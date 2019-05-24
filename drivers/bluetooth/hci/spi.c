@@ -86,7 +86,7 @@ static inline void spi_dump_message(const u8_t *pre, u8_t *buf,
 	for (i = 0U; i < size; i++) {
 		c = buf[i];
 		printk("%x ", c);
-		if (c >= 31 && c <= 126) {
+		if (c >= 31U && c <= 126U) {
 			printk("[%c] ", c);
 		} else {
 			printk("[.] ");
@@ -322,9 +322,9 @@ static void bt_spi_rx_thread(void)
 				kick_cs();
 				ret = bt_spi_transceive(header_master, 5,
 							header_slave, 5);
-			} while ((((header_slave[STATUS_HEADER_TOREAD] == 0 ||
-				  header_slave[STATUS_HEADER_TOREAD] == 0xFF) &&
-				  !ret)) && exit_irq_high_loop());
+			} while ((((header_slave[STATUS_HEADER_TOREAD] == 0U ||
+				    header_slave[STATUS_HEADER_TOREAD] == 0xFF) &&
+				   !ret)) && exit_irq_high_loop());
 
 			if (!ret) {
 				size = header_slave[STATUS_HEADER_TOREAD];
@@ -332,7 +332,7 @@ static void bt_spi_rx_thread(void)
 				do {
 					ret = bt_spi_transceive(&txmsg, size,
 								&rxmsg, size);
-				} while (rxmsg[0] == 0 && ret == 0);
+				} while (rxmsg[0] == 0U && ret == 0);
 			}
 
 			release_cs();
@@ -438,7 +438,7 @@ static int bt_spi_send(struct net_buf *buf)
 		 * sleeping or still in the initialisation stage (waking-up).
 		 */
 	} while ((rxmsg[STATUS_HEADER_READY] != READY_NOW ||
-		  (rxmsg[1] | rxmsg[2] | rxmsg[3] | rxmsg[4]) == 0) && !ret);
+		  (rxmsg[1] | rxmsg[2] | rxmsg[3] | rxmsg[4]) == 0U) && !ret);
 
 
 	k_sem_give(&sem_busy);
@@ -448,7 +448,7 @@ static int bt_spi_send(struct net_buf *buf)
 		do {
 			ret = bt_spi_transceive(buf->data, buf->len,
 						rxmsg, buf->len);
-		} while (rxmsg[0] == 0 && !ret);
+		} while (rxmsg[0] == 0U && !ret);
 	}
 
 	release_cs();
@@ -529,7 +529,7 @@ static const struct bt_hci_driver drv = {
 	.send		= bt_spi_send,
 };
 
-static int _bt_spi_init(struct device *unused)
+static int bt_spi_init(struct device *unused)
 {
 	ARG_UNUSED(unused);
 
@@ -568,4 +568,4 @@ static int _bt_spi_init(struct device *unused)
 	return 0;
 }
 
-SYS_INIT(_bt_spi_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+SYS_INIT(bt_spi_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);

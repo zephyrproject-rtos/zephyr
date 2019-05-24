@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 set(EMU_PLATFORM nsim)
 
 set(BOARD_FLASH_RUNNER arc-nsim)

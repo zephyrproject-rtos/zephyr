@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 # The 'FindPythonInterp' that is distributed with CMake 3.8 has a bug
 # that we need to work around until we upgrade to 3.13. Until then we
 # maintain a patched copy in our repo. Bug:

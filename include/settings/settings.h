@@ -33,7 +33,7 @@ extern "C" {
  */
 #define SETTINGS_EXTRA_LEN ((SETTINGS_MAX_DIR_DEPTH - 1) + 2)
 
-#define SETTINGS_NMGR_OP		0
+typedef ssize_t (*settings_read_cb)(void *cb_arg, void *data, size_t len);
 
 /**
  * @struct settings_handler
@@ -57,14 +57,16 @@ struct settings_handler {
 	 *  - val_len_max - size of that buffer.
 	 */
 
-	int (*h_set)(int argc, char **argv, void *value_ctx);
+	int (*h_set)(int argc, char **argv, size_t len,
+		     settings_read_cb read_cb, void *cb_arg);
 	/**< Set value handler of settings items identified by keyword names.
 	 *
 	 * Parameters:
-	 *  - argc - count of item in argv, argv - array of pointers to keyword
-	 *   names.
-	 *  - value_ctx - pointer to the value context which is used parameter
-	 *   for data extracting routine (@ref settings_val_read_cb).
+	 *  - argc - count of item in argv.
+	 *  - argv - array of pointers to keyword names.
+	 *  - len - the size of the data found in the backend.
+	 *  - read_cb - function provided to read the data from the backend.
+	 *  - cb_arg - arguments for the read function provided by the backend.
 	 */
 
 	int (*h_commit)(void);
@@ -152,86 +154,149 @@ int settings_save_one(const char *name, void *value, size_t val_len);
 int settings_delete(const char *name);
 
 /**
- * Set settings item identified by @p name to be value @p value.
- * This finds the settings handler for this subtree and calls it's
- * set handler.
- *
- * @param name Name/key of the settings item.
- * @param value Pointer to the value of the settings item. This value will
- * be transferred to the @ref settings_handler::h_set handler implementation.
- * @param len Length of value string.
- *
- * @return 0 on success, non-zero on failure.
- */
-int settings_set_value(char *name, void *value, size_t len);
-
-/**
- * Get value of settings item identified by @p name.
- * This calls the settings handler h_get for the subtree.
- *
- * Configuration handler should copy the string to @p buf, the maximum
- * number of bytes it will copy is limited by @p buf_len.
- *
- * @param name Name/key of the settings item.
- *
- * @param buf buffer for value of the settings item.
- * If value is not string, the value will be filled in *buf.
- *
- * @param buf_len size of buf.
- *
- * @return Positive: Length of copied dat. Negative: -ERCODE
- */
-int settings_get_value(char *name, char *buf, int buf_len);
-
-/**
  * Call commit for all settings handler. This should apply all
  * settings which has been set, but not applied yet.
  *
- * @param name Name of the settings subtree, or NULL to commit everything.
- *
  * @return 0 on success, non-zero on failure.
  */
-int settings_commit(char *name);
-
-/**
- * Persistent data extracting routine.
- *
- * This function read and decode data from non-volatile storage to user buffer
- * This function should be used inside set handler in order to read the settings
- * data from backend storage.
- *
- * @param[in] value_ctx Data context provided by the h_set handler.
- * @param[out] buf Buffer for data read.
- * @param[in] len Length of @p buf.
- *
- * @retval Negative value on failure. 0 and positive: Length of data loaded to
- * the @p buf.
- */
-int settings_val_read_cb(void *value_ctx, void *buf, size_t len);
-
-/**
- * This function fetch length of decode data.
- * This function should be used inside set handler in order to detect the
- * settings data length.
- *
- * @param[in] value_ctx Data context provided by the h_set handler.
- *
- * @retval length of data.
- */
-size_t settings_val_get_len_cb(void *value_ctx);
+int settings_commit(void);
 
 /**
  * @} settings
  */
 
+
 /*
- * Config storage
+ * API for config storage
  */
+
 struct settings_store_itf;
+
+/**
+ * @struct settings_store
+ * Backend handler node for storage handling.
+ */
 struct settings_store {
 	sys_snode_t cs_next;
+	/**< Linked list node info for internal usage. */
+
 	const struct settings_store_itf *cs_itf;
+	/**< Backend handler structure. */
 };
+
+/**
+ * @struct settings_store_itf
+ * Backend handler functions.
+ * Sources are registered using a call to @ref settings_src_register.
+ * Destinations are registered using a call to @ref settings_dst_register.
+ */
+struct settings_store_itf {
+	int (*csi_load)(struct settings_store *cs);
+	/**< Loads all values from storage.
+	 *
+	 * Parameters:
+	 *  - cs - Corresponding backend handler node
+	 */
+
+	int (*csi_save_start)(struct settings_store *cs);
+	/**< Handler called before an export operation.
+	 *
+	 * Parameters:
+	 *  - cs - Corresponding backend handler node
+	 */
+
+	int (*csi_save)(struct settings_store *cs, const char *name,
+			const char *value, size_t val_len);
+	/**< Save a single key-value pair to storage.
+	 *
+	 * Parameters:
+	 *  - cs - Corresponding backend handler node
+	 *  - name - Key in string format
+	 *  - value - Binary value
+	 *  - val_len - Length of value in bytes.
+	 */
+
+	int (*csi_save_end)(struct settings_store *cs);
+	/**< Handler called after an export operation.
+	 *
+	 * Parameters:
+	 *  - cs - Corresponding backend handler node
+	 */
+};
+
+/**
+ * Register a backend handler acting as source.
+ *
+ * @param cs Backend handler node containing handler information.
+ *
+ */
+void settings_src_register(struct settings_store *cs);
+
+/**
+ * Register a backend handler acting as destination.
+ *
+ * @param cs Backend handler node containing handler information.
+ *
+ */
+void settings_dst_register(struct settings_store *cs);
+
+
+/*
+ * API for handler lookup
+ */
+
+/**
+ * Parses a key to an array of elements and locate corresponding module handler.
+ *
+ * @param name Key in string format
+ * @param name_argc Parsed number of elements.
+ * @param name_argv Parsed array of elements.
+ *
+ * @return settings_handler node on success, NULL on failure.
+ */
+struct settings_handler *settings_parse_and_lookup(char *name, int *name_argc,
+						   char *name_argv[]);
+
+
+/*
+ * API for runtime settings
+ */
+
+#ifdef CONFIG_SETTINGS_RUNTIME
+
+/**
+ * Set a value with a specific key to a module handler.
+ *
+ * @param name Key in string format.
+ * @param data Binary value.
+ * @param len Value length in bytes.
+ *
+ * @return 0 on success, non-zero on failure.
+ */
+int settings_runtime_set(const char *name, void *data, size_t len);
+
+/**
+ * Get a value corresponding to a key from a module handler.
+ *
+ * @param name Key in string format.
+ * @param data Returned binary value.
+ * @param len Returned value length in bytes.
+ *
+ * @return 0 on success, non-zero on failure.
+ */
+int settings_runtime_get(const char *name, void *data, size_t len);
+
+/**
+ * Apply settings in a module handler.
+ *
+ * @param name Key in string format.
+ *
+ * @return 0 on success, non-zero on failure.
+ */
+int settings_runtime_commit(const char *name);
+
+#endif /* CONFIG_SETTINGS_RUNTIME */
+
 
 #ifdef __cplusplus
 }

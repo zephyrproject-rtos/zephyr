@@ -13,3 +13,4 @@ supported:
   - i2c
   - spi
   - gpio
+  - netif:eth

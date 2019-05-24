@@ -2,7 +2,7 @@
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
  * All rights reserved.
- * 
+ *
  * SPDX-License-Identifier: BSD-3-Clause
  */
 #ifndef _FSL_EWM_H_
@@ -14,7 +14,6 @@
  * @addtogroup ewm
  * @{
  */
-
 
 /*******************************************************************************
  * Definitions
@@ -38,10 +37,10 @@ typedef enum _ewm_lpo_clock_source
 #endif /* FSL_FEATURE_EWM_HAS_CLOCK_SELECT */
 
 /*!
-* @brief Data structure for EWM configuration.
-*
-* This structure is used to configure the EWM.
-*/
+ * @brief Data structure for EWM configuration.
+ *
+ * This structure is used to configure the EWM.
+ */
 typedef struct _ewm_config
 {
     bool enableEwm;           /*!< Enable EWM module */
@@ -109,7 +108,7 @@ extern "C" {
  *
  * @param base EWM peripheral base address
  * @param config The configuration of the EWM
-*/
+ */
 void EWM_Init(EWM_Type *base, const ewm_config_t *config);
 
 /*!
@@ -118,7 +117,7 @@ void EWM_Init(EWM_Type *base, const ewm_config_t *config);
  * This function is used to shut down the EWM.
  *
  * @param base EWM peripheral base address
-*/
+ */
 void EWM_Deinit(EWM_Type *base);
 
 /*!
@@ -205,7 +204,7 @@ static inline uint32_t EWM_GetStatusFlags(EWM_Type *base)
  * This function resets the EWM counter to zero.
  *
  * @param base EWM peripheral base address
-*/
+ */
 void EWM_Refresh(EWM_Type *base);
 
 /*@}*/

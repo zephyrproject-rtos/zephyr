@@ -30,6 +30,8 @@ LOG_MODULE_DECLARE(net_zperf_sample, LOG_LEVEL_DBG);
 static struct sockaddr_in6 *in6_addr_my;
 static struct sockaddr_in *in4_addr_my;
 
+const struct shell *tcp_shell;
+
 static void tcp_received(struct net_context *context,
 			 struct net_pkt *pkt,
 			 union net_ip_header *ip_hdr,
@@ -37,35 +39,41 @@ static void tcp_received(struct net_context *context,
 			 int status,
 			 void *user_data)
 {
-	const struct shell *shell = user_data;
+	const struct shell *shell = tcp_shell;
 	struct session *session;
 	u32_t time;
 
-	if (!pkt) {
+	if (!shell) {
+		printk("Shell is not set!\n");
 		return;
 	}
 
 	time = k_cycle_get_32();
 
-	session = get_session(pkt, SESSION_TCP);
+	session = get_tcp_session(context);
 	if (!session) {
 		shell_fprintf(shell, SHELL_WARNING, "Cannot get a session!\n");
 		return;
 	}
 
 	switch (session->state) {
-	case STATE_NULL:
 	case STATE_COMPLETED:
-		shell_fprintf(shell, SHELL_NORMAL, "New session started\n");
+		break;
+	case STATE_NULL:
+		shell_fprintf(shell, SHELL_NORMAL,
+			      "New TCP session started\n");
 		zperf_reset_session_stats(session);
 		session->start_time = k_cycle_get_32();
 		session->state = STATE_ONGOING;
 		/* fall through */
 	case STATE_ONGOING:
 		session->counter++;
-		session->length += net_pkt_appdatalen(pkt);
 
-		if (status == 0) { /* EOF */
+		if (pkt) {
+			session->length += net_pkt_remaining_data(pkt);
+		}
+
+		if (pkt == NULL && status == 0) { /* EOF */
 			u32_t rate_in_kbps;
 			u32_t duration = HW_CYCLES_TO_USEC(
 				time_delta(session->start_time, time));
@@ -73,12 +81,12 @@ static void tcp_received(struct net_context *context,
 			session->state = STATE_COMPLETED;
 
 			/* Compute baud rate */
-			if (duration != 0) {
+			if (duration != 0U) {
 				rate_in_kbps = (u32_t)
 					(((u64_t)session->length *
 					  (u64_t)8 *
 					  (u64_t)USEC_PER_SEC) /
-					 ((u64_t)duration * 1024));
+					 ((u64_t)duration * 1024U));
 			} else {
 				rate_in_kbps = 0U;
 			}
@@ -94,6 +102,11 @@ static void tcp_received(struct net_context *context,
 			shell_fprintf(shell, SHELL_NORMAL, " rate:\t\t\t");
 			print_number(shell, rate_in_kbps, KBPS, KBPS_UNIT);
 			shell_fprintf(shell, SHELL_NORMAL, "\n");
+
+			zperf_tcp_stopped();
+
+			net_context_unref(context);
+			session->state = STATE_NULL;
 		}
 		break;
 	case STATE_LAST_PACKET_RECEIVED:
@@ -102,7 +115,9 @@ static void tcp_received(struct net_context *context,
 		shell_fprintf(shell, SHELL_WARNING, "Unsupported case\n");
 	}
 
-	net_pkt_unref(pkt);
+	if (pkt) {
+		net_pkt_unref(pkt);
+	}
 }
 
 static void tcp_accepted(struct net_context *context,
@@ -124,11 +139,19 @@ static void tcp_accepted(struct net_context *context,
 
 void zperf_tcp_receiver_init(const struct shell *shell, int port)
 {
+	static bool init_done;
 	struct net_context *context4 = NULL;
 	struct net_context *context6 = NULL;
 	const struct in_addr *in4_addr = NULL;
 	const struct in6_addr *in6_addr = NULL;
 	int ret;
+
+	if (init_done) {
+		zperf_tcp_started();
+		return;
+	}
+
+	tcp_shell = shell;
 
 	if (IS_ENABLED(CONFIG_NET_IPV6)) {
 		in6_addr_my = zperf_get_sin6();
@@ -269,4 +292,7 @@ void zperf_tcp_receiver_init(const struct shell *shell, int port)
 
 	shell_fprintf(shell, SHELL_NORMAL,
 		      "Listening on port %d\n", port);
+
+	zperf_tcp_started();
+	init_done = true;
 }

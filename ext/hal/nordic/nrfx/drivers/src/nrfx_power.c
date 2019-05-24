@@ -225,6 +225,8 @@ void nrfx_power_sleepevt_uninit(void)
 #if NRF_POWER_HAS_USBREG
 void nrfx_power_usbevt_init(nrfx_power_usbevt_config_t const * p_config)
 {
+    NRFX_ASSERT(p_config != NULL);
+
     nrfx_power_usbevt_uninit();
     if (p_config->handler != NULL)
     {

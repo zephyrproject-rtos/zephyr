@@ -79,11 +79,6 @@ static int i2c_stm32_transfer(struct device *dev, struct i2c_msg *msg,
 	current->flags |= I2C_MSG_RESTART;
 
 	for (u8_t i = 1; i <= num_msgs; i++) {
-		/* Maximum length of a single message is 255 Bytes */
-		if (current->len > 255) {
-			ret = -EINVAL;
-			break;
-		}
 
 		if (i < num_msgs) {
 			next = current + 1;
@@ -131,22 +126,44 @@ static int i2c_stm32_transfer(struct device *dev, struct i2c_msg *msg,
 			next = current + 1;
 			next_msg_flags = &(next->flags);
 		}
+		while (current->len > 0) {
+			u32_t temp_len = current->len;
+			u8_t tmp_msg_flags = current->flags & ~I2C_MSG_RESTART;
+			u8_t tmp_next_msg_flags = next_msg_flags ?
+							*next_msg_flags : 0;
 
-		if ((current->flags & I2C_MSG_RW_MASK) == I2C_MSG_WRITE) {
-			ret = stm32_i2c_msg_write(dev, current, next_msg_flags,
-						  slave);
-		} else {
-			ret = stm32_i2c_msg_read(dev, current, next_msg_flags,
-						 slave);
+			if (current->len > 255) {
+				current->len = 255U;
+				current->flags &= ~I2C_MSG_STOP;
+				if (next_msg_flags) {
+					*next_msg_flags = current->flags &
+							  ~I2C_MSG_RESTART;
+				}
+			}
+			if ((current->flags & I2C_MSG_RW_MASK) ==
+								I2C_MSG_WRITE) {
+				ret = stm32_i2c_msg_write(dev, current,
+							  next_msg_flags,
+							  slave);
+			} else {
+				ret = stm32_i2c_msg_read(dev, current,
+							 next_msg_flags, slave);
+			}
+
+			if (ret < 0) {
+				goto exit;
+			}
+			if (next_msg_flags) {
+				*next_msg_flags = tmp_next_msg_flags;
+			}
+			current->buf += current->len;
+			current->flags = tmp_msg_flags;
+			current->len = temp_len - current->len;
 		}
-
-		if (ret < 0) {
-			break;
-		}
-
 		current++;
 		num_msgs--;
 	}
+exit:
 #if defined(CONFIG_I2C_STM32_V1)
 	LL_I2C_Disable(i2c);
 #endif
@@ -217,7 +234,7 @@ static int i2c_stm32_init(struct device *dev)
 	}
 #endif /* CONFIG_SOC_SERIES_STM32F3X) || CONFIG_SOC_SERIES_STM32F0X */
 
-	bitrate_cfg = _i2c_map_dt_bitrate(cfg->bitrate);
+	bitrate_cfg = i2c_map_dt_bitrate(cfg->bitrate);
 
 	ret = i2c_stm32_runtime_configure(dev, I2C_MODE_MASTER | bitrate_cfg);
 	if (ret < 0) {

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 
 if BOARD_IOTDK
 
@@ -5,6 +6,6 @@ config BOARD
 	default "iotdk"
 
 config CPU_ARCEM4
-	def_bool y
+	default y
 
 endif # BOARD_IOTDK

@@ -87,8 +87,6 @@ static int nxp_lpc54114_init(struct device *arg)
 	/* disable interrupts */
 	oldLevel = irq_lock();
 
-	_ClearFaults();
-
 	/* Initialize FRO/system clock to 48 MHz */
 	clkInit();
 

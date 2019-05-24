@@ -24,13 +24,6 @@ if BT_CUSTOM
 # Insert here any custom (non-HCI) offload drives
 endif
 
-config BT_NRF51_PM
-	bool "nRF51 Power Management [EXPERIMENTAL]"
-	depends on BT_H4
-	help
-	  Power Management support for Nordic BLE nRF51 chip. Allows to enable,
-	  disable the chip and handle wakeups.
-
 endmenu
 
 endif # BT && ! BT_CTLR

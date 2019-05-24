@@ -55,7 +55,7 @@ static int ili9340_init(struct device *dev)
 	data->cs_ctrl.gpio_dev =
 		device_get_binding(DT_ILITEK_ILI9340_0_CS_GPIO_CONTROLLER);
 	data->cs_ctrl.gpio_pin = DT_ILITEK_ILI9340_0_CS_GPIO_PIN;
-	data->cs_ctrl.delay = 0;
+	data->cs_ctrl.delay = 0U;
 	data->spi_config.cs = &(data->cs_ctrl);
 #else
 	data->spi_config.cs = NULL;
@@ -126,7 +126,7 @@ static int ili9340_write(const struct device *dev, const u16_t x,
 	u16_t write_h;
 
 	__ASSERT(desc->width <= desc->pitch, "Pitch is smaller then width");
-	__ASSERT((3 * desc->pitch * desc->height) <= desc->bu_size,
+	__ASSERT((desc->pitch * 3U * desc->height) <= desc->bu_size,
 			"Input buffer to small");
 
 	LOG_DBG("Writing %dx%d (w,h) @ %dx%d (x,y)", desc->width, desc->height,
@@ -142,17 +142,18 @@ static int ili9340_write(const struct device *dev, const u16_t x,
 	}
 
 	ili9340_transmit(data, ILI9340_CMD_MEM_WRITE,
-			 (void *) write_data_start, 3 * desc->width * write_h);
+			 (void *) write_data_start,
+			 desc->width * 3U * write_h);
 
 	tx_bufs.buffers = &tx_buf;
 	tx_bufs.count = 1;
 
-	write_data_start += (3 * desc->pitch);
+	write_data_start += (desc->pitch * 3U);
 	for (write_cnt = 1U; write_cnt < nbr_of_writes; ++write_cnt) {
 		tx_buf.buf = (void *)write_data_start;
-		tx_buf.len = 3 * desc->width * write_h;
+		tx_buf.len = desc->width * 3U * write_h;
 		spi_write(data->spi_dev, &data->spi_config, &tx_bufs);
-		write_data_start += (3 * desc->pitch);
+		write_data_start += (desc->pitch * 3U);
 	}
 
 	return 0;
@@ -229,8 +230,8 @@ static void ili9340_get_capabilities(const struct device *dev,
 				     struct display_capabilities *capabilities)
 {
 	memset(capabilities, 0, sizeof(struct display_capabilities));
-	capabilities->x_resolution = 320;
-	capabilities->y_resolution = 240;
+	capabilities->x_resolution = 320U;
+	capabilities->y_resolution = 240U;
 	capabilities->supported_pixel_formats = PIXEL_FORMAT_RGB_888;
 	capabilities->current_pixel_format = PIXEL_FORMAT_RGB_888;
 	capabilities->current_orientation = DISPLAY_ORIENTATION_NORMAL;

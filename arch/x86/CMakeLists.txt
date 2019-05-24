@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 
 # Find out if we are optimizing for size
 get_target_property(zephyr_COMPILE_OPTIONS zephyr_interface INTERFACE_COMPILE_OPTIONS)
@@ -86,7 +88,7 @@ function(add_bin_file_to_the_next_link target_dependency bin)
     -I binary
     -B ${OUTPUT_ARCH}
     -O ${OUTPUT_FORMAT}
-    --rename-section .data=${bin}
+    --rename-section .data=${bin},CONTENTS,ALLOC,LOAD,READONLY,DATA
     ${bin}.bin
     ${bin}.o
     DEPENDS ${target_dependency} ${bin}.bin

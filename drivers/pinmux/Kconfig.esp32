@@ -8,7 +8,6 @@
 
 menuconfig PINMUX_ESP32
 	bool "ESP32 Pin multiplexer driver"
-	depends on PINMUX && SOC_ESP32
+	depends on SOC_ESP32
 	help
 	  Enable driver for ESP32 Pin multiplexer.
-

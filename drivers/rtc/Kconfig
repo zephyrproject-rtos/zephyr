@@ -23,7 +23,7 @@ source "subsys/logging/Kconfig.template.log_config"
 config RTC_0_NAME
 	string "Driver instance name"
 	default "RTC_0"
-	depends on RTC && !HAS_DTS
+	depends on !HAS_DTS
 	help
 	  RTC driver instance name
 

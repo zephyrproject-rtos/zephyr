@@ -28,12 +28,6 @@ config CPU_CORTEX_M
 	help
 	  This option signifies the use of a CPU of the Cortex-M family.
 
-config CPU_HAS_SYSTICK
-	bool
-	# Omit prompt to signify "hidden" option
-	help
-	  This option is enabled when the CPU has systick timer implemented.
-
 config BUILTIN_STACK_GUARD
 	bool "Thread Stack Guards based on built-in ARM stack limit checking"
 	depends on CPU_CORTEX_M_HAS_SPLIM
@@ -103,7 +97,6 @@ depends on ARM_SECURE_FIRMWARE
 
 config ARM_FIRMWARE_HAS_SECURE_ENTRY_FUNCS
 	bool "Secure Firmware has Secure Entry functions"
-	depends on ARM_SECURE_FIRMWARE
 	help
 	  Option indicates that ARM Secure Firmware contains
 	  Secure Entry functions that may be called from
@@ -166,10 +159,6 @@ endmenu
 
 source "arch/arm/core/cortex_m/Kconfig"
 
-if CPU_HAS_MPU
 source "arch/arm/core/cortex_m/mpu/Kconfig"
-endif
 
-if CPU_HAS_TEE
 source "arch/arm/core/cortex_m/tz/Kconfig"
-endif

@@ -1,5 +1,5 @@
-/**
- * Copyright (c) 2017 - 2018, Nordic Semiconductor ASA
+/*
+ * Copyright (c) 2017 - 2019, Nordic Semiconductor ASA
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -48,32 +48,32 @@ extern "C" {
 /**
  * @brief Macro for logging a message with the severity level ERROR.
  *
- * @param format  printf-style format string, optionally followed by arguments
- *                to be formatted and inserted in the resulting string.
+ * @param format printf-style format string, optionally followed by arguments
+ *               to be formatted and inserted in the resulting string.
  */
 #define NRFX_LOG_ERROR(format, ...)
 
 /**
  * @brief Macro for logging a message with the severity level WARNING.
  *
- * @param format  printf-style format string, optionally followed by arguments
- *                to be formatted and inserted in the resulting string.
+ * @param format printf-style format string, optionally followed by arguments
+ *               to be formatted and inserted in the resulting string.
  */
 #define NRFX_LOG_WARNING(format, ...)
 
 /**
  * @brief Macro for logging a message with the severity level INFO.
  *
- * @param format  printf-style format string, optionally followed by arguments
- *                to be formatted and inserted in the resulting string.
+ * @param format printf-style format string, optionally followed by arguments
+ *               to be formatted and inserted in the resulting string.
  */
 #define NRFX_LOG_INFO(format, ...)
 
 /**
  * @brief Macro for logging a message with the severity level DEBUG.
  *
- * @param format  printf-style format string, optionally followed by arguments
- *                to be formatted and inserted in the resulting string.
+ * @param format printf-style format string, optionally followed by arguments
+ *               to be formatted and inserted in the resulting string.
  */
 #define NRFX_LOG_DEBUG(format, ...)
 

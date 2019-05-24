@@ -4,4 +4,4 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-gsource "soc/arm/cypress/*/Kconfig.defconfig.series"
+source "soc/arm/cypress/*/Kconfig.defconfig.series"

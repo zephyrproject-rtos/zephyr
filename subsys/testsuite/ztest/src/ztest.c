@@ -31,7 +31,7 @@ static int cleanup_test(struct unit_test *test)
 	int ret = TC_PASS;
 	int mock_status;
 
-	mock_status = _cleanup_mock();
+	mock_status = z_cleanup_mock();
 
 #ifdef KERNEL
 	/* we need to remove the ztest_thread information from the timeout_q.
@@ -138,7 +138,7 @@ static int run_test(struct unit_test *test)
 	run_test_functions(test);
 out:
 	ret |= cleanup_test(test);
-	_TC_END_RESULT(ret, test->name);
+	Z_TC_END_RESULT(ret, test->name);
 
 	return ret;
 }
@@ -209,8 +209,8 @@ static int run_test(struct unit_test *test)
 	k_thread_create(&ztest_thread, ztest_thread_stack,
 			K_THREAD_STACK_SIZEOF(ztest_thread_stack),
 			(k_thread_entry_t) test_cb, (struct unit_test *)test,
-			NULL, NULL, -1, test->thread_options | K_INHERIT_PERMS,
-			0);
+			NULL, NULL, CONFIG_ZTEST_THREAD_PRIORITY,
+			test->thread_options | K_INHERIT_PERMS,	0);
 	/*
 	 * There is an implicit expectation here that the thread that was
 	 * spawned is still higher priority than the current thread.
@@ -221,7 +221,7 @@ static int run_test(struct unit_test *test)
 	 * another test case to be run after the current one finishes, the
 	 * thread_stack will be reused for that new test case while the current
 	 * test case has not finished running yet (it has given the semaphore,
-	 * but has _not_ gone back to _thread_entry() and completed it's "abort
+	 * but has _not_ gone back to z_thread_entry() and completed it's "abort
 	 * phase": this will corrupt the kernel ready queue.
 	 */
 	k_sem_take(&test_end_signal, K_FOREVER);
@@ -234,9 +234,9 @@ static int run_test(struct unit_test *test)
 	}
 
 	if (test_result == -2) {
-		_TC_END_RESULT(TC_SKIP, test->name);
+		Z_TC_END_RESULT(TC_SKIP, test->name);
 	} else {
-		_TC_END_RESULT(ret, test->name);
+		Z_TC_END_RESULT(ret, test->name);
 	}
 
 	return ret;
@@ -244,7 +244,7 @@ static int run_test(struct unit_test *test)
 
 #endif /* !KERNEL */
 
-void _ztest_run_test_suite(const char *name, struct unit_test *suite)
+void z_ztest_run_test_suite(const char *name, struct unit_test *suite)
 {
 	int fail = 0;
 
@@ -290,7 +290,7 @@ K_APPMEM_PARTITION_DEFINE(ztest_mem_partition);
 #ifndef KERNEL
 int main(void)
 {
-	_init_mock();
+	z_init_mock();
 	test_main();
 	end_report();
 
@@ -320,7 +320,7 @@ void main(void)
 	k_mem_domain_add_thread(&ztest_mem_domain, k_current_get());
 #endif /* CONFIG_USERSPACE */
 
-	_init_mock();
+	z_init_mock();
 	test_main();
 	end_report();
 }

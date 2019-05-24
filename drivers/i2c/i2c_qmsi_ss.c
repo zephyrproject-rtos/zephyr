@@ -89,19 +89,25 @@ static int ss_i2c_resume_device_from_suspend(struct device *dev)
 * the *context may include IN data or/and OUT data
 */
 static int ss_i2c_device_ctrl(struct device *dev, u32_t ctrl_command,
-			      void *context)
+			      void *context, device_pm_cb cb, void *arg)
 {
+	int ret = 0;
+
 	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
 		if (*((u32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
-			return ss_i2c_suspend_device(dev);
+			ret = ss_i2c_suspend_device(dev);
 		} else if (*((u32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
-			return ss_i2c_resume_device_from_suspend(dev);
+			ret = ss_i2c_resume_device_from_suspend(dev);
 		}
 	} else if (ctrl_command == DEVICE_PM_GET_POWER_STATE) {
 		*((u32_t *)context) = ss_i2c_qmsi_get_power_state(dev);
 	}
 
-	return 0;
+	if (cb) {
+		cb(dev, ret, context, arg);
+	}
+
+	return ret;
 }
 #else
 #define ss_i2c_qmsi_set_power_state(...)
@@ -357,7 +363,7 @@ static int i2c_qmsi_ss_init(struct device *dev)
 
 	k_sem_init(&driver_data->sem, 1, UINT_MAX);
 
-	bitrate_cfg = _i2c_map_dt_bitrate(config->bitrate);
+	bitrate_cfg = i2c_map_dt_bitrate(config->bitrate);
 
 	err = i2c_qmsi_ss_configure(dev, I2C_MODE_MASTER | bitrate_cfg);
 

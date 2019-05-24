@@ -136,7 +136,7 @@ static inline bool net_trickle_is_running(struct net_trickle *trickle)
 {
 	NET_ASSERT(trickle);
 
-	return trickle->I != 0;
+	return trickle->I != 0U;
 }
 
 /**

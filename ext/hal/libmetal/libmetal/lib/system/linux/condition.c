@@ -14,15 +14,15 @@
 int metal_condition_wait(struct metal_condition *cv,
 				       metal_mutex_t *m)
 {
-	metal_mutex_t *tmpm = 0;
+	uintptr_t tmpmptr = 0, mptr = (uintptr_t)m;
 	int v = 0;
 
 	/* Check if the mutex has been acquired */
 	if (!cv || !m || !metal_mutex_is_acquired(m))
 		return -EINVAL;
 
-	if (!atomic_compare_exchange_strong(&cv->m, &tmpm, m)) {
-		if (m != tmpm)
+	if (!atomic_compare_exchange_strong(&cv->mptr, &tmpmptr, mptr)) {
+		if (tmpmptr != mptr)
 			return -EINVAL;
 	}
 

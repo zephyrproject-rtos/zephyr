@@ -2,7 +2,7 @@ sample:
   description: TBD
   name: TBD
 tests:
-  test_x86:
+  sample.net.wpan.serial:
     harness: net
     depends_on: usb_device
     platform_whitelist: quark_se_c1000_devboard

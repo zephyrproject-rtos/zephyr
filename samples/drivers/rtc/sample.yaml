@@ -1,7 +1,7 @@
 sample:
   name: RTC Driver Sample
 tests:
-  test:
+  sample.driver.rtc:
     tags: drivers
     harness: console
     harness_config:

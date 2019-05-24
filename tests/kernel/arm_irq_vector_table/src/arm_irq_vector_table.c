@@ -116,7 +116,7 @@ void isr2(void)
  * NVIC_SetPendingIRQ(), to trigger the pending interrupt. And we check
  * that the corresponding interrupt handler is getting called or not.
  *
- * @see irq_enable(), _irq_priority_set(), NVIC_SetPendingIRQ()
+ * @see irq_enable(), z_irq_priority_set(), NVIC_SetPendingIRQ()
  *
  */
 void test_arm_irq_vector_table(void)
@@ -125,7 +125,7 @@ void test_arm_irq_vector_table(void)
 
 	for (int ii = 0; ii < 3; ii++) {
 		irq_enable(_ISR_OFFSET + ii);
-		_irq_priority_set(_ISR_OFFSET + ii, 0, 0);
+		z_irq_priority_set(_ISR_OFFSET + ii, 0, 0);
 		k_sem_init(&sem[ii], 0, UINT_MAX);
 	}
 

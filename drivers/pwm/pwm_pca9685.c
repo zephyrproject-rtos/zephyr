@@ -43,7 +43,7 @@
  * @param dev Device struct.
  * @return 1 if I2C master is identified, 0 if not.
  */
-static inline int _has_i2c_master(struct device *dev)
+static inline int has_i2c_master(struct device *dev)
 {
 	struct pwm_pca9685_drv_data * const drv_data =
 		(struct pwm_pca9685_drv_data * const)dev->driver_data;
@@ -71,7 +71,7 @@ static int pwm_pca9685_pin_set_cycles(struct device *dev, u32_t pwm,
 	u8_t buf[] = { 0, 0, 0, 0, 0};
 
 	ARG_UNUSED(period_count);
-	if (!_has_i2c_master(dev)) {
+	if (!has_i2c_master(dev)) {
 		return -EINVAL;
 	}
 
@@ -89,7 +89,7 @@ static int pwm_pca9685_pin_set_cycles(struct device *dev, u32_t pwm,
 		buf[2] = (1 << 4);
 		buf[3] = 0x0;
 		buf[4] = 0x0;
-	} else if (pulse_count == 0) {
+	} else if (pulse_count == 0U) {
 		buf[1] = 0x0;
 		buf[2] = 0x0;
 		buf[3] = 0x0;

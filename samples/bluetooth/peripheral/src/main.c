@@ -78,7 +78,7 @@ static void vnd_ccc_cfg_changed(const struct bt_gatt_attr *attr, u16_t value)
 static void indicate_cb(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			u8_t err)
 {
-	printk("Indication %s\n", err != 0 ? "fail" : "success");
+	printk("Indication %s\n", err != 0U ? "fail" : "success");
 	indicating = 0U;
 }
 
@@ -187,8 +187,7 @@ static ssize_t write_without_rsp_vnd(struct bt_conn *conn,
 }
 
 /* Vendor Primary Service Declaration */
-static struct bt_gatt_attr vnd_attrs[] = {
-	/* Vendor Primary Service Declaration */
+BT_GATT_SERVICE_DEFINE(vnd_svc,
 	BT_GATT_PRIMARY_SERVICE(&vnd_uuid),
 	BT_GATT_CHARACTERISTIC(&vnd_enc_uuid.uuid,
 			       BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE |
@@ -216,9 +215,7 @@ static struct bt_gatt_attr vnd_attrs[] = {
 			       BT_GATT_CHRC_WRITE_WITHOUT_RESP,
 			       BT_GATT_PERM_WRITE, NULL,
 			       write_without_rsp_vnd, &vnd_value),
-};
-
-static struct bt_gatt_service vnd_svc = BT_GATT_SERVICE(vnd_attrs);
+);
 
 static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
@@ -258,9 +255,7 @@ static void bt_ready(int err)
 	printk("Bluetooth initialized\n");
 
 	hrs_init(0x01);
-	bas_init();
 	cts_init();
-	bt_gatt_service_register(&vnd_svc);
 
 	if (IS_ENABLED(CONFIG_SETTINGS)) {
 		settings_load();
@@ -333,7 +328,7 @@ void main(void)
 				continue;
 			}
 
-			ind_params.attr = &vnd_attrs[2];
+			ind_params.attr = &vnd_svc.attrs[2];
 			ind_params.func = indicate_cb;
 			ind_params.data = &indicating;
 			ind_params.len = sizeof(indicating);

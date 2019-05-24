@@ -258,9 +258,8 @@ static int send_response(struct net_context *ctx,
 		return -EINVAL;
 	}
 
-	ret = net_context_sendto_new(ctx, query->data, query->len,
-				     &dst, dst_len, NULL, K_NO_WAIT,
-				     NULL, NULL);
+	ret = net_context_sendto(ctx, query->data, query->len, &dst,
+				 dst_len, NULL, K_NO_WAIT, NULL);
 	if (ret < 0) {
 		NET_DBG("Cannot send mDNS reply (%d)", ret);
 	}
@@ -296,7 +295,7 @@ static int dns_read(struct net_context *ctx,
 
 	/* TODO: Instead of this temporary copy, just use the net_pkt directly.
 	 */
-	ret = net_pkt_read_new(pkt, dns_data->data, data_len);
+	ret = net_pkt_read(pkt, dns_data->data, data_len);
 	if (ret < 0) {
 		goto quit;
 	}
@@ -324,7 +323,7 @@ static int dns_read(struct net_context *ctx,
 		u8_t *lquery;
 
 		(void)memset(result->data, 0, net_buf_tailroom(result));
-		result->len = 0;
+		result->len = 0U;
 
 		ret = dns_unpack_query(&dns_msg, result, &qtype, &qclass);
 		if (ret < 0) {

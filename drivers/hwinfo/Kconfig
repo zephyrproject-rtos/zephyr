@@ -22,8 +22,8 @@ config HWINFO_SHELL
 config HWINFO_STM32
 	bool "STM32 hwinfo"
 	default y
-	depends on (SOC_SERIES_STM32F0X || SOC_SERIES_STM32F3X || \
-		    SOC_SERIES_STM32L4X || SOC_SERIES_STM32F7X)
+	depends on SOC_FAMILY_STM32
+	select USE_STM32_LL_UTILS
 	help
 	  Enable STM32 hwinfo driver.
 
@@ -47,5 +47,19 @@ config HWINFO_IMXRT
 	depends on SOC_SERIES_IMX_RT
 	help
 	  Enable NXP i.mx RT hwinfo driver.
+
+config HWINFO_SAM
+	bool "Atmel SAM device ID"
+	default y
+	depends on SOC_FAMILY_SAM
+	help
+	  Enable Atmel SAM hwinfo driver.
+
+config HWINFO_SAM0
+	bool "Atmel SAM0 device ID"
+	default y
+	depends on SOC_FAMILY_SAM0
+	help
+	  Enable Atmel SAM0 hwinfo driver.
 
 endif

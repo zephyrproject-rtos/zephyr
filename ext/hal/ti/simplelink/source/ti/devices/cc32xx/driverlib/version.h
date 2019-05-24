@@ -54,11 +54,11 @@ extern "C"
 
 #define DRIVERLIB_MAJOR_VERSION_NUM      01
 #define DRIVERLIB_MINOR_VERSION_NUM      51
-#define DRIVERLIB_PATCH_VERSION_NUM      02
+#define DRIVERLIB_PATCH_VERSION_NUM      04
 #define DRIVERLIB_BUILD_VERSION_NUM      00
-#define DRIVERLIB_RELEASE_DAY            01
-#define DRIVERLIB_RELEASE_MONTH          08
-#define DRIVERLIB_RELEASE_YEAR           2017
+#define DRIVERLIB_RELEASE_DAY            15
+#define DRIVERLIB_RELEASE_MONTH          04
+#define DRIVERLIB_RELEASE_YEAR           2018
 
 /////////////////////////////////////////////
 // !!! Please update the changes.log file !!!

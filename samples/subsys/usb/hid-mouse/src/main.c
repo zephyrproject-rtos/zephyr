@@ -163,7 +163,7 @@ static void x_move(struct device *gpio, struct gpio_callback *cb, u32_t pins)
 	gpio_pin_read(gpio, PIN2, &cur_val);
 
 	if (def_val[2] != cur_val) {
-		state += 10;
+		state += 10U;
 	}
 
 	if (status[MOUSE_X_REPORT_POS] != state) {
@@ -182,7 +182,7 @@ static void y_move(struct device *gpio, struct gpio_callback *cb, u32_t pins)
 	gpio_pin_read(gpio, PIN3, &cur_val);
 
 	if (def_val[3] != cur_val) {
-		state += 10;
+		state += 10U;
 	}
 
 	if (status[MOUSE_Y_REPORT_POS] != state) {
@@ -214,7 +214,7 @@ int callbacks_configure(struct device *gpio, u32_t pin, int flags,
 void main(void)
 {
 	u8_t report[4] = { 0x00 };
-	u8_t toggle = 0;
+	u8_t toggle = 0U;
 	struct device *led_dev, *hid_dev;
 
 	led_dev = device_get_binding(LED_PORT);
@@ -223,7 +223,7 @@ void main(void)
 		return;
 	}
 
-	hid_dev = device_get_binding(CONFIG_USB_HID_DEVICE_NAME_0);
+	hid_dev = device_get_binding("HID_0");
 	if (hid_dev == NULL) {
 		LOG_ERR("Cannot get USB HID Device");
 		return;
@@ -274,9 +274,9 @@ void main(void)
 
 		report[MOUSE_BTN_REPORT_POS] = status[MOUSE_BTN_REPORT_POS];
 		report[MOUSE_X_REPORT_POS] = status[MOUSE_X_REPORT_POS];
-		status[MOUSE_X_REPORT_POS] = 0;
+		status[MOUSE_X_REPORT_POS] = 0U;
 		report[MOUSE_Y_REPORT_POS] = status[MOUSE_Y_REPORT_POS];
-		status[MOUSE_Y_REPORT_POS] = 0;
+		status[MOUSE_Y_REPORT_POS] = 0U;
 		hid_int_ep_write(hid_dev, report, sizeof(report), NULL);
 
 		/* Toggle LED on sent report */

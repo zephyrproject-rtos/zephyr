@@ -36,7 +36,6 @@ GEN_OFFSET_SYM(_kernel_t, idle);
 #endif
 
 GEN_OFFSET_SYM(_kernel_t, ready_q);
-GEN_OFFSET_SYM(_kernel_t, arch);
 
 #ifndef CONFIG_SMP
 GEN_OFFSET_SYM(_ready_q_t, cache);
@@ -56,7 +55,6 @@ GEN_OFFSET_SYM(_thread_base_t, preempt);
 GEN_OFFSET_SYM(_thread_base_t, swap_data);
 
 GEN_OFFSET_SYM(_thread_t, base);
-GEN_OFFSET_SYM(_thread_t, caller_saved);
 GEN_OFFSET_SYM(_thread_t, callee_saved);
 GEN_OFFSET_SYM(_thread_t, arch);
 

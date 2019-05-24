@@ -12,8 +12,8 @@
 #include <kernel_structs.h>
 #include <arch/x86/asm.h>
 
-	GTEXT(_loapic_spurious_handler)
+	GTEXT(z_loapic_spurious_handler)
 
-SECTION_FUNC(TEXT, _loapic_spurious_handler)
+SECTION_FUNC(TEXT, z_loapic_spurious_handler)
 	iret
 

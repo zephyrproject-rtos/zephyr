@@ -9,6 +9,8 @@ import os
 import struct
 from distutils.version import LooseVersion
 
+from collections import OrderedDict
+
 import elftools
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
@@ -35,6 +37,7 @@ DW_OP_addr = 0x3
 DW_OP_fbreg = 0x91
 STACK_TYPE = "_k_thread_stack_element"
 thread_counter = 0
+sys_mutex_counter = 0
 
 # Global type environment. Populated by pass 1.
 type_env = {}
@@ -52,6 +55,7 @@ scr = os.path.basename(sys.argv[0])
 class KobjectInstance:
     def __init__(self, type_obj, addr):
         global thread_counter
+        global sys_mutex_counter
 
         self.addr = addr
         self.type_obj = type_obj
@@ -65,6 +69,9 @@ class KobjectInstance:
             # permissions to other kernel objects
             self.data = thread_counter
             thread_counter = thread_counter + 1
+        elif self.type_obj.name == "sys_mutex":
+            self.data = "(u32_t)(&kernel_mutexes[%d])" % sys_mutex_counter
+            sys_mutex_counter += 1
         else:
             self.data = 0
 
@@ -93,7 +100,7 @@ class ArrayType:
         self.offset = offset
 
     def __repr__(self):
-        return "<array of %d, size %d>" % (self.member_type, self.num_members)
+        return "<array of %d>" % self.member_type
 
     def has_kobject(self):
         if self.member_type not in type_env:
@@ -146,11 +153,12 @@ class AggregateTypeMember:
             if member_offset[0] == 0x23:
                 self.member_offset = member_offset[1] & 0x7f
                 for i in range(1, len(member_offset)-1):
-                    if (member_offset[i] & 0x80):
+                    if member_offset[i] & 0x80:
                         self.member_offset += (
                             member_offset[i+1] & 0x7f) << i*7
             else:
-                self.debug_die("not yet supported location operation")
+                raise Exception("not yet supported location operation (%s:%d:%d)" %
+                        (self.member_name, self.member_type, member_offset[0]))
         else:
             self.member_offset = member_offset
 
@@ -383,7 +391,7 @@ class ElfHelper:
 
         # Step 1: collect all type information.
         for CU in di.iter_CUs():
-            for idx, die in enumerate(CU.iter_DIEs()):
+            for die in CU.iter_DIEs():
                 # Unions are disregarded, kernel objects should never be union
                 # members since the memory is not dedicated to that object and
                 # could be something else
@@ -468,14 +476,6 @@ class ElfHelper:
                 # Never linked; gc-sections deleted it
                 continue
 
-            if ((addr < kram_start or addr >= kram_end) and
-                    (addr < krom_start or addr >= krom_end)):
-
-                self.debug_die(die,
-                               "object '%s' found in invalid location %s"
-                               % (name, hex(addr)))
-                continue
-
             type_obj = type_env[type_offset]
             objs = type_obj.get_kobjects(addr)
             all_objs.update(objs)
@@ -494,6 +494,16 @@ class ElfHelper:
             if ko.type_obj.api:
                 continue
 
+            _, user_ram_allowed = kobjects[ko.type_obj.name]
+            if (not user_ram_allowed and
+                    (addr < kram_start or addr >= kram_end) and
+                    (addr < krom_start or addr >= krom_end)):
+
+                self.debug_die(die,
+                               "object '%s' found in invalid location %s"
+                               % (name, hex(addr)))
+                continue
+
             if ko.type_obj.name != "device":
                 # Not a device struct so we immediately know its type
                 ko.type_name = kobject_to_enum(ko.type_obj.name)
@@ -506,10 +516,10 @@ class ElfHelper:
             if apiaddr not in all_objs:
                 if apiaddr == 0:
                     self.debug("device instance at 0x%x has no associated subsystem"
-                            % addr);
+                            % addr)
                 else:
                     self.debug("device instance at 0x%x has unknown API 0x%x"
-                            % (addr, apiaddr));
+                            % (addr, apiaddr))
                 # API struct does not correspond to a known subsystem, skip it
                 continue
 
@@ -518,13 +528,20 @@ class ElfHelper:
             ret[addr] = ko
 
         self.debug("found %d kernel object instances total" % len(ret))
-        return ret
+
+        # 1. Before python 3.7 dict order is not guaranteed. With Python
+        #    3.5 it doesn't seem random with *integer* keys but can't
+        #    rely on that.
+        # 2. OrderedDict means _insertion_ order, so not enough because
+        #    built from other (random!) dicts: need to _sort_ first.
+        # 3. Sorting memory address looks good.
+        return OrderedDict(sorted(ret.items()))
 
     def get_symbols(self):
         for section in self.elf.iter_sections():
             if isinstance(section, SymbolTableSection):
-                return {self.sym.name: self.sym.entry.st_value
-                        for self.sym in section.iter_symbols()}
+                return {sym.name: sym.entry.st_value
+                        for sym in section.iter_symbols()}
 
         raise LookupError("Could not find symbol table")
 
@@ -546,3 +563,6 @@ class ElfHelper:
 
     def get_thread_counter(self):
         return thread_counter
+
+    def get_sys_mutex_counter(self):
+        return sys_mutex_counter

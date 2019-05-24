@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 
 config BOARD_NRF52_BSIM
 	bool "NRF52 simulation model"
@@ -9,7 +10,6 @@ config BOARD_NRF52_BSIM
 	select CONSOLE_HAS_DRIVER
 	select NRF_RTC_TIMER
 	select CLOCK_CONTROL
-	select CLOCK_CONTROL_NRF
 	help
 	  Will produce a console Linux process which can be executed natively.
 	  It needs the BabbleSim simulator both in compile time and to execute

@@ -14,7 +14,9 @@ void metal_io_init(struct metal_io_region *io, void *virt,
 	      unsigned page_shift, unsigned int mem_flags,
 	      const struct metal_io_ops *ops)
 {
-	const struct metal_io_ops nops = {NULL, NULL, NULL, NULL, NULL, NULL};
+	const struct metal_io_ops nops = {
+		NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
+	};
 
 	io->virt = virt;
 	io->physmap = physmap;
@@ -37,7 +39,7 @@ int metal_io_block_read(struct metal_io_region *io, unsigned long offset,
 	unsigned char *dest = dst;
 	int retlen;
 
-	if (offset > io->size)
+	if (offset >= io->size)
 		return -ERANGE;
 	if ((offset + len) > io->size)
 		len = io->size - offset;
@@ -74,7 +76,7 @@ int metal_io_block_write(struct metal_io_region *io, unsigned long offset,
 	const unsigned char *source = src;
 	int retlen;
 
-	if (offset > io->size)
+	if (offset >= io->size)
 		return -ERANGE;
 	if ((offset + len) > io->size)
 		len = io->size - offset;
@@ -110,7 +112,7 @@ int metal_io_block_set(struct metal_io_region *io, unsigned long offset,
 	unsigned char *ptr = metal_io_virt(io, offset);
 	int retlen = len;
 
-	if (offset > io->size)
+	if (offset >= io->size)
 		return -ERANGE;
 	if ((offset + len) > io->size)
 		len = io->size - offset;
@@ -123,7 +125,7 @@ int metal_io_block_set(struct metal_io_region *io, unsigned long offset,
 		unsigned int i;
 
 		for (i = 1; i < sizeof(int); i++)
-			cint |= ((unsigned int)value << (8 * i));
+			cint |= ((unsigned int)value << (CHAR_BIT * i));
 
 		for (; len && ((uintptr_t)ptr % sizeof(int)); ptr++, len--)
 			*(unsigned char *)ptr = (unsigned char) value;

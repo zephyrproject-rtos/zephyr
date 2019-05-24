@@ -272,7 +272,7 @@ int bt_avdtp_register_sep(u8_t media_type, u8_t role,
 	}
 
 	lsep->sep.id = bt_avdtp_seid++;
-	lsep->sep.inuse = 0;
+	lsep->sep.inuse = 0U;
 	lsep->sep.media_type = media_type;
 	lsep->sep.tsep = role;
 

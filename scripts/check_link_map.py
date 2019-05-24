@@ -22,10 +22,10 @@ import sys
 # to write a valid linker script that will fail this script, but we
 # don't have such a use case and one isn't forseen.
 
-section_re = re.compile('(?x)'                    # (allow whitespace)
-                        '^([a-zA-Z0-9_\.]+) \s+'  # name
-                        ' (0x[0-9a-f]+)     \s+'  # addr
-                        ' (0x[0-9a-f]+)\s*')      # size
+section_re = re.compile(r'(?x)'                    # (allow whitespace)
+                        r'^([a-zA-Z0-9_\.]+) \s+'  # name
+                        r' (0x[0-9a-f]+)     \s+'  # addr
+                        r' (0x[0-9a-f]+)\s*')      # size
 
 load_addr_re = re.compile('load address (0x[0-9a-f]+)')
 
@@ -45,7 +45,7 @@ for line in fileinput.input():
         vma = int(match.group(2), 16)
         size = int(match.group(3), 16)
 
-        if (sec == "bss"):
+        if sec == "bss":
             # Make sure we don't compare the last section of kernel data
             # with the first section of application data, the kernel's bss
             # and noinit are in between.

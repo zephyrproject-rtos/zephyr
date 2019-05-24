@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 if SOC_NIOS2F_ZEPHYR
 
 config SOC
@@ -40,9 +42,6 @@ config ALTERA_AVALON_MSGDMA
 endif # DMA_NIOS2_MSGDMA
 
 if UART_NS16550
-
-config UART_NS16550_PCI
-	default n
 
 config UART_NS16550_PORT_0
 	default y

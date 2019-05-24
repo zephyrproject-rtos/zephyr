@@ -23,7 +23,7 @@ struct unit_test {
 	u32_t thread_options;
 };
 
-void _ztest_run_test_suite(const char *name, struct unit_test *suite);
+void z_ztest_run_test_suite(const char *name, struct unit_test *suite);
 
 /**
  * @defgroup ztest_test Ztest testing macros
@@ -48,7 +48,7 @@ void ztest_test_fail(void);
  *
  * Normally a test passes just by returning without an assertion failure.
  * However, if the success case for your test involves a fatal fault,
- * you can call this function from _SysFatalErrorHandler to indicate that
+ * you can call this function from z_SysFatalErrorHandler to indicate that
  * the test passed before aborting the thread.
  */
 void ztest_test_pass(void);
@@ -126,21 +126,6 @@ static inline void unit_test_noop(void)
 #define ztest_user_unit_test(fn) \
 	ztest_user_unit_test_setup_teardown(fn, unit_test_noop, unit_test_noop)
 
-/**
- * @brief Define a test suite
- *
- * This function should be called in the following fashion:
- * ```{.c}
- *      ztest_test_suite(test_suite_name,
- *              ztest_unit_test(test_function),
- *              ztest_unit_test(test_other_function)
- *      );
- *
- *      ztest_run_test_suite(test_suite_name);
- * ```
- *
- * @param name Name of the testing suite
- */
 
 /* definitions for use with testing application shared memory   */
 #ifdef CONFIG_USERSPACE
@@ -154,8 +139,24 @@ extern struct k_mem_domain ztest_mem_domain;
 #define ZTEST_BMEM
 #define ZTEST_SECTION	.data
 #endif
-#define ztest_test_suite(name, ...) \
-	static ZTEST_DMEM struct unit_test _##name[] = { \
+
+/**
+ * @brief Define a test suite
+ *
+ * This function should be called in the following fashion:
+ * ```{.c}
+ *      ztest_test_suite(test_suite_name,
+ *              ztest_unit_test(test_function),
+ *              ztest_unit_test(test_other_function)
+ *      );
+ *
+ *      ztest_run_test_suite(test_suite_name);
+ * ```
+ *
+ * @param suite Name of the testing suite
+ */
+#define ztest_test_suite(suite, ...) \
+	static ZTEST_DMEM struct unit_test _##suite[] = { \
 		__VA_ARGS__, { 0 } \
 	}
 /**
@@ -164,7 +165,7 @@ extern struct k_mem_domain ztest_mem_domain;
  * @param suite Test suite to run.
  */
 #define ztest_run_test_suite(suite) \
-	_ztest_run_test_suite(#suite, _##suite)
+	z_ztest_run_test_suite(#suite, _##suite)
 
 /**
  * @}

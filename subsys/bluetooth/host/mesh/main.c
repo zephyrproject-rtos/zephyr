@@ -50,7 +50,7 @@ int bt_mesh_provision(const u8_t net_key[16], u16_t net_idx,
 	}
 
 	if (IS_ENABLED(CONFIG_BT_MESH_PB_GATT)) {
-		if (bt_mesh_proxy_prov_disable() == 0) {
+		if (bt_mesh_proxy_prov_disable(false) == 0) {
 			pb_gatt_enabled = true;
 		} else {
 			pb_gatt_enabled = false;
@@ -184,8 +184,7 @@ int bt_mesh_prov_disable(bt_mesh_prov_bearer_t bearers)
 
 	if (IS_ENABLED(CONFIG_BT_MESH_PB_GATT) &&
 	    (bearers & BT_MESH_PROV_GATT)) {
-		bt_mesh_proxy_prov_disable();
-		bt_mesh_adv_update();
+		bt_mesh_proxy_prov_disable(true);
 	}
 
 	return 0;
@@ -195,7 +194,7 @@ static void model_suspend(struct bt_mesh_model *mod, struct bt_mesh_elem *elem,
 			  bool vnd, bool primary, void *user_data)
 {
 	if (mod->pub && mod->pub->update) {
-		mod->pub->count = 0;
+		mod->pub->count = 0U;
 		k_delayed_work_cancel(&mod->pub->timer);
 	}
 }

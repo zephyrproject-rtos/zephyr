@@ -10,7 +10,7 @@
 
 /* exports */
 GTEXT(__swap)
-GTEXT(_thread_entry_wrapper)
+GTEXT(z_thread_entry_wrapper)
 
 /* imports */
 GTEXT(z_sys_trace_thread_switched_in)
@@ -121,7 +121,7 @@ SECTION_FUNC(exception.other, __swap)
 
 	/*
 	 * Load return value into r2 (return value register). -EAGAIN unless
-	 * someone previously called _set_thread_return_value(). Do this before
+	 * someone previously called z_set_thread_return_value(). Do this before
 	 * we potentially unlock interrupts.
 	 */
 	ldw r2, _thread_offset_to_retval(r2)
@@ -171,9 +171,9 @@ no_unlock:
 	ret
 
 
-/* void _thread_entry_wrapper(void)
+/* void z_thread_entry_wrapper(void)
  */
-SECTION_FUNC(TEXT, _thread_entry_wrapper)
+SECTION_FUNC(TEXT, z_thread_entry_wrapper)
 	/* This all corresponds to struct init_stack_frame defined in
 	 * thread.c. We need to take this stuff off the stack and put
 	 * it in the apporpriate registers
@@ -191,5 +191,5 @@ SECTION_FUNC(TEXT, _thread_entry_wrapper)
 	/* pop all the stuff that we just loaded into registers */
 	addi sp, sp, 16
 
-	call _thread_entry
+	call z_thread_entry
 

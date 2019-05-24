@@ -64,11 +64,11 @@ def set_partition_table_pointer(value):
     flash_content.append(value)
 
 def ipc_load_fw(fw_size, fw_offset):
-    dword_count = 3;
-    load_flags = 0;
-    clock_sel = 0;
+    dword_count = 3
+    load_flags = 0
+    clock_sel = 0
 
-    dword_count = 0x3ff & dword_count;
+    dword_count = 0x3ff & dword_count
 
     debug("Creating flash image with following options:")
 
@@ -161,6 +161,7 @@ def parse_args():
     args = parser.parse_args()
 
 def main():
+    global flash_content, write_buf
     parse_args()
 
     in_file_size = os.path.getsize(args.in_file)
@@ -188,9 +189,8 @@ def main():
     ipc_load_fw(SRAM_SIZE, FLASH_PART_TABLE_OFFSET)
 
     # pad zeros until FLASH_PART_TABLE_OFFSET
-    num_zero_pad = (FLASH_PART_TABLE_OFFSET / 4) - len(flash_content)
-    for x in range(int(num_zero_pad)):
-        flash_content.append(0)
+    num_zero_pad = FLASH_PART_TABLE_OFFSET // 4 - len(flash_content)
+    flash_content += num_zero_pad * [0]
 
     # read contents of firmware input file and change the endianness
     with open(args.in_file, "rb") as in_fp:
@@ -203,8 +203,7 @@ def main():
             write_buf.append(read_buf[itr*4 + 0])
 
         # pad zeros until the sector boundary
-        for x in range(zeropad_size):
-            write_buf.append(0)
+        write_buf += zeropad_size*[0]
 
     # Generate the file which should be downloaded to Flash
     with open(args.out_file, "wb") as out_fp:

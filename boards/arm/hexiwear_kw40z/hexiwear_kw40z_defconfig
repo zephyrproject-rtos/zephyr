@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 CONFIG_ARM=y
 CONFIG_SOC_MKW40Z4=y
 CONFIG_SOC_SERIES_KINETIS_KWX=y

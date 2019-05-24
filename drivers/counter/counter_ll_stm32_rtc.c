@@ -22,7 +22,7 @@
 
 LOG_MODULE_REGISTER(counter_rtc_stm32, CONFIG_COUNTER_LOG_LEVEL);
 
-#define T_TIME_OFFSET 2088656896
+#define T_TIME_OFFSET 946684800
 
 #if defined(CONFIG_SOC_SERIES_STM32L4X)
 #define RTC_EXTI_LINE	LL_EXTI_LINE_18
@@ -87,9 +87,12 @@ static u32_t rtc_stm32_read(struct device *dev)
 	rtc_date = LL_RTC_DATE_Get(RTC);
 
 	/* Convert calendar datetime to UNIX timestamp */
-	now.tm_year = __LL_RTC_CONVERT_BCD2BIN(
-					__LL_RTC_GET_YEAR(rtc_date));
-	now.tm_mon = __LL_RTC_CONVERT_BCD2BIN(__LL_RTC_GET_MONTH(rtc_date));
+	/* RTC start time: 1st, Jan, 2000 */
+	/* time_t start:   1st, Jan, 1900 */
+	now.tm_year = 100 +
+			__LL_RTC_CONVERT_BCD2BIN(__LL_RTC_GET_YEAR(rtc_date));
+	/* tm_mon allowed values are 0-11 */
+	now.tm_mon = __LL_RTC_CONVERT_BCD2BIN(__LL_RTC_GET_MONTH(rtc_date)) - 1;
 	now.tm_mday = __LL_RTC_CONVERT_BCD2BIN(__LL_RTC_GET_DAY(rtc_date));
 
 	now.tm_hour = __LL_RTC_CONVERT_BCD2BIN(__LL_RTC_GET_HOUR(rtc_time));
@@ -101,7 +104,8 @@ static u32_t rtc_stm32_read(struct device *dev)
 	/* Return number of seconds since RTC init */
 	ts -= T_TIME_OFFSET;
 
-	ticks = counter_us_to_ticks(dev, (u64_t)(ts * USEC_PER_SEC));
+	__ASSERT(sizeof(time_t) == 8, "unexpected time_t definition");
+	ticks = counter_us_to_ticks(dev, ts * USEC_PER_SEC);
 
 	return ticks;
 }
@@ -271,10 +275,14 @@ static int rtc_stm32_init(struct device *dev)
 
 #else /* CONFIG_COUNTER_RTC_STM32_CLOCK_LSE */
 
-#ifndef(CONFIG_SOC_SERIES_STM32F4X)
+#if !defined(CONFIG_SOC_SERIES_STM32F4X) &&	\
+	!defined(CONFIG_SOC_SERIES_STM32F2X)
+
 	LL_RCC_LSE_SetDriveCapability(
 		CONFIG_COUNTER_RTC_STM32_LSE_DRIVE_STRENGTH);
-#endif /* !CONFIG_SOC_SERIES_STM32F4X */
+
+#endif /* !CONFIG_SOC_SERIES_STM32F4X && !CONFIG_SOC_SERIES_STM32F2X */
+
 	LL_RCC_LSE_Enable();
 
 	/* Wait until LSE is ready */

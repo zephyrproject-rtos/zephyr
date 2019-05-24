@@ -1,3 +1,32 @@
+# SPDX-License-Identifier: Apache-2.0
+
+#.rst:
+# version.cmake
+# -------------
+#
+# Inputs:
+#
+#   ``*VERSION*`` and other constants set by
+#   maintainers in ``${ZEPHYR_BASE}/VERSION``
+#
+# Outputs with examples::
+#
+#   PROJECT_VERSION           1.14.99.07
+#   KERNEL_VERSION_STRING    "1.14.99-extraver"
+#
+#   KERNEL_VERSION_MAJOR       1
+#   KERNEL_VERSION_MINOR        14
+#   KERNEL_PATCHLEVEL             99
+#   KERNELVERSION            0x10E6307
+#   KERNEL_VERSION_NUMBER    0x10E63
+#   ZEPHYR_VERSION_CODE        69219
+#
+# Most outputs are converted to C macros, see ``version.h.in``
+#
+# See also: independent and more dynamic ``BUILD_VERSION`` in
+# ``git.cmake``.
+
+
 include(${ZEPHYR_BASE}/cmake/hex.cmake)
 file(READ ${ZEPHYR_BASE}/VERSION ver)
 

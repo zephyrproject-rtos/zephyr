@@ -85,12 +85,12 @@ void hwm_set_sig_handler(void)
 	struct sigaction act;
 
 	act.sa_handler = hwm_signal_end_handler;
-	_SAFE_CALL(sigemptyset(&act.sa_mask));
+	PC_SAFE_CALL(sigemptyset(&act.sa_mask));
 
 	act.sa_flags = SA_RESETHAND;
 
-	_SAFE_CALL(sigaction(SIGTERM, &act, NULL));
-	_SAFE_CALL(sigaction(SIGINT, &act, NULL));
+	PC_SAFE_CALL(sigaction(SIGTERM, &act, NULL));
+	PC_SAFE_CALL(sigaction(SIGINT, &act, NULL));
 }
 
 

@@ -6,9 +6,10 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
+if CPU_HAS_MPU
+
 config ARM_MPU
 	bool "ARM MPU Support"
-	depends on CPU_HAS_MPU
 	select MEMORY_PROTECTION
 	select THREAD_STACK_INFO
 	select ARCH_HAS_EXECUTABLE_PAGE_BIT
@@ -42,3 +43,5 @@ config MPU_ALLOW_FLASH_WRITE
 	depends on ARM_MPU
 	help
 	  Enable this to allow MPU RWX access to flash memory
+
+endif # CPU_HAS_MPU

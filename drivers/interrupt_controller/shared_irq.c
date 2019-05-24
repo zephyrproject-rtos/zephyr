@@ -52,7 +52,7 @@ static inline int enable(struct device *dev, struct device *isr_dev)
 
 	for (i = 0U; i < config->client_count; i++) {
 		if (clients->client[i].isr_dev == isr_dev) {
-			clients->client[i].enabled = 1;
+			clients->client[i].enabled = 1U;
 			irq_enable(config->irq_num);
 			return 0;
 		}
@@ -84,7 +84,7 @@ static inline int disable(struct device *dev, struct device *isr_dev)
 
 	for (i = 0U; i < config->client_count; i++) {
 		if (clients->client[i].isr_dev == isr_dev) {
-			clients->client[i].enabled = 0;
+			clients->client[i].enabled = 0U;
 			if (last_enabled_isr(clients, config->client_count)) {
 				irq_disable(config->irq_num);
 			}

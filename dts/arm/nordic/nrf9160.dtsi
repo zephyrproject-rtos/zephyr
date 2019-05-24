@@ -17,12 +17,15 @@
 			device_type = "cpu";
 			compatible = "arm,cortex-m33f";
 			reg = <0>;
-		};
-	};
+			#address-cells = <1>;
+			#size-cells = <1>;
 
-	sram0: memory@20000000 {
-		device_type = "memory";
-		compatible = "mmio-sram";
+			mpu: mpu@e000ed90 {
+				compatible = "arm,armv8m-mpu";
+				reg = <0xe000ed90 0x40>;
+				arm,num-mpu-regions = <16>;
+			};
+		};
 	};
 
 	aliases {
@@ -60,6 +63,11 @@
 	};
 
 	soc {
+		sram0: memory@20000000 {
+			device_type = "memory";
+			compatible = "mmio-sram";
+		};
+
 		peripheral@50000000 {
 			#address-cells = <1>;
 			#size-cells = <1>;

@@ -20,12 +20,4 @@ config TEMP_NRF5_NAME
 	help
 	  Device name with which the nRF5 temperature sensor is identified.
 
-config TEMP_NRF5_PRI
-	int "TEMP interrupt priority"
-	range 0 1 if SOC_SERIES_NRF51X
-	range 0 5 if SOC_SERIES_NRF52X
-	default 1
-	help
-	  nRF5X TEMP IRQ priority.
-
 endif # TEMP_NRF5

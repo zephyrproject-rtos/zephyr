@@ -6,6 +6,7 @@
 #include <kernel.h>
 #include <errno.h>
 #include <posix/time.h>
+#include <posix/sys/time.h>
 
 /*
  * `k_uptime_get` returns a timestamp based on an always increasing
@@ -67,20 +68,15 @@ int clock_gettime(clockid_t clock_id, struct timespec *ts)
 int clock_settime(clockid_t clock_id, const struct timespec *tp)
 {
 	struct timespec base;
-	int res;
 
 	if (clock_id != CLOCK_REALTIME) {
 		errno = EINVAL;
 		return -1;
 	}
 
-	res = clock_gettime(clock_id, &base);
-	if (res != 0) {
-		return res;
-	}
-
-	s64_t delta = (s64_t)NSEC_PER_SEC * (tp->tv_sec - base.tv_sec) +
-		(tp->tv_nsec - base.tv_nsec);
+	u64_t elapsed_msecs = k_uptime_get();
+	s64_t delta = (s64_t)NSEC_PER_SEC * tp->tv_sec + tp->tv_nsec
+		- elapsed_msecs * USEC_PER_MSEC * NSEC_PER_USEC;
 
 	base.tv_sec = delta / NSEC_PER_SEC;
 	base.tv_nsec = delta % NSEC_PER_SEC;

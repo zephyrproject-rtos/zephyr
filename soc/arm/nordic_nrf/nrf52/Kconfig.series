@@ -11,10 +11,7 @@ config  SOC_SERIES_NRF52X
 	select CPU_CORTEX_M4
 	select CPU_HAS_ARM_MPU
 	select SOC_FAMILY_NRF
-	select NRF_RTC_TIMER
-	select CLOCK_CONTROL
-	select CLOCK_CONTROL_NRF
-	select HAS_STATE_DEEP_SLEEP_1
+	select HAS_SYS_POWER_STATE_DEEP_SLEEP_1
 	select XIP
 	select HAS_CMSIS
 	select HAS_NRFX

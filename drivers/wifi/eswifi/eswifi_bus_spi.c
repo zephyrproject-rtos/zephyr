@@ -102,7 +102,7 @@ static int eswifi_spi_request(struct eswifi_dev *eswifi, char *cmd, size_t clen,
 			      char *rsp, size_t rlen)
 {
 	struct eswifi_spi_data *spi = eswifi->bus_data;
-	unsigned int offset = 0, to_read = SPI_READ_CHUNK_SIZE;
+	unsigned int offset = 0U, to_read = SPI_READ_CHUNK_SIZE;
 	char tmp[2];
 	int err;
 
@@ -238,7 +238,7 @@ int eswifi_spi_init(struct eswifi_dev *eswifi)
 	spi->spi_cs.gpio_dev =
 		device_get_binding(DT_INVENTEK_ESWIFI_ESWIFI0_CS_GPIO_CONTROLLER);
 	spi->spi_cs.gpio_pin = DT_INVENTEK_ESWIFI_ESWIFI0_CS_GPIO_PIN;
-	spi->spi_cs.delay = 1000;
+	spi->spi_cs.delay = 1000U;
 	spi->spi_cfg.cs = &spi->spi_cs;
 
 	eswifi->bus_data = spi;

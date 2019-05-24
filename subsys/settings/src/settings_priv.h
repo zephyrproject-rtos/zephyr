@@ -22,13 +22,6 @@ struct mgmt_cbuf;
 int settings_cbor_line(struct mgmt_cbuf *cb, char *name, int nlen, char *value,
 		       int vlen);
 
-int settings_line_parse(char *buf, char **namep, char **valp);
-int settings_line_make(char *dst, int dlen, const char *name, const char *val);
-int settings_line_make2(char *dst, int dlen, const char *name,
-			const char *value);
-
-
-
 void settings_line_io_init(int (*read_cb)(void *ctx, off_t off, char *buf,
 					  size_t *len),
 			   int (*write_cb)(void *ctx, off_t off,
@@ -41,6 +34,27 @@ int settings_line_write(const char *name, const char *value, size_t val_len,
 
 /* Get len of record without alignment to write-block-size */
 int settings_line_len_calc(const char *name, size_t val_len);
+
+void settings_line_dup_check_cb(char *name, void *val_read_cb_ctx, off_t off,
+				void *cb_arg);
+
+void settings_line_load_cb(char *name, void *val_read_cb_ctx, off_t off,
+			   void *cb_arg);
+
+typedef void (*line_load_cb)(char *name, void *val_read_cb_ctx, off_t off,
+			     void *cb_arg);
+
+struct settings_line_read_value_cb_ctx {
+	void *read_cb_ctx;
+	off_t off;
+};
+
+struct settings_line_dup_check_arg {
+	const char *name;
+	const char *val;
+	size_t val_len;
+	int is_dup;
+};
 
 #ifdef CONFIG_SETTINGS_ENCODE_LEN
 /* in storage line contex */
@@ -94,7 +108,7 @@ int settings_line_name_read(char *out, size_t len_req, size_t *len_read,
 
 size_t settings_line_val_get_len(off_t val_off, void *read_cb_ctx);
 
-int settings_entry_copy(void *dst_ctx, off_t dst_off, void *src_ctx,
+int settings_line_entry_copy(void *dst_ctx, off_t dst_off, void *src_ctx,
 			off_t src_off, size_t len);
 
 void settings_line_io_init(int (*read_cb)(void *ctx, off_t off, char *buf,
@@ -104,37 +118,6 @@ void settings_line_io_init(int (*read_cb)(void *ctx, off_t off, char *buf,
 			  size_t (*get_len_cb)(void *ctx),
 			  u8_t io_rwbs);
 
-int settings_set_value_priv(char *name, void *val_read_cb_ctx, off_t off,
-			    u8_t is_runtime);
-
-/*
- * API for config storage.
- */
-typedef void (*load_cb)(char *name, void *val_read_cb_ctx, off_t off,
-			void *cb_arg);
-
-struct settings_store_itf {
-	int (*csi_load)(struct settings_store *cs, load_cb cb, void *cb_arg);
-	int (*csi_save_start)(struct settings_store *cs);
-	int (*csi_save)(struct settings_store *cs, const char *name,
-			const char *value, size_t val_len);
-	int (*csi_save_end)(struct settings_store *cs);
-};
-
-struct read_value_cb_ctx {
-	void *read_cb_ctx;
-	off_t off;
-	u8_t runtime;
-};
-
-/* suports runtime settings_set_value operation */
-struct runtime_value_ctx {
-	void *p_value;
-	size_t size;
-};
-
-void settings_src_register(struct settings_store *cs);
-void settings_dst_register(struct settings_store *cs);
 
 extern sys_slist_t settings_load_srcs;
 extern sys_slist_t settings_handlers;

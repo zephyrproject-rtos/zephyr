@@ -8,18 +8,22 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(usb_eem);
 
-#include <net_private.h>
-#include <zephyr.h>
-#include <usb_device.h>
-#include <usb_common.h>
-
 #include <net/net_pkt.h>
+#include <net/ethernet.h>
+#include <net_private.h>
 
-#include <usb_descriptor.h>
-#include <class/usb_cdc.h>
+#include <usb/usb_device.h>
+#include <usb/usb_common.h>
+#include <usb/class/usb_cdc.h>
+
 #include "netusb.h"
 
-static u8_t tx_buf[NETUSB_MTU], rx_buf[NETUSB_MTU];
+static u8_t sentinel[] = { 0xde, 0xad, 0xbe, 0xef };
+
+#define EEM_FRAME_SIZE (NET_ETH_MAX_FRAME_SIZE + sizeof(sentinel) + \
+			sizeof(u16_t)) /* EEM header */
+
+static u8_t tx_buf[EEM_FRAME_SIZE], rx_buf[EEM_FRAME_SIZE];
 
 struct usb_cdc_eem_config {
 	struct usb_if_descriptor if0;
@@ -49,8 +53,7 @@ USBD_CLASS_DESCR_DEFINE(primary, 0) struct usb_cdc_eem_config cdc_eem_cfg = {
 		.bEndpointAddress = CDC_EEM_IN_EP_ADDR,
 		.bmAttributes = USB_DC_EP_BULK,
 		.wMaxPacketSize =
-			sys_cpu_to_le16(
-			CONFIG_CDC_EEM_BULK_EP_MPS),
+			sys_cpu_to_le16(CONFIG_CDC_EEM_BULK_EP_MPS),
 		.bInterval = 0x00,
 	},
 
@@ -61,8 +64,7 @@ USBD_CLASS_DESCR_DEFINE(primary, 0) struct usb_cdc_eem_config cdc_eem_cfg = {
 		.bEndpointAddress = CDC_EEM_OUT_EP_ADDR,
 		.bmAttributes = USB_DC_EP_BULK,
 		.wMaxPacketSize =
-			sys_cpu_to_le16(
-			CONFIG_CDC_EEM_BULK_EP_MPS),
+			sys_cpu_to_le16(CONFIG_CDC_EEM_BULK_EP_MPS),
 		.bInterval = 0x00,
 	},
 };
@@ -99,9 +101,7 @@ static inline u16_t eem_pkt_size(u16_t hdr)
 
 static int eem_send(struct net_pkt *pkt)
 {
-	u8_t sentinel[4] = { 0xde, 0xad, 0xbe, 0xef };
 	u16_t *hdr = (u16_t *)&tx_buf[0];
-	struct net_buf *frag;
 	int ret, len, b_idx = 0;
 
 	/* With EEM, it's possible to send multiple ethernet packets in one
@@ -109,15 +109,20 @@ static int eem_send(struct net_pkt *pkt)
 	 */
 	len = net_pkt_get_len(pkt) + sizeof(sentinel);
 
+	if (len + sizeof(u16_t) > sizeof(tx_buf)) {
+		LOG_WRN("Trying to send too large packet, drop");
+		return -ENOMEM;
+	}
+
 	/* Add EEM header */
 	*hdr = sys_cpu_to_le16(0x3FFF & len);
 	b_idx += sizeof(u16_t);
 
-	/* generate transfer buffer */
-	for (frag = pkt->frags; frag; frag = frag->frags) {
-		memcpy(&tx_buf[b_idx], frag->data, frag->len);
-		b_idx += frag->len;
+	if (net_pkt_read(pkt, &tx_buf[b_idx], net_pkt_get_len(pkt))) {
+		return -ENOBUFS;
 	}
+
+	b_idx += len - sizeof(sentinel);
 
 	/* Add crc-sentinel */
 	memcpy(&tx_buf[b_idx], sentinel, sizeof(sentinel));
@@ -142,13 +147,12 @@ static void eem_read_cb(u8_t ep, int size, void *priv)
 	do {
 		u16_t eem_hdr, eem_size;
 		struct net_pkt *pkt;
-		struct net_buf *frag;
 
 		if (size < sizeof(u16_t)) {
 			break;
 		}
 
-		eem_hdr = sys_le16_to_cpu(*(u16_t *)ptr);
+		eem_hdr = sys_get_le16(ptr);
 		eem_size = eem_pkt_size(eem_hdr);
 
 		if (eem_size + sizeof(u16_t) > size) {
@@ -173,24 +177,17 @@ static void eem_read_cb(u8_t ep, int size, void *priv)
 			break;
 		}
 
-		pkt = net_pkt_get_reserve_rx(K_FOREVER);
+		pkt = net_pkt_alloc_with_buffer(netusb_net_iface(),
+						eem_size - sizeof(sentinel),
+						AF_UNSPEC, 0, K_FOREVER);
 		if (!pkt) {
 			LOG_ERR("Unable to alloc pkt\n");
 			break;
 		}
 
-		frag = net_pkt_get_frag(pkt, K_FOREVER);
-		if (!frag) {
-			LOG_ERR("Unable to alloc fragment");
-			net_pkt_unref(pkt);
-			break;
-		}
-
-		net_pkt_frag_insert(pkt, frag);
-
 		/* copy payload and discard 32-bit sentinel */
-		if (!net_pkt_append_all(pkt, eem_size - 4, ptr, K_FOREVER)) {
-			LOG_ERR("Unable to append pkt\n");
+		if (net_pkt_write(pkt, ptr, eem_size - sizeof(sentinel))) {
+			LOG_ERR("Unable to write into pkt\n");
 			net_pkt_unref(pkt);
 			break;
 		}
@@ -235,8 +232,12 @@ static inline void eem_status_interface(const u8_t *iface)
 	netusb_enable(&eem_function);
 }
 
-static void eem_do_cb(enum usb_dc_status_code status, const u8_t *param)
+static void eem_status_cb(struct usb_cfg_data *cfg,
+			  enum usb_dc_status_code status,
+			  const u8_t *param)
 {
+	ARG_UNUSED(cfg);
+
 	/* Check the USB status and do needed action if required */
 	switch (status) {
 	case USB_DC_DISCONNECTED:
@@ -268,21 +269,6 @@ static void eem_do_cb(enum usb_dc_status_code status, const u8_t *param)
 	}
 }
 
-#ifdef CONFIG_USB_COMPOSITE_DEVICE
-static void eem_status_composite_cb(struct usb_cfg_data *cfg,
-				    enum usb_dc_status_code status,
-				    const u8_t *param)
-{
-	ARG_UNUSED(cfg);
-	eem_do_cb(status, param);
-}
-#else
-static void eem_status_cb(enum usb_dc_status_code status, const u8_t *param)
-{
-	eem_do_cb(status, param);
-}
-#endif
-
 static void eem_interface_config(struct usb_desc_header *head,
 				 u8_t bInterfaceNumber)
 {
@@ -295,11 +281,7 @@ USBD_CFG_DATA_DEFINE(netusb) struct usb_cfg_data netusb_config = {
 	.usb_device_description = NULL,
 	.interface_config = eem_interface_config,
 	.interface_descriptor = &cdc_eem_cfg.if0,
-#ifdef CONFIG_USB_COMPOSITE_DEVICE
-	.cb_usb_status_composite = eem_status_composite_cb,
-#else
 	.cb_usb_status = eem_status_cb,
-#endif
 	.interface = {
 		.class_handler = NULL,
 		.custom_handler = NULL,

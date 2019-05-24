@@ -21,14 +21,16 @@
 #include <logging/log.h>
 
 #ifdef CONFIG_RUNTIME_NMI
-extern void _NmiInit(void);
-#define NMI_INIT() _NmiInit()
+extern void z_NmiInit(void);
+#define NMI_INIT() z_NmiInit()
 #else
 #define NMI_INIT()
 #endif
 
 #if defined(CONFIG_SOC_NRF52810)
 #include <system_nrf52810.h>
+#elif defined(CONFIG_SOC_NRF52811)
+#include <system_nrf52811.h>
 #elif defined(CONFIG_SOC_NRF52832)
 #include <system_nrf52.h>
 #elif defined(CONFIG_SOC_NRF52840)
@@ -68,8 +70,6 @@ static int nordicsemi_nrf52_init(struct device *arg)
 #if defined(CONFIG_SOC_DCDC_NRF52X)
 	nrf_power_dcdcen_set(true);
 #endif
-
-	_ClearFaults();
 
 	/* Install default handler that simply resets the CPU
 	* if configured in the kernel, NOP otherwise

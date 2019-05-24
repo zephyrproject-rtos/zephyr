@@ -16,7 +16,7 @@
 #define FLAG2           (0x00000004)
 #define FLAG            (FLAG1 | FLAG2)
 #define ISR_FLAG        0x50
-#define STACKSZ         512
+#define STACKSZ         CONFIG_CMSIS_V2_THREAD_MAX_STACK_SIZE
 
 osEventFlagsId_t evt_id;
 
@@ -104,7 +104,7 @@ void test_event_flags_no_wait_timeout(void)
 	zassert_equal(flags & FLAG1, FLAG1, "");
 
 	flags = osEventFlagsGet(dummy_id);
-	zassert_true(flags == 0,
+	zassert_true(flags == 0U,
 		     "Invalid event Flags ID is unexpectedly working!");
 	/* Clear the Flag explicitly */
 	flags = osEventFlagsClear(evt_id, FLAG1);

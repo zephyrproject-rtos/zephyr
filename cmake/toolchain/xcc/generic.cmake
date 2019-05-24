@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 set_ifndef(XTENSA_TOOLCHAIN_PATH "$ENV{XTENSA_TOOLCHAIN_PATH}")
 set(       XTENSA_TOOLCHAIN_PATH ${XTENSA_TOOLCHAIN_PATH} CACHE PATH "xtensa tools install directory")
 assert(    XTENSA_TOOLCHAIN_PATH "XTENSA_TOOLCHAIN_PATH is not set")
@@ -9,6 +11,7 @@ endif()
 set(TOOLCHAIN_HOME ${XTENSA_TOOLCHAIN_PATH}/XtDevTools/install/tools/$ENV{TOOLCHAIN_VER}/XtensaTools)
 
 set(COMPILER xcc)
+set(LINKER ld)
 
 set(CROSS_COMPILE_TARGET xt)
 set(SYSROOT_TARGET       xtensa-elf)

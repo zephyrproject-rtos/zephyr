@@ -45,7 +45,11 @@
 #define ADV_INT_DEFAULT_MS 100
 #define ADV_INT_FAST_MS    20
 
+#if defined(CONFIG_BT_HOST_CRYPTO)
+#define ADV_STACK_SIZE 1024
+#else
 #define ADV_STACK_SIZE 768
+#endif
 
 static K_FIFO_DEFINE(adv_queue);
 static struct k_thread adv_thread_data;
@@ -115,7 +119,7 @@ static inline void adv_send(struct net_buf *buf)
 	if (IS_ENABLED(CONFIG_BT_MESH_DEBUG_USE_ID_ADDR)) {
 		param.options = BT_LE_ADV_OPT_USE_IDENTITY;
 	} else {
-		param.options = 0;
+		param.options = 0U;
 	}
 
 	param.id = BT_ID_DEFAULT;
@@ -263,7 +267,7 @@ static void bt_mesh_scan_cb(const bt_addr_le_t *addr, s8_t rssi,
 
 		len = net_buf_simple_pull_u8(buf);
 		/* Check for early termination */
-		if (len == 0) {
+		if (len == 0U) {
 			return;
 		}
 
@@ -314,15 +318,30 @@ int bt_mesh_scan_enable(void)
 			.filter_dup = BT_HCI_LE_SCAN_FILTER_DUP_DISABLE,
 			.interval   = MESH_SCAN_INTERVAL,
 			.window     = MESH_SCAN_WINDOW };
+	int err;
 
 	BT_DBG("");
 
-	return bt_le_scan_start(&scan_param, bt_mesh_scan_cb);
+	err = bt_le_scan_start(&scan_param, bt_mesh_scan_cb);
+	if (err && err != -EALREADY) {
+		BT_ERR("starting scan failed (err %d)", err);
+		return err;
+	}
+
+	return 0;
 }
 
 int bt_mesh_scan_disable(void)
 {
+	int err;
+
 	BT_DBG("");
 
-	return bt_le_scan_stop();
+	err = bt_le_scan_stop();
+	if (err && err != -EALREADY) {
+		BT_ERR("stopping scan failed (err %d)", err);
+		return err;
+	}
+
+	return 0;
 }

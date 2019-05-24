@@ -1,7 +1,7 @@
 sample:
   name: External Library
 tests:
-  test:
+  sample.app_dev.external_lib:
     tags: external
     platform_exclude: qemu_x86_64
     harness: console

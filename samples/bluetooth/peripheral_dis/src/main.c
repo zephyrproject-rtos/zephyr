@@ -19,6 +19,7 @@
 #include <bluetooth/conn.h>
 #include <bluetooth/uuid.h>
 #include <bluetooth/gatt.h>
+#include <settings/settings.h>
 
 static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
@@ -44,6 +45,56 @@ static struct bt_conn_cb conn_callbacks = {
 	.disconnected = disconnected,
 };
 
+static int zephyr_settings_fw_load(struct settings_store *cs);
+
+static const struct settings_store_itf zephyr_settings_fw_itf = {
+	.csi_load = zephyr_settings_fw_load,
+};
+
+static struct settings_store zephyr_settings_fw_store = {
+	.cs_itf = &zephyr_settings_fw_itf
+};
+
+static int zephyr_settings_fw_load(struct settings_store *cs)
+{
+
+#if defined(CONFIG_BT_GATT_DIS_SETTINGS)
+	settings_runtime_set("bt/dis/model",
+			     "Zephyr Model",
+			     sizeof("Zephyr Model"));
+	settings_runtime_set("bt/dis/manuf",
+			     "Zephyr Manufacturer",
+			     sizeof("Zephyr Manufacturer"));
+#if defined(CONFIG_BT_GATT_DIS_SERIAL_NUMBER)
+	settings_runtime_set("bt/dis/serial",
+			     CONFIG_BT_GATT_DIS_SERIAL_NUMBER_STR,
+			     sizeof(CONFIG_BT_GATT_DIS_SERIAL_NUMBER_STR));
+#endif
+#if defined(CONFIG_BT_GATT_DIS_SW_REV)
+	settings_runtime_set("bt/dis/sw",
+			     CONFIG_BT_GATT_DIS_SW_REV_STR,
+			     sizeof(CONFIG_BT_GATT_DIS_SW_REV_STR));
+#endif
+#if defined(CONFIG_BT_GATT_DIS_FW_REV)
+	settings_runtime_set("bt/dis/fw",
+			     CONFIG_BT_GATT_DIS_FW_REV_STR,
+			     sizeof(CONFIG_BT_GATT_DIS_FW_REV_STR));
+#endif
+#if defined(CONFIG_BT_GATT_DIS_HW_REV)
+	settings_runtime_set("bt/dis/hw",
+			     CONFIG_BT_GATT_DIS_HW_REV_STR,
+			     sizeof(CONFIG_BT_GATT_DIS_HW_REV_STR));
+#endif
+#endif
+	return 0;
+}
+
+int settings_backend_init(void)
+{
+	settings_src_register(&zephyr_settings_fw_store);
+	return 0;
+}
+
 void main(void)
 {
 	int err;
@@ -53,6 +104,7 @@ void main(void)
 		printk("Bluetooth init failed (err %d)\n", err);
 		return;
 	}
+	settings_load();
 
 	printk("Bluetooth initialized\n");
 

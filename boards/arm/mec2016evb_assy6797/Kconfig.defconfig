@@ -11,8 +11,8 @@ config BOARD
 if UART_NS16550
 
 config UART_NS16550_PORT_0
-	def_bool y if UART_CONSOLE
+	default y if UART_CONSOLE
 
 endif
 
-endif #BOARD_MEC2016EVB_ASSY6797
+endif # BOARD_MEC2016EVB_ASSY6797

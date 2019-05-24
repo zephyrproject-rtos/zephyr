@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 
 choice
 	prompt "SoC/CPU/Configuration Selection"
@@ -33,10 +34,13 @@ config SOC_COMPATIBLE_NRF52832
 #
 # SOC_*_LD: SoC specific Linker script additions
 #
+
+if ARC || ARM || X86 || NIOS2 || RISCV32
+
 config SOC_NOINIT_LD
 	bool
-	depends on (ARC || ARM || X86 || NIOS2 || RISCV32)
 	help
+	  Note: This is deprecated, use Cmake function zephyr_linker_sources() instead.
 	  Include an SoC specific linker script fragment named soc-noinit.ld
 	  for inserting additional data and linker directives into
 	  the noinit section.
@@ -46,8 +50,8 @@ config SOC_NOINIT_LD
 
 config SOC_RODATA_LD
 	bool
-	depends on (ARC || ARM || X86 || NIOS2 || RISCV32)
 	help
+	  Note: This is deprecated, use Cmake function zephyr_linker_sources() instead.
 	  Include an SoC specific linker script fragment named soc-rodata.ld
 	  for inserting additional data and linker directives into
 	  the rodata section.
@@ -57,11 +61,13 @@ config SOC_RODATA_LD
 
 config SOC_RWDATA_LD
 	bool
-	depends on (ARC || ARM || X86 || NIOS2 || RISCV32)
 	help
+	  Note: This is deprecated, use Cmake function zephyr_linker_sources() instead.
 	  Include an SoC specific linker script fragment named soc-rwdata.ld
 	  for inserting additional data and linker directives into
 	  the data section.
 
 	  This only has effect if the SoC uses the common linker script
 	  under include/arch/.
+
+endif # ARC || ARM || X86 || NIOS2 || RISCV32

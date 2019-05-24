@@ -3,30 +3,75 @@
 Using Zephyr without west
 #########################
 
-There are many valid usecases to avoid using a meta-tool such as west which has
-been custom-designed for a particular project and its requirements.
-This section applies to Zephyr users who fall into one or more of these
-categories:
+This page provides information on using Zephyr without west. This is
+not recommended for beginners due to the extra effort involved. In
+particular, you will have to do work "by hand" to replace these
+features:
 
-- Already use a multi-repository management system (for example Google repo)
+- cloning the additional source code repositories used by Zephyr in
+  addition to the main zephyr repository, and keeping them up to date
+- specifying the locations of these repositories to the Zephyr build
+  system
+- flashing and debugging without understanding detailed usage of the
+  relevant host tools
 
-- Do not need additional functionality beyond compiling and linking
+.. note::
 
-In order to obtain the Zephyr source code and build it without the help of
-west you will need to manually clone the repositories listed in the
-`manifest file`_ one by one, at the path indicated in it.
+   If you have previously installed west and want to stop using it,
+   uninstall it first:
+
+   .. code-block:: console
+
+      pip3 uninstall west
+
+   Otherwise, Zephyr's build system will find it and may try to use
+   it.
+
+Getting the Source
+------------------
+
+In addition to downloading the zephyr source code repository itself,
+you will need to manually clone the additional projects listed in the
+:term:`west manifest` file inside that repository.
 
 .. code-block:: console
 
    mkdir zephyrproject
    cd zephyrproject
    git clone https://github.com/zephyrproject-rtos/zephyr
-   # clone additional repositories listed in the manifest file,
-   # and check out the specified revisions
+   # clone additional repositories listed in zephyr/west.yml,
+   # and check out the specified revisions as well.
 
-If you want to manage Zephyr's repositories without west but still need to
-use west's additional functionality (flashing, debugging, etc.) it is possible
-to do so by manually creating an installation:
+As you pull changes in the zephyr repository, you will also need to
+maintain those additional repositories, adding new ones as necessary
+and keeping existing ones up to date at the latest revisions.
+
+Specifying Modules
+------------------
+
+If you have west installed, the Zephyr build system will use it to set
+:ref:`ZEPHYR_MODULES <important-build-vars>`. If you don't have west
+installed and your application does not need any of these
+repositories, the build will still work.
+
+If you don't have west installed and your application *does* need one
+of these repositories, you must set :makevar:`ZEPHYR_MODULES`
+yourself. See :ref:`modules` for details.
+
+Flashing and Debugging
+----------------------
+
+Running build system targets like ``ninja flash``, ``ninja debug``,
+etc. is just a call to the corresponding :ref:`west command
+<west-build-flash-debug>`. For example, ``ninja flash`` calls ``west
+flash``\ [#wbninja]_. If you don't have west installed on your system, running
+those targets will fail. You can of course still flash and debug using
+any :ref:`debug-host-tools` which work for your board (and which those
+west commands wrap).
+
+If you want to use these build system targets but do not want to
+install west on your system using ``pip``, it is possible to do so
+by manually creating a :term:`west installation`:
 
 .. code-block:: console
 
@@ -40,11 +85,27 @@ Then create a file :file:`.west/config` with the following contents:
    [manifest]
    path = zephyr
 
+   [zephyr]
+   base = zephyr
+
 After that, and in order for ``ninja`` to be able to invoke ``west``
 to flash and debug, you must specify the west directory. This can be
 done by setting the environment variable ``WEST_DIR`` to point to
 :file:`zephyrproject/.west/west` before running CMake to set up a
 build directory.
 
-.. _manifest file:
-   https://github.com/zephyrproject-rtos/zephyr/blob/master/west.yml
+.. rubric:: Footnotes
+
+.. [#wbninja]
+
+   Note that ``west build`` invokes ``ninja``, among other
+   tools. There's no recursive invocation of either ``west`` or
+   ``ninja`` involved by default, however, as ``west build`` does not
+   invoke ``ninja flash``, ``debug``, etc. The one exception is if you
+   specifically run one of these build system targets with a command
+   line like ``west build -t flash``. In that case, west is run twice:
+   once for ``west build``, and in a subprocess, again for ``west
+   flash``. Even in this case, ``ninja`` is only run once, as ``ninja
+   flash``. This is because these build system targets depend on an
+   up to date build of the Zephyr application, so it's compiled before
+   ``west flash`` is run.

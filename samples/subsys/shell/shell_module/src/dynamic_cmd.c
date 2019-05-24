@@ -122,7 +122,7 @@ static int cmd_dynamic_show(const struct shell *shell,
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	if (dynamic_cmd_cnt == 0) {
+	if (dynamic_cmd_cnt == 0U) {
 		shell_warn(shell, "Please add some commands first.");
 		return -ENOEXEC;
 	}

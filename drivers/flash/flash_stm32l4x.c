@@ -30,7 +30,7 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 bool flash_stm32_valid_range(struct device *dev, off_t offset, u32_t len,
 			     bool write)
 {
-	return (!write || (offset % 8 == 0 && len % 8 == 0)) &&
+	return (!write || (offset % 8 == 0 && len % 8 == 0U)) &&
 		flash_stm32_range_exists(dev, offset, len);
 }
 
@@ -48,6 +48,9 @@ static int write_dword(struct device *dev, off_t offset, u64_t val)
 {
 	volatile u32_t *flash = (u32_t *)(offset + CONFIG_FLASH_BASE_ADDRESS);
 	struct stm32l4x_flash *regs = FLASH_STM32_REGS(dev);
+#ifdef FLASH_OPTR_DUALBANK
+	bool dcache_enabled = false;
+#endif /* FLASH_OPTR_DUALBANK */
 	u32_t tmp;
 	int rc;
 
@@ -68,6 +71,17 @@ static int write_dword(struct device *dev, off_t offset, u64_t val)
 		return -EIO;
 	}
 
+#ifdef FLASH_OPTR_DUALBANK
+	/*
+	 * Disable the data cache to avoid the silicon errata 2.2.3:
+	 * "Data cache might be corrupted during Flash memory read-while-write operation"
+	 */
+	if (regs->acr.val & FLASH_ACR_DCEN) {
+		dcache_enabled = true;
+		regs->acr.val &= (~FLASH_ACR_DCEN);
+	}
+#endif /* FLASH_OPTR_DUALBANK */
+
 	/* Set the PG bit */
 	regs->cr |= FLASH_CR_PG;
 
@@ -83,6 +97,15 @@ static int write_dword(struct device *dev, off_t offset, u64_t val)
 
 	/* Clear the PG bit */
 	regs->cr &= (~FLASH_CR_PG);
+
+#ifdef FLASH_OPTR_DUALBANK
+	/* Reset/enable the data cache if previously enabled */
+	if (dcache_enabled) {
+		regs->acr.val |= FLASH_ACR_DCRST;
+		regs->acr.val &= (~FLASH_ACR_DCRST);
+		regs->acr.val |= FLASH_ACR_DCEN;
+	}
+#endif /* FLASH_OPTR_DUALBANK */
 
 	return rc;
 }
@@ -109,7 +132,7 @@ static int erase_page(struct device *dev, unsigned int page)
 #ifdef FLASH_CR_BKER
 	regs->cr &= ~FLASH_CR_BKER_Msk;
 	/* Select bank, only for DUALBANK devices */
-	if (page >= 256)
+	if (page >= 256U)
 		regs->cr |= FLASH_CR_BKER;
 #endif
 	regs->cr &= ~FLASH_CR_PNB_Msk;
@@ -150,8 +173,9 @@ int flash_stm32_write_range(struct device *dev, unsigned int offset,
 {
 	int i, rc = 0;
 
-	for (i = 0; i < len; i += 8, offset += 8) {
-		rc = write_dword(dev, offset, ((const u64_t *) data)[i>>3]);
+	for (i = 0; i < len; i += 8, offset += 8U) {
+		rc = write_dword(dev, offset,
+				UNALIGNED_GET((const u64_t *) data + (i >> 3)));
 		if (rc < 0) {
 			return rc;
 		}

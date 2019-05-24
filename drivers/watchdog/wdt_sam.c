@@ -10,11 +10,11 @@
  * Note:
  * - Once the watchdog disable bit is set, it cannot be cleared till next
  *   power reset, i.e, the watchdog cannot be started once stopped.
- * - Since the MCU boots with WDT enabled,the  CONFIG_WDT_SAM_DISABLE_AT_BOOT
+ * - Since the MCU boots with WDT enabled, the CONFIG_WDT_DISABLE_AT_BOOT
  *   is set default at boot and watchdog module is disabled in the MCU for
  *   systems that don't need watchdog functionality.
  * - If the application needs to use the watchdog in the system, then
- *   CONFIG_WDT_SAM_DISABLE_AT_BOOT must be unset in the app's config file
+ *   CONFIG_WDT_DISABLE_AT_BOOT must be unset in the app's config file
  */
 
 #include <watchdog.h>
@@ -69,12 +69,12 @@ int wdt_sam_convert_timeout(u32_t timeout, u32_t sclk)
 {
 	u32_t max, min;
 
-	timeout = timeout * 1000;
+	timeout = timeout * 1000U;
 	min =  (SAM_PRESCALAR * 1000000) / sclk;
 	max = min * WDT_MAX_VALUE;
 	if ((timeout < min) || (timeout > max)) {
 		LOG_ERR("Invalid timeout value allowed range:"
-			"%d ms to %d ms", min / 1000, max / 1000);
+			"%d ms to %d ms", min / 1000U, max / 1000U);
 		return -EINVAL;
 	}
 
@@ -150,7 +150,7 @@ static int wdt_sam_install_timeout(struct device *dev,
 		return -ENOMEM;
 	}
 
-	if (cfg->window.min != 0) {
+	if (cfg->window.min != 0U) {
 		return -EINVAL;
 	}
 
@@ -241,7 +241,7 @@ static void wdt_sam_irq_config(void)
 
 static int wdt_sam_init(struct device *dev)
 {
-#ifdef CONFIG_WDT_SAM_DISABLE_AT_BOOT
+#ifdef CONFIG_WDT_DISABLE_AT_BOOT
 	wdt_sam_disable(dev);
 #endif
 

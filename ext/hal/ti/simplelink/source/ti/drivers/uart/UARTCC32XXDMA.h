@@ -199,6 +199,20 @@ extern "C" {
 extern const UART_FxnTable UARTCC32XXDMA_fxnTable;
 
 /*!
+ *  @brief      The definition of an optional callback function used by the UART
+ *              driver to notify the application when a receive error (FIFO overrun,
+ *              parity error, etc) occurs.
+ *
+ *  @param      UART_Handle             UART_Handle
+ *
+ *  @param      error                   The current value of the receive
+ *                                      status register.  Please refer to the
+ *                                      device data sheet to interpret this
+ *                                      value.
+ */
+typedef void (*UARTCC32XXDMA_ErrorCallback) (UART_Handle handle, uint32_t error);
+
+/*!
  *  @brief      UARTCC32XXDMA Hardware attributes
  *
  *  These fields, with the exception of intPriority,
@@ -230,7 +244,8 @@ extern const UART_FxnTable UARTCC32XXDMA_fxnTable;
  *          .rxPin = UARTCC32XXDMA_PIN_57_UART0_RX,
  *          .txPin = UARTCC32XXDMA_PIN_55_UART0_TX,
  *          .rtsPin = UARTCC32XXDMA_PIN_UNASSIGNED,
- *          .ctsPin = UARTCC32XX_DMA_PIN_UNASSIGNED
+ *          .ctsPin = UARTCC32XX_DMA_PIN_UNASSIGNED,
+ *          .errorFxn = NULL
  *      },
  *      {
  *          .baseAddr = UARTA1_BASE,
@@ -242,7 +257,8 @@ extern const UART_FxnTable UARTCC32XXDMA_fxnTable;
  *          .rxPin = UARTCC32XXDMA_PIN_08_UART1_RX,
  *          .txPin = UARTCC32XXDMA_PIN_07_UART1_TX,
  *          .rtsPin = UARTCC32XXDMA_PIN_50_UART1_RTS,
- *          .ctsPin = UARTCC32XXDMA_PIN_61_UART1_CTS
+ *          .ctsPin = UARTCC32XXDMA_PIN_61_UART1_CTS,
+ *          .errorFxn = NULL
  *      },
  *  };
  *  @endcode
@@ -268,6 +284,11 @@ typedef struct UARTCC32XXDMA_HWAttrsV1 {
     uint16_t        ctsPin;
     /*! UART request to send (RTS) pin assignment */
     uint16_t        rtsPin;
+    /*!
+     *  Application error function to be called on receive errors.
+     *  Note:  The UARTCC32XXDMA driver currently does not use this function.
+     */
+    UARTCC32XXDMA_ErrorCallback errorFxn;
 } UARTCC32XXDMA_HWAttrsV1;
 
 /*!

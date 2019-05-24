@@ -41,6 +41,13 @@ static struct flash_area const *get_flash_area_from_id(int idx)
 	return NULL;
 }
 
+void flash_area_foreach(flash_area_cb_t user_cb, void *user_data)
+{
+	for (int i = 0; i < flash_map_entries; i++) {
+		user_cb(&flash_map[i], user_data);
+	}
+}
+
 int flash_area_open(u8_t id, const struct flash_area **fap)
 {
 	const struct flash_area *area;
@@ -246,4 +253,9 @@ int flash_area_has_driver(const struct flash_area *fa)
 	}
 
 	return 1;
+}
+
+struct device *flash_area_get_device(const struct flash_area *fa)
+{
+	return device_get_binding(fa->fa_dev_name);
 }

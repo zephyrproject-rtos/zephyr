@@ -149,7 +149,7 @@ void calculate_pi_high(void)
 
 		/* periodically issue progress report */
 
-		if ((++calc_pi_high_count % 100) == 50) {
+		if ((++calc_pi_high_count % 100) == 50U) {
 			PRINT_DATA("Pi calculation OK after %u (high) +"
 				   " %u (low) tests (computed %1.6f)\n",
 				   calc_pi_high_count, calc_pi_low_count, pi);

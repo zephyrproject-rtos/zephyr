@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: Apache-2.0
 
 # A script to generate a list of boards that have changed or added and create an
 # arguemnts file for sanitycheck to allow running more tests for those boards.
 
-import sys
 import re, os
-from email.utils import parseaddr
 import sh
 import logging
 import argparse
+import glob
 
 if "ZEPHYR_BASE" not in os.environ:
     logging.error("$ZEPHYR_BASE environment variable undefined.\n")
@@ -51,6 +51,7 @@ def parse_args():
 
 def main():
     boards = set()
+    all_boards = set()
 
     args = parse_args()
     if not args.commits:
@@ -62,15 +63,21 @@ def main():
     for f in files:
         if f.endswith(".rst") or f.endswith(".png") or f.endswith(".jpg"):
             continue
-        p = re.match("^boards\/[^/]+\/([^/]+)\/", f)
+        p = re.match(r"^boards\/[^/]+\/([^/]+)\/", f)
         if p and p.groups():
             boards.add(p.group(1))
 
-    if boards:
-        print("-p\n%s" %("\n-p\n".join(boards)))
+    for b in boards:
+        suboards = glob.glob("boards/*/%s/*.yaml" %(b))
+        for subboard in suboards:
+            name = os.path.splitext(os.path.basename(subboard))[0]
+            if name:
+                all_boards.add(name)
+
+    if all_boards:
+        print("-p\n%s" %("\n-p\n".join(all_boards)))
 
 
 
 if __name__ == "__main__":
     main()
-

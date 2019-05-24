@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 # Configures CMake for using GCC
 
 find_program(CMAKE_C_COMPILER   gcc    )
@@ -17,10 +19,10 @@ find_program(CMAKE_GDB          gdb    )
 # Maybe the -m32/-miamcu FLAGS should all be next to -march= in the
 # longer term?
 if(NOT CONFIG_X86_64)
-  set(CMAKE_ASM_FLAGS           -m32 )
-  set(CMAKE_C_FLAGS             -m32 )
-  set(CMAKE_CXX_FLAGS           -m32 )
-  set(CMAKE_SHARED_LINKER_FLAGS -m32 ) # unused?
+  string(PREPEND CMAKE_ASM_FLAGS             "-m32 ")
+  string(PREPEND CMAKE_C_FLAGS               "-m32 ")
+  string(PREPEND CMAKE_CXX_FLAGS             "-m32 ")
+  string(PREPEND CMAKE_SHARED_LINKER_FLAGS   "-m32 ") # unused?
 endif()
 
 if(CONFIG_CPLUSPLUS)
@@ -41,9 +43,11 @@ find_program(CMAKE_CXX_COMPILER ${cplusplus_compiler}     CACHE INTERNAL " " FOR
 # -mx32 --print-libgcc-file-name) so don't fail to build for something
 # that is currently not needed. See comments in compiler/gcc/target.cmake
 if (NOT CONFIG_X86_64)
+  # Convert to list as cmake Modules/*.cmake do it
+  STRING(REGEX REPLACE " +" ";" PRINT_LIBGCC_ARGS ${CMAKE_C_FLAGS})
   # This libgcc code is partially duplicated in compiler/*/target.cmake
   execute_process(
-    COMMAND ${CMAKE_C_COMPILER} ${CMAKE_C_FLAGS} --print-libgcc-file-name
+    COMMAND ${CMAKE_C_COMPILER} ${PRINT_LIBGCC_ARGS} --print-libgcc-file-name
     OUTPUT_VARIABLE LIBGCC_FILE_NAME
     OUTPUT_STRIP_TRAILING_WHITESPACE
     )
@@ -77,9 +81,11 @@ endforeach()
 
 # Load toolchain_cc-family macros
 # Significant overlap with freestanding gcc compiler so reuse it
+include(${ZEPHYR_BASE}/cmake/compiler/gcc/target_freestanding.cmake)
 include(${ZEPHYR_BASE}/cmake/compiler/gcc/target_security_fortify.cmake)
 include(${ZEPHYR_BASE}/cmake/compiler/gcc/target_security_canaries.cmake)
 include(${ZEPHYR_BASE}/cmake/compiler/gcc/target_optimizations.cmake)
 include(${ZEPHYR_BASE}/cmake/compiler/gcc/target_cpp.cmake)
 include(${ZEPHYR_BASE}/cmake/compiler/gcc/target_asm.cmake)
 include(${ZEPHYR_BASE}/cmake/compiler/gcc/target_baremetal.cmake)
+include(${ZEPHYR_BASE}/cmake/compiler/gcc/target_warnings.cmake)

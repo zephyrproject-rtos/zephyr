@@ -86,7 +86,7 @@ Drivers and Sensors
 *******************
 
 * timer: Add Support for TICKLESS KERNEL in xtensa_sys_timer
-* Rename `random` to `entropy`
+* Rename ``random`` to ``entropy``
 * Add Atmel SAM I2S (SSC) driver
 * Add Atmel SAM DMA (XDMAC) driver
 * Add plantower PMS7003 Driver

@@ -39,10 +39,11 @@ menuconfig IEEE802154_UPIPE
 	depends on (BOARD_QEMU_X86 || BOARD_QEMU_CORTEX_M3) && NETWORKING
 	select UART_PIPE
 
+if IEEE802154_UPIPE
+
 config IEEE802154_UPIPE_DRV_NAME
 	string "UART PIPE Driver name"
 	default "IEEE802154_UPIPE"
-	depends on IEEE802154_UPIPE
 
 config IEEE802154_UPIPE_HW_FILTER
 	bool "Hw Filtering"
@@ -87,6 +88,8 @@ config IEEE802154_UPIPE_MAC7
 	  This is the byte 7 of the MAC address.
 
 endif # IEEE802154_UPIPE_RANDOM_MAC
+
+endif # IEEE802154_UPIPE
 
 module = IEEE802154_DRIVER
 module-str = IEEE 802.15.4 driver

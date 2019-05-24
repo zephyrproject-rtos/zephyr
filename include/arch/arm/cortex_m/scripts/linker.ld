@@ -235,6 +235,10 @@ SECTIONS
 	*(".rodata.*")
 	*(.gnu.linkonce.r.*)
 
+/* Located in generated directory. This file is populated by the
+ * zephyr_linker_sources() Cmake function.
+ */
+#include <snippets-rodata.ld>
 #ifdef CONFIG_SOC_RODATA_LD
 #include <soc-rodata.ld>
 #endif
@@ -277,6 +281,7 @@ SECTIONS
 #endif /* CONFIG_ARM_FIRMWARE_HAS_SECURE_ENTRY_FUNCS */
 
 	_image_rodata_end = .;
+	MPU_ALIGN(_image_rodata_end -_image_rom_start);
 	_image_rom_end = .;
 
     GROUP_END(ROMABLE_REGION)
@@ -319,70 +324,10 @@ SECTIONS
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
 #endif
 
-#if defined(CONFIG_SW_VECTOR_RELAY)
-	/* Reserved 4 bytes to save vector table base address */
-	SECTION_PROLOGUE(.vt_pointer,(NOLOAD),)
-	{
-		*(.vt_pointer_section)
-		*(".vt_pointer_section.*")
-	}
-#endif
-
-#ifdef CONFIG_COVERAGE_GCOV
-    SECTION_DATA_PROLOGUE(_GCOV_BSS_SECTION_NAME,(NOLOAD),)
-	{
-
-#ifdef CONFIG_USERSPACE
-       MPU_ALIGN(__gcov_bss_end - __gcov_bss_start );
-#else  /* CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT && CONFIG_USERSPACE */
-       . = ALIGN(_region_min_align);
-#endif /* CONFIG_USERSPACE */
-
-       __gcov_bss_start = .;
-       KEEP(*(".bss.__gcov0.*"));
-
-#ifdef CONFIG_USERSPACE
-       MPU_ALIGN(__gcov_bss_end - __gcov_bss_start );
-#else  /* CONFIG_USERSPACE */
-       . = ALIGN(_region_min_align);
-#endif /* CONFIG_USERSPACE */
-
-       __gcov_bss_end = .;
-
-	} GROUP_LINK_IN(RAMABLE_REGION)
-
-       __gcov_bss_num_words = ((__gcov_bss_end - __gcov_bss_start) >> 2);
-       __gcov_bss_size = __gcov_bss_end - __gcov_bss_start;
-
-#endif /* CONFIG_COVERAGE_GCOV */
-
-#if defined(CONFIG_NOCACHE_MEMORY)
-	/* Non-cached region of RAM */
-	SECTION_PROLOGUE(_NOCACHE_SECTION_NAME,(NOLOAD),)
-	{
-		MPU_ALIGN(_nocache_ram_size);
-		_nocache_ram_start = .;
-		*(.nocache)
-		*(".nocache.*")
-		MPU_ALIGN(_nocache_ram_size);
-		_nocache_ram_end = .;
-	} GROUP_LINK_IN(RAMABLE_REGION)
-	_nocache_ram_size = _nocache_ram_end - _nocache_ram_start;
-#endif /* CONFIG_NOCACHE_MEMORY */
-
-#if defined(CONFIG_ARCH_HAS_RAMFUNC_SUPPORT)
-	SECTION_DATA_PROLOGUE(.ramfunc,,)
-	{
-		MPU_ALIGN(_ramfunc_ram_size);
-		_ramfunc_ram_start = .;
-		*(.ramfunc)
-		*(".ramfunc.*")
-		MPU_ALIGN(_ramfunc_ram_size);
-		_ramfunc_ram_end = .;
-	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
-	_ramfunc_ram_size = _ramfunc_ram_end - _ramfunc_ram_start;
-	_ramfunc_rom_start = LOADADDR(.ramfunc);
-#endif /* CONFIG_ARCH_HAS_RAMFUNC_SUPPORT */
+/* Located in generated directory. This file is populated by the
+ * zephyr_linker_sources() Cmake function.
+ */
+#include <snippets-ram-sections.ld>
 
 #if defined(CONFIG_USERSPACE)
 #define APP_SHARED_ALIGN . = ALIGN(_region_min_align);
@@ -409,6 +354,10 @@ SECTIONS
 	*(COMMON)
 	*(".kernel_bss.*")
 
+#ifdef CONFIG_CODE_DATA_RELOCATION
+#include <linker_sram_bss_relocate.ld>
+#endif
+
         /*
          * As memory is cleared in words only, it is simpler to ensure the BSS
          * section ends on a 4 byte boundary. This wastes a maximum of 3 bytes.
@@ -426,6 +375,10 @@ SECTIONS
         *(".noinit.*")
 	*(".kernel_noinit.*")
 
+/* Located in generated directory. This file is populated by the
+ * zephyr_linker_sources() Cmake function.
+ */
+#include <snippets-noinit.ld>
 #ifdef CONFIG_SOC_NOINIT_LD
 #include <soc-noinit.ld>
 #endif
@@ -439,6 +392,10 @@ SECTIONS
 	*(".data.*")
 	*(".kernel.*")
 
+/* Located in generated directory. This file is populated by the
+ * zephyr_linker_sources() Cmake function.
+ */
+#include <snippets-rwdata.ld>
 #ifdef CONFIG_SOC_RWDATA_LD
 #include <soc-rwdata.ld>
 #endif
@@ -446,6 +403,10 @@ SECTIONS
 #ifdef CONFIG_CUSTOM_RWDATA_LD
 /* Located in project source directory */
 #include <custom-rwdata.ld>
+#endif
+
+#ifdef CONFIG_CODE_DATA_RELOCATION
+#include <linker_sram_data_relocate.ld>
 #endif
 
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
@@ -471,53 +432,15 @@ SECTIONS
 
     GROUP_END(RAMABLE_REGION)
 
-#ifdef DT_CCM_BASE_ADDRESS
-
-    GROUP_START(CCM)
-
-	SECTION_PROLOGUE(_CCM_BSS_SECTION_NAME, (NOLOAD OPTIONAL),SUBALIGN(4))
-	{
-		__ccm_start = .;
-		__ccm_bss_start = .;
-		*(.ccm_bss)
-		*(".ccm_bss.*")
-	} GROUP_LINK_IN(CCM)
-
-	__ccm_bss_end = .;
-
-	SECTION_PROLOGUE(_CCM_NOINIT_SECTION_NAME, (NOLOAD OPTIONAL),SUBALIGN(4))
-	{
-		__ccm_noinit_start = .;
-		*(.ccm_noinit)
-		*(".ccm_noinit.*")
-	} GROUP_LINK_IN(CCM)
-
-	__ccm_noinit_end = .;
-
-	SECTION_PROLOGUE(_CCM_DATA_SECTION_NAME, (OPTIONAL),SUBALIGN(4))
-	{
-		__ccm_data_start = .;
-		*(.ccm_data)
-		*(".ccm_data.*")
-	} GROUP_LINK_IN(CCM AT> ROMABLE_REGION)
-
-	__ccm_data_end = .;
-	__ccm_end = .;
-
-	__ccm_data_rom_start = LOADADDR(_CCM_DATA_SECTION_NAME);
-
-    GROUP_END(CCM)
-
-#endif /* DT_CCM_BASE_ADDRESS */
-
 #ifdef CONFIG_CUSTOM_SECTIONS_LD
 /* Located in project source directory */
 #include <custom-sections.ld>
 #endif
 
-#ifdef CONFIG_GEN_ISR_TABLES
-#include <linker/intlist.ld>
-#endif
+/* Located in generated directory. This file is populated by the
+ * zephyr_linker_sources() Cmake function.
+ */
+#include <snippets-sections.ld>
 
 #include <linker/debug-sections.ld>
 

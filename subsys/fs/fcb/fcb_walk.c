@@ -20,7 +20,7 @@ fcb_walk(struct fcb *fcb, struct flash_sector *sector, fcb_walk_cb cb,
 	int rc;
 
 	entry_ctx.loc.fe_sector = sector;
-	entry_ctx.loc.fe_elem_off = 0;
+	entry_ctx.loc.fe_elem_off = 0U;
 
 	rc = k_mutex_lock(&fcb->f_mtx, K_FOREVER);
 	if (rc < 0) {

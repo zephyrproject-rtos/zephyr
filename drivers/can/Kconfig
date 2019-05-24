@@ -29,6 +29,13 @@ config CAN_INIT_PRIORITY
 	  Note that the priority needs to be lower than the net stack
 	  so that it can start before the networking sub-system.
 
+config CAN_WORKQ_FRAMES_BUF_CNT
+	int "Work queue buffer frame count"
+	default 4
+	range 1 65534
+	help
+	  Number of frames in the buffer of a zcan_work.
+
 config CAN_1
 	bool "Enable CAN 1"
 	default y
@@ -36,5 +43,7 @@ config CAN_1
 	  Enable CAN controller 1
 
 source "drivers/can/Kconfig.stm32"
+source "drivers/can/Kconfig.mcp2515"
+source "drivers/can/Kconfig.loopback"
 
 endif # CAN

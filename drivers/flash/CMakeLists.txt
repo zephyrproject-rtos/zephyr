@@ -1,6 +1,9 @@
+# SPDX-License-Identifier: Apache-2.0
+
 zephyr_library()
 
 zephyr_library_sources_ifdef(CONFIG_SPI_NOR spi_nor.c)
+zephyr_library_sources_ifdef(CONFIG_FLASH_SIMULATOR flash_simulator.c)
 zephyr_library_sources_ifdef(CONFIG_SPI_FLASH_W25QXXDV spi_flash_w25qxxdv.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_QMSI soc_flash_qmsi.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_NRF soc_flash_nrf.c)

@@ -457,6 +457,16 @@ struct gatt_read_rp {
 	u8_t data[0];
 } __packed;
 
+#define GATT_READ_UUID			0x12
+struct gatt_read_uuid_cmd {
+	u8_t address_type;
+	u8_t address[6];
+	u16_t start_handle;
+	u16_t end_handle;
+	u8_t uuid_length;
+	u8_t uuid[0];
+} __packed;
+
 #define GATT_READ_LONG			0x13
 struct gatt_read_long_cmd {
 	u8_t address_type;
@@ -567,14 +577,14 @@ struct gatt_attr_value_changed_ev {
 
 static inline void tester_set_bit(u8_t *addr, unsigned int bit)
 {
-	u8_t *p = addr + (bit / 8);
+	u8_t *p = addr + (bit / 8U);
 
 	*p |= BIT(bit % 8);
 }
 
 static inline u8_t tester_test_bit(const u8_t *addr, unsigned int bit)
 {
-	const u8_t *p = addr + (bit / 8);
+	const u8_t *p = addr + (bit / 8U);
 
 	return *p & BIT(bit % 8);
 }

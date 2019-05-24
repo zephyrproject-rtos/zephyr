@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
 #ifdef CONFIG_USERSPACE
 	/* We need to reserve room for the gperf generated hash functions.
 	 * Fortunately, unlike the data tables, the size of the code is
@@ -9,15 +11,33 @@
 	_kobject_text_area_start = .;
 	*(".kobject_data.text*")
 	_kobject_text_area_end = .;
+	_kobject_text_area_used = _kobject_text_area_end - _kobject_text_area_start;
 #ifndef LINKER_PASS2
 #ifdef CONFIG_DYNAMIC_OBJECTS
-	PROVIDE(_k_object_gperf_find = .);
-	PROVIDE(_k_object_gperf_wordlist_foreach = .);
+	PROVIDE(z_object_gperf_find = .);
+	PROVIDE(z_object_gperf_wordlist_foreach = .);
 #else
-	PROVIDE(_k_object_find = .);
-	PROVIDE(_k_object_wordlist_foreach = .);
+	PROVIDE(z_object_find = .);
+	PROVIDE(z_object_wordlist_foreach = .);
 #endif
 #endif
-	. += CONFIG_KOBJECT_TEXT_AREA - (_kobject_text_area_end - _kobject_text_area_start);
+
+	/* In a valid build the MAX function will always evaluate to the
+	second argument below, but to give the user a good error message
+	when the area overflows we need to temporarily corrupt the
+	location counter, and then detect the overflow with an assertion
+	later on. */
+
+	. = MAX(., _kobject_text_area_start + CONFIG_KOBJECT_TEXT_AREA);
+
+	ASSERT(
+		CONFIG_KOBJECT_TEXT_AREA >= _kobject_text_area_used,
+"The configuration system has incorrectly set
+'CONFIG_KOBJECT_TEXT_AREA' to
+CONFIG_KOBJECT_TEXT_AREA, which is not big enough. You must
+through Kconfig either disable 'CONFIG_USERSPACE', or set
+'CONFIG_KOBJECT_TEXT_AREA' to a value larger than
+CONFIG_KOBJECT_TEXT_AREA."
+		);
 #endif /* CONFIG_USERSPACE */
 

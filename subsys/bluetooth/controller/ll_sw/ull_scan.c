@@ -95,7 +95,7 @@ int ull_scan_reset(void)
 	u16_t handle;
 	int err;
 
-	for (handle = 0; handle < BT_CTLR_SCAN_MAX; handle++) {
+	for (handle = 0U; handle < BT_CTLR_SCAN_MAX; handle++) {
 		(void)disable(handle);
 	}
 
@@ -133,7 +133,7 @@ u8_t ull_scan_params_set(struct ll_scan_set *scan, u8_t type,
 
 	lll->filter_policy = filter_policy;
 	lll->interval = interval;
-	lll->ticks_window = HAL_TICKER_US_TO_TICKS((u64_t)window * 625);
+	lll->ticks_window = HAL_TICKER_US_TO_TICKS((u64_t)window * 625U);
 
 	scan->own_addr_type = own_addr_type;
 
@@ -163,16 +163,17 @@ u8_t ull_scan_enable(struct ll_scan_set *scan)
 	}
 #endif
 
+	lll->chan = 0;
 	lll->init_addr_type = scan->own_addr_type;
 	ll_addr_get(lll->init_addr_type, lll->init_addr);
 
 	ull_hdr_init(&scan->ull);
 	lll_hdr_init(lll, scan);
 
-	ticks_interval = HAL_TICKER_US_TO_TICKS((u64_t)lll->interval * 625);
+	ticks_interval = HAL_TICKER_US_TO_TICKS((u64_t)lll->interval * 625U);
 
 	/* TODO: active_to_start feature port */
-	scan->evt.ticks_active_to_start = 0;
+	scan->evt.ticks_active_to_start = 0U;
 	scan->evt.ticks_xtal_to_start =
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
 	scan->evt.ticks_preempt_to_start =
@@ -197,15 +198,15 @@ u8_t ull_scan_enable(struct ll_scan_set *scan)
 	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
 		ticks_slot_overhead = ticks_slot_offset;
 	} else {
-		ticks_slot_overhead = 0;
+		ticks_slot_overhead = 0U;
 	}
 
 	ticks_anchor = ticker_ticks_now_get();
 
 #if defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_CTLR_SCHED_ADVANCED)
 	if (!lll->conn) {
-		u32_t ticks_ref = 0;
-		u32_t offset_us = 0;
+		u32_t ticks_ref = 0U;
+		u32_t offset_us = 0U;
 
 		ull_sched_after_mstr_slot_get(TICKER_USER_ID_THREAD,
 					      (ticks_slot_offset +
@@ -226,7 +227,7 @@ u8_t ull_scan_enable(struct ll_scan_set *scan)
 	ret = ticker_start(TICKER_INSTANCE_ID_CTLR,
 			   TICKER_USER_ID_THREAD, TICKER_ID_SCAN_BASE,
 			   ticks_anchor, 0, ticks_interval,
-			   HAL_TICKER_REMAINDER((u64_t)lll->interval * 625),
+			   HAL_TICKER_REMAINDER((u64_t)lll->interval * 625U),
 			   TICKER_NULL_LAZY,
 			   (scan->evt.ticks_slot + ticks_slot_overhead),
 			   ticker_cb, scan,
@@ -237,7 +238,7 @@ u8_t ull_scan_enable(struct ll_scan_set *scan)
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
-	scan->is_enabled = 1;
+	scan->is_enabled = 1U;
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 #if defined(CONFIG_BT_BROADCASTER)
@@ -417,7 +418,7 @@ static u8_t disable(u16_t handle)
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
-#if defined(CONFIG_BT_CONN)
+#if defined(CONFIG_BT_CENTRAL)
 	if (scan->lll.conn) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
@@ -428,7 +429,7 @@ static u8_t disable(u16_t handle)
 		return ret;
 	}
 
-	scan->is_enabled = 0;
+	scan->is_enabled = 0U;
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 #if defined(CONFIG_BT_BROADCASTER)

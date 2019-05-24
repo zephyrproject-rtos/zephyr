@@ -1,0 +1,32 @@
+/*
+ * Copyright (c) 2019 Vestas Wind Systems A/S
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_KINETIS_SCG_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_KINETIS_SCG_H_
+
+/* SCG system clock source value */
+#define KINETIS_SCG_SCLK_SRC_SOSC 1U
+#define KINETIS_SCG_SCLK_SRC_SIRC 2U
+#define KINETIS_SCG_SCLK_SRC_FIRC 3U
+#define KINETIS_SCG_SCLK_SRC_SPLL 6U
+
+/* SCG system oscillator mode */
+#define KINETIS_SCG_SOSC_MODE_EXT        0U
+#define KINETIS_SCG_SOSC_MODE_LOW_POWER  4U
+#define KINETIS_SCG_SOSC_MODE_HIGH_GAIN 12U
+
+/* SCG system phase-locked loop source */
+#define KINETIS_SCG_SPLL_SRC_SOSC 0U
+#define KINETIS_SCG_SPLL_SRC_FIRC 1U
+
+/* SCG clockout source */
+#define KINETIS_SCG_CLKOUT_SRC_SLOW 0U
+#define KINETIS_SCG_CLKOUT_SRC_SOSC 1U
+#define KINETIS_SCG_CLKOUT_SRC_SIRC 2U
+#define KINETIS_SCG_CLKOUT_SRC_FIRC 3U
+#define KINETIS_SCG_CLKOUT_SRC_SPLL 6U
+
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_KINETIS_SCG_H_ */

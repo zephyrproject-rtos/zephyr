@@ -12,10 +12,6 @@ menu "ARC Options"
 config ARCH
 	default "arc"
 
-config ARCH_DEFCONFIG
-	string
-	default "arch/arc/defconfig"
-
 menu "ARC EM4 processor options"
 
 config	CPU_ARCEM4
@@ -32,8 +28,8 @@ menu "ARCv2 Family Options"
 
 config	CPU_ARCV2
 	bool
-	select ARCH_HAS_STACK_PROTECTION
-	select ARCH_HAS_USERSPACE if ARC_CORE_MPU
+	select ARCH_HAS_STACK_PROTECTION if ARC_HAS_STACK_CHECKING || ARC_MPU
+	select ARCH_HAS_USERSPACE if ARC_MPU
 	default y
 	help
 	  This option signifies the use of a CPU of the ARCv2 family.
@@ -89,13 +85,34 @@ config ARC_FIRQ
 	  If FIRQ is disabled, the handle of interrupts with highest priority
 	  will be same with other interrupts.
 
-config	ARC_STACK_CHECKING
+config 	ARC_HAS_STACK_CHECKING
+	bool "ARC has STACK_CHECKING"
+	default y
+	help
+	  ARC is configured with STACK_CHECKING which is a mechanism for
+	  checking stack accesses and raising an exception when a stack
+	  overflow or underflow is detected.
+
+config  ARC_STACK_CHECKING
+	bool
+	help
+	  Use ARC STACK_CHECKING to do stack protection
+
+config	ARC_STACK_PROTECTION
 	bool
 	default y if HW_STACK_PROTECTION
+	select ARC_STACK_CHECKING if ARC_HAS_STACK_CHECKING
+	select MPU_STACK_GUARD if (!ARC_STACK_CHECKING && ARC_MPU)
 	select THREAD_STACK_INFO
 	help
-	  ARCV2 has a special feature allowing to check stack overflows. This
-	  enables code that allows using this debug feature
+	  This option enables either:
+	  - The ARC stack checking, or
+	  - the MPU-based stack guard
+	  to cause a system fatal error
+	  if the bounds of the current process stack are overflowed.
+	  The two stack guard options are mutually exclusive. The
+	  selection of the ARC stack checking is
+	  prioritized over the MPU-based stack guard.
 
 config	FAULT_DUMP
 	int "Fault dump level"
@@ -143,7 +160,6 @@ depends on CPU_HAS_MPU
 
 config ARC_MPU_ENABLE
 	bool "Enable MPU"
-	depends on CPU_HAS_MPU
 	select ARC_MPU
 	help
 	  Enable MPU
@@ -182,5 +198,14 @@ config CACHE_FLUSHING
 	  If the d-cache is NOT present, set this to n.
 
 endmenu
+
+config ARC_EXCEPTION_DEBUG
+	bool "Unhandled exception debugging information"
+	default n
+	depends on PRINTK
+	help
+	  Print human-readable information about exception vectors, cause codes,
+	  and parameters, at a cost of code/data size for the human-readable
+	  strings.
 
 endmenu

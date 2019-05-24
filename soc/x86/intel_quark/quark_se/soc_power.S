@@ -12,9 +12,9 @@ GDATA(_pm_save_idtr)
 GDATA(_pm_save_esp)
 
 GTEXT(sys_resume_from_deep_sleep)
-GTEXT(_power_restore_cpu_context)
-GTEXT(_power_soc_sleep)
-GTEXT(_power_soc_deep_sleep)
+GTEXT(z_power_restore_cpu_context)
+GTEXT(z_power_soc_sleep)
+GTEXT(z_power_soc_deep_sleep)
 
 SECTION_FUNC(TEXT, save_cpu_context)
 	movl %esp, %eax                 /* save ptr to return address */
@@ -43,7 +43,7 @@ SECTION_FUNC(TEXT, save_cpu_context)
 	pushl (%eax)                    /* push return address */
 	ret
 
-SECTION_FUNC(TEXT, _power_restore_cpu_context)
+SECTION_FUNC(TEXT, z_power_restore_cpu_context)
 	lgdtl _pm_save_gdtr		/* restore gdtr */
 	lidtl _pm_save_idtr		/* restore idtr */
 	movl _pm_save_esp, %esp		/* restore saved stack ptr */
@@ -70,23 +70,23 @@ SECTION_FUNC(TEXT, _power_restore_cpu_context)
 	 *
 	 *          Saved context
 	 * ESP ---> Return address of save_cpu_context
-	 *          Return address of _power_soc_sleep/deep_sleep
+	 *          Return address of z_power_soc_sleep/deep_sleep
 	 *
 	 * We just popped the saved context. Next we pop out the address
 	 * of the caller of save_cpu_context.Then the ret would return
-	 * to caller of _power_soc_sleep or _power_soc_deep_sleep.
+	 * to caller of z_power_soc_sleep or z_power_soc_deep_sleep.
 	 *
 	 */
 	addl $4, %esp
 	ret
 
-SECTION_FUNC(TEXT, _power_soc_sleep)
+SECTION_FUNC(TEXT, z_power_soc_sleep)
 	call save_cpu_context
 	wbinvd
 	call qm_power_soc_sleep
 	/* Does not return */
 
-SECTION_FUNC(TEXT, _power_soc_deep_sleep)
+SECTION_FUNC(TEXT, z_power_soc_deep_sleep)
 	call save_cpu_context
 	wbinvd
 	call qm_power_soc_deep_sleep
@@ -102,10 +102,10 @@ SECTION_FUNC(TEXT, _power_soc_deep_sleep)
  * Disclaimer: This can be used for debug or development purposes. This is not
  * a supported feature in Quark SE boards and to be used at one's own risk.
  */
-SECTION_FUNC(TEXT, sys_resume_from_deep_sleep)
+SECTION_FUNC(TEXT, _sys_resume_from_deep_sleep)
 	movl $CONFIG_BSP_SHARED_RESTORE_INFO_RAM_ADDR, %eax
-	cmpl $_power_restore_cpu_context, (%eax)
-	je _power_restore_cpu_context
+	cmpl $z_power_restore_cpu_context, (%eax)
+	je z_power_restore_cpu_context
 	ret
 
 #endif

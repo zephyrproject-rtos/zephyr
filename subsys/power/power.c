@@ -64,12 +64,12 @@ static void sys_pm_log_debug_info(enum power_states state) { }
 void sys_pm_dump_debug_info(void) { }
 #endif
 
-__weak void sys_pm_notify_lps_entry(enum power_states state)
+__weak void sys_pm_notify_power_state_entry(enum power_states state)
 {
 	/* This function can be overridden by the application. */
 }
 
-__weak void sys_pm_notify_lps_exit(enum power_states state)
+__weak void sys_pm_notify_power_state_exit(enum power_states state)
 {
 	/* This function can be overridden by the application. */
 }
@@ -83,7 +83,7 @@ void sys_pm_force_power_state(enum power_states state)
 	forced_pm_state = state;
 }
 
-enum power_states sys_suspend(s32_t ticks)
+enum power_states _sys_suspend(s32_t ticks)
 {
 	bool deep_sleep;
 
@@ -99,14 +99,14 @@ enum power_states sys_suspend(s32_t ticks)
 		     sys_pm_is_deep_sleep_state(pm_state) : 0;
 
 	post_ops_done = 0;
-	sys_pm_notify_lps_entry(pm_state);
+	sys_pm_notify_power_state_entry(pm_state);
 
 	if (deep_sleep) {
 #if CONFIG_DEVICE_POWER_MANAGEMENT
 		/* Suspend peripherals. */
 		if (sys_pm_suspend_devices()) {
 			LOG_ERR("System level device suspend failed!");
-			sys_pm_notify_lps_exit(pm_state);
+			sys_pm_notify_power_state_exit(pm_state);
 			pm_state = SYS_POWER_STATE_ACTIVE;
 			return pm_state;
 		}
@@ -115,7 +115,7 @@ enum power_states sys_suspend(s32_t ticks)
 		 * Disable idle exit notification as it is not needed
 		 * in deep sleep mode.
 		 */
-		sys_pm_idle_exit_notification_disable();
+		_sys_pm_idle_exit_notification_disable();
 	}
 
 	/* Enter power state */
@@ -133,14 +133,14 @@ enum power_states sys_suspend(s32_t ticks)
 
 	if (!post_ops_done) {
 		post_ops_done = 1;
-		sys_pm_notify_lps_exit(pm_state);
-		sys_power_state_post_ops(pm_state);
+		sys_pm_notify_power_state_exit(pm_state);
+		_sys_pm_power_state_exit_post_ops(pm_state);
 	}
 
 	return pm_state;
 }
 
-void sys_resume(void)
+void _sys_resume(void)
 {
 	/*
 	 * This notification is called from the ISR of the event
@@ -154,13 +154,13 @@ void sys_resume(void)
 	 * The kernel scheduler will get control after the ISR finishes
 	 * and it may schedule another thread.
 	 *
-	 * Call sys_pm_idle_exit_notification_disable() if this
+	 * Call _sys_pm_idle_exit_notification_disable() if this
 	 * notification is not required.
 	 */
 	if (!post_ops_done) {
 		post_ops_done = 1;
-		sys_pm_notify_lps_exit(pm_state);
-		sys_power_state_post_ops(pm_state);
+		sys_pm_notify_power_state_exit(pm_state);
+		_sys_pm_power_state_exit_post_ops(pm_state);
 	}
 }
 

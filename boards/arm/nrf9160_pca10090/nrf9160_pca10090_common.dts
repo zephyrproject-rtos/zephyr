@@ -18,19 +18,19 @@
 	leds {
 		compatible = "gpio-leds";
 		led0: led_0 {
-			gpios = <&gpio0 2 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpio0 2 GPIO_INT_ACTIVE_HIGH>;
 			label = "Green LED 0";
 		};
 		led1: led_1 {
-			gpios = <&gpio0 3 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpio0 3 GPIO_INT_ACTIVE_HIGH>;
 			label = "Green LED 1";
 		};
 		led2: led_2 {
-			gpios = <&gpio0 4 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpio0 4 GPIO_INT_ACTIVE_HIGH>;
 			label = "Green LED 2";
 		};
 		led3: led_3 {
-			gpios = <&gpio0 5 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpio0 5 GPIO_INT_ACTIVE_HIGH>;
 			label = "Green LED 3";
 		};
 	};
@@ -107,7 +107,6 @@
 &pwm0 {
 	status = "ok";
 	ch0-pin = <2>;
-	ch0-inverted;
 };
 
 &spi3 {
@@ -118,6 +117,10 @@
 };
 
 &timer0 {
+	status = "ok";
+};
+
+&timer1 {
 	status = "ok";
 };
 

@@ -64,7 +64,7 @@ SYS_INIT(init_sem_module, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 
 #endif /* CONFIG_OBJECT_TRACING */
 
-void _impl_k_sem_init(struct k_sem *sem, unsigned int initial_count,
+void z_impl_k_sem_init(struct k_sem *sem, unsigned int initial_count,
 		      unsigned int limit)
 {
 	__ASSERT(limit != 0U, "limit cannot be zero");
@@ -73,14 +73,14 @@ void _impl_k_sem_init(struct k_sem *sem, unsigned int initial_count,
 	sys_trace_void(SYS_TRACE_ID_SEMA_INIT);
 	sem->count = initial_count;
 	sem->limit = limit;
-	_waitq_init(&sem->wait_q);
+	z_waitq_init(&sem->wait_q);
 #if defined(CONFIG_POLL)
 	sys_dlist_init(&sem->poll_events);
 #endif
 
 	SYS_TRACING_OBJ_INIT(k_sem, sem);
 
-	_k_object_init(sem);
+	z_object_init(sem);
 	sys_trace_end_call(SYS_TRACE_ID_SEMA_INIT);
 }
 
@@ -89,7 +89,7 @@ Z_SYSCALL_HANDLER(k_sem_init, sem, initial_count, limit)
 {
 	Z_OOPS(Z_SYSCALL_OBJ_INIT(sem, K_OBJ_SEM));
 	Z_OOPS(Z_SYSCALL_VERIFY(limit != 0 && initial_count <= limit));
-	_impl_k_sem_init((struct k_sem *)sem, initial_count, limit);
+	z_impl_k_sem_init((struct k_sem *)sem, initial_count, limit);
 	return 0;
 }
 #endif
@@ -97,7 +97,7 @@ Z_SYSCALL_HANDLER(k_sem_init, sem, initial_count, limit)
 static inline void handle_poll_events(struct k_sem *sem)
 {
 #ifdef CONFIG_POLL
-	_handle_obj_poll_events(&sem->poll_events, K_POLL_STATE_SEM_AVAILABLE);
+	z_handle_obj_poll_events(&sem->poll_events, K_POLL_STATE_SEM_AVAILABLE);
 #else
 	ARG_UNUSED(sem);
 #endif
@@ -110,34 +110,34 @@ static inline void increment_count_up_to_limit(struct k_sem *sem)
 
 static void do_sem_give(struct k_sem *sem)
 {
-	struct k_thread *thread = _unpend_first_thread(&sem->wait_q);
+	struct k_thread *thread = z_unpend_first_thread(&sem->wait_q);
 
 	if (thread != NULL) {
-		_ready_thread(thread);
-		_set_thread_return_value(thread, 0);
+		z_ready_thread(thread);
+		z_set_thread_return_value(thread, 0);
 	} else {
 		increment_count_up_to_limit(sem);
 		handle_poll_events(sem);
 	}
 }
 
-void _impl_k_sem_give(struct k_sem *sem)
+void z_impl_k_sem_give(struct k_sem *sem)
 {
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
 	sys_trace_void(SYS_TRACE_ID_SEMA_GIVE);
 	do_sem_give(sem);
 	sys_trace_end_call(SYS_TRACE_ID_SEMA_GIVE);
-	_reschedule(&lock, key);
+	z_reschedule(&lock, key);
 }
 
 #ifdef CONFIG_USERSPACE
 Z_SYSCALL_HANDLER1_SIMPLE_VOID(k_sem_give, K_OBJ_SEM, struct k_sem *);
 #endif
 
-int _impl_k_sem_take(struct k_sem *sem, s32_t timeout)
+int z_impl_k_sem_take(struct k_sem *sem, s32_t timeout)
 {
-	__ASSERT(((_is_in_isr() == false) || (timeout == K_NO_WAIT)), "");
+	__ASSERT(((z_is_in_isr() == false) || (timeout == K_NO_WAIT)), "");
 
 	sys_trace_void(SYS_TRACE_ID_SEMA_TAKE);
 	k_spinlock_key_t key = k_spin_lock(&lock);
@@ -157,7 +157,7 @@ int _impl_k_sem_take(struct k_sem *sem, s32_t timeout)
 
 	sys_trace_end_call(SYS_TRACE_ID_SEMA_TAKE);
 
-	int ret = _pend_curr(&lock, key, &sem->wait_q, timeout);
+	int ret = z_pend_curr(&lock, key, &sem->wait_q, timeout);
 	return ret;
 }
 
@@ -165,7 +165,7 @@ int _impl_k_sem_take(struct k_sem *sem, s32_t timeout)
 Z_SYSCALL_HANDLER(k_sem_take, sem, timeout)
 {
 	Z_OOPS(Z_SYSCALL_OBJ(sem, K_OBJ_SEM));
-	return _impl_k_sem_take((struct k_sem *)sem, timeout);
+	return z_impl_k_sem_take((struct k_sem *)sem, timeout);
 }
 
 Z_SYSCALL_HANDLER1_SIMPLE_VOID(k_sem_reset, K_OBJ_SEM, struct k_sem *);

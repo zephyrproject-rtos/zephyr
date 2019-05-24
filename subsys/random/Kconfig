@@ -18,6 +18,7 @@ config TEST_RANDOM_GENERATOR
 choice
 	prompt "Random generator"
 	default ENTROPY_DEVICE_RANDOM_GENERATOR
+	depends on ENTROPY_HAS_DRIVER || TEST_RANDOM_GENERATOR
 
 config X86_TSC_RANDOM_GENERATOR
 	bool "x86 timestamp counter based number generator"

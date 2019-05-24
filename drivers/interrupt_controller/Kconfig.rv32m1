@@ -18,7 +18,7 @@ if RV32M1_INTMUX
 
 config RV32M1_INTMUX_INIT_PRIORITY
 	int "INTMUX driver initialization priority"
-	default 60
+	default 40
 	help
 	  Boot time initialization priority for INTMUX driver.
 	  Don't change the default unless you know what you are doing.

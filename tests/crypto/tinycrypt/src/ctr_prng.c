@@ -411,7 +411,7 @@ void test_ctr_prng_reseed(void)
 	/* now, entropy and additional_input */
 	(void)memset(&ctx, 0x00, sizeof(ctx));
 	for (i = 0U; i < sizeof(extra_input); i++) {
-		extra_input[i] = i * 2;
+		extra_input[i] = i * 2U;
 	}
 
 	rc = tc_ctr_prng_reseed(&ctx, entropy, sizeof(entropy),

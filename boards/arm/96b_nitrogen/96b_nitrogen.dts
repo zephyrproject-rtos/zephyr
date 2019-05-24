@@ -15,6 +15,7 @@
 	chosen {
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
+		zephyr,bt-mon-uart = &uart0;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
@@ -76,7 +77,7 @@
 	scl-pin = <22>;
 };
 
-&spi0 {
+&spi1 {
 	status = "ok";
 	sck-pin = <26>;
 	mosi-pin = <23>;

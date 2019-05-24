@@ -55,7 +55,7 @@ features:
 Other hardware features are not currently supported by Zephyr.
 
 The default configuration can be found in the Kconfig
-:file:`boards/arm/atsamd20_xpro/atsamd20_xpro_defconfig`.
+:zephyr_file:`boards/arm/atsamd20_xpro/atsamd20_xpro_defconfig`.
 
 Connections and IOs
 ===================

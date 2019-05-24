@@ -178,19 +178,19 @@ static int init_twim(struct device *dev, const nrfx_twim_config_t *config)
 		return init_twim(dev, &config);				       \
 	}								       \
 	static struct i2c_nrfx_twim_data twim_##idx##_data = {		       \
-		.transfer_sync = _K_SEM_INITIALIZER(                           \
+		.transfer_sync = Z_SEM_INITIALIZER(                           \
 			twim_##idx##_data.transfer_sync, 1, 1),                \
-		.completion_sync = _K_SEM_INITIALIZER(                         \
+		.completion_sync = Z_SEM_INITIALIZER(                         \
 			twim_##idx##_data.completion_sync, 0, 1)               \
 	};								       \
-	static const struct i2c_nrfx_twim_config twim_##idx##_config = {       \
+	static const struct i2c_nrfx_twim_config twim_##idx##z_config = {       \
 		.twim = NRFX_TWIM_INSTANCE(idx)				       \
 	};								       \
 	DEVICE_AND_API_INIT(twim_##idx,					       \
 			    DT_NORDIC_NRF_I2C_I2C_##idx##_LABEL,	       \
 			    twim_##idx##_init,				       \
 			    &twim_##idx##_data,				       \
-			    &twim_##idx##_config,			       \
+			    &twim_##idx##z_config,			       \
 			    POST_KERNEL,				       \
 			    CONFIG_I2C_INIT_PRIORITY,			       \
 			    &i2c_nrfx_twim_driver_api)

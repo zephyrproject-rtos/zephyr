@@ -211,11 +211,11 @@ config UART_MCUMGR
 	  data are handled by an application provided callback.
 
 if UART_MCUMGR
+
 config UART_MCUMGR_ON_DEV_NAME
 	string "Device Name of UART Device for mcumgr UART"
 	default "$(dt_str_val,DT_UART_MCUMGR_ON_DEV_NAME)" if HAS_DTS
 	default "UART_0"
-	depends on UART_MCUMGR
 	help
 	  This option specifies the name of UART device to be used
 	  for mcumgr UART.
@@ -298,5 +298,4 @@ config NATIVE_POSIX_CONSOLE_INIT_PRIORITY
 	help
 	  Device driver initialization priority.
 
-source "drivers/console/Kconfig.telnet"
 endif

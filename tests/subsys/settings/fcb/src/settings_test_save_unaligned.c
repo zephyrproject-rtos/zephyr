@@ -13,6 +13,7 @@ void test_config_save_fcb_unaligned(void)
 	struct settings_fcb cf;
 
 	config_wipe_srcs();
+	config_wipe_fcb(fcb_sectors, ARRAY_SIZE(fcb_sectors));
 
 	cf.cf_fcb.f_magic = CONFIG_SETTINGS_FCB_MAGIC;
 	cf.cf_fcb.f_sectors = fcb_sectors;
@@ -37,9 +38,9 @@ void test_config_save_fcb_unaligned(void)
 
 	rc = settings_load();
 	zassert_true(rc == 0, "fcb redout error");
-	zassert_true(val8_un == 33, "bad value read");
+	zassert_true(val8_un == 33U, "bad value read");
 
-	val8_un = 15;
+	val8_un = 15U;
 	rc = settings_save();
 	zassert_true(rc == 0, "fcb write error");
 }

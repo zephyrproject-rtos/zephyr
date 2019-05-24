@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
 /dts-v1/;
 
 #include <mem.h>
@@ -87,11 +89,11 @@
 		label = "cc2520";
 		spi-max-frequency = <8000000>;
 		status = "ok";
-		vreg-en-gpios = <&gpio0 0 0>;
-		reset-gpios = <&gpio0 1 0>;
-		fifo-gpios = <&gpio1 4 0>;
-		cca-gpios = <&gpio1 6 0>;
-		sfd-gpios = <&gpio1 29 0>;
-		fifop-gpios = <&gpio1 5 0>;
+		vreg-en-gpios = <&gpio1 0 0>;
+		reset-gpios = <&gpio1 1 0>;
+		fifo-gpios = <&gpio0 4 0>;
+		cca-gpios = <&gpio0 6 0>;
+		sfd-gpios = <&gpio0 29 0>;
+		fifop-gpios = <&gpio0 5 0>;
 	};
 };

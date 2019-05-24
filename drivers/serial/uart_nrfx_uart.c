@@ -38,7 +38,7 @@ static inline const struct uart_nrfx_config *get_dev_config(struct device *dev)
 	return dev->config->config_info;
 }
 
-#ifdef CONFIG_UART_ASYNC_API
+#ifdef CONFIG_UART_0_ASYNC
 static struct {
 	uart_callback_t callback;
 	void *user_data;
@@ -63,7 +63,7 @@ static struct {
 	struct k_delayed_work tx_timeout_work;
 #endif
 } uart0_cb;
-#endif /* CONFIG_UART_ASYNC_API */
+#endif /* CONFIG_UART_0_ASYNC */
 
 #ifdef CONFIG_UART_0_INTERRUPT_DRIVEN
 
@@ -319,7 +319,7 @@ static int uart_nrfx_config_get(struct device *dev, struct uart_config *cfg)
 }
 
 
-#ifdef CONFIG_UART_ASYNC_API
+#ifdef CONFIG_UART_0_ASYNC
 
 static void user_callback(struct uart_event *event)
 {
@@ -656,7 +656,7 @@ static void tx_timeout(struct k_work *work)
 }
 #endif
 
-#endif /* CONFIG_UART_ASYNC_API */
+#endif /* CONFIG_UART_0_ASYNC */
 
 
 #ifdef CONFIG_UART_0_INTERRUPT_DRIVEN
@@ -895,7 +895,7 @@ static int uart_nrfx_init(struct device *dev)
 	uart_sw_event_txdrdy = 1U;
 #endif
 
-#if defined(CONFIG_UART_ASYNC_API) || defined(CONFIG_UART_0_INTERRUPT_DRIVEN)
+#if defined(CONFIG_UART_0_ASYNC) || defined(CONFIG_UART_0_INTERRUPT_DRIVEN)
 
 	IRQ_CONNECT(DT_NORDIC_NRF_UART_UART_0_IRQ,
 		    DT_NORDIC_NRF_UART_UART_0_IRQ_PRIORITY,
@@ -905,7 +905,7 @@ static int uart_nrfx_init(struct device *dev)
 	irq_enable(DT_NORDIC_NRF_UART_UART_0_IRQ);
 #endif
 
-#ifdef CONFIG_UART_ASYNC_API
+#ifdef CONFIG_UART_0_ASYNC
 	k_delayed_work_init(&uart0_cb.rx_timeout_work, rx_timeout);
 #if	defined(DT_NORDIC_NRF_UART_UART_0_RTS_PIN) && \
 	defined(DT_NORDIC_NRF_UART_UART_0_CTS_PIN)
@@ -919,14 +919,14 @@ static int uart_nrfx_init(struct device *dev)
  * because Nordic hardware does not distinguish between them.
  */
 static const struct uart_driver_api uart_nrfx_uart_driver_api = {
-#ifdef CONFIG_UART_ASYNC_API
+#ifdef CONFIG_UART_0_ASYNC
 	.callback_set	  = uart_nrfx_callback_set,
 	.tx		  = uart_nrfx_tx,
 	.tx_abort	  = uart_nrfx_tx_abort,
 	.rx_enable	  = uart_nrfx_rx_enable,
 	.rx_buf_rsp	  = uart_nrfx_rx_buf_rsp,
 	.rx_disable	  = uart_nrfx_rx_disable,
-#endif /* CONFIG_UART_ASYNC_API */
+#endif /* CONFIG_UART_0_ASYNC */
 	.poll_in          = uart_nrfx_poll_in,
 	.poll_out         = uart_nrfx_poll_out,
 	.err_check        = uart_nrfx_err_check,
@@ -964,9 +964,8 @@ static void uart_nrfx_set_power_state(u32_t new_state)
 	}
 }
 
-static int uart_nrfx_pm_control(struct device *dev,
-				u32_t ctrl_command,
-				void *context)
+static int uart_nrfx_pm_control(struct device *dev, u32_t ctrl_command,
+				void *context, device_pm_cb cb, void *arg)
 {
 	static u32_t current_state = DEVICE_PM_ACTIVE_STATE;
 
@@ -980,6 +979,10 @@ static int uart_nrfx_pm_control(struct device *dev,
 	} else {
 		assert(ctrl_command == DEVICE_PM_GET_POWER_STATE);
 		*((u32_t *)context) = current_state;
+	}
+
+	if (cb) {
+		cb(dev, 0, context, arg);
 	}
 
 	return 0;

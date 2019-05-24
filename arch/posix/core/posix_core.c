@@ -166,7 +166,7 @@ static void posix_let_run(int next_allowed_th)
 	 * Note that as we hold the mutex, they are going to be blocked until
 	 * we reach our own posix_wait_until_allowed() while loop
 	 */
-	_SAFE_CALL(pthread_cond_broadcast(&cond_threads));
+	PC_SAFE_CALL(pthread_cond_broadcast(&cond_threads));
 }
 
 
@@ -175,7 +175,7 @@ static void posix_preexit_cleanup(void)
 	/*
 	 * Release the mutex so the next allowed thread can run
 	 */
-	_SAFE_CALL(pthread_mutex_unlock(&mtx_threads));
+	PC_SAFE_CALL(pthread_mutex_unlock(&mtx_threads));
 
 	/* We detach ourselves so nobody needs to join to us */
 	pthread_detach(pthread_self());
@@ -205,7 +205,7 @@ void posix_swap(int next_allowed_thread_nbr, int this_th_nbr)
 /**
  * Let the ready thread (main) run, and exit this thread (init)
  *
- * Called from _arch_switch_to_main_thread() which does the picking from the
+ * Called from z_arch_switch_to_main_thread() which does the picking from the
  * kernel structures
  *
  * Note that we could have just done a swap(), but that would have left the
@@ -246,7 +246,7 @@ static void posix_cleanup_handler(void *arg)
 #endif
 
 
-	_SAFE_CALL(pthread_mutex_unlock(&mtx_threads));
+	PC_SAFE_CALL(pthread_mutex_unlock(&mtx_threads));
 
 	/* We detach ourselves so nobody needs to join to us */
 	pthread_detach(pthread_self());
@@ -271,7 +271,7 @@ static void *posix_thread_starter(void *arg)
 	 * We block until all other running threads reach the while loop
 	 * in posix_wait_until_allowed() and they release the mutex
 	 */
-	_SAFE_CALL(pthread_mutex_lock(&mtx_threads));
+	PC_SAFE_CALL(pthread_mutex_lock(&mtx_threads));
 
 	/*
 	 * The program may have been finished before this thread ever got to run
@@ -298,7 +298,7 @@ static void *posix_thread_starter(void *arg)
 
 	posix_new_thread_pre_start();
 
-	_thread_entry(ptr->entry_point, ptr->arg1, ptr->arg2, ptr->arg3);
+	z_thread_entry(ptr->entry_point, ptr->arg1, ptr->arg2, ptr->arg3);
 
 	/*
 	 * We only reach this point if the thread actually returns which should
@@ -357,9 +357,9 @@ static int ttable_get_empty_slot(void)
 }
 
 /**
- * Called from _new_thread(),
+ * Called from z_new_thread(),
  * Create a new POSIX thread for the new Zephyr thread.
- * _new_thread() picks from the kernel structures what it is that we need to
+ * z_new_thread() picks from the kernel structures what it is that we need to
  * call with what parameters
  */
 void posix_new_thread(posix_thread_status_t *ptr)
@@ -372,7 +372,7 @@ void posix_new_thread(posix_thread_status_t *ptr)
 	threads_table[t_slot].thead_cnt = thread_create_count++;
 	ptr->thread_idx = t_slot;
 
-	_SAFE_CALL(pthread_create(&threads_table[t_slot].thread,
+	PC_SAFE_CALL(pthread_create(&threads_table[t_slot].thread,
 				  NULL,
 				  posix_thread_starter,
 				  (void *)ptr));
@@ -403,7 +403,7 @@ void posix_init_multithreading(void)
 	threads_table_size = PC_ALLOC_CHUNK_SIZE;
 
 
-	_SAFE_CALL(pthread_mutex_lock(&mtx_threads));
+	PC_SAFE_CALL(pthread_mutex_lock(&mtx_threads));
 }
 
 /**
@@ -472,9 +472,9 @@ void posix_abort_thread(int thread_idx)
 
 #if defined(CONFIG_ARCH_HAS_THREAD_ABORT)
 
-extern void _k_thread_single_abort(struct k_thread *thread);
+extern void z_thread_single_abort(struct k_thread *thread);
 
-void _impl_k_thread_abort(k_tid_t thread)
+void z_impl_k_thread_abort(k_tid_t thread)
 {
 	unsigned int key;
 	int thread_idx;
@@ -490,8 +490,8 @@ void _impl_k_thread_abort(k_tid_t thread)
 	__ASSERT(!(thread->base.user_options & K_ESSENTIAL),
 		 "essential thread aborted");
 
-	_k_thread_single_abort(thread);
-	_thread_monitor_exit(thread);
+	z_thread_single_abort(thread);
+	z_thread_monitor_exit(thread);
 
 	if (_current == thread) {
 		if (tstatus->aborted == 0) { /* LCOV_EXCL_BR_LINE */
@@ -510,7 +510,7 @@ void _impl_k_thread_abort(k_tid_t thread)
 			thread_idx,
 			__func__);
 
-		(void)_Swap_irqlock(key);
+		(void)z_swap_irqlock(key);
 		CODE_UNREACHABLE; /* LCOV_EXCL_LINE */
 	}
 
@@ -531,7 +531,7 @@ void _impl_k_thread_abort(k_tid_t thread)
 	}
 
 	/* The abort handler might have altered the ready queue. */
-	_reschedule_irqlock(key);
+	z_reschedule_irqlock(key);
 }
 #endif
 

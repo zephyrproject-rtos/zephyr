@@ -302,7 +302,8 @@ static int eth_fake_init(struct device *dev)
 }
 
 ETH_NET_DEVICE_INIT(eth_fake, "eth_fake", eth_fake_init, &eth_fake_data,
-		    NULL, CONFIG_ETH_INIT_PRIORITY, &eth_fake_api_funcs, 1500);
+		    NULL, CONFIG_ETH_INIT_PRIORITY, &eth_fake_api_funcs,
+		    NET_ETH_MTU);
 
 static void test_change_mac_when_up(void)
 {
@@ -514,7 +515,7 @@ static void test_change_qav_params(void)
 		/* Starting with delta bandwidth */
 		params.qav_param.type =
 			ETHERNET_QAV_PARAM_TYPE_DELTA_BANDWIDTH;
-		params.qav_param.delta_bandwidth = 10;
+		params.qav_param.delta_bandwidth = 10U;
 		ret = net_mgmt(NET_REQUEST_ETHERNET_SET_QAV_PARAM,
 			       iface,
 			       &params, sizeof(struct ethernet_req_params));
@@ -522,7 +523,7 @@ static void test_change_qav_params(void)
 		zassert_equal(ret, 0, "could not set delta bandwidth");
 
 		/* Reset local value - read-back and verify it */
-		params.qav_param.delta_bandwidth = 0;
+		params.qav_param.delta_bandwidth = 0U;
 		ret = net_mgmt(NET_REQUEST_ETHERNET_GET_QAV_PARAM,
 			       iface,
 			       &params, sizeof(struct ethernet_req_params));
@@ -533,7 +534,7 @@ static void test_change_qav_params(void)
 
 		/* And them the idle slope */
 		params.qav_param.type = ETHERNET_QAV_PARAM_TYPE_IDLE_SLOPE;
-		params.qav_param.idle_slope = 10;
+		params.qav_param.idle_slope = 10U;
 		ret = net_mgmt(NET_REQUEST_ETHERNET_SET_QAV_PARAM,
 			       iface,
 			       &params, sizeof(struct ethernet_req_params));
@@ -541,7 +542,7 @@ static void test_change_qav_params(void)
 		zassert_equal(ret, 0, "could not set idle slope");
 
 		/* Reset local value - read-back and verify it */
-		params.qav_param.idle_slope = 0;
+		params.qav_param.idle_slope = 0U;
 		ret = net_mgmt(NET_REQUEST_ETHERNET_GET_QAV_PARAM,
 			       iface,
 			       &params, sizeof(struct ethernet_req_params));
@@ -572,7 +573,7 @@ static void test_change_qav_params(void)
 		zassert_not_equal(ret, 0,
 				  "allowed to set invalid delta bandwidth");
 
-		params.qav_param.delta_bandwidth = 101;
+		params.qav_param.delta_bandwidth = 101U;
 		ret = net_mgmt(NET_REQUEST_ETHERNET_SET_QAV_PARAM,
 			       iface,
 			       &params, sizeof(struct ethernet_req_params));
@@ -601,7 +602,7 @@ static void test_change_qav_params(void)
 	/* Now try to set valid parameters to an invalid queue id */
 	params.qav_param.type = ETHERNET_QAV_PARAM_TYPE_DELTA_BANDWIDTH;
 	params.qav_param.queue_id = available_priority_queues;
-	params.qav_param.delta_bandwidth = 10;
+	params.qav_param.delta_bandwidth = 10U;
 	ret = net_mgmt(NET_REQUEST_ETHERNET_SET_QAV_PARAM,
 		       iface,
 		       &params, sizeof(struct ethernet_req_params));
@@ -609,7 +610,7 @@ static void test_change_qav_params(void)
 	zassert_not_equal(ret, 0, "should not be able to set delta bandwidth");
 
 	params.qav_param.type = ETHERNET_QAV_PARAM_TYPE_IDLE_SLOPE;
-	params.qav_param.idle_slope = 10;
+	params.qav_param.idle_slope = 10U;
 	ret = net_mgmt(NET_REQUEST_ETHERNET_SET_QAV_PARAM,
 		       iface,
 		       &params, sizeof(struct ethernet_req_params));

@@ -45,8 +45,8 @@ void test_i2s_tx_transfer_configure_1(void)
 
 	/* Configure */
 
-	i2s_cfg.word_size = 16;
-	i2s_cfg.channels = 2;
+	i2s_cfg.word_size = 16U;
+	i2s_cfg.channels = 2U;
 	i2s_cfg.format = I2S_FMT_DATA_FORMAT_I2S;
 	i2s_cfg.options = I2S_OPT_FRAME_CLK_SLAVE | I2S_OPT_BIT_CLK_SLAVE;
 	i2s_cfg.frame_clk_freq = FRAME_CLK_FREQ;
@@ -71,8 +71,8 @@ void test_i2s_rx_transfer_configure_1(void)
 
 	/* Configure */
 
-	i2s_cfg.word_size = 16;
-	i2s_cfg.channels = 2;
+	i2s_cfg.word_size = 16U;
+	i2s_cfg.channels = 2U;
 	i2s_cfg.format = I2S_FMT_DATA_FORMAT_I2S;
 	i2s_cfg.options = I2S_OPT_FRAME_CLK_SLAVE | I2S_OPT_BIT_CLK_SLAVE;
 	i2s_cfg.frame_clk_freq = FRAME_CLK_FREQ;
@@ -103,7 +103,7 @@ void test_i2s_state_not_ready_neg(void)
 	dev_i2s = device_get_binding(I2S_DEV_NAME);
 	zassert_not_null(dev_i2s, "device " I2S_DEV_NAME " not found");
 
-	i2s_cfg.frame_clk_freq = 0;
+	i2s_cfg.frame_clk_freq = 0U;
 	i2s_cfg.mem_slab = &rx_1_mem_slab;
 
 	ret = i2s_configure(dev_i2s, I2S_DIR_RX, &i2s_cfg);
@@ -127,7 +127,7 @@ void test_i2s_state_not_ready_neg(void)
 	ret = i2s_buf_read(dev_i2s, rx_buf, &rx_size);
 	zassert_equal(ret, -EIO, NULL);
 
-	i2s_cfg.frame_clk_freq = 0;
+	i2s_cfg.frame_clk_freq = 0U;
 	i2s_cfg.mem_slab = &tx_1_mem_slab;
 
 	ret = i2s_configure(dev_i2s, I2S_DIR_TX, &i2s_cfg);
@@ -167,11 +167,11 @@ void test_i2s_state_ready_neg(void)
 
 	/* Configure RX stream changing its state to READY */
 
-	i2s_cfg.word_size = 16;
-	i2s_cfg.channels = 2;
+	i2s_cfg.word_size = 16U;
+	i2s_cfg.channels = 2U;
 	i2s_cfg.format = I2S_FMT_DATA_FORMAT_I2S;
 	i2s_cfg.options = I2S_OPT_FRAME_CLK_SLAVE | I2S_OPT_BIT_CLK_SLAVE;
-	i2s_cfg.frame_clk_freq = 8000;
+	i2s_cfg.frame_clk_freq = 8000U;
 	i2s_cfg.block_size = BLOCK_SIZE;
 	i2s_cfg.mem_slab = &rx_1_mem_slab;
 	i2s_cfg.timeout = TIMEOUT;

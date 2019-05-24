@@ -22,7 +22,7 @@
 
 #define ONE_SECOND		(MSEC_PER_SEC)
 #define ONE_SECOND_ALIGNED	\
-	(u32_t)(__ticks_to_ms(_ms_to_ticks(ONE_SECOND) + _TICK_ALIGN))
+	(u32_t)(__ticks_to_ms(z_ms_to_ticks(ONE_SECOND) + _TICK_ALIGN))
 
 static struct k_sem test_thread_sem;
 static struct k_sem helper_thread_sem;
@@ -233,10 +233,13 @@ void test_sleep(void)
 	status = TC_PASS;
 }
 
+extern void test_usleep(void);
+
 /*test case main entry*/
 void test_main(void)
 {
 	ztest_test_suite(sleep,
-			 ztest_unit_test(test_sleep));
+			 ztest_unit_test(test_sleep),
+			 ztest_unit_test(test_usleep));
 	ztest_run_test_suite(sleep);
 }

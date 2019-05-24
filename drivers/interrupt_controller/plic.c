@@ -30,7 +30,7 @@ static int save_irq;
  *
  * This routine enables a RISCV PLIC-specific interrupt line.
  * riscv_plic_irq_enable is called by SOC_FAMILY_RISCV_PRIVILEGE
- * _arch_irq_enable function to enable external interrupts for
+ * z_arch_irq_enable function to enable external interrupts for
  * IRQS > RISCV_MAX_GENERIC_IRQ, whenever CONFIG_RISCV_HAS_PLIC
  * variable is set.
  * @param irq IRQ number to enable
@@ -56,7 +56,7 @@ void riscv_plic_irq_enable(u32_t irq)
  *
  * This routine disables a RISCV PLIC-specific interrupt line.
  * riscv_plic_irq_disable is called by SOC_FAMILY_RISCV_PRIVILEGE
- * _arch_irq_disable function to disable external interrupts, for
+ * z_arch_irq_disable function to disable external interrupts, for
  * IRQS > RISCV_MAX_GENERIC_IRQ, whenever CONFIG_RISCV_HAS_PLIC
  * variable is set.
  * @param irq IRQ number to disable
@@ -100,7 +100,7 @@ int riscv_plic_irq_is_enabled(u32_t irq)
  * @brief Set priority of a riscv PLIC-specific interrupt line
  *
  * This routine set the priority of a RISCV PLIC-specific interrupt line.
- * riscv_plic_irq_set_prio is called by riscv32 _ARCH_IRQ_CONNECT to set
+ * riscv_plic_irq_set_prio is called by riscv32 Z_ARCH_IRQ_CONNECT to set
  * the priority of an interrupt whenever CONFIG_RISCV_HAS_PLIC variable is set.
  * @param irq IRQ number for which to set priority
  *
@@ -157,11 +157,11 @@ static void plic_irq_handler(void *arg)
 	save_irq = irq;
 
 	/*
-	 * If the IRQ is out of range, call _irq_spurious.
-	 * A call to _irq_spurious will not return.
+	 * If the IRQ is out of range, call z_irq_spurious.
+	 * A call to z_irq_spurious will not return.
 	 */
-	if (irq == 0 || irq >= PLIC_IRQS)
-		_irq_spurious(NULL);
+	if (irq == 0U || irq >= PLIC_IRQS)
+		z_irq_spurious(NULL);
 
 	irq += RISCV_MAX_GENERIC_IRQ;
 

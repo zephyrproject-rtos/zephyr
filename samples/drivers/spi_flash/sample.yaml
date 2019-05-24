@@ -1,7 +1,7 @@
 sample:
   name: SPI Flash Sample
 tests:
-  test:
+  sample.driver.spi_flash:
     platform_whitelist: arduino_101
     tags: spi flash
     harness: console

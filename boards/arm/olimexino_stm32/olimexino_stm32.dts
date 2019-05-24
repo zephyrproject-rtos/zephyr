@@ -9,7 +9,7 @@
 
 / {
 	model = "Olimex OLIMEXINO-STM32 board";
-	compatible = "st,olimexino_stm32", "st,stm32f103rb";
+	compatible = "olimex,olimexino_stm32", "st,stm32f103rb";
 
 	chosen {
 		zephyr,console = &usart1;
@@ -40,6 +40,7 @@
 
 	aliases {
 		led0 = &green_led_1;
+		led1 = &yellow_led_2;
 		sw0 = &user_button;
 	};
 };
@@ -100,4 +101,8 @@ uext_serial: &usart1 {};
 	pwm {
 		status = "ok";
 	};
+};
+
+&iwdg {
+	status = "ok";
 };

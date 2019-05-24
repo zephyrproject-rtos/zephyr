@@ -3,15 +3,12 @@
 # Copyright (c) 2017 Nordic Semiconductor ASA
 #
 # SPDX-License-Identifier: Apache-2.0
-#
 
 #
 # DFU
 #
 
-menu "DFU options"
-
-config IMG_MANAGER
+menuconfig IMG_MANAGER
 	bool "DFU image manager"
 	help
 	  Enable support for managing DFU image.
@@ -21,7 +18,6 @@ if IMG_MANAGER
 choice
 	prompt "Image manager"
 	default MCUBOOT_IMG_MANAGER
-	depends on IMG_MANAGER
 	help
 	  Choice support for managing DFU image.
 	  So far only mcuboot support is available.
@@ -31,6 +27,7 @@ config MCUBOOT_IMG_MANAGER
 	select FLASH_MAP
 	help
 	  Enable support for managing DFU image downloaded using mcuboot.
+
 endchoice
 
 config IMG_BLOCK_BUF_SIZE
@@ -41,10 +38,18 @@ config IMG_BLOCK_BUF_SIZE
 	  Size (in Bytes) of buffer for image writer. Must be a multiple of
 	  the access alignment required by used flash driver.
 
+config 	IMG_ERASE_PROGRESSIVELY
+	bool "Erase flash progressively when receiving new firmware"
+	depends on MCUBOOT_IMG_MANAGER
+	select FLASH_PAGE_LAYOUT
+	help
+	 If enabled, flash is erased as necessary when receiving new firmware,
+	 instead of erasing the whole image slot at once. This is necessary
+	 on some hardware that has long erase times, to prevent long wait
+	 times at the beginning of the DFU process.
+
 module = IMG_MANAGER
 module-str = image manager
 source "subsys/logging/Kconfig.template.log_config"
 
 endif # IMG_MANAGER
-
-endmenu

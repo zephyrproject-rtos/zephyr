@@ -58,7 +58,7 @@
 	static inline bool						\
 	sys_ ## __lname ## _is_empty(sys_ ## __lname ## _t *list)	\
 	{								\
-		return (!sys_ ## __lname ## _peek_head(list));		\
+		return (sys_ ## __lname ## _peek_head(list) == NULL);	\
 	}
 
 #define Z_GENLIST_PEEK_NEXT_NO_CHECK(__lname, __nname)			    \
@@ -72,7 +72,8 @@
 	static inline sys_ ## __nname ## _t *				     \
 	sys_ ## __lname ## _peek_next(sys_ ## __nname ## _t *node)	     \
 	{								     \
-		return node ? sys_ ## __lname ## _peek_next_no_check(node) : \
+		return node != NULL ?                                        \
+			sys_ ## __lname ## _peek_next_no_check(node) :       \
 			      NULL;					     \
 	}
 
@@ -85,7 +86,7 @@
 					sys_ ## __lname ## _peek_head(list)); \
 		z_ ## __lname ## _head_set(list, node);			      \
 									      \
-		if (!sys_ ## __lname ## _peek_tail(list)) {		      \
+		if (sys_ ## __lname ## _peek_tail(list) == NULL) {	      \
 			z_ ## __lname ## _tail_set(list,		      \
 					sys_ ## __lname ## _peek_head(list)); \
 		}							      \
@@ -98,7 +99,7 @@
 	{								\
 		z_ ## __nname ## _next_set(node, NULL);			\
 									\
-		if (!sys_ ## __lname ## _peek_tail(list)) {		\
+		if (sys_ ## __lname ## _peek_tail(list) == NULL) {	\
 			z_ ## __lname ## _tail_set(list, node);		\
 			z_ ## __lname ## _head_set(list, node);		\
 		} else {						\
@@ -114,7 +115,7 @@
 	sys_ ## __lname ## _append_list(sys_ ## __lname ## _t *list,	\
 					void *head, void *tail)		\
 {									\
-	if (!sys_ ## __lname ## _peek_tail(list)) {			\
+	if (sys_ ## __lname ## _peek_tail(list) == NULL) {		\
 		z_ ## __lname ## _head_set(list,			\
 					(sys_ ## __nname ## _t *)head); \
 	} else {							\
@@ -145,9 +146,9 @@
 				   sys_ ## __nname ## _t *prev,		\
 				   sys_ ## __nname ## _t *node)		\
 	{								\
-		if (!prev) {						\
+		if (prev == NULL) {					\
 			sys_ ## __lname ## _prepend(list, node);	\
-		} else if (!z_ ## __nname ## _next_peek(prev)) {	\
+		} else if (z_ ## __nname ## _next_peek(prev) == NULL) {	\
 			sys_ ## __lname ## _append(list, node);		\
 		} else {						\
 			z_ ## __nname ## _next_set(node,		\
@@ -187,7 +188,7 @@
 				   sys_ ## __nname ## _t *prev_node,	      \
 				   sys_ ## __nname ## _t *node)		      \
 	{								      \
-		if (!prev_node) {					      \
+		if (prev_node == NULL) {				      \
 			z_ ## __lname ## _head_set(list,		      \
 				z_ ## __nname ## _next_peek(node));	      \
 									      \

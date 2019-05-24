@@ -15,7 +15,7 @@ static int pinmux_sam0_set(struct device *dev, u32_t pin, u32_t func)
 {
 	const struct pinmux_sam0_config *cfg = dev->config->config_info;
 	bool odd_pin = pin & 1;
-	int idx = pin / 2;
+	int idx = pin / 2U;
 
 	/* Each pinmux register holds the config for two pins.  The
 	 * even numbered pin goes in the bits 0..3 and the odd
@@ -35,7 +35,7 @@ static int pinmux_sam0_get(struct device *dev, u32_t pin, u32_t *func)
 {
 	const struct pinmux_sam0_config *cfg = dev->config->config_info;
 	bool odd_pin = pin & 1;
-	int idx = pin / 2;
+	int idx = pin / 2U;
 
 	if (odd_pin) {
 		*func = cfg->regs->PMUX[idx].bit.PMUXO;
@@ -69,24 +69,35 @@ const struct pinmux_driver_api pinmux_sam0_api = {
 	.input = pinmux_sam0_input,
 };
 
-#if DT_PINMUX_SAM0_A_BASE_ADDRESS
+#if DT_ATMEL_SAM0_PINMUX_PINMUX_A_BASE_ADDRESS
 static const struct pinmux_sam0_config pinmux_sam0_config_0 = {
-	.regs = (PortGroup *)DT_PINMUX_SAM0_A_BASE_ADDRESS,
+	.regs = (PortGroup *)DT_ATMEL_SAM0_PINMUX_PINMUX_A_BASE_ADDRESS,
 };
 
-DEVICE_AND_API_INIT(pinmux_sam0_0, DT_PINMUX_SAM0_A_LABEL,
+DEVICE_AND_API_INIT(pinmux_sam0_0, DT_ATMEL_SAM0_PINMUX_PINMUX_A_LABEL,
 		    pinmux_sam0_init, NULL, &pinmux_sam0_config_0,
 		    PRE_KERNEL_1, CONFIG_PINMUX_INIT_PRIORITY,
 		    &pinmux_sam0_api);
 #endif
 
-#if DT_PINMUX_SAM0_B_BASE_ADDRESS
+#if DT_ATMEL_SAM0_PINMUX_PINMUX_B_BASE_ADDRESS
 static const struct pinmux_sam0_config pinmux_sam0_config_1 = {
-	.regs = (PortGroup *)DT_PINMUX_SAM0_B_BASE_ADDRESS,
+	.regs = (PortGroup *)DT_ATMEL_SAM0_PINMUX_PINMUX_B_BASE_ADDRESS,
 };
 
-DEVICE_AND_API_INIT(pinmux_sam0_1, DT_PINMUX_SAM0_B_LABEL,
+DEVICE_AND_API_INIT(pinmux_sam0_1, DT_ATMEL_SAM0_PINMUX_PINMUX_B_LABEL,
 		    pinmux_sam0_init, NULL, &pinmux_sam0_config_1,
+		    PRE_KERNEL_1, CONFIG_PINMUX_INIT_PRIORITY,
+		    &pinmux_sam0_api);
+#endif
+
+#if DT_ATMEL_SAM0_PINMUX_PINMUX_C_BASE_ADDRESS
+static const struct pinmux_sam0_config pinmux_sam0_config_2 = {
+	.regs = (PortGroup *)DT_ATMEL_SAM0_PINMUX_PINMUX_C_BASE_ADDRESS,
+};
+
+DEVICE_AND_API_INIT(pinmux_sam0_2, DT_ATMEL_SAM0_PINMUX_PINMUX_C_LABEL,
+		    pinmux_sam0_init, NULL, &pinmux_sam0_config_2,
 		    PRE_KERNEL_1, CONFIG_PINMUX_INIT_PRIORITY,
 		    &pinmux_sam0_api);
 #endif

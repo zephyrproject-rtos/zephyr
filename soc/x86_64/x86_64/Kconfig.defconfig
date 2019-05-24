@@ -1,9 +1,17 @@
+# SPDX-License-Identifier: Apache-2.0
+
 if SOC_X86_64
 
 config SOC
 	default "x86_64"
 
 config USE_SWITCH
+	default y
+
+# Make this the default even if we have only one CPU, mostly for test
+# coverage.  Uniprocessor apps for production purposes can get a
+# moderate code size savings by turning it off.
+config SMP
 	default y
 
 endif

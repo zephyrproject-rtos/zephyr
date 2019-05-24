@@ -21,35 +21,6 @@ static u16_t chan_prn(u16_t counter, u16_t chan_id);
 #endif /* CONFIG_BT_CTLR_CHAN_SEL_2 */
 #endif /* CONFIG_BT_CONN */
 
-void lll_chan_set(u32_t chan)
-{
-	switch (chan) {
-	case 37:
-		radio_freq_chan_set(2);
-		break;
-
-	case 38:
-		radio_freq_chan_set(26);
-		break;
-
-	case 39:
-		radio_freq_chan_set(80);
-		break;
-
-	default:
-		if (chan < 11) {
-			radio_freq_chan_set(4 + (2 * chan));
-		} else if (chan < 40) {
-			radio_freq_chan_set(28 + (2 * (chan - 11)));
-		} else {
-			LL_ASSERT(0);
-		}
-		break;
-	}
-
-	radio_whiten_iv_set(chan);
-}
-
 #if defined(CONFIG_BT_CONN)
 u8_t lll_chan_sel_1(u8_t *chan_use, u8_t hop, u16_t latency, u8_t *chan_map,
 		    u8_t chan_count)
@@ -59,7 +30,7 @@ u8_t lll_chan_sel_1(u8_t *chan_use, u8_t hop, u16_t latency, u8_t *chan_map,
 	chan_next = ((*chan_use) + (hop * (1 + latency))) % 37;
 	*chan_use = chan_next;
 
-	if ((chan_map[chan_next >> 3] & (1 << (chan_next % 8))) == 0) {
+	if ((chan_map[chan_next >> 3] & (1 << (chan_next % 8))) == 0U) {
 		u8_t chan_index;
 
 		chan_index = chan_next % chan_count;
@@ -82,7 +53,7 @@ u8_t lll_chan_sel_2(u16_t counter, u16_t chan_id, u8_t *chan_map,
 	prn_e = chan_prn(counter, chan_id);
 	chan_next = prn_e % 37;
 
-	if ((chan_map[chan_next >> 3] & (1 << (chan_next % 8))) == 0) {
+	if ((chan_map[chan_next >> 3] & (1 << (chan_next % 8))) == 0U) {
 		u8_t chan_index;
 
 		chan_index = ((u32_t)chan_count * prn_e) >> 16;
@@ -101,17 +72,17 @@ static u8_t chan_sel_remap(u8_t *chan_map, u8_t chan_index)
 	u8_t chan_next;
 	u8_t byte_count;
 
-	chan_next = 0;
-	byte_count = 5;
+	chan_next = 0U;
+	byte_count = 5U;
 	while (byte_count--) {
 		u8_t bite;
 		u8_t bit_count;
 
 		bite = *chan_map;
-		bit_count = 8;
+		bit_count = 8U;
 		while (bit_count--) {
 			if (bite & 0x01) {
-				if (chan_index == 0) {
+				if (chan_index == 0U) {
 					break;
 				}
 				chan_index--;
@@ -139,22 +110,22 @@ void lll_chan_sel_2_ut(void)
 	u8_t m;
 
 	m = chan_sel_2(1, 0x305F, chan_map_1, 37);
-	LL_ASSERT(m == 20);
+	LL_ASSERT(m == 20U);
 
 	m = chan_sel_2(2, 0x305F, chan_map_1, 37);
-	LL_ASSERT(m == 6);
+	LL_ASSERT(m == 6U);
 
 	m = chan_sel_2(3, 0x305F, chan_map_1, 37);
-	LL_ASSERT(m == 21);
+	LL_ASSERT(m == 21U);
 
 	m = chan_sel_2(6, 0x305F, chan_map_2, 9);
-	LL_ASSERT(m == 23);
+	LL_ASSERT(m == 23U);
 
 	m = chan_sel_2(7, 0x305F, chan_map_2, 9);
-	LL_ASSERT(m == 9);
+	LL_ASSERT(m == 9U);
 
 	m = chan_sel_2(8, 0x305F, chan_map_2, 9);
-	LL_ASSERT(m == 34);
+	LL_ASSERT(m == 34U);
 }
 #endif /* RADIO_UNIT_TEST */
 
@@ -176,7 +147,7 @@ static u16_t chan_perm(u16_t i)
 
 static u16_t chan_mam(u16_t a, u16_t b)
 {
-	return ((u32_t)a * 17 + b) & 0xFFFF;
+	return ((u32_t)a * 17U + b) & 0xFFFF;
 }
 
 static u16_t chan_prn(u16_t counter, u16_t chan_id)
@@ -186,7 +157,7 @@ static u16_t chan_prn(u16_t counter, u16_t chan_id)
 
 	prn_e = counter ^ chan_id;
 
-	for (iterate = 0; iterate < 3; iterate++) {
+	for (iterate = 0U; iterate < 3; iterate++) {
 		prn_e = chan_perm(prn_e);
 		prn_e = chan_mam(prn_e, chan_id);
 	}

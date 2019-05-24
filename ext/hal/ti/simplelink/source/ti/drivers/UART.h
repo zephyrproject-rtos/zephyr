@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2017, Texas Instruments Incorporated
+ * Copyright (c) 2015-2018, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -75,7 +75,7 @@
  *    uartParams.readDataMode = UART_DATA_BINARY;
  *    uartParams.readReturnMode = UART_RETURN_FULL;
  *    uartParams.readEcho = UART_ECHO_OFF;
- *    uartParams.baudRate = 9600;
+ *    uartParams.baudRate = 115200;
  *
  *    // Open an instance of the UART drivers
  *    uart = UART_open(Board_UART0, &uartParams);
@@ -197,7 +197,7 @@
  *  - #UART_RETURN_FULL:  The read action unblocks or returns when the buffer
  *    is full.
  *  - #UART_RETURN_NEWLINE:  The read action unblocks or returns when a
- *    newline character if read, before the buffer is full.
+ *    newline character is read, before the buffer is full.
  *
  *  Options for the readEcho parameter are #UART_ECHO_OFF and #UART_ECHO_ON.
  *  This parameter determines whether the driver echoes data back to the
@@ -222,12 +222,12 @@
  *  to issue multiple concurrent operations in the same direction.
  *  For example, if one thread calls UART_read(uart0, buffer0...),
  *  any other thread attempting UART_read(uart0, buffer1...) will result in
- *  an error of UART_ERROR, until all the data from the first UART_read()
+ *  an error of UART_STATUS_ERROR, until all the data from the first UART_read()
  *  has been transferred to buffer0. This applies to both blocking and
  *  and callback modes. So applications must either synchronize
  *  UART_read() (or UART_write()) calls that use the same UART handle, or
- *  check for the UART_ERROR return code indicating that a transfer is still
- *  ongoing.
+ *  check for the UART_STATUS_ERROR return code indicating that a transfer is
+ *  still ongoing.
  *
  *  # Implementation #
  *
@@ -250,16 +250,7 @@
  *    #include <ti/drivers/uart/UARTMSP432.h>
  *    @endcode
  *
- *  ### Stack Requirements #
- *  It is STRONGLY discouraged to perform UART_read() or UART_write()
- *  calls within the driver's own callback function when in
- *  #UART_MODE_CALLBACK mode. Doing so will incur additional task or system
- *  stack size requirements. See the peripheral implementations'
- *  documentation for stack size estimations.  It is expected that the
- *  user perform their own stack and usage analysis when choosing to
- *  nest these calls.
- *
- *******************************************************************************
+ *  ============================================================================
  */
 
 #ifndef ti_drivers_UART__include
@@ -352,7 +343,7 @@ extern "C" {
  * This command is used to read the next unsigned char from the UART's circular
  * buffer without removing it. With this command code, @b arg is a pointer to an
  * integer. @b *arg contains the next @c unsigned @c char read if data is
- * present, else @b *arg is set to #UART_ERROR.
+ * present, else @b *arg is set to #UART_STATUS_ERROR.
  */
 #define UART_CMD_PEEK               (0)
 
@@ -422,12 +413,6 @@ typedef struct UART_Config_    *UART_Handle;
  *  @brief      The definition of a callback function used by the UART driver
  *              when used in #UART_MODE_CALLBACK
  *              The callback can occur in task or HWI context.
- *
- *  @warning    Making UART_read() or UART_write() calls within its own callback
- *              routines are STRONGLY discouraged as it will impact Task and
- *              System stack size requirements! See the documentation for the
- *              specific driver implementations for additional estimated stack
- *              requirements.
  *
  *  @param      UART_Handle             UART_Handle
  *
@@ -850,7 +835,7 @@ extern void UART_Params_init(UART_Params *params);
  *                      to the UART
  *
  *  @return Returns the number of bytes that have been written to the UART.
- *          If an error occurs, #UART_ERROR is returned.
+ *          If an error occurs, #UART_STATUS_ERROR is returned.
  *          In #UART_MODE_CALLBACK mode, the return value is always 0.
  */
 extern int_fast32_t UART_write(UART_Handle handle, const void *buffer, size_t size);
@@ -876,7 +861,7 @@ extern int_fast32_t UART_write(UART_Handle handle, const void *buffer, size_t si
  *                      to the UART
  *
  *  @return Returns the number of bytes that have been written to the UART.
- *          If an error occurs, #UART_ERROR is returned.
+ *          If an error occurs, #UART_STATUS_ERROR is returned.
  */
 extern int_fast32_t UART_writePolling(UART_Handle handle, const void *buffer, size_t size);
 
@@ -927,7 +912,7 @@ extern void UART_writeCancel(UART_Handle handle);
  *  @param  size        The number of bytes to be written into buffer
  *
  *  @return Returns the number of bytes that have been read from the UART,
- *          #UART_ERROR on an error.
+ *          #UART_STATUS_ERROR on an error.
  */
 extern int_fast32_t UART_read(UART_Handle handle, void *buffer, size_t size);
 
@@ -949,7 +934,7 @@ extern int_fast32_t UART_read(UART_Handle handle, void *buffer, size_t size);
  *  @param  size        The number of bytes to be written into buffer
  *
  *  @return Returns the number of bytes that have been read from the UART,
- *          #UART_ERROR on an error.
+ *          #UART_STATUS_ERROR on an error.
  */
 extern int_fast32_t UART_readPolling(UART_Handle handle, void *buffer, size_t size);
 

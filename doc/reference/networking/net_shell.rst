@@ -31,7 +31,7 @@ The following net-shell commands are implemented:
    print more information if :option:`CONFIG_NET_BUF_POOL_USAGE` is set."
    "net nbr", "Print neighbor information. Only available if
    :option:`CONFIG_NET_IPV6` is set."
-   "net ping", "Ping a network host."
+   "net ping [-c count] [-i interval ms]", "Ping a network host."
    "net route", "Show IPv6 network routes. Only available if
    :option:`CONFIG_NET_ROUTE` is set."
    "net stats", "Show network statistics."

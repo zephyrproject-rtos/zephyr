@@ -54,22 +54,23 @@ struct adc_context {
 	bool asynchronous;
 #endif /* CONFIG_ADC_ASYNC */
 
-	const struct adc_sequence *sequence;
+	struct adc_sequence sequence;
+	struct adc_sequence_options options;
 	u16_t sampling_index;
 };
 
 #ifdef ADC_CONTEXT_USES_KERNEL_TIMER
 #define ADC_CONTEXT_INIT_TIMER(_data, _ctx_name) \
-	._ctx_name.timer = _K_TIMER_INITIALIZER(_data._ctx_name.timer, \
+	._ctx_name.timer = Z_TIMER_INITIALIZER(_data._ctx_name.timer, \
 						adc_context_on_timer_expired, \
 						NULL)
 #endif /* ADC_CONTEXT_USES_KERNEL_TIMER */
 
 #define ADC_CONTEXT_INIT_LOCK(_data, _ctx_name) \
-	._ctx_name.lock = _K_SEM_INITIALIZER(_data._ctx_name.lock, 0, 1)
+	._ctx_name.lock = Z_SEM_INITIALIZER(_data._ctx_name.lock, 0, 1)
 
 #define ADC_CONTEXT_INIT_SYNC(_data, _ctx_name) \
-	._ctx_name.sync = _K_SEM_INITIALIZER(_data._ctx_name.sync, 0, 1)
+	._ctx_name.sync = Z_SEM_INITIALIZER(_data._ctx_name.sync, 0, 1)
 
 
 static inline void adc_context_request_next_sampling(struct adc_context *ctx)
@@ -84,14 +85,14 @@ static inline void adc_context_request_next_sampling(struct adc_context *ctx)
 		 * complete. Instead, note this fact, and inform the user about
 		 * it after the sequence is done.
 		 */
-		ctx->status = -EIO;
+		ctx->status = -EBUSY;
 	}
 }
 
 #ifdef ADC_CONTEXT_USES_KERNEL_TIMER
 static inline void adc_context_enable_timer(struct adc_context *ctx)
 {
-	u32_t interval_us = ctx->sequence->options->interval_us;
+	u32_t interval_us = ctx->options.interval_us;
 	u32_t interval_ms = ceiling_fraction(interval_us, 1000UL);
 
 	k_timer_start(&ctx->timer, 0, interval_ms);
@@ -181,13 +182,15 @@ static inline void adc_context_complete(struct adc_context *ctx, int status)
 static inline void adc_context_start_read(struct adc_context *ctx,
 					  const struct adc_sequence *sequence)
 {
-	ctx->sequence = sequence;
+	ctx->sequence = *sequence;
 	ctx->status = 0;
 
-	if (ctx->sequence->options) {
+	if (sequence->options) {
+		ctx->options = *sequence->options;
+		ctx->sequence.options = &ctx->options;
 		ctx->sampling_index = 0U;
 
-		if (ctx->sequence->options->interval_us != 0) {
+		if (ctx->options.interval_us != 0U) {
 			atomic_set(&ctx->sampling_requested, 0);
 			adc_context_enable_timer(ctx);
 			return;
@@ -205,16 +208,15 @@ static inline void adc_context_start_read(struct adc_context *ctx,
 static inline void adc_context_on_sampling_done(struct adc_context *ctx,
 						struct device *dev)
 {
-	if (ctx->sequence->options) {
-		adc_sequence_callback callback =
-			ctx->sequence->options->callback;
+	if (ctx->sequence.options) {
+		adc_sequence_callback callback = ctx->options.callback;
 		enum adc_action action;
 		bool finish = false;
 		bool repeat = false;
 
 		if (callback) {
 			action = callback(dev,
-					  ctx->sequence,
+					  &ctx->sequence,
 					  ctx->sampling_index);
 		} else {
 			action = ADC_ACTION_CONTINUE;
@@ -229,7 +231,7 @@ static inline void adc_context_on_sampling_done(struct adc_context *ctx,
 			break;
 		default: /* ADC_ACTION_CONTINUE */
 			if (ctx->sampling_index <
-			    ctx->sequence->options->extra_samplings) {
+			    ctx->options.extra_samplings) {
 				++ctx->sampling_index;
 			} else {
 				finish = true;
@@ -244,7 +246,7 @@ static inline void adc_context_on_sampling_done(struct adc_context *ctx,
 			 * a zero interval or if the timer expired again while
 			 * the current sampling was in progress.
 			 */
-			if (ctx->sequence->options->interval_us == 0) {
+			if (ctx->options.interval_us == 0U) {
 				adc_context_start_sampling(ctx);
 			} else if (atomic_dec(&ctx->sampling_requested) > 1) {
 				adc_context_start_sampling(ctx);
@@ -253,7 +255,7 @@ static inline void adc_context_on_sampling_done(struct adc_context *ctx,
 			return;
 		}
 
-		if (ctx->sequence->options->interval_us != 0) {
+		if (ctx->options.interval_us != 0U) {
 			adc_context_disable_timer(ctx);
 		}
 	}

@@ -11,7 +11,7 @@
 	.extern _interrupt_stack
 	.extern _kernel
 #ifdef CONFIG_SYS_CLOCK_EXISTS
-	.extern _timer_int_handler
+	.extern timer_int_handler
 #endif
 	.set _interrupt_stack_top,  _interrupt_stack + CONFIG_ISR_STACK_SIZE
 
@@ -34,7 +34,7 @@ _zxt_dispatch:
 	bnez a2, .L_frxt_dispatch_stk
 
 .L_frxt_dispatch_sol:
-	/* Solicited stack frame. Restore retval from _Swap */
+	/* Solicited stack frame. Restore retval from z_swap */
 	l32i a2, a3, THREAD_OFFSET(retval)
 	l32i a3, sp, XT_SOL_ps
 
@@ -71,9 +71,9 @@ _zxt_dispatch:
 #endif
 #ifdef CONFIG_STACK_SENTINEL
 #ifdef __XTENSA_CALL0_ABI__
-	call0 _check_stack_sentinel
+	call0 z_check_stack_sentinel
 #else
-	call4 _check_stack_sentinel
+	call4 z_check_stack_sentinel
 #endif
 #endif
 	/*
@@ -279,7 +279,7 @@ _zxt_timer_int:
 	s32i a2, sp, 4
 	s32i a3, sp, 8
 	/* TODO: movi a2, _xt_interrupt_table */
-	movi a3, _timer_int_handler
+	movi a3, timer_int_handler
 	/* TODO: l32i a2, a2, 0 */
 	callx0   a3
 	/* Restore a2 and a3. */
@@ -287,7 +287,7 @@ _zxt_timer_int:
 	l32i a3, sp, 8
 #else
 	/* TODO: movi a6, _xt_interrupt_table */
-	movi a7, _timer_int_handler
+	movi a7, timer_int_handler
 	/* TODO: l32i a6, a6, 0 */
 	callx4   a7
 #endif
@@ -308,7 +308,7 @@ _zxt_timer_int:
  * _zxt_tick_timer_init
  * void _zxt_tick_timer_init(void)
  *
- * Initialize timer and timer interrupt handler (_xt_tick_divisor_init() has
+ * Initialize timer and timer interrupt handler (z_xt_tick_divisor_init() has
  * already been been called).
  * Callable from C (obeys ABI conventions on entry).
  *
@@ -341,10 +341,10 @@ _zxt_tick_timer_init:
 	*/
 #ifdef __XTENSA_CALL0_ABI__
 	movi a2, XT_TIMER_INTEN
-	call0  _xt_ints_on
+	call0  z_xt_ints_on
 #else
 	movi a6, XT_TIMER_INTEN
-	call4 _xt_ints_on
+	call4 z_xt_ints_on
 #endif
 
 #endif

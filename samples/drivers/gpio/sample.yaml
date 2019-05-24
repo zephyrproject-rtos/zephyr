@@ -1,7 +1,7 @@
 sample:
   name: GPIO toggling
 tests:
-  test:
+  sample.driver.gpio:
     tags: drivers
     filter: DT_GPIO_LEDS_LED0_GPIO_CONTROLLER and DT_GPIO_KEYS_SW0_GPIO_CONTROLLER
     harness: console

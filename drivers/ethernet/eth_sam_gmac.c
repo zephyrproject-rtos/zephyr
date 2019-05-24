@@ -57,9 +57,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #if CONFIG_NET_BUF_DATA_SIZE * (CONFIG_NET_BUF_RX_COUNT - \
 	CONFIG_ETH_SAM_GMAC_BUF_RX_COUNT) < GMAC_FRAME_SIZE_MAX
-#error Remaining free RX data buffers (CONFIG_NET_BUF_RX_COUNT -
-	CONFIG_ETH_SAM_GMAC_BUF_RX_COUNT) * CONFIG_NET_BUF_DATA_SIZE
-	are not large enough to hold a full frame
+#error (CONFIG_NET_BUF_RX_COUNT - CONFIG_ETH_SAM_GMAC_BUF_RX_COUNT) * \
+	CONFIG_NET_BUF_DATA_SIZE are not large enough to hold a full frame
 #endif
 
 #if CONFIG_NET_BUF_DATA_SIZE & 0x3F
@@ -250,11 +249,11 @@ static int rx_descriptors_init(Gmac *gmac, struct gmac_queue *queue)
 			 "Incorrect length of RX data buffer");
 		/* Give ownership to GMAC and remove the wrap bit */
 		rx_desc_list->buf[i].w0 = (u32_t)rx_buf_addr & GMAC_RXW0_ADDR;
-		rx_desc_list->buf[i].w1 = 0;
+		rx_desc_list->buf[i].w1 = 0U;
 	}
 
 	/* Set the wrap bit on the last descriptor */
-	rx_desc_list->buf[rx_desc_list->len - 1].w0 |= GMAC_RXW0_WRAP;
+	rx_desc_list->buf[rx_desc_list->len - 1U].w0 |= GMAC_RXW0_WRAP;
 
 	return 0;
 }
@@ -270,12 +269,12 @@ static void tx_descriptors_init(Gmac *gmac, struct gmac_queue *queue)
 	tx_desc_list->tail = 0U;
 
 	for (int i = 0; i < tx_desc_list->len; i++) {
-		tx_desc_list->buf[i].w0 = 0;
+		tx_desc_list->buf[i].w0 = 0U;
 		tx_desc_list->buf[i].w1 = GMAC_TXW1_USED;
 	}
 
 	/* Set the wrap bit on the last descriptor */
-	tx_desc_list->buf[tx_desc_list->len - 1].w1 |= GMAC_TXW1_WRAP;
+	tx_desc_list->buf[tx_desc_list->len - 1U].w1 |= GMAC_TXW1_WRAP;
 
 #if GMAC_MULTIPLE_TX_PACKETS == 1
 	/* Reset TX frame list */
@@ -608,7 +607,7 @@ static void rx_error_handler(Gmac *gmac, struct gmac_queue *queue)
 	queue->rx_desc_list.tail = 0U;
 
 	for (int i = 0; i < queue->rx_desc_list.len; i++) {
-		queue->rx_desc_list.buf[i].w1 = 0;
+		queue->rx_desc_list.buf[i].w1 = 0U;
 		queue->rx_desc_list.buf[i].w0 &= ~GMAC_RXW0_OWNERSHIP;
 	}
 
@@ -633,17 +632,17 @@ static int get_mck_clock_divisor(u32_t mck)
 {
 	u32_t mck_divisor;
 
-	if (mck <= 20000000) {
+	if (mck <= 20000000U) {
 		mck_divisor = GMAC_NCFGR_CLK_MCK_8;
-	} else if (mck <= 40000000) {
+	} else if (mck <= 40000000U) {
 		mck_divisor = GMAC_NCFGR_CLK_MCK_16;
-	} else if (mck <= 80000000) {
+	} else if (mck <= 80000000U) {
 		mck_divisor = GMAC_NCFGR_CLK_MCK_32;
-	} else if (mck <= 120000000) {
+	} else if (mck <= 120000000U) {
 		mck_divisor = GMAC_NCFGR_CLK_MCK_48;
-	} else if (mck <= 160000000) {
+	} else if (mck <= 160000000U) {
 		mck_divisor = GMAC_NCFGR_CLK_MCK_64;
-	} else if (mck <= 240000000) {
+	} else if (mck <= 240000000U) {
 		mck_divisor = GMAC_NCFGR_CLK_MCK_96;
 	} else {
 		LOG_ERR("No valid MDC clock");
@@ -661,7 +660,7 @@ static int eth_sam_gmac_setup_qav(Gmac *gmac, int queue_id, bool enable)
 		return -EINVAL;
 	}
 
-	if (queue_id == 1) {
+	if (queue_id == GMAC_QUE_2) {
 		if (enable) {
 			gmac->GMAC_CBSCR |= GMAC_CBSCR_QAE;
 		} else {
@@ -685,7 +684,7 @@ static int eth_sam_gmac_get_qav_status(Gmac *gmac, int queue_id, bool *enabled)
 		return -EINVAL;
 	}
 
-	if (queue_id == 1) {
+	if (queue_id == GMAC_QUE_2) {
 		*enabled = gmac->GMAC_CBSCR & GMAC_CBSCR_QAE;
 	} else {
 		*enabled = gmac->GMAC_CBSCR & GMAC_CBSCR_QBE;
@@ -706,7 +705,7 @@ static int eth_sam_gmac_setup_qav_idle_slope(Gmac *gmac, int queue_id,
 
 	cbscr_val = gmac->GMAC_CBSISQA;
 
-	if (queue_id == 1) {
+	if (queue_id == GMAC_QUE_2) {
 		gmac->GMAC_CBSCR &= ~GMAC_CBSCR_QAE;
 		gmac->GMAC_CBSISQA = idle_slope;
 	} else {
@@ -747,14 +746,14 @@ static int eth_sam_gmac_get_qav_idle_slope(Gmac *gmac, int queue_id,
 		return -EINVAL;
 	}
 
-	if (queue_id == 1) {
+	if (queue_id == GMAC_QUE_2) {
 		*idle_slope = gmac->GMAC_CBSISQA;
 	} else {
 		*idle_slope = gmac->GMAC_CBSISQB;
 	}
 
 	/* Convert to bps as expected by upper layer */
-	*idle_slope *= 8;
+	*idle_slope *= 8U;
 
 	return 0;
 }
@@ -772,7 +771,7 @@ static int eth_sam_gmac_get_qav_delta_bandwidth(Gmac *gmac, int queue_id,
 	}
 
 	/* Calculate in Bps */
-	idle_slope /= 8;
+	idle_slope /= 8U;
 
 	/* Get bandwidth and convert to bps */
 	bandwidth = eth_sam_gmac_get_bandwidth(gmac);
@@ -781,7 +780,7 @@ static int eth_sam_gmac_get_qav_delta_bandwidth(Gmac *gmac, int queue_id,
 	 * divide bandwidth - these numbers are so large that it should not
 	 * influence the outcome and saves us from employing larger data types.
 	 */
-	*delta_bandwidth = idle_slope / (bandwidth / 100);
+	*delta_bandwidth = idle_slope / (bandwidth / 100U);
 
 	return 0;
 }
@@ -799,7 +798,7 @@ static int eth_sam_gmac_setup_qav_delta_bandwidth(Gmac *gmac, int queue_id,
 
 	bandwidth = eth_sam_gmac_get_bandwidth(gmac);
 
-	idle_slope = (bandwidth * queue_share) / 100;
+	idle_slope = (bandwidth * queue_share) / 100U;
 
 	return eth_sam_gmac_setup_qav_idle_slope(gmac, queue_id, idle_slope);
 }
@@ -893,8 +892,18 @@ static int gmac_init(Gmac *gmac, u32_t gmac_ncfgr_val)
 	eth_sam_gmac_setup_qav_delta_bandwidth(gmac, 1, 75);
 	eth_sam_gmac_setup_qav(gmac, 1, true);
 #elif GMAC_PRIORITY_QUEUE_NO == 2
-	eth_sam_gmac_setup_qav_delta_bandwidth(gmac, 1, 0);
-	eth_sam_gmac_setup_qav_delta_bandwidth(gmac, 2, 75);
+	/* For multiple priority queues, 802.1Qav suggests using 75% for the
+	 * highest priority queue, and 0% for the lower priority queues.
+	 * This is because the lower priority queues are supposed to be using
+	 * the bandwidth available from the higher priority queues AND its own
+	 * available bandwidth (see 802.1Q 34.3.1 for more details).
+	 * This does not work like that in SAM GMAC - the lower priority queues
+	 * are not using the bandwidth reserved for the higher priority queues
+	 * at all. Thus we still set the default to a total of the recommended
+	 * 75%, but split the bandwidth between them manually.
+	 */
+	eth_sam_gmac_setup_qav_delta_bandwidth(gmac, 1, 25);
+	eth_sam_gmac_setup_qav_delta_bandwidth(gmac, 2, 50);
 	eth_sam_gmac_setup_qav(gmac, 1, true);
 	eth_sam_gmac_setup_qav(gmac, 2, true);
 #endif
@@ -1028,6 +1037,8 @@ static int priority_queue_init(Gmac *gmac, struct gmac_queue *queue)
 	queue->err_rx_flushed_count = 0U;
 	queue->err_tx_flushed_count = 0U;
 
+	LOG_INF("Queue %d activated", queue->que_idx);
+
 	return 0;
 }
 
@@ -1040,16 +1051,16 @@ static int priority_queue_init_as_idle(Gmac *gmac, struct gmac_queue *queue)
 		 "RX descriptors have to be word aligned");
 	__ASSERT(!((u32_t)tx_desc_list->buf & ~GMAC_TBQB_ADDR_Msk),
 		 "TX descriptors have to be word aligned");
-	__ASSERT((rx_desc_list->len == 1) && (tx_desc_list->len == 1),
+	__ASSERT((rx_desc_list->len == 1U) && (tx_desc_list->len == 1U),
 		 "Priority queues are currently not supported, descriptor "
 		 "list has to have a single entry");
 
 	/* Setup RX descriptor lists */
 	/* Take ownership from GMAC and set the wrap bit */
 	rx_desc_list->buf[0].w0 = GMAC_RXW0_WRAP;
-	rx_desc_list->buf[0].w1 = 0;
+	rx_desc_list->buf[0].w1 = 0U;
 	/* Setup TX descriptor lists */
-	tx_desc_list->buf[0].w0 = 0;
+	tx_desc_list->buf[0].w0 = 0U;
 	/* Take ownership from GMAC and set the wrap bit */
 	tx_desc_list->buf[0].w1 = GMAC_TXW1_USED | GMAC_TXW1_WRAP;
 
@@ -1057,6 +1068,8 @@ static int priority_queue_init_as_idle(Gmac *gmac, struct gmac_queue *queue)
 	gmac->GMAC_RBQBAPQ[queue->que_idx - 1] = (u32_t)rx_desc_list->buf;
 	/* Set Transmit Buffer Queue Pointer Register */
 	gmac->GMAC_TBQBAPQ[queue->que_idx - 1] = (u32_t)tx_desc_list->buf;
+
+	LOG_INF("Queue %d set to idle", queue->que_idx);
 
 	return 0;
 }
@@ -1106,7 +1119,7 @@ static struct net_pkt *frame_get(struct gmac_queue *queue)
 		return NULL;
 	}
 
-	rx_frame = net_pkt_get_reserve_rx(K_NO_WAIT);
+	rx_frame = net_pkt_rx_alloc(K_NO_WAIT);
 
 	/* Process a frame */
 	tail = rx_desc_list->tail;
@@ -1165,13 +1178,13 @@ static struct net_pkt *frame_get(struct gmac_queue *queue)
 		}
 
 		/* Update buffer descriptor status word */
-		rx_desc->w1 = 0;
+		rx_desc->w1 = 0U;
 		/* Guarantee that status word is written before the address
 		 * word to avoid race condition.
 		 */
 		__DMB();  /* data memory barrier */
 		/* Update buffer descriptor address word */
-		wrap = (tail == rx_desc_list->len-1 ? GMAC_RXW0_WRAP : 0);
+		wrap = (tail == rx_desc_list->len-1U ? GMAC_RXW0_WRAP : 0);
 		rx_desc->w0 = ((u32_t)frag->data & GMAC_RXW0_ADDR) | wrap;
 
 		MODULO_INC(tail, rx_desc_list->len);
@@ -1256,8 +1269,9 @@ static void eth_rx(struct gmac_queue *queue)
 	}
 }
 
-#if (CONFIG_ETH_SAM_GMAC_QUEUES != NET_TC_TX_COUNT) || \
-	((NET_TC_TX_COUNT != NET_TC_RX_COUNT) && defined(CONFIG_NET_VLAN))
+#if !defined(CONFIG_ETH_SAM_GMAC_FORCE_QUEUE) && \
+	((CONFIG_ETH_SAM_GMAC_QUEUES != NET_TC_TX_COUNT) || \
+	((NET_TC_TX_COUNT != NET_TC_RX_COUNT) && defined(CONFIG_NET_VLAN)))
 static int priority2queue(enum net_priority priority)
 {
 	static const u8_t queue_priority_map[] = {
@@ -1311,7 +1325,10 @@ static int eth_tx(struct device *dev, struct net_pkt *pkt)
 	/* Decide which queue should be used */
 	pkt_prio = net_pkt_priority(pkt);
 
-#if CONFIG_ETH_SAM_GMAC_QUEUES == CONFIG_NET_TC_TX_COUNT
+#if defined(CONFIG_ETH_SAM_GMAC_FORCE_QUEUE)
+	/* Route eveything to the forced queue */
+	queue = &dev_data->queue_list[CONFIG_ETH_SAM_GMAC_FORCED_QUEUE];
+#elif CONFIG_ETH_SAM_GMAC_QUEUES == CONFIG_NET_TC_TX_COUNT
 	/* Prefer to chose queue based on its traffic class */
 	queue = &dev_data->queue_list[net_tx_priority2tc(pkt_prio)];
 #else
@@ -1361,7 +1378,7 @@ static int eth_tx(struct device *dev, struct net_pkt *pkt)
 		 */
 		tx_desc->w1 = (frag_len & GMAC_TXW1_LEN)
 			    | (!frag->frags ? GMAC_TXW1_LASTBUFFER : 0)
-			    | (tx_desc_list->head == tx_desc_list->len - 1
+			    | (tx_desc_list->head == tx_desc_list->len - 1U
 			       ? GMAC_TXW1_WRAP : 0)
 			    | (tx_desc == tx_first_desc ? GMAC_TXW1_USED : 0);
 
@@ -1668,7 +1685,7 @@ static void eth0_iface_init(struct net_if *iface)
 
 	generate_mac(dev_data->mac_addr);
 
-	LOG_INF("MAC: %x:%x:%x:%x:%x:%x",
+	LOG_INF("MAC: %02x:%02x:%02x:%02x:%02x:%02x",
 		dev_data->mac_addr[0], dev_data->mac_addr[1],
 		dev_data->mac_addr[2], dev_data->mac_addr[3],
 		dev_data->mac_addr[4], dev_data->mac_addr[5]);
@@ -1691,7 +1708,13 @@ static void eth0_iface_init(struct net_if *iface)
 	}
 
 #if GMAC_PRIORITY_QUEUE_NO >= 1
-#if CONFIG_ETH_SAM_GMAC_QUEUES == NET_TC_RX_COUNT
+#if defined(CONFIG_ETH_SAM_GMAC_FORCE_QUEUE)
+	for (i = 0; i < CONFIG_NET_TC_RX_COUNT; ++i) {
+		cfg->regs->GMAC_ST1RPQ[i] =
+			GMAC_ST1RPQ_DSTCM(i) |
+			GMAC_ST1RPQ_QNB(CONFIG_ETH_SAM_GMAC_FORCED_QUEUE);
+	}
+#elif CONFIG_ETH_SAM_GMAC_QUEUES == NET_TC_RX_COUNT
 	/* If TC configuration is compatible with HW configuration, setup the
 	 * screening registers based on the DS/TC values.
 	 * Map them 1:1 - TC 0 -> Queue 0, TC 1 -> Queue 1 etc.
@@ -1706,14 +1729,14 @@ static void eth0_iface_init(struct net_if *iface)
 
 	i = 0;
 	for (j = NET_PRIORITY_NC; j >= 0; --j) {
-		if (j > 7) {
-			/* No more screening registers available */
-			break;
-		}
-
 		if (priority2queue(j) == 0) {
 			/* No point to set rules for the regular queue */
 			continue;
+		}
+
+		if (i >= ARRAY_SIZE(cfg->regs->GMAC_ST2RPQ)) {
+			/* No more screening registers available */
+			break;
 		}
 
 		cfg->regs->GMAC_ST2RPQ[i++] =
@@ -1790,7 +1813,7 @@ static int eth_sam_gmac_set_qav_param(struct device *dev,
 		idle_slope = config->qav_param.idle_slope;
 
 		/* The standard uses bps, SAM GMAC uses Bps - convert now */
-		idle_slope /= 8;
+		idle_slope /= 8U;
 
 		return eth_sam_gmac_setup_qav_idle_slope(gmac, queue_id,
 							 idle_slope);

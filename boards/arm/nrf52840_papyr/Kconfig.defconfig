@@ -47,4 +47,7 @@ config SPI_1
 
 endif # SPI
 
+config BT_CTLR
+	default BT
+
 endif # BOARD_NRF52840_PAPYR

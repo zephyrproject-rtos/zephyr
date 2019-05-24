@@ -1,8 +1,7 @@
-
+# SPDX-License-Identifier: Apache-2.0
 
 config SOC_ATOM
 	bool "Intel ATOM SoC"
 	select CPU_ATOM
-	select BOOTLOADER_UNKNOWN
 	select X86_MMU
 	select ARCH_HAS_USERSPACE

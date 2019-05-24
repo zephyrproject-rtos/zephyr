@@ -3,4 +3,3 @@
 
 config SOC_D_212GP
 	bool "D_212GP core"
-

@@ -109,6 +109,28 @@ static void test_close(int sock)
 		      "close failed");
 }
 
+/* Test that EOF handling works correctly. Should be called with socket
+ * whose peer socket was closed.
+ */
+static void test_eof(int sock)
+{
+	char rx_buf[1];
+	ssize_t recved;
+
+	/* Test that EOF properly detected. */
+	recved = recv(sock, rx_buf, sizeof(rx_buf), 0);
+	zassert_equal(recved, 0, "");
+
+	/* Calling again should be OK. */
+	recved = recv(sock, rx_buf, sizeof(rx_buf), 0);
+	zassert_equal(recved, 0, "");
+
+	/* Calling when TCP connection is fully torn down should be still OK. */
+	k_sleep(TCP_TEARDOWN_TIMEOUT);
+	recved = recv(sock, rx_buf, sizeof(rx_buf), 0);
+	zassert_equal(recved, 0, "");
+}
+
 void test_v4_send_recv(void)
 {
 	/* Test if send() and recv() work on a ipv4 stream socket. */
@@ -137,8 +159,10 @@ void test_v4_send_recv(void)
 	test_recv(new_sock, MSG_PEEK);
 	test_recv(new_sock, 0);
 
-	test_close(new_sock);
 	test_close(c_sock);
+	test_eof(new_sock);
+
+	test_close(new_sock);
 	test_close(s_sock);
 
 	k_sleep(TCP_TEARDOWN_TIMEOUT);
@@ -172,9 +196,11 @@ void test_v6_send_recv(void)
 	test_recv(new_sock, MSG_PEEK);
 	test_recv(new_sock, 0);
 
+	test_close(c_sock);
+	test_eof(new_sock);
+
 	test_close(new_sock);
 	test_close(s_sock);
-	test_close(c_sock);
 
 	k_sleep(TCP_TEARDOWN_TIMEOUT);
 }

@@ -234,6 +234,202 @@ struct hid_ops {
 	HID_MI_COLLECTION_END,					\
 }
 
+/**
+ * @brief Simple HID keyboard report descriptor.
+ */
+#define HID_KEYBOARD_REPORT_DESC() {				\
+	/* USAGE_PAGE (Generic Desktop) */			\
+	HID_GI_USAGE_PAGE, USAGE_GEN_DESKTOP,			\
+	/* USAGE (Keyboard) */					\
+	HID_LI_USAGE, USAGE_GEN_DESKTOP_KEYBOARD,		\
+	/* COLLECTION (Application) */				\
+	HID_MI_COLLECTION, COLLECTION_APPLICATION,		\
+		/* USAGE_PAGE (Keypad) */			\
+		HID_GI_USAGE_PAGE, USAGE_GEN_DESKTOP_KEYPAD,	\
+		/* USAGE_MINIMUM (Keyboard LeftControl) */	\
+		HID_LI_USAGE_MIN(1), 0xE0,			\
+		/* USAGE_MAXIMUM (Keyboard Right GUI) */	\
+		HID_LI_USAGE_MAX(1), 0xE7,			\
+		/* LOGICAL_MINIMUM (0) */			\
+		HID_GI_LOGICAL_MIN(1), 0x00,			\
+		/* LOGICAL_MAXIMUM (1) */			\
+		HID_GI_LOGICAL_MAX(1), 0x01,			\
+		/* REPORT_SIZE (1) */				\
+		HID_GI_REPORT_SIZE, 0x01,			\
+		/* REPORT_COUNT (8) */				\
+		HID_GI_REPORT_COUNT, 0x08,			\
+		/* INPUT (Data,Var,Abs) */			\
+		HID_MI_INPUT, 0x02,				\
+		/* REPORT_SIZE (8) */				\
+		HID_GI_REPORT_SIZE, 0x08,			\
+		/* REPORT_COUNT (1) */				\
+		HID_GI_REPORT_COUNT, 0x01,			\
+		/* INPUT (Cnst,Var,Abs) */			\
+		HID_MI_INPUT, 0x03,				\
+		/* REPORT_SIZE (1) */				\
+		HID_GI_REPORT_SIZE, 0x01,			\
+		/* REPORT_COUNT (5) */				\
+		HID_GI_REPORT_COUNT, 0x05,			\
+		/* USAGE_PAGE (LEDs) */				\
+		HID_GI_USAGE_PAGE, USAGE_GEN_LEDS,		\
+		/* USAGE_MINIMUM (Num Lock) */			\
+		HID_LI_USAGE_MIN(1), 0x01,			\
+		/* USAGE_MAXIMUM (Kana) */			\
+		HID_LI_USAGE_MAX(1), 0x05,			\
+		/* OUTPUT (Data,Var,Abs) */			\
+		HID_MI_OUTPUT, 0x02,				\
+		/* REPORT_SIZE (3) */				\
+		HID_GI_REPORT_SIZE, 0x03,			\
+		/* REPORT_COUNT (1) */				\
+		HID_GI_REPORT_COUNT, 0x01,			\
+		/* OUTPUT (Cnst,Var,Abs) */			\
+		HID_MI_OUTPUT, 0x03,				\
+		/* REPORT_SIZE (8) */				\
+		HID_GI_REPORT_SIZE, 0x08,			\
+		/* REPORT_COUNT (6) */				\
+		HID_GI_REPORT_COUNT, 0x06,			\
+		/* LOGICAL_MINIMUM (0) */			\
+		HID_GI_LOGICAL_MIN(1), 0x00,			\
+		/* LOGICAL_MAXIMUM (101) */			\
+		HID_GI_LOGICAL_MAX(1), 0x65,			\
+		/* USAGE_PAGE (Keypad) */			\
+		HID_GI_USAGE_PAGE, USAGE_GEN_DESKTOP_KEYPAD,	\
+		/* USAGE_MINIMUM (Reserved) */			\
+		HID_LI_USAGE_MIN(1), 0x00,			\
+		/* USAGE_MAXIMUM (Keyboard Application) */	\
+		HID_LI_USAGE_MAX(1), 0x65,			\
+		/* INPUT (Data,Ary,Abs) */			\
+		HID_MI_INPUT, 0x00,				\
+	/* END_COLLECTION */					\
+	HID_MI_COLLECTION_END,					\
+}
+
+/**
+ * @brief HID keyboard button codes.
+ */
+enum hid_kbd_code {
+	HID_KEY_A		= 4,
+	HID_KEY_B		= 5,
+	HID_KEY_C		= 6,
+	HID_KEY_D		= 7,
+	HID_KEY_E		= 8,
+	HID_KEY_F		= 9,
+	HID_KEY_G		= 10,
+	HID_KEY_H		= 11,
+	HID_KEY_I		= 12,
+	HID_KEY_J		= 13,
+	HID_KEY_K		= 14,
+	HID_KEY_L		= 15,
+	HID_KEY_M		= 16,
+	HID_KEY_N		= 17,
+	HID_KEY_O		= 18,
+	HID_KEY_P		= 19,
+	HID_KEY_Q		= 20,
+	HID_KEY_R		= 21,
+	HID_KEY_S		= 22,
+	HID_KEY_T		= 23,
+	HID_KEY_U		= 24,
+	HID_KEY_V		= 25,
+	HID_KEY_W		= 26,
+	HID_KEY_X		= 27,
+	HID_KEY_Y		= 28,
+	HID_KEY_Z		= 29,
+	HID_KEY_1		= 30,
+	HID_KEY_2		= 31,
+	HID_KEY_3		= 32,
+	HID_KEY_4		= 33,
+	HID_KEY_5		= 34,
+	HID_KEY_6		= 35,
+	HID_KEY_7		= 36,
+	HID_KEY_8		= 37,
+	HID_KEY_9		= 38,
+	HID_KEY_0		= 39,
+	HID_KEY_ENTER		= 40,
+	HID_KEY_ESC		= 41,
+	HID_KEY_BACKSPACE	= 42,
+	HID_KEY_TAB		= 43,
+	HID_KEY_SPACE		= 44,
+	HID_KEY_MINUS		= 45,
+	HID_KEY_EQUAL		= 46,
+	HID_KEY_LEFTBRACE	= 47,
+	HID_KEY_RIGHTBRACE	= 48,
+	HID_KEY_BACKSLASH	= 49,
+	HID_KEY_HASH		= 50, /* Non-US # and ~ */
+	HID_KEY_SEMICOLON	= 51,
+	HID_KEY_APOSTROPHE	= 52,
+	HID_KEY_GRAVE		= 53,
+	HID_KEY_COMMA		= 54,
+	HID_KEY_DOT		= 55,
+	HID_KEY_SLASH		= 56,
+	HID_KEY_CAPSLOCK	= 57,
+	HID_KEY_F1		= 58,
+	HID_KEY_F2		= 59,
+	HID_KEY_F3		= 60,
+	HID_KEY_F4		= 61,
+	HID_KEY_F5		= 62,
+	HID_KEY_F6		= 63,
+	HID_KEY_F7		= 64,
+	HID_KEY_F8		= 65,
+	HID_KEY_F9		= 66,
+	HID_KEY_F10		= 67,
+	HID_KEY_F11		= 68,
+	HID_KEY_F12		= 69,
+	HID_KEY_SYSRQ		= 70, /* PRINTSCREEN */
+	HID_KEY_SCROLLLOCK	= 71,
+	HID_KEY_PAUSE		= 72,
+	HID_KEY_INSERT		= 73,
+	HID_KEY_HOME		= 74,
+	HID_KEY_PAGEUP		= 75,
+	HID_KEY_DELETE		= 76,
+	HID_KEY_END		= 77,
+	HID_KEY_PAGEDOWN	= 78,
+	HID_KEY_RIGHT		= 79,
+	HID_KEY_LEFT		= 80,
+	HID_KEY_DOWN		= 81,
+	HID_KEY_UP		= 82,
+	HID_KEY_NUMLOCK		= 83,
+	HID_KEY_KPSLASH		= 84, /* NUMPAD DIVIDE */
+	HID_KEY_KPASTERISK	= 85, /* NUMPAD MULTIPLY */
+	HID_KEY_KPMINUS		= 86,
+	HID_KEY_KPPLUS		= 87,
+	HID_KEY_KPENTER		= 88,
+	HID_KEY_KP_1		= 89,
+	HID_KEY_KP_2		= 90,
+	HID_KEY_KP_3		= 91,
+	HID_KEY_KP_4		= 92,
+	HID_KEY_KP_5		= 93,
+	HID_KEY_KP_6		= 94,
+	HID_KEY_KP_7		= 95,
+	HID_KEY_KP_8		= 96,
+	HID_KEY_KP_9		= 97,
+	HID_KEY_KP_0		= 98,
+};
+
+/**
+ * @brief HID keyboard modifiers.
+ */
+enum hid_kbd_modifier {
+	HID_KBD_MODIFIER_NONE		= 0x00,
+	HID_KBD_MODIFIER_LEFT_CTRL	= 0x01,
+	HID_KBD_MODIFIER_LEFT_SHIFT	= 0x02,
+	HID_KBD_MODIFIER_LEFT_ALT	= 0x04,
+	HID_KBD_MODIFIER_LEFT_UI	= 0x08,
+	HID_KBD_MODIFIER_RIGHT_CTRL	= 0x10,
+	HID_KBD_MODIFIER_RIGHT_SHIFT	= 0x20,
+	HID_KBD_MODIFIER_RIGHT_ALT	= 0x40,
+	HID_KBD_MODIFIER_RIGHT_UI	= 0x80,
+};
+
+/**
+ * @brief HID keyboard LEDs.
+ */
+enum hid_kbd_led {
+	HID_KBD_LED_NUM_LOCK	= 0x01,
+	HID_KBD_LED_CAPS_LOCK	= 0x02,
+	HID_KBD_LED_SCROLL_LOCK	= 0x04,
+	HID_KBD_LED_COMPOSE	= 0x08,
+	HID_KBD_LED_KANA	= 0x10,
+};
 
 /* Register HID device */
 void usb_hid_register_device(struct device *dev, const u8_t *desc, size_t size,

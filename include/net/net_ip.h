@@ -278,12 +278,8 @@ struct sockaddr_storage {
 struct net_addr {
 	sa_family_t family;
 	union {
-#if defined(CONFIG_NET_IPV6)
 		struct in6_addr in6_addr;
-#endif
-#if defined(CONFIG_NET_IPV4)
 		struct in_addr in_addr;
-#endif
 	};
 };
 
@@ -563,7 +559,7 @@ static inline bool net_ipv6_is_prefix(const u8_t *addr1,
 				      u8_t length)
 {
 	u8_t bits = 128 - length;
-	u8_t bytes = length / 8;
+	u8_t bytes = length / 8U;
 	u8_t remain = bits % 8;
 	u8_t mask;
 
@@ -597,7 +593,7 @@ static inline bool net_ipv6_is_prefix(const u8_t *addr1,
  */
 static inline bool net_ipv4_is_addr_loopback(struct in_addr *addr)
 {
-	return addr->s4_addr[0] == 127;
+	return addr->s4_addr[0] == 127U;
 }
 
 /**
@@ -913,7 +909,7 @@ void net_ipv6_addr_create_solicited_node(const struct in6_addr *src,
 	UNALIGNED_PUT(0, &dst->s6_addr16[2]);
 	UNALIGNED_PUT(0, &dst->s6_addr16[3]);
 	UNALIGNED_PUT(0, &dst->s6_addr16[4]);
-	dst->s6_addr[10]  = 0;
+	dst->s6_addr[10]  = 0U;
 	dst->s6_addr[11]  = 0x01;
 	dst->s6_addr[12]  = 0xFF;
 	dst->s6_addr[13]  = src->s6_addr[13];
@@ -981,7 +977,7 @@ static inline void net_ipv6_addr_create_iid(struct in6_addr *addr,
 			UNALIGNED_PUT(0, &addr->s6_addr32[2]);
 			addr->s6_addr[11] = 0xff;
 			addr->s6_addr[12] = 0xfe;
-			addr->s6_addr[13] = 0;
+			addr->s6_addr[13] = 0U;
 			addr->s6_addr[14] = lladdr->addr[0];
 			addr->s6_addr[15] = lladdr->addr[1];
 		}
@@ -1032,9 +1028,9 @@ static inline bool net_ipv6_addr_based_on_ll(const struct in6_addr *addr,
 	switch (lladdr->len) {
 	case 2:
 		if (!memcmp(&addr->s6_addr[14], lladdr->addr, lladdr->len) &&
-		    addr->s6_addr[8]  == 0 &&
-		    addr->s6_addr[9]  == 0 &&
-		    addr->s6_addr[10] == 0 &&
+		    addr->s6_addr[8]  == 0U &&
+		    addr->s6_addr[9]  == 0U &&
+		    addr->s6_addr[10] == 0U &&
 		    addr->s6_addr[11] == 0xff &&
 		    addr->s6_addr[12] == 0xfe) {
 			return true;

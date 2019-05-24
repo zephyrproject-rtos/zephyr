@@ -87,6 +87,13 @@ static int frdm_k64f_pinmux_init(struct device *dev)
 	pinmux_pin_set(portc, 17, PORT_PCR_MUX(kPORT_MuxAsGpio));
 #endif
 
+#ifdef CONFIG_MODEM_UBLOX_SARA_R4
+	/* Modem RESET */
+	pinmux_pin_set(portc,  2, PORT_PCR_MUX(kPORT_MuxAsGpio));
+	/* Modem POWER_ON */
+	pinmux_pin_set(porta,  2, PORT_PCR_MUX(kPORT_MuxAsGpio));
+#endif
+
 #ifdef CONFIG_IEEE802154_MCR20A
 	/* FRDM-MCR20A Reset (D5) */
 	pinmux_pin_set(porta,  2, PORT_PCR_MUX(kPORT_MuxAsGpio));

@@ -14,7 +14,7 @@ BUILD_ASSERT_MSG(!(IS_ENABLED(CONFIG_LOG_BACKEND_RTT) &&
 		 "Conflicting log RTT backend enabled on the same channel");
 
 SHELL_RTT_DEFINE(shell_transport_rtt);
-SHELL_DEFINE(shell_rtt, "rtt:~$ ", &shell_transport_rtt,
+SHELL_DEFINE(shell_rtt, CONFIG_SHELL_PROMPT_RTT, &shell_transport_rtt,
 	     CONFIG_SHELL_BACKEND_RTT_LOG_MESSAGE_QUEUE_SIZE,
 	     CONFIG_SHELL_BACKEND_RTT_LOG_MESSAGE_QUEUE_TIMEOUT,
 	     SHELL_FLAG_OLF_CRLF);

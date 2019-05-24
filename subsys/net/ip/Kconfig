@@ -321,13 +321,6 @@ config NET_MAX_CONN
 	  The value depends on your network needs. The value
 	  should include both UDP and TCP connections.
 
-config NET_CONN_CACHE
-	bool "Cache network connections"
-	depends on NET_UDP || NET_TCP
-	help
-	  Caching takes slight more memory but will speedup connection
-	  handling of UDP and TCP connections.
-
 config NET_MAX_CONTEXTS
 	int "Number of network contexts to allocate"
 	default 6
@@ -366,6 +359,12 @@ config NET_CONTEXT_PRIORITY
 	help
 	  It is possible to prioritize network traffic. This requires
 	  also traffic class support to work as expected.
+
+config NET_CONTEXT_TIMESTAMP
+	bool "Add timepstamp support to net_context"
+	select NET_PKT_TIMESTAMP
+	help
+	  It is possible to timestamp outgoing packets.
 
 config NET_TEST
 	bool "Network Testing"

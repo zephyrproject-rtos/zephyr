@@ -308,19 +308,18 @@ static struct net_pkt *create_pkt(struct net_6lo_data *data)
 	u16_t len;
 	int remaining;
 
-	pkt = net_pkt_get_reserve_tx(K_FOREVER);
+	pkt = net_pkt_alloc_on_iface(net_if_get_default(), K_FOREVER);
 	if (!pkt) {
 		return NULL;
 	}
 
-	net_pkt_set_iface(pkt, net_if_get_default());
 	net_pkt_set_ip_hdr_len(pkt, NET_IPV6H_LEN);
 
 	net_pkt_lladdr_src(pkt)->addr = src_mac;
-	net_pkt_lladdr_src(pkt)->len = 8;
+	net_pkt_lladdr_src(pkt)->len = 8U;
 
 	net_pkt_lladdr_dst(pkt)->addr = dst_mac;
-	net_pkt_lladdr_dst(pkt)->len = 8;
+	net_pkt_lladdr_dst(pkt)->len = 8U;
 
 	frag = net_pkt_get_frag(pkt, K_FOREVER);
 	if (!frag) {

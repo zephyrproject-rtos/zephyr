@@ -2,7 +2,7 @@ sample:
   description: Packet socket sample
   name: packet-socket
 tests:
-  test:
+  sample.net.sockets.packet:
     harness: net
     platform_whitelist: native_posix
     tags: net sockets packet-socket

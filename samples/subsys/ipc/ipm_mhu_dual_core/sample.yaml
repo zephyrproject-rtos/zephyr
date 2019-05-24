@@ -1,0 +1,8 @@
+sample:
+  description: MHU dual core sample
+    application
+  name: ipm_mhu_dual_core
+tests:
+  test:
+    tags: ipm
+    platform_whitelist: v2m_musca v2m_musca_nonsecure

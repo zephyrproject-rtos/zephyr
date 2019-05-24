@@ -14,7 +14,7 @@ from docutils.parsers.rst import directives
 # This could be as simple as generating a couple of sets of instructions, one
 # for Unix environments, and another for Windows.
 class ZephyrAppCommandsDirective(Directive):
-    '''
+    r'''
     This is a Zephyr directive for generating consistent documentation
     of the shell commands needed to manage (build, flash, etc.) an application.
 
@@ -164,7 +164,6 @@ class ZephyrAppCommandsDirective(Directive):
                                                 if v != 'all']
         # Build the command content as a list, then convert to string.
         content = []
-        lit = []
         cd_to = zephyr_app or app
         tool_comment = None
         if len(tools) > 1:
@@ -234,10 +233,10 @@ class ZephyrAppCommandsDirective(Directive):
         cmake_args = ' --{}'.format(cmake_args) if cmake_args != '' else ''
         # ignore zephyr_app since west needs to run within
         # the installation. Instead rely on relative path.
-        src = ' -s {}'.format(cd_to) if cd_to else ''
+        src = ' {}'.format(cd_to) if cd_to else ''
         dst = ' -d {}'.format(build_dir) if build_dir != 'build' else ''
 
-        goal_args = ' -b {}{}{}{}'.format(board, src, dst, cmake_args)
+        goal_args = ' -b {}{}{}{}'.format(board, dst, src, cmake_args)
         if 'build' in goals:
             content.append('west build{}'.format(goal_args))
             # No longer need to specify additional args, they are in the
@@ -245,7 +244,7 @@ class ZephyrAppCommandsDirective(Directive):
             goal_args = '{}'.format(dst)
 
         if 'sign' in goals:
-                content.append('west sign{}'.format(goal_args))
+            content.append('west sign{}'.format(goal_args))
 
         for goal in goals:
             if goal == 'build' or goal == 'sign':
@@ -263,7 +262,7 @@ class ZephyrAppCommandsDirective(Directive):
 
         return content
 
-    def _mkdir(self, mkdir, build_dir, host_os, skip_config, compact):
+    def _mkdir(self, mkdir, build_dir, host_os, skip_config):
         content = []
         if skip_config:
             content.append("# If you already made a build directory ({}) and ran cmake, just 'cd {}' instead.".format(build_dir, build_dir))  # noqa: E501
@@ -336,7 +335,6 @@ class ZephyrAppCommandsDirective(Directive):
         zephyr_app = kwargs['zephyr_app']
         host_os = kwargs['host_os']
         build_dir = kwargs['build_dir']
-        source_dir = kwargs['source_dir']
         skip_config = kwargs['skip_config']
         compact = kwargs['compact']
         generator = kwargs['generator']
@@ -362,8 +360,7 @@ class ZephyrAppCommandsDirective(Directive):
                     prefix = '%ZEPHYR_BASE%\\' if zephyr_app else ''
                     backslashified = cd_to.replace('/', '\\')
                     content.append('cd {}{}'.format(prefix, backslashified))
-            content.extend(self._mkdir(mkdir, build_dir, host,
-                                       skip_config, compact))
+            content.extend(self._mkdir(mkdir, build_dir, host, skip_config))
             if not compact:
                 content.append('')
 

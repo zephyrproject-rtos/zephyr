@@ -71,9 +71,12 @@ static s32_t hbuf_count;
 #endif
 
 /**
- * @brief Pull from memq_ll_rx and push up to Host thread recv_thread()
- *   via recv_fifo
+ * @brief Handover from Controller thread to Host thread
  * @details Execution context: Controller thread
+ *   Pull from memq_ll_rx and push up to Host thread recv_thread() via recv_fifo
+ * @param p1  Unused. Required to conform with Zephyr thread protoype
+ * @param p2  Unused. Required to conform with Zephyr thread protoype
+ * @param p3  Unused. Required to conform with Zephyr thread protoype
  */
 static void prio_recv_thread(void *p1, void *p2, void *p3)
 {
@@ -330,7 +333,7 @@ static void recv_thread(void *p1, void *p2, void *p3)
 		err = k_poll(events, 2, K_FOREVER);
 		LL_ASSERT(err == 0);
 		if (events[0].state == K_POLL_STATE_SIGNALED) {
-			events[0].signal->signaled = 0;
+			events[0].signal->signaled = 0U;
 		} else if (events[1].state ==
 			   K_POLL_STATE_FIFO_DATA_AVAILABLE) {
 			node_rx = k_fifo_get(events[1].fifo, 0);
@@ -486,7 +489,7 @@ static const struct bt_hci_driver drv = {
 	.send	= hci_driver_send,
 };
 
-static int _hci_driver_init(struct device *unused)
+static int hci_driver_init(struct device *unused)
 {
 	ARG_UNUSED(unused);
 
@@ -495,4 +498,4 @@ static int _hci_driver_init(struct device *unused)
 	return 0;
 }
 
-SYS_INIT(_hci_driver_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+SYS_INIT(hci_driver_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);

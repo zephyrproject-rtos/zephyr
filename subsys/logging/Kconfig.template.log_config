@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 choice
 	prompt "Max compiled-in log level for $(module-str)"
 	default $(module)_LOG_LEVEL_INF

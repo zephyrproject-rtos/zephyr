@@ -1,0 +1,58 @@
+# Kconfig - TWR-KE18F board
+#
+# Copyright (c) 2019 Vestas Wind Systems A/S
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if BOARD_TWR_KE18F
+
+config BOARD
+	default "twr_ke18f"
+
+if UART_MCUX_LPUART
+
+config UART_MCUX_LPUART_0
+	default y if UART_CONSOLE
+
+endif # UART_MCUX_LPUART
+
+if PINMUX_MCUX
+
+config PINMUX_MCUX_PORTA
+	default y
+
+config PINMUX_MCUX_PORTB
+	default y
+
+config PINMUX_MCUX_PORTC
+	default y
+
+config PINMUX_MCUX_PORTD
+	default y
+
+config PINMUX_MCUX_PORTE
+	default y
+
+endif # PINMUX_MCUX
+
+if GPIO_MCUX
+
+config GPIO_MCUX_PORTA
+	default y
+
+config GPIO_MCUX_PORTB
+	default y
+
+config GPIO_MCUX_PORTC
+	default y
+
+config GPIO_MCUX_PORTD
+	default y
+
+config GPIO_MCUX_PORTE
+	default y
+
+endif # GPIO_MCUX
+
+endif # BOARD_TWR_KE18F

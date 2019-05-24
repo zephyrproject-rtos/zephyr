@@ -10,6 +10,13 @@
 
 #include <net/socket.h>
 
+/**
+ * @brief Simple Network Time Protocol API
+ * @defgroup sntp SNTP
+ * @ingroup networking
+ * @{
+ */
+
 /** SNTP context */
 struct sntp_ctx {
 	struct {
@@ -25,6 +32,12 @@ struct sntp_ctx {
 	u32_t expected_orig_ts;
 };
 
+/** Time as returned by SNTP API, fractional seconds since 1 Jan 1970 */
+struct sntp_time {
+	u64_t seconds;
+	u32_t fraction;
+};
+
 /**
  * @brief Initialize SNTP context
  *
@@ -38,15 +51,29 @@ int sntp_init(struct sntp_ctx *ctx, struct sockaddr *addr,
 	      socklen_t addr_len);
 
 /**
- * @brief Send SNTP request
+ * @brief SNTP query with seconds precision (deprecated)
  *
  * @param ctx Address of sntp context.
  * @param timeout Timeout of waiting for sntp response (in milliseconds).
- * @param epoch_time Seconds since 1 January 1970.
+ * @param epoch_time Seconds since 1 January 1970 (output).
  *
- * @return 0 if ok, <0 if error.
+ * @return 0 if ok, <0 if error (-ETIMEDOUT if timeout).
  */
-int sntp_request(struct sntp_ctx *ctx, u32_t timeout, u64_t *epoch_time);
+__deprecated int sntp_request(struct sntp_ctx *ctx, u32_t timeout,
+			      u64_t *epoch_time);
+
+/**
+ * @brief Perform SNTP query
+ *
+ * @param ctx Address of sntp context.
+ * @param timeout Timeout of waiting for sntp response (in milliseconds).
+ * @param time Timestamp including integer and fractional seconds since
+ * 1 Jan 1970 (output).
+ *
+ * @return 0 if ok, <0 if error (-ETIMEDOUT if timeout).
+ */
+int sntp_query(struct sntp_ctx *ctx, u32_t timeout,
+	       struct sntp_time *time);
 
 /**
  * @brief Release SNTP context
@@ -54,5 +81,25 @@ int sntp_request(struct sntp_ctx *ctx, u32_t timeout, u64_t *epoch_time);
  * @param ctx Address of sntp context.
  */
 void sntp_close(struct sntp_ctx *ctx);
+
+/**
+ * @brief Convenience function to query SNTP in one-shot fashion
+ *
+ * Convenience wrapper which calls getaddrinfo(), sntp_init(),
+ * sntp_query(), and sntp_close().
+ *
+ * @param server Address of server in format addr[:port]
+ * @param timeout Query timeout
+ * @param time Timestamp including integer and fractional seconds since
+ * 1 Jan 1970 (output).
+ *
+ * @return 0 if ok, <0 if error (-ETIMEDOUT if timeout).
+ */
+int sntp_simple(const char *server, u32_t timeout,
+		struct sntp_time *time);
+
+/**
+ * @}
+ */
 
 #endif

@@ -17,20 +17,20 @@
  */
 
 /*******************************************************************************
-* Definitions
-******************************************************************************/
+ * Definitions
+ ******************************************************************************/
 /*! @brief ADC driver version */
-#define FSL_ADC_DRIVER_VERSION (MAKE_VERSION(2, 0, 1)) /*!< Version 2.0.1. */
+#define FSL_ADC_DRIVER_VERSION (MAKE_VERSION(2, 0, 2)) /*!< Version 2.0.2. */
 
 /*!
  * @brief Converter's status flags.
  */
 typedef enum _adc_status_flags
 {
-    kADC_ConversionActiveFlag = ADC_GS_ADACT_MASK, /*!< Conversion is active,not support w1c. */
-    kADC_CalibrationFailedFlag = ADC_GS_CALF_MASK, /*!< Calibration is failed,support w1c. */
+    kADC_ConversionActiveFlag  = ADC_GS_ADACT_MASK, /*!< Conversion is active,not support w1c. */
+    kADC_CalibrationFailedFlag = ADC_GS_CALF_MASK,  /*!< Calibration is failed,support w1c. */
     kADC_AsynchronousWakeupInterruptFlag =
-        ADC_GS_AWKST_MASK, /*!< Asynchronous wakeup interrupt occured, support w1c. */
+        ADC_GS_AWKST_MASK, /*!< Asynchronous wakeup interrupt occurred, support w1c. */
 } adc_status_flags_t;
 
 /*!
@@ -69,7 +69,7 @@ typedef enum _adc_sample_period_mode
  */
 typedef enum _adc_clock_source
 {
-    kADC_ClockSourceIPG = 0U,     /*!< Select IPG clock to generate ADCK. */
+    kADC_ClockSourceIPG     = 0U, /*!< Select IPG clock to generate ADCK. */
     kADC_ClockSourceIPGDiv2 = 1U, /*!< Select IPG clock divided by 2 to generate ADCK. */
 #if !(defined(FSL_FEATURE_ADC_SUPPORT_ALTCLK_REMOVE) && FSL_FEATURE_ADC_SUPPORT_ALTCLK_REMOVE)
     kADC_ClockSourceALT = 2U, /*!< Select alternate clock to generate ADCK. */
@@ -93,7 +93,7 @@ typedef enum _adc_clock_drvier
  */
 typedef enum _adc_resolution
 {
-    kADC_Resolution8Bit = 0U,  /*!< Single End 8-bit resolution. */
+    kADC_Resolution8Bit  = 0U, /*!< Single End 8-bit resolution. */
     kADC_Resolution10Bit = 1U, /*!< Single End 10-bit resolution. */
     kADC_Resolution12Bit = 2U, /*!< Single End 12-bit resolution. */
 } adc_resolution_t;
@@ -120,10 +120,10 @@ typedef enum _adc_hardware_compare_mode
  */
 typedef enum _adc_hardware_average_mode
 {
-    kADC_HardwareAverageCount4 = 0U,   /*!< For hardware average with 4 samples. */
-    kADC_HardwareAverageCount8 = 1U,   /*!< For hardware average with 8 samples. */
-    kADC_HardwareAverageCount16 = 2U,  /*!< For hardware average with 16 samples. */
-    kADC_HardwareAverageCount32 = 3U,  /*!< For hardware average with 32 samples. */
+    kADC_HardwareAverageCount4   = 0U, /*!< For hardware average with 4 samples. */
+    kADC_HardwareAverageCount8   = 1U, /*!< For hardware average with 8 samples. */
+    kADC_HardwareAverageCount16  = 2U, /*!< For hardware average with 16 samples. */
+    kADC_HardwareAverageCount32  = 3U, /*!< For hardware average with 32 samples. */
     kADC_HardwareAverageDiasable = 4U, /*!< Disable the hardware average function. */
 } adc_hardware_average_mode_t;
 
@@ -188,8 +188,8 @@ typedef struct _adc_channel_config
     bool enableInterruptOnConversionCompleted; /*!< Generate an interrupt request once the conversion is completed. */
 } adc_channel_config_t;
 /*******************************************************************************
-* API
-******************************************************************************/
+ * API
+ ******************************************************************************/
 #if defined(__cplusplus)
 extern "C" {
 #endif
@@ -275,7 +275,7 @@ void ADC_SetChannelConfig(ADC_Type *base, uint32_t channelGroup, const adc_chann
  */
 static inline uint32_t ADC_GetChannelConversionValue(ADC_Type *base, uint32_t channelGroup)
 {
-    assert(channelGroup < ADC_R_COUNT);
+    assert(channelGroup < FSL_FEATURE_ADC_CONVERSION_CONTROL_COUNT);
 
     return base->R[channelGroup];
 }
@@ -299,7 +299,7 @@ static inline uint32_t ADC_GetChannelConversionValue(ADC_Type *base, uint32_t ch
  */
 static inline uint32_t ADC_GetChannelStatusFlags(ADC_Type *base, uint32_t channelGroup)
 {
-    assert(channelGroup < ADC_HC_COUNT);
+    assert(channelGroup < FSL_FEATURE_ADC_CONVERSION_CONTROL_COUNT);
 
     /* If flag is set,return 1,otherwise, return 0. */
     return (((base->HS) & (1U << channelGroup)) >> channelGroup);

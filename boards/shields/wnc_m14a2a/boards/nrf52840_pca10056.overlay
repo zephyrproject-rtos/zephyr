@@ -1,0 +1,31 @@
+/*
+ * Copyright (c) 2019 Foundries.io
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * WNC-M14A2A shield uses an odd UART available on *some* Arduino-R3-compatible
+ * headers.  It needs to be defined individually.
+ */
+&uart1 {
+	current-speed = <115200>;
+	hw-flow-control;
+	status = "ok";
+
+	tx-pin = <46>;
+	rx-pin = <45>;
+	rts-pin = <44>;
+	cts-pin = <47>;
+
+	wnc_m14a2a: wncm14a2a {
+		status = "ok";
+		compatible = "wnc,m14a2a";
+		label = "wnc-m14a2a";
+		mdm-boot-mode-sel-gpios = <&arduino_header 7 0>;   /* D1 */
+		mdm-power-gpios = <&arduino_header 8 0>;	   /* D2 */
+		mdm-keep-awake-gpios = <&arduino_header 12 0>;	   /* D6 */
+		mdm-reset-gpios = <&arduino_header 14 0>;	   /* D8 */
+		mdm-shld-trans-ena-gpios = <&arduino_header 15 0>; /* D9 */
+	};
+};

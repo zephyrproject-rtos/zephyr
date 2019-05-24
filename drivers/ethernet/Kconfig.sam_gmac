@@ -28,6 +28,27 @@ config ETH_SAM_GMAC_QUEUES
 	  Select the number of hardware queues used by the driver. Packets will be
 	  routed to appropriate queues based on their priority.
 
+config ETH_SAM_GMAC_FORCE_QUEUE
+	bool "Force all traffic to be routed through a specific queue"
+	depends on ETH_SAM_GMAC_QUEUES > 1
+	depends on NET_TC_RX_COUNT < 5
+	help
+	  This option is meant to be used only for debugging. Use it to force all
+	  traffic to be routed through a specific hardware queue. With this enabled
+	  it is easier to verify whether the chosen hardware queue actually works.
+	  This works only if there are four or fewer RX traffic classes enabled, as
+	  the SAM GMAC hardware supports screening up to four traffic classes.
+
+config ETH_SAM_GMAC_FORCED_QUEUE
+	int "Queue to force the packets to"
+	depends on ETH_SAM_GMAC_FORCE_QUEUE
+	default 0
+	range 0 1 if ETH_SAM_GMAC_QUEUES = 2
+	range 0 2 if ETH_SAM_GMAC_QUEUES = 3
+	help
+	  Which queue to force the routing to. This affects both the TX and RX queues
+	  setup.
+
 config ETH_SAM_GMAC_BUF_RX_COUNT
 	int "Network RX buffers preallocated by the SAM ETH driver"
 	default 12

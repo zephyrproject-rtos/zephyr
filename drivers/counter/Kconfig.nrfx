@@ -17,33 +17,11 @@ config COUNTER_TIMER0
 	select COUNTER_NRF_TIMER
 	select NRFX_TIMER0
 
-if COUNTER_TIMER0
-
-config COUNTER_TIMER0_PRESCALER
-	int "Timer prescaler"
-	default 0
-	range 0 9
-	help
-	  Frequency = 16 Mhz / 2^prescaler.
-
-endif #COUNTER_TIMER0
-
 config COUNTER_TIMER1
 	bool "Enable Counter on TIMER1"
 	depends on HAS_HW_NRF_TIMER1
 	select COUNTER_NRF_TIMER
 	select NRFX_TIMER1
-
-if COUNTER_TIMER1
-
-config COUNTER_TIMER1_PRESCALER
-	int "Timer prescaler"
-	default 0
-	range 0 9
-	help
-	  Frequency = 16 Mhz / 2^prescaler.
-
-endif #COUNTER_TIMER1
 
 config COUNTER_TIMER2
 	bool "Enable Counter on TIMER2"
@@ -51,50 +29,17 @@ config COUNTER_TIMER2
 	select COUNTER_NRF_TIMER
 	select NRFX_TIMER2
 
-if COUNTER_TIMER2
-
-config COUNTER_TIMER2_PRESCALER
-	int "Timer prescaler"
-	default 0
-	range 0 9
-	help
-	  Frequency = 16 Mhz / 2^prescaler.
-
-endif #COUNTER_TIMER2
-
 config COUNTER_TIMER3
 	bool "Enable Counter on TIMER3"
 	depends on HAS_HW_NRF_TIMER3
 	select COUNTER_NRF_TIMER
 	select NRFX_TIMER3
 
-if COUNTER_TIMER3
-
-config COUNTER_TIMER3_PRESCALER
-	int "Timer prescaler"
-	default 0
-	range 0 9
-	help
-	  Frequency = 16 Mhz / 2^prescaler.
-
-endif #COUNTER_TIMER3
-
 config COUNTER_TIMER4
 	bool "Enable Counter on TIMER4"
 	depends on HAS_HW_NRF_TIMER4
 	select COUNTER_NRF_TIMER
 	select NRFX_TIMER4
-
-if COUNTER_TIMER4
-
-config COUNTER_TIMER4_PRESCALER
-	int "Timer prescaler"
-	default 0
-	range 0 9
-	help
-	  Frequency = 16 Mhz / 2^prescaler.
-
-endif #COUNTER_TIMER4
 
 config COUNTER_RTC0
 	bool "Enable Counter on RTC0"
@@ -103,17 +48,6 @@ config COUNTER_RTC0
 	select COUNTER_NRF_RTC
 	select NRFX_RTC0
 
-if COUNTER_RTC0
-
-config COUNTER_RTC0_PRESCALER
-	int "RTC prescaler"
-	default 0
-	range 0 2047
-	help
-	  Frequency = 32768 / (prescaler+1).
-
-endif #COUNTER_RTC0
-
 config COUNTER_RTC1
 	bool "Enable Counter on RTC1"
 	depends on HAS_HW_NRF_RTC1
@@ -121,33 +55,20 @@ config COUNTER_RTC1
 	select COUNTER_NRF_RTC
 	select NRFX_RTC1
 
-if COUNTER_RTC1
-
-config COUNTER_RTC1_PRESCALER
-	int "RTC prescaler"
-	default 0
-	range 0 2047
-	help
-	  Frequency = 32768 / (prescaler+1).
-
-endif #COUNTER_RTC1
-
 config COUNTER_RTC2
 	bool "Enable Counter on RTC2"
 	depends on HAS_HW_NRF_RTC2
 	select COUNTER_NRF_RTC
 	select NRFX_RTC2
 
-if COUNTER_RTC2
+# Internal flag which detects if PPI wrap feature is enabled for any instance
+if $(dt_int_val,DT_NORDIC_NRF_RTC_0_PPI_WRAP) > 0 || \
+   $(dt_int_val,DT_NORDIC_NRF_RTC_1_PPI_WRAP) > 0 || \
+   $(dt_int_val,DT_NORDIC_NRF_RTC_2_PPI_WRAP) > 0
 
-config COUNTER_RTC2_PRESCALER
-	int "RTC prescaler"
-	default 0
-	range 0 2047
-	help
-	  Frequency = 32768 / (prescaler+1).
-
-endif #COUNTER_RTC2
-
-
-
+config COUNTER_RTC_WITH_PPI_WRAP
+	bool
+	default y
+	select NRFX_PPI if HAS_HW_NRF_PPI
+	select NRFX_DPPI if HAS_HW_NRF_DPPIC
+endif

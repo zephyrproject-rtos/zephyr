@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 set(BOARD_FLASH_RUNNER intel_s1000)
 set(BOARD_DEBUG_RUNNER intel_s1000)
 

@@ -107,6 +107,9 @@ struct bt_gatt_attr {
 
 	/** Attribute read callback
 	 *
+	 *  The callback can also be used locally to read the contents of the
+	 *  attribute in which case no connection will be set.
+	 *
 	 *  @param conn   The connection that is requesting to read
 	 *  @param attr   The attribute that's being read
 	 *  @param buf    Buffer to place the read result in
@@ -122,6 +125,9 @@ struct bt_gatt_attr {
 					u16_t offset);
 
 	/** Attribute write callback
+	 *
+	 *  The callback can also be used locally to read the contents of the
+	 *  attribute in which case no connection will be set.
 	 *
 	 *  @param conn   The connection that is requesting to write
 	 *  @param attr   The attribute that's being written
@@ -144,6 +150,14 @@ struct bt_gatt_attr {
 	u16_t			handle;
 	/** Attribute permissions */
 	u8_t			perm;
+};
+
+/** @brief GATT Service structure */
+struct bt_gatt_service_static {
+	/** Service Attributes */
+	const struct bt_gatt_attr *attrs;
+	/** Service Attribute count */
+	size_t			attr_count;
 };
 
 /** @brief GATT Service structure */
@@ -384,6 +398,19 @@ ssize_t bt_gatt_attr_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 ssize_t bt_gatt_attr_read_service(struct bt_conn *conn,
 				  const struct bt_gatt_attr *attr,
 				  void *buf, u16_t len, u16_t offset);
+
+/** @def BT_GATT_SERVICE_DEFINE
+ *  @brief Statically define and register a service.
+ *
+ *  Helper macro to statically define and register a service.
+ *
+ *  @param _name Service name.
+ */
+#define BT_GATT_SERVICE_DEFINE(_name, ...)				\
+	const struct bt_gatt_attr attr_##_name[] = { __VA_ARGS__ };	\
+	const struct bt_gatt_service_static _name __aligned(4)		\
+			__in_section(_bt_services, static, _name) =	\
+						BT_GATT_SERVICE(attr_##_name)
 
 /** @def BT_GATT_SERVICE
  *  @brief Service Structure Declaration Macro.
@@ -865,12 +892,37 @@ typedef u8_t (*bt_gatt_discover_func_t)(struct bt_conn *conn,
 					const struct bt_gatt_attr *attr,
 					struct bt_gatt_discover_params *params);
 
+/* GATT Discover types */
 enum {
+	/** Discover Primary Services. */
 	BT_GATT_DISCOVER_PRIMARY,
+	/** Discover Secondary Services. */
 	BT_GATT_DISCOVER_SECONDARY,
+	/** Discover Included Services. */
 	BT_GATT_DISCOVER_INCLUDE,
+	/** Discover Characteristic Values.
+	 *
+	 *  Discover Characteristic Value and its properties.
+	 */
 	BT_GATT_DISCOVER_CHARACTERISTIC,
+	/** Discover Descriptors.
+	 *
+	 *  Discover Attributes which are not services or characteristics.
+	 *
+	 *  Note: The use of this type of discover is not recommended for
+	 *  discovering in ranges across multiple services/characteristics
+	 *  as it may incur in extra round trips.
+	 */
 	BT_GATT_DISCOVER_DESCRIPTOR,
+	/** Discover Attributes.
+	 *
+	 *  Discover Attributes of any type.
+	 *
+	 *  Note: The use of this type of discover is not recommended for
+	 *  discovering in ranges across multiple services/characteristics as
+	 *  it may incur in more round trips.
+	 */
+	BT_GATT_DISCOVER_ATTRIBUTE,
 };
 
 /** @brief GATT Discover Attributes parameters */
@@ -946,9 +998,14 @@ typedef u8_t (*bt_gatt_read_func_t)(struct bt_conn *conn, u8_t err,
  *  @param handle_count If equals to 1 single.handle and single.offset
  *                      are used.  If >1 Read Multiple Characteristic
  *                      Values is performed and handles are used.
+ *                      If equals to 0 by_uuid is used for Read Using
+ *                      Characteristic UUID.
  *  @param handle Attribute handle
  *  @param offset Attribute data offset
  *  @param handles Handles to read in Read Multiple Characteristic Values
+ *  @param start_handle First requested handle number
+ *  @param end_handle Last requested handle number
+ *  @param uuid 2 or 16 octet UUID
  */
 struct bt_gatt_read_params {
 	struct bt_att_req _req;
@@ -960,12 +1017,25 @@ struct bt_gatt_read_params {
 			u16_t offset;
 		} single;
 		u16_t *handles;
+		struct {
+			u16_t start_handle;
+			u16_t end_handle;
+			struct bt_uuid *uuid;
+		} by_uuid;
 	};
 };
 
 /** @brief Read Attribute Value by handle
  *
  *  This procedure read the attribute value and return it to the callback.
+ *
+ *  When reading attributes by UUID the callback can be called multiple times
+ *  depending on how many instances of given the UUID exists with the
+ *  start_handle being updated for each instance.
+ *
+ *  If an instance does contain a long value which cannot be read entirely the
+ *  caller will need to read the remaining data separately using the handle and
+ *  offset.
  *
  *  Note: This procedure is asynchronous therefore the parameters need to
  *  remains valid while it is active.

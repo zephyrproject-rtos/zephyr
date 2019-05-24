@@ -24,19 +24,19 @@
 #include <kswap.h>
 #include <arch/x86/segmentation.h>
 
-extern void _SpuriousIntHandler(void *handler);
-extern void _SpuriousIntNoErrCodeHandler(void *handler);
+extern void z_SpuriousIntHandler(void *handler);
+extern void z_SpuriousIntNoErrCodeHandler(void *handler);
 
 /*
  * Place the addresses of the spurious interrupt handlers into the intList
  * section. The genIdt tool can then populate any unused vectors with
  * these routines.
  */
-void *__attribute__((section(".spurIsr"))) MK_ISR_NAME(_SpuriousIntHandler) =
-	&_SpuriousIntHandler;
+void *__attribute__((section(".spurIsr"))) MK_ISR_NAME(z_SpuriousIntHandler) =
+	&z_SpuriousIntHandler;
 void *__attribute__((section(".spurNoErrIsr")))
-	MK_ISR_NAME(_SpuriousIntNoErrCodeHandler) =
-		&_SpuriousIntNoErrCodeHandler;
+	MK_ISR_NAME(z_SpuriousIntNoErrCodeHandler) =
+		&z_SpuriousIntNoErrCodeHandler;
 
 /* FIXME: IRQ direct inline functions have to be placed here and not in
  * arch/cpu.h as inline functions due to nasty circular dependency between
@@ -48,32 +48,32 @@ void *__attribute__((section(".spurNoErrIsr")))
  */
 
 #ifdef CONFIG_SYS_POWER_MANAGEMENT
-void _arch_irq_direct_pm(void)
+void z_arch_irq_direct_pm(void)
 {
 	if (_kernel.idle) {
 		s32_t idle_val = _kernel.idle;
 
 		_kernel.idle = 0;
-		_sys_power_save_idle_exit(idle_val);
+		z_sys_power_save_idle_exit(idle_val);
 	}
 }
 #endif
 
-void _arch_isr_direct_header(void)
+void z_arch_isr_direct_header(void)
 {
-	_int_latency_start();
+	z_int_latency_start();
 	z_sys_trace_isr_enter();
 
 	/* We're not going to unlock IRQs, but we still need to increment this
-	 * so that _is_in_isr() works
+	 * so that z_is_in_isr() works
 	 */
 	++_kernel.nested;
 }
 
-void _arch_isr_direct_footer(int swap)
+void z_arch_isr_direct_footer(int swap)
 {
-	_irq_controller_eoi();
-	_int_latency_stop();
+	z_irq_controller_eoi();
+	z_int_latency_stop();
 	sys_trace_isr_exit();
 	--_kernel.nested;
 
@@ -83,11 +83,11 @@ void _arch_isr_direct_footer(int swap)
 	 * 2) We are not in a nested interrupt
 	 * 3) Next thread to run in the ready queue is not this thread
 	 */
-	if (swap && !_kernel.nested &&
+	if (swap != 0 && _kernel.nested == 0 &&
 	    _kernel.ready_q.cache != _current) {
 		unsigned int flags;
 
-		/* Fetch EFLAGS argument to _Swap() */
+		/* Fetch EFLAGS argument to z_swap() */
 		__asm__ volatile (
 			"pushfl\n\t"
 			"popl %0\n\t"
@@ -95,7 +95,7 @@ void _arch_isr_direct_footer(int swap)
 			:
 			: "memory"
 			);
-		(void)_Swap_irqlock(flags);
+		(void)z_swap_irqlock(flags);
 	}
 }
 
@@ -163,7 +163,7 @@ static unsigned int priority_to_free_vector(unsigned int requested_priority)
 	unsigned int vector_block;
 	unsigned int vector;
 
-	static unsigned int mask[2] = {0x0000ffff, 0xffff0000};
+	static unsigned int mask[2] = {0x0000ffffU, 0xffff0000U};
 
 	vector_block = requested_priority + 2;
 
@@ -198,7 +198,7 @@ static unsigned int priority_to_free_vector(unsigned int requested_priority)
 			z_interrupt_vectors_allocated[entry];
 	fsb = find_lsb_set(search_set);
 
-	__ASSERT(fsb != 0, "No remaning vectors for priority level %d",
+	__ASSERT(fsb != 0U, "No remaning vectors for priority level %d",
 		 requested_priority);
 
 	/*
@@ -206,7 +206,7 @@ static unsigned int priority_to_free_vector(unsigned int requested_priority)
 	 * Mark it as allocated by clearing the bit.
 	 */
 	--fsb;
-	z_interrupt_vectors_allocated[entry] &= ~(1 << fsb);
+	z_interrupt_vectors_allocated[entry] &= ~BIT(fsb);
 
 	/* compute vector given allocated bit within the priority level */
 	vector = (entry << 5) + fsb;
@@ -249,11 +249,11 @@ static void idt_vector_install(int vector, void *irq_handler)
 	int key;
 
 	key = irq_lock();
-	_init_irq_gate(&z_x86_idt.entries[vector], CODE_SEG,
+	z_init_irq_gate(&z_x86_idt.entries[vector], CODE_SEG,
 		       (u32_t)irq_handler, 0);
 #ifdef CONFIG_MVIC
 	/* MVIC requires IDT be reloaded if the entries table is ever changed */
-	_set_idt(&z_x86_idt);
+	z_set_idt(&z_x86_idt);
 #endif
 	irq_unlock(key);
 }
@@ -301,7 +301,7 @@ static void idt_vector_install(int vector, void *irq_handler)
  * the processor.
  */
 
-int _arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
+int z_arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 		void (*routine)(void *parameter), void *parameter,
 		u32_t flags)
 {
@@ -310,15 +310,15 @@ int _arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 	key = irq_lock();
 
 #ifdef CONFIG_X86_FIXED_IRQ_MAPPING
-	vector = _IRQ_TO_INTERRUPT_VECTOR(irq);
+	vector = Z_IRQ_TO_INTERRUPT_VECTOR(irq);
 #else
 	vector = priority_to_free_vector(priority);
 	/* 0 indicates not used, vectors for interrupts start at 32 */
-	__ASSERT(_irq_to_interrupt_vector[irq] == 0,
+	__ASSERT(_irq_to_interrupt_vector[irq] == 0U,
 		 "IRQ %d already configured", irq);
 	_irq_to_interrupt_vector[irq] = vector;
 #endif
-	_irq_controller_irq_config(vector, irq, flags);
+	z_irq_controller_irq_config(vector, irq, flags);
 
 	stub_idx = next_irq_stub++;
 	__ASSERT(stub_idx < CONFIG_X86_DYNAMIC_IRQ_STUBS,

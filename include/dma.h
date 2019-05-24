@@ -155,6 +155,21 @@ struct dma_config {
 };
 
 /**
+ * DMA runtime status structure
+ *
+ * busy 			- is current DMA transfer busy or idle
+ * dir				- DMA transfer direction
+ * pending_length 		- data length pending to be transferred in bytes
+ * 					or platform dependent.
+ *
+ */
+struct dma_status {
+	bool busy;
+	enum dma_channel_direction dir;
+	u32_t pending_length;
+};
+
+/**
  * @cond INTERNAL_HIDDEN
  *
  * These are for internal use only, so skip these in
@@ -171,11 +186,15 @@ typedef int (*dma_api_start)(struct device *dev, u32_t channel);
 
 typedef int (*dma_api_stop)(struct device *dev, u32_t channel);
 
+typedef int (*dma_api_get_status)(struct device *dev, u32_t channel,
+				  struct dma_status *status);
+
 struct dma_driver_api {
 	dma_api_config config;
 	dma_api_reload reload;
 	dma_api_start start;
 	dma_api_stop stop;
+	dma_api_get_status get_status;
 };
 /**
  * @endcond
@@ -220,7 +239,11 @@ static inline int dma_reload(struct device *dev, u32_t channel,
 	const struct dma_driver_api *api =
 		(const struct dma_driver_api *)dev->driver_api;
 
-	return api->reload(dev, channel, src, dst, size);
+	if (api->reload) {
+		return api->reload(dev, channel, src, dst, size);
+	}
+
+	return -ENOSYS;
 }
 
 /**
@@ -239,7 +262,7 @@ static inline int dma_reload(struct device *dev, u32_t channel,
  */
 __syscall int dma_start(struct device *dev, u32_t channel);
 
-static inline int _impl_dma_start(struct device *dev, u32_t channel)
+static inline int z_impl_dma_start(struct device *dev, u32_t channel)
 {
 	const struct dma_driver_api *api =
 		(const struct dma_driver_api *)dev->driver_api;
@@ -262,12 +285,39 @@ static inline int _impl_dma_start(struct device *dev, u32_t channel)
  */
 __syscall int dma_stop(struct device *dev, u32_t channel);
 
-static inline int _impl_dma_stop(struct device *dev, u32_t channel)
+static inline int z_impl_dma_stop(struct device *dev, u32_t channel)
 {
 	const struct dma_driver_api *api =
 		(const struct dma_driver_api *)dev->driver_api;
 
 	return api->stop(dev, channel);
+}
+
+/**
+ * @brief get current runtime status of DMA transfer
+ *
+ * Implementations must check the validity of the channel ID passed in and
+ * return -EINVAL if it is invalid or -ENOSYS if not supported.
+ *
+ * @param dev     Pointer to the device structure for the driver instance.
+ * @param channel Numeric identification of the channel where the transfer was
+ *                being processed
+ * @param stat   a non-NULL dma_status object for storing DMA status
+ *
+ * @retval non-negative if successful.
+ * @retval Negative errno code if failure.
+ */
+static inline int dma_get_status(struct device *dev, u32_t channel,
+				 struct dma_status *stat)
+{
+	const struct dma_driver_api *api =
+		(const struct dma_driver_api *)dev->driver_api;
+
+	if (api->get_status) {
+		return api->get_status(dev, channel, stat);
+	}
+
+	return -ENOSYS;
 }
 
 /**

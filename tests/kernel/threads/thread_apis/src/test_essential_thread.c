@@ -10,22 +10,22 @@
 
 struct k_thread kthread_thread;
 
-#define STACKSIZE 1024
+#define STACKSIZE (1024 + CONFIG_TEST_EXTRA_STACKSIZE)
 K_THREAD_STACK_DEFINE(kthread_stack, STACKSIZE);
 K_SEM_DEFINE(sync_sem, 0, 1);
 
 static void thread_entry(void *p1, void *p2, void *p3)
 {
-	_thread_essential_set();
+	z_thread_essential_set();
 
-	if (_is_thread_essential()) {
+	if (z_is_thread_essential()) {
 		k_busy_wait(100);
 	} else {
 		zassert_unreachable("The thread is not set as essential");
 	}
 
-	_thread_essential_clear();
-	zassert_false(_is_thread_essential(),
+	z_thread_essential_clear();
+	zassert_false(z_is_thread_essential(),
 		      "Essential flag of the thread is not cleared");
 
 	k_sem_give(&sync_sem);

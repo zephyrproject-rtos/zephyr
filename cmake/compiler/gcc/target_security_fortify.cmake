@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 # See root CMakeLists.txt for description and expectations of this macro
 macro(toolchain_cc_security_fortify)
 

@@ -19,7 +19,7 @@ K_SEM_DEFINE(barrier_sem,
 
 ZTEST_BMEM bool valid_fault;
 
-void _SysFatalErrorHandler(unsigned int reason, const NANO_ESF *pEsf)
+void z_SysFatalErrorHandler(unsigned int reason, const NANO_ESF *pEsf)
 {
 	printk("Caught system error -- reason %d %d\n", reason, valid_fault);
 	if (valid_fault) {

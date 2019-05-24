@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Texas Instruments Incorporated
+ * Copyright (c) 2017-2018, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -164,16 +164,16 @@ extern const Timer_FxnTable TimerCC32XX_fxnTable;
  *  @endcode
  */
 typedef struct TimerCC32XX_HWAttrs_ {
-    /*!< The base address of the timer peripheral. */
+    /*! The base address of the timer peripheral. */
     uint32_t             baseAddress;
 
-    /*!< Specifies a full width timer or half-width timer. */
+    /*! Specifies a full width timer or half-width timer. */
     TimerCC32XX_SubTimer subTimer;
 
-    /*!< The hardware interrupt number for the timer peripheral. */
+    /*! The hardware interrupt number for the timer peripheral. */
     uint32_t             intNum;
 
-    /*!< The interrupt priority. */
+    /*! The interrupt priority. */
     uint32_t             intPriority;
 } TimerCC32XX_HWAttrs;
 

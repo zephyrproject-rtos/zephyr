@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
 	/* following sections are obtained via 'ld --verbose' */
 
 	/* Stabs debugging sections. */

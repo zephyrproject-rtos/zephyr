@@ -196,9 +196,6 @@ static int atmel_sam4s_init(struct device *arg)
 
 	key = irq_lock();
 
-	/* Clear all faults. */
-	_ClearFaults();
-
 	/*
 	 * Set FWS (Flash Wait State) value before increasing Master Clock
 	 * (MCK) frequency. Look at table 44.73 in the SAM4S datasheet.

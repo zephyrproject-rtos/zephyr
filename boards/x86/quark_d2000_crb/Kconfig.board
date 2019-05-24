@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 
 config BOARD_QUARK_D2000_CRB
 	bool "Intel Quark D2000 CRB"

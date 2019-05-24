@@ -119,6 +119,12 @@ config PLIC
 	  Platform Level Interrupt Controller provides support
 	  for external interrupt lines defined by the RISC-V SoC;
 
+config VEXRISCV_LITEX_IRQ
+	bool "VexRiscv LiteX Interrupt controller"
+	depends on SOC_RISCV32_LITEX_VEXRISCV
+	help
+	  IRQ implementation for LiteX VexRiscv
+
 config DW_ICTL
 	bool "Designware Interrupt Controller"
 	depends on MULTI_LEVEL_INTERRUPTS
@@ -163,5 +169,7 @@ source "drivers/interrupt_controller/Kconfig.multilevel"
 source "drivers/interrupt_controller/Kconfig.s1000"
 
 source "drivers/interrupt_controller/Kconfig.rv32m1"
+
+source "drivers/interrupt_controller/Kconfig.sam0"
 
 endmenu

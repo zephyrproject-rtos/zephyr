@@ -291,7 +291,7 @@ Flashing an Application to 96Boards Nitrogen
 ============================================
 
 Here is an example for the :ref:`hello_world` application. This
-requires installing the :ref:`nxp_opensda_pyocd` tools.
+requires installing the :ref:`pyocd-debug-host-tools`.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

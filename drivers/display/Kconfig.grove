@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 
 config GROVE_LCD_RGB
 	bool "Enable the Seeed Grove LCD RGB Backlight"

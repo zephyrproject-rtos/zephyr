@@ -15,6 +15,7 @@ supported:
   - nvs
   - spi
   - watchdog
+  - adc
 testing:
   ignore_tags:
     - net

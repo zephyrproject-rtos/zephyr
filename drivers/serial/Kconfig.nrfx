@@ -33,7 +33,10 @@ config UART_0_NRF_UART
 
 config UART_0_NRF_UARTE
 	bool "nRF UARTE 0"
-	depends on HAS_HW_NRF_UARTE0
+	# In nRF91 Series SoCs, UART peripherals share certain resources with
+	# SPI and TWI peripherals having the same instance number, and therefore
+	# these cannot be used simultaneously.
+	depends on HAS_HW_NRF_UARTE0 && !(SOC_SERIES_NRF91X && (SPI_0 || I2C_0))
 	select NRF_UARTE_PERIPHERAL
 	help
 	  Enable nRF UART with EasyDMA on port 0.
@@ -47,6 +50,13 @@ config UART_0_INTERRUPT_DRIVEN
 	default y
 	help
 	  This option enables UART interrupt support on port 0.
+
+config UART_0_ASYNC
+	bool "Enable Asynchronous API support on port 0"
+	depends on UART_ASYNC_API && !UART_0_INTERRUPT_DRIVEN
+	default y
+	help
+	  This option enables UART Asynchronous API support on port 0.
 
 config UART_0_NRF_PARITY_BIT
 	bool "Enable parity bit"
@@ -69,12 +79,29 @@ config UART_0_NRF_TX_BUFFER_SIZE
 	  This value is limited by range of TXD.MAXCNT register for
 	  particular SoC.
 
+config UART_0_NRF_HW_ASYNC
+	bool "Use hardware RX byte counting"
+	depends on UART_0_NRF_UARTE
+	depends on UART_ASYNC_API
+	help
+	  If default driver uses interrupts to count incoming bytes, it is possible
+	  that with higher speeds and/or high cpu load some data can be lost.
+	  It is recommended to use hardware byte counting in such scenarios.
+	  Hardware RX byte counting requires timer instance and one PPI channel
+
+config UART_0_NRF_HW_ASYNC_TIMER
+	int "Timer instance"
+	depends on UART_0_NRF_HW_ASYNC
+
 endif # UART_0_NRF_UART || UART_0_NRF_UARTE
 
 # ----------------- port 1 -----------------
 config UART_1_NRF_UARTE
 	bool "nRF UARTE 1"
-	depends on HAS_HW_NRF_UARTE1
+	# In nRF91 Series SoCs, UART peripherals share certain resources with
+	# SPI and TWI peripherals having the same instance number, and therefore
+	# these cannot be used simultaneously.
+	depends on HAS_HW_NRF_UARTE1 && !(SOC_SERIES_NRF91X && (SPI_1 || I2C_1))
 	select NRF_UARTE_PERIPHERAL
 	help
 	  Enable nRF UART with EasyDMA on port 1.
@@ -87,6 +114,13 @@ config UART_1_INTERRUPT_DRIVEN
 	default y
 	help
 	  This option enables UART interrupt support on port 1.
+
+config UART_1_ASYNC
+	bool "Enable Asynchronous API support on port 1"
+	depends on UART_ASYNC_API && !UART_1_INTERRUPT_DRIVEN
+	default y
+	help
+	  This option enables UART Asynchronous API support on port 1.
 
 config UART_1_NRF_PARITY_BIT
 	bool "Enable parity bit"
@@ -101,6 +135,7 @@ config UART_1_NRF_FLOW_CONTROL
 
 config UART_1_NRF_TX_BUFFER_SIZE
 	int "Size of RAM buffer"
+	depends on UART_INTERRUPT_DRIVEN
 	range 1 65535
 	default 32
 	help
@@ -108,12 +143,28 @@ config UART_1_NRF_TX_BUFFER_SIZE
 	  This value is limited by range of TXD.MAXCNT register for
 	  particular SoC.
 
+config UART_1_NRF_HW_ASYNC
+	bool "Use hardware RX byte counting"
+	depends on UART_1_ASYNC
+	help
+	  If default driver uses interrupts to count incoming bytes, it is possible
+	  that with higher speeds and/or high cpu load some data can be lost.
+	  It is recommended to use hardware byte counting in such scenarios.
+	  Hardware RX byte counting requires timer instance and one PPI channel
+
+config UART_1_NRF_HW_ASYNC_TIMER
+	int "Timer instance"
+	depends on UART_1_NRF_HW_ASYNC
+
 endif # UART_1_NRF_UARTE
 
 # ----------------- port 2 -----------------
 config UART_2_NRF_UARTE
 	bool "nRF UARTE 2"
-	depends on HAS_HW_NRF_UARTE2
+	# In nRF91 Series SoCs, UART peripherals share certain resources with
+	# SPI and TWI peripherals having the same instance number, and therefore
+	# these cannot be used simultaneously.
+	depends on HAS_HW_NRF_UARTE2 && !(SOC_SERIES_NRF91X && (SPI_2 || I2C_2))
 	select NRF_UARTE_PERIPHERAL
 	help
 	  Enable nRF UART with EasyDMA on port 2.
@@ -126,6 +177,13 @@ config UART_2_INTERRUPT_DRIVEN
 	default y
 	help
 	  This option enables UART interrupt support on port 2.
+
+config UART_2_ASYNC
+	bool "Enable Asynchronous API support on port 2"
+	depends on UART_ASYNC_API && !UART_2_INTERRUPT_DRIVEN
+	default y
+	help
+	  This option enables UART Asynchronous API support on port 2.
 
 config UART_2_NRF_PARITY_BIT
 	bool "Enable parity bit"
@@ -147,12 +205,28 @@ config UART_2_NRF_TX_BUFFER_SIZE
 	  This value is limited by range of TXD.MAXCNT register for
 	  particular SoC.
 
+config UART_2_NRF_HW_ASYNC
+	bool "Use hardware RX byte counting"
+	depends on UART_2_ASYNC
+	help
+	  If default driver uses interrupts to count incoming bytes, it is possible
+	  that with higher speeds and/or high cpu load some data can be lost.
+	  It is recommended to use hardware byte counting in such scenarios.
+	  Hardware RX byte counting requires timer instance and one PPI channel
+
+config UART_2_NRF_HW_ASYNC_TIMER
+	int "Timer instance"
+	depends on UART_2_NRF_HW_ASYNC
+
 endif # UART_2_NRF_UARTE
 
 # ----------------- port 3 -----------------
 config UART_3_NRF_UARTE
 	bool "nRF UARTE 3"
-	depends on HAS_HW_NRF_UARTE3
+	# In nRF91 Series SoCs, UART peripherals share certain resources with
+	# SPI and TWI peripherals having the same instance number, and therefore
+	# these cannot be used simultaneously.
+	depends on HAS_HW_NRF_UARTE3 && !(SOC_SERIES_NRF91X && (SPI_3 || I2C_3))
 	select NRF_UARTE_PERIPHERAL
 	help
 	  Enable nRF UART with EasyDMA on port 3.
@@ -165,6 +239,13 @@ config UART_3_INTERRUPT_DRIVEN
 	default y
 	help
 	  This option enables UART interrupt support on port 3.
+
+config UART_3_ASYNC
+	bool "Enable Asynchronous API support on port 3"
+	depends on UART_ASYNC_API && !UART_3_INTERRUPT_DRIVEN
+	default y
+	help
+	  This option enables UART Asynchronous API support on port 3.
 
 config UART_3_NRF_PARITY_BIT
 	bool "Enable parity bit"
@@ -186,7 +267,66 @@ config UART_3_NRF_TX_BUFFER_SIZE
 	  This value is limited by range of TXD.MAXCNT register for
 	  particular SoC.
 
+config UART_3_NRF_HW_ASYNC
+	bool "Use hardware RX byte counting"
+	depends on UART_3_ASYNC
+	help
+	  If default driver uses interrupts to count incoming bytes, it is possible
+	  that with higher speeds and/or high cpu load some data can be lost.
+	  It is recommended to use hardware byte counting in such scenarios.
+	  Hardware RX byte counting requires timer instance and one PPI channel
+
+config UART_3_NRF_HW_ASYNC_TIMER
+	int "Timer instance"
+	depends on UART_3_NRF_HW_ASYNC
+
 endif # UART_3_NRF_UARTE
+
+
+config NRFX_TIMER0
+	default y
+	depends on UART_0_NRF_HW_ASYNC_TIMER = 0 || UART_1_NRF_HW_ASYNC_TIMER = 0 || \
+		   UART_3_NRF_HW_ASYNC_TIMER = 0 || UART_2_NRF_HW_ASYNC_TIMER = 0
+
+config NRFX_TIMER1
+	default y
+	depends on UART_0_NRF_HW_ASYNC_TIMER = 1 || UART_1_NRF_HW_ASYNC_TIMER = 1 || \
+		   UART_3_NRF_HW_ASYNC_TIMER = 1 || UART_2_NRF_HW_ASYNC_TIMER = 1
+
+config NRFX_TIMER2
+	default y
+	depends on UART_0_NRF_HW_ASYNC_TIMER = 2 || UART_1_NRF_HW_ASYNC_TIMER = 2 || \
+		   UART_3_NRF_HW_ASYNC_TIMER = 2 || UART_2_NRF_HW_ASYNC_TIMER = 2
+
+config NRFX_TIMER3
+	default y
+	depends on UART_0_NRF_HW_ASYNC_TIMER = 3 || UART_1_NRF_HW_ASYNC_TIMER = 3 || \
+		   UART_3_NRF_HW_ASYNC_TIMER = 3 || UART_2_NRF_HW_ASYNC_TIMER = 3
+
+config NRFX_TIMER4
+	default y
+	depends on UART_0_NRF_HW_ASYNC_TIMER = 4 || UART_1_NRF_HW_ASYNC_TIMER = 4 || \
+		   UART_3_NRF_HW_ASYNC_TIMER = 4 || UART_2_NRF_HW_ASYNC_TIMER = 4
+
+
+if UART_0_NRF_HW_ASYNC || UART_1_NRF_HW_ASYNC || UART_2_NRF_HW_ASYNC || UART_3_NRF_HW_ASYNC
+
+config NRFX_TIMER
+	default y
+
+config NRFX_PPI
+	depends on HAS_HW_NRF_PPI
+	default y
+
+config NRFX_DPPI
+	depends on HAS_HW_NRF_DPPIC
+	default y
+
+config UARTE_NRF_HW_ASYNC
+	bool
+	default y
+
+endif
 
 config NRF_UART_PERIPHERAL
 	bool

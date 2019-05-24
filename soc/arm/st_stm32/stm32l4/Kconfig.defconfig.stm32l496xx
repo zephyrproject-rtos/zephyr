@@ -30,13 +30,9 @@ config GPIO_STM32_PORTF
 config GPIO_STM32_PORTG
 	default y
 
-config GPIO_STM32_PORTH
-	default y
-
 config GPIO_STM32_PORTI
 	default y
 
 endif # GPIO_STM32
 
 endif # SOC_STM32L496XG
-

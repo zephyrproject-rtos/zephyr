@@ -1,0 +1,6 @@
+sample:
+  name: Device Idle Power Management
+tests:
+  sample.power.ospm.dev_idle_pm:
+    platform_whitelist: nrf52840_pca10056 nrf52_pca10040
+    tags: power

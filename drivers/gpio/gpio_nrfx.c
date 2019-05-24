@@ -105,7 +105,7 @@ static int gpiote_pin_int_cfg(struct device *port, u32_t pin)
 
 			if (data->double_edge & BIT(pin)) {
 				pol = NRF_GPIOTE_POLARITY_TOGGLE;
-			} else if (((data->active_level & BIT(pin)) != 0)
+			} else if (((data->active_level & BIT(pin)) != 0U)
 				   ^ ((BIT(pin) & data->inverted) != 0)) {
 				pol = NRF_GPIOTE_POLARITY_LOTOHI;
 			} else {
@@ -257,7 +257,7 @@ static int gpio_nrfx_manage_callback(struct device *port,
 				     struct gpio_callback *callback,
 				     bool set)
 {
-	return _gpio_manage_callback(&get_port_data(port)->callbacks,
+	return gpio_manage_callback(&get_port_data(port)->callbacks,
 				     callback, set);
 }
 
@@ -337,7 +337,7 @@ static void cfg_level_pins(struct device *port)
 {
 	const struct gpio_nrfx_data *data = get_port_data(port);
 	const struct gpio_nrfx_cfg *cfg = get_port_cfg(port);
-	u32_t pin = 0;
+	u32_t pin = 0U;
 	u32_t bit = 1U << pin;
 	u32_t level_pins = get_level_pins(port);
 
@@ -381,7 +381,7 @@ static u32_t check_level_trigger_pins(struct device *port)
 	 * they appear to have triggered or not.  This ensures
 	 * nobody's requesting DETECT.
 	 */
-	u32_t pin = 0;
+	u32_t pin = 0U;
 	u32_t bit = 1U << pin;
 
 	while (level_pins) {
@@ -400,7 +400,7 @@ static u32_t check_level_trigger_pins(struct device *port)
 
 static inline void fire_callbacks(struct device *port, u32_t pins)
 {
-	_gpio_fire_callbacks(&get_port_data(port)->callbacks, port, pins);
+	gpio_fire_callbacks(&get_port_data(port)->callbacks, port, pins);
 }
 
 #ifdef CONFIG_GPIO_NRF_P0
@@ -440,7 +440,7 @@ static void gpiote_event_handler(void)
 		    nrf_gpiote_event_is_set(evt)) {
 			u32_t abs_pin = nrf_gpiote_event_pin_get(i);
 			/* Divide absolute pin number to port and pin parts. */
-			fired_triggers[abs_pin / 32] |= BIT(abs_pin % 32);
+			fired_triggers[abs_pin / 32U] |= BIT(abs_pin % 32);
 			nrf_gpiote_event_clear(evt);
 		}
 	}

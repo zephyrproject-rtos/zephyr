@@ -7,6 +7,8 @@
 #include <ztest.h>
 #include "test_sched.h"
 
+#ifdef CONFIG_TIMESLICING
+
 /* nrf 51 has lower ram, so creating less number of threads */
 #if CONFIG_SRAM_SIZE <= 24
 	#define NUM_THREAD 2
@@ -37,8 +39,8 @@ static void thread_tslice(void *p1, void *p2, void *p3)
 	int thread_parameter = ((int)p1 == (NUM_THREAD - 1)) ? '\n' :
 			       ((int)p1 + 'A');
 
-	s64_t expected_slice_min = __ticks_to_ms(_ms_to_ticks(SLICE_SIZE));
-	s64_t expected_slice_max = __ticks_to_ms(_ms_to_ticks(SLICE_SIZE) + 1);
+	s64_t expected_slice_min = __ticks_to_ms(z_ms_to_ticks(SLICE_SIZE));
+	s64_t expected_slice_max = __ticks_to_ms(z_ms_to_ticks(SLICE_SIZE) + 1);
 
 	while (1) {
 		s64_t tdelta = k_uptime_delta(&elapsed_slice);
@@ -58,7 +60,6 @@ static void thread_tslice(void *p1, void *p2, void *p3)
 		spin_for_ms(BUSY_MS);
 		k_sem_give(&sema1);
 	}
-
 }
 
 /*test cases*/
@@ -122,3 +123,10 @@ void test_slice_scheduling(void)
 
 	k_thread_priority_set(k_current_get(), old_prio);
 }
+
+#else /* CONFIG_TIMESLICING */
+void test_slice_scheduling(void)
+{
+	ztest_test_skip();
+}
+#endif /* CONFIG_TIMESLICING */

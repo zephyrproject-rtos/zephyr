@@ -62,13 +62,13 @@ MMU_BOOT_REGION(0xB0500000, 256*1024, MMU_ENTRY_WRITE);
  * @return N/A
  */
 /* This function is also called at deep sleep resume. */
-int _arc_init(struct device *arg)
+int z_arc_init(struct device *arg)
 {
 	u32_t *reset_vector;
 
 	ARG_UNUSED(arg);
 
-	if (SCSS_REG_VAL(SCSS_SS_STS) == 0) {
+	if (SCSS_REG_VAL(SCSS_SS_STS) == 0U) {
 		/* ARC shouldn't already be running! */
 		printk("ARC core already running!");
 		return -EIO;
@@ -81,7 +81,7 @@ int _arc_init(struct device *arg)
 	LOG_DBG("Reset vector address: %x", *reset_vector);
 	shared_data->arc_start = *reset_vector;
 	shared_data->flags = 0U;
-	if (shared_data->arc_start == 0) {
+	if (shared_data->arc_start == 0U) {
 		/* Reset vector points to NULL => skip ARC init. */
 		LOG_DBG("Reset vector is NULL, skipping ARC init.");
 		goto skip_arc_init;
@@ -94,13 +94,13 @@ int _arc_init(struct device *arg)
 
 	LOG_DBG("Waiting for arc to start...");
 	/* Block until the ARC core actually starts up */
-	while ((SCSS_REG_VAL(SCSS_SS_STS) & 0x4000) != 0) {
+	while ((SCSS_REG_VAL(SCSS_SS_STS) & 0x4000) != 0U) {
 	}
 
 	/* Block until ARC's quark_se_init() sets a flag indicating it is ready,
 	 * if we get stuck here ARC has run but has exploded very early */
 	LOG_DBG("Waiting for arc to init...");
-	while ((shared_data->flags & ARC_READY) == 0) {
+	while ((shared_data->flags & ARC_READY) == 0U) {
 	}
 
 skip_arc_init:
@@ -108,7 +108,7 @@ skip_arc_init:
 	return 0;
 }
 
-SYS_INIT(_arc_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_INIT(z_arc_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
 #endif /*CONFIG_ARC_INIT*/
 

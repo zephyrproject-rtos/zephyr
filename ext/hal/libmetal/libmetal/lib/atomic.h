@@ -16,7 +16,10 @@
 
 #if defined(HAVE_STDATOMIC_H) && !defined(__STDC_NO_ATOMICS__) && \
 	!defined(__cplusplus)
+# include <stdint.h>
 # include <stdatomic.h>
+#elif defined(__cplusplus)
+# include <atomic>
 #elif defined(__GNUC__)
 # include <metal/compiler/gcc/atomic.h>
 #else

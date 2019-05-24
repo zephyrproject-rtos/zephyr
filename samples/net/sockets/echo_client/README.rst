@@ -11,7 +11,7 @@ that will send IPv4 or IPv6 packets, wait for the data to be sent back,
 and then verify it matches the data that was sent.
 
 The source code for this sample application can be found at:
-:file:`samples/net/sockets/echo_client`.
+:zephyr_file:`samples/net/sockets/echo_client`.
 
 Requirements
 ************
@@ -110,6 +110,7 @@ Run echo-client application in QEMU:
    :zephyr-app: samples/net/sockets/echo_client
    :host-os: unix
    :board: qemu_x86
+   :conf: "prj.conf overlay-linux.conf"
    :goals: run
    :compact:
 

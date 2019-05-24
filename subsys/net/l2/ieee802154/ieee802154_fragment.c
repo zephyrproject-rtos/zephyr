@@ -198,7 +198,7 @@ void ieee802154_fragment(struct ieee802154_fragment_ctx *ctx,
 			max -= ctx->hdr_diff;
 		} else {
 			/* Adding IPv6 dispatch header */
-			max += 1;
+			max += 1U;
 		}
 	}
 
@@ -230,7 +230,7 @@ static void update_protocol_header_lengths(struct net_pkt *pkt, u16_t size)
 	NET_PKT_DATA_ACCESS_DEFINE(ipv6_access, struct net_ipv6_hdr);
 	struct net_ipv6_hdr *ipv6;
 
-	ipv6 = (struct net_ipv6_hdr *)net_pkt_get_data_new(pkt, &ipv6_access);
+	ipv6 = (struct net_ipv6_hdr *)net_pkt_get_data(pkt, &ipv6_access);
 	if (!ipv6) {
 		NET_ERR("could not get IPv6 header");
 		return;
@@ -245,8 +245,7 @@ static void update_protocol_header_lengths(struct net_pkt *pkt, u16_t size)
 		NET_PKT_DATA_ACCESS_DEFINE(udp_access, struct net_udp_hdr);
 		struct net_udp_hdr *udp;
 
-		udp = (struct net_udp_hdr *)net_pkt_get_data_new(pkt,
-								 &udp_access);
+		udp = (struct net_udp_hdr *)net_pkt_get_data(pkt, &udp_access);
 		if (udp) {
 			udp->len = htons(size - NET_IPV6H_LEN);
 			net_pkt_set_data(pkt, &udp_access);

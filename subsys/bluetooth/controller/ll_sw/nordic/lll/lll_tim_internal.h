@@ -4,7 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define TIFS_US 150
+/* Range Delay
+ * Refer to BT Spec v5.1 Vol.6, Part B, Section 4.2.3 Range Delay
+ * "4 / 1000" is an approximation of the propagation time in us of the
+ * signal to travel 1 meter.
+ */
+#define RANGE_DISTANCE 1000 /* meters */
+#define RANGE_DELAY_US (2 * RANGE_DISTANCE * 4 / 1000)
 
 static inline u32_t addr_us_get(u8_t phy)
 {

@@ -51,10 +51,10 @@ struct spi_context {
 };
 
 #define SPI_CONTEXT_INIT_LOCK(_data, _ctx_name)				\
-	._ctx_name.lock = _K_SEM_INITIALIZER(_data._ctx_name.lock, 0, 1)
+	._ctx_name.lock = Z_SEM_INITIALIZER(_data._ctx_name.lock, 0, 1)
 
 #define SPI_CONTEXT_INIT_SYNC(_data, _ctx_name)				\
-	._ctx_name.sync = _K_SEM_INITIALIZER(_data._ctx_name.sync, 0, 1)
+	._ctx_name.sync = Z_SEM_INITIALIZER(_data._ctx_name.sync, 0, 1)
 
 static inline bool spi_context_configured(struct spi_context *ctx,
 					  const struct spi_config *config)
@@ -227,7 +227,7 @@ void spi_context_buffers_setup(struct spi_context *ctx,
 	if (tx_bufs) {
 		ctx->current_tx = tx_bufs->buffers;
 		ctx->tx_count = tx_bufs->count;
-		ctx->tx_buf = ctx->current_tx->buf;
+		ctx->tx_buf = (const u8_t *)ctx->current_tx->buf;
 		ctx->tx_len = ctx->current_tx->len / dfs;
 	} else {
 		ctx->current_tx = NULL;
@@ -239,7 +239,7 @@ void spi_context_buffers_setup(struct spi_context *ctx,
 	if (rx_bufs) {
 		ctx->current_rx = rx_bufs->buffers;
 		ctx->rx_count = rx_bufs->count;
-		ctx->rx_buf = ctx->current_rx->buf;
+		ctx->rx_buf = (u8_t *)ctx->current_rx->buf;
 		ctx->rx_len = ctx->current_rx->len / dfs;
 	} else {
 		ctx->current_rx = NULL;
@@ -278,7 +278,7 @@ void spi_context_update_tx(struct spi_context *ctx, u8_t dfs, u32_t len)
 		ctx->tx_count--;
 		if (ctx->tx_count) {
 			ctx->current_tx++;
-			ctx->tx_buf = ctx->current_tx->buf;
+			ctx->tx_buf = (const u8_t *)ctx->current_tx->buf;
 			ctx->tx_len = ctx->current_tx->len / dfs;
 		} else {
 			ctx->tx_buf = NULL;
@@ -326,7 +326,7 @@ void spi_context_update_rx(struct spi_context *ctx, u8_t dfs, u32_t len)
 		ctx->rx_count--;
 		if (ctx->rx_count) {
 			ctx->current_rx++;
-			ctx->rx_buf = ctx->current_rx->buf;
+			ctx->rx_buf = (u8_t *)ctx->current_rx->buf;
 			ctx->rx_len = ctx->current_rx->len / dfs;
 		} else {
 			ctx->rx_buf = NULL;

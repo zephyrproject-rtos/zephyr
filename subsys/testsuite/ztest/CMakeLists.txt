@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 zephyr_include_directories(
   $ENV{ZEPHYR_BASE}/subsys/testsuite/include
   $ENV{ZEPHYR_BASE}/subsys/testsuite/ztest/include

@@ -14,7 +14,7 @@
 #include <xtensa_config.h>
 #include <kernel_internal.h>
 
-extern void _xt_user_exit(void);
+extern void z_xt_user_exit(void);
 
 /*
  * @brief Initialize a new thread
@@ -25,7 +25,7 @@ extern void _xt_user_exit(void);
  * needed anymore.
  *
  * The initial context is a basic stack frame that contains arguments for
- * _thread_entry() return address, that points at _thread_entry()
+ * z_thread_entry() return address, that points at z_thread_entry()
  * and status register.
  *
  * <options> is currently unused.
@@ -43,12 +43,12 @@ extern void _xt_user_exit(void);
  * @return N/A
  */
 
-void _new_thread(struct k_thread *thread, k_thread_stack_t *stack,
+void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 		size_t stackSize, k_thread_entry_t pEntry,
 		void *p1, void *p2, void *p3,
 		int priority, unsigned int options)
 {
-	char *pStack = K_THREAD_STACK_BUFFER(stack);
+	char *pStack = Z_THREAD_STACK_BUFFER(stack);
 
 	/* Align stack end to maximum alignment requirement. */
 	char *stackEnd = (char *)ROUND_DOWN(pStack + stackSize, 16);
@@ -57,7 +57,7 @@ void _new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	char *cpStack;
 #endif
 
-	_new_thread_init(thread, pStack, stackSize, priority, options);
+	z_new_thread_init(thread, pStack, stackSize, priority, options);
 
 #ifdef CONFIG_DEBUG
 	printk("\nstackPtr = %p, stackSize = %d\n", pStack, stackSize);
@@ -90,13 +90,13 @@ void _new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	/* Explicitly initialize certain saved registers */
 
 	 /* task entrypoint */
-	pInitCtx->pc   = (u32_t)_thread_entry;
+	pInitCtx->pc   = (u32_t)z_thread_entry;
 
 	/* physical top of stack frame */
 	pInitCtx->a1   = (u32_t)pInitCtx + XT_STK_FRMSZ;
 
 	/* user exception exit dispatcher */
-	pInitCtx->exit = (u32_t)_xt_user_exit;
+	pInitCtx->exit = (u32_t)z_xt_user_exit;
 
 	/* Set initial PS to int level 0, EXCM disabled, user mode.
 	 * Also set entry point argument arg.

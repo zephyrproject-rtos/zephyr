@@ -49,7 +49,7 @@ static int gpio_mcux_configure(struct device *dev,
 	}
 
 	/* Check if GPIO port supports interrupts */
-	if ((flags & GPIO_INT) && ((config->flags & GPIO_INT) == 0)) {
+	if ((flags & GPIO_INT) && ((config->flags & GPIO_INT) == 0U)) {
 		return -ENOTSUP;
 	}
 
@@ -179,7 +179,7 @@ static int gpio_mcux_manage_callback(struct device *dev,
 {
 	struct gpio_mcux_data *data = dev->driver_data;
 
-	return _gpio_manage_callback(&data->callbacks, callback, set);
+	return gpio_manage_callback(&data->callbacks, callback, set);
 }
 
 static int gpio_mcux_enable_callback(struct device *dev,
@@ -220,7 +220,7 @@ static void gpio_mcux_port_isr(void *arg)
 	int_status = config->port_base->ISFR;
 	enabled_int = int_status & data->pin_callback_enables;
 
-	_gpio_fire_callbacks(&data->callbacks, dev, enabled_int);
+	gpio_fire_callbacks(&data->callbacks, dev, enabled_int);
 
 	/* Clear the port interrupts */
 	config->port_base->ISFR = 0xFFFFFFFF;

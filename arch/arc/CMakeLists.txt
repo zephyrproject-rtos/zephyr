@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 # Enable debug support in mdb
 # Dwarf version 2 can be recognized by mdb
 # The default dwarf version in gdb is not recognized by mdb

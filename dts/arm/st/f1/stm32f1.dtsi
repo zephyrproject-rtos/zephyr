@@ -157,7 +157,7 @@
 			label = "SPI_1";
 		};
 
-		idwg: watchdog@40003000 {
+		iwdg: watchdog@40003000 {
 			compatible = "st,stm32-watchdog";
 			reg = <0x40003000 0x400>;
 			label = "IWDG";
@@ -226,6 +226,15 @@
 				label = "PWM_4";
 				#pwm-cells = <2>;
 			};
+		};
+
+		adc1: adc@40012400 {
+			compatible = "st,stm32-adc";
+			reg = <0x40012400 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000200>;
+			interrupts = <18 0>;
+			status = "disabled";
+			label = "ADC_1";
 		};
 	};
 };

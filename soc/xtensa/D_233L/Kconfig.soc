@@ -3,4 +3,3 @@
 
 config SOC_D_233L
 	bool "D_233L core"
-

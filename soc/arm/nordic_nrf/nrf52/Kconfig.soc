@@ -46,6 +46,50 @@ config SOC_NRF52810
 	select HAS_HW_NRF_UARTE0
 	select HAS_HW_NRF_WDT
 
+config SOC_NRF52811
+	depends on SOC_SERIES_NRF52X
+	bool
+	select HAS_HW_NRF_BPROT
+	select HAS_HW_NRF_CCM
+	select HAS_HW_NRF_CLOCK
+	select HAS_HW_NRF_COMP
+	select HAS_HW_NRF_ECB
+	select HAS_HW_NRF_EGU0
+	select HAS_HW_NRF_EGU1
+	select HAS_HW_NRF_GPIO0
+	select HAS_HW_NRF_GPIOTE
+	select HAS_HW_NRF_PDM
+	select HAS_HW_NRF_POWER
+	select HAS_HW_NRF_PPI
+	select HAS_HW_NRF_PWM0
+	select HAS_HW_NRF_QDEC
+	select HAS_HW_NRF_RNG
+	select HAS_HW_NRF_RTC0
+	select HAS_HW_NRF_RTC1
+	select HAS_HW_NRF_SAADC
+	select HAS_HW_NRF_SPI0
+	select HAS_HW_NRF_SPIM0
+	select HAS_HW_NRF_SPIS0
+	select HAS_HW_NRF_SPI1
+	select HAS_HW_NRF_SPIM1
+	select HAS_HW_NRF_SPIS1
+	select HAS_HW_NRF_SWI0
+	select HAS_HW_NRF_SWI1
+	select HAS_HW_NRF_SWI2
+	select HAS_HW_NRF_SWI3
+	select HAS_HW_NRF_SWI4
+	select HAS_HW_NRF_SWI5
+	select HAS_HW_NRF_TEMP
+	select HAS_HW_NRF_TIMER0
+	select HAS_HW_NRF_TIMER1
+	select HAS_HW_NRF_TIMER2
+	select HAS_HW_NRF_TWI0
+	select HAS_HW_NRF_TWIM0
+	select HAS_HW_NRF_TWIS0
+	select HAS_HW_NRF_UART0
+	select HAS_HW_NRF_UARTE0
+	select HAS_HW_NRF_WDT
+
 config SOC_NRF52832
 	depends on SOC_SERIES_NRF52X
 	bool
@@ -189,6 +233,10 @@ depends on SOC_SERIES_NRF52X
 config SOC_NRF52810_QFAA
 	bool "NRF52810_QFAA"
 	select SOC_NRF52810
+
+config SOC_NRF52811_QFAA
+	bool "NRF52811_QFAA"
+	select SOC_NRF52811
 
 config SOC_NRF52832_CIAA
 	bool "NRF52832_CIAA"

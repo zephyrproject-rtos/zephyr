@@ -20,7 +20,7 @@
 
 _ASM_FILE_PROLOGUE
 
-GTEXT(_CpuIdleInit)
+GTEXT(z_CpuIdleInit)
 #ifdef CONFIG_SYS_POWER_MANAGEMENT
 GTEXT(_NanoIdleValGet)
 GTEXT(_NanoIdleValClear)
@@ -46,10 +46,10 @@ GTEXT(k_cpu_atomic_idle)
  *
  * C function prototype:
  *
- * void _CpuIdleInit (void);
+ * void z_CpuIdleInit (void);
  */
 
-SECTION_FUNC(TEXT, _CpuIdleInit)
+SECTION_FUNC(TEXT, z_CpuIdleInit)
 	ldr r1, =_SCB_SCR
 	movs.n r2, #_SCR_INIT_BITS
 	str r2, [r1]
@@ -179,14 +179,14 @@ SECTION_FUNC(TEXT, k_cpu_atomic_idle)
 	cpsid i
 
 	/*
-	 * No need to set SEVONPEND, it's set once in _CpuIdleInit() and never
+	 * No need to set SEVONPEND, it's set once in z_CpuIdleInit() and never
 	 * touched again.
 	 */
 
 	/* r0: interrupt mask from caller */
 
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
-	/* No BASEPRI, call wfe directly (SEVONPEND set in _CpuIdleInit()) */
+	/* No BASEPRI, call wfe directly (SEVONPEND set in z_CpuIdleInit()) */
 	wfe
 
 	cmp r0, #0

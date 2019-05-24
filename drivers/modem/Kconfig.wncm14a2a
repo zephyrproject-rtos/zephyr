@@ -8,13 +8,9 @@
 
 menuconfig MODEM_WNCM14A2A
 	bool "Enable Wistron LTE-M modem driver"
-	depends on MODEM
 	select MODEM_RECEIVER
 	select NET_OFFLOAD
-	select UART_MCUX_2 if BOARD_FRDM_K64F
-	select GPIO_NRF_P1 if SOC_NRF52840
-	select UART_1_NRF_UARTE if SOC_NRF52840
-	select UART_1_NRF_FLOW_CONTROL if SOC_NRF52840
+	imply GPIO
 	help
 	  Choose this setting to enable Wistron WNC-M14A2A LTE-M modem driver.
 	  NOTE: Currently the pin settings only work with FRDM K64F shield.
@@ -23,14 +19,12 @@ if MODEM_WNCM14A2A
 
 config MODEM_WNCM14A2A_RX_STACK_SIZE
 	int "Size of the stack for the WNC-M14A2A modem driver RX thread"
-	depends on MODEM_WNCM14A2A
 	default 1028
 	help
 	  This stack is used by the WNCM14A2A RX thread.
 
 config MODEM_WNCM14A2A_RX_WORKQ_STACK_SIZE
 	int "Size of the stack for the WNC-M14A2A modem driver work queue"
-	depends on MODEM_WNCM14A2A
 	default 2048
 	help
 	  This stack is used by the work queue to pass off net_pkt data
@@ -39,7 +33,6 @@ config MODEM_WNCM14A2A_RX_WORKQ_STACK_SIZE
 
 config MODEM_WNCM14A2A_APN_NAME
 	string "APN name for establishing network connection"
-	depends on MODEM_WNCM14A2A
 	default "m2m.com.attz"
 	help
 	  This setting is used in the AT%PDNSET command to set the APN name
@@ -48,7 +41,6 @@ config MODEM_WNCM14A2A_APN_NAME
 
 config MODEM_WNCM14A2A_INIT_PRIORITY
 	int "WNC-M14A2A driver init priority"
-	depends on MODEM_WNCM14A2A
 	default 80
 	help
 	  WNC-M14A2A device driver initialization priority.
@@ -56,4 +48,4 @@ config MODEM_WNCM14A2A_INIT_PRIORITY
 	  Note that the priority needs to be lower than the net stack
 	  so that it can start before the networking sub-system.
 
-endif
+endif # MODEM_WNCM14A2A

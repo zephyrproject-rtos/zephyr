@@ -100,7 +100,7 @@ First, run your favorite terminal program to listen for output.
    $ minicom -D <tty_device> -b 115200
 
 Replace :code:`<tty_device>` with the port where the nRF52840 SoC is connected
-to. Usually, under Linux it will be :code:`/dev/ttyACM1`. The `/dev/ttyACM0`
+to. Usually, under Linux it will be ``/dev/ttyACM1``. The ``/dev/ttyACM0``
 port is connected to the nRF9160 SiP on the board.
 
 Then build and flash the application in the usual way.

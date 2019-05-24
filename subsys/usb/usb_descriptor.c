@@ -69,7 +69,7 @@ USBD_DEVICE_DESCR_DEFINE(primary) struct common_descriptor common_desc = {
 		.bDeviceSubClass = 0,
 		.bDeviceProtocol = 0,
 #endif
-		.bMaxPacketSize0 = MAX_PACKET_SIZE0,
+		.bMaxPacketSize0 = USB_MAX_CTRL_MPS,
 		.idVendor = sys_cpu_to_le16((u16_t)CONFIG_USB_DEVICE_VID),
 		.idProduct = sys_cpu_to_le16((u16_t)CONFIG_USB_DEVICE_PID),
 		.bcdDevice = sys_cpu_to_le16(BCDDEVICE_RELNUM),
@@ -191,7 +191,7 @@ int usb_get_str_descriptor_idx(void *ptr)
 	struct usb_string_descriptor *str = ptr;
 	int str_descr_idx = 0;
 
-	while (head->bLength != 0) {
+	while (head->bLength != 0U) {
 		switch (head->bDescriptorType) {
 		case USB_STRING_DESC:
 			if (head == (struct usb_desc_header *)str) {
@@ -253,6 +253,9 @@ static int usb_validate_ep_cfg_data(struct usb_ep_descriptor * const ep_descr,
 				ep_cfg.ep_addr = idx;
 			}
 			if (!usb_dc_ep_check_cap(&ep_cfg)) {
+				LOG_DBG("Fixing EP address %x -> %x",
+					ep_descr->bEndpointAddress,
+					ep_cfg.ep_addr);
 				ep_descr->bEndpointAddress = ep_cfg.ep_addr;
 				ep_data[i].ep_addr = ep_cfg.ep_addr;
 				if (ep_cfg.ep_addr & USB_EP_DIR_IN) {
@@ -341,7 +344,7 @@ static int usb_fix_descriptor(struct usb_desc_header *head)
 	u8_t str_descr_idx = 0U;
 	u32_t requested_ep = BIT(16) | BIT(0);
 
-	while (head->bLength != 0) {
+	while (head->bLength != 0U) {
 		switch (head->bDescriptorType) {
 		case USB_CONFIGURATION_DESC:
 			cfg_descr = (struct usb_cfg_descriptor *)head;
@@ -358,7 +361,7 @@ static int usb_fix_descriptor(struct usb_desc_header *head)
 				break;
 			}
 
-			if (if_descr->bInterfaceNumber == 0) {
+			if (if_descr->bInterfaceNumber == 0U) {
 				cfg_data = usb_get_cfg_data(if_descr);
 				if (!cfg_data) {
 					LOG_ERR("There is no usb_cfg_data "
@@ -414,7 +417,7 @@ static int usb_fix_descriptor(struct usb_desc_header *head)
 				cfg_descr->bNumInterfaces = numof_ifaces;
 			}
 
-			str_descr_idx += 1;
+			str_descr_idx += 1U;
 
 			break;
 		default:

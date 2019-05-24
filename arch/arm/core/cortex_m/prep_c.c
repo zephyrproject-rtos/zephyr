@@ -10,7 +10,7 @@
  *
  *
  * Initialization of full C support: zero the .bss, copy the .data if XIP,
- * call _Cstart().
+ * call z_cstart().
  *
  * Stack is available in this module, but not the global data/bss until their
  * initialization is performed.
@@ -22,7 +22,6 @@
 #include <linker/linker-defs.h>
 #include <kernel_internal.h>
 #include <arch/arm/cortex_m/cmsis.h>
-#include <cortex_m/stack.h>
 
 #if defined(__GNUC__)
 /*
@@ -36,44 +35,6 @@
 #endif
 
 #include <string.h>
-
-static inline void switch_sp_to_psp(void)
-{
-	__set_CONTROL(__get_CONTROL() | CONTROL_SPSEL_Msk);
-	/*
-	 * When changing the stack pointer, software must use an ISB instruction
-	 * immediately after the MSR instruction. This ensures that instructions
-	 * after the ISB instruction execute using the new stack pointer.
-	 */
-	__ISB();
-}
-
-static inline void set_and_switch_to_psp(void)
-{
-	u32_t process_sp;
-
-	process_sp = (u32_t)&_interrupt_stack + CONFIG_ISR_STACK_SIZE;
-	__set_PSP(process_sp);
-	switch_sp_to_psp();
-}
-
-void lock_interrupts(void)
-{
-#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
-	__disable_irq();
-#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
-	__set_BASEPRI(_EXC_IRQ_DEFAULT_PRIO);
-#else
-#error Unknown ARM architecture
-#endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
-}
-
-#ifdef CONFIG_INIT_STACKS
-static inline void init_stacks(void)
-{
-	memset(&_interrupt_stack, 0xAA, CONFIG_ISR_STACK_SIZE);
-}
-#endif
 
 #ifdef CONFIG_CPU_CORTEX_M_HAS_VTOR
 
@@ -92,7 +53,7 @@ static inline void relocate_vector_table(void)
 #else
 
 #if defined(CONFIG_SW_VECTOR_RELAY)
-_GENERIC_SECTION(.vt_pointer_section) void *_vector_table_pointer;
+Z_GENERIC_SECTION(.vt_pointer_section) void *_vector_table_pointer;
 #endif
 
 #define VECTOR_ADDRESS 0
@@ -119,31 +80,60 @@ static inline void enable_floating_point(void)
 {
 	/*
 	 * Upon reset, the Co-Processor Access Control Register is 0x00000000.
-	 * Enable CP10 and CP11 co-processors to enable floating point.
+	 * Enable CP10 and CP11 Co-Processors to enable access to floating
+	 * point registers.
 	 */
+#if defined(CONFIG_USERSPACE)
+	/* Full access */
 	SCB->CPACR |= CPACR_CP10_FULL_ACCESS | CPACR_CP11_FULL_ACCESS;
+#else
+	/* Privileged access only */
+	SCB->CPACR |= CPACR_CP10_PRIV_ACCESS | CPACR_CP11_PRIV_ACCESS;
+#endif /* CONFIG_USERSPACE */
 	/*
 	 * Upon reset, the FPU Context Control Register is 0xC0000000
 	 * (both Automatic and Lazy state preservation is enabled).
-	 * Disable lazy state preservation so the volatile FP registers are
-	 * always saved on exception.
 	 */
-	FPU->FPCCR = FPU_FPCCR_ASPEN_Msk; /* FPU_FPCCR_LSPEN = 0 */
+#if !defined(CONFIG_FP_SHARING)
+	/* Default mode is Unshared FP registers mode. We disable the
+	 * automatic stacking of FP registers (automatic setting of
+	 * FPCA bit in the CONTROL register), upon exception entries,
+	 * as the FP registers are to be used by a single context (and
+	 * the use of FP registers in ISRs is not supported). This
+	 * configuration improves interrupt latency and decreases the
+	 * stack memory requirement for the (single) thread that makes
+	 * use of the FP co-processor.
+	 */
+	FPU->FPCCR &= (~(FPU_FPCCR_ASPEN_Msk | FPU_FPCCR_LSPEN_Msk));
+#else
+	/*
+	 * Enable both automatic and lazy state preservation of the FP context.
+	 * The FPCA bit of the CONTROL register will be automatically set, if
+	 * the thread uses the floating point registers. Because of lazy state
+	 * preservation the volatile FP registers will not be stacked upon
+	 * exception entry, however, the required area in the stack frame will
+	 * be reserved for them. This configuration improves interrupt latency.
+	 * The registers will eventually be stacked when the thread is swapped
+	 * out during context-switch.
+	 */
+	FPU->FPCCR = FPU_FPCCR_ASPEN_Msk | FPU_FPCCR_LSPEN_Msk;
+#endif /* CONFIG_FP_SHARING */
+
+	/* Make the side-effects of modifying the FPCCR be realized
+	 * immediately.
+	 */
+	__DSB();
+	__ISB();
+
+	/* Initialize the Floating Point Status and Control Register. */
+	__set_FPSCR(0);
 
 	/*
-	 * Although automatic state preservation is enabled, the processor
-	 * does not automatically save the volatile FP registers until they
-	 * have first been touched. Perform a dummy move operation so that
-	 * the stack frames are created as expected before any thread
-	 * context switching can occur. It has to be surrounded by instruction
-	 * synchronization barriers to ensure that the whole sequence is
-	 * serialized.
+	 * Note:
+	 * The use of the FP register bank is enabled, however the FP context
+	 * will be activated (FPCA bit on the CONTROL register) in the presence
+	 * of floating point instructions.
 	 */
-	__asm__ volatile(
-		"isb;\n\t"
-		"vmov s0, s0;\n\t"
-		"isb;\n\t"
-		);
 }
 #else
 static inline void enable_floating_point(void)
@@ -151,7 +141,7 @@ static inline void enable_floating_point(void)
 }
 #endif
 
-extern FUNC_NORETURN void _Cstart(void);
+extern FUNC_NORETURN void z_cstart(void);
 /**
  *
  * @brief Prepare to and run C code
@@ -161,29 +151,21 @@ extern FUNC_NORETURN void _Cstart(void);
  * @return N/A
  */
 
-extern void _IntLibInit(void);
+extern void z_IntLibInit(void);
 
 #ifdef CONFIG_BOOT_TIME_MEASUREMENT
 	extern u64_t __start_time_stamp;
 #endif
 void _PrepC(void)
 {
-#ifdef CONFIG_INIT_STACKS
-	init_stacks();
-#endif
-	/*
-	 * Set PSP and use it to boot without using MSP, so that it
-	 * gets set to _interrupt_stack during initialization.
-	 */
-	set_and_switch_to_psp();
 	relocate_vector_table();
 	enable_floating_point();
-	_bss_zero();
-	_data_copy();
+	z_bss_zero();
+	z_data_copy();
 #ifdef CONFIG_BOOT_TIME_MEASUREMENT
 	__start_time_stamp = 0U;
 #endif
-	_IntLibInit();
-	_Cstart();
+	z_IntLibInit();
+	z_cstart();
 	CODE_UNREACHABLE;
 }

@@ -59,7 +59,7 @@ static inline int wait_for_ack(struct net_if *iface,
 		k_sem_init(&ctx->ack_lock, 0, UINT_MAX);
 	}
 
-	ctx->ack_seq = 0;
+	ctx->ack_seq = 0U;
 
 	return ctx->ack_received ? 0 : -EIO;
 }

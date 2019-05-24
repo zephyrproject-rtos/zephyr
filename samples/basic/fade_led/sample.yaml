@@ -1,7 +1,7 @@
 sample:
   name: Fade LED
 tests:
-  test:
+  sample.fade_led:
     # FIXME: We should remove those and just rely on depends_on
     platform_whitelist: arduino_101 quark_d2000_crb
         nucleo_f103rb nucleo_f401re nucleo_l476rg nucleo_l496zg hexiwear_k64

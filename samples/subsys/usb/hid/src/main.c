@@ -121,7 +121,7 @@ void main(void)
 	k_delayed_work_init(&delayed_report_send, send_report);
 
 #ifndef CONFIG_USB_COMPOSITE_DEVICE
-	hdev = device_get_binding(CONFIG_USB_HID_DEVICE_NAME_0);
+	hdev = device_get_binding("HID_0");
 	if (hdev == NULL) {
 		LOG_ERR("Cannot get USB HID Device");
 		return;
@@ -138,7 +138,7 @@ void main(void)
 #ifdef CONFIG_USB_COMPOSITE_DEVICE
 static int composite_pre_init(struct device *dev)
 {
-	hdev = device_get_binding(CONFIG_USB_HID_DEVICE_NAME_0);
+	hdev = device_get_binding("HID_0");
 	if (hdev == NULL) {
 		LOG_ERR("Cannot get USB HID Device");
 		return -ENODEV;

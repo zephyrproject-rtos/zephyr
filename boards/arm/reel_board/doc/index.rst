@@ -82,7 +82,7 @@ The mode is controlled by MODE pin (P1.00).
 .. note::
    Actually there is no possibility to reduce energy consumption by the
    Low Power mode. Both voltages are always on, see:
-   :file:`boards/arm/reel_board/board.c`
+   :zephyr_file:`boards/arm/reel_board/board.c`
 
 Supported Features
 ==================
@@ -377,12 +377,12 @@ and :ref:`application_run` for more details).
 Flashing
 ========
 
-If you use Linux, create a udev rule to fix a permission issue when not using
-root for flashing.
+If you use Linux, create a udev rule (as ``root``) to fix a permission issue
+when not using root for flashing.
 
 .. code-block:: console
 
-   $ echo 'ATTR{idProduct}=="0204", ATTR{idVendor}=="0d28", MODE="0666", GROUP="plugdev"' > /etc/udev/rules.d/50-cmsis-dap.rules
+   # echo 'ATTR{idProduct}=="0204", ATTR{idVendor}=="0d28", MODE="0666", GROUP="plugdev"' > /etc/udev/rules.d/50-cmsis-dap.rules
 
 Reload the rules and replug the device.
 

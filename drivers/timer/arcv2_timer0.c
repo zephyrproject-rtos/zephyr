@@ -48,7 +48,7 @@ static u32_t cycle_count;
  */
 static ALWAYS_INLINE u32_t timer0_count_register_get(void)
 {
-	return _arc_v2_aux_reg_read(_ARC_V2_TMR0_COUNT);
+	return z_arc_v2_aux_reg_read(_ARC_V2_TMR0_COUNT);
 }
 
 /**
@@ -59,7 +59,7 @@ static ALWAYS_INLINE u32_t timer0_count_register_get(void)
  */
 static ALWAYS_INLINE void timer0_count_register_set(u32_t value)
 {
-	_arc_v2_aux_reg_write(_ARC_V2_TMR0_COUNT, value);
+	z_arc_v2_aux_reg_write(_ARC_V2_TMR0_COUNT, value);
 }
 
 /**
@@ -70,7 +70,7 @@ static ALWAYS_INLINE void timer0_count_register_set(u32_t value)
  */
 static ALWAYS_INLINE u32_t timer0_control_register_get(void)
 {
-	return _arc_v2_aux_reg_read(_ARC_V2_TMR0_CONTROL);
+	return z_arc_v2_aux_reg_read(_ARC_V2_TMR0_CONTROL);
 }
 
 /**
@@ -81,7 +81,7 @@ static ALWAYS_INLINE u32_t timer0_control_register_get(void)
  */
 static ALWAYS_INLINE void timer0_control_register_set(u32_t value)
 {
-	_arc_v2_aux_reg_write(_ARC_V2_TMR0_CONTROL, value);
+	z_arc_v2_aux_reg_write(_ARC_V2_TMR0_CONTROL, value);
 }
 
 /**
@@ -92,7 +92,7 @@ static ALWAYS_INLINE void timer0_control_register_set(u32_t value)
  */
 static ALWAYS_INLINE u32_t timer0_limit_register_get(void)
 {
-	return _arc_v2_aux_reg_read(_ARC_V2_TMR0_LIMIT);
+	return z_arc_v2_aux_reg_read(_ARC_V2_TMR0_LIMIT);
 }
 
 /**
@@ -103,7 +103,7 @@ static ALWAYS_INLINE u32_t timer0_limit_register_get(void)
  */
 static ALWAYS_INLINE void timer0_limit_register_set(u32_t count)
 {
-	_arc_v2_aux_reg_write(_ARC_V2_TMR0_LIMIT, count);
+	z_arc_v2_aux_reg_write(_ARC_V2_TMR0_LIMIT, count);
 }
 
 static u32_t elapsed(void)
@@ -129,7 +129,7 @@ static u32_t elapsed(void)
  *
  * @return N/A
  */
-static void _timer_int_handler(void *unused)
+static void timer_int_handler(void *unused)
 {
 	ARG_UNUSED(unused);
 	u32_t dticks;
@@ -164,9 +164,12 @@ int z_clock_driver_init(struct device *device)
 	last_load = CYC_PER_TICK;
 
 	IRQ_CONNECT(IRQ_TIMER0, CONFIG_ARCV2_TIMER_IRQ_PRIORITY,
-		    _timer_int_handler, NULL, 0);
+		    timer_int_handler, NULL, 0);
 
 	timer0_limit_register_set(last_load - 1);
+#ifdef CONFIG_BOOT_TIME_MEASUREMENT
+	cycle_count = timer0_count_register_get();
+#endif
 	timer0_count_register_set(0);
 	timer0_control_register_set(_ARC_V2_TMR_CTRL_NH | _ARC_V2_TMR_CTRL_IE);
 
@@ -233,7 +236,7 @@ u32_t z_clock_elapsed(void)
 	return cyc / CYC_PER_TICK;
 }
 
-u32_t _timer_cycle_get_32(void)
+u32_t z_timer_cycle_get_32(void)
 {
 	k_spinlock_key_t key = k_spin_lock(&lock);
 	u32_t ret = elapsed() + cycle_count;

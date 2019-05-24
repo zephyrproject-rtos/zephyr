@@ -31,6 +31,17 @@
 		compatible = "microsemi,miv-soc", "simple-bus";
 		ranges;
 
+		flash0: flash@80000000 {
+			compatible = "soc-nv-flash";
+			reg = <0x80000000 0x40000>;
+		};
+
+		sram0: memory@80040000 {
+			device_type = "memory";
+			compatible = "mmio-sram";
+			reg = <0x80040000 0x40000>;
+		};
+
 		plic: interrupt-controller@40000000 {
 			#interrupt-cells = <1>;
 			compatible = "riscv,plic0";

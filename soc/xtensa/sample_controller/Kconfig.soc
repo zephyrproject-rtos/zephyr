@@ -3,4 +3,3 @@
 
 config SOC_XTENSA_SAMPLE_CONTROLLER
 	bool "Xtensa sample_controller core"
-

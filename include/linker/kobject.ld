@@ -21,7 +21,7 @@
 	 * *and* the specific memory addresses being hashed. It is not something
 	 * that can be predicted without actually building and compling it.
          */
-	SECTION_DATA_PROLOGUE(kobject_data, (OPTIONAL),)
+	SECTION_DATA_PROLOGUE(kobject_data,,)
 	{
 	*(".kobject_data.data*")
 

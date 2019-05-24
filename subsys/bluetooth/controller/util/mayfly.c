@@ -79,9 +79,9 @@ u32_t mayfly_enqueue(u8_t caller_id, u8_t callee_id, u8_t chain,
 
 	/* already in queue */
 	state = (m->_req - ack) & 0x03;
-	if (state != 0) {
+	if (state != 0U) {
 		if (chain) {
-			if (state != 1) {
+			if (state != 1U) {
 				/* mark as ready in queue */
 				m->_req = ack + 1;
 
@@ -110,7 +110,7 @@ u32_t mayfly_enqueue(u8_t caller_id, u8_t callee_id, u8_t chain,
 
 mayfly_enqueue_pend:
 	/* set mayfly callee pending */
-	mfp[callee_id] = 1;
+	mfp[callee_id] = 1U;
 
 	/* pend the callee for execution */
 	mayfly_pend(caller_id, callee_id);
@@ -124,7 +124,7 @@ static void dequeue(u8_t callee_id, u8_t caller_id, memq_link_t *link,
 	u8_t req;
 
 	req = m->_req;
-	if (((req - m->_ack) & 0x03) != 1) {
+	if (((req - m->_ack) & 0x03) != 1U) {
 		u8_t ack;
 
 #if defined(MAYFLY_UT)
@@ -135,7 +135,7 @@ static void dequeue(u8_t callee_id, u8_t caller_id, memq_link_t *link,
 			static u8_t single;
 
 			if (!single) {
-				single = 1;
+				single = 1U;
 				mayfly_ut_run_test();
 			}
 		}
@@ -154,7 +154,7 @@ static void dequeue(u8_t callee_id, u8_t caller_id, memq_link_t *link,
 		m->_ack = req;
 
 		/* re-insert, if re-pended by interrupt */
-		if (((m->_req - ack) & 0x03) == 1) {
+		if (((m->_req - ack) & 0x03) == 1U) {
 #if defined(MAYFLY_UT)
 			printk("%s: RACE\n", __func__);
 #endif /* MAYFLY_UT */
@@ -174,7 +174,7 @@ void mayfly_run(u8_t callee_id)
 	if (!mfp[callee_id]) {
 		return;
 	}
-	mfp[callee_id] = 1;
+	mfp[callee_id] = 1U;
 
 	/* iterate through each caller queue to this callee_id */
 	caller_id = MAYFLY_CALLER_COUNT;
@@ -190,14 +190,14 @@ void mayfly_run(u8_t callee_id)
 			u8_t state;
 
 #if defined(MAYFLY_UT)
-			_state = 0;
+			_state = 0U;
 #endif /* MAYFLY_UT */
 
 			/* execute work if ready */
 			state = (m->_req - m->_ack) & 0x03;
-			if (state == 1) {
+			if (state == 1U) {
 #if defined(MAYFLY_UT)
-				_state = 1;
+				_state = 1U;
 #endif /* MAYFLY_UT */
 
 				/* mark mayfly as ran */
@@ -215,10 +215,21 @@ void mayfly_run(u8_t callee_id)
 					 mft[callee_id][caller_id].tail,
 					 (void **)&m);
 
+/**
+ * When using cooperative thread implementation, an issue has been seen where
+ * pended mayflies are never executed in certain scenarios.
+ * This happens when mayflies with higher caller_id are constantly pended, in
+ * which case lower value caller ids never get to be executed.
+ * By allowing complete traversal of mayfly queues for all caller_ids, this
+ * does not happen, however this means that more than one mayfly function is
+ * potentially executed in a mayfly_run(), with added execution time as
+ * consequence.
+ */
+#if defined(CONFIG_BT_MAYFLY_YIELD_AFTER_CALL)
 			/* yield out of mayfly_run if a mayfly function was
 			 * called.
 			 */
-			if (state == 1) {
+			if (state == 1U) {
 				/* pend callee (tailchain) if mayfly queue is
 				 * not empty or all caller queues are not
 				 * processed.
@@ -229,6 +240,7 @@ void mayfly_run(u8_t callee_id)
 					return;
 				}
 			}
+#endif
 		}
 
 		if (mft[callee_id][caller_id].disable_req !=

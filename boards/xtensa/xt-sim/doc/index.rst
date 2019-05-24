@@ -140,7 +140,7 @@ The file "soc/xtensa/linker_more.ld" contains Zephyr-specific linker
 sections that should be added to the default linker script linker.ld (inside
 SECTIONS region). If you are not using a linker script, you must create one
 and add these sections. The memory segment and PHDR should be replaced by
-appropriate values. See :file:`soc/xtensa/hifi3_bd5/linker.ld` for an example.
+appropriate values. See :zephyr_file:`soc/xtensa/hifi3_bd5/linker.ld` for an example.
 
 The linker script should be named ``linker.ld`` and placed in the directory
 ``soc/xtensa/${XTENSA_CORE}``.

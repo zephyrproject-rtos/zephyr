@@ -57,28 +57,28 @@ void main(void)
 		switch (i) {
 		case 3:
 			printk("\n<-- Disabling %s state --->\n",
-					STRINGIFY(SYS_POWER_STATE_LOW_POWER_3));
-			sys_pm_ctrl_disable_state(SYS_POWER_STATE_LOW_POWER_3);
+					STRINGIFY(SYS_POWER_STATE_SLEEP_3));
+			sys_pm_ctrl_disable_state(SYS_POWER_STATE_SLEEP_3);
 			break;
 
 		case 5:
 			printk("\n<-- Enabling %s state --->\n",
-				       STRINGIFY(SYS_POWER_STATE_LOW_POWER_3));
-			sys_pm_ctrl_enable_state(SYS_POWER_STATE_LOW_POWER_3);
+				       STRINGIFY(SYS_POWER_STATE_SLEEP_3));
+			sys_pm_ctrl_enable_state(SYS_POWER_STATE_SLEEP_3);
 
 			printk("<-- Disabling %s state --->\n",
-					STRINGIFY(SYS_POWER_STATE_LOW_POWER_2));
-			sys_pm_ctrl_disable_state(SYS_POWER_STATE_LOW_POWER_2);
+					STRINGIFY(SYS_POWER_STATE_SLEEP_2));
+			sys_pm_ctrl_disable_state(SYS_POWER_STATE_SLEEP_2);
 			break;
 
 		case 7:
 			printk("\n<-- Enabling %s state --->\n",
-				       STRINGIFY(SYS_POWER_STATE_LOW_POWER_2));
-			sys_pm_ctrl_enable_state(SYS_POWER_STATE_LOW_POWER_2);
+				       STRINGIFY(SYS_POWER_STATE_SLEEP_2));
+			sys_pm_ctrl_enable_state(SYS_POWER_STATE_SLEEP_2);
 
 			printk("<-- Forcing %s state --->\n",
-				       STRINGIFY(SYS_POWER_STATE_LOW_POWER_3));
-			sys_pm_force_power_state(SYS_POWER_STATE_LOW_POWER_3);
+				       STRINGIFY(SYS_POWER_STATE_SLEEP_3));
+			sys_pm_force_power_state(SYS_POWER_STATE_SLEEP_3);
 			break;
 
 		default:

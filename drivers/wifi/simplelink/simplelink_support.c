@@ -78,6 +78,13 @@ static s32_t configure_simplelink(void)
 	u8_t config_opt;
 	u8_t power;
 
+#if defined(CONFIG_NET_IPV4) && defined(CONFIG_NET_CONFIG_MY_IPV4_ADDR)
+	struct in_addr addr4;
+	SlNetCfgIpV4Args_t ipV4;
+
+	memset(&ipV4, 0, sizeof(ipV4));
+#endif
+
 	/* Turn on NWP */
 	mode = sl_Start(0, 0, 0);
 	ASSERT_ON_ERROR(mode, DEVICE_ERROR);
@@ -115,10 +122,56 @@ static s32_t configure_simplelink(void)
 	retval = sl_WlanProfileDel(0xFF);
 	ASSERT_ON_ERROR(retval, WLAN_ERROR);
 
+#if defined(CONFIG_NET_IPV4) && defined(CONFIG_NET_CONFIG_MY_IPV4_ADDR)
+	if (net_addr_pton(AF_INET, CONFIG_NET_CONFIG_MY_IPV4_ADDR, &addr4)
+			< 0) {
+		LOG_ERR("Invalid CONFIG_NET_CONFIG_MY_IPV4_ADDR");
+		return -1;
+	}
+	ipV4.Ip = (_u32)SL_IPV4_VAL(addr4.s4_addr[0],
+				    addr4.s4_addr[1],
+				    addr4.s4_addr[2],
+				    addr4.s4_addr[3]);
+
+#if defined(CONFIG_NET_CONFIG_MY_IPV4_GW)
+	if (strcmp(CONFIG_NET_CONFIG_MY_IPV4_GW, "") != 0) {
+		if (net_addr_pton(AF_INET, CONFIG_NET_CONFIG_MY_IPV4_GW,
+				  &addr4) < 0) {
+			LOG_ERR("Invalid CONFIG_NET_CONFIG_MY_IPV4_GW");
+			return -1;
+		}
+		ipV4.IpGateway = (_u32)SL_IPV4_VAL(addr4.s4_addr[0],
+						   addr4.s4_addr[1],
+						   addr4.s4_addr[2],
+						   addr4.s4_addr[3]);
+	}
+#endif
+
+#if defined(CONFIG_NET_CONFIG_MY_IPV4_NETMASK)
+	if (strcmp(CONFIG_NET_CONFIG_MY_IPV4_NETMASK, "") != 0) {
+		if (net_addr_pton(AF_INET, CONFIG_NET_CONFIG_MY_IPV4_NETMASK,
+				  &addr4) < 0) {
+			LOG_ERR("Invalid CONFIG_NET_CONFIG_MY_IPV4_NETMASK");
+			return -1;
+		}
+		ipV4.IpMask = (_u32)SL_IPV4_VAL(addr4.s4_addr[0],
+						addr4.s4_addr[1],
+						addr4.s4_addr[2],
+						addr4.s4_addr[3]);
+	}
+#endif
+
+	retval = sl_NetCfgSet(SL_NETCFG_IPV4_STA_ADDR_MODE,
+			      SL_NETCFG_ADDR_STATIC,
+			      sizeof(SlNetCfgIpV4Args_t), (_u8 *)&ipV4);
+	ASSERT_ON_ERROR(retval, NETAPP_ERROR);
+#else
 	/* enable DHCP client */
 	retval = sl_NetCfgSet(SL_NETCFG_IPV4_STA_ADDR_MODE,
 			      SL_NETCFG_ADDR_DHCP, 0, 0);
 	ASSERT_ON_ERROR(retval, NETAPP_ERROR);
+#endif
+
 
 #if !defined(CONFIG_NET_IPV6)
 	/* Disable ipv6 */
@@ -132,7 +185,7 @@ static s32_t configure_simplelink(void)
 
 	/* Configure scan parameters to default */
 	scan_default.ChannelsMask = CHANNEL_MASK_ALL;
-	scan_default.RssiThershold = RSSI_TH_MAX;
+	scan_default.RssiThreshold = RSSI_TH_MAX;
 
 	retval = sl_WlanSet(SL_WLAN_CFG_GENERAL_PARAM_ID,
 			    SL_WLAN_GENERAL_PARAM_OPT_SCAN_PARAMS,
@@ -488,7 +541,7 @@ void SimpleLinkNetAppRequestMemFreeEventHandler(u8_t *buffer)
  * - Whether network hidden or visible
  * - Other types of security
  */
-void _simplelink_get_scan_result(int index,
+void z_simplelink_get_scan_result(int index,
 				 struct wifi_scan_result *scan_result)
 {
 	SlWlanNetworkEntry_t *net_entry;
@@ -515,7 +568,7 @@ void _simplelink_get_scan_result(int index,
 	scan_result->rssi = net_entry->Rssi;
 }
 
-int _simplelink_start_scan(void)
+int z_simplelink_start_scan(void)
 {
 	s32_t ret;
 
@@ -533,7 +586,7 @@ int _simplelink_start_scan(void)
 	return ret;
 }
 
-void _simplelink_get_mac(unsigned char *mac)
+void z_simplelink_get_mac(unsigned char *mac)
 {
 	u16_t mac_len = SL_MAC_ADDR_LEN;
 	u16_t config_opt = 0U;
@@ -542,7 +595,7 @@ void _simplelink_get_mac(unsigned char *mac)
 		     &mac_len, (u8_t *)mac);
 }
 
-int _simplelink_connect(struct wifi_connect_req_params *params)
+int z_simplelink_connect(struct wifi_connect_req_params *params)
 {
 	SlWlanSecParams_t secParams = { 0 };
 	long lretval;
@@ -565,7 +618,7 @@ int _simplelink_connect(struct wifi_connect_req_params *params)
 	return lretval;
 }
 
-int _simplelink_disconnect(void)
+int z_simplelink_disconnect(void)
 {
 	long lretval;
 
@@ -575,7 +628,7 @@ int _simplelink_disconnect(void)
 	return lretval;
 }
 
-int _simplelink_init(simplelink_wifi_cb_t wifi_cb)
+int z_simplelink_init(simplelink_wifi_cb_t wifi_cb)
 {
 	int retval;
 

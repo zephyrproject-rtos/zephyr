@@ -13,7 +13,7 @@ Overview
 Network statistics are collected if :option:`CONFIG_NET_STATISTICS` is set.
 Individual component statistics for IPv4 or IPv6 can be turned off
 if those statistics are not needed. See various options in
-:file:`subsys/net/ip/Kconfig.stats` file for details.
+:zephyr_file:`subsys/net/ip/Kconfig.stats` file for details.
 
 By default, the system collects network statistics per network interface. This
 can be controlled by :option:`CONFIG_NET_STATISTICS_PER_INTERFACE` option.

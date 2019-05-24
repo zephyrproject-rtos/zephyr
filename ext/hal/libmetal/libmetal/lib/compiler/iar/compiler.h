@@ -20,6 +20,9 @@ extern "C" {
 #define metal_align(n) __attribute__((aligned(n)))
 #define metal_weak __attribute__((weak))
 
+#define METAL_PACKED_BEGIN __packed
+#define METAL_PACKED_END
+
 #ifdef __cplusplus
 }
 #endif

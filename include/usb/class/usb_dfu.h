@@ -119,4 +119,6 @@ enum dfu_state {
 	dfuERROR,
 };
 
+void wait_for_usb_dfu(void);
+
 #endif /* ZEPHYR_INCLUDE_USB_CLASS_USB_DFU_H_ */

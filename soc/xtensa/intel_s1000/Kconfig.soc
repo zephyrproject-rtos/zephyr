@@ -5,4 +5,3 @@ config SOC_INTEL_S1000
 	bool "intel_s1000"
 	select HAS_I2C_DW
 	select HAS_SPI_DW
-

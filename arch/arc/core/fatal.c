@@ -25,7 +25,7 @@
  *
  * This routine is called when fatal error conditions are detected by software
  * and is responsible only for reporting the error. Once reported, it then
- * invokes the user provided routine _SysFatalErrorHandler() which is
+ * invokes the user provided routine z_SysFatalErrorHandler() which is
  * responsible for implementing the error handling policy.
  *
  * The caller is expected to always provide a usable ESF. In the event that the
@@ -34,7 +34,7 @@
  *
  * @return This function does not return.
  */
-void _NanoFatalErrorHandler(unsigned int reason, const NANO_ESF *pEsf)
+void z_NanoFatalErrorHandler(unsigned int reason, const NANO_ESF *pEsf)
 {
 	LOG_PANIC();
 
@@ -43,7 +43,7 @@ void _NanoFatalErrorHandler(unsigned int reason, const NANO_ESF *pEsf)
 		break;
 
 #if defined(CONFIG_STACK_CANARIES) || defined(CONFIG_ARC_STACK_CHECKING) \
-	|| defined(CONFIG_STACK_SENTINEL)
+	|| defined(CONFIG_STACK_SENTINEL) || defined(CONFIG_MPU_STACK_GUARD)
 	case _NANO_ERR_STACK_CHK_FAIL:
 		printk("***** Stack Check Fail! *****\n");
 		break;
@@ -70,7 +70,7 @@ void _NanoFatalErrorHandler(unsigned int reason, const NANO_ESF *pEsf)
 
 	if (reason == _NANO_ERR_HW_EXCEPTION) {
 		printk("Faulting instruction address = 0x%lx\n",
-		_arc_v2_aux_reg_read(_ARC_V2_ERET));
+		z_arc_v2_aux_reg_read(_ARC_V2_ERET));
 	}
 
 	/*
@@ -81,12 +81,12 @@ void _NanoFatalErrorHandler(unsigned int reason, const NANO_ESF *pEsf)
 	 * decide.
 	 */
 
-	_SysFatalErrorHandler(reason, pEsf);
+	z_SysFatalErrorHandler(reason, pEsf);
 }
 
-FUNC_NORETURN void _arch_syscall_oops(void *ssf_ptr)
+FUNC_NORETURN void z_arch_syscall_oops(void *ssf_ptr)
 {
 	LOG_PANIC();
-	_SysFatalErrorHandler(_NANO_ERR_KERNEL_OOPS, ssf_ptr);
+	z_SysFatalErrorHandler(_NANO_ERR_KERNEL_OOPS, ssf_ptr);
 	CODE_UNREACHABLE;
 }

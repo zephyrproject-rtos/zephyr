@@ -5,6 +5,6 @@ sample:
   description: Test LLDP functionality
   name: LLDP sample app
 tests:
-  test:
+  sample.net.lldp:
     platform_whitelist: native_posix
     depends_on: netif

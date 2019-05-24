@@ -29,10 +29,10 @@ void *xtensa_init_stack(int *stack_top,
 
 	(void)memset(bsa, 0, bsasz);
 
-	bsa[BSA_PC_OFF/4] = _thread_entry;
+	bsa[BSA_PC_OFF/4] = z_thread_entry;
 	bsa[BSA_PS_OFF/4] = (void *)(PS_WOE | PS_UM | PS_CALLINC(1));
 
-	/* Arguments to _thread_entry().  Remember these start at A6,
+	/* Arguments to z_thread_entry().  Remember these start at A6,
 	 * which will be rotated into A2 by the ENTRY instruction that
 	 * begins the C function.  And A4-A7 and A8-A11 are optional
 	 * quads that live below the BSA!
@@ -59,17 +59,17 @@ void *xtensa_init_stack(int *stack_top,
  * utilities/testables.
  */
 #ifdef CONFIG_XTENSA_ASM2
-void _new_thread(struct k_thread *thread, k_thread_stack_t *stack, size_t sz,
+void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack, size_t sz,
 		 k_thread_entry_t entry, void *p1, void *p2, void *p3,
 		 int prio, unsigned int opts)
 {
-	char *base = K_THREAD_STACK_BUFFER(stack);
+	char *base = Z_THREAD_STACK_BUFFER(stack);
 	char *top = base + sz;
 
 	/* Align downward.  The API as specified requires a runtime check. */
 	top = (char *)(((unsigned int)top) & ~3);
 
-	_new_thread_init(thread, base, sz, prio, opts);
+	z_new_thread_init(thread, base, sz, prio, opts);
 
 	thread->switch_handle = xtensa_init_stack((void *)top, entry,
 						  p1, p2, p3);
@@ -77,7 +77,7 @@ void _new_thread(struct k_thread *thread, k_thread_stack_t *stack, size_t sz,
 #endif
 
 #ifdef CONFIG_XTENSA_ASM2
-void _irq_spurious(void *arg)
+void z_irq_spurious(void *arg)
 {
 	int irqs, ie;
 
@@ -87,7 +87,7 @@ void _irq_spurious(void *arg)
 	__asm__ volatile("rsr.intenable %0" : "=r"(ie));
 	printk(" ** Spurious INTERRUPT(s) %p, INTENABLE = %p\n",
 	       (void *)irqs, (void *)ie);
-	_NanoFatalErrorHandler(_NANO_ERR_RESERVED_IRQ, &_default_esf);
+	z_NanoFatalErrorHandler(_NANO_ERR_RESERVED_IRQ, &_default_esf);
 }
 #endif
 
@@ -143,7 +143,7 @@ void *xtensa_int##l##_c(void *interrupted_stack)	\
 		irqs ^= m;					\
 		__asm__ volatile("wsr.intclear %0" : : "r"(m)); \
 	}							\
-	return _get_next_switch_handle(interrupted_stack);		\
+	return z_get_next_switch_handle(interrupted_stack);		\
 }
 
 DEF_INT_C_HANDLER(2)
@@ -191,7 +191,7 @@ void *xtensa_excint1_c(int *interrupted_stack)
 		 */
 		printk(" ** FATAL EXCEPTION\n");
 		printk(" ** CPU %d EXCCAUSE %d PS %p PC %p VADDR %p\n",
-		       _arch_curr_cpu()->id, cause, (void *)bsa[BSA_PS_OFF/4],
+		       z_arch_curr_cpu()->id, cause, (void *)bsa[BSA_PS_OFF/4],
 		       (void *)bsa[BSA_PC_OFF/4], (void *)vaddr);
 
 		dump_stack(interrupted_stack);
@@ -201,9 +201,9 @@ void *xtensa_excint1_c(int *interrupted_stack)
 		 * as these are software errors.  Should clean this
 		 * up.
 		 */
-		_NanoFatalErrorHandler(_NANO_ERR_HW_EXCEPTION, &_default_esf);
+		z_NanoFatalErrorHandler(_NANO_ERR_HW_EXCEPTION, &_default_esf);
 	}
 
-	return _get_next_switch_handle(interrupted_stack);
+	return z_get_next_switch_handle(interrupted_stack);
 }
 

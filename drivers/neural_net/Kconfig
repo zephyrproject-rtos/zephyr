@@ -16,6 +16,6 @@ module = NEURAL_NET
 module-str = neural_net
 source "subsys/logging/Kconfig.template.log_config"
 
-gsource "drivers/neural_net/Kconfig.*"
+source "drivers/neural_net/Kconfig.*"
 
 endif # NEURAL_NET

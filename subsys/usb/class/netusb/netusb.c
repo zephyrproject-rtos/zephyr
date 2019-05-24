@@ -10,20 +10,15 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(usb_net);
 
-/* Enable verbose debug printing extra hexdumps */
-#define VERBOSE_DEBUG	0
-
-/* This enables basic hexdumps */
-#define NET_LOG_ENABLED	0
-#include <net_private.h>
-
 #include <init.h>
+
+#include <net/ethernet.h>
+#include <net_private.h>
 
 #include <usb_device.h>
 #include <usb_common.h>
-#include <net/ethernet.h>
-
 #include <usb_descriptor.h>
+
 #include "netusb.h"
 
 static struct __netusb {
@@ -55,6 +50,11 @@ static int netusb_send(struct device *dev, struct net_pkt *pkt)
 	}
 
 	return 0;
+}
+
+struct net_if *netusb_net_iface(void)
+{
+	return netusb.iface;
 }
 
 void netusb_recv(struct net_pkt *pkt)
@@ -128,54 +128,6 @@ bool netusb_enabled(void)
 	return !!netusb.func;
 }
 
-int try_write(u8_t ep, u8_t *data, u16_t len)
-{
-	u8_t tries = 10U;
-	int ret = 0;
-
-	net_hexdump("USB <", data, len);
-
-	while (len) {
-		u32_t wrote;
-
-		ret = usb_write(ep, data, len, &wrote);
-
-		switch (ret) {
-		case -EAGAIN:
-			/*
-			 * In a case when host has not yet enabled endpoint
-			 * to get this message we might get No Space Available
-			 * error from the controller, try only several times.
-			 */
-			if (tries--) {
-				LOG_WRN("Error: EAGAIN. Another try");
-				continue;
-			}
-
-			return ret;
-		case 0:
-			/* Check wrote bytes */
-			break;
-		/* TODO: Handle other error codes */
-		default:
-			LOG_WRN("Error writing to ep 0x%x ret %d", ep, ret);
-			return ret;
-		}
-
-		len -= wrote;
-		data += wrote;
-#if VERBOSE_DEBUG
-		LOG_DBG("Wrote %u bytes, remaining %u", wrote, len);
-#endif
-
-		if (len) {
-			LOG_WRN("Remaining bytes %d wrote %d", len, wrote);
-		}
-	}
-
-	return ret;
-}
-
 static void netusb_init(struct net_if *iface)
 {
 	static u8_t mac[6] = { 0x00, 0x00, 0x5E, 0x00, 0x53, 0x00 };
@@ -237,4 +189,4 @@ static int netusb_init_dev(struct device *dev)
 
 NET_DEVICE_INIT(eth_netusb, "eth_netusb", netusb_init_dev, NULL, NULL,
 		CONFIG_ETH_INIT_PRIORITY, &netusb_api_funcs, ETHERNET_L2,
-		NET_L2_GET_CTX_TYPE(ETHERNET_L2), NETUSB_MTU);
+		NET_L2_GET_CTX_TYPE(ETHERNET_L2), NET_ETH_MTU);

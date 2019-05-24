@@ -1,7 +1,7 @@
 sample:
   name: MPU Test
 tests:
-  test:
+  sample.mpu.mpu_test:
     arch_whitelist: arm
     filter: CONFIG_CPU_HAS_MPU
     tags: mpu

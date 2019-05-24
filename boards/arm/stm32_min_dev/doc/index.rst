@@ -7,8 +7,14 @@ Overview
 ********
 
 The STM32 Minimum Development Board, is a popular and inexpensive
-breadboard-friendly breakout board for the `STM32F103x8`_ CPU. Zephyr
-applications use the stm32_min_dev board configuration to run on these boards.
+breadboard-friendly breakout board for the `STM32F103x8`_ CPU. There
+are two variants of the board:
+
+- `Blue Pill Board`_
+- `Black Pill Board`_
+
+Zephyr applications can use the stm32_min_dev_blue or stm32_min_dev_black board
+configuration to use these boards.
 
 .. figure:: img/stm32_min_dev.jpg
      :width: 500px
@@ -30,8 +36,8 @@ port for a specific board. Most of the GPIOs on the STM32 SoC has been exposed
 in the external header with silk screen labels that match the SoC's pin names.
 
 Each board vendor has their own variations in pin mapping on their boards'
-external connectors and placement of components. Many vendors use port PB12 for
-connecting an LED, so only this device is supported by our Zephyr port.
+external connectors and placement of components. Many vendors use port PC13/PB12
+for connecting an LED, so only this device is supported by our Zephyr port.
 Additional device support is left for the user to implement.
 
 More information on hooking up peripherals and lengthy how to articles can be
@@ -97,6 +103,8 @@ The stm32_min_dev board configuration supports the following hardware features:
 +-----------+------------+----------------------+
 | SPI       | on-chip    | spi                  |
 +-----------+------------+----------------------+
+| USB       | on-chip    | USB device           |
++-----------+------------+----------------------+
 
 Other hardware features are not supported by the Zephyr kernel.
 
@@ -104,8 +112,8 @@ Other hardware features are not supported by the Zephyr kernel.
 Programming and Debugging
 *************************
 
-Applications for the ``stm32_min_dev`` board configuration can be built and
-flashed in the usual way (see :ref:`build_an_application` and
+Applications for the ``stm32_min_dev_(blue|black)`` board configuration can be
+built and flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
 Flashing
@@ -115,7 +123,7 @@ Here is an example for the :ref:`blinky-sample` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: stm32_min_dev
+   :board: stm32_min_dev_blue
    :goals: build flash
 
 Debugging
@@ -126,11 +134,15 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: stm32_min_dev
+   :board: stm32_min_dev_blue
    :maybe-skip-config:
    :goals: debug
 
 .. _STM32F103x8:
         http://www.st.com/resource/en/datasheet/stm32f103c8.pdf
+.. _Black Pill Board:
+        https://wiki.stm32duino.com/index.php?title=Black_Pill
+.. _Blue Pill Board:
+        https://wiki.stm32duino.com/index.php?title=Blue_Pill
 .. _EmbedJournal:
         https://embedjournal.com/tag/stm32-min-dev/

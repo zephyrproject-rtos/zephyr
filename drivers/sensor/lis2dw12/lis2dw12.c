@@ -35,7 +35,7 @@ static int lis2dw12_set_range(struct device *dev, u16_t range)
 	int err;
 	struct lis2dw12_data *lis2dw12 = dev->driver_data;
 	const struct lis2dw12_device_config *cfg = dev->config->config_info;
-	u8_t shift_gain = 0;
+	u8_t shift_gain = 0U;
 
 	err = lis2dw12->hw_tf->update_reg(lis2dw12, LIS2DW12_CTRL6_ADDR,
 					  LIS2DW12_FS_MASK,
@@ -65,7 +65,7 @@ static int lis2dw12_set_odr(struct device *dev, u16_t odr)
 	struct lis2dw12_data *lis2dw12 = dev->driver_data;
 
 	/* check if power off */
-	if (odr == 0) {
+	if (odr == 0U) {
 		return lis2dw12->hw_tf->update_reg(lis2dw12,
 						   LIS2DW12_CTRL1_ADDR,
 						   LIS2DW12_ODR_MASK,
@@ -105,16 +105,16 @@ static inline void lis2dw12_channel_get_acc(struct device *dev,
 
 	switch (chan) {
 	case SENSOR_CHAN_ACCEL_X:
-		ofs_start = ofs_stop = 0;
+		ofs_start = ofs_stop = 0U;
 		break;
 	case SENSOR_CHAN_ACCEL_Y:
-		ofs_start = ofs_stop = 1;
+		ofs_start = ofs_stop = 1U;
 		break;
 	case SENSOR_CHAN_ACCEL_Z:
-		ofs_start = ofs_stop = 2;
+		ofs_start = ofs_stop = 2U;
 		break;
 	default:
-		ofs_start = 0; ofs_stop = 2;
+		ofs_start = 0U; ofs_stop = 2U;
 		break;
 	}
 

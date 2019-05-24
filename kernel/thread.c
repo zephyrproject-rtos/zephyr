@@ -19,6 +19,7 @@
 #include <spinlock.h>
 #include <kernel_structs.h>
 #include <misc/printk.h>
+#include <misc/math_extras.h>
 #include <sys_clock.h>
 #include <drivers/system_timer.h>
 #include <ksched.h>
@@ -66,14 +67,14 @@ void k_thread_foreach(k_thread_user_cb_t user_cb, void *user_data)
 
 bool k_is_in_isr(void)
 {
-	return _is_in_isr();
+	return z_is_in_isr();
 }
 
 /*
  * This function tags the current thread as essential to system operation.
  * Exceptions raised by this thread will be treated as a fatal system error.
  */
-void _thread_essential_set(void)
+void z_thread_essential_set(void)
 {
 	_current->base.user_options |= K_ESSENTIAL;
 }
@@ -83,7 +84,7 @@ void _thread_essential_set(void)
  * Exceptions raised by this thread may be recoverable.
  * (This is the default tag for a thread.)
  */
-void _thread_essential_clear(void)
+void z_thread_essential_clear(void)
 {
 	_current->base.user_options &= ~K_ESSENTIAL;
 }
@@ -93,13 +94,13 @@ void _thread_essential_clear(void)
  *
  * Returns true if current thread is essential, false if it is not.
  */
-bool _is_thread_essential(void)
+bool z_is_thread_essential(void)
 {
 	return (_current->base.user_options & K_ESSENTIAL) == K_ESSENTIAL;
 }
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
-void _impl_k_busy_wait(u32_t usec_to_wait)
+void z_impl_k_busy_wait(u32_t usec_to_wait)
 {
 #if !defined(CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT)
 	/* use 64-bit math to prevent overflow when multiplying */
@@ -126,19 +127,19 @@ void _impl_k_busy_wait(u32_t usec_to_wait)
 #ifdef CONFIG_USERSPACE
 Z_SYSCALL_HANDLER(k_busy_wait, usec_to_wait)
 {
-	_impl_k_busy_wait(usec_to_wait);
+	z_impl_k_busy_wait(usec_to_wait);
 	return 0;
 }
 #endif /* CONFIG_USERSPACE */
 #endif /* CONFIG_SYS_CLOCK_EXISTS */
 
 #ifdef CONFIG_THREAD_CUSTOM_DATA
-void _impl_k_thread_custom_data_set(void *value)
+void z_impl_k_thread_custom_data_set(void *value)
 {
 	_current->custom_data = value;
 }
 
-void *_impl_k_thread_custom_data_get(void)
+void *z_impl_k_thread_custom_data_get(void)
 {
 	return _current->custom_data;
 }
@@ -149,7 +150,7 @@ void *_impl_k_thread_custom_data_get(void)
 /*
  * Remove a thread from the kernel's list of active threads.
  */
-void _thread_monitor_exit(struct k_thread *thread)
+void z_thread_monitor_exit(struct k_thread *thread)
 {
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
@@ -173,7 +174,7 @@ void _thread_monitor_exit(struct k_thread *thread)
 #endif
 
 #ifdef CONFIG_THREAD_NAME
-void _impl_k_thread_name_set(struct k_thread *thread, const char *value)
+void z_impl_k_thread_name_set(struct k_thread *thread, const char *value)
 {
 	if (thread == NULL) {
 		_current->name = value;
@@ -182,19 +183,19 @@ void _impl_k_thread_name_set(struct k_thread *thread, const char *value)
 	}
 }
 
-const char *_impl_k_thread_name_get(struct k_thread *thread)
+const char *z_impl_k_thread_name_get(struct k_thread *thread)
 {
 	return (const char *)thread->name;
 }
 
 #else
-void _impl_k_thread_name_set(k_tid_t thread_id, const char *value)
+void z_impl_k_thread_name_set(k_tid_t thread_id, const char *value)
 {
 	ARG_UNUSED(thread_id);
 	ARG_UNUSED(value);
 }
 
-const char *_impl_k_thread_name_get(k_tid_t thread_id)
+const char *z_impl_k_thread_name_get(k_tid_t thread_id)
 {
 	ARG_UNUSED(thread_id);
 	return NULL;
@@ -209,7 +210,7 @@ Z_SYSCALL_HANDLER(k_thread_name_set, thread, data)
 	char *name_copy = NULL;
 
 	name_copy = z_user_string_alloc_copy((char *)data, 64);
-	_impl_k_thread_name_set((struct k_thread *)thread, name_copy);
+	z_impl_k_thread_name_set((struct k_thread *)thread, name_copy);
 	return 0;
 }
 
@@ -219,7 +220,7 @@ Z_SYSCALL_HANDLER1_SIMPLE(k_thread_name_get, K_OBJ_THREAD, k_tid_t);
 #ifdef CONFIG_THREAD_CUSTOM_DATA
 Z_SYSCALL_HANDLER(k_thread_custom_data_set, data)
 {
-	_impl_k_thread_custom_data_set((void *)data);
+	z_impl_k_thread_custom_data_set((void *)data);
 	return 0;
 }
 
@@ -237,14 +238,14 @@ Z_SYSCALL_HANDLER0_SIMPLE(k_thread_custom_data_get);
  *
  * 1) In k_yield() if the current thread is not swapped out
  * 2) After servicing a non-nested interrupt
- * 3) In _Swap(), check the sentinel in the outgoing thread
+ * 3) In z_swap(), check the sentinel in the outgoing thread
  *
  * Item 2 requires support in arch/ code.
  *
  * If the check fails, the thread will be terminated appropriately through
  * the system fatal error handler.
  */
-void _check_stack_sentinel(void)
+void z_check_stack_sentinel(void)
 {
 	u32_t *stack;
 
@@ -256,24 +257,24 @@ void _check_stack_sentinel(void)
 	if (*stack != STACK_SENTINEL) {
 		/* Restore it so further checks don't trigger this same error */
 		*stack = STACK_SENTINEL;
-		_k_except_reason(_NANO_ERR_STACK_CHK_FAIL);
+		z_except_reason(_NANO_ERR_STACK_CHK_FAIL);
 	}
 }
 #endif
 
 #ifdef CONFIG_MULTITHREADING
-void _impl_k_thread_start(struct k_thread *thread)
+void z_impl_k_thread_start(struct k_thread *thread)
 {
 	k_spinlock_key_t key = k_spin_lock(&lock); /* protect kernel queues */
 
-	if (_has_thread_started(thread)) {
+	if (z_has_thread_started(thread)) {
 		k_spin_unlock(&lock, key);
 		return;
 	}
 
-	_mark_thread_as_started(thread);
-	_ready_thread(thread);
-	_reschedule(&lock, key);
+	z_mark_thread_as_started(thread);
+	z_ready_thread(thread);
+	z_reschedule(&lock, key);
 }
 
 #ifdef CONFIG_USERSPACE
@@ -288,9 +289,9 @@ static void schedule_new_thread(struct k_thread *thread, s32_t delay)
 	if (delay == 0) {
 		k_thread_start(thread);
 	} else {
-		s32_t ticks = _TICK_ALIGN + _ms_to_ticks(delay);
+		s32_t ticks = _TICK_ALIGN + z_ms_to_ticks(delay);
 
-		_add_thread_timeout(thread, ticks);
+		z_add_thread_timeout(thread, ticks);
 	}
 #else
 	ARG_UNUSED(delay);
@@ -317,7 +318,7 @@ static inline size_t adjust_stack_size(size_t stack_size)
 		random_val = sys_rand32_get();
 	}
 
-	/* Don't need to worry about alignment of the size here, _new_thread()
+	/* Don't need to worry about alignment of the size here, z_new_thread()
 	 * is required to do it
 	 *
 	 * FIXME: Not the best way to get a random number in a range.
@@ -338,7 +339,12 @@ static inline size_t adjust_stack_size(size_t stack_size)
 
 #endif /* CONFIG_STACK_POINTER_RANDOM */
 
-void _setup_new_thread(struct k_thread *new_thread,
+/*
+ * Note:
+ * The caller must guarantee that the stack_size passed here corresponds
+ * to the amount of stack memory available for the thread.
+ */
+void z_setup_new_thread(struct k_thread *new_thread,
 		       k_thread_stack_t *stack, size_t stack_size,
 		       k_thread_entry_t entry,
 		       void *p1, void *p2, void *p3,
@@ -354,17 +360,17 @@ void _setup_new_thread(struct k_thread *new_thread,
 #endif
 #endif
 
-	_new_thread(new_thread, stack, stack_size, entry, p1, p2, p3,
+	z_new_thread(new_thread, stack, stack_size, entry, p1, p2, p3,
 		    prio, options);
 
 #ifdef CONFIG_THREAD_USERSPACE_LOCAL_DATA
 #ifndef CONFIG_THREAD_USERSPACE_LOCAL_DATA_ARCH_DEFER_SETUP
-	/* don't set again if the arch's own code in _new_thread() has
+	/* don't set again if the arch's own code in z_new_thread() has
 	 * already set the pointer.
 	 */
 	new_thread->userspace_local_data =
 		(struct _thread_userspace_local_data *)
-		(K_THREAD_STACK_BUFFER(stack) + stack_size);
+		(Z_THREAD_STACK_BUFFER(stack) + stack_size);
 #endif
 #endif
 
@@ -384,8 +390,8 @@ void _setup_new_thread(struct k_thread *new_thread,
 	new_thread->name = name;
 #endif
 #ifdef CONFIG_USERSPACE
-	_k_object_init(new_thread);
-	_k_object_init(stack);
+	z_object_init(new_thread);
+	z_object_init(stack);
 	new_thread->stack_obj = stack;
 
 	/* Any given thread has access to itself */
@@ -408,8 +414,8 @@ void _setup_new_thread(struct k_thread *new_thread,
 					new_thread);
 	}
 
-	if ((options & K_INHERIT_PERMS) != 0) {
-		_thread_perms_inherit(_current, new_thread);
+	if ((options & K_INHERIT_PERMS) != 0U) {
+		z_thread_perms_inherit(_current, new_thread);
 	}
 #endif
 #ifdef CONFIG_SCHED_DEADLINE
@@ -420,15 +426,21 @@ void _setup_new_thread(struct k_thread *new_thread,
 }
 
 #ifdef CONFIG_MULTITHREADING
-k_tid_t _impl_k_thread_create(struct k_thread *new_thread,
+k_tid_t z_impl_k_thread_create(struct k_thread *new_thread,
 			      k_thread_stack_t *stack,
 			      size_t stack_size, k_thread_entry_t entry,
 			      void *p1, void *p2, void *p3,
 			      int prio, u32_t options, s32_t delay)
 {
-	__ASSERT(!_is_in_isr(), "Threads may not be created in ISRs");
+	__ASSERT(!z_is_in_isr(), "Threads may not be created in ISRs");
 
-	_setup_new_thread(new_thread, stack, stack_size, entry, p1, p2, p3,
+	/* Special case, only for unit tests */
+#if defined(CONFIG_TEST) && defined(CONFIG_ARCH_HAS_USERSPACE) && !defined(CONFIG_USERSPACE)
+	__ASSERT((options & K_USER) == 0,
+		 "Platform is capable of user mode, and test thread created with K_USER option, but CONFIG_TEST_USERSPACE or CONFIG_USERSPACE is not set\n");
+#endif
+
+	z_setup_new_thread(new_thread, stack, stack_size, entry, p1, p2, p3,
 			  prio, options, NULL);
 
 	if (delay != K_FOREVER) {
@@ -446,9 +458,7 @@ Z_SYSCALL_HANDLER(k_thread_create,
 	int prio;
 	u32_t options, delay;
 	u32_t total_size;
-#ifndef CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
-	u32_t guard_size;
-#endif
+
 	struct _k_object *stack_object;
 	struct k_thread *new_thread = (struct k_thread *)new_thread_p;
 	volatile struct _syscall_10_args *margs =
@@ -457,30 +467,23 @@ Z_SYSCALL_HANDLER(k_thread_create,
 
 	/* The thread and stack objects *must* be in an uninitialized state */
 	Z_OOPS(Z_SYSCALL_OBJ_NEVER_INIT(new_thread, K_OBJ_THREAD));
-	stack_object = _k_object_find(stack);
-	Z_OOPS(Z_SYSCALL_VERIFY_MSG(_obj_validation_check(stack_object, stack,
+	stack_object = z_object_find(stack);
+	Z_OOPS(Z_SYSCALL_VERIFY_MSG(z_obj_validation_check(stack_object, stack,
 						K_OBJ__THREAD_STACK_ELEMENT,
 						_OBJ_INIT_FALSE) == 0,
 				    "bad stack object"));
 
-#ifndef CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
 	/* Verify that the stack size passed in is OK by computing the total
 	 * size and comparing it with the size value in the object metadata
-	 *
-	 * We skip this check for SoCs which utilize MPUs with power of two
-	 * alignment requirements as the guard is allocated out of the stack
-	 * size and not allocated in addition to the stack size
 	 */
-	guard_size = (u32_t)K_THREAD_STACK_BUFFER(stack) - (u32_t)stack;
-	Z_OOPS(Z_SYSCALL_VERIFY_MSG(!__builtin_uadd_overflow(guard_size,
-							     stack_size,
-							     &total_size),
+	Z_OOPS(Z_SYSCALL_VERIFY_MSG(!u32_add_overflow(K_THREAD_STACK_RESERVED,
+						      stack_size, &total_size),
 				    "stack size overflow (%u+%u)", stack_size,
-				    guard_size));
-#else
-	total_size = stack_size;
-#endif
-	/* They really ought to be equal, make this more strict? */
+				    K_THREAD_STACK_RESERVED));
+
+	/* Testing less-than-or-equal since additional room may have been
+	 * allocated for alignment constraints
+	 */
 	Z_OOPS(Z_SYSCALL_VERIFY_MSG(total_size <= stack_object->data,
 				    "stack size %u is too big, max is %u",
 				    total_size, stack_object->data));
@@ -506,10 +509,10 @@ Z_SYSCALL_HANDLER(k_thread_create,
 	 * than the caller
 	 */
 	Z_OOPS(Z_SYSCALL_VERIFY(_is_valid_prio(prio, NULL)));
-	Z_OOPS(Z_SYSCALL_VERIFY(_is_prio_lower_or_equal(prio,
+	Z_OOPS(Z_SYSCALL_VERIFY(z_is_prio_lower_or_equal(prio,
 							_current->base.prio)));
 
-	_setup_new_thread((struct k_thread *)new_thread, stack, stack_size,
+	z_setup_new_thread((struct k_thread *)new_thread, stack, stack_size,
 			  (k_thread_entry_t)entry, (void *)p1,
 			  (void *)margs->arg6, (void *)margs->arg7, prio,
 			  options, NULL);
@@ -523,25 +526,25 @@ Z_SYSCALL_HANDLER(k_thread_create,
 #endif /* CONFIG_USERSPACE */
 #endif /* CONFIG_MULTITHREADING */
 
-void _k_thread_single_suspend(struct k_thread *thread)
+void z_thread_single_suspend(struct k_thread *thread)
 {
-	if (_is_thread_ready(thread)) {
-		_remove_thread_from_ready_q(thread);
+	if (z_is_thread_ready(thread)) {
+		z_remove_thread_from_ready_q(thread);
 	}
 
-	_mark_thread_as_suspended(thread);
+	z_mark_thread_as_suspended(thread);
 }
 
-void _impl_k_thread_suspend(struct k_thread *thread)
+void z_impl_k_thread_suspend(struct k_thread *thread)
 {
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
-	_k_thread_single_suspend(thread);
+	z_thread_single_suspend(thread);
 
 	sys_trace_thread_suspend(thread);
 
 	if (thread == _current) {
-		_reschedule(&lock, key);
+		z_reschedule(&lock, key);
 	} else {
 		k_spin_unlock(&lock, key);
 	}
@@ -551,40 +554,44 @@ void _impl_k_thread_suspend(struct k_thread *thread)
 Z_SYSCALL_HANDLER1_SIMPLE_VOID(k_thread_suspend, K_OBJ_THREAD, k_tid_t);
 #endif
 
-void _k_thread_single_resume(struct k_thread *thread)
+void z_thread_single_resume(struct k_thread *thread)
 {
-	_mark_thread_as_not_suspended(thread);
-	_ready_thread(thread);
+	z_mark_thread_as_not_suspended(thread);
+	z_ready_thread(thread);
 }
 
-void _impl_k_thread_resume(struct k_thread *thread)
+void z_impl_k_thread_resume(struct k_thread *thread)
 {
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
-	_k_thread_single_resume(thread);
+	z_thread_single_resume(thread);
 
 	sys_trace_thread_resume(thread);
-	_reschedule(&lock, key);
+	z_reschedule(&lock, key);
 }
 
 #ifdef CONFIG_USERSPACE
 Z_SYSCALL_HANDLER1_SIMPLE_VOID(k_thread_resume, K_OBJ_THREAD, k_tid_t);
 #endif
 
-void _k_thread_single_abort(struct k_thread *thread)
+void z_thread_single_abort(struct k_thread *thread)
 {
 	if (thread->fn_abort != NULL) {
 		thread->fn_abort();
 	}
 
-	if (_is_thread_ready(thread)) {
-		_remove_thread_from_ready_q(thread);
+	if (IS_ENABLED(CONFIG_SMP)) {
+		z_sched_abort(thread);
+	}
+
+	if (z_is_thread_ready(thread)) {
+		z_remove_thread_from_ready_q(thread);
 	} else {
-		if (_is_thread_pending(thread)) {
-			_unpend_thread_no_timeout(thread);
+		if (z_is_thread_pending(thread)) {
+			z_unpend_thread_no_timeout(thread);
 		}
-		if (_is_thread_timeout_active(thread)) {
-			(void)_abort_thread_timeout(thread);
+		if (z_is_thread_timeout_active(thread)) {
+			(void)z_abort_thread_timeout(thread);
 		}
 	}
 
@@ -596,11 +603,11 @@ void _k_thread_single_abort(struct k_thread *thread)
 	/* Clear initialized state so that this thread object may be re-used
 	 * and triggers errors if API calls are made on it from user threads
 	 */
-	_k_object_uninit(thread->stack_obj);
-	_k_object_uninit(thread);
+	z_object_uninit(thread->stack_obj);
+	z_object_uninit(thread);
 
 	/* Revoke permissions on thread's ID so that it may be recycled */
-	_thread_perms_all_clear(thread);
+	z_thread_perms_all_clear(thread);
 #endif
 }
 
@@ -624,10 +631,10 @@ static void grant_static_access(void)
 }
 #endif /* CONFIG_USERSPACE */
 
-void _init_static_threads(void)
+void z_init_static_threads(void)
 {
 	_FOREACH_STATIC_THREAD(thread_data) {
-		_setup_new_thread(
+		z_setup_new_thread(
 			thread_data->init_thread,
 			thread_data->init_stack,
 			thread_data->init_stack_size,
@@ -667,7 +674,7 @@ void _init_static_threads(void)
 }
 #endif
 
-void _init_thread_base(struct _thread_base *thread_base, int priority,
+void z_init_thread_base(struct _thread_base *thread_base, int priority,
 		       u32_t initial_state, unsigned int options)
 {
 	/* k_q_node is initialized upon first insertion in a list */
@@ -677,18 +684,18 @@ void _init_thread_base(struct _thread_base *thread_base, int priority,
 
 	thread_base->prio = priority;
 
-	thread_base->sched_locked = 0;
+	thread_base->sched_locked = 0U;
 
 	/* swap_data does not need to be initialized */
 
-	_init_thread_timeout(thread_base);
+	z_init_thread_timeout(thread_base);
 }
 
 FUNC_NORETURN void k_thread_user_mode_enter(k_thread_entry_t entry,
 					    void *p1, void *p2, void *p3)
 {
 	_current->base.user_options |= K_USER;
-	_thread_essential_clear();
+	z_thread_essential_clear();
 #ifdef CONFIG_THREAD_MONITOR
 	_current->entry.pEntry = entry;
 	_current->entry.parameter1 = p1;
@@ -696,10 +703,10 @@ FUNC_NORETURN void k_thread_user_mode_enter(k_thread_entry_t entry,
 	_current->entry.parameter3 = p3;
 #endif
 #ifdef CONFIG_USERSPACE
-	_arch_user_mode_enter(entry, p1, p2, p3);
+	z_arch_user_mode_enter(entry, p1, p2, p3);
 #else
 	/* XXX In this case we do not reset the stack */
-	_thread_entry(entry, p1, p2, p3);
+	z_thread_entry(entry, p1, p2, p3);
 #endif
 }
 
@@ -707,23 +714,28 @@ FUNC_NORETURN void k_thread_user_mode_enter(k_thread_entry_t entry,
  * them in spinlock.h is a giant header ordering headache.
  */
 #ifdef SPIN_VALIDATE
-int z_spin_lock_valid(struct k_spinlock *l)
+bool z_spin_lock_valid(struct k_spinlock *l)
 {
 	if (l->thread_cpu) {
 		if ((l->thread_cpu & 3) == _current_cpu->id) {
-			return 0;
+			return false;
 		}
 	}
-	l->thread_cpu = _current_cpu->id | (u32_t)_current;
-	return 1;
+	return true;
 }
 
-int z_spin_unlock_valid(struct k_spinlock *l)
+bool z_spin_unlock_valid(struct k_spinlock *l)
 {
 	if (l->thread_cpu != (_current_cpu->id | (u32_t)_current)) {
-		return 0;
+		return false;
 	}
 	l->thread_cpu = 0;
-	return 1;
+	return true;
 }
+
+void z_spin_lock_set_owner(struct k_spinlock *l)
+{
+	l->thread_cpu = _current_cpu->id | (u32_t)_current;
+}
+
 #endif

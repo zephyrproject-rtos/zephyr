@@ -27,18 +27,18 @@ See also this URL for details about the board:
 The latest version of EM Starter Kit is 2.3, developer can upgrade from
 2.0/2.1/2.2 to 2.3 using latest firmware.
 The default configuration for EM Starter Kit boards can be found in
-:file:`boards/arc/em_starterkit/em_starterkit_defconfig`.
+:zephyr_file:`boards/arc/em_starterkit/em_starterkit_defconfig`.
 
 The default SoC for this board supported in Zephyr is the EM9D.
 This configuration is a Harvard Architecture, with a separate
 instruction bus and data bus. Instruction memory is called ICCM
 and data memory is called DCCM. The configuration file for EM9D
-is found in :file:`soc/arc/snps_emsk/Kconfig.defconfig.em9d`.
+is found in :zephyr_file:`soc/arc/snps_emsk/Kconfig.defconfig.em9d`.
 
 If you have a larger program, you can select the EM7D or EM11D, which gives
 access to 128KB DRAM with i-cache and d-cache. The configuration file for EM7D
-is found in :file:`soc/arc/snps_emsk/Kconfig.defconfig.em7d` and EM11D is
-found in :file:`soc/arc/snps_emsk/Kconfig.defconfig.em11d`.
+is found in :zephyr_file:`soc/arc/snps_emsk/Kconfig.defconfig.em7d` and EM11D is
+found in :zephyr_file:`soc/arc/snps_emsk/Kconfig.defconfig.em11d`.
 
 
 Hardware
@@ -185,7 +185,7 @@ Building Sample Applications
 
 You can try many of the sample applications or tests, but let us discuss
 the one called :ref:`hello_world`.
-It is found in :file:`$ZEPHYR_BASE/samples/hello_world`.
+It is found in :zephyr_file:`samples/hello_world`.
 
 Configuring
 -----------

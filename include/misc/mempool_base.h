@@ -38,75 +38,75 @@ struct sys_mem_pool_base {
 
 #define _ALIGN4(n) ((((n)+3)/4)*4)
 
-#define _MPOOL_HAVE_LVL(maxsz, minsz, l) (((maxsz) >> (2*(l))) \
+#define Z_MPOOL_HAVE_LVL(maxsz, minsz, l) (((maxsz) >> (2*(l))) \
 					  >= (minsz) ? 1 : 0)
 
 #define __MPOOL_LVLS(maxsz, minsz)		\
-	(_MPOOL_HAVE_LVL((maxsz), (minsz), 0) +	\
-	_MPOOL_HAVE_LVL((maxsz), (minsz), 1) +	\
-	_MPOOL_HAVE_LVL((maxsz), (minsz), 2) +	\
-	_MPOOL_HAVE_LVL((maxsz), (minsz), 3) +	\
-	_MPOOL_HAVE_LVL((maxsz), (minsz), 4) +	\
-	_MPOOL_HAVE_LVL((maxsz), (minsz), 5) +	\
-	_MPOOL_HAVE_LVL((maxsz), (minsz), 6) +	\
-	_MPOOL_HAVE_LVL((maxsz), (minsz), 7) +	\
-	_MPOOL_HAVE_LVL((maxsz), (minsz), 8) +	\
-	_MPOOL_HAVE_LVL((maxsz), (minsz), 9) +	\
-	_MPOOL_HAVE_LVL((maxsz), (minsz), 10) +	\
-	_MPOOL_HAVE_LVL((maxsz), (minsz), 11) +	\
-	_MPOOL_HAVE_LVL((maxsz), (minsz), 12) +	\
-	_MPOOL_HAVE_LVL((maxsz), (minsz), 13) +	\
-	_MPOOL_HAVE_LVL((maxsz), (minsz), 14) +	\
-	_MPOOL_HAVE_LVL((maxsz), (minsz), 15))
+	(Z_MPOOL_HAVE_LVL((maxsz), (minsz), 0) +	\
+	Z_MPOOL_HAVE_LVL((maxsz), (minsz), 1) +	\
+	Z_MPOOL_HAVE_LVL((maxsz), (minsz), 2) +	\
+	Z_MPOOL_HAVE_LVL((maxsz), (minsz), 3) +	\
+	Z_MPOOL_HAVE_LVL((maxsz), (minsz), 4) +	\
+	Z_MPOOL_HAVE_LVL((maxsz), (minsz), 5) +	\
+	Z_MPOOL_HAVE_LVL((maxsz), (minsz), 6) +	\
+	Z_MPOOL_HAVE_LVL((maxsz), (minsz), 7) +	\
+	Z_MPOOL_HAVE_LVL((maxsz), (minsz), 8) +	\
+	Z_MPOOL_HAVE_LVL((maxsz), (minsz), 9) +	\
+	Z_MPOOL_HAVE_LVL((maxsz), (minsz), 10) +	\
+	Z_MPOOL_HAVE_LVL((maxsz), (minsz), 11) +	\
+	Z_MPOOL_HAVE_LVL((maxsz), (minsz), 12) +	\
+	Z_MPOOL_HAVE_LVL((maxsz), (minsz), 13) +	\
+	Z_MPOOL_HAVE_LVL((maxsz), (minsz), 14) +	\
+	Z_MPOOL_HAVE_LVL((maxsz), (minsz), 15))
 
 #define _MPOOL_MINBLK sizeof(sys_dnode_t)
 
-#define _MPOOL_LVLS(maxsz, minsz)		\
+#define Z_MPOOL_LVLS(maxsz, minsz)		\
 	__MPOOL_LVLS((maxsz), (minsz) >= _MPOOL_MINBLK ? (minsz) : \
 		     _MPOOL_MINBLK)
 
 /* Rounds the needed bits up to integer multiples of u32_t */
-#define _MPOOL_LBIT_WORDS_UNCLAMPED(n_max, l) \
+#define Z_MPOOL_LBIT_WORDS_UNCLAMPED(n_max, l) \
 	((((n_max) << (2*(l))) + 31) / 32)
 
 /* One word gets stored free unioned with the pointer, otherwise the
  * calculated unclamped value
  */
-#define _MPOOL_LBIT_WORDS(n_max, l)			\
-	(_MPOOL_LBIT_WORDS_UNCLAMPED(n_max, l) < 2 ? 0	\
-	 : _MPOOL_LBIT_WORDS_UNCLAMPED(n_max, l))
+#define Z_MPOOL_LBIT_WORDS(n_max, l)			\
+	(Z_MPOOL_LBIT_WORDS_UNCLAMPED(n_max, l) < 2 ? 0	\
+	 : Z_MPOOL_LBIT_WORDS_UNCLAMPED(n_max, l))
 
 /* How many bytes for the bitfields of a single level? */
-#define _MPOOL_LBIT_BYTES(maxsz, minsz, l, n_max)	\
-	(_MPOOL_LVLS((maxsz), (minsz)) >= (l) ?		\
-	 4 * _MPOOL_LBIT_WORDS((n_max), l) : 0)
+#define Z_MPOOL_LBIT_BYTES(maxsz, minsz, l, n_max)	\
+	(Z_MPOOL_LVLS((maxsz), (minsz)) >= (l) ?		\
+	 4 * Z_MPOOL_LBIT_WORDS((n_max), l) : 0)
 
 /* Size of the bitmap array that follows the buffer in allocated memory */
 #define _MPOOL_BITS_SIZE(maxsz, minsz, n_max) \
-	(_MPOOL_LBIT_BYTES(maxsz, minsz, 0, n_max) +	\
-	_MPOOL_LBIT_BYTES(maxsz, minsz, 1, n_max) +	\
-	_MPOOL_LBIT_BYTES(maxsz, minsz, 2, n_max) +	\
-	_MPOOL_LBIT_BYTES(maxsz, minsz, 3, n_max) +	\
-	_MPOOL_LBIT_BYTES(maxsz, minsz, 4, n_max) +	\
-	_MPOOL_LBIT_BYTES(maxsz, minsz, 5, n_max) +	\
-	_MPOOL_LBIT_BYTES(maxsz, minsz, 6, n_max) +	\
-	_MPOOL_LBIT_BYTES(maxsz, minsz, 7, n_max) +	\
-	_MPOOL_LBIT_BYTES(maxsz, minsz, 8, n_max) +	\
-	_MPOOL_LBIT_BYTES(maxsz, minsz, 9, n_max) +	\
-	_MPOOL_LBIT_BYTES(maxsz, minsz, 10, n_max) +	\
-	_MPOOL_LBIT_BYTES(maxsz, minsz, 11, n_max) +	\
-	_MPOOL_LBIT_BYTES(maxsz, minsz, 12, n_max) +	\
-	_MPOOL_LBIT_BYTES(maxsz, minsz, 13, n_max) +	\
-	_MPOOL_LBIT_BYTES(maxsz, minsz, 14, n_max) +	\
-	_MPOOL_LBIT_BYTES(maxsz, minsz, 15, n_max))
+	(Z_MPOOL_LBIT_BYTES(maxsz, minsz, 0, n_max) +	\
+	Z_MPOOL_LBIT_BYTES(maxsz, minsz, 1, n_max) +	\
+	Z_MPOOL_LBIT_BYTES(maxsz, minsz, 2, n_max) +	\
+	Z_MPOOL_LBIT_BYTES(maxsz, minsz, 3, n_max) +	\
+	Z_MPOOL_LBIT_BYTES(maxsz, minsz, 4, n_max) +	\
+	Z_MPOOL_LBIT_BYTES(maxsz, minsz, 5, n_max) +	\
+	Z_MPOOL_LBIT_BYTES(maxsz, minsz, 6, n_max) +	\
+	Z_MPOOL_LBIT_BYTES(maxsz, minsz, 7, n_max) +	\
+	Z_MPOOL_LBIT_BYTES(maxsz, minsz, 8, n_max) +	\
+	Z_MPOOL_LBIT_BYTES(maxsz, minsz, 9, n_max) +	\
+	Z_MPOOL_LBIT_BYTES(maxsz, minsz, 10, n_max) +	\
+	Z_MPOOL_LBIT_BYTES(maxsz, minsz, 11, n_max) +	\
+	Z_MPOOL_LBIT_BYTES(maxsz, minsz, 12, n_max) +	\
+	Z_MPOOL_LBIT_BYTES(maxsz, minsz, 13, n_max) +	\
+	Z_MPOOL_LBIT_BYTES(maxsz, minsz, 14, n_max) +	\
+	Z_MPOOL_LBIT_BYTES(maxsz, minsz, 15, n_max))
 
 
-void _sys_mem_pool_base_init(struct sys_mem_pool_base *p);
+void z_sys_mem_pool_base_init(struct sys_mem_pool_base *p);
 
-int _sys_mem_pool_block_alloc(struct sys_mem_pool_base *p, size_t size,
+int z_sys_mem_pool_block_alloc(struct sys_mem_pool_base *p, size_t size,
 			      u32_t *level_p, u32_t *block_p, void **data_p);
 
-void _sys_mem_pool_block_free(struct sys_mem_pool_base *p, u32_t level,
+void z_sys_mem_pool_block_free(struct sys_mem_pool_base *p, u32_t level,
 			      u32_t block);
 
 #endif /* ZEPHYR_INCLUDE_MISC_MEMPOOL_BASE_H_ */

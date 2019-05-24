@@ -35,6 +35,8 @@ source "drivers/sensor/ak8975/Kconfig"
 
 source "drivers/sensor/amg88xx/Kconfig"
 
+source "drivers/sensor/ams_iAQcore/Kconfig"
+
 source "drivers/sensor/apds9960/Kconfig"
 
 source "drivers/sensor/bma280/Kconfig"
@@ -52,6 +54,8 @@ source "drivers/sensor/bmm150/Kconfig"
 source "drivers/sensor/ccs811/Kconfig"
 
 source "drivers/sensor/dht/Kconfig"
+
+source "drivers/sensor/ens210/Kconfig"
 
 source "drivers/sensor/fxas21002/Kconfig"
 

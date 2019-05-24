@@ -28,9 +28,9 @@ static void test_can_frame_to_zcan_frame(void)
 	frame.can_dlc = sizeof(data);
 	memcpy(frame.data, data, sizeof(frame.data));
 
-	expected.rtr = 1;
-	expected.id_type = 1;
-	expected.std_id = 1234;
+	expected.rtr = 1U;
+	expected.id_type = 1U;
+	expected.std_id = 1234U;
 	expected.dlc = sizeof(data);
 
 	can_copy_frame_to_zframe(&frame, &msg);
@@ -57,9 +57,9 @@ static void test_zcan_frame_to_can_frame(void)
 	expected.can_dlc = sizeof(data);
 	memcpy(expected.data, data, sizeof(expected.data));
 
-	msg.rtr = 1;
-	msg.id_type = 1;
-	msg.std_id = 1234;
+	msg.rtr = 1U;
+	msg.id_type = 1U;
+	msg.std_id = 1234U;
 	msg.dlc = sizeof(data);
 	memcpy(msg.data, data, sizeof(data));
 
@@ -86,11 +86,11 @@ static void test_can_filter_to_zcan_filter(void)
 	filter.can_id = BIT(31) | BIT(30) | 1234;
 	filter.can_mask = BIT(31) | BIT(30) | 1234;
 
-	expected.rtr = 1;
-	expected.id_type = 1;
-	expected.std_id = 1234;
-	expected.rtr_mask = 1;
-	expected.std_id_mask = 1234;
+	expected.rtr = 1U;
+	expected.id_type = 1U;
+	expected.std_id = 1234U;
+	expected.rtr_mask = 1U;
+	expected.std_id_mask = 1234U;
 
 	can_copy_filter_to_zfilter(&filter, &msg_filter);
 
@@ -119,11 +119,11 @@ static void test_zcan_filter_to_can_filter(void)
 	expected.can_id = BIT(31) | BIT(30) | 1234;
 	expected.can_mask = BIT(31) | BIT(30) | 1234;
 
-	msg_filter.rtr = 1;
-	msg_filter.id_type = 1;
-	msg_filter.std_id = 1234;
-	msg_filter.rtr_mask = 1;
-	msg_filter.std_id_mask = 1234;
+	msg_filter.rtr = 1U;
+	msg_filter.id_type = 1U;
+	msg_filter.std_id = 1234U;
+	msg_filter.rtr_mask = 1U;
+	msg_filter.std_id_mask = 1234U;
 
 	can_copy_zfilter_to_filter(&msg_filter, &filter);
 

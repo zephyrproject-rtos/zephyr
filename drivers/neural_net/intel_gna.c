@@ -90,13 +90,13 @@ static void intel_gna_interrupt_handler(struct device *dev)
 		pending_resp.response.output_len = pending_req.output_len;
 		pending_resp.callback = pending_req.callback;
 
-		pending_resp.response.stats.cycles_per_sec = 200000000;
+		pending_resp.response.stats.cycles_per_sec = 200000000U;
 		if (regs->gnasts & GNA_STS_STATS_VALID) {
 			pending_resp.response.stats.total_cycles = regs->gnaptc;
 			pending_resp.response.stats.stall_cycles = regs->gnasc;
 		} else {
-			pending_resp.response.stats.total_cycles = 0;
-			pending_resp.response.stats.stall_cycles = 0;
+			pending_resp.response.stats.total_cycles = 0U;
+			pending_resp.response.stats.stall_cycles = 0U;
 		}
 
 		k_msgq_put(&gna->response_queue, &pending_resp, K_NO_WAIT);

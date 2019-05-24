@@ -4,14 +4,6 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-import sys
-import argparse
-import os
-import re
-from distutils.version import LooseVersion
-
-# --- debug stuff ---
-
 """
 gperf C file post-processor
 
@@ -25,6 +17,13 @@ the generated code so that we work with pointers directly and not strings.
 This saves a considerable amount of space.
 """
 
+import sys
+import argparse
+import os
+import re
+from distutils.version import LooseVersion
+
+# --- debug stuff ---
 
 def debug(text):
     if not args.verbose:
@@ -55,7 +54,7 @@ def reformat_str(match_obj):
     ctr = 3
     i = 0
 
-    while (True):
+    while True:
         if i >= len(addr_str):
             break
 

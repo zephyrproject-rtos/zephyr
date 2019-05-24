@@ -12,7 +12,7 @@ show how it's possible to develop a sockets application portable to both
 POSIX and Zephyr. As such, it is kept minimal and supports only IPv4 and TCP.
 
 The source code for this sample application can be found at:
-:file:`samples/net/sockets/echo`.
+:zephyr_file:`samples/net/sockets/echo`.
 
 Requirements
 ************
@@ -82,7 +82,7 @@ Running on cc3220sf_launchxl
 
 See the note on Provisioning and Fast Connect in :ref:`cc3220sf_launchxl`.
 
-After having connected to an Access Point using the sample WiFi shell,
+After having connected to an Access Point using the sample Wi-Fi shell,
 the IP address will be printed to the console upon running this echo
 application.
 

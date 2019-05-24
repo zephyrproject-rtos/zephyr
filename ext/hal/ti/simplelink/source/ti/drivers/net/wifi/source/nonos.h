@@ -35,9 +35,9 @@
 */
 
 #ifndef __NONOS_H__
-#define	__NONOS_H__
+#define    __NONOS_H__
 
-#ifdef	__cplusplus
+#ifdef    __cplusplus
 extern "C" {
 #endif
 
@@ -51,14 +51,10 @@ extern "C" {
 #define _SlSyncWaitLoopCallback  UserSleepFunction
 */
 
-#ifndef SL_TINY_EXT
 #define NONOS_MAX_SPAWN_ENTRIES                 (5)
-#else
-#define NONOS_MAX_SPAWN_ENTRIES                 (1)
-#endif
 
-#define NONOS_WAIT_FOREVER   					~(0UL)
-#define NONOS_NO_WAIT        				    (0x0)
+#define NONOS_WAIT_FOREVER                      ~(0UL)
+#define NONOS_NO_WAIT                           (0x0)
 
 #define NONOS_RET_OK                            (0)
 #define NONOS_RET_ERR                           (0xFF)
@@ -66,24 +62,24 @@ extern "C" {
 
 typedef struct
 {
-    _SlSpawnEntryFunc_t 		pEntry;
-    void* 						pValue;
-	_u8                         IsAllocated;
+    _SlSpawnEntryFunc_t         pEntry;
+    void*                       pValue;
+    _u8                         IsAllocated;
 }_SlNonOsSpawnEntry_t;
 
 typedef struct
 {
-    _SlNonOsSpawnEntry_t	SpawnEntries[NONOS_MAX_SPAWN_ENTRIES];
+    _SlNonOsSpawnEntry_t    SpawnEntries[NONOS_MAX_SPAWN_ENTRIES];
 }_SlNonOsCB_t;
 
 
 /*!
-	\brief type definition for the return values of this adaptation layer
+    \brief type definition for the return values of this adaptation layer
 */
 typedef _u32 _SlNonOsRetVal_t;
 
 /*!
-	\brief type definition for a time value
+    \brief type definition for a time value
 */
 typedef _u32 _SlNonOsTime_t;
 
@@ -98,47 +94,47 @@ typedef _u32 _SlNonOsTime_t;
 
 
 /*!
-	\brief 	This function call the pEntry callback from a different context
-	
-	\param	pEntry		-	pointer to the entry callback function 
-	
-	\param	pValue		- 	pointer to any type of memory structure that would be
-							passed to pEntry callback from the execution thread.
-							
-	\param	flags		- 	execution flags - reserved for future usage
-	
-	\return upon successful registration of the spawn the function return 0
-			(the function is not blocked till the end of the execution of the function
-			and could be returned before the execution is actually completed)
-			Otherwise, a negative value indicating the error code shall be returned
-	\note
-	\warning
+    \brief     This function call the pEntry callback from a different context
+    
+    \param    pEntry        -   pointer to the entry callback function 
+    
+    \param    pValue        -   pointer to any type of memory structure that would be
+                                passed to pEntry callback from the execution thread.
+                            
+    \param    flags        -    execution flags - reserved for future usage
+    
+    \return upon successful registration of the spawn the function return 0
+            (the function is not blocked till the end of the execution of the function
+            and could be returned before the execution is actually completed)
+            Otherwise, a negative value indicating the error code shall be returned
+    \note
+    \warning
 */
 _SlNonOsRetVal_t _SlNonOsSpawn(_SlSpawnEntryFunc_t pEntry , void* pValue , _u32 flags);
 
 
 /*!
-	\brief 	This function is called form the main context, while waiting on a sync object.
+    \brief  This function is called form the main context, while waiting on a sync object.
 
-	\param	None
+    \param  None
 
-	\return None
+    \return None
 
-	\note
-	\warning
+    \note
+    \warning
 */
 void tiDriverSpawnCallback(void);
 
 
 /*!
-	\brief 	This function is called directly the main context, while in main task loop.
+    \brief  This function is called directly the main context, while in main task loop.
 
-	\param	None
+    \param  None
 
-	\return None
+    \return None
 
-	\note
-	\warning
+    \note
+    \warning
 */
 _SlNonOsRetVal_t _SlNonOsHandleSpawnTask(void);
 

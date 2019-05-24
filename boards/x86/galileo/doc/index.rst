@@ -216,14 +216,15 @@ copy of GRUB, follow these steps to test on supported boards using a custom GRUB
 
    .. code-block:: console
 
-      $ sudo apt-get install bison autoconf libopts25-dev flex automake
+      $ sudo apt-get install bison autoconf libopts25-dev flex automake \
+      pkg-config gettext autopoint
 
    On Fedora, type:
 
    .. code-block:: console
 
      $ sudo dnf install gnu-efi bison m4 autoconf help2man flex \
-        automake texinfo
+        automake texinfo gettext-devel
 
 #. Clone and build the GRUB repository using the script in Zephyr tree, type:
 

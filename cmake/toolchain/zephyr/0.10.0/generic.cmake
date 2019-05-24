@@ -1,6 +1,9 @@
+# SPDX-License-Identifier: Apache-2.0
+
 set(TOOLCHAIN_HOME ${ZEPHYR_SDK_INSTALL_DIR})
 
 set(COMPILER gcc)
+set(LINKER ld)
 
 set(CROSS_COMPILE_TARGET i586-${TOOLCHAIN_VENDOR}-elf)
 set(SYSROOT_TARGET       i586-${TOOLCHAIN_VENDOR}-elf)

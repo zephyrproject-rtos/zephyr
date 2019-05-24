@@ -2,6 +2,6 @@ sample:
   description: Demonstration of the LP3943 LED driver
   name: LP3943 sample
 tests:
-  test:
+  sample.driver.led_lp3943:
     platform_whitelist: 96b_neonkey 96b_argonkey
     tags: LED

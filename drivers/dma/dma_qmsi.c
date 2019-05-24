@@ -136,7 +136,7 @@ static int dma_qmsi_chan_config(struct device *dev, u32_t channel,
 	u32_t temp = 0U;
 	int ret = 0;
 
-	if (config->block_count != 1) {
+	if (config->block_count != 1U) {
 		return -ENOTSUP;
 	}
 
@@ -279,19 +279,24 @@ static int dma_resume_device(struct device *dev)
 }
 
 static int dma_qmsi_device_ctrl(struct device *dev, u32_t ctrl_command,
-				void *context)
+				void *context, device_pm_cb cb, void *arg)
 {
+	int ret = 0;
+
 	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
 		if (*((u32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
-			return dma_suspend_device(dev);
+			ret = dma_suspend_device(dev);
 		} else if (*((u32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
-			return dma_resume_device(dev);
+			ret = dma_resume_device(dev);
 		}
 	} else if (ctrl_command == DEVICE_PM_GET_POWER_STATE) {
 		*((u32_t *)context) = dma_qmsi_get_power_state(dev);
 	}
 
-	return 0;
+	if (cb) {
+		cb(dev, ret, context, arg);
+	}
+	return ret;
 }
 #endif
 

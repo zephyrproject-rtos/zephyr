@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 set_ifndef(BOARD_FLASH_RUNNER nios2)
 set_ifndef(BOARD_DEBUG_RUNNER nios2)
 

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 if (NOT DEFINED ENV{BSIM_COMPONENTS_PATH})
 	message(FATAL_ERROR "This board requires the BabbleSim simulator. Please set\
  the  enviroment variable BSIM_COMPONENTS_PATH to point to its components \
@@ -91,21 +93,12 @@ zephyr_ld_options(
   -lm
 )
 
-add_library(bsim_libUtilv1      STATIC IMPORTED GLOBAL)
-add_library(bsim_libPhyComv1    STATIC IMPORTED GLOBAL)
-add_library(bsim_lib2G4PhyComv1 STATIC IMPORTED GLOBAL)
-add_library(bsim_libRandv2      STATIC IMPORTED GLOBAL)
-add_library(bsim_libNRF52_hw    STATIC IMPORTED GLOBAL)
-set_target_properties(bsim_libUtilv1      PROPERTIES IMPORTED_LOCATION $ENV{BSIM_OUT_PATH}/lib/libUtilv1.32.a)
-set_target_properties(bsim_libPhyComv1    PROPERTIES IMPORTED_LOCATION $ENV{BSIM_OUT_PATH}/lib/libPhyComv1.32.a)
-set_target_properties(bsim_lib2G4PhyComv1 PROPERTIES IMPORTED_LOCATION $ENV{BSIM_OUT_PATH}/lib/lib2G4PhyComv1.32.a)
-set_target_properties(bsim_libRandv2      PROPERTIES IMPORTED_LOCATION $ENV{BSIM_OUT_PATH}/lib/libRandv2.32.a)
-set_target_properties(bsim_libNRF52_hw    PROPERTIES IMPORTED_LOCATION $ENV{BSIM_OUT_PATH}/lib/libNRF52_hw_models.32.a)
-zephyr_append_cmake_library(bsim_libUtilv1)
-zephyr_append_cmake_library(bsim_libPhyComv1)
-zephyr_append_cmake_library(bsim_lib2G4PhyComv1)
-zephyr_append_cmake_library(bsim_libRandv2)
-zephyr_append_cmake_library(bsim_libNRF52_hw)
+set(libpath $ENV{BSIM_OUT_PATH}/lib)
+zephyr_library_import(bsim_libUtilv1      ${libpath}/libUtilv1.32.a)
+zephyr_library_import(bsim_libPhyComv1    ${libpath}/libPhyComv1.32.a)
+zephyr_library_import(bsim_lib2G4PhyComv1 ${libpath}/lib2G4PhyComv1.32.a)
+zephyr_library_import(bsim_libRandv2      ${libpath}/libRandv2.32.a)
+zephyr_library_import(bsim_libNRF52_hw    ${libpath}/libNRF52_hw_models.32.a)
 
 # This is due to some tests using _Static_assert which is a 2011 feature, but
 # otherwise relying on compilers supporting it also when set to C99.

@@ -16,11 +16,6 @@
 #define LVL_ARRAY_SZ(n) (n)
 #endif
 
-static bool level_empty(struct sys_mem_pool_base *p, int l)
-{
-	return sys_dlist_is_empty(&p->levels[l].free_list);
-}
-
 static void *block_ptr(struct sys_mem_pool_base *p, size_t lsz, int block)
 {
 	return (u8_t *)p->buf + lsz * block;
@@ -82,7 +77,7 @@ static bool block_fits(struct sys_mem_pool_base *p, void *block, size_t bsz)
 	return ((u8_t *)block + bsz - 1 - (u8_t *)p->buf) < buf_size(p);
 }
 
-void _sys_mem_pool_base_init(struct sys_mem_pool_base *p)
+void z_sys_mem_pool_base_init(struct sys_mem_pool_base *p)
 {
 	int i;
 	size_t buflen = p->n_max * p->max_sz, sz = p->max_sz;
@@ -233,10 +228,10 @@ static void *block_break(struct sys_mem_pool_base *p, void *block, int l,
 	return block;
 }
 
-int _sys_mem_pool_block_alloc(struct sys_mem_pool_base *p, size_t size,
+int z_sys_mem_pool_block_alloc(struct sys_mem_pool_base *p, size_t size,
 			      u32_t *level_p, u32_t *block_p, void **data_p)
 {
-	int i, from_l, alloc_l = -1, free_l = -1;
+	int i, from_l, alloc_l = -1;
 	unsigned int key;
 	void *data = NULL;
 	size_t lsizes[LVL_ARRAY_SZ(p->n_levels)];
@@ -258,12 +253,9 @@ int _sys_mem_pool_block_alloc(struct sys_mem_pool_base *p, size_t size,
 		}
 
 		alloc_l = i;
-		if (!level_empty(p, i)) {
-			free_l = i;
-		}
 	}
 
-	if (alloc_l < 0 || free_l < 0) {
+	if (alloc_l < 0) {
 		*data_p = NULL;
 		return -ENOMEM;
 	}
@@ -280,7 +272,7 @@ int _sys_mem_pool_block_alloc(struct sys_mem_pool_base *p, size_t size,
 	 * spurious -ENOMEM.
 	 */
 	key = pool_irq_lock(p);
-	for (i = free_l; i >= 0; i--) {
+	for (i = alloc_l; i >= 0; i--) {
 		data = block_alloc(p, i, lsizes[i]);
 
 		/* Found one.  Iteratively break it down to the size
@@ -299,20 +291,25 @@ int _sys_mem_pool_block_alloc(struct sys_mem_pool_base *p, size_t size,
 	}
 	pool_irq_unlock(p, key);
 
+	*data_p = data;
+
+	if (data == NULL) {
+		return -ENOMEM;
+	}
+
 	*level_p = alloc_l;
 	*block_p = block_num(p, data, lsizes[alloc_l]);
-	*data_p = data;
 
 	return 0;
 }
 
-void _sys_mem_pool_block_free(struct sys_mem_pool_base *p, u32_t level,
+void z_sys_mem_pool_block_free(struct sys_mem_pool_base *p, u32_t level,
 			      u32_t block)
 {
 	size_t lsizes[LVL_ARRAY_SZ(p->n_levels)];
 	int i;
 
-	/* As in _sys_mem_pool_block_alloc(), we build a table of level sizes
+	/* As in z_sys_mem_pool_block_alloc(), we build a table of level sizes
 	 * to avoid having to store it in precious RAM bytes.
 	 * Overhead here is somewhat higher because block_free()
 	 * doesn't inherently need to traverse all the larger
@@ -336,10 +333,10 @@ void *sys_mem_pool_alloc(struct sys_mem_pool *p, size_t size)
 	u32_t level, block;
 	char *ret;
 
-	k_mutex_lock(p->mutex, K_FOREVER);
+	sys_mutex_lock(&p->mutex, K_FOREVER);
 
 	size += sizeof(struct sys_mem_pool_block);
-	if (_sys_mem_pool_block_alloc(&p->base, size, &level, &block,
+	if (z_sys_mem_pool_block_alloc(&p->base, size, &level, &block,
 				      (void **)&ret)) {
 		ret = NULL;
 		goto out;
@@ -351,7 +348,7 @@ void *sys_mem_pool_alloc(struct sys_mem_pool *p, size_t size)
 	blk->pool = p;
 	ret += sizeof(*blk);
 out:
-	k_mutex_unlock(p->mutex);
+	sys_mutex_unlock(&p->mutex);
 	return ret;
 }
 
@@ -367,8 +364,8 @@ void sys_mem_pool_free(void *ptr)
 	blk = (struct sys_mem_pool_block *)((char *)ptr - sizeof(*blk));
 	p = blk->pool;
 
-	k_mutex_lock(p->mutex, K_FOREVER);
-	_sys_mem_pool_block_free(&p->base, blk->level, blk->block);
-	k_mutex_unlock(p->mutex);
+	sys_mutex_lock(&p->mutex, K_FOREVER);
+	z_sys_mem_pool_block_free(&p->base, blk->level, blk->block);
+	sys_mutex_unlock(&p->mutex);
 }
 

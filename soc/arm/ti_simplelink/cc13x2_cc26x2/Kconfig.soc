@@ -1,0 +1,18 @@
+# Kconfig.soc - Texas Instruments SimpleLink CC13x2 / CC26x2
+#
+# Copyright (c) 2019 Brett Witherspoon
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+choice
+prompt "TI SimpleLink MCU Selection"
+depends on SOC_SERIES_CC13X2_CC26X2
+
+config SOC_CC2652R
+	bool "CC2652R"
+
+config SOC_CC1352R
+	bool "CC1352R"
+
+endchoice

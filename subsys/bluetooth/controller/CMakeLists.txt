@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 zephyr_library()
 zephyr_library_sources(
   util/mem.c
@@ -123,13 +125,13 @@ if(CONFIG_BT_LL_SW_SPLIT)
     CONFIG_BT_HCI_MESH_EXT
     ll_sw/ll_mesh.c
     )
-  zephyr_library_sources_ifdef(
-    CONFIG_BT_CTLR_DTM
-    ll_sw/nordic/lll/lll_test.c
-    )
   if(CONFIG_BT_LLL_VENDOR_NORDIC)
     zephyr_library_include_directories(
       ll_sw/nordic/lll
+      )
+    zephyr_library_sources_ifdef(
+      CONFIG_BT_CTLR_DTM
+      ll_sw/nordic/lll/lll_test.c
       )
     zephyr_library_sources_ifdef(
       CONFIG_BT_CTLR_PROFILE_ISR
@@ -156,6 +158,7 @@ zephyr_library_include_directories(
 if(CONFIG_SOC_COMPATIBLE_NRF)
   zephyr_library_include_directories(
     ll_sw/nordic
+    hci/nordic
     )
 endif()
 

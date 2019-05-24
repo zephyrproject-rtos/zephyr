@@ -24,7 +24,7 @@
 	/* exports (internal APIs) */
 
 	GTEXT(__swap)
-	GTEXT(_x86_thread_entry_wrapper)
+	GTEXT(z_x86_thread_entry_wrapper)
 	GTEXT(_x86_user_thread_entry_wrapper)
 
 	/* externs */
@@ -74,7 +74,7 @@
  * potential security leaks.
  *
  * @return -EAGAIN, or a return value set by a call to
- * _set_thread_return_value()
+ * z_set_thread_return_value()
  *
  * C function prototype:
  *
@@ -130,7 +130,7 @@ SECTION_FUNC(TEXT, __swap)
 	 * Carve space for the return value. Setting it to a default of
 	 * -EAGAIN eliminates the need for the timeout code to set it.
 	 * If another value is ever needed, it can be modified with
-	 * _set_thread_return_value().
+	 * z_set_thread_return_value().
 	 */
 
 	pushl   _k_neg_eagain
@@ -171,7 +171,31 @@ SECTION_FUNC(TEXT, __swap)
 #endif
 #endif
 
-#ifdef CONFIG_FP_SHARING
+#ifdef CONFIG_EAGER_FP_SHARING
+	/* Eager floating point state restore logic
+	 *
+	 * Addresses CVE-2018-3665
+	 * Used as an alternate to CONFIG_LAZY_FP_SHARING if there is any
+	 * sensitive data in the floating point/SIMD registers in a system
+	 * with untrusted threads.
+	 *
+	 * Unconditionally save/restore floating point registers on context
+	 * switch.
+	 */
+	/* Save outgpoing thread context */
+#ifdef CONFIG_SSE
+	fxsave	_thread_offset_to_preempFloatReg(%edx)
+	fninit
+#else
+	fnsave	 _thread_offset_to_preempFloatReg(%edx)
+#endif
+	/* Restore incoming thread context */
+#ifdef CONFIG_SSE
+	fxrstor _thread_offset_to_preempFloatReg(%eax)
+#else
+	frstor _thread_offset_to_preempFloatReg(%eax)
+#endif /* CONFIG_SSE */
+#elif defined(CONFIG_LAZY_FP_SHARING)
 	/*
 	 * Clear the CR0[TS] bit (in the event the current thread
 	 * doesn't have floating point enabled) to prevent the "device not
@@ -325,7 +349,7 @@ restoreContext_NoFloatSwap:
 
 CROHandlingDone:
 
-#endif /* CONFIG_FP_SHARING */
+#endif /* CONFIG_LAZY_FP_SHARING */
 
 	/* update _kernel.current to reflect incoming thread */
 
@@ -336,7 +360,7 @@ CROHandlingDone:
 	movl	_thread_offset_to_esp(%eax), %esp
 
 
-	/* load return value from a possible _set_thread_return_value() */
+	/* load return value from a possible z_set_thread_return_value() */
 
 	popl	%eax
 
@@ -351,7 +375,7 @@ CROHandlingDone:
 	 * %eax may contain one of these values:
 	 *
 	 * - the return value for __swap() that was set up by a call to
-	 * _set_thread_return_value()
+	 * z_set_thread_return_value()
 	 * - -EINVAL
 	 */
 
@@ -365,7 +389,7 @@ CROHandlingDone:
 	/* save %eax since it used as the return value for __swap */
 	pushl	%eax
 	/* interrupts are being reenabled, stop accumulating time */
-	call	_int_latency_stop
+	call	z_int_latency_stop
 	/* restore __swap's %eax */
 	popl	%eax
 
@@ -389,6 +413,8 @@ skipIntLatencyStop:
 	jne time_read_not_needed
 	movw $0x2,__read_swap_end_time_value
 	read_tsc __common_var_swap_end_time
+	pushl __start_swap_time
+	popl __temp_start_swap_time
 time_read_not_needed:
 #endif
 	ret
@@ -398,11 +424,11 @@ time_read_not_needed:
  *
  * @brief Adjust stack/parameters before invoking thread entry function
  *
- * This function adjusts the initial stack frame created by _new_thread() such
+ * This function adjusts the initial stack frame created by z_new_thread() such
  * that the GDB stack frame unwinders recognize it as the outermost frame in
  * the thread's stack.  For targets that use the IAMCU calling convention, the
  * first three arguments are popped into eax, edx, and ecx. The function then
- * jumps to _thread_entry().
+ * jumps to z_thread_entry().
  *
  * GDB normally stops unwinding a stack when it detects that it has
  * reached a function called main().  Kernel threads, however, do not have
@@ -411,9 +437,9 @@ time_read_not_needed:
  *
  * SYS V Systems:
  *
- * Given the initial thread created by _new_thread(), GDB expects to find a
+ * Given the initial thread created by z_new_thread(), GDB expects to find a
  * return address on the stack immediately above the thread entry routine
- * _thread_entry, in the location occupied by the initial EFLAGS.
+ * z_thread_entry, in the location occupied by the initial EFLAGS.
  * GDB attempts to examine the memory at this return address, which typically
  * results in an invalid access to page 0 of memory.
  *
@@ -422,17 +448,17 @@ time_read_not_needed:
  * an invalid access to address zero and returns an error, which causes the
  * GDB stack unwinder to stop somewhat gracefully.
  *
- * The initial EFLAGS cannot be overwritten until after _Swap() has swapped in
- * the new thread for the first time.  This routine is called by _Swap() the
+ * The initial EFLAGS cannot be overwritten until after z_swap() has swapped in
+ * the new thread for the first time.  This routine is called by z_swap() the
  * first time that the new thread is swapped in, and it jumps to
- * _thread_entry after it has done its work.
+ * z_thread_entry after it has done its work.
  *
  * IAMCU Systems:
  *
- * There is no EFLAGS on the stack when we get here. _thread_entry() takes
+ * There is no EFLAGS on the stack when we get here. z_thread_entry() takes
  * four arguments, and we need to pop off the first three into the
  * appropriate registers. Instead of using the 'call' instruction, we push
- * a NULL return address onto the stack and jump into _thread_entry,
+ * a NULL return address onto the stack and jump into z_thread_entry,
  * ensuring the stack won't be unwound further. Placing some kind of return
  * address on the stack is mandatory so this isn't conditionally compiled.
  *
@@ -443,19 +469,19 @@ time_read_not_needed:
  *      |__________________|                  |
  *      |      param1      |                  V
  *      |__________________|
- *      |      pEntry      |  <----   ESP when invoked by _Swap() on IAMCU
+ *      |      pEntry      |  <----   ESP when invoked by z_swap() on IAMCU
  *      |__________________|
- *      | initial EFLAGS   |  <----   ESP when invoked by _Swap() on Sys V
+ *      | initial EFLAGS   |  <----   ESP when invoked by z_swap() on Sys V
  *      |__________________|             (Zeroed by this routine on Sys V)
  *
  * The address of the thread entry function needs to be in %edi when this is
- * invoked. It will either be _thread_entry, or if userspace is enabled,
+ * invoked. It will either be z_thread_entry, or if userspace is enabled,
  * _arch_drop_to_user_mode if this is a user thread.
  *
  * @return this routine does NOT return.
  */
 
-SECTION_FUNC(TEXT, _x86_thread_entry_wrapper)
+SECTION_FUNC(TEXT, z_x86_thread_entry_wrapper)
 #ifdef CONFIG_X86_IAMCU
 	/* IAMCU calling convention has first 3 arguments supplied in
 	 * registers not the stack

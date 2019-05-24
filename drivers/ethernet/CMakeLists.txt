@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 zephyr_library_include_directories(${ZEPHYR_BASE}/subsys/net/l2)
 
 zephyr_sources_ifdef(CONFIG_ETH_SAM_GMAC

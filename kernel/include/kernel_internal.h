@@ -25,27 +25,27 @@ extern "C" {
 
 /* Early boot functions */
 
-void _bss_zero(void);
+void z_bss_zero(void);
 #ifdef CONFIG_XIP
-void _data_copy(void);
+void z_data_copy(void);
 #else
-static inline void _data_copy(void)
+static inline void z_data_copy(void)
 {
 	/* Do nothing */
 }
 #endif
-FUNC_NORETURN void _Cstart(void);
+FUNC_NORETURN void z_cstart(void);
 
-extern FUNC_NORETURN void _thread_entry(k_thread_entry_t entry,
+extern FUNC_NORETURN void z_thread_entry(k_thread_entry_t entry,
 			  void *p1, void *p2, void *p3);
 
-/* Implemented by architectures. Only called from _setup_new_thread. */
-extern void _new_thread(struct k_thread *thread, k_thread_stack_t *pStack,
+/* Implemented by architectures. Only called from z_setup_new_thread. */
+extern void z_new_thread(struct k_thread *thread, k_thread_stack_t *pStack,
 			size_t stackSize, k_thread_entry_t entry,
 			void *p1, void *p2, void *p3,
 			int prio, unsigned int options);
 
-extern void _setup_new_thread(struct k_thread *new_thread,
+extern void z_setup_new_thread(struct k_thread *new_thread,
 			      k_thread_stack_t *stack, size_t stack_size,
 			      k_thread_entry_t entry,
 			      void *p1, void *p2, void *p3,
@@ -65,7 +65,7 @@ extern void _setup_new_thread(struct k_thread *new_thread,
  *
  * @return Max number of free regions, or -1 if there is no limit
  */
-extern int _arch_mem_domain_max_partitions_get(void);
+extern int z_arch_mem_domain_max_partitions_get(void);
 
 /**
  * @brief Configure the memory domain of the thread.
@@ -77,7 +77,7 @@ extern int _arch_mem_domain_max_partitions_get(void);
  *
  * @param thread Thread which needs to be configured.
  */
-extern void _arch_mem_domain_configure(struct k_thread *thread);
+extern void z_arch_mem_domain_configure(struct k_thread *thread);
 
 /**
  * @brief Remove a partition from the memory domain
@@ -90,11 +90,11 @@ extern void _arch_mem_domain_configure(struct k_thread *thread);
  * @param domain The memory domain structure
  * @param partition_id The partition that needs to be deleted
  */
-extern void _arch_mem_domain_partition_remove(struct k_mem_domain *domain,
-					      u32_t partition_id);
+extern void z_arch_mem_domain_partition_remove(struct k_mem_domain *domain,
+					       u32_t partition_id);
 
 /**
- * @brief Remove a partition from the memory domain
+ * @brief Add a partition to the memory domain
  *
  * A memory domain contains multiple partitions and this API provides the
  * freedom to add an additional partition to a memory domain.
@@ -104,8 +104,8 @@ extern void _arch_mem_domain_partition_remove(struct k_mem_domain *domain,
  * @param domain The memory domain structure
  * @param partition_id The partition that needs to be added
  */
-extern void _arch_mem_domain_partition_add(struct k_mem_domain *domain,
-					   u32_t partition_id);
+extern void z_arch_mem_domain_partition_add(struct k_mem_domain *domain,
+					    u32_t partition_id);
 
 /**
  * @brief Remove the memory domain
@@ -116,7 +116,7 @@ extern void _arch_mem_domain_partition_add(struct k_mem_domain *domain,
  *
  * @param domain The memory domain structure which needs to be deleted.
  */
-extern void _arch_mem_domain_destroy(struct k_mem_domain *domain);
+extern void z_arch_mem_domain_destroy(struct k_mem_domain *domain);
 
 /**
  * @brief Check memory region permissions
@@ -125,6 +125,18 @@ extern void _arch_mem_domain_destroy(struct k_mem_domain *domain);
  * configuration would allow a user thread to read/write that region. Used by
  * system calls to validate buffers coming in from userspace.
  *
+ * Notes:
+ * The function is guaranteed to never return validation success, if the entire
+ * buffer area is not user accessible.
+ *
+ * The function is guaranteed to correctly validate the permissions of the
+ * supplied buffer, if the user access permissions of the entire buffer are
+ * enforced by a single, enabled memory management region.
+ *
+ * In some architectures the validation will always return failure
+ * if the supplied memory buffer spans multiple enabled memory management
+ * regions (even if all such regions permit user access).
+ *
  * @param addr start address of the buffer
  * @param size the size of the buffer
  * @param write If nonzero, additionally check if the area is writable.
@@ -132,7 +144,7 @@ extern void _arch_mem_domain_destroy(struct k_mem_domain *domain);
  *
  * @return nonzero if the permissions don't match.
  */
-extern int _arch_buffer_validate(void *addr, size_t size, int write);
+extern int z_arch_buffer_validate(void *addr, size_t size, int write);
 
 /**
  * Perform a one-way transition from supervisor to kernel mode.
@@ -143,7 +155,7 @@ extern int _arch_buffer_validate(void *addr, size_t size, int write);
  * - Set up any kernel stack region for the CPU to use during privilege
  *   elevation
  * - Put the CPU in whatever its equivalent of user mode is
- * - Transfer execution to _new_thread() passing along all the supplied
+ * - Transfer execution to z_new_thread() passing along all the supplied
  *   arguments, in user mode.
  *
  * @param Entry point to start executing as a user thread
@@ -152,7 +164,7 @@ extern int _arch_buffer_validate(void *addr, size_t size, int write);
  * @param p3 3rd parameter to user thread
  */
 extern FUNC_NORETURN
-void _arch_user_mode_enter(k_thread_entry_t user_entry, void *p1, void *p2,
+void z_arch_user_mode_enter(k_thread_entry_t user_entry, void *p1, void *p2,
 			   void *p3);
 
 
@@ -170,7 +182,7 @@ void _arch_user_mode_enter(k_thread_entry_t user_entry, void *p1, void *p2,
  *            to _k_syscall_handler_t functions and its contents are completely
  *            architecture specific.
  */
-extern FUNC_NORETURN void _arch_syscall_oops(void *ssf);
+extern FUNC_NORETURN void z_arch_syscall_oops(void *ssf);
 
 /**
  * @brief Safely take the length of a potentially bad string
@@ -185,6 +197,14 @@ extern FUNC_NORETURN void _arch_syscall_oops(void *ssf);
  * @return Length of the string, not counting NULL byte, up to maxsize
  */
 extern size_t z_arch_user_string_nlen(const char *s, size_t maxsize, int *err);
+
+/**
+ * @brief Zero out BSS sections for application shared memory
+ *
+ * This isn't handled by any platform bss zeroing, and is called from
+ * z_cstart() if userspace is enabled.
+ */
+extern void z_app_shmem_bss_zero(void);
 #endif /* CONFIG_USERSPACE */
 
 /**
@@ -202,15 +222,15 @@ void *z_thread_malloc(size_t size);
 
 /* set and clear essential thread flag */
 
-extern void _thread_essential_set(void);
-extern void _thread_essential_clear(void);
+extern void z_thread_essential_set(void);
+extern void z_thread_essential_clear(void);
 
 /* clean up when a thread is aborted */
 
 #if defined(CONFIG_THREAD_MONITOR)
-extern void _thread_monitor_exit(struct k_thread *thread);
+extern void z_thread_monitor_exit(struct k_thread *thread);
 #else
-#define _thread_monitor_exit(thread) \
+#define z_thread_monitor_exit(thread) \
 	do {/* nothing */    \
 	} while (false)
 #endif /* CONFIG_THREAD_MONITOR */

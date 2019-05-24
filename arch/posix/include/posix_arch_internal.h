@@ -9,13 +9,13 @@
 
 #include "toolchain.h"
 
-#define _SAFE_CALL(a) _safe_call(a, #a)
+#define PC_SAFE_CALL(a) pc_safe_call(a, #a)
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-static inline void _safe_call(int test, const char *test_str)
+static inline void pc_safe_call(int test, const char *test_str)
 {
 	/* LCOV_EXCL_START */ /* See Note1 */
 	if (unlikely(test)) {
@@ -34,6 +34,6 @@ static inline void _safe_call(int test, const char *test_str)
 /*
  * Note 1:
  *
- * All checks for the host pthreads functions which are wrapped by _SAFE_CALL
+ * All checks for the host pthreads functions which are wrapped by PC_SAFE_CALL
  * are meant to never fail, and therefore will not be covered.
  */

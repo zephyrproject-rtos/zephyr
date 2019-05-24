@@ -116,11 +116,11 @@ struct adc_quark_d2000_info {
 	/** Sequence entries array */
 	const struct adc_sequence *entries;
 
-	/** Sequence size */
-	u8_t seq_size;
-
 	/** Resolution value (mapped) */
 	u8_t resolution;
+
+	/** Sampling window */
+	u8_t sample_window;
 };
 
 static struct adc_quark_d2000_info adc_quark_d2000_data_0 = {
@@ -234,14 +234,7 @@ static int adc_quark_d2000_read_request(struct device *dev,
 {
 	struct adc_quark_d2000_info *info = dev->driver_data;
 	int error;
-	u32_t utmp, num_channels;
-
-	/* hardware requires minimum 10 us delay between consecutive samples */
-	if (seq_tbl->options &&
-	    seq_tbl->options->extra_samplings &&
-	    seq_tbl->options->interval_us < 10) {
-		return -EINVAL;
-	}
+	u32_t utmp, num_channels, interval = 0U;
 
 	info->channels = seq_tbl->channels & info->active_channels;
 
@@ -255,24 +248,35 @@ static int adc_quark_d2000_read_request(struct device *dev,
 	case 8:
 	case 10:
 	case 12:
-		info->resolution = (seq_tbl->resolution / 2) - 3;
+		info->resolution = (seq_tbl->resolution / 2U) - 3;
+
+		/* sampling window is (resolution + 2) cycles */
+		info->sample_window = seq_tbl->resolution + 2U;
 		break;
 	default:
 		return -EINVAL;
 	}
 
+	/*
+	 * Make sure the requested interval is longer than the time
+	 * needed to do one conversion.
+	 */
+	if (seq_tbl->options &&
+	    (seq_tbl->options->interval_us > 0)) {
+		/*
+		 * System clock is 32MHz, which means 1us == 32 cycles
+		 * if divider is 1.
+		 */
+		interval = seq_tbl->options->interval_us * 32U /
+			   CONFIG_ADC_INTEL_QUARK_D2000_CLOCK_RATIO;
+
+		if (interval < info->sample_window) {
+			return -EINVAL;
+		}
+	}
+
 	info->entries = seq_tbl;
 	info->buffer = (u16_t *)seq_tbl->buffer;
-
-	if (seq_tbl->options) {
-		info->seq_size = seq_tbl->options->extra_samplings + 1;
-	} else {
-		info->seq_size = 1U;
-	}
-
-	if (info->seq_size > ADC_FIFO_LEN) {
-		return -EINVAL;
-	}
 
 	/* check if buffer has enough size */
 	utmp = info->channels;
@@ -283,9 +287,14 @@ static int adc_quark_d2000_read_request(struct device *dev,
 		}
 		utmp >>= 1;
 	}
-	utmp = info->seq_size * num_channels * sizeof(u16_t);
+	utmp = num_channels * sizeof(u16_t);
+
+	if (seq_tbl->options) {
+		utmp *= (1 + seq_tbl->options->extra_samplings);
+	}
+
 	if (utmp > seq_tbl->buffer_size) {
-		return -EINVAL;
+		return -ENOMEM;
 	}
 
 	adc_context_start_read(&info->ctx, seq_tbl);
@@ -328,42 +337,16 @@ static void adc_quark_d2000_start_conversion(struct device *dev)
 	struct adc_quark_d2000_info *info = dev->driver_data;
 	const struct adc_quark_d2000_config *config =
 		info->dev->config->config_info;
-	const struct adc_sequence *entry = info->ctx.sequence;
 	volatile adc_reg_t *adc_regs = config->reg_base;
-	u32_t i, val, interval_us = 0U;
-	u32_t idx = 0U, offset = 0U;
+	u32_t val;
 
 	info->channel_id = find_lsb_set(info->channels) - 1;
-
-	if (entry->options) {
-		interval_us = entry->options->interval_us;
-	}
 
 	/* flush the FIFO */
 	adc_regs->sample = ADC_FIFO_CLEAR;
 
 	/* setup the sequence table */
-	for (i = 0U; i < info->seq_size; i++) {
-		idx = i / 4;
-		offset = (i % 4) * 8;
-
-		val = adc_regs->seq[idx];
-
-		/* clear last of sequence bit */
-		val &= ~(1 << (offset + 7));
-
-		/* set channel number */
-		val |= (info->channel_id << offset);
-
-		adc_regs->seq[idx] = val;
-	}
-
-	/* set last of sequence bit */
-	if (info->seq_size > 1) {
-		val = adc_regs->seq[idx];
-		val |= (1 << (offset + 7));
-		adc_regs->seq[idx] = val;
-	}
+	adc_regs->seq[0] = info->channel_id | BIT(7);
 
 	/* clear pending interrupts */
 	adc_regs->intr_status = ADC_INTR_STATUS_CC;
@@ -372,7 +355,7 @@ static void adc_quark_d2000_start_conversion(struct device *dev)
 	adc_regs->intr_enable = ADC_INTR_ENABLE_CC;
 
 	/* issue command to start conversion */
-	val = interval_us << ADC_CMD_SW_OFFSET;
+	val = info->sample_window << ADC_CMD_SW_OFFSET;
 	val |= info->resolution << ADC_CMD_RESOLUTION_OFFSET;
 	val |= (ADC_CMD_IE | ADC_CMD_START_SINGLE);
 	adc_regs->cmd = val;
@@ -383,7 +366,7 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 	struct adc_quark_d2000_info *info =
 		CONTAINER_OF(ctx, struct adc_quark_d2000_info, ctx);
 
-	info->channels = ctx->sequence->channels;
+	info->channels = ctx->sequence.channels;
 
 	adc_quark_d2000_start_conversion(info->dev);
 }
@@ -393,7 +376,7 @@ static void adc_context_update_buffer_pointer(struct adc_context *ctx,
 {
 	struct adc_quark_d2000_info *info =
 		CONTAINER_OF(ctx, struct adc_quark_d2000_info, ctx);
-	const struct adc_sequence *entry = ctx->sequence;
+	const struct adc_sequence *entry = &ctx->sequence;
 
 	if (repeat) {
 		info->buffer = (u16_t *)entry->buffer;

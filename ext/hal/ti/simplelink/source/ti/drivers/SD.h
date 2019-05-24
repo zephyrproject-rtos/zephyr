@@ -50,9 +50,10 @@
  *  @code
  *  SD_Handle handle;
  *
- *  handle = SD_open(index, NULL);
+ *  handle = SD_open(Board_SD0, NULL);
  *  if (handle == NULL) {
- *      System_printf("Error opening SD driver\n");
+ *      //Error opening SD driver
+ *      while (1);
  *  }
  *  @endcode
  *

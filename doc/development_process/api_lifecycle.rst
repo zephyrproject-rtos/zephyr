@@ -100,10 +100,12 @@ The following are the requirements for deprecating an existing API:
 
   - Mark as deprecated
   - Document the deprecation
-  - All usage in Zephyr for deprecated API needs to be modified
-  - Change needs to be atomic and bisectable
   - Code using the deprecated API needs to be modified to remove usage of said
     API
+  - The change needs to be atomic and bisectable
+  - Create a GitHub issue to track the removal of the deprecated API, and
+    add it to the roadmap targeting the appropriate release
+    (in the example above, 1.16).
 
 During the deprecation waiting period, the API will be in the ``deprecated``
 state. The Zephyr maintainers will track usage of deprecated APIs on
@@ -130,5 +132,6 @@ the corresponding documentation, and communicate the removal in the usual ways:
 the release notes, mailing lists, Github issues and pull-requests.
 
 If it's not OK to remove the API, the maintainers will continue to support
-migration and aim to remove the API in the next release.
+migration and update the roadmap with the aim to remove the API in the next
+release.
 

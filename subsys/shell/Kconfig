@@ -8,11 +8,9 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-menu "Shell Options"
-
 menuconfig SHELL
-	bool "Enable shell"
-	select LOG_RUNTIME_FILTERING
+	bool "Shell"
+	imply LOG_RUNTIME_FILTERING
 	select POLL
 
 if SHELL
@@ -149,5 +147,4 @@ config SHELL_LOG_BACKEND
 
 source "subsys/shell/modules/Kconfig"
 
-endif #SHELL
-endmenu
+endif # SHELL

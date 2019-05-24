@@ -6,38 +6,33 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-if USB_DEVICE_STACK
-
 config USB_CDC_ACM
 	bool "USB CDC ACM Device Class Driver"
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
+	select RING_BUFFER
 	help
-	  USB CDC ACM device class driver
+	  USB CDC ACM device class driver. Default device name is
+	  "CDC_ACM_0".
 
 if USB_CDC_ACM
 
-config CDC_ACM_PORT_NAME_0
-	string "CDC ACM class device driver port name"
-	default "CDC_ACM_0"
+config USB_CDC_ACM_RINGBUF_SIZE
+	int "USB CDC ACM ring buffer size"
+	default 1024
 	help
-	  Port name through which CDC ACM class device driver is accessed
+	  USB CDC ACM ring buffer size
 
-if USB_COMPOSITE_DEVICE
-
-config CDC_ACM_PORT_1
-	bool "Enable virtual port 1"
+config USB_CDC_ACM_DEVICE_NAME
+	string "USB CDC ACM device name template"
+	default "CDC_ACM"
 	help
-	  Enable CDC ACM Virtual port 1
+	  Device name template for the CDC ACM Devices. First device would
+	  have name $(USB_CDC_ACM_DEVICE_NAME)_0, etc.
 
-config CDC_ACM_PORT_NAME_1
-	string "CDC ACM class device driver port name"
-	depends on CDC_ACM_PORT_1
-	default "CDC_ACM_1"
-	help
-	  Port name through which CDC ACM class device driver is accessed
-
-endif # USB_COMPOSITE_DEVICE
+module = USB_CDC_ACM
+default-count = 1
+source "subsys/usb/class/Kconfig.template.composite_device_number"
 
 config CDC_ACM_INTERRUPT_EP_MPS
 	int
@@ -50,6 +45,14 @@ config CDC_ACM_BULK_EP_MPS
 	default 64
 	help
 	  CDC ACM class bulk endpoints size
+
+config CDC_ACM_IAD
+	bool "Force using Interface Association Descriptor"
+	default n
+	help
+	  IAD should not be required for non-composite CDC ACM device,
+	  but Windows 7 fails to properly enumerate without it.
+	  Enable if you want CDC ACM to work with Windows 7.
 
 module = USB_CDC_ACM
 module-str = usb cdc acm
@@ -126,9 +129,17 @@ source "subsys/usb/class/hid/Kconfig"
 config USB_DFU_CLASS
 	bool "USB DFU Class Driver"
 	select MPU_ALLOW_FLASH_WRITE
+	select POLL
 	depends on IMG_MANAGER
 	help
 	  USB DFU class driver
+
+config USB_DFU_WAIT_DELAY_MS
+	int
+	depends on USB_DFU_CLASS
+	default 12000
+	help
+	  A thread can wait for a prescribed time (in ms) for DFU to begin
 
 config USB_DFU_MAX_XFER_SIZE
 	int
@@ -140,4 +151,11 @@ config USB_DFU_DETACH_TIMEOUT
 	depends on USB_DFU_CLASS
 	default 1000
 
-endif # CONFIG_USB_DEVICE_STACK
+config USB_DFU_DEFAULT_POLLTIMEOUT
+	prompt "Default value for bwPollTimeout"
+	int
+	depends on USB_DFU_CLASS
+	default 256
+	range 0 1000
+	help
+	  Default value for bwPollTimeout (in ms)

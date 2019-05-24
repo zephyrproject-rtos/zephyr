@@ -8,7 +8,7 @@
 #include <string.h>
 #include <i2s.h>
 
-int _impl_i2s_buf_read(struct device *dev, void *buf, size_t *size)
+int z_impl_i2s_buf_read(struct device *dev, void *buf, size_t *size)
 {
 	void *mem_block;
 	int ret;
@@ -26,7 +26,7 @@ int _impl_i2s_buf_read(struct device *dev, void *buf, size_t *size)
 	return ret;
 }
 
-int _impl_i2s_buf_write(struct device *dev, void *buf, size_t size)
+int z_impl_i2s_buf_write(struct device *dev, void *buf, size_t size)
 {
 	int ret;
 	struct i2s_config *tx_cfg;

@@ -213,7 +213,7 @@ static void dtls_timing_set_delay(void *data, uint32_t int_ms, uint32_t fin_ms)
 	ctx->int_ms = int_ms;
 	ctx->fin_ms = fin_ms;
 
-	if (fin_ms != 0) {
+	if (fin_ms != 0U) {
 		ctx->snapshot = k_uptime_get_32();
 	}
 }
@@ -232,7 +232,7 @@ static int dtls_timing_get_delay(void *data)
 
 	NET_ASSERT(timing);
 
-	if (timing->fin_ms == 0) {
+	if (timing->fin_ms == 0U) {
 		return -1;
 	}
 
@@ -480,7 +480,7 @@ static int dtls_rx(void *ctx, unsigned char *buf, size_t len, uint32_t timeout)
 	struct net_context *net_ctx = ctx;
 	bool is_block = !((net_ctx->tls->flags & ZSOCK_MSG_DONTWAIT) ||
 			  sock_is_nonblock(net_ctx));
-	int remaining_time = (timeout == 0) ? K_FOREVER : timeout;
+	int remaining_time = (timeout == 0U) ? K_FOREVER : timeout;
 	u32_t entry_time = k_uptime_get_32();
 	socklen_t addrlen = sizeof(struct sockaddr);
 	struct sockaddr addr;
@@ -1100,7 +1100,7 @@ static int tls_opt_dtls_role_set(struct net_context *context,
 	return 0;
 }
 
-int ztls_socket(int family, int type, int proto)
+static int ztls_socket(int family, int type, int proto)
 {
 	enum net_ip_protocol_secure tls_proto = 0;
 	int fd = z_reserve_fd();
@@ -1151,7 +1151,7 @@ int ztls_socket(int family, int type, int proto)
 	/* Set net context object as initialized and grant access to the
 	 * calling thread (and only the calling thread)
 	 */
-	_k_object_recycle(ctx);
+	z_object_recycle(ctx);
 #endif
 
 	if (tls_proto != 0) {
@@ -1270,7 +1270,7 @@ int ztls_accept_ctx(struct net_context *parent, struct sockaddr *addr,
 	child = k_fifo_get(&parent->accept_q, K_FOREVER);
 
 	#ifdef CONFIG_USERSPACE
-		_k_object_recycle(child);
+		z_object_recycle(child);
 	#endif
 
 	if (addr != NULL && addrlen != NULL) {
@@ -1916,6 +1916,7 @@ static int tls_sock_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 	/* fcntl() commands */
 	case F_GETFL:
 	case F_SETFL:
+	case ZFD_IOCTL_GETSOCKNAME:
 		/* Pass the call to the core socket implementation. */
 		return sock_fd_op_vtable.fd_vtable.ioctl(obj, request, args);
 
@@ -2017,3 +2018,16 @@ static const struct socket_op_vtable tls_sock_fd_op_vtable = {
 	.getsockopt = tls_sock_getsockopt_vmeth,
 	.setsockopt = tls_sock_setsockopt_vmeth,
 };
+
+static bool tls_is_supported(int family, int type, int proto)
+{
+	if ((family == AF_INET || family == AF_INET6) &&
+	    (((proto >= IPPROTO_TLS_1_0) && (proto <= IPPROTO_TLS_1_2)) ||
+	     (proto >= IPPROTO_DTLS_1_0 && proto <= IPPROTO_DTLS_1_2))) {
+		return true;
+	}
+
+	return false;
+}
+
+NET_SOCKET_REGISTER(tls, AF_UNSPEC, tls_is_supported, ztls_socket);

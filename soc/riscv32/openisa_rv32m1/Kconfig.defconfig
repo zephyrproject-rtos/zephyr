@@ -36,6 +36,10 @@ config RISCV_SOC_CONTEXT_SAVE
 	bool
 	default y if SOC_OPENISA_RV32M1_RI5CY
 
+config RISCV_SOC_OFFSETS
+	bool
+	default y
+
 config RISCV_SOC_INTERRUPT_INIT
 	bool
 	default y
@@ -44,29 +48,6 @@ config RISCV_SOC_INTERRUPT_INIT
 # default. Use the WDOG_INIT hook for doing that.
 config WDOG_INIT
 	def_bool y
-
-# Built-in flash allocated to each chip. This configuration
-# assumes the Arm cores are disabled, as these base addresses
-# contain the Arm core vector tables if they are used.
-config RISCV32_RV32M1_ROM_BASE_ADDR
-	hex
-	default 0x00000000 if SOC_OPENISA_RV32M1_RI5CY
-	default 0x01000000 if SOC_OPENISA_RV32M1_ZERO_RISCY
-
-config RISCV32_RV32M1_ROM_SIZE
-	hex
-	default 0x000FFF00 if SOC_OPENISA_RV32M1_RI5CY
-	default 0x0003FF00 if SOC_OPENISA_RV32M1_ZERO_RISCY
-
-config RISCV32_RV32M1_RAM_BASE_ADDR
-	hex
-	default 0x20000000 if SOC_OPENISA_RV32M1_RI5CY
-	default 0x09000000 if SOC_OPENISA_RV32M1_ZERO_RISCY
-
-config RISCV32_RV32M1_RAM_SIZE
-	hex
-	default 0x00030000 if SOC_OPENISA_RV32M1_RI5CY
-	default 0x00020000 if SOC_OPENISA_RV32M1_ZERO_RISCY
 
 # The event unit looks for vector tables at the end of each core's
 # flash space. These vector tables are not relocatable.
@@ -81,7 +62,7 @@ config RISCV32_RV32M1_VECTOR_SIZE
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	int
-	default 8000000 if SOC_OPENISA_RV32M1_RI5CY # SIRC at 8MHz
+	default 8000000
 
 if MULTI_LEVEL_INTERRUPTS
 
@@ -90,7 +71,7 @@ config MAX_IRQ_PER_AGGREGATOR
 	default 32
 
 config 2ND_LEVEL_INTERRUPTS
-	def_bool y
+	default y
 
 config 2ND_LVL_ISR_TBL_OFFSET
 	int
@@ -140,41 +121,41 @@ config 2ND_LVL_INTR_07_OFFSET
 	default 31
 
 config RV32M1_INTMUX
-	def_bool y
+	default y
 
 config RV32M1_INTMUX_CHANNEL_0
-	def_bool y
+	default y
 
 config RV32M1_INTMUX_CHANNEL_1
-	def_bool y
+	default y
 
 config RV32M1_INTMUX_CHANNEL_2
-	def_bool y
+	default y
 
 config RV32M1_INTMUX_CHANNEL_3
-	def_bool y
+	default y
 
 config RV32M1_INTMUX_CHANNEL_4
-	def_bool y
+	default y
 
 config RV32M1_INTMUX_CHANNEL_5
-	def_bool y
+	default y
 
 config RV32M1_INTMUX_CHANNEL_6
-	def_bool y
+	default y
 
 config RV32M1_INTMUX_CHANNEL_7
-	def_bool y
+	default y
 
 endif # MULTI_LEVEL_INTERRUPTS
 
 config PINMUX_RV32M1
-	def_bool y
+	default y
 
 if GPIO
 
 config GPIO_RV32M1
-	def_bool y
+	default y
 
 endif # GPIO
 
@@ -184,5 +165,12 @@ config UART_RV32M1_LPUART
 	def_bool y
 
 endif # SERIAL
+
+if I2C
+
+config I2C_RV32M1_LPI2C
+	def_bool y
+
+endif # I2C
 
 endif # SOC_OPENISA_RV32M1_RISCV32

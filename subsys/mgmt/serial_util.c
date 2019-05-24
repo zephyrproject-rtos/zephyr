@@ -104,7 +104,7 @@ struct net_buf *mcumgr_serial_process_frag(
 		break;
 
 	case MCUMGR_SERIAL_HDR_FRAG:
-		if (rx_ctxt->nb->len == 0) {
+		if (rx_ctxt->nb->len == 0U) {
 			mcumgr_serial_free_rx_ctxt(rx_ctxt);
 			return NULL;
 		}
@@ -142,13 +142,13 @@ struct net_buf *mcumgr_serial_process_frag(
 	}
 
 	crc = mcumgr_serial_calc_crc(rx_ctxt->nb->data, rx_ctxt->nb->len);
-	if (crc != 0) {
+	if (crc != 0U) {
 		mcumgr_serial_free_rx_ctxt(rx_ctxt);
 		return NULL;
 	}
 
 	/* Packet is complete; strip the CRC. */
-	rx_ctxt->nb->len -= 2;
+	rx_ctxt->nb->len -= 2U;
 
 	nb = rx_ctxt->nb;
 	rx_ctxt->nb = NULL;

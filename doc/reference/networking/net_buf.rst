@@ -76,6 +76,7 @@ Add
   .. code-block:: c
 
      void *net_buf_add(struct net_buf *buf, size_t len);
+     void *net_buf_add_mem(struct net_buf *buf, const void *mem, size_t len);
      u8_t *net_buf_add_u8(struct net_buf *buf, u8_t value);
      void net_buf_add_le16(struct net_buf *buf, u16_t value);
      void net_buf_add_le32(struct net_buf *buf, u32_t value);
@@ -99,6 +100,7 @@ Pull
   .. code-block:: c
 
      void *net_buf_pull(struct net_buf *buf, size_t len);
+     void *net_buf_pull_mem(struct net_buf *buf, size_t len);
      u8_t net_buf_pull_u8(struct net_buf *buf);
      u16_t net_buf_pull_le16(struct net_buf *buf);
      u32_t net_buf_pull_le32(struct net_buf *buf);

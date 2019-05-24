@@ -33,6 +33,10 @@
  */
 #define USB_STRING_DESCRIPTOR_LENGTH(s)	(sizeof(s) * 2)
 
+/* Automatic endpoint assignment */
+#define AUTO_EP_IN			0x80
+#define AUTO_EP_OUT			0x00
+
 /* Common part of device data */
 struct usb_dev_data {
 	struct device *dev;

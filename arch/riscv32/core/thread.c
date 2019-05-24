@@ -10,22 +10,22 @@
 #include <wait_q.h>
 #include <string.h>
 
-void _thread_entry_wrapper(k_thread_entry_t thread,
+void z_thread_entry_wrapper(k_thread_entry_t thread,
 			   void *arg1,
 			   void *arg2,
 			   void *arg3);
 
-void _new_thread(struct k_thread *thread, k_thread_stack_t *stack,
+void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 		 size_t stack_size, k_thread_entry_t thread_func,
 		 void *arg1, void *arg2, void *arg3,
 		 int priority, unsigned int options)
 {
-	char *stack_memory = K_THREAD_STACK_BUFFER(stack);
-	_ASSERT_VALID_PRIO(priority, thread_func);
+	char *stack_memory = Z_THREAD_STACK_BUFFER(stack);
+	Z_ASSERT_VALID_PRIO(priority, thread_func);
 
 	struct __esf *stack_init;
 
-	_new_thread_init(thread, stack_memory, stack_size, priority, options);
+	z_new_thread_init(thread, stack_memory, stack_size, priority, options);
 
 	/* Initial stack frame for thread */
 	stack_init = (struct __esf *)
@@ -50,18 +50,18 @@ void _new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	 * within the RISCV32 architecture implementation, initially set:
 	 * 1) MSTATUS to SOC_MSTATUS_DEF_RESTORE in the thread stack to enable
 	 *    interrupts when the newly created thread will be scheduled;
-	 * 2) MEPC to the address of the _thread_entry_wrapper in the thread
+	 * 2) MEPC to the address of the z_thread_entry_wrapper in the thread
 	 *    stack.
 	 * Hence, when going out of an interrupt/exception/context-switch,
 	 * after scheduling the newly created thread:
 	 * 1) interrupts will be enabled, as the MSTATUS register will be
 	 *    restored following the MSTATUS value set within the thread stack;
-	 * 2) the core will jump to _thread_entry_wrapper, as the program
+	 * 2) the core will jump to z_thread_entry_wrapper, as the program
 	 *    counter will be restored following the MEPC value set within the
 	 *    thread stack.
 	 */
 	stack_init->mstatus = SOC_MSTATUS_DEF_RESTORE;
-	stack_init->mepc = (u32_t)_thread_entry_wrapper;
+	stack_init->mepc = (u32_t)z_thread_entry_wrapper;
 
 	thread->callee_saved.sp = (u32_t)stack_init;
 }

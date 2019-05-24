@@ -29,8 +29,8 @@ struct galileo_data {
 
 struct galileo_data galileo_pinmux_driver;
 
-int _galileo_pinmux_set_pin(struct device *port, u8_t pin, u32_t func);
+int z_galileo_pinmux_set_pin(struct device *port, u8_t pin, u32_t func);
 
-int _galileo_pinmux_get_pin(struct device *port, u32_t pin, u32_t *func);
+int z_galileo_pinmux_get_pin(struct device *port, u32_t pin, u32_t *func);
 
 #endif /* __PINMUX_GALILEO_PRIV_H */

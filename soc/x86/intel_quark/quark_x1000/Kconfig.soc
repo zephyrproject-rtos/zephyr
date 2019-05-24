@@ -1,11 +1,14 @@
+# SPDX-License-Identifier: Apache-2.0
 
 config SOC_QUARK_X1000
 	bool "Quark X1000"
 	select CPU_MINUTEIA
 	select CPU_HAS_FPU
 	select HPET_TIMER
-	select BOOTLOADER_UNKNOWN
 	select PCI
+	select PCI_ENUMERATION
+	select PCIE
+	select PCIE_MSI
 	select HAS_I2C_DW
 	depends on SOC_SERIES_QUARK_X1000
 	help

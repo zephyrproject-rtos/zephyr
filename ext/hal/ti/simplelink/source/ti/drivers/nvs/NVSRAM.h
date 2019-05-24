@@ -115,14 +115,7 @@ extern const NVS_FxnTable NVSRAM_fxnTable;
  *  @code
  *  #define SECTORSIZE (4096)
  *
- *  #if defined(__TI_COMPILER_VERSION__)
- *  #pragma DATA_ALIGN(ramBuf, 4096)
- *  #elif defined(__IAR_SYSTEMS_ICC__)
- *  #pragma data_alignment=4096
- *  #elif defined(__GNUC__)
- *  __attribute__ ((aligned (4096)))
- *  #endif
- *  static char ramBuf[SECTORSIZE * 4];
+ *  static char ramBuf[SECTORSIZE * 4] __attribute__ ((aligned (4096)));
  *
  *  NVSRAM_HWAttrs NVSRAMHWAttrs[1] = {
  *      {

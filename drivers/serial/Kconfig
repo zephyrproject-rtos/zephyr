@@ -33,14 +33,12 @@ config UART_ASYNC_API
 	help
 	  This option enables new asynchronous UART API.
 
-if UART_ASYNC_API=n
 config UART_INTERRUPT_DRIVEN
 	bool "Enable UART Interrupt support"
 	depends on SERIAL_SUPPORT_INTERRUPT
 	help
 	  This option enables interrupt support for UART allowing console
 	  input and other UART based drivers.
-endif
 
 config UART_LINE_CTRL
 	bool "Enable Serial Line Control API"
@@ -94,6 +92,8 @@ source "drivers/serial/Kconfig.nrfx"
 
 source "drivers/serial/Kconfig.altera_jtag"
 
+source "drivers/serial/Kconfig.cc13xx_cc26xx"
+
 source "drivers/serial/Kconfig.cc32xx"
 
 source "drivers/serial/Kconfig.cmsdk_apb"
@@ -116,4 +116,6 @@ source "drivers/serial/Kconfig.pl011"
 
 source "drivers/serial/Kconfig.rv32m1_lpuart"
 
-endif
+source "drivers/serial/Kconfig.litex"
+
+endif # SERIAL

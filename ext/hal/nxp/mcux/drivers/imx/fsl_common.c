@@ -1,11 +1,11 @@
 /*
-* Copyright (c) 2015-2016, Freescale Semiconductor, Inc.
+ * Copyright (c) 2015-2016, Freescale Semiconductor, Inc.
  * Copyright 2016-2018 NXP
-* All rights reserved.
-*
-*
-* SPDX-License-Identifier: BSD-3-Clause
-*/
+ * All rights reserved.
+ *
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
 
 #include "fsl_common.h"
 #define SDK_MEM_MAGIC_NUMBER 12345U
@@ -127,16 +127,16 @@ void *SDK_Malloc(size_t size, size_t alignbytes)
 
     p_align_addr = (void *)SDK_SIZEALIGN((uint32_t)p_addr + sizeof(mem_align_cb_t), alignbytes);
 
-    p_cb = (mem_align_cb_t *)((uint32_t)p_align_addr - 4);
+    p_cb             = (mem_align_cb_t *)((uint32_t)p_align_addr - 4U);
     p_cb->identifier = SDK_MEM_MAGIC_NUMBER;
-    p_cb->offset = (uint32_t)p_align_addr - (uint32_t)p_addr;
+    p_cb->offset     = (uint32_t)p_align_addr - (uint32_t)p_addr;
 
     return (void *)p_align_addr;
 }
 
 void SDK_Free(void *ptr)
 {
-    mem_align_cb_t *p_cb = (mem_align_cb_t *)((uint32_t)ptr - 4);
+    mem_align_cb_t *p_cb = (mem_align_cb_t *)((uint32_t)ptr - 4U);
 
     if (p_cb->identifier != SDK_MEM_MAGIC_NUMBER)
     {

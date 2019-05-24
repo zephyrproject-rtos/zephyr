@@ -18,14 +18,14 @@
 #include <string.h>
 
 enum pthread_state {
+	/* The thread structure is unallocated and available for reuse. */
+	PTHREAD_TERMINATED = 0,
 	/* The thread is running and joinable. */
-	PTHREAD_JOINABLE = 0,
+	PTHREAD_JOINABLE,
 	/* The thread is running and detached. */
 	PTHREAD_DETACHED,
 	/* A joinable thread exited and its return code is available. */
-	PTHREAD_EXITED,
-	/* The thread structure is unallocated and available for reuse. */
-	PTHREAD_TERMINATED
+	PTHREAD_EXITED
 };
 
 struct posix_thread {
@@ -49,13 +49,13 @@ struct posix_thread {
 };
 
 /* Pthread detach/joinable */
-#define PTHREAD_CREATE_JOINABLE     0
-#define PTHREAD_CREATE_DETACHED     1
+#define PTHREAD_CREATE_JOINABLE     PTHREAD_JOINABLE
+#define PTHREAD_CREATE_DETACHED     PTHREAD_DETACHED
 
 /* Pthread cancellation */
 #define _PTHREAD_CANCEL_POS	0
-#define PTHREAD_CANCEL_ENABLE	(0 << _PTHREAD_CANCEL_POS)
-#define PTHREAD_CANCEL_DISABLE	(1 << _PTHREAD_CANCEL_POS)
+#define PTHREAD_CANCEL_ENABLE	(0U << _PTHREAD_CANCEL_POS)
+#define PTHREAD_CANCEL_DISABLE	BIT(_PTHREAD_CANCEL_POS)
 
 /* Passed to pthread_once */
 #define PTHREAD_ONCE_INIT 1
@@ -71,7 +71,7 @@ struct posix_thread {
  */
 #define PTHREAD_COND_DEFINE(name)					\
 	struct pthread_cond name = {					\
-		.wait_q = _WAIT_Q_INIT(&name.wait_q),			\
+		.wait_q = Z_WAIT_Q_INIT(&name.wait_q),			\
 	}
 
 /**
@@ -83,7 +83,7 @@ static inline int pthread_cond_init(pthread_cond_t *cv,
 				    const pthread_condattr_t *att)
 {
 	ARG_UNUSED(att);
-	_waitq_init(&cv->wait_q);
+	z_waitq_init(&cv->wait_q);
 	return 0;
 }
 
@@ -164,7 +164,7 @@ static inline int pthread_condattr_destroy(pthread_condattr_t *att)
 		__in_section(_k_mutex, static, name) = \
 	{ \
 		.lock_count = 0, \
-		.wait_q = _WAIT_Q_INIT(&name.wait_q),	\
+		.wait_q = Z_WAIT_Q_INIT(&name.wait_q),	\
 		.owner = NULL, \
 	}
 
@@ -330,7 +330,7 @@ static inline int pthread_mutexattr_destroy(pthread_mutexattr_t *m)
  */
 #define PTHREAD_BARRIER_DEFINE(name, count)			\
 	struct pthread_barrier name = {				\
-		.wait_q = _WAIT_Q_INIT(&name.wait_q),		\
+		.wait_q = Z_WAIT_Q_INIT(&name.wait_q),		\
 		.max = count,					\
 	}
 
@@ -356,7 +356,7 @@ static inline int pthread_barrier_init(pthread_barrier_t *b,
 
 	b->max = count;
 	b->count = 0;
-	_waitq_init(&b->wait_q);
+	z_waitq_init(&b->wait_q);
 
 	return 0;
 }

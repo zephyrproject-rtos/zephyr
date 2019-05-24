@@ -30,8 +30,6 @@ source "ext/hal/nxp/imx/Kconfig"
 
 source "ext/hal/openisa/vega_sdk_riscv/Kconfig"
 
-source "ext/hal/qmsi/Kconfig"
-
 source "ext/hal/silabs/gecko/Kconfig"
 
 source "ext/hal/st/stm32cube/Kconfig"

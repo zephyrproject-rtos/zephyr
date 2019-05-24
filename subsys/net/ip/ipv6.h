@@ -106,6 +106,13 @@ struct net_ipv6_nbr_data {
 
 	/** Is the neighbor a router */
 	bool is_router;
+
+#if defined(CONFIG_NET_IPV6_NBR_CACHE) || defined(CONFIG_NET_IPV6_ND)
+	/** Stale counter used to removed oldest nbr in STALE state,
+	 *  when table is full.
+	 */
+	u32_t stale_counter;
+#endif
 };
 
 static inline struct net_ipv6_nbr_data *net_ipv6_nbr_data(struct net_nbr *nbr)
@@ -141,30 +148,12 @@ static inline bool net_ipv6_is_nexthdr_upper_layer(u8_t nexthdr)
  * @param pkt Network packet
  * @param src Source IPv6 address
  * @param dst Destination IPv6 address
- * @param iface Network interface
- * @param next_header_proto Protocol type of the next header after IPv6 header.
- *
- * @return Returns the input pkt network packet (which now contains IPv6
- * header) or NULL if network packet could not be allocated.
- */
-struct net_pkt *net_ipv6_create(struct net_pkt *pkt,
-				const struct in6_addr *src,
-				const struct in6_addr *dst,
-				struct net_if *iface,
-				u8_t next_header_proto);
-
-/**
- * @brief Create IPv6 packet in provided net_pkt.
- *
- * @param pkt Network packet
- * @param src Source IPv6 address
- * @param dst Destination IPv6 address
  *
  * @return 0 on success, negative errno otherwise.
  */
-int net_ipv6_create_new(struct net_pkt *pkt,
-			const struct in6_addr *src,
-			const struct in6_addr *dst);
+int net_ipv6_create(struct net_pkt *pkt,
+		    const struct in6_addr *src,
+		    const struct in6_addr *dst);
 
 /**
  * @brief Finalize IPv6 packet. It should be called right before

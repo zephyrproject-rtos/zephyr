@@ -16,7 +16,6 @@ if PWM_LED_ESP32
 
 config PWM_LED_ESP32_DEV_NAME_0
 	string "ESP32 PWM LED Name"
-	depends on PWM_LED_ESP32
 	default "PWM_LED"
 	help
 	  Specify the device name for the PWM driver.

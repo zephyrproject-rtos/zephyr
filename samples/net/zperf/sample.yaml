@@ -8,16 +8,16 @@ sample:
   description: Network performance measurement tool for Zephyr
   name: zperf
 tests:
-  test:
+  sample.net.zperf:
     platform_whitelist: qemu_x86
-  test_netusb_ecm:
+  sample.net.zperf.netusb_ecm:
     extra_args: OVERLAY_CONFIG="overlay-netusb.conf"
     extra_configs:
       - CONFIG_NET_TCP=n
       - CONFIG_SHELL_CMDS=n
     tags: usb net zperf
     depends_on: usb_device
-  test_netusb_eem:
+  sample.net.zperf.netusb_eem:
     extra_args: OVERLAY_CONFIG="overlay-netusb.conf"
     extra_configs:
       - CONFIG_USB_DEVICE_NETWORK_ECM=n
@@ -26,7 +26,7 @@ tests:
       - CONFIG_SHELL_CMDS=n
     tags: usb net zperf
     depends_on: usb_device
-  test_netusb_rndis:
+  sample.net.zperf.netusb_rndis:
     extra_args: OVERLAY_CONFIG="overlay-netusb.conf"
     extra_configs:
       - CONFIG_USB_DEVICE_NETWORK_ECM=n

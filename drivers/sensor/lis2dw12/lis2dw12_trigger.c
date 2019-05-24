@@ -27,7 +27,7 @@ static int lis2dw12_enable_int(struct device *dev, int enable)
 	struct lis2dw12_data *lis2dw12 = dev->driver_data;
 
 	/* set interrupt */
-	if (cfg->int_pin == 1)
+	if (cfg->int_pin == 1U)
 		return lis2dw12->hw_tf->update_reg(lis2dw12,
 			 LIS2DW12_CTRL4_ADDR,
 			 LIS2DW12_INT1_DRDY,

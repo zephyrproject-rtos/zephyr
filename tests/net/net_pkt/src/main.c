@@ -1,874 +1,646 @@
-/* main.c - Application main entry point */
-
 /*
- * Copyright (c) 2016 Intel Corporation
+ * Copyright (c) 2018 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
-#include <logging/log.h>
-LOG_MODULE_REGISTER(net_test, CONFIG_NET_PKT_LOG_LEVEL);
 
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <string.h>
 #include <errno.h>
-#include <misc/printk.h>
+#include <net/net_pkt.h>
+#include <net/net_if.h>
+#include <net/net_ip.h>
+#include <net/ethernet.h>
 
 #include <ztest.h>
 
-#include <net/net_pkt.h>
-#include <net/net_ip.h>
+static u8_t mac_addr[sizeof(struct net_eth_addr)];
+static struct net_if *eth_if;
+static u8_t small_buffer[512];
 
-#if defined(CONFIG_NET_PKT_LOG_LEVEL_DBG)
-#define DBG(fmt, ...) printk(fmt, ##__VA_ARGS__)
-#define NET_LOG_ENABLED 1
+/************************\
+ * FAKE ETHERNET DEVICE *
+\************************/
+
+static void fake_dev_iface_init(struct net_if *iface)
+{
+	if (mac_addr[2] == 0U) {
+		/* 00-00-5E-00-53-xx Documentation RFC 7042 */
+		mac_addr[0] = 0x00;
+		mac_addr[1] = 0x00;
+		mac_addr[2] = 0x5E;
+		mac_addr[3] = 0x00;
+		mac_addr[4] = 0x53;
+		mac_addr[5] = sys_rand32_get();
+	}
+
+	net_if_set_link_addr(iface, mac_addr, 6, NET_LINK_ETHERNET);
+
+	eth_if = iface;
+}
+
+static int fake_dev_send(struct device *dev, struct net_pkt *pkt)
+{
+	return 0;
+}
+
+int fake_dev_init(struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	return 0;
+}
+
+#if defined(CONFIG_NET_L2_ETHERNET)
+static const struct ethernet_api fake_dev_api = {
+	.iface_api.init = fake_dev_iface_init,
+	.send = fake_dev_send,
+};
+
+#define _ETH_L2_LAYER ETHERNET_L2
+#define _ETH_L2_CTX_TYPE NET_L2_GET_CTX_TYPE(ETHERNET_L2)
+#define L2_HDR_SIZE sizeof(struct net_eth_hdr)
 #else
-#define DBG(fmt, ...)
+static const struct dummy_api fake_dev_api = {
+	.iface_api.init = fake_dev_iface_init,
+	.send = fake_dev_send,
+};
+
+#define _ETH_L2_LAYER DUMMY_L2
+#define _ETH_L2_CTX_TYPE NET_L2_GET_CTX_TYPE(DUMMY_L2)
+#define L2_HDR_SIZE 0
 #endif
 
-#define NET_LOG_ENABLED 1
-#include "net_private.h"
+NET_DEVICE_INIT(fake_dev, "fake_dev",
+		fake_dev_init, NULL, NULL,
+		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
+		&fake_dev_api, _ETH_L2_LAYER, _ETH_L2_CTX_TYPE,
+		NET_ETH_MTU);
 
-#define FRAG_COUNT 7
+/*********************\
+ * UTILITY FUNCTIONS *
+\*********************/
 
-struct ipv6_hdr {
-	u8_t vtc;
-	u8_t tcflow;
-	u16_t flow;
-	u8_t len[2];
-	u8_t nexthdr;
-	u8_t hop_limit;
-	struct in6_addr src;
-	struct in6_addr dst;
-} __packed;
+static bool pkt_is_of_size(struct net_pkt *pkt, size_t size)
+{
+	return (net_pkt_available_buffer(pkt) == size);
+}
 
-struct udp_hdr {
-	u16_t src_port;
-	u16_t dst_port;
-	u16_t len;
-	u16_t chksum;
-} __packed;
+static void pkt_print_cursor(struct net_pkt *pkt)
+{
+	if (!pkt || !pkt->cursor.buf || !pkt->cursor.pos) {
+		printk("Unknown position\n");
+	} else {
+		printk("Position %zu (%p) in net_buf %p (data %p)\n",
+		       pkt->cursor.pos - pkt->cursor.buf->data,
+		       pkt->cursor.pos, pkt->cursor.buf,
+		       pkt->cursor.buf->data);
+	}
+}
 
-struct icmp_hdr {
-	u8_t type;
-	u8_t code;
-	u16_t chksum;
-} __packed;
 
-static const char example_data[] =
-	"0123456789abcdefghijklmnopqrstuvxyz!#¤%&/()=?"
-	"0123456789abcdefghijklmnopqrstuvxyz!#¤%&/()=?"
-	"0123456789abcdefghijklmnopqrstuvxyz!#¤%&/()=?"
-	"0123456789abcdefghijklmnopqrstuvxyz!#¤%&/()=?"
-	"0123456789abcdefghijklmnopqrstuvxyz!#¤%&/()=?"
-	"0123456789abcdefghijklmnopqrstuvxyz!#¤%&/()=?";
+/*****************************\
+ * HOW TO ALLOCATE - 2 TESTS *
+\*****************************/
 
-static void test_ipv6_multi_frags(void)
+static void test_net_pkt_allocate_wo_buffer(void)
 {
 	struct net_pkt *pkt;
-	struct net_buf *frag;
-	struct ipv6_hdr *ipv6;
-	struct udp_hdr *udp;
-	int bytes, remaining = strlen(example_data), pos = 0;
 
-	/* Example of multi fragment scenario with IPv6 */
-	pkt = net_pkt_get_reserve_rx(K_FOREVER);
-	frag = net_pkt_get_reserve_rx_data(K_FOREVER);
+	/* How to allocate a packet, with no buffer */
+	pkt = net_pkt_alloc(K_NO_WAIT);
+	zassert_true(pkt != NULL, "Pkt not allocated");
 
-	/* Place the IP + UDP header in the first fragment */
-	if (!net_buf_tailroom(frag)) {
-		ipv6 = (struct ipv6_hdr *)(frag->data);
-		udp = (struct udp_hdr *)((u8_t *)ipv6 + sizeof(*ipv6));
-		if (net_buf_tailroom(frag) < sizeof(ipv6)) {
-			printk("Not enough space for IPv6 header, "
-			       "needed %zd bytes, has %zd bytes\n",
-			       sizeof(ipv6), net_buf_tailroom(frag));
-			zassert_true(false, "No space for IPv6 header");
-		}
-		net_buf_add(frag, sizeof(ipv6));
+	/* Freeing the packet */
+	net_pkt_unref(pkt);
+	zassert_true(atomic_get(&pkt->atomic_ref) == 0,
+		     "Pkt not properly unreferenced");
 
-		if (net_buf_tailroom(frag) < sizeof(udp)) {
-			printk("Not enough space for UDP header, "
-			       "needed %zd bytes, has %zd bytes\n",
-			       sizeof(udp), net_buf_tailroom(frag));
-			zassert_true(false, "No space for UDP header");
-		}
-
-		net_pkt_set_appdata(pkt, (u8_t *)udp + sizeof(*udp));
-		net_pkt_set_appdatalen(pkt, 0);
-	}
-
-	net_pkt_frag_add(pkt, frag);
-
-	/* Put some data to rest of the fragments */
-	frag = net_pkt_get_reserve_rx_data(K_FOREVER);
-	if (net_buf_tailroom(frag) -
-	      (CONFIG_NET_BUF_DATA_SIZE - 0)) {
-		printk("Invalid number of bytes available in the buf, "
-		       "should be 0 but was %zd - %d\n",
-		       net_buf_tailroom(frag),
-		       CONFIG_NET_BUF_DATA_SIZE - 0);
-		zassert_true(false, "Invalid byte count");
-	}
-
-	if (((int)net_buf_tailroom(frag) - remaining) > 0) {
-		printk("We should have been out of space now, "
-		       "tailroom %zd user data len %zd\n",
-		       net_buf_tailroom(frag),
-		       strlen(example_data));
-		zassert_true(false, "Still space");
-	}
-
-	while (remaining > 0) {
-		int copy;
-
-		bytes = net_buf_tailroom(frag);
-		copy = remaining > bytes ? bytes : remaining;
-		memcpy(net_buf_add(frag, copy), &example_data[pos], copy);
-
-		DBG("Remaining %d left %d copy %d\n", remaining, bytes, copy);
-
-		pos += bytes;
-		remaining -= bytes;
-		if (net_buf_tailroom(frag) - (bytes - copy)) {
-			printk("There should have not been any tailroom left, "
-			       "tailroom %zd\n",
-			       net_buf_tailroom(frag) - (bytes - copy));
-			zassert_true(false, "There is still tailroom left");
-		}
-
-		net_pkt_frag_add(pkt, frag);
-		if (remaining > 0) {
-			frag = net_pkt_get_reserve_rx_data(K_FOREVER);
-		}
-	}
-
-	bytes = net_pkt_get_len(pkt);
-	if (bytes != strlen(example_data)) {
-		printk("Invalid number of bytes in message, %zd vs %d\n",
-		       strlen(example_data), bytes);
-		zassert_true(false, "Invalid number of bytes");
-	}
-
-	/* Normally one should not unref the fragment list like this
-	 * because it will leave the pkt->frags pointing to already
-	 * freed fragment.
+	/* Note that, if you already know the iface to which the packet
+	 * belongs to, you will be able to use net_pkt_alloc_on_iface().
 	 */
-	net_pkt_frag_unref(pkt->frags);
-
-	zassert_not_null(pkt->frags, "Frag list empty");
-
-	pkt->frags = NULL; /* to prevent double free */
+	pkt = net_pkt_alloc_on_iface(eth_if, K_NO_WAIT);
+	zassert_true(pkt != NULL, "Pkt not allocated");
 
 	net_pkt_unref(pkt);
+	zassert_true(atomic_get(&pkt->atomic_ref) == 0,
+		     "Pkt not properly unreferenced");
 }
 
-/* Empty data and test data must be the same size in order the test to work */
-static const char test_data[] = { '0', '1', '2', '3', '4',
-				  '5', '6', '7' };
-
-static const char sample_data[] =
-	"abcdefghijklmnopqrstuvxyz "
-	"abcdefghijklmnopqrstuvxyz "
-	"abcdefghijklmnopqrstuvxyz "
-	"abcdefghijklmnopqrstuvxyz "
-	"abcdefghijklmnopqrstuvxyz "
-	"abcdefghijklmnopqrstuvxyz "
-	"abcdefghijklmnopqrstuvxyz "
-	"abcdefghijklmnopqrstuvxyz "
-	"abcdefghijklmnopqrstuvxyz "
-	"abcdefghijklmnopqrstuvxyz "
-	"abcdefghijklmnopqrstuvxyz "
-	"abcdefghijklmnopqrstuvxyz "
-	"abcdefghijklmnopqrstuvxyz";
-
-static char test_rw_short[] =
-	"abcdefghijklmnopqrstuvwxyz";
-
-static char test_rw_long[] =
-	"abcdefghijklmnopqrstuvwxyz "
-	"abcdefghijklmnopqrstuvwxyz "
-	"abcdefghijklmnopqrstuvwxyz "
-	"abcdefghijklmnopqrstuvwxyz "
-	"abcdefghijklmnopqrstuvwxyz "
-	"abcdefghijklmnopqrstuvwxyz "
-	"abcdefghijklmnopqrstuvwxyz ";
-
-static void test_pkt_read_append(void)
-{
-	int remaining = strlen(sample_data);
-	u8_t verify_rw_short[sizeof(test_rw_short)];
-	u8_t verify_rw_long[sizeof(test_rw_long)];
-	struct net_pkt *pkt;
-	struct net_buf *frag;
-	struct net_buf *tfrag;
-	struct ipv6_hdr *ipv6;
-	struct udp_hdr *udp;
-	u8_t data[10];
-	int pos = 0;
-	int bytes;
-	u16_t off;
-	u16_t tpos;
-	u16_t fail_pos;
-
-	/* Example of multi fragment read, append and skip APS's */
-	pkt = net_pkt_get_reserve_rx(K_FOREVER);
-	frag = net_pkt_get_reserve_rx_data(K_FOREVER);
-
-	/* Place the IP + UDP header in the first fragment */
-	if (!net_buf_tailroom(frag)) {
-		ipv6 = (struct ipv6_hdr *)(frag->data);
-		udp = (struct udp_hdr *)((u8_t *)ipv6 + sizeof(*ipv6));
-		if (net_buf_tailroom(frag) < sizeof(ipv6)) {
-			printk("Not enough space for IPv6 header, "
-			       "needed %zd bytes, has %zd bytes\n",
-			       sizeof(ipv6), net_buf_tailroom(frag));
-			zassert_true(false, "No space for IPv6 header");
-		}
-		net_buf_add(frag, sizeof(ipv6));
-
-		if (net_buf_tailroom(frag) < sizeof(udp)) {
-			printk("Not enough space for UDP header, "
-			       "needed %zd bytes, has %zd bytes\n",
-			       sizeof(udp), net_buf_tailroom(frag));
-			zassert_true(false, "No space for UDP header");
-		}
-
-		net_pkt_set_appdata(pkt, (u8_t *)udp + sizeof(*udp));
-		net_pkt_set_appdatalen(pkt, 0);
-	}
-
-	net_pkt_frag_add(pkt, frag);
-
-	/* Put some data to rest of the fragments */
-	frag = net_pkt_get_reserve_rx_data(K_FOREVER);
-	if (net_buf_tailroom(frag) -
-	      (CONFIG_NET_BUF_DATA_SIZE - 0)) {
-		printk("Invalid number of bytes available in the buf, "
-		       "should be 0 but was %zd - %d\n",
-		       net_buf_tailroom(frag),
-		       CONFIG_NET_BUF_DATA_SIZE - 0);
-		zassert_true(false, "Invalid number of bytes avail");
-	}
-
-	if (((int)net_buf_tailroom(frag) - remaining) > 0) {
-		printk("We should have been out of space now, "
-		       "tailroom %zd user data len %zd\n",
-		       net_buf_tailroom(frag),
-		       strlen(sample_data));
-		zassert_true(false, "Not out of space");
-	}
-
-	while (remaining > 0) {
-		int copy;
-
-		bytes = net_buf_tailroom(frag);
-		copy = remaining > bytes ? bytes : remaining;
-		memcpy(net_buf_add(frag, copy), &sample_data[pos], copy);
-
-		DBG("Remaining %d left %d copy %d\n", remaining, bytes, copy);
-
-		pos += bytes;
-		remaining -= bytes;
-		if (net_buf_tailroom(frag) - (bytes - copy)) {
-			printk("There should have not been any tailroom left, "
-			       "tailroom %zd\n",
-			       net_buf_tailroom(frag) - (bytes - copy));
-			zassert_true(false, "Still tailroom left");
-		}
-
-		net_pkt_frag_add(pkt, frag);
-		if (remaining > 0) {
-			frag = net_pkt_get_reserve_rx_data(K_FOREVER);
-		}
-	}
-
-	bytes = net_pkt_get_len(pkt);
-	if (bytes != strlen(sample_data)) {
-		printk("Invalid number of bytes in message, %zd vs %d\n",
-		       strlen(sample_data), bytes);
-		zassert_true(false, "Message size wrong");
-	}
-
-	/* Failure cases */
-	/* Invalid buffer */
-	tfrag = net_frag_skip(NULL, 10, &fail_pos, 10);
-	zassert_true(!tfrag && fail_pos == 0xffff, "Invalid case NULL buffer");
-
-	/* Invalid: Skip more than a buffer length.*/
-	tfrag = net_buf_frag_last(pkt->frags);
-	tfrag = net_frag_skip(tfrag, tfrag->len - 1, &fail_pos, tfrag->len + 2);
-	if (!(!tfrag && fail_pos == 0xffff)) {
-		printk("Invalid case offset %d length to skip %d,"
-		       "frag length %d\n",
-		       tfrag->len - 1, tfrag->len + 2, tfrag->len);
-		zassert_true(false, "Invalid offset");
-	}
-
-	/* Invalid offset */
-	tfrag = net_buf_frag_last(pkt->frags);
-	tfrag = net_frag_skip(tfrag, tfrag->len + 10, &fail_pos, 10);
-	if (!(!tfrag && fail_pos == 0xffff)) {
-		printk("Invalid case offset %d length to skip %d,"
-		       "frag length %d\n",
-		       tfrag->len + 10, 10, tfrag->len);
-		zassert_true(false, "Invalid offset");
-	}
-
-	/* Valid cases */
-
-	/* Offset is more than single fragment length */
-	/* Get the first data fragment */
-	tfrag = pkt->frags;
-	tfrag = tfrag->frags;
-	off = tfrag->len;
-	tfrag = net_frag_read(tfrag, off + 10, &tpos, 10, data);
-	zassert_not_null(tfrag, "Fail offset read");
-
-	if (memcmp(sample_data + off + 10, data, 10)) {
-		printk("Failed to read from offset %d, frag length %d "
-		       "read length %d\n",
-		       tfrag->len + 10, tfrag->len, 10);
-		zassert_true(false, "Fail offset read");
-	}
-
-	/* Skip till end of all fragments */
-	/* Get the first data fragment */
-	tfrag = pkt->frags;
-	tfrag = tfrag->frags;
-	tfrag = net_frag_skip(tfrag, 0, &tpos, strlen(sample_data));
-	zassert_true(!tfrag && tpos == 0,
-		     "Invalid skip till end of all fragments");
-
-	/* Short data test case */
-	/* Test case scenario:
-	 * 1) Cache the current fragment and offset
-	 * 2) Append short data
-	 * 3) Append short data again
-	 * 4) Skip first short data from cached frag or offset
-	 * 5) Read short data and compare
-	 */
-	tfrag = net_buf_frag_last(pkt->frags);
-	off = tfrag->len;
-
-	zassert_true(net_pkt_append_all(pkt, (u16_t)sizeof(test_rw_short),
-					test_rw_short, K_FOREVER),
-		     "net_pkt_append failed");
-
-	zassert_true(net_pkt_append_all(pkt, (u16_t)sizeof(test_rw_short),
-					test_rw_short, K_FOREVER),
-		     "net_pkt_append failed");
-
-	tfrag = net_frag_skip(tfrag, off, &tpos,
-			     (u16_t)sizeof(test_rw_short));
-	zassert_not_null(tfrag, "net_frag_skip failed");
-
-	tfrag = net_frag_read(tfrag, tpos, &tpos,
-			     (u16_t)sizeof(test_rw_short),
-			     verify_rw_short);
-	zassert_true(!tfrag && tpos == 0, "net_frag_read failed");
-	zassert_false(memcmp(test_rw_short, verify_rw_short,
-			     sizeof(test_rw_short)),
-		      "net_frag_read failed with mismatch data");
-
-	/* Long data test case */
-	/* Test case scenario:
-	 * 1) Cache the current fragment and offset
-	 * 2) Append long data
-	 * 3) Append long data again
-	 * 4) Skip first long data from cached frag or offset
-	 * 5) Read long data and compare
-	 */
-	tfrag = net_buf_frag_last(pkt->frags);
-	off = tfrag->len;
-
-	zassert_true(net_pkt_append_all(pkt, (u16_t)sizeof(test_rw_long),
-					test_rw_long, K_FOREVER),
-		     "net_pkt_append failed");
-
-	zassert_true(net_pkt_append_all(pkt, (u16_t)sizeof(test_rw_long),
-					test_rw_long, K_FOREVER),
-		     "net_pkt_append failed");
-
-	tfrag = net_frag_skip(tfrag, off, &tpos,
-			      (u16_t)sizeof(test_rw_long));
-	zassert_not_null(tfrag, "net_frag_skip failed");
-
-	tfrag = net_frag_read(tfrag, tpos, &tpos,
-			     (u16_t)sizeof(test_rw_long),
-			     verify_rw_long);
-	zassert_true(!tfrag && tpos == 0, "net_frag_read failed");
-	zassert_false(memcmp(test_rw_long, verify_rw_long,
-			     sizeof(test_rw_long)),
-		      "net_frag_read failed with mismatch data");
-
-	net_pkt_unref(pkt);
-
-	DBG("test_pkt_read_append passed\n");
-}
-
-static void test_pkt_read_write_insert(void)
-{
-	struct net_buf *read_frag;
-	struct net_buf *temp_frag;
-	struct net_pkt *pkt;
-	struct net_buf *frag;
-	u8_t read_data[100];
-	u16_t read_pos;
-	u16_t len;
-	u16_t pos;
-
-	/* Example of multi fragment read, append and skip APS's */
-	pkt = net_pkt_get_reserve_rx(K_FOREVER);
-
-	frag = net_pkt_get_reserve_rx_data(K_FOREVER);
-	net_pkt_frag_add(pkt, frag);
-
-	/* 1) Offset is with in input fragment.
-	 * Write app data after IPv6 and UDP header. (If the offset is after
-	 * IPv6 + UDP header size, api will create empty space till offset
-	 * and write data).
-	 */
-	frag = net_pkt_write(pkt, frag, NET_IPV6UDPH_LEN, &pos, 10,
-			     (u8_t *)sample_data, K_FOREVER);
-	zassert_false(!frag || pos != 58, "Usecase 1: Write failed");
-
-	read_frag = net_frag_read(frag, NET_IPV6UDPH_LEN, &read_pos, 10,
-				 read_data);
-	zassert_false(!read_frag && read_pos == 0xffff,
-		      "Usecase 1: Read failed");
-
-	zassert_false(memcmp(read_data, sample_data, 10),
-		      "Usecase 1: Read data mismatch");
-
-	/* 2) Write IPv6 and UDP header at offset 0. (Empty space is created
-	 * already in Usecase 1, just need to fill the header, at this point
-	 * there shouldn't be any length change).
-	 */
-	frag = net_pkt_write(pkt, frag, 0, &pos, NET_IPV6UDPH_LEN,
-			     (u8_t *)sample_data, K_FOREVER);
-	zassert_false(!frag || pos != 48, "Usecase 2: Write failed");
-
-	read_frag = net_frag_read(frag, 0, &read_pos, NET_IPV6UDPH_LEN,
-				 read_data);
-	zassert_false(!read_frag && read_pos == 0xffff,
-		     "Usecase 2: Read failed");
-
-	zassert_false(memcmp(read_data, sample_data, NET_IPV6UDPH_LEN),
-		      "Usecase 2: Read data mismatch");
-
-	net_pkt_unref(pkt);
-
-	pkt = net_pkt_get_reserve_rx(K_FOREVER);
-
-	/* 3) Offset is in next to next fragment.
-	 * Write app data after 2 fragments. (If the offset far away, api will
-	 * create empty fragments(space) till offset and write data).
-	 */
-	frag = net_pkt_write(pkt, pkt->frags, 200, &pos, 10,
-			     (u8_t *)sample_data + 10, K_FOREVER);
-	zassert_not_null(frag, "Usecase 3: Write failed");
-
-	read_frag = net_frag_read(frag, pos - 10, &read_pos, 10,
-				 read_data);
-	zassert_false(!read_frag && read_pos == 0xffff,
-		     "Usecase 3: Read failed");
-
-	zassert_false(memcmp(read_data, sample_data + 10, 10),
-		      "Usecase 3: Read data mismatch");
-
-	/* 4) Offset is in next to next fragment (overwrite).
-	 * Write app data after 2 fragments. (Space is already available from
-	 * Usecase 3, this scenatio doesn't create any space, it just overwrites
-	 * the existing data.
-	 */
-	frag = net_pkt_write(pkt, pkt->frags, 190, &pos, 10,
-			     (u8_t *)sample_data, K_FOREVER);
-	zassert_not_null(frag, "Usecase 4: Write failed");
-
-	read_frag = net_frag_read(frag, pos - 10, &read_pos, 20,
-				 read_data);
-	zassert_false(!read_frag && read_pos == 0xffff,
-		      "Usecase 4: Read failed");
-
-	zassert_false(memcmp(read_data, sample_data, 20),
-		      "Usecase 4: Read data mismatch");
-
-	net_pkt_unref(pkt);
-
-	/* 5) Write 20 bytes in fragment which has only 10 bytes space.
-	 *    API should overwrite on first 10 bytes and create extra 10 bytes
-	 *    and write there.
-	 */
-	pkt = net_pkt_get_reserve_rx(K_FOREVER);
-
-	frag = net_pkt_get_reserve_rx_data(K_FOREVER);
-	net_pkt_frag_add(pkt, frag);
-
-	/* Create 10 bytes space. */
-	net_buf_add(frag, 10);
-
-	frag = net_pkt_write(pkt, frag, 0, &pos, 20, (u8_t *)sample_data,
-			     K_FOREVER);
-	zassert_false(!frag && pos != 20, "Usecase 5: Write failed");
-
-	read_frag = net_frag_read(frag, 0, &read_pos, 20, read_data);
-	zassert_false(!read_frag && read_pos == 0xffff,
-		     "Usecase 5: Read failed");
-
-	zassert_false(memcmp(read_data, sample_data, 20),
-		      "USecase 5: Read data mismatch");
-
-	net_pkt_unref(pkt);
-
-	/* 6) First fragment is full, second fragment has 10 bytes tail room,
-	 *    third fragment has 5 bytes.
-	 *    Write data (30 bytes) in second fragment where offset is 10 bytes
-	 *    before the tailroom.
-	 *    So it should overwrite 10 bytes and create space for another 10
-	 *    bytes and write data. Third fragment 5 bytes overwritten and space
-	 *    for 5 bytes created.
-	 */
-	pkt = net_pkt_get_reserve_rx(K_FOREVER);
-
-	/* First fragment make it fully occupied. */
-	frag = net_pkt_get_reserve_rx_data(K_FOREVER);
-	net_pkt_frag_add(pkt, frag);
-
-	len = net_buf_tailroom(frag);
-	net_buf_add(frag, len);
-
-	/* 2nd fragment last 10 bytes tailroom, rest occupied */
-	frag = net_pkt_get_reserve_rx_data(K_FOREVER);
-	net_pkt_frag_add(pkt, frag);
-
-	len = net_buf_tailroom(frag);
-	net_buf_add(frag, len - 10);
-
-	read_frag = temp_frag = frag;
-	read_pos = frag->len - 10;
-
-	/* 3rd fragment, only 5 bytes occupied */
-	frag = net_pkt_get_reserve_rx_data(K_FOREVER);
-	net_pkt_frag_add(pkt, frag);
-	net_buf_add(frag, 5);
-
-	temp_frag = net_pkt_write(pkt, temp_frag, temp_frag->len - 10, &pos,
-				  30, (u8_t *) sample_data, K_FOREVER);
-	zassert_not_null(temp_frag, "Use case 6: Write failed");
-
-	read_frag = net_frag_read(read_frag, read_pos, &read_pos, 30,
-				 read_data);
-	zassert_false(!read_frag && read_pos == 0xffff,
-		      "Usecase 6: Read failed");
-
-	zassert_false(memcmp(read_data, sample_data, 30),
-		      "Usecase 6: Read data mismatch");
-
-	net_pkt_unref(pkt);
-
-	/* 7) Offset is with in input fragment.
-	 * Write app data after IPv6 and UDP header. (If the offset is after
-	 * IPv6 + UDP header size, api will create empty space till offset
-	 * and write data). Insert some app data after IPv6 + UDP header
-	 * before first set of app data.
-	 */
-
-	pkt = net_pkt_get_reserve_rx(K_FOREVER);
-
-	/* First fragment make it fully occupied. */
-	frag = net_pkt_get_reserve_rx_data(K_FOREVER);
-	net_pkt_frag_add(pkt, frag);
-
-	frag = net_pkt_write(pkt, frag, NET_IPV6UDPH_LEN, &pos, 10,
-			     (u8_t *)sample_data + 10, K_FOREVER);
-	zassert_false(!frag || pos != 58, "Usecase 7: Write failed");
-
-	read_frag = net_frag_read(frag, NET_IPV6UDPH_LEN, &read_pos, 10,
-				 read_data);
-	zassert_false(!read_frag && read_pos == 0xffff,
-		      "Usecase 7: Read failed");
-
-	zassert_false(memcmp(read_data, sample_data + 10, 10),
-		     "Usecase 7: Read data mismatch");
-
-	zassert_true(net_pkt_insert(pkt, frag, NET_IPV6UDPH_LEN, 10,
-				    (u8_t *)sample_data, K_FOREVER),
-		     "Usecase 7: Insert failed");
-
-	read_frag = net_frag_read(frag, NET_IPV6UDPH_LEN, &read_pos, 20,
-				 read_data);
-	zassert_false(!read_frag && read_pos == 0xffff,
-		      "Usecase 7: Read after failed");
-
-	zassert_false(memcmp(read_data, sample_data, 20),
-		      "Usecase 7: Read data mismatch after insertion");
-
-	/* Insert data outside input fragment length, error case. */
-	zassert_false(net_pkt_insert(pkt, frag, 70, 10, (u8_t *)sample_data,
-				     K_FOREVER),
-		      "Usecase 7: False insert failed");
-
-	net_pkt_unref(pkt);
-
-	/* 8) Offset is with in input fragment.
-	 * Write app data after IPv6 and UDP header. (If the offset is after
-	 * IPv6 + UDP header size, api will create empty space till offset
-	 * and write data). Insert some app data after IPv6 + UDP header
-	 * before first set of app data. Insertion data is long which will
-	 * take two fragments.
-	 */
-	pkt = net_pkt_get_reserve_rx(K_FOREVER);
-
-	/* First fragment make it fully occupied. */
-	frag = net_pkt_get_reserve_rx_data(K_FOREVER);
-	net_pkt_frag_add(pkt, frag);
-
-	frag = net_pkt_write(pkt, frag, NET_IPV6UDPH_LEN, &pos, 10,
-			     (u8_t *)sample_data + 60, K_FOREVER);
-	zassert_false(!frag || pos != 58, "Usecase 8: Write failed");
-
-	read_frag = net_frag_read(frag, NET_IPV6UDPH_LEN, &read_pos, 10,
-				 read_data);
-	zassert_false(!read_frag && read_pos == 0xffff,
-		      "Usecase 8: Read failed");
-
-	zassert_false(memcmp(read_data, sample_data + 60, 10),
-		      "Usecase 8: Read data mismatch");
-
-	zassert_true(net_pkt_insert(pkt, frag, NET_IPV6UDPH_LEN, 60,
-				    (u8_t *)sample_data, K_FOREVER),
-		     "Usecase 8: Insert failed");
-
-	read_frag = net_frag_read(frag, NET_IPV6UDPH_LEN, &read_pos, 70,
-				 read_data);
-	zassert_false(!read_frag && read_pos == 0xffff,
-		      "Usecase 8: Read after failed");
-
-	zassert_false(memcmp(read_data, sample_data, 70),
-		      "Usecase 8: Read data mismatch after insertion");
-
-	net_pkt_unref(pkt);
-
-	DBG("test_pkt_read_write_insert passed\n");
-}
-
-static int calc_fragments(struct net_pkt *pkt)
-{
-	struct net_buf *frag = pkt->frags;
-	int count = 0;
-
-	while (frag) {
-		frag = frag->frags;
-		count++;
-	}
-
-	return count;
-}
-
-static bool net_pkt_is_compact(struct net_pkt *pkt)
-{
-	struct net_buf *frag, *last;
-	size_t total = 0, calc;
-	int count = 0;
-
-	last = NULL;
-	frag = pkt->frags;
-
-	while (frag) {
-		total += frag->len;
-		count++;
-
-		last = frag;
-		frag = frag->frags;
-	}
-
-	NET_ASSERT(last);
-
-	if (!last) {
-		return false;
-	}
-
-	calc = count * (last->size) - net_buf_tailroom(last) -
-		count * (net_buf_headroom(last));
-
-	if (total == calc) {
-		return true;
-	}
-
-	NET_DBG("Not compacted total %zu real %zu", total, calc);
-
-	return false;
-}
-
-static void test_fragment_compact(void)
+static void test_net_pkt_allocate_with_buffer(void)
 {
 	struct net_pkt *pkt;
-	struct net_buf *frags[FRAG_COUNT], *frag;
-	int i, bytes, total, count;
 
-	pkt = net_pkt_get_reserve_rx(K_FOREVER);
-	frag = NULL;
-
-	for (i = 0, total = 0; i < FRAG_COUNT; i++) {
-		frags[i] = net_pkt_get_reserve_rx_data(K_FOREVER);
-
-		if (frag) {
-			net_buf_frag_add(frag, frags[i]);
-		}
-
-		frag = frags[i];
-
-		/* Copy character test data in front of the fragment */
-		memcpy(net_buf_add(frags[i], sizeof(test_data)),
-		       test_data, sizeof(test_data));
-
-		/* Followed by bytes of zeroes */
-		(void)memset(net_buf_add(frags[i], sizeof(test_data)), 0,
-			     sizeof(test_data));
-
-		total++;
-	}
-
-	if (total != FRAG_COUNT) {
-		printk("There should be %d fragments but was %d\n",
-		       FRAG_COUNT, total);
-		zassert_true(false, "Invalid fragment count");
-	}
-
-	DBG("step 1\n");
-
-	pkt->frags = net_buf_frag_add(pkt->frags, frags[0]);
-
-	bytes = net_pkt_get_len(pkt);
-	if (bytes != FRAG_COUNT * sizeof(test_data) * 2) {
-		printk("Compact test failed, fragments had %d bytes but "
-		       "should have had %zd\n", bytes,
-		       FRAG_COUNT * sizeof(test_data) * 2);
-		zassert_true(false, "Invalid fragment bytes");
-	}
-
-	zassert_false(net_pkt_is_compact(pkt),
-		      "The pkt is definitely not compact");
-
-	DBG("step 2\n");
-
-	net_pkt_compact(pkt);
-
-	zassert_true(net_pkt_is_compact(pkt),
-		     "The pkt should be in compact form");
-
-	DBG("step 3\n");
-
-	/* Try compacting again, nothing should happen */
-	net_pkt_compact(pkt);
-
-	zassert_true(net_pkt_is_compact(pkt),
-		     "The pkt should be compacted now");
-
-	total = calc_fragments(pkt);
-
-	/* Add empty fragment at the end and compact, the last fragment
-	 * should be removed.
+	/* How to allocate a packet, with buffer
+	 * a) - with a size that will fit MTU, let's say 512 bytes
+	 * Note: we don't care of the family/protocol for now
 	 */
-	frag = net_pkt_get_reserve_rx_data(K_FOREVER);
+	pkt = net_pkt_alloc_with_buffer(eth_if, 512,
+					AF_UNSPEC, 0, K_NO_WAIT);
+	zassert_true(pkt != NULL, "Pkt not allocated");
 
-	net_pkt_frag_add(pkt, frag);
+	/* Did we get the requested size? */
+	zassert_true(pkt_is_of_size(pkt, 512), "Pkt size is not right");
 
-	count = calc_fragments(pkt);
+	/* Freeing the packet */
+	net_pkt_unref(pkt);
+	zassert_true(atomic_get(&pkt->atomic_ref) == 0,
+		     "Pkt not properly unreferenced");
 
-	DBG("step 4\n");
-
-	net_pkt_compact(pkt);
-
-	i = calc_fragments(pkt);
-
-	if (count != (i + 1)) {
-		printk("Last fragment removal failed, chain should have %d "
-		       "fragments but had %d\n", i-1, i);
-		zassert_true(false, "Last frag rm fails");
-	}
-
-	if (i != total) {
-		printk("Fragments missing, expecting %d but got %d\n",
-		       total, i);
-		zassert_true(false, "Frags missing");
-	}
-
-	/* Add two empty fragments at the end and compact, the last two
-	 * fragment should be removed.
+	/*
+	 * b) - with a size that will not fit MTU, let's say 1800 bytes
+	 * Note: again we don't care of family/protocol for now.
 	 */
-	frag = net_pkt_get_reserve_rx_data(K_FOREVER);
+	pkt = net_pkt_alloc_with_buffer(eth_if, 1800,
+					AF_UNSPEC, 0, K_NO_WAIT);
+	zassert_true(pkt != NULL, "Pkt not allocated");
 
-	net_pkt_frag_add(pkt, frag);
+	zassert_false(pkt_is_of_size(pkt, 1800), "Pkt size is not right");
+	zassert_true(pkt_is_of_size(pkt, net_if_get_mtu(eth_if) + L2_HDR_SIZE),
+		     "Pkt size is not right");
 
-	frag = net_pkt_get_reserve_rx_data(K_FOREVER);
+	/* Freeing the packet */
+	net_pkt_unref(pkt);
+	zassert_true(atomic_get(&pkt->atomic_ref) == 0,
+		     "Pkt not properly unreferenced");
 
-	net_pkt_frag_add(pkt, frag);
-
-	count = calc_fragments(pkt);
-
-	DBG("step 5\n");
-
-	net_pkt_compact(pkt);
-
-	i = calc_fragments(pkt);
-
-	if (count != (i + 2)) {
-		printk("Last two fragment removal failed, chain should have "
-		       "%d fragments but had %d\n", i-2, i);
-		zassert_true(false, "Last two frag rm fails");
-	}
-
-	if (i != total) {
-		printk("Fragments missing, expecting %d but got %d\n",
-		       total, i);
-		zassert_true(false, "Frags missing");
-	}
-
-	/* Add empty fragment at the beginning and at the end, and then
-	 * compact, the two fragment should be removed.
+	/*
+	 * c) - Now with 512 bytes but on IPv4/UDP
 	 */
-	frag = net_pkt_get_reserve_rx_data(K_FOREVER);
+	pkt = net_pkt_alloc_with_buffer(eth_if, 512, AF_INET,
+					IPPROTO_UDP, K_NO_WAIT);
+	zassert_true(pkt != NULL, "Pkt not allocated");
 
-	net_pkt_frag_insert(pkt, frag);
+	/* Because 512 + NET_IPV4UDPH_LEN fits MTU, total must be that one */
+	zassert_true(pkt_is_of_size(pkt, 512 + NET_IPV4UDPH_LEN),
+		     "Pkt overall size does not match");
 
-	frag = net_pkt_get_reserve_rx_data(K_FOREVER);
+	/* Freeing the packet */
+	net_pkt_unref(pkt);
+	zassert_true(atomic_get(&pkt->atomic_ref) == 0,
+		     "Pkt not properly unreferenced");
 
-	net_pkt_frag_add(pkt, frag);
+	/*
+	 * c) - Now with 1800 bytes but on IPv4/UDP
+	 */
+	pkt = net_pkt_alloc_with_buffer(eth_if, 1800, AF_INET,
+					IPPROTO_UDP, K_NO_WAIT);
+	zassert_true(pkt != NULL, "Pkt not allocated");
 
-	count = calc_fragments(pkt);
+	/* Because 1800 + NET_IPV4UDPH_LEN won't fit MTU, payload size
+	 * should be MTU
+	 */
+	zassert_true(net_pkt_available_buffer(pkt) ==
+		     net_if_get_mtu(eth_if),
+		     "Payload buf size does not match for ipv4/udp");
 
-	DBG("step 6\n");
+	/* Freeing the packet */
+	net_pkt_unref(pkt);
+	zassert_true(atomic_get(&pkt->atomic_ref) == 0,
+		     "Pkt not properly unreferenced");
+}
 
-	net_pkt_compact(pkt);
+/********************************\
+ * HOW TO R/W A PACKET -  TESTS *
+\********************************/
 
-	i = calc_fragments(pkt);
+static void test_net_pkt_basics_of_rw(void)
+{
+	struct net_pkt_cursor backup;
+	struct net_pkt *pkt;
+	u16_t value16;
+	int ret;
 
-	if (count != (i + 2)) {
-		printk("Two fragment removal failed, chain should have "
-		       "%d fragments but had %d\n", i-2, i);
-		zassert_true(false, "Two frag rm fails");
+	pkt = net_pkt_alloc_with_buffer(eth_if, 512,
+					AF_UNSPEC, 0, K_NO_WAIT);
+	zassert_true(pkt != NULL, "Pkt not allocated");
+
+	/* Once newly allocated with buffer,
+	 * a packet has no data accounted for in its buffer
+	 */
+	zassert_true(net_pkt_get_len(pkt) == 0,
+		     "Pkt initial length should be 0");
+
+	/* This is done through net_buf which can distinguish
+	 * the size of a buffer from the length of the data in it.
+	 */
+
+	/* Let's subsequently write 1 byte, then 2 bytes and 4 bytes
+	 * We write values made of 0s
+	 */
+	ret = net_pkt_write_u8(pkt, 0);
+	zassert_true(ret == 0, "Pkt write failed");
+
+	/* Length should be 1 now */
+	zassert_true(net_pkt_get_len(pkt) == 1, "Pkt length mismatch");
+
+	ret = net_pkt_write_be16(pkt, 0);
+	zassert_true(ret == 0, "Pkt write failed");
+
+	/* Length should be 3 now */
+	zassert_true(net_pkt_get_len(pkt) == 3, "Pkt length mismatch");
+
+	/* Verify that the data is properly written to net_buf */
+	net_pkt_cursor_backup(pkt, &backup);
+	net_pkt_cursor_init(pkt);
+	net_pkt_set_overwrite(pkt, true);
+	net_pkt_skip(pkt, 1);
+	net_pkt_read_be16(pkt, &value16);
+	zassert_equal(value16, 0, "Invalid value %d read, expected %d",
+		      value16, 0);
+
+	/* Then write new value, overwriting the old one */
+	net_pkt_cursor_init(pkt);
+	net_pkt_skip(pkt, 1);
+	ret = net_pkt_write_be16(pkt, 42);
+	zassert_true(ret == 0, "Pkt write failed");
+
+	/* And re-read the value again */
+	net_pkt_cursor_init(pkt);
+	net_pkt_skip(pkt, 1);
+	ret = net_pkt_read_be16(pkt, &value16);
+	zassert_true(ret == 0, "Pkt read failed");
+	zassert_equal(value16, 42, "Invalid value %d read, expected %d",
+		      value16, 42);
+
+	net_pkt_set_overwrite(pkt, false);
+	net_pkt_cursor_restore(pkt, &backup);
+
+	ret = net_pkt_write_be32(pkt, 0);
+	zassert_true(ret == 0, "Pkt write failed");
+
+	/* Length should be 7 now */
+	zassert_true(net_pkt_get_len(pkt) == 7, "Pkt length mismatch");
+
+	/* All these writing functions use net_ptk_write(), which works
+	 * this way:
+	 */
+	ret = net_pkt_write(pkt, small_buffer, 9);
+	zassert_true(ret == 0, "Pkt write failed");
+
+	/* Length should be 16 now */
+	zassert_true(net_pkt_get_len(pkt) == 16, "Pkt length mismatch");
+
+	/* Now let's say you want to memset some data */
+	ret = net_pkt_memset(pkt, 0, 4);
+	zassert_true(ret == 0, "Pkt memset failed");
+
+	/* Length should be 20 now */
+	zassert_true(net_pkt_get_len(pkt) == 20, "Pkt length mismatch");
+
+	/* So memset affects the length exactly as write does */
+
+	/* Sometimes you might want to advance in the buffer without caring
+	 * what's written there since you'll eventually come back for that.
+	 * net_pkt_skip() is used for it.
+	 * Note: usally you will not have to use that function a lot yourself.
+	 */
+	ret = net_pkt_skip(pkt, 20);
+	zassert_true(ret == 0, "Pkt skip failed");
+
+	/* Length should be 40 now */
+	zassert_true(net_pkt_get_len(pkt) == 40, "Pkt length mismatch");
+
+	/* Again, skip affected the length also, like a write
+	 * But wait a minute: how to get back then, in order to write at
+	 * the position we just skipped?
+	 *
+	 * So let's introduce the concept of buffer cursor. (which could
+	 * be named 'cursor' if such name has more relevancy. Basically, each
+	 * net_pkt embeds such 'cursor': it's like a head of a tape
+	 * recorder/reader, it holds the current position in the buffer where
+	 * you can r/w. All operations use and update it below.
+	 * There is, however, a catch: buffer is described through net_buf
+	 * and these are like a simple linked-list.
+	 * Which means that unlike a tape recorder/reader: you are not
+	 * able to go backward. Only back from starting point and forward.
+	 * Thus why there is a net_pkt_cursor_init(pkt) which will let you going
+	 * back from the start. We could hold more info in order to avoid that,
+	 * but that would mean growing each an every net_buf.
+	 */
+	net_pkt_cursor_init(pkt);
+
+	/* But isn't it so that if I want to go at the previous position I
+	 * skipped, I'll use skip again but then won't it affect again the
+	 * length?
+	 * Answer is yes. Hopefully there is a mean to avoid that. Basically
+	 * for data that already "exists" in the buffer (aka: data accounted
+	 * for in the buffer, through the length) you'll need to set the packet
+	 * to overwrite: all subsequent operations will then work on existing
+	 * data and will not affect the length (it won't add more data)
+	 */
+	net_pkt_set_overwrite(pkt, true);
+
+	zassert_true(net_pkt_is_being_overwritten(pkt),
+		     "Pkt is not set to overwrite");
+
+	/* Ok so previous skipped position was at offset 20 */
+	ret = net_pkt_skip(pkt, 20);
+	zassert_true(ret == 0, "Pkt skip failed");
+
+	/* Length should _still_ be 40 */
+	zassert_true(net_pkt_get_len(pkt) == 40, "Pkt length mismatch");
+
+	/* And you can write stuff */
+	ret = net_pkt_write_le32(pkt, 0);
+	zassert_true(ret == 0, "Pkt write failed");
+
+	/* Again, length should _still_ be 40 */
+	zassert_true(net_pkt_get_len(pkt) == 40, "Pkt length mismatch");
+
+	/* Let's memset the rest */
+	ret = net_pkt_memset(pkt, 0, 16);
+	zassert_true(ret == 0, "Pkt memset failed");
+
+	/* Again, length should _still_ be 40 */
+	zassert_true(net_pkt_get_len(pkt) == 40, "Pkt length mismatch");
+
+	/* We are now back at the end of the existing data in the buffer
+	 * Since overwrite is still on, we should not be able to r/w
+	 * anything.
+	 * This is completely nominal, as being set, overwrite allows r/w only
+	 * on existing data in the buffer:
+	 */
+	ret = net_pkt_write_be32(pkt, 0);
+	zassert_true(ret != 0, "Pkt write succeeded where it shouldn't have");
+
+	/* Logically, in order to be able to add new data in the buffer,
+	 * overwrite should be disabled:
+	 */
+	net_pkt_set_overwrite(pkt, false);
+
+	/* But it will fail: */
+	ret = net_pkt_write_le32(pkt, 0);
+	zassert_true(ret != 0, "Pkt write succeeded?");
+
+	/* Why is that?
+	 * This is because in case of r/w error: the iterator is invalidated.
+	 * This a design choice, once you get a r/w error it means your code
+	 * messed up requesting smaller buffer than you actually needed, or
+	 * writing too much data than it should have been etc...).
+	 * So you must drop your packet entirely.
+	 */
+
+	/* Freeing the packet */
+	net_pkt_unref(pkt);
+	zassert_true(atomic_get(&pkt->atomic_ref) == 0,
+		     "Pkt not properly unreferenced");
+}
+
+void test_net_pkt_advanced_basics(void)
+{
+	struct net_pkt_cursor backup;
+	struct net_pkt *pkt;
+	int ret;
+
+	pkt = net_pkt_alloc_with_buffer(eth_if, 512,
+					AF_INET, IPPROTO_UDP, K_NO_WAIT);
+	zassert_true(pkt != NULL, "Pkt not allocated");
+
+	pkt_print_cursor(pkt);
+
+	/* As stated earlier, initializing the cursor, is the way to go
+	 * back from the start in the buffer (either header or payload then).
+	 * We also showed that using net_pkt_skip() could be used to move
+	 * forward in the buffer.
+	 * But what if you are far in the buffer, you need to go backward,
+	 * and back again to your previous position?
+	 * You could certainly do:
+	 */
+	ret = net_pkt_write(pkt, small_buffer, 20);
+	zassert_true(ret == 0, "Pkt write failed");
+
+	pkt_print_cursor(pkt);
+
+	net_pkt_cursor_init(pkt);
+
+	pkt_print_cursor(pkt);
+
+	/* ... do something here ... */
+
+	/* And finally go back with overwrite/skip: */
+	net_pkt_set_overwrite(pkt, true);
+	ret = net_pkt_skip(pkt, 20);
+	zassert_true(ret == 0, "Pkt skip failed");
+	net_pkt_set_overwrite(pkt, false);
+
+	pkt_print_cursor(pkt);
+
+	/* In this example, do not focus on the 20 bytes. It is just for
+	 * the sake of the example.
+	 * The other method is backup/restore the packet cursor.
+	 */
+	net_pkt_cursor_backup(pkt, &backup);
+
+	net_pkt_cursor_init(pkt);
+
+	/* ... do something here ... */
+
+	/* and restore: */
+	net_pkt_cursor_restore(pkt, &backup);
+
+	pkt_print_cursor(pkt);
+
+	/* Another feature, is how you access your data. Earlier was
+	 * presented basic r/w functions. But sometime you might want to
+	 * access your data directly through a structure/type etc...
+	 * Due to the "fragmented" possible nature of your buffer, you
+	 * need to know if the data you are trying to access is in
+	 * contiguous area.
+	 * For this, you'll use:
+	 */
+	ret = (int) net_pkt_is_contiguous(pkt, 4);
+	zassert_true(ret == 1, "Pkt contiguity check failed");
+
+	/* If that's successful you should be able to get the actual
+	 * position in the buffer and cast it to the type you want.
+	 */
+	{
+		u32_t *val = (u32_t *)net_pkt_cursor_get_pos(pkt);
+
+		*val = 0U;
+		/* etc... */
 	}
 
-	if (i != total) {
-		printk("Fragments missing, expecting %d but got %d\n",
-		       total, i);
-		zassert_true(false, "Frags missing");
+	/* However, to advance your cursor, since none of the usual r/w
+	 * functions got used: net_pkt_skip() should be called relevantly:
+	 */
+	net_pkt_skip(pkt, 4);
+
+	/* Freeing the packet */
+	net_pkt_unref(pkt);
+	zassert_true(atomic_get(&pkt->atomic_ref) == 0,
+		     "Pkt not properly unreferenced");
+
+	/* Obviously one will very rarely use these 2 last low level functions
+	 * - net_pkt_is_contiguous()
+	 * - net_pkt_cursor_update()
+	 *
+	 * Let's see why next.
+	 */
+}
+
+void test_net_pkt_easier_rw_usage(void)
+{
+	struct net_pkt *pkt;
+	int ret;
+
+	pkt = net_pkt_alloc_with_buffer(eth_if, 512,
+					AF_INET, IPPROTO_UDP, K_NO_WAIT);
+	zassert_true(pkt != NULL, "Pkt not allocated");
+
+	/* In net core, all goes down in fine to header manipulation.
+	 * Either it's an IP header, UDP, ICMP, TCP one etc...
+	 * One would then prefer to access those directly via there
+	 * descriptors (struct net_udp_hdr, struct net_icmp_hdr, ...)
+	 * rather than building it byte by bytes etc...
+	 *
+	 * As seen earlier, it is possible to cast on current position.
+	 * However, due to the "fragmented" possible nature of the buffer,
+	 * it should also be possible to handle the case the data being
+	 * accessed is scattered on 1+ net_buf.
+	 *
+	 * To avoid redoing the contiguity check, cast or copy on failure,
+	 * a complex type named struct net_pkt_header_access exists.
+	 * It solves both cases (accessing data contiguous or not), without
+	 * the need for runtime allocation (all is on stack)
+	 */
+	{
+		NET_PKT_DATA_ACCESS_DEFINE(ip_access, struct net_ipv4_hdr);
+		struct net_ipv4_hdr *ip_hdr;
+
+		ip_hdr = (struct net_ipv4_hdr *)
+			net_pkt_get_data(pkt, &ip_access);
+		zassert_not_null(ip_hdr, "Accessor failed");
+
+		ip_hdr->tos = 0x00;
+
+		ret = net_pkt_set_data(pkt, &ip_access);
+		zassert_true(ret == 0, "Accessor failed");
+
+		zassert_true(net_pkt_get_len(pkt) == NET_IPV4H_LEN,
+			     "Pkt length mismatch");
 	}
 
-	DBG("test_fragment_compact passed\n");
+	/* As you can notice: get/set take also care of handling the cursor
+	 * and updating the packet length relevantly thus why packet length
+	 * has properly grown.
+	 */
+
+	/* Freeing the packet */
+	net_pkt_unref(pkt);
+	zassert_true(atomic_get(&pkt->atomic_ref) == 0,
+		     "Pkt not properly unreferenced");
+}
+
+u8_t b5_data[10] = "qrstuvwxyz";
+struct net_buf b5 = {
+	.ref   = 1,
+	.data  = b5_data,
+	.len   = 0,
+	.size  = 0,
+};
+
+u8_t b4_data[4] = "mnop";
+struct net_buf b4 = {
+	.frags = &b5,
+	.ref   = 1,
+	.data  = b4_data,
+	.len   = sizeof(b4_data) - 2,
+	.size  = sizeof(b4_data),
+};
+
+struct net_buf b3 = {
+	.frags = &b4,
+	.ref   = 1,
+};
+
+u8_t b2_data[8] = "efghijkl";
+struct net_buf b2 = {
+	.frags = &b3,
+	.ref   = 1,
+	.data  = b2_data,
+	.len   = 0,
+	.size  = sizeof(b2_data),
+};
+
+u8_t b1_data[4] = "abcd";
+struct net_buf b1 = {
+	.frags = &b2,
+	.ref   = 1,
+	.data  = b1_data,
+	.len   = sizeof(b1_data) - 2,
+	.size  = sizeof(b1_data),
+};
+
+void test_net_pkt_copy(void)
+{
+	struct net_pkt *pkt_src;
+	struct net_pkt *pkt_dst;
+
+	pkt_src = net_pkt_alloc_on_iface(eth_if, K_NO_WAIT);
+	zassert_true(pkt_src != NULL, "Pkt not allocated");
+
+	pkt_print_cursor(pkt_src);
+
+	/* Let's append the buffers */
+	net_pkt_append_buffer(pkt_src, &b1);
+
+	net_pkt_set_overwrite(pkt_src, true);
+
+	/* There should be some space left */
+	zassert_true(net_pkt_available_buffer(pkt_src) != 0, "No space left?");
+	/* Length should be 4 */
+	zassert_true(net_pkt_get_len(pkt_src) == 4, "Wrong length");
+
+	/* Actual space left is 12 (in b1, b2 and b4) */
+	zassert_true(net_pkt_available_buffer(pkt_src) == 12,
+		     "Wrong space left?");
+
+	pkt_print_cursor(pkt_src);
+
+	/* Now let's clone the pkt
+	 * This will test net_pkt_copy_new() as it uses it for the buffers
+	 */
+	pkt_dst = net_pkt_clone(pkt_src, K_NO_WAIT);
+	zassert_true(pkt_dst != NULL, "Pkt not clone");
+
+	/* Cloning does not take into account left space,
+	 * but only occupied one
+	 */
+	zassert_true(net_pkt_available_buffer(pkt_dst) == 0, "Space left");
+	zassert_true(net_pkt_get_len(pkt_src) == net_pkt_get_len(pkt_dst),
+		     "Not same amount?");
+
+	/* It also did not care to copy the net_buf itself, only the content
+	 * so, knowing that the base buffer size is bigger than necessary,
+	 * pkt_dst has only one net_buf
+	 */
+	zassert_true(pkt_dst->buffer->frags == NULL, "Not only one buffer?");
+
+	/* Freeing the packet */
+	pkt_src->buffer = NULL;
+	net_pkt_unref(pkt_src);
+	zassert_true(atomic_get(&pkt_src->atomic_ref) == 0,
+		     "Pkt not properly unreferenced");
+	net_pkt_unref(pkt_dst);
+	zassert_true(atomic_get(&pkt_dst->atomic_ref) == 0,
+		     "Pkt not properly unreferenced");
 }
 
 void test_main(void)
 {
+	eth_if = net_if_get_default();
+
 	ztest_test_suite(net_pkt_tests,
-			 ztest_unit_test(test_ipv6_multi_frags),
-			 ztest_unit_test(test_pkt_read_append),
-			 ztest_unit_test(test_pkt_read_write_insert),
-			 ztest_unit_test(test_fragment_compact)
-			 );
+			 ztest_unit_test(test_net_pkt_allocate_wo_buffer),
+			 ztest_unit_test(test_net_pkt_allocate_with_buffer),
+			 ztest_unit_test(test_net_pkt_basics_of_rw),
+			 ztest_unit_test(test_net_pkt_advanced_basics),
+			 ztest_unit_test(test_net_pkt_easier_rw_usage),
+			 ztest_unit_test(test_net_pkt_copy)
+		);
 
 	ztest_run_test_suite(net_pkt_tests);
 }

@@ -103,7 +103,7 @@ static u8_t notify_func(struct bt_conn *conn,
 	static int notify_count;
 	if (!data) {
 		printk("[UNSUBSCRIBED]\n");
-		params->value_handle = 0;
+		params->value_handle = 0U;
 		return BT_GATT_ITER_STOP;
 	}
 
@@ -284,7 +284,7 @@ static bool eir_found(struct bt_data *data, void *user_data)
 	switch (data->type) {
 	case BT_DATA_UUID16_SOME:
 	case BT_DATA_UUID16_ALL:
-		if (data->data_len % sizeof(u16_t) != 0) {
+		if (data->data_len % sizeof(u16_t) != 0U) {
 			FAIL("AD malformed\n");
 			return true;
 		}

@@ -74,7 +74,7 @@ static int nios2_msgdma_config(struct device *dev, u32_t channel,
 	u32_t control;
 
 	/* Nios-II MSGDMA supports only one channel per DMA core */
-	if (channel != 0) {
+	if (channel != 0U) {
 		LOG_ERR("invalid channel number");
 		return -EINVAL;
 	}
@@ -85,7 +85,7 @@ static int nios2_msgdma_config(struct device *dev, u32_t channel,
 		return -EINVAL;
 	}
 #else
-	if (cfg->block_count != 1) {
+	if (cfg->block_count != 1U) {
 		LOG_ERR("invalid block count!!");
 		return -EINVAL;
 	}
@@ -156,7 +156,7 @@ static int nios2_msgdma_transfer_start(struct device *dev, u32_t channel)
 	int status;
 
 	/* Nios-II mSGDMA supports only one channel per DMA core */
-	if (channel != 0) {
+	if (channel != 0U) {
 		LOG_ERR("Invalid channel number");
 		return -EINVAL;
 	}

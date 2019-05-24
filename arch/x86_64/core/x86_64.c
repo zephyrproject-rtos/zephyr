@@ -10,12 +10,18 @@
 #include <irq_offload.h>
 #include "xuk.h"
 
+/* Always pick a lowest priority interrupt for scheduling IPI's, by
+ * definition they're done on behalf of thread mode code and should
+ * never preempt a true device interrupt
+ */
+#define SCHED_IPI_VECTOR 0x20
+
 struct device;
 
 struct NANO_ESF {
 };
 
-void _new_thread(struct k_thread *t, k_thread_stack_t *stack,
+void z_new_thread(struct k_thread *t, k_thread_stack_t *stack,
 		 size_t sz, k_thread_entry_t entry,
 		 void *p1, void *p2, void *p3,
 		 int prio, unsigned int opts)
@@ -23,13 +29,13 @@ void _new_thread(struct k_thread *t, k_thread_stack_t *stack,
 	void *args[] = { entry, p1, p2, p3 };
 	int nargs = 4;
 	int eflags = 0x200;
-	char *base = K_THREAD_STACK_BUFFER(stack);
+	char *base = Z_THREAD_STACK_BUFFER(stack);
 	char *top = base + sz;
 
-	_new_thread_init(t, base, sz, prio, opts);
+	z_new_thread_init(t, base, sz, prio, opts);
 
 	t->switch_handle = (void *)xuk_setup_stack((long) top,
-						   (void *)_thread_entry,
+						   (void *)z_thread_entry,
 						   eflags, (long *)args,
 						   nargs);
 }
@@ -40,7 +46,7 @@ void k_cpu_idle(void)
 	__asm__ volatile("sti; hlt");
 }
 
-void _unhandled_vector(int vector, int err, struct xuk_entry_frame *f)
+void z_unhandled_vector(int vector, int err, struct xuk_entry_frame *f)
 {
 	/* Yes, there are five regsiters missing.  See notes on
 	 * xuk_entry_frame/xuk_stack_frame.
@@ -53,34 +59,34 @@ void _unhandled_vector(int vector, int err, struct xuk_entry_frame *f)
 	printk("***  R8 0x%llx R9 0x%llx R10 0x%llx R11 0x%llx\n",
 	       f->r8, f->r9, f->r10, f->r11);
 
-	_NanoFatalErrorHandler(x86_64_except_reason, NULL);
+	z_NanoFatalErrorHandler(x86_64_except_reason, NULL);
 }
 
-void _isr_entry(void)
+void z_isr_entry(void)
 {
-	_arch_curr_cpu()->nested++;
+	z_arch_curr_cpu()->nested++;
 }
 
-void *_isr_exit_restore_stack(void *interrupted)
+void *z_isr_exit_restore_stack(void *interrupted)
 {
-	bool nested = (--_arch_curr_cpu()->nested) > 0;
-	void *next = _get_next_switch_handle(interrupted);
+	bool nested = (--z_arch_curr_cpu()->nested) > 0;
+	void *next = z_get_next_switch_handle(interrupted);
 
 	return (nested || next == interrupted) ? NULL : next;
 }
 
-struct {
+volatile struct {
 	void (*fn)(int, void*);
 	void *arg;
-	unsigned int esp;
 } cpu_init[CONFIG_MP_NUM_CPUS];
 
 /* Called from Zephyr initialization */
-void _arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
+void z_arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 		     void (*fn)(int, void *), void *arg)
 {
+	xuk_start_cpu(cpu_num, (int)(sz + (char *)stack));
+
 	cpu_init[cpu_num].arg = arg;
-	cpu_init[cpu_num].esp = (int)(long)(sz + (char *)stack);
 
 	/* This is our flag to the spinning CPU.  Do this last */
 	cpu_init[cpu_num].fn = fn;
@@ -112,14 +118,37 @@ void __weak x86_apic_timer_isr(void *arg, int code)
 	ARG_UNUSED(code);
 }
 
+static void sched_ipi_handler(void *arg, int err)
+{
+	ARG_UNUSED(arg);
+	ARG_UNUSED(err);
+#ifdef CONFIG_SMP
+	z_sched_ipi();
+#endif
+}
+
+void z_arch_sched_ipi(void)
+{
+	_apic.ICR_HI = (struct apic_icr_hi) {};
+	_apic.ICR_LO = (struct apic_icr_lo) {
+		.delivery_mode = FIXED,
+		.vector = SCHED_IPI_VECTOR,
+		.shorthand = NOTSELF,
+	};
+}
+
+
 /* Called from xuk layer on actual CPU start */
-void _cpu_start(int cpu)
+void z_cpu_start(int cpu)
 {
 	xuk_set_f_ptr(cpu, &_kernel.cpus[cpu]);
 
 	/* Set up the timer ISR, but ensure the timer is disabled */
 	xuk_set_isr(INT_APIC_LVT_TIMER, 13, x86_apic_timer_isr, 0);
-	_apic.INIT_COUNT = 0;
+	_apic.INIT_COUNT = 0U;
+
+	xuk_set_isr(XUK_INT_RAW_VECTOR(SCHED_IPI_VECTOR),
+		    -1, sched_ipi_handler, 0);
 
 #ifdef CONFIG_IRQ_OFFLOAD
 	xuk_set_isr(XUK_INT_RAW_VECTOR(CONFIG_IRQ_OFFLOAD_VECTOR),
@@ -130,18 +159,18 @@ void _cpu_start(int cpu)
 		/* The SMP CPU startup function pointers act as init
 		 * flags.  Zero them here because this code is running
 		 * BEFORE .bss is zeroed!  Should probably move that
-		 * out of _Cstart() for this architecture...
+		 * out of z_cstart() for this architecture...
 		 */
 		for (int i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
 			cpu_init[i].fn = 0;
 		}
 
 		/* Enter Zephyr */
-		_Cstart();
+		z_cstart();
 
 	} else if (cpu < CONFIG_MP_NUM_CPUS) {
 		/* SMP initialization.  First spin, waiting for
-		 * _arch_start_cpu() to be called from the main CPU
+		 * z_arch_start_cpu() to be called from the main CPU
 		 */
 		while (!cpu_init[cpu].fn) {
 		}
@@ -155,33 +184,24 @@ void _cpu_start(int cpu)
 	}
 }
 
-/* Returns the initial stack to use for CPU startup on auxiliary (not
- * cpu 0) processors to the xuk layer, which gets selected by the
- * non-arch Zephyr kernel and stashed by _arch_start_cpu()
- */
-unsigned int _init_cpu_stack(int cpu)
-{
-	return cpu_init[cpu].esp;
-}
-
-int _arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
-			      void (*routine)(void *parameter), void *parameter,
-			      u32_t flags)
+int z_arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
+			       void (*routine)(void *parameter), void *parameter,
+			       u32_t flags)
 {
 	ARG_UNUSED(flags);
-	__ASSERT(priority >= 2 && priority <= 15,
+	__ASSERT(priority >= 2U && priority <= 15U,
 		 "APIC interrupt priority must be 2-15");
 
 	xuk_set_isr(irq, priority, (void *)routine, parameter);
 	return 0;
 }
 
-void _arch_irq_disable(unsigned int irq)
+void z_arch_irq_disable(unsigned int irq)
 {
 	xuk_set_isr_mask(irq, 1);
 }
 
-void _arch_irq_enable(unsigned int irq)
+void z_arch_irq_enable(unsigned int irq)
 {
 	xuk_set_isr_mask(irq, 0);
 }
@@ -195,13 +215,13 @@ const NANO_ESF _default_esf;
 
 int x86_64_except_reason;
 
-void _NanoFatalErrorHandler(unsigned int reason, const NANO_ESF *esf)
+void z_NanoFatalErrorHandler(unsigned int reason, const NANO_ESF *esf)
 {
-	_SysFatalErrorHandler(reason, esf);
+	z_SysFatalErrorHandler(reason, esf);
 }
 
 /* App-overridable handler.  Does nothing here */
-void __weak _SysFatalErrorHandler(unsigned int reason, const NANO_ESF *esf)
+void __weak z_SysFatalErrorHandler(unsigned int reason, const NANO_ESF *esf)
 {
 	ARG_UNUSED(reason);
 	ARG_UNUSED(esf);

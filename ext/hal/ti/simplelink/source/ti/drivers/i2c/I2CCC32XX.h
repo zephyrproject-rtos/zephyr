@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2017, Texas Instruments Incorporated
+ * Copyright (c) 2015-2018, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -29,7 +29,7 @@
  * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-/** ============================================================================
+/*!****************************************************************************
  *  @file       I2CCC32XX.h
  *
  *  @brief      I2C driver implementation for a CC32XX I2C controller.
@@ -42,7 +42,11 @@
  *
  *  Refer to @ref I2C.h for a complete description of APIs and usage.
  *
- *  ============================================================================
+ *  ## Supported Bit Rates ##
+ *    - #I2C_100kHz
+ *    - #I2C_400kHz
+ *
+ ******************************************************************************
  */
 
 #ifndef ti_drivers_i2c_I2CCC32XX__include

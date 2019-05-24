@@ -24,12 +24,12 @@ static void test_counter_interrupt_fn(struct device *counter_dev,
 	struct counter_alarm_cfg *config = user_data;
 
 	printk("!!! Alarm !!!\n");
-	printk("Now: %d\n", now_sec);
+	printk("Now: %u\n", now_sec);
 
 	/* Set a new alarm with a double lenght duration */
-	config->ticks = 2 * config->ticks;
+	config->ticks = config->ticks * 2U;
 
-	printk("Set alarm in %d sec\n", config->ticks);
+	printk("Set alarm in %u sec\n", config->ticks);
 	counter_set_channel_alarm(counter_dev, ALARM_CHANNEL_ID, user_data);
 }
 

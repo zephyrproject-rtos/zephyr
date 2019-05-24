@@ -74,7 +74,7 @@ struct led_driver_api {
 __syscall int led_blink(struct device *dev, u32_t led,
 			    u32_t delay_on, u32_t delay_off);
 
-static inline int _impl_led_blink(struct device *dev, u32_t led,
+static inline int z_impl_led_blink(struct device *dev, u32_t led,
 			    u32_t delay_on, u32_t delay_off)
 {
 	const struct led_driver_api *api = dev->driver_api;
@@ -96,7 +96,7 @@ static inline int _impl_led_blink(struct device *dev, u32_t led,
 __syscall int led_set_brightness(struct device *dev, u32_t led,
 				     u8_t value);
 
-static inline int _impl_led_set_brightness(struct device *dev, u32_t led,
+static inline int z_impl_led_set_brightness(struct device *dev, u32_t led,
 				     u8_t value)
 {
 	const struct led_driver_api *api = dev->driver_api;
@@ -115,7 +115,7 @@ static inline int _impl_led_set_brightness(struct device *dev, u32_t led,
  */
 __syscall int led_on(struct device *dev, u32_t led);
 
-static inline int _impl_led_on(struct device *dev, u32_t led)
+static inline int z_impl_led_on(struct device *dev, u32_t led)
 {
 	const struct led_driver_api *api = dev->driver_api;
 
@@ -133,7 +133,7 @@ static inline int _impl_led_on(struct device *dev, u32_t led)
  */
 __syscall int led_off(struct device *dev, u32_t led);
 
-static inline int _impl_led_off(struct device *dev, u32_t led)
+static inline int z_impl_led_off(struct device *dev, u32_t led)
 {
 	const struct led_driver_api *api = dev->driver_api;
 

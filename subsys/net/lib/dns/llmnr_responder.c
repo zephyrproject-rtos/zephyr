@@ -400,9 +400,8 @@ static int send_response(struct net_context *ctx, struct net_pkt *pkt,
 		return -EPFNOSUPPORT;
 	}
 
-	ret = net_context_sendto_new(ctx, reply->data, reply->len,
-				     &dst, dst_len, NULL, K_NO_WAIT,
-				     NULL, NULL);
+	ret = net_context_sendto(ctx, reply->data, reply->len, &dst,
+				 dst_len, NULL, K_NO_WAIT, NULL);
 	if (ret < 0) {
 		NET_DBG("Cannot send LLMNR reply to %s (%d)",
 			net_pkt_family(pkt) == AF_INET ?
@@ -445,7 +444,7 @@ static int dns_read(struct net_context *ctx,
 
 	/* TODO: Instead of this temporary copy, just use the net_pkt directly.
 	 */
-	ret = net_pkt_read_new(pkt, dns_data->data, data_len);
+	ret = net_pkt_read(pkt, dns_data->data, data_len);
 	if (ret < 0) {
 		goto quit;
 	}
@@ -473,7 +472,7 @@ static int dns_read(struct net_context *ctx,
 		enum dns_class qclass;
 
 		(void)memset(result->data, 0, result->size);
-		result->len = 0;
+		result->len = 0U;
 
 		ret = dns_unpack_query(&dns_msg, result, &qtype, &qclass);
 		if (ret < 0) {

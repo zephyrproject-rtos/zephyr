@@ -1,7 +1,7 @@
 sample:
   name: APDS9960 sample
 tests:
-  test:
+  sample.sensor.apds9960:
     harness: console
     platform_whitelist: reel_board
     tags: sensors
@@ -13,7 +13,7 @@ tests:
             - "APDS9960 sample application"
             - "ambient light intensity (.*), proximity (.*)"
         fixture: fixture_i2c_apds9960
-  test-trigger:
+  sample.sensor.apds9960.trigger:
     harness: console
     platform_whitelist: reel_board
     tags: sensors

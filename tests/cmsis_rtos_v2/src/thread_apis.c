@@ -8,7 +8,7 @@
 #include <kernel.h>
 #include <cmsis_os2.h>
 
-#define STACKSZ         512
+#define STACKSZ         CONFIG_CMSIS_V2_THREAD_MAX_STACK_SIZE
 
 /* This is used to check the thread yield functionality between 2 threads */
 static int thread_yield_check;
@@ -67,7 +67,7 @@ static void thread1(void *argument)
 
 static void thread2(void *argument)
 {
-	u32_t i, num_threads, max_num_threads = 5;
+	u32_t i, num_threads, max_num_threads = 5U;
 	osThreadId_t *thread_array;
 	int *yield_check = (int *)argument;
 
@@ -82,14 +82,12 @@ static void thread2(void *argument)
 	zassert_equal(num_threads, 2,
 		      "Incorrect number of cmsis rtos v2 threads");
 
-	for (i = 0; i < num_threads; i++) {
-		zassert_true(
-			osThreadGetStackSize(thread_array[i]) <= STACKSZ,
-			"stack size allocated is not what is expected");
+	for (i = 0U; i < num_threads; i++) {
+		u32_t size = osThreadGetStackSize(thread_array[i]);
+		u32_t space = osThreadGetStackSpace(thread_array[i]);
 
-		zassert_true(
-			osThreadGetStackSpace(thread_array[i]) <= STACKSZ - 4,
-			"stack size remaining is not what is expected");
+		zassert_true(space < size,
+			     "stack size remaining is not what is expected");
 	}
 
 	zassert_equal(osThreadGetState(thread_array[1]), osThreadReady,
@@ -254,7 +252,7 @@ void test_thread_prio(void)
 static void thread5(void *argument)
 {
 	printk(" * Thread B started.\n");
-	osDelay(_ms_to_ticks(DELAY_MS));
+	osDelay(z_ms_to_ticks(DELAY_MS));
 	printk(" * Thread B joining...\n");
 }
 
@@ -319,13 +317,13 @@ void test_thread_detached(void)
 	thread = osThreadNew(thread5, NULL, NULL); /* osThreadDetached */
 	zassert_not_null(thread, "Failed to create thread with osThreadNew!");
 
-	osDelay(_ms_to_ticks(DELAY_MS - DELTA_MS));
+	osDelay(z_ms_to_ticks(DELAY_MS - DELTA_MS));
 
 	status = osThreadJoin(thread);
 	zassert_equal(status, osErrorResource,
 		      "Incorrect status returned from osThreadJoin!");
 
-	osDelay(_ms_to_ticks(DELTA_MS));
+	osDelay(z_ms_to_ticks(DELTA_MS));
 }
 
 void thread6(void *argument)
@@ -352,12 +350,12 @@ void test_thread_joinable_detach(void)
 	tB = osThreadNew(thread6, tA, &attr);
 	zassert_not_null(tB, "Failed to create thread with osThreadNew!");
 
-	osDelay(_ms_to_ticks(DELAY_MS - DELTA_MS));
+	osDelay(z_ms_to_ticks(DELAY_MS - DELTA_MS));
 
 	status = osThreadDetach(tA);
 	zassert_equal(status, osOK, "osThreadDetach failed.");
 
-	osDelay(_ms_to_ticks(DELTA_MS));
+	osDelay(z_ms_to_ticks(DELTA_MS));
 }
 
 void test_thread_joinable_terminate(void)
@@ -374,10 +372,10 @@ void test_thread_joinable_terminate(void)
 	tB = osThreadNew(thread6, tA, &attr);
 	zassert_not_null(tB, "Failed to create thread with osThreadNew!");
 
-	osDelay(_ms_to_ticks(DELAY_MS - DELTA_MS));
+	osDelay(z_ms_to_ticks(DELAY_MS - DELTA_MS));
 
 	status = osThreadTerminate(tA);
 	zassert_equal(status, osOK, "osThreadTerminate failed.");
 
-	osDelay(_ms_to_ticks(DELTA_MS));
+	osDelay(z_ms_to_ticks(DELTA_MS));
 }

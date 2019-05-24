@@ -27,8 +27,6 @@ def regex_replace(tex_file):
     f.write(content)
     f.close()
 
-    return
-
 def main():
 
     parser = argparse.ArgumentParser(description='Fix the .tex file produced '

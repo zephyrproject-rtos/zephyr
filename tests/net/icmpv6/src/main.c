@@ -57,14 +57,11 @@ static char icmpv6_inval_chksum[] =
 	"\x20\x21\x22\x23\x24\x25\x26\x27\x28\x29\x2a\x2b\x2c\x2d\x2e\x2f" \
 	"\x30\x31\x32\x33\x34\x35\x36\x37";
 
-NET_PKT_TX_SLAB_DEFINE(pkts_slab, 2);
-NET_BUF_POOL_DEFINE(data_pool, 2, 128, 0, NULL);
-
 static enum net_verdict handle_test_msg(struct net_pkt *pkt,
 					struct net_ipv6_hdr *ip_hdr,
 					struct net_icmp_hdr *icmp_hdr)
 {
-	struct net_buf *last = net_buf_frag_last(pkt->frags);
+	struct net_buf *last = net_buf_frag_last(pkt->buffer);
 	enum net_verdict ret;
 
 	if (last->len != ICMPV6_MSG_SIZE) {
@@ -98,25 +95,17 @@ void test_icmpv6(void)
 
 	struct net_ipv6_hdr *hdr;
 	struct net_pkt *pkt;
-	struct net_buf *frag;
 	int ret;
 
 	net_icmpv6_register_handler(&test_handler1);
 	net_icmpv6_register_handler(&test_handler2);
 
-	pkt = net_pkt_get_reserve(&pkts_slab, K_SECONDS(1));
-	zassert_true(pkt != NULL, "Could get net_pkt from slab");
+	pkt = net_pkt_alloc_with_buffer(NULL, ICMPV6_MSG_SIZE,
+					AF_UNSPEC, 0, K_SECONDS(1));
 
-	frag = net_buf_alloc(&data_pool, K_SECONDS(1));
-	zassert_true(frag != NULL, "Could not allocate buffer from pool");
-
-	net_pkt_frag_add(pkt, frag);
-
-	net_pkt_set_family(pkt, AF_INET6);
 	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
 
-	memcpy(net_buf_add(frag, ICMPV6_MSG_SIZE),
-	       icmpv6_inval_chksum, ICMPV6_MSG_SIZE);
+	net_pkt_write(pkt, icmpv6_inval_chksum, ICMPV6_MSG_SIZE);
 
 	hdr = (struct net_ipv6_hdr *)pkt->buffer->data;
 	net_pkt_cursor_init(pkt);
@@ -130,9 +119,11 @@ void test_icmpv6(void)
 
 	handler_status = -1;
 
-	frag->len = 0;
-	memcpy(net_buf_add(frag, ICMPV6_MSG_SIZE),
-	       icmpv6_echo_rep, ICMPV6_MSG_SIZE);
+	net_pkt_cursor_init(pkt);
+	net_pkt_set_overwrite(pkt, false);
+	pkt->buffer->len = 0;
+
+	net_pkt_write(pkt, icmpv6_echo_rep, ICMPV6_MSG_SIZE);
 
 	hdr = (struct net_ipv6_hdr *)pkt->buffer->data;
 	net_pkt_cursor_init(pkt);
@@ -146,10 +137,12 @@ void test_icmpv6(void)
 		     "Callback not called properly");
 
 	handler_status = -1;
-	frag->len = 0;
 
-	memcpy(net_buf_add(frag, ICMPV6_MSG_SIZE),
-	       icmpv6_echo_req, ICMPV6_MSG_SIZE);
+	net_pkt_cursor_init(pkt);
+	net_pkt_set_overwrite(pkt, false);
+	pkt->buffer->len = 0;
+
+	net_pkt_write(pkt, icmpv6_echo_req, ICMPV6_MSG_SIZE);
 
 	hdr = (struct net_ipv6_hdr *)pkt->buffer->data;
 	net_pkt_cursor_init(pkt);

@@ -53,7 +53,7 @@ features:
 Other hardware features are not currently supported by Zephyr.
 
 The default configuration can be found in the Kconfig
-:file:`boards/arm/sam4s_xplained/sam4s_xplained_defconfig`.
+:zephyr_file:`boards/arm/sam4s_xplained/sam4s_xplained_defconfig`.
 
 Connections and IOs
 ===================

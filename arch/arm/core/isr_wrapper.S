@@ -57,7 +57,7 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 	 * idle, this ensures that the calculation and programming of the device
 	 * for the next timer deadline is not interrupted.  For non-tickless idle,
 	 * this ensures that the clearing of the kernel idle state is not
-	 * interrupted.  In each case, _sys_power_save_idle_exit is called with
+	 * interrupted.  In each case, z_sys_power_save_idle_exit is called with
 	 * interrupts disabled.
 	 */
 	cpsid i  /* PRIMASK = 1 */
@@ -73,7 +73,7 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 	movs.n r1, #0
 	/* clear kernel idle state */
 	str r1, [r2, #_kernel_offset_to_idle]
-	blx _sys_power_save_idle_exit
+	bl z_sys_power_save_idle_exit
 _idle_state_cleared:
 
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
@@ -81,7 +81,7 @@ _idle_state_cleared:
 	movne	r1, #0
 		/* clear kernel idle state */
 		strne	r1, [r2, #_kernel_offset_to_idle]
-		blxne	_sys_power_save_idle_exit
+		blne	z_sys_power_save_idle_exit
 #else
 #error Unknown ARM architecture
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */

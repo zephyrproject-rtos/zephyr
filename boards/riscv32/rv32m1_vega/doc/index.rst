@@ -27,8 +27,9 @@ flash and RAM as well as a more powerful CPU design. ZERO-RISCY is a
 coprocessor for applications running on RI5CY. The two cores can
 communicate via shared memory and messaging peripherals.
 
-Currently, Zephyr only supports RI5CY with the ``rv32m1_vega_ri5cy``
-board configuration name. Support for ZERO-RISCY is planned.
+Currently, Zephyr supports RI5CY with the ``rv32m1_vega_ri5cy`` board
+configuration name, and ZERO_RISCY with the ``rv32m1_vega_zero_riscy`` board
+configuration name.
 
 Hardware
 ********
@@ -84,6 +85,35 @@ the following hardware features:
 | GPIO      | on-chip    | gpio                                |
 +-----------+------------+-------------------------------------+
 | UART      | on-chip    | serial                              |
++-----------+------------+-------------------------------------+
+| I2C(M)    | on-chip    | i2c                                 |
++-----------+------------+-------------------------------------+
+| SENSOR    | off-chip   | fxos8700 polling;                   |
+|           |            | fxos8700 trigger;                   |
++-----------+------------+-------------------------------------+
+
+Zephyr's ZERO-RISCY configuration, ``rv32m1_vega_zero_riscy``, currently
+supports the following hardware features:
+
++-----------+------------+-------------------------------------+
+| Interface | Controller | Driver/Component                    |
++===========+============+=====================================+
+| EVENT     | on-chip    | event unit interrupt controller     |
++-----------+------------+-------------------------------------+
+| INTMUX    | on-chip    | level 2 interrupt controller        |
++-----------+------------+-------------------------------------+
+| LPTMR     | on-chip    | lptmr-based system timer            |
++-----------+------------+-------------------------------------+
+| PINMUX    | on-chip    | pinmux                              |
++-----------+------------+-------------------------------------+
+| GPIO      | on-chip    | gpio                                |
++-----------+------------+-------------------------------------+
+| UART      | on-chip    | serial                              |
++-----------+------------+-------------------------------------+
+| I2C(M)    | on-chip    | i2c                                 |
++-----------+------------+-------------------------------------+
+| SENSOR    | off-chip   | fxos8700 polling;                   |
+|           |            | fxos8700 trigger;                   |
 +-----------+------------+-------------------------------------+
 
 Connections and IOs
@@ -170,8 +200,8 @@ Pin   Port/bit   Function
 12    B/4        SPI0_SCK
 14    -          GND
 16    -          AREF
-18    C/9        I2C2_SDA
-20    C/10       I2C2_SCL
+18    C/9        I2C0_SDA
+20    C/10       I2C0_SCL
 ===   ========   =================
 
 **Bottom left expansion header (J3)**
@@ -236,8 +266,8 @@ Pin   Port/bit   Function
 4     C/12       ADC0_SE7
 6     B/9        ADC0_SE3
 8     E/4        ADC0_SE21
-10    E/10       ADC0_SE19 (and E/10, I2C_SDA via 0 Ohm DNP)
-12    E/11       ADC0_SE20 (and E/11, I2C_SCL via 0 Ohm DNP)
+10    E/10       ADC0_SE19 (and E/10, I2C3_SDA via 0 Ohm DNP)
+12    E/11       ADC0_SE20 (and E/11, I2C3_SCL via 0 Ohm DNP)
 ===   ========   ===========================================
 
 Additional Pins
@@ -246,7 +276,9 @@ Additional Pins
 For an up-to-date description of additional pins (such as buttons,
 LEDs, etc.) supported by Zephyr, see the board DTS files in the Zephyr
 source code, i.e.
-:file:`boards/riscv32/rv32m1_vega/rv32m1_vega_ri5cy.dts` for RI5CY.
+:zephyr_file:`boards/riscv32/rv32m1_vega/rv32m1_vega_ri5cy.dts` for RI5CY and
+:zephyr_file:`boards/riscv32/rv32m1_vega/rv32m1_vega_zero_riscy.dts` for
+ZERO-RISCY.
 
 See the schematic in the documentation available from the `OpenISA
 GitHub releases`_ page for additional details.
@@ -254,18 +286,18 @@ GitHub releases`_ page for additional details.
 System Clocks
 =============
 
-The RI5CY core is configured to use the slow internal reference clock
-(SIRC) as the clock source for an LPTMR peripheral to manage the
-system timer, and the fast internal reference clock (FIRC) to generate
-a 48MHz core clock.
+The RI5CY and ZERO-RISCY cores are configured to use the slow internal
+reference clock (SIRC) as the clock source for an LPTMR peripheral to manage
+the system timer, and the fast internal reference clock (FIRC) to generate a
+48MHz core clock.
 
 Serial Port
 ===========
 
-The USB connector at the top left of the board (near the RESET button)
-is connected to an OpenSDA chip which provides a serial USB
-device. This is connected to the LPUART0 peripheral which the RI5CY
-core uses by default for console and logging.
+The USB connector at the top left of the board (near the RESET button) is
+connected to an OpenSDA chip which provides a serial USB device. This is
+connected to the LPUART0 peripheral which the RI5CY and ZERO-RISCY cores use by
+default for console and logging.
 
 .. warning::
 
@@ -398,15 +430,15 @@ debugger and adapter board. See the :ref:`above information
 
 #. Make sure your J-Link is connected to your computer via USB.
 
-One-Time Board Setup For Booting RI5CY
-======================================
+One-Time Board Setup For Booting RI5CY or ZERO-RISCY
+====================================================
 
-Next, you'll need to make sure your board boots the RI5CY core. **You
-only need to do this once.**
+Next, you'll need to make sure your board boots the RI5CY or ZERO-RISCY core.
+**You only need to do this once.**
 
 The RV32M1 SoC on the VEGAboard has multiple cores, any of which can
 be selected as the boot core. Before flashing and debugging, you'll
-first make sure you're booting RI5CY.
+first make sure you're booting the right core.
 
 **Linux and macOS**:
 
@@ -425,13 +457,13 @@ first make sure you're booting RI5CY.
 
 1. In one terminal, use OpenOCD to connect to the board::
 
-     ~/rv32m1-openocd -f boards/riscv32/rv32m1_vega/support/openocd.cfg
+     ~/rv32m1-openocd -f boards/riscv32/rv32m1_vega/support/openocd_rv32m1_vega_ri5cy.cfg
 
    The output should look like this:
 
    .. code-block:: none
 
-      $ ~/rv32m1-openocd -f boards/riscv32/rv32m1_vega/support/openocd.cfg
+      $ ~/rv32m1-openocd -f boards/riscv32/rv32m1_vega/support/openocd_rv32m1_vega_ri5cy.cfg
       Open On-Chip Debugger 0.10.0+dev-00431-ge1ec3c7d (2018-10-31-07:29)
       [...]
       Info : Listening on port 3333 for gdb connections
@@ -450,6 +482,9 @@ first make sure you're booting RI5CY.
      > init
      > ri5cy_boot
 
+  To boot the ZERO-RISCY core instead, replace ``ri5cy_boot`` above with
+  ``zero_boot``.
+
   The reset button is at top left, as shown in the following figure.
 
   .. figure:: ri5cy_boot.jpg
@@ -466,7 +501,7 @@ first make sure you're booting RI5CY.
 
 In one cmd.exe prompt in the Zephyr directory::
 
- C:\rv32m1-openocd\bin\openocd.exe rv32m1-openocd -f boards\riscv32\rv32m1_vega\support\openocd.cfg
+ C:\rv32m1-openocd\bin\openocd.exe rv32m1-openocd -f boards\riscv32\rv32m1_vega\support\openocd_rv32m1_vega_ri5cy.cfg
 
 In a telnet program of your choice:
 
@@ -474,6 +509,9 @@ In a telnet program of your choice:
 #. Run ``init`` and ``ri5cy_boot`` as shown above, with RESET held down.
 #. Quit the OpenOCD and telnet sessions.
 #. Unplug your J-Link and VEGAboard, and plug them back in.
+
+  To boot the ZERO-RISCY core instead, replace ``ri5cy_boot`` above with
+  ``zero_boot``.
 
 Compiling a Program
 ===================

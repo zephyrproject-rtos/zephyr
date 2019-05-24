@@ -51,7 +51,7 @@
 
 static bool dcache_available(void)
 {
-	unsigned long val = _arc_v2_aux_reg_read(_ARC_V2_D_CACHE_BUILD);
+	unsigned long val = z_arc_v2_aux_reg_read(_ARC_V2_D_CACHE_BUILD);
 
 	val &= 0xff; /* extract version */
 	return (val == 0) ? false : true;
@@ -60,7 +60,7 @@ static bool dcache_available(void)
 static void dcache_dc_ctrl(u32_t dcache_en_mask)
 {
 	if (dcache_available()) {
-		_arc_v2_aux_reg_write(_ARC_V2_DC_CTRL, dcache_en_mask);
+		z_arc_v2_aux_reg_write(_ARC_V2_DC_CTRL, dcache_en_mask);
 	}
 }
 
@@ -91,7 +91,7 @@ static void dcache_flush_mlines(u32_t start_addr, u32_t size)
 	u32_t end_addr;
 	unsigned int key;
 
-	if (!dcache_available() || (size == 0)) {
+	if (!dcache_available() || (size == 0U)) {
 		return;
 	}
 
@@ -101,13 +101,13 @@ static void dcache_flush_mlines(u32_t start_addr, u32_t size)
 	key = irq_lock(); /* --enter critical section-- */
 
 	do {
-		_arc_v2_aux_reg_write(_ARC_V2_DC_FLDL, start_addr);
+		z_arc_v2_aux_reg_write(_ARC_V2_DC_FLDL, start_addr);
 		__asm__ volatile("nop_s");
 		__asm__ volatile("nop_s");
 		__asm__ volatile("nop_s");
 		/* wait for flush completion */
 		do {
-			if ((_arc_v2_aux_reg_read(_ARC_V2_DC_CTRL) &
+			if ((z_arc_v2_aux_reg_read(_ARC_V2_DC_CTRL) &
 			     DC_CTRL_FLUSH_STATUS) == 0) {
 				break;
 			}
@@ -149,10 +149,10 @@ static void init_dcache_line_size(void)
 {
 	u32_t val;
 
-	val = _arc_v2_aux_reg_read(_ARC_V2_D_CACHE_BUILD);
-	__ASSERT((val&0xff) != 0, "d-cache is not present");
+	val = z_arc_v2_aux_reg_read(_ARC_V2_D_CACHE_BUILD);
+	__ASSERT((val&0xff) != 0U, "d-cache is not present");
 	val = ((val>>16) & 0xf) + 1;
-	val *= 16;
+	val *= 16U;
 	sys_cache_line_size = (size_t) val;
 }
 #endif

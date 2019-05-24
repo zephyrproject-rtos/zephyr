@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 CONFIG_NIOS2=y
 CONFIG_SOC_NIOS2_QEMU=y
 CONFIG_BOARD_QEMU_NIOS2=y

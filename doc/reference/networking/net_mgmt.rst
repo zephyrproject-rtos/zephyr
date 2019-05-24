@@ -14,14 +14,14 @@ The Network Management APIs allow applications, as well as network
 layer code itself, to call defined network routines at any level in
 the IP stack, or receive notifications on relevant network events. For
 example, by using these APIs, code can request a scan be done on a
-WiFi- or Bluetooth-based network interface, or request notification if
+Wi-Fi- or Bluetooth-based network interface, or request notification if
 a network interface IP address changes.
 
 The Network Management API implementation is designed to save memory
 by eliminating code at build time for management routines that are not
 used. Distinct and statically defined APIs for network management
 procedures are not used.  Instead, defined procedure handlers are
-registered by using a `NET_MGMT_REGISTER_REQUEST_HANDLER`
+registered by using a :c:macro:`NET_MGMT_REGISTER_REQUEST_HANDLER`
 macro. Procedure requests are done through a single :cpp:func:`net_mgmt()` API
 that invokes the registered handler for the corresponding request.
 
@@ -113,9 +113,9 @@ associated mgmt_request code.
 Management request code are defined in relevant places depending on
 the targeted layer or eventually, if l2 is the layer, on the
 technology as well. For instance, all IP layer management request code
-will be found in the :file:`include/net/net_mgmt.h` header file. But in case
+will be found in the :zephyr_file:`include/net/net_mgmt.h` header file. But in case
 of an L2 technology, let's say Ethernet, these would be found in
-:file:`include/net/ethernet.h`
+:zephyr_file:`include/net/ethernet.h`
 
 You define your handler modeled with this signature:
 
@@ -142,9 +142,9 @@ Signaling a network event
 
 You can signal a specific network event using the :cpp:func:`net_mgmt_notify()`
 function and provide the network event code. See
-:file:`include/net/net_mgmt.h` for details. As for the management request
+:zephyr_file:`include/net/net_mgmt.h` for details. As for the management request
 code, event code can be also found on specific L2 technology mgmt headers,
-for example :file:`include/net/ieee802154_mgmt.h` would be the right place if
+for example :zephyr_file:`include/net/ieee802154_mgmt.h` would be the right place if
 802.15.4 L2 is the technology one wants to listen to events.
 
 API Reference

@@ -125,33 +125,34 @@ static struct {
 	struct cfg_val cfg;
 } stored_cfg;
 
-static inline int mesh_x_set(void *val_ctx, void *out, size_t read_len)
+static inline int mesh_x_set(settings_read_cb read_cb, void *cb_arg, void *out,
+			     size_t read_len)
 {
-	int len;
+	ssize_t len;
 
-	len = settings_val_read_cb(val_ctx, out, read_len);
-
+	len = read_cb(cb_arg, out, read_len);
 	if (len < 0) {
-		BT_ERR("Failed to read value (err %d)", len);
+		BT_ERR("Failed to read value (err %zu)", len);
 		return len;
 	}
 
 	BT_HEXDUMP_DBG(out, len, "val");
 
 	if (len != read_len) {
-		BT_ERR("Unexpected value length (%d != %zu)", len, read_len);
+		BT_ERR("Unexpected value length (%zu != %zu)", len, read_len);
 		return -EINVAL;
 	}
 
 	return 0;
 }
 
-static int net_set(int argc, char **argv, void *val_ctx)
+static int net_set(int argc, char **argv, size_t len_rd,
+		   settings_read_cb read_cb, void *cb_arg)
 {
 	struct net_val net;
 	int err;
 
-	if (settings_val_get_len_cb(val_ctx) == 0) {
+	if (len_rd == 0) {
 		BT_DBG("val (null)");
 
 		bt_mesh_comp_unprovision();
@@ -159,7 +160,7 @@ static int net_set(int argc, char **argv, void *val_ctx)
 		return 0;
 	}
 
-	err = mesh_x_set(val_ctx, &net, sizeof(net));
+	err = mesh_x_set(read_cb, cb_arg, &net, sizeof(net));
 	if (err) {
 		BT_ERR("Failed to set \'net\'");
 		return err;
@@ -174,12 +175,13 @@ static int net_set(int argc, char **argv, void *val_ctx)
 	return 0;
 }
 
-static int iv_set(int argc, char **argv, void *val_ctx)
+static int iv_set(int argc, char **argv, size_t len_rd,
+		  settings_read_cb read_cb, void *cb_arg)
 {
 	struct iv_val iv;
 	int err;
 
-	if (settings_val_get_len_cb(val_ctx) == 0) {
+	if (len_rd == 0) {
 		BT_DBG("IV deleted");
 
 		bt_mesh.iv_index = 0U;
@@ -187,7 +189,7 @@ static int iv_set(int argc, char **argv, void *val_ctx)
 		return 0;
 	}
 
-	err = mesh_x_set(val_ctx, &iv, sizeof(iv));
+	err = mesh_x_set(read_cb, cb_arg, &iv, sizeof(iv));
 	if (err) {
 		BT_ERR("Failed to set \'iv\'");
 		return err;
@@ -203,19 +205,20 @@ static int iv_set(int argc, char **argv, void *val_ctx)
 	return 0;
 }
 
-static int seq_set(int argc, char **argv, void *val_ctx)
+static int seq_set(int argc, char **argv, size_t len_rd,
+		   settings_read_cb read_cb, void *cb_arg)
 {
 	struct seq_val seq;
 	int err;
 
-	if (settings_val_get_len_cb(val_ctx) == 0) {
+	if (len_rd == 0) {
 		BT_DBG("val (null)");
 
 		bt_mesh.seq = 0U;
 		return 0;
 	}
 
-	err = mesh_x_set(val_ctx, &seq, sizeof(seq));
+	err = mesh_x_set(read_cb, cb_arg, &seq, sizeof(seq));
 	if (err) {
 		BT_ERR("Failed to set \'seq\'");
 		return err;
@@ -266,7 +269,8 @@ static struct bt_mesh_rpl *rpl_alloc(u16_t src)
 	return NULL;
 }
 
-static int rpl_set(int argc, char **argv, void *val_ctx)
+static int rpl_set(int argc, char **argv, size_t len_rd,
+		   settings_read_cb read_cb, void *cb_arg)
 {
 	struct bt_mesh_rpl *entry;
 	struct rpl_val rpl;
@@ -281,7 +285,7 @@ static int rpl_set(int argc, char **argv, void *val_ctx)
 	src = strtol(argv[0], NULL, 16);
 	entry = rpl_find(src);
 
-	if (settings_val_get_len_cb(val_ctx) == 0) {
+	if (len_rd == 0) {
 		BT_DBG("val (null)");
 		if (entry) {
 			(void)memset(entry, 0, sizeof(*entry));
@@ -300,7 +304,7 @@ static int rpl_set(int argc, char **argv, void *val_ctx)
 		}
 	}
 
-	err = mesh_x_set(val_ctx, &rpl, sizeof(rpl));
+	err = mesh_x_set(read_cb, cb_arg, &rpl, sizeof(rpl));
 	if (err) {
 		BT_ERR("Failed to set `net`");
 		return err;
@@ -315,7 +319,8 @@ static int rpl_set(int argc, char **argv, void *val_ctx)
 	return 0;
 }
 
-static int net_key_set(int argc, char **argv, void *val_ctx)
+static int net_key_set(int argc, char **argv, size_t len_rd,
+		       settings_read_cb read_cb, void *cb_arg)
 {
 	struct bt_mesh_subnet *sub;
 	struct net_key_val key;
@@ -325,7 +330,7 @@ static int net_key_set(int argc, char **argv, void *val_ctx)
 	net_idx = strtol(argv[0], NULL, 16);
 	sub = bt_mesh_subnet_get(net_idx);
 
-	if (settings_val_get_len_cb(val_ctx) == 0) {
+	if (len_rd == 0) {
 		BT_DBG("val (null)");
 		if (!sub) {
 			BT_ERR("No subnet with NetKeyIndex 0x%03x", net_idx);
@@ -337,7 +342,7 @@ static int net_key_set(int argc, char **argv, void *val_ctx)
 		return 0;
 	}
 
-	err = mesh_x_set(val_ctx, &key, sizeof(key));
+	err = mesh_x_set(read_cb, cb_arg, &key, sizeof(key));
 	if (err) {
 		BT_ERR("Failed to set \'net-key\'");
 		return err;
@@ -377,7 +382,8 @@ static int net_key_set(int argc, char **argv, void *val_ctx)
 	return 0;
 }
 
-static int app_key_set(int argc, char **argv, void *val_ctx)
+static int app_key_set(int argc, char **argv, size_t len_rd,
+		       settings_read_cb read_cb, void *cb_arg)
 {
 	struct bt_mesh_app_key *app;
 	struct app_key_val key;
@@ -386,7 +392,7 @@ static int app_key_set(int argc, char **argv, void *val_ctx)
 
 	app_idx = strtol(argv[0], NULL, 16);
 
-	if (settings_val_get_len_cb(val_ctx) == 0) {
+	if (len_rd == 0) {
 		BT_DBG("val (null)");
 		BT_DBG("Deleting AppKeyIndex 0x%03x", app_idx);
 
@@ -398,7 +404,7 @@ static int app_key_set(int argc, char **argv, void *val_ctx)
 		return 0;
 	}
 
-	err = mesh_x_set(val_ctx, &key, sizeof(key));
+	err = mesh_x_set(read_cb, cb_arg, &key, sizeof(key));
 	if (err) {
 		BT_ERR("Failed to set \'app-key\'");
 		return err;
@@ -428,7 +434,8 @@ static int app_key_set(int argc, char **argv, void *val_ctx)
 	return 0;
 }
 
-static int hb_pub_set(int argc, char **argv, void *val_ctx)
+static int hb_pub_set(int argc, char **argv, size_t len_rd,
+		      settings_read_cb read_cb, void *cb_arg)
 {
 	struct bt_mesh_hb_pub *pub = bt_mesh_hb_pub_get();
 	struct hb_pub_val hb_val;
@@ -438,19 +445,18 @@ static int hb_pub_set(int argc, char **argv, void *val_ctx)
 		return -ENOENT;
 	}
 
-	if (settings_val_get_len_cb(val_ctx) == 0) {
-		BT_DBG("val (null)");
+	if (len_rd == 0) {
 		pub->dst = BT_MESH_ADDR_UNASSIGNED;
-		pub->count = 0;
-		pub->ttl = 0;
-		pub->period = 0;
-		pub->feat = 0;
+		pub->count = 0U;
+		pub->ttl = 0U;
+		pub->period = 0U;
+		pub->feat = 0U;
 
 		BT_DBG("Cleared heartbeat publication");
 		return 0;
 	}
 
-	err = mesh_x_set(val_ctx, &hb_val, sizeof(hb_val));
+	err = mesh_x_set(read_cb, cb_arg, &hb_val, sizeof(hb_val));
 	if (err) {
 		BT_ERR("Failed to set \'hb_val\'");
 		return err;
@@ -465,7 +471,7 @@ static int hb_pub_set(int argc, char **argv, void *val_ctx)
 	if (hb_val.indefinite) {
 		pub->count = 0xffff;
 	} else {
-		pub->count = 0;
+		pub->count = 0U;
 	}
 
 	BT_DBG("Restored heartbeat publication");
@@ -473,7 +479,8 @@ static int hb_pub_set(int argc, char **argv, void *val_ctx)
 	return 0;
 }
 
-static int cfg_set(int argc, char **argv, void *val_ctx)
+static int cfg_set(int argc, char **argv, size_t len_rd,
+		   settings_read_cb read_cb, void *cb_arg)
 {
 	struct bt_mesh_cfg_srv *cfg = bt_mesh_cfg_get();
 	int err;
@@ -482,15 +489,15 @@ static int cfg_set(int argc, char **argv, void *val_ctx)
 		return -ENOENT;
 	}
 
-	if (settings_val_get_len_cb(val_ctx) == 0) {
-		BT_DBG("val (null)");
+	if (len_rd == 0) {
 		stored_cfg.valid = false;
 		BT_DBG("Cleared configuration state");
 		return 0;
 	}
 
 
-	err = mesh_x_set(val_ctx, &stored_cfg.cfg, sizeof(stored_cfg.cfg));
+	err = mesh_x_set(read_cb, cb_arg, &stored_cfg.cfg,
+			 sizeof(stored_cfg.cfg));
 	if (err) {
 		BT_ERR("Failed to set \'cfg\'");
 		return err;
@@ -502,81 +509,82 @@ static int cfg_set(int argc, char **argv, void *val_ctx)
 	return 0;
 }
 
-static int mod_set_bind(struct bt_mesh_model *mod, void *val_ctx)
+static int mod_set_bind(struct bt_mesh_model *mod, size_t len_rd,
+			settings_read_cb read_cb, void *cb_arg)
 {
-	int len, i;
+	ssize_t len;
+	int i;
 
 	/* Start with empty array regardless of cleared or set value */
 	for (i = 0; i < ARRAY_SIZE(mod->keys); i++) {
 		mod->keys[i] = BT_MESH_KEY_UNUSED;
 	}
 
-	if (settings_val_get_len_cb(val_ctx) == 0) {
-		BT_DBG("val (null)");
+	if (len_rd == 0) {
 		BT_DBG("Cleared bindings for model");
 		return 0;
 	}
 
-	len = settings_val_read_cb(val_ctx, mod->keys, sizeof(mod->keys));
+	len = read_cb(cb_arg, mod->keys, sizeof(mod->keys));
 	if (len < 0) {
-		BT_ERR("Failed to read value (err %d)", len);
+		BT_ERR("Failed to read value (err %zu)", len);
 		return len;
 	}
 
 
-	BT_DBG("Decoded %u bound keys for model", len / sizeof(mod->keys[0]));
+	BT_DBG("Decoded %zu bound keys for model", len / sizeof(mod->keys[0]));
 	return 0;
 }
 
-static int mod_set_sub(struct bt_mesh_model *mod, void *val_ctx)
+static int mod_set_sub(struct bt_mesh_model *mod, size_t len_rd,
+		       settings_read_cb read_cb, void *cb_arg)
 {
-	int len;
+	ssize_t len;
 
 	/* Start with empty array regardless of cleared or set value */
 	(void)memset(mod->groups, 0, sizeof(mod->groups));
 
-	if (settings_val_get_len_cb(val_ctx) == 0) {
-		BT_DBG("val (null)");
+	if (len_rd == 0) {
 		BT_DBG("Cleared subscriptions for model");
 		return 0;
 	}
 
-	len = settings_val_read_cb(val_ctx, mod->groups, sizeof(mod->groups));
+	len = read_cb(cb_arg, mod->groups, sizeof(mod->groups));
 	if (len < 0) {
-		BT_ERR("Failed to read value (err %d)", len);
+		BT_ERR("Failed to read value (err %zu)", len);
 		return len;
 	}
 
-	BT_DBG("Decoded %u subscribed group addresses for model",
+	BT_DBG("Decoded %zu subscribed group addresses for model",
 	       len / sizeof(mod->groups[0]));
 	return 0;
 }
 
-static int mod_set_pub(struct bt_mesh_model *mod, void *val_ctx)
+static int mod_set_pub(struct bt_mesh_model *mod, size_t len_rd,
+		       settings_read_cb read_cb, void *cb_arg)
 {
 	struct mod_pub_val pub;
-	int  err;
+	int err;
 
 	if (!mod->pub) {
 		BT_WARN("Model has no publication context!");
 		return -EINVAL;
 	}
 
-	if (settings_val_get_len_cb(val_ctx) == 0) {
-		BT_DBG("val (null)");
+	if (len_rd == 0) {
 		mod->pub->addr = BT_MESH_ADDR_UNASSIGNED;
-		mod->pub->key = 0;
-		mod->pub->cred = 0;
-		mod->pub->ttl = 0;
-		mod->pub->period = 0;
-		mod->pub->retransmit = 0;
-		mod->pub->count = 0;
+		mod->pub->key = 0U;
+		mod->pub->cred = 0U;
+		mod->pub->ttl = 0U;
+		mod->pub->period = 0U;
+		mod->pub->retransmit = 0U;
+		mod->pub->count = 0U;
 
 		BT_DBG("Cleared publication for model");
 		return 0;
 	}
 
-	err = mesh_x_set(val_ctx, &pub, sizeof(pub));
+	err = mesh_x_set(read_cb, cb_arg, &pub, sizeof(pub));
 	if (err) {
 		BT_ERR("Failed to set \'model-pub\'");
 		return err;
@@ -588,7 +596,7 @@ static int mod_set_pub(struct bt_mesh_model *mod, void *val_ctx)
 	mod->pub->ttl = pub.ttl;
 	mod->pub->period = pub.period;
 	mod->pub->retransmit = pub.retransmit;
-	mod->pub->count = 0;
+	mod->pub->count = 0U;
 
 	BT_DBG("Restored model publication, dst 0x%04x app_idx 0x%03x",
 	       pub.addr, pub.key);
@@ -596,7 +604,8 @@ static int mod_set_pub(struct bt_mesh_model *mod, void *val_ctx)
 	return 0;
 }
 
-static int mod_set(bool vnd, int argc, char **argv, void *val_ctx)
+static int mod_set(bool vnd, int argc, char **argv, size_t len_rd,
+		   settings_read_cb read_cb, void *cb_arg)
 {
 	struct bt_mesh_model *mod;
 	u8_t elem_idx, mod_idx;
@@ -622,34 +631,37 @@ static int mod_set(bool vnd, int argc, char **argv, void *val_ctx)
 	}
 
 	if (!strcmp(argv[1], "bind")) {
-		return mod_set_bind(mod, val_ctx);
+		return mod_set_bind(mod, len_rd, read_cb, cb_arg);
 	}
 
 	if (!strcmp(argv[1], "sub")) {
-		return mod_set_sub(mod, val_ctx);
+		return mod_set_sub(mod, len_rd, read_cb, cb_arg);
 	}
 
 	if (!strcmp(argv[1], "pub")) {
-		return mod_set_pub(mod, val_ctx);
+		return mod_set_pub(mod, len_rd, read_cb, cb_arg);
 	}
 
 	BT_WARN("Unknown module key %s", argv[1]);
 	return -ENOENT;
 }
 
-static int sig_mod_set(int argc, char **argv, void *val_ctx)
+static int sig_mod_set(int argc, char **argv, size_t len_rd,
+		       settings_read_cb read_cb, void *cb_arg)
 {
-	return mod_set(false, argc, argv, val_ctx);
+	return mod_set(false, argc, argv, len_rd, read_cb, cb_arg);
 }
 
-static int vnd_mod_set(int argc, char **argv, void *val_ctx)
+static int vnd_mod_set(int argc, char **argv, size_t len_rd,
+		       settings_read_cb read_cb, void *cb_arg)
 {
-	return mod_set(true, argc, argv, val_ctx);
+	return mod_set(true, argc, argv, len_rd, read_cb, cb_arg);
 }
 
 const struct mesh_setting {
 	const char *name;
-	int (*func)(int argc, char **argv, void *val_ctx);
+	int (*func)(int argc, char **argv, size_t len_rd,
+		    settings_read_cb read_cb, void *cb_arg);
 } settings[] = {
 	{ "Net", net_set },
 	{ "IV", iv_set },
@@ -663,7 +675,8 @@ const struct mesh_setting {
 	{ "v", vnd_mod_set },
 };
 
-static int mesh_set(int argc, char **argv, void *val_ctx)
+static int mesh_set(int argc, char **argv, size_t len_rd,
+		    settings_read_cb read_cb, void *cb_arg)
 {
 	int i;
 
@@ -677,7 +690,8 @@ static int mesh_set(int argc, char **argv, void *val_ctx)
 			argc--;
 			argv++;
 
-			return settings[i].func(argc, argv, val_ctx);
+			return settings[i].func(argc, argv, len_rd, read_cb,
+						cb_arg);
 		}
 	}
 
@@ -744,7 +758,7 @@ static int mesh_commit(void)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_MESH_PB_GATT)) {
-		bt_mesh_proxy_prov_disable();
+		bt_mesh_proxy_prov_disable(true);
 	}
 
 	for (i = 0; i < ARRAY_SIZE(bt_mesh.sub); i++) {
@@ -794,22 +808,38 @@ static int mesh_commit(void)
 
 BT_SETTINGS_DEFINE(mesh, mesh_set, mesh_commit, NULL);
 
+/* Pending flags that use K_NO_WAIT as the storage timeout */
+#define NO_WAIT_PENDING_BITS (BIT(BT_MESH_NET_PENDING) |           \
+			      BIT(BT_MESH_IV_PENDING) |            \
+			      BIT(BT_MESH_SEQ_PENDING))
+
+/* Pending flags that use CONFIG_BT_MESH_STORE_TIMEOUT */
+#define GENERIC_PENDING_BITS (BIT(BT_MESH_KEYS_PENDING) |          \
+			      BIT(BT_MESH_HB_PUB_PENDING) |        \
+			      BIT(BT_MESH_CFG_PENDING) |           \
+			      BIT(BT_MESH_MOD_PENDING))
+
 static void schedule_store(int flag)
 {
-	s32_t timeout;
+	s32_t timeout, remaining;
 
 	atomic_set_bit(bt_mesh.flags, flag);
 
-	if (atomic_test_bit(bt_mesh.flags, BT_MESH_NET_PENDING) ||
-	    atomic_test_bit(bt_mesh.flags, BT_MESH_IV_PENDING) ||
-	    atomic_test_bit(bt_mesh.flags, BT_MESH_SEQ_PENDING)) {
+	if (atomic_get(bt_mesh.flags) & NO_WAIT_PENDING_BITS) {
 		timeout = K_NO_WAIT;
 	} else if (atomic_test_bit(bt_mesh.flags, BT_MESH_RPL_PENDING) &&
-		   (CONFIG_BT_MESH_RPL_STORE_TIMEOUT <
-		    CONFIG_BT_MESH_STORE_TIMEOUT)) {
+		   (!(atomic_get(bt_mesh.flags) & GENERIC_PENDING_BITS) ||
+		    (CONFIG_BT_MESH_RPL_STORE_TIMEOUT <
+		     CONFIG_BT_MESH_STORE_TIMEOUT))) {
 		timeout = K_SECONDS(CONFIG_BT_MESH_RPL_STORE_TIMEOUT);
 	} else {
 		timeout = K_SECONDS(CONFIG_BT_MESH_STORE_TIMEOUT);
+	}
+
+	remaining = k_delayed_work_remaining_get(&pending_store);
+	if (remaining && remaining < timeout) {
+		BT_DBG("Not rescheduling due to existing earlier deadline");
+		return;
 	}
 
 	BT_DBG("Waiting %d seconds", timeout / MSEC_PER_SEC);
@@ -1200,7 +1230,12 @@ static void store_pending_mod_bind(struct bt_mesh_model *mod, bool vnd)
 
 	encode_mod_path(mod, vnd, "bind", path, sizeof(path));
 
-	err = settings_save_one(path, keys, count * sizeof(keys[0]));
+	if (count) {
+		err = settings_save_one(path, keys, count * sizeof(keys[0]));
+	} else {
+		err = settings_delete(path);
+	}
+
 	if (err) {
 		BT_ERR("Failed to store %s value", log_strdup(path));
 	} else {
@@ -1222,7 +1257,13 @@ static void store_pending_mod_sub(struct bt_mesh_model *mod, bool vnd)
 
 	encode_mod_path(mod, vnd, "sub", path, sizeof(path));
 
-	err = settings_save_one(path, groups, count * sizeof(groups[0]));
+	if (count) {
+		err = settings_save_one(path, groups,
+					count * sizeof(groups[0]));
+	} else {
+		err = settings_delete(path);
+	}
+
 	if (err) {
 		BT_ERR("Failed to store %s value", log_strdup(path));
 	} else {
@@ -1234,13 +1275,12 @@ static void store_pending_mod_pub(struct bt_mesh_model *mod, bool vnd)
 {
 	struct mod_pub_val pub;
 	char path[20];
-	void *val;
 	int err;
-	size_t len;
+
+	encode_mod_path(mod, vnd, "pub", path, sizeof(path));
 
 	if (!mod->pub || mod->pub->addr == BT_MESH_ADDR_UNASSIGNED) {
-		val = NULL;
-		len = 0;
+		err = settings_delete(path);
 	} else {
 		pub.addr = mod->pub->addr;
 		pub.key = mod->pub->key;
@@ -1250,13 +1290,9 @@ static void store_pending_mod_pub(struct bt_mesh_model *mod, bool vnd)
 		pub.period_div = mod->pub->period_div;
 		pub.cred = mod->pub->cred;
 
-		val = &pub;
-		len = sizeof(pub);
+		err = settings_save_one(path, &pub, sizeof(pub));
 	}
 
-	encode_mod_path(mod, vnd, "pub", path, sizeof(path));
-
-	err = settings_save_one(path, val, len);
 	if (err) {
 		BT_ERR("Failed to store %s value", log_strdup(path));
 	} else {

@@ -115,7 +115,7 @@ s8_t nm_bus_init(void *pvinit)
 	}
 
 	cs_ctrl.gpio_pin = DT_ATMEL_WINC1500_0_CS_GPIO_PIN;
-	cs_ctrl.delay = 0;
+	cs_ctrl.delay = 0U;
 
 	winc1500.spi_cfg.cs = &cs_ctrl;
 

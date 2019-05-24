@@ -130,7 +130,7 @@ static int uart_mcux_irq_tx_complete(struct device *dev)
 	const struct uart_mcux_config *config = dev->config->config_info;
 	u32_t flags = UART_GetStatusFlags(config->base);
 
-	return (flags & kUART_TxDataRegEmptyFlag) != 0;
+	return (flags & kUART_TxDataRegEmptyFlag) != 0U;
 }
 
 static int uart_mcux_irq_tx_ready(struct device *dev)
@@ -163,7 +163,7 @@ static int uart_mcux_irq_rx_full(struct device *dev)
 	const struct uart_mcux_config *config = dev->config->config_info;
 	u32_t flags = UART_GetStatusFlags(config->base);
 
-	return (flags & kUART_RxDataRegFullFlag) != 0;
+	return (flags & kUART_RxDataRegFullFlag) != 0U;
 }
 
 static int uart_mcux_irq_rx_ready(struct device *dev)

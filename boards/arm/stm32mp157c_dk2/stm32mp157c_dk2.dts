@@ -1,0 +1,42 @@
+/*
+ * Copyright (c) 2019 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/mp1/stm32mp157.dtsi>
+
+/ {
+	model = "STMicroelectronics STM32MP157-DK2 board";
+	compatible = "st,stm32mp157c-dk2", "st,stm32mp15";
+	chosen {
+		/*
+		 * By default, Zephyr console and shell are assigned to
+		 * remoteproc. To enable console and shell over UART, uncomment
+		 * following lines and set the correct config in
+		 * stm32mp157c_dk2_defconfig "Serial Port" section in Zephyr
+		 * board documentation.
+		 * zephyr,console = &usart3;
+		 * zephyr,shell-uart = &usart3;
+		 */
+		zephyr,flash = &retram;
+		zephyr,sram = &mcusram;
+	};
+};
+
+arduino_serial: &uart7 {};
+
+&usart3 {
+	current-speed = <115200>;
+	pinctrl-0 = <&usart3_pins_a>;
+	pinctrl-names = "default";
+	status = "ok";
+};
+
+&uart7 {
+	current-speed = <115200>;
+	pinctrl-0 = <&uart7_pins_a>;
+	pinctrl-names = "default";
+	status = "ok";
+};

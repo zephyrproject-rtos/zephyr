@@ -1,0 +1,158 @@
+/*
+ * Copyright (c) 2019 Nordic Semiconductor
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <nordic/nrf52811_qfaa.dtsi>
+
+/ {
+	model = "Nordic PCA10056 Dev Kit";
+	compatible = "nordic,pca10056-dk", "nordic,nrf52811-qfaa",
+		     "nordic,nrf52811";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,uart-mcumgr = &uart0;
+		zephyr,bt-mon-uart = &uart0;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led0: led_0 {
+			gpios = <&gpio0 13 GPIO_INT_ACTIVE_LOW>;
+			label = "Green LED 0";
+		};
+		led1: led_1 {
+			gpios = <&gpio0 14 GPIO_INT_ACTIVE_LOW>;
+			label = "Green LED 1";
+		};
+		led2: led_2 {
+			gpios = <&gpio0 15 GPIO_INT_ACTIVE_LOW>;
+			label = "Green LED 2";
+		};
+		led3: led_3 {
+			gpios = <&gpio0 16 GPIO_INT_ACTIVE_LOW>;
+			label = "Green LED 3";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		button0: button_0 {
+			gpios = <&gpio0 11 GPIO_PUD_PULL_UP>;
+			label = "Push button switch 0";
+		};
+		button1: button_1 {
+			gpios = <&gpio0 12 GPIO_PUD_PULL_UP>;
+			label = "Push button switch 1";
+		};
+		button2: button_2 {
+			gpios = <&gpio0 24 GPIO_PUD_PULL_UP>;
+			label = "Push button switch 2";
+		};
+		button3: button_3 {
+			gpios = <&gpio0 25 GPIO_PUD_PULL_UP>;
+			label = "Push button switch 3";
+		};
+	};
+
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		led0 = &led0;
+		led1 = &led1;
+		led2 = &led2;
+		led3 = &led3;
+		sw0 = &button0;
+		sw1 = &button1;
+		sw2 = &button2;
+		sw3 = &button3;
+	};
+};
+
+&adc {
+	status ="ok";
+};
+
+&gpiote {
+	status ="ok";
+};
+
+&gpio0 {
+	status ="ok";
+};
+
+&uart0 {
+	compatible = "nordic,nrf-uart";
+	current-speed = <115200>;
+	status = "ok";
+	tx-pin = <6>;
+	rx-pin = <8>;
+	rts-pin = <5>;
+	cts-pin = <7>;
+};
+
+&i2c0 {
+	/* Arduino compatible PINs */
+	status = "ok";
+	sda-pin = <26>;
+	scl-pin = <27>;
+};
+
+&pwm0 {
+	status = "ok";
+	ch0-pin = <13>;
+	ch0-inverted;
+};
+
+&spi0 {
+	status = "ok";
+	sck-pin = <0>;
+	mosi-pin = <1>;
+	miso-pin = <9>;
+};
+
+&spi1 {
+	/* cannot be used with i2c0 */
+	sck-pin = <19>;
+	mosi-pin = <20>;
+	miso-pin = <22>;
+};
+
+&flash0 {
+	/*
+	 * For more information, see:
+	 * http://docs.zephyrproject.org/latest/guides/dts/index.html#flash-partitions
+	 */
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0xc000>;
+		};
+		slot0_partition: partition@c000 {
+			label = "image-0";
+			reg = <0x0000C000 0xd000>;
+		};
+		slot1_partition: partition@19000 {
+			label = "image-1";
+			reg = <0x00019000 0xd000>;
+		};
+		scratch_partition: partition@26000 {
+			label = "image-scratch";
+			reg = <0x00026000 0x3000>;
+		};
+		storage_partition: partition@29000 {
+			label = "storage";
+			reg = <0x00029000 0x00007000>;
+		};
+	};
+};

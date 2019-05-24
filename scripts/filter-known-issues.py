@@ -43,7 +43,7 @@ exclude_regexs = []
 # first is a list of one or more comment lines
 # followed by a list of non-comments which describe a multiline regex
 config_regex = \
-    b"(?P<comment>(^\s*#.*\n)+)" \
+    b"(?P<comment>(^\\s*#.*\n)+)" \
     b"(?P<regex>(^[^#].*\n)+)"
 
 
@@ -87,9 +87,9 @@ def config_import_path(path):
     """
     Imports regular expresions from any file *.conf in the given path
     """
-    file_regex = re.compile(".*\.conf$")
+    file_regex = re.compile(r".*\.conf$")
     try:
-        for dirpath, dirnames, filenames in os.walk(path):
+        for dirpath, _, filenames in os.walk(path):
             for _filename in sorted(filenames):
                 filename = os.path.join(dirpath, _filename)
                 if not file_regex.search(_filename):

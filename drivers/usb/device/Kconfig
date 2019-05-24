@@ -43,6 +43,7 @@ config USB_DC_STM32
 
 config USB_DC_SAM0
 	bool "SAM0 series USB Device Controller driver"
+	default y
 	depends on SOC_FAMILY_SAM0
 	select USB_DEVICE_DRIVER
 	help
@@ -80,6 +81,14 @@ config USB_KINETIS
 	select USB_DEVICE_DRIVER
 	help
 	  Kinetis USB Device Controller Driver.
+
+config USB_DC_NXP_EHCI
+	bool "Kinetis and RT EHCI USB Device Controller Driver"
+	depends on HAS_MCUX_USB_EHCI
+	select USB_DEVICE_DRIVER
+	select NOCACHE_MEMORY if HAS_MCUX_CACHE
+	help
+	  Kinetis and RT EHCI USB Device Controller Driver.
 
 module = USB_DRIVER
 module-str = usb driver

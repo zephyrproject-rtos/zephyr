@@ -1,7 +1,7 @@
 sample:
   name: BME280 Sensor sample
 tests:
-  test:
+  sample.sensor.bme280:
     harness: console
     tags: sensors
     depends_on: i2c bme280
@@ -10,7 +10,7 @@ tests:
         regex:
             - "temp: (.*); press: (.*); humidity: (.*)"
         fixture: fixture_i2c_bme280
-  test_spi:
+  sample.sensor.bme280.spi:
     harness: console
     tags: sensors
     depends_on: spi bme280

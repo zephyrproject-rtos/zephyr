@@ -1,3 +1,12 @@
+common:
+  tags: kernel
+
 tests:
   kernel.common:
-    tags: kernel
+    platform_exclude: nsim_sem_mpu_stack_guard nsim_em_mpu_stack_guard
+  kernel.common.nsim:
+    platform_whitelist: nsim_sem_mpu_stack_guard nsim_em_mpu_stack_guard
+    extra_configs:
+      - CONFIG_TEST_USERSPACE=n
+      - CONFIG_TEST_HW_STACK_PROTECTION=n
+

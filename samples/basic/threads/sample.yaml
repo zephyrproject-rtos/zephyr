@@ -3,7 +3,7 @@ sample:
     using K_THREAD_DEFINE
   name: Basic Thread Demo
 tests:
-  test:
+  sample.threads:
     tags: kernel threads gpio
     filter: DT_GPIO_LEDS_LED0_GPIO_CONTROLLER and DT_GPIO_LEDS_LED1_GPIO_CONTROLLER
     depends_on: gpio

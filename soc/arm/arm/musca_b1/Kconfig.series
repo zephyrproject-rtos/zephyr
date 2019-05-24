@@ -1,0 +1,12 @@
+#
+# Copyright (c) 2019 Linaro Limited
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config SOC_SERIES_MUSCA_B1
+	bool "arm v2m MUSCA B1 MCU Series"
+	select SOC_FAMILY_ARM
+	select BUILD_OUTPUT_HEX
+	help
+	  Enable support for arm V2M Musca B1 MCU Series

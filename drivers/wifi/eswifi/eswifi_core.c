@@ -456,7 +456,7 @@ static int __eswifi_sta_config(struct eswifi_dev *eswifi,
 	}
 
 	if (params->channel == WIFI_CHANNEL_ANY) {
-		eswifi->sta.channel = 0;
+		eswifi->sta.channel = 0U;
 	} else {
 		eswifi->sta.channel = params->channel;
 	}

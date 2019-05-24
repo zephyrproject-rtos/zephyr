@@ -72,10 +72,10 @@ static int sdl_display_init(struct device *dev)
 static void sdl_display_write_argb8888(void *disp_buf,
 		const struct display_buffer_descriptor *desc, const void *buf)
 {
-	__ASSERT((4 * desc->pitch * desc->height) <= desc->buf_size,
+	__ASSERT((desc->pitch * 4U * desc->height) <= desc->buf_size,
 			"Input buffer to small");
 
-	memcpy(disp_buf, buf, 4 * desc->pitch * desc->height);
+	memcpy(disp_buf, buf, desc->pitch * 4U * desc->height);
 }
 
 static void sdl_display_write_rgb888(u8_t *disp_buf,
@@ -86,13 +86,13 @@ static void sdl_display_write_rgb888(u8_t *disp_buf,
 	u32_t pixel;
 	const u8_t *byte_ptr;
 
-	__ASSERT((3 * desc->pitch * desc->height) <= desc->buf_size,
+	__ASSERT((desc->pitch * 3U * desc->height) <= desc->buf_size,
 			"Input buffer to small");
 
-	for (h_idx = 0; h_idx < desc->height; ++h_idx) {
-		for (w_idx = 0; w_idx < desc->width; ++w_idx) {
+	for (h_idx = 0U; h_idx < desc->height; ++h_idx) {
+		for (w_idx = 0U; w_idx < desc->width; ++w_idx) {
 			byte_ptr = (const u8_t *)buf +
-				3 * ((h_idx * desc->pitch) + w_idx);
+				((h_idx * desc->pitch) + w_idx) * 3U;
 			pixel = *byte_ptr << 16;
 			pixel |= *(byte_ptr + 1) << 8;
 			pixel |= *(byte_ptr + 2);
@@ -114,35 +114,35 @@ static void sdl_display_write_mono(u8_t *disp_buf,
 	u32_t one_color;
 	u8_t *disp_buf_start;
 
-	__ASSERT((desc->pitch * desc->height) <= (8 * desc->buf_size),
+	__ASSERT((desc->pitch * desc->height) <= (desc->buf_size * 8U),
 			"Input buffer to small");
-	__ASSERT((desc->height % 8) == 0,
+	__ASSERT((desc->height % 8) == 0U,
 			"Input buffer height not aligned per 8 pixels");
 
 	if (one_is_black) {
-		one_color = 0;
+		one_color = 0U;
 	} else {
 		one_color = 0x00FFFFFF;
 	}
 
-	for (tile_idx = 0; tile_idx < desc->height/8; ++tile_idx) {
-		for (w_idx = 0; w_idx < desc->width; ++w_idx) {
+	for (tile_idx = 0U; tile_idx < desc->height/8U; ++tile_idx) {
+		for (w_idx = 0U; w_idx < desc->width; ++w_idx) {
 			byte_ptr = (const u8_t *)buf +
 				((tile_idx * desc->pitch) + w_idx);
 			disp_buf_start = disp_buf;
-			for (h_idx = 0; h_idx < 8; ++h_idx) {
-				if ((*byte_ptr & BIT(7-h_idx)) != 0)  {
+			for (h_idx = 0U; h_idx < 8; ++h_idx) {
+				if ((*byte_ptr & BIT(7-h_idx)) != 0U)  {
 					pixel = one_color;
 				} else {
 					pixel = (~one_color) & 0x00FFFFFF;
 				}
 				*((u32_t *)disp_buf) = pixel;
-				disp_buf += (4 * desc->width);
+				disp_buf += (desc->width * 4U);
 			}
 			disp_buf = disp_buf_start;
 			disp_buf += 4;
 		}
-		disp_buf += 7 * (4 * desc->width);
+		disp_buf += 7 * (desc->width * 4U);
 	}
 }
 
@@ -207,11 +207,11 @@ static int sdl_display_read(const struct device *dev, const u16_t x,
 			desc->height, x, y);
 
 	__ASSERT(desc->width <= desc->pitch, "Pitch is smaller then width");
-	__ASSERT((3 * desc->pitch * desc->height) <= desc->buf_size,
+	__ASSERT((desc->pitch * 3U * desc->height) <= desc->buf_size,
 			"Input buffer to small");
 
 	return SDL_RenderReadPixels(disp_data->renderer, &rect, 0, buf,
-			4 * desc->pitch);
+			desc->pitch * 4U);
 }
 
 static void *sdl_display_get_framebuffer(const struct device *dev)

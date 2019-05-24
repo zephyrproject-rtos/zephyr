@@ -1,32 +1,52 @@
 /*
- * Copyright (c) 2016-2017 Nordic Semiconductor ASA
+ * Copyright (c) 2016-2019 Nordic Semiconductor ASA
  * Copyright (c) 2016 Vinayak Kariappa Chettimada
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <zephyr/types.h>
-
-/* TODO: Remove weak attribute when refactored architecture replaces the old
- *       controller implementation. */
 #include <toolchain.h>
+#include <soc.h>
+#include <bluetooth/hci.h>
 
-u8_t __weak ll_tx_pwr_lvl_get(u16_t handle, u8_t type, s8_t *tx_pwr_lvl)
+#include "hal/ccm.h"
+#include "hal/radio.h"
+
+#include "util/memq.h"
+
+#include "pdu.h"
+
+#include "lll.h"
+#include "lll_conn.h"
+#include "ull_conn_internal.h"
+
+#if defined(CONFIG_BT_LL_SW_SPLIT)
+u8_t ll_tx_pwr_lvl_get(u16_t handle, u8_t type, s8_t *tx_pwr_lvl)
 {
-	/* TODO: check for active connection */
+	struct ll_conn *conn;
+
+	conn = ll_connected_get(handle);
+	if (!conn) {
+		return BT_HCI_ERR_UNKNOWN_CONN_ID;
+	}
 
 	/* TODO: check type here for current or maximum */
 
-	/* TODO: Support TX Power Level other than 0dBm */
-	*tx_pwr_lvl = 0;
+	/* TODO: Support TX Power Level other than default when dynamic
+	 *       updates is implemented.
+	 */
+	*tx_pwr_lvl = RADIO_TXP_DEFAULT;
 
 	return 0;
 }
+#endif
 
 void ll_tx_pwr_get(s8_t *min, s8_t *max)
 {
-	/* TODO: Support TX Power Level other than 0dBm */
-	*min = 0;
-	*max = 0;
+	/* TODO: Support TX Power Level other than default when dynamic
+	 *       updates is implemented.
+	 */
+	*min = RADIO_TXP_DEFAULT;
+	*max = RADIO_TXP_DEFAULT;
 }
-

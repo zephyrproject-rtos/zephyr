@@ -169,7 +169,7 @@ struct net_if_router {
  */
 #define __net_if_align __aligned(32)
 
-enum {
+enum net_if_flag {
 	/** Interface is up/ready to receive and transmit */
 	NET_IF_UP,
 
@@ -178,6 +178,14 @@ enum {
 
 	/** Interface is in promiscuous mode */
 	NET_IF_PROMISC,
+
+	/** Do not start the interface immediately after initialization.
+	 * This requires that either the device driver or some other entity
+	 * will need to manually take the interface up when needed.
+	 * For example for Ethernet this will happen when the driver calls
+	 * the net_eth_carrier_on() function.
+	 */
+	NET_IF_NO_AUTO_START,
 
 /** @cond INTERNAL_HIDDEN */
 	/* Total number of flags - must be at the end of the enum */
@@ -453,6 +461,66 @@ struct net_if {
 } __net_if_align;
 
 /**
+ * @brief Set a value in network interface flags
+ *
+ * @param iface Pointer to network interface
+ * @param value Flag value
+ */
+static inline void net_if_flag_set(struct net_if *iface,
+				   enum net_if_flag value)
+{
+	NET_ASSERT(iface);
+
+	atomic_set_bit(iface->if_dev->flags, value);
+}
+
+/**
+ * @brief Test and set a value in network interface flags
+ *
+ * @param iface Pointer to network interface
+ * @param value Flag value
+ *
+ * @return true if the bit was set, false if it wasn't.
+ */
+static inline bool net_if_flag_test_and_set(struct net_if *iface,
+					    enum net_if_flag value)
+{
+	NET_ASSERT(iface);
+
+	return atomic_test_and_set_bit(iface->if_dev->flags, value);
+}
+
+/**
+ * @brief Clear a value in network interface flags
+ *
+ * @param iface Pointer to network interface
+ * @param value Flag value
+ */
+static inline void net_if_flag_clear(struct net_if *iface,
+				     enum net_if_flag value)
+{
+	NET_ASSERT(iface);
+
+	atomic_clear_bit(iface->if_dev->flags, value);
+}
+
+/**
+ * @brief Check if a value in network interface flags is set
+ *
+ * @param iface Pointer to network interface
+ * @param value Flag value
+ *
+ * @return True if the value is set, false otherwise
+ */
+static inline bool net_if_flag_is_set(struct net_if *iface,
+				      enum net_if_flag value)
+{
+	NET_ASSERT(iface);
+
+	return atomic_test_bit(iface->if_dev->flags, value);
+}
+
+/**
  * @brief Send a packet through a net iface
  *
  * @param iface Pointer to a network interface structure
@@ -607,7 +675,7 @@ static inline int net_if_set_link_addr(struct net_if *iface,
 				       u8_t *addr, u8_t len,
 				       enum net_link_type type)
 {
-	if (atomic_test_bit(iface->if_dev->flags, NET_IF_UP)) {
+	if (net_if_flag_is_set(iface, NET_IF_UP)) {
 		return -EPERM;
 	}
 
@@ -1285,15 +1353,17 @@ void net_if_ipv6_dad_failed(struct net_if *iface, const struct in6_addr *addr);
 
 /**
  * @brief Return global IPv6 address from the first interface that has
- * a global IPv6 address either in TENTATIVE or PREFERRED state.
+ * a global IPv6 address matching the given state.
  *
+ * @param state IPv6 address state (ANY, TENTATIVE, PREFERRED, DEPRECATED)
  * @param iface Caller can give an interface to check. If iface is set to NULL,
  * then all the interfaces are checked. Pointer to interface where the IPv6
  * address is defined is returned to the caller.
  *
  * @return Pointer to IPv6 address, NULL if not found.
  */
-struct in6_addr *net_if_ipv6_get_global_addr(struct net_if **iface);
+struct in6_addr *net_if_ipv6_get_global_addr(enum net_addr_state state,
+					     struct net_if **iface);
 
 /**
  * @brief Allocate network interface IPv4 config.
@@ -1494,6 +1564,18 @@ struct in_addr *net_if_ipv4_get_ll(struct net_if *iface,
 				   enum net_addr_state addr_state);
 
 /**
+ * @brief Get a IPv4 global address in a given state.
+ *
+ * @param iface Interface to use. Must be a valid pointer to an interface.
+ * @param addr_state IPv4 address state (preferred, tentative, deprecated)
+ *
+ * @return Pointer to link local IPv4 address, NULL if no proper IPv4 address
+ * could be found.
+ */
+struct in_addr *net_if_ipv4_get_global_addr(struct net_if *iface,
+					    enum net_addr_state addr_state);
+
+/**
  * @brief Set IPv4 netmask for an interface.
  *
  * @param iface Interface to use.
@@ -1684,7 +1766,7 @@ static inline bool net_if_is_up(struct net_if *iface)
 {
 	NET_ASSERT(iface);
 
-	return atomic_test_bit(iface->if_dev->flags, NET_IF_UP);
+	return net_if_flag_is_set(iface, NET_IF_UP);
 }
 
 /**

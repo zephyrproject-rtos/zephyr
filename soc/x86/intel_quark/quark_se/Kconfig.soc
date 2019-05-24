@@ -15,5 +15,3 @@ config SOC_QUARK_SE_CURIE
 	select HAS_SPI_DW
 
 endchoice
-
-

@@ -17,16 +17,16 @@
  */
 
 /*******************************************************************************
-* Definitions
-******************************************************************************/
+ * Definitions
+ ******************************************************************************/
 /*! @brief ADC_ETC driver version */
 #define FSL_ADC_ETC_DRIVER_VERSION (MAKE_VERSION(2, 0, 1)) /*!< Version 2.0.1. */
 /*! @brief The mask of status flags cleared by writing 1. */
 #define ADC_ETC_DMA_CTRL_TRGn_REQ_MASK 0xFF0000U
 
 /*!
-* @brief ADC_ETC customized status flags mask.
-*/
+ * @brief ADC_ETC customized status flags mask.
+ */
 enum _adc_etc_status_flag_mask
 {
     kADC_ETC_Done0StatusFlagMask = 1U,
@@ -36,8 +36,8 @@ enum _adc_etc_status_flag_mask
 };
 
 /*!
-* @brief External triggers sources.
-*/
+ * @brief External triggers sources.
+ */
 typedef enum _adc_etc_external_trigger_source
 {
     /* External XBAR sources. Support HW or SW mode. */
@@ -55,11 +55,11 @@ typedef enum _adc_etc_external_trigger_source
 } adc_etc_external_trigger_source_t;
 
 /*!
-* @brief Interrupt enable/disable mask.
-*/
+ * @brief Interrupt enable/disable mask.
+ */
 typedef enum _adc_etc_interrupt_enable
 {
-    kADC_ETC_InterruptDisable = 0U,     /* Disable the ADC_ETC interrupt. */
+    kADC_ETC_InterruptDisable     = 0U, /* Disable the ADC_ETC interrupt. */
     kADC_ETC_Done0InterruptEnable = 1U, /* Enable the DONE0 interrupt when ADC conversions complete. */
     kADC_ETC_Done1InterruptEnable = 2U, /* Enable the DONE1 interrupt when ADC conversions complete. */
     kADC_ETC_Done2InterruptEnable = 3U, /* Enable the DONE2 interrupt when ADC conversions complete. */
@@ -67,8 +67,8 @@ typedef enum _adc_etc_interrupt_enable
 
 #if defined(FSL_FEATURE_ADC_ETC_HAS_CTRL_DMA_MODE_SEL) && FSL_FEATURE_ADC_ETC_HAS_CTRL_DMA_MODE_SEL
 /*!
-* @brief DMA mode selection.
-*/
+ * @brief DMA mode selection.
+ */
 typedef enum _adc_etc_dma_mode_selection
 {
     kADC_ETC_TrigDMAWithLatchedSignal =
@@ -100,8 +100,8 @@ typedef struct _adc_etc_config
 } adc_etc_config_t;
 
 /*!
-* @brief ADC_ETC trigger chain configuration.
-*/
+ * @brief ADC_ETC trigger chain configuration.
+ */
 typedef struct _adc_etc_trigger_chain_config
 {
     bool enableB2BMode;           /* Enable ADC_ETC BackToBack mode. when not enabled B2B mode,
@@ -112,8 +112,8 @@ typedef struct _adc_etc_trigger_chain_config
 } adc_etc_trigger_chain_config_t;
 
 /*!
-* @brief ADC_ETC trigger configuration.
-*/
+ * @brief ADC_ETC trigger configuration.
+ */
 typedef struct _adc_etc_trigger_config
 {
     bool enableSyncMode; /* Enable the sync Mode, In SyncMode ADC1 and ADC2 are controlled by the same trigger source.
@@ -126,8 +126,8 @@ typedef struct _adc_etc_trigger_config
 } adc_etc_trigger_config_t;
 
 /*******************************************************************************
-* API
-******************************************************************************/
+ * API
+ ******************************************************************************/
 #if defined(__cplusplus)
 extern "C" {
 #endif
@@ -138,88 +138,88 @@ extern "C" {
  */
 
 /*!
-* @brief Initialize the ADC_ETC module.
-*
-* @param base ADC_ETC peripheral base address.
-* @param config Pointer to "adc_etc_config_t" structure.
-*/
+ * @brief Initialize the ADC_ETC module.
+ *
+ * @param base ADC_ETC peripheral base address.
+ * @param config Pointer to "adc_etc_config_t" structure.
+ */
 void ADC_ETC_Init(ADC_ETC_Type *base, const adc_etc_config_t *config);
 
 /*!
-* @brief De-Initialize the ADC_ETC module.
-*
-* @param base ADC_ETC peripheral base address.
-*/
+ * @brief De-Initialize the ADC_ETC module.
+ *
+ * @param base ADC_ETC peripheral base address.
+ */
 void ADC_ETC_Deinit(ADC_ETC_Type *base);
 
 /*!
-* @brief Gets an available pre-defined settings for the ADC_ETC's configuration.
-* This function initializes the ADC_ETC's configuration structure with available settings. The default values are:
-* @code
-*   config->enableTSCBypass = true;
-*   config->enableTSC0Trigger = false;
-*   config->enableTSC1Trigger = false;
-*   config->TSC0triggerPriority = 0U;
-*   config->TSC1triggerPriority = 0U;
-*   config->clockPreDivider = 0U;
-*   config->XBARtriggerMask = 0U;
-* @endCode
-*
-* @param config Pointer to "adc_etc_config_t" structure.
-*/
+ * @brief Gets an available pre-defined settings for the ADC_ETC's configuration.
+ * This function initializes the ADC_ETC's configuration structure with available settings. The default values are:
+ * @code
+ *   config->enableTSCBypass = true;
+ *   config->enableTSC0Trigger = false;
+ *   config->enableTSC1Trigger = false;
+ *   config->TSC0triggerPriority = 0U;
+ *   config->TSC1triggerPriority = 0U;
+ *   config->clockPreDivider = 0U;
+ *   config->XBARtriggerMask = 0U;
+ * @endCode
+ *
+ * @param config Pointer to "adc_etc_config_t" structure.
+ */
 void ADC_ETC_GetDefaultConfig(adc_etc_config_t *config);
 
 /*!
-* @brief Set the external XBAR trigger configuration.
-*
-* @param base ADC_ETC peripheral base address.
-* @param triggerGroup Trigger group index.
-* @param config Pointer to "adc_etc_trigger_config_t" structure.
-*/
+ * @brief Set the external XBAR trigger configuration.
+ *
+ * @param base ADC_ETC peripheral base address.
+ * @param triggerGroup Trigger group index.
+ * @param config Pointer to "adc_etc_trigger_config_t" structure.
+ */
 void ADC_ETC_SetTriggerConfig(ADC_ETC_Type *base, uint32_t triggerGroup, const adc_etc_trigger_config_t *config);
 
 /*!
-* @brief Set the external XBAR trigger chain configuration.
-* For example, if triggerGroup is set to 0U and chainGroup is set to 1U, which means Trigger0 source's chain1 would be
-* configurated.
-*
-* @param base ADC_ETC peripheral base address.
-* @param triggerGroup Trigger group index. Available number is 0~7.
-* @param chainGroup Trigger chain group index. Available number is 0~7.
-* @param config Pointer to "adc_etc_trigger_chain_config_t" structure.
-*/
+ * @brief Set the external XBAR trigger chain configuration.
+ * For example, if triggerGroup is set to 0U and chainGroup is set to 1U, which means Trigger0 source's chain1 would be
+ * configurated.
+ *
+ * @param base ADC_ETC peripheral base address.
+ * @param triggerGroup Trigger group index. Available number is 0~7.
+ * @param chainGroup Trigger chain group index. Available number is 0~7.
+ * @param config Pointer to "adc_etc_trigger_chain_config_t" structure.
+ */
 void ADC_ETC_SetTriggerChainConfig(ADC_ETC_Type *base,
                                    uint32_t triggerGroup,
                                    uint32_t chainGroup,
                                    const adc_etc_trigger_chain_config_t *config);
 
 /*!
-* @brief Gets the interrupt status flags of external XBAR and TSC triggers.
-*
-* @param base ADC_ETC peripheral base address.
-* @param sourceIndex trigger source index.
-*
-* @return Status flags mask of trigger. Refer to "_adc_etc_status_flag_mask".
-*/
+ * @brief Gets the interrupt status flags of external XBAR and TSC triggers.
+ *
+ * @param base ADC_ETC peripheral base address.
+ * @param sourceIndex trigger source index.
+ *
+ * @return Status flags mask of trigger. Refer to "_adc_etc_status_flag_mask".
+ */
 uint32_t ADC_ETC_GetInterruptStatusFlags(ADC_ETC_Type *base, adc_etc_external_trigger_source_t sourceIndex);
 
 /*!
-* @brief Clears the ADC_ETC's interrupt status falgs.
-*
-* @param base ADC_ETC peripheral base address.
-* @param sourceIndex trigger source index.
-* @param mask Status flags mask of trigger. Refer to "_adc_etc_status_flag_mask".
-*/
+ * @brief Clears the ADC_ETC's interrupt status falgs.
+ *
+ * @param base ADC_ETC peripheral base address.
+ * @param sourceIndex trigger source index.
+ * @param mask Status flags mask of trigger. Refer to "_adc_etc_status_flag_mask".
+ */
 void ADC_ETC_ClearInterruptStatusFlags(ADC_ETC_Type *base,
                                        adc_etc_external_trigger_source_t sourceIndex,
                                        uint32_t mask);
 
 /*!
-* @brief Enable the DMA corresponding to each trigger source.
-*
-* @param base ADC_ETC peripheral base address.
-* @param triggerGroup Trigger group index. Available number is 0~7.
-*/
+ * @brief Enable the DMA corresponding to each trigger source.
+ *
+ * @param base ADC_ETC peripheral base address.
+ * @param triggerGroup Trigger group index. Available number is 0~7.
+ */
 static inline void ADC_ETC_EnableDMA(ADC_ETC_Type *base, uint32_t triggerGroup)
 {
     /* Avoid clearing status flags at the same time. */
@@ -228,11 +228,11 @@ static inline void ADC_ETC_EnableDMA(ADC_ETC_Type *base, uint32_t triggerGroup)
 }
 
 /*!
-* @brief Disable the DMA corresponding to each trigger sources.
-*
-* @param base ADC_ETC peripheral base address.
-* @param triggerGroup Trigger group index. Available number is 0~7.
-*/
+ * @brief Disable the DMA corresponding to each trigger sources.
+ *
+ * @param base ADC_ETC peripheral base address.
+ * @param triggerGroup Trigger group index. Available number is 0~7.
+ */
 static inline void ADC_ETC_DisableDMA(ADC_ETC_Type *base, uint32_t triggerGroup)
 {
     /* Avoid clearing status flags at the same time. */
@@ -265,11 +265,11 @@ static inline void ADC_ETC_ClearDMAStatusFlags(ADC_ETC_Type *base, uint32_t mask
 }
 
 /*!
-* @brief When enable ,all logical will be reset.
-*
-* @param base ADC_ETC peripheral base address.
-* @param enable Enable/Disable the software reset.
-*/
+ * @brief When enable ,all logical will be reset.
+ *
+ * @param base ADC_ETC peripheral base address.
+ * @param enable Enable/Disable the software reset.
+ */
 static inline void ADC_ETC_DoSoftwareReset(ADC_ETC_Type *base, bool enable)
 {
     if (enable)
@@ -283,14 +283,14 @@ static inline void ADC_ETC_DoSoftwareReset(ADC_ETC_Type *base, bool enable)
 }
 
 /*!
-* @brief Do software trigger corresponding to each XBAR trigger sources.
-* Each XBAR trigger sources can be configured as HW or SW trigger mode. In hardware trigger mode,
-* trigger source is from XBAR. In software mode, trigger source is from software tigger. TSC trigger sources
-* can only work in hardware trigger mode.
-*
-* @param base ADC_ETC peripheral base address.
-* @param triggerGroup Trigger group index. Available number is 0~7.
-*/
+ * @brief Do software trigger corresponding to each XBAR trigger sources.
+ * Each XBAR trigger sources can be configured as HW or SW trigger mode. In hardware trigger mode,
+ * trigger source is from XBAR. In software mode, trigger source is from software tigger. TSC trigger sources
+ * can only work in hardware trigger mode.
+ *
+ * @param base ADC_ETC peripheral base address.
+ * @param triggerGroup Trigger group index. Available number is 0~7.
+ */
 static inline void ADC_ETC_DoSoftwareTrigger(ADC_ETC_Type *base, uint32_t triggerGroup)
 {
     assert(triggerGroup < ADC_ETC_TRIGn_CTRL_COUNT);
@@ -299,15 +299,15 @@ static inline void ADC_ETC_DoSoftwareTrigger(ADC_ETC_Type *base, uint32_t trigge
 }
 
 /*!
-* @brief Get ADC conversion result from external XBAR sources.
-* For example, if triggerGroup is set to 0U and chainGroup is set to 1U, which means the API would
-* return Trigger0 source's chain1 conversion result.
-*
-* @param base ADC_ETC peripheral base address.
-* @param triggerGroup Trigger group index. Available number is 0~7.
-* @param chainGroup Trigger chain group index. Available number is 0~7.
-* @return ADC conversion result value.
-*/
+ * @brief Get ADC conversion result from external XBAR sources.
+ * For example, if triggerGroup is set to 0U and chainGroup is set to 1U, which means the API would
+ * return Trigger0 source's chain1 conversion result.
+ *
+ * @param base ADC_ETC peripheral base address.
+ * @param triggerGroup Trigger group index. Available number is 0~7.
+ * @param chainGroup Trigger chain group index. Available number is 0~7.
+ * @return ADC conversion result value.
+ */
 uint32_t ADC_ETC_GetADCConversionValue(ADC_ETC_Type *base, uint32_t triggerGroup, uint32_t chainGroup);
 
 #if defined(__cplusplus)

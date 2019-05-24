@@ -7,15 +7,14 @@
 from __future__ import print_function
 from __future__ import unicode_literals
 import re
-import os
 from docutils import nodes
 from local_util import run_cmd_get_output
 
 
 def get_github_rev():
     tag = run_cmd_get_output('git describe --exact-match')
-    if len(tag):
-        return(tag)
+    if tag:
+        return tag
     else:
         return 'master'
 
@@ -28,10 +27,17 @@ def setup(app):
     app.add_role('zephyr_file', autolink('{}/blob/{}/%s'.format(baseurl, rev)))
     app.add_role('zephyr_raw', autolink('{}/raw/{}/%s'.format(baseurl, rev)))
 
+    # The role just creates new nodes based on information in the
+    # arguments; its behavior doesn't depend on any other documents.
+    return {
+        'parallel_read_safe': True,
+        'parallel_write_safe': True,
+    }
+
 
 def autolink(pattern):
     def role(name, rawtext, text, lineno, inliner, options={}, content=[]):
-        m = re.search('(.*)\s*<(.*)>', text)  # noqa: W605 - regular expression
+        m = re.search(r'(.*)\s*<(.*)>', text)
         if m:
             link_text = m.group(1)
             link = m.group(2)

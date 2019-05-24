@@ -60,7 +60,7 @@ likely also run on the nrf52_pca10040 board.
 
 Building and Running
 ********************
-This sample can be found under :file:`samples/boards/nrf52/mesh/onoff_level_lighting_vnd_app` in the
+This sample can be found under :zephyr_file:`samples/boards/nrf52/mesh/onoff_level_lighting_vnd_app` in the
 Zephyr tree.
 
 The following commands build the application.
@@ -111,6 +111,6 @@ that has that LED's model and issuing the onoff command.
 Group addresses are not supported.
 
 This application was derived from the sample mesh skeleton at
-:file:`samples/bluetooth/mesh`.
+:zephyr_file:`samples/bluetooth/mesh`.
 
-See :ref:`bluetooth setup section <bluetooth_setup>` for details.
+See :ref:`bluetooth samples section <bluetooth-samples>` for details.

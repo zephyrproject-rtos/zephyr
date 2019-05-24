@@ -1,7 +1,7 @@
 sample:
   name: Demo for Fujitsu MB85RC256V FRAM (I2C)
 tests:
-  test:
+  sample.driver.i2c_fujitsu_fram:
     platform_whitelist: arduino_101_sss quark_d2000_crb
       arduino_due
     tags: drivers

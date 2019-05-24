@@ -96,6 +96,8 @@ The Zephyr nucleo_f091rc board configuration supports the following hardware fea
 +-----------+------------+-------------------------------------+
 | SPI       | on-chip    | SPI controller                      |
 +-----------+------------+-------------------------------------+
+| ADC       | on-chip    | ADC controller                      |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported in this Zephyr port.
 

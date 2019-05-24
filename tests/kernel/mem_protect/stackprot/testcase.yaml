@@ -1,4 +1,4 @@
 tests:
   kernel.memory_protection:
     arch_exclude: nios2 xtensa posix x86_64
-    tags: kernel ignore_faults
+    tags: kernel ignore_faults userspace

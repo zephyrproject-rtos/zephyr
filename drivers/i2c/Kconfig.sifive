@@ -10,4 +10,3 @@ menuconfig I2C_SIFIVE
 	depends on HAS_DTS_I2C
 	help
 	  Enable I2C support on SiFive Freedom
-

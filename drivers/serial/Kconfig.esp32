@@ -1,7 +1,8 @@
+# SPDX-License-Identifier: Apache-2.0
+
 menuconfig UART_ESP32
 	bool "ESP32 UART driver"
 	select SERIAL_HAS_DRIVER
 	depends on SOC_ESP32
 	help
 	  Enable the ESP32 UART using ROM routines.
-

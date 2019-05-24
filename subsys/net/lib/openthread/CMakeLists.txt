@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 # Invoke OpenThread's external autoconf-based build system.
 include(ExternalProject)
 
@@ -255,15 +257,9 @@ ExternalProject_Add_Step(
 
 # Create wrapper CMake libraries
 foreach(ot_lib ${ot_libs})
-  add_library(${ot_lib} STATIC IMPORTED GLOBAL)
-  add_dependencies(   # TODO: Necessary?
-    ${ot_lib}
-    ${ot_name}
-    )
-  set_target_properties(${ot_lib} PROPERTIES IMPORTED_LOCATION
+  zephyr_library_import(${ot_lib}
     ${ot_INSTALL_DIR}/${exec_prefix}/lib/lib${ot_lib}.a
     )
-  zephyr_append_cmake_library(${ot_lib})
 endforeach()
 
 add_subdirectory(platform)

@@ -149,7 +149,7 @@ Using JTAG
 
 As with much custom hardware, the ESP-32 modules require patches to
 OpenOCD that are not upstream.  Espressif maintains their own fork of
-the project here.  By convention they put it in the `~/esp` next to the
+the project here.  By convention they put it in ``~/esp`` next to the
 installations of their toolchain and SDK:
 
 .. code-block:: console

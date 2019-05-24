@@ -60,7 +60,7 @@ static inline int net_promisc_mode_on(struct net_if *iface)
 {
 	ARG_UNUSED(iface);
 
-	return -ENOSUP;
+	return -ENOTSUP;
 }
 #endif /* CONFIG_NET_PROMISCUOUS_MODE */
 
@@ -78,7 +78,7 @@ static inline int net_promisc_mode_off(struct net_if *iface)
 {
 	ARG_UNUSED(iface);
 
-	return -ENOSUP;
+	return -ENOTSUP;
 }
 #endif /* CONFIG_NET_PROMISCUOUS_MODE */
 

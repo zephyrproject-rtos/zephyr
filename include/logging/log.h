@@ -43,7 +43,7 @@ extern "C" {
  * @param ... A string optionally containing printk valid conversion specifier,
  * followed by as many values as specifiers.
  */
-#define LOG_ERR(...)    _LOG(LOG_LEVEL_ERR, __VA_ARGS__)
+#define LOG_ERR(...)    Z_LOG(LOG_LEVEL_ERR, __VA_ARGS__)
 
 /**
  * @brief Writes a WARNING level message to the log.
@@ -54,7 +54,7 @@ extern "C" {
  * @param ... A string optionally containing printk valid conversion specifier,
  * followed by as many values as specifiers.
  */
-#define LOG_WRN(...)   _LOG(LOG_LEVEL_WRN, __VA_ARGS__)
+#define LOG_WRN(...)   Z_LOG(LOG_LEVEL_WRN, __VA_ARGS__)
 
 /**
  * @brief Writes an INFO level message to the log.
@@ -64,7 +64,7 @@ extern "C" {
  * @param ... A string optionally containing printk valid conversion specifier,
  * followed by as many values as specifiers.
  */
-#define LOG_INF(...)   _LOG(LOG_LEVEL_INF, __VA_ARGS__)
+#define LOG_INF(...)   Z_LOG(LOG_LEVEL_INF, __VA_ARGS__)
 
 /**
  * @brief Writes a DEBUG level message to the log.
@@ -74,7 +74,7 @@ extern "C" {
  * @param ... A string optionally containing printk valid conversion specifier,
  * followed by as many values as specifiers.
  */
-#define LOG_DBG(...)    _LOG(LOG_LEVEL_DBG, __VA_ARGS__)
+#define LOG_DBG(...)    Z_LOG(LOG_LEVEL_DBG, __VA_ARGS__)
 
 /**
  * @brief Writes an ERROR level message associated with the instance to the log.
@@ -89,7 +89,7 @@ extern "C" {
  * followed by as many values as specifiers.
  */
 #define LOG_INST_ERR(_log_inst, ...) \
-	_LOG_INSTANCE(LOG_LEVEL_ERR, _log_inst, __VA_ARGS__)
+	Z_LOG_INSTANCE(LOG_LEVEL_ERR, _log_inst, __VA_ARGS__)
 
 /**
  * @brief Writes a WARNING level message associated with the instance to the
@@ -105,7 +105,7 @@ extern "C" {
  *                  specifier, followed by as many values as specifiers.
  */
 #define LOG_INST_WRN(_log_inst, ...) \
-	_LOG_INSTANCE(LOG_LEVEL_WRN, _log_inst, __VA_ARGS__)
+	Z_LOG_INSTANCE(LOG_LEVEL_WRN, _log_inst, __VA_ARGS__)
 
 /**
  * @brief Writes an INFO level message associated with the instance to the log.
@@ -120,7 +120,7 @@ extern "C" {
  * followed by as many values as specifiers.
  */
 #define LOG_INST_INF(_log_inst, ...) \
-	_LOG_INSTANCE(LOG_LEVEL_INF, _log_inst, __VA_ARGS__)
+	Z_LOG_INSTANCE(LOG_LEVEL_INF, _log_inst, __VA_ARGS__)
 
 /**
  * @brief Writes a DEBUG level message associated with the instance to the log.
@@ -135,7 +135,7 @@ extern "C" {
  * followed by as many values as specifiers.
  */
 #define LOG_INST_DBG(_log_inst, ...) \
-	_LOG_INSTANCE(LOG_LEVEL_DBG, _log_inst, __VA_ARGS__)
+	Z_LOG_INSTANCE(LOG_LEVEL_DBG, _log_inst, __VA_ARGS__)
 
 /**
  * @brief Writes an ERROR level hexdump message to the log.
@@ -148,7 +148,7 @@ extern "C" {
  * @param _str    Persistent, raw string.
  */
 #define LOG_HEXDUMP_ERR(_data, _length, _str) \
-	_LOG_HEXDUMP(LOG_LEVEL_ERR, _data, _length, _str)
+	Z_LOG_HEXDUMP(LOG_LEVEL_ERR, _data, _length, _str)
 
 /**
  * @brief Writes a WARNING level message to the log.
@@ -161,7 +161,7 @@ extern "C" {
  * @param _str    Persistent, raw string.
  */
 #define LOG_HEXDUMP_WRN(_data, _length, _str) \
-	_LOG_HEXDUMP(LOG_LEVEL_WRN, _data, _length, _str)
+	Z_LOG_HEXDUMP(LOG_LEVEL_WRN, _data, _length, _str)
 
 /**
  * @brief Writes an INFO level message to the log.
@@ -173,7 +173,7 @@ extern "C" {
  * @param _str    Persistent, raw string.
  */
 #define LOG_HEXDUMP_INF(_data, _length, _str) \
-	_LOG_HEXDUMP(LOG_LEVEL_INF, _data, _length, _str)
+	Z_LOG_HEXDUMP(LOG_LEVEL_INF, _data, _length, _str)
 
 /**
  * @brief Writes a DEBUG level message to the log.
@@ -185,7 +185,7 @@ extern "C" {
  * @param _str    Persistent, raw string.
  */
 #define LOG_HEXDUMP_DBG(_data, _length, _str) \
-	_LOG_HEXDUMP(LOG_LEVEL_DBG, _data, _length, _str)
+	Z_LOG_HEXDUMP(LOG_LEVEL_DBG, _data, _length, _str)
 
 /**
  * @brief Writes an ERROR hexdump message associated with the instance to the
@@ -202,7 +202,7 @@ extern "C" {
  * @param _str        Persistent, raw string.
  */
 #define LOG_INST_HEXDUMP_ERR(_log_inst, _data, _length, _str) \
-	_LOG_HEXDUMP_INSTANCE(LOG_LEVEL_ERR, _log_inst, _data, _length, _str)
+	Z_LOG_HEXDUMP_INSTANCE(LOG_LEVEL_ERR, _log_inst, _data, _length, _str)
 
 /**
  * @brief Writes a WARNING level hexdump message associated with the instance to
@@ -217,7 +217,7 @@ extern "C" {
  * @param _str        Persistent, raw string.
  */
 #define LOG_INST_HEXDUMP_WRN(_log_inst, _data, _length, _str) \
-	_LOG_HEXDUMP_INSTANCE(LOG_LEVEL_WRN, _log_inst, _data, _length, _str)
+	Z_LOG_HEXDUMP_INSTANCE(LOG_LEVEL_WRN, _log_inst, _data, _length, _str)
 
 /**
  * @brief Writes an INFO level hexdump message associated with the instance to
@@ -231,7 +231,7 @@ extern "C" {
  * @param _str        Persistent, raw string.
  */
 #define LOG_INST_HEXDUMP_INF(_log_inst, _data, _length, _str) \
-	_LOG_HEXDUMP_INSTANCE(LOG_LEVEL_INF, _log_inst, _data, _length, _str)
+	Z_LOG_HEXDUMP_INSTANCE(LOG_LEVEL_INF, _log_inst, _data, _length, _str)
 
 /**
  * @brief Writes a DEBUG level hexdump message associated with the instance to
@@ -245,7 +245,7 @@ extern "C" {
  * @param _str        Persistent, raw string.
  */
 #define LOG_INST_HEXDUMP_DBG(_log_inst, _data, _length, _str)	\
-	_LOG_HEXDUMP_INSTANCE(LOG_LEVEL_DBG, _log_inst, _data, _length, _str)
+	Z_LOG_HEXDUMP_INSTANCE(LOG_LEVEL_DBG, _log_inst, _data, _length, _str)
 
 /**
  * @brief Writes an formatted string to the log.
@@ -276,6 +276,10 @@ int log_printk(const char *fmt, va_list ap);
  */
 char *log_strdup(const char *str);
 
+#ifdef __cplusplus
+}
+#define LOG_IN_CPLUSPLUS 1
+#endif
 /* Macro expects that optionally on second argument local log level is provided.
  * If provided it is returned, otherwise default log level is returned or
  * LOG_LEVEL, if it was locally defined.
@@ -284,7 +288,7 @@ char *log_strdup(const char *str);
 #define _LOG_LEVEL_RESOLVE(...) LOG_LEVEL_NONE
 #else
 #define _LOG_LEVEL_RESOLVE(...) \
-	_LOG_EVAL(LOG_LEVEL, \
+	Z_LOG_EVAL(LOG_LEVEL, \
 		  (GET_ARG2(__VA_ARGS__, LOG_LEVEL)), \
 		  (GET_ARG2(__VA_ARGS__, CONFIG_LOG_DEFAULT_LEVEL)))
 #endif
@@ -292,8 +296,8 @@ char *log_strdup(const char *str);
 /* Return first argument */
 #define _LOG_ARG1(arg1, ...) arg1
 
-
 #define _LOG_MODULE_CONST_DATA_CREATE(_name, _level)			     \
+	COND_CODE_1(LOG_IN_CPLUSPLUS, (extern), ())			     \
 	const struct log_source_const_data LOG_ITEM_CONST_DATA(_name)	     \
 	__attribute__ ((section("." STRINGIFY(LOG_ITEM_CONST_DATA(_name))))) \
 	__attribute__((used)) = {					     \
@@ -309,8 +313,8 @@ char *log_strdup(const char *str);
 	__attribute__((used))
 
 #define _LOG_MODULE_DYNAMIC_DATA_COND_CREATE(_name)		\
-	_LOG_EVAL(						\
-		IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING),	\
+	COND_CODE_1(						\
+		CONFIG_LOG_RUNTIME_FILTERING,			\
 		(_LOG_MODULE_DYNAMIC_DATA_CREATE(_name);),	\
 		()						\
 		)
@@ -351,9 +355,8 @@ char *log_strdup(const char *str);
  * @see LOG_MODULE_DECLARE
  */
 
-
 #define LOG_MODULE_REGISTER(...)					\
-	_LOG_EVAL(							\
+	Z_LOG_EVAL(							\
 		_LOG_LEVEL_RESOLVE(__VA_ARGS__),			\
 		(_LOG_MODULE_DATA_CREATE(GET_ARG1(__VA_ARGS__),		\
 				      _LOG_LEVEL_RESOLVE(__VA_ARGS__))),\
@@ -415,15 +418,11 @@ char *log_strdup(const char *str);
  *
  */
 #define LOG_LEVEL_SET(level) \
-	static const u32_t __log_level __attribute__((unused)) = level
+	static const u32_t __log_level __attribute__((unused)) = \
+			_LOG_LEVEL_RESOLVE(level)
 
 /**
  * @}
  */
-
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* ZEPHYR_INCLUDE_LOGGING_LOG_H_ */

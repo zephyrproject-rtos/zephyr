@@ -219,7 +219,7 @@ int stack_test(void)
 			 0, (void *) number_of_loops, NULL,
 			 K_PRIO_COOP(3), 0, K_NO_WAIT);
 
-	for (i = 0; i < number_of_loops / 2; i++) {
+	for (i = 0; i < number_of_loops / 2U; i++) {
 		u32_t data;
 
 		data = 2 * i;

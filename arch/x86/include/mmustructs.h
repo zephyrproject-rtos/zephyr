@@ -8,9 +8,9 @@
 #ifndef ZEPHYR_ARCH_X86_INCLUDE_MMUSTRUCTS_H_
 #define ZEPHYR_ARCH_X86_INCLUDE_MMUSTRUCTS_H_
 
-#define MMU_PAGE_SIZE 4096
-#define MMU_PAGE_MASK 0xfff
-#define MMU_PAGE_SHIFT 12
+#define MMU_PAGE_SIZE 4096U
+#define MMU_PAGE_MASK 0xfffU
+#define MMU_PAGE_SHIFT 12U
 #define PAGES(x) ((x) << (MMU_PAGE_SHIFT))
 #define MMU_ARE_IN_SAME_PAGE(a, b) \
 	(((u32_t)(a) & ~MMU_PAGE_MASK) == ((u32_t)(b) & ~MMU_PAGE_MASK))
@@ -21,43 +21,43 @@
  * x86_mmu_pde_pt structure.
  */
 
-#define MMU_PDE_P_MASK          0x00000001
-#define MMU_PDE_RW_MASK         0x00000002
-#define MMU_PDE_US_MASK         0x00000004
-#define MMU_PDE_PWT_MASK        0x00000008
-#define MMU_PDE_PCD_MASK        0x00000010
-#define MMU_PDE_A_MASK          0x00000020
-#define MMU_PDE_PS_MASK         0x00000080
-#define MMU_PDE_IGNORED_MASK    0x00000F40
+#define MMU_PDE_P_MASK          0x00000001ULL
+#define MMU_PDE_RW_MASK         0x00000002ULL
+#define MMU_PDE_US_MASK         0x00000004ULL
+#define MMU_PDE_PWT_MASK        0x00000008ULL
+#define MMU_PDE_PCD_MASK        0x00000010ULL
+#define MMU_PDE_A_MASK          0x00000020ULL
+#define MMU_PDE_PS_MASK         0x00000080ULL
+#define MMU_PDE_IGNORED_MASK    0x00000F40ULL
 
-#define MMU_PDE_XD_MASK             0x8000000000000000ULL
-#define MMU_PDE_PAGE_TABLE_MASK     0x00000000fffff000ULL
-#define MMU_PDE_NUM_SHIFT           21
-#define MMU_PDE_NUM(v)              (((u32_t)(v) >> MMU_PDE_NUM_SHIFT) & 0x1ff)
-#define MMU_ENTRIES_PER_PGT         512
-#define MMU_PDPTE_NUM_SHIFT         30
-#define MMU_PDPTE_NUM(v)            (((u32_t)(v) >> MMU_PDPTE_NUM_SHIFT) & 0x3)
+#define MMU_PDE_XD_MASK            0x8000000000000000ULL
+#define MMU_PDE_PAGE_TABLE_MASK    0x00000000fffff000ULL
+#define MMU_PDE_NUM_SHIFT          21U
+#define MMU_PDE_NUM(v)             (((u32_t)(v) >> MMU_PDE_NUM_SHIFT) & 0x1ffU)
+#define MMU_ENTRIES_PER_PGT        512U
+#define MMU_PDPTE_NUM_SHIFT        30U
+#define MMU_PDPTE_NUM(v)           (((u32_t)(v) >> MMU_PDPTE_NUM_SHIFT) & 0x3U)
 
 /*
  * The following bitmasks correspond to the bit-fields in the
  * x86_mmu_pde_2mb structure.
  */
 
-#define MMU_2MB_PDE_P_MASK          0x00000001
-#define MMU_2MB_PDE_RW_MASK         0x00000002
-#define MMU_2MB_PDE_US_MASK         0x00000004
-#define MMU_2MB_PDE_PWT_MASK        0x00000008
-#define MMU_2MB_PDE_PCD_MASK        0x00000010
-#define MMU_2MB_PDE_A_MASK          0x00000020
-#define MMU_2MB_PDE_D_MASK          0x00000040
-#define MMU_2MB_PDE_PS_MASK         0x00000080
-#define MMU_2MB_PDE_G_MASK          0x00000100
-#define MMU_2MB_PDE_IGNORED_MASK    0x00380e00
-#define MMU_2MB_PDE_PAT_MASK        0x00001000
-#define MMU_2MB_PDE_PAGE_TABLE_MASK 0x0007e000
-#define MMU_2MB_PDE_PAGE_MASK       0xffc00000
-#define MMU_2MB_PDE_CLEAR_PS        0x00000000
-#define MMU_2MB_PDE_SET_PS          0x00000080
+#define MMU_2MB_PDE_P_MASK          0x00000001ULL
+#define MMU_2MB_PDE_RW_MASK         0x00000002ULL
+#define MMU_2MB_PDE_US_MASK         0x00000004ULL
+#define MMU_2MB_PDE_PWT_MASK        0x00000008ULL
+#define MMU_2MB_PDE_PCD_MASK        0x00000010ULL
+#define MMU_2MB_PDE_A_MASK          0x00000020ULL
+#define MMU_2MB_PDE_D_MASK          0x00000040ULL
+#define MMU_2MB_PDE_PS_MASK         0x00000080ULL
+#define MMU_2MB_PDE_G_MASK          0x00000100ULL
+#define MMU_2MB_PDE_IGNORED_MASK    0x00380e00ULL
+#define MMU_2MB_PDE_PAT_MASK        0x00001000ULL
+#define MMU_2MB_PDE_PAGE_TABLE_MASK 0x0007e000ULL
+#define MMU_2MB_PDE_PAGE_MASK       0xffc00000ULL
+#define MMU_2MB_PDE_CLEAR_PS        0x00000000ULL
+#define MMU_2MB_PDE_SET_PS          0x00000080ULL
 
 
 /*
@@ -65,21 +65,21 @@
  * x86_mmu_pte structure.
  */
 
-#define MMU_PTE_P_MASK              0x00000001
-#define MMU_PTE_RW_MASK             0x00000002
-#define MMU_PTE_US_MASK             0x00000004
-#define MMU_PTE_PWT_MASK            0x00000008
-#define MMU_PTE_PCD_MASK            0x00000010
-#define MMU_PTE_A_MASK              0x00000020
-#define MMU_PTE_D_MASK              0x00000040
-#define MMU_PTE_PAT_MASK            0x00000080
-#define MMU_PTE_G_MASK              0x00000100
-#define MMU_PTE_ALLOC_MASK          0x00000200
-#define MMU_PTE_CUSTOM_MASK         0x00000c00
-#define MMU_PTE_XD_MASK             0x8000000000000000ULL
-#define MMU_PTE_PAGE_MASK           0x00000000fffff000ULL
-#define MMU_PTE_MASK_ALL            0xffffffffffffffffULL
-#define MMU_PAGE_NUM(v)             (((u32_t)(v) >> MMU_PAGE_NUM_SHIFT) & 0x1ff)
+#define MMU_PTE_P_MASK            0x00000001ULL
+#define MMU_PTE_RW_MASK           0x00000002ULL
+#define MMU_PTE_US_MASK           0x00000004ULL
+#define MMU_PTE_PWT_MASK          0x00000008ULL
+#define MMU_PTE_PCD_MASK          0x00000010ULL
+#define MMU_PTE_A_MASK            0x00000020ULL
+#define MMU_PTE_D_MASK            0x00000040ULL
+#define MMU_PTE_PAT_MASK          0x00000080ULL
+#define MMU_PTE_G_MASK            0x00000100ULL
+#define MMU_PTE_ALLOC_MASK        0x00000200ULL
+#define MMU_PTE_CUSTOM_MASK       0x00000c00ULL
+#define MMU_PTE_XD_MASK           0x8000000000000000ULL
+#define MMU_PTE_PAGE_MASK         0x00000000fffff000ULL
+#define MMU_PTE_MASK_ALL          0xffffffffffffffffULL
+#define MMU_PAGE_NUM(v)           (((u32_t)(v) >> MMU_PAGE_NUM_SHIFT) & 0x1ffU)
 #define MMU_PAGE_NUM_SHIFT 12
 
 /*
@@ -87,32 +87,32 @@
  * unuse of various options in a PTE or PDE as appropriate.
  */
 
-#define MMU_ENTRY_NOT_PRESENT       0x00000000
-#define MMU_ENTRY_PRESENT           0x00000001
+#define MMU_ENTRY_NOT_PRESENT       0x00000000ULL
+#define MMU_ENTRY_PRESENT           0x00000001ULL
 
-#define MMU_ENTRY_READ              0x00000000
-#define MMU_ENTRY_WRITE             0x00000002
+#define MMU_ENTRY_READ              0x00000000ULL
+#define MMU_ENTRY_WRITE             0x00000002ULL
 
-#define MMU_ENTRY_SUPERVISOR        0x00000000
-#define MMU_ENTRY_USER              0x00000004
+#define MMU_ENTRY_SUPERVISOR        0x00000000ULL
+#define MMU_ENTRY_USER              0x00000004ULL
 
-#define MMU_ENTRY_WRITE_BACK        0x00000000
-#define MMU_ENTRY_WRITE_THROUGH     0x00000008
+#define MMU_ENTRY_WRITE_BACK        0x00000000ULL
+#define MMU_ENTRY_WRITE_THROUGH     0x00000008ULL
 
-#define MMU_ENTRY_CACHING_ENABLE    0x00000000
-#define MMU_ENTRY_CACHING_DISABLE   0x00000010
+#define MMU_ENTRY_CACHING_ENABLE    0x00000000ULL
+#define MMU_ENTRY_CACHING_DISABLE   0x00000010ULL
 
-#define MMU_ENTRY_NOT_ACCESSED      0x00000000
-#define MMU_ENTRY_ACCESSED          0x00000020
+#define MMU_ENTRY_NOT_ACCESSED      0x00000000ULL
+#define MMU_ENTRY_ACCESSED          0x00000020ULL
 
-#define MMU_ENTRY_NOT_DIRTY         0x00000000
-#define MMU_ENTRY_DIRTY             0x00000040
+#define MMU_ENTRY_NOT_DIRTY         0x00000000ULL
+#define MMU_ENTRY_DIRTY             0x00000040ULL
 
-#define MMU_ENTRY_NOT_GLOBAL        0x00000000
-#define MMU_ENTRY_GLOBAL            0x00000100
+#define MMU_ENTRY_NOT_GLOBAL        0x00000000ULL
+#define MMU_ENTRY_GLOBAL            0x00000100ULL
 
-#define MMU_ENTRY_NOT_ALLOC         0x00000000
-#define MMU_ENTRY_ALLOC             0x00000200
+#define MMU_ENTRY_NOT_ALLOC         0x00000000ULL
+#define MMU_ENTRY_ALLOC             0x00000200ULL
 
 #define MMU_ENTRY_EXECUTE_DISABLE   0x8000000000000000ULL
 
@@ -126,7 +126,7 @@
  * to the region will be set, even if the boot configuration has no user pages
  * in it.
  */
-#define MMU_ENTRY_RUNTIME_USER      0x10000000
+#define MMU_ENTRY_RUNTIME_USER      0x10000000ULL
 
 /* Indicates that pages within this region may have their read/write
  * permissions adjusted at runtime. Unnecessary if MMU_ENTRY_WRITE is already
@@ -136,7 +136,7 @@
  * referring to the region will be set, even if the boot configuration has no
  * writable pages in it.
  */
-#define MMU_ENTRY_RUNTIME_WRITE	    0x20000000
+#define MMU_ENTRY_RUNTIME_WRITE	    0x20000000ULL
 
 
 /* Helper macros to ease the usage of the MMU page table structures.
@@ -251,11 +251,11 @@ struct mmu_region {
 		.flags = permission_flags,				\
 	}
 
-#define _MMU_BOOT_REGION(id, addr, region_size, permission_flags)	\
+#define Z_MMU_BOOT_REGION(id, addr, region_size, permission_flags)	\
 	__MMU_BOOT_REGION(id, addr, region_size, permission_flags)
 
 #define MMU_BOOT_REGION(addr, region_size, permission_flags)		\
-	_MMU_BOOT_REGION(__COUNTER__, addr, region_size, permission_flags)
+	Z_MMU_BOOT_REGION(__COUNTER__, addr, region_size, permission_flags)
 
 /*
  * The following defines the format of a 64-bit page directory pointer entry

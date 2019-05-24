@@ -72,6 +72,10 @@ struct net_eth_addr {
 #endif
 
 #define NET_ETH_MINIMAL_FRAME_SIZE	60
+#define NET_ETH_MTU			1500
+#define NET_ETH_MAX_FRAME_SIZE	(NET_ETH_MTU + sizeof(struct net_eth_hdr))
+
+#define NET_ETH_VLAN_HDR_SIZE	4
 
 /** @endcond */
 
@@ -118,6 +122,9 @@ enum ethernet_hw_caps {
 
 	/** Link Layer Discovery Protocol supported */
 	ETHERNET_LLDP			= BIT(13),
+
+	/** VLAN Tag stripping */
+	ETHERNET_HW_VLAN_TAG_STRIP	= BIT(14),
 };
 
 /** @cond INTERNAL_HIDDEN */
@@ -287,8 +294,14 @@ struct ethernet_lldp {
 	/** Used for track timers */
 	sys_snode_t node;
 
-	/** LLDP information element related to this network interface. */
+	/** LLDP Data Unit mandatory TLVs for the interface. */
 	const struct net_lldpdu *lldpdu;
+
+	/** LLDP Data Unit optional TLVs for the interface */
+	const u8_t *optional_du;
+
+	/** Length of the optional Data Unit TLVs */
+	size_t optional_len;
 
 	/** Network interface that has LLDP supported. */
 	struct net_if *iface;
@@ -687,43 +700,6 @@ static inline int net_eth_get_ptp_port(struct net_if *iface)
 #if defined(CONFIG_NET_GPTP)
 void net_eth_set_ptp_port(struct net_if *iface, int port);
 #endif /* CONFIG_NET_GPTP */
-
-struct net_lldpdu;
-
-/**
- * @brief Set LLDP protocol data unit (LLDPDU) for the network interface.
- *
- * @param iface Network interface
- * @param lldpdu LLDPDU pointer
- *
- * @return <0 if error, index in lldp array if iface is found there
- */
-#if defined(CONFIG_NET_LLDP)
-int net_eth_set_lldpdu(struct net_if *iface, const struct net_lldpdu *lldpdu);
-#else
-static inline int net_eth_set_lldpdu(struct net_if *iface,
-				     const struct net_lldpdu *lldpdu)
-{
-	ARG_UNUSED(iface);
-	ARG_UNUSED(lldpdu);
-
-	return -ENOTSUP;
-}
-#endif
-
-/**
- * @brief Unset LLDP protocol data unit (LLDPDU) for the network interface.
- *
- * @param iface Network interface
- */
-#if defined(CONFIG_NET_LLDP)
-void net_eth_unset_lldpdu(struct net_if *iface);
-#else
-static inline void net_eth_unset_lldpdu(struct net_if *iface)
-{
-	ARG_UNUSED(iface);
-}
-#endif
 
 #ifdef __cplusplus
 }

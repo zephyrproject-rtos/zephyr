@@ -65,7 +65,7 @@ typedef enum _gpio_checker_attribute
  * Note that in some use cases, the corresponding port property should be configured in advance
  *        with the PORT_SetPinConfig().
  */
-typedef struct _gpio_pin_config
+typedef struct z_gpio_pin_config
 {
     gpio_pin_direction_t pinDirection; /*!< GPIO direction, input or output */
     /* Output configurations; ignore if configured as an input pin */

@@ -29,6 +29,13 @@ adc: adc@e000 {
 	label = "ADC_0";
 };
 
+dppic: dppic@17000 {
+	compatible = "nordic,nrf-dppic";
+	reg = <0x17000 0x1000>;
+	status = "ok";
+	label = "DPPIC";
+};
+
 uart0: uart@8000 {
 	compatible = "nordic,nrf-uarte";
 	reg = <0x8000 0x1000>;
@@ -191,6 +198,8 @@ rtc0: rtc@14000 {
 	reg = <0x14000 0x1000>;
 	interrupts = <20 1>;
 	status = "ok";
+	clock-frequency = <32768>;
+	prescaler = <1>;
 	label = "RTC_0";
 };
 
@@ -199,6 +208,8 @@ rtc1: rtc@15000 {
 	reg = <0x15000 0x1000>;
 	interrupts = <21 1>;
 	status = "ok";
+	clock-frequency = <32768>;
+	prescaler = <1>;
 	label = "RTC_1";
 };
 
@@ -230,6 +241,7 @@ timer0: timer@f000 {
 	status = "disabled";
 	reg = <0xf000 0x1000>;
 	interrupts = <15 1>;
+	prescaler = <0>;
 	label = "TIMER_0";
 };
 
@@ -238,6 +250,7 @@ timer1: timer@10000 {
 	status = "disabled";
 	reg = <0x10000 0x1000>;
 	interrupts = <16 1>;
+	prescaler = <0>;
 	label = "TIMER_1";
 };
 
@@ -246,5 +259,6 @@ timer2: timer@11000 {
 	status = "disabled";
 	reg = <0x11000 0x1000>;
 	interrupts = <17 1>;
+	prescaler = <0>;
 	label = "TIMER_2";
 };

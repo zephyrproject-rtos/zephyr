@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2017, Texas Instruments Incorporated
+ * Copyright (c) 2015-2018, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -133,6 +133,9 @@
  *  };
  *  @endcode
  *
+ * \note GPIOCC32XX_GPIO_26 & GPIOCC32XX_GPIO_27 can only be used as output
+ * pins.
+ *
  *  ============================================================================
  */
 
@@ -234,6 +237,8 @@ typedef struct GPIOCC32XX_Config {
 
 #define GPIOCC32XX_GPIO_24    0x0301    /*!< @hideinitializer */
 #define GPIOCC32XX_GPIO_25    0x0302    /*!< @hideinitializer */
+#define GPIOCC32XX_GPIO_26    0x0304    /*!< @hideinitializer */
+#define GPIOCC32XX_GPIO_27    0x0308    /*!< @hideinitializer */
 #define GPIOCC32XX_GPIO_28    0x0310    /*!< @hideinitializer */
 #define GPIOCC32XX_GPIO_29    0x0320    /*!< @hideinitializer */
 #define GPIOCC32XX_GPIO_30    0x0340    /*!< @hideinitializer */

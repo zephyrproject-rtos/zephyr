@@ -3,4 +3,3 @@
 
 config SOC_XRC_D2PM_5SWIRQ
 	bool "XRC_D2PM_5swIrq (XRC_D2PM core with 4 additional SW IRQs)"
-

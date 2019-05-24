@@ -32,7 +32,7 @@ static void zephyr_timer_wrapper(struct k_timer *ztimer)
 
 	timer = (struct timer_obj *)ztimer;
 
-	if (timer->reload == 0) {
+	if (timer->reload == 0U) {
 		timer->status = NOT_ACTIVE;
 	}
 

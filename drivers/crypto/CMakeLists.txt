@@ -1,4 +1,5 @@
-zephyr_link_interface_ifdef(CONFIG_MBEDTLS mbedTLS)
+# SPDX-License-Identifier: Apache-2.0
+
 zephyr_library()
 zephyr_library_sources_ifdef(CONFIG_CRYPTO_TINYCRYPT_SHIM	crypto_tc_shim.c)
 zephyr_library_sources_ifdef(CONFIG_CRYPTO_ATAES132A		crypto_ataes132a.c)

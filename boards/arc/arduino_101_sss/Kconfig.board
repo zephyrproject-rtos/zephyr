@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 
 config BOARD_ARDUINO_101_SSS
 	bool "Arduino 101 Sensor Sub System"

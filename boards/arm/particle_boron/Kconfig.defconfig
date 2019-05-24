@@ -23,6 +23,13 @@ config I2C_0
 
 endif # I2C
 
+if SPI
+
+config SPI_2
+       default y
+
+endif # SPI
+
 if USB
 
 config USB_NRF52840
@@ -42,5 +49,21 @@ endif # IEEE802154
 
 config BT_CTLR
 	default BT
+
+if MODEM
+
+config UART_1_NRF_UARTE
+	default y
+
+config UART_1_NRF_FLOW_CONTROL
+	default y
+
+config MODEM_UBLOX_SARA_R4
+	default y
+
+config UART_INTERRUPT_DRIVEN
+	default y
+
+endif # MODEM
 
 endif # BOARD_PARTICLE_BORON

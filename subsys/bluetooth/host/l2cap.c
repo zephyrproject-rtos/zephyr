@@ -245,7 +245,7 @@ destroy:
 #if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
 	/* Reset internal members of common channel */
 	bt_l2cap_chan_set_state(chan, BT_L2CAP_DISCONNECTED);
-	chan->psm = 0;
+	chan->psm = 0U;
 #endif
 
 	if (chan->destroy) {
@@ -719,7 +719,7 @@ static void l2cap_chan_destroy(struct bt_l2cap_chan *chan)
 	if (ch->_sdu) {
 		net_buf_unref(ch->_sdu);
 		ch->_sdu = NULL;
-		ch->_sdu_len = 0;
+		ch->_sdu_len = 0U;
 	}
 }
 
@@ -978,7 +978,7 @@ static void le_conn_rsp(struct bt_l2cap *l2cap, u8_t ident,
 	k_delayed_work_cancel(&chan->chan.rtx_work);
 
 	/* Reset ident since it got a response */
-	chan->chan.ident = 0;
+	chan->chan.ident = 0U;
 
 	switch (result) {
 	case BT_L2CAP_LE_SUCCESS:
@@ -1498,7 +1498,7 @@ static void l2cap_chan_le_recv_seg(struct bt_l2cap_le_chan *chan,
 
 	buf = chan->_sdu;
 	chan->_sdu = NULL;
-	chan->_sdu_len = 0;
+	chan->_sdu_len = 0U;
 
 	l2cap_chan_le_recv_sdu(chan, buf, seg);
 }

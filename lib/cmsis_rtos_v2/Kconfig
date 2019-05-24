@@ -38,13 +38,15 @@ config CMSIS_V2_THREAD_DYNAMIC_MAX_COUNT
 
 config CMSIS_V2_THREAD_MAX_STACK_SIZE
 	int "Max stack size threads can be allocated in CMSIS RTOS V2 application"
+	default 4096 if COVERAGE
 	default 512
 	help
 	  Mention max stack size threads can be allocated in CMSIS RTOS V2 application.
 
 config CMSIS_V2_THREAD_DYNAMIC_STACK_SIZE
 	int "Dynamic stack size threads are allocated in CMSIS RTOS V2 application"
-	default 0
+	default 4096 if COVERAGE
+	default 512
 	help
 	  Mention dynamic stack size threads are allocated in CMSIS RTOS V2 application.
 

@@ -348,7 +348,7 @@ release:
 * :github:`9574` - tests/cmsis_rtos_v1 - test_mutex_lock_timeout results in Assertion failure on all targets with PR#9569
 * :github:`9561` - Question: Does it support passing the bootloader(mcuboot) parameter to the kernel(zephyr)?
 * :github:`9558` - DTC 1.4.7 breaks at least FRDM_K64F builds
-* :github:`9537` - ENC28J60 can‘t receive packets properly
+* :github:`9537` - ENC28J60 can't receive packets properly
 * :github:`9536` - console: missing kernel.h include in header
 * :github:`9535` - broken callback handling in nrfx gpio driver
 * :github:`9530` - Bluetooth/gatt: bt_gatt_notify never return -ENOMEM, undocumented return value.
@@ -523,7 +523,7 @@ release:
 * :github:`8415` - [Coverity CID :186581] Memory - corruptions in /subsys/bluetooth/host/gatt.c
 * :github:`8414` - [Coverity CID :186582] Memory - corruptions in /subsys/bluetooth/host/gatt.c
 * :github:`8413` - [Coverity CID :186583] Error handling issues in /samples/net/sockets/dumb_http_server/src/socket_dumb_http.c
-* :github:`8393` - `CONFIG_MULTITHREADING=n` builds call `main()` with interrupts locked
+* :github:`8393` - ``CONFIG_MULTITHREADING=n`` builds call main() with interrupts locked
 * :github:`8391` - nrf52_blenano2 tmp112 sensor sample build failed.
 * :github:`8390` - bluetooth: request APIs to notify application that pairing is complete or not
 * :github:`8388` - Assigning to promptless symbols should have a better error message
@@ -535,7 +535,7 @@ release:
 * :github:`8367` - fs: nvs: auto restore FS on writing while power down error.
 * :github:`8366` - mcumgr: unable to perform 2nd update
 * :github:`8365` - mcumgr: improper response to "image list" command after update.
-* :github:`8361` - __ASSERT() triggers with `CONFIG_MULTITHREADING=n`
+* :github:`8361` - __ASSERT() triggers with ``CONFIG_MULTITHREADING=n``
 * :github:`8358` - Flashing Target Device FAIL
 * :github:`8357` - bluetooth: request the capability to change gap device name programmatically
 * :github:`8356` - Failed test: kernel.common.bitfield (tests/kernel/common) on Altera Max10
@@ -582,7 +582,7 @@ release:
 * :github:`8039` - tests/shell failing on Arduino 101 / Quark SE arc
 * :github:`8026` - Verify TLS server side operation
 * :github:`8019` - ARP: should drop any packet pended when timeout
-* :github:`8013` - Open-AMP：power on can not communicate
+* :github:`8013` - Open-AMP power on can not communicate
 * :github:`7999` - HCI UART with Linux host cannot connect to nrf52 6lowpan peripheral
 * :github:`7978` - SSE and SSE_FP_MATH are set on frdm_k64f, which doesn't have it, triggering Kconfig warnings
 * :github:`7977` - ARC_INIT is set on boards that don't have it, triggering Kconfig warnings

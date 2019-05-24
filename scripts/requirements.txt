@@ -5,12 +5,12 @@ docutils==0.14
 sphinx_rtd_theme
 sphinxcontrib-svg2pdfconverter
 junit2html
-PyYAML>=3.12
+PyYAML>=3.13
 ply==3.10
 hub==2.0
 gitlint
 pyelftools==0.24
-pyocd==0.16.1
+pyocd==0.19.0
 pyserial
 pykwalify
 # "win32" is used for 64-bit Windows as well

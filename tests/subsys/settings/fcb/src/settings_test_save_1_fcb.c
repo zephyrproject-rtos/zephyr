@@ -36,9 +36,9 @@ void test_config_save_1_fcb(void)
 
 	rc = settings_load();
 	zassert_true(rc == 0, "fcb redout error");
-	zassert_true(val8 == 33, "bad value read");
+	zassert_true(val8 == 33U, "bad value read");
 
-	val8 = 15;
+	val8 = 15U;
 	rc = settings_save();
 	zassert_true(rc == 0, "fcb write error");
 }

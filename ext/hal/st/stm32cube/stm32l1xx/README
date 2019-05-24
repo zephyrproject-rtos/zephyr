@@ -1,0 +1,78 @@
+STM32CubeL1
+###########
+
+Origin:
+   ST Microelectronics
+   http://www.st.com/en/embedded-software/stm32cubel1.html
+
+Status:
+   version 1.8.0
+
+Purpose:
+   ST Microelectronics official MCU package for STM32L1 series.
+
+Description:
+   This package is an extract of official STM32CubeL1 package written by ST Microelectronics.
+   It is composed of STM32Cube hardware abstraction layer (HAL) and low layer (LL) plus a set
+   of CMSIS headers files, one for each SoC in STM32L1 series.
+
+Dependencies:
+    None.
+
+URL:
+   http://www.st.com/en/embedded-software/stm32cubel1.html
+
+commit:
+   version 1.8.0
+
+Maintained-by:
+   External
+
+License:
+   BSD-3-Clause
+
+License Link:
+   https://opensource.org/licenses/BSD-3-Clause
+
+Patch List:
+
+    *ext/hal/st/stm32cube/stm32l1xx: rename SVC_IRQn -> SVCall_IRQn
+
+     SVCall_IRQn is used as enum value for SV Call Interrupt for Cortex-M
+     based SoCs for which CPU_CORTEX_M_HAS_BASEPRI=y. However stm32cube
+     for stm32l1xx uses SVC_IRQn enum value for this purpose.
+     This leads to this error:
+
+       arch/arm/include/cortex_m/exc.h:101:19: error: 'SVCall_IRQn'
+         undeclared (first use in this function); did you mean 'SVC_IRQn'?
+
+         NVIC_SetPriority(SVCall_IRQn, _EXC_SVC_PRIO);
+                          ^~~~~~~~~~~
+                          SVC_IRQn
+
+     NB: ext/hal/st/stm32cube/stm32l1xx/soc/stm32l151xb.h file was already
+     fixed in 9f8260457b86 ('ext: hal: st: stm32cube: Add HAL for
+     the STM32L1x series').
+     Impacted files:
+      ext/hal/st/stm32cube/stm32l1xx/soc/stm32l100xb.h
+      ext/hal/st/stm32cube/stm32l1xx/soc/stm32l100xba.h
+      ext/hal/st/stm32cube/stm32l1xx/soc/stm32l100xc.h
+      ext/hal/st/stm32cube/stm32l1xx/soc/stm32l151xba.h
+      ext/hal/st/stm32cube/stm32l1xx/soc/stm32l151xc.h
+      ext/hal/st/stm32cube/stm32l1xx/soc/stm32l151xca.h
+      ext/hal/st/stm32cube/stm32l1xx/soc/stm32l151xd.h
+      ext/hal/st/stm32cube/stm32l1xx/soc/stm32l151xdx.h
+      ext/hal/st/stm32cube/stm32l1xx/soc/stm32l151xe.h
+      ext/hal/st/stm32cube/stm32l1xx/soc/stm32l152xb.h
+      ext/hal/st/stm32cube/stm32l1xx/soc/stm32l152xba.h
+      ext/hal/st/stm32cube/stm32l1xx/soc/stm32l152xc.h
+      ext/hal/st/stm32cube/stm32l1xx/soc/stm32l152xca.h
+      ext/hal/st/stm32cube/stm32l1xx/soc/stm32l152xd.h
+      ext/hal/st/stm32cube/stm32l1xx/soc/stm32l152xdx.h
+      ext/hal/st/stm32cube/stm32l1xx/soc/stm32l152xe.h
+      ext/hal/st/stm32cube/stm32l1xx/soc/stm32l162xc.h
+      ext/hal/st/stm32cube/stm32l1xx/soc/stm32l162xca.h
+      ext/hal/st/stm32cube/stm32l1xx/soc/stm32l162xd.h
+      ext/hal/st/stm32cube/stm32l1xx/soc/stm32l162xdx.h
+      ext/hal/st/stm32cube/stm32l1xx/soc/stm32l162xe.h
+     ST Bug tracker ID: 66029

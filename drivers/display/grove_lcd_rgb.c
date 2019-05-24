@@ -85,7 +85,7 @@ static u8_t color_define[][3] = {
 /********************************************
  *  PRIVATE FUNCTIONS
  *******************************************/
-static void _rgb_reg_set(struct device * const i2c, u8_t addr, u8_t dta)
+static void rgb_reg_set(struct device * const i2c, u8_t addr, u8_t dta)
 {
 	u8_t data[2] = { addr, dta };
 
@@ -93,7 +93,7 @@ static void _rgb_reg_set(struct device * const i2c, u8_t addr, u8_t dta)
 }
 
 
-static inline void _sleep(u32_t sleep_in_ms)
+static inline void sleep(u32_t sleep_in_ms)
 {
 	k_busy_wait(SLEEP_IN_US(sleep_in_ms));
 }
@@ -125,7 +125,7 @@ void glcd_cursor_pos_set(struct device *port, u8_t col, u8_t row)
 
 	unsigned char data[2];
 
-	if (row == 0) {
+	if (row == 0U) {
 		col |= 0x80;
 	} else {
 		col |= 0xC0;
@@ -147,7 +147,7 @@ void glcd_clear(struct device *port)
 
 	i2c_write(dev->i2c, clear, sizeof(clear), rom->lcd_addr);
 	LOG_DBG("clear, delay 20 ms");
-	_sleep(20);
+	sleep(20);
 }
 
 
@@ -164,7 +164,7 @@ void glcd_display_state_set(struct device *port, u8_t opt)
 	i2c_write(dev->i2c, data, sizeof(data), rom->lcd_addr);
 
 	LOG_DBG("set display_state options, delay 5 ms");
-	_sleep(5);
+	sleep(5);
 }
 
 
@@ -215,9 +215,9 @@ void glcd_color_set(struct device *port, u8_t r, u8_t g, u8_t b)
 {
 	struct glcd_data * const dev = port->driver_data;
 
-	_rgb_reg_set(dev->i2c, REGISTER_R, r);
-	_rgb_reg_set(dev->i2c, REGISTER_G, g);
-	_rgb_reg_set(dev->i2c, REGISTER_B, b);
+	rgb_reg_set(dev->i2c, REGISTER_R, r);
+	rgb_reg_set(dev->i2c, REGISTER_G, g);
+	rgb_reg_set(dev->i2c, REGISTER_B, b);
 }
 
 
@@ -233,7 +233,7 @@ void glcd_function_set(struct device *port, u8_t opt)
 	i2c_write(dev->i2c, data, sizeof(data), rom->lcd_addr);
 
 	LOG_DBG("set function options, delay 5 ms");
-	_sleep(5);
+	sleep(5);
 }
 
 
@@ -288,7 +288,7 @@ int glcd_initialize(struct device *port)
 	 * VDD to power on, so pause a little here, 30 ms min, so we go 50
 	 */
 	LOG_DBG("delay 50 ms while the VDD powers on");
-	_sleep(50);
+	sleep(50);
 
 	/* Configure everything for the display function first */
 	cmd = GLCD_CMD_FUNCTION_SET | GLCD_FS_ROWS_2;
@@ -309,15 +309,15 @@ int glcd_initialize(struct device *port)
 
 	/* Now power on the background RGB control */
 	LOG_INF("configuring the RGB background");
-	_rgb_reg_set(dev->i2c, 0x00, 0x00);
-	_rgb_reg_set(dev->i2c, 0x01, 0x05);
-	_rgb_reg_set(dev->i2c, 0x08, 0xAA);
+	rgb_reg_set(dev->i2c, 0x00, 0x00);
+	rgb_reg_set(dev->i2c, 0x01, 0x05);
+	rgb_reg_set(dev->i2c, 0x08, 0xAA);
 
 	/* Now set the background color to white */
 	LOG_DBG("background set to white");
-	_rgb_reg_set(dev->i2c, REGISTER_R, color_define[GROVE_RGB_WHITE][0]);
-	_rgb_reg_set(dev->i2c, REGISTER_G, color_define[GROVE_RGB_WHITE][1]);
-	_rgb_reg_set(dev->i2c, REGISTER_B, color_define[GROVE_RGB_WHITE][2]);
+	rgb_reg_set(dev->i2c, REGISTER_R, color_define[GROVE_RGB_WHITE][0]);
+	rgb_reg_set(dev->i2c, REGISTER_G, color_define[GROVE_RGB_WHITE][1]);
+	rgb_reg_set(dev->i2c, REGISTER_B, color_define[GROVE_RGB_WHITE][2]);
 
 	return 0;
 }

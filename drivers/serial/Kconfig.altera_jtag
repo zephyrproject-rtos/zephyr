@@ -1,7 +1,8 @@
+# SPDX-License-Identifier: Apache-2.0
+
 menuconfig UART_ALTERA_JTAG
 	bool "Nios II JTAG UART driver"
 	select SERIAL_HAS_DRIVER
 	help
 	  Enable the Altera JTAG UART driver, built in to many Nios II CPU
 	  designs.
-

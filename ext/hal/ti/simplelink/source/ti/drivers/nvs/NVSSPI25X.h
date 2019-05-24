@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Texas Instruments Incorporated
+ * Copyright (c) 2017-2018, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -61,18 +61,23 @@
  *
  *  It is assumed that the SPI flash device used by this driver supports
  *  the byte programmability of the SPIFLASH_PAGE_WRITE command and that
- *  write page size is 256 bytes.
+ *  write page size is 256 bytes. The erase sector and subsector sizes are
+ *  assumed to be 64K and 4K respectively.
  *
- *  The NVS_erase() command assumes that regions with sectorSize = 4096 bytes
- *  are erased using the SPIFLASH_SUBSECTOR_ERASE command (0x20). Otherwise the
- *  SPIFLASH_SECTOR_ERASE command (0xD8) is used to erase the flash sector.
- *  It is up to the user to ensure that each region's sectorSize matches these
- *  sector erase rules.
+ *  The NVS_erase() command will issue a sector or subsector erase command
+ *  based on the input size and offset.
+ *
+ *  The driver must query the SPI flash to ensure that the part is ready before
+ *  commands are issued. If the part responds as busy, the poll function sleeps
+ *  for a number of microseconds determined by the
+ *  #NVSSPI25X_HWAttrs.statusPollDelayUs field. A value of 0 means that the
+ *  driver will continuously poll the external flash until it is ready, which
+ *  may affect other threads ability to execute.
+ *
+ * ## SPI Interface Management ##
  *
  *  For each managed flash region, a corresponding SPI instance must be
- *  provided to the NVSSPI25X driver. As well, a GPIO instance index must be
- *  provided to the driver so that the SPI flash device's chip select can
- *  be asserted during SPI transfers.
+ *  provided to the NVSSPI25X driver.
  *
  *  The SPI instance can be opened and closed
  *  internally by the NVSSPI25X driver, or alternatively, a SPI handle can be
@@ -100,11 +105,87 @@
  *  expects the NVS driver to open and close the SPI instance internally using
  *  the 'spiIndex' and 'spiBitRate' provided in the HWAttrs.
  *
- *  Regardless of whether a region's SPI instance is opened by the driver or
- *  elsewhere within the application, the GPIO instance used to select the SPI
- *  flash device during SPI operations MUST be provided. The GPIO pin will be
- *  configured as "GPIO_CFG_OUT_STD" and assertion of this pin is
- *  assumed to be active LOW.
+ *  ## @anchor SPI_CS_MGMT SPI Flash Chip Select Management ##
+ *
+ *  ### Option 1: NVSSPI25X Driver Manages Chip Select ###
+ *  By default, the NVSSPI25X driver will assert and de-assert a GPIO
+ *  driver managed pin to select the SPI flash device before and after
+ *  each SPI transfer to and from the device.
+ *
+ *  To enable this behavior, a valid GPIO driver instance index must be
+ *  provided in the NVS region's [spiCsnGpioIndex]
+ *  (@ref NVSSPI25X_HWAttrs.spiCsnGpioIndex) field of the
+ *  NVSSPI25X_HWAttrs structure. The corresponding GPIO pin will be
+ *  configured at runtime by the NVSSPI25X driver as "GPIO_CFG_OUT_STD"
+ *  and assertion of this pin is assumed to be active LOW.
+ *
+ *  ### Option 2: SPI Driver Manages Chip Select ###
+ *  Some SPI peripherals can be configured to manage their own chip
+ *  select. Setting the [spiCsnGpioIndex]
+ *   (@ref NVSSPI25X_HWAttrs.spiCsnGpioIndex) field of the NVSSPI25X_HWAttrs
+ *  structure to #NVSSPI25X_SPI_MANAGES_CS informs the NVSSPI25X driver
+ *  that the SPI peripheral used by the NVS driver has been configured
+ *  that way.
+ *
+ *  ### Option 3: User Manages Chip Select ###
+ *  Alternatively, the user can manage the assertion and de-assertion of
+ *  the SPI flash chip select entirely themselves by providing implementations
+ *  of the following 4 APIs in their application code:
+ *
+ *  @code
+ *  void NVSSPI25X_initSpiCs(NVS_Handle nvsHandle, uint16_t csId);
+ *  @endcode
+ *  - This function is invoked within the NVS_open() API and is where the
+ *    user should do whatever is required to initialize the hardware
+ *    used for asserting and de-assering the SPI chip select signal.
+ *  - The 'nvsHandle` argument is the NVS handle associated with the
+ *    corresponding NVS region.
+ *  - The 'csId' argument passed to this API is a copy of the [spiCsnGpioIndex]
+ *    (@ref NVSSPI25X_HWAttrs.spiCsnGpioIndex)
+ *    field of the corresponding NVS region's NVSSPI25X_HWAttrs structure.
+ *
+ *  @code
+ *  void NVSSPI25X_deinitSpiCs(NVS_Handle nvsHandle, uint16_t csId);
+ *  @endcode
+ *  - This function is invoked within the NVS_close() API and is where the
+ *    user should do whatever is required to de-initialize the hardware
+ *    used for asserting and de-assering the SPI chip select signal.
+ *  - The 'nvsHandle` argument is the NVS handle associated with the
+ *    corresponding NVS region.
+ *  - The 'csId' argument passed to this API is a copy of the [spiCsnGpioIndex]
+ *    (@ref NVSSPI25X_HWAttrs.spiCsnGpioIndex)
+ *    field of the corresponding NVS region's NVSSPI25X_HWAttrs structure.
+ *
+ *  @code
+ *  void NVSSPI25X_assertSpiCs(NVS_Handle nvsHandle, uint16_t csId);
+ *  @endcode
+ *  - This function is called PRIOR to every SPI transfer to and from the SPI
+ *    flash device performed by the NVSSPI25X driver. The user code should
+ *    perform the corresponding action required to select the SPI flash
+ *    device to prepare for the SPI transfer.
+ *  - The 'nvsHandle` argument is the NVS handle associated with the
+ *    corresponding NVS region.
+ *  - The 'csId' argument passed to this API is a copy of the [spiCsnGpioIndex]
+ *    (@ref NVSSPI25X_HWAttrs.spiCsnGpioIndex)
+ *    field of the corresponding NVS region's NVSSPI25X_HWAttrs structure.
+ *
+ *  @code
+ *  void NVSSPI25X_deassertSpiCs(NVS_Handle nvsHandle, uint16_t csId);
+ *  @endcode
+ *  - This function is called AFTER every SPI transfer to and from the SPI
+ *    flash device performed by the NVSSPI25X driver. The user code should
+ *    perform the corresponding action required to de-select the SPI flash
+ *    device.
+ *    following the SPI transfer.
+ *  - The 'nvsHandle` argument is the NVS handle associated with the
+ *    corresponding NVS region.
+ *  - The 'csId' argument passed to this API is a copy of the [spiCsnGpioIndex]
+ *    (@ref NVSSPI25X_HWAttrs.spiCsnGpioIndex)
+ *    field of the corresponding NVS region's NVSSPI25X_HWAttrs structure.
+ *
+ *  @warning  All 4 of the above APIs must be provided by the user if this
+ *  option is used, otherwise default internal implementations of the APIs
+ *  will be called that will likely lead to application failure.
  */
 
 #ifndef ti_drivers_nvs_NVSSPI25X__include
@@ -128,7 +209,19 @@ extern "C" {
  *
  *  Mass Erase is the only control command supported.
  */
-#define NVSSPI25X_CMD_MASS_ERASE       (NVS_CMD_RESERVED + 0)
+#define NVSSPI25X_CMD_MASS_ERASE        (NVS_CMD_RESERVED + 0)
+
+/*!
+ *  @brief Disable internal management of SPI chip select
+ *
+ *  Some SPI peripherals can be configured to manage their own chip
+ *  select. Setting the [spiCsnGpioIndex]
+ *  (@ref NVSSPI25X_HWAttrs.spiCsnGpioIndex) field of the NVSSPI25X_HWAttrs
+ *  structure to #NVSSPI25X_SPI_MANAGES_CS informs the NVSSPI25X driver
+ *  that the SPI peripheral used by the NVS driver is configured
+ *  to manage its own chip select signal.
+ */
+#define NVSSPI25X_SPI_MANAGES_CS        ((uint16_t)(~0))
 
 /*!
  *  @internal @brief NVS function pointer table
@@ -180,7 +273,7 @@ extern const NVS_FxnTable NVSSPI25X_fxnTable;
  *          .spiHandle = NULL,
  *          .spiIndex = 0,
  *          .spiBitRate = 40000000,
- *          .spiCsGpioIndex = 12,
+ *          .spiCsnGpioIndex = 12,
  *      },
  *      //
  *      // region 1 is 3 flash sectors in length.
@@ -194,7 +287,7 @@ extern const NVS_FxnTable NVSSPI25X_fxnTable;
  *          .spiHandle = NULL,
  *          .spiIndex = 0,
  *          .spiBitRate = 40000000,
- *          .spiCsGpioIndex = 12,
+ *          .spiCsnGpioIndex = 12,
  *      }
  *  };
  *  @endcode
@@ -208,7 +301,22 @@ typedef struct NVSSPI25X_HWAttrs {
     SPI_Handle  *spiHandle;         /*!< ptr to SPI handle if provided by user. */
     uint16_t    spiIndex;           /*!< SPI instance index from Board file */
     uint32_t    spiBitRate;         /*!< SPI bit rate in Hz */
-    uint16_t    spiCsnGpioIndex;    /*!< SPI chip select GPIO index from Board file */
+    /*! @brief SPI Flash Chip Select GPIO index
+
+        This field should be set to either an index within the
+        GPIO driver's GPIO_Config table, or to #NVSSPI25X_SPI_MANAGES_CS.
+        see [SPI Flash Chip Select Management] (@ref SPI_CS_MGMT) for more
+        details.
+    */
+    uint16_t    spiCsnGpioIndex;
+    /*! @brief External Flash Status Poll Delay
+     *
+     * This field determines how many microseconds the driver waits after
+     * querying the external flash status. Increasing this value can help
+     * mitigate CPU starvation if the external flash is busy for long periods
+     * of time, but may also result in increased latency.
+     */
+    uint32_t    statusPollDelayUs;
 } NVSSPI25X_HWAttrs;
 
 /*
@@ -241,6 +349,14 @@ extern int_fast16_t NVSSPI25X_read(NVS_Handle handle, size_t offset,
 extern void         NVSSPI25X_unlock(NVS_Handle handle);
 extern int_fast16_t NVSSPI25X_write(NVS_Handle handle, size_t offset,
                         void *buffer, size_t bufferSize, uint_fast16_t flags);
+/*
+ *  Weakly defined APIs that can be overridden by the user
+ */
+extern void         NVSSPI25X_initSpiCs(NVS_Handle spiHandle, uint16_t csId);
+extern void         NVSSPI25X_deinitSpiCs(NVS_Handle spiHandle, uint16_t csId);
+extern void         NVSSPI25X_assertSpiCs(NVS_Handle spiHandle, uint16_t csId);
+extern void         NVSSPI25X_deassertSpiCs(NVS_Handle spiHandle, uint16_t csId);
+
 /*! @endcond */
 
 #if defined (__cplusplus)

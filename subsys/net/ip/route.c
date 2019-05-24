@@ -548,7 +548,7 @@ int net_route_del_by_nexthop_data(struct net_if *iface,
 				continue;
 			}
 
-			if (nbr->extra_data_size == 0) {
+			if (nbr->extra_data_size == 0U) {
 				continue;
 			}
 

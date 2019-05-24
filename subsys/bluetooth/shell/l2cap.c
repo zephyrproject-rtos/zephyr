@@ -73,7 +73,7 @@ static int l2cap_recv_metrics(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		cycle_stamp = k_cycle_get_32();
 	} else {
 		len += buf->len;
-		l2cap_rate = ((u64_t)len << 3) * 1000000000 / delta;
+		l2cap_rate = ((u64_t)len << 3) * 1000000000U / delta;
 	}
 
 	return 0;
@@ -98,7 +98,7 @@ static int l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		    buf->len);
 
 	if (buf->len) {
-		hexdump(ctx_shell, buf->data, buf->len);
+		shell_hexdump(ctx_shell, buf->data, buf->len);
 	}
 
 	if (l2cap_recv_delay) {
@@ -245,7 +245,7 @@ static int cmd_register(const struct shell *shell, size_t argc, char *argv[])
 
 	if (bt_l2cap_server_register(&server) < 0) {
 		shell_error(shell, "Unable to register psm");
-		server.psm = 0;
+		server.psm = 0U;
 		return -ENOEXEC;
 	} else {
 		bt_conn_cb_register(&l2cap_conn_callbacks);

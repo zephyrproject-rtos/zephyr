@@ -133,7 +133,7 @@ any daemons or helpers started in the initial steps, to avoid possible
 networking or routing problems such as address conflicts in local
 network interfaces. For example, stop them if you switch from testing
 networking with QEMU to using real hardware, or to return your host
-laptop to normal WiFi use.
+laptop to normal Wi-Fi use.
 
 To stop the daemons, press Ctrl+C in the corresponding terminal windows
 (you need to stop both ``loop-slip-tap.sh`` and ``loop-socat.sh``).

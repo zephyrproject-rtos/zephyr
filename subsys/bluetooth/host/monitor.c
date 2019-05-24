@@ -66,7 +66,7 @@ static struct {
 	atomic_t other;
 } drops;
 
-extern int _prf(int (*func)(), void *dest,
+extern int z_prf(int (*func)(), void *dest,
 		const char *format, va_list vargs);
 
 static void monitor_send(const void *data, size_t len)

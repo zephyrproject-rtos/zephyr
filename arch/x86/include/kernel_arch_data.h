@@ -41,7 +41,7 @@
 #endif
 
 /* Some configurations require that the stack/registers be adjusted before
- * _thread_entry. See discussion in swap.S for _x86_thread_entry_wrapper()
+ * z_thread_entry. See discussion in swap.S for z_x86_thread_entry_wrapper()
  */
 #if defined(CONFIG_X86_IAMCU) || defined(CONFIG_DEBUG_INFO)
 #define _THREAD_WRAPPER_REQUIRED
@@ -64,9 +64,9 @@
 
 /* end - states */
 
-#if defined(CONFIG_FP_SHARING) && defined(CONFIG_SSE)
+#if defined(CONFIG_LAZY_FP_SHARING) && defined(CONFIG_SSE)
 #define _FP_USER_MASK (K_FP_REGS | K_SSE_REGS)
-#elif defined(CONFIG_FP_SHARING)
+#elif defined(CONFIG_LAZY_FP_SHARING)
 #define _FP_USER_MASK (K_FP_REGS)
 #endif
 
@@ -98,8 +98,8 @@
 #define IV_INTEL_RESERVED_END 31
 
 /*
- * Model specific register (MSR) definitions.  Use the _x86_msr_read() and
- * _x86_msr_write() primitives to read/write the MSRs.  Only the so-called
+ * Model specific register (MSR) definitions.  Use the z_x86_msr_read() and
+ * z_x86_msr_write() primitives to read/write the MSRs.  Only the so-called
  * "Architectural MSRs" are listed, i.e.  the subset of MSRs and associated
  * bit fields which will not change on future processor generations.
  */
@@ -383,8 +383,8 @@
  *   All other "flags"          = Don't change state
  */
 
-#define EFLAGS_INITIAL 0x00000200
-#define EFLAGS_MASK 0x00003200
+#define EFLAGS_INITIAL 0x00000200LLU
+#define EFLAGS_MASK 0x00003200ULL
 
 /* Enable paging and write protection */
 #define CR0_PG_WP_ENABLE 0x80010000
@@ -398,7 +398,7 @@
 #include <misc/util.h>
 
 #ifdef _THREAD_WRAPPER_REQUIRED
-extern void _x86_thread_entry_wrapper(k_thread_entry_t entry,
+extern void z_x86_thread_entry_wrapper(k_thread_entry_t entry,
 				      void *p1, void *p2, void *p3);
 #endif /* _THREAD_WRAPPER_REQUIRED */
 
@@ -412,12 +412,6 @@ extern void _x86_thread_entry_wrapper(k_thread_entry_t entry,
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-
-struct _kernel_arch {
-};
-
-typedef struct _kernel_arch _kernel_arch_t;
 
 #ifdef __cplusplus
 }

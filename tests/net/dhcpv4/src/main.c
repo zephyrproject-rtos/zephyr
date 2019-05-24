@@ -156,14 +156,7 @@ struct dhcp_msg {
 
 static struct k_sem test_lock;
 
-static void test_result(bool pass)
-{
-	if (pass) {
-		TC_END_REPORT(TC_PASS);
-	} else {
-		TC_END_REPORT(TC_FAIL);
-	}
-}
+#define WAIT_TIME K_SECONDS(CONFIG_NET_DHCPV4_INITIAL_DELAY_MAX + 1)
 
 struct net_dhcpv4_context {
 	u8_t mac_addr[sizeof(struct net_eth_addr)];
@@ -207,29 +200,29 @@ struct net_pkt *prepare_dhcp_offer(struct net_if *iface, u32_t xid)
 {
 	struct net_pkt *pkt;
 
-	pkt = net_pkt_alloc_with_buffer(iface,
-					sizeof(struct net_ipv4_hdr) +
-					sizeof(struct net_udp_hdr) +
-					sizeof(offer), AF_INET,
+	pkt = net_pkt_alloc_with_buffer(iface, sizeof(offer), AF_INET,
 					IPPROTO_UDP, K_FOREVER);
+	if (!pkt) {
+		return NULL;
+	}
 
 	net_pkt_set_ipv4_ttl(pkt, 0xFF);
 
-	if (net_ipv4_create_new(pkt, &server_addr, &client_addr) ||
+	if (net_ipv4_create(pkt, &server_addr, &client_addr) ||
 	    net_udp_create(pkt, htons(SERVER_PORT), htons(CLIENT_PORT))) {
 		goto fail;
 	}
 
-	if (net_pkt_write_new(pkt, offer, 4)) {
+	if (net_pkt_write(pkt, offer, 4)) {
 		goto fail;
 	}
 
 	/* Update xid from the client request */
-	if (net_pkt_write_be32_new(pkt, xid)) {
+	if (net_pkt_write_be32(pkt, xid)) {
 		goto fail;
 	}
 
-	if (net_pkt_write_new(pkt, offer + 8, sizeof(offer) - 8)) {
+	if (net_pkt_write(pkt, offer + 8, sizeof(offer) - 8)) {
 		goto fail;
 	}
 
@@ -248,29 +241,29 @@ struct net_pkt *prepare_dhcp_ack(struct net_if *iface, u32_t xid)
 {
 	struct net_pkt *pkt;
 
-	pkt = net_pkt_alloc_with_buffer(iface,
-					sizeof(struct net_ipv4_hdr) +
-					sizeof(struct net_udp_hdr) +
-					sizeof(offer), AF_INET,
+	pkt = net_pkt_alloc_with_buffer(iface, sizeof(offer), AF_INET,
 					IPPROTO_UDP, K_FOREVER);
+	if (!pkt) {
+		return NULL;
+	}
 
 	net_pkt_set_ipv4_ttl(pkt, 0xFF);
 
-	if (net_ipv4_create_new(pkt, &server_addr, &client_addr) ||
+	if (net_ipv4_create(pkt, &server_addr, &client_addr) ||
 	    net_udp_create(pkt, htons(SERVER_PORT), htons(CLIENT_PORT))) {
 		goto fail;
 	}
 
-	if (net_pkt_write_new(pkt, ack, 4)) {
+	if (net_pkt_write(pkt, ack, 4)) {
 		goto fail;
 	}
 
 	/* Update xid from the client request */
-	if (net_pkt_write_be32_new(pkt, xid)) {
+	if (net_pkt_write_be32(pkt, xid)) {
 		goto fail;
 	}
 
-	if (net_pkt_write_new(pkt, ack + 8, sizeof(ack) - 8)) {
+	if (net_pkt_write(pkt, ack + 8, sizeof(ack) - 8)) {
 		goto fail;
 	}
 
@@ -287,8 +280,6 @@ fail:
 
 static int parse_dhcp_message(struct net_pkt *pkt, struct dhcp_msg *msg)
 {
-	net_pkt_cursor_init(pkt);
-
 	/* Skip IPv4 and UDP headers */
 	if (net_pkt_skip(pkt, NET_IPV4UDPH_LEN)) {
 		return 0;
@@ -299,7 +290,7 @@ static int parse_dhcp_message(struct net_pkt *pkt, struct dhcp_msg *msg)
 		return 0;
 	}
 
-	if (net_pkt_read_be32_new(pkt, &msg->xid)) {
+	if (net_pkt_read_be32(pkt, &msg->xid)) {
 		return 0;
 	}
 
@@ -312,7 +303,7 @@ static int parse_dhcp_message(struct net_pkt *pkt, struct dhcp_msg *msg)
 		u8_t length = 0U;
 		u8_t type;
 
-		if (net_pkt_read_u8_new(pkt, &type)) {
+		if (net_pkt_read_u8(pkt, &type)) {
 			return 0;
 		}
 
@@ -321,14 +312,14 @@ static int parse_dhcp_message(struct net_pkt *pkt, struct dhcp_msg *msg)
 				return 0;
 			}
 
-			if (net_pkt_read_u8_new(pkt, &msg->type)) {
+			if (net_pkt_read_u8(pkt, &msg->type)) {
 				return 0;
 			}
 
 			return 1;
 		}
 
-		if (net_pkt_read_u8_new(pkt, &length)) {
+		if (net_pkt_read_u8(pkt, &length)) {
 			return 0;
 		}
 
@@ -399,22 +390,19 @@ static struct net_mgmt_event_callback rx_cb;
 static void receiver_cb(struct net_mgmt_event_callback *cb,
 			u32_t nm_event, struct net_if *iface)
 {
-	k_sem_give(&test_lock);
-
 	if (nm_event != NET_EVENT_IPV4_ADDR_ADD) {
 		/* Spurious callback. */
-		test_result(false);
 		return;
 	}
 
-	test_result(true);
+	k_sem_give(&test_lock);
 }
 
 void test_dhcp(void)
 {
 	struct net_if *iface;
 
-	k_sem_init(&test_lock, 1, UINT_MAX);
+	k_sem_init(&test_lock, 0, UINT_MAX);
 
 	net_mgmt_init_event_callback(&rx_cb, receiver_cb,
 				     NET_EVENT_IPV4_ADDR_ADD);
@@ -423,13 +411,14 @@ void test_dhcp(void)
 
 	iface = net_if_get_default();
 	if (!iface) {
-		TC_PRINT("Interface not available n");
-		return;
+		zassert_true(false, "Interface not available");
 	}
 
 	net_dhcpv4_start(iface);
 
-	k_sem_take(&test_lock, K_FOREVER);
+	if (k_sem_take(&test_lock, WAIT_TIME)) {
+		zassert_true(false, "Timeout while waiting");
+	}
 }
 
 /**test case main entry */

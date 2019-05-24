@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2017, Texas Instruments Incorporated
+ * Copyright (c) 2015-2018, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,7 +32,7 @@
 /** ============================================================================
  *  @file       Power.h
  *
- *  @brief      Power manager interface
+ *  @brief      Power Manager interface
  *
  *  The Power header file should be included in an application as follows:
  *  @code
@@ -40,14 +40,20 @@
  *  @endcode
  *
  *  # Operation #
- *  The Power manager facilitates the transition of the MCU from active state
- *  to one of the sleep states and vice versa.  It provides drivers the
- *  ability to set and release dependencies on hardware resources and keeps
- *  a reference count on each resource to know when to enable or disable the
- *  peripheral clock to the resource.  It provides drivers the ability to
- *  register a callback function upon a specific power event.  In addition,
- *  drivers and apps can set or release constraints to prevent the MCU from
- *  transitioning into a particular sleep state.
+ *  The Power Manager facilitates the transition of the MCU from active states
+ *  to sleep states and vice versa.  It provides other drivers the
+ *  ability to set and release dependencies on hardware resources, and keeps
+ *  reference counts on each resource to know when to enable or disable the
+ *  resource.  It provides drivers the ability to register callback functions
+ *  to be invoked upon specific power events.  In addition, drivers and
+ *  applications can set or release constraints to prevent the MCU from
+ *  transitioning into specific active or sleep states.
+ *
+ *  <B>The Power Manager APIs and configuration parameters are described here.
+ *  For a detailed description of terms and concepts, and usage by different
+ *  types of software components (peripheral drivers, power policies,
+ *  and applications) please see the
+ *  <a href='../../Power_Management.pdf'>SimpleLink SDK Power Management User's Guide</a>.</B>
  *
  *  ============================================================================
  */
@@ -126,7 +132,7 @@ typedef struct Power_NotifyObj_ {
  *  Calling this function clears the flag that controls whether the configured
  *  power policy function is invoked on each pass through the Idle loop.
  *  This function call will override both a 'true' setting of the
- *  "enablePolicy" setting in the Power manager configuration object, as well
+ *  "enablePolicy" setting in the Power Manager configuration object, as well
  *  as a previous runtime call to the Power_enablePolicy() function.
  *
  *  @return The old value of "enablePolicy".
@@ -141,7 +147,7 @@ bool Power_disablePolicy(void);
  *  Calling this function sets a flag that will cause the configured power
  *  policy function to be invoked on each pass through the Idle loop. This
  *  function call will override both a 'false' setting of the "enablePolicy"
- *  setting in the Power manager configuration object, as well as a previous
+ *  setting in the Power Manager configuration object, as well as a previous
  *  runtime call to the Power_disablePolicy() function.
  *
  *  For some processor families, automatic power transitions can make initial
@@ -160,7 +166,7 @@ void Power_enablePolicy(void);
  *  @brief  Get the constraints that have been declared with Power
  *
  *  This function returns a bitmask indicating the constraints that are
- *  currently declared to the Power manager (via previous calls to
+ *  currently declared to the Power Manager (via previous calls to
  *  Power_setConstraint()).  For each constraint that is currently declared,
  *  the corresponding bit in the bitmask will be set.  For example, if two
  *  clients have independently declared two different constraints, the returned
@@ -238,9 +244,9 @@ uint_fast32_t Power_getTransitionLatency(uint_fast16_t sleepState,
     uint_fast16_t type);
 
 /*!
- *  @brief  Get the current transition state of the Power manager
+ *  @brief  Get the current transition state of the Power Manager
  *
- *  This function returns the current transition state for the Power manager.
+ *  This function returns the current transition state for the Power Manager.
  *  For example, when no transitions are in progress, a status of Power_ACTIVE
  *  is returned.  Power_ENTERING_SLEEP is returned during the transition to
  *  sleep, before sleep has occurred. Power_EXITING_SLEEP is returned
@@ -248,7 +254,7 @@ uint_fast32_t Power_getTransitionLatency(uint_fast16_t sleepState,
  *  And Power_CHANGING_PERF_LEVEL is returned when a change is being made
  *  to the performance level.
  *
- *  @return The current Power manager transition state.
+ *  @return The current Power Manager transition state.
  */
 uint_fast16_t Power_getTransitionState(void);
 
@@ -267,7 +273,7 @@ void Power_idleFunc(void);
 /*!
  *  @brief  Power initialization function
  *
- *  This function initializes Power manager internal state.  It must be called
+ *  This function initializes Power Manager internal state.  It must be called
  *  prior to any other Power API.  This function is normally called as part
  *  of TI-RTOS board initialization, for example, from within the
  *  \<board name\>_initGeneral() function.
@@ -366,8 +372,8 @@ int_fast16_t Power_registerNotify(Power_NotifyObj *pNotifyObj,
  *  @param  constraintId      constraint id
  *
  *  @return <b>CC26XX/CC13XX only</b>: Power_SOK. To minimize code size
- *          asserts are used internally to check that the constraintId is valid,
- *          and that the constraint count is not already zero;
+ *          asserts are used internally to check that the constraintId is
+ *          valid,valid, and that the constraint count is not already zero;
  *          the function always returns Power_SOK.
  *
  *  @return <b>All other devices</b>: Power_SOK on success,
@@ -406,7 +412,7 @@ int_fast16_t Power_releaseDependency(uint_fast16_t resourceId);
 /*!
  *  @brief  Declare an operational constraint
  *
- *  Before taking certain actions, the Power manager checks to see if the
+ *  Before taking certain actions, the Power Manager checks to see if the
  *  requested action would conflict with a client-declared constraint. If the
  *  action does conflict, Power will not proceed with the request.  This is the
  *  function that allows clients to declare their constraints with Power.
@@ -436,16 +442,16 @@ int_fast16_t Power_setConstraint(uint_fast16_t constraintId);
  *
  *  This function declares a dependency upon a resource. For example, if a
  *  UART driver needs a specific UART peripheral, it uses this function to
- *  declare this to the Power manager.  If the resource had been inactive,
+ *  declare this to the Power Manager.  If the resource had been inactive,
  *  then Power will activate the peripheral during this function call.
  *
  *  What is needed to make a peripheral resource 'active' will vary by device
  *  family. For some devices this may be a simple enable of a clock to the
  *  specified peripheral.  For others it may also require a power on of a
- *  power domain.  In either case, the Power manager will take care of these
+ *  power domain.  In either case, the Power Manager will take care of these
  *  details, and will also implement reference counting for resources and their
  *  interdependencies.  For example, if multiple UART peripherals reside in
- *  a shared serial power domain, the Power manager will power up the serial
+ *  a shared serial power domain, the Power Manager will power up the serial
  *  domain when it is first needed, and then automatically power the domain off
  *  later, when all related dependencies for the relevant peripherals are
  *  released.

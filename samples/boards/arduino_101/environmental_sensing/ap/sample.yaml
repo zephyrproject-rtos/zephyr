@@ -3,7 +3,7 @@ sample:
     and sensor features on Arduino 101.
   name: Environmental Sensing (Application Processor Part)
 tests:
-  test:
+  sample.board.arduino_101.env_sensing:
     platform_whitelist: arduino_101
     tags: sensors
     harness: sensor

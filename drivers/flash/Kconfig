@@ -41,6 +41,7 @@ config FLASH_SHELL
 config FLASH_PAGE_LAYOUT
 	bool "API for retrieving the layout of pages"
 	depends on FLASH_HAS_PAGE_LAYOUT
+	default y
 	help
 	  Enables API for retrieving the layout of flash memory pages.
 
@@ -64,4 +65,6 @@ source "drivers/flash/Kconfig.sam"
 
 source "drivers/flash/Kconfig.w25qxxdv"
 
-endif
+source "drivers/flash/Kconfig.simulator"
+
+endif # FLASH

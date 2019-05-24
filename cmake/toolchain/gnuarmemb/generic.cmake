@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 # Until we completely deprecate it
 if(NOT DEFINED ENV{GNUARMEMB_TOOLCHAIN_PATH})
   if(DEFINED ENV{GCCARMEMB_TOOLCHAIN_PATH})
@@ -17,6 +19,7 @@ endif()
 set(TOOLCHAIN_HOME ${GNUARMEMB_TOOLCHAIN_PATH})
 
 set(COMPILER gcc)
+set(LINKER ld)
 
 set(CROSS_COMPILE_TARGET arm-none-eabi)
 set(SYSROOT_TARGET       arm-none-eabi)

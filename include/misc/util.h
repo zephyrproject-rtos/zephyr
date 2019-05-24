@@ -94,16 +94,16 @@ constexpr size_t ARRAY_SIZE(T(&)[N]) { return N; }
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
 #endif
 
-static inline int is_power_of_two(unsigned int x)
+static inline bool is_power_of_two(unsigned int x)
 {
-	return (x != 0) && !(x & (x - 1));
+	return (x != 0U) && ((x & (x - 1)) == 0U);
 }
 
 static inline s64_t arithmetic_shift_right(s64_t value, u8_t shift)
 {
 	s64_t sign_ext;
 
-	if (shift == 0) {
+	if (shift == 0U) {
 		return value;
 	}
 
@@ -169,14 +169,14 @@ static inline s64_t arithmetic_shift_right(s64_t value, u8_t shift)
  * value to be e.g. a literal "1" at expansion time in the next macro,
  * not "(1)", etc...  Standard recursive expansion does not work.
  */
-#define IS_ENABLED(config_macro) _IS_ENABLED1(config_macro)
+#define IS_ENABLED(config_macro) Z_IS_ENABLED1(config_macro)
 
 /* Now stick on a "_XXXX" prefix, it will now be "_XXXX1" if config_macro
  * is "1", or just "_XXXX" if it's undefined.
- *   ENABLED:   _IS_ENABLED2(_XXXX1)
- *   DISABLED   _IS_ENABLED2(_XXXX)
+ *   ENABLED:   Z_IS_ENABLED2(_XXXX1)
+ *   DISABLED   Z_IS_ENABLED2(_XXXX)
  */
-#define _IS_ENABLED1(config_macro) _IS_ENABLED2(_XXXX##config_macro)
+#define Z_IS_ENABLED1(config_macro) Z_IS_ENABLED2(_XXXX##config_macro)
 
 /* Here's the core trick, we map "_XXXX1" to "_YYYY," (i.e. a string
  * with a trailing comma), so it has the effect of making this a
@@ -190,15 +190,15 @@ static inline s64_t arithmetic_shift_right(s64_t value, u8_t shift)
 /* Then we append an extra argument to fool the gcc preprocessor into
  * accepting it as a varargs macro.
  *                         arg1   arg2  arg3
- *   ENABLED:   _IS_ENABLED3(_YYYY,    1,    0)
- *   DISABLED   _IS_ENABLED3(_XXXX 1,  0)
+ *   ENABLED:   Z_IS_ENABLED3(_YYYY,    1,    0)
+ *   DISABLED   Z_IS_ENABLED3(_XXXX 1,  0)
  */
-#define _IS_ENABLED2(one_or_two_args) _IS_ENABLED3(one_or_two_args true, false)
+#define Z_IS_ENABLED2(one_or_two_args) Z_IS_ENABLED3(one_or_two_args true, false)
 
 /* And our second argument is thus now cooked to be 1 in the case
  * where the value is defined to 1, and 0 if not:
  */
-#define _IS_ENABLED3(ignore_this, val, ...) val
+#define Z_IS_ENABLED3(ignore_this, val, ...) val
 
 /**
  * @brief Insert code depending on result of flag evaluation.
@@ -234,9 +234,9 @@ static inline s64_t arithmetic_shift_right(s64_t value, u8_t shift)
  *
  */
 #define COND_CODE_1(_flag, _if_1_code, _else_code) \
-	_COND_CODE_1(_flag, _if_1_code, _else_code)
+	Z_COND_CODE_1(_flag, _if_1_code, _else_code)
 
-#define _COND_CODE_1(_flag, _if_1_code, _else_code) \
+#define Z_COND_CODE_1(_flag, _if_1_code, _else_code) \
 	__COND_CODE(_XXXX##_flag, _if_1_code, _else_code)
 
 /**
@@ -251,9 +251,9 @@ static inline s64_t arithmetic_shift_right(s64_t value, u8_t shift)
  *
  */
 #define COND_CODE_0(_flag, _if_0_code, _else_code) \
-	_COND_CODE_0(_flag, _if_0_code, _else_code)
+	Z_COND_CODE_0(_flag, _if_0_code, _else_code)
 
-#define _COND_CODE_0(_flag, _if_0_code, _else_code) \
+#define Z_COND_CODE_0(_flag, _if_0_code, _else_code) \
 	__COND_CODE(_ZZZZ##_flag, _if_0_code, _else_code)
 
 #define _ZZZZ0 _YYYY,
@@ -373,6 +373,222 @@ static inline s64_t arithmetic_shift_right(s64_t value, u8_t shift)
 #define UTIL_DEC_38 37
 #define UTIL_DEC_39 38
 #define UTIL_DEC_40 39
+#define UTIL_DEC_41 40
+#define UTIL_DEC_42 41
+#define UTIL_DEC_43 42
+#define UTIL_DEC_44 43
+#define UTIL_DEC_45 44
+#define UTIL_DEC_46 45
+#define UTIL_DEC_47 46
+#define UTIL_DEC_48 47
+#define UTIL_DEC_49 48
+#define UTIL_DEC_50 49
+#define UTIL_DEC_51 50
+#define UTIL_DEC_52 51
+#define UTIL_DEC_53 52
+#define UTIL_DEC_54 53
+#define UTIL_DEC_55 54
+#define UTIL_DEC_56 55
+#define UTIL_DEC_57 56
+#define UTIL_DEC_58 57
+#define UTIL_DEC_59 58
+#define UTIL_DEC_60 59
+#define UTIL_DEC_61 60
+#define UTIL_DEC_62 61
+#define UTIL_DEC_63 62
+#define UTIL_DEC_64 63
+#define UTIL_DEC_65 64
+#define UTIL_DEC_66 65
+#define UTIL_DEC_67 66
+#define UTIL_DEC_68 67
+#define UTIL_DEC_69 68
+#define UTIL_DEC_70 69
+#define UTIL_DEC_71 70
+#define UTIL_DEC_72 71
+#define UTIL_DEC_73 72
+#define UTIL_DEC_74 73
+#define UTIL_DEC_75 74
+#define UTIL_DEC_76 75
+#define UTIL_DEC_77 76
+#define UTIL_DEC_78 77
+#define UTIL_DEC_79 78
+#define UTIL_DEC_80 79
+#define UTIL_DEC_81 80
+#define UTIL_DEC_82 81
+#define UTIL_DEC_83 82
+#define UTIL_DEC_84 83
+#define UTIL_DEC_85 84
+#define UTIL_DEC_86 85
+#define UTIL_DEC_87 86
+#define UTIL_DEC_88 87
+#define UTIL_DEC_89 88
+#define UTIL_DEC_90 89
+#define UTIL_DEC_91 90
+#define UTIL_DEC_92 91
+#define UTIL_DEC_93 92
+#define UTIL_DEC_94 93
+#define UTIL_DEC_95 94
+#define UTIL_DEC_96 95
+#define UTIL_DEC_97 96
+#define UTIL_DEC_98 97
+#define UTIL_DEC_99 98
+#define UTIL_DEC_100 99
+#define UTIL_DEC_101 100
+#define UTIL_DEC_102 101
+#define UTIL_DEC_103 102
+#define UTIL_DEC_104 103
+#define UTIL_DEC_105 104
+#define UTIL_DEC_106 105
+#define UTIL_DEC_107 106
+#define UTIL_DEC_108 107
+#define UTIL_DEC_109 108
+#define UTIL_DEC_110 109
+#define UTIL_DEC_111 110
+#define UTIL_DEC_112 111
+#define UTIL_DEC_113 112
+#define UTIL_DEC_114 113
+#define UTIL_DEC_115 114
+#define UTIL_DEC_116 115
+#define UTIL_DEC_117 116
+#define UTIL_DEC_118 117
+#define UTIL_DEC_119 118
+#define UTIL_DEC_120 119
+#define UTIL_DEC_121 120
+#define UTIL_DEC_122 121
+#define UTIL_DEC_123 122
+#define UTIL_DEC_124 123
+#define UTIL_DEC_125 124
+#define UTIL_DEC_126 125
+#define UTIL_DEC_127 126
+#define UTIL_DEC_128 127
+#define UTIL_DEC_129 128
+#define UTIL_DEC_130 129
+#define UTIL_DEC_131 130
+#define UTIL_DEC_132 131
+#define UTIL_DEC_133 132
+#define UTIL_DEC_134 133
+#define UTIL_DEC_135 134
+#define UTIL_DEC_136 135
+#define UTIL_DEC_137 136
+#define UTIL_DEC_138 137
+#define UTIL_DEC_139 138
+#define UTIL_DEC_140 139
+#define UTIL_DEC_141 140
+#define UTIL_DEC_142 141
+#define UTIL_DEC_143 142
+#define UTIL_DEC_144 143
+#define UTIL_DEC_145 144
+#define UTIL_DEC_146 145
+#define UTIL_DEC_147 146
+#define UTIL_DEC_148 147
+#define UTIL_DEC_149 148
+#define UTIL_DEC_150 149
+#define UTIL_DEC_151 150
+#define UTIL_DEC_152 151
+#define UTIL_DEC_153 152
+#define UTIL_DEC_154 153
+#define UTIL_DEC_155 154
+#define UTIL_DEC_156 155
+#define UTIL_DEC_157 156
+#define UTIL_DEC_158 157
+#define UTIL_DEC_159 158
+#define UTIL_DEC_160 159
+#define UTIL_DEC_161 160
+#define UTIL_DEC_162 161
+#define UTIL_DEC_163 162
+#define UTIL_DEC_164 163
+#define UTIL_DEC_165 164
+#define UTIL_DEC_166 165
+#define UTIL_DEC_167 166
+#define UTIL_DEC_168 167
+#define UTIL_DEC_169 168
+#define UTIL_DEC_170 169
+#define UTIL_DEC_171 170
+#define UTIL_DEC_172 171
+#define UTIL_DEC_173 172
+#define UTIL_DEC_174 173
+#define UTIL_DEC_175 174
+#define UTIL_DEC_176 175
+#define UTIL_DEC_177 176
+#define UTIL_DEC_178 177
+#define UTIL_DEC_179 178
+#define UTIL_DEC_180 179
+#define UTIL_DEC_181 180
+#define UTIL_DEC_182 181
+#define UTIL_DEC_183 182
+#define UTIL_DEC_184 183
+#define UTIL_DEC_185 184
+#define UTIL_DEC_186 185
+#define UTIL_DEC_187 186
+#define UTIL_DEC_188 187
+#define UTIL_DEC_189 188
+#define UTIL_DEC_190 189
+#define UTIL_DEC_191 190
+#define UTIL_DEC_192 191
+#define UTIL_DEC_193 192
+#define UTIL_DEC_194 193
+#define UTIL_DEC_195 194
+#define UTIL_DEC_196 195
+#define UTIL_DEC_197 196
+#define UTIL_DEC_198 197
+#define UTIL_DEC_199 198
+#define UTIL_DEC_200 199
+#define UTIL_DEC_201 200
+#define UTIL_DEC_202 201
+#define UTIL_DEC_203 202
+#define UTIL_DEC_204 203
+#define UTIL_DEC_205 204
+#define UTIL_DEC_206 205
+#define UTIL_DEC_207 206
+#define UTIL_DEC_208 207
+#define UTIL_DEC_209 208
+#define UTIL_DEC_210 209
+#define UTIL_DEC_211 210
+#define UTIL_DEC_212 211
+#define UTIL_DEC_213 212
+#define UTIL_DEC_214 213
+#define UTIL_DEC_215 214
+#define UTIL_DEC_216 215
+#define UTIL_DEC_217 216
+#define UTIL_DEC_218 217
+#define UTIL_DEC_219 218
+#define UTIL_DEC_220 219
+#define UTIL_DEC_221 220
+#define UTIL_DEC_222 221
+#define UTIL_DEC_223 222
+#define UTIL_DEC_224 223
+#define UTIL_DEC_225 224
+#define UTIL_DEC_226 225
+#define UTIL_DEC_227 226
+#define UTIL_DEC_228 227
+#define UTIL_DEC_229 228
+#define UTIL_DEC_230 229
+#define UTIL_DEC_231 230
+#define UTIL_DEC_232 231
+#define UTIL_DEC_233 232
+#define UTIL_DEC_234 233
+#define UTIL_DEC_235 234
+#define UTIL_DEC_236 235
+#define UTIL_DEC_237 236
+#define UTIL_DEC_238 237
+#define UTIL_DEC_239 238
+#define UTIL_DEC_240 239
+#define UTIL_DEC_241 240
+#define UTIL_DEC_242 241
+#define UTIL_DEC_243 242
+#define UTIL_DEC_244 243
+#define UTIL_DEC_245 244
+#define UTIL_DEC_246 245
+#define UTIL_DEC_247 246
+#define UTIL_DEC_248 247
+#define UTIL_DEC_249 248
+#define UTIL_DEC_250 249
+#define UTIL_DEC_251 250
+#define UTIL_DEC_252 251
+#define UTIL_DEC_253 252
+#define UTIL_DEC_254 253
+#define UTIL_DEC_255 254
+#define UTIL_DEC_256 255
 
 #define UTIL_CHECK_N(x, n, ...) n
 #define UTIL_CHECK(...) UTIL_CHECK_N(__VA_ARGS__, 0,)
@@ -514,27 +730,27 @@ static inline s64_t arithmetic_shift_right(s64_t value, u8_t shift)
 /*
  * The following provides variadic preprocessor macro support to
  * help eliminate multiple, repetitive function/macro calls.  This
- * allows up to 10 "arguments" in addition to _call .
+ * allows up to 10 "arguments" in addition to z_call .
  * Note - derived from work on:
  * https://codecraft.co/2014/11/25/variadic-macros-tricks/
  */
 
-#define _GET_ARG(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, N, ...) N
+#define Z_GET_ARG(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, N, ...) N
 
-#define _for_0(_call, ...)
-#define _for_1(_call, x) _call(x)
-#define _for_2(_call, x, ...) _call(x) _for_1(_call, ##__VA_ARGS__)
-#define _for_3(_call, x, ...) _call(x) _for_2(_call, ##__VA_ARGS__)
-#define _for_4(_call, x, ...) _call(x) _for_3(_call, ##__VA_ARGS__)
-#define _for_5(_call, x, ...) _call(x) _for_4(_call, ##__VA_ARGS__)
-#define _for_6(_call, x, ...) _call(x) _for_5(_call, ##__VA_ARGS__)
-#define _for_7(_call, x, ...) _call(x) _for_6(_call, ##__VA_ARGS__)
-#define _for_8(_call, x, ...) _call(x) _for_7(_call, ##__VA_ARGS__)
-#define _for_9(_call, x, ...) _call(x) _for_8(_call, ##__VA_ARGS__)
-#define _for_10(_call, x, ...) _call(x) _for_9(_call, ##__VA_ARGS__)
+#define _for_0(z_call, ...)
+#define _for_1(z_call, x) z_call(x)
+#define _for_2(z_call, x, ...) z_call(x) _for_1(z_call, ##__VA_ARGS__)
+#define _for_3(z_call, x, ...) z_call(x) _for_2(z_call, ##__VA_ARGS__)
+#define _for_4(z_call, x, ...) z_call(x) _for_3(z_call, ##__VA_ARGS__)
+#define _for_5(z_call, x, ...) z_call(x) _for_4(z_call, ##__VA_ARGS__)
+#define _for_6(z_call, x, ...) z_call(x) _for_5(z_call, ##__VA_ARGS__)
+#define _for_7(z_call, x, ...) z_call(x) _for_6(z_call, ##__VA_ARGS__)
+#define _for_8(z_call, x, ...) z_call(x) _for_7(z_call, ##__VA_ARGS__)
+#define _for_9(z_call, x, ...) z_call(x) _for_8(z_call, ##__VA_ARGS__)
+#define _for_10(z_call, x, ...) z_call(x) _for_9(z_call, ##__VA_ARGS__)
 
 #define FOR_EACH(x, ...) \
-	_GET_ARG(__VA_ARGS__, \
+	Z_GET_ARG(__VA_ARGS__, \
 	_for_10, _for_9, _for_8, _for_7, _for_6, _for_5, \
 	_for_4, _for_3, _for_2, _for_1, _for_0)(x, ##__VA_ARGS__)
 

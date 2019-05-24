@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 
 if BOARD_NATIVE_POSIX
 
@@ -91,6 +92,6 @@ endif # BOARD_NATIVE_POSIX
 if USB
 
 config USB_NATIVE_POSIX
-	def_bool y
+	default y
 
 endif # USB

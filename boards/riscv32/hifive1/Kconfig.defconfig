@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 if BOARD_HIFIVE1
 
 config BOARD
@@ -6,7 +8,7 @@ config BOARD
 if PWM
 
 config PWM_SIFIVE
-	def_bool y
+	default y
 
 endif
 

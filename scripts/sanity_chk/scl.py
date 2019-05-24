@@ -1,12 +1,12 @@
 #! /usr/bin/python
 #
+# SPDX-License-Identifier: Apache-2.0
 # Zephyr's Sanity Check library
 #
 # Set of code that other projects can also import to do things on
 # Zephyr's sanity check testcases.
 
 import logging
-import os
 import yaml
 
 log = logging.getLogger("scl")

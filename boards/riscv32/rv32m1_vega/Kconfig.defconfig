@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 if BOARD_RV32M1_VEGA
 
 config BOARD
@@ -7,53 +9,63 @@ config BOARD
 if UART_RV32M1_LPUART
 
 config UART_RV32M1_LPUART_0
-	def_bool y if UART_CONSOLE
+	default y if UART_CONSOLE
 
 endif # UART_RV32M1
 
 if PINMUX_RV32M1
 
 config PINMUX_RV32M1_PORTA
-	def_bool y
+	default y
 
 config PINMUX_RV32M1_PORTB
-	def_bool y
+	default y
 
 config PINMUX_RV32M1_PORTC
-	def_bool y
+	default y
 
 config PINMUX_RV32M1_PORTD
-	def_bool y
+	default y
 
 config PINMUX_RV32M1_PORTE
-	def_bool y if RV32M1_INTMUX
+	default y if RV32M1_INTMUX
 
 endif # PINMUX_RV32M1
 
 if GPIO_RV32M1
 
 config GPIO_RV32M1_PORTA
-	def_bool y
+	default y
 
 config GPIO_RV32M1_PORTB
-	def_bool y if RV32M1_INTMUX
+	default y if RV32M1_INTMUX
 
 config GPIO_RV32M1_PORTC
-	def_bool y if RV32M1_INTMUX
+	default y if RV32M1_INTMUX
 
 config GPIO_RV32M1_PORTD
-	def_bool y if RV32M1_INTMUX
+	default y if RV32M1_INTMUX
 
 config GPIO_RV32M1_PORTE
-	def_bool y if RV32M1_INTMUX
+	default y if RV32M1_INTMUX
 
 endif # GPIO_RV32M1
 
 if SERIAL
 
 config UART_RV32M1_LPUART
-	def_bool y
+	default y
 
 endif # SERIAL
+
+if I2C
+
+config I2C_0
+	def_bool y
+
+config I2C_3
+	def_bool y if RV32M1_INTMUX
+
+endif # I2C
 
 endif # BOARD_RV32M1_VEGA

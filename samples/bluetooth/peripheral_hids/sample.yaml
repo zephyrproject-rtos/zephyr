@@ -2,7 +2,7 @@ sample:
   description: TBD
   name: TBD
 tests:
-  test:
+  sample.bluetooth.peripheral_hids:
     harness: bluetooth
     platform_whitelist: qemu_cortex_m3 qemu_x86
     tags: bluetooth

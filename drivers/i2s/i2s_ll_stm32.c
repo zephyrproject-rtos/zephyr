@@ -33,7 +33,7 @@ LOG_MODULE_REGISTER(i2s_ll_stm32);
 
 static unsigned int div_round_closest(u32_t dividend, u32_t divisor)
 {
-	return (dividend + (divisor / 2)) / divisor;
+	return (dividend + (divisor / 2U)) / divisor;
 }
 
 /*
@@ -110,8 +110,8 @@ static int i2s_stm32_enable_clock(struct device *dev)
 #define PLLI2S_MAX_MS_TIME	1 /* PLLI2S lock time is 300us max */
 static u16_t plli2s_ms_count;
 
-#define _pllr(v) LL_RCC_PLLI2SR_DIV_ ## v
-#define pllr(v) _pllr(v)
+#define z_pllr(v) LL_RCC_PLLI2SR_DIV_ ## v
+#define pllr(v) z_pllr(v)
 #endif
 
 static int i2s_stm32_set_clock(struct device *dev, u32_t bit_clk_freq)
@@ -204,7 +204,7 @@ static int i2s_stm32_configure(struct device *dev, enum i2s_dir dir,
 		stream->master = false;
 	}
 
-	if (i2s_cfg->frame_clk_freq == 0) {
+	if (i2s_cfg->frame_clk_freq == 0U) {
 		stream->queue_drop(stream);
 		memset(&stream->cfg, 0, sizeof(struct i2s_config));
 		stream->state = I2S_STATE_NOT_READY;
@@ -223,11 +223,11 @@ static int i2s_stm32_configure(struct device *dev, enum i2s_dir dir,
 	}
 
 	/* set I2S Data Format */
-	if (i2s_cfg->word_size == 16) {
+	if (i2s_cfg->word_size == 16U) {
 		LL_I2S_SetDataFormat(cfg->i2s, LL_I2S_DATAFORMAT_16B);
-	} else if (i2s_cfg->word_size == 24) {
+	} else if (i2s_cfg->word_size == 24U) {
 		LL_I2S_SetDataFormat(cfg->i2s, LL_I2S_DATAFORMAT_24B);
-	} else if (i2s_cfg->word_size == 32) {
+	} else if (i2s_cfg->word_size == 32U) {
 		LL_I2S_SetDataFormat(cfg->i2s, LL_I2S_DATAFORMAT_32B);
 	} else {
 		LOG_ERR("invalid word size");
@@ -421,6 +421,23 @@ static const struct i2s_driver_api i2s_stm32_driver_api = {
 static struct device *active_dma_rx_channel[STM32_DMA_NUM_CHANNELS];
 static struct device *active_dma_tx_channel[STM32_DMA_NUM_CHANNELS];
 
+static int reload_dma(struct device *dev_dma, u32_t channel,
+		      struct dma_config *dcfg, void *src, void *dst,
+		      u32_t blk_size)
+{
+	int ret;
+
+	ret = dma_reload(dev_dma, channel, (u32_t)src, (u32_t)dst,
+			 blk_size / sizeof(u16_t));
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = dma_start(dev_dma, channel);
+
+	return ret;
+}
+
 static int start_dma(struct device *dev_dma, u32_t channel,
 		     struct dma_config *dcfg, void *src, void *dst,
 		     u32_t blk_size)
@@ -483,7 +500,7 @@ static void dma_rx_callback(void *arg, u32_t channel, int status)
 		goto rx_disable;
 	}
 
-	ret = start_dma(dev_data->dev_dma, stream->dma_channel,
+	ret = reload_dma(dev_data->dev_dma, stream->dma_channel,
 			&stream->dma_cfg,
 			(void *)LL_SPI_DMA_GetRegAddr(cfg->i2s),
 			stream->mem_block,
@@ -566,7 +583,7 @@ static void dma_tx_callback(void *arg, u32_t channel, int status)
 	/* Assure cache coherency before DMA read operation */
 	DCACHE_CLEAN(stream->mem_block, mem_block_size);
 
-	ret = start_dma(dev_data->dev_dma, stream->dma_channel,
+	ret = reload_dma(dev_data->dev_dma, stream->dma_channel,
 			&stream->dma_cfg,
 			stream->mem_block,
 			(void *)LL_SPI_DMA_GetRegAddr(cfg->i2s),
@@ -592,7 +609,7 @@ static void i2s_stm32_isr(void *arg)
 	struct i2s_stm32_data *const dev_data = DEV_DATA(dev);
 	struct stream *stream = &dev_data->rx;
 
-	LOG_ERR("%s: err=%d", __func__, LL_I2S_ReadReg(cfg->i2s, SR));
+	LOG_ERR("%s: err=%d", __func__, (int)LL_I2S_ReadReg(cfg->i2s, SR));
 	stream->state = I2S_STATE_ERROR;
 
 	/* OVR error must be explicitly cleared */

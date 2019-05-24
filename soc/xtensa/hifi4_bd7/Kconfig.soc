@@ -3,4 +3,3 @@
 
 config SOC_HIFI4_BD7
 	bool "hifi4_bd7 core"
-

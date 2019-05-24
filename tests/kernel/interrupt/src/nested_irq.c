@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2018 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include "interrupt.h"
 
 #define DURATION 5
@@ -103,7 +108,7 @@ static void offload_function(void *param)
 {
 	ARG_UNUSED(param);
 
-	zassert_true(_is_in_isr(), "Not in IRQ context!");
+	zassert_true(z_is_in_isr(), "Not in IRQ context!");
 	k_timer_init(&timer, timer_handler, NULL);
 	k_busy_wait(MS_TO_US(1));
 	k_timer_start(&timer, DURATION, 0);

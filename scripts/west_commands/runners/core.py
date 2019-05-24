@@ -309,7 +309,7 @@ class ZephyrBinaryRunner(abc.ABC):
     def __init__(self, cfg):
         '''Initialize core runner state.
 
-        `cfg` is a RunnerConfig instance.'''
+        ``cfg`` is a RunnerConfig instance.'''
         self.cfg = cfg
 
     @staticmethod
@@ -371,9 +371,9 @@ class ZephyrBinaryRunner(abc.ABC):
     def create(cls, cfg, args):
         '''Create an instance from command-line arguments.
 
-        - `cfg`: RunnerConfig instance (pass to superclass __init__)
-        - `args`: runner-specific argument namespace parsed from
-          execution environment, as specified by `add_parser()`.'''
+        - ``cfg``: RunnerConfig instance (pass to superclass __init__)
+        - ``args``: runner-specific argument namespace parsed from
+          execution environment, as specified by ``add_parser()``.'''
 
     @classmethod
     def get_flash_address(cls, args, build_conf, default=0x0):

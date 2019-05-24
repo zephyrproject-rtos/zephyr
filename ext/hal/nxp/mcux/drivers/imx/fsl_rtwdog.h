@@ -47,7 +47,7 @@ typedef enum _rtwdog_clock_source
 /*! @brief Describes the selection of the clock prescaler. */
 typedef enum _rtwdog_clock_prescaler
 {
-    kRTWDOG_ClockPrescalerDivide1 = 0x0U,   /*!< Divided by 1 */
+    kRTWDOG_ClockPrescalerDivide1   = 0x0U, /*!< Divided by 1 */
     kRTWDOG_ClockPrescalerDivide256 = 0x1U, /*!< Divided by 256 */
 } rtwdog_clock_prescaler_t;
 
@@ -63,9 +63,9 @@ typedef struct _rtwdog_work_mode
 typedef enum _rtwdog_test_mode
 {
     kRTWDOG_TestModeDisabled = 0U, /*!< Test Mode disabled */
-    kRTWDOG_UserModeEnabled = 1U,  /*!< User Mode enabled */
-    kRTWDOG_LowByteTest = 2U,      /*!< Test Mode enabled, only low byte is used */
-    kRTWDOG_HighByteTest = 3U,     /*!< Test Mode enabled, only high byte is used */
+    kRTWDOG_UserModeEnabled  = 1U, /*!< User Mode enabled */
+    kRTWDOG_LowByteTest      = 2U, /*!< Test Mode enabled, only low byte is used */
+    kRTWDOG_HighByteTest     = 3U, /*!< Test Mode enabled, only high byte is used */
 } rtwdog_test_mode_t;
 
 /*! @brief Describes RTWDOG configuration structure. */
@@ -100,7 +100,7 @@ enum _rtwdog_interrupt_enable_t
  */
 enum _rtwdog_status_flags_t
 {
-    kRTWDOG_RunningFlag = RTWDOG_CS_EN_MASK,    /*!< Running flag, set when RTWDOG is enabled */
+    kRTWDOG_RunningFlag   = RTWDOG_CS_EN_MASK,  /*!< Running flag, set when RTWDOG is enabled */
     kRTWDOG_InterruptFlag = RTWDOG_CS_FLG_MASK, /*!< Interrupt flag, set when interrupt occurs */
 };
 
@@ -263,6 +263,43 @@ static inline uint32_t RTWDOG_GetStatusFlags(RTWDOG_Type *base)
 }
 
 /*!
+ * @brief Enables/disables the window mode.
+ *
+ * @param base   RTWDOG peripheral base address.
+ * @param enable Enables(true) or disables(false) the feature.
+ */
+static inline void RTWDOG_EnableWindowMode(RTWDOG_Type *base, bool enable)
+{
+    if (enable)
+    {
+        base->CS |= RTWDOG_CS_WIN_MASK;
+    }
+    else
+    {
+        base->CS &= ~RTWDOG_CS_WIN_MASK;
+    }
+}
+
+/*!
+ * @brief Converts raw count value to millisecond.
+ *
+ * Note that if the clock frequency is too high the timeout period can be less than 1 ms.
+ * In this case this api will return 0 value.
+ *
+ * @param base          RTWDOG peripheral base address.
+ * @param count         Raw count value.
+ # @param clockFreqInHz The frequency of the clock source RTWDOG uses.
+ */
+static inline uint32_t RTWDOG_CountToMesec(RTWDOG_Type *base, uint32_t count, uint32_t clockFreqInHz)
+{
+    if ((base->CS & RTWDOG_CS_PRES_MASK) >> RTWDOG_CS_PRES_SHIFT)
+    {
+        clockFreqInHz /= 256;
+    }
+    return count * 1000U / clockFreqInHz;
+}
+
+/*!
  * @brief Clears the RTWDOG flag.
  *
  * This function clears the RTWDOG status flag.
@@ -346,7 +383,7 @@ static inline void RTWDOG_Unlock(RTWDOG_Type *base)
 static inline void RTWDOG_Refresh(RTWDOG_Type *base)
 {
     uint32_t primaskValue = 0U;
-    primaskValue = DisableGlobalIRQ();
+    primaskValue          = DisableGlobalIRQ();
     if ((base->CS) & RTWDOG_CS_CMD32EN_MASK)
     {
         base->CNT = RTWDOG_REFRESH_KEY;

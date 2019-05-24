@@ -40,7 +40,7 @@ uint8_t inner_main_clean_up(int exit_code)
 
 	u8_t bst_result = bst_delete();
 
-	if (bst_result != 0) {
+	if (bst_result != 0U) {
 		bs_trace_raw_time(2, "main: The TESTCASE FAILED with return "
 				  "code %u\n", bst_result);
 	}

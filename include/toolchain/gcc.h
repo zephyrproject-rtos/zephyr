@@ -105,12 +105,12 @@ do {                                                                    \
  * stringification
  */
 #define __GENERIC_SECTION(segment) __attribute__((section(STRINGIFY(segment))))
-#define _GENERIC_SECTION(segment) __GENERIC_SECTION(segment)
+#define Z_GENERIC_SECTION(segment) __GENERIC_SECTION(segment)
 
 #define ___in_section(a, b, c) \
-	__attribute__((section("." _STRINGIFY(a)			\
-				"." _STRINGIFY(b)			\
-				"." _STRINGIFY(c))))
+	__attribute__((section("." Z_STRINGIFY(a)			\
+				"." Z_STRINGIFY(b)			\
+				"." Z_STRINGIFY(c))))
 #define __in_section(a, b, c) ___in_section(a, b, c)
 
 #define __in_section_unique(seg) ___in_section(seg, __FILE__, __COUNTER__)
@@ -151,6 +151,22 @@ do {                                                                    \
 #define __weak __attribute__((__weak__))
 #endif
 #define __unused __attribute__((__unused__))
+
+/* Builtins with availability that depend on the compiler version. */
+#if __GNUC__ >= 5
+#define HAS_BUILTIN___builtin_add_overflow 1
+#define HAS_BUILTIN___builtin_sub_overflow 1
+#define HAS_BUILTIN___builtin_mul_overflow 1
+#define HAS_BUILTIN___builtin_div_overflow 1
+#endif
+#if __GNUC__ >= 4
+#define HAS_BUILTIN___builtin_clz 1
+#define HAS_BUILTIN___builtin_clzl 1
+#define HAS_BUILTIN___builtin_clzll 1
+#define HAS_BUILTIN___builtin_ctz 1
+#define HAS_BUILTIN___builtin_ctzl 1
+#define HAS_BUILTIN___builtin_ctzll 1
+#endif
 
 /* Be *very* careful with this, you cannot filter out with -wno-deprecated,
  * which has implications for -Werror

@@ -19,7 +19,7 @@ ports: one for DAPLink interface and one for nRF52840 USB device controller.
 The kit also features ultra-low power 64-Mb QSPI FLASH memory, programmable
 user button, RGB LED, up to 24 GPIOs, antenna selection for custom applications.
 
-See `nRF52840-mdk website_` for more information about the development
+See `nRF52840-mdk website`_ for more information about the development
 board and `nRF52840 website`_ for the official reference on the IC itself.
 
 References

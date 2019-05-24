@@ -1,5 +1,6 @@
+# SPDX-License-Identifier: Apache-2.0
+
 config SOC_NIOS2F_ZEPHYR
 	bool "Nios IIf - Zephyr Golden Configuration"
 	select HAS_MUL_INSTRUCTION
 	select HAS_DIV_INSTRUCTION
-

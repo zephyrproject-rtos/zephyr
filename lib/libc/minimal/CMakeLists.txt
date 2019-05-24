@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 zephyr_include_directories(include)
 
 zephyr_library()
@@ -6,6 +8,7 @@ zephyr_library_sources(
   source/stdlib/strtol.c
   source/stdlib/strtoul.c
   source/stdlib/malloc.c
+  source/stdlib/bsearch.c
   source/string/strncasecmp.c
   source/string/strstr.c
   source/string/string.c

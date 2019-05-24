@@ -158,7 +158,7 @@ static int mqtt_read_message_chunk(struct mqtt_client *client,
 		return -ENOMEM;
 	}
 
-	len = mqtt_transport_read(client, buf->end, remaining);
+	len = mqtt_transport_read(client, buf->end, remaining, false);
 	if (len < 0) {
 		MQTT_TRC("[CID %p]: Transport read error: %d", client, len);
 		return len;
@@ -273,7 +273,7 @@ int mqtt_handle_rx(struct mqtt_client *client)
 		return err_code;
 	}
 
-	client->internal.rx_buf_datalen = 0;
+	client->internal.rx_buf_datalen = 0U;
 
 	return 0;
 }

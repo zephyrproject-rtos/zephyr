@@ -156,14 +156,14 @@ static struct log_msg *msg_alloc(u32_t nargs)
 {
 	struct log_msg_cont *cont;
 	struct log_msg_cont **next;
-	struct  log_msg *msg = _log_msg_std_alloc();
+	struct  log_msg *msg = z_log_msg_std_alloc();
 	int n = (int)nargs;
 
 	if ((msg == NULL) || nargs <= LOG_MSG_NARGS_SINGLE_CHUNK) {
 		return msg;
 	}
 
-	msg->hdr.params.std.nargs = 0;
+	msg->hdr.params.std.nargs = 0U;
 	msg->hdr.params.generic.ext = 1;
 	n -= LOG_MSG_NARGS_HEAD_CHUNK;
 	next = &msg->payload.ext.next;
@@ -201,7 +201,7 @@ static void copy_args_to_msg(struct  log_msg *msg, u32_t *args, u32_t nargs)
 		nargs  = 0U;
 	}
 
-	while (nargs != 0) {
+	while (nargs != 0U) {
 		u32_t cpy_args = MIN(nargs, ARGS_CONT_MSG);
 
 		(void)memcpy(cont->payload.args, args,

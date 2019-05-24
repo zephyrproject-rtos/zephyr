@@ -7,4 +7,3 @@
 config HAS_CYPRESS_DRIVERS
 	bool
 	select HAS_CMSIS
-

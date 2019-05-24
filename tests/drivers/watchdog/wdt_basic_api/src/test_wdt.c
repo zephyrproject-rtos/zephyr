@@ -145,7 +145,7 @@ static int test_wdt_no_callback(void)
 
 	m_cfg_wdt0.callback = NULL;
 	m_cfg_wdt0.flags = WDT_FLAG_RESET_SOC;
-	m_cfg_wdt0.window.max = 2000;
+	m_cfg_wdt0.window.max = 2000U;
 	err = wdt_install_timeout(wdt, &m_cfg_wdt0);
 	if (err < 0) {
 		TC_PRINT("Watchdog install error\n");
@@ -191,7 +191,7 @@ static int test_wdt_callback_1(void)
 	m_testvalue = 0U;
 	m_cfg_wdt0.flags = WDT_FLAG_RESET_SOC;
 	m_cfg_wdt0.callback = wdt_int_cb0;
-	m_cfg_wdt0.window.max = 2000;
+	m_cfg_wdt0.window.max = 2000U;
 	err = wdt_install_timeout(wdt, &m_cfg_wdt0);
 	if (err < 0) {
 		TC_PRINT("Watchdog install error\n");
@@ -241,7 +241,7 @@ static int test_wdt_callback_2(void)
 	m_testvalue = 0U;
 	m_cfg_wdt0.callback = wdt_int_cb0;
 	m_cfg_wdt0.flags = WDT_FLAG_RESET_SOC;
-	m_cfg_wdt0.window.max = 2000;
+	m_cfg_wdt0.window.max = 2000U;
 	err = wdt_install_timeout(wdt, &m_cfg_wdt0);
 
 	if (err < 0) {
@@ -251,7 +251,7 @@ static int test_wdt_callback_2(void)
 
 	m_cfg_wdt1.callback = wdt_int_cb1;
 	m_cfg_wdt1.flags = WDT_FLAG_RESET_SOC;
-	m_cfg_wdt1.window.max = 2000;
+	m_cfg_wdt1.window.max = 2000U;
 	err = wdt_install_timeout(wdt, &m_cfg_wdt1);
 	if (err < 0) {
 		TC_PRINT("Watchdog install error\n");
@@ -289,7 +289,7 @@ static int test_wdt_bad_window_max(void)
 
 	m_cfg_wdt0.callback = NULL;
 	m_cfg_wdt0.flags = WDT_FLAG_RESET_SOC;
-	m_cfg_wdt0.window.max = 0;
+	m_cfg_wdt0.window.max = 0U;
 	err = wdt_install_timeout(wdt, &m_cfg_wdt0);
 	if (err == -EINVAL) {
 		return TC_PASS;
@@ -300,24 +300,24 @@ static int test_wdt_bad_window_max(void)
 
 void test_wdt(void)
 {
-	if (m_testcase_index != 1) {
+	if ((m_testcase_index != 1U) && (m_testcase_index != 2U)) {
 		zassert_true(test_wdt_no_callback() == TC_PASS, NULL);
 	}
-	if (m_testcase_index == 1) {
+	if (m_testcase_index == 1U) {
 #if TEST_WDT_CALLBACK_1
 		zassert_true(test_wdt_callback_1() == TC_PASS, NULL);
 #else
 		m_testcase_index++;
 #endif
 	}
-	if (m_testcase_index == 2) {
+	if (m_testcase_index == 2U) {
 #if TEST_WDT_CALLBACK_2
 		zassert_true(test_wdt_callback_2() == TC_PASS, NULL);
 #else
 		m_testcase_index++;
 #endif
 	}
-	if (m_testcase_index == 3) {
+	if (m_testcase_index == 3U) {
 		zassert_true(test_wdt_bad_window_max() == TC_PASS, NULL);
 		m_testcase_index++;
 	}

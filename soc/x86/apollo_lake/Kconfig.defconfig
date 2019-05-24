@@ -19,10 +19,14 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 config CLFLUSH_DETECT
 	default y if CACHE_FLUSHING
 
-if UART_NS16550
+if DYNAMIC_INTERRUPTS
 
-config UART_NS16550_PCI
-	default y if PCI
+config X86_DYNAMIC_IRQ_STUBS
+	default 16
+
+endif # DYNAMIC_INTERRUPTS
+
+if UART_NS16550
 
 config UART_NS16550_PORT_0
 	default y
@@ -31,9 +35,6 @@ if UART_NS16550_PORT_0
 
 config UART_NS16550_PORT_0_OPTIONS
 	default 0
-
-config UART_NS16550_PORT_0_PCI
-	default y if PCI
 
 endif # UART_NS16550_PORT_0
 
@@ -45,9 +46,6 @@ if UART_NS16550_PORT_1
 config UART_NS16550_PORT_1_OPTIONS
 	default 0
 
-config UART_NS16550_PORT_1_PCI
-	default y if PCI
-
 endif # UART_NS16550_PORT_1
 
 if UART_NS16550_PORT_2
@@ -55,18 +53,12 @@ if UART_NS16550_PORT_2
 config UART_NS16550_PORT_2_OPTIONS
 	default 0
 
-config UART_NS16550_PORT_2_PCI
-	default y if PCI
-
 endif # UART_NS16550_PORT_2
 
 if UART_NS16550_PORT_3
 
 config UART_NS16550_PORT_3_OPTIONS
 	default 0
-
-config UART_NS16550_PORT_3_PCI
-	default y if PCI
 
 endif # UART_NS16550_PORT_3
 
@@ -76,15 +68,6 @@ if GPIO
 
 config GPIO_INTEL_APL
 	default y
-
-config SHARED_IRQ
-	default y if GPIO_INTEL_APL
-
-config SHARED_IRQ_0
-	default y if SHARED_IRQ
-
-config SHARED_IRQ_NUM_CLIENTS
-	default 10 if SHARED_IRQ
 
 endif # GPIO
 

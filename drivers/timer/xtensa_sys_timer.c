@@ -62,7 +62,7 @@ static void ccompare_isr(void *arg)
  * pervasive.
  */
 #ifndef CONFIG_XTENSA_ASM2
-void _timer_int_handler(void *arg)
+void timer_int_handler(void *arg)
 {
 	return ccompare_isr(arg);
 }
@@ -114,7 +114,7 @@ u32_t z_clock_elapsed(void)
 	return ret;
 }
 
-u32_t _timer_cycle_get_32(void)
+u32_t z_timer_cycle_get_32(void)
 {
 	return ccount();
 }

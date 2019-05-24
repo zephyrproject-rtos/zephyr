@@ -24,7 +24,7 @@ extern "C" {
 /**
  *  @brief read timestamp register (CPU frequency)
  */
-extern u64_t _tsc_read(void);
+extern u64_t z_tsc_read(void);
 
 
 /* Implementation of sys_io.h's documented functions */
@@ -32,37 +32,37 @@ extern u64_t _tsc_read(void);
 static ALWAYS_INLINE
 	void sys_out8(u8_t data, io_port_t port)
 {
-	_arc_v2_aux_reg_write(port, data);
+	z_arc_v2_aux_reg_write(port, data);
 }
 
 static ALWAYS_INLINE
 	u8_t sys_in8(io_port_t port)
 {
-	return (u8_t)(_arc_v2_aux_reg_read(port) & 0x000000ff);
+	return (u8_t)(z_arc_v2_aux_reg_read(port) & 0x000000ff);
 }
 
 static ALWAYS_INLINE
 	void sys_out16(u16_t data, io_port_t port)
 {
-	_arc_v2_aux_reg_write(port, data);
+	z_arc_v2_aux_reg_write(port, data);
 }
 
 static ALWAYS_INLINE
 	u16_t sys_in16(io_port_t port)
 {
-	return (u16_t)(_arc_v2_aux_reg_read(port) & 0x0000ffff);
+	return (u16_t)(z_arc_v2_aux_reg_read(port) & 0x0000ffff);
 }
 
 static ALWAYS_INLINE
 	void sys_out32(u32_t data, io_port_t port)
 {
-	_arc_v2_aux_reg_write(port, data);
+	z_arc_v2_aux_reg_write(port, data);
 }
 
 static ALWAYS_INLINE
 	u32_t sys_in32(io_port_t port)
 {
-	return _arc_v2_aux_reg_read(port);
+	return z_arc_v2_aux_reg_read(port);
 }
 
 static ALWAYS_INLINE

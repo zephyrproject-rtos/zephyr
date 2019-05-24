@@ -15,7 +15,7 @@
 #error SMP test requires at least two CPUs!
 #endif
 
-#define T2_STACK_SIZE 2048
+#define T2_STACK_SIZE (2048 + CONFIG_TEST_EXTRA_STACKSIZE)
 #define STACK_SIZE (384 + CONFIG_TEST_EXTRA_STACKSIZE)
 #define DELAY_US 50000
 #define TIMEOUT 1000
@@ -40,12 +40,11 @@ struct thread_info {
 	int priority;
 	int cpu_id;
 };
-static struct thread_info tinfo[THREADS_NUM];
+static volatile struct thread_info tinfo[THREADS_NUM];
 static struct k_thread tthread[THREADS_NUM];
 static K_THREAD_STACK_ARRAY_DEFINE(tstack, THREADS_NUM, STACK_SIZE);
 
-static int thread_started[THREADS_NUM - 1];
-static int pending;
+static volatile int thread_started[THREADS_NUM - 1];
 /**
  * @brief Tests for SMP
  * @defgroup kernel_smp_tests SMP Tests
@@ -121,7 +120,7 @@ static void child_fn(void *p1, void *p2, void *p3)
 	ARG_UNUSED(p3);
 	int parent_cpu_id = (int)p1;
 
-	zassert_true(parent_cpu_id != _arch_curr_cpu()->id,
+	zassert_true(parent_cpu_id != z_arch_curr_cpu()->id,
 		     "Parent isn't on other core");
 
 	sync_count++;
@@ -141,7 +140,7 @@ void test_cpu_id_threads(void)
 	/* Make sure idle thread runs on each core */
 	k_sleep(1000);
 
-	int parent_cpu_id = _arch_curr_cpu()->id;
+	int parent_cpu_id = z_arch_curr_cpu()->id;
 
 	k_tid_t tid = k_thread_create(&t2, t2_stack, T2_STACK_SIZE,
 				      child_fn, (void *)parent_cpu_id, NULL,
@@ -162,11 +161,22 @@ static void thread_entry(void *p1, void *p2, void *p3)
 	int count = 0;
 
 	tinfo[thread_num].executed  = 1;
-	tinfo[thread_num].cpu_id = _arch_curr_cpu()->id;
+	tinfo[thread_num].cpu_id = z_arch_curr_cpu()->id;
 
 	while (count++ < 5) {
 		k_busy_wait(DELAY_US);
 	}
+}
+
+static void spin_for_threads_exit(void)
+{
+	for (int i = 0; i < THREADS_NUM - 1; i++) {
+		volatile u8_t *p = &tinfo[i].tid->base.thread_state;
+
+		while (!(*p & _THREAD_DEAD)) {
+		}
+	}
+	k_busy_wait(DELAY_US);
 }
 
 static void spawn_threads(int prio, int thread_num,
@@ -270,8 +280,7 @@ void test_preempt_resched_threads(void)
 	spawn_threads(K_PRIO_PREEMPT(10), THREADS_NUM, !EQUAL_PRIORITY,
 		      &thread_entry, THREAD_DELAY);
 
-	/* Wait for some time to let all threads run */
-	k_busy_wait(DELAY_US);
+	spin_for_threads_exit();
 
 	for (int i = 0; i < THREADS_NUM; i++) {
 		zassert_true(tinfo[i].executed == 1,
@@ -348,11 +357,8 @@ static void thread_wakeup_entry(void *p1, void *p2, void *p3)
 
 	thread_started[thread_num] = 1;
 
-	if (pending) {
-		k_sem_take(&sema, DELAY_US * 1000);
-	} else {
-		k_sleep(DELAY_US * 1000);
-	}
+	k_sleep(DELAY_US * 1000);
+
 	tinfo[thread_num].executed  = 1;
 }
 
@@ -360,10 +366,17 @@ static void wakeup_on_start_thread(int tnum)
 {
 	int threads_started = 0, i;
 
+	/* For each thread, spin waiting for it to first flag that
+	 * it's going to sleep, and then that it's actually blocked
+	 */
 	for (i = 0; i < tnum; i++) {
-		/* Give it some time to start */
-		k_busy_wait(DELAY_US);
+		while (thread_started[i] == 0) {
+		}
+		while (!z_is_thread_prevented_from_running(tinfo[i].tid)) {
+		}
+	}
 
+	for (i = 0; i < tnum; i++) {
 		if (thread_started[i] == 1 && threads_started <= tnum) {
 			threads_started++;
 			k_wakeup(tinfo[i].tid);
@@ -377,18 +390,17 @@ static void check_wokeup_threads(int tnum)
 {
 	int threads_woke_up = 0, i;
 
+	/* k_wakeup() isn't synchronous, give the other CPU time to
+	 * schedule them
+	 */
+	k_busy_wait(200000);
+
 	for (i = 0; i < tnum; i++) {
 		if (tinfo[i].executed == 1 && threads_woke_up <= tnum) {
 			threads_woke_up++;
 		}
 	}
-	if (pending) {
-		zassert_not_equal(threads_woke_up, tnum,
-				  "Pending thread woke up!");
-	} else {
-		zassert_equal(threads_woke_up, tnum,
-			      "Threads did not wakeup");
-	}
+	zassert_equal(threads_woke_up, tnum, "Threads did not wakeup");
 }
 
 /**
@@ -418,22 +430,6 @@ void test_wakeup_threads(void)
 	cleanup_resources();
 }
 
-/**
- * @brief Test wakeup() call on pending threads
- *
- * @ingroup kernel_smp_tests
- *
- * @details Spawn threads to run on remaining cores and
- * make them pend on a semaphore. Call wakeup() from
- * parent thread. Check if the threads have woken up
- */
-void test_wakeup_pending_threads(void)
-{
-	pending = 1;
-
-	test_wakeup_threads();
-}
-
 void test_main(void)
 {
 	/* Sleep a bit to guarantee that both CPUs enter an idle
@@ -449,8 +445,7 @@ void test_main(void)
 			 ztest_unit_test(test_preempt_resched_threads),
 			 ztest_unit_test(test_yield_threads),
 			 ztest_unit_test(test_sleep_threads),
-			 ztest_unit_test(test_wakeup_threads),
-			 ztest_unit_test(test_wakeup_pending_threads)
+			 ztest_unit_test(test_wakeup_threads)
 			 );
 	ztest_run_test_suite(smp);
 }

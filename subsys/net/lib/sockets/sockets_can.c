@@ -26,7 +26,7 @@ extern const struct socket_op_vtable sock_fd_op_vtable;
 
 static const struct socket_op_vtable can_sock_fd_op_vtable;
 
-static inline int _k_fifo_wait_non_empty(struct k_fifo *fifo, int32_t timeout)
+static inline int k_fifo_wait_non_empty(struct k_fifo *fifo, int32_t timeout)
 {
 	struct k_poll_event events[] = {
 		K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_FIFO_DATA_AVAILABLE,
@@ -41,11 +41,6 @@ int zcan_socket(int family, int type, int proto)
 	struct net_context *ctx;
 	int fd;
 	int ret;
-
-	if (proto != CAN_RAW) {
-		errno = EOPNOTSUPP;
-		return -1;
-	}
 
 	fd = z_reserve_fd();
 	if (fd < 0) {
@@ -68,7 +63,7 @@ int zcan_socket(int family, int type, int proto)
 	/* Set net context object as initialized and grant access to the
 	 * calling thread (and only the calling thread)
 	 */
-	_k_object_recycle(ctx);
+	z_object_recycle(ctx);
 #endif
 
 	z_finalize_fd(fd, ctx,
@@ -151,6 +146,7 @@ ssize_t zcan_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
 			socklen_t addrlen)
 {
 	struct sockaddr_can can_addr;
+	struct zcan_frame zframe;
 	s32_t timeout = K_FOREVER;
 	int ret;
 
@@ -178,8 +174,13 @@ ssize_t zcan_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
 		dest_addr = (struct sockaddr *)&can_addr;
 	}
 
-	ret = net_context_sendto_new(ctx, buf, len, dest_addr, addrlen, NULL,
-				     timeout, NULL, ctx->user_data);
+	NET_ASSERT(len == sizeof(struct can_frame));
+
+	can_copy_frame_to_zframe((struct can_frame *)buf, &zframe);
+
+	ret = net_context_sendto(ctx, (void *)&zframe, sizeof(zframe),
+				 dest_addr, addrlen, NULL, timeout,
+				 ctx->user_data);
 	if (ret < 0) {
 		errno = -ret;
 		return -1;
@@ -193,6 +194,7 @@ static ssize_t zcan_recvfrom_ctx(struct net_context *ctx, void *buf,
 				 struct sockaddr *src_addr,
 				 socklen_t *addrlen)
 {
+	struct zcan_frame zframe;
 	size_t recv_len = 0;
 	s32_t timeout = K_FOREVER;
 	struct net_pkt *pkt;
@@ -204,7 +206,7 @@ static ssize_t zcan_recvfrom_ctx(struct net_context *ctx, void *buf,
 	if (flags & ZSOCK_MSG_PEEK) {
 		int ret;
 
-		ret = _k_fifo_wait_non_empty(&ctx->recv_q, timeout);
+		ret = k_fifo_wait_non_empty(&ctx->recv_q, timeout);
 		/* EAGAIN when timeout expired, EINTR when cancelled */
 		if (ret && ret != -EAGAIN && ret != -EINTR) {
 			errno = -ret;
@@ -229,7 +231,7 @@ static ssize_t zcan_recvfrom_ctx(struct net_context *ctx, void *buf,
 		recv_len = max_len;
 	}
 
-	if (net_pkt_read_new(pkt, buf, recv_len)) {
+	if (net_pkt_read(pkt, (void *)&zframe, sizeof(zframe))) {
 		errno = EIO;
 		return -1;
 	}
@@ -239,6 +241,10 @@ static ssize_t zcan_recvfrom_ctx(struct net_context *ctx, void *buf,
 	} else {
 		net_pkt_cursor_init(pkt);
 	}
+
+	NET_ASSERT(recv_len == sizeof(struct can_frame));
+
+	can_copy_zframe_to_frame(&zframe, (struct can_frame *)buf);
 
 	return recv_len;
 }
@@ -343,7 +349,7 @@ static int can_sock_getsockopt_vmeth(void *obj, int level, int optname,
 		dev = net_if_get_device(iface);
 		api = dev->driver_api;
 
-		if (!api->getsockopt) {
+		if (!api || !api->getsockopt) {
 			errno = ENOTSUP;
 			return -1;
 		}
@@ -363,6 +369,15 @@ static int can_sock_setsockopt_vmeth(void *obj, int level, int optname,
 		struct net_if *iface;
 		struct device *dev;
 
+		/* The application must use can_filter and then we convert
+		 * it to zcan_filter as the CANBUS drivers expects that.
+		 */
+		if (optname == CAN_RAW_FILTER &&
+		    optlen != sizeof(struct can_filter)) {
+			errno = EINVAL;
+			return -1;
+		}
+
 		if (optval == NULL) {
 			errno = EINVAL;
 			return -1;
@@ -372,13 +387,23 @@ static int can_sock_setsockopt_vmeth(void *obj, int level, int optname,
 		dev = net_if_get_device(iface);
 		api = dev->driver_api;
 
-		if (!api->setsockopt) {
+		if (!api || !api->setsockopt) {
 			errno = ENOTSUP;
 			return -1;
 		}
 
-		return api->setsockopt(dev, obj, level, optname, optval,
-				       optlen);
+		if (optname == CAN_RAW_FILTER) {
+			struct zcan_filter zfilter;
+
+			can_copy_filter_to_zfilter((struct can_filter *)optval,
+						   &zfilter);
+
+			return api->setsockopt(dev, obj, level, optname,
+					       &zfilter, sizeof(zfilter));
+		}
+
+		return api->setsockopt(dev, obj, level, optname,
+				       optval, optlen);
 	}
 
 	return zcan_setsockopt_ctx(obj, level, optname, optval, optlen);
@@ -399,3 +424,14 @@ static const struct socket_op_vtable can_sock_fd_op_vtable = {
 	.getsockopt = can_sock_getsockopt_vmeth,
 	.setsockopt = can_sock_setsockopt_vmeth,
 };
+
+static bool can_is_supported(int family, int type, int proto)
+{
+	if (type != SOCK_RAW || proto != CAN_RAW) {
+		return false;
+	}
+
+	return true;
+}
+
+NET_SOCKET_REGISTER(af_can, AF_CAN, can_is_supported, zcan_socket);

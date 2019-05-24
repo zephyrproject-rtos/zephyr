@@ -10,7 +10,6 @@ ram: 64
 flash: 512
 supported:
   - adc
-  - counter
   - nvs
   - i2c
   - pwm

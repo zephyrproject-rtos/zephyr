@@ -48,7 +48,7 @@ const NANO_ESF _default_esf = {
  *
  * @return This function does not return.
  */
-FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
+FUNC_NORETURN void z_NanoFatalErrorHandler(unsigned int reason,
 					  const NANO_ESF *esf)
 {
 	LOG_PANIC();
@@ -102,7 +102,7 @@ FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
 	       esf->estatus);
 #endif
 
-	_SysFatalErrorHandler(reason, esf);
+	z_SysFatalErrorHandler(reason, esf);
 }
 
 #if defined(CONFIG_EXTRA_EXCEPTION_INFO) && defined(CONFIG_PRINTK) \
@@ -174,10 +174,10 @@ FUNC_NORETURN void _Fault(const NANO_ESF *esf)
 	u32_t exc_reg, badaddr_reg, eccftl;
 	enum nios2_exception_cause cause;
 
-	exc_reg = _nios2_creg_read(NIOS2_CR_EXCEPTION);
+	exc_reg = z_nios2_creg_read(NIOS2_CR_EXCEPTION);
 
 	/* Bit 31 indicates potentially fatal ECC error */
-	eccftl = (exc_reg & NIOS2_EXCEPTION_REG_ECCFTL_MASK) != 0;
+	eccftl = (exc_reg & NIOS2_EXCEPTION_REG_ECCFTL_MASK) != 0U;
 
 	/* Bits 2-6 contain the cause code */
 	cause = (exc_reg & NIOS2_EXCEPTION_REG_CAUSE_MASK)
@@ -188,13 +188,13 @@ FUNC_NORETURN void _Fault(const NANO_ESF *esf)
 	printk("reason: %s\n", cause_str(cause));
 #endif
 	if (BIT(cause) & NIOS2_BADADDR_CAUSE_MASK) {
-		badaddr_reg = _nios2_creg_read(NIOS2_CR_BADADDR);
+		badaddr_reg = z_nios2_creg_read(NIOS2_CR_BADADDR);
 		printk("Badaddr: 0x%x\n", badaddr_reg);
 	}
 #endif /* ALT_CPU_HAS_EXTRA_EXCEPTION_INFO */
 #endif /* CONFIG_PRINTK */
 
-	_NanoFatalErrorHandler(_NANO_ERR_CPU_EXCEPTION, esf);
+	z_NanoFatalErrorHandler(_NANO_ERR_CPU_EXCEPTION, esf);
 }
 
 
@@ -218,7 +218,7 @@ FUNC_NORETURN void _Fault(const NANO_ESF *esf)
  *
  * @return N/A
  */
-FUNC_NORETURN __weak void _SysFatalErrorHandler(unsigned int reason,
+FUNC_NORETURN __weak void z_SysFatalErrorHandler(unsigned int reason,
 						const NANO_ESF *pEsf)
 {
 	ARG_UNUSED(pEsf);
@@ -232,7 +232,7 @@ FUNC_NORETURN __weak void _SysFatalErrorHandler(unsigned int reason,
 	if (reason == _NANO_ERR_KERNEL_PANIC) {
 		goto hang_system;
 	}
-	if (k_is_in_isr() || _is_thread_essential()) {
+	if (k_is_in_isr() || z_is_thread_essential()) {
 		printk("Fatal fault in %s! Spinning...\n",
 		       k_is_in_isr() ? "ISR" : "essential thread");
 		goto hang_system;
@@ -246,7 +246,7 @@ hang_system:
 #endif
 
 #ifdef ALT_CPU_HAS_DEBUG_STUB
-	_nios2_break();
+	z_nios2_break();
 #endif
 	for (;;) {
 		k_cpu_idle();

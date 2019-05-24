@@ -8,3 +8,7 @@ tests:
     arch_exclude: posix
     filter: TOOLCHAIN_HAS_NEWLIB == 1
     tags: clib newlib userspace
+  libraries.libc.newlibnano:
+    extra_args: CONF_FILE=prj_newlibnano.conf
+    toolchain_whitelist: gnuarmemb
+    tags: clib newlib userspace

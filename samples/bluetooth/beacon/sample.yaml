@@ -1,8 +1,7 @@
 sample:
-  description: TBD
-  name: TBD
+  name: Bluetooth Beacon
 tests:
-  test:
+  sample.bluetooth.beacon:
     harness: bluetooth
     platform_whitelist: qemu_cortex_m3 qemu_x86 nrf52_pca10040
     tags: bluetooth

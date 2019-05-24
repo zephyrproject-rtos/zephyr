@@ -306,8 +306,11 @@ struct adc_driver_api {
  * @retval 0       On success.
  * @retval -EINVAL If a parameter with an invalid value has been provided.
  */
-static inline int adc_channel_setup(struct device *dev,
-				    const struct adc_channel_cfg *channel_cfg)
+__syscall int adc_channel_setup(struct device *dev,
+				const struct adc_channel_cfg *channel_cfg);
+
+static inline int z_impl_adc_channel_setup(struct device *dev,
+				const struct adc_channel_cfg *channel_cfg)
 {
 	const struct adc_driver_api *api = dev->driver_api;
 
@@ -320,19 +323,25 @@ static inline int adc_channel_setup(struct device *dev,
  * @param dev       Pointer to the device structure for the driver instance.
  * @param sequence  Structure specifying requested sequence of samplings.
  *
+ * If invoked from user mode, any sequence struct options for callback must
+ * be NULL.
+ *
  * @retval 0        On success.
  * @retval -EINVAL  If a parameter with an invalid value has been provided.
  * @retval -ENOMEM  If the provided buffer is to small to hold the results
  *                  of all requested samplings.
  * @retval -ENOTSUP If the requested mode of operation is not supported.
- * @retval -EIO     If another sampling was triggered while the previous one
+ * @retval -EBUSY   If another sampling was triggered while the previous one
  *                  was still in progress. This may occur only when samplings
  *                  are done with intervals, and it indicates that the selected
  *                  interval was too small. All requested samples are written
  *                  in the buffer, but at least some of them were taken with
  *                  an extra delay compared to what was scheduled.
  */
-static inline int adc_read(struct device *dev,
+__syscall int adc_read(struct device *dev,
+		       const struct adc_sequence *sequence);
+
+static inline int z_impl_adc_read(struct device *dev,
 			   const struct adc_sequence *sequence)
 {
 	const struct adc_driver_api *api = dev->driver_api;
@@ -344,10 +353,11 @@ static inline int adc_read(struct device *dev,
 /**
  * @brief Set an asynchronous read request.
  *
+ * If invoked from user mode, any sequence struct options for callback must
+ * be NULL.
+ *
  * @param dev       Pointer to the device structure for the driver instance.
  * @param sequence  Structure specifying requested sequence of samplings.
- *                  Caller should ensure lifetime of this structure spans
- *                  until asynchronous read is finished.
  * @param async     Pointer to a valid and ready to be signaled struct
  *                  k_poll_signal. (Note: if NULL this function will not notify
  *                  the end of the transaction, and whether it went successfully
@@ -356,15 +366,22 @@ static inline int adc_read(struct device *dev,
  * @returns 0 on success, negative error code otherwise.
  *
  */
-static inline int adc_read_async(struct device *dev,
-				 const struct adc_sequence *sequence,
-				 struct k_poll_signal *async)
+__syscall int adc_read_async(struct device *dev,
+			     const struct adc_sequence *sequence,
+			     struct k_poll_signal *async);
+
+
+static inline int z_impl_adc_read_async(struct device *dev,
+					const struct adc_sequence *sequence,
+					struct k_poll_signal *async)
 {
 	const struct adc_driver_api *api = dev->driver_api;
 
 	return api->read_async(dev, sequence, async);
 }
 #endif /* CONFIG_ADC_ASYNC */
+
+#include <syscalls/adc.h>
 
 /**
  * @}

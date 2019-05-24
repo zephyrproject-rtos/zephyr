@@ -147,7 +147,7 @@ static inline int burst_write_i2c(struct device *dev, u16_t dev_addr,
 	addr_buffer[1] = start_addr & 0xFF;
 	addr_buffer[0] = start_addr >> 8;
 	msg[0].buf = addr_buffer;
-	msg[0].len = 2;
+	msg[0].len = 2U;
 	msg[0].flags = I2C_MSG_WRITE;
 
 	msg[1].buf = buf;
@@ -169,7 +169,7 @@ static inline int burst_read_i2c(struct device *dev, u16_t dev_addr,
 	addr_buffer[1] = start_addr & 0xFF;
 	addr_buffer[0] = start_addr >> 8;
 	msg[0].buf = addr_buffer;
-	msg[0].len = 2;
+	msg[0].len = 2U;
 	msg[0].flags = I2C_MSG_WRITE;
 
 	msg[1].buf = buf;

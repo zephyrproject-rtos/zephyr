@@ -1,0 +1,19 @@
+common:
+  depends_on: netif
+  tags: net socket socket.register
+tests:
+  net.socket.register:
+    extra_configs:
+      - CONFIG_NET_SOCKETS_SOCKOPT_TLS=n
+  net.socket.register.tls:
+    extra_configs:
+      - CONFIG_MBEDTLS=y
+      - CONFIG_MBEDTLS_BUILTIN=y
+      - CONFIG_MBEDTLS_ENABLE_HEAP=y
+      - CONFIG_MBEDTLS_HEAP_SIZE=60000
+      - CONFIG_MBEDTLS_SSL_MAX_CONTENT_LEN=2048
+      - CONFIG_NET_SOCKETS_SOCKOPT_TLS=y
+      - CONFIG_NET_SOCKETS_TLS_MAX_CONTEXTS=6
+      - CONFIG_NET_SOCKETS_ENABLE_DTLS=y
+      - CONFIG_NET_SOCKETS_DTLS_TIMEOUT=30000
+      - CONFIG_MAIN_STACK_SIZE=2048

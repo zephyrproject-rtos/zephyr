@@ -5,3 +5,31 @@
  */
 
 #include <atmel/samd.dtsi>
+
+&sercom0 {
+	interrupts = <7 0>;
+};
+
+&sercom1 {
+	interrupts = <8 0>;
+};
+
+&sercom2 {
+	interrupts = <9 0>;
+};
+
+&sercom3 {
+	interrupts = <10 0>;
+};
+
+&sercom4 {
+	interrupts = <11 0>;
+};
+
+&sercom5 {
+	interrupts = <12 0>;
+};
+
+&adc {
+	interrupts = <21 0>;
+};

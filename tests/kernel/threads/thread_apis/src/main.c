@@ -37,7 +37,7 @@ extern void test_k_thread_foreach(void);
 extern void test_threads_cpu_mask(void);
 
 struct k_thread tdata;
-#define STACK_SIZE (256 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
 K_THREAD_STACK_DEFINE(tstack, STACK_SIZE);
 size_t tstack_size = K_THREAD_STACK_SIZEOF(tstack);
 
@@ -168,7 +168,7 @@ static void umode_entry(void *thread_id, void *p2, void *p3)
 	ARG_UNUSED(p2);
 	ARG_UNUSED(p3);
 
-	if (!_is_thread_essential() &&
+	if (!z_is_thread_essential() &&
 	    (k_current_get() == (k_tid_t)thread_id)) {
 		ztest_test_pass();
 	} else {
@@ -185,9 +185,9 @@ static void umode_entry(void *thread_id, void *p2, void *p3)
  */
 void test_user_mode(void)
 {
-	_thread_essential_set();
+	z_thread_essential_set();
 
-	zassert_true(_is_thread_essential(), "Thread isn't set"
+	zassert_true(z_is_thread_essential(), "Thread isn't set"
 		     " as essential\n");
 
 	k_thread_user_mode_enter((k_thread_entry_t)umode_entry,

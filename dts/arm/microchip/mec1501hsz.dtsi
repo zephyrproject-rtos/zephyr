@@ -1,0 +1,140 @@
+/*
+ * Copyright (c) 2019 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv7-m.dtsi>
+#include <dt-bindings/i2c/i2c.h>
+#include <dt-bindings/gpio/gpio.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m4";
+			reg = <0>;
+		};
+	};
+
+	flash0: flash@e0000 {
+		reg = <0x000E0000 0x38000>;
+	};
+
+	sram0: memory@118000 {
+		compatible = "mmio-sram";
+		reg = <0x00118000 0x8000>;
+	};
+
+	soc {
+		uart0: uart@400f2400 {
+			compatible = "ns16550";
+			reg = <0x400f2400 0x400>;
+			interrupts = <40 0>;
+			current-speed = <38400>;
+			label = "UART_0";
+			reg-shift = <0>;
+		};
+		uart1: uart@400f2800 {
+			compatible = "ns16550";
+			reg = <0x400f2800 0x400>;
+			interrupts = <41 0>;
+			current-speed = <38400>;
+			label = "UART_1";
+			reg-shift = <0>;
+		};
+		uart2: uart@400f2c00 {
+			compatible = "ns16550";
+			reg = <0x400f2c00 0x400>;
+			interrupts = <44 0>;
+			current-speed = <38400>;
+			label = "UART_2";
+			reg-shift = <0>;
+		};
+		gpioa: gpio@40081000 {
+			compatible = "microchip,xec-gpio";
+			reg = <0x40081000 0x80>;
+			interrupts = <3 2>;
+			gpio-controller;
+			label="GPIO000_036";
+			#gpio-cells=<2>;
+		};
+		gpiob: gpio@40081080 {
+			compatible = "microchip,xec-gpio";
+			reg = <0x40081080 0x80>;
+			interrupts = <2 2>;
+			gpio-controller;
+			label="GPIO040_076";
+			#gpio-cells=<2>;
+		};
+		gpioc: gpio@40081100 {
+			compatible = "microchip,xec-gpio";
+			reg = <0x40081100 0x80>;
+			gpio-controller;
+			interrupts = <1 2>;
+			label="GPIO100_136";
+			#gpio-cells=<2>;
+		};
+		gpiod: gpio@40081180 {
+			compatible = "microchip,xec-gpio";
+			reg = <0x40081180 0x80>;
+			gpio-controller;
+			interrupts = <0 2>;
+			label="GPIO140_176";
+			#gpio-cells=<2>;
+		};
+		gpioe: gpio@40081200 {
+			compatible = "microchip,xec-gpio";
+			reg = <0x40081200 0x80>;
+			gpio-controller;
+			interrupts = <4 2>;
+			label="GPIO200_236";
+			#gpio-cells=<2>;
+		};
+		gpiof: gpio@40081280 {
+			compatible = "microchip,xec-gpio";
+			reg = <0x40081280 0x80>;
+			gpio-controller;
+			interrupts = <17 2>;
+			label="GPIO240_276";
+			#gpio-cells=<2>;
+		};
+		i2c0: i2c@40004000 {
+			compatible = "microchip,xec-i2c";
+			reg = <0x40004000 0x80>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			label = "I2C_0";
+		};
+		i2c1: i2c@40004400 {
+			compatible = "microchip,xec-i2c";
+			reg = <0x40004400 0x80>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			label = "I2C_1";
+		};
+		i2c2: i2c@40004800 {
+			compatible = "microchip,xec-i2c";
+			reg = <0x40004800 0x80>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			label = "I2C_2";
+		};
+		i2c3: i2c@40004c00 {
+			compatible = "microchip,xec-i2c";
+			reg = <0x40004C00 0x80>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			label = "I2C_3";
+		};
+		i2c4: i2c@40005000 {
+			compatible = "microchip,xec-i2c";
+			reg = <0x40005000 0x80>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			label = "I2C_4";
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};

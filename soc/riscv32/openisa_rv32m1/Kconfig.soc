@@ -5,13 +5,11 @@
 config SOC_OPENISA_RV32M1_RISCV32
 	bool "OpenISA RV32M1 RISC-V cores"
 	depends on RISCV32
-	# The following depends is due to limitations in the linker script.
-	# It's not inherent to the chip itself.
-	depends on !CUSTOM_RODATA_LD && !CUSTOM_RWDATA_LD
-	# The following select is also due to limitations in the linker script.
+	# The following select is due to limitations in the linker script.
 	# (We can't make it a 'depends on' without causing a dependency loop).
 	select XIP
 	select HAS_RV32M1_LPUART
+	select HAS_RV32M1_LPI2C
 	select ATOMIC_OPERATIONS_C
 	select VEGA_SDK_HAL
 	select RISCV_SOC_INTERRUPT_INIT

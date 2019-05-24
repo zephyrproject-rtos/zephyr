@@ -337,7 +337,7 @@ static void spi_async_call_cb(struct k_poll_event *async_evt,
 		k_sem_give(caller_sem);
 
 		/* Reinitializing for next call */
-		async_evt->signal->signaled = 0;
+		async_evt->signal->signaled = 0U;
 		async_evt->state = K_POLL_STATE_NOT_READY;
 	}
 }

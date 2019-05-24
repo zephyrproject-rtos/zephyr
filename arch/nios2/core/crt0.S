@@ -140,6 +140,6 @@ SECTION_FUNC(TEXT, __start)
 	 */
 
 	/* Jump into C domain. _PrepC zeroes BSS, copies rw data into RAM,
-	 * and then enters _Cstart */
+	 * and then enters z_cstart */
 	call _PrepC
 

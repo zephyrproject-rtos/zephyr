@@ -27,6 +27,12 @@ config HAS_MCUX_CCM
 	help
 	  Set if the clock control module (CCM) module is present in the SoC.
 
+config HAS_MCUX_PCC
+	bool
+	help
+	  Set if the peripheral clock controller module (PCC) module is
+	  present in the SoC.
+
 config HAS_MCUX_ELCDIF
 	bool
 	help
@@ -37,6 +43,12 @@ config HAS_MCUX_ENET
 	bool
 	help
 	  Set if the ethernet (ENET) module is present in the SoC.
+
+config HAS_MCUX_FTFX
+	bool
+	help
+	  Set if the flash memory (FTFA, FTFE, or FTFL) module is present in
+	  the SoC.
 
 config HAS_MCUX_FTM
 	bool
@@ -90,5 +102,10 @@ config HAS_MCUX_TRNG
 	help
 	  Set if the true random number generator (TRNG) module is present in
 	  the SoC.
+
+config HAS_MCUX_USB_EHCI
+	bool
+	help
+	  Set if the USB controller EHCI module is present in the SoC.
 
 endif # HAS_MCUX

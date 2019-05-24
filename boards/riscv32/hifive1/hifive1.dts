@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
 /dts-v1/;
 
 #include <riscv32-fe310.dtsi>
@@ -14,6 +16,8 @@
 	chosen {
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
+		zephyr,sram = &dtim;
+		zephyr,flash = &flash0;
 	};
 
 	leds {
@@ -50,6 +54,15 @@
 &spi0 {
 	status = "ok";
 	clock-frequency = <16000000>;
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+	reg = <0x10014000 0x1000 0x20400000 0xc00000>;
+	flash0: flash@0 {
+		compatible = "issi,is25lp128", "jedec,spi-nor";
+		jedec-id = <0x96 0x60 0x18>;
+		reg = <0>;
+	};
 };
 
 &spi1 {

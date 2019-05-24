@@ -12,7 +12,7 @@ you IPv6 connectivity over BLE.
 Building and Running
 ********************
 
-This sample can be found under :file:`samples/bluetooth/ipsp` in the
+This sample can be found under :zephyr_file:`samples/bluetooth/ipsp` in the
 Zephyr tree.
 Sample can be built and executed for the nRF52840 PCA10056 as follows:
 

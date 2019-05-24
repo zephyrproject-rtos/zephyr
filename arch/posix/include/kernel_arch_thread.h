@@ -13,7 +13,6 @@
  *
  *  struct _thread_arch
  *  struct _callee_saved
- *  struct _caller_saved
  *
  * necessary to instantiate instances of struct k_thread.
  */
@@ -24,18 +23,11 @@
 #ifndef _ASMLANGUAGE
 #include <zephyr/types.h>
 
-struct _caller_saved {
-	/*
-	 * Nothing here
-	 */
-};
-
-
 struct _callee_saved {
-	/* IRQ status before irq_lock() and call to _Swap() */
+	/* IRQ status before irq_lock() and call to z_swap() */
 	u32_t key;
 
-	/* Return value of _Swap() */
+	/* Return value of z_swap() */
 	u32_t retval;
 
 	/*

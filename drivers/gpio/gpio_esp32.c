@@ -109,7 +109,7 @@ static int config_interrupt(u32_t pin, int flags)
 
 static void config_polarity(u32_t pin, int flags)
 {
-	volatile u32_t *reg = (u32_t *)(GPIO_FUNC0_IN_SEL_CFG_REG + 4 * pin);
+	volatile u32_t *reg = (u32_t *)(GPIO_FUNC0_IN_SEL_CFG_REG + pin * 4U);
 
 	if (flags & GPIO_POL_INV) {
 		*reg |= BIT(GPIO_FUNC0_IN_INV_SEL_S);
@@ -210,7 +210,7 @@ static int gpio_esp32_manage_callback(struct device *dev,
 {
 	struct gpio_esp32_data *data = dev->driver_data;
 
-	return _gpio_manage_callback(&data->cb, callback, set);
+	return gpio_manage_callback(&data->cb, callback, set);
 }
 
 static int gpio_esp32_enable_callback(struct device *dev,
@@ -247,7 +247,7 @@ static void gpio_esp32_fire_callbacks(struct device *device)
 	u32_t values = *data->port.irq.status_reg;
 
 	if (values & data->cb_pins) {
-		_gpio_fire_callbacks(&data->cb, device, values);
+		gpio_fire_callbacks(&data->cb, device, values);
 	}
 
 	*data->port.irq.ack_reg = values;

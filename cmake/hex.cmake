@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 # from https://gist.github.com/korzo89/71a6de0f388f7cf8b349101b0134060c
 function(from_hex HEX DEC)
     string(SUBSTRING "${HEX}" 2 -1 HEX)

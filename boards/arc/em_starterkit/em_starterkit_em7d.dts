@@ -22,7 +22,7 @@
 	};
 
 	chosen {
-		zephyr,sram = &ddr0;
+		zephyr,sram = &dccm0;
 		zephyr,console = &uart1;
 		zephyr,shell-uart = &uart1;
 	};

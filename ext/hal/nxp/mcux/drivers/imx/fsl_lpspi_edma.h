@@ -26,13 +26,13 @@
 /*@}*/
 
 /*!
-* @brief Forward declaration of the _lpspi_master_edma_handle typedefs.
-*/
+ * @brief Forward declaration of the _lpspi_master_edma_handle typedefs.
+ */
 typedef struct _lpspi_master_edma_handle lpspi_master_edma_handle_t;
 
 /*!
-* @brief Forward declaration of the _lpspi_slave_edma_handle typedefs.
-*/
+ * @brief Forward declaration of the _lpspi_slave_edma_handle typedefs.
+ */
 typedef struct _lpspi_slave_edma_handle lpspi_slave_edma_handle_t;
 
 /*!

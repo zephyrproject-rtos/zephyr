@@ -101,19 +101,24 @@ static int gpio_resume_device_from_suspend(struct device *dev)
 * the *context may include IN data or/and OUT data
 */
 static int gpio_qmsi_device_ctrl(struct device *port, u32_t ctrl_command,
-				 void *context)
+				 void *context, device_pm_cb cb, void *arg)
 {
+	int ret = 0;
+
 	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
 		if (*((u32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
-			return gpio_suspend_device(port);
+			ret = gpio_suspend_device(port);
 		} else if (*((u32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
-			return gpio_resume_device_from_suspend(port);
+			ret = gpio_resume_device_from_suspend(port);
 		}
 	} else if (ctrl_command == DEVICE_PM_GET_POWER_STATE) {
 		*((u32_t *)context) = gpio_qmsi_get_power_state(port);
-		return 0;
 	}
-	return 0;
+
+	if (cb) {
+		cb(port, ret, context, arg);
+	}
+	return ret;
 }
 #endif
 
@@ -138,7 +143,7 @@ static struct gpio_qmsi_runtime gpio_aon_runtime;
 * the *context may include IN data or/and OUT data
 */
 static int gpio_aon_device_ctrl(struct device *port, u32_t ctrl_command,
-				void *context)
+				void *context, device_pm_cb cb, void *arg)
 {
 	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
 		u32_t device_pm_state = *(u32_t *)context;
@@ -149,6 +154,10 @@ static int gpio_aon_device_ctrl(struct device *port, u32_t ctrl_command,
 		}
 	} else if (ctrl_command == DEVICE_PM_GET_POWER_STATE) {
 		*((u32_t *)context) = gpio_qmsi_get_power_state(port);
+	}
+
+	if (cb) {
+		cb(port, 0, context, arg);
 	}
 	return 0;
 }
@@ -167,7 +176,7 @@ static void gpio_qmsi_callback(void *data, u32_t status)
 	const u32_t enabled_mask = context->pin_callbacks & status;
 
 	if (enabled_mask) {
-		_gpio_fire_callbacks(&context->callbacks, port, enabled_mask);
+		gpio_fire_callbacks(&context->callbacks, port, enabled_mask);
 	}
 }
 
@@ -298,7 +307,7 @@ static inline int gpio_qmsi_manage_callback(struct device *port,
 {
 	struct gpio_qmsi_runtime *context = port->driver_data;
 
-	return _gpio_manage_callback(&context->callbacks, callback, set);
+	return gpio_manage_callback(&context->callbacks, callback, set);
 }
 
 static inline int gpio_qmsi_enable_callback(struct device *port,

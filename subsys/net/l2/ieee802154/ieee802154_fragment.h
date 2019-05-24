@@ -45,8 +45,8 @@ void ieee802154_fragment_ctx_init(struct ieee802154_fragment_ctx *ctx,
 	ctx->pos = ctx->buf->data;
 	ctx->hdr_diff = hdr_diff;
 	ctx->pkt_size = net_pkt_get_len(pkt) + (iphc ? hdr_diff : -1);
-	ctx->offset = 0;
-	ctx->processed = 0;
+	ctx->offset = 0U;
+	ctx->processed = 0U;
 }
 
 /**

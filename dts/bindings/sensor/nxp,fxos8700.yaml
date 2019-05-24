@@ -18,6 +18,11 @@ properties:
     compatible:
       constraint: "nxp,fxos8700"
 
+    reset-gpios:
+      type: compound
+      category: optional
+      generation: define, use-prop-name
+
     int1-gpios:
       type: compound
       category: optional

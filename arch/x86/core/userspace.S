@@ -11,8 +11,8 @@
 #include <syscall.h>
 
 /* Exports */
-GTEXT(_x86_syscall_entry_stub)
-GTEXT(_x86_userspace_enter)
+GTEXT(z_x86_syscall_entry_stub)
+GTEXT(z_x86_userspace_enter)
 GTEXT(z_arch_user_string_nlen)
 GTEXT(z_arch_user_string_nlen_fault_start)
 GTEXT(z_arch_user_string_nlen_fault_end)
@@ -151,7 +151,7 @@ SECTION_FUNC(TEXT, z_x86_trampoline_to_user_always)
  * unless KPTI is enabled, in which case we're on the trampoline stack and
  * need to get off it before enabling interrupts.
  */
-SECTION_FUNC(TEXT, _x86_syscall_entry_stub)
+SECTION_FUNC(TEXT, z_x86_syscall_entry_stub)
 #ifdef CONFIG_X86_KPTI
 	/* Stash these regs as we need to use them */
 	pushl	%esi
@@ -199,6 +199,10 @@ SECTION_FUNC(TEXT, _x86_syscall_entry_stub)
 	jae	_bad_syscall
 
 _id_ok:
+#ifdef CONFIG_BOUNDS_CHECK_BYPASS_MITIGATION
+	/* Prevent speculation with bogus system call IDs */
+	lfence
+#endif
 	/* Marshal arguments per calling convention to match what is expected
 	 * for _k_syscall_handler_t functions
 	 */
@@ -291,14 +295,14 @@ z_arch_user_string_nlen_fixup:
 	ret
 
 
-/* FUNC_NORETURN void _x86_userspace_enter(k_thread_entry_t user_entry,
+/* FUNC_NORETURN void z_x86_userspace_enter(k_thread_entry_t user_entry,
  *					   void *p1, void *p2, void *p3,
  *					   u32_t stack_end,
  *					   u32_t stack_start)
  *
  * A one-way trip to userspace.
  */
-SECTION_FUNC(TEXT, _x86_userspace_enter)
+SECTION_FUNC(TEXT, z_x86_userspace_enter)
 	pop	%esi	/* Discard return address on stack */
 
 	/* Fetch parameters on the stack */
@@ -362,7 +366,7 @@ SECTION_FUNC(TEXT, _x86_userspace_enter)
 	mov	%bx, %ds
 	mov	%bx, %es
 
-	/* Push arguments to _thread_entry() */
+	/* Push arguments to z_thread_entry() */
 	push	%esi	/* p3 */
 #ifndef CONFIG_X86_IAMCU
 	push	%ecx	/* p2 */
@@ -373,7 +377,7 @@ SECTION_FUNC(TEXT, _x86_userspace_enter)
 	push	$0
 
 	/* Save stack pointer at this position, this is where it will be
-	 * when we land in _thread_entry()
+	 * when we land in z_thread_entry()
 	 */
 	mov	%esp, %edi
 
@@ -385,7 +389,7 @@ SECTION_FUNC(TEXT, _x86_userspace_enter)
 	push	%edi		/* ESP */
 	pushfl			/* EFLAGS */
 	push	$USER_CODE_SEG	/* CS */
-	push	$_thread_entry	/* EIP */
+	push	$z_thread_entry	/* EIP */
 
 #ifdef CONFIG_EXECUTION_BENCHMARKING
 	/* Save the eax and edx registers before reading the time stamp
@@ -400,5 +404,5 @@ SECTION_FUNC(TEXT, _x86_userspace_enter)
 	pop %eax
 #endif
 
-	/* We will land in _thread_entry() in user mode after this */
+	/* We will land in z_thread_entry() in user mode after this */
 	KPTI_IRET_USER

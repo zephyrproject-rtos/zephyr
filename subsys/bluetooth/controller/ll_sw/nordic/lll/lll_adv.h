@@ -51,7 +51,7 @@ static inline struct pdu_adv *lll_adv_pdu_alloc(struct lll_adv_pdu *pdu,
 	if (pdu->first == pdu->last) {
 		last = pdu->last + 1;
 		if (last == DOUBLE_BUFFER_SIZE) {
-			last = 0;
+			last = 0U;
 		}
 	} else {
 		last = pdu->last;

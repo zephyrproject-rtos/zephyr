@@ -31,6 +31,7 @@
 
 #include "pdu.h"
 #include "ll.h"
+#include "ll_feat.h"
 #include "lll.h"
 #include "lll_filter.h"
 #include "lll_adv.h"
@@ -43,6 +44,10 @@
 #include "ull_adv_internal.h"
 #include "ull_scan_internal.h"
 #include "ull_conn_internal.h"
+
+#if defined(CONFIG_BT_CTLR_USER_EXT)
+#include "ull_vendor.h"
+#endif /* CONFIG_BT_CTLR_USER_EXT */
 
 #define LOG_MODULE_NAME bt_ctlr_llsw_ull
 #include "common/log.h"
@@ -144,18 +149,11 @@ static struct {
 static MFIFO_DEFINE(pdu_rx_free, sizeof(void *), PDU_RX_CNT);
 static MFIFO_DEFINE(ll_pdu_rx_free, sizeof(void *), LL_PDU_RX_CNT);
 
-#if defined(CONFIG_BT_RX_BUF_LEN)
-#define PDU_RX_OCTETS_MAX (CONFIG_BT_RX_BUF_LEN - 11)
-#else
-#define PDU_RX_OCTETS_MAX 0
-#endif
-
 #define NODE_RX_HEADER_SIZE      (offsetof(struct node_rx_pdu, pdu))
-#define NODE_RX_FOOTER_SIZE      (sizeof(struct node_rx_ftr))
-#define NODE_RX_STRUCT_OVERHEAD  (NODE_RX_HEADER_SIZE + NODE_RX_FOOTER_SIZE)
+#define NODE_RX_STRUCT_OVERHEAD  (NODE_RX_HEADER_SIZE)
 
-#define PDU_ADVERTIZE_SIZE       (PDU_AC_SIZE_MAX + PDU_AC_SIZE_EXTRA)
-#define PDU_DATA_SIZE            (PDU_DC_LL_HEADER_SIZE  + PDU_RX_OCTETS_MAX)
+#define PDU_ADVERTIZE_SIZE (PDU_AC_SIZE_MAX + PDU_AC_SIZE_EXTRA)
+#define PDU_DATA_SIZE      (PDU_DC_LL_HEADER_SIZE + LL_LENGTH_OCTETS_RX_MAX)
 
 #define PDU_RX_NODE_POOL_ELEMENT_SIZE                      \
 	MROUND(                                            \
@@ -199,7 +197,7 @@ static inline int init_reset(void);
 static inline void done_alloc(void);
 static inline void rx_alloc(u8_t max);
 static void rx_demux(void *param);
-static inline void rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx);
+static inline int rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx);
 static inline void rx_demux_event_done(memq_link_t *link,
 				       struct node_rx_hdr *rx);
 static void disabled_cb(void *param);
@@ -328,7 +326,7 @@ void ll_reset(void)
 			scan = ull_scan_is_enabled_get(0);
 			LL_ASSERT(scan);
 
-			scan->is_enabled = 0;
+			scan->is_enabled = 0U;
 			scan->lll.conn = NULL;
 		}
 
@@ -366,17 +364,22 @@ void ll_reset(void)
  * @brief Peek the next node_rx to send up to Host
  * @details Tightly coupled with prio_recv_thread()
  *   Execution context: Controller thread
+ *
+ * @param node_rx[out]   Pointer to rx node at head of queue
+ * @param handle[out]    Connection handle
  * @return TX completed
  */
 u8_t ll_rx_get(void **node_rx, u16_t *handle)
 {
 	struct node_rx_hdr *rx;
 	memq_link_t *link;
-	u8_t cmplt = 0;
+	u8_t cmplt = 0U;
 
 #if defined(CONFIG_BT_CONN)
 ll_rx_get_again:
 #endif /* CONFIG_BT_CONN */
+
+	*node_rx = NULL;
 
 	link = memq_peek(memq_ll_rx.head, memq_ll_rx.tail, (void **)&rx);
 	if (link) {
@@ -386,13 +389,13 @@ ll_rx_get_again:
 			u8_t f, cmplt_prev, cmplt_curr;
 			u16_t h;
 
-			cmplt_curr = 0;
+			cmplt_curr = 0U;
 			f = mfifo_tx_ack.f;
 			do {
 				cmplt_prev = cmplt_curr;
 				cmplt_curr = tx_cmplt_get(&h, &f,
 							  mfifo_tx_ack.l);
-			} while ((cmplt_prev != 0) ||
+			} while ((cmplt_prev != 0U) ||
 				 (cmplt_prev != cmplt_curr));
 
 			/* Do not send up buffers to Host thread that are
@@ -417,14 +420,10 @@ ll_rx_get_again:
 			*node_rx = rx;
 
 #if defined(CONFIG_BT_CONN)
-		} else {
-			*node_rx = NULL;
 		}
 	} else {
 		cmplt = tx_cmplt_get(handle, &mfifo_tx_ack.f, mfifo_tx_ack.l);
-		*node_rx = NULL;
 #endif /* CONFIG_BT_CONN */
-
 	}
 
 	return cmplt;
@@ -521,6 +520,9 @@ void ll_rx_dequeue(void)
 	case NODE_RX_TYPE_MESH_REPORT:
 #endif /* CONFIG_BT_HCI_MESH_EXT */
 
+#if defined(CONFIG_BT_CTLR_USER_EXT)
+	case NODE_RX_TYPE_USER_START ... NODE_RX_TYPE_USER_END:
+#endif /* CONFIG_BT_CTLR_USER_EXT */
 		/*
 		 * We have just dequeued from memq_ll_rx; that frees up some
 		 * quota for Link Layer. Note that we threw away the rx node
@@ -557,9 +559,7 @@ void ll_rx_dequeue(void)
 	} else if (rx->type == NODE_RX_TYPE_CONNECTION) {
 		struct node_rx_ftr *ftr;
 
-		ftr = (void *)((u8_t *)((struct node_rx_pdu *)rx)->pdu +
-			       (offsetof(struct pdu_adv, connect_ind) +
-			       sizeof(struct pdu_adv_connect_ind)));
+		ftr = &(rx->rx_ftr);
 
 		if (0) {
 #if defined(CONFIG_BT_PERIPHERAL)
@@ -597,14 +597,14 @@ void ll_rx_dequeue(void)
 				}
 			}
 
-			adv->is_enabled = 0;
+			adv->is_enabled = 0U;
 #endif /* CONFIG_BT_PERIPHERAL */
 #if defined(CONFIG_BT_CENTRAL)
 		} else {
 			struct lll_scan *lll = ftr->param;
 			struct ll_scan_set *scan = (void *)HDR_LLL2EVT(lll);
 
-			scan->is_enabled = 0;
+			scan->is_enabled = 0U;
 #endif /* CONFIG_BT_CENTRAL */
 		}
 
@@ -627,12 +627,12 @@ void ll_rx_dequeue(void)
 
 		adv = ull_adv_is_enabled_get(0);
 		LL_ASSERT(adv);
-		adv->is_enabled = 0;
+		adv->is_enabled = 0U;
 
 		scan = ull_scan_is_enabled_get(0);
 		LL_ASSERT(scan);
 
-		scan->is_enabled = 0;
+		scan->is_enabled = 0U;
 
 		ll_adv_scan_state_cb(0);
 #endif /* CONFIG_BT_HCI_MESH_EXT */
@@ -679,7 +679,7 @@ void ll_rx_mem_release(void **node_rx)
 				conn = (void *)HDR_LLL2EVT(conn_lll);
 				ll_conn_release(conn);
 
-				scan->is_enabled = 0;
+				scan->is_enabled = 0U;
 
 				scan->lll.conn = NULL;
 
@@ -747,6 +747,10 @@ void ll_rx_mem_release(void **node_rx)
 		case NODE_RX_TYPE_MESH_ADV_CPLT:
 		case NODE_RX_TYPE_MESH_REPORT:
 #endif /* CONFIG_BT_HCI_MESH_EXT */
+
+#if defined(CONFIG_BT_CTLR_USER_EXT)
+		case NODE_RX_TYPE_USER_START ... NODE_RX_TYPE_USER_END:
+#endif /* CONFIG_BT_CTLR_USER_EXT */
 
 			mem_release(rx_free, &mem_pdu_rx.free);
 			break;
@@ -882,7 +886,7 @@ void ll_radio_state_abort(void)
 
 u32_t ll_radio_state_is_idle(void)
 {
-	return radio_is_idle();
+	return lll_radio_is_idle();
 }
 
 void ull_ticker_status_give(u32_t status, void *param)
@@ -978,7 +982,7 @@ void ull_rx_put(memq_link_t *link, void *rx)
 	 * last element index in Tx ack FIFO.
 	 */
 #if defined(CONFIG_BT_CONN)
-	rx_hdr->ack_last = lll_conn_ack_last_idx_get();
+	rx_hdr->ack_last = ull_conn_ack_last_idx_get();
 #else
 	ARG_UNUSED(rx_hdr);
 #endif
@@ -1016,7 +1020,7 @@ int ull_prepare_enqueue(lll_is_abort_cb_t is_abort_cb,
 	e->abort_cb = abort_cb;
 	e->prio = prio;
 	e->is_resume = is_resume;
-	e->is_aborted = 0;
+	e->is_aborted = 0U;
 
 	MFIFO_ENQUEUE(prep, idx);
 
@@ -1035,14 +1039,14 @@ void *ull_prepare_dequeue_iter(u8_t *idx)
 
 void *ull_event_done_extra_get(void)
 {
-	struct node_rx_event_done *done;
+	struct node_rx_event_done *evdone;
 
-	done = MFIFO_DEQUEUE_PEEK(done);
-	if (!done) {
+	evdone = MFIFO_DEQUEUE_PEEK(done);
+	if (!evdone) {
 		return NULL;
 	}
 
-	return &done->extra;
+	return &evdone->extra;
 }
 
 void *ull_event_done(void *param)
@@ -1076,7 +1080,7 @@ void *ull_event_done(void *param)
 	return evdone;
 }
 
-u8_t ull_entropy_get(u8_t len, u8_t *rand)
+u8_t ull_entropy_get(u8_t len, void *rand)
 {
 	return entropy_get_entropy_isr(dev_entropy, rand, len, 0);
 }
@@ -1240,7 +1244,7 @@ static u8_t tx_cmplt_get(u16_t *handle, u8_t *first, u8_t last)
 	}
 
 	*handle = tx->handle;
-	cmplt = 0;
+	cmplt = 0U;
 	do {
 		struct node_tx *node_tx;
 		struct pdu_data *p;
@@ -1275,9 +1279,11 @@ static inline void rx_demux_conn_tx_ack(u8_t ack_last, u16_t handle,
 					memq_link_t *link,
 					struct node_tx *node_tx)
 {
+#if !defined(CONFIG_BT_CTLR_LOW_LAT_ULL)
 	do {
+#endif /* CONFIG_BT_CTLR_LOW_LAT_ULL */
 		/* Dequeue node */
-		lll_conn_ack_dequeue();
+		ull_conn_ack_dequeue();
 
 		if (handle != 0xFFFF) {
 			struct ll_conn *conn;
@@ -1307,11 +1313,18 @@ static inline void rx_demux_conn_tx_ack(u8_t ack_last, u16_t handle,
 			ull_conn_tx_demux(1);
 		}
 
-		link = lll_conn_ack_by_last_peek(ack_last, &handle, &node_tx);
-	} while (link);
+		link = ull_conn_ack_by_last_peek(ack_last, &handle, &node_tx);
 
-	/* trigger thread to call ll_rx_get() */
-	ll_rx_sched();
+#if defined(CONFIG_BT_CTLR_LOW_LAT_ULL)
+		if (!link)
+#else /* CONFIG_BT_CTLR_LOW_LAT_ULL */
+	} while (link);
+#endif /* CONFIG_BT_CTLR_LOW_LAT_ULL */
+
+		{
+			/* trigger thread to call ll_rx_get() */
+			ll_rx_sched();
+		}
 }
 #endif /* CONFIG_BT_CONN */
 
@@ -1319,7 +1332,9 @@ static void rx_demux(void *param)
 {
 	memq_link_t *link;
 
+#if !defined(CONFIG_BT_CTLR_LOW_LAT_ULL)
 	do {
+#endif /* CONFIG_BT_CTLR_LOW_LAT_ULL */
 		struct node_rx_hdr *rx;
 
 		link = memq_peek(memq_ull_rx.head, memq_ull_rx.tail,
@@ -1330,34 +1345,54 @@ static void rx_demux(void *param)
 			memq_link_t *link_tx;
 			u16_t handle; /* Handle to Ack TX */
 #endif /* CONFIG_BT_CONN */
+			int nack = 0;
 
 			LL_ASSERT(rx);
 
 #if defined(CONFIG_BT_CONN)
-			link_tx = lll_conn_ack_by_last_peek(rx->ack_last,
+			link_tx = ull_conn_ack_by_last_peek(rx->ack_last,
 							    &handle, &node_tx);
 			if (link_tx) {
 				rx_demux_conn_tx_ack(rx->ack_last, handle,
 						     link_tx, node_tx);
 			} else
-#endif
+#endif /* CONFIG_BT_CONN */
 			{
-				rx_demux_rx(link, rx);
+				nack = rx_demux_rx(link, rx);
 			}
+
+#if defined(CONFIG_BT_CTLR_LOW_LAT_ULL)
+			if (!nack) {
+				ull_rx_sched();
+			}
+#else /* !CONFIG_BT_CTLR_LOW_LAT_ULL */
+			if (nack) {
+				break;
+			}
+#endif /* !CONFIG_BT_CTLR_LOW_LAT_ULL */
+
 #if defined(CONFIG_BT_CONN)
 		} else {
 			struct node_tx *node_tx;
 			u8_t ack_last;
 			u16_t handle;
 
-			link = lll_conn_ack_peek(&ack_last, &handle, &node_tx);
+			link = ull_conn_ack_peek(&ack_last, &handle, &node_tx);
 			if (link) {
 				rx_demux_conn_tx_ack(ack_last, handle,
 						      link, node_tx);
+
+#if defined(CONFIG_BT_CTLR_LOW_LAT_ULL)
+				ull_rx_sched();
+#endif /* CONFIG_BT_CTLR_LOW_LAT_ULL */
+
 			}
-#endif
+#endif /* CONFIG_BT_CONN */
 		}
+
+#if !defined(CONFIG_BT_CTLR_LOW_LAT_ULL)
 	} while (link);
+#endif /* CONFIG_BT_CTLR_LOW_LAT_ULL */
 }
 
 /**
@@ -1365,7 +1400,7 @@ static void rx_demux(void *param)
  * @details Rx objects are only peeked, not dequeued yet.
  *   Execution context: ULL high priority Mayfly
  */
-static inline void rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
+static inline int rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 {
 	/* Demux Rx objects */
 	switch (rx->type) {
@@ -1433,13 +1468,15 @@ static inline void rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 		int nack;
 
 		nack = ull_conn_rx(link, (void *)&rx);
-		if (!nack) {
-			memq_dequeue(memq_ull_rx.tail, &memq_ull_rx.head, NULL);
+		if (nack) {
+			return nack;
+		}
 
-			if (rx) {
-				ll_rx_put(link, rx);
-				ll_rx_sched();
-			}
+		memq_dequeue(memq_ull_rx.tail, &memq_ull_rx.head, NULL);
+
+		if (rx) {
+			ll_rx_put(link, rx);
+			ll_rx_sched();
 		}
 	}
 	break;
@@ -1447,10 +1484,18 @@ static inline void rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 
 	default:
 	{
+#if defined(CONFIG_BT_CTLR_USER_EXT)
+		/* Try proprietary demuxing */
+		rx_demux_rx_proprietary(link, rx, memq_ull_rx.tail,
+					&memq_ull_rx.head);
+#else
 		LL_ASSERT(0);
+#endif /* CONFIG_BT_CTLR_USER_EXT */
 	}
 	break;
 	}
+
+	return 0;
 }
 
 static inline void rx_demux_event_done(memq_link_t *link,
@@ -1470,6 +1515,14 @@ static inline void rx_demux_event_done(memq_link_t *link,
 		ull_conn_done(done);
 		break;
 #endif /* CONFIG_BT_CONN */
+
+#if defined(CONFIG_BT_CTLR_USER_EXT)
+	case EVENT_DONE_EXTRA_TYPE_USER_START
+		... EVENT_DONE_EXTRA_TYPE_USER_END:
+		ull_proprietary_done(done);
+		break;
+#endif /* CONFIG_BT_CTLR_USER_EXT */
+
 	case EVENT_DONE_EXTRA_TYPE_NONE:
 		/* ignore */
 		break;
@@ -1480,7 +1533,7 @@ static inline void rx_demux_event_done(memq_link_t *link,
 	}
 
 	/* release done */
-	done->extra.type = 0;
+	done->extra.type = 0U;
 	done_release(link, done);
 
 	/* dequeue prepare pipeline */

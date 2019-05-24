@@ -78,7 +78,7 @@ wdt_config_return:
 
 static __attribute__((noinline)) u32_t next_pow2(u32_t x)
 {
-	if (x <= 2)
+	if (x <= 2U)
 		return x;
 
 	return (1ULL << 32) >> __builtin_clz(x - 1);
@@ -86,7 +86,7 @@ static __attribute__((noinline)) u32_t next_pow2(u32_t x)
 
 static u32_t get_timeout(u32_t  timeout)
 {
-	u32_t val = timeout / 2;
+	u32_t val = timeout / 2U;
 	u32_t count = 0U;
 
 	if (val & (val - 1))
@@ -113,7 +113,7 @@ static int wdt_qmsi_install_timeout(struct device *dev,
 		return -ENOTSUP;
 	}
 
-	if (cfg->window.min != 0 || cfg->window.max == 0) {
+	if (cfg->window.min != 0U || cfg->window.max == 0U) {
 		return -EINVAL;
 	}
 
@@ -193,20 +193,25 @@ static int wdt_resume_device_from_suspend(struct device *dev)
 * the *context may include IN data or/and OUT data
 */
 static int wdt_qmsi_device_ctrl(struct device *dev, u32_t ctrl_command,
-				void *context)
+				void *context, device_pm_cb cb, void *arg)
 {
+	int ret = 0;
+
 	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
 		if (*((u32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
-			return wdt_suspend_device(dev);
+			ret = wdt_suspend_device(dev);
 		} else if (*((u32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
-			return wdt_resume_device_from_suspend(dev);
+			ret = wdt_resume_device_from_suspend(dev);
 		}
 	} else if (ctrl_command == DEVICE_PM_GET_POWER_STATE) {
 		*((u32_t *)context) = wdt_qmsi_get_power_state(dev);
-		return 0;
 	}
 
-	return 0;
+	if (cb) {
+		cb(dev, ret, context, arg);
+	}
+
+	return ret;
 }
 #else
 #define wdt_qmsi_set_power_state(...)

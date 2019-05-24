@@ -92,8 +92,8 @@ void test_i2s_tx_transfer_configure(void)
 
 	/* Configure */
 
-	i2s_cfg.word_size = 16;
-	i2s_cfg.channels = 2;
+	i2s_cfg.word_size = 16U;
+	i2s_cfg.channels = 2U;
 	i2s_cfg.format = I2S_FMT_DATA_FORMAT_I2S;
 	i2s_cfg.options = I2S_OPT_FRAME_CLK_SLAVE | I2S_OPT_BIT_CLK_SLAVE;
 	i2s_cfg.frame_clk_freq = FRAME_CLK_FREQ;
@@ -118,8 +118,8 @@ void test_i2s_rx_transfer_configure(void)
 
 	/* Configure */
 
-	i2s_cfg.word_size = 16;
-	i2s_cfg.channels = 2;
+	i2s_cfg.word_size = 16U;
+	i2s_cfg.channels = 2U;
 	i2s_cfg.format = I2S_FMT_DATA_FORMAT_I2S;
 	i2s_cfg.options = I2S_OPT_FRAME_CLK_SLAVE | I2S_OPT_BIT_CLK_SLAVE;
 	i2s_cfg.frame_clk_freq = FRAME_CLK_FREQ;

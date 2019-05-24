@@ -64,7 +64,7 @@ struct usb_dw_ctrl_prv {
 
 static struct usb_dw_ctrl_prv usb_dw_ctrl;
 
-static inline void _usb_dw_int_unmask(void)
+static inline void usb_dw_int_unmask(void)
 {
 #if defined(CONFIG_SOC_QUARK_SE_C1000)
 	QM_INTERRUPT_ROUTER->usb_0_int_mask &= ~BIT(0);
@@ -398,7 +398,7 @@ static int usb_dw_tx(u8_t ep, const u8_t *const data,
 
 	key = irq_lock();
 
-	avail_space *= 4;
+	avail_space *= 4U;
 	if (!avail_space) {
 		LOG_ERR("USB IN EP%d no space available, DTXFSTS %x", ep_idx,
 			USB_DW->in_ep_reg[ep_idx].dtxfsts);
@@ -416,7 +416,7 @@ static int usb_dw_tx(u8_t ep, const u8_t *const data,
 		data_len = avail_space;
 	}
 
-	if (data_len != 0) {
+	if (data_len != 0U) {
 		/* Get max packet size and packet count for ep */
 		if (ep_idx == USB_DW_IN_EP_0) {
 			max_pkt_cnt =
@@ -478,7 +478,7 @@ static int usb_dw_tx(u8_t ep, const u8_t *const data,
 	 * to access a FIFO, the application must complete the transaction
 	 * before accessing the register."
 	 */
-	for (i = 0U; i < data_len; i += 4) {
+	for (i = 0U; i < data_len; i += 4U) {
 		u32_t val = data[i];
 
 		if (i + 1 < data_len) {
@@ -752,7 +752,7 @@ int usb_dc_attach(void)
 	    usb_dw_isr_handler, 0, IOAPIC_EDGE | IOAPIC_HIGH);
 	irq_enable(USB_DW_IRQ);
 
-	_usb_dw_int_unmask();
+	usb_dw_int_unmask();
 
 	usb_dw_ctrl.attached = 1U;
 
@@ -835,11 +835,20 @@ int usb_dc_ep_check_cap(const struct usb_dc_ep_cfg_data * const cfg)
 
 int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data * const ep_cfg)
 {
-	if (!usb_dw_ctrl.attached && !usb_dw_ep_is_valid(ep_cfg->ep_addr)) {
+	u8_t ep;
+
+	if (!ep_cfg) {
 		return -EINVAL;
 	}
 
-	usb_dw_ep_set(ep_cfg->ep_addr, ep_cfg->ep_mps, ep_cfg->ep_type);
+	ep = ep_cfg->ep_addr;
+
+	if (!usb_dw_ctrl.attached || !usb_dw_ep_is_valid(ep)) {
+		LOG_ERR("Not attached / Invalid endpoint: EP 0x%x", ep);
+		return -EINVAL;
+	}
+
+	usb_dw_ep_set(ep, ep_cfg->ep_mps, ep_cfg->ep_type);
 
 	return 0;
 }
@@ -848,7 +857,8 @@ int usb_dc_ep_set_stall(const u8_t ep)
 {
 	u8_t ep_idx = USB_DW_EP_ADDR2IDX(ep);
 
-	if (!usb_dw_ctrl.attached && !usb_dw_ep_is_valid(ep)) {
+	if (!usb_dw_ctrl.attached || !usb_dw_ep_is_valid(ep)) {
+		LOG_ERR("Not attached / Invalid endpoint: EP 0x%x", ep);
 		return -EINVAL;
 	}
 
@@ -865,7 +875,8 @@ int usb_dc_ep_clear_stall(const u8_t ep)
 {
 	u8_t ep_idx = USB_DW_EP_ADDR2IDX(ep);
 
-	if (!usb_dw_ctrl.attached && !usb_dw_ep_is_valid(ep)) {
+	if (!usb_dw_ctrl.attached || !usb_dw_ep_is_valid(ep)) {
+		LOG_ERR("Not attached / Invalid endpoint: EP 0x%x", ep);
 		return -EINVAL;
 	}
 
@@ -888,8 +899,8 @@ int usb_dc_ep_halt(const u8_t ep)
 	u8_t ep_idx = USB_DW_EP_ADDR2IDX(ep);
 	volatile u32_t *p_depctl;
 
-
-	if (!usb_dw_ctrl.attached && !usb_dw_ep_is_valid(ep)) {
+	if (!usb_dw_ctrl.attached || !usb_dw_ep_is_valid(ep)) {
+		LOG_ERR("Not attached / Invalid endpoint: EP 0x%x", ep);
 		return -EINVAL;
 	}
 
@@ -918,7 +929,8 @@ int usb_dc_ep_is_stalled(const u8_t ep, u8_t *const stalled)
 {
 	u8_t ep_idx = USB_DW_EP_ADDR2IDX(ep);
 
-	if (!usb_dw_ctrl.attached && !usb_dw_ep_is_valid(ep)) {
+	if (!usb_dw_ctrl.attached || !usb_dw_ep_is_valid(ep)) {
+		LOG_ERR("Not attached / Invalid endpoint: EP 0x%x", ep);
 		return -EINVAL;
 	}
 
@@ -944,7 +956,8 @@ int usb_dc_ep_enable(const u8_t ep)
 {
 	u8_t ep_idx = USB_DW_EP_ADDR2IDX(ep);
 
-	if (!usb_dw_ctrl.attached && !usb_dw_ep_is_valid(ep)) {
+	if (!usb_dw_ctrl.attached || !usb_dw_ep_is_valid(ep)) {
+		LOG_ERR("Not attached / Invalid endpoint: EP 0x%x", ep);
 		return -EINVAL;
 	}
 
@@ -976,6 +989,11 @@ int usb_dc_ep_enable(const u8_t ep)
 int usb_dc_ep_disable(const u8_t ep)
 {
 	u8_t ep_idx = USB_DW_EP_ADDR2IDX(ep);
+
+	if (!usb_dw_ctrl.attached || !usb_dw_ep_is_valid(ep)) {
+		LOG_ERR("Not attached / Invalid endpoint: EP 0x%x", ep);
+		return -EINVAL;
+	}
 
 	/* Disable EP interrupts */
 	if (USB_DW_EP_ADDR2DIR(ep) == USB_EP_DIR_OUT) {
@@ -1010,7 +1028,8 @@ int usb_dc_ep_flush(const u8_t ep)
 	u8_t ep_idx = USB_DW_EP_ADDR2IDX(ep);
 	u32_t cnt;
 
-	if (!usb_dw_ctrl.attached && !usb_dw_ep_is_valid(ep)) {
+	if (!usb_dw_ctrl.attached || !usb_dw_ep_is_valid(ep)) {
+		LOG_ERR("Not attached / Invalid endpoint: EP 0x%x", ep);
 		return -EINVAL;
 	}
 
@@ -1036,11 +1055,12 @@ int usb_dc_ep_flush(const u8_t ep)
 }
 
 int usb_dc_ep_write(const u8_t ep, const u8_t *const data,
-		const u32_t data_len, u32_t * const ret_bytes)
+		    const u32_t data_len, u32_t * const ret_bytes)
 {
 	int ret;
 
-	if (!usb_dw_ctrl.attached && !usb_dw_ep_is_valid(ep)) {
+	if (!usb_dw_ctrl.attached || !usb_dw_ep_is_valid(ep)) {
+		LOG_ERR("Not attached / Invalid endpoint: EP 0x%x", ep);
 		return -EINVAL;
 	}
 
@@ -1072,8 +1092,8 @@ int usb_dc_ep_read_wait(u8_t ep, u8_t *data, u32_t max_data_len,
 	u8_t ep_idx = USB_DW_EP_ADDR2IDX(ep);
 	u32_t i, j, data_len, bytes_to_copy;
 
-	if (!usb_dw_ctrl.attached && !usb_dw_ep_is_valid(ep)) {
-		LOG_ERR("No valid endpoint");
+	if (!usb_dw_ctrl.attached || !usb_dw_ep_is_valid(ep)) {
+		LOG_ERR("Not attached / Invalid endpoint: EP 0x%x", ep);
 		return -EINVAL;
 	}
 
@@ -1119,7 +1139,7 @@ int usb_dc_ep_read_wait(u8_t ep, u8_t *data, u32_t max_data_len,
 		bytes_to_copy);
 
 	/* Data in the FIFOs is always stored per 32-bit words */
-	for (i = 0U; i < (bytes_to_copy & ~0x3); i += 4) {
+	for (i = 0U; i < (bytes_to_copy & ~0x3); i += 4U) {
 		*(u32_t *)(data + i) = USB_DW_EP_FIFO(ep_idx);
 	}
 	if (bytes_to_copy & 0x3) {
@@ -1128,7 +1148,7 @@ int usb_dc_ep_read_wait(u8_t ep, u8_t *data, u32_t max_data_len,
 
 		for (j = 0U; j < (bytes_to_copy & 0x3); j++) {
 			*(data + i + j) =
-				(sys_cpu_to_le32(last_dw) >> (8 * j)) & 0xFF;
+				(sys_cpu_to_le32(last_dw) >> (j * 8U)) & 0xFF;
 			}
 	}
 
@@ -1146,8 +1166,8 @@ int usb_dc_ep_read_continue(u8_t ep)
 {
 	u8_t ep_idx = USB_DW_EP_ADDR2IDX(ep);
 
-	if (!usb_dw_ctrl.attached && !usb_dw_ep_is_valid(ep)) {
-		LOG_ERR("No valid endpoint");
+	if (!usb_dw_ctrl.attached || !usb_dw_ep_is_valid(ep)) {
+		LOG_ERR("Not attached / Invalid endpoint: EP 0x%x", ep);
 		return -EINVAL;
 	}
 
@@ -1189,7 +1209,8 @@ int usb_dc_ep_set_callback(const u8_t ep, const usb_dc_ep_callback cb)
 {
 	u8_t ep_idx = USB_DW_EP_ADDR2IDX(ep);
 
-	if (!usb_dw_ctrl.attached && !usb_dw_ep_is_valid(ep)) {
+	if (!usb_dw_ctrl.attached || !usb_dw_ep_is_valid(ep)) {
+		LOG_ERR("Not attached / Invalid endpoint: EP 0x%x", ep);
 		return -EINVAL;
 	}
 
@@ -1202,16 +1223,19 @@ int usb_dc_ep_set_callback(const u8_t ep, const usb_dc_ep_callback cb)
 	return 0;
 }
 
-int usb_dc_set_status_callback(const usb_dc_status_callback cb)
+void usb_dc_set_status_callback(const usb_dc_status_callback cb)
 {
 	usb_dw_ctrl.status_cb = cb;
-
-	return 0;
 }
 
 int usb_dc_ep_mps(const u8_t ep)
 {
 	enum usb_dw_out_ep_idx ep_idx = USB_DW_EP_ADDR2IDX(ep);
+
+	if (!usb_dw_ctrl.attached || !usb_dw_ep_is_valid(ep)) {
+		LOG_ERR("Not attached / Invalid endpoint: EP 0x%x", ep);
+		return -EINVAL;
+	}
 
 	if (USB_DW_EP_ADDR2DIR(ep) == USB_EP_DIR_OUT) {
 		return usb_dw_ctrl.out_ep_ctrl[ep_idx].mps;

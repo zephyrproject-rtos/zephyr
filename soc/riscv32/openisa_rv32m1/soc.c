@@ -66,12 +66,12 @@ void sys_arch_reboot(int type)
 	EVENT_UNIT->SLPCTRL |= EVENT_SLPCTRL_SYSRSTREQST_MASK;
 }
 
-void _arch_irq_enable(unsigned int irq)
+void z_arch_irq_enable(unsigned int irq)
 {
 	if (IS_ENABLED(CONFIG_MULTI_LEVEL_INTERRUPTS)) {
 		unsigned int level = rv32m1_irq_level(irq);
 
-		if (level == 1) {
+		if (level == 1U) {
 			EVENT_UNIT->INTPTEN |= BIT(rv32m1_level1_irq(irq));
 			/* Ensures write has finished: */
 			(void)(EVENT_UNIT->INTPTEN);
@@ -84,12 +84,12 @@ void _arch_irq_enable(unsigned int irq)
 	}
 }
 
-void _arch_irq_disable(unsigned int irq)
+void z_arch_irq_disable(unsigned int irq)
 {
 	if (IS_ENABLED(CONFIG_MULTI_LEVEL_INTERRUPTS)) {
 		unsigned int level = rv32m1_irq_level(irq);
 
-		if (level == 1) {
+		if (level == 1U) {
 			EVENT_UNIT->INTPTEN &= ~BIT(rv32m1_level1_irq(irq));
 			/* Ensures write has finished: */
 			(void)(EVENT_UNIT->INTPTEN);
@@ -102,12 +102,12 @@ void _arch_irq_disable(unsigned int irq)
 	}
 }
 
-int _arch_irq_is_enabled(unsigned int irq)
+int z_arch_irq_is_enabled(unsigned int irq)
 {
 	if (IS_ENABLED(CONFIG_MULTI_LEVEL_INTERRUPTS)) {
 		unsigned int level = rv32m1_irq_level(irq);
 
-		if (level == 1) {
+		if (level == 1U) {
 			return (EVENT_UNIT->INTPTEN &
 				BIT(rv32m1_level1_irq(irq))) != 0;
 		} else {
@@ -124,7 +124,7 @@ int _arch_irq_is_enabled(unsigned int irq)
 			line = rv32m1_intmux_line(irq);
 			ier = INTMUX->CHANNEL[channel].CHn_IER_31_0 & BIT(line);
 
-			return ier != 0;
+			return ier != 0U;
 		}
 	} else {
 		return (EVENT_UNIT->INTPTEN & BIT(rv32m1_level1_irq(irq))) != 0;
@@ -135,7 +135,7 @@ int _arch_irq_is_enabled(unsigned int irq)
  * SoC-level interrupt initialization. Clear any pending interrupts or
  * events, and find the INTMUX device if necessary.
  *
- * This gets called as almost the first thing _Cstart() does, so it
+ * This gets called as almost the first thing z_cstart() does, so it
  * will happen before any calls to the _arch_irq_xxx() routines above.
  */
 void soc_interrupt_init(void)

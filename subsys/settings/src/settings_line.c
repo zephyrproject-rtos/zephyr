@@ -7,7 +7,6 @@
 
 #include <ctype.h>
 #include <string.h>
-#include <misc/__assert.h>
 
 #include "settings/settings.h"
 #include "settings_priv.h"
@@ -16,84 +15,8 @@
 #include "base64.h"
 #endif
 
-#include "misc/printk.h"
-
-int settings_line_parse(char *buf, char **namep, char **valp)
-{
-	char *cp;
-	enum {
-		FIND_NAME,
-		FIND_NAME_END,
-		FIND_VAL,
-		FIND_VAL_END
-		} state = FIND_NAME;
-
-	*valp = NULL;
-	for (cp = buf; *cp != '\0'; cp++) {
-		switch (state) {
-		case FIND_NAME:
-			if (!isspace((unsigned char)*cp)) {
-				*namep = cp;
-				state = FIND_NAME_END;
-			}
-			break;
-		case FIND_NAME_END:
-			if (*cp == '=') {
-				*cp = '\0';
-				state = FIND_VAL;
-			} else if (isspace((unsigned char)*cp)) {
-				*cp = '\0';
-			}
-			break;
-		case FIND_VAL:
-			if (!isspace((unsigned char)*cp)) {
-				*valp = cp;
-				state = FIND_VAL_END;
-			}
-			break;
-		case FIND_VAL_END:
-			if (isspace((unsigned char)*cp)) {
-				*cp = '\0';
-			}
-			break;
-		}
-	}
-
-	if (state == FIND_VAL_END || state == FIND_VAL) {
-		return 0;
-	} else {
-		return -1;
-	}
-}
-
-int settings_line_make(char *dst, int dlen, const char *name, const char *value)
-{
-	int nlen;
-	int vlen;
-	int off;
-
-	nlen = strlen(name);
-
-	if (value) {
-		vlen = strlen(value);
-	} else {
-		vlen = 0;
-	}
-
-	if (nlen + vlen + 2 > dlen) {
-		return -1;
-	}
-
-	memcpy(dst, name, nlen);
-	off = nlen;
-	dst[off++] = '=';
-
-	memcpy(dst + off, value, vlen);
-	off += vlen;
-	dst[off] = '\0';
-
-	return off;
-}
+#include <logging/log.h>
+LOG_MODULE_DECLARE(settings, CONFIG_SETTINGS_LOG_LEVEL);
 
 struct settings_io_cb_s {
 	int (*read_cb)(void *ctx, off_t off, char *buf, size_t *len);
@@ -447,7 +370,9 @@ size_t settings_line_val_get_len(off_t val_off, void *read_cb_ctx)
 		rc = settings_line_raw_read(len - 2, raw, 2, &len, read_cb_ctx);
 		if (rc || len != 2) {
 			/* very unexpected error */
-			__ASSERT(rc == 0, "Failed to read the storage.\n");
+			if (rc != 0) {
+				LOG_ERR("Failed to read the storage (%d)", rc);
+			}
 			return 0;
 		}
 
@@ -486,8 +411,8 @@ int settings_line_name_read(char *out, size_t len_req, size_t *len_read,
 }
 
 
-int settings_entry_copy(void *dst_ctx, off_t dst_off, void *src_ctx,
-			off_t src_off, size_t len)
+int settings_line_entry_copy(void *dst_ctx, off_t dst_off, void *src_ctx,
+			     off_t src_off, size_t len)
 {
 	int rc;
 	char buf[16];
@@ -525,4 +450,115 @@ void settings_line_io_init(int (*read_cb)(void *ctx, off_t off, char *buf,
 	settings_io_cb.write_cb = write_cb;
 	settings_io_cb.get_len_cb = get_len_cb;
 	settings_io_cb.rwbs = io_rwbs;
+}
+
+
+/* val_off - offset of value-string within line entries */
+static int settings_line_cmp(char const *val, size_t val_len,
+			     void *val_read_cb_ctx, off_t val_off)
+{
+	size_t len_read, exp_len;
+	size_t rem;
+	char buf[16];
+	int rc;
+	off_t off = 0;
+
+	for (rem = val_len; rem > 0; rem -= len_read) {
+		len_read = exp_len = MIN(sizeof(buf), rem);
+		rc = settings_line_val_read(val_off, off, buf, len_read,
+					    &len_read, val_read_cb_ctx);
+		if (rc) {
+			break;
+		}
+
+		if (len_read != exp_len) {
+			rc = 1;
+			break;
+		}
+
+		rc = memcmp(val, buf, len_read);
+		if (rc) {
+			break;
+		}
+		val += len_read;
+		off += len_read;
+	}
+
+	return rc;
+}
+
+void settings_line_dup_check_cb(char *name, void *val_read_cb_ctx,
+				off_t off, void *cb_arg)
+{
+	struct settings_line_dup_check_arg *cdca;
+	size_t len_read;
+
+	cdca = (struct settings_line_dup_check_arg *)cb_arg;
+	if (strcmp(name, cdca->name)) {
+		return;
+	}
+
+	len_read = settings_line_val_get_len(off, val_read_cb_ctx);
+	if (len_read != cdca->val_len) {
+		cdca->is_dup = 0;
+	} else if (len_read == 0) {
+		cdca->is_dup = 1;
+	} else {
+		if (!settings_line_cmp(cdca->val, cdca->val_len,
+				       val_read_cb_ctx, off)) {
+			cdca->is_dup = 1;
+		} else {
+			cdca->is_dup = 0;
+		}
+	}
+}
+
+static ssize_t settings_line_read_cb(void *cb_arg, void *data, size_t len)
+{
+	struct settings_line_read_value_cb_ctx *value_context = cb_arg;
+	size_t len_read;
+	int rc;
+
+	rc = settings_line_val_read(value_context->off, 0, data, len,
+				    &len_read,
+				    value_context->read_cb_ctx);
+
+	if (rc == 0) {
+		return len_read;
+	}
+
+	return -1;
+}
+
+void settings_line_load_cb(char *name, void *val_read_cb_ctx, off_t off,
+			   void *cb_arg)
+{
+	int name_argc;
+	char *name_argv[SETTINGS_MAX_DIR_DEPTH];
+	struct settings_handler *ch;
+	struct settings_line_read_value_cb_ctx value_ctx;
+	int rc;
+	size_t len;
+
+	ch = settings_parse_and_lookup(name, &name_argc, name_argv);
+	if (!ch) {
+		return;
+	}
+
+	value_ctx.read_cb_ctx = val_read_cb_ctx;
+	value_ctx.off = off;
+
+	len = settings_line_val_get_len(off, val_read_cb_ctx);
+
+	rc = ch->h_set(name_argc - 1, &name_argv[1], len, settings_line_read_cb,
+		       (void *)&value_ctx);
+
+	if (rc != 0) {
+		LOG_ERR("set-value failure. key: %s error(%d)",
+			log_strdup(name), rc);
+	} else {
+		LOG_DBG("set-value OK. key: %s",
+			log_strdup(name));
+	}
+	(void)rc;
 }

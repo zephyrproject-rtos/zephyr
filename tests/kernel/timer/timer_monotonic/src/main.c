@@ -19,7 +19,7 @@ int test_frequency(void)
 	end = k_cycle_get_32();
 
 	delta = end - start;
-	pct = (u64_t)delta * 100 / sys_clock_hw_cycles_per_sec();
+	pct = (u64_t)delta * 100U / sys_clock_hw_cycles_per_sec();
 
 	printk("delta: %u  expected: %u  %u%%\n", delta,
 	       sys_clock_hw_cycles_per_sec(), pct);

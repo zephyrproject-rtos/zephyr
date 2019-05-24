@@ -32,7 +32,7 @@ const NANO_ESF _default_esf = {
  *
  * @return This function does not return.
  */
-FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
+FUNC_NORETURN void z_NanoFatalErrorHandler(unsigned int reason,
 		const NANO_ESF *esf)
 {
 	LOG_PANIC();
@@ -72,9 +72,9 @@ FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
 
 #endif
 
-	void _SysFatalErrorHandler(unsigned int reason,
+	void z_SysFatalErrorHandler(unsigned int reason,
 			const NANO_ESF *pEsf);
-	_SysFatalErrorHandler(reason, esf);
+	z_SysFatalErrorHandler(reason, esf);
 }
 
 
@@ -85,20 +85,21 @@ FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
  * This routine implements the corrective action to be taken when the system
  * detects a fatal error.
  *
- * This sample implementation attempts to abort the current thread and allow
+ * If CONFIG_ARCH_POSIX_STOP_ON_FATAL_ERROR is not set,
+ * it will attempt to abort the current thread and allow
  * the system to continue executing, which may permit the system to continue
  * functioning with degraded capabilities.
  *
- * System designers may wish to enhance or substitute this sample
- * implementation to take other actions, such as logging error (or debug)
- * information to a persistent repository and/or rebooting the system.
+ * If CONFIG_ARCH_POSIX_STOP_ON_FATAL_ERROR is set, or the thread is an
+ * essential thread or interrupt, the execution will be terminated, and an error
+ * code will be returned to the invoking shell
  *
  * @param reason the fatal error reason
  * @param pEsf pointer to exception stack frame
  *
  * @return N/A
  */
-FUNC_NORETURN __weak void _SysFatalErrorHandler(unsigned int reason,
+FUNC_NORETURN __weak void z_SysFatalErrorHandler(unsigned int reason,
 		const NANO_ESF *pEsf)
 {
 	ARG_UNUSED(pEsf);
@@ -111,17 +112,20 @@ FUNC_NORETURN __weak void _SysFatalErrorHandler(unsigned int reason,
 	if (reason == _NANO_ERR_KERNEL_PANIC) {
 		goto hang_system;
 	}
-	if (k_is_in_isr() || _is_thread_essential()) {
+	if (k_is_in_isr() || z_is_thread_essential()) {
 		posix_print_error_and_exit(
 			"Fatal fault in %s! Stopping...\n",
 			k_is_in_isr() ? "ISR" : "essential thread");
 	}
 	printk("Fatal fault in thread %p! Aborting.\n", _current);
-	k_thread_abort(_current);
+
+	if (!IS_ENABLED(CONFIG_ARCH_POSIX_STOP_ON_FATAL_ERROR)) {
+		k_thread_abort(_current);
+	}
 
 hang_system:
 
 	posix_print_error_and_exit(
-		"Stopped in _SysFatalErrorHandler()\n");
+		"Stopped in z_SysFatalErrorHandler()\n");
 	CODE_UNREACHABLE;
 }

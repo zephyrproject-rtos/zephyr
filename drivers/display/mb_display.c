@@ -308,7 +308,7 @@ static void show_row(struct k_timer *timer)
 	update_pins(disp, disp->row[disp->cur]);
 	disp->cur = (disp->cur + 1) % DISPLAY_ROWS;
 
-	if (disp->cur == 0 && disp->expiry != K_FOREVER &&
+	if (disp->cur == 0U && disp->expiry != K_FOREVER &&
 	    k_uptime_get() > disp->expiry) {
 		if (disp->scroll) {
 			update_scroll(disp);
@@ -326,7 +326,7 @@ static void clear_display(struct k_timer *timer)
 }
 
 static struct mb_display display = {
-	.timer = _K_TIMER_INITIALIZER(display.timer, show_row, clear_display),
+	.timer = Z_TIMER_INITIALIZER(display.timer, show_row, clear_display),
 };
 
 static void start_scroll(struct mb_display *disp, s32_t duration)

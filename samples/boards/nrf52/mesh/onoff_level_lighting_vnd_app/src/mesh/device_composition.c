@@ -72,11 +72,11 @@ BT_MESH_MODEL_PUB_DEFINE(gen_level_cli_pub_s0, NULL, 2 + 7);
 
 /* Definitions of models user data (Start) */
 struct generic_onoff_state gen_onoff_srv_root_user_data = {
-	.transition = &lightness_transition,
+	.transition = &transition,
 };
 
 struct generic_level_state gen_level_srv_root_user_data = {
-	.transition = &lightness_transition,
+	.transition = &transition,
 };
 
 struct gen_def_trans_time_state gen_def_trans_time_srv_user_data;
@@ -84,17 +84,17 @@ struct gen_def_trans_time_state gen_def_trans_time_srv_user_data;
 struct generic_onpowerup_state gen_power_onoff_srv_user_data;
 
 struct light_lightness_state light_lightness_srv_user_data = {
-	.transition = &lightness_transition,
+	.transition = &transition,
 };
 
 struct light_ctl_state light_ctl_srv_user_data = {
-	.transition = &lightness_transition,
+	.transition = &transition,
 };
 
 struct vendor_state vnd_user_data;
 
 struct generic_level_state gen_level_srv_s0_user_data = {
-	.transition = &temp_transition,
+	.transition = &transition,
 };
 /* Definitions of models user data (End) */
 
@@ -113,12 +113,17 @@ static void gen_onoff_get(struct bt_mesh_model *model,
 	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_GEN_ONOFF_STATUS);
 	net_buf_simple_add_u8(msg, state->onoff);
 
+	if (lightness == target_lightness) {
+		goto send;
+	}
+
 	if (state->transition->counter) {
 		calculate_rt(state->transition);
 		net_buf_simple_add_u8(msg, state->target_onoff);
 		net_buf_simple_add_u8(msg, state->transition->rt);
 	}
 
+send:
 	if (bt_mesh_model_send(model, ctx, msg, NULL, NULL)) {
 		printk("Unable to send GEN_ONOFF_SRV Status response\n");
 	}
@@ -137,12 +142,17 @@ void gen_onoff_publish(struct bt_mesh_model *model)
 	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_GEN_ONOFF_STATUS);
 	net_buf_simple_add_u8(msg, state->onoff);
 
+	if (lightness == target_lightness) {
+		goto publish;
+	}
+
 	if (state->transition->counter) {
 		calculate_rt(state->transition);
 		net_buf_simple_add_u8(msg, state->target_onoff);
 		net_buf_simple_add_u8(msg, state->transition->rt);
 	}
 
+publish:
 	err = bt_mesh_model_publish(model);
 	if (err) {
 		printk("bt_mesh_model_publish err %d\n", err);
@@ -197,16 +207,24 @@ static void gen_onoff_set_unack(struct bt_mesh_model *model,
 	state->last_dst_addr = ctx->recv_dst;
 	state->last_msg_timestamp = now;
 	state->target_onoff = onoff;
+	state->transition->tt = tt;
+	state->transition->delay = delay;
+	state->transition->type = ONOFF_TT;
 
 	if (state->target_onoff != state->onoff) {
-		onoff_tt_values(state, tt, delay);
+		onoff_tt_values(state);
 	} else {
-		gen_onoff_publish(model);
-		return;
+		if (lightness != light_lightness_srv_user_data.def &&
+		    state->onoff == STATE_ON) {
+			onoff_tt_values(state);
+		} else {
+			gen_onoff_publish(model);
+			return;
+		}
 	}
 
 	/* For Instantaneous Transition */
-	if (state->transition->counter == 0) {
+	if (state->transition->counter == 0U) {
 		state->onoff = state->target_onoff;
 	}
 
@@ -264,17 +282,25 @@ static void gen_onoff_set(struct bt_mesh_model *model,
 	state->last_dst_addr = ctx->recv_dst;
 	state->last_msg_timestamp = now;
 	state->target_onoff = onoff;
+	state->transition->tt = tt;
+	state->transition->delay = delay;
+	state->transition->type = ONOFF_TT;
 
 	if (state->target_onoff != state->onoff) {
-		onoff_tt_values(state, tt, delay);
+		onoff_tt_values(state);
 	} else {
-		gen_onoff_get(model, ctx, buf);
-		gen_onoff_publish(model);
-		return;
+		if (lightness != light_lightness_srv_user_data.def &&
+		    state->onoff == STATE_ON) {
+			onoff_tt_values(state);
+		} else {
+			gen_onoff_get(model, ctx, buf);
+			gen_onoff_publish(model);
+			return;
+		}
 	}
 
 	/* For Instantaneous Transition */
-	if (state->transition->counter == 0) {
+	if (state->transition->counter == 0U) {
 		state->onoff = state->target_onoff;
 	}
 
@@ -292,7 +318,7 @@ static void gen_onoff_status(struct bt_mesh_model *model,
 	printk("Acknownledgement from GEN_ONOFF_SRV\n");
 	printk("Present OnOff = %02x\n", net_buf_simple_pull_u8(buf));
 
-	if (buf->len == 2) {
+	if (buf->len == 2U) {
 		printk("Target OnOff = %02x\n", net_buf_simple_pull_u8(buf));
 		printk("Remaining Time = %02x\n", net_buf_simple_pull_u8(buf));
 	}
@@ -309,12 +335,23 @@ static void gen_level_get(struct bt_mesh_model *model,
 	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_GEN_LEVEL_STATUS);
 	net_buf_simple_add_le16(msg, state->level);
 
-	if (state->transition->counter) {
-		calculate_rt(state->transition);
-		net_buf_simple_add_le16(msg, state->target_level);
-		net_buf_simple_add_u8(msg, state->transition->rt);
+	if (state->level == state->target_level) {
+		goto send;
 	}
 
+	if (state->transition->counter) {
+		if (state->transition->type == LEVEL_TT_MOVE ||
+		    state->transition->type == LEVEL_TEMP_TT_MOVE) {
+			net_buf_simple_add_le16(msg, state->target_level);
+			net_buf_simple_add_u8(msg, UNKNOWN_VALUE);
+		} else {
+			calculate_rt(state->transition);
+			net_buf_simple_add_le16(msg, state->target_level);
+			net_buf_simple_add_u8(msg, state->transition->rt);
+		}
+	}
+
+send:
 	if (bt_mesh_model_send(model, ctx, msg, NULL, NULL)) {
 		printk("Unable to send GEN_LEVEL_SRV Status response\n");
 	}
@@ -333,12 +370,23 @@ void gen_level_publish(struct bt_mesh_model *model)
 	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_GEN_LEVEL_STATUS);
 	net_buf_simple_add_le16(msg, state->level);
 
-	if (state->transition->counter) {
-		calculate_rt(state->transition);
-		net_buf_simple_add_le16(msg, state->target_level);
-		net_buf_simple_add_u8(msg, state->transition->rt);
+	if (state->level == state->target_level) {
+		goto publish;
 	}
 
+	if (state->transition->counter) {
+		if (state->transition->type == LEVEL_TT_MOVE ||
+		    state->transition->type == LEVEL_TEMP_TT_MOVE) {
+			net_buf_simple_add_le16(msg, state->target_level);
+			net_buf_simple_add_u8(msg, UNKNOWN_VALUE);
+		} else {
+			calculate_rt(state->transition);
+			net_buf_simple_add_le16(msg, state->target_level);
+			net_buf_simple_add_u8(msg, state->transition->rt);
+		}
+	}
+
+publish:
 	err = bt_mesh_model_publish(model);
 	if (err) {
 		printk("bt_mesh_model_publish err %d\n", err);
@@ -390,16 +438,19 @@ static void gen_level_set_unack(struct bt_mesh_model *model,
 	state->last_dst_addr = ctx->recv_dst;
 	state->last_msg_timestamp = now;
 	state->target_level = level;
+	state->transition->tt = tt;
+	state->transition->delay = delay;
+	state->transition->type = UNKNOWN_TT;
 
 	if (state->target_level != state->level) {
-		level_tt_values(state, tt, delay);
+		level_tt_values(state);
 	} else {
 		gen_level_publish(model);
 		return;
 	}
 
 	/* For Instantaneous Transition */
-	if (state->transition->counter == 0) {
+	if (state->transition->counter == 0U) {
 		state->level = state->target_level;
 	}
 
@@ -408,11 +459,11 @@ static void gen_level_set_unack(struct bt_mesh_model *model,
 
 	if (bt_mesh_model_elem(model)->addr == elements[0].addr) {
 		/* Root element */
-		transition_type = LEVEL_TT;
+		state->transition->type = LEVEL_TT;
 		level_lightness_handler(state);
 	} else if (bt_mesh_model_elem(model)->addr == elements[1].addr) {
 		/* Secondary element */
-		transition_type = LEVEL_TEMP_TT;
+		state->transition->type = LEVEL_TEMP_TT;
 		level_temp_handler(state);
 	}
 }
@@ -463,9 +514,12 @@ static void gen_level_set(struct bt_mesh_model *model,
 	state->last_dst_addr = ctx->recv_dst;
 	state->last_msg_timestamp = now;
 	state->target_level = level;
+	state->transition->tt = tt;
+	state->transition->delay = delay;
+	state->transition->type = UNKNOWN_TT;
 
 	if (state->target_level != state->level) {
-		level_tt_values(state, tt, delay);
+		level_tt_values(state);
 	} else {
 		gen_level_get(model, ctx, buf);
 		gen_level_publish(model);
@@ -473,7 +527,7 @@ static void gen_level_set(struct bt_mesh_model *model,
 	}
 
 	/* For Instantaneous Transition */
-	if (state->transition->counter == 0) {
+	if (state->transition->counter == 0U) {
 		state->level = state->target_level;
 	}
 
@@ -483,11 +537,11 @@ static void gen_level_set(struct bt_mesh_model *model,
 
 	if (bt_mesh_model_elem(model)->addr == elements[0].addr) {
 		/* Root element */
-		transition_type = LEVEL_TT;
+		state->transition->type = LEVEL_TT;
 		level_lightness_handler(state);
 	} else if (bt_mesh_model_elem(model)->addr == elements[1].addr) {
 		/* Secondary element */
-		transition_type = LEVEL_TEMP_TT;
+		state->transition->type = LEVEL_TEMP_TT;
 		level_temp_handler(state);
 	}
 }
@@ -553,16 +607,19 @@ static void gen_delta_set_unack(struct bt_mesh_model *model,
 	}
 
 	state->target_level = tmp32;
+	state->transition->tt = tt;
+	state->transition->delay = delay;
+	state->transition->type = UNKNOWN_TT;
 
 	if (state->target_level != state->level) {
-		level_tt_values(state, tt, delay);
+		level_tt_values(state);
 	} else {
 		gen_level_publish(model);
 		return;
 	}
 
 	/* For Instantaneous Transition */
-	if (state->transition->counter == 0) {
+	if (state->transition->counter == 0U) {
 		state->level = state->target_level;
 	}
 
@@ -571,12 +628,11 @@ static void gen_delta_set_unack(struct bt_mesh_model *model,
 
 	if (bt_mesh_model_elem(model)->addr == elements[0].addr) {
 		/* Root element */
-		transition_type = LEVEL_TT_DELTA;
+		state->transition->type = LEVEL_TT_DELTA;
 		level_lightness_handler(state);
-	} else if (bt_mesh_model_elem(model)->addr ==
-		   elements[1].addr) {
+	} else if (bt_mesh_model_elem(model)->addr == elements[1].addr) {
 		/* Secondary element */
-		transition_type = LEVEL_TEMP_TT_DELTA;
+		state->transition->type = LEVEL_TEMP_TT_DELTA;
 		level_temp_handler(state);
 	}
 }
@@ -643,9 +699,12 @@ static void gen_delta_set(struct bt_mesh_model *model,
 	}
 
 	state->target_level = tmp32;
+	state->transition->tt = tt;
+	state->transition->delay = delay;
+	state->transition->type = UNKNOWN_TT;
 
 	if (state->target_level != state->level) {
-		level_tt_values(state, tt, delay);
+		level_tt_values(state);
 	} else {
 		gen_level_get(model, ctx, buf);
 		gen_level_publish(model);
@@ -653,7 +712,7 @@ static void gen_delta_set(struct bt_mesh_model *model,
 	}
 
 	/* For Instantaneous Transition */
-	if (state->transition->counter == 0) {
+	if (state->transition->counter == 0U) {
 		state->level = state->target_level;
 	}
 
@@ -663,66 +722,12 @@ static void gen_delta_set(struct bt_mesh_model *model,
 
 	if (bt_mesh_model_elem(model)->addr == elements[0].addr) {
 		/* Root element */
-		transition_type = LEVEL_TT_DELTA;
+		state->transition->type = LEVEL_TT_DELTA;
 		level_lightness_handler(state);
 	} else if (bt_mesh_model_elem(model)->addr == elements[1].addr) {
 		/* Secondary element */
-		transition_type = LEVEL_TEMP_TT_DELTA;
+		state->transition->type = LEVEL_TEMP_TT_DELTA;
 		level_temp_handler(state);
-	}
-}
-
-static void gen_level_move_get(struct bt_mesh_model *model,
-			       struct bt_mesh_msg_ctx *ctx,
-			       struct net_buf_simple *buf)
-{
-	struct net_buf_simple *msg = NET_BUF_SIMPLE(2 + 5 + 4);
-	struct generic_level_state *state = model->user_data;
-
-	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_GEN_LEVEL_STATUS);
-	net_buf_simple_add_le16(msg, state->level);
-
-	if (state->transition->counter) {
-		if (state->last_delta < 0) {
-			net_buf_simple_add_le16(msg, INT16_MIN);
-		} else { /* 0 should not be possible */
-			net_buf_simple_add_le16(msg, INT16_MAX);
-		}
-
-		net_buf_simple_add_u8(msg, UNKNOWN_VALUE);
-	}
-
-	if (bt_mesh_model_send(model, ctx, msg, NULL, NULL)) {
-		printk("Unable to send GEN_LEVEL_SRV Status response\n");
-	}
-}
-
-static void gen_level_move_publish(struct bt_mesh_model *model)
-{
-	int err;
-	struct net_buf_simple *msg = model->pub->msg;
-	struct generic_level_state *state = model->user_data;
-
-	if (model->pub->addr == BT_MESH_ADDR_UNASSIGNED) {
-		return;
-	}
-
-	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_GEN_LEVEL_STATUS);
-	net_buf_simple_add_le16(msg, state->level);
-
-	if (state->transition->counter) {
-		if (state->last_delta < 0) {
-			net_buf_simple_add_le16(msg, INT16_MIN);
-		} else { /* 0 should not be possible */
-			net_buf_simple_add_le16(msg, INT16_MAX);
-		}
-
-		net_buf_simple_add_u8(msg, UNKNOWN_VALUE);
-	}
-
-	err = bt_mesh_model_publish(model);
-	if (err) {
-		printk("bt_mesh_model_publish err %d\n", err);
 	}
 }
 
@@ -732,7 +737,6 @@ static void gen_move_set_unack(struct bt_mesh_model *model,
 {
 	u8_t tid, tt, delay;
 	s16_t delta;
-	s32_t tmp32;
 	s64_t now;
 	struct generic_level_state *state = model->user_data;
 
@@ -773,36 +777,40 @@ static void gen_move_set_unack(struct bt_mesh_model *model,
 	state->last_msg_timestamp = now;
 	state->last_delta = delta;
 
-	tmp32 = state->level + delta;
-	if (tmp32 < INT16_MIN) {
-		tmp32 = INT16_MIN;
-	} else if (tmp32 > INT16_MAX) {
-		tmp32 = INT16_MAX;
+	if (delta < 0) {
+		state->target_level = INT16_MIN;
+	} else if (delta > 0) {
+		state->target_level = INT16_MAX;
+	} else if (delta == 0) {
+		state->target_level = state->level;
 	}
 
-	state->target_level = tmp32;
+	state->transition->tt = tt;
+	state->transition->delay = delay;
+	state->transition->type = UNKNOWN_TT;
 
 	if (state->target_level != state->level) {
-		level_tt_values(state, tt, delay);
+		level_move_tt_values(state);
 	} else {
-		gen_level_move_publish(model);
+		gen_level_publish(model);
 		return;
 	}
 
-	if (state->transition->counter == 0) {
+	if (state->transition->counter == 0U) {
 		return;
 	}
 
 	state->transition->just_started = true;
-	gen_level_move_publish(model);
 
 	if (bt_mesh_model_elem(model)->addr == elements[0].addr) {
 		/* Root element */
-		transition_type = LEVEL_TT_MOVE;
+		state->transition->type = LEVEL_TT_MOVE;
+		gen_level_publish(model);
 		level_lightness_handler(state);
 	} else if (bt_mesh_model_elem(model)->addr == elements[1].addr) {
 		/* Secondary element */
-		transition_type = LEVEL_TEMP_TT_MOVE;
+		state->transition->type = LEVEL_TEMP_TT_MOVE;
+		gen_level_publish(model);
 		level_temp_handler(state);
 	}
 }
@@ -813,7 +821,6 @@ static void gen_move_set(struct bt_mesh_model *model,
 {
 	u8_t tid, tt, delay;
 	s16_t delta;
-	s32_t tmp32;
 	s64_t now;
 	struct generic_level_state *state = model->user_data;
 
@@ -825,7 +832,7 @@ static void gen_move_set(struct bt_mesh_model *model,
 	    state->last_src_addr == ctx->addr &&
 	    state->last_dst_addr == ctx->recv_dst &&
 	    (now - state->last_msg_timestamp <= K_SECONDS(6))) {
-		gen_level_move_get(model, ctx, buf);
+		gen_level_get(model, ctx, buf);
 		return;
 	}
 
@@ -855,38 +862,43 @@ static void gen_move_set(struct bt_mesh_model *model,
 	state->last_msg_timestamp = now;
 	state->last_delta = delta;
 
-	tmp32 = state->level + delta;
-	if (tmp32 < INT16_MIN) {
-		tmp32 = INT16_MIN;
-	} else if (tmp32 > INT16_MAX) {
-		tmp32 = INT16_MAX;
+	if (delta < 0) {
+		state->target_level = INT16_MIN;
+	} else if (delta > 0) {
+		state->target_level = INT16_MAX;
+	} else if (delta == 0) {
+		state->target_level = state->level;
 	}
 
-	state->target_level = tmp32;
+	state->transition->tt = tt;
+	state->transition->delay = delay;
+	state->transition->type = UNKNOWN_TT;
 
 	if (state->target_level != state->level) {
-		level_tt_values(state, tt, delay);
+		level_move_tt_values(state);
 	} else {
-		gen_level_move_get(model, ctx, buf);
-		gen_level_move_publish(model);
+		gen_level_get(model, ctx, buf);
+		gen_level_publish(model);
 		return;
 	}
 
-	if (state->transition->counter == 0) {
+	if (state->transition->counter == 0U) {
 		return;
 	}
 
 	state->transition->just_started = true;
-	gen_level_move_get(model, ctx, buf);
-	gen_level_move_publish(model);
 
 	if (bt_mesh_model_elem(model)->addr == elements[0].addr) {
 		/* Root element */
-		transition_type = LEVEL_TT_MOVE;
+		state->transition->type = LEVEL_TT_MOVE;
+		gen_level_get(model, ctx, buf);
+		gen_level_publish(model);
 		level_lightness_handler(state);
 	} else if (bt_mesh_model_elem(model)->addr == elements[1].addr) {
 		/* Secondary element */
-		transition_type = LEVEL_TEMP_TT_MOVE;
+		state->transition->type = LEVEL_TEMP_TT_MOVE;
+		gen_level_get(model, ctx, buf);
+		gen_level_publish(model);
 		level_temp_handler(state);
 	}
 }
@@ -899,7 +911,7 @@ static void gen_level_status(struct bt_mesh_model *model,
 	printk("Acknownledgement from GEN_LEVEL_SRV\n");
 	printk("Present Level = %04x\n", net_buf_simple_pull_le16(buf));
 
-	if (buf->len == 3) {
+	if (buf->len == 3U) {
 		printk("Target Level = %04x\n", net_buf_simple_pull_le16(buf));
 		printk("Remaining Time = %02x\n", net_buf_simple_pull_u8(buf));
 	}
@@ -1167,12 +1179,17 @@ static void light_lightness_get(struct bt_mesh_model *model,
 	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_LIGHT_LIGHTNESS_STATUS);
 	net_buf_simple_add_le16(msg, state->actual);
 
+	if (state->actual == state->target_actual) {
+		goto send;
+	}
+
 	if (state->transition->counter) {
 		calculate_rt(state->transition);
 		net_buf_simple_add_le16(msg, state->target_actual);
 		net_buf_simple_add_u8(msg, state->transition->rt);
 	}
 
+send:
 	if (bt_mesh_model_send(model, ctx, msg, NULL, NULL)) {
 		printk("Unable to send LightLightnessAct Status response\n");
 	}
@@ -1191,12 +1208,17 @@ void light_lightness_publish(struct bt_mesh_model *model)
 	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_LIGHT_LIGHTNESS_STATUS);
 	net_buf_simple_add_le16(msg, state->actual);
 
+	if (state->actual == state->target_actual) {
+		goto publish;
+	}
+
 	if (state->transition->counter) {
 		calculate_rt(state->transition);
 		net_buf_simple_add_le16(msg, state->target_actual);
 		net_buf_simple_add_u8(msg, state->transition->rt);
 	}
 
+publish:
 	err = bt_mesh_model_publish(model);
 	if (err) {
 		printk("bt_mesh_model_publish err %d\n", err);
@@ -1255,16 +1277,19 @@ static void light_lightness_set_unack(struct bt_mesh_model *model,
 	}
 
 	state->target_actual = actual;
+	state->transition->tt = tt;
+	state->transition->delay = delay;
+	state->transition->type = LIGHT_ACTUAL_TT;
 
 	if (state->target_actual != state->actual) {
-		light_lightness_actual_tt_values(state, tt, delay);
+		light_lightness_actual_tt_values(state);
 	} else {
 		light_lightness_publish(model);
 		return;
 	}
 
 	/* For Instantaneous Transition */
-	if (state->transition->counter == 0) {
+	if (state->transition->counter == 0U) {
 		state->actual = state->target_actual;
 	}
 
@@ -1326,9 +1351,12 @@ static void light_lightness_set(struct bt_mesh_model *model,
 	}
 
 	state->target_actual = actual;
+	state->transition->tt = tt;
+	state->transition->delay = delay;
+	state->transition->type = LIGHT_ACTUAL_TT;
 
 	if (state->target_actual != state->actual) {
-		light_lightness_actual_tt_values(state, tt, delay);
+		light_lightness_actual_tt_values(state);
 	} else {
 		light_lightness_get(model, ctx, buf);
 		light_lightness_publish(model);
@@ -1336,7 +1364,7 @@ static void light_lightness_set(struct bt_mesh_model *model,
 	}
 
 	/* For Instantaneous Transition */
-	if (state->transition->counter == 0) {
+	if (state->transition->counter == 0U) {
 		state->actual = state->target_actual;
 	}
 
@@ -1357,12 +1385,17 @@ static void light_lightness_linear_get(struct bt_mesh_model *model,
 			       BT_MESH_MODEL_LIGHT_LIGHTNESS_LINEAR_STATUS);
 	net_buf_simple_add_le16(msg, state->linear);
 
+	if (state->linear == state->target_linear) {
+		goto send;
+	}
+
 	if (state->transition->counter) {
 		calculate_rt(state->transition);
 		net_buf_simple_add_le16(msg, state->target_linear);
 		net_buf_simple_add_u8(msg, state->transition->rt);
 	}
 
+send:
 	if (bt_mesh_model_send(model, ctx, msg, NULL, NULL)) {
 		printk("Unable to send LightLightnessLin Status response\n");
 	}
@@ -1382,12 +1415,17 @@ void light_lightness_linear_publish(struct bt_mesh_model *model)
 			       BT_MESH_MODEL_LIGHT_LIGHTNESS_LINEAR_STATUS);
 	net_buf_simple_add_le16(msg, state->linear);
 
+	if (state->linear == state->target_linear) {
+		goto publish;
+	}
+
 	if (state->transition->counter) {
 		calculate_rt(state->transition);
 		net_buf_simple_add_le16(msg, state->target_linear);
 		net_buf_simple_add_u8(msg, state->transition->rt);
 	}
 
+publish:
 	err = bt_mesh_model_publish(model);
 	if (err) {
 		printk("bt_mesh_model_publish err %d\n", err);
@@ -1439,16 +1477,19 @@ static void light_lightness_linear_set_unack(struct bt_mesh_model *model,
 	state->last_dst_addr = ctx->recv_dst;
 	state->last_msg_timestamp = now;
 	state->target_linear = linear;
+	state->transition->tt = tt;
+	state->transition->delay = delay;
+	state->transition->type = LIGHT_LINEAR_TT;
 
 	if (state->target_linear != state->linear) {
-		light_lightness_linear_tt_values(state, tt, delay);
+		light_lightness_linear_tt_values(state);
 	} else {
 		light_lightness_linear_publish(model);
 		return;
 	}
 
 	/* For Instantaneous Transition */
-	if (state->transition->counter == 0) {
+	if (state->transition->counter == 0U) {
 		state->linear = state->target_linear;
 	}
 
@@ -1503,9 +1544,12 @@ static void light_lightness_linear_set(struct bt_mesh_model *model,
 	state->last_dst_addr = ctx->recv_dst;
 	state->last_msg_timestamp = now;
 	state->target_linear = linear;
+	state->transition->tt = tt;
+	state->transition->delay = delay;
+	state->transition->type = LIGHT_LINEAR_TT;
 
 	if (state->target_linear != state->linear) {
-		light_lightness_linear_tt_values(state, tt, delay);
+		light_lightness_linear_tt_values(state);
 	} else {
 		light_lightness_linear_get(model, ctx, buf);
 		light_lightness_linear_publish(model);
@@ -1513,7 +1557,7 @@ static void light_lightness_linear_set(struct bt_mesh_model *model,
 	}
 
 	/* For Instantaneous Transition */
-	if (state->transition->counter == 0) {
+	if (state->transition->counter == 0U) {
 		state->linear = state->target_linear;
 	}
 
@@ -1658,7 +1702,7 @@ static bool light_lightness_range_setunack(struct bt_mesh_model *model,
 
 	/* Here, Model specification is silent about tid implementation */
 
-	if (min == 0 || max == 0) {
+	if (min == 0U || max == 0U) {
 		return false;
 	} else {
 		if (min <= max) {
@@ -1709,7 +1753,7 @@ static void light_lightness_status(struct bt_mesh_model *model,
 	printk("Acknownledgement from LIGHT_LIGHTNESS_SRV (Actual)\n");
 	printk("Present Lightness = %04x\n", net_buf_simple_pull_le16(buf));
 
-	if (buf->len == 3) {
+	if (buf->len == 3U) {
 		printk("Target Lightness = %04x\n",
 		       net_buf_simple_pull_le16(buf));
 		printk("Remaining Time = %02x\n", net_buf_simple_pull_u8(buf));
@@ -1723,7 +1767,7 @@ static void light_lightness_linear_status(struct bt_mesh_model *model,
 	printk("Acknownledgement from LIGHT_LIGHTNESS_SRV (Linear)\n");
 	printk("Present Lightness = %04x\n", net_buf_simple_pull_le16(buf));
 
-	if (buf->len == 3) {
+	if (buf->len == 3U) {
 		printk("Target Lightness = %04x\n",
 		       net_buf_simple_pull_le16(buf));
 		printk("Remaining Time = %02x\n", net_buf_simple_pull_u8(buf));
@@ -1768,6 +1812,11 @@ static void light_ctl_get(struct bt_mesh_model *model,
 	net_buf_simple_add_le16(msg, state->lightness);
 	net_buf_simple_add_le16(msg, state->temp);
 
+	if (state->lightness == state->target_lightness &&
+	    state->temp == state->target_temp) {
+		goto send;
+	}
+
 	if (state->transition->counter) {
 		calculate_rt(state->transition);
 		net_buf_simple_add_le16(msg, state->target_lightness);
@@ -1775,6 +1824,7 @@ static void light_ctl_get(struct bt_mesh_model *model,
 		net_buf_simple_add_u8(msg, state->transition->rt);
 	}
 
+send:
 	if (bt_mesh_model_send(model, ctx, msg, NULL, NULL)) {
 		printk("Unable to send LightCTL Status response\n");
 	}
@@ -1798,6 +1848,11 @@ void light_ctl_publish(struct bt_mesh_model *model)
 	net_buf_simple_add_le16(msg, state->lightness);
 	net_buf_simple_add_le16(msg, state->temp);
 
+	if (state->lightness == state->target_lightness &&
+	    state->temp == state->target_temp) {
+		goto publish;
+	}
+
 	if (state->transition->counter) {
 		calculate_rt(state->transition);
 		net_buf_simple_add_le16(msg, state->target_lightness);
@@ -1805,6 +1860,7 @@ void light_ctl_publish(struct bt_mesh_model *model)
 		net_buf_simple_add_u8(msg, state->transition->rt);
 	}
 
+publish:
 	err = bt_mesh_model_publish(model);
 	if (err) {
 		printk("bt_mesh_model_publish err %d\n", err);
@@ -1872,18 +1928,21 @@ static void light_ctl_set_unack(struct bt_mesh_model *model,
 
 	state->target_temp = temp;
 	state->target_delta_uv = delta_uv;
+	state->transition->tt = tt;
+	state->transition->delay = delay;
+	state->transition->type = LIGHT_CTL_TT;
 
 	if (state->target_lightness != state->lightness ||
 	    state->target_temp != state->temp ||
 	    state->target_delta_uv != state->delta_uv) {
-		light_ctl_tt_values(state, tt, delay);
+		light_ctl_tt_values(state);
 	} else {
 		light_ctl_publish(model);
 		return;
 	}
 
 	/* For Instantaneous Transition */
-	if (state->transition->counter == 0) {
+	if (state->transition->counter == 0U) {
 		state->lightness = state->target_lightness;
 		state->temp = state->target_temp;
 		state->delta_uv = state->target_delta_uv;
@@ -1956,11 +2015,14 @@ static void light_ctl_set(struct bt_mesh_model *model,
 
 	state->target_temp = temp;
 	state->target_delta_uv = delta_uv;
+	state->transition->tt = tt;
+	state->transition->delay = delay;
+	state->transition->type = LIGHT_CTL_TT;
 
 	if (state->target_lightness != state->lightness ||
 	    state->target_temp != state->temp ||
 	    state->target_delta_uv != state->delta_uv) {
-		light_ctl_tt_values(state, tt, delay);
+		light_ctl_tt_values(state);
 	} else {
 		light_ctl_get(model, ctx, buf);
 		light_ctl_publish(model);
@@ -1968,7 +2030,7 @@ static void light_ctl_set(struct bt_mesh_model *model,
 	}
 
 	/* For Instantaneous Transition */
-	if (state->transition->counter == 0) {
+	if (state->transition->counter == 0U) {
 		state->lightness = state->target_lightness;
 		state->temp = state->target_temp;
 		state->delta_uv = state->target_delta_uv;
@@ -2068,6 +2130,8 @@ static bool light_ctl_default_setunack(struct bt_mesh_model *model,
 		state->lightness_def = lightness;
 		state->temp_def = temp;
 		state->delta_uv_def = delta_uv;
+
+		light_lightness_srv_user_data.def = lightness;
 
 		save_on_flash(LIGHTNESS_TEMP_DEF_STATE);
 	}
@@ -2182,7 +2246,7 @@ static void light_ctl_status(struct bt_mesh_model *model,
 	printk("Present CTL Temperature = %04x\n",
 	       net_buf_simple_pull_le16(buf));
 
-	if (buf->len == 5) {
+	if (buf->len == 5U) {
 		printk("Target CTL Lightness = %04x\n",
 		       net_buf_simple_pull_le16(buf));
 		printk("Target CTL Temperature = %04x\n",
@@ -2211,7 +2275,7 @@ static void light_ctl_temp_status(struct bt_mesh_model *model,
 	printk("Present CTL Delta UV = %04x\n",
 	       net_buf_simple_pull_le16(buf));
 
-	if (buf->len == 5) {
+	if (buf->len == 5U) {
 		printk("Target CTL Temperature = %04x\n",
 		       net_buf_simple_pull_le16(buf));
 		printk("Target CTL Delta UV = %04x\n",
@@ -2242,6 +2306,11 @@ static void light_ctl_temp_get(struct bt_mesh_model *model,
 	net_buf_simple_add_le16(msg, state->temp);
 	net_buf_simple_add_le16(msg, state->delta_uv);
 
+	if (state->temp == state->target_temp &&
+	    state->delta_uv == state->target_delta_uv) {
+		goto send;
+	}
+
 	if (state->transition->counter) {
 		calculate_rt(state->transition);
 		net_buf_simple_add_le16(msg, state->target_temp);
@@ -2249,6 +2318,7 @@ static void light_ctl_temp_get(struct bt_mesh_model *model,
 		net_buf_simple_add_u8(msg, state->transition->rt);
 	}
 
+send:
 	if (bt_mesh_model_send(model, ctx, msg, NULL, NULL)) {
 		printk("Unable to send LightCTL Temp. Status response\n");
 	}
@@ -2268,6 +2338,11 @@ void light_ctl_temp_publish(struct bt_mesh_model *model)
 	net_buf_simple_add_le16(msg, state->temp);
 	net_buf_simple_add_le16(msg, state->delta_uv);
 
+	if (state->temp == state->target_temp &&
+	    state->delta_uv == state->target_delta_uv) {
+		goto publish;
+	}
+
 	if (state->transition->counter) {
 		calculate_rt(state->transition);
 		net_buf_simple_add_le16(msg, state->target_temp);
@@ -2275,6 +2350,7 @@ void light_ctl_temp_publish(struct bt_mesh_model *model)
 		net_buf_simple_add_u8(msg, state->transition->rt);
 	}
 
+publish:
 	err = bt_mesh_model_publish(model);
 	if (err) {
 		printk("bt_mesh_model_publish err %d\n", err);
@@ -2340,17 +2416,20 @@ static void light_ctl_temp_set_unack(struct bt_mesh_model *model,
 
 	state->target_temp = temp;
 	state->target_delta_uv = delta_uv;
+	state->transition->tt = tt;
+	state->transition->delay = delay;
+	state->transition->type = LIGHT_CTL_TEMP_TT;
 
 	if (state->target_temp != state->temp ||
 	    state->target_delta_uv != state->delta_uv) {
-		light_ctl_temp_tt_values(state, tt, delay);
+		light_ctl_temp_tt_values(state);
 	} else {
 		light_ctl_temp_publish(model);
 		return;
 	}
 
 	/* For Instantaneous Transition */
-	if (state->transition->counter == 0) {
+	if (state->transition->counter == 0U) {
 		state->temp = state->target_temp;
 		state->delta_uv = state->target_delta_uv;
 	}
@@ -2420,10 +2499,13 @@ static void light_ctl_temp_set(struct bt_mesh_model *model,
 
 	state->target_temp = temp;
 	state->target_delta_uv = delta_uv;
+	state->transition->tt = tt;
+	state->transition->delay = delay;
+	state->transition->type = LIGHT_CTL_TEMP_TT;
 
 	if (state->target_temp != state->temp ||
 	    state->target_delta_uv != state->delta_uv) {
-		light_ctl_temp_tt_values(state, tt, delay);
+		light_ctl_temp_tt_values(state);
 	} else {
 		light_ctl_temp_get(model, ctx, buf);
 		light_ctl_temp_publish(model);
@@ -2431,7 +2513,7 @@ static void light_ctl_temp_set(struct bt_mesh_model *model,
 	}
 
 	/* For Instantaneous Transition */
-	if (state->transition->counter == 0) {
+	if (state->transition->counter == 0U) {
 		state->temp = state->target_temp;
 		state->delta_uv = state->target_delta_uv;
 	}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2017, Texas Instruments Incorporated
+ * Copyright (c) 2015-2018, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -212,13 +212,13 @@ typedef struct I2SCC32XXDMA_HWAttrsV1 {
  *  @brief    CC32XX Serial Pin Configuration
  */
 typedef struct I2SCC32XXDMA_SerialPinConfig {
-    /*!< Pin number  */
+    /*! Pin number  */
     unsigned char         pinNumber;
 
-    /*!< Mode the pin will operate(Rx/Tx) */
+    /*! Mode the pin will operate(Rx/Tx) */
     I2S_PinMode           pinMode;
 
-     /*!< Pin configuration in inactive state */
+     /*! Pin configuration in inactive state */
     I2S_SerInActiveConfig inActiveConfig;
 
 } I2SCC32XXDMA_SerialPinConfig;
@@ -228,7 +228,7 @@ typedef struct I2SCC32XXDMA_SerialPinConfig {
  */
 typedef struct I2SCC32XXDMA_SerialPinParams {
 
-    /*!< CC32XX Serial Pin Configuration */
+    /*! CC32XX Serial Pin Configuration */
     I2SCC32XXDMA_SerialPinConfig serialPinConfig[I2SCC32XXDMA_NUM_SERIAL_PINS];
 
 } I2SCC32XXDMA_SerialPinParams;
@@ -270,11 +270,11 @@ typedef struct I2SCC32XXDMA_Object {
     SemaphoreP_Handle      readSem;             /* I2S read semaphore */
     HwiP_Handle            hwiHandle;
 
-    /*!< Length of zero buffer to write in case of no data */
+    /* Length of zero buffer to write in case of no data */
     unsigned long          zeroWriteBufLength;
 
-    /*!< Length of empty buffer to read in case of no data
-         requested */
+    /* Length of empty buffer to read in case of no data
+       requested */
     unsigned long          emptyReadBufLength;
 
     /* Current Write buffer descriptor pointer */

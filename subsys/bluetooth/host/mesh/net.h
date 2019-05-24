@@ -200,7 +200,7 @@ enum {
 	BT_MESH_IVU_TEST,        /* IV Update test mode */
 	BT_MESH_IVU_PENDING,     /* Update blocked by SDU in progress */
 
-	/* pending storage actions */
+	/* pending storage actions, must reside within first 32 flags */
 	BT_MESH_RPL_PENDING,
 	BT_MESH_KEYS_PENDING,
 	BT_MESH_NET_PENDING,

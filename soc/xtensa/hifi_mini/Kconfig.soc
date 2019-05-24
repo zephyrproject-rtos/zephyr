@@ -3,4 +3,3 @@
 
 config SOC_HIFI_MINI
 	bool "hifi_mini core"
-

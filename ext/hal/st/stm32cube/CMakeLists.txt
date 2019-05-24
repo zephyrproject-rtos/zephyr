@@ -26,8 +26,15 @@ set(stm_socs
   stm32f4x
   stm32f7x
   stm32l0x
+  stm32l1x
   stm32l4x
+  stm32mp1x
+  stm32wbx
   )
+
+if(CONFIG_STM32_CORE_CM4)
+  zephyr_compile_definitions( -DCORE_CM4 )
+endif()
 
 foreach(stm_soc ${stm_socs})
   string(TOUPPER ${stm_soc} soc_to_upper)

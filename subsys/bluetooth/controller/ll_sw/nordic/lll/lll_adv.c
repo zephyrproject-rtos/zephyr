@@ -8,6 +8,7 @@
 #include <stddef.h>
 
 #include <zephyr/types.h>
+#include <misc/byteorder.h>
 
 #include <toolchain.h>
 #include <bluetooth/hci.h>
@@ -116,7 +117,7 @@ static int init_reset(void)
 static int prepare_cb(struct lll_prepare_param *prepare_param)
 {
 	struct lll_adv *lll = prepare_param->param;
-	u32_t aa = 0x8e89bed6;
+	u32_t aa = sys_cpu_to_le32(0x8e89bed6);
 	u32_t ticks_at_event;
 	struct evt_hdr *evt;
 	u32_t remainder_us;
@@ -141,7 +142,7 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 
 	radio_reset();
 	/* TODO: other Tx Power settings */
-	radio_tx_power_set(0);
+	radio_tx_power_set(RADIO_TXP_DEFAULT);
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	/* TODO: if coded we use S8? */
@@ -326,7 +327,7 @@ static void isr_tx(void *param)
 	/* TODO: MOVE ^^ */
 
 	radio_isr_set(isr_rx, param);
-	radio_tmr_tifs_set(TIFS_US);
+	radio_tmr_tifs_set(EVENT_IFS_US);
 	radio_switch_complete_and_tx(0, 0, 0, 0);
 	radio_pkt_rx_set(radio_pkt_scratch_get());
 
@@ -346,7 +347,7 @@ static void isr_tx(void *param)
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 
 	/* +/- 2us active clock jitter, +1 us hcto compensation */
-	hcto = radio_tmr_tifs_base_get() + TIFS_US + 4 + 1;
+	hcto = radio_tmr_tifs_base_get() + EVENT_IFS_US + 4 + 1;
 	hcto += radio_rx_chain_delay_get(0, 0);
 	hcto += addr_us_get(0);
 	hcto -= radio_tx_chain_delay_get(0, 0);
@@ -370,7 +371,7 @@ static void isr_tx(void *param)
 #endif /* CONFIG_BT_CTLR_PROFILE_ISR */
 
 	radio_gpio_lna_setup();
-	radio_gpio_pa_lna_enable(radio_tmr_tifs_base_get() + TIFS_US - 4 -
+	radio_gpio_pa_lna_enable(radio_tmr_tifs_base_get() + EVENT_IFS_US - 4 -
 				 radio_tx_chain_delay_get(0, 0) -
 				 CONFIG_BT_CTLR_GPIO_LNA_OFFSET);
 #endif /* CONFIG_BT_CTLR_GPIO_LNA_PIN */
@@ -407,7 +408,7 @@ static void isr_rx(void *param)
 		irkmatch_id = radio_ar_match_get();
 		rssi_ready = radio_rssi_is_ready();
 	} else {
-		crc_ok = devmatch_ok = irkmatch_ok = rssi_ready = 0;
+		crc_ok = devmatch_ok = irkmatch_ok = rssi_ready = 0U;
 		devmatch_id = irkmatch_id = 0xFF;
 	}
 
@@ -569,7 +570,7 @@ static void chan_prepare(struct lll_adv *lll)
 	struct pdu_adv *pdu;
 	struct pdu_adv *scan_pdu;
 	u8_t chan;
-	u8_t upd = 0;
+	u8_t upd = 0U;
 
 	pdu = lll_adv_data_latest_get(lll, &upd);
 	scan_pdu = lll_adv_scan_rsp_latest_get(lll, &upd);
@@ -592,7 +593,7 @@ static void chan_prepare(struct lll_adv *lll)
 	    (!IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT) ||
 	     (pdu->type != PDU_ADV_TYPE_EXT_IND))) {
 		radio_isr_set(isr_tx, lll);
-		radio_tmr_tifs_set(TIFS_US);
+		radio_tmr_tifs_set(EVENT_IFS_US);
 		radio_switch_complete_and_rx(0);
 	} else {
 		radio_isr_set(isr_done, lll);
@@ -660,7 +661,8 @@ static inline int isr_rx_pdu(struct lll_adv *lll,
 #endif /* CONFIG_BT_CTLR_PROFILE_ISR */
 
 		radio_gpio_pa_setup();
-		radio_gpio_pa_lna_enable(radio_tmr_tifs_base_get() + TIFS_US -
+		radio_gpio_pa_lna_enable(radio_tmr_tifs_base_get() +
+					 EVENT_IFS_US -
 					 radio_rx_chain_delay_get(0, 0) -
 					 CONFIG_BT_CTLR_GPIO_PA_OFFSET);
 #endif /* CONFIG_BT_CTLR_GPIO_PA_PIN */
@@ -708,10 +710,7 @@ static inline int isr_rx_pdu(struct lll_adv *lll,
 		memcpy(rx->pdu, pdu_rx, (offsetof(struct pdu_adv, connect_ind) +
 					 sizeof(struct pdu_adv_connect_ind)));
 
-		ftr = (void *)((u8_t *)rx->pdu +
-			       (offsetof(struct pdu_adv, connect_ind) +
-			       sizeof(struct pdu_adv_connect_ind)));
-
+		ftr = &(rx->hdr.rx_ftr);
 		ftr->param = lll;
 		ftr->ticks_anchor = radio_tmr_start_get();
 		ftr->us_radio_end = radio_tmr_end_get() -
@@ -744,7 +743,7 @@ static inline bool isr_rx_sr_check(struct lll_adv *lll, struct pdu_adv *adv,
 		 (devmatch_ok || ctrl_irk_whitelisted(*rl_idx)))) &&
 		isr_rx_sr_adva_check(adv, sr);
 #else
-	return (((lll->filter_policy & 0x01) == 0) || devmatch_ok) &&
+	return (((lll->filter_policy & 0x01) == 0U) || devmatch_ok) &&
 		isr_rx_sr_adva_check(adv, sr);
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 }

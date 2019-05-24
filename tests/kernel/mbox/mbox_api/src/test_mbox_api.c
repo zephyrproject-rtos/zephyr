@@ -378,7 +378,8 @@ static void tmbox_get(struct k_mbox *pmbox)
 	case BLOCK_GET_INVALID_POOL:
 		/* To dispose of the rx msg using block get */
 		mmsg.rx_source_thread = K_ANY;
-		k_mbox_get(pmbox, &mmsg, NULL, K_FOREVER);
+		zassert_true(k_mbox_get(pmbox, &mmsg, NULL, K_FOREVER) == 0,
+			     NULL);
 		zassert_true(k_mbox_data_block_get
 			     (&mmsg, NULL, NULL, K_FOREVER) == 0,
 			     NULL);

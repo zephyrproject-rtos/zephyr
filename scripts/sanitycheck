@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # vim: set syntax=python ts=4 :
+# SPDX-License-Identifier: Apache-2.0
 """Zephyr Sanity Tests
 
 This script scans for the set of unit test applications in the git
@@ -178,9 +179,11 @@ import subprocess
 import multiprocessing
 import select
 import shutil
+import shlex
 import signal
 import threading
 import time
+import datetime
 import csv
 import glob
 import serial
@@ -205,6 +208,14 @@ ZEPHYR_BASE = os.environ.get("ZEPHYR_BASE")
 if not ZEPHYR_BASE:
     sys.stderr.write("$ZEPHYR_BASE environment variable undefined.\n")
     exit(1)
+
+# Use this for internal comparisons; that's what canonicalization is
+# for. Don't use it when invoking other components of the build system
+# to avoid confusing and hard to trace inconsistencies in error messages
+# and logs, generated Makefiles, etc. compared to when users invoke these
+# components directly.
+# Note "normalization" is different from canonicalization, see os.path.
+canonical_zephyr_base = os.path.realpath(ZEPHYR_BASE)
 
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/"))
 
@@ -417,9 +428,11 @@ class ExecutionError(MakeError):
 
 log_file = None
 
-
 # Debug Functions
-def info(what):
+def info(what, show_time=True):
+    if options.timestamps and show_time:
+        date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        what = "{}: {}".format(date, what)
     sys.stdout.write(what + "\n")
     sys.stdout.flush()
     if log_file:
@@ -428,6 +441,9 @@ def info(what):
 
 
 def error(what):
+    if options.timestamps:
+        date = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+        what = "{}: {}".format(date, what)
     sys.stderr.write(COLOR_RED + what + COLOR_NORMAL + "\n")
     if log_file:
         log_file(what + "\n")
@@ -456,7 +472,7 @@ class HarnessImporter:
         self.instance = my_class()
 
 class Handler:
-    def __init__(self, instance):
+    def __init__(self, instance, type_str="build"):
         """Constructor
 
         @param name Arbitrary name of the created thread
@@ -473,6 +489,7 @@ class Handler:
         self.metrics["handler_time"] = 0
         self.metrics["ram_size"] = 0
         self.metrics["rom_size"] = 0
+        self.type_str = type_str
 
         self.binary = None
         self.pid_fn = None
@@ -500,12 +517,12 @@ class Handler:
         return ret
 
 class BinaryHandler(Handler):
-    def __init__(self, instance):
+    def __init__(self, instance, type_str):
         """Constructor
 
         @param instance Test Instance
         """
-        super().__init__(instance)
+        super().__init__(instance, type_str)
 
         self.valgrind = False
         self.terminated = False
@@ -551,7 +568,7 @@ class BinaryHandler(Handler):
                 generator_cmd = "ninja"
             else:
                 generator_cmd = "make"
-            command = [generator_cmd, "-C", self.outdir, "run"]
+            command = [generator_cmd, "run"]
         else:
             command = [self.binary]
 
@@ -562,7 +579,11 @@ class BinaryHandler(Handler):
                        "--log-file="+self.outdir+"/valgrind.log"
                        ] + command
 
-        with subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE) as proc:
+        verbose("Spawning process: " +
+                " ".join(shlex.quote(word) for word in command) + os.linesep +
+                "Spawning process in directory: " + self.outdir)
+        with subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=self.outdir) as proc:
+            verbose("Spawning BinaryHandler Thread for %s" % self.name)
             t = threading.Thread(target=self._output_reader, args=(proc, harness, ))
             t.start()
             t.join(self.timeout)
@@ -596,12 +617,12 @@ class BinaryHandler(Handler):
 
 class DeviceHandler(Handler):
 
-    def __init__(self, instance):
+    def __init__(self, instance, type_str):
         """Constructor
 
         @param instance Test Instance
         """
-        super().__init__(instance)
+        super().__init__(instance, type_str)
 
     def monitor_serial(self, ser, halt_fileno, harness):
         log_out_fp = open(self.log, "wt")
@@ -647,12 +668,23 @@ class DeviceHandler(Handler):
     def handle(self):
         out_state = "failed"
 
-        if options.ninja:
-            generator_cmd = "ninja"
+        if options.west_flash is not None:
+            command = ["west", "flash", "--skip-rebuild", "-d", self.outdir]
+            # There are two ways this option is used.
+            # 1) bare: --west-flash
+            #    This results in options.west_flash == []
+            # 2) with a value: --west-flash="--board-id=42"
+            #    This results in options.west_flash == "--board-id=42"
+            if options.west_flash != []:
+                command.append('--')
+                command.append(options.west_flash)
         else:
-            generator_cmd = "make"
+            if options.ninja:
+                generator_cmd = "ninja"
+            else:
+                generator_cmd = "make"
 
-        command = [generator_cmd, "-C", self.outdir, "flash"]
+            command = [generator_cmd, "-C", self.outdir, "flash"]
 
         device = options.device_serial
         ser = serial.Serial(
@@ -676,6 +708,7 @@ class DeviceHandler(Handler):
                              args=(ser, rpipe, harness))
         t.start()
 
+        logging.debug('Flash command: %s', command)
         try:
             if VERBOSE:
                 subprocess.check_call(command)
@@ -801,25 +834,27 @@ class QEMUHandler(Handler):
         log_out_fp.close()
         out_fp.close()
         in_fp.close()
+        if os.path.exists(pid_fn):
+            pid = int(open(pid_fn).read())
+            os.unlink(pid_fn)
 
-        pid = int(open(pid_fn).read())
-        os.unlink(pid_fn)
-        try:
-            os.kill(pid, signal.SIGTERM)
-        except ProcessLookupError:
-            # Oh well, as long as it's dead! User probably sent Ctrl-C
-            pass
+            try:
+                if pid:
+                    os.kill(pid, signal.SIGTERM)
+            except ProcessLookupError:
+                # Oh well, as long as it's dead! User probably sent Ctrl-C
+                pass
 
         os.unlink(fifo_in)
         os.unlink(fifo_out)
 
-    def __init__(self, instance):
+    def __init__(self, instance, type_str):
         """Constructor
 
         @param instance Test instance
         """
 
-        super().__init__(instance)
+        super().__init__(instance, type_str)
 
         self.results = {}
         self.run = True
@@ -844,7 +879,7 @@ class QEMUHandler(Handler):
 
         self.instance.results = harness.tests
         self.thread.daemon = True
-        verbose("Spawning QEMU process for %s" % self.name)
+        verbose("Spawning QEMUHandler Thread for %s 'make run'" % self.name)
         self.thread.start()
 
     def get_fifo(self):
@@ -855,8 +890,7 @@ class SizeCalculator:
 
     alloc_sections = ["bss", "noinit", "app_bss", "app_noinit", "ccm_bss",
                       "ccm_noinit"]
-    rw_sections = ["datas", "initlevel", "_k_task_list", "_k_event_list",
-                   "_k_memory_pool", "exceptions", "initshell",
+    rw_sections = ["datas", "initlevel", "exceptions", "initshell",
                    "_static_thread_area", "_k_timer_area",
                    "_k_mem_slab_area", "_k_mem_pool_area", "sw_isr_table",
                    "_k_sem_area", "_k_mutex_area", "app_shmem_regions",
@@ -875,7 +909,8 @@ class SizeCalculator:
     # These get copied into RAM only on non-XIP
     ro_sections = ["text", "ctors", "init_array", "reset", "object_access",
                    "rodata", "devconfig", "net_l2", "vector", "sw_isr_table",
-                   "_bt_settings_area"]
+                   "_bt_settings_area", "_bt_services_area", "vectors",
+                   "net_socket_register"]
 
     def __init__(self, filename, extra_sections):
         """Constructor
@@ -1030,8 +1065,13 @@ class MakeGoal:
             # Failure when calling the sub-make to build the code
             return self.build_log
         elif self.make_state == "running":
-            # Failure in sub-make for "make run", qemu probably failed to start
-            return self.run_log
+            # Failure in sub-make for "make run", qemu probably failed.
+            # Return qemu's output if there is one, otherwise make's.
+            h = Path(self.handler_log)
+            if h.exists() and h.stat().st_size > 0:
+                return self.handler_log
+            else:
+                return self.run_log
         elif self.make_state == "finished":
             # Execution handler finished, but timed out or otherwise wasn't successful
             return self.handler_log
@@ -1215,34 +1255,34 @@ class MakeGenerator:
 
         handler = None
         if type == "qemu":
-            handler = QEMUHandler(instance)
+            handler = QEMUHandler(instance, "qemu")
         elif type == "native":
-            handler = BinaryHandler(instance)
+            handler = BinaryHandler(instance, "native")
             handler.binary = os.path.join(outdir, "zephyr", "zephyr.exe")
             if options.enable_coverage:
                 args += ["EXTRA_LDFLAGS=--coverage"]
         elif type == "nsim":
-            handler = BinaryHandler(instance)
+            handler = BinaryHandler(instance, "nsim")
             handler.call_make_run = True
         elif type == "unit":
-            handler = BinaryHandler(instance)
+            handler = BinaryHandler(instance, "unit")
             handler.binary = os.path.join(outdir, "testbinary")
             if options.enable_coverage:
                 args += ["EXTRA_LDFLAGS=--coverage"]
         elif type == "device":
-            handler = DeviceHandler(instance)
+            handler = DeviceHandler(instance, "device")
         elif type == "renode":
-            handler = BinaryHandler(instance)
+            handler = BinaryHandler(instance, "renode")
             handler.pid_fn = os.path.join(instance.outdir, "renode.pid")
             handler.call_make_run = True
-
 
         if type == 'qemu':
             args.append("QEMU_PIPE=%s" % handler.get_fifo())
 
-        text = (self._get_rule_header(name) +
-                self._get_sub_make(name, "building", directory,
-                                   outdir, build_logfile, args, make_args=make_args))
+        text = self._get_rule_header(name)
+        if not options.test_only:
+            text += self._get_sub_make(name, "building", directory, outdir,
+                                       build_logfile, args, make_args=make_args)
         if handler and handler.run:
             text += self._get_sub_make(name, "running", directory,
                                    outdir, run_logfile,
@@ -1326,9 +1366,11 @@ class MakeGenerator:
             # Create our dynamic Makefile and execute it.
             # Watch stderr output which is where we will keep
             # track of build state
-            for name, goal in self.goals.items():
+            tf.write('\n# Generated by %s which is expected\n' % __file__)
+            tf.write('# to create QEMU_PIPE, spawn zephyr.exe, etc. \n\n')
+            for name, goal in sorted(self.goals.items()):
                 tf.write(goal.text)
-            tf.write("all: %s\n" % (" ".join(self.goals.keys())))
+            tf.write("all: %s\n" % (" ".join(sorted(self.goals.keys()))))
             tf.flush()
 
             cmd = ["make", "-k", "-j", str(JOBS), "-f", tf.name, "all"]
@@ -1354,10 +1396,13 @@ class MakeGenerator:
                     # will cause the 'make run' invocation to exit with
                     # nonzero status.
                     # Need to distinguish this case from a compilation failure.
-                    if goal.handler:
+                    if goal.make_state == "building":
+                        goal.fail("build_error")
+                    elif goal.handler:
                         goal.fail("handler_crash")
                     else:
-                        goal.fail("build_error")
+                        goal.fail("unknown_error")
+
                 else:
                     goal = self.goals[name]
                     goal.make_state = state
@@ -1636,10 +1681,9 @@ class TestCase:
         a testcase.yaml can define multiple tests, the canonical name for
         the test case is <workdir>/<name>.
 
-        @param testcase_root Absolute path to the root directory where
-            all the test cases live
-        @param workdir Relative path to the project directory for this
-            test application from the test_case root.
+        @param testcase_root os.path.abspath() of one of the --testcase-root
+        @param workdir Sub-directory of testcase_root where the
+            .yaml test configuration file was found
         @param name Name of this test case, corresponding to the entry name
             in the test case configuration file. For many test cases that just
             define one test, can be anything and is usually "test". This is
@@ -1685,16 +1729,17 @@ class TestCase:
 
     def get_unique(self, testcase_root, workdir, name):
 
-        if ZEPHYR_BASE in testcase_root:
-            # This is a Zephyr Test, so include path in name for uniqueness
+        canonical_testcase_root = os.path.realpath(testcase_root)
+        if canonical_testcase_root.startswith(canonical_zephyr_base):
+            # This is in ZEPHYR_BASE, so include path in name for uniqueness
             # FIXME: We should not depend on path of test for unique names.
-
-            zephyr_base = os.path.join(os.path.realpath(ZEPHYR_BASE))
-            short_path = os.path.normpath(testcase_root.replace(zephyr_base + "/", ""))
+            relative_tc_root = os.path.relpath(canonical_testcase_root,
+                                         start=canonical_zephyr_base)
         else:
-            short_path = ""
+            relative_tc_root = ""
 
-        unique = os.path.normpath(os.path.join(short_path, workdir, name))
+        # workdir can be "."
+        unique = os.path.normpath(os.path.join(relative_tc_root, workdir, name))
         return unique
 
     def scan_file(self, inf_name):
@@ -1765,7 +1810,7 @@ class TestCase:
                 if _subcases:
                     subcases += _subcases
             except ValueError as e:
-                error("%s: can't find: %s", filename, e)
+                error("%s: can't find: %s" % (filename, e))
         return subcases
 
 
@@ -1774,6 +1819,9 @@ class TestCase:
         for sub in results:
             name = "{}.{}".format(self.id, sub)
             self.cases.append(name)
+
+        if not results:
+            self.cases.append(self.id)
 
 
     def __str__(self):
@@ -1798,6 +1846,9 @@ class TestInstance:
         self.build_only = options.build_only or test.build_only \
                 or self.check_dependency()
         self.results = {}
+
+    def __lt__(self, other):
+        return self.name < other.name
 
     def check_dependency(self):
         build_only = False
@@ -2128,6 +2179,7 @@ class TestSuite:
         info("Building testcase defconfigs...")
         results = mg.execute(defconfig_cb)
 
+        info("Filtering test cases...")
         for name, goal in results.items():
             try:
                 if goal.failed:
@@ -2370,7 +2422,7 @@ class TestSuite:
 
         return self.goals
 
-    def run_report(self, filename):
+    def save_tests(self, filename):
         with open(filename, "at") as csvfile:
             fieldnames = ['path', 'test', 'platform', 'arch']
             cw = csv.DictWriter(csvfile, fieldnames, lineterminator=os.linesep)
@@ -2396,7 +2448,7 @@ class TestSuite:
             fieldnames = ["test", "arch", "platform", "reason"]
             cw = csv.DictWriter(csvfile, fieldnames, lineterminator=os.linesep)
             cw.writeheader()
-            for instance, reason in self.discards.items():
+            for instance, reason in sorted(self.discards.items()):
                 rowdict = {"test": instance.test.name,
                            "arch": instance.platform.arch,
                            "platform": instance.platform.name,
@@ -2446,12 +2498,6 @@ class TestSuite:
                 results.append((i, metric, goal.metrics[metric], delta,
                                 lower_better))
         return results
-
-
-
-    def encode_for_xml(self, unicode_data, encoding='ascii'):
-        unicode_data = unicode_data.replace('\x00', '')
-        return unicode_data
 
     def testcase_target_report(self, report_file):
 
@@ -2508,12 +2554,13 @@ class TestSuite:
                             type="failure",
                             message="failed")
                     p = os.path.join(options.outdir, ti.platform.name, ti.test.name)
-                    bl = os.path.join(p, "handler.log")
+                    log_file = os.path.join(p, "handler.log")
 
-                    if os.path.exists(bl):
-                        with open(bl, "rb") as f:
+                    if os.path.exists(log_file):
+                        with open(log_file, "rb") as f:
                             log = f.read().decode("utf-8")
-                            el.text = self.encode_for_xml(log)
+                            filtered_string = ''.join(filter(lambda x: x in string.printable, log))
+                            el.text = filtered_string
 
                 elif ti.results[k] == 'SKIP':
                     el = ET.SubElement(
@@ -2624,7 +2671,7 @@ class TestSuite:
                           "rom_size"]
             cw = csv.DictWriter(csvfile, fieldnames, lineterminator=os.linesep)
             cw.writeheader()
-            for name, goal in self.goals.items():
+            for name, goal in sorted(self.goals.items()):
                 i = self.instances[name]
                 rowdict = {"test": i.test.name,
                            "arch": i.platform.arch,
@@ -2650,6 +2697,19 @@ def parse_arguments():
         formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.fromfile_prefix_chars = "+"
 
+    case_select = parser.add_argument_group("Test case selection",
+                                            """
+Artificially long but functional example:
+    $ ./scripts/sanitycheck -v     \\
+      --testcase-root tests/     \\
+      --testcase-root mytests/   \\
+      --test      tests/ztest/base/testing.ztest.verbose_0  \\
+      --test      tests/kernel/fifo/fifo_api/kernel.fifo.poll
+
+   "kernel.fifo.poll" is one of the test section names in
+                                 __/fifo_api/testcase.yaml
+    """)
+
     parser.add_argument("--force-toolchain", action="store_true",
             help="Do not filter based on toolchain, use the set "
             " toolchain unconditionally")
@@ -2673,7 +2733,7 @@ def parse_arguments():
     parser.add_argument("-e", "--exclude-tag", action="append",
                         help="Specify tags of tests that should not run. "
                         "Default is to run all tests with all tags.")
-    parser.add_argument(
+    case_select.add_argument(
         "-f",
         "--only-failed",
         action="store_true",
@@ -2689,17 +2749,21 @@ def parse_arguments():
         "defconfig that have that value assigned to any value. "
         "Prepend a '!' to invert the match.")
 
-    parser.add_argument(
+    test_xor_subtest = case_select.add_mutually_exclusive_group()
+
+    test_xor_subtest.add_argument(
         "-s", "--test", action="append",
         help="Run only the specified test cases. These are named by "
-        "<path to test project relative to "
-        "--testcase-root>/<testcase.yaml section name>")
+        "path/relative/to/Zephyr/base/section.name.in.testcase.yaml>")
 
-    parser.add_argument(
+    test_xor_subtest.add_argument(
         "--sub-test", action="append",
-        help="Run only the specified sub-test cases and its parent. These are named by "
-        "test case name appended by test function, i.e. kernel.mutex.mutex_lock_unlock."
-        )
+        help="""Recursively find sub-test functions and run the entire
+        test section where they were found, including all sibling test
+        functions. Sub-tests are named by:
+        section.name.in.testcase.yaml.function_name_without_test_prefix
+        Example: kernel.fifo.poll.fifo_loop
+        """)
 
     parser.add_argument(
         "-l", "--all", action="store_true",
@@ -2736,8 +2800,14 @@ def parse_arguments():
     parser.add_argument("--list-tags", action="store_true",
             help="list all tags in selected tests")
 
-    parser.add_argument("--list-tests", action="store_true",
-            help="list all tests.")
+    case_select.add_argument("--list-tests", action="store_true",
+        help="""List of all sub-test functions recursively found in
+        all --testcase-root arguments. Note different sub-tests can share
+        the same section name and come from different directories.
+        The output is flattened and reports --sub-test names only,
+        not their directories. For instance net.socket.getaddrinfo_ok
+        and net.socket.fd_set belong to different directories.
+        """)
 
     parser.add_argument("--export-tests", action="store",
             metavar="FILENAME",
@@ -2747,6 +2817,10 @@ def parse_arguments():
             action="store",
             metavar="FILENAME",
             help="Generate a junit report with detailed testcase results.")
+
+    parser.add_argument("--timestamps",
+            action="store_true",
+            help="Print all messages with time stamps")
 
     parser.add_argument(
         "-r", "--release", action="store_true",
@@ -2780,23 +2854,28 @@ def parse_arguments():
         action="store_true",
         help="do not update the results of the last run of the sanity "
         "checks")
-    parser.add_argument(
+    case_select.add_argument(
         "-F",
         "--load-tests",
         metavar="FILENAME",
         action="store",
-        help="Load list of tests to be run from file.")
+        help="Load list of tests and platforms to be run from file.")
 
-    parser.add_argument(
+    case_select.add_argument(
         "-E",
         "--save-tests",
         metavar="FILENAME",
         action="store",
-        help="Save list of tests to be run to file.")
+        help="Append list of tests and platforms to be run to file.")
 
-    parser.add_argument(
+    test_or_build = parser.add_mutually_exclusive_group()
+    test_or_build.add_argument(
         "-b", "--build-only", action="store_true",
         help="Only build the code, do not execute any of it in QEMU")
+    test_or_build.add_argument(
+        "--test-only", action="store_true",
+        help="""Only run device tests with current artifacts, do not build
+             the code""")
     parser.add_argument(
         "-j", "--jobs", type=int,
         help="Number of jobs for building, defaults to number of CPU threads "
@@ -2837,12 +2916,12 @@ def parse_arguments():
         "-n", "--no-clean", action="store_true",
         help="Do not delete the outdir before building. Will result in "
         "faster compilation since builds will be incremental")
-    parser.add_argument(
+    case_select.add_argument(
         "-T", "--testcase-root", action="append", default=[],
         help="Base directory to recursively search for test cases. All "
         "testcase.yaml files under here will be processed. May be "
-        "called multiple times. Defaults to the 'samples' and "
-        "'tests' directories in the Zephyr tree.")
+        "called multiple times. Defaults to the 'samples/' and "
+        "'tests/' directories at the base of the Zephyr tree.")
 
     board_root_list = ["%s/boards" % ZEPHYR_BASE,
                        "%s/scripts/sanity_chk/boards" % ZEPHYR_BASE]
@@ -2887,6 +2966,18 @@ def parse_arguments():
         "cmake -DUSE_CCACHE=0"
 
         which will ultimately disable ccache.
+        """
+    )
+    parser.add_argument(
+        "--west-flash", nargs='?', const=[],
+        help="""Uses west instead of ninja or make to flash when running with
+             --device-testing"
+
+        E.g
+         sanitycheck --device-testing --device-serial /dev/ttyACM0 \
+                     --west-flash="--board-id=foobar"
+        will translate to
+         west flash -- --board-id=foobar
         """
     )
     parser.add_argument("--gcov-tool", default="gcov",
@@ -2944,9 +3035,9 @@ def terse_test_cb(instances, goals, goal):
                 i.test.name,
                 COLOR_RED,
                 COLOR_NORMAL,
-                goal.reason))
+                goal.reason), False)
         log_info(goal.get_error_log())
-        info("")
+        info("", False)
 
     sys.stdout.write(
         "\rtotal complete: %s%4d/%4d%s  %2d%%  failed: %s%4d%s" %
@@ -2978,9 +3069,14 @@ def chatty_test_cb(instances, goals, goal):
     else:
         status = goal.make_state
 
-    info("{:>{}}/{} {:<25} {:<50} {}".format(
+    if goal.handler:
+        handler_type = goal.handler.type_str
+    else:
+        handler_type = "build"
+
+    info("{:>{}}/{} {:<25} {:<50} {} ({})".format(
         total_done, total_tests_width, total_tests, i.platform.name,
-        i.test.name, status))
+        i.test.name, status, handler_type))
     if goal.failed:
         log_info(goal.get_error_log())
 
@@ -3278,7 +3374,7 @@ def main():
                                key=cmp_to_key(native_and_unit_first)))
 
     if options.save_tests:
-        ts.run_report(options.save_tests)
+        ts.save_tests(options.save_tests)
         return
 
     if options.subset:
@@ -3309,7 +3405,7 @@ def main():
         goals = ts.execute(
             terse_test_cb,
             ts.instances)
-        info("")
+        info("", False)
 
     if options.detailed_report:
         ts.testcase_target_report(options.detailed_report)

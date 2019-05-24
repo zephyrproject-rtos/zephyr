@@ -283,10 +283,19 @@ static struct nrf_usbd_ctx usbd_ctx = {
 	.ready = false,
 };
 
-
 static inline struct nrf_usbd_ctx *get_usbd_ctx(void)
 {
 	return &usbd_ctx;
+}
+
+static inline bool dev_attached(void)
+{
+	return get_usbd_ctx()->attached;
+}
+
+static inline bool dev_ready(void)
+{
+	return get_usbd_ctx()->ready;
 }
 
 static inline nrfx_usbd_ep_t ep_addr_to_nrfx(uint8_t ep)
@@ -548,6 +557,13 @@ static int hf_clock_enable(bool on, bool blocking)
 			return 0;
 		}
 		ret = clock_control_off(clock, (void *)blocking);
+		if (ret == -EBUSY) {
+			/* This is an expected behaviour.
+			 * -EBUSY means that some other module has also
+			 * requested the clock to run.
+			 */
+			ret = 0;
+		}
 	}
 
 	if (ret && (blocking || (ret != -EINPROGRESS))) {
@@ -620,6 +636,8 @@ static void ep_ctx_reset(struct nrf_usbd_ep_ctx *ep_ctx)
 	ep_ctx->buf.data = ep_ctx->buf.block.data;
 	ep_ctx->buf.curr = ep_ctx->buf.data;
 	ep_ctx->buf.len  = 0U;
+
+	ep_ctx->cfg.en = false;
 
 	ep_ctx->read_complete = true;
 	ep_ctx->read_pending = false;
@@ -746,20 +764,23 @@ static inline void usbd_work_process_pwr_events(struct usbd_pwr_event *pwr_evt)
 
 	switch (pwr_evt->state) {
 	case USBD_ATTACHED:
-		LOG_DBG("USB detected");
-		nrfx_usbd_enable();
-		(void) hf_clock_enable(true, false);
-
-		if (ctx->status_cb) {
-			ctx->status_cb(USB_DC_CONNECTED, NULL);
+		if (!nrfx_usbd_is_enabled()) {
+			LOG_DBG("USB detected");
+			nrfx_usbd_enable();
+			(void) hf_clock_enable(true, false);
 		}
+
+		/* No callback here.
+		 * Stack will be notified when the peripheral is ready.
+		 */
 		break;
 
 	case USBD_POWERED:
-		LOG_DBG("USB Powered");
 		usbd_enable_endpoints(ctx);
 		nrfx_usbd_start(true);
 		ctx->ready = true;
+
+		LOG_DBG("USB Powered");
 
 		if (ctx->status_cb) {
 			ctx->status_cb(USB_DC_CONNECTED, NULL);
@@ -767,10 +788,11 @@ static inline void usbd_work_process_pwr_events(struct usbd_pwr_event *pwr_evt)
 		break;
 
 	case USBD_DETACHED:
-		LOG_DBG("USB Removed");
 		ctx->ready = false;
 		nrfx_usbd_disable();
 		(void) hf_clock_enable(false, false);
+
+		LOG_DBG("USB Removed");
 
 		if (ctx->status_cb) {
 			ctx->status_cb(USB_DC_DISCONNECTED, NULL);
@@ -778,17 +800,18 @@ static inline void usbd_work_process_pwr_events(struct usbd_pwr_event *pwr_evt)
 		break;
 
 	case USBD_SUSPENDED:
-		LOG_DBG("USB Suspend state");
-		nrfx_usbd_suspend();
+		if (dev_ready()) {
+			nrfx_usbd_suspend();
+			LOG_DBG("USB Suspend state");
 
-		if (ctx->status_cb) {
-			ctx->status_cb(USB_DC_SUSPEND, NULL);
+			if (ctx->status_cb) {
+				ctx->status_cb(USB_DC_SUSPEND, NULL);
+			}
 		}
 		break;
 	case USBD_RESUMED:
-		LOG_DBG("USB resume");
-
-		if (ctx->status_cb) {
+		if (ctx->status_cb && dev_ready()) {
+			LOG_DBG("USB resume");
 			ctx->status_cb(USB_DC_RESUME, NULL);
 		}
 		break;
@@ -839,7 +862,7 @@ static inline void usbd_work_process_setup(struct nrf_usbd_ep_ctx *ep_ctx)
 		ctx->ctrl_read_len -= usbd_setup->wLength;
 		nrfx_usbd_setup_data_clear();
 	} else {
-		ctx->ctrl_read_len = 0;
+		ctx->ctrl_read_len = 0U;
 	}
 }
 
@@ -909,16 +932,6 @@ static inline void usbd_work_process_ep_events(struct usbd_ep_event *ep_evt)
 	}
 }
 
-static inline bool dev_attached(void)
-{
-	return get_usbd_ctx()->attached;
-}
-
-static inline bool dev_ready(void)
-{
-	return get_usbd_ctx()->ready;
-}
-
 static void usbd_event_transfer_ctrl(nrfx_usbd_evt_t const *const p_event)
 {
 	struct nrf_usbd_ep_ctx *ep_ctx =
@@ -980,7 +993,7 @@ static void usbd_event_transfer_ctrl(nrfx_usbd_evt_t const *const p_event)
 			if (!ev) {
 				return;
 			}
-			nrfx_err_t err_code;
+			nrfx_usbd_ep_status_t err_code;
 
 			ev->evt_type = USBD_EVT_EP;
 			ev->evt.ep_evt.evt_type = EP_EVT_RECV_COMPLETE;
@@ -989,8 +1002,7 @@ static void usbd_event_transfer_ctrl(nrfx_usbd_evt_t const *const p_event)
 			err_code = nrfx_usbd_ep_status_get(
 				p_event->data.eptransfer.ep, &ep_ctx->buf.len);
 
-			if ((err_code != NRFX_SUCCESS) &&
-			    (err_code != (nrfx_err_t)NRFX_USBD_EP_OK)) {
+			if (err_code != NRFX_USBD_EP_OK) {
 				LOG_ERR("_ep_status_get failed! Code: %d.",
 					err_code);
 				__ASSERT_NO_MSG(0);
@@ -1001,7 +1013,7 @@ static void usbd_event_transfer_ctrl(nrfx_usbd_evt_t const *const p_event)
 				ctx->ctrl_read_len -= ep_ctx->buf.len;
 				nrfx_usbd_setup_data_clear();
 			} else {
-				ctx->ctrl_read_len = 0;
+				ctx->ctrl_read_len = 0U;
 			}
 
 			usbd_evt_put(ev);
@@ -1114,7 +1126,7 @@ static void usbd_event_transfer_data(nrfx_usbd_evt_t const *const p_event)
 static void usbd_event_handler(nrfx_usbd_evt_t const *const p_event)
 {
 	struct nrf_usbd_ep_ctx *ep_ctx;
-	struct usbd_event evt;
+	struct usbd_event evt = {0};
 	bool put_evt = false;
 
 	switch (p_event->type) {
@@ -1235,6 +1247,10 @@ static void usbd_work_handler(struct k_work *item)
 	ctx = CONTAINER_OF(item, struct nrf_usbd_ctx, usb_work);
 
 	while ((ev = usbd_evt_get()) != NULL) {
+		if (!dev_ready() && ev->evt_type != USBD_EVT_POWER) {
+			/* Drop non-power events when cable is detached. */
+			continue;
+		}
 
 		switch (ev->evt_type) {
 		case USBD_EVT_EP:
@@ -1309,6 +1325,17 @@ int usb_dc_attach(void)
 
 	if (!k_fifo_is_empty(&work_queue)) {
 		usbd_work_schedule();
+	}
+
+	if (nrf_power_usbregstatus_vbusdet_get()) {
+		/* USBDETECTED event is be generated on cable attachment and
+		 * when cable is already attached during reset, but not when
+		 * the peripheral is re-enabled.
+		 * When USB-enabled bootloader is used, target application
+		 * will not receive this event and it needs to be generated
+		 * again here.
+		 */
+		usb_dc_nrfx_power_event_callback(NRF_POWER_EVENT_USBDETECTED);
 	}
 
 	return ret;
@@ -1432,7 +1459,7 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data *const ep_cfg)
 	ep_ctx->cfg.type = ep_cfg->ep_type;
 	ep_ctx->cfg.max_sz = ep_cfg->ep_mps;
 
-	if ((ep_cfg->ep_mps & (ep_cfg->ep_mps - 1)) != 0) {
+	if ((ep_cfg->ep_mps & (ep_cfg->ep_mps - 1)) != 0U) {
 		LOG_ERR("EP max packet size must be a power of 2.");
 		return -EINVAL;
 	}
@@ -1801,10 +1828,9 @@ int usb_dc_ep_set_callback(const u8_t ep, const usb_dc_ep_callback cb)
 	return 0;
 }
 
-int usb_dc_set_status_callback(const usb_dc_status_callback cb)
+void usb_dc_set_status_callback(const usb_dc_status_callback cb)
 {
 	get_usbd_ctx()->status_cb = cb;
-	return 0;
 }
 
 int usb_dc_ep_mps(const u8_t ep)

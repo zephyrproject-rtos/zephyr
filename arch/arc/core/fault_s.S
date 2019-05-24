@@ -19,7 +19,7 @@
 #include <syscall.h>
 
 GTEXT(_Fault)
-GTEXT(_do_kernel_oops)
+GTEXT(z_do_kernel_oops)
 GTEXT(__reset)
 GTEXT(__memory_error)
 GTEXT(__instruction_error)
@@ -35,14 +35,11 @@ GTEXT(__ev_div_zero)
 GTEXT(__ev_dc_error)
 GTEXT(__ev_maligned)
 #ifdef CONFIG_IRQ_OFFLOAD
-GTEXT(_irq_do_offload);
+GTEXT(z_irq_do_offload);
 #endif
 
 GDATA(exc_nest_count)
-
-	.balign 4
-SECTION_VAR(BSS, saved_value)
-	.word 0
+GDATA(arc_exc_saved_sWWp)
 
 /* the necessary stack size for exception handling */
 #define EXCEPTION_STACK_SIZE 384
@@ -65,7 +62,7 @@ SECTION_SUBSEC_FUNC(TEXT,__fault,__ev_dc_error)
 SECTION_SUBSEC_FUNC(TEXT,__fault,__ev_maligned)
 
 _exc_entry:
-	st sp, [saved_value]
+	st sp, [arc_exc_saved_sp]
 	/*
 	 * re-use the top part of interrupt stack as exception
 	 * stack. If this top part is used by interrupt handling,
@@ -145,7 +142,7 @@ _exc_return_from_exc:
 	sr r0, [_ARC_V2_ERET]
 
 	_pop_irq_stack_frame
-	ld sp, [saved_value]
+	ld sp, [arc_exc_saved_sp]
 	rtie
 
 
@@ -218,7 +215,7 @@ _do_non_syscall_trap:
 exc_nest_handle:
 	push_s r0
 
-	jl _irq_do_offload
+	jl z_irq_do_offload
 
 	pop sp
 

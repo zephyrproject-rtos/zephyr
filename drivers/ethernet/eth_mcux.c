@@ -102,7 +102,7 @@ struct eth_context {
 	 * Note that we do not copy FCS into this buffer thus the
 	 * size is 1514 bytes.
 	 */
-	u8_t frame_buf[1500 + 14]; /* Max MTU + ethernet header size */
+	u8_t frame_buf[NET_ETH_MAX_FRAME_SIZE]; /* Max MTU + ethernet header */
 };
 
 static void eth_0_config_func(void);
@@ -502,7 +502,7 @@ static int eth_tx(struct device *dev, struct net_pkt *pkt)
 	 */
 	imask = irq_lock();
 
-	if (net_pkt_read_new(pkt, context->frame_buf, total_len)) {
+	if (net_pkt_read(pkt, context->frame_buf, total_len)) {
 		irq_unlock(imask);
 		return -EIO;
 	}
@@ -600,7 +600,7 @@ static void eth_rx(struct device *iface)
 		goto error;
 	}
 
-	if (net_pkt_write_new(pkt, context->frame_buf, frame_length)) {
+	if (net_pkt_write(pkt, context->frame_buf, frame_length)) {
 		irq_unlock(imask);
 		LOG_ERR("Unable to write frame into the pkt");
 		net_pkt_unref(pkt);
@@ -1012,7 +1012,7 @@ static struct eth_context eth_0_context = {
 
 ETH_NET_DEVICE_INIT(eth_mcux_0, DT_ETH_MCUX_0_NAME, eth_0_init,
 		    &eth_0_context, NULL, CONFIG_ETH_INIT_PRIORITY,
-		    &api_funcs, 1500);
+		    &api_funcs, NET_ETH_MTU);
 
 static void eth_0_config_func(void)
 {

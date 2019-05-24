@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017, Texas Instruments Incorporated
+ * Copyright (c) 2016-2018, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -65,7 +65,7 @@
  *  params.callbackFxn = someCaptureCallbackFunction;
  *  params.periodUnit = Capture_PERIOD_US;
  *
- *  handle = Capture_open(someCapture_configIndexValue, &params);
+ *  handle = Capture_open(Board_CAPTURE0, &params);
  *
  *  if (handle == NULL) {
  *      //Capture_open() failed
@@ -274,13 +274,13 @@ typedef void (*Capture_CallBackFxn)(Capture_Handle handle, uint32_t interval);
  *
  */
 typedef struct Capture_Params_ {
-    /*!< Mode to be used by the timer driver. */
+    /*! Mode to be used by the timer driver. */
     Capture_Mode           mode;
 
-    /*!< Callback function called when a trigger event occurs. */
+    /*! Callback function called when a trigger event occurs. */
     Capture_CallBackFxn    callbackFxn;
 
-    /*!< Units used to specify the interval. */
+    /*! Units used to specify the interval. */
     Capture_PeriodUnits    periodUnit;
 } Capture_Params;
 
@@ -328,22 +328,22 @@ typedef void (*Capture_StopFxn)(Capture_Handle handle);
  *              implementation.
  */
 typedef struct Capture_FxnTable_ {
-    /*!< Function to close the specified peripheral. */
+    /*! Function to close the specified peripheral. */
     Capture_CloseFxn closeFxn;
 
-    /*!< Function to implementation specific control function. */
+    /*! Function to implementation specific control function. */
     Capture_ControlFxn controlFxn;
 
-    /*!< Function to initialize the given data object. */
+    /*! Function to initialize the given data object. */
     Capture_InitFxn initFxn;
 
-    /*!< Function to open the specified peripheral. */
+    /*! Function to open the specified peripheral. */
     Capture_OpenFxn openFxn;
 
-    /*!< Function to start the specified peripheral. */
+    /*! Function to start the specified peripheral. */
     Capture_StartFxn startFxn;
 
-    /*!< Function to stop the specified peripheral. */
+    /*! Function to stop the specified peripheral. */
     Capture_StopFxn stopFxn;
 } Capture_FxnTable;
 
@@ -396,8 +396,8 @@ extern void Capture_close(Capture_Handle handle);
  *  @param  arg         A pointer to an optional R/W (read/write) argument that
  *                      is accompanied with cmd.
  *
- *  @return A Capture_Status describing an error or success state. Negative values
- *          indicate an error occurred.
+ *  @return A Capture_Status describing an error or success state. Negative
+ *          values indicate an error occurred.
  *
  *  @sa     Capture_open()
  */

@@ -10,9 +10,10 @@
  */
 
 #ifndef __METAL_GENERIC_SYS__H__
-#error "Include metal/sys.h instead of metal/generic/@PROJECT_MACHINE@/sys.h"
+#error "Include metal/sys.h instead of metal/system/generic/@PROJECT_MACHINE@/sys.h"
 #endif
 
+#include <metal/system/@PROJECT_SYSTEM@/xlnx_common/sys.h>
 #include "xscugic.h"
 
 #ifndef __METAL_GENERIC_ZYNQMP_R5_SYS__H__
@@ -23,6 +24,8 @@ extern "C" {
 #endif
 
 #ifdef METAL_INTERNAL
+
+#define XLNX_MAXIRQS XSCUGIC_MAX_NUM_INTR_INPUTS
 
 static inline void sys_irq_enable(unsigned int vector)
 {

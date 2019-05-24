@@ -2,11 +2,11 @@ sample:
   description: TBD
   name: TBD
 tests:
-  test:
+  sample.bluetooth.peripheral_hr:
     harness: bluetooth
     platform_whitelist: qemu_cortex_m3 qemu_x86
     tags: bluetooth
-  test_frdm_kw41z_shield:
+  sample.bluetooth.peripheral_hr.frdm_kw41z_shield:
     harness: bluetooth
     platform_whitelist: mimxrt1020_evk mimxrt1050_evk mimxrt1060_evk frdm_k64f
     tags: bluetooth

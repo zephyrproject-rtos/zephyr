@@ -10,15 +10,49 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(mpxxdtyy);
 
+#define CHANNEL_MASK	0x55
+
+static u8_t ch_demux[128] = {
+  0x00, 0x01, 0x00, 0x01, 0x02, 0x03, 0x02, 0x03,
+  0x00, 0x01, 0x00, 0x01, 0x02, 0x03, 0x02, 0x03,
+  0x04, 0x05, 0x04, 0x05, 0x06, 0x07, 0x06, 0x07,
+  0x04, 0x05, 0x04, 0x05, 0x06, 0x07, 0x06, 0x07,
+  0x00, 0x01, 0x00, 0x01, 0x02, 0x03, 0x02, 0x03,
+  0x00, 0x01, 0x00, 0x01, 0x02, 0x03, 0x02, 0x03,
+  0x04, 0x05, 0x04, 0x05, 0x06, 0x07, 0x06, 0x07,
+  0x04, 0x05, 0x04, 0x05, 0x06, 0x07, 0x06, 0x07,
+  0x08, 0x09, 0x08, 0x09, 0x0a, 0x0b, 0x0a, 0x0b,
+  0x08, 0x09, 0x08, 0x09, 0x0a, 0x0b, 0x0a, 0x0b,
+  0x0c, 0x0d, 0x0c, 0x0d, 0x0e, 0x0f, 0x0e, 0x0f,
+  0x0c, 0x0d, 0x0c, 0x0d, 0x0e, 0x0f, 0x0e, 0x0f,
+  0x08, 0x09, 0x08, 0x09, 0x0a, 0x0b, 0x0a, 0x0b,
+  0x08, 0x09, 0x08, 0x09, 0x0a, 0x0b, 0x0a, 0x0b,
+  0x0c, 0x0d, 0x0c, 0x0d, 0x0e, 0x0f, 0x0e, 0x0f,
+  0x0c, 0x0d, 0x0c, 0x0d, 0x0e, 0x0f, 0x0e, 0x0f
+};
+
+static u8_t left_channel(u8_t a, u8_t b)
+{
+	return ch_demux[a & CHANNEL_MASK] | (ch_demux[b & CHANNEL_MASK] << 4);
+}
+
+static u8_t right_channel(u8_t a, u8_t b)
+{
+	a >>= 1;
+	b >>= 1;
+	return ch_demux[a & CHANNEL_MASK] | (ch_demux[b & CHANNEL_MASK] << 4);
+}
+
 u16_t sw_filter_lib_init(struct device *dev, struct dmic_cfg *cfg)
 {
 	struct mpxxdtyy_data *const data = DEV_DATA(dev);
-	TPDMFilter_InitStruct *pdm_filter = &data->pdm_filter;
+	TPDMFilter_InitStruct *pdm_filter = &data->pdm_filter[0];
 	u16_t factor;
 	u32_t audio_freq = cfg->streams->pcm_rate;
+	int i;
 
 	/* calculate oversampling factor based on pdm clock */
-	for (factor = 64; factor <= 128; factor += 64) {
+	for (factor = 64U; factor <= 128U; factor += 64U) {
 		u32_t pdm_bit_clk = (audio_freq * factor *
 				     cfg->channel.req_num_chan);
 
@@ -28,20 +62,22 @@ u16_t sw_filter_lib_init(struct device *dev, struct dmic_cfg *cfg)
 		}
 	}
 
-	if (factor != 64 && factor != 128) {
+	if (factor != 64U && factor != 128U) {
 		return 0;
 	}
 
-	/* init the filter lib */
-	pdm_filter->LP_HZ = audio_freq / 2;
-	pdm_filter->HP_HZ = 10;
-	pdm_filter->Fs = audio_freq;
-	pdm_filter->Out_MicChannels = 1;
-	pdm_filter->In_MicChannels = 1;
-	pdm_filter->Decimation = factor;
-	pdm_filter->MaxVolume = 64;
+	for (i = 0; i < cfg->channel.req_num_chan; i++) {
+		/* init the filter lib */
+		pdm_filter[i].LP_HZ = audio_freq / 2U;
+		pdm_filter[i].HP_HZ = 10;
+		pdm_filter[i].Fs = audio_freq;
+		pdm_filter[i].Out_MicChannels = cfg->channel.req_num_chan;
+		pdm_filter[i].In_MicChannels = cfg->channel.req_num_chan;
+		pdm_filter[i].Decimation = factor;
+		pdm_filter[i].MaxVolume = 64;
 
-	Open_PDM_Filter_Init(pdm_filter);
+		Open_PDM_Filter_Init(&data->pdm_filter[i]);
+	}
 
 	return factor;
 }
@@ -51,23 +87,49 @@ int sw_filter_lib_run(TPDMFilter_InitStruct *pdm_filter,
 		      size_t pdm_size, size_t pcm_size)
 {
 	int i;
+	u8_t a, b;
 
 	if (pdm_block == NULL || pcm_block == NULL || pdm_filter == NULL) {
 		return -EINVAL;
 	}
 
 	for (i = 0; i < pdm_size/2; i++) {
-		((u16_t *)pdm_block)[i] = HTONS(((u16_t *)pdm_block)[i]);
+		switch (pdm_filter[0].In_MicChannels) {
+		case 1: /* MONO */
+			((u16_t *)pdm_block)[i] = HTONS(((u16_t *)pdm_block)[i]);
+			break;
+
+		case 2: /* STEREO */
+			if (pdm_filter[0].In_MicChannels > 1) {
+				a = ((u8_t *)pdm_block)[2*i];
+				b = ((u8_t *)pdm_block)[2*i + 1];
+
+				((u8_t *)pdm_block)[2*i] = left_channel(a, b);
+				((u8_t *)pdm_block)[2*i + 1] = right_channel(a, b);
+			}
+			break;
+
+		default:
+			return -EINVAL;
+		}
 	}
 
-	switch (pdm_filter->Decimation) {
+	switch (pdm_filter[0].Decimation) {
 	case 64:
-		Open_PDM_Filter_64((u8_t *) pdm_block, pcm_block,
-				    pcm_size, pdm_filter);
+		for (i = 0; i < pdm_filter[0].In_MicChannels; i++) {
+			Open_PDM_Filter_64(&((u8_t *) pdm_block)[i],
+					   &((u16_t *) pcm_block)[i],
+					   pdm_filter->MaxVolume,
+					   &pdm_filter[i]);
+		}
 		break;
 	case 128:
-		Open_PDM_Filter_128((u8_t *) pdm_block, pcm_block,
-				    pcm_size, pdm_filter);
+		for (i = 0; i < pdm_filter[0].In_MicChannels; i++) {
+			Open_PDM_Filter_128(&((u8_t *) pdm_block)[i],
+					    &((u16_t *) pcm_block)[i],
+					    pdm_filter->MaxVolume,
+					    &pdm_filter[i]);
+		}
 		break;
 	default:
 		return -EINVAL;

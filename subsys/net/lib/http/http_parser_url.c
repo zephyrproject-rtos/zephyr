@@ -386,7 +386,7 @@ int http_parse_host(const char *buf, struct http_parser_url *u,
 	buflen = u->field_data[UF_HOST].off + u->field_data[UF_HOST].len;
 	assert(u->field_set & (1 << UF_HOST));
 
-	u->field_data[UF_HOST].len = 0;
+	u->field_data[UF_HOST].len = 0U;
 
 	s = found_at ? s_http_userinfo_start : s_http_host_start;
 
@@ -420,7 +420,7 @@ int http_parse_host(const char *buf, struct http_parser_url *u,
 		case s_http_host_port:
 			if (s != s_http_host_port) {
 				u->field_data[UF_PORT].off = p - buf;
-				u->field_data[UF_PORT].len = 0;
+				u->field_data[UF_PORT].len = 0U;
 				u->field_set |= (1 << UF_PORT);
 			}
 			u->field_data[UF_PORT].len++;
@@ -429,7 +429,7 @@ int http_parse_host(const char *buf, struct http_parser_url *u,
 		case s_http_userinfo:
 			if (s != s_http_userinfo) {
 				u->field_data[UF_USERINFO].off = p - buf;
-				u->field_data[UF_USERINFO].len = 0;
+				u->field_data[UF_USERINFO].len = 0U;
 				u->field_set |= (1 << UF_USERINFO);
 			}
 			u->field_data[UF_USERINFO].len++;
@@ -475,7 +475,7 @@ http_parser_parse_url(const char *buf, size_t buflen, int is_connect,
 	const char *p;
 	enum state s;
 
-	u->port = u->field_set = 0;
+	u->port = u->field_set = 0U;
 	s = is_connect ? s_req_server_start : s_req_spaces_before_url;
 	old_uf = UF_MAX;
 
@@ -531,7 +531,7 @@ http_parser_parse_url(const char *buf, size_t buflen, int is_connect,
 		}
 
 		u->field_data[uf].off = p - buf;
-		u->field_data[uf].len = 1;
+		u->field_data[uf].len = 1U;
 
 		u->field_set |= (1 << uf);
 		old_uf = uf;
@@ -540,7 +540,7 @@ http_parser_parse_url(const char *buf, size_t buflen, int is_connect,
 	/* host must be present if there is a schema */
 	/* parsing http:///toto will fail */
 	if ((u->field_set & (1 << UF_SCHEMA)) &&
-			(u->field_set & (1 << UF_HOST)) == 0) {
+			(u->field_set & (1 << UF_HOST)) == 0U) {
 		return 1;
 	}
 

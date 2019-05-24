@@ -19,7 +19,7 @@
 
 #define CONFIG_MP_NUM_CPUS 2
 
-#define CONFIG_XUK_64_BIT_ABI 1
+#define XUK_64_BIT_ABI 1
 
 #endif /* CONFIG_X86_64 */
 #endif /* _XUK_CONFIG_H */

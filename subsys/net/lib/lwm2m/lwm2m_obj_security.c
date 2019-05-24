@@ -98,8 +98,8 @@ static struct lwm2m_engine_obj_inst *security_create(u16_t obj_inst_id)
 	security_uri[index][0] = '\0';
 	client_identity[index][0] = '\0';
 	bootstrap_flag[index] = 0;
-	security_mode[index] = 0;
-	short_server_id[index] = 0;
+	security_mode[index] = 0U;
+	short_server_id[index] = 0U;
 
 	/* initialize instance resource data */
 	INIT_OBJ_RES_DATA(res[index], i, SECURITY_SERVER_URI_ID,

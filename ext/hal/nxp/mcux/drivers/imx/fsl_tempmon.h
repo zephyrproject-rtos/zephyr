@@ -38,9 +38,9 @@ typedef struct _tempmon_config
 /*! @brief TEMPMON alarm mode. */
 typedef enum _tempmon_alarm_mode
 {
-    kTEMPMON_HighAlarmMode = 0U,  /*!< The high alarm temperature interrupt mode.*/
+    kTEMPMON_HighAlarmMode  = 0U, /*!< The high alarm temperature interrupt mode.*/
     kTEMPMON_PanicAlarmMode = 1U, /*!< The panic alarm temperature interrupt mode.*/
-    kTEMPMON_LowAlarmMode = 2U,   /*!< The low alarm temperature interrupt mode.*/
+    kTEMPMON_LowAlarmMode   = 2U, /*!< The low alarm temperature interrupt mode.*/
 } tempmon_alarm_mode;
 
 /*******************************************************************************

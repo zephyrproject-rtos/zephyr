@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 cmake_minimum_required(VERSION 3.13.1)
 set(QEMU_EXTRA_FLAGS -s)
 
@@ -15,6 +17,8 @@ target_sources(app PRIVATE
 	       src/mesh/state_binding.c
 	       src/mesh/transition.c
 	       )
+
+target_sources_ifdef(CONFIG_MCUMGR app PRIVATE src/smp_svr.c)
 
 zephyr_include_directories(
 	src/

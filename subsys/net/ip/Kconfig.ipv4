@@ -43,13 +43,27 @@ config NET_ICMPV4_ACCEPT_BROADCAST
 	  If set, then respond to ICMPv4 echo-request that is sent to
 	  broadcast address.
 
+config NET_IPV4_ACCEPT_ZERO_BROADCAST
+	bool "Accept 0.0.0.0 broadcast destination address"
+	help
+	  If set, then accept UDP packets destined to non-standard
+	  0.0.0.0 broadcast address as described in RFC 1122 ch. 3.3.6
+
 config NET_DHCPV4
 	bool "Enable DHCPv4 client"
-	depends on NET_IPV4
+
+config NET_DHCPV4_INITIAL_DELAY_MAX
+	int "Maximum time out for initial discover request"
+	depends on NET_DHCPV4
+	default 10
+	range 2 10
+	help
+	  As per RFC2131 4.1.1, we wait a random period between
+	  1 and 10 seconds before sending the initial discover.
 
 config NET_IPV4_AUTO
 	bool "Enable IPv4 autoconfiguration [EXPERIMENTAL]"
-	depends on NET_IPV4 && NET_ARP
+	depends on NET_ARP
 	help
 	  Enables IPv4 auto IP address configuration (see RFC 3927)
 

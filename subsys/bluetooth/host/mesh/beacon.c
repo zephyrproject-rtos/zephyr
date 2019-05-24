@@ -283,7 +283,7 @@ static void secure_beacon_recv(struct net_buf_simple *buf)
 	data = buf->data;
 
 	flags = net_buf_simple_pull_u8(buf);
-	net_id = net_buf_simple_pull(buf, 8);
+	net_id = net_buf_simple_pull_mem(buf, 8);
 	iv_index = net_buf_simple_pull_be32(buf);
 	auth = buf->data;
 

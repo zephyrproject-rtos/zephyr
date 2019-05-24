@@ -10,7 +10,7 @@ This sample shows how to query (and display) network statistics from a user
 application.
 
 The source code for this sample application can be found at:
-:file:`samples/net/stats`.
+:zephyr_file:`samples/net/stats`.
 
 Requirements
 ************

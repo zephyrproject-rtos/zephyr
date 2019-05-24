@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2017, Texas Instruments Incorporated
+ * Copyright (c) 2015-2018, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -630,6 +630,23 @@ void PowerCC32XX_disableIORetention(unsigned long groupFlags);
 
 /*! OS-specific power policy function */
 void PowerCC32XX_sleepPolicy(void);
+
+/*!
+ *  @brief  Software reset of a resource
+ *
+ *  This function performs a software reset of a resource.
+ *
+ *  Resource identifiers are device specific, and defined in the
+ *  device-specific Power include file.  For example, the resources for
+ *  CC32XX are defined in PowerCC32XX.h.
+ *
+ *  @param  resourceId      resource id
+ *
+ *  @return Power_SOK on success,
+ *          Power_EINVALIDINPUT if the reseourceId is invalid.
+ *
+ */
+ int_fast16_t PowerCC32XX_reset(uint_fast16_t resourceId);
 
 /* \cond */
 #define Power_getPerformanceLevel(void)   0

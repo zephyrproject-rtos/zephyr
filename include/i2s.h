@@ -145,7 +145,7 @@ typedef u8_t i2s_fmt_t;
 /** Send MSB first */
 #define I2S_FMT_DATA_ORDER_MSB              (0 << 3)
 /** Send LSB first */
-#define I2S_FMT_DATA_ORDER_LSB              (1 << 3)
+#define I2S_FMT_DATA_ORDER_LSB              BIT(3)
 /** Invert bit ordering, send LSB first */
 #define I2S_FMT_DATA_ORDER_INV              I2S_FMT_DATA_ORDER_LSB
 
@@ -155,9 +155,9 @@ typedef u8_t i2s_fmt_t;
 #define I2S_FMT_CLK_FORMAT_MASK            (0x3 << I2S_FMT_CLK_FORMAT_SHIFT)
 
 /** Invert bit clock */
-#define I2S_FMT_BIT_CLK_INV                 (1 << 4)
+#define I2S_FMT_BIT_CLK_INV                 BIT(4)
 /** Invert frame clock */
-#define I2S_FMT_FRAME_CLK_INV               (1 << 5)
+#define I2S_FMT_FRAME_CLK_INV               BIT(5)
 
 /** NF represents "Normal Frame" whereas IF represents "Inverted Frame"
  *  NB represents "Normal Bit Clk" whereas IB represents "Inverted Bit clk"
@@ -172,22 +172,22 @@ typedef u8_t i2s_opt_t;
 /** Run bit clock continuously */
 #define I2S_OPT_BIT_CLK_CONT                (0 << 0)
 /** Run bit clock when sending data only */
-#define I2S_OPT_BIT_CLK_GATED               (1 << 0)
+#define I2S_OPT_BIT_CLK_GATED               BIT(0)
 /** I2S driver is bit clock master */
 #define I2S_OPT_BIT_CLK_MASTER              (0 << 1)
 /** I2S driver is bit clock slave */
-#define I2S_OPT_BIT_CLK_SLAVE               (1 << 1)
+#define I2S_OPT_BIT_CLK_SLAVE               BIT(1)
 /** I2S driver is frame clock master */
 #define I2S_OPT_FRAME_CLK_MASTER            (0 << 2)
 /** I2S driver is frame clock slave */
-#define I2S_OPT_FRAME_CLK_SLAVE             (1 << 2)
+#define I2S_OPT_FRAME_CLK_SLAVE             BIT(2)
 
 /** @brief Loop back mode.
  *
  * In loop back mode RX input will be connected internally to TX output.
  * This is used primarily for testing.
  */
-#define I2S_OPT_LOOPBACK                    (1 << 7)
+#define I2S_OPT_LOOPBACK                    BIT(7)
 
 /** @brief Ping pong mode
  *
@@ -197,7 +197,7 @@ typedef u8_t i2s_opt_t;
  * So, in this mode, 2 sets of buffers fixed in size are used. Static Arrays
  * are used to achieve this and hence they are never freed.
  */
-#define I2S_OPT_PINGPONG                    (1 << 6)
+#define I2S_OPT_PINGPONG                    BIT(6)
 
 /**
  * @brief I2C Direction
@@ -349,7 +349,7 @@ struct i2s_driver_api {
 __syscall int i2s_configure(struct device *dev, enum i2s_dir dir,
 			    struct i2s_config *cfg);
 
-static inline int _impl_i2s_configure(struct device *dev, enum i2s_dir dir,
+static inline int z_impl_i2s_configure(struct device *dev, enum i2s_dir dir,
 				      struct i2s_config *cfg)
 {
 	const struct i2s_driver_api *api = dev->driver_api;
@@ -508,7 +508,7 @@ __syscall int i2s_buf_write(struct device *dev, void *buf, size_t size);
 __syscall int i2s_trigger(struct device *dev, enum i2s_dir dir,
 			  enum i2s_trigger_cmd cmd);
 
-static inline int _impl_i2s_trigger(struct device *dev, enum i2s_dir dir,
+static inline int z_impl_i2s_trigger(struct device *dev, enum i2s_dir dir,
 				    enum i2s_trigger_cmd cmd)
 {
 	const struct i2s_driver_api *api = dev->driver_api;

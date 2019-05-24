@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 
 config BOARD_QUARK_SE_C1000_DEVBOARD
 	bool "Quark SE C1000 Devboard"

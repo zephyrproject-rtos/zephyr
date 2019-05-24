@@ -12,7 +12,6 @@
 #define DT_SRAM_SIZE		DT_SIZE_M(2048)
 
 #include <apollo_lake.dtsi>
-#include <dt-bindings/i2c/i2c.h>
 
 / {
 	model = "up_squared";
@@ -27,136 +26,22 @@
 		zephyr,uart-pipe = &uart1;
 		zephyr,bt-mon-uart = &uart1;
 	};
+};
 
-	soc {
-		uart0: uart@91524000 {
-			compatible = "ns16550";
-			reg = <0x91524000 0x1000>;
-			label = "UART_0";
-			clock-frequency = <1843200>;
-			interrupts = <4 IRQ_TYPE_LEVEL_LOW 3>;
-			interrupt-parent = <&intc>;
+&uart0 {
+	status = "ok";
+};
 
-			status = "ok";
-			current-speed = <115200>;
-		};
+&uart1 {
+	status = "ok";
+};
 
-		uart1: uart@91522000 {
-			compatible = "ns16550";
-			reg = <0x91522000 0x1000>;
-			label = "UART_1";
-			clock-frequency = <1843200>;
-			interrupts = <5 IRQ_TYPE_LEVEL_LOW 3>;
-			interrupt-parent = <&intc>;
+&i2c0 {
+	status = "ok";
+};
 
-			status = "ok";
-			current-speed = <115200>;
-		};
-
-		i2c0: i2c@91534000 {
-			compatible = "snps,designware-i2c";
-			clock-frequency = <I2C_BITRATE_STANDARD>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			reg = <0x91534000 0x1000>;
-			interrupts = <27 IRQ_TYPE_LEVEL_LOW 3>;
-			interrupt-parent = <&intc>;
-			label = "I2C_0";
-
-			status = "ok";
-		};
-
-		i2c1: i2c@91532000 {
-			compatible = "snps,designware-i2c";
-			clock-frequency = <I2C_BITRATE_STANDARD>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			reg = <0x91532000 0x1000>;
-			interrupts = <28 IRQ_TYPE_LEVEL_LOW 3>;
-			interrupt-parent = <&intc>;
-			label = "I2C_1";
-
-			status = "ok";
-		};
-
-		i2c2: i2c@91530000 {
-			compatible = "snps,designware-i2c";
-			clock-frequency = <I2C_BITRATE_STANDARD>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			reg = <0x91530000 0x1000>;
-			interrupts = <29 IRQ_TYPE_LEVEL_LOW 3>;
-			interrupt-parent = <&intc>;
-			label = "I2C_2";
-
-			status = "ok";
-		};
-
-		i2c3: i2c@9152e000 {
-			compatible = "snps,designware-i2c";
-			clock-frequency = <I2C_BITRATE_STANDARD>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			reg = <0x9152e000 0x1000>;
-			interrupts = <30 IRQ_TYPE_LEVEL_LOW 3>;
-			interrupt-parent = <&intc>;
-			label = "I2C_3";
-
-			status = "ok";
-		};
-
-		i2c4: i2c@9152c000 {
-			compatible = "snps,designware-i2c";
-			clock-frequency = <I2C_BITRATE_STANDARD>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			reg = <0x9152c000 0x1000>;
-			interrupts = <31 IRQ_TYPE_LEVEL_LOW 3>;
-			interrupt-parent = <&intc>;
-			label = "I2C_4";
-
-			status = "ok";
-		};
-
-		i2c5: i2c@9152a000 {
-			compatible = "snps,designware-i2c";
-			clock-frequency = <I2C_BITRATE_STANDARD>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			reg = <0x9152a000 0x1000>;
-			interrupts = <32 IRQ_TYPE_LEVEL_LOW 3>;
-			interrupt-parent = <&intc>;
-			label = "I2C_5";
-
-			status = "ok";
-		};
-
-		i2c6: i2c@91528000 {
-			compatible = "snps,designware-i2c";
-			clock-frequency = <I2C_BITRATE_STANDARD>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			reg = <0x91528000 0x1000>;
-			interrupts = <33 IRQ_TYPE_LEVEL_LOW 3>;
-			interrupt-parent = <&intc>;
-			label = "I2C_6";
-
-			status = "ok";
-		};
-
-		i2c7: i2c@91526000 {
-			compatible = "snps,designware-i2c";
-			clock-frequency = <I2C_BITRATE_STANDARD>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			reg = <0x91526000 0x1000>;
-			interrupts = <34 IRQ_TYPE_LEVEL_LOW 3>;
-			interrupt-parent = <&intc>;
-			label = "I2C_7";
-
-			status = "ok";
-		};
-	};
+&i2c1 {
+	status = "ok";
 };
 
 &gpio {

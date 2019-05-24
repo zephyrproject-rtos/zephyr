@@ -82,13 +82,11 @@ typedef struct
 /** @brief I2S driver buffers structure. */
 typedef struct
 {
-    uint32_t       * p_rx_buffer;
-    uint32_t const * p_tx_buffer;
+    uint32_t       * p_rx_buffer; ///< Pointer to the buffer for received data.
+    uint32_t const * p_tx_buffer; ///< Pointer to the buffer with data to be sent.
 } nrfx_i2s_buffers_t;
 
-/**
- * @brief I2S driver default configuration.
- */
+/** @brief I2S driver default configuration. */
 #define NRFX_I2S_DEFAULT_CONFIG                                   \
 {                                                                 \
     .sck_pin      = NRFX_I2S_CONFIG_SCK_PIN,                      \
@@ -108,28 +106,28 @@ typedef struct
 
 
 #define NRFX_I2S_STATUS_NEXT_BUFFERS_NEEDED  (1UL << 0)
-    /**< The application should provide buffers that are to be used in the next
-     *   part of the transfer. A call to @ref nrfx_i2s_next_buffers_set should
+    /**< The application must provide buffers that are to be used in the next
+     *   part of the transfer. A call to @ref nrfx_i2s_next_buffers_set must
      *   be done before the currently used buffers are completely processed
-     *   (i.e. the time remaining for supplying the next buffers depends on
+     *   (that is, the time remaining for supplying the next buffers depends on
      *   the used size of the buffers). */
 
 /**
  * @brief I2S driver data handler type.
  *
- * A data handling function of this type must be specified during initialization
+ * A data handling function of this type must be specified during the initialization
  * of the driver. The driver will call this function when it finishes using
  * buffers passed to it by the application, and when it needs to be provided
  * with buffers for the next part of the transfer.
  *
  * @note The @c p_released pointer passed to this function is temporary and
  *       will be invalid after the function returns, hence it cannot be stored
- *       and used later. If needed, the pointed content (i.e. buffers pointers)
- *       should be copied instead.
+ *       and used later. If needed, the pointed content (that is, buffers pointers)
+ *       must be copied instead.
  *
  * @param[in] p_released  Pointer to a structure with pointers to buffers
  *                        passed previously to the driver that will no longer
- *                        be access by it (they can be now safely released or
+ *                        be accessed by it (they can be now safely released or
  *                        used for another purpose, in particular for a next
  *                        part of the transfer).
  *                        This pointer will be NULL if the application did not
@@ -158,13 +156,13 @@ typedef void (* nrfx_i2s_data_handler_t)(nrfx_i2s_buffers_t const * p_released,
 /**
  * @brief Function for initializing the I2S driver.
  *
- * @param[in] p_config  Pointer to the structure with initial configuration.
- * @param[in] handler   Data handler provided by the user. Must not be NULL.
+ * @param[in] p_config Pointer to the structure with the initial configuration.
+ * @param[in] handler  Data handler provided by the user. Must not be NULL.
  *
- * @retval NRFX_SUCCESS              If initialization was successful.
- * @retval NRFX_ERROR_INVALID_STATE  If the driver was already initialized.
- * @retval NRFX_ERROR_INVALID_PARAM  If the requested combination of configuration
- *                                   options is not allowed by the I2S peripheral.
+ * @retval NRFX_SUCCESS             Initialization was successful.
+ * @retval NRFX_ERROR_INVALID_STATE The driver was already initialized.
+ * @retval NRFX_ERROR_INVALID_PARAM The requested combination of configuration
+ *                                  options is not allowed by the I2S peripheral.
  */
 nrfx_err_t nrfx_i2s_init(nrfx_i2s_config_t const * p_config,
                          nrfx_i2s_data_handler_t   handler);
@@ -179,7 +177,7 @@ void nrfx_i2s_uninit(void);
  * only, TX (transmission) only, or in both directions simultaneously.
  * The mode is selected by specifying a proper buffer for a given direction
  * in the call to this function or by passing NULL instead if this direction
- * should be disabled.
+ * is to be disabled.
  *
  * The length of the buffer (which is a common value for RX and TX if both
  * directions are enabled) is specified in 32-bit words. One 32-bit memory
@@ -192,20 +190,20 @@ void nrfx_i2s_uninit(void);
  *       to be placed in the Data RAM region. If this condition is not met,
  *       this function will fail with the error code NRFX_ERROR_INVALID_ADDR.
  *
- * @param[in] p_initial_buffers  Pointer to a structure specifying the buffers
- *                               to be used in the initial part of the transfer
- *                               (buffers for all consecutive parts are provided
- *                               through the data handler).
- * @param[in] buffer_size        Size of the buffers (in 32-bit words).
- *                               Must not be 0.
- * @param[in] flags              Transfer options (0 for default settings).
- *                               Currently, no additional flags are available.
+ * @param[in] p_initial_buffers Pointer to a structure specifying the buffers
+ *                              to be used in the initial part of the transfer
+ *                              (buffers for all consecutive parts are provided
+ *                              through the data handler).
+ * @param[in] buffer_size       Size of the buffers (in 32-bit words).
+ *                              Must not be 0.
+ * @param[in] flags             Transfer options (0 for default settings).
+ *                              Currently, no additional flags are available.
  *
- * @retval NRFX_SUCCESS              If the operation was successful.
- * @retval NRFX_ERROR_INVALID_STATE  If a transfer was already started or
- *                                   the driver has not been initialized.
- * @retval NRFX_ERROR_INVALID_ADDR   If the provided buffers are not placed
- *                                   in the Data RAM region.
+ * @retval NRFX_SUCCESS             The operation was successful.
+ * @retval NRFX_ERROR_INVALID_STATE Transfer was already started or
+ *                                  the driver has not been initialized.
+ * @retval NRFX_ERROR_INVALID_ADDR  The provided buffers are not placed
+ *                                  in the Data RAM region.
  */
 nrfx_err_t nrfx_i2s_start(nrfx_i2s_buffers_t const * p_initial_buffers,
                           uint16_t                   buffer_size,
@@ -215,7 +213,7 @@ nrfx_err_t nrfx_i2s_start(nrfx_i2s_buffers_t const * p_initial_buffers,
  * @brief Function for supplying the buffers to be used in the next part of
  *        the transfer.
  *
- * The application should call this function when the data handler receives
+ * The application must call this function when the data handler receives
  * @ref NRFX_I2S_STATUS_NEXT_BUFFERS_NEEDED in the @c status parameter.
  * The call can be done immediately from the data handler function or later,
  * but it has to be done before the I2S peripheral finishes processing the
@@ -223,9 +221,9 @@ nrfx_err_t nrfx_i2s_start(nrfx_i2s_buffers_t const * p_initial_buffers,
  *
  * @sa nrfx_i2s_data_handler_t
  *
- * @retval NRFX_SUCCESS              If the operation was successful.
- * @retval NRFX_ERROR_INVALID_STATE  If the buffers were already supplied or
- *                                   the peripheral is currently being stopped.
+ * @retval NRFX_SUCCESS             If the operation was successful.
+ * @retval NRFX_ERROR_INVALID_STATE If the buffers were already supplied or
+ *                                  the peripheral is currently being stopped.
  */
 nrfx_err_t nrfx_i2s_next_buffers_set(nrfx_i2s_buffers_t const * p_buffers);
 
@@ -243,3 +241,4 @@ void nrfx_i2s_irq_handler(void);
 #endif
 
 #endif // NRFX_I2S_H__
+

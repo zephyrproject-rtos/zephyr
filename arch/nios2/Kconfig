@@ -11,10 +11,6 @@ config ARCH
 	string
 	default "nios2"
 
-config ARCH_DEFCONFIG
-	string
-	default "arch/nios2/defconfig"
-
 menu "Nios II Gen 2 Processor Options"
 
 config CPU_NIOS2_GEN2
@@ -89,7 +85,7 @@ config GP_GLOBAL
 	help
 	  Use global pointer relative offsets for small globals declared
 	  anywhere in the executable. Note that if any small globals that are put
-	  in alternate sections (such as _k_task_list_ptr) they must be declared
+	  in alternate sections they must be declared
 	  in headers with proper __attribute__((section)) or the linker will
 	  error out.
 

@@ -19,7 +19,7 @@
 /*
  * This is the full pinmap that we have available on the board for configuration
  * including the ball position and the various modes that can be set.  In the
- * _pinmux_defaults we do not spend any time setting values that are using mode
+ * pinmux_defaults we do not spend any time setting values that are using mode
  * A as the hardware brings up all devices by default in mode A.
  */
 
@@ -100,7 +100,7 @@
  * the bit description from above
  */
 #define PINMUX_MAX_REGISTERS	5
-static void _pinmux_defaults(u32_t base)
+static void pinmux_defaults(u32_t base)
 {
 	u32_t mux_config[PINMUX_MAX_REGISTERS] = { 0, 0, 0, 0, 0};
 	int i = 0;
@@ -144,7 +144,7 @@ static int pinmux_initialize(struct device *port)
 {
 	ARG_UNUSED(port);
 
-	_pinmux_defaults(PINMUX_BASE_ADDR);
+	pinmux_defaults(PINMUX_BASE_ADDR);
 
 	return 0;
 }

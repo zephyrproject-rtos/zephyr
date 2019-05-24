@@ -7,4 +7,3 @@
 config BOARD_OLIMEX_STM32_P405
 	bool "OLIMEX-STM32-P405 Development Board"
 	depends on SOC_STM32F405XG
-

@@ -37,6 +37,8 @@ for more details.
 .. _BabbleSim:
    https://BabbleSim.github.io
 
+.. _nrf52bsim_build_and_run:
+
 Building and running
 **********************
 
@@ -142,6 +144,8 @@ of the simulation in microseconds.
 BabbleSim devices and Phy support many command line switches.
 Run them with ``-help`` for more information.
 
+You can find more information about how to run BabbleSim simulations in
+`this BabbleSim example <https://babblesim.github.io/example_2g4.html>`_.
 
 Debugging
 **********

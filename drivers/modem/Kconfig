@@ -46,8 +46,7 @@ config MODEM_SHELL
 	  Activate shell module that provides modem utilities like
 	  sending a command to the modem UART.
 
+source "drivers/modem/Kconfig.ublox-sara-r4"
 source "drivers/modem/Kconfig.wncm14a2a"
-
-config MODEM_WNCM14A2A_RX_STACK_SIZE
 
 endif # MODEM

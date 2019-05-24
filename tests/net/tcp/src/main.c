@@ -36,6 +36,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_TCP_LOG_LEVEL);
 
 #include "tcp_internal.h"
 #include "net_private.h"
+#include "ipv6.h"
 #include "ipv4.h"
 
 static bool test_failed;
@@ -94,7 +95,7 @@ static void net_tcp_iface_init(struct net_if *iface)
 	static u8_t mac_addr_1[6];
 	static u8_t mac_addr_2[6];
 
-	if (mac_addr_1[0] == 0) {
+	if (mac_addr_1[0] == 0U) {
 		/* 00-00-5E-00-53-xx Documentation RFC 7042 */
 		mac_addr_1[0] = 0x00;
 		mac_addr_1[1] = 0x00;
@@ -107,7 +108,7 @@ static void net_tcp_iface_init(struct net_if *iface)
 				     NET_LINK_ETHERNET);
 	}
 
-	if (mac_addr_2[0] == 0) {
+	if (mac_addr_2[0] == 0U) {
 		mac_addr_2[0] = 0x00;
 		mac_addr_2[1] = 0x00;
 		mac_addr_2[2] = 0x5E;
@@ -144,7 +145,7 @@ struct net_tcp_hdr *net_tcp_get_hdr(struct net_pkt *pkt,
 		goto out;
 	}
 
-	tcp_hdr = (struct net_tcp_hdr *)net_pkt_get_data_new(pkt, &tcp_access);
+	tcp_hdr = (struct net_tcp_hdr *)net_pkt_get_data(pkt, &tcp_access);
 
 out:
 	net_pkt_cursor_restore(pkt, &backup);
@@ -173,7 +174,7 @@ struct net_tcp_hdr *net_tcp_set_hdr(struct net_pkt *pkt,
 		goto out;
 	}
 
-	tcp_hdr = (struct net_tcp_hdr *)net_pkt_get_data_new(pkt, &tcp_access);
+	tcp_hdr = (struct net_tcp_hdr *)net_pkt_get_data(pkt, &tcp_access);
 	if (!tcp_hdr) {
 		goto out;
 	}
@@ -238,7 +239,7 @@ static int send_status = -EINVAL;
 
 static int tester_send(struct device *dev, struct net_pkt *pkt)
 {
-	if (!pkt->frags) {
+	if (!pkt->buffer) {
 		DBG("No data to send!\n");
 		return -ENODATA;
 	}
@@ -255,7 +256,7 @@ static int tester_send(struct device *dev, struct net_pkt *pkt)
 
 static int tester_send_peer(struct device *dev, struct net_pkt *pkt)
 {
-	if (!pkt->frags) {
+	if (!pkt->buffer) {
 		DBG("No data to send!\n");
 		return -ENODATA;
 	}
@@ -335,68 +336,64 @@ static enum net_verdict test_fail(struct net_conn *conn,
 	return NET_DROP;
 }
 
-static void setup_ipv6_tcp(struct net_pkt *pkt,
-			   struct in6_addr *remote_addr,
-			   struct in6_addr *local_addr,
-			   u16_t remote_port,
-			   u16_t local_port)
+static u8_t data[] = { 'f', 'o', 'o', 'b', 'a', 'r' };
+
+static struct net_pkt *setup_ipv6_tcp(struct net_if *iface,
+				      struct in6_addr *remote_addr,
+				      struct in6_addr *local_addr,
+				      u16_t remote_port,
+				      u16_t local_port)
 {
-	struct net_ipv6_hdr ipv6;
-	struct net_tcp_hdr tcp_hdr = { 0 };
-	u8_t data[] = { 'f', 'o', 'o', 'b', 'a', 'r' };
+	struct net_pkt *pkt;
+	struct net_tcp_hdr tcp_hdr;
 
-	ipv6.vtc = 0x60;
-	ipv6.tcflow = 0;
-	ipv6.flow = 0;
-	ipv6.len = htons(NET_TCPH_LEN + sizeof(data));
-	ipv6.nexthdr = IPPROTO_TCP;
-	ipv6.hop_limit = 255;
+	pkt = net_pkt_alloc_with_buffer(iface, sizeof(data),
+					AF_INET6, IPPROTO_TCP, K_FOREVER);
+	if (!pkt) {
+		return NULL;
+	}
 
-	net_ipaddr_copy(&ipv6.src, remote_addr);
-	net_ipaddr_copy(&ipv6.dst, local_addr);
-
-	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
-	net_pkt_set_ipv6_ext_len(pkt, 0);
+	net_ipv6_create(pkt, remote_addr, local_addr);
 
 	tcp_hdr.src_port = htons(remote_port);
 	tcp_hdr.dst_port = htons(local_port);
 
-	net_pkt_append_all(pkt, sizeof(ipv6), (u8_t *)&ipv6, K_FOREVER);
-	net_pkt_append_all(pkt, sizeof(tcp_hdr), (u8_t *)&tcp_hdr, K_FOREVER);
-	net_pkt_append_all(pkt, sizeof(data), data, K_FOREVER);
+	net_pkt_write(pkt, &tcp_hdr, sizeof(struct net_tcp_hdr));
+	net_pkt_write(pkt, data, sizeof(data));
+
+	net_pkt_cursor_init(pkt);
+	net_ipv6_finalize(pkt, IPPROTO_TCP);
+
+	return pkt;
 }
 
-static void setup_ipv4_tcp(struct net_pkt *pkt,
-			   struct in_addr *remote_addr,
-			   struct in_addr *local_addr,
-			   u16_t remote_port,
-			   u16_t local_port)
+static struct net_pkt *setup_ipv4_tcp(struct net_if *iface,
+				      struct in_addr *remote_addr,
+				      struct in_addr *local_addr,
+				      u16_t remote_port,
+				      u16_t local_port)
 {
-	struct net_ipv4_hdr ipv4 = {};
-	struct net_tcp_hdr tcp_hdr = { 0 };
-	u8_t data[] = { 'f', 'o', 'o', 'b', 'a', 'r' };
+	struct net_pkt *pkt;
+	struct net_tcp_hdr tcp_hdr;
 
-	ipv4.vhl = 0x45;
-	ipv4.tos = 0;
-	ipv4.len = htons(NET_TCPH_LEN + sizeof(data) +
-				sizeof(struct net_ipv4_hdr));
+	pkt = net_pkt_alloc_with_buffer(iface, sizeof(data),
+					AF_INET, IPPROTO_TCP, K_FOREVER);
+	if (!pkt) {
+		return NULL;
+	}
 
-	ipv4.proto = IPPROTO_TCP;
-
-	net_ipaddr_copy(&ipv4.src, remote_addr);
-	net_ipaddr_copy(&ipv4.dst, local_addr);
-
-	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv4_hdr));
+	net_ipv4_create(pkt, remote_addr, local_addr);
 
 	tcp_hdr.src_port = htons(remote_port);
 	tcp_hdr.dst_port = htons(local_port);
 
-	net_pkt_append_all(pkt, sizeof(ipv4), (u8_t *)&ipv4, K_FOREVER);
-	net_pkt_append_all(pkt, sizeof(tcp_hdr), (u8_t *)&tcp_hdr, K_FOREVER);
-	net_pkt_append_all(pkt, sizeof(data), data, K_FOREVER);
+	net_pkt_write(pkt, &tcp_hdr, sizeof(struct net_tcp_hdr));
+	net_pkt_write(pkt, data, sizeof(data));
 
 	net_pkt_cursor_init(pkt);
 	net_ipv4_finalize(pkt, IPPROTO_TCP);
+
+	return pkt;
 }
 
 u8_t ipv6_hop_by_hop_ext_hdr[] = {
@@ -426,67 +423,42 @@ u8_t ipv6_hop_by_hop_ext_hdr[] = {
 0x00,
 };
 
-static void setup_ipv6_tcp_long(struct net_pkt *pkt,
-				struct in6_addr *remote_addr,
-				struct in6_addr *local_addr,
-				u16_t remote_port,
-				u16_t local_port)
+static struct net_pkt *setup_ipv6_tcp_long(struct net_if *iface,
+					   struct in6_addr *remote_addr,
+					   struct in6_addr *local_addr,
+					   u16_t remote_port,
+					   u16_t local_port)
 {
-	struct net_tcp_hdr hdr, *tcp_hdr;
-	struct net_ipv6_hdr ipv6;
-	u8_t data[] = { 'f', 'o', 'o', 'b', 'a', 'r' };
+	struct net_pkt *pkt;
+	struct net_tcp_hdr tcp_hdr;
 
-	ipv6.vtc = 0x60;
-	ipv6.tcflow = 0;
-	ipv6.flow = 0;
-	ipv6.len = htons(NET_TCPH_LEN + sizeof(data) +
-				sizeof(ipv6_hop_by_hop_ext_hdr));
+	pkt = net_pkt_alloc_with_buffer(iface, sizeof(ipv6_hop_by_hop_ext_hdr) +
+					sizeof(data),
+					AF_INET6, IPPROTO_TCP, K_FOREVER);
+	if (!pkt) {
+		return NULL;
+	}
 
-	ipv6.nexthdr = 0; /* Hop-by-hop option */
-	ipv6.hop_limit = 255;
+	net_pkt_set_ipv6_hop_limit(pkt, 255);
+	net_ipv6_create(pkt, remote_addr, local_addr);
 
-	net_ipaddr_copy(&ipv6.src, remote_addr);
-	net_ipaddr_copy(&ipv6.dst, local_addr);
-
-	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
-
-	net_pkt_append_all(pkt, sizeof(ipv6), (u8_t *)&ipv6, K_FOREVER);
-	net_pkt_append_all(pkt, sizeof(ipv6_hop_by_hop_ext_hdr),
-			   ipv6_hop_by_hop_ext_hdr, K_FOREVER);
-	net_pkt_append_all(pkt, sizeof(hdr), (u8_t *)&hdr, K_FOREVER);
-	net_pkt_append_all(pkt, sizeof(data), data, K_FOREVER);
+	net_pkt_write(pkt, ipv6_hop_by_hop_ext_hdr,
+		      sizeof(ipv6_hop_by_hop_ext_hdr));
 
 	net_pkt_set_ipv6_ext_len(pkt, sizeof(ipv6_hop_by_hop_ext_hdr));
 
-	tcp_hdr = net_tcp_get_hdr(pkt, &hdr);
-	if (tcp_hdr != &hdr) {
-		TC_ERROR("Invalid TCP header pointer\n");
-		return;
-	}
+	tcp_hdr.src_port = htons(remote_port);
+	tcp_hdr.dst_port = htons(local_port);
 
-	tcp_hdr->src_port = htons(remote_port);
-	tcp_hdr->dst_port = htons(local_port);
+	net_pkt_write(pkt, &tcp_hdr, sizeof(struct net_tcp_hdr));
+	net_pkt_write(pkt, data, sizeof(data));
 
-	net_tcp_set_hdr(pkt, &hdr);
+	net_pkt_set_ipv6_next_hdr(pkt, 0); /* hop-by-hop option */
 
-	tcp_hdr = net_tcp_get_hdr(pkt, &hdr);
-	if (tcp_hdr != &hdr) {
-		TC_ERROR("Invalid TCP header pointer %p\n", tcp_hdr);
-		test_failed = true;
-		return;
-	}
+	net_pkt_cursor_init(pkt);
+	net_ipv6_finalize(pkt, IPPROTO_TCP);
 
-	if (tcp_hdr->src_port != htons(remote_port)) {
-		TC_ERROR("Invalid remote port, should have been %d was %d\n",
-			 remote_port, ntohs(tcp_hdr->src_port));
-		test_failed = true;
-	}
-
-	if (tcp_hdr->dst_port != htons(local_port)) {
-		TC_ERROR("Invalid local port, should have been %d was %d\n",
-			 local_port, ntohs(tcp_hdr->dst_port));
-		test_failed = true;
-	}
+	return pkt;
 }
 
 #define TIMEOUT K_MSEC(200)
@@ -500,18 +472,9 @@ static bool send_ipv6_tcp_msg(struct net_if *iface,
 			      bool expect_failure)
 {
 	struct net_pkt *pkt;
-	struct net_buf *frag;
 	int ret;
 
-	pkt = net_pkt_get_reserve_tx(K_FOREVER);
-
-	frag = net_pkt_get_frag(pkt, K_FOREVER);
-
-	net_pkt_frag_add(pkt, frag);
-
-	net_pkt_set_iface(pkt, iface);
-
-	setup_ipv6_tcp(pkt, src, dst, src_port, dst_port);
+	pkt = setup_ipv6_tcp(iface, src, dst, src_port, dst_port);
 
 	ret = net_recv_data(iface, pkt);
 	if (ret < 0) {
@@ -549,18 +512,9 @@ static bool send_ipv4_tcp_msg(struct net_if *iface,
 			      bool expect_failure)
 {
 	struct net_pkt *pkt;
-	struct net_buf *frag;
 	int ret;
 
-	pkt = net_pkt_get_reserve_tx(K_FOREVER);
-
-	frag = net_pkt_get_frag(pkt, K_FOREVER);
-
-	net_pkt_frag_add(pkt, frag);
-
-	net_pkt_set_iface(pkt, iface);
-
-	setup_ipv4_tcp(pkt, src, dst, src_port, dst_port);
+	pkt = setup_ipv4_tcp(iface, src, dst, src_port, dst_port);
 
 	ret = net_recv_data(iface, pkt);
 	if (ret < 0) {
@@ -598,18 +552,9 @@ static bool send_ipv6_tcp_long_msg(struct net_if *iface,
 				   bool expect_failure)
 {
 	struct net_pkt *pkt;
-	struct net_buf *frag;
 	int ret;
 
-	pkt = net_pkt_get_reserve_tx(K_FOREVER);
-
-	frag = net_pkt_get_frag(pkt, K_FOREVER);
-
-	net_pkt_frag_add(pkt, frag);
-
-	net_pkt_set_iface(pkt, iface);
-
-	setup_ipv6_tcp_long(pkt, src, dst, src_port, dst_port);
+	pkt = setup_ipv6_tcp_long(iface, src, dst, src_port, dst_port);
 
 	ret = net_recv_data(iface, pkt);
 	if (ret < 0) {
@@ -1555,7 +1500,7 @@ static bool test_tcp_seq_validity(void)
 	}
 
 	tcp->send_ack = sys_get_be32(tcp_hdr->seq) -
-		get_recv_wnd(tcp) / 2;
+		get_recv_wnd(tcp) / 2U;
 	if (!net_tcp_validate_seq(tcp, tcp_hdr)) {
 		DBG("1) Sequence validation failed (send_ack %u vs seq %u)\n",
 		    tcp->send_ack, sys_get_be32(tcp_hdr->seq));
@@ -1570,7 +1515,7 @@ static bool test_tcp_seq_validity(void)
 	}
 
 	tcp->send_ack = sys_get_be32(tcp_hdr->seq) +
-		2 * get_recv_wnd(tcp);
+		get_recv_wnd(tcp) * 2U;
 	if (net_tcp_validate_seq(tcp, tcp_hdr)) {
 		DBG("3) Sequence validation failed (send_ack %u vs seq %u)\n",
 		    tcp->send_ack, sys_get_be32(tcp_hdr->seq));
@@ -1578,7 +1523,7 @@ static bool test_tcp_seq_validity(void)
 	}
 
 	tcp->send_ack = sys_get_be32(tcp_hdr->seq) -
-		2 * get_recv_wnd(tcp);
+		get_recv_wnd(tcp) * 2U;
 	if (net_tcp_validate_seq(tcp, tcp_hdr)) {
 		DBG("4) Sequence validation failed (send_ack %u vs seq %u)\n",
 		    tcp->send_ack, sys_get_be32(tcp_hdr->seq));

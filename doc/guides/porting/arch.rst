@@ -143,7 +143,7 @@ parameter.
   and ARM architectures via the :option:`CONFIG_GEN_ISR_TABLES` implementation.
   You can find examples of the stubs by looking at :code:`_interrupt_enter()` in
   x86, :code:`_IntExit()` in ARM, :code:`_isr_wrapper()` in ARM, or the full
-  implementation description for ARC in :file:`arch/arc/core/isr_wrapper.S`.
+  implementation description for ARC in :zephyr_file:`arch/arc/core/isr_wrapper.S`.
 
 Each architecture also has to implement primitives for interrupt control:
 
@@ -163,7 +163,7 @@ we strongly suggest that handlers at least print some debug information. The
 information helps figuring out what went wrong when hitting an exception that
 is a fault, like divide-by-zero or invalid memory access, or an interrupt that
 is not expected (:dfn:`spurious interrupt`). See the ARM implementation in
-:file:`arch/arm/core/fault.c` for an example.
+:zephyr_file:`arch/arm/core/fault.c` for an example.
 
 Thread Context Switching
 ************************
@@ -300,9 +300,9 @@ mode if the thread triggered a fatal exception, but not if the thread
 gracefully exits its entry point function.
 
 This means implementing an architecture-specific version of
-:c:func:`k_thread_abort`, and setting the Kconfig option
+:cpp:func:`k_thread_abort`, and setting the Kconfig option
 :option:`CONFIG_ARCH_HAS_THREAD_ABORT` as needed for the architecture (e.g. see
-:file:`arch/arm//core/cortex_m/Kconfig`).
+:zephyr_file:`arch/arm//core/cortex_m/Kconfig`).
 
 Device Drivers
 **************
@@ -457,7 +457,7 @@ Toolchain and Linking
 
 Toolchain support has to be added to the build system.
 
-Some architecture-specific definitions are needed in :file:`include/toolchain/gcc.h`.
+Some architecture-specific definitions are needed in :zephyr_file:`include/toolchain/gcc.h`.
 See what exists in that file for currently supported architectures.
 
 Each architecture also needs its own linker script, even if most sections can
@@ -514,32 +514,32 @@ implemented, and the system must enable the :option:`CONFIG_ARCH_HAS_USERSPACE`
 option. Please see the documentation for each of these functions for more
 details:
 
-* :cpp:func:`_arch_buffer_validate()` to test whether the current thread has
+* :cpp:func:`z_arch_buffer_validate()` to test whether the current thread has
   access permissions to a particular memory region
 
-* :cpp:func:`_arch_user_mode_enter()` which will irreversibly drop a supervisor
+* :cpp:func:`z_arch_user_mode_enter()` which will irreversibly drop a supervisor
   thread to user mode privileges. The stack must be wiped.
 
-* :cpp:func:`_arch_syscall_oops()` which generates a kernel oops when system
+* :cpp:func:`z_arch_syscall_oops()` which generates a kernel oops when system
   call parameters can't be validated, in such a way that the oops appears to be
   generated from where the system call was invoked in the user thread
 
-* :cpp:func:`_arch_syscall_invoke0()` through
-  :cpp:func:`_arch_syscall_invoke6()` invoke a system call with the
+* :cpp:func:`z_arch_syscall_invoke0()` through
+  :cpp:func:`z_arch_syscall_invoke6()` invoke a system call with the
   appropriate number of arguments which must all be passed in during the
   privilege elevation via registers.
 
-* :cpp:func:`_arch_is_user_context()` return nonzero if the CPU is currently
+* :cpp:func:`z_arch_is_user_context()` return nonzero if the CPU is currently
   running in user mode
 
-* :cpp:func:`_arch_mem_domain_max_partitions_get()` which indicates the max
+* :cpp:func:`z_arch_mem_domain_max_partitions_get()` which indicates the max
   number of regions for a memory domain. MMU systems have an unlimited amount,
   MPU systems have constraints on this.
 
-* :cpp:func:`_arch_mem_domain_partition_remove()` Remove a partition from
+* :cpp:func:`z_arch_mem_domain_partition_remove()` Remove a partition from
   a memory domain if the currently executing thread was part of that domain.
 
-* :cpp:func:`_arch_mem_domain_destroy()` Reset the thread's memory domain
+* :cpp:func:`z_arch_mem_domain_destroy()` Reset the thread's memory domain
   configuration
 
 In addition to implementing these APIs, there are some other tasks as well:

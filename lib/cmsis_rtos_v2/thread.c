@@ -178,12 +178,12 @@ osThreadId_t osThreadNew(osThreadFunc_t threadfunc, void *arg,
 	k_poll_signal_init(&tid->poll_signal);
 	k_poll_event_init(&tid->poll_event, K_POLL_TYPE_SIGNAL,
 			  K_POLL_MODE_NOTIFY_ONLY, &tid->poll_signal);
-	tid->signal_results = 0;
+	tid->signal_results = 0U;
 
 	/* TODO: Do this somewhere only once */
-	if (one_time == 0) {
+	if (one_time == 0U) {
 		sys_dlist_init(&thread_list);
-		one_time = 1;
+		one_time = 1U;
 	}
 
 	sys_dlist_append(&thread_list, &tid->node);
@@ -363,7 +363,7 @@ uint32_t osThreadGetStackSpace(osThreadId_t thread_id)
 {
 	struct cv2_thread *tid = (struct cv2_thread *)thread_id;
 	u32_t size = tid->z_thread.stack_info.size;
-	u32_t unused = 0;
+	u32_t unused = 0U;
 
 	__ASSERT(tid, "");
 	__ASSERT(is_cmsis_rtos_v2_thread(tid), "");
@@ -543,11 +543,11 @@ osStatus_t osThreadTerminate(osThreadId_t thread_id)
 uint32_t osThreadGetCount(void)
 {
 	struct k_thread *thread;
-	u32_t count = 0;
+	u32_t count = 0U;
 
 	__ASSERT(!k_is_in_isr(), "");
 	for (thread = _kernel.threads; thread; thread = thread->next_thread) {
-		if (get_cmsis_thread_id(thread) && _is_thread_queued(thread)) {
+		if (get_cmsis_thread_id(thread) && z_is_thread_queued(thread)) {
 			count++;
 		}
 	}
@@ -561,7 +561,7 @@ uint32_t osThreadGetCount(void)
 uint32_t osThreadEnumerate(osThreadId_t *thread_array, uint32_t array_items)
 {
 	struct k_thread *thread;
-	u32_t count = 0;
+	u32_t count = 0U;
 	osThreadId_t tid;
 
 	__ASSERT(!k_is_in_isr(), "");

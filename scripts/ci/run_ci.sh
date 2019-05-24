@@ -1,5 +1,6 @@
 #!/bin/bash
 # Copyright (c) 2017 Linaro Limited
+# Copyright (c) 2018 Intel Corporation
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -122,33 +123,40 @@ function handle_coverage() {
 	echo "Calling gcovr"
 	gcovr -r ${ZEPHYR_BASE} -x > shippable/codecoverage/coverage.xml;
 
-	# Capture data
-	echo "Running lcov --capture ..."
-	lcov --capture \
-		--directory sanity-out/native_posix/ \
-		--directory sanity-out/nrf52_bsim/ \
-		--directory sanity-out/unit_testing/ \
-		--directory bsim_bt_out/ \
-		--output-file lcov.pre.info -q --rc lcov_branch_coverage=1;
 
-	# Remove noise
-	echo "Exclude data from coverage report..."
-	lcov -q \
-		--remove lcov.pre.info mylib.c \
-		--remove lcov.pre.info tests/\* \
-		--remove lcov.pre.info samples/\* \
-		--remove lcov.pre.info ext/\* \
-		--remove lcov.pre.info *generated* \
-		-o lcov.info --rc lcov_branch_coverage=1;
+	# Upload to codecov.io only on merged builds or if CODECOV_IO variable
+	# is set.
+	if [ -n "${CODECOV_IO}" -o -z "${PULL_REQUEST_NR}" ]; then
+		# Capture data
+		echo "Running lcov --capture ..."
+		lcov --capture \
+			--directory sanity-out/native_posix/ \
+			--directory sanity-out/nrf52_bsim/ \
+			--directory sanity-out/unit_testing/ \
+			--directory bsim_bt_out/ \
+			--output-file lcov.pre.info -q --rc lcov_branch_coverage=1;
 
-	# Cleanup
-	rm lcov.pre.info;
+		# Remove noise
+		echo "Exclude data from coverage report..."
+		lcov -q \
+			--remove lcov.pre.info mylib.c \
+			--remove lcov.pre.info tests/\* \
+			--remove lcov.pre.info samples/\* \
+			--remove lcov.pre.info ext/\* \
+			--remove lcov.pre.info *generated* \
+			-o lcov.info --rc lcov_branch_coverage=1;
+
+		# Cleanup
+		rm lcov.pre.info;
+		rm -rf sanity-out out-2nd-pass;
+
+		# Upload to codecov.io
+		echo "Upload coverage reports to codecov.io"
+		bash <(curl -s https://codecov.io/bash) -f "lcov.info" -X coveragepy -X fixes;
+		rm -f lcov.info;
+	fi
+
 	rm -rf sanity-out out-2nd-pass;
-
-	# Upload to codecov.io
-	echo "Upload coverage reports to codecov.io"
-	bash <(curl -s https://codecov.io/bash) -f "lcov.info" -X coveragepy -X fixes;
-	rm -f lcov.info;
 
 }
 

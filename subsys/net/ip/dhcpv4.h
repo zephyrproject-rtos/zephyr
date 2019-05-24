@@ -110,13 +110,22 @@ enum dhcpv4_msg_type {
  */
 #define DHCPV4_INITIAL_RETRY_TIMEOUT 4
 
-/* Initial minimum and maximum delay in INIT state before sending the
- * initial DISCOVER message.
+/* Initial minimum delay in INIT state before sending the
+ * initial DISCOVER message. MAx value is defined with
+ * CONFIG_NET_DHCPV4_INITIAL_DELAY_MAX. Default max value
+ * should be 10.
  * RFC2131 4.1.1
  */
 #define DHCPV4_INITIAL_DELAY_MIN 1
-#define DHCPV4_INITIAL_DELAY_MAX 10
+
+#if defined(CONFIG_NET_DHCPV4)
 
 int net_dhcpv4_init(void);
+
+#else
+
+#define net_dhcpv4_init() 0
+
+#endif /* CONFIG_NET_DHCPV4 */
 
 #endif /* __INTERNAL_DHCPV4_H */

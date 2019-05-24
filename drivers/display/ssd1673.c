@@ -277,7 +277,7 @@ static int ssd1673_write(const struct device *dev, const u16_t x,
 		return -EINVAL;
 	}
 
-	if (buf == NULL || desc->buf_size == 0) {
+	if (buf == NULL || desc->buf_size == 0U) {
 		LOG_ERR("Display buffer is not available");
 		return -EINVAL;
 	}
@@ -297,13 +297,13 @@ static int ssd1673_write(const struct device *dev, const u16_t x,
 		return -EINVAL;
 	}
 
-	if ((desc->height % EPD_PANEL_NUMOF_ROWS_PER_PAGE) != 0) {
+	if ((desc->height % EPD_PANEL_NUMOF_ROWS_PER_PAGE) != 0U) {
 		LOG_ERR("Buffer height not multiple of %d",
 				EPD_PANEL_NUMOF_ROWS_PER_PAGE);
 		return -EINVAL;
 	}
 
-	if ((y % EPD_PANEL_NUMOF_ROWS_PER_PAGE) != 0) {
+	if ((y % EPD_PANEL_NUMOF_ROWS_PER_PAGE) != 0U) {
 		LOG_ERR("Y coordinate not multiple of %d",
 				EPD_PANEL_NUMOF_ROWS_PER_PAGE);
 		return -EINVAL;
@@ -461,7 +461,7 @@ static int ssd1673_clear_and_write_buffer(struct device *dev)
 	memset(clear_page, 0xff, sizeof(clear_page));
 	sbuf.buf = clear_page;
 	sbuf.len = sizeof(clear_page);
-	for (page = 0; page <= (SSD1673_PANEL_LAST_PAGE + 1); ++page) {
+	for (page = 0U; page <= (SSD1673_PANEL_LAST_PAGE + 1); ++page) {
 		err = spi_write(driver->spi_dev, &driver->spi_config, &buf_set);
 		if (err < 0) {
 			return err;
@@ -629,7 +629,7 @@ static int ssd1673_init(struct device *dev)
 	}
 
 	driver->cs_ctrl.gpio_pin = DT_SOLOMON_SSD1673FB_0_CS_GPIO_PIN;
-	driver->cs_ctrl.delay = 0;
+	driver->cs_ctrl.delay = 0U;
 	driver->spi_config.cs = &driver->cs_ctrl;
 #endif
 

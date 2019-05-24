@@ -177,22 +177,15 @@ Pull Requests and Issues
 
 .. _Zephyr devel mailing list: https://lists.zephyrproject.org/g/devel
 
+.. _Zephyr Slack channel: https://zephyrproject.slack.com
+
 Before starting on a patch, first check in our issues `Zephyr Project Issues`_
 system to see what's been reported on the issue you'd like to address.  Have a
-conversation on the `Zephyr devel mailing list`_ (or the #zephyrproject IRC
-channel on freenode.net) to see what others think of your issue (and proposed
-solution).  You may find others that have encountered the issue you're
-finding, or that have similar ideas for changes or additions.  Send a message
-to the `Zephyr devel mailing list`_ to introduce and discuss your idea with
-the development community.
-
-Please note that it's common practice on IRC to be away from the
-channel, but still have a client logged in to receive traffic. If you
-ask a question to a particular person and they don't answer, **try
-to stay signed in to the channel** if you can, so they have time to
-respond to you. This is especially important given the many different
-timezones Zephyr developers live in. If you don't get a timely
-response on IRC, try sending a message to the mailing list instead.
+conversation on the `Zephyr devel mailing list`_ (or the the `Zephyr Slack channel`_)
+to see what others think of your issue (and proposed solution).  You may find
+others that have encountered the issue you're finding, or that have similar
+ideas for changes or additions.  Send a message to the `Zephyr devel mailing list`_
+to introduce and discuss your idea with the development community.
 
 It's always a good practice to search for existing or related issues before
 submitting your own. When you submit an issue (bug or feature request), the
@@ -221,13 +214,6 @@ The CI results must be green indicating "All checks have passed" before
 the Pull Request can be merged.  CI is run when the PR is created, and
 again every time the PR is modified with a commit.
 
-.. note::
-
-   You can also force
-   the CI system to recheck a PR by adding a comment to the PR saying
-   simply ``recheck`` in the message (helpful if the CI system fails
-   unexpectedly).
-
 The current status of the CI run can always be found at the bottom of the
 GitHub PR page, below the review status. Depending on the success or failure
 of the run you will see:
@@ -242,6 +228,11 @@ results page where a table with all the different builds will be shown. To see
 what build or test failed click on the row that contains the failed (i.e.
 non-green) build and then click on the "Tests" tab to see the console output
 messages indicating the failure.
+
+The `builds@lists.zephyrproject.org mailing list
+<https://lists.zephyrproject.org/g/builds>`_
+archives the CI (shippable) nightly build results.
+
 
  .. _Contribution Tools:
 
@@ -265,10 +256,10 @@ gitlint
 
 When you submit a pull request to the project, a series of checks are
 performed to verify your commit messages meet the requirements. The same step
-done during the CI process can be performed locally using the the `gitlint`
+done during the CI process can be performed locally using the the ``gitlint``
 command.
 
-Run `gitlint` locally in your tree and branch where your patches have been
+Run ``gitlint`` locally in your tree and branch where your patches have been
 committed:
 
 .. code-block:: console
@@ -337,9 +328,9 @@ project's style and naming conventions.
 In general, follow the `Linux kernel coding style`_, with the
 following exceptions:
 
-* Add braces to every ``if`` and ``else`` body, even for single-line code
-  blocks. Use the ``--ignore BRACES`` flag to make *checkpatch* stop
-  complaining.
+* Add braces to every ``if``, ``else``, ``do``, ``while``, ``for`` and
+  ``switch`` body, even for single-line code blocks. Use the ``--ignore BRACES``
+  flag to make *checkpatch* stop complaining.
 * Use spaces instead of tabs to align comments after declarations, as needed.
 * Use C89-style single line comments, ``/*  */``. The C99-style single line
   comment, ``//``, is not allowed.
@@ -361,6 +352,34 @@ it to contain:
     #!/bin/sh
     set -e exec
     exec git diff --cached | ${ZEPHYR_BASE}/scripts/checkpatch.pl -
+
+Instead of running checkpatch at each commit, you may prefer to run it only
+before pushing on zephyr repo. To do this, make the file
+*$ZEPHYR_BASE/.git/hooks/pre-push* executable and edit it to contain:
+
+.. code-block:: bash
+
+    #!/bin/sh
+    remote="$1"
+    url="$2"
+
+    z40=0000000000000000000000000000000000000000
+
+    echo "Run push hook"
+
+    while read local_ref local_sha remote_ref remote_sha
+    do
+        args="$remote $url $local_ref $local_sha $remote_ref $remote_sha"
+        exec ${ZEPHYR_BASE}/series-push-hook.sh $args
+    done
+
+    exit 0
+
+If you want to override checkpatch verdict and push you branch despite reported
+issues, you can add option --no-verify to the git push command.
+
+A more complete alternative to this is using check_compliance.py script from
+ci-tools repo.
 
 .. _Contribution workflow:
 
@@ -512,10 +531,26 @@ workflow here:
    By force pushing your update, your original pull request will be updated
    with your changes so you won't need to resubmit the pull request.
 
+   .. note:: While amending commits and force pushing is a common review model
+      outside GitHub, and the one recommended by Zephyr, it's not the main
+      model supported by GitHub. Forced pushes can cause unexpected behavior,
+      such as not being able to use "View Changes" buttons except for the last
+      one - GitHub complains it can't find older commits. You're also not
+      always able to compare the latest reviewed version with the latest
+      submitted version. When rewriting history GitHub only guarantees access
+      to the latest version.
+
 #. If the CI run fails, you will need to make changes to your code in order
    to fix the issues and amend your commits by rebasing as described above.
    Additional information about the CI system can be found in
    `Continuous Integration`_.
+
+Contributions to External Modules
+**********************************
+
+Follow the guidelines in the :ref:`modules` section for contributing
+:ref:`new modules <submitting_new_modules>` and
+submitting changes to :ref:`existing modules <changes_to_existing_module>`.
 
 Commit Guidelines
 *****************
@@ -551,7 +586,7 @@ does and why it's needed. A change summary of ``"Fixes stuff"`` will be rejected
 
 .. warning::
    An empty change summary body is not permitted. Even for trivial changes, please
-   include a summary body in the commmit message.
+   include a summary body in the commit message.
 
 The description body of the commit message must include:
 
@@ -680,7 +715,7 @@ these additional steps must be followed:
 
 #. Complete a README for your code component and add it to your source
    code pull request (PR).  A recommended README template can be found in
-   :file:`doc/contribute/code_component_README` (and included
+   :zephyr_file:`doc/contribute/code_component_README` (and included
    `below`_ for reference)
 
 #. The Zephyr Technical Steering Committee (TSC) will evaluate the code

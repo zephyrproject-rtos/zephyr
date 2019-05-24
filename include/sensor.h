@@ -119,6 +119,8 @@ enum sensor_channel {
 	SENSOR_CHAN_VOLTAGE,
 	/** Current, in amps **/
 	SENSOR_CHAN_CURRENT,
+	/** Resistance , in Ohm **/
+	SENSOR_CHAN_RESISTANCE,
 
 	/** Angular rotation, in degrees */
 	SENSOR_CHAN_ROTATION,
@@ -281,14 +283,14 @@ __syscall int sensor_attr_set(struct device *dev,
 			      enum sensor_attribute attr,
 			      const struct sensor_value *val);
 
-static inline int _impl_sensor_attr_set(struct device *dev,
+static inline int z_impl_sensor_attr_set(struct device *dev,
 					enum sensor_channel chan,
 					enum sensor_attribute attr,
 					const struct sensor_value *val)
 {
 	const struct sensor_driver_api *api = dev->driver_api;
 
-	if (!api->attr_set) {
+	if (api->attr_set == NULL) {
 		return -ENOTSUP;
 	}
 
@@ -318,7 +320,7 @@ static inline int sensor_trigger_set(struct device *dev,
 {
 	const struct sensor_driver_api *api = dev->driver_api;
 
-	if (!api->trigger_set) {
+	if (api->trigger_set == NULL) {
 		return -ENOTSUP;
 	}
 
@@ -343,7 +345,7 @@ static inline int sensor_trigger_set(struct device *dev,
  */
 __syscall int sensor_sample_fetch(struct device *dev);
 
-static inline int _impl_sensor_sample_fetch(struct device *dev)
+static inline int z_impl_sensor_sample_fetch(struct device *dev)
 {
 	const struct sensor_driver_api *api = dev->driver_api;
 
@@ -372,7 +374,7 @@ static inline int _impl_sensor_sample_fetch(struct device *dev)
 __syscall int sensor_sample_fetch_chan(struct device *dev,
 				       enum sensor_channel type);
 
-static inline int _impl_sensor_sample_fetch_chan(struct device *dev,
+static inline int z_impl_sensor_sample_fetch_chan(struct device *dev,
 						 enum sensor_channel type)
 {
 	const struct sensor_driver_api *api = dev->driver_api;
@@ -405,7 +407,7 @@ __syscall int sensor_channel_get(struct device *dev,
 				 enum sensor_channel chan,
 				 struct sensor_value *val);
 
-static inline int _impl_sensor_channel_get(struct device *dev,
+static inline int z_impl_sensor_channel_get(struct device *dev,
 					   enum sensor_channel chan,
 					   struct sensor_value *val)
 {

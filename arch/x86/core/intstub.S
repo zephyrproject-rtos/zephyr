@@ -23,8 +23,8 @@
 	/* exports (internal APIs) */
 
 	GTEXT(_interrupt_enter)
-	GTEXT(_SpuriousIntNoErrCodeHandler)
-	GTEXT(_SpuriousIntHandler)
+	GTEXT(z_SpuriousIntNoErrCodeHandler)
+	GTEXT(z_SpuriousIntHandler)
 	GTEXT(_irq_sw_handler)
 	GTEXT(z_dynamic_stubs_begin)
 
@@ -33,13 +33,13 @@
 	GTEXT(__swap)
 
 #ifdef CONFIG_SYS_POWER_MANAGEMENT
-	GTEXT(_sys_power_save_idle_exit)
+	GTEXT(z_sys_power_save_idle_exit)
 #endif
 
 
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
-	GTEXT(_int_latency_start)
-	GTEXT(_int_latency_stop)
+	GTEXT(z_int_latency_start)
+	GTEXT(z_int_latency_stop)
 #endif
 /**
  *
@@ -150,7 +150,7 @@ SECTION_FUNC(TEXT, _interrupt_enter)
 	 * interrupt.
 	 */
 
-	call	_int_latency_start
+	call	z_int_latency_start
 #endif
 
 	call	z_sys_trace_isr_enter
@@ -196,7 +196,7 @@ alreadyOnIntStack:
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
 	pushl	%eax
 	pushl	%edx
-	call	_int_latency_stop
+	call	z_int_latency_stop
 	popl	%edx
 	popl	%eax
 #endif
@@ -237,7 +237,7 @@ alreadyOnIntStack:
 	_irq_controller_eoi_macro
 
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
-	call	_int_latency_start
+	call	z_int_latency_start
 #endif
 
 	/* determine whether exiting from a nested interrupt */
@@ -260,7 +260,7 @@ alreadyOnIntStack:
 	 * debug tools that a preemptive context switch has occurred.
 	 */
 
-#if defined(CONFIG_FP_SHARING)
+#if defined(CONFIG_LAZY_FP_SHARING)
 	orb	$_INT_ACTIVE, _thread_offset_to_thread_state(%edx)
 #endif
 
@@ -275,7 +275,7 @@ alreadyOnIntStack:
 	popl	%esp	/* switch back to outgoing thread's stack */
 
 #ifdef CONFIG_STACK_SENTINEL
-	call	_check_stack_sentinel
+	call	z_check_stack_sentinel
 #endif
 	pushfl			/* push KERNEL_LOCK_KEY argument */
 #ifdef CONFIG_X86_IAMCU
@@ -296,7 +296,7 @@ alreadyOnIntStack:
 	 * returning control to it at the point where it was interrupted ...
 	 */
 
-#if defined(CONFIG_FP_SHARING)
+#if defined(CONFIG_LAZY_FP_SHARING)
 	/*
 	 * __swap() has restored the floating point registers, if needed.
 	 * Clear the _INT_ACTIVE bit in the interrupted thread's state
@@ -305,11 +305,11 @@ alreadyOnIntStack:
 
 	movl	_kernel + _kernel_offset_to_current, %eax
 	andb	$~_INT_ACTIVE, _thread_offset_to_thread_state(%eax)
-#endif /* CONFIG_FP_SHARING */
+#endif /* CONFIG_LAZY_FP_SHARING */
 
 	/* Restore volatile registers and return to the interrupted thread */
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
-	call	_int_latency_stop
+	call	z_int_latency_stop
 #endif
 	popl	%edi
 	popl	%ecx
@@ -331,7 +331,7 @@ noReschedule:
 	popl	%esp		/* pop thread stack pointer */
 
 #ifdef CONFIG_STACK_SENTINEL
-	call	_check_stack_sentinel
+	call	z_check_stack_sentinel
 #endif
 
 	/* fall through to 'nestedInterrupt' */
@@ -345,7 +345,7 @@ noReschedule:
 
 nestedInterrupt:
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
-	call	_int_latency_stop
+	call	z_int_latency_stop
 #endif
 
 	popl	%edi
@@ -360,7 +360,7 @@ nestedInterrupt:
 handle_idle:
 	pushl	%eax
 	pushl	%edx
-	/* Populate 'ticks' argument to _sys_power_save_idle_exit */
+	/* Populate 'ticks' argument to z_sys_power_save_idle_exit */
 #ifdef CONFIG_X86_IAMCU
 	movl	_kernel_offset_to_idle(%ecx), %eax
 #else
@@ -371,13 +371,13 @@ handle_idle:
 	movl	$0, _kernel_offset_to_idle(%ecx)
 
 	/*
-	 * Beware that a timer driver's _sys_power_save_idle_exit() implementation might
+	 * Beware that a timer driver's z_sys_power_save_idle_exit() implementation might
 	 * expect that interrupts are disabled when invoked.  This ensures that
 	 * the calculation and programming of the device for the next timer
 	 * deadline is not interrupted.
 	 */
 
-	call	_sys_power_save_idle_exit
+	call	z_sys_power_save_idle_exit
 #ifndef CONFIG_X86_IAMCU
 	/* SYS V: discard 'ticks' argument passed on the stack */
 	add	$0x4, %esp
@@ -389,11 +389,11 @@ handle_idle:
 
 /**
  *
- * _SpuriousIntHandler -
+ * z_SpuriousIntHandler -
  * @brief Spurious interrupt handler stubs
  *
  * Interrupt-gate descriptors are statically created for all slots in the IDT
- * that point to _SpuriousIntHandler() or _SpuriousIntNoErrCodeHandler().  The
+ * that point to z_SpuriousIntHandler() or z_SpuriousIntNoErrCodeHandler().  The
  * former stub is connected to exception vectors where the processor pushes an
  * error code onto the stack (or kernel stack) in addition to the EFLAGS/CS/EIP
  * records.
@@ -408,23 +408,23 @@ handle_idle:
  *
  * C function prototype:
  *
- * void _SpuriousIntHandler (void);
+ * void z_SpuriousIntHandler (void);
  *
  * INTERNAL
  * The gen_idt tool creates an interrupt-gate descriptor for all
  * connections.  The processor will automatically clear the IF bit
  * in the EFLAGS register upon execution of the handler,
- * thus _SpuriousIntNoErrCodeHandler()/_SpuriousIntHandler() shall be
+ * thus z_SpuriousIntNoErrCodeHandler()/z_SpuriousIntHandler() shall be
  * invoked with interrupts disabled.
  */
-SECTION_FUNC(TEXT, _SpuriousIntNoErrCodeHandler)
+SECTION_FUNC(TEXT, z_SpuriousIntNoErrCodeHandler)
 
 	pushl	$0			/* push dummy err code onto stk */
 
-	/* fall through to _SpuriousIntHandler */
+	/* fall through to z_SpuriousIntHandler */
 
 
-SECTION_FUNC(TEXT, _SpuriousIntHandler)
+SECTION_FUNC(TEXT, z_SpuriousIntHandler)
 
 	cld				/* Clear direction flag */
 
@@ -457,14 +457,14 @@ SECTION_FUNC(TEXT, _SpuriousIntHandler)
 	movl	$_NANO_ERR_SPURIOUS_INT, %eax
 #endif
 	/* call the fatal error handler */
-	call	_NanoFatalErrorHandler
+	call	z_NanoFatalErrorHandler
 
 	/* handler doesn't  return */
 
 #if CONFIG_IRQ_OFFLOAD
 SECTION_FUNC(TEXT, _irq_sw_handler)
 	push $0
-	push $_irq_do_offload
+	push $z_irq_do_offload
 	jmp _interrupt_enter
 
 #endif

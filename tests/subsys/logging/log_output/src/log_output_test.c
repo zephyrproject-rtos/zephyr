@@ -25,7 +25,7 @@ static u32_t mock_len;
 
 static void reset_mock_buffer(void)
 {
-	mock_len = 0;
+	mock_len = 0U;
 	memset(mock_buffer, 0, sizeof(mock_buffer));
 }
 

@@ -85,7 +85,7 @@ static inline bool mfifo_enqueue_idx_get(u8_t count, u8_t first, u8_t last,
 	/* Non-destructive: Advance write-index modulo 'count' */
 	last = last + 1;
 	if (last == count) {
-		last = 0;
+		last = 0U;
 	}
 
 	/* Is queue full?
@@ -284,7 +284,7 @@ static inline void *mfifo_dequeue_iter_get(u8_t *fifo, u8_t size, u8_t count,
 
 	i = *idx + 1;
 	if (i == count) {
-		i = 0;
+		i = 0U;
 	}
 
 	p = (void *)(fifo + (*idx) * size);
@@ -326,9 +326,9 @@ static inline void *mfifo_dequeue(u8_t *fifo, u8_t size, u8_t count,
 	mem = *((void **)(fifo + _first * size));
 
 	/* Circular buffer increment read-index modulo 'count' */
-	_first += 1;
+	_first += 1U;
 	if (_first == count) {
-		_first = 0;
+		_first = 0U;
 	}
 
 	*first = _first; /* Write back read-index */

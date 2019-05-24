@@ -49,13 +49,13 @@ extern "C" {
  */
 
 static ALWAYS_INLINE
-void _arc_v2_irq_unit_irq_enable_set(
+void z_arc_v2_irq_unit_irq_enable_set(
 	int irq,
 	unsigned char enable
 	)
 {
-	_arc_v2_aux_reg_write(_ARC_V2_IRQ_SELECT, irq);
-	_arc_v2_aux_reg_write(_ARC_V2_IRQ_ENABLE, enable);
+	z_arc_v2_aux_reg_write(_ARC_V2_IRQ_SELECT, irq);
+	z_arc_v2_aux_reg_write(_ARC_V2_IRQ_ENABLE, enable);
 }
 
 /*
@@ -67,9 +67,9 @@ void _arc_v2_irq_unit_irq_enable_set(
  */
 
 static ALWAYS_INLINE
-void _arc_v2_irq_unit_int_enable(int irq)
+void z_arc_v2_irq_unit_int_enable(int irq)
 {
-	_arc_v2_irq_unit_irq_enable_set(irq, _ARC_V2_INT_ENABLE);
+	z_arc_v2_irq_unit_irq_enable_set(irq, _ARC_V2_INT_ENABLE);
 }
 
 /*
@@ -81,9 +81,9 @@ void _arc_v2_irq_unit_int_enable(int irq)
  */
 
 static ALWAYS_INLINE
-void _arc_v2_irq_unit_int_disable(int irq)
+void z_arc_v2_irq_unit_int_disable(int irq)
 {
-	_arc_v2_irq_unit_irq_enable_set(irq, _ARC_V2_INT_DISABLE);
+	z_arc_v2_irq_unit_irq_enable_set(irq, _ARC_V2_INT_DISABLE);
 }
 
 /*
@@ -95,15 +95,15 @@ void _arc_v2_irq_unit_int_disable(int irq)
  */
 
 static ALWAYS_INLINE
-void _arc_v2_irq_unit_prio_set(int irq, unsigned char prio)
+void z_arc_v2_irq_unit_prio_set(int irq, unsigned char prio)
 {
-	_arc_v2_aux_reg_write(_ARC_V2_IRQ_SELECT, irq);
+	z_arc_v2_aux_reg_write(_ARC_V2_IRQ_SELECT, irq);
 #ifdef CONFIG_ARC_HAS_SECURE
 /* if ARC has secure mode, all interrupt should be secure */
-	_arc_v2_aux_reg_write(_ARC_V2_IRQ_PRIORITY, prio |
+	z_arc_v2_aux_reg_write(_ARC_V2_IRQ_PRIORITY, prio |
 			 _ARC_V2_IRQ_PRIORITY_SECURE);
 #else
-	_arc_v2_aux_reg_write(_ARC_V2_IRQ_PRIORITY, prio);
+	z_arc_v2_aux_reg_write(_ARC_V2_IRQ_PRIORITY, prio);
 #endif
 }
 
@@ -121,8 +121,8 @@ void _arc_v2_irq_unit_prio_set(int irq, unsigned char prio)
 static ALWAYS_INLINE
 void _arc_v2_irq_unit_sensitivity_set(int irq, int s)
 {
-	_arc_v2_aux_reg_write(_ARC_V2_IRQ_SELECT, irq);
-	_arc_v2_aux_reg_write(_ARC_V2_IRQ_TRIGGER, s);
+	z_arc_v2_aux_reg_write(_ARC_V2_IRQ_SELECT, irq);
+	z_arc_v2_aux_reg_write(_ARC_V2_IRQ_TRIGGER, s);
 }
 
 /*
@@ -133,16 +133,16 @@ void _arc_v2_irq_unit_sensitivity_set(int irq, int s)
  * @return N/A
  */
 static ALWAYS_INLINE
-bool _arc_v2_irq_unit_is_in_isr(void)
+bool z_arc_v2_irq_unit_is_in_isr(void)
 {
-	u32_t act = _arc_v2_aux_reg_read(_ARC_V2_AUX_IRQ_ACT);
+	u32_t act = z_arc_v2_aux_reg_read(_ARC_V2_AUX_IRQ_ACT);
 
 	/* in exception ?*/
-	if (_arc_v2_aux_reg_read(_ARC_V2_STATUS32) & _ARC_V2_STATUS32_AE) {
+	if (z_arc_v2_aux_reg_read(_ARC_V2_STATUS32) & _ARC_V2_STATUS32_AE) {
 		return true;
 	}
 
-	return ((act & 0xffff) != 0);
+	return ((act & 0xffff) != 0U);
 }
 
 /*
@@ -155,7 +155,7 @@ bool _arc_v2_irq_unit_is_in_isr(void)
  * @return N/A
  */
 
-void _arc_v2_irq_unit_trigger_set(int irq, unsigned int trigger);
+void z_arc_v2_irq_unit_trigger_set(int irq, unsigned int trigger);
 
 /*
  * @brief Returns an IRQ line trigger type
@@ -166,7 +166,7 @@ void _arc_v2_irq_unit_trigger_set(int irq, unsigned int trigger);
  * @return N/A
  */
 
-unsigned int _arc_v2_irq_unit_trigger_get(int irq);
+unsigned int z_arc_v2_irq_unit_trigger_get(int irq);
 
 /*
  * @brief Send EOI signal to interrupt unit
@@ -180,7 +180,7 @@ unsigned int _arc_v2_irq_unit_trigger_get(int irq);
  * @return N/A
  */
 
-void _arc_v2_irq_unit_int_eoi(int irq);
+void z_arc_v2_irq_unit_int_eoi(int irq);
 
 #endif /* _ASMLANGUAGE */
 

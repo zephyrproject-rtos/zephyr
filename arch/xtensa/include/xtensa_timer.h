@@ -147,7 +147,7 @@
 #if USE_INTERNAL_TIMER || (EXTERNAL_TIMER_IRQ < 0)
 #ifndef __ASSEMBLER__
 extern unsigned int _xt_tick_divisor;
-extern void _xt_tick_divisor_init(void);
+extern void z_xt_tick_divisor_init(void);
 #endif
 
 #endif // Internal/External timer

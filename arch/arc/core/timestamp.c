@@ -23,7 +23,7 @@
  *
  * @return 64-bit time stamp value
  */
-u64_t _tsc_read(void)
+u64_t z_tsc_read(void)
 {
 	unsigned int key;
 	u64_t t;
@@ -31,7 +31,7 @@ u64_t _tsc_read(void)
 
 	key = irq_lock();
 	t = (u64_t)z_tick_get();
-	count = _arc_v2_aux_reg_read(_ARC_V2_TMR0_COUNT);
+	count = z_arc_v2_aux_reg_read(_ARC_V2_TMR0_COUNT);
 	irq_unlock(key);
 	t *= (u64_t)sys_clock_hw_cycles_per_tick();
 	t += (u64_t)count;

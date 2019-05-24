@@ -96,7 +96,7 @@ static void i2c_imx_read(struct device *dev, u8_t *rxBuffer, u8_t rxSize)
 	transfer->rxBuff = rxBuffer;
 	transfer->rxSize = rxSize;
 
-	if (transfer->rxSize == 1) {
+	if (transfer->rxSize == 1U) {
 		/* Send Nack */
 		I2C_SetAckBit(base, false);
 	} else {
@@ -194,7 +194,7 @@ static int i2c_imx_transfer(struct device *dev, struct i2c_msg *msgs,
 	while ((I2C_I2SR_REG(base) & i2cStatusBusBusy) && (--timeout)) {
 	}
 
-	if (timeout == 0) {
+	if (timeout == 0U) {
 		return result;
 	}
 
@@ -281,7 +281,7 @@ static void i2c_imx_isr(void *arg)
 			transfer->ack =
 			!(I2C_GetStatusFlag(base, i2cStatusReceivedAck));
 
-			if (transfer->txSize == 0) {
+			if (transfer->txSize == 0U) {
 				/* Close I2C interrupt. */
 				I2C_SetIntCmd(base, false);
 				/* Release I2C Bus. */
@@ -294,7 +294,7 @@ static void i2c_imx_isr(void *arg)
 			}
 		} else {
 			/* Normal read operation. */
-			if (transfer->rxSize == 2) {
+			if (transfer->rxSize == 2U) {
 				/* Send Nack */
 				I2C_SetAckBit(base, false);
 			} else {
@@ -302,7 +302,7 @@ static void i2c_imx_isr(void *arg)
 				I2C_SetAckBit(base, true);
 			}
 
-			if (transfer->rxSize == 1) {
+			if (transfer->rxSize == 1U) {
 				/* Switch back to Tx direction to avoid
 				 * additional I2C bus read.
 				 */
@@ -315,7 +315,7 @@ static void i2c_imx_isr(void *arg)
 			transfer->rxSize--;
 
 			/* receive finished. */
-			if (transfer->rxSize == 0) {
+			if (transfer->rxSize == 0U) {
 				/* Close I2C interrupt. */
 				I2C_SetIntCmd(base, false);
 				/* Release I2C Bus. */
@@ -335,7 +335,7 @@ static int i2c_imx_init(struct device *dev)
 
 	k_sem_init(&data->device_sync_sem, 0, UINT_MAX);
 
-	bitrate_cfg = _i2c_map_dt_bitrate(config->bitrate);
+	bitrate_cfg = i2c_map_dt_bitrate(config->bitrate);
 
 	error = i2c_imx_configure(dev, I2C_MODE_MASTER | bitrate_cfg);
 	if (error) {

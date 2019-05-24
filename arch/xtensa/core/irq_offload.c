@@ -17,7 +17,7 @@ static irq_offload_routine_t offload_routine;
 static void *offload_param;
 
 /* Called by ISR dispatcher */
-void _irq_do_offload(void *unused)
+void z_irq_do_offload(void *unused)
 {
 	ARG_UNUSED(unused);
 	offload_routine(offload_param);
@@ -26,14 +26,14 @@ void _irq_do_offload(void *unused)
 void irq_offload(irq_offload_routine_t routine, void *parameter)
 {
 	IRQ_CONNECT(CONFIG_IRQ_OFFLOAD_INTNUM, XCHAL_EXCM_LEVEL,
-		_irq_do_offload, NULL, 0);
-	_arch_irq_disable(CONFIG_IRQ_OFFLOAD_INTNUM);
+		z_irq_do_offload, NULL, 0);
+	z_arch_irq_disable(CONFIG_IRQ_OFFLOAD_INTNUM);
 	offload_routine = routine;
 	offload_param = parameter;
-	_xt_set_intset(1 << CONFIG_IRQ_OFFLOAD_INTNUM);
+	z_xt_set_intset(BIT(CONFIG_IRQ_OFFLOAD_INTNUM));
 	/*
 	 * Enable the software interrupt, in case it is disabled, so that IRQ
 	 * offload is serviced.
 	 */
-	_arch_irq_enable(CONFIG_IRQ_OFFLOAD_INTNUM);
+	z_arch_irq_enable(CONFIG_IRQ_OFFLOAD_INTNUM);
 }

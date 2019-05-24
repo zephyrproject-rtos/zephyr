@@ -33,6 +33,8 @@ source "drivers/clock_control/Kconfig.beetle"
 
 source "drivers/clock_control/Kconfig.mcux_ccm"
 
+source "drivers/clock_control/Kconfig.mcux_pcc"
+
 source "drivers/clock_control/Kconfig.mcux_sim"
 
 source "drivers/clock_control/Kconfig.rv32m1"

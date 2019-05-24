@@ -1,14 +1,14 @@
 sample:
   name: Low Power State Sample for nRF5x
 tests:
-  pm.low_power_state:
+  sample.board.nrf52.pm.low_power_state:
     platform_whitelist: nrf52840_pca10056 nrf52_pca10040 nrf51_pca10028
     tags: power
     harness: console
     harness_config:
       type: multi_line
       regex:
-        - "--> Entering to SYS_POWER_STATE_LOW_POWER_2 state."
-        - "--> Exited from SYS_POWER_STATE_LOW_POWER_2 state."
-        - "--> Entering to SYS_POWER_STATE_LOW_POWER_3 state."
-        - "--> Exited from SYS_POWER_STATE_LOW_POWER_3 state."
+        - "--> Entering to SYS_POWER_STATE_SLEEP_2 state."
+        - "--> Exited from SYS_POWER_STATE_SLEEP_2 state."
+        - "--> Entering to SYS_POWER_STATE_SLEEP_3 state."
+        - "--> Exited from SYS_POWER_STATE_SLEEP_3 state."

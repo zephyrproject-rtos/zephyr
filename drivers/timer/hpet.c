@@ -98,6 +98,14 @@ int z_clock_driver_init(struct device *device)
 	return 0;
 }
 
+void smp_timer_init(void)
+{
+	/* Noop, the HPET is a single system-wide device and it's
+	 * configured to deliver interrupts to every CPU, so there's
+	 * nothing to do at initialization on auxiliary CPUs.
+	 */
+}
+
 void z_clock_set_timeout(s32_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
@@ -141,7 +149,7 @@ u32_t z_clock_elapsed(void)
 	return ret;
 }
 
-u32_t _timer_cycle_get_32(void)
+u32_t z_timer_cycle_get_32(void)
 {
 	return MAIN_COUNTER_REG;
 }

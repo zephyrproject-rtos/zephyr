@@ -362,21 +362,21 @@ static void shell_udp_upload_print_stats(const struct shell *shell,
 
 		shell_fprintf(shell, SHELL_NORMAL, "-\nUpload completed!\n");
 
-		if (results->time_in_us != 0) {
+		if (results->time_in_us != 0U) {
 			rate_in_kbps = (u32_t)
 				(((u64_t)results->nb_bytes_sent *
 				  (u64_t)8 * (u64_t)USEC_PER_SEC) /
-				 ((u64_t)results->time_in_us * 1024));
+				 ((u64_t)results->time_in_us * 1024U));
 		} else {
 			rate_in_kbps = 0U;
 		}
 
-		if (results->client_time_in_us != 0) {
+		if (results->client_time_in_us != 0U) {
 			client_rate_in_kbps = (u32_t)
 				(((u64_t)results->nb_packets_sent *
 				  (u64_t)results->packet_size * (u64_t)8 *
 				  (u64_t)USEC_PER_SEC) /
-				 ((u64_t)results->client_time_in_us * 1024));
+				 ((u64_t)results->client_time_in_us * 1024U));
 		} else {
 			client_rate_in_kbps = 0U;
 		}
@@ -427,12 +427,12 @@ static void shell_tcp_upload_print_stats(const struct shell *shell,
 
 		shell_fprintf(shell, SHELL_NORMAL, "-\nUpload completed!\n");
 
-		if (results->client_time_in_us != 0) {
+		if (results->client_time_in_us != 0U) {
 			client_rate_in_kbps = (u32_t)
 				(((u64_t)results->nb_packets_sent *
 				  (u64_t)results->packet_size * (u64_t)8 *
 				  (u64_t)USEC_PER_SEC) /
-				 ((u64_t)results->client_time_in_us * 1024));
+				 ((u64_t)results->client_time_in_us * 1024U));
 		} else {
 			client_rate_in_kbps = 0U;
 		}
@@ -536,6 +536,7 @@ static int execute_upload(const struct shell *shell,
 			  struct sockaddr_in6 *ipv6,
 			  struct sockaddr_in *ipv4,
 			  bool is_udp,
+			  int port,
 			  char *argv0,
 			  unsigned int duration_in_ms,
 			  unsigned int packet_size,
@@ -560,7 +561,7 @@ static int execute_upload(const struct shell *shell,
 		 * some time and start the test after that.
 		 */
 		net_icmpv6_send_echo_request(net_if_get_default(),
-					     &ipv6->sin6_addr, 0, 0);
+					     &ipv6->sin6_addr, 0, 0, NULL, 0);
 
 		k_sleep(K_SECONDS(1));
 	}
@@ -584,7 +585,7 @@ static int execute_upload(const struct shell *shell,
 				goto out;
 			}
 
-			zperf_udp_upload(shell, context6, duration_in_ms,
+			zperf_udp_upload(shell, context6, port, duration_in_ms,
 					 packet_size, rate_in_kbps, &results);
 			shell_udp_upload_print_stats(shell, &results);
 		}
@@ -603,7 +604,7 @@ static int execute_upload(const struct shell *shell,
 				goto out;
 			}
 
-			zperf_udp_upload(shell, context4, duration_in_ms,
+			zperf_udp_upload(shell, context4, port, duration_in_ms,
 					 packet_size, rate_in_kbps, &results);
 			shell_udp_upload_print_stats(shell, &results);
 		}
@@ -812,7 +813,7 @@ static int shell_cmd_upload(const struct shell *shell, size_t argc,
 	}
 
 	return execute_upload(shell, context6, context4, family, &ipv6, &ipv4,
-			      is_udp, argv[start], duration_in_ms,
+			      is_udp, port, argv[start], duration_in_ms,
 			      packet_size, rate_in_kbps);
 }
 
@@ -931,7 +932,7 @@ static int shell_cmd_upload2(const struct shell *shell, size_t argc,
 	}
 
 	return execute_upload(shell, context6, context4, family, &in6_addr_dst,
-			      &in4_addr_dst, is_udp, argv[start],
+			      &in4_addr_dst, is_udp, port, argv[start],
 			      duration_in_ms, packet_size, rate_in_kbps);
 }
 
@@ -989,11 +990,22 @@ static int cmd_connectap(const struct shell *shell, size_t argc, char *argv[])
 	return 0;
 }
 
+static bool tcp_running;
+
+void zperf_tcp_stopped(void)
+{
+	tcp_running = false;
+}
+
+void zperf_tcp_started(void)
+{
+	tcp_running = true;
+}
+
 static int cmd_tcp_download(const struct shell *shell, size_t argc,
 			    char *argv[])
 {
 	if (IS_ENABLED(CONFIG_NET_TCP)) {
-		static bool tcp_stopped = true;
 		int port;
 
 		do_init(shell);
@@ -1004,15 +1016,13 @@ static int cmd_tcp_download(const struct shell *shell, size_t argc,
 			port = DEF_PORT;
 		}
 
-		if (!tcp_stopped) {
+		if (tcp_running) {
 			shell_fprintf(shell, SHELL_WARNING,
 				      "TCP server already started!\n");
 			return -ENOEXEC;
 		}
 
 		zperf_tcp_receiver_init(shell, port);
-
-		tcp_stopped = false;
 
 		shell_fprintf(shell, SHELL_NORMAL,
 			      "TCP server started on port %u\n", port);
@@ -1193,7 +1203,3 @@ SHELL_STATIC_SUBCMD_SET_CREATE(zperf_commands,
 );
 
 SHELL_CMD_REGISTER(zperf, &zperf_commands, "Zperf commands", NULL);
-
-void main(void)
-{
-}

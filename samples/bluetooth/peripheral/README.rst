@@ -19,7 +19,7 @@ Requirements
 Building and Running
 ********************
 
-This sample can be found under :file:`samples/bluetooth/peripheral` in the
+This sample can be found under :zephyr_file:`samples/bluetooth/peripheral` in the
 Zephyr tree.
 
-See :ref:`bluetooth setup section <bluetooth_setup>` for details.
+See :ref:`bluetooth samples section <bluetooth-samples>` for details.

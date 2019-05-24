@@ -98,7 +98,7 @@
 			};
 		};
 
-		idwg: watchdog@40003000 {
+		iwdg: watchdog@40003000 {
 			compatible = "st,stm32-watchdog";
 			reg = <0x40003000 0x400>;
 			label = "IWDG";
@@ -290,6 +290,15 @@
 			prescaler = <32768>;
 			status = "disabled";
 			label = "RTC_0";
+		};
+
+		adc1: adc@50040000 {
+			compatible = "st,stm32-adc";
+			reg = <0x50040000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00002000>;
+			interrupts = <18 0>;
+			status = "disabled";
+			label = "ADC_1";
 		};
 	};
 };

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 # kernel is a normal CMake library and not a zephyr_library because it
 # should not be --whole-archive'd
 add_library(kernel

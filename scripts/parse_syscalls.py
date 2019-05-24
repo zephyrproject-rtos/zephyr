@@ -4,6 +4,22 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+"""
+Script to scan Zephyr include directories and emit system call metadata
+
+System calls require a great deal of boilerplate code in order to implement
+completely. This script is the first step in the build system's process of
+auto-generating this code by doing a text scan of directories containing
+header files, and building up a database of system calls and their
+function call prototypes. This information is emitted to a generated
+JSON file for further processing.
+
+If the output JSON file already exists, its contents are checked against
+what information this script would have outputted; if the result is that the
+file would be unchanged, it is not modified to prevent unnecessary
+incremental builds.
+"""
+
 import sys
 import re
 import argparse

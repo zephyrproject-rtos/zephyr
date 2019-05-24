@@ -18,6 +18,14 @@
 			device_type = "cpu";
 			compatible = "arm,cortex-m7";
 			reg = <0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			mpu: mpu@e000ed90 {
+				compatible = "arm,armv7m-mpu";
+				reg = <0xe000ed90 0x40>;
+				arm,num-mpu-regions = <16>;
+			};
 		};
 	};
 
@@ -326,6 +334,17 @@
 			status = "ok";
 			interrupts = <53 0>;
 			label = "TRNG";
+		};
+
+		usbd1: usbd@402E0000 {
+			compatible = "nxp,kinetis-usbd";
+			reg = <0x402E0200 0x1000>;
+			interrupts = <113 1>;
+			interrupt-names = "usb_otg";
+			num-bidir-endpoints = <8>;
+			maximum-speed = "full-speed";
+			status = "disabled";
+			label = "USBD_1";
 		};
 	};
 };

@@ -23,7 +23,8 @@ int test_export_block;
 int c2_var_count = 1;
 
 int c1_handle_get(int argc, char **argv, char *val, int val_len_max);
-int c1_handle_set(int argc, char **argv, void *value_ctx);
+int c1_handle_set(int argc, char **argv, size_t len, settings_read_cb read_cb,
+		  void *cb_arg);
 int c1_handle_commit(void);
 int c1_handle_export(int (*cb)(const char *name, void *value, size_t val_len));
 
@@ -64,35 +65,36 @@ int c1_handle_get(int argc, char **argv, char *val, int val_len_max)
 	return -ENOENT;
 }
 
-int c1_handle_set(int argc, char **argv, void *value_ctx)
+int c1_handle_set(int argc, char **argv, size_t len, settings_read_cb read_cb,
+		  void *cb_arg)
 {
 	int rc;
 	size_t val_len;
 
 	test_set_called = 1;
 	if (argc == 1 && !strcmp(argv[0], "mybar")) {
-		val_len = settings_val_get_len_cb(value_ctx);
+		val_len = len;
 		zassert_true(val_len == 1, "bad set-value size");
 
-		rc = settings_val_read_cb(value_ctx, &val8, sizeof(val8));
+		rc = read_cb(cb_arg, &val8, sizeof(val8));
 		zassert_true(rc >= 0, "SETTINGS_VALUE_SET callback");
 		return 0;
 	}
 
 	if (argc == 1 && !strcmp(argv[0], "mybar16")) {
-		val_len = settings_val_get_len_cb(value_ctx);
+		val_len = len;
 		zassert_true(val_len == 2, "bad set-value size");
 
-		rc = settings_val_read_cb(value_ctx, &val16, sizeof(val16));
+		rc = read_cb(cb_arg, &val16, sizeof(val16));
 		zassert_true(rc >= 0, "SETTINGS_VALUE_SET callback");
 		return 0;
 	}
 
 	if (argc == 1 && !strcmp(argv[0], "mybar64")) {
-		val_len = settings_val_get_len_cb(value_ctx);
+		val_len = len;
 		zassert_true(val_len == 8, "bad set-value size");
 
-		rc = settings_val_read_cb(value_ctx, &val64, sizeof(val64));
+		rc = read_cb(cb_arg, &val64, sizeof(val64));
 		zassert_true(rc >= 0, "SETTINGS_VALUE_SET callback");
 		return 0;
 	}

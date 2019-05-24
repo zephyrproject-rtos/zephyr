@@ -11,10 +11,6 @@ config ARCH
 	string
 	default "riscv32"
 
-config ARCH_DEFCONFIG
-	string
-	default "arch/riscv32/defconfig"
-
 menu "RISCV32 Processor Options"
 
 config INCLUDE_RESET_VECTOR
@@ -25,6 +21,7 @@ config INCLUDE_RESET_VECTOR
 
 config RISCV_SOC_CONTEXT_SAVE
 	bool "Enable SOC-based context saving in IRQ handlers"
+	select RISCV_SOC_OFFSETS
 	help
 	  Enable low-level SOC-specific context management, for SOCs
 	  with extra state that must be saved when entering an
@@ -44,12 +41,6 @@ config RISCV_SOC_CONTEXT_SAVE
 	  - SOC_ESF_INIT: structure contents initializer for struct soc_esf
 	    state. The last initialized member should not end in a comma.
 
-	  - GEN_SOC_OFFSET_SYMS(): a macro which expands to
-	    GEN_OFFSET_SYM(soc_esf_t, soc_specific_member) calls
-	    to ensure offset macros for SOC_ESF_MEMBERS are defined
-	    in offsets.h. The last one should not end in a semicolon.
-	    See gen_offset.h for more details.
-
 	  The generic architecture IRQ wrapper will also call
 	  \_\_soc_save_context and \_\_soc_restore_context routines at
 	  ISR entry and exit, respectively. These should typically
@@ -62,6 +53,18 @@ config RISCV_SOC_CONTEXT_SAVE
 
 	  The calls obey standard calling conventions; i.e., the state
 	  pointer address is in a0, and ra contains the return address.
+
+config RISCV_SOC_OFFSETS
+	bool "Enable SOC-based offsets"
+	help
+	  Enabling this option requires that the SoC provide a soc_offsets.h
+	  header which defines the following macros:
+
+	  - GEN_SOC_OFFSET_SYMS(): a macro which expands to
+	    GEN_OFFSET_SYM(soc_esf_t, soc_specific_member) calls
+	    to ensure offset macros for SOC_ESF_MEMBERS are defined
+	    in offsets.h. The last one should not end in a semicolon.
+	    See gen_offset.h for more details.
 
 config RISCV_SOC_INTERRUPT_INIT
 	bool "Enable SOC-based interrupt initialization"

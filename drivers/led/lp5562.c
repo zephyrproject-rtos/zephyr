@@ -917,7 +917,7 @@ static int lp5562_led_init(struct device *dev)
 
 	if (i2c_reg_write_byte(data->i2c, CONFIG_LP5562_I2C_ADDRESS,
 				LP5562_CONFIG,
-				(LP5562_CONFIG_INTERNAL_CLOCK ||
+				(LP5562_CONFIG_INTERNAL_CLOCK |
 				 LP5562_CONFIG_PWRSAVE_EN))) {
 		LOG_ERR("Configuring LP5562 LED chip failed.");
 		return -EIO;

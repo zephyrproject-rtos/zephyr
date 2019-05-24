@@ -5,9 +5,6 @@ sample:
   description: Test gPTP functionality
   name: gPTP sample app
 tests:
-  test:
+  sample.net.gptp:
     platform_whitelist: frdm_k64f sam_e70_xplained native_posix
     depends_on: netif
-    # To avoid "Too many thread objects" error
-    extra_configs:
-      - CONFIG_USERSPACE=n

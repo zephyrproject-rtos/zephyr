@@ -80,7 +80,7 @@ s32_t bt_mesh_model_pub_period_get(struct bt_mesh_model *mod)
 	switch (mod->pub->period >> 6) {
 	case 0x00:
 		/* 1 step is 100 ms */
-		period = K_MSEC((mod->pub->period & BIT_MASK(6)) * 100);
+		period = K_MSEC((mod->pub->period & BIT_MASK(6)) * 100U);
 		break;
 	case 0x01:
 		/* 1 step is 1 second */
@@ -88,17 +88,21 @@ s32_t bt_mesh_model_pub_period_get(struct bt_mesh_model *mod)
 		break;
 	case 0x02:
 		/* 1 step is 10 seconds */
-		period = K_SECONDS((mod->pub->period & BIT_MASK(6)) * 10);
+		period = K_SECONDS((mod->pub->period & BIT_MASK(6)) * 10U);
 		break;
 	case 0x03:
 		/* 1 step is 10 minutes */
-		period = K_MINUTES((mod->pub->period & BIT_MASK(6)) * 10);
+		period = K_MINUTES((mod->pub->period & BIT_MASK(6)) * 10U);
 		break;
 	default:
 		CODE_UNREACHABLE;
 	}
 
-	return period >> mod->pub->period_div;
+	if (mod->pub->fast_period) {
+		return period >> mod->pub->period_div;
+	} else {
+		return period;
+	}
 }
 
 static s32_t next_period(struct bt_mesh_model *mod)
@@ -198,7 +202,7 @@ static void mod_publish(struct k_work *work)
 		if (err) {
 			BT_ERR("Failed to retransmit (err %d)", err);
 
-			pub->count = 0;
+			pub->count = 0U;
 
 			/* Continue with normal publication */
 			if (period_ms) {
@@ -707,7 +711,7 @@ int bt_mesh_model_publish(struct bt_mesh_model *model)
 	err = model_send(model, &tx, true, &sdu, &pub_sent_cb, model);
 	if (err) {
 		/* Don't try retransmissions for this publish attempt */
-		pub->count = 0;
+		pub->count = 0U;
 		/* Make sure the publish timer gets reset */
 		publish_sent(err, model);
 		return err;

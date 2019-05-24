@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 
 macro(toolchain_cc_nostdinc)
 
@@ -5,6 +7,7 @@ macro(toolchain_cc_nostdinc)
     NOT COMPILER STREQUAL "xcc" AND
     NOT CONFIG_NATIVE_APPLICATION)
     zephyr_compile_options( -nostdinc)
+    zephyr_system_include_directories(${NOSTDINC})
   endif()
 
 endmacro()

@@ -50,6 +50,16 @@
 	};
 };
 
+&i2s2 {
+	status = "ok";
+
+	mp34dt01@0 {
+		compatible = "st,mpxxdtyy";
+		reg = <0>;
+		label = "MP34DT01";
+	};
+};
+
 &i2c1 {
 	status = "ok";
 	clock-frequency = <I2C_BITRATE_FAST>;

@@ -30,6 +30,13 @@
 
 #define BOOT_IMG_VER_STRLEN_MAX 25  /* 255.255.65535.4294967295\0 */
 
+/* Trailer: */
+#define BOOT_MAX_ALIGN		8
+#define BOOT_MAGIC_SZ		16
+
+#define BOOT_TRAILER_IMG_STATUS_OFFS(bank_area) ((bank_area)->fa_size -\
+						  BOOT_MAGIC_SZ -\
+						  BOOT_MAX_ALIGN * 2)
 /**
  * @brief MCUboot image header representation for image version
  *
@@ -145,14 +152,19 @@ int boot_write_img_confirmed(void);
  */
 int mcuboot_swap_type(void);
 
+
+/** Boot upgrade request modes */
+#define BOOT_UPGRADE_TEST       0
+#define BOOT_UPGRADE_PERMANENT  1
+
 /**
  * @brief Marks the image in slot 1 as pending. On the next reboot, the system
  * will perform a boot of the slot 1 image.
  *
  * @param permanent Whether the image should be used permanently or
  * only tested once:
- *   0=run image once, then confirm or revert.
- *   1=run image forever.
+ *   BOOT_UPGRADE_TEST=run image once, then confirm or revert.
+ *   BOOT_UPGRADE_PERMANENT=run image forever.
  * @return 0 on success, negative errno code on fail.
  */
 int boot_request_upgrade(int permanent);

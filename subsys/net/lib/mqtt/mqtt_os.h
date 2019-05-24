@@ -20,6 +20,7 @@
 
 #include <stddef.h>
 #include <kernel.h>
+#include <misc/mutex.h>
 
 #include <net/net_core.h>
 
@@ -41,7 +42,7 @@ extern "C" {
  */
 static inline void mqtt_mutex_init(struct mqtt_client *client)
 {
-	k_mutex_init(&client->internal.mutex);
+	sys_mutex_init(&client->internal.mutex);
 }
 
 /**@brief Acquire lock on the module specific mutex, if any.
@@ -51,14 +52,20 @@ static inline void mqtt_mutex_init(struct mqtt_client *client)
  */
 static inline void mqtt_mutex_lock(struct mqtt_client *client)
 {
-	(void)k_mutex_lock(&client->internal.mutex, K_FOREVER);
+	int ret = sys_mutex_lock(&client->internal.mutex, K_FOREVER);
+
+	__ASSERT(ret == 0, "sys_mutex_lock failed with %d", ret);
+	(void)ret;
 }
 
 /**@brief Release the lock on the module specific mutex, if any.
  */
 static inline void mqtt_mutex_unlock(struct mqtt_client *client)
 {
-	k_mutex_unlock(&client->internal.mutex);
+	int ret = sys_mutex_unlock(&client->internal.mutex);
+
+	__ASSERT(ret == 0, "sys_mutex_unlock failed with %d", ret);
+	(void)ret;
 }
 
 /**@brief Method to get the sys tick or a wall clock in millisecond resolution.

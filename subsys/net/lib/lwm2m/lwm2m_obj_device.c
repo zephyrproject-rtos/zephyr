@@ -155,7 +155,7 @@ static int current_time_post_write_cb(u16_t obj_inst_id,
 				 u8_t *data, u16_t data_len,
 				 bool last_block, size_t total_size)
 {
-	if (data_len == 4) {
+	if (data_len == 4U) {
 		time_offset = *(s32_t *)data - (s32_t)(k_uptime_get() / 1000);
 		return 0;
 	}

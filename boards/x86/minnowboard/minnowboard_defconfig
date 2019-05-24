@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 CONFIG_X86=y
 CONFIG_SOC_ATOM=y
 CONFIG_BOARD_MINNOWBOARD=y

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 # Any linux host toolchain should work as a default
 CC ?= gcc
 OBJCOPY ?= objcopy
@@ -26,7 +28,7 @@ stubs: xuk-stub32.bin xuk-stub16.bin
 # image.
 xuk-stub32.bin: xuk-stub32.c *.h xuk-stub32.ld
 	$(CC) -Wall -m32 $(CFLAGS) -c xuk-stub32.c
-	$(CC) -m32 -T xuk-stub32.ld $(LDFLAGS) -o stub32.elf $(CFLAGS) xuk-stub32.o
+	$(CC) -m32 -T xuk-stub32.ld $(LDFLAGS) -no-pie -o stub32.elf $(CFLAGS) xuk-stub32.o
 	$(OBJCOPY) -O binary stub32.elf $@
 
 # This is the main OS image, starting with the 32 bit stub and

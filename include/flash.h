@@ -94,7 +94,7 @@ struct flash_driver_api {
 __syscall int flash_read(struct device *dev, off_t offset, void *data,
 			 size_t len);
 
-static inline int _impl_flash_read(struct device *dev, off_t offset, void *data,
+static inline int z_impl_flash_read(struct device *dev, off_t offset, void *data,
 			     size_t len)
 {
 	const struct flash_driver_api *api = dev->driver_api;
@@ -118,7 +118,7 @@ static inline int _impl_flash_read(struct device *dev, off_t offset, void *data,
 __syscall int flash_write(struct device *dev, off_t offset, const void *data,
 			  size_t len);
 
-static inline int _impl_flash_write(struct device *dev, off_t offset,
+static inline int z_impl_flash_write(struct device *dev, off_t offset,
 				    const void *data, size_t len)
 {
 	const struct flash_driver_api *api = dev->driver_api;
@@ -149,7 +149,7 @@ static inline int _impl_flash_write(struct device *dev, off_t offset,
  */
 __syscall int flash_erase(struct device *dev, off_t offset, size_t size);
 
-static inline int _impl_flash_erase(struct device *dev, off_t offset,
+static inline int z_impl_flash_erase(struct device *dev, off_t offset,
 				    size_t size)
 {
 	const struct flash_driver_api *api = dev->driver_api;
@@ -175,7 +175,7 @@ static inline int _impl_flash_erase(struct device *dev, off_t offset,
  */
 __syscall int flash_write_protection_set(struct device *dev, bool enable);
 
-static inline int _impl_flash_write_protection_set(struct device *dev,
+static inline int z_impl_flash_write_protection_set(struct device *dev,
 						   bool enable)
 {
 	const struct flash_driver_api *api = dev->driver_api;
@@ -263,7 +263,7 @@ void flash_page_foreach(struct device *dev, flash_page_cb cb, void *data);
  */
 __syscall size_t flash_get_write_block_size(struct device *dev);
 
-static inline size_t _impl_flash_get_write_block_size(struct device *dev)
+static inline size_t z_impl_flash_get_write_block_size(struct device *dev)
 {
 	const struct flash_driver_api *api = dev->driver_api;
 

@@ -193,7 +193,7 @@ u32_t ecb_ut(void)
 		__WFE();
 	} while (!context.done);
 
-	if (context.status != 0) {
+	if (context.status != 0U) {
 		return context.status;
 	}
 

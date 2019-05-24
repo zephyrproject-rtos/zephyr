@@ -60,9 +60,10 @@
  *  @code
  *  SDFatFS_Handle handle;
  *
- *  handle = SDFatFS_open(index, driveNum, NULL);
- *  if (!handle) {
- *      System_printf("Error opening SDFatFS driver\n");
+ *  handle = SDFatFS_open(Board_SDFatFS0, driveNum, NULL);
+ *  if (handle == NULL) {
+ *      //Error opening SDFatFS driver
+ *      while (1);
  *  }
  *  @endcode
  *

@@ -125,8 +125,8 @@ __STATIC_INLINE void nrfx_coredep_delay_us(uint32_t time_us)
     DWT->CTRL = dwt_ctrl;
     CoreDebug->DEMCR = core_debug;
 }
-#else // NRFX_CHECK(NRFX_DELAY_DWT_BASED)
 
+#else // NRFX_CHECK(NRFX_DELAY_DWT_BASED)
 
 __STATIC_INLINE void nrfx_coredep_delay_us(uint32_t time_us)
 {

@@ -40,7 +40,7 @@ static inline unsigned int EflagsGet(void)
 }
 
 
-#ifdef CONFIG_FP_SHARING
+#ifdef CONFIG_LAZY_FP_SHARING
 
 /**
  *
@@ -51,7 +51,7 @@ static inline unsigned int EflagsGet(void)
  *
  * @return N/A
  */
-static inline void _FpAccessDisable(void)
+static inline void z_FpAccessDisable(void)
 {
 	void *tempReg;
 
@@ -72,11 +72,11 @@ static inline void _FpAccessDisable(void)
  * This routine saves the system's "live" non-integer context into the
  * specified area.  If the specified thread supports SSE then
  * x87/MMX/SSEx thread info is saved, otherwise only x87/MMX thread is saved.
- * Function is invoked by _FpCtxSave(struct k_thread *thread)
+ * Function is invoked by FpCtxSave(struct k_thread *thread)
  *
  * @return N/A
  */
-static inline void _do_fp_regs_save(void *preemp_float_reg)
+static inline void z_do_fp_regs_save(void *preemp_float_reg)
 {
 	__asm__ volatile("fnsave (%0);\n\t"
 			 :
@@ -92,11 +92,11 @@ static inline void _do_fp_regs_save(void *preemp_float_reg)
  * This routine saves the system's "live" non-integer context into the
  * specified area.  If the specified thread supports SSE then
  * x87/MMX/SSEx thread info is saved, otherwise only x87/MMX thread is saved.
- * Function is invoked by _FpCtxSave(struct k_thread *thread)
+ * Function is invoked by FpCtxSave(struct k_thread *thread)
  *
  * @return N/A
  */
-static inline void _do_fp_and_sse_regs_save(void *preemp_float_reg)
+static inline void z_do_fp_and_sse_regs_save(void *preemp_float_reg)
 {
 	__asm__ volatile("fxsave (%0);\n\t"
 			 :
@@ -113,7 +113,7 @@ static inline void _do_fp_and_sse_regs_save(void *preemp_float_reg)
  *
  * @return N/A
  */
-static inline void _do_fp_regs_init(void)
+static inline void z_do_fp_regs_init(void)
 {
 	__asm__ volatile("fninit\n\t");
 }
@@ -127,13 +127,13 @@ static inline void _do_fp_regs_init(void)
  *
  * @return N/A
  */
-static inline void _do_sse_regs_init(void)
+static inline void z_do_sse_regs_init(void)
 {
 	__asm__ volatile("ldmxcsr _sse_mxcsr_default_value\n\t");
 }
 #endif /* CONFIG_SSE */
 
-#endif /* CONFIG_FP_SHARING */
+#endif /* CONFIG_LAZY_FP_SHARING */
 
 #endif /* _ASMLANGUAGE */
 

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 CONFIG_ARM=y
 CONFIG_SOC_FAMILY_NRF=y
 CONFIG_SOC_SERIES_NRF52X=y
@@ -6,6 +8,9 @@ CONFIG_BOARD_NRF52840_PCA10059=y
 
 # Enable MPU
 CONFIG_ARM_MPU=y
+
+# enable GPIO
+CONFIG_GPIO=y
 
 # Enable UART driver, needed for CDC ACM
 CONFIG_SERIAL=y
@@ -17,3 +22,4 @@ CONFIG_CONSOLE=y
 
 # additional board options
 CONFIG_GPIO_AS_PINRESET=y
+CONFIG_NFCT_PINS_AS_GPIOS=y

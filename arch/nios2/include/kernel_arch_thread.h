@@ -12,7 +12,6 @@
  *
  *  struct _thread_arch
  *  struct _callee_saved
- *  struct _caller_saved
  *
  * necessary to instantiate instances of struct k_thread.
  */
@@ -22,15 +21,6 @@
 
 #ifndef _ASMLANGUAGE
 #include <zephyr/types.h>
-
-struct _caller_saved {
-	/*
-	 * Nothing here, the exception code puts all the caller-saved
-	 * registers onto the stack.
-	 */
-};
-
-typedef struct _caller_saved _caller_saved_t;
 
 struct _callee_saved {
 	/* General purpose callee-saved registers */
@@ -54,10 +44,10 @@ struct _callee_saved {
 	/* Stack pointer */
 	u32_t sp;
 
-	/* IRQ status before irq_lock() and call to _Swap() */
+	/* IRQ status before irq_lock() and call to z_swap() */
 	u32_t key;
 
-	/* Return value of _Swap() */
+	/* Return value of z_swap() */
 	u32_t retval;
 };
 

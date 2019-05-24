@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 # See root CMakeLists.txt for description and expectations of this macro
 #
 # NOTE: Some GNU toolchains break with plain '-Os' or '-Og', but is fixable

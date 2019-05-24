@@ -69,7 +69,7 @@ Programming and Debugging
 *************************
 
 The D2000 board configuration details are found in the project's tree at
-:file:`boards/x86/quark_d2000_crb`.
+:zephyr_file:`boards/x86/quark_d2000_crb`.
 
 Applications for the ``quark_d2000_crb`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and

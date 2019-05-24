@@ -5,5 +5,5 @@ sample:
   description: Test VLAN functionality
   name: VLAN sample app
 tests:
-  test:
+  sample.net.vlan:
     depends_on: netif

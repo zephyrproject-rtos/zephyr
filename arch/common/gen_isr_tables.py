@@ -223,9 +223,8 @@ def main():
     intlist = read_intlist(args.intlist)
     nvec = intlist["num_vectors"]
     offset = intlist["offset"]
-    prefix = endian_prefix()
 
-    spurious_handler = "&_irq_spurious"
+    spurious_handler = "&z_irq_spurious"
     sw_irq_handler   = "ISR_WRAPPER"
 
     debug('offset is ' + str(offset))
@@ -250,8 +249,8 @@ def main():
         swt = None
 
     for irq, flags, func, param in intlist["interrupts"]:
-        if (flags & ISR_FLAG_DIRECT):
-            if (param != 0):
+        if flags & ISR_FLAG_DIRECT:
+            if param != 0:
                 error("Direct irq %d declared, but has non-NULL parameter"
                         % irq)
             vt[irq - offset] = func
@@ -307,4 +306,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

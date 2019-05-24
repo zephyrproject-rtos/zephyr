@@ -147,16 +147,16 @@ void ADC_GetDefaultConfig(adc_config_t *config)
     memset(config, 0, sizeof(*config));
 
     config->enableAsynchronousClockOutput = true;
-    config->enableOverWrite = false;
-    config->enableContinuousConversion = false;
-    config->enableHighSpeed = false;
-    config->enableLowPower = false;
-    config->enableLongSample = false;
-    config->referenceVoltageSource = kADC_ReferenceVoltageSourceAlt0;
-    config->samplePeriodMode = kADC_SamplePeriod2or12Clocks;
-    config->clockSource = kADC_ClockSourceAD;
-    config->clockDriver = kADC_ClockDriver1;
-    config->resolution = kADC_Resolution12Bit;
+    config->enableOverWrite               = false;
+    config->enableContinuousConversion    = false;
+    config->enableHighSpeed               = false;
+    config->enableLowPower                = false;
+    config->enableLongSample              = false;
+    config->referenceVoltageSource        = kADC_ReferenceVoltageSourceAlt0;
+    config->samplePeriodMode              = kADC_SamplePeriod2or12Clocks;
+    config->clockSource                   = kADC_ClockSourceAD;
+    config->clockDriver                   = kADC_ClockDriver1;
+    config->resolution                    = kADC_Resolution12Bit;
 }
 
 /*!
@@ -189,7 +189,7 @@ void ADC_GetDefaultConfig(adc_config_t *config)
 void ADC_SetChannelConfig(ADC_Type *base, uint32_t channelGroup, const adc_channel_config_t *config)
 {
     assert(NULL != config);
-    assert(channelGroup < ADC_HC_COUNT);
+    assert(channelGroup < FSL_FEATURE_ADC_CONVERSION_CONTROL_COUNT);
 
     uint32_t tmp32;
 
@@ -341,7 +341,7 @@ void ADC_SetHardwareCompareConfig(ADC_Type *base, const adc_hardware_compare_con
     base->GC = tmp32;
 
     /* Load the compare values. */
-    tmp32 = ADC_CV_CV1(config->value1) | ADC_CV_CV2(config->value2);
+    tmp32    = ADC_CV_CV1(config->value1) | ADC_CV_CV2(config->value2);
     base->CV = tmp32;
 }
 

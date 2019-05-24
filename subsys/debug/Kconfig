@@ -68,7 +68,7 @@ config ASAN
 	help
 	  Builds Zephyr with Address Sanitizer enabled.  This is currently
 	  only supported by the native_posix port, and requires a recent-ish
-	  compiler with the `-fsanitize=address` command line option, and
+	  compiler with the ``-fsanitize=address`` command line option, and
 	  the libasan library.
 
 config STACK_USAGE
@@ -275,4 +275,3 @@ config TRACING_CTF_BOTTOM_POSIX
 source "subsys/debug/Kconfig.segger"
 
 endmenu
-

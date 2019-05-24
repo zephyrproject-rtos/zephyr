@@ -118,3 +118,7 @@ arduino_serial: &uart3 {};
 		status = "ok";
 	};
 };
+
+&usbd1 {
+	status = "ok";
+};

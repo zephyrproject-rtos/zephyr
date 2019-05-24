@@ -2,100 +2,112 @@ common:
   build_only: true
   tags: bluetooth
 tests:
-  test:
+  bluetooth.init.test:
     platform_whitelist: qemu_cortex_m3
-  test_0:
+  bluetooth.init.test_0:
     extra_args: CONF_FILE=prj_0.conf
     platform_whitelist: qemu_cortex_m3
-  test_1:
+  bluetooth.init.test_1:
     extra_args: CONF_FILE=prj_1.conf
     platform_whitelist: qemu_cortex_m3
-  test_10:
+  bluetooth.init.test_10:
     extra_args: CONF_FILE=prj_10.conf
     platform_whitelist: qemu_cortex_m3
-  test_11:
+  bluetooth.init.test_11:
     extra_args: CONF_FILE=prj_11.conf
     platform_whitelist: qemu_cortex_m3
-  test_12:
+  bluetooth.init.test_12:
     extra_args: CONF_FILE=prj_12.conf
     platform_whitelist: qemu_cortex_m3
-  test_13:
+  bluetooth.init.test_13:
     extra_args: CONF_FILE=prj_13.conf
     platform_whitelist: qemu_cortex_m3
-  test_14:
+  bluetooth.init.test_14:
     extra_args: CONF_FILE=prj_14.conf
     platform_whitelist: qemu_cortex_m3
-  test_15:
+  bluetooth.init.test_15:
     extra_args: CONF_FILE=prj_15.conf
     platform_whitelist: qemu_cortex_m3
-  test_16:
+  bluetooth.init.test_16:
     extra_args: CONF_FILE=prj_16.conf
     platform_whitelist: qemu_cortex_m3
-  test_17:
+  bluetooth.init.test_17:
     extra_args: CONF_FILE=prj_17.conf
     platform_whitelist: qemu_cortex_m3
-  test_18:
+  bluetooth.init.test_18:
     extra_args: CONF_FILE=prj_18.conf
     platform_whitelist: qemu_cortex_m3
-  test_19:
+  bluetooth.init.test_19:
     extra_args: CONF_FILE=prj_19.conf
     platform_whitelist: qemu_cortex_m3
-  test_2:
+  bluetooth.init.test_2:
     extra_args: CONF_FILE=prj_2.conf
     platform_whitelist: qemu_cortex_m3
-  test_20:
+  bluetooth.init.test_20:
     extra_args: CONF_FILE=prj_20.conf
     platform_whitelist: qemu_cortex_m3
-  test_21:
+  bluetooth.init.test_21:
     extra_args: CONF_FILE=prj_21.conf
     platform_whitelist: qemu_cortex_m3
-  test_22:
+  bluetooth.init.test_22:
     extra_args: CONF_FILE=prj_22.conf
     platform_whitelist: qemu_cortex_m3
-  test_3:
+  bluetooth.init.test_3:
     extra_args: CONF_FILE=prj_3.conf
     platform_whitelist: qemu_cortex_m3
-  test_4:
+  bluetooth.init.test_4:
     extra_args: CONF_FILE=prj_4.conf
     platform_whitelist: qemu_cortex_m3
-  test_5:
+  bluetooth.init.test_5:
     extra_args: CONF_FILE=prj_5.conf
     platform_whitelist: qemu_cortex_m3
-  test_6:
+  bluetooth.init.test_6:
     extra_args: CONF_FILE=prj_6.conf
     platform_whitelist: qemu_cortex_m3
-  test_7:
+  bluetooth.init.test_7:
     extra_args: CONF_FILE=prj_7.conf
     platform_whitelist: qemu_cortex_m3
-  test_8:
+  bluetooth.init.test_8:
     extra_args: CONF_FILE=prj_8.conf
     platform_whitelist: qemu_cortex_m3
-  test_9:
+  bluetooth.init.test_9:
     extra_args: CONF_FILE=prj_9.conf
     platform_whitelist: qemu_cortex_m3
-  test_controller:
+  bluetooth.init.test_controller:
     extra_args: CONF_FILE=prj_controller.conf
     platform_whitelist: nrf52840_pca10056 nrf52_pca10040
       nrf51_pca10028 96b_nitrogen
-  test_controller_4_0:
+  bluetooth.init.test_controller_4_0:
     extra_args: CONF_FILE=prj_controller_4_0.conf
     platform_whitelist: nrf52840_pca10056 nrf52_pca10040
       nrf51_pca10028
-  test_controller_dbg:
+  bluetooth.init.test_controller_tiny:
+    extra_args: CONF_FILE=prj_controller_tiny.conf
+    platform_whitelist: nrf52840_pca10056 nrf52_pca10040
+      nrf51_pca10028
+  bluetooth.init.test_controller_dbg:
     extra_args: CONF_FILE=prj_controller_dbg.conf
     platform_whitelist: nrf52840_pca10056 nrf52_pca10040
       nrf51_pca10028 96b_nitrogen
-  test_controller_ll_sw_split:
+  bluetooth.init.test_controller_ll_sw_split:
     extra_args: CONF_FILE=prj_controller_ll_sw_split.conf
     platform_whitelist: nrf52840_pca10056 nrf52_pca10040
       nrf51_pca10028
-  test_controller_dbg_ll_sw_split:
+  bluetooth.init.test_controller_4_0_ll_sw_split:
+    extra_args: CONF_FILE=prj_controller_4_0_ll_sw_split.conf
+    platform_whitelist: nrf52840_pca10056 nrf52_pca10040
+      nrf51_pca10028
+  bluetooth.init.test_controller_tiny_ll_sw_split:
+    extra_args: CONF_FILE=prj_controller_tiny_ll_sw_split.conf
+    platform_whitelist: nrf52840_pca10056 nrf52_pca10040
+      nrf51_pca10028
+  bluetooth.init.test_controller_dbg_ll_sw_split:
     extra_args: CONF_FILE=prj_controller_dbg_ll_sw_split.conf
     platform_whitelist: nrf52840_pca10056 nrf52_pca10040
       nrf51_pca10028
-  test_h5:
+  bluetooth.init.test_h5:
     extra_args: CONF_FILE=prj_h5.conf
     platform_whitelist: qemu_cortex_m3
-  test_h5_dbg:
+  bluetooth.init.test_h5_dbg:
     extra_args: CONF_FILE=prj_h5_dbg.conf
     platform_whitelist: qemu_cortex_m3

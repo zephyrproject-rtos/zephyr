@@ -249,7 +249,11 @@ void main(void)
 
 	trig.type = SENSOR_TRIG_DATA_READY;
 	trig.chan = SENSOR_CHAN_ACCEL_XYZ;
-	sensor_trigger_set(accel_dev, &trig, lsm6dsl_trigger_handler);
+	if (sensor_trigger_set(accel_dev, &trig,
+			       lsm6dsl_trigger_handler) != 0) {
+		printk("Could not set sensor type and channel\n");
+		return;
+	}
 #endif
 
 	while (1) {

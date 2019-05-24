@@ -160,12 +160,12 @@ static void _ldiv5(uint64_t *v)
 	/* Usage in this file wants rounded behavior, not truncation.  So add
 	 * two to get the threshold right.
 	 */
-	rem += 2;
+	rem += 2U;
 
 	for (i = 0U; i < 3; i++) {
 		hi = rem >> shifts[i];
-		q = (uint64_t)(hi / 5) << shifts[i];
-		rem -= q * 5;
+		q = (uint64_t)(hi / 5U) << shifts[i];
+		rem -= q * 5U;
 		quot += q;
 	}
 
@@ -178,7 +178,7 @@ static	char _get_digit(uint64_t *fr, int *digit_count)
 
 	if (*digit_count > 0) {
 		*digit_count -= 1;
-		*fr = *fr * 10;
+		*fr = *fr * 10U;
 		rval = ((*fr >> 60) & 0xF) + '0';
 		*fr &= 0x0FFFFFFFFFFFFFFFull;
 	} else {
@@ -287,7 +287,7 @@ static int _to_float(char *buf, uint64_t double_temp, int c,
 			_rlrshift(&fract);
 			exp++;
 		}
-		fract *= 5;
+		fract *= 5U;
 		exp++;
 		decexp--;
 
@@ -429,7 +429,7 @@ static int _atoi(char **sptr)
 	return i;
 }
 
-int _prf(int (*func)(), void *dest, char *format, va_list vargs)
+int z_prf(int (*func)(), void *dest, char *format, va_list vargs)
 {
 	/*
 	 * Due the fact that buffer is passed to functions in this file,

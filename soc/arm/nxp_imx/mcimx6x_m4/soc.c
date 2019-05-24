@@ -187,8 +187,6 @@ static int mcimx6x_m4_init(struct device *arg)
 	/* Initialize Cache */
 	SOC_CacheInit();
 
-	_ClearFaults();
-
 	/* Initialize clock */
 	SOC_ClockInit();
 

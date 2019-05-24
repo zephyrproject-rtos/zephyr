@@ -31,7 +31,7 @@ xt_exc_handler _xt_exception_table[XCHAL_EXCCAUSE_NUM] __aligned(4) = {
 #endif
 
 #if defined(CONFIG_SW_ISR_TABLE) && defined(XCHAL_HAVE_INTERRUPTS)
-void _irq_spurious(void *arg)
+void z_irq_spurious(void *arg)
 {
 	ReservedInterruptHandler((unsigned int)arg);
 	CODE_UNREACHABLE;

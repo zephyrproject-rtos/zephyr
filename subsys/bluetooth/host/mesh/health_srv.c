@@ -223,7 +223,7 @@ static void send_attention_status(struct bt_mesh_model *model,
 	u8_t time;
 
 	time = k_delayed_work_remaining_get(&srv->attn_timer) / 1000;
-	BT_DBG("%u second%s", time, (time == 1) ? "" : "s");
+	BT_DBG("%u second%s", time, (time == 1U) ? "" : "s");
 
 	bt_mesh_model_msg_init(&msg, OP_ATTENTION_STATUS);
 
@@ -251,7 +251,7 @@ static void attention_set_unrel(struct bt_mesh_model *model,
 
 	time = net_buf_simple_pull_u8(buf);
 
-	BT_DBG("%u second%s", time, (time == 1) ? "" : "s");
+	BT_DBG("%u second%s", time, (time == 1U) ? "" : "s");
 
 	bt_mesh_attention(model, time);
 }
@@ -342,8 +342,10 @@ static int health_pub_update(struct bt_mesh_model *mod)
 	BT_DBG("");
 
 	count = health_get_current(mod, pub->msg);
-	if (!count) {
-		pub->period_div = 0;
+	if (count) {
+		pub->fast_period = 1U;
+	} else {
+		pub->fast_period = 0U;
 	}
 
 	return 0;
@@ -357,6 +359,15 @@ int bt_mesh_fault_update(struct bt_mesh_elem *elem)
 	if (!mod) {
 		return -EINVAL;
 	}
+
+	/* Let periodic publishing, if enabled, take care of sending the
+	 * Health Current Status.
+	 */
+	if (bt_mesh_model_pub_period_get(mod)) {
+		return 0;
+	}
+
+	health_pub_update(mod);
 
 	return bt_mesh_model_publish(mod);
 }
@@ -425,7 +436,7 @@ void bt_mesh_attention(struct bt_mesh_model *model, u8_t time)
 			srv->cb->attn_on(model);
 		}
 
-		k_delayed_work_submit(&srv->attn_timer, time * 1000);
+		k_delayed_work_submit(&srv->attn_timer, time * 1000U);
 	} else {
 		k_delayed_work_cancel(&srv->attn_timer);
 

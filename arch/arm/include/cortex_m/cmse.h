@@ -136,11 +136,6 @@ int arm_cmse_addr_range_read_ok(u32_t addr, u32_t size, int force_npriv);
  */
 int arm_cmse_addr_range_readwrite_ok(u32_t addr, u32_t size, int force_npriv);
 
-/* Required for C99 compilation */
-#ifndef typeof
-#define typeof  __typeof__
-#endif
-
 /**
  * @brief Read accessibility of an object
  *

@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
 /* This file is a temporary workaround for mapping of the generated information
  * to the current driver definitions.  This will be removed when the drivers
  * are modified to handle the generated information, or the mapping of
@@ -7,6 +9,8 @@
 /* SoC level DTS fixup file */
 
 #define DT_NUM_IRQ_PRIO_BITS	DT_ARM_V7M_NVIC_E000E100_ARM_NUM_IRQ_PRIORITY_BITS
+
+#define DT_NUM_MPU_REGIONS		DT_ARM_ARMV7M_MPU_E000ED90_ARM_NUM_MPU_REGIONS
 
 #define DT_GPIO_SAM_PORTA_LABEL	DT_ATMEL_SAM_GPIO_400E0E00_LABEL
 #define DT_GPIO_SAM_PORTA_BASE_ADDRESS	DT_ATMEL_SAM_GPIO_400E0E00_BASE_ADDRESS

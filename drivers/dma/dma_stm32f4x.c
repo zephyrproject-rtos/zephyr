@@ -210,13 +210,13 @@ static u32_t dma_stm32_irq_status(struct dma_stm32_device *ddata,
 		irqs = dma_stm32_read(ddata, DMA_STM32_LISR);
 	}
 
-	return (irqs >> (((id & 2) << 3) | ((id & 1) * 6)));
+	return (irqs >> (((id & 2) << 3) | ((id & 1) * 6U)));
 }
 
 static void dma_stm32_irq_clear(struct dma_stm32_device *ddata,
 				u32_t id, u32_t irqs)
 {
-	irqs = irqs << (((id & 2) << 3) | ((id & 1) * 6));
+	irqs = irqs << (((id & 2) << 3) | ((id & 1) * 6U));
 
 	if (id & 4) {
 		dma_stm32_write(ddata, DMA_STM32_HIFCR, irqs);
@@ -387,7 +387,7 @@ static int dma_stm32_config(struct device *dev, u32_t id,
 		return -EINVAL;
 	}
 
-	if ((MEMORY_TO_MEMORY == stream->direction) && (!ddata->mem2mem)) {
+	if (MEMORY_TO_MEMORY == config->channel_direction && !ddata->mem2mem) {
 		LOG_ERR("DMA error: Memcopy not supported for device %s",
 			dev->config->name);
 		return -EINVAL;
@@ -415,6 +415,37 @@ static int dma_stm32_config(struct device *dev, u32_t id,
 	regs->sndtr = config->head_block->block_size;
 
 	return ret;
+}
+
+static int dma_stm32_reload(struct device *dev, u32_t id,
+			    u32_t src, u32_t dst, size_t size)
+{
+	struct dma_stm32_device *ddata = dev->driver_data;
+	struct dma_stm32_stream_reg *regs = &ddata->stream[id].regs;
+	struct dma_stm32_stream *stream = &ddata->stream[id];
+
+	if (id >= DMA_STM32_MAX_STREAMS) {
+		return -EINVAL;
+	}
+
+	switch (stream->direction) {
+	case MEMORY_TO_PERIPHERAL:
+		regs->sm0ar = src;
+		regs->spar = dst;
+		break;
+
+	case MEMORY_TO_MEMORY:
+	case PERIPHERAL_TO_MEMORY:
+		regs->spar = src;
+		regs->sm0ar = dst;
+		break;
+
+	default:
+		return -EINVAL;
+	}
+
+	regs->sndtr = size;
+	return 0;
 }
 
 static int dma_stm32_start(struct device *dev, u32_t id)
@@ -492,6 +523,22 @@ static int dma_stm32_stop(struct device *dev, u32_t id)
 	return 0;
 }
 
+static int dma_stm32_get_status(struct device *dev, u32_t id,
+				struct dma_status *stat)
+{
+	struct dma_stm32_device *ddata = dev->driver_data;
+
+	if (id >= DMA_STM32_MAX_STREAMS || stat == NULL) {
+		return -EINVAL;
+	}
+
+	stat->dir = ddata->stream[id].direction;
+	stat->busy = ddata->stream[id].busy;
+	stat->pending_length = dma_stm32_read(ddata, DMA_STM32_SNDTR(id));
+
+	return 0;
+}
+
 static int dma_stm32_init(struct device *dev)
 {
 	struct dma_stm32_device *ddata = dev->driver_data;
@@ -521,9 +568,11 @@ static int dma_stm32_init(struct device *dev)
 }
 
 static const struct dma_driver_api dma_funcs = {
+	.reload		 = dma_stm32_reload,
 	.config		 = dma_stm32_config,
 	.start		 = dma_stm32_start,
 	.stop		 = dma_stm32_stop,
+	.get_status 	 = dma_stm32_get_status,
 };
 
 const struct dma_stm32_config dma_stm32_1_cdata = {

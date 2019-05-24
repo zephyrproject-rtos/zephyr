@@ -15,7 +15,7 @@
 	_priv_stacks_text_area_used = _priv_stacks_text_area_end - _priv_stacks_text_area_start;
 
 #ifndef LINKER_PASS2
-	PROVIDE(_k_priv_stack_find = .);
+	PROVIDE(z_priv_stack_find = .);
 #endif
 
 	/* In a valid build the MAX function will always evaluate to the

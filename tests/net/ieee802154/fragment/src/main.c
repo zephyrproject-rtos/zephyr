@@ -236,12 +236,11 @@ static struct net_pkt *create_pkt(struct net_fragment_data *data)
 	u16_t len;
 	int remaining;
 
-	pkt = net_pkt_get_reserve_tx(K_FOREVER);
+	pkt = net_pkt_alloc_on_iface(net_if_get_default(), K_FOREVER);
 	if (!pkt) {
 		return NULL;
 	}
 
-	net_pkt_set_iface(pkt, net_if_get_default());
 	net_pkt_set_ip_hdr_len(pkt, NET_IPV6H_LEN);
 
 	buf = net_pkt_get_frag(pkt, K_FOREVER);
@@ -470,13 +469,13 @@ static bool test_fragment(struct net_fragment_data *data)
 		goto reassemble;
 	}
 
-	f_pkt = net_pkt_get_reserve_tx(K_FOREVER);
+	f_pkt = net_pkt_alloc(K_FOREVER);
 	if (!f_pkt) {
 		goto end;
 	}
 
 	ieee802154_fragment_ctx_init(&ctx, pkt, hdr_diff, data->iphc);
-	frame_buf.len = 0;
+	frame_buf.len = 0U;
 
 	buf = pkt->buffer;
 	while (buf) {
@@ -493,7 +492,7 @@ static bool test_fragment(struct net_fragment_data *data)
 
 		net_pkt_frag_add(f_pkt, dfrag);
 
-		frame_buf.len = 0;
+		frame_buf.len = 0U;
 	}
 
 	net_pkt_unref(pkt);
@@ -509,7 +508,7 @@ reassemble:
 
 	buf = f_pkt->buffer;
 	while (buf) {
-		rxpkt = net_pkt_get_reserve_rx(K_FOREVER);
+		rxpkt = net_pkt_rx_alloc(K_FOREVER);
 		if (!rxpkt) {
 			goto end;
 		}

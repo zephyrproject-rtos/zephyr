@@ -103,7 +103,7 @@ static void baudrate_set(struct device *dev)
 	 * unchanged. It can be useful in case that Zephyr it is run via
 	 * a bootloader that brings up the serial and sets the baudrate.
 	 */
-	if ((dev_data->baud_rate != 0) && (dev_cfg->sys_clk_freq != 0)) {
+	if ((dev_data->baud_rate != 0U) && (dev_cfg->sys_clk_freq != 0U)) {
 		/* calculate baud rate divisor */
 		uart->bauddiv = (dev_cfg->sys_clk_freq / dev_data->baud_rate);
 	}

@@ -2,7 +2,7 @@ sample:
   description: Test network statistics functionality
   name: Network statistics sample app
 tests:
-  test:
+  sample.net.stats:
     harness: net
     min_ram: 64
     tags: net statistics

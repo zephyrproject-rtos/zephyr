@@ -11,14 +11,14 @@
 
 static int cond_wait(pthread_cond_t *cv, pthread_mutex_t *mut, int timeout)
 {
-	__ASSERT(mut->lock_count == 1, "");
+	__ASSERT(mut->lock_count == 1U, "");
 
 	int ret, key = irq_lock();
 
-	mut->lock_count = 0;
+	mut->lock_count = 0U;
 	mut->owner = NULL;
 	_ready_one_thread(&mut->wait_q);
-	ret = _pend_curr_irqlock(key, &cv->wait_q, timeout);
+	ret = z_pend_curr_irqlock(key, &cv->wait_q, timeout);
 
 	/* FIXME: this extra lock (and the potential context switch it
 	 * can cause) could be optimized out.  At the point of the
@@ -49,7 +49,7 @@ int pthread_cond_signal(pthread_cond_t *cv)
 	int key = irq_lock();
 
 	_ready_one_thread(&cv->wait_q);
-	_reschedule_irqlock(key);
+	z_reschedule_irqlock(key);
 
 	return 0;
 }
@@ -58,11 +58,11 @@ int pthread_cond_broadcast(pthread_cond_t *cv)
 {
 	int key = irq_lock();
 
-	while (_waitq_head(&cv->wait_q)) {
+	while (z_waitq_head(&cv->wait_q)) {
 		_ready_one_thread(&cv->wait_q);
 	}
 
-	_reschedule_irqlock(key);
+	z_reschedule_irqlock(key);
 
 	return 0;
 }

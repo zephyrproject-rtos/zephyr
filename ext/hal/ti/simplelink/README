@@ -3,26 +3,54 @@ and hardware register access header files for the Texas Instruments
 SimpleLink SoCs.
 
 For an explanation of the SimpleLink family SDK directory structure, see:
-http://dev.ti.com/tirex/content/simplelink_cc13x0_sdk_1_30_00_06/docs/simplelink_mcu_sdk/Users_Guide.html#directory-structure
+http://dev.ti.com/tirex/content/simplelink_cc32xx_sdk_2_40_01_01/docs/simplelink_mcu_sdk/Users_Guide.html#directory-structure
 
-1. CC3220 SDK
+1. CC13x2/26x2 SDK
 
-The current version supported in Zephyr is the SimpleLink CC3220 SDK
-1.50.00.06, downloaded from:
+The current version supported in Zephyr is the SimpleLink CC13x2 and CC26x2 SDK
+3.10.00.53, downloaded from:
 
-	http://www.ti.com/tool/download/SIMPLELINK-CC3220-SDK
+  http://www.ti.com/tool/simplelink-cc13x2-26x2-sdk
 
-The source files in the source/ti/devices/ and source/ti/drivers/
-directories are copied from a Linux CC3220 SDK installation, using
-the following commands:
+The driver library source is copied from the SDK, as follows:
 
-  % cd ~/ti/simplelink_cc32xx_sdk_1_50_00_06/
-  % find devices -name '*.[c|h]' | \
-	cpio -pdm ~/zephyr/ext/hal/ti/simplelink/source/ti
-  % find drivers -name '*.[c|h]' | \
-	cpio -pdm ~/zephyr/ext/hal/ti/simplelink/source/ti
+  EXT_DIR=$ZEPHYR_BASE/ext/hal/ti/simplelink/source/ti
+  pushd simplelink_cc13x2_26x2_sdk_3_10_00_53/source/ti
+  find devices/cc13x2_cc26x2/{driverlib,inc,rf_patches} -depth -name '*.[c|h]' -print0 | cpio --null -pvdm $EXT_DIR
+  find devices/cc13x2_cc26x2/startup_files -depth -name ccfg.c -print0 | cpio --null -pvd $EXT_DIR
+  find $EXT_DIR/devices/cc13x2_cc26x2 -name '*.[c|h]' -exec dos2unix {} \;
+  popd
 
-In a separate commit, the file modes and trailing whitespace are fixed.
+The source file startup_files/ccfg.c has been modified to use the appropriate
+sections when linking.
+
+TI provides the driver library functions burned into ROM at the factory,
+or updated via a service pack patch, thus saving application code space.
+
+After setting CONFIG_HAS_CC13X2_CC26X2_SDK=y in Kconfig, most of the
+peripheral driver library functions will be accessible from ROM.
+
+2. CC32xx SDK
+
+The current version supported in Zephyr is the SimpleLink CC32xx SDK
+2.40.01.01, downloaded from:
+
+	http://www.ti.com/tool/download/simplelink-cc32xx-sdk
+
+Source files from select subdirectories are copied from the
+source/ti/ subdirectory of the SDK installation, as follows:
+
+	EXT_DIR=$ZEPHYR_BASE/ext/hal/ti/simplelink/source/ti
+	find devices -not -path '*/\.*' -name '*.[c|h]' | \
+		cpio -pdm $EXT_DIR
+	find drivers -name '*.[c|h]' | \
+		cpio -pdm $EXT_DIR
+	find net -maxdepth 1 -name '*.[c|h]' | cpio -pdm $EXT_DIR
+	cd $EXT_DIR
+	find . -name '*.[c|h]' -exec chmod 664 {} \;
+
+In addition, some files in the drivers/net/wifi/porting directory
+may need to be updated: notably user.h, cc_pal.h, and CC3220SF_LAUNCHXL.c.
 
 Note: TI provides the driver library functions burned into ROM at the factory,
 or updated via a service pack patch, thus saving application code space.

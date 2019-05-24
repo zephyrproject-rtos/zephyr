@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 
+# SPDX-License-Identifier: Apache-2.0
 import subprocess
 import tempfile
 import argparse
 import os
 import string
 import sys
-import shutil
 
 quartus_cpf_template = """<?xml version="1.0" encoding="US-ASCII" standalone="yes"?>
 <cof>
@@ -137,4 +137,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

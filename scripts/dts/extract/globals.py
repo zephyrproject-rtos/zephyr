@@ -5,6 +5,8 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
+import sys
+
 from collections import defaultdict
 
 # globals
@@ -167,7 +169,7 @@ def create_reduced(node, path):
             create_reduced(child_node, path + child_name)
 
 
-def get_node_label(node_path):
+def node_label(node_path):
     node_compat = get_compat(node_path)
     def_label = str_to_label(node_compat)
     if '@' in node_path:
@@ -187,7 +189,10 @@ def get_node_label(node_path):
 
 
 def get_parent_path(node_path):
-    # Turns /foo/bar into /foo
+    # Turns /foo/bar into /foo. Returns None for /.
+
+    if node_path == '/':
+        return None
 
     return '/'.join(node_path.split('/')[:-1]) or '/'
 
@@ -282,21 +287,17 @@ def add_prop_aliases(node_path,
 def get_binding(node_path):
     compat = get_compat(node_path)
 
-    # For just look for the binding in the main dict
-    # if we find it here, return it, otherwise it best
-    # be in the bus specific dict
-    if compat in bindings:
-        return bindings[compat]
-
+    # First look for a bus-specific binding
     parent_path = get_parent_path(node_path)
     parent_compat = get_compat(parent_path)
+    if parent_compat in bindings:
+        parent_binding = bindings[parent_compat]
+        if 'child' in parent_binding and 'bus' in parent_binding['child']:
+            bus = parent_binding['child']['bus']
+            return bus_bindings[bus][compat]
 
-    parent_binding = bindings[parent_compat]
-
-    bus = parent_binding['child']['bus']
-    binding = bus_bindings[bus][compat]
-
-    return binding
+    # No bus-specific binding found, look in the main dict.
+    return bindings[compat]
 
 def get_binding_compats():
     return binding_compats
@@ -326,6 +327,52 @@ def build_cell_array(prop_array):
 
     return ret_array
 
+def child_to_parent_unmap(cell_parent, gpio_index):
+    # This function returns a (gpio-controller, pin number) tuple from
+    # cell_parent (identified as a 'nexus node', ie: has a 'gpio-map'
+    # property) and gpio_index.
+    # Note: Nexus nodes and gpio-map property are described in the
+    # upcoming (presumably v0.3) Device Tree specification, chapter
+    # 'Nexus nodes and Specifier Mapping'.
+
+    # First, retrieve gpio-map as a list
+    gpio_map = reduced[cell_parent]['props']['gpio-map']
+
+    # Before parsing, we need to know 'gpio-map' row size
+    # gpio-map raws are encoded as follows:
+    # [child specifier][gpio controller phandle][parent specifier]
+
+    # child specifier field length is connector property #gpio-cells
+    child_specifier_size = reduced[cell_parent]['props']['#gpio-cells']
+
+    # parent specifier field length is parent property #gpio-cells
+    # Assumption 1: We assume parent #gpio-cells is constant across
+    # the map, so we take the value of the first occurrence and apply
+    # to the whole map.
+    parent = phandles[gpio_map[child_specifier_size]]
+    parent_specifier_size = reduced[parent]['props']['#gpio-cells']
+
+    array_cell_size = child_specifier_size + 1 + parent_specifier_size
+
+    # Now that the length of each entry in 'gpio-map' is known,
+    # look for a match with gpio_index
+    for i in range(0, len(gpio_map), array_cell_size):
+        entry = gpio_map[i:i+array_cell_size]
+
+        if entry[0] == gpio_index:
+            parent_controller_phandle = entry[child_specifier_size]
+            # Assumption 2: We assume optional properties 'gpio-map-mask'
+            # and 'gpio-map-pass-thru' are not specified.
+            # So, for now, only the pin number (first value of the parent
+            # specifier field) should be returned.
+            parent_pin_number = entry[child_specifier_size+1]
+
+            # Return gpio_controller and specifier pin
+            return phandles[parent_controller_phandle], parent_pin_number
+
+    # gpio_index did not match any entry in the gpio-map
+    return None, None
+
 
 def extract_controller(node_path, prop, prop_values, index,
                        def_label, generic, handle_single=False):
@@ -345,12 +392,21 @@ def extract_controller(node_path, prop, prop_values, index,
             continue
 
         cell_parent = phandles[elem[0]]
+
+        if 'gpio-map' in reduced[cell_parent]['props']:
+            # Parent is a gpio 'nexus node' (ie has gpio-map).
+            # Controller should be found in the map, using elem[1] as index.
+            # Pin attribues (number, flag) will not be used in this function
+            cell_parent, _ = child_to_parent_unmap(cell_parent, elem[1])
+            if cell_parent is None:
+                raise Exception("No parent matching child specifier")
+
         l_cell = reduced[cell_parent]['props'].get('label')
 
         if l_cell is None:
             continue
 
-        l_base = def_label.split('/')
+        l_base = [def_label]
 
         # Check is defined should be indexed (_0, _1)
         if handle_single or i == 0 and len(prop_array) == 1:
@@ -403,6 +459,16 @@ def extract_cells(node_path, prop, prop_values, names, index,
 
         cell_parent = phandles[elem[0]]
 
+        if 'gpio-map' in reduced[cell_parent]['props']:
+            # Parent is a gpio connector ie 'nexus node', ie has gpio-map).
+            # Controller and pin number should be found in the connector map,
+            # using elem[1] as index.
+            # Parent pin flag is not used, so child flag(s) value (elem[2:])
+            # is kept as is.
+            cell_parent, elem[1] = child_to_parent_unmap(cell_parent, elem[1])
+            if cell_parent is None:
+                raise Exception("No parent matching child specifier")
+
         try:
             cell_yaml = get_binding(cell_parent)
         except:
@@ -433,7 +499,7 @@ def extract_cells(node_path, prop, prop_values, names, index,
         else:
             l_cell = [str_to_label(str(generic))]
 
-        l_base = def_label.split('/')
+        l_base = [def_label]
         # Check if #define should be indexed (_0, _1, ...)
         if handle_single or i == 0 and len(prop_array) == 1:
             # Less than 2 elements in prop_values
@@ -467,3 +533,10 @@ def extract_cells(node_path, prop, prop_values, names, index,
                     prop_alias)
 
             insert_defs(node_path, prop_def, prop_alias)
+
+
+def err(msg):
+    # General error reporting helper. Prints a message to stderr and exits with
+    # status 1.
+
+    sys.exit("error: " + msg)

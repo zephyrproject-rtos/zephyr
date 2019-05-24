@@ -102,9 +102,12 @@ static struct usb_ep_cfg_data ep_cfg[] = {
 };
 /* usb.rst endpoint configuration end */
 
-static void loopback_status_cb(enum usb_dc_status_code status,
+static void loopback_status_cb(struct usb_cfg_data *cfg,
+			       enum usb_dc_status_code status,
 			       const u8_t *param)
 {
+	ARG_UNUSED(cfg);
+
 	switch (status) {
 	case USB_DC_CONFIGURED:
 		loopback_in_cb(ep_cfg[LOOPBACK_IN_EP_IDX].ep_addr, 0);

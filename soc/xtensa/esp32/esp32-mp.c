@@ -11,16 +11,16 @@
 #include <spinlock.h>
 #include <kernel_structs.h>
 
-#define _REG(base, off) (*(volatile u32_t *)((base) + (off)))
+#define Z_REG(base, off) (*(volatile u32_t *)((base) + (off)))
 
 #define RTC_CNTL_BASE             0x3ff48000
-#define RTC_CNTL_OPTIONS0     _REG(RTC_CNTL_BASE, 0x0)
-#define RTC_CNTL_SW_CPU_STALL _REG(RTC_CNTL_BASE, 0xac)
+#define RTC_CNTL_OPTIONS0     Z_REG(RTC_CNTL_BASE, 0x0)
+#define RTC_CNTL_SW_CPU_STALL Z_REG(RTC_CNTL_BASE, 0xac)
 
 #define DPORT_BASE                 0x3ff00000
-#define DPORT_APPCPU_CTRL_A    _REG(DPORT_BASE, 0x02C)
-#define DPORT_APPCPU_CTRL_B    _REG(DPORT_BASE, 0x030)
-#define DPORT_APPCPU_CTRL_C    _REG(DPORT_BASE, 0x034)
+#define DPORT_APPCPU_CTRL_A    Z_REG(DPORT_BASE, 0x02C)
+#define DPORT_APPCPU_CTRL_B    Z_REG(DPORT_BASE, 0x030)
+#define DPORT_APPCPU_CTRL_C    Z_REG(DPORT_BASE, 0x034)
 
 struct cpustart_rec {
 	int cpu;
@@ -103,10 +103,10 @@ static void appcpu_entry2(void)
  * set to zero for the called function (a null return value is the
  * signal for "top of stack" to the debugger).
  */
-void _appcpu_stack_switch(void *stack, void *entry);
+void z_appcpu_stack_switch(void *stack, void *entry);
 __asm__("\n"
 	".align 4"		"\n"
-	"_appcpu_stack_switch:"	"\n\t"
+	"z_appcpu_stack_switch:"	"\n\t"
 
 	"entry a1, 16"		"\n\t"
 
@@ -153,7 +153,7 @@ __asm__("\n"
  */
 static void appcpu_entry1(void)
 {
-	_appcpu_stack_switch(appcpu_top, appcpu_entry2);
+	z_appcpu_stack_switch(appcpu_top, appcpu_entry2);
 }
 
 /* The calls and sequencing here were extracted from the ESP-32
@@ -190,7 +190,7 @@ static void appcpu_start(void)
 	smp_log("ESP32: APPCPU start sequence complete");
 }
 
-void _arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
+void z_arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 		     void (*fn)(int, void *), void *arg)
 {
 	volatile struct cpustart_rec sr;
@@ -205,12 +205,12 @@ void _arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 
 	sr.cpu = cpu_num;
 	sr.fn = fn;
-	sr.stack_top = K_THREAD_STACK_BUFFER(stack) + sz;
+	sr.stack_top = Z_THREAD_STACK_BUFFER(stack) + sz;
 	sr.arg = arg;
 	sr.vecbase = vb;
 	sr.alive = &alive_flag;
 
-	appcpu_top = K_THREAD_STACK_BUFFER(stack) + sz;
+	appcpu_top = Z_THREAD_STACK_BUFFER(stack) + sz;
 
 	start_rec = &sr;
 

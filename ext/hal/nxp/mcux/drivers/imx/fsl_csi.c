@@ -146,7 +146,7 @@ static uint32_t CSI_TransferGetQueueDelta(uint32_t startIdx, uint32_t endIdx)
     }
     else
     {
-        return startIdx + CSI_DRIVER_ACTUAL_QUEUE_SIZE - endIdx;
+        return endIdx + CSI_DRIVER_ACTUAL_QUEUE_SIZE - startIdx;
     }
 }
 
@@ -696,6 +696,14 @@ status_t CSI_TransferSubmitEmptyBuffer(CSI_Type *base, csi_handle_t *handle, uin
     /* Save the empty frame buffer address to queue. */
     handle->frameBufferQueue[handle->queueUserWriteIdx] = frameBuffer;
     handle->queueUserWriteIdx = CSI_TransferIncreaseQueueIdx(handle->queueUserWriteIdx);
+
+    /*
+     * If transfer is ongoing and an active slot is available, Load the buffer
+     * now to prevent buffer starvation during next TransferHandleIRQ event.
+     */
+    if (handle->transferOnGoing && handle->activeBufferNum < CSI_MAX_ACTIVE_FRAME_NUM) {
+        CSI_TransferLoadBufferToDevice(base, handle);
+    }
 
     base->CSICR1 = csicr1;
 

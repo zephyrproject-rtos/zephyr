@@ -357,6 +357,33 @@ void main(void)
 
 	/* Enable the raw interface, this will in turn open the HCI driver */
 	bt_enable_raw(&rx_queue);
+
+	if (IS_ENABLED(CONFIG_BT_WAIT_NOP)) {
+		/* Issue a Command Complete with NOP */
+		int i;
+
+		const struct {
+			const u8_t h4;
+			const struct bt_hci_evt_hdr hdr;
+			const struct bt_hci_evt_cmd_complete cc;
+		} __packed cc_evt = {
+			.h4 = H4_EVT,
+			.hdr = {
+				.evt = BT_HCI_EVT_CMD_COMPLETE,
+				.len = sizeof(struct bt_hci_evt_cmd_complete),
+			},
+			.cc = {
+				.ncmd = 1,
+				.opcode = sys_cpu_to_le16(BT_OP_NOP),
+			},
+		};
+
+		for (i = 0; i < sizeof(cc_evt); i++) {
+			uart_poll_out(hci_uart_dev,
+				      *(((const u8_t *)&cc_evt)+i));
+		}
+	}
+
 	/* Spawn the TX thread and start feeding commands and data to the
 	 * controller
 	 */

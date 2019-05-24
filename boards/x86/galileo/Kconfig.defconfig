@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 
 if BOARD_GALILEO
 
@@ -22,9 +23,6 @@ config SPI
 config SHARED_IRQ
 	default y
 
-config PCI_ENUMERATION
-	default y
-
 if GPIO && I2C
 
 config GPIO_PCAL9535A
@@ -42,7 +40,7 @@ config GPIO_PCAL9535A_0_DEV_NAME
 config GPIO_PCAL9535A_0_I2C_ADDR
 	default 0x25
 config GPIO_PCAL9535A_0_I2C_MASTER_DEV_NAME
-	default "$(dt_str_val,DT_SNPS_DESIGNWARE_I2C_90007000_LABEL)"
+	default "$(dt_str_val,DT_SNPS_DESIGNWARE_I2C_0_LABEL)"
 
 endif # GPIO_PCAL9535A_0
 
@@ -56,7 +54,7 @@ config GPIO_PCAL9535A_1_DEV_NAME
 config GPIO_PCAL9535A_1_I2C_ADDR
 	default 0x26
 config GPIO_PCAL9535A_1_I2C_MASTER_DEV_NAME
-	default "$(dt_str_val,DT_SNPS_DESIGNWARE_I2C_90007000_LABEL)"
+	default "$(dt_str_val,DT_SNPS_DESIGNWARE_I2C_0_LABEL)"
 
 endif # GPIO_PCAL9535A_1
 
@@ -70,7 +68,7 @@ config GPIO_PCAL9535A_2_DEV_NAME
 config GPIO_PCAL9535A_2_I2C_ADDR
 	default 0x27
 config GPIO_PCAL9535A_2_I2C_MASTER_DEV_NAME
-	default "$(dt_str_val,DT_SNPS_DESIGNWARE_I2C_90007000_LABEL)"
+	default "$(dt_str_val,DT_SNPS_DESIGNWARE_I2C_0_LABEL)"
 
 endif # GPIO_PCAL9535A_2
 
@@ -95,7 +93,7 @@ config PWM_PCA9685_0_DEV_NAME
 config PWM_PCA9685_0_I2C_ADDR
 	default 0x47
 config PWM_PCA9685_0_I2C_MASTER_DEV_NAME
-	default "$(dt_str_val,DT_SNPS_DESIGNWARE_I2C_90007000_LABEL)"
+	default "$(dt_str_val,DT_SNPS_DESIGNWARE_I2C_0_LABEL)"
 
 endif # PWM_PCA9685_0
 endif # PWM_PCA9685

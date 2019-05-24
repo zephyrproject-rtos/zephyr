@@ -1,0 +1,60 @@
+# Kconfig - Flash simulator config
+#
+# Copyright (c) 2018 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig FLASH_SIMULATOR
+	bool
+	prompt "Flash simulator"
+	depends on FLASH
+	select STATS
+	select STATS_NAMES
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_DRIVER_ENABLED
+	help
+	  Enable the flash simulator.
+
+if FLASH_SIMULATOR
+
+config FLASH_SIMULATOR_DOUBLE_WRITES
+	bool
+	prompt "Allow program units to be programmed more than once"
+	default n
+	help
+	 If selected, writing to a non-erased program unit will succeed, otherwise, it will return an error.
+	 Keep in mind that write operations can only pull bits to zero, regardless.
+
+config FLASH_SIMULATOR_ERASE_PROTECT
+	bool
+	prompt "Enable erase protection on write protection"
+	default y
+	help
+	 If selected, turning on write protection will also prevent erasing.
+
+config FLASH_SIMULATOR_SIMULATE_TIMING
+	bool
+	prompt "Enable hardware timing simulation"
+
+if FLASH_SIMULATOR_SIMULATE_TIMING
+
+config FLASH_SIMULATOR_MIN_READ_TIME_US
+	int
+	prompt "Minimum read time (µS)"
+	default 2
+	range 1 1000000
+
+config FLASH_SIMULATOR_MIN_WRITE_TIME_US
+	int
+	prompt "Minimum write time (µS)"
+	default 100
+	range 1 1000000
+
+config FLASH_SIMULATOR_MIN_ERASE_TIME_US
+	int
+	prompt "Minimum erase time (µS)"
+	default 2000
+	range 1 1000000
+
+endif
+
+endif # FLASH_SIMULATOR

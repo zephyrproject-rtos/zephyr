@@ -20,4 +20,5 @@ API Reference
    shell/index.rst
    storage/index.rst
    usb/index.rst
+   usermode/index.rst
 

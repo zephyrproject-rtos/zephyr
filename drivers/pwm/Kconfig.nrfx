@@ -11,4 +11,3 @@ menuconfig PWM_NRFX
 	select NRFX_PWM
 	help
 	  Enable support for nrfx Hardware PWM driver for nRF52 MCU series.
-

@@ -172,7 +172,7 @@ static int lis2dh_freq_to_odr_val(u16_t freq)
 	size_t i;
 
 	/* An ODR of 0 Hz is not allowed */
-	if (freq == 0) {
+	if (freq == 0U) {
 		return -EINVAL;
 	}
 
@@ -202,7 +202,7 @@ static int lis2dh_acc_odr_set(struct device *dev, u16_t freq)
 	}
 
 	/* some odr values cannot be set in certain power modes */
-	if ((value & LIS2DH_LP_EN_BIT_MASK) == 0 && odr == LIS2DH_ODR_8) {
+	if ((value & LIS2DH_LP_EN_BIT_MASK) == 0U && odr == LIS2DH_ODR_8) {
 		return -ENOTSUP;
 	}
 

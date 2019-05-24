@@ -88,7 +88,7 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
 
     def do_run(self, command, **kwargs):
         commands = []
-        if (self.snr is None):
+        if self.snr is None:
             board_snr = self.get_board_snr_from_user()
         else:
             board_snr = self.snr.lstrip("0")

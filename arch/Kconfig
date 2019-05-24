@@ -35,6 +35,7 @@ config X86
 config X86_64
 	bool "x86_64 architecture"
 	select ATOMIC_OPERATIONS_BUILTIN
+	select SCHED_IPI_SUPPORTED
 
 config NIOS2
 	bool "Nios II Gen 2 architecture"
@@ -177,10 +178,7 @@ config USERSPACE
 
 config PRIVILEGED_STACK_SIZE
 	int "Size of privileged stack"
-	default 512 if MPU_STACK_GUARD || BUILTIN_STACK_GUARD
-	default 512 if COVERAGE_GCOV
-	default 384 if ARC
-	default 256
+	default 1024
 	depends on ARCH_HAS_USERSPACE
 	help
 	  This option sets the privileged stack region size that will be used
@@ -199,6 +197,7 @@ config PRIVILEGED_STACK_TEXT_AREA
 config KOBJECT_TEXT_AREA
 	int "Size if kobject text area"
 	default 512 if COVERAGE_GCOV
+	default 512 if NO_OPTIMIZATIONS
 	default 256
 	depends on ARCH_HAS_USERSPACE
 	help
@@ -349,42 +348,42 @@ config ARCH_HAS_THREAD_ABORT
 # Hidden PM feature configs which are to be selected by
 # individual SoC.
 #
-config HAS_STATE_LOW_POWER_1
+config HAS_SYS_POWER_STATE_SLEEP_1
 	# Hidden
 	bool
 	help
-	  This option signifies that the target supports the SYS_POWER_STATE_LOW_POWER_1
+	  This option signifies that the target supports the SYS_POWER_STATE_SLEEP_1
 	  configuration option.
 
-config HAS_STATE_LOW_POWER_2
+config HAS_SYS_POWER_STATE_SLEEP_2
 	# Hidden
 	bool
 	help
-	  This option signifies that the target supports the SYS_POWER_STATE_LOW_POWER_2
+	  This option signifies that the target supports the SYS_POWER_STATE_SLEEP_2
 	  configuration option.
 
-config HAS_STATE_LOW_POWER_3
+config HAS_SYS_POWER_STATE_SLEEP_3
 	# Hidden
 	bool
 	help
-	  This option signifies that the target supports the SYS_POWER_STATE_LOW_POWER_3
+	  This option signifies that the target supports the SYS_POWER_STATE_SLEEP_3
 	  configuration option.
 
-config HAS_STATE_DEEP_SLEEP_1
+config HAS_SYS_POWER_STATE_DEEP_SLEEP_1
 	# Hidden
 	bool
 	help
 	  This option signifies that the target supports the SYS_POWER_STATE_DEEP_SLEEP_1
 	  configuration option.
 
-config HAS_STATE_DEEP_SLEEP_2
+config HAS_SYS_POWER_STATE_DEEP_SLEEP_2
 	# Hidden
 	bool
 	help
 	  This option signifies that the target supports the SYS_POWER_STATE_DEEP_SLEEP_2
 	  configuration option.
 
-config HAS_STATE_DEEP_SLEEP_3
+config HAS_SYS_POWER_STATE_DEEP_SLEEP_3
 	# Hidden
 	bool
 	help

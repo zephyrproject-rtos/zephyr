@@ -46,7 +46,7 @@ static uint32_t WDOG_GetInstance(WDOG_Type *base)
 }
 
 /*!
- * brief Initializes the WDOG configuration sturcture.
+ * brief Initializes the WDOG configuration structure.
  *
  * This function initializes the WDOG configuration structure to default values. The default
  * values are as follows.
@@ -72,16 +72,16 @@ void WDOG_GetDefaultConfig(wdog_config_t *config)
     /* Initializes the configure structure to zero. */
     memset(config, 0, sizeof(*config));
 
-    config->enableWdog = true;
-    config->workMode.enableWait = false;
-    config->workMode.enableStop = false;
-    config->workMode.enableDebug = false;
-    config->enableInterrupt = false;
+    config->enableWdog             = true;
+    config->workMode.enableWait    = false;
+    config->workMode.enableStop    = false;
+    config->workMode.enableDebug   = false;
+    config->enableInterrupt        = false;
     config->softwareResetExtension = false;
-    config->enablePowerDown = false;
-    config->timeoutValue = 0xffu;
-    config->interruptTimeValue = 0x04u;
-    config->enableTimeOutAssert = false;
+    config->enablePowerDown        = false;
+    config->timeoutValue           = 0xffu;
+    config->interruptTimeValue     = 0x04u;
+    config->enableTimeOutAssert    = false;
 }
 
 /*!
@@ -113,13 +113,13 @@ void WDOG_Init(WDOG_Type *base, const wdog_config_t *config)
             WDOG_WCR_WDT(config->enableTimeOutAssert) | WDOG_WCR_SRS_MASK | WDOG_WCR_WDA_MASK;
 
 #if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
-    /* Set configruation */
+    /* Set configuration */
     CLOCK_EnableClock(s_wdogClock[WDOG_GetInstance(base)]);
 #endif
 
     base->WICR = WDOG_WICR_WICT(config->interruptTimeValue) | WDOG_WICR_WIE(config->enableInterrupt);
     base->WMCR = WDOG_WMCR_PDE(config->enablePowerDown);
-    base->WCR = value;
+    base->WCR  = value;
     if (config->enableInterrupt)
     {
         EnableIRQ(s_wdogIRQ[WDOG_GetInstance(base)]);

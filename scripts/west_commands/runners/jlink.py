@@ -7,6 +7,7 @@
 import os
 import tempfile
 import sys
+import shutil
 
 from west import log
 from runners.core import ZephyrBinaryRunner, RunnerCaps, \
@@ -33,7 +34,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
         self.commander = commander
         self.flash_addr = flash_addr
         self.erase = erase
-        self.gdbserver_cmd = [gdbserver]
+        self.gdbserver = gdbserver
         self.iface = iface
         self.speed = speed
         self.gdb_port = gdb_port
@@ -85,8 +86,12 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
     def print_gdbserver_message(self):
         log.inf('J-Link GDB server running on port {}'.format(self.gdb_port))
 
+    def check_cmd(self, cmd):
+        if shutil.which(cmd) is None:
+            log.die('{} is not installed or cannot be found'.format(cmd))
+
     def do_run(self, command, **kwargs):
-        server_cmd = (self.gdbserver_cmd +
+        server_cmd = ([self.gdbserver] +
                       ['-select', 'usb', # only USB connections supported
                        '-port', str(self.gdb_port),
                        '-if', self.iface,
@@ -98,9 +103,11 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
         if command == 'flash':
             self.flash(**kwargs)
         elif command == 'debugserver':
+            self.check_cmd(self.gdbserver)
             self.print_gdbserver_message()
             self.check_call(server_cmd)
         else:
+            self.check_cmd(self.gdbserver)
             if self.gdb_cmd is None:
                 raise ValueError('Cannot debug; gdb is missing')
             if self.elf_name is None:
@@ -117,6 +124,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
             self.run_server_and_client(server_cmd, client_cmd)
 
     def flash(self, **kwargs):
+        self.check_cmd(self.commander)
         if self.bin_name is None:
             raise ValueError('Cannot flash; bin_name is missing')
 

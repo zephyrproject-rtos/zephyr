@@ -23,6 +23,7 @@ choice BT_LL_CHOICE
 config BT_LL_SW
 	bool "Software-based BLE Link Layer"
 	select BT_RECV_IS_RX_THREAD
+	select BT_HAS_HCI_VS
 	select ENTROPY_GENERATOR
 	select ENTROPY_NRF5_RNG if SOC_COMPATIBLE_NRF
 	select ENTROPY_NRF5_BIAS_CORRECTION if SOC_COMPATIBLE_NRF
@@ -41,6 +42,7 @@ endchoice
 config BT_LLL_VENDOR_NORDIC
 	bool "Use Nordic LLL"
 	depends on BT_LL_SW_SPLIT && SOC_COMPATIBLE_NRF
+	select BT_HAS_HCI_VS
 	select ENTROPY_NRF5_RNG
 	select ENTROPY_NRF5_BIAS_CORRECTION
 	default y
@@ -57,9 +59,8 @@ config BT_CTLR_CRYPTO
 	  provided by the controller.
 
 config BT_CTLR_RX_PRIO_STACK_SIZE
-	# Hidden option for Controller's Co-Operative high priority Rx thread
-	# stack size.
-	int
+	# Controller's Co-Operative high priority Rx thread stack size.
+	int "High priority Rx thread stack size" if !SOC_COMPATIBLE_NRF
 	default 448
 
 config BT_CTLR_RX_PRIO
@@ -261,7 +262,7 @@ config BT_CTLR_LE_PING
 
 config BT_CTLR_PRIVACY
 	bool "LE Controller-based Privacy"
-	depends on !SOC_SERIES_NRF51X
+	depends on !SOC_SERIES_NRF51X && BT_LL_SW
 	default y
 	select BT_CTLR_FILTER
 	select BT_RPA
@@ -307,7 +308,7 @@ config BT_CTLR_PHY
 	bool
 	depends on BT_PHY_UPDATE
 	select BT_CTLR_EXT_REJ_IND
-	default y if SOC_COMPATIBLE_NRF52X
+	default y if SOC_COMPATIBLE_NRF52X || BT_CTLR_PHY_2M_NRF
 
 endif # BT_CONN
 
@@ -374,15 +375,7 @@ config BT_CTLR_DATA_LENGTH_CLEAR
 	  251 byte cleartext payloads in the Controller. Encrypted connections
 	  are not supported.
 
-if BT_CTLR_PHY
-
-config BT_CTLR_PHY_2M
-	bool "2Mbps PHY Support"
-	depends on !SOC_SERIES_NRF51X || BT_CTLR_PHY_2M_NRF
-	default y
-	help
-	  Enable support for Bluetooth 5.0 2Mbps PHY in the Controller.
-
+if BT_PHY_UPDATE
 config BT_CTLR_PHY_2M_NRF
 	bool "2Mbps Nordic Semiconductor PHY Support (Cleartext only)"
 	depends on SOC_SERIES_NRF51X
@@ -391,7 +384,12 @@ config BT_CTLR_PHY_2M_NRF
 	  Enable support for Nordic Semiconductor proprietary 2Mbps PHY in the
 	  Controller. Encrypted connections are not supported.
 
-endif # BT_CTLR_PHY
+config BT_CTLR_PHY_2M
+	bool "2Mbps PHY Support"
+	depends on !SOC_SERIES_NRF51X || BT_CTLR_PHY_2M_NRF
+	default y
+	help
+	  Enable support for Bluetooth 5.0 2Mbps PHY in the Controller.
 
 config BT_CTLR_PHY_CODED
 	bool "Coded PHY Support"
@@ -399,6 +397,7 @@ config BT_CTLR_PHY_CODED
 	default y
 	help
 	  Enable support for Bluetooth 5.0 Coded PHY in the Controller.
+endif # BT_PHY_UPDATE
 
 if BT_LL_SW
 
@@ -483,7 +482,7 @@ config BT_CTLR_ULL_HIGH_PRIO
 	int "Upper Link Layer High IRQ priority"
 	range BT_CTLR_LLL_PRIO 3 if SOC_SERIES_NRF51X
 	range BT_CTLR_LLL_PRIO 6 if SOC_SERIES_NRF52X
-	default 0
+	default BT_CTLR_LLL_PRIO
 	help
 	  The interrupt priority for Ticker's Worker IRQ and Upper Link Layer
 	  higher priority functions.
@@ -492,7 +491,7 @@ config BT_CTLR_ULL_LOW_PRIO
 	int "Upper Link Layer Low IRQ priority"
 	range BT_CTLR_ULL_HIGH_PRIO 3 if SOC_SERIES_NRF51X
 	range BT_CTLR_ULL_HIGH_PRIO 6 if SOC_SERIES_NRF52X
-	default 0
+	default BT_CTLR_ULL_HIGH_PRIO
 	help
 	  The interrupt priority for Ticker's Job IRQ and Upper Link Layer
 	  lower priority functions.
@@ -501,7 +500,7 @@ config BT_CTLR_LOWEST_PRIO
 	int "Link Layer Lowest IRQ priority"
 	range BT_CTLR_ULL_LOW_PRIO 3 if SOC_SERIES_NRF51X
 	range BT_CTLR_ULL_LOW_PRIO 6 if SOC_SERIES_NRF52X
-	default 0
+	default BT_CTLR_ULL_LOW_PRIO
 	help
 	  The interrupt priority for RNG and other non-critical functions.
 
@@ -513,6 +512,15 @@ config BT_CTLR_LOW_LAT
 	  Radio ISR latencies by the controller event scheduling framework.
 	  Consequently, this reduces on-air radio utilization due to redundant
 	  radio state switches.
+
+config BT_CTLR_LOW_LAT_ULL
+	prompt "Low latency ULL"
+	bool
+	depends on BT_CTLR_LOW_LAT
+	default y
+	help
+	  Low latency ULL implementation that uses tailchaining instead of while
+	  loop to demux rx messages from LLL.
 
 endif # BT_LL_SW_SPLIT
 
@@ -733,5 +741,28 @@ config BT_CTLR_DEBUG_PINS
 	  Turn on debug GPIO toggling for the BLE Controller. This is useful
 	  when debugging with a logic analyzer or profiling certain sections of
 	  the code.
+
+config BT_MAYFLY_YIELD_AFTER_CALL
+	bool "Yield from mayfly thread after first call"
+	default y
+	help
+	  Only process one mayfly callback per invocation (legacy behavior).
+	  If set to 'n', all pending mayflies for callee are executed before
+	  yielding
+
+config BT_CTLR_USER_EXT
+	prompt "Enable proprietary extensions in Controller"
+	bool
+	help
+	  Catch-all for enabling proprietary event types in Controller behavior.
+
+config BT_CTLR_USER_EVT_RANGE
+	int "Range of event contants reserved for proprietary event types"
+	depends on BT_CTLR_USER_EXT
+	default 5
+	range 0 10
+	help
+	  Number of event types reserved for proprietary use. The range
+	  is typically used when BT_CTLR_USER_EXT is in use.
 
 endif # BT_CTLR

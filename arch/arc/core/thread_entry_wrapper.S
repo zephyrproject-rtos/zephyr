@@ -6,30 +6,30 @@
 
 /**
  * @file
- * @brief Wrapper for _thread_entry
+ * @brief Wrapper for z_thread_entry
  *
- * Wrapper for _thread_entry routine when called from the initial context.
+ * Wrapper for z_thread_entry routine when called from the initial context.
  */
 
 #include <toolchain.h>
 #include <linker/sections.h>
 
-GTEXT(_thread_entry_wrapper)
+GTEXT(z_thread_entry_wrapper)
 
 /*
- * @brief Wrapper for _thread_entry
+ * @brief Wrapper for z_thread_entry
  *
- * The routine pops parameters for the _thread_entry from stack frame, prepared
- * by the _new_thread() routine.
+ * The routine pops parameters for the z_thread_entry from stack frame, prepared
+ * by the z_new_thread() routine.
  *
  * @return N/A
  */
 
-SECTION_FUNC(TEXT, _thread_entry_wrapper)
+SECTION_FUNC(TEXT, z_thread_entry_wrapper)
 
 	pop_s r3
 	pop_s r2
 	pop_s r1
 	pop_s r0
-	j _thread_entry
+	j z_thread_entry
 	nop

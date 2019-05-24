@@ -8,35 +8,10 @@ Note that common helpers used by the flash and debug extension
 commands are in run_common -- that's for common code used by
 commands which specifically execute runners.'''
 
-import os
-
 from west import log
-from west.build import DEFAULT_BUILD_DIR, is_zephyr_build
 from west.commands import WestCommand
 
 from runners.core import RunnerConfig
-
-BUILD_DIR_DESCRIPTION = '''\
-Explicitly sets the build directory.  If not given and the current
-directory is a Zephyr build directory, it will be used; otherwise,
-"{}" is assumed.'''.format(DEFAULT_BUILD_DIR)
-
-
-def find_build_dir(dir):
-    '''Heuristic for finding a build directory.
-
-    If the given argument is truthy, it is returned. Otherwise, if
-    the current working directory is a build directory, it is
-    returned. Otherwise, west.build.DEFAULT_BUILD_DIR is returned.'''
-    if dir:
-        build_dir = dir
-    else:
-        cwd = os.getcwd()
-        if is_zephyr_build(cwd):
-            build_dir = cwd
-        else:
-            build_dir = DEFAULT_BUILD_DIR
-    return os.path.abspath(build_dir)
 
 
 class Forceable(WestCommand):

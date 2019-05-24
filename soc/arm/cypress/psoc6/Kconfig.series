@@ -8,9 +8,7 @@
 config SOC_SERIES_PSOC62
 	bool "Cypress PSoC6 series MCU"
 	select SOC_FAMILY_PSOC6
-	select CPU_HAS_SYSTICK
+	select CPU_CORTEX_M_HAS_SYSTICK
 	select HAS_CYPRESS_DRIVERS
-	select SOC_NOINIT_LD
-	select SOC_RWDATA_LD
 	help
 	  Enable support for Cypress PSoC6 MCU series

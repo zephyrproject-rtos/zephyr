@@ -72,7 +72,7 @@ osStatus_t osSemaphoreAcquire(osSemaphoreId_t semaphore_id, uint32_t timeout)
 
 	if (timeout == osWaitForever) {
 		status = k_sem_take(&semaphore->z_semaphore, K_FOREVER);
-	} else if (timeout == 0) {
+	} else if (timeout == 0U) {
 		status = k_sem_take(&semaphore->z_semaphore, K_NO_WAIT);
 	} else {
 		status = k_sem_take(&semaphore->z_semaphore,

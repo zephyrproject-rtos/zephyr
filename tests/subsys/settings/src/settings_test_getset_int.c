@@ -14,9 +14,9 @@ void test_config_getset_int(void)
 	int rc;
 	u8_t small_value;
 
-	small_value = 42;
+	small_value = 42U;
 	strcpy(name, "myfoo/mybar");
-	rc = settings_set_value(name, &small_value, sizeof(small_value));
+	rc = settings_runtime_set(name, &small_value, sizeof(small_value));
 	zassert_true(rc == 0, "can not set key value");
 	zassert_true(test_set_called == 1, "the SET handler wasn't called");
 	zassert_true(val8 == 42,
@@ -24,7 +24,7 @@ void test_config_getset_int(void)
 	ctest_clear_call_state();
 
 	strcpy(name, "myfoo/mybar");
-	rc = settings_get_value(name, tmp, sizeof(tmp));
+	rc = settings_runtime_get(name, tmp, sizeof(tmp));
 	zassert_true(rc == 1, "the key value should been available");
 	zassert_true(test_get_called == 1, "the GET handler wasn't called");
 	zassert_equal(42, tmp[0], "unexpected value fetched");

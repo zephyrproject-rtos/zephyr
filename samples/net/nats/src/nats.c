@@ -101,24 +101,14 @@ static bool is_sid_valid(const char *sid, size_t len)
 static int transmitv(struct net_context *conn, int iovcnt,
 		     struct io_vec *iov)
 {
-	struct net_pkt *pkt;
-	int i;
+	u8_t buf[1024];
+	int i, pos;
 
-	pkt = net_pkt_get_tx(conn, K_FOREVER);
-	if (!pkt) {
-		return -ENOMEM;
+	for (i = 0, pos = 0; i < iovcnt; pos += iov[i].len, i++) {
+		memcpy(&buf[pos], iov[i].base, iov[i].len);
 	}
 
-	for (i = 0; i < iovcnt; i++) {
-		if (!net_pkt_append_all(pkt, iov[i].len, iov[i].base,
-					K_FOREVER)) {
-			net_pkt_unref(pkt);
-
-			return -ENOMEM;
-		}
-	}
-
-	return net_context_send(pkt, NULL, K_NO_WAIT, NULL, NULL);
+	return net_context_send(conn, buf, pos, NULL, K_NO_WAIT, NULL);
 }
 
 static inline int transmit(struct net_context *conn, const char buffer[],
@@ -561,8 +551,13 @@ static void receive_cb(struct net_context *ctx,
 		return;
 	}
 
-	tmp = pkt->frags;
-	pos = net_pkt_appdata(pkt) - tmp->data;
+	tmp = pkt->cursor.buf;
+	if (!tmp) {
+		net_pkt_unref(pkt);
+		return;
+	}
+
+	pos = pkt->cursor.pos - tmp->data;
 
 	while (tmp) {
 		len = tmp->len - pos;
@@ -576,15 +571,18 @@ static void receive_cb(struct net_context *ctx,
 			break;
 		}
 
-		tmp = net_frag_read(tmp, pos, &pos, len,
-				    (u8_t *)(cmd_buf + cmd_len));
+		if (net_pkt_read(pkt, (u8_t *)(cmd_buf + cmd_len), len)) {
+			break;
+		}
+
 		cmd_len += len;
 
 		if (end_of_line) {
+			u8_t dummy;
 			int ret;
 
-			if (tmp) {
-				tmp = net_frag_read(tmp, pos, &pos, 1, NULL);
+			if (net_pkt_read_u8(pkt, &dummy)) {
+				break;
 			}
 
 			cmd_buf[cmd_len] = '\0';
@@ -595,8 +593,12 @@ static void receive_cb(struct net_context *ctx,
 				/* FIXME: What to do with unhandled messages? */
 				break;
 			}
+
 			cmd_len = 0U;
 		}
+
+		tmp = pkt->cursor.buf;
+		pos = pkt->cursor.pos - tmp->data;
 	}
 
 	net_pkt_unref(pkt);

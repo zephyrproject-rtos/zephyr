@@ -60,21 +60,21 @@ struct rtc_driver_api {
 
 __deprecated __syscall u32_t rtc_read(struct device *dev);
 
-static inline u32_t _impl_rtc_read(struct device *dev)
+static inline u32_t z_impl_rtc_read(struct device *dev)
 {
 	return counter_read(dev);
 }
 
 __deprecated __syscall void rtc_enable(struct device *dev);
 
-static inline void _impl_rtc_enable(struct device *dev)
+static inline void z_impl_rtc_enable(struct device *dev)
 {
 	counter_start(dev);
 }
 
 __deprecated __syscall void rtc_disable(struct device *dev);
 
-static inline void _impl_rtc_disable(struct device *dev)
+static inline void z_impl_rtc_disable(struct device *dev)
 {
 	counter_stop(dev);
 }
@@ -101,7 +101,7 @@ __deprecated static inline int rtc_set_config(struct device *dev,
 	err = counter_set_top_value(dev, cfg->alarm_val,
 				    rtc_counter_top_callback, cfg->cb_fn);
 
-	if (!err && cfg->alarm_enable) {
+	if (err == 0 && cfg->alarm_enable != 0U) {
 		err = counter_start(dev);
 	}
 
@@ -111,7 +111,7 @@ __deprecated static inline int rtc_set_config(struct device *dev,
 __deprecated __syscall int rtc_set_alarm(struct device *dev,
 					 const u32_t alarm_val);
 
-static inline int _impl_rtc_set_alarm(struct device *dev,
+static inline int z_impl_rtc_set_alarm(struct device *dev,
 				      const u32_t alarm_val)
 {
 	return counter_set_top_value(dev, alarm_val, rtc_counter_top_callback,
@@ -133,7 +133,7 @@ static inline int _impl_rtc_set_alarm(struct device *dev,
  */
 __deprecated __syscall int rtc_get_pending_int(struct device *dev);
 
-static inline int _impl_rtc_get_pending_int(struct device *dev)
+static inline int z_impl_rtc_get_pending_int(struct device *dev)
 {
 	return counter_get_pending_int(dev);
 }

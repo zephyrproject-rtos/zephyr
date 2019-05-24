@@ -35,6 +35,9 @@
 #error Library does not support the specified device.
 #endif
 
+/* Add include for DTS generated information */
+#include <generated_dts_board.h>
+
 #define ID_UART0   ID_UART
 #define UART0      UART
 

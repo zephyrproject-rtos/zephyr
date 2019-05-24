@@ -8,6 +8,7 @@
 #include <stdbool.h>
 #include <toolchain.h>
 #include <zephyr/types.h>
+#include <misc/byteorder.h>
 #include <misc/util.h>
 
 #include "hal/ticker.h"
@@ -60,6 +61,7 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 	u8_t peer_addr_type;
 	u16_t win_offset;
 	u16_t timeout;
+	u16_t interval;
 	u8_t chan_sel;
 
 	((struct lll_adv *)ftr->param)->conn = NULL;
@@ -76,25 +78,27 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 	lll->data_chan_count = util_ones_count_get(&lll->data_chan_map[0],
 			       sizeof(lll->data_chan_map));
 	lll->data_chan_hop = pdu_adv->connect_ind.hop;
-	lll->interval = pdu_adv->connect_ind.interval;
-	lll->latency = pdu_adv->connect_ind.latency;
+	interval = sys_le16_to_cpu(pdu_adv->connect_ind.interval);
+	lll->interval = interval;
+	lll->latency = sys_le16_to_cpu(pdu_adv->connect_ind.latency);
 
-	win_offset = pdu_adv->connect_ind.win_offset;
-	conn_interval_us = pdu_adv->connect_ind.interval * 1250;
+	win_offset = sys_le16_to_cpu(pdu_adv->connect_ind.win_offset);
+	conn_interval_us = interval * 1250U;
 
 	/* calculate the window widening */
 	lll->slave.sca = pdu_adv->connect_ind.sca;
 	lll->slave.window_widening_periodic_us =
 		(((lll_conn_ppm_local_get() +
 		   lll_conn_ppm_get(lll->slave.sca)) *
-		  conn_interval_us) + (1000000 - 1)) / 1000000;
-	lll->slave.window_widening_max_us = (conn_interval_us >> 1) - TIFS_US;
-	lll->slave.window_size_event_us = pdu_adv->connect_ind.win_size * 1250;
+		  conn_interval_us) + (1000000 - 1)) / 1000000U;
+	lll->slave.window_widening_max_us = (conn_interval_us >> 1) -
+					    EVENT_IFS_US;
+	lll->slave.window_size_event_us = pdu_adv->connect_ind.win_size * 1250U;
 
 	/* procedure timeouts */
+	timeout = sys_le16_to_cpu(pdu_adv->connect_ind.timeout);
 	conn->supervision_reload =
-		RADIO_CONN_EVENTS((pdu_adv->connect_ind.timeout * 10 * 1000),
-				  conn_interval_us);
+		RADIO_CONN_EVENTS((timeout * 10U * 1000U), conn_interval_us);
 	conn->procedure_reload =
 		RADIO_CONN_EVENTS((40 * 1000 * 1000), conn_interval_us);
 
@@ -120,11 +124,10 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 	chan_sel = pdu_adv->chan_sel;
 	peer_addr_type = pdu_adv->tx_addr;
 	memcpy(peer_addr, pdu_adv->connect_ind.init_addr, BDADDR_SIZE);
-	timeout = pdu_adv->connect_ind.timeout;
 
 	cc = (void *)pdu_adv;
-	cc->status = 0;
-	cc->role = 1;
+	cc->status = 0U;
+	cc->role = 1U;
 	cc->peer_addr_type = peer_addr_type;
 	memcpy(cc->peer_addr, peer_addr, BDADDR_SIZE);
 	cc->interval = lll->interval;
@@ -261,14 +264,14 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 #endif
 
 	/* TODO: active_to_start feature port */
-	conn->evt.ticks_active_to_start = 0;
+	conn->evt.ticks_active_to_start = 0U;
 	conn->evt.ticks_xtal_to_start =
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
 	conn->evt.ticks_preempt_to_start =
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
 	conn->evt.ticks_slot =
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US +
-				       ftr->us_radio_rdy + 328 + TIFS_US +
+				       ftr->us_radio_rdy + 328 + EVENT_IFS_US +
 				       328);
 
 	ticks_slot_offset = MAX(conn->evt.ticks_active_to_start,
@@ -277,13 +280,13 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
 		ticks_slot_overhead = ticks_slot_offset;
 	} else {
-		ticks_slot_overhead = 0;
+		ticks_slot_overhead = 0U;
 	}
 
 	conn_interval_us -= lll->slave.window_widening_periodic_us;
 
 	conn_offset_us = ftr->us_radio_end;
-	conn_offset_us += ((u64_t)win_offset + 1) * 1250;
+	conn_offset_us += ((u64_t)win_offset + 1) * 1250U;
 	conn_offset_us -= EVENT_OVERHEAD_START_US;
 	conn_offset_us -= EVENT_JITTER_US << 1;
 	conn_offset_us -= EVENT_JITTER_US;
@@ -343,6 +346,13 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 #endif
 }
 
+/**
+ * @brief Extract timing from completed event
+ *
+ * @param node_rx_event_done[in] Done event containing fresh timing information
+ * @param ticks_drift_plus[out]  Positive part of drift uncertainty window
+ * @param ticks_drift_minus[out] Negative part of drift uncertainty window
+ */
 void ull_slave_done(struct node_rx_event_done *done, u32_t *ticks_drift_plus,
 		    u32_t *ticks_drift_minus)
 {
@@ -436,14 +446,14 @@ u8_t ll_start_enc_req_send(u16_t handle, u8_t error_code,
 	}
 
 	if (error_code) {
-		if (conn->refresh == 0) {
-			ret = ull_conn_allowed_check(conn);
+		if (conn->refresh == 0U) {
+			ret = ull_conn_llcp_req(conn);
 			if (ret) {
 				return ret;
 			}
 
 			conn->llcp.encryption.error_code = error_code;
-			conn->llcp.encryption.initiate = 0;
+			conn->llcp.encryption.initiate = 0U;
 
 			conn->llcp_type = LLCP_ENCRYPTION;
 			conn->llcp_req++;
@@ -461,13 +471,13 @@ u8_t ll_start_enc_req_send(u16_t handle, u8_t error_code,
 		memcpy(&conn->llcp.encryption.ltk[0], ltk,
 		       sizeof(conn->llcp.encryption.ltk));
 
-		ret = ull_conn_allowed_check(conn);
+		ret = ull_conn_llcp_req(conn);
 		if (ret) {
 			return ret;
 		}
 
-		conn->llcp.encryption.error_code = 0;
-		conn->llcp.encryption.initiate = 0;
+		conn->llcp.encryption.error_code = 0U;
+		conn->llcp.encryption.initiate = 0U;
 
 		conn->llcp_type = LLCP_ENCRYPTION;
 		conn->llcp_req++;

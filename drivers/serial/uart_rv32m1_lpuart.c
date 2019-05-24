@@ -87,7 +87,7 @@ static int rv32m1_lpuart_fifo_fill(struct device *dev, const u8_t *tx_data,
 			       int len)
 {
 	const struct rv32m1_lpuart_config *config = dev->config->config_info;
-	u8_t num_tx = 0;
+	u8_t num_tx = 0U;
 
 	while ((len - num_tx > 0) &&
 	       (LPUART_GetStatusFlags(config->base)
@@ -103,7 +103,7 @@ static int rv32m1_lpuart_fifo_read(struct device *dev, u8_t *rx_data,
 			       const int len)
 {
 	const struct rv32m1_lpuart_config *config = dev->config->config_info;
-	u8_t num_rx = 0;
+	u8_t num_rx = 0U;
 
 	while ((len - num_rx > 0) &&
 	       (LPUART_GetStatusFlags(config->base)
@@ -136,7 +136,7 @@ static int rv32m1_lpuart_irq_tx_complete(struct device *dev)
 	const struct rv32m1_lpuart_config *config = dev->config->config_info;
 	u32_t flags = LPUART_GetStatusFlags(config->base);
 
-	return (flags & kLPUART_TxDataRegEmptyFlag) != 0;
+	return (flags & kLPUART_TxDataRegEmptyFlag) != 0U;
 }
 
 static int rv32m1_lpuart_irq_tx_ready(struct device *dev)
@@ -169,7 +169,7 @@ static int rv32m1_lpuart_irq_rx_full(struct device *dev)
 	const struct rv32m1_lpuart_config *config = dev->config->config_info;
 	u32_t flags = LPUART_GetStatusFlags(config->base);
 
-	return (flags & kLPUART_RxDataRegFullFlag) != 0;
+	return (flags & kLPUART_RxDataRegFullFlag) != 0U;
 }
 
 static int rv32m1_lpuart_irq_rx_ready(struct device *dev)

@@ -215,7 +215,7 @@ static inline void mgmt_run_callbacks(struct mgmt_event_entry *mgmt_event)
 
 #ifdef CONFIG_NET_DEBUG_MGMT_EVENT_STACK
 	net_analyze_stack("Net MGMT event stack",
-			  K_THREAD_STACK_BUFFER(mgmt_stack),
+			  Z_THREAD_STACK_BUFFER(mgmt_stack),
 			  K_THREAD_STACK_SIZEOF(mgmt_stack));
 #endif
 }
@@ -263,7 +263,7 @@ static int mgmt_event_wait_call(struct net_if *iface,
 				int timeout)
 {
 	struct mgmt_event_wait sync_data = {
-		.sync_call = _K_SEM_INITIALIZER(sync_data.sync_call, 0, 1),
+		.sync_call = Z_SEM_INITIALIZER(sync_data.sync_call, 0, 1),
 	};
 	struct net_mgmt_event_callback sync = {
 		.sync_call = &sync_data.sync_call,

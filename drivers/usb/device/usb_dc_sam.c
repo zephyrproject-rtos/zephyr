@@ -101,7 +101,7 @@ static void usb_dc_ep_reset(u8_t ep_idx)
 /* Enable endpoint interrupts, depending of the type and direction */
 static void usb_dc_ep_enable_interrupts(u8_t ep_idx)
 {
-	if (ep_idx == 0) {
+	if (ep_idx == 0U) {
 		/* Control endpoint: enable SETUP and OUT */
 		USBHS->USBHS_DEVEPTIER[ep_idx] = USBHS_DEVEPTIER_RXSTPES;
 		USBHS->USBHS_DEVEPTIER[ep_idx] = USBHS_DEVEPTIER_RXOUTES;
@@ -162,7 +162,7 @@ static void usb_dc_ep0_isr(void)
 		dev_data.ep_data[0].cb_in(USB_EP_DIR_IN, USB_DC_EP_DATA_IN);
 
 		if (!(dev_ctrl & USBHS_DEVCTRL_ADDEN) &&
-		    (dev_ctrl & USBHS_DEVCTRL_UADD_Msk) != 0) {
+		    (dev_ctrl & USBHS_DEVCTRL_UADD_Msk) != 0U) {
 			/* Commit the pending address update.  This
 			 * must be done after the ack to the host
 			 * completes else the ack will get dropped.
@@ -372,12 +372,11 @@ int usb_dc_set_address(u8_t addr)
 }
 
 /* Set USB device controller status callback */
-int usb_dc_set_status_callback(const usb_dc_status_callback cb)
+void usb_dc_set_status_callback(const usb_dc_status_callback cb)
 {
-	dev_data.status_cb = cb;
 	LOG_DBG("");
 
-	return 0;
+	dev_data.status_cb = cb;
 }
 
 /* Check endpoint capabilities */
@@ -390,7 +389,7 @@ int usb_dc_ep_check_cap(const struct usb_dc_ep_cfg_data * const cfg)
 		return -1;
 	}
 
-	if (ep_idx == 0) {
+	if (ep_idx == 0U) {
 		if (cfg->ep_type != USB_DC_EP_CONTROL) {
 			LOG_ERR("pre-selected as control endpoint");
 			return -1;
@@ -701,7 +700,7 @@ int usb_dc_ep_write(u8_t ep, const u8_t *data, u32_t data_len, u32_t *ret_bytes)
 	}
 	__DSB();
 
-	if (ep_idx == 0) {
+	if (ep_idx == 0U) {
 		/*
 		 * Control endpoint: clear the interrupt flag to send the data,
 		 * and re-enable the interrupts to trigger an interrupt at the
@@ -851,7 +850,7 @@ int usb_dc_ep_read_continue(u8_t ep)
 		return -EINVAL;
 	}
 
-	if (ep_idx == 0) {
+	if (ep_idx == 0U) {
 		/*
 		 * Control endpoint: clear the interrupt flag to send the data.
 		 * It is easier to clear both SETUP and OUT flag than checking

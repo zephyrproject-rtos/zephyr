@@ -1,0 +1,8 @@
+sample:
+  name: USB HID CDC ACM sample
+tests:
+  sample.usb.hid-cdc:
+    depends_on: usb_device
+    platform_whitelist: nrf52840_pca10056 nrf52840_pca10059
+    harness: button
+    tags: usb

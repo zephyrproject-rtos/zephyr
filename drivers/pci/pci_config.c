@@ -41,7 +41,7 @@ void pci_config_out_long(u32_t bus_no, u32_t device_no, u32_t func_no,
 	pci_addr.field.bus = bus_no;
 	pci_addr.field.device = device_no;
 	pci_addr.field.func = func_no;
-	pci_addr.field.reg = offset / 4;
+	pci_addr.field.reg = offset / 4U;
 	pci_addr.field.offset = 0;
 
 	/* write to the PCI controller */
@@ -71,7 +71,7 @@ void pci_config_out_word(u32_t bus_no, u32_t device_no, u32_t func_no,
 	pci_addr.field.bus = bus_no;
 	pci_addr.field.device = device_no;
 	pci_addr.field.func = func_no;
-	pci_addr.field.reg = offset / 4;
+	pci_addr.field.reg = offset / 4U;
 	pci_addr.field.offset = offset & 2;
 
 	/* write to the PCI controller */
@@ -101,7 +101,7 @@ void pci_config_out_byte(u32_t bus_no, u32_t device_no, u32_t func_no,
 	pci_addr.field.bus = bus_no;
 	pci_addr.field.device = device_no;
 	pci_addr.field.func = func_no;
-	pci_addr.field.reg = offset / 4;
+	pci_addr.field.reg = offset / 4U;
 	pci_addr.field.offset = offset % 4;
 
 	/* write to the PCI controller */
@@ -132,7 +132,7 @@ void pci_config_in_long(u32_t bus_no, u32_t device_no, u32_t func_no,
 	pci_addr.field.bus = bus_no;
 	pci_addr.field.device = device_no;
 	pci_addr.field.func = func_no;
-	pci_addr.field.reg = offset / 4;
+	pci_addr.field.reg = offset / 4U;
 	pci_addr.field.offset = 0;
 
 	/* read from the PCI controller */
@@ -165,7 +165,7 @@ void pci_config_in_word(u32_t bus_no, u32_t device_no, u32_t func_no,
 	pci_addr.field.bus = bus_no;
 	pci_addr.field.device = device_no;
 	pci_addr.field.func = func_no;
-	pci_addr.field.reg = offset / 4;
+	pci_addr.field.reg = offset / 4U;
 	pci_addr.field.offset = offset & 2;
 
 	/* read from the PCI controller */
@@ -202,7 +202,7 @@ void pci_config_in_byte(u32_t bus_no, u32_t device_no, u32_t func_no,
 	pci_addr.field.bus = bus_no;
 	pci_addr.field.device = device_no;
 	pci_addr.field.func = func_no;
-	pci_addr.field.reg = offset / 4;
+	pci_addr.field.reg = offset / 4U;
 	pci_addr.field.offset = offset % 4;
 
 	/* read from the PCI controller */
@@ -245,7 +245,7 @@ int pci_config_ext_cap_ptr_find(u8_t ext_cap_find_id, u32_t bus,
 
 	pci_config_in_word(bus, device, function, PCI_CFG_STATUS, &tmp_stat);
 
-	if ((tmp_stat & PCI_STATUS_NEW_CAP) == 0) {
+	if ((tmp_stat & PCI_STATUS_NEW_CAP) == 0U) {
 		return -1;
 	}
 

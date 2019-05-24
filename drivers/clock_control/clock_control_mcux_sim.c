@@ -45,6 +45,15 @@ static int mcux_sim_get_subsys_rate(struct device *dev,
 
 static int mcux_sim_init(struct device *dev)
 {
+#ifdef DT_SIM_CLKOUT_DIVIDER
+	SIM->CHIPCTL = (SIM->CHIPCTL & ~SIM_CHIPCTL_CLKOUTDIV_MASK)
+		| SIM_CHIPCTL_CLKOUTDIV(DT_SIM_CLKOUT_DIVIDER);
+#endif
+#ifdef DT_SIM_CLKOUT_SOURCE
+	SIM->CHIPCTL = (SIM->CHIPCTL & ~SIM_CHIPCTL_CLKOUTSEL_MASK)
+		| SIM_CHIPCTL_CLKOUTSEL(DT_SIM_CLKOUT_SOURCE);
+#endif
+
 	return 0;
 }
 

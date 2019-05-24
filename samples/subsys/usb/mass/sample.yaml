@@ -1,7 +1,7 @@
 sample:
   name: Mass Storage
 tests:
-  test_mass_flash:
+  sample.usb.mass_flash:
     extra_args: OVERLAY_CONFIG="overlay-flash-disk.conf"
     extra_configs:
         - CONFIG_LOG_DEFAULT_LEVEL=3
@@ -12,11 +12,22 @@ tests:
       type: one_line
       regex:
         - "The device is put in USB mass storage mode."
-  test_mass_ram:
+  sample.usb.mass_ram:
+    depends_on: usb_device gpio
+    platform_whitelist: reel_board frdm_k64f arduino_101
     extra_args: OVERLAY_CONFIG="overlay-ram-disk.conf"
     extra_configs:
         - CONFIG_LOG_DEFAULT_LEVEL=3
-    platform_whitelist: frdm_k64f quark_se_c1000_devboard
+    tags: msd usb
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "The device is put in USB mass storage mode."
+  test_mass_nrf52840_pca10056:
+    extra_configs:
+        - CONFIG_LOG_DEFAULT_LEVEL=3
+    platform_whitelist: nrf52840_pca10056
     tags: msd usb
     harness: console
     harness_config:

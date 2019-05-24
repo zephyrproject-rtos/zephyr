@@ -6,14 +6,56 @@ History and Motivation
 West was added to the Zephyr project to fulfill two fundamental requirements:
 
 * The ability to work with multiple Git repositories
-* The ability to provide a user-friendly command-line interface to the Zephyr
-  build system and debug mechanisms
-
-Additionally, it was desired that west be easily extensible by
-downstream users.
+* The ability to provide an extensible and user-friendly command-line interface
+  for basic Zephyr workflows
 
 During the development of west, a set of :ref:`west-design-constraints` were
 identified to avoid the common pitfalls of tools of this kind.
+
+Requirements
+************
+
+Although the motivation behind splitting the Zephyr codebase into multiple
+repositories is outside of the scope of this page, the fundamental requirements,
+along with a clear justification of the choice not to use existing tools and
+instead develop a new one, do belong here.
+
+The basic requirements are:
+
+* **R1**: Keep externally maintained code in separately maintained repositories
+  outside of the main zephyr repository, without requiring users to manually
+  clone each of the external repositories
+* **R2**: Provide a tool that both Zephyr users and distributors can make use of
+  to benefit from and extend
+* **R3**: Allow users and downstream distributions to override or remove
+  repositories without having to make changes to the zephyr repository
+* **R4**: Support both continuous tracking and commit-based (bisectable) project
+  updating
+
+
+Rationale for a custom tool
+***************************
+
+Existing tools were considered during west's initial design and development.
+None were found suitable for Zephyr's requirements. In particular, these were
+examined in detail:
+
+* Google repo
+
+  - Does not cleanly support using zephyr as the manifest repository (**R4**)
+  - Python 2 only
+  - Does not play well with Windows
+  - Assumes Gerrit is used for code review
+
+* Git submodules
+
+  - Does not fully support **R1**, since the externally maintained repositories
+    would still need to be inside the main zephyr Git tree
+  - Does not support **R3**, since downstream copies would need to either
+    delete or replace submodule definitions
+  - Does not support continuous tracking of the latest ``HEAD`` in external
+    repositories (**R4**)
+  - Requires hardcoding of the paths/locations of the external repositories
 
 Multiple Git Repositories
 *************************

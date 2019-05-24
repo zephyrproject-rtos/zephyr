@@ -139,7 +139,7 @@
  * mask  -- interrupt bitmask for this level
  */
     .extern _kernel
-    .extern _sys_power_save_idle_exit
+    .extern z_sys_power_save_idle_exit
 
     .macro  dispatch_c_isr    level  mask
 
@@ -203,14 +203,14 @@
     beqz    a2, 10f
     xor     a4, a2, a2
     s32i    a4, a3, _kernel_offset_to_idle
-    call0   _sys_power_save_idle_exit
+    call0   z_sys_power_save_idle_exit
     mov     a2, a12
 #else
     l32i    a6, a3, _kernel_offset_to_idle
     beqz    a6, 10f
     xor     a4, a6, a6
     s32i    a4, a3, _kernel_offset_to_idle
-    call4   _sys_power_save_idle_exit
+    call4   z_sys_power_save_idle_exit
 #endif /* __XTENSA_CALL0_ABI__ */
 10:
 #endif /* CONFIG_SYS_POWER_MANAGEMENT */
@@ -644,10 +644,10 @@ _xt_user_exc:
  * on entry and used to return to a thread or interrupted interrupt handler.
  */
 
-    .global     _xt_user_exit
-    .type       _xt_user_exit,@function
+    .global     z_xt_user_exit
+    .type       z_xt_user_exit,@function
     .align      4
-_xt_user_exit:
+z_xt_user_exit:
     l32i    a0, sp, XT_STK_ps       /* retrieve interruptee's PS */
     wsr     a0, PS
     l32i    a0, sp, XT_STK_pc       /* retrieve interruptee's PC */
@@ -797,7 +797,7 @@ _xt_coproc_exc:
     #if XCHAL_HAVE_WINDOWED
     s32e    a0, sp, -16                 /* for debug backtrace */
     #endif
-    movi    a0, _xt_user_exit           /* save exit point for dispatch */
+    movi    a0, z_xt_user_exit           /* save exit point for dispatch */
     s32i    a0, sp, XT_STK_exit
 
     rsr     a0, EXCCAUSE
@@ -900,7 +900,7 @@ _xt_coproc_exc:
     xchal_cpi_load_funcbody
 
     /* Restore interruptee's saved registers. */
-    /* Can omit rsync for wsr.CPENABLE here because _xt_user_exit does
+    /* Can omit rsync for wsr.CPENABLE here because z_xt_user_exit does
      * it.
      */
 .L_xt_coproc_done:
@@ -909,7 +909,7 @@ _xt_coproc_exc:
     l32i    a4,  sp, XT_STK_a4
     l32i    a3,  sp, XT_STK_a3
     l32i    a2,  sp, XT_STK_a2
-    call0   _xt_user_exit           /* return via exit dispatcher */
+    call0   z_xt_user_exit           /* return via exit dispatcher */
     /* Never returns here - call0 is used as a jump (see note at top) */
 
 .L_check_cs:
@@ -959,7 +959,7 @@ _xt_lowint1:
     s32i    a0, sp, XT_STK_pc
     rsr     a0, EXCSAVE_1           /* save interruptee's a0 */
     s32i    a0, sp, XT_STK_a0
-    movi    a0, _xt_user_exit       /* save exit point for dispatch */
+    movi    a0, z_xt_user_exit       /* save exit point for dispatch */
     s32i    a0, sp, XT_STK_exit
 
     /* Save rest of interrupt context and enter RTOS. */

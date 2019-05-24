@@ -10,7 +10,7 @@
  *
  *
  * Initialization of full C support: zero the .bss, copy the .data if XIP,
- * call _Cstart().
+ * call z_cstart().
  *
  * Stack is available in this module, but not the global data/bss until their
  * initialization is performed.
@@ -40,14 +40,14 @@ static void disable_icache(void)
 {
 	unsigned int val;
 
-	val = _arc_v2_aux_reg_read(_ARC_V2_I_CACHE_BUILD);
+	val = z_arc_v2_aux_reg_read(_ARC_V2_I_CACHE_BUILD);
 	val &= 0xff; /* version field */
 	if (val == 0) {
 		return; /* skip if i-cache is not present */
 	}
-	_arc_v2_aux_reg_write(_ARC_V2_IC_IVIC, 0);
+	z_arc_v2_aux_reg_write(_ARC_V2_IC_IVIC, 0);
 	__asm__ __volatile__ ("nop");
-	_arc_v2_aux_reg_write(_ARC_V2_IC_CTRL, 1);
+	z_arc_v2_aux_reg_write(_ARC_V2_IC_CTRL, 1);
 }
 
 /**
@@ -64,12 +64,12 @@ static void invalidate_dcache(void)
 {
 	unsigned int val;
 
-	val = _arc_v2_aux_reg_read(_ARC_V2_D_CACHE_BUILD);
+	val = z_arc_v2_aux_reg_read(_ARC_V2_D_CACHE_BUILD);
 	val &= 0xff; /* version field */
 	if (val == 0) {
 		return; /* skip if d-cache is not present */
 	}
-	_arc_v2_aux_reg_write(_ARC_V2_DC_IVDC, 1);
+	z_arc_v2_aux_reg_write(_ARC_V2_DC_IVDC, 1);
 }
 #endif
 
@@ -97,15 +97,15 @@ static void adjust_vector_table_base(void)
 	 * from the base address known by the ARC CPU,
 	 * set the vector base to the compiled-in address.
 	 */
-	vbr = _arc_v2_aux_reg_read(_ARC_V2_IRQ_VECT_BASE);
+	vbr = z_arc_v2_aux_reg_read(_ARC_V2_IRQ_VECT_BASE);
 	vbr &= 0xfffffc00;
 	if (vbr != (unsigned int)&_VectorTable) {
-		_arc_v2_aux_reg_write(_ARC_V2_IRQ_VECT_BASE,
+		z_arc_v2_aux_reg_write(_ARC_V2_IRQ_VECT_BASE,
 					(unsigned int)&_VectorTable);
 	}
 }
 
-extern FUNC_NORETURN void _Cstart(void);
+extern FUNC_NORETURN void z_cstart(void);
 /**
  *
  * @brief Prepare to and run C code
@@ -117,10 +117,10 @@ extern FUNC_NORETURN void _Cstart(void);
 
 void _PrepC(void)
 {
-	_icache_setup();
+	z_icache_setup();
 	adjust_vector_table_base();
-	_bss_zero();
-	_data_copy();
-	_Cstart();
+	z_bss_zero();
+	z_data_copy();
+	z_cstart();
 	CODE_UNREACHABLE;
 }

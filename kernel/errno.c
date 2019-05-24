@@ -24,7 +24,7 @@ const int _k_neg_eagain = -EAGAIN;
 
 #ifdef CONFIG_ERRNO
 #ifdef CONFIG_USERSPACE
-int *_impl_z_errno(void)
+int *z_impl_z_errno(void)
 {
 	/* Initialized to the lowest address in the stack so the thread can
 	 * directly read/write it
@@ -34,7 +34,7 @@ int *_impl_z_errno(void)
 
 Z_SYSCALL_HANDLER0_SIMPLE(z_errno);
 #else
-int *_impl_z_errno(void)
+int *z_impl_z_errno(void)
 {
 	return &_current->errno_var;
 }

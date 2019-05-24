@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 CONFIG_ARM=y
 CONFIG_SOC_FAMILY_NRF=y
 CONFIG_SOC_SERIES_NRF52X=y
@@ -6,6 +8,9 @@ CONFIG_BOARD_NRF52_VBLUNO52=y
 
 # Enable MPU
 CONFIG_ARM_MPU=y
+
+# enable GPIO
+CONFIG_GPIO=y
 
 # enable uart driver
 CONFIG_SERIAL=y

@@ -47,8 +47,6 @@ config ADC_0
 config ADC_1
 	bool "Enable ADC 1"
 
-source "drivers/adc/Kconfig.dw"
-
 source "drivers/adc/Kconfig.mcux"
 
 source "drivers/adc/Kconfig.nrfx"
@@ -56,5 +54,9 @@ source "drivers/adc/Kconfig.nrfx"
 source "drivers/adc/Kconfig.sam_afec"
 
 source "drivers/adc/Kconfig.intel_quark"
+
+source "drivers/adc/Kconfig.sam0"
+
+source "drivers/adc/Kconfig.stm32"
 
 endif # ADC

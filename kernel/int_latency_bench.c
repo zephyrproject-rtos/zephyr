@@ -50,7 +50,7 @@ u32_t _hw_irq_to_c_handler_latency = ULONG_MAX;
  * @return N/A
  *
  */
-void _int_latency_start(void)
+void z_int_latency_start(void)
 {
 	/* when interrupts are not already locked, take time stamp */
 	if (!int_locked_timestamp && int_latency_bench_ready) {
@@ -69,7 +69,7 @@ void _int_latency_start(void)
  * @return N/A
  *
  */
-void _int_latency_stop(void)
+void z_int_latency_stop(void)
 {
 	u32_t delta;
 	u32_t delayOverhead;
@@ -143,16 +143,16 @@ void int_latency_init(void)
 		 * takes
 		 */
 		initial_start_delay = k_cycle_get_32();
-		_int_latency_start();
+		z_int_latency_start();
 		initial_start_delay =
 			k_cycle_get_32() - initial_start_delay - timeToReadTime;
 
 		nesting_delay = k_cycle_get_32();
-		_int_latency_start();
+		z_int_latency_start();
 		nesting_delay = k_cycle_get_32() - nesting_delay - timeToReadTime;
 
 		stop_delay = k_cycle_get_32();
-		_int_latency_stop();
+		z_int_latency_stop();
 		stop_delay = k_cycle_get_32() - stop_delay - timeToReadTime;
 
 		/* re-initialize globals to default values */
@@ -176,7 +176,7 @@ void int_latency_show(void)
 {
 	u32_t intHandlerLatency = 0U;
 
-	if (int_latency_bench_ready == 0) {
+	if (int_latency_bench_ready == 0U) {
 		printk("error: int_latency_init() has not been invoked\n");
 		return;
 	}

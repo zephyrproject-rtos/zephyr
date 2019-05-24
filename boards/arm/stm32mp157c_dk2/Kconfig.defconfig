@@ -1,0 +1,27 @@
+# Kconfig - STM32MP157 discovery board configuration
+#
+# Copyright (c) 2019 STMicroelectronics
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if BOARD_STM32MP157C_DK2
+
+config BOARD
+	default "stm32mp157c_dk2"
+
+if UART_CONSOLE
+
+config UART_3
+	default y
+
+endif # UART_CONSOLE
+
+if SERIAL
+
+config UART_7
+	default y
+
+endif # SERIAL
+
+endif # BOARD_STM32MP157_Dk2

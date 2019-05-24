@@ -45,7 +45,7 @@ void test_config_save_2_fcb(void)
 	(void)memset(val_string[0], 0, sizeof(val_string[0]));
 	rc = settings_load();
 	zassert_true(rc == 0, "fcb read error");
-	zassert_true(val8 == 42, "bad value read");
+	zassert_true(val8 == 42U, "bad value read");
 	zassert_true(!strcmp(val_string[0], test_ref_value[0]),
 		     "bad value read");
 	test_export_block = 1;
@@ -71,7 +71,7 @@ void test_config_save_2_fcb(void)
 		zassert_true(!memcmp(val_string, test_ref_value,
 				     sizeof(val_string)),
 			     "bad value read");
-		zassert_true(val8 == 42, "bad value read");
+		zassert_true(val8 == 42U, "bad value read");
 	}
 	c2_var_count = 0;
 }

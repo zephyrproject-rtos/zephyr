@@ -22,13 +22,12 @@ static struct k_thread tx_data;
 
 static void tx(int *can_fd)
 {
-	static char data[] = { 0x11, 0x22, 0x33, 0x44,
-			       0x55, 0x66, 0x77, 0x88 };
 	int fd = POINTER_TO_INT(can_fd);
-	struct zcan_frame msg;
+	struct zcan_frame msg = {0};
+	struct can_frame frame = {0};
 	int ret, i;
 
-	msg.dlc = sizeof(data);
+	msg.dlc = 8U;
 	msg.id_type = CAN_STANDARD_IDENTIFIER;
 	msg.std_id = 0x1;
 	msg.rtr = CAN_DATAFRAME;
@@ -37,10 +36,12 @@ static void tx(int *can_fd)
 		msg.data[i] = 0xF0 | i;
 	}
 
+	can_copy_zframe_to_frame(&msg, &frame);
+
 	LOG_DBG("Sending CAN data...");
 
 	while (1) {
-		ret = send(fd, &msg, sizeof(struct zcan_frame), K_FOREVER);
+		ret = send(fd, &frame, sizeof(frame), K_FOREVER);
 		if (ret < 0) {
 			LOG_ERR("Cannot send CAN message (%d)", -errno);
 		}
@@ -54,6 +55,7 @@ static void rx(int fd)
 	struct sockaddr_can can_addr;
 	socklen_t addr_len;
 	struct zcan_frame msg;
+	struct can_frame frame;
 	int ret;
 
 	LOG_DBG("Waiting CAN data...");
@@ -61,15 +63,17 @@ static void rx(int fd)
 	while (1) {
 		u8_t *data;
 
-		memset(&msg, 0, sizeof(msg));
+		memset(&frame, 0, sizeof(frame));
 		addr_len = sizeof(can_addr);
 
-		ret = recvfrom(fd, &msg, sizeof(struct zcan_frame),
+		ret = recvfrom(fd, &frame, sizeof(struct can_frame),
 			       0, (struct sockaddr *)&can_addr, &addr_len);
 		if (ret < 0) {
 			LOG_ERR("Cannot receive CAN message (%d)", ret);
 			continue;
 		}
+
+		can_copy_frame_to_zframe(&frame, &msg);
 
 		LOG_INF("CAN msg: type 0x%x RTR 0x%x EID 0x%x DLC 0x%x",
 			msg.id_type, msg.rtr, msg.std_id, msg.dlc);
@@ -90,17 +94,20 @@ static void rx(int fd)
 
 static int setup_socket(void)
 {
-	const struct zcan_filter filter = {
+	const struct zcan_filter zfilter = {
 		.id_type = CAN_STANDARD_IDENTIFIER,
 		.rtr = CAN_DATAFRAME,
 		.std_id = 0x1,
 		.rtr_mask = 1,
 		.std_id_mask = CAN_STD_ID_MASK
 	};
+	struct can_filter filter;
 	struct sockaddr_can can_addr;
 	struct net_if *iface;
 	int fd;
 	int ret;
+
+	can_copy_zfilter_to_filter(&zfilter, &filter);
 
 	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(CANBUS));
 	if (!iface) {
@@ -110,9 +117,9 @@ static int setup_socket(void)
 
 	fd = socket(AF_CAN, SOCK_RAW, CAN_RAW);
 	if (fd < 0) {
-		ret = errno;
-		LOG_ERR("Cannot create CAN socket (%d)", -ret);
-		return -ret;
+		ret = -errno;
+		LOG_ERR("Cannot create CAN socket (%d)", ret);
+		return ret;
 	}
 
 	can_addr.can_ifindex = net_if_get_by_iface(iface);
@@ -121,11 +128,17 @@ static int setup_socket(void)
 	ret = bind(fd, (struct sockaddr *)&can_addr, sizeof(can_addr));
 	if (ret < 0) {
 		ret = -errno;
-		LOG_ERR("Cannot bind CAN socket (%d)", -ret);
+		LOG_ERR("Cannot bind CAN socket (%d)", ret);
 		goto cleanup;
 	}
 
-	setsockopt(fd, SOL_CAN_RAW, CAN_RAW_FILTER, &filter, sizeof(filter));
+	ret = setsockopt(fd, SOL_CAN_RAW, CAN_RAW_FILTER, &filter,
+			 sizeof(filter));
+	if (ret < 0) {
+		ret = -errno;
+		LOG_ERR("Cannot set CAN sockopt (%d)", ret);
+		goto cleanup;
+	}
 
 	/* Delay TX startup so that RX is ready to receive */
 	tx_tid = k_thread_create(&tx_data, tx_stack,

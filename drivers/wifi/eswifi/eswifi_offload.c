@@ -93,7 +93,7 @@ static void eswifi_off_read_work(struct k_work *work)
 		goto done;
 	}
 
-	if (!net_pkt_write_new(pkt, data, len)) {
+	if (!net_pkt_write(pkt, data, len)) {
 		LOG_WRN("Incomplete buffer copy");
 	}
 
@@ -329,7 +329,7 @@ static int __eswifi_off_send_pkt(struct eswifi_dev *eswifi,
 	offset = strlen(eswifi->buf);
 
 	/* copy payload */
-	if (net_pkt_read_new(pkt, &eswifi->buf[offset], bytes)) {
+	if (net_pkt_read(pkt, &eswifi->buf[offset], bytes)) {
 		return -ENOBUFS;
 	}
 
@@ -353,7 +353,7 @@ static void eswifi_off_send_work(struct k_work *work)
 	net_context_send_cb_t cb;
 	struct net_context *context;
 	struct eswifi_dev *eswifi;
-	void *user_data, *token;
+	void *user_data;
 	int err;
 
 	socket = CONTAINER_OF(work, struct eswifi_off_socket, connect_work);
@@ -362,7 +362,6 @@ static void eswifi_off_send_work(struct k_work *work)
 	eswifi_lock(eswifi);
 
 	user_data = socket->user_data;
-	token = socket->tx_token;
 	cb = socket->send_cb;
 	context = socket->context;
 
@@ -372,14 +371,13 @@ static void eswifi_off_send_work(struct k_work *work)
 	eswifi_unlock(eswifi);
 
 	if (cb) {
-		cb(context, err, token, user_data);
+		cb(context, err, user_data);
 	}
 }
 
 static int eswifi_off_send(struct net_pkt *pkt,
 			   net_context_send_cb_t cb,
 			   s32_t timeout,
-			   void *token,
 			   void *user_data)
 {
 	struct eswifi_off_socket *socket = pkt->context->offload_context;
@@ -402,7 +400,6 @@ static int eswifi_off_send(struct net_pkt *pkt,
 	socket->tx_pkt = pkt;
 
 	if (timeout == K_NO_WAIT) {
-		socket->tx_token = token;
 		socket->user_data = user_data;
 		socket->send_cb = cb;
 
@@ -419,7 +416,7 @@ static int eswifi_off_send(struct net_pkt *pkt,
 	eswifi_unlock(eswifi);
 
 	if (cb) {
-		cb(socket->context, err, token, user_data);
+		cb(socket->context, err, user_data);
 	}
 
 	return err;
@@ -430,7 +427,6 @@ static int eswifi_off_sendto(struct net_pkt *pkt,
 			     socklen_t addrlen,
 			     net_context_send_cb_t cb,
 			     s32_t timeout,
-			     void *token,
 			     void *user_data)
 {
 	/* TODO */

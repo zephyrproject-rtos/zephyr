@@ -29,7 +29,7 @@
 * clock system.
 *
 * The PDL defines clock system capabilities in:\n
-* devices\<family\>/<series\>/include\<series\>_config.h. (E.g.
+* devices\<family\>/<series\>/include\<series\>z_config.h. (E.g.
 * devices/psoc6/psoc63/include/psoc63_config.h). 
 * User-configurable clock speeds are defined in the file system_<series>.h.
 *

@@ -22,7 +22,7 @@
  *   -# Send and receive a message with extended id without masking
  *   -# Send and receive a message with standard id with masking
  *   -# Send and receive a message with extended id with masking
- *    -# Send and message with different id that should not be received.
+ *   -# Send and message with different id that should not be received.
  * - Expected Results
  *   -# All tests MUST pass
  * @}
@@ -40,8 +40,19 @@
 #define TEST_CAN_EXT_MASK_ID 0x1555555A
 #define TEST_CAN_EXT_MASK    0x1FFFFFF0
 
+
+#if defined(CONFIG_CAN_LOOPBACK_DEV_NAME)
+#define CAN_DEVICE_NAME CONFIG_CAN_LOOPBACK_DEV_NAME
+#elif defined(DT_CAN_1_NAME)
+#define CAN_DEVICE_NAME DT_CAN_1_NAME
+#else
+#define CAN_DEVICE_NAME ""
+#endif
+
 CAN_DEFINE_MSGQ(can_msgq, 5);
 struct k_sem rx_isr_sem;
+struct k_sem rx_cb_sem;
+struct device *can_dev;
 
 struct zcan_frame test_std_msg = {
 	.id_type = CAN_STANDARD_IDENTIFIER,
@@ -115,6 +126,8 @@ const struct zcan_filter test_std_some_filter = {
 	.std_id_mask = CAN_STD_ID_MASK
 };
 
+struct zcan_work can_work;
+
 static inline void check_msg(struct zcan_frame *msg1, struct zcan_frame *msg2,
 			     u32_t mask)
 {
@@ -141,40 +154,95 @@ static inline void check_msg(struct zcan_frame *msg1, struct zcan_frame *msg2,
 	zassert_equal(cmp_res, 0, "Received data differ");
 }
 
-static void tx_isr(u32_t error_flags)
+static void tx_std_isr(u32_t error_flags, void *arg)
 {
+	struct zcan_frame *msg = (struct zcan_frame *)arg;
 
+	zassert_equal(msg->std_id, TEST_CAN_STD_ID, "Arg does not match");
 }
 
-static void rx_std_isr(struct zcan_frame *msg)
+static void tx_std_masked_isr(u32_t error_flags, void *arg)
+{
+	struct zcan_frame *msg = (struct zcan_frame *)arg;
+
+	zassert_equal(msg->std_id, TEST_CAN_STD_MASK_ID, "Arg does not match");
+}
+
+static void tx_ext_isr(u32_t error_flags, void *arg)
+{
+	struct zcan_frame *msg = (struct zcan_frame *)arg;
+
+	zassert_equal(msg->ext_id, TEST_CAN_EXT_ID, "Arg does not match");
+}
+
+static void tx_ext_masked_isr(u32_t error_flags, void *arg)
+{
+	struct zcan_frame *msg = (struct zcan_frame *)arg;
+
+	zassert_equal(msg->ext_id, TEST_CAN_EXT_MASK_ID, "Arg does not match");
+}
+
+static void rx_std_isr(struct zcan_frame *msg, void *arg)
 {
 	check_msg(msg, &test_std_msg, 0);
+	zassert_equal_ptr(arg, &test_std_filter, "arg does not match");
 	k_sem_give(&rx_isr_sem);
 }
 
-static void rx_std_mask_isr(struct zcan_frame *msg)
+static void rx_std_mask_isr(struct zcan_frame *msg, void *arg)
 {
 	check_msg(msg, &test_std_msg, 0x0F);
+	zassert_equal_ptr(arg, &test_std_masked_filter, "arg does not match");
 	k_sem_give(&rx_isr_sem);
 }
 
-static void rx_ext_isr(struct zcan_frame *msg)
+static void rx_ext_isr(struct zcan_frame *msg, void *arg)
 {
 	check_msg(msg, &test_ext_msg, 0);
+	zassert_equal_ptr(arg, &test_ext_filter, "arg does not match");
 	k_sem_give(&rx_isr_sem);
 }
 
-static void rx_ext_mask_isr(struct zcan_frame *msg)
+static void rx_ext_mask_isr(struct zcan_frame *msg, void *arg)
 {
 	check_msg(msg, &test_ext_msg, 0x0F);
+	zassert_equal_ptr(arg, &test_ext_masked_filter, "arg does not match");
 	k_sem_give(&rx_isr_sem);
+}
+
+static void rx_std_cb(struct zcan_frame *msg, void *arg)
+{
+	check_msg(msg, &test_std_msg, 0);
+	zassert_equal_ptr(arg, &test_std_filter, "arg does not match");
+	k_sem_give(&rx_cb_sem);
+}
+
+static void rx_std_mask_cb(struct zcan_frame *msg, void *arg)
+{
+	check_msg(msg, &test_std_msg, 0x0F);
+	zassert_equal_ptr(arg, &test_std_masked_filter, "arg does not match");
+	k_sem_give(&rx_cb_sem);
+}
+
+static void rx_ext_cb(struct zcan_frame *msg, void *arg)
+{
+	check_msg(msg, &test_ext_msg, 0);
+	zassert_equal_ptr(arg, &test_ext_filter, "arg does not match");
+	k_sem_give(&rx_cb_sem);
+}
+
+static void rx_ext_mask_cb(struct zcan_frame *msg, void *arg)
+{
+	check_msg(msg, &test_ext_msg, 0x0F);
+	zassert_equal_ptr(arg, &test_ext_masked_filter, "arg does not match");
+	k_sem_give(&rx_cb_sem);
 }
 
 static void send_test_msg(struct device *can_dev, struct zcan_frame *msg)
 {
 	int ret;
 
-	ret = can_send(can_dev, msg, TEST_SEND_TIMEOUT, NULL);
+	ret = can_send(can_dev, msg, TEST_SEND_TIMEOUT, NULL, NULL);
 	zassert_not_equal(ret, CAN_TX_ARB_LOST,
 			  "Arbitration though in loopback mode");
 	zassert_equal(ret, CAN_TX_OK, "Can't send a message. Err: %d", ret);
@@ -184,7 +252,24 @@ static void send_test_msg_nowait(struct device *can_dev, struct zcan_frame *msg)
 {
 	int ret;
 
-	ret = can_send(can_dev, msg, TEST_SEND_TIMEOUT, tx_isr);
+	if (msg->id_type == CAN_STANDARD_IDENTIFIER) {
+		if (msg->std_id == TEST_CAN_STD_ID) {
+			ret = can_send(can_dev, msg, TEST_SEND_TIMEOUT,
+				       tx_std_isr, msg);
+		} else {
+			ret = can_send(can_dev, msg, TEST_SEND_TIMEOUT,
+				       tx_std_masked_isr, msg);
+		}
+	} else {
+		if (msg->ext_id == TEST_CAN_EXT_ID) {
+			ret = can_send(can_dev, msg, TEST_SEND_TIMEOUT,
+				       tx_ext_isr, msg);
+		} else {
+			ret = can_send(can_dev, msg, TEST_SEND_TIMEOUT,
+				       tx_ext_masked_isr, msg);
+		}
+	}
+
 	zassert_not_equal(ret, CAN_TX_ARB_LOST,
 			  "Arbitration though in loopback mode");
 	zassert_equal(ret, CAN_TX_OK, "Can't send a message. Err: %d", ret);
@@ -203,6 +288,40 @@ static inline int attach_msgq(struct device *can_dev,
 	return filter_id;
 }
 
+static inline int attach_workq(struct device *can_dev,
+			      const struct zcan_filter *filter)
+{
+	int filter_id;
+
+	if (filter->id_type == CAN_STANDARD_IDENTIFIER) {
+		if (filter->std_id_mask == CAN_STD_ID_MASK) {
+			filter_id = can_attach_workq(can_dev, &k_sys_work_q,
+						     &can_work, rx_std_cb,
+						     (void *)filter, filter);
+		} else {
+			filter_id = can_attach_workq(can_dev, &k_sys_work_q,
+						     &can_work, rx_std_mask_cb,
+						     (void *)filter, filter);
+		}
+	} else {
+		if (filter->ext_id_mask == CAN_EXT_ID_MASK) {
+			filter_id = can_attach_workq(can_dev, &k_sys_work_q,
+						     &can_work, rx_ext_cb,
+						     (void *)filter, filter);
+		} else {
+			filter_id = can_attach_workq(can_dev, &k_sys_work_q,
+						     &can_work, rx_ext_mask_cb,
+						     (void *)filter, filter);
+		}
+	}
+
+	zassert_not_equal(filter_id, CAN_NO_FREE_FILTER,
+			  "Filter full even for a single one");
+	zassert_true((filter_id >= 0), "Negative filter number");
+
+	return filter_id;
+}
+
 static inline int attach_isr(struct device *can_dev,
 			     const struct zcan_filter *filter)
 {
@@ -212,15 +331,19 @@ static inline int attach_isr(struct device *can_dev,
 
 	if (filter->id_type == CAN_STANDARD_IDENTIFIER) {
 		if (filter->std_id_mask == CAN_STD_ID_MASK) {
-			filter_id = can_attach_isr(can_dev, rx_std_isr, filter);
+			filter_id = can_attach_isr(can_dev, rx_std_isr,
+						   (void *)filter, filter);
 		} else {
-			filter_id = can_attach_isr(can_dev, rx_std_mask_isr, filter);
+			filter_id = can_attach_isr(can_dev, rx_std_mask_isr,
+						   (void *)filter, filter);
 		}
 	} else {
 		if (filter->ext_id_mask == CAN_EXT_ID_MASK) {
-			filter_id = can_attach_isr(can_dev, rx_ext_isr, filter);
+			filter_id = can_attach_isr(can_dev, rx_ext_isr,
+						   (void *)filter, filter);
 		} else {
-			filter_id = can_attach_isr(can_dev, rx_ext_mask_isr, filter);
+			filter_id = can_attach_isr(can_dev, rx_ext_mask_isr,
+						   (void *)filter, filter);
 		}
 	}
 
@@ -233,18 +356,14 @@ static inline int attach_isr(struct device *can_dev,
 
 static void send_receive(const struct zcan_filter *filter, struct zcan_frame *msg)
 {
-	struct device *can_dev;
 	int ret, filter_id;
 	struct zcan_frame msg_buffer;
-	u32_t mask = 0;
+	u32_t mask = 0U;
 
-	can_dev = device_get_binding(DT_CAN_1_NAME);
 	zassert_not_null(can_dev, "Device not not found");
 
 	filter_id = attach_msgq(can_dev, filter);
-
 	send_test_msg(can_dev, msg);
-
 	ret = k_msgq_get(&can_msgq, &msg_buffer, TEST_RECEIVE_TIMEOUT);
 	zassert_equal(ret, 0, "Receiving timeout");
 
@@ -259,15 +378,18 @@ static void send_receive(const struct zcan_filter *filter, struct zcan_frame *ms
 	}
 
 	check_msg(&msg_buffer, msg, mask);
-
 	can_detach(can_dev, filter_id);
 
-	send_test_msg_nowait(can_dev, msg);
-
 	filter_id = attach_isr(can_dev, filter);
-
+	send_test_msg_nowait(can_dev, msg);
 	ret = k_sem_take(&rx_isr_sem, TEST_RECEIVE_TIMEOUT);
+	zassert_equal(ret, 0, "Receiving timeout");
+	can_detach(can_dev, filter_id);
 
+	filter_id = attach_workq(can_dev, filter);
+	send_test_msg(can_dev, msg);
+	ret = k_sem_take(&rx_cb_sem, TEST_RECEIVE_TIMEOUT);
+	zassert_equal(ret, 0, "Receiving timeout");
 	can_detach(can_dev, filter_id);
 }
 
@@ -278,11 +400,7 @@ static void send_receive(const struct zcan_filter *filter, struct zcan_frame *ms
  */
 static void test_set_loopback(void)
 {
-	struct device *can_dev;
 	int ret;
-
-	can_dev = device_get_binding(DT_CAN_1_NAME);
-	zassert_not_null(can_dev, "Device not not found");
 
 	ret = can_configure(can_dev, CAN_LOOPBACK_MODE, 0);
 	zassert_equal(ret, 0, "Can't set loopback-mode. Err: %d", ret);
@@ -294,9 +412,6 @@ static void test_set_loopback(void)
  */
 static void test_send_and_forget(void)
 {
-	struct device *can_dev;
-
-	can_dev = device_get_binding(DT_CAN_1_NAME);
 	zassert_not_null(can_dev, "Device not not found");
 
 	send_test_msg(can_dev, &test_std_msg);
@@ -308,11 +423,7 @@ static void test_send_and_forget(void)
  */
 static void test_filter_attach(void)
 {
-	struct device *can_dev;
 	int filter_id;
-
-	can_dev = device_get_binding(DT_CAN_1_NAME);
-	zassert_not_null(can_dev, "Device not not found");
 
 	filter_id = attach_isr(can_dev, &test_std_filter);
 	can_detach(can_dev, filter_id);
@@ -332,24 +443,20 @@ static void test_filter_attach(void)
 	filter_id = attach_isr(can_dev, &test_ext_masked_filter);
 	can_detach(can_dev, filter_id);
 
-	filter_id = attach_msgq(can_dev, &test_std_masked_filter);
+	filter_id = attach_workq(can_dev, &test_std_filter);
 	can_detach(can_dev, filter_id);
 
-	filter_id = attach_msgq(can_dev, &test_ext_masked_filter);
+	filter_id = attach_workq(can_dev, &test_std_filter);
 	can_detach(can_dev, filter_id);
 }
 
 /*
- * Test if a message is received wile was sent.
+ * Test if a message is received wile nothing was sent.
  */
 static void test_receive_timeout(void)
 {
-	struct device *can_dev;
 	int ret, filter_id;
 	struct zcan_frame msg;
-
-	can_dev = device_get_binding(DT_CAN_1_NAME);
-	zassert_not_null(can_dev, "Device not not found");
 
 	filter_id = attach_msgq(can_dev, &test_std_filter);
 
@@ -404,18 +511,47 @@ void test_send_receive_ext_masked(void)
 }
 
 /*
+ * Attach to a filter that should pass the message and send multiple messages.
+ * The massage should be received and buffered within a small timeout.
+ * Extended identifier
+ */
+void test_send_receive_buffer(void)
+{
+	int filter_id, i, ret;
+
+	filter_id = attach_workq(can_dev, &test_std_filter);
+	k_sem_reset(&rx_cb_sem);
+
+	for (i = 0; i < CONFIG_CAN_WORKQ_FRAMES_BUF_CNT; i++) {
+		send_test_msg(can_dev, &test_std_msg);
+	}
+
+	for (i = 0; i < CONFIG_CAN_WORKQ_FRAMES_BUF_CNT; i++) {
+		ret = k_sem_take(&rx_cb_sem, TEST_RECEIVE_TIMEOUT);
+		zassert_equal(ret, 0, "Receiving timeout");
+	}
+
+	for (i = 0; i < CONFIG_CAN_WORKQ_FRAMES_BUF_CNT; i++) {
+		send_test_msg(can_dev, &test_std_msg);
+	}
+
+	for (i = 0; i < CONFIG_CAN_WORKQ_FRAMES_BUF_CNT; i++) {
+		ret = k_sem_take(&rx_cb_sem, TEST_RECEIVE_TIMEOUT);
+		zassert_equal(ret, 0, "Receiving timeout");
+	}
+
+	can_detach(can_dev, filter_id);
+}
+
+/*
  * Attach to a filter that should not pass the message and send a message
  * with a different id.
  * The massage should not be received.
  */
 static void test_send_receive_wrong_id(void)
 {
-	struct device *can_dev;
 	int ret, filter_id;
 	struct zcan_frame msg_buffer;
-
-	can_dev = device_get_binding(DT_CAN_1_NAME);
-	zassert_not_null(can_dev, "Device not not found");
 
 	filter_id = attach_msgq(can_dev, &test_std_filter);
 
@@ -431,6 +567,9 @@ static void test_send_receive_wrong_id(void)
 void test_main(void)
 {
 	k_sem_init(&rx_isr_sem, 0, 1);
+	k_sem_init(&rx_cb_sem, 0, INT_MAX);
+	can_dev = device_get_binding(CAN_DEVICE_NAME);
+	zassert_not_null(can_dev, "Device not found");
 
 	ztest_test_suite(can_driver,
 			 ztest_unit_test(test_set_loopback),
@@ -441,6 +580,7 @@ void test_main(void)
 			 ztest_unit_test(test_send_receive_ext),
 			 ztest_unit_test(test_send_receive_std_masked),
 			 ztest_unit_test(test_send_receive_ext_masked),
+			 ztest_unit_test(test_send_receive_buffer),
 			 ztest_unit_test(test_send_receive_wrong_id));
 	ztest_run_test_suite(can_driver);
 }

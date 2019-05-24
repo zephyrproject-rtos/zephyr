@@ -58,7 +58,7 @@ endif # COUNTER
 if I2C
 
 config I2C_SBCON
-	def_bool y
+	default y
 
 endif # I2C
 

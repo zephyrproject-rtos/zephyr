@@ -338,7 +338,7 @@ static int set_rx_data_format(const struct i2s_sam_dev_cfg *const dev_cfg,
 		break;
 
 	case I2S_FMT_DATA_FORMAT_PCM_LONG:
-		fslen = num_words * word_size_bits / 2 - 1;
+		fslen = num_words * word_size_bits / 2U - 1;
 
 		ssc_rcmr = (pin_rf_en ? SSC_RCMR_START_RF_RISING : 0)
 			   | SSC_RCMR_STTDLY(0);
@@ -348,7 +348,7 @@ static int set_rx_data_format(const struct i2s_sam_dev_cfg *const dev_cfg,
 		break;
 
 	case I2S_FMT_DATA_FORMAT_LEFT_JUSTIFIED:
-		fslen = num_words * word_size_bits / 2 - 1;
+		fslen = num_words * word_size_bits / 2U - 1;
 
 		ssc_rcmr = SSC_RCMR_CKI
 			   | (pin_rf_en ? SSC_RCMR_START_RF_RISING : 0)
@@ -377,7 +377,7 @@ static int set_rx_data_format(const struct i2s_sam_dev_cfg *const dev_cfg,
 	 * frame period is an odd number set it to be one bit longer.
 	 */
 	ssc_rcmr |= (pin_rf_en ? 0 : SSC_RCMR_START_TRANSMIT)
-		    | SSC_RCMR_PERIOD((num_words * word_size_bits + 1) / 2 - 1);
+		    | SSC_RCMR_PERIOD((num_words * word_size_bits + 1) / 2U - 1);
 
 	/* Receive Clock Mode Register */
 	ssc->SSC_RCMR = ssc_rcmr;
@@ -426,7 +426,7 @@ static int set_tx_data_format(const struct i2s_sam_dev_cfg *const dev_cfg,
 		break;
 
 	case I2S_FMT_DATA_FORMAT_PCM_LONG:
-		fslen = num_words * word_size_bits / 2 - 1;
+		fslen = num_words * word_size_bits / 2U - 1;
 
 		ssc_tcmr = SSC_TCMR_CKI
 			   | SSC_TCMR_START_TF_RISING
@@ -436,7 +436,7 @@ static int set_tx_data_format(const struct i2s_sam_dev_cfg *const dev_cfg,
 		break;
 
 	case I2S_FMT_DATA_FORMAT_LEFT_JUSTIFIED:
-		fslen = num_words * word_size_bits / 2 - 1;
+		fslen = num_words * word_size_bits / 2U - 1;
 
 		ssc_tcmr = SSC_TCMR_START_TF_RISING
 			   | SSC_TCMR_STTDLY(0);
@@ -457,7 +457,7 @@ static int set_tx_data_format(const struct i2s_sam_dev_cfg *const dev_cfg,
 		     ? SSC_TCMR_CKS_TK : SSC_TCMR_CKS_MCK)
 		    | ((i2s_cfg->options & I2S_OPT_BIT_CLK_GATED)
 		       ? SSC_TCMR_CKO_TRANSFER : SSC_TCMR_CKO_CONTINUOUS)
-		    | SSC_TCMR_PERIOD((num_words * word_size_bits + 1) / 2 - 1);
+		    | SSC_TCMR_PERIOD((num_words * word_size_bits + 1) / 2U - 1);
 
 	/* Transmit Clock Mode Register */
 	ssc->SSC_TCMR = ssc_tcmr;
@@ -483,19 +483,19 @@ static int set_tx_data_format(const struct i2s_sam_dev_cfg *const dev_cfg,
 /* Calculate number of bytes required to store a word of bit_size length */
 static u8_t get_word_size_bytes(u8_t bit_size)
 {
-	u8_t byte_size_min = (bit_size + 7) / 8;
+	u8_t byte_size_min = (bit_size + 7) / 8U;
 	u8_t byte_size;
 
-	byte_size = (byte_size_min == 3) ? 4 : byte_size_min;
+	byte_size = (byte_size_min == 3U) ? 4 : byte_size_min;
 
 	return byte_size;
 }
 
 static int bit_clock_set(Ssc *const ssc, u32_t bit_clk_freq)
 {
-	u32_t clk_div = SOC_ATMEL_SAM_MCK_FREQ_HZ / bit_clk_freq / 2;
+	u32_t clk_div = SOC_ATMEL_SAM_MCK_FREQ_HZ / bit_clk_freq / 2U;
 
-	if (clk_div == 0 || clk_div >= (1 << 12)) {
+	if (clk_div == 0U || clk_div >= (1 << 12)) {
 		LOG_ERR("Invalid bit clock frequency");
 		return -EINVAL;
 	}
@@ -554,7 +554,7 @@ static int i2s_sam_configure(struct device *dev, enum i2s_dir dir,
 		return -EINVAL;
 	}
 
-	if (i2s_cfg->frame_clk_freq == 0) {
+	if (i2s_cfg->frame_clk_freq == 0U) {
 		stream->queue_drop(stream);
 		(void)memset(&stream->cfg, 0, sizeof(struct i2s_config));
 		stream->state = I2S_STATE_NOT_READY;

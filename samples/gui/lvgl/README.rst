@@ -23,12 +23,12 @@ or a simulated display environment in a native Posix application:
 or
 
 - :ref:`mimxrt1050_evk`
-- `RK043FN02H-CT`
+- `RK043FN02H-CT`_
 
 or
 
 - :ref:`mimxrt1060_evk`
-- `RK043FN02H-CT`
+- `RK043FN02H-CT`_
 
 Wiring
 ******

@@ -1,0 +1,14 @@
+# Kconfig.defconfig.cc1352r - Texas Instruments SimpleLink CC1352R
+#
+# Copyright (c) 2019 Brett Witherspoon
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_CC1352R
+
+config SOC
+	string
+	default "cc1352r"
+
+endif # SOC_CC1352R

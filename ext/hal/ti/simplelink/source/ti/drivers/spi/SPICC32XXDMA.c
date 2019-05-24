@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2017, Texas Instruments Incorporated
+ * Copyright (c) 2015-2018, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -36,6 +36,7 @@
 #include <ti/devices/cc32xx/inc/hw_mcspi.h>
 #include <ti/devices/cc32xx/inc/hw_types.h>
 #include <ti/devices/cc32xx/inc/hw_memmap.h>
+#include <ti/devices/cc32xx/inc/hw_udma.h>
 #include <ti/devices/cc32xx/inc/hw_ocp_shared.h>
 #include <ti/devices/cc32xx/driverlib/rom.h>
 #include <ti/devices/cc32xx/driverlib/rom_map.h>
@@ -213,6 +214,19 @@ static void configDMA(SPICC32XXDMA_Object *object,
     /* A lock is needed because we are accessing shared uDMA memory */
     key = HwiP_disable();
 
+    /*
+     * DMA channels 30 and 31 are connected to the SPI peripheral by default.
+     * If someone hasn't remapped them to something else already, we remap
+     * them to SW.
+     */
+    if (!(HWREG(UDMA_BASE + UDMA_O_CHMAP3) & UDMA_CHMAP3_CH30SEL_M)) {
+        MAP_uDMAChannelAssign(UDMA_CH30_SW);
+    }
+    if (!(HWREG(UDMA_BASE + UDMA_O_CHMAP3) & UDMA_CHMAP3_CH31SEL_M)) {
+        MAP_uDMAChannelAssign(UDMA_CH31_SW);
+    }
+
+    /* Assign the requested DMA channels */
     MAP_uDMAChannelAssign(hwAttrs->rxChannelIndex);
     MAP_uDMAChannelAssign(hwAttrs->txChannelIndex);
 
@@ -305,14 +319,33 @@ static int postNotifyFxn(unsigned int eventType, uintptr_t eventArg,
  */
 static void spiHwiFxn(uintptr_t arg)
 {
+    uint32_t                      intFlags;
     SPI_Transaction              *msg;
     SPICC32XXDMA_Object          *object = ((SPI_Handle)arg)->object;
     SPICC32XXDMA_HWAttrsV1 const *hwAttrs = ((SPI_Handle)arg)->hwAttrs;
 
-    /* RX DMA channel has completed */
+    /*
+     * Although the DMATX interrupt is not used by this driver, it seems like
+     * it is still triggering DMA interrupts.  The code below will clear &
+     * disable the interrupt thus reducing the amount of spurious interrupts.
+     */
+    intFlags = MAP_SPIIntStatus(hwAttrs->baseAddr, false);
+    if (intFlags & SPI_INT_DMATX) {
+        MAP_SPIIntDisable(hwAttrs->baseAddr, SPI_INT_DMATX);
+        MAP_SPIIntClear(hwAttrs->baseAddr, SPI_INT_DMATX);
+    }
+
+    if (MAP_uDMAChannelIsEnabled(hwAttrs->rxChannelIndex)) {
+        /* DMA has not completed if the channel is still enabled */
+        return;
+    }
+
+    /* RX DMA channel has completed; disable peripheral */
     MAP_SPIDmaDisable(hwAttrs->baseAddr, SPI_RX_DMA | SPI_TX_DMA);
     MAP_SPIIntDisable(hwAttrs->baseAddr, SPI_INT_DMARX);
     MAP_SPIIntClear(hwAttrs->baseAddr, SPI_INT_DMARX);
+    MAP_SPICSDisable(hwAttrs->baseAddr);
+    MAP_SPIDisable(hwAttrs->baseAddr);
 
     if (object->transaction->count - object->amtDataXferred >
         MAX_DMA_TRANSFER_AMOUNT) {
@@ -322,12 +355,7 @@ static void spiHwiFxn(uintptr_t arg)
         configDMA(object, hwAttrs, object->transaction);
     }
     else {
-        /*
-         * All data sent; disable peripheral, set status, perform
-         * callback & return
-         */
-        MAP_SPICSDisable(hwAttrs->baseAddr);
-        MAP_SPIDisable(hwAttrs->baseAddr);
+        /* All data sent; set status, perform callback & return */
         object->transaction->status = SPI_TRANSFER_COMPLETED;
 
         /* Release constraint since transaction is done */
@@ -442,13 +470,16 @@ void SPICC32XXDMA_close(SPI_Handle handle)
 
     if (object->hwiHandle) {
         HwiP_delete(object->hwiHandle);
+        object->hwiHandle = NULL;
     }
     if (object->transferComplete) {
         SemaphoreP_delete(object->transferComplete);
+        object->transferComplete = NULL;
     }
 
     if (object->dmaHandle) {
         UDMACC32XX_close(object->dmaHandle);
+        object->dmaHandle = NULL;
     }
 
     /* Restore pin pads to their reset states */
@@ -501,7 +532,7 @@ SPI_Handle SPICC32XXDMA_open(SPI_Handle handle, SPI_Params *params)
     uintptr_t                     key;
     uint16_t                      pin;
     uint16_t                      mode;
-    uint8_t                      powerMgrId;
+    uint8_t                       powerMgrId;
     HwiP_Params                   hwiParams;
     SPICC32XXDMA_Object          *object = handle->object;
     SPICC32XXDMA_HWAttrsV1 const *hwAttrs = handle->hwAttrs;
@@ -642,7 +673,9 @@ bool SPICC32XXDMA_transfer(SPI_Handle handle, SPI_Transaction *transaction)
     SPICC32XXDMA_HWAttrsV1 const *hwAttrs = handle->hwAttrs;
 
     if ((transaction->count == 0) ||
-        (transaction->rxBuf == NULL && transaction->txBuf == NULL)) {
+        (transaction->rxBuf == NULL && transaction->txBuf == NULL) ||
+        (hwAttrs->scratchBufPtr == NULL && (transaction->rxBuf == NULL ||
+            transaction->txBuf == NULL))) {
         return (false);
     }
 

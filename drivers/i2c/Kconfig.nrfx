@@ -17,11 +17,13 @@ menuconfig I2C_NRFX
 
 if I2C_NRFX
 
-# In most Nordic SoCs the SPI and TWI peripherals with the same instance
-# number share certain resources and cannot be used at the same time.
-# In nRF52810 there are only single instances of these peripherals and
-# they are arranged in a different way so this limitation does not apply.
-if I2C_0 && (!SPI_0 || SOC_NRF52810)
+# In most Nordic SoCs, SPI and TWI peripherals with the same instance number
+# share certain resources and therefore cannot be used at the same time
+# (in nRF91 Series this limitation concerns UART peripherals as well).
+# In nRF52810 though, there are only single instances of these peripherals
+# and they are arranged in a different way, so this limitation does not apply.
+if I2C_0 && (SOC_NRF52810 || \
+             (!SPI_0 && !(SOC_SERIES_NRF91X && UART_0_NRF_UARTE)))
 
 choice I2C_0_NRF_TYPE
 	prompt "I2C Port 0 Driver type"
@@ -44,10 +46,12 @@ config I2C_0_NRF_TWIM
 
 endchoice
 
-endif # I2C_0 && (!SPI_0 || SOC_NRF52810)
+endif # I2C_0 && (SOC_NRF52810 || ...
 
-# Nordic TWIx1 and SPIx1 instances can not be used at the same time.
-if I2C_1 && !SPI_1
+# In Nordic SoCs, SPI and TWI peripherals with the same instance number
+# share certain resources and therefore cannot be used at the same time
+# (in nRF91 Series this limitation concerns UART peripherals as well).
+if I2C_1 && !SPI_1 && !(SOC_SERIES_NRF91X && UART_1_NRF_UARTE)
 
 choice I2C_1_NRF_TYPE
 	prompt "I2C Port 1 Driver type"
@@ -70,10 +74,12 @@ config I2C_1_NRF_TWIM
 
 endchoice
 
-endif # I2C_1 && !SPI_1
+endif # I2C_1 && !SPI_1 && !(SOC_SERIES_NRF91X && UART_1_NRF_UARTE)
 
-# Nordic TWIx2 and SPIx2 instances can not be used at the same time.
-if I2C_2 && !SPI_2
+# In Nordic SoCs, SPI and TWI peripherals with the same instance number
+# share certain resources and therefore cannot be used at the same time
+# (in nRF91 Series this limitation concerns UART peripherals as well).
+if I2C_2 && !SPI_2 && !(SOC_SERIES_NRF91X && UART_2_NRF_UARTE)
 
 choice I2C_2_NRF_TYPE
 	prompt "I2C Port 2 Driver type"
@@ -89,10 +95,12 @@ config I2C_2_NRF_TWIM
 
 endchoice
 
-endif # I2C_2 && !SPI_2
+endif # I2C_2 && !SPI_2 && !(SOC_SERIES_NRF91X && UART_2_NRF_UARTE)
 
-# Nordic TWIx3 and SPIx3 instances can not be used at the same time.
-if I2C_3 && !SPI_3
+# In Nordic SoCs, SPI and TWI peripherals with the same instance number
+# share certain resources and therefore cannot be used at the same time
+# (in nRF91 Series SoCs this limitation concerns UART peripherals as well).
+if I2C_3 && !SPI_3 && !(SOC_SERIES_NRF91X && UART_3_NRF_UARTE)
 
 choice I2C_3_NRF_TYPE
 	prompt "I2C Port 3 Driver type"
@@ -108,6 +116,6 @@ config I2C_3_NRF_TWIM
 
 endchoice
 
-endif # I2C_3 && !SPI_3
+endif # I2C_3 && !SPI_3 && !(SOC_SERIES_NRF91X && UART_3_NRF_UARTE)
 
 endif #I2C_NRFX

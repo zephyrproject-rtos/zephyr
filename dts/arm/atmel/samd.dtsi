@@ -6,6 +6,7 @@
 
 #include <arm/armv6-m.dtsi>
 #include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/i2c/i2c.h>
 
 / {
 	cpus {
@@ -14,7 +15,7 @@
 
 		cpu@0 {
 			device_type = "cpu";
-			compatible = "arm,cortex-m0";
+			compatible = "arm,cortex-m0+";
 			reg = <0>;
 		};
 	};
@@ -23,6 +24,29 @@
 		device_type = "memory";
 		compatible = "mmio-sram";
 		reg = <0x20000000 0x8000>;
+	};
+
+	id: device_id@80a00c {
+		compatible = "atmel,sam0-id";
+		reg =	<0x0080A00C 0x4>,
+			<0x0080A040 0x4>,
+			<0x0080A044 0x4>,
+			<0x0080A048 0x4>;
+	};
+
+	aliases {
+		pinmux-a = &pinmux_a;
+		pinmux-b = &pinmux_b;
+		port-a = &porta;
+		port-b = &portb;
+		adc-0 = &adc;
+
+		sercom-0 = &sercom0;
+		sercom-1 = &sercom1;
+		sercom-2 = &sercom2;
+		sercom-3 = &sercom3;
+		sercom-4 = &sercom4;
+		sercom-5 = &sercom5;
 	};
 
 	soc {
@@ -41,6 +65,13 @@
 				reg = <0 0x40000>;
 				write-block-size = <64>;
 			};
+		};
+
+		eic: eic@40001800 {
+			compatible = "atmel,sam0-eic";
+			reg = <0x40001800 0x1C>;
+			interrupts = <4 0>;
+			label = "EIC";
 		};
 
 		pinmux_a: pinmux@41004400 {
@@ -65,7 +96,6 @@
 		sercom0: sercom@42000800 {
 			compatible = "atmel,sam0-sercom";
 			reg = <0x42000800 0x40>;
-			interrupts = <9 0>;
 			status = "disabled";
 			label = "SERCOM0";
 		};
@@ -73,7 +103,6 @@
 		sercom1: sercom@42000c00 {
 			compatible = "atmel,sam0-sercom";
 			reg = <0x42000c00 0x40>;
-			interrupts = <10 0>;
 			status = "disabled";
 			label = "SERCOM1";
 		};
@@ -81,7 +110,6 @@
 		sercom2: sercom@42001000 {
 			compatible = "atmel,sam0-sercom";
 			reg = <0x42001000 0x40>;
-			interrupts = <11 0>;
 			status = "disabled";
 			label = "SERCOM2";
 		};
@@ -89,7 +117,6 @@
 		sercom3: sercom@42001400 {
 			compatible = "atmel,sam0-sercom";
 			reg = <0x42001400 0x40>;
-			interrupts = <12 0>;
 			status = "disabled";
 			label = "SERCOM3";
 		};
@@ -97,7 +124,6 @@
 		sercom4: sercom@42001800 {
 			compatible = "atmel,sam0-sercom";
 			reg = <0x42001800 0x40>;
-			interrupts = <13 0>;
 			status = "disabled";
 			label = "SERCOM4";
 		};
@@ -105,7 +131,6 @@
 		sercom5: sercom@42001c00 {
 			compatible = "atmel,sam0-sercom";
 			reg = <0x42001c00 0x40>;
-			interrupts = <14 0>;
 			status = "disabled";
 			label = "SERCOM5";
 		};
@@ -126,15 +151,6 @@
 			#gpio-cells = <2>;
 		};
 
-		usb0: usb@41005000 {
-			compatible = "atmel,sam0-usb";
-			status = "disabled";
-			reg = <0x41005000 0x1000>;
-			interrupts = <7 0>;
-			num-bidir-endpoints = <8>;
-			label = "USB0";
-		};
-
 		rtc: rtc@40001400 {
 			compatible = "atmel,sam0-rtc";
 			reg = <0x40001400 0x1C>;
@@ -142,6 +158,19 @@
 			clock-generator = <0>;
 			status = "disabled";
 			label = "RTC";
+		};
+
+		adc: adc@42004000 {
+			compatible = "atmel,sam0-adc";
+			reg = <0x42004000 0x2B>;
+			label = "ADC_0";
+
+			/*
+			 * 2.1 MHz max, so clock it with the
+			 * 8 MHz GCLK / 4 = 2 MHz
+			 */
+			gclk = <3>;
+			prescaler = <4>;
 		};
 	};
 };

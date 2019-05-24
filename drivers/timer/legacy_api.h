@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2018 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #ifndef ZEPHYR_LEGACY_SET_TIME_H__
 #define ZEPHYR_LEGACY_SET_TIME_H__
 
@@ -10,15 +15,15 @@
  */
 
 #ifdef CONFIG_TICKLESS_IDLE
-void _timer_idle_enter(s32_t ticks);
+void z_timer_idle_enter(s32_t ticks);
 void z_clock_idle_exit(void);
 #endif
 
 #ifdef CONFIG_TICKLESS_KERNEL
-void _set_time(u32_t time);
-extern u32_t _get_program_time(void);
-extern u32_t _get_remaining_program_time(void);
-extern u32_t _get_elapsed_program_time(void);
+void z_set_time(u32_t time);
+extern u32_t z_get_program_time(void);
+extern u32_t z_get_remaining_program_time(void);
+extern u32_t z_get_elapsed_program_time(void);
 #endif
 
 extern u64_t z_clock_uptime(void);
@@ -27,9 +32,9 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 {
 #ifdef CONFIG_TICKLESS_KERNEL
 	if (idle) {
-		_timer_idle_enter(ticks);
+		z_timer_idle_enter(ticks);
 	} else {
-		_set_time(ticks == K_FOREVER ? 0 : ticks);
+		z_set_time(ticks == K_FOREVER ? 0 : ticks);
 	}
 #endif
 }

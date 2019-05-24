@@ -141,50 +141,93 @@ The KW41Z SoC has one UART, which is used for the console.
 Programming and Debugging
 *************************
 
-The FRDM-KW41Z includes the :ref:`nxp_opensda` serial and debug adapter built
-into the board to provide debugging, flash programming, and serial
-communication over USB.
+Build and flash applications as usual (see :ref:`build_an_application` and
+:ref:`application_run` for more details).
 
-To use the pyOCD tools with OpenSDA, follow the instructions in the
-:ref:`nxp_opensda_pyocd` page using the `DAPLink FRDM-KW41Z Firmware`_. The
-pyOCD tools are not the default for this board, therefore it is necessary to
-set ``OPENSDA_FW=daplink`` explicitly when using the default flash and debug
-mechanisms.
+Configuring a Debug Probe
+=========================
 
-.. note::
-   pyOCD added support for KW41Z after support for this board was added to
-   Zephyr, so you may need to build pyOCD from source based on the current
-   master branch (f21d43d).
+A debug probe is used for both flashing and debugging the board. This board is
+configured by default to use the :ref:`opensda-daplink-onboard-debug-probe`.
 
-To use the Segger J-Link tools with OpenSDA, follow the instructions in the
-:ref:`nxp_opensda_jlink` page using the `Segger J-Link OpenSDA V2.1 Firmware`_.
-The Segger J-Link tools are the default for this board, therefore it is not
-necessary to set ``OPENSDA_FW=jlink`` explicitly in the environment before
-programming and debugging.
+Option 1: :ref:`opensda-daplink-onboard-debug-probe` (Recommended)
+------------------------------------------------------------------
 
-With these mechanisms, applications for the ``frdm_kw41z`` board
-configuration can be built and debugged in the usual way (see
-:ref:`build_an_application` and :ref:`application_run` for more
-details).
+Install the :ref:`pyocd-debug-host-tools` and make sure they are in your search
+path.
+
+Follow the instructions in :ref:`opensda-daplink-onboard-debug-probe` to program
+the `OpenSDA DAPLink FRDM-KW41Z Firmware`_.
+
+Option 2: :ref:`opensda-jlink-onboard-debug-probe`
+--------------------------------------------------
+
+Install the :ref:`jlink-debug-host-tools` and make sure they are in your search
+path.
+
+Follow the instructions in :ref:`opensda-jlink-onboard-debug-probe` to program
+the `OpenSDA J-Link FRDM-KW41Z Firmware`_.
+
+Add the argument ``-DOPENSDA_FW=jlink`` when you invoke ``cmake`` or ``west
+build`` to override the default runner from pyOCD to J-Link:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: frdm_kw41z
+   :gen-args: -DOPENSDA_FW=jlink
+   :goals: build
+
+Configuring a Console
+=====================
+
+Regardless of your choice in debug probe, we will use the OpenSDA
+microcontroller as a usb-to-serial adapter for the serial console.
+
+Connect a USB cable from your PC to J6.
+
+Use the following settings with your serial terminal of choice (minicom, putty,
+etc.):
+
+- Speed: 115200
+- Data: 8 bits
+- Parity: None
+- Stop bits: 1
 
 Flashing
 ========
 
-The Segger J-Link firmware does not support command line flashing, therefore
-the usual ``flash`` build system target is not supported.
+Here is an example for the :ref:`hello_world` application.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: frdm_kw41z
+   :goals: flash
+
+Open a serial terminal, reset the board (press the SW1 button), and you should
+see the following message in the terminal:
+
+.. code-block:: console
+
+   ***** Booting Zephyr OS v1.14.0-rc1 *****
+   Hello World! frdm_kw41z
 
 Debugging
 =========
 
-This example uses the :ref:`hello_world` sample with the
-:ref:`nxp_opensda_jlink` tools. Run the following to build
-your Zephyr application, invoke the J-Link GDB server, attach a GDB client, and
-program your Zephyr application to flash. It will leave you at a gdb prompt.
+Here is an example for the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
    :board: frdm_kw41z
    :goals: debug
+
+Open a serial terminal, step through the application in your debugger, and you
+should see the following message in the terminal:
+
+.. code-block:: console
+
+   ***** Booting Zephyr OS v1.14.0-rc1 *****
+   Hello World! frdm_kw41z
 
 .. _FRDM-KW41Z Website:
    https://www.nxp.com/products/processors-and-microcontrollers/arm-based-processors-and-mcus/kinetis-cortex-m-mcus/w-serieswireless-conn.m0-plus-m4/freedom-development-kit-for-kinetis-kw41z-31z-21z-mcus:FRDM-KW41Z
@@ -204,8 +247,8 @@ program your Zephyr application to flash. It will leave you at a gdb prompt.
 .. _KW41Z Reference Manual:
    https://www.nxp.com/webapp/Download?colCode=MKW41Z512RM
 
-.. _DAPLink FRDM-KW41Z Firmware:
-   http://www.nxp.com/assets/downloads/data/en/reference-applications/OpenSDAv2.2_DAPLink_frdmkw41z_rev0241.zip
+.. _OpenSDA DAPLink FRDM-KW41Z Firmware:
+   https://www.nxp.com/assets/downloads/data/en/reference-applications/OpenSDAv2.2_DAPLink_frdmkw41z_rev0241.zip
 
-.. _Segger J-Link OpenSDA V2.1 Firmware:
-   https://www.segger.com/downloads/jlink/OpenSDA_V2_1.bin
+.. _OpenSDA J-Link FRDM-KW41Z Firmware:
+   https://www.segger.com/downloads/jlink/OpenSDA_FRDM-KW41Z

@@ -1,4 +1,8 @@
-
+/*
+ * Copyright (c) 2018 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include <zephyr.h>
 #include <kernel_structs.h>
 #include <init.h>
@@ -55,7 +59,7 @@ static void send_task_list_cb(void)
 
 	for (thread = _kernel.threads; thread; thread = thread->next_thread) {
 		char name[20];
-		char *tname = k_thread_name_get(thread);
+		const char *tname = k_thread_name_get(thread);
 
 		if (is_idle_thread(thread)) {
 			continue;

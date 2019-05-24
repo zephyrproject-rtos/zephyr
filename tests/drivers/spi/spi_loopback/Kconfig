@@ -1,10 +1,11 @@
+# SPDX-License-Identifier: Apache-2.0
+
 mainmenu "SPI Loopback Test"
 
 source "Kconfig.zephyr"
 
 config SPI_LOOPBACK_DRV_NAME
 	string "SPI device name to use for test"
-	default SPI_1_NAME
 
 config SPI_LOOPBACK_CS_GPIO
 	bool "SPI port CS pin is controlled via a GPIO port during test"

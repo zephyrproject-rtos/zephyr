@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2017, Texas Instruments Incorporated
+ * Copyright (c) 2015-2018, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,18 +33,6 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-/*
- * By default disable both asserts and log for this module.
- * This must be done before DebugP.h is included.
- */
-#ifndef DebugP_ASSERT_ENABLED
-#define DebugP_ASSERT_ENABLED 0
-#endif
-#ifndef DebugP_LOG_ENABLED
-#define DebugP_LOG_ENABLED 0
-#endif
-
-#include <ti/drivers/dpl/DebugP.h>
 #include <ti/drivers/dpl/HwiP.h>
 #include <ti/drivers/dpl/ClockP.h>
 
@@ -59,16 +47,21 @@
 #include <ti/devices/cc32xx/driverlib/wdt.h>
 
 /* Function prototypes */
-void            WatchdogCC32XX_clear(Watchdog_Handle handle);
-void            WatchdogCC32XX_close(Watchdog_Handle handle);
-int_fast16_t    WatchdogCC32XX_control(Watchdog_Handle handle,
-                        uint_fast16_t cmd, void *arg);
-void            WatchdogCC32XX_init(Watchdog_Handle handle);
+void WatchdogCC32XX_clear(Watchdog_Handle handle);
+void WatchdogCC32XX_close(Watchdog_Handle handle);
+int_fast16_t WatchdogCC32XX_control(Watchdog_Handle handle,
+    uint_fast16_t cmd, void *arg);
+void WatchdogCC32XX_init(Watchdog_Handle handle);
 Watchdog_Handle WatchdogCC32XX_open(Watchdog_Handle handle, Watchdog_Params *params);
-int_fast16_t    WatchdogCC32XX_setReload(Watchdog_Handle handle,
-                        uint32_t value);
-uint32_t        WatchdogCC32XX_convertMsToTicks(Watchdog_Handle handle,
+int_fast16_t WatchdogCC32XX_setReload(Watchdog_Handle handle,
+    uint32_t value);
+uint32_t WatchdogCC32XX_convertMsToTicks(Watchdog_Handle handle,
     uint32_t milliseconds);
+
+/* Internal functions */
+static void WatchdogCC32XX_initHardware(Watchdog_Handle handle);
+static int WatchdogCC32XX_postNotifyFxn(unsigned int eventType,
+    uintptr_t eventArg, uintptr_t clientArg);
 
 /* Watchdog function table for CC32XX implementation */
 const Watchdog_FxnTable WatchdogCC32XX_fxnTable = {
@@ -83,7 +76,47 @@ const Watchdog_FxnTable WatchdogCC32XX_fxnTable = {
 
 /* Maximum allowable setReload value */
 #define MAX_RELOAD_VALUE        0xFFFFFFFF
-#define MS_RATIO                1000          /* millisecond to second ratio */
+
+/* Millisecond to second ratio */
+#define MS_RATIO                1000
+
+/*
+ *  ======== WatchdogCC32XX_initHardware ========
+ */
+static void WatchdogCC32XX_initHardware(Watchdog_Handle handle)
+{
+    WatchdogCC32XX_HWAttrs const *hwAttrs = handle->hwAttrs;
+    WatchdogCC32XX_Object  const *object  = handle->object;
+
+    MAP_WatchdogUnlock(hwAttrs->baseAddr);
+    MAP_WatchdogReloadSet(hwAttrs->baseAddr, object->reloadValue);
+    MAP_WatchdogIntClear(hwAttrs->baseAddr);
+
+    /* Set debug stall mode */
+    if (object->debugMode == Watchdog_DEBUG_STALL_ON) {
+        MAP_WatchdogStallEnable(hwAttrs->baseAddr);
+    }
+    else {
+        MAP_WatchdogStallDisable(hwAttrs->baseAddr);
+    }
+
+    MAP_WatchdogEnable(hwAttrs->baseAddr);
+
+    MAP_WatchdogLock(hwAttrs->baseAddr);
+}
+
+/*
+ *  ======== WatchdogCC32XX_postNotifyFxn ========
+ *  This functions is called when a transition from LPDS mode is made.
+ *  clientArg is a handle of a previously opened Watchdog instance.
+ */
+static int WatchdogCC32XX_postNotifyFxn(unsigned int eventType,
+    uintptr_t eventArg, uintptr_t clientArg)
+{
+    WatchdogCC32XX_initHardware((Watchdog_Handle) clientArg);
+
+    return (Power_NOTIFYDONE);
+}
 
 /*
  *  ======== WatchdogCC32XX_clear ========
@@ -105,7 +138,6 @@ void WatchdogCC32XX_close(Watchdog_Handle handle)
      *  register has been set, it can only be cleared by a hardware
      *  reset.
      */
-    DebugP_assert(false);
 }
 
 /*
@@ -136,13 +168,12 @@ int_fast16_t WatchdogCC32XX_control(Watchdog_Handle handle, uint_fast16_t cmd,
             return (Watchdog_STATUS_SUCCESS);
 
         default:
-            DebugP_log1("Watchdog: Watchdog CMD undefined: %d",cmd);
             return (Watchdog_STATUS_UNDEFINEDCMD);
     }
 }
 
 /*
- *  ======== Watchdog_init ========
+ *  ======== WatchdogCC32XX_init ========
  */
 void WatchdogCC32XX_init(Watchdog_Handle handle)
 {
@@ -162,56 +193,38 @@ Watchdog_Handle WatchdogCC32XX_open(Watchdog_Handle handle, Watchdog_Params *par
     WatchdogCC32XX_HWAttrs const *hwAttrs = handle->hwAttrs;
     WatchdogCC32XX_Object        *object  = handle->object;
 
-    /* Don't allow preemption */
     key = HwiP_disable();
 
-    /* Check if the Watchdog is open already with the HWAttrs */
     if (object->isOpen == true) {
         HwiP_restore(key);
-        DebugP_log1("Watchdog: Handle %x already in use.", (uintptr_t)handle);
         return (NULL);
     }
 
     object->isOpen = true;
     HwiP_restore(key);
 
-    /* Register the interrupt for this watchdog */
+    /* Register the hardware interrupt for this watchdog */
     if (params->callbackFxn) {
         HwiP_Params_init(&hwiParams);
-        hwiParams.arg = (uintptr_t)handle;
+        hwiParams.arg = (uintptr_t) handle;
         hwiParams.priority = hwAttrs->intPriority;
         hwiHandle = HwiP_create(hwAttrs->intNum, params->callbackFxn,
-                                &hwiParams);
+            &hwiParams);
         if (hwiHandle == NULL) {
-             return (NULL);
+            object->isOpen = false;
+            return (NULL);
         }
     }
 
-    /* Set power dependency on WDT */
     Power_setDependency(PowerCC32XX_PERIPH_WDT);
+    Power_registerNotify(&(object->notifyObj), PowerCC32XX_AWAKE_LPDS,
+        WatchdogCC32XX_postNotifyFxn, (uintptr_t) handle);
 
-    /* Don't allow the processor to go into LPDS (DeepSleep is ok) */
-    Power_setConstraint(PowerCC32XX_DISALLOW_LPDS);
+    object->debugMode = params->debugStallMode;
+    object->reloadValue = hwAttrs->reloadValue;
 
-    MAP_WatchdogUnlock(hwAttrs->baseAddr);
-    MAP_WatchdogReloadSet(hwAttrs->baseAddr, hwAttrs->reloadValue);
-    MAP_WatchdogIntClear(hwAttrs->baseAddr);
+    WatchdogCC32XX_initHardware(handle);
 
-    /* Set debug stall mode */
-    if (params->debugStallMode == Watchdog_DEBUG_STALL_ON) {
-        MAP_WatchdogStallEnable(hwAttrs->baseAddr);
-    }
-    else {
-        MAP_WatchdogStallDisable(hwAttrs->baseAddr);
-    }
-
-    MAP_WatchdogEnable(hwAttrs->baseAddr);
-
-    MAP_WatchdogLock(hwAttrs->baseAddr);
-
-    DebugP_log1("Watchdog: handle %x opened" ,(uintptr_t)handle);
-
-    /* Return handle of the Watchdog object */
     return (handle);
 }
 
@@ -221,14 +234,13 @@ Watchdog_Handle WatchdogCC32XX_open(Watchdog_Handle handle, Watchdog_Params *par
 int_fast16_t WatchdogCC32XX_setReload(Watchdog_Handle handle, uint32_t value)
 {
     WatchdogCC32XX_HWAttrs const *hwAttrs = handle->hwAttrs;
+    WatchdogCC32XX_Object        *object  = handle->object;
 
     /* Set value */
     MAP_WatchdogUnlock(hwAttrs->baseAddr);
     MAP_WatchdogReloadSet(hwAttrs->baseAddr, value);
     MAP_WatchdogLock(hwAttrs->baseAddr);
-
-    DebugP_log2("Watchdog: WDT with handle 0x%x has been set to "
-                "reload to 0x%x", (uintptr_t)handle, value);
+    object->reloadValue = value;
 
     return (Watchdog_STATUS_SUCCESS);
 }

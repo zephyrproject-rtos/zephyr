@@ -196,20 +196,25 @@ static int aonpt_resume_device_from_suspend(struct device *dev)
 * the *context may include IN data or/and OUT data
 */
 static int aonpt_qmsi_device_ctrl(struct device *dev, u32_t ctrl_command,
-				  void *context)
+				  void *context, device_pm_cb cb, void *arg)
 {
+	int ret = 0;
+
 	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
 		if (*((u32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
-			return aonpt_suspend_device(dev);
+			ret = aonpt_suspend_device(dev);
 		} else if (*((u32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
-			return aonpt_resume_device_from_suspend(dev);
+			ret = aonpt_resume_device_from_suspend(dev);
 		}
 	} else if (ctrl_command == DEVICE_PM_GET_POWER_STATE) {
 		*((u32_t *)context) = aonpt_qmsi_get_power_state(dev);
-		return 0;
 	}
 
-	return 0;
+	if (cb) {
+		cb(dev, ret, context, arg);
+	}
+
+	return ret;
 }
 #else
 #define aonpt_qmsi_set_power_state(...)

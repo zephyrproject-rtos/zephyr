@@ -109,7 +109,7 @@ fcb_init(int f_area_id, struct fcb *fcb)
 	}
 
 	align = fcb_get_align(fcb);
-	if (align == 0) {
+	if (align == 0U) {
 		return FCB_ERR_ARGS;
 	}
 

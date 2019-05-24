@@ -16,6 +16,16 @@ config NEWLIB_LIBC
 	  Build with newlib library. The newlib library is expected to be
 	  part of the SDK in this case.
 
+if "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "gnuarmemb"
+config NEWLIB_LIBC_NANO
+	bool "Build with newlib-nano c library"
+	depends on NEWLIB_LIBC
+	help
+	  Build with newlib-nano library, for small embedded apps.
+	  The newlib-nano library for ARM embedded processors is a part of the
+	  GNU Tools for ARM Embedded Processors.
+endif
+
 config NEWLIB_LIBC_ALIGNED_HEAP_SIZE
 	int "Newlib aligned heap size"
 	depends on MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT

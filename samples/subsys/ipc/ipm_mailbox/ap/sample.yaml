@@ -2,6 +2,6 @@ sample:
   description: IPM Mailbox
   name: IPM Mailbox
 tests:
-  test:
+  sample.subsys.ipc.ipm_mailbox.ap:
     tags: ipm
     platform_whitelist: quark_se_c1000_devboard

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 assert_not(FLASH_SCRIPT "FLASH_SCRIPT has been removed; use BOARD_FLASH_RUNNER")
 assert_not(DEBUG_SCRIPT "DEBUG_SCRIPT has been removed; use BOARD_DEBUG_RUNNER")
 

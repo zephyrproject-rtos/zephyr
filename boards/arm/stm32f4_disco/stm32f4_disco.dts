@@ -16,6 +16,7 @@
 		zephyr,shell-uart = &usart2;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
+		zephyr,ccm = &ccm0;
 	};
 
 	leds {
@@ -48,6 +49,9 @@
 
 	aliases {
 		led0 = &green_led_4;
+		led1 = &orange_led_3;
+		led2 = &red_led_5;
+		led3 = &blue_led_6;
 		sw0 = &user_button;
 	};
 };

@@ -522,28 +522,31 @@ Send bug reports, suggestions, and questions to ulfalizer a.t Google's email
 service, or open a ticket on the GitHub page.
 """
 import errno
-import glob
 import importlib
 import os
-import platform
 import re
-import subprocess
 import sys
-import textwrap
+
+# Get rid of some attribute lookups. These are obvious in context.
+from glob import iglob
+from os.path import dirname, exists, expandvars, isabs, islink, join, \
+                    relpath, split
+
 
 # File layout:
 #
 # Public classes
 # Public functions
 # Internal functions
-# Public global constants
-# Internal global constants
+# Global constants
 
 # Line length: 79 columns
+
 
 #
 # Public classes
 #
+
 
 class Kconfig(object):
     """
@@ -610,7 +613,7 @@ class Kconfig(object):
       A list with the filenames of all Kconfig files included in the
       configuration, relative to $srctree (or relative to the current directory
       if $srctree isn't set), except absolute paths (e.g.
-      'source "/foo/Kconfig") are kept as-is.
+      'source "/foo/Kconfig"') are kept as-is.
 
       The files are listed in the order they are source'd, starting with the
       top-level Kconfig file. If a file is source'd multiple times, it will
@@ -966,8 +969,7 @@ class Kconfig(object):
 
         # Open the top-level Kconfig file. Store the readline() method directly
         # as a small optimization.
-        self._readline = \
-            self._open(os.path.join(self.srctree, filename), "r").readline
+        self._readline = self._open(join(self.srctree, filename), "r").readline
 
         try:
             # Parse everything
@@ -987,7 +989,7 @@ class Kconfig(object):
         self.unique_defined_syms = _ordered_unique(self.defined_syms)
         self.unique_choices = _ordered_unique(self.choices)
 
-        # Do various post-processing of the menu tree
+        # Do various post-processing on the menu tree
         self._finalize_tree(self.top_node, self.y)
 
 
@@ -1098,7 +1100,7 @@ class Kconfig(object):
         loaded_existing = True
         if filename is None:
             filename = standard_config_filename()
-            if os.path.exists(filename):
+            if exists(filename):
                 if verbose:
                     print("Using existing configuration '{}' as base"
                           .format(filename))
@@ -1497,7 +1499,7 @@ class Kconfig(object):
         In case you need a different scheme for your project, the sync_deps()
         implementation can be used as a template.
         """
-        if not os.path.exists(path):
+        if not exists(path):
             os.mkdir(path, 0o755)
 
         # This setup makes sure that at least the current working directory
@@ -1579,7 +1581,7 @@ class Kconfig(object):
         for sym in self.unique_defined_syms:
             sym._old_val = None
 
-        if not os.path.exists("auto.conf"):
+        if not exists("auto.conf"):
             # No old values
             return
 
@@ -1821,7 +1823,7 @@ class Kconfig(object):
             # This will try opening the same file twice if $srctree is unset,
             # but it's not a big deal
             try:
-                return self._open(os.path.join(self.srctree, filename), "r")
+                return self._open(join(self.srctree, filename), "r")
             except IOError as e2:
                 # This is needed for Python 3, because e2 is deleted after
                 # the try block:
@@ -1829,11 +1831,12 @@ class Kconfig(object):
                 # https://docs.python.org/3/reference/compound_stmts.html#the-try-statement
                 e = e2
 
-            raise _KconfigIOError(e, "\n" + textwrap.fill(
-                "Could not open '{}' ({}: {}){}".format(
-                    filename, errno.errorcode[e.errno], e.strerror,
-                    self._srctree_hint()),
-                80))
+            raise _KconfigIOError(
+                e, "Could not open '{}' ({}: {}). Check that the $srctree "
+                   "environment variable ({}) is set correctly."
+                   .format(filename, errno.errorcode[e.errno], e.strerror,
+                           "set to '{}'".format(self.srctree) if self.srctree
+                               else "unset or blank"))
 
     def _enter_file(self, full_filename, rel_filename):
         # Jumps to the beginning of a sourced Kconfig file, saving the previous
@@ -1873,7 +1876,7 @@ class Kconfig(object):
         for name, _ in self._include_path:
             if name == rel_filename:
                 raise KconfigError(
-                    "\n{}:{}: Recursive 'source' of '{}' detected. Check that "
+                    "\n{}:{}: recursive 'source' of '{}' detected. Check that "
                     "environment variables are set correctly.\n"
                     "Include path:\n{}"
                     .format(self._filename, self._linenr, rel_filename,
@@ -2084,6 +2087,14 @@ class Kconfig(object):
                     #       tristate unquoted_prompt
                     #
                     #   endmenu
+                    #
+                    # Named choices ('choice FOO') also end up here.
+
+                    if token is not _T_CHOICE:
+                        self._warn("style: quotes recommended around '{}' in '{}'"
+                                   .format(name, self._line.strip()),
+                                   self._filename, self._linenr)
+
                     token = name
                     i = match.end()
 
@@ -2114,9 +2125,9 @@ class Kconfig(object):
                         #
                         # The preprocessor functionality changed how
                         # environment variables are referenced, to $(FOO).
-                        val = os.path.expandvars(
-                            s[i + 1:end_i - 1].replace("$UNAME_RELEASE",
-                                                       platform.uname()[2]))
+                        val = expandvars(s[i + 1:end_i - 1]
+                                         .replace("$UNAME_RELEASE",
+                                                  _UNAME_RELEASE))
 
                         i = end_i
 
@@ -2614,25 +2625,27 @@ class Kconfig(object):
                 # Check if the pattern is absolute and avoid stripping srctree
                 # from it below in that case. We must do the check before
                 # join()'ing, as srctree might be an absolute path.
-                isabs = os.path.isabs(pattern)
+                pattern_is_abs = isabs(pattern)
 
                 if t0 in _REL_SOURCE_TOKENS:
                     # Relative source
-                    pattern = os.path.join(os.path.dirname(self._filename),
-                                           pattern)
+                    pattern = join(dirname(self._filename), pattern)
 
                 # Sort the glob results to ensure a consistent ordering of
                 # Kconfig symbols, which indirectly ensures a consistent
                 # ordering in e.g. .config files
-                filenames = \
-                    sorted(glob.iglob(os.path.join(self.srctree, pattern)))
+                filenames = sorted(iglob(join(self.srctree, pattern)))
 
                 if not filenames and t0 in _OBL_SOURCE_TOKENS:
-                    raise KconfigError("\n" + textwrap.fill(
-                        "{}:{}: '{}' does not exist{}".format(
-                            self._filename, self._linenr, pattern,
-                            self._srctree_hint()),
-                        80))
+                    raise KconfigError(
+                        "{}:{}: '{}' not found (in '{}'). Check that "
+                        "environment variables are set correctly (e.g. "
+                        "$srctree, which is {}). Also note that unset "
+                        "environment variables expand to the empty string."
+                        .format(self._filename, self._linenr, pattern,
+                                self._line.strip(),
+                                "set to '{}'".format(self.srctree)
+                                    if self.srctree else "unset or blank"))
 
                 for filename in filenames:
                     self._enter_file(
@@ -2642,8 +2655,8 @@ class Kconfig(object):
                         # appears without a $srctree prefix in
                         # MenuNode.filename, which is nice e.g. when generating
                         # documentation.
-                        filename if isabs else
-                            os.path.relpath(filename, self.srctree))
+                        filename if pattern_is_abs else
+                            relpath(filename, self.srctree))
 
                     prev = self._parse_block(None, parent, prev)
 
@@ -2807,6 +2820,7 @@ class Kconfig(object):
             t0 = self._tokens[0]
 
             if t0 in _TYPE_TOKENS:
+                # Relies on '_T_BOOL is BOOL', etc., to save a conversion
                 self._set_type(node, t0)
                 if self._tokens[1] is not None:
                     self._parse_prompt(node)
@@ -2836,8 +2850,8 @@ class Kconfig(object):
                 node.defaults.append((self._parse_expr(False),
                                       self._parse_cond()))
 
-            elif t0 in _DEF_TYPE_TOKENS:
-                self._set_type(node, t0)
+            elif t0 in _DEF_TOKEN_TO_TYPE:
+                self._set_type(node, _DEF_TOKEN_TO_TYPE[t0])
                 node.defaults.append((self._parse_expr(False),
                                       self._parse_cond()))
 
@@ -2938,14 +2952,9 @@ class Kconfig(object):
                 self._reuse_tokens = True
                 return
 
-    def _set_type(self, node, type_token):
-        new_type = _TOKEN_TO_TYPE[type_token]
-
-        # The 'is not UNKNOWN' comparison will usually fail, since single-def
-        # symbols/choices are more common
-        if node.item.orig_type is not UNKNOWN and \
-           node.item.orig_type is not new_type:
-
+    def _set_type(self, node, new_type):
+        # Note: UNKNOWN == 0, which is falsy
+        if node.item.orig_type and node.item.orig_type is not new_type:
             self._warn("{} defined with multiple types, {} will be used"
                        .format(_name_and_loc(node.item),
                                TYPE_TO_STR[new_type]))
@@ -3659,16 +3668,6 @@ class Kconfig(object):
         if self._warn_for_redun_assign:
             self._warn(msg, filename, linenr)
 
-    def _srctree_hint(self):
-        # Hint printed when Kconfig files can't be found or .config files can't
-        # be opened
-
-        return ". Perhaps the $srctree environment variable ({}) " \
-               "is set incorrectly. Note that the current value of $srctree " \
-               "is saved when the Kconfig instance is created (for " \
-               "consistency and to cleanly separate instances)." \
-               .format("set to '{}'".format(self.srctree) if self.srctree
-                           else "unset or blank")
 
 class Symbol(object):
     """
@@ -4299,11 +4298,7 @@ class Symbol(object):
         """
         See the class documentation.
         """
-        res = set()
-        for node in self.nodes:
-            res |= node.referenced
-
-        return res
+        return {item for node in self.nodes for item in node.referenced}
 
     def __repr__(self):
         """
@@ -4311,10 +4306,7 @@ class Symbol(object):
         value, visibility, and location(s)) when it is evaluated on e.g. the
         interactive Python prompt.
         """
-        fields = []
-
-        fields.append("symbol " + self.name)
-        fields.append(TYPE_TO_STR[self.type])
+        fields = ["symbol " + self.name, TYPE_TO_STR[self.type]]
 
         for node in self.nodes:
             if node.prompt:
@@ -4360,10 +4352,7 @@ class Symbol(object):
             for node in self.nodes:
                 fields.append("{}:{}".format(node.filename, node.linenr))
         else:
-            if self.is_constant:
-                fields.append("constant")
-            else:
-                fields.append("undefined")
+            fields.append("constant" if self.is_constant else "undefined")
 
         return "<{}>".format(", ".join(fields))
 
@@ -4445,7 +4434,6 @@ class Symbol(object):
         # Warning: See Symbol._rec_invalidate(), and note that this is a hidden
         # function call (property magic)
         vis = self.visibility
-
         if not vis:
             return ()
 
@@ -4614,6 +4602,7 @@ class Symbol(object):
                                TRI_TO_STR[expr_value(select[2])])
 
         self.kconfig._warn(msg)
+
 
 class Choice(object):
     """
@@ -4900,21 +4889,15 @@ class Choice(object):
         """
         See the class documentation.
         """
-        res = set()
-        for node in self.nodes:
-            res |= node.referenced
-
-        return res
+        return {item for node in self.nodes for item in node.referenced}
 
     def __repr__(self):
         """
         Returns a string with information about the choice when it is evaluated
         on e.g. the interactive Python prompt.
         """
-        fields = []
-
-        fields.append("choice " + self.name if self.name else "choice")
-        fields.append(TYPE_TO_STR[self.type])
+        fields = ["choice " + self.name if self.name else "choice",
+                  TYPE_TO_STR[self.type]]
 
         for node in self.nodes:
             if node.prompt:
@@ -5065,6 +5048,7 @@ class Choice(object):
         for item in self._dependents:
             if item._cached_vis is not None:
                 item._rec_invalidate()
+
 
 class MenuNode(object):
     """
@@ -5349,8 +5333,6 @@ class MenuNode(object):
         return s
 
     def _sym_choice_node_str(self, sc_expr_str_fn):
-        lines = []
-
         def indent_add(s):
             lines.append("\t" + s)
 
@@ -5362,11 +5344,10 @@ class MenuNode(object):
         sc = self.item
 
         if sc.__class__ is Symbol:
-            lines.append(
-                ("menuconfig " if self.is_menuconfig else "config ")
-                + sc.name)
+            lines = [("menuconfig " if self.is_menuconfig else "config ")
+                     + sc.name]
         else:
-            lines.append("choice " + sc.name if sc.name else "choice")
+            lines = ["choice " + sc.name if sc.name else "choice"]
 
         if sc.orig_type:  # != UNKNOWN
             indent_add(TYPE_TO_STR[sc.orig_type])
@@ -5418,6 +5399,7 @@ class MenuNode(object):
                 indent_add("  " + line)
 
         return "\n".join(lines)
+
 
 class Variable(object):
     """
@@ -5473,13 +5455,16 @@ class Variable(object):
                        "recursive" if self.is_recursive else "immediate",
                        self.value)
 
+
 class KconfigError(Exception):
     "Exception raised for Kconfig-related errors"
 
 KconfigSyntaxError = KconfigError  # Backwards compatibility
 
+
 class InternalError(Exception):
     "Never raised. Kept around for backwards compatibility."
+
 
 # Workaround:
 #
@@ -5496,9 +5481,11 @@ class _KconfigIOError(IOError):
     def __str__(self):
         return self.msg
 
+
 #
 # Public functions
 #
+
 
 def expr_value(expr):
     """
@@ -5556,6 +5543,7 @@ def expr_value(expr):
     if rel is GREATER:    return 2*(comp > 0)
     return 2*(comp >= 0)  # rel is GREATER_EQUAL
 
+
 def standard_sc_expr_str(sc):
     """
     Standard symbol/choice printing function. Uses plain Kconfig syntax, and
@@ -5568,6 +5556,7 @@ def standard_sc_expr_str(sc):
 
     # Choice
     return "<choice {}>".format(sc.name) if sc.name else "<choice>"
+
 
 def expr_str(expr, sc_expr_str_fn=standard_sc_expr_str):
     """
@@ -5612,6 +5601,7 @@ def expr_str(expr, sc_expr_str_fn=standard_sc_expr_str):
     return "{} {} {}".format(sc_expr_str_fn(expr[1]), _REL_TO_STR[expr[0]],
                              sc_expr_str_fn(expr[2]))
 
+
 def expr_items(expr):
     """
     Returns a set() of all items (symbols and choices) that appear in the
@@ -5636,6 +5626,7 @@ def expr_items(expr):
 
     rec(expr)
     return res
+
 
 def split_expr(expr, op):
     """
@@ -5681,6 +5672,7 @@ def split_expr(expr, op):
     rec(expr)
     return res
 
+
 def escape(s):
     r"""
     Escapes the string 's' in the same fashion as is done for display in
@@ -5690,8 +5682,6 @@ def escape(s):
     # \ must be escaped before " to avoid double escaping
     return s.replace("\\", r"\\").replace('"', r'\"')
 
-# unescape() helper
-_unescape_sub = re.compile(r"\\(.)").sub
 
 def unescape(s):
     r"""
@@ -5699,6 +5689,10 @@ def unescape(s):
     that character. Used internally when reading .config files.
     """
     return _unescape_sub(r"\1", s)
+
+# unescape() helper
+_unescape_sub = re.compile(r"\\(.)").sub
+
 
 def standard_kconfig():
     """
@@ -5720,6 +5714,7 @@ def standard_kconfig():
         # formatting when reported as an unhandled exception. Strip them here.
         sys.exit(str(e).strip())
 
+
 def standard_config_filename():
     """
     Helper for tools. Returns the value of KCONFIG_CONFIG (which specifies the
@@ -5729,6 +5724,7 @@ def standard_config_filename():
     want, without having to use this function.
     """
     return os.environ.get("KCONFIG_CONFIG", ".config")
+
 
 def load_allconfig(kconf, filename):
     """
@@ -5785,9 +5781,11 @@ def load_allconfig(kconf, filename):
     kconf.enable_override_warnings()
     kconf.enable_redun_warnings()
 
+
 #
 # Internal functions
 #
+
 
 def _visibility(sc):
     # Symbols and Choices have a "visibility" that acts as an upper bound on
@@ -5818,6 +5816,7 @@ def _visibility(sc):
 
     return vis
 
+
 def _make_depend_on(sc, expr):
     # Adds 'sc' (symbol or choice) as a "dependee" to all symbols in 'expr'.
     # Constant symbols in 'expr' are skipped as they can never change value
@@ -5836,12 +5835,14 @@ def _make_depend_on(sc, expr):
         # Non-constant symbol, or choice
         expr._dependents.add(sc)
 
+
 def _parenthesize(expr, type_, sc_expr_str_fn):
     # expr_str() helper. Adds parentheses around expressions of type 'type_'.
 
     if expr.__class__ is tuple and expr[0] is type_:
         return "({})".format(expr_str(expr, sc_expr_str_fn))
     return expr_str(expr, sc_expr_str_fn)
+
 
 def _ordered_unique(lst):
     # Returns 'lst' with any duplicates removed, preserving order. This hacky
@@ -5852,6 +5853,7 @@ def _ordered_unique(lst):
     seen_add = seen.add
     return [x for x in lst if x not in seen and not seen_add(x)]
 
+
 def _is_base_n(s, n):
     try:
         int(s, n)
@@ -5859,10 +5861,12 @@ def _is_base_n(s, n):
     except ValueError:
         return False
 
+
 def _strcmp(s1, s2):
     # strcmp()-alike that returns -1, 0, or 1
 
     return (s1 > s2) - (s1 < s2)
+
 
 def _sym_to_num(sym):
     # expr_value() helper for converting a symbol to a number. Raises
@@ -5874,36 +5878,39 @@ def _sym_to_num(sym):
     return sym.tri_value if sym.orig_type in _BOOL_TRISTATE else \
            int(sym.str_value, _TYPE_TO_BASE[sym.orig_type])
 
+
 def _touch_dep_file(sym_name):
     # If sym_name is MY_SYM_NAME, touches my/sym/name.h. See the sync_deps()
     # docstring.
 
     sym_path = sym_name.lower().replace("_", os.sep) + ".h"
-    sym_path_dir = os.path.dirname(sym_path)
-    if sym_path_dir and not os.path.exists(sym_path_dir):
+    sym_path_dir = dirname(sym_path)
+    if sym_path_dir and not exists(sym_path_dir):
         os.makedirs(sym_path_dir, 0o755)
 
     # A kind of truncating touch, mirroring the C tools
     os.close(os.open(
         sym_path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o644))
 
+
 def _save_old(path):
     # See write_config()
 
-    dirname, basename = os.path.split(path)
-    backup = os.path.join(dirname,
-                          basename + ".old" if basename.startswith(".") else
-                              "." + basename + ".old")
+    dirname, basename = split(path)
+    backup = join(dirname,
+                  basename + ".old" if basename.startswith(".")
+                      else "." + basename + ".old")
 
     # os.replace() would be nice here, but it's Python 3 (3.3+) only
     try:
         # Use copyfile() if 'path' is a symlink. The intention is probably to
         # overwrite the target in that case.
-        if os.name == "posix" and not os.path.islink(path):
+        if os.name == "posix" and not islink(path):
             # Will remove .<filename>.old if it already exists on POSIX
             # systems
             os.rename(path, backup)
         else:
+            # Only import as needed, to save some startup time
             import shutil
             shutil.copyfile(path, backup)
     except:
@@ -5911,6 +5918,7 @@ def _save_old(path):
         # backup file is more of a nice-to-have, and not worth erroring out
         # over e.g. if .<filename>.old happens to be a directory.
         pass
+
 
 def _decoding_error(e, filename, macro_linenr=None):
     # Gives the filename and context for UnicodeDecodeError's, which are a pain
@@ -5933,6 +5941,7 @@ def _decoding_error(e, filename, macro_linenr=None):
             e.object[e.start:e.end],
             e.reason))
 
+
 def _name_and_loc(sc):
     # Helper for giving the symbol/choice name and location(s) in e.g. warnings
 
@@ -5950,6 +5959,7 @@ def _name_and_loc(sc):
 
 
 # Menu manipulation
+
 
 def _expr_depends_on(expr, sym):
     # Reimplementation of expr_depends_symbol() from mconf.c. Used to determine
@@ -5978,6 +5988,7 @@ def _expr_depends_on(expr, sym):
            (_expr_depends_on(expr[1], sym) or
             _expr_depends_on(expr[2], sym))
 
+
 def _auto_menu_dep(node1, node2):
     # Returns True if node2 has an "automatic menu dependency" on node1. If
     # node2 has a prompt, we check its condition. Otherwise, we look directly
@@ -5987,13 +5998,14 @@ def _auto_menu_dep(node1, node2):
     return _expr_depends_on(node2.prompt[1] if node2.prompt else node2.dep,
                             node1.item)
 
+
 def _flatten(node):
     # "Flattens" menu nodes without prompts (e.g. 'if' nodes and non-visible
     # symbols with children from automatic menu creation) so that their
     # children appear after them instead. This gives a clean menu structure
     # with no unexpected "jumps" in the indentation.
     #
-    # Do not flatten promptless choices (which can appear "legitimitely" if a
+    # Do not flatten promptless choices (which can appear "legitimately" if a
     # named choice is defined in multiple locations to add on symbols). It
     # looks confusing, and the menuconfig already shows all choice symbols if
     # you enter the choice at some location with a prompt.
@@ -6014,6 +6026,7 @@ def _flatten(node):
             node.list = None
 
         node = node.next
+
 
 def _remove_ifs(node):
     # Removes 'if' nodes (which can be recognized by MenuNode.item being None),
@@ -6039,6 +6052,7 @@ def _remove_ifs(node):
         #
         # due to tricky Python semantics. The order matters.
         cur.next = cur = next
+
 
 def _finalize_choice(node):
     # Finalizes a choice, marking each symbol whose menu node has the choice as
@@ -6066,6 +6080,7 @@ def _finalize_choice(node):
     for sym in choice.syms:
         if not sym.orig_type:
             sym.orig_type = choice.orig_type
+
 
 def _check_dep_loop_sym(sym, ignore_choice):
     # Detects dependency loops using depth-first search on the dependency graph
@@ -6141,6 +6156,7 @@ def _check_dep_loop_sym(sym, ignore_choice):
     # first element in it.
     return (sym,)
 
+
 def _check_dep_loop_choice(choice, skip):
     if not choice._visited:
         # choice._visited == 0, unvisited
@@ -6173,6 +6189,7 @@ def _check_dep_loop_choice(choice, skip):
     # choice._visited == 1, found a dependency loop. Return the choice as the
     # first element in it.
     return (choice,)
+
 
 def _found_dep_loop(loop, cur):
     # Called "on the way back" when we know we have a loop
@@ -6225,22 +6242,27 @@ def _found_dep_loop(loop, cur):
 
 # Predefined preprocessor functions
 
+
 def _filename_fn(kconf, _):
     return kconf._filename
 
+
 def _lineno_fn(kconf, _):
     return str(kconf._linenr)
+
 
 def _info_fn(kconf, _, msg):
     print("{}:{}: {}".format(kconf._filename, kconf._linenr, msg))
 
     return ""
 
+
 def _warning_if_fn(kconf, _, cond, msg):
     if cond == "y":
         kconf._warn(msg, kconf._filename, kconf._linenr)
 
     return ""
+
 
 def _error_if_fn(kconf, _, cond, msg):
     if cond == "y":
@@ -6249,7 +6271,11 @@ def _error_if_fn(kconf, _, cond, msg):
 
     return ""
 
+
 def _shell_fn(kconf, _, command):
+    # Only import as needed, to save some startup time
+    import subprocess
+
     stdout, stderr = subprocess.Popen(
         command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
     ).communicate()
@@ -6276,30 +6302,8 @@ def _shell_fn(kconf, _, command):
     return "\n".join(stdout.splitlines()).rstrip("\n").replace("\n", " ")
 
 #
-# Public global constants
+# Global constants
 #
-
-# Integers representing symbol types. UNKNOWN is 0 (falsy) to simplify some
-# checks, though client code shouldn't rely on it (it was non-zero in older
-# versions).
-(
-    UNKNOWN,
-    BOOL,
-    TRISTATE,
-    STRING,
-    INT,
-    HEX,
-) = range(6)
-
-# Converts a symbol/choice type to a string
-TYPE_TO_STR = {
-    UNKNOWN:  "unknown",
-    BOOL:     "bool",
-    TRISTATE: "tristate",
-    STRING:   "string",
-    INT:      "int",
-    HEX:      "hex",
-}
 
 TRI_TO_STR = {
     0: "n",
@@ -6313,28 +6317,29 @@ STR_TO_TRI = {
     "y": 2,
 }
 
-#
-# Internal global constants (plus public expression type
-# constants)
-#
-
-# Note:
-#
-# The token and type constants below are safe to test with 'is', which is a bit
-# faster (~30% faster in a microbenchmark with Python 3 on my machine, and a
-# few % faster for total parsing time), even without assuming Python's small
-# integer optimization (which caches small integer objects). The constants end
-# up pointing to unique integer objects, and since we consistently refer to
-# them via the names below, we always get the same object.
-#
-# Client code would also need to use the names below, because the integer
-# values can change e.g. when tokens get added. Client code would usually test
-# with == too, which would be safe even in super obscure cases involving e.g.
-# pickling (where 'is' would be a bad idea anyway) and no small-integer
-# optimization.
+# Constant representing that there's no cached choice selection. This is
+# distinct from a cached None (no selection). Any object that's not None or a
+# Symbol will do. We test this with 'is'.
+_NO_CACHED_SELECTION = 0
 
 # Are we running on Python 2?
 _IS_PY2 = sys.version_info[0] < 3
+
+try:
+    _UNAME_RELEASE = os.uname()[2]
+except AttributeError:
+    # Only import as needed, to save some startup time
+    import platform
+    _UNAME_RELEASE = platform.uname()[2]
+
+# Note: The token and type constants below are safe to test with 'is', which is
+# a bit faster (~30% faster on my machine, and a few % faster for total parsing
+# time), even without assuming Python's small integer optimization (which
+# caches small integer objects). The constants end up pointing to unique
+# integer objects, and since we consistently refer to them via the names below,
+# we always get the same object.
+#
+# Client code should use == though.
 
 # Tokens, with values 1, 2, ... . Avoiding 0 simplifies some checks by making
 # all tokens except empty strings truthy.
@@ -6391,25 +6396,6 @@ _IS_PY2 = sys.version_info[0] < 3
     _T_VISIBLE,
 ) = range(1, 51)
 
-# Public integers representing expression types and menu and comment menu
-# nodes
-#
-# Having these match the value of the corresponding tokens removes the need
-# for conversion
-
-AND           = _T_AND
-OR            = _T_OR
-NOT           = _T_NOT
-EQUAL         = _T_EQUAL
-UNEQUAL       = _T_UNEQUAL
-LESS          = _T_LESS
-LESS_EQUAL    = _T_LESS_EQUAL
-GREATER       = _T_GREATER
-GREATER_EQUAL = _T_GREATER_EQUAL
-
-MENU          = _T_MENU
-COMMENT       = _T_COMMENT
-
 # Keyword to token map, with the get() method assigned directly as a small
 # optimization
 _get_keyword = {
@@ -6458,6 +6444,70 @@ _get_keyword = {
     "visible":        _T_VISIBLE,
 }.get
 
+# The constants below match the value of the corresponding tokens to remove the
+# need for conversion
+
+# Node types
+MENU    = _T_MENU
+COMMENT = _T_COMMENT
+
+# Expression types
+AND           = _T_AND
+OR            = _T_OR
+NOT           = _T_NOT
+EQUAL         = _T_EQUAL
+UNEQUAL       = _T_UNEQUAL
+LESS          = _T_LESS
+LESS_EQUAL    = _T_LESS_EQUAL
+GREATER       = _T_GREATER
+GREATER_EQUAL = _T_GREATER_EQUAL
+
+_REL_TO_STR = {
+    EQUAL:         "=",
+    UNEQUAL:       "!=",
+    LESS:          "<",
+    LESS_EQUAL:    "<=",
+    GREATER:       ">",
+    GREATER_EQUAL: ">=",
+}
+
+# Symbol/choice types. UNKNOWN is 0 (falsy) to simplify some checks.
+# Client code shouldn't rely on it though, as it was non-zero in
+# older versions.
+UNKNOWN  = 0
+BOOL     = _T_BOOL
+TRISTATE = _T_TRISTATE
+STRING   = _T_STRING
+INT      = _T_INT
+HEX      = _T_HEX
+
+TYPE_TO_STR = {
+    UNKNOWN:  "unknown",
+    BOOL:     "bool",
+    TRISTATE: "tristate",
+    STRING:   "string",
+    INT:      "int",
+    HEX:      "hex",
+}
+
+# Used in comparisons. 0 means the base is inferred from the format of the
+# string.
+_TYPE_TO_BASE = {
+    HEX:      16,
+    INT:      10,
+    STRING:   0,
+    UNKNOWN:  0,
+}
+
+# def_bool -> BOOL, etc.
+_DEF_TOKEN_TO_TYPE = {
+    _T_DEF_BOOL:     BOOL,
+    _T_DEF_HEX:      HEX,
+    _T_DEF_INT:      INT,
+    _T_DEF_STRING:   STRING,
+    _T_DEF_TRISTATE: TRISTATE,
+}
+
 # Tokens after which strings are expected. This is used to tell strings from
 # constant symbol references during tokenization, both of which are enclosed in
 # quotes.
@@ -6482,8 +6532,8 @@ _STRING_LEX = frozenset((
     _T_TRISTATE,
 ))
 
-# Various sets, for quick membership tests. This gives us a single global
-# lookup and avoids creating temporary dicts/tuples.
+# Various sets for quick membership tests. Gives a single global lookup and
+# avoids creating temporary dicts/tuples.
 
 _TYPE_TOKENS = frozenset((
     _T_BOOL,
@@ -6509,14 +6559,6 @@ _REL_SOURCE_TOKENS = frozenset((
 _OBL_SOURCE_TOKENS = frozenset((
     _T_SOURCE,
     _T_RSOURCE,
-))
-
-_DEF_TYPE_TOKENS = frozenset((
-    _T_DEF_BOOL,
-    _T_DEF_TRISTATE,
-    _T_DEF_INT,
-    _T_DEF_HEX,
-    _T_DEF_STRING,
 ))
 
 _BOOL_TRISTATE = frozenset((
@@ -6556,13 +6598,24 @@ _EQUAL_UNEQUAL = frozenset((
     UNEQUAL,
 ))
 
+_RELATIONS = frozenset((
+    EQUAL,
+    UNEQUAL,
+    LESS,
+    LESS_EQUAL,
+    GREATER,
+    GREATER_EQUAL,
+))
+
 # Helper functions for getting compiled regular expressions, with the needed
 # matching function returned directly as a small optimization.
 #
 # Use ASCII regex matching on Python 3. It's already the default on Python 2.
 
+
 def _re_match(regex):
     return re.compile(regex, 0 if _IS_PY2 else re.ASCII).match
+
 
 def _re_search(regex):
     return re.compile(regex, 0 if _IS_PY2 else re.ASCII).search
@@ -6606,52 +6659,3 @@ _name_special_search = _re_search(r'[^$A-Za-z0-9_/.-]|\$\(|$')
 # A valid right-hand side for an assignment to a string symbol in a .config
 # file, including escaped characters. Extracts the contents.
 _conf_string_match = _re_match(r'"((?:[^\\"]|\\.)*)"')
-
-
-# Token to type mapping
-_TOKEN_TO_TYPE = {
-    _T_BOOL:         BOOL,
-    _T_DEF_BOOL:     BOOL,
-    _T_DEF_HEX:      HEX,
-    _T_DEF_INT:      INT,
-    _T_DEF_STRING:   STRING,
-    _T_DEF_TRISTATE: TRISTATE,
-    _T_HEX:          HEX,
-    _T_INT:          INT,
-    _T_STRING:       STRING,
-    _T_TRISTATE:     TRISTATE,
-}
-
-# Constant representing that there's no cached choice selection. This is
-# distinct from a cached None (no selection). We create a unique object (any
-# will do) for it so we can test with 'is'.
-_NO_CACHED_SELECTION = object()
-
-# Used in comparisons. 0 means the base is inferred from the format of the
-# string.
-_TYPE_TO_BASE = {
-    HEX:      16,
-    INT:      10,
-    STRING:   0,
-    UNKNOWN:  0,
-}
-
-# Note: These constants deliberately equal the corresponding tokens (_T_EQUAL,
-# _T_UNEQUAL, etc.), which removes the need for conversion
-_RELATIONS = frozenset((
-    EQUAL,
-    UNEQUAL,
-    LESS,
-    LESS_EQUAL,
-    GREATER,
-    GREATER_EQUAL,
-))
-
-_REL_TO_STR = {
-    EQUAL:         "=",
-    UNEQUAL:       "!=",
-    LESS:          "<",
-    LESS_EQUAL:    "<=",
-    GREATER:       ">",
-    GREATER_EQUAL: ">=",
-}

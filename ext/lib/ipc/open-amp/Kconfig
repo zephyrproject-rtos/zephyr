@@ -13,5 +13,6 @@ config OPENAMP
 config OPENAMP_SRC_PATH
 	string "OpenAMP library source path"
 	default "open-amp"
+	depends on OPENAMP
 	help
 	  This option specifies the path to the source for the open-amp library

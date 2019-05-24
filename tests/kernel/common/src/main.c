@@ -75,7 +75,7 @@ void test_main(void)
 			 ztest_unit_test(test_irq_offload),
 			 ztest_unit_test(test_byteorder_memcpy_swap),
 			 ztest_unit_test(test_byteorder_mem_swap),
-			 ztest_unit_test(test_atomic),
+			 ztest_user_unit_test(test_atomic),
 			 ztest_unit_test(test_bitfield),
 			 ztest_unit_test(test_printk),
 			 ztest_unit_test(test_slist),

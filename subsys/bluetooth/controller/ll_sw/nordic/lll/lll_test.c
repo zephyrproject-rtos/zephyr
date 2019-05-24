@@ -24,6 +24,9 @@
 
 #include "ll_test.h"
 
+#include "hal/debug.h"
+#include "common/log.h"
+
 #define CNTR_MIN_DELTA 3
 
 static const u32_t test_sync_word = 0x71764129;
@@ -91,7 +94,7 @@ static void isr_tx(void *param)
 #endif /* CONFIG_BT_CTLR_GPIO_PA_PIN */
 
 	/* Exit if radio disabled */
-	if (((tx_req - tx_ack) & 0x01) == 0) {
+	if (((tx_req - tx_ack) & 0x01) == 0U) {
 		tx_ack = tx_req;
 
 		return;
@@ -99,7 +102,7 @@ static void isr_tx(void *param)
 
 	/* LE Test Packet Interval */
 	l = radio_tmr_end_get() - radio_tmr_ready_get();
-	i = ((l + 249 + 624) / 625) * 625;
+	i = ((l + 249 + 624) / 625) * 625U;
 	t = radio_tmr_end_get() - l + i;
 	t -= radio_tx_ready_delay_get(test_phy, test_phy_flags);
 
@@ -107,7 +110,7 @@ static void isr_tx(void *param)
 	radio_tmr_sample();
 	s = radio_tmr_sample_get();
 	while (t < s) {
-		t += 625;
+		t += 625U;
 	}
 
 	/* Setup next Tx */
@@ -128,7 +131,7 @@ static void isr_tx(void *param)
 
 static void isr_rx(void *param)
 {
-	u8_t crc_ok = 0;
+	u8_t crc_ok = 0U;
 	u8_t trx_done;
 
 	/* Read radio status and events */
@@ -176,10 +179,10 @@ static u32_t init(u8_t chan, u8_t phy, void (*isr)(void *))
 	/* Store value needed in Tx/Rx ISR */
 	if (phy < 0x04) {
 		test_phy = BIT(phy - 1);
-		test_phy_flags = 1;
+		test_phy_flags = 1U;
 	} else {
 		test_phy = BIT(2);
-		test_phy_flags = 0;
+		test_phy_flags = 0U;
 	}
 
 	/* Setup Radio in Tx/Rx */
@@ -302,6 +305,7 @@ u32_t ll_test_rx(u8_t chan, u8_t phy, u8_t mod_idx)
 
 u32_t ll_test_end(u16_t *num_rx)
 {
+	int err;
 	u8_t ack;
 
 	if (!started) {
@@ -310,7 +314,7 @@ u32_t ll_test_end(u16_t *num_rx)
 
 	/* Return packets Rx-ed/Completed */
 	*num_rx = test_num_rx;
-	test_num_rx = 0;
+	test_num_rx = 0U;
 
 	/* Disable Radio, if in Rx test */
 	ack = tx_ack;
@@ -328,7 +332,8 @@ u32_t ll_test_end(u16_t *num_rx)
 	radio_tmr_stop();
 
 	/* Release resources acquired for Radio */
-	lll_clk_off();
+	err = lll_clk_off();
+	LL_ASSERT(!err || err == -EBUSY);
 
 	/* Stop coarse timer */
 	cntr_stop();

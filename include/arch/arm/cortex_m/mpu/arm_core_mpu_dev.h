@@ -126,7 +126,8 @@ void arm_core_mpu_disable(void);
  *
  * The function shall be invoked once, upon system initialization.
  *
- * @param static_regions[] an array of memory partitions to be programmed
+ * @param static_regions[] an array of pointers to memory partitions
+ *                         to be programmed
  * @param regions_num the number of regions to be programmed
  * @param background_area_start the start address of the background memory area
  * @param background_area_end the end address of the background memory area
@@ -139,7 +140,7 @@ void arm_core_mpu_disable(void);
  *   requirements of the MPU hardware.
  */
 void arm_core_mpu_configure_static_mpu_regions(
-	const struct k_mem_partition static_regions[], const u8_t regions_num,
+	const struct k_mem_partition *static_regions[], const u8_t regions_num,
 	const u32_t background_area_start, const u32_t background_area_end);
 
 #if defined(CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS)
@@ -182,7 +183,8 @@ void arm_core_mpu_mark_areas_for_dynamic_regions(
  * within a (background) memory area. The total number of HW MPU regions
  * to be programmed depends on the MPU architecture.
  *
- * @param dynamic_regions[] an array of memory partitions to be programmed
+ * @param dynamic_regions[] an array of pointers to memory partitions
+ *                          to be programmed
  * @param regions_num the number of regions to be programmed
  *
  * The function shall assert if the operation cannot be not performed
@@ -190,7 +192,7 @@ void arm_core_mpu_mark_areas_for_dynamic_regions(
  * not exceed the number of (currently) available MPU indices.
  */
 void arm_core_mpu_configure_dynamic_mpu_regions(
-	const struct k_mem_partition dynamic_regions[], u8_t regions_num);
+	const struct k_mem_partition *dynamic_regions[], u8_t regions_num);
 
 #if defined(CONFIG_USERSPACE)
 /**
@@ -260,6 +262,10 @@ int arm_core_mpu_get_max_available_dyn_regions(void);
 
 /**
  * @brief validate the given buffer is user accessible or not
+ *
+ * Note: Validation will always return failure, if the supplied buffer
+ *       spans multiple enabled MPU regions (even if these regions all
+ *       permit user access).
  */
 int arm_core_mpu_buffer_validate(void *addr, size_t size, int write);
 

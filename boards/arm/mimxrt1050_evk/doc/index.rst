@@ -112,6 +112,8 @@ features:
 +-----------+------------+-------------------------------------+
 | ENET      | on-chip    | ethernet                            |
 +-----------+------------+-------------------------------------+
+| USB       | on-chip    | USB device                          |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 
@@ -233,43 +235,102 @@ The MIMXRT1050 SoC has eight UARTs. ``LPUART1`` is configured for the console,
 ``LPUART3`` for the Bluetooth Host Controller Interface (BT HCI), and the
 remaining are not used.
 
+USB
+===
+
+The RT1050 SoC has two USB OTG (USBOTG) controllers that supports both
+device and host functions through its micro USB connectors.
+Only USB device function is supported in Zephyr at the moment.
+
 Programming and Debugging
 *************************
 
-The MIMXRT1050-EVK includes the :ref:`nxp_opensda` serial and debug adapter
-built into the board to provide debugging, flash programming, and serial
-communication over USB.
+Build and flash applications as usual (see :ref:`build_an_application` and
+:ref:`application_run` for more details).
 
-To use the Segger J-Link tools with OpenSDA, follow the instructions in the
-:ref:`nxp_opensda_jlink` page using the `Segger J-Link OpenSDA V2.1 Firmware`_.
-The Segger J-Link tools are the default for this board, therefore it is not
-necessary to set ``OPENSDA_FW=jlink`` explicitly when you invoke ``make
-debug``.
+Configuring a Debug Probe
+=========================
 
-With these mechanisms, applications for the ``mimxrt1050_evk`` board
-configuration can be built and debugged in the usual way (see
-:ref:`build_an_application` and :ref:`application_run` for more details).
+A debug probe is used for both flashing and debugging the board. This board is
+configured by default to use the :ref:`opensda-daplink-onboard-debug-probe`,
+however the :ref:`pyocd-debug-host-tools` do not yet support programming the
+external flashes on this board so you must reconfigure the board for one of the
+following debug probes instead.
 
-The pyOCD tools do not yet support this SoC.
+Option 1: :ref:`opensda-jlink-onboard-debug-probe` (Recommended)
+----------------------------------------------------------------
+
+Install the :ref:`jlink-debug-host-tools` and make sure they are in your search
+path.
+
+Follow the instructions in :ref:`opensda-jlink-onboard-debug-probe` to program
+the `OpenSDA J-Link MIMXRT1050-EVK-Hyperflash Firmware`_. Check that jumpers
+J32 and J33 are **on** (they are on by default when boards ship from the
+factory) to ensure SWD signals are connected to the OpenSDA microcontroller.
+
+Option 2: :ref:`jlink-external-debug-probe`
+-------------------------------------------
+
+Install the :ref:`jlink-debug-host-tools` and make sure they are in your search
+path.
+
+Attach a J-Link 20-pin connector to J21. Check that jumpers J32 and J33 are
+**off** (they are on by default when boards ship from the factory) to ensure
+SWD signals are disconnected from the OpenSDA microcontroller.
+
+Configuring a Console
+=====================
+
+Regardless of your choice in debug probe, we will use the OpenSDA
+microcontroller as a usb-to-serial adapter for the serial console. Check that
+jumpers J30 and J31 are **on** (they are on by default when boards ship from
+the factory) to connect UART signals to the OpenSDA microcontroller.
+
+Connect a USB cable from your PC to J28.
+
+Use the following settings with your serial terminal of choice (minicom, putty,
+etc.):
+
+- Speed: 115200
+- Data: 8 bits
+- Parity: None
+- Stop bits: 1
 
 Flashing
 ========
 
-The Segger J-Link firmware does not support command line flashing, therefore
-the usual ``flash`` build system target is not supported.
+Here is an example for the :ref:`hello_world` application.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: mimxrt1050_evk
+   :goals: flash
+
+Open a serial terminal, reset the board (press the SW4 button), and you should
+see the following message in the terminal:
+
+.. code-block:: console
+
+   ***** Booting Zephyr OS v1.14.0-rc1 *****
+   Hello World! mimxrt1050_evk
 
 Debugging
 =========
 
-This example uses the :ref:`hello_world` sample with the
-:ref:`nxp_opensda_jlink` tools. Run the following to build your Zephyr
-application, invoke the J-Link GDB server, attach a GDB client, and program
-your Zephyr application to flash. It will leave you at a GDB prompt.
+Here is an example for the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
    :board: mimxrt1050_evk
    :goals: debug
+
+Open a serial terminal, step through the application in your debugger, and you
+should see the following message in the terminal:
+
+.. code-block:: console
+
+   ***** Booting Zephyr OS v1.14.0-rc1 *****
+   Hello World! mimxrt1050_evk
 
 Board Revisions
 ***************
@@ -303,11 +364,8 @@ Current Zephyr build supports the new MIMXRT1050-EVKB
 .. _i.MX RT1050 Reference Manual:
    https://www.nxp.com/docs/en/reference-manual/IMXRT1050RM.pdf
 
-.. _DAPLink FRDM-K64F Firmware:
-   http://www.nxp.com/assets/downloads/data/en/ide-debug-compile-build-tools/OpenSDAv2.2_DAPLink_frdmk64f_rev0242.zip
-
-.. _Segger J-Link OpenSDA V2.1 Firmware:
-   https://www.segger.com/downloads/jlink/OpenSDA_V2_1.bin
+.. _OpenSDA J-Link MIMXRT1050-EVK-Hyperflash Firmware:
+   https://www.segger.com/downloads/jlink/OpenSDA_MIMXRT1050-EVK-Hyperflash
 
 .. _NXP i.MXRT1050 A0 to A1 Migration Guide:
    https://www.nxp.com/docs/en/nxp/application-notes/AN12146.pdf

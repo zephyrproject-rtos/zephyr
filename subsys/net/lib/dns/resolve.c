@@ -83,7 +83,7 @@ static bool server_is_mdns(sa_family_t family, struct sockaddr *addr)
 {
 	if (family == AF_INET) {
 		if (net_ipv4_is_addr_mcast(&net_sin(addr)->sin_addr) &&
-		    net_sin(addr)->sin_addr.s4_addr[3] == 251) {
+		    net_sin(addr)->sin_addr.s4_addr[3] == 251U) {
 			return true;
 		}
 
@@ -106,7 +106,7 @@ static bool server_is_llmnr(sa_family_t family, struct sockaddr *addr)
 {
 	if (family == AF_INET) {
 		if (net_ipv4_is_addr_mcast(&net_sin(addr)->sin_addr) &&
-		    net_sin(addr)->sin_addr.s4_addr[3] == 252) {
+		    net_sin(addr)->sin_addr.s4_addr[3] == 252U) {
 			return true;
 		}
 
@@ -136,7 +136,7 @@ static void dns_postprocess_server(struct dns_resolve_context *ctx, int idx)
 				server_is_llmnr(AF_INET, addr);
 		}
 
-		if (net_sin(addr)->sin_port == 0) {
+		if (net_sin(addr)->sin_port == 0U) {
 			if (IS_ENABLED(CONFIG_MDNS_RESOLVER) &&
 			    ctx->servers[idx].is_mdns) {
 				/* We only use 5353 as a default port
@@ -164,7 +164,7 @@ static void dns_postprocess_server(struct dns_resolve_context *ctx, int idx)
 				server_is_llmnr(AF_INET6, addr);
 		}
 
-		if (net_sin6(addr)->sin6_port == 0) {
+		if (net_sin6(addr)->sin6_port == 0U) {
 			if (IS_ENABLED(CONFIG_MDNS_RESOLVER) &&
 			    ctx->servers[idx].is_mdns) {
 				net_sin6(addr)->sin6_port = htons(5353);
@@ -343,7 +343,7 @@ static int dns_read(struct dns_resolve_context *ctx,
 
 	/* TODO: Instead of this temporary copy, just use the net_pkt directly.
 	 */
-	ret = net_pkt_read_new(pkt, dns_data->data, data_len);
+	ret = net_pkt_read(pkt, dns_data->data, data_len);
 	if (ret < 0) {
 		ret = DNS_EAI_MEMORY;
 		goto quit;
@@ -651,9 +651,9 @@ static int dns_write(struct dns_resolve_context *ctx,
 		server_addr_len = sizeof(struct sockaddr_in6);
 	}
 
-	ret = net_context_sendto_new(net_ctx, dns_data->data, dns_data->len,
-				     server, server_addr_len, NULL,
-				     K_NO_WAIT, NULL, NULL);
+	ret = net_context_sendto(net_ctx, dns_data->data, dns_data->len,
+				 server, server_addr_len, NULL,
+				 K_NO_WAIT, NULL);
 	if (ret < 0) {
 		NET_DBG("Cannot send query (%d)", ret);
 		return ret;

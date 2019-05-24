@@ -34,9 +34,9 @@
  *
 */
 #ifndef __SPAWN_H__
-#define	__SPAWN_H__
+#define __SPAWN_H__
 
-#ifdef	__cplusplus
+#ifdef    __cplusplus
 extern "C" {
 #endif
 
@@ -44,13 +44,12 @@ extern "C" {
 
 extern void* _SlInternalSpawnTaskEntry();
 extern _i16 _SlInternalSpawn(_SlSpawnEntryFunc_t pEntry , void* pValue , _u32 flags);
-
+extern _u8 _SlInternalIsItSpawnThread(_u32 ThreadId);
 #undef sl_Spawn
 #define sl_Spawn(pEntry,pValue,flags)               _SlInternalSpawn(pEntry,pValue,flags)
 
 #undef _SlTaskEntry
 #define _SlTaskEntry                                _SlInternalSpawnTaskEntry
-
 
 #endif
 

@@ -17,6 +17,18 @@
 /* Advertisement channel maximum PDU size */
 #define PDU_AC_SIZE_MAX        (PDU_AC_LL_HEADER_SIZE + PDU_AC_PAYLOAD_SIZE_MAX)
 
+#define ACCESS_ADDR_SIZE        4
+#define ADVA_SIZE               6
+#define SCANA_SIZE              6
+#define INITA_SIZE              6
+#define TARGETA_SIZE            6
+#define LLDATA_SIZE             22
+#define CRC_SIZE                3
+#define PREAMBLE_SIZE(phy)      (phy&0x3)
+#define LL_HEADER_SIZE(phy)     (PREAMBLE_SIZE(phy) + PDU_AC_LL_HEADER_SIZE \
+				  + ACCESS_ADDR_SIZE + CRC_SIZE)
+#define BYTES2US(bytes, phy)    (((bytes)<<3)/BIT((phy&0x3)>>1))
+
 /* Data channel minimum payload */
 #define PDU_DC_PAYLOAD_SIZE_MIN 27
 /* Link Layer header size of Data PDU. Assumes pdu_data is packed */
@@ -24,6 +36,15 @@
 
 /* Max size of an empty PDU. TODO: Remove; only used in Nordic LLL */
 #define PDU_EM_SIZE_MAX        (PDU_DC_LL_HEADER_SIZE)
+
+/* Event interframe timings */
+#define EVENT_IFS_US            150
+/* Standard allows 2 us timing uncertainty inside the event */
+#define EVENT_IFS_MAX_US        (EVENT_IFS_US + 2)
+/* Controller will layout extended adv with minimum separation */
+#define EVENT_MAFS_US           300
+/* Standard allows 2 us timing uncertainty inside the event */
+#define EVENT_MAFS_MAX_US       (EVENT_MAFS_US + 2)
 
 /* Extra bytes for enqueued node_rx metadata: rssi (always), resolving
  * index, directed adv report, and mesh channel and instant.
@@ -82,15 +103,30 @@ struct pdu_adv_connect_ind {
 		u16_t latency;
 		u16_t timeout;
 		u8_t  chan_map[5];
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 		u8_t  hop:5;
 		u8_t  sca:3;
+#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+		u8_t  sca:3;
+		u8_t  hop:5;
+#else
+#error "Unsupported endianness"
+#endif
+
 	} __packed;
 } __packed;
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 struct pdu_adv_com_ext_adv {
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 	u8_t ext_hdr_len:6;
 	u8_t adv_mode:2;
+#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+	u8_t adv_mode:2;
+	u8_t ext_hdr_len:6;
+#else
+#error "Unsupported endianness"
+#endif
 	u8_t ext_hdr_adi_adv_data[254];
 } __packed;
 
@@ -101,6 +137,7 @@ enum ext_adv_mode {
 };
 
 struct ext_adv_hdr {
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 	u8_t adv_addr:1;
 	u8_t tgt_addr:1;
 	u8_t rfu0:1;
@@ -109,19 +146,48 @@ struct ext_adv_hdr {
 	u8_t sync_info:1;
 	u8_t tx_pwr:1;
 	u8_t rfu1:1;
+#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+	u8_t rfu1:1;
+	u8_t tx_pwr:1;
+	u8_t sync_info:1;
+	u8_t aux_ptr:1;
+	u8_t adi:1;
+	u8_t rfu0:1;
+	u8_t tgt_addr:1;
+	u8_t adv_addr:1;
+#else
+#error "Unsupported endianness"
+#endif
 } __packed;
 
 struct ext_adv_adi {
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 	u16_t did:12;
 	u16_t sid:4;
+#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+	u16_t sid:4;
+	u16_t did:12;
+#else
+#error "Unsupported endianness"
+#endif
 } __packed;
 
 struct ext_adv_aux_ptr {
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 	u8_t  chan_idx:6;
 	u8_t  ca:1;
 	u8_t  offs_units:1;
 	u16_t offs:13;
 	u16_t phy:3;
+#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+	u8_t  offs_units:1;
+	u8_t  ca:1;
+	u8_t  chan_idx:6;
+	u16_t phy:3;
+	u16_t offs:13;
+#else
+#error "Unsupported endianness"
+#endif
 } __packed;
 
 enum ext_adv_aux_ptr_ca {
@@ -141,9 +207,17 @@ enum ext_adv_aux_phy {
 };
 
 struct ext_adv_sync_info {
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 	u16_t sync_pkt_offs:13;
 	u16_t offs_units:1;
 	u16_t rfu:2;
+#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+	u16_t rfu:2;
+	u16_t offs_units:1;
+	u16_t sync_pkt_offs:13;
+#else
+#error "Unsupported endianness"
+#endif
 	u16_t interval;
 	u8_t  sca_chm[5];
 	u32_t aa;
@@ -171,13 +245,23 @@ enum pdu_adv_type {
 } __packed;
 
 struct pdu_adv {
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 	u8_t type:4;
 	u8_t rfu:1;
 	u8_t chan_sel:1;
 	u8_t tx_addr:1;
 	u8_t rx_addr:1;
+#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+	u8_t rx_addr:1;
+	u8_t tx_addr:1;
+	u8_t chan_sel:1;
+	u8_t rfu:1;
+	u8_t type:4;
+#else
+#error "Unsupported endianness"
+#endif
 
-	u8_t len:8;
+	u8_t len;
 
 	union {
 		u8_t   payload[0];
@@ -423,13 +507,23 @@ struct profile {
 #endif /* CONFIG_BT_CTLR_PROFILE_ISR */
 
 struct pdu_data {
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 	u8_t ll_id:2;
 	u8_t nesn:1;
 	u8_t sn:1;
 	u8_t md:1;
 	u8_t rfu:3;
+#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+	u8_t rfu:3;
+	u8_t md:1;
+	u8_t sn:1;
+	u8_t nesn:1;
+	u8_t ll_id:2;
+#else
+#error "Unsupported endianness"
+#endif
 
-	u8_t len:8;
+	u8_t len;
 
 #if !defined(CONFIG_BT_CTLR_DATA_LENGTH_CLEAR)
 	u8_t resv:8; /* TODO: remove nRF specific code */

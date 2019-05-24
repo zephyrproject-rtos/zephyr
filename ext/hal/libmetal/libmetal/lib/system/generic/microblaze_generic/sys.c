@@ -35,6 +35,17 @@ unsigned int sys_irq_save_disable(void)
 
 	return state &= MSR_IE;
 }
+
+void sys_irq_restore_enable(unsigned int flags)
+{
+	unsigned int tmp;
+	if (flags)
+		asm volatile("  msrset %0, %1	\n"
+			 :  "=r"(tmp)
+			 :  "i"(MSR_IE)
+			 :  "memory");
+}
+
 #else /* XPAR_MICROBLAZE_USE_MSR_INSTR == 0 */
 unsigned int sys_irq_save_disable(void)
 {
@@ -49,19 +60,20 @@ unsigned int sys_irq_save_disable(void)
 
 	return state &= MSR_IE;
 }
-#endif /* XPAR_MICROBLAZE_USE_MSR_INSTR */
 
 void sys_irq_restore_enable(unsigned int flags)
 {
 	unsigned int tmp;
 
-	asm volatile("  mfs    %0, rmsr		\n"
-		     "  or      %0, %0, %1	\n"
-		     "  mts     rmsr, %0	\n"
-		     :  "=r"(tmp)
-		     :  "r"(~flags)
-		     :  "memory");
+	if (flags)
+		asm volatile("  mfs    %0, rmsr		\n"
+			 "  or      %0, %0, %1	\n"
+			 "  mts     rmsr, %0	\n"
+			 :  "=r"(tmp)
+			 :  "r"(flags)
+			 :  "memory");
 }
+#endif /* XPAR_MICROBLAZE_USE_MSR_INSTR */
 
 static void sys_irq_change(unsigned int vector, int is_enable)
 {

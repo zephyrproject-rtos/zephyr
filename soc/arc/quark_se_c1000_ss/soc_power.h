@@ -23,8 +23,8 @@ extern "C" {
 
 /*
  * Power state map:
- * SYS_POWER_STATE_LOW_POWER_1:		SS1 state with Timer ON
- * SYS_POWER_STATE_LOW_POWER_2:		SS1 state with Timer ON
+ * SYS_POWER_STATE_SLEEP_1:		SS1 state with Timer ON
+ * SYS_POWER_STATE_SLEEP_2:		SS1 state with Timer ON
  * SYS_POWER_STATE_DEEP_SLEEP_1:	SS2 with LPSS enabled state
  * SYS_POWER_STATE_DEEP_SLEEP_2:	SLEEP state
  * SYS_POWER_STATE_DEEP_SLEEP_3:	SLEEP state with LPMODE enabled

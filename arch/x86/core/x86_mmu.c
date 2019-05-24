@@ -45,7 +45,7 @@ MMU_BOOT_REGION((u32_t)&__kernel_ram_start, (u32_t)&__kernel_ram_size,
 		MMU_ENTRY_EXECUTE_DISABLE);
 
 
-void _x86_mmu_get_flags(struct x86_mmu_pdpt *pdpt, void *addr,
+void z_x86_mmu_get_flags(struct x86_mmu_pdpt *pdpt, void *addr,
 			x86_page_entry_data_t *pde_flags,
 			x86_page_entry_data_t *pte_flags)
 {
@@ -63,7 +63,7 @@ void _x86_mmu_get_flags(struct x86_mmu_pdpt *pdpt, void *addr,
 }
 
 
-int _arch_buffer_validate(void *addr, size_t size, int write)
+int z_arch_buffer_validate(void *addr, size_t size, int write)
 {
 	u32_t start_pde_num;
 	u32_t end_pde_num;
@@ -76,6 +76,7 @@ int _arch_buffer_validate(void *addr, size_t size, int write)
 	u32_t end_pdpte_num = MMU_PDPTE_NUM((char *)addr + size - 1);
 	u32_t pdpte;
 	struct x86_mmu_pt *pte_address;
+	int ret = -EPERM;
 
 	start_pde_num = MMU_PDE_NUM(addr);
 	end_pde_num = MMU_PDE_NUM((char *)addr + size - 1);
@@ -94,7 +95,7 @@ int _arch_buffer_validate(void *addr, size_t size, int write)
 
 		/* Ensure page directory pointer table entry is present */
 		if (X86_MMU_GET_PDPTE_INDEX(&USER_PDPT, pdpte)->p == 0) {
-			return -EPERM;
+			goto out;
 		}
 
 		struct x86_mmu_pd *pd_address =
@@ -108,10 +109,10 @@ int _arch_buffer_validate(void *addr, size_t size, int write)
 			union x86_mmu_pde_pt pde_value =
 				pd_address->entry[pde].pt;
 
-			if (!pde_value.p ||
-			    !pde_value.us ||
-			    (write && !pde_value.rw)) {
-				return -EPERM;
+			if ((pde_value.p) == 0 ||
+			    (pde_value.us) == 0 ||
+			    ((write != 0) && (pde_value.rw == 0))) {
+				goto out;
 			}
 
 			pte_address = (struct x86_mmu_pt *)
@@ -120,7 +121,7 @@ int _arch_buffer_validate(void *addr, size_t size, int write)
 			/* loop over all the possible page tables for the
 			 * required size. If the pde is not the last one
 			 * then the last pte would be 511. So each pde
-			 * will be using all the page table entires except
+			 * will be using all the page table entries except
 			 * for the last pde. For the last pde, pte is
 			 * calculated using the last memory address
 			 * of the buffer.
@@ -139,7 +140,7 @@ int _arch_buffer_validate(void *addr, size_t size, int write)
 				starting_pte_num = 0U;
 			}
 
-			pte_value.value = 0xFFFFFFFF;
+			pte_value.value = 0xFFFFFFFFU;
 
 			/* Bitwise AND all the pte values.
 			 * An optimization done to make sure a compare is
@@ -152,15 +153,20 @@ int _arch_buffer_validate(void *addr, size_t size, int write)
 					pte_address->entry[pte].value;
 			}
 
-			if (!pte_value.p ||
-			    !pte_value.us ||
-			    (write && !pte_value.rw)) {
-				return -EPERM;
+			if ((pte_value.p) == 0 ||
+			    (pte_value.us) == 0 ||
+			    ((write != 0) && (pte_value.rw == 0))) {
+				goto out;
 			}
 		}
 	}
+	ret = 0;
+out:
+#ifdef CONFIG_BOUNDS_CHECK_BYPASS_MITIGATION
+	__asm__ volatile ("lfence" : : : "memory");
+#endif
 
-	return 0;
+	return ret;
 }
 
 static inline void tlb_flush_page(void *addr)
@@ -174,7 +180,7 @@ static inline void tlb_flush_page(void *addr)
 }
 
 
-void _x86_mmu_set_flags(struct x86_mmu_pdpt *pdpt, void *ptr,
+void z_x86_mmu_set_flags(struct x86_mmu_pdpt *pdpt, void *ptr,
 			size_t size,
 			x86_page_entry_data_t flags,
 			x86_page_entry_data_t mask)
@@ -183,8 +189,8 @@ void _x86_mmu_set_flags(struct x86_mmu_pdpt *pdpt, void *ptr,
 
 	u32_t addr = (u32_t)ptr;
 
-	__ASSERT(!(addr & MMU_PAGE_MASK), "unaligned address provided");
-	__ASSERT(!(size & MMU_PAGE_MASK), "unaligned size provided");
+	__ASSERT((addr & MMU_PAGE_MASK) == 0U, "unaligned address provided");
+	__ASSERT((size & MMU_PAGE_MASK) == 0U, "unaligned size provided");
 
 	/* L1TF mitigation: non-present PTEs will have address fields
 	 * zeroed. Expand the mask to include address bits if we are changing
@@ -225,12 +231,12 @@ void z_x86_reset_pages(void *start, size_t size)
 	/* Clear both present bit and access flags. Only applies
 	 * to threads running in user mode.
 	 */
-	_x86_mmu_set_flags(&z_x86_user_pdpt, start, size,
+	z_x86_mmu_set_flags(&z_x86_user_pdpt, start, size,
 			   MMU_ENTRY_NOT_PRESENT,
 			   K_MEM_PARTITION_PERM_MASK | MMU_PTE_P_MASK);
 #else
 	/* Mark as supervisor read-write, user mode no access */
-	_x86_mmu_set_flags(&z_x86_kernel_pdpt, start, size,
+	z_x86_mmu_set_flags(&z_x86_kernel_pdpt, start, size,
 			   K_MEM_PARTITION_P_RW_U_NA,
 			   K_MEM_PARTITION_PERM_MASK);
 #endif /* CONFIG_X86_KPTI */
@@ -249,16 +255,16 @@ static inline void activate_partition(struct k_mem_partition *partition)
 	mask = K_MEM_PARTITION_PERM_MASK;
 #endif /* CONFIG_X86_KPTI */
 
-	_x86_mmu_set_flags(&USER_PDPT,
-			   (void *)partition->start,
-			   partition->size, attr, mask);
+	z_x86_mmu_set_flags(&USER_PDPT,
+			    (void *)partition->start,
+			    partition->size, attr, mask);
 }
 
 /* Helper macros needed to be passed to x86_update_mem_domain_pages */
 #define X86_MEM_DOMAIN_SET_PAGES   (0U)
 #define X86_MEM_DOMAIN_RESET_PAGES (1U)
 /* Pass 1 to page_conf if reset of mem domain pages is needed else pass a 0*/
-static inline void _x86_mem_domain_pages_update(struct k_mem_domain *mem_domain,
+static inline void x86_mem_domain_pages_update(struct k_mem_domain *mem_domain,
 						u32_t page_conf)
 {
 	u32_t partition_index;
@@ -275,7 +281,7 @@ static inline void _x86_mem_domain_pages_update(struct k_mem_domain *mem_domain,
 	total_partitions = mem_domain->num_partitions;
 
 	/* Iterate over all the partitions for the given mem_domain
-	 * For x86: interate over all the partitions and set the
+	 * For x86: iterate over all the partitions and set the
 	 * required flags in the correct MMU page tables.
 	 */
 	partitions_count = 0U;
@@ -285,7 +291,7 @@ static inline void _x86_mem_domain_pages_update(struct k_mem_domain *mem_domain,
 
 		/* Get the partition info */
 		partition = &mem_domain->partitions[partition_index];
-		if (partition->size == 0) {
+		if (partition->size == 0U) {
 			continue;
 		}
 		partitions_count++;
@@ -301,23 +307,23 @@ out:
 }
 
 /* Load the partitions of the thread. */
-void _arch_mem_domain_configure(struct k_thread *thread)
+void z_arch_mem_domain_configure(struct k_thread *thread)
 {
-	_x86_mem_domain_pages_update(thread->mem_domain_info.mem_domain,
+	x86_mem_domain_pages_update(thread->mem_domain_info.mem_domain,
 				     X86_MEM_DOMAIN_SET_PAGES);
 }
 
 /* Destroy or reset the mmu page tables when necessary.
  * Needed when either swap takes place or k_mem_domain_destroy is called.
  */
-void _arch_mem_domain_destroy(struct k_mem_domain *domain)
+void z_arch_mem_domain_destroy(struct k_mem_domain *domain)
 {
-	_x86_mem_domain_pages_update(domain, X86_MEM_DOMAIN_RESET_PAGES);
+	x86_mem_domain_pages_update(domain, X86_MEM_DOMAIN_RESET_PAGES);
 }
 
-/* Reset/destroy one partition spcified in the argument of the API. */
-void _arch_mem_domain_partition_remove(struct k_mem_domain *domain,
-				       u32_t partition_id)
+/* Reset/destroy one partition specified in the argument of the API. */
+void z_arch_mem_domain_partition_remove(struct k_mem_domain *domain,
+					u32_t partition_id)
 {
 	struct k_mem_partition *partition;
 
@@ -329,8 +335,8 @@ void _arch_mem_domain_partition_remove(struct k_mem_domain *domain,
 	z_x86_reset_pages((void *)partition->start, partition->size);
 }
 
-/* Reset/destroy one partition spcified in the argument of the API. */
-void _arch_mem_domain_partition_add(struct k_mem_domain *domain,
+/* Add one partition specified in the argument of the API. */
+void z_arch_mem_domain_partition_add(struct k_mem_domain *domain,
 				    u32_t partition_id)
 {
 	struct k_mem_partition *partition;
@@ -343,7 +349,7 @@ void _arch_mem_domain_partition_add(struct k_mem_domain *domain,
 	activate_partition(partition);
 }
 
-int _arch_mem_domain_max_partitions_get(void)
+int z_arch_mem_domain_max_partitions_get(void)
 {
 	return CONFIG_MAX_DOMAIN_PARTITIONS;
 }

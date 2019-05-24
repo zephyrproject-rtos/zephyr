@@ -4,16 +4,26 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+config CLOCK_CONTROL_NRF_FORCE_ALT
+	bool
+	depends on SOC_COMPATIBLE_NRF
+	help
+	  This option can be enabled to force an alternative implementation
+	  of the clock control driver.
+
+if !CLOCK_CONTROL_NRF_FORCE_ALT
+
 menuconfig CLOCK_CONTROL_NRF
 	bool "NRF Clock controller support"
 	depends on SOC_COMPATIBLE_NRF
+	default y
 	help
 	  Enable support for the Nordic Semiconductor nRFxx series SoC clock
 	  driver.
 
 if CLOCK_CONTROL_NRF
 
-choice
+choice CLOCK_CONTROL_NRF_SOURCE
 	prompt "32KHz clock source"
 	default CLOCK_CONTROL_NRF_K32SRC_XTAL
 
@@ -22,6 +32,10 @@ config CLOCK_CONTROL_NRF_K32SRC_RC
 
 config CLOCK_CONTROL_NRF_K32SRC_XTAL
 	bool "Crystal Oscillator"
+
+config CLOCK_CONTROL_NRF_K32SRC_SYNTH
+	depends on !SOC_SERIES_NRF91X
+	bool "Synthesized from HFCLK"
 
 endchoice
 
@@ -34,7 +48,7 @@ config CLOCK_CONTROL_NRF_K32SRC_BLOCKING
 	  initially start running and automatically switch to crystal when
 	  ready.
 
-choice
+choice CLOCK_CONTROL_NRF_ACCURACY
 	prompt "32KHz clock accuracy"
 	default CLOCK_CONTROL_NRF_K32SRC_500PPM if CLOCK_CONTROL_NRF_K32SRC_RC
 	default CLOCK_CONTROL_NRF_K32SRC_20PPM
@@ -66,3 +80,5 @@ config CLOCK_CONTROL_NRF_K32SRC_20PPM
 endchoice
 
 endif # CLOCK_CONTROL_NRF
+
+endif #!CLOCK_CONTROL_NRF_FORCE_ALT

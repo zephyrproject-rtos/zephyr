@@ -728,7 +728,7 @@ struct bt_gatt_indicate_params indicate_params;
 static void indicate_cb(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			u8_t err)
 {
-	if (err != 0) {
+	if (err != 0U) {
 		LOG_ERR("Indication fail");
 	} else {
 		LOG_DBG("Indication success");
@@ -1374,6 +1374,49 @@ fail_conn:
 		   BTP_STATUS_FAILED);
 }
 
+static void read_uuid(u8_t *data, u16_t len)
+{
+	const struct gatt_read_uuid_cmd *cmd = (void *) data;
+	struct bt_conn *conn;
+
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, (bt_addr_le_t *)data);
+	if (!conn) {
+		goto fail_conn;
+	}
+
+	if (btp2bt_uuid(cmd->uuid, cmd->uuid_length, &uuid.uuid)) {
+		goto fail;
+	}
+
+	if (!gatt_buf_reserve(sizeof(struct gatt_read_rp))) {
+		goto fail;
+	}
+
+	read_params.by_uuid.uuid = &uuid.uuid;
+	read_params.handle_count = 0;
+	read_params.by_uuid.start_handle = sys_le16_to_cpu(cmd->start_handle);
+	read_params.by_uuid.end_handle = sys_le16_to_cpu(cmd->end_handle);
+	read_params.func = read_cb;
+
+	btp_opcode = GATT_READ_UUID;
+
+	if (bt_gatt_read(conn, &read_params) < 0) {
+		read_destroy(&read_params);
+
+		goto fail;
+	}
+
+	bt_conn_unref(conn);
+
+	return;
+fail:
+	bt_conn_unref(conn);
+
+fail_conn:
+	tester_rsp(BTP_SERVICE_ID_GATT, GATT_READ_UUID, CONTROLLER_INDEX,
+		   BTP_STATUS_FAILED);
+}
+
 static void read_long(u8_t *data, u16_t len)
 {
 	const struct gatt_read_long_cmd *cmd = (void *) data;
@@ -1502,7 +1545,7 @@ static void write(u8_t *data, u16_t len)
 
 	write_params.handle = sys_le16_to_cpu(cmd->handle);
 	write_params.func = write_rsp;
-	write_params.offset = 0;
+	write_params.offset = 0U;
 	write_params.data = cmd->data;
 	write_params.length = sys_le16_to_cpu(cmd->data_length);
 
@@ -1667,7 +1710,7 @@ static int disable_subscription(struct bt_conn *conn, u16_t ccc_handle)
 		return -EBUSY;
 	}
 
-	subscribe_params.ccc_handle = 0;
+	subscribe_params.ccc_handle = 0U;
 
 	return 0;
 }
@@ -1820,6 +1863,11 @@ static u8_t get_attr_val_rp(const struct bt_gatt_attr *attr, void *user_data)
 	do {
 		to_read = net_buf_simple_tailroom(buf);
 
+		if (!attr->read) {
+			rp->att_response = BT_ATT_ERR_READ_NOT_PERMITTED;
+			break;
+		}
+
 		read = attr->read(NULL, attr, buf->data + buf->len, to_read,
 				  rp->value_length);
 		if (read < 0) {
@@ -1902,6 +1950,9 @@ void tester_handle_gatt(u8_t opcode, u8_t index, u8_t *data,
 		return;
 	case GATT_READ:
 		read(data, len);
+		return;
+	case GATT_READ_UUID:
+		read_uuid(data, len);
 		return;
 	case GATT_READ_LONG:
 		read_long(data, len);

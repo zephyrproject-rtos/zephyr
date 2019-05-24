@@ -12,7 +12,6 @@
  *
  *  struct _thread_arch
  *  struct _callee_saved
- *  struct _caller_saved
  *
  * necessary to instantiate instances of struct k_thread.
  */
@@ -23,28 +22,6 @@
 #ifndef _ASMLANGUAGE
 #include <zephyr/types.h>
 #include <xtensa_context.h>
-
-/*
- * The following structure defines the set of 'volatile' integer registers.
- * These registers need not be preserved by a called C function.  Given that
- * they are not preserved across function calls, they must be save/restored
- * (along with the struct _caller_saved) when a preemptive context switch
- * occurs.
- */
-
-struct _caller_saved {
-
-	/*
-	 * The volatile registers area not included in the definition of
-	 * 'tPreempReg' since the interrupt stubs (_IntEnt/_IntExit)
-	 * and exception stubs (_ExcEnt/_ExcEnter) use the stack to save and
-	 * restore the values of these registers in order to support interrupt
-	 * nesting.  The stubs do _not_ copy the saved values from the stack
-	 * into the k_thread.
-	 */
-};
-
-typedef struct _caller_saved _caller_saved_t;
 
 /*
  * The following structure defines the set of 'non-volatile' integer registers.

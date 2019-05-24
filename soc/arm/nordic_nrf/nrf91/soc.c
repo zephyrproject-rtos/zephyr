@@ -20,8 +20,8 @@
 #include <logging/log.h>
 
 #ifdef CONFIG_RUNTIME_NMI
-extern void _NmiInit(void);
-#define NMI_INIT() _NmiInit()
+extern void z_NmiInit(void);
+#define NMI_INIT() z_NmiInit()
 #else
 #define NMI_INIT()
 #endif
@@ -49,8 +49,6 @@ static int nordicsemi_nrf91_init(struct device *arg)
 	/* Enable the instruction cache */
 	NRF_NVMC->ICACHECNF = NVMC_ICACHECNF_CACHEEN_Msk;
 #endif
-
-	_ClearFaults();
 
 	/* Install default handler that simply resets the CPU
 	* if configured in the kernel, NOP otherwise

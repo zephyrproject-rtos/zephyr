@@ -41,19 +41,20 @@ extern "C" {
 #endif
 
 /**
- * @defgroup nrfx_spis SPI slave driver
+ * @defgroup nrfx_spis SPIS driver
  * @{
  * @ingroup nrf_spis
- * @brief   SPI Slave peripheral driver.
+ * @brief   Serial Peripheral Interface Slave with EasyDMA (SPIS) driver.
  */
 
-/** @brief SPI slave driver instance data structure. */
+/** @brief Data structure for the Serial Peripheral Interface Slave with EasyDMA (SPIS) driver instance. */
 typedef struct
 {
     NRF_SPIS_Type * p_reg;          //!< Pointer to a structure with SPIS registers.
-    uint8_t         drv_inst_idx;   //!< Driver instance index.
+    uint8_t         drv_inst_idx;   //!< Index of the driver instance. For internal use only.
 } nrfx_spis_t;
 
+#ifndef __NRFX_DOXYGEN__
 enum {
 #if NRFX_CHECK(NRFX_SPIS0_ENABLED)
     NRFX_SPIS0_INST_IDX,
@@ -69,8 +70,9 @@ enum {
 #endif
     NRFX_SPIS_ENABLED_COUNT
 };
+#endif
 
-/** @brief Macro for creating an SPI slave driver instance. */
+/** @brief Macro for creating an instance of the SPI slave driver. */
 #define NRFX_SPIS_INSTANCE(id)                               \
 {                                                            \
     .p_reg        = NRFX_CONCAT_2(NRF_SPIS, id),             \
@@ -105,12 +107,12 @@ typedef struct
     size_t               tx_amount; //!< Number of bytes transmitted in the last transaction. This parameter is only valid for @ref NRFX_SPIS_XFER_DONE events.
 } nrfx_spis_evt_t;
 
-/** @brief SPI slave instance default configuration. */
+/** @brief The default configuration of the SPI slave instance. */
 #define NRFX_SPIS_DEFAULT_CONFIG                           \
 {                                                          \
-    .sck_pin      = NRFX_SPIS_PIN_NOT_USED,                \
-    .mosi_pin     = NRFX_SPIS_PIN_NOT_USED,                \
     .miso_pin     = NRFX_SPIS_PIN_NOT_USED,                \
+    .mosi_pin     = NRFX_SPIS_PIN_NOT_USED,                \
+    .sck_pin      = NRFX_SPIS_PIN_NOT_USED,                \
     .csn_pin      = NRFX_SPIS_PIN_NOT_USED,                \
     .mode         = NRF_SPIS_MODE_0,                       \
     .bit_order    = NRF_SPIS_BIT_ORDER_MSB_FIRST,          \
@@ -161,15 +163,15 @@ typedef void (*nrfx_spis_event_handler_t)(nrfx_spis_evt_t const * p_event,
  *       to detect falling edges on CSN pin.
  *
  * @param[in] p_instance    Pointer to the driver instance structure.
- * @param[in] p_config      Pointer to the structure with initial configuration.
+ * @param[in] p_config      Pointer to the structure with the initial configuration.
  * @param[in] event_handler Function to be called by the SPI slave driver upon event.
  *                          Must not be NULL.
  * @param[in] p_context     Context passed to the event handler.
  *
- * @retval NRFX_SUCCESS             If the initialization was successful.
- * @retval NRFX_ERROR_INVALID_STATE If the instance is already initialized.
- * @retval NRFX_ERROR_INVALID_PARAM If an invalid parameter is supplied.
- * @retval NRFX_ERROR_BUSY          If some other peripheral with the same
+ * @retval NRFX_SUCCESS             The initialization was successful.
+ * @retval NRFX_ERROR_INVALID_STATE The instance is already initialized.
+ * @retval NRFX_ERROR_INVALID_PARAM Invalid parameter is supplied.
+ * @retval NRFX_ERROR_BUSY          Some other peripheral with the same
  *                                  instance ID is already in use. This is
  *                                  possible only if @ref nrfx_prs module
  *                                  is enabled.
@@ -197,30 +199,30 @@ void nrfx_spis_uninit(nrfx_spis_t const * const p_instance);
  *
  * When either the memory buffer configuration or the SPI transaction has been
  * completed, the event callback function will be called with the appropriate event
- * @ref nrfx_spis_evt_type_t. Note that the callback function can be called before returning from
+ * @ref nrfx_spis_evt_type_t. The callback function can be called before returning from
  * this function, because it is called from the SPI slave interrupt context.
  *
  * @note This function can be called from the callback function context.
  *
  * @note Client applications must call this function after every @ref NRFX_SPIS_XFER_DONE event if
- * the SPI slave driver should be prepared for a possible new SPI transaction.
+ * the SPI slave driver must be prepared for a possible new SPI transaction.
  *
  * @note Peripherals using EasyDMA (including SPIS) require the transfer buffers
  *       to be placed in the Data RAM region. If this condition is not met,
  *       this function will fail with the error code NRFX_ERROR_INVALID_ADDR.
  *
- * @param[in] p_instance            Pointer to the driver instance structure.
- * @param[in] p_tx_buffer           Pointer to the TX buffer. Can be NULL when the buffer length is zero.
- * @param[in] p_rx_buffer           Pointer to the RX buffer. Can be NULL when the buffer length is zero.
- * @param[in] tx_buffer_length      Length of the TX buffer in bytes.
- * @param[in] rx_buffer_length      Length of the RX buffer in bytes.
+ * @param[in] p_instance       Pointer to the driver instance structure.
+ * @param[in] p_tx_buffer      Pointer to the TX buffer. Can be NULL when the buffer length is zero.
+ * @param[in] p_rx_buffer      Pointer to the RX buffer. Can be NULL when the buffer length is zero.
+ * @param[in] tx_buffer_length Length of the TX buffer in bytes.
+ * @param[in] rx_buffer_length Length of the RX buffer in bytes.
  *
- * @retval NRFX_SUCCESS              If the operation was successful.
- * @retval NRFX_ERROR_INVALID_STATE  If the operation failed because the SPI slave device is in an incorrect state.
- * @retval NRFX_ERROR_INVALID_ADDR   If the provided buffers are not placed in the Data
+ * @retval NRFX_SUCCESS              The operation was successful.
+ * @retval NRFX_ERROR_INVALID_STATE  The operation failed because the SPI slave device is in an incorrect state.
+ * @retval NRFX_ERROR_INVALID_ADDR   The provided buffers are not placed in the Data
  *                                   RAM region.
- * @retval NRFX_ERROR_INVALID_LENGTH If provided lengths exceed the EasyDMA limits for the peripheral.
- * @retval NRFX_ERROR_INTERNAL       If the operation failed because of an internal error.
+ * @retval NRFX_ERROR_INVALID_LENGTH Provided lengths exceed the EasyDMA limits for the peripheral.
+ * @retval NRFX_ERROR_INTERNAL       The operation failed because of an internal error.
  */
 nrfx_err_t nrfx_spis_buffers_set(nrfx_spis_t const * const p_instance,
                                  uint8_t const *           p_tx_buffer,
@@ -228,14 +230,14 @@ nrfx_err_t nrfx_spis_buffers_set(nrfx_spis_t const * const p_instance,
                                  uint8_t *                 p_rx_buffer,
                                  size_t                    rx_buffer_length);
 
+/** @} */
+
 
 void nrfx_spis_0_irq_handler(void);
 void nrfx_spis_1_irq_handler(void);
 void nrfx_spis_2_irq_handler(void);
 void nrfx_spis_3_irq_handler(void);
 
-
-/** @} */
 
 #ifdef __cplusplus
 }

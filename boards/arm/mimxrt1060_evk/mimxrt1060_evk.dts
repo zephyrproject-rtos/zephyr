@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <nxp/nxp_rt.dtsi>
+#include <nxp/nxp_rt1060.dtsi>
 
 / {
 	model = "NXP MIMXRT1060-EVK board";
@@ -79,6 +79,10 @@ arduino_serial: &uart3 {};
 			remote-endpoint = <&lcd_panel_in>;
 		};
 	};
+};
+
+&i2c1 {
+	status = "ok";
 };
 
 &uart1 {

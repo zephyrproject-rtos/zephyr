@@ -32,7 +32,7 @@ License:
    BSD-3-Clause
 
 License Link:
-   http://www.st.com/resource/en/license_agreement/dm00218346.pdf
+   https://opensource.org/licenses/BSD-3-Clause
 
 Patch List:
 
@@ -47,3 +47,10 @@ Patch List:
     Impacted files:
       drivers/include/stm32l0xx_ll_spi.h
     ST Bug tracker ID: 12974
+
+    *Fix warnings for extraneous parentheses
+      Using clang 7.0.1, if ((htim->State == HAL_TIM_STATE_BUSY))
+      generates warnings.  Remove the extra parentheses
+     Impacted files:
+      drivers/src/stm32l0xx_hal_tim.c
+     ST Bug tracker ID: 63619

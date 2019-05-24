@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 # This file must be included into the toplevel CMakeLists.txt file of
 # Zephyr applications, e.g. zephyr/samples/hello_world/CMakeLists.txt
 # must start with the line:
@@ -75,8 +77,12 @@ set(PROJECT_SOURCE_DIR $ENV{ZEPHYR_BASE})
 # Convert path to use the '/' separator
 string(REPLACE "\\" "/" PROJECT_SOURCE_DIR ${PROJECT_SOURCE_DIR})
 
+# Remove trailing '/', it results in ugly paths and also exposes some bugs
+string(REGEX REPLACE "\/+$" "" PROJECT_SOURCE_DIR ${PROJECT_SOURCE_DIR})
+
 set(ZEPHYR_BINARY_DIR ${PROJECT_BINARY_DIR})
 set(ZEPHYR_BASE ${PROJECT_SOURCE_DIR})
+set(ENV{ZEPHYR_BASE}   ${ZEPHYR_BASE})
 
 set(AUTOCONF_H ${__build_dir}/include/generated/autoconf.h)
 # Re-configure (Re-execute all CMakeLists.txt code) when autoconf.h changes
@@ -111,6 +117,9 @@ add_custom_target(
   COMMAND ${CMAKE_COMMAND} -P ${ZEPHYR_BASE}/cmake/pristine.cmake
   # Equivalent to rm -rf build/*
   )
+
+# Dummy add to generate files.
+zephyr_linker_sources(SECTIONS)
 
 # The BOARD can be set by 3 sources. Through environment variables,
 # through the cmake CLI, and through CMakeLists.txt.
@@ -289,6 +298,7 @@ foreach(root ${BOARD_ROOT})
 
   if(DEFINED SHIELD)
     foreach(s ${SHIELD_AS_LIST})
+      list(REMOVE_ITEM SHIELD ${s})
       list(FIND SHIELD_LIST ${s} _idx)
       if (NOT _idx EQUAL -1)
         list(GET shields_refs_list ${_idx} s_path)
@@ -305,6 +315,33 @@ foreach(root ${BOARD_ROOT})
         )
       else()
         list(APPEND NOT_FOUND_SHIELD_LIST ${s})
+      endif()
+
+      # search for shield/boards/board.overlay file
+      if(EXISTS ${shield_dir}/${s}/boards/${BOARD}.overlay)
+        # add shield/board overlay to the shield overlays list
+        list(APPEND
+          shield_dts_files
+          ${shield_dir}/${s}/boards/${BOARD}.overlay
+        )
+      endif()
+
+      # search for shield/shield.conf file
+      if(EXISTS ${shield_dir}/${s}/${s}.conf)
+        # add shield.conf to the shield config list
+        list(APPEND
+          shield_conf_files
+          ${shield_dir}/${s}/${s}.conf
+        )
+      endif()
+
+      # search for shield/boards/board.conf file
+      if(EXISTS ${shield_dir}/${s}/boards/${BOARD}.conf)
+        # add HW specific board.conf to the shield config list
+        list(APPEND
+          shield_conf_files
+          ${shield_dir}/${s}/boards/${BOARD}.conf
+        )
       endif()
     endforeach()
   endif()

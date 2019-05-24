@@ -13,6 +13,7 @@
 #ifndef _ASMLANGUAGE
 #include <kernel.h>
 #include <misc/printk.h>
+#include <misc/math_extras.h>
 #include <kernel_internal.h>
 #include <stdbool.h>
 
@@ -45,18 +46,18 @@ enum _obj_init_check {
  *         -EPERM If the caller does not have permissions
  *         -EINVAL Object is not initialized
  */
-int _k_object_validate(struct _k_object *ko, enum k_objects otype,
+int z_object_validate(struct _k_object *ko, enum k_objects otype,
 		       enum _obj_init_check init);
 
 /**
- * Dump out error information on failed _k_object_validate() call
+ * Dump out error information on failed z_object_validate() call
  *
- * @param retval Return value from _k_object_validate()
+ * @param retval Return value from z_object_validate()
  * @param obj Kernel object we were trying to verify
  * @param ko If retval=-EPERM, struct _k_object * that was looked up, or NULL
  * @param otype Expected type of the kernel object
  */
-extern void _dump_object_error(int retval, void *obj, struct _k_object *ko,
+extern void z_dump_object_error(int retval, void *obj, struct _k_object *ko,
 			enum k_objects otype);
 
 /**
@@ -69,7 +70,7 @@ extern void _dump_object_error(int retval, void *obj, struct _k_object *ko,
  * @return Kernel object's metadata, or NULL if the parameter wasn't the
  * memory address of a kernel object
  */
-extern struct _k_object *_k_object_find(void *obj);
+extern struct _k_object *z_object_find(void *obj);
 
 typedef void (*_wordlist_cb_func_t)(struct _k_object *ko, void *context);
 
@@ -79,7 +80,7 @@ typedef void (*_wordlist_cb_func_t)(struct _k_object *ko, void *context);
  * @param func function to run on each struct _k_object
  * @param context Context pointer to pass to each invocation
  */
-extern void _k_object_wordlist_foreach(_wordlist_cb_func_t func, void *context);
+extern void z_object_wordlist_foreach(_wordlist_cb_func_t func, void *context);
 
 /**
  * Copy all kernel object permissions from the parent to the child
@@ -87,7 +88,7 @@ extern void _k_object_wordlist_foreach(_wordlist_cb_func_t func, void *context);
  * @param parent Parent thread, to get permissions from
  * @param child Child thread, to copy permissions to
  */
-extern void _thread_perms_inherit(struct k_thread *parent,
+extern void z_thread_perms_inherit(struct k_thread *parent,
 				  struct k_thread *child);
 
 /**
@@ -96,7 +97,7 @@ extern void _thread_perms_inherit(struct k_thread *parent,
  * @param ko Kernel object metadata to update
  * @param thread The thread to grant permission
  */
-extern void _thread_perms_set(struct _k_object *ko, struct k_thread *thread);
+extern void z_thread_perms_set(struct _k_object *ko, struct k_thread *thread);
 
 /**
  * Revoke a thread's permission to a kernel object
@@ -104,17 +105,17 @@ extern void _thread_perms_set(struct _k_object *ko, struct k_thread *thread);
  * @param ko Kernel object metadata to update
  * @param thread The thread to grant permission
  */
-extern void _thread_perms_clear(struct _k_object *ko, struct k_thread *thread);
+extern void z_thread_perms_clear(struct _k_object *ko, struct k_thread *thread);
 
 /*
  * Revoke access to all objects for the provided thread
  *
- * NOTE: Unlike _thread_perms_clear(), this function will not clear
+ * NOTE: Unlike z_thread_perms_clear(), this function will not clear
  * permissions on public objects.
  *
  * @param thread Thread object to revoke access
  */
-extern void _thread_perms_all_clear(struct k_thread *thread);
+extern void z_thread_perms_all_clear(struct k_thread *thread);
 
 /**
  * Clear initialization state of a kernel object
@@ -124,7 +125,7 @@ extern void _thread_perms_all_clear(struct k_thread *thread);
  *
  * @param object Address of the kernel object
  */
-void _k_object_uninit(void *obj);
+void z_object_uninit(void *obj);
 
 /**
  * Initialize and reset permissions to only access by the caller
@@ -143,7 +144,7 @@ void _k_object_uninit(void *obj);
  *
  * @param object Address of the kernel object
  */
-void _k_object_recycle(void *obj);
+void z_object_recycle(void *obj);
 
 /**
  * @brief Obtain the size of a C string passed from user mode
@@ -189,7 +190,7 @@ static inline size_t z_user_string_nlen(const char *src, size_t maxlen,
  * @return An allocated buffer with the data copied within it, or NULL
  *	if some error condition occurred
  */
-extern void *z_user_alloc_from_copy(void *src, size_t size);
+extern void *z_user_alloc_from_copy(const void *src, size_t size);
 
 /**
  * @brief Copy data from user mode
@@ -204,7 +205,7 @@ extern void *z_user_alloc_from_copy(void *src, size_t size);
  * @retval 0 On success
  * @retval EFAULT On memory access error
  */
-extern int z_user_from_copy(void *dst, void *src, size_t size);
+extern int z_user_from_copy(void *dst, const void *src, size_t size);
 
 /**
  * @brief Copy data to user mode
@@ -219,7 +220,7 @@ extern int z_user_from_copy(void *dst, void *src, size_t size);
  * @retval 0 On success
  * @retval EFAULT On memory access error
  */
-extern int z_user_to_copy(void *dst, void *src, size_t size);
+extern int z_user_to_copy(void *dst, const void *src, size_t size);
 
 /**
  * @brief Copy a C string from userspace into a resource pool allocation
@@ -235,7 +236,7 @@ extern int z_user_to_copy(void *dst, void *src, size_t size);
  * @param maxlen Maximum size of the string including trailing NULL
  * @return The duplicated string, or NULL if an error occurred.
  */
-extern char *z_user_string_alloc_copy(char *src, size_t maxlen);
+extern char *z_user_string_alloc_copy(const char *src, size_t maxlen);
 
 /**
  * @brief Copy a C string from userspace into a provided buffer
@@ -253,12 +254,12 @@ extern char *z_user_string_alloc_copy(char *src, size_t maxlen);
  *	to maxlen
  * @retval EFAULT On memory access error
  */
-extern int z_user_string_copy(char *dst, char *src, size_t maxlen);
+extern int z_user_string_copy(char *dst, const char *src, size_t maxlen);
 
 #define Z_OOPS(expr) \
 	do { \
 		if (expr) { \
-			_arch_syscall_oops(ssf); \
+			z_arch_syscall_oops(ssf); \
 		} \
 	} while (false)
 
@@ -295,8 +296,24 @@ extern int z_user_string_copy(char *dst, char *src, size_t maxlen);
  */
 #define Z_SYSCALL_VERIFY(expr) Z_SYSCALL_VERIFY_MSG(expr, #expr)
 
+/**
+ * @brief Runtime check that a user thread has read and/or write permission to
+ *        a memory area
+ *
+ * Checks that the particular memory area is readable and/or writeable by the
+ * currently running thread if the CPU was in user mode, and generates a kernel
+ * oops if it wasn't. Prevents userspace from getting the kernel to read and/or
+ * modify memory the thread does not have access to, or passing in garbage
+ * pointers that would crash/pagefault the kernel if dereferenced.
+ *
+ * @param ptr Memory area to examine
+ * @param size Size of the memory area
+ * @param write If the thread should be able to write to this memory, not just
+ *		read it
+ * @return 0 on success, nonzero on failure
+ */
 #define Z_SYSCALL_MEMORY(ptr, size, write) \
-	Z_SYSCALL_VERIFY_MSG(_arch_buffer_validate((void *)ptr, size, write) \
+	Z_SYSCALL_VERIFY_MSG(z_arch_buffer_validate((void *)ptr, size, write) \
 			     == 0, \
 			     "Memory region %p (size %u) %s access denied", \
 			     (void *)(ptr), (u32_t)(size), \
@@ -313,8 +330,6 @@ extern int z_user_string_copy(char *dst, char *src, size_t maxlen);
  *
  * @param ptr Memory area to examine
  * @param size Size of the memory area
- * @param write If the thread should be able to write to this memory, not just
- *		read it
  * @return 0 on success, nonzero on failure
  */
 #define Z_SYSCALL_MEMORY_READ(ptr, size) \
@@ -331,8 +346,6 @@ extern int z_user_string_copy(char *dst, char *src, size_t maxlen);
  *
  * @param ptr Memory area to examine
  * @param size Size of the memory area
- * @param write If the thread should be able to write to this memory, not just
- *		read it
  * @param 0 on success, nonzero on failure
  */
 #define Z_SYSCALL_MEMORY_WRITE(ptr, size) \
@@ -341,9 +354,9 @@ extern int z_user_string_copy(char *dst, char *src, size_t maxlen);
 #define Z_SYSCALL_MEMORY_ARRAY(ptr, nmemb, size, write) \
 	({ \
 		u32_t product; \
-		Z_SYSCALL_VERIFY_MSG(!__builtin_umul_overflow((u32_t)(nmemb), \
-							      (u32_t)(size), \
-							      &product), \
+		Z_SYSCALL_VERIFY_MSG(!u32_mul_overflow((u32_t)(nmemb), \
+						       (u32_t)(size), \
+						       &product), \
 				     "%ux%u array is too large", \
 				     (u32_t)(nmemb), (u32_t)(size)) ||  \
 			Z_SYSCALL_MEMORY(ptr, product, write); \
@@ -379,18 +392,18 @@ extern int z_user_string_copy(char *dst, char *src, size_t maxlen);
 #define Z_SYSCALL_MEMORY_ARRAY_WRITE(ptr, nmemb, size) \
 	Z_SYSCALL_MEMORY_ARRAY(ptr, nmemb, size, 1)
 
-static inline int _obj_validation_check(struct _k_object *ko,
+static inline int z_obj_validation_check(struct _k_object *ko,
 					void *obj,
 					enum k_objects otype,
 					enum _obj_init_check init)
 {
 	int ret;
 
-	ret = _k_object_validate(ko, otype, init);
+	ret = z_object_validate(ko, otype, init);
 
 #ifdef CONFIG_PRINTK
 	if (ret != 0) {
-		_dump_object_error(ret, obj, ko, otype);
+		z_dump_object_error(ret, obj, ko, otype);
 	}
 #else
 	ARG_UNUSED(obj);
@@ -400,8 +413,7 @@ static inline int _obj_validation_check(struct _k_object *ko,
 }
 
 #define Z_SYSCALL_IS_OBJ(ptr, type, init) \
-	Z_SYSCALL_VERIFY_MSG( \
-	    _obj_validation_check(_k_object_find((void *)ptr), (void *)ptr, \
+	Z_SYSCALL_VERIFY_MSG(z_obj_validation_check(z_object_find((void *)ptr), (void *)ptr, \
 				   type, init) == 0, "access denied")
 
 /**
@@ -454,7 +466,7 @@ static inline int _obj_validation_check(struct _k_object *ko,
 /**
  * @brief Runtime check kernel object pointer for non-init functions
  *
- * Calls _k_object_validate and triggers a kernel oops if the check fails.
+ * Calls z_object_validate and triggers a kernel oops if the check fails.
  * For use in system call handlers which are not init functions; a fatal
  * error will occur if the object is not initialized.
  *
@@ -505,15 +517,15 @@ static inline int _obj_validation_check(struct _k_object *ko,
  *
  * These make it much simpler to define handlers instead of typing out
  * the bolierplate. The macros ensure that the seventh argument is named
- * "ssf" as this is now referenced by various other _SYSCALL macros.
+ * "ssf" as this is now referenced by various other Z_SYSCALL macros.
  *
- * Use the _SYSCALL_HANDLER(name_, arg0, ..., arg6) variant, as it will
- * automatically deduce the correct version of __SYSCALL_HANDLERn() to
+ * Use the Z_SYSCALL_HANDLER(name_, arg0, ..., arg6) variant, as it will
+ * automatically deduce the correct version of Z__SYSCALL_HANDLERn() to
  * use depending on the number of arguments.
  */
 
-#define __SYSCALL_HANDLER0(name_) \
-	u32_t hdlr_ ## name_(u32_t arg1 __unused, \
+#define Z__SYSCALL_HANDLER0(name_) \
+	u32_t z_hdlr_ ## name_(u32_t arg1 __unused, \
 				 u32_t arg2 __unused, \
 				 u32_t arg3 __unused, \
 				 u32_t arg4 __unused, \
@@ -521,8 +533,8 @@ static inline int _obj_validation_check(struct _k_object *ko,
 				 u32_t arg6 __unused, \
 				 void *ssf)
 
-#define __SYSCALL_HANDLER1(name_, arg1_) \
-	u32_t hdlr_ ## name_(u32_t arg1_, \
+#define Z__SYSCALL_HANDLER1(name_, arg1_) \
+	u32_t z_hdlr_ ## name_(u32_t arg1_, \
 				 u32_t arg2 __unused, \
 				 u32_t arg3 __unused, \
 				 u32_t arg4 __unused, \
@@ -530,8 +542,8 @@ static inline int _obj_validation_check(struct _k_object *ko,
 				 u32_t arg6 __unused, \
 				 void *ssf)
 
-#define __SYSCALL_HANDLER2(name_, arg1_, arg2_) \
-	u32_t hdlr_ ## name_(u32_t arg1_, \
+#define Z__SYSCALL_HANDLER2(name_, arg1_, arg2_) \
+	u32_t z_hdlr_ ## name_(u32_t arg1_, \
 				 u32_t arg2_, \
 				 u32_t arg3 __unused, \
 				 u32_t arg4 __unused, \
@@ -539,8 +551,8 @@ static inline int _obj_validation_check(struct _k_object *ko,
 				 u32_t arg6 __unused, \
 				 void *ssf)
 
-#define __SYSCALL_HANDLER3(name_, arg1_, arg2_, arg3_) \
-	u32_t hdlr_ ## name_(u32_t arg1_, \
+#define Z__SYSCALL_HANDLER3(name_, arg1_, arg2_, arg3_) \
+	u32_t z_hdlr_ ## name_(u32_t arg1_, \
 				 u32_t arg2_, \
 				 u32_t arg3_, \
 				 u32_t arg4 __unused, \
@@ -548,8 +560,8 @@ static inline int _obj_validation_check(struct _k_object *ko,
 				 u32_t arg6 __unused, \
 				 void *ssf)
 
-#define __SYSCALL_HANDLER4(name_, arg1_, arg2_, arg3_, arg4_) \
-	u32_t hdlr_ ## name_(u32_t arg1_, \
+#define Z__SYSCALL_HANDLER4(name_, arg1_, arg2_, arg3_, arg4_) \
+	u32_t z_hdlr_ ## name_(u32_t arg1_, \
 				 u32_t arg2_, \
 				 u32_t arg3_, \
 				 u32_t arg4_, \
@@ -557,8 +569,8 @@ static inline int _obj_validation_check(struct _k_object *ko,
 				 u32_t arg6 __unused, \
 				 void *ssf)
 
-#define __SYSCALL_HANDLER5(name_, arg1_, arg2_, arg3_, arg4_, arg5_) \
-	u32_t hdlr_ ## name_(u32_t arg1_, \
+#define Z__SYSCALL_HANDLER5(name_, arg1_, arg2_, arg3_, arg4_, arg5_) \
+	u32_t z_hdlr_ ## name_(u32_t arg1_, \
 				 u32_t arg2_, \
 				 u32_t arg3_, \
 				 u32_t arg4_, \
@@ -566,8 +578,8 @@ static inline int _obj_validation_check(struct _k_object *ko,
 				 u32_t arg6 __unused, \
 				 void *ssf)
 
-#define __SYSCALL_HANDLER6(name_, arg1_, arg2_, arg3_, arg4_, arg5_, arg6_) \
-	u32_t hdlr_ ## name_(u32_t arg1_, \
+#define Z__SYSCALL_HANDLER6(name_, arg1_, arg2_, arg3_, arg4_, arg5_, arg6_) \
+	u32_t z_hdlr_ ## name_(u32_t arg1_, \
 				 u32_t arg2_, \
 				 u32_t arg3_, \
 				 u32_t arg4_, \
@@ -575,18 +587,18 @@ static inline int _obj_validation_check(struct _k_object *ko,
 				 u32_t arg6_, \
 				 void *ssf)
 
-#define _SYSCALL_CONCAT(arg1, arg2) __SYSCALL_CONCAT(arg1, arg2)
-#define __SYSCALL_CONCAT(arg1, arg2) ___SYSCALL_CONCAT(arg1, arg2)
-#define ___SYSCALL_CONCAT(arg1, arg2) arg1##arg2
+#define Z_SYSCALL_CONCAT(arg1, arg2) Z__SYSCALL_CONCAT(arg1, arg2)
+#define Z__SYSCALL_CONCAT(arg1, arg2) Z___SYSCALL_CONCAT(arg1, arg2)
+#define Z___SYSCALL_CONCAT(arg1, arg2) arg1##arg2
 
-#define _SYSCALL_NARG(...) __SYSCALL_NARG(__VA_ARGS__, __SYSCALL_RSEQ_N())
-#define __SYSCALL_NARG(...) __SYSCALL_ARG_N(__VA_ARGS__)
-#define __SYSCALL_ARG_N(_1, _2, _3, _4, _5, _6, _7, N, ...) N
-#define __SYSCALL_RSEQ_N() 6, 5, 4, 3, 2, 1, 0
+#define Z_SYSCALL_NARG(...) Z__SYSCALL_NARG(__VA_ARGS__, Z__SYSCALL_RSEQ_N())
+#define Z__SYSCALL_NARG(...) Z__SYSCALL_ARG_N(__VA_ARGS__)
+#define Z__SYSCALL_ARG_N(_1, _2, _3, _4, _5, _6, _7, N, ...) N
+#define Z__SYSCALL_RSEQ_N() 6, 5, 4, 3, 2, 1, 0
 
 #define Z_SYSCALL_HANDLER(...) \
-	_SYSCALL_CONCAT(__SYSCALL_HANDLER, \
-			_SYSCALL_NARG(__VA_ARGS__))(__VA_ARGS__)
+	Z_SYSCALL_CONCAT(Z__SYSCALL_HANDLER, \
+			 Z_SYSCALL_NARG(__VA_ARGS__))(__VA_ARGS__)
 
 /*
  * Helper macros for a very common case: calls which just take one argument
@@ -595,26 +607,26 @@ static inline int _obj_validation_check(struct _k_object *ko,
  */
 
 #define Z_SYSCALL_HANDLER1_SIMPLE(name_, obj_enum_, obj_type_) \
-	__SYSCALL_HANDLER1(name_, arg1) { \
+	Z__SYSCALL_HANDLER1(name_, arg1) { \
 		Z_OOPS(Z_SYSCALL_OBJ(arg1, obj_enum_)); \
-		return (u32_t)_impl_ ## name_((obj_type_)arg1); \
+		return (u32_t)z_impl_ ## name_((obj_type_)arg1); \
 	}
 
 #define Z_SYSCALL_HANDLER1_SIMPLE_VOID(name_, obj_enum_, obj_type_) \
-	__SYSCALL_HANDLER1(name_, arg1) { \
+	Z__SYSCALL_HANDLER1(name_, arg1) { \
 		Z_OOPS(Z_SYSCALL_OBJ(arg1, obj_enum_)); \
-		_impl_ ## name_((obj_type_)arg1); \
+		z_impl_ ## name_((obj_type_)arg1); \
 		return 0; \
 	}
 
 #define Z_SYSCALL_HANDLER0_SIMPLE(name_) \
-	__SYSCALL_HANDLER0(name_) { \
-		return (u32_t)_impl_ ## name_(); \
+	Z__SYSCALL_HANDLER0(name_) { \
+		return (u32_t)z_impl_ ## name_(); \
 	}
 
 #define Z_SYSCALL_HANDLER0_SIMPLE_VOID(name_) \
-	__SYSCALL_HANDLER0(name_) { \
-		_impl_ ## name_(); \
+	Z__SYSCALL_HANDLER0(name_) { \
+		z_impl_ ## name_(); \
 		return 0; \
 	}
 

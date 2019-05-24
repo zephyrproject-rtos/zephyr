@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 
 config SOC_QUARK_D2000
 	bool "Intel Quark D2000"

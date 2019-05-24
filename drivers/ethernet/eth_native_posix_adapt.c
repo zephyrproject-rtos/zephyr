@@ -67,7 +67,7 @@ int eth_iface_create(const char *if_name, bool tun_only)
 #ifdef __linux
 	ifr.ifr_flags = (tun_only ? IFF_TUN : IFF_TAP) | IFF_NO_PI;
 
-	strncpy(ifr.ifr_name, if_name, IFNAMSIZ);
+	strncpy(ifr.ifr_name, if_name, IFNAMSIZ - 1);
 
 	ret = ioctl(fd, TUNSETIFF, (void *)&ifr);
 	if (ret < 0) {

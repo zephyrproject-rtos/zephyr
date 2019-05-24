@@ -12,8 +12,8 @@ ram: 32
 flash: 64
 testing:
   ignore_tags:
-  - xtools
     - net
 toolchain:
+  - xtools
   - zephyr
   - gnuarmemb

@@ -7,5 +7,9 @@
 config SOC_APOLLO_LAKE
 	bool "Intel Apollo Lake Soc"
 	select CPU_APOLLO_LAKE
-	select BOOTLOADER_UNKNOWN
 	select HAS_I2C_DW
+	select PCI
+	select PCI_ENUMERATION
+	select PCIE
+	select PCIE_MSI
+	select DYNAMIC_INTERRUPTS

@@ -1,1 +1,3 @@
+# SPDX-License-Identifier: Apache-2.0
+
 source "soc/x86/intel_quark/*/Kconfig.defconfig.series"

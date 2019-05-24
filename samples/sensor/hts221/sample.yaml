@@ -1,7 +1,7 @@
 sample:
   name: HTS221 Temperature and Humidity Monitor
 tests:
-  test:
+  sample.sensor.hts221:
     harness: console
     tags: sensors
     depends_on: i2c hts221

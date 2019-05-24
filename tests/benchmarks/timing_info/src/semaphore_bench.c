@@ -63,7 +63,7 @@ void semaphore_bench(void)
 	k_sleep(1000);
 
 
-	/* u64_t test_time1 = _tsc_read(); */
+	/* u64_t test_time1 = z_tsc_read(); */
 	sem_end_time = (__common_var_swap_end_time);
 	u32_t sem_cycles = sem_end_time - sem_start_time;
 

@@ -63,7 +63,7 @@ static int imx_pwm_pin_set(struct device *dev, u32_t pwm,
 	u32_t cr, sr;
 
 
-	if ((period_cycles == 0) || (pulse_cycles > period_cycles)) {
+	if ((period_cycles == 0U) || (pulse_cycles > period_cycles)) {
 		LOG_ERR("Invalid combination: period_cycles=%d, "
 			    "pulse_cycles=%d", period_cycles, pulse_cycles);
 		return -EINVAL;
@@ -71,7 +71,7 @@ static int imx_pwm_pin_set(struct device *dev, u32_t pwm,
 
 	LOG_DBG("enabled=%d, pulse_cycles=%d, period_cycles=%d,"
 		    " duty_cycle=%d\n", enabled, pulse_cycles, period_cycles,
-		    (100 * pulse_cycles / period_cycles));
+		    (pulse_cycles * 100U / period_cycles));
 
 	/*
 	 * i.MX PWMv2 has a 4-word sample FIFO.
@@ -112,7 +112,7 @@ static int imx_pwm_pin_set(struct device *dev, u32_t pwm,
 	 * PERIOD value in PWMPR plus 2.
 	 */
 	if (period_cycles > 2) {
-		period_cycles -= 2;
+		period_cycles -= 2U;
 	} else {
 		return -EINVAL;
 	}

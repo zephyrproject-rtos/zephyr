@@ -52,7 +52,7 @@
 #define ZEPHYR_INCLUDE_STATS_H_
 
 #include <stddef.h>
-#include <stdint.h>
+#include <zephyr/types.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -66,8 +66,8 @@ struct stats_name_map {
 struct stats_hdr {
 	const char *s_name;
 	u8_t s_size;
-	u8_t s_cnt;
-	u16_t s_pad1;
+	u16_t s_cnt;
+	u8_t s_pad1;
 #ifdef CONFIG_STATS_NAMES
 	const struct stats_name_map *s_map;
 	int s_map_cnt;
@@ -214,8 +214,8 @@ struct stats_hdr {
  * @param group__               The group containing the entry to clear.
  * @param var__                 The statistic entry to clear.
  */
-void stats_init(struct stats_hdr *shdr, uint8_t size, uint8_t cnt,
-		const struct stats_name_map *map, uint8_t map_cnt);
+void stats_init(struct stats_hdr *shdr, u8_t size, u16_t cnt,
+		const struct stats_name_map *map, u16_t map_cnt);
 
 /**
  * @brief Registers a statistics group to be managed.
@@ -255,8 +255,8 @@ int stats_register(const char *name, struct stats_hdr *shdr);
  *
  * @see STATS_INIT_AND_REG
  */
-int stats_init_and_reg(struct stats_hdr *hdr, uint8_t size, uint8_t cnt,
-		       const struct stats_name_map *map, uint8_t map_cnt,
+int stats_init_and_reg(struct stats_hdr *hdr, u8_t size, u16_t cnt,
+		       const struct stats_name_map *map, u16_t map_cnt,
 		       const char *name);
 
 /**
@@ -279,7 +279,7 @@ void stats_reset(struct stats_hdr *shdr);
  *                              nonzero to abort the walk.
  */
 typedef int stats_walk_fn(struct stats_hdr *hdr, void *arg,
-			  const char *name, uint16_t off);
+			  const char *name, u16_t off);
 
 /**
  * @brief Applies a function to every stat entry in a group.

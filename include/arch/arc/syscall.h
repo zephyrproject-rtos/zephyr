@@ -38,7 +38,7 @@ extern "C" {
  * just for enabling CONFIG_USERSPACE on arc w/o errors.
  */
 
-static inline u32_t _arch_syscall_invoke6(u32_t arg1, u32_t arg2, u32_t arg3,
+static inline u32_t z_arch_syscall_invoke6(u32_t arg1, u32_t arg2, u32_t arg3,
 					  u32_t arg4, u32_t arg5, u32_t arg6,
 					  u32_t call_id)
 {
@@ -62,7 +62,7 @@ static inline u32_t _arch_syscall_invoke6(u32_t arg1, u32_t arg2, u32_t arg3,
 	return ret;
 }
 
-static inline u32_t _arch_syscall_invoke5(u32_t arg1, u32_t arg2, u32_t arg3,
+static inline u32_t z_arch_syscall_invoke5(u32_t arg1, u32_t arg2, u32_t arg3,
 					  u32_t arg4, u32_t arg5, u32_t call_id)
 {
 	register u32_t ret __asm__("r0") = arg1;
@@ -84,7 +84,7 @@ static inline u32_t _arch_syscall_invoke5(u32_t arg1, u32_t arg2, u32_t arg3,
 	return ret;
 }
 
-static inline u32_t _arch_syscall_invoke4(u32_t arg1, u32_t arg2, u32_t arg3,
+static inline u32_t z_arch_syscall_invoke4(u32_t arg1, u32_t arg2, u32_t arg3,
 					  u32_t arg4, u32_t call_id)
 {
 	register u32_t ret __asm__("r0") = arg1;
@@ -105,7 +105,7 @@ static inline u32_t _arch_syscall_invoke4(u32_t arg1, u32_t arg2, u32_t arg3,
 	return ret;
 }
 
-static inline u32_t _arch_syscall_invoke3(u32_t arg1, u32_t arg2, u32_t arg3,
+static inline u32_t z_arch_syscall_invoke3(u32_t arg1, u32_t arg2, u32_t arg3,
 					  u32_t call_id)
 {
 	register u32_t ret __asm__("r0") = arg1;
@@ -124,7 +124,7 @@ static inline u32_t _arch_syscall_invoke3(u32_t arg1, u32_t arg2, u32_t arg3,
 	return ret;
 }
 
-static inline u32_t _arch_syscall_invoke2(u32_t arg1, u32_t arg2, u32_t call_id)
+static inline u32_t z_arch_syscall_invoke2(u32_t arg1, u32_t arg2, u32_t call_id)
 {
 	register u32_t ret __asm__("r0") = arg1;
 	register u32_t r1 __asm__("r1") = arg2;
@@ -141,7 +141,7 @@ static inline u32_t _arch_syscall_invoke2(u32_t arg1, u32_t arg2, u32_t call_id)
 	return ret;
 }
 
-static inline u32_t _arch_syscall_invoke1(u32_t arg1, u32_t call_id)
+static inline u32_t z_arch_syscall_invoke1(u32_t arg1, u32_t call_id)
 {
 	register u32_t ret __asm__("r0") = arg1;
 	register u32_t r6 __asm__("r6") = call_id;
@@ -157,7 +157,7 @@ static inline u32_t _arch_syscall_invoke1(u32_t arg1, u32_t call_id)
 	return ret;
 }
 
-static inline u32_t _arch_syscall_invoke0(u32_t call_id)
+static inline u32_t z_arch_syscall_invoke0(u32_t call_id)
 {
 	register u32_t ret __asm__("r0");
 	register u32_t r6 __asm__("r6") = call_id;
@@ -173,7 +173,7 @@ static inline u32_t _arch_syscall_invoke0(u32_t call_id)
 	return ret;
 }
 
-static inline bool _arch_is_user_context(void)
+static inline bool z_arch_is_user_context(void)
 {
 	u32_t status;
 

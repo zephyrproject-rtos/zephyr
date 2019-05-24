@@ -1,3 +1,6 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #ifndef __GEN_OFFSETS_H__
 #define __GEN_OFFSETS_H__
 

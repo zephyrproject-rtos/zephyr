@@ -17,13 +17,6 @@
 			compatible = "atom";
 			reg = <0>;
 		};
-
-		intc: ioapic@fec00000  {
-			compatible = "intel,ioapic";
-			reg = <0xfec00000 0x100000>;
-			interrupt-controller;
-			#interrupt-cells = <3>;
-		};
 	};
 
 	flash0: flash@100000{
@@ -37,6 +30,12 @@
 		reg = <0x00400000 DT_SRAM_SIZE>;
 	};
 
+	intc: ioapic@fec00000  {
+		compatible = "intel,ioapic";
+		reg = <0xfec00000 0x1000>;
+		interrupt-controller;
+		#interrupt-cells = <3>;
+	};
 
 	soc {
 		#address-cells = <1>;

@@ -114,56 +114,51 @@ void save_on_flash(u8_t id)
 	k_work_submit(&storage_work);
 }
 
-static int ps_set(int argc, char **argv, void *val_ctx)
+static int ps_set(int argc, char **argv, size_t len_rd,
+		  settings_read_cb read_cb, void *cb_arg)
 {
-	int len = 0;
+	ssize_t len = 0;
 
 	if (argc == 1) {
 		if (!strcmp(argv[0], "rc")) {
-			len = settings_val_read_cb(val_ctx, &reset_counter,
-						   sizeof(reset_counter));
+			len = read_cb(cb_arg, &reset_counter,
+				      sizeof(reset_counter));
 		}
 
 		if (!strcmp(argv[0], "gdtt")) {
-			len = settings_val_read_cb(
-				val_ctx,
-				&gen_def_trans_time_srv_user_data.tt,
-				sizeof(gen_def_trans_time_srv_user_data.tt));
+			len = read_cb(cb_arg,
+			 &gen_def_trans_time_srv_user_data.tt,
+			 sizeof(gen_def_trans_time_srv_user_data.tt));
 		}
 
 		if (!strcmp(argv[0], "gpo")) {
-			len = settings_val_read_cb(
-			val_ctx,
-			&gen_power_onoff_srv_user_data.onpowerup,
-			sizeof(gen_power_onoff_srv_user_data.onpowerup));
+			len = read_cb(cb_arg,
+			 &gen_power_onoff_srv_user_data.onpowerup,
+			 sizeof(gen_power_onoff_srv_user_data.onpowerup));
 		}
 
 		if (!strcmp(argv[0], "ltd")) {
-			len = settings_val_read_cb(
-			val_ctx,
-			&light_ctl_srv_user_data.lightness_temp_def,
-			sizeof(light_ctl_srv_user_data.lightness_temp_def));
+			len = read_cb(cb_arg,
+			 &light_ctl_srv_user_data.lightness_temp_def,
+			 sizeof(light_ctl_srv_user_data.lightness_temp_def));
 		}
 
 		if (!strcmp(argv[0], "ltl")) {
-			len = settings_val_read_cb(
-			val_ctx,
-			&light_ctl_srv_user_data.lightness_temp_last,
-			sizeof(light_ctl_srv_user_data.lightness_temp_last));
+			len = read_cb(cb_arg,
+			 &light_ctl_srv_user_data.lightness_temp_last,
+			 sizeof(light_ctl_srv_user_data.lightness_temp_last));
 		}
 
 		if (!strcmp(argv[0], "lr")) {
-			len = settings_val_read_cb(
-			val_ctx,
-			&light_lightness_srv_user_data.lightness_range,
-			sizeof(light_lightness_srv_user_data.lightness_range));
+			len = read_cb(cb_arg,
+			 &light_lightness_srv_user_data.lightness_range,
+			 sizeof(light_lightness_srv_user_data.lightness_range));
 		}
 
 		if (!strcmp(argv[0], "tr")) {
-			len = settings_val_read_cb(
-			val_ctx,
-			&light_ctl_srv_user_data.temperature_range,
-			sizeof(light_ctl_srv_user_data.temperature_range));
+			len = read_cb(cb_arg,
+			 &light_ctl_srv_user_data.temperature_range,
+			 sizeof(light_ctl_srv_user_data.temperature_range));
 		}
 
 		return (len < 0) ? len : 0;

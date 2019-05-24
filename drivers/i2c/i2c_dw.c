@@ -22,10 +22,6 @@
 
 #include <misc/util.h>
 
-#ifdef CONFIG_SHARED_IRQ
-#include <shared_irq.h>
-#endif
-
 #ifdef CONFIG_IOAPIC
 #include <drivers/ioapic.h>
 #endif
@@ -38,7 +34,7 @@ LOG_MODULE_REGISTER(i2c_dw);
 
 #include "i2c-priv.h"
 
-static inline void _i2c_dw_data_ask(struct device *dev)
+static inline void i2c_dw_data_ask(struct device *dev)
 {
 	struct i2c_dw_dev_config * const dw = dev->driver_data;
 	u32_t data;
@@ -50,7 +46,7 @@ static inline void _i2c_dw_data_ask(struct device *dev)
 		(struct i2c_dw_registers *)dw->base_address;
 
 	/* No more bytes to request, so command queue is no longer needed */
-	if (dw->request_bytes == 0) {
+	if (dw->request_bytes == 0U) {
 		regs->ic_intr_mask.bits.tx_empty = 0U;
 		return;
 	}
@@ -84,7 +80,7 @@ static inline void _i2c_dw_data_ask(struct device *dev)
 
 		/* After receiving the last byte, send STOP if needed */
 		if ((dw->xfr_flags & I2C_MSG_STOP)
-		    && (dw->request_bytes == 1)) {
+		    && (dw->request_bytes == 1U)) {
 			data |= IC_DATA_CMD_STOP;
 		}
 
@@ -96,7 +92,7 @@ static inline void _i2c_dw_data_ask(struct device *dev)
 	}
 }
 
-static void _i2c_dw_data_read(struct device *dev)
+static void i2c_dw_data_read(struct device *dev)
 {
 	struct i2c_dw_dev_config * const dw = dev->driver_data;
 
@@ -110,20 +106,20 @@ static void _i2c_dw_data_read(struct device *dev)
 		dw->xfr_len--;
 		dw->rx_pending--;
 
-		if (dw->xfr_len == 0) {
+		if (dw->xfr_len == 0U) {
 			break;
 		}
 	}
 
 	/* Nothing to receive anymore */
-	if (dw->xfr_len == 0) {
+	if (dw->xfr_len == 0U) {
 		dw->state &= ~I2C_DW_CMD_RECV;
 		return;
 	}
 }
 
 
-static int _i2c_dw_data_send(struct device *dev)
+static int i2c_dw_data_send(struct device *dev)
 {
 	struct i2c_dw_dev_config * const dw = dev->driver_data;
 	u32_t data = 0U;
@@ -132,7 +128,7 @@ static int _i2c_dw_data_send(struct device *dev)
 		(struct i2c_dw_registers *)dw->base_address;
 
 	/* Nothing to send anymore, mask the interrupt */
-	if (dw->xfr_len == 0) {
+	if (dw->xfr_len == 0U) {
 		regs->ic_intr_mask.bits.tx_empty = 0U;
 
 		dw->state &= ~I2C_DW_CMD_SEND;
@@ -151,7 +147,7 @@ static int _i2c_dw_data_send(struct device *dev)
 		}
 
 		/* Send STOP if needed */
-		if ((dw->xfr_len == 1) && (dw->xfr_flags & I2C_MSG_STOP)) {
+		if ((dw->xfr_len == 1U) && (dw->xfr_flags & I2C_MSG_STOP)) {
 			data |= IC_DATA_CMD_STOP;
 		}
 
@@ -168,7 +164,7 @@ static int _i2c_dw_data_send(struct device *dev)
 	return 0;
 }
 
-static inline void _i2c_dw_transfer_complete(struct device *dev)
+static inline void i2c_dw_transfer_complete(struct device *dev)
 {
 	struct i2c_dw_dev_config * const dw = dev->driver_data;
 	u32_t value;
@@ -198,16 +194,6 @@ static void i2c_dw_isr(void *arg)
 	 */
 	intr_stat.raw = regs->ic_intr_stat.raw;
 
-#if CONFIG_SHARED_IRQ
-	/* If using with shared IRQ, this function will be called
-	 * by the shared IRQ driver. So check here if the interrupt
-	 * is coming from the I2C controller (or somewhere else).
-	 */
-	if (!intr_stat.raw) {
-		return;
-	}
-#endif
-
 	/*
 	 * Causes of an interrupt:
 	 *   - STOP condition is detected
@@ -235,7 +221,7 @@ static void i2c_dw_isr(void *arg)
 
 		/* Check if the RX FIFO reached threshold */
 		if (intr_stat.bits.rx_full) {
-			_i2c_dw_data_read(port);
+			i2c_dw_data_read(port);
 		}
 
 		/* Check if the TX FIFO is ready for commands.
@@ -245,15 +231,15 @@ static void i2c_dw_isr(void *arg)
 		if (intr_stat.bits.tx_empty) {
 			if ((dw->xfr_flags & I2C_MSG_RW_MASK)
 			    == I2C_MSG_WRITE) {
-				ret = _i2c_dw_data_send(port);
+				ret = i2c_dw_data_send(port);
 			} else {
-				_i2c_dw_data_ask(port);
+				i2c_dw_data_ask(port);
 			}
 
 			/* If STOP is not expected, finish processing this
 			 * message if there is nothing left to do anymore.
 			 */
-			if (((dw->xfr_len == 0)
+			if (((dw->xfr_len == 0U)
 			     && !(dw->xfr_flags & I2C_MSG_STOP))
 			    || (ret != 0)) {
 				goto done;
@@ -270,11 +256,11 @@ static void i2c_dw_isr(void *arg)
 	return;
 
 done:
-	_i2c_dw_transfer_complete(port);
+	i2c_dw_transfer_complete(port);
 }
 
 
-static int _i2c_dw_setup(struct device *dev, u16_t slave_address)
+static int i2c_dw_setup(struct device *dev, u16_t slave_address)
 {
 	struct i2c_dw_dev_config * const dw = dev->driver_data;
 	u32_t value;
@@ -422,7 +408,7 @@ static int i2c_dw_transfer(struct device *dev,
 
 	dw->state |= I2C_DW_BUSY;
 
-	ret = _i2c_dw_setup(dev, slave_address);
+	ret = i2c_dw_setup(dev, slave_address);
 	if (ret) {
 		dw->state = I2C_DW_STATE_READY;
 		return ret;
@@ -461,7 +447,7 @@ static int i2c_dw_transfer(struct device *dev,
 		}
 
 		/* Send STOP if this is the last message */
-		if (msg_left == 1) {
+		if (msg_left == 1U) {
 			dw->xfr_flags |= I2C_MSG_STOP;
 		}
 
@@ -620,42 +606,22 @@ static const struct i2c_driver_api funcs = {
 	.transfer = i2c_dw_transfer,
 };
 
-
-#ifdef CONFIG_PCI
-static inline int i2c_dw_pci_setup(struct device *dev)
-{
-	struct i2c_dw_dev_config * const dw = dev->driver_data;
-
-	pci_bus_scan_init();
-
-	if (!pci_bus_scan(&dw->pci_dev)) {
-		LOG_DBG("Could not find device");
-		return 0;
-	}
-
-#ifdef CONFIG_PCI_ENUMERATION
-	dw->base_address = dw->pci_dev.addr;
-#endif
-	pci_enable_regs(&dw->pci_dev);
-
-	pci_show(&dw->pci_dev);
-
-	return 1;
-}
-#else
-#define i2c_dw_pci_setup(_unused_) (1)
-#endif /* CONFIG_PCI */
-
 static int i2c_dw_initialize(struct device *dev)
 {
 	const struct i2c_dw_rom_config * const rom = dev->config->config_info;
 	struct i2c_dw_dev_config * const dw = dev->driver_data;
 	volatile struct i2c_dw_registers *regs;
 
-	if (!i2c_dw_pci_setup(dev)) {
-		dev->driver_api = NULL;
-		return -EIO;
+#ifdef I2C_DW_PCIE_ENABLED
+	if (rom->pcie) {
+		if (!pcie_probe(rom->pcie_bdf, rom->pcie_id)) {
+			return -EINVAL;
+		}
+
+		dw->base_address = pcie_get_mbar(rom->pcie_bdf, 0);
+		pcie_set_cmd(rom->pcie_bdf, PCIE_CONF_CMDSTAT_MEM, true);
 	}
+#endif
 
 	k_sem_init(&dw->device_sync_sem, 0, UINT_MAX);
 
@@ -684,7 +650,7 @@ static int i2c_dw_initialize(struct device *dev)
 
 	rom->config_func(dev);
 
-	dw->app_config = I2C_MODE_MASTER | _i2c_map_dt_bitrate(rom->bitrate);
+	dw->app_config = I2C_MODE_MASTER | i2c_map_dt_bitrate(rom->bitrate);
 
 	if (i2c_dw_runtime_configure(dev, dw->app_config) != 0) {
 		LOG_DBG("I2C: Cannot set default configuration");
@@ -696,342 +662,34 @@ static int i2c_dw_initialize(struct device *dev)
 	return 0;
 }
 
-/* system bindings */
 #if CONFIG_I2C_0
-static void i2c_config_0(struct device *port);
-
-static const struct i2c_dw_rom_config i2c_config_dw_0 = {
-	.config_func = i2c_config_0,
-
-#ifdef CONFIG_GPIO_DW_0_IRQ_SHARED
-	.shared_irq_dev_name = DT_I2C_DW_0_IRQ_SHARED_NAME,
+#include <i2c_dw_port_0.h>
 #endif
-	.bitrate = DT_SNPS_DESIGNWARE_I2C_0_CLOCK_FREQUENCY,
-};
 
-static struct i2c_dw_dev_config i2c_0_runtime = {
-	.base_address = DT_SNPS_DESIGNWARE_I2C_0_BASE_ADDRESS,
-#if CONFIG_PCI
-	.pci_dev.class_type = I2C_DW_0_PCI_CLASS,
-	.pci_dev.bus = I2C_DW_0_PCI_BUS,
-	.pci_dev.dev = I2C_DW_0_PCI_DEV,
-	.pci_dev.vendor_id = I2C_DW_0_PCI_VENDOR_ID,
-	.pci_dev.device_id = I2C_DW_0_PCI_DEVICE_ID,
-	.pci_dev.function = I2C_DW_0_PCI_FUNCTION,
-	.pci_dev.bar = I2C_DW_0_PCI_BAR,
-#endif
-};
-
-DEVICE_AND_API_INIT(i2c_0, DT_SNPS_DESIGNWARE_I2C_0_LABEL, &i2c_dw_initialize,
-		    &i2c_0_runtime, &i2c_config_dw_0,
-		    POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,
-		    &funcs);
-
-#ifndef DT_SNPS_DESIGNWARE_I2C_0_IRQ_0_SENSE
-#define DT_SNPS_DESIGNWARE_I2C_0_IRQ_0_SENSE 0
-#endif
-static void i2c_config_0(struct device *port)
-{
-#if defined(CONFIG_I2C_DW_0_IRQ_DIRECT)
-	IRQ_CONNECT(DT_SNPS_DESIGNWARE_I2C_0_IRQ_0, DT_SNPS_DESIGNWARE_I2C_0_IRQ_0_PRIORITY,
-		    i2c_dw_isr, DEVICE_GET(i2c_0), DT_SNPS_DESIGNWARE_I2C_0_IRQ_0_SENSE);
-	irq_enable(DT_SNPS_DESIGNWARE_I2C_0_IRQ_0);
-#elif defined(CONFIG_I2C_DW_0_IRQ_SHARED)
-	const struct i2c_dw_rom_config * const config =
-		port->config->config_info;
-	struct device *shared_irq_dev;
-
-	shared_irq_dev = device_get_binding(config->shared_irq_dev_name);
-	shared_irq_isr_register(shared_irq_dev, (isr_t)i2c_dw_isr, port);
-	shared_irq_enable(shared_irq_dev, port);
-#endif
-}
-#endif /* CONFIG_I2C_0 */
-
-
-/*
- * Adding in I2C1
- */
 #if CONFIG_I2C_1
-static void i2c_config_1(struct device *port);
-
-static const struct i2c_dw_rom_config i2c_config_dw_1 = {
-	.config_func = i2c_config_1,
-	.bitrate = DT_SNPS_DESIGNWARE_I2C_1_CLOCK_FREQUENCY,
-};
-
-static struct i2c_dw_dev_config i2c_1_runtime = {
-	.base_address = DT_SNPS_DESIGNWARE_I2C_1_BASE_ADDRESS,
-#if CONFIG_PCI
-	.pci_dev.class_type = I2C_DW_1_PCI_CLASS,
-	.pci_dev.bus = I2C_DW_1_PCI_BUS,
-	.pci_dev.dev = I2C_DW_1_PCI_DEV,
-	.pci_dev.vendor_id = I2C_DW_1_PCI_VENDOR_ID,
-	.pci_dev.device_id = I2C_DW_1_PCI_DEVICE_ID,
-	.pci_dev.function = I2C_DW_1_PCI_FUNCTION,
-	.pci_dev.bar = I2C_DW_1_PCI_BAR,
+#include <i2c_dw_port_1.h>
 #endif
-};
 
-DEVICE_AND_API_INIT(i2c_1, DT_SNPS_DESIGNWARE_I2C_1_LABEL, &i2c_dw_initialize,
-		    &i2c_1_runtime, &i2c_config_dw_1,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		    &funcs);
-
-#ifndef DT_SNPS_DESIGNWARE_I2C_1_IRQ_0_SENSE
-#define DT_SNPS_DESIGNWARE_I2C_1_IRQ_0_SENSE 0
-#endif
-static void i2c_config_1(struct device *port)
-{
-	IRQ_CONNECT(DT_SNPS_DESIGNWARE_I2C_1_IRQ_0, DT_SNPS_DESIGNWARE_I2C_1_IRQ_0_PRIORITY,
-		    i2c_dw_isr, DEVICE_GET(i2c_1), DT_SNPS_DESIGNWARE_I2C_1_IRQ_0_SENSE);
-	irq_enable(DT_SNPS_DESIGNWARE_I2C_1_IRQ_0);
-}
-
-#endif /* CONFIG_I2C_1 */
-
-/*
- * Adding in I2C_2
- */
 #if CONFIG_I2C_2
-static void i2c_config_2(struct device *port);
-
-static const struct i2c_dw_rom_config i2c_config_dw_2 = {
-	.config_func = i2c_config_2,
-	.bitrate = DT_SNPS_DESIGNWARE_I2C_2_CLOCK_FREQUENCY,
-};
-
-static struct i2c_dw_dev_config I2C_2_runtime = {
-	.base_address = DT_SNPS_DESIGNWARE_I2C_2_BASE_ADDRESS,
-#if CONFIG_PCI
-	.pci_dev.class_type = I2C_DW_2_PCI_CLASS,
-	.pci_dev.bus = I2C_DW_2_PCI_BUS,
-	.pci_dev.dev = I2C_DW_2_PCI_DEV,
-	.pci_dev.vendor_id = I2C_DW_2_PCI_VENDOR_ID,
-	.pci_dev.device_id = I2C_DW_2_PCI_DEVICE_ID,
-	.pci_dev.function = I2C_DW_2_PCI_FUNCTION,
-	.pci_dev.bar = I2C_DW_2_PCI_BAR,
+#include <i2c_dw_port_2.h>
 #endif
-};
 
-DEVICE_AND_API_INIT(I2C_2, DT_SNPS_DESIGNWARE_I2C_2_LABEL, &i2c_dw_initialize,
-		    &I2C_2_runtime, &i2c_config_dw_2,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		    &funcs);
-
-#ifndef DT_SNPS_DESIGNWARE_I2C_2_IRQ_0_SENSE
-#define DT_SNPS_DESIGNWARE_I2C_2_IRQ_0_SENSE 0
-#endif
-static void i2c_config_2(struct device *port)
-{
-	IRQ_CONNECT(DT_SNPS_DESIGNWARE_I2C_2_IRQ_0, DT_SNPS_DESIGNWARE_I2C_2_IRQ_0_PRIORITY,
-		    i2c_dw_isr, DEVICE_GET(I2C_2), DT_SNPS_DESIGNWARE_I2C_2_IRQ_0_SENSE);
-	irq_enable(DT_SNPS_DESIGNWARE_I2C_2_IRQ_0);
-}
-
-#endif /* CONFIG_I2C_2 */
-
-/*
- * Adding in I2C_3
- */
 #if CONFIG_I2C_3
-static void i2c_config_3(struct device *port);
-
-static const struct i2c_dw_rom_config i2c_config_dw_3 = {
-	.config_func = i2c_config_3,
-	.bitrate = DT_SNPS_DESIGNWARE_I2C_3_CLOCK_FREQUENCY,
-};
-
-static struct i2c_dw_dev_config I2C_3_runtime = {
-	.base_address = DT_SNPS_DESIGNWARE_I2C_3_BASE_ADDRESS,
-#if CONFIG_PCI
-	.pci_dev.class_type = I2C_DW_3_PCI_CLASS,
-	.pci_dev.bus = I2C_DW_3_PCI_BUS,
-	.pci_dev.dev = I2C_DW_3_PCI_DEV,
-	.pci_dev.vendor_id = I2C_DW_3_PCI_VENDOR_ID,
-	.pci_dev.device_id = I2C_DW_3_PCI_DEVICE_ID,
-	.pci_dev.function = I2C_DW_3_PCI_FUNCTION,
-	.pci_dev.bar = I2C_DW_3_PCI_BAR,
+#include <i2c_dw_port_3.h>
 #endif
-};
 
-DEVICE_AND_API_INIT(I2C_3, DT_SNPS_DESIGNWARE_I2C_3_LABEL, &i2c_dw_initialize,
-		    &I2C_3_runtime, &i2c_config_dw_3,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		    &funcs);
-
-#ifndef DT_SNPS_DESIGNWARE_I2C_3_IRQ_0_SENSE
-#define DT_SNPS_DESIGNWARE_I2C_3_IRQ_0_SENSE 0
-#endif
-static void i2c_config_3(struct device *port)
-{
-	IRQ_CONNECT(DT_SNPS_DESIGNWARE_I2C_3_IRQ_0, DT_SNPS_DESIGNWARE_I2C_3_IRQ_0_PRIORITY,
-		    i2c_dw_isr, DEVICE_GET(I2C_3), DT_SNPS_DESIGNWARE_I2C_3_IRQ_0_SENSE);
-	irq_enable(DT_SNPS_DESIGNWARE_I2C_3_IRQ_0);
-}
-
-#endif /* CONFIG_I2C_3 */
-
-/*
- * Adding in I2C_4
- */
 #if CONFIG_I2C_4
-static void i2c_config_4(struct device *port);
-
-static const struct i2c_dw_rom_config i2c_config_dw_4 = {
-	.config_func = i2c_config_4,
-	.bitrate = DT_SNPS_DESIGNWARE_I2C_4_CLOCK_FREQUENCY,
-};
-
-static struct i2c_dw_dev_config I2C_4_runtime = {
-	.base_address = DT_SNPS_DESIGNWARE_I2C_4_BASE_ADDRESS,
-#if CONFIG_PCI
-	.pci_dev.class_type = I2C_DW_4_PCI_CLASS,
-	.pci_dev.bus = I2C_DW_4_PCI_BUS,
-	.pci_dev.dev = I2C_DW_4_PCI_DEV,
-	.pci_dev.vendor_id = I2C_DW_4_PCI_VENDOR_ID,
-	.pci_dev.device_id = I2C_DW_4_PCI_DEVICE_ID,
-	.pci_dev.function = I2C_DW_4_PCI_FUNCTION,
-	.pci_dev.bar = I2C_DW_4_PCI_BAR,
+#include <i2c_dw_port_4.h>
 #endif
-};
 
-DEVICE_AND_API_INIT(I2C_4, DT_SNPS_DESIGNWARE_I2C_4_LABEL, &i2c_dw_initialize,
-		    &I2C_4_runtime, &i2c_config_dw_4,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		    &funcs);
-
-#ifndef DT_SNPS_DESIGNWARE_I2C_4_IRQ_0_SENSE
-#define DT_SNPS_DESIGNWARE_I2C_4_IRQ_0_SENSE 0
-#endif
-static void i2c_config_4(struct device *port)
-{
-	IRQ_CONNECT(DT_SNPS_DESIGNWARE_I2C_4_IRQ_0, DT_SNPS_DESIGNWARE_I2C_4_IRQ_0_PRIORITY,
-		    i2c_dw_isr, DEVICE_GET(I2C_4), DT_SNPS_DESIGNWARE_I2C_4_IRQ_0_SENSE);
-	irq_enable(DT_SNPS_DESIGNWARE_I2C_4_IRQ_0);
-}
-
-#endif /* CONFIG_I2C_4 */
-
-/*
- * Adding in I2C_5
- */
 #if CONFIG_I2C_5
-static void i2c_config_5(struct device *port);
-
-static const struct i2c_dw_rom_config i2c_config_dw_5 = {
-	.config_func = i2c_config_5,
-	.bitrate = DT_SNPS_DESIGNWARE_I2C_5_CLOCK_FREQUENCY,
-};
-
-static struct i2c_dw_dev_config I2C_5_runtime = {
-	.base_address = DT_SNPS_DESIGNWARE_I2C_5_BASE_ADDRESS,
-#if CONFIG_PCI
-	.pci_dev.class_type = I2C_DW_5_PCI_CLASS,
-	.pci_dev.bus = I2C_DW_5_PCI_BUS,
-	.pci_dev.dev = I2C_DW_5_PCI_DEV,
-	.pci_dev.vendor_id = I2C_DW_5_PCI_VENDOR_ID,
-	.pci_dev.device_id = I2C_DW_5_PCI_DEVICE_ID,
-	.pci_dev.function = I2C_DW_5_PCI_FUNCTION,
-	.pci_dev.bar = I2C_DW_5_PCI_BAR,
+#include <i2c_dw_port_5.h>
 #endif
-};
 
-DEVICE_AND_API_INIT(I2C_5, DT_SNPS_DESIGNWARE_I2C_5_LABEL, &i2c_dw_initialize,
-		    &I2C_5_runtime, &i2c_config_dw_5,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		    &funcs);
-
-#ifndef DT_SNPS_DESIGNWARE_I2C_5_IRQ_0_SENSE
-#define DT_SNPS_DESIGNWARE_I2C_5_IRQ_0_SENSE 0
-#endif
-static void i2c_config_5(struct device *port)
-{
-	IRQ_CONNECT(DT_SNPS_DESIGNWARE_I2C_5_IRQ_0, DT_SNPS_DESIGNWARE_I2C_5_IRQ_0_PRIORITY,
-		    i2c_dw_isr, DEVICE_GET(I2C_5), DT_SNPS_DESIGNWARE_I2C_5_IRQ_0_SENSE);
-	irq_enable(DT_SNPS_DESIGNWARE_I2C_5_IRQ_0);
-}
-
-#endif /* CONFIG_I2C_5 */
-
-/*
- * Adding in I2C_6
- */
 #if CONFIG_I2C_6
-static void i2c_config_6(struct device *port);
-
-static const struct i2c_dw_rom_config i2c_config_dw_6 = {
-	.config_func = i2c_config_6,
-	.bitrate = DT_SNPS_DESIGNWARE_I2C_6_CLOCK_FREQUENCY,
-};
-
-static struct i2c_dw_dev_config I2C_6_runtime = {
-	.base_address = DT_SNPS_DESIGNWARE_I2C_6_BASE_ADDRESS,
-#if CONFIG_PCI
-	.pci_dev.class_type = I2C_DW_6_PCI_CLASS,
-	.pci_dev.bus = I2C_DW_6_PCI_BUS,
-	.pci_dev.dev = I2C_DW_6_PCI_DEV,
-	.pci_dev.vendor_id = I2C_DW_6_PCI_VENDOR_ID,
-	.pci_dev.device_id = I2C_DW_6_PCI_DEVICE_ID,
-	.pci_dev.function = I2C_DW_6_PCI_FUNCTION,
-	.pci_dev.bar = I2C_DW_6_PCI_BAR,
+#include <i2c_dw_port_6.h>
 #endif
-};
 
-DEVICE_AND_API_INIT(I2C_6, DT_SNPS_DESIGNWARE_I2C_6_LABEL, &i2c_dw_initialize,
-		    &I2C_6_runtime, &i2c_config_dw_6,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		    &funcs);
-
-#ifndef DT_SNPS_DESIGNWARE_I2C_6_IRQ_0_SENSE
-#define DT_SNPS_DESIGNWARE_I2C_6_IRQ_0_SENSE 0
-#endif
-static void i2c_config_6(struct device *port)
-{
-	IRQ_CONNECT(DT_SNPS_DESIGNWARE_I2C_6_IRQ_0, DT_SNPS_DESIGNWARE_I2C_6_IRQ_0_PRIORITY,
-		    i2c_dw_isr, DEVICE_GET(I2C_6), DT_SNPS_DESIGNWARE_I2C_6_IRQ_0_SENSE);
-	irq_enable(DT_SNPS_DESIGNWARE_I2C_6_IRQ_0);
-}
-
-#endif /* CONFIG_I2C_6 */
-
-/*
- * Adding in I2C_7
- */
 #if CONFIG_I2C_7
-static void i2c_config_7(struct device *port);
-
-static const struct i2c_dw_rom_config i2c_config_dw_7 = {
-	.config_func = i2c_config_7,
-	.bitrate = DT_SNPS_DESIGNWARE_I2C_7_CLOCK_FREQUENCY,
-};
-
-static struct i2c_dw_dev_config I2C_7_runtime = {
-	.base_address = DT_SNPS_DESIGNWARE_I2C_7_BASE_ADDRESS,
-#if CONFIG_PCI
-	.pci_dev.class_type = I2C_DW_7_PCI_CLASS,
-	.pci_dev.bus = I2C_DW_7_PCI_BUS,
-	.pci_dev.dev = I2C_DW_7_PCI_DEV,
-	.pci_dev.vendor_id = I2C_DW_7_PCI_VENDOR_ID,
-	.pci_dev.device_id = I2C_DW_7_PCI_DEVICE_ID,
-	.pci_dev.function = I2C_DW_7_PCI_FUNCTION,
-	.pci_dev.bar = I2C_DW_7_PCI_BAR,
+#include <i2c_dw_port_7.h>
 #endif
-};
-
-DEVICE_AND_API_INIT(I2C_7, DT_SNPS_DESIGNWARE_I2C_7_LABEL, &i2c_dw_initialize,
-		    &I2C_7_runtime, &i2c_config_dw_7,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		    &funcs);
-
-#ifndef DT_SNPS_DESIGNWARE_I2C_7_IRQ_0_SENSE
-#define DT_SNPS_DESIGNWARE_I2C_7_IRQ_0_SENSE 0
-#endif
-static void i2c_config_7(struct device *port)
-{
-	IRQ_CONNECT(DT_SNPS_DESIGNWARE_I2C_7_IRQ_0, DT_SNPS_DESIGNWARE_I2C_7_IRQ_0_PRIORITY,
-		    i2c_dw_isr, DEVICE_GET(I2C_7), DT_SNPS_DESIGNWARE_I2C_7_IRQ_0_SENSE);
-	irq_enable(DT_SNPS_DESIGNWARE_I2C_7_IRQ_0);
-}
-
-#endif /* CONFIG_I2C_7 */

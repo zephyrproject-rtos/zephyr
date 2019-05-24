@@ -13,6 +13,7 @@
 #define ZEPHYR_INCLUDE_MISC_STACK_H_
 
 #include <logging/log.h>
+#include <stdbool.h>
 
 static inline size_t stack_unused_space_get(const char *stack, size_t size)
 {
@@ -66,7 +67,7 @@ static inline void stack_analyze(const char *name, const char *stack,
 		LOG_MODULE_DECLARE(kernel, CONFIG_KERNEL_LOG_LEVEL);
 
 		unsigned int unused = stack_unused_space_get(stack, size);
-		unsigned int pcnt = ((size - unused) * 100) / size;
+		unsigned int pcnt = ((size - unused) * 100U) / size;
 
 		LOG_INF("%s :\tunused %u\tusage %u / %u (%u %%)",
 			name, unused, size - unused, size, pcnt);
@@ -84,8 +85,8 @@ static inline void stack_analyze(const char *name, const char *stack,
 #define STACK_ANALYZE(name, sym)				\
 	do {							\
 		stack_analyze(name,				\
-			      K_THREAD_STACK_BUFFER(sym),	\
+			      Z_THREAD_STACK_BUFFER(sym),	\
 			      K_THREAD_STACK_SIZEOF(sym));	\
-	} while (0)
+	} while (false)
 
 #endif /* ZEPHYR_INCLUDE_MISC_STACK_H_ */

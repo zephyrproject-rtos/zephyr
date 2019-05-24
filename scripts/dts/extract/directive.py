@@ -23,9 +23,6 @@ class DTDirective(object):
     def get_label_string(label):
         return str_to_label('_'.join(x.strip() for x in label if x.strip()))
 
-    def __init__():
-        pass
-
     ##
     # @brief Extract directive information.
     #

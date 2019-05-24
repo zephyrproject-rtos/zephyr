@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 zephyr_library()
 zephyr_library_sources(libc-hooks.c)
 
@@ -7,8 +9,12 @@ zephyr_library_sources(libc-hooks.c)
 # unable to, it will be up to the user to specify LIBC_*_DIR vars to
 # point to a newlib implementation.
 
+# We need to make sure this is included before the standard system
+# header include path's since we build with -ffreestanding and need
+# our libc headers to be picked instead of the toolchain's ffreestanding
+# headers.
 if(LIBC_INCLUDE_DIR)
-  zephyr_include_directories(${LIBC_INCLUDE_DIR})
+  zephyr_system_include_directories(${LIBC_INCLUDE_DIR})
 endif()
 
 if(LIBC_LIBRARY_DIR)
@@ -27,3 +33,13 @@ zephyr_link_libraries(
   $<$<BOOL:${CONFIG_NEWLIB_LIBC_FLOAT_SCANF}>:-u_scanf_float>
   gcc # Lib C depends on libgcc. e.g. libc.a(lib_a-fvwrite.o) references __aeabi_idiv
   )
+
+if(CONFIG_NEWLIB_LIBC_NANO)
+  zephyr_link_libraries(
+    -specs=nano.specs
+    )
+  zephyr_compile_options(
+    -specs=nano.specs
+    )
+endif()
+

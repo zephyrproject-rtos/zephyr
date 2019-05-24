@@ -192,4 +192,68 @@ config BOARD_PCA10090_INTERFACE2_MCU
 
 endchoice
 
+config BOARD_PCA10090_NRF52840_RESET
+	bool "Enable GPIO reset line"
+	help
+	 Let the nRF52840 be reset from the nRF9160 via a GPIO line.
+	 The GPIO line may only be one of the first 6 MCU interface pins.
+	 The line is active high.
+
+if BOARD_PCA10090_NRF52840_RESET
+
+choice
+	prompt "Pin used for reset"
+
+comment "nRF52840 pins"
+
+config BOARD_PCA10090_NRF52840_RESET_P0_17
+	bool "P0.17"
+	depends on BOARD_PCA10090_INTERFACE0_MCU
+	help
+	 Pin P0.17 on nRF52840,
+	 connected to P0.17 on the nRF9160.
+
+config BOARD_PCA10090_NRF52840_RESET_P0_20
+	bool "P0.20"
+	depends on BOARD_PCA10090_INTERFACE0_MCU
+	help
+	 Pin P0.20 on nRF52840,
+	 connected to P0.18 on the nRF9160.
+
+config BOARD_PCA10090_NRF52840_RESET_P0_15
+	bool "P0.15"
+	depends on BOARD_PCA10090_INTERFACE0_MCU
+	help
+	 Pin P0.15 on nRF52840,
+	 connected to P0.19 on the nRF9160.
+
+config BOARD_PCA10090_NRF52840_RESET_P0_22
+	bool "P0.22"
+	depends on BOARD_PCA10090_INTERFACE1_MCU
+	help
+	 Pin P0.22 on nRF52840,
+	 connected to P0.21 on the nRF9160.
+
+config BOARD_PCA10090_NRF52840_RESET_P1_04
+	bool "P1.04"
+	depends on BOARD_PCA10090_INTERFACE1_MCU
+	help
+	 Pin P1.04 on nRF52840,
+	 connected to P0.22 on the nRF9160.
+
+config BOARD_PCA10090_NRF52840_RESET_P1_02
+	bool "P1.02"
+	depends on BOARD_PCA10090_INTERFACE1_MCU
+	help
+	 Pin P1.02 on nRF52840,
+	 connected to P0.23 on the nRF9160.
+
+endchoice
+
+endif # BOARD_PCA10090_NRF52840_RESET
+
+module = BOARD_PCA10090
+module-str = Board Control
+source "subsys/logging/Kconfig.template.log_config"
+
 endif # BOARD_NRF52840_PCA10090

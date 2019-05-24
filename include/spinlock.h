@@ -13,12 +13,12 @@
  * proper "arch" layer.
  */
 #ifdef ZTEST_UNITTEST
-static inline int _arch_irq_lock(void)
+static inline int z_arch_irq_lock(void)
 {
 	return 0;
 }
 
-static inline void _arch_irq_unlock(int key)
+static inline void z_arch_irq_unlock(int key)
 {
 	ARG_UNUSED(key);
 }
@@ -35,9 +35,11 @@ static inline void _arch_irq_unlock(int key)
 #if (CONFIG_FLASH_SIZE == 0) || (CONFIG_FLASH_SIZE > 32)
 #if defined(CONFIG_ASSERT) && (CONFIG_MP_NUM_CPUS < 4)
 #include <misc/__assert.h>
+#include <stdbool.h>
 struct k_spinlock;
-int z_spin_lock_valid(struct k_spinlock *l);
-int z_spin_unlock_valid(struct k_spinlock *l);
+bool z_spin_lock_valid(struct k_spinlock *l);
+bool z_spin_unlock_valid(struct k_spinlock *l);
+void z_spin_lock_set_owner(struct k_spinlock *l);
 #define SPIN_VALIDATE
 #endif
 #endif
@@ -70,7 +72,7 @@ static ALWAYS_INLINE k_spinlock_key_t k_spin_lock(struct k_spinlock *l)
 	 * implementation.  The "irq_lock()" API in SMP context is
 	 * actually a wrapper for a global spinlock!
 	 */
-	k.key = _arch_irq_lock();
+	k.key = z_arch_irq_lock();
 
 #ifdef SPIN_VALIDATE
 	__ASSERT(z_spin_lock_valid(l), "Recursive spinlock");
@@ -81,6 +83,9 @@ static ALWAYS_INLINE k_spinlock_key_t k_spin_lock(struct k_spinlock *l)
 	}
 #endif
 
+#ifdef SPIN_VALIDATE
+	z_spin_lock_set_owner(l);
+#endif
 	return k;
 }
 
@@ -102,7 +107,7 @@ static ALWAYS_INLINE void k_spin_unlock(struct k_spinlock *l,
 	 */
 	atomic_clear(&l->locked);
 #endif
-	_arch_irq_unlock(key.key);
+	z_arch_irq_unlock(key.key);
 }
 
 /* Internal function: releases the lock, but leaves local interrupts

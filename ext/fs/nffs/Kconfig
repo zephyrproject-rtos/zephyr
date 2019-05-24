@@ -1,4 +1,3 @@
-
 config NFFS_FILESYSTEM_MAX_AREAS
 	int "Maximum number of areas"
 	depends on FILE_SYSTEM_NFFS

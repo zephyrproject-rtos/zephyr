@@ -13,7 +13,7 @@ from intelhex import AddressOverlapError
 import argparse
 
 
-def merge_hex_files(output, input_hex_files):
+def merge_hex_files(output, input_hex_files, overlap):
     ih = IntelHex()
 
     for hex_file_path in input_hex_files:
@@ -25,8 +25,8 @@ def merge_hex_files(output, input_hex_files):
         to_merge.start_addr = None
 
         try:
-            ih.merge(to_merge)
-        except AddressOverlapError as e:
+            ih.merge(to_merge, overlap=overlap)
+        except AddressOverlapError:
             raise AddressOverlapError("{} has merge issues".format(hex_file_path))
 
         print("Merged {}".format(hex_file_path))
@@ -41,6 +41,9 @@ def parse_args():
     parser.add_argument("-o", "--output", required=False, default="merged.hex",
                         type=argparse.FileType('w', encoding='UTF-8'),
                         help="Output file name.")
+    parser.add_argument("--overlap", default="error",
+                        help="What to do when files overlap (error, ignore, replace). "
+                             "See IntelHex.merge() for more info.")
     parser.add_argument("input_files", nargs='*')
     return parser.parse_args()
 
@@ -48,7 +51,7 @@ def parse_args():
 def main():
     args = parse_args()
 
-    merge_hex_files(args.output, args.input_files)
+    merge_hex_files(args.output, args.input_files, args.overlap)
 
 
 if __name__ == "__main__":

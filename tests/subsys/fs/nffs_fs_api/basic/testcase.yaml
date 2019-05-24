@@ -4,3 +4,4 @@ tests:
   filesystem.nffs.basic:
     extra_args: TEST=basic
     platform_whitelist: qemu_x86 nrf52840_pca10056
+    timeout: 500

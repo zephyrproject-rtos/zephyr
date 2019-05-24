@@ -22,7 +22,7 @@
 
 	intc: ioapic@fec00000  {
 		compatible = "intel,ioapic";
-		reg = <0xfec00000 0x100000>;
+		reg = <0xfec00000 0x1000>;
 		interrupt-controller;
 		#interrupt-cells = <3>;
 	};

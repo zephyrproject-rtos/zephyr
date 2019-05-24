@@ -193,7 +193,7 @@ static void gpio_sam_isr(void *arg)
 
 	int_stat = pio->PIO_ISR;
 
-	_gpio_fire_callbacks(&context->cb, dev, int_stat);
+	gpio_fire_callbacks(&context->cb, dev, int_stat);
 }
 
 static int gpio_sam_manage_callback(struct device *port,
@@ -202,7 +202,7 @@ static int gpio_sam_manage_callback(struct device *port,
 {
 	struct gpio_sam_runtime *context = port->driver_data;
 
-	return _gpio_manage_callback(&context->cb, callback, set);
+	return gpio_manage_callback(&context->cb, callback, set);
 }
 
 static int gpio_sam_enable_callback(struct device *port,

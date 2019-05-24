@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 # Zephyr Kernel Configuration
 CONFIG_ARM=y
 CONFIG_SOC_SERIES_STM32L0X=y
@@ -10,6 +12,7 @@ CONFIG_BOARD_NUCLEO_L053R8=y
 # General Kernel Options
 CONFIG_CORTEX_M_SYSTICK=y
 CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=32000000
+CONFIG_SYS_CLOCK_TICKS_PER_SEC=1000
 
 # Kernel Options due to Low Memory (8k)
 CONFIG_MAIN_STACK_SIZE=640

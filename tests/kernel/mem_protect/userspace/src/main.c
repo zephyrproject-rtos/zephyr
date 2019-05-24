@@ -14,6 +14,9 @@
 #include <stdlib.h>
 #include <app_memory/app_memdomain.h>
 #include <misc/util.h>
+#include <misc/stack.h>
+#include <syscall_handler.h>
+#include "test_syscall.h"
 
 #if defined(CONFIG_ARC)
 #include <arch/arc/v2/mpu/arc_core_mpu.h>
@@ -76,14 +79,14 @@ K_APP_BMEM(part0) static volatile unsigned int expected_reason;
 #define BARRIER() k_sem_give(&expect_fault_sem)
 
 /* ARM is a special case, in that k_thread_abort() does indeed return
- * instead of calling _Swap() directly. The PendSV exception is queued
+ * instead of calling z_swap() directly. The PendSV exception is queued
  * and immediately fires upon completing the exception path; the faulting
  * thread is never run again.
  */
 #if !(defined(CONFIG_ARM) || defined(CONFIG_ARC))
 FUNC_NORETURN
 #endif
-void _SysFatalErrorHandler(unsigned int reason, const NANO_ESF *pEsf)
+void z_SysFatalErrorHandler(unsigned int reason, const NANO_ESF *pEsf)
 {
 	INFO("Caught system error -- reason %d\n", reason);
 	/*
@@ -271,7 +274,7 @@ static void write_kerntext(void)
 	expect_fault = true;
 	expected_reason = REASON_HW_EXCEPTION;
 	BARRIER();
-	memset(&_is_thread_essential, 0, 4);
+	memset(&z_is_thread_essential, 0, 4);
 	zassert_unreachable("Write to kernel text did not fault");
 }
 
@@ -470,7 +473,7 @@ static void read_other_stack(void)
 	k_sem_take(&uthread_start_sem, K_FOREVER);
 
 	/* Try to directly read the stack of the other thread. */
-	ptr = (unsigned int *)K_THREAD_STACK_BUFFER(uthread_stack);
+	ptr = (unsigned int *)Z_THREAD_STACK_BUFFER(uthread_stack);
 	expect_fault = true;
 	expected_reason = REASON_HW_EXCEPTION;
 	BARRIER();
@@ -503,7 +506,7 @@ static void write_other_stack(void)
 	k_sem_take(&uthread_start_sem, K_FOREVER);
 
 	/* Try to directly write the stack of the other thread. */
-	ptr = (unsigned int *) K_THREAD_STACK_BUFFER(uthread_stack);
+	ptr = (unsigned int *) Z_THREAD_STACK_BUFFER(uthread_stack);
 	expect_fault = true;
 	expected_reason = REASON_HW_EXCEPTION;
 	BARRIER();
@@ -673,7 +676,7 @@ static void access_other_memdomain(void)
 
 
 #if defined(CONFIG_ARM)
-extern u8_t *_k_priv_stack_find(void *obj);
+extern u8_t *z_priv_stack_find(void *obj);
 extern k_thread_stack_t ztest_thread_stack[];
 #endif
 
@@ -895,6 +898,193 @@ static void domain_remove_part_context_switch(void)
 	spawn_user();
 }
 
+/*
+ * Stack testing
+ */
+
+#define NUM_STACKS	3
+#define STEST_STACKSIZE	(1024 + CONFIG_TEST_EXTRA_STACKSIZE)
+K_THREAD_STACK_DEFINE(stest_stack, STEST_STACKSIZE);
+K_THREAD_STACK_ARRAY_DEFINE(stest_stack_array, NUM_STACKS, STEST_STACKSIZE);
+
+struct foo {
+	int bar;
+	K_THREAD_STACK_MEMBER(stack, STEST_STACKSIZE);
+	int baz;
+};
+
+struct foo stest_member_stack;
+
+void z_impl_stack_info_get(u32_t *start_addr, u32_t *size)
+{
+	*start_addr = k_current_get()->stack_info.start;
+	*size = k_current_get()->stack_info.size;
+}
+
+Z_SYSCALL_HANDLER(stack_info_get, start_addr, size)
+{
+	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(start_addr, sizeof(u32_t)));
+	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(size, sizeof(u32_t)));
+
+	z_impl_stack_info_get((u32_t *)start_addr, (u32_t *)size);
+
+	return 0;
+}
+
+int z_impl_check_perms(void *addr, size_t size, int write)
+{
+	return z_arch_buffer_validate(addr, size, write);
+}
+
+Z_SYSCALL_HANDLER(check_perms, addr, size, write)
+{
+	return z_impl_check_perms((void *)addr, size, write);
+}
+
+void stack_buffer_scenarios(k_thread_stack_t *stack_obj, size_t obj_size)
+{
+	size_t stack_size;
+	u8_t val;
+	char *stack_start, *stack_ptr, *stack_end, *obj_start, *obj_end;
+	volatile char *pos;
+
+	expect_fault = false;
+
+
+	/* Dump interesting information */
+
+	stack_info_get((u32_t *)&stack_start, (u32_t *)&stack_size);
+	printk("   - Thread reports buffer %p size %zu\n", stack_start,
+	       stack_size);
+
+	stack_end = stack_start + stack_size;
+	obj_end = (char *)stack_obj + obj_size;
+	obj_start = (char *)stack_obj;
+
+	/* Assert that the created stack object, with the reserved data
+	 * removed, can hold a thread buffer of STEST_STACKSIZE
+	 */
+	zassert_true(STEST_STACKSIZE <= (obj_size - K_THREAD_STACK_RESERVED),
+		      "bad stack size in object");
+
+	/* Check that the stack info in the thread marks a region
+	 * completely contained within the stack object
+	 */
+	zassert_true(stack_end <= obj_end,
+		     "stack size in thread struct out of bounds (overflow)");
+	zassert_true(stack_start >= obj_start,
+		     "stack size in thread struct out of bounds (underflow)");
+
+	/* Check that the entire stack buffer is read/writable */
+	printk("   - check read/write to stack buffer\n");
+
+	/* Address of this stack variable is guaranteed to part of
+	 * the active stack, and close to the actual stack pointer.
+	 * Some CPUs have hardware stack overflow detection which
+	 * faults on memory access within the stack buffer but below
+	 * the stack pointer.
+	 *
+	 * First test does direct read & write starting at the estimated
+	 * stack pointer up to the highest addresses in the buffer
+	 */
+	stack_ptr = &val;
+	for (pos = stack_ptr; pos < stack_end; pos++) {
+		/* pos is volatile so this doesn't get optimized out */
+		val = *pos;
+		*pos = val;
+	}
+
+	if (z_arch_is_user_context()) {
+		/* If we're in user mode, check every byte in the stack buffer
+		 * to ensure that the thread has permissions on it.
+		 */
+		for (pos = stack_start; pos < stack_end; pos++) {
+			zassert_false(check_perms((void *)pos, 1, 1),
+				      "bad MPU/MMU permission on stack buffer at address %p",
+				      pos);
+		}
+
+		/* Bounds check the user accessible area, it shouldn't extend
+		 * before or after the stack. Because of memory protection HW
+		 * alignment constraints, we test the end of the stack object
+		 * and not the buffer.
+		 */
+		zassert_true(check_perms(obj_start - 1, 1, 0),
+			     "user mode access to memory before start of stack object");
+		zassert_true(check_perms(obj_end, 1, 0),
+			     "user mode access past end of stack object");
+	}
+
+
+	/* This API is being removed just whine about it for now */
+	if (Z_THREAD_STACK_BUFFER(stack_obj) != stack_start) {
+		printk("WARNING: Z_THREAD_STACK_BUFFER() reports %p\n",
+		       Z_THREAD_STACK_BUFFER(stack_obj));
+	}
+
+	if (z_arch_is_user_context()) {
+		zassert_true(stack_size <= obj_size - K_THREAD_STACK_RESERVED,
+			      "bad stack size in thread struct");
+	}
+
+
+	k_sem_give(&uthread_end_sem);
+}
+
+void stest_thread_entry(void *p1, void *p2, void *p3)
+{
+	bool drop = (bool)p3;
+
+	if (drop) {
+		k_thread_user_mode_enter(stest_thread_entry, p1, p2,
+					 (void *)false);
+	} else {
+		stack_buffer_scenarios((k_thread_stack_t *)p1, (size_t)p2);
+	}
+}
+
+void stest_thread_launch(void *stack_obj, size_t obj_size, u32_t flags,
+			 bool drop)
+{
+	k_thread_create(&uthread_thread, stack_obj, STEST_STACKSIZE,
+			stest_thread_entry, stack_obj, (void *)obj_size,
+			(void *)drop,
+			-1, flags, K_NO_WAIT);
+	k_sem_take(&uthread_end_sem, K_FOREVER);
+
+	stack_analyze("test_thread", (char *)uthread_thread.stack_info.start,
+		      uthread_thread.stack_info.size);
+}
+
+void scenario_entry(void *stack_obj, size_t obj_size)
+{
+	printk("Stack object %p[%zu]\n", stack_obj, obj_size);
+	printk(" - Testing supervisor mode\n");
+	stest_thread_launch(stack_obj, obj_size, 0, false);
+	printk(" - Testing user mode (direct launch)\n");
+	stest_thread_launch(stack_obj, obj_size, K_USER | K_INHERIT_PERMS,
+			    false);
+	printk(" - Testing user mode (drop)\n");
+	stest_thread_launch(stack_obj, obj_size, K_INHERIT_PERMS,
+			    true);
+}
+
+void test_stack_buffer(void)
+{
+	printk("Reserved space: %u\n", K_THREAD_STACK_RESERVED);
+	printk("Provided stack size: %u\n", STEST_STACKSIZE);
+	scenario_entry(stest_stack, sizeof(stest_stack));
+
+	for (int i = 0; i < NUM_STACKS; i++) {
+		scenario_entry(stest_stack_array[i],
+			       sizeof(stest_stack_array[i]));
+	}
+
+	scenario_entry(&stest_member_stack.stack,
+		       sizeof(stest_member_stack.stack));
+
+}
+
 void test_main(void)
 {
 	struct k_mem_partition *parts[] = {&part0, &part1,
@@ -905,7 +1095,7 @@ void test_main(void)
 	k_mem_domain_add_thread(&dom0, k_current_get());
 
 #if defined(CONFIG_ARM)
-	priv_stack_ptr = (int *)_k_priv_stack_find(ztest_thread_stack) -
+	priv_stack_ptr = (int *)z_priv_stack_find(ztest_thread_stack) -
 		MPU_GUARD_ALIGN_AND_SIZE;
 
 #endif
@@ -944,7 +1134,8 @@ void test_main(void)
 			 ztest_unit_test(domain_add_thread_context_switch),
 			 ztest_unit_test(domain_add_part_context_switch),
 			 ztest_unit_test(domain_remove_part_context_switch),
-			 ztest_unit_test(domain_remove_thread_context_switch)
+			 ztest_unit_test(domain_remove_thread_context_switch),
+			 ztest_unit_test(test_stack_buffer)
 			 );
 	ztest_run_test_suite(userspace);
 }

@@ -108,7 +108,7 @@ __asm__(".align 16\n"
 	"    push %r11\n"
 	"    mov %rsp, %r8\n"
 	"    sub $48, %r8\n"
-#ifdef CONFIG_XUK_64_BIT_ABI
+#ifdef XUK_64_BIT_ABI
 	"    movq %r8, (%rdx)\n"
 #else
 	"    movl %r8d, (%rdx)\n"
@@ -174,7 +174,7 @@ long _isr_c_top(unsigned long vecret, unsigned long rsp,
 	struct vhandler *h = &vector_handlers[vector];
 	struct xuk_entry_frame *frame = (void *)rsp;
 
-	_isr_entry();
+	z_isr_entry();
 
 	/* Set current priority in CR8 to the currently-serviced IRQ
 	 * and re-enable interrupts
@@ -189,7 +189,7 @@ long _isr_c_top(unsigned long vecret, unsigned long rsp,
 	if (h->fn) {
 		h->fn(h->arg, err);
 	} else {
-		_unhandled_vector(vector, err, frame);
+		z_unhandled_vector(vector, err, frame);
 	}
 
 	/* Mask interrupts to finish processing (they'll get restored
@@ -199,7 +199,7 @@ long _isr_c_top(unsigned long vecret, unsigned long rsp,
 
 	/* Signal EOI if it's an APIC-managed interrupt */
 	if (vector > 0x1f) {
-		_apic.EOI = 0;
+		_apic.EOI = 0U;
 	}
 
 	/* Subtle: for the "interrupted context pointer", we pass in
@@ -208,7 +208,7 @@ long _isr_c_top(unsigned long vecret, unsigned long rsp,
 	 * hook doesn't want to switch, it will return null and never
 	 * save the value of the pointer.
 	 */
-	return (long)_isr_exit_restore_stack((void *)(rsp - 48));
+	return (long)z_isr_exit_restore_stack((void *)(rsp - 48));
 }
 
 static long choose_isr_entry(int vector)
@@ -257,9 +257,9 @@ void xuk_set_isr(int interrupt, int priority,
 		red.regvals[0] = ioapic_read(regidx);
 		red.regvals[1] = ioapic_read(regidx + 1);
 		red.vector = v;
-		red.logical = 0;
-		red.destination = 0xff;
-		red.masked = 1;
+		red.logical = 0U;
+		red.destination = 0xffU;
+		red.masked = 1U;
 		ioapic_write(regidx, red.regvals[0]);
 		ioapic_write(regidx + 1, red.regvals[1]);
 	}
@@ -314,8 +314,8 @@ void xuk_set_isr_mask(int interrupt, int masked)
 static void setup_fg_segs(int cpu)
 {
 	int fi = 3 + 2 * cpu, gi = 3 + 2 * cpu + 1;
-	struct gdt64 *fs = &_shared.gdt[fi];
-	struct gdt64 *gs = &_shared.gdt[gi];
+	struct gdt64 *fs = (struct gdt64 *) &_shared.gdt[fi];
+	struct gdt64 *gs = (struct gdt64 *) &_shared.gdt[gi];
 
 	gdt64_set_base(fs, (long)&_shared.fs_ptrs[cpu]);
 	gdt64_set_base(gs, (long)&_shared.gs_ptrs[cpu]);
@@ -481,7 +481,7 @@ static void smp_init(void)
 	 * the page we allocated.
 	 */
 	_shared.smpinit_lock = 0;
-	_shared.smpinit_stack = 0;
+	_shared.smpinit_stack = 0U;
 	_shared.num_active_cpus = 1;
 
 	printf("Sending SIPI IPI\n");
@@ -492,15 +492,17 @@ static void smp_init(void)
 	};
 	while (_apic.ICR_LO.send_pending) {
 	}
+}
 
-	for (int i = 1; i < CONFIG_MP_NUM_CPUS; i++) {
-		_shared.smpinit_stack = _init_cpu_stack(i);
-		printf("Granting stack @ %xh to CPU %d\n",
-		       _shared.smpinit_stack, i);
+void xuk_start_cpu(int cpu, unsigned int stack)
+{
+	int act = _shared.num_active_cpus;
 
-		while (_shared.num_active_cpus <= i) {
-			__asm__("pause");
-		}
+	printf("Granting stack @ %xh to CPU %d\n", stack, cpu);
+	_shared.smpinit_stack = stack;
+
+	while (_shared.num_active_cpus == act) {
+		__asm__ volatile("pause");
 	}
 }
 
@@ -513,7 +515,7 @@ void _cstart64(int cpu_id)
 	}
 
 #ifdef CONFIG_XUK_DEBUG
-	_putchar = putchar;
+	z_putchar = putchar;
 #endif
 	printf("\n==\nHello from 64 bit C code on CPU%d (stack ~%xh)\n",
 	       cpu_id, (int)(long)&cpu_id);
@@ -585,39 +587,31 @@ void _cstart64(int cpu_id)
 		smp_init();
 	}
 
-	printf("Calling _cpu_start on CPU %d\n", cpu_id);
-	_cpu_start(cpu_id);
+	printf("Calling z_cpu_start on CPU %d\n", cpu_id);
+	z_cpu_start(cpu_id);
 }
 
 long xuk_setup_stack(long sp, void *fn, unsigned int eflags,
 		     long *args, int nargs)
 {
-	long long *f = (long long *)(sp & ~7) - 20;
+	struct xuk_stack_frame *f;
 
-	/* FIXME: this should extend naturally to setting up usermode
-	 * frames too: the frame should have a SS and RSP at the top
-	 * that specifies the user stack into which to return (can be
-	 * this same stack as long as the mapping is correct), and the
-	 * CS should be a separate ring 3 segment.
-	 */
+	/* Align downward and make room for one frame */
+	f = &((struct xuk_stack_frame *)(sp & ~7))[-1];
 
-	f[19] = GDT_SELECTOR(2);
-	f[18] = sp;
-	f[17] = eflags;
-	f[16] = GDT_SELECTOR(1);
-	f[15] = (long)fn;
-	f[14] = nargs >= 1 ? args[0] : 0; /* RDI */
-	f[13] = nargs >= 3 ? args[2] : 0; /* RDX */
-	f[12] = 0;                        /* RAX */
-	f[11] = nargs >= 4 ? args[3] : 0; /* RCX */
-	f[10] = nargs >= 2 ? args[1] : 0; /* RSI */
-	f[9]  = nargs >= 5 ? args[4] : 0; /* R8 */
-	f[8]  = nargs >= 6 ? args[5] : 0; /* R9 */
-
-	/* R10, R11, RBX, RBP, R12, R13, R14, R15 */
-	for (int i = 7; i >= 0; i--) {
-		f[i] = 0;
-	}
+	*f = (struct xuk_stack_frame) {
+		.entry.ss     = GDT_SELECTOR(2),
+		.entry.rsp    = sp,
+		.entry.rflags = eflags,
+		.entry.cs     = GDT_SELECTOR(1),
+		.entry.rip    = (long)fn,
+		.entry.rdi    = nargs >= 1 ? args[0] : 0,
+		.entry.rsi    = nargs >= 2 ? args[1] : 0,
+		.entry.rdx    = nargs >= 3 ? args[2] : 0,
+		.entry.rcx    = nargs >= 4 ? args[3] : 0,
+		.entry.r8     = nargs >= 5 ? args[4] : 0,
+		.entry.r9     = nargs >= 6 ? args[5] : 0,
+	};
 
 	return (long)f;
 }

@@ -9,10 +9,11 @@
 
 #include <kernel.h>
 #include <misc/mempool_base.h>
+#include <misc/mutex.h>
 
 struct sys_mem_pool {
 	struct sys_mem_pool_base base;
-	struct k_mutex *mutex;
+	struct sys_mutex mutex;
 };
 
 struct sys_mem_pool_block {
@@ -38,30 +39,28 @@ struct sys_mem_pool_block {
  * run sys_mem_pool_init() on it before using any other APIs.
  *
  * @param name Name of the memory pool.
- * @param kmutex Pointer to an initialized k_mutex object, used for
- *		 synchronization, declared with K_MUTEX_DEFINE().
+ * @param ignored ignored, any value
  * @param minsz Size of the smallest blocks in the pool (in bytes).
  * @param maxsz Size of the largest blocks in the pool (in bytes).
  * @param nmax Number of maximum sized blocks in the pool.
  * @param align Alignment of the pool's buffer (power of 2).
  * @param section Destination binary section for pool data
  */
-#define SYS_MEM_POOL_DEFINE(name, kmutex, minsz, maxsz, nmax, align, section) \
-	char __aligned(align) _GENERIC_SECTION(section)			\
+#define SYS_MEM_POOL_DEFINE(name, ignored, minsz, maxsz, nmax, align, section) \
+	char __aligned(align) Z_GENERIC_SECTION(section)		\
 		_mpool_buf_##name[_ALIGN4(maxsz * nmax)			\
 				  + _MPOOL_BITS_SIZE(maxsz, minsz, nmax)]; \
-	struct sys_mem_pool_lvl _GENERIC_SECTION(section)		\
-		_mpool_lvls_##name[_MPOOL_LVLS(maxsz, minsz)];		\
-	_GENERIC_SECTION(section) struct sys_mem_pool name = {		\
+	struct sys_mem_pool_lvl Z_GENERIC_SECTION(section)		\
+		_mpool_lvls_##name[Z_MPOOL_LVLS(maxsz, minsz)];		\
+	Z_GENERIC_SECTION(section) struct sys_mem_pool name = {		\
 		.base = {						\
 			.buf = _mpool_buf_##name,			\
 			.max_sz = maxsz,				\
 			.n_max = nmax,					\
-			.n_levels = _MPOOL_LVLS(maxsz, minsz),		\
+			.n_levels = Z_MPOOL_LVLS(maxsz, minsz),		\
 			.levels = _mpool_lvls_##name,			\
 			.flags = SYS_MEM_POOL_USER			\
-		},							\
-		.mutex = kmutex,					\
+		}							\
 	}
 
 /**
@@ -74,7 +73,7 @@ struct sys_mem_pool_block {
  */
 static inline void sys_mem_pool_init(struct sys_mem_pool *p)
 {
-	_sys_mem_pool_base_init(&p->base);
+	z_sys_mem_pool_base_init(&p->base);
 }
 
 /**

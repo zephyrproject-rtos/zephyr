@@ -1,8 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+
 config NRF5_POWER_MGMT_EXAMPLE
 	bool
 	default y
-	select HAS_STATE_LOW_POWER_2
-	select HAS_STATE_LOW_POWER_3
+	select HAS_SYS_POWER_STATE_SLEEP_2
+	select HAS_SYS_POWER_STATE_SLEEP_3
 	help
 	  Hidden option enabling LPS_1 and LPS_2 low power states.
 	  This is needed, as these states are implemented by this example.

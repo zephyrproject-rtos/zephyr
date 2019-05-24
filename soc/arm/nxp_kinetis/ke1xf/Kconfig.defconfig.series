@@ -1,0 +1,75 @@
+# Kconfig - Kinetis KE1xF series configuration options
+#
+# Copyright (c) 2019 Vestas Wind Systems A/S
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_SERIES_KINETIS_KE1XF
+
+config SOC_SERIES
+	default "ke1xf"
+
+config NUM_IRQS
+	int
+	# must be >= the highest interrupt number used
+	default 91
+
+if CLOCK_CONTROL
+
+config CLOCK_CONTROL_MCUX_SIM
+	default y
+
+config CLOCK_CONTROL_MCUX_PCC
+	default y
+
+endif # CLOCK_CONTROL
+
+if RTC
+
+config RTC_MCUX
+	default y
+
+endif # RTC
+
+if COUNTER
+
+config COUNTER_MCUX_RTC
+	default y
+
+endif # COUNTER
+
+if PINMUX
+
+config PINMUX_MCUX
+	default y
+
+endif # PINMUX
+
+config GPIO
+	default y
+
+if GPIO
+
+config GPIO_MCUX
+	default y
+
+endif # GPIO
+
+if FLASH
+
+config SOC_FLASH_MCUX
+	default y
+
+endif # FLASH
+
+if SERIAL
+
+config UART_MCUX_LPUART
+	default y
+
+endif # SERIAL
+
+source "soc/arm/nxp_kinetis/ke1xf/Kconfig.defconfig.mke*"
+
+endif # SOC_SERIES_KINETIS_KE1XF

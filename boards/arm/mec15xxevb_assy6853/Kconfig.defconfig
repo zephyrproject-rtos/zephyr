@@ -1,0 +1,53 @@
+#
+# Copyright (c) 2019 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+if BOARD_MEC15XXEVB_ASSY6853
+
+config BOARD
+	default "mec15xxevb_assy6853"
+
+if UART_NS16550
+
+config UART_NS16550_PORT_0
+	def_bool y if UART_CONSOLE
+
+endif
+
+if GPIO_XEC
+
+config GPIO_XEC_GPIO000_036
+	default y
+
+config GPIO_XEC_GPIO040_076
+	default y
+
+config GPIO_XEC_GPIO100_136
+	default y
+
+config GPIO_XEC_GPIO140_176
+	default y
+
+config GPIO_XEC_GPIO200_236
+	default y
+
+config GPIO_XEC_GPIO240_276
+	default y
+
+endif # GPIO_XEC
+
+if I2C_XEC
+
+config I2C_XEC_0
+	default y
+
+config I2C_XEC_1
+	default y
+
+config I2C_XEC_2
+	default y
+
+endif # I2C
+
+endif # BOARD_MEC15XXEVB_ASSY6853

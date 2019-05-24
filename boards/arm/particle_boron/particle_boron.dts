@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <nordic/nrf52840_qiaa.dtsi>
+#include <dt-bindings/gpio/gpio.h>
 #include "mesh_feather.dtsi"
 
 / {
@@ -23,10 +24,20 @@
 
 &uart1 { /* u-blox SARA-U2 or SARA-R4 */
 	compatible = "nordic,nrf-uarte";
-	current-speed = <921600>;
+	current-speed = <115200>;
 	status = "ok";
+
 	tx-pin = <37>;
 	rx-pin = <36>;
 	rts-pin = <39>;
 	cts-pin = <38>;
+
+	sara_r4 {
+		compatible = "ublox,sara-r4";
+		label = "ublox-sara-r4";
+		status = "ok";
+
+		mdm-power-gpios = <&gpio0 16 0>;
+		mdm-reset-gpios = <&gpio0 12 0>;
+	};
 };

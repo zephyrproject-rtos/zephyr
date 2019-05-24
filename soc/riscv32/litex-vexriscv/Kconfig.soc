@@ -1,0 +1,9 @@
+#
+# Copyright (c) 2018 - 2019 Antmicro <www.antmicro.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config SOC_RISCV32_LITEX_VEXRISCV
+	bool "LiteX VexRiscv system implementation"
+	select ATOMIC_OPERATIONS_C

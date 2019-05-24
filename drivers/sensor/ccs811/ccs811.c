@@ -85,7 +85,7 @@ static int ccs811_channel_get(struct device *dev,
 		 */
 		uval = (drv_data->resistance & CCS811_VOLTAGE_MASK)
 					* CCS811_VOLTAGE_SCALE;
-		val->val1 = uval / 1000000;
+		val->val1 = uval / 1000000U;
 		val->val2 = uval % 1000000;
 
 		break;
@@ -95,7 +95,7 @@ static int ccs811_channel_get(struct device *dev,
 		 * significant 6 bits in microAmps
 		 */
 		uval = drv_data->resistance >> 10;
-		val->val1 = uval / 1000000;
+		val->val1 = uval / 1000000U;
 		val->val2 = uval % 1000000;
 
 		break;

@@ -158,7 +158,7 @@ static int process_tcp(struct data *data)
 			LOG_DBG("TCP (%s): Received and replied with %d bytes",
 				data->proto, offset);
 
-			if (++data->tcp.counter % 1000 == 0) {
+			if (++data->tcp.counter % 1000 == 0U) {
 				LOG_INF("%s TCP: Sent %u packets", data->proto,
 					data->tcp.counter);
 			}

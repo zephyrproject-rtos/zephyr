@@ -91,7 +91,7 @@ static lv_fs_res_t lvgl_fs_read(void *file, void *buf, u32_t btr,
 		}
 		err = 0;
 	} else if (br != NULL) {
-		*br = 0;
+		*br = 0U;
 	}
 	return errno_to_lv_fs_res(err);
 }
@@ -109,7 +109,7 @@ static lv_fs_res_t lvgl_fs_write(void *file, const void *buf, u32_t btw,
 		err = 0;
 	} else if (err < 0) {
 		if (bw != NULL) {
-			*bw = 0;
+			*bw = 0U;
 		}
 	} else {
 		if (bw != NULL) {
@@ -159,7 +159,7 @@ static lv_fs_res_t lvgl_fs_size(void *file, u32_t *fsize)
 
 	err = fs_seek((struct fs_file_t *) file, 0, FS_SEEK_END);
 	if (err != 0) {
-		*fsize = 0;
+		*fsize = 0U;
 		return errno_to_lv_fs_res(err);
 	}
 

@@ -37,7 +37,7 @@ const NANO_ESF _default_esf = {
  *
  * This routine is called when fatal error conditions are detected by software
  * and is responsible only for reporting the error. Once reported, it then
- * invokes the user provided routine _SysFatalErrorHandler() which is
+ * invokes the user provided routine z_SysFatalErrorHandler() which is
  * responsible for implementing the error handling policy.
  *
  * The caller is expected to always provide a usable ESF. In the event that the
@@ -49,7 +49,7 @@ const NANO_ESF _default_esf = {
  *
  * @return This function does not return.
  */
-XTENSA_ERR_NORET void _NanoFatalErrorHandler(unsigned int reason,
+XTENSA_ERR_NORET void z_NanoFatalErrorHandler(unsigned int reason,
 					     const NANO_ESF *pEsf)
 {
 	LOG_PANIC();
@@ -92,7 +92,7 @@ XTENSA_ERR_NORET void _NanoFatalErrorHandler(unsigned int reason,
 	 * appropriate to the various errors are something the customer must
 	 * decide.
 	 */
-	_SysFatalErrorHandler(reason, pEsf);
+	z_SysFatalErrorHandler(reason, pEsf);
 }
 
 
@@ -156,7 +156,7 @@ static inline unsigned int get_bits(int offset, int num_bits, unsigned int val)
 {
 	int mask;
 
-	mask = (1 << num_bits) - 1;
+	mask = BIT(num_bits) - 1;
 	val = val >> offset;
 	return val & mask;
 }
@@ -190,7 +190,7 @@ XTENSA_ERR_NORET void FatalErrorHandler(void)
 {
 	printk("*** Unhandled exception ****\n");
 	dump_exc_state();
-	_NanoFatalErrorHandler(_NANO_ERR_HW_EXCEPTION, &_default_esf);
+	z_NanoFatalErrorHandler(_NANO_ERR_HW_EXCEPTION, &_default_esf);
 }
 
 XTENSA_ERR_NORET void ReservedInterruptHandler(unsigned int intNo)
@@ -198,9 +198,9 @@ XTENSA_ERR_NORET void ReservedInterruptHandler(unsigned int intNo)
 	printk("*** Reserved Interrupt ***\n");
 	dump_exc_state();
 	printk("INTENABLE = 0x%x\n"
-	       "INTERRUPT = 0x%x (%d)\n",
+	       "INTERRUPT = 0x%x (%x)\n",
 	       get_sreg(INTENABLE), (1 << intNo), intNo);
-	_NanoFatalErrorHandler(_NANO_ERR_RESERVED_IRQ, &_default_esf);
+	z_NanoFatalErrorHandler(_NANO_ERR_RESERVED_IRQ, &_default_esf);
 }
 
 void exit(int return_code)
@@ -239,7 +239,7 @@ void exit(int return_code)
  *
  * @return N/A
  */
-XTENSA_ERR_NORET __weak void _SysFatalErrorHandler(unsigned int reason,
+XTENSA_ERR_NORET __weak void z_SysFatalErrorHandler(unsigned int reason,
 						   const NANO_ESF *pEsf)
 {
 	ARG_UNUSED(pEsf);
@@ -253,7 +253,7 @@ XTENSA_ERR_NORET __weak void _SysFatalErrorHandler(unsigned int reason,
 	if (reason == _NANO_ERR_KERNEL_PANIC) {
 		goto hang_system;
 	}
-	if (k_is_in_isr() || _is_thread_essential()) {
+	if (k_is_in_isr() || z_is_thread_essential()) {
 		printk("Fatal fault in %s! Spinning...\n",
 		       k_is_in_isr() ? "ISR" : "essential thread");
 		goto hang_system;

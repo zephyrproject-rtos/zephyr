@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 choice
 	prompt "Idle State Power Management Policy"
 	help
@@ -22,49 +24,49 @@ endchoice
 
 if SYS_PM_POLICY_RESIDENCY
 
-config SYS_PM_LPS_1_MIN_RES
-	int "Low Power State 1 minimum residency"
-	depends on HAS_STATE_LOW_POWER_1
+config SYS_PM_MIN_RESIDENCY_SLEEP_1
+	int "Sleep State 1 minimum residency"
+	depends on HAS_SYS_POWER_STATE_SLEEP_1
 	default 5000
 	help
-	  Minimum residency in milliseconds to enter SYS_POWER_STATE_LOW_POWER_1
+	  Minimum residency in milliseconds to enter SYS_POWER_STATE_SLEEP_1
 	  state.
 
-config SYS_PM_LPS_2_MIN_RES
-	int "Low Power State 2 minimum residency"
-	depends on HAS_STATE_LOW_POWER_2
+config SYS_PM_MIN_RESIDENCY_SLEEP_2
+	int "Sleep State 2 minimum residency"
+	depends on HAS_SYS_POWER_STATE_SLEEP_2
 	default 10000
 	help
-	  Minimum residency in milliseconds to enter SYS_POWER_STATE_LOW_POWER_2
+	  Minimum residency in milliseconds to enter SYS_POWER_STATE_SLEEP_2
 	  state.
 
-config SYS_PM_LPS_3_MIN_RES
-	int "Low Power State 3 minimum residency"
-	depends on HAS_STATE_LOW_POWER_3
+config SYS_PM_MIN_RESIDENCY_SLEEP_3
+	int "Sleep State 3 minimum residency"
+	depends on HAS_SYS_POWER_STATE_SLEEP_3
 	default 30000
 	help
-	  Minimum residency in milliseconds to enter SYS_POWER_STATE_LOW_POWER_3
+	  Minimum residency in milliseconds to enter SYS_POWER_STATE_SLEEP_3
 	  state.
 
-config SYS_PM_DEEP_SLEEP_1_MIN_RES
+config SYS_PM_MIN_RESIDENCY_DEEP_SLEEP_1
 	int "Deep Sleep State 1 minimum residency"
-	depends on HAS_STATE_DEEP_SLEEP_1
+	depends on HAS_SYS_POWER_STATE_DEEP_SLEEP_1
 	default 60000
 	help
 	  Minimum residency in milliseconds to enter SYS_POWER_STATE_DEEP_SLEEP_1
 	  state.
 
-config SYS_PM_DEEP_SLEEP_2_MIN_RES
+config SYS_PM_MIN_RESIDENCY_DEEP_SLEEP_2
 	int "Deep Sleep State 2 minimum residency"
-	depends on HAS_STATE_DEEP_SLEEP_2
+	depends on HAS_SYS_POWER_STATE_DEEP_SLEEP_2
 	default 90000
 	help
 	  Minimum residency in milliseconds to enter SYS_POWER_STATE_DEEP_SLEEP_2
 	  state.
 
-config SYS_PM_DEEP_SLEEP_3_MIN_RES
+config SYS_PM_MIN_RESIDENCY_DEEP_SLEEP_3
 	int "Deep Sleep State 3 minimum residency"
-	depends on HAS_STATE_DEEP_SLEEP_3
+	depends on HAS_SYS_POWER_STATE_DEEP_SLEEP_3
 	default 120000
 	help
 	  Minimum residency in milliseconds to enter SYS_POWER_STATE_DEEP_SLEEP_3

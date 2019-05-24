@@ -21,6 +21,7 @@
 	/* These aliases are provided for compatibility with samples */
 	aliases {
 		led0 = &led0;
+		sw0 = &user_button;
 	};
 
 	leds {
@@ -28,6 +29,14 @@
 		led0: led_0 {
 			gpios = <&portb 30 0>;
 			label = "Yellow LED";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		user_button: button_0 {
+			gpios = <&porta 15 (GPIO_PUD_PULL_UP | GPIO_INT_ACTIVE_LOW)>;
+			label = "SW0";
 		};
 	};
 };
@@ -61,4 +70,8 @@
 	compatible = "atmel,sam0-spi";
 	dipo = <0>;
 	dopo = <2>;
+};
+
+&usb0 {
+	status = "ok";
 };

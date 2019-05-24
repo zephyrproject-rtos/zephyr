@@ -31,7 +31,7 @@ int dns_msg_pack_qname(u16_t *len, u8_t *buf, u16_t size,
 	lb_size = 0U;
 
 	dn_size = dns_strlen(domain_name);
-	if (dn_size == 0) {
+	if (dn_size == 0U) {
 		return -EINVAL;
 	}
 
@@ -44,7 +44,7 @@ int dns_msg_pack_qname(u16_t *len, u8_t *buf, u16_t size,
 		switch (domain_name[i]) {
 		default:
 			buf[lb_index] = domain_name[i];
-			lb_size += 1;
+			lb_size += 1U;
 			break;
 		case '.':
 			buf[lb_start] = lb_size;
@@ -56,7 +56,7 @@ int dns_msg_pack_qname(u16_t *len, u8_t *buf, u16_t size,
 			buf[lb_index] = 0U;
 			break;
 		}
-		lb_index += 1;
+		lb_index += 1U;
 	}
 
 	*len = lb_index;
@@ -371,7 +371,7 @@ int dns_copy_qname(u8_t *buf, u16_t *len, u16_t size,
 		/* The domain name terminates with the zero length octet
 		 * for the null label of the root
 		 */
-		if (lb_size == 0) {
+		if (lb_size == 0U) {
 			rc = 0;
 			break;
 		}

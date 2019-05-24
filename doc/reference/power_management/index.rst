@@ -24,9 +24,9 @@ Terminology
    The CPU and clocks are powered on. This is the normal operating state when
    the system is running.
 
-:dfn:`Low Power State`
-   Refers to any one of the low power states supported by the SoC. The SoC is
-   usually powered on while the clocks are power gated.
+:dfn:`Sleep State`
+   Some of the SoC clocks are gated. The CPU is stopped but does not lose
+   execution context. Configuration of the peripherals is preserved.
 
 :dfn:`Deep Sleep State`
    The SoC is power gated and loses context. Most peripherals would also be
@@ -45,8 +45,7 @@ Overview
 The interfaces and APIs provided by the power management subsystem
 are designed to be architecture and SOC independent. This enables power
 management implementations to be easily adapted to different SOCs and
-architectures. The kernel does not implement any power schemes of its own, giving
-the system integrator the flexibility of implementing custom power schemes.
+architectures.
 
 The architecture and SOC independence is achieved by separating the core
 infrastructure and the SOC specific implementations. The SOC specific
@@ -90,108 +89,82 @@ is a thread ready to run or if an external event occurred.
 System Power Management
 ***********************
 
-This consists of the hook functions that the power management subsystem calls
-when the kernel enters and exits the idle state, in other words, when the kernel
-has nothing to schedule. Enabling system power management compels Zephyr kernel
-scheduler to work in tickless idle mode (see :option:`CONFIG_TICKLESS_IDLE`).
+The kernel enters the idle state when it has nothing to schedule. If enabled via
+the :option:`CONFIG_SYS_POWER_MANAGEMENT` Kconfig option, the Power Management
+Subsystem can put an idle system in one of the supported power states, based
+on the selected power management policy and the duration of the idle time
+allotted by the kernel.
 
-Suspend Hook function
-=====================
+It is an application responsibility to set up a wake up event. A wake up event
+will typically be an interrupt triggered by one of the SoC peripheral modules
+such as a SysTick, RTC, counter, or GPIO. Depending on the power mode entered,
+only some SoC peripheral modules may be active and can be used as a wake up
+source.
 
-.. code-block:: c
+Enabling system power management compels the Zephyr kernel scheduler to work in
+tickless idle mode (see :option:`CONFIG_TICKLESS_IDLE`).
 
-   int sys_suspend(s32_t ticks);
+Power States
+============
 
-When the kernel is about to go idle, the power management subsystem calls the
-:code:`sys_suspend()` function, notifying the SOC interface that the kernel
-is ready to enter the idle state.
+The power management subsystem classifies power states into two categories,
+Sleep State and Deep Sleep State, based on whether the CPU loses execution
+context during the power state transition.
 
-At this point, the kernel has disabled interrupts and computed the maximum
-time the system can remain idle. The function passes the time that
-the system can remain idle. The SOC interface performs power operations that
-can be done in the available time. The power management operation must halt
-execution on a CPU or SOC power state. Before entering the power state,
-the SOC interface must setup a wake event.
+The list of available power states is defined by :code:`enum power_states`. In
+general power states with higher indexes will offer greater power savings and
+have higher wake latencies.
 
-The power management subsystem expects the :code:`sys_suspend()` to return
-the power state which was used or :code:`SYS_POWER_STATE_ACTIVE` if SoC was
-kept in active state.
+Sleep State
+-----------
 
-Resume Hook function
-====================
-
-.. code-block:: c
-
-   void sys_resume(void);
-
-The power management subsystem optionally calls this hook function when exiting
-kernel idling if power management operations were performed in
-:code:`sys_suspend()`. Any necessary recovery operations can be performed
-in this function before the kernel scheduler schedules another thread. Some
-power states may not need this notification. It can be disabled by calling
-:code:`sys_pm_idle_exit_notification_disable()` from
-:code:`sys_suspend()`.
-
-Resume From Deep Sleep Hook function
-====================================
-
-.. code-block:: c
-
-   void sys_resume_from_deep_sleep(void);
-
-This function is optionally called when exiting from deep sleep if the SOC
-interface does not have bootloader support to handle resume from deep sleep.
-This function should restore context to the point where system entered
-the deep sleep state.
-
-.. note::
-
-   Since the hook functions are called with the interrupts disabled, the SOC
-   interface should ensure that its operations are completed quickly. Thus, the
-   SOC interface ensures that the kernel's scheduling performance is not
-   disrupted.
-
-Power Schemes
-*************
-
-When the power management subsystem notifies the SOC interface that the kernel
-is about to enter a system idle state, it specifies the period of time the
-system intends to stay idle. The SOC interface can perform various power
-management operations during this time. For example, put the processor or the
-SOC in a power state, turn off some or all of the peripherals or power gate
-device clocks.
-
-Different levels of power savings and different wake latencies characterize
-these power schemes. In general, operations that save more power have a
-higher wake latency. When making decisions, the SOC interface chooses the
-scheme that saves the most power. At the same time, the scheme's total
-execution time must fit within the idle time allotted by the power management
-subsystem.
-
-The power management subsystem classifies power management schemes
-into two categories based on whether the CPU loses execution context during the
-power state transition.
-
-* Low Power State
-* Deep Sleep State
-
-Low Power State
-===============
-
-CPU does not lose execution context. Devices also do not lose power while
-entering power states in this category. The wake latencies of power states
-in this category are relatively low.
+CPU is stopped but does not lose execution context. Some of the SoC clocks are
+gated. Configuration of the peripherals is preserved but some of them may be no
+longer functional. Execution will resume at the place it stopped. The wake
+latencies of power states in this category are relatively low.
 
 Deep Sleep State
-================
+----------------
 
 CPU is power gated and loses execution context. Execution will resume at
 OS startup code or at a resume point determined by a bootloader that supports
 deep sleep resume. Depending on the SOC's implementation of the power saving
 feature, it may turn off power to most devices. RAM may be retained by some
 implementations, while others may remove power from RAM saving considerable
-power. Power states in this category save more power than Low Power states
+power. Power states in this category save more power than Sleep states
 and would have higher wake latencies.
+
+Power Management Policies
+=========================
+
+The power management subsystem supports the following power management policies:
+
+* Residency
+* Application
+* Dummy
+
+Residency
+---------
+
+The power management system enters the power state which offers the highest
+power savings, and with a minimum residency value (defined by the respective
+Kconfig option) less than or equal to the scheduled system idle time duration.
+
+Application
+-----------
+
+The power management policy is defined by the application which has to implement
+the following function.
+
+.. code-block:: c
+
+   enum power_states sys_pm_policy_next_state(s32_t ticks);
+
+Dummy
+-----
+
+This policy returns the next supported power state in a loop. It is used mainly
+for testing purposes.
 
 Device Power Management Infrastructure
 **************************************
@@ -339,7 +312,7 @@ Device Set Power State
 
 .. code-block:: c
 
-   int device_set_power_state(struct device *device, u32_t device_power_state);
+   int device_set_power_state(struct device *device, u32_t device_power_state, device_pm_cb cb, void *arg);
 
 Calls the :c:func:`device_pm_control()` handler function implemented by the
 device driver with DEVICE_PM_SET_POWER_STATE command.
@@ -423,6 +396,92 @@ Check Busy Status of All Devices API
 
 Checks if any device is busy. The API returns 0 if no device in the system is busy.
 
+Device Idle Power Management
+****************************
+
+
+The Device Idle Power Management framework is a Active Power
+Management mechanism which reduces the overall system Power consumtion
+by suspending the devices which are idle or not being used while the
+System is active or running.
+
+The framework uses device_set_power_state() API set the
+device power state accordingly based on the usage count.
+
+The interfaces and APIs provided by the Device Idle PM are
+designed to be generic and architecture independent.
+
+Device Idle Power Management API
+================================
+
+The Device Drivers use these APIs to perform device idle power management
+operations on the devices.
+
+Enable Device Idle Power Management of a Device API
+---------------------------------------------------
+
+.. code-block:: c
+
+   void device_pm_enable(struct device *dev);
+
+Enbles Idle Power Management of the device.
+
+Disable Device Idle Power Management of a Device API
+----------------------------------------------------
+
+.. code-block:: c
+
+   void device_pm_disable(struct device *dev);
+
+Disables Idle Power Management of the device.
+
+Resume Device asynchronously API
+--------------------------------
+
+.. code-block:: c
+
+   int device_pm_get(struct device *dev);
+
+Marks the device as being used. This API will asynchronously
+bring the device to resume state. The API returns 0 on success.
+
+Resume Device synchronously API
+-------------------------------
+
+.. code-block:: c
+
+   int device_pm_get_sync(struct device *dev);
+
+Marks the device as being used. It will bring up or resume
+the device if it is in suspended state based on the device
+usage count. This call is blocked until the device PM state
+is changed to active. The API returns 0 on success.
+
+Suspend Device asynchronously API
+---------------------------------
+
+.. code-block:: c
+
+   int device_pm_put(struct device *dev);
+
+Marks the device as being released. This API asynchronously put
+the device to suspend state if not already in suspend state.
+The API returns 0 on success.
+
+Suspend Device synchronously API
+--------------------------------
+
+.. code-block:: c
+
+   int device_pm_put_sync(struct device *dev);
+
+Marks the device as being released. It will put the device to
+suspended state if is is in active state based on the device
+usage count. This call is blocked until the device PM state
+is changed to resume. The API returns 0 on success. This
+call is blocked until the device is suspended.
+
+
 Power Management Configuration Flags
 ************************************
 
@@ -437,9 +496,9 @@ the following configuration flags.
 
    This flag enables the tickless idle power saving feature.
 
-:option:`CONFIG_SYS_POWER_LOW_POWER_STATES`
+:option:`CONFIG_SYS_POWER_SLEEP_STATES`
 
-   This flag enables support for the Low Power states.
+   This flag enables support for the Sleep states.
 
 :option:`CONFIG_SYS_POWER_DEEP_SLEEP_STATES`
 
@@ -449,6 +508,10 @@ the following configuration flags.
 
    This flag is enabled if the SOC interface and the devices support device power
    management.
+
+:code:`CONFIG_DEVICE_IDLE_PM`
+
+   This flag enables the Device Idle Power Management.
 
 API Reference
 *************

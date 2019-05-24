@@ -389,6 +389,14 @@
 
 // </e>
 
+// <e> NRFX_NVMC_ENABLED - nrfx_nvmc - NVMC peripheral driver
+//==========================================================
+#ifdef CONFIG_NRFX_NVMC
+#define NRFX_NVMC_ENABLED 1
+#endif
+
+// </e>
+
 // <e> NRFX_POWER_ENABLED - nrfx_power - POWER peripheral driver
 //==========================================================
 #ifndef NRFX_POWER_ENABLED
@@ -784,30 +792,18 @@
 #ifdef CONFIG_NRFX_RTC
 #define NRFX_RTC_ENABLED 1
 #endif
+// <q> NRFX_RTC0_ENABLED  - Enable RTC0 instance
+
 
 #ifdef CONFIG_NRFX_RTC0
 #define NRFX_RTC0_ENABLED 1
 #endif
 
-#ifdef CONFIG_NRFX_RTC1
-#define NRFX_RTC1_ENABLED 1
-#endif
-
-#ifndef NRFX_RTC_ENABLED
-#define NRFX_RTC_ENABLED 0
-#endif
-// <q> NRFX_RTC0_ENABLED  - Enable RTC0 instance
-
-
-#ifndef NRFX_RTC0_ENABLED
-#define NRFX_RTC0_ENABLED 0
-#endif
-
 // <q> NRFX_RTC1_ENABLED  - Enable RTC1 instance
 
 
-#ifndef NRFX_RTC1_ENABLED
-#define NRFX_RTC1_ENABLED 0
+#ifdef CONFIG_NRFX_RTC1
+#define NRFX_RTC1_ENABLED 1
 #endif
 
 // <o> NRFX_RTC_MAXIMUM_LATENCY_US - Maximum possible time[us] in highest priority interrupt
@@ -1008,8 +1004,16 @@
 // <1=> NRF_GPIO_PIN_PULLDOWN
 // <3=> NRF_GPIO_PIN_PULLUP
 
-#ifndef NRFX_SPI_MISO_PULL_CFG
+#ifdef CONFIG_SPI_NRFX_SPI_MISO_NO_PULL
+#define NRFX_SPI_MISO_PULL_CFG 0
+#endif
+
+#ifdef CONFIG_SPI_NRFX_SPI_MISO_PULL_DOWN
 #define NRFX_SPI_MISO_PULL_CFG 1
+#endif
+
+#ifdef CONFIG_SPI_NRFX_SPI_MISO_PULL_UP
+#define NRFX_SPI_MISO_PULL_CFG 3
 #endif
 
 // <o> NRFX_SPI_DEFAULT_CONFIG_IRQ_PRIORITY  - Interrupt priority
@@ -1176,12 +1180,30 @@
 
 // </e>
 
+// <e> NRFX_TEMP_ENABLED - nrfx_temp - TEMP peripheral driver
+//==========================================================
+#ifndef NRFX_TEMP_ENABLED
+#define NRFX_TEMP_ENABLED 0
+#endif
+
+// <o> NRFX_TEMP_DEFAULT_CONFIG_IRQ_PRIORITY - Interrupt priority
+
+// <0=> 0 (highest)
+// <1=> 1
+// <2=> 2
+// <3=> 3
+
+#ifndef NRFX_TEMP_DEFAULT_CONFIG_IRQ_PRIORITY
+#define NRFX_TEMP_DEFAULT_CONFIG_IRQ_PRIORITY 3
+#endif
+
+// </e>
+
 // <e> NRFX_TIMER_ENABLED - nrfx_timer - TIMER periperal driver
 //==========================================================
 #ifdef CONFIG_NRFX_TIMER
 #define NRFX_TIMER_ENABLED 1
 #endif
-
 // <q> NRFX_TIMER0_ENABLED  - Enable TIMER0 instance
 
 
@@ -1406,12 +1428,12 @@
 
 // <e> NRFX_UART_ENABLED - nrfx_uart - UART peripheral driver
 //==========================================================
-#ifndef NRFX_UART_ENABLED
-#define NRFX_UART_ENABLED 0
+#ifdef CONFIG_NRFX_UART
+#define NRFX_UART_ENABLED 1
 #endif
 // <o> NRFX_UART0_ENABLED - Enable UART0 instance
-#ifndef NRFX_UART0_ENABLED
-#define NRFX_UART0_ENABLED 0
+#ifdef CONFIG_NRFX_UART
+#define NRFX_UART0_ENABLED 1
 #endif
 
 // <o> NRFX_UART_DEFAULT_CONFIG_HWFC  - Hardware Flow Control

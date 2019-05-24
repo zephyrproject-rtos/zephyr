@@ -112,7 +112,7 @@ try:
 except:
     pass
 finally:
-    if version_major and version_minor and patchlevel and extraversion is not None :
+    if version_major and version_minor and patchlevel and extraversion is not None:
         version = release = version_major + '.' + version_minor + '.' + patchlevel
         if extraversion != '':
             version = release = version + '-' + extraversion
@@ -143,7 +143,15 @@ else:
 
 # The reST default role (used for this markup: `text`) to use for all
 # documents.
-#default_role = None
+
+# This change will allow us to use bare back-tick notation to let
+# Sphinx hunt for a reference, starting with normal "document"
+# references such as :ref:, but also including :c: and :cpp: domains
+# (potentially) helping with API (doxygen) references simply by using
+# `name`
+
+default_role = 'any'
+# default_domain = 'cpp'
 
 # If true, '()' will be appended to :func: etc. cross-reference text.
 #add_function_parentheses = True
@@ -314,7 +322,7 @@ latex_elements = {
 #'pointsize': '10pt',
 
 # Additional stuff for the LaTeX preamble.
-'preamble': '\setcounter{tocdepth}{2}',
+'preamble': r'\setcounter{tocdepth}{2}',
 
 # Latex figure (float) alignment
 #'figure_align': 'htbp',
@@ -390,13 +398,20 @@ breathe_projects = {
 }
 breathe_default_project = "Zephyr"
 
+# Changing breathe configuration to force "c" domain doesn't work
+# see https://github.com/michaeljones/breathe/issues/282
+#breathe_domain_by_extension = {
+#    "h" : "c",
+#    "c" : "c",
+#    }
+
 # Qualifiers to a function are causing Sphihx/Breathe to warn about
 # Error when parsing function declaration and more.  This is a list
 # of strings that the parser additionally should accept as
 # attributes.
 cpp_id_attributes = ['__syscall', '__syscall_inline', '__deprecated',
     '__may_alias', '__used', '__unused', '__weak',
-    '__DEPRECATED_MACRO', 'FUNC_NORETURN' ]
+    '__DEPRECATED_MACRO', 'FUNC_NORETURN']
 
 # docs_title is used in the breadcrumb title in the zephyr docs theme
 html_context = {
@@ -406,11 +421,11 @@ html_context = {
     'theme_logo_only': False,
     'current_version': version,
     'versions': ( ("latest", "/"),
+                 ("1.14.0", "/1.14.0/"),
                  ("1.13.0", "/1.13.0/"),
                  ("1.12.0", "/1.12.0/"),
                  ("1.11.0", "/1.11.0/"),
                  ("1.10.0", "/1.10.0/"),
-                 ("1.9.2", "/1.9.0/"),
                 )
 }
 
@@ -432,5 +447,5 @@ linkcheck_workers = 10
 linkcheck_anchors = False
 
 def setup(app):
-   app.add_stylesheet("zephyr-custom.css")
-   app.add_javascript("zephyr-custom.js")
+    app.add_stylesheet("zephyr-custom.css")
+    app.add_javascript("zephyr-custom.js")

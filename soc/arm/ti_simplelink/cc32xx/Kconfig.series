@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 # Kconfig.series - TI SimpleLink CC32xx
 #
 
@@ -5,6 +7,5 @@ config  SOC_SERIES_CC32XX
 	bool "TI SimpleLink Family"
 	select CPU_CORTEX_M4
 	select SOC_FAMILY_TISIMPLELINK
-	select CPU_HAS_SYSTICK
 	help
 	  Enable support for TI SimpleLink CC32xx

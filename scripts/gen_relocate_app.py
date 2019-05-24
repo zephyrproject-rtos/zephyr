@@ -39,15 +39,34 @@ SECTION_LOAD_MEMORY_SEQ = """
         __{0}_{1}_rom_start = LOADADDR(_{2}_{3}_SECTION_NAME);
 """
 
-LOAD_ADDRESS_LOCATION_FLASH = "GROUP_DATA_LINK_IN({0}, FLASH)"
+LOAD_ADDRESS_LOCATION_FLASH = """
+#ifdef CONFIG_XIP
+GROUP_DATA_LINK_IN({0}, FLASH)
+#else
+GROUP_DATA_LINK_IN({0}, {0})
+#endif
+"""
 LOAD_ADDRESS_LOCATION_BSS = "GROUP_LINK_IN({0})"
+
+MPU_RO_REGION_START = """
+
+     _{0}_mpu_ro_region_start = {1}_ADDR;
+
+"""
+
+MPU_RO_REGION_END = """
+
+    MPU_ALIGN(_{0}_mpu_ro_region_end - _{0}_mpu_ro_region_start);
+    _{0}_mpu_ro_region_end = .;
+
+"""
 
 # generic section creation format
 LINKER_SECTION_SEQ = """
 
 /* Linker section for memory region {2} for  {3} section  */
 
-	SECTION_PROLOGUE(_{2}_{3}_SECTION_NAME, (OPTIONAL),)
+	SECTION_PROLOGUE(_{2}_{3}_SECTION_NAME,,)
         {{
                 . = ALIGN(4);
                 {4}
@@ -193,12 +212,15 @@ def string_create_helper(region, memory_type,
         # Create a complete list of funcs/ variables that goes in for this
         # memory type
         tmp = print_linker_sections(full_list_of_sections[region])
-        linker_string += LINKER_SECTION_SEQ.format(memory_type.lower(), region,
+        if memory_type == 'SRAM' and (region == 'data' or region == 'bss'):
+            linker_string += tmp
+        else:
+            linker_string += LINKER_SECTION_SEQ.format(memory_type.lower(), region,
                                                    memory_type.upper(), region.upper(),
                                                    tmp, load_address_string)
 
-        if load_address_in_flash:
-            linker_string += SECTION_LOAD_MEMORY_SEQ.format(memory_type.lower(),
+            if load_address_in_flash:
+                linker_string += SECTION_LOAD_MEMORY_SEQ.format(memory_type.lower(),
                                                             region,
                                                             memory_type.upper(),
                                                             region.upper())
@@ -206,17 +228,43 @@ def string_create_helper(region, memory_type,
     return linker_string
 
 
-def generate_linker_script(linker_file, complete_list_of_sections):
+def generate_linker_script(linker_file, sram_data_linker_file,
+                sram_bss_linker_file, complete_list_of_sections):
     gen_string = ''
+    gen_string_sram_data = ''
+    gen_string_sram_bss = ''
     for memory_type, full_list_of_sections in complete_list_of_sections.items():
-        gen_string += string_create_helper("text", memory_type, full_list_of_sections, 1)
-        gen_string += string_create_helper("rodata", memory_type, full_list_of_sections, 1)
-        gen_string += string_create_helper("data", memory_type, full_list_of_sections, 1)
-        gen_string += string_create_helper("bss", memory_type, full_list_of_sections, 0)
+
+        if memory_type != "SRAM":
+            gen_string += MPU_RO_REGION_START.format(memory_type.lower(),
+                                                          memory_type.upper())
+        gen_string += string_create_helper("text",
+                memory_type, full_list_of_sections, 1)
+        gen_string += string_create_helper("rodata",
+                memory_type, full_list_of_sections, 1)
+        if memory_type != "SRAM":
+            gen_string += MPU_RO_REGION_END.format(memory_type.lower())
+
+        if memory_type == 'SRAM':
+            gen_string_sram_data += string_create_helper("data",
+                    memory_type, full_list_of_sections, 1)
+            gen_string_sram_bss += string_create_helper("bss",
+                    memory_type, full_list_of_sections, 0)
+        else:
+            gen_string += string_create_helper("data",
+                    memory_type, full_list_of_sections, 1)
+            gen_string += string_create_helper("bss",
+                    memory_type, full_list_of_sections, 0)
 
     #finally writting to the linker file
     with open(linker_file, "a+") as file_desc:
         file_desc.write(gen_string)
+
+    with open(sram_data_linker_file, "a+") as file_desc:
+        file_desc.write(gen_string_sram_data)
+
+    with open(sram_bss_linker_file, "a+") as file_desc:
+        file_desc.write(gen_string_sram_bss)
 
 def generate_memcpy_code(memory_type, full_list_of_sections, code_generation):
 
@@ -237,13 +285,16 @@ def generate_memcpy_code(memory_type, full_list_of_sections, code_generation):
 
     #add all the regions that needs to be copied on boot up
     for mtype in ["text", "rodata", "data"]:
+        if memory_type == "SRAM" and mtype == "data":
+            continue
+
         if full_list_of_sections[mtype] and generate_section[mtype]:
             code_generation["copy_code"] += MEMCPY_TEMPLATE.format(memory_type.lower(), mtype)
             code_generation["extern"] += EXTERN_LINKER_VAR_DECLARATION.format(
                 memory_type.lower(), mtype)
 
     # add for all the bss data that needs to be zeored on boot up
-    if full_list_of_sections["bss"] and generate_section["bss"]:
+    if full_list_of_sections["bss"] and generate_section["bss"] and memory_type != "SRAM":
         code_generation["zero_code"] += MEMSET_TEMPLATE.format(memory_type.lower())
         code_generation["extern"] += EXTERN_LINKER_VAR_DECLARATION.format(
             memory_type.lower(), "bss")
@@ -281,6 +332,10 @@ def parse_args():
     parser.add_argument("-i", "--input_rel_dict", required=True,
                         help="input src:memory type(sram2 or ccm or aon etc) string")
     parser.add_argument("-o", "--output", required=False, help="Output ld file")
+    parser.add_argument("-s", "--output_sram_data", required=False,
+                        help="Output sram data ld file")
+    parser.add_argument("-b", "--output_sram_bss", required=False,
+                        help="Output sram bss ld file")
     parser.add_argument("-c", "--output_code", required=False,
                         help="Output relocation code header file")
     parser.add_argument("-v", "--verbose", action="count", default=0,
@@ -292,7 +347,7 @@ def get_obj_filename(searchpath, filename):
     # get the object file name which is almost always pended with .obj
     obj_filename = filename.split("/")[-1] + ".obj"
 
-    for dirpath, dirs, files in os.walk(searchpath):
+    for dirpath, _, files in os.walk(searchpath):
         for filename1 in files:
             if filename1 == obj_filename:
                 if filename.split("/")[-2] in dirpath.split("/")[-1]:
@@ -330,6 +385,8 @@ def main():
     parse_args()
     searchpath = args.directory
     linker_file = args.output
+    sram_data_linker_file = args.output_sram_data
+    sram_bss_linker_file = args.output_sram_bss
     rel_dict = create_dict_wrt_mem()
     complete_list_of_sections = {}
 
@@ -354,7 +411,8 @@ def main():
                                                                  full_list_of_sections,
                                                                  complete_list_of_sections)
 
-    generate_linker_script(linker_file, complete_list_of_sections)
+    generate_linker_script(linker_file, sram_data_linker_file,
+                       sram_bss_linker_file, complete_list_of_sections)
     for mem_type, list_of_sections in complete_list_of_sections.items():
         code_generation = generate_memcpy_code(mem_type,
                                                list_of_sections, code_generation)

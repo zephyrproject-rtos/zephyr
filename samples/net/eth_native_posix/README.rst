@@ -11,7 +11,7 @@ interface to the host system. One can communicate with Zephyr via this network
 interface.
 
 The source code for this sample application can be found at:
-:file:`samples/net/eth_native_posix`.
+:zephyr_file:`samples/net/eth_native_posix`.
 
 Building And Running
 ********************
@@ -69,7 +69,7 @@ in QEMU.
 If you want to connect two Zephyr instances together, you can do it like this:
 
 Create two Zephyr config files prj1.conf and prj2.conf. You can use
-:file:`samples/net/eth_native_posix/prj.conf` as a base.
+:zephyr_file:`samples/net/eth_native_posix/prj.conf` as a base.
 
 Set prj1.conf IP address configuration like this:
 

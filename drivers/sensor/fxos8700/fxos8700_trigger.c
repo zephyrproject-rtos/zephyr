@@ -18,7 +18,7 @@ static void fxos8700_gpio_callback(struct device *dev,
 	struct fxos8700_data *data =
 		CONTAINER_OF(cb, struct fxos8700_data, gpio_cb);
 
-	if ((pin_mask & BIT(data->gpio_pin)) == 0) {
+	if ((pin_mask & BIT(data->gpio_pin)) == 0U) {
 		return;
 	}
 

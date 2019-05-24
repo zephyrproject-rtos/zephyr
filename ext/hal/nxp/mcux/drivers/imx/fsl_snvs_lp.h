@@ -2,7 +2,7 @@
  * Copyright (c) 2016, Freescale Semiconductor, Inc.
  * Copyright (c) 2017, NXP
  * All rights reserved.
- * 
+ *
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
@@ -44,14 +44,14 @@ typedef enum _snvs_lp_external_tamper
 {
     kSNVS_ExternalTamper1 = 1U,
 #if defined(FSL_FEATURE_SNVS_HAS_MULTIPLE_TAMPER) && (FSL_FEATURE_SNVS_HAS_MULTIPLE_TAMPER > 1)
-    kSNVS_ExternalTamper2 = 2U,
-    kSNVS_ExternalTamper3 = 3U,
-    kSNVS_ExternalTamper4 = 4U,
-    kSNVS_ExternalTamper5 = 5U,
-    kSNVS_ExternalTamper6 = 6U,
-    kSNVS_ExternalTamper7 = 7U,
-    kSNVS_ExternalTamper8 = 8U,
-    kSNVS_ExternalTamper9 = 9U,
+    kSNVS_ExternalTamper2  = 2U,
+    kSNVS_ExternalTamper3  = 3U,
+    kSNVS_ExternalTamper4  = 4U,
+    kSNVS_ExternalTamper5  = 5U,
+    kSNVS_ExternalTamper6  = 6U,
+    kSNVS_ExternalTamper7  = 7U,
+    kSNVS_ExternalTamper8  = 8U,
+    kSNVS_ExternalTamper9  = 9U,
     kSNVS_ExternalTamper10 = 10U
 #endif
 } snvs_lp_external_tamper_t;
@@ -67,13 +67,13 @@ typedef enum _snvs_lp_external_tamper
 typedef enum _snvs_lp_external_tamper_status
 {
     kSNVS_TamperNotDetected = 0U,
-    kSNVS_TamperDetected = 1U
+    kSNVS_TamperDetected    = 1U
 } snvs_lp_external_tamper_status_t;
 
 /*! @brief SNVS_LP external tamper polarity */
 typedef enum _snvs_lp_external_tamper_polarity
 {
-    kSNVS_ExternalTamperActiveLow = 0U,
+    kSNVS_ExternalTamperActiveLow  = 0U,
     kSNVS_ExternalTamperActiveHigh = 1U
 } snvs_lp_external_tamper_polarity_t;
 
@@ -120,8 +120,8 @@ typedef enum _snvs_lp_zmk_program_mode
 typedef enum _snvs_lp_master_key_mode
 {
     kSNVS_OTPMK = 0, /*!< One Time Programmable Master Key. */
-    kSNVS_ZMK = 2,   /*!< Zeroizable Master Key. */
-    kSNVS_CMK = 3,   /*!< Combined Master Key, it is XOR of OPTMK and ZMK. */
+    kSNVS_ZMK   = 2, /*!< Zeroizable Master Key. */
+    kSNVS_CMK   = 3, /*!< Combined Master Key, it is XOR of OPTMK and ZMK. */
 } snvs_lp_master_key_mode_t;
 
 /*******************************************************************************
@@ -527,12 +527,11 @@ static inline void SNVS_LP_EnableZeroizableMasterKeyECC(SNVS_Type *base, bool en
 static inline void SNVS_LP_SetMasterKeyMode(SNVS_Type *base, snvs_lp_master_key_mode_t mode)
 {
     uint32_t lpmkcr = base->LPMKCR;
-    lpmkcr = (lpmkcr & (~SNVS_LPMKCR_MASTER_KEY_SEL_MASK)) | SNVS_LPMKCR_MASTER_KEY_SEL(mode);
-    base->LPMKCR = lpmkcr;
+    lpmkcr          = (lpmkcr & (~SNVS_LPMKCR_MASTER_KEY_SEL_MASK)) | SNVS_LPMKCR_MASTER_KEY_SEL(mode);
+    base->LPMKCR    = lpmkcr;
 }
 
 /*! @}*/
-
 
 #if defined(__cplusplus)
 }

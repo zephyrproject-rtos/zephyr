@@ -52,6 +52,13 @@ void arc_core_mpu_enable(void);
  */
 void arc_core_mpu_disable(void);
 
+/**
+ * @brief configure the thread's mpu regions
+ *
+ * @param thread the target thread
+ */
+void arc_core_mpu_configure_thread(struct k_thread *thread);
+
 /*
  * Before configure the MPU regions, MPU should be disabled
  */
@@ -70,52 +77,19 @@ void arc_core_mpu_default(u32_t region_attr);
  * @param   size    size of region
  * @param   region_attr region attribute
  */
-void arc_core_mpu_region(u32_t index, u32_t base, u32_t size,
+int arc_core_mpu_region(u32_t index, u32_t base, u32_t size,
 			 u32_t region_attr);
 
-/**
- * @brief configure the base address and size for an MPU region
- *
- * @param   type    MPU region type
- * @param   base    base address in RAM
- * @param   size    size of the region
- */
-void arc_core_mpu_configure(u8_t type, u32_t base, u32_t size);
 #endif /* CONFIG_ARC_CORE_MPU */
 
-
-#if defined(CONFIG_MPU_STACK_GUARD)
-/**
- * @brief Configure MPU stack guard
- *
- * This function configures per thread stack guards reprogramming the MPU.
- * The functionality is meant to be used during context switch.
- *
- * @param thread thread info data structure.
- */
-void configure_mpu_stack_guard(struct k_thread *thread);
-#endif
-
 #if defined(CONFIG_USERSPACE)
-void arc_core_mpu_configure_user_context(struct k_thread *thread);
 void arc_core_mpu_configure_mem_domain(struct k_thread *thread);
-void arc_core_mpu_mem_partition_remove(u32_t part_index);
-void arc_core_mpu_configure_mem_partition(u32_t part_index,
-					  struct k_mem_partition *part);
+void arc_core_mpu_remove_mem_domain(struct k_mem_domain *mem_domain);
+void arc_core_mpu_remove_mem_partition(struct k_mem_domain *domain,
+			u32_t partition_id);
 int arc_core_mpu_get_max_domain_partition_regions(void);
 int arc_core_mpu_buffer_validate(void *addr, size_t size, int write);
 
-/*
- * @brief Configure MPU memory domain
- *
- * This function configures per thread memory domain reprogramming the MPU.
- * The functionality is meant to be used during context switch.
- *
- * @param thread thread info data structure.
- */
-void configure_mpu_mem_domain(struct k_thread *thread);
-
-void configure_mpu_user_context(struct k_thread *thread);
 #endif
 
 void configure_mpu_thread(struct k_thread *thread);

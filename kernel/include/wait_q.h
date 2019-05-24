@@ -25,18 +25,18 @@ extern "C" {
 #define _WAIT_Q_FOR_EACH(wq, thread_ptr) \
 	RB_FOR_EACH_CONTAINER(&(wq)->waitq.tree, thread_ptr, base.qnode_rb)
 
-static inline void _waitq_init(_wait_q_t *w)
+static inline void z_waitq_init(_wait_q_t *w)
 {
 	w->waitq = (struct _priq_rb) {
 		.tree = {
-			.lessthan_fn = _priq_rb_lessthan
+			.lessthan_fn = z_priq_rb_lessthan
 		}
 	};
 }
 
-static inline struct k_thread *_waitq_head(_wait_q_t *w)
+static inline struct k_thread *z_waitq_head(_wait_q_t *w)
 {
-	return (void *)rb_get_min(&w->waitq.tree);
+	return (struct k_thread *)rb_get_min(&w->waitq.tree);
 }
 
 #else /* !CONFIG_WAITQ_SCALABLE: */
@@ -45,14 +45,14 @@ static inline struct k_thread *_waitq_head(_wait_q_t *w)
 	SYS_DLIST_FOR_EACH_CONTAINER(&((wq)->waitq), thread_ptr, \
 				     base.qnode_dlist)
 
-static inline void _waitq_init(_wait_q_t *w)
+static inline void z_waitq_init(_wait_q_t *w)
 {
 	sys_dlist_init(&w->waitq);
 }
 
-static inline struct k_thread *_waitq_head(_wait_q_t *w)
+static inline struct k_thread *z_waitq_head(_wait_q_t *w)
 {
-	return (void *)sys_dlist_peek_head(&w->waitq);
+	return (struct k_thread *)sys_dlist_peek_head(&w->waitq);
 }
 
 #endif /* !CONFIG_WAITQ_SCALABLE */

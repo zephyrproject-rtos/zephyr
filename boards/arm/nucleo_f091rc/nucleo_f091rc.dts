@@ -72,7 +72,7 @@ arduino_spi: &spi1 {
 };
 
 
-&idwg {
+&iwdg {
 	status = "ok";
 };
 
@@ -92,4 +92,8 @@ arduino_spi: &spi1 {
 			reg = <0x0003e800 0x00001800>;
 		};
 	};
+};
+
+&adc1 {
+	status = "ok";
 };

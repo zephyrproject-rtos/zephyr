@@ -88,47 +88,47 @@ void test_log_std_msg(void)
 	/* allocation of 4 argument fits in 2 buffers */
 	msg = log_msg_create_n(my_string, args, 4);
 
-	zassert_equal((used_slabs + 2),
+	zassert_equal((used_slabs + 2U),
 		      k_mem_slab_num_used_get(&log_msg_pool),
 		      "Expected mem slab allocation.");
-	used_slabs += 2;
+	used_slabs += 2U;
 
 	log_msg_put(msg);
 
-	zassert_equal((used_slabs - 2),
+	zassert_equal((used_slabs - 2U),
 		      k_mem_slab_num_used_get(&log_msg_pool),
 		      "Expected mem slab allocation.");
-	used_slabs -= 2;
+	used_slabs -= 2U;
 
 	/* allocation of 5 argument fits in 2 buffers */
 	msg = log_msg_create_n(my_string, args, 5);
 
-	zassert_equal((used_slabs + 2),
+	zassert_equal((used_slabs + 2U),
 		      k_mem_slab_num_used_get(&log_msg_pool),
 		      "Expected mem slab allocation.");
-	used_slabs += 2;
+	used_slabs += 2U;
 
 	log_msg_put(msg);
 
-	zassert_equal((used_slabs - 2),
+	zassert_equal((used_slabs - 2U),
 		      k_mem_slab_num_used_get(&log_msg_pool),
 		      "Expected mem slab allocation.");
-	used_slabs -= 2;
+	used_slabs -= 2U;
 
 	/* allocation of 5 argument fits in 2 buffers */
 	msg = log_msg_create_n(my_string, args, 6);
 
-	zassert_equal((used_slabs + 2),
+	zassert_equal((used_slabs + 2U),
 		      k_mem_slab_num_used_get(&log_msg_pool),
 		      "Expected mem slab allocation.");
-	used_slabs += 2;
+	used_slabs += 2U;
 
 	log_msg_put(msg);
 
-	zassert_equal((used_slabs - 2),
+	zassert_equal((used_slabs - 2U),
 		      k_mem_slab_num_used_get(&log_msg_pool),
 		      "Expected mem slab allocation.");
-	used_slabs -= 2;
+	used_slabs -= 2U;
 }
 
 void test_log_hexdump_msg(void)
@@ -178,34 +178,34 @@ void test_log_hexdump_msg(void)
 	msg = log_msg_hexdump_create("test", data,
 				     LOG_MSG_HEXDUMP_BYTES_SINGLE_CHUNK + 1);
 
-	zassert_equal((used_slabs + 2),
+	zassert_equal((used_slabs + 2U),
 		      k_mem_slab_num_used_get(&log_msg_pool),
 		      "Expected mem slab allocation.");
-	used_slabs += 2;
+	used_slabs += 2U;
 
 	log_msg_put(msg);
 
-	zassert_equal((used_slabs - 2),
+	zassert_equal((used_slabs - 2U),
 		      k_mem_slab_num_used_get(&log_msg_pool),
 		      "Expected mem slab allocation.");
-	used_slabs -= 2;
+	used_slabs -= 2U;
 
 	/* allocation of buffer that fits in 3 buffers */
 	msg = log_msg_hexdump_create("test", data,
 				     LOG_MSG_HEXDUMP_BYTES_SINGLE_CHUNK +
 				     HEXDUMP_BYTES_CONT_MSG + 1);
 
-	zassert_equal((used_slabs + 3),
+	zassert_equal((used_slabs + 3U),
 		      k_mem_slab_num_used_get(&log_msg_pool),
 		      "Expected mem slab allocation.");
-	used_slabs += 3;
+	used_slabs += 3U;
 
 	log_msg_put(msg);
 
-	zassert_equal((used_slabs - 3),
+	zassert_equal((used_slabs - 3U),
 		      k_mem_slab_num_used_get(&log_msg_pool),
 		      "Expected mem slab allocation.");
-	used_slabs -= 3;
+	used_slabs -= 3U;
 }
 
 void test_log_hexdump_data_get_single_chunk(void)

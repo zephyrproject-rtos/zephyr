@@ -40,7 +40,7 @@ void main(void)
 			break;
 		}
 
-		if (buffer[BUFFER_LENGTH-1] != 0) {
+		if (buffer[BUFFER_LENGTH-1] != 0U) {
 			printf("entropy_get_entropy buffer overflow\n");
 		}
 

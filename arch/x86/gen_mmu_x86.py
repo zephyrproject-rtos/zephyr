@@ -42,11 +42,9 @@ from reading their contents.
 import os
 import sys
 import struct
-import parser
 from collections import namedtuple
 import ctypes
 import argparse
-import re
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
 
@@ -79,9 +77,9 @@ def print_code(val):
     if not val & PAGE_ENTRY_PRESENT:
         ret = '.'
     else:
-        if (val & PAGE_ENTRY_READ_WRITE):
+        if val & PAGE_ENTRY_READ_WRITE:
             # Writable page
-            if (val & PAGE_ENTRY_XD):
+            if val & PAGE_ENTRY_XD:
                 # Readable, writeable, not executable
                 ret = 'w'
             else:
@@ -89,20 +87,20 @@ def print_code(val):
                 ret = 'a'
         else:
             # Read-only
-            if (val & PAGE_ENTRY_XD):
+            if val & PAGE_ENTRY_XD:
                 # Read-only
                 ret = 'r'
             else:
                 # Readable, executable
                 ret = 'x'
 
-        if (val & PAGE_ENTRY_USER_SUPERVISOR):
+        if val & PAGE_ENTRY_USER_SUPERVISOR:
             # User accessible pages are capital letters
             ret = ret.upper()
 
     sys.stdout.write(ret)
     entry_counter = entry_counter + 1
-    if (entry_counter == 128):
+    if entry_counter == 128:
         sys.stdout.write("\n")
         entry_counter = 0
 
@@ -199,7 +197,7 @@ class PageMode_PAE:
 
         # L1TF mitigation: map non-present pages to the NULL page
         if present:
-            binary_value |= page_table;
+            binary_value |= page_table
 
         return binary_value
 
@@ -350,7 +348,7 @@ class PageMode_PAE:
         # the pd contents
         #
         # FIXME: This wastes a ton of RAM!!
-        if (args.verbose):
+        if args.verbose:
             print("PDPTE at 0x%x" % self.pd_start_addr)
 
         for pdpte in range(self.total_pages + 1):
@@ -373,7 +371,7 @@ class PageMode_PAE:
 
     def page_directory_create_binary_file(self):
         for pdpte, pde_info in self.list_of_pdpte.items():
-            if (args.verbose):
+            if args.verbose:
                 print("Page directory %d at 0x%x" % (pde_info.pdpte_index,
                         self.pd_start_addr + self.output_offset))
             for pde in range(self.total_pages + 1):
@@ -388,18 +386,18 @@ class PageMode_PAE:
                                  self.output_buffer,
                                  self.output_offset,
                                  binary_value)
-                if (args.verbose):
+                if args.verbose:
                     print_code(binary_value)
 
                 self.output_offset += struct.calcsize(page_entry_format)
 
     def page_table_create_binary_file(self):
-        for pdpte, pde_info in sorted(self.list_of_pdpte.items()):
+        for _, pde_info in sorted(self.list_of_pdpte.items()):
             for pde, pte_info in sorted(pde_info.pd_entries.items()):
                 pe_info = pte_info.page_entries_info[0]
                 start_addr = pe_info.start_addr & ~0x1FFFFF
                 end_addr = start_addr + 0x1FFFFF
-                if (args.verbose):
+                if args.verbose:
                     print("Page table for 0x%08x - 0x%08x at 0x%08x" %
                             (start_addr, end_addr,
                                 self.pd_start_addr + self.output_offset))
@@ -423,7 +421,7 @@ class PageMode_PAE:
                                                                  pte,
                                                                  perm_for_pte)
 
-                    if (args.verbose):
+                    if args.verbose:
                         print_code(binary_value)
                     struct.pack_into(page_entry_format,
                                      self.output_buffer,
@@ -445,7 +443,7 @@ def read_mmu_list(mmu_list_data):
     # a offset used to remember next location to read in the binary
     size_read_from_binary = struct.calcsize(header_values_format)
 
-    if (args.verbose):
+    if args.verbose:
         print("Start address of page tables: 0x%08x" % pd_start_addr)
         print("Build-time memory regions:")
 
@@ -456,7 +454,7 @@ def read_mmu_list(mmu_list_data):
                                                      size_read_from_binary)
         size_read_from_binary += struct.calcsize(struct_mmu_regions_format)
 
-        if (args.verbose):
+        if args.verbose:
             print("    Region %03d: 0x%08x - 0x%08x (0x%016x)" %
                     (region_index, addr, addr + size - 1, flags))
 
@@ -470,7 +468,7 @@ def read_mmu_list(mmu_list_data):
             sys.exit(2)
 
         if (size & 0xFFF) != 0:
-            print("Memory region %d size %zu is not page-aligned" %
+            print("Memory region %d size %d is not page-aligned" %
                     (region_index, size))
             sys.exit(2)
 
@@ -484,7 +482,7 @@ def read_mmu_list(mmu_list_data):
             overlap = ((addr <= other_addr and end_addr > other_addr) or
                        (other_addr <= addr and other_end_addr > addr))
 
-            if (overlap):
+            if overlap:
                 print("Memory region %d (%x:%x) overlaps memory region %d (%x:%x)" %
                         (region_index, addr, end_addr, other_region_index,
                             other_addr, other_end_addr))

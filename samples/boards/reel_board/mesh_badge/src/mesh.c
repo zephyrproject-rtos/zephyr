@@ -20,9 +20,12 @@
 #define MOD_LF            0x0000
 #define OP_HELLO          0xbb
 #define OP_HEARTBEAT      0xbc
+#define OP_BADUSER        0xbd
 #define OP_VND_HELLO      BT_MESH_MODEL_OP_3(OP_HELLO, BT_COMP_ID_LF)
 #define OP_VND_HEARTBEAT  BT_MESH_MODEL_OP_3(OP_HEARTBEAT, BT_COMP_ID_LF)
+#define OP_VND_BADUSER    BT_MESH_MODEL_OP_3(OP_BADUSER, BT_COMP_ID_LF)
 
+#define IV_INDEX          0
 #define DEFAULT_TTL       31
 #define GROUP_ADDR        0xc123
 #define NET_IDX           0x000
@@ -56,6 +59,7 @@ struct sensor_hdr_b {
 } __packed;
 
 static struct k_work hello_work;
+static struct k_work baduser_work;
 static struct k_work mesh_start_work;
 
 /* Definitions of models user data (Start) */
@@ -334,6 +338,30 @@ static void vnd_hello(struct bt_mesh_model *model,
 	board_blink_leds();
 }
 
+static void vnd_baduser(struct bt_mesh_model *model,
+			struct bt_mesh_msg_ctx *ctx,
+			struct net_buf_simple *buf)
+{
+	char str[32];
+	size_t len;
+
+	printk("\"Bad user\" message from 0x%04x\n", ctx->addr);
+
+	if (ctx->addr == bt_mesh_model_elem(model)->addr) {
+		printk("Ignoring message from self\n");
+		return;
+	}
+
+	len = MIN(buf->len, HELLO_MAX);
+	memcpy(str, buf->data, len);
+	str[len] = '\0';
+
+	strcat(str, " is misbehaving!");
+	board_show_text(str, false, K_SECONDS(3));
+
+	board_blink_leds();
+}
+
 static void vnd_heartbeat(struct bt_mesh_model *model,
 			  struct bt_mesh_msg_ctx *ctx,
 			  struct net_buf_simple *buf)
@@ -349,7 +377,7 @@ static void vnd_heartbeat(struct bt_mesh_model *model,
 	hops = init_ttl - ctx->recv_ttl + 1;
 
 	printk("Heartbeat from 0x%04x over %u hop%s\n", ctx->addr,
-	       hops, hops == 1 ? "" : "s");
+	       hops, hops == 1U ? "" : "s");
 
 	board_add_heartbeat(ctx->addr, hops);
 }
@@ -357,6 +385,7 @@ static void vnd_heartbeat(struct bt_mesh_model *model,
 static const struct bt_mesh_model_op vnd_ops[] = {
 	{ OP_VND_HELLO, 1, vnd_hello },
 	{ OP_VND_HEARTBEAT, 1, vnd_heartbeat },
+	{ OP_VND_BADUSER, 1, vnd_baduser },
 	BT_MESH_MODEL_OP_END,
 };
 
@@ -432,6 +461,33 @@ void mesh_send_hello(void)
 	k_work_submit(&hello_work);
 }
 
+static void send_baduser(struct k_work *work)
+{
+	NET_BUF_SIMPLE_DEFINE(msg, 3 + HELLO_MAX + 4);
+	struct bt_mesh_msg_ctx ctx = {
+		.net_idx = NET_IDX,
+		.app_idx = APP_IDX,
+		.addr = GROUP_ADDR,
+		.send_ttl = DEFAULT_TTL,
+	};
+	const char *name = bt_get_name();
+
+	bt_mesh_model_msg_init(&msg, OP_VND_BADUSER);
+	net_buf_simple_add_mem(&msg, name,
+			       MIN(HELLO_MAX, first_name_len(name)));
+
+	if (bt_mesh_model_send(&vnd_models[0], &ctx, &msg, NULL, NULL) == 0) {
+		board_show_text("Bad user!", false, K_SECONDS(2));
+	} else {
+		board_show_text("Sending Failed!", false, K_SECONDS(2));
+	}
+}
+
+void mesh_send_baduser(void)
+{
+	k_work_submit(&baduser_work);
+}
+
 static int provision_and_configure(void)
 {
 	static const u8_t net_key[16] = {
@@ -442,7 +498,6 @@ static int provision_and_configure(void)
 		0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa,
 		0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa,
 	};
-	static const u16_t iv_index;
 	struct bt_mesh_cfg_mod_pub pub = {
 		.addr = GROUP_ADDR,
 		.app_idx = APP_IDX,
@@ -468,7 +523,7 @@ static int provision_and_configure(void)
 	/* Make sure it's a unicast address (highest bit unset) */
 	addr &= ~0x8000;
 
-	err = bt_mesh_provision(net_key, NET_IDX, FLAGS, iv_index, addr,
+	err = bt_mesh_provision(net_key, NET_IDX, FLAGS, IV_INDEX, addr,
 				dev_key);
 	if (err) {
 		return err;
@@ -545,6 +600,7 @@ int mesh_init(void)
 	};
 
 	k_work_init(&hello_work, send_hello);
+	k_work_init(&baduser_work, send_baduser);
 	k_work_init(&mesh_start_work, start_mesh);
 
 	return bt_mesh_init(&prov, &comp);

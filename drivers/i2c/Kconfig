@@ -18,15 +18,18 @@ if I2C
 
 # Include these first so that any properties (e.g. defaults) below can be
 # overriden (by defining symbols in multiple locations)
+source "drivers/i2c/Kconfig.cc13xx_cc26xx"
 source "drivers/i2c/Kconfig.dw"
 source "drivers/i2c/Kconfig.esp32"
 source "drivers/i2c/slave/Kconfig"
 source "drivers/i2c/Kconfig.gpio"
+source "drivers/i2c/Kconfig.xec"
 source "drivers/i2c/Kconfig.nrfx"
 source "drivers/i2c/Kconfig.qmsi"
 source "drivers/i2c/Kconfig.sbcon"
 source "drivers/i2c/Kconfig.sifive"
 source "drivers/i2c/Kconfig.stm32"
+source "drivers/i2c/Kconfig.sam0"
 
 
 config I2C_INIT_PRIORITY
@@ -299,5 +302,12 @@ config I2C_NIOS2
 	depends on HAS_ALTERA_HAL
 	help
 	  Enable the Nios-II I2C driver.
+
+config I2C_RV32M1_LPI2C
+	bool "RV32M1 LPI2C driver"
+	depends on HAS_RV32M1_LPI2C && CLOCK_CONTROL
+	select HAS_DTS_I2C
+	help
+	  Enable the RV32M1 LPI2C driver.
 
 endif # I2C

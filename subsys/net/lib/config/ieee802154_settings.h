@@ -7,7 +7,7 @@
  */
 
 #if defined(CONFIG_NET_L2_IEEE802154) && defined(CONFIG_NET_CONFIG_SETTINGS)
-int _net_config_ieee802154_setup(void);
+int z_net_config_ieee802154_setup(void);
 #else
-#define _net_config_ieee802154_setup(...) 0
+#define z_net_config_ieee802154_setup(...) 0
 #endif

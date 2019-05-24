@@ -22,7 +22,7 @@
 void ztest_test_fail(void);
 #if CONFIG_ZTEST_ASSERT_VERBOSE == 0
 
-static inline void _zassert_(int cond, const char *file, int line)
+static inline void z_zassert_(int cond, const char *file, int line)
 {
 	if (!(cond)) {
 		PRINT("\n    Assertion failed at %s:%d\n",
@@ -31,12 +31,12 @@ static inline void _zassert_(int cond, const char *file, int line)
 	}
 }
 
-#define _zassert(cond, default_msg, file, line, func, msg, ...)	\
-	_zassert_(cond, file, line)
+#define z_zassert(cond, default_msg, file, line, func, msg, ...)	\
+	z_zassert_(cond, file, line)
 
 #else /* CONFIG_ZTEST_ASSERT_VERBOSE != 0 */
 
-static inline void _zassert(int cond,
+static inline void z_zassert(int cond,
 			    const char *default_msg,
 			    const char *file,
 			    int line, const char *func,
@@ -85,7 +85,7 @@ static inline void _zassert(int cond,
  */
 
 #define zassert(cond, default_msg, msg, ...)			    \
-	_zassert(cond, msg ? ("(" default_msg ")") : (default_msg), \
+	z_zassert(cond, msg ? ("(" default_msg ")") : (default_msg), \
 		 __FILE__, __LINE__, __func__, msg ? msg : "", ##__VA_ARGS__)
 
 /**
@@ -166,6 +166,19 @@ static inline void _zassert(int cond,
  */
 #define zassert_equal_ptr(a, b, msg, ...)			     \
 	zassert((void *)(a) == (void *)(b), #a " not equal to  " #b, \
+		msg, ##__VA_ARGS__)
+
+/**
+ * @brief Assert that @a a is within @a b with delta @a d
+ *
+ * @param a Value to compare
+ * @param b Value to compare
+ * @param d Delta
+ * @param msg Optional message to print if the assertion fails
+ */
+#define zassert_within(a, b, d, msg, ...)			     \
+	zassert(((a) > ((b) - (d))) && ((a) < ((b) + (d))),	     \
+		#a " not within " #b " +/- " #d,		     \
 		msg, ##__VA_ARGS__)
 
 /**

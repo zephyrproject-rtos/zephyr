@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
 /dts-v1/;
 
 #include <nxp/nxp_k6x.dtsi>
@@ -71,6 +73,36 @@
 			label = "User SW3";
 			gpios = <&gpioa 4 GPIO_INT_ACTIVE_LOW>;
 		};
+	};
+
+	arduino_header: connector {
+		compatible = "arduino-header-r3";
+		#gpio-cells = <2>;
+		gpio-map = <0 0 &gpiob 2 0>,	/* A0 */
+			   <1 0 &gpiob 3 0>,	/* A1 */
+			   <2 0 &gpiob 10 0>,	/* A2 */
+			   <3 0 &gpiob 11 0>,	/* A3 */
+			   <4 0 &gpioc 11 0>,	/* A4 */
+			   <5 0 &gpioc 10 0>,	/* A5 */
+			   <6 0 &gpioc 16 0>,	/* D0 */
+			   <7 0 &gpioc 17 0>,	/* D1 */
+			   <8 0 &gpiob 9 0>,	/* D2 */
+			   <9 0 &gpioa 1 0>,	/* D3 */
+			   <10 0 &gpiob 23 0>,	/* D4 */
+			   <11 0 &gpioa 2 0>,	/* D5 */
+			   <12 0 &gpioc 2 0>,	/* D6 */
+			   <13 0 &gpioc 3 0>,	/* D7 */
+			   /* NOTE: HW Rev D and below use: */
+			   /* <14 0 &gpioa 0 0>, */
+			   /* NOTE: HW Rev E and on use: */
+			   <14 0 &gpioc 12 0>,	/* D8 */
+			   <15 0 &gpioc 4 0>,	/* D9 */
+			   <16 0 &gpiod 0 0>,	/* D10 */
+			   <17 0 &gpiod 2 0>,	/* D11 */
+			   <18 0 &gpiod 3 0>,	/* D12 */
+			   <19 0 &gpiod 1 0>,	/* D13 */
+			   <20 0 &gpioe 25 0>,	/* D14 */
+			   <21 0 &gpioe 24 0>;	/* D15 */
 	};
 };
 

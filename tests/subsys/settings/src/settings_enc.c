@@ -9,7 +9,7 @@
 
 static char enc_buf[128];
 static int enc_buf_cnt;
-static u8_t test_rwbs = 1;
+static u8_t test_rwbs = 1U;
 #define ENC_CTX_VAL 0x2018
 
 static int write_handler(void *ctx, off_t off, char const *buf, size_t len)

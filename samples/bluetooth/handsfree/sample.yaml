@@ -1,8 +1,7 @@
 sample:
-  description: TBD
-  name: TBD
+  name: Bluetooth Handsfree
 tests:
-  test:
+  sample.bluetooth.handsfree:
     harness: bluetooth
     platform_whitelist: qemu_cortex_m3 qemu_x86
     tags: bluetooth

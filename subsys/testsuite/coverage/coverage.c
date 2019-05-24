@@ -42,6 +42,11 @@ void __gcov_merge_add(gcov_type *counters, unsigned int n_counters)
 	/* Unused. */
 }
 
+void __gcov_exit(void)
+{
+	/* Unused. */
+}
+
 /**
  * buff_write_u64 - Store 64 bit data on a buffer and return the size
  */
@@ -73,7 +78,7 @@ size_t calculate_buff_size(struct gcov_info *info)
 	/* few Fixed values at the start version, stamp and magic number. */
 	u32_t size = sizeof(u32_t) * 3;
 
-	for (iter = 0; iter < info->n_functions; iter++) {
+	for (iter = 0U; iter < info->n_functions; iter++) {
 		/* space for TAG_FUNCTION and FUNCTION_LENGTH
 		 * ident
 		 * lineno_checksum
@@ -81,7 +86,7 @@ size_t calculate_buff_size(struct gcov_info *info)
 		 */
 		size += (sizeof(u32_t) * 5);
 
-		for (iter_1 = 0; iter_1 < GCOV_COUNTERS; iter_1++) {
+		for (iter_1 = 0U; iter_1 < GCOV_COUNTERS; iter_1++) {
 			if (!info->merge[iter_1]) {
 				continue;
 			}
@@ -89,7 +94,7 @@ size_t calculate_buff_size(struct gcov_info *info)
 			/*  for function counter and number of values  */
 			size += (sizeof(u32_t) * 2);
 
-			for (iter_2 = 0;
+			for (iter_2 = 0U;
 			     iter_2 < info->functions[iter]->ctrs->num;
 			     iter_2++) {
 
@@ -134,7 +139,7 @@ size_t populate_buffer(u8_t *buffer, struct gcov_info *info)
 		       &buffer_write_position,
 		       info->stamp);
 
-	for (iter_functions = 0;
+	for (iter_functions = 0U;
 	     iter_functions < info->n_functions;
 	     iter_functions++) {
 
@@ -163,7 +168,7 @@ size_t populate_buffer(u8_t *buffer, struct gcov_info *info)
 
 		counters_per_func = functions->ctrs;
 
-		for (iter_counts = 0;
+		for (iter_counts = 0U;
 		     iter_counts < GCOV_COUNTERS;
 		     iter_counts++) {
 
@@ -177,9 +182,9 @@ size_t populate_buffer(u8_t *buffer, struct gcov_info *info)
 
 			buff_write_u32(buffer,
 				       &buffer_write_position,
-				       counters_per_func->num * 2);
+				       counters_per_func->num * 2U);
 
-			for (iter_counter_values = 0;
+			for (iter_counter_values = 0U;
 			     iter_counter_values < counters_per_func->num;
 			     iter_counter_values++) {
 
@@ -207,7 +212,7 @@ void dump_on_console(const char *filename, char *ptr, size_t len)
 
 	/* Data dump */
 
-	for (iter = 0; iter < len; iter++) {
+	for (iter = 0U; iter < len; iter++) {
 		printk(" %02x", (u8_t)*ptr++);
 	}
 }

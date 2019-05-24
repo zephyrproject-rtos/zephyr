@@ -12,6 +12,9 @@ config SOC_SERIES
 config X86_IAMCU
         default y
 
+config X86_MULTIBOOT
+	default n
+
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 32000000
 

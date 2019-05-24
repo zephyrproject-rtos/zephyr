@@ -4,12 +4,15 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-menu Testing
+menu "Testing"
 
 source "subsys/testsuite/ztest/Kconfig"
 
 config TEST
 	bool "Mark project as a test"
+	# For tests, store thread names in binary and dump them on crash to
+	# ease debugging.
+	select THREAD_NAME
 	help
 	  Mark a project or an application as a test. This will enable a few
 	  test defaults.
@@ -23,7 +26,7 @@ config TEST_SHELL
 
 config TEST_EXTRA_STACKSIZE
 	int "Test function extra thread stack size"
-	default 1024 if COVERAGE_GCOV
+	default 2048 if COVERAGE_GCOV
 	default 768 if XTENSA
 	default 0
 	help
@@ -58,15 +61,33 @@ config COVERAGE_GCOV
 endif
 
 config TEST_USERSPACE
-	bool "Enable userspace if available"
+	bool "Indicate that this test exercises user mode"
+	help
+	  This option indicates that a test case puts threads in user mode,
+	  and that the build system should enable userspace if the platform
+	  supports it. It should be set on a per-test basis.
+
+	  The userspace APIs are no-ops if userspace is not enabled, so it is
+	  OK to enable this even if the test will run on platforms which do
+	  not support userspace. The test should still run on those platforms,
+	  just with all threads in supervisor mode.
+
+	  If a test *requires* that userspace be enabled in order to
+	  function, CONFIG_ARCH_HAS_USERSPACE should be filtered in its
+	  testcase.yaml.
+
+config TEST_ENABLE_USERSPACE
+	bool
+	depends on TEST_USERSPACE
 	depends on ARCH_HAS_USERSPACE
-	depends on TEST
 	select USERSPACE
 	select DYNAMIC_OBJECTS
 	default y
 	help
-	  This option will help test the userspace mode. This can be enabled
-	  only when CONFIG_ARCH_HAS_USERSPACE is set.
+	  This hidden option will help test the userspace mode. This will be
+	  enabled only when CONFIG_ARCH_HAS_USERSPACE is set, and that the test
+	  case itself indicates that it exercises user mode via
+	  CONFIG_TEST_USERSPACE.
 
 config TEST_HW_STACK_PROTECTION
 	bool "Enable hardware-based stack overflow detection if available"
@@ -86,4 +107,5 @@ config TEST_FLASH_DRIVERS
 	help
 	  This option will help test the flash drivers. This should be enabled
 	  only when using qemu_x86.
+
 endmenu

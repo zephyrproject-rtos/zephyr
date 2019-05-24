@@ -77,13 +77,13 @@ void main(void)
 	}
 
 	dma_cfg.channel_direction = MEMORY_TO_MEMORY;
-	dma_cfg.source_data_size = 1;
-	dma_cfg.dest_data_size = 1;
-	dma_cfg.source_burst_length = 1;
-	dma_cfg.dest_burst_length = 1;
+	dma_cfg.source_data_size = 1U;
+	dma_cfg.dest_data_size = 1U;
+	dma_cfg.source_burst_length = 1U;
+	dma_cfg.dest_burst_length = 1U;
 	dma_cfg.callback_arg = dma;
 	dma_cfg.dma_callback = dma_user_callback;
-	dma_cfg.block_count = 1;
+	dma_cfg.block_count = 1U;
 	dma_cfg.head_block = &dma_block_cfg;
 
 	chan_id = 0U;

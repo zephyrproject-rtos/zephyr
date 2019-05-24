@@ -71,10 +71,10 @@ struct ring_buf {
  * @param pow Ring buffer size exponent.
  */
 #define RING_BUF_ITEM_DECLARE_POW2(name, pow) \
-	static u32_t _ring_buffer_data_##name[1 << (pow)]; \
+	static u32_t _ring_buffer_data_##name[BIT(pow)]; \
 	struct ring_buf name = { \
-		.size = (1 << (pow)), \
-		.mask = (1 << (pow)) - 1, \
+		.size = (BIT(pow)),	  \
+		.mask = (BIT(pow)) - 1, \
 		.buf = { .buf32 = _ring_buffer_data_##name } \
 	}
 
@@ -148,11 +148,11 @@ static inline void ring_buf_init(struct ring_buf *buf, u32_t size, void *data)
 {
 	memset(buf, 0, sizeof(struct ring_buf));
 	buf->size = size;
-	buf->buf.buf32 = data;
+	buf->buf.buf32 = (u32_t *)data;
 	if (is_power_of_two(size)) {
 		buf->mask = size - 1;
 	} else {
-		buf->mask = 0;
+		buf->mask = 0U;
 	}
 }
 

@@ -52,11 +52,11 @@ extern "C" {
 #ifndef _ASMLANGUAGE
 
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
-void _int_latency_start(void);
-void _int_latency_stop(void);
+void z_int_latency_start(void);
+void z_int_latency_stop(void);
 #else
-#define _int_latency_start()  do { } while (false)
-#define _int_latency_stop()   do { } while (false)
+#define z_int_latency_start()  do { } while (false)
+#define z_int_latency_stop()   do { } while (false)
 #endif
 
 /* interrupt/exception/error related definitions */
@@ -175,7 +175,7 @@ typedef struct s_isrList {
  * These macros are only intended to be used by IRQ_CONNECT() macro.
  */
 #if CONFIG_X86_FIXED_IRQ_MAPPING
-#define _VECTOR_ARG(irq_p)	_IRQ_CONTROLLER_VECTOR_MAPPING(irq_p)
+#define _VECTOR_ARG(irq_p)	Z_IRQ_CONTROLLER_VECTOR_MAPPING(irq_p)
 #else
 #define _VECTOR_ARG(irq_p)	(-1)
 #endif /* CONFIG_X86_FIXED_IRQ_MAPPING */
@@ -200,7 +200,7 @@ typedef struct s_isrList {
  * 3. The IRQ stub pushes the ISR routine and its argument onto the stack
  * and then jumps to the common interrupt handling code in _interrupt_enter().
  *
- * 4. _irq_controller_irq_config() is called at runtime to set the mapping
+ * 4. z_irq_controller_irq_config() is called at runtime to set the mapping
  * between the vector and the IRQ line as well as triggering flags
  *
  * @param irq_p IRQ line number
@@ -211,7 +211,7 @@ typedef struct s_isrList {
  *
  * @return The vector assigned to this interrupt
  */
-#define _ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
+#define Z_ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
 ({ \
 	__asm__ __volatile__(							\
 		".pushsection .intList\n\t" \
@@ -235,9 +235,9 @@ typedef struct s_isrList {
 		  [priority] "i" (priority_p), \
 		  [vector] "i" _VECTOR_ARG(irq_p), \
 		  [irq] "i" (irq_p)); \
-	_irq_controller_irq_config(_IRQ_TO_INTERRUPT_VECTOR(irq_p), (irq_p), \
+	z_irq_controller_irq_config(Z_IRQ_TO_INTERRUPT_VECTOR(irq_p), (irq_p), \
 				   (flags_p)); \
-	_IRQ_TO_INTERRUPT_VECTOR(irq_p); \
+	Z_IRQ_TO_INTERRUPT_VECTOR(irq_p); \
 })
 
 /** Configure a 'direct' static interrupt
@@ -245,12 +245,12 @@ typedef struct s_isrList {
  * All arguments must be computable by the compiler at build time
  *
  */
-#define _ARCH_IRQ_DIRECT_CONNECT(irq_p, priority_p, isr_p, flags_p) \
+#define Z_ARCH_IRQ_DIRECT_CONNECT(irq_p, priority_p, isr_p, flags_p) \
 ({ \
 	NANO_CPU_INT_REGISTER(isr_p, irq_p, priority_p, -1, 0); \
-	_irq_controller_irq_config(_IRQ_TO_INTERRUPT_VECTOR(irq_p), (irq_p), \
+	z_irq_controller_irq_config(Z_IRQ_TO_INTERRUPT_VECTOR(irq_p), (irq_p), \
 				   (flags_p)); \
-	_IRQ_TO_INTERRUPT_VECTOR(irq_p); \
+	Z_IRQ_TO_INTERRUPT_VECTOR(irq_p); \
 })
 
 
@@ -258,7 +258,7 @@ typedef struct s_isrList {
 /* Fixed vector-to-irq association mapping.
  * No need for the table at all.
  */
-#define _IRQ_TO_INTERRUPT_VECTOR(irq) _IRQ_CONTROLLER_VECTOR_MAPPING(irq)
+#define Z_IRQ_TO_INTERRUPT_VECTOR(irq) Z_IRQ_CONTROLLER_VECTOR_MAPPING(irq)
 #else
 /**
  * @brief Convert a statically connected IRQ to its interrupt vector number
@@ -266,25 +266,25 @@ typedef struct s_isrList {
  * @param irq IRQ number
  */
 extern unsigned char _irq_to_interrupt_vector[];
-#define _IRQ_TO_INTERRUPT_VECTOR(irq)                       \
+#define Z_IRQ_TO_INTERRUPT_VECTOR(irq)                       \
 			((unsigned int) _irq_to_interrupt_vector[irq])
 #endif
 
 #ifdef CONFIG_SYS_POWER_MANAGEMENT
-extern void _arch_irq_direct_pm(void);
-#define _ARCH_ISR_DIRECT_PM() _arch_irq_direct_pm()
+extern void z_arch_irq_direct_pm(void);
+#define Z_ARCH_ISR_DIRECT_PM() z_arch_irq_direct_pm()
 #else
-#define _ARCH_ISR_DIRECT_PM() do { } while (false)
+#define Z_ARCH_ISR_DIRECT_PM() do { } while (false)
 #endif
 
-#define _ARCH_ISR_DIRECT_HEADER() _arch_isr_direct_header()
-#define _ARCH_ISR_DIRECT_FOOTER(swap) _arch_isr_direct_footer(swap)
+#define Z_ARCH_ISR_DIRECT_HEADER() z_arch_isr_direct_header()
+#define Z_ARCH_ISR_DIRECT_FOOTER(swap) z_arch_isr_direct_footer(swap)
 
 /* FIXME prefer these inline, but see GH-3056 */
-extern void _arch_isr_direct_header(void);
-extern void _arch_isr_direct_footer(int maybe_swap);
+extern void z_arch_isr_direct_header(void);
+extern void z_arch_isr_direct_footer(int maybe_swap);
 
-#define _ARCH_ISR_DIRECT_DECLARE(name) \
+#define Z_ARCH_ISR_DIRECT_DECLARE(name) \
 	static inline int name##_body(void); \
 	__attribute__ ((interrupt)) void name(void *stack_frame) \
 	{ \
@@ -363,8 +363,8 @@ typedef struct nanoIsf {
 #endif /* !_ASMLANGUAGE */
 
 /*
- * Reason codes passed to both _NanoFatalErrorHandler()
- * and _SysFatalErrorHandler().
+ * Reason codes passed to both z_NanoFatalErrorHandler()
+ * and z_SysFatalErrorHandler().
  */
 
 /** Unhandled exception/interrupt */
@@ -418,11 +418,11 @@ typedef struct nanoIsf {
  *
  */
 
-static ALWAYS_INLINE unsigned int _arch_irq_lock(void)
+static ALWAYS_INLINE unsigned int z_arch_irq_lock(void)
 {
 	unsigned int key = _do_irq_lock();
 
-	_int_latency_start();
+	z_int_latency_start();
 
 	return key;
 }
@@ -442,15 +442,15 @@ static ALWAYS_INLINE unsigned int _arch_irq_lock(void)
  *
  */
 
-static ALWAYS_INLINE void _arch_irq_unlock(unsigned int key)
+static ALWAYS_INLINE void z_arch_irq_unlock(unsigned int key)
 {
-	if (!(key & 0x200)) {
+	if ((key & 0x200U) == 0U) {
 		return;
 	}
 
-	_int_latency_stop();
+	z_int_latency_stop();
 
-	_do_irq_unlock();
+	z_do_irq_unlock();
 }
 
 /**
@@ -473,12 +473,12 @@ static ALWAYS_INLINE void arch_nop(void)
  * @brief Enable a specific IRQ
  * @param irq IRQ
  */
-extern void	_arch_irq_enable(unsigned int irq);
+extern void	z_arch_irq_enable(unsigned int irq);
 /**
  * @brief Disable a specific IRQ
  * @param irq IRQ
  */
-extern void	_arch_irq_disable(unsigned int irq);
+extern void	z_arch_irq_disable(unsigned int irq);
 
 /**
  * @defgroup float_apis Floating Point APIs
@@ -501,7 +501,7 @@ struct k_thread;
  *
  * Invoking this routine initializes the thread's floating point context info
  * to that of an FPU that has been reset. The next time the thread is scheduled
- * by _Swap() it will either inherit an FPU that is guaranteed to be in a "sane"
+ * by z_swap() it will either inherit an FPU that is guaranteed to be in a "sane"
  * state (if the most recent user of the FPU was cooperatively swapped out)
  * or the thread's own floating point context will be loaded (if the most
  * recent user of the FPU was preempted, or if this thread is the first user
@@ -543,15 +543,15 @@ extern void k_float_disable(struct k_thread *thread);
 
 extern void	k_cpu_idle(void);
 
-extern u32_t _timer_cycle_get_32(void);
-#define _arch_k_cycle_get_32()	_timer_cycle_get_32()
+extern u32_t z_timer_cycle_get_32(void);
+#define z_arch_k_cycle_get_32()	z_timer_cycle_get_32()
 
 /** kernel provided routine to report any detected fatal error. */
-extern FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
+extern FUNC_NORETURN void z_NanoFatalErrorHandler(unsigned int reason,
 						 const NANO_ESF * pEsf);
 
 /** User provided routine to handle any detected fatal error post reporting. */
-extern FUNC_NORETURN void _SysFatalErrorHandler(unsigned int reason,
+extern FUNC_NORETURN void z_SysFatalErrorHandler(unsigned int reason,
 						const NANO_ESF * pEsf);
 
 
@@ -582,17 +582,17 @@ extern struct task_state_segment _main_tss;
  * to the top of it.
  * All context switches will save/restore the esp0 field in the TSS.
  */
-#define _STACK_GUARD_SIZE	(MMU_PAGE_SIZE * 2)
+#define Z_ARCH_THREAD_STACK_RESERVED	(MMU_PAGE_SIZE * 2)
 #define _STACK_BASE_ALIGN	MMU_PAGE_SIZE
 #elif defined(CONFIG_HW_STACK_PROTECTION) || defined(CONFIG_USERSPACE)
 /* If only one of HW stack protection or userspace is enabled, then the
  * stack will be preceded by one page which is a guard page or a kernel mode
  * stack, respectively.
  */
-#define _STACK_GUARD_SIZE	MMU_PAGE_SIZE
+#define Z_ARCH_THREAD_STACK_RESERVED	MMU_PAGE_SIZE
 #define _STACK_BASE_ALIGN	MMU_PAGE_SIZE
 #else /* Neither feature */
-#define _STACK_GUARD_SIZE	0
+#define Z_ARCH_THREAD_STACK_RESERVED	0
 #define _STACK_BASE_ALIGN	STACK_ALIGN
 #endif
 
@@ -606,33 +606,33 @@ extern struct task_state_segment _main_tss;
 #define _STACK_SIZE_ALIGN	1
 #endif
 
-#define _ARCH_THREAD_STACK_DEFINE(sym, size) \
+#define Z_ARCH_THREAD_STACK_DEFINE(sym, size) \
 	struct _k_thread_stack_element __noinit \
 		__aligned(_STACK_BASE_ALIGN) \
-		sym[ROUND_UP((size), _STACK_SIZE_ALIGN) + _STACK_GUARD_SIZE]
+		sym[ROUND_UP((size), _STACK_SIZE_ALIGN) + Z_ARCH_THREAD_STACK_RESERVED]
 
-#define _ARCH_THREAD_STACK_LEN(size) \
+#define Z_ARCH_THREAD_STACK_LEN(size) \
 		(ROUND_UP((size), \
 			  MAX(_STACK_BASE_ALIGN, _STACK_SIZE_ALIGN)) + \
-		_STACK_GUARD_SIZE)
+		Z_ARCH_THREAD_STACK_RESERVED)
 
-#define _ARCH_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size) \
+#define Z_ARCH_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size) \
 	struct _k_thread_stack_element __noinit \
 		__aligned(_STACK_BASE_ALIGN) \
-		sym[nmemb][_ARCH_THREAD_STACK_LEN(size)]
+		sym[nmemb][Z_ARCH_THREAD_STACK_LEN(size)]
 
-#define _ARCH_THREAD_STACK_MEMBER(sym, size) \
+#define Z_ARCH_THREAD_STACK_MEMBER(sym, size) \
 	struct _k_thread_stack_element __aligned(_STACK_BASE_ALIGN) \
-		sym[ROUND_UP((size), _STACK_SIZE_ALIGN) + _STACK_GUARD_SIZE]
+		sym[ROUND_UP((size), _STACK_SIZE_ALIGN) + Z_ARCH_THREAD_STACK_RESERVED]
 
-#define _ARCH_THREAD_STACK_SIZEOF(sym) \
-	(sizeof(sym) - _STACK_GUARD_SIZE)
+#define Z_ARCH_THREAD_STACK_SIZEOF(sym) \
+	(sizeof(sym) - Z_ARCH_THREAD_STACK_RESERVED)
 
-#define _ARCH_THREAD_STACK_BUFFER(sym) \
-	((char *)((sym) + _STACK_GUARD_SIZE))
+#define Z_ARCH_THREAD_STACK_BUFFER(sym) \
+	((char *)((sym) + Z_ARCH_THREAD_STACK_RESERVED))
 
 #if CONFIG_X86_KERNEL_OOPS
-#define _ARCH_EXCEPT(reason_p) do { \
+#define Z_ARCH_EXCEPT(reason_p) do { \
 	__asm__ volatile( \
 		"push %[reason]\n\t" \
 		"int %[vector]\n\t" \
@@ -666,7 +666,7 @@ extern struct x86_mmu_pdpt z_x86_user_pdpt;
  * @param pde_flags Output parameter for page directory entry flags
  * @param pte_flags Output parameter for page table entry flags
  */
-void _x86_mmu_get_flags(struct x86_mmu_pdpt *pdpt, void *addr,
+void z_x86_mmu_get_flags(struct x86_mmu_pdpt *pdpt, void *addr,
 			x86_page_entry_data_t *pde_flags,
 			x86_page_entry_data_t *pte_flags);
 
@@ -684,7 +684,7 @@ void _x86_mmu_get_flags(struct x86_mmu_pdpt *pdpt, void *addr,
  * @param mask Mask indicating which particular bits in the page table entries to
  *	 modify
  */
-void _x86_mmu_set_flags(struct x86_mmu_pdpt *pdpt, void *ptr,
+void z_x86_mmu_set_flags(struct x86_mmu_pdpt *pdpt, void *ptr,
 			size_t size,
 			x86_page_entry_data_t flags,
 			x86_page_entry_data_t mask);

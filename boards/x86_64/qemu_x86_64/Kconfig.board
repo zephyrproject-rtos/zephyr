@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 config BOARD_QEMU_X86_64
 	bool "QEMU x86_64"
 	depends on SOC_X86_64

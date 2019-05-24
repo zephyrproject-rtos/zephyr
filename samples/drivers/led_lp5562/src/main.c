@@ -53,7 +53,7 @@ static u8_t colors[COLORS_TO_SHOW][VALUES_PER_COLOR] = {
  */
 static inline u8_t scale_color_to_percent(u8_t hex)
 {
-	return (hex * 100) / 0xFF;
+	return (hex * 100U) / 0xFF;
 }
 
 /*

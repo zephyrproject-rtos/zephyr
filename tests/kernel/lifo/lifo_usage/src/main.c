@@ -8,7 +8,7 @@
 #include "lifo_usage.h"
 #include <kernel.h>
 
-#define STACK_SIZE 1024
+#define STACK_SIZE (1024 + CONFIG_TEST_EXTRA_STACKSIZE)
 #define LIST_LEN 2
 
 struct k_lifo lifo, plifo;
@@ -64,7 +64,7 @@ struct timeout_order_data timeout_order_data_mult_lifo[] = {
 
 #define NUM_SCRATCH_LIFO_PACKETS 20
 #define TIMEOUT_ORDER_NUM_THREADS	ARRAY_SIZE(timeout_order_data_mult_lifo)
-#define TSTACK_SIZE			1024
+#define TSTACK_SIZE			(1024 + CONFIG_TEST_EXTRA_STACKSIZE)
 #define LIFO_THREAD_PRIO		-5
 
 struct scratch_lifo_packet scratch_lifo_packets[NUM_SCRATCH_LIFO_PACKETS];

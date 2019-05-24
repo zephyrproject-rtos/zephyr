@@ -1,9 +1,11 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
 /dts-v1/;
 
 #include <nxp/nxp_k6x.dtsi>
 
 / {
-	model = "Hexiwear K64  board";
+	model = "Hexiwear K64 board";
 	compatible = "nxp,hexiwear", "nxp,k64f", "nxp,k6x";
 
 	aliases {

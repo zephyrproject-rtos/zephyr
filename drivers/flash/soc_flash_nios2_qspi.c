@@ -87,7 +87,7 @@ static int flash_nios2_qspi_erase(struct device *dev, off_t offset, size_t len)
 	for (i = offset/qspi_dev->sector_size;
 			i < qspi_dev->number_of_sectors; i++) {
 
-		if ((remaining_length <= 0) ||
+		if ((remaining_length <= 0U) ||
 				erase_offset >= (offset + len)) {
 			break;
 		}
@@ -280,7 +280,7 @@ static int flash_nios2_qspi_write(struct device *dev, off_t offset,
 	for (i = offset/qspi_dev->sector_size;
 			i < qspi_dev->number_of_sectors; i++) {
 
-		if (remaining_length <= 0) {
+		if (remaining_length <= 0U) {
 			break;
 		}
 

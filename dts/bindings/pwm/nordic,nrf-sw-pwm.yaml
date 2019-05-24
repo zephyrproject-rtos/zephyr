@@ -1,0 +1,47 @@
+---
+title: nRF SW PWM
+version: 0.1
+
+description: >
+    This binding gives a base representation of the nRFx S/W PWM
+
+properties:
+    compatible:
+      constraint: "nordic,nrf-sw-pwm"
+
+    label:
+      type: string
+      category: required
+      description: Human readable string describing the device (used by Zephyr for API name)
+      generation: define
+
+    timer-instance:
+      type: int
+      description: Timer instance to use for generating the PWM output signals
+      category: required
+      generation: define
+
+    channel-count:
+      type: int
+      description: Number of PWM channels. Limited by timer instance compare registers minus 1.
+      category: required
+      generation: define
+
+    clock-prescaler:
+      type: int
+      description: Clock prescaler for timer used for generating the PWM output signals with frequency = 16 MHz / 2^prescaler
+      category: required
+      generation: define
+
+    ppi-base:
+      type: int
+      description: PPI base used for PPI index calculation used for PWM output generation
+      category: required
+      generation: define
+
+    gpiote-base:
+      type: int
+      description: GPIOTE base used for GPIOTE index calculation used for PWM output generation
+      category: required
+      generation: define
+...

@@ -1,0 +1,12 @@
+identifier: nrf52811_pca10056
+name: nRF52811-PCA10056
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 24
+flash: 192
+supported:
+  - counter

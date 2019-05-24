@@ -210,22 +210,22 @@ void ENC_GetDefaultConfig(enc_config_t *config)
     /* Initializes the configure structure to zero. */
     memset(config, 0, sizeof(*config));
 
-    config->enableReverseDirection = false;
-    config->decoderWorkMode = kENC_DecoderWorkAsNormalMode;
-    config->HOMETriggerMode = kENC_HOMETriggerDisabled;
-    config->INDEXTriggerMode = kENC_INDEXTriggerDisabled;
-    config->enableTRIGGERClearPositionCounter = false;
+    config->enableReverseDirection                = false;
+    config->decoderWorkMode                       = kENC_DecoderWorkAsNormalMode;
+    config->HOMETriggerMode                       = kENC_HOMETriggerDisabled;
+    config->INDEXTriggerMode                      = kENC_INDEXTriggerDisabled;
+    config->enableTRIGGERClearPositionCounter     = false;
     config->enableTRIGGERClearHoldPositionCounter = false;
-    config->enableWatchdog = false;
-    config->watchdogTimeoutValue = 0U;
-    config->filterCount = 0U;
-    config->filterSamplePeriod = 0U;
-    config->positionMatchMode = kENC_POSMATCHOnPositionCounterEqualToComapreValue;
-    config->positionCompareValue = 0xFFFFFFFFU;
-    config->revolutionCountCondition = kENC_RevolutionCountOnINDEXPulse;
-    config->enableModuloCountMode = false;
-    config->positionModulusValue = 0U;
-    config->positionInitialValue = 0U;
+    config->enableWatchdog                        = false;
+    config->watchdogTimeoutValue                  = 0U;
+    config->filterCount                           = 0U;
+    config->filterSamplePeriod                    = 0U;
+    config->positionMatchMode                     = kENC_POSMATCHOnPositionCounterEqualToComapreValue;
+    config->positionCompareValue                  = 0xFFFFFFFFU;
+    config->revolutionCountCondition              = kENC_RevolutionCountOnINDEXPulse;
+    config->enableModuloCountMode                 = false;
+    config->positionModulusValue                  = 0U;
+    config->positionInitialValue                  = 0U;
 }
 
 /*!

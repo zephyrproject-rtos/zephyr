@@ -20,10 +20,10 @@ in either one of the following two ways:
 - standalone mode, supplying 5V directly on P1 connector
 
 The user may select or unselect the sensors from
-:file:`samples/boards/96b_argonkey/sensors/prj.conf`.
+:zephyr_file:`samples/boards/96b_argonkey/sensors/prj.conf`.
 
 Please note that all sensor related code is conditionally compiled
-using the `#ifdef` directive, so this sample is supposed to always
+using the ``#ifdef`` directive, so this sample is supposed to always
 build correctly. Example:
 
 .. code-block:: c

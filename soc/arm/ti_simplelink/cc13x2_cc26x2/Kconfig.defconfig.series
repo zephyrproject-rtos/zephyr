@@ -1,0 +1,63 @@
+# Kconfig.defconfig.series - Texas Instruments SimpleLink CC13x2 / CC26x2
+#
+# Copyright (c) 2019 Brett Witherspoon
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_SERIES_CC13X2_CC26X2
+
+source "soc/arm/ti_simplelink/cc13x2_cc26x2/Kconfig.defconfig.cc*"
+
+config SOC_SERIES
+	string
+	default "cc13x2_cc26x2"
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	int
+	default 48000000
+
+config NUM_IRQS
+	int
+	default 38
+
+config TI_CCFG_PRESENT
+	bool
+	default y
+
+if PINMUX
+
+config PINMUX_CC13XX_CC26XX
+	default y
+
+endif # PINMUX
+
+if GPIO
+
+config GPIO_CC13XX_CC26XX
+	default y
+
+endif # GPIO
+
+if ENTROPY_GENERATOR
+
+config ENTROPY_CC13XX_CC26XX_RNG
+	default y
+
+endif # ENTROPY_GENERATOR
+
+if SERIAL
+
+config UART_CC13XX_CC26XX
+	default y
+
+endif # SERIAL
+
+if I2C
+
+config I2C_CC13XX_CC26XX
+	default y
+
+endif # I2C
+
+endif # SOC_SERIES_CC13X2_CC26X2

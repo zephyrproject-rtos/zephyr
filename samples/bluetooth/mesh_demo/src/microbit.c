@@ -108,7 +108,7 @@ void board_play_tune(const char *str)
 		}
 
 		while (isdigit((unsigned char)*str)) {
-			duration *= 10;
+			duration *= 10U;
 			duration += *str - '0';
 			str++;
 		}
@@ -126,7 +126,7 @@ void board_play_tune(const char *str)
 		}
 
 		if (period) {
-			pwm_pin_set_usec(pwm, BUZZER_PIN, period, period / 2);
+			pwm_pin_set_usec(pwm, BUZZER_PIN, period, period / 2U);
 		}
 
 		k_sleep(duration);

@@ -24,13 +24,13 @@ extern "C" {
 
 #ifdef _ASMLANGUAGE
 GTEXT(_IntExit);
-GTEXT(_arch_irq_enable)
-GTEXT(_arch_irq_disable)
-GTEXT(_arch_irq_is_enabled)
+GTEXT(z_arch_irq_enable)
+GTEXT(z_arch_irq_disable)
+GTEXT(z_arch_irq_is_enabled)
 #else
-extern void _arch_irq_enable(unsigned int irq);
-extern void _arch_irq_disable(unsigned int irq);
-extern int _arch_irq_is_enabled(unsigned int irq);
+extern void z_arch_irq_enable(unsigned int irq);
+extern void z_arch_irq_disable(unsigned int irq);
+extern int z_arch_irq_is_enabled(unsigned int irq);
 
 extern void _IntExit(void);
 
@@ -43,18 +43,18 @@ extern void _IntExit(void);
 #define CONCAT(x, y) DO_CONCAT(x, y)
 
 /* internal routine documented in C file, needed by IRQ_CONNECT() macro */
-extern void _irq_priority_set(unsigned int irq, unsigned int prio,
+extern void z_irq_priority_set(unsigned int irq, unsigned int prio,
 			      u32_t flags);
 
 
 /* Flags for use with IRQ_CONNECT() */
-#if CONFIG_ZERO_LATENCY_IRQS
+#ifdef CONFIG_ZERO_LATENCY_IRQS
 /**
  * Set this interrupt up as a zero-latency IRQ. It has a fixed hardware
  * priority level (discarding what was supplied in the interrupt's priority
  * argument), and will run even if irq_lock() is active. Be careful!
  */
-#define IRQ_ZERO_LATENCY	(1 << 0)
+#define IRQ_ZERO_LATENCY	BIT(0)
 #endif
 
 
@@ -63,7 +63,7 @@ extern void _irq_priority_set(unsigned int irq, unsigned int prio,
  *
  * All arguments must be computable by the compiler at build time.
  *
- * _ISR_DECLARE will populate the .intList section with the interrupt's
+ * Z_ISR_DECLARE will populate the .intList section with the interrupt's
  * parameters, which will then be used by gen_irq_tables.py to create
  * the vector table and the software ISR table. This is all done at
  * build-time.
@@ -79,10 +79,10 @@ extern void _irq_priority_set(unsigned int irq, unsigned int prio,
  *
  * @return The vector assigned to this interrupt
  */
-#define _ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
+#define Z_ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
 ({ \
-	_ISR_DECLARE(irq_p, 0, isr_p, isr_param_p); \
-	_irq_priority_set(irq_p, priority_p, flags_p); \
+	Z_ISR_DECLARE(irq_p, 0, isr_p, isr_param_p); \
+	z_irq_priority_set(irq_p, priority_p, flags_p); \
 	irq_p; \
 })
 
@@ -93,25 +93,25 @@ extern void _irq_priority_set(unsigned int irq, unsigned int prio,
  * See include/irq.h for details.
  * All arguments must be computable at build time.
  */
-#define _ARCH_IRQ_DIRECT_CONNECT(irq_p, priority_p, isr_p, flags_p) \
+#define Z_ARCH_IRQ_DIRECT_CONNECT(irq_p, priority_p, isr_p, flags_p) \
 ({ \
-	_ISR_DECLARE(irq_p, ISR_FLAG_DIRECT, isr_p, NULL); \
-	_irq_priority_set(irq_p, priority_p, flags_p); \
+	Z_ISR_DECLARE(irq_p, ISR_FLAG_DIRECT, isr_p, NULL); \
+	z_irq_priority_set(irq_p, priority_p, flags_p); \
 	irq_p; \
 })
 
 /* FIXME prefer these inline, but see GH-3056 */
 #ifdef CONFIG_SYS_POWER_MANAGEMENT
 extern void _arch_isr_direct_pm(void);
-#define _ARCH_ISR_DIRECT_PM() _arch_isr_direct_pm()
+#define Z_ARCH_ISR_DIRECT_PM() _arch_isr_direct_pm()
 #else
-#define _ARCH_ISR_DIRECT_PM() do { } while (false)
+#define Z_ARCH_ISR_DIRECT_PM() do { } while (false)
 #endif
 
-#define _ARCH_ISR_DIRECT_HEADER() _arch_isr_direct_header()
-extern void _arch_isr_direct_header(void);
+#define Z_ARCH_ISR_DIRECT_HEADER() z_arch_isr_direct_header()
+extern void z_arch_isr_direct_header(void);
 
-#define _ARCH_ISR_DIRECT_FOOTER(swap) _arch_isr_direct_footer(swap)
+#define Z_ARCH_ISR_DIRECT_FOOTER(swap) z_arch_isr_direct_footer(swap)
 
 /* arch/arm/core/exc_exit.S */
 extern void _IntExit(void);
@@ -120,7 +120,7 @@ extern void _IntExit(void);
 extern void z_sys_trace_isr_exit(void);
 #endif
 
-static inline void _arch_isr_direct_footer(int maybe_swap)
+static inline void z_arch_isr_direct_footer(int maybe_swap)
 {
 
 #ifdef CONFIG_TRACING
@@ -131,7 +131,7 @@ static inline void _arch_isr_direct_footer(int maybe_swap)
 	}
 }
 
-#define _ARCH_ISR_DIRECT_DECLARE(name) \
+#define Z_ARCH_ISR_DIRECT_DECLARE(name) \
 	static inline int name##_body(void); \
 	__attribute__ ((interrupt ("IRQ"))) void name(void) \
 	{ \
@@ -143,7 +143,7 @@ static inline void _arch_isr_direct_footer(int maybe_swap)
 	static inline int name##_body(void)
 
 /* Spurious interrupt handler. Throws an error if called */
-extern void _irq_spurious(void *unused);
+extern void z_irq_spurious(void *unused);
 
 #ifdef CONFIG_GEN_SW_ISR_TABLE
 /* Architecture-specific common entry point for interrupts from the vector

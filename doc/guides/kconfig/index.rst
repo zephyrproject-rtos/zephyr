@@ -1,3 +1,5 @@
+.. SPDX-License-Identifier: Apache-2.0
+
 .. _kconfig_tips_and_tricks:
 
 Kconfig - Tips and Best Practices
@@ -45,7 +47,7 @@ fixed on some machines and configurable on other machines.
 
 
 ``select`` statements
-****************************************
+*********************
 
 The ``select`` statement is used to force one symbol to ``y`` whenever another
 symbol is ``y``. For example, the following code forces ``CONSOLE`` to ``y``
@@ -273,6 +275,91 @@ In summary, here are some recommended practices for ``select``:
 
 - Select simple helper symbols without prompts and dependencies however much
   you like. They're a great tool for simplifying Kconfig files.
+
+
+(Lack of) conditional includes
+******************************
+
+``if`` blocks add dependencies to each item within the ``if``, as if ``depends
+on`` was used.
+
+A common misunderstanding related to ``if`` is to think that the following code
+conditionally includes the file :file:`Kconfig.other`:
+
+.. code-block:: none
+
+   if DEP
+   source "Kconfig.other"
+   endif
+
+In reality, there are no conditional includes in Kconfig. ``if`` has no special
+meaning around a ``source``.
+
+.. note::
+
+   Conditional includes would be impossible to implement, because ``if``
+   conditions may contain (either directly or indirectly) forward references to
+   symbols that haven't been defined yet.
+
+Say that :file:`Kconfig.other` above contains this definition:
+
+.. code-block:: none
+
+   config FOO
+   	bool "Support foo"
+
+In this case, ``FOO`` will end up with this definition:
+
+.. code-block:: none
+
+   config FOO
+   	bool "Support foo"
+   	depends on DEP
+
+Note that it is redundant to add ``depends on DEP`` to the definition of
+``FOO`` in :file:`Kconfig.other`, because the ``DEP`` dependency has already
+been added by ``if DEP``.
+
+In general, try to avoid adding redundant dependencies. They can make the
+structure of the Kconfig files harder to understand, and also make changes more
+error-prone, since it can be hard to spot that the same dependency is added
+twice.
+
+
+Checking changes in ``menuconfig``
+**********************************
+
+When adding new symbols or making other changes to Kconfig files, it is a good
+idea to look up the symbols in the :ref:`menuconfig <override_kernel_conf>`
+interface afterwards. To get to a symbol quickly, use the menuconfig's jump-to
+feature (press :kbd:`/`).
+
+Here are some things to check:
+
+* Are the symbols placed in a good spot? Check that they appear in a menu where
+  they make sense, close to related symbols.
+
+  If one symbol depends on another, then it's often a good idea to place it
+  right after the symbol it depends on. It will then be shown indented relative
+  to the symbol it depends on in the ``menuconfig`` interface. This also works
+  if several symbols are placed after the symbol they depend on.
+
+* Is it easy to guess what the symbols do from their prompts?
+
+* If many symbols are added, do all combinations of values they can be set to
+  make sense?
+
+  For example, if two symbols ``FOO_SUPPORT`` and ``NO_FOO_SUPPORT`` are added,
+  and both can be enabled at the same time, then that makes a nonsensical
+  configuration. In this case, it's probably better to have a single
+  ``FOO_SUPPORT`` symbol.
+
+* Are there any duplicated dependencies?
+
+  This can be checked by selecting a symbol and pressing :kbd:`?` to view the
+  symbol information. If there are duplicated dependencies, then use the
+  ``Included via ...`` path shown in the symbol information to figure out where
+  they come from.
 
 
 Style recommendations and shorthands

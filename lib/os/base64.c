@@ -151,7 +151,7 @@ int base64_decode(u8_t *dst, size_t dlen, size_t *olen, const u8_t *src,
 		}
 
 		/* Space inside a line is an error */
-		if (x != 0) {
+		if (x != 0U) {
 			return -EINVAL;
 		}
 
@@ -159,11 +159,11 @@ int base64_decode(u8_t *dst, size_t dlen, size_t *olen, const u8_t *src,
 			return -EINVAL;
 		}
 
-		if (src[i] > 127 || base64_dec_map[src[i]] == 127) {
+		if (src[i] > 127 || base64_dec_map[src[i]] == 127U) {
 			return -EINVAL;
 		}
 
-		if (base64_dec_map[src[i]] < 64 && j != 0) {
+		if (base64_dec_map[src[i]] < 64 && j != 0U) {
 			return -EINVAL;
 		}
 
@@ -193,7 +193,7 @@ int base64_decode(u8_t *dst, size_t dlen, size_t *olen, const u8_t *src,
 			continue;
 		}
 
-		j -= (base64_dec_map[*src] == 64);
+		j -= (base64_dec_map[*src] == 64U);
 		x  = (x << 6) | (base64_dec_map[*src] & 0x3F);
 
 		if (++n == 4) {

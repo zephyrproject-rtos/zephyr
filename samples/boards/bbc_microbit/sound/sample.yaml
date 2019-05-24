@@ -1,6 +1,6 @@
 sample:
   name: BBC micro:bit Sound
 tests:
-  test:
+  sample.board.bbc_microbit.sound:
     platform_whitelist: bbc_microbit
     tags: sound

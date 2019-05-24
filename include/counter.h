@@ -126,7 +126,8 @@ struct counter_driver_api {
  */
 static inline bool counter_is_counting_up(const struct device *dev)
 {
-	const struct counter_config_info *config = dev->config->config_info;
+	const struct counter_config_info *config =
+			(struct counter_config_info *)dev->config->config_info;
 
 	return config->count_up;
 }
@@ -140,7 +141,8 @@ static inline bool counter_is_counting_up(const struct device *dev)
  */
 static inline u8_t counter_get_num_of_channels(const struct device *dev)
 {
-	const struct counter_config_info *config = dev->config->config_info;
+	const struct counter_config_info *config =
+			(struct counter_config_info *)dev->config->config_info;
 
 	return config->channels;
 }
@@ -155,7 +157,8 @@ static inline u8_t counter_get_num_of_channels(const struct device *dev)
  */
 static inline u32_t counter_get_frequency(const struct device *dev)
 {
-	const struct counter_config_info *config = dev->config->config_info;
+	const struct counter_config_info *config =
+			(struct counter_config_info *)dev->config->config_info;
 
 	return config->freq;
 }
@@ -170,7 +173,8 @@ static inline u32_t counter_get_frequency(const struct device *dev)
  */
 static inline u32_t counter_us_to_ticks(const struct device *dev, u64_t us)
 {
-	const struct counter_config_info *config = dev->config->config_info;
+	const struct counter_config_info *config =
+			(struct counter_config_info *)dev->config->config_info;
 	u64_t ticks = (us * config->freq) / USEC_PER_SEC;
 
 	return (ticks > (u64_t)UINT32_MAX) ? UINT32_MAX : ticks;
@@ -186,7 +190,8 @@ static inline u32_t counter_us_to_ticks(const struct device *dev, u64_t us)
  */
 static inline u64_t counter_ticks_to_us(const struct device *dev, u32_t ticks)
 {
-	const struct counter_config_info *config = dev->config->config_info;
+	const struct counter_config_info *config =
+			(struct counter_config_info *)dev->config->config_info;
 
 	return ((u64_t)ticks * USEC_PER_SEC) / config->freq;
 }
@@ -200,7 +205,8 @@ static inline u64_t counter_ticks_to_us(const struct device *dev, u32_t ticks)
  */
 static inline u32_t counter_get_max_top_value(const struct device *dev)
 {
-	const struct counter_config_info *config = dev->config->config_info;
+	const struct counter_config_info *config =
+			(struct counter_config_info *)dev->config->config_info;
 
 	return config->max_top_value;
 }
@@ -215,9 +221,10 @@ static inline u32_t counter_get_max_top_value(const struct device *dev)
  */
 __syscall int counter_start(struct device *dev);
 
-static inline int _impl_counter_start(struct device *dev)
+static inline int z_impl_counter_start(struct device *dev)
 {
-	const struct counter_driver_api *api = dev->driver_api;
+	const struct counter_driver_api *api =
+				(struct counter_driver_api *)dev->driver_api;
 
 	return api->start(dev);
 }
@@ -233,9 +240,10 @@ static inline int _impl_counter_start(struct device *dev)
  */
 __syscall int counter_stop(struct device *dev);
 
-static inline int _impl_counter_stop(struct device *dev)
+static inline int z_impl_counter_stop(struct device *dev)
 {
-	const struct counter_driver_api *api = dev->driver_api;
+	const struct counter_driver_api *api =
+				(struct counter_driver_api *)dev->driver_api;
 
 	return api->stop(dev);
 }
@@ -248,9 +256,10 @@ static inline int _impl_counter_stop(struct device *dev)
  */
 __syscall u32_t counter_read(struct device *dev);
 
-static inline u32_t _impl_counter_read(struct device *dev)
+static inline u32_t z_impl_counter_read(struct device *dev)
 {
-	const struct counter_driver_api *api = dev->driver_api;
+	const struct counter_driver_api *api =
+				(struct counter_driver_api *)dev->driver_api;
 
 	return api->read(dev);
 }
@@ -276,7 +285,8 @@ static inline u32_t _impl_counter_read(struct device *dev)
 static inline int counter_set_channel_alarm(struct device *dev, u8_t chan_id,
 				      const struct counter_alarm_cfg *alarm_cfg)
 {
-	const struct counter_driver_api *api = dev->driver_api;
+	const struct counter_driver_api *api =
+				(struct counter_driver_api *)dev->driver_api;
 
 	if (chan_id >= counter_get_num_of_channels(dev)) {
 		return -ENOTSUP;
@@ -300,7 +310,8 @@ static inline int counter_set_channel_alarm(struct device *dev, u8_t chan_id,
 static inline int counter_cancel_channel_alarm(struct device *dev,
 						u8_t chan_id)
 {
-	const struct counter_driver_api *api = dev->driver_api;
+	const struct counter_driver_api *api =
+				(struct counter_driver_api *)dev->driver_api;
 
 	if (chan_id >= counter_get_num_of_channels(dev)) {
 		return -ENOTSUP;
@@ -332,7 +343,8 @@ static inline int counter_set_top_value(struct device *dev, u32_t ticks,
 					counter_top_callback_t callback,
 					void *user_data)
 {
-	const struct counter_driver_api *api = dev->driver_api;
+	const struct counter_driver_api *api =
+				(struct counter_driver_api *)dev->driver_api;
 
 	if (ticks > counter_get_max_top_value(dev)) {
 		return -EINVAL;
@@ -356,9 +368,10 @@ static inline int counter_set_top_value(struct device *dev, u32_t ticks,
  */
 __syscall int counter_get_pending_int(struct device *dev);
 
-static inline int _impl_counter_get_pending_int(struct device *dev)
+static inline int z_impl_counter_get_pending_int(struct device *dev)
 {
-	const struct counter_driver_api *api = dev->driver_api;
+	const struct counter_driver_api *api =
+				(struct counter_driver_api *)dev->driver_api;
 
 	return api->get_pending_int(dev);
 }
@@ -372,9 +385,10 @@ static inline int _impl_counter_get_pending_int(struct device *dev)
  */
 __syscall u32_t counter_get_top_value(struct device *dev);
 
-static inline u32_t _impl_counter_get_top_value(struct device *dev)
+static inline u32_t z_impl_counter_get_top_value(struct device *dev)
 {
-	const struct counter_driver_api *api = dev->driver_api;
+	const struct counter_driver_api *api =
+				(struct counter_driver_api *)dev->driver_api;
 
 	return api->get_top_value(dev);
 }
@@ -389,9 +403,10 @@ static inline u32_t _impl_counter_get_top_value(struct device *dev)
  */
 __syscall u32_t counter_get_max_relative_alarm(struct device *dev);
 
-static inline u32_t _impl_counter_get_max_relative_alarm(struct device *dev)
+static inline u32_t z_impl_counter_get_max_relative_alarm(struct device *dev)
 {
-	const struct counter_driver_api *api = dev->driver_api;
+	const struct counter_driver_api *api =
+				(struct counter_driver_api *)dev->driver_api;
 
 	return api->get_max_relative_alarm(dev);
 }
@@ -421,7 +436,8 @@ __deprecated static inline int counter_set_alarm(struct device *dev,
  */
 __deprecated static inline void *counter_get_user_data(struct device *dev)
 {
-	const struct counter_driver_api *api = dev->driver_api;
+	const struct counter_driver_api *api =
+				(struct counter_driver_api *)dev->driver_api;
 
 	if (api->get_user_data) {
 		return api->get_user_data(dev);

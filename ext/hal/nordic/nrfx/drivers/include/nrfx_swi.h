@@ -78,23 +78,22 @@ typedef uint16_t nrfx_swi_flags_t;
  */
 typedef void (*nrfx_swi_handler_t)(nrfx_swi_t swi, nrfx_swi_flags_t flags);
 
-
 /**
  * @brief Function for allocating the first unused SWI instance and setting a handler.
  *
  * If provided handler is not NULL, an allocated SWI has its interrupt enabled by default.
  * The interrupt can be disabled by @ref nrfx_swi_int_disable.
  *
- * @param[out] p_swi          Points to a place where the allocated SWI instance
- *                            number is to be stored.
- * @param[in]  event_handler  Event handler function.
- *                            If NULL, no interrupt will be enabled.
- *                            It can be NULL only if the EGU driver is enabled.
- *                            For classic SWI, it must be a valid handler pointer.
- * @param[in]  irq_priority   Interrupt priority.
+ * @param[out] p_swi         Points to a place where the allocated SWI instance
+ *                           number is to be stored.
+ * @param[in]  event_handler Event handler function.
+ *                           If NULL, no interrupt will be enabled.
+ *                           It can be NULL only if the EGU driver is enabled.
+ *                           For classic SWI, it must be a valid handler pointer.
+ * @param[in]  irq_priority  Interrupt priority.
  *
- * @retval NRFX_SUCCESS       If the SWI was successfully allocated.
- * @retval NRFX_ERROR_NO_MEM  If there is no available SWI to be used.
+ * @retval NRFX_SUCCESS      The SWI was successfully allocated.
+ * @retval NRFX_ERROR_NO_MEM There is no available SWI to be used.
  */
 nrfx_err_t nrfx_swi_alloc(nrfx_swi_t *       p_swi,
                           nrfx_swi_handler_t event_handler,
@@ -105,22 +104,22 @@ nrfx_err_t nrfx_swi_alloc(nrfx_swi_t *       p_swi,
  *
  * Use @ref nrfx_swi_int_enable to re-enable the interrupt.
  *
- * @param[in] swi  SWI instance.
+ * @param[in] swi SWI instance.
  */
 void nrfx_swi_int_disable(nrfx_swi_t swi);
 
 /**
  * @brief Function for enabling an allocated SWI interrupt.
  *
- * @param[in] swi  SWI instance.
+ * @param[in] swi SWI instance.
  */
 void nrfx_swi_int_enable(nrfx_swi_t swi);
 
 /**
  * @brief Function for freeing a previously allocated SWI.
  *
- * @param[in,out] p_swi  SWI instance to free. The value is changed to
- *                       @ref NRFX_SWI_UNALLOCATED on success.
+ * @param[in,out] p_swi SWI instance to free. The value is changed to
+ *                      @ref NRFX_SWI_UNALLOCATED on success.
  */
 void nrfx_swi_free(nrfx_swi_t * p_swi);
 
@@ -130,8 +129,8 @@ void nrfx_swi_all_free(void);
 /**
  * @brief Function for triggering the SWI.
  *
- * @param[in] swi          SWI to trigger.
- * @param[in] flag_number  Number of user flag to trigger.
+ * @param[in] swi         SWI to trigger.
+ * @param[in] flag_number Number of user flag to trigger.
  */
 void nrfx_swi_trigger(nrfx_swi_t swi,
                       uint8_t    flag_number);
@@ -139,10 +138,10 @@ void nrfx_swi_trigger(nrfx_swi_t swi,
 /**
  * @brief Function for checking if the specified SWI is currently allocated.
  *
- * @param[in] swi  SWI instance.
+ * @param[in] swi SWI instance.
  *
- * @retval true  If the SWI instance is allocated.
- * @retval false Otherwise.
+ * @retval true  The SWI instance is allocated.
+ * @retval false The SWI instance is not allocated.
  */
 bool nrfx_swi_is_allocated(nrfx_swi_t swi);
 
@@ -152,10 +151,10 @@ bool nrfx_swi_is_allocated(nrfx_swi_t swi);
  * @brief Function for returning the base address of the EGU peripheral
  *        associated with the specified SWI instance.
  *
- * @param[in] swi  SWI instance.
+ * @param[in] swi SWI instance.
  *
- * @returns EGU base address or NULL if the specified SWI instance number
- *          is too high.
+ * @return EGU base address or NULL if the specified SWI instance number
+ *         is too high.
  */
 __STATIC_INLINE NRF_EGU_Type * nrfx_swi_egu_instance_get(nrfx_swi_t swi)
 {
@@ -172,10 +171,10 @@ __STATIC_INLINE NRF_EGU_Type * nrfx_swi_egu_instance_get(nrfx_swi_t swi)
 /**
  * @brief Function for returning the EGU trigger task address.
  *
- * @param[in] swi      SWI instance.
- * @param[in] channel  Number of the EGU channel.
+ * @param[in] swi     SWI instance.
+ * @param[in] channel Number of the EGU channel.
  *
- * @returns Address of EGU trigger task.
+ * @return Address of the EGU trigger task.
  */
 __STATIC_INLINE uint32_t nrfx_swi_task_trigger_address_get(nrfx_swi_t swi,
                                                            uint8_t    channel)
@@ -194,12 +193,12 @@ __STATIC_INLINE uint32_t nrfx_swi_task_trigger_address_get(nrfx_swi_t swi,
 }
 
 /**
- * @brief Function for returning the EGU triggered event address.
+ * @brief Function for returning the EGU-triggered event address.
  *
- * @param[in] swi      SWI instance.
- * @param[in] channel  Number of the EGU channel.
+ * @param[in] swi     SWI instance.
+ * @param[in] channel Number of the EGU channel.
  *
- * @returns Address of EGU triggered event.
+ * @return Address of the EGU-triggered event.
  */
 __STATIC_INLINE uint32_t nrfx_swi_event_triggered_address_get(nrfx_swi_t swi,
                                                               uint8_t    channel)
@@ -219,6 +218,8 @@ __STATIC_INLINE uint32_t nrfx_swi_event_triggered_address_get(nrfx_swi_t swi,
 
 #endif // NRFX_CHECK(NRFX_EGU_ENABLED) || defined(__NRFX_DOXYGEN__)
 
+/** @} */
+
 
 void nrfx_swi_0_irq_handler(void);
 void nrfx_swi_1_irq_handler(void);
@@ -227,7 +228,6 @@ void nrfx_swi_3_irq_handler(void);
 void nrfx_swi_4_irq_handler(void);
 void nrfx_swi_5_irq_handler(void);
 
-/** @} */
 
 #ifdef __cplusplus
 }

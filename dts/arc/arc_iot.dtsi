@@ -65,6 +65,7 @@
 			label = "UART_0";
 			interrupts = <86 0>;
 			interrupt-parent = <&intc>;
+			dlf = <0x01>;
 		};
 
 		uart1: uart@80014100 {
@@ -245,7 +246,7 @@
 			compatible = "snps,designware-spi";
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x80010100 0x100>;
+			reg = <0x80010200 0x100>;
 			interrupts = <78 2>, <79 2>, <80 2>;
 			interrupt-names = "err-int", "rx-avail", "tx-req";
 			interrupt-parent = <&intc>;

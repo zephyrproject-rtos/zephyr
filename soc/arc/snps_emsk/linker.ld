@@ -17,9 +17,9 @@
  * DRAM includes the exception vector table at reset, which is at
  * the beginning of the region.
  */
-#if defined(CONFIG_SRAM_BASE_ADDRESS) && (CONFIG_SRAM_SIZE > 0)
-#define SRAM_START		CONFIG_SRAM_BASE_ADDRESS
-#define SRAM_SIZE		CONFIG_SRAM_SIZE
+#if defined(DT_DDR_BASE_ADDRESS) && (DT_DDR_SIZE > 0)
+#define SRAM_START		DT_DDR_BASE_ADDRESS
+#define SRAM_SIZE		DT_DDR_SIZE
 #endif
 
 /* Instruction Closely Coupled Memory (ICCM) base address and size */

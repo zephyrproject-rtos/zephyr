@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 set(BOARD_FLASH_RUNNER esp32)
 
 if(NOT DEFINED ESP_IDF_PATH)

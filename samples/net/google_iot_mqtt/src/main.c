@@ -30,7 +30,7 @@ void do_sntp(struct addrinfo *addr)
 	struct sntp_ctx ctx;
 	int rc;
 	s64_t stamp;
-	u64_t epoch_time;
+	struct sntp_time sntp_time;
 	char time_str[sizeof("1970-01-01T00:00:00")];
 
 	LOG_INF("Sending NTP request for current time:");
@@ -42,13 +42,13 @@ void do_sntp(struct addrinfo *addr)
 		return;
 	}
 
-	rc = sntp_request(&ctx, K_FOREVER, &epoch_time);
+	rc = sntp_query(&ctx, K_FOREVER, &sntp_time);
 	if (rc == 0) {
 		stamp = k_uptime_get();
-		time_base = epoch_time * MSEC_PER_SEC - stamp;
+		time_base = sntp_time.seconds * MSEC_PER_SEC - stamp;
 
 		/* Convert time to make sure. */
-		time_t now = epoch_time;
+		time_t now = sntp_time.seconds;
 		struct tm now_tm;
 
 		gmtime_r(&now, &now_tm);
@@ -77,7 +77,7 @@ top:
 	LOG_DBG("  family  : %d", addr->ai_family);
 	LOG_DBG("  socktype: %d", addr->ai_socktype);
 	LOG_DBG("  protocol: %d", addr->ai_protocol);
-	LOG_DBG("  addrlen : %d", addr->ai_addrlen);
+	LOG_DBG("  addrlen : %d", (int)addr->ai_addrlen);
 
 	/* Assume two words. */
 	LOG_DBG("   addr[0]: 0x%lx", ((uint32_t *)addr->ai_addr)[0]);

@@ -24,11 +24,10 @@ real network interface. This is similar to how Linux implements VLANs. The
 that is run on top of *eth0*.
 
 VLAN support must be enabled at compile time by setting option
-:option:`CONFIG_NET_VLAN` and also setting option
-:option:`CONFIG_NET_VLAN_COUNT` to reflect how many network interfaces there
-will be in the system.  For example, if there is one network interface without
-VLAN support, and two with VLAN support, the :option:`CONFIG_NET_VLAN_COUNT`
-should be set to 3.
+:option:`CONFIG_NET_VLAN` and :option:`CONFIG_NET_VLAN_COUNT` to reflect how
+many network interfaces there will be in the system.  For example, if there is
+one network interface without VLAN support, and two with VLAN support, the
+:option:`CONFIG_NET_VLAN_COUNT` option should be set to 3.
 
 Even if VLAN is enabled in a :file:`prj.conf` file, the VLAN needs to be
 activated at runtime by the application. The VLAN API provides a
@@ -38,9 +37,9 @@ function. The VLAN tagging for a given network interface can be disabled by a
 :cpp:func:`net_eth_vlan_disable()` function. The application needs to configure
 the VLAN network interface itself, such as setting the IP address, etc.
 
-See also the :ref:`vlan-sample` VLAN sample application for API usage
+See also the :ref:`VLAN sample application <vlan-sample>` for API usage
 example. The source code for that sample application can be found at
-:file:`samples/net/vlan`.
+:zephyr_file:`samples/net/vlan`.
 
 The net-shell module contains *net vlan add* and *net vlan del* commands
 that can be used to enable or disable VLAN tags for a given network interface.

@@ -11,7 +11,7 @@
 Z_SYSCALL_HANDLER(i2c_configure, dev, dev_config)
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_I2C(dev, configure));
-	return _impl_i2c_configure((struct device *)dev, dev_config);
+	return z_impl_i2c_configure((struct device *)dev, dev_config);
 }
 
 static u32_t copy_msgs_and_transfer(struct device *dev,
@@ -34,7 +34,7 @@ static u32_t copy_msgs_and_transfer(struct device *dev,
 					copy[i].flags & I2C_MSG_READ));
 	}
 
-	return _impl_i2c_transfer(dev, copy, num_msgs, addr);
+	return z_impl_i2c_transfer(dev, copy, num_msgs, addr);
 }
 
 Z_SYSCALL_HANDLER(i2c_transfer, dev, msgs, num_msgs, addr)

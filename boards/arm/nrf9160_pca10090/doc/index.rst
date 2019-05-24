@@ -28,7 +28,7 @@ following devices:
 * :abbr:`IDAU (Implementation Defined Attribution Unit)`
 
 .. figure:: img/nrf9160_pca10090.png
-     :width: 442px
+     :width: 711px
      :align: center
      :alt: nRF9160 PCA10090 DK
 
@@ -189,8 +189,8 @@ the board are working properly with Zephyr:
 * :ref:`button-sample`
 
 You can build and flash the examples to make sure Zephyr is running correctly on
-your board. The button and LED definitions can be found in :file:
-`boards/arm/nrf9160_pca10090/nrf9160_pca10090_common.dts`.
+your board. The button and LED definitions can be found in
+:zephyr_file:`boards/arm/nrf9160_pca10090/nrf9160_pca10090_common.dts`.
 
 References
 **********

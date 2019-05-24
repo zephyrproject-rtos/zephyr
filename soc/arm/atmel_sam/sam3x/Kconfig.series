@@ -10,7 +10,7 @@ config SOC_SERIES_SAM3X
 	bool "Atmel SAM3X MCU"
 	select CPU_CORTEX_M3
 	select SOC_FAMILY_SAM
-	select CPU_HAS_SYSTICK
+	select CPU_HAS_ARM_MPU
 	select ASF
 	help
 	  Enable support for Atmel SAM3X Cortex-M3 microcontrollers.

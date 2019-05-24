@@ -22,7 +22,7 @@
  */
 void GPC_EnableIRQ(GPC_Type *base, uint32_t irqId)
 {
-    uint32_t irqRegNum = irqId / 32U;
+    uint32_t irqRegNum      = irqId / 32U;
     uint32_t irqRegShiftNum = irqId % 32U;
 
     assert(irqRegNum > 0U);
@@ -50,7 +50,7 @@ void GPC_EnableIRQ(GPC_Type *base, uint32_t irqId)
  */
 void GPC_DisableIRQ(GPC_Type *base, uint32_t irqId)
 {
-    uint32_t irqRegNum = irqId / 32U;
+    uint32_t irqRegNum      = irqId / 32U;
     uint32_t irqRegShiftNum = irqId % 32U;
 
     assert(irqRegNum > 0U);
@@ -79,7 +79,7 @@ void GPC_DisableIRQ(GPC_Type *base, uint32_t irqId)
  */
 bool GPC_GetIRQStatusFlag(GPC_Type *base, uint32_t irqId)
 {
-    uint32_t irqRegNum = irqId / 32U;
+    uint32_t irqRegNum      = irqId / 32U;
     uint32_t irqRegShiftNum = irqId % 32U;
     uint32_t ret;
 

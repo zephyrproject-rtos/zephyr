@@ -44,87 +44,102 @@ extern "C" {
  * @defgroup nrfx_gpiote GPIOTE driver
  * @{
  * @ingroup nrf_gpiote
- * @brief   GPIOTE peripheral driver.
+ * @brief   GPIO Task Event (GPIOTE) peripheral driver.
  */
 
-/**@brief Input pin configuration. */
+/** @brief Input pin configuration. */
 typedef struct
 {
-    nrf_gpiote_polarity_t sense;               /**< Transition that triggers interrupt. */
+    nrf_gpiote_polarity_t sense;               /**< Transition that triggers the interrupt. */
     nrf_gpio_pin_pull_t   pull;                /**< Pulling mode. */
     bool                  is_watcher      : 1; /**< True when the input pin is tracking an output pin. */
     bool                  hi_accuracy     : 1; /**< True when high accuracy (IN_EVENT) is used. */
     bool                  skip_gpio_setup : 1; /**< Do not change GPIO configuration */
 } nrfx_gpiote_in_config_t;
 
-/**@brief Macro for configuring a pin to use a GPIO IN or PORT EVENT to detect low-to-high transition.
- * @details Set hi_accu to true to use IN_EVENT. */
+/**
+ * @brief Macro for configuring a pin to use a GPIO IN or PORT EVENT to detect low-to-high transition.
+ * @details Set hi_accu to true to use IN_EVENT.
+ */
 #define NRFX_GPIOTE_CONFIG_IN_SENSE_LOTOHI(hi_accu) \
-    {                                               \
-        .is_watcher = false,                        \
-        .hi_accuracy = hi_accu,                     \
-        .pull = NRF_GPIO_PIN_NOPULL,                \
-        .sense = NRF_GPIOTE_POLARITY_LOTOHI,        \
-    }
+{                                                   \
+    .sense = NRF_GPIOTE_POLARITY_LOTOHI,            \
+    .pull = NRF_GPIO_PIN_NOPULL,                    \
+    .is_watcher = false,                            \
+    .hi_accuracy = hi_accu,                         \
+    .skip_gpio_setup = false,                       \
+}
 
-/**@brief Macro for configuring a pin to use a GPIO IN or PORT EVENT to detect high-to-low transition.
- * @details Set hi_accu to true to use IN_EVENT. */
+/**
+ * @brief Macro for configuring a pin to use a GPIO IN or PORT EVENT to detect high-to-low transition.
+ * @details Set hi_accu to true to use IN_EVENT.
+ */
 #define NRFX_GPIOTE_CONFIG_IN_SENSE_HITOLO(hi_accu) \
-    {                                               \
-        .is_watcher = false,                        \
-        .hi_accuracy = hi_accu,                     \
-        .pull = NRF_GPIO_PIN_NOPULL,                \
-        .sense = NRF_GPIOTE_POLARITY_HITOLO,        \
-    }
+{                                                   \
+    .sense = NRF_GPIOTE_POLARITY_HITOLO,            \
+    .pull = NRF_GPIO_PIN_NOPULL,                    \
+    .is_watcher = false,                            \
+    .hi_accuracy = hi_accu,                         \
+    .skip_gpio_setup = false,                       \
+}
 
-/**@brief Macro for configuring a pin to use a GPIO IN or PORT EVENT to detect any change on the pin.
- * @details Set hi_accu to true to use IN_EVENT.*/
+/**
+ * @brief Macro for configuring a pin to use a GPIO IN or PORT EVENT to detect any change on the pin.
+ * @details Set hi_accu to true to use IN_EVENT.
+ */
 #define NRFX_GPIOTE_CONFIG_IN_SENSE_TOGGLE(hi_accu) \
-    {                                               \
-        .is_watcher = false,                        \
-        .hi_accuracy = hi_accu,                     \
-        .pull = NRF_GPIO_PIN_NOPULL,                \
-        .sense = NRF_GPIOTE_POLARITY_TOGGLE,        \
-    }
+{                                                   \
+    .sense = NRF_GPIOTE_POLARITY_TOGGLE,            \
+    .pull = NRF_GPIO_PIN_NOPULL,                    \
+    .is_watcher = false,                            \
+    .hi_accuracy = hi_accu,                         \
+    .skip_gpio_setup = false,                       \
+}
 
-/**@brief Macro for configuring a pin to use a GPIO IN or PORT EVENT to detect low-to-high transition.
+/**
+ * @brief Macro for configuring a pin to use a GPIO IN or PORT EVENT to detect low-to-high transition.
  * @details Set hi_accu to true to use IN_EVENT.
- * @note This macro prepares configuration that skips GPIO setup. */
+ * @note This macro prepares configuration that skips the GPIO setup.
+ */
 #define NRFX_GPIOTE_RAW_CONFIG_IN_SENSE_LOTOHI(hi_accu) \
-    {                                               \
-        .is_watcher = false,                        \
-        .hi_accuracy = hi_accu,                     \
-        .pull = NRF_GPIO_PIN_NOPULL,                \
-        .sense = NRF_GPIOTE_POLARITY_LOTOHI,        \
-        .skip_gpio_setup = true,                    \
-    }
+{                                                       \
+    .sense = NRF_GPIOTE_POLARITY_LOTOHI,                \
+    .pull = NRF_GPIO_PIN_NOPULL,                        \
+    .is_watcher = false,                                \
+    .hi_accuracy = hi_accu,                             \
+    .skip_gpio_setup = true,                            \
+}
 
-/**@brief Macro for configuring a pin to use a GPIO IN or PORT EVENT to detect high-to-low transition.
+/**
+ * @brief Macro for configuring a pin to use a GPIO IN or PORT EVENT to detect high-to-low transition.
  * @details Set hi_accu to true to use IN_EVENT.
- * @note This macro prepares configuration that skips GPIO setup. */
+ * @note This macro prepares configuration that skips the GPIO setup.
+ */
 #define NRFX_GPIOTE_RAW_CONFIG_IN_SENSE_HITOLO(hi_accu) \
-    {                                               \
-        .is_watcher = false,                        \
-        .hi_accuracy = hi_accu,                     \
-        .pull = NRF_GPIO_PIN_NOPULL,                \
-        .sense = NRF_GPIOTE_POLARITY_HITOLO,        \
-        .skip_gpio_setup = true,                    \
-    }
+{                                                       \
+    .sense = NRF_GPIOTE_POLARITY_HITOLO,                \
+    .pull = NRF_GPIO_PIN_NOPULL,                        \
+    .is_watcher = false,                                \
+    .hi_accuracy = hi_accu,                             \
+    .skip_gpio_setup = true,                            \
+}
 
-/**@brief Macro for configuring a pin to use a GPIO IN or PORT EVENT to detect any change on the pin.
+/**
+ * @brief Macro for configuring a pin to use a GPIO IN or PORT EVENT to detect any change on the pin.
  * @details Set hi_accu to true to use IN_EVENT.
- * @note This macro prepares configuration that skips GPIO setup. */
+ * @note This macro prepares configuration that skips the GPIO setup.
+ */
 #define NRFX_GPIOTE_RAW_CONFIG_IN_SENSE_TOGGLE(hi_accu) \
-    {                                               \
-        .is_watcher = false,                        \
-        .hi_accuracy = hi_accu,                     \
-        .pull = NRF_GPIO_PIN_NOPULL,                \
-        .sense = NRF_GPIOTE_POLARITY_TOGGLE,        \
-        .skip_gpio_setup = true,                    \
-    }
+{                                                       \
+    .sense = NRF_GPIOTE_POLARITY_TOGGLE,                \
+    .pull = NRF_GPIO_PIN_NOPULL,                        \
+    .is_watcher = false,                                \
+    .hi_accuracy = hi_accu,                             \
+    .skip_gpio_setup = true,                            \
+}
 
 
-/**@brief Output pin configuration. */
+/** @brief Output pin configuration. */
 typedef struct
 {
     nrf_gpiote_polarity_t action;     /**< Configuration of the pin task. */
@@ -132,15 +147,18 @@ typedef struct
     bool                  task_pin;   /**< True if the pin is controlled by a GPIOTE task. */
 } nrfx_gpiote_out_config_t;
 
-/**@brief Macro for configuring a pin to use as output. GPIOTE is not used for the pin. */
+/** @brief Macro for configuring a pin to use as output. GPIOTE is not used for the pin. */
 #define NRFX_GPIOTE_CONFIG_OUT_SIMPLE(init_high)                                                \
     {                                                                                           \
+        .action     = NRF_GPIOTE_POLARITY_LOTOHI,                                               \
         .init_state = init_high ? NRF_GPIOTE_INITIAL_VALUE_HIGH : NRF_GPIOTE_INITIAL_VALUE_LOW, \
-        .task_pin = false,                                                                      \
+        .task_pin   = false,                                                                    \
     }
 
-/**@brief Macro for configuring a pin to use the GPIO OUT TASK to change the state from high to low.
- * @details The task will clear the pin. Therefore, the pin is set initially.  */
+/**
+ * @brief Macro for configuring a pin to use the GPIO OUT TASK to change the state from high to low.
+ * @details The task will clear the pin. Therefore, the pin is set initially.
+ */
 #define NRFX_GPIOTE_CONFIG_OUT_TASK_LOW              \
     {                                                \
         .init_state = NRF_GPIOTE_INITIAL_VALUE_HIGH, \
@@ -148,22 +166,26 @@ typedef struct
         .action     = NRF_GPIOTE_POLARITY_HITOLO,    \
     }
 
-/**@brief Macro for configuring a pin to use the GPIO OUT TASK to change the state from low to high.
- * @details The task will set the pin. Therefore, the pin is cleared initially.  */
+/**
+ * @brief Macro for configuring a pin to use the GPIO OUT TASK to change the state from low to high.
+ * @details The task will set the pin. Therefore, the pin is cleared initially.
+ */
 #define NRFX_GPIOTE_CONFIG_OUT_TASK_HIGH            \
     {                                               \
+        .action     = NRF_GPIOTE_POLARITY_LOTOHI,   \
         .init_state = NRF_GPIOTE_INITIAL_VALUE_LOW, \
         .task_pin   = true,                         \
-        .action     = NRF_GPIOTE_POLARITY_LOTOHI,   \
     }
 
-/**@brief Macro for configuring a pin to use the GPIO OUT TASK to toggle the pin state.
- * @details The initial pin state must be provided.  */
+/**
+ * @brief Macro for configuring a pin to use the GPIO OUT TASK to toggle the pin state.
+ * @details The initial pin state must be provided.
+ */
 #define NRFX_GPIOTE_CONFIG_OUT_TASK_TOGGLE(init_high)                                           \
     {                                                                                           \
+        .action     = NRF_GPIOTE_POLARITY_TOGGLE,                                               \
         .init_state = init_high ? NRF_GPIOTE_INITIAL_VALUE_HIGH : NRF_GPIOTE_INITIAL_VALUE_LOW, \
         .task_pin   = true,                                                                     \
-        .action     = NRF_GPIOTE_POLARITY_TOGGLE,                                               \
     }
 
 /** @brief Pin. */
@@ -172,8 +194,8 @@ typedef uint32_t nrfx_gpiote_pin_t;
 /**
  * @brief Pin event handler prototype.
  *
- * @param pin    Pin that triggered this event.
- * @param action Action that lead to triggering this event.
+ * @param[in] pin    Pin that triggered this event.
+ * @param[in] action Action that led to triggering this event.
  */
 typedef void (*nrfx_gpiote_evt_handler_t)(nrfx_gpiote_pin_t pin, nrf_gpiote_polarity_t action);
 
@@ -183,25 +205,23 @@ typedef void (*nrfx_gpiote_evt_handler_t)(nrfx_gpiote_pin_t pin, nrf_gpiote_pola
  * @details Only static configuration is supported to prevent the shared
  * resource being customized by the initiator.
  *
- * @retval NRFX_SUCCESS             If initialization was successful.
- * @retval NRFX_ERROR_INVALID_STATE If the driver was already initialized.
+ * @retval NRFX_SUCCESS             Initialization was successful.
+ * @retval NRFX_ERROR_INVALID_STATE The driver was already initialized.
  */
 nrfx_err_t nrfx_gpiote_init(void);
 
 /**
  * @brief Function for checking if the GPIOTE module is initialized.
  *
- * @details The GPIOTE module is a shared module. Therefore, you should check if
+ * @details The GPIOTE module is a shared module. Therefore, check if
  * the module is already initialized and skip initialization if it is.
  *
- * @retval true  If the module is already initialized.
- * @retval false If the module is not initialized.
+ * @retval true  The module is already initialized.
+ * @retval false The module is not initialized.
  */
 bool nrfx_gpiote_is_init(void);
 
-/**
- * @brief Function for uninitializing the GPIOTE module.
- */
+/** @brief Function for uninitializing the GPIOTE module. */
 void nrfx_gpiote_uninit(void);
 
 /**
@@ -214,9 +234,9 @@ void nrfx_gpiote_uninit(void);
  * @param[in] pin      Pin.
  * @param[in] p_config Initial configuration.
  *
- * @retval NRFX_SUCCESS             If initialization was successful.
- * @retval NRFX_ERROR_INVALID_STATE If the driver is not initialized or the pin is already used.
- * @retval NRFX_ERROR_NO_MEM        If no GPIOTE channel is available.
+ * @retval NRFX_SUCCESS             Initialization was successful.
+ * @retval NRFX_ERROR_INVALID_STATE The driver is not initialized or the pin is already used.
+ * @retval NRFX_ERROR_NO_MEM        No GPIOTE channel is available.
  */
 nrfx_err_t nrfx_gpiote_out_init(nrfx_gpiote_pin_t                pin,
                                 nrfx_gpiote_out_config_t const * p_config);
@@ -305,7 +325,7 @@ uint32_t nrfx_gpiote_clr_task_addr_get(nrfx_gpiote_pin_t pin);
  * If high-accuracy mode is used, the driver attempts to allocate one
  * of the available GPIOTE channels. If no channel is
  * available, an error is returned.
- * In low accuracy mode SENSE feature is used. In this case only one active pin
+ * In low accuracy mode SENSE feature is used. In this case, only one active pin
  * can be detected at a time. It can be worked around by setting all of the used
  * low accuracy pins to toggle mode.
  * For more information about SENSE functionality, refer to Product Specification.
@@ -314,9 +334,9 @@ uint32_t nrfx_gpiote_clr_task_addr_get(nrfx_gpiote_pin_t pin);
  * @param[in] p_config    Initial configuration.
  * @param[in] evt_handler User function to be called when the configured transition occurs.
  *
- * @retval NRFX_SUCCESS             If initialization was successful.
- * @retval NRFX_ERROR_INVALID_STATE If the driver is not initialized or the pin is already used.
- * @retval NRFX_ERROR_NO_MEM        If no GPIOTE channel is available.
+ * @retval NRFX_SUCCESS             Initialization was successful.
+ * @retval NRFX_ERROR_INVALID_STATE The driver is not initialized or the pin is already used.
+ * @retval NRFX_ERROR_NO_MEM        No GPIOTE channel is available.
  */
 nrfx_err_t nrfx_gpiote_in_init(nrfx_gpiote_pin_t               pin,
                                nrfx_gpiote_in_config_t const * p_config,
@@ -335,8 +355,7 @@ void nrfx_gpiote_in_uninit(nrfx_gpiote_pin_t pin);
  *
  * @details If the input pin is configured as high-accuracy pin, the function
  * enables an IN_EVENT. Otherwise, the function enables the GPIO sense mechanism.
- * Note that a PORT event is shared between multiple pins, therefore the
- * interrupt is always enabled.
+ * The PORT event is shared between multiple pins, therefore the interrupt is always enabled.
  *
  * @param[in] pin        Pin.
  * @param[in] int_enable True to enable the interrupt. Always valid for a high-accuracy pin.
@@ -355,8 +374,8 @@ void nrfx_gpiote_in_event_disable(nrfx_gpiote_pin_t pin);
  *
  * @param[in] pin Pin.
  *
- * @retval true  If the input pin is set.
- * @retval false If the input pin is not set.
+ * @retval true  The input pin is set.
+ * @retval false The input pin is not set.
  */
 bool nrfx_gpiote_in_is_set(nrfx_gpiote_pin_t pin);
 
@@ -365,6 +384,8 @@ bool nrfx_gpiote_in_is_set(nrfx_gpiote_pin_t pin);
  * @details If the pin is configured to use low-accuracy mode, the address of the PORT event is returned.
  *
  * @param[in] pin Pin.
+ *
+ * @return Address of the specified input pin event.
  */
 uint32_t nrfx_gpiote_in_event_addr_get(nrfx_gpiote_pin_t pin);
 
@@ -401,11 +422,11 @@ void nrfx_gpiote_set_task_trigger(nrfx_gpiote_pin_t pin);
 void nrfx_gpiote_clr_task_trigger(nrfx_gpiote_pin_t pin);
 #endif // defined(GPIOTE_FEATURE_CLR_PRESENT) || defined(__NRFX_DOXYGEN__)
 
+/** @} */
+
 
 void nrfx_gpiote_irq_handler(void);
 
-
-/** @} */
 
 #ifdef __cplusplus
 }

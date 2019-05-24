@@ -59,14 +59,14 @@ static void FLEXIO_I2S_TxEDMACallback(edma_handle_t *handle, void *userData, boo
 static void FLEXIO_I2S_RxEDMACallback(edma_handle_t *handle, void *userData, bool done, uint32_t tcds);
 
 /*******************************************************************************
-* Code
-******************************************************************************/
+ * Code
+ ******************************************************************************/
 static void FLEXIO_I2S_TxEDMACallback(edma_handle_t *handle, void *userData, bool done, uint32_t tcds)
 {
     flexio_i2s_edma_private_handle_t *privHandle = (flexio_i2s_edma_private_handle_t *)userData;
-    flexio_i2s_edma_handle_t *flexio_i2sHandle = privHandle->handle;
+    flexio_i2s_edma_handle_t *flexio_i2sHandle   = privHandle->handle;
 
-    /* If finished a blcok, call the callback function */
+    /* If finished a block, call the callback function */
     memset(&flexio_i2sHandle->queue[flexio_i2sHandle->queueDriver], 0, sizeof(flexio_i2s_transfer_t));
     flexio_i2sHandle->queueDriver = (flexio_i2sHandle->queueDriver + 1) % FLEXIO_I2S_XFER_QUEUE_SIZE;
     if (flexio_i2sHandle->callback)
@@ -84,9 +84,9 @@ static void FLEXIO_I2S_TxEDMACallback(edma_handle_t *handle, void *userData, boo
 static void FLEXIO_I2S_RxEDMACallback(edma_handle_t *handle, void *userData, bool done, uint32_t tcds)
 {
     flexio_i2s_edma_private_handle_t *privHandle = (flexio_i2s_edma_private_handle_t *)userData;
-    flexio_i2s_edma_handle_t *flexio_i2sHandle = privHandle->handle;
+    flexio_i2s_edma_handle_t *flexio_i2sHandle   = privHandle->handle;
 
-    /* If finished a blcok, call the callback function */
+    /* If finished a block, call the callback function */
     memset(&flexio_i2sHandle->queue[flexio_i2sHandle->queueDriver], 0, sizeof(flexio_i2s_transfer_t));
     flexio_i2sHandle->queueDriver = (flexio_i2sHandle->queueDriver + 1) % FLEXIO_I2S_XFER_QUEUE_SIZE;
     if (flexio_i2sHandle->callback)
@@ -127,13 +127,13 @@ void FLEXIO_I2S_TransferTxCreateHandleEDMA(FLEXIO_I2S_Type *base,
 
     /* Set flexio_i2s base to handle */
     handle->dmaHandle = dmaHandle;
-    handle->callback = callback;
-    handle->userData = userData;
+    handle->callback  = callback;
+    handle->userData  = userData;
 
     /* Set FLEXIO I2S state to idle */
     handle->state = kFLEXIO_I2S_Idle;
 
-    s_edmaPrivateHandle[0].base = base;
+    s_edmaPrivateHandle[0].base   = base;
     s_edmaPrivateHandle[0].handle = handle;
 
     /* Need to use scatter gather */
@@ -169,13 +169,13 @@ void FLEXIO_I2S_TransferRxCreateHandleEDMA(FLEXIO_I2S_Type *base,
 
     /* Set flexio_i2s base to handle */
     handle->dmaHandle = dmaHandle;
-    handle->callback = callback;
-    handle->userData = userData;
+    handle->callback  = callback;
+    handle->userData  = userData;
 
     /* Set FLEXIO I2S state to idle */
     handle->state = kFLEXIO_I2S_Idle;
 
-    s_edmaPrivateHandle[1].base = base;
+    s_edmaPrivateHandle[1].base   = base;
     s_edmaPrivateHandle[1].handle = handle;
 
     /* Need to use scatter gather */
@@ -197,7 +197,7 @@ void FLEXIO_I2S_TransferRxCreateHandleEDMA(FLEXIO_I2S_Type *base,
  * param srcClock_Hz FlexIO I2S clock source frequency in Hz, it should be 0 while in slave mode.
  * retval kStatus_Success Audio format set successfully.
  * retval kStatus_InvalidArgument The input arguments is invalid.
-*/
+ */
 void FLEXIO_I2S_TransferSetFormatEDMA(FLEXIO_I2S_Type *base,
                                       flexio_i2s_edma_handle_t *handle,
                                       flexio_i2s_format_t *format,
@@ -216,7 +216,7 @@ void FLEXIO_I2S_TransferSetFormatEDMA(FLEXIO_I2S_Type *base,
         FLEXIO_I2S_SlaveSetFormat(base, format);
     }
 
-    /* Get the tranfer size from format, this should be used in EDMA configuration */
+    /* Get the transfer size from format, this should be used in EDMA configuration */
     handle->bytesPerFrame = format->bitWidth / 8U;
 }
 
@@ -240,7 +240,7 @@ status_t FLEXIO_I2S_TransferSendEDMA(FLEXIO_I2S_Type *base,
     assert(handle && xfer);
 
     edma_transfer_config_t config = {0};
-    uint32_t destAddr = FLEXIO_I2S_TxGetDataRegisterAddress(base) + (4U - handle->bytesPerFrame);
+    uint32_t destAddr             = FLEXIO_I2S_TxGetDataRegisterAddress(base) + (4U - handle->bytesPerFrame);
 
     /* Check if input parameter invalid */
     if ((xfer->data == NULL) || (xfer->dataSize == 0U))
@@ -257,10 +257,10 @@ status_t FLEXIO_I2S_TransferSendEDMA(FLEXIO_I2S_Type *base,
     handle->state = kFLEXIO_I2S_Busy;
 
     /* Update the queue state */
-    handle->queue[handle->queueUser].data = xfer->data;
+    handle->queue[handle->queueUser].data     = xfer->data;
     handle->queue[handle->queueUser].dataSize = xfer->dataSize;
-    handle->transferSize[handle->queueUser] = xfer->dataSize;
-    handle->queueUser = (handle->queueUser + 1) % FLEXIO_I2S_XFER_QUEUE_SIZE;
+    handle->transferSize[handle->queueUser]   = xfer->dataSize;
+    handle->queueUser                         = (handle->queueUser + 1) % FLEXIO_I2S_XFER_QUEUE_SIZE;
 
     /* Prepare edma configure */
     EDMA_PrepareTransfer(&config, xfer->data, handle->bytesPerFrame, (void *)destAddr, handle->bytesPerFrame,
@@ -304,7 +304,7 @@ status_t FLEXIO_I2S_TransferReceiveEDMA(FLEXIO_I2S_Type *base,
     assert(handle && xfer);
 
     edma_transfer_config_t config = {0};
-    uint32_t srcAddr = FLEXIO_I2S_RxGetDataRegisterAddress(base);
+    uint32_t srcAddr              = FLEXIO_I2S_RxGetDataRegisterAddress(base);
 
     /* Check if input parameter invalid */
     if ((xfer->data == NULL) || (xfer->dataSize == 0U))
@@ -321,10 +321,10 @@ status_t FLEXIO_I2S_TransferReceiveEDMA(FLEXIO_I2S_Type *base,
     handle->state = kFLEXIO_I2S_Busy;
 
     /* Update queue state  */
-    handle->queue[handle->queueUser].data = xfer->data;
+    handle->queue[handle->queueUser].data     = xfer->data;
     handle->queue[handle->queueUser].dataSize = xfer->dataSize;
-    handle->transferSize[handle->queueUser] = xfer->dataSize;
-    handle->queueUser = (handle->queueUser + 1) % FLEXIO_I2S_XFER_QUEUE_SIZE;
+    handle->transferSize[handle->queueUser]   = xfer->dataSize;
+    handle->queueUser                         = (handle->queueUser + 1) % FLEXIO_I2S_XFER_QUEUE_SIZE;
 
     /* Prepare edma configure */
     EDMA_PrepareTransfer(&config, (void *)srcAddr, handle->bytesPerFrame, xfer->data, handle->bytesPerFrame,

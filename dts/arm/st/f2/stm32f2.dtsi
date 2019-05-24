@@ -140,7 +140,7 @@
 			};
 		};
 
-		idwg: watchdog@40003000 {
+		iwdg: watchdog@40003000 {
 			compatible = "st,stm32-watchdog";
 			reg = <0x40003000 0x400>;
 			label = "IWDG";
@@ -212,6 +212,15 @@
 			phys = <&otgfs_phy>;
 			status = "disabled";
 			label = "OTGFS";
+		};
+
+		adc1: adc@40012000 {
+			compatible = "st,stm32-adc";
+			reg = <0x40012000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000100>;
+			interrupts = <18 0>;
+			status = "disabled";
+			label = "ADC_1";
 		};
 	};
 

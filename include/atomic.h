@@ -10,6 +10,9 @@
 #define ZEPHYR_INCLUDE_ATOMIC_H_
 
 #include <stdbool.h>
+#include <toolchain.h>
+
+#include <zephyr/types.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -45,6 +48,10 @@ static inline bool atomic_cas(atomic_t *target, atomic_val_t old_value,
 					   0, __ATOMIC_SEQ_CST,
 					   __ATOMIC_SEQ_CST);
 }
+#elif defined(CONFIG_ATOMIC_OPERATIONS_C)
+__syscall int atomic_cas(atomic_t *target, atomic_val_t old_value,
+			 atomic_val_t new_value);
+
 #else
 extern int atomic_cas(atomic_t *target, atomic_val_t old_value,
 		      atomic_val_t new_value);
@@ -66,6 +73,8 @@ static inline atomic_val_t atomic_add(atomic_t *target, atomic_val_t value)
 {
 	return __atomic_fetch_add(target, value, __ATOMIC_SEQ_CST);
 }
+#elif defined(CONFIG_ATOMIC_OPERATIONS_C)
+__syscall atomic_val_t atomic_add(atomic_t *target, atomic_val_t value);
 #else
 extern atomic_val_t atomic_add(atomic_t *target, atomic_val_t value);
 #endif
@@ -86,6 +95,8 @@ static inline atomic_val_t atomic_sub(atomic_t *target, atomic_val_t value)
 {
 	return __atomic_fetch_sub(target, value, __ATOMIC_SEQ_CST);
 }
+#elif defined(CONFIG_ATOMIC_OPERATIONS_C)
+__syscall atomic_val_t atomic_sub(atomic_t *target, atomic_val_t value);
 #else
 extern atomic_val_t atomic_sub(atomic_t *target, atomic_val_t value);
 #endif
@@ -100,7 +111,7 @@ extern atomic_val_t atomic_sub(atomic_t *target, atomic_val_t value);
  *
  * @return Previous value of @a target.
  */
-#ifdef CONFIG_ATOMIC_OPERATIONS_BUILTIN
+#if defined(CONFIG_ATOMIC_OPERATIONS_BUILTIN) || defined (CONFIG_ATOMIC_OPERATIONS_C)
 static inline atomic_val_t atomic_inc(atomic_t *target)
 {
 	return atomic_add(target, 1);
@@ -119,7 +130,7 @@ extern atomic_val_t atomic_inc(atomic_t *target);
  *
  * @return Previous value of @a target.
  */
-#ifdef CONFIG_ATOMIC_OPERATIONS_BUILTIN
+#if defined(CONFIG_ATOMIC_OPERATIONS_BUILTIN) || defined (CONFIG_ATOMIC_OPERATIONS_C)
 static inline atomic_val_t atomic_dec(atomic_t *target)
 {
 	return atomic_sub(target, 1);
@@ -168,6 +179,8 @@ static inline atomic_val_t atomic_set(atomic_t *target, atomic_val_t value)
 	 */
 	return __atomic_exchange_n(target, value, __ATOMIC_SEQ_CST);
 }
+#elif defined(CONFIG_ATOMIC_OPERATIONS_C)
+__syscall atomic_val_t atomic_set(atomic_t *target, atomic_val_t value);
 #else
 extern atomic_val_t atomic_set(atomic_t *target, atomic_val_t value);
 #endif
@@ -183,7 +196,7 @@ extern atomic_val_t atomic_set(atomic_t *target, atomic_val_t value);
  *
  * @return Previous value of @a target.
  */
-#ifdef CONFIG_ATOMIC_OPERATIONS_BUILTIN
+#if defined(CONFIG_ATOMIC_OPERATIONS_BUILTIN) || defined (CONFIG_ATOMIC_OPERATIONS_C)
 static inline atomic_val_t atomic_clear(atomic_t *target)
 {
 	return atomic_set(target, 0);
@@ -209,6 +222,9 @@ static inline atomic_val_t atomic_or(atomic_t *target, atomic_val_t value)
 {
 	return __atomic_fetch_or(target, value, __ATOMIC_SEQ_CST);
 }
+#elif defined(CONFIG_ATOMIC_OPERATIONS_C)
+__syscall atomic_val_t atomic_or(atomic_t *target, atomic_val_t value);
+
 #else
 extern atomic_val_t atomic_or(atomic_t *target, atomic_val_t value);
 #endif
@@ -230,6 +246,8 @@ static inline atomic_val_t atomic_xor(atomic_t *target, atomic_val_t value)
 {
 	return __atomic_fetch_xor(target, value, __ATOMIC_SEQ_CST);
 }
+#elif defined(CONFIG_ATOMIC_OPERATIONS_C)
+__syscall atomic_val_t atomic_xor(atomic_t *target, atomic_val_t value);
 #else
 extern atomic_val_t atomic_xor(atomic_t *target, atomic_val_t value);
 #endif
@@ -251,6 +269,8 @@ static inline atomic_val_t atomic_and(atomic_t *target, atomic_val_t value)
 {
 	return __atomic_fetch_and(target, value, __ATOMIC_SEQ_CST);
 }
+#elif defined(CONFIG_ATOMIC_OPERATIONS_C)
+__syscall atomic_val_t atomic_and(atomic_t *target, atomic_val_t value);
 #else
 extern atomic_val_t atomic_and(atomic_t *target, atomic_val_t value);
 #endif
@@ -272,6 +292,8 @@ static inline atomic_val_t atomic_nand(atomic_t *target, atomic_val_t value)
 {
 	return __atomic_fetch_nand(target, value, __ATOMIC_SEQ_CST);
 }
+#elif defined(CONFIG_ATOMIC_OPERATIONS_C)
+__syscall atomic_val_t atomic_nand(atomic_t *target, atomic_val_t value);
 #else
 extern atomic_val_t atomic_nand(atomic_t *target, atomic_val_t value);
 #endif
@@ -292,7 +314,7 @@ extern atomic_val_t atomic_nand(atomic_t *target, atomic_val_t value);
  */
 
 #define ATOMIC_BITS (sizeof(atomic_val_t) * 8)
-#define ATOMIC_MASK(bit) (1 << ((bit) & (ATOMIC_BITS - 1)))
+#define ATOMIC_MASK(bit) (1 << ((u32_t)(bit) & (ATOMIC_BITS - 1)))
 #define ATOMIC_ELEM(addr, bit) ((addr) + ((bit) / ATOMIC_BITS))
 
 /**
@@ -434,6 +456,9 @@ static inline void atomic_set_bit_to(atomic_t *target, int bit, bool val)
 	}
 }
 
+#ifdef CONFIG_ATOMIC_OPERATIONS_C
+#include <syscalls/atomic.h>
+#endif
 /**
  * @}
  */

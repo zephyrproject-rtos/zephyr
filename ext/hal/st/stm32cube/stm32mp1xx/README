@@ -1,0 +1,56 @@
+STM32CubeMP1
+###########
+
+Origin:
+   ST Microelectronics
+   https://github.com/STMicroelectronics/STM32CubeMP1
+
+Status:
+   version 1.0.0
+
+Purpose:
+   ST Microelectronics official MCU package for STM32MP1 series.
+
+Description:
+   This package is an extract of official STM32CubeMP1 package written by ST Microelectronics.
+   It is composed of STM32Cube hardware abstraction layer (HAL) and low layer (LL) plus a set
+   of CMSIS headers files, one for each SoC in STM32MP1 series.
+
+Dependencies:
+    None.
+
+URL:
+   https://github.com/STMicroelectronics/STM32CubeMP1
+
+commit:
+   version 1.0.0
+
+Maintained-by:
+   External
+
+License:
+   BSD-3-Clause
+
+License Link:
+   https://opensource.org/licenses/BSD-3-Clause
+
+Patch List:
+
+    * Initial version 1.0.0
+
+    * Add stm32mp1 exti ll driver
+    The stm32mp1 exti ll driver is mandatory for compilation.
+    add it on top of stm32cubeMP1 version 1.0.0.
+    Impacted files:
+      ext/hal/st/stm32cube/stm32mp1xx/README
+      ext/hal/st/stm32cube/stm32mp1xx/drivers/include/stm32mp1xx_ll_exti.h
+      ext/hal/st/stm32cube/stm32mp1xx/drivers/src/stm32mp1xx_ll_exti.c
+    ST Bug tracker ID: None
+
+    * Fix LL RCC definition
+    The CONFIG_ prefix is reserved in Zephyr, rename CONFIG_SHIFT and
+    associated constants by adding a RCC_ prefix
+    Impacted files:
+      ext/hal/st/stm32cube/stm32mp1xx/README
+      ext/hal/st/stm32cube/stm32mp1xx/drivers/include/stm32mp1xx_ll_rcc.h
+    ST Bug tracker ID: BZ65410

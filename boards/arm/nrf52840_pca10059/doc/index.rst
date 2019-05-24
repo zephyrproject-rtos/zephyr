@@ -107,82 +107,189 @@ Programming and Debugging
 
 Applications for the ``nrf52840_pca10059`` board configuration can be
 built in the usual way (see :ref:`build_an_application` for more details).
-There are two ways to program the board, with the DFU tool or with an external
-debugger chip.
 
-Flashing with a device firmware update (DFU)
-============================================
+Flashing
+========
 
-The board is factory-programmed with Nordic's bootloader from Nordic's nRF5 SDK.
-This section covers the steps required to program the board with a Zephyr
-application using Nordic's DFU tool nrfutil.
+The board supports the following programming options:
 
-Follow the instructions on `nrfutil GitHub`_ to install the necessary software.
+1. Using the built-in bootloader only
+2. Using MCUboot in serial recovery mode
+3. Using an external :ref:`debug probe <debug-probes>`
 
-Compile a Zephyr application as usual,
-here is an example for the :ref:`blinky-sample` application.
+These instructions use the :ref:`west <west>` tool and assume you are in the
+root directory of your :term:`west installation`.
 
-.. zephyr-app-commands::
-   :zephyr-app: samples/basic/blinky
-   :board: nrf52840_pca10059
-   :goals: build
+Option 1: Using the Built-In Bootloader Only
+--------------------------------------------
 
-Create an application package, using nrfutil::
+The board is factory-programmed with Nordic's bootloader from Nordic's nRF5
+SDK. With this option, you'll use Nordic's `nrfutil`_ program to create
+firmware packages supported by this bootloader and flash them to the
+device. Make sure ``nrfutil`` is installed before proceeding.
 
-	nrfutil pkg generate --hw-version 52 --sd-req=0x00 \
-		--application zephyr.hex --application-version 1 pkg.zip
+#. Reset the board into the Nordic bootloader by pressing the RESET button.
 
-Flash it onto the board::
+   The push button is on the far side of the board from the USB connector. Note
+   that the button does not face up. You will have to push it from the outside
+   in, towards the USB connector:
 
-	nrfutil dfu usb_serial -pkg pkg.zip -p /dev/ttyACM0
+   .. image:: img/nRF52840_dongle_press_reset.svg
+      :alt: Location of RESET button and direction of push
 
-Observe the green LED on the board blinking.
+   The red LED should start a fade pattern, signalling the bootloader is
+   running.
 
-For more information on these steps visit: `Nordic Semiconductor USB DFU`_ and
-`nrfutil GitHub`_ pages.
+#. Compile a Zephyr application; we'll use :ref:`blinky <blinky-sample>`.
 
-Chainloading the MCUBoot bootloader
-===================================
+   .. zephyr-app-commands::
+      :app: zephyr/samples/basic/blinky
+      :board: nrf52840_pca10059
+      :goals: build
+      :tool: west
 
-It is possible to use the nRF5 bootloader alongside MCUBoot. To do so,
-program the board with MCUBoot as a Zephyr application, following
-the steps above. Then, prepare to compile an application with MCUBoot support.
+#. Package the application for the bootloader using ``nrfutil``:
 
-Select :option: `CONFIG_BOOTLOADER_MCUBOOT`, under "Boot options" and set
-:option: `CONFIG_TEXT_SECTION_OFFSET` under "Build and Link features",
-"Linker options" to 0x200 to ensure the code is offset to account for MCUboot
-firmware image metadata.
+   .. code-block:: console
 
-Sign the resulting firmware image using the imgtool utility as follows::
+      nrfutil pkg generate --hw-version 52 --sd-req=0x00 \
+              --application build/zephyr/zephyr.hex \
+              --application-version 1 blinky.zip
 
-	imgtool sign -S 0x5e000 --key mcuboot/root-rsa-2048.pem \
-		--header-size 0x200 --align 8 --version 3.0 firmware.bin signed.bin
+#. Flash it onto the board. Note :file:`/dev/ttyACM0` is for Linux; it will be
+   something like ``COMx`` on Windows, and something else on macOS.
 
-Enter MCUboot serial recovery mode by inserting the device into the USB port
-while holding BUTTON1 down. Keep in mind that resetting the device using the
-RESET button will always enter Nordic nRF5 bootloader's DFU mode.
+   .. code-block:: console
 
-Finally, perform a firmware update using mcumgr as follows::
+      nrfutil dfu usb-serial -pkg blinky.zip -p /dev/ttyACM0
 
-	mcumgr --conntype=serial --connstring='dev=/dev/ttyACM0,baud=115200' \
-		image upload -e signed.bin
+   When this command exits, observe the green LED on the board blinking,
+   instead of the red LED used by the bootloader.
 
-and reset the device::
+For more information, see `Nordic Semiconductor USB DFU`_.
 
-	mcumgr --conntype=serial --connstring='dev=/dev/ttyACM0,baud=115200' reset
+Option 2: Using MCUboot in Serial Recovery Mode
+-----------------------------------------------
 
-For more information about these steps refer to: `MCUboot`_ and
-`mcumgr`_.
+It is also possible to use the MCUboot bootloader with this board to flash
+Zephyr applications. You need to do some one-time set-up to build and flash
+MCUboot on your board. From that point on, you can build and flash other Zephyr
+applications using MCUboot's serial recovery mode. This process does not
+overwrite the built-in Nordic bootloader, so you can always go back to using
+Option 1 later.
 
-Flashing with an external JLink programmer
-===========================================
+Install `nrfutil`_ and `mcumgr`_ first, and make sure MCUboot's ``imgtool`` is
+available for signing your binary for MCUboot as described on :ref:`west-sign`.
 
-Flashing Zephyr onto the ``nrf52840_pca10059`` with an external J-Link
-programmer requires an SWD header to be attached on the back side of the board.
+Next, do the **one-time setup** to flash MCUboot. We'll assume you've cloned
+the `MCUboot`_ repository into the directory ``mcuboot``, and that it is next
+to the zephyr repository on your computer.
 
-Follow the instructions in the :ref:`nordic_segger` page to install
-and configure all the necessary software. Further information can be
-found in :ref:`nordic_segger_flashing`.
+#. Reset the board into the Nordic bootloader as described above.
+
+#. Compile MCUboot as a Zephyr application.
+
+   .. zephyr-app-commands::
+      :app: mcuboot/boot/zephyr
+      :board: nrf52840_pca10059
+      :build-dir: mcuboot
+      :tool: west
+      :goals: build
+
+#. Package the application for the bootloader using ``nrfutil``:
+
+   .. code-block:: console
+
+      nrfutil pkg generate --hw-version 52 --sd-req=0x00 \
+              --application build/mcuboot/zephyr/zephyr.hex \
+              --application-version 1 mcuboot.zip
+
+#. Flash it onto the board. Note :file:`/dev/ttyACM0` is for Linux; it will be
+   something like ``COMx`` on Windows, and something else on macOS.
+
+   .. code-block:: console
+
+      nrfutil dfu usb-serial -pkg mcuboot.zip -p /dev/ttyACM0
+
+You can now flash a Zephyr application to the board using MCUboot's serial
+recovery mode. We'll use the :ref:`smp_svr_sample` since it's ready to be
+compiled for chain-loading by MCUboot (and itself supports firmware updates
+over Bluetooth).
+
+#. Boot into MCUboot serial recovery mode by plugging the board in with the SW1
+   button pressed down. See above for a picture showing where SW1 is.
+
+   **Do not press RESET**; that will run the Nordic bootloader, which is
+   different than MCUboot.
+
+   A serial port will enumerate on your board. On Windows, "MCUBOOT" should
+   appear under "Other Devices" in the Device Manager (in addition to the usual
+   ``COMx`` device). On Linux, something like
+   :file:`/dev/serial/by-id/usb-ZEPHYR_MCUBOOT_0.01-if00` should be created.
+
+   If no serial port appears, try plugging it in again, making sure SW1 is
+   pressed. If it still doesn't appear, retry the one-time MCUboot setup.
+
+#. Compile ``smp_svr``.
+
+   .. zephyr-app-commands::
+      :app: zephyr/samples/subsys/mgmt/mcumgr/smp_svr
+      :board: nrf52840_pca10059
+      :build-dir: smp_svr
+      :tool: west
+      :goals: build
+
+#. Sign ``smp_svr`` for chain-loading by MCUboot.
+
+   .. code-block:: console
+
+      west sign -t imgtool --bin --no-hex -d build/smp_svr \
+                -B smp_svr.signed.bin -- --key mcuboot/root-rsa-2048.pem
+
+#. Flash the application to the MCUboot serial port using ``mcumgr``:
+
+   .. code-block:: console
+
+      mcumgr --conntype=serial --connstring='dev=/dev/ttyACM0,baud=115200' \
+             image upload -e smp_svr.signed.bin
+
+#. Reset the device:
+
+   .. code-block:: console
+
+      mcumgr --conntype=serial --connstring='dev=/dev/ttyACM0,baud=115200' reset
+
+You should now be able to scan for Bluetooth devices using a smartphone or
+computer. The device you just flashed will be listed with ``Zephyr`` in its
+name.
+
+.. note::
+
+   This board supports building other Zephyr applications for flashing with
+   MCUboot in this way also. Just make sure :option:`CONFIG_BOOTLOADER_MCUBOOT`
+   is set when building your application. For example, to compile blinky for
+   loading by MCUboot, use this:
+
+   .. zephyr-app-commands::
+      :app: zephyr/samples/basic/blinky
+      :board: nrf52840_pca10059
+      :build-dir: blinky
+      :goals: build
+      :tool: west
+      :gen-args: -DCONFIG_BOOTLOADER_MCUBOOT=y
+
+   You can then sign and flash it using the steps above.
+
+Option 3: Using an External Debug Probe
+---------------------------------------
+
+If you have one, you can also use an external :ref:`debug probe <debug-probes>`
+to flash and debug Zephyr applications, but you need to solder an SWD header
+onto the back side of the board.
+
+For Segger J-Link debug probes, follow the instructions in the
+:ref:`nordic_segger` page to install and configure all the necessary
+software. Further information can be found in :ref:`nordic_segger_flashing`.
 
 Locate the DTS file for the board under: boards/arm/nrf52840_pca10059.
 This file requires a small modification to use a different partition table.
@@ -225,10 +332,17 @@ References
 
 .. target-notes::
 
-.. _nRF52840 Dongle website: https://www.nordicsemi.com/Software-and-Tools/Development-Kits/nRF52840-Dongle
-.. _Nordic Semiconductor Documentation library: https://www.nordicsemi.com/DocLib
-.. _J-Link Software and documentation pack: https://www.segger.com/jlink-software.html
-.. _Nordic Semiconductor USB DFU: https://infocenter.nordicsemi.com/index.jsp?topic=%2Fcom.nordic.infocenter.sdk5.v15.2.0%2Fsdk_app_serial_dfu_bootloader.html
-.. _nrfutil GitHub: https://github.com/NordicSemiconductor/pc-nrfutil
-.. _MCUboot: https://github.com/runtimeco/mcuboot/blob/master/docs/readme-zephyr.md
-.. _mcumgr: https://github.com/apache/mynewt-mcumgr-cli
+.. _nRF52840 Dongle website:
+   https://www.nordicsemi.com/Software-and-Tools/Development-Kits/nRF52840-Dongle
+.. _Nordic Semiconductor Documentation library:
+   https://www.nordicsemi.com/DocLib
+.. _J-Link Software and documentation pack:
+   https://www.segger.com/jlink-software.html
+.. _Nordic Semiconductor USB DFU:
+   https://infocenter.nordicsemi.com/index.jsp?topic=%2Fcom.nordic.infocenter.sdk5.v15.2.0%2Fsdk_app_serial_dfu_bootloader.html
+.. _nrfutil:
+   https://github.com/NordicSemiconductor/pc-nrfutil
+.. _MCUboot:
+   https://github.com/JuulLabs-OSS/mcuboot
+.. _mcumgr:
+   https://github.com/apache/mynewt-mcumgr-cli

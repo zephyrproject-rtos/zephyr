@@ -12,7 +12,14 @@ evaluate network bandwidth.
 Features
 *********
 
-- Compatible with iPerf_2.0.5.
+- Compatible with iPerf_2.0.9. Note that UDP uploader (client) testing did
+  not work properly in iPerf_2.0.13: an error message like this is printed
+  and the server reported statistics are missing.
+
+.. code-block:: console
+
+   LAST PACKET NOT RECEIVED!!!
+
 - Client or server mode allowed without need to modify the source code.
 
 Supported Boards
@@ -57,14 +64,14 @@ In the Zephyr console, zperf can be executed as follows:
 
 .. code-block:: console
 
-   zperf> udp upload 2001:db8::2 5001 10 1K 1M
+   zperf udp upload 2001:db8::2 5001 10 1K 1M
 
 
 For TCP the zperf command would look like this:
 
 .. code-block:: console
 
-   zperf> tcp upload 2001:db8::2 5001 10 1K 1M
+   zperf tcp upload 2001:db8::2 5001 10 1K 1M
 
 
 If the IP addresses of Zephyr and the host machine are specified in the
@@ -72,28 +79,28 @@ config file, zperf can be started as follows:
 
 .. code-block:: console
 
-   zperf> udp upload2 v6 10 1K 1M
+   zperf udp upload2 v6 10 1K 1M
 
 
 or like this if you want to test TCP:
 
 .. code-block:: console
 
-   zperf> tcp upload2 v6 10 1K 1M
+   zperf tcp upload2 v6 10 1K 1M
 
 
 If Zephyr is acting as a server, set the download mode as follows for UDP:
 
 .. code-block:: console
 
-   zperf> udp download 5001
+   zperf udp download 5001
 
 
 or like this for TCP:
 
 .. code-block:: console
 
-   zperf> tcp download 5001
+   zperf tcp download 5001
 
 
 and in the host side, iPerf must be executed with the following

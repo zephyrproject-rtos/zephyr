@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017, Texas Instruments Incorporated
+ * Copyright (c) 2016-2018, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -132,28 +132,28 @@ extern const SD_FxnTable sdHostCC32XX_fxnTable;
  *  @endcode
  */
 typedef struct SDHostCC32XX_HWAttrsV1 {
-    /*!< SD interface clock rate */
+    /*! SD interface clock rate */
     uint_fast32_t clkRate;
 
-    /*!< Internal SDHost ISR command/transfer priorty */
+    /*! Internal SDHost ISR command/transfer priorty */
     int_fast32_t intPriority;
 
-    /*!< SDHost Peripheral base address */
+    /*! SDHost Peripheral base address */
     uint_fast32_t baseAddr;
 
-    /*!< uDMA controlTable receive channel index */
+    /*! uDMA controlTable receive channel index */
     unsigned long rxChIdx;
 
-    /*!< uDMA controlTable transmit channel index */
+    /*! uDMA controlTable transmit channel index */
     unsigned long txChIdx;
 
-    /*!< SD Host Data pin */
+    /*! SD Host Data pin */
     uint32_t dataPin;
 
-    /*!< SD Host CMD pin */
+    /*! SD Host CMD pin */
     uint32_t cmdPin;
 
-    /*!< SD Host CLK pin */
+    /*! SD Host CLK pin */
     uint32_t clkPin;
 } SDHostCC32XX_HWAttrsV1;
 

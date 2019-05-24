@@ -62,6 +62,7 @@
 #define PRCM_ENABLE_STATUS        0x00000002
 #define SYS_CLK                   80000000
 #define XTAL_CLK                  40000000
+#define PLL_DIV_8                 30000000
 
 
 //*****************************************************************************
@@ -446,20 +447,33 @@ PRCMPeripheralClockGet(unsigned long ulPeripheral)
   //
   // Get the clock based on specified peripheral.
   //
-  if(((ulPeripheral == PRCM_SSPI) | (ulPeripheral == PRCM_LSPI)
-            | (ulPeripheral == PRCM_GSPI)))
+  if((ulPeripheral == PRCM_GSPI) | (ulPeripheral == PRCM_SSPI))
   {
     return XTAL_CLK;
+  }
+  else if(ulPeripheral == PRCM_LSPI)
+  {
+    //
+    // Check NWP generation.
+    //
+    if((HWREG(GPRCM_BASE + GPRCM_O_GPRCM_DIEID_READ_REG4) >> 24) & 0x02)
+    {
+       return PLL_DIV_8;
+    }
+    else
+    {
+       return XTAL_CLK;
+    }
   }
   else if(ulPeripheral == PRCM_CAMERA)
   {
     ulHiPulseDiv = ((HWREG(ARCM_BASE + APPS_RCM_O_CAMERA_CLK_GEN) >> 8) & 0x07);
-    ulLoPulseDiv = (HWREG(ARCM_BASE + APPS_RCM_O_CAMERA_CLK_GEN)& 0xFF);
+    ulLoPulseDiv = (HWREG(ARCM_BASE + APPS_RCM_O_CAMERA_CLK_GEN) & 0xFF);
   }
   else if(ulPeripheral == PRCM_SDHOST)
   {
     ulHiPulseDiv = ((HWREG(ARCM_BASE + APPS_RCM_O_MMCHS_CLK_GEN) >> 8) & 0x07);
-    ulLoPulseDiv = (HWREG(ARCM_BASE + APPS_RCM_O_MMCHS_CLK_GEN)& 0xFF);
+    ulLoPulseDiv = (HWREG(ARCM_BASE + APPS_RCM_O_MMCHS_CLK_GEN) & 0xFF);
   }
   else
   {

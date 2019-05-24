@@ -1,6 +1,5 @@
-
+# SPDX-License-Identifier: Apache-2.0
 
 config SOC_IA32
 	bool "Generic IA32 SoC"
 	select CPU_MINUTEIA
-	select BOOTLOADER_UNKNOWN

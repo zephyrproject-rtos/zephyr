@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2017, Texas Instruments Incorporated
+ * Copyright (c) 2015-2018, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -66,6 +66,15 @@
 #define PAD_CONFIG_BASE (OCP_SHARED_BASE + OCP_SHARED_O_GPIO_PAD_CONFIG_0)
 #define PAD_RESET_STATE 0xC61
 
+/*!
+ *  @brief If the PWM period is lower than this value, setDutyAndPeriod
+ *  will briefly disable the PWM channel to set the new values.
+ *
+ *  This is to prevent the case where the period, but not the duty, is
+ *  applied before the timeout and the next cycle is in an undetermined state.
+ */
+#define PWM_PERIOD_FOR_GLITCH_PROTECTION 0xF
+
 void PWMTimerCC32XX_close(PWM_Handle handle);
 int_fast16_t PWMTimerCC32XX_control(PWM_Handle handle, uint_fast16_t cmd,
         void *arg);
@@ -73,6 +82,7 @@ void PWMTimerCC32XX_init(PWM_Handle handle);
 PWM_Handle PWMTimerCC32XX_open(PWM_Handle handle, PWM_Params *params);
 int_fast16_t PWMTimerCC32XX_setDuty(PWM_Handle handle, uint32_t dutyValue);
 int_fast16_t PWMTimerCC32XX_setPeriod(PWM_Handle handle, uint32_t periodValue);
+int_fast16_t PWMTimerCC32XX_setDutyAndPeriod(PWM_Handle handle, uint32_t dutyValue, uint32_t periodValue);
 void PWMTimerCC32XX_start(PWM_Handle handle);
 void PWMTimerCC32XX_stop(PWM_Handle handle);
 
@@ -84,6 +94,7 @@ const PWM_FxnTable PWMTimerCC32XX_fxnTable = {
     PWMTimerCC32XX_open,
     PWMTimerCC32XX_setDuty,
     PWMTimerCC32XX_setPeriod,
+    PWMTimerCC32XX_setDutyAndPeriod,
     PWMTimerCC32XX_start,
     PWMTimerCC32XX_stop
 };
@@ -127,14 +138,16 @@ static const uint32_t timerHalves[2] = {
     TIMER_B,
 };
 
-static const uint32_t gpioBaseAddresses[4] = {
+#define NUMGPIOPORTS 4
+static const uint32_t gpioBaseAddresses[NUMGPIOPORTS] = {
     GPIOA0_BASE,
     GPIOA1_BASE,
     GPIOA2_BASE,
     GPIOA3_BASE,
 };
 
-static const uint32_t gpioPinIndexes[8] = {
+#define NUMGPIOPINS 8
+static const uint32_t gpioPinIndexes[NUMGPIOPINS] = {
     GPIO_PIN_0,
     GPIO_PIN_1,
     GPIO_PIN_2,
@@ -174,7 +187,7 @@ static uint32_t getDutyCounts(PWM_Duty_Units dutyUnits, uint32_t dutyValue,
             break;
 
         case PWM_DUTY_US:
-            duty = dutyValue * (freq.lo/1000000);
+            duty = (dutyValue != 0) ? (dutyValue * (freq.lo/1000000)) - 1 : 0;
             break;
 
         default:
@@ -203,12 +216,12 @@ static uint32_t getPeriodCounts(PWM_Period_Units periodUnits,
 
         case PWM_PERIOD_HZ:
             if (periodValue && periodValue <= freq.lo) {
-                period = freq.lo / periodValue;
+                period = (freq.lo / periodValue) - 1;
             }
             break;
 
         case PWM_PERIOD_US:
-            period = periodValue * (freq.lo/1000000);
+            period = (periodValue * (freq.lo/1000000)) - 1;
             break;
 
         default:
@@ -336,7 +349,7 @@ void PWMTimerCC32XX_close(PWM_Handle handle)
      * Some PWM pins may not have GPIO capability; in these cases gpioBaseAddr
      * is set to 0 & the GPIO power dependencies are not released.
      */
-    gpioBaseAddr = (PinConfigGPIOPort(hwAttrs->pwmPin) == 0xF) ?
+    gpioBaseAddr = (PinConfigGPIOPort(hwAttrs->pwmPin) >= NUMGPIOPORTS) ?
         0 : gpioBaseAddresses[PinConfigGPIOPort(hwAttrs->pwmPin)];
 
     PWMTimerCC32XX_stop(handle);
@@ -427,7 +440,7 @@ PWM_Handle PWMTimerCC32XX_open(PWM_Handle handle, PWM_Params *params)
      * Some PWM pins may not have GPIO capability; in these cases gpioBaseAddr
      * is set to 0 & the GPIO power dependencies are not set.
      */
-    gpioBaseAddr = (PinConfigGPIOPort(hwAttrs->pwmPin) == 0xF) ?
+    gpioBaseAddr = (PinConfigGPIOPort(hwAttrs->pwmPin) >= NUMGPIOPORTS) ?
         0 : gpioBaseAddresses[PinConfigGPIOPort(hwAttrs->pwmPin)];
 
     /* Set GPIO power dependency if pin is GPIO capable */
@@ -625,6 +638,102 @@ int_fast16_t PWMTimerCC32XX_setPeriod(PWM_Handle handle, uint32_t periodValue)
 }
 
 /*
+ *  ======== PWMTimerCC32XX_setDutyAndPeriod ========
+ *  @pre    Function assumes that handle is not NULL
+ */
+int_fast16_t PWMTimerCC32XX_setDutyAndPeriod(PWM_Handle handle, uint32_t dutyValue, uint32_t periodValue)
+{
+    uintptr_t                       key;
+    uint32_t                        duty;
+    uint32_t                        period;
+    bool                            stopped = false;
+    PWMTimerCC32XX_Object          *object = handle->object;
+    PWMTimerCC32XX_HWAttrsV2 const *hwAttrs = handle->hwAttrs;
+    uint32_t                        oldPeriod;
+    uint32_t timerBaseAddr;
+    uint16_t halfTimer;
+
+    timerBaseAddr = timerBaseAddresses[PinConfigTimerPort(hwAttrs->pwmPin)];
+    halfTimer = timerHalves[PinConfigTimerHalf(hwAttrs->pwmPin)];
+
+    key = HwiP_disable();
+
+    oldPeriod = getPeriodCounts(object->periodUnits, object->period);
+    period = getPeriodCounts(object->periodUnits, periodValue);
+    duty = getDutyCounts(object->dutyUnits, dutyValue, period);
+
+    if (period == PWM_INVALID_VALUE) {
+        HwiP_restore(key);
+
+        DebugP_log1("PWM:(%p) period units could not be determined.", (uintptr_t) handle);
+
+        return (PWM_STATUS_ERROR);
+    }
+
+    if ((period == 0) || (period < duty) || (period > PWM_MAX_PERIOD_COUNT)) {
+        HwiP_restore(key);
+
+        DebugP_log1("PWM:(%p) period is out of range.", (uintptr_t) handle);
+
+        return (PWM_STATUS_INVALID_PERIOD);
+    }
+
+    /* Set the new period */
+    object->period = period;
+
+    /*
+     * The timer peripheral cannot generate a duty equal to the period when
+     * the timer is counting down.  In these cases the PWM duty is set to the
+     * period value (output remains low) and output polarity is inverted.
+     * Additionally, if the output is changed from the period the PWM output
+     * polarity must be inverted again.
+     *
+     * The code below uses the previous duty (object->duty) and the new duty to
+     * determine if the polarity should be inverted.
+     * For more details refer to the device specific datasheet and the following
+     * E2E post:
+     *  http://e2e.ti.com/support/microcontrollers/tiva_arm/f/908/t/354826.aspx
+     */
+    if (((duty == period) && (object->duty != period)) ||
+        ((duty != period) && (object->duty == period))) {
+        HWREG(timerBaseAddr + TIMER_O_CTL) ^=
+            (halfTimer & (TIMER_CTL_TAPWML | TIMER_CTL_TBPWML));
+    }
+
+    /*
+     * Set & store the new duty.  IMPORTANT: this must be saved after output
+     * inversion is determined and before the duty = 0 corner case.
+     */
+    object->duty = duty;
+
+    /*
+     * Special corner case, if duty is 0 we set it to the period without
+     * inverting output
+     */
+    if (duty == 0) {
+        duty = period;
+    }
+
+    if (object->pwmStarted && oldPeriod <= PWM_PERIOD_FOR_GLITCH_PROTECTION) {
+        stopped = true;
+        MAP_TimerDisable(timerBaseAddr, halfTimer);
+    }
+
+    MAP_TimerPrescaleSet(timerBaseAddr, halfTimer, period / PWM_MAX_MATCH_REG_VALUE);
+    MAP_TimerPrescaleMatchSet(timerBaseAddr, halfTimer, duty / PWM_MAX_MATCH_REG_VALUE);
+
+    MAP_TimerLoadSet(timerBaseAddr, halfTimer, period % PWM_MAX_MATCH_REG_VALUE);
+    MAP_TimerMatchSet(timerBaseAddr, halfTimer, duty % PWM_MAX_MATCH_REG_VALUE);
+
+    if (stopped) {
+        MAP_TimerEnable(timerBaseAddr, halfTimer);
+    }
+
+    HwiP_restore(key);
+    return (PWM_STATUS_SUCCESS);
+}
+
+/*
  *  ======== PWMTimerCC32XX_start ========
  *  @pre    Function assumes that handle is not NULL
  */
@@ -656,12 +765,9 @@ void PWMTimerCC32XX_start(PWM_Handle handle)
 
     /* Start the timer & set pinmux to PWM mode */
     MAP_TimerEnable(timerBaseAddr, halfTimer);
-
     MAP_PinTypeTimer((unsigned long)pin, (unsigned long)mode);
 
     HwiP_restore(key);
-
-    DebugP_log1("PWM:(%p) started.", (uintptr_t) handle);
 }
 
 /*
@@ -688,9 +794,9 @@ void PWMTimerCC32XX_stop(PWM_Handle handle)
      * Some PWM pins may not have GPIO capability; in these cases gpioBaseAddr
      * is set to 0 & the GPIO power dependencies are not set.
      */
-    gpioBaseAddr = (PinConfigGPIOPort(hwAttrs->pwmPin) == 0xF) ?
+    gpioBaseAddr = (PinConfigGPIOPort(hwAttrs->pwmPin) >= NUMGPIOPORTS) ?
         0 : gpioBaseAddresses[PinConfigGPIOPort(hwAttrs->pwmPin)];
-    gpioPinIndex = (PinConfigGPIOPinIndex(hwAttrs->pwmPin) == 0xF) ?
+    gpioPinIndex = (PinConfigGPIOPinIndex(hwAttrs->pwmPin) >= NUMGPIOPINS) ?
         0 : gpioPinIndexes[PinConfigGPIOPinIndex(hwAttrs->pwmPin)];
 
     key = HwiP_disable();
@@ -713,8 +819,5 @@ void PWMTimerCC32XX_stop(PWM_Handle handle)
 
     /* Stop the Timer */
     MAP_TimerDisable(timerBaseAddr, halfTimer);
-
     HwiP_restore(key);
-
-    DebugP_log1("PWM:(%p) stopped.", (uintptr_t) handle);
 }

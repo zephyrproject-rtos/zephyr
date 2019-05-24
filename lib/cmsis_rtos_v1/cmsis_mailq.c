@@ -37,7 +37,7 @@ void *osMailAlloc(osMailQId queue_id, uint32_t millisec)
 		return NULL;
 	}
 
-	if (millisec == 0) {
+	if (millisec == 0U) {
 		retval = k_mem_slab_alloc(
 				(struct k_mem_slab *)(queue_def->pool),
 				(void **)&ptr, K_NO_WAIT);
@@ -71,7 +71,7 @@ void *osMailCAlloc(osMailQId queue_id, uint32_t millisec)
 		return NULL;
 	}
 
-	if (millisec == 0) {
+	if (millisec == 0U) {
 		retval = k_mem_slab_alloc(
 				(struct k_mem_slab *)(queue_def->pool),
 				(void **)&ptr, K_NO_WAIT);
@@ -137,7 +137,7 @@ osEvent osMailGet(osMailQId queue_id, uint32_t millisec)
 	mmsg.rx_source_thread = K_ANY;
 	mmsg.tx_target_thread = K_ANY;
 
-	if (millisec == 0) {
+	if (millisec == 0U) {
 		retval = k_mbox_get(queue_def->mbox, &mmsg, NULL, K_NO_WAIT);
 	} else if (millisec == osWaitForever) {
 		retval = k_mbox_get(queue_def->mbox, &mmsg, NULL, K_FOREVER);

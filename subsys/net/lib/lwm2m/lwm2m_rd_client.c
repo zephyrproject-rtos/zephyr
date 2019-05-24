@@ -699,17 +699,15 @@ static int sm_do_registration(void)
 		return ret;
 	}
 
-	if (!sm_is_registered()) {
-		ret = sm_send_registration(true,
-					   do_registration_reply_cb,
-					   do_registration_timeout_cb);
-		if (!ret) {
-			set_sm_state(ENGINE_REGISTRATION_SENT);
-		} else {
-			LOG_ERR("Registration err: %d", ret);
-			lwm2m_engine_context_close(client.ctx);
-			/* exit and try again */
-		}
+	ret = sm_send_registration(true,
+				   do_registration_reply_cb,
+				   do_registration_timeout_cb);
+	if (!ret) {
+		set_sm_state(ENGINE_REGISTRATION_SENT);
+	} else {
+		LOG_ERR("Registration err: %d", ret);
+		lwm2m_engine_context_close(client.ctx);
+		/* exit and try again */
 	}
 
 	return ret;
@@ -739,7 +737,7 @@ static int sm_registration_done(void)
 			LOG_ERR("Registration update err: %d", ret);
 			lwm2m_engine_context_close(client.ctx);
 			/* perform full registration */
-			set_sm_state(ENGINE_REGISTRATION_SENT);
+			set_sm_state(ENGINE_DO_REGISTRATION);
 		}
 	}
 

@@ -12,8 +12,7 @@
  *
  *  struct _thread_arch
  *  struct _callee_saved
- *  struct _caller_saved
- *
+  *
  * necessary to instantiate instances of struct k_thread.
  */
 
@@ -22,26 +21,6 @@
 
 #ifndef _ASMLANGUAGE
 #include <zephyr/types.h>
-
-struct _caller_saved {
-	/*
-	 * Unused for Cortex-M, which automatically saves the necessary
-	 * registers in its exception stack frame.
-	 *
-	 * For Cortex-A, this may be:
-	 *
-	 * u32_t a1;       r0
-	 * u32_t a2;       r1
-	 * u32_t a3;       r2
-	 * u32_t a4;       r3
-	 * u32_t ip;       r12
-	 * u32_t lr;       r14
-	 * u32_t pc;       r15
-	 * u32_t xpsr;
-	 */
-};
-
-typedef struct _caller_saved _caller_saved_t;
 
 struct _callee_saved {
 	u32_t v1;  /* r4 */
@@ -57,7 +36,7 @@ struct _callee_saved {
 
 typedef struct _callee_saved _callee_saved_t;
 
-#ifdef CONFIG_FLOAT
+#if defined(CONFIG_FLOAT) && defined(CONFIG_FP_SHARING)
 struct _preempt_float {
 	float  s16;
 	float  s17;
@@ -86,7 +65,7 @@ struct _thread_arch {
 	/* r0 in stack frame cannot be written to reliably */
 	u32_t swap_return_value;
 
-#ifdef CONFIG_FLOAT
+#if defined(CONFIG_FLOAT) && defined(CONFIG_FP_SHARING)
 	/*
 	 * No cooperative floating point register set structure exists for
 	 * the Cortex-M as it automatically saves the necessary registers
@@ -95,9 +74,11 @@ struct _thread_arch {
 	struct _preempt_float  preempt_float;
 #endif
 
-#ifdef CONFIG_USERSPACE
+#if defined(CONFIG_USERSPACE) || defined(CONFIG_FP_SHARING)
 	u32_t mode;
+#if defined(CONFIG_USERSPACE)
 	u32_t priv_stack_start;
+#endif
 #endif
 };
 

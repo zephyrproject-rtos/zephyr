@@ -12,10 +12,10 @@
 GDATA(_pm_arc_context)
 
 GTEXT(sys_resume_from_deep_sleep)
-GTEXT(_power_restore_cpu_context)
-GTEXT(_power_soc_sleep)
-GTEXT(_power_soc_deep_sleep)
-GTEXT(_power_soc_lpss_mode)
+GTEXT(z_power_restore_cpu_context)
+GTEXT(z_power_soc_sleep)
+GTEXT(z_power_soc_deep_sleep)
+GTEXT(z_power_soc_lpss_mode)
 
 #define GPS0_REGISTER  0xb0800100
 #define GP0_REGISTER 0xb0800114
@@ -24,7 +24,7 @@ GTEXT(_power_soc_lpss_mode)
 #define SLEEP_INTR_ENABLED_BIT 4
 #define SLEEP_MODE_RTC_ENABLED_BIT 5
 
-SECTION_FUNC(TEXT, sys_resume_from_deep_sleep)
+SECTION_FUNC(TEXT, _sys_resume_from_deep_sleep)
         /* Check is this wakeup after sleep event. */
         ld r0,[GPS0_REGISTER]
         bbit1 r0,RESTORE_SS_BIT,restore
@@ -47,7 +47,7 @@ SECTION_FUNC(TEXT, save_cpu_context)
 
 	j_s [blink] /* Jump to context of BLINK register. */
 
-SECTION_FUNC(TEXT, _power_soc_sleep)
+SECTION_FUNC(TEXT, z_power_soc_sleep)
 	/*
 	 * Save the return address.
 	 * The restore function will pop this and jump
@@ -60,7 +60,7 @@ SECTION_FUNC(TEXT, _power_soc_sleep)
 	j @qm_power_soc_sleep
 	/* Does not return */
 
-SECTION_FUNC(TEXT, _power_soc_deep_sleep)
+SECTION_FUNC(TEXT, z_power_soc_deep_sleep)
 	/*
 	 * Save the return address.
 	 * The restore function will pop this and jump
@@ -73,7 +73,7 @@ SECTION_FUNC(TEXT, _power_soc_deep_sleep)
 	j @qm_power_soc_deep_sleep
 	/* Does not return */
 
-SECTION_FUNC(TEXT, _power_soc_lpss_mode)
+SECTION_FUNC(TEXT, z_power_soc_lpss_mode)
 	/*
 	 * Setup 'sleep' instruction operand.
 	 */

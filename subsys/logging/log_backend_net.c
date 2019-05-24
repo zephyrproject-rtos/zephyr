@@ -58,33 +58,18 @@ static int line_out(u8_t *data, size_t length, void *output_ctx)
 {
 	struct net_context *ctx = (struct net_context *)output_ctx;
 	int ret = -ENOMEM;
-	struct net_pkt *pkt;
 
 	if (ctx == NULL) {
 		return length;
 	}
 
-	pkt = net_pkt_get_tx(ctx, K_NO_WAIT);
-	if (pkt == NULL) {
-		goto fail;
-	}
-
-	if (net_pkt_append_all(pkt, length, data, K_NO_WAIT) == false) {
-		goto fail;
-	}
-
-	ret = net_context_send(pkt, NULL, K_NO_WAIT, NULL, NULL);
+	ret = net_context_send(ctx, data, length, NULL, K_NO_WAIT, NULL);
 	if (ret < 0) {
 		goto fail;
 	}
 
 	DBG(data);
-
 fail:
-	if (ret < 0 && (pkt != NULL)) {
-		net_pkt_unref(pkt);
-	}
-
 	return length;
 }
 
@@ -102,13 +87,13 @@ static int do_net_init(void)
 	if (IS_ENABLED(CONFIG_NET_IPV4) && server_addr.sa_family == AF_INET) {
 		local_addr = (struct sockaddr *)&local_addr4;
 		server_addr_len = sizeof(struct sockaddr_in);
-		local_addr4.sin_port = 0;
+		local_addr4.sin_port = 0U;
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV6) && server_addr.sa_family == AF_INET6) {
 		local_addr = (struct sockaddr *)&local_addr6;
 		server_addr_len = sizeof(struct sockaddr_in6);
-		local_addr6.sin6_port = 0;
+		local_addr6.sin6_port = 0U;
 	}
 
 	if (local_addr == NULL) {
@@ -192,11 +177,8 @@ static void send_output(const struct log_backend *const backend,
 		return;
 	}
 
-	if (!net_init_done) {
+	if (!net_init_done && do_net_init() == 0) {
 		net_init_done = true;
-		if (do_net_init() < 0) {
-			net_init_done = false;
-		}
 	}
 
 	log_msg_get(msg);
@@ -230,10 +212,34 @@ static void panic(struct log_backend const *const backend)
 	panic_mode = true;
 }
 
+static void sync_string(const struct log_backend *const backend,
+		     struct log_msg_ids src_level, u32_t timestamp,
+		     const char *fmt, va_list ap)
+{
+	u32_t flags = LOG_OUTPUT_FLAG_LEVEL | LOG_OUTPUT_FLAG_FORMAT_SYSLOG |
+		LOG_OUTPUT_FLAG_TIMESTAMP;
+	u32_t key;
+
+	if (!net_init_done && do_net_init() == 0) {
+		net_init_done = true;
+	}
+
+	key = irq_lock();
+	log_output_string(&log_output, src_level, timestamp, fmt, ap, flags);
+	irq_unlock(key);
+}
+
 const struct log_backend_api log_backend_net_api = {
-	.put = send_output,
 	.panic = panic,
 	.init = init_net,
+	.put = IS_ENABLED(CONFIG_LOG_IMMEDIATE) ? NULL : send_output,
+	.put_sync_string = IS_ENABLED(CONFIG_LOG_IMMEDIATE) ?
+							sync_string : NULL,
+	/* Currently we do not send hexdumps over network to remote server
+	 * in CONFIG_LOG_IMMEDIATE mode. This is just to save resources,
+	 * this can be revisited if needed.
+	 */
+	.put_sync_hexdump = NULL,
 };
 
 /* Note that the backend can be activated only after we have networking

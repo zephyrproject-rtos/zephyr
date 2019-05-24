@@ -14,7 +14,7 @@
 #if defined(CONFIG_X86) && defined(CONFIG_X86_MMU)
 #define STACKSIZE (8192)
 #else
-#define  STACKSIZE (2048)
+#define  STACKSIZE (2048 + CONFIG_TEST_EXTRA_STACKSIZE)
 #endif
 #define MAIN_PRIORITY 7
 #define PRIORITY 5
@@ -40,7 +40,7 @@ volatile int rv;
 static volatile int crash_reason;
 
 /* On some architectures, k_thread_abort(_current) will return instead
- * of _Swap'ing away.
+ * of z_swap'ing away.
  *
  * On ARM the PendSV exception is queued and immediately fires upon
  * completing the exception path; the faulting thread is never run
@@ -51,7 +51,7 @@ static volatile int crash_reason;
  * interrupt exit code.
  *
  * In both cases the thread is guaranteed never to run again once we
- * return from the _SysFatalErrorHandler().
+ * return from the z_SysFatalErrorHandler().
  */
 #if !(defined(CONFIG_ARM) || defined(CONFIG_XTENSA_ASM2) \
 	|| defined(CONFIG_ARC) || defined(CONFIG_X86_64))
@@ -61,7 +61,7 @@ static volatile int crash_reason;
 #ifdef ERR_IS_NORETURN
 FUNC_NORETURN
 #endif
-void _SysFatalErrorHandler(unsigned int reason, const NANO_ESF *pEsf)
+void z_SysFatalErrorHandler(unsigned int reason, const NANO_ESF *pEsf)
 {
 	TC_PRINT("Caught system error -- reason %d\n", reason);
 	crash_reason = reason;
@@ -140,10 +140,22 @@ void blow_up_stack(void)
 
 void stack_sentinel_timer(void)
 {
+	u32_t cur_tick;
+
 	/* Test that stack overflow check due to timer interrupt works */
 	blow_up_stack();
-	TC_PRINT("busy waiting...\n");
-	k_busy_wait(1024 * 1024);
+	TC_PRINT("waiting for tick advance...\n");
+
+	/* This test has tickless kernel disabled, z_tick_get_32() returns
+	 * the current tick count without trying to offset it by checking
+	 * time elapsed in the driver since last update
+	 */
+	cur_tick = z_tick_get_32();
+
+	while (cur_tick == z_tick_get_32()) {
+		/* spin */
+	}
+
 	TC_ERROR("should never see this\n");
 	rv = TC_FAIL;
 }
@@ -155,7 +167,7 @@ void stack_sentinel_swap(void)
 	/* Test that stack overflow check due to swap works */
 	blow_up_stack();
 	TC_PRINT("swapping...\n");
-	_Swap_unlocked();
+	z_swap_unlocked();
 	TC_ERROR("should never see this\n");
 	rv = TC_FAIL;
 	irq_unlock(key);
@@ -279,13 +291,11 @@ void test_fatal(void)
 
 #ifdef CONFIG_USERSPACE
 
-#if !defined(CONFIG_ARC) /* FIXME #13341 */
 	TC_PRINT("test stack HW-based overflow - user 1\n");
 	check_stack_overflow(stack_hw_overflow, K_USER);
 
 	TC_PRINT("test stack HW-based overflow - user 2\n");
 	check_stack_overflow(stack_hw_overflow, K_USER);
-#endif
 #endif /* CONFIG_USERSPACE */
 
 #endif /* !CONFIG_ARCH_POSIX */

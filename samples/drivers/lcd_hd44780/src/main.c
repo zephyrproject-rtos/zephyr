@@ -461,7 +461,7 @@ void pi_lcd_init(struct device *gpio_dev, u8_t cols, u8_t rows, u8_t dotsize)
 	_set_row_offsets(0x00, 0x40, 0x00 + cols, 0x40 + cols);
 
 	/* For 1 line displays, a 10 pixel high font looks OK */
-	if ((dotsize != LCD_5x8_DOTS) && (rows == 1)) {
+	if ((dotsize != LCD_5x8_DOTS) && (rows == 1U)) {
 		lcd_data.disp_func |= LCD_5x10_DOTS;
 	}
 
@@ -563,7 +563,7 @@ void main(void)
 		pi_lcd_set_cursor(gpio_dev, 19, 3);
 		pi_lcd_left_to_right(gpio_dev);
 		pi_lcd_string(gpio_dev, "********************");
-		k_sleep(MSEC_PER_SEC * 3);
+		k_sleep(MSEC_PER_SEC * 3U);
 
 		/* Clear display */
 		pi_lcd_clear(gpio_dev);
@@ -579,7 +579,7 @@ void main(void)
 		pi_lcd_string(gpio_dev, "My super RTOS");
 		pi_lcd_set_cursor(gpio_dev, 0, 3);
 		pi_lcd_string(gpio_dev, "-------------------");
-		k_sleep(MSEC_PER_SEC * 3);
+		k_sleep(MSEC_PER_SEC * 3U);
 
 		/* Clear display */
 		pi_lcd_clear(gpio_dev);
@@ -594,7 +594,7 @@ void main(void)
 		pi_lcd_string(gpio_dev, "I am home!");
 		pi_lcd_set_cursor(gpio_dev, 0, 2);
 		pi_lcd_string(gpio_dev, "");
-		k_sleep(MSEC_PER_SEC * 3);
+		k_sleep(MSEC_PER_SEC * 3U);
 
 		/* Clear display */
 		pi_lcd_clear(gpio_dev);

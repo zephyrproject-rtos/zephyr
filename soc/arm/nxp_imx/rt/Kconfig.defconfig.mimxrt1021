@@ -11,6 +11,9 @@ config SOC
 	string
 	default "mimxrt1021"
 
+config NUM_IRQS
+	default 142
+
 config ARM_DIV
 	default 0
 

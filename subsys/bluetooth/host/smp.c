@@ -2252,7 +2252,7 @@ static u8_t smp_master_ident(struct bt_smp *smp, struct net_buf *buf)
 }
 #endif /* !CONFIG_BT_SMP_SC_PAIR_ONLY */
 
-static int _smp_init(struct bt_smp *smp)
+static int smp_init(struct bt_smp *smp)
 {
 	/* Initialize SMP context without clearing L2CAP channel context */
 	(void)memset((u8_t *)smp + sizeof(smp->chan), 0,
@@ -2355,7 +2355,7 @@ int bt_smp_send_security_req(struct bt_conn *conn)
 		return -EINVAL;
 	}
 
-	if (_smp_init(smp) != 0) {
+	if (smp_init(smp) != 0) {
 		return -ENOBUFS;
 	}
 
@@ -2394,7 +2394,7 @@ static u8_t smp_pairing_req(struct bt_smp *smp, struct net_buf *buf)
 	 * is already initialized.
 	 */
 	if (!atomic_test_bit(smp->flags, SMP_FLAG_SEC_REQ)) {
-		int ret = _smp_init(smp);
+		int ret = smp_init(smp);
 
 		if (ret) {
 			return ret;
@@ -2533,7 +2533,7 @@ int bt_smp_send_pairing_req(struct bt_conn *conn)
 		return -EINVAL;
 	}
 
-	if (_smp_init(smp)) {
+	if (smp_init(smp)) {
 		return -ENOBUFS;
 	}
 
@@ -2948,7 +2948,7 @@ static u8_t smp_pairing_random(struct bt_smp *smp, struct net_buf *buf)
 		case PASSKEY_DISPLAY:
 		case PASSKEY_INPUT:
 			smp->passkey_round++;
-			if (smp->passkey_round == 20) {
+			if (smp->passkey_round == 20U) {
 				break;
 			}
 
@@ -2999,7 +2999,7 @@ static u8_t smp_pairing_random(struct bt_smp *smp, struct net_buf *buf)
 		smp_send_pairing_random(smp);
 
 		smp->passkey_round++;
-		if (smp->passkey_round == 20) {
+		if (smp->passkey_round == 20U) {
 			atomic_set_bit(&smp->allowed_cmds, BT_SMP_DHKEY_CHECK);
 			atomic_set_bit(smp->flags, SMP_FLAG_DHCHECK_WAIT);
 			return 0;

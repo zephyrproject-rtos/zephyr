@@ -88,19 +88,19 @@ int validate_hw_compatibility(struct device *dev)
 	u32_t flags = 0U;
 
 	flags = cipher_query_hwcaps(dev);
-	if ((flags & CAP_RAW_KEY) == 0) {
+	if ((flags & CAP_RAW_KEY) == 0U) {
 		LOG_INF("Please provision the key separately "
 			"as the module doesnt support a raw key");
 		return -1;
 	}
 
-	if ((flags & CAP_SYNC_OPS) == 0) {
+	if ((flags & CAP_SYNC_OPS) == 0U) {
 		LOG_ERR("The app assumes sync semantics. "
 		  "Please rewrite the app accordingly before proceeding");
 		return -1;
 	}
 
-	if ((flags & CAP_SEPARATE_IO_BUFS) == 0) {
+	if ((flags & CAP_SEPARATE_IO_BUFS) == 0U) {
 		LOG_ERR("The app assumes distinct IO buffers. "
 		"Please rewrite the app accordingly before proceeding");
 		return -1;

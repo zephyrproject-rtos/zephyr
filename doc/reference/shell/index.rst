@@ -82,16 +82,28 @@ Use the following macros for adding shell commands:
 
 * :c:macro:`SHELL_CMD_REGISTER` - Create root command. All root commands must
   have different name.
+* :c:macro:`SHELL_COND_CMD_REGISTER` - Conditionally (if compile time flag is
+  set) create root command. All root commands must have different name.
 * :c:macro:`SHELL_CMD_ARG_REGISTER` - Create root command with arguments.
   All root commands must have different name.
+* :c:macro:`SHELL_COND_CMD_ARG_REGISTER` - Conditionally (if compile time flag
+  is set) create root command with arguments. All root commands must have
+  different name.
 * :c:macro:`SHELL_CMD` - Initialize a command.
+* :c:macro:`SHELL_COND_CMD` - Initialize a command if compile time flag is set.
+* :c:macro:`SHELL_EXPR_CMD` - Initialize a command if compile time expression is
+  non-zero.
 * :c:macro:`SHELL_CMD_ARG` - Initialize a command with arguments.
+* :c:macro:`SHELL_COND_CMD_ARG` - Initialize a command with arguments if compile
+  time flag is set.
+* :c:macro:`SHELL_EXPR_CMD_ARG` - Initialize a command with arguments if compile
+  time expression is non-zero.
 * :c:macro:`SHELL_STATIC_SUBCMD_SET_CREATE` - Create a static subcommands
   array.
 * :c:macro:`SHELL_DYNAMIC_CMD_CREATE` - Create a dynamic subcommands array.
 
 Commands can be created in any file in the system that includes
-:file:`include/shell/shell.h`. All created commands are available for all
+:zephyr_file:`include/shell/shell.h`. All created commands are available for all
 shell instances.
 
 Static commands
@@ -117,7 +129,7 @@ subcommands.
 	SHELL_CMD_REGISTER(demo, &sub_demo, "Demo commands", NULL);
 
 Example implementation can be found under following location:
-:file:`samples/subsys/shell/shell_module/src/main.c`.
+:zephyr_file:`samples/subsys/shell/shell_module/src/main.c`.
 
 Dynamic commands
 ----------------
@@ -182,7 +194,7 @@ Newly added commands can be prompted or autocompleted with the :kbd:`Tab` key.
 		   "Demonstrate dynamic command usage.", cmd_dynamic);
 
 Example implementation can be found under following location:
-:file:`samples/subsys/shell/shell_module/src/dynamic_cmd.c`.
+:zephyr_file:`samples/subsys/shell/shell_module/src/dynamic_cmd.c`.
 
 Commands execution
 ==================
@@ -367,7 +379,7 @@ Usage
 *****
 
 To create a new shell instance user needs to activate requested
-backend using `menuconfig`.
+backend using ``menuconfig``.
 
 The following code shows a simple use case of this library:
 
@@ -434,10 +446,10 @@ These commands are registered by various modules, for example:
 
 * :command:`clear`, :command:`shell`, :command:`history`, and :command:`resize`
   are built-in commands which have been registered by
-  :file:`subsys/shell/shell.c`
+  :zephyr_file:`subsys/shell/shell.c`
 * :command:`demo` and :command:`version` have been registered in example code
   above by main.c
-* :command:`log` has been registered by :file:`subsys/logging/log_cmds.c`
+* :command:`log` has been registered by :zephyr_file:`subsys/logging/log_cmds.c`
 
 Then, if a user types a :command:`demo` command and presses the :kbd:`Tab` key,
 the shell will only print the subcommands registered for this command:
@@ -464,6 +476,14 @@ are :c:macro:`SHELL_DEFINE` arguments.
 	block, for example, by a UART with hardware flow control. If timeout is
 	set too high, the logger thread could be blocked and impact other logger
 	backends.
+
+.. warning::
+	As the shell is a complex logger backend, it can not output logs if
+	the application crashes before the shell thread is running. In this
+	situation, you can enable one of the simple logging backends instead,
+	such as UART (:option:`CONFIG_LOG_BACKEND_UART`) or
+	RTT (:option:`CONFIG_LOG_BACKEND_RTT`), which are available earlier
+	during system initialization.
 
 API Reference
 *************

@@ -5,7 +5,7 @@
  */
 
 #include <logging/log.h>
-LOG_MODULE_REGISTER(net_promisc_sample, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(net_promisc_sample, LOG_LEVEL_INF);
 
 #include <zephyr.h>
 #include <errno.h>
@@ -14,7 +14,17 @@ LOG_MODULE_REGISTER(net_promisc_sample, LOG_LEVEL_DBG);
 
 #include <net/net_core.h>
 #include <net/promiscuous.h>
-#include <net/tcp.h>
+#include <net/udp.h>
+
+static void net_pkt_hexdump(struct net_pkt *pkt, const char *str)
+{
+	struct net_buf *buf = pkt->buffer;
+
+	while (buf) {
+		LOG_HEXDUMP_DBG(buf->data, buf->len, str);
+		buf = buf->frags;
+	}
+}
 
 static void iface_cb(struct net_if *iface, void *user_data)
 {
@@ -32,15 +42,15 @@ static void iface_cb(struct net_if *iface, void *user_data)
 
 static int get_ports(struct net_pkt *pkt, u16_t *src, u16_t *dst)
 {
-	struct net_tcp_hdr hdr, *tcp_hdr;
+	struct net_udp_hdr hdr, *udp_hdr;
 
-	tcp_hdr = net_tcp_get_hdr(pkt, &hdr);
-	if (!tcp_hdr) {
+	udp_hdr = net_udp_get_hdr(pkt, &hdr);
+	if (!udp_hdr) {
 		return -EINVAL;
 	}
 
-	*src = ntohs(tcp_hdr->src_port);
-	*dst = ntohs(tcp_hdr->dst_port);
+	*src = ntohs(udp_hdr->src_port);
+	*dst = ntohs(udp_hdr->dst_port);
 
 	return 0;
 }
@@ -49,13 +59,16 @@ static void print_info(struct net_pkt *pkt)
 {
 	char src_addr_buf[NET_IPV6_ADDR_LEN], *src_addr;
 	char dst_addr_buf[NET_IPV6_ADDR_LEN], *dst_addr;
+	u16_t dst_port = 0U, src_port = 0U;
 	sa_family_t family = AF_UNSPEC;
 	void *dst, *src;
-	u16_t dst_port, src_port;
 	u8_t next_hdr;
 	const char *proto;
 	size_t len;
 	int ret;
+
+	/* Enable hexdump by setting the log level to LOG_LEVEL_DBG */
+	net_pkt_hexdump(pkt, "Network packet");
 
 	switch (NET_IPV6_HDR(pkt)->vtc & 0xf0) {
 	case 0x60:
@@ -77,7 +90,7 @@ static void print_info(struct net_pkt *pkt)
 	}
 
 	if (family == AF_UNSPEC) {
-		LOG_INF("Recv %p len %d (unknown address family)",
+		LOG_INF("Recv %p len %zd (unknown address family)",
 			pkt, net_pkt_get_len(pkt));
 		return;
 	}

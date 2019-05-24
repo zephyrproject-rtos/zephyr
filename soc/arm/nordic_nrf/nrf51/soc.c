@@ -21,8 +21,8 @@
 #include <logging/log.h>
 
 #ifdef CONFIG_RUNTIME_NMI
-extern void _NmiInit(void);
-#define NMI_INIT() _NmiInit()
+extern void z_NmiInit(void);
+#define NMI_INIT() z_NmiInit()
 #else
 #define NMI_INIT()
 #endif

@@ -34,7 +34,7 @@ static uint32_t FLEXRAM_GetInstance(FLEXRAM_Type *base);
  *
  * @param tcmBankNum tcm banknumber
  * @retval register value correspond to the tcm size
-  */
+ */
 static uint8_t FLEXRAM_MapTcmSizeToRegister(uint8_t tcmBankNum);
 
 /*******************************************************************************
@@ -175,8 +175,8 @@ status_t FLEXRAM_AllocateRam(flexram_allocate_ram_t *config)
 {
     assert(config != NULL);
 
-    uint8_t dtcmBankNum = config->dtcmBankNum;
-    uint8_t itcmBankNum = config->itcmBankNum;
+    uint8_t dtcmBankNum  = config->dtcmBankNum;
+    uint8_t itcmBankNum  = config->itcmBankNum;
     uint8_t ocramBankNum = config->ocramBankNum;
     uint32_t bankCfg = 0U, i = 0U;
 

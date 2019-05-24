@@ -189,8 +189,6 @@ static int kw2xd_init(struct device *arg)
 	/* release I/O power hold to allow normal run state */
 	PMC->REGSC |= PMC_REGSC_ACKISO_MASK;
 
-	_ClearFaults();
-
 	/* Initialize PLL/system clock to 48 MHz */
 	clkInit();
 

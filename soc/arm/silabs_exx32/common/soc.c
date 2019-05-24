@@ -119,8 +119,6 @@ static int silabs_exx32_init(struct device *arg)
 	/* handle chip errata */
 	CHIP_Init();
 
-	_ClearFaults();
-
 #ifdef CONFIG_SOC_GECKO_EMU_DCDC
 	dcdc_init();
 #endif

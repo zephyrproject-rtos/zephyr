@@ -41,7 +41,7 @@ static void eth_stellaris_flush(struct device *dev)
 	if (dev_data->tx_pos != 0) {
 		sys_write32(dev_data->tx_word, REG_MACDATA);
 		dev_data->tx_pos = 0;
-		dev_data->tx_word = 0;
+		dev_data->tx_word = 0U;
 	}
 }
 
@@ -54,7 +54,7 @@ static void eth_stellaris_send_byte(struct device *dev, u8_t byte)
 	if (dev_data->tx_pos == 4) {
 		sys_write32(dev_data->tx_word, REG_MACDATA);
 		dev_data->tx_pos = 0;
-		dev_data->tx_word = 0;
+		dev_data->tx_word = 0U;
 	}
 }
 
@@ -65,16 +65,17 @@ static int eth_stellaris_send(struct device *dev, struct net_pkt *pkt)
 	u16_t i, data_len;
 
 	/* Frame transmission
-	 * First two bytes are data_len for frame,
-	 * Initially send the data_len
+	 *
+	 * First two bytes is the length of the frame, exclusive of
+	 * the header length.
 	 */
-	data_len = net_pkt_get_len(pkt);
+	data_len = net_pkt_get_len(pkt) - sizeof(struct net_eth_hdr);
 	eth_stellaris_send_byte(dev, data_len & 0xff);
 	eth_stellaris_send_byte(dev, (data_len & 0xff00) >> 8);
 
 	/* Send the payload */
 	for (frag = pkt->frags; frag; frag = frag->frags) {
-		for (i = 0; i < frag->len; ++i) {
+		for (i = 0U; i < frag->len; ++i) {
 			eth_stellaris_send_byte(dev, frag->data[i]);
 		}
 	}
@@ -150,9 +151,9 @@ static struct net_pkt *eth_stellaris_rx_pkt(struct device *dev,
 	 * The remaining 2 bytes, in the first word is appended to the
 	 * ethernet frame.
 	 */
-	count = 2;
+	count = 2U;
 	data = (u8_t *)&reg_val + 2;
-	if (net_pkt_write_new(pkt, data, count)) {
+	if (net_pkt_write(pkt, data, count)) {
 		goto error;
 	}
 
@@ -162,9 +163,9 @@ static struct net_pkt *eth_stellaris_rx_pkt(struct device *dev,
 	/* Read the rest of words, minus the partial word and FCS byte. */
 	for (; bytes_left > 7; bytes_left -= 4) {
 		reg_val = sys_read32(REG_MACDATA);
-		count = 4;
+		count = 4U;
 		data = (u8_t *)&reg_val;
-		if (net_pkt_write_new(pkt, data, count)) {
+		if (net_pkt_write(pkt, data, count)) {
 			goto error;
 		}
 	}
@@ -182,7 +183,7 @@ static struct net_pkt *eth_stellaris_rx_pkt(struct device *dev,
 
 		count = bytes_left - 4;
 		data = (u8_t *)&reg_val;
-		if (net_pkt_write_new(pkt, data, count)) {
+		if (net_pkt_write(pkt, data, count)) {
 			goto error;
 		}
 
@@ -358,4 +359,4 @@ NET_DEVICE_INIT(eth_stellaris, DT_ETH_DRV_NAME,
 		eth_stellaris_dev_init, &eth_data, &eth_cfg,
 		CONFIG_ETH_INIT_PRIORITY,
 		&eth_stellaris_apis, ETHERNET_L2,
-		NET_L2_GET_CTX_TYPE(ETHERNET_L2), ETH_MTU);
+		NET_L2_GET_CTX_TYPE(ETHERNET_L2), NET_ETH_MTU);

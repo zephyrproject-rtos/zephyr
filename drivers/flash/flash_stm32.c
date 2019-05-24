@@ -210,11 +210,6 @@ static int flash_stm32_write_protection(struct device *dev, bool enable)
 	} else {
 		if (regs->cr & FLASH_CR_LOCK) {
 			regs->keyr = FLASH_KEY1;
-#ifdef CONFIG_SOC_SERIES_STM32F3X
-			/* On STM32F3 series some time is requested */
-			/* before writing again on key register */
-			flash_stm32_wait_flash_idle(dev);
-#endif /* CONFIG_SOC_SERIES_STM32F3X */
 			regs->keyr = FLASH_KEY2;
 		}
 	}

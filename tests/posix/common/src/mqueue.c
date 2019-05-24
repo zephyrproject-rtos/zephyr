@@ -95,7 +95,7 @@ void test_posix_mqueue(void)
 		zassert_equal(pthread_attr_destroy(&attr[i]), 0, NULL);
 	}
 
-	usleep(10 * USEC_PER_MSEC);
+	usleep(USEC_PER_MSEC * 10U);
 
 	for (i = 0; i < N_THR; i++) {
 		pthread_join(newthread[i], &retval);

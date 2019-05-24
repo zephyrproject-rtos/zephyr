@@ -101,3 +101,13 @@ config X86_RETPOLINE
 	  description of how retpolines work can be found here[1].
 
 	  [1] https://support.google.com/faqs/answer/7625886
+
+config X86_BOUNDS_CHECK_BYPASS_MITIGATION
+	bool
+	depends on USERSPACE
+	default y if !X86_NO_SPECTRE_V1
+	select BOUNDS_CHECK_BYPASS_MITIGATION
+	help
+	  Hidden config to select arch-independent option to enable
+	  Spectre V1 mitigations by default if the CPU is not known
+	  to be immune to it.

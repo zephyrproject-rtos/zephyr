@@ -2,7 +2,7 @@ sample:
   description: BSD Sockets API HTTP GET example
   name: socket_http_get
 tests:
-  test:
+  sample.net.sockets.http_get:
     filter: TOOLCHAIN_HAS_NEWLIB == 1
     harness: net
     min_ram: 32

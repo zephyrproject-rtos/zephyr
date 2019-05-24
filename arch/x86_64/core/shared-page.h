@@ -57,7 +57,7 @@ struct xuk_shared_mem {
 	int vgacol;
 };
 
-#define _shared (*((struct xuk_shared_mem *)(long)SHARED_ADDR))
+#define _shared (*((volatile struct xuk_shared_mem *)(long)SHARED_ADDR))
 
 static inline void shared_init(void)
 {
@@ -73,7 +73,7 @@ static inline void *alloc_page(int clear)
 {
 	int *p = (int *)(long)_shared.next_page;
 
-	_shared.next_page += 4096;
+	_shared.next_page += 4096U;
 
 	for (int i = 0; clear && i < 1024; i++) {
 		p[i] = 0;

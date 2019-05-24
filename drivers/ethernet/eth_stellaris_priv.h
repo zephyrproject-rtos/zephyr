@@ -8,8 +8,6 @@
 #ifndef ETH_STELLARIS_PRIV_H_
 #define ETH_STELLARIS_PRIV_H_
 
-#define ETH_MTU 1500
-
 #define DEV_DATA(dev) \
 	((struct eth_stellaris_runtime *)(dev)->driver_data)
 #define DEV_CFG(dev) \

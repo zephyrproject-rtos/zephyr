@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 zephyr_library()
 
 if (CMAKE_C_COMPILER_ID STREQUAL "Clang")
@@ -10,6 +12,7 @@ endif()
 zephyr_compile_options_ifdef(CONFIG_COVERAGE_GCOV
   -ftest-coverage
   -fprofile-arcs
+  -fno-inline
   )
 
 zephyr_library_sources(
@@ -26,11 +29,12 @@ zephyr_library_sources(
   spec_ctrl.c
   )
 
-zephyr_library_sources_if_kconfig(                irq_offload.c)
-zephyr_library_sources_if_kconfig(                x86_mmu.c)
-zephyr_library_sources_if_kconfig(                reboot_rst_cnt.c)
-zephyr_library_sources_ifdef(CONFIG_FP_SHARING    float.c)
-zephyr_library_sources_ifdef(CONFIG_X86_USERSPACE userspace.S)
+zephyr_library_sources_if_kconfig(			irq_offload.c)
+zephyr_library_sources_if_kconfig(			x86_mmu.c)
+zephyr_library_sources_if_kconfig(			reboot_rst_cnt.c)
+zephyr_library_sources_if_kconfig(			pcie.c)
+zephyr_library_sources_ifdef(CONFIG_LAZY_FP_SHARING	float.c)
+zephyr_library_sources_ifdef(CONFIG_X86_USERSPACE	userspace.S)
 
 # Last since we declare default exception handlers here
 zephyr_library_sources(fatal.c)

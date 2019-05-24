@@ -95,8 +95,8 @@ extern const struct log_backend __log_backends_end[0];
 static inline void log_backend_put(const struct log_backend *const backend,
 				   struct log_msg *msg)
 {
-	__ASSERT_NO_MSG(backend);
-	__ASSERT_NO_MSG(msg);
+	__ASSERT_NO_MSG(backend != NULL);
+	__ASSERT_NO_MSG(msg != NULL);
 	backend->api->put(backend, msg);
 }
 
@@ -115,7 +115,7 @@ static inline void log_backend_put_sync_string(
 					u32_t timestamp, const char *fmt,
 					va_list ap)
 {
-	__ASSERT_NO_MSG(backend);
+	__ASSERT_NO_MSG(backend != NULL);
 
 	if (backend->api->put_sync_string) {
 		backend->api->put_sync_string(backend, src_level,
@@ -139,7 +139,7 @@ static inline void log_backend_put_sync_hexdump(
 					u32_t timestamp, const char *metadata,
 					const u8_t *data, u32_t len)
 {
-	__ASSERT_NO_MSG(backend);
+	__ASSERT_NO_MSG(backend != NULL);
 
 	if (backend->api->put_sync_hexdump) {
 		backend->api->put_sync_hexdump(backend, src_level, timestamp,
@@ -158,7 +158,7 @@ static inline void log_backend_put_sync_hexdump(
 static inline void log_backend_dropped(const struct log_backend *const backend,
 				       u32_t cnt)
 {
-	__ASSERT_NO_MSG(backend);
+	__ASSERT_NO_MSG(backend != NULL);
 
 	if (backend->api->dropped != NULL) {
 		backend->api->dropped(backend, cnt);
@@ -172,7 +172,7 @@ static inline void log_backend_dropped(const struct log_backend *const backend,
  */
 static inline void log_backend_panic(const struct log_backend *const backend)
 {
-	__ASSERT_NO_MSG(backend);
+	__ASSERT_NO_MSG(backend != NULL);
 	backend->api->panic(backend);
 }
 
@@ -187,7 +187,7 @@ static inline void log_backend_panic(const struct log_backend *const backend)
 static inline void log_backend_id_set(const struct log_backend *const backend,
 				      u8_t id)
 {
-	__ASSERT_NO_MSG(backend);
+	__ASSERT_NO_MSG(backend != NULL);
 	backend->cb->id = id;
 }
 
@@ -201,7 +201,7 @@ static inline void log_backend_id_set(const struct log_backend *const backend,
  */
 static inline u8_t log_backend_id_get(const struct log_backend *const backend)
 {
-	__ASSERT_NO_MSG(backend);
+	__ASSERT_NO_MSG(backend != NULL);
 	return backend->cb->id;
 }
 
@@ -236,7 +236,7 @@ static inline int log_backend_count_get(void)
 static inline void log_backend_activate(const struct log_backend *const backend,
 					void *ctx)
 {
-	__ASSERT_NO_MSG(backend);
+	__ASSERT_NO_MSG(backend != NULL);
 	backend->cb->ctx = ctx;
 	backend->cb->active = true;
 }
@@ -249,7 +249,7 @@ static inline void log_backend_activate(const struct log_backend *const backend,
 static inline void log_backend_deactivate(
 				const struct log_backend *const backend)
 {
-	__ASSERT_NO_MSG(backend);
+	__ASSERT_NO_MSG(backend != NULL);
 	backend->cb->active = false;
 }
 
@@ -263,7 +263,7 @@ static inline void log_backend_deactivate(
 static inline bool log_backend_is_active(
 				const struct log_backend *const backend)
 {
-	__ASSERT_NO_MSG(backend);
+	__ASSERT_NO_MSG(backend != NULL);
 	return backend->cb->active;
 }
 

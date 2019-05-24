@@ -6,7 +6,6 @@
 
 menuconfig NET_GPTP
 	bool "Enable IEEE 802.1AS (gPTP) support [EXPERIMENTAL]"
-	depends on NET_L2_ETHERNET
 	select NET_PKT_TIMESTAMP
 	select PTP_CLOCK
 	help
@@ -39,7 +38,6 @@ config NET_GPTP_PROBE_CLOCK_SOURCE_ON_DEMAND
 
 choice
 	prompt "gPTP Clock Accuracy"
-	depends on NET_GPTP
 	default NET_GPTP_CLOCK_ACCURACY_UNKNOWN
 	help
 	  Specify the accuracy of the clock. This setting should reflect
@@ -206,4 +204,4 @@ config NET_GPTP_STATISTICS
 	  Enable this if you need to collect gPTP statistics. The statistics
 	  can be seen in net-shell if needed.
 
-endif
+endif # NET_GPTP

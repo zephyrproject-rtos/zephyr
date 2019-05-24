@@ -94,7 +94,7 @@ static u8_t *net_iface_get_mac(struct device *dev)
 	}
 
 	data->ll_addr.addr = data->mac_addr;
-	data->ll_addr.len = 6;
+	data->ll_addr.len = 6U;
 
 	return data->mac_addr;
 }
@@ -109,7 +109,7 @@ static void net_iface_init(struct net_if *iface)
 
 static int sender_iface(struct device *dev, struct net_pkt *pkt)
 {
-	if (!pkt->frags) {
+	if (!pkt->buffer) {
 		DBG("No data to send!\n");
 		return -ENODATA;
 	}
@@ -258,7 +258,8 @@ static int eth_fake_init(struct device *dev)
 }
 
 ETH_NET_DEVICE_INIT(eth_fake, "eth_fake", eth_fake_init, &eth_fake_data,
-		    NULL, CONFIG_ETH_INIT_PRIORITY, &eth_fake_api_funcs, 1500);
+		    NULL, CONFIG_ETH_INIT_PRIORITY, &eth_fake_api_funcs,
+		    NET_ETH_MTU);
 
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
 static const char *iface2str(struct net_if *iface)
@@ -420,10 +421,15 @@ static bool send_iface(struct net_if *iface, int val, bool expect_fail)
 	struct net_pkt *pkt;
 	int ret;
 
-	pkt = net_pkt_get_reserve_tx(K_FOREVER);
-	net_pkt_set_iface(pkt, iface);
+	pkt = net_pkt_alloc_with_buffer(iface, sizeof(data),
+					AF_UNSPEC, 0, K_FOREVER);
+	if (!pkt) {
+		DBG("Cannot allocate pkt\n");
+		return false;
+	}
 
-	net_pkt_append_all(pkt, sizeof(data), data, K_FOREVER);
+	net_pkt_write(pkt, data, sizeof(data));
+	net_pkt_cursor_init(pkt);
 
 	ret = net_send_data(pkt);
 	if (!expect_fail && ret < 0) {
@@ -546,7 +552,7 @@ static void select_src_iface(void)
 
 	net_ipaddr_copy(&ipv4.sin_addr, &dst_addr_2);
 	ipv4.sin_family = AF_INET;
-	ipv4.sin_port = 0;
+	ipv4.sin_port = 0U;
 
 	iface = net_if_select_src_iface((struct sockaddr *)&ipv4);
 	zassert_equal_ptr(iface, iface1, "Invalid interface %p vs %p selected",
@@ -554,7 +560,7 @@ static void select_src_iface(void)
 
 	net_ipaddr_copy(&ipv6.sin6_addr, &dst_addr1);
 	ipv6.sin6_family = AF_INET6;
-	ipv6.sin6_port = 0;
+	ipv6.sin6_port = 0U;
 
 	iface = net_if_select_src_iface((struct sockaddr *)&ipv6);
 	zassert_equal_ptr(iface, iface1, "Invalid interface %p vs %p selected",

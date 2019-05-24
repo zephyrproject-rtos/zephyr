@@ -26,6 +26,9 @@ config HAS_HW_NRF_CLOCK
 config HAS_HW_NRF_COMP
 	bool
 
+config HAS_HW_NRF_DPPIC
+	bool
+
 config HAS_HW_NRF_ECB
 	bool
 

@@ -70,7 +70,7 @@ Building Sample Applications
 
 You can try many of the sample applications or tests, but let us discuss
 the one called :ref:`hello_world`.
-It is found in :file:`$ZEPHYR_BASE/samples/hello_world`.
+It is found in :zephyr_file:`samples/hello_world`.
 
 Configuring
 -----------

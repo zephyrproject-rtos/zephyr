@@ -129,7 +129,7 @@ static int gpio_cc32xx_manage_callback(struct device *dev,
 {
 	struct gpio_cc32xx_data *data = DEV_DATA(dev);
 
-	return _gpio_manage_callback(&data->callbacks, callback, set);
+	return gpio_manage_callback(&data->callbacks, callback, set);
 }
 
 
@@ -179,7 +179,7 @@ static void gpio_cc32xx_port_isr(void *arg)
 	MAP_GPIOIntClear(config->port_base, int_status);
 
 	/* Call the registered callbacks */
-	_gpio_fire_callbacks(&data->callbacks, (struct device *)dev,
+	gpio_fire_callbacks(&data->callbacks, (struct device *)dev,
 			     enabled_int);
 
 	/* Re-enable the interrupts */

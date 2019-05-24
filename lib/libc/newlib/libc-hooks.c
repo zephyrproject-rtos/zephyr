@@ -57,8 +57,6 @@ extern void *_heap_sentry;
 #define MAX_HEAP_SIZE ((KB(CONFIG_SRAM_SIZE)) - USED_RAM_SIZE)
 #endif
 
-static unsigned char *heap_base = UINT_TO_POINTER(USED_RAM_END_ADDR);
-
 #ifdef CONFIG_USERSPACE
 struct k_mem_partition z_malloc_partition;
 
@@ -66,7 +64,11 @@ static int malloc_prepare(struct device *unused)
 {
 	ARG_UNUSED(unused);
 
+#if CONFIG_NEWLIB_LIBC_ALIGNED_HEAP_SIZE
 	z_malloc_partition.start = (u32_t)heap_base;
+#else
+	z_malloc_partition.start = USED_RAM_END_ADDR;
+#endif
 	z_malloc_partition.size = MAX_HEAP_SIZE;
 	z_malloc_partition.attr = K_MEM_PARTITION_P_RW_U_RW;
 	return 0;
@@ -104,7 +106,7 @@ void __stdin_hook_install(unsigned char (*hook)(void))
 	_stdin_hook = hook;
 }
 
-int _impl__zephyr_read_stdin(char *buf, int nbytes)
+int z_impl_zephyr_read_stdin(char *buf, int nbytes)
 {
 	int i = 0;
 
@@ -119,14 +121,14 @@ int _impl__zephyr_read_stdin(char *buf, int nbytes)
 }
 
 #ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER(_zephyr_read_stdin, buf, nbytes)
+Z_SYSCALL_HANDLER(zephyr_read_stdin, buf, nbytes)
 {
 	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(buf, nbytes));
-	return _impl__zephyr_read_stdin((char *)buf, nbytes);
+	return z_impl_zephyr_read_stdin((char *)buf, nbytes);
 }
 #endif
 
-int _impl__zephyr_write_stdout(const void *buffer, int nbytes)
+int z_impl_zephyr_write_stdout(const void *buffer, int nbytes)
 {
 	const char *buf = buffer;
 	int i;
@@ -141,10 +143,10 @@ int _impl__zephyr_write_stdout(const void *buffer, int nbytes)
 }
 
 #ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER(_zephyr_write_stdout, buf, nbytes)
+Z_SYSCALL_HANDLER(zephyr_write_stdout, buf, nbytes)
 {
 	Z_OOPS(Z_SYSCALL_MEMORY_READ(buf, nbytes));
-	return _impl__zephyr_write_stdout((const void *)buf, nbytes);
+	return z_impl_zephyr_write_stdout((const void *)buf, nbytes);
 }
 #endif
 
@@ -153,7 +155,7 @@ int _read(int fd, char *buf, int nbytes)
 {
 	ARG_UNUSED(fd);
 
-	return _zephyr_read_stdin(buf, nbytes);
+	return z_impl_zephyr_read_stdin(buf, nbytes);
 }
 FUNC_ALIAS(_read, read, int);
 
@@ -161,7 +163,7 @@ int _write(int fd, const void *buf, int nbytes)
 {
 	ARG_UNUSED(fd);
 
-	return _zephyr_write_stdout(buf, nbytes);
+	return z_impl_zephyr_write_stdout(buf, nbytes);
 }
 FUNC_ALIAS(_write, write, int);
 
@@ -222,7 +224,11 @@ void _exit(int status)
 
 void *_sbrk(int count)
 {
+#if CONFIG_NEWLIB_LIBC_ALIGNED_HEAP_SIZE
 	void *ptr = heap_base + heap_sz;
+#else
+	void *ptr = _end + heap_sz;
+#endif
 
 	if ((heap_sz + count) < MAX_HEAP_SIZE) {
 		heap_sz += count;

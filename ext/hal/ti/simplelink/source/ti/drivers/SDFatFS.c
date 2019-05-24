@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017, Texas Instruments Incorporated
+ * Copyright (c) 2016-2018, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -63,9 +63,9 @@ static bool isInitialized = false;
 /*
  * Array of SDFatFS_Handles to determine the association of the
  * FatFs drive number with a SDFatFS_Handle.
- * _VOLUMES is defined in <third_party/fatfs/ffconf.h>.
+ * FF_VOLUMES is defined in <third_party/fatfs/ffconf.h>.
  */
-static SDFatFS_Handle sdFatFSHandles[_VOLUMES];
+static SDFatFS_Handle sdFatFSHandles[FF_VOLUMES];
 
 /* FatFS function prototypes */
 DSTATUS SDFatFS_diskInitialize(BYTE drive);
@@ -141,6 +141,10 @@ DRESULT SDFatFS_diskIOctrl(BYTE drive, BYTE ctrl, void *buffer)
     DRESULT         fatfsRes = RES_ERROR;
 
     switch (ctrl) {
+        case CTRL_SYNC:
+            fatfsRes = RES_OK;
+            break;
+
         case (BYTE)GET_SECTOR_COUNT:
             *(uint32_t*)buffer = (uint32_t)SD_getNumSectors(obj->sdHandle);
 
@@ -156,7 +160,10 @@ DRESULT SDFatFS_diskIOctrl(BYTE drive, BYTE ctrl, void *buffer)
             fatfsRes = RES_OK;
             break;
 
-        case CTRL_SYNC:
+        case (BYTE)GET_BLOCK_SIZE:
+            *(WORD*)buffer = (WORD)SD_getSectorSize(obj->sdHandle);
+            DebugP_log1("SDFatFS: Disk IO control: block size: %d",
+                *(WORD*)buffer);
             fatfsRes = RES_OK;
             break;
 

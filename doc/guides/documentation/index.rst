@@ -246,6 +246,12 @@ For example, there are roles for marking :file:`filenames`
 (``:command:`make```).  You can also use the \`\`inline code\`\`
 markup (double backticks) to indicate a ``filename``.
 
+For references to files that are in the Zephyr GitHub tree, a special
+role can be used that creates a hyperlink to that file.  For example a
+reference to the reST file used to create this document can be generated
+using ``:zephyr_file:\`doc/guides/documentation/index.rst\```  that will
+show up as :zephyr_file:`doc/guides/documentation/index.rst`.
+
 .. _internal-linking:
 
 Internal Cross-Reference Linking

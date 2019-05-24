@@ -97,12 +97,10 @@ struct lll_conn {
 	/* FIXME: END: Move to ULL? */
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
-	u16_t default_tx_octets;
 	u16_t max_tx_octets;
 	u16_t max_rx_octets;
 
 #if defined(CONFIG_BT_CTLR_PHY)
-	u16_t default_tx_time;
 	u16_t max_tx_time;
 	u16_t max_rx_time;
 #endif /* CONFIG_BT_CTLR_PHY */
@@ -155,10 +153,5 @@ void lll_conn_isr_abort(void *param);
 void lll_conn_rx_pkt_set(struct lll_conn *lll);
 void lll_conn_tx_pkt_set(struct lll_conn *lll, struct pdu_data *pdu_data_tx);
 void lll_conn_pdu_tx_prep(struct lll_conn *lll, struct pdu_data **pdu_data_tx);
-u8_t lll_conn_ack_last_idx_get(void);
-memq_link_t *lll_conn_ack_peek(u8_t *ack_last, u16_t *handle,
-			       struct node_tx **node_tx);
-memq_link_t *lll_conn_ack_by_last_peek(u8_t last, u16_t *handle,
-				       struct node_tx **node_tx);
-void *lll_conn_ack_dequeue(void);
-void lll_conn_tx_flush(void *param);
+
+extern void ull_conn_lll_ack_enqueue(u16_t handle, struct node_tx *tx);

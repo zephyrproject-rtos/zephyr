@@ -80,10 +80,10 @@ static int i2c_clk_set(Twihs *const twihs, u32_t speed)
 	 *  T_low = ( ( CLDIV × 2^CKDIV ) + 3 ) × T_MCK
 	 */
 	while (!div_completed) {
-		cl_div =   ((SOC_ATMEL_SAM_MCK_FREQ_HZ / (2 * speed)) - 3)
+		cl_div =   ((SOC_ATMEL_SAM_MCK_FREQ_HZ / (speed * 2U)) - 3)
 			 / (1 << ck_div);
 
-		if (cl_div <= 255) {
+		if (cl_div <= 255U) {
 			div_completed = true;
 		} else {
 			ck_div++;
@@ -173,7 +173,7 @@ static void read_msg_start(Twihs *const twihs, struct twihs_msg *msg,
 	twihs->TWIHS_IER = TWIHS_IER_RXRDY | TWIHS_IER_TXCOMP | TWIHS_IER_NACK;
 
 	/* In single data byte read the START and STOP must both be set */
-	twihs_cr_stop = (msg->len == 1) ? TWIHS_CR_STOP : 0;
+	twihs_cr_stop = (msg->len == 1U) ? TWIHS_CR_STOP : 0;
 	/* Start the transfer by sending START condition */
 	twihs->TWIHS_CR = TWIHS_CR_START | twihs_cr_stop;
 }
@@ -242,7 +242,7 @@ static void i2c_sam_twihs_isr(void *arg)
 
 		msg->buf[msg->idx++] = twihs->TWIHS_RHR;
 
-		if (msg->idx == msg->len - 1) {
+		if (msg->idx == msg->len - 1U) {
 			/* Send STOP condition */
 			twihs->TWIHS_CR = TWIHS_CR_STOP;
 		}
@@ -302,7 +302,7 @@ static int i2c_sam_twihs_initialize(struct device *dev)
 	/* Reset the module */
 	twihs->TWIHS_CR = TWIHS_CR_SWRST;
 
-	bitrate_cfg = _i2c_map_dt_bitrate(dev_cfg->bitrate);
+	bitrate_cfg = i2c_map_dt_bitrate(dev_cfg->bitrate);
 
 	ret = i2c_sam_twihs_configure(dev, I2C_MODE_MASTER | bitrate_cfg);
 	if (ret < 0) {

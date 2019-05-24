@@ -14,4 +14,5 @@ Network APIs
    net_timeout.rst
    net_context.rst
    promiscuous.rst
+   sntp.rst
    trickle.rst

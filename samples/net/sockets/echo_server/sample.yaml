@@ -8,59 +8,59 @@ sample:
     sample
   name: Socket Echo Server
 tests:
-  test:
+  sample.net.sockets.echo_server:
     platform_whitelist: qemu_x86 sam_e70_xplained frdm_k64f
       qemu_cortex_m3 frdm_kw41z
-  test_802154:
+  sample.net.sockets.echo_server.802154:
     extra_args: OVERLAY_CONFIG="overlay-qemu_802154.conf"
     platform_whitelist: qemu_x86
-  test_bt:
+  sample.net.sockets.echo_server.bt:
     extra_args: OVERLAY_CONFIG="overlay-bt.conf"
     platform_whitelist: qemu_x86
     tags: bluetooth
-  test_mcr20a:
+  sample.net.sockets.echo_server.mcr20a:
     extra_args: OVERLAY_CONFIG="overlay-frdm_k64f_mcr20a.conf"
     platform_whitelist: frdm_k64f
-  test_nrf_802154:
+  sample.net.sockets.echo_server.nrf_802154:
     extra_args: OVERLAY_CONFIG="overlay-802154.conf"
     platform_whitelist: nrf52840_pca10056
-  test_usbnet:
+  sample.net.sockets.echo_server.usbnet:
     harness: net
     extra_args: OVERLAY_CONFIG="overlay-netusb.conf"
     platform_whitelist: quark_se_c1000_devboard 96b_carbon
     extra_configs:
       - CONFIG_NET_SHELL=n
     tags: net usb
-  test_usbnet_composite:
+  sample.net.sockets.echo_server.usbnet_composite:
     harness: net
     extra_args: OVERLAY_CONFIG="overlay-netusb.conf"
     extra_configs:
       - CONFIG_USB_COMPOSITE_DEVICE=y
     platform_whitelist: quark_se_c1000_devboard 96b_carbon
     tags: net usb
-  test_nrf_openthread:
+  sample.net.sockets.echo_server.nrf_openthread:
     extra_args: OVERLAY_CONFIG="overlay-ot.conf"
     slow: true
     tags: net openthread
     platform_whitelist: nrf52840_pca10056
-  test_kw41z_openthread:
+  sample.net.sockets.echo_server.kw41z_openthread:
     extra_args: OVERLAY_CONFIG="overlay-ot.conf"
     slow: true
     tags: net openthread
     platform_whitelist: frdm_kw41z
-  test_enc28j60:
+  sample.net.sockets.echo_server.enc28j60:
     extra_args: OVERLAY_CONFIG="overlay-enc28j60.conf"
     tags: net enc28j60
     platform_whitelist: arduino_101
-  test_e1000:
+  sample.net.sockets.echo_server.e1000:
     extra_args: OVERLAY_CONFIG="overlay-e1000.conf"
     tags: net
     platform_whitelist: qemu_x86
-  test_stellaris:
+  sample.net.sockets.echo_server.stellaris:
     extra_args: OVERLAY_CONFIG="overlay-qemu_cortex_m3_eth.conf"
     tags: net
     platform_whitelist: qemu_cortex_m3
-  test_smsc911x:
+  sample.net.sockets.echo_server.smsc911x:
     extra_args: OVERLAY_CONFIG="overlay-smsc911x.conf"
     tags: net
     platform_whitelist: mps2_an385

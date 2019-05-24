@@ -64,7 +64,7 @@ static struct spi_cs_control cs_ctrl;
  * DEBUG *
  ********/
 #if LOG_LEVEL == LOG_LEVEL_DBG
-static inline void _cc2520_print_gpio_config(struct device *dev)
+static inline void cc2520_print_gpio_config(struct device *dev)
 {
 	struct cc2520_context *cc2520 = dev->driver_data;
 
@@ -81,7 +81,7 @@ static inline void _cc2520_print_gpio_config(struct device *dev)
 		    read_reg_gpioctrl(cc2520));
 }
 
-static inline void _cc2520_print_exceptions(struct cc2520_context *cc2520)
+static inline void cc2520_print_exceptions(struct cc2520_context *cc2520)
 {
 	u8_t flag = read_reg_excflag0(cc2520);
 
@@ -156,7 +156,7 @@ static inline void _cc2520_print_exceptions(struct cc2520_context *cc2520)
 	}
 }
 
-static inline void _cc2520_print_errors(struct cc2520_context *cc2520)
+static inline void cc2520_print_errors(struct cc2520_context *cc2520)
 {
 	u8_t flag = read_reg_excflag2(cc2520);
 
@@ -191,18 +191,18 @@ static inline void _cc2520_print_errors(struct cc2520_context *cc2520)
 	}
 }
 #else
-#define _cc2520_print_gpio_config(...)
-#define _cc2520_print_exceptions(...)
-#define _cc2520_print_errors(...)
+#define cc2520_print_gpio_config(...)
+#define cc2520_print_exceptions(...)
+#define cc2520_print_errors(...)
 #endif /* LOG_LEVEL == LOG_LEVEL_DBG */
 
 
 /*********************
  * Generic functions *
  ********************/
-#define _usleep(usec) k_busy_wait(usec)
+#define z_usleep(usec) k_busy_wait(usec)
 
-bool _cc2520_access(struct cc2520_context *ctx, bool read, u8_t ins,
+bool z_cc2520_access(struct cc2520_context *ctx, bool read, u8_t ins,
 		    u16_t addr, void *data, size_t length)
 {
 	u8_t cmd_buf[2];
@@ -248,11 +248,11 @@ bool _cc2520_access(struct cc2520_context *ctx, bool read, u8_t ins,
 	return (spi_write(ctx->spi, &ctx->spi_cfg, &tx) == 0);
 }
 
-static inline u8_t _cc2520_status(struct cc2520_context *ctx)
+static inline u8_t cc2520_status(struct cc2520_context *ctx)
 {
 	u8_t status;
 
-	if (_cc2520_access(ctx, true, CC2520_INS_SNOP, 0, &status, 1)) {
+	if (z_cc2520_access(ctx, true, CC2520_INS_SNOP, 0, &status, 1)) {
 		return status;
 	}
 
@@ -265,8 +265,8 @@ static bool verify_osc_stabilization(struct cc2520_context *cc2520)
 	u8_t status;
 
 	do {
-		status = _cc2520_status(cc2520);
-		_usleep(1);
+		status = cc2520_status(cc2520);
+		z_usleep(1);
 		timeout--;
 	} while (!(status & CC2520_STATUS_XOSC_STABLE_N_RUNNING) && timeout);
 
@@ -299,7 +299,7 @@ static inline u8_t *get_mac(struct device *dev)
 	return cc2520->mac_addr;
 }
 
-static int _cc2520_set_pan_id(struct device *dev, u16_t pan_id)
+static int cc2520_set_pan_id(struct device *dev, u16_t pan_id)
 {
 	struct cc2520_context *cc2520 = dev->driver_data;
 
@@ -315,7 +315,7 @@ static int _cc2520_set_pan_id(struct device *dev, u16_t pan_id)
 	return 0;
 }
 
-static int _cc2520_set_short_addr(struct device *dev, u16_t short_addr)
+static int cc2520_set_short_addr(struct device *dev, u16_t short_addr)
 {
 	struct cc2520_context *cc2520 = dev->driver_data;
 
@@ -331,7 +331,7 @@ static int _cc2520_set_short_addr(struct device *dev, u16_t short_addr)
 	return 0;
 }
 
-static int _cc2520_set_ieee_addr(struct device *dev, const u8_t *ieee_addr)
+static int cc2520_set_ieee_addr(struct device *dev, const u8_t *ieee_addr)
 {
 	struct cc2520_context *cc2520 = dev->driver_data;
 
@@ -477,13 +477,13 @@ static inline bool write_txfifo_length(struct cc2520_context *ctx, u8_t len)
 {
 	u8_t length = len + CC2520_FCS_LENGTH;
 
-	return _cc2520_access(ctx, false, CC2520_INS_TXBUF, 0, &length, 1);
+	return z_cc2520_access(ctx, false, CC2520_INS_TXBUF, 0, &length, 1);
 }
 
 static inline bool write_txfifo_content(struct cc2520_context *ctx,
 					u8_t *frame, u8_t len)
 {
-	return _cc2520_access(ctx, false, CC2520_INS_TXBUF, 0, frame, len);
+	return z_cc2520_access(ctx, false, CC2520_INS_TXBUF, 0, frame, len);
 }
 
 static inline bool verify_txfifo_status(struct cc2520_context *cc2520,
@@ -503,7 +503,7 @@ static inline bool verify_tx_done(struct cc2520_context *cc2520)
 	u8_t status;
 
 	do {
-		_usleep(1);
+		z_usleep(1);
 		timeout--;
 		status = read_reg_excflag0(cc2520);
 	} while (!(status & EXCFLAG0_TX_FRM_DONE) && timeout);
@@ -533,7 +533,7 @@ static inline u8_t read_rxfifo_length(struct cc2520_context *ctx)
 	u8_t len;
 
 
-	if (_cc2520_access(ctx, true, CC2520_INS_RXBUF, 0, &len, 1)) {
+	if (z_cc2520_access(ctx, true, CC2520_INS_RXBUF, 0, &len, 1)) {
 		return len;
 	}
 
@@ -543,7 +543,7 @@ static inline u8_t read_rxfifo_length(struct cc2520_context *ctx)
 static inline bool read_rxfifo_content(struct cc2520_context *ctx,
 				       struct net_buf *buf, u8_t len)
 {
-	if (!_cc2520_access(ctx, true, CC2520_INS_RXBUF, 0, buf->data, len)) {
+	if (!z_cc2520_access(ctx, true, CC2520_INS_RXBUF, 0, buf->data, len)) {
 		return false;
 	}
 
@@ -574,12 +574,12 @@ static inline void insert_radio_noise_details(struct net_pkt *pkt, u8_t *buf)
 	 * lqi = (lqi - 50) * 4
 	 */
 	lqi = buf[1] & CC2520_FCS_CORRELATION;
-	if (lqi <= 50) {
+	if (lqi <= 50U) {
 		lqi = 0U;
-	} else if (lqi >= 110) {
+	} else if (lqi >= 110U) {
 		lqi = 255U;
 	} else {
-		lqi = (lqi - 50) << 2;
+		lqi = (lqi - 50U) << 2;
 	}
 
 	net_pkt_set_ieee802154_lqi(pkt, lqi);
@@ -589,7 +589,7 @@ static inline bool verify_crc(struct cc2520_context *ctx, struct net_pkt *pkt)
 {
 	u8_t fcs[2];
 
-	if (!_cc2520_access(ctx, true, CC2520_INS_RXBUF, 0, &fcs, 2)) {
+	if (!z_cc2520_access(ctx, true, CC2520_INS_RXBUF, 0, &fcs, 2)) {
 		return false;
 	}
 
@@ -645,7 +645,7 @@ static void cc2520_rx(int arg)
 		}
 
 		if (!IS_ENABLED(CONFIG_IEEE802154_RAW_MODE)) {
-			pkt_len -= 2;
+			pkt_len -= 2U;
 		}
 
 		if (!read_rxfifo_content(cc2520, pkt->buffer, pkt_len)) {
@@ -671,12 +671,12 @@ static void cc2520_rx(int arg)
 		}
 
 		net_analyze_stack("CC2520 Rx Fiber stack",
-				K_THREAD_STACK_BUFFER(cc2520->cc2520_rx_stack),
+				Z_THREAD_STACK_BUFFER(cc2520->cc2520_rx_stack),
 				K_THREAD_STACK_SIZEOF(cc2520->cc2520_rx_stack));
 		continue;
 flush:
-		_cc2520_print_exceptions(cc2520);
-		_cc2520_print_errors(cc2520);
+		cc2520_print_exceptions(cc2520);
+		cc2520_print_errors(cc2520);
 		flush_rxfifo(cc2520);
 out:
 		if (pkt) {
@@ -719,7 +719,7 @@ static int cc2520_set_channel(struct device *dev, u16_t channel)
 	}
 
 	/* See chapter 16 */
-	channel = 11 + 5 * (channel - 11);
+	channel = 11 + (channel - 11) * 5U;
 
 	if (!write_reg_freqctrl(cc2520, FREQCTRL_FREQ(channel))) {
 		LOG_ERR("Failed");
@@ -741,11 +741,11 @@ static int cc2520_filter(struct device *dev,
 	}
 
 	if (type == IEEE802154_FILTER_TYPE_IEEE_ADDR) {
-		return _cc2520_set_ieee_addr(dev, filter->ieee_addr);
+		return cc2520_set_ieee_addr(dev, filter->ieee_addr);
 	} else if (type == IEEE802154_FILTER_TYPE_SHORT_ADDR) {
-		return _cc2520_set_short_addr(dev, filter->short_addr);
+		return cc2520_set_short_addr(dev, filter->short_addr);
 	} else if (type == IEEE802154_FILTER_TYPE_PAN_ID) {
-		return _cc2520_set_pan_id(dev, filter->pan_id);
+		return cc2520_set_pan_id(dev, filter->pan_id);
 	}
 
 	return -ENOTSUP;
@@ -858,8 +858,8 @@ error:
 	k_sem_give(&cc2520->access_lock);
 #endif
 	LOG_ERR("No TX_FRM_DONE");
-	_cc2520_print_exceptions(cc2520);
-	_cc2520_print_errors(cc2520);
+	cc2520_print_exceptions(cc2520);
+	cc2520_print_errors(cc2520);
 
 	atomic_set(&cc2520->tx, 0);
 	instruct_sflushtx(cc2520);
@@ -913,17 +913,17 @@ static int power_on_and_setup(struct device *dev)
 
 	/* Switching to LPM2 mode */
 	set_reset(dev, 0);
-	_usleep(150);
+	z_usleep(150);
 
 	set_vreg_en(dev, 0);
-	_usleep(250);
+	z_usleep(250);
 
 	/* Then to ACTIVE mode */
 	set_vreg_en(dev, 1);
-	_usleep(250);
+	z_usleep(250);
 
 	set_reset(dev, 1);
-	_usleep(150);
+	z_usleep(150);
 
 	if (!verify_osc_stabilization(cc2520)) {
 		return -EIO;
@@ -968,7 +968,7 @@ static int power_on_and_setup(struct device *dev)
 
 	setup_gpio_callbacks(dev);
 
-	_cc2520_print_gpio_config(dev);
+	cc2520_print_gpio_config(dev);
 
 	return 0;
 }
@@ -992,7 +992,7 @@ static inline int configure_spi(struct device *dev)
 	}
 
 	cs_ctrl.gpio_pin = DT_TI_CC2520_0_CS_GPIO_PIN;
-	cs_ctrl.delay = 0;
+	cs_ctrl.delay = 0U;
 
 	cc2520->spi_cfg.cs = &cs_ctrl;
 
@@ -1097,17 +1097,17 @@ NET_STACK_INFO_ADDR(RX, cc2520,
 
 #ifdef CONFIG_IEEE802154_CC2520_CRYPTO
 
-static inline bool _cc2520_read_ram(struct cc2520_context *ctx, u16_t addr,
+static inline bool cc2520_read_ram(struct cc2520_context *ctx, u16_t addr,
 				    u8_t *data_buf, u8_t len)
 {
-	return _cc2520_access(ctx, true, CC2520_INS_MEMRD,
+	return z_cc2520_access(ctx, true, CC2520_INS_MEMRD,
 			      addr, data_buf, len);
 }
 
-static inline bool _cc2520_write_ram(struct cc2520_context *ctx, u16_t addr,
+static inline bool cc2520_write_ram(struct cc2520_context *ctx, u16_t addr,
 				     u8_t *data_buf, u8_t len)
 {
-	return _cc2520_access(ctx, false, CC2520_INS_MEMWR,
+	return z_cc2520_access(ctx, false, CC2520_INS_MEMWR,
 			      addr, data_buf, len);
 }
 
@@ -1245,7 +1245,7 @@ static int insert_crypto_parameters(struct cipher_ctx *ctx,
 	}
 
 	/* Writing the frame in RAM */
-	if (!_cc2520_write_ram(cc2520, CC2520_MEM_DATA, in_buf, in_len)) {
+	if (!cc2520_write_ram(cc2520, CC2520_MEM_DATA, in_buf, in_len)) {
 		LOG_ERR("Cannot write the frame in RAM");
 		return -EIO;
 	}
@@ -1254,7 +1254,7 @@ static int insert_crypto_parameters(struct cipher_ctx *ctx,
 	sys_memcpy_swap(data, ctx->key.bit_stream, ctx->keylen);
 
 	/* Writing the key in RAM */
-	if (!_cc2520_write_ram(cc2520, CC2520_MEM_KEY, data, 16)) {
+	if (!cc2520_write_ram(cc2520, CC2520_MEM_KEY, data, 16)) {
 		LOG_ERR("Cannot write the key in RAM");
 		return -EIO;
 	}
@@ -1262,7 +1262,7 @@ static int insert_crypto_parameters(struct cipher_ctx *ctx,
 	generate_nonce(ccm_nonce, data, apkt, m);
 
 	/* Writing the nonce in RAM */
-	if (!_cc2520_write_ram(cc2520, CC2520_MEM_NONCE, data, 16)) {
+	if (!cc2520_write_ram(cc2520, CC2520_MEM_NONCE, data, 16)) {
 		LOG_ERR("Cannot write the nonce in RAM");
 		return -EIO;
 	}
@@ -1270,7 +1270,7 @@ static int insert_crypto_parameters(struct cipher_ctx *ctx,
 	return m;
 }
 
-static int _cc2520_crypto_ccm(struct cipher_ctx *ctx,
+static int cc2520_crypto_ccm(struct cipher_ctx *ctx,
 			      struct cipher_aead_pkt *apkt,
 			      u8_t *ccm_nonce)
 {
@@ -1280,11 +1280,6 @@ static int _cc2520_crypto_ccm(struct cipher_ctx *ctx,
 
 	if (!apkt || !apkt->pkt) {
 		LOG_ERR("Invalid crypto packet to operate with");
-		return -EINVAL;
-	}
-
-	if (apkt->tag) {
-		LOG_ERR("CCM encryption does not take a tag");
 		return -EINVAL;
 	}
 
@@ -1306,18 +1301,21 @@ static int _cc2520_crypto_ccm(struct cipher_ctx *ctx,
 	if (!instruct_uccm_ccm(cc2520, false, CC2520_MEM_KEY >> 4, auth_crypt,
 			       CC2520_MEM_NONCE >> 4, CC2520_MEM_DATA,
 			       0x000, apkt->ad_len, m) ||
-	    !_cc2520_read_ram(cc2520, CC2520_MEM_DATA,
+	    !cc2520_read_ram(cc2520, CC2520_MEM_DATA,
 			      apkt->pkt->out_buf, apkt->pkt->out_len)) {
 		LOG_ERR("CCM or reading result from RAM failed");
 		return -EIO;
 	}
 
-	apkt->tag = apkt->pkt->out_buf + apkt->pkt->in_len;
+	if (apkt->tag) {
+		memcpy(apkt->tag, apkt->pkt->out_buf + apkt->pkt->in_len,
+					ctx->mode_params.ccm_info.tag_len);
+	}
 
 	return 0;
 }
 
-static int _cc2520_crypto_uccm(struct cipher_ctx *ctx,
+static int cc2520_crypto_uccm(struct cipher_ctx *ctx,
 			       struct cipher_aead_pkt *apkt,
 			       u8_t *ccm_nonce)
 {
@@ -1345,7 +1343,7 @@ static int _cc2520_crypto_uccm(struct cipher_ctx *ctx,
 	if (!instruct_uccm_ccm(cc2520, true, CC2520_MEM_KEY >> 4, auth_crypt,
 			       CC2520_MEM_NONCE >> 4, CC2520_MEM_DATA,
 			       0x000, apkt->ad_len, m) ||
-	    !_cc2520_read_ram(cc2520, CC2520_MEM_DATA,
+	    !cc2520_read_ram(cc2520, CC2520_MEM_DATA,
 			      apkt->pkt->out_buf, apkt->pkt->out_len)) {
 		LOG_ERR("UCCM or reading result from RAM failed");
 		return -EIO;
@@ -1375,16 +1373,16 @@ static int cc2520_crypto_begin_session(struct device *dev,
 		return -EINVAL;
 	}
 
-	if (ctx->mode_params.ccm_info.nonce_len != 13) {
+	if (ctx->mode_params.ccm_info.nonce_len != 13U) {
 		LOG_ERR("Nonce length erroneous (%u)",
 			    ctx->mode_params.ccm_info.nonce_len);
 		return -EINVAL;
 	}
 
 	if (op_type == CRYPTO_CIPHER_OP_ENCRYPT) {
-		ctx->ops.ccm_crypt_hndlr = _cc2520_crypto_ccm;
+		ctx->ops.ccm_crypt_hndlr = cc2520_crypto_ccm;
 	} else {
-		ctx->ops.ccm_crypt_hndlr = _cc2520_crypto_uccm;
+		ctx->ops.ccm_crypt_hndlr = cc2520_crypto_uccm;
 	}
 
 	ctx->ops.cipher_mode = mode;

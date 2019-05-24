@@ -1,0 +1,59 @@
+# Kconfig - u-blox SARA R4 driver options
+
+#
+# Copyright (c) 2019 Foundries.io
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config MODEM_UBLOX_SARA_R4
+	bool "Enable u-blox SARA-R4 LTE-CatM1/NB-IoT modem driver"
+	select MODEM_RECEIVER
+	select NET_OFFLOAD
+	imply GPIO
+	help
+	  Choose this setting to enable u-blox SARA-R4 LTE-CatM1/NB-IoT modem
+	  driver.
+
+if MODEM_UBLOX_SARA_R4
+
+config MODEM_UBLOX_SARA_R4_RX_STACK_SIZE
+	int "Stack size for the u-blox SARA-R4 modem driver RX thread"
+	default 1028
+	help
+	  This stack is used by the u-blox SARA-R4 RX thread.
+
+config MODEM_UBLOX_SARA_R4_RX_WORKQ_STACK_SIZE
+	int "Stack size for the u-blox SARA-R4 modem driver work queue"
+	default 2048
+	help
+	  This stack is used by the work queue to pass off net_pkt data
+	  to the rest of the network stack, letting the rx thread continue
+	  processing data.
+
+config MODEM_UBLOX_SARA_R4_APN
+	string "APN for establishing network connection"
+	default "hologram"
+	help
+	  This setting is used in the AT+CGDCONT command to set the APN name
+	  for the network connection context.  This value is specific to
+	  the network provider and may need to be changed.
+
+config MODEM_UBLOX_SARA_R4_MANUAL_MCCMNO
+	string "MCC/MNOfor establishing network connection"
+	help
+	  This setting is used in the AT+COPS command to set the MCC/MNO
+	  for the network connection context.  This value is specific to
+	  the network provider and may need to be changed if auto is not
+	  selected.
+
+config MODEM_UBLOX_SARA_R4_INIT_PRIORITY
+	int "u-blox SARA-R4 driver init priority"
+	default 80
+	help
+	  u-blox SARA-R4 device driver initialization priority.
+	  Do not mess with it unless you know what you are doing.
+	  Note that the priority needs to be lower than the net stack
+	  so that it can start before the networking sub-system.
+
+endif # MODEM_UBLOX_SARA_R4

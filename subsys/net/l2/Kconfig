@@ -16,11 +16,11 @@ config NET_L2_DUMMY
 config NET_L2_BT
 	bool "Enable Bluetooth support"
 	depends on NET_IPV6
-	select BT
-	select BT_PERIPHERAL
-	select BT_CENTRAL
-	select BT_SMP
-	select BT_L2CAP_DYNAMIC_CHANNEL
+	depends on BT
+	depends on BT_PERIPHERAL
+	depends on BT_CENTRAL
+	depends on BT_SMP
+	depends on BT_L2CAP_DYNAMIC_CHANNEL
 	select NET_6LO
 	help
 	  Enable Bluetooth driver that send and receives IPv6 packets,
@@ -76,26 +76,26 @@ source "subsys/net/l2/ieee802154/Kconfig"
 source "subsys/net/l2/openthread/Kconfig"
 
 config NET_L2_WIFI_MGMT
-	bool "Enable WiFi Management support"
+	bool "Enable Wi-Fi Management support"
 	select NET_MGMT
 	select NET_MGMT_EVENT
 	select NET_MGMT_EVENT_INFO
 	help
-	Add support for WiFi Management interface.
+	Add support for Wi-Fi Management interface.
 
 if NET_L2_WIFI_MGMT
 module = NET_L2_WIFI_MGMT
 module-dep = NET_LOG
-module-str = Log level for WiFi management layer
-module-help = Enables WiFi management interface to output debug messages.
+module-str = Log level for Wi-Fi management layer
+module-help = Enables Wi-Fi management interface to output debug messages.
 source "subsys/net/Kconfig.template.log_config.net"
 endif # NET_L2_WIFI_MGMT
 
 config NET_L2_WIFI_SHELL
-	bool "Enable WiFi shell module"
+	bool "Enable Wi-Fi shell module"
 	select NET_L2_WIFI_MGMT
 	help
-	  This can be used for controlling WiFi through the console via
+	  This can be used for controlling Wi-Fi through the console via
 	  exposing a shell module named "wifi".
 
 config NET_L2_CANBUS

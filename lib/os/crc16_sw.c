@@ -17,16 +17,16 @@ u16_t crc16(const u8_t *src, size_t len, u16_t polynomial,
 	for (i = 0; i < len + padding; i++) {
 
 		for (b = 0; b < 8; b++) {
-			u16_t divide = crc & 0x8000;
+			u16_t divide = crc & 0x8000UL;
 
-			crc = (crc << 1);
+			crc = (crc << 1U);
 
 			/* choose input bytes or implicit trailing zeros */
 			if (i < len) {
-				crc |= !!(src[i] & (0x80 >> b));
+				crc |= !!(src[i] & (0x80U >> b));
 			}
 
-			if (divide) {
+			if (divide != 0U) {
 				crc = crc ^ polynomial;
 			}
 		}
@@ -51,11 +51,11 @@ u16_t crc16_ccitt(u16_t seed, const u8_t *src, size_t len)
 u16_t crc16_itu_t(u16_t seed, const u8_t *src, size_t len)
 {
 	for (; len > 0; len--) {
-		seed = (seed >> 8) | (seed << 8);
+		seed = (seed >> 8U) | (seed << 8U);
 		seed ^= *src++;
-		seed ^= (seed & 0xff) >> 4;
-		seed ^= seed << 12;
-		seed ^= (seed & 0xff) << 5;
+		seed ^= (seed & 0xffU) >> 4U;
+		seed ^= seed << 12U;
+		seed ^= (seed & 0xffU) << 5U;
 	}
 
 	return seed;

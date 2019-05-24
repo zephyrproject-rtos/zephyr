@@ -35,7 +35,6 @@
 */
 
 
-
 /*****************************************************************************/
 /* Include files                                                             */
 /*****************************************************************************/
@@ -51,60 +50,53 @@ _SlNonOsCB_t g__SlNonOsCB;
 
 _SlNonOsRetVal_t _SlNonOsSpawn(_SlSpawnEntryFunc_t pEntry , void* pValue , _u32 flags)
 {
-	 _i8 i = 0;
+    _i8 i = 0;
 
-     /* The parameter is currently not in use */
-     (void)flags;
+    /* The parameter is currently not in use */
+    (void)flags;
 
-#ifndef SL_TINY
-	for (i=0 ; i<NONOS_MAX_SPAWN_ENTRIES ; i++)
-#endif
-	{
-		_SlNonOsSpawnEntry_t* pE = &g__SlNonOsCB.SpawnEntries[i];
 
-		if (pE->IsAllocated == FALSE)
-		{
-			pE->pValue = pValue;
-			pE->pEntry = pEntry;
-			pE->IsAllocated = TRUE;
-#ifndef SL_TINY
-			break;
-#endif
-		}
-	}
+    for (i=0 ; i<NONOS_MAX_SPAWN_ENTRIES ; i++)
+    {
+        _SlNonOsSpawnEntry_t* pE = &g__SlNonOsCB.SpawnEntries[i];
+
+        if (pE->IsAllocated == FALSE)
+        {
+            pE->pValue = pValue;
+            pE->pEntry = pEntry;
+            pE->IsAllocated = TRUE;
+            break;
+        }
+    }
 
     return NONOS_RET_OK;
 }
 
-
 _SlNonOsRetVal_t _SlNonOsHandleSpawnTask(void)
 {
-	_i8    i=0;
-	void*  pValue;
+    _i8    i=0;
+    void*  pValue;
 
-#ifndef SL_TINY
-	for (i=0 ; i<NONOS_MAX_SPAWN_ENTRIES ; i++)
-#endif
-	{
-		_SlNonOsSpawnEntry_t* pE = &g__SlNonOsCB.SpawnEntries[i];
+    for (i=0 ; i<NONOS_MAX_SPAWN_ENTRIES ; i++)
+    {
+        _SlNonOsSpawnEntry_t* pE = &g__SlNonOsCB.SpawnEntries[i];
 
-		if (pE->IsAllocated == TRUE)
-		{
-			_SlSpawnEntryFunc_t  pF = pE->pEntry;
-			pValue = pE->pValue;
+        if (pE->IsAllocated == TRUE)
+        {
+            _SlSpawnEntryFunc_t  pF = pE->pEntry;
+            pValue = pE->pValue;
 
-			/* Clear the entry */
-			pE->pEntry = NULL;
-			pE->pValue = NULL;
-			pE->IsAllocated = FALSE;
+            /* Clear the entry */
+            pE->pEntry = NULL;
+            pE->pValue = NULL;
+            pE->IsAllocated = FALSE;
 
-			/* execute the spawn function */
+            /* execute the spawn function */
             pF(pValue);
-		}
-	}
+        }
+    }
         return NONOS_RET_OK;
 }
-
 
 void tiDriverSpawnCallback(void)
 {
@@ -114,7 +106,7 @@ void tiDriverSpawnCallback(void)
      */
     if (FALSE == g_pCB->WaitForCmdResp)
     {
-    	(void)_SlNonOsHandleSpawnTask();
+        (void)_SlNonOsHandleSpawnTask();
     }
 }
 

@@ -26,25 +26,25 @@ extern "C" {
 
 #ifdef _ASMLANGUAGE
 GTEXT(_irq_exit);
-GTEXT(_arch_irq_enable)
-GTEXT(_arch_irq_disable)
+GTEXT(z_arch_irq_enable)
+GTEXT(z_arch_irq_disable)
 #else
 
-extern void _arch_irq_enable(unsigned int irq);
-extern void _arch_irq_disable(unsigned int irq);
+extern void z_arch_irq_enable(unsigned int irq);
+extern void z_arch_irq_disable(unsigned int irq);
 
 extern void _irq_exit(void);
-extern void _irq_priority_set(unsigned int irq, unsigned int prio,
+extern void z_irq_priority_set(unsigned int irq, unsigned int prio,
 			      u32_t flags);
 extern void _isr_wrapper(void);
-extern void _irq_spurious(void *unused);
+extern void z_irq_spurious(void *unused);
 
 /**
  * Configure a static interrupt.
  *
  * All arguments must be computable by the compiler at build time.
  *
- * _ISR_DECLARE will populate the .intList section with the interrupt's
+ * Z_ISR_DECLARE will populate the .intList section with the interrupt's
  * parameters, which will then be used by gen_irq_tables.py to create
  * the vector table and the software ISR table. This is all done at
  * build-time.
@@ -60,10 +60,10 @@ extern void _irq_spurious(void *unused);
  *
  * @return The vector assigned to this interrupt
  */
-#define _ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
+#define Z_ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
 ({ \
-	_ISR_DECLARE(irq_p, 0, isr_p, isr_param_p); \
-	_irq_priority_set(irq_p, priority_p, flags_p); \
+	Z_ISR_DECLARE(irq_p, 0, isr_p, isr_param_p); \
+	z_irq_priority_set(irq_p, priority_p, flags_p); \
 	irq_p; \
 })
 
@@ -101,7 +101,7 @@ extern void _irq_spurious(void *unused);
  * "interrupt disable state" prior to the call.
  */
 
-static ALWAYS_INLINE unsigned int _arch_irq_lock(void)
+static ALWAYS_INLINE unsigned int z_arch_irq_lock(void)
 {
 	unsigned int key;
 
@@ -122,7 +122,7 @@ static ALWAYS_INLINE unsigned int _arch_irq_lock(void)
  * @return N/A
  */
 
-static ALWAYS_INLINE void _arch_irq_unlock(unsigned int key)
+static ALWAYS_INLINE void z_arch_irq_unlock(unsigned int key)
 {
 	__asm__ volatile("seti %0" : : "ir"(key) : "memory");
 }

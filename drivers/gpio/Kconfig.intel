@@ -8,7 +8,6 @@
 
 menuconfig GPIO_INTEL_APL
 	bool "Intel Apollo Lake SoC GPIO"
-	depends on GPIO
 	select HAS_DTS_GPIO
 	help
 	  Enable driver for Intel Apollo Lake SoC GPIO

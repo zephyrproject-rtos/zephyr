@@ -76,7 +76,7 @@ struct timeout_order_data timeout_order_data_mult_fifo[] = {
 };
 
 #define TIMEOUT_ORDER_NUM_THREADS	ARRAY_SIZE(timeout_order_data_mult_fifo)
-#define TSTACK_SIZE			1024
+#define TSTACK_SIZE			(1024 + CONFIG_TEST_EXTRA_STACKSIZE)
 #define FIFO_THREAD_PRIO		-5
 
 static K_THREAD_STACK_ARRAY_DEFINE(ttstack,
@@ -178,7 +178,7 @@ static int test_multiple_threads_pending(struct timeout_order_data *test_data,
 				diff_ms = test_data[j].timeout - data->timeout;
 			}
 
-			if (_ms_to_ticks(diff_ms) == 1) {
+			if (z_ms_to_ticks(diff_ms) == 1) {
 				TC_PRINT(
 				" thread (q order: %d, t/o: %d, fifo %p)\n",
 				data->q_order, data->timeout, data->fifo);

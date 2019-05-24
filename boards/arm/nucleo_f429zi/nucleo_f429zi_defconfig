@@ -1,6 +1,9 @@
+# SPDX-License-Identifier: Apache-2.0
+
 CONFIG_ARM=y
 CONFIG_SOC_SERIES_STM32F4X=y
 CONFIG_SOC_STM32F429XI=y
+CONFIG_CORTEX_M_SYSTICK=y
 # 168MHz system clock (highest value to get a precise USB clock)
 CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=168000000
 CONFIG_SYS_CLOCK_TICKS_PER_SEC=1000
@@ -31,7 +34,7 @@ CONFIG_CLOCK_STM32_PLL_SRC_HSE=y
 # however, the board does not have an external oscillator, so just use
 # the 8MHz clock signal coming from integrated STLink
 CONFIG_CLOCK_STM32_HSE_BYPASS=y
-# produce 180MHz clock at PLL output
+# produce 168MHz clock at PLL output
 CONFIG_CLOCK_STM32_PLL_M_DIVISOR=8
 CONFIG_CLOCK_STM32_PLL_N_MULTIPLIER=336
 CONFIG_CLOCK_STM32_PLL_P_DIVISOR=2

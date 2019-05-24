@@ -72,9 +72,9 @@
 	     puttime[0],                                             \
 	     puttime[1],                                             \
 	     puttime[2],                                             \
-	     (u32_t)((1000000 * (u64_t)putsize) / SAFE_DIVISOR(puttime[0])), \
-	     (u32_t)((1000000 * (u64_t)putsize) / SAFE_DIVISOR(puttime[1])), \
-	     (u32_t)((1000000 * (u64_t)putsize) / SAFE_DIVISOR(puttime[2])))
+	     (u32_t)(((u64_t)putsize * 1000000U) / SAFE_DIVISOR(puttime[0])), \
+	     (u32_t)(((u64_t)putsize * 1000000U) / SAFE_DIVISOR(puttime[1])), \
+	     (u32_t)(((u64_t)putsize * 1000000U) / SAFE_DIVISOR(puttime[2])))
 #endif /* FLOAT */
 
 /*

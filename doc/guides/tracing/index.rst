@@ -11,7 +11,7 @@ your application and allows enabled backends to visualize the inner-working of
 the kernel and various subsystems.
 
 Applications and supported tools can define empty macros declared in
-:file:`include/tracing.h` that are called across the kernel in key spots.
+:zephyr_file:`include/tracing.h` that are called across the kernel in key spots.
 
 
 SEGGER SystemView Support

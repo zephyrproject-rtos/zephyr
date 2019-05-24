@@ -40,6 +40,7 @@ extern "C" {
 #ifndef _ASMLANGUAGE
 
 typedef struct __esf _esf_t;
+typedef struct __basic_sf _basic_sf_t;
 
 #endif /* _ASMLANGUAGE */
 
@@ -54,12 +55,6 @@ typedef struct __esf _esf_t;
 #endif
 
 #ifndef _ASMLANGUAGE
-
-struct _kernel_arch {
-	/* empty */
-};
-
-typedef struct _kernel_arch _kernel_arch_t;
 
 #endif /* _ASMLANGUAGE */
 

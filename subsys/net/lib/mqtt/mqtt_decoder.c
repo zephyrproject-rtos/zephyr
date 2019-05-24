@@ -177,7 +177,7 @@ int packet_length_decode(struct buf_ctx *buf, u32_t *length)
 								<< shift;
 		shift += MQTT_LENGTH_SHIFT;
 		bytes++;
-	} while ((*(buf->cur++) & MQTT_LENGTH_CONTINUATION_BIT) != 0);
+	} while ((*(buf->cur++) & MQTT_LENGTH_CONTINUATION_BIT) != 0U);
 
 	MQTT_TRC("length:0x%08x", *length);
 

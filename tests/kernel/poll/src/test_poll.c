@@ -15,11 +15,16 @@ struct fifo_msg {
 
 #define SIGNAL_RESULT 0x1ee7d00d
 #define FIFO_MSG_VALUE 0xdeadbeef
+#define STACK_SIZE (1024 + CONFIG_TEST_EXTRA_STACKSIZE)
 
 /* verify k_poll() without waiting */
 static struct k_sem no_wait_sem;
 static struct k_fifo no_wait_fifo;
 static struct k_poll_signal no_wait_signal;
+static struct k_thread test_thread;
+static struct k_thread test_loprio_thread;
+K_THREAD_STACK_DEFINE(test_stack, STACK_SIZE);
+K_THREAD_STACK_DEFINE(test_loprio_stack, STACK_SIZE);
 
 /**
  * @brief Test cases to verify poll
@@ -113,9 +118,6 @@ static struct k_poll_signal wait_signal =
 
 struct fifo_msg wait_msg = { NULL, FIFO_MSG_VALUE };
 
-static struct k_thread poll_wait_helper_thread;
-static K_THREAD_STACK_DEFINE(poll_wait_helper_stack, KB(1));
-
 #define TAG_0 10
 #define TAG_1 11
 #define TAG_2 12
@@ -173,8 +175,8 @@ void test_poll_wait(void)
 	 */
 	k_thread_priority_set(k_current_get(), main_low_prio);
 
-	k_thread_create(&poll_wait_helper_thread, poll_wait_helper_stack,
-			K_THREAD_STACK_SIZEOF(poll_wait_helper_stack),
+	k_thread_create(&test_thread, test_stack,
+			K_THREAD_STACK_SIZEOF(test_stack),
 			poll_wait_helper, (void *)1, 0, 0,
 			main_low_prio - 1, K_USER | K_INHERIT_PERMS, 0);
 
@@ -208,7 +210,7 @@ void test_poll_wait(void)
 	wait_events[1].state = K_POLL_STATE_NOT_READY;
 	wait_events[2].state = K_POLL_STATE_NOT_READY;
 	wait_events[3].state = K_POLL_STATE_NOT_READY;
-	wait_signal.signaled = 0;
+	wait_signal.signaled = 0U;
 
 	zassert_equal(k_poll(wait_events, ARRAY_SIZE(wait_events),
 			     K_SECONDS(1)), -EAGAIN, "");
@@ -229,8 +231,8 @@ void test_poll_wait(void)
 	 */
 	k_thread_priority_set(k_current_get(), main_low_prio);
 
-	k_thread_create(&poll_wait_helper_thread, poll_wait_helper_stack,
-			K_THREAD_STACK_SIZEOF(poll_wait_helper_stack),
+	k_thread_create(&test_thread, test_stack,
+			K_THREAD_STACK_SIZEOF(test_stack),
 			poll_wait_helper,
 			0, 0, 0, main_low_prio - 1, 0, 0);
 
@@ -262,10 +264,10 @@ void test_poll_wait(void)
 	wait_events[0].state = K_POLL_STATE_NOT_READY;
 	wait_events[1].state = K_POLL_STATE_NOT_READY;
 	wait_events[2].state = K_POLL_STATE_NOT_READY;
-	wait_signal.signaled = 0;
+	wait_signal.signaled = 0U;
 
-	k_thread_create(&poll_wait_helper_thread, poll_wait_helper_stack,
-			K_THREAD_STACK_SIZEOF(poll_wait_helper_stack),
+	k_thread_create(&test_thread, test_stack,
+			K_THREAD_STACK_SIZEOF(test_stack),
 			poll_wait_helper,
 			(void *)1, 0, 0, old_prio + 1,
 			K_USER | K_INHERIT_PERMS, 0);
@@ -329,16 +331,13 @@ void test_poll_wait(void)
 	zassert_equal(wait_events[2].tag, TAG_2, "");
 
 	wait_events[2].state = K_POLL_STATE_NOT_READY;
-	wait_signal.signaled = 0;
+	wait_signal.signaled = 0U;
 }
 
 /* verify k_poll() that waits on object which gets cancellation */
 
 static struct k_fifo cancel_fifo;
 static struct k_fifo non_cancel_fifo;
-
-static struct k_thread poll_cancel_helper_thread;
-static K_THREAD_STACK_DEFINE(poll_cancel_helper_stack, 768);
 
 static void poll_cancel_helper(void *p1, void *p2, void *p3)
 {
@@ -385,8 +384,8 @@ void test_poll_cancel(bool is_main_low_prio)
 		k_thread_priority_set(k_current_get(), main_low_prio);
 	}
 
-	k_thread_create(&poll_cancel_helper_thread, poll_cancel_helper_stack,
-			K_THREAD_STACK_SIZEOF(poll_cancel_helper_stack),
+	k_thread_create(&test_thread, test_stack,
+			K_THREAD_STACK_SIZEOF(test_stack),
 			poll_cancel_helper, (void *)1, 0, 0,
 			main_low_prio - 1, K_USER | K_INHERIT_PERMS, 0);
 
@@ -428,9 +427,6 @@ void test_poll_cancel_main_high_prio(void)
 /* verify multiple pollers */
 static K_SEM_DEFINE(multi_sem, 0, 1);
 
-static struct k_thread multi_thread_lowprio;
-static K_THREAD_STACK_DEFINE(multi_stack_lowprio, KB(1));
-
 static void multi_lowprio(void *p1, void *p2, void *p3)
 {
 	(void)p1; (void)p2; (void)p3;
@@ -447,9 +443,6 @@ static void multi_lowprio(void *p1, void *p2, void *p3)
 }
 
 static K_SEM_DEFINE(multi_reply, 0, 1);
-
-static struct k_thread multi_thread;
-static K_THREAD_STACK_DEFINE(multi_stack, KB(1));
 
 static void multi(void *p1, void *p2, void *p3)
 {
@@ -491,8 +484,8 @@ void test_poll_multi(void)
 
 	k_thread_priority_set(k_current_get(), main_low_prio);
 
-	k_thread_create(&multi_thread, multi_stack,
-			K_THREAD_STACK_SIZEOF(multi_stack),
+	k_thread_create(&test_thread, test_stack,
+			K_THREAD_STACK_SIZEOF(test_stack),
 			multi, 0, 0, 0, main_low_prio - 1,
 			K_USER | K_INHERIT_PERMS, 0);
 
@@ -500,8 +493,8 @@ void test_poll_multi(void)
 	 * create additional thread to add multiple(more than one) pending threads
 	 * in events list to improve code coverage
 	 */
-	k_thread_create(&multi_thread_lowprio, multi_stack_lowprio,
-			K_THREAD_STACK_SIZEOF(multi_stack_lowprio),
+	k_thread_create(&test_loprio_thread, test_loprio_stack,
+			K_THREAD_STACK_SIZEOF(test_loprio_stack),
 			multi_lowprio, 0, 0, 0, main_low_prio + 1,
 			K_USER | K_INHERIT_PERMS, 0);
 
@@ -525,8 +518,6 @@ void test_poll_multi(void)
 	k_sleep(250);
 }
 
-static struct k_thread signal_thread;
-static K_THREAD_STACK_DEFINE(signal_stack, KB(1));
 static struct k_poll_signal signal;
 
 static void threadstate(void *p1, void *p2, void *p3)
@@ -571,8 +562,8 @@ void test_poll_threadstate(void)
 	k_thread_priority_set(k_current_get(), main_low_prio);
 	k_tid_t ztest_tid = k_current_get();
 
-	k_thread_create(&signal_thread, signal_stack,
-			K_THREAD_STACK_SIZEOF(signal_stack), threadstate,
+	k_thread_create(&test_thread, test_stack,
+			K_THREAD_STACK_SIZEOF(test_stack), threadstate,
 			ztest_tid, 0, 0, main_low_prio - 1, K_INHERIT_PERMS, 0);
 
 	/* wait for spawn thread to take action */
@@ -593,8 +584,6 @@ void test_poll_grant_access(void)
 	k_thread_access_grant(k_current_get(), &no_wait_sem, &no_wait_fifo,
 			      &no_wait_signal, &wait_sem, &wait_fifo,
 			      &cancel_fifo, &non_cancel_fifo,
-			      &wait_signal, &poll_wait_helper_thread,
-			      &poll_wait_helper_stack, &multi_sem,
-			      &multi_reply, &multi_thread, &multi_stack,
-			      &multi_thread_lowprio, &multi_stack_lowprio);
+			      &wait_signal, &test_thread,
+			      &test_stack, &multi_sem, &multi_reply)
 }

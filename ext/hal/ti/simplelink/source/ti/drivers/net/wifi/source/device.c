@@ -32,8 +32,8 @@
  *  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
  *  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
-*/
-
+ */
+    
 /*****************************************************************************/
 /* Include files                                                             */
 /*****************************************************************************/
@@ -62,13 +62,12 @@ void _SlDeviceResetRequestInitCompletedCB(_u32 Status, SlDeviceInitInfo_t *Devic
 
 typedef struct
 {
-	const void	*pIfHdl;   /* Holds the last opened interface handle */
-	_i8 		*pDevName; /* Holds the last opened interface parameters */
-	_u32         ResetRequestSessionNumber; /* Special session number to be verified upon every reset request during provisioning */
+    const void    *pIfHdl;   /* Holds the last opened interface handle */
+    _i8         *pDevName; /* Holds the last opened interface parameters */
+    _u32         ResetRequestSessionNumber; /* Special session number to be verified upon every reset request during provisioning */
 } _SlDeviceCb_t;
 
 _SlDeviceCb_t DeviceCB; /* the device control block */
-
 
 static const _i16 StartResponseLUT[16] = 
 {
@@ -84,9 +83,9 @@ static const _i16 StartResponseLUT[16] =
     SL_ERROR_FS_ALERT_ERR,
     SL_ERROR_RESTORE_IMAGE_COMPLETE, 
     SL_ERROR_INCOMPLETE_PROGRAMMING,
-    SL_ERROR_UNKNOWN_ERR,
-    SL_ERROR_UNKNOWN_ERR,
-    SL_ERROR_UNKNOWN_ERR,
+    ROLE_TAG,
+    SL_ERROR_ROLE_TAG_ERR,
+    SL_ERROR_FIPS_ERR,
     SL_ERROR_GENERAL_ERR
 };
 
@@ -95,12 +94,9 @@ static _i16 _SlDeviceGetStartResponseConvert(_i32 Status)
     return StartResponseLUT[Status & 0xF];
 }
 
-
 /*****************************************************************************/
 /* API Functions                                                             */
 /*****************************************************************************/
-
-
 
 /*****************************************************************************/
 /* sl_Task                                                                   */
@@ -116,7 +112,6 @@ void* sl_Task(void* pEntry)
 }
 #endif
 
-
 /*****************************************************************************/
 /* sl_Start                                                                  */
 /*****************************************************************************/
@@ -128,7 +123,7 @@ _i16 sl_Start(const void* pIfHdl, _i8*  pDevName, const P_INIT_CALLBACK pInitCal
 
     _SlDrvMemZero(&AsyncRsp, sizeof(InitComplete_t));
 
-    /* verify no erorr handling in progress. if in progress than
+    /* verify no error handling in progress. if in progress than
     ignore the API execution and return immediately with an error */
     VERIFY_NO_ERROR_HANDLING_IN_PROGRESS();
     if (SL_IS_DEVICE_STARTED)
@@ -152,7 +147,7 @@ _i16 sl_Start(const void* pIfHdl, _i8*  pDevName, const P_INIT_CALLBACK pInitCal
     {
         g_pCB->FD = (_SlFd_t)pIfHdl;
     }
-    
+
     ObjIdx = _SlDrvProtectAsyncRespSetting((_u8 *)&AsyncRsp, START_STOP_ID, SL_MAX_SOCKETS);
 
     if (MAX_CONCURRENT_ACTIONS == ObjIdx)
@@ -162,32 +157,27 @@ _i16 sl_Start(const void* pIfHdl, _i8*  pDevName, const P_INIT_CALLBACK pInitCal
 
     if( g_pCB->FD >= (_SlFd_t)0)
     {
-		/* store the interface parameters for the internal call of the 
-		   sl_start to be called upon reset request handling */
-		DeviceCB.pIfHdl = pIfHdl;
-		DeviceCB.pDevName = pDevName;
+        /* store the interface parameters for the internal call of the 
+           sl_start to be called upon reset request handling */
+        DeviceCB.pIfHdl = pIfHdl;
+        DeviceCB.pDevName = pDevName;
 
-		/* Mark that device is in progress! */
-		SL_SET_DEVICE_START_IN_PROGRESS;
+        /* Mark that device is in progress! */
+        SL_SET_DEVICE_START_IN_PROGRESS;
 
         sl_DeviceDisable();
-
+    
         sl_IfRegIntHdlr((SL_P_EVENT_HANDLER)_SlDrvRxIrqHandler, NULL);
-
+    
         g_pCB->pInitCallback = pInitCallBack;
         sl_DeviceEnable();
         
         if (NULL == pInitCallBack)
         {
-#ifdef SL_TINY
-            _SlDrvSyncObjWaitForever(&g_pCB->ObjPool[ObjIdx].SyncObj);
-#else
-        	SL_DRV_SYNC_OBJ_WAIT_TIMEOUT(&g_pCB->ObjPool[ObjIdx].SyncObj,
-        								 INIT_COMPLETE_TIMEOUT,
-                                         SL_OPCODE_DEVICE_INITCOMPLETE);
-#endif            
 
-        	SL_UNSET_DEVICE_START_IN_PROGRESS;
+            VERIFY_RET_OK(_SlDrvWaitForInternalAsyncEvent(ObjIdx, INIT_COMPLETE_TIMEOUT, SL_OPCODE_DEVICE_INITCOMPLETE));
+
+            SL_UNSET_DEVICE_START_IN_PROGRESS;
 
             SL_SET_DEVICE_STARTED;
 
@@ -223,21 +213,21 @@ _SlReturnVal_t _SlDeviceHandleAsync_InitComplete(void *pVoidBuf)
     }
     else
     {
-		sl_Memcpy(g_pCB->ObjPool[g_pCB->FunctionParams.AsyncExt.ActionIndex].pRespArgs, pMsgArgs, sizeof(InitComplete_t));
+        sl_Memcpy(g_pCB->ObjPool[g_pCB->FunctionParams.AsyncExt.ActionIndex].pRespArgs, pMsgArgs, sizeof(InitComplete_t));
         SL_DRV_SYNC_OBJ_SIGNAL(&g_pCB->ObjPool[g_pCB->FunctionParams.AsyncExt.ActionIndex].SyncObj);
     }
-    
-    SL_DRV_PROTECTION_OBJ_UNLOCK();
-	if(g_pCB->pInitCallback)
-    {
-		SL_SET_DEVICE_STARTED;
-		SL_UNSET_DEVICE_START_IN_PROGRESS;
-        _SlDrvReleasePoolObj(g_pCB->FunctionParams.AsyncExt.ActionIndex);
+        
+        SL_DRV_PROTECTION_OBJ_UNLOCK();
+        if(g_pCB->pInitCallback)
+        {
+            SL_SET_DEVICE_STARTED;
+            SL_UNSET_DEVICE_START_IN_PROGRESS;
+            _SlDrvReleasePoolObj(g_pCB->FunctionParams.AsyncExt.ActionIndex);
+        }
+     
+        return SL_OS_RET_CODE_OK;
     }
- 
-	return SL_OS_RET_CODE_OK;
-}
-
+    
 
 /***************************************************************************
 _SlDeviceHandleAsync_Stop - handles stop signalling to 
@@ -250,15 +240,15 @@ void _SlDeviceHandleAsync_Stop(void *pVoidBuf)
     VERIFY_SOCKET_CB(NULL != g_pCB->StopCB.pAsyncRsp);
 
     SL_DRV_PROTECTION_OBJ_LOCK_FOREVER();
-	
-	if (g_pCB->ObjPool[g_pCB->FunctionParams.AsyncExt.ActionIndex].pRespArgs != NULL)
-	{
-		sl_Memcpy(g_pCB->ObjPool[g_pCB->FunctionParams.AsyncExt.ActionIndex].pRespArgs, pMsgArgs, sizeof(_BasicResponse_t));
-		SL_DRV_SYNC_OBJ_SIGNAL(&g_pCB->ObjPool[g_pCB->FunctionParams.AsyncExt.ActionIndex].SyncObj);
-	}
-    
+
+    if (g_pCB->ObjPool[g_pCB->FunctionParams.AsyncExt.ActionIndex].pRespArgs != NULL)
+    {
+        sl_Memcpy(g_pCB->ObjPool[g_pCB->FunctionParams.AsyncExt.ActionIndex].pRespArgs, pMsgArgs, sizeof(_BasicResponse_t));
+        SL_DRV_SYNC_OBJ_SIGNAL(&g_pCB->ObjPool[g_pCB->FunctionParams.AsyncExt.ActionIndex].SyncObj);
+    }
+
     SL_DRV_PROTECTION_OBJ_UNLOCK();
-    
+
     return;
 }
 
@@ -269,7 +259,7 @@ sl_stop
 typedef union
 {
     SlDeviceStopCommand_t  Cmd;
-    _BasicResponse_t   Rsp;    
+    _BasicResponse_t   Rsp;
 }_SlStopMsg_u;
 
 static const _SlCmdCtrl_t _SlStopCmdCtrl =
@@ -287,87 +277,85 @@ _i16 sl_Stop(const _u16 Timeout)
     _BasicResponse_t  AsyncRsp;
     _u8 ObjIdx = MAX_CONCURRENT_ACTIONS;
     _u8 ReleasePoolObject = FALSE;
-	_u8 IsProvInProgress = FALSE;
-
-	/* In case the device has already stopped,
-	 * return an error code .
-	 */
-    if (!SL_IS_DEVICE_STARTED)
-    {
-        return SL_RET_CODE_DEV_NOT_STARTED;
-    }
+    _u8 IsProvInProgress = FALSE;
 
     /* NOTE: don't check VERIFY_API_ALLOWED(), this command is not
      * filtered in error handling and also not filtered in NWP lock state.
      * If we are in the middle of assert handling than ignore stopping
      * the device with timeout and force immediate shutdown as we would like
      * to avoid any additional commands to the NWP */
-    if( (Timeout != 0) 
-#ifndef SL_TINY  
-       && (!SL_IS_RESTART_REQUIRED)
-#endif 
-    )      
+    if( (Timeout != 0) && (SL_IS_DEVICE_STARTED)
+       && (!SL_IS_RESTART_REQUIRED))
     {
         /* Clear the Async response structure */
         _SlDrvMemZero(&AsyncRsp, sizeof(_BasicResponse_t));
 
-    	/* let the device make the shutdown using the defined timeout */
+        /* let the device make the shutdown using the defined timeout */
         Msg.Cmd.Timeout = Timeout;
 
-		IsProvInProgress = SL_IS_PROVISIONING_IN_PROGRESS;
+        IsProvInProgress = SL_IS_PROVISIONING_IN_PROGRESS;
 
-		/* if provisioning in progress do not take pool object as we are not going to wait for it if */
-		if (!IsProvInProgress)
-		{
-			ObjIdx = _SlDrvProtectAsyncRespSetting((_u8 *)&AsyncRsp, START_STOP_ID, SL_MAX_SOCKETS);
-			if (MAX_CONCURRENT_ACTIONS == ObjIdx)
-			{
-			  return SL_POOL_IS_EMPTY;
-			}
+        /* if provisioning in progress do not take pool object as we are not going to wait for it  */
+        if (!IsProvInProgress)
+        {
+            ObjIdx = _SlDrvProtectAsyncRespSetting((_u8 *)&AsyncRsp, START_STOP_ID, SL_MAX_SOCKETS);
+            if (MAX_CONCURRENT_ACTIONS == ObjIdx)
+            {
+              return SL_POOL_IS_EMPTY;
+            }
 
-			ReleasePoolObject = TRUE;
-		}
-      
-		/* Set the stop-in-progress flag */
-		SL_SET_DEVICE_STOP_IN_PROGRESS;
+            ReleasePoolObject = TRUE;
+        }
+  
+        /* Set the stop-in-progress flag */
+        SL_SET_DEVICE_STOP_IN_PROGRESS;
 
         VERIFY_RET_OK(_SlDrvCmdOp((_SlCmdCtrl_t *)&_SlStopCmdCtrl, &Msg, NULL));
-		
 
         /* Do not wait for stop async event if provisioning is in progress */
-        if((SL_OS_RET_CODE_OK == (_i16)Msg.Rsp.status) && (!(IsProvInProgress)))
-        {
-
-#ifdef SL_TINY        
-        	_SlDrvSyncObjWaitForever(&g_pCB->ObjPool[ObjIdx].SyncObj);
-                /* Wait for sync object to be signaled */
-#else                
-        	SL_DRV_SYNC_OBJ_WAIT_TIMEOUT(&g_pCB->ObjPool[ObjIdx].SyncObj,
-													   STOP_DEVICE_TIMEOUT,
-													   SL_OPCODE_DEVICE_STOP_ASYNC_RESPONSE);
-
-#endif
-
-			 Msg.Rsp.status = AsyncRsp.status;
-			 RetVal = Msg.Rsp.status;
+       if((SL_OS_RET_CODE_OK == (_i16)Msg.Rsp.status) && (!(IsProvInProgress)))
+       {
+            /* Wait for sync object to be signaled */
+            VERIFY_RET_OK(_SlDrvWaitForInternalAsyncEvent(ObjIdx, STOP_DEVICE_TIMEOUT, SL_OPCODE_DEVICE_STOP_ASYNC_RESPONSE));
+            Msg.Rsp.status = AsyncRsp.status;
+            RetVal = Msg.Rsp.status;
         }
 
-	   /* Release pool object only if taken */
-		if (ReleasePoolObject == TRUE)
-		{
-			_SlDrvReleasePoolObj(ObjIdx);
-		}
-
-		/* This macro wait for the NWP to raise a ready for shutdown indication.
-		 * This function is unique for the CC32XX family, and expected to return
-		 * in less than 600 mSec, which is the time takes for NWP to gracefully shutdown. */
-		WAIT_NWP_SHUTDOWN_READY;
+        /* Release pool object only if taken */
+        if (ReleasePoolObject == TRUE)
+        {
+            _SlDrvReleasePoolObj(ObjIdx);
+        }
+    
+        /* This macro wait for the NWP to raise a ready for shutdown indication.
+        * This function is unique for the CC32XX family, and expected to return
+        * in less than 600 mSec, which is the time takes for NWP to gracefully shutdown. */
+        WAIT_NWP_SHUTDOWN_READY;
     }
-	else
-	{
-		/* Set the stop-in-progress flag */
-		SL_SET_DEVICE_STOP_IN_PROGRESS;
-	}
+    else
+    {
+        if ((!SL_IS_DEVICE_STARTED)
+       && (!SL_IS_RESTART_REQUIRED))
+        {
+            sl_DeviceDisable();
+            return SL_RET_CODE_DEV_NOT_STARTED;
+        }
+        /* Set the stop-in-progress flag */
+        SL_SET_DEVICE_STOP_IN_PROGRESS;
+    }
+    /* Release (signal) all active and pending commands */
+    _SlDrvReleaseAllActivePendingPoolObj();
+
+#ifdef SL_PLATFORM_MULTI_THREADED
+    /* Do not continue until all sync object deleted (in relevant context) */
+    while (g_pCB->NumOfDeletedSyncObj < MAX_CONCURRENT_ACTIONS)
+    {
+        usleep(100000);
+    }
+#endif    
+
+    /* Lock during stopping the interface */
+    SL_DRV_LOCK_GLOBAL_LOCK_FOREVER(GLOBAL_LOCK_FLAGS_NONE);
 
     sl_IfRegIntHdlr(NULL, NULL);
     sl_DeviceDisable();
@@ -376,10 +364,12 @@ _i16 sl_Stop(const _u16 Timeout)
     (void)_SlDrvDriverCBDeinit();
 
     /* clear the stop-in-progress flag */
-	SL_UNSET_DEVICE_STOP_IN_PROGRESS;
+    SL_UNSET_DEVICE_STOP_IN_PROGRESS;
 
-	/* clear the device started flag */
-	SL_UNSET_DEVICE_STARTED;
+    /* clear the device started flag */
+    SL_UNSET_DEVICE_STARTED;
+
+    SL_DRV_LOCK_GLOBAL_UNLOCK(FALSE);
 
     return RetVal;
 }
@@ -391,11 +381,9 @@ sl_DeviceEventMaskSet
 *****************************************************************************/
 typedef union
 {
-    SlDeviceMaskEventSetCommand_t	    Cmd;
-    _BasicResponse_t	            Rsp;
+    SlDeviceMaskEventSetCommand_t        Cmd;
+    _BasicResponse_t                Rsp;
 }_SlEventMaskSetMsg_u;
-
-
 
 
 #if _SL_INCLUDE_FUNC(sl_DeviceEventMaskSet)
@@ -424,13 +412,13 @@ _i16 sl_DeviceEventMaskSet(const _u8 EventClass ,const _u32 Mask)
     return (_i16)Msg.Rsp.status;
 }
 #endif
-
+    
 /******************************************************************************
 sl_EventMaskGet
 ******************************************************************************/
 typedef union
 {
-    SlDeviceMaskEventGetCommand_t	    Cmd;
+    SlDeviceMaskEventGetCommand_t        Cmd;
     SlDeviceMaskEventGetResponse_t      Rsp;
 }_SlEventMaskGetMsg_u;
 
@@ -472,8 +460,8 @@ sl_DeviceGet
 
 typedef union
 {
-    SlDeviceSetGet_t	    Cmd;
-    SlDeviceSetGet_t	    Rsp;
+    SlDeviceSetGet_t        Cmd;
+    SlDeviceSetGet_t        Rsp;
 }_SlDeviceMsgGet_u;
 
 
@@ -592,9 +580,9 @@ _SlReturnVal_t _SlDeviceEventHandler(void* pEventInfo)
     DeviceEventInfo_t*    pInfo = (DeviceEventInfo_t*)pEventInfo;
     _SlResponseHeader_t*  pHdr  = (_SlResponseHeader_t *)pInfo->pAsyncMsgBuff;
     _BasicResponse_t     *pMsgArgs   = (_BasicResponse_t *)_SL_RESP_ARGS_START(pHdr);
-	SlDeviceEvent_t       DeviceEvent;
-     
-	_SlDrvMemZero(&DeviceEvent, sizeof(DeviceEvent));
+    SlDeviceEvent_t       DeviceEvent;
+
+    _SlDrvMemZero(&DeviceEvent, sizeof(DeviceEvent));
 
     switch(pHdr->GenHeader.Opcode)
     {
@@ -604,49 +592,47 @@ _SlReturnVal_t _SlDeviceEventHandler(void* pEventInfo)
     case SL_OPCODE_DEVICE_STOP_ASYNC_RESPONSE:
         _SlDeviceHandleAsync_Stop(pHdr);
         break;
-	case SL_OPCODE_DEVICE_RESET_REQUEST_ASYNC_EVENT:
-		{
-			SlDeviceResetRequestData_t *pResetRequestData = (SlDeviceResetRequestData_t*)pMsgArgs;
+    case SL_OPCODE_DEVICE_RESET_REQUEST_ASYNC_EVENT:
+        {
+            SlDeviceResetRequestData_t *pResetRequestData = (SlDeviceResetRequestData_t*)pMsgArgs;
 
 #if defined(slcb_DeviceGeneralEvtHdlr) || defined (EXT_LIB_REGISTERED_GENERAL_EVENTS)
-			if (pResetRequestData->Caller == SL_DEVICE_RESET_REQUEST_CALLER_PROVISIONING_EXTERNAL_CONFIGURATION)
-			{
-				/* call the registered events handlers (application/external lib) */
-				DeviceEvent.Id = SL_DEVICE_EVENT_RESET_REQUEST;
-				DeviceEvent.Data.ResetRequest.Status = 0;
-				DeviceEvent.Data.ResetRequest.Caller = pResetRequestData->Caller;
-				_SlDrvHandleGeneralEvents(&DeviceEvent);
-				break;
-			}
+            if (pResetRequestData->Caller == SL_DEVICE_RESET_REQUEST_CALLER_PROVISIONING_EXTERNAL_CONFIGURATION)
+            {
+                /* call the registered events handlers (application/external lib) */
+                DeviceEvent.Id = SL_DEVICE_EVENT_RESET_REQUEST;
+                DeviceEvent.Data.ResetRequest.Status = 0;
+                DeviceEvent.Data.ResetRequest.Caller = pResetRequestData->Caller;
+                _SlDrvHandleGeneralEvents(&DeviceEvent);
+                break;
+            }
 #endif
 
-			if (!_SlDrvIsApiInProgress() && SL_IS_PROVISIONING_IN_PROGRESS)
-			{
-				if (pResetRequestData->SessionNumber != DeviceCB.ResetRequestSessionNumber)
-				{
-					/* store the last session number */
-					DeviceCB.ResetRequestSessionNumber = pResetRequestData->SessionNumber;
-					
-					/* perform the reset request */
-					_SlDeviceHandleResetRequestInternally();
-				}
-			}
-		}
-		break;
+            if (!_SlDrvIsApiInProgress() && SL_IS_PROVISIONING_IN_PROGRESS)
+            {
+                if (pResetRequestData->SessionNumber != DeviceCB.ResetRequestSessionNumber)
+                {
+                    /* store the last session number */
+                    DeviceCB.ResetRequestSessionNumber = pResetRequestData->SessionNumber;
+                    
+                    /* perform the reset request */
+                    _SlDeviceHandleResetRequestInternally();
+                }
+            }
+        }
+        break;
 
     case SL_OPCODE_DEVICE_ABORT:
     {
         /* release global lock of cmd context */
         if (pInfo->bInCmdContext == TRUE)
         {
-			SL_DRV_LOCK_GLOBAL_UNLOCK(TRUE);
+            SL_DRV_LOCK_GLOBAL_UNLOCK(TRUE);
         }
 
-#ifndef SL_TINY
-		_SlDrvHandleFatalError(SL_DEVICE_EVENT_FATAL_DEVICE_ABORT,
+        _SlDrvHandleFatalError(SL_DEVICE_EVENT_FATAL_DEVICE_ABORT,
                                 *((_u32*)pMsgArgs - 1),    /* Abort type */
                                 *((_u32*)pMsgArgs));       /* Abort data */
-#endif        
         }
         break;
 
@@ -675,42 +661,40 @@ _SlReturnVal_t _SlDeviceEventHandler(void* pEventInfo)
 
 void _SlDeviceResetRequestInitCompletedCB(_u32 Status, SlDeviceInitInfo_t *DeviceInitInfo)
 {
-	/* Do nothing...*/
+    /* Do nothing...*/
 }
 
 
 void _SlDeviceHandleResetRequestInternally(void)
-{	
-	_u8 irqCountLast = RxIrqCnt;
-#if (!defined (SL_TINY)) && (defined(slcb_GetTimestamp))
+{    
+    _u8 irqCountLast = RxIrqCnt;
+#if (defined(slcb_GetTimestamp))
       _SlTimeoutParams_t      TimeoutInfo={0};
 
       _SlDrvStartMeasureTimeout(&TimeoutInfo, 2*RESET_REQUEST_STOP_TIMEOUT);
 #endif
 
-	/* Here we send stop command with timeout, but the API will not blocked 
-	   Till the stop complete event is received as we in the middle of async event handling */
-	sl_Stop(RESET_REQUEST_STOP_TIMEOUT);
-	
-	/* wait till the stop complete cmd & async 
-	   event messages are received (2 Irqs) */
-	do
-	{
-#if (!defined (SL_TINY)) && (defined(slcb_GetTimestamp))
-		 if (_SlDrvIsTimeoutExpired(&TimeoutInfo))
-		 {
-			break;
-		 }
+    /* Here we send stop command with timeout, but the API will not blocked 
+       Till the stop complete event is received as we in the middle of async event handling */
+    sl_Stop(RESET_REQUEST_STOP_TIMEOUT);
+    
+    /* wait till the stop complete cmd & async 
+       event messages are received (2 Irqs) */
+    do
+    {
+#if (defined(slcb_GetTimestamp))
+         if (_SlDrvIsTimeoutExpired(&TimeoutInfo))
+         {
+            break;
+         }
 #endif
-	}
-	while((RxIrqCnt - irqCountLast) < 2);
+    }
+    while((RxIrqCnt - irqCountLast) < 2);
 
-	/* start the device again */
-	sl_Start(DeviceCB.pIfHdl, DeviceCB.pDevName ,_SlDeviceResetRequestInitCompletedCB);
-	
+    /* start the device again */
+    sl_Start(DeviceCB.pIfHdl, DeviceCB.pDevName ,_SlDeviceResetRequestInitCompletedCB);
+    
 }
-
-
 
 
 /******************************************************************************
@@ -719,7 +703,7 @@ sl_DeviceUartSetMode
 #ifdef SL_IF_TYPE_UART
 typedef union
 {
-    SlDeviceUartSetModeCommand_t	  Cmd;
+    SlDeviceUartSetModeCommand_t      Cmd;
     SlDeviceUartSetModeResponse_t     Rsp;
 }_SlUartSetModeMsg_u;
 
@@ -781,5 +765,4 @@ _i16 sl_DeviceUartSetMode(const SlDeviceUartIfParams_t *pUartParams)
 }
 #endif
 #endif
-
 

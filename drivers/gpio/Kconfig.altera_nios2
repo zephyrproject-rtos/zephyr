@@ -8,7 +8,7 @@
 
 menuconfig GPIO_ALTERA_NIOS2
 	bool "Altera Nios-II PIO Controllers"
-	depends on GPIO && HAS_ALTERA_HAL
+	depends on HAS_ALTERA_HAL
 	help
 	  Enable config options to support the PIO controllers
 	  on Altera Nios-II family processors.

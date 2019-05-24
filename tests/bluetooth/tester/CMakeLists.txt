@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 cmake_minimum_required(VERSION 3.13.1)
 if(BOARD STREQUAL "qemu_cortex_m3")
 set(CONF_FILE qemu.conf)

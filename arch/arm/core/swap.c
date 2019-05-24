@@ -42,15 +42,11 @@ extern const int _k_neg_eagain;
  * as BASEPRI is not available.
  *
  * @return -EAGAIN, or a return value set by a call to
- * _set_thread_return_value()
+ * z_set_thread_return_value()
  *
  */
 int __swap(int key)
 {
-#ifdef CONFIG_USERSPACE
-	/* Save off current privilege mode */
-	_current->arch.mode = __get_CONTROL() & CONTROL_nPRIV_Msk;
-#endif
 #ifdef CONFIG_EXECUTION_BENCHMARKING
 	read_timer_start_of_swap();
 #endif
@@ -65,5 +61,8 @@ int __swap(int key)
 	/* clear mask or enable all irqs to take a pendsv */
 	irq_unlock(0);
 
+	/* Context switch is performed here. Returning implies the
+	 * thread has been context-switched-in again.
+	 */
 	return _current->arch.swap_return_value;
 }

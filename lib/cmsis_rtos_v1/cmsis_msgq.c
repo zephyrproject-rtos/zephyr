@@ -38,7 +38,7 @@ osStatus osMessagePut(osMessageQId queue_id, uint32_t info, uint32_t millisec)
 		return osErrorParameter;
 	}
 
-	if (millisec == 0) {
+	if (millisec == 0U) {
 		retval = k_msgq_put(queue_def->msgq, (void *)&info, K_NO_WAIT);
 	} else if (millisec == osWaitForever) {
 		retval = k_msgq_put(queue_def->msgq, (void *)&info, K_FOREVER);
@@ -70,7 +70,7 @@ osEvent osMessageGet(osMessageQId queue_id, uint32_t millisec)
 		return evt;
 	}
 
-	if (millisec == 0) {
+	if (millisec == 0U) {
 		retval = k_msgq_get(queue_def->msgq, &info, K_NO_WAIT);
 	} else if (millisec == osWaitForever) {
 		retval = k_msgq_get(queue_def->msgq, &info, K_FOREVER);

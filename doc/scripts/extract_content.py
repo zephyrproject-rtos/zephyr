@@ -40,10 +40,11 @@ Output = collections.namedtuple('Output', 'src dst')
 Content = collections.namedtuple('Content', 'outputs output_dirs')
 
 
-def src_deps(zephyr_base, src_file, dest):
+def src_deps(zephyr_base, src_file, dest, src_root):
     # - zephyr_base: the ZEPHYR_BASE directory containing src_file
     # - src_file: path to a source file in the documentation
     # - dest: path to the top-level output/destination directory
+    # - src_root: path to the Sphinx top-level source directory
     #
     # Return a list of Output objects which contain src_file's
     # additional dependencies, as they should be copied into
@@ -81,7 +82,7 @@ def src_deps(zephyr_base, src_file, dest):
     # argument, which is a (relative) path to the additional
     # dependency file.
     directives = "|".join(DIRECTIVES)
-    pattern = re.compile("\.\.\s+(?P<directive>%s)::\s+(?P<dep_rel>.*)" %
+    pattern = re.compile(r"\.\.\s+(?P<directive>%s)::\s+(?P<dep_rel>.*)" %
                          directives)
     deps = []
     for l in content:
@@ -89,8 +90,22 @@ def src_deps(zephyr_base, src_file, dest):
         if not m:
             continue
 
-        dep_rel = m.group('dep_rel')  # relative to src_dir
+        dep_rel = m.group('dep_rel')  # relative to src_dir or absolute
         dep_src = path.abspath(path.join(src_dir, dep_rel))
+        if path.isabs(dep_rel):
+            # Not a relative path, check if it's absolute if we have been
+            # provided with a sphinx source directory root
+            if not src_root:
+                print("Absolute path to file:", dep_rel, "\n  referenced by:",
+                      src_file, "with no --sphinx-src-root", file=sys.stderr)
+                continue
+            # Make it really relative
+            dep_rel = '.' + dep_rel
+            dep_src = path.abspath(path.join(src_root, dep_rel))
+            if path.isfile(dep_src):
+                # File found, but no need to copy it since it's part
+                # of Sphinx's top-level source directory
+                continue
         if not path.isfile(dep_src):
             print("File not found:", dep_src, "\n  referenced by:",
                   src_file, file=sys.stderr)
@@ -102,7 +117,7 @@ def src_deps(zephyr_base, src_file, dest):
     return deps
 
 
-def find_content(zephyr_base, src, dest, fnfilter, ignore):
+def find_content(zephyr_base, src, dest, fnfilter, ignore, src_root):
     # Create a list of Outputs to copy over, and new directories we
     # might need to make to contain them. Don't copy any files or
     # otherwise modify dest.
@@ -128,7 +143,7 @@ def find_content(zephyr_base, src, dest, fnfilter, ignore):
         # directories for dependencies are tracked too.
         for src_rel in sources:
             src_abs = path.join(dirpath, src_rel)
-            deps = src_deps(zephyr_base, src_abs, dest)
+            deps = src_deps(zephyr_base, src_abs, dest, src_root)
 
             for depdir in (path.dirname(d.dst) for d in deps):
                 output_dirs.add(depdir)
@@ -168,6 +183,11 @@ def main():
     parser.add_argument('--ignore', action='append',
                         help='''Source directories to ignore when copying
                         files. This may be given multiple times.''')
+    parser.add_argument('--sphinx-src-root',
+                        help='''If given, absolute paths for dependencies are
+                        resolved using this root, which is the Sphinx top-level
+                        source directory as passed to sphinx-build.''')
+
     parser.add_argument('content_config', nargs='+',
                         help='''A glob:source:destination specification
                         for content to extract. The "glob" is a documentation
@@ -191,7 +211,8 @@ def main():
     content_config = [cfg.split(':', 2) for cfg in args.content_config]
     outputs = set()
     for fnfilter, source, dest in content_config:
-        content = find_content(zephyr_base, source, dest, fnfilter, ignore)
+        content = find_content(zephyr_base, source, dest, fnfilter, ignore,
+                               args.sphinx_src_root)
         if not args.just_outputs:
             extract_content(content)
         outputs |= set(content.outputs)

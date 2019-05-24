@@ -23,7 +23,8 @@ Samples and Demos
    shields/*
    portability/*
    gui/*
+   zio/*
 
 .. comment
    To add a new sample document, please use the template available under
-   :file:`doc/templates/sample.tmpl`
+   ``doc/templates/sample.tmpl``

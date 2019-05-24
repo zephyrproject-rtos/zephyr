@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 menuconfig UART_CC32XX
 	depends on SOC_SERIES_CC32XX
 	bool "CC32XX UART driver"

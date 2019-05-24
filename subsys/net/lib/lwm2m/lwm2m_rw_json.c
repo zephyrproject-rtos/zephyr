@@ -128,12 +128,12 @@ static void json_add_char(struct lwm2m_input_context *in,
 	    !(fd->json_flags & T_STRING_END))) {
 		if (fd->json_flags & T_VALUE) {
 			fd->value_len++;
-			if (fd->value_len == 1) {
+			if (fd->value_len == 1U) {
 				fd->value_offset = fd->offset;
 			}
 		} else {
 			fd->name_len++;
-			if (fd->name_len == 1) {
+			if (fd->name_len == 1U) {
 				fd->name_offset = fd->offset;
 			}
 		}
@@ -170,7 +170,7 @@ static int json_next_token(struct lwm2m_input_context *in,
 		case '[':
 			if (!escape) {
 				fd->json_flags |= T_OBJECT_BEGIN;
-				cont = 0;
+				cont = 0U;
 			} else {
 				json_add_char(in, fd);
 			}
@@ -178,7 +178,7 @@ static int json_next_token(struct lwm2m_input_context *in,
 		case ']':
 			if (!escape) {
 				fd->json_flags |= T_OBJECT_END;
-				cont = 0;
+				cont = 0U;
 			} else {
 				json_add_char(in, fd);
 			}
@@ -195,7 +195,7 @@ static int json_next_token(struct lwm2m_input_context *in,
 		case '}':
 		case ',':
 			if (!escape) {
-				cont = 0;
+				cont = 0U;
 			} else {
 				json_add_char(in, fd);
 			}
@@ -248,7 +248,7 @@ static int json_next_token(struct lwm2m_input_context *in,
 	}
 
 	/* OK if cont == 0 othewise we failed */
-	return (cont == 0);
+	return (cont == 0U);
 }
 
 static size_t put_begin(struct lwm2m_output_context *out,
@@ -256,7 +256,7 @@ static size_t put_begin(struct lwm2m_output_context *out,
 {
 	int len = -1;
 
-	if (path->level >= 2) {
+	if (path->level >= 2U) {
 		len = snprintk(json_buffer, sizeof(json_buffer),
 			       "{\"bn\":\"/%u/%u/\",\"e\":[",
 			       path->obj_id, path->obj_inst_id);
@@ -344,7 +344,7 @@ static size_t put_json_prefix(struct lwm2m_output_context *out,
 	}
 
 	sep = SEPARATOR(fd->writer_flags);
-	if (fd->path_level >= 2) {
+	if (fd->path_level >= 2U) {
 		if (fd->writer_flags & WRITER_RESOURCE_INSTANCE) {
 			len = snprintk(json_buffer, sizeof(json_buffer),
 				       "%s{\"n\":\"%u/%u\",%s:",
@@ -732,7 +732,7 @@ static int parse_path(const u8_t *buf, u16_t buflen,
 		c = buf[pos];
 		/* we should get a value first - consume all numbers */
 		while (pos < buflen && isdigit(c)) {
-			val = val * 10 + (c - '0');
+			val = val * 10U + (c - '0');
 			c = buf[++pos];
 		}
 
@@ -811,7 +811,7 @@ int do_write_op_json(struct lwm2m_engine_obj *obj, struct lwm2m_message *msg)
 		/* handle resource name */
 		if (value[0] == 'n') {
 			/* reset values */
-			created = 0;
+			created = 0U;
 
 			/* get value for relative path */
 			if (buf_read(value, fd.value_len,
@@ -863,7 +863,7 @@ int do_write_op_json(struct lwm2m_engine_obj *obj, struct lwm2m_message *msg)
 			}
 
 			if (!obj_inst->resources ||
-			    obj_inst->resource_count == 0) {
+			    obj_inst->resource_count == 0U) {
 				ret = -EINVAL;
 				break;
 			}
@@ -885,7 +885,7 @@ int do_write_op_json(struct lwm2m_engine_obj *obj, struct lwm2m_message *msg)
 			/* handle value assignment */
 			ret = lwm2m_write_handler(obj_inst, res, obj_field,
 						  msg);
-			if (orig_path.level == 3 && ret < 0) {
+			if (orig_path.level == 3U && ret < 0) {
 				/* return errors on a single write */
 				break;
 			}

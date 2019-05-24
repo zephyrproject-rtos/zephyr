@@ -17,6 +17,23 @@ LOG_MODULE_REGISTER(net_lldp_sample, LOG_LEVEL_DBG);
 #include <net/net_if.h>
 #include <net/ethernet.h>
 
+static struct lldp_system_name_tlv {
+	u16_t type_length;
+	u8_t name[4];
+} __packed tlv = {
+	.name = { 't', 'e', 's', 't' },
+};
+
+static void set_optional_tlv(struct net_if *iface)
+{
+	NET_DBG("");
+
+	tlv.type_length = htons((LLDP_TLV_SYSTEM_NAME << 9) |
+				((sizeof(tlv) - sizeof(u16_t)) & 0x01ff));
+
+	net_lldp_config_optional(iface, (u8_t *)&tlv, sizeof(tlv));
+}
+
 /* User data for the interface callback */
 struct ud {
 	struct net_if *first;
@@ -123,31 +140,28 @@ static int init_vlan(void)
 
 static enum net_verdict parse_lldp(struct net_if *iface, struct net_pkt *pkt)
 {
-	size_t len = net_pkt_get_len(pkt);
-	struct net_buf *frag = pkt->frags;
-	u16_t pos = 0U;
+	LOG_DBG("iface %p Parsing LLDP, len %u", iface, net_pkt_get_len(pkt));
 
-	LOG_DBG("iface %p Parsing LLDP, len %u", iface, len);
+	net_pkt_cursor_init(pkt);
 
-	while (frag) {
+	while (1) {
 		u16_t type_length;
+		u16_t length;
+		u8_t type;
 
-		frag = net_frag_read_be16(frag, pos, &pos, &type_length);
-		if (!frag) {
-			if (type_length == 0) {
-				LOG_DBG("End LLDP DU TLV");
-				break;
-			}
-
-			LOG_ERR("Parsing ended, pos %u", pos);
+		if (net_pkt_read_be16(pkt, &type_length)) {
+			LOG_DBG("End LLDP DU TLV");
 			break;
 		}
 
-		u16_t length = type_length & 0x1FF;
-		u8_t type = (u8_t)(type_length >> 9);
+		length = type_length & 0x1FF;
+		type = (u8_t)(type_length >> 9);
 
 		/* Skip for now data */
-		frag = net_frag_skip(frag, pos, &pos, length);
+		if (net_pkt_skip(pkt, length)) {
+			LOG_DBG("");
+			break;
+		}
 
 		switch (type) {
 		case LLDP_TLV_CHASSIS_ID:
@@ -164,8 +178,8 @@ static enum net_verdict parse_lldp(struct net_if *iface, struct net_pkt *pkt)
 			break;
 		}
 
-		LOG_DBG("type_length %u type %u length %u pos %u",
-			type_length, type, length, pos);
+		LOG_DBG("type_length %u type %u length %u",
+			type_length, type, length);
 	}
 
 	/* Let stack to free the packet */
@@ -178,6 +192,7 @@ static int init_app(void)
 		LOG_ERR("Cannot setup VLAN");
 	}
 
+	set_optional_tlv(ud.first);
 	net_lldp_register_callback(ud.first, parse_lldp);
 
 	return 0;

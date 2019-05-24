@@ -1,7 +1,7 @@
 sample:
   name: RGB LED
 tests:
-  test:
+  sample.rgb_led:
     filter: DT_PWM_LEDS_RED_PWM_LED_PWM_CONTROLLER and
             DT_PWM_LEDS_GREEN_PWM_LED_PWM_CONTROLLER and
             DT_PWM_LEDS_BLUE_PWM_LED_PWM_CONTROLLER

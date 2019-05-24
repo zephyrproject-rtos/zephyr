@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 # CROSS_COMPILE is a KBuild mechanism for specifying an external
 # toolchain with a single environment variable.
 #
@@ -23,3 +25,4 @@ set(   CROSS_COMPILE ${CROSS_COMPILE} CACHE PATH "")
 assert(CROSS_COMPILE "CROSS_COMPILE is not set")
 
 set(COMPILER gcc)
+set(LINKER ld)

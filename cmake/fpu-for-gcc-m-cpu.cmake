@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 # Defines a mapping from GCC_M_CPU to FPU
 
 if(CONFIG_CPU_HAS_FPU_DOUBLE_PRECISION)

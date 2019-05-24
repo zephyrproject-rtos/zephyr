@@ -20,26 +20,26 @@
 #include <toolchain.h>
 #include <linker/sections.h>
 
-extern void _SysNmiOnReset(void);
+extern void z_SysNmiOnReset(void);
 #if !defined(CONFIG_RUNTIME_NMI)
-#define handler _SysNmiOnReset
+#define handler z_SysNmiOnReset
 #endif
 
 #ifdef CONFIG_RUNTIME_NMI
 typedef void (*_NmiHandler_t)(void);
-static _NmiHandler_t handler = _SysNmiOnReset;
+static _NmiHandler_t handler = z_SysNmiOnReset;
 
 /**
  *
  * @brief Default NMI handler installed when kernel is up
  *
  * The default handler outputs a error message and reboots the target. It is
- * installed by calling _NmiInit();
+ * installed by calling z_NmiInit();
  *
  * @return N/A
  */
 
-static void _DefaultHandler(void)
+static void DefaultHandler(void)
 {
 	printk("NMI received! Rebooting...\n");
 	/* In ARM implementation sys_reboot ignores the parameter */
@@ -57,9 +57,9 @@ static void _DefaultHandler(void)
  * @return N/A
  */
 
-void _NmiInit(void)
+void z_NmiInit(void)
 {
-	handler = _DefaultHandler;
+	handler = DefaultHandler;
 }
 
 /**
@@ -73,7 +73,7 @@ void _NmiInit(void)
  * @return N/A
  */
 
-void _NmiHandlerSet(void (*pHandler)(void))
+void z_NmiHandlerSet(void (*pHandler)(void))
 {
 	handler = pHandler;
 }
@@ -91,5 +91,5 @@ void _NmiHandlerSet(void (*pHandler)(void))
 void __nmi(void)
 {
 	handler();
-	_ExcExit();
+	z_ExcExit();
 }

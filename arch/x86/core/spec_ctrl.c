@@ -44,23 +44,23 @@ static int spec_ctrl_init(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	u32_t enable_bits = 0;
+	u32_t enable_bits = 0U;
 	u32_t cpuid7 = cpuid_extended_features();
 
 #ifdef CONFIG_DISABLE_SSBD
-	if ((cpuid7 & CPUID_SPEC_CTRL_SSBD) != 0) {
+	if ((cpuid7 & CPUID_SPEC_CTRL_SSBD) != 0U) {
 		enable_bits |= SPEC_CTRL_SSBD;
 	}
 #endif
 #ifdef CONFIG_ENABLE_EXTENDED_IBRS
-	if ((cpuid7 & CPUID_SPEC_CTRL_IBRS) != 0) {
+	if ((cpuid7 & CPUID_SPEC_CTRL_IBRS) != 0U) {
 		enable_bits |= SPEC_CTRL_IBRS;
 	}
 #endif
-	if (enable_bits != 0) {
-		u64_t cur = _x86_msr_read(IA32_SPEC_CTRL_MSR);
+	if (enable_bits != 0U) {
+		u64_t cur = z_x86_msr_read(IA32_SPEC_CTRL_MSR);
 
-		_x86_msr_write(IA32_SPEC_CTRL_MSR,
+		z_x86_msr_write(IA32_SPEC_CTRL_MSR,
 			       cur | enable_bits);
 	}
 

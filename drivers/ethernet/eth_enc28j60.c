@@ -533,7 +533,7 @@ static int eth_enc28j60_rx(struct device *dev)
 		/* Get the frame length from the rx status vector,
 		 * minus CRC size at the end which is always present
 		 */
-		frm_len = (info[1] << 8) | (info[0] - 4);
+		frm_len = sys_get_le16(info) - 4;
 		lengthfr = frm_len;
 
 		/* Get the frame from the buffer */
@@ -751,9 +751,9 @@ static struct eth_enc28j60_runtime eth_enc28j60_0_runtime = {
 		DT_MICROCHIP_ENC28J60_0_LOCAL_MAC_ADDRESS_4,
 		DT_MICROCHIP_ENC28J60_0_LOCAL_MAC_ADDRESS_5
 	},
-	.tx_rx_sem = _K_SEM_INITIALIZER(eth_enc28j60_0_runtime.tx_rx_sem,
+	.tx_rx_sem = Z_SEM_INITIALIZER(eth_enc28j60_0_runtime.tx_rx_sem,
 					1,  UINT_MAX),
-	.int_sem  = _K_SEM_INITIALIZER(eth_enc28j60_0_runtime.int_sem,
+	.int_sem  = Z_SEM_INITIALIZER(eth_enc28j60_0_runtime.int_sem,
 				       0, UINT_MAX),
 };
 
@@ -767,13 +767,14 @@ static const struct eth_enc28j60_config eth_enc28j60_0_config = {
 	.spi_cs_port = DT_MICROCHIP_ENC28J60_0_CS_GPIO_CONTROLLER,
 	.spi_cs_pin = DT_MICROCHIP_ENC28J60_0_CS_GPIO_PIN,
 #endif /* CONFIG_ETH_ENC28J60_0_GPIO_SPI_CS */
-	.full_duplex = CONFIG_ETH_EN28J60_0_FULL_DUPLEX,
-	.timeout = CONFIG_ETH_EN28J60_TIMEOUT,
+	.full_duplex = IS_ENABLED(CONFIG_ETH_ENC28J60_0_FULL_DUPLEX),
+	.timeout = CONFIG_ETH_ENC28J60_TIMEOUT,
 };
 
 NET_DEVICE_INIT(enc28j60_0, DT_MICROCHIP_ENC28J60_0_LABEL,
 		eth_enc28j60_init, &eth_enc28j60_0_runtime,
 		&eth_enc28j60_0_config, CONFIG_ETH_INIT_PRIORITY, &api_funcs,
-		ETHERNET_L2, NET_L2_GET_CTX_TYPE(ETHERNET_L2), 1500);
+		ETHERNET_L2, NET_L2_GET_CTX_TYPE(ETHERNET_L2),
+		NET_ETH_MTU);
 
 #endif /* CONFIG_ETH_ENC28J60_0 */

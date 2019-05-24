@@ -8,7 +8,6 @@
 
 menuconfig SPI_SIFIVE
 	bool "SiFive SPI controller driver"
-	depends on SPI
 	depends on SOC_SERIES_RISCV32_SIFIVE_FREEDOM
 	help
 	  Enable the SPI peripherals on SiFive Freedom processors
@@ -18,7 +17,6 @@ if SPI_SIFIVE
 config SIFIVE_SPI_0_ROM
 	bool "SPI 0 is used to access SPI Flash ROM"
 	default y
-	depends on SPI_SIFIVE
 	help
 	  If enabled, SPI 0 is reserved for accessing the SPI flash ROM and a
 	  driver interface won't be instantiated for SPI 0.
@@ -28,4 +26,3 @@ config SIFIVE_SPI_0_ROM
 	  peripheral control the FE310 will crash on boot.
 
 endif # SPI_SIFIVE
-

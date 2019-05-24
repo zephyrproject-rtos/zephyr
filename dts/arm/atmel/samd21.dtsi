@@ -5,3 +5,51 @@
  */
 
 #include <atmel/samd.dtsi>
+
+/ {
+	soc {
+		usb0: usb@41005000 {
+			compatible = "atmel,sam0-usb";
+			status = "disabled";
+			reg = <0x41005000 0x1000>;
+			interrupts = <7 0>;
+			num-bidir-endpoints = <8>;
+			label = "USB0";
+		};
+
+		dma: dmac@41004800 {
+			compatible = "atmel,sam0-dmac";
+			reg = <0x41004800 0x50>;
+			interrupts = <6 0>;
+			label = "DMA_0";
+		};
+	};
+};
+
+&sercom0 {
+	interrupts = <9 0>;
+};
+
+&sercom1 {
+	interrupts = <10 0>;
+};
+
+&sercom2 {
+	interrupts = <11 0>;
+};
+
+&sercom3 {
+	interrupts = <12 0>;
+};
+
+&sercom4 {
+	interrupts = <13 0>;
+};
+
+&sercom5 {
+	interrupts = <14 0>;
+};
+
+&adc {
+	interrupts = <23 0>;
+};

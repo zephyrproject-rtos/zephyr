@@ -94,7 +94,7 @@ static void isr_tx(void *param)
 #endif /* CONFIG_BT_CTLR_GPIO_PA_PIN */
 
 	/* Exit if radio disabled */
-	if (((tx_req - tx_ack) & 0x01) == 0) {
+	if (((tx_req - tx_ack) & 0x01) == 0U) {
 		tx_ack = tx_req;
 
 		return;
@@ -102,7 +102,7 @@ static void isr_tx(void *param)
 
 	/* LE Test Packet Interval */
 	l = radio_tmr_end_get() - radio_tmr_ready_get();
-	i = ((l + 249 + 624) / 625) * 625;
+	i = ((l + 249 + 624) / 625) * 625U;
 	t = radio_tmr_end_get() - l + i;
 	t -= radio_tx_ready_delay_get(test_phy, test_phy_flags);
 
@@ -110,7 +110,7 @@ static void isr_tx(void *param)
 	radio_tmr_sample();
 	s = radio_tmr_sample_get();
 	while (t < s) {
-		t += 625;
+		t += 625U;
 	}
 
 	/* Setup next Tx */

@@ -112,7 +112,7 @@ void test_select(void)
 	tstamp = k_uptime_get_32();
 	res = select(s_sock + 1, &readfds, NULL, NULL, &tval);
 	tstamp = k_uptime_get_32() - tstamp;
-	zassert_true(tstamp >= 30 && tstamp <= 30 + FUZZ, "");
+	zassert_true(tstamp >= 30U && tstamp <= 30 + FUZZ, "");
 	zassert_equal(res, 0, "");
 
 

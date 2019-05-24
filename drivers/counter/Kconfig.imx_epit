@@ -7,7 +7,7 @@
 
 config COUNTER_IMX_EPIT
 	bool "IMX EPIT driver"
-	depends on COUNTER && HAS_IMX_EPIT
+	depends on HAS_IMX_EPIT
 	help
 	  Enable the IMX EPIT driver.
 

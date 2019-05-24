@@ -106,7 +106,7 @@ void *init_page_tables(void)
 
 		/* Each PDE filled with 2M supervisor pages */
 		for (int i = 0; i < 512; i++) {
-			if (!(gb == 0 && i == 0)) {
+			if (!(gb == 0U && i == 0)) {
 				pde[i].addr = (gb << 30) | (i << 21);
 				pde[i].present = 1;
 				pde[i].writable = 1;
@@ -163,7 +163,7 @@ void cstart(unsigned int magic, unsigned int arg)
 		shared_init();
 #ifdef CONFIG_XUK_DEBUG
 		serial_init();
-		_putchar = putchar;
+		z_putchar = putchar;
 #endif
 
 		printf("Entering stub32 on boot cpu, magic %xh stack ~%xh\n",
@@ -179,11 +179,7 @@ void cstart(unsigned int magic, unsigned int arg)
 	 * using BIOS e820 like Linux does.
 	 */
 	if (magic == BOOT_MAGIC_MULTIBOOT) {
-		printf("Hi there!\n");
-		printf("This is a second line!\n");
-		printf("And this line was generated from %s\n", "printf!");
-
-		printf("Magic: %p MBI Addr: %p\n", magic, arg);
+		printf("Magic: %p MBI Addr: %p\n", (void *)magic, (void *)arg);
 
 		int mem_lower = *(int *)(arg + 4);
 		int mem_upper = *(int *)(arg + 8);
@@ -204,7 +200,7 @@ void cstart(unsigned int magic, unsigned int arg)
 	if (magic == BOOT_MAGIC_STUB16) {
 		cpu_id = _shared.num_active_cpus++;
 		init_stack = _shared.smpinit_stack;
-		_shared.smpinit_stack = 0;
+		_shared.smpinit_stack = 0U;
 		__asm__ volatile("movl $0, (%0)" : : "m"(_shared.smpinit_lock));
 	}
 

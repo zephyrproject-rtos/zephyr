@@ -1,3 +1,5 @@
+.. _sm-pics:
+
 SM PICS
 *******
 

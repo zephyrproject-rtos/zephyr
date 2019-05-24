@@ -221,7 +221,7 @@ void lll_disable(void *param)
 int lll_prepare_done(void *param)
 {
 #if defined(CONFIG_BT_CTLR_LOW_LAT) && \
-	(CONFIG_BT_CTLR_LLL_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO)
+	    (CONFIG_BT_CTLR_LLL_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO)
 	u32_t ret;
 
 	/* Ticker Job Silence */
@@ -229,8 +229,8 @@ int lll_prepare_done(void *param)
 				  TICKER_USER_ID_LLL,
 				  ticker_op_job_disable, NULL);
 
-	return ((ret == TICKER_STATUS_SUCCESS) || (ret == TICKER_STATUS_BUSY)) ?
-	       0 : -EFAULT;
+	return ((ret == TICKER_STATUS_SUCCESS) ||
+		(ret == TICKER_STATUS_BUSY)) ? 0 : -EFAULT;
 #else
 	return 0;
 #endif /* CONFIG_BT_CTLR_LOW_LAT */
@@ -258,10 +258,12 @@ int lll_done(void *param)
 			ull = HDR_ULL(((struct lll_hdr *)param)->parent);
 		}
 
-#if defined(CONFIG_BT_CTLR_LOW_LAT) && \
-	(CONFIG_BT_CTLR_LLL_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO)
-		mayfly_enable(TICKER_USER_ID_LLL, TICKER_USER_ID_ULL_LOW, 1);
-#endif /* CONFIG_BT_CTLR_LOW_LAT */
+		if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT) &&
+		    (CONFIG_BT_CTLR_LLL_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO)) {
+			mayfly_enable(TICKER_USER_ID_LLL,
+				      TICKER_USER_ID_ULL_LOW,
+				      1);
+		}
 
 		DEBUG_RADIO_CLOSE(0);
 	} else {
@@ -342,6 +344,43 @@ u32_t lll_preempt_calc(struct evt_hdr *evt, u8_t ticker_id,
 	return 0;
 }
 
+
+void lll_chan_set(u32_t chan)
+{
+	switch (chan) {
+	case 37:
+		radio_freq_chan_set(2);
+		break;
+
+	case 38:
+		radio_freq_chan_set(26);
+		break;
+
+	case 39:
+		radio_freq_chan_set(80);
+		break;
+
+	default:
+		if (chan < 11) {
+			radio_freq_chan_set(4 + (chan * 2U));
+		} else if (chan < 40) {
+			radio_freq_chan_set(28 + ((chan - 11) * 2U));
+		} else {
+			LL_ASSERT(0);
+		}
+		break;
+	}
+
+	radio_whiten_iv_set(chan);
+}
+
+
+u32_t lll_radio_is_idle(void)
+{
+	return radio_is_idle();
+}
+
+
 static int init_reset(void)
 {
 	return 0;
@@ -371,12 +410,10 @@ static int prepare(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 #endif /* CONFIG_BT_CTLR_LOW_LAT */
 		int ret;
 
-#if defined(CONFIG_BT_CTLR_LOW_LAT)
-		/* early abort */
-		if (event.curr.param) {
+		if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT) && event.curr.param) {
+			/* early abort */
 			event.curr.abort_cb(NULL, event.curr.param);
 		}
-#endif /* CONFIG_BT_CTLR_LOW_LAT */
 
 		/* Store the next prepare for deferred call */
 		ret = ull_prepare_enqueue(is_abort_cb, abort_cb, prepare_param,

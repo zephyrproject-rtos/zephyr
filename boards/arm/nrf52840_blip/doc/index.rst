@@ -180,7 +180,8 @@ the board are working properly with Zephyr:
 * :ref:`button-sample`
 
 You can build and flash the examples to make sure Zephyr is running correctly on
-your board. The button and LED definitions can be found in :file:`boards/arm/nrf52840_blip/nrf52840_blip.dts`.
+your board. The button and LED definitions can be found in
+:zephyr_file:`boards/arm/nrf52840_blip/nrf52840_blip.dts`.
 
 
 References

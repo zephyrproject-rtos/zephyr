@@ -145,13 +145,13 @@ static const struct wdt_driver_api wdog_cmsdk_apb_api = {
 };
 
 #ifdef CONFIG_RUNTIME_NMI
-extern void _NmiHandlerSet(void (*pHandler)(void));
+extern void z_NmiHandlerSet(void (*pHandler)(void));
 
 static int wdog_cmsdk_apb_has_fired(void)
 {
 	volatile struct wdog_cmsdk_apb *wdog = WDOG_STRUCT;
 
-	return (wdog->maskintstat & CMSDK_APB_WDOG_MASKINTSTAT) != 0;
+	return (wdog->maskintstat & CMSDK_APB_WDOG_MASKINTSTAT) != 0U;
 }
 
 static void wdog_cmsdk_apb_isr(void)
@@ -186,7 +186,7 @@ static int wdog_cmsdk_apb_init(struct device *dev)
 
 #ifdef CONFIG_RUNTIME_NMI
 	/* Configure the interrupts */
-	_NmiHandlerSet(wdog_cmsdk_apb_isr);
+	z_NmiHandlerSet(wdog_cmsdk_apb_isr);
 #endif
 
 #ifdef CONFIG_WDOG_CMSDK_APB_START_AT_BOOT

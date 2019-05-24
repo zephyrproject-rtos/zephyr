@@ -72,7 +72,10 @@ extern "C" {
  *  USB configuration
  **************************************************************************/
 
-#define MAX_PACKET_SIZE0    64        /**< maximum packet size for EP 0 */
+#define USB_MAX_CTRL_MPS	64   /**< maximum packet size (MPS) for EP 0 */
+#define USB_MAX_FS_BULK_MPS	64   /**< full speed MPS for bulk EP */
+#define USB_MAX_FS_INT_MPS	64   /**< full speed MPS for interrupt EP */
+#define USB_MAX_FS_ISO_MPS	1023 /**< full speed MPS for isochronous EP */
 
 /*************************************************************************
  *  USB application interface
@@ -190,12 +193,9 @@ struct usb_cfg_data {
 	/** Function for interface runtime configuration */
 	usb_interface_config interface_config;
 	/** Callback to be notified on USB connection status change */
-	usb_dc_status_callback cb_usb_status;
-	/** Composite callback */
-	void (*cb_usb_status_composite)(struct usb_cfg_data *cfg,
-					enum usb_dc_status_code cb_status,
-					const u8_t *param);
-
+	void (*cb_usb_status)(struct usb_cfg_data *cfg,
+			      enum usb_dc_status_code cb_status,
+			      const u8_t *param);
 	/** USB interface (Class) handler and storage space */
 	struct usb_interface_cfg_data interface;
 	/** Number of individual endpoints in the device configuration */
@@ -417,6 +417,21 @@ int usb_transfer_sync(u8_t ep, u8_t *data, size_t dlen, unsigned int flags);
  * @return 0 on success, negative errno code on fail.
  */
 void usb_cancel_transfer(u8_t ep);
+
+/**
+ * @brief Cancel all ongoing transfers
+ */
+void usb_cancel_transfers(void);
+
+/**
+ * @brief Check that transfer is ongoing for the endpoint
+ *
+ * @param[in]  ep           Endpoint address corresponding to the one
+ *                          listed in the device configuration table
+ *
+ * @return true if transfer is ongoing, false otherwise.
+ */
+bool usb_transfer_is_busy(u8_t ep);
 
 /**
  * @brief Start the USB remote wakeup procedure

@@ -23,7 +23,7 @@
  *
  * If the TICKLESS_IDLE kernel configuration option is enabled, the timer may
  * be programmed to wake the system in N >= TICKLESS_IDLE_THRESH ticks.  The
- * kernel invokes _timer_idle_enter() to program the down counter in one-shot
+ * kernel invokes z_timer_idle_enter() to program the down counter in one-shot
  * mode to trigger an interrupt in N ticks.  When the timer expires or when
  * another interrupt is detected, the kernel's interrupt stub invokes
  * z_clock_idle_exit() to leave the tickless idle state.
@@ -45,7 +45,7 @@
  * straddled, the following will occur:
  *    a. Enter tickless idle in one-shot mode
  *    b. Immediately leave tickless idle
- *    c. Process the tick event in the _timer_int_handler() and revert
+ *    c. Process the tick event in the timer_int_handler() and revert
  *       to periodic mode.
  *    d. Re-run the scheduler and possibly re-enter tickless idle
  *
@@ -55,9 +55,9 @@
  * 5. Tickless idle may be prematurely aborted due to a non-timer interrupt.
  * Its handler may make a thread ready to run, so any elapsed ticks
  * must be accounted for and the timer must also expire at the end of the
- * next logical tick so _timer_int_handler() can put it back in periodic mode.
+ * next logical tick so timer_int_handler() can put it back in periodic mode.
  * This can only be distinguished from the previous factor by the execution of
- * _timer_int_handler().
+ * timer_int_handler().
  *
  * 6. Tickless idle may end naturally.  The down counter should be zero in
  * this case. However, some targets do not implement the local APIC timer
@@ -151,7 +151,7 @@ static u32_t reg_timer_cfg_save;
 #endif
 
 #ifdef CONFIG_JAILHOUSE_X2APIC
-void _jailhouse_eoi(void)
+void z_jailhouse_eoi(void)
 {
 	write_x2apic(LOAPIC_EOI >> 4, 0);
 }
@@ -277,7 +277,7 @@ static inline void program_max_cycles(void)
 }
 #endif
 
-void _timer_int_handler(void *unused /* parameter is not used */
+void timer_int_handler(void *unused /* parameter is not used */
 				 )
 {
 #ifdef CONFIG_EXECUTION_BENCHMARKING
@@ -380,23 +380,23 @@ void _timer_int_handler(void *unused /* parameter is not used */
 }
 
 #ifdef CONFIG_TICKLESS_KERNEL
-u32_t _get_program_time(void)
+u32_t z_get_program_time(void)
 {
 	return programmed_full_ticks;
 }
 
-u32_t _get_remaining_program_time(void)
+u32_t z_get_remaining_program_time(void)
 {
-	if (programmed_full_ticks == 0) {
+	if (programmed_full_ticks == 0U) {
 		return 0;
 	}
 
 	return current_count_register_get() / cycles_per_tick;
 }
 
-u32_t _get_elapsed_program_time(void)
+u32_t z_get_elapsed_program_time(void)
 {
-	if (programmed_full_ticks == 0) {
+	if (programmed_full_ticks == 0U) {
 		return 0;
 	}
 
@@ -404,7 +404,7 @@ u32_t _get_elapsed_program_time(void)
 	    (current_count_register_get() / cycles_per_tick);
 }
 
-void _set_time(u32_t time)
+void z_set_time(u32_t time)
 {
 	if (!time) {
 		programmed_full_ticks = 0U;
@@ -420,7 +420,7 @@ void _set_time(u32_t time)
 	initial_count_register_set(programmed_cycles);
 }
 
-void _enable_sys_clock(void)
+void z_enable_sys_clock(void)
 {
 	if (!programmed_full_ticks) {
 		program_max_cycles();
@@ -479,14 +479,14 @@ static void tickless_idle_init(void)
  *
  * @return N/A
  */
-void _timer_idle_enter(s32_t ticks /* system ticks */
+void z_timer_idle_enter(s32_t ticks /* system ticks */
 				)
 {
 #ifdef CONFIG_TICKLESS_KERNEL
 	if (ticks != K_FOREVER) {
 		/* Need to reprogram only if current program is smaller */
 		if (ticks > programmed_full_ticks) {
-			_set_time(ticks);
+			z_set_time(ticks);
 		}
 	} else {
 		programmed_full_ticks = 0U;
@@ -573,12 +573,12 @@ void z_clock_idle_exit(void)
 
 	remaining_cycles = current_count_register_get();
 
-	if ((remaining_cycles == 0) ||
+	if ((remaining_cycles == 0U) ||
 		(remaining_cycles >= programmed_cycles)) {
 		/*
-		 * The timer has expired. The handler _timer_int_handler() is
+		 * The timer has expired. The handler timer_int_handler() is
 		 * guaranteed to execute. Track the number of elapsed ticks. The
-		 * handler _timer_int_handler() will account for the final tick.
+		 * handler timer_int_handler() will account for the final tick.
 		 */
 
 		_sys_idle_elapsed_ticks = programmed_full_ticks;
@@ -612,7 +612,7 @@ void z_clock_idle_exit(void)
 	 * NOTE #2: In the case of a straddled tick, it is assumed that when the
 	 * timer is reprogrammed, it will be reprogrammed with a cycle count
 	 * sufficiently close to one tick that the timer will not expire before
-	 * _timer_int_handler() is executed.
+	 * timer_int_handler() is executed.
 	 */
 
 	remaining_full_ticks = remaining_cycles / cycles_per_tick;
@@ -669,7 +669,7 @@ int z_clock_driver_init(struct device *device)
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 	loapic_timer_device_power_state = DEVICE_PM_ACTIVE_STATE;
 #endif
-	IRQ_CONNECT(TIMER_IRQ, TIMER_IRQ_PRIORITY, _timer_int_handler, 0, 0);
+	IRQ_CONNECT(TIMER_IRQ, TIMER_IRQ_PRIORITY, timer_int_handler, 0, 0);
 
 	/* Everything has been configured. It is now safe to enable the
 	 * interrupt
@@ -737,20 +737,25 @@ static int sys_clock_resume(struct device *dev)
 * the *context may include IN data or/and OUT data
 */
 int z_clock_device_ctrl(struct device *port, u32_t ctrl_command,
-			  void *context)
+			  void *context, device_pm_cb cb, void *arg)
 {
+	int ret = 0;
+
 	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
 		if (*((u32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
-			return sys_clock_suspend(port);
+			ret = sys_clock_suspend(port);
 		} else if (*((u32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
-			return sys_clock_resume(port);
+			ret = sys_clock_resume(port);
 		}
 	} else if (ctrl_command == DEVICE_PM_GET_POWER_STATE) {
 		*((u32_t *)context) = loapic_timer_device_power_state;
-		return 0;
 	}
 
-	return 0;
+	if (cb) {
+		cb(dev, ret, context, arg);
+	}
+
+	return ret;
 }
 #endif
 
@@ -764,20 +769,20 @@ int z_clock_device_ctrl(struct device *port, u32_t ctrl_command,
  *
  * @return up counter of elapsed clock cycles
  */
-u32_t _timer_cycle_get_32(void)
+u32_t z_timer_cycle_get_32(void)
 {
 #if CONFIG_TSC_CYCLES_PER_SEC != 0
 	u64_t tsc;
 
 	/* 64-bit math to avoid overflows */
-	tsc = _tsc_read() * (u64_t)sys_clock_hw_cycles_per_sec() /
+	tsc = z_tsc_read() * (u64_t)sys_clock_hw_cycles_per_sec() /
 		(u64_t) CONFIG_TSC_CYCLES_PER_SEC;
 	return (u32_t)tsc;
 #else
 	/* TSC runs same as the bus speed, nothing to do but return the TSC
 	 * value
 	 */
-	return _do_read_cpu_timestamp32();
+	return z_do_read_cpu_timestamp32();
 #endif
 }
 

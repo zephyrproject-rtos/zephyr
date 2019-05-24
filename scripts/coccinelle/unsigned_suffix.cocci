@@ -15,7 +15,29 @@ constant C;
 position p;
 @@
 
+(
   v = C@p
+|
+  v == C@p
+|
+  v != C@p
+|
+  v <= C@p
+|
+  v >= C@p
+|
+  v += C@p
+|
+  v -= C@p
+|
+  v * C@p
+|
+  v / C@p
+|
+  v *= C@p
+|
+  v /= C@p
+)
 
 @script:python r_rewrite@
 C << r_unsigned.C;
@@ -33,9 +55,66 @@ constant r_unsigned.C;
 identifier r_rewrite.z;
 @@
 
+(
   v =
 - C
 + z
+|
+  v ==
+- C
++ z
+|
+  v !=
+- C
++ z
+|
+  v <=
+- C
++ z
+|
+  v >=
+- C
++ z
+|
+  v +=
+- C
++ z
+|
+  v -=
+- C
++ z
+|
+  v +
+- C
++ z
+|
+  v -
+- C
++ z
+|
+  v +=
+- C
++ z
+|
+  v -=
+- C
++ z
+|
+- v * C
++ v * z
+|
+  v /
+- C
++ z
+|
+  v *=
+- C
++ z
+|
+  v /=
+- C
++ z
+)
 
 @script: python depends on report@
 p << r_unsigned.p;

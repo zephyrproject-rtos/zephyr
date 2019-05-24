@@ -49,7 +49,7 @@ static void at_test1(void)
 	struct net_buf *buf;
 	int len;
 
-	at.buf_max_len = 140;
+	at.buf_max_len = 140U;
 	at.buf = buffer;
 
 	buf = net_buf_alloc(&at_pool, K_FOREVER);

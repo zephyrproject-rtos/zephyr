@@ -2,3 +2,4 @@ tests:
   kernel.poll:
     tags: kernel userspace
     min_ram: 16
+    platform_exclude: nrf52810_pca10040

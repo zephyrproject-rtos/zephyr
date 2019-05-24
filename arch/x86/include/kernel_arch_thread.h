@@ -12,7 +12,6 @@
  *
  *  struct _thread_arch
  *  struct _callee_saved
- *  struct _caller_saved
  *
  * necessary to instantiate instances of struct k_thread.
  */
@@ -36,32 +35,6 @@
 
 #ifndef _ASMLANGUAGE
 #include <stdint.h>
-
-/*
- * The following structure defines the set of 'volatile' integer registers.
- * These registers need not be preserved by a called C function.  Given that
- * they are not preserved across function calls, they must be save/restored
- * (along with the struct _caller_saved) when a preemptive context switch
- * occurs.
- */
-
-struct _caller_saved {
-
-	/*
-	 * The volatile registers 'eax', 'ecx' and 'edx' area not included in
-	 * the definition of 'tPreempReg' since the interrupt and exception
-	 * handling routunes use the stack to save and restore the values of
-	 * these registers in order to support interrupt nesting.  The stubs
-	 * do _not_ copy the saved values from the stack into the TCS.
-	 *
-	 * unsigned long eax;
-	 * unsigned long ecx;
-	 * unsigned long edx;
-	 */
-
-};
-
-typedef struct _caller_saved _caller_saved_t;
 
 /*
  * The following structure defines the set of 'non-volatile' integer registers.
@@ -91,14 +64,14 @@ struct _callee_saved {
 typedef struct _callee_saved _callee_saved_t;
 
 /*
- * The macro CONFIG_FP_SHARING shall be set to indicate that the
+ * The macros CONFIG_{LAZY|EAGER}_FP_SHARING shall be set to indicate that the
  * saving/restoring of the traditional x87 floating point (and MMX) registers
  * are supported by the kernel's context swapping code. The macro
  * CONFIG_SSE shall _also_ be set if saving/restoring of the XMM
  * registers is also supported in the kernel's context swapping code.
  */
 
-#ifdef CONFIG_FP_SHARING
+#if defined(CONFIG_EAGER_FP_SHARING) || defined(CONFIG_LAZY_FP_SHARING)
 
 /* definition of a single x87 (floating point / MMX) register */
 
@@ -187,7 +160,7 @@ typedef struct s_FpRegSetEx {
 
 #endif /* CONFIG_SSE == 0 */
 
-#else /* CONFIG_FP_SHARING == 0 */
+#else /* !CONFIG_LAZY_FP_SHARING && !CONFIG_EAGER_FP_SHARING */
 
 /* empty floating point register definition */
 
@@ -197,23 +170,7 @@ typedef struct s_FpRegSet {
 typedef struct s_FpRegSetEx {
 } tFpRegSetEx;
 
-#endif /* CONFIG_FP_SHARING == 0 */
-
-/*
- * The following structure defines the set of 'non-volatile' x87 FPU/MMX/SSE
- * registers. These registers must be preserved by a called C function.
- * These are the only registers that need to be saved/restored when a
- * cooperative context switch occurs.
- */
-
-typedef struct s_coopFloatReg {
-
-	/*
-	 * This structure intentionally left blank, i.e. the ST[0] -> ST[7] and
-	 * XMM0 -> XMM7 registers are all 'volatile'.
-	 */
-
-} tCoopFloatReg;
+#endif /* CONFIG_LAZY_FP_SHARING || CONFIG_EAGER_FP_SHARING */
 
 /*
  * The following structure defines the set of 'volatile' x87 FPU/MMX/SSE
@@ -236,19 +193,19 @@ typedef struct s_preempFloatReg {
  * The thread control stucture definition.  It contains the
  * various fields to manage a _single_ thread. The TCS will be aligned
  * to the appropriate architecture specific boundary via the
- * _new_thread() call.
+ * z_new_thread() call.
  */
 
 struct _thread_arch {
 
-#if defined(CONFIG_FP_SHARING)
+#if defined(CONFIG_LAZY_FP_SHARING)
 	/*
 	 * Nested exception count to maintain setting of EXC_ACTIVE flag across
-	 * outermost exception.  EXC_ACTIVE is used by _Swap() lazy FP
+	 * outermost exception.  EXC_ACTIVE is used by z_swap() lazy FP
 	 * save/restore and by debug tools.
 	 */
 	unsigned excNestCount; /* nested exception count */
-#endif /* CONFIG_FP_SHARING */
+#endif /* CONFIG_LAZY_FP_SHARING */
 
 	/*
 	 * The location of all floating point related structures/fields MUST be
@@ -260,11 +217,9 @@ struct _thread_arch {
 	 * Given that stacks "grow down" on IA-32, and the TCS is located
 	 * at the start of a thread's "workspace" memory, the stacks of
 	 * threads that do not utilize floating point instruction can
-	 * effectively consume the memory occupied by the 'tCoopFloatReg' and
-	 * 'tPreempFloatReg' structures without ill effect.
+	 * effectively consume the memory occupied by the 'tPreempFloatReg'
+	 * struct without ill effect.
 	 */
-
-	tCoopFloatReg coopFloatReg; /* non-volatile float register storage */
 	tPreempFloatReg preempFloatReg; /* volatile float register storage */
 };
 

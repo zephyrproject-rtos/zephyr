@@ -20,7 +20,8 @@ void test_main(void)
 			 ztest_unit_test(test_chained_read),
 			 ztest_unit_test(test_double_buffer),
 			 ztest_unit_test(test_read_abort),
+			 ztest_unit_test(test_chained_write),
+			 ztest_unit_test(test_long_buffers),
 			 ztest_unit_test(test_write_abort));
-
 	ztest_run_test_suite(uart_async_test);
 }

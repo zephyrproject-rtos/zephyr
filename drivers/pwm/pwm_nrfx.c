@@ -57,10 +57,11 @@ static u32_t pwm_period_check_and_set(const struct pwm_nrfx_config *config,
 		/* See if there is a prescaler that will make it work: */
 		bool matching_prescaler_found = false;
 
-		/* Go through all available prescaler values on device.
+		/* Go through all available prescaler values on device (skip 0
+		 * here as it is used in the 'else' block).
 		 * nRF52832 has 0-7 (Div1 - Div128)
 		 */
-		for (u8_t prescaler = 0;
+		for (u8_t prescaler = 1;
 		     prescaler <= PWM_PRESCALER_PRESCALER_Msk;
 		     prescaler++) {
 			u32_t new_countertop = period_cycles >> prescaler;
@@ -82,10 +83,10 @@ static u32_t pwm_period_check_and_set(const struct pwm_nrfx_config *config,
 			return -EINVAL;
 		}
 	} else {
-		/* If period_cycles fit with standard prescaler,
-		 * set it directly
+		/* If period_cycles fit the PWM counter without dividing
+		 * the PWM clock, use the zero prescaler.
 		 */
-		data->prescaler = 1;
+		data->prescaler = 0U;
 		data->countertop = period_cycles;
 		data->period_cycles = period_cycles;
 	}
@@ -104,7 +105,7 @@ static u8_t pwm_channel_map(const uint8_t *output_pins, u32_t pwm)
 	u8_t i;
 
 	/* Find pin, return channel number */
-	for (i = 0; i < NRF_PWM_CHANNEL_COUNT; i++) {
+	for (i = 0U; i < NRF_PWM_CHANNEL_COUNT; i++) {
 		if (output_pins[i] != NRFX_PWM_PIN_NOT_USED
 		    && (pwm == (output_pins[i] & PWM_NRFX_CH_PIN_MASK))) {
 			return i;
@@ -119,7 +120,7 @@ static bool any_channel_active(const struct pwm_nrfx_data *data)
 {
 	u8_t channel;
 
-	for (channel = 0; channel < NRF_PWM_CHANNEL_COUNT; channel++) {
+	for (channel = 0U; channel < NRF_PWM_CHANNEL_COUNT; channel++) {
 		u16_t channel_pulse_cycle =
 			data->current[channel]
 			& PWM_NRFX_CH_PULSE_CYCLES_MASK;
@@ -182,7 +183,7 @@ static int pwm_nrfx_pin_set(struct device *dev, u32_t pwm,
 	 * since this will the setting if we in the future disable the
 	 * peripheral when no channels are active.
 	 */
-	if (pulse_cycles == 0 || pulse_cycles == period_cycles) {
+	if (pulse_cycles == 0U || pulse_cycles == period_cycles) {
 		/* If pulse 0% and pin not inverted, set LOW.
 		 * If pulse 100% and pin inverted, set LOW.
 		 * If pulse 0% and pin inverted, set HIGH.
@@ -193,7 +194,7 @@ static int pwm_nrfx_pin_set(struct device *dev, u32_t pwm,
 			& NRFX_PWM_PIN_INVERTED;
 
 		bool pulse_0_and_not_inverted =
-			(pulse_cycles == 0)
+			(pulse_cycles == 0U)
 			&& !channel_inverted_state;
 		bool pulse_100_and_inverted =
 			(pulse_cycles == period_cycles)
@@ -321,11 +322,18 @@ static int pwm_nrfx_pm_control(struct device *dev,
 #define PWM_NRFX_PM_CONTROL(idx)					\
 	static int pwm_##idx##_nrfx_pm_control(struct device *dev,	\
 					       u32_t ctrl_command,	\
-					       void *context)		\
+					       void *context,		\
+					       device_pm_cb cb,		\
+					       void *arg)		\
 	{								\
 		static u32_t current_state = DEVICE_PM_ACTIVE_STATE;	\
-		return pwm_nrfx_pm_control(dev, ctrl_command, context,	\
+		int ret = 0;                                            \
+		ret = pwm_nrfx_pm_control(dev, ctrl_command, context,	\
 					   &current_state);		\
+		if (cb) {                                               \
+			cb(dev, ret, context, arg);                     \
+		}                                                       \
+		return ret;                                             \
 	}
 #else
 
@@ -353,7 +361,7 @@ static int pwm_nrfx_pm_control(struct device *dev,
 		.countertop = NRFX_PWM_DEFAULT_CONFIG_TOP_VALUE,	      \
 		.prescaler = NRFX_PWM_DEFAULT_CONFIG_BASE_CLOCK 	      \
 	};								      \
-	static const struct pwm_nrfx_config pwm_nrfx_##idx##_config = {	      \
+	static const struct pwm_nrfx_config pwm_nrfx_##idx##z_config = {	      \
 		.pwm = NRFX_PWM_INSTANCE(idx),				      \
 		.initial_config = {					      \
 			.output_pins = {				      \
@@ -376,7 +384,7 @@ static int pwm_nrfx_pm_control(struct device *dev,
 		      DT_NORDIC_NRF_PWM_PWM_##idx##_LABEL,		      \
 		      pwm_nrfx_init, pwm_##idx##_nrfx_pm_control,	      \
 		      &pwm_nrfx_##idx##_data,				      \
-		      &pwm_nrfx_##idx##_config,				      \
+		      &pwm_nrfx_##idx##z_config,				      \
 		      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	      \
 		      &pwm_nrfx_drv_api_funcs)
 

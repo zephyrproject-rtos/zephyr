@@ -78,7 +78,7 @@ static ALWAYS_INLINE unsigned int find_lsb_set(u32_t op)
 }
 
 /* internal routine documented in C file, needed by IRQ_CONNECT() macro */
-extern void _irq_priority_set(u32_t irq, u32_t prio, u32_t flags);
+extern void z_irq_priority_set(u32_t irq, u32_t prio, u32_t flags);
 
 
 /**
@@ -100,7 +100,7 @@ extern void _irq_priority_set(u32_t irq, u32_t prio, u32_t flags);
  * spurious IRQ handler) with what was supplied here.
  *
  * 3. The priority level for the interrupt is configured by a call to
- * _irq_priority_set()
+ * z_irq_priority_set()
  *
  * @param irq_p IRQ line number
  * @param priority_p Interrupt priority
@@ -110,14 +110,14 @@ extern void _irq_priority_set(u32_t irq, u32_t prio, u32_t flags);
  *
  * @return The vector assigned to this interrupt
  */
-#define _ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
+#define Z_ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
 ({ \
-	_ISR_DECLARE(irq_p, flags_p, isr_p, isr_param_p); \
+	Z_ISR_DECLARE(irq_p, flags_p, isr_p, isr_param_p); \
 	irq_p; \
 })
 
 /* Spurious interrupt handler. Throws an error if called */
-extern void _irq_spurious(void *unused);
+extern void z_irq_spurious(void *unused);
 
 #ifdef CONFIG_XTENSA_ASM2
 #define XTENSA_ERR_NORET /**/
@@ -125,14 +125,14 @@ extern void _irq_spurious(void *unused);
 #define XTENSA_ERR_NORET FUNC_NORETURN
 #endif
 
-XTENSA_ERR_NORET void _SysFatalErrorHandler(unsigned int reason,
+XTENSA_ERR_NORET void z_SysFatalErrorHandler(unsigned int reason,
 					    const NANO_ESF *esf);
 
-XTENSA_ERR_NORET void _NanoFatalErrorHandler(unsigned int reason,
+XTENSA_ERR_NORET void z_NanoFatalErrorHandler(unsigned int reason,
 					     const NANO_ESF *pEsf);
 
-extern u32_t _timer_cycle_get_32(void);
-#define _arch_k_cycle_get_32()	_timer_cycle_get_32()
+extern u32_t z_timer_cycle_get_32(void);
+#define z_arch_k_cycle_get_32()	z_timer_cycle_get_32()
 
 /**
  * @brief Explicitly nop operation.

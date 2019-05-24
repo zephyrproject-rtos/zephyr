@@ -37,7 +37,7 @@ static void trigger_irq(int irq)
 static void trigger_irq(int irq)
 {
 	printk("Triggering irq : %d\n", irq);
-	_arc_v2_aux_reg_write(_ARC_V2_AUX_IRQ_HINT, irq);
+	z_arc_v2_aux_reg_write(_ARC_V2_AUX_IRQ_HINT, irq);
 }
 #else
 /* for not supported architecture */

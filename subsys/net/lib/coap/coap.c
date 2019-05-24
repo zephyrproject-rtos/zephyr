@@ -106,9 +106,9 @@ int coap_packet_init(struct coap_packet *cpkt, u8_t *data,
 	memset(cpkt, 0, sizeof(*cpkt));
 
 	cpkt->data = data;
-	cpkt->offset = 0;
+	cpkt->offset = 0U;
 	cpkt->max_len = max_len;
-	cpkt->delta = 0;
+	cpkt->delta = 0U;
 
 	hdr = (ver & 0x3) << 6;
 	hdr |= (type & 0x3) << 4;
@@ -195,24 +195,24 @@ static int encode_option(struct coap_packet *cpkt, u16_t code,
 		return -EINVAL;
 	}
 
-	if (delta_size == 1) {
+	if (delta_size == 1U) {
 		res = append_u8(cpkt, (u8_t)delta_ext);
 		if (!res) {
 			return -EINVAL;
 		}
-	} else if (delta_size == 2) {
+	} else if (delta_size == 2U) {
 		res = append_be16(cpkt, delta_ext);
 		if (!res) {
 			return -EINVAL;
 		}
 	}
 
-	if (len_size == 1) {
+	if (len_size == 1U) {
 		res = append_u8(cpkt, (u8_t)len_ext);
 		if (!res) {
 			return -EINVAL;
 		}
-	} else if (delta_size == 2) {
+	} else if (delta_size == 2U) {
 		res = append_be16(cpkt, len_ext);
 		if (!res) {
 			return -EINVAL;
@@ -271,7 +271,7 @@ int coap_append_option_int(struct coap_packet *cpkt, u16_t code,
 {
 	u8_t data[4], len;
 
-	if (val == 0) {
+	if (val == 0U) {
 		data[0] = 0U;
 		len = 0U;
 	} else if (val < 0xFF) {
@@ -437,7 +437,7 @@ static int parse_option(u8_t *data, u16_t offset, u16_t *pos,
 		return r;
 	}
 
-	*opt_len += 1;
+	*opt_len += 1U;
 
 	/* This indicates that options have ended */
 	if (opt == COAP_MARKER) {
@@ -482,7 +482,7 @@ static int parse_option(u8_t *data, u16_t offset, u16_t *pos,
 	*opt_len += len;
 
 	if (r == 0) {
-		if (len == 0) {
+		if (len == 0U) {
 			return r;
 		}
 
@@ -544,11 +544,11 @@ int coap_packet_parse(struct coap_packet *cpkt, u8_t *data, u16_t len,
 	}
 
 	cpkt->data = data;
-	cpkt->offset = 0;
+	cpkt->offset = 0U;
 	cpkt->max_len = len;
-	cpkt->opt_len = 0;
-	cpkt->hdr_len = 0;
-	cpkt->delta = 0;
+	cpkt->opt_len = 0U;
+	cpkt->hdr_len = 0U;
+	cpkt->delta = 0U;
 
 	/* Token lenghts 9-15 are reserved. */
 	tkl = cpkt->data[0] & 0x0f;
@@ -1104,7 +1104,7 @@ static inline bool is_addr_unspecified(const struct sockaddr *addr)
 		return net_ipv6_is_addr_unspecified(
 			&(net_sin6(addr)->sin6_addr));
 	} else if (addr->sa_family == AF_INET) {
-		return net_sin(addr)->sin_addr.s4_addr32[0] == 0;
+		return net_sin(addr)->sin_addr.s4_addr32[0] == 0U;
 	}
 
 	return false;
@@ -1232,12 +1232,12 @@ struct coap_reply *coap_response_received(
 	for (i = 0, r = replies; i < len; i++, r++) {
 		int age;
 
-		if ((r->id == 0) && (r->tkl == 0)) {
+		if ((r->id == 0U) && (r->tkl == 0U)) {
 			continue;
 		}
 
 		/* Piggybacked must match id when token is empty */
-		if ((r->id != id) && (tkl == 0)) {
+		if ((r->id != id) && (tkl == 0U)) {
 			continue;
 		}
 

@@ -122,7 +122,13 @@ config USE_STM32_HAL_I2C_EX
 config USE_STM32_HAL_I2S
 	bool
 
+config USE_STM32_HAL_IPCC
+	bool
+
 config USE_STM32_HAL_I2S_EX
+	bool
+
+config USE_STM32_HAL_IPCC
 	bool
 
 config USE_STM32_HAL_IRDA
@@ -308,6 +314,9 @@ config USE_STM32_LL_HRTIM
 config USE_STM32_LL_I2C
 	bool
 
+config USE_STM32_LL_IPCC
+	bool
+
 config USE_STM32_LL_LPTIM
 	bool
 
@@ -351,4 +360,3 @@ config USE_STM32_LL_UTILS
 	bool
 
 endif
-

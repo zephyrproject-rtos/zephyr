@@ -48,7 +48,7 @@ extern "C" {
  * @return Interrupt vector assigned to this interrupt.
  */
 #define IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
-	_ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p)
+	Z_ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p)
 
 /**
  * Configure a dynamic interrupt.
@@ -63,7 +63,7 @@ extern "C" {
  *
  * @return The vector assigned to this interrupt
  */
-extern int _arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
+extern int z_arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 			     void (*routine)(void *parameter), void *parameter,
 			     u32_t flags);
 
@@ -72,7 +72,7 @@ irq_connect_dynamic(unsigned int irq, unsigned int priority,
 		    void (*routine)(void *parameter), void *parameter,
 		    u32_t flags)
 {
-	return _arch_irq_connect_dynamic(irq, priority, routine, parameter, flags);
+	return z_arch_irq_connect_dynamic(irq, priority, routine, parameter, flags);
 }
 
 /**
@@ -116,7 +116,7 @@ irq_connect_dynamic(unsigned int irq, unsigned int priority,
  * @return Interrupt vector assigned to this interrupt.
  */
 #define IRQ_DIRECT_CONNECT(irq_p, priority_p, isr_p, flags_p) \
-	_ARCH_IRQ_DIRECT_CONNECT(irq_p, priority_p, isr_p, flags_p)
+	Z_ARCH_IRQ_DIRECT_CONNECT(irq_p, priority_p, isr_p, flags_p)
 
 /**
  * @brief Common tasks before executing the body of an ISR
@@ -125,7 +125,7 @@ irq_connect_dynamic(unsigned int irq, unsigned int priority,
  * minimal architecture-specific tasks before the ISR itself can run. It takes
  * no arguments and has no return value.
  */
-#define ISR_DIRECT_HEADER() _ARCH_ISR_DIRECT_HEADER()
+#define ISR_DIRECT_HEADER() Z_ARCH_ISR_DIRECT_HEADER()
 
 /**
  * @brief Common tasks before exiting the body of an ISR
@@ -134,16 +134,16 @@ irq_connect_dynamic(unsigned int irq, unsigned int priority,
  * minimal architecture-specific tasks like EOI. It has no return value.
  *
  * In a normal interrupt, a check is done at end of interrupt to invoke
- * _Swap() logic if the current thread is preemptible and there is another
+ * z_swap() logic if the current thread is preemptible and there is another
  * thread ready to run in the kernel's ready queue cache. This is now optional
  * and controlled by the check_reschedule argument. If unsure, set to nonzero.
  * On systems that do stack switching and nested interrupt tracking in software,
- * _Swap() should only be called if this was a non-nested interrupt.
+ * z_swap() should only be called if this was a non-nested interrupt.
  *
  * @param check_reschedule If nonzero, additionally invoke scheduling logic
  */
 #define ISR_DIRECT_FOOTER(check_reschedule) \
-	_ARCH_ISR_DIRECT_FOOTER(check_reschedule)
+	Z_ARCH_ISR_DIRECT_FOOTER(check_reschedule)
 
 /**
  * @brief Perform power management idle exit logic
@@ -153,7 +153,7 @@ irq_connect_dynamic(unsigned int irq, unsigned int priority,
  * exit power management idle state. It takes no parameters and returns no
  * arguments. It may be omitted, but be careful!
  */
-#define ISR_DIRECT_PM() _ARCH_ISR_DIRECT_PM()
+#define ISR_DIRECT_PM() Z_ARCH_ISR_DIRECT_PM()
 
 /**
  * @brief Helper macro to declare a direct interrupt service routine.
@@ -175,7 +175,7 @@ irq_connect_dynamic(unsigned int irq, unsigned int priority,
  *	bool done = do_stuff();
  *	ISR_DIRECT_PM(); <-- done after do_stuff() due to latency concerns
  *	if (!done) {
- *		return 0;  <-- Don't bother checking if we have to _Swap()
+ *		return 0;  <-- Don't bother checking if we have to z_swap()
  *	}
  *	k_sem_give(some_sem);
  *	return 1;
@@ -183,7 +183,7 @@ irq_connect_dynamic(unsigned int irq, unsigned int priority,
  *
  * @param name symbol name of the ISR
  */
-#define ISR_DIRECT_DECLARE(name) _ARCH_ISR_DIRECT_DECLARE(name)
+#define ISR_DIRECT_DECLARE(name) Z_ARCH_ISR_DIRECT_DECLARE(name)
 
 /**
  * @brief Lock interrupts.
@@ -217,10 +217,10 @@ irq_connect_dynamic(unsigned int irq, unsigned int priority,
  * @return Lock-out key.
  */
 #ifdef CONFIG_SMP
-unsigned int _smp_global_lock(void);
-#define irq_lock() _smp_global_lock()
+unsigned int z_smp_global_lock(void);
+#define irq_lock() z_smp_global_lock()
 #else
-#define irq_lock() _arch_irq_lock()
+#define irq_lock() z_arch_irq_lock()
 #endif
 
 /**
@@ -238,10 +238,10 @@ unsigned int _smp_global_lock(void);
  * @return N/A
  */
 #ifdef CONFIG_SMP
-void _smp_global_unlock(unsigned int key);
-#define irq_unlock(key) _smp_global_unlock(key)
+void z_smp_global_unlock(unsigned int key);
+#define irq_unlock(key) z_smp_global_unlock(key)
 #else
-#define irq_unlock(key) _arch_irq_unlock(key)
+#define irq_unlock(key) z_arch_irq_unlock(key)
 #endif
 
 /**
@@ -253,7 +253,7 @@ void _smp_global_unlock(unsigned int key);
  *
  * @return N/A
  */
-#define irq_enable(irq) _arch_irq_enable(irq)
+#define irq_enable(irq) z_arch_irq_enable(irq)
 
 /**
  * @brief Disable an IRQ.
@@ -264,7 +264,7 @@ void _smp_global_unlock(unsigned int key);
  *
  * @return N/A
  */
-#define irq_disable(irq) _arch_irq_disable(irq)
+#define irq_disable(irq) z_arch_irq_disable(irq)
 
 /**
  * @brief Get IRQ enable state.
@@ -275,7 +275,7 @@ void _smp_global_unlock(unsigned int key);
  *
  * @return interrupt enable state, true or false
  */
-#define irq_is_enabled(irq) _arch_irq_is_enabled(irq)
+#define irq_is_enabled(irq) z_arch_irq_is_enabled(irq)
 
 /**
  * @}

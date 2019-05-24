@@ -51,7 +51,7 @@ fcb_getnext_nolock(struct fcb *fcb, struct fcb_entry *loc)
 		 */
 		loc->fe_sector = fcb->f_oldest;
 	}
-	if (loc->fe_elem_off == 0) {
+	if (loc->fe_elem_off == 0U) {
 		/*
 		 * If offset is zero, we serve the first entry from the sector.
 		 */

@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
 SECTIONS {
 	. = 0x100000;
 

@@ -19,7 +19,7 @@ LOG_MODULE_REGISTER(soc);
 
 static u32_t ref_clk_freq;
 
-void _soc_irq_enable(u32_t irq)
+void z_soc_irq_enable(u32_t irq)
 {
 	struct device *dev_cavs, *dev_ictl;
 
@@ -38,7 +38,7 @@ void _soc_irq_enable(u32_t irq)
 		break;
 	default:
 		/* regular interrupt */
-		_xtensa_irq_enable(XTENSA_IRQ_NUMBER(irq));
+		z_xtensa_irq_enable(XTENSA_IRQ_NUMBER(irq));
 		return;
 	}
 
@@ -50,7 +50,7 @@ void _soc_irq_enable(u32_t irq)
 	/* If the control comes here it means the specified interrupt
 	 * is in either CAVS interrupt logic or DW interrupt controller
 	 */
-	_xtensa_irq_enable(XTENSA_IRQ_NUMBER(irq));
+	z_xtensa_irq_enable(XTENSA_IRQ_NUMBER(irq));
 
 	switch (CAVS_IRQ_NUMBER(irq)) {
 	case DW_ICTL_IRQ_CAVS_OFFSET:
@@ -78,7 +78,7 @@ void _soc_irq_enable(u32_t irq)
 	irq_enable_next_level(dev_ictl, INTR_CNTL_IRQ_NUM(irq));
 }
 
-void _soc_irq_disable(u32_t irq)
+void z_soc_irq_disable(u32_t irq)
 {
 	struct device *dev_cavs, *dev_ictl;
 
@@ -97,7 +97,7 @@ void _soc_irq_disable(u32_t irq)
 		break;
 	default:
 		/* regular interrupt */
-		_xtensa_irq_disable(XTENSA_IRQ_NUMBER(irq));
+		z_xtensa_irq_disable(XTENSA_IRQ_NUMBER(irq));
 		return;
 	}
 
@@ -120,7 +120,7 @@ void _soc_irq_disable(u32_t irq)
 
 		/* Disable the parent IRQ if all children are disabled */
 		if (!irq_is_enabled_next_level(dev_cavs)) {
-			_xtensa_irq_disable(XTENSA_IRQ_NUMBER(irq));
+			z_xtensa_irq_disable(XTENSA_IRQ_NUMBER(irq));
 		}
 		return;
 	}
@@ -142,7 +142,7 @@ void _soc_irq_disable(u32_t irq)
 		irq_disable_next_level(dev_cavs, CAVS_IRQ_NUMBER(irq));
 
 		if (!irq_is_enabled_next_level(dev_cavs)) {
-			_xtensa_irq_disable(XTENSA_IRQ_NUMBER(irq));
+			z_xtensa_irq_disable(XTENSA_IRQ_NUMBER(irq));
 		}
 	}
 }
@@ -201,7 +201,7 @@ static inline void soc_set_dmic_power(void)
 	/* enable power */
 	dmic_shim_regs->dmiclctl |= SOC_DMIC_SHIM_DMICLCTL_SPA;
 
-	while ((dmic_shim_regs->dmiclctl & SOC_DMIC_SHIM_DMICLCTL_CPA) == 0) {
+	while ((dmic_shim_regs->dmiclctl & SOC_DMIC_SHIM_DMICLCTL_CPA) == 0U) {
 		/* wait for power status */
 	}
 #endif
@@ -215,7 +215,7 @@ static inline void soc_set_gna_power(void)
 
 	/* power on GNA block */
 	regs->gna_power_control |= SOC_GNA_POWER_CONTROL_SPA;
-	while ((regs->gna_power_control & SOC_GNA_POWER_CONTROL_CPA) == 0) {
+	while ((regs->gna_power_control & SOC_GNA_POWER_CONTROL_CPA) == 0U) {
 		/* wait for power status */
 	}
 

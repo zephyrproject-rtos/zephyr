@@ -17,9 +17,7 @@ This document describes the requirements and process for ensuring
 security is addressed within the Zephyr project.  All code submitted
 should comply with these guidelines.
 
-Much of this document comes from the `CII best practices`_ document.
-
-.. _CII best practices: https://github.com/linuxfoundation/cii-best-practices-badge
+Much of this document comes from [CIIBPB]_.
 
 Introduction and Scope
 **********************
@@ -140,9 +138,7 @@ The Zephyr project must have at least one primary developer who knows
 how to design secure software.
 
 This requires understanding the following design principles,
-including the 8 principles from `Saltzer and Schroeder`_:
-
-.. _Saltzer and Schroeder: http://web.mit.edu/Saltzer/www/publications/protection/
+including the 8 principles from [SALT75]_:
 
 - economy of mechanism (keep the design as simple and small as
   practical, e.g., by adopting sweeping simplifications)
@@ -217,10 +213,10 @@ scripting, missing authentication, and missing authorization. See the
 
 .. _OWASP Top 10: https://www.owasp.org/index.php/Category:OWASP_Top_Ten_Project
 
-Security Subcommittee
-=====================
+Zephyr Security Subcommittee
+============================
 
-There shall be a "security subcommittee", responsible for
+There shall be a "Zephyr Security Subcommittee", responsible for
 enforcing this guideline, monitoring reviews, and improving these
 guidelines.
 
@@ -250,9 +246,9 @@ system.
 
 Because security issues are often sensitive, this issue tracking
 system shall have a field to indicate a security issue.  Setting this
-field shall result in the issue only being visible to a
-project-maintained core security team.  In addition, there shall be a
-field to allow core security members to add additional users that will
+field shall result in the issue only being visible to the Zephyr Security
+Subcommittee. In addition, there shall be a
+field to allow the Zephyr Security Subcommittee to add additional users that will
 have visibility to a given issue.
 
 This embargo, or limited visibility, shall only be for a fixed
@@ -262,7 +258,7 @@ project itself, it may be necessary to increase this embargo time.
 The time necessary shall be clearly annotated in the issue itself.
 
 The list of issues shall be reviewed at least once a month by the
-security committee on the Zephyr Project.  This review should focus on
+Zephyr Security Subcommittee.  This review should focus on
 tracking the fixes, determining if any external parties need to be
 notified or involved, and determining when to lift the embargo on the
 issue.  The embargo should **not** be lifted via an automated means, but
@@ -272,7 +268,7 @@ have been resolved.
 Modifications to This Document
 ******************************
 
-Changes to this document shall be reviewed by the security committee,
+Changes to this document shall be reviewed by the Zephyr Security Subcommittee,
 and approved by consensus.
 
 .. [#attackf]  An attack_ resulted in a significant portion of DNS

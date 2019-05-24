@@ -15,7 +15,7 @@ volatile irq_offload_routine_t offload_routine;
 static void *offload_param;
 
 /* Called by __svc */
-void _irq_do_offload(void)
+void z_irq_do_offload(void)
 {
 	offload_routine(offload_param);
 }
@@ -29,7 +29,7 @@ void irq_offload(irq_offload_routine_t routine, void *parameter)
 	unsigned int key;
 
 	__asm__ volatile("mrs %0, PRIMASK;" : "=r" (key) : : "memory");
-	__ASSERT(key == 0, "irq_offload called with interrupts locked\n");
+	__ASSERT(key == 0U, "irq_offload called with interrupts locked\n");
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE && CONFIG_ASSERT */
 
 	k_sched_lock();

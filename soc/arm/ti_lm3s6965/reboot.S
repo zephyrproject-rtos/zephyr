@@ -13,8 +13,8 @@ _ASM_FILE_PROLOGUE
 
 GDATA(_interrupt_stack)
 
-GTEXT(_do_software_reboot)
-SECTION_FUNC(TEXT,_do_software_reboot)
+GTEXT(z_do_software_reboot)
+SECTION_FUNC(TEXT,z_do_software_reboot)
 
 	eors r0, r0
 
@@ -26,8 +26,8 @@ SECTION_FUNC(TEXT,_do_software_reboot)
 	bx r0
 
 
-GTEXT(_force_exit_one_nested_irq)
-SECTION_FUNC(TEXT,_force_exit_one_nested_irq)
+GTEXT(z_force_exit_one_nested_irq)
+SECTION_FUNC(TEXT,z_force_exit_one_nested_irq)
 
 	ldr r0, =_SCS_ICSR_RETTOBASE
 	ldr r1, =_SCS_ICSR
@@ -41,12 +41,12 @@ SECTION_FUNC(TEXT,_force_exit_one_nested_irq)
 	*/
 	ittee eq
 		ldreq lr, =0xfffffff1
-		ldreq r2, =_force_exit_one_nested_irq
+		ldreq r2, =z_force_exit_one_nested_irq
 		ldrne lr, =0xfffffffd
-		ldrne r2, =_do_software_reboot
+		ldrne r2, =z_do_software_reboot
 
 	ldr ip, =_interrupt_stack
-	add.w ip, #(___esf_t_SIZEOF * 2) /* enough for a stack frame */
+	add.w ip, ip, #(___esf_t_SIZEOF * 2) /* enough for a stack frame */
 	ldr r1, =0xfffffffe
 	and.w r2, r1
 	str r2, [ip, #(6 * 4)]

@@ -69,7 +69,7 @@ static int pci_rcba_mask_get(union pci_addr_reg pci_ctrl_addr,
 			old_value);
 
 	/* check if this RCBA is implemented */
-	if (*mask != 0xffffffff && *mask != 0) {
+	if (*mask != 0xffffffff && *mask != 0U) {
 		/* clear the least address unrelated bit */
 		*mask &= ~0x01;
 		return 0;
@@ -99,13 +99,13 @@ int pci_legacy_bridge_detect(struct pci_dev_info *dev_info)
 	u32_t rcba_mask; /* bits set for RCBA */
 
 	/* initialise the PCI controller address register value */
-	pci_ctrl_addr.value = 0;
+	pci_ctrl_addr.value = 0U;
 
 	pci_ctrl_addr.field.bus = CONFIG_PCI_LEGACY_BRIDGE_BUS;
 	pci_ctrl_addr.field.device = CONFIG_PCI_LEGACY_BRIDGE_DEV;
 
 	/* verify first if there is a valid device at this point */
-	pci_ctrl_addr.field.func = 0;
+	pci_ctrl_addr.field.func = 0U;
 
 	pci_read(DEFAULT_PCI_CONTROLLER,
 			pci_ctrl_addr,
@@ -139,7 +139,7 @@ int pci_legacy_bridge_detect(struct pci_dev_info *dev_info)
 	}
 
 	dev_info->addr = rcba & rcba_mask;
-	if (dev_info->addr != 0) {
+	if (dev_info->addr != 0U) {
 		/* calculate the size of the root complex memory required */
 		dev_info->size = 1 << (find_lsb_set(rcba_mask) - 1);
 	}
@@ -147,10 +147,10 @@ int pci_legacy_bridge_detect(struct pci_dev_info *dev_info)
 	dev_info->irq = -1;
 	dev_info->bus = CONFIG_PCI_LEGACY_BRIDGE_BUS;
 	dev_info->dev = CONFIG_PCI_LEGACY_BRIDGE_DEV;
-	dev_info->function = 0;
+	dev_info->function = 0U;
 	dev_info->mem_type = BAR_SPACE_MEM;
 	dev_info->class_type = pci_dev_header.field.class;
-	dev_info->bar = 0;
+	dev_info->bar = 0U;
 	dev_info->vendor_id = pci_dev_header.field.vendor_id;
 	dev_info->device_id = pci_dev_header.field.device_id;
 

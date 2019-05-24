@@ -2,7 +2,7 @@ sample:
   description: Demonstration of the CCS811 Digital Gas Sensor driver
   name: CCS811 sample
 tests:
-  test:
+  sample.sensor.ccs811:
     harness: sensor
     tags: sensors
     platform_whitelist: nrf52_pca20020

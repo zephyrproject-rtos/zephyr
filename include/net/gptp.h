@@ -68,7 +68,7 @@ struct gptp_uscaled_ns {
 #define GPTP_POW2(exp) pow(2, exp)
 #else
 
-static inline double _gptp_pow2(int exp)
+static inline double gptp_pow2(int exp)
 {
 	double res;
 
@@ -85,7 +85,7 @@ static inline double _gptp_pow2(int exp)
 	return res;
 }
 
-#define GPTP_POW2(exp) _gptp_pow2(exp)
+#define GPTP_POW2(exp) gptp_pow2(exp)
 #endif
 
 /* Pre-calculated constants */

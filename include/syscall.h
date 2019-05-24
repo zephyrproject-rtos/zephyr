@@ -37,11 +37,11 @@ extern "C" {
  * All system calls require a handler function and an implementation function.
  * These must follow a naming convention. For a system call named k_foo():
  *
- * - The handler function will be named _handler_k_foo(). Handler functions
+ * - The handler function will be named z_hdlr_k_foo(). Handler functions
  *   are always of type _k_syscall_handler_t, verify arguments passed up
  *   from userspace, and call the implementation function. See
  *   documentation for that typedef for more information.
- * - The implementation function will be named _impl_k_foo(). This is the
+ * - The implementation function will be named z_impl_k_foo(). This is the
  *   actual implementation of the system call.
  *
  * The basic declartion macros are as follows. System calls with 0 to 10
@@ -120,7 +120,7 @@ typedef u32_t (*_k_syscall_handler_t)(u32_t arg1, u32_t arg2, u32_t arg3,
  *
  * @return true if the CPU is currently running with user permissions
  */
-static inline bool _arch_is_user_context(void);
+static inline bool z_arch_is_user_context(void);
 
 /**
  * Indicate whether the CPU is currently in user mode
@@ -129,7 +129,7 @@ static inline bool _arch_is_user_context(void);
  */
 static inline bool _is_user_context(void)
 {
-	return _arch_is_user_context();
+	return z_arch_is_user_context();
 }
 
 /*
@@ -166,28 +166,28 @@ struct _syscall_10_args {
  * Interfaces for invoking system calls
  */
 
-static inline u32_t _arch_syscall_invoke0(u32_t call_id);
+static inline u32_t z_arch_syscall_invoke0(u32_t call_id);
 
-static inline u32_t _arch_syscall_invoke1(u32_t arg1, u32_t call_id);
+static inline u32_t z_arch_syscall_invoke1(u32_t arg1, u32_t call_id);
 
-static inline u32_t _arch_syscall_invoke2(u32_t arg1, u32_t arg2,
+static inline u32_t z_arch_syscall_invoke2(u32_t arg1, u32_t arg2,
 					  u32_t call_id);
 
-static inline u32_t _arch_syscall_invoke3(u32_t arg1, u32_t arg2, u32_t arg3,
+static inline u32_t z_arch_syscall_invoke3(u32_t arg1, u32_t arg2, u32_t arg3,
 					  u32_t call_id);
 
-static inline u32_t _arch_syscall_invoke4(u32_t arg1, u32_t arg2, u32_t arg3,
+static inline u32_t z_arch_syscall_invoke4(u32_t arg1, u32_t arg2, u32_t arg3,
 					  u32_t arg4, u32_t call_id);
 
-static inline u32_t _arch_syscall_invoke5(u32_t arg1, u32_t arg2, u32_t arg3,
+static inline u32_t z_arch_syscall_invoke5(u32_t arg1, u32_t arg2, u32_t arg3,
 					  u32_t arg4, u32_t arg5,
 					  u32_t call_id);
 
-static inline u32_t _arch_syscall_invoke6(u32_t arg1, u32_t arg2, u32_t arg3,
+static inline u32_t z_arch_syscall_invoke6(u32_t arg1, u32_t arg2, u32_t arg3,
 					  u32_t arg4, u32_t arg5, u32_t arg6,
 					  u32_t call_id);
 
-static inline u32_t _syscall_invoke7(u32_t arg1, u32_t arg2, u32_t arg3,
+static inline u32_t z_syscall_invoke7(u32_t arg1, u32_t arg2, u32_t arg3,
 				    u32_t arg4, u32_t arg5, u32_t arg6,
 				    u32_t arg7, u32_t call_id) {
 	struct _syscall_7_args args = {
@@ -195,11 +195,11 @@ static inline u32_t _syscall_invoke7(u32_t arg1, u32_t arg2, u32_t arg3,
 		.arg7 = arg7,
 	};
 
-	return _arch_syscall_invoke6(arg1, arg2, arg3, arg4, arg5, (u32_t)&args,
+	return z_arch_syscall_invoke6(arg1, arg2, arg3, arg4, arg5, (u32_t)&args,
 				     call_id);
 }
 
-static inline u32_t _syscall_invoke8(u32_t arg1, u32_t arg2, u32_t arg3,
+static inline u32_t z_syscall_invoke8(u32_t arg1, u32_t arg2, u32_t arg3,
 				    u32_t arg4, u32_t arg5, u32_t arg6,
 				    u32_t arg7, u32_t arg8, u32_t call_id)
 {
@@ -209,11 +209,11 @@ static inline u32_t _syscall_invoke8(u32_t arg1, u32_t arg2, u32_t arg3,
 		.arg8 = arg8,
 	};
 
-	return _arch_syscall_invoke6(arg1, arg2, arg3, arg4, arg5, (u32_t)&args,
+	return z_arch_syscall_invoke6(arg1, arg2, arg3, arg4, arg5, (u32_t)&args,
 				     call_id);
 }
 
-static inline u32_t _syscall_invoke9(u32_t arg1, u32_t arg2, u32_t arg3,
+static inline u32_t z_syscall_invoke9(u32_t arg1, u32_t arg2, u32_t arg3,
 				    u32_t arg4, u32_t arg5, u32_t arg6,
 				    u32_t arg7, u32_t arg8, u32_t arg9,
 				    u32_t call_id)
@@ -225,11 +225,11 @@ static inline u32_t _syscall_invoke9(u32_t arg1, u32_t arg2, u32_t arg3,
 		.arg9 = arg9,
 	};
 
-	return _arch_syscall_invoke6(arg1, arg2, arg3, arg4, arg5, (u32_t)&args,
+	return z_arch_syscall_invoke6(arg1, arg2, arg3, arg4, arg5, (u32_t)&args,
 				     call_id);
 }
 
-static inline u32_t _syscall_invoke10(u32_t arg1, u32_t arg2, u32_t arg3,
+static inline u32_t z_syscall_invoke10(u32_t arg1, u32_t arg2, u32_t arg3,
 				     u32_t arg4, u32_t arg5, u32_t arg6,
 				     u32_t arg7, u32_t arg8, u32_t arg9,
 				     u32_t arg10, u32_t call_id)
@@ -242,32 +242,32 @@ static inline u32_t _syscall_invoke10(u32_t arg1, u32_t arg2, u32_t arg3,
 		.arg10 = arg10
 	};
 
-	return _arch_syscall_invoke6(arg1, arg2, arg3, arg4, arg5, (u32_t)&args,
+	return z_arch_syscall_invoke6(arg1, arg2, arg3, arg4, arg5, (u32_t)&args,
 				     call_id);
 }
 
-static inline u64_t _syscall_ret64_invoke0(u32_t call_id)
+static inline u64_t z_syscall_ret64_invoke0(u32_t call_id)
 {
 	u64_t ret;
 
-	(void)_arch_syscall_invoke1((u32_t)&ret, call_id);
+	(void)z_arch_syscall_invoke1((u32_t)&ret, call_id);
 	return ret;
 }
 
-static inline u64_t _syscall_ret64_invoke1(u32_t arg1, u32_t call_id)
+static inline u64_t z_syscall_ret64_invoke1(u32_t arg1, u32_t call_id)
 {
 	u64_t ret;
 
-	(void)_arch_syscall_invoke2(arg1, (u32_t)&ret, call_id);
+	(void)z_arch_syscall_invoke2(arg1, (u32_t)&ret, call_id);
 	return ret;
 }
 
-static inline u64_t _syscall_ret64_invoke2(u32_t arg1, u32_t arg2,
+static inline u64_t z_syscall_ret64_invoke2(u32_t arg1, u32_t arg2,
 					   u32_t call_id)
 {
 	u64_t ret;
 
-	(void)_arch_syscall_invoke3(arg1, arg2, (u32_t)&ret, call_id);
+	(void)z_arch_syscall_invoke3(arg1, arg2, (u32_t)&ret, call_id);
 	return ret;
 }
 

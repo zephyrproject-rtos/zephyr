@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: Apache-2.0
+
+add_subdirectory(utils)
 add_subdirectory_if_kconfig(coap)
 add_subdirectory_if_kconfig(lwm2m)
 add_subdirectory_if_kconfig(socks)

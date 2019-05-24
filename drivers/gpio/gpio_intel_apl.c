@@ -15,23 +15,28 @@
  * The GPIO controller has 245 pins divided into four sets.
  * Each set has its own MMIO address space. Due to GPIO
  * callback only allowing 32 pins (as a 32-bit mask) at once,
- * each set is further sub-divided into multiple devices.
- * Because of this, shared IRQ must be used.
+ * each set is further sub-divided into multiple devices, so
+ * we export GPIO_INTEL_APL_NR_SUBDEVS devices to the kernel.
  */
+
+#define GPIO_INTEL_APL_NR_SUBDEVS 10
 
 #include <errno.h>
 #include <gpio.h>
-#include <shared_irq.h>
 #include <soc.h>
 #include <sys_io.h>
 #include <misc/__assert.h>
 #include <misc/slist.h>
+#include <misc/speculation.h>
 
 #include "gpio_utils.h"
 
-#ifndef CONFIG_SHARED_IRQ
-#error "Need CONFIG_SHARED_IRQ!"
-#endif
+/*
+ * only IRQ 14 is supported now. the docs say IRQ 15 is supported
+ * as well, but my (admitted cursory) testing disagrees.
+ */
+
+BUILD_ASSERT(DT_APL_GPIO_IRQ == 14);
 
 #define REG_PAD_BASE_ADDR		0x000C
 
@@ -147,29 +152,45 @@ static bool check_perm(struct device *dev, u32_t raw_pin)
 #define check_perm(...) (1)
 #endif
 
+/*
+ * as the kernel initializes the subdevices, we add them
+ * to the list of devices to check at ISR time.
+ */
+
+static int nr_isr_devs;
+
+static struct device *isr_devs[GPIO_INTEL_APL_NR_SUBDEVS];
+
 static int gpio_intel_apl_isr(struct device *dev)
 {
-	const struct gpio_intel_apl_config *cfg = dev->config->config_info;
-	struct gpio_intel_apl_data *data = dev->driver_data;
+	const struct gpio_intel_apl_config *cfg;
+	struct gpio_intel_apl_data *data;
 	struct gpio_callback *cb, *tmp;
 	u32_t reg, int_sts, cur_mask, acc_mask;
+	int isr_dev;
 
-	reg = cfg->reg_base + REG_GPI_INT_STS_BASE
-		+ ((cfg->pin_offset >> 5) << 2);
-	int_sts = sys_read32(reg);
-	acc_mask = 0;
+	for (isr_dev = 0; isr_dev < nr_isr_devs; ++isr_dev) {
+		dev = isr_devs[isr_dev];
+		cfg = dev->config->config_info;
+		data = dev->driver_data;
 
-	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&data->cb, cb, tmp, node) {
-		cur_mask = int_sts & cb->pin_mask;
-		acc_mask |= cur_mask;
-		if (cur_mask) {
-			__ASSERT(cb->handler, "No callback handler!");
-			cb->handler(dev, cb, cur_mask);
+		reg = cfg->reg_base + REG_GPI_INT_STS_BASE
+			+ ((cfg->pin_offset >> 5) << 2);
+		int_sts = sys_read32(reg);
+		acc_mask = 0U;
+
+		SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&data->cb, cb, tmp, node) {
+			cur_mask = int_sts & cb->pin_mask;
+			acc_mask |= cur_mask;
+			if (cur_mask) {
+				__ASSERT(cb->handler, "No callback handler!");
+				cb->handler(dev, cb, cur_mask);
+			}
 		}
-	}
 
-	/* clear handled interrupt bits */
-	sys_write32(acc_mask, reg);
+		/* clear handled interrupt bits */
+		sys_write32(acc_mask, reg);
+	}
 
 	return 0;
 }
@@ -204,6 +225,7 @@ static int gpio_intel_apl_config(struct device *dev, int access_op,
 	if (pin > cfg->num_pins) {
 		return -EINVAL;
 	}
+	pin = k_array_index_sanitize(pin, cfg->num_pins + 1);
 
 	raw_pin = cfg->pin_offset + pin;
 
@@ -218,7 +240,7 @@ static int gpio_intel_apl_config(struct device *dev, int access_op,
 	}
 
 	/* read in pad configuration register */
-	reg = cfg->reg_base + data->pad_base + (raw_pin * 8);
+	reg = cfg->reg_base + data->pad_base + (raw_pin * 8U);
 	cfg0 = sys_read32(reg);
 	cfg1 = sys_read32(reg + 4);
 
@@ -294,6 +316,7 @@ static int gpio_intel_apl_write(struct device *dev, int access_op,
 	if (pin > cfg->num_pins) {
 		return -EINVAL;
 	}
+	pin = k_array_index_sanitize(pin, cfg->num_pins + 1);
 
 	raw_pin = cfg->pin_offset + pin;
 
@@ -301,7 +324,7 @@ static int gpio_intel_apl_write(struct device *dev, int access_op,
 		return -EPERM;
 	}
 
-	reg = cfg->reg_base + data->pad_base + (raw_pin * 8);
+	reg = cfg->reg_base + data->pad_base + (raw_pin * 8U);
 	val = sys_read32(reg);
 
 	if (value) {
@@ -329,6 +352,7 @@ static int gpio_intel_apl_read(struct device *dev, int access_op,
 	if (pin > cfg->num_pins) {
 		return -EINVAL;
 	}
+	pin = k_array_index_sanitize(pin, cfg->num_pins + 1);
 
 	raw_pin = cfg->pin_offset + pin;
 
@@ -336,15 +360,15 @@ static int gpio_intel_apl_read(struct device *dev, int access_op,
 		return -EPERM;
 	}
 
-	reg = cfg->reg_base + data->pad_base + (raw_pin * 8);
+	reg = cfg->reg_base + data->pad_base + (raw_pin * 8U);
 	val = sys_read32(reg);
 
 	if (!(val & PAD_CFG0_TXDIS)) {
 		/* If TX is not disabled, return TX_STATE */
-		*value = val & PAD_CFG0_TXSTATE;
+		*value = (val & PAD_CFG0_TXSTATE) >> PAD_CFG0_TXSTATE_POS;
 	} else {
 		/* else just return RX_STATE */
-		*value = val & PAD_CFG0_RXSTATE;
+		*value = (val & PAD_CFG0_RXSTATE) >> PAD_CFG0_RXSTATE_POS;
 	}
 
 	return 0;
@@ -356,7 +380,7 @@ static int gpio_intel_apl_manage_callback(struct device *dev,
 {
 	struct gpio_intel_apl_data *data = dev->driver_data;
 
-	return _gpio_manage_callback(&data->cb, callback, set);
+	return gpio_manage_callback(&data->cb, callback, set);
 }
 
 static int gpio_intel_apl_enable_callback(struct device *dev,
@@ -372,6 +396,7 @@ static int gpio_intel_apl_enable_callback(struct device *dev,
 	if (pin > cfg->num_pins) {
 		return -EINVAL;
 	}
+	pin = k_array_index_sanitize(pin, cfg->num_pins + 1);
 
 	raw_pin = cfg->pin_offset + pin;
 
@@ -403,6 +428,7 @@ static int gpio_intel_apl_disable_callback(struct device *dev,
 	if (pin > cfg->num_pins) {
 		return -EINVAL;
 	}
+	pin = k_array_index_sanitize(pin, cfg->num_pins + 1);
 
 	raw_pin = cfg->pin_offset + pin;
 
@@ -426,18 +452,28 @@ static const struct gpio_driver_api gpio_intel_apl_api = {
 	.disable_callback = gpio_intel_apl_disable_callback,
 };
 
-static void gpio_intel_apl_irq_config(struct device *dev);
-
 int gpio_intel_apl_init(struct device *dev)
 {
 	const struct gpio_intel_apl_config *cfg = dev->config->config_info;
 	struct gpio_intel_apl_data *data = dev->driver_data;
 
-	gpio_intel_apl_irq_config(dev);
-
 	data->pad_base = sys_read32(cfg->reg_base + REG_PAD_BASE_ADDR);
 
-	/* Set to route interrupt through IRQ 14 */
+	__ASSERT(nr_isr_devs < GPIO_INTEL_APL_NR_SUBDEVS, "too many subdevs");
+
+	if (nr_isr_devs == 0) {
+		IRQ_CONNECT(DT_APL_GPIO_IRQ,
+			    DT_APL_GPIO_IRQ_PRIORITY,
+			    gpio_intel_apl_isr, NULL,
+			    DT_APL_GPIO_IRQ_SENSE);
+
+		irq_enable(DT_APL_GPIO_IRQ);
+	}
+
+	isr_devs[nr_isr_devs++] = dev;
+
+	/* route to IRQ 14 */
+
 	sys_bitfield_clear_bit(data->pad_base + REG_MISCCFG,
 			       MISCCFG_IRQ_ROUTE_POS);
 
@@ -464,6 +500,8 @@ DEVICE_AND_API_INIT(gpio_intel_apl_##dir_l##_##pos,			\
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	\
 		    &gpio_intel_apl_api)
 
+/* "sub" devices.  no more than GPIO_INTEL_APL_NR_SUBDEVS of these! */
+
 GPIO_INTEL_APL_DEV_CFG_DATA(n, N, 0, 0, 32);
 GPIO_INTEL_APL_DEV_CFG_DATA(n, N, 1, 32, 32);
 GPIO_INTEL_APL_DEV_CFG_DATA(n, N, 2, 32, 14);
@@ -477,15 +515,3 @@ GPIO_INTEL_APL_DEV_CFG_DATA(w, W, 1, 32, 15);
 
 GPIO_INTEL_APL_DEV_CFG_DATA(sw, SW, 0, 0, 32);
 GPIO_INTEL_APL_DEV_CFG_DATA(sw, SW, 1, 32, 11);
-
-static void gpio_intel_apl_irq_config(struct device *dev)
-{
-	struct device *irq_dev;
-
-	irq_dev = device_get_binding(DT_SHARED_IRQ_SHAREDIRQ0_LABEL);
-	__ASSERT(irq_dev != NULL,
-		 "Failed to get shared IRQ device binding");
-
-	shared_irq_isr_register(irq_dev, gpio_intel_apl_isr, dev);
-	shared_irq_enable(irq_dev, dev);
-}

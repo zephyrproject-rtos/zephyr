@@ -18,20 +18,20 @@
 #include "vreg.h"
 
 #if (defined(CONFIG_SYS_POWER_DEEP_SLEEP_STATES))
-extern void _power_soc_sleep(void);
-extern void _power_soc_deep_sleep(void);
-extern void _power_soc_lpss_mode(void);
+extern void z_power_soc_sleep(void);
+extern void z_power_soc_deep_sleep(void);
+extern void z_power_soc_lpss_mode(void);
 
-static void _deep_sleep(enum power_states state)
+static void deep_sleep(enum power_states state)
 {
 	qm_power_soc_set_ss_restore_flag();
 
 	switch (state) {
 	case SYS_POWER_STATE_DEEP_SLEEP_2:
-		_power_soc_sleep();
+		z_power_soc_sleep();
 		break;
 	case SYS_POWER_STATE_DEEP_SLEEP_3:
-		_power_soc_deep_sleep();
+		z_power_soc_deep_sleep();
 		break;
 	default:
 		break;
@@ -42,11 +42,11 @@ static void _deep_sleep(enum power_states state)
 void sys_set_power_state(enum power_states state)
 {
 	switch (state) {
-#if (defined(CONFIG_SYS_POWER_LOW_POWER_STATES))
-	case SYS_POWER_STATE_LOW_POWER_1:
+#if (defined(CONFIG_SYS_POWER_SLEEP_STATES))
+	case SYS_POWER_STATE_SLEEP_1:
 		qm_ss_power_cpu_ss1(QM_SS_POWER_CPU_SS1_TIMER_ON);
 		break;
-	case SYS_POWER_STATE_LOW_POWER_2:
+	case SYS_POWER_STATE_SLEEP_2:
 		qm_ss_power_cpu_ss2();
 		break;
 #endif
@@ -54,11 +54,11 @@ void sys_set_power_state(enum power_states state)
 	case SYS_POWER_STATE_DEEP_SLEEP_1:
 		qm_ss_power_soc_lpss_enable();
 		qm_power_soc_set_ss_restore_flag();
-		_power_soc_lpss_mode();
+		z_power_soc_lpss_mode();
 		break;
 	case SYS_POWER_STATE_DEEP_SLEEP_2:
 	case SYS_POWER_STATE_DEEP_SLEEP_3:
-		_deep_sleep(state);
+		deep_sleep(state);
 		break;
 #endif
 	default:
@@ -66,17 +66,17 @@ void sys_set_power_state(enum power_states state)
 	}
 }
 
-void sys_power_state_post_ops(enum power_states state)
+void _sys_pm_power_state_exit_post_ops(enum power_states state)
 {
 	switch (state) {
-#if (defined(CONFIG_SYS_POWER_LOW_POWER_STATES))
-	case SYS_POWER_STATE_LOW_POWER_2:
+#if (defined(CONFIG_SYS_POWER_SLEEP_STATES))
+	case SYS_POWER_STATE_SLEEP_2:
 		{
 			/* Expire the timer as it is disabled in SS2. */
-			u32_t limit = _arc_v2_aux_reg_read(_ARC_V2_TMR0_LIMIT);
-			_arc_v2_aux_reg_write(_ARC_V2_TMR0_COUNT, limit - 1);
+			u32_t limit = z_arc_v2_aux_reg_read(_ARC_V2_TMR0_LIMIT);
+			z_arc_v2_aux_reg_write(_ARC_V2_TMR0_COUNT, limit - 1);
 		}
-	case SYS_POWER_STATE_LOW_POWER_1:
+	case SYS_POWER_STATE_SLEEP_1:
 		__builtin_arc_seti(0);
 		break;
 #endif
@@ -90,7 +90,7 @@ void sys_power_state_post_ops(enum power_states state)
 		 * its execution.
 		 */
 		if ((QM_SCSS_GP->gp0 & GP0_BIT_SLEEP_READY) == 0) {
-			_quark_se_ss_ready();
+			z_quark_se_ss_ready();
 			__builtin_arc_seti(0);
 		} else {
 			QM_SCSS_GP->gp0 &= ~GP0_BIT_SLEEP_READY;

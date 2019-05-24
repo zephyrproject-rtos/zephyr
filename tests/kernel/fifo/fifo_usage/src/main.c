@@ -35,7 +35,7 @@
 #include <ztest.h>
 #include <irq_offload.h>
 
-#define STACK_SIZE	1024
+#define STACK_SIZE	(1024 + CONFIG_TEST_EXTRA_STACKSIZE)
 #define LIST_LEN	4
 
 struct fdata_t {

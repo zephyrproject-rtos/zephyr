@@ -29,7 +29,7 @@ void zperf_tcp_upload(const struct shell *shell,
 {
 	u32_t duration = MSEC_TO_HW_CYCLES(duration_in_ms);
 	u32_t nb_packets = 0U, nb_errors = 0U;
-	u32_t start_time, last_print_time, last_loop_time, end_time;
+	u32_t start_time, last_print_time, end_time;
 	u8_t time_elapsed = 0U, finished = 0U;
 
 	if (packet_size > PACKET_SIZE_MAX) {
@@ -42,52 +42,33 @@ void zperf_tcp_upload(const struct shell *shell,
 	/* Start the loop */
 	start_time = k_cycle_get_32();
 	last_print_time = start_time;
-	last_loop_time = start_time;
 
 	shell_fprintf(shell, SHELL_NORMAL,
 		      "New session started\n");
 
 	(void)memset(sample_packet, 'z', sizeof(sample_packet));
 
+	/* Set the "flags" field in start of the packet to be 0.
+	 * As the protocol is not properly described anywhere, it is
+	 * not certain if this is a proper thing to do.
+	 */
+	(void)memset(sample_packet, 0, sizeof(uint32_t));
+
 	do {
 		int ret = 0;
-		struct net_pkt *pkt;
-		struct net_buf *frag;
 		u32_t loop_time;
 
 		/* Timestamps */
 		loop_time = k_cycle_get_32();
-		last_loop_time = loop_time;
-
-		pkt = net_pkt_get_tx(ctx, K_FOREVER);
-		if (!pkt) {
-			shell_fprintf(shell, SHELL_ERROR,
-				      "Failed to retrieve a packet\n");
-			break;
-		}
-
-		frag = net_pkt_get_data(ctx, K_FOREVER);
-		if (!frag) {
-			net_pkt_unref(pkt);
-			shell_fprintf(shell, SHELL_ERROR,
-				      "Failed to retrieve a fragment\n");
-			break;
-		}
-
-		net_pkt_frag_add(pkt, frag);
-
-		/* Fill in the TCP payload */
-		net_pkt_append(pkt, sizeof(sample_packet),
-			       sample_packet, K_FOREVER);
 
 		/* Send the packet */
-		ret = net_context_send(pkt, NULL, K_NO_WAIT, NULL, NULL);
+		ret = net_context_send(ctx, sample_packet,
+				       packet_size, NULL,
+				       K_NO_WAIT, NULL);
 		if (ret < 0) {
 			shell_fprintf(shell, SHELL_WARNING,
 				      "Failed to send the packet (%d)\n",
 				      ret);
-
-			net_pkt_unref(pkt);
 			nb_errors++;
 			break;
 		} else {
@@ -99,11 +80,15 @@ void zperf_tcp_upload(const struct shell *shell,
 		}
 
 		if (!time_elapsed && time_delta(start_time,
-						last_loop_time) > duration) {
+						loop_time) > duration) {
 			time_elapsed = 1U;
 		}
 
+#if defined(CONFIG_ARCH_POSIX)
+		k_busy_wait(K_MSEC(100));
+#else
 		k_yield();
+#endif
 	} while (!finished);
 
 	end_time = k_cycle_get_32();

@@ -78,7 +78,7 @@ static inline struct net_buf *pool_get_uninit(struct net_buf_pool *pool,
 
 void net_buf_reset(struct net_buf *buf)
 {
-	NET_BUF_ASSERT(buf->flags == 0);
+	NET_BUF_ASSERT(buf->flags == 0U);
 	NET_BUF_ASSERT(buf->frags == NULL);
 
 	net_buf_simple_reset(&buf->b);
@@ -330,8 +330,8 @@ success:
 		buf->__buf = NULL;
 	}
 
-	buf->ref   = 1;
-	buf->flags = 0;
+	buf->ref   = 1U;
+	buf->flags = 0U;
 	buf->frags = NULL;
 	buf->size  = size;
 	net_buf_reset(buf);
@@ -430,7 +430,7 @@ struct net_buf *net_buf_get(struct k_fifo *fifo, s32_t timeout)
 void net_buf_simple_reserve(struct net_buf_simple *buf, size_t reserve)
 {
 	NET_BUF_ASSERT(buf);
-	NET_BUF_ASSERT(buf->len == 0);
+	NET_BUF_ASSERT(buf->len == 0U);
 	NET_BUF_DBG("buf %p reserve %zu", buf, reserve);
 
 	buf->data = buf->__buf + reserve;

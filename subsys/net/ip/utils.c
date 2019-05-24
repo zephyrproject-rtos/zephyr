@@ -101,7 +101,7 @@ char *net_sprint_ll_addr_buf(const u8_t *ll, u8_t ll_len,
 	for (i = 0U, blen = buflen; i < len && blen > 0; i++) {
 		ptr = net_byte_to_hex(ptr, (char)ll[i], 'A', true);
 		*ptr++ = ':';
-		blen -= 3;
+		blen -= 3U;
 	}
 
 	if (!(ptr - buf)) {
@@ -122,7 +122,7 @@ static int net_value_to_udec(char *buf, u32_t value, int precision)
 	divisor = 1000000000U;
 	if (precision < 0)
 		precision = 1;
-	for (i = 9; i >= 0; i--, divisor /= 10) {
+	for (i = 9; i >= 0; i--, divisor /= 10U) {
 		temp = value / divisor;
 		value = value % divisor;
 		if ((precision > i) || (temp != 0)) {
@@ -174,7 +174,7 @@ char *net_addr_ntop(sa_family_t family, const void *src,
 			}
 		}
 
-		if (longest == 1) {
+		if (longest == 1U) {
 			pos = -1;
 		}
 
@@ -194,7 +194,7 @@ char *net_addr_ntop(sa_family_t family, const void *src,
 			value = (u32_t)addr->s4_addr[i];
 
 			/* net_byte_to_udec() eats 0 */
-			if (value == 0) {
+			if (value == 0U) {
 				*ptr++ = '0';
 				*ptr++ = delim;
 				continue;
@@ -210,13 +210,13 @@ char *net_addr_ntop(sa_family_t family, const void *src,
 
 		/* IPv6 address */
 		if (i == pos) {
-			if (needcolon || i == 0) {
+			if (needcolon || i == 0U) {
 				*ptr++ = ':';
 			}
 
 			*ptr++ = ':';
 			needcolon = false;
-			i += longest - 1;
+			i += longest - 1U;
 
 			continue;
 		}
@@ -504,7 +504,7 @@ u16_t net_calc_chksum(struct net_pkt *pkt, u8_t proto)
 
 	sum = pkt_calc_chksum(pkt, sum);
 
-	sum = (sum == 0) ? 0xffff : htons(sum);
+	sum = (sum == 0U) ? 0xffff : htons(sum);
 
 	net_pkt_cursor_restore(pkt, &backup);
 
@@ -518,9 +518,9 @@ u16_t net_calc_chksum_ipv4(struct net_pkt *pkt)
 {
 	u16_t sum;
 
-	sum = calc_chksum(0, pkt->buffer->data, NET_IPV4H_LEN);
+	sum = calc_chksum(0, pkt->buffer->data, net_pkt_ip_hdr_len(pkt));
 
-	sum = (sum == 0) ? 0xffff : htons(sum);
+	sum = (sum == 0U) ? 0xffff : htons(sum);
 
 	return ~sum;
 }

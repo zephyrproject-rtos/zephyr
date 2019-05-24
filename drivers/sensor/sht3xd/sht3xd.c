@@ -127,15 +127,15 @@ static int sht3xd_channel_get(struct device *dev,
 	 */
 	if (chan == SENSOR_CHAN_AMBIENT_TEMP) {
 		/* val = -45 + 175 * sample / (2^16 -1) */
-		tmp = 175 * (u64_t)data->t_sample;
+		tmp = (u64_t)data->t_sample * 175U;
 		val->val1 = (s32_t)(tmp / 0xFFFF) - 45;
-		val->val2 = (1000000 * (tmp % 0xFFFF)) / 0xFFFF;
+		val->val2 = ((tmp % 0xFFFF) * 1000000U) / 0xFFFF;
 	} else if (chan == SENSOR_CHAN_HUMIDITY) {
 		/* val = 100 * sample / (2^16 -1) */
-		u32_t tmp2 = 100 * (u32_t)data->rh_sample;
+		u32_t tmp2 = (u32_t)data->rh_sample * 100U;
 		val->val1 = tmp2 / 0xFFFF;
 		/* x * 100000 / 65536 == x * 15625 / 1024 */
-		val->val2 = (tmp2 % 0xFFFF) * 15625 / 1024;
+		val->val2 = (tmp2 % 0xFFFF) * 15625U / 1024;
 	} else {
 		return -ENOTSUP;
 	}

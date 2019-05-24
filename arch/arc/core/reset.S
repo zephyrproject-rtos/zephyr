@@ -49,7 +49,16 @@ SECTION_FUNC(TEXT,__start)
 	 */
 	mov r0, 0
 	kflag r0
-
+#if defined(CONFIG_BOOT_TIME_MEASUREMENT) && defined(CONFIG_ARCV2_TIMER)
+	/*
+	 * ARCV2 timer (timer0) is a free run timer, let it start to count
+	 * here.
+	 */
+	mov r0, 0xffffffff
+	sr r0, [_ARC_V2_TMR0_LIMIT]
+	mov r0, 0
+	sr r0, [_ARC_V2_TMR0_COUNT]
+#endif
 	/* interrupt related init */
 	sr r0, [_ARC_V2_AUX_IRQ_ACT]
 	sr r0, [_ARC_V2_AUX_IRQ_CTRL]
@@ -57,7 +66,7 @@ SECTION_FUNC(TEXT,__start)
 
 	/* \todo: MPU init, gp for small data? */
 
-#if CONFIG_USERSPACE
+#if defined(CONFIG_USERSPACE)
 	lr r0, [_ARC_V2_STATUS32]
 	bset r0, r0, _ARC_V2_STATUS32_US_BIT
 	kflag r0
@@ -90,7 +99,7 @@ done_cache_invalidate:
 
 #if defined(CONFIG_SYS_POWER_DEEP_SLEEP_STATES) && \
 	!defined(CONFIG_BOOTLOADER_CONTEXT_RESTORE)
-        jl @sys_resume_from_deep_sleep
+        jl @_sys_resume_from_deep_sleep
 #endif
 
 #ifdef CONFIG_INIT_STACKS

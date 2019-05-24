@@ -26,7 +26,7 @@
 /* forward declaration */
 
 /* Initial thread stack frame, such that everything is laid out as expected
- * for when _Swap() switches to it for the first time.
+ * for when z_swap() switches to it for the first time.
  */
 struct _x86_initial_frame {
 	u32_t swap_retval;
@@ -58,7 +58,7 @@ struct _x86_initial_frame {
  * @param priority thread priority
  * @param options thread options: K_ESSENTIAL, K_FP_REGS, K_SSE_REGS
  */
-void _new_thread(struct k_thread *thread, k_thread_stack_t *stack,
+void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 		 size_t stack_size, k_thread_entry_t entry,
 		 void *parameter1, void *parameter2, void *parameter3,
 		 int priority, unsigned int options)
@@ -67,15 +67,15 @@ void _new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	char *stack_high;
 	struct _x86_initial_frame *initial_frame;
 
-	_ASSERT_VALID_PRIO(priority, entry);
-	stack_buf = K_THREAD_STACK_BUFFER(stack);
-	_new_thread_init(thread, stack_buf, stack_size, priority, options);
+	Z_ASSERT_VALID_PRIO(priority, entry);
+	stack_buf = Z_THREAD_STACK_BUFFER(stack);
+	z_new_thread_init(thread, stack_buf, stack_size, priority, options);
 
 #if CONFIG_X86_USERSPACE
-	if ((options & K_USER) == 0) {
+	if ((options & K_USER) == 0U) {
 		/* Running in kernel mode, kernel stack region is also a guard
 		 * page */
-		_x86_mmu_set_flags(&z_x86_kernel_pdpt,
+		z_x86_mmu_set_flags(&z_x86_kernel_pdpt,
 				   (void *)(stack_buf - MMU_PAGE_SIZE),
 				   MMU_PAGE_SIZE, MMU_ENTRY_NOT_PRESENT,
 				   MMU_PTE_P_MASK);
@@ -83,16 +83,16 @@ void _new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 #endif /* CONFIG_X86_USERSPACE */
 
 #if CONFIG_X86_STACK_PROTECTION
-	_x86_mmu_set_flags(&z_x86_kernel_pdpt, stack, MMU_PAGE_SIZE,
+	z_x86_mmu_set_flags(&z_x86_kernel_pdpt, stack, MMU_PAGE_SIZE,
 			   MMU_ENTRY_NOT_PRESENT, MMU_PTE_P_MASK);
 #endif
 
 	stack_high = (char *)STACK_ROUND_DOWN(stack_buf + stack_size);
 
-	/* Create an initial context on the stack expected by _Swap() */
+	/* Create an initial context on the stack expected by z_swap() */
 	initial_frame = (struct _x86_initial_frame *)
 		(stack_high - sizeof(struct _x86_initial_frame));
-	/* _thread_entry() arguments */
+	/* z_thread_entry() arguments */
 	initial_frame->entry = entry;
 	initial_frame->p1 = parameter1;
 	initial_frame->p2 = parameter2;
@@ -100,31 +100,31 @@ void _new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	/* initial EFLAGS; only modify IF and IOPL bits */
 	initial_frame->eflags = (EflagsGet() & ~EFLAGS_MASK) | EFLAGS_INITIAL;
 #ifdef CONFIG_X86_USERSPACE
-	if ((options & K_USER) != 0) {
+	if ((options & K_USER) != 0U) {
 #ifdef _THREAD_WRAPPER_REQUIRED
-		initial_frame->edi = (u32_t)_arch_user_mode_enter;
-		initial_frame->thread_entry = _x86_thread_entry_wrapper;
+		initial_frame->edi = (u32_t)z_arch_user_mode_enter;
+		initial_frame->thread_entry = z_x86_thread_entry_wrapper;
 #else
-		initial_frame->thread_entry = _arch_user_mode_enter;
+		initial_frame->thread_entry = z_arch_user_mode_enter;
 #endif /* _THREAD_WRAPPER_REQUIRED */
 	} else
 #endif /* CONFIG_X86_USERSPACE */
 	{
 #ifdef _THREAD_WRAPPER_REQUIRED
-		initial_frame->edi = (u32_t)_thread_entry;
-		initial_frame->thread_entry = _x86_thread_entry_wrapper;
+		initial_frame->edi = (u32_t)z_thread_entry;
+		initial_frame->thread_entry = z_x86_thread_entry_wrapper;
 #else
-		initial_frame->thread_entry = _thread_entry;
+		initial_frame->thread_entry = z_thread_entry;
 #endif
 	}
-	/* Remaining _x86_initial_frame members can be garbage, _thread_entry()
+	/* Remaining _x86_initial_frame members can be garbage, z_thread_entry()
 	 * doesn't care about their state when execution begins
 	 */
 	thread->callee_saved.esp = (unsigned long)initial_frame;
 
-#if defined(CONFIG_FP_SHARING)
+#if defined(CONFIG_LAZY_FP_SHARING)
 	thread->arch.excNestCount = 0;
-#endif /* CONFIG_FP_SHARING */
+#endif /* CONFIG_LAZY_FP_SHARING */
 }
 
 #ifdef CONFIG_X86_USERSPACE
@@ -136,7 +136,7 @@ void _x86_swap_update_page_tables(struct k_thread *incoming,
 			   ROUND_UP(outgoing->stack_info.size, MMU_PAGE_SIZE));
 
 	/* Userspace can now access the incoming thread's stack */
-	_x86_mmu_set_flags(&USER_PDPT,
+	z_x86_mmu_set_flags(&USER_PDPT,
 			   (void *)incoming->stack_info.start,
 			   ROUND_UP(incoming->stack_info.size, MMU_PAGE_SIZE),
 			   MMU_ENTRY_PRESENT | K_MEM_PARTITION_P_RW_U_RW,
@@ -164,13 +164,13 @@ void _x86_swap_update_page_tables(struct k_thread *incoming,
 		 /* Ensure that the outgoing mem domain configuration
 		  * is set back to default state.
 		  */
-		_arch_mem_domain_destroy(outgoing->mem_domain_info.mem_domain);
-		_arch_mem_domain_configure(incoming);
+		z_arch_mem_domain_destroy(outgoing->mem_domain_info.mem_domain);
+		z_arch_mem_domain_configure(incoming);
 	}
 }
 
 
-FUNC_NORETURN void _arch_user_mode_enter(k_thread_entry_t user_entry,
+FUNC_NORETURN void z_arch_user_mode_enter(k_thread_entry_t user_entry,
 					 void *p1, void *p2, void *p3)
 {
 	u32_t stack_end;
@@ -182,7 +182,7 @@ FUNC_NORETURN void _arch_user_mode_enter(k_thread_entry_t user_entry,
 				     _current->stack_info.size);
 
 	/* Set up the kernel stack used during privilege elevation */
-	_x86_mmu_set_flags(&z_x86_kernel_pdpt,
+	z_x86_mmu_set_flags(&z_x86_kernel_pdpt,
 			   (void *)(_current->stack_info.start - MMU_PAGE_SIZE),
 			   MMU_PAGE_SIZE,
 			   (MMU_ENTRY_PRESENT | MMU_ENTRY_WRITE |
@@ -190,18 +190,18 @@ FUNC_NORETURN void _arch_user_mode_enter(k_thread_entry_t user_entry,
 			   (MMU_PTE_P_MASK | MMU_PTE_RW_MASK |
 			    MMU_PTE_US_MASK));
 
-	_x86_userspace_enter(user_entry, p1, p2, p3, stack_end,
+	z_x86_userspace_enter(user_entry, p1, p2, p3, stack_end,
 			     _current->stack_info.start);
 	CODE_UNREACHABLE;
 }
 
 
 /* Implemented in userspace.S */
-extern void _x86_syscall_entry_stub(void);
+extern void z_x86_syscall_entry_stub(void);
 
 /* Syscalls invoked by 'int 0x80'. Installed in the IDT at DPL=3 so that
  * userspace can invoke it.
  */
-NANO_CPU_INT_REGISTER(_x86_syscall_entry_stub, -1, -1, 0x80, 3);
+NANO_CPU_INT_REGISTER(z_x86_syscall_entry_stub, -1, -1, 0x80, 3);
 
 #endif /* CONFIG_X86_USERSPACE */

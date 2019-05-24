@@ -23,8 +23,9 @@ config MULTITHREADING
 	  since the main thread cannot pend, it being the only thread in the
 	  system.
 
-	  Many drivers and subsystems will not work with this option; use only
-	  when you REALLY know what you are doing.
+	  Many drivers and subsystems will not work with this option
+	  set to 'n'; disable only when you REALLY know what you are
+	  doing.
 
 config NUM_COOP_PRIORITIES
 	int "Number of coop priorities" if MULTITHREADING
@@ -147,7 +148,7 @@ config SCHED_CPU_MASK
 config MAIN_STACK_SIZE
 	int "Size of stack for initialization and main thread"
 	default 2048 if COVERAGE_GCOV
-	default 512 if ZTEST
+	default 512 if ZTEST && !RISCV32
 	default 1024
 	help
 	  When the initialization is complete, the thread executing it then
@@ -158,7 +159,7 @@ config MAIN_STACK_SIZE
 
 config IDLE_STACK_SIZE
 	int "Size of stack for idle thread"
-	default 512 if COVERAGE_GCOV
+	default 2048 if COVERAGE_GCOV
 	default 1024 if XTENSA
 	default 512 if RISCV32
 	default 320 if ARC || (ARM && CPU_HAS_FPU)
@@ -195,7 +196,7 @@ config THREAD_USERSPACE_LOCAL_DATA
 config THREAD_USERSPACE_LOCAL_DATA_ARCH_DEFER_SETUP
 	bool
 	depends on THREAD_USERSPACE_LOCAL_DATA
-	default y if ARCH="arc"
+	default y if ARC || ARM
 
 config ERRNO
 	bool "Enable errno support"
@@ -365,6 +366,7 @@ endmenu
 menu "Work Queue Options"
 config SYSTEM_WORKQUEUE_STACK_SIZE
 	int "System workqueue stack size"
+	default 4096 if COVERAGE
 	default 1024
 
 config SYSTEM_WORKQUEUE_PRIORITY
@@ -379,6 +381,7 @@ config SYSTEM_WORKQUEUE_PRIORITY
 
 config OFFLOAD_WORKQUEUE_STACK_SIZE
 	int "Workqueue stack size for thread offload requests"
+	default 4096 if COVERAGE
 	default 1024
 
 config OFFLOAD_WORKQUEUE_PRIORITY
@@ -485,6 +488,15 @@ config HEAP_MEM_POOL_SIZE
 	  dynamically allocating memory using k_malloc(). Supported values
 	  are: 256, 1024, 4096, and 16384. A size of zero means that no
 	  heap memory pool is defined.
+
+config HEAP_MEM_POOL_MIN_SIZE
+	int "The smallest blocks in the heap memory pool (in bytes)"
+	depends on HEAP_MEM_POOL_SIZE != 0
+	default 64
+	help
+	  This option specifies the size of the smallest block in the pool.
+	  Option must be a power of 2 and lower than or equal to the size
+	  of the entire pool.
 endmenu
 
 config ARCH_HAS_CUSTOM_SWAP_TO_MAIN
@@ -544,6 +556,8 @@ config SYS_CLOCK_TICKS_PER_SEC
 	  this config variable specifies the minimum available timing
 	  granularity, not necessarily the number or frequency of
 	  interrupts delivered to the kernel.
+
+	  A value of 0 completely disables timer support in the kernel.
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	int "System clock's h/w timer frequency"
@@ -635,6 +649,7 @@ config EXECUTE_XOR_WRITE
 config STACK_POINTER_RANDOM
 	int "Initial stack pointer randomization bounds"
 	depends on !STACK_GROWS_UP
+	depends on TEST_RANDOM_GENERATOR || ENTROPY_HAS_DRIVER
 	default 0
 	help
 	  This option performs a limited form of Address Space Layout
@@ -651,6 +666,17 @@ config STACK_POINTER_RANDOM
 	  This is currently only implemented for systems whose stack pointers
 	  grow towards lower memory addresses.
 
+config BOUNDS_CHECK_BYPASS_MITIGATION
+	bool "Enable bounds check bypass mitigations for speculative execution"
+	depends on USERSPACE
+	help
+	  Untrusted parameters from user mode may be used in system calls to
+	  index arrays during speculative execution, also known as the Spectre
+	  V1 vulnerability. When enabled, various macros defined in
+	  misc/speculation.h will insert fence instructions or other appropriate
+	  mitigations after bounds checking any array index parameters passed
+	  in from untrusted sources (user mode threads). When disabled, these
+	  macros do nothing.
 endmenu
 
 config MAX_DOMAIN_PARTITIONS
@@ -694,6 +720,17 @@ config MP_NUM_CPUS
 	help
 	  Number of multiprocessing-capable cores available to the
 	  multicpu API and SMP features.
+
+config SCHED_IPI_SUPPORTED
+	bool "Architecture supports broadcast interprocessor interrupts"
+	help
+	  True if the architecture supports a call to
+	  z_arch_sched_ipi() to broadcast an interrupt that will call
+	  z_sched_ipi() on other CPUs in the system.  Required for
+	  k_thread_abort() to operate with reasonable latency
+	  (otherwise we might have to wait for the other thread to
+	  take an interrupt, which can be arbitrarily far in the
+	  future).
 
 endmenu
 

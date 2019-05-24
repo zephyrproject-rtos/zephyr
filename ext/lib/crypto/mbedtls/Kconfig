@@ -140,10 +140,9 @@ config MBEDTLS_HEAP_SIZE
 config APP_LINK_WITH_MBEDTLS
 	bool "Link 'app' with MBEDTLS"
 	default y
-	depends on MBEDTLS
 	help
 	  Add MBEDTLS header files to the 'app' include path. It may be
 	  disabled if the include paths for MBEDTLS are causing aliasing
 	  issues for 'app'.
 
-endif
+endif # MBEDTLS

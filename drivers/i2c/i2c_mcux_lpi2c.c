@@ -116,6 +116,14 @@ static int mcux_lpi2c_transfer(struct device *dev, struct i2c_msg *msgs,
 
 		/* Initialize the transfer descriptor */
 		transfer.flags = mcux_lpi2c_convert_flags(msgs->flags);
+
+		/* Prevent the controller to send a start condition between
+		 * messages, except if explicitely requested.
+		 */
+		if (i != 0 && !(msgs->flags & I2C_MSG_RESTART)) {
+			transfer.flags |= kLPI2C_TransferNoStartFlag;
+		}
+
 		transfer.slaveAddress = addr;
 		transfer.direction = (msgs->flags & I2C_MSG_READ)
 			? kLPI2C_Read : kLPI2C_Write;
@@ -189,7 +197,7 @@ static int mcux_lpi2c_init(struct device *dev)
 	LPI2C_MasterTransferCreateHandle(base, &data->handle,
 			mcux_lpi2c_master_transfer_callback, dev);
 
-	bitrate_cfg = _i2c_map_dt_bitrate(config->bitrate);
+	bitrate_cfg = i2c_map_dt_bitrate(config->bitrate);
 
 	error = mcux_lpi2c_configure(dev, I2C_MODE_MASTER | bitrate_cfg);
 	if (error) {
@@ -205,6 +213,34 @@ static const struct i2c_driver_api mcux_lpi2c_driver_api = {
 	.configure = mcux_lpi2c_configure,
 	.transfer = mcux_lpi2c_transfer,
 };
+
+#ifdef CONFIG_I2C_0
+static void mcux_lpi2c_config_func_0(struct device *dev);
+
+static const struct mcux_lpi2c_config mcux_lpi2c_config_0 = {
+	.base = (LPI2C_Type *)DT_I2C_MCUX_LPI2C_0_BASE_ADDRESS,
+	.clock_name = DT_I2C_MCUX_LPI2C_0_CLOCK_NAME,
+	.clock_subsys =
+		(clock_control_subsys_t) DT_I2C_MCUX_LPI2C_0_CLOCK_SUBSYS,
+	.irq_config_func = mcux_lpi2c_config_func_0,
+	.bitrate = DT_I2C_MCUX_LPI2C_0_BITRATE,
+};
+
+static struct mcux_lpi2c_data mcux_lpi2c_data_0;
+
+DEVICE_AND_API_INIT(mcux_lpi2c_0, CONFIG_I2C_0_NAME, &mcux_lpi2c_init,
+		    &mcux_lpi2c_data_0, &mcux_lpi2c_config_0,
+		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    &mcux_lpi2c_driver_api);
+
+static void mcux_lpi2c_config_func_0(struct device *dev)
+{
+	IRQ_CONNECT(DT_I2C_MCUX_LPI2C_0_IRQ, DT_I2C_MCUX_LPI2C_0_IRQ_PRI,
+		    mcux_lpi2c_isr, DEVICE_GET(mcux_lpi2c_0), 0);
+
+	irq_enable(DT_I2C_MCUX_LPI2C_0_IRQ);
+}
+#endif /* CONFIG_I2C_0 */
 
 #ifdef CONFIG_I2C_1
 static void mcux_lpi2c_config_func_1(struct device *dev);

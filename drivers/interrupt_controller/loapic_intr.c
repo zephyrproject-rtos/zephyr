@@ -47,7 +47,7 @@
  * local APIC have been extended and/or modified in the local xAPIC.
  *
  * This driver contains three routines for use.  They are:
- * _loapic_init() initializes the Local APIC for the interrupt mode chosen.
+ * z_loapic_init() initializes the Local APIC for the interrupt mode chosen.
  * _loapic_enable()/disable() enables / disables the Local APIC.
  *
  * Local APIC is used in the Virtual Wire Mode: delivery mode ExtINT.
@@ -148,24 +148,6 @@
 #define MODE_STARTUP 0x6   /* delivery mode: StartUp */
 #define STATUS_PEND 0x1000 /* delivery status: Pend */
 
-/* MP Configuration Table Entries */
-
-#define MP_ENTRY_CPU 0	 /* Entry Type: CPU */
-#define MP_ENTRY_BUS 1	 /* Entry Type: BUS */
-#define MP_ENTRY_IOAPIC 2      /* Entry Type: IO APIC */
-#define MP_ENTRY_IOINTERRUPT 3 /* Entry Type: IO INT */
-#define MP_ENTRY_LOINTERRUPT 4 /* Entry Type: LO INT */
-
-/* Extended MP Configuration Table Entries */
-
-#define EXT_MP_ENTRY_SASM 128  /* Entry Type: System Address Space Map */
-#define EXT_MP_ENTRY_BHD 129   /* Entry Type: Bus Hierarchy Descriptor */
-#define EXT_MP_ENTRY_CBASM 130 /* Entry Type: Comp Address Space Modifier */
-
-/* MP Configuration Table CPU Flags */
-
-#define MP_CPU_FLAGS_BP 0x02
-
 /* IMCR related bits */
 
 #define IMCR_ADRS 0x22       /* IMCR addr reg */
@@ -216,7 +198,7 @@ static ALWAYS_INLINE void LOAPIC_WRITE(mem_addr_t addr, u32_t data)
  *
  */
 
-static int _loapic_init(struct device *unused)
+static int loapic_init(struct device *unused)
 {
 	ARG_UNUSED(unused);
 	s32_t loApicMaxLvt; /* local APIC Max LVT */
@@ -275,7 +257,7 @@ static int _loapic_init(struct device *unused)
 
 	/* discard a pending interrupt if any */
 #if CONFIG_EOI_FORWARDING_BUG
-	_lakemont_eoi();
+	z_lakemont_eoi();
 #else
 	LOAPIC_WRITE(LOAPIC_EOI, 0);
 #endif
@@ -292,7 +274,7 @@ static int _loapic_init(struct device *unused)
  * @return N/A
  */
 
-void _loapic_int_vec_set(unsigned int irq, /* IRQ number of the interrupt */
+void z_loapic_int_vec_set(unsigned int irq, /* IRQ number of the interrupt */
 				  unsigned int vector /* vector to copy into the LVT */
 				  )
 {
@@ -331,7 +313,7 @@ void _loapic_int_vec_set(unsigned int irq, /* IRQ number of the interrupt */
  * @return N/A
  */
 
-void _loapic_irq_enable(unsigned int irq)
+void z_loapic_irq_enable(unsigned int irq)
 {
 	unsigned int oldLevel;   /* previous interrupt lock level */
 
@@ -360,7 +342,7 @@ void _loapic_irq_enable(unsigned int irq)
  * @return N/A
  */
 
-void _loapic_irq_disable(unsigned int irq)
+void z_loapic_irq_disable(unsigned int irq)
 {
 	unsigned int oldLevel;   /* previous interrupt lock level */
 
@@ -442,7 +424,7 @@ static int loapic_suspend(struct device *port)
 			 */
 			lvt = LOAPIC_READ(LOAPIC_TIMER + (loapic_irq * 0x10));
 
-			if ((lvt & LOAPIC_LVT_MASKED) == 0) {
+			if ((lvt & LOAPIC_LVT_MASKED) == 0U) {
 				sys_bitfield_set_bit((mem_addr_t)loapic_suspend_buf,
 					loapic_irq);
 			}
@@ -459,20 +441,20 @@ int loapic_resume(struct device *port)
 	ARG_UNUSED(port);
 
 	/* Assuming all loapic device registers lose their state, the call to
-	 * _loapic_init(), should bring all the registers to a sane state.
+	 * z_loapic_init(), should bring all the registers to a sane state.
 	 */
-	_loapic_init(NULL);
+	loapic_init(NULL);
 
 	for (loapic_irq = 0; loapic_irq < LOAPIC_IRQ_COUNT; loapic_irq++) {
 
 		if (_irq_to_interrupt_vector[LOAPIC_IRQ_BASE + loapic_irq]) {
 			/* Configure vector and enable the required ones*/
-			_loapic_int_vec_set(loapic_irq,
+			z_loapic_int_vec_set(loapic_irq,
 				_irq_to_interrupt_vector[LOAPIC_IRQ_BASE + loapic_irq]);
 
 			if (sys_bitfield_test_bit((mem_addr_t) loapic_suspend_buf,
 							loapic_irq)) {
-				_loapic_irq_enable(loapic_irq);
+				z_loapic_irq_enable(loapic_irq);
 			}
 		}
 	}
@@ -486,33 +468,38 @@ int loapic_resume(struct device *port)
 * the *context may include IN data or/and OUT data
 */
 static int loapic_device_ctrl(struct device *port, u32_t ctrl_command,
-			      void *context)
+			      void *context, device_pm_cb cb, void *arg)
 {
+	int ret = 0;
+
 	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
 		if (*((u32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
-			return loapic_suspend(port);
+			ret = loapic_suspend(port);
 		} else if (*((u32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
-			return loapic_resume(port);
+			ret = loapic_resume(port);
 		}
 	} else if (ctrl_command == DEVICE_PM_GET_POWER_STATE) {
 		*((u32_t *)context) = loapic_device_power_state;
-		return 0;
 	}
 
-	return 0;
+	if (cb) {
+		cb(port, ret, context, arg);
+	}
+
+	return ret;
 }
 
-SYS_DEVICE_DEFINE("loapic", _loapic_init, loapic_device_ctrl, PRE_KERNEL_1,
+SYS_DEVICE_DEFINE("loapic", loapic_init, loapic_device_ctrl, PRE_KERNEL_1,
 		  CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 #else
-SYS_INIT(_loapic_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_INIT(loapic_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 #endif   /* CONFIG_DEVICE_POWER_MANAGEMENT */
 
 
 #if CONFIG_LOAPIC_SPURIOUS_VECTOR
-extern void _loapic_spurious_handler(void);
+extern void z_loapic_spurious_handler(void);
 
-NANO_CPU_INT_REGISTER(_loapic_spurious_handler, NANO_SOFT_IRQ,
+NANO_CPU_INT_REGISTER(z_loapic_spurious_handler, NANO_SOFT_IRQ,
 		      LOAPIC_SPURIOUS_VECTOR_ID >> 4,
 		      LOAPIC_SPURIOUS_VECTOR_ID, 0);
 #endif

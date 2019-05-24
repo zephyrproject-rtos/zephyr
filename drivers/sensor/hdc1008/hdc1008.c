@@ -75,16 +75,16 @@ static int hdc1008_channel_get(struct device *dev,
 	 */
 	if (chan == SENSOR_CHAN_AMBIENT_TEMP) {
 		/* val = -40 + 165 * sample / 2^16 */
-		tmp = 165 * (u64_t)drv_data->t_sample;
+		tmp = (u64_t)drv_data->t_sample * 165U;
 		val->val1 = (s32_t)(tmp >> 16) - 40;
-		val->val2 = (1000000 * (tmp & 0xFFFF)) >> 16;
+		val->val2 = ((tmp & 0xFFFF) * 1000000U) >> 16;
 	} else if (chan == SENSOR_CHAN_HUMIDITY) {
 		/* val = 100 * sample / 2^16 */
 		u32_t tmp2;
-		tmp2 = 100 * (u32_t)drv_data->rh_sample;
+		tmp2 = (u32_t)drv_data->rh_sample * 100U;
 		val->val1 = tmp2 >> 16;
 		/* x * 1000000 / 65536 == x * 15625 / 1024 */
-		val->val2 = (15625 * (tmp2 & 0xFFFF)) >> 10;
+		val->val2 = ((tmp2 & 0xFFFF) * 15625U) >> 10;
 	} else {
 		return -ENOTSUP;
 	}

@@ -13,6 +13,8 @@
 #error "Include metal/sys.h instead of metal/generic/@PROJECT_MACHINE@/sys.h"
 #endif
 
+#include <metal/system/@PROJECT_SYSTEM@/xlnx_common/sys.h>
+
 #ifndef __METAL_GENERIC_MICROBLAZE_SYS__H__
 #define __METAL_GENERIC_MICROBLAZE_SYS__H__
 
@@ -23,6 +25,10 @@ extern "C" {
 #endif
 
 #ifdef METAL_INTERNAL
+
+#ifndef XLNX_MAXIRQS
+#define XLNX_MAXIRQS 32
+#endif
 
 void metal_weak sys_irq_enable(unsigned int vector);
 

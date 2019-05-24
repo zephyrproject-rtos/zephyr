@@ -114,7 +114,7 @@
 			};
 		};
 
-		idwg: watchdog@40003000 {
+		iwdg: watchdog@40003000 {
 			compatible = "st,stm32-watchdog";
 			reg = <0x40003000 0x400>;
 			label = "IWDG";
@@ -137,15 +137,6 @@
 			interrupts = <38 0>;
 			status = "disabled";
 			label = "UART_2";
-		};
-
-		uart4: serial@40004c00 {
-			compatible = "st,stm32-usart", "st,stm32-uart";
-			reg = <0x40004C00 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00080000>;
-			interrupts = <52 0>;
-			status = "disabled";
-			label = "UART_4";
 		};
 
 		usart6: serial@40011400 {
@@ -367,6 +358,15 @@
 			prescaler = <32768>;
 			status = "disabled";
 			label = "RTC_0";
+		};
+
+		adc1: adc@40012000 {
+			compatible = "st,stm32-adc";
+			reg = <0x40012000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000100>;
+			interrupts = <18 0>;
+			status = "disabled";
+			label = "ADC_1";
 		};
 	};
 

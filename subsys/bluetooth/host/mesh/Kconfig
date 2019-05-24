@@ -37,6 +37,7 @@ if BT_CONN
 # Virtual option enabled whenever any Proxy protocol is needed
 config BT_MESH_PROXY
 	bool
+	select BT_GATT_DYNAMIC_DB
 
 config BT_MESH_PB_GATT
 	bool "Provisioning support using GATT (PB-GATT)"

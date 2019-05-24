@@ -45,7 +45,7 @@ SECTION_VAR(BSS, saved_sp)
 #endif
 
 #if defined(CONFIG_SYS_POWER_MANAGEMENT)
-GTEXT(_sys_power_save_idle_exit)
+GTEXT(z_sys_power_save_idle_exit)
 #endif
 
 /*
@@ -81,9 +81,6 @@ IRQ stack frame layout:
   low address
 
 Registers not taken into account in the current implementation.
-          jli_base
-          ldi_base
-          ei_base
           accl
           acch
 
@@ -95,7 +92,7 @@ The context switch code adopts this standard so that it is easier to follow:
     transition from outgoing thread to incoming thread
 
 Not loading _kernel into r0 allows loading _kernel without stomping on
-the parameter in r0 in _Swap().
+the parameter in r0 in z_swap().
 
 
 ARCv2 processors have two kinds of interrupts: fast (FIRQ) and regular. The
@@ -195,7 +192,7 @@ From FIRQ:
 
   o to coop
 
-    The address of the returning instruction from _Swap() is loaded in ilink and
+    The address of the returning instruction from z_swap() is loaded in ilink and
     the saved status32 in status32_p0, taking care to adjust the interrupt lock
     state desired in status32_p0. The return value is put in r0.
 
@@ -230,44 +227,7 @@ From RIRQ:
  */
 
 SECTION_FUNC(TEXT, _isr_wrapper)
-#ifdef CONFIG_EXECUTION_BENCHMARKING
-	push_s r0
-	push_s blink
-	push_s r13
-	push_s r12
-	push r11
-	push r10
-	push r9
-	push r8
-	push r7
-	push r6
-	push r5
-	push r4
-	push_s r3
-	push_s r2
-	push_s r1
-
-	bl read_timer_start_of_isr
-
-	pop_s r1
-	pop_s r2
-	pop_s r3
-	pop r4
-	pop r5
-	pop r6
-	pop r7
-	pop r8
-	pop r9
-	pop r10
-	pop r11
-	pop_s r12
-	pop_s r13
-	pop_s blink
-	pop_s r0
-
-#endif
-
-#if CONFIG_ARC_FIRQ
+#if defined(CONFIG_ARC_FIRQ)
 #if CONFIG_RGF_NUM_BANKS == 1
 	st r0,[saved_r0]
 #endif
@@ -277,40 +237,13 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 #if CONFIG_RGF_NUM_BANKS == 1
 	bnz rirq_path
 	/* 1-register bank FIRQ handling must save registers on stack */
-	lr r0,[_ARC_V2_STATUS32_P0]
-	push_s r0
+	_create_irq_stack_frame
+	lr r0, [_ARC_V2_STATUS32_P0]
+	st_s r0, [sp, ___isf_t_status32_OFFSET]
 	mov r0,ilink
-	push_s r0
-#ifdef CONFIG_CODE_DENSITY
-	lr r0, [_ARC_V2_JLI_BASE]
-	push_s r0
-	lr r0, [_ARC_V2_LDI_BASE]
-	push_s r0
-	lr r0, [_ARC_V2_EI_BASE]
-	push_s r0
-#endif
-	mov r0,lp_count
-	push_s r0
-	lr r0, [_ARC_V2_LP_START]
-	push_s r0
-	lr r0, [_ARC_V2_LP_END]
-	push_s r0
-	push_s blink
-	push_s r13
-	push_s r12
-	push r11
-	push r10
-	push r9
-	push r8
-	push r7
-	push r6
-	push r5
-	push r4
-	push_s r3
-	push_s r2
-	push_s r1
+	st_s r0, [sp, ___isf_t_pc_OFFSET]
 	ld r0,[saved_r0]
-	push_s r0
+	st_s r0, [sp, ___isf_t_r0_OFFSET]
 	mov r3, _firq_exit
 	mov r2, _firq_enter
 	j_s [r2]
@@ -326,7 +259,6 @@ rirq_path:
 	j_s [r2]
 #endif
 #else
-
 	mov r3, _rirq_exit
 	mov r2, _rirq_enter
 	j_s [r2]
@@ -359,7 +291,7 @@ GTEXT(z_sys_trace_isr_enter)
 
 	st 0, [r1, _kernel_offset_to_idle] /* zero idle duration */
 	push_s blink
-	jl _sys_power_save_idle_exit
+	jl z_sys_power_save_idle_exit
 	pop_s blink
 
 _skip_sys_power_save_idle_exit:
@@ -375,7 +307,9 @@ _skip_sys_power_save_idle_exit:
 SECTION_FUNC(TEXT, _isr_demux)
 	push_s r3
 
-
+#ifdef CONFIG_EXECUTION_BENCHMARKING
+	bl read_timer_start_of_isr
+#endif
 	/* cannot be done before this point because we must be able to run C */
 	/* r0 is available to be stomped here, and exit_tickless_idle uses it */
 	exit_tickless_idle
@@ -383,9 +317,9 @@ SECTION_FUNC(TEXT, _isr_demux)
 
 	lr r0, [_ARC_V2_ICAUSE]
 	/* handle software triggered interrupt */
-	lr	r3, [_ARC_V2_AUX_IRQ_HINT]
-	brne	r3, r0, irq_hint_handled
-	sr	0, [_ARC_V2_AUX_IRQ_HINT]
+	lr r3, [_ARC_V2_AUX_IRQ_HINT]
+	brne r3, r0, irq_hint_handled
+	sr 0, [_ARC_V2_AUX_IRQ_HINT]
 irq_hint_handled:
 
 	sub r0, r0, 16
@@ -396,39 +330,10 @@ irq_hint_handled:
 	ld_s r1, [r0, 4] /* ISR into r1 */
 #ifdef CONFIG_EXECUTION_BENCHMARKING
 	push_s r0
-	push_s blink
-	push_s r13
-	push_s r12
-	push r11
-	push r10
-	push r9
-	push r8
-	push r7
-	push r6
-	push r5
-	push r4
-	push_s r3
-	push_s r2
 	push_s r1
-
 	bl read_timer_end_of_isr
-
 	pop_s r1
-	pop_s r2
-	pop_s r3
-	pop r4
-	pop r5
-	pop r6
-	pop r7
-	pop r8
-	pop r9
-	pop r10
-	pop r11
-	pop_s r12
-	pop_s r13
-	pop_s blink
 	pop_s r0
-
 #endif
 	jl_s.d [r1]
 	ld_s r0, [r0] /* delay slot: ISR parameter into r0  */

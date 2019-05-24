@@ -16,7 +16,7 @@ Supported DNS answers are IPv4/IPv6 addresses and CNAME.
 
 If a CNAME is received, the DNS resolver will create another DNS query.
 The number of additional queries is controlled by the
-option:`CONFIG_DNS_RESOLVER_ADDITIONAL_QUERIES` Kconfig variable.
+:option:`CONFIG_DNS_RESOLVER_ADDITIONAL_QUERIES` Kconfig variable.
 
 The multicast DNS (mDNS) client resolver support can be enabled by setting
 :option:`CONFIG_MDNS_RESOLVER` Kconfig option.
@@ -29,13 +29,13 @@ See `IETF RFC4795 <https://tools.ietf.org/html/rfc4795>`_ for more details
 about LLMNR.
 
 For more information about DNS configuration variables, see:
-:file:`subsys/net/lib/dns/Kconfig`. The DNS resolver API can be found at
-:file:`include/net/dns_resolve.h`.
+:zephyr_file:`subsys/net/lib/dns/Kconfig`. The DNS resolver API can be found at
+:zephyr_file:`include/net/dns_resolve.h`.
 
 Sample usage
 ************
 
-See sample :ref:`dns-resolve-sample` for details.
+See :ref:`DNS resolve sample application <dns-resolve-sample>` for details.
 
 API Reference
 *************

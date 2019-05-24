@@ -1,0 +1,75 @@
+/*
+ * Copyright (c) 2019 Brett Witherspoon
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <ti/cc1352r.dtsi>
+
+#define BTN_GPIO_FLAGS (GPIO_INT_ACTIVE_LOW | GPIO_PUD_PULL_UP)
+
+/ {
+	model = "TI CC1352R1 LaunchXL";
+	compatible = "ti,launchxl-cc1352r1";
+
+	aliases {
+		led0 = &led0;
+		led1 = &led1;
+		sw0 = &btn0;
+		sw1 = &btn1;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led0: led_0 {
+			gpios = <&gpio0 7 0>;
+			label = "Green LED";
+		};
+		led1: led_1 {
+			gpios = <&gpio0 6 0>;
+			label = "Red LED";
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+		btn0: btn_0 {
+			gpios = <&gpio0 15 BTN_GPIO_FLAGS>;
+			label = "Push button 1";
+		};
+		btn1: btn_1 {
+			gpios = <&gpio0 14 BTN_GPIO_FLAGS>;
+			label = "Push button 2";
+		};
+	};
+};
+
+&trng {
+	status = "ok";
+};
+
+&gpio0 {
+	status = "ok";
+};
+
+&uart0 {
+	status = "ok";
+	current-speed = <115200>;
+	tx-pin = <13>;
+	rx-pin = <12>;
+};
+
+&i2c0 {
+	status = "ok";
+	scl-pin = <4>;
+	sda-pin = <5>;
+};

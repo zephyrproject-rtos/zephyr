@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 set_ifndef(XTOOLS_TOOLCHAIN_PATH "$ENV{XTOOLS_TOOLCHAIN_PATH}")
 set(       XTOOLS_TOOLCHAIN_PATH     ${XTOOLS_TOOLCHAIN_PATH} CACHE PATH "")
 assert(    XTOOLS_TOOLCHAIN_PATH      "XTOOLS_TOOLCHAIN_PATH is not set")
@@ -5,6 +7,7 @@ assert(    XTOOLS_TOOLCHAIN_PATH      "XTOOLS_TOOLCHAIN_PATH is not set")
 set(TOOLCHAIN_HOME ${XTOOLS_TOOLCHAIN_PATH})
 
 set(COMPILER gcc)
+set(LINKER ld)
 
 # Choose one of the toolchains in 'TOOLCHAIN_HOME' at random to use as
 # a 'generic' toolchain until we know for sure which toolchain we

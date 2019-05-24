@@ -28,7 +28,7 @@ struct kinetis_uid {
 	u32_t id[HWINFO_DEVICE_ID_LENGTH_TOTAL];
 };
 
-ssize_t _impl_hwinfo_get_device_id(u8_t *buffer, size_t length)
+ssize_t z_impl_hwinfo_get_device_id(u8_t *buffer, size_t length)
 {
 	struct kinetis_uid dev_id;
 

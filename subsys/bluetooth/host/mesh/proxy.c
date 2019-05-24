@@ -91,7 +91,7 @@ static struct bt_mesh_proxy_client {
 } clients[CONFIG_BT_MAX_CONN] = {
 	[0 ... (CONFIG_BT_MAX_CONN - 1)] = {
 #if defined(CONFIG_BT_MESH_GATT_PROXY)
-		.send_beacons = _K_WORK_INITIALIZER(proxy_send_beacons),
+		.send_beacons = Z_WORK_INITIALIZER(proxy_send_beacons),
 #endif
 	},
 };
@@ -660,7 +660,7 @@ int bt_mesh_proxy_prov_enable(void)
 	return 0;
 }
 
-int bt_mesh_proxy_prov_disable(void)
+int bt_mesh_proxy_prov_disable(bool disconnect)
 {
 	int i;
 
@@ -680,11 +680,20 @@ int bt_mesh_proxy_prov_disable(void)
 	for (i = 0; i < ARRAY_SIZE(clients); i++) {
 		struct bt_mesh_proxy_client *client = &clients[i];
 
-		if (client->conn && client->filter_type == PROV) {
+		if (!client->conn || client->filter_type != PROV) {
+			continue;
+		}
+
+		if (disconnect) {
+			bt_conn_disconnect(client->conn,
+					   BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+		} else {
 			bt_mesh_pb_gatt_close(client->conn);
 			client->filter_type = NONE;
 		}
 	}
+
+	bt_mesh_adv_update();
 
 	return 0;
 }

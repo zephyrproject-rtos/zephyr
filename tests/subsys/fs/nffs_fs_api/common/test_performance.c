@@ -63,7 +63,7 @@ void test_performance(void)
 
 	delta = k_uptime_delta_32(&reftime);
 	printk("Created %d files in %d.%03d seconds\n", TEST_NUM_FILES,
-	       delta / 1000, delta % 1000);
+	       delta / 1000U, delta % 1000);
 
 	/* 2. Unlink files benchmark */
 	printk("2. Unlinking files...\n");
@@ -78,7 +78,7 @@ void test_performance(void)
 
 	delta = k_uptime_delta_32(&reftime);
 	printk("Unlinked %d files in %d.%03d seconds\n", TEST_NUM_FILES,
-	       delta / 1000, delta % 1000);
+	       delta / 1000U, delta % 1000);
 
 	/* Format to start on clean flash */
 	rc = nffs_format_full(area_descs);
@@ -101,7 +101,7 @@ void test_performance(void)
 	zassert_equal(rc, 0, "cannot close file");
 
 	delta = k_uptime_delta_32(&reftime);
-	printk("Written %d bytes in %d.%03d seconds\n", i, delta / 1000,
+	printk("Written %d bytes in %d.%03d seconds\n", i, delta / 1000U,
 	       delta % 1000);
 
 	/* 4. Read file benchmark */
@@ -120,7 +120,7 @@ void test_performance(void)
 	zassert_equal(rc, 0, "cannot close file");
 
 	delta = k_uptime_delta_32(&reftime);
-	printk("Read %d bytes in %d.%03d seconds\n", i, delta / 1000,
+	printk("Read %d bytes in %d.%03d seconds\n", i, delta / 1000U,
 	       delta % 1000);
 
 	/* Format to start on clean flash */
@@ -145,7 +145,7 @@ void test_performance(void)
 	zassert_equal(rc, 0, "cannot close file");
 
 	delta = k_uptime_delta_32(&reftime);
-	printk("Written %d bytes in %d.%03d seconds\n", i, delta / 1000,
+	printk("Written %d bytes in %d.%03d seconds\n", i, delta / 1000U,
 	       delta % 1000);
 
 	/* 6. Read file benchmark */
@@ -165,6 +165,6 @@ void test_performance(void)
 	zassert_equal(rc, 0, "cannot close file");
 
 	delta = k_uptime_delta_32(&reftime);
-	printk("Read %d bytes in %d.%03d seconds\n", i, delta / 1000,
+	printk("Read %d bytes in %d.%03d seconds\n", i, delta / 1000U,
 	       delta % 1000);
 }

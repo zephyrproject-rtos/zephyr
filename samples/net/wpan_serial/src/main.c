@@ -145,22 +145,16 @@ static int slip_process_byte(unsigned char c)
 #endif
 
 	if (!pkt_curr) {
-		pkt_curr = net_pkt_get_reserve_rx(K_NO_WAIT);
+		pkt_curr = net_pkt_rx_alloc_with_buffer(NULL, 256,
+							AF_UNSPEC, 0,
+							K_NO_WAIT);
 		if (!pkt_curr) {
 			LOG_ERR("No more buffers");
 			return 0;
 		}
-		buf = net_pkt_get_frag(pkt_curr, K_NO_WAIT);
-		if (!buf) {
-			LOG_ERR("No more buffers");
-			net_pkt_unref(pkt_curr);
-			return 0;
-		}
-		net_pkt_frag_insert(pkt_curr, buf);
-	} else {
-		buf = net_buf_frag_last(pkt_curr->frags);
 	}
 
+	buf = net_buf_frag_last(pkt_curr->buffer);
 	if (!net_buf_tailroom(buf)) {
 		LOG_ERR("No more buf space: buf %p len %u", buf, buf->len);
 
@@ -221,34 +215,26 @@ static void interrupt_handler(struct device *dev)
 static void send_data(u8_t *cfg, u8_t *data, size_t len)
 {
 	struct net_pkt *pkt;
-	struct net_buf *buf;
 
-	pkt = net_pkt_get_reserve_rx(K_NO_WAIT);
+	pkt = net_pkt_alloc_with_buffer(NULL, len + 5,
+					AF_UNSPEC, 0, K_NO_WAIT);
 	if (!pkt) {
 		LOG_DBG("No pkt available");
 		return;
 	}
 
-	buf = net_pkt_get_frag(pkt, K_NO_WAIT);
-	if (!buf) {
-		LOG_DBG("No fragment available");
-		net_pkt_unref(pkt);
-		return;
-	}
-
-	net_pkt_frag_insert(pkt, buf);
-
-	LOG_DBG("queue pkt %p buf %p len %u", pkt, buf, len);
+	LOG_DBG("queue pkt %p len %u", pkt, len);
 
 	/* Add configuration id */
-	memcpy(net_buf_add(buf, 2), cfg, 2);
-
-	memcpy(net_buf_add(buf, len), data, len);
+	net_pkt_write(pkt, cfg, 2);
+	net_pkt_write(pkt, data, len);
 
 	/* simulate LQI */
-	net_buf_add(buf, 1);
+	net_pkt_skip(pkt, 1);
 	/* simulate FCS */
-	net_buf_add(buf, 2);
+	net_pkt_skip(pkt, 2);
+
+	net_pkt_set_overwrite(pkt, true);
 
 	k_fifo_put(&tx_queue, pkt);
 }
@@ -295,7 +281,7 @@ static void send_pkt_report(u8_t seq, u8_t status, u8_t num_tx)
 
 static void process_data(struct net_pkt *pkt)
 {
-	struct net_buf *buf = net_buf_frag_last(pkt->frags);
+	struct net_buf *buf = net_buf_frag_last(pkt->buffer);
 	u8_t seq, num_attr;
 	int ret, i;
 
@@ -338,7 +324,7 @@ static void set_channel(u8_t chan)
 
 static void process_config(struct net_pkt *pkt)
 {
-	struct net_buf *buf = net_buf_frag_last(pkt->frags);
+	struct net_buf *buf = net_buf_frag_last(pkt->buffer);
 	u8_t cmd = net_buf_pull_u8(buf);
 
 	LOG_DBG("Process config %c", cmd);
@@ -365,7 +351,7 @@ static void rx_thread(void)
 		u8_t specifier;
 
 		pkt = k_fifo_get(&rx_queue, K_FOREVER);
-		buf = net_buf_frag_last(pkt->frags);
+		buf = net_buf_frag_last(pkt->buffer);
 
 		LOG_DBG("Got pkt %p buf %p", pkt, buf);
 
@@ -442,7 +428,7 @@ static void tx_thread(void)
 		k_sem_take(&tx_sem, K_FOREVER);
 
 		pkt = k_fifo_get(&tx_queue, K_FOREVER);
-		buf = net_buf_frag_last(pkt->frags);
+		buf = net_buf_frag_last(pkt->buffer);
 		len = net_pkt_get_len(pkt);
 
 		LOG_DBG("Send pkt %p buf %p len %d", pkt, buf, len);
@@ -450,7 +436,7 @@ static void tx_thread(void)
 		hexdump("SLIP <", buf->data, buf->len);
 
 		/* remove FCS 2 bytes */
-		buf->len -= 2;
+		buf->len -= 2U;
 
 		/* SLIP encode and send */
 		len = slip_buffer(slip_buf, buf);
@@ -579,7 +565,7 @@ void main(void)
 	u32_t baudrate, dtr = 0U;
 	int ret;
 
-	dev = device_get_binding(CONFIG_CDC_ACM_PORT_NAME_0);
+	dev = device_get_binding("CDC_ACM_0");
 	if (!dev) {
 		LOG_ERR("CDC ACM device not found");
 		return;
@@ -597,19 +583,6 @@ void main(void)
 
 	LOG_DBG("DTR set, continue");
 
-#if CONFIG_DCD_DSR
-	/* They are optional, we use them to test the interrupt endpoint */
-	ret = uart_line_ctrl_set(dev, LINE_CTRL_DCD, 1);
-	if (ret)
-		printk("Failed to set DCD, ret code %d\n", ret);
-
-	ret = uart_line_ctrl_set(dev, LINE_CTRL_DSR, 1);
-	if (ret)
-		printk("Failed to set DSR, ret code %d\n", ret);
-
-	/* Wait 1 sec for the host to do all settings */
-	sys_thread_busy_wait(1000000);
-#endif
 	ret = uart_line_ctrl_get(dev, LINE_CTRL_BAUD_RATE, &baudrate);
 	if (ret)
 		printk("Failed to get baudrate, ret code %d\n", ret);

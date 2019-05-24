@@ -8,10 +8,7 @@
 #include <spinlock.h>
 #include <arch/arm/cortex_m/cmsis.h>
 
-void _ExcExit(void);
-
-/* Minimum cycles in the future to try to program. */
-#define MIN_DELAY 512
+void z_ExcExit(void);
 
 #define COUNTER_MAX 0x00ffffff
 #define TIMER_STOPPED 0xff000000
@@ -21,8 +18,25 @@ void _ExcExit(void);
 #define MAX_TICKS ((COUNTER_MAX / CYC_PER_TICK) - 1)
 #define MAX_CYCLES (MAX_TICKS * CYC_PER_TICK)
 
+/* Minimum cycles in the future to try to program.  Note that this is
+ * NOT simply "enough cycles to get the counter read and reprogrammed
+ * reliably" -- it becomes the minimum value of the LOAD register, and
+ * thus reflects how much time we can reliably see expire between
+ * calls to elapsed() to read the COUNTFLAG bit.  So it needs to be
+ * set to be larger than the maximum time the interrupt might be
+ * masked.  Choosing a fraction of a tick is probably a good enough
+ * default, with an absolute minimum of 1k cyc.
+ */
+#define MIN_DELAY MAX(1024, (CYC_PER_TICK/16))
+
 #define TICKLESS (IS_ENABLED(CONFIG_TICKLESS_KERNEL) &&			\
 		  !IS_ENABLED(CONFIG_QEMU_TICKLESS_WORKAROUND))
+
+/* VAL value above which we assume that a subsequent COUNTFLAG
+ * overflow seen in CTRL is real and not an artifact of wraparound
+ * timing.
+ */
+#define VAL_ABOUT_TO_WRAP 8
 
 static struct k_spinlock lock;
 
@@ -32,19 +46,40 @@ static u32_t cycle_count;
 
 static u32_t announced_cycles;
 
-static volatile u32_t ctrl_cache; /* overflow bit clears on read! */
+static volatile u32_t overflow_cyc;
 
 static u32_t elapsed(void)
 {
-	u32_t val, ov;
+	u32_t val, ctrl1, ctrl2;
 
-	do {
-		val = SysTick->VAL & COUNTER_MAX;
-		ctrl_cache |= SysTick->CTRL;
-	} while (SysTick->VAL > val);
+	/* SysTick is infuriatingly racy.  The counter wraps at zero
+	 * automatically, setting a 1 in the COUNTFLAG bit of the CTRL
+	 * register when it does.  But reading the control register
+	 * automatically resets that bit, so we need to save it for
+	 * future calls.  And ordering is critical and race-prone: if
+	 * we read CTRL first, then it is possible for VAL to wrap
+	 * after that read but before we read VAL and we'll miss the
+	 * overflow.  If we read VAL first, then it can wrap after we
+	 * read it and we'll see an "extra" overflow in CTRL.  And we
+	 * want to handle multiple overflows, so we effectively must
+	 * read CTRL first otherwise there will be no way to detect
+	 * the double-overflow if called at the end of a cycle.  There
+	 * is no safe algorithm here, so we split the difference by
+	 * reading CTRL twice, suppressing the second overflow bit if
+	 * VAL was "about to overflow".
+	 */
+	ctrl1 = SysTick->CTRL;
+	val = SysTick->VAL & COUNTER_MAX;
+	ctrl2 = SysTick->CTRL;
 
-	ov = (ctrl_cache & SysTick_CTRL_COUNTFLAG_Msk) ? last_load : 0;
-	return (last_load - val) + ov;
+	overflow_cyc += (ctrl1 & SysTick_CTRL_COUNTFLAG_Msk) ? last_load : 0;
+	if (val > VAL_ABOUT_TO_WRAP) {
+		int wrap = ctrl2 & SysTick_CTRL_COUNTFLAG_Msk;
+
+		overflow_cyc += (wrap != 0) ? last_load : 0;
+	}
+
+	return (last_load - val) + overflow_cyc;
 }
 
 /* Callout out of platform assembly, not hooked via IRQ_CONNECT... */
@@ -57,17 +92,18 @@ void z_clock_isr(void *arg)
 	dticks = (cycle_count - announced_cycles) / CYC_PER_TICK;
 	announced_cycles += dticks * CYC_PER_TICK;
 
-	ctrl_cache = SysTick->CTRL; /* Reset overflow flag */
-	ctrl_cache = 0U;
+	overflow_cyc = SysTick->CTRL; /* Reset overflow flag */
+	overflow_cyc = 0U;
 
 	z_clock_announce(TICKLESS ? dticks : 1);
-	_ExcExit();
+	z_ExcExit();
 }
 
 int z_clock_driver_init(struct device *device)
 {
 	NVIC_SetPriority(SysTick_IRQn, _IRQ_PRIO_OFFSET);
-	last_load = CYC_PER_TICK;
+	last_load = CYC_PER_TICK - 1;
+	overflow_cyc = 0U;
 	SysTick->LOAD = last_load;
 	SysTick->VAL = 0; /* resets timer to last_load */
 	SysTick->CTRL |= (SysTick_CTRL_ENABLE_Msk |
@@ -107,7 +143,8 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 	delay = ((delay + CYC_PER_TICK - 1) / CYC_PER_TICK) * CYC_PER_TICK;
 	last_load = delay - (cycle_count - announced_cycles);
 
-	SysTick->LOAD = last_load;
+	overflow_cyc = 0U;
+	SysTick->LOAD = last_load - 1;
 	SysTick->VAL = 0; /* resets timer to last_load */
 
 	k_spin_unlock(&lock, key);
@@ -127,7 +164,7 @@ u32_t z_clock_elapsed(void)
 	return cyc / CYC_PER_TICK;
 }
 
-u32_t _timer_cycle_get_32(void)
+u32_t z_timer_cycle_get_32(void)
 {
 	k_spinlock_key_t key = k_spin_lock(&lock);
 	u32_t ret = elapsed() + cycle_count;

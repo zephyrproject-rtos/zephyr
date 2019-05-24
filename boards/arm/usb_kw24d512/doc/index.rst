@@ -128,48 +128,84 @@ can only be used in device mode.
 Programming and Debugging
 *************************
 
-Currently only the J-Link tools and the `Segger J-Link debug probe`_ are
-supported. The J-Link probe should be connected to the JTAG-SWD connector on
-the USB-KW24D512 board. To use the Segger J-Link tools, follow the instructions
-in the :ref:`nxp_opensda_jlink` page.
+Build and flash applications as usual (see :ref:`build_an_application` and
+:ref:`application_run` for more details).
+
+Configuring a Debug Probe
+=========================
+
+A debug probe is used for both flashing and debugging the board. This board is
+configured by default to use the :ref:`jlink-external-debug-probe`.
+
+:ref:`jlink-external-debug-probe`
+---------------------------------
+
+Install the :ref:`jlink-debug-host-tools` and make sure they are in your search
+path.
+
+Attach a J-Link 10-pin connector to J1.
+
+Configuring a Console
+=====================
+
+The console is available using `Segger RTT`_.
+
+Connect a USB cable from your PC to J5.
+
+Once you have started a debug session, run telnet:
+
+.. code-block:: console
+
+    Trying 127.0.0.1...
+    Connected to localhost.
+    Escape character is '^]'.
+    SEGGER J-Link V6.44 - Real time terminal output
+    SEGGER J-Link ARM V10.1, SN=600111924
+    Process: JLinkGDBServerCLExe
 
 Flashing
 ========
 
-The Segger J-Link firmware does not support command line flashing, therefore
-the usual ``flash`` build target is not supported.
+Here is an example for the :ref:`hello_world` application.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: usb_kw24d512
+   :goals: flash
+
+The Segger RTT console is only available during a debug session. Use ``attach``
+to start one:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: usb_kw24d512
+   :goals: attach
+
+Run telnet as shown earlier, and you should see the following message in the
+terminal:
+
+.. code-block:: console
+
+   ***** Booting Zephyr OS v1.14.0-rc1 *****
+   Hello World! usb_kw24d512
 
 Debugging
 =========
 
-This example uses the :ref:`hello_world` sample with the
-:ref:`nxp_opensda_jlink` tools. This builds the Zephyr application,
-invokes the J-Link GDB server, attaches a GDB client, and programs the
-application to flash. It will leave you at a gdb prompt.
+Here is an example for the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
    :board: usb_kw24d512
    :goals: debug
 
-In a second terminal, open telnet:
+Run telnet as shown earlier, step through the application in your debugger, and
+you should see the following message in the terminal:
 
 .. code-block:: console
 
-     $ telnet localhost 19021
-     Trying 127.0.0.1...
-     Connected to localhost.
-     Escape character is '^]'.
-     SEGGER J-Link V6.16j - Real time terminal output
-     SEGGER J-Link ARM V6.0, SN=xxxxxxxx
-     Process: JLinkGDBServer
-
-Continue program execution in GDB, then in the telnet terminal you should see:
-
-.. code-block:: console
-
-     ***** BOOTING ZEPHYR OS v1.8.99 - BUILD: Jul 26 2017 15:39:04 *****
-     Hello World! arm
+   ***** Booting Zephyr OS v1.14.0-rc1 *****
+   Hello World! usb_kw24d512
 
 .. _USB-KW24D512 Website:
    https://www.nxp.com/products/processors-and-microcontrollers/arm-based-processors-and-mcus/kinetis-cortex-m-mcus/w-serieswireless-conn.m0-plus-m4/ieee-802.15.4-packet-sniffer-usb-dongle-form-factor:USB-KW24D512
@@ -186,5 +222,5 @@ Continue program execution in GDB, then in the telnet terminal you should see:
 .. _KW2xD Reference Manual:
    https://www.nxp.com/docs/en/reference-manual/MKW2xDxxxRM.pdf
 
-.. _Segger J-Link debug probe:
-    https://www.segger.com/products/debug-probes/j-link/models/j-link-base/
+.. _Segger RTT:
+   https://www.segger.com/products/debug-probes/j-link/technology/about-real-time-transfer/

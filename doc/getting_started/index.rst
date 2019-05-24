@@ -6,6 +6,10 @@ Getting Started Guide
 Follow this guide to set up a :ref:`Zephyr <introducing_zephyr>` development
 environment on your system, and then build and run a sample application.
 
+.. tip::
+
+   Need help with something? See :ref:`help`.
+
 .. _host_setup:
 
 Set Up a Development System
@@ -29,17 +33,15 @@ Zephyr's multi-purpose :ref:`west` tool lets you easily get the Zephyr project
 source code, instead of manually cloning the Zephyr repos along with west
 itself.
 
-.. note::
-   If you prefer to manage the repositories manually or with another tool
-   instead of using ``west``, you can still opt to do so. The documentation
-   section :ref:`no-west` describes how to work with Zephyr without using
-   west to manage its source code.
+.. warning::
+
+   It's possible to use Zephyr without installing west, but you have
+   to **really** know :ref:`what you are doing <no-west>`.
 
 Bootstrap west
 ==============
 
-Install the bootstrapper for Zephyr's command-line tool, :ref:`west <west>` in a
-shell or ``cmd.exe`` prompt:
+First, install the ``west`` binary and bootstrapper:
 
 .. code-block:: console
 
@@ -50,11 +52,9 @@ shell or ``cmd.exe`` prompt:
    pip3 install west
 
 .. note::
-   See :ref:`gs_python_deps` for additional clarfication on using the
-   `--user` switch.
+   See :ref:`west-install` for additional details on installing west.
 
-Additional information about west's structure can be found
-:ref:`in the relevant west documentation section <west-struct>`.
+.. _clone-zephyr:
 
 Clone the Zephyr Repositories
 =============================
@@ -71,7 +71,8 @@ Clone the Zephyr Repositories
 
    You should see ``West bootstrapper version: v0.5.0`` (or higher).
 
-Clone the Zephyr source code repositories from GitHub using the ``west`` tool:
+Next, clone the Zephyr source code repositories from GitHub using the
+``west`` tool you just installed:
 
 .. code-block:: console
 
@@ -100,10 +101,9 @@ Clone the Zephyr source code repositories from GitHub using the ``west`` tool:
 Running ``west init`` will clone west itself into ``./.west/west`` and
 initialize a local installation. Running ``west update`` will pull all the
 projects referenced by the manifest file (:file:`zephyr/west.yml`) into the
-folders specified in it. See :ref:`west-struct-installation` for additional
-details and a list of the folders and files that west will create as part of
-the process and :ref:`west-multi-repo` for more on how ``west`` helps manage
-multiple repositories.
+folders specified in it. See :ref:`west-multi-repo` for additional details, a
+list of the folders and files that west will create as part of the process,
+and more on how ``west`` helps manage multiple repositories.
 
 .. warning::
 
@@ -157,7 +157,8 @@ Set Up a Toolchain
    In some specific configurations like non-MCU x86 targets on Linux,
    you may be able to re-use the native development tools provided by
    your operating system instead of an SDK by setting
-   ``ZEPHYR_TOOLCHAIN_VARIANT=host``.
+   ``ZEPHYR_TOOLCHAIN_VARIANT=host`` for gcc or
+   ``ZEPHYR_TOOLCHAIN_VARIANT=llvm`` for clang.
 
    If you want, you can use the SDK host tools (such as OpenOCD) with a
    different toolchain by keeping the :envvar:`ZEPHYR_SDK_INSTALL_DIR`
@@ -294,13 +295,13 @@ build target from an initialized build directory to get a list.
       :board: reel_board
       :goals: build
 
-The main build products are in :file:`zephyr/samples/hello_world/build/zephyr`.
+The main build products are in :file:`samples/hello_world/build/zephyr`.
 The final application binary in ELF format is named :file:`zephyr.elf` by
 default. Other binary formats and byproducts such as disassembly and map files
 will be present depending on the target and build system configuration.
 
 Other sample projects demonstrating Zephyr's features are located in
-:file:`zephyr/samples` and are documented in :ref:`samples-and-demos`.
+:zephyr_file:`samples` and are documented in :ref:`samples-and-demos`.
 
 Run the Application by Flashing to a Board
 ==========================================

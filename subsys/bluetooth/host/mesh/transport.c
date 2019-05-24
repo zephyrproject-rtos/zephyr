@@ -338,7 +338,7 @@ static int send_seg(struct bt_mesh_net_tx *net_tx, struct net_buf_simple *sdu,
 
 	seg_o = 0U;
 	tx->dst = net_tx->ctx->addr;
-	tx->seg_n = (sdu->len - 1) / 12;
+	tx->seg_n = (sdu->len - 1) / 12U;
 	tx->nack_count = tx->seg_n + 1;
 	tx->seq_auth = SEQ_AUTH(BT_MESH_NET_IVI_TX, bt_mesh.seq);
 	tx->sub = net_tx->sub;
@@ -455,7 +455,7 @@ int bt_mesh_trans_send(struct bt_mesh_net_tx *tx, struct net_buf_simple *msg,
 	}
 
 	if (msg->len > 11) {
-		tx->ctx->send_rel = 1;
+		tx->ctx->send_rel = 1U;
 	}
 
 	BT_DBG("net_idx 0x%04x app_idx 0x%04x dst 0x%04x", tx->sub->net_idx,
@@ -795,7 +795,7 @@ static int trans_heartbeat(struct bt_mesh_net_rx *rx,
 
 	BT_DBG("src 0x%04x TTL %u InitTTL %u (%u hop%s) feat 0x%04x",
 	       rx->ctx.addr, rx->ctx.recv_ttl, init_ttl, hops,
-	       (hops == 1) ? "" : "s", feat);
+	       (hops == 1U) ? "" : "s", feat);
 
 	bt_mesh_heartbeat(rx->ctx.addr, rx->ctx.recv_dst, hops, feat);
 
@@ -913,10 +913,10 @@ static inline s32_t ack_timeout(struct seg_rx *rx)
 	/* The acknowledgment timer shall be set to a minimum of
 	 * 150 + 50 * TTL milliseconds.
 	 */
-	to = K_MSEC(150 + (50 * ttl));
+	to = K_MSEC(150 + (ttl * 50U));
 
 	/* 100 ms for every not yet received segment */
-	to += K_MSEC(((rx->seg_n + 1) - popcount(rx->block)) * 100);
+	to += K_MSEC(((rx->seg_n + 1) - popcount(rx->block)) * 100U);
 
 	/* Make sure we don't send more frequently than the duration for
 	 * each packet (default is 300ms).

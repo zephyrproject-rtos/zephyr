@@ -85,12 +85,12 @@ struct rbtree {
 
 typedef void (*rb_visit_t)(struct rbnode *node, void *cookie);
 
-struct rbnode *_rb_child(struct rbnode *node, int side);
-int _rb_is_black(struct rbnode *node);
+struct rbnode *z_rb_child(struct rbnode *node, int side);
+int z_rb_is_black(struct rbnode *node);
 #ifndef CONFIG_MISRA_SANE
-void _rb_walk(struct rbnode *node, rb_visit_t visit_fn, void *cookie);
+void z_rb_walk(struct rbnode *node, rb_visit_t visit_fn, void *cookie);
 #endif
-struct rbnode *_rb_get_minmax(struct rbtree *tree, int side);
+struct rbnode *z_rb_get_minmax(struct rbtree *tree, int side);
 
 /**
  * @brief Insert node into tree
@@ -107,7 +107,7 @@ void rb_remove(struct rbtree *tree, struct rbnode *node);
  */
 static inline struct rbnode *rb_get_min(struct rbtree *tree)
 {
-	return _rb_get_minmax(tree, 0);
+	return z_rb_get_minmax(tree, 0);
 }
 
 /**
@@ -115,7 +115,7 @@ static inline struct rbnode *rb_get_min(struct rbtree *tree)
  */
 static inline struct rbnode *rb_get_max(struct rbtree *tree)
 {
-	return _rb_get_minmax(tree, 1);
+	return z_rb_get_minmax(tree, 1);
 }
 
 /**
@@ -141,7 +141,7 @@ bool rb_contains(struct rbtree *tree, struct rbnode *node);
 static inline void rb_walk(struct rbtree *tree, rb_visit_t visit_fn,
 			   void *cookie)
 {
-	_rb_walk(tree->root, visit_fn, cookie);
+	z_rb_walk(tree->root, visit_fn, cookie);
 }
 #endif
 
@@ -159,13 +159,14 @@ struct _rb_foreach {
 }
 #else
 #define _RB_FOREACH_INIT(tree, node) {					\
-	.stack   = alloca((tree)->max_depth * sizeof(struct rbnode *)), \
-	.is_left = alloca((tree)->max_depth * sizeof(char)),		\
+	.stack   = (struct rbnode **)					\
+			alloca((tree)->max_depth * sizeof(struct rbnode *)), \
+	.is_left = (char *)alloca((tree)->max_depth * sizeof(char)),		\
 	.top     = -1							\
 }
 #endif
 
-struct rbnode *_rb_foreach_next(struct rbtree *tree, struct _rb_foreach *f);
+struct rbnode *z_rb_foreach_next(struct rbtree *tree, struct _rb_foreach *f);
 
 /**
  * @brief Walk a tree in-order without recursing
@@ -190,7 +191,7 @@ struct rbnode *_rb_foreach_next(struct rbtree *tree, struct _rb_foreach *f);
  */
 #define RB_FOR_EACH(tree, node) \
 	for (struct _rb_foreach __f = _RB_FOREACH_INIT(tree, node);	\
-	     (node = _rb_foreach_next(tree, &__f));			\
+	     (node = z_rb_foreach_next(tree, &__f));			\
 	     /**/)
 
 /**
@@ -205,7 +206,7 @@ struct rbnode *_rb_foreach_next(struct rbtree *tree, struct _rb_foreach *f);
  */
 #define RB_FOR_EACH_CONTAINER(tree, node, field)		           \
 	for (struct _rb_foreach __f = _RB_FOREACH_INIT(tree, node);	   \
-			({struct rbnode *n = _rb_foreach_next(tree, &__f); \
+			({struct rbnode *n = z_rb_foreach_next(tree, &__f); \
 			 node = n ? CONTAINER_OF(n, __typeof__(*(node)),   \
 					 field) : NULL; }) != NULL;        \
 			 /**/)

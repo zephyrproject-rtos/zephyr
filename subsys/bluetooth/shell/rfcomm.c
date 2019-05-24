@@ -157,7 +157,7 @@ static int cmd_register(const struct shell *shell, size_t argc, char *argv[])
 	ret = bt_rfcomm_server_register(&rfcomm_server);
 	if (ret < 0) {
 		shell_error(shell, "Unable to register channel %x", ret);
-		rfcomm_server.channel = 0;
+		rfcomm_server.channel = 0U;
 		return -ENOEXEC;
 	} else {
 		shell_print(shell, "RFCOMM channel %u registered",

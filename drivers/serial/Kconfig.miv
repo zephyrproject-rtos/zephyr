@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 # Kconfig.miv - Mi-V UART configuration option
 #
 # Copyright (c) 2018 Antmicro <www.antmicro.com>

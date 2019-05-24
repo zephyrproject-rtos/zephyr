@@ -1,0 +1,152 @@
+# Kconfig - Bluetooth ATT/GATT configuration options
+
+#
+# Copyright (c) 2019 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menu "ATT and GATT Options"
+
+config BT_ATT_ENFORCE_FLOW
+	bool "Enforce strict flow control semantics for incoming PDUs"
+	default y if !(BOARD_QEMU_CORTEX_M3 || BOARD_QEMU_X86 || BOARD_NATIVE_POSIX)
+	help
+	  Enforce flow control rules on incoming PDUs, preventing a peer
+	  from sending new requests until a previous one has been responded
+	  or sending a new indication until a previous one has been
+	  confirmed. This may need to be disabled to avoid potential race
+	  conditions arising from a USB based HCI transport that splits
+	  HCI events and ACL data to separate endpoints.
+
+config BT_ATT_PREPARE_COUNT
+	int "Number of ATT prepare write buffers"
+	default 0
+	range 0 64
+	help
+	  Number of buffers available for ATT prepare write, setting
+	  this to 0 disables GATT long/reliable writes.
+
+config BT_ATT_TX_MAX
+	int "Maximum number of queued outgoing ATT PDUs"
+	default 2
+	range 1 BT_L2CAP_TX_BUF_COUNT
+	help
+	  Number of ATT PDUs that can be at a single moment queued for
+	  transmission. If the application tries to send more than this
+	  amount the calls will block until an existing queued PDU gets
+	  sent.
+
+config BT_GATT_DYNAMIC_DB
+	bool "GATT dynamic database support"
+	default n
+	help
+	  This option enables registering/unregistering services at runtime.
+
+config BT_GATT_CACHING
+	bool "GATT Caching support"
+	default y
+	depends on BT_GATT_DYNAMIC_DB
+	select TINYCRYPT
+	select TINYCRYPT_AES
+	select TINYCRYPT_AES_CMAC
+	help
+	  This option enables support for GATT Caching. When enabled the stack
+	  will register Client Supported Features and Database Hash
+	  characteristics which can be used by clients to detect if anything has
+	  changed on the GATT database.
+
+config BT_GATT_ENFORCE_CHANGE_UNAWARE
+	bool "GATT Enforce change-unaware state"
+	depends on BT_GATT_CACHING
+	help
+	 When enable this option blocks notification and indications to client
+	 to conform to the following statement from the Bluetooth 5.1
+	 specification:
+	 '...the server shall not send notifications and indications to such
+	 a client until it becomes change-aware."
+	 In case the service cannot deal with sudden errors (-EAGAIN) then it
+	 shall not use this option.
+
+config BT_GATT_CLIENT
+	bool "GATT client support"
+	help
+	  This option enables support for the GATT Client role.
+
+config BT_GATT_READ_MULTIPLE
+	bool "GATT Read Multiple Characteristic Values support"
+	default y
+	help
+	  This option enables support for the GATT Read Multiple Characteristic
+	  Values procedure.
+
+config BT_GAP_PERIPHERAL_PREF_PARAMS
+	bool "Configure peripheral preferred connection parameters"
+	default y
+	depends on BT_PERIPHERAL
+	help
+	  This allows to configure peripheral preferred connection parameters.
+	  Enabling this option results in adding PPCP characteristic in GAP
+	  and sending request for connection parameters update after GAP
+	  recommended 5 seconds of connection as peripheral. If disabled it is
+	  up to application to set expected connection parameters.
+
+if BT_GAP_PERIPHERAL_PREF_PARAMS
+config BT_PERIPHERAL_PREF_MIN_INT
+	int "Peripheral preferred minimum connection interval in 1.25ms units"
+	default 24
+	range 6 65535
+	help
+	  Range 3200 to 65534 is invalid. 65535 represents no specific value.
+
+config BT_PERIPHERAL_PREF_MAX_INT
+	int "Peripheral preferred maximum connection interval in 1.25ms units"
+	default 40
+	range 6 65535
+	help
+	  Range 3200 to 65534 is invalid. 65535 represents no specific value.
+
+config BT_PERIPHERAL_PREF_SLAVE_LATENCY
+	int "Peripheral preferred slave latency in Connection Intervals"
+	default 0
+	range 0 499
+
+config BT_PERIPHERAL_PREF_TIMEOUT
+	int "Peripheral preferred supervision timeout in 10ms units"
+	default 42
+	range 10 65535
+	help
+	  It is up to user to provide valid timeout which pass required minimum
+	  value: in milliseconds it shall be larger than
+	  "(1+ Conn_Latency) * Conn_Interval_Max * 2"
+	  where Conn_Interval_Max is given in milliseconds.
+	  Range 3200 to 65534 is invalid. 65535 represents no specific value.
+endif # BT_GAP_PERIPHERAL_PREF_PARAMS
+
+config BT_DEVICE_NAME_GATT_WRITABLE
+	bool "Allow to write name by remote GATT clients"
+	depends on BT_CONN && BT_DEVICE_NAME_DYNAMIC
+	default y
+	help
+	  Enabling this option allows remote GATT clients to write to device
+	  name GAP characteristic.
+
+if BT_DEBUG
+
+config BT_DEBUG_ATT
+	bool "Bluetooth Attribute Protocol (ATT) debug"
+	depends on BT_CONN
+	help
+	  This option enables debug support for the Bluetooth
+	  Attribute Protocol (ATT).
+
+config BT_DEBUG_GATT
+	bool "Bluetooth Generic Attribute Profile (GATT) debug"
+	depends on BT_CONN
+	help
+	  This option enables debug support for the Bluetooth
+	  Generic Attribute Profile (GATT).
+
+endif # BT_DEBUG
+
+endmenu

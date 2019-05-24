@@ -54,8 +54,8 @@ static int test_alarm(void)
 		return TC_FAIL;
 	}
 
-	config.init_val = 0;
-	config.alarm_enable = 1;
+	config.init_val = 0U;
+	config.alarm_enable = 1U;
 	config.alarm_val = RTC_ALARM_SECOND;
 	config.cb_fn = rtc_alarm_callback;
 

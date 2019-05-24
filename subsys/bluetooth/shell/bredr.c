@@ -174,7 +174,7 @@ static int cmd_discovery(const struct shell *shell, size_t argc, char *argv[])
 		struct bt_br_discovery_param param;
 
 		param.limited = false;
-		param.length = 8;
+		param.length = 8U;
 
 		if (argc > 2) {
 			param.length = atoi(argv[2]);
@@ -274,7 +274,7 @@ static int cmd_l2cap_register(const struct shell *shell,
 
 	if (bt_l2cap_br_server_register(&br_server) < 0) {
 		shell_error(shell, "Unable to register psm");
-		br_server.psm = 0;
+		br_server.psm = 0U;
 		return -ENOEXEC;
 	} else {
 		shell_print(shell, "L2CAP psm %u registered", br_server.psm);

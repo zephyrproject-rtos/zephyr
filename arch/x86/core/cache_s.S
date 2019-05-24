@@ -16,12 +16,12 @@
 
 #if defined(CONFIG_CLFLUSH_DETECT)
 
-	#define CACHE_FLUSH_NAME _cache_flush_wbinvd
+	#define CACHE_FLUSH_NAME z_cache_flush_wbinvd
 	#define CPUID_CFLSH_BIT (1 << 19)
 
-	GTEXT(_is_clflush_available)
+	GTEXT(z_is_clflush_available)
 
-SECTION_FUNC(TEXT, _is_clflush_available)
+SECTION_FUNC(TEXT, z_is_clflush_available)
 	pushl %ebx
 	movl $1, %eax
 	cpuid
@@ -62,9 +62,9 @@ SECTION_FUNC(TEXT, CACHE_FLUSH_NAME)
 
 	#define CPUID_CACHE_LINE_MASK (0xff << 8)
 
-	GTEXT(_cache_line_size_get)
+	GTEXT(z_cache_line_size_get)
 
-SECTION_FUNC(TEXT, _cache_line_size_get)
+SECTION_FUNC(TEXT, z_cache_line_size_get)
 	pushl %ebx
 	movl $1, %eax
 	cpuid

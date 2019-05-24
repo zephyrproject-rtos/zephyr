@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
 /* SoC level DTS fixup file */
 
 /* CCM configuration */

@@ -116,7 +116,7 @@ static ALWAYS_INLINE unsigned int find_lsb_set(u32_t op)
  * except NMI.
  */
 
-static ALWAYS_INLINE unsigned int _arch_irq_lock(void)
+static ALWAYS_INLINE unsigned int z_arch_irq_lock(void)
 {
 	unsigned int key;
 
@@ -132,7 +132,8 @@ static ALWAYS_INLINE unsigned int _arch_irq_lock(void)
 	__asm__ volatile(
 		"mov %1, %2;"
 		"mrs %0, BASEPRI;"
-		"msr BASEPRI, %1"
+		"msr BASEPRI, %1;"
+		"isb;"
 		: "=r"(key), "=r"(tmp)
 		: "i"(_EXC_IRQ_DEFAULT_PRIO)
 		: "memory");
@@ -163,15 +164,21 @@ static ALWAYS_INLINE unsigned int _arch_irq_lock(void)
  *
  */
 
-static ALWAYS_INLINE void _arch_irq_unlock(unsigned int key)
+static ALWAYS_INLINE void z_arch_irq_unlock(unsigned int key)
 {
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
 	if (key) {
 		return;
 	}
-	__asm__ volatile("cpsie i" : : : "memory");
+	__asm__ volatile(
+		"cpsie i;"
+		"isb"
+		: : : "memory");
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
-	__asm__ volatile("msr BASEPRI, %0" :  : "r"(key) : "memory");
+	__asm__ volatile(
+		"msr BASEPRI, %0;"
+		"isb;"
+		:  : "r"(key) : "memory");
 #else
 #error Unknown ARM architecture
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */

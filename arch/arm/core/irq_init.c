@@ -11,7 +11,7 @@
  * The ARM Cortex-M architecture provides its own k_thread_abort() to deal with
  * different CPU modes (handler vs thread) when a thread aborts. When its entry
  * point returns or when it aborts itself, the CPU is in thread mode and must
- * call _Swap() (which triggers a service call), but when in handler mode, the
+ * call z_swap() (which triggers a service call), but when in handler mode, the
  * CPU must exit handler mode to cause the context switch, and thus must queue
  * the PendSV exception.
  */
@@ -33,7 +33,7 @@
  * @return N/A
  */
 
-void _IntLibInit(void)
+void z_IntLibInit(void)
 {
 	int irq = 0;
 

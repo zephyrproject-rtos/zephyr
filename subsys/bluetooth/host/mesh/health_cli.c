@@ -191,7 +191,7 @@ static int cli_prepare(void *param, u32_t op)
 
 static void cli_reset(void)
 {
-	health_cli->op_pending = 0;
+	health_cli->op_pending = 0U;
 	health_cli->op_param = NULL;
 }
 

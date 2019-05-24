@@ -36,7 +36,7 @@ extern u32_t __device_busy_end[];
  *
  * @param level init level to run.
  */
-void _sys_device_do_config_level(s32_t level)
+void z_sys_device_do_config_level(s32_t level)
 {
 	struct device *info;
 	static struct device *config_levels[] = {
@@ -60,12 +60,12 @@ void _sys_device_do_config_level(s32_t level)
 			 */
 			info->driver_api = NULL;
 		} else {
-			_k_object_init(info);
+			z_object_init(info);
 		}
 	}
 }
 
-struct device *_impl_device_get_binding(const char *name)
+struct device *z_impl_device_get_binding(const char *name)
 {
 	struct device *info;
 
@@ -104,13 +104,16 @@ Z_SYSCALL_HANDLER(device_get_binding, name)
 		return 0;
 	}
 
-	return (u32_t)_impl_device_get_binding(name_copy);
+	return (u32_t)z_impl_device_get_binding(name_copy);
 }
 #endif /* CONFIG_USERSPACE */
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 int device_pm_control_nop(struct device *unused_device,
-		       u32_t unused_ctrl_command, void *unused_context)
+		       u32_t unused_ctrl_command,
+		       void *unused_context,
+		       device_pm_cb cb,
+		       void *unused_arg)
 {
 	return 0;
 }
@@ -128,7 +131,7 @@ int device_any_busy_check(void)
 	int i = 0;
 
 	for (i = 0; i < DEVICE_BUSY_SIZE; i++) {
-		if (__device_busy_start[i] != 0) {
+		if (__device_busy_start[i] != 0U) {
 			return -EBUSY;
 		}
 	}

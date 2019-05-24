@@ -1,0 +1,7 @@
+sample:
+  name: Promiscuous mode sample application
+tests:
+  sample.net.promiscuous_mode:
+    harness: net
+    depends_on: netif
+    tags: net promisc

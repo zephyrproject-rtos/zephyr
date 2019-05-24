@@ -130,7 +130,7 @@ subdirectories which are not described here.
 :file:`ext`
     Externally created code that has been integrated into Zephyr
     from other sources and that must live inside the zephyr repository unlike
-    `external projects <ext-projs>`_
+    `external projects <modules>`_
 
 :file:`include`
     Include files for all public APIs, except those defined under :file:`lib`.
@@ -253,17 +253,16 @@ section describes the most important ones that every Zephyr developer
 should know about.
 
 .. note::
-   All variables listed in this section can be supplied to the build system
-   in 3 ways (in order of precedence):
+
+   The variables :makevar:`BOARD`, :makevar:`CONF_FILE`, and
+   :makevar:`DTC_OVERLAY_FILE` can be supplied to the build system in
+   3 ways (in order of precedence):
 
    * As a parameter to the ``cmake`` invocation via the ``-D`` command-line
      switch
    * As an environment variables (``export`` on Linux/macOS and ``set`` on
      Windows)
-   * As a ``set(<VARIABLE>, <VALUE>)`` statement in your :file:`CMakeLists.txt`
-
-   The exception is :makevar:`ZEPHYR_BASE`, which **must** be exported as an
-   environment variable.
+   * As a ``set(<VARIABLE> <VALUE>)`` statement in your :file:`CMakeLists.txt`
 
 * :makevar:`ZEPHYR_BASE`: Sets the path to the directory containing Zephyr,
   which is needed by the build system's boilerplate file.  This is an
@@ -273,24 +272,24 @@ should know about.
   :makevar:`ZEPHYR_BASE` explicitly, but then you won't get the other features
   provided by those scripts.
 
-* :makevar:`BOARD`: Selects the board that the application's build will use for
-  the default configuration. This can be defined in the environment, in your
-  application's :file:`CMakeLists.txt` file, or in the ``cmake`` command line.
-  See :ref:`boards` for built-in boards, and :ref:`board_porting_guide` for
-  information on adding board support.
+* :makevar:`BOARD`: Selects the board that the application's build
+  will use for the default configuration.  See :ref:`boards` for
+  built-in boards, and :ref:`board_porting_guide` for information on
+  adding board support.
 
 * :makevar:`CONF_FILE`: Indicates the name of one or more configuration
-  fragment files.  Multiple filenames can either be separated by a single space
-  or a single semicolon.  Each file includes Kconfig configuration values that
-  override the default configuration values.  Like :makevar:`BOARD`, this can
-  also be defined in the environment, in your application's
-  :file:`CMakeLists.txt` file, or in the ``cmake`` command line.
+  fragment files. Multiple filenames can be separated with either spaces or
+  semicolons. Each file includes Kconfig configuration values that override
+  the default configuration values.
 
 * :makevar:`DTC_OVERLAY_FILE`: Indicates the name of one or more Device Tree
-  overlay files.  Each file includes Device Tree values that
-  override the default DT values.  Like :makevar:`CONF_FILE`, this
-  can also be defined in the environment, in your application's
-  :file:`CMakeLists.txt` file, or in the ``cmake`` command line.
+  overlay files. Multiple filenames can be separated with either spaces or
+  semicolons. Each file includes Device Tree values that override the default
+  DT values.
+
+* :makevar:`ZEPHYR_MODULES`: A CMake list containing absolute paths of
+  additional directories with source code, Kconfig, etc. that should be used in
+  the application build. See :ref:`modules` for details.
 
 .. _build_an_application:
 
@@ -302,8 +301,8 @@ into a single application image that can be run on simulated hardware or real
 hardware.
 
 As described in :ref:`getting_started_cmake`, on Linux and macOS you can choose
-between the `make` and `ninja` generators, whereas on Windows you need to use
-`ninja`. For simplicity we will use `ninja` throughout this guide.
+between the ``make`` and ``ninja`` generators, whereas on Windows you need to use
+``ninja``. For simplicity we will use ``ninja`` throughout this guide.
 
 Basics
 ======
@@ -428,6 +427,8 @@ Run an Application
 
 An application image can be run on a real board or emulated hardware.
 
+.. _application_run_board:
+
 Running on a Board
 ==================
 
@@ -466,6 +467,7 @@ for additional information on how to flash your board.
           consult your board's documentation to see if this is
           necessary.
 
+.. _application_run_qemu:
 
 Running in an Emulator
 ======================
@@ -508,12 +510,12 @@ again.
 .. _application_debugging:
 .. _custom_board_definition:
 
-Custom Board and SOC Definitions
-********************************
+Custom Board, DeviceTree and SOC Definitions
+********************************************
 
-In cases where the board or platform you are developing for is not yet supported
-by Zephyr, you can add the board and SOC definition to your application and
-build for this board or SOC without having to add them to the Zephyr tree.
+In cases where the board or platform you are developing for is not yet
+supported by Zephyr, you can add board, DeviceTree and SOC definitions
+to your application without having to add them to the Zephyr tree.
 
 The structure needed to support out-of-tree board and SOC development
 is similar to how boards and SOCs are maintained in the Zephyr tree. By using
@@ -642,81 +644,29 @@ Zephyr binary into your application directory.
 You can also define the ``SOC_ROOT`` variable in the application
 :file:`CMakeLists.txt` file.
 
-.. _ext-projs:
+DeviceTree Definitions
+======================
 
-Modules (External projects)
-***************************
+Additional DeviceTree directory trees, or DTS_ROOTs, can be added by
+creating this directory tree:
 
-Zephyr relies on the source code of several externally maintained projects in
-order to avoid reinventing the wheel and to reuse as much well-established,
-mature code as possible when it makes sense. In the context of Zephyr's build
-system those are called *modules*.
-There are several categories of external projects that Zephyr depends on,
-including:
+    dts/bindings/
+    dts/common/
+    dts/arm/
+    include/
 
-- Debugger integration
-- Silicon Vendor Hardware Abstraction Layers (HALs)
-- Cryptography libraries
-- Filesystems
-- Inter-Process Communication (IPC)
+Where 'arm' is changed to the appropriate architecture. Each directory
+is optional. The binding directory contains bindings and the other
+directories contain files that can be included from DT sources.
 
-These modules (external projects) must be integrated with the Zephyr
-build system, which is based around Kconfig and CMake (see
-:ref:`application` for more information about Zephyr's build system).
+Once the directory structure is in place, you can use it by specifying
+its location through the ``DTS_ROOT`` CMake Cache variable::
 
-The way that the build system discovers and includes external projects when
-building an application is based around the :ref:`west` tool's ``west list``
-command. The main CMake script in Zephyr (the :file:`CMakeLists.txt` located
-in the zephyr repository root folder) invokes ``west list`` to obtain a list of
-projects managed by west. For each project then, the CMake scripts will verify
-if the project contains the metadata required in a module.  If the project is
-identified to be a module then CMake will include it in the build.
+   cmake -DDTS_ROOT=<path to dts root>
 
-.. note::
-   Although the build system currently uses :ref:`west` to list the available
-   external projects for potential inclusion in the build, it is perfectly
-   possible to use any other script or tool instead by modifying the CMake
-   script. A future addition will make this possible even without any
-   modifications to the build scripts.
+You can also define the variable in the application
+:file:`CMakeLists.txt` file.
 
-The code in :file:`CMakeLists.txt` retrieves the following information for
-each project using ``west list``:
-
-- name: The name of the project as specified in the manifest file
-- path: The path of the project within the west installation
-
-Once it has collected the list, the CMake script performs the following
-operations on each project to determine if it is a module to be included in
-the build:
-
-- If a matching (see below) :file:`CMakeLists.txt` is located, it will process
-  it directly by using the CMake ``add_subdirectory`` command
-- If a matching (see below) :file:`Kconfig` is located, it will instruct
-  Kconfig to source it (i.e. process it)
-
-The way that the script determines if a matching :file:`CMakeLists.txt` and
-:file:`Kconfig` are present is the following (in order of precedence):
-
-- If the project contains a file named :file:`<path>/zephyr/module.yml` then
-  its contents are parsed:
-
-  - If a ``cmake: <folder>`` field is present then the build system will match
-    the :file:`CMakeLists.txt` in ``<folder>``
-  - If a ``kconfig: <folder>/<kconfig-file>`` field is present then the build
-    system will match the setting.
-- If the project contains a file named exactly
-  :file:`<path>/zephyr/CMakeLists.txt` the build system will match it
-- If the project contains a file named :file:`<path>/zephyr/Kconfig` the build
-  system will match it
-
-Example of a :file:`<path>/zephyr/module.yml` file referring to
-:file:`CMakeLists.txt` and :file:`Kconfig` files at the root of the module:
-
-.. code-block:: console
-
-	build:
-          cmake: .
-          kconfig: Kconfig
 
 Application Debugging
 *********************
@@ -1150,7 +1100,7 @@ configuration settings from three sources:
    :file:`boards/ARCHITECTURE/BOARD/BOARD_defconfig` in the Zephyr base
    directory.
 
-2. Any CMakeCache entries entries that are prefixed with :makevar:`CONFIG_`.
+2. Any CMakeCache entries that are prefixed with :makevar:`CONFIG_`.
 
 3. One or more application-specific configuration files.
 
@@ -1469,7 +1419,7 @@ be useful for glue code to have access to Zephyr kernel header files.
 To make it easier to integrate third-party components, the Zephyr
 build system has defined CMake functions that give application build
 scripts access to the zephyr compiler options. The functions are
-documented and defined in :file:`$ZEPHYR_BASE/cmake/extensions.cmake`
+documented and defined in :zephyr_file:`cmake/extensions.cmake`
 and follow the naming convention ``zephyr_get_<type>_<format>``.
 
 The following variables will often need to be exported to the
@@ -1480,10 +1430,11 @@ third-party build system.
 * ``ARCH`` and ``BOARD``, together with several variables that identify the
   Zephyr kernel version.
 
-:file:`samples/application_development/external_lib` is a sample
+:zephyr_file:`samples/application_development/external_lib` is a sample
 project that demonstrates some of these features.
 
 .. _Eclipse IDE for C/C++ Developers: https://www.eclipse.org/downloads/packages/eclipse-ide-cc-developers/oxygen2
 .. _GNU MCU Eclipse plug-ins: https://gnu-mcu-eclipse.github.io/plugins/install/
 .. _pyOCD v0.11.0: https://github.com/mbedmicro/pyOCD/releases/tag/v0.11.0
-
+.. _CMake list: https://cmake.org/cmake/help/latest/manual/cmake-language.7.html#lists
+.. _add_subdirectory(): https://cmake.org/cmake/help/latest/command/add_subdirectory.html

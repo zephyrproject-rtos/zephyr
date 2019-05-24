@@ -97,7 +97,7 @@ void *osMemoryPoolAlloc(osMemoryPoolId_t mp_id, uint32_t timeout)
 		return NULL;
 	}
 
-	if (timeout == 0) {
+	if (timeout == 0U) {
 		retval = k_mem_slab_alloc(
 			(struct k_mem_slab *)(&mslab->z_mslab),
 			(void **)&ptr, K_NO_WAIT);

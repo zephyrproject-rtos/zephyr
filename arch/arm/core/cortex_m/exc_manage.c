@@ -15,23 +15,24 @@
 #include <misc/printk.h>
 void sys_exc_esf_dump(NANO_ESF *esf)
 {
-	printk("r0/a1:  %x  ", esf->a1);
-	printk("r1/a2:  %x  ", esf->a2);
-	printk("r2/a3:  %x\n", esf->a3);
-	printk("r3/a4:  %x  ", esf->a4);
-	printk("r12/ip: %x  ", esf->ip);
-	printk("r14/lr: %x\n", esf->lr);
-	printk("r15/pc: %x  ", esf->pc);
-	printk("xpsr:   %x\n", esf->xpsr);
-#ifdef CONFIG_FLOAT
+	printk("r0/a1:  0x%08x  ", esf->basic.a1);
+	printk("r1/a2:  0x%08x  ", esf->basic.a2);
+	printk("r2/a3:  0x%08x\n", esf->basic.a3);
+	printk("r3/a4:  0x%08x  ", esf->basic.a4);
+	printk("r12/ip: 0x%08x  ", esf->basic.ip);
+	printk("r14/lr: 0x%08x\n", esf->basic.lr);
+	printk("r15/pc: 0x%08x  ", esf->basic.pc);
+	printk("xpsr:   0x%08x\n", esf->basic.xpsr);
+#if defined(CONFIG_FLOAT) && defined(CONFIG_FP_SHARING)
 	for (int i = 0; i < 16; i += 4) {
-		printk("s[%d]:  %x  s[%d]:  %x  s[%d]:  %x  s[%d]:  %x\n",
+		printk("s[%d]:  0x%08x  s[%d]:  0x%08x"
+			"  s[%d]:  0x%08x  s[%d]:  0x%08x\n",
 		       i, (u32_t)esf->s[i],
 		       i + 1, (u32_t)esf->s[i + 1],
 		       i + 2, (u32_t)esf->s[i + 2],
 		       i + 3, (u32_t)esf->s[i + 3]);
 	}
-	printk("fpscr:  %x\n", esf->fpscr);
+	printk("fpscr:  0x%08x\n", esf->fpscr);
 #endif
 }
 

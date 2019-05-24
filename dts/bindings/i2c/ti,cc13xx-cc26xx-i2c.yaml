@@ -1,0 +1,46 @@
+#
+# Copyright (c) 2019 Brett Witherspoon
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: TI CC13xx / CC26xx I2C
+version: 0.1
+
+description: >
+    This is a representation of the TI CC13xx / CC26xx I2C node
+
+inherits:
+    !include i2c.yaml
+
+properties:
+    compatible:
+      type: string
+      category: required
+      description: compatible strings
+      constraint: "ti,cc13xx-cc26xx-i2c"
+
+    reg:
+      type: array
+      category: required
+      description: mmio register space
+      generation: define
+
+    interrupts:
+      type: array
+      category: required
+      description: required interrupts
+      generation: define
+
+    sda-pin:
+      type: int
+      category: required
+      description: SDA pin
+      generation: define
+
+    scl-pin:
+      type: int
+      category: required
+      description: SCL pin
+      generation: define
+...

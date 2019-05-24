@@ -14,7 +14,7 @@ LOG_MODULE_REGISTER(pwm_sifive, CONFIG_PWM_LOG_LEVEL);
 
 /* Macros */
 
-#define PWM_REG(_config, _offset) ((mem_addr_t) ((_config)->base + _offset))
+#define PWM_REG(z_config, _offset) ((mem_addr_t) ((z_config)->base + _offset))
 
 /* Register Offsets */
 #define REG_PWMCFG		0x00
@@ -99,9 +99,9 @@ static int pwm_sifive_pin_set(struct device *dev,
 			      u32_t pulse_cycles)
 {
 	const struct pwm_sifive_cfg *config = NULL;
-	u32_t count_max = 0;
-	u32_t max_cmp_val = 0;
-	u32_t pwmscale = 0;
+	u32_t count_max = 0U;
+	u32_t max_cmp_val = 0U;
+	u32_t pwmscale = 0U;
 
 	if (dev == NULL) {
 		LOG_ERR("The device instance pointer was NULL\n");
@@ -124,7 +124,7 @@ static int pwm_sifive_pin_set(struct device *dev,
 	}
 
 	/* Channel 0 sets the period, we can't output PWM with it */
-	if ((pwm == 0)) {
+	if ((pwm == 0U)) {
 		LOG_ERR("PWM channel 0 cannot be configured\n");
 		return -ENOTSUP;
 	}

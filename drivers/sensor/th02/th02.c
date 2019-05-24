@@ -109,11 +109,11 @@ static int th02_channel_get(struct device *dev, enum sensor_channel chan,
 
 	if (chan == SENSOR_CHAN_AMBIENT_TEMP) {
 		/* val = sample / 32 - 50 */
-		val->val1 = drv_data->t_sample / 32 - 50;
+		val->val1 = drv_data->t_sample / 32U - 50;
 		val->val2 = (drv_data->t_sample % 32) * (1000000 / 32);
 	} else {
 		/* val = sample / 16 -24 */
-		val->val1 = drv_data->rh_sample / 16 - 24;
+		val->val1 = drv_data->rh_sample / 16U - 24;
 		val->val2 = (drv_data->rh_sample % 16) * (1000000 / 16);
 	}
 

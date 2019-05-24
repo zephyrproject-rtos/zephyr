@@ -1,3 +1,5 @@
+.. _gatt-pics:
+
 GATT PICS
 =========
 

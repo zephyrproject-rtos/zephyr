@@ -80,14 +80,6 @@ considered to be sufficiently stable and the final 0.4.x release is made.
 
 At that point, the whole process starts over again.
 
-.. figure:: merge_window.png
-    :align: center
-    :alt: Merge Window
-    :figclass: align-center
-    :width: 80%
-
-    Merge Window
-
 Here is the description of the various moderation levels:
 
 - Low:
@@ -100,7 +92,7 @@ Here is the description of the various moderation levels:
 
   - Bug Fixes, all priorities
   - Enhancements
-  - Minor “self-contained” New Features
+  - Minor "self-contained" New Features
 - High:
 
   - Bug Fixes: P1 and P2
@@ -248,12 +240,18 @@ Tagging
 Every time a release candidate (or the final release) needs to be tagged, the
 following steps need to be followed:
 
-#. Update the :file:`VERSION` file in the root of the Git repository. If it's a
-release candidate, use `EXTRAVERSION` variable::
+.. note::
+
+    Tagging needs to be done via explicit git commands and not via GitHub's release
+    interface.  The GitHub release interface does not generate annotated tags (it
+    generates 'lightweight' tags regardless of release or pre-release).
+
+#. Update the :zephyr_file:`VERSION` file in the root of the Git repository. If it's a
+release candidate, use ``EXTRAVERSION`` variable::
 
     EXTRAVERSION = rc1
 
-#. Commit the update to the :file:`VERSION` file, use `release:` as a commit
+#. Commit the update to the :zephyr_file:`VERSION` file, use ``release:`` as a commit
    tag.
 #. Check that CI has completed successfully before tagging.
 #. Tag and push the version, using annotated tags:
@@ -280,18 +278,18 @@ release candidate, use `EXTRAVERSION` variable::
     $ git shortlog v1.10.0..v.1.11.0-rc1
 
 #. Find the new tag at the top of the releases page, edit the release with the
-   `Edit` button and then do the following:
+   ``Edit`` button and then do the following:
 
   * If it's a release candidate:
 
-    * Name it `Zephyr 1.11.0-rc1`
+    * Name it ``Zephyr 1.11.0-rc1``
     * Copy the shortlog into the release notes textbox (don't forget to quote it
       properly so it shows as unformatted text in Markdown)
     * Check the "This is a pre-release" checkbox
   * If it's a release:
 
-    * Name it `Zephyr 1.11.0`
-    * Copy the full content of `docs/release-notes-1.11.rst` into the the
+    * Name it ``Zephyr 1.11.0``
+    * Copy the full content of ``docs/release-notes-1.11.rst`` into the the
       release notes textbox
     * Copy the full list of GitHub issues closed with this release into the
       release notes textbox (see below on how to generate this list)

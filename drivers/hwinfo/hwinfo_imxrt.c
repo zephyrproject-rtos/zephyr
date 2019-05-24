@@ -12,7 +12,7 @@ struct imxrt_uid {
 	u32_t id[2];
 };
 
-ssize_t _impl_hwinfo_get_device_id(u8_t *buffer, size_t length)
+ssize_t z_impl_hwinfo_get_device_id(u8_t *buffer, size_t length)
 {
 	struct imxrt_uid dev_id;
 

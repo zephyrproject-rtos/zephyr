@@ -16,8 +16,8 @@
 
 _ASM_FILE_PROLOGUE
 
-GTEXT(_arm_userspace_enter)
-GTEXT(_arm_do_syscall)
+GTEXT(z_arm_userspace_enter)
+GTEXT(z_arm_do_syscall)
 GTEXT(z_arch_user_string_nlen)
 GTEXT(z_arch_user_string_nlen_fault_start)
 GTEXT(z_arch_user_string_nlen_fault_end)
@@ -36,7 +36,7 @@ GDATA(_k_syscall_table)
  * not transition back later, unless they are doing system calls.
  *
  */
-SECTION_FUNC(TEXT,_arm_userspace_enter)
+SECTION_FUNC(TEXT,z_arm_userspace_enter)
     /* move user_entry to lr */
     mov lr, r0
 
@@ -68,7 +68,7 @@ SECTION_FUNC(TEXT,_arm_userspace_enter)
     /* Re-program dynamic memory map.
      *
      * Important note:
-     * _arch_configure_dynamic_mpu_regions() may re-program the MPU Stack Guard
+     * z_arch_configure_dynamic_mpu_regions() may re-program the MPU Stack Guard
      * to guard the privilege stack for overflows (if building with option
      * CONFIG_MPU_STACK_GUARD). There is a risk of actually overflowing the
      * stack while doing the re-programming. We minimize the risk by placing
@@ -77,12 +77,12 @@ SECTION_FUNC(TEXT,_arm_userspace_enter)
      *
      * Note that the risk for overflow is higher if using the normal thread
      * stack, since we do not control how much stack is actually left, when
-     * user invokes _arm_userspace_enter().
+     * user invokes z_arm_userspace_enter().
      */
     push {r0,r1,r2,r3,ip,lr}
     ldr r0, =_kernel
     ldr r0, [r0, #_kernel_offset_to_current]
-    bl _arch_configure_dynamic_mpu_regions
+    bl z_arch_configure_dynamic_mpu_regions
     pop {r0,r1,r2,r3,ip,lr}
 #endif
 
@@ -142,8 +142,16 @@ SECTION_FUNC(TEXT,_arm_userspace_enter)
 #endif /* CONFIG_EXECUTION_BENCHMARKING */
 
     /* change processor mode to unprivileged */
+    push {r0, r1}
+    ldr r0, =_kernel
+    ldr r0, [r0, #_kernel_offset_to_current]
+    ldr r1, [r0, #_thread_offset_to_mode]
+    orrs r1, r1, #1
     mrs ip, CONTROL
     orrs ip, ip, #1
+    /* Store (unprivileged) mode in thread's mode state variable */
+    str r1, [r0, #_thread_offset_to_mode]
+    dsb
     msr CONTROL, ip
 
     /* ISB is not strictly necessary here (stack pointer is not being
@@ -151,9 +159,10 @@ SECTION_FUNC(TEXT,_arm_userspace_enter)
      * instructions with the previous privilege.
      */
     isb
+    pop {r0, r1}
 
-    /* jump to _thread_entry entry */
-    ldr ip, =_thread_entry
+    /* jump to z_thread_entry entry */
+    ldr ip, =z_thread_entry
     bx ip
 
 /**
@@ -168,7 +177,7 @@ SECTION_FUNC(TEXT,_arm_userspace_enter)
  * 4) Restoring stack and calling back to the caller of the SVC
  *
  */
-SECTION_FUNC(TEXT, _arm_do_syscall)
+SECTION_FUNC(TEXT, z_arm_do_syscall)
     /*
      * r0-r5 contain arguments
      * r6 contains call_id
@@ -242,6 +251,14 @@ dispatch_syscall:
     ldr ip, [sp,#8]
     msr PSP, ip
 
+    push {r0, r1}
+    ldr r0, =_kernel
+    ldr r0, [r0, #_kernel_offset_to_current]
+    ldr r1, [r0, #_thread_offset_to_mode]
+    orrs r1, r1, #1
+    /* Store (unprivileged) mode in thread's mode state variable */
+    str r1, [r0, #_thread_offset_to_mode]
+    dsb
     /* drop privileges by setting bit 0 in CONTROL */
     mrs ip, CONTROL
     orrs ip, ip, #1
@@ -252,6 +269,7 @@ dispatch_syscall:
      * instructions with the previous privilege.
      */
     isb
+    pop {r0, r1}
 
     /* Zero out volatile (caller-saved) registers so as to not leak state from
      * kernel mode. The C calling convention for the syscall handler will

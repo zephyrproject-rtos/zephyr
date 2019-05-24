@@ -45,7 +45,7 @@
 #endif
 
 /* in micro second */
-#define MIN_PERIOD	(USEC_PER_SEC / 64)
+#define MIN_PERIOD	(USEC_PER_SEC / 64U)
 
 /* in micro second */
 #define MAX_PERIOD	USEC_PER_SEC
@@ -66,20 +66,20 @@ void main(void)
 
 	while (1) {
 		if (pwm_pin_set_usec(pwm_dev, PWM_CHANNEL,
-				     period, period / 2)) {
+				     period, period / 2U)) {
 			printk("pwm pin set fails\n");
 			return;
 		}
 
 		if (dir) {
-			period *= 2;
+			period *= 2U;
 
 			if (period > MAX_PERIOD) {
 				dir = 0U;
 				period = MAX_PERIOD;
 			}
 		} else {
-			period /= 2;
+			period /= 2U;
 
 			if (period < MIN_PERIOD) {
 				dir = 1U;
@@ -87,6 +87,6 @@ void main(void)
 			}
 		}
 
-		k_sleep(MSEC_PER_SEC * 4);
+		k_sleep(MSEC_PER_SEC * 4U);
 	}
 }

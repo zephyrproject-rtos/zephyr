@@ -11,4 +11,3 @@ config MS5837
 	depends on I2C && HAS_DTS_I2C
 	help
 	 Enable driver for MS5837 pressure and temperature sensor.
-

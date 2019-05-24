@@ -56,7 +56,7 @@ void test_ring_buffer_main(void)
 	u8_t getsize, getval;
 	u16_t gettype;
 	int dsize = INITIAL_SIZE;
-	char rb_data[] = "ABCDEFGHIJKLMNOPQRSTUVWX";
+	__aligned(sizeof(u32_t)) char rb_data[] = "ABCDEFGHIJKLMNOPQRSTUVWX";
 	put_count = 0;
 
 	while (1) {
@@ -294,7 +294,7 @@ void test_ringbuffer_alloc_put(void)
 
 	allocated = ring_buf_put_claim(&ringbuf_raw, &data, 1);
 	sum_allocated = allocated;
-	zassert_true(allocated == 1, NULL);
+	zassert_true(allocated == 1U, NULL);
 
 
 	allocated = ring_buf_put_claim(&ringbuf_raw, &data,
@@ -318,7 +318,7 @@ void test_ringbuffer_alloc_put(void)
 
 	for (int i = 0; i < 10; i++) {
 		allocated = ring_buf_put_claim(&ringbuf_raw, &data, 2);
-		if (allocated == 2) {
+		if (allocated == 2U) {
 			data[0] = inputbuf[0];
 			data[1] = inputbuf[1];
 		} else {
@@ -328,7 +328,7 @@ void test_ringbuffer_alloc_put(void)
 		}
 
 		allocated = ring_buf_put_claim(&ringbuf_raw, &data, 2);
-		if (allocated == 2) {
+		if (allocated == 2U) {
 			data[0] = inputbuf[2];
 			data[1] = inputbuf[3];
 		} else {
@@ -342,7 +342,7 @@ void test_ringbuffer_alloc_put(void)
 
 		read_size = ring_buf_get(&ringbuf_raw,
 						     outputbuf, 4);
-		zassert_true(read_size == 4, NULL);
+		zassert_true(read_size == 4U, NULL);
 
 		zassert_true(memcmp(outputbuf, inputbuf, 4) == 0, NULL);
 	}
@@ -359,7 +359,7 @@ void test_byte_put_free(void)
 
 	/* Ring buffer is empty */
 	granted = ring_buf_get_claim(&ringbuf_raw, &data, RINGBUFFER_SIZE);
-	zassert_true(granted == 0, NULL);
+	zassert_true(granted == 0U, NULL);
 
 	for (int i = 0; i < 10; i++) {
 		ring_buf_put(&ringbuf_raw, indata,

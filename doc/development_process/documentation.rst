@@ -1,3 +1,4 @@
+.. _code-documentation:
 
 Code Documentation
 ###################
@@ -40,7 +41,7 @@ Test Code
 **********
 
 The Zephyr project uses several test methodologies, the most common being the
-:ref:`Ztest framework <testing>`. The documentation of tests should only be done
+:ref:`Ztest framework <test-framework>`. Test documentation should only be done
 on the entry test functions (usually prefixed with test\_) and those that are
 called directly by the Ztest framework. Those tests are going to appear in test
 reports and using their name and identifier is the best way to identify them and

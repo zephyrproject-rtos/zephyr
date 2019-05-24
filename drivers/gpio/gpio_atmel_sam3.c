@@ -33,7 +33,7 @@ struct gpio_sam3_runtime {
 	sys_slist_t		cb;
 };
 
-static void _config(struct device *dev, u32_t mask, int flags)
+static void config(struct device *dev, u32_t mask, int flags)
 {
 	const struct gpio_sam3_config *cfg = dev->config->config_info;
 
@@ -101,10 +101,10 @@ static int gpio_sam3_config(struct device *dev, int access_op,
 {
 	switch (access_op) {
 	case GPIO_ACCESS_BY_PIN:
-		_config(dev, BIT(pin), flags);
+		config(dev, BIT(pin), flags);
 		break;
 	case GPIO_ACCESS_BY_PORT:
-		_config(dev, (0xFFFFFFFF), flags);
+		config(dev, (0xFFFFFFFF), flags);
 		break;
 	default:
 		return -ENOTSUP;
@@ -193,7 +193,7 @@ static void gpio_sam3_isr(void *arg)
 
 	int_stat = cfg->port->PIO_ISR;
 
-	_gpio_fire_callbacks(&context->cb, dev, int_stat);
+	gpio_fire_callbacks(&context->cb, dev, int_stat);
 }
 
 static int gpio_sam3_manage_callback(struct device *dev,
@@ -202,7 +202,7 @@ static int gpio_sam3_manage_callback(struct device *dev,
 {
 	struct gpio_sam3_runtime *context = dev->driver_data;
 
-	return _gpio_manage_callback(&context->cb, callback, set);
+	return gpio_manage_callback(&context->cb, callback, set);
 }
 
 static int gpio_sam3_enable_callback(struct device *dev,

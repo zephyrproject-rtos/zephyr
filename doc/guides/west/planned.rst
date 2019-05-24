@@ -1,19 +1,24 @@
+.. _west-planned-features:
+
 Planned Features
 ================
 
 Additional west features are under development for future versions of
-Zephyr:
+Zephyr. These include:
 
-- Running Zephyr in emulation.
+- Multiple manifest files: support for having multiple files which have
+  manifest data, instead of the single :file:`west.yml` supported today.
+  See `west #221`_.
 
-- Bootloader integration: bootloader-aware image building, signing,
-  and flashing, as well as building and flashing the bootloader itself.
+- Toolchain awareness: see `west #180`_.
 
-- Additional multiple repository support: fetching and updating repositories
-  that integrate with Zephyr, such as `MCUboot`_, `OpenThread`_ and others.
+See the `west repository issues`_ page for more.
 
-.. _MCUboot:
-   https://mcuboot.com/
+.. _west #221:
+   https://github.com/zephyrproject-rtos/west/issues/221
 
-.. _OpenThread:
-   https://openthread.io/
+.. _west #180:
+   https://github.com/zephyrproject-rtos/west/issues/180
+
+.. _west repository issues:
+   https://github.com/zephyrproject-rtos/west/issues

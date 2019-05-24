@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
 #include <dt-bindings/gpio/gpio.h>
 
 / {
@@ -169,6 +171,7 @@
 			interrupts = <4>;
 			reg = <0x10023000 0x1000>;
 			reg-names = "control";
+			label = "uart_1";
 			status = "disabled";
 		};
 		spi0: spi@10014000 {

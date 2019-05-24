@@ -110,7 +110,7 @@ osEvent osSignalWait(int32_t signals, uint32_t millisec)
 			evt.status = osEventSignal;
 			break;
 		case -EAGAIN:
-			if (millisec == 0) {
+			if (millisec == 0U) {
 				evt.status = osOK;
 			} else {
 				evt.status = osEventTimeout;

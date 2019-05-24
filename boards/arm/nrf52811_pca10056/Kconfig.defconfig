@@ -1,0 +1,43 @@
+# Kconfig - nRF52811 PCA10056 board configuration
+#
+# Copyright (c) 2019 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_NRF52811_PCA10056
+
+config BOARD
+	default "nrf52811_pca10056"
+
+config BT_CTLR
+	default BT
+
+if ADC
+
+config ADC_0
+	default y
+
+endif # ADC
+
+if I2C
+
+config I2C_0
+	default y
+
+endif # I2C
+
+if SPI
+
+config SPI_0
+	default y
+
+endif # SPI
+
+if PWM
+
+config PWM_0
+	default y
+
+endif # PWM
+
+endif # BOARD_NRF52811_PCA10056

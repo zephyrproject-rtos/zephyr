@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 config SYS_PM_STATE_LOCK
 	bool "Enable Power State locking capability"
 	help
@@ -10,6 +12,16 @@ config SYS_PM_DEBUG
 	bool "Enable System Power Management debug hooks"
 	help
 	  Enable System Power Management debugging hooks.
+
+config DEVICE_IDLE_PM
+	bool "Enable device Idle Power Management"
+	depends on DEVICE_POWER_MANAGEMENT
+	select POLL
+	help
+	  Enable device Idle Power Management to save power.
+	  With device Idle PM enabled, devices can be suspended or
+	  resumed based on the device usage even while the CPU or
+	  system is running.
 
 source "subsys/power/policy/Kconfig"
 

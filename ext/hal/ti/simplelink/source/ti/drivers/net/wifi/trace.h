@@ -52,26 +52,17 @@ extern "C" {
 
 #define SL_SYNC_SCAN_THRESHOLD  (( _u32 )2000)
 
-#ifdef SL_TINY
-#define _SlDrvAssert(line )  { while(1); }  
-#else
 #define _SlDrvAssert() _SlDrvHandleFatalError(SL_DEVICE_EVENT_FATAL_DRIVER_ABORT, 0, 0)
-#endif
 
-#define _SL_ASSERT(expr)            { if(!(expr)){ \
-	_SlDrvAssert(); } \
-}
-#define _SL_ERROR(expr, error)      { if(!(expr)){return (error); } }
+#define _SL_ASSERT(expr)              {if(!(expr)){ _SlDrvAssert();}}
+#define _SL_ERROR(expr, error)        {if(!(expr)){return (error);}}
 
-#define _SL_ASSERT_ERROR(expr, error)            { if(!(expr)){ \
-    _SlDrvAssert(); return (error);} \
-}
+#define _SL_ASSERT_ERROR(expr, error) {if(!(expr)){_SlDrvAssert(); return (error);}}
 
 #define SL_HANDLING_ASSERT          2
 #define SL_HANDLING_ERROR           1
 #define SL_HANDLING_NONE            0
 
-#ifndef SL_TINY
 #define SL_SELF_COND_HANDLING       SL_HANDLING_ASSERT
 #define SL_PROTOCOL_HANDLING        SL_HANDLING_ASSERT
 #define SL_DRV_RET_CODE_HANDLING    SL_HANDLING_ERROR
@@ -81,22 +72,11 @@ extern "C" {
 #define SL_USER_ARGS_HANDLING       SL_HANDLING_ASSERT
 #define SL_ERR_IN_PROGRESS_HANDLING SL_HANDLING_ERROR
 #define SL_ERR_IN_API_ALLOWED       SL_HANDLING_ERROR
-#else
-#define SL_SELF_COND_HANDLING       SL_HANDLING_NONE
-#define SL_PROTOCOL_HANDLING        SL_HANDLING_NONE
-#define SL_DRV_RET_CODE_HANDLING    SL_HANDLING_NONE
-#define SL_NWP_IF_HANDLING          SL_HANDLING_NONE
-#define SL_OSI_RET_OK_HANDLING      SL_HANDLING_NONE
-#define SL_MALLOC_OK_HANDLING       SL_HANDLING_NONE
-#define SL_USER_ARGS_HANDLING       SL_HANDLING_NONE
-#define SL_ERR_IN_PROGRESS_HANDLING SL_HANDLING_NONE
-#define SL_ERR_IN_API_ALLOWED       SL_HANDLING_NONE
-#endif
-
+#define SL_LOCK_OK_HANDLING         SL_HANDLING_ASSERT
 
 #if (SL_ERR_IN_PROGRESS_HANDLING == SL_HANDLING_ERROR)
 #define VERIFY_NO_ERROR_HANDLING_IN_PROGRESS() { \
-	    if (SL_IS_RESTART_REQUIRED) return SL_API_ABORTED; }
+        if (SL_IS_RESTART_REQUIRED) return SL_API_ABORTED; }
 #else
 #define VERIFY_NO_ERROR_HANDLING_IN_PROGRESS()
 #endif
@@ -104,7 +84,7 @@ extern "C" {
 #if (SL_ERR_IN_API_ALLOWED == SL_HANDLING_ERROR)
 #define VERIFY_API_ALLOWED(Silo) { \
         _SlReturnVal_t status = _SlDrvDriverIsApiAllowed(Silo); \
-	    if ( status ) return status; }
+        if ( status ) return status; }
 #else
 #define VERIFY_API_ALLOWED(Silo)
 #endif
@@ -159,6 +139,16 @@ extern "C" {
 #else
 #define MALLOC_OK_CHECK(Ptr)
 #endif
+
+
+#if (SL_LOCK_OK_HANDLING == SL_HANDLING_ASSERT)
+#define LOCK_OK_CHECK(Func)                  {_SlReturnVal_t _RetVal = (Func); _SL_ASSERT((_SlReturnVal_t)SL_OS_RET_CODE_OK == _RetVal)}
+#elif (SL_LOCK_OK_HANDLING == SL_HANDLING_ERROR)
+#define LOCK_OK_CHECK(Func)                  {_SlReturnVal_t _RetVal = (Func); if (SL_OS_RET_CODE_OK != _RetVal) return  _RetVal;}
+#else
+#define LOCK_OK_CHECK(Func)                  (Func);
+#endif
+
 
 #ifdef SL_INC_ARG_CHECK
 
@@ -216,7 +206,7 @@ extern "C" {
 #define SL_DBG_LEVEL_3                  4
 #define SL_DBG_LEVEL_MASK               (SL_DBG_LEVEL_2|SL_DBG_LEVEL_3)
 
-#define SL_INCLUDE_DBG_FUNC(Name)		((Name ## _DBG_LEVEL) & SL_DBG_LEVEL_MASK)
+#define SL_INCLUDE_DBG_FUNC(Name)       ((Name ## _DBG_LEVEL) & SL_DBG_LEVEL_MASK)
 
 #define _SlDrvPrintStat_DBG_LEVEL       SL_DBG_LEVEL_3
 #define _SlDrvOtherFunc_DBG_LEVEL       SL_DBG_LEVEL_1

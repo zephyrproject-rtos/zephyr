@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2017, Texas Instruments Incorporated
+ * Copyright (c) 2015-2018, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -78,8 +78,6 @@
  *
  *      // Enable interrupts
  *      GPIO_enableInt(Board_GPIO_BUTTON0);
- *
- *      ...
  *  }
  *
  *  //
@@ -304,9 +302,9 @@ typedef uint32_t GPIO_PinConfig;
 #define GPIO_CFG_OUT_OD_PU         (((uint32_t) 4) << GPIO_CFG_IO_LSB) /*!< @hideinitializer Output pin is Open Drain w/ pull up */
 #define GPIO_CFG_OUT_OD_PD         (((uint32_t) 6) << GPIO_CFG_IO_LSB) /*!< @hideinitializer Output pin is Open Drain w/ pull dn */
 
-#define GPIO_CFG_OUT_STR_LOW       (((uint32_t) 0) << GPIO_CFG_OUT_STRENGTH_LSB) /*!< @hideinitializer Set output pin strengh to low */
-#define GPIO_CFG_OUT_STR_MED       (((uint32_t) 1) << GPIO_CFG_OUT_STRENGTH_LSB) /*!< @hideinitializer Set output pin strengh to medium */
-#define GPIO_CFG_OUT_STR_HIGH      (((uint32_t) 2) << GPIO_CFG_OUT_STRENGTH_LSB) /*!< @hideinitializer Set output pin strengh to high */
+#define GPIO_CFG_OUT_STR_LOW       (((uint32_t) 0) << GPIO_CFG_OUT_STRENGTH_LSB) /*!< @hideinitializer Set output pin strength to low */
+#define GPIO_CFG_OUT_STR_MED       (((uint32_t) 1) << GPIO_CFG_OUT_STRENGTH_LSB) /*!< @hideinitializer Set output pin strength to medium */
+#define GPIO_CFG_OUT_STR_HIGH      (((uint32_t) 2) << GPIO_CFG_OUT_STRENGTH_LSB) /*!< @hideinitializer Set output pin strength to high */
 
 #define GPIO_CFG_OUT_HIGH          (((uint32_t) 1) << GPIO_CFG_OUT_BIT) /*!< @hideinitializer Set pin's output to 1. */
 #define GPIO_CFG_OUT_LOW           (((uint32_t) 0) << GPIO_CFG_OUT_BIT) /*!< @hideinitializer Set pin's output to 0. */

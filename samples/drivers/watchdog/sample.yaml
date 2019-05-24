@@ -1,7 +1,7 @@
 sample:
   name: Watchdog Driver Sample
 tests:
-  test:
+  sample.driver.watchdog:
     tags: drivers
     harness: console
     harness_config:
@@ -11,4 +11,5 @@ tests:
             - "Watchdog sample application"
             - "Feeding watchdog..."
             - "Waiting for reset..."
+            - "Watchdog sample application"
     depends_on: watchdog

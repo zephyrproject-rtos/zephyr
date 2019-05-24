@@ -1,0 +1,40 @@
+/*
+ * Copyright (c) 2018, Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <microchip/mec1501hsz.dtsi>
+
+/ {
+	model = "Microchip MEC15XXEVB_ASSY6853 evaluation board";
+	compatible = "microchip,mec15xxevb_assy6853", "microchip,mec1501hsz";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,console = &uart0;
+		zephyr,flash = &flash0;
+	};
+};
+
+&uart0 {
+	status = "ok";
+	current-speed = <115200>;
+};
+
+&i2c0 {
+	status = "ok";
+	port_sel = <0>;
+};
+
+&i2c1 {
+	status = "ok";
+	port_sel = <1>;
+};
+
+&i2c2 {
+	status = "ok";
+	port_sel = <7>;
+};

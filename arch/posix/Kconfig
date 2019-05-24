@@ -12,13 +12,8 @@ menu "POSIX (native) Options"
 config ARCH
 	default "posix"
 
-config ARCH_DEFCONFIG
-	string
-	default "arch/posix/defconfig"
-
 config ARCH_POSIX_RECOMMENDED_STACK_SIZE
 	int
-	depends on ARCH_POSIX
 	default 24
 	help
 	  In bytes, stack size for Zephyr threads meant only for the POSIX
@@ -26,5 +21,15 @@ config ARCH_POSIX_RECOMMENDED_STACK_SIZE
 	  (In this architecture only part of the thread status is kept in the Zephyr
 	  thread stack, the real stack is the native underlying pthread stack.
 	  Therefore the allocated stack can be limited to this size)
+
+config ARCH_POSIX_STOP_ON_FATAL_ERROR
+	bool "Terminate execution on fatal errors"
+	depends on ARCH_POSIX
+	help
+	  If set, when a fatal error occurs, the execution will stop immediately with
+	  an error. If not set, the default Zephyr behaviour will be followed:
+	  terminate only if the fault was triggered in an ISR or essential thread,
+	  otherwise abort the current thread and attempt to continue.
+	  Enabling this option may simplify locating and debugging faults
 
 endmenu

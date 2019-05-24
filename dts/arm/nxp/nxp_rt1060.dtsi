@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2019, Linaro
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nxp/nxp_rt.dtsi>
+
+/* i.MX rt1060 has two continuous on-chip RAM, one is part of the
+ * FlexRAM mapped at 0x20280000 (vs 0x20280000 on rt1050) and is
+ * configurable (256KB by defaults), the other one is dedicated 512KB
+ * ram (OCRAM2) mapped at 0x20200000. In order to have a continuous
+ * region, we describe them in one 768Kb unique node.
+ */
+&ocram0 {
+	compatible = "mmio-sram";
+	reg = <0x20200000 0xC0000>;
+};

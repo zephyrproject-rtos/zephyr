@@ -201,7 +201,7 @@ static int adxl372_set_activity_threshold_xyz(struct device *dev,
 		if (ret) {
 			return ret;
 		}
-		axis_reg_h += 2;
+		axis_reg_h += 2U;
 	}
 
 	return 0;
@@ -469,7 +469,7 @@ int adxl372_get_status(struct device *dev,
 	}
 
 	if (fifo_entries) {
-		length += 2;
+		length += 2U;
 	}
 
 	ret = adxl372_reg_read_multiple(dev, ADXL372_STATUS_1, buf, length);
@@ -908,7 +908,7 @@ static int adxl372_init(struct device *dev)
 	}
 
 	data->adxl372_cs_ctrl.gpio_pin = cfg->cs_gpio;
-	data->adxl372_cs_ctrl.delay = 0;
+	data->adxl372_cs_ctrl.delay = 0U;
 
 	data->spi_cfg.cs = &data->adxl372_cs_ctrl;
 #endif

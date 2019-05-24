@@ -2,7 +2,7 @@ sample:
   description: Demonstration of the APA102 LED strip driver
   name: APA102 sample
 tests:
-  test:
+  sample.driver.led_apa102:
     platform_whitelist: nucleo_l432kc
     tags: LED
     depends_on: spi

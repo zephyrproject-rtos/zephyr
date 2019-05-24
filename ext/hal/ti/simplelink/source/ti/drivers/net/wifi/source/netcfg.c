@@ -35,7 +35,6 @@
 */
 
 
-
 /*****************************************************************************/
 /* Include files                                                             */
 /*****************************************************************************/
@@ -74,7 +73,6 @@ _i16 sl_NetCfgSet(const _u16 ConfigId,const _u16 ConfigOpt,const _u16 ConfigLen,
     CmdExt.TxPayload1Len = (ConfigLen+3) & (~3);
     CmdExt.pTxPayload1 = (_u8 *)pValues;
 
-
     Msg.Cmd.ConfigId    = ConfigId;
     Msg.Cmd.ConfigLen   = ConfigLen;
     Msg.Cmd.ConfigOpt   = ConfigOpt;
@@ -85,14 +83,13 @@ _i16 sl_NetCfgSet(const _u16 ConfigId,const _u16 ConfigOpt,const _u16 ConfigLen,
 }
 #endif
 
-
 /*****************************************************************************/
 /* sl_NetCfgGet */
 /*****************************************************************************/
 typedef union
 {
-    SlNetCfgSetGet_t	    Cmd;
-    SlNetCfgSetGet_t	    Rsp;
+    SlNetCfgSetGet_t        Cmd;
+    SlNetCfgSetGet_t        Rsp;
 }_SlNetCfgMsgGet_u;
 
 #if _SL_INCLUDE_FUNC(sl_NetCfgGet)
@@ -122,7 +119,7 @@ _i16 sl_NetCfgGet(const _u16 ConfigId, _u16 *pConfigOpt,_u16 *pConfigLen, _u8 *p
     CmdExt.RxPayloadLen = (_i16)(*pConfigLen);
     CmdExt.pRxPayload = (_u8 *)pValues;
 
-	_SlDrvMemZero((void*) &Msg, sizeof(Msg));
+    _SlDrvMemZero((void*) &Msg, sizeof(Msg));
 
     Msg.Cmd.ConfigLen    = *pConfigLen;
     Msg.Cmd.ConfigId     = ConfigId;
@@ -140,9 +137,8 @@ _i16 sl_NetCfgGet(const _u16 ConfigId, _u16 *pConfigOpt,_u16 *pConfigLen, _u8 *p
     }
     if (CmdExt.RxPayloadLen < CmdExt.ActualRxPayloadLen) 
     {
-         *pConfigLen = (_u8)CmdExt.RxPayloadLen;
-        
-         return SL_ESMALLBUF;
+        *pConfigLen = (_u8)CmdExt.RxPayloadLen;
+        return SL_ESMALLBUF;
     }
     else
     {

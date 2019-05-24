@@ -130,6 +130,41 @@ struct shell_static_entry {
 	}
 
 /**
+ * @brief Macro for defining and adding a conditional root command (level 0)
+ * with required number of arguments.
+ *
+ * @see SHELL_CMD_ARG_REGISTER for details.
+ *
+ * Macro can be used to create a command which can be conditionally present.
+ * It is and alternative to \#ifdefs around command registration and command
+ * handler. If command is disabled handler and subcommands are removed from
+ * the application.
+ *
+ * @param[in] flag	Compile time flag. Command is present only if flag
+ *			exists and equals 1.
+ * @param[in] syntax	Command syntax (for example: history).
+ * @param[in] subcmd	Pointer to a subcommands array.
+ * @param[in] help	Pointer to a command help string.
+ * @param[in] handler	Pointer to a function handler.
+ * @param[in] mandatory	Number of mandatory arguments.
+ * @param[in] optional	Number of optional arguments.
+ */
+#define SHELL_COND_CMD_ARG_REGISTER(flag, syntax, subcmd, help, handler, \
+					mandatory, optional) \
+	COND_CODE_1(\
+		flag, \
+		(\
+		SHELL_CMD_ARG_REGISTER(syntax, subcmd, help, handler, \
+					mandatory, optional) \
+		), \
+		(\
+		static shell_cmd_handler dummy_##syntax##handler \
+			__attribute__((unused)) = handler;\
+		static const struct shell_cmd_entry *dummy_subcmd_##syntax \
+			__attribute__((unused)) = subcmd\
+		)\
+	)
+/**
  * @brief Macro for defining and adding a root command (level 0) with
  * arguments.
  *
@@ -141,15 +176,23 @@ struct shell_static_entry {
  * @param[in] handler	Pointer to a function handler.
  */
 #define SHELL_CMD_REGISTER(syntax, subcmd, help, handler) \
-	static const struct shell_static_entry UTIL_CAT(_shell_, syntax) = \
-	SHELL_CMD(syntax, subcmd, help, handler);			   \
-	const struct shell_cmd_entry UTIL_CAT(shell_cmd_, syntax)	   \
-	__attribute__ ((section("."					   \
-			STRINGIFY(UTIL_CAT(shell_root_cmd_, syntax)))))	   \
-	__attribute__((used)) = {					   \
-		.is_dynamic = false,					   \
-		.u = { .entry = &UTIL_CAT(_shell_, syntax) }		   \
-	}
+	SHELL_CMD_ARG_REGISTER(syntax, subcmd, help, handler, 0, 0)
+
+/**
+ * @brief Macro for defining and adding a conditional root command (level 0)
+ * with arguments.
+ *
+ * @see SHELL_COND_CMD_ARG_REGISTER.
+ *
+ * @param[in] flag	Compile time flag. Command is present only if flag
+ *			exists and equals 1.
+ * @param[in] syntax	Command syntax (for example: history).
+ * @param[in] subcmd	Pointer to a subcommands array.
+ * @param[in] help	Pointer to a command help string.
+ * @param[in] handler	Pointer to a function handler.
+ */
+#define SHELL_COND_CMD_REGISTER(flag, syntax, subcmd, help, handler) \
+	SHELL_COND_CMD_ARG_REGISTER(flag, syntax, subcmd, help, handler, 0, 0)
 
 /**
  * @brief Macro for creating a subcommand set. It must be used outside of any
@@ -226,21 +269,68 @@ struct shell_static_entry {
  * @note If a command will be called with wrong number of arguments shell will
  * print an error message and command handler will not be called.
  *
+ * @param[in] syntax	 Command syntax (for example: history).
+ * @param[in] subcmd	 Pointer to a subcommands array.
+ * @param[in] help	 Pointer to a command help string.
+ * @param[in] handler	 Pointer to a function handler.
+ * @param[in] mand	 Number of mandatory arguments.
+ * @param[in] opt	 Number of optional arguments.
+ */
+#define SHELL_CMD_ARG(syntax, subcmd, help, handler, mand, opt) \
+	SHELL_EXPR_CMD_ARG(1, syntax, subcmd, help, handler, mand, opt)
+
+/**
+ * @brief Initializes a conditional shell command with arguments.
+ *
+ * @see SHELL_CMD_ARG. Based on the flag, creates a valid entry or an empty
+ * command which is ignored by the shell. It is an alternative to \#ifdefs
+ * around command registration and command handler. However, empty structure is
+ * present in the flash even if command is disabled (subcommands and handler are
+ * removed). Macro internally handles case if flag is not defined so flag must
+ * be provided without any wrapper, e.g.: SHELL_COND_CMD_ARG(CONFIG_FOO, ...)
+ *
+ * @param[in] flag	 Compile time flag. Command is present only if flag
+ *			 exists and equals 1.
+ * @param[in] syntax	 Command syntax (for example: history).
+ * @param[in] subcmd	 Pointer to a subcommands array.
+ * @param[in] help	 Pointer to a command help string.
+ * @param[in] handler	 Pointer to a function handler.
+ * @param[in] mand	 Number of mandatory arguments.
+ * @param[in] opt	 Number of optional arguments.
+ */
+#define SHELL_COND_CMD_ARG(flag, syntax, subcmd, help, handler, mand, opt) \
+	SHELL_EXPR_CMD_ARG(IS_ENABLED(flag), syntax, subcmd, help, \
+			  handler, mand, opt)
+
+/**
+ * @brief Initializes a conditional shell command with arguments if expression
+ *	  gives non-zero result at compile time.
+ *
+ * @see SHELL_CMD_ARG. Based on the expression, creates a valid entry or an
+ * empty command which is ignored by the shell. It should be used instead of
+ * @ref SHELL_COND_CMD_ARG if condition is not a single configuration flag,
+ * e.g.:
+ * SHELL_EXPR_CMD_ARG(IS_ENABLED(CONFIG_FOO) &&
+ *		      IS_ENABLED(CONFIG_FOO_SETTING_1), ...)
+ *
+ * @param[in] _expr	 Expression.
  * @param[in] _syntax	 Command syntax (for example: history).
  * @param[in] _subcmd	 Pointer to a subcommands array.
  * @param[in] _help	 Pointer to a command help string.
  * @param[in] _handler	 Pointer to a function handler.
- * @param[in] _mandatory Number of mandatory arguments.
- * @param[in] _optional	 Number of optional arguments.
+ * @param[in] _mand	 Number of mandatory arguments.
+ * @param[in] _opt	 Number of optional arguments.
  */
-#define SHELL_CMD_ARG(_syntax, _subcmd, _help, _handler,		      \
-		      _mandatory, _optional) {				      \
-	.syntax = (const char *)STRINGIFY(_syntax),			      \
-	.help  = (const char *)_help,					      \
-	.subcmd = _subcmd,						      \
-	.handler = _handler,						      \
-	.args = {. mandatory = _mandatory, .optional =  _optional}	      \
-}
+#define SHELL_EXPR_CMD_ARG(_expr, _syntax, _subcmd, _help, _handler, \
+			   _mand, _opt) \
+	{ \
+		.syntax = (_expr) ? (const char *)STRINGIFY(_syntax) : "", \
+		.help  = (_expr) ? (const char *)_help : NULL, \
+		.subcmd = (const struct shell_cmd_entry *)((_expr) ? \
+				_subcmd : NULL), \
+		.handler = (shell_cmd_handler)((_expr) ? _handler : NULL), \
+		.args = { .mandatory = _mand, .optional = _opt} \
+	}
 
 /**
  * @brief Initializes a shell command.
@@ -253,6 +343,36 @@ struct shell_static_entry {
 #define SHELL_CMD(_syntax, _subcmd, _help, _handler) \
 	SHELL_CMD_ARG(_syntax, _subcmd, _help, _handler, 0, 0)
 
+/**
+ * @brief Initializes a conditional shell command.
+ *
+ * @see SHELL_COND_CMD_ARG.
+ *
+ * @param[in] _flag	Compile time flag. Command is present only if flag
+ *			exists and equals 1.
+ * @param[in] _syntax	Command syntax (for example: history).
+ * @param[in] _subcmd	Pointer to a subcommands array.
+ * @param[in] _help	Pointer to a command help string.
+ * @param[in] _handler	Pointer to a function handler.
+ */
+#define SHELL_COND_CMD(_flag, _syntax, _subcmd, _help, _handler) \
+	SHELL_COND_CMD_ARG(_flag, _syntax, _subcmd, _help, _handler, 0, 0)
+
+/**
+ * @brief Initializes shell command if expression gives non-zero result at
+ *	  compile time.
+ *
+ * @see SHELL_EXPR_CMD_ARG.
+ *
+ * @param[in] _expr	Compile time expression. Command is present only if
+ *			expression is non-zero.
+ * @param[in] _syntax	Command syntax (for example: history).
+ * @param[in] _subcmd	Pointer to a subcommands array.
+ * @param[in] _help	Pointer to a command help string.
+ * @param[in] _handler	Pointer to a function handler.
+ */
+#define SHELL_EXPR_CMD(_expr, _syntax, _subcmd, _help, _handler) \
+	SHELL_EXPR_CMD_ARG(_expr, _syntax, _subcmd, _help, _handler, 0, 0)
 
 /**
  * @internal @brief Internal shell state in response to data received from the
@@ -380,7 +500,7 @@ struct shell_stats {
 	u32_t log_lost_cnt; /*!< Lost log counter.*/
 };
 
-#if CONFIG_SHELL_STATS
+#ifdef CONFIG_SHELL_STATS
 #define SHELL_STATS_DEFINE(_name) static struct shell_stats _name##_stats
 #define SHELL_STATS_PTR(_name) (&(_name##_stats))
 #else
@@ -623,6 +743,15 @@ int shell_stop(const struct shell *shell);
  */
 void shell_fprintf(const struct shell *shell, enum shell_vt100_color color,
 		   const char *fmt, ...);
+
+/**
+ * @brief Print data in hexadecimal format.
+ *
+ * @param[in] shell	Pointer to the shell instance.
+ * @param[in] data	Pointer to data.
+ * @param[in] len	Length of data.
+ */
+void shell_hexdump(const struct shell *shell, const u8_t *data, size_t len);
 
 /**
  * @brief Print info message to the shell.

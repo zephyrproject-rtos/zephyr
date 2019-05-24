@@ -5,5 +5,5 @@ sample:
   description: Test wifi driver and APIs functionality
   name: WiFi sample app
 tests:
-  test:
+  sample.net.wifi:
     platform_whitelist: quark_se_c1000_devboard cc3220sf_launchxl disco_l475_iot1

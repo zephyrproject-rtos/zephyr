@@ -40,7 +40,7 @@ details.)
            --header-size 0x200 \
            --align 8 \
            --version 1.2 \
-           --included-header \
+           --slot-size 0x60000 \
            ./zephyr/zephyr.bin \
            signed-zephyr.bin
 
@@ -52,7 +52,7 @@ Build and sign a second application image e.g. :ref:`hello_world`,
 which will be used as an image for the update.
 Do not forget to enable the required MCUboot Kconfig option (as described
 in :ref:`mcuboot`) by adding the following line to
-:file:`samples/hello_world/prj.conf`:
+:zephyr_file:`samples/hello_world/prj.conf`:
 
 .. code-block:: console
 

@@ -1,1 +1,0 @@
-add_subdirectory_if_kconfig(tinycbor)

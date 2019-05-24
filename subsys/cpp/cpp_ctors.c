@@ -37,7 +37,7 @@ void __do_global_ctors_aux(void)
 
 	nCtors = (unsigned int)__CTOR_LIST__[0];
 
-	while (nCtors >= 1) {
+	while (nCtors >= 1U) {
 		__CTOR_LIST__[nCtors--]();
 	}
 }

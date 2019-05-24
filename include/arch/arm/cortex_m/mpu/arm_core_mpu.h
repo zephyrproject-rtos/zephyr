@@ -20,7 +20,7 @@ extern "C" {
  * MPU driver. The function is meant to be invoked once,
  * during system initialization.
  */
-void _arch_configure_static_mpu_regions(void);
+void z_arch_configure_static_mpu_regions(void);
 
 /**
  * @brief Use the HW-specific MPU driver to program
@@ -33,7 +33,7 @@ void _arch_configure_static_mpu_regions(void);
  *
  * @param thread pointer to the current k_thread context
  */
-void _arch_configure_dynamic_mpu_regions(struct k_thread *thread);
+void z_arch_configure_dynamic_mpu_regions(struct k_thread *thread);
 
 #ifdef __cplusplus
 }

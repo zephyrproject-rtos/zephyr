@@ -20,10 +20,10 @@
 #define HEXDUMP_BYTES_IN_LINE 8
 
 #define  DROPPED_COLOR_PREFIX \
-	_LOG_EVAL(CONFIG_LOG_BACKEND_SHOW_COLOR, (LOG_COLOR_CODE_RED), ())
+	Z_LOG_EVAL(CONFIG_LOG_BACKEND_SHOW_COLOR, (LOG_COLOR_CODE_RED), ())
 
 #define DROPPED_COLOR_POSTFIX \
-	_LOG_EVAL(CONFIG_LOG_BACKEND_SHOW_COLOR, (LOG_COLOR_CODE_DEFAULT), ())
+	Z_LOG_EVAL(CONFIG_LOG_BACKEND_SHOW_COLOR, (LOG_COLOR_CODE_DEFAULT), ())
 
 static const char *const severity[] = {
 	NULL,
@@ -46,8 +46,8 @@ static u32_t timestamp_div;
 
 typedef int (*out_func_t)(int c, void *ctx);
 
-extern int _prf(int (*func)(), void *dest, char *format, va_list vargs);
-extern void _vprintk(out_func_t out, void *log_output,
+extern int z_prf(int (*func)(), void *dest, char *format, va_list vargs);
+extern void z_vprintk(out_func_t out, void *log_output,
 		     const char *fmt, va_list ap);
 
 /* The RFC 5424 allows very flexible mapping and suggest the value 0 being the
@@ -68,22 +68,22 @@ static int level_to_rfc5424_severity(u32_t level)
 
 	switch (level) {
 	case LOG_LEVEL_NONE:
-		ret = 7;
+		ret = 7U;
 		break;
 	case LOG_LEVEL_ERR:
-		ret =  3;
+		ret =  3U;
 		break;
 	case LOG_LEVEL_WRN:
-		ret =  4;
+		ret =  4U;
 		break;
 	case LOG_LEVEL_INF:
-		ret =  6;
+		ret =  6U;
 		break;
 	case LOG_LEVEL_DBG:
-		ret = 7;
+		ret = 7U;
 		break;
 	default:
-		ret = 7;
+		ret = 7U;
 		break;
 	}
 
@@ -98,7 +98,7 @@ static int out_func(int c, void *ctx)
 	out_ctx->buf[out_ctx->control_block->offset] = (u8_t)c;
 	out_ctx->control_block->offset++;
 
-	assert(out_ctx->control_block->offset <= out_ctx->size);
+	__ASSERT_NO_MSG(out_ctx->control_block->offset <= out_ctx->size);
 
 	if (out_ctx->control_block->offset == out_ctx->size) {
 		log_output_flush(out_ctx);
@@ -115,10 +115,10 @@ static int print_formatted(const struct log_output *log_output,
 
 	va_start(args, fmt);
 #if !defined(CONFIG_NEWLIB_LIBC) && !defined(CONFIG_ARCH_POSIX) && \
-    !defined(CONFIG_LOG_DISABLE_FANCY_OUTPUT_FORMATTING)
-	length = _prf(out_func, (void *)log_output, (char *)fmt, args);
+    defined(CONFIG_LOG_ENABLE_FANCY_OUTPUT_FORMATTING)
+	length = z_prf(out_func, (void *)log_output, (char *)fmt, args);
 #else
-	_vprintk(out_func, (void *)log_output, fmt, args);
+	z_vprintk(out_func, (void *)log_output, fmt, args);
 #endif
 	va_end(args);
 
@@ -157,7 +157,7 @@ static int timestamp_print(const struct log_output *log_output,
 
 	if (!format) {
 		length = print_formatted(log_output, "[%08lu] ", timestamp);
-	} else if (freq != 0) {
+	} else if (freq != 0U) {
 		u32_t remainder;
 		u32_t seconds;
 		u32_t hours;
@@ -167,14 +167,14 @@ static int timestamp_print(const struct log_output *log_output,
 
 		timestamp /= timestamp_div;
 		seconds = timestamp / freq;
-		hours = seconds / 3600;
-		seconds -= hours * 3600;
-		mins = seconds / 60;
-		seconds -= mins * 60;
+		hours = seconds / 3600U;
+		seconds -= hours * 3600U;
+		mins = seconds / 60U;
+		seconds -= mins * 60U;
 
 		remainder = timestamp % freq;
-		ms = (remainder * 1000) / freq;
-		us = (1000 * (1000 * remainder - (ms * freq))) / freq;
+		ms = (remainder * 1000U) / freq;
+		us = (1000 * (remainder * 1000U - (ms * freq))) / freq;
 
 		if (IS_ENABLED(CONFIG_LOG_BACKEND_NET) &&
 		    flags & LOG_OUTPUT_FLAG_FORMAT_SYSLOG) {
@@ -189,11 +189,11 @@ static int timestamp_print(const struct log_output *log_output,
 			strftime(time_str, sizeof(time_str), "%FT%T", tm);
 
 			length = print_formatted(log_output, "%s.%06dZ ",
-						 time_str, ms * 1000 + us);
+						 time_str, ms * 1000U + us);
 #else
 			length = print_formatted(log_output,
 					"1970-01-01T%02d:%02d:%02d.%06dZ ",
-					hours, mins, seconds, ms * 1000 + us);
+					hours, mins, seconds, ms * 1000U + us);
 #endif
 		} else {
 			length = print_formatted(log_output,
@@ -255,11 +255,11 @@ static void newline_print(const struct log_output *ctx, u32_t flags)
 		return;
 	}
 
-	if ((flags & LOG_OUTPUT_FLAG_CRLF_NONE) != 0) {
+	if ((flags & LOG_OUTPUT_FLAG_CRLF_NONE) != 0U) {
 		return;
 	}
 
-	if ((flags & LOG_OUTPUT_FLAG_CRLF_LFONLY) != 0) {
+	if ((flags & LOG_OUTPUT_FLAG_CRLF_LFONLY) != 0U) {
 		print_formatted(ctx, "\n");
 	} else {
 		print_formatted(ctx, "\r\n");
@@ -350,7 +350,7 @@ static void std_print(struct log_msg *msg,
 		break;
 	default:
 		/* Unsupported number of arguments. */
-		assert(true);
+		__ASSERT_NO_MSG(true);
 		break;
 	}
 }
@@ -414,7 +414,7 @@ static void hexdump_print(struct log_msg *msg,
 static void raw_string_print(struct log_msg *msg,
 			     const struct log_output *log_output)
 {
-	assert(log_output->size);
+	__ASSERT_NO_MSG(log_output->size);
 
 	size_t offset = 0;
 	size_t length;
@@ -443,7 +443,7 @@ static u32_t prefix_print(const struct log_output *log_output,
 			 u32_t flags, bool func_on, u32_t timestamp, u8_t level,
 			 u8_t domain_id, u16_t source_id)
 {
-	u32_t length = 0;
+	u32_t length = 0U;
 
 	bool stamp = flags & LOG_OUTPUT_FLAG_TIMESTAMP;
 	bool colors_on = flags & LOG_OUTPUT_FLAG_COLORS;
@@ -553,10 +553,10 @@ void log_output_string(const struct log_output *log_output,
 	}
 
 #if !defined(CONFIG_NEWLIB_LIBC) && !defined(CONFIG_ARCH_POSIX) && \
-    !defined(CONFIG_LOG_DISABLE_FANCY_OUTPUT_FORMATTING)
-	length = _prf(out_func, (void *)log_output, (char *)fmt, ap);
+    defined(CONFIG_LOG_ENABLE_FANCY_OUTPUT_FORMATTING)
+	length = z_prf(out_func, (void *)log_output, (char *)fmt, ap);
 #else
-	_vprintk(out_func, (void *)log_output, fmt, ap);
+	z_vprintk(out_func, (void *)log_output, fmt, ap);
 #endif
 
 	(void)length;
@@ -629,8 +629,8 @@ void log_output_timestamp_freq_set(u32_t frequency)
 	 * printed) and too high frequency leads to overflows in calculations.
 	 */
 	while (frequency > 1000000) {
-		frequency /= 2;
-		timestamp_div *= 2;
+		frequency /= 2U;
+		timestamp_div *= 2U;
 	}
 
 	freq = frequency;

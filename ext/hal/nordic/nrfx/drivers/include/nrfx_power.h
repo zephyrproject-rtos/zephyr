@@ -92,26 +92,26 @@ typedef enum
  */
 typedef enum
 {
-    NRFX_POWER_USB_STATE_DISCONNECTED, /**< No power on USB lines detected */
-    NRFX_POWER_USB_STATE_CONNECTED,    /**< The USB power is detected, but USB power regulator is not ready */
-    NRFX_POWER_USB_STATE_READY         /**< From the power point of view USB is ready for working */
+    NRFX_POWER_USB_STATE_DISCONNECTED, /**< No power on USB lines detected. */
+    NRFX_POWER_USB_STATE_CONNECTED,    /**< The USB power is detected, but USB power regulator is not ready. */
+    NRFX_POWER_USB_STATE_READY         /**< From the power viewpoint, USB is ready for working. */
 }nrfx_power_usb_state_t;
 #endif /* NRF_POWER_HAS_USBREG */
 
 /**
  * @name Callback types
  *
- * Defined types of callback functions
+ * Defined types of callback functions.
  * @{
  */
 /**
- * @brief Event handler for power failure warning
+ * @brief Event handler for power failure warning.
  */
 typedef void (*nrfx_power_pofwarn_event_handler_t)(void);
 
 #if NRF_POWER_HAS_SLEEPEVT || defined(__NRFX_DOXYGEN__)
 /**
- * @brief Event handler for entering/exiting sleep
+ * @brief Event handler for the sleep events.
  *
  * @param event Event type
  */
@@ -120,7 +120,7 @@ typedef void (*nrfx_power_sleep_event_handler_t)(nrfx_power_sleep_evt_t event);
 
 #if NRF_POWER_HAS_USBREG || defined(__NRFX_DOXYGEN__)
 /**
- * @brief Event handler for USB related power events
+ * @brief Event handler for the USB-related power events.
  *
  * @param event Event type
  */
@@ -136,22 +136,22 @@ typedef void (*nrfx_power_usb_event_handler_t)(nrfx_power_usb_evt_t event);
 typedef struct
 {
     /**
-     * @brief Enable main DCDC regulator
+     * @brief Enable main DCDC regulator.
      *
      * This bit only informs the driver that elements for DCDC regulator
-     * are installed and regulator can be used.
-     * The regulator would be enabled or disabled automatically
+     * are installed and the regulator can be used.
+     * The regulator will be enabled or disabled automatically
      * by the hardware, basing on current power requirement.
      */
     bool dcdcen:1;
 
 #if NRF_POWER_HAS_VDDH || defined(__NRFX_DOXYGEN__)
     /**
-     * @brief Enable HV DCDC regulator
+     * @brief Enable HV DCDC regulator.
      *
      * This bit only informs the driver that elements for DCDC regulator
-     * are installed and regulator can be used.
-     * The regulator would be enabled or disabled automatically
+     * are installed and the regulator can be used.
+     * The regulator will be enabled or disabled automatically
      * by the hardware, basing on current power requirement.
      */
     bool dcdcenhv: 1;
@@ -159,44 +159,44 @@ typedef struct
 }nrfx_power_config_t;
 
 /**
- * @brief The configuration for power failure comparator
+ * @brief The configuration for power failure comparator.
  *
- * Configuration used to enable and configure power failure comparator
+ * Configuration used to enable and configure the power failure comparator.
  */
 typedef struct
 {
-    nrfx_power_pofwarn_event_handler_t handler; //!< Event handler
+    nrfx_power_pofwarn_event_handler_t handler; //!< Event handler.
 #if NRF_POWER_HAS_POFCON || defined(__NRFX_DOXYGEN__)
     nrf_power_pof_thr_t                thr;     //!< Threshold for power failure detection
 #endif
 #if NRF_POWER_HAS_VDDH || defined(__NRFX_DOXYGEN__)
-    nrf_power_pof_thrvddh_t            thrvddh; //!< Threshold for power failure detection on VDDH pin
+    nrf_power_pof_thrvddh_t            thrvddh; //!< Threshold for power failure detection on the VDDH pin.
 #endif
 }nrfx_power_pofwarn_config_t;
 
 #if NRF_POWER_HAS_SLEEPEVT || defined(__NRFX_DOXYGEN__)
 /**
- * @brief The configuration of sleep event processing
+ * @brief The configuration of sleep event processing.
  *
- * Configuration used to enable and configure sleep event handling
+ * Configuration used to enable and configure sleep event handling.
  */
 typedef struct
 {
-    nrfx_power_sleep_event_handler_t handler;    //!< Event handler
-    bool                             en_enter:1; //!< Enable event on sleep entering
-    bool                             en_exit :1; //!< Enable event on sleep exiting
+    nrfx_power_sleep_event_handler_t handler;    //!< Event handler.
+    bool                             en_enter:1; //!< Enable event on sleep entering.
+    bool                             en_exit :1; //!< Enable event on sleep exiting.
 }nrfx_power_sleepevt_config_t;
 #endif
 
 #if NRF_POWER_HAS_USBREG || defined(__NRFX_DOXYGEN__)
 /**
- * @brief The configuration of USB related power events
+ * @brief The configuration of the USB-related power events.
  *
- * Configuration used to enable and configure USB power event handling
+ * Configuration used to enable and configure USB power event handling.
  */
 typedef struct
 {
-    nrfx_power_usb_event_handler_t handler; //!< Event processing
+    nrfx_power_usb_event_handler_t handler; //!< Event processing.
 }nrfx_power_usbevt_config_t;
 #endif /* NRF_POWER_HAS_USBREG */
 
@@ -215,11 +215,11 @@ nrfx_power_usb_event_handler_t nrfx_power_usb_handler_get(void);
 #endif
 
 /**
- * @brief Initialize power module driver
+ * @brief Function for initializing the power module driver.
  *
- * Enabled power module driver would process all the interrupts from power system.
+ * Enabled power module driver processes all the interrupts from the power system.
  *
- * @param[in] p_config Pointer to the structure with initial configuration.
+ * @param[in] p_config Pointer to the structure with the initial configuration.
  *
  * @retval NRFX_SUCCESS                   Successfully initialized.
  * @retval NRFX_ERROR_ALREADY_INITIALIZED Module was already initialized.
@@ -227,7 +227,7 @@ nrfx_power_usb_event_handler_t nrfx_power_usb_handler_get(void);
 nrfx_err_t nrfx_power_init(nrfx_power_config_t const * p_config);
 
 /**
- * @brief Unintialize power module driver
+ * @brief Function for unintializing the power module driver.
  *
  * Disables all the interrupt handling in the module.
  *
@@ -237,36 +237,36 @@ void nrfx_power_uninit(void);
 
 #if NRF_POWER_HAS_POFCON || defined(__NRFX_DOXYGEN__)
 /**
- * @brief Initialize power failure comparator
+ * @brief Function for initializing the power failure comparator.
  *
- * Configures the power failure comparator. This function does not setup and enable it.
- * Those steps can be done with functions @ref nrfx_power_pof_enable and @ref nrfx_power_pof_disable
- * or with Softdevice API (when Softdevice is using).
+ * Configures the power failure comparator. This function does not set it up and enable it.
+ * These steps can be done with functions @ref nrfx_power_pof_enable and @ref nrfx_power_pof_disable
+ * or with the SoftDevice API (when in use).
  *
  * @param[in] p_config Configuration with values and event handler.
- *                     If event handler is set to NULL, interrupt would be disabled.
+ *                     If event handler is set to NULL, the interrupt will be disabled.
  */
 void nrfx_power_pof_init(nrfx_power_pofwarn_config_t const * p_config);
 
 /**
- * @brief Enable power failure comparator
- * Sets and enables interrupt of the power failure comparator. This functions cannot be using
- * when Softdevice is enabled. If event handler set in init function is set to NULL, interrupt
- * would be disabled.
+ * @brief Function for enabling the power failure comparator.
+ * Sets and enables the interrupt of the power failure comparator. This function cannot be in use
+ * when SoftDevice is enabled. If the event handler set in the init function is set to NULL, the interrupt
+ * will be disabled.
  *
  * @param[in] p_config Configuration with values and event handler.
  */
 void nrfx_power_pof_enable(nrfx_power_pofwarn_config_t const * p_config);
 
 /**
- * @brief Disable the power failure comparator
+ * @brief Function for disabling the power failure comparator.
  *
  * Disables the power failure comparator interrupt.
  */
 void nrfx_power_pof_disable(void);
 
 /**
- * @brief Clear the power failure comparator settings
+ * @brief Function for clearing the power failure comparator settings.
  *
  * Clears the settings of the power failure comparator.
  */
@@ -275,9 +275,9 @@ void nrfx_power_pof_uninit(void);
 
 #if NRF_POWER_HAS_SLEEPEVT || defined(__NRFX_DOXYGEN__)
 /**
- * @brief Initialize sleep entering and exiting events processing
+ * @brief Function for initializing the processing of the sleep events.
  *
- * Configures and setups the sleep event processing.
+ * Configures and sets up the sleep event processing.
  *
  * @param[in] p_config Configuration with values and event handler.
  *
@@ -287,19 +287,17 @@ void nrfx_power_pof_uninit(void);
 void nrfx_power_sleepevt_init(nrfx_power_sleepevt_config_t const * p_config);
 
 /**
- * @brief Enable sleep entering and exiting events processing
+ * @brief Function for enabling the processing of the sleep events.
  *
  * @param[in] p_config Configuration with values and event handler.
  */
 void nrfx_power_sleepevt_enable(nrfx_power_sleepevt_config_t const * p_config);
 
-/**
- * @brief Disable sleep entering and exiting events processing
- */
+/** @brief Function for disabling the processing of the sleep events. */
 void nrfx_power_sleepevt_disable(void);
 
 /**
- * @brief Uninitialize sleep entering and exiting events processing
+ * @brief Function for uninitializing the processing of the sleep events.
  *
  * @sa nrfx_power_sleepevt_init
  */
@@ -308,9 +306,9 @@ void nrfx_power_sleepevt_uninit(void);
 
 #if NRF_POWER_HAS_USBREG || defined(__NRFX_DOXYGEN__)
 /**
- * @brief Initialize USB power event processing
+ * @brief Function for initializing the processing of USB power event.
  *
- * Configures and setups the USB power event processing.
+ * Configures and sets up the USB power event processing.
  *
  * @param[in] p_config Configuration with values and event handler.
  *
@@ -318,27 +316,23 @@ void nrfx_power_sleepevt_uninit(void);
  */
 void nrfx_power_usbevt_init(nrfx_power_usbevt_config_t const * p_config);
 
-/**
- * @brief Enable USB power event processing
- */
+/** @brief Function for enabling the processing of USB power event. */
 void nrfx_power_usbevt_enable(void);
 
-/**
- * @brief Disable USB power event processing
- */
+/** @brief Function for disabling the processing of USB power event. */
 void nrfx_power_usbevt_disable(void);
 
 /**
- * @brief Uninitalize USB power event processing
+ * @brief Function for uninitalizing the processing of USB power event.
  *
  * @sa nrfx_power_usbevt_init
  */
 void nrfx_power_usbevt_uninit(void);
 
 /**
- *  @brief Get the status of USB power
+ * @brief Function for getting the status of USB power.
  *
- *  @return Current USB power status
+ * @return Current USB power status.
  */
 __STATIC_INLINE nrfx_power_usb_state_t nrfx_power_usbstatus_get(void);
 
@@ -364,11 +358,11 @@ __STATIC_INLINE nrfx_power_usb_state_t nrfx_power_usbstatus_get(void)
 
 #endif /* SUPPRESS_INLINE_IMPLEMENTATION */
 
+/** @} */
+
 
 void nrfx_power_irq_handler(void);
 
-
-/** @} */
 
 #ifdef __cplusplus
 }

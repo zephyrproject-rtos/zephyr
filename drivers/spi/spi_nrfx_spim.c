@@ -178,12 +178,22 @@ static void transfer_next_chunk(struct device *dev)
 		xfer.tx_length   = spi_context_tx_buf_on(ctx) ? chunk_len : 0;
 		xfer.p_rx_buffer = ctx->rx_buf;
 		xfer.rx_length   = spi_context_rx_buf_on(ctx) ? chunk_len : 0;
-		result = nrfx_spim_xfer(&dev_config->spim, &xfer, 0);
-		if (result == NRFX_SUCCESS) {
-			return;
+
+		/* This SPIM driver is only used by the NRF52832 if
+		   SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58 is enabled */
+		if (IS_ENABLED(CONFIG_SOC_NRF52832) &&
+		   (xfer.rx_length == 1 && xfer.tx_length <= 1)) {
+			LOG_WRN("Transaction aborted since it would trigger nRF52832 PAN 58");
+			error = -EIO;
 		}
 
-		error = -EIO;
+		if (!error) {
+			result = nrfx_spim_xfer(&dev_config->spim, &xfer, 0);
+			if (result == NRFX_SUCCESS) {
+				return;
+			}
+			error = -EIO;
+		}
 	}
 
 	spi_context_cs_control(ctx, false);
@@ -331,7 +341,7 @@ static int init_spim(struct device *dev, const nrfx_spim_config_t *config)
 		SPI_CONTEXT_INIT_SYNC(spi_##idx##_data, ctx),		       \
 		.busy = false,						       \
 	};								       \
-	static const struct spi_nrfx_config spi_##idx##_config = {	       \
+	static const struct spi_nrfx_config spi_##idx##z_config = {	       \
 		.spim = NRFX_SPIM_INSTANCE(idx),			       \
 		.max_chunk_len = (1 << SPIM##idx##_EASYDMA_MAXCNT_SIZE) - 1,   \
 	};								       \
@@ -339,7 +349,7 @@ static int init_spim(struct device *dev, const nrfx_spim_config_t *config)
 			    DT_NORDIC_NRF_SPI_SPI_##idx##_LABEL,	       \
 			    spi_##idx##_init,				       \
 			    &spi_##idx##_data,				       \
-			    &spi_##idx##_config,			       \
+			    &spi_##idx##z_config,			       \
 			    POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,	       \
 			    &spi_nrfx_driver_api)
 

@@ -151,7 +151,7 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 
 	radio_isr_set(lll_conn_isr_tx, lll);
 
-	radio_tmr_tifs_set(TIFS_US);
+	radio_tmr_tifs_set(EVENT_IFS_US);
 
 #if defined(CONFIG_BT_CTLR_PHY)
 	radio_switch_complete_and_rx(lll->phy_rx);

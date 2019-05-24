@@ -1,6 +1,6 @@
 /*******************************************************************************
  *
- * Copyright(c) 2015,2016 Intel Corporation.
+ * Copyright(c) 2015-2019 Intel Corporation.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -41,6 +41,7 @@
 #include <init.h>
 #include <uart.h>
 #include <string.h>
+#include <ring_buffer.h>
 #include <misc/byteorder.h>
 #include <usb/class/usb_cdc.h>
 #include <usb/usb_device.h>
@@ -61,11 +62,10 @@ LOG_MODULE_REGISTER(usb_cdc_acm);
 	((struct cdc_acm_dev_data_t * const)(dev)->driver_data)
 
 /* 115200bps, no parity, 1 stop bit, 8bit char */
-#define CDC_ACM_DEFAUL_BAUDRATE {sys_cpu_to_le32(115200), 0, 0, 8}
+#define CDC_ACM_DEFAULT_BAUDRATE {sys_cpu_to_le32(115200), 0, 0, 8}
 
 /* Size of the internal buffer used for storing received data */
-#define CDC_ACM_BUFFER_SIZE (2 * CONFIG_CDC_ACM_BULK_EP_MPS)
-
+#define CDC_ACM_BUFFER_SIZE (CONFIG_CDC_ACM_BULK_EP_MPS)
 
 /* Max CDC ACM class request max data size */
 #define CDC_CLASS_REQ_MAX_DATA_SIZE	8
@@ -73,18 +73,12 @@ LOG_MODULE_REGISTER(usb_cdc_acm);
 /* Serial state notification timeout */
 #define CDC_CONTROL_SERIAL_STATE_TIMEOUT_US 100000
 
-#define CDC_ACM_INT_EP_ADDR		0x85
-#define CDC_ACM_IN_EP_ADDR		0x84
-#define CDC_ACM_OUT_EP_ADDR		0x03
-
 #define ACM_INT_EP_IDX			0
 #define ACM_OUT_EP_IDX			1
 #define ACM_IN_EP_IDX			2
 
-#define ACM_IF0_STRING			"ACM-CDC"
-
 struct usb_cdc_acm_config {
-#ifdef CONFIG_USB_COMPOSITE_DEVICE
+#if (CONFIG_USB_COMPOSITE_DEVICE || CONFIG_CDC_ACM_IAD)
 	struct usb_association_descriptor iad_cdc;
 #endif
 	struct usb_if_descriptor if0;
@@ -184,14 +178,16 @@ struct cdc_acm_dev_data_t {
 	uart_irq_callback_user_data_t cb;
 	void *cb_data;
 	struct k_work cb_work;
+	struct k_work tx_work;
 	/* Tx ready status. Signals when */
-	u8_t tx_ready;
-	u8_t rx_ready;                 /* Rx ready status */
-	u8_t tx_irq_ena;               /* Tx interrupt enable status */
-	u8_t rx_irq_ena;               /* Rx interrupt enable status */
-	u8_t rx_buf[CDC_ACM_BUFFER_SIZE];/* Internal Rx buffer */
-	u32_t rx_buf_head;             /* Head of the internal Rx buffer */
-	u32_t rx_buf_tail;             /* Tail of the internal Rx buffer */
+	bool tx_ready;
+	bool rx_ready;				/* Rx ready status */
+	bool tx_irq_ena;			/* Tx interrupt enable status */
+	bool rx_irq_ena;			/* Rx interrupt enable status */
+	u8_t rx_buf[CDC_ACM_BUFFER_SIZE];	/* Internal RX buffer */
+	u8_t tx_buf[CDC_ACM_BUFFER_SIZE];	/* Internal TX buffer */
+	struct ring_buf *rx_ringbuf;
+	struct ring_buf *tx_ringbuf;
 	/* Interface data buffer */
 #ifndef CONFIG_USB_COMPOSITE_DEVICE
 	u8_t interface_data[CDC_CLASS_REQ_MAX_DATA_SIZE];
@@ -271,97 +267,80 @@ int cdc_acm_class_handle_req(struct usb_setup_packet *pSetup,
 	return 0;
 }
 
-/**
- * @brief EP Bulk IN handler, used to send data to the Host
- *
- * @param ep        Endpoint address.
- * @param ep_status Endpoint status code.
- *
- * @return  N/A.
- */
-static void cdc_acm_bulk_in(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
+static void cdc_acm_write_cb(u8_t ep, int size, void *priv)
 {
-	struct cdc_acm_dev_data_t *dev_data;
-	struct usb_dev_data *common;
+	struct cdc_acm_dev_data_t *dev_data = priv;
 
-	ARG_UNUSED(ep_status);
+	LOG_DBG("ep %x: written %d bytes dev_data %p", ep, size, dev_data);
 
-	common = usb_get_dev_data_by_ep(&cdc_acm_data_devlist, ep);
-	if (common == NULL) {
-		LOG_WRN("Device data not found for endpoint %u", ep);
-		return;
-	}
+	dev_data->tx_ready = true;
 
-	dev_data = CONTAINER_OF(common, struct cdc_acm_dev_data_t, common);
-
-	dev_data->tx_ready = 1U;
 	k_sem_give(&poll_wait_sem);
+
 	/* Call callback only if tx irq ena */
 	if (dev_data->cb && dev_data->tx_irq_ena) {
 		k_work_submit(&dev_data->cb_work);
 	}
-}
 
-/**
- * @brief EP Bulk OUT handler, used to read the data received from the Host
- *
- * @param ep        Endpoint address.
- * @param ep_status Endpoint status code.
- *
- * @return  N/A.
- */
-static void cdc_acm_bulk_out(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
-{
-	struct cdc_acm_dev_data_t *dev_data;
-	u32_t bytes_to_read, i, j, buf_head;
-	struct usb_dev_data *common;
-	u8_t tmp_buf[4];
-
-	ARG_UNUSED(ep_status);
-
-	common = usb_get_dev_data_by_ep(&cdc_acm_data_devlist, ep);
-	if (common == NULL) {
-		LOG_WRN("Device data not found for endpoint %u", ep);
+	if (ring_buf_is_empty(dev_data->tx_ringbuf)) {
+		LOG_DBG("tx_ringbuf is empty");
 		return;
 	}
 
-	dev_data = CONTAINER_OF(common, struct cdc_acm_dev_data_t, common);
+	k_work_submit(&dev_data->tx_work);
+}
 
-	/* Check how many bytes were received */
-	usb_read(ep, NULL, 0, &bytes_to_read);
+static void tx_work_handler(struct k_work *work)
+{
+	struct cdc_acm_dev_data_t *dev_data =
+		CONTAINER_OF(work, struct cdc_acm_dev_data_t, tx_work);
+	struct device *dev = dev_data->common.dev;
+	struct usb_cfg_data *cfg = (void *)dev->config->config_info;
+	u8_t ep = cfg->endpoint[ACM_IN_EP_IDX].ep_addr;
+	size_t len;
 
-	buf_head = dev_data->rx_buf_head;
-
-	/*
-	 * Quark SE USB controller is always storing data
-	 * in the FIFOs per 32-bit words.
-	 */
-	for (i = 0U; i < bytes_to_read; i += 4) {
-		usb_read(ep, tmp_buf, 4, NULL);
-
-		for (j = 0U; j < 4; j++) {
-			if (i + j == bytes_to_read) {
-				/* We read all the data */
-				break;
-			}
-
-			if (((buf_head + 1) % CDC_ACM_BUFFER_SIZE) ==
-			    dev_data->rx_buf_tail) {
-				/* FIFO full, discard data */
-				LOG_ERR("CDC buffer full!");
-			} else {
-				dev_data->rx_buf[buf_head] = tmp_buf[j];
-				buf_head = (buf_head + 1) % CDC_ACM_BUFFER_SIZE;
-			}
-		}
+	if (usb_transfer_is_busy(ep)) {
+		LOG_DBG("Transfer is ongoing");
+		return;
 	}
 
-	dev_data->rx_buf_head = buf_head;
-	dev_data->rx_ready = 1U;
+	len = ring_buf_get(dev_data->tx_ringbuf, dev_data->tx_buf,
+			   sizeof(dev_data->tx_buf));
+
+	LOG_DBG("Got %d bytes from ringbuffer send to ep %x", len, ep);
+
+	usb_transfer(ep, dev_data->tx_buf, len, USB_TRANS_WRITE,
+		     cdc_acm_write_cb, dev_data);
+}
+
+static void cdc_acm_read_cb(u8_t ep, int size, void *priv)
+{
+	struct cdc_acm_dev_data_t *dev_data = priv;
+	size_t wrote;
+
+	LOG_DBG("ep %x size %d dev_data %p rx_ringbuf space %u",
+		ep, size, dev_data, ring_buf_space_get(dev_data->rx_ringbuf));
+
+	if (size <= 0) {
+		goto done;
+	}
+
+	wrote = ring_buf_put(dev_data->rx_ringbuf, dev_data->rx_buf, size);
+	if (wrote < size) {
+		LOG_ERR("Ring buffer full, drop %d bytes", size - wrote);
+	}
+
+done:
+	dev_data->rx_ready = true;
+
 	/* Call callback only if rx irq ena */
 	if (dev_data->cb && dev_data->rx_irq_ena) {
 		k_work_submit(&dev_data->cb_work);
 	}
+
+	usb_transfer(ep, dev_data->rx_buf, sizeof(dev_data->rx_buf),
+		     USB_TRANS_READ, cdc_acm_read_cb, dev_data);
+
 }
 
 /**
@@ -391,10 +370,26 @@ static void cdc_acm_int_in(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 	LOG_DBG("CDC_IntIN EP[%x]\r", ep);
 }
 
+static void cdc_acm_reset_port(struct cdc_acm_dev_data_t *dev_data)
+{
+	k_sem_give(&poll_wait_sem);
+	dev_data->rx_ready = false;
+	dev_data->tx_ready = false;
+	dev_data->tx_irq_ena = false;
+	dev_data->rx_irq_ena = false;
+	dev_data->line_coding = (struct cdc_acm_line_coding)
+				CDC_ACM_DEFAULT_BAUDRATE;
+	dev_data->serial_state = 0;
+	dev_data->line_state = 0;
+	memset(&dev_data->rx_buf, 0, CDC_ACM_BUFFER_SIZE);
+}
+
 static void cdc_acm_do_cb(struct cdc_acm_dev_data_t *dev_data,
 			  enum usb_dc_status_code status,
 			  const u8_t *param)
 {
+	struct device *dev = dev_data->common.dev;
+	struct usb_cfg_data *cfg = (void *)dev->config->config_info;
 
 	/* Store the new status */
 	if (status != USB_DC_SOF) {
@@ -408,16 +403,22 @@ static void cdc_acm_do_cb(struct cdc_acm_dev_data_t *dev_data,
 		break;
 	case USB_DC_RESET:
 		LOG_DBG("USB device reset detected");
+		cdc_acm_reset_port(dev_data);
 		break;
 	case USB_DC_CONNECTED:
 		LOG_DBG("USB device connected");
 		break;
 	case USB_DC_CONFIGURED:
-		dev_data->tx_ready = 1;
+		cdc_acm_read_cb(cfg->endpoint[ACM_OUT_EP_IDX].ep_addr, 0,
+				dev_data);
+		dev_data->tx_ready = true;
+		dev_data->tx_irq_ena = true;
+		dev_data->rx_irq_ena = true;
 		LOG_DBG("USB device configured");
 		break;
 	case USB_DC_DISCONNECTED:
 		LOG_DBG("USB device disconnected");
+		cdc_acm_reset_port(dev_data);
 		break;
 	case USB_DC_SUSPEND:
 		LOG_DBG("USB device suspended");
@@ -434,10 +435,9 @@ static void cdc_acm_do_cb(struct cdc_acm_dev_data_t *dev_data,
 	}
 }
 
-#if defined(CONFIG_USB_COMPOSITE_DEVICE)
-static void cdc_acm_dev_status_composite_cb(struct usb_cfg_data *cfg,
-					    enum usb_dc_status_code status,
-					    const u8_t *param)
+static void cdc_acm_dev_status_cb(struct usb_cfg_data *cfg,
+				  enum usb_dc_status_code status,
+				  const u8_t *param)
 {
 	struct cdc_acm_dev_data_t *dev_data;
 	struct usb_dev_data *common;
@@ -454,26 +454,6 @@ static void cdc_acm_dev_status_composite_cb(struct usb_cfg_data *cfg,
 
 	cdc_acm_do_cb(dev_data, status, param);
 }
-#else
-static void cdc_acm_dev_status_cb(enum usb_dc_status_code status,
-				  const u8_t *param)
-{
-	struct cdc_acm_dev_data_t *dev_data;
-	struct usb_dev_data *common;
-
-	/* Should be the only one element in the list */
-	common = CONTAINER_OF(sys_slist_peek_head(&cdc_acm_data_devlist),
-			      struct usb_dev_data, node);
-	if (common == NULL) {
-		LOG_WRN("Device data not found");
-		return;
-	}
-
-	dev_data = CONTAINER_OF(common, struct cdc_acm_dev_data_t, common);
-
-	cdc_acm_do_cb(dev_data, status, param);
-}
-#endif
 
 static void cdc_interface_config(struct usb_desc_header *head,
 				 u8_t bInterfaceNumber)
@@ -570,6 +550,7 @@ static int cdc_acm_init(struct device *dev)
 #endif
 	k_sem_init(&poll_wait_sem, 0, UINT_MAX);
 	k_work_init(&dev_data->cb_work, cdc_acm_irq_callback_work_handler);
+	k_work_init(&dev_data->tx_work, tx_work_handler);
 
 	return ret;
 }
@@ -587,32 +568,25 @@ static int cdc_acm_fifo_fill(struct device *dev,
 			     const u8_t *tx_data, int len)
 {
 	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(dev);
-	struct usb_cfg_data *cfg = (void *)dev->config->config_info;
-	u32_t wrote = 0U;
-	int err;
+	size_t wrote;
+
+	LOG_DBG("dev_data %p len %d tx_ringbuf space %u",
+		dev_data, len, ring_buf_space_get(dev_data->tx_ringbuf));
 
 	if (dev_data->usb_status != USB_DC_CONFIGURED) {
 		return 0;
 	}
 
-	dev_data->tx_ready = 0U;
+	dev_data->tx_ready = false;
 
-	/* FIXME: On Quark SE Family processor, restrict writing more than
-	 * 4 bytes into TX USB Endpoint. When more than 4 bytes are written,
-	 * sometimes (freq ~1/3000) first 4 bytes are  repeated.
-	 * (example: abcdef prints as abcdabcdef) (refer Jira GH-3515).
-	 * Application should handle partial data transfer while writing
-	 * into USB TX Endpoint.
-	 */
-#ifdef CONFIG_SOC_SERIES_QUARK_SE
-	len = len > sizeof(u32_t) ? sizeof(u32_t) : len;
-#endif
-
-	err = usb_write(cfg->endpoint[ACM_IN_EP_IDX].ep_addr,
-			tx_data, len, &wrote);
-	if (err != 0) {
-		return err;
+	wrote = ring_buf_put(dev_data->tx_ringbuf, tx_data, len);
+	if (wrote < len) {
+		LOG_WRN("Ring buffer full, drop %d bytes", len - wrote);
 	}
+
+	k_work_submit(&dev_data->tx_work);
+
+	/* Return written to ringbuf data len */
 	return wrote;
 }
 
@@ -625,34 +599,21 @@ static int cdc_acm_fifo_fill(struct device *dev,
  *
  * @return Number of bytes read.
  */
-static int cdc_acm_fifo_read(struct device *dev, u8_t *rx_data,
-			     const int size)
+static int cdc_acm_fifo_read(struct device *dev, u8_t *rx_data, const int size)
 {
-	u32_t avail_data, bytes_read, i;
 	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(dev);
+	u32_t len;
 
-	avail_data = (CDC_ACM_BUFFER_SIZE + dev_data->rx_buf_head -
-		      dev_data->rx_buf_tail) % CDC_ACM_BUFFER_SIZE;
-	if (avail_data > size) {
-		bytes_read = size;
-	} else {
-		bytes_read = avail_data;
+	LOG_DBG("dev %p size %d rx_ringbuf space %u",
+		dev, size, ring_buf_space_get(dev_data->rx_ringbuf));
+
+	len = ring_buf_get(dev_data->rx_ringbuf, rx_data, size);
+
+	if (ring_buf_is_empty(dev_data->rx_ringbuf)) {
+		dev_data->rx_ready = false;
 	}
 
-	for (i = 0U; i < bytes_read; i++) {
-		rx_data[i] = dev_data->rx_buf[(dev_data->rx_buf_tail + i) %
-					      CDC_ACM_BUFFER_SIZE];
-	}
-
-	dev_data->rx_buf_tail = (dev_data->rx_buf_tail + bytes_read) %
-		CDC_ACM_BUFFER_SIZE;
-
-	if (dev_data->rx_buf_tail == dev_data->rx_buf_head) {
-		/* Buffer empty */
-		dev_data->rx_ready = 0U;
-	}
-
-	return bytes_read;
+	return len;
 }
 
 /**
@@ -666,7 +627,8 @@ static void cdc_acm_irq_tx_enable(struct device *dev)
 {
 	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(dev);
 
-	dev_data->tx_irq_ena = 1U;
+	dev_data->tx_irq_ena = true;
+
 	if (dev_data->cb && dev_data->tx_ready) {
 		k_work_submit(&dev_data->cb_work);
 	}
@@ -683,7 +645,7 @@ static void cdc_acm_irq_tx_disable(struct device *dev)
 {
 	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(dev);
 
-	dev_data->tx_irq_ena = 0U;
+	dev_data->tx_irq_ena = false;
 }
 
 /**
@@ -715,7 +677,8 @@ static void cdc_acm_irq_rx_enable(struct device *dev)
 {
 	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(dev);
 
-	dev_data->rx_irq_ena = 1U;
+	dev_data->rx_irq_ena = true;
+
 	if (dev_data->cb && dev_data->rx_ready) {
 		k_work_submit(&dev_data->cb_work);
 	}
@@ -732,7 +695,7 @@ static void cdc_acm_irq_rx_disable(struct device *dev)
 {
 	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(dev);
 
-	dev_data->rx_irq_ena = 0U;
+	dev_data->rx_irq_ena = false;
 }
 
 /**
@@ -827,8 +790,8 @@ static int cdc_acm_send_notification(struct device *dev, u16_t serial_state)
 
 	notification.bmRequestType = 0xA1;
 	notification.bNotificationType = 0x20;
-	notification.wValue = 0;
-	notification.wIndex = 0;
+	notification.wValue = 0U;
+	notification.wIndex = 0U;
 	notification.wLength = sys_cpu_to_le16(sizeof(serial_state));
 	notification.data = sys_cpu_to_le16(serial_state);
 
@@ -865,25 +828,63 @@ static int cdc_acm_line_ctrl_set(struct device *dev,
 	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(dev);
 
 	switch (ctrl) {
-	case LINE_CTRL_BAUD_RATE:
+	case USB_CDC_LINE_CTRL_BAUD_RATE:
 		cdc_acm_baudrate_set(dev, val);
 		return 0;
-	case LINE_CTRL_DCD:
+	case USB_CDC_LINE_CTRL_DCD:
 		dev_data->serial_state &= ~SERIAL_STATE_RX_CARRIER;
 
 		if (val) {
 			dev_data->serial_state |= SERIAL_STATE_RX_CARRIER;
 		}
-
 		cdc_acm_send_notification(dev, SERIAL_STATE_RX_CARRIER);
 		return 0;
-	case LINE_CTRL_DSR:
+	case USB_CDC_LINE_CTRL_DSR:
 		dev_data->serial_state &= ~SERIAL_STATE_TX_CARRIER;
 
 		if (val) {
 			dev_data->serial_state |= SERIAL_STATE_TX_CARRIER;
 		}
+		cdc_acm_send_notification(dev, dev_data->serial_state);
+		return 0;
+	case USB_CDC_LINE_CTRL_BREAK:
+		dev_data->serial_state &= ~SERIAL_STATE_BREAK;
 
+		if (val) {
+			dev_data->serial_state |= SERIAL_STATE_BREAK;
+		}
+		cdc_acm_send_notification(dev, dev_data->serial_state);
+		return 0;
+	case USB_CDC_LINE_CTRL_RING_SIGNAL:
+		dev_data->serial_state &= ~SERIAL_STATE_RING_SIGNAL;
+
+		if (val) {
+			dev_data->serial_state |= SERIAL_STATE_RING_SIGNAL;
+		}
+		cdc_acm_send_notification(dev, dev_data->serial_state);
+		return 0;
+	case USB_CDC_LINE_CTRL_FRAMING:
+		dev_data->serial_state &= ~SERIAL_STATE_FRAMING;
+
+		if (val) {
+			dev_data->serial_state |= SERIAL_STATE_FRAMING;
+		}
+		cdc_acm_send_notification(dev, dev_data->serial_state);
+		return 0;
+	case USB_CDC_LINE_CTRL_PARITY:
+		dev_data->serial_state &= ~SERIAL_STATE_PARITY;
+
+		if (val) {
+			dev_data->serial_state |= SERIAL_STATE_PARITY;
+		}
+		cdc_acm_send_notification(dev, dev_data->serial_state);
+		return 0;
+	case USB_CDC_LINE_CTRL_OVER_RUN:
+		dev_data->serial_state &= ~SERIAL_STATE_OVER_RUN;
+
+		if (val) {
+			dev_data->serial_state |= SERIAL_STATE_OVER_RUN;
+		}
 		cdc_acm_send_notification(dev, dev_data->serial_state);
 		return 0;
 	default:
@@ -984,29 +985,13 @@ static const struct uart_driver_api cdc_acm_driver_api = {
 #define DEFINE_CDC_ACM_EP(x, int_ep_addr, out_ep_addr, in_ep_addr)	\
 	static struct usb_ep_cfg_data cdc_acm_ep_data_##x[] = {		\
 		INITIALIZER_EP_DATA(cdc_acm_int_in, int_ep_addr),	\
-		INITIALIZER_EP_DATA(cdc_acm_bulk_out, out_ep_addr),	\
-		INITIALIZER_EP_DATA(cdc_acm_bulk_in, in_ep_addr),	\
+		INITIALIZER_EP_DATA(usb_transfer_ep_callback,		\
+				    out_ep_addr),			\
+		INITIALIZER_EP_DATA(usb_transfer_ep_callback,		\
+				    in_ep_addr),			\
 	}
 
-#ifdef CONFIG_USB_COMPOSITE_DEVICE
-#define DEFINE_CDC_ACM_CFG_DATA(x)					\
-	USBD_CFG_DATA_DEFINE(cdc_acm)					\
-	struct usb_cfg_data cdc_acm_config_##x = {			\
-		.usb_device_description = NULL,				\
-		.interface_config = cdc_interface_config,		\
-		.interface_descriptor = &cdc_acm_cfg_##x.if0,		\
-		.cb_usb_status_composite =				\
-				cdc_acm_dev_status_composite_cb,	\
-		.interface = {						\
-			.class_handler = cdc_acm_class_handle_req,	\
-			.custom_handler = NULL,				\
-			.payload_data = NULL,				\
-		},							\
-		.num_endpoints = ARRAY_SIZE(cdc_acm_ep_data_##x),	\
-		.endpoint = cdc_acm_ep_data_##x,			\
-	}
-#else /* CONFIG_USB_COMPOSITE_DEVICE */
-#define DEFINE_CDC_ACM_CFG_DATA(x)					\
+#define DEFINE_CDC_ACM_CFG_DATA(x, _)					\
 	USBD_CFG_DATA_DEFINE(cdc_acm)					\
 	struct usb_cfg_data cdc_acm_config_##x = {			\
 		.usb_device_description = NULL,				\
@@ -1020,10 +1005,9 @@ static const struct uart_driver_api cdc_acm_driver_api = {
 		},							\
 		.num_endpoints = ARRAY_SIZE(cdc_acm_ep_data_##x),	\
 		.endpoint = cdc_acm_ep_data_##x,			\
-	}
-#endif /* CONFIG_USB_COMPOSITE_DEVICE */
+	};
 
-#if CONFIG_USB_COMPOSITE_DEVICE
+#if (CONFIG_USB_COMPOSITE_DEVICE || CONFIG_CDC_ACM_IAD)
 #define DEFINE_CDC_ACM_DESCR(x, int_ep_addr, out_ep_addr, in_ep_addr)	\
 	USBD_CLASS_DESCR_DEFINE(primary, x)				\
 	struct usb_cdc_acm_config cdc_acm_cfg_##x = {			\
@@ -1048,7 +1032,7 @@ static const struct uart_driver_api cdc_acm_driver_api = {
 					CONFIG_CDC_ACM_BULK_EP_MPS,	\
 					0x00),				\
 }
-#else /* CONFIG_USB_COMPOSITE_DEVICE */
+#else /* (CONFIG_USB_COMPOSITE_DEVICE || CONFIG_CDC_ACM_IAD) */
 #define DEFINE_CDC_ACM_DESCR(x, int_ep_addr, out_ep_addr, in_ep_addr)	\
 	USBD_CLASS_DESCR_DEFINE(primary, x)				\
 	struct usb_cdc_acm_config cdc_acm_cfg_##x = {			\
@@ -1072,32 +1056,37 @@ static const struct uart_driver_api cdc_acm_driver_api = {
 					CONFIG_CDC_ACM_BULK_EP_MPS,	\
 					0x00),				\
 }
-#endif /* CONFIG_USB_COMPOSITE_DEVICE */
+#endif /* (CONFIG_USB_COMPOSITE_DEVICE || CONFIG_CDC_ACM_IAD) */
 
-#define DEFINE_CDC_ACM_DEV_DATA(x)					\
+#define DEFINE_CDC_ACM_DEV_DATA(x, _)					\
+	RING_BUF_DECLARE(rx_ringbuf_##x,				\
+			 CONFIG_USB_CDC_ACM_RINGBUF_SIZE);		\
+	RING_BUF_DECLARE(tx_ringbuf_##x,				\
+			 CONFIG_USB_CDC_ACM_RINGBUF_SIZE);		\
 	static struct cdc_acm_dev_data_t cdc_acm_dev_data_##x = {	\
 		.usb_status = USB_DC_UNKNOWN,				\
-		.line_coding = CDC_ACM_DEFAUL_BAUDRATE,			\
-}
+		.line_coding = CDC_ACM_DEFAULT_BAUDRATE,		\
+		.rx_ringbuf = &rx_ringbuf_##x,				\
+		.tx_ringbuf = &tx_ringbuf_##x,				\
+	};
 
-#define DEFINE_CDC_ACM_DEVICE(x)					\
-	DEVICE_AND_API_INIT(cdc_acm_##x, CONFIG_CDC_ACM_PORT_NAME_##x,	\
+#define DEFINE_CDC_ACM_DEVICE(x, _)					\
+	DEVICE_AND_API_INIT(cdc_acm_##x,				\
+			    CONFIG_USB_CDC_ACM_DEVICE_NAME "_" #x,	\
 			    &cdc_acm_init, &cdc_acm_dev_data_##x,	\
 			    &cdc_acm_config_##x,			\
 			    APPLICATION,				\
 			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
-			    &cdc_acm_driver_api)
+			    &cdc_acm_driver_api);
 
-DEFINE_CDC_ACM_DESCR(0, 0x80, 0x00, 0x80);
-DEFINE_CDC_ACM_EP(0, 0x80, 0x00, 0x80);
-DEFINE_CDC_ACM_CFG_DATA(0);
-DEFINE_CDC_ACM_DEV_DATA(0);
-DEFINE_CDC_ACM_DEVICE(0);
+#define DEFINE_CDC_ACM_DESCR_AUTO(x, _) \
+	DEFINE_CDC_ACM_DESCR(x, AUTO_EP_IN, AUTO_EP_OUT, AUTO_EP_IN);
 
-#if defined(CONFIG_CDC_ACM_PORT_NAME_1)
-DEFINE_CDC_ACM_DESCR(1, 0x80, 0x00, 0x80);
-DEFINE_CDC_ACM_EP(1, 0x80, 0x00, 0x80);
-DEFINE_CDC_ACM_CFG_DATA(1);
-DEFINE_CDC_ACM_DEV_DATA(1);
-DEFINE_CDC_ACM_DEVICE(1);
-#endif
+#define DEFINE_CDC_ACM_EP_AUTO(x, _) \
+	DEFINE_CDC_ACM_EP(x, AUTO_EP_IN, AUTO_EP_OUT, AUTO_EP_IN);
+
+UTIL_LISTIFY(CONFIG_USB_CDC_ACM_DEVICE_COUNT, DEFINE_CDC_ACM_DESCR_AUTO, _)
+UTIL_LISTIFY(CONFIG_USB_CDC_ACM_DEVICE_COUNT, DEFINE_CDC_ACM_EP_AUTO, _)
+UTIL_LISTIFY(CONFIG_USB_CDC_ACM_DEVICE_COUNT, DEFINE_CDC_ACM_CFG_DATA, _)
+UTIL_LISTIFY(CONFIG_USB_CDC_ACM_DEVICE_COUNT, DEFINE_CDC_ACM_DEV_DATA, _)
+UTIL_LISTIFY(CONFIG_USB_CDC_ACM_DEVICE_COUNT, DEFINE_CDC_ACM_DEVICE, _)

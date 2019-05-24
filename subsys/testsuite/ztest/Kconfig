@@ -47,3 +47,10 @@ config ZTEST_PARAMETER_COUNT
 	default 1
 	help
 	  Maximum amount of concurrent return values / expected parameters.
+
+config ZTEST_THREAD_PRIORITY
+	int "Testing thread priority"
+	depends on ZTEST
+	default -1
+	help
+	  Set priority of the testing thread. Default is -1 (cooperative).

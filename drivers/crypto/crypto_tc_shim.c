@@ -125,7 +125,9 @@ static int do_ccm_encrypt_mac(struct cipher_ctx *ctx,
 	 * of this and provide sufficient buffer space in output buffer to hold
 	 * both encrypted output and hash
 	 */
-	aead_op->tag = op->out_buf + op->in_len;
+	if (aead_op->tag) {
+		memcpy(aead_op->tag, op->out_buf + op->in_len, ccm.mlen);
+	}
 
 	/* Before returning TC_CRYPTO_SUCCESS, tc_ccm_generation_encryption()
 	 * will advance the output buffer pointer by op->in_len bytes,
@@ -223,7 +225,7 @@ static int tc_session_setup(struct device *dev, struct cipher_ctx *ctx,
 			ctx->ops.cbc_crypt_hndlr = do_cbc_encrypt;
 			break;
 		case CRYPTO_CIPHER_MODE_CTR:
-			if (ctx->mode_params.ctr_info.ctr_len != 32) {
+			if (ctx->mode_params.ctr_info.ctr_len != 32U) {
 				LOG_ERR("Tinycrypt supports only 32 bit "
 					    "counter");
 				return -EINVAL;
@@ -244,7 +246,7 @@ static int tc_session_setup(struct device *dev, struct cipher_ctx *ctx,
 			break;
 		case CRYPTO_CIPHER_MODE_CTR:
 			/* Maybe validate CTR length */
-			if (ctx->mode_params.ctr_info.ctr_len != 32) {
+			if (ctx->mode_params.ctr_info.ctr_len != 32U) {
 				LOG_ERR("Tinycrypt supports only 32 bit "
 					    "counter");
 				return -EINVAL;

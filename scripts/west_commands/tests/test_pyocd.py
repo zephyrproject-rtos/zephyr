@@ -63,12 +63,14 @@ TEST_DEF_PARAMS = ['--target', TEST_TARGET]
 
 FLASH_ALL_EXPECTED_CALL = ([TEST_PYOCD,
                             'flash',
+                            '-e', 'sector',
                             '-a', hex(TEST_ADDR), '-da', TEST_DAPARG,
                             '-t', TEST_TARGET, '-b', TEST_BOARD_ID,
                             '-f', TEST_FREQUENCY] +
                            TEST_FLASH_OPTS +
                            [RC_KERNEL_HEX])
-FLASH_DEF_EXPECTED_CALL = ['pyocd', 'flash', '-t', TEST_TARGET, RC_KERNEL_HEX]
+FLASH_DEF_EXPECTED_CALL = ['pyocd', 'flash', '-e', 'sector',
+                           '-t', TEST_TARGET, RC_KERNEL_HEX]
 
 
 DEBUG_ALL_EXPECTED_SERVER = [TEST_PYOCD,

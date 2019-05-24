@@ -11,25 +11,25 @@
 #include <kernel_arch_func.h>
 
 #ifdef CONFIG_STACK_SENTINEL
-extern void _check_stack_sentinel(void);
+extern void z_check_stack_sentinel(void);
 #else
-#define _check_stack_sentinel() /**/
+#define z_check_stack_sentinel() /**/
 #endif
 
 /* In SMP, the irq_lock() is a spinlock which is implicitly released
  * and reacquired on context switch to preserve the existing
  * semantics.  This means that whenever we are about to return to a
- * thread (via either _Swap() or interrupt/exception return!) we need
+ * thread (via either z_swap() or interrupt/exception return!) we need
  * to restore the lock state to whatever the thread's counter
  * expects.
  */
-void _smp_reacquire_global_lock(struct k_thread *thread);
-void _smp_release_global_lock(struct k_thread *thread);
+void z_smp_reacquire_global_lock(struct k_thread *thread);
+void z_smp_release_global_lock(struct k_thread *thread);
 
 /* context switching and scheduling-related routines */
 #ifdef CONFIG_USE_SWITCH
 
-/* New style context switching.  _arch_switch() is a lower level
+/* New style context switching.  z_arch_switch() is a lower level
  * primitive that doesn't know about the scheduler or return value.
  * Needed for SMP, where the scheduler requires spinlocking that we
  * don't want to have to do in per-architecture assembly.
@@ -51,7 +51,7 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 
 	old_thread = _current;
 
-	_check_stack_sentinel();
+	z_check_stack_sentinel();
 
 #ifdef CONFIG_TRACING
 	sys_trace_thread_switched_out();
@@ -61,7 +61,7 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 		k_spin_release(lock);
 	}
 
-	new_thread = _get_next_ready_thread();
+	new_thread = z_get_next_ready_thread();
 
 	if (new_thread != old_thread) {
 		old_thread->swap_retval = -EAGAIN;
@@ -69,14 +69,14 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 #ifdef CONFIG_SMP
 		_current_cpu->swap_ok = 0;
 
-		new_thread->base.cpu = _arch_curr_cpu()->id;
+		new_thread->base.cpu = z_arch_curr_cpu()->id;
 
 		if (!is_spinlock) {
-			_smp_release_global_lock(new_thread);
+			z_smp_release_global_lock(new_thread);
 		}
 #endif
 		_current = new_thread;
-		_arch_switch(new_thread->switch_handle,
+		z_arch_switch(new_thread->switch_handle,
 			     &old_thread->switch_handle);
 	}
 
@@ -85,7 +85,7 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 #endif
 
 	if (is_spinlock) {
-		_arch_irq_unlock(key);
+		z_arch_irq_unlock(key);
 	} else {
 		irq_unlock(key);
 	}
@@ -93,32 +93,32 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 	return _current->swap_retval;
 }
 
-static inline int _Swap_irqlock(unsigned int key)
+static inline int z_swap_irqlock(unsigned int key)
 {
 	return do_swap(key, NULL, 0);
 }
 
-static inline int _Swap(struct k_spinlock *lock, k_spinlock_key_t key)
+static inline int z_swap(struct k_spinlock *lock, k_spinlock_key_t key)
 {
 	return do_swap(key.key, lock, 1);
 }
 
-static inline void _Swap_unlocked(void)
+static inline void z_swap_unlocked(void)
 {
 	struct k_spinlock lock = {};
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
-	(void) _Swap(&lock, key);
+	(void) z_swap(&lock, key);
 }
 
 #else /* !CONFIG_USE_SWITCH */
 
 extern int __swap(unsigned int key);
 
-static inline int _Swap_irqlock(unsigned int key)
+static inline int z_swap_irqlock(unsigned int key)
 {
 	int ret;
-	_check_stack_sentinel();
+	z_check_stack_sentinel();
 
 #ifndef CONFIG_ARM
 #ifdef CONFIG_TRACING
@@ -139,15 +139,15 @@ static inline int _Swap_irqlock(unsigned int key)
  * can't be in SMP.  The k_spin_release() call is just for validation
  * handling.
  */
-static ALWAYS_INLINE int _Swap(struct k_spinlock *lock, k_spinlock_key_t key)
+static ALWAYS_INLINE int z_swap(struct k_spinlock *lock, k_spinlock_key_t key)
 {
 	k_spin_release(lock);
-	return _Swap_irqlock(key.key);
+	return z_swap_irqlock(key.key);
 }
 
-static inline void _Swap_unlocked(void)
+static inline void z_swap_unlocked(void)
 {
-	(void) _Swap_irqlock(_arch_irq_lock());
+	(void) z_swap_irqlock(z_arch_irq_lock());
 }
 
 #endif

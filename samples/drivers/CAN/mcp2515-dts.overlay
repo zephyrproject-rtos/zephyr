@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2019 Karsten Koenig
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&spi1 {
+	status = "ok";
+	cs-gpios = <&gpioa 4 GPIO_DIR_OUT>;
+	mcp2515@0 {
+		compatible = "microchip,mcp2515";
+		spi-port-name = "SPI_1";
+		spi-max-frequency = <1000000>;
+		int-gpios = <&gpioa 0 GPIO_INT_ACTIVE_LOW>;
+		status = "ok";
+		label = "CAN_1";
+		reg = <0>;
+		bus-speed = <250000>;
+	};
+};

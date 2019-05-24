@@ -47,10 +47,10 @@ static u32_t __get_tim_clk(u32_t bus_clk,
 	 * Otherwise, they are set to twice (×2) the frequency of the
 	 * APB domain.
 	 */
-	if (apb_psc == 1) {
+	if (apb_psc == 1U) {
 		tim_clk = bus_clk;
 	} else	{
-		tim_clk = 2 * bus_clk;
+		tim_clk = bus_clk * 2U;
 	}
 
 	return tim_clk;
@@ -76,7 +76,7 @@ static int pwm_stm32_pin_set(struct device *dev, u32_t pwm,
 	u32_t channel;
 	bool counter_32b;
 
-	if (period_cycles == 0 || pulse_cycles > period_cycles) {
+	if (period_cycles == 0U || pulse_cycles > period_cycles) {
 		return -EINVAL;
 	}
 

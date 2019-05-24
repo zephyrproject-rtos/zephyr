@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 menuconfig UART_NS16550
 	bool "NS16550 serial driver"
 	select SERIAL_HAS_DRIVER
@@ -6,34 +8,6 @@ menuconfig UART_NS16550
 	  This option enables the NS16550 serial driver.
 	  This driver can be used for the serial hardware
 	  available on x86 boards.
-
-config UART_NS16550_PCI
-	bool "Enable PCI Support"
-	depends on PCI && UART_NS16550
-	help
-	  This enables NS16550 to probe for PCI-based serial devices.
-
-	  This option enables the driver to auto-detect the device
-	  configuration required to access those ports.
-
-config UART_NS16550_DLF
-	bool "Enable Divisor Latch Fraction (DLF) support"
-	depends on UART_NS16550
-	help
-	  This enables support for divisor latch fraction (DLF).
-	  It is used to limit frequency error.
-
-	  Says n if you are not sure if hardware supports this.
-
-config UART_NS16550_PCP
-	bool "Enable Apollo Lake PRV_CLOCK_PARAMS (PCP) support"
-	depends on SOC_APOLLO_LAKE && UART_NS16550
-	help
-	  This enables configuration of the clock blocks that feed
-	  the UARTs on Apollo Lake SoCs, allowing the generation of
-	  custom baud rates.
-
-	  Say n unless you know you need this feature.
 
 config UART_NS16550_LINE_CTRL
 	bool "Enable Serial Line Control for Apps"
@@ -74,29 +48,6 @@ config UART_NS16550_PORT_0_OPTIONS
 	help
 	  Options used for port initialization.
 
-config UART_NS16550_PORT_0_DLF
-	hex "Port 0 DLF value"
-	default 0x0
-	depends on UART_NS16550_PORT_0 && UART_NS16550_DLF
-	help
-	  Value for DLF register.
-
-config UART_NS16550_PORT_0_PCP
-	hex "Port 0 PCP value"
-	default 0
-	depends on UART_NS16550_PORT_0 && UART_NS16550_PCP
-	help
-	  Value for PRV_CLOCK_PARAMS register. If left at its default
-	  value (0), then the kernel will not attempt to set the PCP
-	  for this UART; otherwise be sure the device tree for this
-	  port has sys_clk_freq set accordingly.
-
-config UART_NS16550_PORT_0_PCI
-	bool "Port 0 is PCI-based"
-	depends on UART_NS16550_PCI && UART_NS16550_PORT_0
-	help
-	  Obtain port information from PCI.
-
 # ---------- Port 1 ----------
 
 menuconfig UART_NS16550_PORT_1
@@ -112,29 +63,6 @@ config UART_NS16550_PORT_1_OPTIONS
 	depends on UART_NS16550_PORT_1
 	help
 	  Options used for port initialization.
-
-config UART_NS16550_PORT_1_DLF
-	hex "Port 1 DLF value"
-	default 0x0
-	depends on UART_NS16550_PORT_1 && UART_NS16550_DLF
-	help
-	  Value for DLF register.
-
-config UART_NS16550_PORT_1_PCP
-	hex "Port 1 PCP value"
-	default 0
-	depends on UART_NS16550_PORT_1 && UART_NS16550_PCP
-	help
-	  Value for PRV_CLOCK_PARAMS register. If left at its default
-	  value (0), then the kernel will not attempt to set the PCP
-	  for this UART; otherwise be sure the device tree for this
-	  port has sys_clk_freq set accordingly.
-
-config UART_NS16550_PORT_1_PCI
-	bool "Port 1 is PCI-based"
-	depends on UART_NS16550_PCI && UART_NS16550_PORT_1
-	help
-	  Obtain port information from PCI.
 
 # ---------- Port 2 ----------
 
@@ -153,29 +81,6 @@ config UART_NS16550_PORT_2_OPTIONS
 	help
 	  Options used for port initialization.
 
-config UART_NS16550_PORT_2_DLF
-	hex "Port 2 DLF value"
-	default 0x0
-	depends on UART_NS16550_PORT_2 && UART_NS16550_DLF
-	help
-	  Value for DLF register.
-
-config UART_NS16550_PORT_2_PCP
-	hex "Port 2 PCP value"
-	default 0
-	depends on UART_NS16550_PORT_2 && UART_NS16550_PCP
-	help
-	  Value for PRV_CLOCK_PARAMS register. If left at its default
-	  value (0), then the kernel will not attempt to set the PCP
-	  for this UART; otherwise be sure the device tree for this
-	  port has sys_clk_freq set accordingly.
-
-config UART_NS16550_PORT_2_PCI
-	bool "Port 2 is PCI-based"
-	depends on UART_NS16550_PCI && UART_NS16550_PORT_2
-	help
-	  Obtain port information from PCI.
-
 # ---------- Port 3 ----------
 
 menuconfig UART_NS16550_PORT_3
@@ -191,26 +96,3 @@ config UART_NS16550_PORT_3_OPTIONS
 	depends on UART_NS16550_PORT_3
 	help
 	  Options used for port initialization.
-
-config UART_NS16550_PORT_3_DLF
-	hex "Port 3 DLF value"
-	default 0x0
-	depends on UART_NS16550_PORT_3 && UART_NS16550_DLF
-	help
-	  Value for DLF register.
-
-config UART_NS16550_PORT_3_PCP
-	hex "Port 3 PCP value"
-	default 0
-	depends on UART_NS16550_PORT_3 && UART_NS16550_PCP
-	help
-	  Value for PRV_CLOCK_PARAMS register. If left at its default
-	  value (0), then the kernel will not attempt to set the PCP
-	  for this UART; otherwise be sure the device tree for this
-	  port has sys_clk_freq set accordingly.
-
-config UART_NS16550_PORT_3_PCI
-	bool "Port 3 is PCI-based"
-	depends on UART_NS16550_PCI && UART_NS16550_PORT_3
-	help
-	  Obtain port information from PCI.

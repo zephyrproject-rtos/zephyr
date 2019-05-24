@@ -46,6 +46,8 @@ source "drivers/gpio/Kconfig.nrfx"
 
 source "drivers/gpio/Kconfig.cmsdk_ahb"
 
+source "drivers/gpio/Kconfig.cc13xx_cc26xx"
+
 source "drivers/gpio/Kconfig.cc32xx"
 
 source "drivers/gpio/Kconfig.sifive"
@@ -68,8 +70,12 @@ source "drivers/gpio/Kconfig.imx"
 
 source "drivers/gpio/Kconfig.intel"
 
+source "drivers/gpio/Kconfig.xec"
+
 source "drivers/gpio/Kconfig.stellaris"
 
 source "drivers/gpio/Kconfig.rv32m1"
+
+source "drivers/gpio/Kconfig.ht16k33"
 
 endif # GPIO

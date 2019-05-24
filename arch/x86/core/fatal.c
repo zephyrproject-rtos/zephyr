@@ -8,7 +8,7 @@
  * @file
  * @brief Kernel fatal error handler
  *
- * This module provides the _NanoFatalErrorHandler() routine.
+ * This module provides the z_NanoFatalErrorHandler() routine.
  */
 
 #include <toolchain.h>
@@ -24,7 +24,7 @@
 #include <exc_handle.h>
 #include <logging/log_ctrl.h>
 
-__weak void _debug_fatal_hook(const NANO_ESF *esf) { ARG_UNUSED(esf); }
+__weak void z_debug_fatal_hook(const NANO_ESF *esf) { ARG_UNUSED(esf); }
 
 #ifdef CONFIG_THREAD_STACK_INFO
 /**
@@ -43,11 +43,11 @@ static bool check_stack_bounds(u32_t addr, size_t size, u16_t cs)
 {
 	u32_t start, end;
 
-	if (_is_in_isr()) {
+	if (z_is_in_isr()) {
 		/* We were servicing an interrupt */
-		start = (u32_t)_ARCH_THREAD_STACK_BUFFER(_interrupt_stack);
+		start = (u32_t)Z_ARCH_THREAD_STACK_BUFFER(_interrupt_stack);
 		end = start + CONFIG_ISR_STACK_SIZE;
-	} else if ((cs & 0x3) != 0 ||
+	} else if ((cs & 0x3U) != 0U ||
 		   (_current->base.user_options & K_USER) == 0) {
 		/* Thread was in user mode, or is not a user mode thread.
 		 * The normal stack buffer is what we will check.
@@ -79,19 +79,19 @@ static void unwind_stack(u32_t base_ptr, u16_t cs)
 	struct stack_frame *frame;
 	int i;
 
-	if (base_ptr == 0) {
+	if (base_ptr == 0U) {
 		printk("NULL base ptr\n");
 		return;
 	}
 
 	for (i = 0; i < MAX_STACK_FRAMES; i++) {
-		if (base_ptr % sizeof(base_ptr) != 0) {
+		if (base_ptr % sizeof(base_ptr) != 0U) {
 			printk("unaligned frame ptr\n");
 			return;
 		}
 
 		frame = (struct stack_frame *)base_ptr;
-		if ((frame == NULL)) {
+		if (frame == NULL) {
 			break;
 		}
 
@@ -105,7 +105,7 @@ static void unwind_stack(u32_t base_ptr, u16_t cs)
 		}
 #endif
 
-		if (frame->ret_addr == 0) {
+		if (frame->ret_addr == 0U) {
 			break;
 		}
 #ifdef CONFIG_X86_IAMCU
@@ -134,12 +134,16 @@ static void unwind_stack(u32_t base_ptr, u16_t cs)
  *
  * @return This function does not return.
  */
-FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
+FUNC_NORETURN void z_NanoFatalErrorHandler(unsigned int reason,
 					  const NANO_ESF *pEsf)
 {
+#ifdef CONFIG_THREAD_NAME
+	const char *thread_name = k_thread_name_get(k_current_get());
+#endif
+
 	LOG_PANIC();
 
-	_debug_fatal_hook(pEsf);
+	z_debug_fatal_hook(pEsf);
 
 #ifdef CONFIG_PRINTK
 
@@ -150,7 +154,7 @@ FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
 		break;
 
 	case _NANO_ERR_SPURIOUS_INT: {
-		int vector = _irq_controller_isr_vector_get();
+		int vector = z_irq_controller_isr_vector_get();
 
 		printk("***** Unhandled interrupt vector ");
 		if (vector >= 0) {
@@ -184,7 +188,11 @@ FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
 		break;
 	}
 
-	printk("Current thread ID = %p\n"
+	printk("Current thread ID = %p"
+#ifdef CONFIG_THREAD_NAME
+	       " (%s)"
+#endif
+	       "\n"
 	       "eax: 0x%08x, ebx: 0x%08x, ecx: 0x%08x, edx: 0x%08x\n"
 	       "esi: 0x%08x, edi: 0x%08x, ebp: 0x%08x, esp: 0x%08x\n"
 	       "eflags: 0x%08x cs: 0x%04x\n"
@@ -193,9 +201,12 @@ FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
 #endif
 	       "eip: 0x%08x\n",
 	       k_current_get(),
+#ifdef CONFIG_THREAD_NAME
+	       thread_name ? thread_name : "unknown",
+#endif
 	       pEsf->eax, pEsf->ebx, pEsf->ecx, pEsf->edx,
 	       pEsf->esi, pEsf->edi, pEsf->ebp, pEsf->esp,
-	       pEsf->eflags, pEsf->cs & 0xFFFF, pEsf->eip);
+	       pEsf->eflags, pEsf->cs & 0xFFFFU, pEsf->eip);
 #ifdef CONFIG_EXCEPTION_STACK_TRACE
 	unwind_stack(pEsf->ebp, pEsf->cs);
 #endif
@@ -208,10 +219,10 @@ FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
 	 * fatal error handling policy defined for the platform.
 	 */
 
-	_SysFatalErrorHandler(reason, pEsf);
+	z_SysFatalErrorHandler(reason, pEsf);
 }
 
-FUNC_NORETURN void _arch_syscall_oops(void *ssf_ptr)
+FUNC_NORETURN void z_arch_syscall_oops(void *ssf_ptr)
 {
 	struct _x86_syscall_stack_frame *ssf =
 		(struct _x86_syscall_stack_frame *)ssf_ptr;
@@ -225,14 +236,14 @@ FUNC_NORETURN void _arch_syscall_oops(void *ssf_ptr)
 		oops.esp = ssf->esp;
 	}
 
-	_NanoFatalErrorHandler(_NANO_ERR_KERNEL_OOPS, &oops);
+	z_NanoFatalErrorHandler(_NANO_ERR_KERNEL_OOPS, &oops);
 }
 
 #ifdef CONFIG_X86_KERNEL_OOPS
-FUNC_NORETURN void _do_kernel_oops(const NANO_ESF *esf)
+FUNC_NORETURN void z_do_kernel_oops(const NANO_ESF *esf)
 {
 	u32_t *stack_ptr = (u32_t *)esf->esp;
-	_NanoFatalErrorHandler(*stack_ptr, esf);
+	z_NanoFatalErrorHandler(*stack_ptr, esf);
 }
 
 extern void (*_kernel_oops_handler)(void);
@@ -242,7 +253,7 @@ NANO_CPU_INT_REGISTER(_kernel_oops_handler, NANO_SOFT_IRQ,
 #endif
 
 /*
- * Define a default ESF for use with _NanoFatalErrorHandler() in the event
+ * Define a default ESF for use with z_NanoFatalErrorHandler() in the event
  * the caller does not have a NANO_ESF to pass
  */
 const NANO_ESF _default_esf = {
@@ -280,7 +291,7 @@ static FUNC_NORETURN void generic_exc_handle(unsigned int vector,
 	if ((BIT(vector) & _EXC_ERROR_CODE_FAULTS) != 0) {
 		printk("***** Exception code: 0x%x\n", pEsf->errorCode);
 	}
-	_NanoFatalErrorHandler(_NANO_ERR_CPU_EXCEPTION, pEsf);
+	z_NanoFatalErrorHandler(_NANO_ERR_CPU_EXCEPTION, pEsf);
 }
 
 #define _EXC_FUNC(vector) \
@@ -289,11 +300,11 @@ FUNC_NORETURN void handle_exc_##vector(const NANO_ESF *pEsf) \
 	generic_exc_handle(vector, pEsf); \
 }
 
-#define _EXC_FUNC_CODE(vector) \
+#define Z_EXC_FUNC_CODE(vector) \
 	_EXC_FUNC(vector) \
 	_EXCEPTION_CONNECT_CODE(handle_exc_##vector, vector)
 
-#define _EXC_FUNC_NOCODE(vector) \
+#define Z_EXC_FUNC_NOCODE(vector) \
 	_EXC_FUNC(vector) \
 	_EXCEPTION_CONNECT_NOCODE(handle_exc_##vector, vector)
 
@@ -301,10 +312,10 @@ FUNC_NORETURN void handle_exc_##vector(const NANO_ESF *pEsf) \
  * the handle_exc_##vector
  */
 #define EXC_FUNC_NOCODE(vector) \
-	_EXC_FUNC_NOCODE(vector)
+	Z_EXC_FUNC_NOCODE(vector)
 
 #define EXC_FUNC_CODE(vector) \
-	_EXC_FUNC_CODE(vector)
+	Z_EXC_FUNC_CODE(vector)
 
 EXC_FUNC_NOCODE(IV_DIVIDE_ERROR);
 EXC_FUNC_NOCODE(IV_NON_MASKABLE_INTERRUPT);
@@ -351,7 +362,7 @@ static void dump_mmu_flags(struct x86_mmu_pdpt *pdpt, void *addr)
 {
 	x86_page_entry_data_t pde_flags, pte_flags;
 
-	_x86_mmu_get_flags(pdpt, addr, &pde_flags, &pte_flags);
+	z_x86_mmu_get_flags(pdpt, addr, &pde_flags, &pte_flags);
 
 	printk("PDE: ");
 	dump_entry_flags(pde_flags);
@@ -372,9 +383,9 @@ static void dump_page_fault(NANO_ESF *esf)
 	printk("***** CPU Page Fault (error code 0x%08x)\n", err);
 
 	printk("%s thread %s address 0x%08x\n",
-	       err & US ? "User" : "Supervisor",
-	       err & ID ? "executed" : (err & WR ? "wrote" : "read"),
-	       cr2);
+	       (err & US) != 0U ? "User" : "Supervisor",
+	       (err & ID) != 0U ? "executed" : ((err & WR) != 0U ? "wrote" :
+						"read"), cr2);
 
 #ifdef CONFIG_X86_MMU
 #ifdef CONFIG_X86_KPTI
@@ -414,10 +425,10 @@ void page_fault_handler(NANO_ESF *esf)
 #endif
 #ifdef CONFIG_THREAD_STACK_INFO
 	if (check_stack_bounds(esf->esp, 0, esf->cs)) {
-		_NanoFatalErrorHandler(_NANO_ERR_STACK_CHK_FAIL, esf);
+		z_NanoFatalErrorHandler(_NANO_ERR_STACK_CHK_FAIL, esf);
 	}
 #endif
-	_NanoFatalErrorHandler(_NANO_ERR_CPU_EXCEPTION, esf);
+	z_NanoFatalErrorHandler(_NANO_ERR_CPU_EXCEPTION, esf);
 	CODE_UNREACHABLE;
 }
 _EXCEPTION_CONNECT_CODE(page_fault_handler, IV_PAGE_FAULT);
@@ -426,18 +437,18 @@ _EXCEPTION_CONNECT_CODE(page_fault_handler, IV_PAGE_FAULT);
 static __noinit volatile NANO_ESF _df_esf;
 
 /* Very tiny stack; just enough for the bogus error code pushed by the CPU
- * and a frame pointer push by the compiler. All _df_handler_top does is
+ * and a frame pointer push by the compiler. All df_handler_top does is
  * shuffle some data around with 'mov' statements and then 'iret'.
  */
 static __noinit char _df_stack[8];
 
-static FUNC_NORETURN __used void _df_handler_top(void);
+static FUNC_NORETURN __used void df_handler_top(void);
 
 #ifdef CONFIG_X86_KPTI
 extern char z_trampoline_stack_end[];
 #endif
 
-_GENERIC_SECTION(.tss)
+Z_GENERIC_SECTION(.tss)
 struct task_state_segment _main_tss = {
 	.ss0 = DATA_SEG,
 #ifdef CONFIG_X86_KPTI
@@ -450,25 +461,25 @@ struct task_state_segment _main_tss = {
 };
 
 /* Special TSS for handling double-faults with a known good stack */
-_GENERIC_SECTION(.tss)
+Z_GENERIC_SECTION(.tss)
 struct task_state_segment _df_tss = {
 	.esp = (u32_t)(_df_stack + sizeof(_df_stack)),
 	.cs = CODE_SEG,
 	.ds = DATA_SEG,
 	.es = DATA_SEG,
 	.ss = DATA_SEG,
-	.eip = (u32_t)_df_handler_top,
+	.eip = (u32_t)df_handler_top,
 	.cr3 = (u32_t)&z_x86_kernel_pdpt
 };
 
-static FUNC_NORETURN __used void _df_handler_bottom(void)
+static FUNC_NORETURN __used void df_handler_bottom(void)
 {
 	/* We're back in the main hardware task on the interrupt stack */
 	int reason = _NANO_ERR_CPU_EXCEPTION;
 
 	/* Restore the top half so it is runnable again */
 	_df_tss.esp = (u32_t)(_df_stack + sizeof(_df_stack));
-	_df_tss.eip = (u32_t)_df_handler_top;
+	_df_tss.eip = (u32_t)df_handler_top;
 
 	printk("***** Double Fault *****\n");
 #ifdef CONFIG_THREAD_STACK_INFO
@@ -476,10 +487,10 @@ static FUNC_NORETURN __used void _df_handler_bottom(void)
 		reason = _NANO_ERR_STACK_CHK_FAIL;
 	}
 #endif
-	_NanoFatalErrorHandler(reason, (NANO_ESF *)&_df_esf);
+	z_NanoFatalErrorHandler(reason, (NANO_ESF *)&_df_esf);
 }
 
-static FUNC_NORETURN __used void _df_handler_top(void)
+static FUNC_NORETURN __used void df_handler_top(void)
 {
 	/* State of the system when the double-fault forced a task switch
 	 * will be in _main_tss. Set up a NANO_ESF and copy system state into
@@ -499,18 +510,18 @@ static FUNC_NORETURN __used void _df_handler_top(void)
 	_df_esf.eflags = _main_tss.eflags;
 
 	/* Restore the main IA task to a runnable state */
-	_main_tss.esp = (u32_t)(_ARCH_THREAD_STACK_BUFFER(_interrupt_stack) +
+	_main_tss.esp = (u32_t)(Z_ARCH_THREAD_STACK_BUFFER(_interrupt_stack) +
 				CONFIG_ISR_STACK_SIZE);
 	_main_tss.cs = CODE_SEG;
 	_main_tss.ds = DATA_SEG;
 	_main_tss.es = DATA_SEG;
 	_main_tss.ss = DATA_SEG;
-	_main_tss.eip = (u32_t)_df_handler_bottom;
+	_main_tss.eip = (u32_t)df_handler_bottom;
 	_main_tss.cr3 = (u32_t)&z_x86_kernel_pdpt;
-	_main_tss.eflags = 0;
+	_main_tss.eflags = 0U;
 
 	/* NT bit is set in EFLAGS so we will task switch back to _main_tss
-	 * and run _df_handler_bottom
+	 * and run df_handler_bottom
 	 */
 	__asm__ volatile ("iret");
 	CODE_UNREACHABLE;

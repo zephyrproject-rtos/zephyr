@@ -62,7 +62,7 @@ static u32_t copy_bufs_and_transceive(struct device *dev,
 	copy_and_check(tx_bufs, tx_buf_copy, 0, ssf);
 	copy_and_check(rx_bufs, rx_buf_copy, 1, ssf);
 
-	return _impl_spi_transceive((struct device *)dev, config,
+	return z_impl_spi_transceive((struct device *)dev, config,
 				    tx_bufs, rx_bufs);
 }
 
@@ -126,5 +126,5 @@ Z_SYSCALL_HANDLER(spi_release, dev, config_p)
 
 	Z_OOPS(Z_SYSCALL_MEMORY_READ(config, sizeof(*config)));
 	Z_OOPS(Z_SYSCALL_DRIVER_SPI(dev, release));
-	return _impl_spi_release((struct device *)dev, config);
+	return z_impl_spi_release((struct device *)dev, config);
 }

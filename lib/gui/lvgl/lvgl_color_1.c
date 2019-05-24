@@ -20,7 +20,7 @@ static void zephyr_disp_flush(s32_t x1, s32_t y1, s32_t x2, s32_t y2,
 
 	display_get_capabilities(lvgl_display_dev, &cap);
 
-	desc.buf_size = (w * h)/8;
+	desc.buf_size = (w * h)/8U;
 	desc.width = w;
 	desc.pitch = w;
 	desc.height = h;
@@ -36,16 +36,28 @@ static void zephyr_disp_flush(s32_t x1, s32_t y1, s32_t x2, s32_t y2,
 void zephyr_vdb_write(u8_t *buf, lv_coord_t buf_w, lv_coord_t x,
 		lv_coord_t y, lv_color_t color, lv_opa_t opa)
 {
-	u8_t *buf_xy = buf + x + y/8 * buf_w;
+	u8_t *buf_xy;
 	u8_t bit;
 	struct display_capabilities cap;
 
 	display_get_capabilities(lvgl_display_dev, &cap);
 
-	if (cap.screen_info & SCREEN_INFO_MONO_MSB_FIRST) {
-		bit = 7 - y%8;
+	if (cap.screen_info & SCREEN_INFO_MONO_VTILED) {
+		buf_xy = buf + x + y/8 * buf_w;
+
+		if (cap.screen_info & SCREEN_INFO_MONO_MSB_FIRST) {
+			bit = 7 - y%8;
+		} else {
+			bit = y%8;
+		}
 	} else {
-		bit = y%8;
+		buf_xy = buf + x/8 + y * buf_w/8;
+
+		if (cap.screen_info & SCREEN_INFO_MONO_MSB_FIRST) {
+			bit = 7 - x%8;
+		} else {
+			bit = x%8;
+		}
 	}
 
 	if (cap.current_pixel_format == PIXEL_FORMAT_MONO10) {

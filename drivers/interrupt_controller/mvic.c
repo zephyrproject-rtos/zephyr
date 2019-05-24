@@ -62,7 +62,7 @@ static inline u32_t compute_ioregsel(unsigned int irq)
  *
  * @returns N/A
  */
-static void _mvic_rte_set(unsigned int irq, u32_t value)
+static void mvic_rte_set(unsigned int irq, u32_t value)
 {
 	unsigned int key; /* interrupt lock level */
 	u32_t regsel;
@@ -92,7 +92,7 @@ static void _mvic_rte_set(unsigned int irq, u32_t value)
  *
  * @returns N/A
  */
-static void _mvic_rte_update(unsigned int irq, u32_t value, u32_t mask)
+static void mvic_rte_update(unsigned int irq, u32_t value, u32_t mask)
 {
 	unsigned int key;
 	u32_t regsel, old_value, updated_value;
@@ -123,14 +123,14 @@ static void _mvic_rte_update(unsigned int irq, u32_t value, u32_t mask)
  *
  * @returns: N/A
  */
-static int _mvic_init(struct device *unused)
+static int mvic_init(struct device *unused)
 {
 	ARG_UNUSED(unused);
 	int i;
 
 	/* By default mask all interrupt lines */
 	for (i = 0; i < MVIC_NUM_RTES; i++) {
-		_mvic_rte_set(i, MVIC_IOWIN_MASK);
+		mvic_rte_set(i, MVIC_IOWIN_MASK);
 	}
 
 	/* reset the task priority and timer initial count registers */
@@ -151,27 +151,27 @@ static int _mvic_init(struct device *unused)
 	return 0;
 
 }
-SYS_INIT(_mvic_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_INIT(mvic_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
 
-void _arch_irq_enable(unsigned int irq)
+void z_arch_irq_enable(unsigned int irq)
 {
 	if (irq == CONFIG_MVIC_TIMER_IRQ) {
 		sys_write32(sys_read32(MVIC_LVTTIMER) & ~MVIC_LVTTIMER_MASK,
 			    MVIC_LVTTIMER);
 	} else {
-		_mvic_rte_update(irq, 0, MVIC_IOWIN_MASK);
+		mvic_rte_update(irq, 0, MVIC_IOWIN_MASK);
 	}
 }
 
 
-void _arch_irq_disable(unsigned int irq)
+void z_arch_irq_disable(unsigned int irq)
 {
 	if (irq == CONFIG_MVIC_TIMER_IRQ) {
 		sys_write32(sys_read32(MVIC_LVTTIMER) | MVIC_LVTTIMER_MASK,
 			    MVIC_LVTTIMER);
 	} else {
-		_mvic_rte_update(irq, MVIC_IOWIN_MASK, MVIC_IOWIN_MASK);
+		mvic_rte_update(irq, MVIC_IOWIN_MASK, MVIC_IOWIN_MASK);
 	}
 }
 
@@ -186,9 +186,9 @@ void __irq_controller_irq_config(unsigned int vector, unsigned int irq,
 	 * interrupts need their triggering set
 	 */
 	if (irq != CONFIG_MVIC_TIMER_IRQ) {
-		_mvic_rte_set(irq, MVIC_IOWIN_MASK | flags);
+		mvic_rte_set(irq, MVIC_IOWIN_MASK | flags);
 	} else {
-		__ASSERT(flags == 0,
+		__ASSERT(flags == 0U,
 			 "Timer interrupt cannot have triggering flags set");
 	}
 }

@@ -22,10 +22,10 @@
 #include <misc/__assert.h>
 #include <syscall_handler.h>
 
-extern void _k_thread_single_abort(struct k_thread *thread);
+extern void z_thread_single_abort(struct k_thread *thread);
 
 #if !defined(CONFIG_ARCH_HAS_THREAD_ABORT)
-void _impl_k_thread_abort(k_tid_t thread)
+void z_impl_k_thread_abort(k_tid_t thread)
 {
 	/* We aren't trying to synchronize data access here (these
 	 * APIs are internally synchronized).  The original lock seems
@@ -37,13 +37,13 @@ void _impl_k_thread_abort(k_tid_t thread)
 	struct k_spinlock lock = {};
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
-	__ASSERT((thread->base.user_options & K_ESSENTIAL) == 0,
+	__ASSERT((thread->base.user_options & K_ESSENTIAL) == 0U,
 		 "essential thread aborted");
 
-	_k_thread_single_abort(thread);
-	_thread_monitor_exit(thread);
+	z_thread_single_abort(thread);
+	z_thread_monitor_exit(thread);
 
-	_reschedule(&lock, key);
+	z_reschedule(&lock, key);
 }
 #endif
 
@@ -55,7 +55,7 @@ Z_SYSCALL_HANDLER(k_thread_abort, thread_p)
 	Z_OOPS(Z_SYSCALL_VERIFY_MSG(!(thread->base.user_options & K_ESSENTIAL),
 				    "aborting essential thread %p", thread));
 
-	_impl_k_thread_abort((struct k_thread *)thread);
+	z_impl_k_thread_abort((struct k_thread *)thread);
 	return 0;
 }
 #endif

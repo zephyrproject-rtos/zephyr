@@ -63,7 +63,7 @@ static void shell_tdata_dump(const struct k_thread *thread, void *user_data)
 					size);
 
 	/* Calculate the real size reserved for the stack */
-	pcnt = ((size - unused) * 100) / size;
+	pcnt = ((size - unused) * 100U) / size;
 
 	tname = k_thread_name_get((struct k_thread *)thread);
 
@@ -104,7 +104,7 @@ static void shell_stack_dump(const struct k_thread *thread, void *user_data)
 					size);
 
 	/* Calculate the real size reserved for the stack */
-	pcnt = ((size - unused) * 100) / size;
+	pcnt = ((size - unused) * 100U) / size;
 
 	shell_fprintf((const struct shell *)user_data, SHELL_NORMAL,
 		"0x%08X %-10s (real size %u):\tunused %u\tusage %u / %u (%u %%)\n",

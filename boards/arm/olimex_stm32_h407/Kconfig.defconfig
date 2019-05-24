@@ -18,4 +18,3 @@ config UART_2
 endif # UART_CONSOLE
 
 endif # BOARD_OLIMEX_STM32_H407
-

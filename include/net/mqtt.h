@@ -27,6 +27,7 @@
 #include <zephyr.h>
 #include <zephyr/types.h>
 #include <net/tls_credentials.h>
+#include <misc/mutex.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -404,7 +405,7 @@ struct mqtt_transport {
 /** @brief MQTT internal state. */
 struct mqtt_internal {
 	/** Internal. Mutex to protect access to the client instance. */
-	struct k_mutex mutex;
+	struct sys_mutex mutex;
 
 	/** Internal. Wall clock value (in milliseconds) of the last activity
 	 *  that occurred. Needed for periodic PING.
@@ -696,6 +697,20 @@ int mqtt_input(struct mqtt_client *client);
  */
 int mqtt_read_publish_payload(struct mqtt_client *client, void *buffer,
 			      size_t length);
+
+/**
+ * @brief Blocking version of @ref mqtt_read_publish_payload function.
+ *
+ * @param[in] client Client instance for which the procedure is requested.
+ *                   Shall not be NULL.
+ * @param[out] buffer Buffer where payload should be stored.
+ * @param[in] length Length of the buffer, in bytes.
+ *
+ * @return Number of bytes read or a negative error code (errno.h) indicating
+ *         reason of failure.
+ */
+int mqtt_read_publish_payload_blocking(struct mqtt_client *client, void *buffer,
+				       size_t length);
 
 #ifdef __cplusplus
 }

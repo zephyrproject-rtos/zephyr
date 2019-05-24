@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
 /* SoC level DTS fixup file */
 
 #define DT_UART_NS16550_PORT_0_BASE_ADDR	DT_NS16550_3F8_BASE_ADDRESS

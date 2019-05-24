@@ -8,7 +8,8 @@ configurations that support these registers.
 
 .. note::
     Floating point services are currently available only for boards
-    based on the ARM Cortex-M4 or the Intel x86 architectures. The
+    based on either ARM Cortex-M SoCs supporting the Floating Point Extension,
+    or the Intel x86 architecture. The
     services provided are architecture specific.
 
     The kernel does not support the use of floating point registers by ISRs.
@@ -40,13 +41,14 @@ Unshared FP registers mode
 This mode is used when the application has only a single thread
 that uses floating point registers.
 
-The kernel initializes the floating point registers so they can be used
-by any thread. The floating point registers are left unchanged
+On x86 platforms, the kernel initializes the floating point registers so they can
+be used by any thread (initialization in skipped on ARM Cortex-M platforms).
+The floating point registers are left unchanged
 whenever a context switch occurs.
 
 .. note::
-    Incorrect operation may result if two or more threads use
-    floating point registers, as the kernel does not attempt to detect
+    The behavior is undefined, if two or more threads attempt to use
+    the floating point registers, as the kernel does not attempt to detect
     (or prevent) multiple threads from using these registers.
 
 Shared FP registers mode
@@ -68,11 +70,15 @@ by any thread, then saves and restores these registers during
 context switches to ensure the computations performed by each FPU user
 or SSE user are not impacted by the computations performed by the other users.
 
-On the ARM Cortex-M4 architecture the kernel treats *all* threads
+On the ARM Cortex-M architecture with the Floating Point Extension
+the kernel treats *all* threads
 as FPU users when shared FP registers mode is enabled. This means that the
-floating point registers are saved and restored during a context switch, even
-when the associated threads are not using them. Each thread must provide
-an extra 132 bytes of stack space where these register values can be saved.
+floating point registers are saved and restored during each context switch,
+even when the associated threads are not using them. Each thread must provide
+an extra 72 bytes of stack space where these register values can be saved.
+Lazy Stacking is currently not supported in Zephyr applications on ARM
+Cortex-M architecture, and the feature is explicitly disabled during system
+boot.
 
 On the x86 architecture the kernel treats each thread as a non-user,
 FPU user or SSE user on a case-by-case basis. A "lazy save" algorithm is used

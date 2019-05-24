@@ -225,8 +225,8 @@ static int publish(struct mqtt_client *client, enum mqtt_qos qos)
 	param.message.payload.len =
 			strlen(param.message.payload.data);
 	param.message_id = sys_rand32_get();
-	param.dup_flag = 0;
-	param.retain_flag = 0;
+	param.dup_flag = 0U;
+	param.retain_flag = 0U;
 
 	return mqtt_publish(client, &param);
 }

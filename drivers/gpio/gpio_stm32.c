@@ -32,7 +32,7 @@ static void gpio_stm32_isr(int line, void *arg)
 	struct gpio_stm32_data *data = dev->driver_data;
 
 	if ((BIT(line) & data->cb_pins) != 0) {
-		_gpio_fire_callbacks(&data->cb, dev, BIT(line));
+		gpio_fire_callbacks(&data->cb, dev, BIT(line));
 	}
 }
 
@@ -94,6 +94,7 @@ int gpio_stm32_configure(u32_t *base_addr, int pin, int conf, int altf)
 	GPIO_TypeDef *gpio = (GPIO_TypeDef *)base_addr;
 
 	int pin_ll = stm32_pinval_get(pin);
+
 #ifdef CONFIG_SOC_SERIES_STM32F1X
 	ARG_UNUSED(altf);
 
@@ -163,13 +164,23 @@ int gpio_stm32_configure(u32_t *base_addr, int pin, int conf, int altf)
 		}
 	}
 
+#if defined(CONFIG_SOC_SERIES_STM32L4X) && defined(GPIO_ASCR_ASC0)
+	/*
+	 * For STM32L47xx/48xx, register ASCR should be configured to connect
+	 * analog switch of gpio lines to the ADC.
+	 */
+	if (mode == STM32_MODER_ANALOG_MODE) {
+		LL_GPIO_EnablePinAnalogControl(gpio, pin_ll);
+	}
+#endif
+
 	LL_GPIO_SetPinOutputType(gpio, pin_ll, otype >> STM32_OTYPER_SHIFT);
 
 	LL_GPIO_SetPinSpeed(gpio, pin_ll, ospeed >> STM32_OSPEEDR_SHIFT);
 
 	LL_GPIO_SetPinPull(gpio, pin_ll, pupd >> STM32_PUPDR_SHIFT);
 
-#endif /* CONFIG_SOC_SERIES_STM32F1X */
+#endif  /* CONFIG_SOC_SERIES_STM32F1X */
 
 	return 0;
 }
@@ -179,10 +190,11 @@ int gpio_stm32_configure(u32_t *base_addr, int pin, int conf, int altf)
  */
 const int gpio_stm32_enable_int(int port, int pin)
 {
-#if defined(CONFIG_SOC_SERIES_STM32F2X) || \
+#if defined(CONFIG_SOC_SERIES_STM32F2X) ||     \
 	defined(CONFIG_SOC_SERIES_STM32F3X) || \
 	defined(CONFIG_SOC_SERIES_STM32F4X) || \
 	defined(CONFIG_SOC_SERIES_STM32F7X) || \
+	defined(CONFIG_SOC_SERIES_STM32L1X) || \
 	defined(CONFIG_SOC_SERIES_STM32L4X)
 	struct device *clk = device_get_binding(STM32_CLOCK_CONTROL_NAME);
 	struct stm32_pclken pclken = {
@@ -202,6 +214,8 @@ const int gpio_stm32_enable_int(int port, int pin)
 #if defined(CONFIG_SOC_SERIES_STM32L0X) || \
 	defined(CONFIG_SOC_SERIES_STM32F0X)
 	line = ((pin % 4 * 4) << 16) | (pin / 4);
+#elif defined(CONFIG_SOC_SERIES_STM32MP1X)
+	line = (((pin * 8) % 32) << 16) | (pin / 4);
 #else
 	line = (0xF << ((pin % 4 * 4) + 16)) | (pin / 4);
 #endif
@@ -219,6 +233,8 @@ const int gpio_stm32_enable_int(int port, int pin)
 
 #ifdef CONFIG_SOC_SERIES_STM32F1X
 	LL_GPIO_AF_SetEXTISource(port, line);
+#elif CONFIG_SOC_SERIES_STM32MP1X
+	LL_EXTI_SetEXTISource(port, line);
 #else
 	LL_SYSCFG_SetEXTISource(port, line);
 #endif
@@ -271,7 +287,7 @@ static int gpio_stm32_config(struct device *dev, int access_op,
 
 			if ((flags & GPIO_INT_DOUBLE_EDGE) != 0) {
 				edge = STM32_EXTI_TRIG_RISING |
-					STM32_EXTI_TRIG_FALLING;
+				       STM32_EXTI_TRIG_FALLING;
 			} else if ((flags & GPIO_INT_ACTIVE_HIGH) != 0) {
 				edge = STM32_EXTI_TRIG_RISING;
 			} else {
@@ -307,7 +323,7 @@ static int gpio_stm32_write(struct device *dev, int access_op,
 	}
 
 	pin = stm32_pinval_get(pin);
-	if (value != 0) {
+	if (value != 0U) {
 		LL_GPIO_SetOutputPin(gpio, pin);
 	} else {
 		LL_GPIO_ResetOutputPin(gpio, pin);
@@ -340,7 +356,7 @@ static int gpio_stm32_manage_callback(struct device *dev,
 {
 	struct gpio_stm32_data *data = dev->driver_data;
 
-	return _gpio_manage_callback(&data->cb, callback, set);
+	return gpio_manage_callback(&data->cb, callback, set);
 }
 
 static int gpio_stm32_enable_callback(struct device *dev,
@@ -400,7 +416,7 @@ static int gpio_stm32_init(struct device *device)
 		device_get_binding(STM32_CLOCK_CONTROL_NAME);
 
 	if (clock_control_on(clk,
-		(clock_control_subsys_t *) &cfg->pclken) != 0) {
+			     (clock_control_subsys_t *)&cfg->pclken) != 0) {
 		return -EIO;
 	}
 
@@ -416,36 +432,35 @@ static int gpio_stm32_init(struct device *device)
 			LL_APB1_GRP1_DisableClock(LL_APB1_GRP1_PERIPH_PWR);
 		}
 	}
-#endif /* PWR_CR2_IOSV */
+#endif  /* PWR_CR2_IOSV */
 
 	return 0;
 }
 
 
 #define GPIO_DEVICE_INIT(__name, __suffix, __base_addr, __port, __cenr, __bus) \
-static const struct gpio_stm32_config gpio_stm32_cfg_## __suffix = {	\
-	.base = (u32_t *)__base_addr,				\
-	.port = __port,							\
-	.pclken = { .bus = __bus, .enr = __cenr }			\
-};									\
-static struct gpio_stm32_data gpio_stm32_data_## __suffix;		\
-DEVICE_AND_API_INIT(gpio_stm32_## __suffix,				\
-		    __name,						\
-		    gpio_stm32_init,					\
-		    &gpio_stm32_data_## __suffix,			\
-		    &gpio_stm32_cfg_## __suffix,			\
-		    POST_KERNEL,					\
-		    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,			\
-		    &gpio_stm32_driver);
+	static const struct gpio_stm32_config gpio_stm32_cfg_## __suffix = {   \
+		.base = (u32_t *)__base_addr,				       \
+		.port = __port,						       \
+		.pclken = { .bus = __bus, .enr = __cenr }		       \
+	};								       \
+	static struct gpio_stm32_data gpio_stm32_data_## __suffix;	       \
+	DEVICE_AND_API_INIT(gpio_stm32_## __suffix,			       \
+			    __name,					       \
+			    gpio_stm32_init,				       \
+			    &gpio_stm32_data_## __suffix,		       \
+			    &gpio_stm32_cfg_## __suffix,		       \
+			    POST_KERNEL,				       \
+			    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	       \
+			    &gpio_stm32_driver)
 
-
-#define GPIO_DEVICE_INIT_STM32(__suffix, __SUFFIX)				\
-	GPIO_DEVICE_INIT(DT_GPIO_STM32_GPIO##__SUFFIX##_LABEL,		\
-			__suffix,						\
-			DT_GPIO_STM32_GPIO##__SUFFIX##_BASE_ADDRESS, 	\
-			STM32_PORT##__SUFFIX,					\
-			DT_GPIO_STM32_GPIO##__SUFFIX##_CLOCK_BITS,		\
-			DT_GPIO_STM32_GPIO##__SUFFIX##_CLOCK_BUS)
+#define GPIO_DEVICE_INIT_STM32(__suffix, __SUFFIX)		      \
+	GPIO_DEVICE_INIT(DT_GPIO_STM32_GPIO##__SUFFIX##_LABEL,	      \
+			 __suffix,				      \
+			 DT_GPIO_STM32_GPIO##__SUFFIX##_BASE_ADDRESS, \
+			 STM32_PORT##__SUFFIX,			      \
+			 DT_GPIO_STM32_GPIO##__SUFFIX##_CLOCK_BITS,   \
+			 DT_GPIO_STM32_GPIO##__SUFFIX##_CLOCK_BUS)
 
 #ifdef CONFIG_GPIO_STM32_PORTA
 GPIO_DEVICE_INIT_STM32(a, A);

@@ -197,13 +197,13 @@ def parse_file(fd, ignore_dts_version=False):
             continue
 
         if line.startswith('/include/ '):
-            tag, filename = line.split()
+            _, filename = line.split()
             with open(filename.strip()[1:-1], "r") as new_fd:
                 nodes.update(parse_file(new_fd, True))
         elif line == '/dts-v1/;':
             has_v1_tag = True
         elif line.startswith('/memreserve/ ') and line.endswith(';'):
-            tag, start, end = line.split()
+            _, start, end = line.split()
             start = int(start, 16)
             end = int(end[:-1], 16)
             label = "reserved_memory_0x%x_0x%x" % (start, end)
@@ -212,7 +212,7 @@ def parse_file(fd, ignore_dts_version=False):
                 'reg': [start, end],
                 'label': label,
                 'addr': start,
-                'name': build_node_name(name, start)
+                'name': '<memreserve>'
             }
         elif line.endswith('{'):
             if not has_v1_tag and not ignore_dts_version:
@@ -238,7 +238,7 @@ def dump_refs(name, value, indent=0):
 
 def dump_all_refs(name, props, indent=0):
     out = []
-    for key, value in props.items():
+    for value in props.values():
         out.extend(dump_refs(name, value, indent))
     return out
 
@@ -260,15 +260,16 @@ def dump_to_dot(nodes, indent=0, start_string='digraph devicetree', name=None):
         print("%s\"%s\";" % (spaces, name))
 
     ref_list = []
-    for key, value in nodes.items():
-        if value['children']:
-            refs = dump_to_dot(value['children'], indent + 1, next_subgraph(), get_dot_node_name(value))
+    for node in nodes.values():
+        if node['children']:
+            refs = dump_to_dot(node['children'], indent + 1, next_subgraph(),
+                               get_dot_node_name(node))
             ref_list.extend(refs)
         else:
-            print("%s\"%s\";" % (spaces, get_dot_node_name(value)))
+            print("%s\"%s\";" % (spaces, get_dot_node_name(node)))
 
-    for key, value in nodes.items():
-        refs = dump_all_refs(get_dot_node_name(value), value['props'], indent)
+    for node in nodes.values():
+        refs = dump_all_refs(get_dot_node_name(node), node['props'], indent)
         ref_list.extend(refs)
 
     if start_string.startswith("digraph"):

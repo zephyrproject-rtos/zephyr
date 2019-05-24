@@ -1,5 +1,15 @@
 # Keep the help strings in sync with the values in the .py files!
 west-commands:
+  - file: scripts/west_commands/completion.py
+    commands:
+      - name: completion
+        class: Completion
+        help: display shell completion scripts
+  - file: scripts/west_commands/boards.py
+    commands:
+      - name: boards
+        class: Boards
+        help: display information about supported boards
   - file: scripts/west_commands/build.py
     commands:
       - name: build

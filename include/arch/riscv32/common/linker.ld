@@ -36,9 +36,9 @@
 MEMORY
 {
 #ifdef CONFIG_XIP
-    ROM (rx)  : ORIGIN = CONFIG_RISCV_ROM_BASE_ADDR, LENGTH = CONFIG_RISCV_ROM_SIZE
+    ROM (rx)  : ORIGIN = DT_FLASH_BASE_ADDRESS, LENGTH = KB(DT_FLASH_SIZE)
 #endif
-    RAM (rwx) : ORIGIN = CONFIG_RISCV_RAM_BASE_ADDR, LENGTH = RISCV_RAM_SIZE
+    RAM (rwx) : ORIGIN = DT_SRAM_BASE_ADDRESS, LENGTH = KB(DT_SRAM_SIZE)
     /* Used by and documented in include/linker/intlist.ld */
     IDT_LIST  (wx)      : ORIGIN = 0xFFFFF7FF, LENGTH = 2K
 }
@@ -110,6 +110,10 @@ SECTIONS
 		 *(".rodata.*")
 		 *(.gnu.linkonce.r.*)
 
+/* Located in generated directory. This file is populated by the
+ * zephyr_linker_sources() Cmake function.
+ */
+#include <snippets-rodata.ld>
 #ifdef CONFIG_SOC_RODATA_LD
 #include <soc-rodata.ld>
 #endif
@@ -135,6 +139,10 @@ SECTIONS
 		 *(.sdata .sdata.* .gnu.linkonce.s.*)
 		 *(.sdata2 .sdata2.* .gnu.linkonce.s2.*)
 
+/* Located in generated directory. This file is populated by the
+ * zephyr_linker_sources() Cmake function.
+ */
+#include <snippets-rwdata.ld>
 #ifdef CONFIG_SOC_RWDATA_LD
 #include <soc-rwdata.ld>
 #endif
@@ -143,6 +151,10 @@ SECTIONS
 
 #include <linker/common-ram.ld>
 
+/* Located in generated directory. This file is populated by the
+ * zephyr_linker_sources() Cmake function.
+ */
+#include <snippets-ram-sections.ld>
     __data_ram_end = .;
 
     SECTION_DATA_PROLOGUE(_BSS_SECTION_NAME,(NOLOAD),)
@@ -174,6 +186,10 @@ SECTIONS
 		 *(.noinit)
 		 *(".noinit.*")
 
+/* Located in generated directory. This file is populated by the
+ * zephyr_linker_sources() Cmake function.
+ */
+#include <snippets-noinit.ld>
 #ifdef CONFIG_SOC_NOINIT_LD
 #include <soc-noinit.ld>
 #endif
@@ -183,9 +199,10 @@ SECTIONS
      _image_ram_end = .;
      _end = .; /* end of image */
 
-#ifdef CONFIG_GEN_ISR_TABLES
-#include <linker/intlist.ld>
-#endif
+/* Located in generated directory. This file is populated by the
+ * zephyr_linker_sources() Cmake function.
+ */
+#include <snippets-sections.ld>
 
      GROUP_END(RAMABLE_REGION)
 

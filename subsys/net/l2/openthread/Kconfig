@@ -21,7 +21,6 @@ if NET_L2_OPENTHREAD
 
 config OPENTHREAD_PLAT
 	bool
-	depends on NET_L2_OPENTHREAD
 	help
 	  This option enables OpenThread platform
 
@@ -149,6 +148,25 @@ config OPENTHREAD_JOINER
 	bool "Joiner functions support"
 	help
 	  Enable joiner capability in OpenThread stack
+
+config OPENTHREAD_JOINER_AUTOSTART
+	bool "Support for automatic joiner start"
+	depends on OPENTHREAD_JOINER
+	help
+	  Enable automatic joiner start
+
+config OPENTHREAD_JOINER_PSKD
+	string "Default Pre Shared key for the Device to start joiner"
+	depends on OPENTHREAD_JOINER_AUTOSTART
+	default "J01NME"
+	help
+	  Pre Shared Key for the Device to start joiner
+
+config OPENTHREAD_PLATFORM_INFO
+	string "Platform information for OpenThread"
+	default "ZEPHYR"
+	help
+	  Platform information for OpenThread
 
 config OPENTHREAD_JAM_DETECTION
 	bool "Jam detection support"

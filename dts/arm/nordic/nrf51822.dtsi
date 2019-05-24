@@ -1,6 +1,9 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
 #include <arm/armv6-m.dtsi>
 #include <dt-bindings/i2c/i2c.h>
 #include <dt-bindings/gpio/gpio.h>
+#include "nrf5_common.dtsi"
 
 / {
 	cpus {
@@ -12,28 +15,6 @@
 			compatible = "arm,cortex-m0";
 			reg = <0>;
 		};
-	};
-
-	flash-controller@4001E000 {
-			compatible = "nordic,nrf51-flash-controller";
-			reg = <0x4001E000 0x518>;
-
-			#address-cells = <1>;
-			#size-cells = <1>;
-
-			label="NRF_FLASH_DRV_NAME";
-
-			flash0: flash@0 {
-				compatible = "soc-nv-flash";
-				label = "NRF_FLASH";
-				erase-block-size = <1024>;
-				write-block-size = <4>;
-			};
-	};
-
-	sram0: memory@20000000 {
-		device_type = "memory";
-		compatible = "mmio-sram";
 	};
 
 	aliases {
@@ -55,6 +36,29 @@
 	};
 
 	soc {
+
+		flash-controller@4001e000 {
+			compatible = "nordic,nrf51-flash-controller";
+			reg = <0x4001e000 0x1000>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			label="NRF_FLASH_DRV_NAME";
+
+			flash0: flash@0 {
+				compatible = "soc-nv-flash";
+				label = "NRF_FLASH";
+				erase-block-size = <1024>;
+				write-block-size = <4>;
+			};
+		};
+
+		sram0: memory@20000000 {
+			device_type = "memory";
+			compatible = "mmio-sram";
+		};
+
 		adc: adc@40007000 {
 			compatible = "nordic,nrf-adc";
 			reg = <0x40007000 0x1000>;
@@ -90,7 +94,7 @@
 		gpio0: gpio@50000000 {
 			compatible = "nordic,nrf-gpio";
 			gpio-controller;
-			reg = <0x50000000 0x800>;
+			reg = <0x50000000 0x1000>;
 			#gpio-cells = <2>;
 			label = "GPIO_0";
 			status = "disabled";
@@ -151,6 +155,8 @@
 			reg = <0x4000b000 0x1000>;
 			interrupts = <11 1>;
 			status = "ok";
+			clock-frequency = <32768>;
+			prescaler = <1>;
 			label = "RTC_0";
 		};
 
@@ -159,6 +165,8 @@
 			reg = <0x40011000 0x1000>;
 			interrupts = <17 1>;
 			status = "ok";
+			clock-frequency = <32768>;
+			prescaler = <1>;
 			label = "RTC_1";
 		};
 
@@ -167,6 +175,7 @@
 			status = "ok";
 			reg = <0x40008000 0x1000>;
 			interrupts = <8 1>;
+			prescaler = <0>;
 			label = "TIMER_0";
 		};
 
@@ -175,6 +184,7 @@
 			status = "ok";
 			reg = <0x40009000 0x1000>;
 			interrupts = <9 1>;
+			prescaler = <0>;
 			label = "TIMER_1";
 		};
 
@@ -183,7 +193,16 @@
 			status = "ok";
 			reg = <0x4000a000 0x1000>;
 			interrupts = <10 1>;
+			prescaler = <0>;
 			label = "TIMER_2";
+		};
+
+		temp: temp@4000c000 {
+			compatible = "nordic,nrf-temp";
+			reg = <0x4000c000 0x1000>;
+			interrupts = <12 1>;
+			status = "ok";
+			label = "TEMP_0";
 		};
 
 		wdt: watchdog@40010000 {
@@ -198,4 +217,16 @@
 
 &nvic {
 	arm,num-irq-priority-bits = <2>;
+};
+
+/delete-node/ &systick;
+
+
+&sw_pwm {
+	timer-instance = <1>;
+	channel-count = <3>;
+	clock-prescaler = <0>;
+	ppi-base = <7>;
+	gpiote-base = <0>;
+	status = "ok";
 };

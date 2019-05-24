@@ -61,7 +61,7 @@ static struct arc_v2_irq_unit_ctx ctx;
  * @return N/A
  */
 
-static int _arc_v2_irq_unit_init(struct device *unused)
+static int arc_v2_irq_unit_init(struct device *unused)
 {
 	ARG_UNUSED(unused);
 	int irq; /* the interrupt index */
@@ -71,43 +71,43 @@ static int _arc_v2_irq_unit_init(struct device *unused)
 	 * values in this loop.
 	 */
 	for (irq = 16; irq < CONFIG_NUM_IRQS; irq++) {
-		_arc_v2_aux_reg_write(_ARC_V2_IRQ_SELECT, irq);
+		z_arc_v2_aux_reg_write(_ARC_V2_IRQ_SELECT, irq);
 #ifdef CONFIG_ARC_HAS_SECURE
-		_arc_v2_aux_reg_write(_ARC_V2_IRQ_PRIORITY,
+		z_arc_v2_aux_reg_write(_ARC_V2_IRQ_PRIORITY,
 			 (CONFIG_NUM_IRQ_PRIO_LEVELS-1) |
 			 _ARC_V2_IRQ_PRIORITY_SECURE); /* lowest priority */
 #else
-		_arc_v2_aux_reg_write(_ARC_V2_IRQ_PRIORITY,
+		z_arc_v2_aux_reg_write(_ARC_V2_IRQ_PRIORITY,
 			 (CONFIG_NUM_IRQ_PRIO_LEVELS-1)); /* lowest priority */
 #endif
-		_arc_v2_aux_reg_write(_ARC_V2_IRQ_ENABLE, _ARC_V2_INT_DISABLE);
-		_arc_v2_aux_reg_write(_ARC_V2_IRQ_TRIGGER, _ARC_V2_INT_LEVEL);
+		z_arc_v2_aux_reg_write(_ARC_V2_IRQ_ENABLE, _ARC_V2_INT_DISABLE);
+		z_arc_v2_aux_reg_write(_ARC_V2_IRQ_TRIGGER, _ARC_V2_INT_LEVEL);
 	}
 
 	return 0;
 }
 
-void _arc_v2_irq_unit_int_eoi(int irq)
+void z_arc_v2_irq_unit_int_eoi(int irq)
 {
-	_arc_v2_aux_reg_write(_ARC_V2_IRQ_SELECT, irq);
-	_arc_v2_aux_reg_write(_ARC_V2_IRQ_PULSE_CANCEL, 1);
+	z_arc_v2_aux_reg_write(_ARC_V2_IRQ_SELECT, irq);
+	z_arc_v2_aux_reg_write(_ARC_V2_IRQ_PULSE_CANCEL, 1);
 }
 
-void _arc_v2_irq_unit_trigger_set(int irq, unsigned int trigger)
+void z_arc_v2_irq_unit_trigger_set(int irq, unsigned int trigger)
 {
-	_arc_v2_aux_reg_write(_ARC_V2_IRQ_SELECT, irq);
-	_arc_v2_aux_reg_write(_ARC_V2_IRQ_TRIGGER, trigger);
+	z_arc_v2_aux_reg_write(_ARC_V2_IRQ_SELECT, irq);
+	z_arc_v2_aux_reg_write(_ARC_V2_IRQ_TRIGGER, trigger);
 }
 
-unsigned int _arc_v2_irq_unit_trigger_get(int irq)
+unsigned int z_arc_v2_irq_unit_trigger_get(int irq)
 {
-	_arc_v2_aux_reg_write(_ARC_V2_IRQ_SELECT, irq);
-	return _arc_v2_aux_reg_read(_ARC_V2_IRQ_TRIGGER);
+	z_arc_v2_aux_reg_write(_ARC_V2_IRQ_SELECT, irq);
+	return z_arc_v2_aux_reg_read(_ARC_V2_IRQ_TRIGGER);
 }
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 
-static int _arc_v2_irq_unit_suspend(struct device *dev)
+static int arc_v2_irq_unit_suspend(struct device *dev)
 {
 	u8_t irq;
 
@@ -118,24 +118,24 @@ static int _arc_v2_irq_unit_suspend(struct device *dev)
 	 * values in this loop.
 	 */
 	for (irq = 16U; irq < CONFIG_NUM_IRQS; irq++) {
-		_arc_v2_aux_reg_write(_ARC_V2_IRQ_SELECT, irq);
+		z_arc_v2_aux_reg_write(_ARC_V2_IRQ_SELECT, irq);
 		ctx.irq_config[irq - 16] =
-			_arc_v2_aux_reg_read(_ARC_V2_IRQ_PRIORITY) << 2;
+			z_arc_v2_aux_reg_read(_ARC_V2_IRQ_PRIORITY) << 2;
 		ctx.irq_config[irq - 16] |=
-			_arc_v2_aux_reg_read(_ARC_V2_IRQ_TRIGGER) << 1;
+			z_arc_v2_aux_reg_read(_ARC_V2_IRQ_TRIGGER) << 1;
 		ctx.irq_config[irq - 16] |=
-			_arc_v2_aux_reg_read(_ARC_V2_IRQ_ENABLE);
+			z_arc_v2_aux_reg_read(_ARC_V2_IRQ_ENABLE);
 	}
 
-	ctx.irq_ctrl = _arc_v2_aux_reg_read(_ARC_V2_AUX_IRQ_CTRL);
-	ctx.irq_vect_base = _arc_v2_aux_reg_read(_ARC_V2_IRQ_VECT_BASE);
+	ctx.irq_ctrl = z_arc_v2_aux_reg_read(_ARC_V2_AUX_IRQ_CTRL);
+	ctx.irq_vect_base = z_arc_v2_aux_reg_read(_ARC_V2_IRQ_VECT_BASE);
 
 	_arc_v2_irq_unit_device_power_state = DEVICE_PM_SUSPEND_STATE;
 
 	return 0;
 }
 
-static int _arc_v2_irq_unit_resume(struct device *dev)
+static int arc_v2_irq_unit_resume(struct device *dev)
 {
 	u8_t irq;
 	u32_t status32;
@@ -147,26 +147,26 @@ static int _arc_v2_irq_unit_resume(struct device *dev)
 	 * values in this loop.
 	 */
 	for (irq = 16U; irq < CONFIG_NUM_IRQS; irq++) {
-		_arc_v2_aux_reg_write(_ARC_V2_IRQ_SELECT, irq);
+		z_arc_v2_aux_reg_write(_ARC_V2_IRQ_SELECT, irq);
 #ifdef CONFIG_ARC_HAS_SECURE
-		_arc_v2_aux_reg_write(_ARC_V2_IRQ_PRIORITY,
+		z_arc_v2_aux_reg_write(_ARC_V2_IRQ_PRIORITY,
 				ctx.irq_config[irq - 16] >> 2 |
 				_ARC_V2_IRQ_PRIORITY_SECURE);
 #else
-		_arc_v2_aux_reg_write(_ARC_V2_IRQ_PRIORITY,
+		z_arc_v2_aux_reg_write(_ARC_V2_IRQ_PRIORITY,
 				ctx.irq_config[irq - 16] >> 2);
 #endif
-		_arc_v2_aux_reg_write(_ARC_V2_IRQ_TRIGGER,
+		z_arc_v2_aux_reg_write(_ARC_V2_IRQ_TRIGGER,
 				(ctx.irq_config[irq - 16] >> 1) & BIT(0));
-		_arc_v2_aux_reg_write(_ARC_V2_IRQ_ENABLE,
+		z_arc_v2_aux_reg_write(_ARC_V2_IRQ_ENABLE,
 				ctx.irq_config[irq - 16] & BIT(0));
 	}
 
-	_arc_v2_aux_reg_write(_ARC_V2_AUX_IRQ_CTRL, ctx.irq_ctrl);
-	_arc_v2_aux_reg_write(_ARC_V2_IRQ_VECT_BASE, ctx.irq_vect_base);
+	z_arc_v2_aux_reg_write(_ARC_V2_AUX_IRQ_CTRL, ctx.irq_ctrl);
+	z_arc_v2_aux_reg_write(_ARC_V2_IRQ_VECT_BASE, ctx.irq_vect_base);
 
-	status32 = _arc_v2_aux_reg_read(_ARC_V2_STATUS32);
-	status32 |= _ARC_V2_STATUS32_E(_ARC_V2_DEF_IRQ_LEVEL);
+	status32 = z_arc_v2_aux_reg_read(_ARC_V2_STATUS32);
+	status32 |= Z_ARC_V2_STATUS32_E(_ARC_V2_DEF_IRQ_LEVEL);
 
 	__builtin_arc_kflag(status32);
 
@@ -175,7 +175,7 @@ static int _arc_v2_irq_unit_resume(struct device *dev)
 	return 0;
 }
 
-static int _arc_v2_irq_unit_get_state(struct device *dev)
+static int arc_v2_irq_unit_get_state(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
@@ -186,26 +186,32 @@ static int _arc_v2_irq_unit_get_state(struct device *dev)
  * Implements the driver control management functionality
  * the *context may include IN data or/and OUT data
  */
-static int _arc_v2_irq_unit_device_ctrl(struct device *device,
-		u32_t ctrl_command, void *context)
+static int arc_v2_irq_unit_device_ctrl(struct device *device,
+		u32_t ctrl_command, void *context, device_pm_cb cb, void *arg)
 {
+	int ret = 0;
+
 	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
 		if (*((u32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
-			return _arc_v2_irq_unit_suspend(device);
+			ret = arc_v2_irq_unit_suspend(device);
 		} else if (*((u32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
-			return _arc_v2_irq_unit_resume(device);
+			ret = arc_v2_irq_unit_resume(device);
 		}
 	} else if (ctrl_command == DEVICE_PM_GET_POWER_STATE) {
-		*((u32_t *)context) = _arc_v2_irq_unit_get_state(device);
-		return 0;
+		*((u32_t *)context) = arc_v2_irq_unit_get_state(device);
 	}
-	return 0;
+
+	if (cb) {
+		cb(device, ret, context, arg);
+	}
+
+	return ret;
 }
 
-SYS_DEVICE_DEFINE("arc_v2_irq_unit", _arc_v2_irq_unit_init,
-		_arc_v2_irq_unit_device_ctrl, PRE_KERNEL_1,
-		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_DEVICE_DEFINE("arc_v2_irq_unit", arc_v2_irq_unit_init,
+		  arc_v2_irq_unit_device_ctrl, PRE_KERNEL_1,
+		  CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 #else
-SYS_INIT(_arc_v2_irq_unit_init, PRE_KERNEL_1,
+SYS_INIT(arc_v2_irq_unit_init, PRE_KERNEL_1,
 		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 #endif   /* CONFIG_DEVICE_POWER_MANAGEMENT */

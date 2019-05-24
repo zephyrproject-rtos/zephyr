@@ -231,7 +231,7 @@ static void keys_clear_id(struct bt_keys *keys, void *data)
 
 	if (*id == keys->id) {
 		if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
-			bt_gatt_clear_ccc(*id, &keys->addr);
+			bt_gatt_clear(*id, &keys->addr);
 		}
 
 		bt_keys_clear(keys);
@@ -271,12 +271,14 @@ int bt_keys_store(struct bt_keys *keys)
 	return 0;
 }
 
-static int keys_set(int argc, char **argv, void *value_ctx)
+static int keys_set(int argc, char **argv, size_t len_rd,
+		    settings_read_cb read_cb, void *cb_arg)
 {
 	struct bt_keys *keys;
 	bt_addr_le_t addr;
 	u8_t id;
-	int len, err;
+	size_t len;
+	int err;
 	char val[BT_KEYS_STORAGE_LEN];
 
 	if (argc < 1) {
@@ -284,9 +286,9 @@ static int keys_set(int argc, char **argv, void *value_ctx)
 		return -EINVAL;
 	}
 
-	len = settings_val_read_cb(value_ctx, val, sizeof(val));
+	len = read_cb(cb_arg, val, sizeof(val));
 	if (len < 0) {
-		BT_ERR("Failed to read value (err %d)", len);
+		BT_ERR("Failed to read value (err %zu)", len);
 		return -EINVAL;
 	}
 
@@ -323,8 +325,9 @@ static int keys_set(int argc, char **argv, void *value_ctx)
 		return -ENOMEM;
 	}
 
-	if (settings_val_get_len_cb(value_ctx) != BT_KEYS_STORAGE_LEN) {
-		BT_ERR("Invalid key length %d != %d", len, BT_KEYS_STORAGE_LEN);
+	if (len_rd != BT_KEYS_STORAGE_LEN) {
+		BT_ERR("Invalid key length %zu != %zu", len,
+		       BT_KEYS_STORAGE_LEN);
 		bt_keys_clear(keys);
 		return -EINVAL;
 	} else {

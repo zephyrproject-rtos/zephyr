@@ -1016,9 +1016,9 @@ sub top_of_kernel_tree {
 	my ($root) = @_;
 
 	my @tree_check = (
-		"COPYING", "CREDITS", "Kbuild", "Makefile",
-		"README", "Documentation", "arch", "include", "drivers",
-		"fs", "init", "ipc", "kernel", "lib", "scripts",
+		"LICENSE", "CODEOWNERS", "Kconfig", "Makefile",
+		"README.rst", "doc", "arch", "include", "drivers",
+		"boards", "kernel", "lib", "scripts",
 	);
 
 	foreach my $check (@tree_check) {
@@ -2860,7 +2860,7 @@ sub process {
 
 			my @compats = $rawline =~ /\"([a-zA-Z0-9\-\,\.\+_]+)\"/g;
 
-			my $dt_path = $root . "/Documentation/devicetree/bindings/";
+			my $dt_path = $root . "/dts/bindings/";
 			my $vp_file = $dt_path . "vendor-prefixes.txt";
 
 			foreach my $compat (@compats) {

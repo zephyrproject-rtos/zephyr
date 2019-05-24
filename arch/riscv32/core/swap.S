@@ -10,7 +10,7 @@
 
 /* exports */
 GTEXT(__swap)
-GTEXT(_thread_entry_wrapper)
+GTEXT(z_thread_entry_wrapper)
 
 /* Use ABI name of registers for the sake of simplicity */
 
@@ -78,7 +78,7 @@ SECTION_FUNC(exception.other, __swap)
 	 * Prior to unlocking irq, load return value of
 	 * __swap to temp register t2 (from
 	 * _thread_offset_to_swap_return_value). Normally, it should be -EAGAIN,
-	 * unless someone has previously called _set_thread_return_value(..).
+	 * unless someone has previously called z_set_thread_return_value(..).
 	 */
 	la t0, _kernel
 
@@ -103,18 +103,18 @@ SECTION_FUNC(exception.other, __swap)
 
 
 /*
- * void _thread_entry_wrapper(k_thread_entry_t, void *, void *, void *)
+ * void z_thread_entry_wrapper(k_thread_entry_t, void *, void *, void *)
  */
-SECTION_FUNC(TEXT, _thread_entry_wrapper)
+SECTION_FUNC(TEXT, z_thread_entry_wrapper)
 	/*
-	 * _thread_entry_wrapper is called for every new thread upon the return
+	 * z_thread_entry_wrapper is called for every new thread upon the return
 	 * of __swap or ISR. Its address, as well as its input function
 	 * arguments thread_entry_t, void *, void *, void * are restored from
 	 * the thread stack (initialized via function _thread).
 	 * In this case, thread_entry_t, * void *, void * and void * are stored
 	 * in registers a0, a1, a2 and a3. These registers are used as arguments
-	 * to function _thread_entry. Hence, just call _thread_entry with
+	 * to function z_thread_entry. Hence, just call z_thread_entry with
 	 * return address set to 0 to indicate a non-returning function call.
 	 */
 
-	jal x0, _thread_entry
+	jal x0, z_thread_entry

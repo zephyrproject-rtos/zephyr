@@ -350,12 +350,12 @@ u8_t ll_adv_data_set(u8_t len, u8_t const *const data)
 	/* update adv pdu fields. */
 	pdu = lll_adv_data_alloc(&adv->lll, &idx);
 	pdu->type = prev->type;
-	pdu->rfu = 0;
+	pdu->rfu = 0U;
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_CHAN_SEL_2)) {
 		pdu->chan_sel = prev->chan_sel;
 	} else {
-		pdu->chan_sel = 0;
+		pdu->chan_sel = 0U;
 	}
 
 	pdu->tx_addr = prev->tx_addr;
@@ -429,10 +429,6 @@ u8_t ll_adv_enable(u8_t enable)
 	u32_t ticks_slot_offset;
 	struct ll_adv_set *adv;
 	struct lll_adv *lll;
-	u16_t interval;
-	u32_t slot_us;
-	u8_t chan_map;
-	u8_t chan_cnt;
 	u32_t ret;
 
 	if (!enable) {
@@ -571,6 +567,19 @@ u8_t ll_adv_enable(u8_t enable)
 		conn_lll->enc_tx = 0;
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
+		conn_lll->max_tx_octets = PDU_DC_PAYLOAD_SIZE_MIN;
+		conn_lll->max_rx_octets = PDU_DC_PAYLOAD_SIZE_MIN;
+
+#if defined(CONFIG_BT_CTLR_PHY)
+		/* Use the default 1M packet max time. Value of 0 is
+		 * equivalent to using BIT(0).
+		 */
+		conn_lll->max_tx_time = PKT_US(PDU_DC_PAYLOAD_SIZE_MIN, 0);
+		conn_lll->max_rx_time = PKT_US(PDU_DC_PAYLOAD_SIZE_MIN, 0);
+#endif /* CONFIG_BT_CTLR_PHY */
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+
 #if defined(CONFIG_BT_CTLR_PHY)
 		conn_lll->phy_tx = BIT(0);
 		conn_lll->phy_flags = 0;
@@ -625,8 +634,19 @@ u8_t ll_adv_enable(u8_t enable)
 		conn->llcp_conn_param.disabled = 0;
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
+		conn->llcp_length.req = conn->llcp_length.ack = 0U;
+		conn->llcp_length.pause_tx = 0U;
+		conn->default_tx_octets = ull_conn_default_tx_octets_get();
+
+#if defined(CONFIG_BT_CTLR_PHY)
+		conn->default_tx_time = ull_conn_default_tx_time_get();
+#endif /* CONFIG_BT_CTLR_PHY */
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+
 #if defined(CONFIG_BT_CTLR_PHY)
 		conn->llcp_phy.req = conn->llcp_phy.ack = 0;
+		conn->llcp_phy.pause_tx = 0U;
 		conn->phy_pref_tx = ull_conn_default_phy_tx_get();
 		conn->phy_pref_rx = ull_conn_default_phy_rx_get();
 		conn->phy_pref_flags = 0;
@@ -654,25 +674,76 @@ u8_t ll_adv_enable(u8_t enable)
 	ARG_UNUSED(rl_idx);
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 
-	interval = adv->interval;
-	chan_map = lll->chan_map;
-	chan_cnt = util_ones_count_get(&chan_map, sizeof(chan_map));
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+	const u8_t phy = lll->phy_p;
+#else
+	/* Legacy ADV only supports LE_1M PHY */
+	const u8_t phy = 1;
+#endif
 
-	/* TODO: use adv data len in slot duration calculation, instead of
-	 * hardcoded max. numbers used below.
-	 */
-	if (pdu_adv->type == PDU_ADV_TYPE_DIRECT_IND) {
-		/* Max. chain is DIRECT_IND * channels + CONNECT_IND */
-		slot_us = ((EVENT_OVERHEAD_START_US + 176 + 152 + 40) *
-			   chan_cnt) - 40 + 352;
-	} else if (pdu_adv->type == PDU_ADV_TYPE_NONCONN_IND) {
-		slot_us = (EVENT_OVERHEAD_START_US + 376) * chan_cnt;
-	} else {
-		/* Max. chain is ADV/SCAN_IND + SCAN_REQ + SCAN_RESP */
-		slot_us = (EVENT_OVERHEAD_START_US + 376 + 152 + 176 +
-			   152 + 376) * chan_cnt;
+	/* For now we adv on all channels enabled in channel map */
+	u8_t ch_map = lll->chan_map;
+	const u8_t adv_chn_cnt = util_ones_count_get(&ch_map, sizeof(ch_map));
+	u32_t slot_us	= EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
+
+	if (adv_chn_cnt == 0) {
+		/* ADV needs at least one channel */
+		goto failure_cleanup;
 	}
 
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+	if (pdu_adv->type == PDU_ADV_TYPE_EXT_IND) {
+		/* TBD */
+	} else
+#endif
+	{
+		const u8_t adv_data_len = pdu_adv->len;
+		const u8_t rsp_data_len = pdu_scan->len;
+		const u8_t ll_hdr_size  = LL_HEADER_SIZE(phy);
+		u32_t adv_size		= ll_hdr_size + ADVA_SIZE;
+		const u8_t ll_hdr_us	= BYTES2US(ll_hdr_size, phy);
+		const u8_t rx_to_us	= EVENT_RX_TO_US(phy);
+		const u8_t rxtx_turn_us = EVENT_RX_TX_TURNARROUND(phy);
+		const u16_t conn_ind_us = ll_hdr_us +
+					  BYTES2US(INITA_SIZE + ADVA_SIZE +
+						   LLDATA_SIZE, phy);
+		const u8_t scan_req_us  = ll_hdr_us +
+					  BYTES2US(SCANA_SIZE + ADVA_SIZE, phy);
+		/* ll_header plus AdvA and scan response data */
+		const u16_t scan_rsp_us  = ll_hdr_us +
+					  BYTES2US(ADVA_SIZE + rsp_data_len,
+						   phy);
+
+		if (phy != 0x01) {
+			/* Legacy ADV only supports LE_1M PHY */
+			goto failure_cleanup;
+		}
+
+		if (pdu_adv->type == PDU_ADV_TYPE_NONCONN_IND) {
+			adv_size += adv_data_len;
+			slot_us += BYTES2US(adv_size, phy) * adv_chn_cnt +
+				    EVENT_IFS_MAX_US * (adv_chn_cnt - 1);
+		} else {
+			if (pdu_adv->type == PDU_ADV_TYPE_DIRECT_IND) {
+				adv_size += TARGETA_SIZE;
+				slot_us += conn_ind_us;
+			} else if (pdu_adv->type == PDU_ADV_TYPE_ADV_IND) {
+				adv_size += adv_data_len;
+				slot_us += MAX(scan_req_us + EVENT_IFS_MAX_US +
+						scan_rsp_us, conn_ind_us);
+			} else if (pdu_adv->type == PDU_ADV_TYPE_SCAN_IND) {
+				adv_size += adv_data_len;
+				slot_us += scan_req_us + EVENT_IFS_MAX_US +
+					   scan_rsp_us;
+			}
+
+			slot_us += (BYTES2US(adv_size, phy) + EVENT_IFS_MAX_US
+				  + rx_to_us + rxtx_turn_us) * (adv_chn_cnt-1)
+				  + BYTES2US(adv_size, phy) + EVENT_IFS_MAX_US;
+		}
+	}
+
+	u16_t interval = adv->interval;
 #if defined(CONFIG_BT_HCI_MESH_EXT)
 	if (lll->is_mesh) {
 		u16_t interval_min_us;
@@ -827,7 +898,7 @@ int ull_adv_reset(void)
 	u16_t handle;
 	int err;
 
-	for (handle = 0; handle < BT_CTLR_ADV_MAX; handle++) {
+	for (handle = 0U; handle < BT_CTLR_ADV_MAX; handle++) {
 		(void)disable(handle);
 	}
 
@@ -942,18 +1013,18 @@ static void ticker_cb(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 	if (!lll->is_hdcd)
 #endif /* CONFIG_BT_PERIPHERAL */
 	{
-		u8_t random_delay;
+		u32_t random_delay;
 		u32_t ret;
 
 		ull_entropy_get(sizeof(random_delay), &random_delay);
-		random_delay %= 10;
+		random_delay %= HAL_TICKER_US_TO_TICKS(10000);
 		random_delay += 1;
 
 		ret = ticker_update(TICKER_INSTANCE_ID_CTLR,
 				    TICKER_USER_ID_ULL_HIGH,
 				    (TICKER_ID_ADV_BASE +
 				     ull_adv_handle_get(adv)),
-				    HAL_TICKER_US_TO_TICKS(random_delay * 1000),
+				    random_delay,
 				    0, 0, 0, 0, 0,
 				    ticker_op_update_cb, adv);
 		LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
@@ -1069,10 +1140,7 @@ static void disabled_cb(void *param)
 	memset(cc, 0x00, sizeof(struct node_rx_cc));
 	cc->status = 0x3c;
 
-	ftr = (void *)((u8_t *)rx->pdu +
-		       (offsetof(struct pdu_adv, connect_ind) +
-		       sizeof(struct pdu_adv_connect_ind)));
-
+	ftr = &(rx->hdr.rx_ftr);
 	ftr->param = param;
 
 	ll_rx_put(link, rx);
@@ -1129,7 +1197,7 @@ static inline u8_t disable(u16_t handle)
 	}
 #endif /* CONFIG_BT_PERIPHERAL */
 
-	adv->is_enabled = 0;
+	adv->is_enabled = 0U;
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	if (!ull_scan_is_enabled_get(0)) {

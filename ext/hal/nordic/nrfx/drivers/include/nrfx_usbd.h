@@ -169,7 +169,7 @@ typedef enum
     NRFX_USBD_EP_ABORTED,  /**< EP0 transfer can be aborted when new setup comes.
                             *   Any other transfer can be aborted by USB reset or driver stopping.
                             */
-    NRFX_USBD_EP_BUSY,     /**< A transfer is in progress. */
+    NRFX_USBD_EP_BUSY,     /**< Transfer is in progress. */
 } nrfx_usbd_ep_status_t;
 
 /**
@@ -179,12 +179,12 @@ typedef enum
  */
 typedef struct
 {
-    nrfx_usbd_event_type_t type;
+    nrfx_usbd_event_type_t type;          /**< Event type. */
     union
     {
         struct {
-            uint16_t framecnt; /**< Current value of frame counter. */
-        } sof; /**< Data available for @ref NRFX_USBD_EVT_SOF. */
+            uint16_t framecnt;            /**< Current value of frame counter. */
+        } sof;                            /**< Data available for @ref NRFX_USBD_EVT_SOF. */
         struct {
             nrfx_usbd_ep_t        ep;     /**< Endpoint number. */
         } isocrc;
@@ -192,7 +192,7 @@ typedef struct
             nrfx_usbd_ep_t        ep;     /**< Endpoint number. */
             nrfx_usbd_ep_status_t status; /**< Status for the endpoint. */
         } eptransfer;
-    } data;
+    } data;                               /**< Union to store event data. */
 } nrfx_usbd_evt_t;
 
 /**
@@ -850,11 +850,11 @@ nrfx_usbd_ep_t nrfx_usbd_last_setup_dir_get(void);
  */
 void nrfx_usbd_transfer_out_drop(nrfx_usbd_ep_t ep);
 
+/** @} */
+
 
 void nrfx_usbd_irq_handler(void);
 
-
-/** @} */
 
 #ifdef __cplusplus
 }

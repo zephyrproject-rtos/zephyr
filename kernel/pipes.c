@@ -109,7 +109,7 @@ static int init_pipes_module(struct device *dev)
 		async_msg[i].thread.thread_state = _THREAD_DUMMY;
 		async_msg[i].thread.swap_data = &async_msg[i].desc;
 
-		_init_thread_timeout(&async_msg[i].thread);
+		z_init_thread_timeout(&async_msg[i].thread);
 
 		k_stack_push(&pipe_async_msgs, (u32_t)&async_msg[i]);
 	}
@@ -140,13 +140,13 @@ void k_pipe_init(struct k_pipe *pipe, unsigned char *buffer, size_t size)
 	pipe->read_index = 0;
 	pipe->write_index = 0;
 	pipe->flags = 0;
-	_waitq_init(&pipe->wait_q.writers);
-	_waitq_init(&pipe->wait_q.readers);
+	z_waitq_init(&pipe->wait_q.writers);
+	z_waitq_init(&pipe->wait_q.readers);
 	SYS_TRACING_OBJ_INIT(k_pipe, pipe);
-	_k_object_init(pipe);
+	z_object_init(pipe);
 }
 
-int _impl_k_pipe_alloc_init(struct k_pipe *pipe, size_t size)
+int z_impl_k_pipe_alloc_init(struct k_pipe *pipe, size_t size)
 {
 	void *buffer;
 	int ret;
@@ -173,14 +173,14 @@ Z_SYSCALL_HANDLER(k_pipe_alloc_init, pipe, size)
 {
 	Z_OOPS(Z_SYSCALL_OBJ_NEVER_INIT(pipe, K_OBJ_PIPE));
 
-	return _impl_k_pipe_alloc_init((struct k_pipe *)pipe, size);
+	return z_impl_k_pipe_alloc_init((struct k_pipe *)pipe, size);
 }
 #endif
 
 void k_pipe_cleanup(struct k_pipe *pipe)
 {
-	__ASSERT_NO_MSG(!_waitq_head(&pipe->wait_q.readers));
-	__ASSERT_NO_MSG(!_waitq_head(&pipe->wait_q.writers));
+	__ASSERT_NO_MSG(!z_waitq_head(&pipe->wait_q.readers));
+	__ASSERT_NO_MSG(!z_waitq_head(&pipe->wait_q.writers));
 
 	if ((pipe->flags & K_PIPE_FLAG_ALLOC) != 0) {
 		k_free(pipe->buffer);
@@ -348,7 +348,7 @@ static bool pipe_xfer_prepare(sys_dlist_t      *xfer_list,
 	sys_dlist_init(xfer_list);
 	num_bytes = 0;
 
-	while ((thread = _waitq_head(wait_q)) != NULL) {
+	while ((thread = z_waitq_head(wait_q)) != NULL) {
 		desc = (struct k_pipe_desc *)thread->base.swap_data;
 		num_bytes += desc->bytes_to_xfer;
 
@@ -368,7 +368,7 @@ static bool pipe_xfer_prepare(sys_dlist_t      *xfer_list,
 		 * Abort its timeout.
 		 * Add it to the transfer list.
 		 */
-		_unpend_thread(thread);
+		z_unpend_thread(thread);
 		sys_dlist_append(xfer_list, &thread->base.qnode_dlist);
 	}
 
@@ -414,19 +414,19 @@ static int pipe_return_code(size_t min_xfer, size_t bytes_remaining,
 static void pipe_thread_ready(struct k_thread *thread)
 {
 #if (CONFIG_NUM_PIPE_ASYNC_MSGS > 0)
-	if ((thread->base.thread_state & _THREAD_DUMMY) != 0) {
+	if ((thread->base.thread_state & _THREAD_DUMMY) != 0U) {
 		pipe_async_finish((struct k_pipe_async *)thread);
 		return;
 	}
 #endif
 
-	_ready_thread(thread);
+	z_ready_thread(thread);
 }
 
 /**
  * @brief Internal API used to send data to a pipe
  */
-int _k_pipe_put_internal(struct k_pipe *pipe, struct k_pipe_async *async_desc,
+int z_pipe_put_internal(struct k_pipe *pipe, struct k_pipe_async *async_desc,
 			 unsigned char *data, size_t bytes_to_write,
 			 size_t *bytes_written, size_t min_xfer,
 			 s32_t timeout)
@@ -456,7 +456,7 @@ int _k_pipe_put_internal(struct k_pipe *pipe, struct k_pipe_async *async_desc,
 		return -EIO;
 	}
 
-	_sched_lock();
+	z_sched_lock();
 	k_spin_unlock(&pipe->lock, key);
 
 	/*
@@ -484,7 +484,7 @@ int _k_pipe_put_internal(struct k_pipe *pipe, struct k_pipe_async *async_desc,
 		desc->bytes_to_xfer -= bytes_copied;
 
 		/* The thread's read request has been satisfied. Ready it. */
-		_ready_thread(thread);
+		z_ready_thread(thread);
 
 		thread = (struct k_thread *)sys_dlist_get(&xfer_list);
 	}
@@ -533,15 +533,15 @@ int _k_pipe_put_internal(struct k_pipe *pipe, struct k_pipe_async *async_desc,
 		 * manipulating the writers wait_q.
 		 */
 		k_spinlock_key_t key = k_spin_lock(&pipe->lock);
-		_sched_unlock_no_reschedule();
+		z_sched_unlock_no_reschedule();
 
 		async_desc->desc.buffer = data + num_bytes_written;
 		async_desc->desc.bytes_to_xfer =
 			bytes_to_write - num_bytes_written;
 
-		_pend_thread((struct k_thread *) &async_desc->thread,
+		z_pend_thread((struct k_thread *) &async_desc->thread,
 			     &pipe->wait_q.writers, K_FOREVER);
-		_reschedule(&pipe->lock, key);
+		z_reschedule(&pipe->lock, key);
 		return 0;
 	}
 #endif
@@ -558,8 +558,8 @@ int _k_pipe_put_internal(struct k_pipe *pipe, struct k_pipe_async *async_desc,
 		 * manipulating the writers wait_q.
 		 */
 		k_spinlock_key_t key = k_spin_lock(&pipe->lock);
-		_sched_unlock_no_reschedule();
-		(void)_pend_curr(&pipe->lock, key,
+		z_sched_unlock_no_reschedule();
+		(void)z_pend_curr(&pipe->lock, key,
 				 &pipe->wait_q.writers, timeout);
 	} else {
 		k_sched_unlock();
@@ -571,7 +571,7 @@ int _k_pipe_put_internal(struct k_pipe *pipe, struct k_pipe_async *async_desc,
 				 bytes_to_write);
 }
 
-int _impl_k_pipe_get(struct k_pipe *pipe, void *data, size_t bytes_to_read,
+int z_impl_k_pipe_get(struct k_pipe *pipe, void *data, size_t bytes_to_read,
 		     size_t *bytes_read, size_t min_xfer, s32_t timeout)
 {
 	struct k_thread    *writer;
@@ -598,7 +598,7 @@ int _impl_k_pipe_get(struct k_pipe *pipe, void *data, size_t bytes_to_read,
 		return -EIO;
 	}
 
-	_sched_lock();
+	z_sched_lock();
 	k_spin_unlock(&pipe->lock, key);
 
 	num_bytes_read = pipe_buffer_get(pipe, data, bytes_to_read);
@@ -701,8 +701,8 @@ int _impl_k_pipe_get(struct k_pipe *pipe, void *data, size_t bytes_to_read,
 		_current->base.swap_data = &pipe_desc;
 		k_spinlock_key_t key = k_spin_lock(&pipe->lock);
 
-		_sched_unlock_no_reschedule();
-		(void)_pend_curr(&pipe->lock, key,
+		z_sched_unlock_no_reschedule();
+		(void)z_pend_curr(&pipe->lock, key,
 				 &pipe->wait_q.readers, timeout);
 	} else {
 		k_sched_unlock();
@@ -726,19 +726,19 @@ Z_SYSCALL_HANDLER(k_pipe_get,
 	Z_OOPS(Z_SYSCALL_MEMORY_WRITE((void *)data, bytes_to_read));
 	Z_OOPS(Z_SYSCALL_VERIFY(min_xfer <= bytes_to_read));
 
-	return _impl_k_pipe_get((struct k_pipe *)pipe, (void *)data,
+	return z_impl_k_pipe_get((struct k_pipe *)pipe, (void *)data,
 				bytes_to_read, bytes_read, min_xfer,
 				timeout);
 }
 #endif
 
-int _impl_k_pipe_put(struct k_pipe *pipe, void *data, size_t bytes_to_write,
+int z_impl_k_pipe_put(struct k_pipe *pipe, void *data, size_t bytes_to_write,
 		     size_t *bytes_written, size_t min_xfer, s32_t timeout)
 {
 	__ASSERT(min_xfer <= bytes_to_write, "");
 	__ASSERT(bytes_written != NULL, "");
 
-	return _k_pipe_put_internal(pipe, NULL, data,
+	return z_pipe_put_internal(pipe, NULL, data,
 				    bytes_to_write, bytes_written,
 				    min_xfer, timeout);
 }
@@ -755,7 +755,7 @@ Z_SYSCALL_HANDLER(k_pipe_put, pipe, data, bytes_to_write, bytes_written_p,
 	Z_OOPS(Z_SYSCALL_MEMORY_READ((void *)data, bytes_to_write));
 	Z_OOPS(Z_SYSCALL_VERIFY(min_xfer <= bytes_to_write));
 
-	return _impl_k_pipe_put((struct k_pipe *)pipe, (void *)data,
+	return z_impl_k_pipe_put((struct k_pipe *)pipe, (void *)data,
 				bytes_to_write, bytes_written, min_xfer,
 				timeout);
 }
@@ -776,7 +776,7 @@ void k_pipe_block_put(struct k_pipe *pipe, struct k_mem_block *block,
 	async_desc->desc.sem = sem;
 	async_desc->thread.prio = k_thread_priority_get(_current);
 
-	(void) _k_pipe_put_internal(pipe, async_desc, block->data,
+	(void) z_pipe_put_internal(pipe, async_desc, block->data,
 				    bytes_to_write, &dummy_bytes_written,
 				    bytes_to_write, K_FOREVER);
 }

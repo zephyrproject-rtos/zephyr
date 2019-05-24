@@ -1,6 +1,4 @@
-from gitlint.rules import CommitRule, RuleViolation, TitleRegexMatches, CommitMessageTitle, LineRule, CommitMessageBody
-from gitlint.options import IntOption, BoolOption, StrOption, ListOption
-import re
+# SPDX-License-Identifier: Apache-2.0
 
 """
 The classes below are examples of user-defined CommitRules. Commit rules are gitlint rules that
@@ -14,6 +12,10 @@ that should only be done once per gitlint run.
 While every LineRule can be implemented as a CommitRule, it's usually easier and more concise to go with a LineRule if
 that fits your needs.
 """
+
+from gitlint.rules import CommitRule, RuleViolation, CommitMessageTitle, LineRule, CommitMessageBody
+from gitlint.options import IntOption, StrOption
+import re
 
 class BodyMinLineCount(CommitRule):
     # A rule MUST have a human friendly name
@@ -66,7 +68,7 @@ class SignedOffBy(CommitRule):
         flags |= re.IGNORECASE
         for line in commit.message.body:
             if line.lower().startswith("signed-off-by"):
-                if not re.search('(^)Signed-off-by: ([-\'\w.]+) ([-\'\w.]+) (.*)', line, flags=flags):
+                if not re.search(r"(^)Signed-off-by: ([-'\w.]+) ([-'\w.]+) (.*)", line, flags=flags):
                     return [RuleViolation(self.id, "Signed-off-by: must have a full name", line_nr=1)]
                 else:
                     return
@@ -106,7 +108,7 @@ class MaxLineLengthExceptions(LineRule):
 
     def validate(self, line, _commit):
         max_length = self.options['line-length'].value
-        urls = re.findall('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', line)
+        urls = re.findall(r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', line)
         if line.startswith('Signed-off-by'):
             return
 

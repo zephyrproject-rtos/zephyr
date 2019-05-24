@@ -33,7 +33,7 @@ otError utilsFlashInit(void)
 	pages_count = flash_get_page_count(flash_dev);
 
 	if (flash_get_page_info_by_idx(flash_dev,
-		pages_count - CONFIG_OT_PLAT_FLASH_PAGES_COUNT - 1, &info)) {
+		pages_count - CONFIG_OT_PLAT_FLASH_PAGES_COUNT, &info)) {
 
 		return OT_ERROR_FAILED;
 	}
@@ -60,6 +60,7 @@ u32_t utilsFlashGetSize(void)
 
 otError utilsFlashErasePage(u32_t aAddress)
 {
+	otError err = OT_ERROR_NONE;
 	struct flash_pages_info info;
 	u32_t address;
 
@@ -68,11 +69,17 @@ otError utilsFlashErasePage(u32_t aAddress)
 		return OT_ERROR_FAILED;
 	}
 
-	if (flash_erase(flash_dev, address, info.size)) {
+	if (flash_write_protection_set(flash_dev, false) < 0) {
 		return OT_ERROR_FAILED;
 	}
 
-	return OT_ERROR_NONE;
+	if (flash_erase(flash_dev, address, info.size) < 0) {
+		err = OT_ERROR_FAILED;
+	}
+
+	(void)flash_write_protection_set(flash_dev, true);
+
+	return err;
 }
 
 otError utilsFlashStatusWait(u32_t aTimeout)

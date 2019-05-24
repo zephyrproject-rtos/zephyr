@@ -8,11 +8,7 @@
 #include <kernel.h>
 #include <cmsis_os.h>
 
-#ifdef CONFIG_COVERAGE
-#define STACKSZ		(512 + CONFIG_TEST_EXTRA_STACKSIZE)
-#else
-#define STACKSZ		(512U)
-#endif
+#define STACKSZ CONFIG_CMSIS_THREAD_MAX_STACK_SIZE
 
 static osPriority osPriorityDeadline = 10;
 

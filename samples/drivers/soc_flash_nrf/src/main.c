@@ -10,8 +10,13 @@
 #include <device.h>
 #include <stdio.h>
 
-/* Offset between pages */
-#define FLASH_TEST_OFFSET 0x40000
+
+#ifdef CONFIG_TRUSTED_EXECUTION_NONSECURE
+#define FLASH_TEST_OFFSET DT_FLASH_AREA_IMAGE_1_NONSECURE_OFFSET
+#else
+#define FLASH_TEST_OFFSET DT_FLASH_AREA_IMAGE_1_OFFSET
+#endif
+
 #define FLASH_PAGE_SIZE   4096
 #define TEST_DATA_WORD_0  0x1122
 #define TEST_DATA_WORD_1  0xaabb
@@ -46,6 +51,7 @@ void main(void)
 	}
 
 	printf("\nTest 1: Flash erase page at 0x%x\n", FLASH_TEST_OFFSET);
+	flash_write_protection_set(flash_dev, false);
 	if (flash_erase(flash_dev, FLASH_TEST_OFFSET, FLASH_PAGE_SIZE) != 0) {
 		printf("   Flash erase failed!\n");
 	} else {
@@ -76,7 +82,6 @@ void main(void)
 			printf("   Data read does not match data written!\n");
 		}
 	}
-	flash_write_protection_set(flash_dev, true);
 
 	offset = FLASH_TEST_OFFSET - FLASH_PAGE_SIZE * 2;
 	printf("\nTest 3: Flash erase (4 pages at 0x%x)\n", offset);
@@ -110,7 +115,6 @@ void main(void)
 			printf("   Data read does not match data written!\n");
 		}
 	}
-	flash_write_protection_set(flash_dev, true);
 
 	printf("\nTest 5: Flash erase page at 0x%x\n", FLASH_TEST_OFFSET);
 	if (flash_erase(flash_dev, FLASH_TEST_OFFSET, FLASH_PAGE_SIZE) != 0) {

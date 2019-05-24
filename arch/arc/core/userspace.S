@@ -44,20 +44,20 @@
 	mov r13, 0
 .endm
 
-GTEXT(_arc_userspace_enter)
+GTEXT(z_arc_userspace_enter)
 GTEXT(_arc_do_syscall)
-GTEXT(_user_thread_entry_wrapper)
+GTEXT(z_user_thread_entry_wrapper)
 GTEXT(z_arch_user_string_nlen)
 GTEXT(z_arch_user_string_nlen_fault_start)
 GTEXT(z_arch_user_string_nlen_fault_end)
 GTEXT(z_arch_user_string_nlen_fixup)
 /*
- * @brief Wrapper for _thread_entry in the case of user thread
+ * @brief Wrapper for z_thread_entry in the case of user thread
  * The init parameters are in privileged stack
  *
  * @return N/A
  */
-SECTION_FUNC(TEXT, _user_thread_entry_wrapper)
+SECTION_FUNC(TEXT, z_user_thread_entry_wrapper)
 	pop_s r3
 	pop_s r2
 	pop_s r1
@@ -74,7 +74,7 @@ SECTION_FUNC(TEXT, _user_thread_entry_wrapper)
 
 /*
  * when CONFIG_INIT_STACKS is enable, stack will be initialized
- * in _new_thread_init.
+ * in z_new_thread_init.
  */
 	j _arc_go_to_user_space
 
@@ -87,7 +87,7 @@ SECTION_FUNC(TEXT, _user_thread_entry_wrapper)
  * not transition back later, unless they are doing system calls.
  *
  */
-SECTION_FUNC(TEXT, _arc_userspace_enter)
+SECTION_FUNC(TEXT, z_arc_userspace_enter)
 	/*
 	 * In ARCv2, the U bit can only be set through exception return
 	 */
@@ -151,7 +151,7 @@ _arc_go_to_user_space:
 	lr r0, [_ARC_V2_STATUS32]
 	bset r0, r0, _ARC_V2_STATUS32_U_BIT
 
-	mov r1, _thread_entry_wrapper
+	mov r1, z_thread_entry_wrapper
 
 	/* fake exception return */
 	kflag _ARC_V2_STATUS32_AE

@@ -23,10 +23,6 @@ config GPIO_STM32_PORTD
 config GPIO_STM32_PORTE
 	default y
 
-config GPIO_STM32_PORTH
-	default y
-
 endif # GPIO_STM32
 
 endif # SOC_STM32L433XC
-

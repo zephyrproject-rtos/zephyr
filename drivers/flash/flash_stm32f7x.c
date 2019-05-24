@@ -77,11 +77,11 @@ static int erase_sector(struct device *dev, u32_t sector)
 #if defined(FLASH_OPTCR_nDBANK) && FLASH_SECTOR_TOTAL == 24
 #if CONFIG_FLASH_SIZE == 2048
 	if (sector > 11) {
-		sector += 4;
+		sector += 4U;
 	}
 #elif CONFIG_FLASH_SIZE == 1024
 	if (sector > 7) {
-		sector += 8;
+		sector += 8U;
 	}
 #endif /* CONFIG_FLASH_SIZE */
 #endif /* defined(FLASH_OPTCR_nDBANK) && FLASH_SECTOR_TOTAL == 24 */

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 if(NOT TOOLCHAIN_ROOT)
   if(DEFINED ENV{TOOLCHAIN_ROOT})
     # Support for out-of-tree toolchain
@@ -39,6 +41,11 @@ if("${ZEPHYR_TOOLCHAIN_VARIANT}" STREQUAL "gccarmemb")
   set(ZEPHYR_TOOLCHAIN_VARIANT "gnuarmemb")
 endif()
 
+# Host-tools don't unconditionally set TOOLCHAIN_HOME anymore,
+# but in case Zephyr's SDK toolchain is used, set TOOLCHAIN_HOME
+if("${ZEPHYR_TOOLCHAIN_VARIANT}" STREQUAL "zephyr")
+  set(TOOLCHAIN_HOME ${HOST_TOOLS_HOME})
+endif()
 
 set(TOOLCHAIN_ROOT ${TOOLCHAIN_ROOT} CACHE STRING "Zephyr toolchain root")
 assert(TOOLCHAIN_ROOT "Zephyr toolchain root path invalid: please set the TOOLCHAIN_ROOT-variable")
@@ -48,7 +55,9 @@ assert(ZEPHYR_TOOLCHAIN_VARIANT "Zephyr toolchain variant invalid: please set th
 
 # Pick host system's toolchain if we are targeting posix
 if((${ARCH} STREQUAL "posix") OR (${ARCH} STREQUAL "x86_64"))
-  set(ZEPHYR_TOOLCHAIN_VARIANT "host")
+  if(NOT "${ZEPHYR_TOOLCHAIN_VARIANT}" STREQUAL "llvm")
+    set(ZEPHYR_TOOLCHAIN_VARIANT "host")
+  endif()
 endif()
 
 # Configure the toolchain based on what SDK/toolchain is in use.

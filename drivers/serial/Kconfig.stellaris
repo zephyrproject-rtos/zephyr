@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 menuconfig UART_STELLARIS
 	bool "Stellaris serial driver"
 	depends on SOC_TI_LM3S6965 || SOC_CC2650

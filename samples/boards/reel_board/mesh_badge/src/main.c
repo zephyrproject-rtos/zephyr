@@ -74,7 +74,7 @@ static const struct bt_gatt_cpf name_cpf = {
 };
 
 /* Vendor Primary Service Declaration */
-static struct bt_gatt_attr name_attrs[] = {
+BT_GATT_SERVICE_DEFINE(name_svc,
 	/* Vendor Primary Service Declaration */
 	BT_GATT_PRIMARY_SERVICE(&name_uuid),
 	BT_GATT_CHARACTERISTIC(&name_enc_uuid.uuid,
@@ -83,9 +83,7 @@ static struct bt_gatt_attr name_attrs[] = {
 			       read_name, write_name, NULL),
 	BT_GATT_CUD("Badge Name", BT_GATT_PERM_READ),
 	BT_GATT_CPF(&name_cpf),
-};
-
-static struct bt_gatt_service name_svc = BT_GATT_SERVICE(name_attrs);
+);
 
 static void passkey_display(struct bt_conn *conn, unsigned int passkey)
 {
@@ -170,8 +168,6 @@ static void bt_ready(int err)
 
 	bt_conn_cb_register(&conn_cb);
 	bt_conn_auth_cb_register(&auth_cb);
-
-	bt_gatt_service_register(&name_svc);
 
 	if (IS_ENABLED(CONFIG_SETTINGS)) {
 		settings_load();

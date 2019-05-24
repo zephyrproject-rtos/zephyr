@@ -1,6 +1,11 @@
 sample:
   name: CDC ACM Composite USB
 tests:
-  usb.cdc-acm-composite:
-    depends_on: usb_device
+  sample.usb.cdc-acm-composite:
+    depends_on: usb_device gpio
     tags: usb
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "Wait for DTR"

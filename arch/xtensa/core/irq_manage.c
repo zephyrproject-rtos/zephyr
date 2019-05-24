@@ -27,7 +27,7 @@
  * @return N/A
  */
 
-void _irq_priority_set(unsigned int irq, unsigned int prio, u32_t flags)
+void z_irq_priority_set(unsigned int irq, unsigned int prio, u32_t flags)
 {
 	__ASSERT(prio < XCHAL_EXCM_LEVEL + 1,
 		 "invalid priority %d! values must be less than %d\n",
@@ -38,7 +38,7 @@ void _irq_priority_set(unsigned int irq, unsigned int prio, u32_t flags)
 }
 
 #ifdef CONFIG_DYNAMIC_INTERRUPTS
-int _arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
+int z_arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 			      void (*routine)(void *parameter), void *parameter,
 			      u32_t flags)
 {

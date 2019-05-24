@@ -350,12 +350,12 @@ static int init_app(struct device *device)
 
 #if defined(CONFIG_NET_IPV6)
 	/* IEEE 802.15.4 is only usable if IPv6 is enabled */
-	ret = _net_config_ieee802154_setup();
+	ret = z_net_config_ieee802154_setup();
 	if (ret < 0) {
 		NET_ERR("Cannot setup IEEE 802.15.4 interface (%d)", ret);
 	}
 
-	ret = _net_config_bt_setup();
+	ret = z_net_config_bt_setup();
 	if (ret < 0) {
 		NET_ERR("Cannot setup Bluetooth interface (%d)", ret);
 	}

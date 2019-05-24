@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Texas Instruments Incorporated
+ * Copyright (c) 2017-2018, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -251,14 +251,14 @@ extern const Capture_FxnTable CaptureCC32XX_fxnTable;
  *  @endcode
  */
 typedef struct CaptureCC32XX_HWAttrs_ {
-    /*!< Specifies the input pin for the capture event. There are 17
+    /*!  Specifies the input pin for the capture event. There are 17
          pins available as inputs for capture functionality. Each
          available pin must map to a specific general purpose timer
          hardware instance. By specifying this attribute, a fixed
          16-bit timer peripheral is used. */
     uint32_t             capturePin;
 
-    /*!< The interrupt priority. */
+    /*! The interrupt priority. */
     uint32_t             intPriority;
 } CaptureCC32XX_HWAttrs;
 

@@ -1,4 +1,4 @@
-.. _testing:
+.. _test-framework:
 
 Test Framework
 ###############
@@ -13,7 +13,7 @@ integration testing, or for unit testing specific modules.
 Quick start - Integration testing
 *********************************
 
-A simple working base is located at :file:`samples/testing/integration`.  Just
+A simple working base is located at :zephyr_file:`samples/testing/integration`.  Just
 copy the files to ``tests/`` and edit them for your needs. The test will then
 be automatically built and run by the sanitycheck script. If you are testing
 the **bar** component of **foo**, you should copy the sample folder to
@@ -23,7 +23,7 @@ the **bar** component of **foo**, you should copy the sample folder to
 
 
 In the example above ``tests/foo/bar`` signifies the path to the test and the
-``test-identifier`` references a test defined in the file::`testcase.yaml` file.
+``test-identifier`` references a test defined in the :file:`testcase.yaml` file.
 
 To run all tests defined in a test project, run::
 
@@ -202,7 +202,7 @@ Here is a generic template for a test showing the expected use of
                             ztest_unit_test(test_sometest1),
                             ztest_unit_test(test_sometest2),
                             ztest_unit_test(test_sometest3),
-                            ztest_unit_test(test_sometest4),
+                            ztest_unit_test(test_sometest4)
                    );
    	ztest_run_test_suite(common);
    }
@@ -226,14 +226,16 @@ What to avoid:
              ztest_test_suite(feature1,
                               ztest_unit_test(test_1a),
                               ztest_unit_test(test_1b),
-                              ztest_unit_test(test_1c),
+                              ztest_unit_test(test_1c)
+                              );
              ztest_run_test_suite(feature1);
      #endif
 
      #ifdef TEST_feature2
              ztest_test_suite(feature2,
                               ztest_unit_test(test_2a),
-                              ztest_unit_test(test_2b),
+                              ztest_unit_test(test_2b)
+                              );
              ztest_run_test_suite(feature2);
      #endif
      }

@@ -50,7 +50,7 @@
  * 50 is flicker fusion threshold. Modulated light will be perceived
  * as steady by our eyes when blinking rate is at least 50.
  */
-#define PERIOD (USEC_PER_SEC / 50)
+#define PERIOD (USEC_PER_SEC / 50U)
 
 /* in micro second */
 #define FADESTEP	2000

@@ -1,0 +1,47 @@
+# Kconfig - ST Microelectronics STM32MP1 MCU/MPU line
+#
+# Copyright (c) 2019 STMicroelectronics
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_SERIES_STM32MP1X
+
+source "soc/arm/st_stm32/stm32mp1/Kconfig.defconfig.stm32mp15_m4"
+
+config SOC_SERIES
+	default "stm32mp1"
+
+config STM32_CORE_CM4
+	bool "define stm32 core"
+	default y
+
+if GPIO_STM32
+
+config GPIO_STM32_PORTD
+	default y
+
+config GPIO_STM32_PORTE
+	default y
+
+config GPIO_STM32_PORTF
+	default y
+
+config GPIO_STM32_PORTG
+	default y
+
+config GPIO_STM32_PORTH
+	default y
+
+config GPIO_STM32_PORTI
+	default y
+
+config GPIO_STM32_PORTJ
+	default y
+
+config GPIO_STM32_PORTK
+	default y
+
+endif # GPIO_STM32
+
+endif # SOC_SERIES_STM32MP1X

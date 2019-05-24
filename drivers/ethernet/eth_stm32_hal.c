@@ -87,7 +87,7 @@ static int eth_tx(struct device *dev, struct net_pkt *pkt)
 
 	dma_buffer = (u8_t *)(dma_tx_desc->Buffer1Addr);
 
-	if (net_pkt_read_new(pkt, dma_buffer, total_len)) {
+	if (net_pkt_read(pkt, dma_buffer, total_len)) {
 		res = -EIO;
 		goto error;
 	}
@@ -150,7 +150,7 @@ static struct net_pkt *eth_rx(struct device *dev)
 		goto release_desc;
 	}
 
-	if (net_pkt_write_new(pkt, dma_buffer, total_len)) {
+	if (net_pkt_write(pkt, dma_buffer, total_len)) {
 		LOG_ERR("Failed to append RX buffer to context buffer");
 		net_pkt_unref(pkt);
 		pkt = NULL;

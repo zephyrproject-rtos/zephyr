@@ -6,9 +6,9 @@ sample:
   description: syslog network backend
   name: syslog_net
 tests:
-  test_with_timefuncs:
+  sample.net.syslog.with_timefuncs:
     extra_configs:
       - CONFIG_NEWLIB_LIBC=y
-  test_without_timefuncs:
+  sample.net.syslog.without_timefuncs:
     extra_configs:
       - CONFIG_NEWLIB_LIBC=n

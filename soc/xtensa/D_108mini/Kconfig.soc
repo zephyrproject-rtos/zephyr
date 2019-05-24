@@ -3,4 +3,3 @@
 
 config SOC_D_108MINI
 	bool "D_108mini core"
-

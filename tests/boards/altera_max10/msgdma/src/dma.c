@@ -53,12 +53,12 @@ void test_msgdma(void)
 
 	/* Init DMA config info */
 	dma_cfg.channel_direction = MEMORY_TO_MEMORY;
-	dma_cfg.source_data_size = 1;
-	dma_cfg.dest_data_size = 1;
-	dma_cfg.source_burst_length = 1;
-	dma_cfg.dest_burst_length = 1;
+	dma_cfg.source_data_size = 1U;
+	dma_cfg.dest_data_size = 1U;
+	dma_cfg.source_burst_length = 1U;
+	dma_cfg.dest_burst_length = 1U;
 	dma_cfg.dma_callback = dma_user_callback;
-	dma_cfg.block_count = 1;
+	dma_cfg.block_count = 1U;
 	dma_cfg.head_block = &dma_block_cfg;
 
 	/*
@@ -77,7 +77,7 @@ void test_msgdma(void)
 						"DMA config error");
 
 	/* Make sure all the data is written out to memory */
-	_nios2_dcache_flush_all();
+	z_nios2_dcache_flush_all();
 
 	/* Start DMA operation */
 	zassert_true(dma_start(dma, chan_id) == 0, "DMA start error");
@@ -87,7 +87,7 @@ void test_msgdma(void)
 	}
 
 	/* Invalidate the data cache */
-	_nios2_dcache_flush_no_writeback(rx_data, DMA_BUFF_SIZE);
+	z_nios2_dcache_flush_no_writeback(rx_data, DMA_BUFF_SIZE);
 
 	zassert_true(dma_stat == DMA_OP_STAT_SUCCESS,
 			"Nios-II DMA operation failed!!");

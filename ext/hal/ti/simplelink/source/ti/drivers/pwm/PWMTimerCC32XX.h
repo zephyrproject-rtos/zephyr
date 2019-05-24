@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2017, Texas Instruments Incorporated
+ * Copyright (c) 2015-2018, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -76,7 +76,7 @@
  *
  *  1.  An array of PWMTimerCC32XX_Object elements, which will be used by
  *  by the driver to maintain instance state.
- *  Below is an example PWMTimerCC32XX_Object array appropriate for the CC3220SF Launchpad
+ *  Below is an example PWMTimerCC32XX_Object array appropriate for the CC3220SF LaunchPad
  *  board:
  *  @code
  *    #include <ti/drivers/PWM.h>
@@ -88,7 +88,7 @@
  *  2.  An array of PWMTimerCC32XX_HWAttrsV2 elements that defines which
  *  pin will be used by the corresponding PWM instance
  *  (see @ref pwmPinIdentifiersCC32XX).
- *  Below is an example PWMTimerCC32XX_HWAttrsV2 array appropriate for the CC3220SF Launchpad
+ *  Below is an example PWMTimerCC32XX_HWAttrsV2 array appropriate for the CC3220SF LaunchPad
  *  board:
  *  @code
  *    const PWMTimerCC32XX_HWAttrsV2 pwmTimerCC3220SHWAttrs[CC3220SF_LAUNCHXL_PWMCOUNT] = {
@@ -105,7 +105,7 @@
  *  element of this array identifies the device-specific API function table,
  *  the device specific PWM object instance, and the device specific Hardware
  *  Attributes to be used for each PWM channel.
- *  Below is an example @ref PWM_Config array appropriate for the CC3220SF Launchpad
+ *  Below is an example @ref PWM_Config array appropriate for the CC3220SF LaunchPad
  *  board:
  *  @code
  *    const PWM_Config PWM_config[CC3220SF_LAUNCHXL_PWMCOUNT] = {
@@ -155,6 +155,7 @@ extern "C" {
 #endif
 
 #include <stdbool.h>
+#include <ti/drivers/Power.h>
 #include <ti/drivers/PWM.h>
 
 /*! \cond */

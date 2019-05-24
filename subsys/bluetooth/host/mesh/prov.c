@@ -104,7 +104,6 @@
 
 enum {
 	REMOTE_PUB_KEY,        /* Remote key has been received */
-	LOCAL_PUB_KEY,         /* Local public key is available */
 	LINK_ACTIVE,           /* Link has been opened */
 	HAVE_DHKEY,            /* DHKey has been calcualted */
 	SEND_CONFIRM,          /* Waiting to send Confirm value */
@@ -189,6 +188,36 @@ static const struct bt_mesh_prov *prov;
 
 static void close_link(u8_t err, u8_t reason);
 
+static void reset_state(void)
+{
+	/* Disable Attention Timer if it was set */
+	if (link.conf_inputs[0]) {
+		bt_mesh_attention(NULL, 0);
+	}
+
+#if defined(CONFIG_BT_MESH_PB_GATT)
+	if (link.conn) {
+		bt_conn_unref(link.conn);
+	}
+#endif
+
+#if defined(CONFIG_BT_MESH_PB_ADV)
+	/* Clear everything except the retransmit delayed work config */
+	(void)memset(&link, 0, offsetof(struct prov_link, tx.retransmit));
+	link.rx.prev_id = XACT_NVAL;
+
+#if defined(CONFIG_BT_MESH_PB_GATT)
+	link.rx.buf = bt_mesh_proxy_get_buf();
+#else
+	net_buf_simple_reset(&rx_buf);
+	link.rx.buf = &rx_buf;
+#endif /* PB_GATT */
+
+#else
+	(void)memset(&link, 0, sizeof(link));
+#endif /* PB_ADV */
+}
+
 #if defined(CONFIG_BT_MESH_PB_ADV)
 static void buf_sent(int err, void *user_data)
 {
@@ -238,26 +267,7 @@ static void reset_link(void)
 		prov->link_close(BT_MESH_PROV_ADV);
 	}
 
-	/* Clear everything except the retransmit delayed work config */
-	(void)memset(&link, 0, offsetof(struct prov_link, tx.retransmit));
-
-	link.rx.prev_id = XACT_NVAL;
-
-	if (bt_pub_key_get()) {
-		atomic_set_bit(link.flags, LOCAL_PUB_KEY);
-	}
-
-#if defined(CONFIG_BT_MESH_PB_GATT)
-	link.rx.buf = bt_mesh_proxy_get_buf();
-#else
-	net_buf_simple_reset(&rx_buf);
-	link.rx.buf = &rx_buf;
-#endif
-
-	/* Disable Attention Timer if it was set */
-	if (link.conf_inputs[0]) {
-		bt_mesh_attention(NULL, 0);
-	}
+	reset_state();
 }
 
 static struct net_buf *adv_buf_create(void)
@@ -375,7 +385,7 @@ static u8_t last_seg(u8_t len)
 
 static inline u8_t next_transaction_id(void)
 {
-	if (link.tx.id != 0 && link.tx.id != 0xFF) {
+	if (link.tx.id != 0U && link.tx.id != 0xFF) {
 		return ++link.tx.id;
 	}
 
@@ -902,7 +912,7 @@ static void prov_pub_key(const u8_t *data)
 
 	memcpy(&link.conf_inputs[17], data, 64);
 
-	if (!atomic_test_bit(link.flags, LOCAL_PUB_KEY)) {
+	if (!bt_pub_key_get()) {
 		/* Clear retransmit timer */
 #if defined(CONFIG_BT_MESH_PB_ADV)
 		prov_clear_tx();
@@ -923,8 +933,6 @@ static void pub_key_ready(const u8_t *pkey)
 	}
 
 	BT_DBG("Local public key ready");
-
-	atomic_set_bit(link.flags, LOCAL_PUB_KEY);
 
 	if (atomic_test_and_clear_bit(link.flags, REMOTE_PUB_KEY)) {
 		send_pub_key();
@@ -1074,7 +1082,11 @@ static void prov_data(const u8_t *data)
 		identity_enable = false;
 	}
 
-	bt_mesh_provision(pdu, net_idx, flags, iv_index, addr, dev_key);
+	err = bt_mesh_provision(pdu, net_idx, flags, iv_index, addr, dev_key);
+	if (err) {
+		BT_ERR("Failed to provision (err %d)", err);
+		return;
+	}
 
 	/* After PB-GATT provisioning we should start advertising
 	 * using Node Identity.
@@ -1128,12 +1140,7 @@ static void close_link(u8_t err, u8_t reason)
 	bearer_ctl_send(LINK_CLOSE, &reason, sizeof(reason));
 #endif
 
-	atomic_clear_bit(link.flags, LINK_ACTIVE);
-
-	/* Disable Attention Timer if it was set */
-	if (link.conf_inputs[0]) {
-		bt_mesh_attention(NULL, 0);
-	}
+	reset_state();
 }
 
 #if defined(CONFIG_BT_MESH_PB_ADV)
@@ -1322,8 +1329,8 @@ static void gen_prov_cont(struct prov_rx *rx, struct net_buf_simple *buf)
 	} else if (seg == link.rx.last_seg) {
 		u8_t expect_len;
 
-		expect_len = (link.rx.buf->len - 20 -
-			      (23 * (link.rx.last_seg - 1)));
+		expect_len = (link.rx.buf->len - 20U -
+			      ((link.rx.last_seg - 1) * 23U));
 		if (expect_len != buf->len) {
 			BT_ERR("Incorrect last seg len: %u != %u",
 			       expect_len, buf->len);
@@ -1391,7 +1398,7 @@ static void gen_prov_start(struct prov_rx *rx, struct net_buf_simple *buf)
 		return;
 	}
 
-	if (START_LAST_SEG(rx->gpc) > 0 && link.rx.buf->len <= 20) {
+	if (START_LAST_SEG(rx->gpc) > 0 && link.rx.buf->len <= 20U) {
 		BT_ERR("Too small total length for multi-segment PDU");
 		close_link(PROV_ERR_NVAL_FMT, CLOSE_REASON_FAILED);
 		return;
@@ -1408,9 +1415,9 @@ static void gen_prov_start(struct prov_rx *rx, struct net_buf_simple *buf)
 }
 
 static const struct {
-	void (*const func)(struct prov_rx *rx, struct net_buf_simple *buf);
-	const u8_t require_link;
-	const u8_t min_len;
+	void (*func)(struct prov_rx *rx, struct net_buf_simple *buf);
+	bool require_link;
+	u8_t min_len;
 } gen_prov[] = {
 	{ gen_prov_start, true, 3 },
 	{ gen_prov_ack, true, 0 },
@@ -1522,8 +1529,6 @@ int bt_mesh_pb_gatt_open(struct bt_conn *conn)
 
 int bt_mesh_pb_gatt_close(struct bt_conn *conn)
 {
-	bool pub_key;
-
 	BT_DBG("conn %p", conn);
 
 	if (link.conn != conn) {
@@ -1531,23 +1536,11 @@ int bt_mesh_pb_gatt_close(struct bt_conn *conn)
 		return -ENOTCONN;
 	}
 
-	/* Disable Attention Timer if it was set */
-	if (link.conf_inputs[0]) {
-		bt_mesh_attention(NULL, 0);
-	}
-
 	if (prov->link_close) {
 		prov->link_close(BT_MESH_PROV_GATT);
 	}
 
-	bt_conn_unref(link.conn);
-
-	pub_key = atomic_test_bit(link.flags, LOCAL_PUB_KEY);
-	(void)memset(&link, 0, sizeof(link));
-
-	if (pub_key) {
-		atomic_set_bit(link.flags, LOCAL_PUB_KEY);
-	}
+	reset_state();
 
 	return 0;
 }
@@ -1585,16 +1578,9 @@ int bt_mesh_prov_init(const struct bt_mesh_prov *prov_info)
 
 #if defined(CONFIG_BT_MESH_PB_ADV)
 	k_delayed_work_init(&link.tx.retransmit, prov_retransmit);
-	link.rx.prev_id = XACT_NVAL;
-
-#if defined(CONFIG_BT_MESH_PB_GATT)
-	link.rx.buf = bt_mesh_proxy_get_buf();
-#else
-	net_buf_simple_reset(&rx_buf);
-	link.rx.buf = &rx_buf;
 #endif
 
-#endif /* CONFIG_BT_MESH_PB_ADV */
+	reset_state();
 
 	return 0;
 }

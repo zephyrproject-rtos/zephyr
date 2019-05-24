@@ -33,7 +33,7 @@ __weak void sys_set_power_state(enum power_states state)
 	__ASSERT_NO_MSG(false);
 }
 
-__weak void sys_power_state_post_ops(enum power_states state)
+__weak void _sys_pm_power_state_exit_post_ops(enum power_states state)
 {
 	/* Never called. */
 	__ASSERT_NO_MSG(false);
@@ -94,7 +94,7 @@ void test_call_stacks_analyze_main(void)
  *
  * @ingroup kernel_profiling_tests
  *
- * @see k_thread_foreach(), sys_suspend(), sys_resume(),
+ * @see k_thread_foreach(), _sys_suspend(), _sys_resume(),
  * stack_analyze()
  */
 void test_call_stacks_analyze_idle(void)

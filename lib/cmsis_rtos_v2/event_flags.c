@@ -45,7 +45,7 @@ osEventFlagsId_t osEventFlagsNew(const osEventFlagsAttr_t *attr)
 	k_poll_signal_init(&events->poll_signal);
 	k_poll_event_init(&events->poll_event, K_POLL_TYPE_SIGNAL,
 			  K_POLL_MODE_NOTIFY_ONLY, &events->poll_signal);
-	events->signal_results = 0;
+	events->signal_results = 0U;
 
 	if (attr->name == NULL) {
 		strncpy(events->name, init_event_flags_attrs.name,
@@ -147,11 +147,11 @@ uint32_t osEventFlagsWait(osEventFlagsId_t ef_id, uint32_t flags,
 
 		__ASSERT(events->poll_event.state == K_POLL_STATE_SIGNALED,
 			 "event state not signalled!");
-		__ASSERT(events->poll_event.signal->signaled == 1,
+		__ASSERT(events->poll_event.signal->signaled == 1U,
 			 "event signaled is not 1");
 
 		/* Reset the states to facilitate the next trigger */
-		events->poll_event.signal->signaled = 0;
+		events->poll_event.signal->signaled = 0U;
 		events->poll_event.state = K_POLL_STATE_NOT_READY;
 
 		if (options & osFlagsWaitAll) {
@@ -178,7 +178,7 @@ uint32_t osEventFlagsWait(osEventFlagsId_t ef_id, uint32_t flags,
 			if (timeout_ms > time_delta_ms) {
 				timeout_ms -= time_delta_ms;
 			} else {
-				timeout_ms = 0;
+				timeout_ms = 0U;
 			}
 		} else {
 			break;

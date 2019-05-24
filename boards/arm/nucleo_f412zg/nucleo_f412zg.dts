@@ -5,7 +5,7 @@
  */
 
 /dts-v1/;
-#include <st/f4/stm32f412zg.dtsi>
+#include <st/f4/stm32f412Xg.dtsi>
 
 / {
 	model = "STMicroelectronics STM32F412ZG-NUCLEO board";

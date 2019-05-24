@@ -20,7 +20,7 @@
 #include <sys_clock.h>
 
 /* RTC registers. */
-#define RTC0 ((RtcMode0 *) DT_RTC_SAM0_BASE_ADDRESS)
+#define RTC0 ((RtcMode0 *) DT_ATMEL_SAM0_RTC_0_BASE_ADDRESS)
 
 /* Number of sys timer cycles per on tick. */
 #define CYCLES_PER_TICK (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC \
@@ -155,7 +155,7 @@ int z_clock_driver_init(struct device *device)
 	/* Set up bus clock and GCLK generator. */
 	PM->APBAMASK.reg |= PM_APBAMASK_RTC;
 	GCLK->CLKCTRL.reg = GCLK_CLKCTRL_ID(RTC_GCLK_ID) | GCLK_CLKCTRL_CLKEN
-			    | GCLK_GEN(DT_RTC_SAM0_CLOCK_GENERATOR);
+			    | GCLK_GEN(DT_ATMEL_SAM0_RTC_0_CLOCK_GENERATOR);
 
 	while (GCLK->STATUS.bit.SYNCBUSY) {
 		/* Synchronize GCLK. */
@@ -164,7 +164,7 @@ int z_clock_driver_init(struct device *device)
 	/* Reset module to hardware defaults. */
 	rtc_reset();
 
-	rtc_last = 0;
+	rtc_last = 0U;
 
 	/* Configure RTC with 32-bit mode, configured prescaler and MATCHCLR. */
 	u16_t ctrl = RTC_MODE0_CTRL_MODE(0) | RTC_MODE0_CTRL_PRESCALER(0);
@@ -182,8 +182,8 @@ int z_clock_driver_init(struct device *device)
 	rtc_sync();
 	RTC0->COMP[0].reg = CYCLES_PER_TICK;
 	RTC0->INTENSET.reg = RTC_MODE0_INTENSET_OVF;
-	rtc_counter = 0;
-	rtc_timeout = 0;
+	rtc_counter = 0U;
+	rtc_timeout = 0U;
 #endif
 
 	/* Enable RTC module. */
@@ -191,9 +191,10 @@ int z_clock_driver_init(struct device *device)
 	RTC0->CTRL.reg |= RTC_MODE0_CTRL_ENABLE;
 
 	/* Enable RTC interrupt. */
-	NVIC_ClearPendingIRQ(DT_RTC_SAM0_IRQ);
-	IRQ_CONNECT(DT_RTC_SAM0_IRQ, DT_RTC_SAM0_IRQ_PRIORITY, rtc_isr, 0, 0);
-	irq_enable(DT_RTC_SAM0_IRQ);
+	NVIC_ClearPendingIRQ(DT_ATMEL_SAM0_RTC_0_IRQ_0);
+	IRQ_CONNECT(DT_ATMEL_SAM0_RTC_0_IRQ_0,
+		    DT_ATMEL_SAM0_RTC_0_IRQ_0_PRIORITY, rtc_isr, 0, 0);
+	irq_enable(DT_ATMEL_SAM0_RTC_0_IRQ_0);
 
 	return 0;
 }
@@ -256,7 +257,7 @@ u32_t z_clock_elapsed(void)
 #endif
 }
 
-u32_t _timer_cycle_get_32(void)
+u32_t z_timer_cycle_get_32(void)
 {
 	/* Just return the absolute value of RTC cycle counter. */
 	return rtc_count();

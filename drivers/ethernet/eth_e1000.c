@@ -12,7 +12,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr.h>
 #include <net/ethernet.h>
 #include <ethernet/eth_stats.h>
-#include <pci/pci.h>
+#include <drivers/pcie/pcie.h>
 #include "eth_e1000_priv.h"
 
 static const char *e1000_reg_to_string(enum e1000_reg_t r)
@@ -72,7 +72,7 @@ static int e1000_send(struct device *device, struct net_pkt *pkt)
 	struct e1000_dev *dev = device->driver_data;
 	size_t len = net_pkt_get_len(pkt);
 
-	if (net_pkt_read_new(pkt, dev->txb, len)) {
+	if (net_pkt_read(pkt, dev->txb, len)) {
 		return -EIO;
 	}
 
@@ -97,8 +97,8 @@ static struct net_pkt *e1000_rx(struct e1000_dev *dev)
 		goto out;
 	}
 
-	if (net_pkt_write_new(pkt, INT_TO_POINTER((u32_t) dev->rx.addr),
-			      dev->rx.len - 4)) {
+	if (net_pkt_write(pkt, INT_TO_POINTER((u32_t) dev->rx.addr),
+			  dev->rx.len - 4)) {
 		LOG_ERR("Out of memory for received frame");
 		net_pkt_unref(pkt);
 		pkt = NULL;
@@ -132,24 +132,24 @@ static void e1000_isr(struct device *device)
 	}
 }
 
+#define PCI_VENDOR_ID_INTEL	0x8086
+#define PCI_DEVICE_ID_I82540EM	0x100e
+
 int e1000_probe(struct device *device)
 {
+	const pcie_bdf_t bdf = PCIE_BDF(0, 3, 0);
 	struct e1000_dev *dev = device->driver_data;
+	int retval = -ENODEV;
 
-	pci_bus_scan_init();
-
-	if (pci_bus_scan(&dev->pci)) {
-
-		pci_enable_regs(&dev->pci);
-
-		pci_enable_bus_master(&dev->pci);
-
-		pci_show(&dev->pci);
-
-		return 0;
+	if (pcie_probe(bdf, PCIE_ID(PCI_VENDOR_ID_INTEL,
+			    PCI_DEVICE_ID_I82540EM))) {
+		dev->address = pcie_get_mbar(bdf, 0);
+		pcie_set_cmd(bdf, PCIE_CONF_CMDSTAT_MEM |
+				  PCIE_CONF_CMDSTAT_MASTER, true);
+		retval = 0;
 	}
 
-	return -ENODEV;
+	return retval;
 }
 
 static struct device DEVICE_NAME_GET(eth_e1000);
@@ -210,13 +210,7 @@ static void e1000_init(struct net_if *iface)
 	LOG_DBG("done");
 }
 
-#define PCI_VENDOR_ID_INTEL	0x8086
-#define PCI_DEVICE_ID_I82540EM	0x100e
-
-static struct e1000_dev e1000_dev = {
-	.pci.vendor_id = PCI_VENDOR_ID_INTEL,
-	.pci.device_id = PCI_DEVICE_ID_I82540EM,
-};
+static struct e1000_dev e1000_dev;
 
 static const struct ethernet_api e1000_api = {
 	.iface_api.init		= e1000_init,
@@ -233,4 +227,4 @@ NET_DEVICE_INIT(eth_e1000,
 		&e1000_api,
 		ETHERNET_L2,
 		NET_L2_GET_CTX_TYPE(ETHERNET_L2),
-		E1000_MTU);
+		NET_ETH_MTU);

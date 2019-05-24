@@ -35,7 +35,7 @@ static inline void handle_sb(I2C_TypeDef *i2c, struct i2c_stm32_data *data)
 		slave = (((saddr & 0x0300) >> 7) & 0xFF);
 		u8_t header = slave | HEADER;
 
-		if (data->current.is_restart == 0) {
+		if (data->current.is_restart == 0U) {
 			data->current.is_restart = 1U;
 		} else {
 			header |= I2C_REQUEST_READ;
@@ -65,10 +65,10 @@ static inline void handle_addr(I2C_TypeDef *i2c, struct i2c_stm32_data *data)
 		}
 	}
 	if (!data->current.is_write) {
-		if (data->current.len == 1) {
+		if (data->current.len == 1U) {
 			/* Single byte reception: enable NACK and clear POS */
 			LL_I2C_AcknowledgeNextData(i2c, LL_I2C_NACK);
-		} else if (data->current.len == 2) {
+		} else if (data->current.len == 2U) {
 			/* 2-byte reception: enable NACK and set POS */
 			LL_I2C_AcknowledgeNextData(i2c, LL_I2C_NACK);
 			LL_I2C_EnableBitPOS(i2c);
@@ -81,7 +81,7 @@ static inline void handle_txe(I2C_TypeDef *i2c, struct i2c_stm32_data *data)
 {
 	if (data->current.len) {
 		data->current.len--;
-		if (data->current.len == 0) {
+		if (data->current.len == 0U) {
 			/*
 			 * This is the last byte to transmit disable Buffer
 			 * interrupt and wait for a BTF interrupt
@@ -431,10 +431,10 @@ s32_t stm32_i2c_msg_read(struct device *dev, struct i2c_msg *msg,
 			}
 		}
 
-		if (len == 1) {
+		if (len == 1U) {
 			/* Single byte reception: enable NACK and set STOP */
 			LL_I2C_AcknowledgeNextData(i2c, LL_I2C_NACK);
-		} else if (len == 2) {
+		} else if (len == 2U) {
 			/* 2-byte reception: enable NACK and set POS */
 			LL_I2C_AcknowledgeNextData(i2c, LL_I2C_NACK);
 			LL_I2C_EnableBitPOS(i2c);

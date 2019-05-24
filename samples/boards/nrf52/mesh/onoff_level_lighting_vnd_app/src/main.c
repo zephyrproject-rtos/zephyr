@@ -8,14 +8,17 @@
 #include <gpio.h>
 
 #include "app_gpio.h"
-#include "storage.h"
-
 #include "ble_mesh.h"
 #include "device_composition.h"
 #include "no_transition_work_handler.h"
-#include "publisher.h"
 #include "state_binding.h"
+#include "storage.h"
 #include "transition.h"
+
+#if defined(CONFIG_MCUMGR)
+#include <mgmt/smp_bt.h>
+#include "smp_svr.h"
+#endif
 
 static bool reset;
 
@@ -106,8 +109,8 @@ static void light_default_status_init(void)
 
 	default_tt = gen_def_trans_time_srv_user_data.tt;
 
-	target_lightness = lightness;
-	target_temperature = temperature;
+	init_lightness_target_values();
+	init_temp_target_values();
 }
 
 void update_led_gpio(void)
@@ -156,7 +159,7 @@ void update_light_state(void)
 
 static void short_time_multireset_bt_mesh_unprovisioning(void)
 {
-	if (reset_counter >= 4) {
+	if (reset_counter >= 4U) {
 		reset_counter = 0U;
 		printk("BT Mesh reset\n");
 		bt_mesh_reset();
@@ -185,22 +188,34 @@ void main(void)
 
 	app_gpio_init();
 
+#if defined(CONFIG_MCUMGR)
+	smp_svr_init();
+#endif
+
 	printk("Initializing...\n");
 
 	ps_settings_init();
 
 	/* Initialize the Bluetooth Subsystem */
-	err = bt_enable(bt_ready);
+	err = bt_enable(NULL);
 	if (err) {
 		printk("Bluetooth init failed (err %d)\n", err);
+		return;
 	}
+
+	bt_ready();
 
 	light_default_status_init();
 
 	update_light_state();
 
-	randomize_publishers_TID();
-
 	short_time_multireset_bt_mesh_unprovisioning();
 	k_timer_start(&reset_counter_timer, K_MSEC(7000), 0);
+
+#if defined(CONFIG_MCUMGR)
+	/* Initialize the Bluetooth mcumgr transport. */
+	smp_bt_register();
+
+	k_timer_start(&smp_svr_timer, 0, K_MSEC(1000));
+#endif
 }

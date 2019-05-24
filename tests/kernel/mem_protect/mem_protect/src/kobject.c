@@ -56,7 +56,7 @@ void kobject_user_tc1(void *p1, void *p2, void *p3)
 void test_kobject_access_grant(void *p1, void *p2, void *p3)
 {
 
-	_k_object_init(random_sem_type);
+	z_object_init(random_sem_type);
 	k_thread_access_grant(k_current_get(),
 			      &kobject_sem,
 			      &kobject_mutex,
@@ -129,7 +129,7 @@ void test_thread_without_kobject_permission(void *p1, void *p2, void *p3)
 void kobject_user_test4(void *p1, void *p2, void *p3)
 {
 	/* should cause a fault */
-	if ((u32_t)p1 == 1) {
+	if ((u32_t)p1 == 1U) {
 		valid_fault = false;
 	} else {
 		valid_fault = true;
@@ -158,7 +158,7 @@ void test_kobject_revoke_access(void *p1, void *p2, void *p3)
 			0, K_INHERIT_PERMS | K_USER, K_NO_WAIT);
 
 
-	k_sem_take(&sync_sem, MSEC(100));
+	k_sem_take(&sync_sem, K_MSEC(100));
 	k_object_access_revoke(&kobject_sem, k_current_get());
 
 	k_thread_create(&kobject_test_4_tid,
@@ -215,7 +215,7 @@ void test_kobject_grant_access_kobj(void *p1, void *p2, void *p3)
 			0, K_INHERIT_PERMS | K_USER, K_NO_WAIT);
 
 
-	k_sem_take(&sync_sem, MSEC(100));
+	k_sem_take(&sync_sem, K_MSEC(100));
 
 	k_thread_create(&kobject_test_reuse_2_tid,
 			kobject_stack_2,
@@ -346,7 +346,7 @@ void test_kobject_access_all_grant(void *p1, void *p2, void *p3)
 			NULL, NULL, NULL,
 			0, K_USER, K_NO_WAIT);
 
-	k_sem_take(&sync_sem, MSEC(100));
+	k_sem_take(&sync_sem, K_MSEC(100));
 
 	k_thread_create(&kobject_test_reuse_2_tid,
 			kobject_stack_4,
@@ -405,7 +405,7 @@ void test_thread_has_residual_permissions(void *p1, void *p2, void *p3)
 			0, K_INHERIT_PERMS | K_USER, K_NO_WAIT);
 
 
-	k_sem_take(&sync_sem, MSEC(100));
+	k_sem_take(&sync_sem, K_MSEC(100));
 
 	k_thread_create(&kobject_test_9_tid,
 			kobject_stack_1,
@@ -425,7 +425,7 @@ void test_thread_has_residual_permissions(void *p1, void *p2, void *p3)
  * @ingroup kernel_memprotect_tests
  *
  * @see k_object_access_grant(), k_object_access_revoke(),
- * _k_object_find()
+ * z_object_find()
  */
 #define ERROR_STR_TEST_10 "Access granted/revoked to invalid thread k_object"
 void test_kobject_access_grant_to_invalid_thread(void *p1, void *p2, void *p3)
@@ -956,4 +956,3 @@ void test_create_new_invalid_prio_thread_from_user(void *p1, void *p2, void *p3)
 	k_sem_take(&sync_sem, SYNC_SEM_TIMEOUT);
 
 }
-

@@ -32,7 +32,7 @@ static int send_udp_data(struct data *data)
 
 	do {
 		data->udp.expecting = sys_rand32_get() % ipsum_len;
-	} while (data->udp.expecting == 0);
+	} while (data->udp.expecting == 0U);
 
 	ret = send(data->udp.sock, lorem_ipsum, data->udp.expecting, 0);
 
@@ -158,7 +158,7 @@ static int process_udp_proto(struct data *data)
 	LOG_DBG("%s UDP: Received and compared %d bytes, all ok",
 		data->proto, received);
 
-	if (++data->udp.counter % 1000 == 0) {
+	if (++data->udp.counter % 1000 == 0U) {
 		LOG_INF("%s UDP: Exchanged %u packets", data->proto,
 			data->udp.counter);
 	}

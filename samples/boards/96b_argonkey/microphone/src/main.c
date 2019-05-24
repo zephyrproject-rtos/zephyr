@@ -144,7 +144,7 @@ void main(void)
 	signal_sampling_started();
 
 	/* Acquire microphone audio */
-	for (ms = 0; ms < NUM_MS; ms++) {
+	for (ms = 0U; ms < NUM_MS; ms++) {
 		ret = dmic_read(mic_dev, 0, &rx_block[ms], &rx_size, 2000);
 		if (ret < 0) {
 			printk("microphone audio read error\n");
@@ -178,8 +178,8 @@ void main(void)
 			pcm_l = (char)(pcm_out[j] & 0xFF);
 			pcm_h = (char)((pcm_out[j] >> 8) & 0xFF);
 
-			_impl_k_str_out(&pcm_l, 1);
-			_impl_k_str_out(&pcm_h, 1);
+			z_impl_k_str_out(&pcm_l, 1);
+			z_impl_k_str_out(&pcm_h, 1);
 		}
 	}
 #endif

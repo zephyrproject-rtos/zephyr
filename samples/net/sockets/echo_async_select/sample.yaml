@@ -3,7 +3,7 @@ sample:
     using non-blocking sockets
   name: socket_echo_async
 tests:
-  test:
+  sample.net.sockets.echo_async_select:
     harness: net
     platform_whitelist: qemu_x86
     tags: net socket

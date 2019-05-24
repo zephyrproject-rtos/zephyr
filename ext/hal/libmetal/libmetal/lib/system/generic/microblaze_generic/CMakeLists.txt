@@ -7,4 +7,5 @@ if (HAS_XINTC)
   add_definitions(-DHAS_XINTC)
 endif(HAS_XINTC)
 
+add_subdirectory(../xlnx_common ${CMAKE_CURRENT_BINARY_DIR}/../xlnx_common)
 # vim: expandtab:ts=2:sw=2:smartindent

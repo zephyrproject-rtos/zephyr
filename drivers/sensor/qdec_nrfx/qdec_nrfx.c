@@ -271,9 +271,8 @@ static int qdec_nrfx_pm_set_state(struct qdec_nrfx_data *data,
 	return 0;
 }
 
-static int qdec_nrfx_pm_control(struct device *dev,
-				u32_t          ctrl_command,
-				void          *context)
+static int qdec_nrfx_pm_control(struct device *dev, u32_t ctrl_command,
+				void *context, device_pm_cb cb, void *arg)
 {
 	struct qdec_nrfx_data *data = &qdec_nrfx_data;
 	int err;
@@ -292,6 +291,10 @@ static int qdec_nrfx_pm_control(struct device *dev,
 	default:
 		err = -ENOTSUP;
 		break;
+	}
+
+	if (cb) {
+		cb(dev, err, context, arg);
 	}
 
 	return err;

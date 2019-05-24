@@ -132,11 +132,11 @@ uint32_t osThreadFlagsWait(uint32_t flags, uint32_t options, uint32_t timeout)
 
 		__ASSERT(tid->poll_event.state == K_POLL_STATE_SIGNALED,
 			 "event state not signalled!");
-		__ASSERT(tid->poll_event.signal->signaled == 1,
+		__ASSERT(tid->poll_event.signal->signaled == 1U,
 			 "event signaled is not 1");
 
 		/* Reset the states to facilitate the next trigger */
-		tid->poll_event.signal->signaled = 0;
+		tid->poll_event.signal->signaled = 0U;
 		tid->poll_event.state = K_POLL_STATE_NOT_READY;
 
 		if (options & osFlagsWaitAll) {
@@ -162,7 +162,7 @@ uint32_t osThreadFlagsWait(uint32_t flags, uint32_t options, uint32_t timeout)
 			if (timeout_ms > time_delta_ms) {
 				timeout_ms -= time_delta_ms;
 			} else {
-				timeout_ms = 0;
+				timeout_ms = 0U;
 			}
 		} else {
 			break;

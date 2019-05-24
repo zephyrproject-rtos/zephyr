@@ -48,16 +48,20 @@ config BT_RX_BUF_LEN
 	  (4 bytes) and the ACL header (also 4 bytes) which yields 73 bytes.
 
 config BT_HCI_TX_STACK_SIZE
+	# NOTE: This value is derived from other symbols and should not be
+	# user-configurable. Do not give it a prompt.
 	int
 	default 512 if BT_H4
 	default 512 if BT_H5
 	default 416 if BT_SPI
-	default 940 if BT_CTLR && NO_OPTIMIZATIONS
-	default 640 if BT_CTLR
+	default 940 if BT_CTLR && (BT_LL_SW || BT_LL_SW_SPLIT) && NO_OPTIMIZATIONS
+	default 1024 if BT_CTLR && (BT_LL_SW || BT_LL_SW_SPLIT) && BT_CENTRAL
+	default 640 if BT_CTLR && (BT_LL_SW || BT_LL_SW_SPLIT)
 	default 512 if BT_USERCHAN
 	# Even if no driver is selected the following default is still
-	# needed e.g. for unit tests.
-	default 512
+	# needed e.g. for unit tests. This default will also server as
+	# the worst-case stack size if an out-of-tree controller is used.
+	default 1024
 	help
 	  Stack size needed for executing bt_send with specified driver
 
@@ -65,15 +69,6 @@ config BT_HCI_TX_PRIO
 	# Hidden option for Co-Operative Tx thread priority
 	int
 	default 7
-
-config BT_WAIT_NOP
-	bool "Wait for \"NOP\" Command Complete event during init"
-	depends on BT_HCI
-	help
-	  Some controllers emit a Command Complete event for the NOP
-	  opcode to indicate that they're ready to receive commands.
-	  This option should be selected if the controller used
-	  exhibits such behavior.
 
 config BT_HCI_RESERVE
 	int
@@ -325,74 +320,7 @@ config BT_L2CAP_DYNAMIC_CHANNEL
 	  This option enables support for LE Connection oriented Channels,
 	  allowing the creation of dynamic L2CAP Channels.
 
-menu "ATT and GATT Options"
-
-config BT_ATT_ENFORCE_FLOW
-	bool "Enforce strict flow control semantics for incoming PDUs"
-	default y if !(BOARD_QEMU_CORTEX_M3 || BOARD_QEMU_X86 || BOARD_NATIVE_POSIX)
-	help
-	  Enforce flow control rules on incoming PDUs, preventing a peer
-	  from sending new requests until a previous one has been responded
-	  or sending a new indication until a previous one has been
-	  confirmed. This may need to be disabled to avoid potential race
-	  conditions arising from a USB based HCI transport that splits
-	  HCI events and ACL data to separate endpoints.
-
-config BT_ATT_PREPARE_COUNT
-	int "Number of ATT prepare write buffers"
-	default 0
-	range 0 64
-	help
-	  Number of buffers available for ATT prepare write, setting
-	  this to 0 disables GATT long/reliable writes.
-
-config BT_ATT_TX_MAX
-	int "Maximum number of queued outgoing ATT PDUs"
-	default 2
-	range 1 BT_L2CAP_TX_BUF_COUNT
-	help
-	  Number of ATT PDUs that can be at a single moment queued for
-	  transmission. If the application tries to send more than this
-	  amount the calls will block until an existing queued PDU gets
-	  sent.
-
-config BT_GATT_CACHING
-	bool "GATT Caching support"
-	default y
-	select TINYCRYPT
-	select TINYCRYPT_AES
-	select TINYCRYPT_AES_CMAC
-	help
-	  This option enables support for GATT Caching. When enabled the stack
-	  will register Client Supported Features and Database Hash
-	  characteristics which can be used by clients to detect if anything has
-	  changed on the GATT database.
-
-config BT_GATT_ENFORCE_CHANGE_UNAWARE
-	bool "GATT Enforce change-unaware state"
-	depends on BT_GATT_CACHING
-	help
-	 When enable this option blocks notification and indications to client
-	 to conform to the following statement from the Bluetooth 5.1
-	 specification:
-	 '...the server shall not send notifications and indications to such
-	 a client until it becomes change-aware."
-	 In case the service cannot deal with sudden errors (-EAGAIN) then it
-	 shall not use this option.
-
-config BT_GATT_CLIENT
-	bool "GATT client support"
-	help
-	  This option enables support for the GATT Client role.
-
-config BT_GATT_READ_MULTIPLE
-	bool "GATT Read Multiple Characteristic Values support"
-	default y
-	help
-	  This option enables support for the GATT Read Multiple Characteristic
-	  Values procedure.
-
-endmenu
+source "subsys/bluetooth/host/Kconfig.gatt"
 
 config BT_MAX_PAIRED
 	int "Maximum number of paired devices"
@@ -402,44 +330,6 @@ config BT_MAX_PAIRED
 	help
 	  Maximum number of paired Bluetooth devices. The minimum (and
 	  default) number is 1.
-
-config BT_GAP_PERIPHERAL_PREF_PARAMS
-	bool "Configure peripheral preferred connection parameters"
-	default y
-	depends on BT_PERIPHERAL
-	help
-	  This allows to configure peripheral preferred connection parameters.
-	  Enabling this option results in adding PPCP characteristic in GAP
-	  and sending request for connection parameters update after GAP
-	  recommended 5 seconds of connection as peripheral. If disabled it is
-	  up to application to set expected connection parameters.
-
-if BT_GAP_PERIPHERAL_PREF_PARAMS
-config BT_PERIPHERAL_PREF_MIN_INT
-	int "Peripheral preferred minimum connection interval in 1.25ms units"
-	default 24
-	range 6 3200
-
-config BT_PERIPHERAL_PREF_MAX_INT
-	int "Peripheral preferred maximum connection interval in 1.25ms units"
-	default 40
-	range 6 3200
-
-config BT_PERIPHERAL_PREF_SLAVE_LATENCY
-	int "Peripheral preferred slave latency in Connection Intervals"
-	default 0
-	range 0 499
-
-config BT_PERIPHERAL_PREF_TIMEOUT
-	int "Peripheral preferred supervision timeout in 10ms units"
-	default 42
-	range 10 3200
-	help
-	  It is up to user to provide valid timeout which pass required minimum
-	  value: in milliseconds it shall be larger than
-	  "(1+ Conn_Latency) * Conn_Interval_Max * 2"
-	  where Conn_Interval_Max is given in milliseconds.
-endif # BT_GAP_PERIPHERAL_PREF_PARAMS
 
 config BT_CREATE_CONN_TIMEOUT
         int "Timeout for pending LE Create Connection command in seconds"
@@ -482,14 +372,6 @@ config BT_DEVICE_NAME_MAX
 	help
 	  Bluetooth device name storage size. Storage can be up to 248 bytes
 	  long (excluding NULL termination).
-
-config BT_DEVICE_NAME_GATT_WRITABLE
-	bool "Allow to write name by remote GATT clients"
-	depends on BT_CONN && BT_DEVICE_NAME_DYNAMIC
-	default y
-	help
-	  Enabling this option allows remote GATT clients to write to device
-	  name GAP characteristic.
 
 config BT_DEVICE_NAME
 	string "Bluetooth device name"
@@ -598,20 +480,6 @@ config BT_SMP_FORCE_BREDR
 	  supporting BR/EDR Secure Connections. This option is solely for
 	  testing and should never be enabled on production devices.
 
-config BT_DEBUG_ATT
-	bool "Bluetooth Attribute Protocol (ATT) debug"
-	depends on BT_CONN
-	help
-	  This option enables debug support for the Bluetooth
-	  Attribute Protocol (ATT).
-
-config BT_DEBUG_GATT
-	bool "Bluetooth Generic Attribute Profile (GATT) debug"
-	depends on BT_CONN
-	help
-	  This option enables debug support for the Bluetooth
-	  Generic Attribute Profile (GATT).
-
 config BT_DEBUG_RFCOMM
 	bool "Bluetooth RFCOMM debug"
 	depends on BT_RFCOMM
@@ -643,8 +511,15 @@ config BT_DEBUG_SDP
 	bool "Bluetooth Service Discovery Protocol (SDP) debug"
 	depends on BT_BREDR
 	help
-		This option enables debug support for the Bluetooth
-		Service Discovery Protocol (SDP).
+	  This option enables debug support for the Bluetooth
+	  Service Discovery Protocol (SDP).
+
+config BT_DEBUG_SERVICE
+	bool "Bluetooth Services debug"
+	depends on BT_CONN
+	help
+	  This option enables debug support for the Bluetooth
+	  Services.
 
 endif # BT_DEBUG
 
@@ -715,3 +590,9 @@ config BT_PAGE_TIMEOUT
 	  (N * 0.625) ms.
 
 endif # BT_BREDR
+
+config BT_HCI_VS_EVT_USER
+	bool "User Vendor-Specific event handling"
+	help
+	  Enable registering a callback for delegating to the user the handling of
+	  VS events that are not known to the stack

@@ -91,8 +91,7 @@ config ARCV2_TIMER_IRQ_PRIORITY
 
 config CORTEX_M_SYSTICK
 	bool "Cortex-M SYSTICK timer"
-	default y
-	depends on CPU_HAS_SYSTICK
+	depends on CPU_CORTEX_M_HAS_SYSTICK
 	select TICKLESS_CAPABLE
 	help
 	  This module implements a kernel device driver for the Cortex-M processor
@@ -110,8 +109,8 @@ config ALTERA_AVALON_TIMER
 
 config NRF_RTC_TIMER
 	bool "nRF Real Time Counter (NRF_RTC1) Timer"
-	default y
-	depends on CLOCK_CONTROL_NRF
+	depends on CLOCK_CONTROL
+	depends on SOC_COMPATIBLE_NRF
 	select TICKLESS_CAPABLE
 	help
 	  This module implements a kernel device driver for the nRF Real Time
@@ -136,6 +135,14 @@ config RV32M1_LPTMR_TIMER
 	  This module implements a kernel device driver for using the LPTMR
 	  peripheral as the system clock. It provides the standard "system clock
 	  driver" interfaces.
+
+config LITEX_TIMER
+	bool "LiteX Timer"
+	default y
+	depends on !TICKLESS_IDLE
+	depends on SOC_RISCV32_LITEX_VEXRISCV
+	help
+	  This module implements a kernel device driver for LiteX Timer.
 
 config NATIVE_POSIX_TIMER
 	bool "(POSIX) native_posix timer driver"

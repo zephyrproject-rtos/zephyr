@@ -17,4 +17,3 @@ config NUM_IRQS
 	default 39
 
 endif # SOC_NRF52832_CIAA
-

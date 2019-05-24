@@ -12,7 +12,7 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(wdt_sam0);
 
-#define WDT_REGS ((Wdt *)DT_WDT_SAM0_BASE_ADDRESS)
+#define WDT_REGS ((Wdt *)DT_ATMEL_SAM0_WATCHDOG_0_BASE_ADDRESS)
 
 struct wdt_sam0_dev_data {
 	wdt_callback_t cb;
@@ -35,10 +35,10 @@ static u32_t wdt_sam0_timeout_to_wdt_period(u32_t timeout_ms)
 	u32_t cycles;
 
 	/* Calculate number of clock cycles @ 1.024 kHz input clock */
-	cycles = (timeout_ms * 1024) / 1000;
+	cycles = (timeout_ms * 1024U) / 1000;
 
 	/* Minimum wdt period is 8 clock cycles (register value 0) */
-	if (cycles <= 8)
+	if (cycles <= 8U)
 		return 0;
 
 	/* Round up to next pow2 and calculate the register value */
@@ -117,6 +117,11 @@ static int wdt_sam0_install_timeout(struct device *dev,
 		return -ENOTSUP;
 	}
 
+	if (cfg->window.max == 0) {
+		LOG_ERR("Upper limit timeout out of range");
+		return -EINVAL;
+	}
+
 	per = wdt_sam0_timeout_to_wdt_period(cfg->window.max);
 	if (per > WDT_CONFIG_PER_16K_Val) {
 		LOG_ERR("Upper limit timeout out of range");
@@ -141,9 +146,9 @@ static int wdt_sam0_install_timeout(struct device *dev,
 		if (cfg->callback) {
 			if (per == WDT_CONFIG_PER_8_Val) {
 				/* Ensure we have time for the early warning */
-				per += 1;
+				per += 1U;
 			}
-			WDT_REGS->EWCTRL.bit.EWOFFSET = per - 1;
+			WDT_REGS->EWCTRL.bit.EWOFFSET = per - 1U;
 		}
 		window = WDT_CONFIG_PER_8_Val;
 		WDT_REGS->CTRL.bit.WEN = 0;
@@ -208,16 +213,16 @@ static int wdt_sam0_init(struct device *dev)
 		| GCLK_CLKCTRL_GEN_GCLK2
 		| GCLK_CLKCTRL_CLKEN;
 
-	IRQ_CONNECT(DT_WDT_SAM0_IRQ,
-		    DT_WDT_SAM0_IRQ_PRIORITY, wdt_sam0_isr,
+	IRQ_CONNECT(DT_ATMEL_SAM0_WATCHDOG_0_IRQ_0,
+		    DT_ATMEL_SAM0_WATCHDOG_0_IRQ_0_PRIORITY, wdt_sam0_isr,
 		    DEVICE_GET(wdt_sam0), 0);
-	irq_enable(DT_WDT_SAM0_IRQ);
+	irq_enable(DT_ATMEL_SAM0_WATCHDOG_0_IRQ_0);
 
 	return 0;
 }
 
 static struct wdt_sam0_dev_data wdt_sam0_data;
 
-DEVICE_AND_API_INIT(wdt_sam0, DT_WDT_SAM0_LABEL, wdt_sam0_init,
+DEVICE_AND_API_INIT(wdt_sam0, DT_ATMEL_SAM0_WATCHDOG_0_LABEL, wdt_sam0_init,
 		    &wdt_sam0_data, NULL, PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &wdt_sam0_api);

@@ -2,7 +2,7 @@ sample:
   description: Code data relocation Sample
   name: code relocation
 tests:
-  test:
+  sample.app_dev.code_relocation:
     harness: console
     harness_config:
       type: one_line

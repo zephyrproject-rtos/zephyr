@@ -192,7 +192,7 @@ static void insert_char(char *pos, char c, u8_t end)
 	/* Echo back to console */
 	uart_poll_out(uart_console_dev, c);
 
-	if (end == 0) {
+	if (end == 0U) {
 		*pos = c;
 		return;
 	}
@@ -217,7 +217,7 @@ static void del_char(char *pos, u8_t end)
 {
 	uart_poll_out(uart_console_dev, '\b');
 
-	if (end == 0) {
+	if (end == 0U) {
 		uart_poll_out(uart_console_dev, ' ');
 		uart_poll_out(uart_console_dev, '\b');
 		return;
@@ -271,10 +271,10 @@ static void handle_ansi(u8_t byte, char *line)
 	if (atomic_test_bit(&esc_state, ESC_ANSI_VAL)) {
 		if (isdigit(byte)) {
 			if (atomic_test_bit(&esc_state, ESC_ANSI_VAL_2)) {
-				ansi_val_2 *= 10;
+				ansi_val_2 *= 10U;
 				ansi_val_2 += byte - '0';
 			} else {
-				ansi_val *= 10;
+				ansi_val *= 10U;
 				ansi_val += byte - '0';
 			}
 			return;

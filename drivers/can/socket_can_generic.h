@@ -43,10 +43,12 @@ static inline void socket_can_iface_init(struct net_if *iface)
 	LOG_DBG("Init CAN interface %p dev %p", iface, dev);
 }
 
-static inline void tx_irq_callback(u32_t error_flags)
+static inline void tx_irq_callback(u32_t error_flags, void *arg)
 {
+	char *caller_str = (char *)arg;
 	if (error_flags) {
-		LOG_DBG("Callback! error-code: %d", error_flags);
+		LOG_DBG("TX error from %s! error-code: %d",
+			caller_str, error_flags);
 	}
 }
 
@@ -62,7 +64,7 @@ static inline int socket_can_send(struct device *dev, struct net_pkt *pkt)
 
 	ret = can_send(socket_context->can_dev,
 		       (struct zcan_frame *)pkt->frags->data,
-		       SEND_TIMEOUT, tx_irq_callback);
+		       SEND_TIMEOUT, tx_irq_callback, "socket_can_send");
 	if (ret) {
 		LOG_DBG("Cannot send socket CAN msg (%d)", ret);
 	}
@@ -85,10 +87,7 @@ static inline int socket_can_setsockopt(struct device *dev, void *obj,
 		return -1;
 	}
 
-	if (optlen != sizeof(struct can_filter)) {
-		errno = EINVAL;
-		return -1;
-	}
+	__ASSERT_NO_MSG(optlen == sizeof(struct zcan_filter));
 
 	ret = can_attach_msgq(socket_context->can_dev, socket_context->msgq,
 			      optval);
@@ -131,7 +130,7 @@ static inline void rx_thread(void *ctx, void *unused1, void *unused2)
 			continue;
 		}
 
-		if (net_pkt_write_new(pkt, (void *)&msg, sizeof(msg))) {
+		if (net_pkt_write(pkt, (void *)&msg, sizeof(msg))) {
 			LOG_ERR("Failed to append RX data");
 			net_pkt_unref(pkt);
 			continue;

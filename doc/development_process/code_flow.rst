@@ -1,3 +1,4 @@
+.. _code-flow-and-branches:
 
 Code Flow and Branches
 ######################
@@ -26,7 +27,7 @@ Changes submitted to a development topic branch can evolve and improve
 incrementally in a branch, before they are submitted to the mainline tree for
 final integration.
 
-By dedicating an isolated branch to complex features, it’s
+By dedicating an isolated branch to complex features, it's
 possible to initiate in-depth discussions around new additions before
 integrating them into the official project.
 

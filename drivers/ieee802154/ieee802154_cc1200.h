@@ -47,43 +47,43 @@ struct cc1200_context {
  ***************************
  */
 
-bool _cc1200_access_reg(struct cc1200_context *ctx, bool read, u8_t addr,
+bool z_cc1200_access_reg(struct cc1200_context *ctx, bool read, u8_t addr,
 			void *data, size_t length, bool extended, bool burst);
 
-static inline u8_t _cc1200_read_single_reg(struct cc1200_context *ctx,
+static inline u8_t cc1200_read_single_reg(struct cc1200_context *ctx,
 					   u8_t addr, bool extended)
 {
 	u8_t val;
 
-	if (_cc1200_access_reg(ctx, true, addr, &val, 1, extended, false)) {
+	if (z_cc1200_access_reg(ctx, true, addr, &val, 1, extended, false)) {
 		return val;
 	}
 
 	return 0;
 }
 
-static inline bool _cc1200_write_single_reg(struct cc1200_context *ctx,
+static inline bool cc1200_write_single_reg(struct cc1200_context *ctx,
 					    u8_t addr, u8_t val, bool extended)
 {
-	return _cc1200_access_reg(ctx, false, addr, &val, 1, extended, false);
+	return z_cc1200_access_reg(ctx, false, addr, &val, 1, extended, false);
 }
 
-static inline bool _cc1200_instruct(struct cc1200_context *ctx, u8_t addr)
+static inline bool cc1200_instruct(struct cc1200_context *ctx, u8_t addr)
 {
-	return _cc1200_access_reg(ctx, false, addr, NULL, 0, false, false);
+	return z_cc1200_access_reg(ctx, false, addr, NULL, 0, false, false);
 }
 
 #define DEFINE_REG_READ(__reg_name, __reg_addr, __ext)			\
 	static inline u8_t read_reg_##__reg_name(struct cc1200_context *ctx) \
 	{								\
-		return _cc1200_read_single_reg(ctx, __reg_addr, __ext);	\
+		return cc1200_read_single_reg(ctx, __reg_addr, __ext);	\
 	}
 
 #define DEFINE_REG_WRITE(__reg_name, __reg_addr, __ext)			\
 	static inline bool write_reg_##__reg_name(struct cc1200_context *ctx, \
 						  u8_t val)		\
 	{								\
-		return _cc1200_write_single_reg(ctx, __reg_addr,	\
+		return cc1200_write_single_reg(ctx, __reg_addr,	\
 						val, __ext);		\
 	}
 
@@ -107,7 +107,7 @@ DEFINE_REG_READ(num_rxbytes, CC1200_REG_NUM_RXBYTES, true)
 #define DEFINE_STROBE_INSTRUCTION(__ins_name, __ins_addr)		\
 	static inline bool instruct_##__ins_name(struct cc1200_context *ctx) \
 	{								\
-		return _cc1200_instruct(ctx, __ins_addr);		\
+		return cc1200_instruct(ctx, __ins_addr);		\
 	}
 
 DEFINE_STROBE_INSTRUCTION(sres, CC1200_INS_SRES)

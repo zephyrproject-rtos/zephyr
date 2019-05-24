@@ -27,26 +27,26 @@ LOG_MODULE_REGISTER(gpio_sch);
  * memory mapped I/O.
  */
 #ifdef GPIO_SCH_LEGACY_IO_PORTS_ACCESS
-#define _REG_READ sys_in32
-#define _REG_WRITE sys_out32
-#define _REG_SET_BIT sys_io_set_bit
-#define _REG_CLEAR_BIT sys_io_clear_bit
+#define Z_REG_READ sys_in32
+#define Z_REG_WRITE sys_out32
+#define Z_REG_SET_BIT sys_io_set_bit
+#define Z_REG_CLEAR_BIT sys_io_clear_bit
 #else
-#define _REG_READ sys_read32
-#define _REG_WRITE sys_write32
-#define _REG_SET_BIT sys_set_bit
-#define _REG_CLEAR_BIT sys_clear_bit
+#define Z_REG_READ sys_read32
+#define Z_REG_WRITE sys_write32
+#define Z_REG_SET_BIT sys_set_bit
+#define Z_REG_CLEAR_BIT sys_clear_bit
 #endif /* GPIO_SCH_LEGACY_IO_PORTS_ACCESS */
 
 #define DEFINE_MM_REG_READ(__reg, __off)                                \
-	static inline u32_t _read_##__reg(u32_t addr)             \
+	static inline u32_t z_read_##__reg(u32_t addr)             \
 	{                                                               \
-		return _REG_READ(addr + __off);                         \
+		return Z_REG_READ(addr + __off);                         \
 	}
 #define DEFINE_MM_REG_WRITE(__reg, __off)                               \
-	static inline void _write_##__reg(u32_t data, u32_t addr) \
+	static inline void z_write_##__reg(u32_t data, u32_t addr) \
 	{                                                               \
-		_REG_WRITE(data, addr + __off);                         \
+		Z_REG_WRITE(data, addr + __off);                         \
 	}
 
 DEFINE_MM_REG_READ(glvl, GPIO_SCH_REG_GLVL)
@@ -56,21 +56,21 @@ DEFINE_MM_REG_WRITE(gtne, GPIO_SCH_REG_GTNE)
 DEFINE_MM_REG_READ(gts, GPIO_SCH_REG_GTS)
 DEFINE_MM_REG_WRITE(gts, GPIO_SCH_REG_GTS)
 
-static void _set_bit(u32_t base_addr,
+static void set_bit(u32_t base_addr,
 		     u32_t bit, u8_t set)
 {
 	if (!set) {
-		_REG_CLEAR_BIT(base_addr, bit);
+		Z_REG_CLEAR_BIT(base_addr, bit);
 	} else {
-		_REG_SET_BIT(base_addr, bit);
+		Z_REG_SET_BIT(base_addr, bit);
 	}
 }
 
 #define DEFINE_MM_REG_SET_BIT(__reg, __off)                             \
-	static inline void _set_bit_##__reg(u32_t addr,              \
+	static inline void z_set_bit_##__reg(u32_t addr,              \
 					    u32_t bit, u8_t set)  \
 	{                                                               \
-		_set_bit(addr + __off, bit, set);                       \
+		set_bit(addr + __off, bit, set);                       \
 	}
 
 DEFINE_MM_REG_SET_BIT(gen, GPIO_SCH_REG_GEN)
@@ -79,21 +79,21 @@ DEFINE_MM_REG_SET_BIT(glvl, GPIO_SCH_REG_GLVL)
 DEFINE_MM_REG_SET_BIT(gtpe, GPIO_SCH_REG_GTPE)
 DEFINE_MM_REG_SET_BIT(gtne, GPIO_SCH_REG_GTNE)
 
-static inline void _set_data_reg(u32_t *reg, u8_t pin, u8_t set)
+static inline void set_data_reg(u32_t *reg, u8_t pin, u8_t set)
 {
 	*reg &= ~(BIT(pin));
 	*reg |= (set << pin) & BIT(pin);
 }
 
-static void _gpio_pin_config(struct device *dev, u32_t pin, int flags)
+static void gpio_pin_config(struct device *dev, u32_t pin, int flags)
 {
 	const struct gpio_sch_config *info = dev->config->config_info;
 	struct gpio_sch_data *gpio = dev->driver_data;
 	u8_t active_high = 0U;
 	u8_t active_low = 0U;
 
-	_set_bit_gen(info->regs, pin, 1);
-	_set_bit_gio(info->regs, pin, !(flags & GPIO_DIR_MASK));
+	z_set_bit_gen(info->regs, pin, 1);
+	z_set_bit_gio(info->regs, pin, !(flags & GPIO_DIR_MASK));
 
 	if (flags & GPIO_INT) {
 		if (flags & GPIO_INT_DOUBLE_EDGE) {
@@ -112,17 +112,17 @@ static void _gpio_pin_config(struct device *dev, u32_t pin, int flags)
 	/* We store the gtpe/gtne settings. These will be used once
 	 * we enable the callback for the pin, or the whole port
 	 */
-	_set_data_reg(&gpio->int_regs.gtpe, pin, active_high);
-	_set_data_reg(&gpio->int_regs.gtne, pin, active_low);
+	set_data_reg(&gpio->int_regs.gtpe, pin, active_high);
+	set_data_reg(&gpio->int_regs.gtne, pin, active_low);
 }
 
-static inline void _gpio_port_config(struct device *dev, int flags)
+static inline void gpio_port_config(struct device *dev, int flags)
 {
 	const struct gpio_sch_config *info = dev->config->config_info;
 	int pin;
 
 	for (pin = 0; pin < info->bits; pin++) {
-		_gpio_pin_config(dev, pin, flags);
+		gpio_pin_config(dev, pin, flags);
 	}
 }
 
@@ -144,9 +144,9 @@ static int gpio_sch_config(struct device *dev,
 			return -EINVAL;
 		}
 
-		_gpio_pin_config(dev, pin, flags);
+		gpio_pin_config(dev, pin, flags);
 	} else {
-		_gpio_port_config(dev, flags);
+		gpio_port_config(dev, flags);
 	}
 
 	return 0;
@@ -162,9 +162,9 @@ static int gpio_sch_write(struct device *dev,
 			return -ENOTSUP;
 		}
 
-		_set_bit_glvl(info->regs, pin, value);
+		z_set_bit_glvl(info->regs, pin, value);
 	} else {
-		_write_glvl(info->regs, value);
+		z_write_glvl(info->regs, value);
 	}
 
 	return 0;
@@ -175,7 +175,7 @@ static int gpio_sch_read(struct device *dev,
 {
 	const struct gpio_sch_config *info = dev->config->config_info;
 
-	*value = _read_glvl(info->regs);
+	*value = z_read_glvl(info->regs);
 
 	if (access_op == GPIO_ACCESS_BY_PIN) {
 		if (pin >= info->bits) {
@@ -188,7 +188,7 @@ static int gpio_sch_read(struct device *dev,
 	return 0;
 }
 
-static void _gpio_sch_poll_status(void *arg1, void *unused1, void *unused2)
+static void gpio_sch_poll_status(void *arg1, void *unused1, void *unused2)
 {
 	struct device *dev = (struct device *)arg1;
 	const struct gpio_sch_config *info = dev->config->config_info;
@@ -198,22 +198,22 @@ static void _gpio_sch_poll_status(void *arg1, void *unused1, void *unused2)
 	ARG_UNUSED(unused2);
 
 	/* Cleaning up GTS first */
-	_write_gts(_read_gts(info->regs), info->regs);
+	z_write_gts(z_read_gts(info->regs), info->regs);
 
 	while (gpio->poll) {
 		u32_t status;
 
-		status = _read_gts(info->regs);
+		status = z_read_gts(info->regs);
 		if (!status) {
 			goto loop;
 		}
 
-		_gpio_fire_callbacks(&gpio->callbacks, dev, status);
+		gpio_fire_callbacks(&gpio->callbacks, dev, status);
 
 		/* It's not documented but writing the same status value
 		 * into GTS tells to the controller it got handled.
 		 */
-		_write_gts(status, info->regs);
+		z_write_gts(status, info->regs);
 loop:
 		k_timer_start(&gpio->poll_timer, GPIO_SCH_POLLING_MSEC, 0);
 		k_timer_status_sync(&gpio->poll_timer);
@@ -232,7 +232,7 @@ static void _gpio_sch_manage_callback(struct device *dev)
 			k_thread_create(&gpio->polling_thread,
 					gpio->polling_stack,
 					GPIO_SCH_POLLING_STACK_SIZE,
-					(k_thread_entry_t)_gpio_sch_poll_status,
+					(k_thread_entry_t)gpio_sch_poll_status,
 					dev, NULL, NULL,
 					K_PRIO_COOP(1), 0, 0);
 		}
@@ -246,7 +246,7 @@ static int gpio_sch_manage_callback(struct device *dev,
 {
 	struct gpio_sch_data *gpio = dev->driver_data;
 
-	if (_gpio_manage_callback(&gpio->callbacks, callback, set)) {
+	if (gpio_manage_callback(&gpio->callbacks, callback, set)) {
 		return -EINVAL;
 	}
 
@@ -268,13 +268,13 @@ static int gpio_sch_enable_callback(struct device *dev,
 			return -ENOTSUP;
 		}
 
-		_set_bit_gtpe(info->regs, pin, !!(bits & gpio->int_regs.gtpe));
-		_set_bit_gtne(info->regs, pin, !!(bits & gpio->int_regs.gtne));
+		z_set_bit_gtpe(info->regs, pin, !!(bits & gpio->int_regs.gtpe));
+		z_set_bit_gtne(info->regs, pin, !!(bits & gpio->int_regs.gtne));
 
 		gpio->cb_enabled |= bits;
 	} else {
-		_write_gtpe(gpio->int_regs.gtpe, info->regs);
-		_write_gtne(gpio->int_regs.gtne, info->regs);
+		z_write_gtpe(gpio->int_regs.gtpe, info->regs);
+		z_write_gtne(gpio->int_regs.gtne, info->regs);
 
 		gpio->cb_enabled = BIT_MASK(info->bits);
 	}
@@ -295,13 +295,13 @@ static int gpio_sch_disable_callback(struct device *dev,
 			return -ENOTSUP;
 		}
 
-		_set_bit_gtpe(info->regs, pin, 0);
-		_set_bit_gtne(info->regs, pin, 0);
+		z_set_bit_gtpe(info->regs, pin, 0);
+		z_set_bit_gtne(info->regs, pin, 0);
 
 		gpio->cb_enabled &= ~BIT(pin);
 	} else {
-		_write_gtpe(0, info->regs);
-		_write_gtne(0, info->regs);
+		z_write_gtpe(0, info->regs);
+		z_write_gtne(0, info->regs);
 
 		gpio->cb_enabled = 0U;
 	}

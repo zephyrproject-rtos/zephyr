@@ -1,14 +1,11 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
 /dts-v1/;
 
 #include <mem.h>
 
-#define DT_FLASH_SIZE		DT_SIZE_K(4092)
-
-#if XIP
-	#define DT_SRAM_SIZE		DT_SIZE_K(4096)
-#else
-	#define DT_SRAM_SIZE		DT_SIZE_K(8188)
-#endif
+#define DT_FLASH_SIZE		DT_SIZE_K(4096)
+#define DT_SRAM_SIZE		DT_SIZE_K(4096)
 
 #include <ia32.dtsi>
 
@@ -23,12 +20,13 @@
 
 	chosen {
 		zephyr,sram = &sram0;
-		zephyr,flash = &flash0;
+		zephyr,flash = &flash_sim0;
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
 		zephyr,bt-uart = &uart1;
 		zephyr,uart-pipe = &uart1;
 		zephyr,bt-mon-uart = &uart1;
+		zephyr,code-partition = &slot0_partition;
 	};
 
 	soc {
@@ -42,6 +40,22 @@
 			status = "ok";
 		};
 	};
+
+	sim_flash {
+		compatible = "zephyr,sim-flash";
+		label = "FLASH_SIMULATOR";
+
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		flash_sim0: flash_sim@0 {
+			compatible = "soc-nv-flash";
+			reg = <0x00000000 DT_SIZE_K(1024)>;
+
+			erase-block-size = <1024>;
+			write-block-size = <4>;
+		};
+	};
 };
 
 &uart0 {
@@ -52,4 +66,31 @@
 &uart1 {
 	status = "ok";
 	current-speed = <115200>;
+};
+
+&flash_sim0 {
+	/*
+	 * For more information, see:
+	 * http://docs.zephyrproject.org/latest/guides/dts/index.html#flash-partitions
+	 */
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* Storage partition will be used by FCB/NFFS/NVS if enabled. */
+		storage_partition: partition@1000 {
+			label = "storage";
+			reg = <0x00001000 0x00010000>;
+		};
+
+		slot0_partition: partition@11000 {
+			label = "image-0";
+			reg = <0x00011000 0x00010000>;
+		};
+		slot1_partition: partition@21000 {
+			label = "image-1";
+			reg = <0x00021000 0x00010000>;
+		};
+	};
 };
