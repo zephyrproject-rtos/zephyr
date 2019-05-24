@@ -73,3 +73,9 @@ config COUNTER_RTC_STM32_LSE_BYPASS
 	depends on COUNTER_RTC_STM32_CLOCK_LSE
 	help
 	  Enable LSE bypass
+
+config COUNTER_RTC_STM32_BACKUP_DOMAIN_RESET
+	bool "Do backup domain reset"
+	default y
+	help
+	  Force a backup domain reset on startup

@@ -289,8 +289,11 @@ static int rtc_stm32_init(struct device *dev)
 	z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
 
 	LL_PWR_EnableBkUpAccess();
+
+#if defined(CONFIG_COUNTER_RTC_STM32_BACKUP_DOMAIN_RESET)
 	LL_RCC_ForceBackupDomainReset();
 	LL_RCC_ReleaseBackupDomainReset();
+#endif
 
 #if defined(CONFIG_COUNTER_RTC_STM32_CLOCK_LSI)
 
