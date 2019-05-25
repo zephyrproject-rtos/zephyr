@@ -16,7 +16,7 @@ from west import util
 from west.build import DEFAULT_BUILD_DIR, is_zephyr_build
 from west.commands import CommandContextError
 
-from runners import get_runner_cls, ZephyrBinaryRunner
+from runners import get_runner_cls, ZephyrBinaryRunner, MissingProgram
 
 from zephyr_ext_common import cached_runner_config
 
@@ -225,7 +225,11 @@ def do_run_common(command, args, runner_args, cached_runner_var):
         raise CommandContextError('Runner', runner,
                                   'received unknown arguments', unknown)
     runner = runner_cls.create(cfg, parsed_args)
-    runner.run(command_name)
+    try:
+        runner.run(command_name)
+    except MissingProgram as e:
+        log.die('required program', e.filename,
+                'not found; install it or add its location to PATH')
 
 
 #
