@@ -4,7 +4,7 @@ tests:
     min_flash: 33
     min_ram: 32
   kernel.common.misra:
-    tags: kernel
+    tags: kernel userspace
     min_flash: 33
     min_ram: 32
     # Some configurations are known-incompliant and won't build
