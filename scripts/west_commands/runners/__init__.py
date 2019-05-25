@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-from runners.core import ZephyrBinaryRunner
+from runners.core import ZephyrBinaryRunner, MissingProgram
 
 # We import these here to ensure the ZephyrBinaryRunner subclasses are
 # defined; otherwise, ZephyrBinaryRunner.create_for_shell_script()

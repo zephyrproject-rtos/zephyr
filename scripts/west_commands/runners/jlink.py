@@ -98,9 +98,11 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
         if command == 'flash':
             self.flash(**kwargs)
         elif command == 'debugserver':
+            self.require(server_cmd[0])
             self.print_gdbserver_message()
             self.check_call(server_cmd)
         else:
+            self.require(server_cmd[0])
             if self.gdb_cmd is None:
                 raise ValueError('Cannot debug; gdb is missing')
             if self.elf_name is None:
@@ -109,6 +111,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                           self.tui_arg +
                           [self.elf_name] +
                           ['-ex', 'target remote :{}'.format(self.gdb_port)])
+            self.require(client_cmd[0])
             if command == 'debug':
                 client_cmd += ['-ex', 'monitor halt',
                                '-ex', 'monitor reset',
@@ -117,6 +120,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
             self.run_server_and_client(server_cmd, client_cmd)
 
     def flash(self, **kwargs):
+        self.require(self.commander)
         if self.bin_name is None:
             raise ValueError('Cannot flash; bin_name is missing')
 
