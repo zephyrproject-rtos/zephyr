@@ -787,6 +787,10 @@ static int eth_0_init(struct device *dev)
 #if defined(CONFIG_PTP_CLOCK_MCUX)
 	u8_t ptp_multicast[6] = { 0x01, 0x80, 0xC2, 0x00, 0x00, 0x0E };
 #endif
+#if defined(CONFIG_MDNS_RESPONDER) || defined(CONFIG_MDNS_RESOLVER)
+	/* standard multicast MAC address */
+	u8_t mdns_multicast[6] = { 0x01, 0x00, 0x5E, 0x00, 0x00, 0xFB };
+#endif
 
 #if defined(CONFIG_PTP_CLOCK_MCUX)
 	ts_tx_rd = 0;
@@ -843,6 +847,9 @@ static int eth_0_init(struct device *dev)
 
 	ENET_Ptp1588Configure(ENET, &context->enet_handle,
 			      &context->ptp_config);
+#endif
+#if defined(CONFIG_MDNS_RESPONDER) || defined(CONFIG_MDNS_RESOLVER)
+	ENET_AddMulticastGroup(ENET, mdns_multicast);
 #endif
 
 	ENET_SetSMI(ENET, sys_clock, false);
