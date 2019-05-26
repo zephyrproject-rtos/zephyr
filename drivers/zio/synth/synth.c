@@ -24,57 +24,6 @@
 #define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
 LOG_MODULE_REGISTER(SYNTH);
 
-static const struct zio_chan_desc synth_chans[2] = {
-	{
-		.name = "Left",
-		.type = SYNTH_AUDIO_TYPE,
-		.bit_width = 16,
-		.byte_size = 2,
-		.byte_order = ZIO_BYTEORDER_ARCH,
-		.sign_bit = ZIO_SIGN_MSB,
-	},
-	{
-		.name = "Right",
-		.type = SYNTH_AUDIO_TYPE,
-		.bit_width = 16,
-		.byte_size = 2,
-		.byte_order = ZIO_BYTEORDER_ARCH,
-		.sign_bit = ZIO_SIGN_MSB,
-	}
-};
-
-
-static const struct zio_attr_desc dev_attr_descs[1] = {
-	{
-		.type = ZIO_SAMPLE_RATE,
-		.data_type = zio_variant_float,
-	}
-};
-
-static const struct zio_attr_desc chans_attr_descs[2][2] = {
-	{
-		{
-			.type = SYNTH_FREQUENCY,
-			.data_type = zio_variant_float,
-		},
-		{
-			.type = SYNTH_PHASE,
-			.data_type = zio_variant_float,
-		},
-	},
-	{
-		{
-			.type = SYNTH_FREQUENCY,
-			.data_type = zio_variant_float,
-		},
-		{
-			.type = SYNTH_PHASE,
-			.data_type = zio_variant_float,
-		}
-	},
-};
-
-
 static struct synth_data {
 	u32_t last_timestamp;
 	u32_t t; /* samples index */
@@ -82,7 +31,6 @@ static struct synth_data {
 	u32_t sample_rate;
 	float frequencies[2];
 	float phases[2];
-	ZIO_FIFO_BUF_DECLARE(fifo, struct synth_datum, CONFIG_SYNTH_FIFO_SIZE);
 }
 synth_data = {
 	.last_timestamp = 0,
@@ -98,6 +46,146 @@ synth_data = {
 	},
 	.fifo = ZIO_FIFO_BUF_INITIALIZER(synth_data.fifo, struct synth_datum, CONFIG_SYNTH_FIFO_SIZE),
 };
+
+static struct zio_synth_api {
+	ZIO_DEFINE_CHANNEL(SYNTH_LEFT_CHANNEL, \
+		ZIO_DEFINE_ATTRIBUTE(SYNTH_FREQUENCY_ATTR); \
+		ZIO_DEFINE_ATTRIBUTE(SYNTH_PHASE_ATTR); \
+	);
+	ZIO_DEFINE_CHANNEL(SYNTH_RIGHT_CHANNEL, \
+		ZIO_DEFINE_ATTRIBUTE(SYNTH_FREQUENCY_ATTR); \
+		ZIO_DEFINE_ATTRIBUTE(SYNTH_PHASE_ATTR); \
+	);
+	ZIO_DEFINE_ATTRIBUTE(ZIO_SAMPLE_DEVICE_ATTR);
+	ZIO_FIFO_BUF_DECLARE(fifo, struct synth_datum, CONFIG_SYNTH_FIFO_SIZE);
+	ZIO_DEFINE_API();
+} dev_api = {
+	.ZIO_ATTR(ZIO_SAMPLE_DEVICE_ATTR) = {
+		.data_type = zio_variant_float,
+	},
+	.ZIO_CHANNEL(SYNTH_LEFT_CHANNEL) = {
+		.channel = {
+			.name = "Left",
+			.type = SYNTH_AUDIO_TYPE,
+			.bit_width = 16,
+			.byte_size = 2,
+			.byte_order = ZIO_BYTEORDER_ARCH,
+			.sign_bit = ZIO_SIGN_MSB,
+			.attributes = chans_attr_descs
+			.num_attributes = ARRAY_SIZE(chans_attr_descs),
+			.get_attr = synth_channel_get_attr,
+			.set_attr = synth_channel_set_attr
+		},
+		.ZIO_ATTR(SYNTH_FREQUENCY_ATTR) = {
+			.data_type = zio_variant_float
+		},
+		.ZIO_ATTR(SYNTH_PHASE_ATTR) = {
+			.data_type = zio_variant_float
+		}
+	},
+	.ZIO_CHANNEL(SYNTH_RIGHT_CHANNEL) = {
+		.channel = {
+			.name = "Right",
+			.type = SYNTH_AUDIO_TYPE,
+			.bit_width = 16,
+			.byte_size = 2,
+			.byte_order = ZIO_BYTEORDER_ARCH,
+			.sign_bit = ZIO_SIGN_MSB,
+			.attributes = chans_attr_descs
+			.num_attributes = ARRAY_SIZE(chans_attr_descs)
+		},
+		.ZIO_ATTR(SYNTH_FREQUENCY_ATTR) = {
+			.data_type = zio_variant_float
+		},
+		.ZIO_ATTR(SYNTH_PHASE_ATTR) = {
+			.data_type = zio_variant_float
+		}
+		.ZIO_API() = {
+
+		}
+	},
+};
+
+static const struct zio_dev_api synth_driver_api = {
+	.attributes = dev_attr_descs,
+	.num_attributes = ARRAY_SIZE(dev_attr_descs),
+	.channels = synth_chans,
+	.num_channels = ARRAY_SIZE(synth_chans),
+};
+
+
+
+static const struct zio_attr_desc chans_attr_descs[] = {
+	[SYNTH_CHANNEL_FREQUENCY] = {
+		.data_type = zio_variant_float
+	},
+	[SYNTH_CHANNEL_PHASE] = {
+		.data_type = zio_variant_float
+	}
+};
+
+
+
+static int synth_channel_set_attr(struct device *dev, const u16_t channel_idx, const u16_t attribute_idx, 
+	const struct zio_variant var)
+{
+	struct synth_data *drv_data = dev->driver_data;
+
+	switch (attribute_idx)
+	{
+		case SYNTH_CHANNEL_FREQUENCY:
+			drv_data->frequencies[attribute_idx];
+			zio_dev_set_attr(dev,attribute_idx)
+			break;
+		case SYNTH_CHANNEL_PHASE:
+			/* code */
+			break;
+		default:
+			return -EINVAL;
+	}
+}
+
+static int synth_channel_get_attr(struct device *dev,const u16_t channel_idx, const u16_t attribute_idx, 
+	struct zio_variant *attr)
+{
+
+}
+
+static const struct zio_chan_desc synth_chans[] = {
+	[SYNTH_CHANNEL_LEFT] = {
+		.name = "Left",
+		.type = SYNTH_AUDIO_TYPE,
+		.bit_width = 16,
+		.byte_size = 2,
+		.byte_order = ZIO_BYTEORDER_ARCH,
+		.sign_bit = ZIO_SIGN_MSB,
+		.attributes = chans_attr_descs
+		.num_attributes = ARRAY_SIZE(chans_attr_descs),
+		.get_attr = synth_channel_get_attr,
+		.set_attr = synth_channel_set_attr
+	},
+	[SYNTH_CHANNEL_RIGHT] = {
+		.name = "Right",
+		.type = SYNTH_AUDIO_TYPE,
+		.bit_width = 16,
+		.byte_size = 2,
+		.byte_order = ZIO_BYTEORDER_ARCH,
+		.sign_bit = ZIO_SIGN_MSB,
+		.attributes = chans_attr_descs
+		.num_attributes = ARRAY_SIZE(chans_attr_descs)
+	}
+};
+
+
+static const struct zio_attr_desc dev_attr_descs[] = {
+	[SYNTH_SAMPLE_RATE] = {
+		.data_type = zio_variant_float,
+	}
+};
+
+
+
+
 
 static int synth_set_attr(struct device *dev, const u32_t attr_idx,
 		const struct zio_variant val)
@@ -219,16 +307,6 @@ static int synth_detach_buf(struct device *dev)
 	return zio_fifo_buf_detach(&drv_data->fifo);
 }
 
-static const struct zio_dev_api synth_driver_api = {
-	.set_attr = synth_set_attr,
-	.get_attr = synth_get_attr,
-	.get_attr_descs = synth_get_attr_descs,
-	.get_chan_descs = synth_get_chan_descs,
-	.get_chan_attr_descs = synth_get_chan_attr_descs,
-	.trigger = synth_trigger,
-	.attach_buf = synth_attach_buf,
-	.detach_buf = synth_detach_buf
-};
 
 int synth_init(struct device *dev)
 {
@@ -245,4 +323,4 @@ static struct synth_data synth_data;
 
 DEVICE_AND_API_INIT(synth, "SYNTH", synth_init,
 		    &synth_data, NULL, POST_KERNEL,
-		    CONFIG_ZIO_INIT_PRIORITY, &synth_driver_api);
+		    CONFIG_ZIO_INIT_PRIORITY, &dev_api);

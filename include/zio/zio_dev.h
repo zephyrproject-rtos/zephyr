@@ -66,6 +66,8 @@
 extern "C" {
 #endif
 
+#define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
+
 /**
  * @brief ZIO device API definitions.
  * @defgroup zio_device ZIO device definitions
@@ -74,6 +76,27 @@ extern "C" {
  */
 
 struct zio_buf;
+struct zio_attr_desc;
+struct zio_chan_desc;
+
+
+#define CONCAT(x,y,z) x ## _ ## z
+#define ZIO_CHANNEL(id)  CONCAT(channel,id)
+#define ZIO_ATTR(id) CONCAT(attribute,id)
+#define ZIO_API() api;
+
+#define ZIO_DEFINE_ATTRIBUTE(id) \
+	struct zio_attr_desc ZIO_ATTR(id);
+
+#define ZIO_DEFINE_CHANNEL(id,attributes) \
+    struct { \
+        struct zio_chan_desc channel; \
+        attributes \
+	} \
+    ZIO_CHANNEL(id);
+
+#define ZIO_GET_CHANNEL(channel_idx,attribute_idx) \
+#define ZIO_DEFINE_API() struct zio_dev_api api;
 
 /**
  * @brief Pre-defined channel types with the ability to extend by a driver
@@ -85,6 +108,8 @@ struct zio_buf;
  * Example: #define MY_CHAN_TYPE (ZIO_CHAN_TYPES+1)
  */
 enum zio_chan_type {
+	ZIO_NONE = 0,
+	
 	ZIO_VOLTAGE,
 
 	/* Last type is always begins the user definable type range */
@@ -95,6 +120,7 @@ enum zio_chan_type {
 	 */
 	ZIO_CHAN_TYPE_MAKE_16_BIT = 0xFFFF
 };
+
 
 
 /**
@@ -144,7 +170,6 @@ struct zio_chan_desc {
 			ZIO_SIGN_MSB,
 			ZIO_SIGN_LSB,
 	} sign_bit;
-
 };
 
 /**
@@ -169,30 +194,32 @@ enum zio_attr_type {
 	ZIO_ATTR_TYPE_MAKE_16_BIT = 0xFFFF
 };
 
+
+
+
+/**
+ * @brief Function to set a channel attribute for a device
+ *
+ * @return -EINVAL if an invalid attribute id, type, or range was given,
+ * 0 otherwise
+ */
+typedef int (*zio_set_attr_t)(struct device *dev, const u16_t channel_idx, const u16_t attribute_idx, const struct zio_variant var);
+
+/**
+ * @brief Function to get a device attribute channel
+ *
+ * @return -EINVAL if an invalid attribute id was given, 0 otherwise
+ */
+typedef int (*zio_get_attr_t)(struct device *dev,const u16_t channel_idx, const u16_t attribute_idx, struct zio_variant *attr);
+
+
 /** Attribute record. */
 struct zio_attr_desc {
-	/* Attribute type, describing what it is such as the sample rate */
-	enum zio_attr_type type;
-
 	/* Attribute data type describing the expected data type. */
 	enum zio_variant_type data_type;
+	zio_set_attr_t set_attr;
+	zio_get_attr_t get_attr;
 };
-
-/**
- * @brief Function to set a device attribute
- *
- * @return -EINVAL if an invalid attribute id was given, 0 otherwise
- */
-typedef int (*zio_dev_set_attr_t)(struct device *dev, const u32_t attr_idx,
-				  const struct zio_variant var);
-
-/**
- * @brief Function to get a device attribute
- *
- * @return -EINVAL if an invalid attribute id was given, 0 otherwise
- */
-typedef int (*zio_dev_get_attr_t)(struct device *dev, uint32_t attr_idx,
-				  struct zio_variant *attr);
 
 
 /**
@@ -219,15 +246,7 @@ typedef int (*zio_chan_get_attr_descs_t)(struct device *dev,
 				   const struct zio_attr_desc **attrs,
 				   u32_t *num_attrs);
 
-/**
- * @brief Function to set a channel attribute for a device
- *
- * @return -EINVAL if an invalid attribute id, type, or range was given,
- * 0 otherwise
- */
-typedef int (*zio_chan_set_attr_t)(struct device *dev, const u32_t chan_idx,
-				   const u32_t attr_idx,
-				   const struct zio_variant var);
+
 /**
  * @brief Function to get a channel attribute for a device
  *
@@ -298,19 +317,27 @@ typedef int (*zio_dev_attach_buf_t)(struct device *dev, struct zio_buf *buf);
  */
 typedef int (*zio_dev_detach_buf_t)(struct device *dev);
 
+/**
+ * @brief Function to set a device attribute
+ *
+ * @return -EINVAL if an invalid attribute id was given, 0 otherwise
+ */
+typedef int (*zio_dev_set_attr_t)(struct device *dev, const u16_t attr_idx, const struct zio_variant var);
+
+
+/**
+ * @brief Function to get a device attribute channel
+ *
+ * @return -EINVAL if an invalid attribute id was given, 0 otherwise
+ */
+typedef int (*zio_dev_get_attr_t)(struct device *dev, const u16_t attr_idx, struct zio_variant *attr);
+
+
 
 /**
  * @brief Functions for ZIO device implementations
  */
 struct zio_dev_api {
-	zio_dev_set_attr_t set_attr;
-	zio_dev_get_attr_t get_attr;
-	zio_dev_get_attr_descs_t get_attr_descs;
-
-	zio_dev_get_chan_descs_t get_chan_descs;
-	zio_chan_get_attr_descs_t get_chan_attr_descs;
-	zio_chan_set_attr_t set_chan_attr;
-	zio_chan_get_attr_t get_chan_attr;
 	zio_chan_enable_t enable_chan;
 	zio_chan_disable_t disable_chan;
 	zio_chan_is_enabled_t is_chan_enabled;
@@ -320,6 +347,7 @@ struct zio_dev_api {
 
 	zio_dev_attach_buf_t attach_buf;
 	zio_dev_detach_buf_t detach_buf;
+
 
 	/* TODO read raw datum out to a void* */
 	/* TODO write raw datum from a void* */
@@ -339,13 +367,21 @@ struct zio_dev_api {
 	({ \
 		int res = 0; \
 		const struct zio_dev_api *api = dev->driver_api; \
-		if (!api->set_attr) { \
+		zio_attr_desc* attr = api->attributes[attr_idx] \
+		if (!attr->set_attr) { \
 			res = -ENOTSUP; \
 		} else { \
 			struct zio_variant data = zio_variant_wrap(val); \
 			res = api->set_attr(dev, attr_idx, data); \
 		} \
 		res; \
+	})
+
+
+#define zio_dev_get_channel(dev, channel_idx, val) \
+	({ \
+		struct zio_chan_desc* channel = &dev->driver_data->ZIO_CHANNEL(channel_idx).channel; 	\
+		channel; \
 	})
 
 /**
