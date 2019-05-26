@@ -14,7 +14,7 @@ struct bt_settings_handler {
 };
 
 #define BT_SETTINGS_DEFINE(_name, _set, _commit, _export)               \
-	const struct bt_settings_handler _name __aligned(4)             \
+	const Z_DECL_ALIGN(struct bt_settings_handler) _name            \
 			__in_section(_bt_settings, static, _name) = {   \
 				.name = STRINGIFY(_name),               \
 				.set = _set,                            \
