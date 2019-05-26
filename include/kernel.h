@@ -1722,6 +1722,11 @@ void k_alarm_init(struct k_alarm *alarm,
 		  k_alarm_cancel_t cancel,
 		  void *user_data);
 
+#else /* CONFIG_ALARM */
+
+/* Declare struct to satisfy syscall infrastructure */
+struct k_alarm;
+
 #endif /* CONFIG_ALARM */
 
 /**
