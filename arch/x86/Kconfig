@@ -20,6 +20,15 @@ config X86_MULTIBOOT
 	  to leave this option on if you're not sure. It only expands the
 	  text segment by 12-16 bytes and is typically ignored if not needed.
 
+config X86_MULTIBOOT_INFO
+	bool "Preserve multiboot information structure"
+	depends on X86_MULTIBOOT
+	default n
+	help
+	  Multiboot passes a pointer to an information structure to the
+	  kernel entry point. Some drivers (e.g., the multiboot framebuffer
+	  display driver) need to refer to information in this structure,
+	  and so set this option to preserve the data in a permanent location.
 
 source "arch/x86/core/Kconfig"
 

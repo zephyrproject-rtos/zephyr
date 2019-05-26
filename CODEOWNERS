@@ -38,6 +38,7 @@
 /arch/x86/core/                           @andrewboie
 /arch/x86/core/crt0.S                     @wentongwu @nashif
 /arch/x86/core/pcie.c                     @gnuless
+/arch/x86/core/multiboot.c                @gnuless
 /soc/x86/                                 @andrewboie @wentongwu
 /soc/x86/intel_quark/quark_d2000/         @nashif
 /soc/x86/intel_quark/quark_se/            @nashif
@@ -206,6 +207,7 @@
 /include/arch/x86/                        @andrewboie @wentongwu
 /include/arch/common/                     @andrewboie @andyross @nashif
 /include/arch/x86/arch.h                  @andrewboie
+/include/arch/x86/multiboot.h             @gnuless
 /include/arch/xtensa/                     @andrewboie
 /include/atomic.h                         @andrewboie @andyross
 /include/bluetooth/                       @joerchan @jhedberg @Vudentz
