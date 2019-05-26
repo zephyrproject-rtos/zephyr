@@ -187,7 +187,7 @@ struct _k_object_assignment {
 	static void * const _CONCAT(_object_list_, name_)[] = \
 		{ __VA_ARGS__, NULL }; \
 	static __used __in_section_unique(object_access) \
-		const struct _k_object_assignment \
+		const Z_DECL_ALIGN(struct _k_object_assignment) \
 		_CONCAT(_object_access_, name_) = \
 			{ (&_k_thread_obj_ ## name_), \
 			  (_CONCAT(_object_list_, name_)) }
@@ -969,7 +969,7 @@ struct _static_thread_data {
 			prio, options, delay)                            \
 	K_THREAD_STACK_DEFINE(_k_thread_stack_##name, stack_size);	 \
 	struct k_thread _k_thread_obj_##name;			 \
-	struct _static_thread_data _k_thread_data_##name __aligned(4)    \
+	Z_DECL_ALIGN(struct _static_thread_data) _k_thread_data_##name   \
 		__in_section(_static_thread_data, static, name) =        \
 		_THREAD_INITIALIZER(&_k_thread_obj_##name,		 \
 				    _k_thread_stack_##name, stack_size,  \
@@ -1468,7 +1468,7 @@ typedef void (*k_timer_stop_t)(struct k_timer *timer);
  * @param stop_fn   Function to invoke if the timer is stopped while running.
  */
 #define K_TIMER_DEFINE(name, expiry_fn, stop_fn) \
-	struct k_timer name \
+	Z_DECL_ALIGN(struct k_timer) name \
 		__in_section(_k_timer, static, name) = \
 		Z_TIMER_INITIALIZER(name, expiry_fn, stop_fn)
 
@@ -2050,7 +2050,7 @@ static inline void *z_impl_k_queue_peek_tail(struct k_queue *queue)
  * @param name Name of the queue.
  */
 #define K_QUEUE_DEFINE(name) \
-	struct k_queue name \
+	Z_DECL_ALIGN(struct k_queue) name \
 		__in_section(_k_queue, static, name) = \
 		_K_QUEUE_INITIALIZER(name)
 
@@ -2266,7 +2266,7 @@ struct k_fifo {
  * @req K-FIFO-002
  */
 #define K_FIFO_DEFINE(name) \
-	struct k_fifo name \
+	Z_DECL_ALIGN(struct k_fifo) name \
 		__in_section(_k_queue, static, name) = \
 		Z_FIFO_INITIALIZER(name)
 
@@ -2378,7 +2378,7 @@ struct k_lifo {
  * @req K-LIFO-002
  */
 #define K_LIFO_DEFINE(name) \
-	struct k_lifo name \
+	Z_DECL_ALIGN(struct k_lifo) name \
 		__in_section(_k_queue, static, name) = \
 		_K_LIFO_INITIALIZER(name)
 
@@ -2514,7 +2514,7 @@ __syscall int k_stack_pop(struct k_stack *stack, u32_t *data, s32_t timeout);
 #define K_STACK_DEFINE(name, stack_num_entries)                \
 	u32_t __noinit                                      \
 		_k_stack_buf_##name[stack_num_entries];        \
-	struct k_stack name                                    \
+	Z_DECL_ALIGN(struct k_stack) name                                    \
 		__in_section(_k_stack, static, name) =    \
 		_K_STACK_INITIALIZER(name, _k_stack_buf_##name, \
 				    stack_num_entries)
@@ -2949,7 +2949,7 @@ struct k_mutex {
  * @req K-MUTEX-001
  */
 #define K_MUTEX_DEFINE(name) \
-	struct k_mutex name \
+	Z_DECL_ALIGN(struct k_mutex) name \
 		__in_section(_k_mutex, static, name) = \
 		_K_MUTEX_INITIALIZER(name)
 
@@ -3150,7 +3150,7 @@ static inline unsigned int z_impl_k_sem_count_get(struct k_sem *sem)
  * @req K-SEM-002
  */
 #define K_SEM_DEFINE(name, initial_count, count_limit) \
-	struct k_sem name \
+	Z_DECL_ALIGN(struct k_sem) name \
 		__in_section(_k_sem, static, name) = \
 		Z_SEM_INITIALIZER(name, initial_count, count_limit); \
 	BUILD_ASSERT(((count_limit) != 0) && \
@@ -3240,7 +3240,7 @@ struct k_msgq_attrs {
 #define K_MSGQ_DEFINE(q_name, q_msg_size, q_max_msgs, q_align)      \
 	static char __noinit __aligned(q_align)              \
 		_k_fifo_buf_##q_name[(q_max_msgs) * (q_msg_size)];  \
-	struct k_msgq q_name                                        \
+	Z_DECL_ALIGN(struct k_msgq) q_name                                        \
 		__in_section(_k_msgq, static, q_name) =        \
 	       _K_MSGQ_INITIALIZER(q_name, _k_fifo_buf_##q_name,     \
 				  q_msg_size, q_max_msgs)
@@ -3504,7 +3504,7 @@ struct k_mbox {
  * @req K-MBOX-001
  */
 #define K_MBOX_DEFINE(name) \
-	struct k_mbox name \
+	Z_DECL_ALIGN(struct k_mbox) name \
 		__in_section(_k_mbox, static, name) = \
 		_K_MBOX_INITIALIZER(name) \
 
@@ -3707,7 +3707,7 @@ struct k_pipe {
 #define K_PIPE_DEFINE(name, pipe_buffer_size, pipe_align)		\
 	static unsigned char __noinit __aligned(pipe_align)	\
 		_k_pipe_buf_##name[pipe_buffer_size];			\
-	struct k_pipe name						\
+	Z_DECL_ALIGN(struct k_pipe) name						\
 		__in_section(_k_pipe, static, name) =			\
 		_K_PIPE_INITIALIZER(name, _k_pipe_buf_##name, pipe_buffer_size)
 
@@ -3888,7 +3888,7 @@ struct k_mem_slab {
 #define K_MEM_SLAB_DEFINE(name, slab_block_size, slab_num_blocks, slab_align) \
 	char __noinit __aligned(slab_align) \
 		_k_mem_slab_buf_##name[(slab_num_blocks) * (slab_block_size)]; \
-	struct k_mem_slab name \
+	Z_DECL_ALIGN(struct k_mem_slab) name \
 		__in_section(_k_mem_slab, static, name) = \
 		_K_MEM_SLAB_INITIALIZER(name, _k_mem_slab_buf_##name, \
 				      slab_block_size, slab_num_blocks)
@@ -4025,7 +4025,8 @@ struct k_mem_pool {
 	char __aligned(align) _mpool_buf_##name[_ALIGN4(maxsz * nmax)	\
 				  + _MPOOL_BITS_SIZE(maxsz, minsz, nmax)]; \
 	struct sys_mem_pool_lvl _mpool_lvls_##name[Z_MPOOL_LVLS(maxsz, minsz)]; \
-	struct k_mem_pool name __in_section(_k_mem_pool, static, name) = { \
+	Z_DECL_ALIGN(struct k_mem_pool) name \
+		__in_section(_k_mem_pool, static, name) = { \
 		.base = {						\
 			.buf = _mpool_buf_##name,			\
 			.max_sz = maxsz,				\
