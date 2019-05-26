@@ -323,6 +323,20 @@ void lwm2m_firmware_set_update_cb(lwm2m_engine_user_cb_t cb);
  * @return A registered callback function to receive the execute event.
  */
 lwm2m_engine_user_cb_t lwm2m_firmware_get_update_cb(void);
+
+#if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_SUPPORT)
+/**
+ * @brief Set URI of COAP-HTTP proxy for firmware pull.
+ *
+ * LwM2M clients use this function to configure the URI of the COAP-HTTP
+ * proxy if such support is enabled for firmware pull. If not null the URI
+ * will superseed LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_ADDR set through
+ * kconfig.
+ *
+ * @param[in] in_cfg_proxy_uri Proxy URI to configure
+ */
+void lwm2m_firmware_set_proxy(char *in_cfg_proxy_uri);
+#endif
 #endif
 #endif
 

@@ -38,6 +38,7 @@ static struct coap_block_context firmware_block_ctx;
 #define COAP2HTTP_PROXY_URI_PATH	"coap2http"
 
 static char proxy_uri[URI_LEN];
+static char *cfg_proxy_uri;
 #endif
 
 static void do_transmit_timeout_cb(struct lwm2m_message *msg);
@@ -394,7 +395,11 @@ static void firmware_transfer(struct k_work *work)
 	char *server_addr;
 
 #if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_SUPPORT)
-	server_addr = CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_ADDR;
+	if (cfg_proxy_uri == NULL) {
+		server_addr = CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_ADDR;
+	} else {
+		server_addr = cfg_proxy_uri;
+	}
 	if (strlen(server_addr) >= URI_LEN) {
 		LOG_ERR("Invalid Proxy URI: %s", server_addr);
 		ret = -ENOTSUP;
@@ -464,3 +469,10 @@ int lwm2m_firmware_start_transfer(char *package_uri)
 
 	return 0;
 }
+
+#if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_SUPPORT)
+void lwm2m_firmware_set_proxy(char *in_cfg_proxy_uri)
+{
+	cfg_proxy_uri = in_cfg_proxy_uri;
+}
+#endif
