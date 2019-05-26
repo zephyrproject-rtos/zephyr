@@ -35,6 +35,7 @@ zephyr_library_sources_if_kconfig(			reboot_rst_cnt.c)
 zephyr_library_sources_if_kconfig(			pcie.c)
 zephyr_library_sources_ifdef(CONFIG_LAZY_FP_SHARING	float.c)
 zephyr_library_sources_ifdef(CONFIG_X86_USERSPACE	userspace.S)
+zephyr_library_sources_ifdef(CONFIG_X86_MULTIBOOT	multiboot.c)
 
 # Last since we declare default exception handlers here
 zephyr_library_sources(fatal.c)

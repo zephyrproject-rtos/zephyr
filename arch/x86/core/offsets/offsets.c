@@ -29,6 +29,7 @@
 #include <kernel_structs.h>
 #include <swapstk.h>
 #include <mmustructs.h>
+#include <arch/x86/multiboot.h>
 
 #include <kernel_offsets.h>
 
@@ -81,5 +82,10 @@ GEN_OFFSET_SYM(NANO_ESF, eflags);
 /* size of the MMU_REGION structure. Used by linker scripts */
 
 GEN_ABSOLUTE_SYM(__MMU_REGION_SIZEOF, sizeof(struct mmu_region));
+
+/* size of struct x86_multiboot_info, used by crt0.S */
+
+GEN_ABSOLUTE_SYM(__X86_MULTIBOOT_INFO_SIZEOF,
+	sizeof(struct x86_multiboot_info));
 
 GEN_ABS_SYM_END

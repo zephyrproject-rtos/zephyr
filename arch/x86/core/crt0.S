@@ -14,6 +14,7 @@
 #include <arch/x86/asm.h>
 #include <kernel_arch_data.h>
 #include <arch/cpu.h>
+#include <arch/x86/multiboot.h>
 
 	/* exports (private APIs) */
 
@@ -139,6 +140,28 @@ gdt_ptr:
 	.balign 16,0x90
 
 SECTION_FUNC(TEXT_START, __start)
+
+#ifdef CONFIG_X86_MULTIBOOT_INFO
+	/*
+	 * If we were loaded by a multiboot-compliant loader, then EAX
+	 * contains X86_MULTIBOOT_EAX_MAGIC and EBX points to a 'struct
+	 * x86_multiboot_info' somewhere in memory that the kernel load
+	 * image doesn't claim. Since the kernel will consider such memory
+	 * "free", we must copy the contents of the struct before the kernel
+	 * decides to use that RAM for something else. However, we can't
+	 * effect the copy until after the BSS is initialized.
+	 *
+	 * EBX isn't touched until the copy is made; even function calls will
+	 * preserve it (it's callee-save in the SysV ABI). But EAX will be
+	 * clobbered, so we check for the magic now and leave a sentinel in
+	 * EBX (0) if the multiboot data isn't valid.
+	 */
+
+	cmpl $X86_MULTIBOOT_EAX_MAGIC, %eax
+	je 1f
+	xorl %ebx, %ebx
+1:
+#endif
 
 #ifdef CONFIG_BOOT_TIME_MEASUREMENT
 	/*
@@ -375,6 +398,23 @@ __csSet:
 #endif
 	lidt	z_x86_idt		/* load 32-bit operand size IDT */
 
+#if defined(CONFIG_X86_MULTIBOOT_INFO)
+	/*
+	 * If EBX isn't 0, then it points to a valid boot information
+	 * struct. Copy it to x86_multiboot_info before it's overwritten.
+	 */
+
+	testl	%ebx, %ebx
+	jz	1f
+	movl	$__X86_MULTIBOOT_INFO_SIZEOF, %ecx
+	movl	%ebx, %esi
+	movl	$x86_multiboot_info, %edi
+	cld	/* to be safe. should still be 0 from BSS clear, though */
+	rep
+	movsb
+1:
+#endif
+
 	/* Jump to C portion of kernel initialization and never return */
 
 	jmp	z_cstart
@@ -477,7 +517,7 @@ z_x86_idt:
 
 	.balign 4,0x90
 
-	.long	0x1BADB002	/* multiboot magic number */
+	.long	X86_MULTIBOOT_HEADER_MAGIC
 
 	/*
 	 * Flags = no bits are being set, specifically bit 16 is not being
@@ -494,7 +534,7 @@ z_x86_idt:
 	 * unsigned sum of zero.
 	 */
 
-	.long	-(0x1BADB002 + 0)
+	.long	-(X86_MULTIBOOT_HEADER_MAGIC + 0)
 #endif /* CONFIG_X86_MULTIBOOT */
 
 #ifdef CONFIG_SET_GDT
