@@ -8,6 +8,9 @@ toolchain:
   - xtools
 ram: 32
 flash: 512
+testing:
+  ignore_tags:
+    - userspace
 supported:
   - rtc
   - counter
