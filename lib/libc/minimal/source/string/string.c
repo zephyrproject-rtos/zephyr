@@ -7,6 +7,8 @@
  */
 
 #include <string.h>
+#include <stdint.h>
+#include <sys/types.h>
 
 /**
  *
@@ -241,12 +243,13 @@ void *memcpy(void *_MLIBC_RESTRICT d, const void *_MLIBC_RESTRICT s, size_t n)
 
 	unsigned char *d_byte = (unsigned char *)d;
 	const unsigned char *s_byte = (const unsigned char *)s;
+	const uintptr_t mask = sizeof(mem_word_t) - 1;
 
-	if ((((unsigned int)d ^ (unsigned int)s_byte) & 0x3) == 0U) {
+	if ((((uintptr_t)d ^ (uintptr_t)s_byte) & mask) == 0) {
 
 		/* do byte-sized copying until word-aligned or finished */
 
-		while (((unsigned int)d_byte) & 0x3) {
+		while (((uintptr_t)d_byte) & mask) {
 			if (n == 0) {
 				return d;
 			}
@@ -256,12 +259,12 @@ void *memcpy(void *_MLIBC_RESTRICT d, const void *_MLIBC_RESTRICT s, size_t n)
 
 		/* do word-sized copying as long as possible */
 
-		unsigned int *d_word = (unsigned int *)d_byte;
-		const unsigned int *s_word = (const unsigned int *)s_byte;
+		mem_word_t *d_word = (mem_word_t *)d_byte;
+		const mem_word_t *s_word = (const mem_word_t *)s_byte;
 
-		while (n >= sizeof(unsigned int)) {
+		while (n >= sizeof(mem_word_t)) {
 			*(d_word++) = *(s_word++);
-			n -= sizeof(unsigned int);
+			n -= sizeof(mem_word_t);
 		}
 
 		d_byte = (unsigned char *)d_word;
@@ -292,7 +295,7 @@ void *memset(void *buf, int c, size_t n)
 	unsigned char *d_byte = (unsigned char *)buf;
 	unsigned char c_byte = (unsigned char)c;
 
-	while (((unsigned int)d_byte) & 0x3) {
+	while (((uintptr_t)d_byte) & (sizeof(mem_word_t) - 1)) {
 		if (n == 0) {
 			return buf;
 		}
@@ -302,15 +305,18 @@ void *memset(void *buf, int c, size_t n)
 
 	/* do word-sized initialization as long as possible */
 
-	unsigned int *d_word = (unsigned int *)d_byte;
-	unsigned int c_word = (unsigned int)(unsigned char)c;
+	mem_word_t *d_word = (mem_word_t *)d_byte;
+	mem_word_t c_word = (mem_word_t)c_byte;
 
 	c_word |= c_word << 8;
 	c_word |= c_word << 16;
+#if Z_MEM_WORD_T_WIDTH > 32
+	c_word |= c_word << 32;
+#endif
 
-	while (n >= sizeof(unsigned int)) {
+	while (n >= sizeof(mem_word_t)) {
 		*(d_word++) = c_word;
-		n -= sizeof(unsigned int);
+		n -= sizeof(mem_word_t);
 	}
 
 	/* do byte-sized initialization until finished */
