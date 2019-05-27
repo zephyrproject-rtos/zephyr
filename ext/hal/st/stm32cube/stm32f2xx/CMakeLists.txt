@@ -43,7 +43,7 @@ zephyr_sources_ifdef(CONFIG_USE_STM32_HAL_SMARTCARD drivers/src/stm32f2xx_hal_sm
 zephyr_sources_ifdef(CONFIG_USE_STM32_HAL_SPI drivers/src/stm32f2xx_hal_spi.c)
 zephyr_sources_ifdef(CONFIG_USE_STM32_HAL_SRAM drivers/src/stm32f2xx_hal_sram.c)
 zephyr_sources_ifdef(CONFIG_USE_STM32_HAL_TIM drivers/src/stm32f2xx_hal_tim.c)
-zephyr_sources_ifdef(CONFIG_USE_STM32_HAL_TIME_EX drivers/src/stm32f2xx_hal_tim_ex.c)
+zephyr_sources_ifdef(CONFIG_USE_STM32_HAL_TIM_EX drivers/src/stm32f2xx_hal_tim_ex.c)
 zephyr_sources_ifdef(CONFIG_USE_STM32_HAL_UART drivers/src/stm32f2xx_hal_uart.c)
 zephyr_sources_ifdef(CONFIG_USE_STM32_HAL_USART drivers/src/stm32f2xx_hal_usart.c)
 zephyr_sources_ifdef(CONFIG_USE_STM32_HAL_WWDG drivers/src/stm32f2xx_hal_wwdg.c)

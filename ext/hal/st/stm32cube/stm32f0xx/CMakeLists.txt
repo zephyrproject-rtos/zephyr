@@ -37,7 +37,7 @@ zephyr_sources_ifdef(CONFIG_USE_STM32_HAL_SMBUS drivers/src/stm32f0xx_hal_smbus.
 zephyr_sources_ifdef(CONFIG_USE_STM32_HAL_SPI drivers/src/stm32f0xx_hal_spi.c)
 zephyr_sources_ifdef(CONFIG_USE_STM32_HAL_SPI_EX drivers/src/stm32f0xx_hal_spi_ex.c)
 zephyr_sources_ifdef(CONFIG_USE_STM32_HAL_TIM drivers/src/stm32f0xx_hal_tim.c)
-zephyr_sources_ifdef(CONFIG_USE_STM32_HAL_TIME_EX drivers/src/stm32f0xx_hal_tim_ex.c)
+zephyr_sources_ifdef(CONFIG_USE_STM32_HAL_TIM_EX drivers/src/stm32f0xx_hal_tim_ex.c)
 zephyr_sources_ifdef(CONFIG_USE_STM32_HAL_TSC drivers/src/stm32f0xx_hal_tsc.c)
 zephyr_sources_ifdef(CONFIG_USE_STM32_HAL_UART drivers/src/stm32f0xx_hal_uart.c)
 zephyr_sources_ifdef(CONFIG_USE_STM32_HAL_UART_EX drivers/src/stm32f0xx_hal_uart_ex.c)
@@ -59,4 +59,3 @@ zephyr_sources_ifdef(CONFIG_USE_STM32_LL_SPI drivers/src/stm32f0xx_ll_spi.c)
 zephyr_sources_ifdef(CONFIG_USE_STM32_LL_TIM drivers/src/stm32f0xx_ll_tim.c)
 zephyr_sources_ifdef(CONFIG_USE_STM32_LL_USART drivers/src/stm32f0xx_ll_usart.c)
 zephyr_sources_ifdef(CONFIG_USE_STM32_LL_UTILS drivers/src/stm32f0xx_ll_utils.c)
-
