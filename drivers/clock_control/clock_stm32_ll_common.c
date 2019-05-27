@@ -7,7 +7,6 @@
  */
 
 #include <soc.h>
-#include <soc_registers.h>
 #include <clock_control.h>
 #include <misc/util.h>
 #include <clock_control/stm32_clock_control.h>
