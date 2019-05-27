@@ -394,6 +394,7 @@ static void address_setup(void)
 
 static void test_ptp_clock_interfaces(void)
 {
+	struct device *clk_by_index;
 	struct device *clk;
 	int idx;
 
@@ -410,6 +411,11 @@ static void test_ptp_clock_interfaces(void)
 	clk = net_eth_get_ptp_clock(eth_interfaces[non_ptp_interface]);
 	zassert_is_null(clk, "Clock found for interface %p\n",
 			eth_interfaces[non_ptp_interface]);
+
+	clk_by_index = net_eth_get_ptp_clock_by_index(ptp_clocks[0]);
+	zassert_not_null(clk_by_index,
+			 "Clock not found for interface index %d\n",
+			 ptp_clocks[0]);
 }
 
 static void test_ptp_clock_iface(int idx)
@@ -504,8 +510,51 @@ static void test_ptp_clock_get_by_index_user(void)
 	zassert_equal(clk1, clk_by_index, "Invalid PTP clock 1");
 }
 
+static ZTEST_BMEM struct net_ptp_time tm;
+static ZTEST_BMEM struct net_ptp_time empty;
+
+static void test_ptp_clock_get_by_xxx(const char *who)
+{
+	struct device *clk_by_index;
+	int ret;
+
+	clk_by_index = net_eth_get_ptp_clock_by_index(ptp_clocks[0]);
+	zassert_not_null(clk_by_index, "PTP 0 not found (%s)", who);
+	zassert_equal(clk0, clk_by_index, "Invalid PTP clock 0 (%s)", who);
+
+	(void)memset(&tm, 0, sizeof(tm));
+	ptp_clock_get(clk_by_index, &tm);
+
+	ret = memcmp(&tm, &empty, sizeof(tm));
+	zassert_not_equal(ret, 0, "ptp_clock_get() failed in %s mode", who);
+}
+
+static void test_ptp_clock_get_kernel(void)
+{
+	struct device *clk;
+
+	/* Make sure that this function is really run in kernel mode by
+	 * calling a function that will not work in user mode.
+	 */
+	clk = net_eth_get_ptp_clock(eth_interfaces[0]);
+
+	test_ptp_clock_get_by_xxx("kernel");
+}
+
+static void test_ptp_clock_get_user(void)
+{
+	test_ptp_clock_get_by_xxx("user");
+}
+
 void test_main(void)
 {
+	struct device *clk;
+
+	clk = device_get_binding(PTP_CLOCK_NAME);
+	if (clk != NULL) {
+		k_object_access_grant(clk, k_current_get());
+	}
+
 	ztest_test_suite(ptp_clock_test,
 			 ztest_unit_test(check_interfaces),
 			 ztest_unit_test(address_setup),
@@ -513,7 +562,9 @@ void test_main(void)
 			 ztest_unit_test(test_ptp_clock_iface_1),
 			 ztest_unit_test(test_ptp_clock_iface_2),
 			 ztest_unit_test(test_ptp_clock_get_by_index),
-			 ztest_user_unit_test(test_ptp_clock_get_by_index_user)
+			 ztest_user_unit_test(test_ptp_clock_get_by_index_user),
+			 ztest_unit_test(test_ptp_clock_get_kernel),
+			 ztest_user_unit_test(test_ptp_clock_get_user)
 			 );
 
 	ztest_run_test_suite(ptp_clock_test);
