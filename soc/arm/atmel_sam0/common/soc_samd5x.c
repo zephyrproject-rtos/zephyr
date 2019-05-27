@@ -321,12 +321,12 @@ static void soc_sam0_fdpll0_init(void)
 	 */
 
 	mul = DT_FIXED_CLOCK_FDPLL0_CLOCK_FREQUENCY;
-	mul <<= 4U;
+	mul <<= 5U;
 	mul += in_frequency / 2U;
 	mul /= in_frequency;
 
-	u32_t ldr = mul >> 4U;
-	u32_t ldrfrac = mul & 0xFU;
+	u32_t ldr = mul >> 5U;
+	u32_t ldrfrac = mul & 0x1FU;
 
 	reg |= OSCCTRL_DPLLCTRLB_WUF | OSCCTRL_DPLLCTRLB_LBYPASS;
 
