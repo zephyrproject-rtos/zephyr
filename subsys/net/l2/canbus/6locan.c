@@ -172,12 +172,17 @@ static u16_t canbus_get_lladdr(struct net_linkaddr *net_lladdr)
 
 static u16_t canbus_get_src_lladdr(struct net_pkt *pkt)
 {
-	return canbus_get_lladdr(net_pkt_lladdr_src(pkt));
+	return net_pkt_lladdr_src(pkt)->type == NET_LINK_CANBUS ?
+		canbus_get_lladdr(net_pkt_lladdr_src(pkt)) :
+		NET_CAN_ETH_TRANSLATOR_ADDR;
 }
 
 static u16_t canbus_get_dest_lladdr(struct net_pkt *pkt)
 {
-	return canbus_get_lladdr(net_pkt_lladdr_dst(pkt));
+	return net_pkt_lladdr_dst(pkt)->type == NET_LINK_CANBUS &&
+	       net_pkt_lladdr_dst(pkt)->len == sizeof(struct net_can_lladdr) ?
+		canbus_get_lladdr(net_pkt_lladdr_dst(pkt)) :
+		NET_CAN_ETH_TRANSLATOR_ADDR;
 }
 
 static inline bool canbus_dest_is_mcast(struct net_pkt *pkt)
@@ -185,6 +190,18 @@ static inline bool canbus_dest_is_mcast(struct net_pkt *pkt)
 	u16_t lladdr_be = UNALIGNED_GET((u16_t *)net_pkt_lladdr_dst(pkt)->addr);
 
 	return (sys_be16_to_cpu(lladdr_be) & CAN_NET_IF_IS_MCAST_BIT);
+}
+
+static bool canbus_src_is_translator(struct net_pkt *pkt)
+{
+	return ((get_src_lladdr(pkt) & CAN_NET_IF_ADDR_MASK) ==
+		NET_CAN_ETH_TRANSLATOR_ADDR);
+}
+
+static bool canbus_dest_is_translator(struct net_pkt *pkt)
+{
+	return (net_pkt_lladdr_dst(pkt)->type == NET_LINK_ETHERNET ||
+		net_pkt_lladdr_dst(pkt)->len == sizeof(struct net_eth_addr));
 }
 
 static size_t canbus_total_lladdr_len(struct net_pkt *pkt)
@@ -208,11 +225,19 @@ static inline void canbus_cpy_lladdr(struct net_pkt *dst, struct net_pkt *src)
 	lladdr = net_pkt_lladdr_src(dst);
 	lladdr->addr = net_pkt_cursor_get_pos(dst);
 
-
-	net_pkt_write(dst, net_pkt_lladdr_src(src)->addr,
-		      sizeof(struct net_canbus_lladdr));
-	lladdr->len = sizeof(struct net_canbus_lladdr);
-	lladdr->type = NET_LINK_CANBUS;
+	if (src_is_translator(src)) {
+		net_pkt_copy(dst, src, sizeof(struct net_eth_addr));
+		lladdr->len = sizeof(struct net_eth_addr);
+		lladdr->type = NET_LINK_ETHERNET;
+		NET_DBG("Inline MAC: %02x:%02x:%02x:%02x:%02x:%02x",
+			lladdr->addr[0], lladdr->addr[1], lladdr->addr[2],
+			lladdr->addr[3], lladdr->addr[4], lladdr->addr[5]);
+	} else {
+		net_pkt_write(dst, net_pkt_lladdr_src(src)->addr,
+			      sizeof(struct net_canbus_lladdr));
+		lladdr->len = sizeof(struct net_canbus_lladdr);
+		lladdr->type = NET_LINK_CANBUS;
+	}
 }
 
 
@@ -310,6 +335,7 @@ static enum net_verdict canbus_finish_pkt(struct net_pkt *pkt)
 	/* Pull the ll addresses to ignore them in upper layers */
 	net_buf_pull(pkt->buffer, net_pkt_lladdr_dst(pkt)->len +
 		     net_pkt_lladdr_src(pkt)->len);
+
 
 	net_pkt_cursor_init(pkt);
 	if (!net_6lo_uncompress(pkt)) {
@@ -812,6 +838,7 @@ static inline int canbus_send_ff(struct net_pkt *pkt, size_t len, bool mcast,
 {
 	struct device *net_can_dev = net_if_get_device(pkt->iface);
 	const struct net_can_api *api = net_can_dev->driver_api;
+	struct net_linkaddr *lladdr_inline;
 	struct zcan_frame frame;
 	int ret, index = 0;
 
@@ -828,6 +855,10 @@ static inline int canbus_send_ff(struct net_pkt *pkt, size_t len, bool mcast,
 			frame.ext_id, len, pkt->canbus_tx_ctx);
 	}
 
+	if (!mcast && canbus_dest_is_translator(pkt)) {
+		len += net_pkt_lladdr_dst(pkt)->len;
+	}
+
 	frame.data[index++] = NET_CAN_PCI_TYPE_FF | (len >> 8);
 	frame.data[index++] = len & 0xFF;
 
@@ -835,6 +866,13 @@ static inline int canbus_send_ff(struct net_pkt *pkt, size_t len, bool mcast,
 	 * alltough it's not part of the FF frame
 	 */
 	pkt->canbus_tx_ctx->sn = 1;
+
+	if (!mcast && canbus_dest_is_translator(pkt)) {
+		lladdr_inline = net_pkt_lladdr_dst(pkt);
+		memcpy(&frame.data[index], lladdr_inline->addr,
+		       lladdr_inline->len);
+		index += lladdr_inline->len;
+	}
 
 	net_pkt_read(pkt, &frame.data[index], NET_CAN_DL - index);
 	pkt->canbus_tx_ctx->rem_len -= NET_CAN_DL - index;
@@ -856,12 +894,22 @@ static inline int canbus_send_single_frame(struct net_pkt *pkt, size_t len,
 	const struct net_can_api *api = net_can_dev->driver_api;
 	int index = 0;
 	struct zcan_frame frame;
+	struct net_linkaddr *lladdr_dest;
 	int ret;
 
 	canbus_set_frame_addr_pkt(&frame, pkt, dest_addr, mcast);
 
 	frame.data[index++] = NET_CAN_PCI_TYPE_SF;
 	frame.data[index++] = len;
+
+	NET_ASSERT((len + (!mcast && canbus_dest_is_translator(pkt)) ?
+		    net_pkt_lladdr_dst(pkt)->len : 0) <= NET_CAN_DL - 1);
+
+	if (!mcast && canbus_dest_is_translator(pkt)) {
+		lladdr_dest = net_pkt_lladdr_dst(pkt);
+		memcpy(&frame.data[index], lladdr_dest->addr, lladdr_dest->len);
+		index += lladdr_dest->len;
+	}
 
 	net_pkt_read(pkt, &frame.data[index], len);
 
@@ -945,7 +993,7 @@ static int canbus_send(struct net_if *iface, struct net_pkt *pkt)
 {
 	int ret = 0;
 	int comp_len;
-	size_t pkt_len;
+	size_t pkt_len, inline_lladdr_len;
 	struct net_canbus_lladdr dest_addr;
 	bool mcast;
 
@@ -975,7 +1023,10 @@ static int canbus_send(struct net_if *iface, struct net_pkt *pkt)
 	NET_DBG("Send CAN frame to 0x%04x%s", dest_addr.addr,
 		mcast ? " (mcast)" : "");
 
-	if ((pkt_len) > (NET_CAN_DL - 1)) {
+	inline_lladdr_len = (!mcast && canbus_dest_is_translator(pkt)) ?
+			    net_pkt_lladdr_dst(pkt)->len : 0;
+
+	if ((pkt_len + inline_lladdr_len) > (NET_CAN_DL - 1)) {
 		k_sem_take(&l2_ctx.tx_sem, K_FOREVER);
 		ret = canbus_send_multiple_frames(pkt, pkt_len, mcast,
 						  &dest_addr);
