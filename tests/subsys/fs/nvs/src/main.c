@@ -78,33 +78,39 @@ void test_nvs_init(void)
 	zassert_true(err == 0,  "nvs_init call failure: %d", err);
 }
 
-void test_nvs_write(void)
+static void execute_long_pattern_write(u16_t id)
 {
-	int err;
 	char rd_buf[512];
 	char wr_buf[512];
 	char pattern[] = {0xDE, 0xAD, 0xBE, 0xEF};
 	size_t len;
 
-	err = nvs_init(&fs, DT_FLASH_DEV_NAME);
-	zassert_true(err == 0,  "nvs_init call failure: %d", err);
-
-	err = nvs_read(&fs, TEST_DATA_ID, rd_buf, sizeof(rd_buf));
-	zassert_true(err == -ENOENT,  "nvs_read unexpected failure: %d", err);
+	len = nvs_read(&fs, id, rd_buf, sizeof(rd_buf));
+	zassert_true(len == -ENOENT,  "nvs_read unexpected failure: %d", len);
 
 	BUILD_ASSERT((sizeof(wr_buf) % sizeof(pattern)) == 0);
 	for (int i = 0; i < sizeof(wr_buf); i += sizeof(pattern)) {
 		memcpy(wr_buf + i, pattern, sizeof(pattern));
 	}
 
-	len = nvs_write(&fs, TEST_DATA_ID, wr_buf, sizeof(wr_buf));
+	len = nvs_write(&fs, id, wr_buf, sizeof(wr_buf));
 	zassert_true(len == sizeof(wr_buf), "nvs_write failed: %d", len);
 
-	len = nvs_read(&fs, TEST_DATA_ID, rd_buf, sizeof(rd_buf));
+	len = nvs_read(&fs, id, rd_buf, sizeof(rd_buf));
 	zassert_true(len == sizeof(rd_buf),  "nvs_read unexpected failure: %d",
 			len);
 	zassert_mem_equal(wr_buf, rd_buf, sizeof(rd_buf),
 			"RD buff should be equal to the WR buff");
+}
+
+void test_nvs_write(void)
+{
+	int err;
+
+	err = nvs_init(&fs, DT_FLASH_DEV_NAME);
+	zassert_true(err == 0,  "nvs_init call failure: %d", err);
+
+	execute_long_pattern_write(TEST_DATA_ID);
 }
 
 static int flash_sim_write_calls_find(struct stats_hdr *hdr, void *arg,
@@ -379,6 +385,105 @@ void test_nvs_gc_3sectors(void)
 	check_content(max_id, &fs);
 }
 
+static int flash_sim_erase_calls_find(struct stats_hdr *hdr, void *arg,
+				      const char *name, uint16_t off)
+{
+	if (!strcmp(name, "flash_erase_calls")) {
+		u32_t **flash_erase_stat = (u32_t **) arg;
+		*flash_erase_stat = (u32_t *)((u8_t *)hdr + off);
+	}
+
+	return 0;
+}
+
+static int flash_sim_max_erase_calls_find(struct stats_hdr *hdr, void *arg,
+					  const char *name, uint16_t off)
+{
+	if (!strcmp(name, "max_erase_calls")) {
+		u32_t **max_erase_calls = (u32_t **) arg;
+		*max_erase_calls = (u32_t *)((u8_t *)hdr + off);
+	}
+
+	return 0;
+}
+
+static int flash_sim_max_len_find(struct stats_hdr *hdr, void *arg,
+				  const char *name, uint16_t off)
+{
+	if (!strcmp(name, "max_len")) {
+		u32_t **max_len = (u32_t **) arg;
+		*max_len = (u32_t *)((u8_t *)hdr + off);
+	}
+
+	return 0;
+}
+
+void test_nvs_corrupted_sector_close_operation(void)
+{
+	int err;
+	int len;
+	u8_t buf[32];
+	u32_t *flash_write_stat;
+	u32_t *flash_erase_stat;
+	u32_t *flash_max_write_calls;
+	u32_t *flash_max_erase_calls;
+	u32_t *flash_max_len;
+
+	const u16_t max_id = 10;
+	/* 25th write will trigger GC. */
+	const u16_t max_writes = 26;
+
+	/* Get the address of simulator parameters. */
+	stats_walk(sim_thresholds, flash_sim_max_write_calls_find,
+		   &flash_max_write_calls);
+	stats_walk(sim_thresholds, flash_sim_max_erase_calls_find,
+		   &flash_max_erase_calls);
+	stats_walk(sim_thresholds, flash_sim_max_len_find,
+		   &flash_max_len);
+	stats_walk(sim_stats, flash_sim_write_calls_find, &flash_write_stat);
+	stats_walk(sim_stats, flash_sim_erase_calls_find, &flash_erase_stat);
+
+	err = nvs_init(&fs, DT_FLASH_DEV_NAME);
+	zassert_true(err == 0,  "nvs_init call failure: %d", err);
+
+	for (u16_t i = 0; i < max_writes; i++) {
+		u8_t id = (i % max_id);
+		u8_t id_data = id + max_id * (i / max_id);
+
+		memset(buf, id_data, sizeof(buf));
+
+		if (i == max_writes - 1) {
+			/* Reset stats. */
+			*flash_write_stat = 0;
+			*flash_erase_stat = 0;
+
+			/* Block write calls and simulate power down during
+			 * sector closing operation, so only a part of a NVS
+			 * closing ate will be written.
+			 */
+			*flash_max_write_calls = 1;
+			*flash_max_erase_calls = 1;
+			*flash_max_len = 4;
+		}
+
+		len = nvs_write(&fs, id, buf, sizeof(buf));
+		zassert_true(len == sizeof(buf), "nvs_write failed: %d", len);
+	}
+
+	/* Make the flash simulator functional again. */
+	*flash_max_write_calls = 0;
+	*flash_max_erase_calls = 0;
+	*flash_max_len = 0;
+
+	err = nvs_init(&fs, DT_FLASH_DEV_NAME);
+	zassert_true(err == 0,  "nvs_init call failure: %d", err);
+
+	check_content(max_id, &fs);
+
+	/* Ensure that the NVS is able to store new content. */
+	execute_long_pattern_write(max_id);
+}
+
 void test_main(void)
 {
 	ztest_test_suite(test_nvs,
@@ -388,11 +493,14 @@ void test_main(void)
 				 teardown),
 			 ztest_unit_test_setup_teardown(
 				 test_nvs_corrupted_write, setup, teardown),
-			ztest_unit_test_setup_teardown(
+			 ztest_unit_test_setup_teardown(
 				 test_nvs_gc, setup, teardown),
 			 ztest_unit_test_setup_teardown(
-				 test_nvs_gc_3sectors, setup, teardown)
-			 );
+				 test_nvs_gc_3sectors, setup, teardown),
+			 ztest_unit_test_setup_teardown(
+				 test_nvs_corrupted_sector_close_operation,
+				 setup, teardown)
+			);
 
 	ztest_run_test_suite(test_nvs);
 }
