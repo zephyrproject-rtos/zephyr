@@ -98,6 +98,38 @@ struct zio_chan_desc;
 #define ZIO_GET_CHANNEL(channel_idx,attribute_idx) \
 #define ZIO_DEFINE_API() struct zio_dev_api api;
 
+
+/**
+ * @brief Get the zio channel from the channel idx 
+ *
+ * @param dev Pointer to the ZIO device
+ * @param channel_idx Index of the channel
+ */
+#define ZIO_GET_CHANNEL(dev, channel_idx) \
+	({ \
+		struct zio_chan_desc* channel = &dev->driver_data.ZIO_CHANNEL(channel_idx).channel; 	\
+		channel; \
+	})
+
+/**
+ * @brief Get the zio channel attribute from the channel idx and attribute idx 
+ *
+ * @param dev Pointer to the ZIO device
+ * @param channel_idx Index of the channel
+ * @param attribute_idx Index of the attribute
+ */
+#define ZIO_GET_CHANNEL_ATTRIBUTE(dev, channel_idx, attribute_idx) \
+	({ \
+		struct zio_attr_desc* attr = &dev->driver_data.ZIO_CHANNEL(channel_idx).ZIO_ATTR(attribute_idx); 	\
+		attr; \
+	})
+
+#define ZIO_GET_DEV_ATTRIBUTE(dev, attribute_idx) \
+	({ \
+		struct zio_attr_desc* attr = &dev->driver_data.ZIO_ATTR(attribute_idx); 	\
+		attr; \
+	})
+
 /**
  * @brief Pre-defined channel types with the ability to extend by a driver
  * implementation.
@@ -108,7 +140,7 @@ struct zio_chan_desc;
  * Example: #define MY_CHAN_TYPE (ZIO_CHAN_TYPES+1)
  */
 enum zio_chan_type {
-	ZIO_NONE = 0,
+	ZIO_DEVICE = 0,
 	
 	ZIO_VOLTAGE,
 
@@ -366,23 +398,19 @@ struct zio_dev_api {
 #define zio_dev_set_attr(dev, attr_idx, val) \
 	({ \
 		int res = 0; \
-		const struct zio_dev_api *api = dev->driver_api; \
-		zio_attr_desc* attr = api->attributes[attr_idx] \
+		zio_attr_desc* attr = zio_dev_attribute(dev,attr_idx); \
 		if (!attr->set_attr) { \
 			res = -ENOTSUP; \
 		} else { \
 			struct zio_variant data = zio_variant_wrap(val); \
-			res = api->set_attr(dev, attr_idx, data); \
+			res = attr->set_attr(dev, attr_idx, data); \
 		} \
 		res; \
 	})
 
 
-#define zio_dev_get_channel(dev, channel_idx, val) \
-	({ \
-		struct zio_chan_desc* channel = &dev->driver_data->ZIO_CHANNEL(channel_idx).channel; 	\
-		channel; \
-	})
+
+
 
 /**
  * @brief Get a device attribute value
