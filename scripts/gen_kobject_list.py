@@ -111,6 +111,7 @@ subsystems = [
     "spi_driver_api",
     "uart_driver_api",
     "can_driver_api",
+    "ptp_clock_driver_api",
 ]
 
 
