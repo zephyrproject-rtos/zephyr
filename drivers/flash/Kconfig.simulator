@@ -16,6 +16,15 @@ menuconfig FLASH_SIMULATOR
 
 if FLASH_SIMULATOR
 
+config FLASH_SIMULATOR_UNALIGNED_READ
+	bool
+	prompt "Allow read access to be unaligned"
+	default y
+	help
+	 If selected, the reading operation does not check if access is aligned.
+	 Disable this option only if you want to simulate
+	 a specific FLASH interface that requires aligned read access.
+
 config FLASH_SIMULATOR_DOUBLE_WRITES
 	bool
 	prompt "Allow program units to be programmed more than once"
