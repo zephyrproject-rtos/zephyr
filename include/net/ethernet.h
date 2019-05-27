@@ -13,6 +13,7 @@
 #ifndef ZEPHYR_INCLUDE_NET_ETHERNET_H_
 #define ZEPHYR_INCLUDE_NET_ETHERNET_H_
 
+#include <kernel.h>
 #include <zephyr/types.h>
 #include <stdbool.h>
 #include <atomic.h>
@@ -691,16 +692,7 @@ static inline struct device *net_eth_get_ptp_clock(struct net_if *iface)
  * @return Pointer to PTP clock if found, NULL if not found or if this
  * ethernet interface index does not support PTP.
  */
-#if defined(CONFIG_PTP_CLOCK)
-struct device *net_eth_get_ptp_clock_by_index(int index);
-#else
-static inline struct device *net_eth_get_ptp_clock_by_index(int index)
-{
-	ARG_UNUSED(index);
-
-	return NULL;
-}
-#endif
+__syscall struct device *net_eth_get_ptp_clock_by_index(int index);
 
 /**
  * @brief Return gPTP port number attached to this interface.
@@ -729,6 +721,8 @@ static inline int net_eth_get_ptp_port(struct net_if *iface)
 #if defined(CONFIG_NET_GPTP)
 void net_eth_set_ptp_port(struct net_if *iface, int port);
 #endif /* CONFIG_NET_GPTP */
+
+#include <syscalls/ethernet.h>
 
 #ifdef __cplusplus
 }

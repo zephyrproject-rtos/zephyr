@@ -60,6 +60,7 @@ static struct in6_addr ll_addr = { { { 0xfe, 0x80, 0x43, 0xb8, 0, 0, 0, 0,
 /* Keep track of all ethernet interfaces */
 static struct net_if *eth_interfaces[MAX_NUM_INTERFACES];
 
+static ZTEST_BMEM int ptp_clocks[MAX_NUM_INTERFACES - 1];
 static int ptp_interface[MAX_NUM_INTERFACES - 1];
 static int non_ptp_interface;
 static bool test_failed;
@@ -298,7 +299,9 @@ static void iface_cb(struct net_if *iface, void *user_data)
 		if (!clk) {
 			non_ptp_interface = ud->eth_if_count;
 		} else {
-			ptp_interface[ptp_iface_idx++] = ud->eth_if_count;
+			ptp_interface[ptp_iface_idx] = ud->eth_if_count;
+			ptp_clocks[ptp_iface_idx] = net_if_get_by_iface(iface);
+			ptp_iface_idx++;
 		}
 
 		eth_interfaces[ud->eth_if_count++] = iface;
@@ -455,6 +458,52 @@ static void test_ptp_clock_iface_2(void)
 	test_ptp_clock_iface(ptp_interface[1]);
 }
 
+static ZTEST_BMEM struct device *clk0;
+static ZTEST_BMEM struct device *clk1;
+
+static void test_ptp_clock_get_by_index(void)
+{
+	struct device *clk, *clk_by_index;
+	int idx;
+
+	idx = ptp_interface[0];
+
+	clk = net_eth_get_ptp_clock(eth_interfaces[idx]);
+	zassert_not_null(clk, "PTP 0 not found");
+
+	clk0 = clk;
+
+	clk_by_index = net_eth_get_ptp_clock_by_index(ptp_clocks[0]);
+	zassert_not_null(clk_by_index, "PTP 0 not found");
+
+	zassert_equal(clk, clk_by_index, "Interface index %d invalid", idx);
+
+	idx = ptp_interface[1];
+
+	clk = net_eth_get_ptp_clock(eth_interfaces[idx]);
+	zassert_not_null(clk, "PTP 1 not found");
+
+	clk1 = clk;
+
+	clk_by_index = net_eth_get_ptp_clock_by_index(ptp_clocks[1]);
+	zassert_not_null(clk_by_index, "PTP 1 not found");
+
+	zassert_equal(clk, clk_by_index, "Interface index %d invalid", idx);
+}
+
+static void test_ptp_clock_get_by_index_user(void)
+{
+	struct device *clk_by_index;
+
+	clk_by_index = net_eth_get_ptp_clock_by_index(ptp_clocks[0]);
+	zassert_not_null(clk_by_index, "PTP 0 not found");
+	zassert_equal(clk0, clk_by_index, "Invalid PTP clock 0");
+
+	clk_by_index = net_eth_get_ptp_clock_by_index(ptp_clocks[1]);
+	zassert_not_null(clk_by_index, "PTP 1 not found");
+	zassert_equal(clk1, clk_by_index, "Invalid PTP clock 1");
+}
+
 void test_main(void)
 {
 	ztest_test_suite(ptp_clock_test,
@@ -462,7 +511,9 @@ void test_main(void)
 			 ztest_unit_test(address_setup),
 			 ztest_unit_test(test_ptp_clock_interfaces),
 			 ztest_unit_test(test_ptp_clock_iface_1),
-			 ztest_unit_test(test_ptp_clock_iface_2)
+			 ztest_unit_test(test_ptp_clock_iface_2),
+			 ztest_unit_test(test_ptp_clock_get_by_index),
+			 ztest_user_unit_test(test_ptp_clock_get_by_index_user)
 			 );
 
 	ztest_run_test_suite(ptp_clock_test);
