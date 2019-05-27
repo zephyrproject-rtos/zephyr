@@ -12,6 +12,7 @@
 #include <stdarg.h>
 #include <string.h>
 #include <ctype.h>
+#include <sys/types.h>
 
 #ifndef MAXFLD
 #define	MAXFLD	200
@@ -55,12 +56,12 @@ static int _reverse_and_pad(char *start, char *end, int minlen)
  * using the digit characters 0-9a-z (i.e. base>36 will start writing
  * odd bytes), padding with leading zeros up to the minimum length.
  */
-static int _to_x(char *buf, uint32_t n, int base, int minlen)
+static int _to_x(char *buf, unsigned long n, unsigned int base, int minlen)
 {
 	char *buf0 = buf;
 
 	do {
-		int d = n % base;
+		unsigned int d = n % base;
 
 		n /= base;
 		*buf++ = '0' + d + (d > 9 ? ('a' - '0' - 10) : 0);
@@ -68,7 +69,7 @@ static int _to_x(char *buf, uint32_t n, int base, int minlen)
 	return _reverse_and_pad(buf0, buf, minlen);
 }
 
-static int _to_hex(char *buf, uint32_t value,
+static int _to_hex(char *buf, unsigned long value,
 		   int alt_form, int precision, int prefix)
 {
 	int len;
@@ -87,7 +88,8 @@ static int _to_hex(char *buf, uint32_t value,
 	return len + (buf - buf0);
 }
 
-static int _to_octal(char *buf, uint32_t value, int alt_form, int precision)
+static int _to_octal(char *buf, unsigned long value,
+		     int alt_form, int precision)
 {
 	char *buf0 = buf;
 
@@ -102,24 +104,22 @@ static int _to_octal(char *buf, uint32_t value, int alt_form, int precision)
 	return (buf - buf0) + _to_x(buf, value, 8, precision);
 }
 
-static int _to_udec(char *buf, uint32_t value, int precision)
+static int _to_udec(char *buf, unsigned long value, int precision)
 {
 	return _to_x(buf, value, 10, precision);
 }
 
-static int _to_dec(char *buf, int32_t value, int fplus, int fspace, int precision)
+static int _to_dec(char *buf, long value, int fplus, int fspace, int precision)
 {
 	char *start = buf;
 
-#if (MAXFLD < 10)
+#if (MAXFLD < (defined(CONFIG_64BIT) ? 20 : 10))
   #error buffer size MAXFLD is too small
 #endif
 
 	if (value < 0) {
 		*buf++ = '-';
-		if (value != 0x80000000) {
-			value = -value;
-		}
+		value = -value;
 	} else if (fplus) {
 		*buf++ = '+';
 	} else if (fspace) {
@@ -128,7 +128,7 @@ static int _to_dec(char *buf, int32_t value, int fplus, int fspace, int precisio
 		/* unreachable */
 	}
 
-	return (buf + _to_udec(buf, (uint32_t) value, precision)) - start;
+	return (buf + _to_udec(buf, value, precision)) - start;
 }
 
 static	void _rlrshift(uint64_t *v)
@@ -437,7 +437,7 @@ int z_prf(int (*func)(), void *dest, char *format, va_list vargs)
 {
 	/*
 	 * Due the fact that buffer is passed to functions in this file,
-	 * they assume that it's size if MAXFLD + 1. In need of change
+	 * they assume that its size is MAXFLD + 1. In need of change
 	 * the buffer size, either MAXFLD should be changed or the change
 	 * has to be propagated across the file
 	 */
@@ -455,10 +455,8 @@ int z_prf(int (*func)(), void *dest, char *format, va_list vargs)
 	int				precision;
 	int				prefix;
 	int				width;
+	long			val;
 	char			*cptr_temp;
-	int32_t			*int32ptr_temp;
-	int32_t			int32_temp;
-	uint32_t			uint32_temp;
 	uint64_t			double_temp;
 
 	count = 0;
@@ -505,7 +503,7 @@ int z_prf(int (*func)(), void *dest, char *format, va_list vargs)
 
 			if (c == '*') {
 				/* Is the width a parameter? */
-				width = (int32_t) va_arg(vargs, int32_t);
+				width = va_arg(vargs, int);
 				if (width < 0) {
 					fminus = true;
 					width = -width;
@@ -531,8 +529,7 @@ int z_prf(int (*func)(), void *dest, char *format, va_list vargs)
 			if (c == '.') {
 				c = *format++;
 				if (c == '*') {
-					precision = (int32_t)
-					va_arg(vargs, int32_t);
+					precision = va_arg(vargs, int);
 				} else {
 					precision = _atoi(&format);
 				}
@@ -545,34 +542,23 @@ int z_prf(int (*func)(), void *dest, char *format, va_list vargs)
 			}
 
 			/*
-			 * This implementation only checks that the following format
-			 * specifiers are followed by an appropriate type:
+			 * This implementation only supports the following
+			 * length modifiers:
 			 *    h: short
 			 *    l: long
-			 *    L: long double
 			 *    z: size_t or ssize_t
-			 * No further special processing is done for them.
 			 */
-
-			if (strchr("hlLz", c) != NULL) {
+			i = 0;
+			if (strchr("hlz", c) != NULL) {
 				i = c;
 				c = *format++;
-				/*
-				 * Here there was a switch() block
-				 * which was doing nothing useful, I
-				 * am still puzzled at why it was left
-				 * over. Maybe before it contained
-				 * stuff that was needed, but in its
-				 * current form, it was being
-				 * optimized out.
-				 */
 			}
 
 			need_justifying = false;
 			prefix = 0;
 			switch (c) {
 			case 'c':
-				buf[0] = (char) ((int32_t) va_arg(vargs, int32_t));
+				buf[0] = va_arg(vargs, int);
 				buf[1] = '\0';
 				need_justifying = true;
 				c = 1;
@@ -580,9 +566,20 @@ int z_prf(int (*func)(), void *dest, char *format, va_list vargs)
 
 			case 'd':
 			case 'i':
-				int32_temp = (int32_t) va_arg(vargs, int32_t);
-				c = _to_dec(buf, int32_temp, fplus, fspace, precision);
-				if (fplus || fspace || (int32_temp < 0)) {
+				switch (i) {
+				case 'l':
+					val = va_arg(vargs, long);
+					break;
+				case 'z':
+					val = va_arg(vargs, ssize_t);
+					break;
+				case 'h':
+				default:
+					val = va_arg(vargs, int);
+					break;
+				}
+				c = _to_dec(buf, val, fplus, fspace, precision);
+				if (fplus || fspace || val < 0) {
 					prefix = 1;
 				}
 				need_justifying = true;
@@ -626,22 +623,25 @@ int z_prf(int (*func)(), void *dest, char *format, va_list vargs)
 				break;
 
 			case 'n':
-				int32ptr_temp = (int32_t *)va_arg(vargs, int32_t *);
-				*int32ptr_temp = count;
-				break;
-
-			case 'o':
-				uint32_temp = (uint32_t) va_arg(vargs, uint32_t);
-				c = _to_octal(buf, uint32_temp, falt, precision);
-				need_justifying = true;
-				if (precision != -1) {
-					pad = ' ';
+				switch (i) {
+				case 'h':
+					*va_arg(vargs, short *) = count;
+					break;
+				case 'l':
+					*va_arg(vargs, long *) = count;
+					break;
+				case 'z':
+					*va_arg(vargs, ssize_t *) = count;
+					break;
+				default:
+					*va_arg(vargs, int *) = count;
+					break;
 				}
 				break;
 
 			case 'p':
-				uint32_temp = (uint32_t) va_arg(vargs, uint32_t);
-				c = _to_hex(buf, uint32_temp, true, 8, (int) 'x');
+				val = (uintptr_t) va_arg(vargs, void *);
+				c = _to_hex(buf, val, true, 2*sizeof(void *), 'x');
 				need_justifying = true;
 				if (precision != -1) {
 					pad = ' ';
@@ -649,7 +649,7 @@ int z_prf(int (*func)(), void *dest, char *format, va_list vargs)
 				break;
 
 			case 's':
-				cptr_temp = (char *) va_arg(vargs, char *);
+				cptr_temp = va_arg(vargs, char *);
 				/* Get the string length */
 				for (c = 0; c < MAXFLD; c++) {
 					if (cptr_temp[c] == '\0') {
@@ -665,21 +665,37 @@ int z_prf(int (*func)(), void *dest, char *format, va_list vargs)
 				}
 				break;
 
-			case 'u':
-				uint32_temp = (uint32_t) va_arg(vargs, uint32_t);
-				c = _to_udec(buf, uint32_temp, precision);
 				need_justifying = true;
 				if (precision != -1) {
 					pad = ' ';
 				}
 				break;
 
+			case 'o':
+			case 'u':
 			case 'x':
 			case 'X':
-				uint32_temp = (uint32_t) va_arg(vargs, uint32_t);
-				c = _to_hex(buf, uint32_temp, falt, precision, c);
-				if (falt) {
-					prefix = 2;
+				switch (i) {
+				case 'l':
+					val = va_arg(vargs, unsigned long);
+					break;
+				case 'z':
+					val = va_arg(vargs, size_t);
+					break;
+				case 'h':
+				default:
+					val = va_arg(vargs, unsigned int);
+					break;
+				}
+				if (c == 'o') {
+					c = _to_octal(buf, val, falt, precision);
+				} else if (c == 'u') {
+					c = _to_udec(buf, val, precision);
+				} else {
+					c = _to_hex(buf, val, falt, precision, c);
+					if (falt) {
+						prefix = 2;
+					}
 				}
 				need_justifying = true;
 				if (precision != -1) {
