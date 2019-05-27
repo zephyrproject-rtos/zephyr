@@ -671,7 +671,16 @@ int net_eth_promisc_mode(struct net_if *iface, bool enable);
  * @return Pointer to PTP clock if found, NULL if not found or if this
  * ethernet interface does not support PTP.
  */
+#if defined(CONFIG_PTP_CLOCK)
 struct device *net_eth_get_ptp_clock(struct net_if *iface);
+#else
+static inline struct device *net_eth_get_ptp_clock(struct net_if *iface)
+{
+	ARG_UNUSED(iface);
+
+	return NULL;
+}
+#endif
 
 /**
  * @brief Return gPTP port number attached to this interface.
