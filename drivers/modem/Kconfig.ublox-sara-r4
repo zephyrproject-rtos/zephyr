@@ -17,6 +17,12 @@ config MODEM_UBLOX_SARA_R4
 
 if MODEM_UBLOX_SARA_R4
 
+config MODEM_UBLOX_SARA_U2
+	bool "u-blox SARA-U2"
+	default n
+	help
+	  Enable support for SARA-U2 modems instead of SARA-R4.
+
 config MODEM_UBLOX_SARA_R4_RX_STACK_SIZE
 	int "Stack size for the u-blox SARA-R4 modem driver RX thread"
 	default 1028

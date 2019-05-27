@@ -58,6 +58,9 @@ struct mdm_control_pinconfig {
 enum mdm_control_pins {
 	MDM_POWER = 0,
 	MDM_RESET,
+#if defined(DT_UBLOX_SARA_R4_0_MDM_VINT_GPIOS_CONTROLLER)
+	MDM_VINT,
+#endif
 	MAX_MDM_CONTROL_PINS,
 };
 
@@ -69,6 +72,12 @@ static const struct mdm_control_pinconfig pinconfig[] = {
 	/* MDM_RESET */
 	PINCONFIG(DT_UBLOX_SARA_R4_0_MDM_RESET_GPIOS_CONTROLLER,
 		  DT_UBLOX_SARA_R4_0_MDM_RESET_GPIOS_PIN),
+
+#if defined(DT_UBLOX_SARA_R4_0_MDM_VINT_GPIOS_CONTROLLER)
+	/* MDM_VINT */
+	PINCONFIG(DT_UBLOX_SARA_R4_0_MDM_VINT_GPIOS_CONTROLLER,
+		  DT_UBLOX_SARA_R4_0_MDM_VINT_GPIOS_PIN),
+#endif
 };
 
 #define MDM_UART_DEV_NAME		DT_UBLOX_SARA_R4_0_BUS_NAME
@@ -82,7 +91,11 @@ static const struct mdm_control_pinconfig pinconfig[] = {
 #define MDM_CMD_SEND_TIMEOUT		K_SECONDS(10)
 #define MDM_CMD_CONN_TIMEOUT		K_SECONDS(31)
 #define MDM_REGISTRATION_TIMEOUT	K_SECONDS(180)
+#if defined(CONFIG_MODEM_UBLOX_SARA_U2)
+#define MDM_PROMPT_CMD_DELAY		K_MSEC(50)
+#else
 #define MDM_PROMPT_CMD_DELAY		K_MSEC(10)
+#endif
 
 #define MDM_MAX_DATA_LENGTH		1024
 
@@ -377,6 +390,9 @@ static int send_data(struct modem_socket *sock,
 	/* Loop through packet data and send */
 	while (frag) {
 		if (frag->len > 0) {
+#if defined(CONFIG_MODEM_UBLOX_SARA_U2)
+			mdm_receiver_send(&ictx.mdm_ctx, frag->data, frag->len);
+#else
 			/*
 			 * HACK: Apparently enabling HEX transmit mode also
 			 * affects the BINARY send method.  We need to encode
@@ -387,6 +403,7 @@ static int send_data(struct modem_socket *sock,
 				snprintk(buf, sizeof(buf), "%02x", frag->data[i]);
 				mdm_receiver_send(&ictx.mdm_ctx, buf, 2);
 			}
+#endif
 		}
 		frag = frag->frags;
 	}
@@ -648,6 +665,61 @@ static void on_cmd_atcmdinfo_rssi(struct net_buf **buf, u16_t len)
 		rssi = atoi(value);
 		if (rssi >= 0 && rssi <= 97) {
 			ictx.mdm_ctx.data_rssi = -140 + rssi;
+		} else {
+			ictx.mdm_ctx.data_rssi = -1000;
+		}
+
+		LOG_INF("RSSI: %d", ictx.mdm_ctx.data_rssi);
+		return;
+	}
+
+	LOG_WRN("Bad format found for RSSI");
+	ictx.mdm_ctx.data_rssi = -1000;
+}
+
+/* Handler: +CSQ: <signal_power>[0],<qual>[1] */
+static void on_cmd_atcmdinfo_rssi_csq(struct net_buf **buf, u16_t len)
+{
+	int i = 0, rssi, param_count = 0;
+	size_t value_size;
+	char value[12];
+
+	value_size = sizeof(value);
+	while (*buf && len > 0 && param_count < 1) {
+		i = 0;
+		(void)memset(value, 0, value_size);
+
+		while (*buf && len > 0 && i < value_size) {
+			value[i] = net_buf_pull_u8(*buf);
+			len--;
+			if (!(*buf)->len) {
+				*buf = net_buf_frag_del(NULL, *buf);
+			}
+
+			/* "," marks the end of each value */
+			if (value[i] == ',') {
+				value[i] = '\0';
+				break;
+			}
+
+			i++;
+		}
+
+		if (i == value_size) {
+			i = -1;
+			break;
+		}
+
+		param_count++;
+	}
+
+	if (param_count == 1 && i > 0) {
+		rssi = atoi(value);
+		if (rssi == 31) {
+			ictx.mdm_ctx.data_rssi = -46;
+		} else if (rssi >= 0 && rssi <= 31) {
+			/* FIXME: This value depends on the RAT */
+			ictx.mdm_ctx.data_rssi = -70;
 		} else {
 			ictx.mdm_ctx.data_rssi = -1000;
 		}
@@ -1103,6 +1175,9 @@ static void modem_rx(void)
 		CMD_HANDLER("AT+CGDCONT=", atcmdecho_nosock),
 		CMD_HANDLER("AT+COPS=", atcmdecho_nosock),
 		CMD_HANDLER("AT+CESQ", atcmdecho_nosock),
+		CMD_HANDLER("AT+CSQ", atcmdecho_nosock),
+		CMD_HANDLER("AT+UPSD=", atcmdecho_nosock),
+		CMD_HANDLER("AT+UPSDA=", atcmdecho_nosock),
 		CMD_HANDLER("AT+USOCR=", atcmdecho_nosock),
 		CMD_HANDLER("AT+CGSN", atcmdecho_nosock_imei),
 
@@ -1117,6 +1192,7 @@ static void modem_rx(void)
 		CMD_HANDLER("Model: ", atcmdinfo_model),
 		CMD_HANDLER("Revision: ", atcmdinfo_revision),
 		CMD_HANDLER("+CESQ: ", atcmdinfo_rssi),
+		CMD_HANDLER("+CSQ: ", atcmdinfo_rssi_csq),
 
 		/* SOLICITED SOCKET RESPONSES */
 		CMD_HANDLER("OK", sockok),
@@ -1222,22 +1298,60 @@ static int modem_pin_init(void)
 			  pinconfig[MDM_RESET].pin, GPIO_DIR_OUT);
 	gpio_pin_configure(ictx.gpio_port_dev[MDM_POWER],
 			  pinconfig[MDM_POWER].pin, GPIO_DIR_OUT);
+#if defined(DT_UBLOX_SARA_R4_0_MDM_VINT_GPIOS_CONTROLLER)
+	gpio_pin_configure(ictx.gpio_port_dev[MDM_VINT],
+			  pinconfig[MDM_VINT].pin, GPIO_DIR_IN);
+#endif
 
 	LOG_DBG("MDM_RESET_PIN -> NOT_ASSERTED");
 	gpio_pin_write(ictx.gpio_port_dev[MDM_RESET],
 		       pinconfig[MDM_RESET].pin, MDM_RESET_NOT_ASSERTED);
 
+	LOG_DBG("MDM_POWER_PIN -> ENABLE");
+	gpio_pin_write(ictx.gpio_port_dev[MDM_POWER],
+		       pinconfig[MDM_POWER].pin, MDM_POWER_ENABLE);
+	k_sleep(K_SECONDS(4));
+
 	LOG_DBG("MDM_POWER_PIN -> DISABLE");
 	gpio_pin_write(ictx.gpio_port_dev[MDM_POWER],
 		       pinconfig[MDM_POWER].pin, MDM_POWER_DISABLE);
+#if defined(CONFIG_MODEM_UBLOX_SARA_U2)
+	k_sleep(K_SECONDS(1));
+#else
+	k_sleep(K_SECONDS(4));
+#endif
+
+	LOG_DBG("MDM_POWER_PIN -> ENABLE");
+	gpio_pin_write(ictx.gpio_port_dev[MDM_POWER],
+		       pinconfig[MDM_POWER].pin, MDM_POWER_ENABLE);
+	k_sleep(K_SECONDS(1));
+
 	/* make sure module is powered off */
-	k_sleep(K_SECONDS(12));
+#if defined(DT_UBLOX_SARA_R4_0_MDM_VINT_GPIOS_CONTROLLER)
+	LOG_DBG("Waiting for MDM_VINT_PIN = 0");
+	u32_t vint;
 
-	LOG_DBG("MDM_POWER_PIN -> ENABLE");
+	do {
+		k_sleep(K_MSEC(100));
+		gpio_pin_read(ictx.gpio_port_dev[MDM_VINT],
+			      pinconfig[MDM_VINT].pin, &vint);
+	} while (vint != 0);
+#else
+	k_sleep(K_SECONDS(8));
+#endif
+
+#if defined(CONFIG_MODEM_UBLOX_SARA_U2)
+	LOG_DBG("MDM_POWER_PIN -> DISABLE");
+	unsigned int irq_lock_key = irq_lock();
+	gpio_pin_write(ictx.gpio_port_dev[MDM_POWER],
+		       pinconfig[MDM_POWER].pin, MDM_POWER_DISABLE);
+	k_usleep(50);		/* 50-80 microseconds */
+
 	gpio_pin_write(ictx.gpio_port_dev[MDM_POWER],
 		       pinconfig[MDM_POWER].pin, MDM_POWER_ENABLE);
-	k_sleep(K_SECONDS(1));
-
+	irq_unlock(irq_lock_key);
+	LOG_DBG("MDM_POWER_PIN -> ENABLE");
+#else  /* !defined(CONFIG_MODEM_UBLOX_SARA_U2) */
 	LOG_DBG("MDM_POWER_PIN -> DISABLE");
 	gpio_pin_write(ictx.gpio_port_dev[MDM_POWER],
 		       pinconfig[MDM_POWER].pin, MDM_POWER_DISABLE);
@@ -1246,7 +1360,18 @@ static int modem_pin_init(void)
 	LOG_DBG("MDM_POWER_PIN -> ENABLE");
 	gpio_pin_write(ictx.gpio_port_dev[MDM_POWER],
 		       pinconfig[MDM_POWER].pin, MDM_POWER_ENABLE);
+#endif
+
+#if defined(DT_UBLOX_SARA_R4_0_MDM_VINT_GPIOS_CONTROLLER)
+	LOG_DBG("Waiting for MDM_VINT_PIN = 1");
+	do {
+		k_sleep(K_MSEC(100));
+		gpio_pin_read(ictx.gpio_port_dev[MDM_VINT],
+			      pinconfig[MDM_VINT].pin, &vint);
+	} while (vint != 1);
+#else
 	k_sleep(K_SECONDS(10));
+#endif
 
 	gpio_pin_configure(ictx.gpio_port_dev[MDM_POWER],
 			  pinconfig[MDM_POWER].pin, GPIO_DIR_IN);
@@ -1261,10 +1386,17 @@ static void modem_rssi_query_work(struct k_work *work)
 	int ret;
 
 	/* query modem RSSI */
+#if defined(CONFIG_MODEM_UBLOX_SARA_U2)
+	ret = send_at_cmd(NULL, "AT+CSQ", MDM_CMD_TIMEOUT);
+	if (ret < 0) {
+		LOG_ERR("AT+CSQ ret:%d", ret);
+	}
+#else
 	ret = send_at_cmd(NULL, "AT+CESQ", MDM_CMD_TIMEOUT);
 	if (ret < 0) {
 		LOG_ERR("AT+CESQ ret:%d", ret);
 	}
+#endif
 
 	/* re-start RSSI query work */
 	k_delayed_work_submit_to_queue(&modem_workq,
@@ -1312,7 +1444,7 @@ restart:
 	}
 
 	/* stop functionality */
-	ret = send_at_cmd(NULL, "AT+CFUN=0", MDM_CMD_TIMEOUT);
+	ret = send_at_cmd(NULL, "AT+CFUN=0", MDM_REGISTRATION_TIMEOUT);
 	if (ret < 0) {
 		LOG_ERR("AT+CFUN=0 ret:%d", ret);
 		goto error;
@@ -1320,7 +1452,7 @@ restart:
 
 #if defined(CONFIG_BOARD_PARTICLE_BORON)
 	/* use external SIM */
-	ret = send_at_cmd(NULL, "AT+UGPIOC=23,0,0", MDM_CMD_TIMEOUT);
+	ret = send_at_cmd(NULL, "AT+UGPIOC=23,0,0", K_SECONDS(10));
 	if (ret < 0) {
 		LOG_ERR("AT+UGPIOC=23,0,0 ret:%d", ret);
 		goto error;
@@ -1392,9 +1524,9 @@ restart:
 
 	LOG_INF("Waiting for network");
 
-	/* wait for +CREG: 1 notification (20 seconds max) */
+	/* wait for +CREG: 1 notification (20 seconds max), or 5 for roaming */
 	counter = 0;
-	while (counter++ < 20 && ictx.ev_creg != 1) {
+	while (counter++ < 20 && ictx.ev_creg != 1 && ictx.ev_creg != 5) {
 		k_sleep(K_SECONDS(1));
 	}
 
@@ -1424,6 +1556,32 @@ restart:
 		LOG_ERR("Failed network init.  Restarting process.");
 		goto restart;
 	}
+
+#if defined(CONFIG_MODEM_UBLOX_SARA_U2)
+	/* set the APN */
+	ret = send_at_cmd(NULL, "AT+UPSD=0,1,\""
+			  CONFIG_MODEM_UBLOX_SARA_R4_MANUAL_MCCMNO "\"",
+			  MDM_CMD_TIMEOUT);
+	if (ret < 0) {
+		LOG_ERR("AT+UPSD ret:%d", ret);
+		goto error;
+	}
+
+	/* set dynamic IP */
+	ret = send_at_cmd(NULL, "AT+UPSD=0,7,\"0.0.0.0\"",
+			  MDM_CMD_TIMEOUT);
+	if (ret < 0) {
+		LOG_ERR("AT+UPSD ret:%d", ret);
+		goto error;
+	}
+
+	/* activate the GPRS connection */
+	ret = send_at_cmd(NULL, "AT+UPSDA=0,3", MDM_CMD_TIMEOUT);
+	if (ret < 0) {
+		LOG_ERR("AT+UPSDA ret:%d", ret);
+		goto error;
+	}
+#endif
 
 	LOG_INF("Network is ready.");
 
