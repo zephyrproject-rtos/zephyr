@@ -32,16 +32,35 @@ config ARM_MPU_REGION_MIN_ALIGN_AND_SIZE
 	  A minimum 4-byte alignment is enforced in ARM builds without
 	  support for Memory Protection.
 
+if ARM_MPU
+
 config MPU_STACK_GUARD
 	bool "Thread Stack Guards"
-	depends on ARM_MPU
 	help
 	  Enable Thread Stack Guards via MPU
 
+if MPU_STACK_GUARD
+
+config MPU_STACK_GUARD_MIN_SIZE_FLOAT
+	int
+	depends on FP_SHARING
+	default 128
+	help
+	  Minimum size (and alignment when applicable) of an ARM MPU
+	  region, which guards the stack of a thread that is using the
+	  Floating Point (FP) context. The width of the guard is set to
+	  128, to accommodate the length of a Cortex-M exception stack
+	  frame when the floating point context is active. The FP context
+	  is only stacked in sharing FP registers mode, therefore, the
+	  option is applicable only when FP_SHARING is selected.
+
+endif # MPU_STACK_GUARD
+
 config MPU_ALLOW_FLASH_WRITE
 	bool "Add MPU access to write to flash"
-	depends on ARM_MPU
 	help
 	  Enable this to allow MPU RWX access to flash memory
+
+endif # ARM_MPU
 
 endif # CPU_HAS_MPU
