@@ -139,9 +139,11 @@ static int flash_sim_read(struct device *dev, const off_t offset, void *data,
 		return -EINVAL;
 	}
 
-	if ((offset % FLASH_SIMULATOR_PROG_UNIT) ||
-	    (len % FLASH_SIMULATOR_PROG_UNIT)) {
-		return -EINVAL;
+	if (!IS_ENABLED(CONFIG_FLASH_SIMULATOR_UNALIGNED_READ)) {
+		if ((offset % FLASH_SIMULATOR_PROG_UNIT) ||
+		    (len % FLASH_SIMULATOR_PROG_UNIT)) {
+			return -EINVAL;
+		}
 	}
 
 	STATS_INC(flash_sim_stats, flash_read_calls);
