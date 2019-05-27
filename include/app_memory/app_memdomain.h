@@ -12,15 +12,6 @@
 
 #ifdef CONFIG_USERSPACE
 
-#if defined(CONFIG_X86)
-#define MEM_DOMAIN_ALIGN_SIZE _STACK_BASE_ALIGN
-#elif defined(STACK_ALIGN)
-#define MEM_DOMAIN_ALIGN_SIZE STACK_ALIGN
-#else
-#error "Not implemented for this architecture"
-#endif
-
-
 /**
  * @brief Name of the data section for a particular partition
  *
