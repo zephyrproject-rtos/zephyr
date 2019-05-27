@@ -80,79 +80,63 @@ struct zio_attr_desc;
 struct zio_chan_desc;
 
 
-#define CONCAT(x,y,z) x ## _ ## z
-#define ZIO_CHANNEL(id)  CONCAT(channel,id)
-#define ZIO_ATTR(id) CONCAT(attribute,id)
+#define CONCAT(x, y, z) x ## _ ## z
+
+// zio attribute types
+#define ZIO_CHANNEL(id)  CONCAT(channel, id)
+#define ZIO_ATTR(id) CONCAT(attribute, id)
 #define ZIO_API() api;
 
+// zio definitions
 #define ZIO_DEFINE_ATTRIBUTE(id) \
 	struct zio_attr_desc ZIO_ATTR(id);
 
-#define ZIO_DEFINE_CHANNEL(id,attributes) \
-    struct { \
-        struct zio_chan_desc channel; \
-        attributes \
-	} \
-    ZIO_CHANNEL(id);
+#define ZIO_DEFINE_CHANNEL(id, attributes)    \
+	struct {			      \
+		struct zio_chan_desc channel; \
+		attributes		      \
+	}				      \
+	ZIO_CHANNEL(id);
 
-#define ZIO_GET_CHANNEL(channel_idx,attribute_idx) \
 #define ZIO_DEFINE_API() struct zio_dev_api api;
 
 
 /**
- * @brief Get the zio channel from the channel idx 
+ * @brief Get the zio channel from the channel idx
  *
  * @param dev Pointer to the ZIO device
  * @param channel_idx Index of the channel
  */
-#define ZIO_GET_CHANNEL(dev, channel_idx) \
-	({ \
-		struct zio_chan_desc* channel = &dev->driver_data.ZIO_CHANNEL(channel_idx).channel; 	\
-		channel; \
+#define ZIO_GET_CHANNEL(dev, channel_idx)							    \
+	({											    \
+		struct zio_chan_desc *channel = &dev->driver_data.ZIO_CHANNEL(channel_idx).channel; \
+		channel;									    \
 	})
 
 /**
- * @brief Get the zio channel attribute from the channel idx and attribute idx 
+ * @brief Get the zio channel attribute from the channel idx and attribute idx
  *
  * @param dev Pointer to the ZIO device
  * @param channel_idx Index of the channel
  * @param attribute_idx Index of the attribute
  */
-#define ZIO_GET_CHANNEL_ATTRIBUTE(dev, channel_idx, attribute_idx) \
-	({ \
-		struct zio_attr_desc* attr = &dev->driver_data.ZIO_CHANNEL(channel_idx).ZIO_ATTR(attribute_idx); 	\
-		attr; \
-	})
-
-#define ZIO_GET_DEV_ATTRIBUTE(dev, attribute_idx) \
-	({ \
-		struct zio_attr_desc* attr = &dev->driver_data.ZIO_ATTR(attribute_idx); 	\
-		attr; \
+#define ZIO_GET_CHANNEL_ATTRIBUTE(dev, channel_idx, attribute_idx)						 \
+	({													 \
+		struct zio_attr_desc *attr = &dev->driver_data.ZIO_CHANNEL(channel_idx).ZIO_ATTR(attribute_idx); \
+		attr;												 \
 	})
 
 /**
- * @brief Pre-defined channel types with the ability to extend by a driver
- * implementation.
+ * @brief Get the zio dev attribute
  *
- * Extended values should always be based on ZIO_CHAN_TYPES count with an
- * additive and defined in a publicly available driver header.
- *
- * Example: #define MY_CHAN_TYPE (ZIO_CHAN_TYPES+1)
+ * @param dev Pointer to the ZIO device
+ * @param attribute_idx Index of the attribute
  */
-enum zio_chan_type {
-	ZIO_DEVICE = 0,
-	
-	ZIO_VOLTAGE,
-
-	/* Last type is always begins the user definable type range */
-	ZIO_CHAN_TYPES,
-
-	/* enforce a specific enum size allowing for a good number of user
-	 * definable values while keeping the size standardized for encoding
-	 */
-	ZIO_CHAN_TYPE_MAKE_16_BIT = 0xFFFF
-};
-
+#define ZIO_GET_DEV_ATTRIBUTE(dev, attribute_idx)					\
+	({										\
+		struct zio_attr_desc *attr = &dev->driver_data.ZIO_ATTR(attribute_idx);	\
+		attr;									\
+	})
 
 
 /**
@@ -193,40 +177,16 @@ struct zio_chan_desc {
 	 */
 	const enum byteorder {
 		ZIO_BYTEORDER_ARCH,
-			ZIO_BYTEORDER_BIG,
-			ZIO_BYTEORDER_LITTLE
+		ZIO_BYTEORDER_BIG,
+		ZIO_BYTEORDER_LITTLE
 	} byte_order;
 
 	const enum sign_bit {
 		ZIO_SIGN_NONE,
-			ZIO_SIGN_MSB,
-			ZIO_SIGN_LSB,
+		ZIO_SIGN_MSB,
+		ZIO_SIGN_LSB,
 	} sign_bit;
 };
-
-/**
- * @brief Pre-defined attribute types with the ability to extend by a driver
- * implementation.
- *
- * Extended values should always be based on ZIO_ATTR_TYPES count with an
- * additive and defined in a publicly available driver header.
- *
- * Example: #define MY_ATTR_TYPE (ZIO_ATTR_TYPES+1)
- */
-enum zio_attr_type {
-	/* samples per second */
-	ZIO_SAMPLE_RATE,
-
-	/* A count of attribute types always begins the user definable range */
-	ZIO_ATTR_TYPES,
-
-	/* enforce a specific enum size allowing for a good number of user
-	 * definable values but keeping
-	 */
-	ZIO_ATTR_TYPE_MAKE_16_BIT = 0xFFFF
-};
-
-
 
 
 /**
@@ -242,7 +202,7 @@ typedef int (*zio_set_attr_t)(struct device *dev, const u16_t channel_idx, const
  *
  * @return -EINVAL if an invalid attribute id was given, 0 otherwise
  */
-typedef int (*zio_get_attr_t)(struct device *dev,const u16_t channel_idx, const u16_t attribute_idx, struct zio_variant *attr);
+typedef int (*zio_get_attr_t)(struct device *dev, const u16_t channel_idx, const u16_t attribute_idx, struct zio_variant *attr);
 
 
 /** Attribute record. */
@@ -258,15 +218,15 @@ struct zio_attr_desc {
  * @brief Function to get a pointer to the array of attribute descriptions
  */
 typedef int (*zio_dev_get_attr_descs_t)(struct device *dev,
-				   const struct zio_attr_desc **attrs,
-				   u32_t *num_attrs);
+					const struct zio_attr_desc **attrs,
+					u32_t *num_attrs);
 
 /**
  * @brief Function to get a pointer to the array of channel descriptions
  */
 typedef int (*zio_dev_get_chan_descs_t)(struct device *dev,
-				   const struct zio_chan_desc **chans,
-				   u32_t *num_chans);
+					const struct zio_chan_desc **chans,
+					u32_t *num_chans);
 
 /**
  * @brief Function to get a channels attribute descriptions
@@ -274,9 +234,9 @@ typedef int (*zio_dev_get_chan_descs_t)(struct device *dev,
  * @return -EINVAL if an invalid channel id was given, 0 otherwise
  */
 typedef int (*zio_chan_get_attr_descs_t)(struct device *dev,
-				   const u32_t chan_idx,
-				   const struct zio_attr_desc **attrs,
-				   u32_t *num_attrs);
+					 const u32_t chan_idx,
+					 const struct zio_attr_desc **attrs,
+					 u32_t *num_attrs);
 
 
 /**
@@ -285,8 +245,8 @@ typedef int (*zio_chan_get_attr_descs_t)(struct device *dev,
  * @return -EINVAL if an invalid attribute id was given, 0 otherwise
  */
 typedef int (*zio_chan_get_attr_t)(struct device *dev, const u32_t chan_idx,
-					const u32_t attr_idx,
-					struct zio_variant *var);
+				   const u32_t attr_idx,
+				   struct zio_variant *var);
 
 /**
  * @brief Function to enable a channel for a device
@@ -395,21 +355,18 @@ struct zio_dev_api {
  *
  * @return 0 if successful, negative errno code if failure.
  */
-#define zio_dev_set_attr(dev, attr_idx, val) \
-	({ \
-		int res = 0; \
-		zio_attr_desc* attr = zio_dev_attribute(dev,attr_idx); \
-		if (!attr->set_attr) { \
-			res = -ENOTSUP; \
-		} else { \
-			struct zio_variant data = zio_variant_wrap(val); \
-			res = attr->set_attr(dev, attr_idx, data); \
-		} \
-		res; \
+#define zio_dev_set_attr(dev, attr_idx, val)				       \
+	({								       \
+		int res = 0;						       \
+		zio_attr_desc *attr = ZIO_GET_DEV_ATTRIBUTE(dev, attr_idx);    \
+		if (!attr->set_attr) {					       \
+			res = -ENOTSUP;					       \
+		} else {						       \
+			struct zio_variant data = zio_variant_wrap(val);       \
+			res = attr->set_attr(dev, ZIO_DEVICE, attr_idx, data); \
+		}							       \
+		res;							       \
 	})
-
-
-
 
 
 /**
@@ -421,43 +378,21 @@ struct zio_dev_api {
  *
  * @return 0 if successful, negative errno code if failure.
  */
-#define zio_dev_get_attr(dev, attr_idx, val) \
-	({ \
-		int res = 0; \
-		const struct zio_dev_api *api = dev->driver_api; \
-		if (!api->set_attr) { \
-			res = -ENOTSUP; \
-		} else { \
-			struct zio_variant data; \
-			res = api->get_attr(dev, attr_idx, &data); \
-			if (res == 0) { \
-				res = zio_variant_unwrap(data, val); \
-			} \
-			res; \
-		} \
+#define zio_dev_get_attr(dev, attr_idx, val)					\
+	({									\
+		int res = 0;							\
+		zio_attr_desc *attr = ZIO_GET_DEV_ATTRIBUTE(dev, attr_idx);	\
+		if (!attr->set_attr) {						\
+			res = -ENOTSUP;						\
+		} else {							\
+			struct zio_variant data;				\
+			res = attr->get_attr(dev, ZIO_DEVICE, attr_idx, &data);	\
+			if (res == 0) {						\
+				res = zio_variant_unwrap(data, val);		\
+			}							\
+			res;							\
+		}								\
 	})
-
-/**
- * @brief Get the all of the device attributes
- *
- * @param dev Pointer to the ZIO device
- * @param attrs Double pointer, value is set to the address of this devices
- *	attrs
- * @param num_attrs Pointer to a u32_t which is set to the number of attrs of
- *	the device
- */
-static inline int zio_dev_get_attr_descs(struct device *dev,
-		const struct zio_attr_desc **attrs,
-		u32_t *num_attrs)
-{
-	const struct zio_dev_api *api = dev->driver_api;
-
-	if (!api->get_attr_descs) {
-		return -ENOTSUP;
-	}
-	api->get_attr_descs(dev, attrs, num_attrs);
-	return 0;
-}
 
 /**
  * @brief Enable a device channel by index

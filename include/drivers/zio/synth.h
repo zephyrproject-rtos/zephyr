@@ -10,14 +10,13 @@
 #include <zio.h>
 
 
-#define SYNTH_LEFT_CHANNEL (ZIO_CHAN_TYPES + 1)
-#define SYNTH_RIGHT_CHANNEL (ZIO_CHAN_TYPES + 2)
+#define SYNTH_LEFT_CHANNEL 0
+#define SYNTH_RIGHT_CHANNEL 1
 
 /* channel attribute type(s) */
-#define SYNTH_FREQUENCY_ATTR (ZIO_ATTR_TYPES + 1)
-#define SYNTH_PHASE_ATTR (ZIO_ATTR_TYPES + 2)
-
-#define ZIO_SAMPLE_DEVICE_ATTR (ZIO_ATTR_TYPES + 3)
+#define SYNTH_FREQUENCY_ATTR 0
+#define SYNTH_PHASE_ATTR 1
+#define ZIO_SAMPLE_DEVICE_ATTR 2
 
 /* datum type */
 struct synth_datum {
