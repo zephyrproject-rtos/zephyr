@@ -965,9 +965,9 @@ void net_eth_carrier_off(struct net_if *iface)
 	handle_carrier(ctx, iface, carrier_off);
 }
 
+#if defined(CONFIG_PTP_CLOCK)
 struct device *net_eth_get_ptp_clock(struct net_if *iface)
 {
-#if defined(CONFIG_PTP_CLOCK)
 	struct device *dev = net_if_get_device(iface);
 	const struct ethernet_api *api = dev->driver_api;
 
@@ -984,10 +984,8 @@ struct device *net_eth_get_ptp_clock(struct net_if *iface)
 	}
 
 	return api->get_ptp_clock(net_if_get_device(iface));
-#else
-	return NULL;
-#endif
 }
+#endif /* CONFIG_PTP_CLOCK */
 
 #if defined(CONFIG_NET_GPTP)
 int net_eth_get_ptp_port(struct net_if *iface)
