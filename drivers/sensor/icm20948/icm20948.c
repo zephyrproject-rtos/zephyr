@@ -27,14 +27,38 @@
 #define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
 LOG_MODULE_REGISTER(ICM20948);
 
-static inline int icm20948_set_gyro_fs(enum icm20948_gyro_fs gyro_fs)
+static inline int icm20948_set_gyro_fs(struct device *dev, enum icm20948_gyro_fs gyro_fs)
 {
+
+	/* set default fullscale range for gyro */
+	if (data->hw_tf->update_reg(data, ICM20948_REG_GYRO_CONFIG_1,
+				    ICM20948_GYRO_MASK,
+				    ICM20948_GYRO_FS_DEFAULT)) {
+		return -EIO;
+	}
+
 	return 0;
 }
 
-static inline int icm20948_set_acc_fs(enum icm20948_gyro_fs gyro_fs)
+static inline int icm20948_set_acc_fs(struct device *dev, enum icm20948_gyro_fs gyro_fs)
 {
+	struct icm20948_data *data = (struct icm20948_data *)dev->driver_data;
+	/* set default fullscale range for acc */
+	if (data->hw_tf->update_reg(data, ICM20948_REG_ACCEL_CONFIG,
+				    ICM20948_ACCEL_MASK,
+				    gyro_fs)) {
+		return -EIO;
+	}
+	data->gyro_fs = gyro_fs;
 	return 0;
+}
+
+
+static int icm20948_attr_set(struct device *dev, enum sensor_channel chan,
+			   enum sensor_attribute attr,
+			   const struct sensor_value *val)
+{
+
 }
 
 static int icm20948_channel_get(struct device *dev, enum sensor_channel chan,
@@ -65,8 +89,8 @@ static int icm20948_sample_fetch(struct device *dev, enum sensor_channel chan)
 			return -EIO;
 		}
 		data->acc[0] = sys_be16_to_cpu(buf.axis[0]);
-		data->acc[1] = sys_be16_to_cpu(buf.axis[0]);
-		data->acc[2] = sys_be16_to_cpu(buf.axis[0]);
+		data->acc[1] = sys_be16_to_cpu(buf.axis[1]);
+		data->acc[2] = sys_be16_to_cpu(buf.axis[2]);
 	} break;
 	case SENSOR_CHAN_GYRO_X:
 	case SENSOR_CHAN_GYRO_Y:
@@ -75,6 +99,9 @@ static int icm20948_sample_fetch(struct device *dev, enum sensor_channel chan)
 		if (data->hw_tf->read_data(data, ICM20948_REG_ACCEL_XOUT_H_SH,
 					   buf.raw, sizeof(buf))) {
 			LOG_DBG("Failed to fetch raw data samples");
+			data->acc[0] = sys_be16_to_cpu(buf.axis[0]);
+			data->acc[1] = sys_be16_to_cpu(buf.axis[1]);
+			data->acc[2] = sys_be16_to_cpu(buf.axis[2]);
 			return -EIO;
 		}
 	} break;
@@ -106,12 +133,7 @@ int icm20948_init(struct device *dev)
 		LOG_ERR("Invalid Chip ID");
 	}
 
-	/* set default fullscale range for acc */
-	if (data->hw_tf->update_reg(data, ICM20948_REG_ACCEL_CONFIG,
-				    ICM20948_ACCEL_MASK,
-				    ICM20948_ACCEL_FS_DEFAULT)) {
-		return -EIO;
-	}
+	
 
 	/* set default fullscale range for gyro */
 	if (data->hw_tf->update_reg(data, ICM20948_REG_GYRO_CONFIG_1,

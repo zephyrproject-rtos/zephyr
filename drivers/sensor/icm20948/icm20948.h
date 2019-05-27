@@ -182,6 +182,8 @@ struct icm20948_data {
 	enum icm20948_gyro_fs gyro_fs; //gyro range
 	enum icm20948_accel_fs accel_fs; //accel range
 
+	icm20948_accel_fs accel_freq;
+	icm20948_gyro_fs gyro_fs;
 #if defined(DT_TDK_ICM20948_0_CS_GPIO_CONTROLLER)
 	struct spi_cs_control cs_ctrl;
 #endif
