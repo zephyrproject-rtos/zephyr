@@ -1,6 +1,4 @@
 /*
- * Copyright (c) 2016, 2017 Intel Corporation
- * Copyright (c) 2017 IpTronix S.r.l.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -178,6 +176,8 @@ struct icm20948_data {
 
 	s16_t acc[3];
 	s16_t gyro[3];
+
+	s16_t temp;
 
 	enum icm20948_gyro_fs gyro_fs; //gyro range
 	enum icm20948_accel_fs accel_fs; //accel range
