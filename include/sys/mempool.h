@@ -47,6 +47,7 @@ struct sys_mem_pool_block {
  * @param section Destination binary section for pool data
  */
 #define SYS_MEM_POOL_DEFINE(name, ignored, minsz, maxsz, nmax, align, section) \
+	BUILD_ASSERT(WB_UP(maxsz) >= _MPOOL_MINBLK);			\
 	char __aligned(WB_UP(align)) Z_GENERIC_SECTION(section)		\
 		_mpool_buf_##name[WB_UP(maxsz) * nmax			\
 				  + _MPOOL_BITS_SIZE(maxsz, minsz, nmax)]; \
