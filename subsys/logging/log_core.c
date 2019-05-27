@@ -683,13 +683,7 @@ u32_t log_get_strdup_longest_string(void)
 
 bool log_is_strdup(void *buf)
 {
-	struct log_strdup_buf *pool_first, *pool_last;
-
-	pool_first = (struct log_strdup_buf *)log_strdup_pool_buf;
-	pool_last = pool_first + CONFIG_LOG_STRDUP_BUF_COUNT - 1;
-
-	return ((char *)buf >= pool_first->buf) &&
-	       ((char *)buf <= pool_last->buf);
+	return PART_OF_ARRAY(log_strdup_pool_buf, (u8_t *)buf);
 
 }
 
