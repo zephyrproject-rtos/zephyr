@@ -189,20 +189,20 @@ static void add_question(struct net_buf *query, enum dns_rr_type qtype)
 		*prev = strlen(prev) - 1;
 	}
 
-	offset = DNS_MSG_HEADER_SIZE + query->len;
+	offset = DNS_MSG_HEADER_SIZE + query->len + 1;
 	UNALIGNED_PUT(htons(qtype), (u16_t *)(query->data+offset));
 
 	offset += DNS_QTYPE_LEN;
 	UNALIGNED_PUT(htons(DNS_CLASS_IN), (u16_t *)(query->data+offset));
 }
 
-static void add_answer(struct net_buf *query, u32_t ttl,
+static int add_answer(struct net_buf *query, u32_t ttl,
 		       u16_t addr_len, const u8_t *addr)
 {
-	const u16_t q_len = query->len + DNS_QTYPE_LEN + DNS_QCLASS_LEN;
+	const u16_t q_len = query->len + 1 + DNS_QTYPE_LEN + DNS_QCLASS_LEN;
 	u16_t offset = DNS_MSG_HEADER_SIZE + q_len;
 
-	memcpy(query->data + offset, query->data, q_len);
+	memcpy(query->data + offset, query->data + DNS_MSG_HEADER_SIZE, q_len);
 	offset += q_len;
 
 	UNALIGNED_PUT(htonl(ttl), query->data + offset);
@@ -212,6 +212,8 @@ static void add_answer(struct net_buf *query, u32_t ttl,
 	offset += DNS_RDLENGTH_LEN;
 
 	memcpy(query->data + offset, addr, addr_len);
+
+	return offset + addr_len;
 }
 
 static int create_answer(struct net_context *ctx,
@@ -236,11 +238,7 @@ static int create_answer(struct net_context *ctx,
 
 	add_question(query, qtype);
 
-	add_answer(query, LLMNR_TTL, addr_len, addr);
-
-	query->len += DNS_MSG_HEADER_SIZE +
-		(DNS_QTYPE_LEN + DNS_QCLASS_LEN) * 2 +
-		DNS_TTL_LEN + DNS_RDLENGTH_LEN + addr_len + query->len;
+	query->len = add_answer(query, LLMNR_TTL, addr_len, addr);
 
 	return 0;
 }
