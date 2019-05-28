@@ -752,6 +752,41 @@ static int cmd_unregister_test_svc(const struct shell *shell,
 	return 0;
 }
 
+static void notify_cb(struct bt_conn *conn, void *user_data)
+{
+	const struct shell *shell = user_data;
+
+	shell_print(shell, "Nofication sent to conn %p", conn);
+}
+
+static int cmd_notify(const struct shell *shell, size_t argc, char *argv[])
+{
+	struct bt_gatt_notify_params params;
+	u8_t data = 0;
+
+	if (!echo_enabled) {
+		shell_error(shell, "Nofication not enabled");
+		return -ENOEXEC;
+	}
+
+	if (argc > 1) {
+		data = strtoul(argv[1], NULL, 16);
+	}
+
+	memset(&params, 0, sizeof(params));
+
+	params.uuid = &vnd1_echo_uuid.uuid;
+	params.attr = vnd1_attrs;
+	params.data = &data;
+	params.len = sizeof(data);
+	params.func = notify_cb;
+	params.user_data = (void *)shell;
+
+	bt_gatt_notify_cb(NULL, 1, &params);
+
+	return 0;
+}
+
 static struct bt_uuid_128 met_svc_uuid = BT_UUID_INIT_128(
 	0x01, 0xde, 0xbc, 0x9a, 0x78, 0x56, 0x34, 0x12,
 	0x78, 0x56, 0x34, 0x12, 0x78, 0x56, 0x34, 0x12);
@@ -1004,6 +1039,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(gatt_cmds,
 	SHELL_CMD_ARG(unregister, NULL,
 		      "unregister pre-predefined test service",
 		      cmd_unregister_test_svc, 1, 0),
+	SHELL_CMD_ARG(notify, NULL, "[data]", cmd_notify, 1, 1),
 #endif /* CONFIG_BT_GATT_DYNAMIC_DB */
 	SHELL_SUBCMD_SET_END
 );
