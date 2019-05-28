@@ -30,6 +30,7 @@
 
 		tc6: tc@42003800 {
 			compatible = "atmel,sam0-tc32";
+			status = "disabled";
 			reg = <0x42003800 0x20>;
 			interrupts = <19 0>;
 			label = "TIMER_6";
