@@ -37,6 +37,8 @@ void config_pll_init(LL_UTILS_PLLInitTypeDef *pllinit)
 #if defined(CONFIG_CLOCK_STM32_PLL_SRC_HSI)
 	pllinit->PLLDiv = LL_RCC_PLLSOURCE_HSI;
 #else
+
+#if defined(CONFIG_CLOCK_STM32_PLL_PREDIV1)
 	/*
 	 * PLL DIV
 	 * 1  -> LL_RCC_PLLSOURCE_HSE_DIV_1  -> 0x00010000
@@ -47,6 +49,8 @@ void config_pll_init(LL_UTILS_PLLInitTypeDef *pllinit)
 	 */
 	pllinit->PLLDiv = (RCC_CFGR_PLLSRC_HSE_PREDIV |
 					(CONFIG_CLOCK_STM32_PLL_PREDIV1 - 1));
+#endif /* CONFIG_CLOCK_STM32_PLL_PREDIV1 */
+
 #endif /* CONFIG_CLOCK_STM32_PLL_SRC_HSI */
 #else
 	/*
@@ -68,10 +72,12 @@ void config_pll_init(LL_UTILS_PLLInitTypeDef *pllinit)
  */
 void config_enable_default_clocks(void)
 {
+#ifndef CONFIG_SOC_SERIES_STM32F3X
 #if defined(CONFIG_EXTI_STM32) || defined(CONFIG_USB_DC_STM32)
 	/* Enable System Configuration Controller clock. */
 	LL_APB1_GRP2_EnableClock(LL_APB1_GRP2_PERIPH_SYSCFG);
 #endif
+#endif /* !CONFIG_SOC_SERIES_STM32F3X */
 }
 
 /**
