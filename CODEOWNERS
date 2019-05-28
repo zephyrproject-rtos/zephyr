@@ -312,6 +312,7 @@
 /subsys/fs/fcb/                           @nvlsianpu
 /subsys/fs/nvs/                           @Laczen
 /subsys/logging/                          @nordic-krch
+/subsys/mgmt/                             @carlescufi @nvlsianpu
 /subsys/net/buf.c                         @jukkar @jhedberg @tbursztyka @pfalcon
 /subsys/net/ip/                           @jukkar @tbursztyka @pfalcon
 /subsys/net/lib/                          @jukkar @tbursztyka @pfalcon
