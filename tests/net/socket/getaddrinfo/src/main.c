@@ -255,15 +255,63 @@ void test_getaddrinfo_no_host(void)
 	freeaddrinfo(res);
 }
 
+void test_getaddrinfo_num_ipv4(void)
+{
+	struct zsock_addrinfo *res = NULL;
+	struct sockaddr_in *saddr;
+	int ret;
+
+	ret = zsock_getaddrinfo("1.2.3.255", "65534", NULL, &res);
+
+	zassert_equal(ret, 0, "Invalid result");
+	zassert_not_null(res, "");
+	zassert_is_null(res->ai_next, "");
+
+	zassert_equal(res->ai_family, AF_INET, "");
+	zassert_equal(res->ai_socktype, SOCK_STREAM, "");
+	zassert_equal(res->ai_protocol, IPPROTO_TCP, "");
+
+	saddr = (struct sockaddr_in *)res->ai_addr;
+	zassert_equal(saddr->sin_family, AF_INET, "");
+	zassert_equal(saddr->sin_port, htons(65534), "");
+	zassert_equal(saddr->sin_addr.s4_addr[0], 1, "");
+	zassert_equal(saddr->sin_addr.s4_addr[1], 2, "");
+	zassert_equal(saddr->sin_addr.s4_addr[2], 3, "");
+	zassert_equal(saddr->sin_addr.s4_addr[3], 255, "");
+
+	zsock_freeaddrinfo(res);
+}
+
+void test_getaddrinfo_flags_numerichost(void)
+{
+	int ret;
+	struct zsock_addrinfo *res = NULL;
+	struct zsock_addrinfo hints = {
+		.ai_flags = AI_NUMERICHOST,
+	};
+
+	ret = zsock_getaddrinfo("foo.bar", "65534", &hints, &res);
+	zassert_equal(ret, DNS_EAI_FAIL, "Invalid result");
+	zassert_is_null(res, "");
+
+	ret = zsock_getaddrinfo("1.2.3.4", "65534", &hints, &res);
+	zassert_equal(ret, 0, "Invalid result");
+	zassert_not_null(res, "");
+
+	zsock_freeaddrinfo(res);
+}
+
 void test_main(void)
 {
 	k_thread_system_pool_assign(k_current_get());
 
 	ztest_test_suite(socket_getaddrinfo,
 			 ztest_unit_test(test_getaddrinfo_setup),
-			 ztest_user_unit_test(test_getaddrinfo_ok),
-			 ztest_user_unit_test(test_getaddrinfo_cancelled),
-			 ztest_user_unit_test(test_getaddrinfo_no_host));
+			 ztest_unit_test(test_getaddrinfo_ok),
+			 ztest_unit_test(test_getaddrinfo_cancelled),
+			 ztest_unit_test(test_getaddrinfo_no_host),
+			 ztest_unit_test(test_getaddrinfo_num_ipv4),
+			 ztest_unit_test(test_getaddrinfo_flags_numerichost));
 
 	ztest_run_test_suite(socket_getaddrinfo);
 }
