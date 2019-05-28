@@ -1004,10 +1004,6 @@ SHELL_STATIC_SUBCMD_SET_CREATE(gatt_cmds,
 	SHELL_CMD_ARG(unregister, NULL,
 		      "unregister pre-predefined test service",
 		      cmd_unregister_test_svc, 1, 0),
-
-	SHELL_CMD_ARG(unregister, NULL,
-		      "unregister pre-predefined test service",
-		      cmd_unregister_test_svc, 1, 0),
 #endif /* CONFIG_BT_GATT_DYNAMIC_DB */
 	SHELL_SUBCMD_SET_END
 );
