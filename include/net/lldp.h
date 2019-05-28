@@ -41,6 +41,7 @@ extern "C" {
  *
  * FIXME: implement a similar scheme for subtype 5 (network address).
  */
+#if defined(CONFIG_NET_LLDP_CHASSIS_ID_SUBTYPE)
 #if (CONFIG_NET_LLDP_CHASSIS_ID_SUBTYPE == 4)
 #define NET_LLDP_CHASSIS_ID_VALUE		\
 	{					\
@@ -57,6 +58,10 @@ extern "C" {
 #define NET_LLDP_CHASSIS_ID_VALUE CONFIG_NET_LLDP_CHASSIS_ID
 #define NET_LLDP_CHASSIS_ID_VALUE_LEN (sizeof(CONFIG_NET_LLDP_CHASSIS_ID) - 1)
 #endif
+#else
+#define NET_LLDP_CHASSIS_ID_VALUE 0
+#define NET_LLDP_CHASSIS_ID_VALUE_LEN 0
+#endif
 
 /*
  * For the Port ID TLV Value, if subtype is a MAC address then we must
@@ -65,6 +70,7 @@ extern "C" {
  *
  * FIXME: implement a similar scheme for subtype 4 (network address).
  */
+#if defined(CONFIG_NET_LLDP_PORT_ID_SUBTYPE)
 #if (CONFIG_NET_LLDP_PORT_ID_SUBTYPE == 3)
 #define NET_LLDP_PORT_ID_VALUE		\
 	{				\
@@ -80,6 +86,10 @@ extern "C" {
 #else
 #define NET_LLDP_PORT_ID_VALUE CONFIG_NET_LLDP_PORT_ID
 #define NET_LLDP_PORT_ID_VALUE_LEN (sizeof(CONFIG_NET_LLDP_PORT_ID) - 1)
+#endif
+#else
+#define NET_LLDP_PORT_ID_VALUE 0
+#define NET_LLDP_PORT_ID_VALUE_LEN 0
 #endif
 
 /*
@@ -97,8 +107,10 @@ extern "C" {
  * FIXME: when the network interface is about to be ‘disabled’ TTL shall be set
  * to zero so LLDP Rx agents can invalidate the entry related to this node.
  */
+#if defined(CONFIG_NET_LLDP_TX_INTERVAL) && defined(CONFIG_NET_LLDP_TX_HOLD)
 #define NET_LLDP_TTL \
 	MIN((CONFIG_NET_LLDP_TX_INTERVAL * CONFIG_NET_LLDP_TX_HOLD) + 1, 65535)
+#endif
 
 
 struct net_if;
