@@ -685,35 +685,6 @@ config BT_CTLR_PA_LNA_GPIOTE_CHAN
 	help
 	  Select the nRF5 GPIOTE channel to use for PA/LNA GPIO feature.
 
-if BT_LL_SW_SPLIT
-config BT_TMP
-	bool "Temporary Role"
-	depends on BT_SHELL
-	default y
-	help
-	  Temporary role to manual test ULL/LLL split architecture.
-
-if BT_TMP
-config BT_TMP_MAX
-	int "Temporary Role Max. Instances"
-	default 3
-	help
-	  Maximum supported Temporary role instances.
-
-config BT_TMP_TX_SIZE_MAX
-	int "Temporary Role Max. Tx buffer size"
-	default 10
-	help
-	  Temporary role's maximum transmit buffer size in bytes.
-
-config BT_TMP_TX_COUNT_MAX
-	int "Temporary Role Max. Tx buffers"
-	default 1
-	help
-	  Temporary role's maximum transmit buffer count.
-endif # BT_TMP
-endif # BT_LL_SW_SPLIT
-
 comment "BLE Controller debug configuration"
 
 config BT_CTLR_ASSERT_HANDLER
