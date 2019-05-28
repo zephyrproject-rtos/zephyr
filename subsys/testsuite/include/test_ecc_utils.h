@@ -64,16 +64,6 @@
 #include <tinycrypt/ecc.h>
 #include <test_utils.h>
 
-int hex2int(char hex);
-
-
-/*
- * Convert hex string to byte string
- * Return number of bytes written to buf, or 0 on error
- */
-int hex2bin(uint8_t *buf, const size_t buflen, const char *hex,
-	    const size_t hexlen);
-
 /*
  * Convert hex string to zero-padded nanoECC scalar
  */
