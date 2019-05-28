@@ -1,0 +1,23 @@
+# Kconfig - SD Card configuration options
+
+#
+# Copyright (c) 2019 Yurii Hamann
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig SDMMC
+	bool "SD/MMC Drivers"
+	help
+	  Enable config options for SD/MMC drivers.
+
+if SDMMC
+
+module = SDMMC
+module-str = sdmmc
+source "subsys/logging/Kconfig.template.log_config"
+
+config SDMMC_1
+	bool "Enable SDMMC Interface 1"
+
+endif # SDMMC

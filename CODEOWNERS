@@ -145,6 +145,7 @@
 /drivers/ptp_clock/                       @jukkar
 /drivers/spi/                             @tbursztyka
 /drivers/spi/spi_ll_stm32.*               @superna9999
+/drivers/sdmmc/                           @pic16f887
 /drivers/timer/cortex_m_systick.c         @ioannisg
 /drivers/timer/altera_avalon_timer_hal.c  @wentongwu
 /drivers/timer/riscv_machine_timer.c      @nategraff-sifive @kgugala @pgielda
@@ -247,6 +248,7 @@
 /include/shared_irq.h                     @andrewboie @andyross
 /include/shell/                           @jarz-nordic @nordic-krch
 /include/spi.h                            @tbursztyka
+/include/sdmmc/                           @pic16f887
 /include/sw_isr_table.h                   @andrewboie @andyross
 /include/sys_clock.h                      @andrewboie @andyross
 /include/sys_io.h                         @andrewboie @andyross
