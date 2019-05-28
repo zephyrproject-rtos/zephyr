@@ -49,7 +49,7 @@ static void zephyr_disp_flush(s32_t x1, s32_t y1, s32_t x2, s32_t y2,
 static void zephyr_vdb_write(u8_t *buf, lv_coord_t buf_w, lv_coord_t x,
 		lv_coord_t y, lv_color_t color, lv_opa_t opa)
 {
-	u8_t *buf_xy = buf + x + y * buf_w;
+	u8_t *buf_xy = buf + x * 3U + y * 3U * buf_w;
 
 	if (opa != LV_OPA_COVER) {
 		lv_color_t mix_color;
