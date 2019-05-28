@@ -1,0 +1,13 @@
+# Kconfig - SD Card configuration options
+
+#
+# Copyright (c) 2019 Yurii Hamann
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig SDMMC_STM32
+	bool "SD/MMC Drivers for STM32 MCU families"
+	depends on SOC_FAMILY_STM32
+	help
+	  Enable config options for SD/MMC driver for STM32 MCU families.

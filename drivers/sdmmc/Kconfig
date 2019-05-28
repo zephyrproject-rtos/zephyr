@@ -20,4 +20,6 @@ source "subsys/logging/Kconfig.template.log_config"
 config SDMMC_1
 	bool "Enable SDMMC Interface 1"
 
+source "drivers/sdmmc/Kconfig.stm32"
+
 endif # SDMMC
