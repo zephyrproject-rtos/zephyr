@@ -60,6 +60,8 @@ config MCUMGR_SMP_UART_MTU
 
 endif
 
+source "subsys/mgmt/Kconfig.mcumgr"
+
 if MCUMGR
 config MCUMGR_BUF_COUNT
 	int "Number of mcumgr buffers"
