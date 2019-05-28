@@ -88,6 +88,8 @@ struct bt_conn_tx_data {
 
 struct bt_conn_tx {
 	sys_snode_t node;
+	struct bt_conn *conn;
+	struct k_work work;
 	struct bt_conn_tx_data data;
 };
 
