@@ -8,6 +8,7 @@
 #include <fsl_common.h>
 #include <fsl_iocon.h>
 #include <soc.h>
+#include <LPC55S69_cm33_core0.h>
 
 static int lpcxpresso_55s69_pinmux_init(struct device *dev)
 {
@@ -48,8 +49,8 @@ static int lpcxpresso_55s69_pinmux_init(struct device *dev)
 
 #endif
 
-#ifdef CONFIG_GPIO_MCUX_LPC_PORT0
-	const u32_t port0_pin5_config = (
+#ifdef DT_GPIO_KEYS_SW0_GPIO_CONTROLLER
+	const u32_t sw0_config = (
 			IOCON_PIO_FUNC0 |
 			IOCON_PIO_MODE_PULLUP |
 			IOCON_PIO_INV_DI |
@@ -58,12 +59,11 @@ static int lpcxpresso_55s69_pinmux_init(struct device *dev)
 			IOCON_PIO_SLEW_STANDARD |
 			IOCON_PIO_OPENDRAIN_DI
 			);
-
-	pinmux_pin_set(port0, 5, port0_pin5_config);
+	pinmux_pin_set(port0, DT_ALIAS_SW0_GPIOS_PIN, sw0_config);
 #endif
 
-#ifdef CONFIG_GPIO_MCUX_LPC_PORT0
-	const u32_t port1_pin18_config = (
+#ifdef DT_GPIO_KEYS_SW1_GPIO_CONTROLLER
+	const u32_t sw1_config = (
 			IOCON_PIO_FUNC0 |
 			IOCON_PIO_MODE_PULLUP |
 			IOCON_PIO_INV_DI |
@@ -72,10 +72,11 @@ static int lpcxpresso_55s69_pinmux_init(struct device *dev)
 			IOCON_PIO_SLEW_STANDARD |
 			IOCON_PIO_OPENDRAIN_DI
 			);
+	pinmux_pin_set(port1, DT_ALIAS_SW0_GPIOS_PIN, sw1_config);
+#endif
 
-	pinmux_pin_set(port1, 18, port1_pin18_config);
-
-	const u32_t port1_pin9_config = (
+#ifdef DT_GPIO_KEYS_SW2_GPIO_CONTROLLER
+	const u32_t sw2_config = (
 			IOCON_PIO_FUNC0 |
 			IOCON_PIO_MODE_PULLUP |
 			IOCON_PIO_INV_DI |
@@ -84,8 +85,7 @@ static int lpcxpresso_55s69_pinmux_init(struct device *dev)
 			IOCON_PIO_SLEW_STANDARD |
 			IOCON_PIO_OPENDRAIN_DI
 			);
-
-	pinmux_pin_set(port1, 9, port1_pin9_config);
+	pinmux_pin_set(port1, DT_ALIAS_SW0_GPIOS_PIN, sw2_config);
 #endif
 
 	return 0;
