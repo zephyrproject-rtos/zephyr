@@ -116,269 +116,17 @@ config CLOCK_STM32_PLL_SRC_PLL2
 
 endchoice
 
-if SOC_SERIES_STM32F0X
 
-config CLOCK_STM32_PLL_PREDIV
-	int "PREDIV Prescaler"
-	default 1
-	range 1 16
-	help
-	 PREDIV is PLLSCR clock signal prescaler, allowed values: 1 - 16.
+# Source series specific files for PLL settings
 
-config CLOCK_STM32_PLL_PREDIV1
-	int "PREDIV1 Prescaler"
-	depends on CLOCK_STM32_PLL_SRC_HSE
-	default 1
-	range 1 16
-	help
-	 PREDIV is PLLSCR clock signal prescaler, present on STM32F0 SoC having
-	 an HSE Oscillator available like the stm32f04xx, stm32f07xx,
-	 stm32f09xx and stm32f030xc parts. If configured on a non supported
-	 part, the HSI oscillator will be used a default PLL source and this
-	 config will be ignored.
-	 Allowed values: 1 - 16.
+source "drivers/clock_control/Kconfig.stm32f0_f3"
+source "drivers/clock_control/Kconfig.stm32f1"
+source "drivers/clock_control/Kconfig.stm32f2_f4_f7"
+source "drivers/clock_control/Kconfig.stm32l0_l1"
+source "drivers/clock_control/Kconfig.stm32l4_wb"
 
-config CLOCK_STM32_PLL_MULTIPLIER
-	int "PLL multiplier"
-	depends on CLOCK_STM32_SYSCLK_SRC_PLL
-	default 6
-	range 2 16
-	help
-	 PLL multiplier, allowed values: 2-16. PLL output must not exceed 48MHz.
 
-endif # SOC_SERIES_STM32F0X
-
-if SOC_SERIES_STM32F1X
-
-config CLOCK_STM32_PLL_XTPRE
-	bool "HSE to PLL /2 prescaler"
-	depends on SOC_STM32F10X_DENSITY_DEVICE && CLOCK_STM32_PLL_SRC_HSE
-	help
-	 Enable this option to enable /2 prescaler on HSE to PLL clock signal
-
-config CLOCK_STM32_PLL_MULTIPLIER
-	int "PLL multiplier"
-	depends on CLOCK_STM32_SYSCLK_SRC_PLL
-	default 9
-	range 2 16 if SOC_STM32F10X_DENSITY_DEVICE
-	range 4 9 if SOC_STM32F10X_CONNECTIVITY_LINE_DEVICE
-	help
-	 PLL multiplier, PLL output must not exceed 72MHz. Allowed values:
-	 Density devices: 2-16
-	 Connectivity devices:  4 - 9 and 13 ( used for multiplication factor 6.5).
-
-config CLOCK_STM32_PLL_PREDIV1
-	int "PREDIV1 Prescaler"
-	depends on SOC_STM32F10X_CONNECTIVITY_LINE_DEVICE && CLOCK_STM32_SYSCLK_SRC_PLL
-	default 1
-	range 1 16
-	help
-	 PREDIV1 is PLL clock signal prescaler, allowed values: 1 - 16.
-
-config CLOCK_STM32_PLL2_MULTIPLIER
-	int "PLL2 multiplier"
-	depends on SOC_STM32F10X_CONNECTIVITY_LINE_DEVICE && CLOCK_STM32_PLL_SRC_PLL2
-	default 8
-	range 8 20
-	help
-	 PLL2 multiplier, allowed values: 8 - 20. 15-17-18-19 reserved
-
-config CLOCK_STM32_PLL2_PREDIV2
-	int "PREDIV2 Prescaler"
-	depends on SOC_STM32F10X_CONNECTIVITY_LINE_DEVICE && CLOCK_STM32_PLL_SRC_PLL2
-	default 1
-	range 1 16
-	help
-	 PREDIV2 is PLL2 prescaler, allowed values: 1 - 16.
-
-endif # SOC_SERIES_STM32F1X
-
-if SOC_SERIES_STM32F2X
-
-config CLOCK_STM32_PLL_M_DIVISOR
-	int "Division factor for PLL VCO input clock"
-	depends on CLOCK_STM32_SYSCLK_SRC_PLL
-	default 20
-	range 2 63
-	help
-	 PLLM division factor needs to be set correctly to ensure that the VCO
-	 input frequency ranges from 1 to 2 MHz. It is recommended to select a
-	 frequency of 2 MHz to limit PLL jitter.
-	 Allowed values: 2-63
-
-config CLOCK_STM32_PLL_N_MULTIPLIER
-	int "Multiplier factor for PLL VCO output clock"
-	depends on CLOCK_STM32_SYSCLK_SRC_PLL
-	default 192
-	range 192 432
-	help
-	 PLLN multiplier factor needs to be set correctly to ensure that the
-	 VCO output frequency is between 192 and 432 MHz.
-
-config CLOCK_STM32_PLL_P_DIVISOR
-	int "PLL division factor for main system clock"
-	depends on CLOCK_STM32_SYSCLK_SRC_PLL
-	default 2
-	range 2 8
-	help
-	 PLLP division factor needs to be set correctly to not exceed 120MHz.
-	 Allowed values: 2, 4, 6, 8
-
-config CLOCK_STM32_PLL_Q_DIVISOR
-	int "PLL division factor for USB OTG FS, SDIO and RNG clocks"
-	depends on CLOCK_STM32_SYSCLK_SRC_PLL
-	default 5
-	range 2 15
-	help
-	 The USB OTG FS requires a 48MHz clock to work correctly. SDIO and RNG
-	 need a frequency lower than or equal to 48 MHz to work correctly.
-	 Allowed values: 2-15
-
-endif # SOC_SERIES_STM32F2X
-
-if SOC_SERIES_STM32F3X
-
-config CLOCK_STM32_PLL_PREDIV
-	int "PREDIV Prescaler"
-	default 1
-	range 1 16
-	help
-	 PREDIV is PLLSCR clock signal prescaler, allowed values: 1 - 16.
-
-config CLOCK_STM32_PLL_MULTIPLIER
-	int "PLL multiplier"
-	depends on CLOCK_STM32_SYSCLK_SRC_PLL
-	default 9
-	range 2 16
-	help
-	 PLL multiplier, allowed values: 2-16. PLL output must not exceed 72MHz.
-
-endif # SOC_SERIES_STM32F3X
-
-if SOC_SERIES_STM32F4X || SOC_SERIES_STM32F7X
-
-config CLOCK_STM32_PLL_M_DIVISOR
-	int "Division factor for PLL VCO input clock"
-	depends on CLOCK_STM32_SYSCLK_SRC_PLL
-	default 8
-	range 2 63
-	help
-	 PLLM division factor needs to be set correctly to ensure that the VCO
-	 input frequency ranges from 1 to 2 MHz. It is recommended to select a
-	 frequency of 2 MHz to limit PLL jitter.
-	 Allowed values: 2-63
-
-config CLOCK_STM32_PLL_N_MULTIPLIER
-	int "Multiplier factor for PLL VCO output clock"
-	depends on CLOCK_STM32_SYSCLK_SRC_PLL
-	default 336
-	range 192 432 if SOC_STM32F401XE
-	range 50 432
-	help
-	 PLLN multiplier factor needs to be set correctly to ensure that the
-	 VCO output frequency is between 100 and 432 MHz, except on STM32F401
-	 where the frequency must be between 192 and 432 MHz.
-	 Allowed values: 50-432 (STM32F401: 192-432)
-
-config CLOCK_STM32_PLL_P_DIVISOR
-	int "PLL division factor for main system clock"
-	depends on CLOCK_STM32_SYSCLK_SRC_PLL
-	default 4
-	range 2 8
-	help
-	 PLLP division factor needs to be set correctly to not exceed 84MHz.
-	 Allowed values: 2, 4, 6, 8
-
-config CLOCK_STM32_PLL_Q_DIVISOR
-	int "Division factor for OTG FS, SDIO and RNG clocks"
-	depends on CLOCK_STM32_SYSCLK_SRC_PLL
-	default 7
-	range 2 15
-	help
-	 The USB OTG FS requires a 48MHz clock to work correctly. SDIO and RNG
-	 need a frequency lower than or equal to 48 MHz to work correctly.
-	 Allowed values: 2-15
-
-endif # SOC_SERIES_STM32F4X || SOC_SERIES_STM32F7X
-
-if SOC_SERIES_STM32L0X || SOC_SERIES_STM32L1X
-
-config CLOCK_STM32_PLL_MULTIPLIER
-	int "PLL multiplier"
-	depends on CLOCK_STM32_SYSCLK_SRC_PLL
-	default 4
-	range 3 48
-	help
-	 PLL multiplier, allowed values: 3, 4, 6, 8, 12, 16, 24, 32, 48.
-	 PLL output must not exceed 96MHz(1.8V)/48MHz(1.5V)/24MHz(1.2V).
-
-config CLOCK_STM32_PLL_DIVISOR
-	int "PLL divisor"
-	depends on CLOCK_STM32_SYSCLK_SRC_PLL
-	default 2
-	range 2 4
-	help
-	  PLL divisor, allowed values: 2-4.
-
-endif # SOC_SERIES_STM32L0X || SOC_SERIES_STM32L1X
-
-if SOC_SERIES_STM32L4X || SOC_SERIES_STM32WBX
-
-config CLOCK_STM32_PLL_M_DIVISOR
-	int "PLL divisor"
-	depends on CLOCK_STM32_SYSCLK_SRC_PLL
-	default 1
-	range 1 8
-	help
-	  PLL divisor, allowed values: 1-8. With this ensure that the PLL
-	  VCO input frequency ranges from 4 to 16MHz.
-
-config CLOCK_STM32_PLL_N_MULTIPLIER
-	int "PLL multiplier"
-	depends on CLOCK_STM32_SYSCLK_SRC_PLL
-	default 20
-	range 8 86
-	help
-	  PLL multiplier, allowed values: 2-16. PLL output must not
-	  exceed 344MHz.
-
-config CLOCK_STM32_PLL_P_DIVISOR
-	int "PLL P Divisor"
-	depends on CLOCK_STM32_SYSCLK_SRC_PLL
-	default 7
-	range 0 17
-	help
-	  PLL P Output divisor, allowed values: 0, 7, 17.
-
-config CLOCK_STM32_PLL_Q_DIVISOR
-	int "PLL Q Divisor"
-	depends on CLOCK_STM32_SYSCLK_SRC_PLL
-	default 2
-	range 0 8
-	help
-	  PLL Q Output divisor, allowed values: 0, 2, 4, 6, 8.
-
-config CLOCK_STM32_PLL_R_DIVISOR
-	int "PLL R Divisor"
-	depends on CLOCK_STM32_SYSCLK_SRC_PLL
-	default 4
-	range 0 8
-	help
-	  PLL R Output divisor, allowed values: 0, 2, 4, 6, 8.
-
-config CLOCK_STM32_LSE
-	bool "Low-speed external clock"
-	help
-	  Enable the low-speed external (LSE) clock supplied with a 32.768 kHz
-	  crystal resonator oscillator.
-
-config CLOCK_STM32_MSI_PLL_MODE
-	bool "MSI PLL MODE"
-	depends on CLOCK_STM32_LSE
-	help
-	  Enable hardware auto-calibration with LSE.
-
-endif # SOC_SERIES_STM32L4X || SOC_SERIES_STM32WBX
+# Bus clocks configuration options
 
 config CLOCK_STM32_AHB_PRESCALER
 	int "AHB prescaler"
@@ -397,24 +145,20 @@ config CLOCK_STM32_APB1_PRESCALER
 	  APB1 Low speed clock (PCLK1) prescaler, allowed values:
 	  1, 2, 4, 8, 16
 
-if SOC_SERIES_STM32F0X!=y
-
 config CLOCK_STM32_APB2_PRESCALER
 	int "APB2 prescaler"
 	default 1
 	range 1 16
+	depends on !SOC_SERIES_STM32F0X
 	help
 	  APB2 High speed clock (PCLK2) prescaler, allowed values:
 	  1, 2, 4, 8, 16
-
-endif # SOC_SERIES_STM32F0X!=y
-
-if SOC_SERIES_STM32WBX
 
 config CLOCK_STM32_CPU1_PRESCALER
 	int "CPU1 HCLK prescaler"
 	default 1
 	range 1 512
+	depends on SOC_SERIES_STM32WBX
 	help
 	  CPU1 HCLK prescaler, allowed values: 1, 2, 4, 8, 16, 64, 128,
 	  256, 512.
@@ -423,6 +167,7 @@ config CLOCK_STM32_CPU2_PRESCALER
 	int "CPU2 HCLK prescaler"
 	default 1
 	range 1 512
+	depends on SOC_SERIES_STM32WBX
 	help
 	  CPU2 HCLK prescaler, allowed values: 1, 2, 4, 8, 16, 64, 128,
 	  256, 512.
@@ -431,11 +176,13 @@ config CLOCK_STM32_AHB4_PRESCALER
 	int "AHB4 HCLK prescaler"
 	default 1
 	range 1 512
+	depends on SOC_SERIES_STM32WBX
 	help
 	  HCLK4 prescaler, allowed values: 1, 2, 4, 8, 16, 64, 128,
 	  256, 512.
 
-endif # SOC_SERIES_STM32WBX
+
+# Micro-controller Clock output configuration options
 
 choice
 prompt "STM32 MCO1 Clock Source"
