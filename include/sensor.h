@@ -125,6 +125,13 @@ enum sensor_channel {
 	/** Angular rotation, in degrees */
 	SENSOR_CHAN_ROTATION,
 
+	/** Position change on the X axis, in points. */
+	SENSOR_CHAN_POS_DX,
+	/** Position change on the Y axis, in points. */
+	SENSOR_CHAN_POS_DY,
+	/** Position change on the Z axis, in points. */
+	SENSOR_CHAN_POS_DZ,
+
 	/** All channels. */
 	SENSOR_CHAN_ALL,
 };
