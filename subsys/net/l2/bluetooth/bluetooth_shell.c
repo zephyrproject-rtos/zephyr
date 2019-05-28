@@ -25,21 +25,6 @@ LOG_MODULE_REGISTER(net_bt_shell, CONFIG_NET_L2_BT_LOG_LEVEL);
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/hci.h>
 
-static int char2hex(const char *c, u8_t *x)
-{
-	if (*c >= '0' && *c <= '9') {
-		*x = *c - '0';
-	} else if (*c >= 'a' && *c <= 'f') {
-		*x = *c - 'a' + 10;
-	} else if (*c >= 'A' && *c <= 'F') {
-		*x = *c - 'A' + 10;
-	} else {
-		return -EINVAL;
-	}
-
-	return 0;
-}
-
 static int str2bt_addr_le(const char *str, const char *type, bt_addr_le_t *addr)
 {
 	int i, j;

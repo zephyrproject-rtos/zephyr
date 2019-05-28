@@ -18,6 +18,7 @@
 #include <string.h>
 #include <sys/printk.h>
 #include <sys/byteorder.h>
+#include <sys/util.h>
 #include <zephyr.h>
 
 #include <settings/settings.h>
@@ -228,21 +229,6 @@ static struct bt_conn_cb conn_callbacks = {
 #endif
 };
 #endif /* CONFIG_BT_CONN */
-
-static int char2hex(const char *c, u8_t *x)
-{
-	if (*c >= '0' && *c <= '9') {
-		*x = *c - '0';
-	} else if (*c >= 'a' && *c <= 'f') {
-		*x = *c - 'a' + 10;
-	} else if (*c >= 'A' && *c <= 'F') {
-		*x = *c - 'A' + 10;
-	} else {
-		return -EINVAL;
-	}
-
-	return 0;
-}
 
 static int hexstr2array(const char *str, u8_t *array, u8_t size)
 {

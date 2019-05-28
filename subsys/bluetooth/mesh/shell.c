@@ -13,6 +13,7 @@
 #include <ctype.h>
 #include <zephyr.h>
 #include <sys/printk.h>
+#include <sys/util.h>
 
 #include <shell/shell.h>
 #include <settings/settings.h>
@@ -205,37 +206,6 @@ static const struct bt_mesh_comp comp = {
 	.elem_count = ARRAY_SIZE(elements),
 };
 
-static u8_t hex2val(char c)
-{
-	if (c >= '0' && c <= '9') {
-		return c - '0';
-	} else if (c >= 'a' && c <= 'f') {
-		return c - 'a' + 10;
-	} else if (c >= 'A' && c <= 'F') {
-		return c - 'A' + 10;
-	} else {
-		return 0;
-	}
-}
-
-static size_t hex2bin(const char *hex, u8_t *bin, size_t bin_len)
-{
-	size_t len = 0;
-
-	while (*hex && len < bin_len) {
-		bin[len] = hex2val(*hex++) << 4;
-
-		if (!*hex) {
-			len++;
-			break;
-		}
-
-		bin[len++] |= hex2val(*hex++);
-	}
-
-	return len;
-}
-
 static void prov_complete(u16_t net_idx, u16_t addr)
 {
 	shell_print(ctx_shell, "Local node provisioned, net_idx 0x%04x address "
@@ -395,7 +365,8 @@ static int cmd_static_oob(const struct shell *shell, size_t argc, char *argv[])
 		prov.static_val = NULL;
 		prov.static_val_len = 0U;
 	} else {
-		prov.static_val_len = hex2bin(argv[1], static_val, 16);
+		prov.static_val_len = hex2bin(argv[1], strlen(argv[1]),
+					      static_val, 16);
 		if (prov.static_val_len) {
 			prov.static_val = static_val;
 		} else {
@@ -422,7 +393,7 @@ static int cmd_uuid(const struct shell *shell, size_t argc, char *argv[])
 		return -EINVAL;
 	}
 
-	len = hex2bin(argv[1], uuid, sizeof(uuid));
+	len = hex2bin(argv[1], strlen(argv[1]), uuid, sizeof(uuid));
 	if (len < 1) {
 		return -EINVAL;
 	}
@@ -727,7 +698,8 @@ static int cmd_net_send(const struct shell *shell, size_t argc, char *argv[])
 		return 0;
 	}
 
-	len = hex2bin(argv[1], msg.data, net_buf_simple_tailroom(&msg) - 4);
+	len = hex2bin(argv[1], strlen(argv[1]),
+		      msg.data, net_buf_simple_tailroom(&msg) - 4);
 	net_buf_simple_add(&msg, len);
 
 	err = bt_mesh_trans_send(&tx, &msg, NULL, NULL);
@@ -940,7 +912,8 @@ static int cmd_net_key_add(const struct shell *shell, size_t argc, char *argv[])
 	if (argc > 2) {
 		size_t len;
 
-		len = hex2bin(argv[3], key_val, sizeof(key_val));
+		len = hex2bin(argv[3], strlen(argv[3]),
+			      key_val, sizeof(key_val));
 		(void)memset(key_val, 0, sizeof(key_val) - len);
 	} else {
 		memcpy(key_val, default_key, sizeof(key_val));
@@ -981,7 +954,8 @@ static int cmd_app_key_add(const struct shell *shell, size_t argc, char *argv[])
 	if (argc > 3) {
 		size_t len;
 
-		len = hex2bin(argv[3], key_val, sizeof(key_val));
+		len = hex2bin(argv[3], strlen(argv[3]),
+			      key_val, sizeof(key_val));
 		(void)memset(key_val, 0, sizeof(key_val) - len);
 	} else {
 		memcpy(key_val, default_key, sizeof(key_val));
@@ -1141,7 +1115,7 @@ static int cmd_mod_sub_add_va(const struct shell *shell, size_t argc,
 
 	elem_addr = strtoul(argv[1], NULL, 0);
 
-	len = hex2bin(argv[2], label, sizeof(label));
+	len = hex2bin(argv[2], strlen(argv[2]), label, sizeof(label));
 	(void)memset(label + len, 0, sizeof(label) - len);
 
 	mod_id = strtoul(argv[3], NULL, 0);
@@ -1189,7 +1163,7 @@ static int cmd_mod_sub_del_va(const struct shell *shell, size_t argc,
 
 	elem_addr = strtoul(argv[1], NULL, 0);
 
-	len = hex2bin(argv[2], label, sizeof(label));
+	len = hex2bin(argv[2], strlen(argv[2]), label, sizeof(label));
 	(void)memset(label + len, 0, sizeof(label) - len);
 
 	mod_id = strtoul(argv[3], NULL, 0);
