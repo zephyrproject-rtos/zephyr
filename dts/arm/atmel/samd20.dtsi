@@ -20,6 +20,7 @@
 			interrupts = <13 0>;
 			label = "TIMER_0";
 			clocks = <&gclk0>;
+			clock-frequency = <48000000>;
 		};
 
 		tc2: tc@42002800 {
@@ -28,6 +29,7 @@
 			interrupts = <15 0>;
 			label = "TIMER_2";
 			clocks = <&gclk0>;
+			clock-frequency = <48000000>;
 		};
 
 		tc6: tc@42003800 {
@@ -37,6 +39,7 @@
 			interrupts = <19 0>;
 			label = "TIMER_6";
 			clocks = <&gclk0>;
+			clock-frequency = <48000000>;
 		};
 	};
 };

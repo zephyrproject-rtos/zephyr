@@ -261,6 +261,7 @@
 			reg = <0x42003000 0x20>;
 			label = "TIMER_4";
 			clocks = <&gclk0>;
+			clock-frequency = <48000000>;
 		};
 
 		porta: gpio@41004400 {

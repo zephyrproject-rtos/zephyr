@@ -26,3 +26,14 @@ properties:
 
   label:
     category: required
+
+  clocks:
+    category: required
+
+  clock-frequency:
+    type: int
+    category: required
+    description: >
+      The frequency that the timer runs at (Hz).  This is used to calculate
+      the divisor applied to the input clock.  It is also the frequency
+      exposed through the device API.

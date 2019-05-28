@@ -7,6 +7,7 @@
 #include <drivers/counter.h>
 #include <device.h>
 #include <soc.h>
+#include <clock_control.h>
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(counter_sam0_tc32, CONFIG_COUNTER_LOG_LEVEL);
@@ -26,19 +27,20 @@ struct counter_sam0_tc32_data {
 struct counter_sam0_tc32_config {
 	struct counter_config_info info;
 	TcCount32 *regs;
+
+	const char *clk_dev;
+	clock_control_subsys_t clk_sys;
 #ifdef MCLK
 	volatile u32_t *mclk;
 	u32_t mclk_mask;
-	u16_t gclk_id;
 #else
 	u32_t pm_apbcmask;
-	u16_t gclk_clkctrl_id;
 #endif
-	u16_t prescaler;
 
 	void (*irq_config_func)(struct device *dev);
 };
 
+#define DEV_NAME(dev) ((dev)->config->name)
 #define DEV_CFG(dev) ((const struct counter_sam0_tc32_config *const) \
 		      (dev)->config->config_info)
 #define DEV_DATA(dev) ((struct counter_sam0_tc32_data *const) \
@@ -327,38 +329,95 @@ static void counter_sam0_tc32_isr(void *arg)
 	}
 }
 
-static int counter_sam0_tc32_initialize(struct device *dev)
+static int  counter_sam0_calculate_prescaler(struct device *dev,
+					     u32_t clk_freq)
 {
 	const struct counter_sam0_tc32_config *const cfg = DEV_CFG(dev);
 	TcCount32 *tc = cfg->regs;
+	u32_t reg;
+	u32_t div;
 
-#ifdef MCLK
-	/* Enable the GCLK */
-	GCLK->PCHCTRL[cfg->gclk_id].reg = GCLK_PCHCTRL_GEN_GCLK0 |
-					  GCLK_PCHCTRL_CHEN;
-
-	/* Enable TC clock in MCLK */
-	*cfg->mclk |= cfg->mclk_mask;
-#else
-	/* Enable the GCLK */
-	GCLK->CLKCTRL.reg = cfg->gclk_clkctrl_id | GCLK_CLKCTRL_GEN_GCLK0 |
-			    GCLK_CLKCTRL_CLKEN;
-
-	/* Enable clock in PM */
-	PM->APBCMASK.reg |= cfg->pm_apbcmask;
-#endif
 
 	/*
 	 * In 32 bit mode, NFRQ mode always uses MAX as the counter top, so
 	 * use MFRQ mode which uses CC0 as the top at the expense of only
 	 * having CC1 available for alarms.
 	 */
-	tc->CTRLA.reg = TC_CTRLA_MODE_COUNT32 |
+	reg = TC_CTRLA_MODE_COUNT32;
 #ifdef TC_CTRLA_WAVEGEN_MFRQ
-			TC_CTRLA_WAVEGEN_MFRQ |
+	reg |= TC_CTRLA_WAVEGEN_MFRQ;
 #endif
-			cfg->prescaler;
+
+	div = clk_freq / cfg->info.freq;
+	switch (div) {
+	case 1:
+		reg |= TC_CTRLA_PRESCALER_DIV1;
+		break;
+	case 2:
+		reg |= TC_CTRLA_PRESCALER_DIV2;
+		break;
+	case 4:
+		reg |= TC_CTRLA_PRESCALER_DIV4;
+		break;
+	case 16:
+		reg |= TC_CTRLA_PRESCALER_DIV16;
+		break;
+	case 64:
+		reg |= TC_CTRLA_PRESCALER_DIV64;
+		break;
+	case 256:
+		reg |= TC_CTRLA_PRESCALER_DIV256;
+		break;
+	case 1024:
+		reg |= TC_CTRLA_PRESCALER_DIV1024;
+		break;
+	default:
+		LOG_ERR("Unable to match counter %s requested frequency (%u/%u)",
+			DEV_NAME(dev), clk_freq, cfg->info.freq);
+		return -EINVAL;
+	}
+
+	clk_freq /= div;
+	if (clk_freq != cfg->info.freq) {
+		LOG_ERR("Inexact frequency match for counter %s (%u vs %u)",
+			DEV_NAME(dev), clk_freq, cfg->info.freq);
+		return -EINVAL;
+	}
+
+
+	tc->CTRLA.reg = reg;
 	wait_synchronization(tc);
+
+	return 0;
+}
+
+static int counter_sam0_tc32_initialize(struct device *dev)
+{
+	const struct counter_sam0_tc32_config *const cfg = DEV_CFG(dev);
+	TcCount32 *tc = cfg->regs;
+	struct device *clk = device_get_binding(cfg->clk_dev);
+	u32_t clk_freq;
+	int retval;
+
+	if (!clk) {
+		return -EINVAL;
+	}
+
+	clock_control_on(clk, cfg->clk_sys);
+	clock_control_get_rate(clk, cfg->clk_sys, &clk_freq);
+
+#ifdef MCLK
+	/* Enable TC clock in MCLK */
+	*cfg->mclk |= cfg->mclk_mask;
+#else
+	/* Enable clock in PM */
+	PM->APBCMASK.reg |= cfg->pm_apbcmask;
+#endif
+
+	retval = counter_sam0_calculate_prescaler(dev, clk_freq);
+	if (retval != 0) {
+		return retval;
+	}
 
 #ifdef TC_WAVE_WAVEGEN_MFRQ
 	tc->WAVE.reg = TC_WAVE_WAVEGEN_MFRQ;
@@ -398,13 +457,10 @@ static const struct counter_driver_api counter_sam0_tc32_driver_api = {
 #ifdef MCLK
 #define COUNTER_SAM0_TC32_CLOCK_CONTROL(n) \
 	.mclk = MCLK_TC##n,		   \
-	.mclk_mask = MCLK_TC##n##_MASK,	   \
-	.gclk_id = TC##n##_GCLK_ID,
+	.mclk_mask = MCLK_TC##n##_MASK,
 #else
-#define COUNTER_SAM0_TC32_CLOCK_CONTROL(n)			    \
-	.pm_apbcmask = PM_APBCMASK_TC##n,			    \
-	.gclk_clkctrl_id = UTIL_CAT(GCLK_CLKCTRL_ID_TC ## n ## _TC, \
-				    UTIL_INC(n)),
+#define COUNTER_SAM0_TC32_CLOCK_CONTROL(n) \
+	.pm_apbcmask = PM_APBCMASK_TC##n,
 #endif
 
 #define COUNTER_SAM0_TC32_DEVICE(n)					      \
@@ -413,15 +469,14 @@ static const struct counter_driver_api counter_sam0_tc32_driver_api = {
 	counter_sam0_tc32_dev_config_##n = {				      \
 		.info = {						      \
 			.max_top_value = UINT32_MAX,			      \
-			.freq = SOC_ATMEL_SAM0_GCLK0_FREQ_HZ /		      \
-				CONFIG_COUNTER_SAM0_TC32_##n##_DIVISOR,	      \
+			.freq = DT_ATMEL_SAM0_TC32_TC_##n##_CLOCK_FREQUENCY,  \
 			.flags = COUNTER_CONFIG_INFO_COUNT_UP,		      \
 			.channels = 1					      \
 		},							      \
 		.regs = (TcCount32 *)DT_ATMEL_SAM0_TC32_TC_##n##_BASE_ADDRESS,\
+		.clk_dev = DT_ATMEL_SAM0_TC32_TC_##n##_CLOCK_CONTROLLER,      \
+		.clk_sys = (clock_control_subsys_t)TC##n##_GCLK_ID,	      \
 		COUNTER_SAM0_TC32_CLOCK_CONTROL(n)			      \
-		.prescaler = UTIL_CAT(TC_CTRLA_PRESCALER_DIV,		      \
-				CONFIG_COUNTER_SAM0_TC32_##n##_DIVISOR),      \
 		.irq_config_func = &counter_sam0_tc32_config_##n,	      \
 	};								      \
 	static struct counter_sam0_tc32_data counter_sam0_tc32_dev_data_##n;  \

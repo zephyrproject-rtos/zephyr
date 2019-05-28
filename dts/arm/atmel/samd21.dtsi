@@ -52,6 +52,7 @@
 			interrupts = <21 0>;
 			label = "TIMER_6";
 			clocks = <&gclk0>;
+			clock-frequency = <48000000>;
 		};
 	};
 };
