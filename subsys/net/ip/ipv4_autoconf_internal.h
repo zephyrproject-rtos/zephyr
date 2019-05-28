@@ -87,7 +87,7 @@ void net_ipv4_autoconf_reset(struct net_if *iface);
 enum net_verdict net_ipv4_autoconf_input(struct net_if *iface,
 					 struct net_pkt *pkt);
 #else
-#define net_ipv4_autoconf_input(...)
+#define net_ipv4_autoconf_input(...) NET_CONTINUE
 #endif
 
 #endif /* __IPV4_AUTOCONF_INTERNAL_H */
