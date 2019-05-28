@@ -614,6 +614,39 @@ config BT_CTLR_SCAN_INDICATION
 	help
 	  Generate events indicating on air scanner events.
 
+config BT_MAYFLY_YIELD_AFTER_CALL
+	bool "Yield from mayfly thread after first call"
+	default y
+	help
+	  Only process one mayfly callback per invocation (legacy behavior).
+	  If set to 'n', all pending mayflies for callee are executed before
+	  yielding
+
+config BT_CTLR_USER_EXT
+	prompt "Enable proprietary extensions in Controller"
+	bool
+	help
+	  Catch-all for enabling proprietary event types in Controller behavior.
+
+config BT_CTLR_USER_EVT_RANGE
+	int "Range of event contants reserved for proprietary event types"
+	depends on BT_CTLR_USER_EXT
+	default 5
+	range 0 10
+	help
+	  Number of event types reserved for proprietary use. The range
+	  is typically used when BT_CTLR_USER_EXT is in use.
+
+config BT_RX_USER_PDU_LEN
+	int "Maximum supported proprietary PDU buffer length"
+	depends on BT_CTLR_USER_EXT
+	default 2
+	range 2 255
+	help
+	  Maximum data size for each proprietary PDU. This size includes link layer
+	  header and payload. It does not account for HCI event headers as these
+	  PDUs are assumed to not go across HCI.
+
 endmenu
 
 comment "BLE Controller hardware configuration"
@@ -712,37 +745,5 @@ config BT_CTLR_DEBUG_PINS
 	  Turn on debug GPIO toggling for the BLE Controller. This is useful
 	  when debugging with a logic analyzer or profiling certain sections of
 	  the code.
-
-config BT_MAYFLY_YIELD_AFTER_CALL
-	bool "Yield from mayfly thread after first call"
-	default y
-	help
-	  Only process one mayfly callback per invocation (legacy behavior).
-	  If set to 'n', all pending mayflies for callee are executed before
-	  yielding
-
-config BT_CTLR_USER_EXT
-	prompt "Enable proprietary extensions in Controller"
-	bool
-	help
-	  Catch-all for enabling proprietary event types in Controller behavior.
-
-config BT_CTLR_USER_EVT_RANGE
-	int "Range of event contants reserved for proprietary event types"
-	depends on BT_CTLR_USER_EXT
-	default 5
-	range 0 10
-	help
-	  Number of event types reserved for proprietary use. The range
-	  is typically used when BT_CTLR_USER_EXT is in use.
-
-config BT_RX_USER_PDU_LEN
-	int "Maximum supported proprietary PDU buffer length"
-	default 2
-	range 2 255
-	help
-	  Maximum data size for each proprietary PDU. This size includes link layer
-	  header and payload. It does not account for HCI event headers as these
-	  PDUs are assumed to not go across HCI.
 
 endif # BT_CTLR
