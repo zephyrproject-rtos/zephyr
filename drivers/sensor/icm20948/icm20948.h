@@ -8,7 +8,7 @@
 
 #include <zephyr/types.h>
 #include <device.h>
-#include <spi.h>
+#include <gpio.h>
 
 #define CONFIG_ICM20948_I2C_SLAVE_ADDR (0x68 | CONFIG_ICM20948_I2C_AD0)
 
@@ -150,6 +150,12 @@ enum icm20948_gyro_fs {
 #define ICM20948_GYRO_FS_DEFAULT ICM20948_GYRO_FS_2000_VAL
 #endif
 
+#define ICM20948_ENABLE_FSYNC 0 
+#if defined(CONFIG_ICM20948_ENABLE_WAKE_FSYNC)
+	#define ICM20948_ENABLE_FSYNC BIT(7)
+#endif
+
+
 /* sensor data forward declaration (member definition is below) */
 struct icm20948_data;
 
@@ -187,11 +193,28 @@ struct icm20948_data {
 #if defined(DT_TDK_ICM20948_0_CS_GPIO_CONTROLLER)
 	struct spi_cs_control cs_ctrl;
 #endif
+
+#ifdef CONFIG_ICM20948_TRIGGER
+	struct device *gpio;
+	struct gpio_callback gpio_cb;
+
+	struct sensor_trigger data_ready_trigger;
+	sensor_trigger_handler_t data_ready_handler;
+#endif
 	u8_t bank; // bank
 };
 
-int icm20948_i2c_init(struct device *dev);
 
+#ifdef CONFIG_ICM20948_TRIGGER
+int icm20948_trigger_set(struct device *dev,
+			const struct sensor_trigger *trig,
+			sensor_trigger_handler_t handler);
+
+int icm20948_init_interrupt(struct device *dev);
+
+#endif
+
+int icm20948_i2c_init(struct device *dev);
 int icm20948_spi_init(struct device *dev);
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_BME280_BME280_H_ */
