@@ -97,7 +97,7 @@ config UART_10
 	  Enable support for UART10 port in the driver.
 	  Say y here if you want to use UART10 device.
 
-if SOC_SERIES_STM32L0X || SOC_SERIES_STM32L4X
+if SOC_SERIES_STM32L0X || SOC_SERIES_STM32L4X || SOC_SERIES_STM32WBX
 
 # --- low power port 1 ---
 
@@ -107,6 +107,6 @@ config LPUART_1
 	  Enable support for LPUART1 port in the driver.
 	  Say y here if you want to use LPUART1 device.
 
-endif # SOC_SERIES_STM32L0X || SOC_SERIES_STM32L4X
+endif # SOC_SERIES_STM32L0X || SOC_SERIES_STM32L4X || SOC_SERIES_STM32WBX
 
 endif # UART_STM32

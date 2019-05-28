@@ -26,9 +26,9 @@ endif # SERIAL
 
 if BT_DEBUG_MONITOR
 
-config UART_1
+config LPUART_1
 	default y
 
-endif
+endif # BT_DEBUG_MONITOR
 
 endif # BOARD_NUCLEO_WB55RG
