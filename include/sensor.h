@@ -134,6 +134,22 @@ enum sensor_channel {
 
 	/** All channels. */
 	SENSOR_CHAN_ALL,
+
+	/**
+	 * Number of all common sensor channels.
+	 */
+	SENSOR_CHAN_COMMON_COUNT,
+
+	/**
+	 * This and higher values are sensor specific.
+	 * Refer to the sensor header file.
+	 */
+	SENSOR_CHAN_PRIV_START = SENSOR_CHAN_COMMON_COUNT,
+
+	/**
+	 * Maximum value describing a sensor channel type.
+	 */
+	SENSOR_CHAN_MAX = INT16_MAX,
 };
 
 /**
@@ -171,6 +187,22 @@ enum sensor_trigger_type {
 
 	/** Trigger fires when a double tap is detected. */
 	SENSOR_TRIG_DOUBLE_TAP,
+
+	/**
+	 * Number of all common sensor triggers.
+	 */
+	SENSOR_TRIG_COMMON_COUNT,
+
+	/**
+	 * This and higher values are sensor specific.
+	 * Refer to the sensor header file.
+	 */
+	SENSOR_TRIG_PRIV_START = SENSOR_TRIG_COMMON_COUNT,
+
+	/**
+	 * Maximum value describing a sensor trigger type.
+	 */
+	SENSOR_TRIG_MAX = INT16_MAX,
 };
 
 /**
@@ -217,6 +249,22 @@ enum sensor_attribute {
 	 * algorithms to calibrate itself on a certain axis, or all of them.
 	 */
 	SENSOR_ATTR_CALIB_TARGET,
+
+	/**
+	 * Number of all common sensor attributes.
+	 */
+	SENSOR_ATTR_COMMON_COUNT,
+
+	/**
+	 * This and higher values are sensor specific.
+	 * Refer to the sensor header file.
+	 */
+	SENSOR_ATTR_PRIV_START = SENSOR_ATTR_COMMON_COUNT,
+
+	/**
+	 * Maximum value describing a sensor attribute type.
+	 */
+	SENSOR_ATTR_MAX = INT16_MAX,
 };
 
 /**
