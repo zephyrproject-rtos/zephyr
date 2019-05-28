@@ -79,7 +79,7 @@ void net_gptp_init(void);
 enum net_verdict net_gptp_recv(struct net_if *iface, struct net_pkt *pkt);
 #else
 #define net_gptp_init()
-#define net_gptp_recv(iface, pkt)
+#define net_gptp_recv(iface, pkt) NET_DROP
 #endif /* CONFIG_NET_GPTP */
 
 #if defined(CONFIG_NET_IPV6_FRAGMENT)
