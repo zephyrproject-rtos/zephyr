@@ -76,9 +76,9 @@ struct flash_sector {
 };
 
 /**
- * @brief Retrieve partitions flash area form the flash_mpa.
+ * @brief Retrieve partitions flash area from the flash_map.
  *
- * Function Retrieves flash_area form flash_map for given partition.
+ * Function Retrieves flash_area from flash_map for given partition.
  *
  * @param[in]  id ID of the flash partition.
  * @param[out] fa Pointer which has to reference flash_area. If
