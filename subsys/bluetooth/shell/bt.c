@@ -46,9 +46,14 @@ struct bt_conn *default_conn;
 
 /* Connection context for BR/EDR legacy pairing in sec mode 3 */
 static struct bt_conn *pairing_conn;
+
+static struct bt_le_oob oob_local;
+static struct bt_le_oob oob_remote;
 #endif /* CONFIG_BT_CONN */
 
 #define NAME_LEN 30
+
+#define KEY_STR_LEN 33
 
 #if defined(CONFIG_BT_OBSERVER)
 static bool data_cb(struct bt_data *data, void *user_data)
@@ -829,19 +834,56 @@ static int cmd_chan_map(const struct shell *shell, size_t argc, char *argv[])
 static int cmd_oob(const struct shell *shell, size_t argc, char *argv[])
 {
 	char addr[BT_ADDR_LE_STR_LEN];
-	struct bt_le_oob oob;
+	char c[KEY_STR_LEN];
+	char r[KEY_STR_LEN];
 	int err;
 
-	err = bt_le_oob_get_local(selected_id, &oob);
+	err = bt_le_oob_get_local(selected_id, &oob_local);
 	if (err) {
 		shell_error(shell, "OOB data failed");
 		return err;
 	}
 
-	bt_addr_le_to_str(&oob.addr, addr, sizeof(addr));
+	bt_addr_le_to_str(&oob_local.addr, addr, sizeof(addr));
+	bin2hex(oob_local.le_sc_data.c, sizeof(oob_local.le_sc_data.c), c,
+		sizeof(c));
+	bin2hex(oob_local.le_sc_data.r, sizeof(oob_local.le_sc_data.r), r,
+		sizeof(r));
 
 	shell_print(shell, "OOB data:");
-	shell_print(shell, "  addr %s", addr);
+	shell_print(shell, "%-26s %-32s %-32s", "addr", "random", "confirm");
+	shell_print(shell, "%26s %32s %32s", addr, r, c);
+
+	return 0;
+}
+
+static int cmd_oob_remote(const struct shell *shell, size_t argc,
+			     char *argv[])
+{
+	int err;
+	bt_addr_le_t addr;
+
+	if (argc < 3) {
+		shell_error(shell, "too few args");
+	}
+
+	err = bt_addr_le_from_str(argv[1], argv[2], &addr);
+	if (err) {
+		shell_error(shell, "Invalid peer address (err %d)", err);
+		return err;
+	}
+
+	bt_addr_le_copy(&oob_remote.addr, &addr);
+
+	if (argc == 5) {
+		hex2bin(argv[3], strlen(argv[3]), oob_remote.le_sc_data.r,
+			sizeof(oob_remote.le_sc_data.r));
+		hex2bin(argv[4], strlen(argv[4]), oob_remote.le_sc_data.c,
+			sizeof(oob_remote.le_sc_data.c));
+		bt_set_oob_data_flag(true);
+	} else {
+		shell_error(shell, "legacy not implemented (%d)", argc);
+	}
 
 	return 0;
 }
@@ -986,6 +1028,55 @@ static void auth_pairing_confirm(struct bt_conn *conn)
 	shell_print(ctx_shell, "Confirm pairing for %s", addr);
 }
 
+static const char *oob_config_str(int oob_config)
+{
+	switch (oob_config) {
+	case BT_CONN_OOB_LOCAL_ONLY:
+		return "Local";
+	case BT_CONN_OOB_REMOTE_ONLY:
+		return "Remote";
+	case BT_CONN_OOB_BOTH_PEERS:
+		return "Local and Remote";
+	case BT_CONN_OOB_NO_DATA:
+	default:
+		return "no";
+	}
+}
+
+static void auth_pairing_oob_data_request(struct bt_conn *conn,
+					  struct bt_conn_oob_info *info)
+{
+	char addr[BT_ADDR_LE_STR_LEN];
+
+	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+
+	if (info->lesc.oob_config != BT_CONN_OOB_LOCAL_ONLY &&
+	    bt_addr_le_cmp(bt_conn_get_dst(conn), &oob_remote.addr)) {
+		shell_print(ctx_shell, "No OOB data available for %s", addr);
+		bt_conn_auth_cancel(conn);
+		return;
+	}
+
+	if (info->type == BT_CONN_OOB_LE_SC) {
+		struct bt_le_oob_sc_data *oobd_local =
+			info->lesc.oob_config != BT_CONN_OOB_REMOTE_ONLY
+					      ? &oob_local.le_sc_data
+					      : NULL;
+		struct bt_le_oob_sc_data *oobd_remote =
+			info->lesc.oob_config != BT_CONN_OOB_LOCAL_ONLY
+					      ? &oob_remote.le_sc_data
+					      : NULL;
+		bt_le_oob_set_sc_data(conn, oobd_local,
+					    oobd_remote);
+
+		shell_print(ctx_shell, "Set %s OOB SC data for %s, ",
+			oob_config_str(info->lesc.oob_config), addr);
+	} else {
+		shell_print(ctx_shell, "Legacy OOB not supported");
+		bt_conn_auth_cancel(conn);
+	}
+}
+
 static void auth_pairing_complete(struct bt_conn *conn, bool bonded)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
@@ -1045,6 +1136,7 @@ static struct bt_conn_auth_cb auth_cb_display = {
 #if defined(CONFIG_BT_BREDR)
 	.pincode_entry = auth_pincode_entry,
 #endif
+	.oob_data_request = NULL,
 	.cancel = auth_cancel,
 	.pairing_confirm = auth_pairing_confirm,
 	.pairing_failed = auth_pairing_failed,
@@ -1058,6 +1150,7 @@ static struct bt_conn_auth_cb auth_cb_display_yes_no = {
 #if defined(CONFIG_BT_BREDR)
 	.pincode_entry = auth_pincode_entry,
 #endif
+	.oob_data_request = NULL,
 	.cancel = auth_cancel,
 	.pairing_confirm = auth_pairing_confirm,
 	.pairing_failed = auth_pairing_failed,
@@ -1071,6 +1164,7 @@ static struct bt_conn_auth_cb auth_cb_input = {
 #if defined(CONFIG_BT_BREDR)
 	.pincode_entry = auth_pincode_entry,
 #endif
+	.oob_data_request = NULL,
 	.cancel = auth_cancel,
 	.pairing_confirm = auth_pairing_confirm,
 	.pairing_failed = auth_pairing_failed,
@@ -1081,6 +1175,7 @@ static struct bt_conn_auth_cb auth_cb_confirm = {
 #if defined(CONFIG_BT_BREDR)
 	.pincode_entry = auth_pincode_entry,
 #endif
+	.oob_data_request = NULL,
 	.cancel = auth_cancel,
 	.pairing_confirm = auth_pairing_confirm,
 	.pairing_failed = auth_pairing_failed,
@@ -1094,6 +1189,7 @@ static struct bt_conn_auth_cb auth_cb_all = {
 #if defined(CONFIG_BT_BREDR)
 	.pincode_entry = auth_pincode_entry,
 #endif
+	.oob_data_request = auth_pairing_oob_data_request,
 	.cancel = auth_cancel,
 	.pairing_confirm = auth_pairing_confirm,
 	.pairing_failed = auth_pairing_failed,
@@ -1277,6 +1373,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 		      cmd_auth_passkey_confirm, 1, 0),
 	SHELL_CMD_ARG(auth-pairing-confirm, NULL, HELP_NONE,
 		      cmd_auth_pairing_confirm, 1, 0),
+	SHELL_CMD_ARG(oob-remote, NULL,
+		      HELP_ADDR_LE" <oob rand> <oob confirm>",
+		      cmd_oob_remote, 5, 0),
 #if defined(CONFIG_BT_FIXED_PASSKEY)
 	SHELL_CMD_ARG(fixed-passkey, NULL, "[passkey]", cmd_fixed_passkey,
 		      1, 1),
