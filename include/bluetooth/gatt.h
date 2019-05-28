@@ -769,24 +769,40 @@ ssize_t bt_gatt_attr_read_cpf(struct bt_conn *conn,
  */
 typedef void (*bt_gatt_complete_func_t) (struct bt_conn *conn, void *user_data);
 
-/** @brief Notify attribute value change with callback.
+struct bt_gatt_notify_params {
+	/** Notification Attribute UUID type */
+	const struct bt_uuid *uuid;
+	/** Notification Attribute object*/
+	const struct bt_gatt_attr *attr;
+	/** Notification Value data */
+	const void *data;
+	/** Notification Value length */
+	u16_t len;
+	/** Notification Value callback */
+	bt_gatt_complete_func_t func;
+	/** Notification Value callback user data */
+	void *user_data;
+};
+
+/** @brief Notify attribute value change.
  *
  *  This function works in the same way as @ref bt_gatt_notify.
  *  With the addition that after sending the notification the
- *  callback function will be called.
+ *  callback function will be called and can dispatch multiple
+ *  notifications at once.
+
+ *  Alternatively it is possible to notify by UUID by setting it on the
+ *  parameters, when using this method the attribute given when be used as the
+ *  start range when looking up for possible matches.
  *
  *  @param conn Connection object.
- *  @param attr Characteristic or Characteristic Value attribute.
- *  @param data Pointer to Attribute data.
- *  @param len Attribute value length.
- *  @param func Notification value callback.
- *  @param user_data User data to be passed back to the callback.
+ *  @param num_params Number of Notification parameters.
+ *  @param params Notification parameters.
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-int bt_gatt_notify_cb(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-		      const void *data, u16_t len,
-		      bt_gatt_complete_func_t func, void *user_data);
+int bt_gatt_notify_cb(struct bt_conn *conn, u16_t num_params,
+		      struct bt_gatt_notify_params *params);
 
 /** @brief Notify attribute value change.
  *
@@ -794,10 +810,10 @@ int bt_gatt_notify_cb(struct bt_conn *conn, const struct bt_gatt_attr *attr,
  *  all peer that have notification enabled via CCC otherwise do a direct
  *  notification only the given connection.
  *
- *  The attribute object can be the so called Characteristic Declaration,
- *  which is usually declared with BT_GATT_CHARACTERISTIC followed by
- *  BT_GATT_CCC, or the Characteristic Value Declaration which is automatically
- *  created after the Characteristic Declaration when using
+ *  The attribute object on the parameters can be the so called Characteristic
+ *  Declaration, which is usually declared with BT_GATT_CHARACTERISTIC followed
+ *  by BT_GATT_CCC, or the Characteristic Value Declaration which is
+ *  automatically created after the Characteristic Declaration when using
  *  BT_GATT_CHARACTERISTIC.
  *
  *  @param conn Connection object.
@@ -811,7 +827,15 @@ static inline int bt_gatt_notify(struct bt_conn *conn,
 				 const struct bt_gatt_attr *attr,
 				 const void *data, u16_t len)
 {
-	return bt_gatt_notify_cb(conn, attr, data, len, NULL, NULL);
+	struct bt_gatt_notify_params params;
+
+	memset(&params, 0, sizeof(params));
+
+	params.attr = attr;
+	params.data = data;
+	params.len = len;
+
+	return bt_gatt_notify_cb(conn, 1, &params);
 }
 
 /** @typedef bt_gatt_indicate_func_t

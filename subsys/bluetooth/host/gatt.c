@@ -1276,16 +1276,14 @@ static u16_t find_static_attr(const struct bt_gatt_attr *attr)
 struct notify_data {
 	int err;
 	u16_t type;
-	const struct bt_gatt_attr *attr;
-	bt_gatt_complete_func_t func;
-	void *user_data;
-	const void *data;
-	u16_t len;
-	struct bt_gatt_indicate_params *params;
+	union {
+		struct bt_gatt_notify_params *nfy_params;
+		struct bt_gatt_indicate_params *ind_params;
+	};
 };
 
-static int gatt_notify(struct bt_conn *conn, u16_t handle, const void *data,
-		       size_t len, bt_gatt_complete_func_t cb, void *user_data)
+static int gatt_notify(struct bt_conn *conn, u16_t handle,
+		       struct bt_gatt_notify_params *params)
 {
 	struct net_buf *buf;
 	struct bt_att_notify *nfy;
@@ -1301,7 +1299,8 @@ static int gatt_notify(struct bt_conn *conn, u16_t handle, const void *data,
 	}
 #endif
 
-	buf = bt_att_create_pdu(conn, BT_ATT_OP_NOTIFY, sizeof(*nfy) + len);
+	buf = bt_att_create_pdu(conn, BT_ATT_OP_NOTIFY,
+				sizeof(*nfy) + params->len);
 	if (!buf) {
 		BT_WARN("No buffer available to send notification");
 		return -ENOMEM;
@@ -1312,10 +1311,10 @@ static int gatt_notify(struct bt_conn *conn, u16_t handle, const void *data,
 	nfy = net_buf_add(buf, sizeof(*nfy));
 	nfy->handle = sys_cpu_to_le16(handle);
 
-	net_buf_add(buf, len);
-	memcpy(nfy->value, data, len);
+	net_buf_add(buf, params->len);
+	memcpy(nfy->value, params->data, params->len);
 
-	return bt_att_send(conn, buf, cb, user_data);
+	return bt_att_send(conn, buf, params->func, params->user_data);
 }
 
 static void gatt_indicate_rsp(struct bt_conn *conn, u8_t err,
@@ -1464,7 +1463,7 @@ static u8_t notify_cb(const struct bt_gatt_attr *attr, void *user_data)
 		if (!conn) {
 #if defined(CONFIG_BT_GATT_DYNAMIC_DB)
 			if (ccc->cfg == sc_ccc_cfg) {
-				sc_save(cfg, data->params);
+				sc_save(cfg, data->ind_params);
 			}
 #endif /* CONFIG_BT_GATT_DYNAMIC_DB */
 			continue;
@@ -1482,11 +1481,10 @@ static u8_t notify_cb(const struct bt_gatt_attr *attr, void *user_data)
 
 		if (data->type == BT_GATT_CCC_INDICATE) {
 			err = gatt_indicate(conn, attr->handle - 1,
-					    data->params);
+					    data->ind_params);
 		} else {
-			err = gatt_notify(conn, attr->handle - 1, data->data,
-					  data->len, data->func,
-					  data->user_data);
+			err = gatt_notify(conn, attr->handle - 1,
+					  data->nfy_params);
 		}
 
 		bt_conn_unref(conn);
@@ -1501,18 +1499,43 @@ static u8_t notify_cb(const struct bt_gatt_attr *attr, void *user_data)
 	return BT_GATT_ITER_CONTINUE;
 }
 
-int bt_gatt_notify_cb(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-		      const void *data, u16_t len,
-		      bt_gatt_complete_func_t func, void *user_data)
+static u8_t match_uuid(const struct bt_gatt_attr *attr, void *user_data)
 {
-	struct notify_data nfy;
+	const struct bt_gatt_attr **found = user_data;
+
+	*found = attr;
+
+	return BT_GATT_ITER_STOP;
+}
+
+static int gatt_notify_params(struct bt_conn *conn,
+			      struct bt_gatt_notify_params *params)
+{
+	struct notify_data data;
+	const struct bt_gatt_attr *attr;
 	u16_t handle;
 
-	__ASSERT(attr, "invalid parameters\n");
+	attr = params->attr;
 
 	handle = attr->handle ? : find_static_attr(attr);
 	if (!handle) {
 		return -ENOENT;
+	}
+
+	/* Lookup UUID if it was given */
+	if (params->uuid) {
+		attr = NULL;
+
+		bt_gatt_foreach_attr_type(handle, 0xffff, params->uuid,
+					  NULL, 1, match_uuid, &attr);
+		if (!attr) {
+			return -ENOENT;
+		}
+
+		handle = attr->handle ? : find_static_attr(attr);
+		if (!handle) {
+			return -ENOENT;
+		}
 	}
 
 	/* Check if attribute is a characteristic then adjust the handle */
@@ -1527,27 +1550,42 @@ int bt_gatt_notify_cb(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	}
 
 	if (conn) {
-		return gatt_notify(conn, handle, data, len, func, user_data);
+		return gatt_notify(conn, handle, params);
 	}
 
-	nfy.err = -ENOTCONN;
-	nfy.attr = attr;
-	nfy.func = func;
-	nfy.user_data = user_data;
-	nfy.type = BT_GATT_CCC_NOTIFY;
-	nfy.data = data;
-	nfy.len = len;
+	data.err = -ENOTCONN;
+	data.type = BT_GATT_CCC_NOTIFY;
+	data.nfy_params = params;
 
 	bt_gatt_foreach_attr_type(handle, 0xffff, BT_UUID_GATT_CCC, NULL, 1,
-				  notify_cb, &nfy);
+				  notify_cb, &data);
 
-	return nfy.err;
+	return data.err;
+}
+
+int bt_gatt_notify_cb(struct bt_conn *conn, u16_t num_params,
+		      struct bt_gatt_notify_params *params)
+{
+	int i, ret;
+
+	__ASSERT(params, "invalid parameters\n");
+	__ASSERT(num_params, "invalid parameters\n");
+	__ASSERT(params->attr, "invalid parameters\n");
+
+	for (i = 0; i < num_params; i++) {
+		ret = gatt_notify_params(conn, &params[i]);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	return 0;
 }
 
 int bt_gatt_indicate(struct bt_conn *conn,
 		     struct bt_gatt_indicate_params *params)
 {
-	struct notify_data nfy;
+	struct notify_data data;
 	u16_t handle;
 
 	__ASSERT(params, "invalid parameters\n");
@@ -1562,14 +1600,14 @@ int bt_gatt_indicate(struct bt_conn *conn,
 		return gatt_indicate(conn, handle, params);
 	}
 
-	nfy.err = -ENOTCONN;
-	nfy.type = BT_GATT_CCC_INDICATE;
-	nfy.params = params;
+	data.err = -ENOTCONN;
+	data.type = BT_GATT_CCC_INDICATE;
+	data.ind_params = params;
 
 	bt_gatt_foreach_attr_type(handle, 0xffff, BT_UUID_GATT_CCC, NULL, 1,
-				  notify_cb, &nfy);
+				  notify_cb, &data);
 
-	return nfy.err;
+	return data.err;
 }
 
 u16_t bt_gatt_get_mtu(struct bt_conn *conn)
