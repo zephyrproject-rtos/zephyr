@@ -192,6 +192,20 @@ size_t strcspn(const char *s1, const char *s2)
 }
 
 /**
+ * @brief Test for a control character
+ *
+ * @return non-zero if c is a control character, otherwise 0.
+ */
+
+int iscntrl(int c)
+{
+	/* All the characters placed before the space on the ASCII table
+	 * and the 0x7F character (DEL) are control characters.
+	 */
+	return (int)(c < ' ' || c == 0x7F);
+}
+
+/**
  *
  * @brief Compare two memory areas
  *
