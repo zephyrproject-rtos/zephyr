@@ -1,0 +1,39 @@
+# Kconfig - STM32F0 and STM32F3 PLL configuration options
+#
+# Copyright (c) 2019 Linaro
+#
+#  SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_SERIES_STM32F0X || SOC_SERIES_STM32F3X
+
+config CLOCK_STM32_PLL_PREDIV
+	int "PREDIV Prescaler"
+	default 1
+	range 1 16
+	help
+	 PREDIV is PLLSCR clock signal prescaler, allowed values: 1 - 16.
+
+config CLOCK_STM32_PLL_PREDIV1
+	int "PREDIV1 Prescaler"
+	depends on CLOCK_STM32_PLL_SRC_HSE
+	depends on SOC_SERIES_STM32F0X
+	default 1
+	range 1 16
+	help
+	 PREDIV is PLLSCR clock signal prescaler, present on STM32F0 SoC having
+	 an HSE Oscillator available like the stm32f04xx, stm32f07xx,
+	 stm32f09xx and stm32f030xc parts. If configured on a non supported
+	 part, the HSI oscillator will be used a default PLL source and this
+	 config will be ignored.
+	 Allowed values: 1 - 16.
+
+config CLOCK_STM32_PLL_MULTIPLIER
+	int "PLL multiplier"
+	depends on CLOCK_STM32_SYSCLK_SRC_PLL
+	default 6
+	range 2 16
+	help
+	 PLL multiplier, allowed values: 2-16. PLL output must not exceed 48MHz.
+
+endif # SOC_SERIES_STM32F0X || SOC_SERIES_STM32F3X

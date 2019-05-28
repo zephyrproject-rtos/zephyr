@@ -1,0 +1,52 @@
+# Kconfig - STM32F2, STM32F4 and STM32F7 PLL configuration options
+#
+# Copyright (c) 2019 Linaro
+#
+#  SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_SERIES_STM32F2X || SOC_SERIES_STM32F4X || SOC_SERIES_STM32F7X
+
+config CLOCK_STM32_PLL_M_DIVISOR
+	int "Division factor for PLL VCO input clock"
+	depends on CLOCK_STM32_SYSCLK_SRC_PLL
+	default 8
+	range 2 63
+	help
+	 PLLM division factor needs to be set correctly to ensure that the VCO
+	 input frequency ranges from 1 to 2 MHz. It is recommended to select a
+	 frequency of 2 MHz to limit PLL jitter.
+	 Allowed values: 2-63
+
+config CLOCK_STM32_PLL_N_MULTIPLIER
+	int "Multiplier factor for PLL VCO output clock"
+	depends on CLOCK_STM32_SYSCLK_SRC_PLL
+	default 336
+	range 192 432 if SOC_STM32F401XE || SOC_SERIES_STM32F2X
+	range 50 432
+	help
+	 PLLN multiplier factor needs to be set correctly to ensure that the
+	 VCO output frequency is between 100 and 432 MHz, except on STM32F401
+	 where the frequency must be between 192 and 432 MHz.
+	 Allowed values: 50-432 (STM32F401: 192-432)
+
+config CLOCK_STM32_PLL_P_DIVISOR
+	int "PLL division factor for main system clock"
+	depends on CLOCK_STM32_SYSCLK_SRC_PLL
+	default 4
+	range 2 8
+	help
+	 PLLP division factor needs to be set correctly to not exceed 84MHz.
+	 Allowed values: 2, 4, 6, 8
+
+config CLOCK_STM32_PLL_Q_DIVISOR
+	int "Division factor for OTG FS, SDIO and RNG clocks"
+	depends on CLOCK_STM32_SYSCLK_SRC_PLL
+	default 7
+	range 2 15
+	help
+	 The USB OTG FS requires a 48MHz clock to work correctly. SDIO and RNG
+	 need a frequency lower than or equal to 48 MHz to work correctly.
+	 Allowed values: 2-15
+
+endif # SOC_SERIES_STM32F2X || SOC_SERIES_STM32F4X || SOC_SERIES_STM32F7X
