@@ -1589,7 +1589,7 @@ size_t net_pkt_remaining_data(struct net_pkt *pkt);
 /**
  * @brief Update the overall length of a packet
  *
- * @details Unlike net_pkt_pull() below, this does not take packet cursor
+ * @details Unlike net_pkt_remove() below, this does not take packet cursor
  *          into account. It's mainly a helper dedicated for ipv4 and ipv6
  *          input functions. It shrinks the overall length by given parameter.
  *
@@ -1611,7 +1611,7 @@ int net_pkt_update_length(struct net_pkt *pkt, size_t length);
  *
  * @return 0 on success, negative errno code otherwise.
  */
-int net_pkt_pull(struct net_pkt *pkt, size_t length);
+int net_pkt_remove(struct net_pkt *pkt, size_t length);
 
 /**
  * @brief Get the actual offset in the packet from its cursor

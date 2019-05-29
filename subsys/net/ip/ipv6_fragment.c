@@ -259,7 +259,7 @@ static void reassemble_packet(struct net_ipv6_reassembly *reass)
 		NET_DBG("Removing %d bytes from start of pkt %p",
 			removed_len, pkt->buffer);
 
-		if (net_pkt_pull(pkt, removed_len)) {
+		if (net_pkt_remove(pkt, removed_len)) {
 			NET_ERR("Failed to pull headers");
 			reassembly_cancel(reass->id, &reass->src, &reass->dst);
 			return;
@@ -297,7 +297,7 @@ static void reassemble_packet(struct net_ipv6_reassembly *reass)
 
 	next_hdr = ipv6.frag_hdr->nexthdr;
 
-	if (net_pkt_pull(pkt, sizeof(struct net_ipv6_frag_hdr))) {
+	if (net_pkt_remove(pkt, sizeof(struct net_ipv6_frag_hdr))) {
 		NET_ERR("Failed to remove fragment header");
 		goto error;
 	}

@@ -1749,7 +1749,7 @@ int net_pkt_update_length(struct net_pkt *pkt, size_t length)
 	return !length ? 0 : -EINVAL;
 }
 
-int net_pkt_pull(struct net_pkt *pkt, size_t length)
+int net_pkt_remove(struct net_pkt *pkt, size_t length)
 {
 	struct net_pkt_cursor *c_op = &pkt->cursor;
 	struct net_pkt_cursor backup;
@@ -1779,7 +1779,7 @@ int net_pkt_pull(struct net_pkt *pkt, size_t length)
 
 		/* For now, empty buffer are not freed, and there is no
 		 * compaction done either.
-		 * net_pkt_pull() is currently used only in very specific
+		 * net_pkt_remove() is currently used only in very specific
 		 * places where such memory optimization would not make
 		 * that much sense. Let's see in future if it's worth do to it.
 		 */
