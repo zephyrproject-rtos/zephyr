@@ -33,9 +33,11 @@ Hardware
 - ATECC508 CryptoAuthentication™  device
 - AT24MAC402 serial EEPROM with EUI-48™ MAC address
 - Ethernet
-	- RJ45 connector with built-in magnetics
-	- KSZ8091RNA PHY
-	- 10Base-T/100Base-TX IEE 802.3 compliant Ethernet transceiver
+
+   - RJ45 connector with built-in magnetics
+   - KSZ8091RNA PHY
+   - 10Base-T/100Base-TX IEE 802.3 compliant Ethernet transceiver
+
 - USB interface, host, and device
 - SD/SDIO card connector
 
