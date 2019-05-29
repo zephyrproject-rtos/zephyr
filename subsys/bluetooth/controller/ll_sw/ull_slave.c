@@ -393,7 +393,7 @@ u8_t ll_start_enc_req_send(u16_t handle, u8_t error_code,
 	}
 
 	if (error_code) {
-		if (conn->refresh == 0U) {
+		if (conn->llcp_enc.refresh == 0U) {
 			ret = ull_conn_llcp_req(conn);
 			if (ret) {
 				return ret;
@@ -415,13 +415,12 @@ u8_t ll_start_enc_req_send(u16_t handle, u8_t error_code,
 			conn->llcp_terminate.req++;
 		}
 	} else {
-		memcpy(&conn->llcp.encryption.ltk[0], ltk,
-		       sizeof(conn->llcp.encryption.ltk));
-
 		ret = ull_conn_llcp_req(conn);
 		if (ret) {
 			return ret;
 		}
+
+		memcpy(&conn->llcp_enc.ltk[0], ltk, sizeof(conn->llcp_enc.ltk));
 
 		conn->llcp.encryption.error_code = 0U;
 		conn->llcp.encryption.initiate = 0U;
