@@ -35,6 +35,7 @@ struct bt_keys *bt_keys_get_addr(u8_t id, const bt_addr_le_t *addr)
 {
 	struct bt_keys *keys;
 	int i;
+	size_t first_free_slot = ARRAY_SIZE(key_pool);
 
 	BT_DBG("%s", bt_addr_le_str(addr));
 
@@ -45,14 +46,19 @@ struct bt_keys *bt_keys_get_addr(u8_t id, const bt_addr_le_t *addr)
 			return keys;
 		}
 
-		if (!bt_addr_le_cmp(&keys->addr, BT_ADDR_LE_ANY)) {
-			keys->id = id;
-			bt_addr_le_copy(&keys->addr, addr);
-			BT_DBG("created %p for %s", keys, bt_addr_le_str(addr));
-			return keys;
+		if (first_free_slot == ARRAY_SIZE(key_pool) &&
+		    !bt_addr_le_cmp(&keys->addr, BT_ADDR_LE_ANY)) {
+			first_free_slot = i;
 		}
 	}
 
+	if (first_free_slot < ARRAY_SIZE(key_pool)) {
+		keys = &key_pool[first_free_slot];
+		keys->id = id;
+		bt_addr_le_copy(&keys->addr, addr);
+		BT_DBG("created %p for %s", keys, bt_addr_le_str(addr));
+		return keys;
+	}
 	BT_DBG("unable to create keys for %s", bt_addr_le_str(addr));
 
 	return NULL;
