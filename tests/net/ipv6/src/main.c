@@ -27,6 +27,8 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_IPV6_LOG_LEVEL);
 #include "icmpv6.h"
 #include "ipv6.h"
 
+#include "udp_internal.h"
+
 #define NET_LOG_ENABLED 1
 #include "net_private.h"
 
@@ -1088,28 +1090,23 @@ static struct net_pkt *setup_ipv6_udp(struct net_if *iface,
 		return NULL;
 	}
 
-	NET_IPV6_HDR(pkt)->vtc = 0x60;
-	NET_IPV6_HDR(pkt)->tcflow = 0U;
-	NET_IPV6_HDR(pkt)->flow = 0U;
-	NET_IPV6_HDR(pkt)->len = htons(NET_UDPH_LEN + strlen(payload));
+	if (net_ipv6_create(pkt, local_addr, remote_addr)) {
+		printk("Cannot create IPv6  pkt %p", pkt);
+		zassert_true(0, "exiting");
+	}
 
-	NET_IPV6_HDR(pkt)->nexthdr = IPPROTO_UDP;
-	NET_IPV6_HDR(pkt)->hop_limit = 255U;
+	if (net_udp_create(pkt, htons(local_port), htons(remote_port))) {
+		printk("Cannot create IPv6  pkt %p", pkt);
+		zassert_true(0, "exiting");
+	}
 
-	net_ipaddr_copy(&NET_IPV6_HDR(pkt)->src, local_addr);
-	net_ipaddr_copy(&NET_IPV6_HDR(pkt)->dst, remote_addr);
+	if (net_pkt_write(pkt, (u8_t *)payload, strlen(payload))) {
+		printk("Cannot write IPv6 ext header pkt %p", pkt);
+		zassert_true(0, "exiting");
+	}
 
-	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
-	net_pkt_set_ipv6_ext_len(pkt, 0);
-
-	net_buf_add(pkt->buffer, net_pkt_ip_hdr_len(pkt) +
-		    sizeof(struct net_udp_hdr));
-
-	NET_UDP_HDR(pkt)->src_port = htons(local_port);
-	NET_UDP_HDR(pkt)->dst_port = htons(remote_port);
-
-	net_buf_add_mem(pkt->buffer, payload, strlen(payload));
-
+	net_pkt_cursor_init(pkt);
+	net_ipv6_finalize(pkt, IPPROTO_UDP);
 	net_pkt_cursor_init(pkt);
 
 	return pkt;

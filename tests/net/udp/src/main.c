@@ -303,6 +303,9 @@ static bool send_ipv6_udp_long_msg(struct net_if *iface,
 		zassert_true(0, "exiting");
 	}
 
+	net_pkt_set_ipv6_ext_len(pkt, sizeof(ipv6_hop_by_hop_ext_hdr));
+	net_pkt_set_ipv6_next_hdr(pkt, NET_IPV6_NEXTHDR_HBHO);
+
 	if (net_udp_create(pkt, htons(src_port), htons(dst_port))) {
 		printk("Cannot create IPv6  pkt %p", pkt);
 		zassert_true(0, "exiting");
@@ -314,7 +317,7 @@ static bool send_ipv6_udp_long_msg(struct net_if *iface,
 	}
 
 	net_pkt_cursor_init(pkt);
-	net_ipv6_finalize(pkt, 0);
+	net_ipv6_finalize(pkt, IPPROTO_UDP);
 
 	ret = net_recv_data(iface, pkt);
 	if (ret < 0) {
