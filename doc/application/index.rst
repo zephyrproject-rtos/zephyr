@@ -648,7 +648,7 @@ DeviceTree Definitions
 ======================
 
 Additional DeviceTree directory trees, or DTS_ROOTs, can be added by
-creating this directory tree:
+creating this directory tree::
 
     dts/bindings/
     dts/common/
