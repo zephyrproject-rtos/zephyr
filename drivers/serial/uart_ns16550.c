@@ -241,6 +241,13 @@ BUILD_ASSERT_MSG(IS_ENABLED(CONFIG_PCIE), "NS16550(s) in DT need CONFIG_PCIE");
 #endif
 #endif /* UART_NS16550_ACCESS_IOPORT */
 
+#ifdef CONFIG_UART_NS16550_ACCESS_WORD_ONLY
+#undef INBYTE
+#define INBYTE(x) INWORD(x)
+#undef OUTBYTE
+#define OUTBYTE(x, d) OUTWORD(x, d)
+#endif
+
 
 struct uart_ns16550_device_config {
 	u32_t sys_clk_freq;
