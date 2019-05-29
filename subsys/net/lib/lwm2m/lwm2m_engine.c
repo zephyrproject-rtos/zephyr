@@ -448,7 +448,8 @@ static int engine_add_observer(struct lwm2m_message *msg,
 			LOG_DBG("OBSERVER DUPLICATE %u/%u/%u(%u) [%s]",
 				msg->path.obj_id, msg->path.obj_inst_id,
 				msg->path.res_id, msg->path.level,
-				lwm2m_sprint_ip_addr(&msg->ctx->remote_addr));
+				log_strdup(
+				lwm2m_sprint_ip_addr(&msg->ctx->remote_addr)));
 
 			return 0;
 		}
@@ -548,8 +549,8 @@ static int engine_add_observer(struct lwm2m_message *msg,
 	LOG_DBG("OBSERVER ADDED %u/%u/%u(%u) token:'%s' addr:%s",
 		msg->path.obj_id, msg->path.obj_inst_id,
 		msg->path.res_id, msg->path.level,
-		sprint_token(token, tkl),
-		lwm2m_sprint_ip_addr(&msg->ctx->remote_addr));
+		log_strdup(sprint_token(token, tkl)),
+		log_strdup(lwm2m_sprint_ip_addr(&msg->ctx->remote_addr)));
 
 	return 0;
 }
@@ -582,7 +583,7 @@ static int engine_remove_observer(const u8_t *token, u8_t tkl)
 	sys_slist_remove(&engine_observer_list, prev_node, &found_obj->node);
 	(void)memset(found_obj, 0, sizeof(*found_obj));
 
-	LOG_DBG("observer '%s' removed", sprint_token(token, tkl));
+	LOG_DBG("observer '%s' removed", log_strdup(sprint_token(token, tkl)));
 
 	return 0;
 }
@@ -1313,7 +1314,7 @@ int lwm2m_engine_create_obj_inst(char *pathstr)
 	struct lwm2m_engine_obj_inst *obj_inst;
 	int ret = 0;
 
-	LOG_DBG("path:%s", pathstr);
+	LOG_DBG("path:%s", log_strdup(pathstr));
 
 	/* translate path -> path_obj */
 	ret = string_to_path(pathstr, &path, '/');
@@ -1372,7 +1373,7 @@ static int lwm2m_engine_set(char *pathstr, void *value, u16_t len)
 	int ret = 0;
 	bool changed = false;
 
-	LOG_DBG("path:%s, value:%p, len:%d", pathstr, value, len);
+	LOG_DBG("path:%s, value:%p, len:%d", log_strdup(pathstr), value, len);
 
 	/* translate path -> path_obj */
 	ret = string_to_path(pathstr, &path, '/');
@@ -1617,7 +1618,7 @@ static int lwm2m_engine_get(char *pathstr, void *buf, u16_t buflen)
 	void *data_ptr = NULL;
 	size_t data_len = 0;
 
-	LOG_DBG("path:%s, buf:%p, buflen:%d", pathstr, buf, buflen);
+	LOG_DBG("path:%s, buf:%p, buflen:%d", log_strdup(pathstr), buf, buflen);
 
 	/* translate path -> path_obj */
 	ret = string_to_path(pathstr, &path, '/');
@@ -2401,7 +2402,7 @@ static int lwm2m_write_attr_handler(struct lwm2m_engine_obj *obj,
 
 		if (ret < 0) {
 			LOG_ERR("invalid attr[%s] value",
-				LWM2M_ATTR_STR[type]);
+				log_strdup(LWM2M_ATTR_STR[type]));
 			/* bad request */
 			return -EEXIST;
 		}
@@ -2450,7 +2451,8 @@ static int lwm2m_write_attr_handler(struct lwm2m_engine_obj *obj,
 		type = attr->type;
 
 		if (!(BIT(type) & nattrs.flags)) {
-			LOG_DBG("Unset attr %s", LWM2M_ATTR_STR[type]);
+			LOG_DBG("Unset attr %s",
+				log_strdup(LWM2M_ATTR_STR[type]));
 			(void)memset(attr, 0, sizeof(*attr));
 
 			if (type <= LWM2M_ATTR_PMAX) {
@@ -2479,7 +2481,8 @@ static int lwm2m_write_attr_handler(struct lwm2m_engine_obj *obj,
 			       sizeof(float32_value_t));
 		}
 
-		LOG_DBG("Update %s to %d.%06d", LWM2M_ATTR_STR[type],
+		LOG_DBG("Update %s to %d.%06d",
+			log_strdup(LWM2M_ATTR_STR[type]),
 			attr->float_val.val1, attr->float_val.val2);
 	}
 
@@ -2513,7 +2516,7 @@ static int lwm2m_write_attr_handler(struct lwm2m_engine_obj *obj,
 		}
 
 		nattrs.flags &= ~BIT(type);
-		LOG_DBG("Add %s to %d.%06d", LWM2M_ATTR_STR[type],
+		LOG_DBG("Add %s to %d.%06d", log_strdup(LWM2M_ATTR_STR[type]),
 			attr->float_val.val1, attr->float_val.val2);
 	}
 
@@ -3470,7 +3473,7 @@ static void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx,
 	}
 
 	LOG_DBG("checking for reply from [%s]",
-		lwm2m_sprint_ip_addr(from_addr));
+		log_strdup(lwm2m_sprint_ip_addr(from_addr)));
 	reply = coap_response_received(&response, from_addr,
 				       client_ctx->replies,
 				       CONFIG_LWM2M_ENGINE_MAX_REPLIES);
@@ -3607,7 +3610,7 @@ static int notify_message_reply_cb(const struct coap_packet *response,
 		type,
 		COAP_RESPONSE_CODE_CLASS(code),
 		COAP_RESPONSE_CODE_DETAIL(code),
-		sprint_token(reply->token, reply->tkl));
+		log_strdup(sprint_token(reply->token, reply->tkl)));
 
 	/* remove observer on COAP_TYPE_RESET */
 	if (type == COAP_TYPE_RESET) {
@@ -3652,8 +3655,8 @@ static int generate_notify_message(struct observe_node *obs,
 		obs->path.obj_inst_id,
 		obs->path.res_id,
 		obs->path.level,
-		sprint_token(obs->token, obs->tkl),
-		lwm2m_sprint_ip_addr(&obs->ctx->remote_addr),
+		log_strdup(sprint_token(obs->token, obs->tkl)),
+		log_strdup(lwm2m_sprint_ip_addr(&obs->ctx->remote_addr)),
 		k_uptime_get());
 
 	obj_inst = get_engine_obj_inst(obs->path.obj_id,
@@ -3966,7 +3969,8 @@ static int load_tls_credential(struct lwm2m_ctx *client_ctx, u16_t res_id,
 
 	ret = lwm2m_engine_get_res_data(pathstr, &cred, &cred_len, &cred_flags);
 	if (ret < 0) {
-		LOG_ERR("Unable to get resource data for '%s'", pathstr);
+		LOG_ERR("Unable to get resource data for '%s'",
+			log_strdup(pathstr));
 		return ret;
 	}
 
@@ -3977,7 +3981,8 @@ static int load_tls_credential(struct lwm2m_ctx *client_ctx, u16_t res_id,
 
 	ret = tls_credential_add(client_ctx->tls_tag, type, cred, cred_len);
 	if (ret < 0) {
-		LOG_ERR("Unable to get resource data for '%s'", pathstr);
+		LOG_ERR("Unable to get resource data for '%s'",
+			log_strdup(pathstr));
 	}
 
 	return ret;
@@ -4055,7 +4060,7 @@ int lwm2m_parse_peerinfo(char *url, struct sockaddr *addr, bool *use_dtls)
 	http_parser_url_init(&parser);
 	ret = http_parser_parse_url(url, strlen(url), 0, &parser);
 	if (ret < 0) {
-		LOG_ERR("Invalid url: %s", url);
+		LOG_ERR("Invalid url: %s", log_strdup(url));
 		return -ENOTSUP;
 	}
 

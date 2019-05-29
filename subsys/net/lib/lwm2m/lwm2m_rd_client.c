@@ -274,7 +274,7 @@ static int do_registration_reply_cb(const struct coap_packet *response,
 		client.server_ep[options[1].len] = '\0';
 		set_sm_state(ENGINE_REGISTRATION_DONE);
 		LOG_INF("Registration Done (EP='%s')",
-			    client.server_ep);
+			log_strdup(client.server_ep));
 
 		return 0;
 	} else if (code == COAP_RESPONSE_CODE_NOT_FOUND) {
@@ -488,7 +488,7 @@ static int sm_do_bootstrap_reg(void)
 	}
 
 	LOG_INF("Bootstrap started with endpoint '%s' with client lifetime %d",
-		client.ep_name, client.lifetime);
+		log_strdup(client.ep_name), client.lifetime);
 
 	ret = lwm2m_engine_start(client.ctx);
 	if (ret < 0) {
@@ -526,7 +526,7 @@ static int sm_do_bootstrap_reg(void)
 
 	/* log the bootstrap attempt */
 	LOG_DBG("Register ID with bootstrap server as '%s'",
-		query_buffer);
+		log_strdup(query_buffer));
 
 	ret = lwm2m_send_message(msg);
 	if (ret < 0) {
@@ -658,7 +658,7 @@ static int sm_send_registration(bool send_obj_support_data,
 
 	/* log the registration attempt */
 	LOG_DBG("registration sent [%s]",
-		lwm2m_sprint_ip_addr(&client.ctx->remote_addr));
+		log_strdup(lwm2m_sprint_ip_addr(&client.ctx->remote_addr)));
 
 	return 0;
 
@@ -691,7 +691,7 @@ static int sm_do_registration(void)
 	}
 
 	LOG_INF("RD Client started with endpoint '%s' with client lifetime %d",
-		client.ep_name, client.lifetime);
+		log_strdup(client.ep_name), client.lifetime);
 
 	ret = lwm2m_engine_start(client.ctx);
 	if (ret < 0) {
@@ -771,7 +771,7 @@ static int sm_do_deregister(void)
 				  client.server_ep,
 				  strlen(client.server_ep));
 
-	LOG_INF("Deregister from '%s'", client.server_ep);
+	LOG_INF("Deregister from '%s'", log_strdup(client.server_ep));
 
 	ret = lwm2m_send_message(msg);
 	if (ret < 0) {
@@ -861,7 +861,7 @@ void lwm2m_rd_client_start(struct lwm2m_ctx *client_ctx, const char *ep_name,
 
 	set_sm_state(ENGINE_INIT);
 	strncpy(client.ep_name, ep_name, CLIENT_EP_LEN - 1);
-	LOG_INF("LWM2M Client: %s", client.ep_name);
+	LOG_INF("LWM2M Client: %s", log_strdup(client.ep_name));
 }
 
 static int lwm2m_rd_client_init(struct device *dev)
