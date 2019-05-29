@@ -10,6 +10,7 @@ LOG_MODULE_REGISTER(net_if, CONFIG_NET_IF_LOG_LEVEL);
 #include <init.h>
 #include <kernel.h>
 #include <linker/sections.h>
+#include <syscall_handler.h>
 #include <stdlib.h>
 #include <string.h>
 #include <net/net_core.h>
@@ -753,6 +754,30 @@ struct net_if_addr *net_if_ipv6_addr_lookup_by_iface(struct net_if *iface,
 	return NULL;
 }
 
+int z_impl_net_if_ipv6_addr_lookup_by_index(const struct in6_addr *addr)
+{
+	struct net_if *iface = NULL;
+	struct net_if_addr *if_addr;
+
+	if_addr = net_if_ipv6_addr_lookup(addr, &iface);
+	if (!if_addr) {
+		return 0;
+	}
+
+	return net_if_get_by_iface(iface);
+}
+
+#ifdef CONFIG_USERSPACE
+Z_SYSCALL_HANDLER(net_if_ipv6_addr_lookup_by_index, addr)
+{
+	struct in6_addr addr_v6;
+
+	Z_OOPS(z_user_from_copy(&addr_v6, (void *)addr, sizeof(addr_v6)));
+
+	return z_impl_net_if_ipv6_addr_lookup_by_index(&addr_v6);
+}
+#endif
+
 #if defined(CONFIG_NET_IPV6)
 static bool check_timeout(u32_t start, s32_t timeout, u32_t counter,
 			  u32_t current_time)
@@ -1099,6 +1124,69 @@ bool net_if_ipv6_addr_rm(struct net_if *iface, const struct in6_addr *addr)
 
 	return false;
 }
+
+bool z_impl_net_if_ipv6_addr_add_by_index(int index,
+					  struct in6_addr *addr,
+					  enum net_addr_type addr_type,
+					  u32_t vlifetime)
+{
+	struct net_if *iface;
+
+	iface = net_if_get_by_index(index);
+	if (!iface) {
+		return false;
+	}
+
+	return net_if_ipv6_addr_add(iface, addr, addr_type, vlifetime) ?
+		true : false;
+}
+
+#ifdef CONFIG_USERSPACE
+Z_SYSCALL_HANDLER(net_if_ipv6_addr_add_by_index, index, addr, addr_type,
+		  vlifetime)
+{
+#if defined(CONFIG_NET_IF_USERSPACE_ACCESS)
+	struct in6_addr addr_v6;
+
+	Z_OOPS(z_user_from_copy(&addr_v6, (void *)addr, sizeof(addr_v6)));
+
+	return z_impl_net_if_ipv6_addr_add_by_index(index,
+						    &addr_v6,
+						    addr_type,
+						    vlifetime);
+#else
+	return false;
+#endif /* CONFIG_NET_IF_USERSPACE_ACCESS */
+}
+#endif /* CONFIG_USERSPACE */
+
+bool z_impl_net_if_ipv6_addr_rm_by_index(int index,
+					 const struct in6_addr *addr)
+{
+	struct net_if *iface;
+
+	iface = net_if_get_by_index(index);
+	if (!iface) {
+		return false;
+	}
+
+	return net_if_ipv6_addr_rm(iface, addr);
+}
+
+#ifdef CONFIG_USERSPACE
+Z_SYSCALL_HANDLER(net_if_ipv6_addr_rm_by_index, index, addr)
+{
+#if defined(CONFIG_NET_IF_USERSPACE_ACCESS)
+	struct in6_addr addr_v6;
+
+	Z_OOPS(z_user_from_copy(&addr_v6, (void *)addr, sizeof(addr_v6)));
+
+	return z_impl_net_if_ipv6_addr_rm_by_index(index, &addr_v6);
+#else
+	return false;
+#endif /* CONFIG_NET_IF_USERSPACE_ACCESS */
+}
+#endif /* CONFIG_USERSPACE */
 
 struct net_if_mcast_addr *net_if_ipv6_maddr_add(struct net_if *iface,
 						const struct in6_addr *addr)
@@ -2518,6 +2606,30 @@ struct net_if_addr *net_if_ipv4_addr_lookup(const struct in_addr *addr,
 	return NULL;
 }
 
+int z_impl_net_if_ipv4_addr_lookup_by_index(const struct in_addr *addr)
+{
+	struct net_if_addr *if_addr;
+	struct net_if *iface = NULL;
+
+	if_addr = net_if_ipv4_addr_lookup(addr, &iface);
+	if (!if_addr) {
+		return 0;
+	}
+
+	return net_if_get_by_iface(iface);
+}
+
+#ifdef CONFIG_USERSPACE
+Z_SYSCALL_HANDLER(net_if_ipv4_addr_lookup_by_index, addr)
+{
+	struct in_addr addr_v4;
+
+	Z_OOPS(z_user_from_copy(&addr_v4, (void *)addr, sizeof(addr_v4)));
+
+	return z_impl_net_if_ipv4_addr_lookup_by_index(&addr_v4);
+}
+#endif
+
 #if defined(CONFIG_NET_IPV4)
 static struct net_if_addr *ipv4_addr_find(struct net_if *iface,
 					  struct in_addr *addr)
@@ -2646,6 +2758,70 @@ bool net_if_ipv4_addr_rm(struct net_if *iface, struct in_addr *addr)
 
 	return false;
 }
+
+bool z_impl_net_if_ipv4_addr_add_by_index(int index,
+					  struct in_addr *addr,
+					  enum net_addr_type addr_type,
+					  u32_t vlifetime)
+{
+	struct net_if *iface;
+	struct net_if_addr *if_addr;
+
+	iface = net_if_get_by_index(index);
+	if (!iface) {
+		return false;
+	}
+
+	if_addr = net_if_ipv4_addr_add(iface, addr, addr_type, vlifetime);
+	return if_addr ? true : false;
+}
+
+#ifdef CONFIG_USERSPACE
+Z_SYSCALL_HANDLER(net_if_ipv4_addr_add_by_index, index, addr, addr_type,
+		  vlifetime)
+{
+#if defined(CONFIG_NET_IF_USERSPACE_ACCESS)
+	struct in_addr addr_v4;
+
+	Z_OOPS(z_user_from_copy(&addr_v4, (void *)addr, sizeof(addr_v4)));
+
+	return z_impl_net_if_ipv4_addr_add_by_index(index,
+						    &addr_v4,
+						    addr_type,
+						    vlifetime);
+#else
+	return false;
+#endif /* CONFIG_NET_IF_USERSPACE_ACCESS */
+}
+#endif /* CONFIG_USERSPACE */
+
+bool z_impl_net_if_ipv4_addr_rm_by_index(int index,
+					 const struct in_addr *addr)
+{
+	struct net_if *iface;
+
+	iface = net_if_get_by_index(index);
+	if (!iface) {
+		return false;
+	}
+
+	return net_if_ipv4_addr_rm(iface, addr);
+}
+
+#ifdef CONFIG_USERSPACE
+Z_SYSCALL_HANDLER(net_if_ipv4_addr_rm_by_index, index, addr)
+{
+#if defined(CONFIG_NET_IF_USERSPACE_ACCESS)
+	struct in_addr addr_v4;
+
+	Z_OOPS(z_user_from_copy(&addr_v4, (void *)addr, sizeof(addr_v4)));
+
+	return (uint32_t)z_impl_net_if_ipv4_addr_rm_by_index(index, &addr_v4);
+#else
+	return false;
+#endif /* CONFIG_NET_IF_USERSPACE_ACCESS */
+}
+#endif /* CONFIG_USERSPACE */
 
 #if defined(CONFIG_NET_IPV4)
 static struct net_if_mcast_addr *ipv4_maddr_find(struct net_if *iface,
