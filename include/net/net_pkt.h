@@ -1614,6 +1614,16 @@ int net_pkt_update_length(struct net_pkt *pkt, size_t length);
 int net_pkt_remove(struct net_pkt *pkt, size_t length);
 
 /**
+ * @brief Remove data from beginning of the packet
+ *
+ * @param pkt    Network packet
+ * @param length Number of bytes to be removed
+ *
+ * @return 0 on success, negative errno code otherwise.
+ */
+int net_pkt_pull(struct net_pkt *pkt, size_t length);
+
+/**
  * @brief Get the actual offset in the packet from its cursor
  *
  * @param pkt Network packet.

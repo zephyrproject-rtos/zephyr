@@ -1797,6 +1797,16 @@ int net_pkt_remove(struct net_pkt *pkt, size_t length)
 	return 0;
 }
 
+int net_pkt_pull(struct net_pkt *pkt, size_t length)
+{
+	if (pkt->buffer) {
+		net_buf_pull(pkt->buffer, length);
+		net_pkt_cursor_init(pkt);
+	}
+
+	return 0;
+}
+
 u16_t net_pkt_get_current_offset(struct net_pkt *pkt)
 {
 	struct net_buf *buf = pkt->buffer;
