@@ -177,6 +177,7 @@ static void prepare_ra_message(struct net_pkt *pkt)
 
 	net_buf_unref(pkt->buffer);
 	pkt->buffer = NULL;
+	pkt->length = 0;
 
 	net_pkt_alloc_buffer(pkt, sizeof(struct net_eth_hdr) +
 			     sizeof(icmpv6_ra), AF_UNSPEC, 0);

@@ -172,44 +172,41 @@ static inline struct net_pkt *prepare_arp_reply(struct net_if *iface,
 						struct net_eth_hdr **eth_rep)
 {
 	struct net_pkt *pkt;
-	struct net_arp_hdr *hdr;
-	struct net_eth_hdr *eth;
+	struct net_arp_hdr hdr;
+	struct net_eth_hdr eth;
 
 	pkt = net_pkt_alloc_with_buffer(iface, sizeof(struct net_eth_hdr) +
 					sizeof(struct net_arp_hdr),
 					AF_UNSPEC, 0, K_SECONDS(1));
 	zassert_not_null(pkt, "out of mem reply");
 
-	eth = NET_ETH_HDR(pkt);
-
-	net_buf_pull(pkt->buffer, sizeof(struct net_eth_hdr));
-
-	(void)memset(&eth->dst.addr, 0xff, sizeof(struct net_eth_addr));
-	memcpy(&eth->src.addr, net_if_get_link_addr(iface)->addr,
+	(void)memset(&eth.dst.addr, 0xff, sizeof(struct net_eth_addr));
+	memcpy(&eth.src.addr, net_if_get_link_addr(iface)->addr,
 	       sizeof(struct net_eth_addr));
-	eth->type = htons(NET_ETH_PTYPE_ARP);
+	eth.type = htons(NET_ETH_PTYPE_ARP);
 
-	*eth_rep = eth;
+	net_pkt_write(pkt, &eth, sizeof(struct net_eth_hdr));
 
-	net_buf_pull(pkt->buffer, sizeof(struct net_eth_hdr));
+	*eth_rep = NET_ETH_HDR(pkt);
 
-	hdr = NET_ARP_HDR(pkt);
+	net_pkt_pull(pkt, sizeof(struct net_eth_hdr));
 
-	hdr->hwtype = htons(NET_ARP_HTYPE_ETH);
-	hdr->protocol = htons(NET_ETH_PTYPE_IP);
-	hdr->hwlen = sizeof(struct net_eth_addr);
-	hdr->protolen = sizeof(struct in_addr);
-	hdr->opcode = htons(NET_ARP_REPLY);
+	hdr.hwtype = htons(NET_ARP_HTYPE_ETH);
+	hdr.protocol = htons(NET_ETH_PTYPE_IP);
+	hdr.hwlen = sizeof(struct net_eth_addr);
+	hdr.protolen = sizeof(struct in_addr);
+	hdr.opcode = htons(NET_ARP_REPLY);
 
-	memcpy(&hdr->dst_hwaddr.addr, &eth->src.addr,
+	memcpy(&hdr.dst_hwaddr.addr, &(*eth_rep)->src.addr,
 	       sizeof(struct net_eth_addr));
-	memcpy(&hdr->src_hwaddr.addr, addr,
+	memcpy(&hdr.src_hwaddr.addr, addr,
 	       sizeof(struct net_eth_addr));
 
-	net_ipaddr_copy(&hdr->dst_ipaddr, &NET_ARP_HDR(req)->src_ipaddr);
-	net_ipaddr_copy(&hdr->src_ipaddr, &NET_ARP_HDR(req)->dst_ipaddr);
+	net_ipaddr_copy(&hdr.dst_ipaddr, &NET_ARP_HDR(req)->src_ipaddr);
+	net_ipaddr_copy(&hdr.src_ipaddr, &NET_ARP_HDR(req)->dst_ipaddr);
 
-	net_buf_add(pkt->buffer, sizeof(struct net_arp_hdr));
+	net_pkt_write(pkt, &hdr, sizeof(struct net_arp_hdr));
+	net_pkt_cursor_init(pkt);
 
 	return pkt;
 }
@@ -220,8 +217,8 @@ static inline struct net_pkt *prepare_arp_request(struct net_if *iface,
 						  struct net_eth_hdr **eth_hdr)
 {
 	struct net_pkt *pkt;
-	struct net_arp_hdr *hdr, *req_hdr;
-	struct net_eth_hdr *eth, *eth_req;
+	struct net_arp_hdr hdr, *req_hdr;
+	struct net_eth_hdr eth, *eth_req;
 
 	pkt = net_pkt_alloc_with_buffer(iface, sizeof(struct net_eth_hdr) +
 					sizeof(struct net_arp_hdr),
@@ -229,35 +226,36 @@ static inline struct net_pkt *prepare_arp_request(struct net_if *iface,
 	zassert_not_null(pkt, "out of mem request");
 
 	eth_req = NET_ETH_HDR(req);
-	eth = NET_ETH_HDR(pkt);
 
 	net_buf_pull(req->buffer, sizeof(struct net_eth_hdr));
 
 	req_hdr = NET_ARP_HDR(req);
 
-	(void)memset(&eth->dst.addr, 0xff, sizeof(struct net_eth_addr));
-	memcpy(&eth->src.addr, addr, sizeof(struct net_eth_addr));
+	(void)memset(&eth.dst.addr, 0xff, sizeof(struct net_eth_addr));
+	memcpy(&eth.src.addr, addr, sizeof(struct net_eth_addr));
 
-	eth->type = htons(NET_ETH_PTYPE_ARP);
-	*eth_hdr = eth;
+	eth.type = htons(NET_ETH_PTYPE_ARP);
 
-	net_buf_pull(pkt->buffer, sizeof(struct net_eth_hdr));
+	net_pkt_write(pkt, &eth, sizeof(struct net_eth_hdr));
 
-	hdr = NET_ARP_HDR(pkt);
+	*eth_hdr = NET_ETH_HDR(pkt);
 
-	hdr->hwtype = htons(NET_ARP_HTYPE_ETH);
-	hdr->protocol = htons(NET_ETH_PTYPE_IP);
-	hdr->hwlen = sizeof(struct net_eth_addr);
-	hdr->protolen = sizeof(struct in_addr);
-	hdr->opcode = htons(NET_ARP_REQUEST);
+	net_pkt_pull(pkt, sizeof(struct net_eth_hdr));
 
-	(void)memset(&hdr->dst_hwaddr.addr, 0x00, sizeof(struct net_eth_addr));
-	memcpy(&hdr->src_hwaddr.addr, addr, sizeof(struct net_eth_addr));
+	hdr.hwtype = htons(NET_ARP_HTYPE_ETH);
+	hdr.protocol = htons(NET_ETH_PTYPE_IP);
+	hdr.hwlen = sizeof(struct net_eth_addr);
+	hdr.protolen = sizeof(struct in_addr);
+	hdr.opcode = htons(NET_ARP_REQUEST);
 
-	net_ipaddr_copy(&hdr->src_ipaddr, &req_hdr->src_ipaddr);
-	net_ipaddr_copy(&hdr->dst_ipaddr, &req_hdr->dst_ipaddr);
+	(void)memset(&hdr.dst_hwaddr.addr, 0x00, sizeof(struct net_eth_addr));
+	memcpy(&hdr.src_hwaddr.addr, addr, sizeof(struct net_eth_addr));
 
-	net_buf_add(pkt->buffer, sizeof(struct net_arp_hdr));
+	net_ipaddr_copy(&hdr.src_ipaddr, &req_hdr->src_ipaddr);
+	net_ipaddr_copy(&hdr.dst_ipaddr, &req_hdr->dst_ipaddr);
+
+	net_pkt_write(pkt, &hdr, sizeof(struct net_arp_hdr));
+	net_pkt_cursor_init(pkt);
 
 	return pkt;
 }
@@ -602,8 +600,10 @@ void test_arp(void)
 		setup_eth_header(iface, pkt, net_eth_broadcast_addr(),
 				 NET_ETH_PTYPE_ARP);
 
+		net_buf_add(pkt->buffer, sizeof(struct net_eth_hdr));
+
 		eth_hdr = (struct net_eth_hdr *)net_pkt_data(pkt);
-		net_buf_pull(pkt->buffer, sizeof(struct net_eth_hdr));
+		net_pkt_pull(pkt, sizeof(struct net_eth_hdr));
 		arp_hdr = NET_ARP_HDR(pkt);
 
 		arp_hdr->hwtype = htons(NET_ARP_HTYPE_ETH);
@@ -617,6 +617,7 @@ void test_arp(void)
 		net_ipaddr_copy(&arp_hdr->src_ipaddr, &dst);
 
 		net_buf_add(pkt->buffer, sizeof(struct net_arp_hdr));
+		pkt->length += sizeof(struct net_arp_hdr);
 
 		verdict = net_arp_input(pkt, eth_hdr);
 		zassert_not_equal(verdict, NET_DROP, "Gratuitous ARP failed");
