@@ -6,6 +6,10 @@
 
 #include <nxp/nxp_rt.dtsi>
 
+&sysclk {
+	clock-frequency = <500000000>;
+};
+
 /* i.MX rt1020 default FlexRAM partition:
  * ITCM: 64KB
  * DTCM: 64KB

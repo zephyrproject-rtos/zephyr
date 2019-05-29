@@ -29,6 +29,12 @@
 		};
 	};
 
+	sysclk: system-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <600000000>;
+		#clock-cells = <0>;
+	};
+
 	soc {
 		flexram0: flexram@400b0000 {
 			compatible = "nxp,imx-flexram";
@@ -341,9 +347,10 @@
 			reg = <0x402E0000 0x200>;
 			interrupts = <113 1>;
 			interrupt-names = "usb_otg";
+			clocks = <&sysclk>;
 			num-bidir-endpoints = <8>;
 			maximum-speed = "full-speed";
-			status = "disabled";
+			status = "ok";
 			label = "USBD_1";
 		};
 

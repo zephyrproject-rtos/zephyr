@@ -33,4 +33,10 @@ properties:
       type: stringlist
       category: optional
       description: readable string describing the interrupts
+
+    clocks:
+      type: array
+      category: required
+      description: Clock gate control information
+      generation: structures
 ...
