@@ -11,10 +11,15 @@
 
 #define N_THR_E 3
 #define N_THR_T 4
+#define N_THR_T_AUTO_STACK 1
 #define BOUNCES 64
 #define STACKS (1024 + CONFIG_TEST_EXTRA_STACKSIZE)
 #define THREAD_PRIORITY 3
 #define ONE_SECOND 1
+
+#if CONFIG_MINIMAL_LIBC_MALLOC_ARENA_SIZE < STACKS * N_THR_T_AUTO_STACK
+#error "Insufficient malloc arena size"
+#endif
 
 /* Macros to test invalid states */
 #define PTHREAD_CANCEL_INVALID -1
@@ -22,7 +27,7 @@
 #define PRIO_INVALID -1
 
 K_THREAD_STACK_ARRAY_DEFINE(stack_e, N_THR_E, STACKS);
-K_THREAD_STACK_ARRAY_DEFINE(stack_t, N_THR_T, STACKS);
+K_THREAD_STACK_ARRAY_DEFINE(stack_t, N_THR_T - N_THR_T_AUTO_STACK, STACKS);
 
 void *thread_top_exec(void *p1);
 void *thread_top_term(void *p1);
@@ -386,7 +391,15 @@ void test_posix_pthread_termination(void)
 
 		schedparam.sched_priority = 2;
 		pthread_attr_setschedparam(&attr[i], &schedparam);
-		pthread_attr_setstack(&attr[i], &stack_t[i][0], STACKS);
+
+		if (i < N_THR_T - N_THR_T_AUTO_STACK) {
+			pthread_attr_setstack(&attr[i],
+					      &stack_t[i][0],
+					      STACKS);
+		} else {
+			pthread_attr_setstacksize(&attr[i], STACKS);
+		}
+
 		ret = pthread_create(&newthread[i], &attr[i], thread_top_term,
 				     (void *)i);
 
