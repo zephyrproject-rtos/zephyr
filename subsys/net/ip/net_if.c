@@ -2722,7 +2722,7 @@ struct net_if_addr *net_if_ipv4_addr_add(struct net_if *iface,
 	return NULL;
 }
 
-bool net_if_ipv4_addr_rm(struct net_if *iface, struct in_addr *addr)
+bool net_if_ipv4_addr_rm(struct net_if *iface, const struct in_addr *addr)
 {
 #if defined(CONFIG_NET_IPV4)
 	struct net_if_ipv4 *ipv4 = iface->config.ip.ipv4;

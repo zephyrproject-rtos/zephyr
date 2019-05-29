@@ -1408,7 +1408,7 @@ struct net_if_addr *net_if_ipv4_addr_add(struct net_if *iface,
  *
  * @return True if successfully removed, false otherwise
  */
-bool net_if_ipv4_addr_rm(struct net_if *iface,  struct in_addr *addr);
+bool net_if_ipv4_addr_rm(struct net_if *iface, const struct in_addr *addr);
 
 /**
  * @brief Check if this IPv4 address belongs to one of the interface indices.
