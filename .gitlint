@@ -13,7 +13,7 @@ debug = false
 extra-path=scripts/gitlint
 
 [title-max-length-no-revert]
-line-length=72
+line-length=75
 
 [body-min-line-count]
 min-line-count=1
