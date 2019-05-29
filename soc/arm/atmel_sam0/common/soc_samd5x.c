@@ -198,11 +198,10 @@ void soc_sam0_get_gclk_configure(const char *const src,
 			    out_frequency;
 		/* If it's an exact power of two, use DIVSEL */
 		if ((div & (div - 1)) == 0) {
-			GCLK->GENCTRL[index].bit.DIVSEL = 1;
+			reg |= GCLK_GENCTRL_DIVSEL;
 			div = (31U - __builtin_clz(div));
 		}
-		GCLK->GENCTRL[index].bit.DIV = div - 1U;
-		soc_sam0_wait_gclk_synchronization();
+		reg |= GCLK_GENCTRL_DIV(div - 1U);
 	}
 
 	GCLK->GENCTRL[index].reg = reg;
