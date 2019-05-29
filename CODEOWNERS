@@ -142,6 +142,8 @@
 /drivers/serial/*ns16550*                 @gnuless
 /drivers/serial/Kconfig.litex             @mateusz-holenko @kgugala @pgielda
 /drivers/serial/uart_liteuart.c           @mateusz-holenko @kgugala @pgielda
+/drivers/serial/Kconfig.mmio8             @olofk
+/drivers/serial/uart_mmio8.c              @olofk
 /drivers/net/                             @jukkar @tbursztyka
 /drivers/ptp_clock/                       @jukkar
 /drivers/spi/                             @tbursztyka

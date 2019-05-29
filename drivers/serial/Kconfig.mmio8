@@ -1,0 +1,20 @@
+# Kconfig.mmio8 - mmio8 UART configuration option
+#
+# Copyright (c) 2019 Western Digital Corporation or its affiliates
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig UART_MMIO8
+	bool "mmio8 serial driver"
+	select SERIAL_HAS_DRIVER
+	help
+	  This option enables an transmit-only serial driver with
+ 	  a single memory-mapped address for writing data
+
+config UART_MMIO8_BASE
+       	hex "UART mmio8 base address"
+	default 0x0
+	depends on UART_MMIO8
+	help
+	  Set mmio8 base address
