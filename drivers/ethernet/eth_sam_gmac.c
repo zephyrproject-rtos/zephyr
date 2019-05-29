@@ -2097,7 +2097,8 @@ static int ptp_clock_sam_gmac_adjust(struct device *dev, int increment)
 	Gmac *gmac = cfg->regs;
 	GMAC_TA_Type gmac_ta;
 
-	if ((increment <= -NSEC_PER_SEC) || (increment >= NSEC_PER_SEC)) {
+	if ((increment <= -(int)NSEC_PER_SEC) ||
+	    (increment >= (int)NSEC_PER_SEC)) {
 		return -EINVAL;
 	}
 
