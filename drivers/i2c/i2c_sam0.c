@@ -818,7 +818,7 @@ static void i2c_sam0_irq_config_##n(struct device *dev)			\
 		.pm_apbcmask = PM_APBCMASK_SERCOM##n,			    \
 		.clk_dev = DT_ATMEL_SAM0_I2C_SERCOM_##n##_CLOCK_CONTROLLER, \
 		.clk_sys = (clock_control_subsys_t)SERCOM##n##_GCLK_ID_CORE,\
-		.irq_config_func = &i2c_sam_irq_config_##n,		    \
+		.irq_config_func = &i2c_sam0_irq_config_##n,		    \
 		I2C_SAM0_DMA_CHANNELS(n)				    \
 	};
 #endif
