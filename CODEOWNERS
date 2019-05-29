@@ -113,6 +113,7 @@
 /drivers/clock_control/*stm32f4*          @rsalveti @idlethread
 /drivers/counter/                         @nordic-krch
 /drivers/display/                         @vanwinkeljan
+/drivers/display/display_framebuf.c       @gnuless
 /drivers/dma/*sam0*                       @Sizurka
 /drivers/ethernet/                        @jukkar @tbursztyka @pfalcon
 /drivers/flash/                           @nashif
@@ -215,6 +216,7 @@
 /include/device.h                         @wentongwu @nashif
 /include/display.h                        @vanwinkeljan
 /include/display/                         @vanwinkeljan
+/include/display/framebuf.h               @gnuless
 /include/drivers/bluetooth/               @joerchan @jhedberg @Vudentz
 /include/drivers/led/ht16k33.h            @henrikbrixandersen
 /include/drivers/modem/                   @mike-scott
