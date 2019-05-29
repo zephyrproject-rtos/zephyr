@@ -28,6 +28,8 @@ config ICM20948_THREAD_PRIORITY
 	help
       Priority of thread used to handle the timer and threshold triggers.
 
+config ICM20948_TRIGGER
+	bool
 
 config ICM20948_ENABLE_WAKE_FSYNC
     bool "enable wake on fsync interrupt"
@@ -35,14 +37,11 @@ config ICM20948_ENABLE_WAKE_FSYNC
     help
       In this mode, the IMU will trigger on the frame sync
 
-
-
 config ICM20948_DMP
     bool "DMP"
     default y
     help
       in this mode, the IMU offloads processing from the host to the processor
-
 
 choice ICM20948_TRIGGER_MODE
 	prompt "Trigger mode"

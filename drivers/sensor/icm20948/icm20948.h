@@ -150,7 +150,7 @@ enum icm20948_gyro_fs {
 #define ICM20948_GYRO_FS_DEFAULT ICM20948_GYRO_FS_2000_VAL
 #endif
 
-#define ICM20948_ENABLE_FSYNC 0 
+#define ICM20948_ENABLE_FSYNC 0
 #if defined(CONFIG_ICM20948_ENABLE_WAKE_FSYNC)
 	#define ICM20948_ENABLE_FSYNC BIT(7)
 #endif
@@ -185,11 +185,9 @@ struct icm20948_data {
 
 	s16_t temp;
 
-	enum icm20948_gyro_fs gyro_fs; //gyro range
-	enum icm20948_accel_fs accel_fs; //accel range
+	enum icm20948_gyro_fs gyro_fs;          // gyro range
+	enum icm20948_accel_fs accel_fs;        // accel range
 
-	icm20948_accel_fs accel_freq;
-	icm20948_gyro_fs gyro_fs;
 #if defined(DT_TDK_ICM20948_0_CS_GPIO_CONTROLLER)
 	struct spi_cs_control cs_ctrl;
 #endif
@@ -207,8 +205,8 @@ struct icm20948_data {
 
 #ifdef CONFIG_ICM20948_TRIGGER
 int icm20948_trigger_set(struct device *dev,
-			const struct sensor_trigger *trig,
-			sensor_trigger_handler_t handler);
+			 const struct sensor_trigger *trig,
+			 sensor_trigger_handler_t handler);
 
 int icm20948_init_interrupt(struct device *dev);
 

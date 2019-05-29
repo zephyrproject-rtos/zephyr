@@ -11,17 +11,17 @@
 LOG_MODULE_DECLARE(ICM20948);
 
 static struct spi_config icm20948_spi_config =
-	{
-		.frequency = DT_ST_LIS2DW12_0_SPI_MAX_FREQUENCY,
-		.operation =
-			(SPI_OP_MODE_MASTER | SPI_MODE_CPOL | SPI_MODE_CPHA |
-			 SPI_WORD_SET(8) | SPI_LINES_SINGLE),
-		.slave = CONFIG_ICM20948_I2C_SLAVE_ADDR,
-		.cs = NULL,
-	}
+{
+	.frequency = DT_ST_LIS2DW12_0_SPI_MAX_FREQUENCY,
+	.operation =
+		(SPI_OP_MODE_MASTER | SPI_MODE_CPOL | SPI_MODE_CPHA |
+		 SPI_WORD_SET(8) | SPI_LINES_SINGLE),
+	.slave = CONFIG_ICM20948_I2C_SLAVE_ADDR,
+	.cs = NULL,
+}
 
 static int
-icm20948_raw_read(struct icm20948_data * data, u8_t reg_addr, u8_t *value,
+icm20948_raw_read(struct icm20948_data *data, u8_t reg_addr, u8_t *value,
 		  u8_t len)
 {
 	struct spi_config *spi_cfg = &icm20948_spi_config;
@@ -56,7 +56,7 @@ static int icm20948_raw_write(struct lis2dw12_data *data, u8_t reg_addr,
 			      u8_t *value, u8_t len)
 {
 	struct spi_config *spi_cfg = &icm20948_spi_config;
-	u8_t buffer_tx[1] = { reg_addr & ~ICM20948_SPI_READ };
+	u8_t buffer_tx[1] = { reg_addr &~ICM20948_SPI_READ };
 	const struct spi_buf tx_buf[2] = { {
 						   .buf = buffer_tx,
 						   .len = 1,
@@ -82,6 +82,7 @@ static inline int icm20948_change_bank(struct icm20948_data *data,
 				       u16_t reg_bank_addr)
 {
 	u8_t bank = (u8_t)(reg_bank_addr >> 7);
+
 	if (bank != data->bank) {
 		u8_t tmp_val = (bank << 4);
 		return icm20948_raw_write(data, ICM20948_REG_BANK_SEL, &tmp_val,
@@ -155,7 +156,7 @@ int icm20948_spi_init(struct device *dev)
 	struct icm20948_data *data = dev->driver_data;
 
 	data->hw_tf = &icm20948_spi_transfer_fn;
-#if define(DT_TDK_ICM20948_0_CS_GPIO_CONTROLLER)
+#if define (DT_TDK_ICM20948_0_CS_GPIO_CONTROLLER)
 	data->cs_ctrl.gpio_dev =
 		device_get_binding(DT_TDK_ICM20948_0_CS_GPIO_CONTROLLER);
 	if (!data->cs_ctrl.gpio_dev) {

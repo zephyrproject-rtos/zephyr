@@ -4,4 +4,4 @@ tests:
   sample.sensor.icm20948:
     harness: console
     tags: sensors
-    depends_on: lsm6dsl
+    depends_on: icm20948
