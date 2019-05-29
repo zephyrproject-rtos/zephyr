@@ -240,7 +240,7 @@ static int commit(void)
 	return 0;
 }
 
-static int export(int (*export_func)(const char *name, void *val,
+static int export(int (*export_func)(const char *name, const void *val,
 				     size_t val_len))
 
 {

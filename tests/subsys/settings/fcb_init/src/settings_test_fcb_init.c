@@ -29,8 +29,8 @@ static int c1_set(int argc, char **argv, size_t len, settings_read_cb read_cb,
 	return -ENOENT;
 }
 
-static int c1_export(int (*export_func)(const char *name, void *value,
-					size_t val_len))
+static int c1_export(int (*export_func)(const char *name,
+					const void *value, size_t val_len))
 {
 	(void)export_func("hello/val32", &val32, sizeof(val32));
 
