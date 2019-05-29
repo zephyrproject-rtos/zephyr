@@ -36,6 +36,12 @@
 		compatible = "serial-flash";
 	};
 
+	sysclk: system-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <48000000>;
+		#clock-cells = <0>;
+	};
+
 	soc {
 		pinmux: pinmux@40081000 {
 			compatible = "ti,cc13xx-cc26xx-pinmux";
@@ -65,6 +71,7 @@
 			compatible = "ti,cc13xx-cc26xx-uart";
 			reg = <0x40001000 0x1000>;
 			interrupts = <5 0>;
+			clocks = <&sysclk>;
 			status = "disabled";
 			label = "UART_0";
 		};
@@ -73,6 +80,7 @@
 			compatible = "ti,cc13xx-cc26xx-uart";
 			reg = <0x4000b000 0x1000>;
 			interrupts = <36 0>;
+			clocks = <&sysclk>;
 			status = "disabled";
 			label = "UART_1";
 		};

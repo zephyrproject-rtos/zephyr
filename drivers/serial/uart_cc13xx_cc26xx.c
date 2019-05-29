@@ -361,7 +361,7 @@ static int uart_cc13xx_cc26xx_init_0(struct device *dev)
 
 static const struct uart_device_config uart_cc13xx_cc26xx_config_0 = {
 	.regs = DT_TI_CC13XX_CC26XX_UART_40001000_BASE_ADDRESS,
-	.sys_clk_freq = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC,
+	.sys_clk_freq = DT_TI_CC13XX_CC26XX_UART_40001000_CLOCKS_CLOCK_FREQUENCY,
 };
 
 static struct uart_cc13xx_cc26xx_data uart_cc13xx_cc26xx_data_0 = {
@@ -438,7 +438,7 @@ static int uart_cc13xx_cc26xx_init_1(struct device *dev)
 
 static const struct uart_device_config uart_cc13xx_cc26xx_config_1 = {
 	.regs = DT_TI_CC13XX_CC26XX_UART_4000B000_BASE_ADDRESS,
-	.sys_clk_freq = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC,
+	.sys_clk_freq = DT_TI_CC13XX_CC26XX_UART_4000B000_CLOCKS_CLOCK_FREQUENCY,
 };
 
 static struct uart_cc13xx_cc26xx_data uart_cc13xx_cc26xx_data_1 = {
