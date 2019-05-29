@@ -429,6 +429,59 @@ static int set_random_address(const bt_addr_t *addr)
 	return 0;
 }
 
+int bt_addr_from_str(const char *str, bt_addr_t *addr)
+{
+	int i, j;
+	u8_t tmp;
+
+	if (strlen(str) != 17U) {
+		return -EINVAL;
+	}
+
+	for (i = 5, j = 1; *str != '\0'; str++, j++) {
+		if (!(j % 3) && (*str != ':')) {
+			return -EINVAL;
+		} else if (*str == ':') {
+			i--;
+			continue;
+		}
+
+		addr->val[i] = addr->val[i] << 4;
+
+		if (char2hex(*str, &tmp) < 0) {
+			return -EINVAL;
+		}
+
+		addr->val[i] |= tmp;
+	}
+
+	return 0;
+}
+
+int bt_addr_le_from_str(const char *str, const char *type, bt_addr_le_t *addr)
+{
+	int err;
+
+	err = bt_addr_from_str(str, &addr->a);
+	if (err < 0) {
+		return err;
+	}
+
+	if (!strcmp(type, "public") || !strcmp(type, "(public)")) {
+		addr->type = BT_ADDR_LE_PUBLIC;
+	} else if (!strcmp(type, "random") || !strcmp(type, "(random)")) {
+		addr->type = BT_ADDR_LE_RANDOM;
+	} else if (!strcmp(type, "public-id") || !strcmp(type, "(public-id)")) {
+		addr->type = BT_ADDR_LE_PUBLIC_ID;
+	} else if (!strcmp(type, "random-id") || !strcmp(type, "(random-id)")) {
+		addr->type = BT_ADDR_LE_RANDOM_ID;
+	} else {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 #if defined(CONFIG_BT_PRIVACY)
 /* this function sets new RPA only if current one is no longer valid */
 static int le_set_private_addr(u8_t id)

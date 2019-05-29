@@ -230,60 +230,6 @@ static struct bt_conn_cb conn_callbacks = {
 };
 #endif /* CONFIG_BT_CONN */
 
-static int hexstr2array(const char *str, u8_t *array, u8_t size)
-{
-	int i, j;
-	u8_t tmp;
-
-	if (strlen(str) != ((size * 2U) + (size - 1))) {
-		return -EINVAL;
-	}
-
-	for (i = size - 1, j = 1; *str != '\0'; str++, j++) {
-		if (!(j % 3) && (*str != ':')) {
-			return -EINVAL;
-		} else if (*str == ':') {
-			i--;
-			continue;
-		}
-
-		array[i] = array[i] << 4;
-
-		if (char2hex(str, &tmp) < 0) {
-			return -EINVAL;
-		}
-
-		array[i] |= tmp;
-	}
-
-	return 0;
-}
-
-int str2bt_addr(const char *str, bt_addr_t *addr)
-{
-	return hexstr2array(str, addr->val, 6);
-}
-
-static int str2bt_addr_le(const char *str, const char *type, bt_addr_le_t *addr)
-{
-	int err;
-
-	err = str2bt_addr(str, &addr->a);
-	if (err < 0) {
-		return err;
-	}
-
-	if (!strcmp(type, "public") || !strcmp(type, "(public)")) {
-		addr->type = BT_ADDR_LE_PUBLIC;
-	} else if (!strcmp(type, "random") || !strcmp(type, "(random)")) {
-		addr->type = BT_ADDR_LE_RANDOM;
-	} else {
-		return -EINVAL;
-	}
-
-	return 0;
-}
-
 static void bt_ready(int err)
 {
 	if (err) {
@@ -377,7 +323,7 @@ static int cmd_id_create(const struct shell *shell, size_t argc, char *argv[])
 	int err;
 
 	if (argc > 1) {
-		err = str2bt_addr_le(argv[1], "random", &addr);
+		err = bt_addr_le_from_str(argv[1], "random", &addr);
 		if (err) {
 			shell_error(shell, "Invalid address");
 		}
@@ -411,7 +357,7 @@ static int cmd_id_reset(const struct shell *shell, size_t argc, char *argv[])
 	id = strtol(argv[1], NULL, 10);
 
 	if (argc > 2) {
-		err = str2bt_addr_le(argv[2], "random", &addr);
+		err = bt_addr_le_from_str(argv[2], "random", &addr);
 		if (err) {
 			shell_print(shell, "Invalid address");
 			return err;
@@ -677,7 +623,7 @@ static int cmd_directed_adv(const struct shell *shell,
 	struct bt_conn *conn;
 	struct bt_le_adv_param *param = BT_LE_ADV_CONN_DIR;
 
-	err = str2bt_addr_le(argv[1], argv[2], &addr);
+	err = bt_addr_le_from_str(argv[1], argv[2], &addr);
 	if (err) {
 		shell_error(shell, "Invalid peer address (err %d)", err);
 		return err;
@@ -720,7 +666,7 @@ static int cmd_connect_le(const struct shell *shell, size_t argc, char *argv[])
 	bt_addr_le_t addr;
 	struct bt_conn *conn;
 
-	err = str2bt_addr_le(argv[1], argv[2], &addr);
+	err = bt_addr_le_from_str(argv[1], argv[2], &addr);
 	if (err) {
 		shell_error(shell, "Invalid peer address (err %d)", err);
 		return err;
@@ -747,7 +693,7 @@ static int cmd_auto_conn(const struct shell *shell, size_t argc, char *argv[])
 	bt_addr_le_t addr;
 	int err;
 
-	err = str2bt_addr_le(argv[1], argv[2], &addr);
+	err = bt_addr_le_from_str(argv[1], argv[2], &addr);
 	if (err) {
 		shell_error(shell, "Invalid peer address (err %d)", err);
 		return err;
@@ -783,7 +729,7 @@ static int cmd_disconnect(const struct shell *shell, size_t argc, char *argv[])
 			return SHELL_CMD_HELP_PRINTED;
 		}
 
-		err = str2bt_addr_le(argv[1], argv[2], &addr);
+		err = bt_addr_le_from_str(argv[1], argv[2], &addr);
 		if (err) {
 			shell_error(shell, "Invalid peer address (err %d)",
 				    err);
@@ -815,7 +761,7 @@ static int cmd_select(const struct shell *shell, size_t argc, char *argv[])
 	bt_addr_le_t addr;
 	int err;
 
-	err = str2bt_addr_le(argv[1], argv[2], &addr);
+	err = bt_addr_le_from_str(argv[1], argv[2], &addr);
 	if (err) {
 		shell_error(shell, "Invalid peer address (err %d)", err);
 		return err;
@@ -863,11 +809,11 @@ static int cmd_chan_map(const struct shell *shell, size_t argc, char *argv[])
 	u8_t chan_map[5] = {};
 	int err;
 
-	err = hexstr2array(argv[1], chan_map, 5);
-	if (err) {
+	if (hex2bin(argv[1], strlen(argv[1]), chan_map, 5) == 0) {
 		shell_error(shell, "Invalid channel map");
 		return -ENOEXEC;
 	}
+	sys_mem_swap(chan_map, 5);
 
 	err = bt_le_set_chan_map(chan_map);
 	if (err) {
@@ -926,13 +872,13 @@ static int cmd_clear(const struct shell *shell, size_t argc, char *argv[])
 	if (argc < 3) {
 #if defined(CONFIG_BT_BREDR)
 		addr.type = BT_ADDR_LE_PUBLIC;
-		err = str2bt_addr(argv[1], &addr.a);
+		err = bt_addr_from_str(argv[1], &addr.a);
 #else
 		shell_print(shell, "Both address and address type needed");
 		return -ENOEXEC;
 #endif
 	} else {
-		err = str2bt_addr_le(argv[1], argv[2], &addr);
+		err = bt_addr_le_from_str(argv[1], argv[2], &addr);
 	}
 
 	if (err) {
@@ -1317,7 +1263,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 	SHELL_CMD_ARG(conn-update, NULL, "<min> <max> <latency> <timeout>",
 		      cmd_conn_update, 5, 0),
 #if defined(CONFIG_BT_CENTRAL)
-	SHELL_CMD_ARG(channel-map, NULL, "<channel-map: XX:XX:XX:XX:XX> (36-0)",
+	SHELL_CMD_ARG(channel-map, NULL, "<channel-map: XXXXXXXXXX> (36-0)",
 		      cmd_chan_map, 2, 1),
 #endif /* CONFIG_BT_CENTRAL */
 	SHELL_CMD_ARG(oob, NULL, NULL, cmd_oob, 1, 0),

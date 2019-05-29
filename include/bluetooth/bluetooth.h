@@ -683,10 +683,10 @@ static inline int bt_addr_le_to_str(const bt_addr_le_t *addr, char *str,
 		strcpy(type, "random");
 		break;
 	case BT_ADDR_LE_PUBLIC_ID:
-		strcpy(type, "public id");
+		strcpy(type, "public-id");
 		break;
 	case BT_ADDR_LE_RANDOM_ID:
-		strcpy(type, "random id");
+		strcpy(type, "random-id");
 		break;
 	default:
 		snprintk(type, sizeof(type), "0x%02x", addr->type);
@@ -697,6 +697,27 @@ static inline int bt_addr_le_to_str(const bt_addr_le_t *addr, char *str,
 			addr->a.val[5], addr->a.val[4], addr->a.val[3],
 			addr->a.val[2], addr->a.val[1], addr->a.val[0], type);
 }
+
+/**
+ * @brief Convert Bluetooth address from string to binary.
+ *
+ * @param[in]  str   The string representation of a Bluetooth address.
+ * @param[out] addr  Address of buffer to store the Bluetooth address
+ *
+ *  @return Zero on success or (negative) error code otherwise.
+ */
+int bt_addr_from_str(const char *str, bt_addr_t *addr);
+
+/**
+ * @brief Convert LE Bluetooth address from string to binary.
+ *
+ * @param[in]  str   The string representation of an LE Bluetooth address.
+ * @param[in]  type  The string representation of the LE Bluetooth address type.
+ * @param[out] addr  Address of buffer to store the LE Bluetooth address
+ *
+ *  @return Zero on success or (negative) error code otherwise.
+ */
+int bt_addr_le_from_str(const char *str, const char *type, bt_addr_le_t *addr);
 
 /** @brief Enable/disable set controller in discoverable state.
  *
