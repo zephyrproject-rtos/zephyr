@@ -87,9 +87,6 @@ struct ll_conn {
 		struct {
 			u8_t  initiate;
 			u8_t  error_code;
-			u8_t  rand[8];
-			u8_t  ediv[2];
-			u8_t  ltk[16];
 			u8_t  skd[16];
 		} encryption;
 #endif /* CONFIG_BT_CTLR_LE_ENC */
@@ -117,6 +114,19 @@ struct ll_conn {
 			u8_t reason;
 		} node_rx;
 	} llcp_terminate;
+
+#if defined(CONFIG_BT_CTLR_LE_ENC)
+	struct {
+		u8_t req;
+		u8_t ack;
+		u8_t pause_rx:1;
+		u8_t pause_tx:1;
+		u8_t refresh:1;
+		u8_t ediv[2];
+		u8_t rand[8];
+		u8_t ltk[16];
+	} llcp_enc;
+#endif /* CONFIG_BT_CTLR_LE_ENC */
 
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 	struct {
@@ -190,12 +200,6 @@ struct ll_conn {
 	u8_t phy_pref_flags:1;
 	u8_t phy_pref_rx:3;
 #endif /* CONFIG_BT_CTLR_PHY */
-
-#if defined(CONFIG_BT_CTLR_LE_ENC)
-	u8_t  pause_rx:1;
-	u8_t  pause_tx:1;
-	u8_t  refresh:1;
-#endif /* CONFIG_BT_CTLR_LE_ENC */
 
 	struct node_tx *tx_head;
 	struct node_tx *tx_ctrl;
