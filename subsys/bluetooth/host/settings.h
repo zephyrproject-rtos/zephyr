@@ -9,8 +9,8 @@ struct bt_settings_handler {
 	int (*set)(int argc, char **argv, size_t len, settings_read_cb read_cb,
 		   void *cb_arg);
 	int (*commit)(void);
-	int (*export)(int (*func)(const char *name, void *val,
-				  size_t val_len));
+	int (*export)(int (*func)(const char *name,
+				  const void *val, size_t val_len));
 };
 
 #define BT_SETTINGS_DEFINE(_name, _set, _commit, _export)               \

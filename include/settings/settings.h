@@ -74,7 +74,7 @@ struct settings_handler {
 	 * User might use it to apply setting to the application.
 	 */
 
-	int (*h_export)(int (*export_func)(const char *name, void *val,
+	int (*h_export)(int (*export_func)(const char *name, const void *val,
 					   size_t val_len));
 	/**< This gets called to dump all current settings items.
 	 *
@@ -139,7 +139,7 @@ int settings_save(void);
  *
  * @return 0 on success, non-zero on failure.
  */
-int settings_save_one(const char *name, void *value, size_t val_len);
+int settings_save_one(const char *name, const void *value, size_t val_len);
 
 /**
  * Delete a single serialized in persisted storage.

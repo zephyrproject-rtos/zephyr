@@ -28,7 +28,7 @@ struct deletable_s {
 
 u32_t val4v2;
 
-int c4_handle_export(int (*cb)(const char *name, void *value, size_t val_len));
+int c4_handle_export(int (*cb)(const char *name, const void *value, size_t val_len));
 
 struct settings_handler c4_test_handler = {
 	.name = "4",
@@ -38,7 +38,7 @@ struct settings_handler c4_test_handler = {
 	.h_export = c4_handle_export
 };
 
-int c4_handle_export(int (*cb)(const char *name, void *value, size_t val_len))
+int c4_handle_export(int (*cb)(const char *name, const void *value, size_t val_len))
 {
 	if (deletable_val.valid) {
 		(void)cb(NAME_DELETABLE, &deletable_val.val32,

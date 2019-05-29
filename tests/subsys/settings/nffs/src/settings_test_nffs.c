@@ -26,7 +26,8 @@ int c1_handle_get(int argc, char **argv, char *val, int val_len_max);
 int c1_handle_set(int argc, char **argv, size_t len, settings_read_cb read_cb,
 		  void *cb_arg);
 int c1_handle_commit(void);
-int c1_handle_export(int (*cb)(const char *name, void *value, size_t val_len));
+int c1_handle_export(int (*cb)(const char *name,
+			       const void *value, size_t val_len));
 
 struct settings_handler c_test_handlers[] = {
 	{
@@ -108,7 +109,8 @@ int c1_handle_commit(void)
 	return 0;
 }
 
-int c1_handle_export(int (*cb)(const char *name, void *value, size_t val_len))
+int c1_handle_export(int (*cb)(const char *name,
+			       const void *value, size_t val_len))
 {
 	if (test_export_block) {
 		return 0;

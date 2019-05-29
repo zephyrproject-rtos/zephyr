@@ -60,7 +60,7 @@ int settings_load(void)
 /*
  * Append a single value to persisted config. Don't store duplicate value.
  */
-int settings_save_one(const char *name, void *value, size_t val_len)
+int settings_save_one(const char *name, const void *value, size_t val_len)
 {
 	struct settings_store *cs;
 
