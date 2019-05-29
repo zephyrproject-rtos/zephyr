@@ -2050,15 +2050,19 @@ struct bt_conn *bt_conn_create_slave_le(const bt_addr_le_t *peer,
 		case BT_CONN_CONNECT:
 		case BT_CONN_CONNECTED:
 			return conn;
+		case BT_CONN_DISCONNECTED:
+			break;
 		default:
 			bt_conn_unref(conn);
 			return NULL;
 		}
 	}
 
-	conn = bt_conn_add_le(peer);
-	if (!conn) {
-		return NULL;
+	if (!conn || conn->state != BT_CONN_DISCONNECTED) {
+		conn = bt_conn_add_le(peer);
+		if (!conn) {
+			return NULL;
+		}
 	}
 
 	conn->id = param->id;
