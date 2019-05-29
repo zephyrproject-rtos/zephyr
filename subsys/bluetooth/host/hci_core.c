@@ -3857,7 +3857,7 @@ static int common_init(void)
 	if (err) {
 		return err;
 	}
-#endif /* CONFIG_BT_CONN */
+#endif /* CONFIG_BT_HCI_ACL_FLOW_CONTROL */
 
 	return 0;
 }
@@ -5066,7 +5066,8 @@ int bt_id_reset(u8_t id, bt_addr_le_t *addr, u8_t *irk)
 		return -EBUSY;
 	}
 
-	if (bt_addr_le_cmp(&bt_dev.id_addr[id], BT_ADDR_LE_ANY)) {
+	if (IS_ENABLED(CONFIG_BT_CONN) &&
+	    bt_addr_le_cmp(&bt_dev.id_addr[id], BT_ADDR_LE_ANY)) {
 		int err;
 
 		err = bt_unpair(id, NULL);
@@ -5082,8 +5083,6 @@ int bt_id_reset(u8_t id, bt_addr_le_t *addr, u8_t *irk)
 
 int bt_id_delete(u8_t id)
 {
-	int err;
-
 	if (id == BT_ID_DEFAULT || id >= bt_dev.id_count) {
 		return -EINVAL;
 	}
@@ -5097,9 +5096,13 @@ int bt_id_delete(u8_t id)
 		return -EBUSY;
 	}
 
-	err = bt_unpair(id, NULL);
-	if (err) {
-		return err;
+	if (IS_ENABLED(CONFIG_BT_CONN)) {
+		int err;
+
+		err = bt_unpair(id, NULL);
+		if (err) {
+			return err;
+		}
 	}
 
 #if defined(CONFIG_BT_PRIVACY)
