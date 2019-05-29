@@ -83,7 +83,7 @@ static int cmd_connect(const struct shell *shell, size_t argc, char *argv[])
 	bt_addr_t addr;
 	int err;
 
-	err = str2bt_addr(argv[1], &addr);
+	err = bt_addr_from_str(argv[1], &addr);
 	if (err) {
 		shell_print(shell, "Invalid peer address (err %d)", err);
 		return -ENOEXEC;
