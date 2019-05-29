@@ -229,7 +229,6 @@ static struct bt_conn_cb conn_callbacks = {
 };
 #endif /* CONFIG_BT_CONN */
 
-#if defined(CONFIG_BT_BREDR) || defined(CONFIG_BT_CONN)
 static int char2hex(const char *c, u8_t *x)
 {
 	if (*c >= '0' && *c <= '9') {
@@ -279,7 +278,6 @@ int str2bt_addr(const char *str, bt_addr_t *addr)
 	return hexstr2array(str, addr->val, 6);
 }
 
-#if defined(CONFIG_BT_CONN)
 static int str2bt_addr_le(const char *str, const char *type, bt_addr_le_t *addr)
 {
 	int err;
@@ -299,8 +297,6 @@ static int str2bt_addr_le(const char *str, const char *type, bt_addr_le_t *addr)
 
 	return 0;
 }
-#endif /* CONFIG_BT_CONN */
-#endif /* CONFIG_BT_BREDR || CONFIG_BT_CONN */
 
 static void bt_ready(int err)
 {
