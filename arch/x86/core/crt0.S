@@ -507,34 +507,26 @@ z_x86_idt:
 
 
 #ifdef CONFIG_X86_MULTIBOOT
-	/* Multiboot header definition is needed for some bootloaders */
-
 	/*
 	 * The multiboot header must be in the first 8 Kb of the kernel image
 	 * (not including the ELF section header(s)) and be aligned on a
-	 * 4 byte boundary.
+	 * 4 byte boundary. See include/arch/x86/multiboot.h for more info.
 	 */
 
 	.balign 4,0x90
 
 	.long	X86_MULTIBOOT_HEADER_MAGIC
+	.long	X86_MULTIBOOT_HEADER_FLAGS
+	.long	-(X86_MULTIBOOT_HEADER_MAGIC + X86_MULTIBOOT_HEADER_FLAGS)
 
-	/*
-	 * Flags = no bits are being set, specifically bit 16 is not being
-	 * set since the supplied kernel image is an ELF file, and the
-	 * multiboot loader shall use the information from the program and
-	 * section header to load and boot the kernel image.
-	 */
+#ifdef CONFIG_X86_MULTIBOOT_FRAMEBUF
+	.fill	5,4,0				/* (unused exec layout) */
+	.long	0				/* linear graphics mode */
+	.long	CONFIG_X86_MULTIBOOT_FRAMEBUF_X	/* width */
+	.long	CONFIG_X86_MULTIBOOT_FRAMEBUF_Y	/* height */
+	.long	32				/* depth */
+#endif /* CONFIG_X86_MULTIBOOT_FRAMEBUF */
 
-	.long	0x00000000
-
-	/*
-	 * checksum = 32-bit unsigned value which, when added to the other
-	 * magic fields (i.e. "magic" and "flags"), must have a 32-bit
-	 * unsigned sum of zero.
-	 */
-
-	.long	-(X86_MULTIBOOT_HEADER_MAGIC + 0)
 #endif /* CONFIG_X86_MULTIBOOT */
 
 #ifdef CONFIG_SET_GDT

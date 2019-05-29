@@ -30,6 +30,29 @@ config X86_MULTIBOOT_INFO
 	  display driver) need to refer to information in this structure,
 	  and so set this option to preserve the data in a permanent location.
 
+if X86_MULTIBOOT
+
+config X86_MULTIBOOT_FRAMEBUF
+	bool "Multiboot framebuffer support"
+	default n
+	select DISPLAY
+	select FRAMEBUF_DISPLAY
+	select X86_MULTIBOOT_INFO
+
+if X86_MULTIBOOT_FRAMEBUF
+
+config X86_MULTIBOOT_FRAMEBUF_X
+	int "Multiboot framebuffer X pixels"
+	default 640
+
+config X86_MULTIBOOT_FRAMEBUF_Y
+	int "Multiboot framebuffer Y pixels"
+	default 480
+
+endif # X86_MULTIBOOT_FRAMEBUF
+
+endif # X86_MULTIBOOT
+
 source "arch/x86/core/Kconfig"
 
 #
