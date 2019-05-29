@@ -55,11 +55,11 @@ static inline int icm20948_set_gyro_fs(struct device *dev, enum icm20948_gyro_fs
 	return 0;
 }
 
-#ifdef (CONFIG_ICM20948_ACCEL_RANGE_RUNTIME)
+#ifdef CONFIG_ICM20948_ACCEL_RANGE_RUNTIME
 static const u16_t icm20948_accel_fs_map[] = { 2, 4, 8, 16 };
 static int icm20948_accel_range_set(struct device *dev, s32_t range)
 {
-	for (i = 0; i < ARRAY_SIZE(icm20948_accel_fs_map); i++) {
+	for (size_t i = 0; i < ARRAY_SIZE(icm20948_accel_fs_map); i++) {
 		if (range == icm20948_accel_fs_map[i]) {
 			return icm20948_set_accel_fs(dev, i);
 		}
@@ -69,11 +69,11 @@ static int icm20948_accel_range_set(struct device *dev, s32_t range)
 #endif
 
 
-#ifdef (CONFIG_ICM20948_GYRO_RANGE_RUNTIME)
+#ifdef CONFIG_ICM20948_GYRO_RANGE_RUNTIME
 static const u16_t icm20948_gyro_fs_map[] = { 250, 500, 1000, 2000 };
 static int icm20948_gyro_range_set(struct device *dev, s32_t range)
 {
-	for (i = 0; i < ARRAY_SIZE(icm20948_gyro_fs_map); i++) {
+	for (size_t i = 0; i < ARRAY_SIZE(icm20948_gyro_fs_map); i++) {
 		if (range == icm20948_gyro_fs_map[i]) {
 			return icm20948_set_gyro_fs(dev, i);
 		}
@@ -88,11 +88,8 @@ static int icm20948_accel_config(struct device *dev, enum sensor_channel chan,
 				 enum sensor_attribute attr,
 				 const struct sensor_value *val)
 {
-
-	struct icm20948_data *data = dev->driver_data;
-
 	switch (attr) {
-#ifdef (CONFIG_ICM20948_ACCEL_RANGE_RUNTIME)
+#ifdef CONFIG_ICM20948_ACCEL_RANGE_RUNTIME
 	case SENSOR_ATTR_FULL_SCALE:
 		return icm20948_accel_range_set(dev, sensor_ms2_to_g(val));
 #endif
@@ -106,10 +103,8 @@ static int icm20948_gyro_config(struct device *dev, enum sensor_channel chan,
 				enum sensor_attribute attr,
 				const struct sensor_value *val)
 {
-	struct icm20948_data *data = dev->driver_data;
-
 	switch (attr) {
-#ifdef (CONFIG_ICM20948_GYRO_RANGE_RUNTIME)
+#ifdef CONFIG_ICM20948_GYRO_RANGE_RUNTIME
 	case SENSOR_ATTR_FULL_SCALE:
 		return icm20948_gyro_range_set(dev, sensor_rad_to_degrees(val));
 #endif
@@ -124,8 +119,6 @@ static int icm20948_attr_set(struct device *dev, enum sensor_channel chan,
 			     enum sensor_attribute attr,
 			     const struct sensor_value *val)
 {
-	struct icm20948_data *data = dev->driver_data;
-
 	switch (chan) {
 	case SENSOR_CHAN_GYRO_X:
 	case SENSOR_CHAN_GYRO_Y:
@@ -146,7 +139,7 @@ static int icm20948_attr_set(struct device *dev, enum sensor_channel chan,
 
 
 static inline void icm20948_accel_convert(struct sensor_value *val, int raw_val,
-					  icm20948_accel_fs sensitivity)
+					  enum icm20948_accel_fs sensitivity)
 {
 	/* Sensitivity is exposed in LSB/g */
 	double dval = raw_val / ((double)(16384 >> sensitivity));
@@ -157,7 +150,7 @@ static inline void icm20948_accel_convert(struct sensor_value *val, int raw_val,
 
 
 static inline void icm20948_gyro_convert(struct sensor_value *val, int raw_val,
-					 icm20948_gyro_fs sensitivity)
+					 enum icm20948_gyro_fs sensitivity)
 {
 	/* Sensitivity is exposed in LSB/dps */
 	double dval = raw_val / ((double)(131.0 / (sensitivity + 1)));

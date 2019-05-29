@@ -6,6 +6,7 @@
 #ifndef ZEPHYR_DRIVERS_SENSOR_ICM_20498_H_
 #define ZEPHYR_DRIVERS_SENSOR_ICM_20498_H_
 
+#include <sensor.h>
 #include <zephyr/types.h>
 #include <device.h>
 #include <gpio.h>
@@ -209,7 +210,6 @@ int icm20948_trigger_set(struct device *dev,
 			 sensor_trigger_handler_t handler);
 
 int icm20948_init_interrupt(struct device *dev);
-
 #endif
 
 int icm20948_i2c_init(struct device *dev);
