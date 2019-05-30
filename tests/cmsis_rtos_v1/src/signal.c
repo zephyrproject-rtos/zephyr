@@ -163,13 +163,13 @@ void test_signal_events_signalled(void)
 /* IRQ offload function handler to set signal flag */
 static void offload_function(void *param)
 {
-	u32_t tid = (u32_t)param;
+	osThreadId tid = param;
 	int signals;
 
 	/* Make sure we're in IRQ context */
 	zassert_true(k_is_in_isr(), "Not in IRQ context!");
 
-	signals = osSignalSet((osThreadId)tid, ISR_SIGNAL);
+	signals = osSignalSet(tid, ISR_SIGNAL);
 	zassert_not_equal(signals, 0x80000000, "signal set failed in ISR");
 }
 
