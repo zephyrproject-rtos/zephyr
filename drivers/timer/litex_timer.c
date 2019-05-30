@@ -21,8 +21,6 @@
 #define TIMER_IRQ	DT_LITEX_TIMER0_E0002800_IRQ_0
 #define TIMER_DISABLE	0x0
 #define TIMER_ENABLE	0x1
-#define TIMER_VALUE	((CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC) / 100)
-
 
 static u32_t accumulated_cycle_count;
 
@@ -59,9 +57,9 @@ int z_clock_driver_init(struct device *device)
 	sys_write8(TIMER_DISABLE, TIMER_EN_ADDR);
 
 	for (int i = 0; i < 4; i++) {
-		sys_write8(TIMER_VALUE >> (24 - i * 8),
+		sys_write8(sys_clock_hw_cycles_per_tick() >> (24 - i * 8),
 				TIMER_RELOAD_ADDR + i * 0x4);
-		sys_write8(TIMER_VALUE >> (24 - i * 8),
+		sys_write8(sys_clock_hw_cycles_per_tick() >> (24 - i * 8),
 				TIMER_LOAD_ADDR + i * 0x4);
 	}
 
