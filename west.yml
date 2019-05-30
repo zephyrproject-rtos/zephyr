@@ -37,9 +37,9 @@ manifest:
       revision: 30b7efa827b04d2e47840716b0372737fe7d6c92
     - name: tinycbor
       path: modules/lib/tinycbor
-      revision: 111f7a215cc4efa49fd03a7835719adca83b4388
+      revision: 31ae89e4b768612722620cb6cb173a0de4a19cc9
     - name: hal_qmsi
-      revision: 3179a8e44912a5a05b1cb467870b7e91aedff8d6
+      revision: 9195fe6f97e4f7f25a3fc9e5a515f1b7af13762c
       path: modules/hal/qmsi
     - name: esp-idf
       revision: 6835bfc741bf15e98fb7971293913f770df6081f
