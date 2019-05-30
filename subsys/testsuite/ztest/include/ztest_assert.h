@@ -164,8 +164,8 @@ static inline void z_zassert(int cond,
  * @param b Value to compare
  * @param msg Optional message to print if the assertion fails
  */
-#define zassert_equal_ptr(a, b, msg, ...)			     \
-	zassert((void *)(a) == (void *)(b), #a " not equal to  " #b, \
+#define zassert_equal_ptr(a, b, msg, ...)			    \
+	zassert((void *)(a) == (void *)(b), #a " not equal to " #b, \
 		msg, ##__VA_ARGS__)
 
 /**
@@ -184,16 +184,31 @@ static inline void z_zassert(int cond,
 /**
  * @brief Assert that 2 memory buffers have the same contents
  *
+ * This macro calls the final memory comparison assertion macro.
+ * Using double expansion allows providing some arguments by macros that
+ * would expand to more than one values (ANSI-C99 defines that all the macro
+ * arguments have to be expanded before macro call).
+ *
+ * @param ... Arguments, see @ref zassert_mem_equal__
+ *            for real arguments accepted.
+ */
+#define zassert_mem_equal(...) \
+	zassert_mem_equal__(__VA_ARGS__)
+
+/**
+ * @brief Internal assert that 2 memory buffers have the same contents
+ *
+ * @note This is internal macro, to be used as a second expansion.
+ *       See @ref zassert_mem_equal.
+ *
  * @param buf Buffer to compare
  * @param exp Buffer with expected contents
  * @param size Size of buffers
  * @param msg Optional message to print if the assertion fails
  */
-static inline void zassert_mem_equal(void *buf, void *exp, size_t size,
-				     const char *msg)
-{
-	zassert_equal(memcmp(buf, exp, size), 0, msg);
-}
+#define zassert_mem_equal__(buf, exp, size, msg, ...)                        \
+	zassert_equal(memcmp(buf, exp, size), 0, #buf " not equal to " #exp, \
+	msg, ##__VA_ARGS__)
 
 /**
  * @}
