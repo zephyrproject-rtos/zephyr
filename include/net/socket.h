@@ -740,6 +740,9 @@ static inline char *inet_ntop(sa_family_t family, const void *src, char *dst,
 /** sockopt: Don't support IPv4 access (ignored, for compatibility) */
 #define IPV6_V6ONLY 26
 
+/** sockopt: Socket priority */
+#define SO_PRIORITY 12
+
 /** @cond INTERNAL_HIDDEN */
 /**
  * @brief Registration information for a given BSD socket family.

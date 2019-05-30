@@ -1116,6 +1116,8 @@ int zsock_getsockopt(int sock, int level, int optname,
 int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 			 const void *optval, socklen_t optlen)
 {
+	int ret;
+
 	switch (level) {
 	case SOL_SOCKET:
 		switch (optname) {
@@ -1124,7 +1126,21 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 			 * existing apps.
 			 */
 			return 0;
+
+		case SO_PRIORITY:
+			if (IS_ENABLED(CONFIG_NET_CONTEXT_PRIORITY)) {
+				ret = net_context_set_option(ctx,
+							     NET_OPT_PRIORITY,
+							     optval, optlen);
+				if (ret < 0) {
+					errno = -ret;
+					return -1;
+				}
+
+				return 0;
+			}
 		}
+
 		break;
 
 	case IPPROTO_TCP:
