@@ -373,7 +373,8 @@ config NET_CONTEXT_TIMESTAMP
 	bool "Add timestamp support to net_context"
 	select NET_PKT_TIMESTAMP
 	help
-	  It is possible to timestamp outgoing packets.
+	  It is possible to timestamp outgoing packets and get information
+	  about these timestamps.
 
 config NET_TEST
 	bool "Network Testing"
@@ -544,10 +545,21 @@ config NET_PKT_TIMESTAMP
 	  example in gPTP which needs to know how long it takes to send
 	  a network packet.
 
+config NET_PKT_TIMESTAMP_THREAD
+	bool "Create TX timestamp thread"
+	default y if NET_GPTP
+	depends on NET_PKT_TIMESTAMP
+	help
+	  Create a TX timestamp thread that will pass the timestamped network
+	  packets to some other module like gPTP for further processing.
+	  If you just want to timestamp network packets and get information
+	  how long the network packets flow in the system, you can disable
+	  the thread support.
+
 config NET_PKT_TIMESTAMP_STACK_SIZE
 	int "Timestamp thread stack size"
 	default 1024
-	depends on NET_PKT_TIMESTAMP
+	depends on NET_PKT_TIMESTAMP_THREAD
 	help
 	  Set the timestamp thread stack size in bytes. The timestamp
 	  thread waits for timestamped TX frames and calls registered

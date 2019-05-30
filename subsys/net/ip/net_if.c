@@ -82,7 +82,7 @@ static sys_slist_t link_callbacks;
 static sys_slist_t mcast_monitor_callbacks;
 #endif
 
-#if defined(CONFIG_NET_PKT_TIMESTAMP)
+#if defined(CONFIG_NET_PKT_TIMESTAMP_THREAD)
 #if !defined(CONFIG_NET_PKT_TIMESTAMP_STACK_SIZE)
 #define CONFIG_NET_PKT_TIMESTAMP_STACK_SIZE 1024
 #endif
@@ -97,7 +97,7 @@ static struct k_thread tx_thread_ts;
 /* We keep track of the timestamp callbacks in this list.
  */
 static sys_slist_t timestamp_callbacks;
-#endif /* CONFIG_NET_PKT_TIMESTAMP */
+#endif /* CONFIG_NET_PKT_TIMESTAMP_THREAD */
 
 #if CONFIG_NET_IF_LOG_LEVEL >= LOG_LEVEL_DBG
 #define debug_check_packet(pkt)						\
@@ -142,6 +142,15 @@ static bool net_if_tx(struct net_if *iface, struct net_pkt *pkt)
 	struct net_context *context;
 	int status;
 
+#if defined(CONFIG_NET_CONTEXT_TIMESTAMP)
+	/* Timestamp of the current network packet sent */
+	struct net_ptp_time start_timestamp;
+	u32_t curr_time = 0;
+
+	/* We collect send statistics for each socket priority */
+	u8_t pkt_priority;
+#endif
+
 	if (!pkt) {
 		return false;
 	}
@@ -158,7 +167,27 @@ static bool net_if_tx(struct net_if *iface, struct net_pkt *pkt)
 			net_pkt_set_queued(pkt, false);
 		}
 
+#if defined(CONFIG_NET_CONTEXT_TIMESTAMP)
+		if (context) {
+			if (net_context_get_timestamp(context, pkt,
+						      &start_timestamp) < 0) {
+				start_timestamp.nanosecond = 0;
+			} else {
+				pkt_priority = net_pkt_priority(pkt);
+			}
+		}
+#endif
+
 		status = net_if_l2(iface)->send(iface, pkt);
+
+#if defined(CONFIG_NET_CONTEXT_TIMESTAMP)
+		if (status >= 0 && context) {
+			if (start_timestamp.nanosecond > 0) {
+				curr_time = k_cycle_get_32();
+			}
+		}
+#endif
+
 	} else {
 		/* Drop packet if interface is not up */
 		NET_WARN("iface %p is down", iface);
@@ -176,6 +205,20 @@ static bool net_if_tx(struct net_if *iface, struct net_pkt *pkt)
 			context, status);
 
 		net_context_send_cb(context, status);
+
+#if defined(CONFIG_NET_CONTEXT_TIMESTAMP)
+		if (status >= 0 && start_timestamp.nanosecond &&
+		    curr_time > 0) {
+			/* So we know now how long the network packet was in
+			 * transit from when it was allocated to when we
+			 * got information that it was sent successfully.
+			 */
+			net_stats_update_tc_tx_time(iface,
+						    pkt_priority,
+						    start_timestamp.nanosecond,
+						    curr_time);
+		}
+#endif
 	}
 
 	if (dst->addr) {
@@ -3349,7 +3392,7 @@ bool net_if_is_promisc(struct net_if *iface)
 	return net_if_flag_is_set(iface, NET_IF_PROMISC);
 }
 
-#if defined(CONFIG_NET_PKT_TIMESTAMP)
+#if defined(CONFIG_NET_PKT_TIMESTAMP_THREAD)
 static void net_tx_ts_thread(void)
 {
 	struct net_pkt *pkt;
@@ -3402,7 +3445,7 @@ void net_if_add_tx_timestamp(struct net_pkt *pkt)
 {
 	k_fifo_put(&tx_ts_queue, pkt);
 }
-#endif /* CONFIG_NET_PKT_TIMESTAMP */
+#endif /* CONFIG_NET_PKT_TIMESTAMP_THREAD */
 
 void net_if_init(void)
 {
@@ -3467,13 +3510,13 @@ void net_if_init(void)
 	}
 #endif /* CONFIG_NET_IPV6 */
 
-#if defined(CONFIG_NET_PKT_TIMESTAMP)
+#if defined(CONFIG_NET_PKT_TIMESTAMP_THREAD)
 	k_thread_create(&tx_thread_ts, tx_ts_stack,
 			K_THREAD_STACK_SIZEOF(tx_ts_stack),
 			(k_thread_entry_t)net_tx_ts_thread,
 			NULL, NULL, NULL, K_PRIO_COOP(1), 0, 0);
 	k_thread_name_set(&tx_thread_ts, "tx_tstamp");
-#endif /* CONFIG_NET_PKT_TIMESTAMP */
+#endif /* CONFIG_NET_PKT_TIMESTAMP_THREAD */
 
 #if defined(CONFIG_NET_VLAN)
 	/* Make sure that we do not have too many network interfaces
