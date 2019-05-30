@@ -151,3 +151,16 @@ long strtol(const char *nptr, char **endptr, register int base)
 {
 	return (long)strtoi(nptr, endptr, base, 1, LONG_MAX);
 }
+
+/* Convert a string to an unsigned long long integer. */
+unsigned long long strtoull(const char *nptr, char **endptr, register int base)
+{
+	return (unsigned long long)strtoi(nptr, endptr, base, 0, ULLONG_MAX);
+}
+
+/* Convert a string to a long long integer. */
+long long strtoll(const char *nptr, char **endptr, register int base)
+{
+	return (long long)strtoi(nptr, endptr, base, 1, LLONG_MAX);
+}
+

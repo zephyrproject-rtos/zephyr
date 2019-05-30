@@ -16,6 +16,8 @@ extern "C" {
 
 unsigned long int strtoul(const char *str, char **endptr, int base);
 long int strtol(const char *str, char **endptr, int base);
+unsigned long long int strtoull(const char *str, char **endptr, int base);
+long long int strtoll(const char *str, char **endptr, int base);
 int atoi(const char *s);
 
 void *malloc(size_t size);
