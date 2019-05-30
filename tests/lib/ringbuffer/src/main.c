@@ -395,6 +395,54 @@ void test_byte_put_free(void)
 	}
 }
 
+void test_capacity(void)
+{
+	u32_t capacity;
+
+	ring_buf_init(&ringbuf_raw, RINGBUFFER_SIZE, ringbuf_raw.buf.buf8);
+
+	/* capacity equals buffer size dedicated for ring buffer - 1 because
+	 * 1 byte is used for distinguishing between full and empty state.
+	 */
+	capacity = ring_buf_capacity_get(&ringbuf_raw);
+	zassert_equal(RINGBUFFER_SIZE - 1, capacity,
+			"Unexpected capacity");
+}
+
+void test_reset(void)
+{
+	u8_t indata[] = {1, 2, 3, 4, 5};
+	u8_t outdata[RINGBUFFER_SIZE];
+	u8_t *outbuf;
+	u32_t len;
+	u32_t out_len;
+	u32_t granted;
+	u32_t space;
+
+	ring_buf_init(&ringbuf_raw, RINGBUFFER_SIZE, ringbuf_raw.buf.buf8);
+
+	len = 3;
+	out_len = ring_buf_put(&ringbuf_raw, indata, len);
+	zassert_equal(out_len, len, NULL);
+
+	out_len = ring_buf_get(&ringbuf_raw, outdata, len);
+	zassert_equal(out_len, len, NULL);
+
+	space = ring_buf_space_get(&ringbuf_raw);
+	zassert_equal(space, RINGBUFFER_SIZE - 1, NULL);
+
+	/* Even though ringbuffer is empty, full buffer cannot be allocated
+	 * because internal pointers are not at the beginning.
+	 */
+	granted = ring_buf_put_claim(&ringbuf_raw, &outbuf, RINGBUFFER_SIZE);
+	zassert_false(granted == RINGBUFFER_SIZE - 1, NULL);
+
+	/* After reset full buffer can be allocated. */
+	ring_buf_reset(&ringbuf_raw);
+	granted = ring_buf_put_claim(&ringbuf_raw, &outbuf, RINGBUFFER_SIZE);
+	zassert_true(granted == RINGBUFFER_SIZE - 1, NULL);
+}
+
 /*test case main entry*/
 void test_main(void)
 {
@@ -410,7 +458,10 @@ void test_main(void)
 			 ztest_unit_test(test_ring_buffer_main),
 			 ztest_unit_test(test_ringbuffer_raw),
 			 ztest_unit_test(test_ringbuffer_alloc_put),
-			 ztest_unit_test(test_byte_put_free)
+			 ztest_unit_test(test_byte_put_free),
+			 ztest_unit_test(test_byte_put_free),
+			 ztest_unit_test(test_capacity),
+			 ztest_unit_test(test_reset)
 			 );
 	ztest_run_test_suite(test_ringbuffer_api);
 }
