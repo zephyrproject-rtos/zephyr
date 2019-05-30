@@ -769,6 +769,14 @@ static void net_shell_print_statistics(struct net_if *iface, void *user_data)
 	   GET_STAT(iface, tcp.connrst));
 #endif
 
+#if defined(CONFIG_NET_CONTEXT_TIMESTAMP)
+	if (GET_STAT(iface, tx_time.time_count) > 0) {
+		PR("Network pkt TX time %lu us\n",
+		   (u32_t)(GET_STAT(iface, tx_time.time_sum) /
+			   (u64_t)GET_STAT(iface, tx_time.time_count)));
+	}
+#endif
+
 	PR("Bytes received %u\n", GET_STAT(iface, bytes.received));
 	PR("Bytes sent     %u\n", GET_STAT(iface, bytes.sent));
 	PR("Processing err %d\n", GET_STAT(iface, processing_error));
@@ -779,6 +787,23 @@ static void net_shell_print_statistics(struct net_if *iface, void *user_data)
 
 #if NET_TC_TX_COUNT > 1
 		PR("TX traffic class statistics:\n");
+
+#if defined(CONFIG_NET_CONTEXT_TIMESTAMP)
+		PR("TC  Priority\tSent pkts\tbytes\ttime\n");
+
+		for (i = 0; i < NET_TC_TX_COUNT; i++) {
+			PR("[%d] %s (%d)\t%d\t\t%d\t%lu us\n", i,
+			   priority2str(GET_STAT(iface, tc.sent[i].priority)),
+			   GET_STAT(iface, tc.sent[i].priority),
+			   GET_STAT(iface, tc.sent[i].pkts),
+			   GET_STAT(iface, tc.sent[i].bytes),
+			   GET_STAT(iface, tc.sent[i].tx_time.time_count) ?
+			   (u32_t)(GET_STAT(iface,
+					tc.sent[i].tx_time.time_sum) /
+				   (u64_t)GET_STAT(iface,
+					tc.sent[i].tx_time.time_count)) : 0);
+		}
+#else
 		PR("TC  Priority\tSent pkts\tbytes\n");
 
 		for (i = 0; i < NET_TC_TX_COUNT; i++) {
@@ -788,6 +813,7 @@ static void net_shell_print_statistics(struct net_if *iface, void *user_data)
 			   GET_STAT(iface, tc.sent[i].pkts),
 			   GET_STAT(iface, tc.sent[i].bytes));
 		}
+#endif /* CONFIG_NET_CONTEXT_TIMESTAMP */
 #endif
 
 #if NET_TC_RX_COUNT > 1
@@ -801,8 +827,8 @@ static void net_shell_print_statistics(struct net_if *iface, void *user_data)
 			   GET_STAT(iface, tc.recv[i].pkts),
 			   GET_STAT(iface, tc.recv[i].bytes));
 		}
-	}
 #endif
+	}
 #endif /* NET_TC_COUNT > 1 */
 
 #if defined(CONFIG_NET_STATISTICS_ETHERNET) && \
