@@ -5,8 +5,7 @@ zephyr_system_include_directories(include)
 zephyr_library()
 zephyr_library_sources(
   source/stdlib/atoi.c
-  source/stdlib/strtol.c
-  source/stdlib/strtoul.c
+  source/stdlib/strtoi.c
   source/stdlib/malloc.c
   source/stdlib/bsearch.c
   source/stdlib/exit.c

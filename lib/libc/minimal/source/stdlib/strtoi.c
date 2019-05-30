@@ -1,4 +1,4 @@
-/*
+/*-
  * Copyright (c) 1990, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
@@ -36,21 +36,35 @@
 #include <stdlib.h>
 
 /*
- * Convert a string to an unsigned long integer.
+ * @brief Convert a string to a long long integer, bounded by limit.
+ *
+ * This is not a standard library function, only a helper to support different
+ * target types.
  *
  * Ignores `locale' stuff.  Assumes that the upper and lower case
  * alphabets and digits are each contiguous.
+ *
+ * @param nptr Pointer to the beginning of the string to convert
+ * @param endptr Pointer to store the first invalid character. May be null
+ * @param base Base of the conversion process
+ * @param issigned Defines if the target type will be signed or not
+ * @param limit Maximal positive value of the target type
+ *
+ * @retval A converted value, as unsigned long long.
  */
-unsigned long strtoul(const char *nptr, char **endptr, register int base)
+static unsigned long long strtoi(const char *nptr, char **endptr,
+		register int base, int issigned, unsigned long long limit)
 {
 	register const char *s = nptr;
-	register unsigned long acc;
+	register unsigned long long acc;
 	register int c;
-	register unsigned long cutoff;
+	register unsigned long long cutoff;
 	register int neg = 0, any, cutlim;
 
 	/*
-	 * See strtol for comments as to the logic used.
+	 * Skip white space and pick up leading +/- sign if any.
+	 * If base is 0, allow 0x for hex and 0 for octal, else
+	 * assume decimal; if base is already 16, allow 0x.
 	 */
 	do {
 		c = *s++;
@@ -73,8 +87,26 @@ unsigned long strtoul(const char *nptr, char **endptr, register int base)
 		base = c == '0' ? 8 : 10;
 	}
 
-	cutoff = (unsigned long)ULONG_MAX / (unsigned long)base;
-	cutlim = (unsigned long)ULONG_MAX % (unsigned long)base;
+	/*
+	 * Compute the cutoff value between legal numbers and illegal
+	 * numbers.  That is the largest legal value, divided by the
+	 * base.  An input number that is greater than this value, if
+	 * followed by a legal input character, is too big.  One that
+	 * is equal to this value may be valid or not; the limit
+	 * between valid and invalid numbers is then based on the last
+	 * digit.  For instance, if the range for longs is
+	 * [-2147483648..2147483647] and the input base is 10,
+	 * cutoff will be set to 214748364 and cutlim to either
+	 * 7 (neg==0) or 8 (neg==1), meaning that if we have accumulated
+	 * a value > 214748364, or equal but the next digit is > 7 (or 8),
+	 * the number is too big, and we will return a range error.
+	 *
+	 * Set any if any `digits' consumed; make it negative to indicate
+	 * overflow.
+	 */
+	cutoff = neg && issigned ? (unsigned long long)(limit + 1) : limit;
+	cutlim = cutoff % (unsigned long long)base;
+	cutoff /= (unsigned long)base;
 	for (acc = 0, any = 0;; c = *s++) {
 		if (isdigit(c)) {
 			c -= '0';
@@ -94,14 +126,28 @@ unsigned long strtoul(const char *nptr, char **endptr, register int base)
 			acc += c;
 		}
 	}
+
 	if (any < 0) {
-		acc = ULONG_MAX;
+		acc = neg && issigned ? -limit - 1LL : limit;
 		errno = ERANGE;
 	} else if (neg) {
 		acc = -acc;
 	}
+
 	if (endptr != NULL) {
 		*endptr = (char *)(any ? s - 1 : nptr);
 	}
 	return acc;
+}
+
+/* Convert a string to an unsigned long integer. */
+unsigned long strtoul(const char *nptr, char **endptr, register int base)
+{
+	return (unsigned long)strtoi(nptr, endptr, base, 0, ULONG_MAX);
+}
+
+/* Convert a string to a long integer. */
+long strtol(const char *nptr, char **endptr, register int base)
+{
+	return (long)strtoi(nptr, endptr, base, 1, LONG_MAX);
 }
