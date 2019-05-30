@@ -57,6 +57,12 @@ char *net_sprint_addr(sa_family_t af, const void *addr);
 
 #define net_sprint_ipv6_addr(_addr) net_sprint_addr(AF_INET6, _addr)
 
+#if defined(CONFIG_NET_CONTEXT_TIMESTAMP)
+int net_context_get_timestamp(struct net_context *context,
+			      struct net_pkt *pkt,
+			      struct net_ptp_time *timestamp);
+#endif
+
 #if defined(CONFIG_NET_GPTP)
 /**
  * @brief Initialize Precision Time Protocol Layer.

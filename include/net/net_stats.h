@@ -202,6 +202,14 @@ struct net_stats_ipv6_mld {
 };
 
 /**
+ * @brief Network packet transfer times
+ */
+struct net_stats_tx_time {
+	u64_t time_sum;
+	net_stats_t time_count;
+};
+
+/**
  * @brief Traffic class statistics
  */
 struct net_stats_tc {
@@ -209,6 +217,7 @@ struct net_stats_tc {
 		net_stats_t pkts;
 		net_stats_t bytes;
 		u8_t priority;
+		struct net_stats_tx_time tx_time;
 	} sent[NET_TC_TX_COUNT];
 
 	struct {
@@ -272,6 +281,11 @@ struct net_stats {
 #if NET_TC_COUNT > 1
 	/** Traffic class statistics */
 	struct net_stats_tc tc;
+#endif
+
+#if defined(CONFIG_NET_CONTEXT_TIMESTAMP)
+	/** Network packet TX time statistics */
+	struct net_stats_tx_time tx_time;
 #endif
 };
 
