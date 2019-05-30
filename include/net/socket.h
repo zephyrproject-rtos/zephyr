@@ -732,6 +732,9 @@ static inline char *inet_ntop(sa_family_t family, const void *src, char *dst,
 /** sockopt: Async error (ignored, for compatibility) */
 #define SO_ERROR 4
 
+/** sockopt: Timestamp TX packets */
+#define SO_TIMESTAMPING 37
+
 /* Socket options for IPPROTO_TCP level */
 /** sockopt: Disable TCP buffering (ignored, for compatibility) */
 #define TCP_NODELAY 1
