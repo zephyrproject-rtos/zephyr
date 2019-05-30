@@ -557,7 +557,7 @@ static int adc_stm32_init(struct device *dev)
 		LOG_ERR("ADC clock rate get error.");
 	}
 
-	wait_cycles = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / adc_rate *
+	wait_cycles = SystemCoreClock / adc_rate *
 		      LL_ADC_DELAY_CALIB_ENABLE_ADC_CYCLES;
 
 	for (int i = wait_cycles; i >= 0; i--) {
