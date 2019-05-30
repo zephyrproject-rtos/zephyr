@@ -196,21 +196,6 @@ SECTIONS
 	/* RAMABLE_REGION */
 	GROUP_START(RAMABLE_REGION)
 
-#ifdef CONFIG_COVERAGE_GCOV
-	SECTION_PROLOGUE(_GCOV_BSS_SECTION_NAME, (NOLOAD),)
-	{
-		MMU_PAGE_ALIGN
-		__gcov_bss_start = .;
-		*(".bss.__gcov0.*");
-		. = ALIGN(4);
-		MMU_PAGE_ALIGN
-		__gcov_bss_end = .;
-	}GROUP_DATA_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
-
-	__gcov_bss_num_words = ((__gcov_bss_end - __gcov_bss_start) >> 2);
-	__gcov_bss_size = __gcov_bss_end - __gcov_bss_start;
-#endif /* CONFIG_COVERAGE_GCOV */
-
 /* Located in generated directory. This file is populated by the
  * zephyr_linker_sources() Cmake function.
  */

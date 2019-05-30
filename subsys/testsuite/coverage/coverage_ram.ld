@@ -6,6 +6,7 @@
 
 /* Copied from linker.ld */
 
+#ifdef CONFIG_ARM
 SECTION_DATA_PROLOGUE(_GCOV_BSS_SECTION_NAME,(NOLOAD),)
 {
 #ifdef CONFIG_USERSPACE
@@ -28,3 +29,19 @@ SECTION_DATA_PROLOGUE(_GCOV_BSS_SECTION_NAME,(NOLOAD),)
 
 __gcov_bss_num_words = ((__gcov_bss_end - __gcov_bss_start) >> 2);
 __gcov_bss_size = __gcov_bss_end - __gcov_bss_start;
+#endif
+
+#ifdef CONFIG_X86
+SECTION_PROLOGUE(_GCOV_BSS_SECTION_NAME, (NOLOAD),)
+{
+	MMU_PAGE_ALIGN
+	__gcov_bss_start = .;
+	*(".bss.__gcov0.*");
+	. = ALIGN(4);
+	MMU_PAGE_ALIGN
+	__gcov_bss_end = .;
+}GROUP_DATA_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
+
+__gcov_bss_num_words = ((__gcov_bss_end - __gcov_bss_start) >> 2);
+__gcov_bss_size = __gcov_bss_end - __gcov_bss_start;
+#endif
