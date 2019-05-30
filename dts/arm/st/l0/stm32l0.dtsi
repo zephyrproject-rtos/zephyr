@@ -18,6 +18,7 @@
 		cpu@0 {
 			device_type = "cpu";
 			compatible = "arm,cortex-m0+";
+			clock-frequency = <32000000>;
 			reg = <0>;
 		};
 	};
