@@ -301,6 +301,40 @@ void test_send_recv_2_sock(void)
 	zassert_equal(rv, 0, "close failed");
 }
 
+void test_so_priority(void)
+{
+	struct sockaddr_in bind_addr4;
+	struct sockaddr_in6 bind_addr6;
+	int sock1, sock2, rv;
+	u8_t optval;
+
+	prepare_sock_udp_v4(CONFIG_NET_CONFIG_MY_IPV4_ADDR, 55555,
+			    &sock1, &bind_addr4);
+	prepare_sock_udp_v6(CONFIG_NET_CONFIG_MY_IPV6_ADDR, 55555,
+			    &sock2, &bind_addr6);
+
+	rv = bind(sock1, (struct sockaddr *)&bind_addr4, sizeof(bind_addr4));
+	zassert_equal(rv, 0, "bind failed");
+
+	rv = bind(sock2, (struct sockaddr *)&bind_addr6, sizeof(bind_addr6));
+	zassert_equal(rv, 0, "bind failed");
+
+	optval = 2;
+	rv = setsockopt(sock1, SOL_SOCKET, SO_PRIORITY, &optval,
+			sizeof(optval));
+	zassert_equal(rv, 0, "setsockopt failed (%d)", errno);
+
+	optval = 8;
+	rv = setsockopt(sock2, SOL_SOCKET, SO_PRIORITY, &optval,
+			sizeof(optval));
+	zassert_equal(rv, 0, "setsockopt failed");
+
+	rv = close(sock1);
+	zassert_equal(rv, 0, "close failed");
+	rv = close(sock2);
+	zassert_equal(rv, 0, "close failed");
+}
+
 void test_main(void)
 {
 	ztest_test_suite(socket_udp,
@@ -308,7 +342,9 @@ void test_main(void)
 			 ztest_unit_test(test_v4_sendto_recvfrom),
 			 ztest_unit_test(test_v6_sendto_recvfrom),
 			 ztest_unit_test(test_v4_bind_sendto),
-			 ztest_unit_test(test_v6_bind_sendto));
+			 ztest_unit_test(test_v6_bind_sendto),
+			 ztest_unit_test(test_so_priority)
+		);
 
 	ztest_run_test_suite(socket_udp);
 }
