@@ -37,6 +37,6 @@ set(QEMU_FLAGS_${ARCH}
   )
 
 # TODO: Support debug
-# board_set_debugger(qemu)
+# board_set_debugger_ifnset(qemu)
 # debugserver: QEMU_EXTRA_FLAGS += -s -S
 # debugserver: qemu
