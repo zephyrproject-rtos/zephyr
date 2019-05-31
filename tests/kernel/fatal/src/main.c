@@ -140,24 +140,17 @@ void blow_up_stack(void)
 
 void stack_sentinel_timer(void)
 {
-	u32_t cur_tick;
-
-	/* Test that stack overflow check due to timer interrupt works */
-	blow_up_stack();
-	TC_PRINT("waiting for tick advance...\n");
-
-	/* This test has tickless kernel disabled, z_tick_get_32() returns
-	 * the current tick count without trying to offset it by checking
-	 * time elapsed in the driver since last update
+	/* We need to guarantee that we receive an interrupt, so set a
+	 * k_timer and spin until we die.  Spinning alone won't work
+	 * on a tickless kernel.
 	 */
-	cur_tick = z_tick_get_32();
+	struct k_timer timer;
 
-	while (cur_tick == z_tick_get_32()) {
-		/* spin */
+	blow_up_stack();
+	k_timer_init(&timer, NULL, NULL);
+	k_timer_start(&timer, 1, 0);
+	while (true) {
 	}
-
-	TC_ERROR("should never see this\n");
-	rv = TC_FAIL;
 }
 
 void stack_sentinel_swap(void)
