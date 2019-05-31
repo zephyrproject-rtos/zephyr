@@ -324,19 +324,24 @@ entries, then bump the 'max_top_items' variable in {}.
         # ('#ifdef '), but it was added fairly recently (second half of 2018),
         # so we extract the references from each line ourselves instead.
         #
-        # The regular expression in use here uses zero length word boundary
-        # assertions (\b) to isolate the reference then a negative lookahead to
-        # ensure that it is not followed by a token paste operation
-        # (CONFIG_FOO_##...), a '$' (e.g. for a CMake variable expansion like
-        # CONFIG_FOO_${VAR}), a '@' (for a CMake configure_file() reference
-        # like CONFIG_FOO_@VAR@), a '{' (when building symbol names in Python
-        # scripts), or a '*' (for comments like CONFIG_FOO_*). Those would
-        # always need to be whitelisted anyway.
+        # The regex uses word boundaries (\b) to isolate the reference, and
+        # negative lookahead to automatically whitelist the following:
         #
-        # Skip the samples/ and tests/ directories for now. They often contain
-        # Kconfig files that are not part of the main Kconfig tree, which will
-        # trigger false positives until we do something fancier. Skip
-        # doc/releases too, which often references removed symbols.
+        #  - ##, for token pasting (CONFIG_FOO_##X)
+        #
+        #  - $, e.g. for CMake variable expansion (CONFIG_FOO_${VAR})
+        #
+        #  - @, e.g. for CMakes's configure_file() (CONFIG_FOO_@VAR@)
+        #
+        #  - {, e.g. for Python scripts ("CONFIG_FOO_{}_BAR".format(...)")
+        #
+        #  - *, meant for comments like '#endif /* CONFIG_FOO_* */
+        #
+        # We skip the samples/ and tests/ directories for now. They often
+        # contain Kconfig files that are not part of the main Kconfig tree,
+        # which will trigger false positives until we do something fancier.
+        #
+        # We also skip doc/releases, which often references removed symbols.
 
         # Warning: Needs to work with both --perl-regexp and the 're' module
         regex = r"\bCONFIG_[A-Z0-9_]+\b(?!\s*##|[$@{*])"
