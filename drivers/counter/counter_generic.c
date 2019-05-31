@@ -41,6 +41,8 @@ struct counter_generic_config {
 	struct counter_config_info info;
 	struct device *backend;
 	u32_t cnt;
+	u32_t upperstamp;
+	u32_t last_stamp;
 	struct counter_channel_data chdata[1];
 };
 
@@ -89,24 +91,43 @@ static bool is_backend32(struct device *backend)
 static u32_t emu32_read(struct device *dev)
 {
 	struct counter_generic_config *config = get_dev_config(dev);
-	const struct counter_generic_data *devdata = get_dev_data(dev);
-	u32_t cnt_lo;
-	u32_t cnt_hi;
-	u32_t max;
-	u32_t common_bit;
+	u32_t upperstamp = config->upperstamp;
+	u32_t stamp;
 
-	/* TODO: What about counting down backend. */
-	cnt_hi = config->cnt;
-	cnt_lo = counter_read(config->backend) >> devdata->prescale;
-	max = get_top_value(config->backend) >> devdata->prescale;
+	/* 32 bit timestamp is formed as a sum of base counter value and
+	 * upper part. Since base counter is running independent from the core
+	 * it is possible that it just wrapped. In that case upper part may not
+	 * yet be updated.
+	 *
+	 * In order to detect counter is updating reference time stamp at least
+	 * once per base counter cycle. Updating must occur in the location
+	 * which is guaranteed to not collide with wrapping.
+	 *
+	 * Any timestamp calculated as the sum of base counter and upper part
+	 * will be bigger than last reference time stamp unless:
+	 * - wrapping just occurred and upper part is not yet updated
+	 * - 32 bit counter wrapped. Upper part is updated but reference stamp
+	 *   is not
+	 *
+	 * Counter reading for majority cases is simple and fast.
+	 */
+	stamp = counter_read(config->backend) + upperstamp;
+	if (stamp < config->last_stamp) {
+		u32_t top_mask = counter_get_top_value(config->backend);
+		u32_t top = top_mask + 1;
 
-	common_bit = (max >> 1) + 1;
-	if ((cnt_lo & common_bit) != (cnt_hi & common_bit)) {
-		cnt_hi += common_bit;
-		config->cnt = cnt_hi;
+		if ((upperstamp + top) == UINT32_MAX) {
+			stamp &= top_mask;
+		} else {
+			upperstamp += top;
+			stamp += top;
+		}
+
+		config->last_stamp = stamp;
+		atomic_set(&config->upperstamp, upperstamp);
 	}
 
-	return cnt_hi | (cnt_lo & (max >> 1));
+	return stamp;
 }
 
 static u32_t counter_generic_read(struct device *dev)
@@ -119,32 +140,30 @@ static u32_t counter_generic_read(struct device *dev)
 		emu32_read(dev);
 }
 
-static u32_t get_backend_ticks(struct device *dev, u32_t ticks32, u32_t *bticks)
+static bool get_next_alarm(struct device *dev, u32_t ticks32, u32_t *alarm)
 {
 	struct counter_generic_config *config = get_dev_config(dev);
 	u32_t now = counter_read(dev);
-	u32_t rel_ticks = ticks32 - now;
-	u32_t htop = get_top_value(config->backend)/2;
-	u32_t new_ticks = ticks32;
-	bool frag = false;
-	u32_t guard = counter_get_top_value(config->backend) -
-			counter_get_max_relative_alarm(config->backend);
+	u32_t dist = ticks32 - now;
+	u32_t max = counter_get_max_relative_alarm(config->backend);
+	u32_t top = counter_get_top_value(config->backend);
+	u32_t ticks;
+	bool frag;
 
-	if (IN_RANGE((int)rel_ticks, -guard, 0)) {
-		new_ticks = ticks32;
-	} else if (rel_ticks > htop + guard /*todo - make relative */) {
-		new_ticks = now + htop - guard/2;
-		frag = true;
-	} else if (IN_RANGE(rel_ticks, guard, htop)) {
-		new_ticks = now + rel_ticks/2;
+	/* If distance exceeds base counter capabilities deadline will be
+	 * fragmented.
+	 */
+	if (dist > max) {
+		ticks = (now + max) & top;
 		frag = true;
 	} else {
-		new_ticks = ticks32;
+		ticks = ticks32 & top;
+		frag = false;
 	}
 
-	*bticks = new_ticks & get_top_value(config->backend);
-	DBG("now:%d, rel_ticks:%d, qtop:%d , bticks %d",
-			now, rel_ticks, htop, *bticks);
+	*alarm = ticks;
+	DBG("now:%d, next_alarm:%d %s, target:%d",
+			now, ticks, frag ? "(fragmented)" : "", ticks32);
 
 	return frag;
 }
@@ -171,7 +190,7 @@ static bool user_alarm_handle(struct device *dev, u8_t chan_id,
 		if (config->chdata[chan_id].frag) {
 			bool frag;
 
-			frag = get_backend_ticks(dev,
+			frag = get_next_alarm(dev,
 						 config->chdata[chan_id].ticks,
 						 &cfg->ticks);
 			config->chdata[chan_id].frag = frag;
@@ -191,14 +210,18 @@ static void set_sync_tick(struct device *dev, struct device *backend,
 			  struct counter_alarm_cfg *cfg)
 {
 	int err;
-	u32_t top = get_top_value(backend);
 	u32_t now = counter_read(backend);
+	u32_t max = counter_get_max_relative_alarm(backend);
+	u32_t top = counter_get_top_value(backend);
 
-	cfg->ticks = IN_RANGE(now, top/4 - 100, 3*top/4 - 100) ?
-							3*top/4 : top/4;
+	/* To avoid sync tick happening just before wrapping it is moved
+	 * earlier.
+	 */
+	cfg->ticks = MIN((now + max) & top, max);
+
+	DBG("Next sync tick: %d (now: %d, max: %d)", cfg->ticks, now, max);
 	err = counter_set_channel_alarm(backend, 0, cfg);
 	__ASSERT((err == 0) || (err == -EBUSY), "Unexpected err: %d", err);
-	DBG("Setting sync tick (now: %d, next %d)", now, cfg->ticks);
 }
 
 static void alarm_callback_frag(struct device *backend, u8_t chan_id,
@@ -210,15 +233,19 @@ static void alarm_callback_frag(struct device *backend, u8_t chan_id,
 		.user_data = dev,
 		.absolute = true
 	};
+	bool user_alarm = user_alarm_handle(dev, chan_id, &cfg);
 
 	INF("alarm_callback chan: %d, ticks:%d", chan_id, ticks);
 
-	bool user_alarm = user_alarm_handle(dev, chan_id, &cfg);
+	/* if there is no wrap risk in the callback update reliable stamp. */
+	if (ticks <= counter_get_max_relative_alarm(backend)) {
+		struct counter_generic_config *config = get_dev_config(dev);
+
+		config->last_stamp = counter_read(dev);
+		DBG("updating last stamp %d", config->last_stamp);
+	}
 
 	if (!user_alarm && (chan_id == 0)) {
-		u32_t cnt = counter_read(dev);
-
-		DBG("Sync tick (cnt:%d).", cnt);
 		set_sync_tick(dev, backend, &cfg);
 	}
 }
@@ -251,7 +278,7 @@ static int counter_generic_set_alarm(struct device *dev, u8_t chan_id,
 		u32_t backend_ticks;
 		bool frag;
 
-		frag = get_backend_ticks(dev, alarm_cfg->ticks, &backend_ticks);
+		frag = get_next_alarm(dev, alarm_cfg->ticks, &backend_ticks);
 		cfg.ticks = backend_ticks;
 		cfg.callback = alarm_callback_frag;
 
@@ -266,7 +293,8 @@ static int counter_generic_set_alarm(struct device *dev, u8_t chan_id,
 		}
 
 		config->chdata[chan_id].frag = frag;
-		DBG("Setting alarm, ticks:%d", alarm_cfg->ticks);
+		DBG("Setting alarm, ticks:%d, now:%d",
+				alarm_cfg->ticks, counter_read(dev));
 		if (frag) {
 			DBG("Fragmented, first part:%d", cfg.ticks);
 		}
@@ -349,6 +377,8 @@ int counter_generic_init_with_max(struct device *dev, u32_t max)
 	config->info.channels = counter_get_num_of_channels(backend);
 	config->backend = backend;
 	config->cnt = 0;
+	config->last_stamp = 0;
+	config->upperstamp = 0;
 
 	config->info.freq >>= devdata->prescale;
 	__ASSERT(config->info.freq > 0, "Invalid prescaler settings!");
