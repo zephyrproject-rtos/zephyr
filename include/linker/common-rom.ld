@@ -59,6 +59,13 @@
 		__devconfig_end = .;
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
+	SECTION_PROLOGUE (devlink,,)
+	{
+		__devlink_start = .;
+		KEEP(*(".devlink"))
+		__devlink_end = .;
+	} GROUP_LINK_IN(ROMABLE_REGION)
+
 	SECTION_PROLOGUE(net_l2,,)
 	{
 		__net_l2_start = .;

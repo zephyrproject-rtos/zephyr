@@ -389,6 +389,109 @@ void device_busy_set(struct device *busy_dev);
  */
 void device_busy_clear(struct device *busy_dev);
 
+/**
+ * @brief Device link type codes.
+ */
+enum device_link_type {
+	DEVICE_LINK_TYPE_CLOCK,
+	DEVICE_LINK_TYPE_DMA,
+};
+
+/**
+ * @brief Static device link definition (In ROM)
+ *
+ * @param dev the device linking to another one
+ * @param link_to the link target
+ * @param link_type the type of the link
+ * @param link_index the index within the same link type
+ */
+struct device_link {
+	const struct device *dev;
+	const char *link_to;
+	enum device_link_type link_type;
+	u32_t link_index;
+};
+
+/**
+ * @def DEVICE_LINK
+ *
+ * @brief Declare a link from one device to another.
+ *
+ * @details This macro declares a link between one device and (the label of)
+ * another device.  For example, this can be used for a device to declare
+ * the clock it uses: the device links to the clock label.
+ *
+ * @param dev_name Linking device name.
+ *
+ * @param lnk_to Label of the device being linked to.
+ *
+ * @param lnk_type Link type code.
+ *
+ * @param lnk_index Link index within the type code.
+ */
+#define DEVICE_LINK(dev_name, lnk_to, lnk_type, lnk_index)		  \
+	static struct device_link					  \
+	_CONCAT(__link_, _CONCAT(dev_name, _CONCAT(lnk_type, lnk_index))) \
+	__used __attribute__((__section__(".devlink"))) = {		  \
+		.dev = &(DEVICE_NAME_GET(dev_name)),			  \
+		.link_to = lnk_to,					  \
+		.link_type = (lnk_type),				  \
+		.link_index = (lnk_index),				  \
+	}
+
+/**
+ * @def DEVICE_LINK_CLOCK
+ *
+ * @brief Declare a link from a device to a clock.
+ *
+ * @details This macro declares a link between a device and a clock it uses.
+ *
+ * @param dev_name Linking device name.
+ *
+ * @param clk_name Label of the clock being linked to.
+ *
+ * @param clk_index Clock index.
+ */
+#define DEVICE_LINK_CLOCK(dev_name, clk_name, clk_index)		  \
+	DEVICE_LINK(dev_name, clk_name, DEVICE_LINK_TYPE_CLOCK, clk_index)
+
+/**
+ * @brief Retrieve the device structure for a device linked to another
+ *
+ * @details This function retrieves a device pointer for a device that
+ * was declared as linked to the original device.  For example, this can
+ * be used to retrieve clock devices from their consumers (the consumer
+ * is the "linking" device provided here).
+ *
+ * @param dev Linking device pointer.
+ *
+ * @param lnk_type Link type to look up.
+ *
+ * @param index Index within the linked type.
+ *
+ * @return pointer to device structure; NULL if not found or cannot be used.
+ */
+__syscall struct device *device_get_linked(struct device *dev,
+					   enum device_link_type lnk_type,
+					   u32_t index);
+
+/**
+ * @brief Retrieve the device structure for a clock used by a device.
+ *
+ * @details This function retrieves a device pointer for a clock that
+ * was declared as linked/consumed by the source device.
+ *
+ * @param dev Source/consumer device.
+ *
+ * @param index Clock index number.
+ *
+ * @return pointer to device structure; NULL if not found or cannot be used.
+ */
+static inline struct device *device_get_clock(struct device *dev, u32_t index)
+{
+	return device_get_linked(dev, DEVICE_LINK_TYPE_CLOCK, index);
+}
+
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 /*
  * Device PM functions

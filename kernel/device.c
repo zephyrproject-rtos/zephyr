@@ -18,6 +18,9 @@ extern struct device __device_POST_KERNEL_start[];
 extern struct device __device_APPLICATION_start[];
 extern struct device __device_init_end[];
 
+extern const struct device_link __devlink_start[];
+extern const struct device_link __devlink_end[];
+
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 extern u32_t __device_busy_start[];
@@ -105,6 +108,40 @@ Z_SYSCALL_HANDLER(device_get_binding, name)
 	}
 
 	return (u32_t)z_impl_device_get_binding(name_copy);
+}
+#endif /* CONFIG_USERSPACE */
+
+struct device *z_impl_device_get_linked(struct device *dev,
+				 enum device_link_type lnk_type,
+				 u32_t index)
+{
+	const struct device_link *link;
+
+	for (link = __devlink_start; link != __devlink_end; link++) {
+		if (link->dev != dev) {
+			continue;
+		}
+
+		if (link->link_type != lnk_type) {
+			continue;
+		}
+
+		if (link->link_index != index) {
+			continue;
+		}
+
+		return z_impl_device_get_binding(link->link_to);
+	}
+
+	return NULL;
+}
+
+#ifdef CONFIG_USERSPACE
+Z_SYSCALL_HANDLER(device_get_linked, dev, lnk_type, index)
+{
+	return (u32_t)z_impl_device_get_linked((struct device *)dev,
+					       (enum device_link_type)lnk_type,
+					       (u32_t)index);
 }
 #endif /* CONFIG_USERSPACE */
 
