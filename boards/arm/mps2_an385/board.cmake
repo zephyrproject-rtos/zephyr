@@ -10,4 +10,4 @@ set(QEMU_FLAGS_${ARCH}
   -vga none
   )
 
-set(BOARD_DEBUG_RUNNER qemu)
+board_set_debugger(qemu)

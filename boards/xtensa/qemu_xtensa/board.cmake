@@ -9,6 +9,6 @@ set(QEMU_FLAGS_${ARCH}
   )
 
 # TODO: Support debug
-# set(BOARD_DEBUG_RUNNER qemu)
+# board_set_debugger(qemu)
 # debugserver: QEMU_EXTRA_FLAGS += -s -S
 # debugserver: qemu

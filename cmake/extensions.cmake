@@ -559,6 +559,66 @@ endfunction()
 # This section provides glue between CMake and the Python code that
 # manages the runners.
 
+function(_board_check_runner_type type) # private helper
+  if (NOT (("${type}" STREQUAL "FLASH") OR ("${type}" STREQUAL "DEBUG")))
+    message(FATAL_ERROR "invalid type ${type}; should be FLASH or DEBUG")
+  endif()
+endfunction()
+
+# This function sets the runner for the board unconditionally.  It's
+# meant to be used from application CMakeLists.txt files.
+#
+# NOTE: Usually board_set_xxx_ifnset() is best in board.cmake files.
+#       This lets the user set the runner at cmake time, or in their
+#       own application's CMakeLists.txt.
+#
+# Usage:
+#   board_set_runner(FLASH pyocd)
+#
+# This would set the board's flash runner to "pyocd".
+#
+# In general, "type" is FLASH or DEBUG, and "runner" is the name of a
+# runner.
+function(board_set_runner type runner)
+  _board_check_runner_type(${type})
+  if (DEFINED BOARD_${type}_RUNNER)
+    message(STATUS "overriding ${type} runner ${BOARD_${type}_RUNNER}; it's now ${runner}")
+  endif()
+  set(BOARD_${type}_RUNNER ${runner} PARENT_SCOPE)
+endfunction()
+
+# This macro is like board_set_runner(), but will only make a change
+# if that runner is currently not set.
+#
+# See also board_set_flasher_ifnset() and board_set_debugger_ifnset().
+macro(board_set_runner_ifnset type runner)
+  _board_check_runner_type(${type})
+  # This is a macro because set_ifndef() works at parent scope.
+  # If this were a function, that would be this function's scope,
+  # which wouldn't work.
+  set_ifndef(BOARD_${type}_RUNNER ${runner})
+endmacro()
+
+# A convenience macro for board_set_runner(FLASH ${runner}).
+macro(board_set_flasher runner)
+  board_set_runner(FLASH ${runner})
+endmacro()
+
+# A convenience macro for board_set_runner(DEBUG ${runner}).
+macro(board_set_debugger runner)
+  board_set_runner(DEBUG ${runner})
+endmacro()
+
+# A convenience macro for board_set_runner_ifnset(FLASH ${runner}).
+macro(board_set_flasher_ifnset runner)
+  board_set_runner_ifnset(FLASH ${runner})
+endmacro()
+
+# A convenience macro for board_set_runner_ifnset(DEBUG ${runner}).
+macro(board_set_debugger_ifnset runner)
+  board_set_runner_ifnset(DEBUG ${runner})
+endmacro()
+
 # This function is intended for board.cmake files and application
 # CMakeLists.txt files.
 #
