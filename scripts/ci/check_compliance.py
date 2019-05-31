@@ -318,7 +318,11 @@ entries, then bump the 'max_top_items' variable in {}.
         # Example output line for a reference to CONFIG_BAZ at line 17 of
         # foo/bar.c:
         #
-        #   foo/bar.c<null>17<null>CONFIG_BAZ
+        #   foo/bar.c<null>17<null>#ifdef CONFIG_BAZ
+        #
+        # 'git grep --only-matching' would get rid of the surrounding context
+        # ('#ifdef '), but it was added fairly recently (second half of 2018),
+        # so we extract the references from each line ourselves instead.
         #
         # The regular expression in use here uses zero length word boundary
         # assertions (\b) to isolate the reference then a negative lookahead to
@@ -333,9 +337,12 @@ entries, then bump the 'max_top_items' variable in {}.
         # Kconfig files that are not part of the main Kconfig tree, which will
         # trigger false positives until we do something fancier. Skip
         # doc/releases too, which often references removed symbols.
-        grep_cmd = ["git", "grep", "--only-matching", "--line-number", "-I",
-                    "--null", "--perl-regexp",
-                    r"\bCONFIG_[A-Z0-9_]+\b(?!\s*##|[$@{*])",
+
+        # Warning: Needs to work with both --perl-regexp and the 're' module
+        regex = r"\bCONFIG_[A-Z0-9_]+\b(?!\s*##|[$@{*])"
+
+        grep_cmd = ["git", "grep", "--line-number", "-I", "--null",
+                    "--perl-regexp", regex,
                     "--", ":!samples", ":!tests", ":!doc/releases"]
 
         grep_process = subprocess.Popen(grep_cmd,
@@ -356,14 +363,17 @@ entries, then bump the 'max_top_items' variable in {}.
         undef_to_locs = collections.defaultdict(list)
 
         # splitlines() supports various line terminators
-        for line in grep_stdout.decode("utf-8").splitlines():
-            path, lineno, sym_name = line.split("\0")
+        for grep_line in grep_stdout.decode("utf-8").splitlines():
+            path, lineno, line = grep_line.split("\0")
 
-            # [7:] removes the "CONFIG_" prefix
-            if sym_name[7:] not in defined_syms and \
-               sym_name not in UNDEF_KCONFIG_WHITELIST:
+            # Extract symbol references (might be more than one) within the
+            # line
+            for sym_name in re.findall(regex, line):
+                sym_name = sym_name[7:]  # Strip CONFIG_
+                if sym_name not in defined_syms and \
+                   sym_name not in UNDEF_KCONFIG_WHITELIST:
 
-                undef_to_locs[sym_name].append("{}:{}".format(path, lineno))
+                    undef_to_locs[sym_name].append("{}:{}".format(path, lineno))
 
         if not undef_to_locs:
             return
@@ -375,7 +385,7 @@ entries, then bump the 'max_top_items' variable in {}.
         #   CONFIG_ALSO_MISSING    arch/xtensa/core/fatal.c:273
         #   CONFIG_MISSING         arch/xtensa/core/fatal.c:264, subsys/fb/cfb.c:20
         undef_desc = "\n".join(
-            "{:35} {}".format(sym_name, ", ".join(locs))
+            "CONFIG_{:35} {}".format(sym_name, ", ".join(locs))
             for sym_name, locs in sorted(undef_to_locs.items()))
 
         self.add_failure("""
@@ -386,56 +396,56 @@ If the reference is for a comment like /* CONFIG_FOO_* */ (or
 /* CONFIG_FOO_*_... */), then please use exactly that form (with the '*'). The
 CI check knows not to flag it.
 
-More generally, a reference followed by $, @, {, *, or ## will never be
+More generally, a reference followed by $, @, {{, *, or ## will never be
 flagged.
 
 {}""".format(os.path.basename(__file__), undef_desc))
 
 
-# Many of these are symbols used as examples.
-# Note that the list is sorted alphabetically.
+# Many of these are symbols used as examples. Note that the list is sorted
+# alphabetically, and skips the CONFIG_ prefix.
 UNDEF_KCONFIG_WHITELIST = {
-    "CONFIG_APP_LINK_WITH_",
-    "CONFIG_CDC_ACM_PORT_NAME_",
-    "CONFIG_CLOCK_STM32_SYSCLK_SRC_",
-    "CONFIG_CMU",
-    "CONFIG_COUNTER_RTC_STM32_CLOCK_SRC",
-    "CONFIG_CRC",  # Used in TI CC13x2 / CC26x2 SDK comment
-    "CONFIG_DEEP_SLEEP",  # #defined by RV32M1 in ext/
-    "CONFIG_DESCRIPTION",
-    "CONFIG_ERR",
-    "CONFIG_ESP_DIF_LIBRARY",  # Referenced in CMake comment
-    "CONFIG_EXPERIMENTAL",
-    "CONFIG_FFT",  # Used as an example in cmake/extensions.cmake
-    "CONFIG_FLAG",  # Used as an example
-    "CONFIG_FOO",
-    "CONFIG_FOO_LOG_LEVEL",
-    "CONFIG_FOO_SETTING_1",
-    "CONFIG_FOO_SETTING_2",
-    "CONFIG_LIS2DW12_INT_PIN",
-    "CONFIG_LSM6DSO_INT_PIN",
-    "CONFIG_MODULES",
-    "CONFIG_MYFEATURE",
-    "CONFIG_MY_DRIVER_0",
-    "CONFIG_NORMAL_SLEEP",  # #defined by RV32M1 in ext/
-    "CONFIG_OPT",
-    "CONFIG_OPT_0",
-    "CONFIG_PEDO_THS_MIN",
-    "CONFIG_REG1",
-    "CONFIG_REG2",
-    "CONFIG_SEL",
-    "CONFIG_SHIFT",
-    "CONFIG_SOC_WATCH",  # Issue 13749
-    "CONFIG_SOME_BOOL",
-    "CONFIG_SOME_INT",
-    "CONFIG_SOME_OTHER_BOOL",
-    "CONFIG_SOME_STRING",
-    "CONFIG_STD_CPP",  # Referenced in CMake comment
-    "CONFIG_TEST1",
-    "CONFIG_TYPE_BOOLEAN",
-    "CONFIG_USB_CONSOLE",
-    "CONFIG_USE_STDC_",
-    "CONFIG_WHATEVER",
+    "APP_LINK_WITH_",
+    "CDC_ACM_PORT_NAME_",
+    "CLOCK_STM32_SYSCLK_SRC_",
+    "CMU",
+    "COUNTER_RTC_STM32_CLOCK_SRC",
+    "CRC",  # Used in TI CC13x2 / CC26x2 SDK comment
+    "DEEP_SLEEP",  # #defined by RV32M1 in ext/
+    "DESCRIPTION",
+    "ERR",
+    "ESP_DIF_LIBRARY",  # Referenced in CMake comment
+    "EXPERIMENTAL",
+    "FFT",  # Used as an example in cmake/extensions.cmake
+    "FLAG",  # Used as an example
+    "FOO",
+    "FOO_LOG_LEVEL",
+    "FOO_SETTING_1",
+    "FOO_SETTING_2",
+    "LIS2DW12_INT_PIN",
+    "LSM6DSO_INT_PIN",
+    "MODULES",
+    "MYFEATURE",
+    "MY_DRIVER_0",
+    "NORMAL_SLEEP",  # #defined by RV32M1 in ext/
+    "OPT",
+    "OPT_0",
+    "PEDO_THS_MIN",
+    "REG1",
+    "REG2",
+    "SEL",
+    "SHIFT",
+    "SOC_WATCH",  # Issue 13749
+    "SOME_BOOL",
+    "SOME_INT",
+    "SOME_OTHER_BOOL",
+    "SOME_STRING",
+    "STD_CPP",  # Referenced in CMake comment
+    "TEST1",
+    "TYPE_BOOLEAN",
+    "USB_CONSOLE",
+    "USE_STDC_",
+    "WHATEVER",
 }
 
 
