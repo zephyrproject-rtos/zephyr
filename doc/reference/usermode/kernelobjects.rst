@@ -51,7 +51,7 @@ call APIs, several conditions must be met on how the kernel object is declared:
 
 * The object must be declared as a top-level global at build time, such that it
   appears in the ELF symbol table. It is permitted to declare kernel objects
-  with static scope. The post-build script ``gen_kobject_list.py`` scans the
+  with static scope. The post-build script :ref:`gen_kobject_list.py` scans the
   generated ELF file to find kernel objects and places their memory addresses
   in a special table of kernel object metadata.  Kernel objects may be members
   of arrays or embedded within other data structures.
@@ -66,7 +66,7 @@ Kernel objects that are found but do not meet the above conditions will not be
 included in the generated table that is used to validate kernel object pointers
 passed in from user mode.
 
-The debug output of the ``gen_kobject_list.py`` script may be useful when
+The debug output of the :ref:`gen_kobject_list.py` script may be useful when
 debugging why some object was unexpectedly not being tracked. This
 information will be printed if the script is run with the ``--verbose`` flag,
 or if the build system is invoked with verbose output.
@@ -98,7 +98,7 @@ the access control aspects of the permission system are not enforced.
 Implementation Details
 ======================
 
-The ``gen_kobject_list.py`` script is a post-build step which finds all the
+The :ref:`gen_kobject_list.py` script is a post-build step which finds all the
 valid kernel object instances in the binary. It accomplishes this by parsing
 the DWARF debug information present in the generated ELF file for the kernel.
 

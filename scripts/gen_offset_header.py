@@ -5,6 +5,13 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
+"""
+This script scans a specified object file and generates a header file
+that defined macros for the offsets of various found structure members
+(particularly symbols ending with ``_OFFSET`` or ``_SIZEOF``), primarily
+intended for use in assembly code.
+"""
+
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
 import argparse
