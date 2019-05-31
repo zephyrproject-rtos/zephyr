@@ -301,7 +301,13 @@ zephyr_cc_option_ifdef(CONFIG_STACK_USAGE            -fstack-usage)
 # application code. This saves some memory, stops leaking user locations
 # in binaries, makes failure logs more deterministic and most
 # importantly makes builds more deterministic
-zephyr_cc_option(-fmacro-prefix-map=${ZEPHYR_BASE}=.)
+
+# If both match then the last one wins. This matters for tests/ and
+# samples/ inside *both* CMAKE_SOURCE_DIR and ZEPHYR_BASE: for them
+# let's strip the shortest prefix.
+zephyr_cc_option(-fmacro-prefix-map=${CMAKE_SOURCE_DIR}=CMAKE_SOURCE_DIR)
+zephyr_cc_option(-fmacro-prefix-map=${ZEPHYR_BASE}=ZEPHYR_BASE)
+# TODO: -fmacro-prefix-map=modules/etc. "build/zephyr_modules.txt" might help.
 
 # TODO: Archiver arguments
 # ar_option(D)
