@@ -1,8 +1,8 @@
 /**************************************************************************//**
  * @file     cmsis_armcc.h
  * @brief    CMSIS compiler ARMCC (Arm Compiler 5) header file
- * @version  V5.0.4
- * @date     10. January 2018
+ * @version  V5.0.5
+ * @date     14. December 2018
  ******************************************************************************/
 /*
  * Copyright (c) 2009-2018 Arm Limited. All rights reserved.
@@ -47,6 +47,10 @@
   /* __ARM_ARCH_8M_BASE__  not applicable */
   /* __ARM_ARCH_8M_MAIN__  not applicable */
 
+/* CMSIS compiler control DSP macros */
+#if ((defined (__ARM_ARCH_7EM__) && (__ARM_ARCH_7EM__ == 1))     )
+  #define __ARM_FEATURE_DSP         1
+#endif
 
 /* CMSIS compiler specific defines */
 #ifndef   __ASM
