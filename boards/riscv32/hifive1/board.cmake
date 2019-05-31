@@ -9,6 +9,6 @@ set(QEMU_FLAGS_${ARCH}
   -machine sifive_e
   )
 
-board_set_debugger(qemu)
-board_set_flasher(hifive1)
+board_set_debugger_ifnset(qemu)
+board_set_flasher_ifnset(hifive1)
 board_finalize_runner_args(hifive1)
