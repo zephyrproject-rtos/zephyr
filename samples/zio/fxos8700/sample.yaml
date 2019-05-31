@@ -1,0 +1,7 @@
+sample:
+  name: FXOS8700 ZIO Sample
+tests:
+  sample.zio.synth:
+    harness: console
+    tags: zio
+    depends_on: zio zio_fxo8700

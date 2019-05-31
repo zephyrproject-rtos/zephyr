@@ -26,5 +26,6 @@ config ZIO_INIT_PRIORITY
 comment "Device Drivers"
 
 source "drivers/zio/synth/Kconfig"
+source "drivers/zio/fxos8700/Kconfig"
 
 endif # ZIO
