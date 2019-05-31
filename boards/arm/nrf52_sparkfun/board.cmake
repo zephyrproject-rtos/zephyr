@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
-set(BOARD_FLASH_RUNNER pyocd.sh)
-set(BOARD_DEBUG_RUNNER pyocd.sh)
+board_set_flasher(pyocd.sh)
+board_set_debugger(pyocd.sh)
 
 set(PYOCD_TARGET nrf52)
 

@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
-set(BOARD_FLASH_RUNNER intel_s1000)
-set(BOARD_DEBUG_RUNNER intel_s1000)
+board_set_flasher(intel_s1000)
+board_set_debugger(intel_s1000)
 
 board_finalize_runner_args(intel_s1000
   "--xt-ocd-dir=/opt/tensilica/xocd-12.0.4/xt-ocd"

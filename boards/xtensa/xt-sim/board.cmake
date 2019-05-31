@@ -1,3 +1,3 @@
 # SPDX-License-Identifier: Apache-2.0
 
-set(BOARD_DEBUG_RUNNER xtensa)
+board_set_debugger(xtensa)

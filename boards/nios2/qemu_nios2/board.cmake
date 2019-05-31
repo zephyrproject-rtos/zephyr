@@ -9,4 +9,4 @@ set(QEMU_FLAGS_${ARCH}
   -nographic
   )
 
-set(BOARD_DEBUG_RUNNER qemu)
+board_set_debugger(qemu)

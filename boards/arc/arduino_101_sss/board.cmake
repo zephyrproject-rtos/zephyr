@@ -1,12 +1,12 @@
 # SPDX-License-Identifier: Apache-2.0
 
 if(DEFINED ENV{ZEPHYR_FLASH_OVER_DFU})
-  set(BOARD_FLASH_RUNNER dfu-util)
+  board_set_flasher(dfu-util)
 else()
-  set(BOARD_FLASH_RUNNER openocd)
+  board_set_flasher(openocd)
 endif()
 
-set(BOARD_DEBUG_RUNNER openocd)
+board_set_debugger(openocd)
 
 board_runner_args(dfu-util "--pid=8087:0aba" "--alt=sensor_core")
 board_runner_args(openocd --cmd-pre-load "targets 1" "--gdb-port=3334")
