@@ -28,7 +28,7 @@ All system calls have the following components:
 
 * A **C prototype** for the API, declared in some header under ``include/`` and
   prefixed with :c:macro:`__syscall`.  This prototype is never implemented
-  manually, instead it gets created by the ``scripts/gen_syscalls.py`` script.
+  manually, instead it gets created by the :ref:`gen_syscalls.py` script.
   What gets generated is an inline function which either calls the
   implementation function directly (if called from supervisor mode) or goes
   through privilege elevation and validation steps (if called from user
@@ -57,8 +57,8 @@ supervisor mode. For example, to initialize a semaphore:
 
 The :c:macro:`__syscall` attribute is very special. To the C compiler, it
 simply expands to 'static inline'. However to the post-build
-``parse_syscalls.py`` script, it indicates that this API is a system call.
-The ``parse_syscalls.py`` script does some parsing of the function prototype,
+:ref:`parse_syscalls.py` script, it indicates that this API is a system call.
+The :ref:`parse_syscalls.py` script does some parsing of the function prototype,
 to determine the data types of its return value and arguments, and has some
 limitations:
 
@@ -118,7 +118,7 @@ Implementation Details
 ======================
 
 Declaring an API with :c:macro:`__syscall` causes some code to be generated in
-C and header files by ``scripts/gen_syscalls.py``, all of which can be found in
+C and header files by the :ref:`gen_syscalls.py` script, all of which can be found in
 the project out directory under ``include/generated/``:
 
 * The system call is added to the enumerated type of system call IDs,

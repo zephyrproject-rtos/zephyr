@@ -380,12 +380,12 @@ x86 Details
 The x86 architecture has a special type of vector table called the Interrupt
 Descriptor Table (IDT) which must be laid out in a certain way per the x86
 processor documentation.  It is still fundamentally a vector table, and the
-gen_idt tool uses the .intList section to create it. However, on APIC-based
+:ref:`gen_idt.py` tool uses the .intList section to create it. However, on APIC-based
 systems the indexes in the vector table do not correspond to the IRQ line. The
 first 32 vectors are reserved for CPU exceptions, and all remaining vectors (up
 to index 255) correspond to the priority level, in groups of 16. In this
 scheme, interrupts of priority level 0 will be placed in vectors 32-47, level 1
-48-63, and so forth. When the gen_idt tool is constructing the IDT, when it
+48-63, and so forth. When the :ref:`gen_idt.py` tool is constructing the IDT, when it
 configures an interrupt it will look for a free vector in the appropriate range
 for the requested priority level and set the handler there.
 
@@ -400,7 +400,7 @@ ISR is placed directly in the IDT.
 
 On systems where the position in the vector table corresponds to the
 interrupt's priority level, the interrupt controller needs to know at
-runtime what vector is associated with an IRQ line. gen_idt additionally
+runtime what vector is associated with an IRQ line. :ref:`gen_idt.py` additionally
 creates an _irq_to_interrupt_vector array which maps an IRQ line to its
 configured vector in the IDT. This is used at runtime by :c:macro:`IRQ_CONNECT`
 to program the IRQ-to-vector association in the interrupt controller.

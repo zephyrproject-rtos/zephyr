@@ -19,7 +19,7 @@ validate accesses to kernel objects to make the following assertions:
 
     - The calling thread has sufficient permissions on the object
 
-For more details see the "Kernel Objects" section in the documentation.
+For more details see the :ref:`kernelobjects` section in the documentation.
 
 The zephyr build generates an intermediate ELF binary, zephyr_prebuilt.elf,
 which this script scans looking for kernel objects by examining the DWARF

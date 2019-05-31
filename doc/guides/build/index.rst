@@ -74,9 +74,9 @@ Offset generation
    *offsets.h* (by *gen_offset_header.py*) facilitates this.
 
 System call boilerplate
-   The *gen_syscall_header.py*, *parse_syscalls.py* and
-   *gen_syscall_header.py* scripts work together to bind potential
-   system call functions with their implementations.
+   The *gen_syscall.py* and *parse_syscalls.py*  scripts work
+   together to bind potential system call functions with their
+   implementations.
 
 .. figure:: build-build-phase-1.svg
     :align: center
@@ -153,3 +153,93 @@ target. This is accomplished in a straightforward manner with *objdump*.
     :alt: Zephyr's build final stage
     :figclass: align-center
     :width: 80%
+
+
+.. _build_system_scripts:
+
+Supporting Scripts and Tools
+****************************
+
+The following is a detailed description of the scripts used during the build process.
+
+.. _gen_syscalls.py:
+
+:zephyr_file:`scripts/gen_syscalls.py`
+========================================
+
+.. include:: ../../../scripts/gen_syscalls.py
+   :start-after: """
+   :end-before: """
+
+.. _gen_kobject_list.py:
+
+:zephyr_file:`scripts/gen_kobject_list.py`
+==========================================
+
+.. include:: ../../../scripts/gen_kobject_list.py
+   :start-after: """
+   :end-before: """
+
+.. _gen_offset_header.py:
+
+:zephyr_file:`scripts/gen_offset_header.py`
+===========================================
+
+.. include:: ../../../scripts/gen_offset_header.py
+   :start-after: """
+   :end-before: """
+
+.. _parse_syscalls.py:
+
+:zephyr_file:`scripts/parse_syscalls.py`
+========================================
+
+
+.. include:: ../../../scripts/parse_syscalls.py
+   :start-after: """
+   :end-before: """
+
+.. _gen_priv_stacks.py:
+
+:zephyr_file:`scripts/gen_priv_stacks.py`
+==========================================
+
+.. include:: ../../../scripts/gen_priv_stacks.py
+   :start-after: """
+   :end-before: """
+
+.. _gen_idt.py:
+
+:zephyr_file:`arch/x86/gen_idt.py`
+==================================
+
+.. include:: ../../../arch/x86/gen_idt.py
+   :start-after: """
+   :end-before: """
+
+.. _gen_gdt.py:
+
+:zephyr_file:`arch/x86/gen_gdt.py`
+===================================
+
+.. include:: ../../../arch/x86/gen_gdt.py
+   :start-after: """
+   :end-before: """
+
+.. _gen_relocate_app.py:
+
+:zephyr_file:`scripts/gen_relocate_app.py`
+===========================================
+
+.. include:: ../../../scripts/gen_relocate_app.py
+   :start-after: """
+   :end-before: """
+
+.. _process_gperf.py:
+
+:zephyr_file:`scripts/process_gperf.py`
+========================================
+
+.. include:: ../../../scripts/process_gperf.py
+   :start-after: """
+   :end-before: """

@@ -9,6 +9,7 @@ User and Developer Guides
    getting-help.rst
    beyond-GSG.rst
    bluetooth/index.rst
+   build/index
    c_library
    ../README.rst
    coccinelle.rst
@@ -30,4 +31,3 @@ User and Developer Guides
    tracing/index
    west/index
    optimizations/index
-   build/index
