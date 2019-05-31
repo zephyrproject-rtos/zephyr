@@ -790,7 +790,9 @@ struct bt_gatt_notify_params {
  *  With the addition that after sending the notification the
  *  callback function will be called and can dispatch multiple
  *  notifications at once.
-
+ *
+ *  The callback is run from System Workqueue context.
+ *
  *  Alternatively it is possible to notify by UUID by setting it on the
  *  parameters, when using this method the attribute given when be used as the
  *  start range when looking up for possible matches.
@@ -1146,6 +1148,8 @@ int bt_gatt_write(struct bt_conn *conn, struct bt_gatt_write_params *params);
  * This function works in the same way as @ref bt_gatt_write_without_response.
  * With the addition that after sending the write the callback function will be
  * called.
+ *
+ * The callback is run from System Workqueue context.
  *
  * Note: By using a callback it also disable the internal flow control
  * which would prevent sending multiple commands without waiting for their
