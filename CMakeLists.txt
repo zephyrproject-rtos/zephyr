@@ -21,6 +21,20 @@ CMAKE_CACHEFILE_DIR: ${CMAKE_CACHEFILE_DIR}
 ")
 endif()
 
+
+# See https://gitlab.kitware.com/cmake/cmake/issues/16228
+# and https://cmake.org/pipermail/cmake/2019-May/thread.html#69496
+if(NOT ZEPHYR_BASE STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+message(WARNING "ZEPHYR_BASE doesn't match CMAKE_CURRENT_SOURCE_DIR
+  ZEPHYR_BASE              = ${ZEPHYR_BASE}
+  PWD                      = $ENV{PWD}
+  CMAKE_CURRENT_SOURCE_DIR = ${CMAKE_CURRENT_SOURCE_DIR}
+You may be using a mix of symbolic links and real paths which causes \
+subtle and hard to debug CMake issues.")
+endif()
+# For Zephyr more specifically this breaks (at least)
+#     -fmacro-prefix-map=${ZEPHYR_BASE}=
+
 project(Zephyr-Kernel VERSION ${PROJECT_VERSION})
 enable_language(C CXX ASM)
 
@@ -430,6 +444,11 @@ if(EXISTS ${CMAKE_BINARY_DIR}/zephyr_modules.txt)
     string(REGEX REPLACE "\"(.*)\":\".*\"" "\\1" module_name ${module})
     string(REGEX REPLACE "\".*\":\"(.*)\"" "\\1" module_path ${module})
     message("Including module: ${module_name} in path: ${module_path}")
+    # Note the second, binary_dir parameter requires the added
+    # subdirectory to have its own, local cmake target(s). If not then
+    # this binary_dir is created but stays empty. Object files land in
+    # the main binary dir instead.
+    # https://cmake.org/pipermail/cmake/2019-June/069547.html
     add_subdirectory(${module_path} ${CMAKE_BINARY_DIR}/modules/${module_name})
   endforeach()
 endif()
