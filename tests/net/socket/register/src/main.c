@@ -246,6 +246,8 @@ void test_create_sockets(void)
 		} else {
 			failed_tests++;
 		}
+
+		close(fd);
 	}
 
 	zassert_equal(ok_tests + failed_tests - failed_family, func_called,
