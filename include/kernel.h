@@ -4506,7 +4506,7 @@ extern void z_sys_power_save_idle_exit(s32_t ticks);
 #define z_except_reason(reason) do { \
 		printk("@ %s:%d:\n", __FILE__,  __LINE__); \
 		z_NanoFatalErrorHandler(reason, &_default_esf); \
-		CODE_UNREACHABLE; \
+		k_thread_abort(k_current_get()); \
 	} while (false)
 
 #endif /* _ARCH__EXCEPT */
