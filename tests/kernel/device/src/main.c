@@ -56,6 +56,33 @@ void test_dummy_device(void)
 }
 
 /**
+ * @brief Test device object link lookup
+ *
+ * Validates device link lookup for an existing and a non-existing device
+ * link.
+ *
+ * @see device_get_linked()
+ */
+void test_linked_device(void)
+{
+	struct device *dev;
+	struct device *linked;
+
+	linked = device_get_linked(NULL, DEVICE_LINK_TYPE_CLOCK, 0);
+	zassert_equal(linked, NULL, NULL);
+
+	dev = device_get_binding(DUMMY_PORT_2);
+	zassert_false((dev == NULL), NULL);
+
+	linked = device_get_linked(dev, DEVICE_LINK_TYPE_DMA, 0);
+	zassert_equal(linked, NULL, NULL);
+	linked = device_get_linked(dev, DEVICE_LINK_TYPE_CLOCK, 1);
+	zassert_equal(linked, NULL, NULL);
+	linked = device_get_linked(dev, DEVICE_LINK_TYPE_CLOCK, 0);
+	zassert_false((linked == NULL), NULL);
+}
+
+/**
  * @brief Test device binding for existing device
  *
  * Validates device binding for an existing device object.
@@ -176,6 +203,7 @@ void test_main(void)
 			 ztest_unit_test(test_dummy_device_pm),
 			 ztest_unit_test(build_suspend_device_list),
 			 ztest_unit_test(test_dummy_device),
+			 ztest_unit_test(test_linked_device),
 			 ztest_unit_test(test_bogus_dynamic_name),
 			 ztest_unit_test(test_dynamic_name));
 	ztest_run_test_suite(device);

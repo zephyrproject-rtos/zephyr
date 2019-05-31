@@ -38,6 +38,7 @@ int dummy_init(struct device *dev)
 DEVICE_AND_API_INIT(dummy_driver, DUMMY_DRIVER_NAME, &dummy_init,
 		    NULL, NULL, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &funcs);
+DEVICE_LINK_CLOCK(dummy_driver, DUMMY_DRIVER_NAME, 0);
 
 /**
  * @endcond
