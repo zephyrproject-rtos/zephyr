@@ -1,11 +1,11 @@
 /**************************************************************************//**
  * @file     core_cm7.h
  * @brief    CMSIS Cortex-M7 Core Peripheral Access Layer Header File
- * @version  V5.0.8
- * @date     04. June 2018
+ * @version  V5.1.0
+ * @date     13. March 2019
  ******************************************************************************/
 /*
- * Copyright (c) 2009-2018 Arm Limited. All rights reserved.
+ * Copyright (c) 2009-2019 Arm Limited. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -86,7 +86,7 @@
   #endif
 
 #elif defined (__ARMCC_VERSION) && (__ARMCC_VERSION >= 6010050)
-  #if defined __ARM_PCS_VFP
+  #if defined __ARM_FP
     #if defined (__FPU_PRESENT) && (__FPU_PRESENT == 1U)
       #define __FPU_USED       1U
     #else
@@ -423,7 +423,7 @@ typedef struct
   __IOM uint32_t ISER[8U];               /*!< Offset: 0x000 (R/W)  Interrupt Set Enable Register */
         uint32_t RESERVED0[24U];
   __IOM uint32_t ICER[8U];               /*!< Offset: 0x080 (R/W)  Interrupt Clear Enable Register */
-        uint32_t RSERVED1[24U];
+        uint32_t RESERVED1[24U];
   __IOM uint32_t ISPR[8U];               /*!< Offset: 0x100 (R/W)  Interrupt Set Pending Register */
         uint32_t RESERVED2[24U];
   __IOM uint32_t ICPR[8U];               /*!< Offset: 0x180 (R/W)  Interrupt Clear Pending Register */
@@ -930,6 +930,24 @@ typedef struct
 #define SCnSCB_ICTR_INTLINESNUM_Msk        (0xFUL /*<< SCnSCB_ICTR_INTLINESNUM_Pos*/)  /*!< ICTR: INTLINESNUM Mask */
 
 /* Auxiliary Control Register Definitions */
+#define SCnSCB_ACTLR_DISDYNADD_Pos         26U                                         /*!< ACTLR: DISDYNADD Position */
+#define SCnSCB_ACTLR_DISDYNADD_Msk         (1UL << SCnSCB_ACTLR_DISDYNADD_Pos)         /*!< ACTLR: DISDYNADD Mask */
+
+#define SCnSCB_ACTLR_DISISSCH1_Pos         21U                                         /*!< ACTLR: DISISSCH1 Position */
+#define SCnSCB_ACTLR_DISISSCH1_Msk         (0x1FUL << SCnSCB_ACTLR_DISISSCH1_Pos)      /*!< ACTLR: DISISSCH1 Mask */
+
+#define SCnSCB_ACTLR_DISDI_Pos             16U                                         /*!< ACTLR: DISDI Position */
+#define SCnSCB_ACTLR_DISDI_Msk             (0x1FUL << SCnSCB_ACTLR_DISDI_Pos)          /*!< ACTLR: DISDI Mask */
+
+#define SCnSCB_ACTLR_DISCRITAXIRUR_Pos     15U                                         /*!< ACTLR: DISCRITAXIRUR Position */
+#define SCnSCB_ACTLR_DISCRITAXIRUR_Msk     (1UL << SCnSCB_ACTLR_DISCRITAXIRUR_Pos)     /*!< ACTLR: DISCRITAXIRUR Mask */
+
+#define SCnSCB_ACTLR_DISBTACALLOC_Pos      14U                                         /*!< ACTLR: DISBTACALLOC Position */
+#define SCnSCB_ACTLR_DISBTACALLOC_Msk      (1UL << SCnSCB_ACTLR_DISBTACALLOC_Pos)      /*!< ACTLR: DISBTACALLOC Mask */
+
+#define SCnSCB_ACTLR_DISBTACREAD_Pos       13U                                         /*!< ACTLR: DISBTACREAD Position */
+#define SCnSCB_ACTLR_DISBTACREAD_Msk       (1UL << SCnSCB_ACTLR_DISBTACREAD_Pos)       /*!< ACTLR: DISBTACREAD Mask */
+
 #define SCnSCB_ACTLR_DISITMATBFLUSH_Pos    12U                                         /*!< ACTLR: DISITMATBFLUSH Position */
 #define SCnSCB_ACTLR_DISITMATBFLUSH_Msk    (1UL << SCnSCB_ACTLR_DISITMATBFLUSH_Pos)    /*!< ACTLR: DISITMATBFLUSH Mask */
 
@@ -1024,10 +1042,7 @@ typedef struct
   __IOM uint32_t TPR;                    /*!< Offset: 0xE40 (R/W)  ITM Trace Privilege Register */
         uint32_t RESERVED2[15U];
   __IOM uint32_t TCR;                    /*!< Offset: 0xE80 (R/W)  ITM Trace Control Register */
-        uint32_t RESERVED3[29U];
-  __OM  uint32_t IWR;                    /*!< Offset: 0xEF8 ( /W)  ITM Integration Write Register */
-  __IM  uint32_t IRR;                    /*!< Offset: 0xEFC (R/ )  ITM Integration Read Register */
-  __IOM uint32_t IMCR;                   /*!< Offset: 0xF00 (R/W)  ITM Integration Mode Control Register */
+        uint32_t RESERVED3[32U];
         uint32_t RESERVED4[43U];
   __OM  uint32_t LAR;                    /*!< Offset: 0xFB0 ( /W)  ITM Lock Access Register */
   __IM  uint32_t LSR;                    /*!< Offset: 0xFB4 (R/ )  ITM Lock Status Register */
@@ -1077,18 +1092,6 @@ typedef struct
 
 #define ITM_TCR_ITMENA_Pos                  0U                                            /*!< ITM TCR: ITM Enable bit Position */
 #define ITM_TCR_ITMENA_Msk                 (1UL /*<< ITM_TCR_ITMENA_Pos*/)                /*!< ITM TCR: ITM Enable bit Mask */
-
-/* ITM Integration Write Register Definitions */
-#define ITM_IWR_ATVALIDM_Pos                0U                                            /*!< ITM IWR: ATVALIDM Position */
-#define ITM_IWR_ATVALIDM_Msk               (1UL /*<< ITM_IWR_ATVALIDM_Pos*/)              /*!< ITM IWR: ATVALIDM Mask */
-
-/* ITM Integration Read Register Definitions */
-#define ITM_IRR_ATREADYM_Pos                0U                                            /*!< ITM IRR: ATREADYM Position */
-#define ITM_IRR_ATREADYM_Msk               (1UL /*<< ITM_IRR_ATREADYM_Pos*/)              /*!< ITM IRR: ATREADYM Mask */
-
-/* ITM Integration Mode Control Register Definitions */
-#define ITM_IMCR_INTEGRATION_Pos            0U                                            /*!< ITM IMCR: INTEGRATION Position */
-#define ITM_IMCR_INTEGRATION_Msk           (1UL /*<< ITM_IMCR_INTEGRATION_Pos*/)          /*!< ITM IMCR: INTEGRATION Mask */
 
 /* ITM Lock Status Register Definitions */
 #define ITM_LSR_ByteAcc_Pos                 2U                                            /*!< ITM LSR: ByteAcc Position */
@@ -1325,13 +1328,13 @@ typedef struct
 
 /* TPI Integration ETM Data Register Definitions (FIFO0) */
 #define TPI_FIFO0_ITM_ATVALID_Pos          29U                                         /*!< TPI FIFO0: ITM_ATVALID Position */
-#define TPI_FIFO0_ITM_ATVALID_Msk          (0x3UL << TPI_FIFO0_ITM_ATVALID_Pos)        /*!< TPI FIFO0: ITM_ATVALID Mask */
+#define TPI_FIFO0_ITM_ATVALID_Msk          (0x1UL << TPI_FIFO0_ITM_ATVALID_Pos)        /*!< TPI FIFO0: ITM_ATVALID Mask */
 
 #define TPI_FIFO0_ITM_bytecount_Pos        27U                                         /*!< TPI FIFO0: ITM_bytecount Position */
 #define TPI_FIFO0_ITM_bytecount_Msk        (0x3UL << TPI_FIFO0_ITM_bytecount_Pos)      /*!< TPI FIFO0: ITM_bytecount Mask */
 
 #define TPI_FIFO0_ETM_ATVALID_Pos          26U                                         /*!< TPI FIFO0: ETM_ATVALID Position */
-#define TPI_FIFO0_ETM_ATVALID_Msk          (0x3UL << TPI_FIFO0_ETM_ATVALID_Pos)        /*!< TPI FIFO0: ETM_ATVALID Mask */
+#define TPI_FIFO0_ETM_ATVALID_Msk          (0x1UL << TPI_FIFO0_ETM_ATVALID_Pos)        /*!< TPI FIFO0: ETM_ATVALID Mask */
 
 #define TPI_FIFO0_ETM_bytecount_Pos        24U                                         /*!< TPI FIFO0: ETM_bytecount Position */
 #define TPI_FIFO0_ETM_bytecount_Msk        (0x3UL << TPI_FIFO0_ETM_bytecount_Pos)      /*!< TPI FIFO0: ETM_bytecount Mask */
@@ -1354,13 +1357,13 @@ typedef struct
 
 /* TPI Integration ITM Data Register Definitions (FIFO1) */
 #define TPI_FIFO1_ITM_ATVALID_Pos          29U                                         /*!< TPI FIFO1: ITM_ATVALID Position */
-#define TPI_FIFO1_ITM_ATVALID_Msk          (0x3UL << TPI_FIFO1_ITM_ATVALID_Pos)        /*!< TPI FIFO1: ITM_ATVALID Mask */
+#define TPI_FIFO1_ITM_ATVALID_Msk          (0x1UL << TPI_FIFO1_ITM_ATVALID_Pos)        /*!< TPI FIFO1: ITM_ATVALID Mask */
 
 #define TPI_FIFO1_ITM_bytecount_Pos        27U                                         /*!< TPI FIFO1: ITM_bytecount Position */
 #define TPI_FIFO1_ITM_bytecount_Msk        (0x3UL << TPI_FIFO1_ITM_bytecount_Pos)      /*!< TPI FIFO1: ITM_bytecount Mask */
 
 #define TPI_FIFO1_ETM_ATVALID_Pos          26U                                         /*!< TPI FIFO1: ETM_ATVALID Position */
-#define TPI_FIFO1_ETM_ATVALID_Msk          (0x3UL << TPI_FIFO1_ETM_ATVALID_Pos)        /*!< TPI FIFO1: ETM_ATVALID Mask */
+#define TPI_FIFO1_ETM_ATVALID_Msk          (0x1UL << TPI_FIFO1_ETM_ATVALID_Pos)        /*!< TPI FIFO1: ETM_ATVALID Mask */
 
 #define TPI_FIFO1_ETM_bytecount_Pos        24U                                         /*!< TPI FIFO1: ETM_bytecount Position */
 #define TPI_FIFO1_ETM_bytecount_Msk        (0x3UL << TPI_FIFO1_ETM_bytecount_Pos)      /*!< TPI FIFO1: ETM_bytecount Mask */
@@ -1616,6 +1619,9 @@ typedef struct
 #define FPU_MVFR1_FtZ_mode_Msk             (0xFUL /*<< FPU_MVFR1_FtZ_mode_Pos*/)          /*!< MVFR1: FtZ mode bits Mask */
 
 /* Media and FP Feature Register 2 Definitions */
+
+#define FPU_MVFR2_VFP_Misc_Pos              4U                                            /*!< MVFR2: VFP Misc bits Position */
+#define FPU_MVFR2_VFP_Misc_Msk             (0xFUL << FPU_MVFR2_VFP_Misc_Pos)              /*!< MVFR2: VFP Misc bits Mask */
 
 /*@} end of group CMSIS_FPU */
 
@@ -2120,8 +2126,8 @@ __STATIC_INLINE void NVIC_DecodePriority (uint32_t Priority, uint32_t PriorityGr
  */
 __STATIC_INLINE void __NVIC_SetVector(IRQn_Type IRQn, uint32_t vector)
 {
-  uint32_t *vectors = (uint32_t *)SCB->VTOR;
-  vectors[(int32_t)IRQn + NVIC_USER_IRQ_OFFSET] = vector;
+  uint32_t vectors = (uint32_t )SCB->VTOR;
+  (* (int *) (vectors + ((int32_t)IRQn + NVIC_USER_IRQ_OFFSET) * 4)) = vector;
 }
 
 
@@ -2135,8 +2141,8 @@ __STATIC_INLINE void __NVIC_SetVector(IRQn_Type IRQn, uint32_t vector)
  */
 __STATIC_INLINE uint32_t __NVIC_GetVector(IRQn_Type IRQn)
 {
-  uint32_t *vectors = (uint32_t *)SCB->VTOR;
-  return vectors[(int32_t)IRQn + NVIC_USER_IRQ_OFFSET];
+  uint32_t vectors = (uint32_t )SCB->VTOR;
+  return (uint32_t)(* (int *) (vectors + ((int32_t)IRQn + NVIC_USER_IRQ_OFFSET) * 4));
 }
 
 
@@ -2161,6 +2167,7 @@ __NO_RETURN __STATIC_INLINE void __NVIC_SystemReset(void)
 
 /*@} end of CMSIS_Core_NVICFunctions */
 
+
 /* ##########################  MPU functions  #################################### */
 
 #if defined (__MPU_PRESENT) && (__MPU_PRESENT == 1U)
@@ -2168,6 +2175,7 @@ __NO_RETURN __STATIC_INLINE void __NVIC_SystemReset(void)
 #include "mpu_armv7.h"
 
 #endif
+
 
 /* ##########################  FPU functions  #################################### */
 /**
@@ -2204,7 +2212,6 @@ __STATIC_INLINE uint32_t SCB_GetFPUType(void)
   }
 }
 
-
 /*@} end of CMSIS_Core_FpuFunctions */
 
 
@@ -2221,14 +2228,17 @@ __STATIC_INLINE uint32_t SCB_GetFPUType(void)
 #define CCSIDR_WAYS(x)         (((x) & SCB_CCSIDR_ASSOCIATIVITY_Msk) >> SCB_CCSIDR_ASSOCIATIVITY_Pos)
 #define CCSIDR_SETS(x)         (((x) & SCB_CCSIDR_NUMSETS_Msk      ) >> SCB_CCSIDR_NUMSETS_Pos      )
 
+#define __SCB_DCACHE_LINE_SIZE  32U /*!< Cortex-M7 cache line size is fixed to 32 bytes (8 words). See also register SCB_CCSIDR */
 
 /**
   \brief   Enable I-Cache
   \details Turns on I-Cache
   */
-__STATIC_INLINE void SCB_EnableICache (void)
+__STATIC_FORCEINLINE void SCB_EnableICache (void)
 {
   #if defined (__ICACHE_PRESENT) && (__ICACHE_PRESENT == 1U)
+    if (SCB->CCR & SCB_CCR_IC_Msk) return;  /* return if ICache is already enabled */
+
     __DSB();
     __ISB();
     SCB->ICIALLU = 0UL;                     /* invalidate I-Cache */
@@ -2245,7 +2255,7 @@ __STATIC_INLINE void SCB_EnableICache (void)
   \brief   Disable I-Cache
   \details Turns off I-Cache
   */
-__STATIC_INLINE void SCB_DisableICache (void)
+__STATIC_FORCEINLINE void SCB_DisableICache (void)
 {
   #if defined (__ICACHE_PRESENT) && (__ICACHE_PRESENT == 1U)
     __DSB();
@@ -2262,7 +2272,7 @@ __STATIC_INLINE void SCB_DisableICache (void)
   \brief   Invalidate I-Cache
   \details Invalidates I-Cache
   */
-__STATIC_INLINE void SCB_InvalidateICache (void)
+__STATIC_FORCEINLINE void SCB_InvalidateICache (void)
 {
   #if defined (__ICACHE_PRESENT) && (__ICACHE_PRESENT == 1U)
     __DSB();
@@ -2278,14 +2288,16 @@ __STATIC_INLINE void SCB_InvalidateICache (void)
   \brief   Enable D-Cache
   \details Turns on D-Cache
   */
-__STATIC_INLINE void SCB_EnableDCache (void)
+__STATIC_FORCEINLINE void SCB_EnableDCache (void)
 {
   #if defined (__DCACHE_PRESENT) && (__DCACHE_PRESENT == 1U)
     uint32_t ccsidr;
     uint32_t sets;
     uint32_t ways;
 
-    SCB->CSSELR = 0U; /*(0U << 1U) | 0U;*/  /* Level 1 data cache */
+    if (SCB->CCR & SCB_CCR_DC_Msk) return;  /* return if DCache is already enabled */
+
+    SCB->CSSELR = 0U;                       /* select Level 1 data cache */
     __DSB();
 
     ccsidr = SCB->CCSIDR;
@@ -2316,14 +2328,14 @@ __STATIC_INLINE void SCB_EnableDCache (void)
   \brief   Disable D-Cache
   \details Turns off D-Cache
   */
-__STATIC_INLINE void SCB_DisableDCache (void)
+__STATIC_FORCEINLINE void SCB_DisableDCache (void)
 {
   #if defined (__DCACHE_PRESENT) && (__DCACHE_PRESENT == 1U)
     uint32_t ccsidr;
     uint32_t sets;
     uint32_t ways;
 
-    SCB->CSSELR = 0U; /*(0U << 1U) | 0U;*/  /* Level 1 data cache */
+    SCB->CSSELR = 0U;                       /* select Level 1 data cache */
     __DSB();
 
     SCB->CCR &= ~(uint32_t)SCB_CCR_DC_Msk;  /* disable D-Cache */
@@ -2354,14 +2366,14 @@ __STATIC_INLINE void SCB_DisableDCache (void)
   \brief   Invalidate D-Cache
   \details Invalidates D-Cache
   */
-__STATIC_INLINE void SCB_InvalidateDCache (void)
+__STATIC_FORCEINLINE void SCB_InvalidateDCache (void)
 {
   #if defined (__DCACHE_PRESENT) && (__DCACHE_PRESENT == 1U)
     uint32_t ccsidr;
     uint32_t sets;
     uint32_t ways;
 
-    SCB->CSSELR = 0U; /*(0U << 1U) | 0U;*/  /* Level 1 data cache */
+    SCB->CSSELR = 0U;                       /* select Level 1 data cache */
     __DSB();
 
     ccsidr = SCB->CCSIDR;
@@ -2389,15 +2401,15 @@ __STATIC_INLINE void SCB_InvalidateDCache (void)
   \brief   Clean D-Cache
   \details Cleans D-Cache
   */
-__STATIC_INLINE void SCB_CleanDCache (void)
+__STATIC_FORCEINLINE void SCB_CleanDCache (void)
 {
   #if defined (__DCACHE_PRESENT) && (__DCACHE_PRESENT == 1U)
     uint32_t ccsidr;
     uint32_t sets;
     uint32_t ways;
 
-     SCB->CSSELR = 0U; /*(0U << 1U) | 0U;*/  /* Level 1 data cache */
-   __DSB();
+    SCB->CSSELR = 0U;                       /* select Level 1 data cache */
+    __DSB();
 
     ccsidr = SCB->CCSIDR;
 
@@ -2424,14 +2436,14 @@ __STATIC_INLINE void SCB_CleanDCache (void)
   \brief   Clean & Invalidate D-Cache
   \details Cleans and Invalidates D-Cache
   */
-__STATIC_INLINE void SCB_CleanInvalidateDCache (void)
+__STATIC_FORCEINLINE void SCB_CleanInvalidateDCache (void)
 {
   #if defined (__DCACHE_PRESENT) && (__DCACHE_PRESENT == 1U)
     uint32_t ccsidr;
     uint32_t sets;
     uint32_t ways;
 
-    SCB->CSSELR = 0U; /*(0U << 1U) | 0U;*/  /* Level 1 data cache */
+    SCB->CSSELR = 0U;                       /* select Level 1 data cache */
     __DSB();
 
     ccsidr = SCB->CCSIDR;
@@ -2457,27 +2469,30 @@ __STATIC_INLINE void SCB_CleanInvalidateDCache (void)
 
 /**
   \brief   D-Cache Invalidate by address
-  \details Invalidates D-Cache for the given address
-  \param[in]   addr    address (aligned to 32-byte boundary)
+  \details Invalidates D-Cache for the given address.
+           D-Cache is invalidated starting from a 32 byte aligned address in 32 byte granularity.
+           D-Cache memory blocks which are part of given address + given size are invalidated.
+  \param[in]   addr    address
   \param[in]   dsize   size of memory block (in number of bytes)
 */
-__STATIC_INLINE void SCB_InvalidateDCache_by_Addr (uint32_t *addr, int32_t dsize)
+__STATIC_FORCEINLINE void SCB_InvalidateDCache_by_Addr (void *addr, int32_t dsize)
 {
   #if defined (__DCACHE_PRESENT) && (__DCACHE_PRESENT == 1U)
-     int32_t op_size = dsize;
-    uint32_t op_addr = (uint32_t)addr;
-     int32_t linesize = 32;                /* in Cortex-M7 size of cache line is fixed to 8 words (32 bytes) */
+    if ( dsize > 0 ) { 
+       int32_t op_size = dsize + (((uint32_t)addr) & (__SCB_DCACHE_LINE_SIZE - 1U));
+      uint32_t op_addr = (uint32_t)addr /* & ~(__SCB_DCACHE_LINE_SIZE - 1U) */;
+    
+      __DSB();
 
-    __DSB();
+      do {
+        SCB->DCIMVAC = op_addr;             /* register accepts only 32byte aligned values, only bits 31..5 are valid */
+        op_addr += __SCB_DCACHE_LINE_SIZE;
+        op_size -= __SCB_DCACHE_LINE_SIZE;
+      } while ( op_size > 0 );
 
-    while (op_size > 0) {
-      SCB->DCIMVAC = op_addr;
-      op_addr += (uint32_t)linesize;
-      op_size -=           linesize;
+      __DSB();
+      __ISB();
     }
-
-    __DSB();
-    __ISB();
   #endif
 }
 
@@ -2485,26 +2500,29 @@ __STATIC_INLINE void SCB_InvalidateDCache_by_Addr (uint32_t *addr, int32_t dsize
 /**
   \brief   D-Cache Clean by address
   \details Cleans D-Cache for the given address
-  \param[in]   addr    address (aligned to 32-byte boundary)
+           D-Cache is cleaned starting from a 32 byte aligned address in 32 byte granularity.
+           D-Cache memory blocks which are part of given address + given size are cleaned.
+  \param[in]   addr    address
   \param[in]   dsize   size of memory block (in number of bytes)
 */
-__STATIC_INLINE void SCB_CleanDCache_by_Addr (uint32_t *addr, int32_t dsize)
+__STATIC_FORCEINLINE void SCB_CleanDCache_by_Addr (uint32_t *addr, int32_t dsize)
 {
   #if defined (__DCACHE_PRESENT) && (__DCACHE_PRESENT == 1U)
-     int32_t op_size = dsize;
-    uint32_t op_addr = (uint32_t) addr;
-     int32_t linesize = 32;                /* in Cortex-M7 size of cache line is fixed to 8 words (32 bytes) */
+    if ( dsize > 0 ) { 
+       int32_t op_size = dsize + (((uint32_t)addr) & (__SCB_DCACHE_LINE_SIZE - 1U));
+      uint32_t op_addr = (uint32_t)addr /* & ~(__SCB_DCACHE_LINE_SIZE - 1U) */;
+    
+      __DSB();
 
-    __DSB();
+      do {
+        SCB->DCCMVAC = op_addr;             /* register accepts only 32byte aligned values, only bits 31..5 are valid */
+        op_addr += __SCB_DCACHE_LINE_SIZE;
+        op_size -= __SCB_DCACHE_LINE_SIZE;
+      } while ( op_size > 0 );
 
-    while (op_size > 0) {
-      SCB->DCCMVAC = op_addr;
-      op_addr += (uint32_t)linesize;
-      op_size -=           linesize;
+      __DSB();
+      __ISB();
     }
-
-    __DSB();
-    __ISB();
   #endif
 }
 
@@ -2512,29 +2530,31 @@ __STATIC_INLINE void SCB_CleanDCache_by_Addr (uint32_t *addr, int32_t dsize)
 /**
   \brief   D-Cache Clean and Invalidate by address
   \details Cleans and invalidates D_Cache for the given address
+           D-Cache is cleaned and invalidated starting from a 32 byte aligned address in 32 byte granularity.
+           D-Cache memory blocks which are part of given address + given size are cleaned and invalidated.
   \param[in]   addr    address (aligned to 32-byte boundary)
   \param[in]   dsize   size of memory block (in number of bytes)
 */
-__STATIC_INLINE void SCB_CleanInvalidateDCache_by_Addr (uint32_t *addr, int32_t dsize)
+__STATIC_FORCEINLINE void SCB_CleanInvalidateDCache_by_Addr (uint32_t *addr, int32_t dsize)
 {
   #if defined (__DCACHE_PRESENT) && (__DCACHE_PRESENT == 1U)
-     int32_t op_size = dsize;
-    uint32_t op_addr = (uint32_t) addr;
-     int32_t linesize = 32;                /* in Cortex-M7 size of cache line is fixed to 8 words (32 bytes) */
+    if ( dsize > 0 ) { 
+       int32_t op_size = dsize + (((uint32_t)addr) & (__SCB_DCACHE_LINE_SIZE - 1U));
+      uint32_t op_addr = (uint32_t)addr /* & ~(__SCB_DCACHE_LINE_SIZE - 1U) */;
+    
+      __DSB();
 
-    __DSB();
+      do {
+        SCB->DCCIMVAC = op_addr;            /* register accepts only 32byte aligned values, only bits 31..5 are valid */
+        op_addr +=          __SCB_DCACHE_LINE_SIZE;
+        op_size -=          __SCB_DCACHE_LINE_SIZE;
+      } while ( op_size > 0 );
 
-    while (op_size > 0) {
-      SCB->DCCIMVAC = op_addr;
-      op_addr += (uint32_t)linesize;
-      op_size -=           linesize;
+      __DSB();
+      __ISB();
     }
-
-    __DSB();
-    __ISB();
   #endif
 }
-
 
 /*@} end of CMSIS_Core_CacheFunctions */
 

@@ -1,8 +1,8 @@
 /**************************************************************************//**
  * @file     cmsis_iccarm.h
  * @brief    CMSIS compiler ICCARM (IAR Compiler for Arm) header file
- * @version  V5.0.7
- * @date     19. June 2018
+ * @version  V5.0.8
+ * @date     04. September 2018
  ******************************************************************************/
 
 //------------------------------------------------------------------------------
@@ -150,7 +150,12 @@
 #endif
 
 #ifndef   __RESTRICT
-  #define __RESTRICT            __restrict
+  #if __ICCARM_V8
+    #define __RESTRICT            __restrict
+  #else
+    /* Needs IAR language extensions */
+    #define __RESTRICT            restrict
+  #endif
 #endif
 
 #ifndef   __STATIC_INLINE

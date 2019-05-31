@@ -1,8 +1,8 @@
 /**************************************************************************//**
  * @file     core_cm0plus.h
  * @brief    CMSIS Cortex-M0+ Core Peripheral Access Layer Header File
- * @version  V5.0.6
- * @date     28. May 2018
+ * @version  V5.0.7
+ * @date     13. March 2019
  ******************************************************************************/
 /*
  * Copyright (c) 2009-2018 Arm Limited. All rights reserved.
@@ -81,7 +81,7 @@
   #endif
 
 #elif defined (__ARMCC_VERSION) && (__ARMCC_VERSION >= 6010050)
-  #if defined __ARM_PCS_VFP
+  #if defined __ARM_FP
     #error "Compiler generates FPU instructions for a device without an FPU (check __FPU_PRESENT)"
   #endif
 
@@ -330,7 +330,7 @@ typedef struct
   __IOM uint32_t ISER[1U];               /*!< Offset: 0x000 (R/W)  Interrupt Set Enable Register */
         uint32_t RESERVED0[31U];
   __IOM uint32_t ICER[1U];               /*!< Offset: 0x080 (R/W)  Interrupt Clear Enable Register */
-        uint32_t RSERVED1[31U];
+        uint32_t RESERVED1[31U];
   __IOM uint32_t ISPR[1U];               /*!< Offset: 0x100 (R/W)  Interrupt Set Pending Register */
         uint32_t RESERVED2[31U];
   __IOM uint32_t ICPR[1U];               /*!< Offset: 0x180 (R/W)  Interrupt Clear Pending Register */
@@ -948,11 +948,11 @@ __STATIC_INLINE void NVIC_DecodePriority (uint32_t Priority, uint32_t PriorityGr
 __STATIC_INLINE void __NVIC_SetVector(IRQn_Type IRQn, uint32_t vector)
 {
 #if defined (__VTOR_PRESENT) && (__VTOR_PRESENT == 1U)
-  uint32_t *vectors = (uint32_t *)SCB->VTOR;
+  uint32_t vectors = SCB->VTOR;
 #else
-    uint32_t *vectors = (uint32_t *)0x0U;
+  uint32_t vectors = 0x0U;
 #endif
-  vectors[(int32_t)IRQn + NVIC_USER_IRQ_OFFSET] = vector;
+  (* (int *) (vectors + ((int32_t)IRQn + NVIC_USER_IRQ_OFFSET) * 4)) = vector;
 }
 
 
@@ -967,12 +967,11 @@ __STATIC_INLINE void __NVIC_SetVector(IRQn_Type IRQn, uint32_t vector)
 __STATIC_INLINE uint32_t __NVIC_GetVector(IRQn_Type IRQn)
 {
 #if defined (__VTOR_PRESENT) && (__VTOR_PRESENT == 1U)
-  uint32_t *vectors = (uint32_t *)SCB->VTOR;
+  uint32_t vectors = SCB->VTOR;
 #else
-  uint32_t *vectors = (uint32_t *)0x0U;
+  uint32_t vectors = 0x0U;
 #endif
-  return vectors[(int32_t)IRQn + NVIC_USER_IRQ_OFFSET];
-
+  return (uint32_t)(* (int *) (vectors + ((int32_t)IRQn + NVIC_USER_IRQ_OFFSET) * 4));
 }
 
 
