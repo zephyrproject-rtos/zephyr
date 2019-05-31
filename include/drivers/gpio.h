@@ -368,6 +368,24 @@ extern "C" {
  * @endcond
  */
 
+/**
+ * @brief Pins associated with a port.
+ *
+ * Value of this type identifies pins, or their value, associated with a port.
+ * Pin with index n, or its value, is identified by bit n (1U << n) in the value
+ * of type gpio_pins_t.
+ */
+typedef u32_t gpio_pins_t;
+
+/**
+ * @brief Maximum number of pins that are supported by gpio_pins_t
+ */
+#define GPIO_MAX_PINS_PER_PORT (sizeof(gpio_pins_t) * __CHAR_BIT__)
+
+struct gpio_driver_data {
+	gpio_pins_t invert;
+};
+
 struct gpio_callback;
 
 /**
@@ -385,7 +403,7 @@ struct gpio_callback;
  */
 typedef void (*gpio_callback_handler_t)(struct device *port,
 					struct gpio_callback *cb,
-					u32_t pins);
+					gpio_pins_t pins);
 
 /**
  * @brief GPIO callback structure
@@ -412,7 +430,7 @@ struct gpio_callback {
 	 * called or not. The selected pins must be configured to trigger
 	 * an interrupt.
 	 */
-	u32_t pin_mask;
+	gpio_pins_t pin_mask;
 };
 
 /**
@@ -426,6 +444,12 @@ struct gpio_driver_api {
 		     u32_t value);
 	int (*read)(struct device *port, int access_op, u32_t pin,
 		    u32_t *value);
+	int (*port_get_raw)(struct device *port, gpio_pins_t *value);
+	int (*port_set_masked_raw)(struct device *port, gpio_pins_t mask,
+				   gpio_pins_t value);
+	int (*port_set_bits_raw)(struct device *port, gpio_pins_t pins);
+	int (*port_clear_bits_raw)(struct device *port, gpio_pins_t pins);
+	int (*port_toggle_bits)(struct device *port, gpio_pins_t pins);
 	int (*manage_callback)(struct device *port, struct gpio_callback *cb,
 			       bool set);
 	int (*enable_callback)(struct device *port, int access_op, u32_t pin);
@@ -532,6 +556,388 @@ static inline int gpio_pin_configure(struct device *port, u32_t pin,
 }
 
 /**
+ * @brief Get physical level of all input pins in a port.
+ *
+ * A low physical level on the pin will be interpreted as value 0. A high
+ * physical level will be interpreted as value 1. This function ignores
+ * GPIO_ACTIVE_LOW flag.
+ *
+ * Value of a pin with index n will be represented by bit n in the returned
+ * port value.
+ *
+ * @param port Pointer to the device structure for the driver instance.
+ * @param value Pointer to a variable where pin values will be stored.
+ *
+ * @retval 0 If successful.
+ * @retval -EIO I/O error when accessing an external GPIO chip.
+ */
+__syscall int gpio_port_get_raw(struct device *port, gpio_pins_t *value);
+
+static inline int z_impl_gpio_port_get_raw(struct device *port,
+					   gpio_pins_t *value)
+{
+	const struct gpio_driver_api *api =
+		(const struct gpio_driver_api *)port->driver_api;
+
+	return api->port_get_raw(port, value);
+}
+
+/**
+ * @brief Get logical level of all input pins in a port.
+ *
+ * Get logical level of an input pin taking into account GPIO_ACTIVE_LOW flag.
+ * If pin is configured as Active High, a low physical level will be interpreted
+ * as logical value 0. If pin is configured as Active Low, a low physical level
+ * will be interpreted as logical value 1.
+ *
+ * Value of a pin with index n will be represented by bit n in the returned
+ * port value.
+ *
+ * @param port Pointer to the device structure for the driver instance.
+ * @param value Pointer to a variable where pin values will be stored.
+ *
+ * @retval 0 If successful.
+ * @retval -EIO I/O error when accessing an external GPIO chip.
+ */
+static inline int gpio_port_get(struct device *port, gpio_pins_t *value)
+{
+	struct gpio_driver_data *const data =
+			(struct gpio_driver_data *const)port->driver_data;
+	int ret;
+
+	ret = gpio_port_get_raw(port, value);
+	if (ret == 0) {
+		*value ^= data->invert;
+	}
+
+	return ret;
+}
+
+/**
+ * @brief Set physical level of output pins in a port.
+ *
+ * Writing value 0 to the pin will set it to a low physical level. Writing
+ * value 1 will set it to a high physical level. This function ignores
+ * GPIO_ACTIVE_LOW flag.
+ *
+ * Pin with index n is represented by bit n in mask and value parameter.
+ *
+ * @param port Pointer to the device structure for the driver instance.
+ * @param mask Mask indicating which pins will be modified.
+ * @param value Value assigned to the output pins.
+ *
+ * @retval 0 If successful.
+ * @retval -EIO I/O error when accessing an external GPIO chip.
+ */
+__syscall int gpio_port_set_masked_raw(struct device *port, gpio_pins_t mask,
+				       gpio_pins_t value);
+
+static inline int z_impl_gpio_port_set_masked_raw(struct device *port,
+		gpio_pins_t mask, gpio_pins_t value)
+{
+	const struct gpio_driver_api *api =
+		(const struct gpio_driver_api *)port->driver_api;
+
+	return api->port_set_masked_raw(port, mask, value);
+}
+
+/**
+ * @brief Set logical level of output pins in a port.
+ *
+ * Set logical level of an output pin taking into account GPIO_ACTIVE_LOW flag.
+ * Value 0 sets the pin in logical 0 / inactive state. Value 1 sets the pin in
+ * logical 1 / active state. If pin is configured as Active High, the default,
+ * setting it in inactive state will force the pin to a low physical level. If
+ * pin is configured as Active Low, setting it in inactive state will force the
+ * pin to a high physical level.
+ *
+ * Pin with index n is represented by bit n in mask and value parameter.
+ *
+ * @param port Pointer to the device structure for the driver instance.
+ * @param mask Mask indicating which pins will be modified.
+ * @param value Value assigned to the output pins.
+ *
+ * @retval 0 If successful.
+ * @retval -EIO I/O error when accessing an external GPIO chip.
+ */
+static inline int gpio_port_set_masked(struct device *port, gpio_pins_t mask,
+				       gpio_pins_t value)
+{
+	struct gpio_driver_data *const data =
+			(struct gpio_driver_data *const)port->driver_data;
+
+	value ^= data->invert;
+
+	return gpio_port_set_masked_raw(port, mask, value);
+}
+
+/**
+ * @brief Set physical level of selected output pins to high.
+ *
+ * @param port Pointer to the device structure for the driver instance.
+ * @param pins Value indicating which pins will be modified.
+ *
+ * @retval 0 If successful.
+ * @retval -EIO I/O error when accessing an external GPIO chip.
+ */
+__syscall int gpio_port_set_bits_raw(struct device *port, gpio_pins_t pins);
+
+static inline int z_impl_gpio_port_set_bits_raw(struct device *port,
+						gpio_pins_t pins)
+{
+	const struct gpio_driver_api *api =
+		(const struct gpio_driver_api *)port->driver_api;
+
+	return api->port_set_bits_raw(port, pins);
+}
+
+/**
+ * @brief Set logical level of selected output pins to active.
+ *
+ * @param port Pointer to the device structure for the driver instance.
+ * @param pins Value indicating which pins will be modified.
+ *
+ * @retval 0 If successful.
+ * @retval -EIO I/O error when accessing an external GPIO chip.
+ */
+static inline int gpio_port_set_bits(struct device *port, gpio_pins_t pins)
+{
+	return gpio_port_set_masked(port, pins, pins);
+}
+
+/**
+ * @brief Set physical level of selected output pins to low.
+ *
+ * @param port Pointer to the device structure for the driver instance.
+ * @param pins Value indicating which pins will be modified.
+ *
+ * @retval 0 If successful.
+ * @retval -EIO I/O error when accessing an external GPIO chip.
+ */
+__syscall int gpio_port_clear_bits_raw(struct device *port, gpio_pins_t pins);
+
+static inline int z_impl_gpio_port_clear_bits_raw(struct device *port,
+						  gpio_pins_t pins)
+{
+	const struct gpio_driver_api *api =
+		(const struct gpio_driver_api *)port->driver_api;
+
+	return api->port_clear_bits_raw(port, pins);
+}
+
+/**
+ * @brief Set logical level of selected output pins to inactive.
+ *
+ * @param port Pointer to the device structure for the driver instance.
+ * @param pins Value indicating which pins will be modified.
+ *
+ * @retval 0 If successful.
+ * @retval -EIO I/O error when accessing an external GPIO chip.
+ */
+static inline int gpio_port_clear_bits(struct device *port, gpio_pins_t pins)
+{
+	return gpio_port_set_masked(port, pins, 0);
+}
+
+/**
+ * @brief Toggle level of selected output pins.
+ *
+ * @param port Pointer to the device structure for the driver instance.
+ * @param pins Value indicating which pins will be modified.
+ *
+ * @retval 0 If successful.
+ * @retval -EIO I/O error when accessing an external GPIO chip.
+ */
+__syscall int gpio_port_toggle_bits(struct device *port, gpio_pins_t pins);
+
+static inline int z_impl_gpio_port_toggle_bits(struct device *port,
+					       gpio_pins_t pins)
+{
+	const struct gpio_driver_api *api =
+		(const struct gpio_driver_api *)port->driver_api;
+
+	return api->port_toggle_bits(port, pins);
+}
+
+/**
+ * @brief Set physical level of selected output pins.
+ *
+ * @param port Pointer to the device structure for the driver instance.
+ * @param set_pins Value indicating which pins will be set to high.
+ * @param clear_pins Value indicating which pins will be set to low.
+ *
+ * @retval 0 If successful.
+ * @retval -EIO I/O error when accessing an external GPIO chip.
+ */
+static inline int gpio_port_set_clr_bits_raw(struct device *port,
+		gpio_pins_t set_pins, gpio_pins_t clear_pins)
+{
+	__ASSERT((set_pins & clear_pins) == 0, "Set and Clear pins overlap");
+
+	return gpio_port_set_masked_raw(port, set_pins | clear_pins, set_pins);
+}
+
+/**
+ * @brief Set logical level of selected output pins.
+ *
+ * @param port Pointer to the device structure for the driver instance.
+ * @param set_pins Value indicating which pins will be set to active.
+ * @param clear_pins Value indicating which pins will be set to inactive.
+ *
+ * @retval 0 If successful.
+ * @retval -EIO I/O error when accessing an external GPIO chip.
+ */
+static inline int gpio_port_set_clr_bits(struct device *port,
+		gpio_pins_t set_pins, gpio_pins_t clear_pins)
+{
+	__ASSERT((set_pins & clear_pins) == 0, "Set and Clear pins overlap");
+
+	return gpio_port_set_masked(port, set_pins | clear_pins, set_pins);
+}
+
+/**
+ * @brief Get physical level of an input pin.
+ *
+ * A low physical level on the pin will be interpreted as value 0. A high
+ * physical level will be interpreted as value 1. This function ignores
+ * GPIO_ACTIVE_LOW flag.
+ *
+ * @param port Pointer to the device structure for the driver instance.
+ * @param pin Pin number.
+ *
+ * @retval 1 If pin physical level is high.
+ * @retval 0 If pin physical level is low.
+ * @retval -EIO I/O error when accessing an external GPIO chip.
+ */
+static inline int gpio_pin_get_raw(struct device *port, unsigned int pin)
+{
+	gpio_pins_t value;
+	int ret;
+
+	__ASSERT(pin < GPIO_MAX_PINS_PER_PORT, "Invalid pin number");
+
+	ret = gpio_port_get_raw(port, &value);
+	if (ret == 0) {
+		ret = (value & BIT(pin)) != 0 ? 1 : 0;
+	}
+
+	return ret;
+}
+
+/**
+ * @brief Get logical level of an input pin.
+ *
+ * Get logical level of an input pin taking into account GPIO_ACTIVE_LOW flag.
+ * If pin is configured as Active High, a low physical level will be interpreted
+ * as logical value 0. If pin is configured as Active Low, a low physical level
+ * will be interpreted as logical value 1.
+ *
+ * Note: If pin is configured as Active High, the default, gpio_pin_get()
+ *       function is equivalent to gpio_pin_get_raw().
+ *
+ * @param port Pointer to the device structure for the driver instance.
+ * @param pin Pin number.
+ *
+ * @retval 1 If pin logical value is 1 / active.
+ * @retval 0 If pin logical value is 0 / inactive.
+ * @retval -EIO I/O error when accessing an external GPIO chip.
+ */
+static inline int gpio_pin_get(struct device *port, unsigned int pin)
+{
+	gpio_pins_t value;
+	int ret;
+
+	__ASSERT(pin < GPIO_MAX_PINS_PER_PORT, "Invalid pin number");
+
+	ret = gpio_port_get(port, &value);
+	if (ret == 0) {
+		ret = (value & BIT(pin)) != 0 ? 1 : 0;
+	}
+
+	return ret;
+}
+
+/**
+ * @brief Set physical level of an output pin.
+ *
+ * Writing value 0 to the pin will set it to a low physical level. Writing any
+ * value other than 0 will set it to a high physical level. This function
+ * ignores GPIO_ACTIVE_LOW flag.
+ *
+ * @param port Pointer to the device structure for the driver instance.
+ * @param pin Pin number.
+ * @param value Value assigned to the pin.
+ *
+ * @retval 0 If successful.
+ * @retval -EIO I/O error when accessing an external GPIO chip.
+ */
+static inline int gpio_pin_set_raw(struct device *port, unsigned int pin,
+				   int value)
+{
+	int ret;
+
+	__ASSERT(pin < GPIO_MAX_PINS_PER_PORT, "Invalid pin number");
+
+	if (value != 0)	{
+		ret = gpio_port_set_bits_raw(port, BIT(pin));
+	} else {
+		ret = gpio_port_clear_bits_raw(port, BIT(pin));
+	}
+
+	return ret;
+}
+
+/**
+ * @brief Set logical level of an output pin.
+ *
+ * Set logical level of an output pin taking into account GPIO_ACTIVE_LOW flag.
+ * Value 0 sets the pin in logical 0 / inactive state. Any value other than 0
+ * sets the pin in logical 1 / active state. If pin is configured as Active
+ * High, the default, setting it in inactive state will force the pin to a low
+ * physical level. If pin is configured as Active Low, setting it in inactive
+ * state will force the pin to a high physical level.
+ *
+ * Note: If pin is configured as Active High, gpio_pin_set() function is
+ *       equivalent to gpio_pin_set_raw().
+ *
+ * @param port Pointer to the device structure for the driver instance.
+ * @param pin Pin number.
+ * @param value Value assigned to the pin.
+ *
+ * @retval 0 If successful.
+ * @retval -EIO I/O error when accessing an external GPIO chip.
+ */
+static inline int gpio_pin_set(struct device *port, unsigned int pin, int value)
+{
+	struct gpio_driver_data *const data =
+			(struct gpio_driver_data *const)port->driver_data;
+
+	__ASSERT(pin < GPIO_MAX_PINS_PER_PORT, "Invalid pin number");
+
+	if (data->invert & BIT(pin)) {
+		value = (value != 0) ? 0 : 1;
+	}
+
+	return gpio_pin_set_raw(port, pin, value);
+}
+
+/**
+ * @brief Toggle pin level.
+ *
+ * @param port Pointer to the device structure for the driver instance.
+ * @param pin Pin number.
+ *
+ * @retval 0 If successful.
+ * @retval -EIO I/O error when accessing an external GPIO chip.
+ */
+static inline int gpio_pin_toggle(struct device *port, unsigned int pin)
+{
+	__ASSERT(pin < GPIO_MAX_PINS_PER_PORT, "Invalid pin number");
+
+	return gpio_port_toggle_bits(port, BIT(pin));
+}
+
+/**
  * @brief Write the data value to a single pin.
  * @param port Pointer to the device structure for the driver instance.
  * @param pin Pin number where the data is written.
@@ -568,7 +974,7 @@ static inline int gpio_pin_read(struct device *port, u32_t pin,
  */
 static inline void gpio_init_callback(struct gpio_callback *callback,
 				      gpio_callback_handler_t handler,
-				      u32_t pin_mask)
+				      gpio_pins_t pin_mask)
 {
 	__ASSERT(callback, "Callback pointer should not be NULL");
 	__ASSERT(handler, "Callback handler pointer should not be NULL");
