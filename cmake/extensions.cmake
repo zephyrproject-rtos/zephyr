@@ -65,17 +65,10 @@
 # https://cmake.org/cmake/help/latest/command/target_sources.html
 function(zephyr_sources)
   foreach(arg ${ARGV})
-    if(IS_ABSOLUTE ${arg})
-      set(path ${arg})
-    else()
-      set(path ${CMAKE_CURRENT_SOURCE_DIR}/${arg})
-    endif()
-
-    if(IS_DIRECTORY ${path})
+    if(IS_DIRECTORY ${arg})
       message(FATAL_ERROR "zephyr_sources() was called on a directory")
     endif()
-
-    target_sources(zephyr PRIVATE ${path})
+    target_sources(zephyr PRIVATE ${arg})
   endforeach()
 endfunction()
 
