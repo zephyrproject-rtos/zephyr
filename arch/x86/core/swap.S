@@ -382,19 +382,6 @@ CROHandlingDone:
 	/* Utilize the 'eflags' parameter to __swap() */
 
 	pushl	4(%esp)
-#ifdef CONFIG_INT_LATENCY_BENCHMARK
-	testl	$0x200, (%esp)
-	jz	skipIntLatencyStop
-
-	/* save %eax since it used as the return value for __swap */
-	pushl	%eax
-	/* interrupts are being reenabled, stop accumulating time */
-	call	z_int_latency_stop
-	/* restore __swap's %eax */
-	popl	%eax
-
-skipIntLatencyStop:
-#endif
 	popfl
 #if CONFIG_X86_IAMCU
 	/* Remember that eflags we stuck into the stack before the return

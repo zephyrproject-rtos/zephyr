@@ -332,16 +332,6 @@ config BOOT_DELAY
 	  achieved by waiting for DCD on the serial port--however, not
 	  all serial ports have DCD.
 
-config INT_LATENCY_BENCHMARK
-	bool "Interrupt latency metrics [EXPERIMENTAL]"
-	depends on ARCH="x86"
-	help
-	  This option enables the tracking of interrupt latency metrics;
-	  the exact set of metrics being tracked is board-dependent.
-	  Tracking begins when int_latency_init() is invoked by an application.
-	  The metrics are displayed (and a new sampling interval is started)
-	  each time int_latency_show() is called thereafter.
-
 config EXECUTION_BENCHMARKING
 	bool "Timing metrics"
 	help

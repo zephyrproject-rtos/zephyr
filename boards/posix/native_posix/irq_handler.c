@@ -30,12 +30,6 @@ static int currently_running_irq = -1;
 
 static inline void vector_to_irq(int irq_nbr, int *may_swap)
 {
-	/*
-	 * As in this architecture an irq (code) executes in 0 time,
-	 * it is a bit senseless to call z_int_latency_start/stop()
-	 */
-	/* z_int_latency_start(); */
-
 	sys_trace_isr_enter();
 
 	if (irq_vector_table[irq_nbr].func == NULL) { /* LCOV_EXCL_BR_LINE */
@@ -59,7 +53,6 @@ static inline void vector_to_irq(int irq_nbr, int *may_swap)
 	}
 
 	sys_trace_isr_exit();
-	/* z_int_latency_stop(); */
 }
 
 /**
