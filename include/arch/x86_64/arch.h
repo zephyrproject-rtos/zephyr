@@ -7,7 +7,8 @@
 #define _X86_64_ARCH_H
 
 #include <kernel_arch_func.h>
-#include <arch/bits_portable.h>
+#include <arch/common/sys_io.h>
+#include <arch/common/ffs.h>
 
 #define STACK_ALIGN 8
 

@@ -21,7 +21,8 @@ extern "C" {
 
 #include <generated_dts_board.h>
 #if !defined(_ASMLANGUAGE) && !defined(__ASSEMBLER__)
-#include "sys_io.h" /* Include from the very same folder of this file */
+#include <arch/common/sys_io.h>
+#include <arch/common/ffs.h>
 #include <zephyr/types.h>
 #include <sw_isr_table.h>
 #include <arch/xtensa/xtensa_irq.h>
@@ -40,42 +41,6 @@ extern "C" {
 #define sys_define_gpr_with_alias(name1, name2) union { u32_t name1, name2; }
 
 #include <arch/xtensa/exc.h>
-
-/**
- *
- * @brief find most significant bit set in a 32-bit word
- *
- * This routine finds the first bit set starting from the most significant bit
- * in the argument passed in and returns the index of that bit.  Bits are
- * numbered starting at 1 from the least significant bit.  A return value of
- * zero indicates that the value passed is zero.
- *
- * @return most significant bit set, 0 if @a op is 0
- */
-
-static ALWAYS_INLINE unsigned int find_msb_set(u32_t op)
-{
-	if (!op)
-		return 0;
-	return 32 - __builtin_clz(op);
-}
-
-/**
- *
- * @brief find least significant bit set in a 32-bit word
- *
- * This routine finds the first bit set starting from the least significant bit
- * in the argument passed in and returns the index of that bit.  Bits are
- * numbered starting at 1 from the least significant bit.  A return value of
- * zero indicates that the value passed is zero.
- *
- * @return least significant bit set, 0 if @a op is 0
- */
-
-static ALWAYS_INLINE unsigned int find_lsb_set(u32_t op)
-{
-	return __builtin_ffs(op);
-}
 
 /* internal routine documented in C file, needed by IRQ_CONNECT() macro */
 extern void z_irq_priority_set(u32_t irq, u32_t prio, u32_t flags);

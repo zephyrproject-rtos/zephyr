@@ -16,7 +16,8 @@
 #define ZEPHYR_INCLUDE_ARCH_RISCV32_ARCH_H_
 
 #include "exp.h"
-#include "sys_io.h"
+#include <arch/common/sys_io.h>
+#include <arch/common/ffs.h>
 
 #include <irq.h>
 #include <sw_isr_table.h>
