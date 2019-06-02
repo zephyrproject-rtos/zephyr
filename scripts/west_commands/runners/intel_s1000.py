@@ -61,6 +61,7 @@ class IntelS1000BinaryRunner(ZephyrBinaryRunner):
             gdb_port=args.gdb_port)
 
     def do_run(self, command, **kwargs):
+        self.require(self.xt_ocd_dir)
         kwargs['ocd-topology'] = path.join(self.board_dir, 'support',
                                            self.ocd_topology)
         kwargs['ocd-jtag-instr'] = path.join(self.board_dir, 'support',
@@ -76,6 +77,9 @@ class IntelS1000BinaryRunner(ZephyrBinaryRunner):
             self.do_debug(**kwargs)
 
     def flash(self, **kwargs):
+        if self.gdb_cmd is None:
+            raise ValueError('Cannot debug; no gdb specified')
+        self.require(self.gdb_cmd)
         topology_file = kwargs['ocd-topology']
         jtag_instr_file = kwargs['ocd-jtag-instr']
         gdb_flash_file = kwargs['gdb-flash-file']
@@ -113,6 +117,7 @@ class IntelS1000BinaryRunner(ZephyrBinaryRunner):
             raise ValueError('Cannot debug; elf is missing')
         if self.gdb_cmd is None:
             raise ValueError('Cannot debug; no gdb specified')
+        self.require(self.gdb_cmd)
 
         topology_file = kwargs['ocd-topology']
         jtag_instr_file = kwargs['ocd-jtag-instr']

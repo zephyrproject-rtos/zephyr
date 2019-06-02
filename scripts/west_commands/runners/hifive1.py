@@ -36,6 +36,8 @@ class HiFive1BinaryRunner(ZephyrBinaryRunner):
         return HiFive1BinaryRunner(cfg)
 
     def do_run(self, command, **kwargs):
+        self.require(self.cfg.openocd)
+        self.require(self.cfg.gdb)
         openocd_cmd = ([self.cfg.openocd, '-f', self.openocd_config])
         gdb_cmd = ([self.cfg.gdb, self.cfg.elf_file, '--batch',
                     '-ex', 'set remotetimeout 240',

@@ -64,6 +64,7 @@ class EmStarterKitBinaryRunner(ZephyrBinaryRunner):
             gdb_port=args.gdb_port)
 
     def do_run(self, command, **kwargs):
+        self.require(self.openocd_cmd[0])
         kwargs['openocd-cfg'] = path.join(self.cfg.board_dir, 'support',
                                           'openocd.cfg')
 
@@ -73,8 +74,8 @@ class EmStarterKitBinaryRunner(ZephyrBinaryRunner):
             self.debugserver(**kwargs)
 
     def flash_debug(self, command, **kwargs):
+        self.require(self.gdb_cmd[0])
         config = kwargs['openocd-cfg']
-
         server_cmd = (self.openocd_cmd +
                       ['-f', config] +
                       ['-c', 'tcl_port {}'.format(self.tcl_port),
