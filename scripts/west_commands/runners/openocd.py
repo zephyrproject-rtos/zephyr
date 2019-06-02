@@ -86,6 +86,7 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
             gdb_port=args.gdb_port)
 
     def do_run(self, command, **kwargs):
+        self.require(self.openocd_cmd[0])
         if command == 'flash':
             self.do_flash(**kwargs)
         elif command == 'debug':
@@ -135,11 +136,10 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
                        '-c', 'init',
                        '-c', 'targets',
                        '-c', 'halt'])
-
         gdb_cmd = (self.gdb_cmd + self.tui_arg +
                    ['-ex', 'target remote :{}'.format(self.gdb_port),
                     self.elf_name])
-
+        self.require(gdb_cmd[0])
         self.run_server_and_client(server_cmd, gdb_cmd)
 
     def do_debugserver(self, **kwargs):

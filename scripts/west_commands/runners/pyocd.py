@@ -108,6 +108,7 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
         return ['-p', str(self.gdb_port)]
 
     def do_run(self, command, **kwargs):
+        self.require(self.pyocd)
         if command == 'flash':
             self.flash(**kwargs)
         else:
@@ -166,5 +167,6 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
                                '-ex', 'monitor reset',
                                '-ex', 'load']
 
+            self.require(client_cmd[0])
             self.print_gdbserver_message()
             self.run_server_and_client(server_cmd, client_cmd)
