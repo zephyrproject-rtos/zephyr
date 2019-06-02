@@ -51,14 +51,6 @@ extern "C" {
 
 #ifndef _ASMLANGUAGE
 
-#ifdef CONFIG_INT_LATENCY_BENCHMARK
-void z_int_latency_start(void);
-void z_int_latency_stop(void);
-#else
-#define z_int_latency_start()  do { } while (false)
-#define z_int_latency_stop()   do { } while (false)
-#endif
-
 /* interrupt/exception/error related definitions */
 
 
@@ -422,8 +414,6 @@ static ALWAYS_INLINE unsigned int z_arch_irq_lock(void)
 {
 	unsigned int key = _do_irq_lock();
 
-	z_int_latency_start();
-
 	return key;
 }
 
@@ -447,8 +437,6 @@ static ALWAYS_INLINE void z_arch_irq_unlock(unsigned int key)
 	if ((key & 0x200U) == 0U) {
 		return;
 	}
-
-	z_int_latency_stop();
 
 	z_do_irq_unlock();
 }

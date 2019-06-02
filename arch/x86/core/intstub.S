@@ -37,10 +37,6 @@
 #endif
 
 
-#ifdef CONFIG_INT_LATENCY_BENCHMARK
-	GTEXT(z_int_latency_start)
-	GTEXT(z_int_latency_stop)
-#endif
 /**
  *
  * @brief Inform the kernel of an interrupt
@@ -135,23 +131,11 @@ SECTION_FUNC(TEXT, _interrupt_enter)
 	pushl	%edi
 
 
-#if defined(CONFIG_INT_LATENCY_BENCHMARK) || \
-		defined(CONFIG_TRACING)
+#if defined(CONFIG_TRACING)
 
 	/* Save these as we are using to keep track of isr and isr_param */
 	pushl	%eax
 	pushl	%edx
-
-#ifdef CONFIG_INT_LATENCY_BENCHMARK
-	/*
-	 * Volatile registers are now saved it is safe to start measuring
-	 * how long interrupt are disabled.
-	 * The interrupt gate created by IRQ_CONNECT disables the
-	 * interrupt.
-	 */
-
-	call	z_int_latency_start
-#endif
 
 	call	z_sys_trace_isr_enter
 
@@ -193,13 +177,6 @@ SECTION_FUNC(TEXT, _interrupt_enter)
 	/* fall through to nested case */
 
 alreadyOnIntStack:
-#ifdef CONFIG_INT_LATENCY_BENCHMARK
-	pushl	%eax
-	pushl	%edx
-	call	z_int_latency_stop
-	popl	%edx
-	popl	%eax
-#endif
 
 #ifndef CONFIG_X86_IAMCU
 	/* EAX has the interrupt handler argument, needs to go on
@@ -235,10 +212,6 @@ alreadyOnIntStack:
 
 	/* irq_controller.h interface */
 	_irq_controller_eoi_macro
-
-#ifdef CONFIG_INT_LATENCY_BENCHMARK
-	call	z_int_latency_start
-#endif
 
 	/* determine whether exiting from a nested interrupt */
 	movl	$_kernel, %ecx
@@ -308,9 +281,6 @@ alreadyOnIntStack:
 #endif /* CONFIG_LAZY_FP_SHARING */
 
 	/* Restore volatile registers and return to the interrupted thread */
-#ifdef CONFIG_INT_LATENCY_BENCHMARK
-	call	z_int_latency_stop
-#endif
 	popl	%edi
 	popl	%ecx
 	popl	%edx
@@ -344,10 +314,6 @@ noReschedule:
 	 */
 
 nestedInterrupt:
-#ifdef CONFIG_INT_LATENCY_BENCHMARK
-	call	z_int_latency_stop
-#endif
-
 	popl	%edi
 	popl	%ecx		/* pop volatile registers in reverse order */
 	popl	%edx

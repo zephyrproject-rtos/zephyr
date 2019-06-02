@@ -44,7 +44,6 @@ extern u64_t __idle_time_stamp;  /* timestamp when CPU went idle */
  */
 void k_cpu_idle(void)
 {
-	z_int_latency_stop();
 	z_sys_trace_idle();
 #if defined(CONFIG_BOOT_TIME_MEASUREMENT)
 	__idle_time_stamp = (u64_t)k_cycle_get_32();
@@ -75,7 +74,6 @@ void k_cpu_idle(void)
 
 void k_cpu_atomic_idle(unsigned int key)
 {
-	z_int_latency_stop();
 	z_sys_trace_idle();
 
 	__asm__ volatile (
@@ -96,7 +94,6 @@ void k_cpu_atomic_idle(unsigned int key)
 
 	/* restore interrupt lockout state before returning to caller */
 	if ((key & 0x200U) == 0U) {
-		z_int_latency_start();
 		__asm__ volatile("cli");
 	}
 }
