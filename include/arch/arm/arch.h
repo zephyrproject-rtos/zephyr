@@ -30,7 +30,8 @@
 #include <arch/arm/cortex_m/memory_map.h>
 #include <arch/arm/cortex_m/asm_inline.h>
 #include <arch/arm/cortex_m/addr_types.h>
-#include <arch/arm/cortex_m/sys_io.h>
+#include <arch/common/sys_io.h>
+#include <arch/common/ffs.h>
 #include <arch/arm/cortex_m/nmi.h>
 #endif
 

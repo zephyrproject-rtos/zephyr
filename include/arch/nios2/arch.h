@@ -18,6 +18,8 @@
 #include <arch/nios2/asm_inline.h>
 #include <generated_dts_board.h>
 #include "nios2.h"
+#include <arch/common/sys_io.h>
+#include <arch/common/ffs.h>
 
 #ifdef __cplusplus
 extern "C" {

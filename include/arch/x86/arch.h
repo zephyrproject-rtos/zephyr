@@ -20,6 +20,8 @@
 #include <generated_dts_board.h>
 #include <mmustructs.h>
 #include <stdbool.h>
+#include "sys_io.h"
+#include "ffs.h"
 
 #ifndef _ASMLANGUAGE
 #include <arch/x86/asm_inline.h>

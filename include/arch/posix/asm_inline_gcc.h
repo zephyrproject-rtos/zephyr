@@ -28,8 +28,8 @@ extern "C" {
 
 #include <toolchain/common.h>
 #include <zephyr/types.h>
-#include <sys_io.h>
-#include <arch/bits_portable.h>
+#include <arch/common/sys_io.h>
+#include <arch/common/ffs.h>
 #include "posix_soc_if.h"
 
 
