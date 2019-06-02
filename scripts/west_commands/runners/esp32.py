@@ -78,6 +78,7 @@ class Esp32BinaryRunner(ZephyrBinaryRunner):
             partition_table_bin=args.esp_flash_partition_table)
 
     def do_run(self, command, **kwargs):
+        self.require(self.espidf)
         bin_name = path.splitext(self.elf)[0] + path.extsep + 'bin'
         cmd_convert = [self.espidf, '--chip', 'esp32', 'elf2image', self.elf]
         cmd_flash = [self.espidf, '--chip', 'esp32', '--port', self.device,

@@ -50,6 +50,8 @@ class BossacBinaryRunner(ZephyrBinaryRunner):
             msg = 'CAUTION: No flash tool for your host system found!'
             raise NotImplementedError(msg)
 
+        self.require('stty')
+        self.require(self.bossac)
         cmd_stty = ['stty', '-F', self.port, 'raw', 'ispeed', '1200',
                     'ospeed', '1200', 'cs8', '-cstopb', 'ignpar', 'eol', '255',
                     'eof', '255']
