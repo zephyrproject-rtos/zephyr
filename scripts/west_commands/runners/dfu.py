@@ -90,6 +90,7 @@ class DfuUtilBinaryRunner(ZephyrBinaryRunner):
         return self.list_pattern in output
 
     def do_run(self, command, **kwargs):
+        self.require(self.cmd[0])
         reset = False
         if not self.find_device():
             reset = True
