@@ -29,9 +29,6 @@
 #include <syscall_handler.h>
 #include <tracing.h>
 
-extern struct k_sem _k_sem_list_start[];
-extern struct k_sem _k_sem_list_end[];
-
 /* We use a system-wide lock to synchronize semaphores, which has
  * unfortunate performance impact vs. using a per-object lock
  * (semaphores are *very* widely used).  But per-object locks require
@@ -52,9 +49,7 @@ static int init_sem_module(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	struct k_sem *sem;
-
-	for (sem = _k_sem_list_start; sem < _k_sem_list_end; sem++) {
+	Z_STRUCT_SECTION_FOREACH(k_sem, sem) {
 		SYS_TRACING_OBJ_INIT(k_sem, sem);
 	}
 	return 0;

@@ -43,9 +43,6 @@ static inline void mbox_async_free(struct k_mbox_async *async)
 
 #endif /* CONFIG_NUM_MBOX_ASYNC_MSGS > 0 */
 
-extern struct k_mbox _k_mbox_list_start[];
-extern struct k_mbox _k_mbox_list_end[];
-
 #ifdef CONFIG_OBJECT_TRACING
 struct k_mbox *_trace_list_k_mbox;
 #endif	/* CONFIG_OBJECT_TRACING */
@@ -87,9 +84,7 @@ static int init_mbox_module(struct device *dev)
 	/* Complete initialization of statically defined mailboxes. */
 
 #ifdef CONFIG_OBJECT_TRACING
-	struct k_mbox *mbox;
-
-	for (mbox = _k_mbox_list_start; mbox < _k_mbox_list_end; mbox++) {
+	Z_STRUCT_SECTION_FOREACH(k_mbox, mbox) {
 		SYS_TRACING_OBJ_INIT(k_mbox, mbox);
 	}
 #endif /* CONFIG_OBJECT_TRACING */

@@ -13,19 +13,17 @@
 #include <misc/math_extras.h>
 #include <stdbool.h>
 
-/* Linker-defined symbols bound the static pool structs */
-extern struct k_mem_pool _k_mem_pool_list_start[];
-extern struct k_mem_pool _k_mem_pool_list_end[];
-
 static struct k_spinlock lock;
 
 static struct k_mem_pool *get_pool(int id)
 {
+	extern struct k_mem_pool _k_mem_pool_list_start[];
 	return &_k_mem_pool_list_start[id];
 }
 
 static int pool_id(struct k_mem_pool *pool)
 {
+	extern struct k_mem_pool _k_mem_pool_list_start[];
 	return pool - &_k_mem_pool_list_start[0];
 }
 
@@ -38,9 +36,8 @@ static void k_mem_pool_init(struct k_mem_pool *p)
 int init_static_pools(struct device *unused)
 {
 	ARG_UNUSED(unused);
-	struct k_mem_pool *p;
 
-	for (p = _k_mem_pool_list_start; p < _k_mem_pool_list_end; p++) {
+	Z_STRUCT_SECTION_FOREACH(k_mem_pool, p) {
 		k_mem_pool_init(p);
 	}
 

@@ -38,9 +38,9 @@
 	 */
 	SECTION_PROLOGUE(object_access,,)
 	{
-		__object_access_start = .;
+		__k_object_assignment_list_start = .;
 		KEEP(*(".__k_object_assignment.*"))
-		__object_access_end = .;
+		__k_object_assignment_list_end = .;
 	} GROUP_LINK_IN(ROMABLE_REGION)
 #endif
 

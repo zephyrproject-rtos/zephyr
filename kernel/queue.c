@@ -23,9 +23,6 @@
 #include <syscall_handler.h>
 #include <kernel_internal.h>
 
-extern struct k_queue _k_queue_list_start[];
-extern struct k_queue _k_queue_list_end[];
-
 struct alloc_node {
 	sys_sfnode_t node;
 	void *data;
@@ -70,9 +67,7 @@ static int init_queue_module(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	struct k_queue *queue;
-
-	for (queue = _k_queue_list_start; queue < _k_queue_list_end; queue++) {
+	Z_STRUCT_SECTION_FOREACH(k_queue, queue) {
 		SYS_TRACING_OBJ_INIT(k_queue, queue);
 	}
 	return 0;
