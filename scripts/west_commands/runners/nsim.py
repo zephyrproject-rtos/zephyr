@@ -10,11 +10,11 @@ from os import path
 from runners.core import ZephyrBinaryRunner
 
 DEFAULT_ARC_GDB_PORT = 3333
-DEFAULT_PROPS_FILE = 'nsim.props'
+DEFAULT_PROPS_FILE = 'nsim_em.props'
 
 
 class NsimBinaryRunner(ZephyrBinaryRunner):
-    '''Runner front-end for the ARC si.'''
+    '''Runner front-end for the ARC nSIM.'''
 
     # This unusual 'flash' implementation matches the original shell script.
     #
