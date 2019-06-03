@@ -9,6 +9,8 @@ macro(toolchain_cc_warning_base)
     -Wformat
     -Wformat-security
     -Wno-format-zero-length
+    # FIXME: Remove once #16587 is fixed
+    -Wno-address-of-packed-member
     -Wno-main
   )
 
