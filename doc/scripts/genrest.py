@@ -77,15 +77,15 @@ Supported Options
      - Description
 """
 
-def write_kconfig_rst():
-    # The "main" function. Writes index.rst and the symbol RST files.
+def main():
+    # Writes index.rst and the symbol RST files
 
-    # accelerate doc building by skipping kconfig option documentation.
+    # Accelerate doc building by skipping kconfig option documentation.
     turbo_mode = os.environ.get('KCONFIG_TURBO_MODE') == "1"
 
     if len(sys.argv) != 3:
-        print("usage: {} <Kconfig> <output directory>", file=sys.stderr)
-        sys.exit(1)
+        sys.exit("usage: {} <Kconfig> <output directory>"
+                 .format(sys.argv[0]))
 
     kconf = kconfiglib.Kconfig(sys.argv[1])
     out_dir = sys.argv[2]
@@ -388,8 +388,8 @@ def kconfig_definition_rst(sc):
             # Add a horizontal line between multiple definitions
             rst += "\n\n----"
 
-    rst += "\n\n*(Definitions include propagated dependencies, " \
-           "including from if's and menus.)*"
+    rst += "\n\n*(The 'depends on' condition includes propagated " \
+           "dependencies from if's and menus.)*"
 
     return rst
 
@@ -404,7 +404,7 @@ def choice_id(choice):
     # we can't use that, and the prompt isn't guaranteed to be unique.
 
     # Pretty slow, but fast enough
-    return "choice_{}".format(choice.kconfig.choices.index(choice))
+    return "choice_{}".format(choice.kconfig.unique_choices.index(choice))
 
 
 def choice_desc(choice):
@@ -445,4 +445,4 @@ def write_if_updated(filename, s):
 
 
 if __name__ == "__main__":
-    write_kconfig_rst()
+    main()
