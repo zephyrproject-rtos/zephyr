@@ -19,19 +19,15 @@ LOG_MODULE_REGISTER(settings, CONFIG_SETTINGS_LOG_LEVEL);
 
 sys_slist_t settings_handlers;
 
-static u8_t settings_cmd_inited;
 
 static struct settings_handler *settings_handler_lookup(char *name);
+
 void settings_store_init(void);
 
 void settings_init(void)
 {
-	if (!settings_cmd_inited) {
-		sys_slist_init(&settings_handlers);
-		settings_store_init();
-
-		settings_cmd_inited = 1U;
-	}
+	sys_slist_init(&settings_handlers);
+	settings_store_init();
 }
 
 int settings_register(struct settings_handler *handler)
