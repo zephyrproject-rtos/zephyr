@@ -14,8 +14,7 @@ struct bt_settings_handler {
 };
 
 #define BT_SETTINGS_DEFINE(_name, _set, _commit, _export)               \
-	const Z_DECL_ALIGN(struct bt_settings_handler) _name            \
-			__in_section(_bt_settings, static, _name) = {   \
+	const Z_STRUCT_SECTION_ITERABLE(bt_settings_handler, _name) = { \
 				.name = STRINGIFY(_name),               \
 				.set = _set,                            \
 				.commit = _commit,                      \

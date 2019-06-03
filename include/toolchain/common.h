@@ -163,4 +163,13 @@
  */
 #define Z_DECL_ALIGN(type) __aligned(__alignof(type)) type
 
+/*
+ * Convenience helper combining __in_section() and Z_DECL_ALIGN().
+ * The section name is the struct type prepended with an underscore.
+ * The subsection is "static" and the subsubsection is the variable name.
+ */
+#define Z_STRUCT_SECTION_ITERABLE(struct_type, name) \
+	Z_DECL_ALIGN(struct struct_type) name \
+	__in_section(_##struct_type, static, name) __used
+
 #endif /* ZEPHYR_INCLUDE_TOOLCHAIN_COMMON_H_ */

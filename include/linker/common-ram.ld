@@ -34,7 +34,7 @@
 	SECTION_DATA_PROLOGUE(_static_thread_area,,SUBALIGN(4))
 	{
 		_static_thread_data_list_start = .;
-		KEEP(*(SORT_BY_NAME("._static_thread_data.static.*")))
+		KEEP(*(SORT_BY_NAME(".__static_thread_data.static.*")))
 		_static_thread_data_list_end = .;
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
@@ -88,6 +88,8 @@
 	{
 		_k_queue_list_start = .;
 		KEEP(*("._k_queue.static.*"))
+		KEEP(*("._k_fifo.static.*"))
+		KEEP(*("._k_lifo.static.*"))
 		_k_queue_list_end = .;
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
