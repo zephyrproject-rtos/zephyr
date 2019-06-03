@@ -25,7 +25,7 @@
 
 #ifndef _ASMLANGUAGE
 #include <arch/x86/asm_inline.h>
-#include <arch/x86/addr_types.h>
+#include <arch/common/addr_types.h>
 #include <arch/x86/segmentation.h>
 #endif
 

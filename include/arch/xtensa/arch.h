@@ -27,6 +27,7 @@ extern "C" {
 #include <sw_isr_table.h>
 #include <arch/xtensa/xtensa_irq.h>
 #include <xtensa/config/core.h>
+#include <arch/common/addr_types.h>
 
 #define STACK_ALIGN 16
 

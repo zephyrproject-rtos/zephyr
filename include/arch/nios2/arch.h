@@ -16,6 +16,7 @@
 
 #include <system.h>
 #include <arch/nios2/asm_inline.h>
+#include <arch/common/addr_types.h>
 #include <generated_dts_board.h>
 #include "nios2.h"
 #include <arch/common/sys_io.h>
@@ -39,9 +40,6 @@ extern "C" {
 #include <irq.h>
 #include <sw_isr_table.h>
 
-/* physical/virtual address types required by the kernel */
-typedef unsigned int paddr_t;
-typedef unsigned int vaddr_t;
 
 /**
  * Configure a static interrupt.

@@ -27,7 +27,7 @@
 #include <arch/arc/v2/aux_regs.h>
 #include <arch/arc/v2/arcv2_irq_unit.h>
 #include <arch/arc/v2/asm_inline.h>
-#include <arch/arc/v2/addr_types.h>
+#include <arch/common/addr_types.h>
 #include "v2/sys_io.h"
 #endif
 
