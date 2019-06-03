@@ -650,11 +650,11 @@ def menuconfig(kconf):
 
     _kconf = kconf
 
-    # Load existing configuration and set _conf_changed True if it is outdated
-    _conf_changed = _load_config()
-
     # Filename to save configuration to
     _conf_filename = standard_config_filename()
+
+    # Load existing configuration and set _conf_changed True if it is outdated
+    _conf_changed = _load_config()
 
     # Filename to save minimal configuration to
     _minconf_filename = "defconfig"
@@ -673,7 +673,7 @@ def menuconfig(kconf):
 
     # Disable warnings. They get mangled in curses mode, and we deal with
     # errors ourselves.
-    kconf.disable_warnings()
+    kconf.warn = False
 
     # Make curses use the locale settings specified in the environment
     locale.setlocale(locale.LC_ALL, "")
@@ -710,7 +710,8 @@ def _load_config():
     # Returns True if .config is missing or outdated. We always prompt for
     # saving the configuration in that case.
 
-    if not _kconf.load_config():
+    print(_kconf.load_config())
+    if not os.path.exists(_conf_filename):
         # No .config
         return True
 
@@ -922,8 +923,10 @@ def _quit_dialog():
             return None
 
         if c == "y":
-            if _try_save(_kconf.write_config, _conf_filename, "configuration"):
-                return "Configuration saved to '{}'".format(_conf_filename)
+            # Returns a message to print
+            msg = _try_save(_kconf.write_config, _conf_filename, "configuration")
+            if msg:
+                return msg
 
         elif c == "n":
             return "Configuration ({}) was not saved".format(_conf_filename)
@@ -1858,29 +1861,33 @@ def _save_dialog(save_fn, default_filename, description):
 
         filename = os.path.expanduser(filename)
 
-        if _try_save(save_fn, filename, description):
-            _msg("Success", "{} saved to {}".format(description, filename))
+        msg = _try_save(save_fn, filename, description)
+        if msg:
+            _msg("Success", msg)
             return filename
 
 
 def _try_save(save_fn, filename, description):
-    # Tries to save a configuration file. Pops up an error and returns False on
-    # failure.
+    # Tries to save a configuration file. Returns a message to print on
+    # success.
     #
     # save_fn:
     #   Function to call with 'filename' to save the file
     #
     # description:
     #   String describing the thing being saved
+    #
+    # Return value:
+    #   A message to print on success, and None on failure
 
     try:
-        save_fn(filename)
-        return True
+        # save_fn() returns a message to print
+        return save_fn(filename)
     except OSError as e:
         _error("Error saving {} to '{}'\n\n{} (errno: {})"
                .format(description, e.filename, e.strerror,
                        errno.errorcode[e.errno]))
-        return False
+        return None
 
 
 def _key_dialog(title, text, keys):
@@ -2739,7 +2746,7 @@ def _kconfig_def_info(item):
 
     nodes = [item] if isinstance(item, MenuNode) else item.nodes
 
-    s = "Kconfig definition{}, with propagated dependencies\n" \
+    s = "Kconfig definition{}, with parent deps. propagated to 'depends on'\n" \
         .format("s" if len(nodes) > 1 else "")
     s += (len(s) - 1)*"="
 
