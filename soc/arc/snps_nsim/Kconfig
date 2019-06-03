@@ -7,16 +7,16 @@
 if SOC_NSIM
 
 choice
-prompt "ARC EM Starter Kit Core Selection"
+prompt "ARC nSIM SoC Selection"
 default SOC_NSIM_EM
 
 config SOC_NSIM_EM
-	bool "Synopsys ARC EM of nsim"
+	bool "Synopsys ARC EM in nSIM"
 	select CPU_HAS_MPU
 	select CPU_HAS_FPU
 
 config SOC_NSIM_SEM
-	bool "Synopsys ARC SEM of nsim"
+	bool "Synopsys ARC SEM in nSIM"
 	select CPU_HAS_MPU
 	select CPU_HAS_FPU
 	select ARC_HAS_SECURE

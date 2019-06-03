@@ -5,4 +5,4 @@
 #
 
 config SOC_NSIM
-	bool "Synopsys NSIM simulator for ARC EM"
+	bool "Synopsys nSIM simulator for ARC cores"
