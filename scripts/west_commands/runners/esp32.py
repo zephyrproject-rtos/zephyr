@@ -6,8 +6,6 @@
 
 from os import path
 
-from west import log
-
 from runners.core import ZephyrBinaryRunner, RunnerCaps
 
 
@@ -95,8 +93,9 @@ class Esp32BinaryRunner(ZephyrBinaryRunner):
         else:
             cmd_flash.extend(['0x1000', bin_name])
 
-        log.inf("Converting ELF to BIN")
+        self.logger.info("Converting ELF to BIN")
         self.check_call(cmd_convert)
 
-        log.inf("Flashing ESP32 on {} ({}bps)".format(self.device, self.baud))
+        self.logger.info("Flashing ESP32 on {} ({}bps)".
+                         format(self.device, self.baud))
         self.check_call(cmd_flash)

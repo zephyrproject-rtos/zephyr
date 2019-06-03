@@ -14,19 +14,21 @@ as well as some other helpers for concrete runner classes.
 import abc
 import argparse
 import errno
+import logging
 import os
 import platform
+import shlex
 import shutil
 import signal
 import subprocess
 
-from west import log
-from west.util import quote_sh_list
+# Turn on to enable just logging the commands that would be run (at
+# info rather than debug level), without actually running them. This
+# can break runners that are expecting output or if one command
+# depends on another, so it's just for debugging.
+_DRY_RUN = False
 
-# Turn on to enable just printing the commands that would be run,
-# without actually running them. This can break runners that are expecting
-# output or if one command depends on another, so it's just for debugging.
-JUST_PRINT = False
+_logger = logging.getLogger('runners')
 
 
 class _DebugDummyPopen:
@@ -313,6 +315,17 @@ class ZephyrBinaryRunner(abc.ABC):
     3. Give your runner's name to the Zephyr build system in your
        board's board.cmake.
 
+    Some advice on input and output:
+
+    - If you need to ask the user something (e.g. using input()), do it
+      in your create() classmethod, not do_run(). That ensures your
+      __init__() really has everything it needs to call do_run(), and also
+      avoids calling input() when not instantiating within a command line
+      application.
+
+    - Use self.logger to log messages using the standard library's
+      logging API; your logger is named "runner.<your-runner-name()>"
+
     For command-line invocation from the Zephyr build system, runners
     define their own argparse-based interface through the common
     add_parser() (and runner-specific do_add_parser() it delegates
@@ -330,6 +343,10 @@ class ZephyrBinaryRunner(abc.ABC):
 
         ``cfg`` is a RunnerConfig instance.'''
         self.cfg = cfg
+        '''RunnerConfig for this instance.'''
+
+        self.logger = logging.getLogger('runners.{}'.format(self.name()))
+        '''logging.Logger for this instance.'''
 
     @staticmethod
     def get_runners():
@@ -465,6 +482,13 @@ class ZephyrBinaryRunner(abc.ABC):
             server_proc.terminate()
             server_proc.wait()
 
+    def _log_cmd(self, cmd):
+        escaped = ' '.join(shlex.quote(s) for s in cmd)
+        if not _DRY_RUN:
+            self.logger.debug(escaped)
+        else:
+            self.logger.info(escaped)
+
     def call(self, cmd):
         '''Subclass subprocess.call() wrapper.
 
@@ -472,13 +496,9 @@ class ZephyrBinaryRunner(abc.ABC):
         subprocess and get its return code, rather than
         using subprocess directly, to keep accurate debug logs.
         '''
-        quoted = quote_sh_list(cmd)
-
-        if JUST_PRINT:
-            log.inf(quoted)
+        self._log_cmd(cmd)
+        if _DRY_RUN:
             return 0
-
-        log.dbg(quoted)
         return subprocess.call(cmd)
 
     def check_call(self, cmd):
@@ -488,13 +508,9 @@ class ZephyrBinaryRunner(abc.ABC):
         subprocess and check that it executed correctly, rather than
         using subprocess directly, to keep accurate debug logs.
         '''
-        quoted = quote_sh_list(cmd)
-
-        if JUST_PRINT:
-            log.inf(quoted)
+        self._log_cmd(cmd)
+        if _DRY_RUN:
             return
-
-        log.dbg(quoted)
         try:
             subprocess.check_call(cmd)
         except subprocess.CalledProcessError:
@@ -507,13 +523,9 @@ class ZephyrBinaryRunner(abc.ABC):
         subprocess and check that it executed correctly, rather than
         using subprocess directly, to keep accurate debug logs.
         '''
-        quoted = quote_sh_list(cmd)
-
-        if JUST_PRINT:
-            log.inf(quoted)
+        self._log_cmd(cmd)
+        if _DRY_RUN:
             return b''
-
-        log.dbg(quoted)
         try:
             return subprocess.check_output(cmd)
         except subprocess.CalledProcessError:
@@ -526,16 +538,14 @@ class ZephyrBinaryRunner(abc.ABC):
         cflags = 0
         preexec = None
         system = platform.system()
-        quoted = quote_sh_list(cmd)
 
         if system == 'Windows':
             cflags |= subprocess.CREATE_NEW_PROCESS_GROUP
         elif system in {'Linux', 'Darwin'}:
             preexec = os.setsid
 
-        if JUST_PRINT:
-            log.inf(quoted)
+        self._log_cmd(cmd)
+        if _DRY_RUN:
             return _DebugDummyPopen()
 
-        log.dbg(quoted)
         return subprocess.Popen(cmd, creationflags=cflags, preexec_fn=preexec)

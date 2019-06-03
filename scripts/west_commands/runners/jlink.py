@@ -7,11 +7,9 @@
 import argparse
 import os
 import shlex
-import shutil
 import sys
 import tempfile
 
-from west import log
 from runners.core import ZephyrBinaryRunner, RunnerCaps, \
     BuildConfiguration
 
@@ -105,7 +103,8 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                                  tui=args.tui, tool_opt=args.tool_opt)
 
     def print_gdbserver_message(self):
-        log.inf('J-Link GDB server running on port {}'.format(self.gdb_port))
+        self.logger.info('J-Link GDB server running on port {}'.
+                         format(self.gdb_port))
 
     def do_run(self, command, **kwargs):
         server_cmd = ([self.gdbserver] +
@@ -162,8 +161,8 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
         lines.append('g') # Start the CPU
         lines.append('q') # Close the connection and quit
 
-        log.dbg('JLink commander script:')
-        log.dbg('\n'.join(lines))
+        self.logger.debug('JLink commander script:')
+        self.logger.debug('\n'.join(lines))
 
         # Don't use NamedTemporaryFile: the resulting file can't be
         # opened again on Windows.
@@ -179,5 +178,5 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                     '-CommanderScript', fname] +
                    self.tool_opt)
 
-            log.inf('Flashing Target Device')
+            self.logger.info('Flashing Target Device')
             self.check_call(cmd)

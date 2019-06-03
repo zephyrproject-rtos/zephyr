@@ -6,6 +6,7 @@
 '''
 
 import argparse
+import logging
 from os import getcwd, path
 from subprocess import CalledProcessError
 import textwrap
@@ -25,6 +26,44 @@ from zephyr_ext_common import cached_runner_config
 # Don't change this, or output from argparse won't match up.
 INDENT = ' ' * 2
 
+if log.VERBOSE >= log.VERBOSE_NORMAL:
+    # Using level 1 allows sub-DEBUG levels of verbosity. The
+    # west.log module decides whether or not to actually print the
+    # message.
+    #
+    # https://docs.python.org/3.7/library/logging.html#logging-levels.
+    LOG_LEVEL = 1
+else:
+    LOG_LEVEL = logging.INFO
+
+
+class WestLogFormatter(logging.Formatter):
+
+    def __init__(self):
+        super().__init__(fmt='%(message)s')
+
+class WestLogHandler(logging.Handler):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.setFormatter(WestLogFormatter())
+        self.setLevel(LOG_LEVEL)
+
+    def emit(self, record):
+        fmt = self.format(record)
+        lvl = record.levelno
+        if lvl > logging.CRITICAL:
+            log.die(fmt)
+        elif lvl >= logging.ERROR:
+            log.err(fmt)
+        elif lvl >= logging.WARNING:
+            log.wrn(fmt)
+        elif lvl >= logging.INFO:
+            log.inf(fmt)
+        elif lvl >= logging.DEBUG:
+            log.dbg(fmt)
+        else:
+            log.dbg(fmt, level=log.VERBOSE_EXTREME)
 
 def add_parser_common(parser_adder, command):
     parser = parser_adder.add_parser(
@@ -201,9 +240,13 @@ def do_run_common(command, args, runner_args, cached_runner_var):
     # At this point, the common options above are already parsed in
     # 'args', and unrecognized arguments are in 'runner_args'.
     #
+    # - Set up runner logging to delegate to west.
     # - Pull the RunnerConfig out of the cache
     # - Override cached values with applicable command-line options
 
+    logger = logging.getLogger('runners')
+    logger.setLevel(LOG_LEVEL)
+    logger.addHandler(WestLogHandler())
     cfg = cached_runner_config(build_dir, cache)
     _override_config_from_namespace(cfg, args)
 
