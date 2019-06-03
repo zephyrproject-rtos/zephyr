@@ -21,6 +21,9 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
+
+		zephyr,clock-source = &rtc1_generic;	/* 32768 Hz */
+		// zephyr,clock-source = &timer1;	/* 16 MHz */
 	};
 
 	leds {
@@ -115,6 +118,22 @@ arduino_i2c: &i2c0 {
 	status = "ok";
 	ch0-pin = <17>;
 	ch0-inverted;
+};
+
+&rtc1 {
+	ppi-wrap;
+
+	/*
+	 * The rtc1 cannot be directly used by the OS as it has only 24 bits.
+	 * Use counter-generic to extend capabilites of the hardware.
+	 */
+	#address-cells = <1>;
+	#size-cells = <0>;
+	rtc1_generic: counter-generic@0 {
+		compatible = "counter,generic";
+		label = "counter-generic-0";
+		reg = <0>;
+	};
 };
 
 &spi0 {

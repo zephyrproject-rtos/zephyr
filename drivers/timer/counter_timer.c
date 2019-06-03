@@ -62,6 +62,13 @@ int z_clock_driver_init(struct device *device)
 	/* Schedule first alarm  */
 	z_clock_set_timeout(K_FOREVER, false);
 
+#if 1
+	/* DEMO: Print information about current clock source. */
+	printk("Clock Source: %s (frequency: %u Hz)\n",
+		DT_CLOCK_SOURCE_ON_DEV_NAME,
+		z_clock_hw_cycles_per_sec);
+#endif
+
 	return status;
 }
 
