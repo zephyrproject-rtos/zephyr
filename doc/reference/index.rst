@@ -21,4 +21,4 @@ API Reference
    storage/index.rst
    usb/index.rst
    usermode/index.rst
-
+   zio/index.rst
