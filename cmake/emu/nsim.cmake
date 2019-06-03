@@ -6,7 +6,7 @@ find_program(
   )
 
 if(${CONFIG_SOC_NSIM_EM})
- set(NSIM_PROPS nsim.props)
+ set(NSIM_PROPS nsim_em.props)
 elseif(${CONFIG_SOC_NSIM_SEM})
  set(NSIM_PROPS nsim_sem.props)
 endif()
