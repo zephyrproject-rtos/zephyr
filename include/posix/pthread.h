@@ -160,8 +160,7 @@ static inline int pthread_condattr_destroy(pthread_condattr_t *att)
  * @param name Symbol name of the mutex
  */
 #define PTHREAD_MUTEX_DEFINE(name) \
-	struct pthread_mutex name \
-		__in_section(_k_mutex, static, name) = \
+	struct pthread_mutex name = \
 	{ \
 		.lock_count = 0, \
 		.wait_q = Z_WAIT_Q_INIT(&name.wait_q),	\
