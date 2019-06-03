@@ -19,8 +19,7 @@
 extern "C" {
 #endif
 
-#ifdef _ASMLANGUAGE
-#else
+#ifndef _ASMLANGUAGE
 /**
  * @brief Exception Stack Frame
  *
@@ -28,7 +27,7 @@ extern "C" {
  * to exception handlers registered via nanoCpuExcConnect().
  */
 struct __esf {
-	/* XXX - not finished yet */
+	/* FIXME - not finished yet */
 	sys_define_gpr_with_alias(a1, sp);
 	u32_t pc;
 };
