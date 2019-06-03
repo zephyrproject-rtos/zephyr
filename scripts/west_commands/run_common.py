@@ -13,7 +13,7 @@ import textwrap
 from west import cmake
 from west import log
 from west import util
-from west.build import DEFAULT_BUILD_DIR, is_zephyr_build
+from build_helpers import find_build_dir, is_zephyr_build
 from west.commands import CommandContextError
 
 from runners import get_runner_cls, ZephyrBinaryRunner
@@ -128,16 +128,14 @@ def _build_dir(args, die_if_none=True):
     if args.build_dir:
         return args.build_dir
 
-    cwd = getcwd()
-    default = path.join(cwd, DEFAULT_BUILD_DIR)
-    if is_zephyr_build(default):
-        return default
-    elif is_zephyr_build(cwd):
-        return cwd
+    dir = find_build_dir(None)
+
+    if is_zephyr_build(dir):
+        return dir
     elif die_if_none:
         log.die('--build-dir was not given, and neither {} '
                 'nor {} are zephyr build directories.'.
-                format(default, cwd))
+                format(getcwd(), dir))
     else:
         return None
 

@@ -21,22 +21,25 @@ DEFAULT_CMAKE_GENERATOR = 'Ninja'
 '''Name of the default CMake generator.'''
 
 BUILD_DIR_DESCRIPTION = '''\
-Build directory. If missing and run in a Zephyr build directory, it is
-used; otherwise, it's "{}".'''.format(
-    DEFAULT_BUILD_DIR)
+Build directory. If not given, {}/ is used; otherwise if the current directory
+is a Zephyr build directory, it is used.'''.format(DEFAULT_BUILD_DIR)
 
 
 def find_build_dir(dir):
     '''Heuristic for finding a build directory.
 
-    If the given argument is truthy, it is returned. Otherwise, if
+    If the given argument is truthy, it is returned. Otherwise if the
+    DEFAULT_BUILD_DIR is a build directory, it is returned. Next, if
     the current working directory is a build directory, it is
-    returned. Otherwise, DEFAULT_BUILD_DIR is returned.'''
+    returned. Finally, DEFAULT_BUILD_DIR is returned.'''
     if dir:
         build_dir = dir
     else:
         cwd = os.getcwd()
-        if is_zephyr_build(cwd):
+        default = os.path.join(cwd, DEFAULT_BUILD_DIR)
+        if is_zephyr_build(default):
+            build_dir = default
+        elif is_zephyr_build(cwd):
             build_dir = cwd
         else:
             build_dir = DEFAULT_BUILD_DIR
