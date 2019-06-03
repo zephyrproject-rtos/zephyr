@@ -25,7 +25,7 @@ extern "C" {
 #include <arch/common/ffs.h>
 #include <zephyr/types.h>
 #include <sw_isr_table.h>
-#include <arch/xtensa/xtensa_irq.h>
+#include <arch/xtensa/irq.h>
 #include <xtensa/config/core.h>
 #include <arch/common/addr_types.h>
 
