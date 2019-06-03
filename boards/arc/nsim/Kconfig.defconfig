@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_NSIM_EM
+if BOARD_NSIM
 
 config BOARD
-	default "nsim_em"
+	default "nsim"
 
 config CPU_ARCEM4
 	default y
@@ -16,4 +16,4 @@ config UART_NSIM
 endif # SERIAL
 
 
-endif # BOARD_NSIM_EM
+endif # BOARD_NSIM
