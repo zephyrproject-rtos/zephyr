@@ -248,6 +248,7 @@ void test_timer_periodicity(void)
 	 * whatever duration that was set.
 	 */
 	k_timer_status_sync(&periodicity_timer);
+	k_timer_status_sync(&periodicity_timer);
 	tdata.timestamp = k_uptime_get();
 
 	for (int i = 0; i < EXPIRE_TIMES; i++) {
@@ -265,6 +266,7 @@ void test_timer_periodicity(void)
 		 * time. The actual perioid will be equal to [tick time]
 		 * multiplied by z_ms_to_ticks(PERIOD).
 		 */
+
 		TIMER_ASSERT(WITHIN_ERROR(delta,
 				__ticks_to_ms(z_ms_to_ticks(PERIOD)), 1),
 				&periodicity_timer);
