@@ -245,8 +245,12 @@ void test_timer_periodicity(void)
 	k_timer_start(&periodicity_timer, 0, PERIOD);
 
 	/* clear the expiration that would have happenned due to
-	 * whatever duration that was set.
+	 * whatever duration that was set. Since timer is likely
+	 * to fire before call to k_timer_status_sync(), we have
+	 * to synchronize twice to ensure that the timestamp will
+	 * be fetched as soon as possible after timer firing.
 	 */
+	k_timer_status_sync(&periodicity_timer);
 	k_timer_status_sync(&periodicity_timer);
 	tdata.timestamp = k_uptime_get();
 
