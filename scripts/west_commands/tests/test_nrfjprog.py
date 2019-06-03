@@ -210,14 +210,15 @@ def test_nrfjprog_init(cc, get_snr, req, test_case, runner_config):
 
     runner = NrfJprogBinaryRunner(runner_config, family, softreset, snr,
                                   erase=erase)
-    runner.run('flash')
-
-    assert req.called
-    assert cc.call_args_list == [call(x) for x in
-                                 expected_commands(*test_case)]
     if snr is None:
-        get_snr.assert_called_once_with()
+        with pytest.raises(ValueError) as e:
+            runner.run('flash')
+        assert 'snr must not be None' in str(e)
     else:
+        runner.run('flash')
+        assert req.called
+        assert cc.call_args_list == [call(x) for x in
+                                     expected_commands(*test_case)]
         get_snr.assert_not_called()
 
 
