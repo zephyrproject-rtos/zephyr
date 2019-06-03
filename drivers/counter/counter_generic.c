@@ -463,7 +463,7 @@ static const struct counter_driver_api counter_generic_driver_api = {
 			    counter_generic_init,			       \
 			    (void *)&counter_##_idx##_data,		       \
 			    &counter_##_idx##_config.info,		       \
-			    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,   \
+			    PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,   \
 			    &counter_generic_driver_api)
 
 #ifdef DT_COUNTER_GENERIC_0_LABEL
