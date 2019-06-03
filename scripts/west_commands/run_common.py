@@ -36,11 +36,13 @@ if log.VERBOSE >= log.VERBOSE_NORMAL:
 else:
     LOG_LEVEL = logging.INFO
 
+def _banner(msg):
+    log.inf('-- ' + msg, colorize=True)
 
 class WestLogFormatter(logging.Formatter):
 
     def __init__(self):
-        super().__init__(fmt='%(message)s')
+        super().__init__(fmt='%(name)s: %(message)s')
 
 class WestLogHandler(logging.Handler):
 
@@ -59,7 +61,7 @@ class WestLogHandler(logging.Handler):
         elif lvl >= logging.WARNING:
             log.wrn(fmt)
         elif lvl >= logging.INFO:
-            log.inf(fmt)
+            _banner(fmt)
         elif lvl >= logging.DEBUG:
             log.dbg(fmt)
         else:
@@ -192,6 +194,7 @@ def do_run_common(command, args, runner_args, cached_runner_var):
     build_dir = _build_dir(args)
 
     if not args.skip_rebuild:
+        _banner('west {}: rebuilding'.format(command_name))
         try:
             cmake.run_build(build_dir)
         except CalledProcessError:
@@ -226,7 +229,7 @@ def do_run_common(command, args, runner_args, cached_runner_var):
         manually, or check your board's documentation for
         alternative instructions.""".format(command_name, board)))
 
-    log.inf('Using runner:', runner)
+    _banner('west {}: using runner {}'.format(command_name, runner))
     if runner not in available:
         log.wrn('Runner {} is not configured for use with {}, '
                 'this may not work'.format(runner, board))
