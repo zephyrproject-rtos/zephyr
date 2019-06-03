@@ -37,9 +37,6 @@ struct k_pipe_async {
 	struct k_pipe_desc  desc;     /* Pipe message descriptor */
 };
 
-extern struct k_pipe _k_pipe_list_start[];
-extern struct k_pipe _k_pipe_list_end[];
-
 #ifdef CONFIG_OBJECT_TRACING
 struct k_pipe *_trace_list_k_pipe;
 #endif	/* CONFIG_OBJECT_TRACING */
@@ -118,9 +115,7 @@ static int init_pipes_module(struct device *dev)
 	/* Complete initialization of statically defined mailboxes. */
 
 #ifdef CONFIG_OBJECT_TRACING
-	struct k_pipe *pipe;
-
-	for (pipe = _k_pipe_list_start; pipe < _k_pipe_list_end; pipe++) {
+	Z_STRUCT_SECTION_FOREACH(k_pipe, pipe) {
 		SYS_TRACING_OBJ_INIT(k_pipe, pipe);
 	}
 #endif /* CONFIG_OBJECT_TRACING */

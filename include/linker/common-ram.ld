@@ -33,9 +33,9 @@
 
 	SECTION_DATA_PROLOGUE(_static_thread_area,,SUBALIGN(4))
 	{
-		_static_thread_data_list_start = .;
+		__static_thread_data_list_start = .;
 		KEEP(*(SORT_BY_NAME(".__static_thread_data.static.*")))
-		_static_thread_data_list_end = .;
+		__static_thread_data_list_end = .;
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
 #ifdef CONFIG_USERSPACE

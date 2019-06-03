@@ -38,9 +38,6 @@
 #include <syscall_handler.h>
 #include <tracing.h>
 
-extern struct k_mutex _k_mutex_list_start[];
-extern struct k_mutex _k_mutex_list_end[];
-
 /* We use a global spinlock here because some of the synchronization
  * is protecting things like owner thread priorities which aren't
  * "part of" a single k_mutex.  Should move those bits of the API
@@ -59,9 +56,7 @@ static int init_mutex_module(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	struct k_mutex *mutex;
-
-	for (mutex = _k_mutex_list_start; mutex < _k_mutex_list_end; mutex++) {
+	Z_STRUCT_SECTION_FOREACH(k_mutex, mutex) {
 		SYS_TRACING_OBJ_INIT(k_mutex, mutex);
 	}
 	return 0;

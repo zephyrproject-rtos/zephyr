@@ -12,9 +12,6 @@
 #include <stdbool.h>
 #include <spinlock.h>
 
-extern struct k_timer _k_timer_list_start[];
-extern struct k_timer _k_timer_list_end[];
-
 static struct k_spinlock lock;
 
 #ifdef CONFIG_OBJECT_TRACING
@@ -28,9 +25,7 @@ static int init_timer_module(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	struct k_timer *timer;
-
-	for (timer = _k_timer_list_start; timer < _k_timer_list_end; timer++) {
+	Z_STRUCT_SECTION_FOREACH(k_timer, timer) {
 		SYS_TRACING_OBJ_INIT(k_timer, timer);
 	}
 	return 0;

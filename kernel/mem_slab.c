@@ -14,9 +14,6 @@
 #include <ksched.h>
 #include <init.h>
 
-extern struct k_mem_slab _k_mem_slab_list_start[];
-extern struct k_mem_slab _k_mem_slab_list_end[];
-
 static struct k_spinlock lock;
 
 #ifdef CONFIG_OBJECT_TRACING
@@ -57,11 +54,7 @@ static int init_mem_slab_module(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	struct k_mem_slab *slab;
-
-	for (slab = _k_mem_slab_list_start;
-	     slab < _k_mem_slab_list_end;
-	     slab++) {
+	Z_STRUCT_SECTION_FOREACH(k_mem_slab, slab) {
 		create_free_list(slab);
 		SYS_TRACING_OBJ_INIT(k_mem_slab, slab);
 		z_object_init(slab);

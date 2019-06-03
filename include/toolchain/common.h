@@ -172,4 +172,20 @@
 	Z_DECL_ALIGN(struct struct_type) name \
 	__in_section(_##struct_type, static, name) __used
 
+/*
+ * Itterator for structure instances gathered by Z_STRUCT_SECTION_ITERABLE().
+ * The linker must provide a _<struct_type>_list_start symbol and a
+ * _<struct_type>_list_end symbol to mark the start and the end of the
+ * list of struct objects to iterate over.
+ */
+#define Z_STRUCT_SECTION_FOREACH(struct_type, iterator) \
+	extern struct struct_type _CONCAT(_##struct_type, _list_start)[]; \
+	extern struct struct_type _CONCAT(_##struct_type, _list_end)[]; \
+	for (struct struct_type *iterator = \
+			_CONCAT(_##struct_type, _list_start); \
+	     ({ __ASSERT(iterator <= _CONCAT(_##struct_type, _list_end), \
+			 "unexpected list end location"); \
+		iterator < _CONCAT(_##struct_type, _list_end); }); \
+	     iterator++)
+
 #endif /* ZEPHYR_INCLUDE_TOOLCHAIN_COMMON_H_ */

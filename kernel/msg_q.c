@@ -23,9 +23,6 @@
 #include <syscall_handler.h>
 #include <kernel_internal.h>
 
-extern struct k_msgq _k_msgq_list_start[];
-extern struct k_msgq _k_msgq_list_end[];
-
 #ifdef CONFIG_OBJECT_TRACING
 
 struct k_msgq *_trace_list_k_msgq;
@@ -37,9 +34,7 @@ static int init_msgq_module(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	struct k_msgq *msgq;
-
-	for (msgq = _k_msgq_list_start; msgq < _k_msgq_list_end; msgq++) {
+	Z_STRUCT_SECTION_FOREACH(k_msgq, msgq) {
 		SYS_TRACING_OBJ_INIT(k_msgq, msgq);
 	}
 	return 0;
