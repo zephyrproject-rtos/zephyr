@@ -1,0 +1,11 @@
+identifier: gpmrb
+name: Gordon Peak MRB
+type: mcu
+arch: x86
+toolchain:
+  - zephyr
+ram: 256
+testing:
+  ignore_tags:
+     - net
+     - bluetooth

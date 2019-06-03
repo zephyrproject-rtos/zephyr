@@ -1,0 +1,9 @@
+#
+# Copyright (c) 2018 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config BOARD_GPMRB
+	bool "Gordon Peak MRB"
+	depends on SOC_APOLLO_LAKE
