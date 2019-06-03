@@ -268,7 +268,7 @@ class ZephyrBinaryRunner(abc.ABC):
     (have a breakpoint debugger and program loader on a host
     workstation attached to a running target).
 
-    This is supported by three top-level commands managed by the
+    This is supported by four top-level commands managed by the
     Zephyr build system:
 
     - 'flash': flash a previously configured binary to the board,
@@ -289,18 +289,19 @@ class ZephyrBinaryRunner(abc.ABC):
       the current binary, and block until it exits. Unlike 'debug', this
       command does not program the flash.
 
-    This class provides an API for these commands. Every runner has a
-    name (like 'pyocd'), and declares commands it can handle (like
-    'flash'). Zephyr boards (like 'nrf52_pca10040') declare compatible
-    runner(s) by name to the build system, which makes concrete runner
-    instances to execute commands via this class.
+    This class provides an API for these commands. Every subclass is
+    called a 'runner' for short. Each runner has a name (like
+    'pyocd'), and declares commands it can handle (like
+    'flash'). Boards (like 'nrf52_pca10040') declare which runner(s)
+    are compatible with them to the Zephyr build system, along with
+    information on how to configure the runner to work with the board.
 
-    If your board can use an existing runner, all you have to do is
-    give its name to the build system. How to do that is out of the
-    scope of this documentation, but use the existing boards as a
-    starting point.
+    The build system will then place enough information in the build
+    directory so to create and use runners with this class's create()
+    method, which provides a command line argument parsing API. You
+    can also create runners by instantiating subclasses directly.
 
-    If you want to define and use your own runner:
+    In order to define your own runner, you need to:
 
     1. Define a ZephyrBinaryRunner subclass, and implement its
        abstract methods. You may need to override capabilities().
@@ -310,7 +311,7 @@ class ZephyrBinaryRunner(abc.ABC):
        get_runners() won't work).
 
     3. Give your runner's name to the Zephyr build system in your
-       board's build files.
+       board's board.cmake.
 
     For command-line invocation from the Zephyr build system, runners
     define their own argparse-based interface through the common
@@ -318,11 +319,11 @@ class ZephyrBinaryRunner(abc.ABC):
     to), and provide a way to create instances of themselves from
     a RunnerConfig and parsed runner-specific arguments via create().
 
-    Runners use a variety of target-specific tools and configuration
-    values, the user interface to which is abstracted by this
-    class. Each runner subclass should take any values it needs to
-    execute one of these commands in its constructor.  The actual
-    command execution is handled in the run() method.'''
+    Runners use a variety of host tools and configuration values, the
+    user interface to which is abstracted by this class. Each runner
+    subclass should take any values it needs to execute one of these
+    commands in its constructor.  The actual command execution is
+    handled in the run() method.'''
 
     def __init__(self, cfg):
         '''Initialize core runner state.
