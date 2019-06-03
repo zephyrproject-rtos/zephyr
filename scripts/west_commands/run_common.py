@@ -7,16 +7,18 @@
 
 import argparse
 import logging
-from os import getcwd, path
+from os import close, getcwd, path
 from subprocess import CalledProcessError
+import tempfile
 import textwrap
+import traceback
 
 from west import cmake
 from west import log
 from west import util
 from build_helpers import find_build_dir, is_zephyr_build, \
     FIND_BUILD_DIR_DESCRIPTION
-from west.commands import CommandContextError
+from west.commands import CommandError
 
 from runners import get_runner_cls, ZephyrBinaryRunner, MissingProgram
 
@@ -184,6 +186,13 @@ def _build_dir(args, die_if_none=True):
     else:
         return None
 
+def dump_traceback():
+    # Save the current exception to a file and return its path.
+    fd, name = tempfile.mkstemp(prefix='west-exc-', suffix='.txt')
+    close(fd)        # traceback has no use for the fd
+    with open(name, 'w') as f:
+        traceback.print_exc(file=f)
+    log.inf("An exception trace has been saved in", name)
 
 def do_run_common(command, args, runner_args, cached_runner_var):
     if args.context:
@@ -224,10 +233,9 @@ def do_run_common(command, args, runner_args, cached_runner_var):
     runner = args.runner or cache.get(cached_runner_var)
 
     if runner is None:
-        raise CommandContextError(textwrap.dedent("""
-        No {} runner available for {}. Please either specify one
-        manually, or check your board's documentation for
-        alternative instructions.""".format(command_name, board)))
+        log.die('No', command_name, 'runner available for board', board,
+                '({} is not in the cache).'.format(cached_runner_var),
+                "Check your board's documentation for instructions.")
 
     _banner('west {}: using runner {}'.format(command_name, runner))
     if runner not in available:
@@ -277,6 +285,10 @@ def do_run_common(command, args, runner_args, cached_runner_var):
     runner = runner_cls.create(cfg, parsed_args)
     try:
         runner.run(command_name)
+    except ValueError as ve:
+        log.err(str(ve), fatal=True)
+        dump_traceback()
+        raise CommandError(1)
     except MissingProgram as e:
         log.die('required program', e.filename,
                 'not found; install it or add its location to PATH')
