@@ -5,9 +5,6 @@ if BOARD_NSIM
 config BOARD
 	default "nsim"
 
-config CPU_ARCEM4
-	default y
-
 if SERIAL
 
 config UART_NSIM
