@@ -256,7 +256,7 @@ def _dump_context(command, args, runner_args, cached_runner_var):
     # Load the cache itself, if possible.
     if cache_file is None:
         log.wrn('No build directory (--build-dir) or CMake cache '
-                '(--cache-file) given or found; output will be limited')
+                '(--cmake-cache) given or found; output will be limited')
         cache = None
     else:
         try:
