@@ -175,11 +175,11 @@ def menuconfig(kconf):
 
     _create_ui()
 
-    # Load existing configuration and check if it's outdated
-    _set_conf_changed(_load_config())
-
     # Filename to save configuration to
     _conf_filename = standard_config_filename()
+
+    # Load existing configuration and check if it's outdated
+    _set_conf_changed(_load_config())
 
     # Filename to save minimal configuration to
     _minconf_filename = "defconfig"
@@ -238,7 +238,8 @@ def _load_config():
     # Returns True if .config is missing or outdated. We always prompt for
     # saving the configuration in that case.
 
-    if not _kconf.load_config():
+    print(_kconf.load_config())
+    if not os.path.exists(_conf_filename):
         # No .config
         return True
 
@@ -639,7 +640,8 @@ def _set_conf_changed(changed):
     global _conf_changed
 
     _conf_changed = changed
-    _set_status("Modified" if changed else "")
+    if changed:
+        _set_status("Modified")
 
 
 def _update_tree():
@@ -1341,7 +1343,6 @@ def _save(_=None):
 
     if _try_save(_kconf.write_config, _conf_filename, "configuration"):
         _set_conf_changed(False)
-        _set_status("Configuration saved to " + _conf_filename)
 
     _tree.focus_set()
 
@@ -1363,7 +1364,6 @@ def _save_as():
             break
 
         if _try_save(_kconf.write_config, filename, "configuration"):
-            _set_status("Configuration saved to " + filename)
             _conf_filename = filename
             break
 
@@ -1433,7 +1433,6 @@ def _open(_=None):
 
             _update_tree()
 
-            _set_status("Configuration loaded from " + filename)
             break
 
     _tree.focus_set()
@@ -1694,8 +1693,10 @@ def _try_save(save_fn, filename, description):
     #   String describing the thing being saved
 
     try:
-        save_fn(filename)
-        print("{} saved to '{}'".format(description, filename))
+        # save_fn() returns a message to print
+        msg = save_fn(filename)
+        _set_status(msg)
+        print(msg)
         return True
     except (OSError, IOError) as e:
         messagebox.showerror(
@@ -1714,8 +1715,9 @@ def _try_load(filename):
     #   Configuration file to load
 
     try:
-        _kconf.load_config(filename)
-        print("configuration loaded from " + filename)
+        msg = _kconf.load_config(filename)
+        _set_status(msg)
+        print(msg)
         return True
     except (OSError, IOError) as e:
         messagebox.showerror(
@@ -2222,7 +2224,7 @@ def _kconfig_def_info(item):
 
     nodes = [item] if isinstance(item, MenuNode) else item.nodes
 
-    s = "Kconfig definition{}, with propagated dependencies\n" \
+    s = "Kconfig definition{}, with parent deps. propagated to 'depends on'\n" \
         .format("s" if len(nodes) > 1 else "")
     s += (len(s) - 1)*"="
 
