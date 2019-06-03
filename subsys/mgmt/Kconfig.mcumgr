@@ -10,6 +10,10 @@ config MCUMGR
 
 if MCUMGR
 
+module = MCUMGR
+module-str = mcumgr
+source "subsys/logging/Kconfig.template.log_config"
+
 config MGMT_CBORATTR_MAX_SIZE
   	int "The maximum size of a CBOR attribute during decoding"
         default 512
