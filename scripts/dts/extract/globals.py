@@ -31,7 +31,8 @@ name_config = {
     'zephyr,bt-uart'     : 'DT_BT_UART_ON_DEV_NAME',
     'zephyr,uart-pipe'   : 'DT_UART_PIPE_ON_DEV_NAME',
     'zephyr,bt-mon-uart' : 'DT_BT_MONITOR_ON_DEV_NAME',
-    'zephyr,uart-mcumgr' : 'DT_UART_MCUMGR_ON_DEV_NAME'
+    'zephyr,uart-mcumgr' : 'DT_UART_MCUMGR_ON_DEV_NAME',
+    'zephyr,clock-source': 'DT_CLOCK_SOURCE_ON_DEV_NAME'
 }
 
 

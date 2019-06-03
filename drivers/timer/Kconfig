@@ -183,6 +183,16 @@ config SAM0_RTC_TIMER
 	  series Real Time Counter and provides the standard "system clock
 	  driver" interfaces.
 
+config COUNTER_TIMER
+	bool "Counter-based timer"
+	depends on COUNTER
+	select TICKLESS_CAPABLE
+	select TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
+	help
+	  This module uses any device exporting Counter API to implement
+	  system timer. The counter device should be selected in device tree
+	  using "zephyr,clock-source" property in choosen node.
+
 config SYSTEM_CLOCK_DISABLE
 	bool "API to disable system clock"
 	help
