@@ -68,8 +68,9 @@ static void reset_results(void)
 {
 	int i;
 
-	for (i = 0; i < NUM_TEST_ITEMS; i++)
+	for (i = 0; i < NUM_TEST_ITEMS; i++) {
 		results[i] = 0;
+	}
 
 	num_results = 0;
 }

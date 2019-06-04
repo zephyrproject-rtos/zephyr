@@ -152,8 +152,10 @@ void mutex_bench(void)
 		/* If timer interrupt occurs we need to omit that sample*/
 		s64_t after = k_uptime_get();
 
-		if (after - before)
+		if (after - before) {
 			continue;
+		}
+
 		count++;
 
 		mutex_lock_diff += (mutex_lock_end_time -

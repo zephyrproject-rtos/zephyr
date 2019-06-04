@@ -96,11 +96,13 @@ void qsort(void *a, size_t n, size_t es, cmp_t *cmp)
 loop:
 	swap_cnt = 0;
 	if (n < 7) {
-		for (pm = (char *)a + es; pm < (char *)a + n * es; pm += es)
+		for (pm = (char *)a + es; pm < (char *)a + n * es; pm += es) {
 			for (pl = pm;
 			     pl > (char *)a && CMP(thunk, pl - es, pl) > 0;
-			     pl -= es)
+			     pl -= es) {
 				swapfunc(pl, pl - es, es);
+			}
+		}
 		return;
 	}
 	pm = (char *)a + (n / 2) * es;
@@ -137,19 +139,23 @@ loop:
 			}
 			pc -= es;
 		}
-		if (pb > pc)
+		if (pb > pc) {
 			break;
+		}
+
 		swapfunc(pb, pc, es);
 		swap_cnt = 1;
 		pb += es;
 		pc -= es;
 	}
 	if (swap_cnt == 0) {  /* Switch to insertion sort */
-		for (pm = (char *)a + es; pm < (char *)a + n * es; pm += es)
+		for (pm = (char *)a + es; pm < (char *)a + n * es; pm += es) {
 			for (pl = pm;
 			     pl > (char *)a && CMP(thunk, pl - es, pl) > 0;
-			     pl -= es)
+			     pl -= es) {
 				swapfunc(pl, pl - es, es);
+			}
+		}
 		return;
 	}
 

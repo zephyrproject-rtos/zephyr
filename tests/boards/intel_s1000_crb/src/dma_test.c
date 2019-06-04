@@ -198,23 +198,27 @@ static int test_task(u32_t chan_id, u32_t blen, u32_t block_count)
 	/* Intentionally break has been omitted (fall-through) */
 	switch (block_count) {
 	case 4:
-		if (strcmp(tx_data4, rx_data4) != 0)
+		if (strcmp(tx_data4, rx_data4) != 0) {
 			return -1;
+		}
 		printk("%s\n", rx_data4);
 
 	case 3:
-		if (strcmp(tx_data3, rx_data3) != 0)
+		if (strcmp(tx_data3, rx_data3) != 0) {
 			return -1;
+		}
 		printk("%s\n", rx_data3);
 
 	case 2:
-		if (strcmp(tx_data2, rx_data2) != 0)
+		if (strcmp(tx_data2, rx_data2) != 0) {
 			return -1;
+		}
 		printk("%s\n", rx_data2);
 
 	case 1:
-		if (strcmp(tx_data, rx_data) != 0)
+		if (strcmp(tx_data, rx_data) != 0) {
 			return -1;
+		}
 		printk("%s\n", rx_data);
 		break;
 
