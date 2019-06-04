@@ -302,8 +302,7 @@ __weak u8_t *usb_update_sn_string_descriptor(void)
 	return NULL;
 }
 
-static void
-usb_fix_ascii_sn_string_descriptor(struct usb_sn_descriptor *sn)
+static void usb_fix_ascii_sn_string_descriptor(struct usb_sn_descriptor *sn)
 {
 	u8_t *runtime_sn =  usb_update_sn_string_descriptor();
 	int runtime_sn_len, default_sn_len;
