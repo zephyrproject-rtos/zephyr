@@ -22,7 +22,7 @@ prepare() {
   fi
 
   pushd src
-  git checkout grub-2.02-285-g5bc41db75
+  git checkout grub-2.04-rc1-17-g8e8723a6b
   git clean -fdx
   popd
 }
