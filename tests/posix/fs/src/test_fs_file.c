@@ -5,6 +5,7 @@
  */
 
 #include <string.h>
+#include <fcntl.h>
 #include <posix/unistd.h>
 #include "test_fs.h"
 
