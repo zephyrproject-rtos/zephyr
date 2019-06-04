@@ -21,7 +21,6 @@ extern "C" {
 #include <fs/fs.h>
 
 /* File related operations */
-extern int open(const char *name, int flags);
 extern int close(int file);
 extern ssize_t write(int file, const void *buffer, size_t count);
 extern ssize_t read(int file, void *buffer, size_t count);

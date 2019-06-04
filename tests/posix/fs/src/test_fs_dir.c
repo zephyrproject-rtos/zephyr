@@ -5,6 +5,7 @@
  */
 
 #include <stdio.h>
+#include <fcntl.h>
 #include <posix/unistd.h>
 #include <posix/dirent.h>
 #include "test_fs.h"

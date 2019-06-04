@@ -15,4 +15,6 @@
 #define F_GETFL 3
 #define F_SETFL 4
 
+int open(const char *name, int flags);
+
 #endif /* ZEPHYR_LIB_LIBC_MINIMAL_INCLUDE_SYS_FCNTL_H_ */
