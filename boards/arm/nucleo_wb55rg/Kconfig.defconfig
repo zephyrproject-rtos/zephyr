@@ -24,6 +24,19 @@ config LPUART_1
 
 endif # SERIAL
 
+if I2C
+
+config I2C_1
+	default y
+
+config I2C_3
+	default y
+
+config I2C_STM32_INTERRUPT
+	default y
+
+endif # I2C
+
 if BT_DEBUG_MONITOR
 
 config LPUART_1
