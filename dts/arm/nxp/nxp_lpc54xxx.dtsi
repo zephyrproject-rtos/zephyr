@@ -58,7 +58,7 @@
 		};
 
 		gpio0: gpio@0 {
-			compatible = "nxp,kinetis-gpio";
+			compatible = "nxp,lpc-gpio";
 			reg = <0x4008c000 0x2488>;
 			interrupts = <2 2>;
 			label = "GPIO_0";
@@ -67,7 +67,7 @@
 		};
 
 		gpio1: gpio@1 {
-			compatible = "nxp,kinetis-gpio";
+			compatible = "nxp,lpc-gpio";
 			reg = <0x4008C000 0x2488>;
 			interrupts = <3 2>;
 			label = "GPIO_1";
