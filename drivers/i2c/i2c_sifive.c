@@ -80,8 +80,8 @@ static int i2c_sifive_send_addr(struct device *dev,
 	u8_t command = 0U;
 
 	/* Wait for a previous transfer to complete */
-	while (i2c_sifive_busy(dev))
-		;
+	while (i2c_sifive_busy(dev)) {
+	}
 
 	/* Set transmit register to address with read/write flag */
 	sys_write8((addr | rw_flag), I2C_REG(config, REG_TRANSMIT));
@@ -92,8 +92,8 @@ static int i2c_sifive_send_addr(struct device *dev,
 	/* Write the command register to start the transfer */
 	sys_write8(command, I2C_REG(config, REG_COMMAND));
 
-	while (i2c_sifive_busy(dev))
-		;
+	while (i2c_sifive_busy(dev)) {
+	}
 
 	if (IS_SET(config, REG_STATUS, SF_STATUS_RXACK)) {
 		LOG_ERR("I2C Rx failed to acknowledge\n");
@@ -119,8 +119,8 @@ static int i2c_sifive_write_msg(struct device *dev,
 
 	for (u32_t i = 0; i < msg->len; i++) {
 		/* Wait for a previous transfer */
-		while (i2c_sifive_busy(dev))
-			;
+		while (i2c_sifive_busy(dev)) {
+		}
 
 		/* Put data in transmit reg */
 		sys_write8((msg->buf)[i], I2C_REG(config, REG_TRANSMIT));
@@ -140,8 +140,8 @@ static int i2c_sifive_write_msg(struct device *dev,
 		sys_write8(command, I2C_REG(config, REG_COMMAND));
 
 		/* Wait for a previous transfer */
-		while (i2c_sifive_busy(dev))
-			;
+		while (i2c_sifive_busy(dev)) {
+		}
 
 		if (IS_SET(config, REG_STATUS, SF_STATUS_RXACK)) {
 			LOG_ERR("I2C Rx failed to acknowledge\n");
@@ -161,8 +161,8 @@ static int i2c_sifive_read_msg(struct device *dev,
 
 	i2c_sifive_send_addr(dev, addr, SF_TX_READ);
 
-	while (i2c_sifive_busy(dev))
-		;
+	while (i2c_sifive_busy(dev)) {
+	}
 
 	for (int i = 0; i < msg->len; i++) {
 		/* Generate command byte */
@@ -183,8 +183,8 @@ static int i2c_sifive_read_msg(struct device *dev,
 		sys_write8(command, I2C_REG(config, REG_COMMAND));
 
 		/* Wait for the read to complete */
-		while (i2c_sifive_busy(dev))
-			;
+		while (i2c_sifive_busy(dev)) {
+		}
 
 		/* Store the received byte */
 		(msg->buf)[i] = sys_read8(I2C_REG(config, REG_RECEIVE));

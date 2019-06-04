@@ -519,8 +519,8 @@ static inline int msg_done(struct device *dev, unsigned int current_msg_flags)
 	if (current_msg_flags & I2C_MSG_STOP) {
 		LL_I2C_GenerateStopCondition(i2c);
 		while (!LL_I2C_IsActiveFlag_STOP(i2c)) {
-			;
 		}
+
 		LL_I2C_ClearFlag_STOP(i2c);
 		LL_I2C_DisableReloadMode(i2c);
 	}

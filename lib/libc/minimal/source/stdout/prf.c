@@ -312,8 +312,10 @@ static int _to_float(char *buf, uint64_t double_temp, int c,
 		exp++;
 	}
 
-	if (precision < 0)
+	if (precision < 0) {
 		precision = 6;		/* Default precision if none given */
+	}
+
 	prune_zero = false;		/* Assume trailing 0's allowed     */
 	if ((c == 'g') || (c == 'G')) {
 		if (!falt && (precision > 0)) {
@@ -390,8 +392,10 @@ static int _to_float(char *buf, uint64_t double_temp, int c,
 	}
 
 	if (prune_zero) {
-		while (*--buf == '0')
+		while (*--buf == '0') {
 			;
+		}
+
 		if (*buf != '.') {
 			buf++;
 		}
@@ -703,17 +707,21 @@ int z_prf(int (*func)(), void *dest, char *format, va_list vargs)
 				if (c < width) {
 					if (fminus) {
 						/* Left justify? */
-						for (i = c; i < width; i++)
+						for (i = c; i < width; i++) {
 							buf[i] = ' ';
+						}
 					} else {
 						/* Right justify */
 						(void) memmove((buf + (width - c)), buf, (size_t) (c
 										+ 1));
-						if (pad == ' ')
+						if (pad == ' ') {
 							prefix = 0;
+						}
+
 						c = width - c + prefix;
-						for (i = prefix; i < c; i++)
+						for (i = prefix; i < c; i++) {
 							buf[i] = pad;
+						}
 					}
 					c = width;
 				}

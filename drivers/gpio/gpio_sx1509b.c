@@ -192,26 +192,30 @@ static int gpio_sx1509b_config(struct device *dev, int access_op, u32_t pin,
 
 	ret = i2c_reg_write_word_be(drv_data->i2c_master, cfg->i2c_slave_addr,
 				    SX1509B_REG_DIR, pins->dir);
-	if (ret)
+	if (ret) {
 		goto out;
+	}
 
 	ret = i2c_reg_write_word_be(drv_data->i2c_master, cfg->i2c_slave_addr,
 				    SX1509B_REG_INPUT_DISABLE,
 				    pins->input_disable);
-	if (ret)
+	if (ret) {
 		goto out;
+	}
 
 	ret = i2c_reg_write_word_be(drv_data->i2c_master, cfg->i2c_slave_addr,
 				    SX1509B_REG_PULL_UP,
 				    pins->pull_up);
-	if (ret)
+	if (ret) {
 		goto out;
+	}
 
 	ret = i2c_reg_write_word_be(drv_data->i2c_master, cfg->i2c_slave_addr,
 				    SX1509B_REG_PULL_DOWN,
 				    pins->pull_down);
-	if (ret)
+	if (ret) {
 		goto out;
+	}
 
 	ret = i2c_reg_write_word_be(drv_data->i2c_master, cfg->i2c_slave_addr,
 				    SX1509B_REG_OPEN_DRAIN,
@@ -288,8 +292,9 @@ static int gpio_sx1509b_read(struct device *dev, int access_op, u32_t pin,
 	ret = i2c_burst_read(drv_data->i2c_master, cfg->i2c_slave_addr,
 			     SX1509B_REG_DATA, (u8_t *)&pin_data,
 			     sizeof(pin_data));
-	if (ret)
+	if (ret) {
 		goto out;
+	}
 
 	pin_data = sys_be16_to_cpu(pin_data);
 
@@ -339,18 +344,22 @@ static int gpio_sx1509b_init(struct device *dev)
 
 	ret = i2c_reg_write_byte(drv_data->i2c_master, cfg->i2c_slave_addr,
 				 SX1509B_REG_RESET, SX1509B_REG_RESET_MAGIC0);
-	if (ret)
+	if (ret) {
 		goto out;
+	}
+
 	ret = i2c_reg_write_byte(drv_data->i2c_master, cfg->i2c_slave_addr,
 				 SX1509B_REG_RESET, SX1509B_REG_RESET_MAGIC1);
-	if (ret)
+	if (ret) {
 		goto out;
+	}
 
 	ret = i2c_reg_write_byte(drv_data->i2c_master, cfg->i2c_slave_addr,
 				 SX1509B_REG_CLOCK,
 				 SX1509B_REG_CLOCK_FOSC_INT_2MHZ);
-	if (ret)
+	if (ret) {
 		goto out;
+	}
 
 out:
 	k_sem_give(&drv_data->lock);

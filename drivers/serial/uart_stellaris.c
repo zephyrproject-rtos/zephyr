@@ -217,8 +217,8 @@ static inline void disable(struct device *dev)
 	uart->ctl &= ~UARTCTL_UARTEN;
 
 	/* ensure transmissions are complete */
-	while (uart->fr & UARTFR_BUSY)
-		;
+	while (uart->fr & UARTFR_BUSY) {
+	}
 
 	/* flush the FIFOs by disabling them */
 	uart->lcrh &= ~UARTLCRH_FEN;
@@ -304,8 +304,9 @@ static int uart_stellaris_poll_in(struct device *dev, unsigned char *c)
 {
 	volatile struct _uart *uart = UART_STRUCT(dev);
 
-	if (uart->fr & UARTFR_RXFE)
+	if (uart->fr & UARTFR_RXFE) {
 		return (-1);
+	}
 
 	/* got a character */
 	*c = (unsigned char)uart->dr;
@@ -327,8 +328,8 @@ static void uart_stellaris_poll_out(struct device *dev,
 {
 	volatile struct _uart *uart = UART_STRUCT(dev);
 
-	while (!poll_tx_ready(dev))
-		;
+	while (!poll_tx_ready(dev)) {
+	}
 
 	/* send a character */
 	uart->dr = (u32_t)c;
@@ -420,8 +421,8 @@ static void uart_stellaris_irq_tx_enable(struct device *dev)
 		uart->ctl = (UARTCTL_UARTEN | UARTCTL_TXEN | UARTCTL_LBE);
 		uart->dr = 0U;
 
-		while (uart->fr & UARTFR_BUSY)
-			;
+		while (uart->fr & UARTFR_BUSY) {
+		}
 
 		/* restore control and baud rate settings */
 		disable(dev);

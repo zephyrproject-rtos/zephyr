@@ -452,8 +452,9 @@ static int eswifi_off_recv(struct net_context *context,
 	k_sem_reset(&socket->read_sem);
 	eswifi_unlock(eswifi);
 
-	if (timeout == K_NO_WAIT)
+	if (timeout == K_NO_WAIT) {
 		return 0;
+	}
 
 	err = k_sem_take(&socket->read_sem, timeout);
 

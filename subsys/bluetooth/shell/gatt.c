@@ -927,8 +927,9 @@ static int cmd_get(const struct shell *shell, size_t argc, char *argv[])
 	start = strtoul(argv[1], NULL, 16);
 	end = start;
 
-	if (argc > 2)
+	if (argc > 2) {
 		end = strtoul(argv[2], NULL, 16);
+	}
 
 	bt_gatt_foreach_attr(start, end, get_cb, (void *)shell);
 

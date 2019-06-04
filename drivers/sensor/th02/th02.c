@@ -56,7 +56,6 @@ static u16_t get_humi(struct device *dev)
 	}
 	while (!is_ready(dev)) {
 	}
-	;
 
 	humidity = read8(dev, TH02_REG_DATA_H) << 8;
 	humidity |= read8(dev, TH02_REG_DATA_L);
@@ -76,7 +75,6 @@ u16_t get_temp(struct device *dev)
 	}
 	while (!is_ready(dev)) {
 	}
-	;
 
 	temperature = read8(dev, TH02_REG_DATA_H) << 8;
 	temperature |= read8(dev, TH02_REG_DATA_L);

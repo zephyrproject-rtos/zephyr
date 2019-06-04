@@ -319,8 +319,9 @@ static u8_t get_pair_method(struct bt_smp *smp, u8_t remote_io)
 		}
 	}
 
-	if (remote_io > BT_SMP_IO_KEYBOARD_DISPLAY)
+	if (remote_io > BT_SMP_IO_KEYBOARD_DISPLAY) {
 		return JUST_WORKS;
+	}
 
 	/* if none side requires MITM use JustWorks */
 	if (!((req->auth_req | rsp->auth_req) & BT_SMP_AUTH_MITM)) {
@@ -1918,8 +1919,9 @@ static u8_t legacy_get_pair_method(struct bt_smp *smp, u8_t remote_io)
 	struct bt_smp_pairing *req, *rsp;
 	u8_t method;
 
-	if (remote_io > BT_SMP_IO_KEYBOARD_DISPLAY)
+	if (remote_io > BT_SMP_IO_KEYBOARD_DISPLAY) {
 		return JUST_WORKS;
+	}
 
 	req = (struct bt_smp_pairing *)&smp->preq[1];
 	rsp = (struct bt_smp_pairing *)&smp->prsp[1];

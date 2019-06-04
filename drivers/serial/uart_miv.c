@@ -155,8 +155,8 @@ static void uart_miv_poll_out(struct device *dev,
 {
 	volatile struct uart_miv_regs_t *uart = DEV_UART(dev);
 
-	while (!(uart->status & STATUS_TXRDY_MASK))
-		;
+	while (!(uart->status & STATUS_TXRDY_MASK)) {
+	}
 
 	uart->tx = c;
 }

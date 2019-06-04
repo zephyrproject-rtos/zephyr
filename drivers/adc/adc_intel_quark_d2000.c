@@ -136,8 +136,8 @@ static void adc_quark_d2000_set_mode(struct device *dev, int mode)
 
 	/* Set mode and wait for change */
 	adc_regs->op_mode = mode;
-	while ((adc_regs->op_mode & ADC_OP_MODE_OM_MASK) != mode)
-		;
+	while ((adc_regs->op_mode & ADC_OP_MODE_OM_MASK) != mode) {
+	}
 
 	/* Perform a dummy conversion if going into normal mode */
 	if (mode >= ADC_MODE_NORM_CAL) {
@@ -149,8 +149,8 @@ static void adc_quark_d2000_set_mode(struct device *dev, int mode)
 
 		/* run dummy conversion and wait for completion */
 		adc_regs->cmd = (ADC_CMD_IE | ADC_CMD_START_SINGLE);
-		while (!(adc_regs->intr_status & ADC_INTR_STATUS_CC))
-			;
+		while (!(adc_regs->intr_status & ADC_INTR_STATUS_CC)) {
+		}
 
 		/* flush FIFO */
 		adc_regs->sample = ADC_FIFO_CLEAR;
@@ -176,8 +176,8 @@ static void adc_quark_d2000_goto_normal_mode(struct device *dev)
 
 	/* start the calibration and wait for completion */
 	adc_regs->cmd = (ADC_CMD_IE | ADC_CMD_START_CAL);
-	while (!(adc_regs->intr_status & ADC_INTR_STATUS_CC))
-		;
+	while (!(adc_regs->intr_status & ADC_INTR_STATUS_CC)) {
+	}
 
 	/* clear command complete interrupt */
 	adc_regs->intr_status = ADC_INTR_STATUS_CC;

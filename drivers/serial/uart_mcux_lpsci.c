@@ -47,8 +47,8 @@ static void mcux_lpsci_poll_out(struct device *dev, unsigned char c)
 	const struct mcux_lpsci_config *config = dev->config->config_info;
 
 	while (!(LPSCI_GetStatusFlags(config->base)
-		& kLPSCI_TxDataRegEmptyFlag))
-		;
+		& kLPSCI_TxDataRegEmptyFlag)) {
+	}
 
 	LPSCI_WriteByte(config->base, c);
 }

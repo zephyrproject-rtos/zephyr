@@ -223,8 +223,9 @@ static void eswifi_scan(struct eswifi_dev *eswifi)
 			eswifi->scan_cb(eswifi->iface, 0, &res);
 			k_yield();
 
-			while (data[i] && data[i] != '\n')
+			while (data[i] && data[i] != '\n') {
 				i++;
+			}
 		}
 	}
 

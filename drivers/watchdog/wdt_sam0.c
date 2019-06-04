@@ -38,8 +38,9 @@ static u32_t wdt_sam0_timeout_to_wdt_period(u32_t timeout_ms)
 	cycles = (timeout_ms * 1024U) / 1000;
 
 	/* Minimum wdt period is 8 clock cycles (register value 0) */
-	if (cycles <= 8U)
+	if (cycles <= 8U) {
 		return 0;
+	}
 
 	/* Round up to next pow2 and calculate the register value */
 	next_pow2 = (1ULL << 32) >> __builtin_clz(cycles - 1);

@@ -105,8 +105,9 @@ FUNC_NORETURN void z_NanoFatalErrorHandler(unsigned int reason,
 
 	z_SysFatalErrorHandler(reason, esf);
 	/* spin forever */
-	for (;;)
+	for (;;) {
 		__asm__ volatile("nop");
+	}
 }
 
 

@@ -24,8 +24,9 @@ u32_t pcie_get_cap(pcie_bdf_t bdf, u32_t cap_id)
 	while (reg) {
 		data = pcie_conf_read(bdf, reg);
 
-		if (PCIE_CONF_CAP_ID(data) == cap_id)
+		if (PCIE_CONF_CAP_ID(data) == cap_id) {
 			break;
+		}
 
 		reg = PCIE_CONF_CAP_NEXT(data);
 	}

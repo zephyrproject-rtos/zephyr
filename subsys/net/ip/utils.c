@@ -120,8 +120,10 @@ static int net_value_to_udec(char *buf, u32_t value, int precision)
 	char *start = buf;
 
 	divisor = 1000000000U;
-	if (precision < 0)
+	if (precision < 0) {
 		precision = 1;
+	}
+
 	for (i = 9; i >= 0; i--, divisor /= 10U) {
 		temp = value / divisor;
 		value = value % divisor;
@@ -311,8 +313,9 @@ int net_addr_pton(sa_family_t family, const char *src,
 			if (!(src[i] >= '0' && src[i] <= '9') &&
 			    !(src[i] >= 'A' && src[i] <= 'F') &&
 			    !(src[i] >= 'a' && src[i] <= 'f') &&
-			    src[i] != '.' && src[i] != ':')
+			    src[i] != '.' && src[i] != ':') {
 				return -EINVAL;
+			}
 		}
 
 		for (i = 0; i < expected_groups; i++) {

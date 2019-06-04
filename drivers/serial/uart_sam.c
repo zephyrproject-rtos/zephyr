@@ -158,8 +158,8 @@ static void uart_sam_poll_out(struct device *dev, unsigned char c)
 	Uart *const uart = DEV_CFG(dev)->regs;
 
 	/* Wait for transmitter to be ready */
-	while (!(uart->UART_SR & UART_SR_TXRDY))
-		;
+	while (!(uart->UART_SR & UART_SR_TXRDY)) {
+	}
 
 	/* send a character */
 	uart->UART_THR = (u32_t)c;
@@ -214,8 +214,8 @@ static int uart_sam_fifo_fill(struct device *dev, const uint8_t *tx_data,
 	volatile Uart * const uart = DEV_CFG(dev)->regs;
 
 	/* Wait for transmitter to be ready. */
-	while ((uart->UART_SR & UART_SR_TXRDY) == 0)
-		;
+	while ((uart->UART_SR & UART_SR_TXRDY) == 0) {
+	}
 
 	uart->UART_THR = *tx_data;
 

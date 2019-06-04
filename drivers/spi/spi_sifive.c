@@ -93,8 +93,8 @@ int spi_config(struct device *dev, u32_t frequency, u16_t operation)
 
 void spi_sifive_send(struct device *dev, u16_t frame)
 {
-	while (SPI_REG(dev, REG_TXDATA) & SF_TXDATA_FULL)
-		;
+	while (SPI_REG(dev, REG_TXDATA) & SF_TXDATA_FULL) {
+	}
 
 	sys_write32((u32_t) frame, SPI_REG(dev, REG_TXDATA));
 }
@@ -103,8 +103,8 @@ u16_t spi_sifive_recv(struct device *dev)
 {
 	u32_t val;
 
-	while ((val = sys_read32(SPI_REG(dev, REG_RXDATA))) & SF_RXDATA_EMPTY)
-		;
+	while ((val = sys_read32(SPI_REG(dev, REG_RXDATA))) & SF_RXDATA_EMPTY) {
+	}
 
 	return (u16_t) val;
 }

@@ -45,8 +45,8 @@ static inline void flash_stm32_sem_take(struct device *dev)
 {
 
 #ifdef CONFIG_SOC_SERIES_STM32WBX
-	while (LL_HSEM_1StepLock(HSEM, CFG_HW_FLASH_SEMID))
-		;
+	while (LL_HSEM_1StepLock(HSEM, CFG_HW_FLASH_SEMID)) {
+	}
 #endif /* CONFIG_SOC_SERIES_STM32WBX */
 
 	k_sem_take(&FLASH_STM32_PRIV(dev)->sem, K_FOREVER);

@@ -111,7 +111,6 @@ static int hp206c_osr_set(struct device *dev, u16_t osr)
 
 	/* the following code translates OSR values to an index */
 	for (i = 0U; i < 6 && BIT(12 - i) != osr; i++) {
-		;
 	}
 
 	if (i == 6U) {

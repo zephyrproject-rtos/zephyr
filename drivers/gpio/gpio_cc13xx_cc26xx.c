@@ -29,8 +29,9 @@ static int gpio_cc13xx_cc26xx_config(struct device *port, int access_op,
 {
 	u32_t config;
 
-	if (access_op != GPIO_ACCESS_BY_PIN)
+	if (access_op != GPIO_ACCESS_BY_PIN) {
 		return -ENOTSUP;
+	}
 
 	__ASSERT_NO_MSG(pin < NUM_IO_MAX);
 

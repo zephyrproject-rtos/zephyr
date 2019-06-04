@@ -90,8 +90,8 @@ static void uart_nsim_poll_out(struct device *dev, unsigned char c)
 	u32_t regs = DEV_CFG(dev)->regs;
 	/* wait for transmitter to ready to accept a character */
 
-	while (!(UART_GET_STATUS(regs) & TXEMPTY))
-		;
+	while (!(UART_GET_STATUS(regs) & TXEMPTY)) {
+	}
 
 	UART_SET_DATA(regs, c);
 }

@@ -278,8 +278,9 @@ static int i2c_xec_poll_read(struct device *dev, struct i2c_msg msg,
 	/* Read dummy byte */
 	byte = MCHP_I2C_SMB_DATA(ba);
 	ret = wait_completion(ba);
-	if (ret)
+	if (ret) {
 		return ret;
+	}
 
 	for (int i = 0U; i < msg.len; i++) {
 		while (MCHP_I2C_SMB_STS_RO(ba) & MCHP_I2C_SMB_STS_PIN) {

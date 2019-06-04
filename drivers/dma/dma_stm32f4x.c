@@ -508,8 +508,9 @@ static int dma_stm32_stop(struct device *dev, u32_t id)
 
 	/* Disable stream */
 	ret = dma_stm32_disable_stream(ddata, id);
-	if (ret)
+	if (ret) {
 		return ret;
+	}
 
 	/* Clear remanent IRQs from previous transfers */
 	irqstatus = dma_stm32_irq_status(ddata, id);

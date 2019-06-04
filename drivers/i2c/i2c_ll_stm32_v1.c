@@ -317,7 +317,6 @@ s32_t stm32_i2c_msg_write(struct device *dev, struct i2c_msg *msg,
 	if (msg->flags & I2C_MSG_RESTART) {
 		LL_I2C_GenerateStartCondition(i2c);
 		while (!LL_I2C_IsActiveFlag_SB(i2c)) {
-			;
 		}
 
 		if (I2C_ADDR_10_BITS & data->dev_config) {
@@ -326,8 +325,8 @@ s32_t stm32_i2c_msg_write(struct device *dev, struct i2c_msg *msg,
 
 			LL_I2C_TransmitData8(i2c, header);
 			while (!LL_I2C_IsActiveFlag_ADD10(i2c)) {
-				;
 			}
+
 			slave = data->slave_address & 0xFF;
 			LL_I2C_TransmitData8(i2c, slave);
 		} else {
@@ -366,7 +365,6 @@ s32_t stm32_i2c_msg_write(struct device *dev, struct i2c_msg *msg,
 	}
 
 	while (!LL_I2C_IsActiveFlag_BTF(i2c)) {
-		;
 	}
 
 	if (msg->flags & I2C_MSG_STOP) {
@@ -392,7 +390,6 @@ s32_t stm32_i2c_msg_read(struct device *dev, struct i2c_msg *msg,
 	if (msg->flags & I2C_MSG_RESTART) {
 		LL_I2C_GenerateStartCondition(i2c);
 		while (!LL_I2C_IsActiveFlag_SB(i2c)) {
-			;
 		}
 
 		if (I2C_ADDR_10_BITS & data->dev_config) {
@@ -401,18 +398,18 @@ s32_t stm32_i2c_msg_read(struct device *dev, struct i2c_msg *msg,
 
 			LL_I2C_TransmitData8(i2c, header);
 			while (!LL_I2C_IsActiveFlag_ADD10(i2c)) {
-				;
 			}
+
 			slave = saddr & 0xFF;
 			LL_I2C_TransmitData8(i2c, slave);
 			while (!LL_I2C_IsActiveFlag_ADDR(i2c)) {
-				;
 			}
+
 			LL_I2C_ClearFlag_ADDR(i2c);
 			LL_I2C_GenerateStartCondition(i2c);
 			while (!LL_I2C_IsActiveFlag_SB(i2c)) {
-				;
 			}
+
 			header |= I2C_REQUEST_READ;
 			LL_I2C_TransmitData8(i2c, header);
 		} else {
@@ -458,8 +455,8 @@ s32_t stm32_i2c_msg_read(struct device *dev, struct i2c_msg *msg,
 			break;
 		case 2:
 			while (!LL_I2C_IsActiveFlag_BTF(i2c)) {
-				;
 			}
+
 			/*
 			 * Stop condition must be generated before reading the
 			 * last two bytes.
@@ -477,8 +474,8 @@ s32_t stm32_i2c_msg_read(struct device *dev, struct i2c_msg *msg,
 			break;
 		case 3:
 			while (!LL_I2C_IsActiveFlag_BTF(i2c)) {
-				;
 			}
+
 			/* Set NACK before reading N-2 byte*/
 			LL_I2C_AcknowledgeNextData(i2c, LL_I2C_NACK);
 			/* Fall through */

@@ -68,8 +68,9 @@ char *strchr(const char *s, int c)
 {
 	char tmp = (char) c;
 
-	while ((*s != tmp) && (*s != '\0'))
+	while ((*s != tmp) && (*s != '\0')) {
 		s++;
+	}
 
 	return (*s == tmp) ? (char *) s : NULL;
 }
@@ -180,8 +181,9 @@ int memcmp(const void *m1, const void *m2, size_t n)
 	const char *c1 = m1;
 	const char *c2 = m2;
 
-	if (!n)
+	if (!n) {
 		return 0;
+	}
 
 	while ((--n > 0) && (*c1 == *c2)) {
 		c1++;
