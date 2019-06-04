@@ -460,8 +460,8 @@ static void adc_stm32_calib(struct device *dev)
 	defined(CONFIG_SOC_SERIES_STM32L0X)
 	LL_ADC_StartCalibration(adc);
 #endif
-	while (LL_ADC_IsCalibrationOnGoing(adc))
-		;
+	while (LL_ADC_IsCalibrationOnGoing(adc)) {
+	}
 }
 #endif
 
@@ -560,8 +560,8 @@ static int adc_stm32_init(struct device *dev)
 	wait_cycles = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / adc_rate *
 		      LL_ADC_DELAY_CALIB_ENABLE_ADC_CYCLES;
 
-	for (int i = wait_cycles; i >= 0; i--)
-		;
+	for (int i = wait_cycles; i >= 0; i--) {
+	}
 #endif
 
 	LL_ADC_Enable(adc);

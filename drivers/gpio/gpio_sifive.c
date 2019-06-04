@@ -79,14 +79,15 @@ static void gpio_sifive_irq_handler(void *arg)
 	 * to indicate to GPIO controller that interrupt for the corresponding
 	 * pin has been handled.
 	 */
-	if (gpio->rise_ip & pin_mask)
+	if (gpio->rise_ip & pin_mask) {
 		gpio->rise_ip = pin_mask;
-	else if (gpio->fall_ip & pin_mask)
+	} else if (gpio->fall_ip & pin_mask) {
 		gpio->fall_ip = pin_mask;
-	else if (gpio->high_ip & pin_mask)
+	} else if (gpio->high_ip & pin_mask) {
 		gpio->high_ip = pin_mask;
-	else if (gpio->low_ip & pin_mask)
+	} else if (gpio->low_ip & pin_mask) {
 		gpio->low_ip = pin_mask;
+	}
 }
 
 /**
@@ -106,11 +107,13 @@ static int gpio_sifive_config(struct device *dev,
 {
 	volatile struct gpio_sifive_t *gpio = DEV_GPIO(dev);
 
-	if (access_op != GPIO_ACCESS_BY_PIN)
+	if (access_op != GPIO_ACCESS_BY_PIN) {
 		return -ENOTSUP;
+	}
 
-	if (pin >= SIFIVE_PINMUX_PINS)
+	if (pin >= SIFIVE_PINMUX_PINS) {
 		return -EINVAL;
+	}
 
 	/* Configure gpio direction */
 	if (flags & GPIO_DIR_OUT) {
@@ -121,29 +124,33 @@ static int gpio_sifive_config(struct device *dev,
 		 * Account for polarity only for GPIO_DIR_OUT.
 		 * invert register handles only output gpios
 		 */
-		if (flags & GPIO_POL_INV)
+		if (flags & GPIO_POL_INV) {
 			gpio->invert |= BIT(pin);
-		else
+		} else {
 			gpio->invert &= ~BIT(pin);
+		}
 	} else {
 		gpio->out_en &= ~BIT(pin);
 		gpio->in_en |= BIT(pin);
 
 		/* Polarity inversion is not supported for input gpio */
-		if (flags & GPIO_POL_INV)
+		if (flags & GPIO_POL_INV) {
 			return -EINVAL;
+		}
 
 		/*
 		 * Pull-up can be configured only for input gpios.
 		 * Only Pull-up can be enabled or disabled.
 		 */
-		if ((flags & GPIO_PUD_MASK) == GPIO_PUD_PULL_DOWN)
+		if ((flags & GPIO_PUD_MASK) == GPIO_PUD_PULL_DOWN) {
 			return -EINVAL;
+		}
 
-		if ((flags & GPIO_PUD_MASK) == GPIO_PUD_PULL_UP)
+		if ((flags & GPIO_PUD_MASK) == GPIO_PUD_PULL_UP) {
 			gpio->pue |= BIT(pin);
-		else
+		} else {
 			gpio->pue &= ~BIT(pin);
+		}
 	}
 
 	/*
@@ -155,14 +162,16 @@ static int gpio_sifive_config(struct device *dev,
 	 * 1) enabled only via a call to gpio_sifive_enable_callback.
 	 * 2) disabled only via a call to gpio_sifive_disabled_callback.
 	 */
-	if (!(flags & GPIO_INT))
+	if (!(flags & GPIO_INT)) {
 		return 0;
+	}
 
 	/*
 	 * Interrupt cannot be set for GPIO_DIR_OUT
 	 */
-	if (flags & GPIO_DIR_OUT)
+	if (flags & GPIO_DIR_OUT) {
 		return -EINVAL;
+	}
 
 	/* Edge or Level triggered ? */
 	if (flags & GPIO_INT_EDGE) {
@@ -214,20 +223,23 @@ static int gpio_sifive_write(struct device *dev,
 {
 	volatile struct gpio_sifive_t *gpio = DEV_GPIO(dev);
 
-	if (access_op != GPIO_ACCESS_BY_PIN)
+	if (access_op != GPIO_ACCESS_BY_PIN) {
 		return -ENOTSUP;
+	}
 
 	if (pin >= SIFIVE_PINMUX_PINS)
 		return -EINVAL;
 
 	/* If pin is configured as input return with error */
-	if (gpio->in_en & BIT(pin))
+	if (gpio->in_en & BIT(pin)) {
 		return -EINVAL;
+	}
 
-	if (value)
+	if (value) {
 		gpio->out_val |= BIT(pin);
-	else
+	} else {
 		gpio->out_val &= ~BIT(pin);
+	}
 
 	return 0;
 }
@@ -249,21 +261,24 @@ static int gpio_sifive_read(struct device *dev,
 {
 	volatile struct gpio_sifive_t *gpio = DEV_GPIO(dev);
 
-	if (access_op != GPIO_ACCESS_BY_PIN)
+	if (access_op != GPIO_ACCESS_BY_PIN) {
 		return -ENOTSUP;
+	}
 
-	if (pin >= SIFIVE_PINMUX_PINS)
+	if (pin >= SIFIVE_PINMUX_PINS) {
 		return -EINVAL;
+	}
 
 	/*
 	 * If gpio is configured as output,
 	 * read gpio value from out_val register,
 	 * otherwise read gpio value from in_val register
 	 */
-	if (gpio->out_en & BIT(pin))
+	if (gpio->out_en & BIT(pin)) {
 		*value = !!(gpio->out_val & BIT(pin));
-	else
+	} else {
 		*value = !!(gpio->in_val & BIT(pin));
+	}
 
 	return 0;
 }
@@ -283,11 +298,13 @@ static int gpio_sifive_enable_callback(struct device *dev,
 {
 	const struct gpio_sifive_config *cfg = DEV_GPIO_CFG(dev);
 
-	if (access_op != GPIO_ACCESS_BY_PIN)
+	if (access_op != GPIO_ACCESS_BY_PIN) {
 		return -ENOTSUP;
+	}
 
-	if (pin >= SIFIVE_PINMUX_PINS)
+	if (pin >= SIFIVE_PINMUX_PINS) {
 		return -EINVAL;
+	}
 
 	/* Enable interrupt for the pin at PLIC level */
 	irq_enable(cfg->gpio_irq_base + pin);
@@ -301,11 +318,13 @@ static int gpio_sifive_disable_callback(struct device *dev,
 {
 	const struct gpio_sifive_config *cfg = DEV_GPIO_CFG(dev);
 
-	if (access_op != GPIO_ACCESS_BY_PIN)
+	if (access_op != GPIO_ACCESS_BY_PIN) {
 		return -ENOTSUP;
+	}
 
-	if (pin >= SIFIVE_PINMUX_PINS)
+	if (pin >= SIFIVE_PINMUX_PINS) {
 		return -EINVAL;
+	}
 
 	/* Disable interrupt for the pin at PLIC level */
 	irq_disable(cfg->gpio_irq_base + pin);

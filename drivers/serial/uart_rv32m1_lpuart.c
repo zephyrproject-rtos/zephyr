@@ -51,8 +51,8 @@ static void rv32m1_lpuart_poll_out(struct device *dev, unsigned char c)
 	const struct rv32m1_lpuart_config *config = dev->config->config_info;
 
 	while (!(LPUART_GetStatusFlags(config->base)
-		& kLPUART_TxDataRegEmptyFlag))
-		;
+		& kLPUART_TxDataRegEmptyFlag)) {
+	}
 
 	LPUART_WriteByte(config->base, c);
 }

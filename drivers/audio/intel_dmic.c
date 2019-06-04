@@ -157,8 +157,9 @@ int find_equal_int16(s16_t idx[], s16_t vec[], int n, int vec_length,
 	for (i = 0; i < vec_length; i++) {
 		if (vec[i] == n) {
 			idx[nresults++] = i;
-			if (nresults == max_results)
+			if (nresults == max_results) {
 				break;
+			}
 		}
 	}
 
@@ -171,8 +172,9 @@ s16_t find_min_int16(s16_t vec[], int vec_length)
 	int i;
 	int min = vec[0];
 
-	for (i = 1; i < vec_length; i++)
+	for (i = 1; i < vec_length; i++) {
 		min = (vec[i] < min) ? vec[i] : min;
+	}
 
 	return min;
 }
@@ -418,8 +420,9 @@ static struct pdm_decim *get_fir(struct dmic_configuration *cfg, int mfir)
 	struct pdm_decim *fir = NULL;
 	struct pdm_decim **fir_list;
 
-	if (mfir <= 0)
+	if (mfir <= 0) {
 		return fir;
+	}
 
 	cic_fs = DMIC_HW_IOCLK / cfg->clkdiv / cfg->mcic;
 	fs = cic_fs / mfir;
@@ -467,8 +470,9 @@ static int fir_coef_scale(s32_t *fir_scale, int *fir_shift, int add_shift,
 	/* Scale max. tap value with FIR gain. */
 	new_amax = Q_MULTSR_32X32((s64_t)amax, fir_gain, 31,
 		DMIC_FIR_SCALE_Q, DMIC_FIR_SCALE_Q);
-	if (new_amax <= 0)
+	if (new_amax <= 0) {
 		return -EINVAL;
+	}
 
 	/* Get left shifts count to normalize the fractional value as 32 bit.
 	 * We need right shifts count for scaling so need to invert. The
@@ -483,14 +487,16 @@ static int fir_coef_scale(s32_t *fir_scale, int *fir_shift, int add_shift,
 	 */
 	*fir_shift = -shift + add_shift;
 	if (*fir_shift < DMIC_HW_FIR_SHIFT_MIN ||
-		*fir_shift > DMIC_HW_FIR_SHIFT_MAX)
+		*fir_shift > DMIC_HW_FIR_SHIFT_MAX) {
 		return -EINVAL;
+	}
 
 	/* Compensate shift into FIR coef scaler and store as Q4.20. */
-	if (shift < 0)
+	if (shift < 0) {
 		*fir_scale = (fir_gain << -shift);
-	else
+	} else {
 		*fir_scale = (fir_gain >> shift);
+	}
 
 	return 0;
 }
@@ -541,10 +547,11 @@ static int select_mode(struct dmic_configuration *cfg,
 	 * factor in 1st element. If FIR A is not used get decimation factors
 	 * from FIR B instead.
 	 */
-	if (modes->mfir_a[0] > 0)
+	if (modes->mfir_a[0] > 0) {
 		mfir = modes->mfir_a;
-	else
+	} else {
 		mfir = modes->mfir_b;
+	}
 
 	mmin = find_min_int16(mfir, modes->num_of_modes);
 	count = find_equal_int16(idx, mfir, mmin, modes->num_of_modes, 0);
@@ -599,10 +606,11 @@ static int select_mode(struct dmic_configuration *cfg,
 	 * values.
 	 */
 	fir_in_max = (1 << (DMIC_HW_BITS_FIR_INPUT - 1));
-	if (cfg->cic_shift >= 0)
+	if (cfg->cic_shift >= 0) {
 		cic_out_max = g_cic >> cfg->cic_shift;
-	else
+	} else {
 		cic_out_max = g_cic << -cfg->cic_shift;
+	}
 
 	gain_to_fir = (s32_t)((((s64_t)fir_in_max) << DMIC_FIR_SCALE_Q) /
 		cic_out_max);

@@ -166,8 +166,9 @@ static int adt7420_probe(struct device *dev)
 		return ret;
 	}
 
-	if (value != ADT7420_DEFAULT_ID)
+	if (value != ADT7420_DEFAULT_ID) {
 		return -ENODEV;
+	}
 
 	ret = i2c_reg_write_byte(drv_data->i2c, cfg->i2c_addr,
 			ADT7420_REG_CONFIG, ADT7420_CONFIG_RESOLUTION |

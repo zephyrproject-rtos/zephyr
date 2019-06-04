@@ -272,8 +272,9 @@ static void i2c_imx_isr(void *arg)
 
 
 	/* Exit the ISR if no transfer is happening for this instance. */
-	if (!transfer->isBusy)
+	if (!transfer->isBusy) {
 		return;
+	}
 
 	if (i2cModeMaster == transfer->currentMode) {
 		if (i2cDirectionTransmit == transfer->currentDir) {

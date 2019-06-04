@@ -238,8 +238,9 @@ void z_vprintk(out_func_t out, void *ctx, const char *fmt, va_list ap)
 				char *s = va_arg(ap, char *);
 				char *start = s;
 
-				while (*s)
+				while (*s) {
 					out((int)(*s++), ctx);
+				}
 
 				if (padding == PAD_SPACE_AFTER) {
 					int remaining = min_width - (s - start);

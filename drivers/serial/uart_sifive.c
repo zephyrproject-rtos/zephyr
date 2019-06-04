@@ -84,8 +84,8 @@ static void uart_sifive_poll_out(struct device *dev,
 	volatile struct uart_sifive_regs_t *uart = DEV_UART(dev);
 
 	/* Wait while TX FIFO is full */
-	while (uart->tx & TXDATA_FULL)
-		;
+	while (uart->tx & TXDATA_FULL) {
+	}
 
 	uart->tx = (int)c;
 }
@@ -103,8 +103,9 @@ static int uart_sifive_poll_in(struct device *dev, unsigned char *c)
 	volatile struct uart_sifive_regs_t *uart = DEV_UART(dev);
 	u32_t val = uart->rx;
 
-	if (val & RXDATA_EMPTY)
+	if (val & RXDATA_EMPTY) {
 		return -1;
+	}
 
 	*c = (unsigned char)(val & RXDATA_MASK);
 

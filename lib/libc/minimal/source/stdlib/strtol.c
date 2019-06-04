@@ -60,14 +60,17 @@ long strtol(const char *nptr, char **endptr, register int base)
 	if (c == '-') {
 		neg = 1;
 		c = *s++;
-	} else if (c == '+')
+	} else if (c == '+') {
 		c = *s++;
+	}
+
 	if ((base == 0 || base == 16) &&
 	    c == '0' && (*s == 'x' || *s == 'X')) {
 		c = s[1];
 		s += 2;
 		base = 16;
 	}
+
 	if (base == 0) {
 		base = c == '0' ? 8 : 10;
 	}
@@ -111,11 +114,14 @@ long strtol(const char *nptr, char **endptr, register int base)
 			acc += c;
 		}
 	}
+
 	if (any < 0) {
 		acc = neg ? LONG_MIN : LONG_MAX;
 		errno = ERANGE;
-	} else if (neg)
+	} else if (neg) {
 		acc = -acc;
+	}
+
 	if (endptr != NULL) {
 		*endptr = (char *)(any ? s - 1 : nptr);
 	}

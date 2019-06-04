@@ -49,10 +49,11 @@ static inline int has_i2c_master(struct device *dev)
 		(struct pwm_pca9685_drv_data * const)dev->driver_data;
 	struct device * const i2c_master = drv_data->i2c_master;
 
-	if (i2c_master)
+	if (i2c_master) {
 		return 1;
-	else
+	} else {
 		return 0;
+	}
 }
 
 /*

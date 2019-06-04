@@ -128,7 +128,6 @@ static inline bool is_addr_valid(off_t addr, size_t len)
 static void nvmc_wait_ready(void)
 {
 	while (!nrfx_nvmc_write_done_check()) {
-		;
 	}
 }
 

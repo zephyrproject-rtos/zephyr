@@ -56,8 +56,9 @@ void _start16(void)
 	 */
 	volatile unsigned short *vga = (unsigned short *)0xb8000;
 
-	for (int i = 0; i < 240; i++)
+	for (int i = 0; i < 240; i++) {
 		vga[i] = 0xcc20;
+	}
 
 	/* Spin again waiting on the BSP processor to give us a stack.  We
 	 * won't use it until the entry code of stub32, but we want to

@@ -122,8 +122,8 @@ static void uart_psoc6_poll_out(struct device *dev, unsigned char c)
 {
 	const struct cypress_psoc6_config *config = dev->config->config_info;
 
-	while (Cy_SCB_UART_Put(config->base, (uint32_t)c) != 1UL)
-		;
+	while (Cy_SCB_UART_Put(config->base, (uint32_t)c) != 1UL) {
+	}
 }
 
 static const struct uart_driver_api uart_psoc6_driver_api = {

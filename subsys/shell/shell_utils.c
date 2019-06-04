@@ -448,8 +448,9 @@ static void buffer_trim(char *buff, u16_t *buff_len)
 	/* Counting whitespace characters starting from beginning of the
 	 * command.
 	 */
-	while (isspace((int) buff[i++]))
-      ;
+	while (isspace((int) buff[i++])) {
+	}
+
 
 	/* Removing counted whitespace characters. */
 	if (--i > 0) {

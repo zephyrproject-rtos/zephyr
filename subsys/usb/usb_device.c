@@ -858,16 +858,19 @@ static int usb_handle_standard_request(struct usb_setup_packet *setup,
 
 	switch (REQTYPE_GET_RECIP(setup->bmRequestType)) {
 	case REQTYPE_RECIP_DEVICE:
-		if (usb_handle_std_device_req(setup, len, data_buf) == false)
+		if (usb_handle_std_device_req(setup, len, data_buf) == false) {
 			rc = -EINVAL;
+		}
 		break;
 	case REQTYPE_RECIP_INTERFACE:
-		if (usb_handle_std_interface_req(setup, len, data_buf) == false)
+		if (usb_handle_std_interface_req(setup, len, data_buf) == false) {
 			rc = -EINVAL;
+		}
 		break;
 	case REQTYPE_RECIP_ENDPOINT:
-		if (usb_handle_std_endpoint_req(setup, len, data_buf) == false)
+		if (usb_handle_std_endpoint_req(setup, len, data_buf) == false) {
 			rc = -EINVAL;
+		}
 		break;
 	default:
 		rc = -EINVAL;

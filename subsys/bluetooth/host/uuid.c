@@ -64,8 +64,9 @@ static int uuid128_cmp(const struct bt_uuid *u1, const struct bt_uuid *u2)
 int bt_uuid_cmp(const struct bt_uuid *u1, const struct bt_uuid *u2)
 {
 	/* Convert to 128 bit if types don't match */
-	if (u1->type != u2->type)
+	if (u1->type != u2->type) {
 		return uuid128_cmp(u1, u2);
+	}
 
 	switch (u1->type) {
 	case BT_UUID_TYPE_16:

@@ -269,8 +269,9 @@ static int rtc_stm32_init(struct device *dev)
 #if defined(CONFIG_COUNTER_RTC_STM32_CLOCK_LSI)
 
 	LL_RCC_LSI_Enable();
-	while (LL_RCC_LSI_IsReady() != 1)
-		;
+	while (LL_RCC_LSI_IsReady() != 1) {
+	}
+
 	LL_RCC_SetRTCClockSource(LL_RCC_RTC_CLKSOURCE_LSI);
 
 #else /* CONFIG_COUNTER_RTC_STM32_CLOCK_LSE */
@@ -286,8 +287,8 @@ static int rtc_stm32_init(struct device *dev)
 	LL_RCC_LSE_Enable();
 
 	/* Wait until LSE is ready */
-	while (LL_RCC_LSE_IsReady() != 1)
-		;
+	while (LL_RCC_LSE_IsReady() != 1) {
+	}
 
 	LL_RCC_SetRTCClockSource(LL_RCC_RTC_CLKSOURCE_LSE);
 

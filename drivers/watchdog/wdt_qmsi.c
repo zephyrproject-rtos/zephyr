@@ -78,8 +78,9 @@ wdt_config_return:
 
 static __attribute__((noinline)) u32_t next_pow2(u32_t x)
 {
-	if (x <= 2U)
+	if (x <= 2U) {
 		return x;
+	}
 
 	return (1ULL << 32) >> __builtin_clz(x - 1);
 }
@@ -89,8 +90,9 @@ static u32_t get_timeout(u32_t  timeout)
 	u32_t val = timeout / 2U;
 	u32_t count = 0U;
 
-	if (val & (val - 1))
+	if (val & (val - 1)) {
 		val = next_pow2(val);
+	}
 
 	while (val) {
 		val = val >> 1;

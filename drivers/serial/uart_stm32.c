@@ -392,8 +392,8 @@ static void uart_stm32_poll_out(struct device *dev,
 	USART_TypeDef *UartInstance = UART_STRUCT(dev);
 
 	/* Wait for TXE flag to be raised */
-	while (!LL_USART_IsActiveFlag_TXE(UartInstance))
-		;
+	while (!LL_USART_IsActiveFlag_TXE(UartInstance)) {
+	}
 
 	LL_USART_ClearFlag_TC(UartInstance);
 
@@ -681,14 +681,14 @@ static int uart_stm32_init(struct device *dev)
 
 #ifdef USART_ISR_TEACK
 	/* Wait until TEACK flag is set */
-	while (!(LL_USART_IsActiveFlag_TEACK(UartInstance)))
-		;
+	while (!(LL_USART_IsActiveFlag_TEACK(UartInstance))) {
+	}
 #endif /* !USART_ISR_TEACK */
 
 #ifdef USART_ISR_REACK
 	/* Wait until REACK flag is set */
-	while (!(LL_USART_IsActiveFlag_REACK(UartInstance)))
-		;
+	while (!(LL_USART_IsActiveFlag_REACK(UartInstance))) {
+	}
 #endif /* !USART_ISR_REACK */
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN

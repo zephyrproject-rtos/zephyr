@@ -302,8 +302,9 @@ static void start_ble_rf(void)
 
 	/* Select LSE clock */
 	LL_RCC_LSE_Enable();
-	while (!LL_RCC_LSE_IsReady())
-		;
+	while (!LL_RCC_LSE_IsReady()) {
+	}
+
 	/* Select wakeup source of BLE RF */
 	LL_RCC_SetRFWKPClockSource(LL_RCC_RFWKP_CLKSOURCE_LSE);
 	LL_RCC_SetRTCClockSource(LL_RCC_RTC_CLKSOURCE_LSE);
@@ -312,8 +313,9 @@ static void start_ble_rf(void)
 	LL_RCC_LSI1_Disable();
 	/* Set RNG on HSI48 */
 	LL_RCC_HSI48_Enable();
-	while (!LL_RCC_HSI48_IsReady())
-		;
+	while (!LL_RCC_HSI48_IsReady()) {
+	}
+
 	LL_RCC_SetCLK48ClockSource(LL_RCC_CLK48_CLKSOURCE_HSI48);
 }
 

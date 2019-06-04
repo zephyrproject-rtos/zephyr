@@ -51,8 +51,8 @@ static void usart_mcux_lpc_poll_out(struct device *dev,
 	const struct usart_mcux_lpc_config *config = dev->config->config_info;
 
 	/* Wait until space is available in TX FIFO */
-	while (!(USART_GetStatusFlags(config->base) & kUSART_TxFifoEmptyFlag))
-		;
+	while (!(USART_GetStatusFlags(config->base) & kUSART_TxFifoEmptyFlag)) {
+	}
 
 	USART_WriteByte(config->base, c);
 }
