@@ -12,6 +12,7 @@
  */
 
 #include <arch/x86/asm.h>
+#include <arch/x86/msr.h>
 #include <kernel_arch_data.h>
 #include <arch/cpu.h>
 #include <arch/x86/multiboot.h>
@@ -47,8 +48,6 @@
 
 #define RM_CODE_SEG             0x8
 #define RM_DATA_SEG             0x18
-#define MSR_MTRR_DEF_TYPE       0x000002ff
-#define MTRR_ENABLE             0x00000800
 #define X86_CR0_PE              0x00000001
 #define X86_CR0_WP              0x00010000
 #define X86_CR4_PSE             0x00000010
@@ -82,9 +81,9 @@ start32:
 	mov $(X86_CR0_WP | X86_CR0_PE),%eax
 	mov %eax,%cr0
 
-	movl $MSR_MTRR_DEF_TYPE,%ecx
+	movl $X86_MTRR_DEF_TYPE_MSR,%ecx
 	rdmsr
-	or $MTRR_ENABLE,%eax
+	or $X86_MTRR_DEF_TYPE_MSR_ENABLE,%eax
 	wrmsr
 
 	mov $RM_DATA_SEG,%eax
