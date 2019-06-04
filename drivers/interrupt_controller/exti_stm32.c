@@ -51,7 +51,51 @@
 #define EXTI_LINES 49
 #endif
 
-#if defined(CONFIG_SOC_SERIES_STM32MP1X)
+#if defined(CONFIG_SOC_SERIES_STM32F0X) || \
+    defined(CONFIG_SOC_SERIES_STM32L0X)
+IRQn_Type exti_irq_table[] = {
+	EXTI0_1_IRQn, EXTI0_1_IRQn, EXTI2_3_IRQn, EXTI2_3_IRQn,
+	EXTI4_15_IRQn, EXTI4_15_IRQn, EXTI4_15_IRQn, EXTI4_15_IRQn,
+	EXTI4_15_IRQn, EXTI4_15_IRQn, EXTI4_15_IRQn, EXTI4_15_IRQn,
+	EXTI4_15_IRQn, EXTI4_15_IRQn, EXTI4_15_IRQn, EXTI4_15_IRQn
+};
+#elif defined(CONFIG_SOC_SERIES_STM32F1X) || \
+      defined(CONFIG_SOC_SERIES_STM32L1X) || \
+      defined(CONFIG_SOC_SERIES_STM32L4X) || \
+      defined(CONFIG_SOC_SERIES_STM32WBX)
+IRQn_Type exti_irq_table[] = {
+	EXTI0_IRQn, EXTI1_IRQn, EXTI2_IRQn, EXTI3_IRQn,
+	EXTI4_IRQn, EXTI9_5_IRQn, EXTI9_5_IRQn, EXTI9_5_IRQn,
+	EXTI9_5_IRQn, EXTI9_5_IRQn, EXTI15_10_IRQn, EXTI15_10_IRQn,
+	EXTI15_10_IRQn, EXTI15_10_IRQn, EXTI15_10_IRQn, EXTI15_10_IRQn
+};
+#elif defined(CONFIG_SOC_SERIES_STM32F3X)
+IRQn_Type exti_irq_table[] = {
+	EXTI0_IRQn, EXTI1_IRQn, EXTI2_TSC_IRQn, EXTI3_IRQn,
+	EXTI4_IRQn, EXTI9_5_IRQn, EXTI9_5_IRQn, EXTI9_5_IRQn,
+	EXTI9_5_IRQn, EXTI9_5_IRQn, EXTI15_10_IRQn, EXTI15_10_IRQn,
+	EXTI15_10_IRQn, EXTI15_10_IRQn, EXTI15_10_IRQn, EXTI15_10_IRQn
+};
+#elif defined(CONFIG_SOC_SERIES_STM32F2X) || \
+      defined(CONFIG_SOC_SERIES_STM32F4X)
+IRQn_Type exti_irq_table[] = {
+	EXTI0_IRQn, EXTI1_IRQn, EXTI2_IRQn, EXTI3_IRQn,
+	EXTI4_IRQn, EXTI9_5_IRQn, EXTI9_5_IRQn, EXTI9_5_IRQn,
+	EXTI9_5_IRQn, EXTI9_5_IRQn, EXTI15_10_IRQn, EXTI15_10_IRQn,
+	EXTI15_10_IRQn, EXTI15_10_IRQn, EXTI15_10_IRQn, EXTI15_10_IRQn,
+	PVD_IRQn, 0xFF, OTG_FS_WKUP_IRQn, 0xFF,
+	0xFF, TAMP_STAMP_IRQn, RTC_WKUP_IRQn
+};
+#elif defined(CONFIG_SOC_SERIES_STM32F7X)
+IRQn_Type exti_irq_table[] = {
+	EXTI0_IRQn, EXTI1_IRQn, EXTI2_IRQn, EXTI3_IRQn,
+	EXTI4_IRQn, EXTI9_5_IRQn, EXTI9_5_IRQn, EXTI9_5_IRQn,
+	EXTI9_5_IRQn, EXTI9_5_IRQn, EXTI15_10_IRQn, EXTI15_10_IRQn,
+	EXTI15_10_IRQn, EXTI15_10_IRQn, EXTI15_10_IRQn, EXTI15_10_IRQn,
+	PVD_IRQn, 0xFF, OTG_FS_WKUP_IRQn, 0xFF,
+	0xFF, TAMP_STAMP_IRQn, RTC_WKUP_IRQn, LPTIM1_IRQn
+};
+#elif defined(CONFIG_SOC_SERIES_STM32MP1X)
 IRQn_Type exti_irq_table[] = {
 	EXTI0_IRQn, EXTI1_IRQn, EXTI2_IRQn, EXTI3_IRQn,
 	EXTI4_IRQn, EXTI5_IRQn, EXTI6_IRQn, EXTI7_IRQn,
@@ -90,6 +134,7 @@ int stm32_exti_enable(int line)
 {
 	int irqnum = 0;
 
+	/* Enable requested line interrupt */
 	if (line < 32) {
 		LL_EXTI_EnableIT_0_31(1 << line);
 	} else if (line < 64) {
@@ -106,91 +151,16 @@ int stm32_exti_enable(int line)
 #endif
 	}
 
-#if defined(CONFIG_SOC_SERIES_STM32F0X) || \
-    defined(CONFIG_SOC_SERIES_STM32L0X)
-	if (line >= 4 && line <= 15) {
-		irqnum = EXTI4_15_IRQn;
-	}	else if (line >= 2  && line <= 3) {
-		irqnum = EXTI2_3_IRQn;
-	}	else if (line >= 0  && line <= 1) {
-		irqnum = EXTI0_1_IRQn;
-	} else {
-		/* > 15 are not mapped on an IRQ */
-		/*
-		 * On STM32F0X, this function also support enabling EXTI
-		 * lines that are not connected to an IRQ. This might be used
-		 * by other drivers or boards, to allow the device wakeup on
-		 * some non-GPIO signals.
-		 */
-		return 0;
-	}
-#elif defined(CONFIG_SOC_SERIES_STM32F1X) || \
-      defined(CONFIG_SOC_SERIES_STM32F2X) || \
-      defined(CONFIG_SOC_SERIES_STM32F3X) || \
-      defined(CONFIG_SOC_SERIES_STM32F4X) || \
-      defined(CONFIG_SOC_SERIES_STM32F7X) || \
-      defined(CONFIG_SOC_SERIES_STM32L1X) || \
-      defined(CONFIG_SOC_SERIES_STM32L4X) || \
-      defined(CONFIG_SOC_SERIES_STM32WBX)
-	if (line >= 5 && line <= 9) {
-		irqnum = EXTI9_5_IRQn;
-	} else if (line >= 10 && line <= 15) {
-		irqnum = EXTI15_10_IRQn;
-	} else if (line >= 0 && line <= 4) {
-		/* pins 0..4 are mapped to EXTI0.. EXTI4 */
-		irqnum = EXTI0_IRQn + line;
-	} else {
-		switch (line) {
-#if defined(CONFIG_SOC_SERIES_STM32F2X) || \
-    defined(CONFIG_SOC_SERIES_STM32F4X) || \
-    defined(CONFIG_SOC_SERIES_STM32F7X)
-		case 16:
-			irqnum = PVD_IRQn;
-			break;
-		case 18:
-			irqnum = OTG_FS_WKUP_IRQn;
-			break;
-		case 21:
-			irqnum = TAMP_STAMP_IRQn;
-			break;
-		case 22:
-			irqnum = RTC_WKUP_IRQn;
-			break;
-#endif
-#if defined(CONFIG_SOC_SERIES_STM32F7X)
-		case 23:
-			irqnum = LPTIM1_IRQn;
-			break;
-#endif
-		default:
-			/* No IRQ associated to this line */
-#if defined(CONFIG_SOC_SERIES_STM32L4X) || \
-      defined(CONFIG_SOC_SERIES_STM32WBX)
-			/* > 15 are not mapped on an IRQ */
-			/*
-			 * On specified soc, this function also support enabling EXTI
-			 * lines that are not connected to an IRQ. This might be used
-			 * by other drivers or boards, to allow the device wakeup on
-			 * some non-GPIO signals.
-			 */
-			return 0;
-#else
-			return -ENOTSUP;
-#endif /* CONFIG_SOC_SERIES_STM32L4X */
-		}
-	}
-#elif defined(CONFIG_SOC_SERIES_STM32MP1X)
-	if (line <= 72) {
+	/* Get matching exti irq mathcing provided line thanks to irq_table */
+	if (line <= ARRAY_SIZE(exti_irq_table)) {
 		irqnum = exti_irq_table[line];
 		if (irqnum == 0xFF)
 			return 0;
 	} else {
 		return -ENOTSUP;
 	}
-#else
-	#error "Unknown STM32 SoC"
-#endif
 
+	/* Enable exti irq interrupt */
 	irq_enable(irqnum);
 
 	return 0;
