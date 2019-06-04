@@ -12,17 +12,25 @@ menu "ARC Options"
 config ARCH
 	default "arc"
 
-menu "ARC processor options"
+choice
+	prompt "ARC core family"
+	default CPU_ARCEM
 
 config	CPU_ARCEM
-	bool
-	default y
+	bool "ARC EM cores"
 	select CPU_ARCV2
 	select ATOMIC_OPERATIONS_C
 	help
 	  This option signifies the use of an ARC EM CPU
 
-endmenu
+config	CPU_ARCHS
+	bool "ARC HS cores"
+	select CPU_ARCV2
+	select ATOMIC_OPERATIONS_BUILTIN
+	help
+	  This option signifies the use of an ARC HS CPU
+
+endchoice
 
 menu "ARCv2 Family Options"
 
@@ -119,7 +127,8 @@ config	ARC_STACK_PROTECTION
 config	ARC_USE_UNALIGNED_MEM_ACCESS
 	bool "Enable unaligned access in HW"
 	default n if CPU_ARCEM
-	depends on (CPU_ARCEM && !ARC_HAS_SECURE)
+	default y if CPU_ARCHS
+	depends on (CPU_ARCEM && !ARC_HAS_SECURE) || CPU_ARCHS
 	help
 	  ARC EM cores w/o secure shield 2+2 mode support might be configured
 	  to support unaligned memory access which is then disabled by default.
