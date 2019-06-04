@@ -11,7 +11,7 @@
 #include <errno.h>
 #include <assert.h>
 
-#include "iwdg_stm32.h"
+#include "wdt_iwdg_stm32.h"
 
 /* Minimal timeout in microseconds. */
 #define IWDG_TIMEOUT_MIN	100
