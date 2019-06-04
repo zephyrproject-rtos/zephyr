@@ -492,20 +492,46 @@ static struct bt_gatt_attr gatt_attrs[] = {
 
 static struct bt_gatt_service gatt_svc = BT_GATT_SERVICE(gatt_attrs);
 
+static void gatt_insert(struct bt_gatt_service *svc, u16_t last_handle)
+{
+	struct bt_gatt_service *tmp, *prev = NULL;
+
+	if (last_handle == 0 || svc->attrs[0].handle > last_handle) {
+		sys_slist_append(&db, &svc->node);
+		return;
+	}
+
+	/* DB shall always have its service in ascending order */
+	SYS_SLIST_FOR_EACH_CONTAINER(&db, tmp, node) {
+		if (tmp->attrs[0].handle > svc->attrs[0].handle) {
+			if (prev) {
+				sys_slist_insert(&db, &prev->node, &svc->node);
+			} else {
+				sys_slist_prepend(&db, &svc->node);
+			}
+			return;
+		}
+
+		prev = tmp;
+	}
+}
+
 static int gatt_register(struct bt_gatt_service *svc)
 {
 	struct bt_gatt_service *last;
-	u16_t handle;
+	u16_t handle, last_handle;
 	struct bt_gatt_attr *attrs = svc->attrs;
 	u16_t count = svc->attr_count;
 
 	if (sys_slist_is_empty(&db)) {
 		handle = 0U;
+		last_handle = 0U;
 		goto populate;
 	}
 
 	last = SYS_SLIST_PEEK_TAIL_CONTAINER(&db, last, node);
 	handle = last->attrs[last->attr_count - 1].handle;
+	last_handle = handle;
 
 populate:
 	/* Populate the handles and append them to the list */
@@ -528,7 +554,7 @@ populate:
 		       attrs->perm);
 	}
 
-	sys_slist_append(&db, &svc->node);
+	gatt_insert(svc, last_handle);
 
 	return 0;
 }
