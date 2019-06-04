@@ -1,0 +1,22 @@
+title: LPC GPIO
+
+description: >
+    This is a representation of the LPC GPIO nodes
+
+inherits:
+    !include base.yaml
+
+properties:
+    compatible:
+      constraint: "nxp,lpc-gpio"
+
+    reg:
+      category: required
+
+    label:
+      category: required
+
+"#cells":
+  - pin
+  - flags
+...
