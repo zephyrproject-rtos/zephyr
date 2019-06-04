@@ -1,4 +1,4 @@
-.. _nsim_em:
+.. _nsim:
 
 DesignWare(R) ARC(R) Emulation (nsim)
 #####################################
@@ -7,20 +7,22 @@ Overview
 ********
 
 This board configuration will use `Designware ARC nSIM`_ to emulate a virtual
-ARC EM based board including the following features:
+ARC EM or ARC HS based board including the following features:
 
-* ARC EM processor
+* ARC EM or ARC HS processor
 * ARC internal timer
 * a virtual output only console (uart-nsim)
 
-There are two sub configurations in board:
+There are three supported board sub-configurations:
 
-* nsim_em which includes normal em features and ARC MPUv2
-* nsim_sem which includes secure em features and ARC MPUv3
+* ``nsim_em`` which includes normal ARC EM features and ARC MPUv2
+* ``nsim_sem`` which includes secure ARC EM features and ARC MPUv3
+* ``nsim_hs`` which includes base ARC HS features, i.e. w/o PMU and MMU
 
 For detailed arc features, please refer to
-:zephyr_file:`boards/arc/nsim/support/nsim_em.props` and
-:zephyr_file:`boards/arc/nsim/support/nsim_sem.props`.
+:zephyr_file:`boards/arc/nsim/support/nsim_em.props`,
+:zephyr_file:`boards/arc/nsim/support/nsim_sem.props` and
+:zephyr_file:`boards/arc/nsim/support/nsim_hs.props`.
 
 
 Hardware
@@ -30,15 +32,15 @@ Supported Features
 
 The following hardware features are supported:
 
-+-----------+------------+-----+-------+-----------------------+
-| Interface | Controller | EM  | SEM   | Driver/Component      |
-+===========+============+=====+=======+=======================+
-| INT       | on-chip    | Y   | Y     | interrupt_controller  |
-+-----------+------------+-----+-------+-----------------------+
-| UART      | nsim uart  | Y   | Y     | serial port-polling   |
-+-----------+------------+-----+-------+-----------------------+
-| TIMER     | on-chip    | Y   | Y     | system clock          |
-+-----------+------------+-----+-------+-----------------------+
++-----------+------------+-----+-------+-----+-----------------------+
+| Interface | Controller | EM  | SEM   | HS  | Driver/Component      |
++===========+============+=====+=======+=====+=======================+
+| INT       | on-chip    | Y   | Y     | Y   | interrupt_controller  |
++-----------+------------+-----+-------+-----+-----------------------+
+| UART      | nsim uart  | Y   | Y     | Y   | serial port-polling   |
++-----------+------------+-----+-------+-----+-----------------------+
+| TIMER     | on-chip    | Y   | Y     | Y   | system clock          |
++-----------+------------+-----+-------+-----+-----------------------+
 
 
 Programming and Debugging
