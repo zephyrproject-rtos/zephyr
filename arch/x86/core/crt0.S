@@ -415,6 +415,17 @@ __csSet:
 1:
 #endif
 
+#if defined(CONFIG_PIC_DISABLE)
+	/*
+	 * "Disable" legacy i8259 interrupt controllers. Note that we
+	 * can't actually disable them, but we mask all their interrupt
+	 * sources which is effectively the same thing (almost).
+	 */
+	movb $0xff, %al		/* all bits set = mask all interrupts */
+	outb %al, $0x21		/* set i8259 master mask (IRQs 0-7) */
+	outb %al, $0xA1		/* set i8259 slave mask (IRQs 8-15) */
+#endif
+
 	/* Jump to C portion of kernel initialization and never return */
 
 	jmp	z_cstart
