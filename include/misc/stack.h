@@ -64,7 +64,7 @@ static inline void stack_analyze(const char *name, const char *stack,
 				 unsigned int size)
 {
 	if (IS_ENABLED(CONFIG_INIT_STACKS)) {
-		LOG_MODULE_DECLARE(kernel, CONFIG_KERNEL_LOG_LEVEL);
+		LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 		unsigned int unused = stack_unused_space_get(stack, size);
 		unsigned int pcnt = ((size - unused) * 100U) / size;

@@ -36,7 +36,7 @@ K_APPMEM_PARTITION_DEFINE(k_mbedtls_partition);
 
 #define LOG_LEVEL CONFIG_KERNEL_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_DECLARE(kernel);
+LOG_MODULE_DECLARE(os);
 
 /* The originally synchronization strategy made heavy use of recursive
  * irq_locking, which ports poorly to spinlocks which are
