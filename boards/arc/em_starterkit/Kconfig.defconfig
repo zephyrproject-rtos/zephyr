@@ -5,7 +5,7 @@ if BOARD_EM_STARTERKIT
 config BOARD
 	default "em_starterkit"
 
-config CPU_ARCEM4
+config CPU_ARCEM
 	default y
 
 if GPIO
