@@ -124,8 +124,6 @@ void test_slice_reset(void)
 		while (k_uptime_get_32() == t32) {
 #if defined(CONFIG_ARCH_POSIX)
 			k_busy_wait(50);
-#else
-			;
 #endif
 		}
 
@@ -137,8 +135,6 @@ void test_slice_reset(void)
 		while (k_cycle_get_32() - t32 < HALF_SLICE_SIZE_CYCLES) {
 #if defined(CONFIG_ARCH_POSIX)
 			k_busy_wait(50);
-#else
-			;
 #endif
 		}
 

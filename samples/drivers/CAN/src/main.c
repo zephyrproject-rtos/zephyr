@@ -126,8 +126,9 @@ void rx_str_thread(void *msgq, void *can_dev_param, void *unused)
 
 	while (1) {
 		k_msgq_get((struct k_msgq *)msgq, &msg, K_FOREVER);
-		for (int i = 0; i < msg.dlc; i++)
+		for (int i = 0; i < msg.dlc; i++) {
 			printk("%c", msg.data[i]);
+		}
 	}
 }
 

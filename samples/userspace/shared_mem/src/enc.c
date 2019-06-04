@@ -56,8 +56,10 @@ char enig_enc(char pt)
 	printk("EE   : %02x\n", tmpIndex);
 #endif
 	/* if error return  */
-	if (tmpIndex == -1)
+	if (tmpIndex == -1) {
 		return (char)0xFF;
+	}
+
 	tmpIndex = (W1[IMOD(IW1, tmpIndex)] + WHEEL_SIZE - IW1) % WHEEL_SIZE;
 #ifdef DBUG
 	printk("EE i1: %02x\n", tmpIndex);

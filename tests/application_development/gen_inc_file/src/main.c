@@ -96,9 +96,10 @@ static void do_test_gen_gz_inc_file(const unsigned char gz_inc_file[],
 			/* Modification time field (4 bytes) in
 			 * the gzip header.
 			 */
-			if (mtime != NULL) /* NULL arg = random "now" */
+			if (mtime != NULL) { /* NULL arg = random "now" */
 				zassert_equal(gz_inc_file[i], mtime[i-4],
 					      "Invalid mtime in inc file");
+			}
 
 			continue;
 		}

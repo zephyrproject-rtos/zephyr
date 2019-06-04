@@ -575,8 +575,9 @@ void main(void)
 
 	while (1) {
 		uart_line_ctrl_get(dev, LINE_CTRL_DTR, &dtr);
-		if (dtr)
+		if (dtr) {
 			break;
+		}
 	}
 
 	uart_dev = dev;
@@ -584,10 +585,11 @@ void main(void)
 	LOG_DBG("DTR set, continue");
 
 	ret = uart_line_ctrl_get(dev, LINE_CTRL_BAUD_RATE, &baudrate);
-	if (ret)
+	if (ret) {
 		printk("Failed to get baudrate, ret code %d\n", ret);
-	else
+	} else {
 		printk("Baudrate detected: %d\n", baudrate);
+	}
 
 	LOG_INF("USB serial initialized");
 

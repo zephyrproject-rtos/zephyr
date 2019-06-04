@@ -102,8 +102,9 @@ static int test_fifo_read(void)
 	TC_PRINT("Please send characters to serial console\n");
 
 	data_received = false;
-	while (data_received == false)
-		;
+	while (data_received == false) {
+	}
+
 	/* Verify uart_irq_rx_disable() */
 	uart_irq_rx_disable(uart_dev);
 
