@@ -29,6 +29,12 @@ static void show_msi(const struct shell *shell, pcie_bdf_t bdf)
 			      (data & PCIE_MSI_MCR_64) ? ", 64-bit" : "",
 			      (data & PCIE_MSI_MCR_EN) ? ", enabled" : "");
 	}
+
+	msi = pcie_get_cap(bdf, PCIE_MSIX_CAP_ID);
+
+	if (msi) {
+		shell_fprintf(shell, SHELL_NORMAL, "    MSI-X support\n");
+	}
 #endif
 }
 

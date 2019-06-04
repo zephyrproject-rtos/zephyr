@@ -73,10 +73,11 @@ extern u16_t pcie_msi_mdr(unsigned int irq);
 extern bool pcie_set_msi(pcie_bdf_t bdf, unsigned int irq);
 
 /*
- * MSI capability ID in the PCI configuration capability list.
+ * MSI capability IDs in the PCI configuration capability list.
  */
 
-#define PCIE_MSI_CAP_ID		05U
+#define PCIE_MSI_CAP_ID		0x05U
+#define PCIE_MSIX_CAP_ID	0x11U
 
 /*
  * The first word of the MSI capability is shared with the
