@@ -477,6 +477,8 @@ GROUP_END(DTCM)
 
 #include <linker/debug-sections.ld>
 
+    /DISCARD/ : { *(.note.GNU-stack) }
+
     SECTION_PROLOGUE(.ARM.attributes, 0,)
 	{
 	KEEP(*(.ARM.attributes))
