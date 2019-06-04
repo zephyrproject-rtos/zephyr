@@ -4,4 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "nsim_em.dts"
+/dts-v1/;
+
+#include "nsim_em.dtsi"
+
+/ {
+	model = "snps,nsim_sem_mpu_stack_guard";
+	compatible = "snps,nsim_sem_mpu_stack_guard.dts";
+};

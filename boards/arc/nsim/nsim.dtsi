@@ -1,0 +1,46 @@
+/*
+ * Copyright (c) 2018, 2019, Synopsys, Inc. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include "skeleton.dtsi"
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		intc: arcv2-intc {
+			compatible = "snps,arcv2-intc";
+			interrupt-controller;
+			#interrupt-cells = <2>;
+		};
+	};
+
+	iccm0: iccm@0 {
+		device_type = "memory";
+		compatible = "arc,iccm";
+		reg = <0x0 0x80000>;
+	};
+
+	dccm0: dccm@80000000 {
+		device_type = "memory";
+		compatible = "arc,dccm";
+		reg = <0x80000000 0x80000>;
+	};
+
+	uart0: uart@f0000000 {
+		compatible = "snps,nsim-uart";
+		reg = <0xf0000000 0x100>;
+		label = "UART_0";
+	};
+
+	chosen {
+		zephyr,sram = &dccm0;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+	};
+};
