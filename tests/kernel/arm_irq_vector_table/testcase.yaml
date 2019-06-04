@@ -1,5 +1,5 @@
 tests:
   arch.interrupt:
-    filter: CONFIG_ARMV7_M_ARMV8_M_MAINLINE
+    filter: CONFIG_ARMV7_M_ARMV8_M_MAINLINE and not CONFIG_COUNTER_TIMER
     tags: arm interrupt vector_table
     arch_whitelist: arm
