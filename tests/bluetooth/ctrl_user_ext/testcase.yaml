@@ -1,0 +1,6 @@
+common:
+  build_only: true
+  tags: bluetooth
+tests:
+  bluetooth.ctrl_user_ext.test:
+    platform_whitelist: nrf52_bsim
