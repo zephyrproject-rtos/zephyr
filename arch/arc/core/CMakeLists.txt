@@ -24,6 +24,6 @@ zephyr_library_sources_ifdef(CONFIG_CACHE_FLUSHING cache.c)
 zephyr_library_sources_ifdef(CONFIG_ARC_FIRQ fast_irq.S)
 
 zephyr_library_sources_if_kconfig(irq_offload.c)
-zephyr_library_sources_ifdef(CONFIG_ATOMIC_OPERATIONS_CUSTOM atomic.c)
+zephyr_library_sources_ifdef(CONFIG_ATOMIC_OPERATIONS_CUSTOM atomic.S)
 add_subdirectory_ifdef(CONFIG_ARC_CORE_MPU mpu)
 zephyr_library_sources_ifdef(CONFIG_USERSPACE userspace.S)
