@@ -1,7 +1,14 @@
 /*
- * Copyright (c) 2018, Synopsys, Inc. All rights reserved.
+ * Copyright (c) 2018, 2019, Synopsys, Inc. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "nsim_em.dts"
+/dts-v1/;
+
+#include "nsim_em.dtsi"
+
+/ {
+	model = "snps,nsim_sem";
+	compatible = "snps,nsim_sem";
+};
