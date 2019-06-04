@@ -206,8 +206,8 @@ static inline void z_zassert(int cond,
  * @param size Size of buffers
  * @param msg Optional message to print if the assertion fails
  */
-#define zassert_mem_equal__(buf, exp, size, msg, ...)                        \
-	zassert_equal(memcmp(buf, exp, size), 0, #buf " not equal to " #exp, \
+#define zassert_mem_equal__(buf, exp, size, msg, ...)                    \
+	zassert(memcmp(buf, exp, size) == 0, #buf " not equal to " #exp, \
 	msg, ##__VA_ARGS__)
 
 /**
