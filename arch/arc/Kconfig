@@ -1,7 +1,7 @@
-# ARC EM4 options
+# ARC options
 
 #
-# Copyright (c) 2014 Wind River Systems, Inc.
+# Copyright (c) 2014, 2019 Wind River Systems, Inc.
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -12,15 +12,15 @@ menu "ARC Options"
 config ARCH
 	default "arc"
 
-menu "ARC EM4 processor options"
+menu "ARC processor options"
 
-config	CPU_ARCEM4
+config	CPU_ARCEM
 	bool
 	default y
 	select CPU_ARCV2
 	select ATOMIC_OPERATIONS_C
 	help
-	  This option signifies the use of an ARC EM4 CPU
+	  This option signifies the use of an ARC EM CPU
 
 endmenu
 
