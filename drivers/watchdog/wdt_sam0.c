@@ -52,6 +52,7 @@ static void wdt_sam0_isr(struct device *dev)
 	struct wdt_sam0_dev_data *data = dev->driver_data;
 
 	WDT_REGS->INTFLAG.reg = WDT_INTFLAG_EW;
+
 	if (data->cb != NULL) {
 		data->cb(dev, 0);
 	}
