@@ -67,43 +67,6 @@ z_set_thread_return_value(struct k_thread *thread, unsigned int value)
 
 extern void k_cpu_atomic_idle(unsigned int key);
 
-/**
- * @brief Write to a model specific register (MSR)
- *
- * This function is used to write to an MSR.
- *
- * The definitions of the so-called  "Architectural MSRs" are contained
- * in kernel_structs.h and have the format: IA32_XXX_MSR
- *
- * @return N/A
- */
-static inline void z_x86_msr_write(unsigned int msr, u64_t data)
-{
-	u32_t high = data >> 32;
-	u32_t low = data & 0xFFFFFFFF;
-
-	__asm__ volatile ("wrmsr" : : "c"(msr), "a"(low), "d"(high));
-}
-
-/**
- * @brief Read from a model specific register (MSR)
- *
- * This function is used to read from an MSR.
- *
- * The definitions of the so-called  "Architectural MSRs" are contained
- * in kernel_structs.h and have the format: IA32_XXX_MSR
- *
- * @return N/A
- */
-static inline u64_t z_x86_msr_read(unsigned int msr)
-{
-	u64_t ret;
-
-	__asm__ volatile("rdmsr" : "=A" (ret) : "c" (msr));
-
-	return ret;
-}
-
 #ifdef CONFIG_JAILHOUSE_X2APIC
 #define MSR_X2APIC_BASE 0x00000800
 

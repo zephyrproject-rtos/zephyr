@@ -10,6 +10,7 @@
 #include <kernel_structs.h>
 #include <kernel_arch_data.h>
 #include <kernel_arch_func.h>
+#include <arch/x86/msr.h>
 #include <kernel.h>
 
 /*
@@ -23,7 +24,7 @@
 #define CPUID_SPEC_CTRL_SSBD	BIT(31)
 #define CPUID_SPEC_CTRL_IBRS	BIT(26)
 
-/* Bits to set in IA32_SPEC_CTRL_MSR to enable */
+/* Bits to set in X86_SPEC_CTRL_MSR to enable */
 #define SPEC_CTRL_IBRS		BIT(0)
 #define SPEC_CTRL_SSBD		BIT(2)
 
@@ -58,9 +59,9 @@ static int spec_ctrl_init(struct device *dev)
 	}
 #endif
 	if (enable_bits != 0U) {
-		u64_t cur = z_x86_msr_read(IA32_SPEC_CTRL_MSR);
+		u64_t cur = z_x86_msr_read(X86_SPEC_CTRL_MSR);
 
-		z_x86_msr_write(IA32_SPEC_CTRL_MSR,
+		z_x86_msr_write(X86_SPEC_CTRL_MSR,
 			       cur | enable_bits);
 	}
 
