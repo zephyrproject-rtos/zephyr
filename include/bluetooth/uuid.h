@@ -91,6 +91,10 @@ struct bt_uuid_128 {
  *  @brief Current Time Service
  */
 #define BT_UUID_CTS                       BT_UUID_DECLARE_16(0x1805)
+/** @def BT_UUID_HTS
+ *  @brief Health Thermometer Service
+ */
+#define BT_UUID_HTS                       BT_UUID_DECLARE_16(0x1809)
 /** @def BT_UUID_DIS
  *  @brief Device Information Service
  */
@@ -207,6 +211,10 @@ struct bt_uuid_128 {
  *  @brief BAS Characteristic Battery Level
  */
 #define BT_UUID_BAS_BATTERY_LEVEL         BT_UUID_DECLARE_16(0x2a19)
+/** @def BT_UUID_HTS_MEASUREMENT
+ *  @brief HTS Characteristic Measurement Value
+ */
+#define BT_UUID_HTS_MEASUREMENT           BT_UUID_DECLARE_16(0x2a1c)
 /** @def BT_UUID_HIDS_BOOT_KB_IN_REPORT
  *  @brief HID Characteristic Boot Keyboard Input Report
  */
