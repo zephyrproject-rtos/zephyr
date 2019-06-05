@@ -1,4 +1,4 @@
-.. _lsm6dsl:
+.. _synth:
 
 SYNTH: Synth Monitor
 ####################
