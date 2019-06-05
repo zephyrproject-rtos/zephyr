@@ -9,7 +9,7 @@ from west import log
 from west.configuration import config
 from zcmake import DEFAULT_CMAKE_GENERATOR, run_cmake, run_build, CMakeCache
 from build_helpers import is_zephyr_build, find_build_dir, \
-    BUILD_DIR_DESCRIPTION
+    FIND_BUILD_DIR_DESCRIPTION
 
 from zephyr_ext_common import Forceable
 
@@ -85,8 +85,10 @@ class Build(Forceable):
         # Hidden option for backwards compatibility
         parser.add_argument('-s', '--source-dir', help=argparse.SUPPRESS)
         parser.add_argument('-d', '--build-dir',
-                            help=BUILD_DIR_DESCRIPTION +
-                            " Always created if it doesn't exist.")
+                            help='Build directory. ' +
+                            FIND_BUILD_DIR_DESCRIPTION +
+                            " Otherwise the default build directory is " +
+                            "created and used.")
         parser.add_argument('-t', '--target',
                             help='''Build system target to run''')
         parser.add_argument('-p', '--pristine', choices=['auto', 'always',
@@ -155,7 +157,7 @@ class Build(Forceable):
                     self.run_cmake = True
         else:
             self.run_cmake = True
-        self._setup_source_dir()
+        self.source_dir = self._find_source_dir()
         self._sanity_check()
 
         board, origin = self._find_board()
@@ -218,7 +220,15 @@ class Build(Forceable):
         # Initialize build_dir and created_build_dir attributes.
         # If we created the build directory, we must run CMake.
         log.dbg('setting up build directory', level=log.VERBOSE_EXTREME)
-        build_dir = find_build_dir(self.args.build_dir)
+        # The CMake Cache has not been loaded yet, so this is safe
+        board, origin = self._find_board()
+        source_dir = self._find_source_dir()
+        app = os.path.split(source_dir)[1]
+        build_dir = find_build_dir(self.args.build_dir, board=board,
+                                   source_dir=source_dir, app=app)
+        if not build_dir:
+            log.die('Unable to determine a default build folder. Check '
+                    'your build.dir-fmt configuration option')
 
         if os.path.exists(build_dir):
             if not os.path.isdir(build_dir):
@@ -231,7 +241,7 @@ class Build(Forceable):
 
         self.build_dir = build_dir
 
-    def _setup_source_dir(self):
+    def _find_source_dir(self):
         # Initialize source_dir attribute, either from command line argument,
         # implicitly from the build directory's CMake cache, or using the
         # default (current working directory).
@@ -248,7 +258,7 @@ class Build(Forceable):
                         'please give a source_dir')
         else:
             source_dir = os.getcwd()
-        self.source_dir = os.path.abspath(source_dir)
+        return os.path.abspath(source_dir)
 
     def _sanity_check_source_dir(self):
         if self.source_dir == self.build_dir:
@@ -338,7 +348,7 @@ class Build(Forceable):
             # invalidated, reset to CWD and re-run the basic tests.
             if ((boards_mismatched and not apps_mismatched) and
                     (not source_abs and cached_abs)):
-                self._setup_source_dir()
+                self.source_dir = self._find_source_dir()
                 self._sanity_check_source_dir()
 
     def _run_cmake(self, board, origin, cmake_opts):
