@@ -21,6 +21,8 @@ manifest:
   remotes:
     - name: upstream
       url-base: https://github.com/zephyrproject-rtos
+    - name: sofproject
+      url-base: https://github.com/thesofproject
 
   #
   # Please add items below based on alphabetical order
@@ -103,6 +105,10 @@ manifest:
     - name: littlefs
       path: modules/fs/littlefs
       revision: fe9572dd5a9fcf93a249daa4233012692bd2881d
+    - name: sof
+      revision: topic/zephyr
+      path: modules/audio/sof
+      remote: sofproject
 
   self:
     path: zephyr
