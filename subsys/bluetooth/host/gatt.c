@@ -1388,17 +1388,6 @@ static int gatt_indicate(struct bt_conn *conn, u16_t handle,
 	}
 #endif
 
-	/* Check if attribute is a characteristic then adjust the handle */
-	if (!bt_uuid_cmp(params->attr->uuid, BT_UUID_GATT_CHRC)) {
-		struct bt_gatt_chrc *chrc = params->attr->user_data;
-
-		if (!(chrc->properties & BT_GATT_CHRC_INDICATE)) {
-			return -EINVAL;
-		}
-
-		handle++;
-	}
-
 	buf = bt_att_create_pdu(conn, BT_ATT_OP_INDICATE,
 				sizeof(*ind) + params->len);
 	if (!buf) {
@@ -1613,6 +1602,17 @@ int bt_gatt_indicate(struct bt_conn *conn,
 	handle = params->attr->handle ? : find_static_attr(params->attr);
 	if (!handle) {
 		return -ENOENT;
+	}
+
+	/* Check if attribute is a characteristic then adjust the handle */
+	if (!bt_uuid_cmp(params->attr->uuid, BT_UUID_GATT_CHRC)) {
+		struct bt_gatt_chrc *chrc = params->attr->user_data;
+
+		if (!(chrc->properties & BT_GATT_CHRC_INDICATE)) {
+			return -EINVAL;
+		}
+
+		handle++;
 	}
 
 	if (conn) {
