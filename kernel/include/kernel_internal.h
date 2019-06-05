@@ -235,7 +235,7 @@ extern void z_thread_monitor_exit(struct k_thread *thread);
 	} while (false)
 #endif /* CONFIG_THREAD_MONITOR */
 
-extern void smp_init(void);
+extern void z_smp_init(void);
 
 extern void smp_timer_init(void);
 
