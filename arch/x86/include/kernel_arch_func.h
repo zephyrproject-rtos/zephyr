@@ -67,7 +67,7 @@ z_set_thread_return_value(struct k_thread *thread, unsigned int value)
 
 extern void k_cpu_atomic_idle(unsigned int key);
 
-#ifdef CONFIG_JAILHOUSE_X2APIC
+#ifdef CONFIG_X2APIC
 #define MSR_X2APIC_BASE 0x00000800
 
 static inline u32_t read_x2apic(unsigned int reg)

@@ -172,7 +172,7 @@ static u32_t loapic_device_power_state = DEVICE_PM_ACTIVE_STATE;
 
 static ALWAYS_INLINE u32_t LOAPIC_READ(mem_addr_t addr)
 {
-#ifndef CONFIG_JAILHOUSE_X2APIC
+#ifndef CONFIG_X2APIC
 	return sys_read32(CONFIG_LOAPIC_BASE_ADDRESS + addr);
 #else
 	return read_x2apic(addr >> 4);
@@ -181,7 +181,7 @@ static ALWAYS_INLINE u32_t LOAPIC_READ(mem_addr_t addr)
 
 static ALWAYS_INLINE void LOAPIC_WRITE(mem_addr_t addr, u32_t data)
 {
-#ifndef CONFIG_JAILHOUSE_X2APIC
+#ifndef CONFIG_X2APIC
 	sys_write32(data, CONFIG_LOAPIC_BASE_ADDRESS + addr);
 #else
 	write_x2apic(addr >> 4, data);
@@ -209,9 +209,8 @@ static int loapic_init(struct device *unused)
 
 	/* reset the DFR, TPR, TIMER_CONFIG, and TIMER_ICR */
 
-	/* Jailhouse does not allow writes to DFR in x2APIC mode */
-#ifndef CONFIG_JAILHOUSE_X2APIC
-	LOAPIC_WRITE(LOAPIC_DFR, 0xffffffff);
+#ifndef CONFIG_X2APIC
+	LOAPIC_WRITE(LOAPIC_DFR, 0xffffffff);	/* no DFR in x2APIC mode */
 #endif
 
 	LOAPIC_WRITE(LOAPIC_TPR, 0x0);

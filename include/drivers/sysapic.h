@@ -27,8 +27,8 @@ void __irq_controller_irq_config(unsigned int vector, unsigned int irq,
 
 int __irq_controller_isr_vector_get(void);
 
-#ifdef CONFIG_JAILHOUSE_X2APIC
-void z_jailhouse_eoi(void);
+#ifdef CONFIG_X2APIC
+void z_x2apic_eoi(void);
 #endif
 
 static inline void __irq_controller_eoi(void)
@@ -48,8 +48,8 @@ static inline void __irq_controller_eoi(void)
 .endm
 #else
 .macro __irq_controller_eoi_macro
-#ifdef CONFIG_JAILHOUSE_X2APIC
-	call	z_jailhouse_eoi
+#ifdef CONFIG_X2APIC
+	call	z_x2apic_eoi
 #else
 	xorl %eax, %eax			/* zeroes eax */
 	loapic_eoi_reg = (CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_EOI)
