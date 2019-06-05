@@ -89,7 +89,7 @@ static void smp_init_top(int key, void *arg)
 }
 #endif
 
-void smp_init(void)
+void z_smp_init(void)
 {
 	(void)atomic_clear(&start_flag);
 

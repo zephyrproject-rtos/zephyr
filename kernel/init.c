@@ -263,7 +263,7 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 	z_init_static_threads();
 
 #ifdef CONFIG_SMP
-	smp_init();
+	z_smp_init();
 #endif
 
 #ifdef CONFIG_BOOT_TIME_MEASUREMENT
