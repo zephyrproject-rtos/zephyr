@@ -19,6 +19,6 @@ properties:
 
     drdy-gpios:
       type: compound
-      category: required
+      category: optional
       generation: define, use-prop-name
 ...

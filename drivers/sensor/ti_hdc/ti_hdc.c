@@ -18,6 +18,7 @@
 #define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
 LOG_MODULE_REGISTER(TI_HDC);
 
+#if defined(DT_TI_HDC_0_DRDY_GPIOS_CONTROLLER)
 static void ti_hdc_gpio_callback(struct device *dev,
 				  struct gpio_callback *cb, u32_t pins)
 {
@@ -29,6 +30,7 @@ static void ti_hdc_gpio_callback(struct device *dev,
 	gpio_pin_disable_callback(dev, DT_TI_HDC_0_DRDY_GPIOS_PIN);
 	k_sem_give(&drv_data->data_sem);
 }
+#endif
 
 static int ti_hdc_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
@@ -37,8 +39,9 @@ static int ti_hdc_sample_fetch(struct device *dev, enum sensor_channel chan)
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 
-	gpio_pin_enable_callback(drv_data->gpio,
-				 DT_TI_HDC_0_DRDY_GPIOS_PIN);
+#if defined(DT_TI_HDC_0_DRDY_GPIOS_CONTROLLER)
+	gpio_pin_enable_callback(drv_data->gpio, DT_TI_HDC_0_DRDY_GPIOS_PIN);
+#endif
 
 	buf[0] = TI_HDC_REG_TEMP;
 	if (i2c_write(drv_data->i2c, buf, 1,
@@ -47,7 +50,12 @@ static int ti_hdc_sample_fetch(struct device *dev, enum sensor_channel chan)
 		return -EIO;
 	}
 
+#if defined(DT_TI_HDC_0_DRDY_GPIOS_CONTROLLER)
 	k_sem_take(&drv_data->data_sem, K_FOREVER);
+#else
+	/* wait for the conversion to finish */
+	k_sleep(HDC_CONVERSION_TIME);
+#endif
 
 	if (i2c_read(drv_data->i2c, buf, 4, DT_TI_HDC_0_BASE_ADDRESS) < 0) {
 		LOG_DBG("Failed to read sample data");
@@ -62,8 +70,8 @@ static int ti_hdc_sample_fetch(struct device *dev, enum sensor_channel chan)
 
 
 static int ti_hdc_channel_get(struct device *dev,
-			       enum sensor_channel chan,
-			       struct sensor_value *val)
+			      enum sensor_channel chan,
+			      struct sensor_value *val)
 {
 	struct ti_hdc_data *drv_data = dev->driver_data;
 	u64_t tmp;
@@ -129,6 +137,7 @@ static int ti_hdc_init(struct device *dev)
 		return -EINVAL;
 	}
 
+#if defined(DT_TI_HDC_0_DRDY_GPIOS_CONTROLLER)
 	k_sem_init(&drv_data->data_sem, 0, UINT_MAX);
 
 	/* setup data ready gpio interrupt */
@@ -155,6 +164,9 @@ static int ti_hdc_init(struct device *dev)
 		LOG_DBG("Failed to set GPIO callback");
 		return -EIO;
 	}
+#endif
+
+	LOG_INF("Initialized device successfully");
 
 	return 0;
 }
