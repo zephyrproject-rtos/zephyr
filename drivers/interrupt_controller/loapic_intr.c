@@ -222,7 +222,6 @@ static int loapic_init(struct device *unused)
 	/* skip LINT0/LINT1 for Jailhouse guest case, because we won't
 	 * ever be waiting for interrupts on those
 	 */
-#ifndef CONFIG_JAILHOUSE
 	/* set LINT0: extInt, high-polarity, edge-trigger, not-masked */
 
 	LOAPIC_WRITE(LOAPIC_LINT0, (LOAPIC_READ(LOAPIC_LINT0) &
@@ -236,7 +235,6 @@ static int loapic_init(struct device *unused)
 		~(LOAPIC_MODE | LOAPIC_LOW |
 		  LOAPIC_LEVEL | LOAPIC_LVT_MASKED)) |
 		(LOAPIC_NMI | LOAPIC_HIGH | LOAPIC_EDGE));
-#endif
 
 	/* lock the Local APIC interrupts */
 
