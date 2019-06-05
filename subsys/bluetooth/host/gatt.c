@@ -1252,11 +1252,11 @@ static int gatt_send(struct bt_conn *conn, struct net_buf *buf,
 }
 
 static int gatt_indicate(struct bt_conn *conn,
+			 u16_t value_handle,
 			 struct bt_gatt_indicate_params *params)
 {
 	struct net_buf *buf;
 	struct bt_att_indicate *ind;
-	u16_t value_handle = params->attr->handle;
 
 #if defined(CONFIG_BT_GATT_ENFORCE_CHANGE_UNAWARE)
 	/* BLUETOOTH CORE SPECIFICATION Version 5.1 | Vol 3, Part G page 2350:
@@ -1269,18 +1269,6 @@ static int gatt_indicate(struct bt_conn *conn,
 		return -EAGAIN;
 	}
 #endif
-
-
-	/* Check if attribute is a characteristic then adjust the handle */
-	if (!bt_uuid_cmp(params->attr->uuid, BT_UUID_GATT_CHRC)) {
-		struct bt_gatt_chrc *chrc = params->attr->user_data;
-
-		if (!(chrc->properties & BT_GATT_CHRC_INDICATE)) {
-			return -EINVAL;
-		}
-
-		value_handle += 1U;
-	}
 
 	buf = bt_att_create_pdu(conn, BT_ATT_OP_INDICATE,
 				sizeof(*ind) + params->len);
@@ -1386,7 +1374,8 @@ static u8_t notify_cb(const struct bt_gatt_attr *attr, void *user_data)
 		}
 
 		if (data->type == BT_GATT_CCC_INDICATE) {
-			err = gatt_indicate(conn, data->params);
+			err = gatt_indicate(conn, data->attr->handle,
+					    data->params);
 		} else {
 			err = gatt_notify(conn, data->attr->handle,
 					  data->data, data->len,
@@ -1446,19 +1435,33 @@ int bt_gatt_indicate(struct bt_conn *conn,
 		     struct bt_gatt_indicate_params *params)
 {
 	struct notify_data nfy;
+	u16_t handle;
 
 	__ASSERT(params, "invalid parameters\n");
 	__ASSERT(params->attr && params->attr->handle, "invalid parameters\n");
 
+	handle = params->attr->handle;
+
+	/* Check if attribute is a characteristic then adjust the handle */
+	if (!bt_uuid_cmp(params->attr->uuid, BT_UUID_GATT_CHRC)) {
+		struct bt_gatt_chrc *chrc = params->attr->user_data;
+
+		if (!(chrc->properties & BT_GATT_CHRC_INDICATE)) {
+			return -EINVAL;
+		}
+
+		handle++;
+	}
+
 	if (conn) {
-		return gatt_indicate(conn, params);
+		return gatt_indicate(conn, handle, params);
 	}
 
 	nfy.err = -ENOTCONN;
 	nfy.type = BT_GATT_CCC_INDICATE;
 	nfy.params = params;
 
-	bt_gatt_foreach_attr(params->attr->handle, 0xffff, notify_cb, &nfy);
+	bt_gatt_foreach_attr(handle, 0xffff, notify_cb, &nfy);
 
 	return nfy.err;
 }
