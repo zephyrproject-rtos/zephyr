@@ -10,14 +10,7 @@
 extern "C" {
 #endif
 
-
-#ifndef __timespec_defined
-#define __timespec_defined
-struct timespec {
-	signed int tv_sec;
-	signed int tv_nsec;
-};
-#endif
+#include <sys/_timespec.h>
 
 /* Older newlib's like 2.{0-2}.0 don't define any newlib version defines, only
  * __NEWLIB_H__ so we use that to decide if itimerspec was defined in
