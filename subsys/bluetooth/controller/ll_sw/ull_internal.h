@@ -33,5 +33,8 @@ u32_t ull_ticker_status_take(u32_t ret, u32_t volatile *ret_cb);
 void *ull_disable_mark(void *param);
 void *ull_disable_unmark(void *param);
 void *ull_disable_mark_get(void);
+void *ull_update_mark(void *param);
+void *ull_update_unmark(void *param);
+void *ull_update_mark_get(void);
 int ull_disable(void *param);
 u8_t ull_entropy_get(u8_t len, void *rand);
