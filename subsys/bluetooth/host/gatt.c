@@ -905,17 +905,35 @@ static u8_t get_service_handles(const struct bt_gatt_attr *attr,
 	return BT_GATT_ITER_CONTINUE;
 }
 
+static u16_t find_static_attr(const struct bt_gatt_attr *attr)
+{
+	const struct bt_gatt_service_static *static_svc;
+	u16_t handle;
+
+	for (static_svc = _bt_services_start, handle = 1;
+	     static_svc < _bt_services_end; static_svc++) {
+		for (int i = 0; i < static_svc->attr_count; i++, handle++) {
+			if (attr == &static_svc->attrs[i]) {
+				return handle;
+			}
+		}
+	}
+
+	return 0;
+}
+
 ssize_t bt_gatt_attr_read_included(struct bt_conn *conn,
 				   const struct bt_gatt_attr *attr,
 				   void *buf, u16_t len, u16_t offset)
 {
 	struct bt_gatt_attr *incl = attr->user_data;
+	u16_t handle = incl->handle ? : find_static_attr(incl);
 	struct bt_uuid *uuid = incl->user_data;
 	struct gatt_incl pdu;
 	u8_t value_len;
 
 	/* first attr points to the start handle */
-	pdu.start_handle = sys_cpu_to_le16(incl->handle);
+	pdu.start_handle = sys_cpu_to_le16(handle);
 	value_len = sizeof(pdu.start_handle) + sizeof(pdu.end_handle);
 
 	/*
@@ -929,8 +947,7 @@ ssize_t bt_gatt_attr_read_included(struct bt_conn *conn,
 	}
 
 	/* Lookup for service end handle */
-	bt_gatt_foreach_attr(incl->handle + 1, 0xffff, get_service_handles,
-			     &pdu);
+	bt_gatt_foreach_attr(handle + 1, 0xffff, get_service_handles, &pdu);
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, &pdu, value_len);
 }
@@ -949,6 +966,7 @@ ssize_t bt_gatt_attr_read_chrc(struct bt_conn *conn,
 			       u16_t len, u16_t offset)
 {
 	struct bt_gatt_chrc *chrc = attr->user_data;
+	u16_t handle = attr->handle ? : find_static_attr(attr);
 	struct gatt_chrc pdu;
 	u8_t value_len;
 
@@ -960,7 +978,7 @@ ssize_t bt_gatt_attr_read_chrc(struct bt_conn *conn,
 	 * declaration. All characteristic definitions shall have a
 	 * Characteristic Value declaration.
 	 */
-	pdu.value_handle = sys_cpu_to_le16(attr->handle + 1);
+	pdu.value_handle = sys_cpu_to_le16(handle + 1);
 
 	value_len = sizeof(pdu.properties) + sizeof(pdu.value_handle);
 
@@ -1273,23 +1291,6 @@ ssize_t bt_gatt_attr_read_cpf(struct bt_conn *conn,
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, value,
 				 sizeof(*value));
-}
-
-static u16_t find_static_attr(const struct bt_gatt_attr *attr)
-{
-	const struct bt_gatt_service_static *static_svc;
-	u16_t handle;
-
-	for (static_svc = _bt_services_start, handle = 1;
-	     static_svc < _bt_services_end; static_svc++) {
-		for (int i = 0; i < static_svc->attr_count; i++, handle++) {
-			if (attr == &static_svc->attrs[i]) {
-				return handle;
-			}
-		}
-	}
-
-	return 0;
 }
 
 struct notify_data {
