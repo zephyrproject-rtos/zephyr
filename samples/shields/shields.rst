@@ -1,4 +1,4 @@
-.. shields-samples:
+.. _shields-samples:
 
 Shields Samples
 ###############
