@@ -20,6 +20,12 @@ config LOAPIC_BASE_ADDRESS
 	help
 	  This option specifies the base address of the Local APIC device.
 
+config X2APIC
+	bool "Access local APIC in x2APIC mode"
+	default n
+	help
+	  If your local APIC supports x2APIC mode, turn this on.
+
 config LOAPIC_SPURIOUS_VECTOR
 	bool "Handle LOAPIC spurious interrupts"
 	help

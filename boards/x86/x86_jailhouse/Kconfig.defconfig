@@ -9,8 +9,4 @@ config JAILHOUSE
 	bool "Zephyr port to boot as a (x86) Jailhouse inmate cell payload"
 	default y
 
-config JAILHOUSE_X2APIC
-	depends on JAILHOUSE
-	bool "When in Jailhouse inmate cell mode, access APIC in x2APIC mode"
-
 endif # BOARD_X86_JAILHOUSE
