@@ -963,6 +963,8 @@ void HAL_PCD_SetupStageCallback(PCD_HandleTypeDef *hpcd)
 	LOG_DBG("");
 
 	ep_state = usb_dc_stm32_get_ep_state(EP0_OUT); /* can't fail for ep0 */
+	__ASSERT(ep_state, "No corresponding ep_state for EP0");
+
 	ep_state->read_count = SETUP_SIZE;
 	ep_state->read_offset = 0U;
 	memcpy(&usb_dc_stm32_state.ep_buf[EP0_IDX],
