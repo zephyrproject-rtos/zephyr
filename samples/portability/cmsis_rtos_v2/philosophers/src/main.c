@@ -252,4 +252,11 @@ void main(void)
 	display_demo_description();
 	init_objects();
 	start_threads();
+
+#ifdef CONFIG_COVERAGE
+	/* Wait a few seconds before main() exit, giving the sample the
+	 * opportunity to dump some output before coverage data gets emitted
+	 */
+	k_sleep(5000);
+#endif
 }
