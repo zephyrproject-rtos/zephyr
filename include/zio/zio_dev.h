@@ -9,8 +9,8 @@
  * @file
  * @brief ZIO Device, a pollable sampled IO device
  *
- * ZIO devices are composed of device attributes (zio_attr),
- * channels (zio_dev_chan) and channel attributes (zio_attr) in the
+ * ZIO devices are composed of device attributes (zio_attr_desc),
+ * channels (zio_chan_desc) and channel attributes (zio_attr_desc) in the
  * following manner:
  *
  * ZIO Device----------------------------------------------------------------+
@@ -60,8 +60,7 @@
 
 #include <zephyr/types.h>
 #include <device.h>
-
-#include <zio/zio_attr.h>
+#include <zio/zio_variant.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -80,14 +79,21 @@ struct zio_buf;
  * @brief Pre-defined channel types with the ability to extend by a driver
  * implementation.
  *
- * Extended values should always be based on ZIO_LAST_CHAN_TYPE with an
+ * Extended values should always be based on ZIO_CHAN_TYPES count with an
  * additive and defined in a publicly available driver header.
+ *
+ * Example: \#define MY_CHAN_TYPE (ZIO_CHAN_TYPES+1)
  */
-enum zio_channel_type {
+enum zio_chan_type {
 	ZIO_VOLTAGE,
 
 	/* Last type is always begins the user definable type range */
-	ZIO_CHAN_TYPES
+	ZIO_CHAN_TYPES,
+
+	/* enforce a specific enum size allowing for a good number of user
+	 * definable values while keeping the size standardized for encoding
+	 */
+	ZIO_CHAN_TYPE_MAKE_16_BIT = 0xFFFF
 };
 
 
@@ -96,7 +102,7 @@ enum zio_channel_type {
  *
  * A description of a the format and type of data coming for a channel
  */
-struct zio_dev_chan {
+struct zio_chan_desc {
 	/**
 	 * Name of the channel, may be null
 	 */
@@ -112,7 +118,7 @@ struct zio_dev_chan {
 	 * above a certain value defined in the enum. The enum will be defined
 	 * in a future zio_defs.h file.
 	 */
-	const u16_t type;
+	const enum zio_chan_type type;
 
 	/**
 	 * Bit width of channel data, ex: 12 bit samples from a 12 bit adc
@@ -129,16 +135,50 @@ struct zio_dev_chan {
 	 */
 	const enum byteorder {
 		ZIO_BYTEORDER_ARCH,
-			ZIO_BYTEORDER_BIG,
-			ZIO_BYTEORDER_LITTLE
+		ZIO_BYTEORDER_BIG,
+		ZIO_BYTEORDER_LITTLE,
 	} byte_order;
 
 	const enum sign_bit {
 		ZIO_SIGN_NONE,
-			ZIO_SIGN_MSB,
-			ZIO_SIGN_LSB,
+		ZIO_SIGN_MSB,
+		ZIO_SIGN_LSB,
 	} sign_bit;
 
+};
+
+/**
+ * @brief Pre-defined attribute types with the ability to extend by a driver
+ * implementation.
+ *
+ * Extended values should always be based on ZIO_ATTR_TYPES count with an
+ * additive and defined in a publicly available driver header.
+ *
+ * Example: \#define MY_ATTR_TYPE (ZIO_ATTR_TYPES+1)
+ */
+enum zio_attr_type {
+	ZIO_SAMPLE_RATE,
+	/**< @brief Samples per second */
+
+	ZIO_ATTR_TYPES,
+	/**< @brief A count of attribute types always begins the user definable range */
+
+	ZIO_ATTR_TYPE_MAKE_16_BIT = 0xFFFF
+	/**< enforce a specific enum size allowing for a good number of user
+	 * definable values but keeping
+	 */
+
+};
+
+/**
+ * @brief Attribute description
+ */
+struct zio_attr_desc {
+	enum zio_attr_type type;
+	/**< @brief Attribute type, describing what it is such as the sample rate */
+
+	enum zio_variant_type data_type;
+	/**< @brief Attribute data type describing the expected data type. */
 };
 
 /**
@@ -161,15 +201,15 @@ typedef int (*zio_dev_get_attr_t)(struct device *dev, uint32_t attr_idx,
 /**
  * @brief Function to get a pointer to the array of attribute descriptions
  */
-typedef int (*zio_dev_get_attrs_t)(struct device *dev,
-				   struct zio_attr **attrs,
-				   u16_t *num_attrs);
+typedef int (*zio_dev_get_attr_descs_t)(struct device *dev,
+				   const struct zio_attr_desc **attrs,
+				   u32_t *num_attrs);
 
 /**
  * @brief Function to get a pointer to the array of channel descriptions
  */
-typedef int (*zio_dev_get_chans_t)(struct device *dev,
-				   const struct zio_dev_chan **chans,
+typedef int (*zio_dev_get_chan_descs_t)(struct device *dev,
+				   const struct zio_chan_desc **chans,
 				   u32_t *num_chans);
 
 /**
@@ -177,9 +217,10 @@ typedef int (*zio_dev_get_chans_t)(struct device *dev,
  *
  * @return -EINVAL if an invalid channel id was given, 0 otherwise
  */
-typedef int (*zio_chan_get_attrs_t)(struct device *dev, const u32_t chan_idx,
-				    struct zio_attr *attrs,
-				    u32_t *num_attrs);
+typedef int (*zio_chan_get_attr_descs_t)(struct device *dev,
+				   const u32_t chan_idx,
+				   const struct zio_attr_desc **attrs,
+				   u32_t *num_attrs);
 
 /**
  * @brief Function to set a channel attribute for a device
@@ -225,7 +266,7 @@ typedef int (*zio_chan_disable_t)(struct device *dev, u32_t chan_idx);
  * @return -EINVAL if an invalid chan was given, 0 if not enabled, 1 if enabled
  */
 typedef int (*zio_chan_is_enabled_t)(struct device *dev,
-				     struct zio_dev_chan *chan);
+				     struct zio_chan_desc *chan);
 
 
 /**
@@ -267,10 +308,10 @@ typedef int (*zio_dev_detach_buf_t)(struct device *dev);
 struct zio_dev_api {
 	zio_dev_set_attr_t set_attr;
 	zio_dev_get_attr_t get_attr;
-	zio_dev_get_attrs_t get_attrs;
+	zio_dev_get_attr_descs_t get_attr_descs;
 
-	zio_dev_get_chans_t get_chans;
-	zio_chan_get_attrs_t get_chan_attrs;
+	zio_dev_get_chan_descs_t get_chan_descs;
+	zio_chan_get_attr_descs_t get_chan_attr_descs;
 	zio_chan_set_attr_t set_chan_attr;
 	zio_chan_get_attr_t get_chan_attr;
 	zio_chan_enable_t enable_chan;
@@ -344,15 +385,16 @@ struct zio_dev_api {
  * @param num_attrs Pointer to a u32_t which is set to the number of attrs of
  *	the device
  */
-static inline int zio_dev_get_attrs(struct device *dev,
-		struct zio_attr **attrs, u16_t *num_attrs)
+static inline int zio_dev_get_attr_descs(struct device *dev,
+		const struct zio_attr_desc **attrs,
+		u32_t *num_attrs)
 {
 	const struct zio_dev_api *api = dev->driver_api;
 
-	if (!api->get_attrs) {
+	if (!api->get_attr_descs) {
 		return -ENOTSUP;
 	}
-	api->get_attrs(dev, attrs, num_attrs);
+	api->get_attr_descs(dev, attrs, num_attrs);
 	return 0;
 }
 
