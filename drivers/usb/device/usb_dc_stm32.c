@@ -1009,6 +1009,8 @@ void HAL_PCD_DataInStageCallback(PCD_HandleTypeDef *hpcd, u8_t epnum)
 
 	LOG_DBG("epnum 0x%02x", epnum);
 
+	__ASSERT(ep_state, "No corresponding ep_state for ep");
+
 	k_sem_give(&ep_state->write_sem);
 
 	if (ep_state->cb) {
