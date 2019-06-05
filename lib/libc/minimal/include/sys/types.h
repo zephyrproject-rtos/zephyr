@@ -8,6 +8,8 @@
 #ifndef ZEPHYR_LIB_LIBC_MINIMAL_INCLUDE_SYS_TYPES_H_
 #define ZEPHYR_LIB_LIBC_MINIMAL_INCLUDE_SYS_TYPES_H_
 
+#include <stdint.h>
+
 typedef unsigned int mode_t;
 
 #if !defined(__ssize_t_defined)
@@ -40,7 +42,7 @@ typedef int off_t;
 
 #endif
 
-typedef long long time_t;
-typedef long suseconds_t;
+typedef int64_t time_t;
+typedef int32_t suseconds_t;
 
 #endif /* ZEPHYR_LIB_LIBC_MINIMAL_INCLUDE_SYS_TYPES_H_ */
