@@ -197,11 +197,16 @@ static MEMQ_DECLARE(ll_rx);
 #if defined(CONFIG_BT_CONN)
 static MFIFO_DEFINE(tx_ack, sizeof(struct lll_tx),
 		    CONFIG_BT_CTLR_TX_BUFFERS);
+
+static void *mark_update;
 #endif /* CONFIG_BT_CONN */
 
-static void *mark;
+static void *mark_disable;
 
 static inline int init_reset(void);
+static inline void *mark_set(void **m, void *param);
+static inline void *mark_unset(void **m, void *param);
+static inline void *mark_get(void *m);
 static inline void done_alloc(void);
 static inline void rx_alloc(u8_t max);
 static void rx_demux(void *param);
@@ -938,26 +943,35 @@ u32_t ull_ticker_status_take(u32_t ret, u32_t volatile *ret_cb)
 
 void *ull_disable_mark(void *param)
 {
-	if (!mark) {
-		mark = param;
-	}
-
-	return mark;
+	return mark_set(&mark_disable, param);
 }
 
 void *ull_disable_unmark(void *param)
 {
-	if (mark && mark == param) {
-		mark = NULL;
-	}
-
-	return param;
+	return mark_unset(&mark_disable, param);
 }
 
 void *ull_disable_mark_get(void)
 {
-	return mark;
+	return mark_get(mark_disable);
 }
+
+#if defined(CONFIG_BT_CONN)
+void *ull_update_mark(void *param)
+{
+	return mark_set(&mark_update, param);
+}
+
+void *ull_update_unmark(void *param)
+{
+	return mark_unset(&mark_update, param);
+}
+
+void *ull_update_mark_get(void)
+{
+	return mark_get(mark_update);
+}
+#endif /* CONFIG_BT_CONN */
 
 int ull_disable(void *lll)
 {
@@ -1158,6 +1172,31 @@ static inline int init_reset(void)
 	rx_alloc(UINT8_MAX);
 
 	return 0;
+}
+
+static inline void *mark_set(void **m, void *param)
+{
+	if (!*m) {
+		*m = param;
+	}
+
+	return *m;
+}
+
+static inline void *mark_unset(void **m, void *param)
+{
+	if (*m && *m == param) {
+		*m = NULL;
+
+		return param;
+	}
+
+	return NULL;
+}
+
+static inline void *mark_get(void *m)
+{
+	return m;
 }
 
 /**
