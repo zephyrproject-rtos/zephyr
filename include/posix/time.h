@@ -10,7 +10,30 @@
 extern "C" {
 #endif
 
+#ifdef CONFIG_NEWLIB_LIBC
+/* Kludge to support outdated newlib version as used in SDK 0.10 for Xtensa */
+#include <newlib.h>
+
+#ifdef __NEWLIB__
+/* Newever Newlib 3.x+ */
 #include <sys/_timespec.h>
+#else
+/* Workaround for older Newlib 2.x, as used by Xtensa. It lacks sys/_timeval.h,
+ * so mimic it here.
+ */
+#include <sys/types.h>
+#ifndef __timespec_defined
+struct timespec {
+	time_t tv_sec;
+	long tv_nsec;
+};
+#endif
+#endif
+
+#else
+/* Not Newlib */
+#include <sys/_timespec.h>
+#endif /* CONFIG_NEWLIB_LIBC */
 
 /* Older newlib's like 2.{0-2}.0 don't define any newlib version defines, only
  * __NEWLIB_H__ so we use that to decide if itimerspec was defined in
