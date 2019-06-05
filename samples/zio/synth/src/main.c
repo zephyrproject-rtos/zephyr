@@ -22,10 +22,8 @@ static struct k_poll_event events[1] = {
 
 void main(void)
 {
-	int cnt = 0;
 	int poll_cnt = 0;
 	struct synth_datum datum;
-	char out_str[64];
 	struct device *synth = device_get_binding("SYNTH");
 
 	if (synth == NULL) {
