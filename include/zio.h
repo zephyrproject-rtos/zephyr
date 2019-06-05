@@ -8,7 +8,6 @@
 #define ZEPHYR_INCLUDE_ZIO_H_
 
 #include <zio/zio_variant.h>
-#include <zio/zio_attr.h>
 #include <zio/zio_fifo.h>
 #include <zio/zio_buf.h>
 #include <zio/zio_fifo_buf.h>
