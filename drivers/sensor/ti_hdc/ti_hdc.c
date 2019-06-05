@@ -117,6 +117,7 @@ static u16_t read16(struct device *dev, u8_t a, u8_t d)
 static int ti_hdc_init(struct device *dev)
 {
 	struct ti_hdc_data *drv_data = dev->driver_data;
+	u16_t tmp;
 
 	drv_data->i2c = device_get_binding(DT_TI_HDC_0_BUS_NAME);
 
@@ -131,9 +132,10 @@ static int ti_hdc_init(struct device *dev)
 		LOG_ERR("Failed to get correct manufacturer ID");
 		return -EINVAL;
 	}
-	if (read16(drv_data->i2c, DT_TI_HDC_0_BASE_ADDRESS,
-		   TI_HDC_REG_DEVICEID) != TI_HDC_DEVICEID) {
-		LOG_ERR("Failed to get correct device ID");
+	tmp = read16(drv_data->i2c, DT_TI_HDC_0_BASE_ADDRESS,
+		     TI_HDC_REG_DEVICEID);
+	if (tmp != TI_HDC1000_DEVID && tmp != TI_HDC1050_DEVID) {
+		LOG_ERR("Unsupported device ID");
 		return -EINVAL;
 	}
 

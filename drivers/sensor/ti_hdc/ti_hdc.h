@@ -15,7 +15,8 @@
 #define TI_HDC_REG_DEVICEID	0xFF
 
 #define TI_HDC_MANUFID	0x5449
-#define TI_HDC_DEVICEID	0x1000
+#define TI_HDC1050_DEVID	0x1050
+#define TI_HDC1000_DEVID	0x1000
 
 /* For 14bit conversion RH needs 6.5ms and Temp 6.35ms */
 #define HDC_CONVERSION_TIME     13
