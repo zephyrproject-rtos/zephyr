@@ -121,7 +121,7 @@ Launch Zephyr
 =============
 
 Connect to UART 2 on the GP MRB and press the "ignition" button. After
-initialization messages, you will the Zephyr banner:
+initialization messages, you will see the Zephyr banner:
 
 .. code-block:: console
 
@@ -129,4 +129,4 @@ initialization messages, you will the Zephyr banner:
    Hello World! gpmrb
 
 
-Congratulations! You are running Zephyr on your Gordon Peak MRB!
+You are running a Zephyr application on your Gordon Peak MRB.
