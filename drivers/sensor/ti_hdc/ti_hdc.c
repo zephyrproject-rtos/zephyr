@@ -88,11 +88,10 @@ static int ti_hdc_channel_get(struct device *dev,
 		val->val2 = ((tmp & 0xFFFF) * 1000000U) >> 16;
 	} else if (chan == SENSOR_CHAN_HUMIDITY) {
 		/* val = 100 * sample / 2^16 */
-		u32_t tmp2;
-		tmp2 = (u32_t)drv_data->rh_sample * 100U;
-		val->val1 = tmp2 >> 16;
+		tmp = (u64_t)drv_data->rh_sample * 100U;
+		val->val1 = tmp >> 16;
 		/* x * 1000000 / 65536 == x * 15625 / 1024 */
-		val->val2 = ((tmp2 & 0xFFFF) * 15625U) >> 10;
+		val->val2 = ((tmp & 0xFFFF) * 15625U) >> 10;
 	} else {
 		return -ENOTSUP;
 	}
