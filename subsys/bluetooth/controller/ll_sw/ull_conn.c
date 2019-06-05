@@ -43,7 +43,7 @@
 #include "hal/debug.h"
 
 static int init_reset(void);
-static void ticker_op_update_cb(u32_t status, void *param);
+static void ticker_update_conn_op_cb(u32_t status, void *param);
 static inline void disable(u16_t handle);
 static void conn_cleanup(struct ll_conn *conn);
 static void ctrl_tx_enqueue(struct ll_conn *conn, struct node_tx *tx);
@@ -89,7 +89,8 @@ static inline void ctrl_tx_ack(struct ll_conn *conn, struct node_tx **tx,
 			       struct pdu_data *pdu_tx);
 static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 			  struct pdu_data *pdu_rx, struct ll_conn *conn);
-static void ticker_op_cb(u32_t status, void *params);
+static void ticker_stop_conn_op_cb(u32_t status, void *param);
+static void ticker_start_conn_op_cb(u32_t status, void *param);
 
 #define CONN_TX_BUF_SIZE MROUND(offsetof(struct node_tx, pdu) + \
 				offsetof(struct pdu_data, lldata) + \
@@ -1139,7 +1140,7 @@ void ull_conn_done(struct node_rx_event_done *done)
 					      ticks_drift_plus,
 					      ticks_drift_minus, 0, 0,
 					      lazy, force,
-					      ticker_op_update_cb,
+					      ticker_update_conn_op_cb,
 					      conn);
 		LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
 			  (ticker_status == TICKER_STATUS_BUSY) ||
@@ -1413,9 +1414,14 @@ static int init_reset(void)
 	return 0;
 }
 
-static void ticker_op_update_cb(u32_t status, void *param)
+static void ticker_update_conn_op_cb(u32_t status, void *param)
 {
+	/* Slave drift compensation succeeds, or it fails in a race condition
+	 * when disconnecting or connection update (race between ticker_update
+	 * and ticker_stop calls).
+	 */
 	LL_ASSERT(status == TICKER_STATUS_SUCCESS ||
+		  param == ull_update_mark_get() ||
 		  param == ull_disable_mark_get());
 }
 
@@ -1961,8 +1967,9 @@ static inline int event_conn_upd_prep(struct ll_conn *conn,
 		ticker_id_conn = TICKER_ID_CONN_BASE + ll_conn_handle_get(conn);
 		ticker_status =	ticker_stop(TICKER_INSTANCE_ID_CTLR,
 					    TICKER_USER_ID_ULL_HIGH,
-					    ticker_id_conn, ticker_op_cb,
-					    (void *)__LINE__);
+					    ticker_id_conn,
+					    ticker_stop_conn_op_cb,
+					    (void *)conn);
 		LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
 			  (ticker_status == TICKER_STATUS_BUSY));
 		ticker_status =
@@ -1982,7 +1989,8 @@ static inline int event_conn_upd_prep(struct ll_conn *conn,
 #else
 				     ull_master_ticker_cb,
 #endif
-				     conn, ticker_op_cb, (void *)__LINE__);
+				     conn, ticker_start_conn_op_cb,
+				     (void *)conn);
 		LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
 			  (ticker_status == TICKER_STATUS_BUSY));
 
@@ -5339,9 +5347,18 @@ ull_conn_rx_unknown_rsp_send:
 	return nack;
 }
 
-static void ticker_op_cb(u32_t status, void *params)
+static void ticker_stop_conn_op_cb(u32_t status, void *param)
 {
-	ARG_UNUSED(params);
-
 	LL_ASSERT(status == TICKER_STATUS_SUCCESS);
+
+	void *p = ull_update_mark(param);
+	LL_ASSERT(p == param);
+}
+
+static void ticker_start_conn_op_cb(u32_t status, void *param)
+{
+	LL_ASSERT(status == TICKER_STATUS_SUCCESS);
+
+	void *p = ull_update_unmark(param);
+	LL_ASSERT(p == param);
 }
