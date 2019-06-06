@@ -271,14 +271,17 @@ def add_compat_alias(node_path, label_postfix, label, prop_aliases):
 def add_prop_aliases(node_path,
                      alias_label_function, prop_label, prop_aliases):
     node_compat = get_compat(node_path)
-    new_alias_prefix = 'DT_' + str_to_label(node_compat)
+    new_alias_prefix = 'DT_'
 
     for alias in aliases[node_path]:
         old_alias_label = alias_label_function(alias)
-        new_alias_label = new_alias_prefix + '_' + old_alias_label
+        new_alias_label = new_alias_prefix + 'ALIAS_' + old_alias_label
+        new_alias_compat_label = new_alias_prefix + str_to_label(node_compat) + '_' + old_alias_label
 
         if new_alias_label != prop_label:
             prop_aliases[new_alias_label] = prop_label
+        if new_alias_compat_label != prop_label:
+            prop_aliases[new_alias_compat_label] = prop_label
         if old_alias_names and old_alias_label != prop_label:
             prop_aliases[old_alias_label] = prop_label
 
