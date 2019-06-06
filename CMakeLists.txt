@@ -214,9 +214,6 @@ if(CONFIG_MISRA_SANE)
   zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:${CPP_MISRA_SANE_FLAG}>)
 endif()
 
-# @Intent: Set compiler specific flags for standard C includes
-toolchain_cc_nostdinc()
-
 # @Intent: Set compiler specific macro inclusion of AUTOCONF_H
 toolchain_cc_imacros(${AUTOCONF_H})
 
@@ -1497,3 +1494,8 @@ if(CONFIG_BOARD_DEPRECATED)
       removed in version ${CONFIG_BOARD_DEPRECATED}"
   )
 endif()
+
+# @Intent: Set compiler specific flags for standard C includes
+# Done at the very end, so any other system includes which may
+# be added by Zephyr components were first in list.
+toolchain_cc_nostdinc()
