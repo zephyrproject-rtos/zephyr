@@ -268,13 +268,13 @@ To be discussed in a meeting
 ============================
 
 =============  ===============================================================
-Labels         ``API``, ``dev-review``, ``TSC``
+Labels         ``dev-review``, ``TSC``
 Applicable to  PRs  and issues
 Description    The issue is to be discussed in the following
-               `API/dev-review/TSC meeting`_ if time permits
+               `dev-review/TSC meeting`_ if time permits
 =============  ===============================================================
 
-.. _`API/dev-review/TSC meeting`: https://github.com/zephyrproject-rtos/zephyr/wiki/Zephyr-Committee-and-Working-Group-Meetings
+.. _`dev-review/TSC meeting`: https://github.com/zephyrproject-rtos/zephyr/wiki/Zephyr-Committee-and-Working-Group-Meetings
 
 Minimum PR review time
 ======================
