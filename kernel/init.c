@@ -323,13 +323,6 @@ static void prepare_multithreading(struct k_thread *dummy_thread)
 	ARG_UNUSED(dummy_thread);
 #else
 
-#ifdef CONFIG_TRACING
-	sys_trace_thread_switched_out();
-#endif
-#ifdef CONFIG_TRACING
-	sys_trace_thread_switched_in();
-#endif
-
 	/*
 	 * Initialize the current execution thread to permit a level of
 	 * debugging output if an exception should happen during kernel
