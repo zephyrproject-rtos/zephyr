@@ -32,7 +32,7 @@ set(stm_socs
   stm32wbx
   )
 
-if(CONFIG_STM32_CORE_CM4)
+if(CONFIG_CPU_CORTEX_M4)
   zephyr_compile_definitions( -DCORE_CM4 )
 endif()
 
