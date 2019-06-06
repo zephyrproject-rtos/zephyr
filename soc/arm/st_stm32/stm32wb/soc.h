@@ -46,6 +46,9 @@
 #ifdef CONFIG_FLASH
 #include <stm32wbxx_ll_hsem.h>
 #endif /* CONFIG_FLASH */
+#ifdef CONFIG_I2C
+#include <stm32wbxx_ll_i2c.h>
+#endif
 
 #endif /* !_ASMLANGUAGE */
 

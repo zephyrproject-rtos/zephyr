@@ -4,7 +4,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  *
- * I2C Driver for: STM32F0, STM32F3, STM32F7, STM32L0 and STM32L4
+ * I2C Driver for: STM32F0, STM32F3, STM32F7, STM32L0, STM32L4 and STM32WB
  *
  */
 
