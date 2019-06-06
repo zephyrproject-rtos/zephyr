@@ -481,7 +481,17 @@ static inline int lp5562_set_engine_exec_state(struct device *dev,
 					enum lp5562_led_sources engine,
 					enum lp5562_engine_exec_states state)
 {
-	return lp5562_set_engine_reg(dev, engine, LP5562_ENABLE, state);
+	int ret;
+
+	ret = lp5562_set_engine_reg(dev, engine, LP5562_ENABLE, state);
+
+	/*
+	 * Delay between consecutive I2C writes to
+	 * ENABLE register (00h) need to be longer than 488μs (typ.).
+	 */
+	k_sleep(1);
+
+	return ret;
 }
 
 /*
@@ -502,7 +512,6 @@ static inline int lp5562_start_program_exec(struct device *dev,
 
 	return lp5562_set_engine_exec_state(dev, engine,
 					    LP5562_ENGINE_MODE_RUN);
-
 }
 
 /*
