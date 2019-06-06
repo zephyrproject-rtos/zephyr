@@ -23,7 +23,6 @@ from extract.compatible import compatible
 from extract.interrupts import interrupts
 from extract.reg import reg
 from extract.flash import flash
-from extract.pinctrl import pinctrl
 from extract.default import default
 
 
@@ -77,8 +76,6 @@ def generate_prop_defines(node_path, prop):
         interrupts.extract(node_path, prop, names, def_label)
     elif prop == 'compatible':
         compatible.extract(node_path, prop, def_label)
-    elif 'pinctrl-' in prop:
-        pinctrl.extract(node_path, prop, def_label)
     elif 'clocks' in prop:
         clocks.extract(node_path, prop, def_label)
     elif 'pwms' in prop or 'gpios' in prop:
@@ -169,12 +166,9 @@ def prop_names(node, prop_name):
     # interrupt-names, etc.) The list is copied so that it can be modified
     # in-place later without stomping on the device tree data.
 
-    if prop_name.startswith('pinctrl-'):
-        names = node['props'].get('pinctrl-names', [])
-    else:
-        # The first case turns 'interrupts' into 'interrupt-names'
-        names = node['props'].get(prop_name[:-1] + '-names', []) or \
-                node['props'].get(prop_name + '-names', [])
+    # The first case turns 'interrupts' into 'interrupt-names'
+    names = node['props'].get(prop_name[:-1] + '-names', []) or \
+            node['props'].get(prop_name + '-names', [])
 
     if isinstance(names, list):
         # Allow the list of names to be modified in-place without
