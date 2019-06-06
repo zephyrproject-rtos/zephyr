@@ -1327,7 +1327,7 @@ void shell_fprintf(const struct shell *shell, enum shell_vt100_color color,
 	__ASSERT_NO_MSG(shell->fprintf_ctx);
 	__ASSERT_NO_MSG(fmt);
 
-	va_list args = { 0 };
+	va_list args;
 
 	k_mutex_lock(&shell->ctx->wr_mtx, K_FOREVER);
 	if (!flag_cmd_ctx_get(shell)) {

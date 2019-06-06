@@ -474,7 +474,7 @@ void shell_internal_fprintf(const struct shell *shell,
 	__ASSERT_NO_MSG(shell->fprintf_ctx);
 	__ASSERT_NO_MSG(fmt);
 
-	va_list args = { 0 };
+	va_list args;
 
 	va_start(args, fmt);
 	shell_internal_vfprintf(shell, color, fmt, args);
