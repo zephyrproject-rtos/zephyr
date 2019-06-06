@@ -154,6 +154,9 @@ static void add_answer(struct net_buf *query, enum dns_rr_type qtype,
 		*prev = strlen(prev) - 1;
 	}
 
+	/* terminator byte (0x00) */
+	query->len += 1;
+
 	offset = DNS_MSG_HEADER_SIZE + query->len;
 	UNALIGNED_PUT(htons(qtype), (u16_t *)(query->data+offset));
 
