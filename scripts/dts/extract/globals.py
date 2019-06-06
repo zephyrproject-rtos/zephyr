@@ -71,12 +71,6 @@ def create_aliases(root):
         for name, node_path in root['children']['aliases']['props'].items():
             aliases[node_path].append(name)
 
-    # Treat alternate names as aliases
-    for node_path, node in reduced.items():
-        if 'alt_name' in node:
-            aliases[node_path].append(node['alt_name'])
-
-
 def get_compat(node_path):
     # Returns the value of the 'compatible' property for the node at
     # 'node_path'. Also checks the node's parent.
