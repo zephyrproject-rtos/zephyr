@@ -9,6 +9,9 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_LOAPIC_H_
 #define ZEPHYR_INCLUDE_DRIVERS_LOAPIC_H_
 
+#include <arch/x86/sys_io.h>
+#include <arch/x86/msr.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -49,6 +52,89 @@ extern "C" {
 extern void z_loapic_int_vec_set(unsigned int irq, unsigned int vector);
 extern void z_loapic_irq_enable(unsigned int irq);
 extern void z_loapic_irq_disable(unsigned int irq);
+
+/**
+ * @brief Read 64-bit value from the local APIC in x2APIC mode.
+ *
+ * @param reg the LOAPIC register number to read (LOAPIC_*)
+ */
+static inline u64_t x86_read_x2apic(unsigned int reg)
+{
+	reg >>= 4;
+	return z_x86_msr_read(X86_X2APIC_BASE_MSR + reg);
+}
+
+/**
+ * @brief Read 32-bit value from the local APIC in xAPIC (MMIO) mode.
+ *
+ * @param reg the LOAPIC register number to read (LOAPIC_*)
+ */
+static inline u32_t x86_read_xapic(unsigned int reg)
+{
+	return sys_read32(CONFIG_LOAPIC_BASE_ADDRESS + reg);
+}
+
+/**
+ * @brief Read value from the local APIC using the default mode.
+ *
+ * Returns a 32-bit value read from the local APIC, using the access
+ * method determined by CONFIG_X2APIC (either xAPIC or x2APIC). Note
+ * that 64-bit reads are only allowed in x2APIC mode and can only be
+ * done by calling x86_read_x2apic() directly. (This is intentional.)
+ *
+ * @param reg the LOAPIC register number to read (LOAPIC_*)
+ */
+static inline u32_t x86_read_loapic(unsigned int reg)
+{
+#ifdef CONFIG_X2APIC
+	return x86_read_x2apic(reg);
+#else
+	return x86_read_xapic(reg);
+#endif
+}
+
+/**
+ * @brief Write 64-bit value to the local APIC in x2APIC mode.
+ *
+ * @param reg the LOAPIC register number to write (one of LOAPIC_*)
+ * @param val 64-bit value to write
+ */
+static inline void x86_write_x2apic(unsigned int reg, u64_t val)
+{
+	reg >>= 4;
+	z_x86_msr_write(X86_X2APIC_BASE_MSR + reg, val);
+}
+
+/**
+ * @brief Write 32-bit value to the local APIC in xAPIC (MMIO) mode.
+ *
+ * @param reg the LOAPIC register number to write (one of LOAPIC_*)
+ * @param val 32-bit value to write
+ */
+static inline void x86_write_xapic(unsigned int reg, u32_t val)
+{
+	sys_write32(val, CONFIG_LOAPIC_BASE_ADDRESS + reg);
+}
+
+/**
+ * @brief Write 32-bit value to the local APIC using the default mode.
+ *
+ * Write a 32-bit value to the local APIC, using the access method
+ * determined by CONFIG_X2APIC (either xAPIC or x2APIC). Note that
+ * 64-bit writes are only available in x2APIC mode and can only be
+ * done by calling x86_write_x2apic() directly. (This is intentional.)
+ *
+ * @param reg the LOAPIC register number to write (one of LOAPIC_*)
+ * @param val 32-bit value to write
+ */
+static inline void x86_write_loapic(unsigned int reg, u32_t val)
+{
+#ifdef CONFIG_X2APIC
+	x86_write_x2apic(reg, val);
+#else
+	x86_write_xapic(reg, val);
+#endif
+}
 
 #if CONFIG_EOI_FORWARDING_BUG
 extern void z_lakemont_eoi(void);
