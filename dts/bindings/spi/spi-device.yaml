@@ -25,7 +25,7 @@ properties:
       generation: define
       category: required
     spi-max-frequency:
-      type: u32
+      type: int
       category: required
       description: Maximum clock frequency of device's SPI interface in Hz
       generation: define
