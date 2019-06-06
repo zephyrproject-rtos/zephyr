@@ -51,5 +51,4 @@ properties:
       type: array
       category: optional
       description: pinmux information for RX, TX
-      generation: structure
 ...
