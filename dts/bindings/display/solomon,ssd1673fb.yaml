@@ -42,49 +42,49 @@ properties:
       generation: define
 
     gdv-a:
-      type: hex
+      type: int
       category: required
       description: Gate driving voltage (A value)
       generation: define
 
     gdv-b:
-      type: hex
+      type: int
       category: optional
       description: Gate driving voltage (B value)
       generation: define
 
     sdv:
-      type: hex
+      type: int
       category: required
       description: Source driving voltage
       generation: define
 
     vcom:
-      type: hex
+      type: int
       category: required
       description: VCOM voltage
       generation: define
 
     border-waveform:
-      type: hex
+      type: int
       category: required
       description: Border waveform
       generation: define
 
     softstart-1:
-      type: hex
+      type: int
       category: optional
       description: Booster soft start phase 1
       generation: define
 
     softstart-2:
-      type: hex
+      type: int
       category: optional
       description: Booster soft start phase 2
       generation: define
 
     softstart-3:
-      type: hex
+      type: int
       category: optional
       description: Booster soft start phase 3
       generation: define
