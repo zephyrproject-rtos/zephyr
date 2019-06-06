@@ -47,6 +47,7 @@ config CAN_1
 	  Enable CAN controller 1
 
 source "drivers/can/Kconfig.stm32"
+source "drivers/can/Kconfig.mcux"
 source "drivers/can/Kconfig.mcp2515"
 source "drivers/can/Kconfig.loopback"
 

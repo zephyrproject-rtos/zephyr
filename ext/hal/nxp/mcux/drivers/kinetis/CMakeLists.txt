@@ -28,3 +28,7 @@ zephyr_sources_ifdef(CONFIG_UART_MCUX_LPUART  fsl_lpuart.c)
 zephyr_sources_ifdef(CONFIG_COUNTER_MCUX_RTC  fsl_rtc.c)
 zephyr_sources_ifdef(CONFIG_RTC_MCUX          fsl_rtc.c)
 zephyr_sources_ifdef(CONFIG_WDT_MCUX_WDOG     fsl_wdog.c)
+zephyr_sources_ifdef(CONFIG_CAN_MCUX_FLEXCAN  fsl_flexcan.c)
+if(NOT CONFIG_ASSERT OR CONFIG_FORCE_NO_ASSERT)
+  zephyr_compile_definitions(NDEBUG) # squelch fsl_flexcan.c warning
+endif()
