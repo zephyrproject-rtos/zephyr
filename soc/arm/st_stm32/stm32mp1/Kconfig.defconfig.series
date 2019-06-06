@@ -12,10 +12,6 @@ source "soc/arm/st_stm32/stm32mp1/Kconfig.defconfig.stm32mp15_m4"
 config SOC_SERIES
 	default "stm32mp1"
 
-config STM32_CORE_CM4
-	bool "define stm32 core"
-	default y
-
 if GPIO_STM32
 
 config GPIO_STM32_PORTD
