@@ -5,6 +5,7 @@
  */
 
 #include <arm/armv7-m.dtsi>
+#include <dt-bindings/clock/kinetis_scg.h>
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/i2c/i2c.h>
 
@@ -165,6 +166,42 @@
 			interrupts = <27 0>;
 			clocks = <&pcc 0xb4>;
 			label = "SPI_1";
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		can0: can@40024000 {
+			compatible = "nxp,kinetis-flexcan";
+			reg = <0x40024000 0x1000>;
+			interrupts = <78 0>, <79 0>, <80 0>, <81 0>;
+			interrupt-names = "warning", "error", "wake-up",
+					  "mb-0-15";
+			clocks = <&scg KINETIS_SCG_BUS_CLK>;
+			clk-source = <1>;
+			label = "CAN_0";
+			sjw = <1>;
+			prop-seg = <1>;
+			phase-seg1 = <3>;
+			phase-seg2 = <2>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		can1: can@40025000 {
+			compatible = "nxp,kinetis-flexcan";
+			reg = <0x40025000 0x1000>;
+			interrupts = <85 0>, <86 0>, <87 0>, <88 0>;
+			interrupt-names = "warning", "error", "wake-up",
+					  "mb-0-15";
+			clocks = <&scg KINETIS_SCG_BUS_CLK>;
+			clk-source = <1>;
+			label = "CAN_1";
+			sjw = <1>;
+			prop-seg = <1>;
+			phase-seg1 = <3>;
+			phase-seg2 = <2>;
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;

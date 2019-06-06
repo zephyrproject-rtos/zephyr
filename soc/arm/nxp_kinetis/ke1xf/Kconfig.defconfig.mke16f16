@@ -11,4 +11,11 @@ config SOC
 	string
 	default "mke16f16"
 
+if CAN
+
+config CAN_MCUX_FLEXCAN
+	default y
+
+endif # CAN
+
 endif # SOC_MKE16F16

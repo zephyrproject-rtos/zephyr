@@ -5,3 +5,10 @@
  */
 
 #include <nxp/nxp_ke1xf512vlx16.dtsi>
+
+/ {
+	aliases {
+		can-0 = &can0;
+		can-1 = &can1;
+	};
+};
