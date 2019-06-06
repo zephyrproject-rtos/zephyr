@@ -31,6 +31,7 @@ int settings_file_src(struct settings_file *cf)
 	if (!cf->cf_name) {
 		return -EINVAL;
 	}
+	k_mutex_init(&cf->mtx);
 	cf->cf_store.cs_itf = &settings_file_itf;
 	settings_src_register(&cf->cf_store);
 
@@ -111,8 +112,17 @@ static int settings_file_load_priv(struct settings_store *cs, line_load_cb cb,
  */
 static int settings_file_load(struct settings_store *cs, const char *pattern)
 {
-	return settings_file_load_priv(cs, settings_line_load_cb,
-				       (void *)pattern);
+	struct settings_file *cf = (struct settings_file *)cs;
+	int rc;
+
+	rc = k_mutex_lock(&cf->mtx, K_FOREVER);
+	if (rc) {
+		return rc;
+	}
+	rc =  settings_file_load_priv(cs, settings_line_load_cb,
+				      (void *)pattern);
+	k_mutex_unlock(&cf->mtx);
+	return rc;
 }
 
 static void settings_tmpfile(char *dst, const char *src, char *pfx)
@@ -345,12 +355,17 @@ static int settings_file_save_priv(struct settings_store *cs, const char *name,
 static int settings_file_save(struct settings_store *cs, const char *name,
 			      const char *value, size_t val_len)
 {
+	struct settings_file *cf = (struct settings_file *)cs;
 	struct settings_line_dup_check_arg cdca;
+	int rc;
 
 	if (val_len > 0 && value == NULL) {
 		return -EINVAL;
 	}
-
+	rc = k_mutex_lock(&cf->mtx, K_FOREVER);
+	if (rc) {
+		return rc;
+	}
 	/*
 	 * Check if we're writing the same value again.
 	 */
@@ -360,9 +375,12 @@ static int settings_file_save(struct settings_store *cs, const char *name,
 	cdca.val_len = val_len;
 	settings_file_load_priv(cs, settings_line_dup_check_cb, &cdca);
 	if (cdca.is_dup == 1) {
+		k_mutex_unlock(&cf->mtx);
 		return 0;
 	}
-	return settings_file_save_priv(cs, name, (char *)value, val_len);
+	rc = settings_file_save_priv(cs, name, (char *)value, val_len);
+	k_mutex_unlock(&cf->mtx);
+	return rc;
 }
 
 static int read_handler(void *ctx, off_t off, char *buf, size_t *len)

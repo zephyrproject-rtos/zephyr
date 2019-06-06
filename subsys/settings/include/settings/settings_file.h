@@ -8,6 +8,7 @@
 #ifndef __SETTINGS_FILE_H_
 #define __SETTINGS_FILE_H_
 
+#include <kernel.h>
 #include "settings/settings.h"
 
 #ifdef __cplusplus
@@ -21,6 +22,8 @@ struct settings_file {
 	const char *cf_name;	/* filename */
 	int cf_maxlines;	/* max # of lines before compressing */
 	int cf_lines;		/* private */
+	/* Accessing mutex - FCB cannot write and read in the same time */
+	struct k_mutex mtx;
 };
 
 /* register file to be source of settings */

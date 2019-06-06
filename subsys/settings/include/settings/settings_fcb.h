@@ -8,6 +8,7 @@
 #ifndef __SETTINGS_FCB_H_
 #define __SETTINGS_FCB_H_
 
+#include <kernel.h>
 #include <fcb.h>
 #include "settings/settings.h"
 
@@ -18,6 +19,8 @@ extern "C" {
 struct settings_fcb {
 	struct settings_store cf_store;
 	struct fcb cf_fcb;
+	/* Accessing mutex - FCB cannot write and read in the same time */
+	struct k_mutex mtx;
 };
 
 extern int settings_fcb_src(struct settings_fcb *cf);
