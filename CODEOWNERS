@@ -251,7 +251,7 @@
 /include/ptp_clock.h                      @jukkar
 /include/sensor.h                         @MaureenHelm
 /include/shared_irq.h                     @andrewboie @andyross
-/include/shell/                           @jarz-nordic @nordic-krch
+/include/shell/                           @jakub-uC @nordic-krch
 /include/spi.h                            @tbursztyka
 /include/sw_isr_table.h                   @andrewboie @andyross
 /include/sys_clock.h                      @andrewboie @andyross
@@ -291,8 +291,8 @@
 /samples/sensor/                          @MaureenHelm
 /samples/net/updatehub/                   @chtavares592 @otavio
 /samples/sensor/                          @bogdan-davidoaia
-/samples/subsys/logging/                  @nordic-krch @jarz-nordic
-/samples/subsys/shell/                    @jarz-nordic @nordic-krch
+/samples/subsys/logging/                  @nordic-krch @jakub-uC
+/samples/subsys/shell/                    @jakub-uC @nordic-krch
 /samples/subsys/usb/                      @jfischer-phytec-iot @finikorg
 /samples/subsys/power/                    @wentongwu @pizi-nordic
 /scripts/coccicheck                       @himanshujha199640 @JuliaLawall
@@ -338,7 +338,7 @@
 /subsys/net/l2/                           @jukkar @tbursztyka
 /subsys/power/                            @wentongwu @pizi-nordic
 /subsys/settings/                         @nvlsianpu
-/subsys/shell/                            @jarz-nordic @nordic-krch
+/subsys/shell/                            @jakub-uC @nordic-krch
 /subsys/storage/                          @nvlsianpu
 /subsys/testsuite/                        @nashif
 /subsys/usb/                              @jfischer-phytec-iot @finikorg
@@ -365,6 +365,6 @@
 /tests/net/socket/                        @jukkar @tbursztyka @pfalcon
 /tests/subsys/fs/                         @nashif @wentongwu
 /tests/subsys/settings/                   @nvlsianpu
-/tests/subsys/shell/                      @jarz-nordic @nordic-krch
+/tests/subsys/shell/                      @jakub-uC @nordic-krch
 # Get all docs reviewed
 *.rst                                     @dbkinder
