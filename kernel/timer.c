@@ -58,7 +58,7 @@ void z_timer_expiration_handler(struct _timeout *t)
 	 */
 	if (timer->period > 0) {
 		z_add_timeout(&timer->timeout, z_timer_expiration_handler,
-			     timer->period);
+			     t->cycle + timer->period);
 	}
 
 	/* update timer's status */
@@ -114,16 +114,16 @@ void z_impl_k_timer_start(struct k_timer *timer, s32_t duration, s32_t period)
 	__ASSERT(duration >= 0 && period >= 0 &&
 		 (duration != 0 || period != 0), "invalid parameters\n");
 
-	volatile s32_t period_in_ticks, duration_in_ticks;
+	volatile s32_t period_in_cycles, duration_in_cycles;
 
-	period_in_ticks = z_ms_to_ticks(period);
-	duration_in_ticks = z_ms_to_ticks(duration);
+	period_in_cycles = z_ms_to_cycles(period);
+	duration_in_cycles = z_ms_to_cycles(duration);
 
 	(void)z_abort_timeout(&timer->timeout);
-	timer->period = period_in_ticks;
+	timer->period = period_in_cycles;
 	timer->status = 0U;
 	z_add_timeout(&timer->timeout, z_timer_expiration_handler,
-		     duration_in_ticks);
+		     k_cycle_get_32() + duration_in_cycles);
 }
 
 #ifdef CONFIG_USERSPACE

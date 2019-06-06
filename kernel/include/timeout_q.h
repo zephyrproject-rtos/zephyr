@@ -43,9 +43,9 @@ static inline void z_init_thread_timeout(struct _thread_base *thread_base)
 
 extern void z_thread_timeout(struct _timeout *to);
 
-static inline void z_add_thread_timeout(struct k_thread *th, s32_t ticks)
+static inline void z_add_thread_timeout(struct k_thread *th, s32_t cycles)
 {
-	z_add_timeout(&th->base.timeout, z_thread_timeout, ticks);
+	z_add_timeout(&th->base.timeout, z_thread_timeout, cycles);
 }
 
 static inline int z_abort_thread_timeout(struct k_thread *thread)

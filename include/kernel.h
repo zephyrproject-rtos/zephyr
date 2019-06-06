@@ -894,9 +894,6 @@ __syscall void k_thread_start(k_tid_t thread);
  * @cond INTERNAL_HIDDEN
  */
 
-/* timeout has timed out and is not on _timeout_q anymore */
-#define _EXPIRED (-2)
-
 struct _static_thread_data {
 	struct k_thread *init_thread;
 	k_thread_stack_t *init_stack;
@@ -1573,8 +1570,8 @@ __syscall u32_t k_timer_remaining_get(struct k_timer *timer);
 
 static inline u32_t z_impl_k_timer_remaining_get(struct k_timer *timer)
 {
-	const s32_t ticks = z_timeout_remaining(&timer->timeout);
-	return (ticks > 0) ? (u32_t)__ticks_to_ms(ticks) : 0U;
+	const s32_t cycles = z_timeout_remaining(&timer->timeout);
+	return (cycles > 0) ? (u32_t)z_cycles_to_ms(cycles) : 0U;
 }
 
 /**
@@ -2896,7 +2893,7 @@ static inline int k_delayed_work_submit(struct k_delayed_work *work,
  */
 static inline s32_t k_delayed_work_remaining_get(struct k_delayed_work *work)
 {
-	return __ticks_to_ms(z_timeout_remaining(&work->timeout));
+	return z_cycles_to_ms(z_timeout_remaining(&work->timeout));
 }
 
 /** @} */

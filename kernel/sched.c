@@ -368,9 +368,9 @@ static void pend(struct k_thread *thread, _wait_q_t *wait_q, s32_t timeout)
 	}
 
 	if (timeout != K_FOREVER) {
-		s32_t ticks = _TICK_ALIGN + z_ms_to_ticks(timeout);
+		s32_t cycle = k_cycle_get_32() + z_ms_to_cycles(timeout);
 
-		z_add_thread_timeout(thread, ticks);
+		z_add_thread_timeout(thread, cycle);
 	}
 
 	sys_trace_thread_pend(thread);
@@ -912,23 +912,20 @@ void z_impl_k_yield(void)
 Z_SYSCALL_HANDLER0_SIMPLE_VOID(k_yield);
 #endif
 
-static s32_t z_tick_sleep(s32_t ticks)
+static s32_t z_sleep(s32_t cycles)
 {
 #ifdef CONFIG_MULTITHREADING
-	u32_t expected_wakeup_time;
+	u32_t now;
 
 	__ASSERT(!z_is_in_isr(), "");
 
 	K_DEBUG("thread %p for %d ticks\n", _current, ticks);
 
 	/* wait of 0 ms is treated as a 'yield' */
-	if (ticks == 0) {
+	if (cycles == 0) {
 		k_yield();
 		return 0;
 	}
-
-	ticks += _TICK_ALIGN;
-	expected_wakeup_time = ticks + z_tick_get_32();
 
 	/* Spinlock purely for local interrupt locking to prevent us
 	 * from being interrupted while _current is in an intermediate
@@ -940,17 +937,18 @@ static s32_t z_tick_sleep(s32_t ticks)
 #if defined(CONFIG_TIMESLICING) && defined(CONFIG_SWAP_NONATOMIC)
 	pending_current = _current;
 #endif
+	now = k_cycle_get_32();
 	z_remove_thread_from_ready_q(_current);
-	z_add_thread_timeout(_current, ticks);
+	z_add_thread_timeout(_current, now + cycles);
 	z_mark_thread_as_suspended(_current);
 
 	(void)z_swap(&local_lock, key);
 
 	__ASSERT(!z_is_thread_state_set(_current, _THREAD_SUSPENDED), "");
 
-	ticks = expected_wakeup_time - z_tick_get_32();
-	if (ticks > 0) {
-		return ticks;
+	cycles = k_cycle_get_32() - now;
+	if (cycles > 0) {
+		return cycles;
 	}
 #endif
 
@@ -959,13 +957,13 @@ static s32_t z_tick_sleep(s32_t ticks)
 
 s32_t z_impl_k_sleep(int ms)
 {
-	s32_t ticks;
+	s32_t cycles;
 
 	__ASSERT(ms != K_FOREVER, "");
 
-	ticks = z_ms_to_ticks(ms);
-	ticks = z_tick_sleep(ticks);
-	return __ticks_to_ms(ticks);
+	cycles = z_ms_to_cycles(ms);
+	cycles = z_sleep(cycles);
+	return z_cycles_to_ms(cycles);
 }
 
 #ifdef CONFIG_USERSPACE
@@ -983,11 +981,11 @@ Z_SYSCALL_HANDLER(k_sleep, ms)
 
 s32_t z_impl_k_usleep(int us)
 {
-	s32_t ticks;
+	s32_t cycles;
 
-	ticks = z_us_to_ticks(us);
-	ticks = z_tick_sleep(ticks);
-	return __ticks_to_us(ticks);
+	cycles = z_us_to_cycles(us);
+	cycles = z_sleep(cycles);
+	return z_cycles_to_us(cycles);
 }
 
 #ifdef CONFIG_USERSPACE

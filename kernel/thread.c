@@ -289,9 +289,9 @@ static void schedule_new_thread(struct k_thread *thread, s32_t delay)
 	if (delay == 0) {
 		k_thread_start(thread);
 	} else {
-		s32_t ticks = _TICK_ALIGN + z_ms_to_ticks(delay);
+		s32_t cycles = k_cycle_get_32() + z_ms_to_cycles(delay);
 
-		z_add_thread_timeout(thread, ticks);
+		z_add_thread_timeout(thread, cycles);
 	}
 #else
 	ARG_UNUSED(delay);

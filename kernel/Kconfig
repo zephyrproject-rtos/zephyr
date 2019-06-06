@@ -527,38 +527,6 @@ config ARCH_HAS_CUSTOM_BUSY_WAIT
 	  the provided k_busy_wait(), but instead must do something custom. It must
 	  enable this option in that case.
 
-config SYS_CLOCK_TICKS_PER_SEC
-	int "System tick frequency (in ticks/second)"
-	default 100
-	help
-	  This option specifies the frequency of the system clock in Hz.
-
-	  Depending on the choice made, an amount of possibly expensive math must
-	  occur when converting ticks to milliseconds and vice-versa. Some values
-	  are optimized, and yield significantly less math.
-
-	  The optimal values from a computational point-of-view are 1000, 500,
-	  250 and 125, since in these cases there is either no computation
-	  required, or it is all done via bit-shifting. These also give a
-	  granularity from 1ms to 8ms.
-
-	  Other good values are 100, 50, 25, 20 and 10. In this case, some math
-	  is required but is minimized. These are also values that necessitate a
-	  reduced number of clock interrupts per second, at the cost of
-	  granularity (10ms to 100ms).
-
-	  All other values require some extensive 64-bit math, and in some
-	  configurations even require calls to compiler built-in functions, and
-	  can require a non-trivial extra amount of stack space (e.g. around 80
-	  bytes on x86).
-
-	  Note that when available and enabled, in "tickless" mode
-	  this config variable specifies the minimum available timing
-	  granularity, not necessarily the number or frequency of
-	  interrupts delivered to the kernel.
-
-	  A value of 0 completely disables timer support in the kernel.
-
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	int "System clock's h/w timer frequency"
 	help
@@ -567,7 +535,7 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 	  and the user should generally avoid modifying it via the menu configuration.
 
 config SYS_CLOCK_EXISTS
-	def_bool (SYS_CLOCK_TICKS_PER_SEC != 0)
+	def_bool (SYS_CLOCK_HW_CYCLES_PER_SEC != 0)
 	# omit prompt to signify a "hidden" option
 	help
 	  This option specifies that the kernel lacks timer support.
@@ -733,34 +701,6 @@ config SCHED_IPI_SUPPORTED
 	  future).
 
 endmenu
-
-config TICKLESS_IDLE
-	# NB: This option is deprecated, see TICKLESS_KERNEL and
-	# https://github.com/zephyrproject-rtos/zephyr/pull/12234
-	bool "Tickless idle"
-	default y if SYS_POWER_MANAGEMENT || TICKLESS_CAPABLE
-	help
-	  This option suppresses periodic system clock interrupts whenever the
-	  kernel becomes idle. This permits the system to remain in a power
-	  saving state for extended periods without having to wake up to
-	  service each tick as it occurs.
-
-config TICKLESS_IDLE_THRESH
-	int "Tickless idle threshold"
-	default 3
-	depends on TICKLESS_IDLE
-	help
-	  This option enables clock interrupt suppression when the kernel idles
-	  for only a short period of time. It specifies the minimum number of
-	  ticks that must occur before the next kernel timer expires in order
-	  for suppression to happen.
-
-config TICKLESS_KERNEL
-	bool "Tickless kernel"
-	default y if TICKLESS_CAPABLE
-	help
-	  This option enables a fully event driven kernel. Periodic system
-	  clock interrupt generation would be stopped at all times.
 
 source "kernel/Kconfig.power_mgmt"
 

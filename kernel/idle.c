@@ -52,15 +52,18 @@ void __attribute__((weak)) _sys_resume_from_deep_sleep(void)
  * @return N/A
  */
 #ifndef CONFIG_SMP
+#if 0
 static void set_kernel_idle_time_in_ticks(s32_t ticks)
 {
 #ifdef CONFIG_SYS_POWER_MANAGEMENT
 	_kernel.idle = ticks;
 #endif
 }
+#endif
 
 static void sys_power_save_idle(void)
 {
+#if 0
 	s32_t ticks = z_get_next_timeout_expiry();
 
 	/* The documented behavior of CONFIG_TICKLESS_IDLE_THRESH is
@@ -74,6 +77,7 @@ static void sys_power_save_idle(void)
 #endif
 
 	set_kernel_idle_time_in_ticks(ticks);
+#endif
 #if (defined(CONFIG_SYS_POWER_SLEEP_STATES) || \
 	defined(CONFIG_SYS_POWER_DEEP_SLEEP_STATES))
 
