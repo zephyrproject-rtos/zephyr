@@ -11,7 +11,12 @@
 #include <device.h>
 #include <gpio.h>
 
-#define CONFIG_ICM20948_I2C_SLAVE_ADDR (0x68 | CONFIG_ICM20948_I2C_AD0)
+#ifdef CONFIG_ICM20948_I2C_AD0
+	#define CONFIG_ICM20948_I2C_SLAVE_ADDR 0x69 
+#else
+	#define CONFIG_ICM20948_I2C_SLAVE_ADDR 0x68
+#endif
+
 
 /* banks */
 #define ICM20948_BANK_0 0
@@ -204,13 +209,13 @@ struct icm20948_data {
 };
 
 
-#ifdef CONFIG_ICM20948_TRIGGER
-int icm20948_trigger_set(struct device *dev,
-			 const struct sensor_trigger *trig,
-			 sensor_trigger_handler_t handler);
+// #ifdef CONFIG_ICM20948_TRIGGER
+// int icm20948_trigger_set(struct device *dev,
+// 			 const struct sensor_trigger *trig,
+// 			 sensor_trigger_handler_t handler);
 
-int icm20948_init_interrupt(struct device *dev);
-#endif
+// int icm20948_init_interrupt(struct device *dev);
+// #endif
 
 int icm20948_i2c_init(struct device *dev);
 int icm20948_spi_init(struct device *dev);

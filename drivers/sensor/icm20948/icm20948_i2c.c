@@ -13,8 +13,9 @@ static inline int icm20948_change_bank(struct icm20948_data *data,
 				       u16_t reg_bank_addr)
 {
 	u8_t bank = (u8_t)(reg_bank_addr >> 7);
-
 	if (bank != data->bank) {
+		k_sleep(500);
+		data->bank = bank;
 		return i2c_reg_write_byte(data->bus,
 					  CONFIG_ICM20948_I2C_SLAVE_ADDR,
 					  ICM20948_REG_BANK_SEL, (bank << 4));
@@ -50,7 +51,7 @@ static int icm20948_i2c_read_reg(struct icm20948_data *data,
 				 u16_t reg_bank_addr, u8_t *value)
 {
 	u8_t reg_addr = (u8_t)(reg_bank_addr & 0xff);
-
+	
 	if (icm20948_change_bank(data, reg_bank_addr)) {
 		return -EIO;
 	}

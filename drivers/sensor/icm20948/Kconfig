@@ -54,7 +54,7 @@ config ICM20948_TRIGGER_GLOBAL_THREAD
 config ICM20948_TRIGGER_OWN_THREAD
 	bool "Use own thread"
 	depends on GPIO
- 	select ICM20948_TRIGGER
+	select ICM20948_TRIGGER
 
 endchoice
 
