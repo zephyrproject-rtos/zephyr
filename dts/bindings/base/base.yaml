@@ -19,7 +19,7 @@ properties:
         category: optional
 
     reg-names:
-        type: stringlist
+        type: string-array
         description: name of each register space
         generation: define
         category: optional
@@ -31,7 +31,7 @@ properties:
         generation: define
 
     interrupt-names:
-        type: stringlist
+        type: string-array
         category: optional
         description: name of each interrupt
         generation: define
