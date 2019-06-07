@@ -10,13 +10,12 @@ version: 0.1
 description: >
     This is a representation of the PWM GPIO nodes
 
+inherits:
+    !include base.yaml
+
 properties:
     compatible:
-      type: string
-      category: required
-      description: compatible strings
       constraint: "pwm-leds"
-      generation: define
 
     pwms:
       type: compound
@@ -24,9 +23,6 @@ properties:
       generation: define
 
     label:
-      type: string
       category: required
-      description: Human readable string describing the device (used by Zephyr for API name)
-      generation: define
 
 ...

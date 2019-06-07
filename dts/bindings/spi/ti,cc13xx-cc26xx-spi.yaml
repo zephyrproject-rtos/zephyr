@@ -18,10 +18,7 @@ properties:
       constraint: "ti,cc13xx-cc26xx-spi"
 
     reg:
-      type: array
       category: required
-      description: mmio register space
-      generation: define
 
     sck-pin:
       type: int

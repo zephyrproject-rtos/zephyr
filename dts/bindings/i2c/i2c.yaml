@@ -10,15 +10,13 @@ version: 0.1
 description: >
     This binding gives the base structures for all I2C devices
 
+inherits:
+    !include base.yaml
+
 child:
     bus: i2c
 
 properties:
-    compatible:
-      type: string
-      category: required
-      description: compatible strings
-      generation: define
     "#address-cells":
       type: int
       category: required
@@ -38,8 +36,5 @@ properties:
       description: Clock gate information
       generation: define
     label:
-      type: string
       category: required
-      description: Human readable string describing the device (used by Zephyr for API name)
-      generation: define
 ...

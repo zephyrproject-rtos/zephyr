@@ -1,0 +1,45 @@
+---
+title: base device binding
+version: 0.1
+
+description: >
+    Binding for device
+
+properties:
+    compatible:
+        type: string
+        category: required
+        description: compatible strings
+        generation: define
+
+    reg:
+        type: array
+        description: register space
+        generation: define
+        category: optional
+
+    reg-names:
+        type: stringlist
+        description: name of each register space
+        generation: define
+        category: optional
+
+    interrupts:
+        type: array
+        category: optional
+        description: interrupts for device
+        generation: define
+
+    interrupt-names:
+        type: stringlist
+        category: optional
+        description: name of each interrupt
+        generation: define
+
+    label:
+        type: string
+        category: optional
+        description: Human readable string describing the device (used by Zephyr for API name)
+        generation: define
+
+...

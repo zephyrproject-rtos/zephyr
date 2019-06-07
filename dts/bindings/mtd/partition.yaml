@@ -5,12 +5,11 @@ version: 0.1
 description: >
     This binding gives a base FLASH partition description
 
+inherits:
+    !include base.yaml
+
 properties:
     compatible:
-      type: string
-      category: required
-      description: compatible strings
       constraint: "fixed-partitions"
-      generation: define
 
 ...

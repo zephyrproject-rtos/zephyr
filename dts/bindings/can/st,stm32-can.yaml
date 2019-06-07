@@ -13,21 +13,10 @@ properties:
       constraint: "st,stm32-can"
 
     reg:
-      type: array
-      description: register base address
-      generation: define
       category: required
 
     interrupts:
-      type: array
       category: required
-      description: required interrupts
-      generation: define
-
-    interrupt-names:
-      type: array
-      category: optional
-      description: names off the interrupt lines
 
     gpio-port:
       type: string

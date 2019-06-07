@@ -15,16 +15,9 @@ inherits:
 
 properties:
     compatible:
-      type: string
-      category: required
-      description: compatible strings
       constraint: "microchip,xec-i2c"
-      generation: define
 
     reg:
-      type: int
-      description: mmio register space
-      generation: define
       category: required
 
     port_sel:

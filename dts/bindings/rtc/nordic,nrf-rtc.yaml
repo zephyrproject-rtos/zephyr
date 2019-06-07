@@ -18,9 +18,6 @@ properties:
       constraint: "nordic,nrf-rtc"
 
     reg:
-      type: array
-      description: mmio register space
-      generation: define
       category: required
 
     #If enabled, overflow different than full range (24 bits) is handled

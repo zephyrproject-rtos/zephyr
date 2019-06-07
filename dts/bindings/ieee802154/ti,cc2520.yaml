@@ -15,9 +15,6 @@ inherits:
 
 properties:
     compatible:
-      type: string
-      category: required
-      description: compatible strings
       constraint: "ti,cc2520"
 
     vreg-en-gpios:

@@ -10,24 +10,16 @@ version: 0.1
 description: >
     This binding gives the base structures for all i2s devices
 
+inherits:
+    !include base.yaml
+
 parent:
     bus: i2s
 
 properties:
-    compatible:
-      type: string
-      category: required
-      description: compatible strings
-      generation: define
     reg:
-      type: array
-      description: Logic number of device
-      generation: define
       category: required
     label:
-      type: string
       category: required
-      description: Human readable string describing the device (used by Zephyr for API name)
-      generation: define
 
 ...

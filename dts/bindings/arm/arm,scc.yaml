@@ -10,17 +10,14 @@ version: 0.1
 description: >
     This binding gives a base representation of the ARM SCC
 
+inherits:
+    !include base.yaml
+
 properties:
     compatible:
-      type: string
-      category: required
-      description: compatible strings
       constraint: "arm,scc"
 
     reg:
-      type: array
-      description: mmio register space
-      generation: define
       category: required
 
 ...

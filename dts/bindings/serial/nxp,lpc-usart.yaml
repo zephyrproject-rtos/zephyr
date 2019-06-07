@@ -18,16 +18,10 @@ properties:
       constraint: "nxp,lpc-usart"
 
     reg:
-      type: array
-      description: mmio register space
-      generation: define
       category: required
 
     interrupts:
-      type: array
       category: required
-      description: required interrupts
-      generation: define
 
     pinctrl-\d+:
       type: array

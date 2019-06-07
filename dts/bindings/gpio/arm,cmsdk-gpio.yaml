@@ -5,23 +5,16 @@ version: 0.1
 description: >
     This binding gives a base representation of the ARM CMSDK GPIO
 
+inherits:
+    !include base.yaml
+
 properties:
     compatible:
-      type: string
-      category: required
-      description: compatible strings
       constraint: "arm,cmsdk-gpio"
-      generation: define
 
     reg:
-      type: array
-      description: mmio register space
-      generation: define
       category: required
 
     interrupts:
-      type: array
       category: required
-      description: required interrupts
-      generation: define
 ...

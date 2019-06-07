@@ -13,16 +13,10 @@ properties:
       constraint: "openisa,rv32m1-lpuart"
 
     reg:
-      type: array
-      description: mmio register space
-      generation: define
       category: required
 
     interrupts:
-      type: array
       category: required
-      description: required interrupts
-      generation: define
 
     pinctrl-*:
       type: array

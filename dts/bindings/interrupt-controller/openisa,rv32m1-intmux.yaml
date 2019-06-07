@@ -10,19 +10,15 @@ version: 0.1
 description: >
     This binding describes the RV32M1 INTMUX IP
 
+inherits:
+    !include base.yaml
+
 properties:
   compatible:
-      category: required
-      type: string
-      description: compatible strings
       constraint: "openisa,rv32m1-intmux"
-      generation: define
 
   reg:
       category: required
-      type: int
-      description: mmio register space
-      generation: define
 
   clocks:
       type: array
@@ -31,16 +27,10 @@ properties:
       generation: define
 
   label:
-      type: string
       category: required
-      description: Human readable string naming the device (used by Zephyr for API name)
-      generation: define
 
   interrupts:
-      type: array
       category: required
-      description: required interrupts
-      generation: define
 
 "#cells":
   - irq

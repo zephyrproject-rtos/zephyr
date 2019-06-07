@@ -15,22 +15,13 @@ inherits:
 
 properties:
     compatible:
-      type: string
-      category: required
-      description: compatible strings
       constraint: "ti,cc13xx-cc26xx-i2c"
 
     reg:
-      type: array
       category: required
-      description: mmio register space
-      generation: define
 
     interrupts:
-      type: array
       category: required
-      description: required interrupts
-      generation: define
 
     sda-pin:
       type: int

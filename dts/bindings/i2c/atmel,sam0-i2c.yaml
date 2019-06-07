@@ -15,22 +15,13 @@ inherits:
 
 properties:
     compatible:
-      type: string
-      category: required
-      description: compatible strings
       constraint: "atmel,sam0-i2c"
 
     reg:
-      type: int
-      description: mmio register space
-      generation: define
       category: required
 
     interrupts:
-      type: compound
       category: required
-      description: required interrupts
-      generation: define
 
     dma:
       type: int

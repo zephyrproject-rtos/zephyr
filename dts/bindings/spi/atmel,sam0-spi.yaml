@@ -18,9 +18,6 @@ properties:
       constraint: "atmel,sam0-spi"
 
     reg:
-      type: array
-      description: mmio register space
-      generation: define
       category: required
 
     dipo:

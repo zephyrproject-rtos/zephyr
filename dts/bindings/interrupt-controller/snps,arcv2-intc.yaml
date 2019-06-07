@@ -10,19 +10,15 @@ version: 0.1
 description: >
     This binding describes the ARCV2 IRQ controller
 
+inherits:
+    !include base.yaml
+
 properties:
     compatible:
-      category: required
-      type: string
-      description: compatible strings
       constraint: "snps,arcv2-intc"
-      generation: define
 
     reg:
       category: required
-      type: int
-      description: mmio register space
-      generation: define
 
     arc,num-irq-priority-bits:
       category: required

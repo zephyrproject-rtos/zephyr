@@ -11,16 +11,15 @@ description: >
     This binding gives the base representation of a bluetooth controller node
     that provides HCI over SPI.
 
+inherits:
+    !include base.yaml
+
 parent:
     bus: spi
 
 properties:
     compatible:
-      type: string
-      category: required
-      description: compatible strings
       constraint: "zephyr,bt-hci-spi-slave"
-      generation: define
 
     irq-gpios:
       type: compound

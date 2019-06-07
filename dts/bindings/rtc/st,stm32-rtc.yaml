@@ -15,15 +15,9 @@ inherits:
 
 properties:
     compatible:
-      type: string
-      category: required
-      description: compatible strings
       constraint: "st,stm32-rtc"
 
     reg:
-      type: array
-      description: mmio register space
-      generation: define
       category: required
 
     clocks:
