@@ -44,25 +44,39 @@ To report the coverage for the particular test application set :option:`CONFIG_C
 Steps to generate code coverage reports
 =======================================
 
-1. Build the code with CONFIG_COVERAGE=y::
+These steps will produce an HTML coverage report for a single application.
+
+1. Build the code with CONFIG_COVERAGE=y. Some boards like qemu_x86_coverage
+   automatically enable this, but for boards that do not you will need to
+   enable the configuration manually::
 
      $ cmake -DBOARD=mps2_an385 -DCONFIG_COVERAGE=y ..
+     $ make
 
-#. Store the build and run output on to a log file::
+#. Capture the emulator output into a log file. You may need to terminate
+   the emulator with :kbd:`Ctrl-A X` for this to complete after the coverage dump
+   has been printed::
 
-     $ make run > log.log
+     $ make run | tee log.log
 
-#. Generate the gcov gcda files from the log file that was saved::
+#. Generate the gcov ``.gcda`` and ``.gcno`` files from the log file that was
+   saved::
 
      $ python3 scripts/gen_gcov_files.py -i log.log
 
-#. Find the gcov binary placed in the SDK::
+#. Find the gcov binary placed in the SDK. You will need to pass the path to
+   the gcov binary for the appropriate architecture when you later invoke
+   ``gcovr``::
 
-     $ find -iregex ".*gcov"
+     $ find $ZEPHYR_SDK_INSTALL_DIR -iregex ".*gcov"
 
-#. Run gcovr to get the reports::
+#. Create an output directory for the reports::
 
-     $ gcovr -r . --html -o gcov_report/coverage.html --html-details --gcov-executable <gcov_path_in_SDK>
+     $ mkdir -p gcov_report
+
+#. Run ``gcovr`` to get the reports::
+
+     $ gcovr -r $ZEPHYR_BASE . --html -o gcov_report/coverage.html --html-details --gcov-executable <gcov_path_in_SDK>
 
 .. _coverage_posix:
 
@@ -111,6 +125,17 @@ For example you may run::
     $ sanitycheck -p native_posix -T tests/kernel -C
 
 which will produce ``sanity-out/coverage/index.html`` with the report.
+
+For emulated targets you will need to pass the correct ``gcov`` binary from
+the SDK, the default of using the ``gcov`` found in the default path is likely
+not going to work. For example, to produce reports using the
+``qemu_x86_coverage`` target::
+
+    $ sanitycheck --coverage --coverage-platform=qemu_x86_coverage -p qemu_x86_coverage --gcov-tool $ZEPHYR_SDK_INSTALL_DIR/i586-zephyr-elf/bin/i586-zephyr-elf-gcov
+
+You can find the paths to all the ``gcov`` binaries in the SDK with::
+
+    $ find $ZEPHYR_SDK_INSTALL_DIR -iregex ".*gcov"
 
 .. _gcov:
    https://gcc.gnu.org/onlinedocs/gcc/Gcov.html
