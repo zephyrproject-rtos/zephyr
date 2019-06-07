@@ -39,4 +39,6 @@ source "drivers/counter/Kconfig.cmos"
 
 source "drivers/counter/Kconfig.mcux_gpt"
 
+source "drivers/counter/Kconfig.xec"
+
 endif # COUNTER
