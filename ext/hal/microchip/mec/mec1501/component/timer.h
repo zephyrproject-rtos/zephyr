@@ -125,6 +125,35 @@
 #define MCHP_BTMR_CTRL_COUNT_DIR_POS	2u
 #define MCHP_BTMR_CTRL_ENABLE_POS	0u
 
+/* Basic Timer interrupt routing */
+#define MCHP_B16TMR0_GIRQ	23u
+#define MCHP_B16TMR1_GIRQ	23u
+#define MCHP_B32TMR0_GIRQ	23u
+#define MCHP_B32TMR1_GIRQ	23u
+
+/* Bit position in GIRQ Source, Enable-Set/Clr, and Result registers */
+#define MCHP_B16TMR0_GIRQ_POS	0u
+#define MCHP_B16TMR1_GIRQ_POS	1u
+#define MCHP_B32TMR0_GIRQ_POS	4u
+#define MCHP_B32TMR1_GIRQ_POS	5u
+
+#define MCHP_B16TMR0_GIRQ_VAL	(1ul << 0)
+#define MCHP_B16TMR1_GIRQ_VAL	(1ul << 1)
+#define MCHP_B32TMR0_GIRQ_VAL	(1ul << 4)
+#define MCHP_B32TMR1_GIRQ_VAL	(1ul << 5)
+
+/* Basic timer GIRQ aggregated NVIC input */
+#define MCHP_B16TMR0_NVIC_AGGR	14u
+#define MCHP_B16TMR1_NVIC_AGGR	14u
+#define MCHP_B32TMR0_NVIC_AGGR	14u
+#define MCHP_B32TMR1_NVIC_AGGR	14u
+
+/* Basic timer direct NVIC inputs */
+#define MCHP_B16TMR0_NVIC_DIRECT	136u
+#define MCHP_B16TMR1_NVIC_DIRECT	137u
+#define MCHP_B32TMR0_NVIC_DIRECT	140u
+#define MCHP_B32TMR1_NVIC_DIRECT	141u
+
 /* =========================================================================*/
 /* ================   32/16-bit Basic Timer		   ================ */
 /* =========================================================================*/
@@ -134,7 +163,7 @@
   * @note Basic timers 0 & 1 are 16-bit, 2 & 3 are 32-bit.
   */
 typedef struct btmr_regs
-{		/*!< (@ 0x40000C00) BTMR Structure	  */
+{
 	__IOM uint32_t CNT;	/*!< (@ 0x00000000) BTMR Count		  */
 	__IOM uint32_t PRLD;	/*!< (@ 0x00000004) BTMR Preload	  */
 	__IOM uint8_t  STS;	/*!< (@ 0x00000008) BTMR Status		  */
@@ -178,6 +207,25 @@ typedef struct btmr_regs
  */
 #define MCHP_HTMR_CNT_STOP_VALUE	0u
 
+/* Hibernation timer interrupt routing */
+#define MCHP_HTMR0_GIRQ		23u
+#define MCHP_HTMR1_GIRQ		23u
+
+/* Bit position in GIRQ Source, Enable-Set/Clr, and Result registers */
+#define MCHP_HTMR0_GIRQ_POS	16u
+#define MCHP_HTMR1_GIRQ_POS	17u
+
+#define MCHP_HTMR0_GIRQ_VAL	(1ul << 16)
+#define MCHP_HTMR1_GIRQ_VAL	(1ul << 17)
+
+/* Hibernation timer GIRQ aggregated NVIC input */
+#define MCHP_HTMR0_NVIC_AGGR	14u
+#define MCHP_GTMR1_NVIC_AGGR	14u
+
+/* Hibernation timer direct NVIC inputs */
+#define MCHP_HTMR0_NVIC_DIRECT	112u
+#define MCHP_HTMR1_NVIC_DIRECT	113u
+
 /**
   * @brief Hibernation Timer (HTMR)
   */
@@ -216,24 +264,66 @@ typedef struct htmr_regs
 #define MCHP_CCT_CTRL_COMP1_EN		(1ul << 9)
 #define MCHP_CCT_CTRL_COMP1_SET		(1ul << 16)	/* R/WS */
 #define MCHP_CCT_CTRL_COMP0_SET		(1ul << 17)	/* R/WS */
+#define MCHP_CCT_CTRL_COMP1_CLR		(1ul << 24)	/* R/W1C */
+#define MCHP_CCT_CTRL_COMP0_CLR		(1ul << 25)	/* R/W1C */
+
+
+/* Capture Compare timer interrupt routing */
+#define MCHP_CCT_GIRQ		18u
+
+/* Bit position in GIRQ Source, Enable-Set/Clr, and Result registers */
+#define MCHP_CCT_TMR_GIRQ_POS	20u
+#define MCHP_CCT_CAP0_GIRQ_POS	21u
+#define MCHP_CCT_CAP1_GIRQ_POS	22u
+#define MCHP_CCT_CAP2_GIRQ_POS	23u
+#define MCHP_CCT_CAP3_GIRQ_POS	24u
+#define MCHP_CCT_CAP4_GIRQ_POS	25u
+#define MCHP_CCT_CAP5_GIRQ_POS	26u
+#define MCHP_CCT_CMP0_GIRQ_POS	27u
+#define MCHP_CCT_CMP1_GIRQ_POS	28u
+
+#define MCHP_CCT_TMR_GIRQ_VAL	(1ul << 20)
+#define MCHP_CCT_CAP0_GIRQ_VAL	(1ul << 21)
+#define MCHP_CCT_CAP1_GIRQ_VAL	(1ul << 22)
+#define MCHP_CCT_CAP2_GIRQ_VAL	(1ul << 23)
+#define MCHP_CCT_CAP3_GIRQ_VAL	(1ul << 24)
+#define MCHP_CCT_CAP4_GIRQ_VAL	(1ul << 25)
+#define MCHP_CCT_CAP5_GIRQ_VAL	(1ul << 26)
+#define MCHP_CCT_CMP0_GIRQ_VAL	(1ul << 27)
+#define MCHP_CCT_CMP1_GIRQ_VAL	(1ul << 28)
+#define MCHP_CCT_GIRQ_VAL_ALL	0x1FF00000ul
+
+/* Capture Compare timer GIRQ aggregated NVIC input */
+#define MCHP_CCT_NVIC_AGGR	10u
+
+/* Capture Compare timer direct NVIC inputs */
+#define MCHP_CCT_TMR_NVIC_DIRECT	146u
+#define MCHP_CCT_CAP0_NVIC_DIRECT	147u
+#define MCHP_CCT_CAP1_NVIC_DIRECT	148u
+#define MCHP_CCT_CAP2_NVIC_DIRECT	149u
+#define MCHP_CCT_CAP3_NVIC_DIRECT	150u
+#define MCHP_CCT_CAP4_NVIC_DIRECT	151u
+#define MCHP_CCT_CAP5_NVIC_DIRECT	152u
+#define MCHP_CCT_CMP0_NVIC_DIRECT	153u
+#define MCHP_CCT_CMP1_NVIC_DIRECT	154u
 
 /**
   * @brief Capture/Compare Timer (CCT)
   */
 typedef struct cct_regs
-{		/*!< (@ 0x40001000) CCT Structure	  */
-	__IOM uint32_t CTRL;	/*!< (@ 0x00000000) CCT Control		  */
+{
+	__IOM uint32_t CTRL;		/*!< (@ 0x00000000) CCT Control */
 	__IOM uint32_t CAP0_CTRL;	/*!< (@ 0x00000004) CCT Capture 0 Control */
 	__IOM uint32_t CAP1_CTRL;	/*!< (@ 0x00000008) CCT Capture 1 Control */
-	__IOM uint32_t FREE_RUN;	/*!< (@ 0x0000000C) CCT Free run counter  */
-	__IOM uint32_t CAP0;	/*!< (@ 0x00000010) CCT Capture 0	  */
-	__IOM uint32_t CAP1;	/*!< (@ 0x00000014) CCT Capture 1	  */
-	__IOM uint32_t CAP2;	/*!< (@ 0x00000018) CCT Capture 2	  */
-	__IOM uint32_t CAP3;	/*!< (@ 0x0000001C) CCT Capture 3	  */
-	__IOM uint32_t CAP4;	/*!< (@ 0x00000020) CCT Capture 4	  */
-	__IOM uint32_t CAP5;	/*!< (@ 0x00000024) CCT Capture 5	  */
-	__IOM uint32_t COMP0;	/*!< (@ 0x00000028) CCT Compare 0	  */
-	__IOM uint32_t COMP1;	/*!< (@ 0x0000002C) CCT Compare 1	  */
+	__IOM uint32_t FREE_RUN;	/*!< (@ 0x0000000C) CCT Free run counter */
+	__IOM uint32_t CAP0;		/*!< (@ 0x00000010) CCT Capture 0 */
+	__IOM uint32_t CAP1;		/*!< (@ 0x00000014) CCT Capture 1 */
+	__IOM uint32_t CAP2;		/*!< (@ 0x00000018) CCT Capture 2 */
+	__IOM uint32_t CAP3;		/*!< (@ 0x0000001C) CCT Capture 3 */
+	__IOM uint32_t CAP4;		/*!< (@ 0x00000020) CCT Capture 4 */
+	__IOM uint32_t CAP5;		/*!< (@ 0x00000024) CCT Capture 5 */
+	__IOM uint32_t COMP0;		/*!< (@ 0x00000028) CCT Compare 0 */
+	__IOM uint32_t COMP1;		/*!< (@ 0x0000002C) CCT Compare 1 */
 } CCT_Type;
 
 /* =========================================================================*/
@@ -264,6 +354,20 @@ typedef struct cct_regs
 #define MCHP_RTMR_CTRL_FW_HALT_EN_POS	4u
 #define MCHP_RTMR_CTRL_FW_HALT_EN_MASK	(1ul << (MCHP_RTMR_CTRL_FW_HALT_EN_POS))
 #define MCHP_RTMR_CTRL_FW_HALT_EN	(1ul << (MCHP_RTMR_CTRL_FW_HALT_EN_POS))
+
+/* RTOS timer interrupt routing */
+#define MCHP_RTMR_GIRQ		23u
+
+/* Bit position in GIRQ Source, Enable-Set/Clr, and Result registers */
+#define MCHP_RTMR_GIRQ_POS	10u
+
+#define MCHP_RTMR_GIRQ_VAL	(1ul << 10)
+
+/* RTOS timer GIRQ aggregated NVIC input */
+#define MCHP_RTMR_NVIC_AGGR	14u
+
+/* RTOS timer direct NVIC inputs */
+#define MCHP_RTMR_NVIC_DIRECT	111u
 
 /**
   * @brief RTOS Timer (RTMR)
@@ -337,6 +441,32 @@ typedef struct rtmr_regs
 	(1ul << (MCHP_WKTMR_SWKC_AUTO_RELOAD_POS))
 #define MCHP_WKTMR_SWKC_AUTO_RELOAD \
 	(1ul << (MCHP_WKTMR_SWKC_AUTO_RELOAD_POS))
+
+/* Week timer interrupt routing */
+#define MCHP_WKTMR_GIRQ		21u
+
+/* Bit position in GIRQ Source, Enable-Set/Clr, and Result registers */
+#define MCHP_WKTMR_ALARM_GIRQ_POS	3u
+#define MCHP_WKTMR_SUBWK_GIRQ_POS	4u
+#define MCHP_WKTMR_ONESEC_GIRQ_POS	5u
+#define MCHP_WKTMR_SUBSEC_GIRQ_POS	6u
+#define MCHP_WKTMR_SUSPWR_GIRQ_POS	7u
+
+#define MCHP_WKTMR_ALARM_GIRQ_VAL	(1ul << 3)
+#define MCHP_WKTMR_SUBWK_GIRQ_VAL	(1ul << 4)
+#define MCHP_WKTMR_ONESEC_GIRQ_VAL	(1ul << 5)
+#define MCHP_WKTMR_SUBSEC_GIRQ_VAL	(1ul << 6)
+#define MCHP_WKTMR_SUSPWR_GIRQ_VAL	(1ul << 7)
+
+/* Capture Compare timer GIRQ aggregated NVIC input */
+#define MCHP_WKTMR_NVIC_AGGR		13u
+
+/* Capture Compare timer direct NVIC inputs */
+#define MCHP_WKTMR_ALARM_NVIC_DIRECT	114u
+#define MCHP_WKTMR_SUBWK_NVIC_DIRECT	115u
+#define MCHP_WKTMR_ONESEC_NVIC_DIRECT	116u
+#define MCHP_WKTMR_SUBSEC_NVIC_DIRECT	117u
+#define MCHP_WKTMR_SUSPWR_NVIC_DIRECT	118u
 
 /**
   * @brief Week Timer (WKTMR)

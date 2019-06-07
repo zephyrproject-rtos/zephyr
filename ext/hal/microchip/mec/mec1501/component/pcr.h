@@ -154,7 +154,7 @@
  * bit[8]==1 system will allow entry to heavy sleep before PLL is locked.
  */
 #define MCHP_PCR_SYS_SLP_CTRL_SLP_PLL_LOCK		(0ul << 8)
-#define MCHP_PCR_SYS_SLP_CTRL_ALLOW_SLP_NO_PLL_LOCK	(0ul << 8)
+#define MCHP_PCR_SYS_SLP_CTRL_ALLOW_SLP_NO_PLL_LOCK	(1ul << 8)
 
 #define MCHP_PCR_SYS_SLP_LIGHT	0x08ul
 #define MCHP_PCR_SYS_SLP_HEAVY	0x09ul
@@ -487,6 +487,18 @@ mchp_pcr_periph_slp_ctrl(PCR_ID pcr_id, uint8_t enable)
 	} else {
 		REG32(raddr) &= ~(1ul << bitpos);
 	}
+}
+
+static __attribute__ ((always_inline)) inline void
+mchp_pcr_periph_reset(PCR_ID pcr_id)
+{
+	uintptr_t raddr = (uintptr_t) (MCHP_PCR_PERIPH_RST0_ADDR);
+	uint32_t bitpos = (uint32_t) pcr_id & 0x1F;
+
+	raddr += ((uint32_t) pcr_id >> 5);
+	REG32(MCHP_PCR_PERIPH_RESET_LOCK_ADDR) = MCHP_PCR_RSTEN_UNLOCK;
+	REG32(raddr) = (1ul << bitpos);
+	REG32(MCHP_PCR_PERIPH_RESET_LOCK_ADDR) = MCHP_PCR_RSTEN_LOCK;
 }
 
 #endif				// #ifndef _DEFS_H
