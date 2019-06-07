@@ -119,7 +119,7 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 {
 	struct lll_adv *lll = prepare_param->param;
 	u32_t aa = sys_cpu_to_le32(0x8e89bed6);
-	u32_t ticks_at_event;
+	u32_t ticks_at_event, ticks_at_start;
 	struct evt_hdr *evt;
 	u32_t remainder_us;
 	u32_t remainder;
@@ -191,10 +191,12 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 	ticks_at_event = prepare_param->ticks_at_expire;
 	evt = HDR_LLL2EVT(lll);
 	ticks_at_event += lll_evt_offset_get(evt);
-	ticks_at_event += HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US);
+
+	ticks_at_start = ticks_at_event;
+	ticks_at_start += HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US);
 
 	remainder = prepare_param->remainder;
-	remainder_us = radio_tmr_start(1, ticks_at_event, remainder);
+	remainder_us = radio_tmr_start(1, ticks_at_start, remainder);
 
 	/* capture end of Tx-ed PDU, used to calculate HCTO. */
 	radio_tmr_end_capture();
@@ -211,7 +213,9 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 #if defined(CONFIG_BT_CTLR_XTAL_ADVANCED) && \
 	(EVENT_OVERHEAD_PREEMPT_US <= EVENT_OVERHEAD_PREEMPT_MIN_US)
 	/* check if preempt to start has changed */
-	if (lll_preempt_calc(evt, TICKER_ID_ADV_BASE, ticks_at_event)) {
+	if (lll_preempt_calc(evt, (TICKER_ID_ADV_BASE +
+				   ull_adv_lll_handle_get(lll)),
+			     ticks_at_event)) {
 		radio_isr_set(isr_abort, lll);
 		radio_disable();
 	} else

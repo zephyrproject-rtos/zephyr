@@ -17,11 +17,12 @@
 
 #include "util/mem.h"
 #include "util/memq.h"
-
 #include "util/mayfly.h"
+
 #include "ticker/ticker.h"
 
 #include "lll.h"
+#include "lll_vendor.h"
 #include "lll_internal.h"
 
 #define LOG_MODULE_NAME bt_ctlr_llsw_nordic_lll
@@ -358,10 +359,24 @@ u32_t lll_evt_offset_get(struct evt_hdr *evt)
 u32_t lll_preempt_calc(struct evt_hdr *evt, u8_t ticker_id,
 		       u32_t ticks_at_event)
 {
-	/* TODO: */
+	u32_t ticks_now = ticker_ticks_now_get();
+	u32_t diff;
+
+	diff = ticker_ticks_diff_get(ticks_now, ticks_at_event);
+	diff += HAL_TICKER_CNTR_CMP_OFFSET_MIN;
+	if (!(diff & BIT(HAL_TICKER_CNTR_MSBIT)) &&
+	    (diff > HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US))) {
+		/* TODO: for Low Latency Feature with Advanced XTAL feature.
+		 * 1. Release retained HF clock.
+		 * 2. Advance the radio event to accommodate normal prepare
+		 *    duration.
+		 * 3. Increase the preempt to start ticks for future events.
+		 */
+		return 1;
+	}
+
 	return 0;
 }
-
 
 void lll_chan_set(u32_t chan)
 {
