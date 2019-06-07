@@ -761,6 +761,7 @@ static void lpn_timeout(struct k_work *work)
 		}
 		lpn->counter++;
 		lpn_set_state(BT_MESH_LPN_ENABLED);
+		lpn->sent_req = 0U;
 		k_delayed_work_submit(&lpn->timer, FRIEND_REQ_RETRY_TIMEOUT);
 		break;
 	case BT_MESH_LPN_ESTABLISHED:
