@@ -634,6 +634,8 @@ static void isr_done(void *param)
 	/* TODO: MOVE ^^ */
 
 	e = ull_event_done_extra_get();
+	LL_ASSERT(e);
+
 	e->type = EVENT_DONE_EXTRA_TYPE_CONN;
 	e->trx_cnt = trx_cnt;
 	e->crc_valid = crc_valid;

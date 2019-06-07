@@ -1572,6 +1572,7 @@ static inline void rx_demux_event_done(memq_link_t *link,
 	struct node_rx_event_done *done = (void *)rx;
 	struct ull_hdr *ull_hdr;
 	struct lll_event *next;
+	void *release;
 
 	/* Get the ull instance */
 	ull_hdr = done->param;
@@ -1602,7 +1603,8 @@ static inline void rx_demux_event_done(memq_link_t *link,
 
 	/* release done */
 	done->extra.type = 0U;
-	done_release(link, done);
+	release = done_release(link, done);
+	LL_ASSERT(release == done);
 
 	/* dequeue prepare pipeline */
 	next = ull_prepare_dequeue_get();

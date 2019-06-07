@@ -47,6 +47,7 @@ static int prepare(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 static int resume_enqueue(lll_prepare_cb_t resume_cb, int resume_prio);
 
 #if !defined(CONFIG_BT_CTLR_LOW_LAT)
+static void ticker_start_op_cb(u32_t status, void *param);
 static void preempt_ticker_cb(u32_t ticks_at_expire, u32_t remainder,
 			      u16_t lazy, void *param);
 static void preempt(void *param);
@@ -240,6 +241,7 @@ int lll_done(void *param)
 {
 	struct lll_event *next = ull_prepare_dequeue_get();
 	struct ull_hdr *ull = NULL;
+	void *evdone;
 	int ret = 0;
 
 	/* Assert if param supplied without a pending prepare to cancel. */
@@ -271,7 +273,8 @@ int lll_done(void *param)
 	}
 
 	/* Let ULL know about LLL event done */
-	ull_event_done(ull);
+	evdone = ull_event_done(ull);
+	LL_ASSERT(evdone);
 
 	return ret;
 }
@@ -443,7 +446,7 @@ static int prepare(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 				   TICKER_NULL_LAZY,
 				   TICKER_NULL_SLOT,
 				   preempt_ticker_cb, NULL,
-				   NULL, NULL);
+				   ticker_start_op_cb, NULL);
 		LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
 			  (ret == TICKER_STATUS_FAILURE) ||
 			  (ret == TICKER_STATUS_BUSY));
@@ -502,6 +505,17 @@ static int resume_enqueue(lll_prepare_cb_t resume_cb, int resume_prio)
 }
 
 #if !defined(CONFIG_BT_CTLR_LOW_LAT)
+static void ticker_start_op_cb(u32_t status, void *param)
+{
+	/* NOTE: this callback is present only for addition debug messages
+	 * when needed, else can be dispensed with.
+	 */
+	ARG_UNUSED(param);
+
+	LL_ASSERT((status == TICKER_STATUS_SUCCESS) ||
+		  (status == TICKER_STATUS_FAILURE));
+}
+
 static void preempt_ticker_cb(u32_t ticks_at_expire, u32_t remainder,
 			       u16_t lazy, void *param)
 {
