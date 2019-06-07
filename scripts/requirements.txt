@@ -19,3 +19,4 @@ colorama
 Pillow
 intelhex
 pytest
+gcovr
