@@ -101,7 +101,8 @@ static void ticker_op_cb(u32_t status, void *params);
 				     sizeof(struct pdu_data_llctrl))
 
 static MFIFO_DEFINE(conn_tx, sizeof(struct lll_tx), CONFIG_BT_CTLR_TX_BUFFERS);
-static MFIFO_DEFINE(conn_ack, sizeof(struct lll_tx), CONFIG_BT_CTLR_TX_BUFFERS);
+static MFIFO_DEFINE(conn_ack, sizeof(struct lll_tx),
+		    (CONFIG_BT_CTLR_TX_BUFFERS + CONN_TX_CTRL_BUFFERS));
 
 
 static struct {
@@ -1158,8 +1159,8 @@ void ull_conn_tx_demux(u8_t count)
 			break;
 		}
 
-		conn = ll_conn_get(lll_tx->handle);
-		if (conn->lll.handle == lll_tx->handle) {
+		conn = ll_connected_get(lll_tx->handle);
+		if (conn) {
 			struct node_tx *tx = lll_tx->node;
 
 			tx->next = NULL;
