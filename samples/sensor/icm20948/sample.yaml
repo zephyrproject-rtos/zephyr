@@ -1,0 +1,22 @@
+sample:
+  name: TDK ICM20948 accelerometer and gyrometer sensor
+tests:
+  sample.sensor.icm20948:
+    harness: console
+    tags: sensors
+    depends_on: i2c icm20948
+    harness_config:
+        type: one_line
+        regex:
+            - "x: (.*); y: (.*); z: (.*)"
+        fixture: fixture_i2c_icm20948
+  sample.sensor.icm20948:
+    harness: console
+    tags: sensors
+    depends_on: spi icm20948
+    extra_args: "CONF_FILE=prj_spi.conf"
+    harness_config:
+        type: one_line
+        regex:
+            - "x: (.*); y: (.*); z: (.*)"
+        fixture: fixture_i2c_icm20948
