@@ -18,13 +18,7 @@ properties:
       constraint: "nxp,kinetis-i2c"
 
     reg:
-      type: int
-      description: mmio register space
-      generation: define
       category: required
 
     interrupts:
-      type: compound
       category: required
-      description: required interrupts
-      generation: define

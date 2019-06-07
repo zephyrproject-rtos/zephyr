@@ -15,9 +15,6 @@ inherits:
 
 properties:
     compatible:
-      type: string
-      category: required
-      description: compatible strings
       constraint: "microchip,mcp2515"
     int-gpios:
       type: compound

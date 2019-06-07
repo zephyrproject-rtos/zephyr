@@ -18,8 +18,5 @@ properties:
       constraint: "nxp,kinetis-rtc"
 
     reg:
-      type: array
-      description: mmio register space
-      generation: define
       category: required
 ...

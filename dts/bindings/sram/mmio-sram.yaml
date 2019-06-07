@@ -10,24 +10,17 @@ version: 0.1
 description: >
     This binding gives a generic on-chip SRAM description
 
+inherits:
+    !include base.yaml
+
 properties:
     compatible:
-      type: string
-      category: required
-      description: compatible strings
       constraint: "mmio-sram"
-      generation: define
 
     reg:
-      type: array
-      description: mmio register space
-      generation: define
       category: required
 
     label:
-      type: string
       category: optional
-      description: Human readable string describing the device (used by Zephyr for API name)
-      generation: define
 
 ...

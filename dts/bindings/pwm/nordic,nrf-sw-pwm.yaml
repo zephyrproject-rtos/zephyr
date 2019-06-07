@@ -5,15 +5,15 @@ version: 0.1
 description: >
     This binding gives a base representation of the nRFx S/W PWM
 
+inherits:
+    !include base.yaml
+
 properties:
     compatible:
       constraint: "nordic,nrf-sw-pwm"
 
     label:
-      type: string
       category: required
-      description: Human readable string describing the device (used by Zephyr for API name)
-      generation: define
 
     timer-instance:
       type: int

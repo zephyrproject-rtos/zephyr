@@ -5,19 +5,15 @@ version: 0.1
 description: >
     This binding describes CAVS Interrupt controller
 
+inherits:
+    !include base.yaml
+
 properties:
   compatible:
-      category: required
-      type: string
-      description: compatible strings
       constraint: "intel,cavs-intc"
-      generation: define
 
   reg:
       category: required
-      type: int
-      description: mmio register space
-      generation: define
 
   intel,num-irq-priority-bits:
       category: required
@@ -26,10 +22,7 @@ properties:
       generation: define
 
   interrupts:
-      type: array
       category: required
-      description: required interrupts
-      generation: define
 
 cell_string: IRQ
 

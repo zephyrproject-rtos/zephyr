@@ -10,17 +10,14 @@ version: 0.1
 description: >
   This binding gives a base representation of the i.MX DTCM
 
+inherits:
+  !include base.yaml
+
 properties:
     compatible:
-      type: string
-      category: required
       constraint: "nxp,imx-dtcm"
-      generation: define
 
     reg:
-      type: int
-      description: mmio register space
-      generation: define
       category: required
 
 ...

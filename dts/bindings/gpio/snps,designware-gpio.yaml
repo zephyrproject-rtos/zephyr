@@ -10,18 +10,14 @@ version: 0.1
 description: >
     This is a representation of the Synopsys DesignWare gpio node
 
+inherits:
+    !include base.yaml
+
 properties:
     compatible:
-      type: string
-      category: required
-      description: compatible strings
       constraint: "snps,designware-gpio"
-      generation: define
 
     reg:
-      type: int
-      description: mmio register space
-      generation: define
       category: required
 
     bits:
@@ -31,16 +27,10 @@ properties:
       category: required
 
     interrupts:
-      type: array
       category: required
-      description: required interrupts
-      generation: define
 
     label:
-      type: string
       category: required
-      description: Human readable string describing the device (used by Zephyr for API name)
-      generation: define
 
 cell_string: GPIO
 

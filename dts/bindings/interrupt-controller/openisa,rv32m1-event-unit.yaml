@@ -11,19 +11,15 @@ version: 0.1
 description: >
     This binding describes the RV32M1 Event Unit
 
+inherits:
+    !include base.yaml
+
 properties:
   compatible:
-      category: required
-      type: string
-      description: compatible strings
       constraint: "openisa,rv32m1-event-unit"
-      generation: define
 
   reg:
       category: required
-      type: int
-      description: mmio register space
-      generation: define
 
 "#cells":
   - irq

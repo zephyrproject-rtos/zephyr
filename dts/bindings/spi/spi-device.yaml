@@ -10,19 +10,14 @@ version: 0.1
 description: >
     This binding gives the base structures for all spi devices
 
+inherits:
+    !include base.yaml
+
 parent:
     bus: spi
 
 properties:
-    compatible:
-      type: string
-      category: required
-      description: compatible strings
-      generation: define
     reg:
-      type: array
-      description: Chip select address of device
-      generation: define
       category: required
     spi-max-frequency:
       type: int
@@ -30,8 +25,5 @@ properties:
       description: Maximum clock frequency of device's SPI interface in Hz
       generation: define
     label:
-      type: string
       category: required
-      description: Human readable string describing the device (used by Zephyr for API name)
-      generation: define
 ...

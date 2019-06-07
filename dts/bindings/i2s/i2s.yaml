@@ -10,15 +10,13 @@ version: 0.1
 description: >
     This binding gives the base structures for all I2S devices
 
+inherits:
+    !include base.yaml
+
 child:
     bus: i2s
 
 properties:
-    compatible:
-      type: string
-      category: required
-      description: compatible strings
-      generation: define
     "#address-cells":
       type: int
       category: required
@@ -28,15 +26,11 @@ properties:
       category: required
       description: should be 0.
     label:
-      type: string
       category: required
-      description: Human readable string describing the device (used by Zephyr for API name)
-      generation: define
     clocks:
       type: array
       category: optional
       description: Clock gate information
       generation: define
-
 
 ...

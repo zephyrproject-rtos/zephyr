@@ -10,19 +10,15 @@ version: 0.1
 description: >
     This binding describes LiteX VexRiscV Interrupt Controller
 
+inherits:
+    !include base.yaml
+
 properties:
   compatible:
-      category: required
-      type: string
-      description: compatible strings
       constraint: "vexriscv,intc0"
-      generation: define
 
   reg:
       category: required
-      type: int
-      description: mmio register space
-      generation: define
 
   riscv,max-priority:
       type: int

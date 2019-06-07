@@ -12,11 +12,7 @@ child:
 
 properties:
     compatible:
-      type: string
-      category: required
-      description: compatible strings
       constraint: "holtek,ht16k33"
-      generation: define
     "#address-cells":
       type: int
       category: required
@@ -26,10 +22,7 @@ properties:
       category: required
       description: should be 0.
     label:
-      type: string
       category: required
-      description: Human readable string describing the device (used by Zephyr for API name)
-      generation: define
     irq-gpios:
       type: compound
       category: optional

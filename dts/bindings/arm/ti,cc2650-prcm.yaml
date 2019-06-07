@@ -7,17 +7,13 @@ description: >
     This binding gives a base representation of the TI CC2650
     Power, Reset, and Clock control Module.
 
+inherits:
+    !include base.yaml
+
 properties:
     compatible:
-      type: string
-      category: required
-      description: compatible strings
       constraint: "ti,cc2650-prcm"
-      generation: define
 
     reg:
-      type: array
-      description: mmio register space
-      generation: define
       category: required
 ...

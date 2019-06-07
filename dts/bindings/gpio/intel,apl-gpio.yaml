@@ -10,29 +10,20 @@ version: 0.1
 description: >
     This is a representation of the Intel Apollo Lake GPIO node
 
+inherits:
+    !include base.yaml
+
 properties:
     compatible:
-      type: string
-      category: required
-      description: compatible strings
       constraint: "intel,apl-gpio"
-      generation: define
 
     reg:
-      type: int
-      description: mmio register space
-      generation: define
       category: required
 
     label:
-      type: string
       category: required
-      description: Human readable string describing the device (used by Zephyr for API name)
-      generation: define
 
     interrupts:
-      type: int
-      generation: define
       category: required
 
 cell_string: GPIO

@@ -10,17 +10,13 @@ version: 0.1
 description: >
     This binding gives a base representation of the ARC DCCM
 
+inherits:
+    !include base.yaml
+
 properties:
     compatible:
-      type: string
-      category: required
-      description: compatible strings
       constraint: "arc,dccm"
-      generation: define
 
     reg:
-      type: array
-      description: DCCM memory mapped address space
-      generation: define
       category: required
 ...

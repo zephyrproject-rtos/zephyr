@@ -10,15 +10,12 @@ version: 0.1
 description: >
     This binding gives a base representation of the NXP Kinetis Ethernet PTP
 
+inherits:
+    !include base.yaml
+
 properties:
     compatible:
-      type: string
-      category: required
-      description: compatible strings
       constraint: "nxp,kinetis-ptp"
     interrupts:
-      type: array
       category: required
-      description: required interrupts
-      generation: define
 ...

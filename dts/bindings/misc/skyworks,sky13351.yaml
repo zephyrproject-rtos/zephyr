@@ -11,6 +11,9 @@ description: >
     This binding allows control of the output selectors of the SKY13351
     SPDT switch.
 
+inherits:
+    !include base.yaml
+
 properties:
     compatible:
         constraint: "skyworks,sky13351"

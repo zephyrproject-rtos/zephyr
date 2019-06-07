@@ -18,9 +18,6 @@ properties:
       constraint: "atmel,sam0-rtc"
 
     reg:
-      type: array
-      description: mmio register space
-      generation: define
       category: required
 
     clock-generator:

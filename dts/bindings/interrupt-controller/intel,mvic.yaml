@@ -6,19 +6,15 @@ description: >
     This binding describes the Intel Quark D2000 Interrupt
     Controller
 
+inherits:
+    !include base.yaml
+
 properties:
   compatible:
-      category: required
-      type: string
-      description: compatible strings
       constraint: "intel,mvic"
-      generation: define
 
   reg:
       category: required
-      type: int
-      description: mmio register space
-      generation: define
 
   intel,num-irq-priority-bits:
       category: required

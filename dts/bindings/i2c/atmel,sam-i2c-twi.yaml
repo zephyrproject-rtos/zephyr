@@ -18,16 +18,10 @@ properties:
       constraint: "atmel,sam-i2c-twi"
 
     reg:
-      type: array
-      description: mmio register space
-      generation: define
       category: required
 
     interrupts:
-      type: array
       category: required
-      description: required interrupts
-      generation: define
 
     peripheral-id:
       type: int

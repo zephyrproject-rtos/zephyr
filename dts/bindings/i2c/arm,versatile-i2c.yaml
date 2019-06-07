@@ -18,9 +18,6 @@ properties:
       constraint: "arm,versatile-i2c"
 
     reg:
-      type: array
-      description: mmio register space
-      generation: define
       category: required
 
 ...

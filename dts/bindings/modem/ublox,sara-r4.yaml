@@ -15,15 +15,10 @@ inherits:
 
 properties:
     compatible:
-      type: string
-      category: required
       constraint: "ublox,sara-r4"
-      generation: define
 
     label:
-      type: string
       category: required
-      generation: define
 
     mdm-power-gpios:
       type: compound

@@ -5,6 +5,9 @@ version: 0.1
 description: >
     This binding gives a base representation of the STM32 TIMERS
 
+inherits:
+    !include base.yaml
+
 properties:
     "#address-cells":
       type: int
@@ -16,22 +19,12 @@ properties:
       description: should be 0.
 
     compatible:
-      type: string
-      category: required
-      description: compatible strings
       constraint: "st,stm32-timers"
-      generation: define
 
     label:
-      type: string
       category: required
-      description: Human readable string describing the device (used by Zephyr for API name)
-      generation: define
 
     reg:
-      type: array
-      description: mmio register space
-      generation: define
       category: required
 
     clocks:

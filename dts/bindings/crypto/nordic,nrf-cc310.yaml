@@ -10,22 +10,15 @@ version: 0.1
 description: >
     This is a representation of the Nordic Control Interface for ARM TrustZone CryptoCell 310
 
+inherits:
+    !include base.yaml
+
 properties:
     compatible:
-      type: string
-      category: required
-      description: compatible strings
       constraint: "nordic,nrf-cc310"
-      generation: define
 
     reg:
-      type: int
-      description: mmio register space
-      generation: define
       category: required
 
     label:
-      type: string
       category: required
-      description: Human readable string describing the device (used by Zephyr for API name)
-      generation: define

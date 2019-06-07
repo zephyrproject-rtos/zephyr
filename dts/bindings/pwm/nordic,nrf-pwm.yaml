@@ -5,21 +5,18 @@ version: 0.1
 description: >
     This binding gives a base representation of the nRF PWM
 
+inherits:
+    !include base.yaml
+
 properties:
     compatible:
       constraint: "nordic,nrf-pwm"
 
     reg:
-      type: array
-      description: mmio register space
-      generation: define
       category: required
 
     label:
-      type: string
       category: required
-      description: Human readable string describing the device (used by Zephyr for API name)
-      generation: define
 
     ch0-pin:
       type: int

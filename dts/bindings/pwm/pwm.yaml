@@ -10,13 +10,10 @@ version: 0.1
 description: >
     This binding gives the base structures for all PWM devices
 
-properties:
-    compatible:
-      type: string
-      category: required
-      description: compatible strings
-      generation: define
+inherits:
+    !include base.yaml
 
+properties:
     clocks:
       type: array
       category: required
@@ -24,8 +21,5 @@ properties:
       generation: define
 
     label:
-      type: string
       category: required
-      description: Human readable string describing the device (used by Zephyr for API name)
-      generation: define
 ...

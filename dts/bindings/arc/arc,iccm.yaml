@@ -10,17 +10,13 @@ version: 0.1
 description: >
     This binding gives a base representation of the ARC ICCM
 
+inherits:
+    !include base.yaml
+
 properties:
     compatible:
-      type: string
-      category: required
-      description: compatible strings
       constraint: "arc,iccm"
-      generation: define
 
     reg:
-      type: array
-      description: ICCM memory mapped address space
-      generation: define
       category: required
 ...

@@ -18,9 +18,6 @@ properties:
       constraint: "st,stm32-usbphyc"
 
     reg:
-      type: array
-      description: address and length of the usb phy control register set
-      generation: define
       category: required
 
     "phy-cells":
