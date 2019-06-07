@@ -624,6 +624,7 @@ config BT_MAYFLY_YIELD_AFTER_CALL
 
 config BT_CTLR_USER_EXT
 	prompt "Enable proprietary extensions in Controller"
+	depends on BT_LL_SW_SPLIT
 	bool
 	help
 	  Catch-all for enabling proprietary event types in Controller behavior.
