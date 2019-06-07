@@ -262,7 +262,7 @@ typedef struct {
 	__IOM uint8_t VW_RDY;		/*! (@ 0x003D) VW ready */
 	uint8_t RSVD3[0x102];
 	__IOM uint32_t VW_ERR_STS;	/*! (@ 0x0140) IO Virtual Wire Error */
-} ESPI_IO_VW;
+} ESPI_IO_VW_Type;
 
 /* Master-to-Slave Virtual Wire 96-bit register */
 
@@ -328,7 +328,7 @@ typedef struct {
 	ESPI_MSVW_REG MSVW08;
 	ESPI_MSVW_REG MSVW09;
 	ESPI_MSVW_REG MSVW10;
-} ESPI_M2S_VW;
+} ESPI_M2S_VW_Type;
 
 /* Slave-to-Master Virtual Wire 64-bit register */
 
@@ -352,7 +352,7 @@ typedef struct {
 	ESPI_SMVW_REG SMVW08;
 	ESPI_SMVW_REG SMVW09;
 	ESPI_SMVW_REG SMVW10;
-} ESPI_S2M_VW;
+} ESPI_S2M_VW_Type;
 
 /* MSVW helper inline functions */
 
@@ -415,12 +415,29 @@ mec_espi_msvw_mtos_set(ESPI_MSVW_REG * p, enum espi_vw_rst_src rst_src,
 	p->MTOS = (rst_src & 0x03u) | ((rst_val & 0x0Fu) << 4);
 }
 
+/*
+ * Set the specified Master-to-Slave VWire's interrupt select field for
+ * the specified edge, level, or disabled.
+ * MSVW IRQ_SELECT is a 32-bit register where the four VWire's
+ * interrupt select fields are located on byte boundaries.
+ * Param p is a pointer to the 96-bit MSVW register.
+ * Param src is in [0:3] specifying one of the four VWire's.
+ * Param isel is the new value for the specified VWire's interrupt
+ * select field. IRQ_SELECT is the 32-bit word at bits[63:32] in the
+ * 96-bit MSVW register.
+ * IRQ_SELECT[3:0]   = SRC0_IRQ_SELECT
+ * IRQ_SELECT[11:8]  = SRC1_IRQ_SELECT
+ * IRQ_SELECT[19:16] = SRC1_IRQ_SELECT
+ * IRQ_SELECT[27:24] = SRC1_IRQ_SELECT
+ * The MSVW registers are byte accessible allowing us to avoid a
+ * read-modify-write.
+ */
 static __attribute__ ((always_inline))
 inline void
 mec_espi_msvw_irq_sel_set(ESPI_MSVW_REG * p, enum espi_msvw_src src,
 			  enum espi_msvw_irq_sel isel)
 {
-	volatile uint8_t *psrc = (volatile uint8_t *)p->SRC_IRQ_SEL;
+	volatile uint8_t *psrc = (volatile uint8_t *)&p->SRC_IRQ_SEL;
 
 	*(psrc + (uintptr_t) src) = isel;
 }
@@ -436,11 +453,26 @@ inline void mec_espi_msvw_irq_sel_set_all(ESPI_MSVW_REG * p, uint32_t isel_all)
 	p->SRC_IRQ_SEL = isel_all;
 }
 
+/*
+ * Set the specified Master-to-Slave VWire state.
+ * MSVW.SRC is a 32-bit component at bits[95:64] where states of the
+ * four VWire's it controls are located on byte boundaries.
+ * Param p is a pointer to the 96-bit MSVW register.
+ * Param src is in [0:3] specifying one of the four VWire's.
+ * Param src_val is the new VWire state.
+ * SRC member is the 32-bit word at bits[95:64] in the MSVW structure.
+ * SRC[3:0]   = SRC0 VWire state
+ * SRC[11:8]  = SRC1 VWire state
+ * SRC[19:16] = SRC1 VWire state
+ * SRC[27:24] = SRC1 VWire state
+ * The MSVW registers are byte accessible allowing us to avoid a
+ * read-modify-write.
+ */
 static __attribute__ ((always_inline))
 inline void
 mec_espi_msvw_set(ESPI_MSVW_REG * p, enum espi_msvw_src src, uint8_t src_val)
 {
-	volatile uint8_t *psrc = (volatile uint8_t *)p->SRC;
+	volatile uint8_t *psrc = (volatile uint8_t *)&p->SRC;
 
 	*(psrc + (uintptr_t) src) = src_val;
 }
@@ -562,12 +594,40 @@ inline void mec_espi_smvw_set_all_bitmap(ESPI_SMVW_REG * p, uint8_t src_bitmap)
 	p->SRC = srcs;
 }
 
+/*
+ * Get the specified Slave-to-Master VWire state.
+ * SMVW.SRC is a 32-bit register located at bits[63:32] where the four
+ * VWire's it controls are located on byte boundaries.
+ * Param p is a pointer to the 64-bit SMVW register.
+ * Param src is in [0:3] specifying one of the four VWire's.
+ * Param src_val is the new VWire state.
+ * SRC member is the 32-bit word at bits[63:32] in the SMVW structure.
+ * SRC[3:0]   = SRC0 VWire state
+ * SRC[11:8]  = SRC1 VWire state
+ * SRC[19:16] = SRC1 VWire state
+ * SRC[27:24] = SRC1 VWire state
+ */
 static __attribute__ ((always_inline))
 inline uint8_t mec_espi_smvw_get(ESPI_SMVW_REG * p, enum espi_smvw_src src)
 {
 	return (uint8_t) ((p->SRC >> (src << 3)) & 0x01ul);
 }
 
+/*
+ * Set the specified Slave-to-Master VWire state.
+ * SMVW.SRC is a 32-bit register located at bits[63:32] where the four
+ * VWire's it controls are located on byte boundaries.
+ * Param p is a pointer to the 64-bit SMVW register.
+ * Param src is in [0:3] specifying one of the four VWire's.
+ * Param src_val is the new VWire state.
+ * SRC member is the 32-bit word at bits[63:32] in the SMVW structure.
+ * SRC[3:0]   = SRC0 VWire state
+ * SRC[11:8]  = SRC1 VWire state
+ * SRC[19:16] = SRC1 VWire state
+ * SRC[27:24] = SRC1 VWire state
+ * The SMVW registers are byte accessible allowing us to avoid a
+ * read-modify-write.
+ */
 static __attribute__ ((always_inline))
 inline void
 mec_espi_smvw_set(ESPI_SMVW_REG * p, enum espi_smvw_src src, uint8_t new_val)
