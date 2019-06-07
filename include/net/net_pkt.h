@@ -1554,6 +1554,16 @@ int net_pkt_copy(struct net_pkt *pkt_dst,
 struct net_pkt *net_pkt_clone(struct net_pkt *pkt, s32_t timeout);
 
 /**
+ * @brief Clone pkt and increase the refcount of its buffer.
+ *
+ * @param pkt Original pkt to be shallow cloned
+ * @param timeout Timeout to wait for free packet
+ *
+ * @return NULL if error, cloned packet otherwise.
+ */
+struct net_pkt *net_pkt_shallow_clone(struct net_pkt *pkt, s32_t timeout);
+
+/**
  * @brief Read some data from a net_pkt
  *
  * @details net_pkt's cursor should be properly initialized and,
