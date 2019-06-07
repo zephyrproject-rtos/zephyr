@@ -2336,9 +2336,14 @@ static struct in_addr *net_if_ipv4_get_best_match(struct net_if *iface,
 static struct in_addr *if_ipv4_get_addr(struct net_if *iface,
 					enum net_addr_state addr_state, bool ll)
 {
-	struct net_if_ipv4 *ipv4 = iface->config.ip.ipv4;
+	struct net_if_ipv4 *ipv4;
 	int i;
 
+	if (!iface) {
+		return NULL;
+	}
+
+	ipv4 = iface->config.ip.ipv4;
 	if (!ipv4) {
 		return NULL;
 	}
