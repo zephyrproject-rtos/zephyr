@@ -1,7 +1,7 @@
 /*
- *
  * SPDX-License-Identifier: Apache-2.0
  */
+
 
 #ifndef ZEPHYR_DRIVERS_SENSOR_ICM_20498_H_
 #define ZEPHYR_DRIVERS_SENSOR_ICM_20498_H_
@@ -12,7 +12,7 @@
 #include <gpio.h>
 
 #ifdef CONFIG_ICM20948_I2C_AD0
-	#define CONFIG_ICM20948_I2C_SLAVE_ADDR 0x69 
+	#define CONFIG_ICM20948_I2C_SLAVE_ADDR 0x69
 #else
 	#define CONFIG_ICM20948_I2C_SLAVE_ADDR 0x68
 #endif
@@ -197,25 +197,8 @@ struct icm20948_data {
 #if defined(DT_TDK_ICM20948_0_CS_GPIO_CONTROLLER)
 	struct spi_cs_control cs_ctrl;
 #endif
-
-#ifdef CONFIG_ICM20948_TRIGGER
-	struct device *gpio;
-	struct gpio_callback gpio_cb;
-
-	struct sensor_trigger data_ready_trigger;
-	sensor_trigger_handler_t data_ready_handler;
-#endif
 	u8_t bank; // bank
 };
-
-
-// #ifdef CONFIG_ICM20948_TRIGGER
-// int icm20948_trigger_set(struct device *dev,
-// 			 const struct sensor_trigger *trig,
-// 			 sensor_trigger_handler_t handler);
-
-// int icm20948_init_interrupt(struct device *dev);
-// #endif
 
 int icm20948_i2c_init(struct device *dev);
 int icm20948_spi_init(struct device *dev);

@@ -1,3 +1,8 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+
 #include <string.h>
 #include "icm20948.h"
 #include <logging/log.h>
@@ -56,7 +61,7 @@ static int icm20948_raw_write(struct lis2dw12_data *data, u8_t reg_addr,
 			      u8_t *value, u8_t len)
 {
 	struct spi_config *spi_cfg = &icm20948_spi_config;
-	u8_t buffer_tx[1] = { reg_addr &~ICM20948_SPI_READ };
+	u8_t buffer_tx[1] = { reg_addr & ~ICM20948_SPI_READ };
 	const struct spi_buf tx_buf[2] = { {
 						   .buf = buffer_tx,
 						   .len = 1,

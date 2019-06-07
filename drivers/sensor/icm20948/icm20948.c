@@ -1,11 +1,7 @@
-/* bmp280.c - Driver for Bosch BMP280 temperature and pressure sensor */
-
 /*
- * Copyright (c) 2016, 2017 Intel Corporation
- * Copyright (c) 2017 IpTronix S.r.l.
- *
  * SPDX-License-Identifier: Apache-2.0
  */
+
 
 #include <init.h>
 #include <sensor.h>
@@ -114,7 +110,6 @@ static int icm20948_gyro_config(struct device *dev, enum sensor_channel chan,
 	}
 }
 
-
 static int icm20948_attr_set(struct device *dev, enum sensor_channel chan,
 			     enum sensor_attribute attr,
 			     const struct sensor_value *val)
@@ -137,7 +132,6 @@ static int icm20948_attr_set(struct device *dev, enum sensor_channel chan,
 	return 0;
 }
 
-
 static inline void icm20948_accel_convert(struct sensor_value *val, int raw_val,
 					  enum icm20948_accel_fs sensitivity)
 {
@@ -158,8 +152,6 @@ static inline void icm20948_gyro_convert(struct sensor_value *val, int raw_val,
 	val->val1 = (s32_t)dval;
 	val->val2 = (((s32_t)(dval * 1000)) % 1000) * 1000;
 }
-
-
 
 
 static int icm20948_channel_get(struct device *dev, enum sensor_channel chan,
@@ -282,17 +274,18 @@ static int icm20948_sample_fetch(struct device *dev, enum sensor_channel chan)
 int icm20948_init(struct device *dev)
 {
 	struct icm20948_data *data = (struct icm20948_data *)dev->driver_data;
+
 	data->bus = device_get_binding(DT_TDK_ICM20948_0_BUS_NAME);
 	data->bank = 0;
 	if (!data->bus) {
-		LOG_DBG("master not found: %s",DT_TDK_ICM20948_0_BUS_NAME);
+		LOG_DBG("master not found: %s", DT_TDK_ICM20948_0_BUS_NAME);
 		return -EINVAL;
 	}
 
 	#if defined(DT_TDK_ICM20948_BUS_SPI)
-		icm20948_spi_init(dev);
+	icm20948_spi_init(dev);
 	#elif defined(DT_TDK_ICM20948_BUS_I2C)
-		icm20948_i2c_init(dev);
+	icm20948_i2c_init(dev);
 	#else
 	#error "BUS MACRO NOT DEFINED IN DTS"
 	#endif
@@ -305,7 +298,7 @@ int icm20948_init(struct device *dev)
 	}
 
 	if (tmp != ICM20948_WHO_AM_I) {
-		LOG_ERR("Invalid Chip ID Expects 0x%x -- 0x%x", ICM20948_WHO_AM_I,tmp);
+		LOG_ERR("Invalid Chip ID Expects 0x%x -- 0x%x", ICM20948_WHO_AM_I, tmp);
 	}
 
 	// set gyro and accel config
@@ -320,17 +313,10 @@ int icm20948_init(struct device *dev)
 	}
 
 	/* wake up chip */
-	if(data->hw_tf->update_reg(data,ICM20948_REG_PWR_MGMT_1, BIT(6),0)){
+	if (data->hw_tf->update_reg(data, ICM20948_REG_PWR_MGMT_1, BIT(6), 0)) {
 		LOG_ERR("Failed to wake up chip.");
 		return -EIO;
 	}
-
-	// #ifdef CONFIG_ICM20948_TRIGGER
-	// if (icm20948_init_interrupt(dev)) {
-		// LOG_ERR("Failed to initialize interrupt.");
-		// return -EIO;
-	// }
-	// #endif
 
 	return 0;
 }
@@ -339,13 +325,10 @@ struct icm20948_data icm20948_data;
 
 static const struct sensor_driver_api icm20948_driver_api = {
 	.attr_set = icm20948_attr_set,
-// #ifdef CONFIG_ICM20948_TRIGGER
-	// .trigger_set = icm20948_trigger_set,
-// #endif
 	.sample_fetch = icm20948_sample_fetch,
 	.channel_get = icm20948_channel_get
 };
 
 DEVICE_AND_API_INIT(icm20948, DT_TDK_ICM20948_0_LABEL, icm20948_init,
-		    &icm20948_data, NULL, POST_KERNEL,
-		    CONFIG_SENSOR_INIT_PRIORITY, &icm20948_driver_api);
+			&icm20948_data, NULL, POST_KERNEL,
+			CONFIG_SENSOR_INIT_PRIORITY, &icm20948_driver_api);
