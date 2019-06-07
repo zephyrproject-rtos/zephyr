@@ -21,7 +21,6 @@ static struct {
 } mft[MAYFLY_CALLEE_COUNT][MAYFLY_CALLER_COUNT];
 
 static memq_link_t mfl[MAYFLY_CALLEE_COUNT][MAYFLY_CALLER_COUNT];
-static u8_t mfp[MAYFLY_CALLEE_COUNT];
 
 #if defined(MAYFLY_UT)
 static u8_t _state;
@@ -109,9 +108,6 @@ u32_t mayfly_enqueue(u8_t caller_id, u8_t callee_id, u8_t chain,
 	memq_enqueue(m->_link, m, &mft[callee_id][caller_id].tail);
 
 mayfly_enqueue_pend:
-	/* set mayfly callee pending */
-	mfp[callee_id] = 1U;
-
 	/* pend the callee for execution */
 	mayfly_pend(caller_id, callee_id);
 
@@ -170,11 +166,6 @@ void mayfly_run(u8_t callee_id)
 	u8_t disable = 0U;
 	u8_t enable = 0U;
 	u8_t caller_id;
-
-	if (!mfp[callee_id]) {
-		return;
-	}
-	mfp[callee_id] = 1U;
 
 	/* iterate through each caller queue to this callee_id */
 	caller_id = MAYFLY_CALLER_COUNT;
