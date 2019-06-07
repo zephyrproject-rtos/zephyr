@@ -1672,6 +1672,32 @@ int net_pkt_copy(struct net_pkt *pkt_dst,
 	return 0;
 }
 
+static void clone_pkt_attributes(struct net_pkt *pkt, struct net_pkt *clone_pkt)
+{
+	net_pkt_set_family(clone_pkt, net_pkt_family(pkt));
+	net_pkt_set_context(clone_pkt, net_pkt_context(pkt));
+	net_pkt_set_ip_hdr_len(clone_pkt, net_pkt_ip_hdr_len(pkt));
+	net_pkt_set_vlan_tag(clone_pkt, net_pkt_vlan_tag(pkt));
+	net_pkt_set_timestamp(clone_pkt, net_pkt_timestamp(pkt));
+	net_pkt_set_priority(clone_pkt, net_pkt_priority(pkt));
+	net_pkt_set_orig_iface(clone_pkt, net_pkt_orig_iface(pkt));
+
+	if (IS_ENABLED(CONFIG_NET_IPV4) && net_pkt_family(pkt) == AF_INET) {
+		net_pkt_set_ipv4_ttl(clone_pkt, net_pkt_ipv4_ttl(pkt));
+	} else if (IS_ENABLED(CONFIG_NET_IPV6) &&
+		   net_pkt_family(pkt) == AF_INET6) {
+		net_pkt_set_ipv6_hop_limit(clone_pkt,
+					   net_pkt_ipv6_hop_limit(pkt));
+		net_pkt_set_ipv6_ext_len(clone_pkt, net_pkt_ipv6_ext_len(pkt));
+		net_pkt_set_ipv6_ext_opt_len(clone_pkt,
+					     net_pkt_ipv6_ext_opt_len(pkt));
+		net_pkt_set_ipv6_hdr_prev(clone_pkt,
+					  net_pkt_ipv6_hdr_prev(pkt));
+		net_pkt_set_ipv6_next_hdr(clone_pkt,
+					  net_pkt_ipv6_next_hdr(pkt));
+	}
+}
+
 struct net_pkt *net_pkt_clone(struct net_pkt *pkt, s32_t timeout)
 {
 	struct net_pkt *clone_pkt;
@@ -1701,32 +1727,50 @@ struct net_pkt *net_pkt_clone(struct net_pkt *pkt, s32_t timeout)
 		       sizeof(clone_pkt->lladdr_dst));
 	}
 
-	net_pkt_set_family(clone_pkt, net_pkt_family(pkt));
-	net_pkt_set_context(clone_pkt, net_pkt_context(pkt));
-	net_pkt_set_ip_hdr_len(clone_pkt, net_pkt_ip_hdr_len(pkt));
-	net_pkt_set_vlan_tag(clone_pkt, net_pkt_vlan_tag(pkt));
-	net_pkt_set_timestamp(clone_pkt, net_pkt_timestamp(pkt));
-	net_pkt_set_priority(clone_pkt, net_pkt_priority(pkt));
-	net_pkt_set_orig_iface(clone_pkt, net_pkt_orig_iface(pkt));
-
-	if (IS_ENABLED(CONFIG_NET_IPV4) && net_pkt_family(pkt) == AF_INET) {
-		net_pkt_set_ipv4_ttl(clone_pkt, net_pkt_ipv4_ttl(pkt));
-	} else if (IS_ENABLED(CONFIG_NET_IPV6) &&
-		   net_pkt_family(pkt) == AF_INET6) {
-		net_pkt_set_ipv6_hop_limit(clone_pkt,
-					   net_pkt_ipv6_hop_limit(pkt));
-		net_pkt_set_ipv6_ext_len(clone_pkt, net_pkt_ipv6_ext_len(pkt));
-		net_pkt_set_ipv6_ext_opt_len(clone_pkt,
-					     net_pkt_ipv6_ext_opt_len(pkt));
-		net_pkt_set_ipv6_hdr_prev(clone_pkt,
-					  net_pkt_ipv6_hdr_prev(pkt));
-		net_pkt_set_ipv6_next_hdr(clone_pkt,
-					  net_pkt_ipv6_next_hdr(pkt));
-	}
+	clone_pkt_attributes(pkt, clone_pkt);
 
 	net_pkt_cursor_init(clone_pkt);
 
 	NET_DBG("Cloned %p to %p", pkt, clone_pkt);
+
+	return clone_pkt;
+}
+
+struct net_pkt *net_pkt_shallow_clone(struct net_pkt *pkt, s32_t timeout)
+{
+	struct net_pkt *clone_pkt;
+	struct net_buf *buf;
+
+	clone_pkt = net_pkt_alloc(timeout);
+	if (!clone_pkt) {
+		return NULL;
+	}
+
+	net_pkt_set_iface(clone_pkt, net_pkt_iface(pkt));
+	clone_pkt->buffer = pkt->buffer;
+	buf = pkt->buffer;
+
+	while (buf) {
+		net_pkt_frag_ref(buf);
+		buf = buf->frags;
+	}
+
+	if (pkt->buffer) {
+		/* The link header pointers are only usable if there is
+		 * a buffer that we copied because those pointers point
+		 * to start of the fragment which we do not have right now.
+		 */
+		memcpy(&clone_pkt->lladdr_src, &pkt->lladdr_src,
+		       sizeof(clone_pkt->lladdr_src));
+		memcpy(&clone_pkt->lladdr_dst, &pkt->lladdr_dst,
+		       sizeof(clone_pkt->lladdr_dst));
+	}
+
+	clone_pkt_attributes(pkt, clone_pkt);
+
+	net_pkt_cursor_restore(clone_pkt, &pkt->cursor);
+
+	NET_DBG("Shallow cloned %p to %p", pkt, clone_pkt);
 
 	return clone_pkt;
 }
