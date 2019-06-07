@@ -1009,16 +1009,13 @@ void ull_conn_done(struct node_rx_event_done *done)
 				if (latency_event) {
 					force = 1U;
 				} else {
-					/* FIXME:*/
-					#if 0
-					force = lll->slave.force & 0x01;
+					force = conn->slave.force & 0x01;
 
 					/* rotate force bits */
-					lll->slave.force >>= 1;
+					conn->slave.force >>= 1;
 					if (force) {
-						lll->slave.force |= BIT(31);
+						conn->slave.force |= BIT(31);
 					}
-					#endif
 				}
 			}
 		} else {

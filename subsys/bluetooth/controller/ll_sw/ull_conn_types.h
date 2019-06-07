@@ -37,6 +37,7 @@ struct ll_conn {
 
 		struct {
 			u8_t fex_valid:1;
+			u32_t force;
 			u32_t ticks_to_offset;
 		} slave;
 

@@ -116,11 +116,8 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 			     conn->apto_reload;
 #endif /* CONFIG_BT_CTLR_LE_PING */
 
-	/* FIXME: */
-	#if 0
-	memcpy((void *)&lll->slave.force, &lll->access_addr[0],
-	       sizeof(lll->slave.force));
-	#endif
+	memcpy((void *)&conn->slave.force, &lll->access_addr[0],
+	       sizeof(conn->slave.force));
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	u8_t own_addr_type = pdu_adv->rx_addr;
