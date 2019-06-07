@@ -67,20 +67,6 @@ z_set_thread_return_value(struct k_thread *thread, unsigned int value)
 
 extern void k_cpu_atomic_idle(unsigned int key);
 
-#ifdef CONFIG_X2APIC
-#define MSR_X2APIC_BASE 0x00000800
-
-static inline u32_t read_x2apic(unsigned int reg)
-{
-	return z_x86_msr_read(MSR_X2APIC_BASE + reg);
-}
-
-static inline void write_x2apic(unsigned int reg, u32_t val)
-{
-	z_x86_msr_write(MSR_X2APIC_BASE + reg, val);
-}
-#endif
-
 extern FUNC_NORETURN void z_x86_userspace_enter(k_thread_entry_t user_entry,
 					       void *p1, void *p2, void *p3,
 					       u32_t stack_end,
