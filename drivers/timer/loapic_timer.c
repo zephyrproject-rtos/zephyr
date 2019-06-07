@@ -8,15 +8,6 @@
  * @file
  * @brief Intel Local APIC timer driver
  *
- * This module implements a kernel device driver for the Intel local APIC
- * timer device. It provides the standard "system clock driver" interfaces for
- * use with P6 (PentiumPro, II, III) and P7 (Pentium4) family processors.
- * The local APIC timer contains a 32-bit programmable down counter that
- * generates an interrupt for use by the local processor when it reaches zero.
- * The time base is derived from the processor's bus clock, divided by a value
- * specified in the divide configuration register. After reset, the timer is
- * initialized to zero.
- *
  * Typically, the local APIC timer operates in periodic mode. That is, after
  * its down counter reaches zero and triggers a timer interrupt, it is reset
  * to its initial value and the down counting continues.
@@ -91,32 +82,6 @@
 #define LOAPIC_TIMER_PERIODIC 0x00020000 /* Timer Mode: Periodic */
 
 
-/* Helpful macros and inlines for programming timer.
- * We support both standard LOAPIC, and MVIC which has a similar
- * interface
- */
-
-#if defined(CONFIG_LOAPIC)
-#define _REG_TIMER ((volatile u32_t *) \
-			(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_TIMER))
-#define _REG_TIMER_ICR ((volatile u32_t *) \
-			(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_TIMER_ICR))
-#define _REG_TIMER_CCR ((volatile u32_t *) \
-			(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_TIMER_CCR))
-#define _REG_TIMER_CFG ((volatile u32_t *) \
-			(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_TIMER_CONFIG))
-#define TIMER_IRQ		CONFIG_LOAPIC_TIMER_IRQ
-#define TIMER_IRQ_PRIORITY	CONFIG_LOAPIC_TIMER_IRQ_PRIORITY
-#elif defined(CONFIG_MVIC)
-
-#define _REG_TIMER	((volatile u32_t *)MVIC_LVTTIMER)
-#define _REG_TIMER_ICR	((volatile u32_t *)MVIC_ICR)
-#define _REG_TIMER_CCR	((volatile u32_t *)MVIC_CCR)
-/* MVIC has no TIMER_CFG register */
-#define TIMER_IRQ		CONFIG_MVIC_TIMER_IRQ
-#define TIMER_IRQ_PRIORITY	-1
-#endif
-
 #if defined(CONFIG_TICKLESS_IDLE)
 #define TIMER_MODE_ONE_SHOT     0
 #define TIMER_MODE_PERIODIC     1
@@ -150,13 +115,6 @@ static u32_t reg_timer_cfg_save;
 #endif
 #endif
 
-#ifdef CONFIG_X2APIC
-void z_x2apic_eoi(void)
-{
-	write_x2apic(LOAPIC_EOI >> 4, 0);
-}
-#endif
-
 /**
  *
  * @brief Set the timer for periodic mode
@@ -167,11 +125,12 @@ void z_x2apic_eoi(void)
  */
 static inline void periodic_mode_set(void)
 {
-#ifndef CONFIG_X2APIC
-	*_REG_TIMER |= LOAPIC_TIMER_PERIODIC;
+#ifdef CONFIG_MVIC
+	sys_write32(sys_read32(MVIC_LVTTIMER) | LOAPIC_TIMER_PERIODIC,
+		    MVIC_LVTTIMER);
 #else
-	write_x2apic(LOAPIC_TIMER >> 4,
-		     read_x2apic(LOAPIC_TIMER >> 4) | LOAPIC_TIMER_PERIODIC);
+	x86_write_loapic(LOAPIC_TIMER,
+		x86_read_loapic(LOAPIC_TIMER) | LOAPIC_TIMER_PERIODIC);
 #endif
 }
 
@@ -188,10 +147,10 @@ static inline void periodic_mode_set(void)
  */
 static inline void initial_count_register_set(u32_t count)
 {
-#ifndef CONFIG_X2APIC
-	*_REG_TIMER_ICR = count;
+#ifdef CONFIG_MVIC
+	sys_write32(count, MVIC_ICR);
 #else
-	write_x2apic(LOAPIC_TIMER_ICR >> 4, count);
+	x86_write_loapic(LOAPIC_TIMER_ICR, count);
 #endif
 }
 
@@ -206,32 +165,15 @@ static inline void initial_count_register_set(u32_t count)
  */
 static inline void one_shot_mode_set(void)
 {
-	*_REG_TIMER &= ~LOAPIC_TIMER_PERIODIC;
+#ifdef CONFIG_MVIC
+	sys_write32(sys_read32(MVIC_LVTTIMER) & ~LOAPIC_TIMER_PERIODIC,
+		MVIC_LVTTIMER);
+#else
+	x86_write_loapic(LOAPIC_TIMER,
+		x86_read_loapic(LOAPIC_TIMER) & ~LOAPIC_TIMER_PERIODIC);
+#endif
 }
 #endif /* CONFIG_TICKLESS_IDLE */
-
-/**
- *
- * @brief Set the rate at which the timer is decremented
- *
- * This routine sets rate at which the timer is decremented to match the
- * external bus frequency.
- * This is not supported with MVIC, only real LOAPIC.
- *
- * @return N/A
- */
-#ifndef CONFIG_MVIC
-static inline void divide_configuration_register_set(void)
-{
-#ifndef CONFIG_X2APIC
-	*_REG_TIMER_CFG = (*_REG_TIMER_CFG & ~0xf) | LOAPIC_TIMER_DIVBY_1;
-#else
-	write_x2apic(LOAPIC_TIMER_CONFIG >> 4,
-		     (read_x2apic(LOAPIC_TIMER_CONFIG >> 4) & ~0xf)
-		     | LOAPIC_TIMER_DIVBY_1);
-#endif
-}
-#endif
 
 #if defined(CONFIG_TICKLESS_KERNEL) || defined(CONFIG_TICKLESS_IDLE)
 /**
@@ -246,10 +188,10 @@ static inline void divide_configuration_register_set(void)
  */
 static inline u32_t current_count_register_get(void)
 {
-#ifndef CONFIG_X2APIC
-	return *_REG_TIMER_CCR;
+#ifdef CONFIG_MVIC
+	return sys_read32(MVIC_CCR);
 #else
-	return read_x2apic(LOAPIC_TIMER_CCR >> 4);
+	return x86_read_loapic(LOAPIC_TIMER_CCR);
 #endif
 }
 #endif
@@ -265,7 +207,11 @@ static inline u32_t current_count_register_get(void)
  */
 static inline u32_t initial_count_register_get(void)
 {
-	return *_REG_TIMER_ICR;
+#ifdef CONFIG_MVIC
+	return sys_read32(MVIC_ICR);
+#else
+	return x86_read_loapic(LOAPIC_TIMER_ICR);
+#endif
 }
 #endif /* CONFIG_TICKLESS_IDLE */
 
@@ -658,8 +604,11 @@ int z_clock_driver_init(struct device *device)
 	tickless_idle_init();
 
 #ifndef CONFIG_MVIC
-	divide_configuration_register_set();
+	x86_write_loapic(LOAPIC_TIMER_CONFIG,
+		     (x86_read_loapic(LOAPIC_TIMER_CONFIG) & ~0xf)
+		     | LOAPIC_TIMER_DIVBY_1);
 #endif
+
 #ifdef CONFIG_TICKLESS_KERNEL
 	one_shot_mode_set();
 #else
@@ -669,12 +618,15 @@ int z_clock_driver_init(struct device *device)
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 	loapic_timer_device_power_state = DEVICE_PM_ACTIVE_STATE;
 #endif
-	IRQ_CONNECT(TIMER_IRQ, TIMER_IRQ_PRIORITY, timer_int_handler, 0, 0);
 
-	/* Everything has been configured. It is now safe to enable the
-	 * interrupt
-	 */
-	irq_enable(TIMER_IRQ);
+#ifdef CONFIG_MVIC
+	IRQ_CONNECT(CONFIG_MVIC_TIMER_IRQ, -1, timer_int_handler, 0, 0);
+	irq_enable(CONFIG_MVIC_TIMER_IRQ);
+#else
+	IRQ_CONNECT(CONFIG_LOAPIC_TIMER_IRQ, CONFIG_LOAPIC_TIMER_IRQ_PRIORITY,
+		    timer_int_handler, 0, 0);
+	irq_enable(CONFIG_LOAPIC_TIMER_IRQ);
+#endif
 
 	return 0;
 }
@@ -684,9 +636,11 @@ static int sys_clock_suspend(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	reg_timer_save = *_REG_TIMER;
-#ifndef CONFIG_MVIC
-	reg_timer_cfg_save = *_REG_TIMER_CFG;
+#ifdef CONFIG_MVIC
+	reg_timer_save = sys_read32(MVIC_LVTTIMER);
+#else
+	reg_timer_save = x86_read_loapic(LOAPIC_TIMER);
+	reg_timer_cfg_save = x86_read_loapic(LOAPIC_TIMER_CONFIG);
 #endif
 
 	loapic_timer_device_power_state = DEVICE_PM_SUSPEND_STATE;
@@ -698,9 +652,11 @@ static int sys_clock_resume(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	*_REG_TIMER = reg_timer_save;
-#ifndef CONFIG_MVIC
-	*_REG_TIMER_CFG = reg_timer_cfg_save;
+#ifdef CONFIG_MVIC
+	sys_write32(reg_timer_save, MVIC_LVTTIMER);
+#else
+	x86_write_loapic(LOAPIC_TIMER, reg_timer_save);
+	x86_write_loapic(LOAPIC_TIMER_CONFIG, reg_timer_cfg_save);
 #endif
 
 	/*
@@ -802,9 +758,13 @@ void sys_clock_disable(void)
 
 	key = irq_lock();
 
-	irq_disable(TIMER_IRQ);
-	initial_count_register_set(0);
+#ifdef CONFIG_MVIC
+	irq_disable(MVIC_TIMER_IRQ);
+#else
+	irq_disable(CONFIG_LOAPIC_TIMER_IRQ);
+#endif
 
+	initial_count_register_set(0);
 	irq_unlock(key);
 }
 
