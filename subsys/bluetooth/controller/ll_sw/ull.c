@@ -1350,37 +1350,26 @@ static inline void rx_demux_conn_tx_ack(u8_t ack_last, u16_t handle,
 #if !defined(CONFIG_BT_CTLR_LOW_LAT_ULL)
 	do {
 #endif /* CONFIG_BT_CTLR_LOW_LAT_ULL */
+		struct ll_conn *conn;
+
 		/* Dequeue node */
 		ull_conn_ack_dequeue();
 
-		if (handle != 0xFFFF) {
-			struct ll_conn *conn;
+		/* Process Tx ack */
+		conn = ull_conn_tx_ack(handle, link, node_tx);
 
-			/* Get the conn instance */
-			conn = ll_conn_get(handle);
+		/* Release link mem */
+		ull_conn_link_tx_release(link);
 
-			/* Process Tx ack */
-			ull_conn_tx_ack(conn, link, node_tx);
+		/* De-mux 1 tx node from FIFO */
+		ull_conn_tx_demux(1);
 
-			/* Release link mem */
-			ull_conn_link_tx_release(link);
-
-			/* De-mux 1 tx node from FIFO */
-			ull_conn_tx_demux(1);
-
-			/* Enqueue towards LLL */
+		/* Enqueue towards LLL */
+		if (conn) {
 			ull_conn_tx_lll_enqueue(conn, 1);
-		} else {
-			/* Pass through Tx ack */
-			ll_tx_ack_put(0xFFFF, node_tx);
-
-			/* Release link mem */
-			ull_conn_link_tx_release(link);
-
-			/* De-mux 1 tx node from FIFO */
-			ull_conn_tx_demux(1);
 		}
 
+		/* check for more rx ack */
 		link = ull_conn_ack_by_last_peek(ack_last, &handle, &node_tx);
 
 #if defined(CONFIG_BT_CTLR_LOW_LAT_ULL)
