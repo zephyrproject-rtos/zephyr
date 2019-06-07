@@ -253,15 +253,14 @@ static int icm20948_sample_fetch(struct device *dev, enum sensor_channel chan)
 		data->temp = sys_be16_to_cpu(buf2.temp);
 		break;
 	case SENSOR_CHAN_ALL: {
-		int ret = 0;
-		if ((ret = icm20948_sample_fetch(dev, SENSOR_CHAN_ACCEL_XYZ)) == 0) {
-			return ret;
+		if (icm20948_sample_fetch(dev, SENSOR_CHAN_ACCEL_XYZ)) {
+			return -EIO;
 		}
-		if ((ret = icm20948_sample_fetch(dev, SENSOR_CHAN_GYRO_XYZ)) == 0) {
-			return ret;
+		if (icm20948_sample_fetch(dev, SENSOR_CHAN_GYRO_XYZ)) {
+			return -EIO;
 		}
-		if ((ret = icm20948_sample_fetch(dev, SENSOR_CHAN_AMBIENT_TEMP)) == 0) {
-			return ret;
+		if (icm20948_sample_fetch(dev, SENSOR_CHAN_AMBIENT_TEMP)) {
+			return -EIO;
 		}
 	}
 	break;
@@ -290,8 +289,9 @@ int icm20948_init(struct device *dev)
 	#error "BUS MACRO NOT DEFINED IN DTS"
 	#endif
 
-	// verify chip ID
 	u8_t tmp;
+
+	/* verify chip ID */
 	if (data->hw_tf->read_reg(data, ICM20948_REG_WHO_AM_I, &tmp)) {
 		LOG_ERR("Failed to read chip ID");
 		return -EIO;
@@ -301,7 +301,7 @@ int icm20948_init(struct device *dev)
 		LOG_ERR("Invalid Chip ID Expects 0x%x -- 0x%x", ICM20948_WHO_AM_I, tmp);
 	}
 
-	// set gyro and accel config
+	/* set gyro and accel config */
 	icm20948_set_gyro_fs(dev, ICM20948_GYRO_FS_DEFAULT);
 	icm20948_set_accel_fs(dev, ICM20948_ACCEL_FS_DEFAULT);
 
@@ -330,5 +330,5 @@ static const struct sensor_driver_api icm20948_driver_api = {
 };
 
 DEVICE_AND_API_INIT(icm20948, DT_TDK_ICM20948_0_LABEL, icm20948_init,
-			&icm20948_data, NULL, POST_KERNEL,
-			CONFIG_SENSOR_INIT_PRIORITY, &icm20948_driver_api);
+		    &icm20948_data, NULL, POST_KERNEL,
+		    CONFIG_SENSOR_INIT_PRIORITY, &icm20948_driver_api);

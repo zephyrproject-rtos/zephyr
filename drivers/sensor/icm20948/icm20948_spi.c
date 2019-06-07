@@ -15,8 +15,7 @@
 #define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
 LOG_MODULE_DECLARE(ICM20948);
 
-static struct spi_config icm20948_spi_config =
-{
+static struct spi_config icm20948_spi_config = {
 	.frequency = DT_ST_LIS2DW12_0_SPI_MAX_FREQUENCY,
 	.operation =
 		(SPI_OP_MODE_MASTER | SPI_MODE_CPOL | SPI_MODE_CPHA |
