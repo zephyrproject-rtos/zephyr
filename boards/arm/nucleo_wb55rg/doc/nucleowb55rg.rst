@@ -160,6 +160,8 @@ The Zephyr nucleo_wb55rg board configuration supports the following hardware fea
 +-----------+------------+-------------------------------------+
 | GPIO      | on-chip    | gpio                                |
 +-----------+------------+-------------------------------------+
+| I2C       | on-chip    | i2c                                 |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 
@@ -178,6 +180,10 @@ Default Zephyr Peripheral Mapping:
 
 - UART_1 TX/RX : PB7/PB6
 - LPUART_1 TX/RX : PA3/PA2 (arduino_serial)
+- I2C_1_SCL : PB8
+- I2C_1_SDA : PB9
+- I2C_3_SCL : PC0
+- I2C_3_SDA : PC1
 - USER_PB : PC4
 - USER_PB1 : PD0
 - USER_PB2 : PD1
