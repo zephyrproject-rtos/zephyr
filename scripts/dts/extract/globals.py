@@ -18,6 +18,7 @@ defs = {}
 bindings = {}
 bus_bindings = {}
 binding_compats = []
+deprecated = []
 old_alias_names = False
 
 regs_config = {
@@ -262,6 +263,9 @@ def add_compat_alias(node_path, label_postfix, label, prop_aliases):
         for k in instance:
             i = instance[k]
             b = 'DT_' + str_to_label(k) + '_' + str(i) + '_' + label_postfix
+            deprecated.append(b)
+            prop_aliases[b] = label
+            b = "DT_INST_{}_{}_{}".format(str(i), str_to_label(k), label_postfix)
             prop_aliases[b] = label
 
 def add_prop_aliases(node_path,

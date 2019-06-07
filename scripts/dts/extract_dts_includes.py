@@ -302,6 +302,8 @@ def write_header(f):
             # for now we special case LED, SW, and *PWM_LED*
             if not alias.startswith(('DT_', 'LED', 'SW')) and not 'PWM_LED' in alias:
                 deprecated_warn = True
+            if alias in deprecated:
+                deprecated_warn = True
             f.write(define_str(alias, alias_target, value_tabs, deprecated_warn))
 
         f.write('\n')
