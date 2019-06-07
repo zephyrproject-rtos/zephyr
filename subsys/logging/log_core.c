@@ -15,6 +15,10 @@
 #include <atomic.h>
 #include <ctype.h>
 
+#if defined(CONFIG_ARM)
+#include <arch/arm/cortex_m/memory_map.h>
+#endif
+
 LOG_MODULE_REGISTER(log);
 
 #ifndef CONFIG_LOG_PRINTK_MAX_STRING_LENGTH
@@ -125,13 +129,20 @@ static u32_t count_s(const char *str, u32_t nargs)
  */
 static bool is_rodata(const void *addr)
 {
-#if defined(CONFIG_ARM) || defined(CONFIG_ARC) || defined(CONIFG_RISCV32) || \
-	defined(CONFIG_X86)
+/* Note: ARM architecture is relying on fixed memory map specified for that
+ * architecture while other architectures rely on memory section. It may lead
+ * to different return values between platforms thus cross platform code may
+ * require redundant (on some platforms) log_strdup calls.
+ */
+#if defined(CONFIG_ARM)
+	#define RO_START _CODE_BASE_ADDR
+	#define RO_END _CODE_END_ADDR
+#elif defined(CONFIG_ARC) || defined(CONFIG_X86)
 	extern const char *_image_rodata_start[];
 	extern const char *_image_rodata_end[];
 	#define RO_START _image_rodata_start
 	#define RO_END _image_rodata_end
-#elif defined(CONFIG_NIOS2)
+#elif defined(CONFIG_NIOS2) || defined(CONFIG_RISCV32)
 	extern const char *_image_rom_start[];
 	extern const char *_image_rom_end[];
 	#define RO_START _image_rom_start
