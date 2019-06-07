@@ -68,6 +68,9 @@ static void create_ipv6_dst_addr(struct net_pkt *pkt,
 	struct net_udp_hdr *udp_hdr, hdr;
 
 	udp_hdr = net_udp_get_hdr(pkt, &hdr);
+	if (!udp_hdr) {
+		return;
+	}
 
 	addr->sin6_family = AF_INET6;
 	addr->sin6_port = udp_hdr->src_port;
