@@ -197,7 +197,7 @@ struct icm20948_data {
 #if defined(DT_TDK_ICM20948_0_CS_GPIO_CONTROLLER)
 	struct spi_cs_control cs_ctrl;
 #endif
-	u8_t bank; // bank
+	u8_t bank; /* selected bank for sensor bank */
 };
 
 int icm20948_i2c_init(struct device *dev);
