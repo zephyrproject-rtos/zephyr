@@ -173,16 +173,16 @@ static u16_t canbus_get_lladdr(struct net_linkaddr *net_lladdr)
 static u16_t canbus_get_src_lladdr(struct net_pkt *pkt)
 {
 	return net_pkt_lladdr_src(pkt)->type == NET_LINK_CANBUS ?
-		canbus_get_lladdr(net_pkt_lladdr_src(pkt)) :
-		NET_CAN_ETH_TRANSLATOR_ADDR;
+	       canbus_get_lladdr(net_pkt_lladdr_src(pkt)) :
+	       NET_CAN_ETH_TRANSLATOR_ADDR;
 }
 
 static u16_t canbus_get_dest_lladdr(struct net_pkt *pkt)
 {
 	return net_pkt_lladdr_dst(pkt)->type == NET_LINK_CANBUS &&
-	       net_pkt_lladdr_dst(pkt)->len == sizeof(struct net_can_lladdr) ?
-		canbus_get_lladdr(net_pkt_lladdr_dst(pkt)) :
-		NET_CAN_ETH_TRANSLATOR_ADDR;
+	       net_pkt_lladdr_dst(pkt)->len == sizeof(struct net_canbus_lladdr) ?
+	       canbus_get_lladdr(net_pkt_lladdr_dst(pkt)) :
+	       NET_CAN_ETH_TRANSLATOR_ADDR;
 }
 
 static inline bool canbus_dest_is_mcast(struct net_pkt *pkt)
@@ -194,7 +194,7 @@ static inline bool canbus_dest_is_mcast(struct net_pkt *pkt)
 
 static bool canbus_src_is_translator(struct net_pkt *pkt)
 {
-	return ((get_src_lladdr(pkt) & CAN_NET_IF_ADDR_MASK) ==
+	return ((canbus_get_src_lladdr(pkt) & CAN_NET_IF_ADDR_MASK) ==
 		NET_CAN_ETH_TRANSLATOR_ADDR);
 }
 
@@ -204,9 +204,27 @@ static bool canbus_dest_is_translator(struct net_pkt *pkt)
 		net_pkt_lladdr_dst(pkt)->len == sizeof(struct net_eth_addr));
 }
 
+#if defined(CONFIG_NET_L2_CANBUS_ETH_TRANSLATOR)
+static bool canbus_is_for_translator(struct net_pkt *pkt)
+{
+	return ((net_pkt_lladdr_dst(pkt)->type == NET_LINK_CANBUS) &&
+		(canbus_get_lladdr(net_pkt_lladdr_dst(pkt)) ==
+		 NET_CAN_ETH_TRANSLATOR_ADDR));
+}
+#else
+#define canbus_is_for_translator(...) false
+#endif /* CONFIG_NET_L2_CANBUS_ETH_TRANSLATOR */
+
 static size_t canbus_total_lladdr_len(struct net_pkt *pkt)
 {
-	ARG_UNUSED(pkt);
+	/* This pkt will be farowarded to Ethernet
+	 * Destination MAC is carried inline, source is going to be extended
+	 */
+	if (IS_ENABLED(CONFIG_NET_L2_CANBUS_ETH_TRANSLATOR) &&
+	    canbus_is_for_translator(pkt)) {
+		return sizeof(struct net_eth_addr) +
+		       sizeof(struct net_canbus_lladdr);
+	}
 
 	return 2U * sizeof(struct net_canbus_lladdr);
 }
@@ -222,10 +240,17 @@ static inline void canbus_cpy_lladdr(struct net_pkt *dst, struct net_pkt *src)
 	lladdr->len = sizeof(struct net_canbus_lladdr);
 	lladdr->type = NET_LINK_CANBUS;
 
+	if (IS_ENABLED(CONFIG_NET_L2_CANBUS_ETH_TRANSLATOR) &&
+	    canbus_is_for_translator(src)) {
+		/* Make room for address extension */
+		net_pkt_skip(dst, sizeof(struct net_eth_addr) -
+			     sizeof(struct net_canbus_lladdr));
+	}
+
 	lladdr = net_pkt_lladdr_src(dst);
 	lladdr->addr = net_pkt_cursor_get_pos(dst);
 
-	if (src_is_translator(src)) {
+	if (canbus_src_is_translator(src)) {
 		net_pkt_copy(dst, src, sizeof(struct net_eth_addr));
 		lladdr->len = sizeof(struct net_eth_addr);
 		lladdr->type = NET_LINK_ETHERNET;
@@ -336,6 +361,18 @@ static enum net_verdict canbus_finish_pkt(struct net_pkt *pkt)
 	net_buf_pull(pkt->buffer, net_pkt_lladdr_dst(pkt)->len +
 		     net_pkt_lladdr_src(pkt)->len);
 
+	if (IS_ENABLED(CONFIG_NET_L2_CANBUS_ETH_TRANSLATOR) &&
+	    canbus_is_for_translator(pkt)) {
+		/* Pull room for address extension */
+		net_buf_pull(pkt->buffer, sizeof(struct net_eth_addr) -
+			     net_pkt_lladdr_src(pkt)->len);
+		/* Set the destination address to the inline MAC and pull it */
+		net_pkt_cursor_init(pkt);
+		net_pkt_lladdr_dst(pkt)->addr = net_pkt_cursor_get_pos(pkt);
+		net_pkt_lladdr_dst(pkt)->type = NET_LINK_ETHERNET;
+		net_pkt_lladdr_dst(pkt)->len = sizeof(struct net_eth_addr);
+		net_buf_pull(pkt->buffer, sizeof(struct net_eth_addr));
+	}
 
 	net_pkt_cursor_init(pkt);
 	if (!net_6lo_uncompress(pkt)) {
@@ -376,7 +413,12 @@ static void canbus_set_frame_addr_pkt(struct zcan_frame *frame,
 {
 	struct net_canbus_lladdr src_addr;
 
-	src_addr.addr = canbus_get_lladdr(net_if_get_link_addr(pkt->iface));
+	if (IS_ENABLED(CONFIG_NET_L2_CANBUS_ETH_TRANSLATOR) &&
+	    net_pkt_lladdr_src(pkt)->type == NET_LINK_ETHERNET) {
+		src_addr.addr = NET_CAN_ETH_TRANSLATOR_ADDR;
+	} else {
+		src_addr.addr = canbus_get_lladdr(net_if_get_link_addr(pkt->iface));
+	}
 
 	canbus_set_frame_addr(frame, dest_addr, &src_addr, mcast);
 }
@@ -855,6 +897,14 @@ static inline int canbus_send_ff(struct net_pkt *pkt, size_t len, bool mcast,
 			frame.ext_id, len, pkt->canbus_tx_ctx);
 	}
 
+#if defined(CONFIG_NET_L2_CANBUS_ETH_TRANSLATOR)
+	NET_ASSERT(mcast || !(canbus_dest_is_translator(pkt) &&
+			      canbus_src_is_translator(pkt)));
+
+	if (canbus_src_is_translator(pkt)) {
+		len += net_pkt_lladdr_src(pkt)->len;
+	}
+#endif
 	if (!mcast && canbus_dest_is_translator(pkt)) {
 		len += net_pkt_lladdr_dst(pkt)->len;
 	}
@@ -869,6 +919,14 @@ static inline int canbus_send_ff(struct net_pkt *pkt, size_t len, bool mcast,
 
 	if (!mcast && canbus_dest_is_translator(pkt)) {
 		lladdr_inline = net_pkt_lladdr_dst(pkt);
+		memcpy(&frame.data[index], lladdr_inline->addr,
+		       lladdr_inline->len);
+		index += lladdr_inline->len;
+	}
+
+	if (IS_ENABLED(CONFIG_NET_L2_CANBUS_ETH_TRANSLATOR) &&
+	    net_pkt_lladdr_src(pkt)->type == NET_LINK_ETHERNET) {
+		lladdr_inline = net_pkt_lladdr_src(pkt);
 		memcpy(&frame.data[index], lladdr_inline->addr,
 		       lladdr_inline->len);
 		index += lladdr_inline->len;
@@ -1004,6 +1062,17 @@ static int canbus_send(struct net_if *iface, struct net_pkt *pkt)
 	mcast = net_ipv6_is_addr_mcast(&NET_IPV6_HDR(pkt)->dst);
 	if (mcast || canbus_dest_is_mcast(pkt)) {
 		canbus_ipv6_mcast_to_dest(pkt, &dest_addr);
+	} else if (IS_ENABLED(CONFIG_NET_L2_CANBUS_ETH_TRANSLATOR) &&
+		   net_pkt_lladdr_dst(pkt)->type == NET_LINK_ETHERNET) {
+		struct net_linkaddr *lladdr = net_pkt_lladdr_dst(pkt);
+
+		lladdr->type = NET_LINK_CANBUS;
+		lladdr->len = sizeof(struct net_canbus_lladdr);
+		dest_addr.addr = canbus_eth_to_can_addr(net_pkt_lladdr_dst(pkt));
+		NET_DBG("Translated %02x:%02x:%02x:%02x:%02x:%02x to 0x%04x",
+			lladdr->addr[0], lladdr->addr[1], lladdr->addr[2],
+			lladdr->addr[3], lladdr->addr[4], lladdr->addr[5],
+			dest_addr.addr);
 	} else {
 		dest_addr.addr = canbus_get_dest_lladdr(pkt);
 	}
@@ -1071,6 +1140,330 @@ static enum net_verdict canbus_process_frame(struct net_pkt *pkt)
 	return ret;
 }
 
+#if defined(CONFIG_NET_L2_CANBUS_ETH_TRANSLATOR)
+static void forward_eth_frame(struct net_pkt *pkt, struct net_if *canbus_iface)
+{
+	pkt->iface = canbus_iface;
+	net_if_queue_tx(canbus_iface, pkt);
+}
+
+static struct net_ipv6_hdr *get_ip_hdr_from_eth_frame(struct net_pkt *pkt)
+{
+	return (struct net_ipv6_hdr *)((u8_t *)net_pkt_data(pkt) +
+				       sizeof(struct net_eth_hdr));
+}
+
+enum net_verdict net_canbus_translate_eth_frame(struct net_if *iface,
+						struct net_pkt *pkt)
+{
+	struct net_linkaddr *lladdr = net_pkt_lladdr_dst(pkt);
+	struct net_pkt *clone_pkt;
+	struct net_if *canbus_iface;
+
+	/* Forward only IPv6 frames */
+	if ((get_ip_hdr_from_eth_frame(pkt)->vtc & 0xf0) != 0x60) {
+		return NET_CONTINUE;
+	}
+
+	/* This frame is for the Ethernet interface itself */
+	if (net_linkaddr_cmp(net_if_get_link_addr(iface), lladdr)) {
+		NET_DBG("Frame is for Ethernet only %02x:%02x:%02x:%02x:%02x:%02x",
+			lladdr->addr[0], lladdr->addr[1], lladdr->addr[2],
+			lladdr->addr[3], lladdr->addr[4], lladdr->addr[5]);
+		return NET_CONTINUE;
+	}
+
+	canbus_iface = net_if_get_first_by_type(&NET_L2_GET_NAME(CANBUS));
+
+	net_pkt_cursor_init(pkt);
+	/* Forward all broadcasts */
+	if (net_eth_is_addr_broadcast((struct net_eth_addr *)lladdr->addr) ||
+	    net_eth_is_addr_multicast((struct net_eth_addr *)lladdr->addr)) {
+		if (!canbus_iface || !net_if_is_up(canbus_iface)) {
+			NET_ERR("No canbus iface");
+			return NET_CONTINUE;
+		}
+
+		clone_pkt = net_pkt_shallow_clone(pkt, NET_CAN_ALLOC_TIMEOUT);
+		if (clone_pkt) {
+			NET_DBG("Frame is %scast %02x:%02x:%02x:%02x:%02x:%02x,",
+				net_eth_is_addr_broadcast(
+					(struct net_eth_addr *)lladdr->addr) ? "broad" :
+				"multi",
+				lladdr->addr[0], lladdr->addr[1], lladdr->addr[2],
+				lladdr->addr[3], lladdr->addr[4], lladdr->addr[5]);
+			net_pkt_set_family(clone_pkt, AF_INET6);
+			forward_eth_frame(clone_pkt, canbus_iface);
+		} else {
+			NET_ERR("PKT forwarding: cloning failed");
+		}
+
+		return NET_CONTINUE;
+	}
+
+	if (!canbus_iface || !net_if_is_up(canbus_iface)) {
+		NET_ERR("No canbus iface");
+		return NET_DROP;
+	}
+
+	/* This frame is for 6LoCAN only */
+	net_pkt_set_family(pkt, AF_INET6);
+	net_buf_pull(pkt->buffer, sizeof(struct net_eth_hdr));
+	forward_eth_frame(pkt, canbus_iface);
+	NET_DBG("Frame is for CANBUS: 0x%04x", canbus_get_dest_lladdr(pkt));
+
+	return NET_OK;
+}
+
+static void forward_can_frame(struct net_pkt *pkt, struct net_if *eth_iface)
+{
+	net_pkt_set_iface(pkt, eth_iface);
+	net_if_queue_tx(eth_iface, pkt);
+}
+
+static void rewrite_icmp_hdr(struct net_pkt *pkt, struct net_icmp_hdr *icmp_hdr)
+{
+	int ret;
+
+	net_pkt_cursor_init(pkt);
+	net_pkt_skip(pkt, sizeof(struct net_ipv6_hdr));
+	ret = net_icmpv6_create(pkt, icmp_hdr->type, icmp_hdr->code);
+	if (ret) {
+		NET_ERR("Can't create ICMP HDR");
+		return;
+	}
+
+	net_pkt_cursor_init(pkt);
+	net_pkt_skip(pkt, sizeof(struct net_ipv6_hdr));
+	ret = net_icmpv6_finalize(pkt);
+	if (ret) {
+		NET_ERR("Can't finalize ICMP HDR");
+	}
+}
+
+static void extend_llao(struct net_pkt *pkt, struct net_linkaddr *mac_addr)
+{
+	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(icmp_access, struct net_icmp_hdr);
+	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(icmp_opt_access,
+					      struct net_icmpv6_nd_opt_hdr);
+	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(llao_access,
+					      struct net_eth_addr);
+	struct net_pkt_cursor cursor_backup;
+	struct net_icmp_hdr *icmp_hdr;
+	struct net_icmpv6_nd_opt_hdr *icmp_opt_hdr;
+	u8_t *llao, llao_backup[2];
+	int ret;
+
+	net_pkt_cursor_backup(pkt, &cursor_backup);
+	net_pkt_cursor_init(pkt);
+	net_pkt_set_overwrite(pkt, true);
+	net_pkt_skip(pkt, sizeof(struct net_ipv6_hdr));
+
+	if (net_calc_chksum(pkt, IPPROTO_ICMPV6) != 0U) {
+		NET_ERR("Invalid checksum");
+		return;
+	}
+
+	icmp_hdr = (struct net_icmp_hdr *)net_pkt_get_data(pkt, &icmp_access);
+	if (!icmp_hdr) {
+		NET_ERR("No ICMP6 HDR");
+		goto done;
+	}
+
+	switch (icmp_hdr->type) {
+
+	case NET_ICMPV6_NS:
+		net_pkt_skip(pkt, sizeof(struct net_icmpv6_ns_hdr));
+		NET_DBG("Extend NS SLLAO");
+		break;
+
+	case NET_ICMPV6_NA:
+		net_pkt_skip(pkt, sizeof(struct net_icmpv6_na_hdr));
+		NET_DBG("Extend NA TLLAO");
+		break;
+
+	case NET_ICMPV6_RS:
+		net_pkt_skip(pkt, sizeof(struct net_icmpv6_rs_hdr));
+		NET_DBG("Extend RS SLLAO");
+		break;
+
+	case NET_ICMPV6_RA:
+		net_pkt_skip(pkt, sizeof(struct net_icmpv6_ra_hdr));
+		NET_DBG("Extend RA SLLAO");
+		break;
+
+	default:
+		goto done;
+	}
+
+	net_pkt_acknowledge_data(pkt, &icmp_access);
+
+	icmp_opt_hdr = (struct net_icmpv6_nd_opt_hdr *)
+		       net_pkt_get_data(pkt, &icmp_opt_access);
+	if (!icmp_opt_hdr) {
+		NET_DBG("No LLAO opt to extend");
+		goto done;
+	}
+
+	net_pkt_acknowledge_data(pkt, &icmp_opt_access);
+
+	if (icmp_opt_hdr->type != NET_ICMPV6_ND_OPT_SLLAO &&
+	    (icmp_hdr->type == NET_ICMPV6_NA &&
+	     icmp_opt_hdr->type != NET_ICMPV6_ND_OPT_TLLAO)) {
+		NET_DBG("opt was not LLAO");
+		goto done;
+	}
+
+	if (icmp_opt_hdr->len != 1) {
+		NET_ERR("LLAO len is %u. This should be 1 for 6LoCAN",
+			icmp_opt_hdr->len);
+		goto done;
+	}
+
+	llao = (u8_t *)net_pkt_get_data(pkt, &llao_access);
+	if (!llao) {
+		NET_ERR("Can't read LLAO");
+		goto done;
+	}
+
+	memcpy(llao_backup, llao, sizeof(struct net_canbus_lladdr));
+	memcpy(llao, mac_addr->addr, mac_addr->len);
+
+	llao[4] = (llao[4] & 0xC0) | llao_backup[0];
+	llao[5] = llao_backup[1];
+
+	ret = net_pkt_set_data(pkt, &llao_access);
+	if (ret < 0) {
+		NET_ERR("Failed to write MAC to LLAO [%d]", ret);
+		goto done;
+	}
+
+	rewrite_icmp_hdr(pkt, icmp_hdr);
+
+	NET_DBG("LLAO extended to %02x:%02x:%02x:%02x:%02x:%02x",
+		llao[0], llao[1], llao[2], llao[3], llao[4], llao[5]);
+
+done:
+	net_pkt_cursor_restore(pkt, &cursor_backup);
+}
+
+static bool pkt_is_icmp(struct net_pkt *pkt)
+{
+	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ipv6_access, struct net_ipv6_hdr);
+	struct net_ipv6_hdr *ipv6_hdr =
+		(struct net_ipv6_hdr *)net_pkt_get_data(pkt, &ipv6_access);
+
+	if (!ipv6_hdr) {
+		NET_ERR("No IPv6 HDR");
+		return false;
+	}
+
+	return (ipv6_hdr->nexthdr == IPPROTO_ICMPV6);
+}
+
+static void swap_scr_lladdr(struct net_pkt *pkt, struct net_pkt *pkt_clone)
+{
+	struct net_linkaddr *lladdr_origin = net_pkt_lladdr_src(pkt);
+	struct net_linkaddr *lladdr_clone = net_pkt_lladdr_src(pkt_clone);
+	size_t offset;
+
+	offset = lladdr_origin->addr - pkt->buffer->data;
+	lladdr_clone->addr = pkt_clone->buffer->data + offset;
+}
+
+static void can_to_eth_lladdr(struct net_pkt *pkt, struct net_if *eth_iface,
+			      bool bcast)
+{
+	u16_t src_can_addr = canbus_get_src_lladdr(pkt);
+	struct net_linkaddr *lladdr_src = net_pkt_lladdr_src(pkt);
+	struct net_linkaddr *lladdr_dst;
+
+	if (bcast) {
+		lladdr_dst = net_pkt_lladdr_dst(pkt);
+		lladdr_dst->len = sizeof(struct net_eth_addr);
+		lladdr_dst->type = NET_LINK_ETHERNET;
+		lladdr_dst->addr = (u8_t *)net_eth_broadcast_addr()->addr;
+	}
+
+	lladdr_src->addr = net_pkt_lladdr_src(pkt)->addr -
+			   (sizeof(struct net_eth_addr) - lladdr_src->len);
+	memcpy(lladdr_src->addr, net_if_get_link_addr(eth_iface)->addr,
+	       sizeof(struct net_eth_addr));
+	lladdr_src->addr[4] = (lladdr_src->addr[4] & 0xC0) | (src_can_addr >> 8U);
+	lladdr_src->addr[5] = src_can_addr & 0xFF;
+	lladdr_src->len = sizeof(struct net_eth_addr);
+	lladdr_src->type = NET_LINK_ETHERNET;
+}
+
+void translate_to_eth_frame(struct net_pkt *pkt, bool is_bcast,
+			    struct net_if *eth_iface)
+{
+	struct net_linkaddr *dest_addr = net_pkt_lladdr_dst(pkt);
+	struct net_linkaddr *src_addr = net_pkt_lladdr_src(pkt);
+	bool is_icmp;
+
+	is_icmp = pkt_is_icmp(pkt);
+
+	can_to_eth_lladdr(pkt, eth_iface, is_bcast);
+	canbus_print_ip_hdr((struct net_ipv6_hdr *)net_pkt_cursor_get_pos(pkt));
+	NET_DBG("Forward frame to %02x:%02x:%02x:%02x:%02x:%02x. "
+		"Src: %02x:%02x:%02x:%02x:%02x:%02x",
+		dest_addr->addr[0], dest_addr->addr[1], dest_addr->addr[2],
+		dest_addr->addr[3], dest_addr->addr[4], dest_addr->addr[5],
+		src_addr->addr[0], src_addr->addr[1], src_addr->addr[2],
+		src_addr->addr[3], src_addr->addr[4], src_addr->addr[5]);
+
+	if (is_icmp) {
+		extend_llao(pkt, net_if_get_link_addr(eth_iface));
+	}
+}
+
+static enum net_verdict canbus_forward_to_eth(struct net_pkt *pkt)
+{
+	struct net_pkt *pkt_clone;
+	struct net_if *eth_iface;
+
+	eth_iface = net_if_get_first_by_type(&NET_L2_GET_NAME(ETHERNET));
+	if (!eth_iface || !net_if_is_up(eth_iface)) {
+		NET_ERR("No Ethernet iface available");
+		if (canbus_is_for_translator(pkt)) {
+			return NET_DROP;
+		} else {
+			return NET_CONTINUE;
+		}
+	}
+
+	if (canbus_dest_is_mcast(pkt)) {
+		/* net_pkt_clone can't be called on a pkt where
+		 * net_buf_pull was called on. We need to clone
+		 * first and then finish the pkt.
+		 */
+		pkt_clone = net_pkt_clone(pkt, NET_CAN_ALLOC_TIMEOUT);
+		if (pkt_clone) {
+			swap_scr_lladdr(pkt, pkt_clone);
+			canbus_finish_pkt(pkt_clone);
+			translate_to_eth_frame(pkt_clone, true, eth_iface);
+			forward_can_frame(pkt_clone, eth_iface);
+			NET_DBG("Len: %zu", net_pkt_get_len(pkt_clone));
+		} else {
+			NET_ERR("Failed to clone pkt");
+		}
+	}
+
+	canbus_finish_pkt(pkt);
+
+	if (net_pkt_lladdr_dst(pkt)->type == NET_LINK_ETHERNET) {
+		translate_to_eth_frame(pkt, false, eth_iface);
+		forward_can_frame(pkt, eth_iface);
+		return NET_OK;
+	}
+
+	return NET_CONTINUE;
+}
+#else
+#define canbus_forward_to_eth(...) 0
+#endif /*CONFIG_NET_L2_CANBUS_ETH_TRANSLATOR*/
+
 static enum net_verdict canbus_recv(struct net_if *iface,
 				    struct net_pkt *pkt)
 {
@@ -1090,9 +1483,14 @@ static enum net_verdict canbus_recv(struct net_if *iface,
 
 		if (pkt->canbus_rx_ctx->state == NET_CAN_RX_STATE_FIN) {
 			canbus_rx_finish(pkt);
-			canbus_finish_pkt(pkt);
-			canbus_print_ip_hdr(NET_IPV6_HDR(pkt));
-			ret = NET_CONTINUE;
+
+			if (IS_ENABLED(CONFIG_NET_L2_CANBUS_ETH_TRANSLATOR)) {
+				ret = canbus_forward_to_eth(pkt);
+			} else {
+				canbus_finish_pkt(pkt);
+				canbus_print_ip_hdr(NET_IPV6_HDR(pkt));
+				ret = NET_CONTINUE;
+			}
 		} else {
 			NET_ERR("Expected pkt in FIN state");
 		}

@@ -44,6 +44,29 @@ static u8_t dma_rx_buffer[ETH_RXBUFNB][ETH_RX_BUF_SIZE] __aligned(4);
 static u8_t dma_tx_buffer[ETH_TXBUFNB][ETH_TX_BUF_SIZE] __aligned(4);
 #endif /* CONFIG_ETH_STM32_HAL_USE_DTCM_FOR_DMA_BUFFER */
 
+#if defined(CONFIG_NET_L2_CANBUS_ETH_TRANSLATOR)
+#include <net/can.h>
+
+static void set_mac_to_translator_addr(u8_t *mac_addr)
+{
+	/* Set the last 14 bit to the translator  link layer address to avoid
+	 * address collissions with the 6LoCAN address range
+	 */
+	mac_addr[4] = (mac_addr[4] & 0xC0) | (NET_CAN_ETH_TRANSLATOR_ADDR >> 8);
+	mac_addr[5] = NET_CAN_ETH_TRANSLATOR_ADDR & 0xFF;
+}
+
+static void enable_canbus_eth_translator_filter(ETH_HandleTypeDef *heth,
+						u8_t *mac_addr)
+{
+	heth->Instance->MACA1LR = (mac_addr[3] << 24U) | (mac_addr[2] << 16U) |
+				  (mac_addr[1] << 8U) | mac_addr[0];
+	/*enable filter 1 and ignore byte 5 and 6 for filtering*/
+	heth->Instance->MACA1HR = ETH_MACA1HR_AE |  ETH_MACA1HR_MBC_HBits15_8 |
+				  ETH_MACA1HR_MBC_HBits7_0;
+}
+#endif /*CONFIG_NET_L2_CANBUS_ETH_TRANSLATOR*/
+
 static inline void disable_mcast_filter(ETH_HandleTypeDef *heth)
 {
 	__ASSERT_NO_MSG(heth != NULL);
@@ -341,6 +364,9 @@ static void eth_iface_init(struct net_if *iface)
 #if defined(CONFIG_ETH_STM32_HAL_RANDOM_MAC)
 	generate_mac(dev_data->mac_addr);
 #endif
+#if defined(CONFIG_NET_L2_CANBUS_ETH_TRANSLATOR)
+	set_mac_to_translator_addr(dev_data->mac_addr);
+#endif
 
 	heth->Init.MACAddr = dev_data->mac_addr;
 
@@ -375,6 +401,10 @@ static void eth_iface_init(struct net_if *iface)
 	HAL_ETH_Start(heth);
 
 	disable_mcast_filter(heth);
+
+#if defined(CONFIG_NET_L2_CANBUS_ETH_TRANSLATOR)
+	enable_canbus_eth_translator_filter(heth, dev_data->mac_addr);
+#endif
 
 	LOG_DBG("MAC %02x:%02x:%02x:%02x:%02x:%02x",
 		dev_data->mac_addr[0], dev_data->mac_addr[1],
