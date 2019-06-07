@@ -13,6 +13,7 @@
 #include <zephyr/types.h>
 #include <string.h>
 #include <misc/__assert.h>
+#include <arch/x86/msr.h>
 
 #include <toolchain.h>
 #include <linker/sections.h>
@@ -93,8 +94,25 @@ static int loapic_init(struct device *unused)
 	ARG_UNUSED(unused);
 	s32_t loApicMaxLvt; /* local APIC Max LVT */
 
-	/* enable the Local APIC */
-	x86_write_loapic(LOAPIC_SVR, x86_read_loapic(LOAPIC_SVR) | LOAPIC_ENABLE);
+	/*
+	 * enable the local APIC. note that we use xAPIC mode here, since
+	 * x2APIC access is not enabled until the next step (if at all).
+	 */
+
+	x86_write_xapic(LOAPIC_SVR,
+			x86_read_xapic(LOAPIC_SVR) | LOAPIC_ENABLE);
+
+#ifdef CONFIG_X2APIC
+	/*
+	 * turn on x2APIC mode. we trust the config option, so
+	 * we don't check CPUID to see if x2APIC is supported.
+	 */
+
+	u64_t msr = z_x86_msr_read(X86_APIC_BASE_MSR);
+	msr |= X86_APIC_BASE_MSR_X2APIC;
+	z_x86_msr_write(X86_APIC_BASE_MSR, msr);
+#endif
+
 	loApicMaxLvt = (x86_read_loapic(LOAPIC_VER) & LOAPIC_MAXLVT_MASK) >> 16;
 
 	/* reset the DFR, TPR, TIMER_CONFIG, and TIMER_ICR */
