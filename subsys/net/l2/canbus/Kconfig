@@ -55,6 +55,16 @@ config NET_L2_CANBUS_BS
 	  the sender waits for a FC frame again an BS is reset.
 	  See also: ISO 15765-2:2016
 
+config NET_L2_CANBUS_ETH_TRANSLATOR
+	bool "Enable 6LoCAN to Ethernet translator"
+	depends on NET_L2_ETHERNET
+	help
+	  Enable a 6LoCAN Ethernet translator. With this translator it is
+	  possible to connect a 6LoCAN network to a Ethernet network directly,
+	  via a Switch or trough a router. Messages that goes through the
+	  translator have a special address and the MAC address is carried inline.
+	  The packet is forwarded with uncompressed IPv6 header.
+
 module = NET_L2_CANBUS
 module-dep = NET_LOG
 module-str = Log level for CANbus L2 layer

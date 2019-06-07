@@ -10,12 +10,37 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(net_can, CONFIG_CAN_NET_LOG_LEVEL);
 
+struct mcast_filter_mapping {
+	const struct in6_addr *addr;
+	int filter_id;
+};
+
 struct net_can_context {
 	struct device *can_dev;
 	struct net_if *iface;
 	int recv_filter_id;
-	int mcast_filter_id;
+	struct mcast_filter_mapping mcast_mapping[NET_IF_MAX_IPV6_MADDR];
+#ifdef CONFIG_NET_L2_CANBUS_ETH_TRANSLATOR
+	int eth_bridge_filter_id;
+	int all_mcast_filter_id;
+#endif
 };
+
+static struct net_if_mcast_monitor mcast_monitor;
+
+struct mcast_filter_mapping *can_get_mcast_filter(struct net_can_context *ctx,
+					      const struct in6_addr *addr)
+{
+	struct mcast_filter_mapping *map = ctx->mcast_mapping;
+
+	for (int i = 0; i < NET_IF_MAX_IPV6_MADDR; i++) {
+		if (map[i].addr == addr) {
+			return &map[i];
+		}
+	}
+
+	return NULL;
+}
 
 static inline u8_t can_get_frame_datalength(struct zcan_frame *frame)
 {
@@ -31,8 +56,14 @@ static inline u16_t can_get_lladdr_src(struct zcan_frame *frame)
 
 static inline u16_t can_get_lladdr_dest(struct zcan_frame *frame)
 {
-	return (frame->ext_id >> CAN_NET_IF_ADDR_DEST_POS) &
-	       CAN_NET_IF_ADDR_MASK;
+	u16_t addr = (frame->ext_id >> CAN_NET_IF_ADDR_DEST_POS) &
+		     CAN_NET_IF_ADDR_MASK;
+
+	if (frame->ext_id & CAN_NET_IF_ADDR_MCAST_MASK) {
+		addr |= CAN_NET_IF_IS_MCAST_BIT;
+	}
+
+	return addr;
 }
 
 static inline void can_set_lladdr(struct net_pkt *pkt, struct zcan_frame *frame)
@@ -55,18 +86,6 @@ static inline void can_set_lladdr(struct net_pkt *pkt, struct zcan_frame *frame)
 	net_pkt_lladdr_src(pkt)->type = NET_LINK_CANBUS;
 	net_buf_add_be16(buf, can_get_lladdr_src(frame));
 	net_buf_pull(buf, sizeof(u16_t));
-}
-
-static void net_can_iface_init(struct net_if *iface)
-{
-	struct device *dev = net_if_get_device(iface);
-	struct net_can_context *ctx = dev->driver_data;
-
-	ctx->iface = iface;
-
-	NET_DBG("Init CAN network interface %p dev %p", iface, dev);
-
-	net_6locan_init(iface);
 }
 
 static int net_can_send(struct device *dev, const struct zcan_frame *frame,
@@ -120,7 +139,86 @@ drop:
 	}
 }
 
-static int can_attach_filter(struct device *dev, can_rx_callback_t cb, void *cb_arg,
+static inline int attach_mcast_filter(struct net_can_context *ctx,
+				      const struct in6_addr *addr)
+{
+	static struct zcan_filter filter = {
+		.id_type = CAN_EXTENDED_IDENTIFIER,
+		.rtr = CAN_DATAFRAME,
+		.rtr_mask = 1,
+		.ext_id_mask = CAN_NET_IF_ADDR_MCAST_MASK |
+			       CAN_NET_IF_ADDR_DEST_MASK
+	};
+	const u16_t group =
+		sys_be16_to_cpu(UNALIGNED_GET((&addr->s6_addr16[7])));
+	int filter_id;
+
+	filter.ext_id = CAN_NET_IF_ADDR_MCAST_MASK |
+			((group & CAN_NET_IF_ADDR_MASK) <<
+			 CAN_NET_IF_ADDR_DEST_POS);
+
+	filter_id = can_attach_isr(ctx->can_dev, net_can_recv,
+				   ctx, &filter);
+	if (filter_id == CAN_NET_FILTER_NOT_SET) {
+		return CAN_NET_FILTER_NOT_SET;
+	}
+
+	NET_DBG("Attached mcast filter. Group 0x%04x. Filter:%d",
+		group, filter_id);
+
+	return filter_id;
+}
+
+static void mcast_cb(struct net_if *iface, const struct in6_addr *addr,
+		     bool is_joined)
+{
+	struct device *dev = net_if_get_device(iface);
+	struct net_can_context *ctx = dev->driver_data;
+	struct mcast_filter_mapping *filter_mapping;
+	int filter_id;
+
+	if (is_joined) {
+		filter_mapping = can_get_mcast_filter(ctx, NULL);
+		if (!filter_mapping) {
+			NET_ERR("Can't get a free filter_mapping");
+		}
+
+		filter_id = attach_mcast_filter(ctx, addr);
+		if (filter_id < 0) {
+			NET_ERR("Can't attach mcast filter");
+			return;
+		}
+
+		filter_mapping->addr = addr;
+		filter_mapping->filter_id = filter_id;
+	} else {
+		filter_mapping = can_get_mcast_filter(ctx, addr);
+		if (!filter_mapping) {
+			NET_ERR("No filter mapping found");
+			return;
+		}
+
+		can_detach(ctx->can_dev, filter_mapping->filter_id);
+		filter_mapping->addr = NULL;
+	}
+}
+
+static void net_can_iface_init(struct net_if *iface)
+{
+	struct device *dev = net_if_get_device(iface);
+	struct net_can_context *ctx = dev->driver_data;
+
+	ctx->iface = iface;
+
+	NET_DBG("Init CAN network interface %p dev %p", iface, dev);
+
+	net_6locan_init(iface);
+
+	net_if_mcast_mon_register(&mcast_monitor, iface, mcast_cb);
+}
+
+static int can_attach_filter(struct device *dev, can_rx_callback_t cb,
+			     void *cb_arg,
 			     const struct zcan_filter *filter)
 {
 	struct net_can_context *ctx = dev->driver_data;
@@ -163,29 +261,56 @@ static inline int can_attach_unicast_filter(struct net_can_context *ctx)
 	return filter_id;
 }
 
-static inline int can_attach_mcast_filter(struct net_can_context *ctx)
+#ifdef CONFIG_NET_L2_CANBUS_ETH_TRANSLATOR
+static inline int can_attach_eth_bridge_filter(struct net_can_context *ctx)
 {
-	struct zcan_filter filter = {
+	const struct zcan_filter filter = {
 		.id_type = CAN_EXTENDED_IDENTIFIER,
 		.rtr = CAN_DATAFRAME,
 		.rtr_mask = 1,
-		.ext_id_mask = CAN_NET_IF_ADDR_DEST_MASK
+		.ext_id_mask = CAN_NET_IF_ADDR_DEST_MASK,
+		.ext_id = (NET_CAN_ETH_TRANSLATOR_ADDR <<
+			   CAN_NET_IF_ADDR_DEST_POS)
 	};
-	int filter_id;
 
-	filter.ext_id = (NET_CAN_MULTICAST_ADDR << CAN_NET_IF_ADDR_DEST_POS);
+	int filter_id;
 
 	filter_id = can_attach_isr(ctx->can_dev, net_can_recv,
 				   ctx, &filter);
 	if (filter_id == CAN_NET_FILTER_NOT_SET) {
-		NET_ERR("Can't attach multicast filter");
+		NET_ERR("Can't attach ETH bridge filter");
 		return CAN_NET_FILTER_NOT_SET;
 	}
 
-	NET_DBG("Attached multicast filter %d", filter_id);
+	NET_DBG("Attached ETH bridge filter %d", filter_id);
 
 	return filter_id;
 }
+
+static inline int can_attach_all_mcast_filter(struct net_can_context *ctx)
+{
+	const struct zcan_filter filter = {
+		.id_type = CAN_EXTENDED_IDENTIFIER,
+		.rtr = CAN_DATAFRAME,
+		.rtr_mask = 1,
+		.ext_id_mask = CAN_NET_IF_ADDR_MCAST_MASK,
+		.ext_id = CAN_NET_IF_ADDR_MCAST_MASK
+	};
+
+	int filter_id;
+
+	filter_id = can_attach_isr(ctx->can_dev, net_can_recv,
+				   ctx, &filter);
+	if (filter_id == CAN_NET_FILTER_NOT_SET) {
+		NET_ERR("Can't attach all mcast filter");
+		return CAN_NET_FILTER_NOT_SET;
+	}
+
+	NET_DBG("Attached all mcast filter %d", filter_id);
+
+	return filter_id;
+}
+#endif /*CONFIG_NET_L2_CANBUS_ETH_TRANSLATOR*/
 
 static int can_enable(struct device *dev, bool enable)
 {
@@ -199,21 +324,38 @@ static int can_enable(struct device *dev, bool enable)
 			}
 		}
 
-		if (ctx->mcast_filter_id == CAN_NET_FILTER_NOT_SET) {
-			ctx->mcast_filter_id = can_attach_mcast_filter(ctx);
-			if (ctx->mcast_filter_id < 0) {
+#ifdef CONFIG_NET_L2_CANBUS_ETH_TRANSLATOR
+		if (ctx->eth_bridge_filter_id == CAN_NET_FILTER_NOT_SET) {
+			ctx->eth_bridge_filter_id = can_attach_eth_bridge_filter(ctx);
+			if (ctx->eth_bridge_filter_id < 0) {
 				can_detach(ctx->can_dev, ctx->recv_filter_id);
 				return -EIO;
 			}
 		}
+
+		if (ctx->all_mcast_filter_id == CAN_NET_FILTER_NOT_SET) {
+			ctx->all_mcast_filter_id = can_attach_all_mcast_filter(ctx);
+			if (ctx->all_mcast_filter_id < 0) {
+				can_detach(ctx->can_dev, ctx->recv_filter_id);
+				can_detach(ctx->can_dev, ctx->eth_bridge_filter_id);
+				return -EIO;
+			}
+		}
+#endif /*CONFIG_NET_L2_CANBUS_ETH_TRANSLATOR*/
 	} else {
 		if (ctx->recv_filter_id != CAN_NET_FILTER_NOT_SET) {
 			can_detach(ctx->can_dev, ctx->recv_filter_id);
 		}
 
-		if (ctx->mcast_filter_id != CAN_NET_FILTER_NOT_SET) {
-			can_detach(ctx->can_dev, ctx->mcast_filter_id);
+#ifdef CONFIG_NET_L2_CANBUS_ETH_TRANSLATOR
+		if (ctx->eth_bridge_filter_id != CAN_NET_FILTER_NOT_SET) {
+			can_detach(ctx->can_dev, ctx->eth_bridge_filter_id);
 		}
+
+		if (ctx->all_mcast_filter_id != CAN_NET_FILTER_NOT_SET) {
+			can_detach(ctx->can_dev, ctx->all_mcast_filter_id);
+		}
+#endif /*CONFIG_NET_L2_CANBUS_ETH_TRANSLATOR*/
 	}
 
 	return 0;
@@ -234,7 +376,10 @@ static int net_can_init(struct device *dev)
 	struct net_can_context *ctx = dev->driver_data;
 
 	ctx->recv_filter_id = CAN_NET_FILTER_NOT_SET;
-	ctx->mcast_filter_id = CAN_NET_FILTER_NOT_SET;
+#ifdef CONFIG_NET_L2_CANBUS_ETH_TRANSLATOR
+	ctx->eth_bridge_filter_id = CAN_NET_FILTER_NOT_SET;
+	ctx->all_mcast_filter_id = CAN_NET_FILTER_NOT_SET;
+#endif /*CONFIG_NET_L2_CANBUS_ETH_TRANSLATOR*/
 
 	if (!can_dev) {
 		NET_ERR("Can't get binding to CAN device %s", DT_CAN_1_NAME);
