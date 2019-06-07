@@ -64,7 +64,7 @@
 		adc: adc@40007000 {
 			compatible = "nordic,nrf-saadc";
 			reg = <0x40007000 0x1000>;
-			interrupts = <7 1>;
+			interrupts = <7 5>;
 			status = "disabled";
 			label = "ADC_0";
 			#io-channel-cells = <1>;
@@ -73,7 +73,7 @@
 		clock: clock@40000000 {
 			compatible = "nordic,nrf-clock";
 			reg = <0x40000000 0x1000>;
-			interrupts = <0 1>;
+			interrupts = <0 5>;
 			status = "okay";
 			label = "CLOCK";
 		};
@@ -82,7 +82,7 @@
 			/* uart can be either UART or UARTE, for the user to pick */
 			/* compatible = "nordic,nrf-uarte" or "nordic,nrf-uart"; */
 			reg = <0x40002000 0x1000>;
-			interrupts = <2 1>;
+			interrupts = <2 5>;
 			status = "disabled";
 			label = "UART_0";
 		};
@@ -119,7 +119,7 @@
 			#size-cells = <0>;
 			reg = <0x40003000 0x1000>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
-			interrupts = <3 1>;
+			interrupts = <3 5>;
 			status = "disabled";
 			label = "I2C_0";
 		};
@@ -127,7 +127,7 @@
 		pwm0: pwm@4001c000 {
 			compatible = "nordic,nrf-pwm";
 			reg = <0x4001c000 0x1000>;
-			interrupts = <28 1>;
+			interrupts = <28 5>;
 			status = "disabled";
 			label = "PWM_0";
 			#pwm-cells = <1>;
@@ -136,7 +136,7 @@
 		qdec: qdec@40012000 {
 			compatible = "nordic,nrf-qdec";
 			reg = <0x40012000 0x1000>;
-			interrupts = <18 1>;
+			interrupts = <18 5>;
 			status = "disabled";
 			label = "QDEC";
 		};
@@ -152,7 +152,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40004000 0x1000>;
-			interrupts = <4 1>;
+			interrupts = <4 5>;
 			status = "disabled";
 			label = "SPI_0";
 		};
@@ -169,7 +169,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40003000 0x1000>;
-			interrupts = <3 1>;
+			interrupts = <3 5>;
 			status = "disabled";
 			label = "SPI_1";
 		};
@@ -177,7 +177,7 @@
 		rtc0: rtc@4000b000 {
 			compatible = "nordic,nrf-rtc";
 			reg = <0x4000b000 0x1000>;
-			interrupts = <11 1>;
+			interrupts = <11 5>;
 			status = "okay";
 			clock-frequency = <32768>;
 			prescaler = <1>;
@@ -187,7 +187,7 @@
 		rtc1: rtc@40011000 {
 			compatible = "nordic,nrf-rtc";
 			reg = <0x40011000 0x1000>;
-			interrupts = <17 1>;
+			interrupts = <17 5>;
 			status = "okay";
 			clock-frequency = <32768>;
 			prescaler = <1>;
@@ -198,7 +198,7 @@
 			compatible = "nordic,nrf-timer";
 			status = "okay";
 			reg = <0x40008000 0x1000>;
-			interrupts = <8 1>;
+			interrupts = <8 5>;
 			prescaler = <0>;
 			label = "TIMER_0";
 		};
@@ -207,7 +207,7 @@
 			compatible = "nordic,nrf-timer";
 			status = "okay";
 			reg = <0x40009000 0x1000>;
-			interrupts = <9 1>;
+			interrupts = <9 5>;
 			prescaler = <0>;
 			label = "TIMER_1";
 		};
@@ -216,7 +216,7 @@
 			compatible = "nordic,nrf-timer";
 			status = "okay";
 			reg = <0x4000a000 0x1000>;
-			interrupts = <10 1>;
+			interrupts = <10 5>;
 			prescaler = <0>;
 			label = "TIMER_2";
 		};
@@ -224,7 +224,7 @@
 		temp: temp@4000c000 {
 			compatible = "nordic,nrf-temp";
 			reg = <0x4000c000 0x1000>;
-			interrupts = <12 1>;
+			interrupts = <12 5>;
 			status = "okay";
 			label = "TEMP_0";
 		};
@@ -232,7 +232,7 @@
 		wdt: watchdog@40010000 {
 			compatible = "nordic,nrf-watchdog";
 			reg = <0x40010000 0x1000>;
-			interrupts = <16 1>;
+			interrupts = <16 5>;
 			status = "okay";
 			label = "WDT";
 		};

@@ -75,7 +75,7 @@
 		adc: adc@40007000 {
 			compatible = "nordic,nrf-saadc";
 			reg = <0x40007000 0x1000>;
-			interrupts = <7 1>;
+			interrupts = <7 5>;
 			status = "disabled";
 			label = "ADC_0";
 			#io-channel-cells = <1>;
@@ -84,7 +84,7 @@
 		clock: clock@40000000 {
 			compatible = "nordic,nrf-clock";
 			reg = <0x40000000 0x1000>;
-			interrupts = <0 1>;
+			interrupts = <0 5>;
 			status = "okay";
 			label = "CLOCK";
 		};
@@ -93,7 +93,7 @@
 			/* uart can be either UART or UARTE, for the user to pick */
 			/* compatible = "nordic,nrf-uarte" or "nordic,nrf-uart"; */
 			reg = <0x40002000 0x1000>;
-			interrupts = <2 1>;
+			interrupts = <2 5>;
 			status = "disabled";
 			label = "UART_0";
 		};
@@ -101,7 +101,7 @@
 		uart1: uart@40028000 {
 			compatible = "nordic,nrf-uarte";
 			reg = <0x40028000 0x1000>;
-			interrupts = <40 1>;
+			interrupts = <40 5>;
 			status = "disabled";
 			label = "UART_1";
 		};
@@ -146,7 +146,7 @@
 			#size-cells = <0>;
 			reg = <0x40003000 0x1000>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
-			interrupts = <3 1>;
+			interrupts = <3 5>;
 			status = "disabled";
 			label = "I2C_0";
 		};
@@ -163,7 +163,7 @@
 			#size-cells = <0>;
 			reg = <0x40004000 0x1000>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
-			interrupts = <4 1>;
+			interrupts = <4 5>;
 			status = "disabled";
 			label = "I2C_1";
 		};
@@ -171,7 +171,7 @@
 		pwm0: pwm@4001c000 {
 			compatible = "nordic,nrf-pwm";
 			reg = <0x4001c000 0x1000>;
-			interrupts = <28 1>;
+			interrupts = <28 5>;
 			status = "disabled";
 			label = "PWM_0";
 			#pwm-cells = <1>;
@@ -180,7 +180,7 @@
 		pwm1: pwm@40021000 {
 			compatible = "nordic,nrf-pwm";
 			reg = <0x40021000 0x1000>;
-			interrupts = <33 1>;
+			interrupts = <33 5>;
 			status = "disabled";
 			label = "PWM_1";
 			#pwm-cells = <1>;
@@ -189,7 +189,7 @@
 		pwm2: pwm@40022000 {
 			compatible = "nordic,nrf-pwm";
 			reg = <0x40022000 0x1000>;
-			interrupts = <34 1>;
+			interrupts = <34 5>;
 			status = "disabled";
 			label = "PWM_2";
 			#pwm-cells = <1>;
@@ -198,7 +198,7 @@
 		pwm3: pwm@4002d000 {
 			compatible = "nordic,nrf-pwm";
 			reg = <0x4002d000 0x1000>;
-			interrupts = <45 1>;
+			interrupts = <45 5>;
 			status = "disabled";
 			label = "PWM_3";
 			#pwm-cells = <1>;
@@ -207,7 +207,7 @@
 		qdec: qdec@40012000 {
 			compatible = "nordic,nrf-qdec";
 			reg = <0x40012000 0x1000>;
-			interrupts = <18 1>;
+			interrupts = <18 5>;
 			status = "disabled";
 			label = "QDEC";
 		};
@@ -223,7 +223,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40003000 0x1000>;
-			interrupts = <3 1>;
+			interrupts = <3 5>;
 			status = "disabled";
 			label = "SPI_0";
 		};
@@ -239,7 +239,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40004000 0x1000>;
-			interrupts = <4 1>;
+			interrupts = <4 5>;
 			status = "disabled";
 			label = "SPI_1";
 		};
@@ -255,7 +255,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40023000 0x1000>;
-			interrupts = <35 1>;
+			interrupts = <35 5>;
 			status = "disabled";
 			label = "SPI_2";
 		};
@@ -265,7 +265,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x4002f000 0x1000>;
-			interrupts = <47 1>;
+			interrupts = <47 5>;
 			status = "disabled";
 			label = "SPI_3";
 		};
@@ -273,7 +273,7 @@
 		rtc0: rtc@4000b000 {
 			compatible = "nordic,nrf-rtc";
 			reg = <0x4000b000 0x1000>;
-			interrupts = <11 1>;
+			interrupts = <11 5>;
 			status = "okay";
 			clock-frequency = <32768>;
 			prescaler = <1>;
@@ -283,7 +283,7 @@
 		rtc1: rtc@40011000 {
 			compatible = "nordic,nrf-rtc";
 			reg = <0x40011000 0x1000>;
-			interrupts = <17 1>;
+			interrupts = <17 5>;
 			status = "okay";
 			clock-frequency = <32768>;
 			prescaler = <1>;
@@ -293,7 +293,7 @@
 		rtc2: rtc@40024000 {
 			compatible = "nordic,nrf-rtc";
 			reg = <0x40024000 0x1000>;
-			interrupts = <36 1>;
+			interrupts = <36 5>;
 			status = "okay";
 			clock-frequency = <32768>;
 			prescaler = <1>;
@@ -304,7 +304,7 @@
 			compatible = "nordic,nrf-timer";
 			status = "okay";
 			reg = <0x40008000 0x1000>;
-			interrupts = <8 1>;
+			interrupts = <8 5>;
 			prescaler = <0>;
 			label = "TIMER_0";
 		};
@@ -313,7 +313,7 @@
 			compatible = "nordic,nrf-timer";
 			status = "okay";
 			reg = <0x40009000 0x1000>;
-			interrupts = <9 1>;
+			interrupts = <9 5>;
 			prescaler = <0>;
 			label = "TIMER_1";
 		};
@@ -322,7 +322,7 @@
 			compatible = "nordic,nrf-timer";
 			status = "okay";
 			reg = <0x4000a000 0x1000>;
-			interrupts = <10 1>;
+			interrupts = <10 5>;
 			prescaler = <0>;
 			label = "TIMER_2";
 		};
@@ -331,7 +331,7 @@
 			compatible = "nordic,nrf-timer";
 			status = "okay";
 			reg = <0x4001a000 0x1000>;
-			interrupts = <26 1>;
+			interrupts = <26 5>;
 			prescaler = <0>;
 			label = "TIMER_3";
 		};
@@ -340,7 +340,7 @@
 			compatible = "nordic,nrf-timer";
 			status = "okay";
 			reg = <0x4001b000 0x1000>;
-			interrupts = <27 1>;
+			interrupts = <27 5>;
 			prescaler = <0>;
 			label = "TIMER_4";
 		};
@@ -348,7 +348,7 @@
 		temp: temp@4000c000 {
 			compatible = "nordic,nrf-temp";
 			reg = <0x4000c000 0x1000>;
-			interrupts = <12 1>;
+			interrupts = <12 5>;
 			status = "okay";
 			label = "TEMP_0";
 		};
@@ -356,7 +356,7 @@
 		usbd: usbd@40027000 {
 			compatible = "nordic,nrf-usbd";
 			reg = <0x40027000 0x1000>;
-			interrupts = <39 1>;
+			interrupts = <39 5>;
 			num-bidir-endpoints = <1>;
 			num-in-endpoints = <7>;
 			num-out-endpoints = <7>;
@@ -369,7 +369,7 @@
 		wdt: watchdog@40010000 {
 			compatible = "nordic,nrf-watchdog";
 			reg = <0x40010000 0x1000>;
-			interrupts = <16 1>;
+			interrupts = <16 5>;
 			status = "okay";
 			label = "WDT";
 		};
@@ -384,7 +384,7 @@
 			cryptocell310: crypto@5002b000 {
 				compatible = "arm,cryptocell-310";
 				reg = <0x5002B000 0x1000>;
-				interrupts = <42 1>;
+				interrupts = <42 5>;
 				label = "CRYPTOCELL310";
 			};
 		};

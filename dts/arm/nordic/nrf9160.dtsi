@@ -91,7 +91,7 @@
 		spu: spu@50003000 {
 			compatible = "nordic,nrf-spu";
 			reg = <0x50003000 0x1000>;
-			interrupts = <3 1>;
+			interrupts = <3 5>;
 			status = "okay";
 		};
 
