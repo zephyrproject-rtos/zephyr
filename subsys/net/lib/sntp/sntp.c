@@ -191,6 +191,6 @@ int sntp_request(struct sntp_ctx *ctx, u32_t timeout, u64_t *epoch_time)
 void sntp_close(struct sntp_ctx *ctx)
 {
 	if (ctx) {
-		close(ctx->sock.fd);
+		(void)close(ctx->sock.fd);
 	}
 }
