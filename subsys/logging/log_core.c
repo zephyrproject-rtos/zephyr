@@ -753,7 +753,7 @@ char *log_strdup(const char *str)
 	struct log_strdup_buf *dup;
 	int err;
 
-	if (IS_ENABLED(CONFIG_LOG_IMMEDIATE)) {
+	if (IS_ENABLED(CONFIG_LOG_IMMEDIATE) || is_rodata(str)) {
 		return (char *)str;
 	}
 
