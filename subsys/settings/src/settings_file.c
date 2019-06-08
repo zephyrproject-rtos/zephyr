@@ -14,11 +14,11 @@
 #include "settings/settings_file.h"
 #include "settings_priv.h"
 
-static int settings_file_load(struct settings_store *cs);
+static int settings_file_load(struct settings_store *cs, const char *subtree);
 static int settings_file_save(struct settings_store *cs, const char *name,
 			      const char *value, size_t val_len);
 
-static struct settings_store_itf settings_file_itf = {
+static const struct settings_store_itf settings_file_itf = {
 	.csi_load = settings_file_load,
 	.csi_save = settings_file_save,
 };
@@ -109,9 +109,10 @@ static int settings_file_load_priv(struct settings_store *cs, line_load_cb cb,
 /*
  * Called to load configuration items.
  */
-static int settings_file_load(struct settings_store *cs)
+static int settings_file_load(struct settings_store *cs, const char *subtree)
 {
-	return settings_file_load_priv(cs, settings_line_load_cb, NULL);
+	return settings_file_load_priv(cs, settings_line_load_cb,
+				       (void *)subtree);
 }
 
 static void settings_tmpfile(char *dst, const char *src, char *pfx)
