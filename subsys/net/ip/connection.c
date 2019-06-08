@@ -410,18 +410,18 @@ static bool conn_addr_cmp(struct net_pkt *pkt,
 	if (IS_ENABLED(CONFIG_NET_IPV6) &&
 	    net_pkt_family(pkt) == AF_INET6 &&
 	    addr->sa_family == AF_INET6) {
-		struct in6_addr *addr6;
+		struct in6_addr addr6;
 
 		if (is_remote) {
-			addr6 = &ip_hdr->ipv6->src;
+			net_ipaddr_copy(&addr6, &ip_hdr->ipv6->src);
 		} else {
-			addr6 = &ip_hdr->ipv6->dst;
+			net_ipaddr_copy(&addr6, &ip_hdr->ipv6->dst);
 		}
 
 		if (!net_ipv6_is_addr_unspecified(
 			    &net_sin6(addr)->sin6_addr)) {
 			if (!net_ipv6_addr_cmp(&net_sin6(addr)->sin6_addr,
-					       addr6)) {
+					       &addr6)) {
 				return false;
 			}
 		}
@@ -430,17 +430,17 @@ static bool conn_addr_cmp(struct net_pkt *pkt,
 	} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
 		   net_pkt_family(pkt) == AF_INET &&
 		   addr->sa_family == AF_INET) {
-		struct in_addr *addr4;
+		struct in_addr addr4;
 
 		if (is_remote) {
-			addr4 = &ip_hdr->ipv4->src;
+			net_ipaddr_copy(&addr4, &ip_hdr->ipv4->src);
 		} else {
-			addr4 = &ip_hdr->ipv4->dst;
+			net_ipaddr_copy(&addr4, &ip_hdr->ipv4->dst);
 		}
 
 		if (net_sin(addr)->sin_addr.s_addr) {
 			if (!net_ipv4_addr_cmp(&net_sin(addr)->sin_addr,
-					       addr4)) {
+					       &addr4)) {
 				return false;
 			}
 		}
@@ -480,16 +480,20 @@ static bool conn_are_end_points_valid(struct net_pkt *pkt,
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV4) && net_pkt_family(pkt) == AF_INET) {
-		if (net_ipv4_addr_cmp(&ip_hdr->ipv4->src,
-				      &ip_hdr->ipv4->dst) ||
-		    net_ipv4_is_my_addr(&ip_hdr->ipv4->src)) {
+		if (net_ipv4_addr_cmp_by_value(
+			    UNALIGNED_GET(&ip_hdr->ipv4->src),
+			    UNALIGNED_GET(&ip_hdr->ipv4->dst)) ||
+		    net_ipv4_is_my_addr_by_value(
+			    UNALIGNED_GET(&ip_hdr->ipv4->src))) {
 			my_src_addr = true;
 		}
 	} else if (IS_ENABLED(CONFIG_NET_IPV6) &&
 		   net_pkt_family(pkt) == AF_INET6) {
-		if (net_ipv6_addr_cmp(&ip_hdr->ipv6->src,
-				      &ip_hdr->ipv6->dst) ||
-		    net_ipv6_is_my_addr(&ip_hdr->ipv6->src)) {
+		if (net_ipv6_addr_cmp_by_value(
+			    UNALIGNED_GET(&ip_hdr->ipv6->src),
+			    UNALIGNED_GET(&ip_hdr->ipv6->dst)) ||
+		    net_ipv6_is_my_addr_by_value(
+			    UNALIGNED_GET(&ip_hdr->ipv6->src))) {
 			my_src_addr = true;
 		}
 	}
@@ -630,11 +634,13 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 	 */
 	if (IS_ENABLED(CONFIG_NET_IPV6) &&
 	    net_pkt_family(pkt) == AF_INET6 &&
-	    net_ipv6_is_addr_mcast(&ip_hdr->ipv6->dst)) {
+	    net_ipv6_is_addr_mcast_by_value(
+		    UNALIGNED_GET(&ip_hdr->ipv6->dst))) {
 		;
 	} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
 		   net_pkt_family(pkt) == AF_INET &&
-		   net_ipv4_is_addr_mcast(&ip_hdr->ipv4->dst)) {
+		   net_ipv4_is_addr_mcast_by_value(
+			   UNALIGNED_GET(&ip_hdr->ipv4->dst))) {
 		;
 	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) &&
 		    net_pkt_family(pkt) == AF_PACKET) {

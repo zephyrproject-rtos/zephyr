@@ -819,9 +819,13 @@ static inline void net_pkt_set_lldp(struct net_pkt *pkt, bool is_lldp)
 
 static inline void net_pkt_set_src_ipv6_addr(struct net_pkt *pkt)
 {
+	struct in6_addr src;
+
+	net_ipaddr_copy(&src, &NET_IPV6_HDR(pkt)->src);
+
 	net_if_ipv6_select_src_addr(net_context_get_iface(
 					    net_pkt_context(pkt)),
-				    &NET_IPV6_HDR(pkt)->src);
+				    &src);
 }
 
 static inline void net_pkt_set_overwrite(struct net_pkt *pkt, bool overwrite)

@@ -109,6 +109,7 @@ enum net_verdict icmpv6_handle_echo_request(struct net_pkt *pkt,
 {
 	struct net_pkt *reply = NULL;
 	const struct in6_addr *src;
+	struct in6_addr dst;
 	s16_t payload_len;
 
 	ARG_UNUSED(icmp_hdr);
@@ -132,11 +133,13 @@ enum net_verdict icmpv6_handle_echo_request(struct net_pkt *pkt,
 		goto drop;
 	}
 
-	if (net_ipv6_is_addr_mcast(&ip_hdr->dst)) {
-		src = net_if_ipv6_select_src_addr(net_pkt_iface(pkt),
-						  &ip_hdr->dst);
+	if (net_ipv6_is_addr_mcast_by_value(UNALIGNED_GET(&ip_hdr->dst))) {
+		src = net_if_ipv6_select_src_addr_by_value(net_pkt_iface(pkt),
+						  UNALIGNED_GET(&ip_hdr->dst));
 	} else {
-		src = &ip_hdr->dst;
+		net_ipaddr_copy(&dst, &ip_hdr->dst);
+
+		src = &dst;
 	}
 
 	/* We must not set the destination ll address here but trust
@@ -146,7 +149,8 @@ enum net_verdict icmpv6_handle_echo_request(struct net_pkt *pkt,
 	net_pkt_lladdr_dst(reply)->addr = NULL;
 	net_pkt_lladdr_src(reply)->addr = NULL;
 
-	if (net_ipv6_create(reply, src, &ip_hdr->src)) {
+	if (net_ipv6_create_by_value(reply, *src,
+				     UNALIGNED_GET(&ip_hdr->src))) {
 		NET_DBG("DROP: wrong buffer");
 		goto drop;
 	}
@@ -191,6 +195,7 @@ int net_icmpv6_send_error(struct net_pkt *orig, u8_t type, u8_t code,
 	int err = -EIO;
 	struct net_ipv6_hdr *ip_hdr;
 	const struct in6_addr *src;
+	struct in6_addr dst;
 	struct net_pkt *pkt;
 	size_t copy_len;
 
@@ -238,14 +243,16 @@ int net_icmpv6_send_error(struct net_pkt *orig, u8_t type, u8_t code,
 		goto drop_no_pkt;
 	}
 
-	if (net_ipv6_is_addr_mcast(&ip_hdr->dst)) {
-		src = net_if_ipv6_select_src_addr(net_pkt_iface(pkt),
-						  &ip_hdr->dst);
+	if (net_ipv6_is_addr_mcast_by_value(UNALIGNED_GET(&ip_hdr->dst))) {
+		src = net_if_ipv6_select_src_addr_by_value(net_pkt_iface(pkt),
+						   UNALIGNED_GET(&ip_hdr->dst));
 	} else {
-		src = &ip_hdr->dst;
+		net_ipaddr_copy(&dst, &ip_hdr->dst);
+
+		src = &dst;
 	}
 
-	if (net_ipv6_create(pkt, src, &ip_hdr->src) ||
+	if (net_ipv6_create_by_value(pkt, *src, UNALIGNED_GET(&ip_hdr->src)) ||
 	    net_icmpv6_create(pkt, type, code)) {
 		goto drop;
 	}

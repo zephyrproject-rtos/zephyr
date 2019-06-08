@@ -880,8 +880,8 @@ static bool v6_check_port_and_address(char *test_str, struct net_pkt *pkt,
 
 	tcp_hdr = net_tcp_get_hdr(pkt, NULL);
 
-	if (!net_ipv6_addr_cmp(&NET_IPV6_HDR(pkt)->src,
-			       &my_v6_addr.sin6_addr)) {
+	if (!net_ipv6_addr_cmp_by_value(UNALIGNED_GET(&NET_IPV6_HDR(pkt)->src),
+					my_v6_addr.sin6_addr)) {
 		DBG("%s: IPv6 source address mismatch, should be %s ",
 		    test_str, net_sprint_ipv6_addr(&my_v6_addr.sin6_addr));
 		DBG("was %s\n",
@@ -896,7 +896,8 @@ static bool v6_check_port_and_address(char *test_str, struct net_pkt *pkt,
 		return false;
 	}
 
-	if (!net_ipv6_addr_cmp(expected_dst_addr, &NET_IPV6_HDR(pkt)->dst)) {
+	if (!net_ipv6_addr_cmp_by_value(*expected_dst_addr,
+				UNALIGNED_GET(&NET_IPV6_HDR(pkt)->dst))) {
 		DBG("%s: IPv6 destination address mismatch, should be %s ",
 		    test_str, net_sprint_ipv6_addr(expected_dst_addr));
 		DBG("was %s\n",
@@ -922,8 +923,8 @@ static bool v4_check_port_and_address(char *test_str, struct net_pkt *pkt,
 
 	tcp_hdr = net_tcp_get_hdr(pkt, NULL);
 
-	if (!net_ipv4_addr_cmp(&NET_IPV4_HDR(pkt)->src,
-			       &my_v4_addr.sin_addr)) {
+	if (!net_ipv4_addr_cmp_by_value(UNALIGNED_GET(&NET_IPV4_HDR(pkt)->src),
+					my_v4_addr.sin_addr)) {
 		DBG("%s: IPv4 source address mismatch, should be %s ",
 		    test_str, net_sprint_ipv4_addr(&my_v4_addr.sin_addr));
 		DBG("was %s\n",
@@ -938,7 +939,8 @@ static bool v4_check_port_and_address(char *test_str, struct net_pkt *pkt,
 		return false;
 	}
 
-	if (!net_ipv4_addr_cmp(expected_dst_addr, &NET_IPV4_HDR(pkt)->dst)) {
+	if (!net_ipv4_addr_cmp_by_value(*expected_dst_addr,
+				UNALIGNED_GET(&NET_IPV4_HDR(pkt)->dst))) {
 		DBG("%s: IPv4 destination address mismatch, should be %s ",
 		    test_str, net_sprint_ipv4_addr(expected_dst_addr));
 		DBG("was %s\n",

@@ -244,11 +244,11 @@ static int create_answer(struct net_context *ctx,
 }
 
 #if defined(CONFIG_NET_IPV4)
-static const u8_t *get_ipv4_src(struct net_if *iface, struct in_addr *dst)
+static const u8_t *get_ipv4_src(struct net_if *iface, struct in_addr dst)
 {
 	const struct in_addr *addr;
 
-	addr = net_if_ipv4_select_src_addr(iface, dst);
+	addr = net_if_ipv4_select_src_addr(iface, &dst);
 	if (!addr || net_ipv4_is_addr_unspecified(addr)) {
 		return NULL;
 	}
@@ -258,11 +258,11 @@ static const u8_t *get_ipv4_src(struct net_if *iface, struct in_addr *dst)
 #endif
 
 #if defined(CONFIG_NET_IPV6)
-static const u8_t *get_ipv6_src(struct net_if *iface, struct in6_addr *dst)
+static const u8_t *get_ipv6_src(struct net_if *iface, struct in6_addr dst)
 {
 	const struct in6_addr *addr;
 
-	addr = net_if_ipv6_select_src_addr(iface, dst);
+	addr = net_if_ipv6_select_src_addr(iface, &dst);
 	if (!addr || net_ipv6_is_addr_unspecified(addr)) {
 		return NULL;
 	}
@@ -290,7 +290,7 @@ static int create_ipv4_answer(struct net_context *ctx,
 	if (qtype == DNS_RR_TYPE_A) {
 		/* Select proper address according to destination */
 		addr = get_ipv4_src(net_pkt_iface(pkt),
-				    &net_sin(dst)->sin_addr);
+				    net_sin(dst)->sin_addr);
 		if (!addr) {
 			return -ENOENT;
 		}
@@ -300,7 +300,7 @@ static int create_ipv4_answer(struct net_context *ctx,
 	} else if (qtype == DNS_RR_TYPE_AAAA) {
 #if defined(CONFIG_NET_IPV6)
 		addr = get_ipv6_src(net_pkt_iface(pkt),
-				    &ip_hdr->ipv6->src);
+				    UNALIGNED_GET(&ip_hdr->ipv6->src));
 		if (!addr) {
 			return -ENOENT;
 		}
@@ -342,7 +342,7 @@ static int create_ipv6_answer(struct net_context *ctx,
 
 	if (qtype == DNS_RR_TYPE_AAAA) {
 		addr = get_ipv6_src(net_pkt_iface(pkt),
-				    &ip_hdr->ipv6->src);
+				    UNALIGNED_GET(&ip_hdr->ipv6->src));
 		if (!addr) {
 			return -ENOENT;
 		}
@@ -351,7 +351,7 @@ static int create_ipv6_answer(struct net_context *ctx,
 	} else if (qtype == DNS_RR_TYPE_A) {
 #if defined(CONFIG_NET_IPV4)
 		addr = get_ipv4_src(net_pkt_iface(pkt),
-				    &ip_hdr->ipv4->src);
+				    UNALIGNED_GET(&ip_hdr->ipv4->src));
 		if (!addr) {
 			return -ENOENT;
 		}

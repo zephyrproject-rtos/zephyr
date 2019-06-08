@@ -120,8 +120,8 @@ fail:
 }
 
 static struct net_ipv6_reassembly *reassembly_get(u32_t id,
-						  struct in6_addr *src,
-						  struct in6_addr *dst)
+						  struct in6_addr src,
+						  struct in6_addr dst)
 {
 	int i, avail = -1;
 
@@ -129,8 +129,8 @@ static struct net_ipv6_reassembly *reassembly_get(u32_t id,
 
 		if (k_delayed_work_remaining_get(&reassembly[i].timer) &&
 		    reassembly[i].id == id &&
-		    net_ipv6_addr_cmp(src, &reassembly[i].src) &&
-		    net_ipv6_addr_cmp(dst, &reassembly[i].dst)) {
+		    net_ipv6_addr_cmp(&src, &reassembly[i].src) &&
+		    net_ipv6_addr_cmp(&dst, &reassembly[i].dst)) {
 			return &reassembly[i];
 		}
 
@@ -150,8 +150,8 @@ static struct net_ipv6_reassembly *reassembly_get(u32_t id,
 	k_delayed_work_submit(&reassembly[avail].timer,
 			      IPV6_REASSEMBLY_TIMEOUT);
 
-	net_ipaddr_copy(&reassembly[avail].src, src);
-	net_ipaddr_copy(&reassembly[avail].dst, dst);
+	net_ipaddr_copy(&reassembly[avail].src, &src);
+	net_ipaddr_copy(&reassembly[avail].dst, &dst);
 
 	reassembly[avail].id = id;
 
@@ -458,7 +458,8 @@ enum net_verdict net_ipv6_handle_fragment_hdr(struct net_pkt *pkt,
 		goto drop;
 	}
 
-	reass = reassembly_get(id, &hdr->src, &hdr->dst);
+	reass = reassembly_get(id, UNALIGNED_GET(&hdr->src),
+			       UNALIGNED_GET(&hdr->dst));
 	if (!reass) {
 		NET_DBG("Cannot get reassembly slot, dropping pkt %p", pkt);
 		goto drop;

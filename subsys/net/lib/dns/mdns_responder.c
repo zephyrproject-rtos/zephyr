@@ -218,8 +218,8 @@ static int send_response(struct net_context *ctx,
 #if defined(CONFIG_NET_IPV4)
 		const struct in_addr *addr;
 
-		addr = net_if_ipv4_select_src_addr(net_pkt_iface(pkt),
-						   &ip_hdr->ipv4->src);
+		addr = net_if_ipv4_select_src_addr_by_value(net_pkt_iface(pkt),
+					UNALIGNED_GET(&ip_hdr->ipv4->src));
 
 		create_ipv4_addr(net_sin(&dst));
 		dst_len = sizeof(struct sockaddr_in);
@@ -239,8 +239,8 @@ static int send_response(struct net_context *ctx,
 #if defined(CONFIG_NET_IPV6)
 		const struct in6_addr *addr;
 
-		addr = net_if_ipv6_select_src_addr(net_pkt_iface(pkt),
-						   &ip_hdr->ipv6->src);
+		addr = net_if_ipv6_select_src_addr_by_value(net_pkt_iface(pkt),
+					    UNALIGNED_GET(&ip_hdr->ipv6->src));
 
 		create_ipv6_addr(net_sin6(&dst));
 		dst_len = sizeof(struct sockaddr_in6);

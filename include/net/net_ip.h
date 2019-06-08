@@ -489,7 +489,7 @@ union net_proto_header {
 /**
  * @brief Check if the IPv6 address is a loopback address (::1).
  *
- * @param addr IPv6 address
+ * @param addr Pointer to IPv6 address
  *
  * @return True if address is a loopback address, False otherwise.
  */
@@ -502,15 +502,42 @@ static inline bool net_ipv6_is_addr_loopback(struct in6_addr *addr)
 }
 
 /**
- * @brief Check if the IPv6 address is a multicast address.
+ * @brief Check if the IPv6 address is a loopback address (::1).
  *
  * @param addr IPv6 address
+ *
+ * @return True if address is a loopback address, False otherwise.
+ */
+static inline bool net_ipv6_is_addr_loopback_by_value(struct in6_addr addr)
+{
+	return addr.s6_addr32[0] == 0 &&
+		addr.s6_addr32[1] == 0 &&
+		addr.s6_addr32[2] == 0 &&
+		ntohl(addr.s6_addr32[3]) == 1;
+}
+
+/**
+ * @brief Check if the IPv6 address is a multicast address.
+ *
+ * @param addr Pointer to IPv6 address
  *
  * @return True if address is multicast address, False otherwise.
  */
 static inline bool net_ipv6_is_addr_mcast(const struct in6_addr *addr)
 {
 	return addr->s6_addr[0] == 0xFF;
+}
+
+/**
+ * @brief Check if the IPv6 address is a multicast address.
+ *
+ * @param addr IPv6 address
+ *
+ * @return True if address is multicast address, False otherwise.
+ */
+static inline bool net_ipv6_is_addr_mcast_by_value(const struct in6_addr addr)
+{
+	return net_ipv6_is_addr_mcast(&addr);
 }
 
 struct net_if;
@@ -522,13 +549,25 @@ extern struct net_if_addr *net_if_ipv6_addr_lookup(const struct in6_addr *addr,
 /**
  * @brief Check if IPv6 address is found in one of the network interfaces.
  *
- * @param addr IPv6 address
+ * @param addr Pointer to IPv6 address
  *
  * @return True if address was found, False otherwise.
  */
 static inline bool net_ipv6_is_my_addr(struct in6_addr *addr)
 {
 	return net_if_ipv6_addr_lookup(addr, NULL) != NULL;
+}
+
+/**
+ * @brief Check if IPv6 address is found in one of the network interfaces.
+ *
+ * @param addr IPv6 address
+ *
+ * @return True if address was found, False otherwise.
+ */
+static inline bool net_ipv6_is_my_addr_by_value(struct in6_addr addr)
+{
+	return net_ipv6_is_my_addr(&addr);
 }
 
 extern struct net_if_mcast_addr *net_if_ipv6_maddr_lookup(
@@ -538,13 +577,26 @@ extern struct net_if_mcast_addr *net_if_ipv6_maddr_lookup(
  * @brief Check if IPv6 multicast address is found in one of the
  * network interfaces.
  *
- * @param maddr Multicast IPv6 address
+ * @param maddr Pointer to multicast IPv6 address
  *
  * @return True if address was found, False otherwise.
  */
 static inline bool net_ipv6_is_my_maddr(struct in6_addr *maddr)
 {
 	return net_if_ipv6_maddr_lookup(maddr, NULL) != NULL;
+}
+
+/**
+ * @brief Check if IPv6 multicast address is found in one of the
+ * network interfaces.
+ *
+ * @param maddr Multicast IPv6 address
+ *
+ * @return True if address was found, False otherwise.
+ */
+static inline bool net_ipv6_is_my_maddr_by_value(struct in6_addr maddr)
+{
+	return net_ipv6_is_my_maddr(&maddr);
 }
 
 /**
@@ -589,19 +641,31 @@ static inline bool net_ipv6_is_prefix(const u8_t *addr1,
 /**
  * @brief Check if the IPv4 address is a loopback address (127.0.0.0/8).
  *
- * @param addr IPv4 address
+ * @param addr Pointer to IPv4 address
  *
  * @return True if address is a loopback address, False otherwise.
  */
 static inline bool net_ipv4_is_addr_loopback(struct in_addr *addr)
 {
-	return addr->s4_addr[0] == 127U;
+	return UNALIGNED_GET(&addr->s4_addr[0]) == 127U;
+}
+
+/**
+ * @brief Check if the IPv4 address is a loopback address (127.0.0.0/8).
+ *
+ * @param addr IPv4 address
+ *
+ * @return True if address is a loopback address, False otherwise.
+ */
+static inline bool net_ipv4_is_addr_loopback_by_value(struct in_addr addr)
+{
+	return net_ipv4_is_addr_loopback(&addr);
 }
 
 /**
  *  @brief Check if the IPv4 address is unspecified (all bits zero)
  *
- *  @param addr IPv4 address.
+ *  @param addr Pointer to IPv4 address.
  *
  *  @return True if the address is unspecified, false otherwise.
  */
@@ -611,15 +675,39 @@ static inline bool net_ipv4_is_addr_unspecified(const struct in_addr *addr)
 }
 
 /**
+ *  @brief Check if the IPv4 address is unspecified (all bits zero)
+ *
+ *  @param addr IPv4 address.
+ *
+ *  @return True if the address is unspecified, false otherwise.
+ */
+static inline bool net_ipv4_is_addr_unspecified_by_value(struct in_addr addr)
+{
+	return net_ipv4_is_addr_unspecified(&addr);
+}
+
+/**
  * @brief Check if the IPv4 address is a multicast address.
  *
- * @param addr IPv4 address
+ * @param addr Pointer to IPv4 address
  *
  * @return True if address is multicast address, False otherwise.
  */
 static inline bool net_ipv4_is_addr_mcast(const struct in_addr *addr)
 {
 	return (ntohl(UNALIGNED_GET(&addr->s_addr)) & 0xE0000000) == 0xE0000000;
+}
+
+/**
+ * @brief Check if the IPv4 address is a multicast address.
+ *
+ * @param addr IPv4 address
+ *
+ * @return True if address is multicast address, False otherwise.
+ */
+static inline bool net_ipv4_is_addr_mcast_by_value(struct in_addr addr)
+{
+	return net_ipv4_is_addr_mcast(&addr);
 }
 
 /**
@@ -632,6 +720,18 @@ static inline bool net_ipv4_is_addr_mcast(const struct in_addr *addr)
 static inline bool net_ipv4_is_ll_addr(const struct in_addr *addr)
 {
 	return (ntohl(UNALIGNED_GET(&addr->s_addr)) & 0xA9FE0000) == 0xA9FE0000;
+}
+
+/**
+ * @brief Check if the given IPv4 address is a link local address.
+ *
+ * @param addr IPv4 address
+ *
+ * @return True if it is, false otherwise.
+ */
+static inline bool net_ipv4_is_ll_addr_by_value(struct in_addr addr)
+{
+	return net_ipv4_is_ll_addr(&addr);
 }
 
 /**
@@ -661,6 +761,20 @@ static inline bool net_ipv4_addr_cmp(const struct in_addr *addr1,
 }
 
 /**
+ *  @brief Compare two IPv4 addresses
+ *
+ *  @param addr1 IPv4 address.
+ *  @param addr2 IPv4 address.
+ *
+ *  @return True if the addresses are the same, false otherwise.
+ */
+static inline bool net_ipv4_addr_cmp_by_value(const struct in_addr addr1,
+					      const struct in_addr addr2)
+{
+	return addr1.s_addr == addr2.s_addr;
+}
+
+/**
  *  @brief Compare two IPv6 addresses
  *
  *  @param addr1 Pointer to IPv6 address.
@@ -675,6 +789,23 @@ static inline bool net_ipv6_addr_cmp(const struct in6_addr *addr1,
 }
 
 /**
+ *  @brief Compare two IPv6 addresses
+ *
+ *  @details Note that the IPv6 addresses are passed as values so that
+ *           we avoid possible unaligned memory access issues.
+ *
+ *  @param addr1 IPv6 address.
+ *  @param addr2 IPv6 address.
+ *
+ *  @return True if the addresses are the same, false otherwise.
+ */
+static inline bool net_ipv6_addr_cmp_by_value(const struct in6_addr addr1,
+					      const struct in6_addr addr2)
+{
+	return net_ipv6_addr_cmp(&addr1, &addr2);
+}
+
+/**
  * @brief Check if the given IPv6 address is a link local address.
  *
  * @param addr A valid pointer on an IPv6 address
@@ -684,6 +815,18 @@ static inline bool net_ipv6_addr_cmp(const struct in6_addr *addr1,
 static inline bool net_ipv6_is_ll_addr(const struct in6_addr *addr)
 {
 	return UNALIGNED_GET(&addr->s6_addr16[0]) == htons(0xFE80);
+}
+
+/**
+ * @brief Check if the given IPv6 address is a link local address.
+ *
+ * @param addr IPv6 address
+ *
+ * @return True if it is, false otherwise.
+ */
+static inline bool net_ipv6_is_ll_addr_by_value(const struct in6_addr addr)
+{
+	return addr.s6_addr16[0] == htons(0xFE80);
 }
 
 /**
@@ -733,7 +876,7 @@ extern bool net_if_ipv4_is_addr_bcast(struct net_if *iface,
  * @brief Check if the given IPv4 address is a broadcast address.
  *
  * @param iface Interface to use. Must be a valid pointer to an interface.
- * @param addr IPv4 address
+ * @param addr Pointer to IPv4 address
  *
  * @return True if address is a broadcast address, false otherwise.
  */
@@ -747,6 +890,20 @@ static inline bool net_ipv4_is_addr_bcast(struct net_if *iface,
 	return net_if_ipv4_is_addr_bcast(iface, addr);
 }
 
+/**
+ * @brief Check if the given IPv4 address is a broadcast address.
+ *
+ * @param iface Interface to use. Must be a valid pointer to an interface.
+ * @param addr IPv4 address
+ *
+ * @return True if address is a broadcast address, false otherwise.
+ */
+static inline bool net_ipv4_is_addr_bcast_by_value(struct net_if *iface,
+						   struct in_addr addr)
+{
+	return net_ipv4_is_addr_bcast(iface, &addr);
+}
+
 extern struct net_if_addr *net_if_ipv4_addr_lookup(const struct in_addr *addr,
 						   struct net_if **iface);
 
@@ -754,7 +911,7 @@ extern struct net_if_addr *net_if_ipv4_addr_lookup(const struct in_addr *addr,
  * @brief Check if the IPv4 address is assigned to any network interface
  * in the system.
  *
- * @param addr A valid pointer on an IPv4 address
+ * @param addr Pointer to IPv4 address
  *
  * @return True if IPv4 address is found in one of the network interfaces,
  * False otherwise.
@@ -772,9 +929,23 @@ static inline bool net_ipv4_is_my_addr(const struct in_addr *addr)
 }
 
 /**
+ * @brief Check if the IPv4 address is assigned to any network interface
+ * in the system.
+ *
+ * @param addr IPv4 address
+ *
+ * @return True if IPv4 address is found in one of the network interfaces,
+ * False otherwise.
+ */
+static inline bool net_ipv4_is_my_addr_by_value(struct in_addr addr)
+{
+	return net_ipv4_is_my_addr(&addr);
+}
+
+/**
  *  @brief Check if the IPv6 address is unspecified (all bits zero)
  *
- *  @param addr IPv6 address.
+ *  @param addr Pointer to IPv6 address.
  *
  *  @return True if the address is unspecified, false otherwise.
  */
@@ -784,6 +955,22 @@ static inline bool net_ipv6_is_addr_unspecified(const struct in6_addr *addr)
 		UNALIGNED_GET(&addr->s6_addr32[1]) == 0 &&
 		UNALIGNED_GET(&addr->s6_addr32[2]) == 0 &&
 		UNALIGNED_GET(&addr->s6_addr32[3]) == 0;
+}
+
+/**
+ *  @brief Check if the IPv6 address is unspecified (all bits zero)
+ *
+ *  @param addr IPv6 address.
+ *
+ *  @return True if the address is unspecified, false otherwise.
+ */
+static inline
+bool net_ipv6_is_addr_unspecified_by_value(struct in6_addr addr)
+{
+	return addr.s6_addr32[0] == 0 &&
+		addr.s6_addr32[1] == 0 &&
+		addr.s6_addr32[2] == 0 &&
+		addr.s6_addr32[3] == 0;
 }
 
 /**
@@ -807,7 +994,7 @@ static inline bool net_ipv6_is_addr_solicited_node(const struct in6_addr *addr)
  * @brief Check if the IPv6 address is a given scope multicast
  * address (FFyx::).
  *
- * @param addr IPv6 address
+ * @param addr Pointer to IPv6 address
  * @param scope Scope to check
  *
  * @return True if the address is in given scope multicast address,
@@ -817,6 +1004,23 @@ static inline bool net_ipv6_is_addr_mcast_scope(const struct in6_addr *addr,
 						int scope)
 {
 	return (addr->s6_addr[0] == 0xff) && (addr->s6_addr[1] == scope);
+}
+
+/**
+ * @brief Check if the IPv6 address is a given scope multicast
+ * address (FFyx::).
+ *
+ * @param addr IPv6 address
+ * @param scope Scope to check
+ *
+ * @return True if the address is in given scope multicast address,
+ * false otherwise.
+ */
+static inline
+bool net_ipv6_is_addr_mcast_scope_by_value(const struct in6_addr addr,
+					   int scope)
+{
+	return net_ipv6_is_addr_mcast_scope(&addr, scope);
 }
 
 /**
@@ -835,7 +1039,7 @@ static inline bool net_ipv6_is_addr_mcast_global(const struct in6_addr *addr)
  * @brief Check if the IPv6 address is a interface scope multicast
  * address (FFx1::).
  *
- * @param addr IPv6 address.
+ * @param addr Pointer to IPv6 address.
  *
  * @return True if the address is a interface scope multicast address,
  * false otherwise.
@@ -843,6 +1047,35 @@ static inline bool net_ipv6_is_addr_mcast_global(const struct in6_addr *addr)
 static inline bool net_ipv6_is_addr_mcast_iface(const struct in6_addr *addr)
 {
 	return net_ipv6_is_addr_mcast_scope(addr, 0x01);
+}
+
+/**
+ * @brief Check if the IPv6 address is a interface scope multicast
+ * address (FFx1::).
+ *
+ * @param addr IPv6 address.
+ *
+ * @return True if the address is a interface scope multicast address,
+ * false otherwise.
+ */
+static inline
+bool net_ipv6_is_addr_mcast_iface_by_value(const struct in6_addr addr)
+{
+	return net_ipv6_is_addr_mcast_iface(&addr);
+}
+
+/**
+ * @brief Check if the IPv6 address is a site scope multicast
+ * address (FFx5::).
+ *
+ * @param addr Pointer to IPv6 address.
+ *
+ * @return True if the address is a site scope multicast address,
+ * false otherwise.
+ */
+static inline bool net_ipv6_is_addr_mcast_site(const struct in6_addr *addr)
+{
+	return net_ipv6_is_addr_mcast_scope(addr, 0x05);
 }
 
 /**
@@ -854,9 +1087,23 @@ static inline bool net_ipv6_is_addr_mcast_iface(const struct in6_addr *addr)
  * @return True if the address is a site scope multicast address,
  * false otherwise.
  */
-static inline bool net_ipv6_is_addr_mcast_site(const struct in6_addr *addr)
+static inline bool net_ipv6_is_addr_mcast_site_by_value(struct in6_addr addr)
 {
-	return net_ipv6_is_addr_mcast_scope(addr, 0x05);
+	return net_ipv6_is_addr_mcast_site(&addr);
+}
+
+/**
+ * @brief Check if the IPv6 address is an organization scope multicast
+ * address (FFx8::).
+ *
+ * @param addr Pointer to IPv6 address.
+ *
+ * @return True if the address is an organization scope multicast address,
+ * false otherwise.
+ */
+static inline bool net_ipv6_is_addr_mcast_org(const struct in6_addr *addr)
+{
+	return net_ipv6_is_addr_mcast_scope(addr, 0x08);
 }
 
 /**
@@ -868,15 +1115,16 @@ static inline bool net_ipv6_is_addr_mcast_site(const struct in6_addr *addr)
  * @return True if the address is an organization scope multicast address,
  * false otherwise.
  */
-static inline bool net_ipv6_is_addr_mcast_org(const struct in6_addr *addr)
+static inline
+bool net_ipv6_is_addr_mcast_org_by_value(struct in6_addr addr)
 {
-	return net_ipv6_is_addr_mcast_scope(addr, 0x08);
+	return net_ipv6_is_addr_mcast_org(&addr);
 }
 
 /**
  * @brief Check if the IPv6 address belongs to certain multicast group
  *
- * @param addr IPv6 address.
+ * @param addr Pointer to IPv6 address.
  * @param group Group id IPv6 address, the values must be in network
  * byte order
  *
@@ -892,6 +1140,23 @@ static inline bool net_ipv6_is_addr_mcast_group(const struct in6_addr *addr,
 		UNALIGNED_GET(&addr->s6_addr32[1]) == group->s6_addr32[1] &&
 		UNALIGNED_GET(&addr->s6_addr32[2]) == group->s6_addr32[1] &&
 		UNALIGNED_GET(&addr->s6_addr32[3]) == group->s6_addr32[3];
+}
+
+/**
+ * @brief Check if the IPv6 address belongs to certain multicast group
+ *
+ * @param addr IPv6 address.
+ * @param group Group id IPv6 address, the values must be in network
+ * byte order
+ *
+ * @return True if the IPv6 multicast address belongs to given multicast
+ * group, false otherwise.
+ */
+static inline
+bool net_ipv6_is_addr_mcast_group_by_value(struct in6_addr addr,
+					   const struct in6_addr *group)
+{
+	return net_ipv6_is_addr_mcast_group(&addr, group);
 }
 
 /**
@@ -959,7 +1224,7 @@ static inline void net_ipv6_addr_create_ll_allnodes_mcast(struct in6_addr *addr)
 /**
  *  @brief Create IPv6 address interface identifier
  *
- *  @param addr IPv6 address
+ *  @param addr Pointer to IPv6 address
  *  @param lladdr Link local address
  */
 static inline void net_ipv6_addr_create_iid(struct in6_addr *addr,
@@ -1017,6 +1282,9 @@ static inline void net_ipv6_addr_create_iid(struct in6_addr *addr,
 
 /**
  *  @brief Check if given address is based on link layer address
+ *
+ *  @param addr Pointer to IPv6 address
+ *  @param lladdr Link layer address
  *
  *  @return True if it is, False otherwise
  */
@@ -1076,6 +1344,21 @@ static inline bool net_ipv6_addr_based_on_ll(const struct in6_addr *addr,
 	}
 
 	return false;
+}
+
+/**
+ *  @brief Check if given address is based on link layer address
+ *
+ *  @param addr IPv6 address
+ *  @param lladdr Link layer address
+ *
+ *  @return True if it is, False otherwise
+ */
+static inline
+bool net_ipv6_addr_based_on_ll_by_value(struct in6_addr addr,
+					const struct net_linkaddr *lladdr)
+{
+	return net_ipv6_addr_based_on_ll(&addr, lladdr);
 }
 
 /**

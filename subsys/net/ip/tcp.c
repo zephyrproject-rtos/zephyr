@@ -2200,7 +2200,8 @@ NET_CONN_CB(tcp_synack_received)
 static void get_sockaddr_ptr(union net_ip_header *ip_hdr,
 			     struct net_tcp_hdr *tcp_hdr,
 			     sa_family_t family,
-			     struct sockaddr_ptr *addr)
+			     struct sockaddr_ptr *addr,
+			     struct sockaddr *local)
 {
 	(void)memset(addr, 0, sizeof(*addr));
 
@@ -2209,7 +2210,7 @@ static void get_sockaddr_ptr(union net_ip_header *ip_hdr,
 
 		addr4->sin_family = AF_INET;
 		addr4->sin_port = tcp_hdr->dst_port;
-		addr4->sin_addr = &ip_hdr->ipv4->dst;
+		addr4->sin_addr = &net_sin(local)->sin_addr;
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV6) && family == AF_INET6) {
@@ -2217,7 +2218,7 @@ static void get_sockaddr_ptr(union net_ip_header *ip_hdr,
 
 		addr6->sin6_family = AF_INET6;
 		addr6->sin6_port = tcp_hdr->dst_port;
-		addr6->sin6_addr = &ip_hdr->ipv6->dst;
+		addr6->sin6_addr = &net_sin6(local)->sin6_addr;
 	}
 }
 
@@ -2325,7 +2326,7 @@ NET_CONN_CB(tcp_syn_rcvd)
 
 		get_sockaddr_ptr(ip_hdr, tcp_hdr,
 				 net_context_get_family(context),
-				 &pkt_src_addr);
+				 &pkt_src_addr, &local_addr);
 		send_syn_ack(context, &pkt_src_addr, &remote_addr);
 		net_pkt_unref(pkt);
 		return NET_OK;

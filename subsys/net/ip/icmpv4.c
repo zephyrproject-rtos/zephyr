@@ -65,12 +65,14 @@ static enum net_verdict icmpv4_handle_echo_request(struct net_pkt *pkt,
 {
 	struct net_pkt *reply = NULL;
 	const struct in_addr *src;
+	struct in_addr dst;
 	s16_t payload_len;
 
 	/* If interface can not select src address based on dst addr
 	 * and src address is unspecified, drop the echo request.
 	 */
-	if (net_ipv4_is_addr_unspecified(&ip_hdr->src)) {
+	if (net_ipv4_is_addr_unspecified_by_value(
+		    UNALIGNED_GET(&ip_hdr->src))) {
 		NET_DBG("DROP: src addr is unspecified");
 		goto drop;
 	}
@@ -94,14 +96,17 @@ static enum net_verdict icmpv4_handle_echo_request(struct net_pkt *pkt,
 		goto drop;
 	}
 
-	if (net_ipv4_is_addr_mcast(&ip_hdr->dst)) {
-		src = net_if_ipv4_select_src_addr(net_pkt_iface(pkt),
-						  &ip_hdr->dst);
+	if (net_ipv4_is_addr_mcast_by_value(UNALIGNED_GET(&ip_hdr->dst))) {
+		src = net_if_ipv4_select_src_addr_by_value(net_pkt_iface(pkt),
+						  UNALIGNED_GET(&ip_hdr->dst));
 	} else {
-		src = &ip_hdr->dst;
+		net_ipaddr_copy(&dst, &ip_hdr->dst);
+
+		src = &dst;
 	}
 
-	if (net_ipv4_create(reply, src, &ip_hdr->src) ||
+	if (net_ipv4_create_by_value(reply, *src,
+				     UNALIGNED_GET(&ip_hdr->src)) ||
 	    icmpv4_create(reply, NET_ICMPV4_ECHO_REPLY, 0) ||
 	    net_pkt_copy(reply, pkt, payload_len)) {
 		NET_DBG("DROP: wrong buffer");
@@ -253,7 +258,9 @@ int net_icmpv4_send_error(struct net_pkt *orig, u8_t type, u8_t code)
 		goto drop_no_pkt;
 	}
 
-	if (net_ipv4_create(pkt, &ip_hdr->dst, &ip_hdr->src) ||
+	if (net_ipv4_create_by_value(pkt,
+				     UNALIGNED_GET(&ip_hdr->dst),
+				     UNALIGNED_GET(&ip_hdr->src)) ||
 	    icmpv4_create(pkt, type, code) ||
 	    net_pkt_memset(pkt, 0, NET_ICMPV4_UNUSED_LEN) ||
 	    net_pkt_copy(pkt, orig, copy_len)) {
@@ -315,7 +322,8 @@ enum net_verdict net_icmpv4_input(struct net_pkt *pkt,
 		goto drop;
 	}
 
-	if (net_ipv4_is_addr_bcast(net_pkt_iface(pkt), &ip_hdr->dst) &&
+	if (net_ipv4_is_addr_bcast_by_value(net_pkt_iface(pkt),
+				   UNALIGNED_GET(&ip_hdr->dst)) &&
 	    (!IS_ENABLED(CONFIG_NET_ICMPV4_ACCEPT_BROADCAST) ||
 	     icmp_hdr->type != NET_ICMPV4_ECHO_REQUEST)) {
 		NET_DBG("DROP: broadcast pkt");

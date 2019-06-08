@@ -75,9 +75,9 @@ static int check_used_port(enum net_ip_protocol ip_proto,
 		    local_addr->sa_family == AF_INET6) {
 			if (net_ipv6_addr_cmp(
 				    net_sin6_ptr(&contexts[i].local)->
-							     sin6_addr,
+							   sin6_addr,
 				    &((struct sockaddr_in6 *)
-				      local_addr)->sin6_addr)) {
+				     local_addr)->sin6_addr)) {
 				return -EEXIST;
 			}
 		} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
@@ -818,8 +818,8 @@ int net_context_create_ipv4_new(struct net_context *context,
 
 	if (net_ipv4_is_addr_unspecified(src)
 	    || net_ipv4_is_addr_mcast(src)) {
-		src = net_if_ipv4_select_src_addr(net_pkt_iface(pkt),
-						  (struct in_addr *)dst);
+		src = net_if_ipv4_select_src_addr(net_pkt_iface(pkt), dst);
+
 		/* If src address is still unspecified, do not create pkt */
 		if (net_ipv4_is_addr_unspecified(src)) {
 			NET_DBG("DROP: src addr is unspecified");

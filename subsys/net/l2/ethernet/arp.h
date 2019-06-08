@@ -26,16 +26,16 @@ extern "C" {
 #define NET_ARP_HDR(pkt) ((struct net_arp_hdr *)net_pkt_data(pkt))
 
 struct net_arp_hdr {
-	u16_t hwtype;		/* HTYPE */
-	u16_t protocol;		/* PTYPE */
-	u8_t hwlen;			/* HLEN */
-	u8_t protolen;		/* PLEN */
+	u16_t hwtype;                   /* HTYPE */
+	u16_t protocol;                 /* PTYPE */
+	u8_t hwlen;                     /* HLEN */
+	u8_t protolen;                  /* PLEN */
 	u16_t opcode;
-	struct net_eth_addr src_hwaddr;	/* SHA */
-	struct in_addr src_ipaddr;	/* SPA */
-	struct net_eth_addr dst_hwaddr;	/* THA */
-	struct in_addr dst_ipaddr;	/* TPA */
-}  __packed;
+	struct net_eth_addr src_hwaddr; /* SHA */
+	struct in_addr src_ipaddr;      /* SPA */
+	struct net_eth_addr dst_hwaddr; /* THA */
+	struct in_addr dst_ipaddr;      /* TPA */
+} __packed;
 
 #define NET_ARP_HTYPE_ETH 1
 #define NET_ARP_IPV4_PTYPE_SIZE 4
@@ -44,7 +44,7 @@ struct net_arp_hdr {
 #define NET_ARP_REPLY   2
 
 struct net_pkt *net_arp_prepare(struct net_pkt *pkt,
-				struct in_addr *request_ip,
+				struct in_addr request_ip,
 				struct in_addr *current_ip);
 enum net_verdict net_arp_input(struct net_pkt *pkt,
 			       struct net_eth_hdr *eth_hdr);
@@ -72,7 +72,7 @@ void net_arp_init(void);
  */
 
 #else /* CONFIG_NET_ARP */
-#define net_arp_prepare(_kt, _u1, _u2) _kt
+#define net_arp_prepare(pkt, a1, a2) pkt
 #define net_arp_input(...) NET_OK
 #define net_arp_clear_cache(...)
 #define net_arp_init(...)

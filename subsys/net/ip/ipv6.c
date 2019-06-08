@@ -159,7 +159,7 @@ static inline bool ipv6_drop_on_unknown_option(struct net_pkt *pkt,
 	case 0x40:
 		break;
 	case 0xc0:
-		if (net_ipv6_is_addr_mcast(&hdr->dst)) {
+		if (net_ipv6_is_addr_mcast_by_value(UNALIGNED_GET(&hdr->dst))) {
 			break;
 		}
 
@@ -266,31 +266,40 @@ static void ipv6_no_route_info(struct net_pkt *pkt,
 		log_strdup(net_sprint_ipv6_addr(dst)));
 }
 
+static void ipv6_no_route_info_by_value(struct net_pkt *pkt,
+					struct in6_addr src,
+					struct in6_addr dst)
+{
+	ipv6_no_route_info(pkt, &src, &dst);
+}
+
 #if defined(CONFIG_NET_ROUTE)
 static enum net_verdict ipv6_route_packet(struct net_pkt *pkt,
 					  struct net_ipv6_hdr *hdr)
 {
 	struct net_route_entry *route;
-	struct in6_addr *nexthop;
+	struct in6_addr *nexthop, dst, src;
 	bool found;
+
+	net_ipaddr_copy(&dst, &hdr->dst);
+	net_ipaddr_copy(&src, &hdr->src);
 
 	/* Check if the packet can be routed */
 	if (IS_ENABLED(CONFIG_NET_ROUTING)) {
-		found = net_route_get_info(NULL, &hdr->dst, &route,
-					   &nexthop);
+		found = net_route_get_info(NULL, &dst, &route, &nexthop);
 	} else {
-		found = net_route_get_info(net_pkt_iface(pkt),
-					   &hdr->dst, &route, &nexthop);
+		found = net_route_get_info(net_pkt_iface(pkt), &dst, &route,
+					   &nexthop);
 	}
 
 	if (found) {
 		int ret;
 
 		if (IS_ENABLED(CONFIG_NET_ROUTING) &&
-		    (net_ipv6_is_ll_addr(&hdr->src) ||
-		     net_ipv6_is_ll_addr(&hdr->dst))) {
+		    (net_ipv6_is_ll_addr(&src) ||
+		     net_ipv6_is_ll_addr(&dst))) {
 			/* RFC 4291 ch 2.5.6 */
-			ipv6_no_route_info(pkt, &hdr->src, &hdr->dst);
+			ipv6_no_route_info(pkt, &src, &dst);
 			goto drop;
 		}
 
@@ -313,7 +322,7 @@ static enum net_verdict ipv6_route_packet(struct net_pkt *pkt,
 				pkt, net_pkt_orig_iface(pkt),
 				net_pkt_iface(pkt));
 
-			add_route(net_pkt_orig_iface(pkt), &hdr->src, 128);
+			add_route(net_pkt_orig_iface(pkt), &src, 128);
 		}
 
 		ret = net_route_packet(pkt, nexthop);
@@ -327,7 +336,7 @@ static enum net_verdict ipv6_route_packet(struct net_pkt *pkt,
 		}
 	} else {
 		NET_DBG("No route to %s pkt %p dropped",
-			log_strdup(net_sprint_ipv6_addr(&hdr->dst)), pkt);
+			log_strdup(net_sprint_ipv6_addr(&dst)), pkt);
 	}
 
 drop:
@@ -370,7 +379,7 @@ enum net_verdict net_ipv6_input(struct net_pkt *pkt, bool is_loopback)
 		goto drop;
 	}
 
-	pkt_len = ntohs(hdr->len) + sizeof(struct net_ipv6_hdr);
+	pkt_len = ntohs(UNALIGNED_GET(&hdr->len)) + sizeof(struct net_ipv6_hdr);
 	if (real_len < pkt_len) {
 		NET_DBG("DROP: pkt len per hdr %d != pkt real len %d",
 			pkt_len, real_len);
@@ -383,29 +392,36 @@ enum net_verdict net_ipv6_input(struct net_pkt *pkt, bool is_loopback)
 		log_strdup(net_sprint_ipv6_addr(&hdr->src)),
 		log_strdup(net_sprint_ipv6_addr(&hdr->dst)));
 
-	if (net_ipv6_is_addr_unspecified(&hdr->src)) {
+	if (net_ipv6_is_addr_unspecified_by_value(UNALIGNED_GET(&hdr->src))) {
 		NET_DBG("DROP: src addr is %s", "unspecified");
 		goto drop;
 	}
 
-	if (net_ipv6_is_addr_mcast(&hdr->src) ||
-	    net_ipv6_is_addr_mcast_scope(&hdr->dst, 0)) {
+	if (net_ipv6_is_addr_mcast_by_value(UNALIGNED_GET(&hdr->src)) ||
+	    net_ipv6_is_addr_mcast_scope_by_value(UNALIGNED_GET(&hdr->dst),
+						  0)) {
 		NET_DBG("DROP: multicast packet");
 		goto drop;
 	}
 
 	if (!is_loopback) {
-		if (net_ipv6_is_addr_loopback(&hdr->dst) ||
-		    net_ipv6_is_addr_loopback(&hdr->src)) {
+		if (net_ipv6_is_addr_loopback_by_value(
+			    UNALIGNED_GET(&hdr->dst)) ||
+		    net_ipv6_is_addr_loopback_by_value(
+			    UNALIGNED_GET(&hdr->src))) {
 			NET_DBG("DROP: ::1 packet");
 			goto drop;
 		}
 
-		if (net_ipv6_is_addr_mcast_iface(&hdr->dst) ||
-		    (net_ipv6_is_addr_mcast_group(
-			    &hdr->dst, net_ipv6_unspecified_address()) &&
-		     (net_ipv6_is_addr_mcast_site(&hdr->dst) ||
-		      net_ipv6_is_addr_mcast_org(&hdr->dst)))) {
+		if (net_ipv6_is_addr_mcast_iface_by_value(
+			    UNALIGNED_GET(&hdr->dst)) ||
+		    (net_ipv6_is_addr_mcast_group_by_value(
+			    UNALIGNED_GET(&hdr->dst),
+			    net_ipv6_unspecified_address()) &&
+		     (net_ipv6_is_addr_mcast_site_by_value(
+			     UNALIGNED_GET(&hdr->dst)) ||
+		      net_ipv6_is_addr_mcast_org_by_value(
+			      UNALIGNED_GET(&hdr->dst))))) {
 			NET_DBG("DROP: invalid scope multicast packet");
 			goto drop;
 		}
@@ -417,9 +433,9 @@ enum net_verdict net_ipv6_input(struct net_pkt *pkt, bool is_loopback)
 	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
 	net_pkt_set_ipv6_hop_limit(pkt, NET_IPV6_HDR(pkt)->hop_limit);
 
-	if (!net_ipv6_is_my_addr(&hdr->dst) &&
-	    !net_ipv6_is_my_maddr(&hdr->dst) &&
-	    !net_ipv6_is_addr_mcast(&hdr->dst)) {
+	if (!net_ipv6_is_my_addr_by_value(UNALIGNED_GET(&hdr->dst)) &&
+	    !net_ipv6_is_my_maddr_by_value(UNALIGNED_GET(&hdr->dst)) &&
+	    !net_ipv6_is_addr_mcast_by_value(UNALIGNED_GET(&hdr->dst))) {
 		if (ipv6_route_packet(pkt, hdr) == NET_OK) {
 			return NET_OK;
 		}
@@ -432,11 +448,13 @@ enum net_verdict net_ipv6_input(struct net_pkt *pkt, bool is_loopback)
 	 * boundary, then drop the packet. RFC 4291 ch 2.5.6
 	 */
 	if (IS_ENABLED(CONFIG_NET_ROUTING) &&
-	    net_ipv6_is_ll_addr(&hdr->src) &&
-	    !net_ipv6_is_addr_mcast(&hdr->dst) &&
-	    !net_if_ipv6_addr_lookup_by_iface(net_pkt_iface(pkt),
-					      &hdr->dst)) {
-		ipv6_no_route_info(pkt, &hdr->src, &hdr->dst);
+	    net_ipv6_is_ll_addr_by_value(UNALIGNED_GET(&hdr->src)) &&
+	    !net_ipv6_is_addr_mcast_by_value(UNALIGNED_GET(&hdr->dst)) &&
+	    !net_if_ipv6_addr_lookup_by_iface_by_value(net_pkt_iface(pkt),
+						   UNALIGNED_GET(&hdr->dst))) {
+		ipv6_no_route_info_by_value(pkt,
+					    UNALIGNED_GET(&hdr->src),
+					    UNALIGNED_GET(&hdr->dst));
 		goto drop;
 	}
 

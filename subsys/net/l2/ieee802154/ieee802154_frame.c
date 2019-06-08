@@ -207,23 +207,23 @@ validate_beacon(struct ieee802154_mpdu *mpdu, u8_t *buf, u8_t length)
 }
 
 static inline bool
-validate_mac_command_cfi_to_mhr(struct ieee802154_mhr *mhr,
+validate_mac_command_cfi_to_mhr(struct ieee802154_mhr mhr,
 				u8_t ar, u8_t comp,
 				u8_t src, bool src_pan_brdcst_chk,
 				u8_t dst, bool dst_brdcst_chk)
 {
-	if (mhr->fs->fc.ar != ar || mhr->fs->fc.pan_id_comp != comp) {
+	if (mhr.fs->fc.ar != ar || mhr.fs->fc.pan_id_comp != comp) {
 		return false;
 	}
 
-	if ((mhr->fs->fc.src_addr_mode != src) ||
-	    (mhr->fs->fc.dst_addr_mode != dst)) {
+	if ((mhr.fs->fc.src_addr_mode != src) ||
+	    (mhr.fs->fc.dst_addr_mode != dst)) {
 		return false;
 	}
 
 	/* This should be set only when comp == 0 */
 	if (src_pan_brdcst_chk) {
-		if (mhr->src_addr->plain.pan_id !=
+		if (mhr.src_addr->plain.pan_id !=
 		    IEEE802154_BROADCAST_PAN_ID) {
 			return false;
 		}
@@ -231,7 +231,7 @@ validate_mac_command_cfi_to_mhr(struct ieee802154_mhr *mhr,
 
 	/* This should be set only when comp == 0 */
 	if (dst_brdcst_chk) {
-		if (mhr->dst_addr->plain.addr.short_addr !=
+		if (mhr.dst_addr->plain.addr.short_addr !=
 		    IEEE802154_BROADCAST_ADDRESS) {
 			return false;
 		}
@@ -317,7 +317,8 @@ validate_mac_command(struct ieee802154_mpdu *mpdu, u8_t *buf, u8_t length)
 		return false;
 	}
 
-	if (!validate_mac_command_cfi_to_mhr(&mpdu->mhr, ar, comp,
+	if (!validate_mac_command_cfi_to_mhr(UNALIGNED_GET(&mpdu->mhr), ar,
+					     comp,
 					     src, src_pan_brdcst_chk,
 					     dst, dst_brdcst_chk)) {
 		return false;
@@ -411,7 +412,7 @@ bool ieee802154_validate_frame(u8_t *buf, u8_t length,
 }
 
 u8_t ieee802154_compute_header_size(struct net_if *iface,
-				    struct in6_addr *dst)
+				    struct in6_addr dst)
 {
 	u8_t hdr_len = sizeof(struct ieee802154_fcf_seq);
 #ifdef CONFIG_NET_L2_IEEE802154_SECURITY
@@ -419,10 +420,8 @@ u8_t ieee802154_compute_header_size(struct net_if *iface,
 		&((struct ieee802154_context *)net_if_l2_data(iface))->sec_ctx;
 #endif
 
-	/** if dst is NULL, we'll consider it as a brodcast header */
-	if (!dst ||
-	    net_ipv6_is_addr_mcast(dst) ||
-	    net_ipv6_is_addr_unspecified(dst)) {
+	if (net_ipv6_is_addr_mcast(&dst) ||
+	    net_ipv6_is_addr_unspecified(&dst)) {
 		NET_DBG("Broadcast destination");
 		/* 4 dst pan/addr + 8 src addr */
 		hdr_len += IEEE802154_PAN_ID_LENGTH +
@@ -435,7 +434,7 @@ u8_t ieee802154_compute_header_size(struct net_if *iface,
 	} else {
 		struct net_nbr *nbr;
 
-		nbr = net_ipv6_nbr_lookup(iface, dst);
+		nbr = net_ipv6_nbr_lookup(iface, &dst);
 		if (nbr) {
 			/* ToDo: handle short addresses */
 			/* dst pan/addr + src addr */

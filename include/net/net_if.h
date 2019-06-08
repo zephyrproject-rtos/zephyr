@@ -845,7 +845,7 @@ int net_if_config_ipv6_put(struct net_if *iface);
 /**
  * @brief Check if this IPv6 address belongs to one of the interfaces.
  *
- * @param addr IPv6 address
+ * @param addr Pointer to IPv6 address
  * @param iface Pointer to interface is returned
  *
  * @return Pointer to interface address, NULL if not found.
@@ -854,6 +854,33 @@ struct net_if_addr *net_if_ipv6_addr_lookup(const struct in6_addr *addr,
 					    struct net_if **iface);
 
 /**
+ * @brief Check if this IPv6 address belongs to one of the interfaces.
+ *
+ * @param addr IPv6 address
+ * @param iface Pointer to interface is returned
+ *
+ * @return Pointer to interface address, NULL if not found.
+ */
+static inline
+struct net_if_addr *net_if_ipv6_addr_lookup_by_value(
+	const struct in6_addr addr,
+	struct net_if **iface)
+{
+	return net_if_ipv6_addr_lookup(&addr, iface);
+}
+
+/**
+ * @brief Check if this IPv6 address belongs to this specific interfaces.
+ *
+ * @param iface Network interface
+ * @param addr Pointer to IPv6 address
+ *
+ * @return Pointer to interface address, NULL if not found.
+ */
+struct net_if_addr *net_if_ipv6_addr_lookup_by_iface(struct net_if *iface,
+						     struct in6_addr *addr);
+
+/*
  * @brief Check if this IPv6 address belongs to this specific interfaces.
  *
  * @param iface Network interface
@@ -861,8 +888,12 @@ struct net_if_addr *net_if_ipv6_addr_lookup(const struct in6_addr *addr,
  *
  * @return Pointer to interface address, NULL if not found.
  */
-struct net_if_addr *net_if_ipv6_addr_lookup_by_iface(struct net_if *iface,
-						     struct in6_addr *addr);
+static inline struct net_if_addr *
+net_if_ipv6_addr_lookup_by_iface_by_value(struct net_if *iface,
+					  struct in6_addr addr)
+{
+	return net_if_ipv6_addr_lookup_by_iface(iface, &addr);
+}
 
 /**
  * @brief Check if this IPv6 address belongs to one of the interface indices.
@@ -1154,7 +1185,7 @@ void net_if_ipv6_prefix_unset_timer(struct net_if_ipv6_prefix *prefix);
  *
  * @param iface Network interface. This is returned to the caller.
  * The iface can be NULL in which case we check all the interfaces.
- * @param addr IPv6 address
+ * @param addr Pointer to IPv6 address
  *
  * @return True if address is part of our subnet, false otherwise
  */
@@ -1380,13 +1411,31 @@ static inline u32_t net_if_ipv6_get_retrans_timer(struct net_if *iface)
  *
  * @param iface Interface that was used when packet was received.
  * If the interface is not known, then NULL can be given.
- * @param dst IPv6 destination address
+ * @param dst Pointer to IPv6 destination address
  *
  * @return Pointer to IPv6 address to use, NULL if no IPv6 address
  * could be found.
  */
 const struct in6_addr *net_if_ipv6_select_src_addr(struct net_if *iface,
 						   const struct in6_addr *dst);
+
+/**
+ * @brief Get a IPv6 source address that should be used when sending
+ * network data to destination.
+ *
+ * @param iface Interface that was used when packet was received.
+ * If the interface is not known, then NULL can be given.
+ * @param dst IPv6 destination address
+ *
+ * @return Pointer to IPv6 address to use, NULL if no IPv6 address
+ * could be found.
+ */
+static inline const
+struct in6_addr *net_if_ipv6_select_src_addr_by_value(struct net_if *iface,
+						      struct in6_addr dst)
+{
+	return net_if_ipv6_select_src_addr(iface, &dst);
+}
 
 /**
  * @brief Get a network interface that should be used when sending
@@ -1491,13 +1540,28 @@ static inline u8_t net_if_ipv4_get_ttl(struct net_if *iface)
 /**
  * @brief Check if this IPv4 address belongs to one of the interfaces.
  *
- * @param addr IPv4 address
+ * @param addr Pointer to IPv4 address
  * @param iface Interface is returned
  *
  * @return Pointer to interface address, NULL if not found.
  */
 struct net_if_addr *net_if_ipv4_addr_lookup(const struct in_addr *addr,
 					    struct net_if **iface);
+
+/**
+ * @brief Check if this IPv4 address belongs to one of the interfaces.
+ *
+ * @param addr IPv4 address
+ * @param iface Interface is returned
+ *
+ * @return Pointer to interface address, NULL if not found.
+ */
+static inline
+struct net_if_addr *net_if_ipv4_addr_lookup_by_value(const struct in_addr addr,
+						     struct net_if **iface)
+{
+	return net_if_ipv4_addr_lookup(&addr, iface);
+}
 
 /**
  * @brief Add a IPv4 address to an interface
@@ -1702,13 +1766,31 @@ struct net_if *net_if_ipv4_select_src_iface(const struct in_addr *dst);
  *
  * @param iface Interface to use when sending the packet.
  * If the interface is not known, then NULL can be given.
- * @param dst IPv4 destination address
+ * @param dst Pointer to IPv4 destination address
  *
  * @return Pointer to IPv4 address to use, NULL if no IPv4 address
  * could be found.
  */
 const struct in_addr *net_if_ipv4_select_src_addr(struct net_if *iface,
 						  const struct in_addr *dst);
+
+/**
+ * @brief Get a IPv4 source address that should be used when sending
+ * network data to destination.
+ *
+ * @param iface Interface to use when sending the packet.
+ * If the interface is not known, then NULL can be given.
+ * @param dst IPv4 destination address
+ *
+ * @return Pointer to IPv4 address to use, NULL if no IPv4 address
+ * could be found.
+ */
+static inline
+const struct in_addr *net_if_ipv4_select_src_addr_by_value(struct net_if *iface,
+							   struct in_addr dst)
+{
+	return net_if_ipv4_select_src_addr(iface, &dst);
+}
 
 /**
  * @brief Get a IPv4 link local address in a given state.

@@ -46,7 +46,7 @@ static struct net_pkt *ipv4_autoconf_prepare_arp(struct net_if *iface)
 	net_pkt_set_family(pkt, AF_INET);
 	net_pkt_set_ipv4_auto(pkt, true);
 
-	return net_arp_prepare(pkt, &cfg->ipv4auto.requested_ip,
+	return net_arp_prepare(pkt, cfg->ipv4auto.requested_ip,
 			       &cfg->ipv4auto.current_ip);
 }
 
@@ -111,14 +111,14 @@ enum net_verdict net_ipv4_autoconf_input(struct net_if *iface,
 
 	arp_hdr = NET_ARP_HDR(pkt);
 
-	if (!net_ipv4_addr_cmp(&arp_hdr->dst_ipaddr,
-			       &cfg->ipv4auto.requested_ip)) {
+	if (!net_ipv4_addr_cmp_by_value(UNALIGNED_GET(&arp_hdr->dst_ipaddr),
+					cfg->ipv4auto.requested_ip)) {
 		/* No conflict */
 		return NET_CONTINUE;
 	}
 
-	if (!net_ipv4_addr_cmp(&arp_hdr->src_ipaddr,
-			       &cfg->ipv4auto.requested_ip)) {
+	if (!net_ipv4_addr_cmp_by_value(UNALIGNED_GET(&arp_hdr->src_ipaddr),
+					cfg->ipv4auto.requested_ip)) {
 		/* No need to defend */
 		return NET_CONTINUE;
 	}

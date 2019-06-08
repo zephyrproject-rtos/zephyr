@@ -207,7 +207,8 @@ static void arp_request_timeout(struct k_work *work)
 }
 
 static inline struct in_addr *if_get_addr(struct net_if *iface,
-					  struct in_addr *addr)
+					  struct in_addr addr,
+					  bool is_addr_set)
 {
 	struct net_if_ipv4 *ipv4 = iface->config.ip.ipv4;
 	int i;
@@ -220,8 +221,8 @@ static inline struct in_addr *if_get_addr(struct net_if *iface,
 		if (ipv4->unicast[i].is_used &&
 		    ipv4->unicast[i].address.family == AF_INET &&
 		    ipv4->unicast[i].addr_state == NET_ADDR_PREFERRED &&
-		    (!addr ||
-		     net_ipv4_addr_cmp(addr,
+		    (!is_addr_set ||
+		     net_ipv4_addr_cmp(&addr,
 				       &ipv4->unicast[i].address.in_addr))) {
 			return &ipv4->unicast[i].address.in_addr;
 		}
@@ -285,11 +286,11 @@ static inline struct net_pkt *arp_prepare(struct net_if *iface,
 	net_pkt_lladdr_dst(pkt)->addr = (u8_t *)net_eth_broadcast_addr();
 	net_pkt_lladdr_dst(pkt)->len = sizeof(struct net_eth_addr);
 
-	hdr->hwtype = htons(NET_ARP_HTYPE_ETH);
-	hdr->protocol = htons(NET_ETH_PTYPE_IP);
-	hdr->hwlen = sizeof(struct net_eth_addr);
+	UNALIGNED_PUT(htons(NET_ARP_HTYPE_ETH), &hdr->hwtype);
+	UNALIGNED_PUT(htons(NET_ETH_PTYPE_IP), &hdr->protocol);
+	UNALIGNED_PUT(sizeof(struct net_eth_addr), &hdr->hwlen);
+	UNALIGNED_PUT(htons(NET_ARP_REQUEST), &hdr->opcode);
 	hdr->protolen = sizeof(struct in_addr);
-	hdr->opcode = htons(NET_ARP_REQUEST);
 
 	(void)memset(&hdr->dst_hwaddr.addr, 0x00, sizeof(struct net_eth_addr));
 
@@ -301,7 +302,14 @@ static inline struct net_pkt *arp_prepare(struct net_if *iface,
 	if (!entry || net_pkt_ipv4_auto(pkt)) {
 		my_addr = current_ip;
 	} else {
-		my_addr = if_get_addr(entry->iface, current_ip);
+		struct in_addr curr_ip;
+
+		if (current_ip) {
+			curr_ip = *current_ip;
+		}
+
+		my_addr = if_get_addr(entry->iface, curr_ip,
+				      current_ip ? true : false);
 	}
 
 	if (my_addr) {
@@ -314,7 +322,7 @@ static inline struct net_pkt *arp_prepare(struct net_if *iface,
 }
 
 struct net_pkt *net_arp_prepare(struct net_pkt *pkt,
-				struct in_addr *request_ip,
+				struct in_addr request_ip,
 				struct in_addr *current_ip)
 {
 	struct arp_entry *entry;
@@ -328,11 +336,12 @@ struct net_pkt *net_arp_prepare(struct net_pkt *pkt,
 	 * the gateway address.
 	 */
 	if (!current_ip &&
-	    !net_if_ipv4_addr_mask_cmp(net_pkt_iface(pkt), request_ip)) {
+	    !net_if_ipv4_addr_mask_cmp(net_pkt_iface(pkt), &request_ip)) {
 		struct net_if_ipv4 *ipv4 = net_pkt_iface(pkt)->config.ip.ipv4;
 
 		if (ipv4) {
 			addr = &ipv4->gw;
+
 			if (net_ipv4_is_addr_unspecified(addr)) {
 				NET_ERR("Gateway not set for iface %p",
 					net_pkt_iface(pkt));
@@ -340,10 +349,10 @@ struct net_pkt *net_arp_prepare(struct net_pkt *pkt,
 				return NULL;
 			}
 		} else {
-			addr = request_ip;
+			addr = &request_ip;
 		}
 	} else {
-		addr = request_ip;
+		addr = &request_ip;
 	}
 
 	/* If the destination address is already known, we do not need
@@ -417,7 +426,7 @@ static void arp_gratuitous(struct net_if *iface,
 }
 
 static void arp_update(struct net_if *iface,
-		       struct in_addr *src,
+		       struct in_addr src,
 		       struct net_eth_addr *hwaddr,
 		       bool gratuitous,
 		       bool force)
@@ -425,19 +434,19 @@ static void arp_update(struct net_if *iface,
 	struct arp_entry *entry;
 	struct net_pkt *pkt;
 
-	NET_DBG("src %s", log_strdup(net_sprint_ipv4_addr(src)));
+	NET_DBG("src %s", log_strdup(net_sprint_ipv4_addr(&src)));
 
-	entry = arp_entry_get_pending(iface, src);
+	entry = arp_entry_get_pending(iface, &src);
 	if (!entry) {
 		if (IS_ENABLED(CONFIG_NET_ARP_GRATUITOUS) && gratuitous) {
-			arp_gratuitous(iface, src, hwaddr);
+			arp_gratuitous(iface, &src, hwaddr);
 		}
 
 		if (force) {
 			sys_snode_t *prev = NULL;
 			struct arp_entry *entry;
 
-			entry = arp_entry_find(&arp_table, iface, src, &prev);
+			entry = arp_entry_find(&arp_table, iface, &src, &prev);
 			if (entry) {
 				memcpy(&entry->eth, hwaddr,
 				       sizeof(struct net_eth_addr));
@@ -454,9 +463,11 @@ static void arp_update(struct net_if *iface,
 				if (entry) {
 					entry->req_start = k_uptime_get_32();
 					entry->iface = iface;
-					net_ipaddr_copy(&entry->ip, src);
-					memcpy(&entry->eth, hwaddr, sizeof(entry->eth));
-					sys_slist_prepend(&arp_table, &entry->node);
+					net_ipaddr_copy(&entry->ip, &src);
+					memcpy(&entry->eth, hwaddr,
+					       sizeof(entry->eth));
+					sys_slist_prepend(&arp_table,
+							  &entry->node);
 				}
 			}
 		}
@@ -505,11 +516,11 @@ static inline struct net_pkt *arp_prepare_reply(struct net_if *iface,
 
 	net_pkt_set_vlan_tag(pkt, net_pkt_vlan_tag(req));
 
-	hdr->hwtype = htons(NET_ARP_HTYPE_ETH);
-	hdr->protocol = htons(NET_ETH_PTYPE_IP);
-	hdr->hwlen = sizeof(struct net_eth_addr);
+	UNALIGNED_PUT(htons(NET_ARP_HTYPE_ETH), &hdr->hwtype);
+	UNALIGNED_PUT(htons(NET_ETH_PTYPE_IP), &hdr->protocol);
+	UNALIGNED_PUT(sizeof(struct net_eth_addr), &hdr->hwlen);
+	UNALIGNED_PUT(htons(NET_ARP_REPLY), &hdr->opcode);
 	hdr->protolen = sizeof(struct in_addr);
-	hdr->opcode = htons(NET_ARP_REPLY);
 
 	memcpy(&hdr->dst_hwaddr.addr, &dst_addr->addr,
 	       sizeof(struct net_eth_addr));
@@ -530,11 +541,12 @@ static inline struct net_pkt *arp_prepare_reply(struct net_if *iface,
 
 static bool arp_hdr_check(struct net_arp_hdr *arp_hdr)
 {
-	if (ntohs(arp_hdr->hwtype) != NET_ARP_HTYPE_ETH ||
-	    ntohs(arp_hdr->protocol) != NET_ETH_PTYPE_IP ||
-	    arp_hdr->hwlen != sizeof(struct net_eth_addr) ||
+	if (ntohs(UNALIGNED_GET(&arp_hdr->hwtype)) != NET_ARP_HTYPE_ETH ||
+	    ntohs(UNALIGNED_GET(&arp_hdr->protocol)) != NET_ETH_PTYPE_IP ||
+	    UNALIGNED_GET(&arp_hdr->hwlen) != sizeof(struct net_eth_addr) ||
 	    arp_hdr->protolen != NET_ARP_IPV4_PTYPE_SIZE ||
-	    net_ipv4_is_addr_loopback(&arp_hdr->src_ipaddr)) {
+	    net_ipv4_is_addr_loopback_by_value(
+		    UNALIGNED_GET(&arp_hdr->src_ipaddr))) {
 		NET_DBG("DROP: Invalid ARP header");
 		return false;
 	}
@@ -551,7 +563,7 @@ enum net_verdict net_arp_input(struct net_pkt *pkt,
 	struct in_addr *addr;
 
 	if (net_pkt_get_len(pkt) < (sizeof(struct net_arp_hdr) -
-				    (net_pkt_ip_data(pkt) - (u8_t *)eth_hdr))) {
+				   (net_pkt_ip_data(pkt) - (u8_t *)eth_hdr))) {
 		NET_DBG("Invalid ARP header (len %zu, min %zu bytes) %p",
 			net_pkt_get_len(pkt), sizeof(struct net_arp_hdr) -
 			(net_pkt_ip_data(pkt) - (u8_t *)eth_hdr), pkt);
@@ -563,7 +575,7 @@ enum net_verdict net_arp_input(struct net_pkt *pkt,
 		return NET_DROP;
 	}
 
-	switch (ntohs(arp_hdr->opcode)) {
+	switch (ntohs(UNALIGNED_GET(&arp_hdr->opcode))) {
 	case NET_ARP_REQUEST:
 		/* If ARP request sender hw address is our address,
 		 * we must drop the packet.
@@ -587,7 +599,7 @@ enum net_verdict net_arp_input(struct net_pkt *pkt,
 				 * then update it here.
 				 */
 				arp_update(net_pkt_iface(pkt),
-					   &arp_hdr->src_ipaddr,
+					   UNALIGNED_GET(&arp_hdr->src_ipaddr),
 					   &arp_hdr->src_hwaddr,
 					   true, false);
 				break;
@@ -599,13 +611,15 @@ enum net_verdict net_arp_input(struct net_pkt *pkt,
 		 */
 		if (memcmp(&eth_hdr->dst, net_eth_broadcast_addr(),
 			   sizeof(struct net_eth_addr)) == 0 &&
-		    net_ipv4_is_addr_mcast(&arp_hdr->src_ipaddr)) {
+		    net_ipv4_is_addr_mcast_by_value(
+			    UNALIGNED_GET(&arp_hdr->src_ipaddr))) {
 			NET_DBG("DROP: eth addr is bcast, src addr is mcast");
 			return NET_DROP;
 		}
 
 		/* Someone wants to know our ll address */
-		addr = if_get_addr(net_pkt_iface(pkt), &arp_hdr->dst_ipaddr);
+		addr = if_get_addr(net_pkt_iface(pkt),
+				   UNALIGNED_GET(&arp_hdr->dst_ipaddr), true);
 		if (!addr) {
 			/* Not for us so drop the packet silently */
 			return NET_DROP;
@@ -632,7 +646,7 @@ enum net_verdict net_arp_input(struct net_pkt *pkt,
 						 arp_hdr->hwlen)));
 
 			arp_update(net_pkt_iface(pkt),
-				   &arp_hdr->src_ipaddr,
+				   UNALIGNED_GET(&arp_hdr->src_ipaddr),
 				   &arp_hdr->src_hwaddr,
 				   false, true);
 
@@ -652,9 +666,10 @@ enum net_verdict net_arp_input(struct net_pkt *pkt,
 		break;
 
 	case NET_ARP_REPLY:
-		if (net_ipv4_is_my_addr(&arp_hdr->dst_ipaddr)) {
+		if (net_ipv4_is_my_addr_by_value(
+			    UNALIGNED_GET(&arp_hdr->dst_ipaddr))) {
 			arp_update(net_pkt_iface(pkt),
-				   &arp_hdr->src_ipaddr,
+				   UNALIGNED_GET(&arp_hdr->src_ipaddr),
 				   &arp_hdr->src_hwaddr,
 				   false, false);
 		}

@@ -155,9 +155,10 @@ enum net_verdict ethernet_check_ipv4_bcast_addr(struct net_pkt *pkt,
 						struct net_eth_hdr *hdr)
 {
 	if (net_eth_is_addr_broadcast(&hdr->dst) &&
-	    !(net_ipv4_is_addr_mcast(&NET_IPV4_HDR(pkt)->dst) ||
-	      net_ipv4_is_addr_bcast(net_pkt_iface(pkt),
-				     &NET_IPV4_HDR(pkt)->dst))) {
+	    !(net_ipv4_is_addr_mcast_by_value(
+			UNALIGNED_GET(&NET_IPV4_HDR(pkt)->dst)) ||
+	      net_ipv4_is_addr_bcast_by_value(net_pkt_iface(pkt),
+			UNALIGNED_GET(&NET_IPV4_HDR(pkt)->dst)))) {
 		return NET_DROP;
 	}
 
@@ -298,8 +299,8 @@ drop:
 #ifdef CONFIG_NET_IPV4
 static inline bool ethernet_ipv4_dst_is_broadcast_or_mcast(struct net_pkt *pkt)
 {
-	if (net_ipv4_is_addr_bcast(net_pkt_iface(pkt),
-				   &NET_IPV4_HDR(pkt)->dst) ||
+	if (net_ipv4_is_addr_bcast_by_value(net_pkt_iface(pkt),
+				UNALIGNED_GET(&NET_IPV4_HDR(pkt)->dst)) ||
 	    NET_IPV4_HDR(pkt)->dst.s4_addr[0] == 224U) {
 		return true;
 	}
@@ -338,7 +339,9 @@ static struct net_pkt *ethernet_ll_prepare_on_ipv4(struct net_if *iface,
 	if (IS_ENABLED(CONFIG_NET_ARP)) {
 		struct net_pkt *arp_pkt;
 
-		arp_pkt = net_arp_prepare(pkt, &NET_IPV4_HDR(pkt)->dst, NULL);
+		arp_pkt = net_arp_prepare(pkt,
+				  UNALIGNED_GET(&NET_IPV4_HDR(pkt)->dst),
+				  NULL);
 		if (!arp_pkt) {
 			return NULL;
 		}
@@ -367,7 +370,8 @@ static bool ethernet_fill_in_dst_on_ipv6_mcast(struct net_pkt *pkt,
 					       struct net_eth_addr *dst)
 {
 	if (net_pkt_family(pkt) == AF_INET6 &&
-	    net_ipv6_is_addr_mcast(&NET_IPV6_HDR(pkt)->dst)) {
+	    net_ipv6_is_addr_mcast_by_value(
+		    UNALIGNED_GET(&NET_IPV6_HDR(pkt)->dst))) {
 		memcpy(dst, (u8_t *)multicast_eth_addr.addr,
 		       sizeof(struct net_eth_addr) - 4);
 		memcpy((u8_t *)dst + 2,
@@ -398,8 +402,9 @@ static enum net_verdict set_vlan_tag(struct ethernet_context *ctx,
 	if (net_pkt_family(pkt) == AF_INET6) {
 		struct net_if *target;
 
-		if (net_if_ipv6_addr_lookup(&NET_IPV6_HDR(pkt)->src,
-					    &target)) {
+		if (net_if_ipv6_addr_lookup_by_value(
+			    UNALIGNED_GET(&NET_IPV6_HDR(pkt)->src),
+			    &target)) {
 			if (target != iface) {
 				NET_DBG("Iface %p should be %p", iface,
 					target);
@@ -414,8 +419,9 @@ static enum net_verdict set_vlan_tag(struct ethernet_context *ctx,
 	if (net_pkt_family(pkt) == AF_INET) {
 		struct net_if *target;
 
-		if (net_if_ipv4_addr_lookup(&NET_IPV4_HDR(pkt)->src,
-					    &target)) {
+		if (net_if_ipv4_addr_lookup_by_value(
+			    UNALIGNED_GET(&NET_IPV4_HDR(pkt)->src),
+			    &target)) {
 			if (target != iface) {
 				NET_DBG("Iface %p should be %p", iface,
 					target);

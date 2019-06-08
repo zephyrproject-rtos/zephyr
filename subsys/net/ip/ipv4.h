@@ -26,14 +26,27 @@
  * @brief Create IPv4 packet in provided net_pkt.
  *
  * @param pkt Network packet
- * @param src Source IPv4 address
- * @param dst Destination IPv4 address
+ * @param src Pointer to source IPv4 address
+ * @param dst Pointer to destination IPv4 address
  *
  * @return 0 on success, negative errno otherwise.
  */
 int net_ipv4_create(struct net_pkt *pkt,
 		    const struct in_addr *src,
 		    const struct in_addr *dst);
+
+/**
+ * @brief Create IPv4 packet in provided net_pkt.
+ *
+ * @param pkt Network packet
+ * @param src Source IPv4 address
+ * @param dst Destination IPv4 address
+ *
+ * @return 0 on success, negative errno otherwise.
+ */
+int net_ipv4_create_by_value(struct net_pkt *pkt,
+			     struct in_addr src,
+			     struct in_addr dst);
 
 /**
  * @brief Finalize IPv4 packet. It should be called right before

@@ -332,8 +332,9 @@ static enum net_verdict handle_mld_query(struct net_pkt *pkt,
 	}
 
 	/* Currently we only support an unspecified address query. */
-	if (!net_ipv6_addr_cmp(&mld_query->mcast_address,
-			       net_ipv6_unspecified_address())) {
+	if (!net_ipv6_addr_cmp_by_value(
+		    UNALIGNED_GET(&mld_query->mcast_address),
+		    *net_ipv6_unspecified_address())) {
 		NET_DBG("DROP: only supporting unspecified address query");
 		goto drop;
 	}

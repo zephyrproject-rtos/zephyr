@@ -49,39 +49,38 @@ static struct net_6lo_context ctx_6co[CONFIG_NET_MAX_6LO_CONTEXTS];
  *       Mesh header compression
  */
 
-static inline bool net_6lo_ll_prefix_padded_with_zeros(struct in6_addr *addr)
+static inline bool net_6lo_ll_prefix_padded_with_zeros(struct in6_addr addr)
 {
-	return ((UNALIGNED_GET(&addr->s6_addr16[1]) == 0x00) &&
-		 (UNALIGNED_GET(&addr->s6_addr32[1]) == 0x00));
+	return (addr.s6_addr16[1] == 0x00) && (addr.s6_addr32[1] == 0x00);
 }
 
-static inline bool net_6lo_addr_16_bit_compressible(struct in6_addr *addr)
+static inline bool net_6lo_addr_16_bit_compressible(struct in6_addr addr)
 {
-	return ((UNALIGNED_GET(&addr->s6_addr32[2]) == htonl(0xFF)) &&
-		 (UNALIGNED_GET(&addr->s6_addr16[6]) == htons(0xFE00)));
+	return (addr.s6_addr32[2] == htonl(0xFF)) &&
+		(addr.s6_addr16[6] == htons(0xFE00));
 }
 
-static inline bool net_6lo_maddr_8_bit_compressible(struct in6_addr *addr)
+static inline bool net_6lo_maddr_8_bit_compressible(struct in6_addr addr)
 {
-	return ((addr->s6_addr[1] == 0x02) &&
-		 (UNALIGNED_GET(&addr->s6_addr16[1]) == 0x00) &&
-		 (UNALIGNED_GET(&addr->s6_addr32[1]) == 0x00) &&
-		 (UNALIGNED_GET(&addr->s6_addr32[2]) == 0x00) &&
-		 (addr->s6_addr[14] == 0x00));
+	return ((addr.s6_addr[1] == 0x02) &&
+		 (addr.s6_addr16[1] == 0x00) &&
+		 (addr.s6_addr32[1] == 0x00) &&
+		 (addr.s6_addr32[2] == 0x00) &&
+		 (addr.s6_addr[14] == 0x00));
 }
 
-static inline bool net_6lo_maddr_32_bit_compressible(struct in6_addr *addr)
+static inline bool net_6lo_maddr_32_bit_compressible(struct in6_addr addr)
 {
-	return ((UNALIGNED_GET(&addr->s6_addr32[1]) == 0x00) &&
-		 (UNALIGNED_GET(&addr->s6_addr32[2]) == 0x00) &&
-		 (addr->s6_addr[12] == 0x00));
+	return ((addr.s6_addr32[1] == 0x00) &&
+		(addr.s6_addr32[2] == 0x00) &&
+		(addr.s6_addr[12] == 0x00));
 }
 
-static inline bool net_6lo_maddr_48_bit_compressible(struct in6_addr *addr)
+static inline bool net_6lo_maddr_48_bit_compressible(struct in6_addr addr)
 {
-	return ((UNALIGNED_GET(&addr->s6_addr32[1]) == 0x00) &&
-		 (UNALIGNED_GET(&addr->s6_addr16[4]) == 0x00) &&
-		 (addr->s6_addr[10] == 0x00));
+	return ((addr.s6_addr32[1] == 0x00) &&
+		(addr.s6_addr16[4] == 0x00) &&
+		(addr.s6_addr[10] == 0x00));
 }
 
 #if defined(CONFIG_NET_6LO_CONTEXT)
@@ -160,7 +159,7 @@ get_6lo_context_by_cid(struct net_if *iface, u8_t cid)
 
 /* Get the context by addr */
 static inline struct net_6lo_context *
-get_6lo_context_by_addr(struct net_if *iface, struct in6_addr *addr)
+get_6lo_context_by_addr(struct net_if *iface, struct in6_addr addr)
 {
 	u8_t i;
 
@@ -170,7 +169,7 @@ get_6lo_context_by_addr(struct net_if *iface, struct in6_addr *addr)
 		}
 
 		if (ctx_6co[i].iface == iface &&
-		    !memcmp(ctx_6co[i].prefix.s6_addr, addr->s6_addr, 8)) {
+		    !memcmp(ctx_6co[i].prefix.s6_addr, addr.s6_addr, 8)) {
 			return &ctx_6co[i];
 		}
 	}
@@ -288,7 +287,7 @@ static inline u8_t compress_sa(struct net_ipv6_hdr *ipv6,
 			       struct net_buf *frag,
 			       u8_t offset)
 {
-	if (net_ipv6_is_addr_unspecified(&ipv6->src)) {
+	if (net_ipv6_is_addr_unspecified_by_value(UNALIGNED_GET(&ipv6->src))) {
 		NET_DBG("SAM_00, SAC_1 unspecified src address");
 
 		/* Unspecified IPv6 src address */
@@ -299,13 +298,14 @@ static inline u8_t compress_sa(struct net_ipv6_hdr *ipv6,
 	}
 
 	/* If address is link-local prefix and padded with zeros */
-	if (net_ipv6_is_ll_addr(&ipv6->src) &&
-	    net_6lo_ll_prefix_padded_with_zeros(&ipv6->src)) {
+	if (net_ipv6_is_ll_addr_by_value(UNALIGNED_GET(&ipv6->src)) &&
+	    net_6lo_ll_prefix_padded_with_zeros(UNALIGNED_GET(&ipv6->src))) {
 
 		NET_DBG("SAC_0 src is ll_addr and padded with zeros");
 
 		/* Following 64 bits are 0000:00ff:fe00:XXXX */
-		if (net_6lo_addr_16_bit_compressible(&ipv6->src)) {
+		if (net_6lo_addr_16_bit_compressible(
+			    UNALIGNED_GET(&ipv6->src))) {
 			NET_DBG("SAM_10 src addr 16 bit compressible");
 
 			IPHC[1] |= NET_6LO_IPHC_SAM_10;
@@ -318,8 +318,9 @@ static inline u8_t compress_sa(struct net_ipv6_hdr *ipv6,
 				return 0;
 			}
 
-			if (net_ipv6_addr_based_on_ll(
-				    &ipv6->src, net_pkt_lladdr_src(pkt))) {
+			if (net_ipv6_addr_based_on_ll_by_value(
+				    UNALIGNED_GET(&ipv6->src),
+				    net_pkt_lladdr_src(pkt))) {
 				NET_DBG("SAM_11 src address is fully elided");
 
 				/* Address is fully elided */
@@ -361,15 +362,16 @@ static inline u8_t compress_sa_ctx(struct net_ipv6_hdr *ipv6,
 	IPHC[1] |= NET_6LO_IPHC_SAC_1;
 
 	/* Following 64 bits are 0000:00ff:fe00:XXXX */
-	if (net_6lo_addr_16_bit_compressible(&ipv6->src)) {
+	if (net_6lo_addr_16_bit_compressible(UNALIGNED_GET(&ipv6->src))) {
 		NET_DBG("SAM_10 src addr 16 bit compressible");
 
 		IPHC[1] |= NET_6LO_IPHC_SAM_10;
 
 		memcpy(&IPHC[offset], &ipv6->src.s6_addr[14], 2);
 		offset += 2U;
-	} else if (net_ipv6_addr_based_on_ll(&ipv6->src,
-					     net_pkt_lladdr_src(pkt))) {
+	} else if (net_ipv6_addr_based_on_ll_by_value(
+			   UNALIGNED_GET(&ipv6->src),
+			   net_pkt_lladdr_src(pkt))) {
 		NET_DBG("SAM_11 src address is fully elided");
 
 		/* Address is fully elided */
@@ -398,7 +400,7 @@ static inline u8_t compress_da_mcast(struct net_ipv6_hdr *ipv6,
 
 	NET_DBG("M_1 dst is mcast");
 
-	if (net_6lo_maddr_8_bit_compressible(&ipv6->dst)) {
+	if (net_6lo_maddr_8_bit_compressible(UNALIGNED_GET(&ipv6->dst))) {
 		NET_DBG("DAM_11 dst maddr 8 bit compressible");
 
 		/* last byte */
@@ -406,7 +408,8 @@ static inline u8_t compress_da_mcast(struct net_ipv6_hdr *ipv6,
 
 		memcpy(&IPHC[offset], &ipv6->dst.s6_addr[15], 1);
 		offset++;
-	} else if (net_6lo_maddr_32_bit_compressible(&ipv6->dst)) {
+	} else if (net_6lo_maddr_32_bit_compressible(
+			   UNALIGNED_GET(&ipv6->dst))) {
 		NET_DBG("DAM_10 4 bytes: 2nd byte + last three bytes");
 
 		/* 4 bytes: 2nd byte + last three bytes */
@@ -417,7 +420,8 @@ static inline u8_t compress_da_mcast(struct net_ipv6_hdr *ipv6,
 
 		memcpy(&IPHC[offset], &ipv6->dst.s6_addr[13], 3);
 		offset += 3U;
-	} else if (net_6lo_maddr_48_bit_compressible(&ipv6->dst)) {
+	} else if (net_6lo_maddr_48_bit_compressible(
+			   UNALIGNED_GET(&ipv6->dst))) {
 		NET_DBG("DAM_01 6 bytes: 2nd byte + last five bytes");
 
 		/* 6 bytes: 2nd byte + last five bytes */
@@ -446,18 +450,19 @@ static inline u8_t compress_da(struct net_ipv6_hdr *ipv6,
 			       u8_t offset)
 {
 	/* If destination address is multicast */
-	if (net_ipv6_is_addr_mcast(&ipv6->dst)) {
+	if (net_ipv6_is_addr_mcast_by_value(UNALIGNED_GET(&ipv6->dst))) {
 		return compress_da_mcast(ipv6, pkt, frag, offset);
 	}
 
 	/* If address is link-local prefix and padded with zeros */
-	if (net_ipv6_is_ll_addr(&ipv6->dst) &&
-	    net_6lo_ll_prefix_padded_with_zeros(&ipv6->dst)) {
+	if (net_ipv6_is_ll_addr_by_value(UNALIGNED_GET(&ipv6->dst)) &&
+	    net_6lo_ll_prefix_padded_with_zeros(UNALIGNED_GET(&ipv6->dst))) {
 
 		NET_DBG("Dst is ll_addr and padded with zeros");
 
 		/* Following 64 bits are 0000:00ff:fe00:XXXX */
-		if (net_6lo_addr_16_bit_compressible(&ipv6->dst)) {
+		if (net_6lo_addr_16_bit_compressible(
+			    UNALIGNED_GET(&ipv6->dst))) {
 			NET_DBG("DAM_10 dst addr 16 bit compressible");
 
 			IPHC[1] |= NET_6LO_IPHC_DAM_10;
@@ -470,8 +475,9 @@ static inline u8_t compress_da(struct net_ipv6_hdr *ipv6,
 				return 0;
 			}
 
-			if (net_ipv6_addr_based_on_ll(
-				    &ipv6->dst, net_pkt_lladdr_dst(pkt))) {
+			if (net_ipv6_addr_based_on_ll_by_value(
+				    UNALIGNED_GET(&ipv6->dst),
+				    net_pkt_lladdr_dst(pkt))) {
 				NET_DBG("DAM_11 dst addr fully elided");
 
 				/* Address is fully elided */
@@ -511,7 +517,7 @@ static inline u8_t compress_da_ctx(struct net_ipv6_hdr *ipv6,
 	IPHC[1] |= NET_6LO_IPHC_DAC_1;
 
 	/* Following 64 bits are 0000:00ff:fe00:XXXX */
-	if (net_6lo_addr_16_bit_compressible(&ipv6->dst)) {
+	if (net_6lo_addr_16_bit_compressible(UNALIGNED_GET(&ipv6->dst))) {
 		NET_DBG("DAM_10 dst addr 16 bit compressible");
 
 		IPHC[1] |= NET_6LO_IPHC_DAM_10;
@@ -519,8 +525,9 @@ static inline u8_t compress_da_ctx(struct net_ipv6_hdr *ipv6,
 		memcpy(&IPHC[offset], &ipv6->dst.s6_addr[14], 2);
 		offset += 2U;
 	} else {
-		if (net_ipv6_addr_based_on_ll(&ipv6->dst,
-					      net_pkt_lladdr_dst(pkt))) {
+		if (net_ipv6_addr_based_on_ll_by_value(
+			    UNALIGNED_GET(&ipv6->dst),
+			    net_pkt_lladdr_dst(pkt))) {
 			NET_DBG("DAM_11 dst addr fully elided");
 
 			/* Address is fully elided */
@@ -633,12 +640,14 @@ static inline bool is_src_and_dst_addr_ctx_based(struct net_ipv6_hdr *ipv6,
 {
 	/* If compress flag is unset means use only in uncompression. */
 
-	*src = get_6lo_context_by_addr(net_pkt_iface(pkt), &ipv6->src);
+	*src = get_6lo_context_by_addr(net_pkt_iface(pkt),
+				       UNALIGNED_GET(&ipv6->src));
 	if (*src && !((*src)->compress)) {
 		*src = NULL;
 	}
 
-	*dst = get_6lo_context_by_addr(net_pkt_iface(pkt), &ipv6->dst);
+	*dst = get_6lo_context_by_addr(net_pkt_iface(pkt),
+				       UNALIGNED_GET(&ipv6->dst));
 	if (*dst && !((*dst)->compress)) {
 		*dst = NULL;
 	}
@@ -939,8 +948,13 @@ static inline u8_t uncompress_sa(struct net_pkt *pkt,
 		NET_DBG("SAM_11 generate src addr from ll");
 
 		if (!dry_run) {
-			net_ipv6_addr_create_iid(&ipv6->src,
-						 net_pkt_lladdr_src(pkt));
+			struct in6_addr addr;
+
+			net_ipv6_addr_create_iid(&addr,
+				net_pkt_lladdr_src(pkt));
+
+			net_ipaddr_copy(&ipv6->src, &addr);
+
 		}
 
 		break;
@@ -956,6 +970,8 @@ static inline u8_t uncompress_sa_ctx(struct net_pkt *pkt,
 				     struct net_6lo_context *ctx,
 				     bool dry_run)
 {
+	struct in6_addr addr;
+
 	switch (CIPHC[1] & NET_6LO_IPHC_SAM_11) {
 	case NET_6LO_IPHC_SAM_01:
 		NET_DBG("SAM_01 last 64 bits are inlined");
@@ -1002,7 +1018,9 @@ static inline u8_t uncompress_sa_ctx(struct net_pkt *pkt,
 		 * the encapsulating header.
 		 * (e.g., 802.15.4 or IPv6 source address).
 		 */
-		net_ipv6_addr_create_iid(&ipv6->src, net_pkt_lladdr_src(pkt));
+		net_ipv6_addr_create_iid(&addr, net_pkt_lladdr_src(pkt));
+
+		net_ipaddr_copy(&ipv6->src, &addr);
 
 		/* net_ipv6_addr_create_iid will copy first 8 bytes
 		 * as link local prefix.
@@ -1137,8 +1155,11 @@ static inline u8_t uncompress_da(struct net_pkt *pkt,
 		NET_DBG("DAM_11 generate dst addr from ll");
 
 		if (!dry_run) {
-			net_ipv6_addr_create_iid(&ipv6->dst,
+			struct in6_addr addr;
+
+			net_ipv6_addr_create_iid(&addr,
 						 net_pkt_lladdr_dst(pkt));
+			net_ipaddr_copy(&ipv6->dst, &addr);
 		}
 
 		break;
@@ -1154,6 +1175,8 @@ static inline u8_t uncompress_da_ctx(struct net_pkt *pkt,
 				     struct net_6lo_context *ctx,
 				     bool dry_run)
 {
+	struct in6_addr addr;
+
 	NET_DBG("DAC_1");
 
 	if (CIPHC[1] & NET_6LO_IPHC_M_1) {
@@ -1206,7 +1229,9 @@ static inline u8_t uncompress_da_ctx(struct net_pkt *pkt,
 		 * the encapsulating header.
 		 * (e.g., 802.15.4 or IPv6 source address).
 		 */
-		net_ipv6_addr_create_iid(&ipv6->dst, net_pkt_lladdr_dst(pkt));
+		net_ipv6_addr_create_iid(&addr, net_pkt_lladdr_dst(pkt));
+
+		net_ipaddr_copy(&ipv6->dst, &addr);
 
 		/* net_ipv6_addr_create_iid will copy first 8 bytes
 		 * as link local prefix.

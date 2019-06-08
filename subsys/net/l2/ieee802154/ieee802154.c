@@ -238,7 +238,7 @@ static int ieee802154_send(struct net_if *iface, struct net_pkt *pkt)
 	}
 
 	ll_hdr_size = ieee802154_compute_header_size(iface,
-						     &NET_IPV6_HDR(pkt)->dst);
+					UNALIGNED_GET(&NET_IPV6_HDR(pkt)->dst));
 
 	/* len will hold the hdr size difference on success */
 	len = net_6lo_compress(pkt, true);

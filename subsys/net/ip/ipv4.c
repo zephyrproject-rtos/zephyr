@@ -63,6 +63,13 @@ int net_ipv4_create(struct net_pkt *pkt,
 	return net_pkt_set_data(pkt, &ipv4_access);
 }
 
+int net_ipv4_create_by_value(struct net_pkt *pkt,
+			     struct in_addr src,
+			     struct in_addr dst)
+{
+	return net_ipv4_create(pkt, &src, &dst);
+}
+
 int net_ipv4_finalize(struct net_pkt *pkt, u8_t next_header_proto)
 {
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ipv4_access, struct net_ipv4_hdr);
@@ -149,17 +156,18 @@ enum net_verdict net_ipv4_input(struct net_pkt *pkt)
 		net_pkt_update_length(pkt, pkt_len);
 	}
 
-	if (net_ipv4_is_addr_mcast(&hdr->src)) {
+	if (net_ipv4_is_addr_mcast_by_value(UNALIGNED_GET(&hdr->src))) {
 		NET_DBG("DROP: src addr is %s", "mcast");
 		goto drop;
 	}
 
-	if (net_ipv4_is_addr_bcast(net_pkt_iface(pkt), &hdr->src)) {
+	if (net_ipv4_is_addr_bcast_by_value(net_pkt_iface(pkt),
+				   UNALIGNED_GET(&hdr->src))) {
 		NET_DBG("DROP: src addr is %s", "bcast");
 		goto drop;
 	}
 
-	if (net_ipv4_is_addr_unspecified(&hdr->src)) {
+	if (net_ipv4_is_addr_unspecified_by_value(UNALIGNED_GET(&hdr->src))) {
 		NET_DBG("DROP: src addr is %s", "unspecified");
 		goto drop;
 	}
@@ -170,16 +178,18 @@ enum net_verdict net_ipv4_input(struct net_pkt *pkt)
 		goto drop;
 	}
 
-	if ((!net_ipv4_is_my_addr(&hdr->dst) &&
-	     !net_ipv4_is_addr_mcast(&hdr->dst) &&
+	if ((!net_ipv4_is_my_addr_by_value(UNALIGNED_GET(&hdr->dst)) &&
+	     !net_ipv4_is_addr_mcast_by_value(UNALIGNED_GET(&hdr->dst)) &&
 	     !(hdr->proto == IPPROTO_UDP &&
-	       (net_ipv4_addr_cmp(&hdr->dst, net_ipv4_broadcast_address()) ||
+	       (net_ipv4_addr_cmp_by_value(UNALIGNED_GET(&hdr->dst),
+					   *net_ipv4_broadcast_address()) ||
 		/* RFC 1122 ch. 3.3.6 The 0.0.0.0 is non-standard bcast addr */
 		(IS_ENABLED(CONFIG_NET_IPV4_ACCEPT_ZERO_BROADCAST) &&
-		 net_ipv4_addr_cmp(&hdr->dst,
-				   net_ipv4_unspecified_address()))))) ||
+		 net_ipv4_addr_cmp_by_value(UNALIGNED_GET(&hdr->dst),
+					*net_ipv4_unspecified_address()))))) ||
 	    (hdr->proto == IPPROTO_TCP &&
-	     net_ipv4_is_addr_bcast(net_pkt_iface(pkt), &hdr->dst))) {
+	     net_ipv4_is_addr_bcast_by_value(net_pkt_iface(pkt),
+				    UNALIGNED_GET(&hdr->dst)))) {
 		NET_DBG("DROP: not for me");
 		goto drop;
 	}

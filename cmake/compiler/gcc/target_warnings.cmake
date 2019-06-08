@@ -12,13 +12,6 @@ macro(toolchain_cc_warning_base)
     -Wno-main
   )
 
-if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "9.1.0")
-  zephyr_compile_options(
-    # FIXME: Remove once #16587 is fixed
-    -Wno-address-of-packed-member
-  )
-endif()
-
   zephyr_cc_option(-Wno-pointer-sign)
 
   # Prohibit void pointer arithmetic. Illegal in C99

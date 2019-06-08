@@ -258,12 +258,12 @@ static bool compare_data(struct net_pkt *pkt, struct net_6lo_data *data)
 
 	if (data->nh_udp) {
 		if (memcmp(frag->data, (u8_t *)data, NET_IPV6UDPH_LEN)) {
-			TC_PRINT("mismatch headers\n");
+			TC_PRINT("mismatch headers udp\n");
 			return false;
 		}
 	} else	if (data->nh_icmp) {
 		if (memcmp(frag->data, (u8_t *)data, NET_IPV6ICMPH_LEN)) {
-			TC_PRINT("mismatch headers\n");
+			TC_PRINT("mismatch headers icmp\n");
 			return false;
 		}
 	} else {

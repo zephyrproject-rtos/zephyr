@@ -146,14 +146,30 @@ static inline bool net_ipv6_is_nexthdr_upper_layer(u8_t nexthdr)
  * @brief Create IPv6 packet in provided net_pkt.
  *
  * @param pkt Network packet
- * @param src Source IPv6 address
- * @param dst Destination IPv6 address
+ * @param src Pointer to source IPv6 address
+ * @param dst Pointer to destination IPv6 address
  *
  * @return 0 on success, negative errno otherwise.
  */
 int net_ipv6_create(struct net_pkt *pkt,
 		    const struct in6_addr *src,
 		    const struct in6_addr *dst);
+
+/**
+ * @brief Create IPv6 packet in provided net_pkt.
+ *
+ * @param pkt Network packet
+ * @param src Source IPv6 address
+ * @param dst Destination IPv6 address
+ *
+ * @return 0 on success, negative errno otherwise.
+ */
+static inline int net_ipv6_create_by_value(struct net_pkt *pkt,
+					   const struct in6_addr src,
+					   const struct in6_addr dst)
+{
+	return net_ipv6_create(pkt, &src, &dst);
+}
 
 /**
  * @brief Finalize IPv6 packet. It should be called right before
