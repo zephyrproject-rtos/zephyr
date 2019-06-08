@@ -169,7 +169,7 @@ static int process_tcp(struct data *data)
 #endif
 	} while (true);
 
-	close(client);
+	(void)close(client);
 
 	return ret;
 }
