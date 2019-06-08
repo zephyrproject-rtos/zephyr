@@ -178,12 +178,10 @@ SECTION_FUNC(TEXT, _interrupt_enter)
 
 alreadyOnIntStack:
 
-#ifndef CONFIG_X86_IAMCU
 	/* EAX has the interrupt handler argument, needs to go on
 	 * stack for sys V calling convention
 	 */
 	push	%eax
-#endif
 #ifdef CONFIG_EXECUTION_BENCHMARKING
 	/* Save the eax and edx registers before reading the time stamp
 	* once done pop the values
@@ -202,10 +200,8 @@ alreadyOnIntStack:
 #endif
 	/* Now call the interrupt handler */
 	INDIRECT_CALL(%edx)
-#ifndef CONFIG_X86_IAMCU
 	/* Discard ISR argument */
 	addl	$0x4, %esp
-#endif
 #ifdef CONFIG_NESTED_INTERRUPTS
 	cli			/* disable interrupts again */
 #endif
@@ -251,16 +247,9 @@ alreadyOnIntStack:
 	call	z_check_stack_sentinel
 #endif
 	pushfl			/* push KERNEL_LOCK_KEY argument */
-#ifdef CONFIG_X86_IAMCU
-	/* IAMCU first argument goes into a register, not the stack.
-	 */
-	popl	%eax
-#endif
 	call	__swap
 
-#ifndef CONFIG_X86_IAMCU
 	addl 	$4, %esp	/* pop KERNEL_LOCK_KEY argument */
-#endif
 	/*
 	 * The interrupted thread has now been scheduled,
 	 * as the result of a _later_ invocation of __swap().
@@ -327,12 +316,8 @@ handle_idle:
 	pushl	%eax
 	pushl	%edx
 	/* Populate 'ticks' argument to z_sys_power_save_idle_exit */
-#ifdef CONFIG_X86_IAMCU
-	movl	_kernel_offset_to_idle(%ecx), %eax
-#else
 	/* SYS V calling convention */
 	push	_kernel_offset_to_idle(%ecx)
-#endif
 	/* Zero out _kernel.idle */
 	movl	$0, _kernel_offset_to_idle(%ecx)
 
@@ -344,10 +329,8 @@ handle_idle:
 	 */
 
 	call	z_sys_power_save_idle_exit
-#ifndef CONFIG_X86_IAMCU
 	/* SYS V: discard 'ticks' argument passed on the stack */
 	add	$0x4, %esp
-#endif
 	popl	%edx
 	popl	%eax
 	jmp	alreadyOnIntStack
@@ -407,21 +390,13 @@ SECTION_FUNC(TEXT, z_SpuriousIntHandler)
 	leal	44(%esp), %ecx   /* Calculate ESP before exception occurred */
 	pushl	%ecx             /* Save calculated ESP */
 
-#ifndef CONFIG_X86_IAMCU
 	pushl	%esp			/* push cur stack pointer: pEsf arg */
-#else
-	mov	%esp, %edx
-#endif
 
 	/* re-enable interrupts */
 	sti
 
 	/* push the 'unsigned int reason' parameter */
-#ifndef CONFIG_X86_IAMCU
 	pushl	$_NANO_ERR_SPURIOUS_INT
-#else
-	movl	$_NANO_ERR_SPURIOUS_INT, %eax
-#endif
 	/* call the fatal error handler */
 	call	z_NanoFatalErrorHandler
 

@@ -398,7 +398,7 @@ Connect to the debug server at the x86 core from a second console:
 .. code-block:: console
 
    $ cd <my x86 app>
-   $ $ZEPHYR_SDK_INSTALL_DIR/sysroots/x86_64-pokysdk-linux/usr/bin/i586-zephyr-elfiamcu/i586-zephyr-elfiamcu-gdb build/zephyr/zephyr.elf
+   $ gdb build/zephyr/zephyr.elf
    (gdb) target remote localhost:3333
    (gdb) b main
    (gdb) c
@@ -423,7 +423,7 @@ Connect to the debug server at the ARC core from a second console:
 .. code-block:: console
 
    $ cd <my arc app>
-   $ $ZEPHYR_SDK_INSTALL_DIR/sysroots/x86_64-pokysdk-linux/usr/bin/arc-zephyr-elf/arc-zephyr-elf-gdb build/zephyr/zephyr.elf
+   $ gdb build/zephyr/zephyr.elf
    (gdb) target remote localhost:3334
    (gdb) b main
    (gdb) c
