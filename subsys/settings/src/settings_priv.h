@@ -35,14 +35,14 @@ int settings_line_write(const char *name, const char *value, size_t val_len,
 /* Get len of record without alignment to write-block-size */
 int settings_line_len_calc(const char *name, size_t val_len);
 
-void settings_line_dup_check_cb(char *name, void *val_read_cb_ctx, off_t off,
-				void *cb_arg);
+void settings_line_dup_check_cb(const char *name, void *val_read_cb_ctx,
+				off_t off, void *cb_arg);
 
-void settings_line_load_cb(char *name, void *val_read_cb_ctx, off_t off,
-			   void *cb_arg);
+void settings_line_load_cb(const char *name, void *val_read_cb_ctx,
+			   off_t off, void *cb_arg);
 
-typedef void (*line_load_cb)(char *name, void *val_read_cb_ctx, off_t off,
-			     void *cb_arg);
+typedef void (*line_load_cb)(const char *name, void *val_read_cb_ctx,
+			     off_t off, void *cb_arg);
 
 struct settings_line_read_value_cb_ctx {
 	void *read_cb_ctx;

@@ -23,11 +23,11 @@ struct settings_fcb_load_cb_arg {
 	void *cb_arg;
 };
 
-static int settings_fcb_load(struct settings_store *cs);
+static int settings_fcb_load(struct settings_store *cs, const char *subtree);
 static int settings_fcb_save(struct settings_store *cs, const char *name,
 			     const char *value, size_t val_len);
 
-static struct settings_store_itf settings_fcb_itf = {
+static const struct settings_store_itf settings_fcb_itf = {
 	.csi_load = settings_fcb_load,
 	.csi_save = settings_fcb_save,
 };
@@ -117,9 +117,10 @@ static int settings_fcb_load_priv(struct settings_store *cs, line_load_cb cb,
 	return 0;
 }
 
-static int settings_fcb_load(struct settings_store *cs)
+static int settings_fcb_load(struct settings_store *cs, const char *subtree)
 {
-	return settings_fcb_load_priv(cs, settings_line_load_cb, NULL);
+	return settings_fcb_load_priv(cs, settings_line_load_cb,
+				      (void *)subtree);
 }
 
 

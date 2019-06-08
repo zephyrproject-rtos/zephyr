@@ -21,6 +21,7 @@ LOG_MODULE_DECLARE(settings, CONFIG_SETTINGS_LOG_LEVEL);
 
 sys_slist_t settings_load_srcs;
 struct settings_store *settings_save_dst;
+extern struct k_mutex settings_lock;
 
 void settings_src_register(struct settings_store *cs)
 {
@@ -42,7 +43,13 @@ void settings_dst_register(struct settings_store *cs)
 
 int settings_load(void)
 {
+	return settings_load_subtree(NULL);
+}
+
+int settings_load_subtree(const char *subtree)
+{
 	struct settings_store *cs;
+	int rc;
 
 	/*
 	 * for every config store
@@ -50,11 +57,13 @@ int settings_load(void)
 	 *    apply config
 	 *    commit all
 	 */
-
+	k_mutex_lock(&settings_lock, K_FOREVER);
 	SYS_SLIST_FOR_EACH_CONTAINER(&settings_load_srcs, cs, cs_next) {
-		cs->cs_itf->csi_load(cs);
+		cs->cs_itf->csi_load(cs, subtree);
 	}
-	return settings_commit();
+	rc = settings_commit_subtree(subtree);
+	k_mutex_unlock(&settings_lock);
+	return rc;
 }
 
 /*
@@ -62,6 +71,7 @@ int settings_load(void)
  */
 int settings_save_one(const char *name, const void *value, size_t val_len)
 {
+	int rc;
 	struct settings_store *cs;
 
 	cs = settings_save_dst;
@@ -69,7 +79,13 @@ int settings_save_one(const char *name, const void *value, size_t val_len)
 		return -ENOENT;
 	}
 
-	return cs->cs_itf->csi_save(cs, name, (char *)value, val_len);
+	k_mutex_lock(&settings_lock, K_FOREVER);
+
+	rc = cs->cs_itf->csi_save(cs, name, (char *)value, val_len);
+
+	k_mutex_unlock(&settings_lock);
+
+	return rc;
 }
 
 int settings_delete(const char *name)
