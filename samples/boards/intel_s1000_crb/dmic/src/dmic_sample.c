@@ -19,10 +19,6 @@ LOG_MODULE_REGISTER(dmic_sample);
 #define MIC_FRAME_SAMPLES	(SAMPLES_PER_FRAME * NUM_MIC_CHANNELS)
 #define MIC_FRAME_BYTES		(MIC_FRAME_SAMPLES * AUDIO_SAMPLE_WIDTH / 8)
 
-#define LP_SRAM_BASE		0xBE800000
-#define LP_SRAM_BASE_UNCACHED	0x9E800000
-#define LP_SRAM_SIZE		(16 << 10)
-
 #define DMIC_DEV_NAME		"PDM"
 #define MIC_IN_BUF_COUNT	2
 
@@ -31,7 +27,8 @@ LOG_MODULE_REGISTER(dmic_sample);
 #define DELAY_BTW_ITERATIONS	K_MSEC(20)
 
 static struct k_mem_slab dmic_mem_slab;
-static char audio_buffers[MIC_FRAME_BYTES * MIC_IN_BUF_COUNT];
+__attribute__((section(".dma_buffers")))
+static char audio_buffers[MIC_FRAME_BYTES][MIC_IN_BUF_COUNT];
 static struct device *dmic_device;
 
 static void dmic_init(void)
