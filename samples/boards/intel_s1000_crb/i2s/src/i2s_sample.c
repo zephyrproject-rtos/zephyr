@@ -26,10 +26,6 @@ LOG_MODULE_REGISTER(i2s_sample);
 #define AUDIO_FRAME_BUF_BYTES		\
 	(AUDIO_SAMPLES_PER_FRAME * AUDIO_SAMPLE_BYTES)
 
-#define LP_SRAM_BASE			(0xBE800000)
-#define LP_SRAM_BASE_UNCACHED		(0x9E800000)
-#define LP_SRAM_SIZE			(16 << 10)
-
 #define I2S_PLAYBACK_DEV		"I2S_1"
 #define I2S_HOST_DEV			"I2S_2"
 
@@ -61,7 +57,8 @@ LOG_MODULE_REGISTER(i2s_sample);
 #endif
 
 static struct k_mem_slab i2s_mem_slab;
-static char *audio_buffers = (char *)LP_SRAM_BASE_UNCACHED;
+__attribute__((section(".dma_buffers")))
+static char audio_buffers[AUDIO_FRAME_BUF_BYTES][I2S_PLAY_BUF_COUNT];
 static struct device *spk_i2s_dev;
 static struct device *host_i2s_dev;
 static struct device *codec_device;
