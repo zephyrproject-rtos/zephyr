@@ -3,6 +3,7 @@
 #include "skeleton.dtsi"
 #include <dt-bindings/i2c/i2c.h>
 #include <dt-bindings/gpio/gpio.h>
+#include <mem.h>
 
 #define IRQ_DW(x) ((x) << 16 | (7) << 8 | (6))
 
@@ -35,7 +36,13 @@
 	sram0: memory@be000000 {
 		device_type = "memory";
 		compatible = "mmio-sram";
-		reg = <0xbe000000 0x400000>;
+		reg = <0xbe000000 DT_SIZE_M(4)>;
+	};
+
+	sram1: memory@be800000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0xbe800000 DT_SIZE_K(64)>;
 	};
 
 	soc {
