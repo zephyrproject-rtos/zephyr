@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Intel Corporation
+ * Copyright (c) 2019 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,6 +25,7 @@ OUTPUT_ARCH(xtensa)
 
 #define RAMABLE_REGION ram :ram_phdr
 #define ROMABLE_REGION ram :ram_phdr
+#define LPRAM_REGION lpram
 
 MEMORY
 {
@@ -105,6 +106,9 @@ MEMORY
 	org = IDT_BASE,
 	len = IDT_SIZE
 #endif
+  lpram :
+	org = LPRAM_BASE,
+	len = LPRAM_SIZE
 }
 
 PHDRS
@@ -433,6 +437,13 @@ SECTIONS
   _end = ALIGN(8);
   PROVIDE(end = ALIGN(8));
   __stack = DT_L2_SRAM_BASE + DT_L2_SRAM_SIZE;
+  /* dma buffers */
+  .lpbuf (NOLOAD): ALIGN(4)
+  {
+    _dma_buf_start = ABSOLUTE(.);
+    *(.dma_buffers)
+    _dma_buf_end = ABSOLUTE(.);
+  } >LPRAM_REGION
   .comment  0 :  { *(.comment) }
   .debug 0 : { *(.debug) }
   .line 0 : { *(.line) }
