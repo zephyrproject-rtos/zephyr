@@ -562,10 +562,18 @@ static int cmd_show_db(const struct shell *shell, size_t argc, char *argv[])
 	memset(&stats, 0, sizeof(stats));
 
 	if (argc > 1) {
+		u16_t num_matches = 0;
+
 		uuid.uuid.type = BT_UUID_TYPE_16;
 		uuid.val = strtoul(argv[1], NULL, 16);
-		bt_gatt_foreach_attr_type(0x0001, 0xffff, &uuid.uuid, NULL, 0,
-					  print_attr, (void *)shell);
+
+		if (argc > 2) {
+			num_matches = strtoul(argv[2], NULL, 10);
+		}
+
+		bt_gatt_foreach_attr_type(0x0001, 0xffff, &uuid.uuid, NULL,
+					  num_matches, print_attr,
+					  (void *)shell);
 		return 0;
 	}
 
@@ -1029,7 +1037,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(gatt_cmds,
 #endif /* CONFIG_BT_GATT_CLIENT */
 	SHELL_CMD_ARG(get, NULL, "<start handle> [end handle]", cmd_get, 2, 1),
 	SHELL_CMD_ARG(set, NULL, "<handle> [data...]", cmd_set, 2, 255),
-	SHELL_CMD_ARG(show-db, NULL, "[uuid]", cmd_show_db, 1, 1),
+	SHELL_CMD_ARG(show-db, NULL, "[uuid] [num_matches]", cmd_show_db, 1, 2),
 #if defined(CONFIG_BT_GATT_DYNAMIC_DB)
 	SHELL_CMD_ARG(metrics, NULL,
 		      "register vendr char and measure rx <value: on, off>",
