@@ -151,7 +151,7 @@ static bool is_rodata(const void *addr)
 }
 
 /**
- * @brief Scan string arguments and report evert address which is not in read
+ * @brief Scan string arguments and report every address which is not in read
  *	  only memory and not yet duplicated.
  *
  * @param msg Log message.
@@ -161,8 +161,15 @@ static void detect_missed_strdup(struct log_msg *msg)
 #define ERR_MSG	"argument %d in log message \"%s\" missing log_strdup()."
 	u32_t idx;
 	const char *str;
-	const char *msg_str = log_msg_str_get(msg);
-	u32_t mask = count_s(msg_str, log_msg_nargs_get(msg));
+	const char *msg_str;
+	u32_t mask;
+
+	if (!log_msg_is_std(msg)) {
+		return;
+	}
+
+	msg_str = log_msg_str_get(msg);
+	mask = count_s(msg_str, log_msg_nargs_get(msg));
 
 	while (mask) {
 		idx = 31 - __builtin_clz(mask);
