@@ -478,6 +478,28 @@ def main():
     create_aliases(root)
     create_chosen(root)
 
+    # Re-sort instance_id by reg addr
+    #
+    # Note: this is a short term fix and should be removed when
+    # generate defines for instance with a prefix like 'DT_INST'
+    #
+    # Build a dict of dicts, first level is index by compat
+    # second level is index by reg addr
+    compat_reg_dict = defaultdict(dict)
+    for node in reduced.values():
+        instance = node.get('instance_id')
+        if instance and node['addr'] is not None:
+            for compat in instance:
+                reg = node['addr']
+                compat_reg_dict[compat][reg] = node
+
+    # Walk the reg addr in sorted order to re-index 'instance_id'
+    for compat in compat_reg_dict:
+        # only update if we have more than one instance
+        if len(compat_reg_dict[compat]) > 1:
+            for idx, reg_addr in enumerate(sorted(compat_reg_dict[compat])):
+                compat_reg_dict[compat][reg_addr]['instance_id'][compat] = idx
+
     # Load any bindings (.yaml files) that match 'compatible' values from the
     # DTS
     load_bindings(root, args.yaml)
