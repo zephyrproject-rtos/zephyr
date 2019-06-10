@@ -20,8 +20,6 @@
 		      / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 #define MAX_TICKS ((COUNTER_MAX - CYC_PER_TICK) / CYC_PER_TICK)
 
-#define MIN_DELAY 32
-
 static struct k_spinlock lock;
 
 static u32_t last_count;
@@ -63,7 +61,10 @@ void rtc1_nrf_isr(void *arg)
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		u32_t next = last_count + CYC_PER_TICK;
 
-		if (counter_sub(next, t) < MIN_DELAY) {
+		/* As below: we're guaranteed to get an interrupt as
+		 * long as it's set two or more cycles in the future
+		 */
+		if (counter_sub(next, t) < 3) {
 			next += CYC_PER_TICK;
 		}
 		set_comparator(next);
@@ -117,21 +118,80 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 	ticks = MAX(MIN(ticks - 1, (s32_t)MAX_TICKS), 0);
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
-	u32_t cyc, t = counter();
+	u32_t cyc, dt, t = counter();
+	bool flagged = false;
 
 	/* Round up to next tick boundary */
-	cyc = ticks * CYC_PER_TICK + counter_sub(t, last_count);
+	cyc = ticks * CYC_PER_TICK + 1 + counter_sub(t, last_count);
 	cyc += (CYC_PER_TICK - 1);
 	cyc = (cyc / CYC_PER_TICK) * CYC_PER_TICK;
 	cyc += last_count;
 
-	if (counter_sub(cyc, t) < MIN_DELAY) {
-		cyc += CYC_PER_TICK;
+	/* Per NRF docs, the RTC is guaranteed to trigger a compare
+	 * event if the comparator value to be set is at least two
+	 * cycles later than the current value of the counter.  So if
+	 * we're three or more cycles out, we can set it blindly.  If
+	 * not, check the time again immediately after setting: it's
+	 * possible we "just missed it" and can flag an immediate
+	 * interrupt.  Or it could be exactly two cycles out, which
+	 * will have worked.  Otherwise, there's no way to get an
+	 * interrupt at the right time and we have to slip the event
+	 * by one clock cycle (or we could spin, but this is a slow
+	 * clock and spinning for a whole cycle can be thousands of
+	 * instructions!)
+	 *
+	 * You might ask: why not set the comparator first and then
+	 * check the timer synchronously to see if we missed it, which
+	 * would avoid the need for a slipped cycle.  That doesn't
+	 * work, the states overlap inside the counter hardware.  It's
+	 * possible to set a comparator value of "N", issue a DSB
+	 * instruction to flush the pipeline, and then immediately
+	 * read a counter value of "N-1" (i.e. the comparator is still
+	 * in the future), and yet still not receive an interrupt at
+	 * least on nRF52.  Some experimentation on nrf52840 shows
+	 * that you need to be early by about 400 processor cycles
+	 * (about 1/5th of a RTC cycle) in order to reliably get the
+	 * interrupt.  The docs say two cycles, they mean two cycles.
+	 */
+	if (counter_sub(cyc, t) > 2) {
+		set_comparator(cyc);
+	} else {
+		set_comparator(cyc);
+		dt = counter_sub(cyc, counter());
+		if (dt == 0 || dt > 0x7fffff) {
+			/* Missed it! */
+			NVIC_SetPendingIRQ(RTC1_IRQn);
+			if (IS_ENABLED(CONFIG_ZERO_LATENCY_IRQS)) {
+				flagged = true;
+			}
+		} else if (dt == 1) {
+			/* Too soon, interrupt won't arrive. */
+			set_comparator(cyc + 1);
+		}
+		/* Otherwise it was two cycles out, we're fine */
 	}
 
-	set_comparator(cyc);
-	k_spin_unlock(&lock, key);
+#ifdef CONFIG_ZERO_LATENCY_IRQS
+	/* Failsafe.  ZLIs can preempt us even though interrupts are
+	 * masked, blowing up the sensitive timing above.  If enabled,
+	 * we need a final check (in a loop!  because this too can be
+	 * interrupted) to see that the comparator is still in the
+	 * future.  Don't bother being fancy with cycle counting here,
+	 * just set an interrupt "soon" that we know will get the
+	 * timer back to a known state.  This handles (via some hairy
+	 * modular expressions) the wraparound cases where we are
+	 * preempted for as much as half the counter space.
+	 */
+	if (!flagged && counter_sub(cyc, counter()) <= 0x7fffff) {
+		while (counter_sub(cyc, counter() + 2) > 0x7fffff) {
+			cyc = counter() + 3;
+			set_comparator(cyc);
+		}
+	}
 #endif
+
+	k_spin_unlock(&lock, key);
+#endif /* CONFIG_TICKLESS_KERNEL */
 }
 
 u32_t z_clock_elapsed(void)
