@@ -514,8 +514,11 @@ void mqtt_client_init(struct mqtt_client *client);
  *
  * @note Default protocol revision used for connection request is 3.1.1. Please
  *       set client.protocol_version = MQTT_VERSION_3_1_0 to use protocol 3.1.0.
- * @note Please modify :option:`CONFIG_MQTT_KEEPALIVE` time to override default
- *       of 1 minute.
+ * @note
+ *       @rststar
+ *          Please modify :option:`CONFIG_MQTT_KEEPALIVE` time to override
+ *          default of 1 minute.
+ *       @endrststar
  */
 int mqtt_connect(struct mqtt_client *client);
 

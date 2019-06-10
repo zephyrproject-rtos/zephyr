@@ -1626,10 +1626,13 @@ static inline void *z_impl_k_timer_user_data_get(struct k_timer *timer)
  * This routine returns the elapsed time since the system booted,
  * in milliseconds.
  *
- * @note While this function returns time in milliseconds, it does not mean it
- * has millisecond resolution. The actual resolution depends on
- * :option:`CONFIG_SYS_CLOCK_TICKS_PER_SEC` config option, and with the default
- * setting of 100, system time is updated in increments of 10ms.
+ * @note
+ *    @rststar
+ *    While this function returns time in milliseconds, it does
+ *    not mean it has millisecond resolution. The actual resolution depends on
+ *    :option:`CONFIG_SYS_CLOCK_TICKS_PER_SEC` config option, and with the
+ *    default setting of 100, system time is updated in increments of 10ms.
+ *    @endrststar
  *
  * @return Current uptime in milliseconds.
  */
@@ -1670,10 +1673,13 @@ void k_disable_sys_clock_always_on(void);
  * cannot hold a system uptime time larger than approximately 50 days, so the
  * caller must handle possible rollovers.
  *
- * @note While this function returns time in milliseconds, it does not mean it
- * has millisecond resolution. The actual resolution depends on
- * :option:`CONFIG_SYS_CLOCK_TICKS_PER_SEC` config option, and with the default
- * setting of 100, system time is updated in increments of 10ms.
+ * @note
+ *    @rststar
+ *    While this function returns time in milliseconds, it does
+ *    not mean it has millisecond resolution. The actual resolution depends on
+ *    :option:`CONFIG_SYS_CLOCK_TICKS_PER_SEC` config option, and with the
+ *    default setting of 100, system time is updated in increments of 10ms.
+ *    @endrststar
  *
  * @return Current uptime in milliseconds.
  */
