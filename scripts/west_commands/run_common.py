@@ -169,7 +169,10 @@ def do_run_common(command, args, runner_args, cached_runner_var):
     # make sure it supports the command.
 
     cache_file = path.join(build_dir, args.cmake_cache or cmake.DEFAULT_CACHE)
-    cache = cmake.CMakeCache(cache_file)
+    try:
+        cache = cmake.CMakeCache(cache_file)
+    except FileNotFoundError:
+        log.die('no CMake cache found (expected one at {})'.format(cache_file))
     board = cache['CACHED_BOARD']
     available = cache.get_list('ZEPHYR_RUNNERS')
     if not available:
