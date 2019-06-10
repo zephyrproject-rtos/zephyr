@@ -999,6 +999,8 @@ static u8_t gatt_foreach_iter(const struct bt_gatt_attr *attr,
 			      const void *attr_data, uint16_t *num_matches,
 			      bt_gatt_attr_func_t func, void *user_data)
 {
+	u8_t result;
+
 	/* Stop if over the requested range */
 	if (attr->handle > end_handle) {
 		return BT_GATT_ITER_STOP;
@@ -1019,11 +1021,15 @@ static u8_t gatt_foreach_iter(const struct bt_gatt_attr *attr,
 		return BT_GATT_ITER_CONTINUE;
 	}
 
-	if (*num_matches) {
-		*num_matches -= 1;
+	*num_matches -= 1;
+
+	result = func(attr, user_data);
+
+	if (!*num_matches) {
+		return BT_GATT_ITER_STOP;
 	}
 
-	return func(attr, user_data);
+	return result;
 }
 
 void bt_gatt_foreach_attr_type(u16_t start_handle, u16_t end_handle,
@@ -1066,11 +1072,6 @@ void bt_gatt_foreach_attr_type(u16_t start_handle, u16_t end_handle,
 					return;
 				}
 			}
-
-			/* Stop if number of matches has reached 0 */
-			if (!num_matches) {
-				return;
-			}
 		}
 	}
 
@@ -1094,11 +1095,6 @@ void bt_gatt_foreach_attr_type(u16_t start_handle, u16_t end_handle,
 			    BT_GATT_ITER_STOP) {
 				return;
 			}
-		}
-
-		/* Stop if number of matches has reached 0 */
-		if (!num_matches) {
-			return;
 		}
 	}
 }
