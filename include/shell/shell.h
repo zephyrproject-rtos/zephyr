@@ -851,9 +851,12 @@ void shell_help(const struct shell *shell);
  *	 This function must not be called from shell command context!
 
  *
- * @param[in] shell	Pointer to the shell instance. It can be NULL when
+ * @param[in] shell	Pointer to the shell instance.
+ *			@rststar
+ *			It can be NULL when
  *			the :option:`CONFIG_SHELL_BACKEND_DUMMY` option is
  *			enabled.
+ *			@endrststar
  * @param[in] cmd	Command to be executed.
  *
  * @returns		Result of the execution
