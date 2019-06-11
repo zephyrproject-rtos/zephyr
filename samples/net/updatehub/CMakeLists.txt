@@ -18,7 +18,7 @@ if(CONFIG_UPDATEHUB_DTLS)
             privkey.der
             )
         generate_inc_file_for_target(
-            ${ZEPHYR_CURRENT_LIBRARY}
+            app
             src/certificates/${inc_file}
             ${gen_dir}/${inc_file}.inc
             )
