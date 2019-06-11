@@ -44,13 +44,15 @@ extern "C" {
 #define PF_INET6        2          /**< IP protocol family version 6. */
 #define PF_PACKET       3          /**< Packet family.                */
 #define PF_CAN          4          /**< Controller Area Network.      */
+#define PF_NET_MGMT     5          /**< Network management info.      */
 
 /* Address families. */
-#define AF_UNSPEC       PF_UNSPEC  /**< Unspecified address family.   */
-#define AF_INET         PF_INET    /**< IP protocol family version 4. */
-#define AF_INET6        PF_INET6   /**< IP protocol family version 6. */
-#define AF_PACKET       PF_PACKET  /**< Packet family.                */
-#define AF_CAN          PF_CAN     /**< Controller Area Network.      */
+#define AF_UNSPEC      PF_UNSPEC   /**< Unspecified address family.   */
+#define AF_INET        PF_INET     /**< IP protocol family version 4. */
+#define AF_INET6       PF_INET6    /**< IP protocol family version 6. */
+#define AF_PACKET      PF_PACKET   /**< Packet family.                */
+#define AF_CAN         PF_CAN      /**< Controller Area Network.      */
+#define AF_NET_MGMT    PF_NET_MGMT /**< Network management info.      */
 
 /** Protocol numbers from IANA/BSD */
 enum net_ip_protocol {
