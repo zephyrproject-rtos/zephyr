@@ -411,7 +411,7 @@ static void prepare_multithreading(struct k_thread *dummy_thread)
 
 }
 
-static void switch_to_main_thread(void)
+static FUNC_NORETURN void switch_to_main_thread(void)
 {
 #ifdef CONFIG_ARCH_HAS_CUSTOM_SWAP_TO_MAIN
 	z_arch_switch_to_main_thread(_main_thread, _main_stack,
@@ -425,6 +425,7 @@ static void switch_to_main_thread(void)
 	 */
 	z_swap_unlocked();
 #endif
+	CODE_UNREACHABLE; /* LCOV_EXCL_LINE */
 }
 #endif /* CONFIG_MULTITHREADING */
 
@@ -519,9 +520,13 @@ FUNC_NORETURN void z_cstart(void)
 #else
 	bg_thread_main(NULL, NULL, NULL);
 
+	/* LCOV_EXCL_START
+	 * We've already dumped coverage data at this point.
+	 */
 	irq_lock();
 	while (true) {
 	}
+	/* LCOV_EXCL_STOP */
 #endif
 
 	/*
@@ -530,5 +535,5 @@ FUNC_NORETURN void z_cstart(void)
 	 * far.
 	 */
 
-	CODE_UNREACHABLE;
+	CODE_UNREACHABLE; /* LCOV_EXCL_LINE */
 }
