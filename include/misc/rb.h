@@ -159,8 +159,9 @@ struct _rb_foreach {
 }
 #else
 #define _RB_FOREACH_INIT(tree, node) {					\
-	.stack   = alloca((tree)->max_depth * sizeof(struct rbnode *)), \
-	.is_left = alloca((tree)->max_depth * sizeof(char)),		\
+	.stack   = (struct rbnode **)					\
+			alloca((tree)->max_depth * sizeof(struct rbnode *)), \
+	.is_left = (char *)alloca((tree)->max_depth * sizeof(char)),		\
 	.top     = -1							\
 }
 #endif

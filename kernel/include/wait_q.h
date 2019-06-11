@@ -36,7 +36,7 @@ static inline void z_waitq_init(_wait_q_t *w)
 
 static inline struct k_thread *z_waitq_head(_wait_q_t *w)
 {
-	return (void *)rb_get_min(&w->waitq.tree);
+	return (struct k_thread *)rb_get_min(&w->waitq.tree);
 }
 
 #else /* !CONFIG_WAITQ_SCALABLE: */
@@ -52,7 +52,7 @@ static inline void z_waitq_init(_wait_q_t *w)
 
 static inline struct k_thread *z_waitq_head(_wait_q_t *w)
 {
-	return (void *)sys_dlist_peek_head(&w->waitq);
+	return (struct k_thread *)sys_dlist_peek_head(&w->waitq);
 }
 
 #endif /* !CONFIG_WAITQ_SCALABLE */
