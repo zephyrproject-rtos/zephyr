@@ -67,7 +67,7 @@ DEVICE_INIT(vdd_pwr_ctrl_init, "", pwr_ctrl_init, NULL, &vdd_pwr_ctrl_cfg,
 #endif
 
 static const struct pwr_ctrl_cfg ccs_vdd_pwr_ctrl_cfg = {
-	.port = DT_SEMTECH_SX1509B_0_LABEL,
+	.port = DT_INST_0_SEMTECH_SX1509B_LABEL,
 	.pin = CCS_VDD_PWR_CTRL_GPIO_PIN,
 };
 

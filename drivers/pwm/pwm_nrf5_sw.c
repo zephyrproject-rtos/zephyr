@@ -14,13 +14,13 @@
 LOG_MODULE_REGISTER(pwm_nrf5_sw);
 
 /* One compare channel is needed to set the PWM period, hence +1. */
-#if ((DT_NORDIC_NRF_SW_PWM_0_CHANNEL_COUNT + 1) > \
+#if ((DT_INST_0_NORDIC_NRF_SW_PWM_CHANNEL_COUNT + 1) > \
 	(_CONCAT( \
-		_CONCAT(TIMER, DT_NORDIC_NRF_SW_PWM_0_TIMER_INSTANCE), \
+		_CONCAT(TIMER, DT_INST_0_NORDIC_NRF_SW_PWM_TIMER_INSTANCE), \
 		_CC_NUM)))
 #error "Invalid number of PWM channels configured."
 #endif
-#define PWM_0_MAP_SIZE DT_NORDIC_NRF_SW_PWM_0_CHANNEL_COUNT
+#define PWM_0_MAP_SIZE DT_INST_0_NORDIC_NRF_SW_PWM_CHANNEL_COUNT
 
 struct pwm_config {
 	NRF_TIMER_Type *timer;
@@ -245,11 +245,11 @@ static int pwm_nrf5_sw_init(struct device *dev)
 }
 
 static const struct pwm_config pwm_nrf5_sw_0_config = {
-	.timer = _CONCAT(NRF_TIMER, DT_NORDIC_NRF_SW_PWM_0_TIMER_INSTANCE),
-	.ppi_base = DT_NORDIC_NRF_SW_PWM_0_PPI_BASE,
-	.gpiote_base = DT_NORDIC_NRF_SW_PWM_0_GPIOTE_BASE,
+	.timer = _CONCAT(NRF_TIMER, DT_INST_0_NORDIC_NRF_SW_PWM_TIMER_INSTANCE),
+	.ppi_base = DT_INST_0_NORDIC_NRF_SW_PWM_PPI_BASE,
+	.gpiote_base = DT_INST_0_NORDIC_NRF_SW_PWM_GPIOTE_BASE,
 	.map_size = PWM_0_MAP_SIZE,
-	.prescaler = DT_NORDIC_NRF_SW_PWM_0_CLOCK_PRESCALER,
+	.prescaler = DT_INST_0_NORDIC_NRF_SW_PWM_CLOCK_PRESCALER,
 };
 
 static struct pwm_data pwm_nrf5_sw_0_data;

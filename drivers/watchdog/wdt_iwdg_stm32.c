@@ -172,10 +172,10 @@ static int iwdg_stm32_init(struct device *dev)
 }
 
 static struct iwdg_stm32_data iwdg_stm32_dev_data = {
-	.Instance = (IWDG_TypeDef *)DT_ST_STM32_WATCHDOG_0_BASE_ADDRESS
+	.Instance = (IWDG_TypeDef *)DT_INST_0_ST_STM32_WATCHDOG_BASE_ADDRESS
 };
 
-DEVICE_AND_API_INIT(iwdg_stm32, DT_ST_STM32_WATCHDOG_0_LABEL,
+DEVICE_AND_API_INIT(iwdg_stm32, DT_INST_0_ST_STM32_WATCHDOG_LABEL,
 		    iwdg_stm32_init, &iwdg_stm32_dev_data, NULL,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &iwdg_stm32_api);

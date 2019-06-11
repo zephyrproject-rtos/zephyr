@@ -24,7 +24,7 @@ void lll_clock_wait(void)
 	done = true;
 
 	struct device *lf_clock = device_get_binding(
-		DT_NORDIC_NRF_CLOCK_0_LABEL "_32K");
+		DT_INST_0_NORDIC_NRF_CLOCK_LABEL "_32K");
 
 	LL_ASSERT(lf_clock);
 

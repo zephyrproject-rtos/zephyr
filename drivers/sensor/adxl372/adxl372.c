@@ -898,7 +898,7 @@ static int adxl372_init(struct device *dev)
 	data->spi_cfg.frequency = cfg->spi_max_frequency;
 	data->spi_cfg.slave = cfg->spi_slave;
 
-#if defined(DT_ADI_ADXL372_0_CS_GPIO_CONTROLLER)
+#if defined(DT_INST_0_ADI_ADXL372_CS_GPIO_CONTROLLER)
 	/* handle SPI CS thru GPIO if it is the case */
 
 	data->adxl372_cs_ctrl.gpio_dev = device_get_binding(cfg->gpio_cs_port);
@@ -925,21 +925,21 @@ static struct adxl372_data adxl372_data;
 
 static const struct adxl372_dev_config adxl372_config = {
 #ifdef CONFIG_ADXL372_I2C
-	.i2c_port = DT_ADI_ADXL372_0_BUS_NAME,
-	.i2c_addr = DT_ADI_ADXL372_0_BASE_ADDRESS,
+	.i2c_port = DT_INST_0_ADI_ADXL372_BUS_NAME,
+	.i2c_addr = DT_INST_0_ADI_ADXL372_BASE_ADDRESS,
 #endif
 #ifdef CONFIG_ADXL372_SPI
-	.spi_port = DT_ADI_ADXL372_0_BUS_NAME,
-	.spi_slave = DT_ADI_ADXL372_0_BASE_ADDRESS,
-	.spi_max_frequency = DT_ADI_ADXL372_0_SPI_MAX_FREQUENCY,
-#ifdef DT_ADI_ADXL372_0_CS_GPIO_CONTROLLER
-	.gpio_cs_port = DT_ADI_ADXL372_0_CS_GPIO_CONTROLLER,
-	.cs_gpio = DT_ADI_ADXL372_0_CS_GPIO_PIN,
+	.spi_port = DT_INST_0_ADI_ADXL372_BUS_NAME,
+	.spi_slave = DT_INST_0_ADI_ADXL372_BASE_ADDRESS,
+	.spi_max_frequency = DT_INST_0_ADI_ADXL372_SPI_MAX_FREQUENCY,
+#ifdef DT_INST_0_ADI_ADXL372_CS_GPIO_CONTROLLER
+	.gpio_cs_port = DT_INST_0_ADI_ADXL372_CS_GPIO_CONTROLLER,
+	.cs_gpio = DT_INST_0_ADI_ADXL372_CS_GPIO_PIN,
 #endif
 #endif
 #ifdef CONFIG_ADXL372_TRIGGER
-	.gpio_port = DT_ADI_ADXL372_0_INT1_GPIOS_CONTROLLER,
-	.int_gpio = DT_ADI_ADXL372_0_INT1_GPIOS_PIN,
+	.gpio_port = DT_INST_0_ADI_ADXL372_INT1_GPIOS_CONTROLLER,
+	.int_gpio = DT_INST_0_ADI_ADXL372_INT1_GPIOS_PIN,
 #endif
 
 	.max_peak_detect_mode = IS_ENABLED(CONFIG_ADXL372_PEAK_DETECT_MODE),
@@ -1011,6 +1011,6 @@ static const struct adxl372_dev_config adxl372_config = {
 	.op_mode = ADXL372_FULL_BW_MEASUREMENT,
 };
 
-DEVICE_AND_API_INIT(adxl372, DT_ADI_ADXL372_0_LABEL, adxl372_init,
+DEVICE_AND_API_INIT(adxl372, DT_INST_0_ADI_ADXL372_LABEL, adxl372_init,
 		    &adxl372_data, &adxl372_config, POST_KERNEL,
 		    CONFIG_SENSOR_INIT_PRIORITY, &adxl372_api_funcs);

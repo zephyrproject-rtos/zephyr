@@ -14,7 +14,7 @@ void main(void)
 	struct device *dev;
 	struct sensor_value temperature, humidity;
 
-	dev = device_get_binding(DT_AMS_ENS210_0_LABEL);
+	dev = device_get_binding(DT_INST_0_AMS_ENS210_LABEL);
 	if (!dev) {
 		printk("Failed to get device binding");
 		return;

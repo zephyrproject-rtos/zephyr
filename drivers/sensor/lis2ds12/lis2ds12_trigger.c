@@ -29,7 +29,7 @@ static void lis2ds12_gpio_callback(struct device *dev,
 
 	ARG_UNUSED(pins);
 
-	gpio_pin_disable_callback(dev, DT_ST_LIS2DS12_0_IRQ_GPIOS_PIN);
+	gpio_pin_disable_callback(dev, DT_INST_0_ST_LIS2DS12_IRQ_GPIOS_PIN);
 
 #if defined(CONFIG_LIS2DS12_TRIGGER_OWN_THREAD)
 	k_sem_give(&data->trig_sem);
@@ -62,7 +62,7 @@ static void lis2ds12_handle_int(void *arg)
 		lis2ds12_handle_drdy_int(dev);
 	}
 
-	gpio_pin_enable_callback(data->gpio, DT_ST_LIS2DS12_0_IRQ_GPIOS_PIN);
+	gpio_pin_enable_callback(data->gpio, DT_INST_0_ST_LIS2DS12_IRQ_GPIOS_PIN);
 }
 
 #ifdef CONFIG_LIS2DS12_TRIGGER_OWN_THREAD
@@ -120,20 +120,20 @@ int lis2ds12_trigger_init(struct device *dev)
 	struct lis2ds12_data *data = dev->driver_data;
 
 	/* setup data ready gpio interrupt */
-	data->gpio = device_get_binding(DT_ST_LIS2DS12_0_IRQ_GPIOS_CONTROLLER);
+	data->gpio = device_get_binding(DT_INST_0_ST_LIS2DS12_IRQ_GPIOS_CONTROLLER);
 	if (data->gpio == NULL) {
 		LOG_ERR("Cannot get pointer to %s device.",
-			    DT_ST_LIS2DS12_0_IRQ_GPIOS_CONTROLLER);
+			    DT_INST_0_ST_LIS2DS12_IRQ_GPIOS_CONTROLLER);
 		return -EINVAL;
 	}
 
-	gpio_pin_configure(data->gpio, DT_ST_LIS2DS12_0_IRQ_GPIOS_PIN,
+	gpio_pin_configure(data->gpio, DT_INST_0_ST_LIS2DS12_IRQ_GPIOS_PIN,
 			   GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
 			   GPIO_INT_ACTIVE_HIGH | GPIO_INT_DEBOUNCE);
 
 	gpio_init_callback(&data->gpio_cb,
 			   lis2ds12_gpio_callback,
-			   BIT(DT_ST_LIS2DS12_0_IRQ_GPIOS_PIN));
+			   BIT(DT_INST_0_ST_LIS2DS12_IRQ_GPIOS_PIN));
 
 	if (gpio_add_callback(data->gpio, &data->gpio_cb) < 0) {
 		LOG_ERR("Could not set gpio callback.");
@@ -153,7 +153,7 @@ int lis2ds12_trigger_init(struct device *dev)
 	data->dev = dev;
 #endif
 
-	gpio_pin_enable_callback(data->gpio, DT_ST_LIS2DS12_0_IRQ_GPIOS_PIN);
+	gpio_pin_enable_callback(data->gpio, DT_INST_0_ST_LIS2DS12_IRQ_GPIOS_PIN);
 
 	return 0;
 }
@@ -167,7 +167,7 @@ int lis2ds12_trigger_set(struct device *dev,
 
 	__ASSERT_NO_MSG(trig->type == SENSOR_TRIG_DATA_READY);
 
-	gpio_pin_disable_callback(data->gpio, DT_ST_LIS2DS12_0_IRQ_GPIOS_PIN);
+	gpio_pin_disable_callback(data->gpio, DT_INST_0_ST_LIS2DS12_IRQ_GPIOS_PIN);
 
 	data->data_ready_handler = handler;
 	if (handler == NULL) {
@@ -185,7 +185,7 @@ int lis2ds12_trigger_set(struct device *dev,
 	data->data_ready_trigger = *trig;
 
 	lis2ds12_init_interrupt(dev);
-	gpio_pin_enable_callback(data->gpio, DT_ST_LIS2DS12_0_IRQ_GPIOS_PIN);
+	gpio_pin_enable_callback(data->gpio, DT_INST_0_ST_LIS2DS12_IRQ_GPIOS_PIN);
 
 	return 0;
 }

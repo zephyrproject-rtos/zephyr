@@ -56,7 +56,7 @@ static int m16src_start(struct device *dev, clock_control_subsys_t sub_system)
 	if (blocking) {
 		u32_t intenset;
 
-		irq_disable(DT_NORDIC_NRF_CLOCK_0_IRQ_0);
+		irq_disable(DT_INST_0_NORDIC_NRF_CLOCK_IRQ_0);
 
 		NRF_CLOCK->EVENTS_HFCLKSTARTED = 0;
 
@@ -77,9 +77,9 @@ static int m16src_start(struct device *dev, clock_control_subsys_t sub_system)
 			nrf_clock_int_disable(NRF_CLOCK_INT_HF_STARTED_MASK);
 		}
 
-		NVIC_ClearPendingIRQ(DT_NORDIC_NRF_CLOCK_0_IRQ_0);
+		NVIC_ClearPendingIRQ(DT_INST_0_NORDIC_NRF_CLOCK_IRQ_0);
 
-		irq_enable(DT_NORDIC_NRF_CLOCK_0_IRQ_0);
+		irq_enable(DT_INST_0_NORDIC_NRF_CLOCK_IRQ_0);
 	} else {
 		NRF_CLOCK->EVENTS_HFCLKSTARTED = 0;
 
@@ -184,7 +184,7 @@ static int k32src_start(struct device *dev, clock_control_subsys_t sub_system)
 	NRF_CLOCK->LFCLKSRC = lf_clk_src;
 
 #if defined(CONFIG_CLOCK_CONTROL_NRF_K32SRC_BLOCKING)
-	irq_disable(DT_NORDIC_NRF_CLOCK_0_IRQ_0);
+	irq_disable(DT_INST_0_NORDIC_NRF_CLOCK_IRQ_0);
 
 	intenset = NRF_CLOCK->INTENSET;
 	nrf_clock_int_enable(NRF_CLOCK_INT_LF_STARTED_MASK);
@@ -204,9 +204,9 @@ static int k32src_start(struct device *dev, clock_control_subsys_t sub_system)
 		nrf_clock_int_disable(NRF_CLOCK_INT_LF_STARTED_MASK);
 	}
 
-	NVIC_ClearPendingIRQ(DT_NORDIC_NRF_CLOCK_0_IRQ_0);
+	NVIC_ClearPendingIRQ(DT_INST_0_NORDIC_NRF_CLOCK_IRQ_0);
 
-	irq_enable(DT_NORDIC_NRF_CLOCK_0_IRQ_0);
+	irq_enable(DT_INST_0_NORDIC_NRF_CLOCK_IRQ_0);
 
 #else /* !CONFIG_CLOCK_CONTROL_NRF_K32SRC_BLOCKING */
 	/* NOTE: LFCLK will initially start running from the LFRC if LFXO is
@@ -250,7 +250,7 @@ static int k32src_start(struct device *dev, clock_control_subsys_t sub_system)
 
 		err = m16src_start(dev, false);
 		if (!err) {
-			NVIC_SetPendingIRQ(DT_NORDIC_NRF_CLOCK_0_IRQ_0);
+			NVIC_SetPendingIRQ(DT_INST_0_NORDIC_NRF_CLOCK_IRQ_0);
 		} else {
 			__ASSERT_NO_MSG(err == -EINPROGRESS);
 		}
@@ -410,7 +410,7 @@ void nrf_power_clock_isr(void *arg)
 
 		err = m16src_start(dev, false);
 		if (!err) {
-			NVIC_SetPendingIRQ(DT_NORDIC_NRF_CLOCK_0_IRQ_0);
+			NVIC_SetPendingIRQ(DT_INST_0_NORDIC_NRF_CLOCK_IRQ_0);
 		} else {
 			__ASSERT_NO_MSG(err == -EINPROGRESS);
 		}
@@ -443,11 +443,11 @@ static int clock_control_init(struct device *dev)
 	 * power peripheral driver and/or new SoC series.
 	 * NOTE: Currently the operations here are idempotent.
 	 */
-	IRQ_CONNECT(DT_NORDIC_NRF_CLOCK_0_IRQ_0,
-		    DT_NORDIC_NRF_CLOCK_0_IRQ_0_PRIORITY,
+	IRQ_CONNECT(DT_INST_0_NORDIC_NRF_CLOCK_IRQ_0,
+		    DT_INST_0_NORDIC_NRF_CLOCK_IRQ_0_PRIORITY,
 		    nrf_power_clock_isr, 0, 0);
 
-	irq_enable(DT_NORDIC_NRF_CLOCK_0_IRQ_0);
+	irq_enable(DT_INST_0_NORDIC_NRF_CLOCK_IRQ_0);
 
 	return 0;
 }
@@ -459,7 +459,7 @@ static const struct clock_control_driver_api _m16src_clock_control_api = {
 };
 
 DEVICE_AND_API_INIT(clock_nrf5_m16src,
-		    DT_NORDIC_NRF_CLOCK_0_LABEL "_16M",
+		    DT_INST_0_NORDIC_NRF_CLOCK_LABEL "_16M",
 		    clock_control_init, NULL, NULL, PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &_m16src_clock_control_api);
@@ -471,7 +471,7 @@ static const struct clock_control_driver_api _k32src_clock_control_api = {
 };
 
 DEVICE_AND_API_INIT(clock_nrf5_k32src,
-		    DT_NORDIC_NRF_CLOCK_0_LABEL "_32K",
+		    DT_INST_0_NORDIC_NRF_CLOCK_LABEL "_32K",
 		    clock_control_init, NULL, NULL, PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &_k32src_clock_control_api);
@@ -489,7 +489,7 @@ void nrf5_power_usb_power_int_enable(bool enable)
 
 	if (enable) {
 		nrf_power_int_enable(mask);
-		irq_enable(DT_NORDIC_NRF_CLOCK_0_IRQ_0);
+		irq_enable(DT_INST_0_NORDIC_NRF_CLOCK_IRQ_0);
 	} else {
 		nrf_power_int_disable(mask);
 	}

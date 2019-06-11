@@ -113,10 +113,10 @@ void main(void)
 #ifdef CONFIG_LP3943
 	static struct device *ledc;
 
-	ledc = device_get_binding(DT_TI_LP3943_0_LABEL);
+	ledc = device_get_binding(DT_INST_0_TI_LP3943_LABEL);
 	if (!ledc) {
 		printk("Could not get pointer to %s sensor\n",
-			DT_TI_LP3943_0_LABEL);
+			DT_INST_0_TI_LP3943_LABEL);
 		return;
 	}
 
@@ -150,31 +150,31 @@ void main(void)
 
 #ifdef CONFIG_LPS22HB
 	struct device *baro_dev =
-			device_get_binding(DT_ST_LPS22HB_PRESS_0_LABEL);
+			device_get_binding(DT_INST_0_ST_LPS22HB_PRESS_LABEL);
 
 	if (!baro_dev) {
 		printk("Could not get pointer to %s sensor\n",
-			DT_ST_LPS22HB_PRESS_0_LABEL);
+			DT_INST_0_ST_LPS22HB_PRESS_LABEL);
 		return;
 	}
 #endif
 
 #ifdef CONFIG_HTS221
-	struct device *hum_dev = device_get_binding(DT_ST_HTS221_0_LABEL);
+	struct device *hum_dev = device_get_binding(DT_INST_0_ST_HTS221_LABEL);
 
 	if (!hum_dev) {
 		printk("Could not get pointer to %s sensor\n",
-			DT_ST_HTS221_0_LABEL);
+			DT_INST_0_ST_HTS221_LABEL);
 		return;
 	}
 #endif
 
 #ifdef CONFIG_LSM6DSL
-	struct device *accel_dev = device_get_binding(DT_ST_LSM6DSL_0_LABEL);
+	struct device *accel_dev = device_get_binding(DT_INST_0_ST_LSM6DSL_LABEL);
 
 	if (!accel_dev) {
 		printk("Could not get pointer to %s sensor\n",
-			DT_ST_LSM6DSL_0_LABEL);
+			DT_INST_0_ST_LSM6DSL_LABEL);
 		return;
 	}
 
@@ -235,11 +235,11 @@ void main(void)
 #endif
 
 #ifdef CONFIG_VL53L0X
-	struct device *tof_dev = device_get_binding(DT_ST_VL53L0X_0_LABEL);
+	struct device *tof_dev = device_get_binding(DT_INST_0_ST_VL53L0X_LABEL);
 
 	if (!tof_dev) {
 		printk("Could not get pointer to %s sensor\n",
-			DT_ST_VL53L0X_0_LABEL);
+			DT_INST_0_ST_VL53L0X_LABEL);
 		return;
 	}
 #endif

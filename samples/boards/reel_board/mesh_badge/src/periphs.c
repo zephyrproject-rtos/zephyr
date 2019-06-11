@@ -32,10 +32,10 @@ static struct led_device_info led_dev_info[] = {
 
 static struct device_info dev_info[] = {
 	{ NULL, SW0_GPIO_CONTROLLER },
-	{ NULL, DT_TI_HDC1010_0_LABEL },
-	{ NULL, DT_NXP_MMA8652FC_0_LABEL },
-	{ NULL, DT_AVAGO_APDS9960_0_LABEL },
-	{ NULL, DT_SOLOMON_SSD1673FB_0_LABEL },
+	{ NULL, DT_INST_0_TI_HDC1010_LABEL },
+	{ NULL, DT_INST_0_NXP_MMA8652FC_LABEL },
+	{ NULL, DT_INST_0_AVAGO_APDS9960_LABEL },
+	{ NULL, DT_INST_0_SOLOMON_SSD1673FB_LABEL },
 };
 
 static void configure_gpios(void)

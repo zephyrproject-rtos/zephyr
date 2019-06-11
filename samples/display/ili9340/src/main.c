@@ -46,7 +46,7 @@ void main(void)
 	size_t cnt = 0;
 	int h_step;
 
-	dev = device_get_binding(DT_ILITEK_ILI9340_0_LABEL);
+	dev = device_get_binding(DT_INST_0_ILITEK_ILI9340_LABEL);
 
 	if (dev == NULL) {
 		LOG_ERR("Device not found. Aborting test.");

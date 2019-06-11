@@ -520,11 +520,11 @@ static const struct sensor_driver_api fxos8700_driver_api = {
 };
 
 static const struct fxos8700_config fxos8700_config = {
-	.i2c_name = DT_NXP_FXOS8700_0_BUS_NAME,
-	.i2c_address = DT_NXP_FXOS8700_0_BASE_ADDRESS,
-#ifdef DT_NXP_FXOS8700_0_RESET_GPIOS_CONTROLLER
-	.reset_name = DT_NXP_FXOS8700_0_RESET_GPIOS_CONTROLLER,
-	.reset_pin = DT_NXP_FXOS8700_0_RESET_GPIOS_PIN,
+	.i2c_name = DT_INST_0_NXP_FXOS8700_BUS_NAME,
+	.i2c_address = DT_INST_0_NXP_FXOS8700_BASE_ADDRESS,
+#ifdef DT_INST_0_NXP_FXOS8700_RESET_GPIOS_CONTROLLER
+	.reset_name = DT_INST_0_NXP_FXOS8700_RESET_GPIOS_CONTROLLER,
+	.reset_pin = DT_INST_0_NXP_FXOS8700_RESET_GPIOS_PIN,
 #else
 	.reset_name = NULL,
 	.reset_pin = 0,
@@ -563,11 +563,11 @@ static const struct fxos8700_config fxos8700_config = {
 #endif
 #ifdef CONFIG_FXOS8700_TRIGGER
 #ifdef CONFIG_FXOS8700_DRDY_INT1
-	.gpio_name = DT_NXP_FXOS8700_0_INT1_GPIOS_CONTROLLER,
-	.gpio_pin = DT_NXP_FXOS8700_0_INT1_GPIOS_PIN,
+	.gpio_name = DT_INST_0_NXP_FXOS8700_INT1_GPIOS_CONTROLLER,
+	.gpio_pin = DT_INST_0_NXP_FXOS8700_INT1_GPIOS_PIN,
 #else
-	.gpio_name = DT_NXP_FXOS8700_0_INT2_GPIOS_CONTROLLER,
-	.gpio_pin = DT_NXP_FXOS8700_0_INT2_GPIOS_PIN,
+	.gpio_name = DT_INST_0_NXP_FXOS8700_INT2_GPIOS_CONTROLLER,
+	.gpio_pin = DT_INST_0_NXP_FXOS8700_INT2_GPIOS_PIN,
 #endif
 #endif
 #ifdef CONFIG_FXOS8700_PULSE
@@ -583,7 +583,7 @@ static const struct fxos8700_config fxos8700_config = {
 
 static struct fxos8700_data fxos8700_data;
 
-DEVICE_AND_API_INIT(fxos8700, DT_NXP_FXOS8700_0_LABEL, fxos8700_init,
+DEVICE_AND_API_INIT(fxos8700, DT_INST_0_NXP_FXOS8700_LABEL, fxos8700_init,
 		    &fxos8700_data, &fxos8700_config,
 		    POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
 		    &fxos8700_driver_api);

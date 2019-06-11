@@ -92,13 +92,13 @@ static const struct pwm_driver_api sam_pwm_driver_api = {
 
 #ifdef DT_ATMEL_SAM_PWM_0
 static const struct sam_pwm_config sam_pwm_config_0 = {
-	.regs = (Pwm *)DT_ATMEL_SAM_PWM_0_BASE_ADDRESS,
-	.id = DT_ATMEL_SAM_PWM_0_PERIPHERAL_ID,
-	.prescaler = DT_ATMEL_SAM_PWM_0_PRESCALER,
-	.divider = DT_ATMEL_SAM_PWM_0_DIVIDER,
+	.regs = (Pwm *)DT_INST_0_ATMEL_SAM_PWM_BASE_ADDRESS,
+	.id = DT_INST_0_ATMEL_SAM_PWM_PERIPHERAL_ID,
+	.prescaler = DT_INST_0_ATMEL_SAM_PWM_PRESCALER,
+	.divider = DT_INST_0_ATMEL_SAM_PWM_DIVIDER,
 };
 
-DEVICE_AND_API_INIT(sam_pwm_0, DT_ATMEL_SAM_PWM_0_LABEL, &sam_pwm_init,
+DEVICE_AND_API_INIT(sam_pwm_0, DT_INST_0_ATMEL_SAM_PWM_LABEL, &sam_pwm_init,
 		    NULL, &sam_pwm_config_0,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &sam_pwm_driver_api);

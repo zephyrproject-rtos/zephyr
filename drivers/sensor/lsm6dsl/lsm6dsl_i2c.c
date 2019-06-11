@@ -15,7 +15,7 @@
 
 #ifdef DT_ST_LSM6DSL_BUS_I2C
 
-static u16_t lsm6dsl_i2c_slave_addr = DT_ST_LSM6DSL_0_BASE_ADDRESS;
+static u16_t lsm6dsl_i2c_slave_addr = DT_INST_0_ST_LSM6DSL_BASE_ADDRESS;
 
 #define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
 LOG_MODULE_DECLARE(LSM6DSL);

@@ -207,16 +207,16 @@ static int i2c_eeprom_slave_init(struct device *dev)
 
 static struct i2c_eeprom_slave_data i2c_eeprom_slave_0_dev_data;
 
-static u8_t i2c_eeprom_slave_0_buffer[(DT_ATMEL_AT24_0_SIZE * 1024)];
+static u8_t i2c_eeprom_slave_0_buffer[(DT_INST_0_ATMEL_AT24_SIZE * 1024)];
 
 static const struct i2c_eeprom_slave_config i2c_eeprom_slave_0_cfg = {
-	.controller_dev_name = DT_ATMEL_AT24_0_BUS_NAME,
-	.address = DT_ATMEL_AT24_0_BASE_ADDRESS,
-	.buffer_size = (DT_ATMEL_AT24_0_SIZE * 1024),
+	.controller_dev_name = DT_INST_0_ATMEL_AT24_BUS_NAME,
+	.address = DT_INST_0_ATMEL_AT24_BASE_ADDRESS,
+	.buffer_size = (DT_INST_0_ATMEL_AT24_SIZE * 1024),
 	.buffer = i2c_eeprom_slave_0_buffer
 };
 
-DEVICE_AND_API_INIT(i2c_eeprom_slave_0, DT_ATMEL_AT24_0_LABEL,
+DEVICE_AND_API_INIT(i2c_eeprom_slave_0, DT_INST_0_ATMEL_AT24_LABEL,
 		    &i2c_eeprom_slave_init,
 		    &i2c_eeprom_slave_0_dev_data, &i2c_eeprom_slave_0_cfg,
 		    POST_KERNEL, CONFIG_I2C_SLAVE_INIT_PRIORITY,
@@ -228,16 +228,16 @@ DEVICE_AND_API_INIT(i2c_eeprom_slave_0, DT_ATMEL_AT24_0_LABEL,
 
 static struct i2c_eeprom_slave_data i2c_eeprom_slave_1_dev_data;
 
-static u8_t i2c_eeprom_slave_1_buffer[(DT_ATMEL_AT24_1_SIZE * 1024)];
+static u8_t i2c_eeprom_slave_1_buffer[(DT_INST_1_ATMEL_AT24_SIZE * 1024)];
 
 static const struct i2c_eeprom_slave_config i2c_eeprom_slave_1_cfg = {
-	.controller_dev_name = DT_ATMEL_AT24_1_BUS_NAME,
-	.address = DT_ATMEL_AT24_1_BASE_ADDRESS,
-	.buffer_size = (DT_ATMEL_AT24_1_SIZE * 1024),
+	.controller_dev_name = DT_INST_1_ATMEL_AT24_BUS_NAME,
+	.address = DT_INST_1_ATMEL_AT24_BASE_ADDRESS,
+	.buffer_size = (DT_INST_1_ATMEL_AT24_SIZE * 1024),
 	.buffer = i2c_eeprom_slave_1_buffer
 };
 
-DEVICE_AND_API_INIT(i2c_eeprom_slave_1, DT_ATMEL_AT24_1_LABEL,
+DEVICE_AND_API_INIT(i2c_eeprom_slave_1, DT_INST_1_ATMEL_AT24_LABEL,
 		    &i2c_eeprom_slave_init,
 		    &i2c_eeprom_slave_1_dev_data, &i2c_eeprom_slave_1_cfg,
 		    POST_KERNEL, CONFIG_I2C_SLAVE_INIT_PRIORITY,

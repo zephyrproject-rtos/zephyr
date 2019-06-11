@@ -21,10 +21,10 @@
 LOG_MODULE_DECLARE(LIS2DW12);
 
 static struct spi_config lis2dw12_spi_conf = {
-	.frequency = DT_ST_LIS2DW12_0_SPI_MAX_FREQUENCY,
+	.frequency = DT_INST_0_ST_LIS2DW12_SPI_MAX_FREQUENCY,
 	.operation = (SPI_OP_MODE_MASTER | SPI_MODE_CPOL |
 		      SPI_MODE_CPHA | SPI_WORD_SET(8) | SPI_LINES_SINGLE),
-	.slave     = DT_ST_LIS2DW12_0_BASE_ADDRESS,
+	.slave     = DT_INST_0_ST_LIS2DW12_BASE_ADDRESS,
 	.cs        = NULL,
 };
 
@@ -151,23 +151,23 @@ int lis2dw12_spi_init(struct device *dev)
 
 	data->hw_tf = &lis2dw12_spi_transfer_fn;
 
-#if defined(DT_ST_LIS2DW12_0_CS_GPIO_CONTROLLER)
+#if defined(DT_INST_0_ST_LIS2DW12_CS_GPIO_CONTROLLER)
 	/* handle SPI CS thru GPIO if it is the case */
 	data->cs_ctrl.gpio_dev = device_get_binding(
-		DT_ST_LIS2DW12_0_CS_GPIO_CONTROLLER);
+		DT_INST_0_ST_LIS2DW12_CS_GPIO_CONTROLLER);
 	if (!data->cs_ctrl.gpio_dev) {
 		LOG_ERR("Unable to get GPIO SPI CS device");
 		return -ENODEV;
 	}
 
-	data->cs_ctrl.gpio_pin = DT_ST_LIS2DW12_0_CS_GPIO_PIN;
+	data->cs_ctrl.gpio_pin = DT_INST_0_ST_LIS2DW12_CS_GPIO_PIN;
 	data->cs_ctrl.delay = 0U;
 
 	lis2dw12_spi_conf.cs = &data->cs_ctrl;
 
 	LOG_DBG("SPI GPIO CS configured on %s:%u",
-		    DT_ST_LIS2DW12_0_CS_GPIO_CONTROLLER,
-		    DT_ST_LIS2DW12_0_CS_GPIO_PIN);
+		    DT_INST_0_ST_LIS2DW12_CS_GPIO_CONTROLLER,
+		    DT_INST_0_ST_LIS2DW12_CS_GPIO_PIN);
 #endif
 
 	return 0;

@@ -417,7 +417,7 @@ void main(void)
 #endif
 
 	printk("IMU: Binding...\n");
-	bmi160 = device_get_binding(DT_BOSCH_BMI160_0_LABEL);
+	bmi160 = device_get_binding(DT_INST_0_BOSCH_BMI160_LABEL);
 	if (!bmi160) {
 		printk("Gyro: Device not found.\n");
 		return;

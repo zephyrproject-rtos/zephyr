@@ -47,10 +47,10 @@ void main(void)
 	int i;
 	char meter[200];
 
-	struct device *dev = device_get_binding(DT_ADI_ADXL372_0_LABEL);
+	struct device *dev = device_get_binding(DT_INST_0_ADI_ADXL372_LABEL);
 
 	if (dev == NULL) {
-		printf("Could not get %s device\n", DT_ADI_ADXL372_0_LABEL);
+		printf("Could not get %s device\n", DT_INST_0_ADI_ADXL372_LABEL);
 		return;
 	}
 

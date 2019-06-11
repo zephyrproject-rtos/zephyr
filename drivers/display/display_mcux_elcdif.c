@@ -226,7 +226,7 @@ static const struct display_driver_api mcux_elcdif_api = {
 static void mcux_elcdif_config_func_1(struct device *dev);
 
 static struct mcux_elcdif_config mcux_elcdif_config_1 = {
-	.base = (LCDIF_Type *) DT_FSL_IMX6SX_LCDIF_0_BASE_ADDRESS,
+	.base = (LCDIF_Type *) DT_INST_0_FSL_IMX6SX_LCDIF_BASE_ADDRESS,
 	.irq_config_func = mcux_elcdif_config_func_1,
 #ifdef CONFIG_MCUX_ELCDIF_PANEL_RK043FN02H
 	.rgb_mode = {
@@ -252,7 +252,7 @@ static struct mcux_elcdif_config mcux_elcdif_config_1 = {
 
 static struct mcux_elcdif_data mcux_elcdif_data_1;
 
-DEVICE_AND_API_INIT(mcux_elcdif_1, DT_FSL_IMX6SX_LCDIF_0_LABEL,
+DEVICE_AND_API_INIT(mcux_elcdif_1, DT_INST_0_FSL_IMX6SX_LCDIF_LABEL,
 		    &mcux_elcdif_init,
 		    &mcux_elcdif_data_1, &mcux_elcdif_config_1,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
@@ -260,9 +260,9 @@ DEVICE_AND_API_INIT(mcux_elcdif_1, DT_FSL_IMX6SX_LCDIF_0_LABEL,
 
 static void mcux_elcdif_config_func_1(struct device *dev)
 {
-	IRQ_CONNECT(DT_FSL_IMX6SX_LCDIF_0_IRQ_0,
-		    DT_FSL_IMX6SX_LCDIF_0_IRQ_0_PRIORITY,
+	IRQ_CONNECT(DT_INST_0_FSL_IMX6SX_LCDIF_IRQ_0,
+		    DT_INST_0_FSL_IMX6SX_LCDIF_IRQ_0_PRIORITY,
 		    mcux_elcdif_isr, DEVICE_GET(mcux_elcdif_1), 0);
 
-	irq_enable(DT_FSL_IMX6SX_LCDIF_0_IRQ_0);
+	irq_enable(DT_INST_0_FSL_IMX6SX_LCDIF_IRQ_0);
 }

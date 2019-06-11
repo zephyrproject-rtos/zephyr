@@ -32,7 +32,7 @@ static int send_buf(u8_t *buf, size_t len)
 	 */
 	u32_t i = 0U;
 
-	clock = device_get_binding(DT_NORDIC_NRF_CLOCK_0_LABEL "_16M");
+	clock = device_get_binding(DT_INST_0_NORDIC_NRF_CLOCK_LABEL "_16M");
 	if (!clock) {
 		LOG_ERR("Unable to get HF clock");
 		return -EIO;

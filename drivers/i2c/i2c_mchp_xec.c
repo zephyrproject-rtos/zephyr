@@ -357,10 +357,10 @@ static const struct i2c_driver_api i2c_xec_driver_api = {
 #ifdef CONFIG_I2C_XEC_0
 static struct i2c_xec_data i2c_xec_data_0;
 static const struct i2c_xec_config i2c_xec_config_0 = {
-	.base_addr = DT_MICROCHIP_XEC_I2C_0_BASE_ADDRESS,
-	.port_sel = DT_MICROCHIP_XEC_I2C_0_PORT_SEL,
+	.base_addr = DT_INST_0_MICROCHIP_XEC_I2C_BASE_ADDRESS,
+	.port_sel = DT_INST_0_MICROCHIP_XEC_I2C_PORT_SEL,
 };
-DEVICE_AND_API_INIT(i2c_xec_0, DT_MICROCHIP_XEC_I2C_0_LABEL,
+DEVICE_AND_API_INIT(i2c_xec_0, DT_INST_0_MICROCHIP_XEC_I2C_LABEL,
 			&i2c_xec_init, &i2c_xec_data_0, &i2c_xec_config_0,
 			POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,
 			&i2c_xec_driver_api);
@@ -369,10 +369,10 @@ DEVICE_AND_API_INIT(i2c_xec_0, DT_MICROCHIP_XEC_I2C_0_LABEL,
 #ifdef CONFIG_I2C_XEC_1
 static struct i2c_xec_data i2c_xec_data_1;
 static const struct i2c_xec_config i2c_xec_config_1 = {
-	.base_addr	= DT_MICROCHIP_XEC_I2C_1_BASE_ADDRESS,
-	.port_sel = DT_MICROCHIP_XEC_I2C_1_PORT_SEL,
+	.base_addr	= DT_INST_1_MICROCHIP_XEC_I2C_BASE_ADDRESS,
+	.port_sel = DT_INST_1_MICROCHIP_XEC_I2C_PORT_SEL,
 };
-DEVICE_AND_API_INIT(i2c_xec_1, DT_MICROCHIP_XEC_I2C_1_LABEL,
+DEVICE_AND_API_INIT(i2c_xec_1, DT_INST_1_MICROCHIP_XEC_I2C_LABEL,
 			&i2c_xec_init, &i2c_xec_data_1, &i2c_xec_config_1,
 			POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,
 			&i2c_xec_driver_api);
@@ -381,10 +381,10 @@ DEVICE_AND_API_INIT(i2c_xec_1, DT_MICROCHIP_XEC_I2C_1_LABEL,
 #ifdef CONFIG_I2C_XEC_2
 static struct i2c_xec_data i2c_xec_data_2;
 static const struct i2c_xec_config i2c_xec_config_2 = {
-	.base_addr	= DT_MICROCHIP_XEC_I2C_2_BASE_ADDRESS,
-	.port_sel = DT_MICROCHIP_XEC_I2C_2_PORT_SEL,
+	.base_addr	= DT_INST_2_MICROCHIP_XEC_I2C_BASE_ADDRESS,
+	.port_sel = DT_INST_2_MICROCHIP_XEC_I2C_PORT_SEL,
 };
-DEVICE_AND_API_INIT(i2c_xec_2, DT_MICROCHIP_XEC_I2C_2_LABEL,
+DEVICE_AND_API_INIT(i2c_xec_2, DT_INST_2_MICROCHIP_XEC_I2C_LABEL,
 			&i2c_xec_init, &i2c_xec_data_2, &i2c_xec_config_2,
 			POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,
 			&i2c_xec_driver_api);

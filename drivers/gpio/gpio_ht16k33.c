@@ -148,15 +148,15 @@ static const struct gpio_driver_api gpio_ht16k33_api = {
 #define GPIO_HT16K33_DEVICE(id)						\
 	static const struct gpio_ht16k33_cfg gpio_ht16k33_##id##_cfg = {\
 		.parent_dev_name =					\
-			DT_HOLTEK_HT16K33_KEYSCAN_##id##_BUS_NAME,	\
+			DT_INST_##id##_HOLTEK_HT16K33_KEYSCAN_BUS_NAME,	\
 		.keyscan_idx     =					\
-			DT_HOLTEK_HT16K33_KEYSCAN_##id##_BASE_ADDRESS,	\
+			DT_INST_##id##_HOLTEK_HT16K33_KEYSCAN_BASE_ADDRESS,	\
 	};								\
 									\
 	static struct gpio_ht16k33_data gpio_ht16k33_##id##_data;	\
 									\
 	DEVICE_AND_API_INIT(gpio_ht16k33_##id,				\
-			    DT_HOLTEK_HT16K33_KEYSCAN_##id##_LABEL,	\
+			    DT_INST_##id##_HOLTEK_HT16K33_KEYSCAN_LABEL,	\
 			    &gpio_ht16k33_init,				\
 			    &gpio_ht16k33_##id##_data,			\
 			    &gpio_ht16k33_##id##_cfg, POST_KERNEL,	\

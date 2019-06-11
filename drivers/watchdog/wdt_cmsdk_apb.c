@@ -57,7 +57,7 @@ struct wdog_cmsdk_apb {
 #define CMSDK_APB_WDOG_LOCK_VALUE (0x2BDDF662)
 
 #define WDOG_STRUCT \
-	((volatile struct wdog_cmsdk_apb *)(DT_ARM_CMSDK_WATCHDOG_0_BASE_ADDRESS))
+	((volatile struct wdog_cmsdk_apb *)(DT_INST_0_ARM_CMSDK_WATCHDOG_BASE_ADDRESS))
 
 /* Keep reference of the device to pass it to the callback */
 struct device *wdog_r;

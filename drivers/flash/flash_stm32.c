@@ -274,8 +274,8 @@ static const struct flash_driver_api flash_stm32_api = {
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
 	.page_layout = flash_stm32_page_layout,
 #endif
-#ifdef DT_SOC_NV_FLASH_0_WRITE_BLOCK_SIZE
-	.write_block_size = DT_SOC_NV_FLASH_0_WRITE_BLOCK_SIZE,
+#ifdef DT_INST_0_SOC_NV_FLASH_WRITE_BLOCK_SIZE
+	.write_block_size = DT_INST_0_SOC_NV_FLASH_WRITE_BLOCK_SIZE,
 #else
 #error Flash write block size not available
 	/* Flash Write block size is extracted from device tree */

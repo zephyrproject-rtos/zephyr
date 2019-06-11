@@ -165,14 +165,14 @@ static const struct dtmr_cmsdk_apb_cfg dtmr_cmsdk_apb_cfg_0 = {
 			.flags = 0,
 			.channels = 0U,
 	},
-	.dtimer = ((volatile struct dualtimer_cmsdk_apb *)DT_ARM_CMSDK_DTIMER_0_BASE_ADDRESS),
+	.dtimer = ((volatile struct dualtimer_cmsdk_apb *)DT_INST_0_ARM_CMSDK_DTIMER_BASE_ADDRESS),
 	.dtimer_config_func = dtimer_cmsdk_apb_config_0,
 	.dtimer_cc_as = {.bus = CMSDK_APB, .state = SOC_ACTIVE,
-			 .device = DT_ARM_CMSDK_DTIMER_0_BASE_ADDRESS,},
+			 .device = DT_INST_0_ARM_CMSDK_DTIMER_BASE_ADDRESS,},
 	.dtimer_cc_ss = {.bus = CMSDK_APB, .state = SOC_SLEEP,
-			 .device = DT_ARM_CMSDK_DTIMER_0_BASE_ADDRESS,},
+			 .device = DT_INST_0_ARM_CMSDK_DTIMER_BASE_ADDRESS,},
 	.dtimer_cc_dss = {.bus = CMSDK_APB, .state = SOC_DEEPSLEEP,
-			  .device = DT_ARM_CMSDK_DTIMER_0_BASE_ADDRESS,},
+			  .device = DT_INST_0_ARM_CMSDK_DTIMER_BASE_ADDRESS,},
 };
 
 static struct dtmr_cmsdk_apb_dev_data dtmr_cmsdk_apb_dev_data_0 = {
@@ -180,7 +180,7 @@ static struct dtmr_cmsdk_apb_dev_data dtmr_cmsdk_apb_dev_data_0 = {
 };
 
 DEVICE_AND_API_INIT(dtmr_cmsdk_apb_0,
-		    DT_ARM_CMSDK_DTIMER_0_LABEL,
+		    DT_INST_0_ARM_CMSDK_DTIMER_LABEL,
 		    dtmr_cmsdk_apb_init,
 		    &dtmr_cmsdk_apb_dev_data_0,
 		    &dtmr_cmsdk_apb_cfg_0, POST_KERNEL,
@@ -189,10 +189,10 @@ DEVICE_AND_API_INIT(dtmr_cmsdk_apb_0,
 
 static void dtimer_cmsdk_apb_config_0(struct device *dev)
 {
-	IRQ_CONNECT(DT_ARM_CMSDK_DTIMER_0_IRQ_0,
-		    DT_ARM_CMSDK_DTIMER_0_IRQ_0_PRIORITY,
+	IRQ_CONNECT(DT_INST_0_ARM_CMSDK_DTIMER_IRQ_0,
+		    DT_INST_0_ARM_CMSDK_DTIMER_IRQ_0_PRIORITY,
 		    dtmr_cmsdk_apb_isr,
 		    DEVICE_GET(dtmr_cmsdk_apb_0), 0);
-	irq_enable(DT_ARM_CMSDK_DTIMER_0_IRQ_0);
+	irq_enable(DT_INST_0_ARM_CMSDK_DTIMER_IRQ_0);
 }
 #endif /* DT_ARM_CMSDK_DTIMER_0 */

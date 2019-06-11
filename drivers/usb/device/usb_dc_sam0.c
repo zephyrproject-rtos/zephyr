@@ -21,8 +21,8 @@ LOG_MODULE_REGISTER(usb_dc_sam0);
 
 #define USB_SAM0_IN_EP 0x80
 
-#define REGS ((Usb *)DT_ATMEL_SAM0_USB_0_BASE_ADDRESS)
-#define USB_NUM_ENDPOINTS DT_ATMEL_SAM0_USB_0_NUM_BIDIR_ENDPOINTS
+#define REGS ((Usb *)DT_INST_0_ATMEL_SAM0_USB_BASE_ADDRESS)
+#define USB_NUM_ENDPOINTS DT_INST_0_ATMEL_SAM0_USB_NUM_BIDIR_ENDPOINTS
 
 struct usb_sam0_data {
 	UsbDeviceDescriptor descriptors[USB_NUM_ENDPOINTS];
@@ -203,10 +203,10 @@ int usb_dc_attach(void)
 	regs->INTENSET.reg = USB_DEVICE_INTENSET_EORST;
 
 	/* Connect and enable the interrupt */
-	IRQ_CONNECT(DT_ATMEL_SAM0_USB_0_IRQ_0,
-		    DT_ATMEL_SAM0_USB_0_IRQ_0_PRIORITY,
+	IRQ_CONNECT(DT_INST_0_ATMEL_SAM0_USB_IRQ_0,
+		    DT_INST_0_ATMEL_SAM0_USB_IRQ_0_PRIORITY,
 		    usb_sam0_isr, 0, 0);
-	irq_enable(DT_ATMEL_SAM0_USB_0_IRQ_0);
+	irq_enable(DT_INST_0_ATMEL_SAM0_USB_IRQ_0);
 
 	/* Enable and attach */
 	regs->CTRLA.bit.ENABLE = 1;
@@ -232,7 +232,7 @@ int usb_dc_reset(void)
 {
 	UsbDevice *regs = &REGS->DEVICE;
 
-	irq_disable(DT_ATMEL_SAM0_USB_0_IRQ_0);
+	irq_disable(DT_INST_0_ATMEL_SAM0_USB_IRQ_0);
 
 	regs->CTRLA.bit.SWRST = 1;
 	usb_sam0_wait_syncbusy();

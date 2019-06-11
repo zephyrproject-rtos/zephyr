@@ -34,7 +34,7 @@ static int iaqcore_sample_fetch(struct device *dev, enum sensor_channel chan)
 	for (tries = 0; tries < CONFIG_IAQ_CORE_MAX_READ_RETRIES; tries++) {
 
 		ret = i2c_transfer(drv_data->i2c, &msg, 1,
-				   DT_AMS_IAQCORE_0_BASE_ADDRESS);
+				   DT_INST_0_AMS_IAQCORE_BASE_ADDRESS);
 		if (ret < 0) {
 			LOG_ERR("Failed to read registers data [%d].", ret);
 			return -EIO;
@@ -100,10 +100,10 @@ static int iaq_core_init(struct device *dev)
 {
 	struct iaq_core_data *drv_data = dev->driver_data;
 
-	drv_data->i2c = device_get_binding(DT_AMS_IAQCORE_0_BUS_NAME);
+	drv_data->i2c = device_get_binding(DT_INST_0_AMS_IAQCORE_BUS_NAME);
 	if (drv_data->i2c == NULL) {
 		LOG_ERR("Failed to get pointer to %s device!",
-			    DT_AMS_IAQCORE_0_BUS_NAME);
+			    DT_INST_0_AMS_IAQCORE_BUS_NAME);
 		return -EINVAL;
 	}
 
@@ -112,6 +112,6 @@ static int iaq_core_init(struct device *dev)
 
 static struct iaq_core_data iaq_core_driver;
 
-DEVICE_AND_API_INIT(iaq_core, DT_AMS_IAQCORE_0_LABEL, iaq_core_init,
+DEVICE_AND_API_INIT(iaq_core, DT_INST_0_AMS_IAQCORE_LABEL, iaq_core_init,
 		    &iaq_core_driver, NULL, POST_KERNEL,
 		    CONFIG_SENSOR_INIT_PRIORITY, &iaq_core_driver_api);
