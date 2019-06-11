@@ -377,6 +377,11 @@ int usb_dc_ep_read_continue(u8_t ep)
 	/* select the index of the next endpoint buffer */
 	u8_t ep_abs_idx = EP_ABS_IDX(ep);
 
+	if (s_Device.eps[ep_abs_idx].ep_occupied) {
+		LOG_WRN("endpoint 0x%x already occupied", ep);
+		return -EBUSY;
+	}
+
 	if (EP_ADDR2IDX(ep) == USB_ENDPOINT_CONTROL) {
 		if (s_Device.setupDataStage == SETUP_DATA_STAGE_DONE) {
 			return 0;
