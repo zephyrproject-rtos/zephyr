@@ -399,12 +399,12 @@ DEVICE_AND_API_INIT(uart_sifive_0, DT_SIFIVE_UART_0_LABEL,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void uart_sifive_irq_cfg_func_0(void)
 {
-	IRQ_CONNECT(DT_SIFIVE_UART_0_IRQ_0,
+	IRQ_CONNECT(RISCV_MAX_GENERIC_IRQ + DT_SIFIVE_UART_0_IRQ_0,
 		    CONFIG_UART_SIFIVE_PORT_0_IRQ_PRIORITY,
 		    uart_sifive_irq_handler, DEVICE_GET(uart_sifive_0),
 		    0);
 
-	irq_enable(DT_SIFIVE_UART_0_IRQ_0);
+	irq_enable(RISCV_MAX_GENERIC_IRQ + DT_SIFIVE_UART_0_IRQ_0);
 }
 #endif
 
@@ -438,12 +438,12 @@ DEVICE_AND_API_INIT(uart_sifive_1, DT_SIFIVE_UART_1_LABEL,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void uart_sifive_irq_cfg_func_1(void)
 {
-	IRQ_CONNECT(DT_SIFIVE_UART_1_IRQ_0,
+	IRQ_CONNECT(RISCV_MAX_GENERIC_IRQ + DT_SIFIVE_UART_1_IRQ_0,
 		    CONFIG_UART_SIFIVE_PORT_1_IRQ_PRIORITY,
 		    uart_sifive_irq_handler, DEVICE_GET(uart_sifive_1),
 		    0);
 
-	irq_enable(DT_SIFIVE_UART_1_IRQ_0);
+	irq_enable(RISCV_MAX_GENERIC_IRQ + DT_SIFIVE_UART_1_IRQ_0);
 }
 #endif
 
