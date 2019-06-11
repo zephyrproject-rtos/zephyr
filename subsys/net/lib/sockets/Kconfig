@@ -132,6 +132,24 @@ config NET_SOCKETS_CAN
 	help
 	  The value depends on your network needs.
 
+config NET_SOCKETS_NET_MGMT
+	bool "Enable network mangement socket support [EXPERIMENTAL]"
+	depends on NET_MGMT_EVENT
+	select NET_MGMT_EVENT_INFO
+	help
+	  Select this if you want to use socket API to get network
+	  managements events to your application.
+
+config NET_SOCKETS_NET_MGMT_MAX_LISTENERS
+	int "Max number of sockets to listen"
+	default 1
+	depends on NET_SOCKETS_NET_MGMT
+	help
+	  This sets the maximum number of net_mgmt sockets that can
+	  be set by the socket interface. So if you have two separate
+	  sockets that are used for listening events, you need to set
+	  this to two.
+
 module = NET_SOCKETS
 module-dep = NET_LOG
 module-str = Log level for BSD sockets compatible API calls
