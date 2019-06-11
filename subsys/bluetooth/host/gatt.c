@@ -1038,15 +1038,19 @@ ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn,
 	struct bt_gatt_ccc_cfg *cfg;
 	u16_t value;
 
-	if (offset > sizeof(u16_t)) {
+	if (offset) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
 	}
 
-	if (offset + len > sizeof(u16_t)) {
+	if (!len || len > sizeof(u16_t)) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	}
 
-	value = sys_get_le16(buf);
+	if (len < sizeof(u16_t)) {
+		value = *(u8_t *)buf;
+	} else {
+		value = sys_get_le16(buf);
+	}
 
 	cfg = find_ccc_cfg(conn, ccc);
 	if (!cfg) {
