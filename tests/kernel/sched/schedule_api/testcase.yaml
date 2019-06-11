@@ -1,8 +1,8 @@
 tests:
   kernel.sched:
     min_ram: 32
-    tags: kernel threads sched
+    tags: kernel threads sched userspace
   kernel.sched.multiq:
     min_ram: 32
     extra_args: CONF_FILE=prj_multiq.conf
-    tags: kernel threads sched
+    tags: kernel threads sched userspace
