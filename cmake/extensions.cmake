@@ -330,19 +330,23 @@ endmacro()
 #
 # A Zephyr library can be constructed by the function zephyr_library
 # or zephyr_library_named. The constructors create a CMake library
-# with a name accessible through the variable ZEPHYR_CURRENT_LIBRARY.
+# which can be manipulated via extensions with zephyr_library in their
+# names.
 #
-# The variable ZEPHYR_CURRENT_LIBRARY should seldomly be needed since
-# the zephyr libraries have methods that modify the libraries. These
-# methods have the signature: zephyr_library_<target-function>
+# The variable ZEPHYR_CURRENT_LIBRARY contains the library name, but
+# this is an implementation detail that should not be relied upon,
+# since this file provides functions for modifying it. These functions
+# have the signatures zephyr_library_<target-function> and
+# <target_function>_zephyr_library.
 #
-# The methods are wrappers around the CMake target_* functions. See
+# The methods are wrappers around CMake functions for manipulating
+# targets. See
 # https://cmake.org/cmake/help/latest/manual/cmake-commands.7.html for
 # documentation on the underlying target_* functions.
 #
 # The methods modify the CMake target_* API to reduce boilerplate;
 #  PRIVATE is assumed
-#  The target is assumed to be ZEPHYR_CURRENT_LIBRARY
+#  The target is assumed to be the current library
 #
 # When a flag that is given through the zephyr_* API conflicts with
 # the zephyr_library_* API then precedence will be given to the
