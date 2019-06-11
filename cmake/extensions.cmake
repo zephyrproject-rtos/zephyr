@@ -390,6 +390,10 @@ endfunction()
 #
 # zephyr_library versions of normal CMake target_<func> functions
 #
+function(zephyr_library_add_dependencies)
+  add_dependencies(${ZEPHYR_CURRENT_LIBRARY} ${ARGN})
+endfunction()
+
 function(zephyr_library_sources source)
   target_sources(${ZEPHYR_CURRENT_LIBRARY} PRIVATE ${source} ${ARGN})
 endfunction()
@@ -547,6 +551,23 @@ function(generate_inc_file_for_target
 
   add_custom_target(${generated_target_name} DEPENDS ${generated_file})
   generate_inc_file_for_gen_target(${target} ${source_file} ${generated_file} ${generated_target_name} ${ARGN})
+endfunction()
+
+function(generate_inc_file_for_gen_zephyr_library
+    source_file     # The source file to be converted to hex
+    generated_file  # The generated file
+    gen_target      # The generated file target we depend on
+                    # Any additional arguments are passed on to file2hex.py
+    )
+  generate_inc_file_for_gen_target(${ZEPHYR_CURRENT_LIBRARY} ${source_file} ${generated_file} ${gen_target} ${ARGN})
+endfunction()
+
+function(generate_inc_file_for_zephyr_library
+    source_file     # The source file to be converted to hex
+    generated_file  # The generated file
+                    # Any additional arguments are passed on to file2hex.py
+    )
+  generate_inc_file_for_target(${ZEPHYR_CURRENT_LIBRARY} ${source_file} ${generated_file} ${ARGN})
 endfunction()
 
 # 1.4. board_*
