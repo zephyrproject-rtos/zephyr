@@ -74,5 +74,6 @@ integrations:
           - net
           - bluetooth
           - arm
+          - v1.14-branch
       on_success: never
       on_failure: never
