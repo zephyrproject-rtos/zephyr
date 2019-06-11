@@ -282,11 +282,11 @@ u32_t z_check_thread_stack_fail(const u32_t fault_addr, const u32_t psp)
 		}
 	}
 #else /* CONFIG_USERSPACE */
-	if (IS_MPU_GUARD_VIOLATION(thread->stack_info.start,
+	if (IS_MPU_GUARD_VIOLATION(thread->stack_info.start -
+			MPU_GUARD_ALIGN_AND_SIZE,
 			fault_addr, psp)) {
 		/* Thread stack corruption */
-		return thread->stack_info.start +
-			MPU_GUARD_ALIGN_AND_SIZE;
+		return thread->stack_info.start;
 	}
 #endif /* CONFIG_USERSPACE */
 
