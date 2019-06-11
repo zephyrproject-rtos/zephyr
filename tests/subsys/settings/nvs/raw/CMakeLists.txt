@@ -4,13 +4,11 @@ cmake_minimum_required(VERSION 3.13.1)
 include($ENV{ZEPHYR_BASE}/cmake/app/boilerplate.cmake NO_POLICY_SCOPE)
 project(test_settings_nvs_raw)
 
-FILE(GLOB app_sources ../src/*.c ../../src/*c)
-target_sources(app PRIVATE ${app_sources})
-zephyr_include_directories(
-	$ENV{ZEPHYR_BASE}/subsys/settings/include
-	$ENV{ZEPHYR_BASE}/subsys/settings/src
-	$ENV{ZEPHYR_BASE}/tests/subsys/settings/nvs/src
-	)
+add_subdirectory(../src nvs_test_bindir)
+target_link_libraries(app PRIVATE settings_nvs_test)
+
+# The code is in the library common to several tests.
+target_sources(app PRIVATE placeholder.c)
 
 if(TEST)
 	target_compile_definitions(app PRIVATE
