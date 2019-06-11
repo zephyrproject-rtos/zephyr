@@ -32,4 +32,11 @@ config I2C_STM32_V2
 
 endif # I2C_STM32
 
+if ADC
+
+config ADC_STM32
+	default y
+
+endif # ADC
+
 endif # SOC_SERIES_STM32WBX

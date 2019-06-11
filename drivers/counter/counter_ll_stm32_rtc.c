@@ -28,7 +28,8 @@ LOG_MODULE_REGISTER(counter_rtc_stm32, CONFIG_COUNTER_LOG_LEVEL);
 #define RTC_EXTI_LINE	LL_EXTI_LINE_18
 #elif defined(CONFIG_SOC_SERIES_STM32F4X) \
 	|| defined(CONFIG_SOC_SERIES_STM32F3X)	\
-	|| defined(CONFIG_SOC_SERIES_STM32F7X)
+	|| defined(CONFIG_SOC_SERIES_STM32F7X) \
+    || defined(CONFIG_SOC_SERIES_STM32WBX)
 #define RTC_EXTI_LINE	LL_EXTI_LINE_17
 #endif
 
@@ -264,9 +265,15 @@ static int rtc_stm32_init(struct device *dev)
 
 #if defined(CONFIG_COUNTER_RTC_STM32_CLOCK_LSI)
 
+#if defined(CONFIG_SOC_SERIES_STM32WBX)
+	LL_RCC_LSI1_Enable();
+	while (LL_RCC_LSI1_IsReady() != 1) {
+	}
+#else
 	LL_RCC_LSI_Enable();
 	while (LL_RCC_LSI_IsReady() != 1) {
 	}
+#endif /* CONFIG_SOC_SERIES_STM32WBX */
 
 	LL_RCC_SetRTCClockSource(LL_RCC_RTC_CLKSOURCE_LSI);
 

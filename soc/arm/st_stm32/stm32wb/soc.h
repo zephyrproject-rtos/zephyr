@@ -27,6 +27,10 @@
  */
 #include <kernel_includes.h>
 
+#ifdef CONFIG_EXTI_STM32
+#include <stm32wbxx_ll_exti.h>
+#endif
+
 #ifdef CONFIG_GPIO_STM32
 #include <stm32wbxx_ll_gpio.h>
 #endif
@@ -36,12 +40,35 @@
 #include <stm32wbxx_ll_lpuart.h>
 #endif
 
+#if defined(CONFIG_RTC_STM32) || defined(CONFIG_COUNTER_RTC_STM32)
+#include <stm32wbxx_ll_rtc.h>
+#include <stm32wbxx_ll_exti.h>
+#include <stm32wbxx_ll_pwr.h>
+#include <stm32wbxx_ll_bus.h>
+#endif
+
 #ifdef CONFIG_CLOCK_CONTROL_STM32_CUBE
 #include <stm32wbxx_ll_utils.h>
 #include <stm32wbxx_ll_bus.h>
 #include <stm32wbxx_ll_rcc.h>
 #include <stm32wbxx_ll_system.h>
 #endif /* CONFIG_CLOCK_CONTROL_STM32_CUBE */
+
+#ifdef CONFIG_ADC_STM32
+#include <stm32wbxx_ll_adc.h>
+#endif
+
+#ifdef CONFIG_SPI_STM32
+#include <stm32wbxx_ll_spi.h>
+#endif
+
+#ifdef CONFIG_I2C
+#include <stm32wbxx_ll_i2c.h>
+#endif
+
+#ifdef CONFIG_IWDG_STM32
+#include <stm32wbxx_ll_iwdg.h>
+#endif
 
 #ifdef CONFIG_FLASH
 #include <stm32wbxx_ll_hsem.h>

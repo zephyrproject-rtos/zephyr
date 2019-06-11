@@ -17,7 +17,8 @@
 
 #if defined(CONFIG_SOC_STM32F401XE) || defined(CONFIG_SOC_STM32F412ZG) || \
 	defined(CONFIG_SOC_STM32F413XX) || defined(CONFIG_SOC_STM32L476XX) || \
-	defined(CONFIG_SOC_STM32F407XG) || defined(CONFIG_SOC_STM32F302X8)
+	defined(CONFIG_SOC_STM32F407XG) || defined(CONFIG_SOC_STM32F302X8) || \
+	defined(CONFIG_SOC_STM32WB55XG)
 #define PWM_DRIVER DT_PWM_STM32_2_DEV_NAME
 #define PWM_CHANNEL 1
 #elif CONFIG_SOC_STM32F103XB
@@ -31,7 +32,7 @@
 #define PWM_DRIVER CONFIG_PWM_NRF5_SW_0_DEV_NAME
 #else
 #define PWM_DRIVER DT_NORDIC_NRF_PWM_PWM_0_LABEL
-#endif  /* CONFIG_PWM_NRF5_SW */
+#endif	/* CONFIG_PWM_NRF5_SW */
 #define PWM_CHANNEL LED0_GPIO_PIN
 #elif defined(CONFIG_BOARD_COLIBRI_IMX7D_M4)
 #define PWM_DRIVER	PWM_1_LABEL
@@ -66,7 +67,7 @@ void main(void)
 
 	while (1) {
 		if (pwm_pin_set_usec(pwm_dev, PWM_CHANNEL,
-				     period, period / 2U)) {
+					 period, period / 2U)) {
 			printk("pwm pin set fails\n");
 			return;
 		}
