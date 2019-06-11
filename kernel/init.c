@@ -287,12 +287,12 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 
 	main();
 
+	/* Mark nonessenrial since main() has no more work to do */
+	_main_thread->base.user_options &= ~K_ESSENTIAL;
+
 	/* Dump coverage data once the main() has exited. */
 	gcov_coverage_dump();
-
-	/* Terminate thread normally since it has no more work to do */
-	_main_thread->base.user_options &= ~K_ESSENTIAL;
-}
+} /* LCOV_EXCL_LINE ... because we just dumped final coverage data */
 
 /* LCOV_EXCL_START */
 
