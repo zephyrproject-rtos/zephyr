@@ -88,3 +88,7 @@ arduino_i2c: &i2c1 {};
 		status = "ok";
 	};
 };
+
+&usbd1 {
+	status = "ok";
+};
