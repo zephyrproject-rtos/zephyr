@@ -529,9 +529,11 @@ config ARCH_HAS_CUSTOM_BUSY_WAIT
 
 config SYS_CLOCK_TICKS_PER_SEC
 	int "System tick frequency (in ticks/second)"
+	default 100 if QEMU_TARGET || SOC_POSIX
+	default 10000 if TICKLESS_CAPABLE
 	default 100
 	help
-	  This option specifies the frequency of the system clock in Hz.
+	  This option specifies the nominal frequency of the system clock in Hz.
 
 	  Depending on the choice made, an amount of possibly expensive math must
 	  occur when converting ticks to milliseconds and vice-versa. Some values
@@ -567,10 +569,13 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 	  and the user should generally avoid modifying it via the menu configuration.
 
 config SYS_CLOCK_EXISTS
-	def_bool (SYS_CLOCK_TICKS_PER_SEC != 0)
-	# omit prompt to signify a "hidden" option
+	bool "System clock exists and is enabled"
+	default y
 	help
 	  This option specifies that the kernel lacks timer support.
+	  Some device configurations can eliminate significant code if
+	  this is disabled.  Obviously timeout-related APIs will not
+	  work.
 
 config XIP
 	bool "Execute in place"

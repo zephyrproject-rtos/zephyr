@@ -1684,8 +1684,7 @@ static inline void *z_impl_k_timer_user_data_get(struct k_timer *timer)
  *    @rst
  *    While this function returns time in milliseconds, it does
  *    not mean it has millisecond resolution. The actual resolution depends on
- *    :option:`CONFIG_SYS_CLOCK_TICKS_PER_SEC` config option, and with the
- *    default setting of 100, system time is updated in increments of 10ms.
+ *    :option:`CONFIG_SYS_CLOCK_TICKS_PER_SEC` config option.
  *    @endrst
  *
  * @return Current uptime in milliseconds.
@@ -1741,8 +1740,7 @@ __deprecated static inline void k_disable_sys_clock_always_on(void)
  *    @rst
  *    While this function returns time in milliseconds, it does
  *    not mean it has millisecond resolution. The actual resolution depends on
- *    :option:`CONFIG_SYS_CLOCK_TICKS_PER_SEC` config option, and with the
- *    default setting of 100, system time is updated in increments of 10ms.
+ *    :option:`CONFIG_SYS_CLOCK_TICKS_PER_SEC` config option
  *    @endrst
  *
  * @return Current uptime in milliseconds.
