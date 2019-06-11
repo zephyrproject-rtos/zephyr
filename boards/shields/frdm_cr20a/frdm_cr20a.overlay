@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2019, NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&arduino_spi {
+	status = "okay";
+
+	mcr20a@0 {
+		compatible = "nxp,mcr20a";
+		reg = <0x0>;
+		label = "mcr20a";
+		spi-max-frequency = <4000000>;
+		irqb-gpios = <&arduino_header 8 0>;	   /* D2 */
+		reset-gpios = <&arduino_header 11 0>;	   /* D5 */
+		status = "okay";
+	};
+};
