@@ -40,6 +40,10 @@ void main(void)
 
 	printk("Counter alarm sample\n\n");
 	counter_dev = device_get_binding(DT_RTC_0_NAME);
+	if (counter_dev == NULL) {
+		printk("Device not found\n");
+		return;
+	}
 
 	counter_start(counter_dev);
 
