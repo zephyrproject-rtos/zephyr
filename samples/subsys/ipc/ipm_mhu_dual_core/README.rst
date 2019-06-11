@@ -18,6 +18,9 @@ steps are:
 Building and Running
 ********************
 
+On Musca A1
+-----------
+
 This project outputs 'IPM MHU sample on musca_a' to the console.
 It can be built and executed on Musca A1 CPU 0 as follows:
 
@@ -35,6 +38,40 @@ It can be built and executed on Musca A1 CPU 1 as follows:
    :board: v2m_musca_nonsecure
    :goals: run
    :compact:
+
+On Musca B1
+-----------
+
+This project outputs 'IPM MHU sample on musca_b1' to the console.
+It can be built and executed on Musca B1 CPU 0 as follows:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/subsys/ipc/ipm_mhu_dual_core
+   :board: v2m_musca_b1
+   :goals: run
+   :compact:
+
+This project outputs 'IPM MHU sample on v2m_musca_b1_nonsecure' to the console.
+It can be built and executed on Musca B1 CPU 1 as follows:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/subsys/ipc/ipm_mhu_dual_core
+   :board: v2m_musca_b1_nonsecure
+   :goals: run
+   :compact:
+
+Combine images for Musca
+========================
+
+A third-party tool (srecord) is used to generate the Intel formatted hex image.
+For more information refer to the `Srecord Manual`_.
+
+.. code-block:: bash
+
+   srec_cat zephyr.bin -Binary -offset $IMAGE_OFFSET zephyr_nonsecure.bin -Binary -offset $IMAGE_NS_OFFSET -o dual_core_zephyr.hex -Intel
+
+   # This command is an example for Musca B1
+   srec_cat zephyr.bin -Binary -offset 0xA000000 zephyr_nonsecure.bin -Binary -offset 0xA060400 -o dual_core_zephyr.hex -Intel
 
 Open a serial terminal (minicom, putty, etc.) and connect the board with the
 following settings:
@@ -61,3 +98,7 @@ Sample Output
    MHU ISR on CPU 0
    MHU ISR on CPU 1
    MHU Test Done.
+
+
+.. _Srecord Manual:
+   http://srecord.sourceforge.net/man/man1/srec_cat.html
