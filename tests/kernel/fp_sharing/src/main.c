@@ -43,15 +43,15 @@
 #error Rebuild with the FP_SHARING config option enabled
 #endif
 
-#if defined(CONFIG_ISA_IA32)
+#if defined(CONFIG_X86)
 #ifndef CONFIG_SSE
 #error Rebuild with the SSE config option enabled
 #endif
-#endif /* CONFIG_ISA_IA32 */
+#endif /* CONFIG_X86 */
 
 #include <zephyr.h>
 
-#if defined(CONFIG_ISA_IA32)
+#if defined(CONFIG_X86)
 #if defined(__GNUC__)
 #include "float_regs_x86_gcc.h"
 #else
@@ -226,7 +226,7 @@ void load_store_low(void)
 		 * After every 1000 iterations (arbitrarily chosen), explicitly
 		 * disable floating point operations for the task.
 		 */
-#if (defined(CONFIG_ISA_IA32) && defined(CONFIG_LAZY_FP_SHARING)) || \
+#if (defined(CONFIG_X86) && defined(CONFIG_LAZY_FP_SHARING)) || \
 		defined(CONFIG_ARMV7_M_ARMV8_M_FP)
 		/*
 		 * In x86:
@@ -345,7 +345,7 @@ void load_store_high(void)
 	}
 }
 
-#if defined(CONFIG_ISA_IA32)
+#if defined(CONFIG_X86)
 #define THREAD_FP_FLAGS (K_FP_REGS | K_SSE_REGS)
 #else
 #define THREAD_FP_FLAGS (K_FP_REGS)

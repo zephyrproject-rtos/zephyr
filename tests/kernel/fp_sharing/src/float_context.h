@@ -29,7 +29,7 @@
  *     _store_all_float_registers()
  */
 
-#if defined(CONFIG_ISA_IA32)
+#if defined(CONFIG_X86)
 
 #define FP_OPTION 0
 
@@ -95,7 +95,7 @@ struct fp_non_volatile_register_set {
 "\t'struct fp_non_volatile_registers'\n"
 "\t'SIZEOF_FP_VOLATILE_REGISTER_SET'\n"
 "\t'SIZEOF_FP_NON_VOLATILE_REGISTER_SET'\n"
-#endif /* CONFIG_ISA_IA32 */
+#endif /* CONFIG_X86 */
 
 /* the set of ALL floating point registers */
 

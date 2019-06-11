@@ -265,14 +265,6 @@ config REBOOT_RST_CNT
 
 endchoice
 
-
-config ISA_IA32
-	bool
-	default y
-	help
-	  This option signifies the use of a CPU based on the Intel IA-32
-	  instruction set architecture.
-
 config CMOV
 	bool
 	help

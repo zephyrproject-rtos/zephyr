@@ -12,7 +12,7 @@
 #ifndef _FLOAT_REGS_X86_GCC_H
 #define _FLOAT_REGS_X86_GCC_H
 
-#if !defined(__GNUC__) || !defined(CONFIG_ISA_IA32)
+#if !defined(__GNUC__) || !defined(CONFIG_X86)
 #error __FILE__ goes only with x86 GCC
 #endif
 
