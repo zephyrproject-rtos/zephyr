@@ -510,12 +510,12 @@ again.
 .. _application_debugging:
 .. _custom_board_definition:
 
-Custom Board and SOC Definitions
-********************************
+Custom Board, DeviceTree and SOC Definitions
+********************************************
 
-In cases where the board or platform you are developing for is not yet supported
-by Zephyr, you can add the board and SOC definition to your application and
-build for this board or SOC without having to add them to the Zephyr tree.
+In cases where the board or platform you are developing for is not yet
+supported by Zephyr, you can add board, DeviceTree and SOC definitions
+to your application without having to add them to the Zephyr tree.
 
 The structure needed to support out-of-tree board and SOC development
 is similar to how boards and SOCs are maintained in the Zephyr tree. By using
@@ -642,6 +642,29 @@ This will use your custom platform configurations and will generate the
 Zephyr binary into your application directory.
 
 You can also define the ``SOC_ROOT`` variable in the application
+:file:`CMakeLists.txt` file.
+
+DeviceTree Definitions
+======================
+
+Additional DeviceTree directory trees, or DTS_ROOTs, can be added by
+creating this directory tree:
+
+    dts/bindings/
+    dts/common/
+    dts/arm/
+    include/
+
+Where 'arm' is changed to the appropriate architecture. Each directory
+is optional. The binding directory contains bindings and the other
+directories contain files that can be included from DT sources.
+
+Once the directory structure is in place, you can use it by specifying
+its location through the ``DTS_ROOT`` CMake Cache variable::
+
+   cmake -DDTS_ROOT=<path to dts root>
+
+You can also define the variable in the application
 :file:`CMakeLists.txt` file.
 
 .. _ext-projs:
