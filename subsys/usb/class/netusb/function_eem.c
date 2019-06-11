@@ -221,11 +221,14 @@ static struct netusb_function eem_function = {
 	.send_pkt = eem_send,
 };
 
-static inline void eem_status_interface(const u8_t *iface)
+static inline void eem_status_interface(const u8_t *desc)
 {
+	const struct usb_if_descriptor *if_desc = (void *)desc;
+	u8_t iface_num = if_desc->bInterfaceNumber;
+
 	LOG_DBG("");
 
-	if (*iface != eem_get_first_iface_number()) {
+	if (iface_num != eem_get_first_iface_number()) {
 		return;
 	}
 
