@@ -5,4 +5,4 @@ sample:
 tests:
   test:
     tags: ipm
-    platform_whitelist: v2m_musca v2m_musca_nonsecure
+    platform_whitelist: v2m_musca v2m_musca_nonsecure v2m_musca_b1 v2m_musca_b1_nonsecure
