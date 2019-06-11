@@ -13,5 +13,5 @@ if(CONFIG_NET_L2_OPENTHREAD)
   # files so we need express that this driver depends on OpenThread
   # being downloaded to make sure that we don't build this driver
   # before all of it's header file dependencies are met.
-  add_dependencies(${ZEPHYR_CURRENT_LIBRARY} ot)
+  zephyr_library_add_dependencies(ot)
 endif()
