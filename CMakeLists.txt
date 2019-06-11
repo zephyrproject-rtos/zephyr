@@ -214,12 +214,14 @@ endif()
 # @Intent: Set compiler specific flags for standard C includes
 toolchain_cc_nostdinc()
 
+# @Intent: Set compiler specific macro inclusion of AUTOCONF_H
+toolchain_cc_imacros(${AUTOCONF_H})
+
 # @Intent: Set compiler specific flag for bare metal freestanding option
 toolchain_cc_freestanding()
 
 zephyr_compile_options(
   -g # TODO: build configuration enough?
-  -imacros ${AUTOCONF_H}
   -fno-common
   ${TOOLCHAIN_C_FLAGS}
 )
