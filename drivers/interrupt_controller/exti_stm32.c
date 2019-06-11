@@ -23,7 +23,7 @@
 
 #if defined(CONFIG_SOC_SERIES_STM32F0X) || \
     defined(CONFIG_SOC_SERIES_STM32L0X)
-IRQn_Type exti_irq_table[] = {
+const IRQn_Type exti_irq_table[] = {
 	EXTI0_1_IRQn, EXTI0_1_IRQn, EXTI2_3_IRQn, EXTI2_3_IRQn,
 	EXTI4_15_IRQn, EXTI4_15_IRQn, EXTI4_15_IRQn, EXTI4_15_IRQn,
 	EXTI4_15_IRQn, EXTI4_15_IRQn, EXTI4_15_IRQn, EXTI4_15_IRQn,
@@ -33,14 +33,14 @@ IRQn_Type exti_irq_table[] = {
       defined(CONFIG_SOC_SERIES_STM32L1X) || \
       defined(CONFIG_SOC_SERIES_STM32L4X) || \
       defined(CONFIG_SOC_SERIES_STM32WBX)
-IRQn_Type exti_irq_table[] = {
+const IRQn_Type exti_irq_table[] = {
 	EXTI0_IRQn, EXTI1_IRQn, EXTI2_IRQn, EXTI3_IRQn,
 	EXTI4_IRQn, EXTI9_5_IRQn, EXTI9_5_IRQn, EXTI9_5_IRQn,
 	EXTI9_5_IRQn, EXTI9_5_IRQn, EXTI15_10_IRQn, EXTI15_10_IRQn,
 	EXTI15_10_IRQn, EXTI15_10_IRQn, EXTI15_10_IRQn, EXTI15_10_IRQn
 };
 #elif defined(CONFIG_SOC_SERIES_STM32F3X)
-IRQn_Type exti_irq_table[] = {
+const IRQn_Type exti_irq_table[] = {
 	EXTI0_IRQn, EXTI1_IRQn, EXTI2_TSC_IRQn, EXTI3_IRQn,
 	EXTI4_IRQn, EXTI9_5_IRQn, EXTI9_5_IRQn, EXTI9_5_IRQn,
 	EXTI9_5_IRQn, EXTI9_5_IRQn, EXTI15_10_IRQn, EXTI15_10_IRQn,
@@ -48,7 +48,7 @@ IRQn_Type exti_irq_table[] = {
 };
 #elif defined(CONFIG_SOC_SERIES_STM32F2X) || \
       defined(CONFIG_SOC_SERIES_STM32F4X)
-IRQn_Type exti_irq_table[] = {
+const IRQn_Type exti_irq_table[] = {
 	EXTI0_IRQn, EXTI1_IRQn, EXTI2_IRQn, EXTI3_IRQn,
 	EXTI4_IRQn, EXTI9_5_IRQn, EXTI9_5_IRQn, EXTI9_5_IRQn,
 	EXTI9_5_IRQn, EXTI9_5_IRQn, EXTI15_10_IRQn, EXTI15_10_IRQn,
@@ -57,7 +57,7 @@ IRQn_Type exti_irq_table[] = {
 	0xFF, TAMP_STAMP_IRQn, RTC_WKUP_IRQn
 };
 #elif defined(CONFIG_SOC_SERIES_STM32F7X)
-IRQn_Type exti_irq_table[] = {
+const IRQn_Type exti_irq_table[] = {
 	EXTI0_IRQn, EXTI1_IRQn, EXTI2_IRQn, EXTI3_IRQn,
 	EXTI4_IRQn, EXTI9_5_IRQn, EXTI9_5_IRQn, EXTI9_5_IRQn,
 	EXTI9_5_IRQn, EXTI9_5_IRQn, EXTI15_10_IRQn, EXTI15_10_IRQn,
@@ -66,7 +66,7 @@ IRQn_Type exti_irq_table[] = {
 	0xFF, TAMP_STAMP_IRQn, RTC_WKUP_IRQn, LPTIM1_IRQn
 };
 #elif defined(CONFIG_SOC_SERIES_STM32MP1X)
-IRQn_Type exti_irq_table[] = {
+const IRQn_Type exti_irq_table[] = {
 	EXTI0_IRQn, EXTI1_IRQn, EXTI2_IRQn, EXTI3_IRQn,
 	EXTI4_IRQn, EXTI5_IRQn, EXTI6_IRQn, EXTI7_IRQn,
 	EXTI8_IRQn, EXTI9_IRQn, EXTI10_IRQn, EXTI11_IRQn,
