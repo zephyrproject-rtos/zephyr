@@ -256,7 +256,7 @@ The ARM Musca B1 test chip implements a Serial Configuration Control (SCC)
 register. The purpose of this register is to allow individual control of
 clocks, reset-signals and interrupts to peripherals, and pin-muxing.
 
-QSPI boot memory
+Boot memory
 ================
 Normal Musca-B1 test chip boot operation is from 4MB eFlash by default, and
 it offers the fastest boot method.
@@ -348,38 +348,28 @@ Follow the build steps for AN521 target while replacing the platform with
 ``-DTARGET_PLATFORM=MUSCA_B1`` and compiler (if required) with ``-DCOMPILER=GNUARM``
 
 Copy over tfm as a library to the Zephyr project source and create a shortcut
-for the secure veneers.
-
-.. code-block:: bash
-
-   cp -r install/ $ZEPHYR_PROJECT/src/ext
-   cp $ZEPHYR_PROJECT/src/ext/install/export/tfm/veneers/s_veneers.o $ZEPHYR_PROJECT/src/ext
-
-
-Build the Zephyr app in the usual way.
+for the secure veneers and necessary header files. All files are in the install
+folder after TF-M built.
 
 Uploading an application to V2M Musca B1
 ----------------------------------------
 
 Applications must be converted to Intel's hex format before being flashed to a
 V2M Musca B1. An optional bootloader can be prepended to the image.
-The QSPI flash base address alias is 0x0.
-
+The QSPI flash base address alias is 0x0, and the eFlash base address alias is
+0xA000000.
 The image offset is calculated by adding the flash offset to the
 bootloader partition size.
 
-A third-party tool (srecord) is used to generate the Intel formatted hex image. For more information
-refer to the `Srecord Manual`_.
+A third-party tool (srecord) is used to generate the Intel formatted hex image.
+For more information refer to the `Srecord Manual`_.
 
 .. code-block:: bash
 
-   srec_cat $BIN_BOOLOADER -Binary -offset $QSPI_FLASH_OFFSET $BIN_SNS -Binary -offset $IMAGE_OFFSET -o $HEX_FLASHABLE -Intel
+   srec_cat $BIN_BOOLOADER -Binary -offset $FLASH_OFFSET $BIN_SNS -Binary -offset $IMAGE_OFFSET -o $HEX_FLASHABLE -Intel
 
-   # For a 64K bootloader IMAGE_OFFSET = $QSPI_FLASH_OFFSET + 0x10000
-   srec_cat $BIN_BOOLOADER -Binary -offset 0x0 $BIN_SNS -Binary -offset 0x10000 -o $HEX_FLASHABLE -Intel
-
-   # For a 256K bootloader IMAGE_OFFSET = $QSPI_FLASH_OFFSET + 0x40000
-   srec_cat $BIN_BOOLOADER -Binary -offset 0x0 $BIN_SNS -Binary -offset 0x40000 -o $HEX_FLASHABLE -Intel
+   # For a 128K bootloader IMAGE_OFFSET = $FLASH_OFFSET + 0x20000
+   srec_cat $BIN_BOOLOADER -Binary -offset 0xA000000 $BIN_SNS -Binary -offset 0xA020000 -o $HEX_FLASHABLE -Intel
 
 Connect the V2M Musca B1 to your host computer using the USB port. You should
 see a USB connection exposing a Mass Storage (MUSCA_B) and a USB Serial Port.

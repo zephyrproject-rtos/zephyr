@@ -39,9 +39,9 @@
 		};
 	};
 
-	flash0: flash@30400 {
-		/* QSPI flash */
-		reg = <0x00030400 0x1fcfc00>;
+	flash0: flash@0a060400 {
+		/* Embedded flash */
+		reg = <0x0a060400 0x19fc00>;
 	};
 
 	sram0: memory@20070000 {
