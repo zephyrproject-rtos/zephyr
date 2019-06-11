@@ -9,6 +9,7 @@ extern void test_mpool_alloc_wait_prio(void);
 extern void test_mpool_alloc_size_roundup(void);
 extern void test_mpool_alloc_merge_failed_diff_size(void);
 extern void test_mpool_alloc_merge_failed_diff_parent(void);
+extern void test_mempool_spook(void);
 
 /*test case main entry*/
 void test_main(void)
@@ -17,7 +18,8 @@ void test_main(void)
 		ztest_unit_test(test_mpool_alloc_wait_prio),
 		ztest_unit_test(test_mpool_alloc_size_roundup),
 		ztest_unit_test(test_mpool_alloc_merge_failed_diff_size),
-		ztest_unit_test(test_mpool_alloc_merge_failed_diff_parent));
+		ztest_unit_test(test_mpool_alloc_merge_failed_diff_parent),
+		ztest_unit_test(test_mempool_spook));
 	ztest_run_test_suite(mpool_concept);
 }
 
