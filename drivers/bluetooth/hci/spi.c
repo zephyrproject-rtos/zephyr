@@ -72,8 +72,8 @@ static K_SEM_DEFINE(sem_initialised, 0, 1);
 static K_SEM_DEFINE(sem_request, 0, 1);
 static K_SEM_DEFINE(sem_busy, 1, 1);
 
-static K_THREAD_STACK_DEFINE(rx_stack, 448);
-static struct k_thread rx_thread_data;
+static K_THREAD_STACK_DEFINE(spi_rx_stack, 256);
+static struct k_thread spi_rx_thread_data;
 
 #if defined(CONFIG_BT_DEBUG_HCI_DRIVER)
 #include <misc/printk.h>
@@ -504,10 +504,10 @@ static int bt_spi_open(void)
 	}
 
 	/* Start RX thread */
-	k_thread_create(&rx_thread_data, rx_stack,
-			K_THREAD_STACK_SIZEOF(rx_stack),
+	k_thread_create(&spi_rx_thread_data, spi_rx_stack,
+			K_THREAD_STACK_SIZEOF(spi_rx_stack),
 			(k_thread_entry_t)bt_spi_rx_thread, NULL, NULL, NULL,
-			K_PRIO_COOP(CONFIG_BT_RX_PRIO),
+			K_PRIO_COOP(CONFIG_BT_RX_PRIO - 1),
 			0, K_NO_WAIT);
 
 	/* Take BLE out of reset */
