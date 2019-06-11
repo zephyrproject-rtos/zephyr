@@ -44,4 +44,13 @@ config CAMERA_INIT_PRIO
 	  so CAMERA_INIT_PRIO must be greater than
 	  IMAGE_SENSOR_INIT_PRIO.
 
+menuconfig MT9M114
+	bool "MT9M114 image sensor"
+	depends on I2C
+	default y
+	help
+	  Enable driver for the MT9M114 image sensor.
+
+source "drivers/camera/mt9m114/Kconfig"
+
 endif
