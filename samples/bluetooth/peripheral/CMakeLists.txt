@@ -6,9 +6,11 @@ project(peripheral)
 
 target_sources(app PRIVATE
   src/main.c
-  ../gatt/hrs.c
-  ../gatt/bas.c
-  ../gatt/cts.c
 )
 
 zephyr_library_include_directories($ENV{ZEPHYR_BASE}/samples/bluetooth)
+
+add_subdirectory(../gatt gatt_bindir)
+
+zephyr_library_cmake_target(samples_bt_gatt gatt_tgt)
+target_link_libraries(app PRIVATE ${gatt_tgt})
