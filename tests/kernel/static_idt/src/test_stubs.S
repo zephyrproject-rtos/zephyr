@@ -12,9 +12,7 @@ This module implements assembler exception and interrupt stubs for regression
 testing.
  */
 
-#ifdef CONFIG_ISA_IA32
-
-/* IA-32 specific */
+#ifdef CONFIG_X86
 
 #include <arch/cpu.h>
 #include <kernel_structs.h>
@@ -36,4 +34,4 @@ SECTION_FUNC(TEXT, int_stub)
 
 #error Arch not supported
 
-#endif /* CONFIG_ISA_IA32 */
+#endif /* CONFIG_X86 */
