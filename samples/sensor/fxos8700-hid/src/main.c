@@ -54,7 +54,7 @@ LOG_MODULE_REGISTER(main);
 
 #ifdef CONFIG_FXOS8700
 #include <sensor.h>
-#define SENSOR_ACCEL_NAME DT_NXP_FXOS8700_0_LABEL
+#define SENSOR_ACCEL_NAME DT_INST_0_NXP_FXOS8700_LABEL
 #endif
 
 static const u8_t hid_report_desc[] = HID_MOUSE_REPORT_DESC(2);

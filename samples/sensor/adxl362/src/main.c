@@ -33,7 +33,7 @@ void main(void)
 {
 	struct sensor_value accel[3];
 
-	struct device *dev = device_get_binding(DT_ADI_ADXL362_0_LABEL);
+	struct device *dev = device_get_binding(DT_INST_0_ADI_ADXL362_LABEL);
 	if (dev == NULL) {
 		printf("Device get binding device\n");
 		return;

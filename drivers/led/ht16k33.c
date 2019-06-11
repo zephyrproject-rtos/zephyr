@@ -465,14 +465,14 @@ static const struct led_driver_api ht16k33_leds_api = {
 
 #define HT16K33_DEVICE(id)						\
 	static const struct ht16k33_cfg ht16k33_##id##_cfg = {		\
-		.i2c_dev_name = DT_HOLTEK_HT16K33_##id##_BUS_NAME,	\
-		.i2c_addr     = DT_HOLTEK_HT16K33_##id##_BASE_ADDRESS,	\
+		.i2c_dev_name = DT_INST_##id##_HOLTEK_HT16K33_BUS_NAME,	\
+		.i2c_addr     = DT_INST_##id##_HOLTEK_HT16K33_BASE_ADDRESS,	\
 		.irq_enabled  = false,					\
 	};								\
 									\
 static struct ht16k33_data ht16k33_##id##_data;				\
 									\
-DEVICE_AND_API_INIT(ht16k33_##id, DT_HOLTEK_HT16K33_##id##_LABEL,	\
+DEVICE_AND_API_INIT(ht16k33_##id, DT_INST_##id##_HOLTEK_HT16K33_LABEL,	\
 		    &ht16k33_init, &ht16k33_##id##_data,		\
 		    &ht16k33_##id##_cfg, POST_KERNEL,			\
 		    CONFIG_LED_INIT_PRIORITY, &ht16k33_leds_api)
@@ -480,19 +480,19 @@ DEVICE_AND_API_INIT(ht16k33_##id, DT_HOLTEK_HT16K33_##id##_LABEL,	\
 #ifdef CONFIG_HT16K33_KEYSCAN
 #define HT16K33_DEVICE_WITH_IRQ(id)					\
 	static const struct ht16k33_cfg ht16k33_##id##_cfg = {		\
-		.i2c_dev_name = DT_HOLTEK_HT16K33_##id##_BUS_NAME,	\
-		.i2c_addr     = DT_HOLTEK_HT16K33_##id##_BASE_ADDRESS,	\
+		.i2c_dev_name = DT_INST_##id##_HOLTEK_HT16K33_BUS_NAME,	\
+		.i2c_addr     = DT_INST_##id##_HOLTEK_HT16K33_BASE_ADDRESS,	\
 		.irq_enabled  = true,					\
 		.irq_dev_name =						\
-			DT_HOLTEK_HT16K33_##id##_IRQ_GPIOS_CONTROLLER,	\
-		.irq_pin      = DT_HOLTEK_HT16K33_##id##_IRQ_GPIOS_PIN,	\
+			DT_INST_##id##_HOLTEK_HT16K33_IRQ_GPIOS_CONTROLLER,	\
+		.irq_pin      = DT_INST_##id##_HOLTEK_HT16K33_IRQ_GPIOS_PIN,	\
 		.irq_flags    =						\
-			DT_HOLTEK_HT16K33_##id##_IRQ_GPIOS_FLAGS,	\
+			DT_INST_##id##_HOLTEK_HT16K33_IRQ_GPIOS_FLAGS,	\
 	};								\
 									\
 static struct ht16k33_data ht16k33_##id##_data;				\
 									\
-DEVICE_AND_API_INIT(ht16k33_##id, DT_HOLTEK_HT16K33_##id##_LABEL,	\
+DEVICE_AND_API_INIT(ht16k33_##id, DT_INST_##id##_HOLTEK_HT16K33_LABEL,	\
 		    &ht16k33_init, &ht16k33_##id##_data,		\
 		    &ht16k33_##id##_cfg, POST_KERNEL,			\
 		    CONFIG_LED_INIT_PRIORITY, &ht16k33_leds_api)
@@ -503,7 +503,7 @@ DEVICE_AND_API_INIT(ht16k33_##id, DT_HOLTEK_HT16K33_##id##_LABEL,	\
 /* Support up to eight HT16K33 devices */
 
 #ifdef DT_HOLTEK_HT16K33_0
-#ifdef DT_HOLTEK_HT16K33_0_IRQ_GPIOS_CONTROLLER
+#ifdef DT_INST_0_HOLTEK_HT16K33_IRQ_GPIOS_CONTROLLER
 HT16K33_DEVICE_WITH_IRQ(0);
 #else
 HT16K33_DEVICE(0);
@@ -511,7 +511,7 @@ HT16K33_DEVICE(0);
 #endif
 
 #ifdef DT_HOLTEK_HT16K33_1
-#ifdef DT_HOLTEK_HT16K33_1_IRQ_GPIOS_CONTROLLER
+#ifdef DT_INST_1_HOLTEK_HT16K33_IRQ_GPIOS_CONTROLLER
 HT16K33_DEVICE_WITH_IRQ(1);
 #else
 HT16K33_DEVICE(1);
@@ -519,7 +519,7 @@ HT16K33_DEVICE(1);
 #endif
 
 #ifdef DT_HOLTEK_HT16K33_2
-#ifdef DT_HOLTEK_HT16K33_2_IRQ_GPIOS_CONTROLLER
+#ifdef DT_INST_2_HOLTEK_HT16K33_IRQ_GPIOS_CONTROLLER
 HT16K33_DEVICE_WITH_IRQ(2);
 #else
 HT16K33_DEVICE(2);
@@ -527,7 +527,7 @@ HT16K33_DEVICE(2);
 #endif
 
 #ifdef DT_HOLTEK_HT16K33_3
-#ifdef DT_HOLTEK_HT16K33_3_IRQ_GPIOS_CONTROLLER
+#ifdef DT_INST_3_HOLTEK_HT16K33_IRQ_GPIOS_CONTROLLER
 HT16K33_DEVICE_WITH_IRQ(3);
 #else
 HT16K33_DEVICE(3);
@@ -535,7 +535,7 @@ HT16K33_DEVICE(3);
 #endif
 
 #ifdef DT_HOLTEK_HT16K33_4
-#ifdef DT_HOLTEK_HT16K33_4_IRQ_GPIOS_CONTROLLER
+#ifdef DT_INST_4_HOLTEK_HT16K33_IRQ_GPIOS_CONTROLLER
 HT16K33_DEVICE_WITH_IRQ(4);
 #else
 HT16K33_DEVICE(4);
@@ -543,7 +543,7 @@ HT16K33_DEVICE(4);
 #endif
 
 #ifdef DT_HOLTEK_HT16K33_5
-#ifdef DT_HOLTEK_HT16K33_5_IRQ_GPIOS_CONTROLLER
+#ifdef DT_INST_5_HOLTEK_HT16K33_IRQ_GPIOS_CONTROLLER
 HT16K33_DEVICE_WITH_IRQ(5);
 #else
 HT16K33_DEVICE(5);
@@ -551,7 +551,7 @@ HT16K33_DEVICE(5);
 #endif
 
 #ifdef DT_HOLTEK_HT16K33_6
-#ifdef DT_HOLTEK_HT16K33_6_IRQ_GPIOS_CONTROLLER
+#ifdef DT_INST_6_HOLTEK_HT16K33_IRQ_GPIOS_CONTROLLER
 HT16K33_DEVICE_WITH_IRQ(6);
 #else
 HT16K33_DEVICE(6);
@@ -559,7 +559,7 @@ HT16K33_DEVICE(6);
 #endif
 
 #ifdef DT_HOLTEK_HT16K33_7
-#ifdef DT_HOLTEK_HT16K33_7_IRQ_GPIOS_CONTROLLER
+#ifdef DT_INST_7_HOLTEK_HT16K33_IRQ_GPIOS_CONTROLLER
 HT16K33_DEVICE_WITH_IRQ(7);
 #else
 HT16K33_DEVICE(7);

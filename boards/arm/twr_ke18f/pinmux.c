@@ -103,10 +103,10 @@ static int twr_ke18f_pinmux_init(struct device *dev)
 #endif
 
 	/* FXOS8700 INT1, INT2, RST */
-#ifdef DT_NXP_FXOS8700_0_INT1_GPIOS_PIN
+#ifdef DT_INST_0_NXP_FXOS8700_INT1_GPIOS_PIN
 	pinmux_pin_set(porta, 14, PORT_PCR_MUX(kPORT_MuxAsGpio));
 #endif
-#ifdef DT_NXP_FXOS8700_0_INT2_GPIOS_PIN
+#ifdef DT_INST_0_NXP_FXOS8700_INT2_GPIOS_PIN
 	pinmux_pin_set(portc, 17, PORT_PCR_MUX(kPORT_MuxAsGpio));
 #endif
 	pinmux_pin_set(portc, 15, PORT_PCR_MUX(kPORT_MuxAsGpio));

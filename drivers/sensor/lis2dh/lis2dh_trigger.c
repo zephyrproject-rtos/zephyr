@@ -91,7 +91,7 @@ static int lis2dh_start_trigger_int1(struct device *dev)
 				       LIS2DH_EN_DRDY1_INT1, 1);
 }
 
-#if defined(DT_ST_LIS2DH_0_IRQ_GPIOS_CONTROLLER_1)
+#if defined(DT_INST_0_ST_LIS2DH_IRQ_GPIOS_CONTROLLER_1)
 #define LIS2DH_ANYM_CFG (LIS2DH_INT_CFG_ZHIE_ZUPE | LIS2DH_INT_CFG_YHIE_YUPE |\
 			 LIS2DH_INT_CFG_XHIE_XUPE)
 
@@ -144,7 +144,7 @@ static int lis2dh_start_trigger_int2(struct device *dev)
 	return lis2dh_reg_write_byte(dev, LIS2DH_REG_INT2_CFG,
 				     LIS2DH_ANYM_CFG);
 }
-#endif /* DT_ST_LIS2DH_0_IRQ_GPIOS_CONTROLLER_1 */
+#endif /* DT_INST_0_ST_LIS2DH_IRQ_GPIOS_CONTROLLER_1 */
 
 int lis2dh_trigger_set(struct device *dev,
 		       const struct sensor_trigger *trig,
@@ -153,10 +153,10 @@ int lis2dh_trigger_set(struct device *dev,
 	if (trig->type == SENSOR_TRIG_DATA_READY &&
 	    trig->chan == SENSOR_CHAN_ACCEL_XYZ) {
 		return lis2dh_trigger_drdy_set(dev, trig->chan, handler);
-#if defined(DT_ST_LIS2DH_0_IRQ_GPIOS_CONTROLLER_1)
+#if defined(DT_INST_0_ST_LIS2DH_IRQ_GPIOS_CONTROLLER_1)
 	} else if (trig->type == SENSOR_TRIG_DELTA) {
 		return lis2dh_trigger_anym_set(dev, handler);
-#endif /* DT_ST_LIS2DH_0_IRQ_GPIOS_CONTROLLER_1 */
+#endif /* DT_INST_0_ST_LIS2DH_IRQ_GPIOS_CONTROLLER_1 */
 	}
 
 	return -ENOTSUP;
@@ -230,7 +230,7 @@ static void lis2dh_gpio_int1_callback(struct device *dev,
 #endif
 }
 
-#if defined(DT_ST_LIS2DH_0_IRQ_GPIOS_CONTROLLER_1)
+#if defined(DT_INST_0_ST_LIS2DH_IRQ_GPIOS_CONTROLLER_1)
 static void lis2dh_gpio_int2_callback(struct device *dev,
 				      struct gpio_callback *cb, u32_t pins)
 {
@@ -247,7 +247,7 @@ static void lis2dh_gpio_int2_callback(struct device *dev,
 	k_work_submit(&lis2dh->work);
 #endif
 }
-#endif /* DT_ST_LIS2DH_0_IRQ_GPIOS_CONTROLLER_1 */
+#endif /* DT_INST_0_ST_LIS2DH_IRQ_GPIOS_CONTROLLER_1 */
 
 static void lis2dh_thread_cb(void *arg)
 {
@@ -265,7 +265,7 @@ static void lis2dh_thread_cb(void *arg)
 		return;
 	}
 
-#if defined(DT_ST_LIS2DH_0_IRQ_GPIOS_CONTROLLER_1)
+#if defined(DT_INST_0_ST_LIS2DH_IRQ_GPIOS_CONTROLLER_1)
 	if (unlikely(atomic_test_and_clear_bit(&lis2dh->trig_flags,
 		     START_TRIG_INT2))) {
 		status = lis2dh_start_trigger_int2(dev);
@@ -275,7 +275,7 @@ static void lis2dh_thread_cb(void *arg)
 		}
 		return;
 	}
-#endif /* DT_ST_LIS2DH_0_IRQ_GPIOS_CONTROLLER_1 */
+#endif /* DT_INST_0_ST_LIS2DH_IRQ_GPIOS_CONTROLLER_1 */
 
 	if (atomic_test_and_clear_bit(&lis2dh->trig_flags,
 				      TRIGGED_INT1)) {
@@ -291,7 +291,7 @@ static void lis2dh_thread_cb(void *arg)
 		return;
 	}
 
-#if defined(DT_ST_LIS2DH_0_IRQ_GPIOS_CONTROLLER_1)
+#if defined(DT_INST_0_ST_LIS2DH_IRQ_GPIOS_CONTROLLER_1)
 	if (atomic_test_and_clear_bit(&lis2dh->trig_flags,
 				      TRIGGED_INT2)) {
 		struct sensor_trigger anym_trigger = {
@@ -317,7 +317,7 @@ static void lis2dh_thread_cb(void *arg)
 
 		return;
 	}
-#endif /* DT_ST_LIS2DH_0_IRQ_GPIOS_CONTROLLER_1 */
+#endif /* DT_INST_0_ST_LIS2DH_IRQ_GPIOS_CONTROLLER_1 */
 }
 
 #ifdef CONFIG_LIS2DH_TRIGGER_OWN_THREAD
@@ -388,7 +388,7 @@ int lis2dh_init_interrupt(struct device *dev)
 	LOG_INF("int1 on pin=%d cfg=0x%x",
 		    DT_LIS2DH_INT1_GPIO_PIN, LIS2DH_INT1_CFG);
 
-#if defined(DT_ST_LIS2DH_0_IRQ_GPIOS_CONTROLLER_1)
+#if defined(DT_INST_0_ST_LIS2DH_IRQ_GPIOS_CONTROLLER_1)
 	/* setup any motion gpio interrupt */
 	lis2dh->gpio_int2 = device_get_binding(DT_LIS2DH_INT2_GPIO_DEV_NAME);
 	if (lis2dh->gpio_int2 == NULL) {
@@ -419,7 +419,7 @@ int lis2dh_init_interrupt(struct device *dev)
 
 	LOG_INF("int2 on pin=%d cfg=0x%x",
 		    DT_LIS2DH_INT2_GPIO_PIN, LIS2DH_INT2_CFG);
-#endif /* DT_ST_LIS2DH_0_IRQ_GPIOS_CONTROLLER_1 */
+#endif /* DT_INST_0_ST_LIS2DH_IRQ_GPIOS_CONTROLLER_1 */
 
 #if defined(CONFIG_LIS2DH_TRIGGER_OWN_THREAD)
 	k_sem_init(&lis2dh->gpio_sem, 0, UINT_MAX);

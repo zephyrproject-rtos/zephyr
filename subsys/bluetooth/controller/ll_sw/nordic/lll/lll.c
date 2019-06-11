@@ -112,7 +112,7 @@ int lll_init(void)
 	event.curr.abort_cb = NULL;
 
 	/* Initialize LF CLK */
-	clk_k32 = device_get_binding(DT_NORDIC_NRF_CLOCK_0_LABEL "_32K");
+	clk_k32 = device_get_binding(DT_INST_0_NORDIC_NRF_CLOCK_LABEL "_32K");
 	if (!clk_k32) {
 		return -ENODEV;
 	}
@@ -121,7 +121,7 @@ int lll_init(void)
 
 	/* Initialize HF CLK */
 	lll.clk_hf =
-		device_get_binding(DT_NORDIC_NRF_CLOCK_0_LABEL "_16M");
+		device_get_binding(DT_INST_0_NORDIC_NRF_CLOCK_LABEL "_16M");
 	if (!lll.clk_hf) {
 		return -ENODEV;
 	}

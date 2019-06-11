@@ -340,32 +340,32 @@ ISR_DIRECT_DECLARE(counter_gecko_isr_0)
 	return 1;
 }
 
-BUILD_ASSERT((DT_SILABS_GECKO_RTCC_0_PRESCALER > 0U) &&
-	     (DT_SILABS_GECKO_RTCC_0_PRESCALER <= 32768U));
+BUILD_ASSERT((DT_INST_0_SILABS_GECKO_RTCC_PRESCALER > 0U) &&
+	     (DT_INST_0_SILABS_GECKO_RTCC_PRESCALER <= 32768U));
 
 static void counter_gecko_0_irq_config(void)
 {
-	IRQ_DIRECT_CONNECT(DT_SILABS_GECKO_RTCC_0_IRQ_0,
-			   DT_SILABS_GECKO_RTCC_0_IRQ_0_PRIORITY,
+	IRQ_DIRECT_CONNECT(DT_INST_0_SILABS_GECKO_RTCC_IRQ_0,
+			   DT_INST_0_SILABS_GECKO_RTCC_IRQ_0_PRIORITY,
 			   counter_gecko_isr_0, 0);
-	irq_enable(DT_SILABS_GECKO_RTCC_0_IRQ_0);
+	irq_enable(DT_INST_0_SILABS_GECKO_RTCC_IRQ_0);
 }
 
 static const struct counter_gecko_config counter_gecko_0_config = {
 	.info = {
 		.max_top_value = RTCC_MAX_VALUE,
-		.freq = DT_SILABS_GECKO_RTCC_0_CLOCK_FREQUENCY /
-			DT_SILABS_GECKO_RTCC_0_PRESCALER,
+		.freq = DT_INST_0_SILABS_GECKO_RTCC_CLOCK_FREQUENCY /
+			DT_INST_0_SILABS_GECKO_RTCC_PRESCALER,
 		.flags = COUNTER_CONFIG_INFO_COUNT_UP,
 		.channels = RTCC_ALARM_NUM,
 	},
 	.irq_config = counter_gecko_0_irq_config,
-	.prescaler = DT_SILABS_GECKO_RTCC_0_PRESCALER,
+	.prescaler = DT_INST_0_SILABS_GECKO_RTCC_PRESCALER,
 };
 
 static struct counter_gecko_data counter_gecko_0_data;
 
-DEVICE_AND_API_INIT(counter_gecko_0, DT_SILABS_GECKO_RTCC_0_LABEL,
+DEVICE_AND_API_INIT(counter_gecko_0, DT_INST_0_SILABS_GECKO_RTCC_LABEL,
 	counter_gecko_init, &counter_gecko_0_data, &counter_gecko_0_config,
 	PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 	&counter_gecko_driver_api);

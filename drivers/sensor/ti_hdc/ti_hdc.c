@@ -18,7 +18,7 @@
 #define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
 LOG_MODULE_REGISTER(TI_HDC);
 
-#if defined(DT_TI_HDC_0_DRDY_GPIOS_CONTROLLER)
+#if defined(DT_INST_0_TI_HDC_DRDY_GPIOS_CONTROLLER)
 static void ti_hdc_gpio_callback(struct device *dev,
 				  struct gpio_callback *cb, u32_t pins)
 {
@@ -27,7 +27,7 @@ static void ti_hdc_gpio_callback(struct device *dev,
 
 	ARG_UNUSED(pins);
 
-	gpio_pin_disable_callback(dev, DT_TI_HDC_0_DRDY_GPIOS_PIN);
+	gpio_pin_disable_callback(dev, DT_INST_0_TI_HDC_DRDY_GPIOS_PIN);
 	k_sem_give(&drv_data->data_sem);
 }
 #endif
@@ -39,25 +39,25 @@ static int ti_hdc_sample_fetch(struct device *dev, enum sensor_channel chan)
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 
-#if defined(DT_TI_HDC_0_DRDY_GPIOS_CONTROLLER)
-	gpio_pin_enable_callback(drv_data->gpio, DT_TI_HDC_0_DRDY_GPIOS_PIN);
+#if defined(DT_INST_0_TI_HDC_DRDY_GPIOS_CONTROLLER)
+	gpio_pin_enable_callback(drv_data->gpio, DT_INST_0_TI_HDC_DRDY_GPIOS_PIN);
 #endif
 
 	buf[0] = TI_HDC_REG_TEMP;
 	if (i2c_write(drv_data->i2c, buf, 1,
-		      DT_TI_HDC_0_BASE_ADDRESS) < 0) {
+		      DT_INST_0_TI_HDC_BASE_ADDRESS) < 0) {
 		LOG_DBG("Failed to write address pointer");
 		return -EIO;
 	}
 
-#if defined(DT_TI_HDC_0_DRDY_GPIOS_CONTROLLER)
+#if defined(DT_INST_0_TI_HDC_DRDY_GPIOS_CONTROLLER)
 	k_sem_take(&drv_data->data_sem, K_FOREVER);
 #else
 	/* wait for the conversion to finish */
 	k_sleep(HDC_CONVERSION_TIME);
 #endif
 
-	if (i2c_read(drv_data->i2c, buf, 4, DT_TI_HDC_0_BASE_ADDRESS) < 0) {
+	if (i2c_read(drv_data->i2c, buf, 4, DT_INST_0_TI_HDC_BASE_ADDRESS) < 0) {
 		LOG_DBG("Failed to read sample data");
 		return -EIO;
 	}
@@ -118,48 +118,48 @@ static int ti_hdc_init(struct device *dev)
 	struct ti_hdc_data *drv_data = dev->driver_data;
 	u16_t tmp;
 
-	drv_data->i2c = device_get_binding(DT_TI_HDC_0_BUS_NAME);
+	drv_data->i2c = device_get_binding(DT_INST_0_TI_HDC_BUS_NAME);
 
 	if (drv_data->i2c == NULL) {
 		LOG_DBG("Failed to get pointer to %s device!",
-			DT_TI_HDC_0_BUS_NAME);
+			DT_INST_0_TI_HDC_BUS_NAME);
 		return -EINVAL;
 	}
 
-	if (read16(drv_data->i2c, DT_TI_HDC_0_BASE_ADDRESS,
+	if (read16(drv_data->i2c, DT_INST_0_TI_HDC_BASE_ADDRESS,
 		   TI_HDC_REG_MANUFID) != TI_HDC_MANUFID) {
 		LOG_ERR("Failed to get correct manufacturer ID");
 		return -EINVAL;
 	}
-	tmp = read16(drv_data->i2c, DT_TI_HDC_0_BASE_ADDRESS,
+	tmp = read16(drv_data->i2c, DT_INST_0_TI_HDC_BASE_ADDRESS,
 		     TI_HDC_REG_DEVICEID);
 	if (tmp != TI_HDC1000_DEVID && tmp != TI_HDC1050_DEVID) {
 		LOG_ERR("Unsupported device ID");
 		return -EINVAL;
 	}
 
-#if defined(DT_TI_HDC_0_DRDY_GPIOS_CONTROLLER)
+#if defined(DT_INST_0_TI_HDC_DRDY_GPIOS_CONTROLLER)
 	k_sem_init(&drv_data->data_sem, 0, UINT_MAX);
 
 	/* setup data ready gpio interrupt */
 	drv_data->gpio = device_get_binding(
-				DT_TI_HDC_0_DRDY_GPIOS_CONTROLLER);
+				DT_INST_0_TI_HDC_DRDY_GPIOS_CONTROLLER);
 	if (drv_data->gpio == NULL) {
 		LOG_DBG("Failed to get pointer to %s device",
-			 DT_TI_HDC_0_DRDY_GPIOS_CONTROLLER);
+			 DT_INST_0_TI_HDC_DRDY_GPIOS_CONTROLLER);
 		return -EINVAL;
 	}
 
-	gpio_pin_configure(drv_data->gpio, DT_TI_HDC_0_DRDY_GPIOS_PIN,
+	gpio_pin_configure(drv_data->gpio, DT_INST_0_TI_HDC_DRDY_GPIOS_PIN,
 			   GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
-#if defined(DT_TI_HDC_0_DRDY_GPIOS_FLAGS)
-			   DT_TI_HDC_0_DRDY_GPIOS_FLAGS |
+#if defined(DT_INST_0_TI_HDC_DRDY_GPIOS_FLAGS)
+			   DT_INST_0_TI_HDC_DRDY_GPIOS_FLAGS |
 #endif
 			   GPIO_INT_ACTIVE_LOW | GPIO_INT_DEBOUNCE);
 
 	gpio_init_callback(&drv_data->gpio_cb,
 			   ti_hdc_gpio_callback,
-			   BIT(DT_TI_HDC_0_DRDY_GPIOS_PIN));
+			   BIT(DT_INST_0_TI_HDC_DRDY_GPIOS_PIN));
 
 	if (gpio_add_callback(drv_data->gpio, &drv_data->gpio_cb) < 0) {
 		LOG_DBG("Failed to set GPIO callback");
@@ -174,6 +174,6 @@ static int ti_hdc_init(struct device *dev)
 
 static struct ti_hdc_data ti_hdc_data;
 
-DEVICE_AND_API_INIT(ti_hdc, DT_TI_HDC_0_LABEL, ti_hdc_init, &ti_hdc_data,
+DEVICE_AND_API_INIT(ti_hdc, DT_INST_0_TI_HDC_LABEL, ti_hdc_init, &ti_hdc_data,
 		    NULL, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
 		    &ti_hdc_driver_api);

@@ -797,7 +797,7 @@ static inline void set_reset(struct device *dev, u32_t value)
 	struct mcr20a_context *mcr20a = dev->driver_data;
 
 	gpio_pin_write(mcr20a->reset_gpio,
-		       DT_NXP_MCR20A_0_RESET_GPIOS_PIN, value);
+		       DT_INST_0_NXP_MCR20A_RESET_GPIOS_PIN, value);
 }
 
 static void enable_irqb_interrupt(struct mcr20a_context *mcr20a,
@@ -805,10 +805,10 @@ static void enable_irqb_interrupt(struct mcr20a_context *mcr20a,
 {
 	if (enable) {
 		gpio_pin_enable_callback(mcr20a->irq_gpio,
-					 DT_NXP_MCR20A_0_IRQB_GPIOS_PIN);
+					 DT_INST_0_NXP_MCR20A_IRQB_GPIOS_PIN);
 	} else {
 		gpio_pin_disable_callback(mcr20a->irq_gpio,
-					  DT_NXP_MCR20A_0_IRQB_GPIOS_PIN);
+					  DT_INST_0_NXP_MCR20A_IRQB_GPIOS_PIN);
 	}
 }
 
@@ -816,7 +816,7 @@ static inline void setup_gpio_callbacks(struct mcr20a_context *mcr20a)
 {
 	gpio_init_callback(&mcr20a->irqb_cb,
 			   irqb_int_handler,
-			   BIT(DT_NXP_MCR20A_0_IRQB_GPIOS_PIN));
+			   BIT(DT_INST_0_NXP_MCR20A_IRQB_GPIOS_PIN));
 	gpio_add_callback(mcr20a->irq_gpio, &mcr20a->irqb_cb);
 }
 
@@ -1281,7 +1281,7 @@ static int power_on_and_setup(struct device *dev)
 			z_usleep(50);
 			timeout--;
 			gpio_pin_read(mcr20a->irq_gpio,
-				      DT_NXP_MCR20A_0_IRQB_GPIOS_PIN, &status);
+				      DT_INST_0_NXP_MCR20A_IRQB_GPIOS_PIN, &status);
 		} while (status && timeout);
 
 		if (status) {
@@ -1335,15 +1335,15 @@ static inline int configure_gpios(struct device *dev)
 
 	/* setup gpio for the modem interrupt */
 	mcr20a->irq_gpio =
-		device_get_binding(DT_NXP_MCR20A_0_IRQB_GPIOS_CONTROLLER);
+		device_get_binding(DT_INST_0_NXP_MCR20A_IRQB_GPIOS_CONTROLLER);
 	if (mcr20a->irq_gpio == NULL) {
 		LOG_ERR("Failed to get pointer to %s device",
-			DT_NXP_MCR20A_0_IRQB_GPIOS_CONTROLLER);
+			DT_INST_0_NXP_MCR20A_IRQB_GPIOS_CONTROLLER);
 		return -EINVAL;
 	}
 
 	gpio_pin_configure(mcr20a->irq_gpio,
-			   DT_NXP_MCR20A_0_IRQB_GPIOS_PIN,
+			   DT_INST_0_NXP_MCR20A_IRQB_GPIOS_PIN,
 			   GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
 			   GPIO_PUD_PULL_UP |
 			   GPIO_INT_ACTIVE_LOW);
@@ -1352,15 +1352,15 @@ static inline int configure_gpios(struct device *dev)
 		/* setup gpio for the modems reset */
 		mcr20a->reset_gpio =
 			device_get_binding(
-				DT_NXP_MCR20A_0_RESET_GPIOS_CONTROLLER);
+				DT_INST_0_NXP_MCR20A_RESET_GPIOS_CONTROLLER);
 		if (mcr20a->reset_gpio == NULL) {
 			LOG_ERR("Failed to get pointer to %s device",
-				DT_NXP_MCR20A_0_RESET_GPIOS_CONTROLLER);
+				DT_INST_0_NXP_MCR20A_RESET_GPIOS_CONTROLLER);
 			return -EINVAL;
 		}
 
 		gpio_pin_configure(mcr20a->reset_gpio,
-				   DT_NXP_MCR20A_0_RESET_GPIOS_PIN,
+				   DT_INST_0_NXP_MCR20A_RESET_GPIOS_PIN,
 				   GPIO_DIR_OUT);
 		set_reset(dev, 0);
 	}
@@ -1372,7 +1372,7 @@ static inline int configure_spi(struct device *dev)
 {
 	struct mcr20a_context *mcr20a = dev->driver_data;
 
-	mcr20a->spi = device_get_binding(DT_NXP_MCR20A_0_BUS_NAME);
+	mcr20a->spi = device_get_binding(DT_INST_0_NXP_MCR20A_BUS_NAME);
 	if (!mcr20a->spi) {
 		LOG_ERR("Unable to get SPI device");
 		return -ENODEV;
@@ -1396,13 +1396,13 @@ static inline int configure_spi(struct device *dev)
 		DT_NXP_MCR20A_0_CS_GPIO_PIN);
 #endif /* DT_NXP_MCR20A_0_CS_GPIO_CONTROLLER */
 
-	mcr20a->spi_cfg.frequency = DT_NXP_MCR20A_0_SPI_MAX_FREQUENCY;
+	mcr20a->spi_cfg.frequency = DT_INST_0_NXP_MCR20A_SPI_MAX_FREQUENCY;
 	mcr20a->spi_cfg.operation = SPI_WORD_SET(8);
-	mcr20a->spi_cfg.slave = DT_NXP_MCR20A_0_BASE_ADDRESS;
+	mcr20a->spi_cfg.slave = DT_INST_0_NXP_MCR20A_BASE_ADDRESS;
 
 	LOG_DBG("SPI configured %s, %d",
-		DT_NXP_MCR20A_0_BUS_NAME,
-		DT_NXP_MCR20A_0_BASE_ADDRESS);
+		DT_INST_0_NXP_MCR20A_BUS_NAME,
+		DT_INST_0_NXP_MCR20A_BASE_ADDRESS);
 
 	return 0;
 }

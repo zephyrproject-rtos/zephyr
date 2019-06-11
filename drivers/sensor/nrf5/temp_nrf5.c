@@ -101,17 +101,17 @@ static int temp_nrf5_init(struct device *dev)
 	LOG_DBG("");
 
 	data->clk_m16_dev =
-		device_get_binding(DT_NORDIC_NRF_CLOCK_0_LABEL "_16M");
+		device_get_binding(DT_INST_0_NORDIC_NRF_CLOCK_LABEL "_16M");
 	__ASSERT_NO_MSG(data->clk_m16_dev);
 
 	k_sem_init(&data->device_sync_sem, 0, UINT_MAX);
 	IRQ_CONNECT(
-		DT_NORDIC_NRF_TEMP_0_IRQ_0,
-		DT_NORDIC_NRF_TEMP_0_IRQ_0_PRIORITY,
+		DT_INST_0_NORDIC_NRF_TEMP_IRQ_0,
+		DT_INST_0_NORDIC_NRF_TEMP_IRQ_0_PRIORITY,
 		temp_nrf5_isr,
 		DEVICE_GET(temp_nrf5),
 		0);
-	irq_enable(DT_NORDIC_NRF_TEMP_0_IRQ_0);
+	irq_enable(DT_INST_0_NORDIC_NRF_TEMP_IRQ_0);
 
 	NRF_TEMP->INTENSET = TEMP_INTENSET_DATARDY_Set;
 

@@ -346,11 +346,11 @@ static int lis2dw12_init(struct device *dev)
 }
 
 const struct lis2dw12_device_config lis2dw12_cfg = {
-	.bus_name = DT_ST_LIS2DW12_0_BUS_NAME,
+	.bus_name = DT_INST_0_ST_LIS2DW12_BUS_NAME,
 	.pm = CONFIG_LIS2DW12_POWER_MODE,
 #ifdef CONFIG_LIS2DW12_TRIGGER
-	.int_gpio_port = DT_ST_LIS2DW12_0_IRQ_GPIOS_CONTROLLER,
-	.int_gpio_pin = DT_ST_LIS2DW12_0_IRQ_GPIOS_PIN,
+	.int_gpio_port = DT_INST_0_ST_LIS2DW12_IRQ_GPIOS_CONTROLLER,
+	.int_gpio_pin = DT_INST_0_ST_LIS2DW12_IRQ_GPIOS_PIN,
 #if defined(CONFIG_LIS2DW12_INT_PIN_1)
 	.int_pin = 1,
 #elif defined(CONFIG_LIS2DW12_INT_PIN_2)
@@ -362,6 +362,6 @@ const struct lis2dw12_device_config lis2dw12_cfg = {
 
 struct lis2dw12_data lis2dw12_data;
 
-DEVICE_AND_API_INIT(lis2dw12, DT_ST_LIS2DW12_0_LABEL, lis2dw12_init,
+DEVICE_AND_API_INIT(lis2dw12, DT_INST_0_ST_LIS2DW12_LABEL, lis2dw12_init,
 	     &lis2dw12_data, &lis2dw12_cfg, POST_KERNEL,
 	     CONFIG_SENSOR_INIT_PRIORITY, &lis2dw12_driver_api);

@@ -96,32 +96,32 @@ s8_t nm_bus_init(void *pvinit)
 	/* Not implemented */
 #elif defined CONF_WINC_USE_SPI
 	/* setup SPI device */
-	winc1500.spi = device_get_binding(DT_ATMEL_WINC1500_0_BUS_NAME);
+	winc1500.spi = device_get_binding(DT_INST_0_ATMEL_WINC1500_BUS_NAME);
 	if (!winc1500.spi) {
 		LOG_ERR("spi device binding");
 		return -1;
 	}
 
 	winc1500.spi_cfg.operation = SPI_WORD_SET(8) | SPI_TRANSFER_MSB;
-	winc1500.spi_cfg.frequency = DT_ATMEL_WINC1500_0_SPI_MAX_FREQUENCY;
-	winc1500.spi_cfg.slave = DT_ATMEL_WINC1500_0_BASE_ADDRESS;
+	winc1500.spi_cfg.frequency = DT_INST_0_ATMEL_WINC1500_SPI_MAX_FREQUENCY;
+	winc1500.spi_cfg.slave = DT_INST_0_ATMEL_WINC1500_BASE_ADDRESS;
 
 #ifdef CONFIG_WIFI_WINC1500_GPIO_SPI_CS
 	cs_ctrl.gpio_dev = device_get_binding(
-		DT_ATMEL_WINC1500_0_CS_GPIO_CONTROLLER);
+		DT_INST_0_ATMEL_WINC1500_CS_GPIO_CONTROLLER);
 	if (!cs_ctrl.gpio_dev) {
 		LOG_ERR("Unable to get GPIO SPI CS device");
 		return -ENODEV;
 	}
 
-	cs_ctrl.gpio_pin = DT_ATMEL_WINC1500_0_CS_GPIO_PIN;
+	cs_ctrl.gpio_pin = DT_INST_0_ATMEL_WINC1500_CS_GPIO_PIN;
 	cs_ctrl.delay = 0U;
 
 	winc1500.spi_cfg.cs = &cs_ctrl;
 
 	LOG_DBG("SPI GPIO CS configured on %s:%u",
-		    DT_ATMEL_WINC1500_0_CS_GPIO_CONTROLLER,
-		    DT_ATMEL_WINC1500_0_CS_GPIO_PIN);
+		    DT_INST_0_ATMEL_WINC1500_CS_GPIO_CONTROLLER,
+		    DT_INST_0_ATMEL_WINC1500_CS_GPIO_PIN);
 #endif /* CONFIG_WIFI_WINC1500_GPIO_SPI_CS */
 
 	nm_bsp_reset();

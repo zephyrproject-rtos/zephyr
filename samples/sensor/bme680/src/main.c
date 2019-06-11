@@ -11,7 +11,7 @@
 
 void main(void)
 {
-	struct device *dev = device_get_binding(DT_BOSCH_BME680_0_LABEL);
+	struct device *dev = device_get_binding(DT_INST_0_BOSCH_BME680_LABEL);
 	struct sensor_value temp, press, humidity, gas_res;
 
 	printf("Device %p name is %s\n", dev, dev->config->name);

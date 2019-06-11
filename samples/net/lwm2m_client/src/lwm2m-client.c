@@ -186,7 +186,7 @@ static void *temperature_get_buf(u16_t obj_inst_id, size_t *data_len)
 	struct device *dev = NULL;
 
 #if defined(CONFIG_FXOS8700_TEMP)
-	dev = device_get_binding(DT_NXP_FXOS8700_0_LABEL);
+	dev = device_get_binding(DT_INST_0_NXP_FXOS8700_LABEL);
 #endif
 
 	if (dev != NULL) {

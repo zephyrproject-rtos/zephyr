@@ -201,17 +201,17 @@ static int sht3xd_init(struct device *dev)
 
 struct sht3xd_data sht3xd0_driver;
 static const struct sht3xd_config sht3xd0_cfg = {
-	.bus_name = DT_SENSIRION_SHT3XD_0_BUS_NAME,
+	.bus_name = DT_INST_0_SENSIRION_SHT3XD_BUS_NAME,
 #ifdef CONFIG_SHT3XD_TRIGGER
-	.alert_gpio_name = DT_SENSIRION_SHT3XD_0_ALERT_GPIOS_CONTROLLER,
+	.alert_gpio_name = DT_INST_0_SENSIRION_SHT3XD_ALERT_GPIOS_CONTROLLER,
 #endif
-	.base_address = DT_SENSIRION_SHT3XD_0_BASE_ADDRESS,
+	.base_address = DT_INST_0_SENSIRION_SHT3XD_BASE_ADDRESS,
 #ifdef CONFIG_SHT3XD_TRIGGER
-	.alert_pin = DT_SENSIRION_SHT3XD_0_ALERT_GPIOS_PIN,
+	.alert_pin = DT_INST_0_SENSIRION_SHT3XD_ALERT_GPIOS_PIN,
 #endif
 };
 
-DEVICE_AND_API_INIT(sht3xd0, DT_SENSIRION_SHT3XD_0_LABEL,
+DEVICE_AND_API_INIT(sht3xd0, DT_INST_0_SENSIRION_SHT3XD_LABEL,
 		    sht3xd_init, &sht3xd0_driver, &sht3xd0_cfg,
 		    POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
 		    &sht3xd_driver_api);

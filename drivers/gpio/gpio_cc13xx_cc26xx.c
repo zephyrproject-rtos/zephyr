@@ -224,10 +224,10 @@ static int gpio_cc13xx_cc26xx_init(struct device *dev)
 	}
 
 	/* Enable IRQ */
-	IRQ_CONNECT(DT_TI_CC13XX_CC26XX_GPIO_0_IRQ_0,
-		    DT_TI_CC13XX_CC26XX_GPIO_0_IRQ_0_PRIORITY,
+	IRQ_CONNECT(DT_INST_0_TI_CC13XX_CC26XX_GPIO_IRQ_0,
+		    DT_INST_0_TI_CC13XX_CC26XX_GPIO_IRQ_0_PRIORITY,
 		    gpio_cc13xx_cc26xx_isr, DEVICE_GET(gpio_cc13xx_cc26xx), 0);
-	irq_enable(DT_TI_CC13XX_CC26XX_GPIO_0_IRQ_0);
+	irq_enable(DT_INST_0_TI_CC13XX_CC26XX_GPIO_IRQ_0);
 
 	/* Disable callbacks */
 	data->pin_callback_enables = 0;
@@ -251,7 +251,7 @@ static const struct gpio_driver_api gpio_cc13xx_cc26xx_driver_api = {
 	.get_pending_int = gpio_cc13xx_cc26xx_get_pending_int
 };
 
-DEVICE_AND_API_INIT(gpio_cc13xx_cc26xx, DT_TI_CC13XX_CC26XX_GPIO_0_LABEL,
+DEVICE_AND_API_INIT(gpio_cc13xx_cc26xx, DT_INST_0_TI_CC13XX_CC26XX_GPIO_LABEL,
 		    gpio_cc13xx_cc26xx_init, &gpio_cc13xx_cc26xx_data_0, NULL,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &gpio_cc13xx_cc26xx_driver_api);

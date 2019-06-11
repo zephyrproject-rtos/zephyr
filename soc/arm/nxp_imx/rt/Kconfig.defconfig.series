@@ -74,10 +74,10 @@ endif # SPI
 if CODE_ITCM
 
 config FLASH_SIZE
-	default $(dt_int_val,DT_NXP_IMX_ITCM_0_SIZE,K)
+	default $(dt_int_val,DT_INST_0_NXP_IMX_ITCM_SIZE,K)
 
 config FLASH_BASE_ADDRESS
-	default $(dt_hex_val,DT_NXP_IMX_ITCM_0_BASE_ADDRESS)
+	default $(dt_hex_val,DT_INST_0_NXP_IMX_ITCM_BASE_ADDRESS)
 
 endif # CODE_ITCM
 
@@ -104,10 +104,10 @@ endif # CODE_FLEXSPI2
 if DATA_DTCM
 
 config SRAM_SIZE
-	default $(dt_int_val,DT_NXP_IMX_DTCM_0_SIZE,K)
+	default $(dt_int_val,DT_INST_0_NXP_IMX_DTCM_SIZE,K)
 
 config SRAM_BASE_ADDRESS
-	default $(dt_hex_val,DT_NXP_IMX_DTCM_0_BASE_ADDRESS)
+	default $(dt_hex_val,DT_INST_0_NXP_IMX_DTCM_BASE_ADDRESS)
 
 endif # DATA_DTCM
 

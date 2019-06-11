@@ -16,10 +16,10 @@ ssize_t z_impl_hwinfo_get_device_id(u8_t *buffer, size_t length)
 {
 	struct sam0_uid dev_id;
 
-	dev_id.id[0] = *(const u32_t *) DT_ATMEL_SAM0_ID_0_BASE_ADDRESS_0;
-	dev_id.id[1] = *(const u32_t *) DT_ATMEL_SAM0_ID_0_BASE_ADDRESS_1;
-	dev_id.id[2] = *(const u32_t *) DT_ATMEL_SAM0_ID_0_BASE_ADDRESS_2;
-	dev_id.id[3] = *(const u32_t *) DT_ATMEL_SAM0_ID_0_BASE_ADDRESS_3;
+	dev_id.id[0] = *(const u32_t *) DT_INST_0_ATMEL_SAM0_ID_BASE_ADDRESS_0;
+	dev_id.id[1] = *(const u32_t *) DT_INST_0_ATMEL_SAM0_ID_BASE_ADDRESS_1;
+	dev_id.id[2] = *(const u32_t *) DT_INST_0_ATMEL_SAM0_ID_BASE_ADDRESS_2;
+	dev_id.id[3] = *(const u32_t *) DT_INST_0_ATMEL_SAM0_ID_BASE_ADDRESS_3;
 
 	if (length > sizeof(dev_id.id)) {
 		length = sizeof(dev_id.id);

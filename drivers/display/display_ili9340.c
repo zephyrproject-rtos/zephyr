@@ -18,13 +18,13 @@ LOG_MODULE_REGISTER(display_ili9340);
 #include <string.h>
 
 struct ili9340_data {
-#ifdef DT_ILITEK_ILI9340_0_RESET_GPIOS_CONTROLLER
+#ifdef DT_INST_0_ILITEK_ILI9340_RESET_GPIOS_CONTROLLER
 	struct device *reset_gpio;
 #endif
 	struct device *command_data_gpio;
 	struct device *spi_dev;
 	struct spi_config spi_config;
-#ifdef DT_ILITEK_ILI9340_0_CS_GPIO_CONTROLLER
+#ifdef DT_INST_0_ILITEK_ILI9340_CS_GPIO_CONTROLLER
 	struct spi_cs_control cs_ctrl;
 #endif
 };
@@ -51,55 +51,55 @@ static int ili9340_init(struct device *dev)
 
 	LOG_DBG("Initializing display driver");
 
-	data->spi_dev = device_get_binding(DT_ILITEK_ILI9340_0_BUS_NAME);
+	data->spi_dev = device_get_binding(DT_INST_0_ILITEK_ILI9340_BUS_NAME);
 	if (data->spi_dev == NULL) {
 		LOG_ERR("Could not get SPI device for ILI9340");
 		return -EPERM;
 	}
 
-	data->spi_config.frequency = DT_ILITEK_ILI9340_0_SPI_MAX_FREQUENCY;
+	data->spi_config.frequency = DT_INST_0_ILITEK_ILI9340_SPI_MAX_FREQUENCY;
 	data->spi_config.operation = SPI_OP_MODE_MASTER | SPI_WORD_SET(8);
-	data->spi_config.slave = DT_ILITEK_ILI9340_0_BASE_ADDRESS;
+	data->spi_config.slave = DT_INST_0_ILITEK_ILI9340_BASE_ADDRESS;
 
-#ifdef DT_ILITEK_ILI9340_0_CS_GPIO_CONTROLLER
+#ifdef DT_INST_0_ILITEK_ILI9340_CS_GPIO_CONTROLLER
 	data->cs_ctrl.gpio_dev =
-		device_get_binding(DT_ILITEK_ILI9340_0_CS_GPIO_CONTROLLER);
-	data->cs_ctrl.gpio_pin = DT_ILITEK_ILI9340_0_CS_GPIO_PIN;
+		device_get_binding(DT_INST_0_ILITEK_ILI9340_CS_GPIO_CONTROLLER);
+	data->cs_ctrl.gpio_pin = DT_INST_0_ILITEK_ILI9340_CS_GPIO_PIN;
 	data->cs_ctrl.delay = 0U;
 	data->spi_config.cs = &(data->cs_ctrl);
 #else
 	data->spi_config.cs = NULL;
 #endif
 
-#ifdef DT_ILITEK_ILI9340_0_RESET_GPIOS_CONTROLLER
+#ifdef DT_INST_0_ILITEK_ILI9340_RESET_GPIOS_CONTROLLER
 	data->reset_gpio =
-		device_get_binding(DT_ILITEK_ILI9340_0_RESET_GPIOS_CONTROLLER);
+		device_get_binding(DT_INST_0_ILITEK_ILI9340_RESET_GPIOS_CONTROLLER);
 	if (data->reset_gpio == NULL) {
 		LOG_ERR("Could not get GPIO port for ILI9340 reset");
 		return -EPERM;
 	}
 
-	gpio_pin_configure(data->reset_gpio, DT_ILITEK_ILI9340_0_RESET_GPIOS_PIN,
+	gpio_pin_configure(data->reset_gpio, DT_INST_0_ILITEK_ILI9340_RESET_GPIOS_PIN,
 			   GPIO_DIR_OUT);
 #endif
 
 	data->command_data_gpio =
-		device_get_binding(DT_ILITEK_ILI9340_0_CMD_DATA_GPIOS_CONTROLLER);
+		device_get_binding(DT_INST_0_ILITEK_ILI9340_CMD_DATA_GPIOS_CONTROLLER);
 	if (data->command_data_gpio == NULL) {
 		LOG_ERR("Could not get GPIO port for ILI9340 command/data");
 		return -EPERM;
 	}
 
-	gpio_pin_configure(data->command_data_gpio, DT_ILITEK_ILI9340_0_CMD_DATA_GPIOS_PIN,
+	gpio_pin_configure(data->command_data_gpio, DT_INST_0_ILITEK_ILI9340_CMD_DATA_GPIOS_PIN,
 			   GPIO_DIR_OUT);
 
-#ifdef DT_ILITEK_ILI9340_0_RESET_GPIOS_CONTROLLER
+#ifdef DT_INST_0_ILITEK_ILI9340_RESET_GPIOS_CONTROLLER
 	LOG_DBG("Resetting display driver");
-	gpio_pin_write(data->reset_gpio, DT_ILITEK_ILI9340_0_RESET_GPIOS_PIN, 1);
+	gpio_pin_write(data->reset_gpio, DT_INST_0_ILITEK_ILI9340_RESET_GPIOS_PIN, 1);
 	k_sleep(1);
-	gpio_pin_write(data->reset_gpio, DT_ILITEK_ILI9340_0_RESET_GPIOS_PIN, 0);
+	gpio_pin_write(data->reset_gpio, DT_INST_0_ILITEK_ILI9340_RESET_GPIOS_PIN, 0);
 	k_sleep(1);
-	gpio_pin_write(data->reset_gpio, DT_ILITEK_ILI9340_0_RESET_GPIOS_PIN, 1);
+	gpio_pin_write(data->reset_gpio, DT_INST_0_ILITEK_ILI9340_RESET_GPIOS_PIN, 1);
 	k_sleep(5);
 #endif
 
@@ -266,7 +266,7 @@ void ili9340_transmit(struct ili9340_data *data, u8_t cmd, void *tx_data,
 	struct spi_buf tx_buf = { .buf = &cmd, .len = 1 };
 	struct spi_buf_set tx_bufs = { .buffers = &tx_buf, .count = 1 };
 
-	gpio_pin_write(data->command_data_gpio, DT_ILITEK_ILI9340_0_CMD_DATA_GPIOS_PIN,
+	gpio_pin_write(data->command_data_gpio, DT_INST_0_ILITEK_ILI9340_CMD_DATA_GPIOS_PIN,
 		       ILI9340_CMD_DATA_PIN_COMMAND);
 	spi_write(data->spi_dev, &data->spi_config, &tx_bufs);
 
@@ -274,7 +274,7 @@ void ili9340_transmit(struct ili9340_data *data, u8_t cmd, void *tx_data,
 		tx_buf.buf = tx_data;
 		tx_buf.len = tx_len;
 		gpio_pin_write(data->command_data_gpio,
-			       DT_ILITEK_ILI9340_0_CMD_DATA_GPIOS_PIN,
+			       DT_INST_0_ILITEK_ILI9340_CMD_DATA_GPIOS_PIN,
 			       ILI9340_CMD_DATA_PIN_DATA);
 		spi_write(data->spi_dev, &data->spi_config, &tx_bufs);
 	}
@@ -295,6 +295,6 @@ static const struct display_driver_api ili9340_api = {
 
 static struct ili9340_data ili9340_data;
 
-DEVICE_AND_API_INIT(ili9340, DT_ILITEK_ILI9340_0_LABEL, &ili9340_init,
+DEVICE_AND_API_INIT(ili9340, DT_INST_0_ILITEK_ILI9340_LABEL, &ili9340_init,
 		    &ili9340_data, NULL, APPLICATION,
 		    CONFIG_APPLICATION_INIT_PRIORITY, &ili9340_api);

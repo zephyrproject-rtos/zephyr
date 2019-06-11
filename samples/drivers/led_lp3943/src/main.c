@@ -14,7 +14,7 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(app);
 
-#define LED_DEV_NAME DT_TI_LP3943_0_LABEL
+#define LED_DEV_NAME DT_INST_0_TI_LP3943_LABEL
 #define NUM_LEDS 16
 
 #define DELAY_TIME K_MSEC(1000)

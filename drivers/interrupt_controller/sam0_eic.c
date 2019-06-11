@@ -316,10 +316,10 @@ u32_t sam0_eic_interrupt_pending(int port)
 
 #define SAM0_EIC_IRQ_CONNECT(n)						\
 	do {								\
-		IRQ_CONNECT(DT_ATMEL_SAM0_EIC_0_IRQ_ ## n,		\
-			    DT_ATMEL_SAM0_EIC_0_IRQ_ ## n ## _PRIORITY,	\
+		IRQ_CONNECT(DT_INST_0_ATMEL_SAM0_EIC_IRQ_ ## n,		\
+			    DT_INST_0_ATMEL_SAM0_EIC_IRQ_ ## n ## _PRIORITY,	\
 			    sam0_eic_isr, DEVICE_GET(sam0_eic), 0);	\
-		irq_enable(DT_ATMEL_SAM0_EIC_0_IRQ_ ## n);		\
+		irq_enable(DT_INST_0_ATMEL_SAM0_EIC_IRQ_ ## n);		\
 	} while (0)
 
 static int sam0_eic_init(struct device *dev)
@@ -333,7 +333,7 @@ static int sam0_eic_init(struct device *dev)
 	GCLK->CLKCTRL.reg = GCLK_CLKCTRL_ID_EIC | GCLK_CLKCTRL_GEN_GCLK0 |
 			    GCLK_CLKCTRL_CLKEN;
 
-#ifdef DT_ATMEL_SAM0_EIC_0_IRQ_0
+#ifdef DT_INST_0_ATMEL_SAM0_EIC_IRQ_0
 	SAM0_EIC_IRQ_CONNECT(0);
 #endif
 #ifdef DT_ATMEL_SAM0_EIC_0_IRQ_1
@@ -389,6 +389,6 @@ static int sam0_eic_init(struct device *dev)
 }
 
 static struct sam0_eic_data eic_data;
-DEVICE_INIT(sam0_eic, DT_ATMEL_SAM0_EIC_0_LABEL, sam0_eic_init,
+DEVICE_INIT(sam0_eic, DT_INST_0_ATMEL_SAM0_EIC_LABEL, sam0_eic_init,
 	    &eic_data, NULL,
 	    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

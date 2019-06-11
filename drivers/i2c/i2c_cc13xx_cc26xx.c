@@ -293,16 +293,16 @@ static int i2c_cc13xx_cc26xx_init(struct device *dev)
 		continue;
 	}
 
-	IRQ_CONNECT(DT_TI_CC13XX_CC26XX_I2C_0_IRQ_0,
-		    DT_TI_CC13XX_CC26XX_I2C_0_IRQ_0_PRIORITY,
+	IRQ_CONNECT(DT_INST_0_TI_CC13XX_CC26XX_I2C_IRQ_0,
+		    DT_INST_0_TI_CC13XX_CC26XX_I2C_IRQ_0_PRIORITY,
 		    i2c_cc13xx_cc26xx_isr, DEVICE_GET(i2c_cc13xx_cc26xx), 0);
-	irq_enable(DT_TI_CC13XX_CC26XX_I2C_0_IRQ_0);
+	irq_enable(DT_INST_0_TI_CC13XX_CC26XX_I2C_IRQ_0);
 
 	/* Configure IOC module to route SDA and SCL signals */
 	IOCPinTypeI2c(get_dev_config(dev)->base, get_dev_config(dev)->sda_pin,
 		      get_dev_config(dev)->scl_pin);
 
-	cfg = i2c_map_dt_bitrate(DT_TI_CC13XX_CC26XX_I2C_0_CLOCK_FREQUENCY);
+	cfg = i2c_map_dt_bitrate(DT_INST_0_TI_CC13XX_CC26XX_I2C_CLOCK_FREQUENCY);
 	err = i2c_cc13xx_cc26xx_configure(dev, cfg | I2C_MODE_MASTER);
 	if (err) {
 		LOG_ERR("Failed to configure");
@@ -320,9 +320,9 @@ static const struct i2c_driver_api i2c_cc13xx_cc26xx_driver_api = {
 };
 
 static const struct i2c_cc13xx_cc26xx_config i2c_cc13xx_cc26xx_config = {
-	.base = DT_TI_CC13XX_CC26XX_I2C_0_BASE_ADDRESS,
-	.sda_pin = DT_TI_CC13XX_CC26XX_I2C_0_SDA_PIN,
-	.scl_pin = DT_TI_CC13XX_CC26XX_I2C_0_SCL_PIN
+	.base = DT_INST_0_TI_CC13XX_CC26XX_I2C_BASE_ADDRESS,
+	.sda_pin = DT_INST_0_TI_CC13XX_CC26XX_I2C_SDA_PIN,
+	.scl_pin = DT_INST_0_TI_CC13XX_CC26XX_I2C_SCL_PIN
 };
 
 static struct i2c_cc13xx_cc26xx_data i2c_cc13xx_cc26xx_data = {
@@ -331,7 +331,7 @@ static struct i2c_cc13xx_cc26xx_data i2c_cc13xx_cc26xx_data = {
 	.error = I2C_MASTER_ERR_NONE
 };
 
-DEVICE_AND_API_INIT(i2c_cc13xx_cc26xx, DT_TI_CC13XX_CC26XX_I2C_0_LABEL,
+DEVICE_AND_API_INIT(i2c_cc13xx_cc26xx, DT_INST_0_TI_CC13XX_CC26XX_I2C_LABEL,
 		    i2c_cc13xx_cc26xx_init, &i2c_cc13xx_cc26xx_data,
 		    &i2c_cc13xx_cc26xx_config, POST_KERNEL,
 		    CONFIG_I2C_INIT_PRIORITY, &i2c_cc13xx_cc26xx_driver_api);

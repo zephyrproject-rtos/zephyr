@@ -26,11 +26,11 @@ struct ti_hdc_data {
 	u16_t t_sample;
 	u16_t rh_sample;
 
-#if defined(DT_TI_HDC_0_DRDY_GPIOS_CONTROLLER)
+#if defined(DT_INST_0_TI_HDC_DRDY_GPIOS_CONTROLLER)
 	struct device *gpio;
 	struct gpio_callback gpio_cb;
 	struct k_sem data_sem;
-#endif  /* DT_TI_HDC_0_DRDY_GPIOS_CONTROLLER */
+#endif  /* DT_INST_0_TI_HDC_DRDY_GPIOS_CONTROLLER */
 };
 
 #endif

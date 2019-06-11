@@ -11,7 +11,7 @@
 #include <generated_dts_board.h>
 
 /* lib-c hooks required RAM defined variables */
-#define RISCV_RAM_BASE              DT_MMIO_SRAM_0_BASE_ADDRESS
-#define RISCV_RAM_SIZE              DT_MMIO_SRAM_0_SIZE
+#define RISCV_RAM_BASE              DT_INST_0_MMIO_SRAM_BASE_ADDRESS
+#define RISCV_RAM_SIZE              DT_INST_0_MMIO_SRAM_SIZE
 
 #endif /* __RISCV32_LITEX_VEXRISCV_SOC_H_ */

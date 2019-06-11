@@ -19,8 +19,8 @@ LOG_MODULE_REGISTER(ssd1673);
 #include "ssd1673_regs.h"
 #include <display/cfb.h>
 
-#define EPD_PANEL_WIDTH			DT_SOLOMON_SSD1673FB_0_WIDTH
-#define EPD_PANEL_HEIGHT		DT_SOLOMON_SSD1673FB_0_HEIGHT
+#define EPD_PANEL_WIDTH			DT_INST_0_SOLOMON_SSD1673FB_WIDTH
+#define EPD_PANEL_HEIGHT		DT_INST_0_SOLOMON_SSD1673FB_HEIGHT
 #define EPD_PANEL_NUMOF_COLUMS		EPD_PANEL_WIDTH
 #define EPD_PANEL_NUMOF_ROWS_PER_PAGE	8
 #define EPD_PANEL_NUMOF_PAGES		(EPD_PANEL_HEIGHT / \
@@ -39,7 +39,7 @@ struct ssd1673_data {
 	struct device *busy;
 	struct device *spi_dev;
 	struct spi_config spi_config;
-#if defined(DT_SOLOMON_SSD1673FB_0_CS_GPIO_CONTROLLER)
+#if defined(DT_INST_0_SOLOMON_SSD1673FB_CS_GPIO_CONTROLLER)
 	struct spi_cs_control cs_ctrl;
 #endif
 	u8_t scan_mode;
@@ -98,7 +98,7 @@ static inline int ssd1673_write_cmd(struct ssd1673_data *driver,
 	struct spi_buf buf = {.buf = &cmd, .len = sizeof(cmd)};
 	struct spi_buf_set buf_set = {.buffers = &buf, .count = 1};
 
-	gpio_pin_write(driver->dc, DT_SOLOMON_SSD1673FB_0_DC_GPIOS_PIN, 0);
+	gpio_pin_write(driver->dc, DT_INST_0_SOLOMON_SSD1673FB_DC_GPIOS_PIN, 0);
 	err = spi_write(driver->spi_dev, &driver->spi_config, &buf_set);
 	if (err < 0) {
 		return err;
@@ -107,7 +107,7 @@ static inline int ssd1673_write_cmd(struct ssd1673_data *driver,
 	if (data != NULL) {
 		buf.buf = data;
 		buf.len = len;
-		gpio_pin_write(driver->dc, DT_SOLOMON_SSD1673FB_0_DC_GPIOS_PIN, 1);
+		gpio_pin_write(driver->dc, DT_INST_0_SOLOMON_SSD1673FB_DC_GPIOS_PIN, 1);
 		err = spi_write(driver->spi_dev, &driver->spi_config, &buf_set);
 		if (err < 0) {
 			return err;
@@ -121,36 +121,36 @@ static inline void ssd1673_busy_wait(struct ssd1673_data *driver)
 {
 	u32_t val = 0U;
 
-	gpio_pin_read(driver->busy, DT_SOLOMON_SSD1673FB_0_BUSY_GPIOS_PIN, &val);
+	gpio_pin_read(driver->busy, DT_INST_0_SOLOMON_SSD1673FB_BUSY_GPIOS_PIN, &val);
 	while (val) {
 		k_sleep(SSD1673_BUSY_DELAY);
-		gpio_pin_read(driver->busy, DT_SOLOMON_SSD1673FB_0_BUSY_GPIOS_PIN, &val);
+		gpio_pin_read(driver->busy, DT_INST_0_SOLOMON_SSD1673FB_BUSY_GPIOS_PIN, &val);
 	}
 }
 
 static inline size_t push_x_param(u8_t *data, u16_t x)
 {
-#if DT_SOLOMON_SSD1673FB_0_PP_WIDTH_BITS == 8
+#if DT_INST_0_SOLOMON_SSD1673FB_PP_WIDTH_BITS == 8
 	data[0] = (u8_t)x;
 	return 1;
-#elif DT_SOLOMON_SSD1673FB_0_PP_WIDTH_BITS == 16
+#elif DT_INST_0_SOLOMON_SSD1673FB_PP_WIDTH_BITS == 16
 	sys_put_le16(sys_cpu_to_le16(x), data);
 	return 2;
 #else
-#error Unsupported DT_SOLOMON_SSD1673FB_0_PP_WIDTH_BITS value
+#error Unsupported DT_INST_0_SOLOMON_SSD1673FB_PP_WIDTH_BITS value
 #endif
 }
 
 static inline size_t push_y_param(u8_t *data, u16_t y)
 {
-#if DT_SOLOMON_SSD1673FB_0_PP_HEIGHT_BITS == 8
+#if DT_INST_0_SOLOMON_SSD1673FB_PP_HEIGHT_BITS == 8
 	data[0] = (u8_t)y;
 	return 1;
-#elif DT_SOLOMON_SSD1673FB_0_PP_HEIGHT_BITS == 16
+#elif DT_INST_0_SOLOMON_SSD1673FB_PP_HEIGHT_BITS == 16
 	sys_put_le16(sys_cpu_to_le16(y), data);
 	return 2;
 #else
-#error Unsupported DT_SOLOMON_SSD1673FB_0_PP_HEIGHT_BITS value
+#error Unsupported DT_INST_0_SOLOMON_SSD1673FB_PP_HEIGHT_BITS value
 #endif
 }
 
@@ -199,7 +199,7 @@ static inline int ssd1673_set_ram_ptr(struct ssd1673_data *driver,
 static void ssd1673_set_orientation_internall(struct ssd1673_data *driver)
 
 {
-#if DT_SOLOMON_SSD1673FB_0_ORIENTATION_FLIPPED == 1
+#if DT_INST_0_SOLOMON_SSD1673FB_ORIENTATION_FLIPPED == 1
 	driver->scan_mode = SSD1673_DATA_ENTRY_XIYDY;
 #else
 	driver->scan_mode = SSD1673_DATA_ENTRY_XDYIY;
@@ -446,7 +446,7 @@ static int ssd1673_clear_and_write_buffer(struct device *dev)
 		return err;
 	}
 
-	gpio_pin_write(driver->dc, DT_SOLOMON_SSD1673FB_0_DC_GPIOS_PIN, 0);
+	gpio_pin_write(driver->dc, DT_INST_0_SOLOMON_SSD1673FB_DC_GPIOS_PIN, 0);
 
 	tmp = SSD1673_CMD_WRITE_RAM;
 	sbuf.buf = &tmp;
@@ -456,7 +456,7 @@ static int ssd1673_clear_and_write_buffer(struct device *dev)
 		return err;
 	}
 
-	gpio_pin_write(driver->dc, DT_SOLOMON_SSD1673FB_0_DC_GPIOS_PIN, 1);
+	gpio_pin_write(driver->dc, DT_INST_0_SOLOMON_SSD1673FB_DC_GPIOS_PIN, 1);
 
 	memset(clear_page, 0xff, sizeof(clear_page));
 	sbuf.buf = clear_page;
@@ -480,9 +480,9 @@ static int ssd1673_controller_init(struct device *dev)
 
 	LOG_DBG("");
 
-	gpio_pin_write(driver->reset, DT_SOLOMON_SSD1673FB_0_RESET_GPIOS_PIN, 0);
+	gpio_pin_write(driver->reset, DT_INST_0_SOLOMON_SSD1673FB_RESET_GPIOS_PIN, 0);
 	k_sleep(SSD1673_RESET_DELAY);
-	gpio_pin_write(driver->reset, DT_SOLOMON_SSD1673FB_0_RESET_GPIOS_PIN, 1);
+	gpio_pin_write(driver->reset, DT_INST_0_SOLOMON_SSD1673FB_RESET_GPIOS_PIN, 1);
 	k_sleep(SSD1673_RESET_DELAY);
 	ssd1673_busy_wait(driver);
 
@@ -499,19 +499,19 @@ static int ssd1673_controller_init(struct device *dev)
 		return err;
 	}
 
-#if defined(DT_SOLOMON_SSD1673FB_0_SOFTSTART_1)
-	tmp[0] = DT_SOLOMON_SSD1673FB_0_SOFTSTART_1;
-	tmp[1] = DT_SOLOMON_SSD1673FB_0_SOFTSTART_2;
-	tmp[2] = DT_SOLOMON_SSD1673FB_0_SOFTSTART_3;
+#if defined(DT_INST_0_SOLOMON_SSD1673FB_SOFTSTART_1)
+	tmp[0] = DT_INST_0_SOLOMON_SSD1673FB_SOFTSTART_1;
+	tmp[1] = DT_INST_0_SOLOMON_SSD1673FB_SOFTSTART_2;
+	tmp[2] = DT_INST_0_SOLOMON_SSD1673FB_SOFTSTART_3;
 	err = ssd1673_write_cmd(driver, SSD1673_CMD_SOFTSTART, tmp, 3);
 	if (err < 0) {
 		return err;
 	}
 #endif
 
-	tmp[0] = DT_SOLOMON_SSD1673FB_0_GDV_A;
-#if defined(DT_SOLOMON_SSD1673FB_0_GDV_B)
-	tmp[1] = DT_SOLOMON_SSD1673FB_0_GDV_B;
+	tmp[0] = DT_INST_0_SOLOMON_SSD1673FB_GDV_A;
+#if defined(DT_INST_0_SOLOMON_SSD1673FB_GDV_B)
+	tmp[1] = DT_INST_0_SOLOMON_SSD1673FB_GDV_B;
 	err = ssd1673_write_cmd(driver, SSD1673_CMD_GDV_CTRL, tmp, 2);
 #else
 	err = ssd1673_write_cmd(driver, SSD1673_CMD_GDV_CTRL, tmp, 1);
@@ -520,13 +520,13 @@ static int ssd1673_controller_init(struct device *dev)
 		return err;
 	}
 
-	tmp[0] = DT_SOLOMON_SSD1673FB_0_SDV;
+	tmp[0] = DT_INST_0_SOLOMON_SSD1673FB_SDV;
 	err = ssd1673_write_cmd(driver, SSD1673_CMD_SDV_CTRL, tmp, 1);
 	if (err < 0) {
 		return err;
 	}
 
-	tmp[0] = DT_SOLOMON_SSD1673FB_0_VCOM;
+	tmp[0] = DT_INST_0_SOLOMON_SSD1673FB_VCOM;
 	err = ssd1673_write_cmd(driver, SSD1673_CMD_VCOM_VOLTAGE, tmp, 1);
 	if (err < 0) {
 		return err;
@@ -544,7 +544,7 @@ static int ssd1673_controller_init(struct device *dev)
 		return err;
 	}
 
-	tmp[0] = DT_SOLOMON_SSD1673FB_0_BORDER_WAVEFORM;
+	tmp[0] = DT_INST_0_SOLOMON_SSD1673FB_BORDER_WAVEFORM;
 	err = ssd1673_write_cmd(driver, SSD1673_CMD_BWF_CTRL, tmp, 1);
 	if (err < 0) {
 		return err;
@@ -582,53 +582,53 @@ static int ssd1673_init(struct device *dev)
 
 	LOG_DBG("");
 
-	driver->spi_dev = device_get_binding(DT_SOLOMON_SSD1673FB_0_BUS_NAME);
+	driver->spi_dev = device_get_binding(DT_INST_0_SOLOMON_SSD1673FB_BUS_NAME);
 	if (driver->spi_dev == NULL) {
 		LOG_ERR("Could not get SPI device for SSD1673");
 		return -EIO;
 	}
 
-	driver->spi_config.frequency = DT_SOLOMON_SSD1673FB_0_SPI_MAX_FREQUENCY;
+	driver->spi_config.frequency = DT_INST_0_SOLOMON_SSD1673FB_SPI_MAX_FREQUENCY;
 	driver->spi_config.operation = SPI_OP_MODE_MASTER | SPI_WORD_SET(8);
-	driver->spi_config.slave = DT_SOLOMON_SSD1673FB_0_BASE_ADDRESS;
+	driver->spi_config.slave = DT_INST_0_SOLOMON_SSD1673FB_BASE_ADDRESS;
 	driver->spi_config.cs = NULL;
 
-	driver->reset = device_get_binding(DT_SOLOMON_SSD1673FB_0_RESET_GPIOS_CONTROLLER);
+	driver->reset = device_get_binding(DT_INST_0_SOLOMON_SSD1673FB_RESET_GPIOS_CONTROLLER);
 	if (driver->reset == NULL) {
 		LOG_ERR("Could not get GPIO port for SSD1673 reset");
 		return -EIO;
 	}
 
-	gpio_pin_configure(driver->reset, DT_SOLOMON_SSD1673FB_0_RESET_GPIOS_PIN,
+	gpio_pin_configure(driver->reset, DT_INST_0_SOLOMON_SSD1673FB_RESET_GPIOS_PIN,
 			   GPIO_DIR_OUT);
 
-	driver->dc = device_get_binding(DT_SOLOMON_SSD1673FB_0_DC_GPIOS_CONTROLLER);
+	driver->dc = device_get_binding(DT_INST_0_SOLOMON_SSD1673FB_DC_GPIOS_CONTROLLER);
 	if (driver->dc == NULL) {
 		LOG_ERR("Could not get GPIO port for SSD1673 DC signal");
 		return -EIO;
 	}
 
-	gpio_pin_configure(driver->dc, DT_SOLOMON_SSD1673FB_0_DC_GPIOS_PIN,
+	gpio_pin_configure(driver->dc, DT_INST_0_SOLOMON_SSD1673FB_DC_GPIOS_PIN,
 			   GPIO_DIR_OUT);
 
-	driver->busy = device_get_binding(DT_SOLOMON_SSD1673FB_0_BUSY_GPIOS_CONTROLLER);
+	driver->busy = device_get_binding(DT_INST_0_SOLOMON_SSD1673FB_BUSY_GPIOS_CONTROLLER);
 	if (driver->busy == NULL) {
 		LOG_ERR("Could not get GPIO port for SSD1673 busy signal");
 		return -EIO;
 	}
 
-	gpio_pin_configure(driver->busy, DT_SOLOMON_SSD1673FB_0_BUSY_GPIOS_PIN,
+	gpio_pin_configure(driver->busy, DT_INST_0_SOLOMON_SSD1673FB_BUSY_GPIOS_PIN,
 			   GPIO_DIR_IN);
 
-#if defined(DT_SOLOMON_SSD1673FB_0_CS_GPIO_CONTROLLER)
+#if defined(DT_INST_0_SOLOMON_SSD1673FB_CS_GPIO_CONTROLLER)
 	driver->cs_ctrl.gpio_dev = device_get_binding(
-		DT_SOLOMON_SSD1673FB_0_CS_GPIO_CONTROLLER);
+		DT_INST_0_SOLOMON_SSD1673FB_CS_GPIO_CONTROLLER);
 	if (!driver->cs_ctrl.gpio_dev) {
 		LOG_ERR("Unable to get SPI GPIO CS device");
 		return -EIO;
 	}
 
-	driver->cs_ctrl.gpio_pin = DT_SOLOMON_SSD1673FB_0_CS_GPIO_PIN;
+	driver->cs_ctrl.gpio_pin = DT_INST_0_SOLOMON_SSD1673FB_CS_GPIO_PIN;
 	driver->cs_ctrl.delay = 0U;
 	driver->spi_config.cs = &driver->cs_ctrl;
 #endif
@@ -652,7 +652,7 @@ static struct display_driver_api ssd1673_driver_api = {
 };
 
 
-DEVICE_AND_API_INIT(ssd1673, DT_SOLOMON_SSD1673FB_0_LABEL, ssd1673_init,
+DEVICE_AND_API_INIT(ssd1673, DT_INST_0_SOLOMON_SSD1673FB_LABEL, ssd1673_init,
 		    &ssd1673_driver, NULL,
 		    POST_KERNEL, CONFIG_APPLICATION_INIT_PRIORITY,
 		    &ssd1673_driver_api);

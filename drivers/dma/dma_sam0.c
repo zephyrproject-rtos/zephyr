@@ -11,7 +11,7 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(dma_sam0, CONFIG_DMA_LOG_LEVEL);
 
-#define DMA_REGS	((Dmac *)DT_ATMEL_SAM0_DMAC_0_BASE_ADDRESS)
+#define DMA_REGS	((Dmac *)DT_INST_0_ATMEL_SAM0_DMAC_BASE_ADDRESS)
 
 typedef void (*dma_callback)(void *callback_arg, u32_t channel,
 			     int error_code);
@@ -397,10 +397,10 @@ DEVICE_DECLARE(dma_sam0_0);
 
 #define DMA_SAM0_IRQ_CONNECT(n)						 \
 	do {								 \
-		IRQ_CONNECT(DT_ATMEL_SAM0_DMAC_0_IRQ_ ## n,		 \
-			    DT_ATMEL_SAM0_DMAC_0_IRQ_ ## n ## _PRIORITY, \
+		IRQ_CONNECT(DT_INST_0_ATMEL_SAM0_DMAC_IRQ_ ## n,		 \
+			    DT_INST_0_ATMEL_SAM0_DMAC_IRQ_ ## n ## _PRIORITY, \
 			    dma_sam0_isr, DEVICE_GET(dma_sam0_0), 0);	 \
-		irq_enable(DT_ATMEL_SAM0_DMAC_0_IRQ_ ## n);		 \
+		irq_enable(DT_INST_0_ATMEL_SAM0_DMAC_IRQ_ ## n);		 \
 	} while (0)
 
 static int dma_sam0_init(struct device *dev)
@@ -427,7 +427,7 @@ static int dma_sam0_init(struct device *dev)
 	/* Enable the unit and enable all priorities */
 	DMA_REGS->CTRL.reg = DMAC_CTRL_DMAENABLE | DMAC_CTRL_LVLEN(0x0F);
 
-#ifdef DT_ATMEL_SAM0_DMAC_0_IRQ_0
+#ifdef DT_INST_0_ATMEL_SAM0_DMAC_IRQ_0
 	DMA_SAM0_IRQ_CONNECT(0);
 #endif
 #ifdef DT_ATMEL_SAM0_DMAC_0_IRQ_1
