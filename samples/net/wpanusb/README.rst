@@ -31,9 +31,6 @@ There are configuration files for various setups in the
 - :file:`overlay-cc2520.conf`
     This overlay config enables support for CC2520
 
-- :file:`overlay-mcr20a.conf`
-    This overlay config enables support for MCR20A
-
 Build the WPANUSB sample like this:
 
 .. zephyr-app-commands::

@@ -129,18 +129,8 @@ arduino_serial: &uart3 {};
 	};
 };
 
-&spi0 {
+arduino_spi: &spi0 {
 	status = "okay";
-
-	mcr20a@0 {
-		compatible = "nxp,mcr20a";
-		reg = <0x0>;
-		label = "mcr20a";
-		spi-max-frequency = <4000000>;
-		irqb-gpios = <&gpiob 9 0>;
-		reset-gpios = <&gpioa 2 0>;
-		status = "okay";
-	};
 };
 
 &pwm3 {
