@@ -133,6 +133,13 @@ K_THREAD_STACK_DEFINE(_interrupt_stack3, CONFIG_ISR_STACK_SIZE);
 extern void idle(void *unused1, void *unused2, void *unused3);
 
 
+/* LCOV_EXCL_START
+ *
+ * This code is called so early in the boot process that code coverage
+ * doesn't work properly. In addition, not all arches call this code,
+ * some like x86 do this with optimized assembly
+ */
+
 /**
  *
  * @brief Clear BSS
@@ -215,7 +222,9 @@ void z_data_copy(void)
 #endif /* CONFIG_STACK_CANARIES */
 #endif /* CONFIG_USERSPACE */
 }
-#endif
+#endif /* CONFIG_XIP */
+
+/* LCOV_EXCL_STOP */
 
 /**
  *
@@ -284,11 +293,15 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 	_main_thread->base.user_options &= ~K_ESSENTIAL;
 }
 
+/* LCOV_EXCL_START */
+
 void __weak main(void)
 {
 	/* NOP default main() if the application does not provide one. */
 	arch_nop();
 }
+
+/* LCOV_EXCL_STOP */
 
 #if defined(CONFIG_MULTITHREADING)
 static void init_idle_thread(struct k_thread *thr, k_thread_stack_t *stack)
