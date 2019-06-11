@@ -5,6 +5,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import argparse
+import os
 import sys
 
 from PIL import ImageFont
@@ -67,6 +68,21 @@ def generate_header():
     guard = "__CFB_FONT_{:s}_{:d}{:d}_H__".format(args.name.upper(), args.width,
                                                   args.height)
 
+    zephyr_base = os.environ.get('ZEPHYR_BASE', "")
+
+    clean_cmd = [ ]
+    for arg in sys.argv:
+        if arg.startswith("--bindir"):
+            # Drop. Assumes --bindir= was passed with '=' sign.
+            continue
+        if arg.startswith(args.bindir):
+            # +1 to also strip '/' or '\' separator
+            striplen = min(len(args.bindir)+1, len(arg))
+            clean_cmd.append(arg[striplen:])
+            continue
+
+        clean_cmd.append(arg.replace(zephyr_base, '"${ZEPHYR_BASE}"'))
+
     args.output.write("""/*
  * This file was automatically generated using the following command:
  * {cmd}
@@ -80,7 +96,7 @@ def generate_header():
 #include <display/cfb.h>
 
 const u8_t cfb_font_{name:s}_{width:d}{height:d}[{elem:d}][{b:.0f}] = {{\n"""
-                      .format(cmd=" ".join(sys.argv),
+                      .format(cmd=" ".join(clean_cmd),
                               guard=guard,
                               name=args.name,
                               width=args.width,
@@ -141,6 +157,9 @@ def parse_args():
     group.add_argument(
         "-o", "--output", type=argparse.FileType('w'), default="-", metavar="FILE",
         help="CFB font header file (default: stdout)")
+    group.add_argument(
+        "--bindir", type=str, default="",
+        help="CMAKE_BINARY_DIR for pure logging purposes. No trailing slash.")
     group.add_argument(
         "-x", "--width", required=True, type=int,
         help="width of the CFB font elements in pixels")
