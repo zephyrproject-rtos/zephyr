@@ -331,12 +331,14 @@ zephyr_cc_option_ifdef(CONFIG_STACK_USAGE            -fstack-usage)
 # in binaries, makes failure logs more deterministic and most
 # importantly makes builds more deterministic
 
-# If both match then the last one wins. This matters for tests/ and
-# samples/ inside *both* CMAKE_SOURCE_DIR and ZEPHYR_BASE: for them
-# let's strip the shortest prefix.
+# If several match then the last one wins. This matters for instances
+# like tests/ and samples/: they're inside all of them! Then let's
+# strip as little as possible.
 zephyr_cc_option(-fmacro-prefix-map=${CMAKE_SOURCE_DIR}=CMAKE_SOURCE_DIR)
 zephyr_cc_option(-fmacro-prefix-map=${ZEPHYR_BASE}=ZEPHYR_BASE)
-# TODO: -fmacro-prefix-map=modules/etc. "build/zephyr_modules.txt" might help.
+if(WEST_TOPDIR)
+  zephyr_cc_option(-fmacro-prefix-map=${WEST_TOPDIR}=WEST_TOPDIR)
+endif()
 
 # TODO: Archiver arguments
 # ar_option(D)
