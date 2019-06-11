@@ -919,7 +919,6 @@ s32_t z_impl_k_sleep(s32_t duration)
 	s32_t ticks;
 
 	__ASSERT(!z_is_in_isr(), "");
-	__ASSERT(duration != K_FOREVER, "");
 
 	K_DEBUG("thread %p for %d ns\n", _current, duration);
 
@@ -962,12 +961,6 @@ s32_t z_impl_k_sleep(s32_t duration)
 #ifdef CONFIG_USERSPACE
 Z_SYSCALL_HANDLER(k_sleep, duration)
 {
-	/* FIXME there were some discussions recently on whether we should
-	 * relax this, thread would be unscheduled until k_wakeup issued
-	 */
-	Z_OOPS(Z_SYSCALL_VERIFY_MSG(duration != K_FOREVER,
-				    "sleeping forever not allowed"));
-
 	return z_impl_k_sleep(duration);
 }
 #endif
