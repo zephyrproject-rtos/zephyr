@@ -455,7 +455,7 @@ int bt_mesh_trans_send(struct bt_mesh_net_tx *tx, struct net_buf_simple *msg,
 	}
 
 	if (msg->len > 11) {
-		tx->ctx->send_rel = 1U;
+		tx->ctx->send_rel = true;
 	}
 
 	BT_DBG("net_idx 0x%04x app_idx 0x%04x dst 0x%04x", tx->sub->net_idx,

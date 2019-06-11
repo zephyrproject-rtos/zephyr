@@ -141,10 +141,10 @@ struct bt_mesh_msg_ctx {
 	s8_t  recv_rssi;
 
 	/** Received TTL value. Not used for sending. */
-	u8_t  recv_ttl:7;
+	u8_t  recv_ttl;
 
 	/** Force sending reliably by using segment acknowledgement */
-	u8_t  send_rel:1;
+	bool  send_rel;
 
 	/** TTL, or BT_MESH_TTL_DEFAULT for default TTL. */
 	u8_t  send_ttl;
