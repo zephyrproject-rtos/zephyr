@@ -31,6 +31,12 @@
 #define PDU_TYPE(data)     (data[0] & BIT_MASK(6))
 #define PDU_SAR(data)      (data[0] >> 6)
 
+/* Mesh Profile 1.0 Section 6.6:
+ * "The timeout for the SAR transfer is 20 seconds. When the timeout
+ *  expires, the Proxy Server shall disconnect."
+ */
+#define PROXY_SAR_TIMEOUT  K_SECONDS(20)
+
 #define SAR_COMPLETE       0x00
 #define SAR_FIRST          0x01
 #define SAR_CONT           0x02
@@ -87,6 +93,7 @@ static struct bt_mesh_proxy_client {
 #if defined(CONFIG_BT_MESH_GATT_PROXY)
 	struct k_work send_beacons;
 #endif
+	struct k_delayed_work    sar_timer;
 	struct net_buf_simple    buf;
 } clients[CONFIG_BT_MAX_CONN] = {
 	[0 ... (CONFIG_BT_MAX_CONN - 1)] = {
@@ -116,6 +123,19 @@ static struct bt_mesh_proxy_client *find_client(struct bt_conn *conn)
 	}
 
 	return NULL;
+}
+
+static void proxy_sar_timeout(struct k_work *work)
+{
+	struct bt_mesh_proxy_client *client;
+
+	BT_WARN("Proxy SAR timeout");
+
+	client = CONTAINER_OF(work, struct bt_mesh_proxy_client, sar_timer);
+	if (client->conn) {
+		bt_conn_disconnect(client->conn,
+				   BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+	}
 }
 
 #if defined(CONFIG_BT_MESH_GATT_PROXY)
@@ -473,6 +493,7 @@ static ssize_t proxy_recv(struct bt_conn *conn,
 			return -EINVAL;
 		}
 
+		k_delayed_work_submit(&client->sar_timer, PROXY_SAR_TIMEOUT);
 		client->msg_type = PDU_TYPE(data);
 		net_buf_simple_add_mem(&client->buf, data + 1, len - 1);
 		break;
@@ -488,6 +509,7 @@ static ssize_t proxy_recv(struct bt_conn *conn,
 			return -EINVAL;
 		}
 
+		k_delayed_work_submit(&client->sar_timer, PROXY_SAR_TIMEOUT);
 		net_buf_simple_add_mem(&client->buf, data + 1, len - 1);
 		break;
 
@@ -502,6 +524,7 @@ static ssize_t proxy_recv(struct bt_conn *conn,
 			return -EINVAL;
 		}
 
+		k_delayed_work_cancel(&client->sar_timer);
 		net_buf_simple_add_mem(&client->buf, data + 1, len - 1);
 		proxy_complete_pdu(client);
 		break;
@@ -564,6 +587,7 @@ static void proxy_disconnected(struct bt_conn *conn, u8_t reason)
 				bt_mesh_pb_gatt_close(conn);
 			}
 
+			k_delayed_work_cancel(&client->sar_timer);
 			bt_conn_unref(client->conn);
 			client->conn = NULL;
 			break;
@@ -1288,6 +1312,8 @@ int bt_mesh_proxy_init(void)
 
 		client->buf.size = CLIENT_BUF_SIZE;
 		client->buf.__buf = client_buf_data + (i * CLIENT_BUF_SIZE);
+
+		k_delayed_work_init(&client->sar_timer, proxy_sar_timeout);
 	}
 
 	bt_conn_cb_register(&conn_callbacks);
