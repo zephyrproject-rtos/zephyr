@@ -47,15 +47,9 @@ static ALWAYS_INLINE unsigned int find_lsb_set(u32_t op)
 
 	__asm__ volatile (
 
-#if defined(CONFIG_CMOV)
+#ifdef CONFIG_CPU_MINUTEIA
 
-		"bsfl %1, %0;\n\t"
-		"cmovzl %2, %0;\n\t"
-		: "=r" (bitpos)
-		: "rm" (op), "r" (-1)
-		: "cc"
-
-#else
+		/* Minute IA doesn't support cmov */
 
 		  "bsfl %1, %0;\n\t"
 		  "jnz 1f;\n\t"
@@ -64,8 +58,15 @@ static ALWAYS_INLINE unsigned int find_lsb_set(u32_t op)
 		: "=r" (bitpos)
 		: "rm" (op)
 		: "cc"
+#else
 
-#endif /* CONFIG_CMOV */
+		"bsfl %1, %0;\n\t"
+		"cmovzl %2, %0;\n\t"
+		: "=r" (bitpos)
+		: "rm" (op), "r" (-1)
+		: "cc"
+
+#endif /* CONFIG_CPU_MINUTEIA */
 		);
 
 	return (bitpos + 1);
@@ -97,14 +98,9 @@ static ALWAYS_INLINE unsigned int find_msb_set(u32_t op)
 
 	__asm__ volatile (
 
-#if defined(CONFIG_CMOV)
+#ifdef CONFIG_CPU_MINUTEIA
 
-		"bsrl %1, %0;\n\t"
-		"cmovzl %2, %0;\n\t"
-		: "=r" (bitpos)
-		: "rm" (op), "r" (-1)
-
-#else
+		/* again, Minute IA doesn't support cmov */
 
 		  "bsrl %1, %0;\n\t"
 		  "jnz 1f;\n\t"
@@ -114,7 +110,14 @@ static ALWAYS_INLINE unsigned int find_msb_set(u32_t op)
 		: "rm" (op)
 		: "cc"
 
-#endif /* CONFIG_CMOV */
+#else
+
+		"bsrl %1, %0;\n\t"
+		"cmovzl %2, %0;\n\t"
+		: "=r" (bitpos)
+		: "rm" (op), "r" (-1)
+
+#endif /* CONFIG_CPU_MINUTEIA */
 		);
 
 	return (bitpos + 1);

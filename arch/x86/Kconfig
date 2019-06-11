@@ -62,7 +62,6 @@ source "arch/x86/core/Kconfig"
 config CPU_ATOM
 	# Hidden
 	bool
-	select CMOV
 	select CPU_HAS_FPU
 	select ARCH_HAS_STACK_PROTECTION if X86_MMU
 	select ARCH_HAS_USERSPACE if X86_MMU
@@ -80,7 +79,6 @@ config CPU_MINUTEIA
 config CPU_APOLLO_LAKE
 	# Hidden
 	bool
-	select CMOV
 	select CPU_HAS_FPU
 	select ARCH_HAS_STACK_PROTECTION if X86_MMU
 	select ARCH_HAS_USERSPACE if X86_MMU
@@ -264,12 +262,6 @@ config REBOOT_RST_CNT
 	  Reboot via the RST_CNT register, going back to BIOS.
 
 endchoice
-
-config CMOV
-	bool
-	help
-	  This option signifies the use of an Intel CPU that supports
-	  the CMOV instruction.
 
 config CACHE_LINE_SIZE_DETECT
 	bool "Detect cache line size at runtime"
