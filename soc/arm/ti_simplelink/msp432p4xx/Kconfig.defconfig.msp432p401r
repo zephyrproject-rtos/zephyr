@@ -15,10 +15,6 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 	int
 	default 48000000
 
-config SYS_CLOCK_TICKS_PER_SEC
-	int
-	default 1000
-
 config NUM_IRQS
 	int
 	default 64
