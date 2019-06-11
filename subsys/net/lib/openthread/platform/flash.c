@@ -33,7 +33,7 @@ otError utilsFlashInit(void)
 	pages_count = flash_get_page_count(flash_dev);
 
 	if (flash_get_page_info_by_idx(flash_dev,
-		pages_count - CONFIG_OT_PLAT_FLASH_PAGES_COUNT - 1, &info)) {
+		pages_count - CONFIG_OT_PLAT_FLASH_PAGES_COUNT, &info)) {
 
 		return OT_ERROR_FAILED;
 	}
