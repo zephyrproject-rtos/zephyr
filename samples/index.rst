@@ -23,6 +23,7 @@ Samples and Demos
    shields/*
    portability/*
    gui/*
+   camera/*
 
 .. comment
    To add a new sample document, please use the template available under

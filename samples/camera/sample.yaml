@@ -1,0 +1,8 @@
+sample:
+  name: Camera Sample
+tests:
+  sample.camera:
+    harness: camera
+    tags: camera
+    platform_whitelist: mimxrt1050_evk
+    depends_on: camera i2c display
