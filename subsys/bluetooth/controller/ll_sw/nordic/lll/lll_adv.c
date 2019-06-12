@@ -627,6 +627,7 @@ static inline int isr_rx_pdu(struct lll_adv *lll,
 
 	if ((pdu_rx->type == PDU_ADV_TYPE_SCAN_REQ) &&
 	    (pdu_rx->len == sizeof(struct pdu_adv_scan_req)) &&
+	    (pdu_adv->type != PDU_ADV_TYPE_DIRECT_IND) &&
 	    isr_rx_sr_check(lll, pdu_adv, pdu_rx, devmatch_ok, &rl_idx)) {
 		radio_isr_set(isr_done, lll);
 		radio_switch_complete_and_disable();
