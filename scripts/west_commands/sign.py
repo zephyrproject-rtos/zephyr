@@ -102,9 +102,9 @@ class Sign(Forceable):
                            help='''produce a signed .bin file?
                             (default: yes, if supported)''')
         group.add_argument('-B', '--sbin', metavar='BIN',
-                           default='zephyr.signed.bin',
                            help='''signed .bin file name
-                           (default: zephyr.signed.bin)''')
+                           (default: zephyr.signed.bin in the build
+                           directory, next to zephyr.bin)''')
 
         # hex file options
         group = parser.add_argument_group('Intel HEX (.hex) file options')
@@ -113,9 +113,9 @@ class Sign(Forceable):
                            help='''produce a signed .hex file?
                            (default: yes, if supported)''')
         group.add_argument('-H', '--shex', metavar='HEX',
-                           default='zephyr.signed.hex',
                            help='''signed .hex file name
-                           (default: zephyr.signed.hex)''')
+                           (default: zephyr.signed.hex in the build
+                           directory, next to zephyr.hex)''')
 
         # defaults for hex/bin generation
         parser.set_defaults(gen_bin=True, gen_hex=True)
@@ -171,15 +171,19 @@ class ImgtoolSigner(Signer):
 
         # Build a signed .bin
         if args.gen_bin and runner_config.bin_file:
+            sbin = args.sbin or os.path.join(build_dir, 'zephyr',
+                                             'zephyr.signed.bin')
             sign_bin = self.sign_cmd(command, bcfg, runner_config.bin_file,
-                                     args.sbin)
+                                     sbin)
             log.dbg(quote_sh_list(sign_bin))
             subprocess.check_call(sign_bin)
 
         # Build a signed .hex
         if args.gen_hex and runner_config.hex_file:
+            shex = args.shex or os.path.join(build_dir, 'zephyr',
+                                             'zephyr.signed.hex')
             sign_hex = self.sign_cmd(command, bcfg, runner_config.hex_file,
-                                     args.shex)
+                                     shex)
             log.dbg(quote_sh_list(sign_hex))
             subprocess.check_call(sign_hex)
 
