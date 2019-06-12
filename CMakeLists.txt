@@ -220,9 +220,11 @@ toolchain_cc_imacros(${AUTOCONF_H})
 # @Intent: Set compiler specific flag for bare metal freestanding option
 toolchain_cc_freestanding()
 
+# @Intent: Set compiler specific flag for tentative definitions, no-common
+toolchain_cc_nocommon()
+
 zephyr_compile_options(
   -g # TODO: build configuration enough?
-  -fno-common
   ${TOOLCHAIN_C_FLAGS}
 )
 
