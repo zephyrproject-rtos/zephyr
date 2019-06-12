@@ -127,15 +127,14 @@ class Sign(Forceable):
             return
 
         # Provide the build directory if not given, and defer to the signer.
-        args.build_dir = find_build_dir(args.build_dir)
+        build_dir = find_build_dir(args.build_dir)
 
         self.args = args        # for check_force
-
-        self.check_force(os.path.isdir(args.build_dir),
-                         'no such build directory {}'.format(args.build_dir))
-        self.check_force(is_zephyr_build(args.build_dir),
+        self.check_force(os.path.isdir(build_dir),
+                         'no such build directory {}'.format(build_dir))
+        self.check_force(is_zephyr_build(build_dir),
                          "build directory {} doesn't look like a Zephyr build "
-                         'directory'.format(args.build_dir))
+                         'directory'.format(build_dir))
 
         if args.tool == 'imgtool':
             signer = ImgtoolSigner()
@@ -143,7 +142,7 @@ class Sign(Forceable):
         else:
             raise RuntimeError("can't happen")
 
-        signer.sign(self)
+        signer.sign(self, build_dir)
 
 
 class Signer(abc.ABC):
@@ -153,21 +152,22 @@ class Signer(abc.ABC):
     it in the Sign.do_run() method.'''
 
     @abc.abstractmethod
-    def sign(self, command):
+    def sign(self, command, build_dir):
         '''Abstract method to perform a signature; subclasses must implement.
 
         :param command: the Sign instance
+        :param build_dir: the build directory
         '''
 
 
 class ImgtoolSigner(Signer):
 
-    def sign(self, command):
+    def sign(self, command, build_dir):
         args = command.args
 
-        cache = cmake.CMakeCache.from_build_dir(args.build_dir)
-        runner_config = cached_runner_config(args.build_dir, cache)
-        bcfg = BuildConfiguration(args.build_dir)
+        cache = cmake.CMakeCache.from_build_dir(build_dir)
+        runner_config = cached_runner_config(build_dir, cache)
+        bcfg = BuildConfiguration(build_dir)
 
         # Build a signed .bin
         if args.gen_bin and runner_config.bin_file:
