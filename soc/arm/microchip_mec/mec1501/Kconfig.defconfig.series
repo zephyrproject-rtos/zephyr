@@ -18,5 +18,8 @@ config NUM_IRQS
 	# All NVIC external sources.
 	default 174
 
+config ARCH_HAS_CUSTOM_BUSY_WAIT
+	default y
+
 source "soc/arm/microchip_mec/mec1501/Kconfig.defconfig.mec1501*"
 endif # SOC_SERIES_MEC1501X

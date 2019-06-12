@@ -127,6 +127,23 @@ static int soc_ecia_init(void)
 	return 0;
 }
 
+/*
+ * Initialize any SoC based timers that do not require drivers.
+ * Configure and enable basic timer 0 for 16MHz auto-reload
+ * with no interrupt. This timer will be used by custom k_busy_wait
+ * to provide microsecond resolution delays.
+ */
+void soc_timer_init(void)
+{
+	B32TMR0_REGS->CTRL = MCHP_BTMR_CTRL_SOFT_RESET;
+	B32TMR0_REGS->CTRL = (MCHP_BTMR_CTRL_ENABLE
+			      | MCHP_BTMR_CTRL_AUTO_RESTART
+			      | MCHP_BTMR_CTRL_COUNT_UP
+			      | (2UL << MCHP_BTMR_CTRL_PRESCALE_POS));
+	B32TMR0_REGS->PRLD = 0UL;
+	B32TMR0_REGS->CTRL |= MCHP_BTMR_CTRL_START;
+}
+
 static int soc_init(struct device *dev)
 {
 	u32_t isave;
@@ -151,11 +168,40 @@ static int soc_init(struct device *dev)
 
 	soc_ecia_init();
 
+	soc_timer_init();
+
 	if (!isave) {
 		__enable_irq();
 	}
 
 	return 0;
 }
+
+#ifdef CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT
+
+#define DELAY_CALL_OVERHEAD_US 2
+
+/*
+ * 32-bit basic timer 0 has been configured for 16MHz auto-reload
+ * count up, no-interrupt mode.
+ */
+void z_arch_busy_wait(u32_t usec_to_wait)
+{
+	/* use 64-bit math to prevent overflow when multiplying */
+	u32_t cycles_to_wait = (u32_t)(
+		(u64_t)usec_to_wait << 4
+	);
+	u32_t start_cycles = B32TMR0_REGS->CNT;
+
+	for (;;) {
+		u32_t current_cycles = B32TMR0_REGS->CNT;
+
+		/* this handles the rollover on an unsigned 32-bit value */
+		if ((current_cycles - start_cycles) >= cycles_to_wait) {
+			break;
+		}
+	}
+}
+#endif
 
 SYS_INIT(soc_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
