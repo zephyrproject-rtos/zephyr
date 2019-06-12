@@ -65,11 +65,25 @@ K_THREAD_DEFINE(trigger_events_thread_id, STACK_SIZE,
 		trigger_events, NULL, NULL, NULL,
 		THREAD_PRIORITY, 0, K_FOREVER);
 
+static char *get_ip_addr(char *ipaddr, size_t len, sa_family_t family,
+			 struct net_mgmt_msghdr *hdr)
+{
+	char *buf;
+
+	buf = net_addr_ntop(family, hdr->nm_msg, ipaddr, len);
+	if (!buf) {
+		return "?";
+	}
+
+	return buf;
+}
+
 static void listener(void)
 {
 	struct sockaddr_nm sockaddr;
 	struct sockaddr_nm event_addr;
 	socklen_t event_addr_len;
+	char ipaddr[INET6_ADDRSTRLEN];
 	u8_t buf[MAX_BUF_LEN];
 	int fd, ret;
 
@@ -116,16 +130,22 @@ static void listener(void)
 
 		switch (event_addr.nm_mask) {
 		case NET_EVENT_IPV6_DAD_SUCCEED:
-			printk("DAD succeed for interface %d\n",
-			       event_addr.nm_ifindex);
+			printk("DAD succeed for interface %d (%s)\n",
+			       event_addr.nm_ifindex,
+			       get_ip_addr(ipaddr, sizeof(ipaddr),
+					   AF_INET6, hdr));
 			break;
 		case NET_EVENT_IPV6_ADDR_ADD:
-			printk("IPv6 address added to interface %d\n",
-			       event_addr.nm_ifindex);
+			printk("IPv6 address added to interface %d (%s)\n",
+			       event_addr.nm_ifindex,
+			       get_ip_addr(ipaddr, sizeof(ipaddr),
+					   AF_INET6, hdr));
 			break;
 		case NET_EVENT_IPV6_ADDR_DEL:
-			printk("IPv6 address removed from interface %d\n",
-			       event_addr.nm_ifindex);
+			printk("IPv6 address removed from interface %d (%s)\n",
+			       event_addr.nm_ifindex,
+			       get_ip_addr(ipaddr, sizeof(ipaddr),
+					   AF_INET6, hdr));
 			break;
 		}
 	}
