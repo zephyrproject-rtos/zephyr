@@ -12,7 +12,9 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(net_utils, CONFIG_NET_UTILS_LOG_LEVEL);
 
+#include <kernel.h>
 #include <stdlib.h>
+#include <syscall_handler.h>
 #include <zephyr/types.h>
 #include <stdbool.h>
 #include <string.h>
@@ -137,8 +139,8 @@ static int net_value_to_udec(char *buf, u32_t value, int precision)
 	return buf - start;
 }
 
-char *net_addr_ntop(sa_family_t family, const void *src,
-		    char *dst, size_t size)
+char *z_impl_net_addr_ntop(sa_family_t family, const void *src,
+			   char *dst, size_t size)
 {
 	struct in_addr *addr;
 	struct in6_addr *addr6;
@@ -270,8 +272,42 @@ char *net_addr_ntop(sa_family_t family, const void *src,
 	return dst;
 }
 
-int net_addr_pton(sa_family_t family, const char *src,
-		  void *dst)
+#if defined(CONFIG_USERSPACE)
+Z_SYSCALL_HANDLER(net_addr_ntop, family, src, dst, size)
+{
+	char str[INET6_ADDRSTRLEN];
+	struct in6_addr addr6;
+	struct in_addr addr4;
+	char *out;
+	const void *addr;
+
+	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(dst, size));
+
+	if (family == AF_INET) {
+		Z_OOPS(z_user_from_copy(&addr4, (const void *)src,
+					sizeof(addr4)));
+		addr = &addr4;
+	} else if (family == AF_INET6) {
+		Z_OOPS(z_user_from_copy(&addr6, (const void *)src,
+					sizeof(addr6)));
+		addr = &addr6;
+	} else {
+		return 0;
+	}
+
+	out = z_impl_net_addr_ntop(family, addr, str, sizeof(str));
+	if (!out) {
+		return 0;
+	}
+
+	Z_OOPS(z_user_to_copy((void *)dst, str, MIN(size, sizeof(str))));
+
+	return (int)dst;
+}
+#endif /* CONFIG_USERSPACE */
+
+int z_impl_net_addr_pton(sa_family_t family, const char *src,
+			 void *dst)
 {
 	if (family == AF_INET) {
 		struct in_addr *addr = (struct in_addr *)dst;
@@ -402,6 +438,49 @@ int net_addr_pton(sa_family_t family, const char *src,
 
 	return 0;
 }
+
+#if defined(CONFIG_USERSPACE)
+Z_SYSCALL_HANDLER(net_addr_pton, family, src, dst)
+{
+	char str[INET6_ADDRSTRLEN];
+	struct in6_addr addr6;
+	struct in_addr addr4;
+	void *addr;
+	size_t size;
+	size_t nlen;
+	int err;
+
+	if (family == AF_INET) {
+		size = sizeof(struct in_addr);
+		addr = &addr4;
+	} else if (family == AF_INET6) {
+		size = sizeof(struct in6_addr);
+		addr = &addr6;
+	} else {
+		return -EINVAL;
+	}
+
+	memset(str, 0, sizeof(str));
+
+	nlen = z_user_string_nlen((const char *)src, sizeof(str), &err);
+	if (err) {
+		return -EINVAL;
+	}
+
+	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(dst, size));
+	Z_OOPS(Z_SYSCALL_MEMORY_READ(src, nlen));
+	Z_OOPS(z_user_from_copy(str, (const void *)src, nlen));
+
+	err = z_impl_net_addr_pton(family, str, addr);
+	if (err) {
+		return err;
+	}
+
+	Z_OOPS(z_user_to_copy((void *)src, addr, size));
+
+	return 0;
+}
+#endif /* CONFIG_USERSPACE */
 
 static u16_t calc_chksum(u16_t sum, const u8_t *data, size_t len)
 {
