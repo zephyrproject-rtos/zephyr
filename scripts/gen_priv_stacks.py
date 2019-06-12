@@ -42,7 +42,6 @@ header = """%compare-lengths
 priv_stack_decl_temp = ("static u8_t __used"
                         " __aligned(CONFIG_PRIVILEGED_STACK_SIZE)"
                         " priv_stack_%x[CONFIG_PRIVILEGED_STACK_SIZE];\n")
-priv_stack_decl_size = "CONFIG_PRIVILEGED_STACK_SIZE"
 
 
 includes = """#include <kernel.h>
