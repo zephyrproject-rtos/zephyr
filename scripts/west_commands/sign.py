@@ -5,6 +5,7 @@
 import abc
 import argparse
 import os
+import pathlib
 import shutil
 import subprocess
 
@@ -165,39 +166,10 @@ class ImgtoolSigner(Signer):
     def sign(self, command, build_dir):
         args = command.args
 
-        cache = cmake.CMakeCache.from_build_dir(build_dir)
-        runner_config = cached_runner_config(build_dir, cache)
-        bcfg = BuildConfiguration(build_dir)
-
-        # Build a signed .bin
-        if args.gen_bin and runner_config.bin_file:
-            sbin = args.sbin or os.path.join(build_dir, 'zephyr',
-                                             'zephyr.signed.bin')
-            sign_bin = self.sign_cmd(command, bcfg, runner_config.bin_file,
-                                     sbin)
-            log.dbg(quote_sh_list(sign_bin))
-            subprocess.check_call(sign_bin)
-
-        # Build a signed .hex
-        if args.gen_hex and runner_config.hex_file:
-            shex = args.shex or os.path.join(build_dir, 'zephyr',
-                                             'zephyr.signed.hex')
-            sign_hex = self.sign_cmd(command, bcfg, runner_config.hex_file,
-                                     shex)
-            log.dbg(quote_sh_list(sign_hex))
-            subprocess.check_call(sign_hex)
-
-    def sign_cmd(self, command, bcfg, infile, outfile):
-        align, vtoff, slot_size = [self.get_cfg_str(command, bcfg, x) for x in
-                                   ('DT_FLASH_WRITE_BLOCK_SIZE',
-                                    'CONFIG_TEXT_SECTION_OFFSET',
-                                    'DT_FLASH_AREA_IMAGE_0_SIZE')]
-        align_arg = ['--align', align] if align else []
-        header_arg = ['--header-size', vtoff] if vtoff else []
-        slot_arg = ['--slot-size', slot_size] if slot_size else []
-
-        args = command.args
         if args.tool_path:
+            command.check_force(shutil.which(args.tool_path),
+                                '--tool-path {}: not an executable'.
+                                format(args.tool_path))
             tool_path = args.tool_path
         else:
             tool_path = shutil.which('imgtool')
@@ -205,26 +177,70 @@ class ImgtoolSigner(Signer):
                 log.die('imgtool not found; either install it',
                         '(e.g. "pip3 install imgtool") or provide --tool-path')
 
-        sign_command = ([tool_path,
-                        'sign'] +
-                        align_arg +
-                        header_arg +
-                        slot_arg +
-                        # We provide a default --version in case the
-                        # user is just messing around and doesn't want
-                        # to set one. It will be overridden if there is
-                        # a --version in args.tool_args.
-                        ['--version', '0.0.0+0',
-                         infile,
-                         outfile])
+        bcfg = BuildConfiguration(build_dir)
+        align, vtoff, slot_size = [self.get_cfg(command, bcfg, x) for x in
+                                   ('DT_FLASH_WRITE_BLOCK_SIZE',
+                                    'CONFIG_TEXT_SECTION_OFFSET',
+                                    'DT_FLASH_AREA_IMAGE_0_SIZE')]
 
-        sign_command.extend(args.tool_args)
+        log.dbg('build config: --align={}, --header-size={}, --slot-size={}'.
+                format(align, vtoff, slot_size))
 
-        return sign_command
+        # Base sign command.
+        #
+        # We provide a default --version in case the user is just
+        # messing around and doesn't want to set one. It will be
+        # overridden if there is a --version in args.tool_args.
+        sign_base = [tool_path, 'sign', '--version', '0.0.0+0']
+        if align:
+            sign_base.extend(['--align', str(align)])
+        else:
+            log.wrn('expected nonzero flash alignment, but '
+                    'DT_FLASH_WRITE_BLOCK_SIZE={} '
+                    "in build directory's ({}) device tree".
+                    format(align, build_dir))
 
-    def get_cfg_str(self, command, bcfg, item):
+        if vtoff:
+            sign_base.extend(['--header-size', str(vtoff)])
+        else:
+            log.wrn('expected nonzero header size, but '
+                    'CONFIG_TEXT_SECTION_OFFSET={} '
+                    "in build directory's ({}) .config".
+                    format(vtoff, build_dir))
+
+        if slot_size:
+            sign_base.extend(['--slot-size', str(slot_size)])
+        else:
+            log.wrn('expected nonzero slot size, but '
+                    'DT_FLASH_AREA_IMAGE_0_SIZE={} '
+                    "in build directory's ({}) device tree".
+                    format(slot_size, build_dir))
+
+        b = pathlib.Path(build_dir)
+        cache = cmake.CMakeCache.from_build_dir(build_dir)
+        runner_config = cached_runner_config(build_dir, cache)
+
+        # Build a signed .bin
+        if args.gen_bin and runner_config.bin_file:
+            out_bin = args.sbin or str(b / 'zephyr' / 'zephyr.signed.bin')
+            log.inf('Generating:', out_bin)
+            sign_bin = (sign_base + args.tool_args +
+                        [runner_config.bin_file, out_bin])
+            log.dbg(quote_sh_list(sign_bin))
+            subprocess.check_call(sign_bin)
+
+        # Build a signed .hex
+        if args.gen_hex and runner_config.hex_file:
+            out_hex = args.shex or str(b / 'zephyr' / 'zephyr.signed.hex')
+            log.inf('Generating:', out_hex)
+            sign_hex = (sign_base + args.tool_args +
+                        [runner_config.hex_file, out_hex])
+            log.dbg(quote_sh_list(sign_hex))
+            subprocess.check_call(sign_hex)
+
+    def get_cfg(self, command, bcfg, item):
         try:
-            return str(bcfg[item])
+            return bcfg[item]
         except KeyError:
             command.check_force(
                 False,
