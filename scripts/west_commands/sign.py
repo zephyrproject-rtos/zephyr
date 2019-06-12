@@ -101,7 +101,8 @@ class Sign(Forceable):
         group.add_argument('--bin', '--no-bin', dest='gen_bin', nargs=0,
                            action=ToggleAction,
                            help='''produce a signed .bin file?
-                            (default: yes, if supported)''')
+                           (default: yes, if supported and unsigned bin
+                           exists)''')
         group.add_argument('-B', '--sbin', metavar='BIN',
                            help='''signed .bin file name
                            (default: zephyr.signed.bin in the build
@@ -112,38 +113,62 @@ class Sign(Forceable):
         group.add_argument('--hex', '--no-hex', dest='gen_hex', nargs=0,
                            action=ToggleAction,
                            help='''produce a signed .hex file?
-                           (default: yes, if supported)''')
+                           (default: yes, if supported and unsigned hex
+                           exists)''')
         group.add_argument('-H', '--shex', metavar='HEX',
                            help='''signed .hex file name
                            (default: zephyr.signed.hex in the build
                            directory, next to zephyr.hex)''')
 
-        # defaults for hex/bin generation
-        parser.set_defaults(gen_bin=True, gen_hex=True)
-
         return parser
 
     def do_run(self, args, ignored):
-        if not (args.gen_bin or args.gen_hex):
-            return
-
-        # Provide the build directory if not given, and defer to the signer.
-        build_dir = find_build_dir(args.build_dir)
-
         self.args = args        # for check_force
+
+        # Find the build directory and parse .config and DT.
+        build_dir = find_build_dir(args.build_dir)
         self.check_force(os.path.isdir(build_dir),
                          'no such build directory {}'.format(build_dir))
         self.check_force(is_zephyr_build(build_dir),
                          "build directory {} doesn't look like a Zephyr build "
                          'directory'.format(build_dir))
+        bcfg = BuildConfiguration(build_dir)
 
+        # Decide on output formats.
+        formats = []
+        bin_exists = 'CONFIG_BUILD_OUTPUT_BIN' in bcfg
+        if args.gen_bin:
+            self.check_force(bin_exists,
+                             '--bin given but CONFIG_BUILD_OUTPUT_BIN not set '
+                             "in build directory's ({}) .config".
+                             format(build_dir))
+            formats.append('bin')
+        elif args.gen_bin is None and bin_exists:
+            formats.append('bin')
+
+        hex_exists = 'CONFIG_BUILD_OUTPUT_HEX' in bcfg
+        if args.gen_hex:
+            self.check_force(hex_exists,
+
+                             '--hex given but CONFIG_BUILD_OUTPUT_HEX not set '
+                             "in build directory's ({}) .config".
+                             format(build_dir))
+            formats.append('hex')
+        elif args.gen_hex is None and hex_exists:
+            formats.append('hex')
+
+        if not formats:
+            log.dbg('nothing to do: no output files')
+            return
+
+        # Delegate to the signer.
         if args.tool == 'imgtool':
             signer = ImgtoolSigner()
         # (Add support for other signers here in elif blocks)
         else:
             raise RuntimeError("can't happen")
 
-        signer.sign(self, build_dir)
+        signer.sign(self, build_dir, bcfg, formats)
 
 
 class Signer(abc.ABC):
@@ -153,17 +178,19 @@ class Signer(abc.ABC):
     it in the Sign.do_run() method.'''
 
     @abc.abstractmethod
-    def sign(self, command, build_dir):
+    def sign(self, command, build_dir, bcfg, formats):
         '''Abstract method to perform a signature; subclasses must implement.
 
         :param command: the Sign instance
         :param build_dir: the build directory
+        :param bcfg: BuildConfiguration for build directory
+        :param formats: list of formats to generate ('bin', 'hex')
         '''
 
 
 class ImgtoolSigner(Signer):
 
-    def sign(self, command, build_dir):
+    def sign(self, command, build_dir, bcfg, formats):
         args = command.args
 
         if args.tool_path:
@@ -177,7 +204,6 @@ class ImgtoolSigner(Signer):
                 log.die('imgtool not found; either install it',
                         '(e.g. "pip3 install imgtool") or provide --tool-path')
 
-        bcfg = BuildConfiguration(build_dir)
         align, vtoff, slot_size = [self.get_cfg(command, bcfg, x) for x in
                                    ('DT_FLASH_WRITE_BLOCK_SIZE',
                                     'CONFIG_TEXT_SECTION_OFFSET',
@@ -221,7 +247,7 @@ class ImgtoolSigner(Signer):
         runner_config = cached_runner_config(build_dir, cache)
 
         # Build a signed .bin
-        if args.gen_bin and runner_config.bin_file:
+        if 'bin' in formats and runner_config.bin_file:
             out_bin = args.sbin or str(b / 'zephyr' / 'zephyr.signed.bin')
             log.inf('Generating:', out_bin)
             sign_bin = (sign_base + args.tool_args +
@@ -230,7 +256,7 @@ class ImgtoolSigner(Signer):
             subprocess.check_call(sign_bin)
 
         # Build a signed .hex
-        if args.gen_hex and runner_config.hex_file:
+        if 'hex' in formats and runner_config.hex_file:
             out_hex = args.shex or str(b / 'zephyr' / 'zephyr.signed.hex')
             log.inf('Generating:', out_hex)
             sign_hex = (sign_base + args.tool_args +
