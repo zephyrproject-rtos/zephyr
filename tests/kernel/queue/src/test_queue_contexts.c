@@ -227,6 +227,8 @@ void test_queue_get_2threads(void)
 
 static void tqueue_alloc(struct k_queue *pqueue)
 {
+	k_thread_resource_pool_assign(k_current_get(), NULL);
+
 	/* Alloc append without resource pool */
 	k_queue_alloc_append(pqueue, (void *)&data_append);
 
