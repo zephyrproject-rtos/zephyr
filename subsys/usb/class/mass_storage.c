@@ -854,7 +854,7 @@ static void mass_interface_config(struct usb_desc_header *head,
 }
 
 /* Configuration of the Mass Storage Device send to the USB Driver */
-USBD_CFG_DATA_DEFINE(msd) struct usb_cfg_data mass_storage_config = {
+USBD_CFG_DATA_DEFINE(primary, msd) struct usb_cfg_data mass_storage_config = {
 	.usb_device_description = NULL,
 	.interface_config = mass_interface_config,
 	.interface_descriptor = &mass_cfg.if0,

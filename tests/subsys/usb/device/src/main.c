@@ -76,7 +76,7 @@ static struct usb_ep_cfg_data device_ep[] = {
 	},
 };
 
-USBD_CFG_DATA_DEFINE(device) struct usb_cfg_data device_config = {
+USBD_CFG_DATA_DEFINE(primary, device) struct usb_cfg_data device_config = {
 	.usb_device_description = NULL,
 	.interface_descriptor = &dev_desc.if0,
 	.cb_usb_status = status_cb,
