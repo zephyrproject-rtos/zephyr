@@ -5066,8 +5066,7 @@ int bt_id_reset(u8_t id, bt_addr_le_t *addr, u8_t *irk)
 		return -EBUSY;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_CONN) &&
-	    bt_addr_le_cmp(&bt_dev.id_addr[id], BT_ADDR_LE_ANY)) {
+	if (IS_ENABLED(CONFIG_BT_CONN)) {
 		int err;
 
 		err = bt_unpair(id, NULL);
