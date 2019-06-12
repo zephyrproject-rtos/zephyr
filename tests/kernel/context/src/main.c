@@ -697,7 +697,9 @@ static void thread_sleep(void *delta, void *arg2, void *arg3)
 	timestamp = k_uptime_get() - timestamp;
 	TC_PRINT(" thread back from sleep\n");
 
-	if (timestamp < timeout || timestamp > timeout + __ticks_to_ms(2)) {
+	int slop = MAX(__ticks_to_ms(2), 1);
+
+	if (timestamp < timeout || timestamp > timeout + slop) {
 		TC_ERROR("timestamp out of range, got %d\n", (int)timestamp);
 		return;
 	}
