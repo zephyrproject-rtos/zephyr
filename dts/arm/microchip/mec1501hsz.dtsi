@@ -30,6 +30,12 @@
 	};
 
 	soc {
+		rtimer: timer@40007400 {
+			compatible = "microchip,xec-rtos-timer";
+			reg = <0x40007400 0x10>;
+			interrupts = <111 0>;
+			label = "RTIMER";
+		};
 		uart0: uart@400f2400 {
 			compatible = "ns16550";
 			reg = <0x400f2400 0x400>;
