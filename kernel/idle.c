@@ -26,6 +26,10 @@
  */
 unsigned char sys_pm_idle_exit_notify;
 
+
+/* LCOV_EXCL_START
+ * These are almost certainly overidden and in any event do nothing
+ */
 #if defined(CONFIG_SYS_POWER_SLEEP_STATES)
 void __attribute__((weak)) _sys_resume(void)
 {
@@ -37,6 +41,7 @@ void __attribute__((weak)) _sys_resume_from_deep_sleep(void)
 {
 }
 #endif
+/* LCOV_EXCL_STOP */
 
 #endif /* CONFIG_SYS_POWER_MANAGEMENT */
 
