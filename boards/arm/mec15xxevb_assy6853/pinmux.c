@@ -76,6 +76,7 @@ static int board_pinmux_init(struct device *dev)
 	pinmux_pin_set(portd, MCHP_GPIO_143, MCHP_GPIO_CTRL_MUX_F1);
 	pinmux_pin_set(portd, MCHP_GPIO_144, MCHP_GPIO_CTRL_MUX_F1);
 #endif
+
 	return 0;
 }
 

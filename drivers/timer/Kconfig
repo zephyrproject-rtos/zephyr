@@ -232,6 +232,15 @@ config SAM0_RTC_TIMER
 	  series Real Time Counter and provides the standard "system clock
 	  driver" interfaces.
 
+config MCHP_XEC_RTOS_TIMER
+	bool "Microchip XEC series RTOS timer"
+	depends on SOC_FAMILY_MEC
+	select TICKLESS_CAPABLE
+	help
+	  This module implements a kernel device driver for the Microchip
+	  XEC series RTOS timer and provides the standard "system clock
+	  driver" interfaces.
+
 config SYSTEM_CLOCK_DISABLE
 	bool "API to disable system clock"
 	help

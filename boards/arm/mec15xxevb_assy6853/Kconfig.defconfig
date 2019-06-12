@@ -72,4 +72,14 @@ config I2C_XEC_2
 
 endif # I2C
 
+if SYS_CLOCK_EXISTS
+# If the kernel has timer support, enable both clock control and timer
+config CLOCK_CONTROL
+	default y
+
+config MCHP_XEC_RTOS_TIMER
+	default y
+
+endif # SYS_CLOCK_EXISTS
+
 endif # BOARD_MEC15XXEVB_ASSY6853

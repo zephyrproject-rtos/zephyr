@@ -1,0 +1,37 @@
+#
+# Copyright (c) 2019 Microchip Technology Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: Microchip XEC RTOS timer
+version: 0.1
+
+description: >
+    This is a representation of the Microchip XEC RTOS timer node
+
+properties:
+    compatible:
+      type: string
+      category: required
+      description: compatible strings
+      constraint: "microchip,xec-rtos-timer"
+
+    reg:
+      type: array
+      category: required
+      description: mmio register space
+      generation: define
+
+    interrupts:
+      type: array
+      category: required
+      description: required interrupts
+      generation: define
+
+    label:
+      type: string
+      category: required
+      description: Human readable string describing the device (used by Zephyr for API name)
+      generation: define
+...
