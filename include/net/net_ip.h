@@ -1173,7 +1173,7 @@ struct sockaddr_can_ptr *net_can_ptr(const struct sockaddr_ptr *addr)
  *
  * @return 0 if ok, < 0 if error
  */
-int net_addr_pton(sa_family_t family, const char *src, void *dst);
+__syscall int net_addr_pton(sa_family_t family, const char *src, void *dst);
 
 /**
  * @brief Convert IP address to string form.
@@ -1186,8 +1186,8 @@ int net_addr_pton(sa_family_t family, const char *src, void *dst);
  *
  * @return dst pointer if ok, NULL if error
  */
-char *net_addr_ntop(sa_family_t family, const void *src,
-		    char *dst, size_t size);
+__syscall char *net_addr_ntop(sa_family_t family, const void *src,
+			      char *dst, size_t size);
 
 /**
  * @brief Parse a string that contains either IPv4 or IPv6 address
@@ -1323,6 +1323,8 @@ static inline u8_t net_priority2vlan(enum net_priority priority)
 #ifdef __cplusplus
 }
 #endif
+
+#include <syscalls/net_ip.h>
 
 /**
  * @}
