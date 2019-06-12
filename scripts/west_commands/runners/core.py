@@ -122,6 +122,9 @@ class BuildConfiguration:
         self.options = {}
         self._init()
 
+    def __contains__(self, item):
+        return item in self.options
+
     def __getitem__(self, item):
         return self.options[item]
 
