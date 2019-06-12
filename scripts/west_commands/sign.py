@@ -16,7 +16,7 @@ from west.util import quote_sh_list
 from runners.core import BuildConfiguration
 
 from build_helpers import find_build_dir, \
-    BUILD_DIR_DESCRIPTION
+    FIND_BUILD_DIR_DESCRIPTION
 
 from zephyr_ext_common import Forceable, \
     cached_runner_config
@@ -81,7 +81,8 @@ class Sign(Forceable):
             formatter_class=argparse.RawDescriptionHelpFormatter,
             description=self.description)
 
-        parser.add_argument('-d', '--build-dir', help=BUILD_DIR_DESCRIPTION)
+        parser.add_argument('-d', '--build-dir',
+                            help=FIND_BUILD_DIR_DESCRIPTION)
         self.add_force_arg(parser)
 
         # general options
