@@ -1,0 +1,14 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+/dts-v1/;
+
+#include "intel_apl_adsp.dtsi"
+
+/ {
+	model = "up_squared_adsp";
+	compatible = "intel";
+
+	chosen {
+		zephyr,sram = &sram0;
+	};
+};

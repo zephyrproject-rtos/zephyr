@@ -1,0 +1,6 @@
+identifier: up_squared_adsp
+name: Up Squared Audio DSP using CAVS (Connected Audio Voice and Speech)
+type: mcu
+arch: xtensa
+toolchain:
+  - xcc
