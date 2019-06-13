@@ -249,27 +249,13 @@ _firq_reschedule:
 
 .balign 4
 _firq_return_from_coop:
-
-	ld_s r3, [r2, _thread_offset_to_intlock_key]
-	st  0, [r2, _thread_offset_to_intlock_key]
-
 	/* pc into ilink */
 	pop_s r0
 	mov ilink, r0
 
 	pop_s r0 /* status32 into r0 */
-	/*
-	 * There are only two interrupt lock states: locked and unlocked. When
-	 * entering z_swap(), they are always locked, so the IE bit is unset in
-	 * status32. If the incoming thread had them locked recursively, it
-	 * means that the IE bit should stay unset. The only time the bit
-	 * has to change is if they were not locked recursively.
-	 */
-	and.f r3, r3, (1 << 4)
-	or.nz r0, r0, _ARC_V2_STATUS32_IE
 	sr r0, [_ARC_V2_STATUS32_P0]
 
-	ld_s r0, [r2, _thread_offset_to_return_value]
 	rtie
 
 .balign 4

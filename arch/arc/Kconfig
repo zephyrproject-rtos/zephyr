@@ -30,6 +30,8 @@ config	CPU_ARCV2
 	bool
 	select ARCH_HAS_STACK_PROTECTION if ARC_HAS_STACK_CHECKING || ARC_MPU
 	select ARCH_HAS_USERSPACE if ARC_MPU
+	select USE_SWITCH
+	select USE_SWITCH_SUPPORTED
 	default y
 	help
 	  This option signifies the use of a CPU of the ARCv2 family.

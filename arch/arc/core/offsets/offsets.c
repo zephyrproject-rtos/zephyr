@@ -26,9 +26,7 @@
 #include <kernel_structs.h>
 #include <kernel_offsets.h>
 
-GEN_OFFSET_SYM(_thread_arch_t, intlock_key);
 GEN_OFFSET_SYM(_thread_arch_t, relinquish_cause);
-GEN_OFFSET_SYM(_thread_arch_t, return_value);
 #ifdef CONFIG_ARC_STACK_CHECKING
 GEN_OFFSET_SYM(_thread_arch_t, k_stack_base);
 GEN_OFFSET_SYM(_thread_arch_t, k_stack_top);

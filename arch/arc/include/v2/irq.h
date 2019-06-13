@@ -28,8 +28,15 @@ extern "C" {
 #define _ARC_V2_AUX_IRQ_CTRL_32_REGS 16
 
 
-#define _ARC_V2_DEF_IRQ_LEVEL (CONFIG_NUM_IRQ_PRIO_LEVELS-1)
+#define _ARC_V2_DEF_IRQ_LEVEL (CONFIG_NUM_IRQ_PRIO_LEVELS - 1)
 #define _ARC_V2_WAKE_IRQ_LEVEL _ARC_V2_DEF_IRQ_LEVEL
+
+/*
+ * INIT_IRQ_LOCK_KEY is init interrupt level setting of a thread.
+ * It's configured by seti instruction when a thread starts to run
+ *, i.e., z_thread_entry_wrapper and z_user_thread_entry_wrapper
+ */
+#define _ARC_V2_INIT_IRQ_LOCK_KEY (0x10 | _ARC_V2_DEF_IRQ_LEVEL)
 
 #ifndef _ASMLANGUAGE
 

@@ -38,14 +38,8 @@ typedef struct _callee_saved _callee_saved_t;
 
 struct _thread_arch {
 
-	/* interrupt key when relinquishing control */
-	u32_t intlock_key;
-
 	/* one of the _CAUSE_xxxx definitions above */
 	int relinquish_cause;
-
-	/* return value from z_swap */
-	unsigned int return_value;
 
 #ifdef CONFIG_ARC_STACK_CHECKING
 	/* High address of stack region, stack grows downward from this

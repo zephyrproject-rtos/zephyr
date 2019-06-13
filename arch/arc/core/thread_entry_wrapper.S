@@ -13,8 +13,10 @@
 
 #include <toolchain.h>
 #include <linker/sections.h>
+#include <v2/irq.h>
 
 GTEXT(z_thread_entry_wrapper)
+GTEXT(z_thread_entry_wrapper1)
 
 /*
  * @brief Wrapper for z_thread_entry
@@ -26,7 +28,8 @@ GTEXT(z_thread_entry_wrapper)
  */
 
 SECTION_FUNC(TEXT, z_thread_entry_wrapper)
-
+	seti _ARC_V2_INIT_IRQ_LOCK_KEY
+z_thread_entry_wrapper1:
 	pop_s r3
 	pop_s r2
 	pop_s r1
