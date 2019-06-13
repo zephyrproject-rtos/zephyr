@@ -14,6 +14,7 @@ if LOG
 
 config LOG_RUNTIME_FILTERING
 	bool "Enable runtime reconfiguration of the logger"
+	depends on !LOG_FRONTEND
 	help
 	  Allow runtime configuration of maximal, independent severity
 	  level for instance.
@@ -68,6 +69,7 @@ config LOG_MAX_LEVEL
 	  - 4 DEBUG, maximal level set to LOG_LEVEL_DBG
 
 menu "Prepend log message with function name"
+	depends on !LOG_FRONTEND
 
 config LOG_FUNC_NAME_PREFIX_ERR
 	bool "Error messages prepended"
@@ -222,6 +224,14 @@ config LOG_CMDS
 	bool "Enable shell commands"
 	depends on SHELL
 	default y if SHELL
+
+config LOG_FRONTEND
+	bool "Enable frontend"
+	default n
+	select LOG_IMMEDIATE
+	help
+	  When enabled, logs are redirected to a custom frontend instead
+	  of being processed by the logger.
 
 config LOG_BACKEND_UART
 	bool "Enable UART backend"
