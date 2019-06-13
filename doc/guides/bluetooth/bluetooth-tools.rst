@@ -149,7 +149,7 @@ building and running a sample:
 
   And then run it with::
 
-     $ sudo zephyr/zephyr.exe --bt-dev=hci0
+     $ sudo ./build/zephyr/zephyr.exe --bt-dev=hci0
 
 Using a Zephyr-based BLE Controller
 ===================================

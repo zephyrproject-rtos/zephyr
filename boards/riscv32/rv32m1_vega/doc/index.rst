@@ -555,14 +555,14 @@ Linux and macOS (run this in a terminal from the Zephyr directory)::
 
   # Set up environment and create build directory:
   source zephyr-env.sh
-  cd samples/hello_world
-  mkdir build && cd build
 
-  # Use CMake to generate a Ninja-based build system:
-  cmake -GNinja -DBOARD=rv32m1_vega_ri5cy -DCMAKE_REQUIRED_FLAGS=-Wl,-dT=/dev/null ..
-
-  # Build the sample
-  ninja
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :tool: cmake
+   :cd-into:
+   :board: rv32m1_vega_ri5cy
+   :gen-args: -DCMAKE_REQUIRED_FLAGS=-Wl,-dT=/dev/null
+   :goals: build
 
 Windows (run this in a ``cmd`` prompt, from the Zephyr directory)::
 

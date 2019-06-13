@@ -85,7 +85,7 @@ Then you can execute your application using:
 
 .. code-block:: console
 
-   $ zephyr/zephyr.exe -nosim
+   $ ./build/zephyr/zephyr.exe -nosim
    # Press Ctrl+C to exit
 
 Note that the executable is a BabbleSim executable. The ``-nosim`` command line
@@ -110,7 +110,7 @@ executable to the simulator bin folder with a sensible name:
 
 .. code-block:: console
 
-   $ cp zephyr/zephyr.exe \
+   $ cp build/zephyr/zephyr.exe \
      ${BSIM_OUT_PATH}/bin/bs_nrf52_bsim_samples_bluetooth_central_hr
 
 Do the same for the ``peripheral`` sample app:
@@ -124,7 +124,7 @@ Do the same for the ``peripheral`` sample app:
 
 .. code-block:: console
 
-   $ cp zephyr/zephyr.exe \
+   $ cp build/zephyr/zephyr.exe \
      ${BSIM_OUT_PATH}/bin/bs_nrf52_bsim_samples_bluetooth_peripheral
 
 And then run them together with BabbleSim's 2G4 physical layer simulation:

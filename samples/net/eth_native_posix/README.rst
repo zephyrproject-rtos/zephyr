@@ -35,7 +35,7 @@ with admin privileges, like this:
 
 .. code-block:: console
 
-    sudo --preserve-env=ZEPHYR_BASE make run
+    sudo --preserve-env=ZEPHYR_BASE make -Cbuild run
 
 If the ``sudo --preserve-env=ZEPHYR_BASE`` gives an error,
 just use ``sudo --preserve-env`` instead.
@@ -105,15 +105,13 @@ just use ``sudo --preserve-env`` instead):
 
 .. code-block:: console
 
-    mkdir -p build1/native_posix
-    cmake -DCONF_FILE=prj1.conf -DBOARD=native_posix -Bbuild1/native_posix -H.
+    cmake -DCONF_FILE=prj1.conf -DBOARD=native_posix -Bbuild1/native_posix .
     make -s -C build1/native_posix
     sudo --preserve-env=ZEPHYR_BASE make -s -C build1/native_posix run
 
 .. code-block:: console
 
-    mkdir -p build2/native_posix
-    cmake -DCONF_FILE=prj2.conf -DBOARD=native_posix -Bbuild2/native_posix -H.
+    cmake -DCONF_FILE=prj2.conf -DBOARD=native_posix -Bbuild2/native_posix .
     make -s -C build2/native_posix
     sudo --preserve-env=ZEPHYR_BASE make -s -C build2/native_posix run
 

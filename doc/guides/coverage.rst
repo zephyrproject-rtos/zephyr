@@ -48,16 +48,28 @@ These steps will produce an HTML coverage report for a single application.
 
 1. Build the code with CONFIG_COVERAGE=y. Some boards like qemu_x86_coverage
    automatically enable this, but for boards that do not you will need to
-   enable the configuration manually::
+   enable the configuration manually:
 
-     $ cmake -DBOARD=mps2_an385 -DCONFIG_COVERAGE=y ..
-     $ make
+   .. zephyr-app-commands::
+      :tool: all
+      :board: mps2_an385
+      :gen-args: -DCONFIG_COVERAGE=y
+      :goals: build
+      :compact:
 
 #. Capture the emulator output into a log file. You may need to terminate
    the emulator with :kbd:`Ctrl-A X` for this to complete after the coverage dump
-   has been printed::
+   has been printed:
 
-     $ make run | tee log.log
+   .. code-block:: console
+
+      ninja -Cbuild run | tee log.log
+
+   or
+
+   .. code-block:: console
+
+      ninja -Cbuild run | tee log.log
 
 #. Generate the gcov ``.gcda`` and ``.gcno`` files from the log file that was
    saved::
@@ -107,7 +119,7 @@ You may postprocess these with your preferred tools. For example:
 
 .. code-block:: console
 
-   $ zephyr/zephyr.exe
+   $ ./build/zephyr/zephyr.exe
    # Press Ctrl+C to exit
    lcov --capture --directory ./ --output-file lcov.info -q --rc lcov_branch_coverage=1
    genhtml lcov.info --output-directory lcov_html -q --ignore-errors source --branch-coverage --highlight --legend
