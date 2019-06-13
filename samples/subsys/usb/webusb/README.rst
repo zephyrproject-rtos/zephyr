@@ -24,8 +24,8 @@ real usecase, implement applications based on the WebUSB API.
 Building and flashing
 *********************
 
-Refer to :ref:`arduino_101`
-for details on building and flashing the image into an Arduino 101.
+Refer to :ref:`arduino_101` for details on building and flashing the image into
+an Arduino 101.
 
 Testing with latest Google Chrome on host
 *****************************************

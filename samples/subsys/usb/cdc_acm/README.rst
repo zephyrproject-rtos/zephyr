@@ -16,11 +16,9 @@ Zephyr project tree.
 Requirements
 ************
 
-This project requires an USB device driver,
-which is available for Intel Quark* SE SoC based boards like
-:ref:`arduino_101`.
-For the Arduino 101 board you need a USB to 3.3V TTL serial cable.
-Connect it to UART1 as described in
+This project requires an USB device driver, which is available for Intel Quark*
+SE SoC based boards like :ref:`arduino_101`.  For the Arduino 101 board you need
+a USB to 3.3V TTL serial cable.  Connect it to UART1 as described in
 :ref:`Connecting Serial Output section <arduino_101>`.
 
 Building and Running

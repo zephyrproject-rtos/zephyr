@@ -14,7 +14,7 @@ Requirements
 
 To use this sample, the following hardware is required:
 
-* Arduino 101 or Quark D2000 Devboard
+* A board with ADC support
 * `Grove LCD module`_
 * `Grove Base Shield`_ [Optional]
 
@@ -27,11 +27,6 @@ supports Arduino shields.
 On some boards you will need to use 2 pull-up resistors (10k Ohm) between the
 SCL/SDA lines and 3.3V.
 
-.. note::
-
-   The I2C lines on Quark SE Sensor Subsystem does not have internal pull-up, so
-   external one is required.
-
 Take note that even though SDA and SCL are connected to a 3.3V power source, the
 Grove LCD VDD line needs to be connected to the 5V power line, otherwise
 characters will not be displayed on the LCD (3.3V is enough to power just the
@@ -42,12 +37,12 @@ Building and Running
 ********************
 
 This sample should work on any board that has I2C enabled and has an Arduino
-shield interface. For example, it can be run on the Quark D2000 DevBoard as
+shield interface. For example, it can be run on the FRDM K64F board as
 described below:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/grove/lcd
-   :board: quark_d2000_crb
+   :board: frdm_k64f
    :goals: flash
    :compact:
 
