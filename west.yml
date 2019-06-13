@@ -32,21 +32,18 @@ manifest:
   #
   # This will grow over time as external code is migrated into its own
   # repositories.
+  #
+  # Please add items below based on alphabetical order
   projects:
-    - name: net-tools
-      revision: 30b7efa827b04d2e47840716b0372737fe7d6c92
-    - name: tinycbor
-      path: modules/lib/tinycbor
-      revision: 31ae89e4b768612722620cb6cb173a0de4a19cc9
-    - name: hal_qmsi
-      revision: 9195fe6f97e4f7f25a3fc9e5a515f1b7af13762c
-      path: modules/hal/qmsi
     - name: esp-idf
       revision: 6835bfc741bf15e98fb7971293913f770df6081f
       path: modules/hal/esp-idf
     - name: fatfs
       revision: df96914dd989907f3a5de4cb95b116c2f305820d
       path: modules/fs/fatfs
+    - name: hal_qmsi
+      revision: 9195fe6f97e4f7f25a3fc9e5a515f1b7af13762c
+      path: modules/hal/qmsi
     - name: hal_cypress
       revision: a12d92816a53a521d79cefcf5c38b9dc8a4fed6e
       path: modules/hal/cypress
@@ -56,9 +53,14 @@ manifest:
     - name: libmetal
       revision: 45e630d6152824f807d3f919958605c4626cbdff
       path: modules/hal/libmetal
+    - name: mbedtls
+      revision: ca32746072ce3381f1c9ae46ba6cd34c69f8c0ee
+      path: modules/crypto/mbedtls
     - name: mcumgr
       revision: 84934959d2d1722a23b7e7e200191ae4a6f96168
       path: modules/lib/mcumgr
+    - name: net-tools
+      revision: 30b7efa827b04d2e47840716b0372737fe7d6c92
     - name: nffs
       revision: bc62a2fa9d98ddb5d633c932ea199bc68e10f194
       path: modules/fs/nffs
@@ -68,9 +70,9 @@ manifest:
     - name: segger
       revision: 6fcf61606d6012d2c44129edc033f59331e268bc
       path: modules/debug/segger
-    - name: mbedtls
-      revision: ca32746072ce3381f1c9ae46ba6cd34c69f8c0ee
-      path: modules/crypto/mbedtls
+    - name: tinycbor
+      path: modules/lib/tinycbor
+      revision: 31ae89e4b768612722620cb6cb173a0de4a19cc9
 
   self:
     path: zephyr
