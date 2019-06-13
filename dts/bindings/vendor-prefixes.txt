@@ -456,6 +456,7 @@ xunlong	Shenzhen Xunlong Software CO.,Limited
 ysoft	Y Soft Corporation a.s.
 zarlink	Zarlink Semiconductor
 zeitec	ZEITEC Semiconductor Co., LTD.
+zephyr	Zephyr-specific binding
 zidoo	Shenzhen Zidoo Technology Co., Ltd.
 zii	Zodiac Inflight Innovations
 zte	ZTE Corp.
