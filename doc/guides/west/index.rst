@@ -44,6 +44,7 @@ context about the tool.
    why.rst
    without-west.rst
    planned.rst
+   release-notes.rst
 
 For details on west's Python APIs (including APIs provided by extensions in the
 zephyr), see :ref:`west-apis`.
