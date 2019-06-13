@@ -14,30 +14,21 @@ interrupt trigger).
 Building and Running
 ********************
 
-This sample application uses an BME280 sensor connected to an Arduino 101 board via I2C.
+This sample application uses an BME280 sensor connected to a board via I2C.
 Connect the sensor pins according to the connection diagram given in the `bme280 datasheet`_
 at page 38.
-There are two processor cores (x86 and ARC) on the Arduino 101. You will need to
-flash both this sample's code on the ARC core (using the ``arduino101_sss`` board target),
-and stub code on the x86 core (using the ``arduino_101`` board target), as shown below.
 
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensors/bme280
-   :board: arduino_101_sss
-   :goals: flash
-   :compact:
-
-.. zephyr-app-commands::
-   :zephyr-app: tests/booting/stub
-   :board: arduino_101
+   :board: nrf52840_pca10056
    :goals: flash
    :compact:
 
 Sample Output
 =============
 To check output of this sample , any serial console program can be used.
-This example uses ``picocom`` on the serial port ``/dev/ttyUSB0``:
+This example uses ``picocom`` on the serial port ``/dev/ttyACM0``:
 
 .. code-block:: console
 

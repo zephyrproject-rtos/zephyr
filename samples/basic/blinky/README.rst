@@ -30,7 +30,7 @@ flashed to a board as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: arduino_101
+   :board: reel_board
    :goals: build flash
    :compact:
 

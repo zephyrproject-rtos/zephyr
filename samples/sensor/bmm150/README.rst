@@ -14,24 +14,15 @@ interrupt trigger).
 Building and Running
 ********************
 
-This sample application uses an BMM150 sensor connected to an Arduino 101 board via I2C.
+This sample application uses an BMM150 sensor connected to a board via I2C.
 Sensor has multiple pins so you need to connect according to connection diagram given in
 `bmm150 datasheet`_ at page 41.
-There are two processor cores (x86 and ARC) on the Arduino 101. You will need to
-flash both this sample's code on the ARC core (using the ``arduino101_ss`` board target),
-and stub code on the x86 core (using the ``arduino_101`` board target), as shown below.
 
 .. code-block:: console
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensors/bmm150
-   :board: arduino_101_sss
-   :goals: flash
-   :compact:
-
-.. zephyr-app-commands::
-   :zephyr-app: tests/booting/stub
-   :board: arduino_101
+   :board: nrf52840_pca10056
    :goals: flash
    :compact:
 
@@ -39,11 +30,11 @@ Sample Output
 =============
 To check output of this sample , any serial console program can be used.
 Here I am using picocom program to open output. Check which tty device it is.
-In my case it is ttyUSB0
+In my case it is ttyACM0
 
 .. code-block:: console
 
-        $ sudo picocom -D /dev/ttyUSB0
+        $ sudo picocom -D /dev/ttyACM0
 
 .. code-block:: console
 

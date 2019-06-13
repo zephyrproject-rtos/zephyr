@@ -50,7 +50,7 @@ Building and Running
 ********************
 
 This sample can be built for multiple boards, in this example we will build it
-for the arduino_101 board:
+for the nrf52840_pca10056 board:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/fade_led
