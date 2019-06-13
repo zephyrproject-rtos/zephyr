@@ -13,6 +13,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <sys/types.h>
+#include <misc/util.h>
 
 #ifndef MAXFLD
 #define	MAXFLD	200
@@ -20,6 +21,19 @@
 
 #ifndef EOF
 #define EOF  -1
+#endif
+
+#ifdef CONFIG_MINIMAL_LIBC_LL_PRINTF
+#define VALTYPE long long
+#define SIZEOF_VALTYPE __SIZEOF_LONG_LONG__
+#else
+#define VALTYPE long
+#define SIZEOF_VALTYPE __SIZEOF_LONG__
+#endif
+
+/* this has to fit max range octal display */
+#if MAXFLD < (1 + (SIZEOF_VALTYPE*8 + 2)/3)
+#error buffer size MAXFLD is too small
 #endif
 
 static void _uc(char *buf)
@@ -56,7 +70,7 @@ static int _reverse_and_pad(char *start, char *end, int minlen)
  * using the digit characters 0-9a-z (i.e. base>36 will start writing
  * odd bytes), padding with leading zeros up to the minimum length.
  */
-static int _to_x(char *buf, unsigned long n, unsigned int base, int minlen)
+static int _to_x(char *buf, unsigned VALTYPE n, unsigned int base, int minlen)
 {
 	char *buf0 = buf;
 
@@ -69,7 +83,7 @@ static int _to_x(char *buf, unsigned long n, unsigned int base, int minlen)
 	return _reverse_and_pad(buf0, buf, minlen);
 }
 
-static int _to_hex(char *buf, unsigned long value,
+static int _to_hex(char *buf, unsigned VALTYPE value,
 		   int alt_form, int precision, int prefix)
 {
 	int len;
@@ -88,7 +102,7 @@ static int _to_hex(char *buf, unsigned long value,
 	return len + (buf - buf0);
 }
 
-static int _to_octal(char *buf, unsigned long value,
+static int _to_octal(char *buf, unsigned VALTYPE value,
 		     int alt_form, int precision)
 {
 	char *buf0 = buf;
@@ -104,18 +118,14 @@ static int _to_octal(char *buf, unsigned long value,
 	return (buf - buf0) + _to_x(buf, value, 8, precision);
 }
 
-static int _to_udec(char *buf, unsigned long value, int precision)
+static int _to_udec(char *buf, unsigned VALTYPE value, int precision)
 {
 	return _to_x(buf, value, 10, precision);
 }
 
-static int _to_dec(char *buf, long value, int fplus, int fspace, int precision)
+static int _to_dec(char *buf, VALTYPE value, int fplus, int fspace, int precision)
 {
 	char *start = buf;
-
-#if (MAXFLD < (defined(CONFIG_64BIT) ? 20 : 10))
-  #error buffer size MAXFLD is too small
-#endif
 
 	if (value < 0) {
 		*buf++ = '-';
@@ -455,7 +465,7 @@ int z_prf(int (*func)(), void *dest, char *format, va_list vargs)
 	int				precision;
 	int				prefix;
 	int				width;
-	long			val;
+	VALTYPE			val;
 	char			*cptr_temp;
 	uint64_t			double_temp;
 
@@ -546,12 +556,18 @@ int z_prf(int (*func)(), void *dest, char *format, va_list vargs)
 			 * length modifiers:
 			 *    h: short
 			 *    l: long
+			 *   ll: long long
 			 *    z: size_t or ssize_t
 			 */
 			i = 0;
 			if (strchr("hlz", c) != NULL) {
 				i = c;
 				c = *format++;
+				if (IS_ENABLED(CONFIG_MINIMAL_LIBC_LL_PRINTF) &&
+				    i == 'l' && c == 'l') {
+					i = 'L';
+					c = *format++;
+				}
 			}
 
 			need_justifying = false;
@@ -570,6 +586,11 @@ int z_prf(int (*func)(), void *dest, char *format, va_list vargs)
 				case 'l':
 					val = va_arg(vargs, long);
 					break;
+#ifdef CONFIG_MINIMAL_LIBC_LL_PRINTF
+				case 'L':
+					val = va_arg(vargs, long long);
+					break;
+#endif
 				case 'z':
 					val = va_arg(vargs, ssize_t);
 					break;
@@ -630,6 +651,11 @@ int z_prf(int (*func)(), void *dest, char *format, va_list vargs)
 				case 'l':
 					*va_arg(vargs, long *) = count;
 					break;
+#ifdef CONFIG_MINIMAL_LIBC_LL_PRINTF
+				case 'L':
+					*va_arg(vargs, long long *) = count;
+					break;
+#endif
 				case 'z':
 					*va_arg(vargs, ssize_t *) = count;
 					break;
@@ -679,6 +705,11 @@ int z_prf(int (*func)(), void *dest, char *format, va_list vargs)
 				case 'l':
 					val = va_arg(vargs, unsigned long);
 					break;
+#ifdef CONFIG_MINIMAL_LIBC_LL_PRINTF
+				case 'L':
+					val = va_arg(vargs, unsigned long long);
+					break;
+#endif
 				case 'z':
 					val = va_arg(vargs, size_t);
 					break;

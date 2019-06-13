@@ -75,4 +75,12 @@ config MINIMAL_LIBC_MALLOC_ARENA_SIZE
 	  malloc() implementation. This size value must be compatible with
 	  a sys_mem_pool definition with nmax of 1 and minsz of 16.
 
+config MINIMAL_LIBC_LL_PRINTF
+	bool "Build with minimal libc long long printf" if !64BIT
+	depends on !NEWLIB_LIBC
+	default y if 64BIT
+	help
+	  Build with long long printf enabled. This will increase the size of
+	  the image.
+
 endmenu
