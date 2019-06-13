@@ -1,0 +1,23 @@
+#
+#  Copyright (c) 2019 Nordic Semiconductor ASA
+#
+#  SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig BH1749
+	bool "BH1749 Sensor"
+	depends on I2C && HAS_DTS_I2C && HAS_DTS_GPIO && SENSOR
+	help
+	  Enable driver for BH1749 sensors.
+
+if BH1749
+
+config BH1749_TRIGGER
+	bool "Trigger for BH1749"
+	depends on GPIO
+	select BH1749_TRIGGER_GLOBAL_THREAD
+
+config BH1749_TRIGGER_GLOBAL_THREAD
+	bool
+
+endif # BH1749
