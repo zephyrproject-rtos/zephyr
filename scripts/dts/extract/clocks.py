@@ -120,6 +120,16 @@ class DTClocks(DTDirective):
                 # Legacy clocks definitions by extract_controller
                 clock_provider_label_str = clock_provider['props'].get('label',
                                                                        None)
+                if clock_provider_label_str is None:
+                    clock_provider_label_str = clock_provider['props'].get(
+                        'clock-output-names', None)
+                    if type(clock_provider_label_str) is list:
+                        # For clock-output-names in providers, assume the
+                        # first cell is the clock index, if there are multiple
+                        # available clocks
+                        clock_provider_label_str = clock_provider_label_str[
+                            len(clock_cells) > 0 and int(clock_cells[0]) or 0
+                        ]
                 if clock_provider_label_str is not None:
                     clock_cell_name = 'CLOCK_CONTROLLER'
                     if clock_index == 0 and \
