@@ -88,7 +88,8 @@ struct bt_att {
 	struct bt_att_req	*req;
 	sys_slist_t		reqs;
 	struct k_delayed_work	timeout_work;
-	struct k_sem            tx_sem;
+	struct k_sem		tx_sem;
+	struct k_fifo		tx_queue;
 #if CONFIG_BT_ATT_PREPARE_COUNT > 0
 	struct k_fifo		prep_queue;
 #endif
@@ -121,6 +122,58 @@ static struct bt_att *att_get(struct bt_conn *conn)
 	return CONTAINER_OF(chan, struct bt_att, chan);
 }
 
+static bt_conn_tx_cb_t att_cb(struct net_buf *buf);
+
+static int att_send(struct bt_conn *conn, struct net_buf *buf,
+		    bt_conn_tx_cb_t cb, void *user_data)
+{
+	struct bt_att_hdr *hdr;
+
+	hdr = (void *)buf->data;
+
+	BT_DBG("code 0x%02x", hdr->code);
+
+	if (hdr->code == BT_ATT_OP_SIGNED_WRITE_CMD) {
+		int err;
+
+		err = bt_smp_sign(conn, buf);
+		if (err) {
+			BT_ERR("Error signing data");
+			return err;
+		}
+	}
+
+	bt_l2cap_send_cb(conn, BT_L2CAP_CID_ATT, buf, cb ? cb : att_cb(buf),
+			 user_data);
+
+	return 0;
+}
+
+static void att_pdu_sent(struct bt_conn *conn, void *user_data)
+{
+	struct bt_att *att = att_get(conn);
+	struct net_buf *buf;
+
+	BT_DBG("conn %p att %p", conn, att);
+
+	while ((buf = net_buf_get(&att->tx_queue, K_NO_WAIT))) {
+		/* Check if the queued buf is a request */
+		if (att->req && att->req->buf == buf) {
+			/* Save request state so it can be resent */
+			net_buf_simple_save(&att->req->buf->b,
+					    &att->req->state);
+		}
+
+		if (!att_send(conn, buf, NULL, NULL)) {
+			return;
+		}
+		/* If the buffer cannot be send unref it */
+		net_buf_unref(buf);
+	}
+
+	k_sem_give(&att->tx_sem);
+}
+
 static void att_cfm_sent(struct bt_conn *conn, void *user_data)
 {
 	struct bt_att *att = att_get(conn);
@@ -131,7 +184,7 @@ static void att_cfm_sent(struct bt_conn *conn, void *user_data)
 	atomic_clear_bit(att->flags, ATT_PENDING_CFM);
 #endif /* CONFIG_BT_ATT_ENFORCE_FLOW */
 
-	k_sem_give(&att->tx_sem);
+	att_pdu_sent(conn, user_data);
 }
 
 static void att_rsp_sent(struct bt_conn *conn, void *user_data)
@@ -144,7 +197,7 @@ static void att_rsp_sent(struct bt_conn *conn, void *user_data)
 	atomic_clear_bit(att->flags, ATT_PENDING_RSP);
 #endif /* CONFIG_BT_ATT_ENFORCE_FLOW */
 
-	k_sem_give(&att->tx_sem);
+	att_pdu_sent(conn, user_data);
 }
 
 static void att_req_sent(struct bt_conn *conn, void *user_data)
@@ -153,21 +206,12 @@ static void att_req_sent(struct bt_conn *conn, void *user_data)
 
 	BT_DBG("conn %p att %p att->req %p", conn, att, att->req);
 
-	k_sem_give(&att->tx_sem);
-
 	/* Start timeout work */
 	if (att->req) {
 		k_delayed_work_submit(&att->timeout_work, ATT_TIMEOUT);
 	}
-}
 
-static void att_pdu_sent(struct bt_conn *conn, void *user_data)
-{
-	struct bt_att *att = att_get(conn);
-
-	BT_DBG("conn %p att %p", conn, att);
-
-	k_sem_give(&att->tx_sem);
+	att_pdu_sent(conn, user_data);
 }
 
 static bt_conn_tx_cb_t att_cb(struct net_buf *buf)
@@ -270,11 +314,9 @@ static int att_send_req(struct bt_att *att, struct bt_att_req *req)
 
 	att->req = req;
 
-	k_sem_take(&att->tx_sem, K_FOREVER);
-	if (!att_is_connected(att)) {
-		BT_WARN("Disconnected");
-		k_sem_give(&att->tx_sem);
-		return -ENOTCONN;
+	if (k_sem_take(&att->tx_sem, K_NO_WAIT) < 0) {
+		k_fifo_put(&att->tx_queue, req->buf);
+		return 0;
 	}
 
 	/* Save request state so it can be resent */
@@ -2013,6 +2055,10 @@ static void att_reset(struct bt_att *att)
 	while ((buf = k_fifo_get(&att->prep_queue, K_NO_WAIT))) {
 		net_buf_unref(buf);
 	}
+
+	while ((buf = k_fifo_get(&att->tx_queue, K_NO_WAIT))) {
+		net_buf_unref(buf);
+	}
 #endif
 
 	atomic_set_bit(att->flags, ATT_DISCONNECTED);
@@ -2071,6 +2117,7 @@ static void bt_att_connected(struct bt_l2cap_chan *chan)
 
 	BT_DBG("chan %p cid 0x%04x", ch, ch->tx.cid);
 
+	k_fifo_init(&att->tx_queue);
 #if CONFIG_BT_ATT_PREPARE_COUNT > 0
 	k_fifo_init(&att->prep_queue);
 #endif
@@ -2198,7 +2245,7 @@ int bt_att_send(struct bt_conn *conn, struct net_buf *buf, bt_conn_tx_cb_t cb,
 		void *user_data)
 {
 	struct bt_att *att;
-	struct bt_att_hdr *hdr;
+	int err;
 
 	if (!conn || !buf) {
 		return -EINVAL;
@@ -2211,31 +2258,18 @@ int bt_att_send(struct bt_conn *conn, struct net_buf *buf, bt_conn_tx_cb_t cb,
 
 	/* Don't use tx_sem if caller has set it own callback */
 	if (!cb) {
-		k_sem_take(&att->tx_sem, K_FOREVER);
-		if (!att_is_connected(att)) {
-			BT_WARN("Disconnected");
-			k_sem_give(&att->tx_sem);
-			return -ENOTCONN;
+		/* Queue buffer to be send later */
+		if (k_sem_take(&att->tx_sem, K_NO_WAIT) < 0) {
+			k_fifo_put(&att->tx_queue, buf);
+			return 0;
 		}
 	}
 
-	hdr = (void *)buf->data;
-
-	BT_DBG("code 0x%02x", hdr->code);
-
-	if (hdr->code == BT_ATT_OP_SIGNED_WRITE_CMD) {
-		int err;
-
-		err = bt_smp_sign(conn, buf);
-		if (err) {
-			BT_ERR("Error signing data");
-			k_sem_give(&att->tx_sem);
-			return err;
-		}
+	err = att_send(conn, buf, cb, user_data);
+	if (err) {
+		k_sem_give(&att->tx_sem);
+		return err;
 	}
-
-	bt_l2cap_send_cb(conn, BT_L2CAP_CID_ATT, buf, cb ? cb : att_cb(buf),
-			 user_data);
 
 	return 0;
 }
