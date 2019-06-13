@@ -29,6 +29,15 @@ config NET_SOCKETS_POLL_MAX
 	help
 	  Maximum number of entries supported for poll() call.
 
+config NET_SOCKETS_CONNECT_TIMEOUT
+	int "Timeout value in milliseconds to CONNECT"
+	default 3000
+	range 0 60000
+	help
+	 This variable specifies time in milliseconds after connect()
+	 API call will timeout if we have not received SYN-ACK from
+	 peer.
+
 config NET_SOCKETS_DNS_TIMEOUT
 	int "Timeout value in milliseconds for DNS queries"
 	default 2000
