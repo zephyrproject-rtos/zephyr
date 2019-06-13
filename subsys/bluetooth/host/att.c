@@ -2267,7 +2267,9 @@ int bt_att_send(struct bt_conn *conn, struct net_buf *buf, bt_conn_tx_cb_t cb,
 
 	err = att_send(conn, buf, cb, user_data);
 	if (err) {
-		k_sem_give(&att->tx_sem);
+		if (!cb) {
+			k_sem_give(&att->tx_sem);
+		}
 		return err;
 	}
 
