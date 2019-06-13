@@ -62,7 +62,7 @@ Context switch explanation:
 
 The context switch code is spread in these files:
 
-  isr_wrapper.s, swap.s, swap_macros.s, fast_irq.s, regular_irq.s
+  isr_wrapper.s, switch.s, swap_macros.s, fast_irq.s, regular_irq.s
 
 IRQ stack frame layout:
 
@@ -92,7 +92,7 @@ The context switch code adopts this standard so that it is easier to follow:
     transition from outgoing thread to incoming thread
 
 Not loading _kernel into r0 allows loading _kernel without stomping on
-the parameter in r0 in z_swap().
+the parameter in r0 in z_arch_switch().
 
 
 ARCv2 processors have two kinds of interrupts: fast (FIRQ) and regular. The
@@ -174,7 +174,7 @@ From coop:
 
   o to coop
 
-    Restore interrupt lock level and do a normal function call return.
+    Do a normal function call return.
 
   o to any irq
 
@@ -192,9 +192,8 @@ From FIRQ:
 
   o to coop
 
-    The address of the returning instruction from z_swap() is loaded in ilink and
-    the saved status32 in status32_p0, taking care to adjust the interrupt lock
-    state desired in status32_p0. The return value is put in r0.
+    The address of the returning instruction from z_arch_switch() is loaded
+    in ilink and the saved status32 in status32_p0.
 
   o to any irq
 
@@ -207,7 +206,7 @@ From RIRQ:
 
     The interrupt return mechanism in the processor expects a stack frame, but
     the outgoing context did not create one. A fake one is created here, with
-    only the relevant values filled in: pc, status32 and the return value in r0.
+    only the relevant values filled in: pc, status32.
 
     There is a discrepancy between the ABI from the ARCv2 docs, including the
     way the processor pushes GPRs in pairs in the IRQ stack frame, and the ABI

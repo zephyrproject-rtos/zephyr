@@ -215,17 +215,8 @@ void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	thread->arch.k_stack_base = (u32_t) stackEnd;
 #endif
 #endif
-	/*
-	 * seti instruction in the end of the z_swap() will
-	 * enable the interrupts based on intlock_key
-	 * value.
-	 *
-	 * intlock_key is constructed based on ARCv2 ISA Programmer's
-	 * Reference Manual CLRI instruction description:
-	 * dst[31:6] dst[5] dst[4]       dst[3:0]
-	 *    26'd0    1    STATUS32.IE  STATUS32.E[3:0]
-	 */
-	thread->arch.intlock_key = 0x30 | (_ARC_V2_DEF_IRQ_LEVEL & 0xf);
+
+	thread->switch_handle = thread;
 	thread->arch.relinquish_cause = _CAUSE_COOP;
 	thread->callee_saved.sp =
 		(u32_t)pInitCtx - ___callee_saved_stack_t_SIZEOF;

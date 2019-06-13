@@ -11,6 +11,7 @@
 #include <arch/cpu.h>
 #include <syscall.h>
 #include <swap_macros.h>
+#include <v2/irq.h>
 
 .macro clear_scratch_regs
 	mov r1, 0
@@ -58,6 +59,7 @@ GTEXT(z_arch_user_string_nlen_fixup)
  * @return N/A
  */
 SECTION_FUNC(TEXT, z_user_thread_entry_wrapper)
+	seti _ARC_V2_INIT_IRQ_LOCK_KEY
 	pop_s r3
 	pop_s r2
 	pop_s r1
@@ -151,7 +153,7 @@ _arc_go_to_user_space:
 	lr r0, [_ARC_V2_STATUS32]
 	bset r0, r0, _ARC_V2_STATUS32_U_BIT
 
-	mov r1, z_thread_entry_wrapper
+	mov r1, z_thread_entry_wrapper1
 
 	/* fake exception return */
 	kflag _ARC_V2_STATUS32_AE
