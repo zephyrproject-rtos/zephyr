@@ -58,6 +58,7 @@ manifest:
       path: modules/lib/mcumgr
     - name: net-tools
       revision: 30b7efa827b04d2e47840716b0372737fe7d6c92
+      path: tools/net-tools
     - name: nffs
       revision: bc62a2fa9d98ddb5d633c932ea199bc68e10f194
       path: modules/fs/nffs
