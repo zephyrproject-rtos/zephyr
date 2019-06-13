@@ -12,3 +12,9 @@ macro(toolchain_cc_nocommon)
   zephyr_compile_options(-fno-common)
 
 endmacro()
+
+macro(toolchain_cc_cstd_flag dest_var_name c_std)
+
+  set_ifndef(${dest_var_name} "-std=${c_std}")
+
+endmacro()

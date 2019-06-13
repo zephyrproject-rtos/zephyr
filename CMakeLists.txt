@@ -984,8 +984,10 @@ get_property(GKSF GLOBAL PROPERTY GENERATED_KERNEL_SOURCE_FILES)
 get_property(CSTD GLOBAL PROPERTY CSTD)
 set_ifndef(CSTD c99)
 
+# @Intent: Obtain compiler specific flag for specifying the c standard
+toolchain_cc_cstd_flag(CC_CSTD ${CSTD})
 zephyr_compile_options(
-  $<$<COMPILE_LANGUAGE:C>:-std=${CSTD}>
+  $<$<COMPILE_LANGUAGE:C>:${CC_CSTD}>
 )
 
 # @Intent: Configure linker scripts, i.e. generate linker scripts with variables substituted
