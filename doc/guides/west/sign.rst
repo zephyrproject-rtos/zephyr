@@ -35,8 +35,13 @@ Some additional notes follow. See ``west sign -h`` for detailed help.
 - If you don't have your own signing key and have a default MCUboot build, use
   ``--key path/to/mcuboot/root-rsa-2048.pem``.
 - By default, the output files produced by ``west sign`` are named
-  :file:`zephyr.signed.bin` and :file:`zephyr.signed.hex`. You can control this
-  using the ``-B`` and ``-H`` options, e.g.:
+  :file:`zephyr.signed.bin` and :file:`zephyr.signed.hex` and are created in the
+  build directory next to the unsigned :file:`zephyr.bin` and :file:`zephyr.hex`
+  versions.
+
+  You can control this using the ``-B`` and ``-H`` options, e.g. this would
+  create :file:`my-signed.bin` and :file:`my-signed.hex` in the current working
+  directory instead:
 
   .. code-block:: console
 
@@ -44,6 +49,7 @@ Some additional notes follow. See ``west sign -h`` for detailed help.
 
 Example build flow
 ******************
+
 For reference, here is an example showing how to build :ref:`hello_world` for
 MCUboot using ``west``:
 
@@ -51,9 +57,11 @@ MCUboot using ``west``:
 
    west build -b YOUR_BOARD samples/hello_world -- -DCONFIG_BOOTLOADER_MCUBOOT=y
    west sign -t imgtool -- --key YOUR_SIGNING_KEY.pem
-   west flash --hex-file zephyr.signed.hex
+   west flash --hex-file build/zephyr/zephyr.signed.hex
 
-Availability of a hex file depends on your build configuration.
+The availability of a hex file, and whether ``west flash`` uses it to flash,
+depends on your board and build configuration. At least the west flash runners
+using ``nrfjprog`` and ``pyocd`` work with the above flow.
 
 .. _MCUboot:
    https://mcuboot.com/
