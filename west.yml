@@ -26,12 +26,6 @@ manifest:
     - name: upstream
       url-base: https://github.com/zephyrproject-rtos
 
-  # The initial list of external projects is just Zephyr's net-tools
-  # repository, which is useful for running the Zephyr networking
-  # stack in QEMU.
-  #
-  # This will grow over time as external code is migrated into its own
-  # repositories.
   #
   # Please add items below based on alphabetical order
   projects:
