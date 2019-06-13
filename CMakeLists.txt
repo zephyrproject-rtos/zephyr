@@ -43,6 +43,9 @@ enable_language(C CXX ASM)
 check_c_compiler_flag("" toolchain_is_ok)
 assert(toolchain_is_ok "The toolchain is unable to build a dummy C file. See CMakeError.log.")
 
+# In some cases the "final" things are not used at all and "_prebuilt"
+# is the last station. See "logical_target_for_zephyr_elf" below for
+# details.
 set(CMAKE_EXECUTABLE_SUFFIX .elf)
 set(ZEPHYR_PREBUILT_EXECUTABLE zephyr_prebuilt)
 set(ZEPHYR_FINAL_EXECUTABLE    zephyr_final)
@@ -1055,7 +1058,7 @@ if(CONFIG_USERSPACE)
   add_executable(       app_smem_unaligned_prebuilt misc/empty_file.c)
   toolchain_ld_link_elf(
     TARGET_ELF            app_smem_unaligned_prebuilt
-    OUTPUT_MAP            ${PROJECT_BINARY_DIR}/${KERNEL_MAP_NAME}
+    OUTPUT_MAP            ${PROJECT_BINARY_DIR}/app_smem_unaligned_prebuilt.map
     LIBRARIES_PRE_SCRIPT  ""
     LINKER_SCRIPT         ${PROJECT_BINARY_DIR}/linker_app_smem_unaligned.cmd
     LIBRARIES_POST_SCRIPT ""
@@ -1107,7 +1110,7 @@ if(CONFIG_USERSPACE AND CONFIG_ARM)
   add_executable(       priv_stacks_prebuilt misc/empty_file.c)
   toolchain_ld_link_elf(
     TARGET_ELF            priv_stacks_prebuilt
-    OUTPUT_MAP            ${PROJECT_BINARY_DIR}/${KERNEL_MAP_NAME}
+    OUTPUT_MAP            ${PROJECT_BINARY_DIR}/priv_stacks_prebuilt.map
     LIBRARIES_PRE_SCRIPT  ""
     LINKER_SCRIPT         ${PROJECT_BINARY_DIR}/linker_priv_stacks.cmd
     LIBRARIES_POST_SCRIPT ""
@@ -1121,7 +1124,7 @@ endif()
 add_executable(       ${ZEPHYR_PREBUILT_EXECUTABLE} misc/empty_file.c)
 toolchain_ld_link_elf(
   TARGET_ELF            ${ZEPHYR_PREBUILT_EXECUTABLE}
-  OUTPUT_MAP            ${PROJECT_BINARY_DIR}/${KERNEL_MAP_NAME}
+  OUTPUT_MAP            ${PROJECT_BINARY_DIR}/${ZEPHYR_PREBUILT_EXECUTABLE}.map
   LIBRARIES_PRE_SCRIPT  ""
   LINKER_SCRIPT         ${PROJECT_BINARY_DIR}/linker.cmd
   LIBRARIES_POST_SCRIPT ${PRIV_STACK_LIB}
@@ -1164,7 +1167,7 @@ else()
   add_executable(       ${ZEPHYR_FINAL_EXECUTABLE} misc/empty_file.c ${GKSF})
   toolchain_ld_link_elf(
     TARGET_ELF            ${ZEPHYR_FINAL_EXECUTABLE}
-    OUTPUT_MAP            ${PROJECT_BINARY_DIR}/${KERNEL_MAP_NAME}
+    OUTPUT_MAP            ${PROJECT_BINARY_DIR}/${ZEPHYR_FINAL_EXECUTABLE}.map
     LIBRARIES_PRE_SCRIPT  ${GKOF}
     LINKER_SCRIPT         ${PROJECT_BINARY_DIR}/linker_pass_final.cmd
     LIBRARIES_POST_SCRIPT ""
@@ -1181,7 +1184,7 @@ endif()
 # application to know what the name of the final elf target is.
 set(logical_target_for_zephyr_elf ${logical_target_for_zephyr_elf} PARENT_SCOPE)
 
-# Override the base name of final .elf so:
+# Override the base name of the last, "logical" .elf output (and last .map) so:
 # 1. it doesn't depend on the number of passes above and the
 #    post_build_commands below can always find it no matter which is it;
 # 2. it can be defined in Kconfig
@@ -1189,6 +1192,12 @@ set_target_properties(${logical_target_for_zephyr_elf} PROPERTIES OUTPUT_NAME ${
 
 set(post_build_commands "")
 set(post_build_byproducts "")
+
+list(APPEND
+  post_build_commands
+  COMMAND
+  cmake -E rename ${logical_target_for_zephyr_elf}.map ${KERNEL_MAP_NAME}
+)
 
 if(NOT CONFIG_BUILD_NO_GAP_FILL)
   # Use ';' as separator to get proper space in resulting command.
