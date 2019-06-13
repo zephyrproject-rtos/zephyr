@@ -82,8 +82,10 @@ struct mcuboot_v1_raw_header {
 #define FLASH_AREA_IMAGE_SCRATCH DT_FLASH_AREA_IMAGE_SCRATCH_ID
 #endif /* CONFIG_TRUSTED_EXECUTION_NONSECURE */
 
+#ifdef CONFIG_MCUBOOT_TRAILER_SWAP_TYPE
 #define SWAP_TYPE_OFFS(bank_area) ((bank_area)->fa_size -\
 				   BOOT_MAGIC_SZ - BOOT_MAX_ALIGN * 3)
+#endif
 
 #define COPY_DONE_OFFS(bank_area) ((bank_area)->fa_size -\
 				   BOOT_MAGIC_SZ - BOOT_MAX_ALIGN * 2)
@@ -384,6 +386,7 @@ static int boot_magic_write(u8_t bank_id)
 	return rc;
 }
 
+#ifdef CONFIG_MCUBOOT_TRAILER_SWAP_TYPE
 static int boot_swap_type_write(u8_t bank_id, u8_t swap_type)
 {
 	const struct flash_area *fa;
@@ -402,6 +405,7 @@ static int boot_swap_type_write(u8_t bank_id, u8_t swap_type)
 
 	return rc;
 }
+#endif
 
 static int boot_read_v1_header(u8_t area_id,
 			       struct mcuboot_v1_raw_header *v1_raw)
@@ -508,6 +512,7 @@ static int boot_read_swap_state(const struct flash_area *fa,
 		state->magic = boot_magic_decode(magic);
 	}
 
+#ifdef CONFIG_MCUBOOT_TRAILER_SWAP_TYPE
 	off = SWAP_TYPE_OFFS(fa);
 	rc = flash_area_read_is_empty(fa, off, &state->swap_type,
 				      sizeof(state->swap_type));
@@ -529,6 +534,21 @@ static int boot_read_swap_state(const struct flash_area *fa,
 	} else {
 		state->copy_done = boot_flag_decode(state->copy_done);
 	}
+#else
+	if (fa->fa_id != FLASH_AREA_IMAGE_SCRATCH) {
+		off = COPY_DONE_OFFS(fa);
+		rc = flash_area_read_is_empty(fa, off, &state->copy_done,
+					      sizeof(state->copy_done));
+		if (rc < 0) {
+			return -EIO;
+		}
+		if (rc == 1) {
+			state->copy_done = BOOT_FLAG_UNSET;
+		} else {
+			state->copy_done = boot_flag_decode(state->copy_done);
+		}
+	}
+#endif
 
 	off = IMAGE_OK_OFFS(fa);
 	rc = flash_area_read_is_empty(fa, off, &state->image_ok,
@@ -623,7 +643,9 @@ int mcuboot_swap_type(void)
 
 int boot_request_upgrade(int permanent)
 {
+#ifdef CONFIG_MCUBOOT_TRAILER_SWAP_TYPE
 	u8_t swap_type;
+#endif
 	int rc;
 
 	rc = boot_magic_write(FLASH_AREA_IMAGE_SECONDARY);
@@ -633,6 +655,8 @@ int boot_request_upgrade(int permanent)
 
 	if (permanent) {
 		rc = boot_image_ok_write(FLASH_AREA_IMAGE_SECONDARY);
+
+#ifdef CONFIG_MCUBOOT_TRAILER_SWAP_TYPE
 		if (rc) {
 			goto op_end;
 		}
@@ -643,7 +667,9 @@ int boot_request_upgrade(int permanent)
 	}
 
 	rc = boot_swap_type_write(FLASH_AREA_IMAGE_SECONDARY, swap_type);
-
+#else
+	}
+#endif
 op_end:
 	return rc;
 }
