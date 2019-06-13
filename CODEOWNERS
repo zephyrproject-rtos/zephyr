@@ -43,7 +43,7 @@
 /soc/riscv32/openisa*/                    @MaureenHelm
 /arch/x86/                                @andrewboie @wentongwu
 /arch/x86/core/                           @andrewboie
-/arch/x86/core/crt0.S                     @wentongwu @nashif
+/arch/x86/core/ia32/crt0.S                @wentongwu @nashif
 /arch/x86/core/pcie.c                     @gnuless
 /arch/x86/core/multiboot.c                @gnuless
 /soc/x86/                                 @andrewboie @wentongwu
