@@ -10,4 +10,3 @@ toolchain:
   - xtools
 supported:
   - ble
-  - spi
