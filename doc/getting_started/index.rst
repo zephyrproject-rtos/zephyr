@@ -182,10 +182,6 @@ inside the ``zephyrproject`` directory for a list of supported boards.
 
 #. Build the Hello World sample for the ``reel_board``:
 
-   .. Note: we don't use :zephyr-app: here because we just told the user to cd
-      to ZEPHYR_BASE, so it's not necessary for clarity and would clutter the
-      instructions a bit.
-
    .. zephyr-app-commands::
       :tool: all
       :app: samples/hello_world
@@ -279,15 +275,15 @@ Next, run the application.
    # With west:
    west build -t run
 
-   # With ninja, from the build directory:
-   ninja run
+   # With ninja:
+   ninja -Cbuild run
 
    # or just run zephyr.exe directly:
-   ./zephyr/zephyr.exe
+   ./build/zephyr/zephyr.exe
 
 Press :kbd:`Ctrl-C` to exit.
 
-You can run ``./zephyr/zephyr.exe --help`` to get a list of available
+You can run ``./build/zephyr/zephyr.exe --help`` to get a list of available
 options.
 
 This executable can be instrumented using standard tools, such as gdb or

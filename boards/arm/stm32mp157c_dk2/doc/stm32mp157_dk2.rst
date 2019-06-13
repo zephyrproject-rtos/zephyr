@@ -260,17 +260,11 @@ install `stm32mp1 developer package`_.
 
 2) run gdb in Zephyr environment
 
-   .. code-block:: console
-
-      # On Linux
-      cd $ZEPHYR_BASE/samples/hello_world
-      mkdir -p build && cd build
-
-      # Use cmake to configure a Ninja-based build system:
-      cmake -GNinja -DBOARD=stm32mp157_dk2 ..
-
-      # Now run ninja on the generated build system:
-      ninja debug
+   .. zephyr-app-commands::
+      :zephyr-app: samples/hello_world
+      :tool: all
+      :board: stm32mp157_dk2
+      :goals: debug
 
 .. _STM32P157C Discovery website:
    https://www.st.com/content/st_com/en/products/evaluation-tools/product-evaluation-tools/mcu-mpu-eval-tools/stm32-mcu-mpu-eval-tools/stm32-discovery-kits/stm32mp157c-dk2.html

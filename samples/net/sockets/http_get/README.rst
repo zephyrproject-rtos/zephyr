@@ -59,7 +59,7 @@ Enable TLS support in the sample by building the project with the
    :compact:
 
 An alternative way is to specify ``-DOVERLAY_CONFIG=overlay-tls.conf`` when
-running cmake.
+running ``west build`` or ``cmake``.
 
 The certificate used by the sample can be found in the sample's ``src``
 directory. The certificate was selected to enable access to the default website

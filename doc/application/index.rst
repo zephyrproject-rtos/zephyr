@@ -15,7 +15,7 @@ Application Development
 Overview
 ********
 
-Zephyr's build system is based on CMake.
+Zephyr's build system is based on `CMake`_.
 
 The build system is application-centric, and requires Zephyr-based applications
 to initiate building the kernel source tree. The application build controls
@@ -64,11 +64,6 @@ Once an application has been defined, you can use CMake to create project files
 for building it from a directory where you want to host these files. This is
 known as the **build directory**. Application build artifacts are always
 generated in a build directory; Zephyr does not support "in-tree" builds.
-
-.. important::
-
-   You must create a build directory yourself, and call ``cmake`` from
-   there. The Zephyr build system does not create build directories for you.
 
 The following sections describe how to create, build, and run Zephyr
 applications, followed by more detailed reference material.
@@ -258,8 +253,8 @@ should know about.
    :makevar:`DTC_OVERLAY_FILE` can be supplied to the build system in
    3 ways (in order of precedence):
 
-   * As a parameter to the ``cmake`` invocation via the ``-D`` command-line
-     switch
+   * As a parameter to the ``west build`` or ``cmake`` invocation via the
+     ``-D`` command-line switch
    * As :ref:`env_vars`.
    * As a ``set(<VARIABLE> <VALUE>)`` statement in your :file:`CMakeLists.txt`
 
@@ -299,19 +294,35 @@ The Zephyr build system compiles and links all components of an application
 into a single application image that can be run on simulated hardware or real
 hardware.
 
-As described in :ref:`getting_started_cmake`, on Linux and macOS you can choose
-between the ``make`` and ``ninja`` generators, whereas on Windows you need to use
-``ninja``. For simplicity we will use ``ninja`` throughout this guide.
+Like any other CMake-based system, the build process takes place :ref:`in
+two stages <cmake-details>`. First, build files (also known as a buildsystem)
+are generated using the ``cmake`` command-line tool while specifying a
+generator. This generator determines the native build tool the buildsystem
+will use in the second stage.
+The second stage runs the native build tool to actually build the
+source files and generate an image. To learn more about these concepts refer to
+the `CMake introduction`_ in the official CMake documentation.
+
+As described in :ref:`getting_started_cmake`, you can choose to invoke ``cmake``
+directly or to use :ref:`west <west>`, Zephyr's meta-tool, which itself invokes
+``cmake`` and the build tool behind the scenes.
+On Linux and macOS you can choose between the ``make`` and ``ninja``
+generators (i.e. build tools), whereas on Windows you need to use ``ninja``,
+since ``make`` is not supported on this platform.
+For simplicity we will use ``ninja`` throughout this guide, and if you
+choose to use ``west build`` to build your application know that it will
+default to ``ninja`` under the hood.
 
 Basics
 ======
 
 #. Navigate to the application directory :file:`<home>/app`.
-
 #. Enter the following commands to build the application's :file:`zephyr.elf`
    image for the board specified in the command-line parameters:
 
    .. zephyr-app-commands::
+      :tool: all
+      :cd-into:
       :board: <board>
       :goals: build
 
@@ -320,15 +331,20 @@ Basics
    parameter. These settings will override the settings in the application's
    :file:`.config` file or its default :file:`.conf` file. For example:
 
-   .. code-block:: console
-
-       cmake -GNinja -DBOARD=<board> -DCONF_FILE=prj.alternate.conf ..
-       ninja
+   .. zephyr-app-commands::
+      :tool: all
+      :cd-into:
+      :board: <board>
+      :gen-args: -DCONF_FILE=prj.alternate.conf
+      :goals: build
+      :compact:
 
    As described in the previous section, you can instead choose to permanently
    set the board and configuration settings by either exporting :makevar:`BOARD`
    and :makevar:`CONF_FILE` environment variables or by setting their values
    in your :file:`CMakeLists.txt` using ``set()`` statements.
+   Additionally, ``west`` allows you to :ref:`set a default board
+   <west-building-config>`.
 
 Build Directory Contents
 ========================
@@ -394,26 +410,42 @@ because it fails to recompile one or more necessary files. You can force
 the build system to rebuild the entire application from scratch with the
 following procedure:
 
-
 #. Open a terminal console on your host computer, and navigate to the
    build directory :file:`<home>/app/build`.
 
-#. Enter the following command to delete the application's generated
+#. Enter one of the following commands, depending on whether you want to use
+   ``west`` or ``cmake`` directly to delete the application's generated
    files, except for the :file:`.config` file that contains the
    application's current configuration information.
 
    .. code-block:: console
 
+       west build -t clean
+
+   or
+
+   .. code-block:: console
+
        ninja clean
 
-   Alternatively, enter the following command to delete *all*
+   Alternatively, enter one of the following commands to delete *all*
    generated files, including the :file:`.config` files that contain
    the application's current configuration information for those board
    types.
 
    .. code-block:: console
 
+       west build -t pristine
+
+   or
+
+   .. code-block:: console
+
        ninja pristine
+
+   If you use west, you can take advantage of its capability to automatically
+   :ref:`make the build folder pristine <west-building-config>` whenever it is
+   required.
 
 #. Rebuild the application normally following the steps specified
    in :ref:`build_an_application` above.
@@ -432,7 +464,7 @@ Running on a Board
 ==================
 
 Most boards supported by Zephyr let you flash a compiled binary using
-the CMake ``flash`` target to copy the binary to the board and run it.
+the ``flash`` target to copy the binary to the board and run it.
 Follow these instructions to flash and run an application on real
 hardware:
 
@@ -441,8 +473,15 @@ hardware:
 #. Make sure your board is attached to your host computer. Usually, you'll do
    this via USB.
 
-#. Run this console command from the build directory, :file:`<home>/app/build`,
-   to flash the compiled Zephyr binary and run it on your board:
+#. Run one of these console commands from the build directory,
+   :file:`<home>/app/build`, to flash the compiled Zephyr image and run it on
+   your board:
+
+   .. code-block:: console
+
+      west flash
+
+   or
 
    .. code-block:: console
 
@@ -484,8 +523,14 @@ hardware. Follow these instructions to run an application via QEMU:
    - ``qemu_x86`` to emulate running on an x86-based board
    - ``qemu_cortex_m3`` to emulate running on an ARM Cortex M3-based board
 
-#. Run this console command from the build directory, :file:`<home>/app/build`,
-   to flash the compiled Zephyr binary and run it in QEMU:
+#. Run one of these console commands from the build directory,
+   :file:`<home>/app/build`, to run the Zephyr binary in QEMU:
+
+   .. code-block:: console
+
+      west build -t run
+
+   or
 
    .. code-block:: console
 
@@ -581,10 +626,14 @@ Zephyr board, and provide the following files::
 Once the board structure is in place, you can build your application
 targeting this board by specifying the location of your custom board
 information with the ``-DBOARD_ROOT`` parameter to the CMake
-build system::
+build system:
 
-   cmake -DBOARD=<board name> -DBOARD_ROOT=<path to boards> ..
-
+.. zephyr-app-commands::
+   :tool: all
+   :board: <board name>
+   :gen-args: -DBOARD_ROOT=<path to boards>
+   :goals: build
+   :compact:
 
 This will use your custom board configuration and will generate the
 Zephyr binary into your application directory.
@@ -634,10 +683,14 @@ custom SOC definitions:
 Once the SOC structure is in place, you can build your application
 targeting this platform by specifying the location of your custom platform
 information with the ``-DSOC_ROOT`` parameter to the CMake
-build system::
+build system:
 
-   cmake -DBOARD=<board name> -DSOC_ROOT=<path to soc> -DBOARD_ROOT=<path to boards> ..
-
+.. zephyr-app-commands::
+   :tool: all
+   :board: <board name>
+   :gen-args: -DSOC_ROOT=<path to soc> -DBOARD_ROOT=<path to boards>
+   :goals: build
+   :compact:
 
 This will use your custom platform configurations and will generate the
 Zephyr binary into your application directory.
@@ -661,9 +714,14 @@ is optional. The binding directory contains bindings and the other
 directories contain files that can be included from DT sources.
 
 Once the directory structure is in place, you can use it by specifying
-its location through the ``DTS_ROOT`` CMake Cache variable::
+its location through the ``DTS_ROOT`` CMake Cache variable:
 
-   cmake -DDTS_ROOT=<path to dts root>
+.. zephyr-app-commands::
+   :tool: all
+   :board: <board name>
+   :gen-args: -DDTS_ROOT=<path to dts root>
+   :goals: build
+   :compact:
 
 You can also define the variable in the application
 :file:`CMakeLists.txt` file.
@@ -713,7 +771,7 @@ The options used above have the following meaning:
   TCP port 1234.
 
 To debug with QEMU and to start a GDB server and wait for a remote connect, run
-the following inside the build directory of an application:
+either of the following inside the build directory of an application:
 
 .. code-block:: bash
 
@@ -839,12 +897,14 @@ Generate and Import an Eclipse Project
    argument. This will generate an Eclipse project description file,
    :file:`.project`, in addition to the usual ninja build files.
 
-   .. code-block:: console
-
-      # On Windows
-      mkdir build && cd build
-      cmake -G"Eclipse CDT4 - Ninja" -DBOARD=frdm_k64f %ZEPHYR_BASE%\samples\synchronization
-      ninja
+   .. zephyr-app-commands::
+      :tool: all
+      :app: %ZEPHYR_BASE%\samples\synchronization
+      :host-os: win
+      :board: frdm_k64f
+      :gen-args: -G"Eclipse CDT4 - Ninja"
+      :goals: build
+      :compact:
 
 #. In Eclipse, import your generated project by opening the menu
    ``File->Import...`` and selecting the option ``Existing Projects into
@@ -899,6 +959,8 @@ RTOS Awareness
 Support for Zephyr RTOS awareness is implemented in `pyOCD v0.11.0`_ and later.
 It is compatible with GDB PyOCD Debugging in Eclipse, but you must enable
 CONFIG_OPENOCD_SUPPORT=y in your application.
+
+.. _cmake-details:
 
 CMake Details
 *************
@@ -972,8 +1034,9 @@ Make sure to follow these steps in order.
      precedence. This ensures you don't try to run a build with a different
      :makevar:`BOARD` value than you set during the build configuration step.
 
-   - Any value given on the CMake command line using ``-DBOARD=YOUR_BOARD``
-     will be checked for and used next.
+   - Any value given on the CMake command line (directly or indirectly via
+     ``west build``) using ``-DBOARD=YOUR_BOARD`` will be checked for and
+     used next.
 
    - If an :ref:`environment variable <env_vars>` ``BOARD`` is set, its value
      will then be used.
@@ -1113,8 +1176,9 @@ file.
 
 1. If :makevar:`CONF_FILE` is set in :file:`CMakeLists.txt` (**before including
    the boilerplate.cmake file**), or is present in the CMake variable cache,
-   the configuration files specified in it are merged and used as the
-   application-specific settings.
+   or is specified via the ``-DCONF_FILE=<conf file(s)>`` when invoking CMake
+   (either directly or via ``west``) the configuration files specified in it
+   are merged and used as the application-specific settings.
 
 2. Otherwise (if (1.) does not apply), if a file :file:`prj_BOARD.conf` exists
    in the application directory, where :makevar:`BOARD` is the BOARD value set
@@ -1234,26 +1298,31 @@ described above in :ref:`application_set_conf`.
 
 Follow these steps to run the configuration interfaces.
 
-#. Create a build directory :file:`<home>/app/build` inside your application
-   directory and generate build files inside it with CMake:
+#. Build your application as usual using either ``west`` or ``cmake``:
+
+   .. zephyr-app-commands::
+      :tool: all
+      :cd-into:
+      :board: <board>
+      :goals: build
+      :compact:
+
+#. Use either of these commands to run the terminal-based ``menuconfig``
+   interface:
 
    .. code-block:: bash
 
-      # On Linux/macOS
-      cd ~/app
-      # On Windows
-      cd %userprofile%\app
-
-      mkdir build && cd build
-      cmake -GNinja -D<board> ..
-
-#. Use this command to run the terminal-based ``menuconfig`` interface:
+       west build -t menuconfig
 
    .. code-block:: bash
 
        ninja menuconfig
 
-   Use this command to run the graphical ``guiconfig`` interface:
+   Use either of these command to run the graphical ``guiconfig`` interface:
+
+   .. code-block:: bash
+
+       west build -t guiconfig
 
    .. code-block:: bash
 
@@ -1493,6 +1562,8 @@ third-party build system.
 :zephyr_file:`samples/application_development/external_lib` is a sample
 project that demonstrates some of these features.
 
+.. _CMake: https://www.cmake.org
+.. _CMake introduction: https://cmake.org/cmake/help/latest/manual/cmake.1.html#description
 .. _Eclipse IDE for C/C++ Developers: https://www.eclipse.org/downloads/packages/eclipse-ide-cc-developers/oxygen2
 .. _GNU MCU Eclipse plug-ins: https://gnu-mcu-eclipse.github.io/plugins/install/
 .. _pyOCD v0.11.0: https://github.com/mbedmicro/pyOCD/releases/tag/v0.11.0

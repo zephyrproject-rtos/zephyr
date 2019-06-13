@@ -22,7 +22,7 @@ The host is a slave on the I2S and is expected to send a stereo audio at a
 sampling frequency of 48KHz, 32 bits per sample.
 
 The app can be built in one of two modes and the mode selection is done by
-providing a command line flag to ``cmake``.
+providing a command line flag to ``west build`` or ``cmake``.
 
 1. **Audio Playback from Host**
 
@@ -34,7 +34,7 @@ providing a command line flag to ``cmake``.
    A copy of the same audio is also looped back to the host.
 
    This mode is chosen when ``-DAUDIO_PLAY_FROM_HOST=Y`` is specified in the
-   ``cmake`` command.
+   ``west build`` or ``cmake`` command.
 
    In this mode, the app forwards the audio forever, and does not exit.
    After the app starts, one may use the ALSA aplay command on a Linux host
@@ -48,7 +48,7 @@ providing a command line flag to ``cmake``.
    the I2S bus connected to the codec.
 
    This mode is chosen when ``-DAUDIO_PLAY_FROM_HOST=N`` is specified in the
-   ``cmake`` command.
+   ``west build`` or ``cmake`` command.
 
    In this mode, the app exits after the tone sequence is played.
    For the duration of tone playback, the app uses the I2S interface connected
@@ -86,6 +86,7 @@ Audio Playback from a Host
 
 .. zephyr-app-commands::
    :zephyr-app: samples/boards/intel_s1000_crb/i2s
+   :tool: all
    :board:
    :goals: build
    :gen-args: -DAUDIO_PLAY_FROM_HOST=Y
@@ -96,6 +97,7 @@ Tone Sequence Playback
 
 .. zephyr-app-commands::
    :zephyr-app: samples/boards/intel_s1000_crb/i2s
+   :tool: all
    :board:
    :goals: build
    :gen-args: -DAUDIO_PLAY_FROM_HOST=N

@@ -83,7 +83,7 @@ Enable TLS support in the sample by building the project with the
    :compact:
 
 An alternative way is to specify ``-DOVERLAY_CONFIG=overlay-tls.conf`` when
-running cmake.
+running ``west build`` or ``cmake``.
 
 The certificate and private key used by the sample can be found in the sample's
 ``src`` directory. The default certificates used by Socket Echo Client and
