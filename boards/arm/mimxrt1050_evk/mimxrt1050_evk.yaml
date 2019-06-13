@@ -18,6 +18,5 @@ supported:
   - display
   - i2c
   - spi
-  - netif:eth
   - hwinfo
   - usb_device

@@ -17,5 +17,4 @@ flash: 4096
 supported:
   - display
   - hwinfo
-  - netif:eth
   - i2c
