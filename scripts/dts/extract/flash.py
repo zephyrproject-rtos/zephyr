@@ -21,16 +21,10 @@ class DTFlash(DTDirective):
         prop_alias = {}
         node = reduced[node_path]
 
-        partition_name = node['props']['label']
-        partition_sectors = node['props']['reg']
-
         # Build Index based partition IDs
-        if node_path in self._flash_area:
-            area_id = self._flash_area[node_path]["id"]
-        else:
-            area_id = len(self._flash_area)
-            self._flash_area[node_path] = {'id': area_id }
-        partition_idx = str(area_id)
+        if node_path not in self._flash_area:
+            self._flash_area[node_path] = len(self._flash_area)
+        area_id = self._flash_area[node_path]
 
         # Extract a per partition dev name, something like:
         # #define DT_FLASH_AREA_1_DEV             "FLASH_CTRL"
@@ -42,48 +36,33 @@ class DTFlash(DTDirective):
         # The flash controller might be the flash itself (for cases like NOR
         # flashes), for the case of 'soc-nv-flash' we assume its the parent
         # of the flash node.
-        ctrl_addr = '/' + '/'.join(node_path.split('/')[1:-2])
-        if get_compat(ctrl_addr) == "soc-nv-flash":
-            ctrl_addr = '/' + '/'.join(node_path.split('/')[1:-3])
+        controller_path = '/' + '/'.join(node_path.split('/')[1:-2])
+        if get_compat(controller_path) == "soc-nv-flash":
+            controller_path = '/' + '/'.join(node_path.split('/')[1:-3])
 
-        node = reduced[ctrl_addr]
-        name = "\"{}\"".format(node['props']['label'])
+        for flash_path in self._flash_area:
+            if controller_path in flash_path:
+                prop_def["DT_FLASH_AREA_{}_DEV".format(area_id)] = \
+                    '"' + reduced[controller_path]['props']['label'] + '"'
 
-        for area in self._flash_area.keys():
-            if ctrl_addr in area:
-                label = self.get_label_string(["DT_FLASH_AREA", partition_idx, "DEV"])
-                prop_def[label] = name
+        partition_label = str_to_label(node['props']['label'])
+        prop_def["DT_FLASH_AREA_{}_LABEL".format(area_id)] = partition_label
+        prop_def["DT_FLASH_AREA_{}_ID".format(partition_label)] = area_id
 
-        label = self.get_label_string(["DT_FLASH_AREA"] + [partition_name] + ["ID",])
-        prop_def[label] = area_id
-
-        label_prefix = ["DT_FLASH_AREA", partition_idx]
-
-        index = 0
-        while index < len(partition_sectors):
-            sector_index = int(index/2)
-            sector_start_offset = partition_sectors[index]
-            sector_size = partition_sectors[index + 1]
-            label = self.get_label_string(
-                label_prefix + ["OFFSET", str(sector_index)])
-            prop_def[label] = "{}".format(sector_start_offset)
-            label = self.get_label_string(
-                label_prefix + ["SIZE", str(sector_index)])
-            prop_def[label] = "{}".format(sector_size)
-            index += 2
-
-        # alias sector 0
-        label = self.get_label_string(label_prefix + ["OFFSET",])
-        prop_alias[label] = self.get_label_string(
-            label_prefix + ["OFFSET", '0'])
-        label = self.get_label_string(label_prefix + ["SIZE",])
-        prop_alias[label] = self.get_label_string(
-            label_prefix + ["SIZE", '0'])
-
-        label = self.get_label_string(["DT_FLASH_AREA", partition_idx, "LABEL"])
-        prop_def[label] = self.get_label_string([partition_name,])
+        reg = node['props']['reg']
+        for i in range(len(reg)//2):
+            prop_def["DT_FLASH_AREA_{}_OFFSET_{}".format(area_id, i)] = reg[2*i]
+            prop_def["DT_FLASH_AREA_{}_SIZE_{}".format(area_id, i)] = reg[2*i + 1]
 
         prop_def["DT_FLASH_AREA_NUM"] = len(self._flash_area)
+
+        # Alias sector 0
+        prop_alias[
+            "DT_FLASH_AREA_{}_OFFSET".format(area_id)
+        ] = "DT_FLASH_AREA_{}_OFFSET_0".format(area_id)
+        prop_alias[
+            "DT_FLASH_AREA_{}_SIZE".format(area_id)
+        ] = "DT_FLASH_AREA_{}_SIZE_0".format(area_id)
 
         insert_defs("DT_FLASH_AREA", prop_def, prop_alias)
 
@@ -97,40 +76,34 @@ class DTFlash(DTDirective):
 
         self._extract_partition(node_path)
 
-        partition_name = node['props']['label']
-        partition_sectors = node['props']['reg']
+        partition_label = str_to_label(node['props']['label'])
 
-        label_prefix = ["DT_FLASH_AREA", partition_name]
-        label = self.get_label_string(label_prefix + ["LABEL",])
-        prop_def[label] = '"{}"'.format(partition_name)
+        label = "DT_FLASH_AREA_{}_LABEL".format(partition_label)
+        prop_def[label] = '"' + node['props']['label'] + '"'
         self._create_legacy_label(prop_alias, label)
 
-        label = self.get_label_string(label_prefix + ["READ_ONLY",])
+        label = "DT_FLASH_AREA_{}_READ_ONLY".format(partition_label)
         prop_def[label] = 1 if 'read-only' in node['props'] else 0
         self._create_legacy_label(prop_alias, label)
 
-        index = 0
-        while index < len(partition_sectors):
-            sector_index = int(index/2)
-            sector_start_offset = partition_sectors[index]
-            sector_size = partition_sectors[index + 1]
-            label = self.get_label_string(
-                label_prefix + ["OFFSET", str(sector_index)])
-            prop_def[label] = "{}".format(sector_start_offset)
+        reg = node['props']['reg']
+        for i in range(len(reg)//2):
+            label = "DT_FLASH_AREA_{}_OFFSET_{}".format(partition_label, i)
+            prop_def[label] = reg[2*i]
             self._create_legacy_label(prop_alias, label)
-            label = self.get_label_string(
-                label_prefix + ["SIZE", str(sector_index)])
-            prop_def[label] = "{}".format(sector_size)
+
+            label = "DT_FLASH_AREA_{}_SIZE_{}".format(partition_label, i)
+            prop_def[label] = reg[2*i + 1]
             self._create_legacy_label(prop_alias, label)
-            index += 2
-        # alias sector 0
-        label = self.get_label_string(label_prefix + ["OFFSET",])
-        prop_alias[label] = self.get_label_string(
-            label_prefix + ["OFFSET", '0'])
+
+        # Alias sector 0
+
+        label = "DT_FLASH_AREA_{}_OFFSET".format(partition_label)
+        prop_alias[label] = "DT_FLASH_AREA_{}_OFFSET_0".format(partition_label)
         self._create_legacy_label(prop_alias, label)
-        label = self.get_label_string(label_prefix + ["SIZE",])
-        prop_alias[label] = self.get_label_string(
-            label_prefix + ["SIZE", '0'])
+
+        label = "DT_FLASH_AREA_{}_SIZE".format(partition_label)
+        prop_alias[label] = "DT_FLASH_AREA_{}_SIZE_0".format(partition_label)
         self._create_legacy_label(prop_alias, label)
 
         insert_defs(node_path, prop_def, prop_alias)
