@@ -325,8 +325,9 @@ Z_SYSCALL_HANDLER(zsock_bind, sock, addr, addrlen)
 int zsock_connect_ctx(struct net_context *ctx, const struct sockaddr *addr,
 		      socklen_t addrlen)
 {
-	SET_ERRNO(net_context_connect(ctx, addr, addrlen, NULL, K_FOREVER,
-				      NULL));
+	SET_ERRNO(net_context_connect(ctx, addr, addrlen, NULL,
+			      K_MSEC(CONFIG_NET_SOCKETS_CONNECT_TIMEOUT),
+			      NULL));
 	SET_ERRNO(net_context_recv(ctx, zsock_received_cb, K_NO_WAIT,
 				   ctx->user_data));
 
