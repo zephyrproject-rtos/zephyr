@@ -58,30 +58,30 @@ arduino_spi: &spi1 {};
 	current-speed = <115200>;
 	pinctrl-0 = <&usart3_pins_b>;
 	pinctrl-names = "default";
-	status = "ok";
+	status = "okay";
 };
 
 &usart6 {
 	current-speed = <115200>;
 	pinctrl-0 = <&usart6_pins_a>;
 	pinctrl-names = "default";
-	status = "ok";
+	status = "okay";
 };
 
 &usbotg_fs {
-	status = "ok";
+	status = "okay";
 };
 
 &i2c1 {
-	status = "ok";
+	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
 &timers1 {
-	status = "ok";
+	status = "okay";
 
 	pwm {
-		status = "ok";
+		status = "okay";
 	};
 };
 
@@ -90,15 +90,15 @@ arduino_spi: &spi1 {};
 	 * WARNING: The pin PA7 will conflict on selection of SPI_1 and
 	 *          ETH_STM32_HAL. See pinmux.c for further details.
 	 */
-	status = "ok";
+	status = "okay";
 };
 
 &iwdg {
-	status = "ok";
+	status = "okay";
 };
 
 &rtc {
-	status = "ok";
+	status = "okay";
 };
 
 &can1 {
@@ -106,9 +106,9 @@ arduino_spi: &spi1 {};
 	sjw = <1>;
 	prop_seg_phase_seg1 = <6>;
 	phase_seg2 = <5>;
-	status = "ok";
+	status = "okay";
 };
 
 &adc1 {
-	status = "ok";
+	status = "okay";
 };

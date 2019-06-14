@@ -41,18 +41,18 @@
 	current-speed = <115200>;
 	pinctrl-0 = <&usart2_pins_b>;
 	pinctrl-names = "default";
-	status = "ok";
+	status = "okay";
 };
 
 &spi1 {
-	status = "ok";
+	status = "okay";
 };
 
 &timers2 {
-	status = "ok";
+	status = "okay";
 
 	pwm {
-		status = "ok";
+		status = "okay";
 	};
 };
 
@@ -60,11 +60,11 @@
 	pinctrl-0 = <&can_pins_a>;
 	pinctrl-names = "default";
 	bus-speed = <125000>;
-	status = "ok";
+	status = "okay";
 };
 
 &rtc {
-	status = "ok";
+	status = "okay";
 };
 
 &flash0 {

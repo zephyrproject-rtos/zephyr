@@ -24,19 +24,19 @@
 };
 
 &wdog {
-	status = "ok";
+	status = "okay";
 };
 
 
 &i2c0 {
-	status = "ok";
+	status = "okay";
 };
 
 &i2c1 {
-	status = "ok";
+	status = "okay";
 };
 
 &uart0 {
-	status = "ok";
+	status = "okay";
 	current-speed = <115200>;
 };

@@ -72,12 +72,12 @@ arduino_serial: &uart3 {};
 	hyperflash0: hyperflash@0 {
 		compatible = "cypress,s26ks512s";
 		reg = <0>;
-		status = "ok";
+		status = "okay";
 	};
 };
 
 &lcdif1 {
-	status = "ok";
+	status = "okay";
 	port {
 		lcd_panel_out: endpoint {
 			remote-endpoint = <&lcd_panel_in>;
@@ -86,7 +86,7 @@ arduino_serial: &uart3 {};
 };
 
 &i2c1 {
-	status = "ok";
+	status = "okay";
 
 	fxos8700@1f {
 		compatible = "nxp,fxos8700";
@@ -104,21 +104,21 @@ arduino_serial: &uart3 {};
 };
 
 &uart1 {
-	status = "ok";
+	status = "okay";
 	current-speed = <115200>;
 };
 
 &spi3 {
-	status = "ok";
+	status = "okay";
 };
 
 &eth {
-	status = "ok";
+	status = "okay";
 	ptp {
-		status = "ok";
+		status = "okay";
 	};
 };
 
 &usbd1 {
-	status = "ok";
+	status = "okay";
 };

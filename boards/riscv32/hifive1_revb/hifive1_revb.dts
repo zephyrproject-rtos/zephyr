@@ -39,23 +39,23 @@
 };
 
 &gpio0 {
-	status = "ok";
+	status = "okay";
 };
 
 &uart0 {
-	status = "ok";
+	status = "okay";
 	current-speed = <115200>;
 	clock-frequency = <16000000>;
 };
 
 &uart1 {
-	status = "ok";
+	status = "okay";
 	current-speed = <115200>;
 	clock-frequency = <16000000>;
 };
 
 &spi0 {
-	status = "ok";
+	status = "okay";
 	clock-frequency = <16000000>;
 
 	#address-cells = <1>;
@@ -69,32 +69,32 @@
 };
 
 &spi1 {
-	status = "ok";
+	status = "okay";
 	clock-frequency = <16000000>;
 };
 
 &spi2 {
-	status = "ok";
+	status = "okay";
 	clock-frequency = <16000000>;
 };
 
 &pwm0 {
-	status = "ok";
+	status = "okay";
 	clock-frequency = <16000000>;
 };
 
 &pwm1 {
-	status = "ok";
+	status = "okay";
 	clock-frequency = <16000000>;
 };
 
 &pwm2 {
-	status = "ok";
+	status = "okay";
 	clock-frequency = <16000000>;
 };
 
 &i2c0 {
-	status = "ok";
+	status = "okay";
 	input-frequency = <16000000>;
 	clock-frequency = <100000>;
 };

@@ -65,7 +65,7 @@
 arduino_i2c: &i2c1 {};
 
 &lcdif1 {
-	status = "ok";
+	status = "okay";
 	port {
 		lcd_panel_out: endpoint {
 			remote-endpoint = <&lcd_panel_in>;
@@ -74,17 +74,17 @@ arduino_i2c: &i2c1 {};
 };
 
 &i2c1 {
-	status = "ok";
+	status = "okay";
 };
 
 &uart1 {
-	status = "ok";
+	status = "okay";
 	current-speed = <115200>;
 };
 
 &eth {
-	status = "ok";
+	status = "okay";
 	ptp {
-		status = "ok";
+		status = "okay";
 	};
 };

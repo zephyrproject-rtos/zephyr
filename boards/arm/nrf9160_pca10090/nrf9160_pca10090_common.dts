@@ -69,19 +69,19 @@
 };
 
 &adc {
-	status ="ok";
+	status = "okay";
 };
 
 &gpiote {
-	status = "ok";
+	status = "okay";
 };
 
 &gpio0 {
-	status = "ok";
+	status = "okay";
 };
 
 &uart0 {
-	status = "ok";
+	status = "okay";
 	current-speed = <115200>;
 	tx-pin = <29>;
 	rx-pin = <28>;
@@ -90,7 +90,7 @@
 };
 
 &uart1 {
-	status = "ok";
+	status = "okay";
 	current-speed = <115200>;
 	tx-pin = <1>;
 	rx-pin = <0>;
@@ -99,33 +99,33 @@
 };
 
 &i2c2 {
-	status = "ok";
+	status = "okay";
 	sda-pin = <30>;
 	scl-pin = <31>;
 };
 
 &pwm0 {
-	status = "ok";
+	status = "okay";
 	ch0-pin = <2>;
 };
 
 &spi3 {
-	status = "ok";
+	status = "okay";
 	sck-pin = <19>;
 	mosi-pin = <18>;
 	miso-pin = <17>;
 };
 
 &timer0 {
-	status = "ok";
+	status = "okay";
 };
 
 &timer1 {
-	status = "ok";
+	status = "okay";
 };
 
 &timer2 {
-	status = "ok";
+	status = "okay";
 };
 
 &flash0 {

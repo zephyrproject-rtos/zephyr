@@ -34,16 +34,16 @@
 };
 
 &gpiote {
-	status ="ok";
+	status = "okay";
 };
 
 &gpio0 {
-	status ="ok";
+	status = "okay";
 };
 
 &uart0 {
 	current-speed = <115200>;
-	status = "ok";
+	status = "okay";
 	tx-pin = <9>;
 	rx-pin = <11>;
 	rts-pin = <8>;

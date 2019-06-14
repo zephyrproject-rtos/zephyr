@@ -38,23 +38,23 @@
 };
 
 &uart2 {
-	status = "ok";
+	status = "okay";
 	current-speed = <115200>;
 	modem-mode = <0>;
 };
 
 &uart6 {
-	status = "ok";
+	status = "okay";
 	current-speed = <115200>;
 	modem-mode = <0>;
 };
 
 &gpio7 {
-	status = "ok";
+	status = "okay";
 };
 
 &i2c4 {
-	status = "ok";
+	status = "okay";
 
 	fxos8700@1e {
 		compatible = "nxp,fxos8700";
@@ -73,5 +73,5 @@
 };
 
 &mub {
-	status = "ok";
+	status = "okay";
 };

@@ -109,15 +109,15 @@
 arduino_serial: &uart3 {};
 
 &adc0 {
-	status = "ok";
+	status = "okay";
 };
 
 &adc1 {
-	status = "ok";
+	status = "okay";
 };
 
 &i2c0 {
-	status = "ok";
+	status = "okay";
 
 	fxos8700@1d {
 		compatible = "nxp,fxos8700";
@@ -129,7 +129,7 @@ arduino_serial: &uart3 {};
 };
 
 &spi0 {
-	status = "ok";
+	status = "okay";
 
 	mcr20a@0 {
 		compatible = "nxp,mcr20a";
@@ -138,22 +138,22 @@ arduino_serial: &uart3 {};
 		spi-max-frequency = <4000000>;
 		irqb-gpios = <&gpiob 9 0>;
 		reset-gpios = <&gpioa 2 0>;
-		status = "ok";
+		status = "okay";
 	};
 };
 
 &pwm3 {
-	status = "ok";
+	status = "okay";
 };
 
 &uart0 {
-	status = "ok";
+	status = "okay";
 	current-speed = <115200>;
 };
 
 &usbd {
 	compatible = "nxp,kinetis-usbd";
-	status = "ok";
+	status = "okay";
 	num-bidir-endpoints = <8>;
 };
 
@@ -199,8 +199,8 @@ arduino_serial: &uart3 {};
 };
 
 &eth {
-	status = "ok";
+	status = "okay";
 	ptp {
-		status = "ok";
+		status = "okay";
 	};
 };

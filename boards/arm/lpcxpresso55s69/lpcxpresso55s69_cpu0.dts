@@ -44,26 +44,26 @@
 };
 
 &usart0 {
-	status = "ok";
+	status = "okay";
 	current-speed = <115200>;
 };
 
 &gpio0 {
-	status = "ok";
+	status = "okay";
 };
 
 &gpio1 {
-	status = "ok";
+	status = "okay";
 };
 
 &green_led {
-	status = "ok";
+	status = "okay";
 };
 
 &blue_led {
-	status = "ok";
+	status = "okay";
 };
 
 &red_led {
-	status = "ok";
+	status = "okay";
 };

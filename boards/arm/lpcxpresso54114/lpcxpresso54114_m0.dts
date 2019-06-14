@@ -22,5 +22,5 @@
 };
 
 &mailbox0 {
-	status = "ok";
+	status = "okay";
 };

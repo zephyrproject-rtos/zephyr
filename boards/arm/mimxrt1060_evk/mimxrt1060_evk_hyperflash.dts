@@ -12,6 +12,6 @@
 	hyperflash0: hyperflash@0 {
 		compatible = "cypress,s26ks512s";
 		reg = <0>;
-		status = "ok";
+		status = "okay";
 	};
 };

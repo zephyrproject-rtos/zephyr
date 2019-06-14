@@ -73,18 +73,18 @@
 	current-speed = <115200>;
 	pinctrl-0 = <&usart1_pins_d>;
 	pinctrl-names = "default";
-	status = "ok";
+	status = "okay";
 };
 
 &usart2 {
 	current-speed = <115200>;
 	pinctrl-0 = <&usart2_pins_a>;
 	pinctrl-names = "default";
-	status = "ok";
+	status = "okay";
 };
 
 &i2c1 {
-	status = "ok";
+	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 
 	lsm303dlhc-magn@1e {
@@ -102,24 +102,24 @@
 };
 
 &i2c2 {
-	status = "ok";
+	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
 &spi1 {
-	status = "ok";
+	status = "okay";
 };
 
 &spi2 {
-	status = "ok";
+	status = "okay";
 };
 
 &usb {
-	status = "ok";
+	status = "okay";
 };
 
 &rtc {
-	status = "ok";
+	status = "okay";
 };
 
 &flash0 {

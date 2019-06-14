@@ -87,15 +87,15 @@ arduino_serial: &uart1 {};
 
 &uart0 {
 	current-speed = <115200>;
-	status = "ok";
+	status = "okay";
 };
 
 arduino_i2c: &i2c0 {
-	status = "ok";
+	status = "okay";
 };
 
 &i2c3 {
-	status = "ok";
+	status = "okay";
 
 	fxos8700@1e {
 		compatible = "nxp,fxos8700";

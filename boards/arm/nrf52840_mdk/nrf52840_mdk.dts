@@ -59,21 +59,21 @@
 };
 
 &gpiote {
-	status ="ok";
+	status = "okay";
 };
 
 &gpio0 {
-	status ="ok";
+	status = "okay";
 };
 
 &gpio1 {
-	status ="ok";
+	status = "okay";
 };
 
 &uart0 {
 	compatible = "nordic,nrf-uart";
 	current-speed = <115200>;
-	status = "ok";
+	status = "okay";
 	tx-pin = <20>;
 	rx-pin = <19>;
 	rts-pin = <5>;
@@ -81,19 +81,19 @@
 };
 
 &i2c0 {
-	status = "ok";
+	status = "okay";
 	sda-pin = <26>;
 	scl-pin = <27>;
 };
 
 &i2c1 {
-	status = "ok";
+	status = "okay";
 	sda-pin = <30>;
 	scl-pin = <31>;
 };
 
 &pwm0 {
-	status = "ok";
+	status = "okay";
 	ch0-pin = <22>;
 	ch0-inverted;
 };
@@ -140,5 +140,5 @@
 
 &usbd {
 	compatible = "nordic,nrf-usbd";
-	status = "ok";
+	status = "okay";
 };

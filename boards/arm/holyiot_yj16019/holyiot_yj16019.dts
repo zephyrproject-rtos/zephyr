@@ -42,15 +42,15 @@
 };
 
 &gpiote {
-	status ="ok";
+	status = "okay";
 };
 
 &gpio0 {
-	status ="ok";
+	status = "okay";
 };
 
 &pwm0 {
-	status = "ok";
+	status = "okay";
 	ch0-pin = <29>;
 };
 

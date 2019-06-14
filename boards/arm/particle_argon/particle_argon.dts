@@ -24,7 +24,7 @@
 &uart1 { /* ESP32 */
 	compatible = "nordic,nrf-uarte";
 	current-speed = <921600>;
-	status = "ok";
+	status = "okay";
 	tx-pin = <37>;
 	rx-pin = <36>;
 	rts-pin = <39>;

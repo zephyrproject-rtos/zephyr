@@ -56,31 +56,31 @@
 };
 
 &uart0 {
-	status = "ok";
+	status = "okay";
 	current-speed = <1000000>;
 };
 
 &uart1 {
-	status = "ok";
+	status = "okay";
 	current-speed = <115200>;
 };
 
 &i2c0 {
-	status = "ok";
+	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
 &i2c1 {
-	status = "ok";
+	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
 &spi0 {
-	status = "ok";
+	status = "okay";
 };
 
 &spi1 {
-	status = "ok";
+	status = "okay";
 	cs-gpios = <&gpio0 11 0>;
 
 	cc2520@0 {
@@ -88,7 +88,7 @@
 		reg = <0x0>;
 		label = "cc2520";
 		spi-max-frequency = <8000000>;
-		status = "ok";
+		status = "okay";
 		vreg-en-gpios = <&gpio1 0 0>;
 		reset-gpios = <&gpio1 1 0>;
 		fifo-gpios = <&gpio0 4 0>;

@@ -26,48 +26,48 @@
 };
 
 &uart0 {
-	status = "ok";
+	status = "okay";
 	current-speed = <115200>;
 };
 
 &uart1 {
-	status = "ok";
+	status = "okay";
 	current-speed = <115200>;
 };
 
 &uart2 {
-	status = "ok";
+	status = "okay";
 	current-speed = <115200>;
 };
 
 &eth {
-	status = "ok";
+	status = "okay";
 };
 
 &gpio0 {
-       status = "ok";
+       status = "okay";
 };
 
 &gpio1 {
-       status = "ok";
+       status = "okay";
 };
 
 &gpio2 {
-       status = "ok";
+       status = "okay";
 };
 
 &gpio3 {
-       status = "ok";
+       status = "okay";
 };
 
 &gpio4 {
-       status = "ok";
+       status = "okay";
 };
 
 &gpio5 {
-       status = "ok";
+       status = "okay";
 };
 
 &gpio6 {
-       status = "ok";
+       status = "okay";
 };

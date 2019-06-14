@@ -56,24 +56,24 @@
 };
 
 &adc0 {
-	status = "ok";
+	status = "okay";
 };
 
 &i2c0 {
-	status = "ok";
+	status = "okay";
 };
 
 &pwm1 {
-	status = "ok";
+	status = "okay";
 };
 
 &uart0 {
-	status = "ok";
+	status = "okay";
 	current-speed = <115200>;
 };
 
 &usbd {
 	compatible = "nxp,kinetis-usbd";
-	status = "ok";
+	status = "okay";
 	num-bidir-endpoints = <8>;
 };

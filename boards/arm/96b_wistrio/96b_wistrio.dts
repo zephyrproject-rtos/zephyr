@@ -39,18 +39,18 @@
 	current-speed = <115200>;
 	pinctrl-0 = <&usart1_pins_b>;
 	pinctrl-names = "default";
-	status = "ok";
+	status = "okay";
 };
 
 &usart3 {
 	current-speed = <115200>;
 	pinctrl-0 = <&usart3_pins_a>;
 	pinctrl-names = "default";
-	status = "ok";
+	status = "okay";
 };
 
 &i2c1 {
-	status = "ok";
+	status = "okay";
 
 	lis3dh@32 {
 		compatible = "st,lis3dh";

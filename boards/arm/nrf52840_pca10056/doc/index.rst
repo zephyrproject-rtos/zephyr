@@ -180,7 +180,7 @@ more than one UART for connecting peripheral devices:
       &uart1 {
         compatible = "nordic,nrf-uarte";
         current-speed = <115200>;
-        status = "ok";
+        status = "okay";
         tx-pin = <14>;
         rx-pin = <16>;
       };

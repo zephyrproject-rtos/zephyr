@@ -20,21 +20,21 @@
 };
 
 &uart2 {
-	status = "ok";
+	status = "okay";
 	current-speed = <115200>;
 };
 
 &i2c0 {
-	status = "ok";
+	status = "okay";
 	port_sel = <0>;
 };
 
 &i2c1 {
-	status = "ok";
+	status = "okay";
 	port_sel = <1>;
 };
 
 &i2c2 {
-	status = "ok";
+	status = "okay";
 	port_sel = <7>;
 };

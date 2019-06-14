@@ -90,13 +90,13 @@
 			compatible = "nordic,nrf-spu";
 			reg = <0x50003000 0x1000>;
 			interrupts = <3 1>;
-			status = "ok";
+			status = "okay";
 		};
 
 		ficr: ficr@ff0000 {
 			compatible = "nordic,nrf-ficr";
 			reg = <0xff0000 0x1000>;
-			status = "ok";
+			status = "okay";
 		};
 	};
 };

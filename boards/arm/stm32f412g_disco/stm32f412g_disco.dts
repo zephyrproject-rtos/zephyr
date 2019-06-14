@@ -75,9 +75,9 @@
 	current-speed = <115200>;
 	pinctrl-0 = <&usart2_pins_a>;
 	pinctrl-names = "default";
-	status = "ok";
+	status = "okay";
 };
 
 &rtc {
-	status = "ok";
+	status = "okay";
 };

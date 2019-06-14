@@ -35,7 +35,7 @@
 	current-speed = <115200>;
 	pinctrl-0 = <&usart1_pins_a>;
 	pinctrl-names = "default";
-	status = "ok";
+	status = "okay";
 };
 
 &usart2 {
@@ -51,26 +51,26 @@
 };
 
 &i2c1 {
-	status = "ok";
+	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
 &spi1 {
-	status = "ok";
+	status = "okay";
 };
 
 &spi2 {
-	status = "ok";
+	status = "okay";
 };
 
 &timers1 {
-	status = "ok";
+	status = "okay";
 
 	pwm {
-		status = "ok";
+		status = "okay";
 	};
 };
 
 &usb {
-	status = "ok";
+	status = "okay";
 };

@@ -45,27 +45,27 @@
 	current-speed = <115200>;
 	pinctrl-0 = <&usart1_pins_a>;
 	pinctrl-names = "default";
-	status = "ok";
+	status = "okay";
 };
 
 &usart2 {
 	current-speed = <115200>;
 	pinctrl-0 = <&usart2_pins_a>;
 	pinctrl-names = "default";
-	status = "ok";
+	status = "okay";
 };
 
 arduino_i2c: &i2c1 {
-	status = "ok";
+	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
 arduino_spi: &spi1 {
-	status = "ok";
+	status = "okay";
 };
 
 &spi2 {
-	status = "ok";
+	status = "okay";
 };
 
 &flash0 {
@@ -107,17 +107,17 @@ arduino_spi: &spi1 {
 };
 
 &timers2 {
-	status = "ok";
+	status = "okay";
 
 	pwm {
-		status = "ok";
+		status = "okay";
 	};
 };
 
 &rtc {
-	status = "ok";
+	status = "okay";
 };
 
 &adc1 {
-	status = "ok";
+	status = "okay";
 };

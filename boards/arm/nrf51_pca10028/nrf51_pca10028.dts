@@ -76,20 +76,20 @@
 };
 
 &gpiote {
-	status ="ok";
+	status = "okay";
 };
 
 &gpio0 {
-	status ="ok";
+	status = "okay";
 };
 
 &adc {
-	status ="ok";
+	status = "okay";
 };
 
 &uart0 {
 	current-speed = <115200>;
-	status = "ok";
+	status = "okay";
 	tx-pin = <9>;
 	rx-pin = <11>;
 	rts-pin = <8>;
@@ -97,28 +97,28 @@
 };
 
 &i2c0 {
-	status = "ok";
+	status = "okay";
 	sda-pin = <30>;
 	scl-pin = <7>;
 };
 
 &i2c1 {
 	/* Cannot be used together with spi1. */
-	/* status = "ok"; */
+	/* status = "okay"; */
 	sda-pin = <5>;
 	scl-pin = <6>;
 };
 
 &spi0 {
 	/* Cannot be used together with i2c0. */
-	/* status = "ok"; */
+	/* status = "okay"; */
 	sck-pin = <7>;
 	mosi-pin = <29>;
 	miso-pin = <30>;
 };
 
 &spi1 {
-	status = "ok";
+	status = "okay";
 	sck-pin = <6>;
 	mosi-pin = <5>;
 	miso-pin = <4>;

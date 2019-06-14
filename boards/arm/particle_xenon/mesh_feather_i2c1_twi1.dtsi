@@ -9,7 +9,7 @@
  * NOTE: This file is replicated in particle_{argon,xenon}.
  * Changes should be made in all instances. */
 &i2c1 { /* feather I2C1 */
-	status = "ok";
+	status = "okay";
 	sda-pin = <33>;
 	scl-pin = <34>;
 };

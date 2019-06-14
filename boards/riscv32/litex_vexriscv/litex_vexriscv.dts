@@ -26,10 +26,10 @@
 };
 
 &uart0 {
-	status = "ok";
+	status = "okay";
 	current-speed = <115200>;
 };
 
 &timer0 {
-	status = "ok";
+	status = "okay";
 };

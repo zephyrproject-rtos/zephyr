@@ -56,7 +56,7 @@
 			clock-frequency = <1843200>;
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
-			status = "ok";
+			status = "okay";
 			current-speed = <115200>;
 		};
 
@@ -71,7 +71,7 @@
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
 
-			status = "ok";
+			status = "okay";
 			current-speed = <115200>;
 		};
 
@@ -86,7 +86,7 @@
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
 
-			status = "ok";
+			status = "okay";
 			current-speed = <115200>;
 		};
 
@@ -101,7 +101,7 @@
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
 
-			status = "ok";
+			status = "okay";
 			current-speed = <115200>;
 		};
 
@@ -116,7 +116,7 @@
 			interrupt-parent = <&intc>;
 			label = "I2C_0";
 
-			status = "ok";
+			status = "okay";
 		};
 
 		i2c1: i2c@1 {
@@ -130,7 +130,7 @@
 			interrupt-parent = <&intc>;
 			label = "I2C_1";
 
-			status = "ok";
+			status = "okay";
 		};
 
 		i2c2: i2c@2 {
@@ -144,7 +144,7 @@
 			interrupt-parent = <&intc>;
 			label = "I2C_2";
 
-			status = "ok";
+			status = "okay";
 		};
 
 		i2c3: i2c@3 {
@@ -158,7 +158,7 @@
 			interrupt-parent = <&intc>;
 			label = "I2C_3";
 
-			status = "ok";
+			status = "okay";
 		};
 
 		i2c4: i2c@4 {
@@ -172,7 +172,7 @@
 			interrupt-parent = <&intc>;
 			label = "I2C_4";
 
-			status = "ok";
+			status = "okay";
 		};
 
 		i2c5: i2c@5 {
@@ -186,7 +186,7 @@
 			interrupt-parent = <&intc>;
 			label = "I2C_5";
 
-			status = "ok";
+			status = "okay";
 		};
 
 		i2c6: i2c@6 {
@@ -200,7 +200,7 @@
 			interrupt-parent = <&intc>;
 			label = "I2C_6";
 
-			status = "ok";
+			status = "okay";
 		};
 
 		i2c7: i2c@7 {
@@ -214,7 +214,7 @@
 			interrupt-parent = <&intc>;
 			label = "I2C_7";
 
-			status = "ok";
+			status = "okay";
 		};
 
 		gpio: gpio@d0c50000 {
@@ -230,7 +230,7 @@
 			gpio-controller ;
 			#gpio-cells = <2>;
 
-			status = "ok";
+			status = "okay";
 		};
 	};
 };

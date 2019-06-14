@@ -2,12 +2,12 @@
 
 
 &spi1 {
-	status = "ok";
+	status = "okay";
 
 	cs-gpios = <&gpio0 13 0>;
 
 	winc1500@0 {
-		status = "ok";
+		status = "okay";
 		compatible = "atmel,winc1500";
 		reg = <0x0>;
 		label = "winc1500";

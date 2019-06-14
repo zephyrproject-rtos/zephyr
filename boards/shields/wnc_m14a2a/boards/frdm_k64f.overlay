@@ -11,10 +11,10 @@
 &uart2 {
 	current-speed = <115200>;
 	hw-flow-control;
-	status = "ok";
+	status = "okay";
 
 	wnc_m14a2a: wncm14a2a {
-		status = "ok";
+		status = "okay";
 		compatible = "wnc,m14a2a";
 		label = "wnc-m14a2a";
 		mdm-boot-mode-sel-gpios = <&arduino_header 7 0>;   /* D1 */

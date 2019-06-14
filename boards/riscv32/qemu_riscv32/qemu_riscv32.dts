@@ -18,11 +18,11 @@
 };
 
 &gpio0 {
-	status = "ok";
+	status = "okay";
 };
 
 &uart0 {
-	status = "ok";
+	status = "okay";
 	current-speed = <115200>;
 	clock-frequency = <16000000>;
 };
@@ -32,7 +32,7 @@
 };
 
 &spi0 {
-	status = "ok";
+	status = "okay";
 
 	#address-cells = <1>;
 	#size-cells = <0>;
