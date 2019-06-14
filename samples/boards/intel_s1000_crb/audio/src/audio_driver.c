@@ -303,9 +303,9 @@ static void audio_driver_config_periph_streams(void)
 		return;
 	}
 
-	codec_dev = device_get_binding(DT_TI_TLV320DAC_0_LABEL);
+	codec_dev = device_get_binding(DT_INST_0_TI_TLV320DAC_LABEL);
 	if (!codec_dev) {
-		LOG_ERR("unable to find device %s", DT_TI_TLV320DAC_0_LABEL);
+		LOG_ERR("unable to find device %s", DT_INST_0_TI_TLV320DAC_LABEL);
 		return;
 	}
 

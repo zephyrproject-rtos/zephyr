@@ -531,7 +531,7 @@ static int mcp2515_init(struct device *dev)
 		return -EINVAL;
 	}
 
-#ifdef DT_MICROCHIP_MCP2515_0_CS_GPIO_PIN
+#ifdef DT_INST_0_MICROCHIP_MCP2515_CS_GPIO_PIN
 	dev_data->spi_cs_ctrl.gpio_dev =
 		device_get_binding(dev_cfg->spi_cs_port);
 	if (!dev_data->spi_cs_ctrl.gpio_dev) {
@@ -545,7 +545,7 @@ static int mcp2515_init(struct device *dev)
 	dev_data->spi_cfg.cs = &dev_data->spi_cs_ctrl;
 #else
 	dev_data->spi_cfg.cs = NULL;
-#endif  /* DT_MICROCHIP_MCP2515_0_CS_GPIO_PIN */
+#endif  /* DT_INST_0_MICROCHIP_MCP2515_CS_GPIO_PIN */
 
 	/* Reset MCP2515 */
 	if (mcp2515_cmd_soft_reset(dev)) {
@@ -607,25 +607,25 @@ static struct mcp2515_data mcp2515_data_1 = {
 };
 
 static const struct mcp2515_config mcp2515_config_1 = {
-	.spi_port = DT_MICROCHIP_MCP2515_0_BUS_NAME,
-	.spi_freq = DT_MICROCHIP_MCP2515_0_SPI_MAX_FREQUENCY,
-	.spi_slave = DT_MICROCHIP_MCP2515_0_BASE_ADDRESS,
-	.int_pin = DT_MICROCHIP_MCP2515_0_INT_GPIOS_PIN,
-	.int_port = DT_MICROCHIP_MCP2515_0_INT_GPIOS_CONTROLLER,
+	.spi_port = DT_INST_0_MICROCHIP_MCP2515_BUS_NAME,
+	.spi_freq = DT_INST_0_MICROCHIP_MCP2515_SPI_MAX_FREQUENCY,
+	.spi_slave = DT_INST_0_MICROCHIP_MCP2515_BASE_ADDRESS,
+	.int_pin = DT_INST_0_MICROCHIP_MCP2515_INT_GPIOS_PIN,
+	.int_port = DT_INST_0_MICROCHIP_MCP2515_INT_GPIOS_CONTROLLER,
 	.int_thread_stack_size = CONFIG_CAN_MCP2515_INT_THREAD_STACK_SIZE,
 	.int_thread_priority = CONFIG_CAN_MCP2515_INT_THREAD_PRIO,
-#ifdef DT_MICROCHIP_MCP2515_0_CS_GPIO_PIN
-	.spi_cs_pin = DT_MICROCHIP_MCP2515_0_CS_GPIO_PIN,
-	.spi_cs_port = DT_MICROCHIP_MCP2515_0_CS_GPIO_CONTROLLER,
-#endif  /* DT_MICROCHIP_MCP2515_0_CS_GPIO_PIN */
+#ifdef DT_INST_0_MICROCHIP_MCP2515_CS_GPIO_PIN
+	.spi_cs_pin = DT_INST_0_MICROCHIP_MCP2515_CS_GPIO_PIN,
+	.spi_cs_port = DT_INST_0_MICROCHIP_MCP2515_CS_GPIO_CONTROLLER,
+#endif  /* DT_INST_0_MICROCHIP_MCP2515_CS_GPIO_PIN */
 	.tq_sjw = CONFIG_CAN_SJW,
 	.tq_prop = CONFIG_CAN_PROP_SEG,
 	.tq_bs1 = CONFIG_CAN_PHASE_SEG1,
 	.tq_bs2 = CONFIG_CAN_PHASE_SEG2,
-	.bus_speed = DT_MICROCHIP_MCP2515_0_BUS_SPEED,
+	.bus_speed = DT_INST_0_MICROCHIP_MCP2515_BUS_SPEED,
 };
 
-DEVICE_AND_API_INIT(can_mcp2515_1, DT_MICROCHIP_MCP2515_0_LABEL, &mcp2515_init,
+DEVICE_AND_API_INIT(can_mcp2515_1, DT_INST_0_MICROCHIP_MCP2515_LABEL, &mcp2515_init,
 		    &mcp2515_data_1, &mcp2515_config_1, POST_KERNEL,
 		    CONFIG_CAN_MCP2515_INIT_PRIORITY, &can_api_funcs);
 

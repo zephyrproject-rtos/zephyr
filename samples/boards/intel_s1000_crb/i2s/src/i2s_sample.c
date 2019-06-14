@@ -140,9 +140,9 @@ static void i2s_audio_init(void)
 		return;
 	}
 
-	codec_device = device_get_binding(DT_TI_TLV320DAC_0_LABEL);
+	codec_device = device_get_binding(DT_INST_0_TI_TLV320DAC_LABEL);
 	if (!codec_device) {
-		LOG_ERR("unable to find " DT_TI_TLV320DAC_0_LABEL " device");
+		LOG_ERR("unable to find " DT_INST_0_TI_TLV320DAC_LABEL " device");
 		return;
 	}
 
