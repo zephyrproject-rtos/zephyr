@@ -46,10 +46,6 @@ tests:
     slow: true
     tags: net openthread
     platform_whitelist: frdm_kw41z
-  sample.net.sockets.echo_server.enc28j60:
-    extra_args: OVERLAY_CONFIG="overlay-enc28j60.conf"
-    tags: net enc28j60
-    platform_whitelist: arduino_101
   sample.net.sockets.echo_server.e1000:
     extra_args: OVERLAY_CONFIG="overlay-e1000.conf"
     tags: net
