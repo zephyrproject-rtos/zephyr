@@ -59,7 +59,6 @@ tests:
     depends_on: adc spi
   test_clock:
     build_only: true
-    platform_whitelist: arduino_101
     extra_configs:
       - CONFIG_CLOCK_CONTROL=y
   test_build_gpio:
