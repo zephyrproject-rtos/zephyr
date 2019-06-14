@@ -157,6 +157,13 @@ FUNC_NORETURN void z_arch_user_mode_enter(k_thread_entry_t user_entry,
 	/* Set up privileged stack before entering user mode */
 	_current->arch.priv_stack_start =
 		(u32_t)z_priv_stack_find(_current->stack_obj);
+#if defined(CONFIG_MPU_STACK_GUARD)
+	/* Stack guard area reserved at the bottom of the thread's
+	 * privileged stack. Adjust the available (writable) stack
+	 * buffer area accordingly.
+	 */
+	 _current->arch.priv_stack_start += MPU_GUARD_ALIGN_AND_SIZE;
+#endif /* CONFIG_MPU_STACK_GUARD */
 
 	z_arm_userspace_enter(user_entry, p1, p2, p3,
 			     (u32_t)_current->stack_info.start,
@@ -265,11 +272,11 @@ u32_t z_check_thread_stack_fail(const u32_t fault_addr, const u32_t psp)
 		if ((__get_CONTROL() & CONTROL_nPRIV_Msk) == 0) {
 			/* User thread in privilege mode */
 			if (IS_MPU_GUARD_VIOLATION(
-				thread->arch.priv_stack_start,
+				thread->arch.priv_stack_start -
+					MPU_GUARD_ALIGN_AND_SIZE,
 				fault_addr, psp)) {
 				/* Thread's privilege stack corruption */
-				return thread->arch.priv_stack_start +
-					MPU_GUARD_ALIGN_AND_SIZE;
+				return thread->arch.priv_stack_start;
 			}
 		} else {
 			if (psp < (u32_t)thread->stack_obj) {
