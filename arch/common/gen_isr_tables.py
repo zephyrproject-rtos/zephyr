@@ -227,6 +227,9 @@ def main():
     nvec = intlist["num_vectors"]
     offset = intlist["offset"]
 
+    if nvec > pow(2, 15):
+        raise ValueError('nvec is too large, check endianness.')
+
     spurious_handler = "&z_irq_spurious"
     sw_irq_handler   = "ISR_WRAPPER"
 
