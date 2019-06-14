@@ -3558,26 +3558,29 @@ next:
 	return load->count ? BT_GATT_ITER_CONTINUE : BT_GATT_ITER_STOP;
 }
 
-static int ccc_set(int argc, char **argv, size_t len_rd,
-		   settings_read_cb read_cb, void *cb_arg)
+static int ccc_set(const char *name, size_t len_rd, settings_read_cb read_cb,
+		   void *cb_arg)
 {
 	struct ccc_store ccc_store[CCC_STORE_MAX];
 	struct ccc_load load;
 	bt_addr_le_t addr;
 	int len, err;
+	const char *next;
 
-	if (argc < 1) {
+	settings_name_next(name, &next);
+
+	if (!name) {
 		BT_ERR("Insufficient number of arguments");
 		return -EINVAL;
-	} else if (argc == 1) {
+	} else if (!next) {
 		load.addr_with_id.id = BT_ID_DEFAULT;
 	} else {
-		load.addr_with_id.id = strtol(argv[1], NULL, 10);
+		load.addr_with_id.id = strtol(next, NULL, 10);
 	}
 
-	err = bt_settings_decode_key(argv[0], &addr);
+	err = bt_settings_decode_key(name, &addr);
 	if (err) {
-		BT_ERR("Unable to decode address %s", argv[0]);
+		BT_ERR("Unable to decode address %s", name);
 		return -EINVAL;
 	}
 
@@ -3614,21 +3617,21 @@ static int ccc_set(int argc, char **argv, size_t len_rd,
 BT_SETTINGS_DEFINE(ccc, ccc_set, NULL, NULL);
 
 #if defined(CONFIG_BT_GATT_CACHING)
-static int cf_set(int argc, char **argv, size_t len_rd,
-		  settings_read_cb read_cb, void *cb_arg)
+static int cf_set(const char *name, size_t len_rd, settings_read_cb read_cb,
+		  void *cb_arg)
 {
 	struct gatt_cf_cfg *cfg;
 	bt_addr_le_t addr;
 	int len, err;
 
-	if (argc < 1) {
+	if (!name) {
 		BT_ERR("Insufficient number of arguments");
 		return -EINVAL;
 	}
 
-	err = bt_settings_decode_key(argv[0], &addr);
+	err = bt_settings_decode_key(name, &addr);
 	if (err) {
-		BT_ERR("Unable to decode address %s", argv[0]);
+		BT_ERR("Unable to decode address %s", name);
 		return -EINVAL;
 	}
 
@@ -3662,7 +3665,7 @@ BT_SETTINGS_DEFINE(cf, cf_set, NULL, NULL);
 
 static u8_t stored_hash[16];
 
-static int db_hash_set(int argc, char **argv, size_t len_rd,
+static int db_hash_set(const char *name, size_t len_rd,
 		       settings_read_cb read_cb, void *cb_arg)
 {
 	int len;
