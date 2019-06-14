@@ -43,12 +43,12 @@ void bt_settings_encode_key(char *path, size_t path_size, const char *subsys,
 	BT_DBG("Encoded path %s", log_strdup(path));
 }
 
-int bt_settings_decode_key(char *key, bt_addr_le_t *addr)
+int bt_settings_decode_key(const char *key, bt_addr_le_t *addr)
 {
 	bool high;
 	int i;
 
-	if (strlen(key) != 13) {
+	if (settings_name_next(key, NULL) != 13) {
 		return -EINVAL;
 	}
 
@@ -86,24 +86,27 @@ int bt_settings_decode_key(char *key, bt_addr_le_t *addr)
 	return 0;
 }
 
-static int set(int argc, char **argv, size_t len_rd, settings_read_cb read_cb,
+static int set(const char *name, size_t len_rd, settings_read_cb read_cb,
 	       void *cb_arg)
 {
 	ssize_t len;
-
 	const struct bt_settings_handler *h;
+	const char *next;
+
+	if (!name) {
+		BT_ERR("Insufficient number of arguments");
+		return -ENOENT;
+	}
+
+	len = settings_name_next(name, &next);
 
 	for (h = _bt_settings_start; h < _bt_settings_end; h++) {
-		if (!strcmp(argv[0], h->name)) {
-			argc--;
-			argv++;
-
-			return h->set(argc, argv, len_rd, read_cb,
-				      cb_arg);
+		if (!strncmp(name, h->name, len)) {
+			return h->set(next, len_rd, read_cb, cb_arg);
 		}
 	}
 
-	if (!strcmp(argv[0], "id")) {
+	if (!strncmp(name, "id", len)) {
 		/* Any previously provided identities supersede flash */
 		if (atomic_test_bit(bt_dev.flags, BT_DEV_PRESET_ID)) {
 			BT_WARN("Ignoring identities stored in flash");
@@ -137,7 +140,7 @@ static int set(int argc, char **argv, size_t len_rd, settings_read_cb read_cb,
 	}
 
 #if defined(CONFIG_BT_DEVICE_NAME_DYNAMIC)
-	if (!strcmp(argv[0], "name")) {
+	if (!strncmp(name, "name", len)) {
 		len = read_cb(cb_arg, &bt_dev.name, sizeof(bt_dev.name) - 1);
 		if (len < 0) {
 			BT_ERR("Failed to read device name from storage"
@@ -152,7 +155,7 @@ static int set(int argc, char **argv, size_t len_rd, settings_read_cb read_cb,
 #endif
 
 #if defined(CONFIG_BT_PRIVACY)
-	if (!strcmp(argv[0], "irk")) {
+	if (!strncmp(name, "irk", len)) {
 		len = read_cb(cb_arg, bt_dev.irk, sizeof(bt_dev.irk));
 		if (len < sizeof(bt_dev.irk[0])) {
 			if (len < 0) {
@@ -184,7 +187,7 @@ static int set(int argc, char **argv, size_t len_rd, settings_read_cb read_cb,
 static void save_id(struct k_work *work)
 {
 	int err;
-
+	BT_INFO("Saving ID");
 	err = settings_save_one("bt/id", &bt_dev.id_addr,
 				ID_DATA_LEN(bt_dev.id_addr));
 	if (err) {
