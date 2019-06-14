@@ -2,11 +2,12 @@
 #
 # Copyright (c) 2016 Open-RnD Sp. z o.o.
 # Copyright (c) 2016 BayLibre, SAS
+# Copyright (c) 2019 Centaur Analytics, Inc
 #
 # SPDX-License-Identifier: Apache-2.0
 #
 
-if SOC_STM32L496XG
+if SOC_STM32L496XX
 
 config SOC
 	string
@@ -35,4 +36,4 @@ config GPIO_STM32_PORTI
 
 endif # GPIO_STM32
 
-endif # SOC_STM32L496XG
+endif # SOC_STM32L496XX
