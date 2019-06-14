@@ -32,6 +32,7 @@
 /**
  * @brief fill in AHB/APB buses configuration structure
  */
+#if !defined(CONFIG_CPU_CORTEX_M4)
 static void config_bus_prescalers(void)
 {
 	LL_RCC_SetSysPrescaler(sysclk_prescaler(CONFIG_CLOCK_STM32_D1CPRE));
@@ -41,6 +42,7 @@ static void config_bus_prescalers(void)
 	LL_RCC_SetAPB3Prescaler(apb3_prescaler(CONFIG_CLOCK_STM32_D1PPRE));
 	LL_RCC_SetAPB4Prescaler(apb4_prescaler(CONFIG_CLOCK_STM32_D3PPRE));
 }
+#endif /* CONFIG_CPU_CORTEX_M4 */
 
 static u32_t get_bus_clock(u32_t clock, u32_t prescaler)
 {
@@ -53,6 +55,9 @@ static inline int stm32_clock_control_on(struct device *dev,
 	struct stm32_pclken *pclken = (struct stm32_pclken *)(sub_system);
 
 	ARG_UNUSED(dev);
+
+	/* Both cores can access bansk by following LL API */
+	/* Using "_Cn_" LL API would restrict access to one or the other */
 
 	switch (pclken->bus) {
 	case STM32_CLOCK_BUS_AHB1:
@@ -95,6 +100,9 @@ static inline int stm32_clock_control_off(struct device *dev,
 	struct stm32_pclken *pclken = (struct stm32_pclken *)(sub_system);
 
 	ARG_UNUSED(dev);
+
+	/* Both cores can access bansk by following LL API */
+	/* Using "_Cn_" LL API would restrict access to one or the other */
 
 	switch (pclken->bus) {
 	case STM32_CLOCK_BUS_AHB1:
@@ -194,6 +202,8 @@ static int stm32_clock_control_init(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
+#if !defined(CONFIG_CPU_CORTEX_M4)
+
 #ifdef CONFIG_CLOCK_STM32_SYSCLK_SRC_PLL
 	/* Power Configuration */
 	LL_PWR_ConfigSupply(LL_PWR_DIRECT_SMPS_SUPPLY);
@@ -251,6 +261,8 @@ static int stm32_clock_control_init(struct device *dev)
 #else
 	#error "CONFIG_CLOCK_STM32_SYSCLK_SRC_PLL not selected"
 #endif /* CLOCK_STM32_SYSCLK_SRC_PLL */
+
+#endif /* CONFIG_CPU_CORTEX_M4 */
 
 	/* Set systick to 1ms */
 	SysTick_Config(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / 1000);
