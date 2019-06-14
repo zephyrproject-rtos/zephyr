@@ -129,15 +129,22 @@ if(SUPPORTS_DTS)
   # Run the DTC on *.dts.pre.tmp to create the intermediary file *.dts_compiled
 
   set(DTC_WARN_UNIT_ADDR_IF_ENABLED "")
-  check_dtc_flag("-Wunique_unit_address_if_enabled" check)
-  if (check)
-    set(DTC_WARN_UNIT_ADDR_IF_ENABLED "-Wunique_unit_address_if_enabled")
+
+  # Until PCI busses are better integrated into Zephyr devicetree, silence
+  # warnings about duplicate unit addresses on PCI-enabled platforms.
+
+  if(NOT CONFIG_PCIE)
+    check_dtc_flag("-Wunique_unit_address_if_enabled" check)
+    if (check)
+      set(DTC_WARN_UNIT_ADDR_IF_ENABLED "-Wunique_unit_address_if_enabled")
+    endif()
+    set(DTC_NO_WARN_UNIT_ADDR "")
+    check_dtc_flag("-Wno-unique_unit_address" check)
+    if (check)
+      set(DTC_NO_WARN_UNIT_ADDR "-Wno-unique_unit_address")
+    endif()
   endif()
-  set(DTC_NO_WARN_UNIT_ADDR "")
-  check_dtc_flag("-Wno-unique_unit_address" check)
-  if (check)
-    set(DTC_NO_WARN_UNIT_ADDR "-Wno-unique_unit_address")
-  endif()
+
   execute_process(
     COMMAND ${DTC}
     -O dts

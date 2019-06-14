@@ -43,7 +43,7 @@
 	soc {
 		#address-cells = <1>;
 		#size-cells = <1>;
-		compatible = "simple-bus";
+		compatible = "other-bus";
 		ranges;
 
 		uart0: uart@0 {
