@@ -163,7 +163,6 @@ Most everyday users will run with no arguments.
 """
 
 import os
-
 if os.name == 'nt':
     print("Running sanitycheck on Windows is not supported yet.")
     print("https://github.com/zephyrproject-rtos/zephyr/issues/2664")
@@ -2382,6 +2381,7 @@ class TestSuite:
                     case.create_overlay(case.platform.name)
 
         self.discards = discards
+
         return discards
 
     def add_instances(self, ti_list):
@@ -2799,6 +2799,12 @@ Artificially long but functional example:
 
     parser.add_argument("--list-tags", action="store_true",
             help="list all tags in selected tests")
+
+    parser.add_argument("--report-excluded",
+            action="store_true",
+            help="""List all tests that are never run based on current scope and
+            coverage. If you are looking for accurate results, run this with
+            --all, but this will take a while...""")
 
     case_select.add_argument("--list-tests", action="store_true",
         help="""List of all sub-test functions recursively found in
@@ -3298,8 +3304,8 @@ def main():
     if options.test:
         run_individual_tests = options.test
 
-    if options.list_tests or options.sub_test:
-        cnt = 0
+
+    def get_unique_tests(ts):
         unq = []
         run_individual_tests = []
         for n,tc in ts.testcases.items():
@@ -3308,6 +3314,12 @@ def main():
                     if tc.name not in run_individual_tests:
                         run_individual_tests.append(tc.name)
                 unq.append(c)
+
+        return unq
+
+    if options.list_tests or options.sub_test:
+        cnt = 0
+        unq = get_unique_tests(ts)
 
         if options.sub_test:
             if run_individual_tests:
@@ -3332,6 +3344,7 @@ def main():
         ts.get_last_failed()
     else:
         discards = ts.apply_filters()
+
 
     if options.discard_report:
         ts.discard_report(options.discard_report)
@@ -3372,6 +3385,22 @@ def main():
 
     ts.instances = OrderedDict(sorted(ts.instances.items(),
                                key=cmp_to_key(native_and_unit_first)))
+
+
+
+    if options.report_excluded:
+        all_tests = set(get_unique_tests(ts))
+        to_be_run = set()
+        for i,p in ts.instances.items():
+            to_be_run.update(p.test.cases)
+
+        if (all_tests - to_be_run):
+            print("Tests that never build or run:")
+            for not_run in (all_tests - to_be_run):
+                print("- {}".format(not_run))
+
+        return
+
 
     if options.save_tests:
         ts.save_tests(options.save_tests)
