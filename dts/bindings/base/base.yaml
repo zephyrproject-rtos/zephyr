@@ -7,7 +7,7 @@ description: >
 
 properties:
     compatible:
-        type: string
+        type: string-array
         category: required
         description: compatible strings
         generation: define
