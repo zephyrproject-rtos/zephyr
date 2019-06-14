@@ -62,26 +62,26 @@ arduino_serial: &uart2 {};
 	is25wp064: is25wp064@0 {
 		compatible = "issi,is25wp064", "jedec,spi-nor";
 		reg = <0>;
-		status = "ok";
+		status = "okay";
 	};
 };
 
 &i2c1 {
-	status = "ok";
+	status = "okay";
 };
 
 &i2c4 {
-	status = "ok";
+	status = "okay";
 };
 
 &uart1 {
-	status = "ok";
+	status = "okay";
 	current-speed = <115200>;
 };
 
 &eth {
-	status = "ok";
+	status = "okay";
 	ptp {
-		status = "ok";
+		status = "okay";
 	};
 };

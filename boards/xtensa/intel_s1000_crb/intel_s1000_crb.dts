@@ -21,12 +21,12 @@
 };
 
 &uart0 {
-	status = "ok";
+	status = "okay";
 	current-speed = <115200>;
 };
 
 &i2c0 {
-	status = "ok";
+	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 
 	codec0: tlv320dac@18 {
@@ -38,7 +38,7 @@
 };
 
 &spi0 {
-	status = "ok";
+	status = "okay";
 
 	flash0: flash@0 {
 		compatible = "jedec,spi-nor";

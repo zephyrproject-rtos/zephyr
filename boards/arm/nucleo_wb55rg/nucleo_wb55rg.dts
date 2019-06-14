@@ -60,22 +60,22 @@
 
 &usart1 {
 	current-speed = <115200>;
-	status = "ok";
+	status = "okay";
 };
 
 arduino_i2c: &i2c1 {
-	status = "ok";
+	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
 &i2c3 {
-	status = "ok";
+	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
 arduino_serial: &lpuart1 {
 	current-speed = <115200>;
-	status = "ok";
+	status = "okay";
 };
 
 &flash0 {

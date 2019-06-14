@@ -24,15 +24,15 @@
 };
 
 &gpiote {
-	status ="ok";
+	status = "okay";
 };
 
 &gpio0 {
-	status ="ok";
+	status = "okay";
 };
 
 &gpio1 {
-	status ="ok";
+	status = "okay";
 };
 
 /* The nRF52840 SoC does not have any connection to the any of the LEDs,
@@ -42,7 +42,7 @@
 &uart0 {
 	compatible = "nordic,nrf-uart";
 	current-speed = <115200>;
-	status = "ok";
+	status = "okay";
 	tx-pin = <5>;
 	rx-pin = <3>;
 	rts-pin = <40>;

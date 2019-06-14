@@ -54,15 +54,15 @@ arduino_serial: &uart4 {};
 	at25sf128a: at25sf128a@0 {
 		compatible = "adesto,at25sf128a", "jedec,spi-nor";
 		reg = <0>;
-		status = "ok";
+		status = "okay";
 	};
 };
 
 &i2c1 {
-	status = "ok";
+	status = "okay";
 };
 
 &uart1 {
-	status = "ok";
+	status = "okay";
 	current-speed = <115200>;
 };

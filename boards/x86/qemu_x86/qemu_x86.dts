@@ -37,7 +37,7 @@
 			interrupts = <11 IRQ_TYPE_EDGE_RISING 3>;
 			interrupt-parent = <&intc>;
 
-			status = "ok";
+			status = "okay";
 		};
 	};
 
@@ -59,12 +59,12 @@
 };
 
 &uart0 {
-	status = "ok";
+	status = "okay";
 	current-speed = <115200>;
 };
 
 &uart1 {
-	status = "ok";
+	status = "okay";
 	current-speed = <115200>;
 };
 

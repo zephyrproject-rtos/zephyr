@@ -25,7 +25,7 @@
 };
 
 &i2c1 { /* power monitoring */
-	status = "ok";
+	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 	sda-pin = <24>;
 	scl-pin = <41>;
@@ -34,7 +34,7 @@
 &uart1 { /* u-blox SARA-U2 or SARA-R4 */
 	compatible = "nordic,nrf-uarte";
 	current-speed = <115200>;
-	status = "ok";
+	status = "okay";
 
 	tx-pin = <37>;
 	rx-pin = <36>;
@@ -44,7 +44,7 @@
 	sara_r4 {
 		compatible = "ublox,sara-r4";
 		label = "ublox-sara-r4";
-		status = "ok";
+		status = "okay";
 
 		mdm-power-gpios = <&gpio0 16 0>;
 		mdm-reset-gpios = <&gpio0 12 0>;

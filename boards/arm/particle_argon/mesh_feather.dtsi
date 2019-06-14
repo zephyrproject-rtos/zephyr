@@ -64,7 +64,7 @@
 };
 
 &adc { /* feather ADC */
-	status = "ok";
+	status = "okay";
 };
 
 
@@ -105,19 +105,19 @@
 };
 
 &gpio0 {
-	status ="ok";
+	status = "okay";
 };
 
 &gpio1 {
-	status ="ok";
+	status = "okay";
 };
 
 &gpiote {
-	status ="ok";
+	status = "okay";
 };
 
 &i2c0 { /* feather I2C */
-	status = "ok";
+	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 	sda-pin = <26>;
 	scl-pin = <27>;
@@ -126,7 +126,7 @@
 /* TWI1 used on Boron; also see mesh_feather_spi1_spi1.dtsi */
 
 &spi2 { /* dedicated MX25L */
-	status = "ok";
+	status = "okay";
 	sck-pin = <19>;
 	mosi-pin = <20>;
 	miso-pin = <21>;
@@ -147,7 +147,7 @@
 &uart0 { /* feather UART1 */
 	compatible = "nordic,nrf-uarte";
 	current-speed = <115200>;
-	status = "ok";
+	status = "okay";
 	tx-pin = <6>;
 	rx-pin = <8>;
 	/* optional mesh_feather_uart1_rtscts.dtsi */
@@ -155,5 +155,5 @@
 
 &usbd {
 	compatible = "nordic,nrf-usbd";
-	status = "ok";
+	status = "okay";
 };

@@ -53,7 +53,7 @@ uext_serial: &usart1 {};
 	current-speed = <115200>;
 	pinctrl-0 = <&usart1_pins_a>;
 	pinctrl-names = "default";
-	status = "ok";
+	status = "okay";
 };
 
 &usart2 {
@@ -69,40 +69,40 @@ uext_serial: &usart1 {};
 };
 
 &i2c2 {
-	status = "ok";
+	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
 &spi1 {
-	status = "ok";
+	status = "okay";
 };
 
 &spi2 {
-	status = "ok";
+	status = "okay";
 	cs-gpios = <&gpiod 2 0>;
 
 	sdhc0: sdhc@0 {
 		compatible = "zephyr,mmc-spi-slot";
 		reg = <0>;
-		status = "ok";
+		status = "okay";
 		label = "SDHC0";
 		spi-max-frequency = <24000000>;
 	};
 };
 
 &usb {
-	status = "ok";
+	status = "okay";
 	disconnect-gpios = <&gpioc 12 0>;
 };
 
 &timers1 {
-	status = "ok";
+	status = "okay";
 
 	pwm {
-		status = "ok";
+		status = "okay";
 	};
 };
 
 &iwdg {
-	status = "ok";
+	status = "okay";
 };

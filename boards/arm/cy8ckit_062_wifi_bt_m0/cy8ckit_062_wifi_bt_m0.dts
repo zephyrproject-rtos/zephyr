@@ -25,6 +25,6 @@
 };
 
 &uart6 {
-	status = "ok";
+	status = "okay";
 	current-speed = <115200>;
 };

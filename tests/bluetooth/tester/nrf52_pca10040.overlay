@@ -9,5 +9,5 @@
 &uart0 {
 	compatible = "nordic,nrf-uart";
 	current-speed = <115200>;
-	status = "ok";
+	status = "okay";
 };

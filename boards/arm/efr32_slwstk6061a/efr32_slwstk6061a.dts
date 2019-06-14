@@ -59,17 +59,17 @@
 	current-speed = <115200>;
 	location-rx = <GECKO_LOCATION(0) GECKO_PORT_A GECKO_PIN(1)>;
 	location-tx = <GECKO_LOCATION(0) GECKO_PORT_A GECKO_PIN(0)>;
-	status = "ok";
+	status = "okay";
 };
 
 &rtcc0 {
 	prescaler = <1>;
-	status = "ok";
+	status = "okay";
 };
 
 &gpio {
 	location-swo = <0>;
-	status = "ok";
+	status = "okay";
 };
 
 &flash0 {

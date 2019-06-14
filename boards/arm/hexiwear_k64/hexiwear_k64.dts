@@ -80,19 +80,19 @@
 };
 
 &adc0 {
-	status = "ok";
+	status = "okay";
 };
 
 &adc1 {
-	status = "ok";
+	status = "okay";
 };
 
 &pwm3 {
-	status = "ok";
+	status = "okay";
 };
 
 &i2c0 {
-	status = "ok";
+	status = "okay";
 
 	max30101@57 {
 		compatible = "max,max30101";
@@ -102,7 +102,7 @@
 };
 
 &i2c1 {
-	status = "ok";
+	status = "okay";
 
 	fxos8700@1e {
 		compatible = "nxp,fxos8700";
@@ -122,12 +122,12 @@
 };
 
 &uart0 {
-	status = "ok";
+	status = "okay";
 	current-speed = <115200>;
 };
 
 &uart4 {
-	status = "ok";
+	status = "okay";
 	current-speed = <115200>;
 };
 

@@ -23,7 +23,7 @@
 };
 
 &uart0 {
-	status = "ok";
+	status = "okay";
 	current-speed = <115200>;
 	clock-frequency = <66000000>;
 };

@@ -42,7 +42,7 @@
 };
 
 &sercom0 {
-	status = "ok";
+	status = "okay";
 	compatible = "atmel,sam0-uart";
 	current-speed = <115200>;
 	rxpo = <3>;
@@ -50,7 +50,7 @@
 };
 
 &sercom2 {
-	status = "ok";
+	status = "okay";
 	compatible = "atmel,sam0-uart";
 	current-speed = <115200>;
 	rxpo = <1>;
@@ -59,7 +59,7 @@
 
 /* Drives the on-board DotStar LED */
 &sercom1 {
-	status = "ok";
+	status = "okay";
 	compatible = "atmel,sam0-spi";
 	dipo = <2>;
 	dopo = <0>;
@@ -104,5 +104,5 @@
 };
 
 &usb0 {
-	status = "ok";
+	status = "okay";
 };

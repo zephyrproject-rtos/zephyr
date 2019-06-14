@@ -267,7 +267,7 @@
 				spi-max-frequency = <8000000>;
 				irqb-gpios = <&gpiob 3 0>;
 				reset-gpios = <&gpiob 19 0>;
-				status = "ok";
+				status = "okay";
 			};
 		};
 
@@ -331,7 +331,7 @@
 		rnga: random@40029000 {
 			compatible = "nxp,kinetis-rnga";
 			reg = <0x40029000 0x1000>;
-			status = "ok";
+			status = "okay";
 			interrupts = <23 0>;
 			label = "RNGA";
 		};

@@ -22,11 +22,11 @@
 };
 
 &jtag_uart {
-	status = "ok";
+	status = "okay";
 	current-speed = <115200>;
 };
 
 &ns16550_uart {
-	status = "ok";
+	status = "okay";
 	current-speed = <115200>;
 };

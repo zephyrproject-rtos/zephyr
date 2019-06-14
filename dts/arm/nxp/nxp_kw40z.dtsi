@@ -248,7 +248,7 @@
 		trng: random@40029000 {
 			compatible = "nxp,kinetis-trng";
 			reg = <0x40029000 0x1000>;
-			status = "ok";
+			status = "okay";
 			interrupts = <13 0>;
 			label = "TRNG";
 		};

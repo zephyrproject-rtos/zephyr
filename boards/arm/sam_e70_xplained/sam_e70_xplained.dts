@@ -53,40 +53,40 @@
 };
 
 &adc0 {
-	status = "ok";
+	status = "okay";
 };
 
 &adc1 {
-	status = "ok";
+	status = "okay";
 };
 
 &i2c0 {
-	status = "ok";
+	status = "okay";
 };
 
 &i2c2 {
-	status = "ok";
+	status = "okay";
 };
 
 &spi0 {
-	status = "ok";
+	status = "okay";
 };
 
 &usart1 {
 	current-speed = <115200>;
-	status = "ok";
+	status = "okay";
 };
 
 &wdog {
-	status = "ok";
+	status = "okay";
 };
 
 &usbhs {
-	status = "ok";
+	status = "okay";
 };
 
 &pwm0 {
-	status = "ok";
+	status = "okay";
 };
 
 &flash0 {

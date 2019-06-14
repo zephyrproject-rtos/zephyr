@@ -25,15 +25,15 @@
 };
 
 &gpioa {
-	status = "ok";
+	status = "okay";
 };
 
 &trng0 {
-	status = "ok";
+	status = "okay";
 };
 
 &uart0 {
-	status = "ok";
+	status = "okay";
 	current-speed = <115200>;
 };
 

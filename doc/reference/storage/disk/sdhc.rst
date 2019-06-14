@@ -31,13 +31,13 @@ SDHC card has been initialized:
 .. code-block:: none
 
     &spi1 {
-            status = "ok";
+            status = "okay";
             cs-gpios = <&porta 27 0>;
 
             sdhc0: sdhc@0 {
                     compatible = "zephyr,mmc-spi-slot";
                     reg = <0>;
-                    status = "ok";
+                    status = "okay";
                     label = "SDHC0";
                     spi-max-frequency = <24000000>;
             };

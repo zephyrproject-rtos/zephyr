@@ -22,29 +22,29 @@
 };
 
 &gpiote {
-	status ="ok";
+	status = "okay";
 };
 
 &gpio0 {
-	status ="ok";
+	status = "okay";
 };
 
 &i2c0 {
-	status = "ok";
+	status = "okay";
 	sda-pin = <28>;
 	scl-pin = <2>;
 };
 
 &uart0 {
 	current-speed = <115200>;
-	status = "ok";
+	status = "okay";
 	tx-pin = <29>;
 	rx-pin = <11>;
 };
 
 &spi1 {
 	compatible = "nordic,nrf-spis";
-	status = "ok";
+	status = "okay";
 	sck-pin = <7>;
 	mosi-pin = <0>;
 	miso-pin = <30>;

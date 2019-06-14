@@ -64,11 +64,11 @@
 };
 
 &adc0 {
-	status = "ok";
+	status = "okay";
 };
 
 &i2c1 {
-	status = "ok";
+	status = "okay";
 
 	fxos8700@1f {
 		compatible = "nxp,fxos8700";
@@ -79,6 +79,6 @@
 };
 
 &lpuart0 {
-	status = "ok";
+	status = "okay";
 	current-speed = <115200>;
 };

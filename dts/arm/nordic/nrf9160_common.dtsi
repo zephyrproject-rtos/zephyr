@@ -32,7 +32,7 @@ adc: adc@e000 {
 dppic: dppic@17000 {
 	compatible = "nordic,nrf-dppic";
 	reg = <0x17000 0x1000>;
-	status = "ok";
+	status = "okay";
 	label = "DPPIC";
 };
 
@@ -197,7 +197,7 @@ rtc0: rtc@14000 {
 	compatible = "nordic,nrf-rtc";
 	reg = <0x14000 0x1000>;
 	interrupts = <20 1>;
-	status = "ok";
+	status = "okay";
 	clock-frequency = <32768>;
 	prescaler = <1>;
 	label = "RTC_0";
@@ -207,7 +207,7 @@ rtc1: rtc@15000 {
 	compatible = "nordic,nrf-rtc";
 	reg = <0x15000 0x1000>;
 	interrupts = <21 1>;
-	status = "ok";
+	status = "okay";
 	clock-frequency = <32768>;
 	prescaler = <1>;
 	label = "RTC_1";
@@ -217,7 +217,7 @@ clock: clock@5000 {
 	compatible = "nordic,nrf-clock";
 	reg = <0x5000 0x1000>;
 	interrupts = <5 1>;
-	status = "ok";
+	status = "okay";
 	label = "CLOCK";
 };
 
@@ -225,14 +225,14 @@ power: power@5000 {
 	compatible = "nordic,nrf-power";
 	reg = <0x5000 0x1000>;
 	interrupts = <5 1>;
-	status = "ok";
+	status = "okay";
 };
 
 wdt: watchdog@18000 {
 	compatible = "nordic,nrf-watchdog";
 	reg = <0x18000 0x1000>;
 	interrupts = <24 1>;
-	status = "ok";
+	status = "okay";
 	label = "WDT";
 };
 

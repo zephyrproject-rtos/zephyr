@@ -5,7 +5,7 @@
  */
 
 &spi1 {
-	status = "ok";
+	status = "okay";
 	sck-pin = <47>;
 	mosi-pin = <45>;
 	miso-pin = <46>;

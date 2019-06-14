@@ -13,6 +13,6 @@
 	is25wp064: is25wp064@0 {
 		compatible = "issi,is25wp064", "jedec,spi-nor";
 		reg = <0>;
-		status = "ok";
+		status = "okay";
 	};
 };

@@ -48,27 +48,27 @@
 };
 
 &uart2 {
-	status = "ok";
+	status = "okay";
 	current-speed = <115200>;
 	modem-mode = <64>;
 };
 
 &gpio1 {
-	status = "ok";
+	status = "okay";
 };
 
 &gpio2 {
-	status = "ok";
+	status = "okay";
 };
 
 &i2c4 {
-	status = "ok";
+	status = "okay";
 };
 
 &pwm1 {
-	status = "ok";
+	status = "okay";
 };
 
 &mub {
-	status = "ok";
+	status = "okay";
 };

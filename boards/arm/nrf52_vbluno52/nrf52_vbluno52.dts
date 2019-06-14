@@ -46,15 +46,15 @@
 };
 
 &gpiote {
-	status ="ok";
+	status = "okay";
 };
 
 &gpio0 {
-	status ="ok";
+	status = "okay";
 };
 
 &uart0 {
-	status = "ok";
+	status = "okay";
 	compatible = "nordic,nrf-uart";
 	current-speed = <115200>;
 	tx-pin = <6>;
@@ -64,7 +64,7 @@
 };
 
 &i2c0 {
-	status = "ok";
+	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 	sda-pin = <26>;
 	scl-pin = <27>;

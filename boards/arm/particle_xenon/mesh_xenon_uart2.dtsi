@@ -8,7 +8,7 @@
 &uart1 {
 	compatible = "nordic,nrf-uarte";
 	current-speed = <115200>;
-	status ="ok";
+	status = "okay";
 	tx-pin = <40>;
 	rx-pin = <42>;
 	rts-pin = <35>;

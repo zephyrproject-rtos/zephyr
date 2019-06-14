@@ -44,7 +44,7 @@
 };
 
 &sercom0 {
-	status = "ok";
+	status = "okay";
 	compatible = "atmel,sam0-uart";
 	current-speed = <115200>;
 	rxpo = <3>;
@@ -52,7 +52,7 @@
 };
 
 &sercom5 {
-	status = "ok";
+	status = "okay";
 	compatible = "atmel,sam0-uart";
 	current-speed = <115200>;
 	rxpo = <3>;
@@ -60,7 +60,7 @@
 };
 
 &sercom4 {
-	status = "ok";
+	status = "okay";
 	compatible = "atmel,sam0-spi";
 	dipo = <0>;
 	dopo = <1>;
@@ -84,5 +84,5 @@
 };
 
 &usb0 {
-	status = "ok";
+	status = "okay";
 };

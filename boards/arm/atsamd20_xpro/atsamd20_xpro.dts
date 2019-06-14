@@ -41,14 +41,14 @@
 };
 
 &sercom0 {
-	status = "ok";
+	status = "okay";
 	compatible = "atmel,sam0-spi";
 	dipo = <0>;
 	dopo = <2>;
 };
 
 &sercom3 {
-	status = "ok";
+	status = "okay";
 	compatible = "atmel,sam0-uart";
 	current-speed = <115200>;
 	rxpo = <3>;
@@ -56,7 +56,7 @@
 };
 
 &sercom4 {
-	status = "ok";
+	status = "okay";
 	compatible = "atmel,sam0-uart";
 	current-speed = <115200>;
 	rxpo = <1>;
@@ -81,5 +81,5 @@
 };
 
 &rtc {
-	status = "ok";
+	status = "okay";
 };

@@ -305,7 +305,7 @@
 			reg = <0x40070000 0x4000>;
 			interrupts = <57 0>;
 			peripheral-id = <57>;
-			status = "ok";
+			status = "okay";
 			label = "TRNG";
 		};
 	};

@@ -50,19 +50,19 @@
 };
 
 &i2c0 {
-	status = "ok";
+	status = "okay";
 };
 
 &uart0 {
 	current-speed = <115200>;
-	status = "ok";
+	status = "okay";
 };
 
 &uart1 {
 	current-speed = <115200>;
-	status = "ok";
+	status = "okay";
 };
 
 &wdog {
-	status = "ok";
+	status = "okay";
 };

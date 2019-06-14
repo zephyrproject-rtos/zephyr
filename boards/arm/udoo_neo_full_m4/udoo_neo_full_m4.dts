@@ -58,31 +58,31 @@
 };
 
 &uart5 {
-	status = "ok";
+	status = "okay";
 	current-speed = <115200>;
 	modem-mode = <0>;
 };
 
 &gpio4 {
-	status = "ok";
+	status = "okay";
 };
 
 &gpio5 {
-	status = "ok";
+	status = "okay";
 };
 
 &gpio6 {
-	status = "ok";
+	status = "okay";
 };
 
 &mub {
-	status = "ok";
+	status = "okay";
 };
 
 &epit1 {
-	status = "ok";
+	status = "okay";
 };
 
 &epit2 {
-	status = "ok";
+	status = "okay";
 };
