@@ -14,7 +14,7 @@ inherits:
     !include base.yaml
 properties:
     local-mac-address:
-      type: array
+      type: uint8-array
       category: optional
       description: mac address
       generation: define
