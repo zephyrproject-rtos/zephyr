@@ -1,0 +1,4 @@
+tests:
+  counter.cmos:
+    tags: drivers
+    arch_whitelist: x86
