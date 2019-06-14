@@ -120,6 +120,7 @@
 /drivers/can/                             @alexanderwachter
 /drivers/can/*mcp2515*                    @karstenkoenig
 /drivers/counter/                         @nordic-krch
+/drivers/counter/counter_cmos.c           @gnuless
 /drivers/display/                         @vanwinkeljan
 /drivers/display/display_framebuf.c       @gnuless
 /drivers/dma/*sam0*                       @Sizurka
