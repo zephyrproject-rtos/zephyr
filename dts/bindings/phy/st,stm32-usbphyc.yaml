@@ -20,6 +20,6 @@ properties:
     reg:
       category: required
 
-    "phy-cells":
+    "#phy-cells":
       description: should be 0
 ...

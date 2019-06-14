@@ -18,6 +18,6 @@ properties:
     compatible:
       constraint: "usb-nop-xceiv"
 
-    "phy-cells":
+    "#phy-cells":
       description: should be 0
 ...
