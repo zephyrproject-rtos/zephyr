@@ -397,7 +397,7 @@ static const struct leuart_gecko_config leuart_gecko_1_config = {
 
 static struct leuart_gecko_data leuart_gecko_1_data;
 
-DEVICE_AND_API_INIT(leuart_1, DT_SILABS_GECKO_LEUART_1_LABEL,
+DEVICE_AND_API_INIT(leuart_1, DT_INST_1_SILABS_GECKO_LEUART_LABEL,
 		    &leuart_gecko_init, &leuart_gecko_1_data,
 		    &leuart_gecko_1_config, PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
