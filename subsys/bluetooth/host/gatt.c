@@ -1517,12 +1517,15 @@ static u8_t match_uuid(const struct bt_gatt_attr *attr, void *user_data)
 	return BT_GATT_ITER_STOP;
 }
 
-static int gatt_notify_params(struct bt_conn *conn,
-			      struct bt_gatt_notify_params *params)
+int bt_gatt_notify_cb(struct bt_conn *conn,
+		      struct bt_gatt_notify_params *params)
 {
 	struct notify_data data;
 	const struct bt_gatt_attr *attr;
 	u16_t handle;
+
+	__ASSERT(params, "invalid parameters\n");
+	__ASSERT(params->attr, "invalid parameters\n");
 
 	attr = params->attr;
 
@@ -1570,25 +1573,6 @@ static int gatt_notify_params(struct bt_conn *conn,
 				  notify_cb, &data);
 
 	return data.err;
-}
-
-int bt_gatt_notify_cb(struct bt_conn *conn, u16_t num_params,
-		      struct bt_gatt_notify_params *params)
-{
-	int i, ret;
-
-	__ASSERT(params, "invalid parameters\n");
-	__ASSERT(num_params, "invalid parameters\n");
-	__ASSERT(params->attr, "invalid parameters\n");
-
-	for (i = 0; i < num_params; i++) {
-		ret = gatt_notify_params(conn, &params[i]);
-		if (ret < 0) {
-			return ret;
-		}
-	}
-
-	return 0;
 }
 
 int bt_gatt_indicate(struct bt_conn *conn,

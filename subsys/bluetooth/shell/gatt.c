@@ -790,7 +790,7 @@ static int cmd_notify(const struct shell *shell, size_t argc, char *argv[])
 	params.func = notify_cb;
 	params.user_data = (void *)shell;
 
-	bt_gatt_notify_cb(NULL, 1, &params);
+	bt_gatt_notify_cb(NULL, &params);
 
 	return 0;
 }
