@@ -54,7 +54,7 @@ manifest:
       revision: ca32746072ce3381f1c9ae46ba6cd34c69f8c0ee
       path: modules/crypto/mbedtls
     - name: mcumgr
-      revision: 84934959d2d1722a23b7e7e200191ae4a6f96168
+      revision: ee2cb08d76efa7791ac7a79fed5a73f549bf6abd
       path: modules/lib/mcumgr
     - name: net-tools
       revision: 30b7efa827b04d2e47840716b0372737fe7d6c92
