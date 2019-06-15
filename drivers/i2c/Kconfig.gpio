@@ -10,6 +10,16 @@ config I2C_GPIO
 	help
 	  Enable software driven (bit banging) I2C support using GPIO pins
 
+# SCL stretching support
+if I2C_GPIO
+config I2C_GPIO_CLOCKSTRETCHING
+	bool "GPIO bit banging I2C clock stretching support"
+	default "y"
+	help
+		Enable Slave clock stretching support
+	
+endif #I2C_GPIO  
+
 # ---------- Port 0 ----------
 
 config I2C_GPIO_0
