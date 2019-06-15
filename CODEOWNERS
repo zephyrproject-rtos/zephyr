@@ -1,7 +1,14 @@
 # CODEOWNERS for autoreview assigning in github
 
-# Order is important; the last matching pattern takes the most
-# precedence.
+# https://help.github.com/en/articles/about-code-owners#codeowners-syntax
+
+# Order is important; for each modified file, the last matching
+# pattern takes the most precedence.
+# That is, with the last pattern being
+# *.rst                                     @dbkinder
+# if only .rst files are being modified, only dbkinder is
+# automatically requested for review, but you can manually
+# add others as needed.
 
 # Do not use wildcard on all source yet
 # *                                        @galak @nashif
