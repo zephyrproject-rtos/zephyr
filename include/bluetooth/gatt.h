@@ -788,8 +788,7 @@ struct bt_gatt_notify_params {
  *
  *  This function works in the same way as @ref bt_gatt_notify.
  *  With the addition that after sending the notification the
- *  callback function will be called and can dispatch multiple
- *  notifications at once.
+ *  callback function will be called.
  *
  *  The callback is run from System Workqueue context.
  *
@@ -798,12 +797,11 @@ struct bt_gatt_notify_params {
  *  start range when looking up for possible matches.
  *
  *  @param conn Connection object.
- *  @param num_params Number of Notification parameters.
  *  @param params Notification parameters.
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-int bt_gatt_notify_cb(struct bt_conn *conn, u16_t num_params,
+int bt_gatt_notify_cb(struct bt_conn *conn,
 		      struct bt_gatt_notify_params *params);
 
 /** @brief Notify attribute value change.
@@ -837,7 +835,7 @@ static inline int bt_gatt_notify(struct bt_conn *conn,
 	params.data = data;
 	params.len = len;
 
-	return bt_gatt_notify_cb(conn, 1, &params);
+	return bt_gatt_notify_cb(conn, &params);
 }
 
 /** @typedef bt_gatt_indicate_func_t
