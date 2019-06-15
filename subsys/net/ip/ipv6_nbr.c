@@ -1532,7 +1532,7 @@ static inline bool handle_na_neighbor(struct net_pkt *pkt,
 	}
 
 	if (tllao_offset) {
-		lladdr.len = net_if_get_link_addr(net_pkt_iface(pkt))->len;
+		lladdr.len = net_pkt_lladdr_src(pkt)->len;
 
 		net_pkt_cursor_init(pkt);
 
