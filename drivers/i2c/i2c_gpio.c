@@ -45,7 +45,19 @@ static void i2c_gpio_set_scl(void *io_context, int state)
 {
 	struct i2c_gpio_context *context = io_context;
 
+#ifdef CONFIG_I2C_GPIO_CLOCKSTRETCHING
 	gpio_pin_write(context->gpio, context->scl_pin, state);
+	if (state) {
+		/* wait for SCL to actually go up, clock stretching */
+		u32_t scl_state = 1;
+
+		do {
+			gpio_pin_read(context->gpio, context->scl_pin,
+				&scl_state);
+		} while (!scl_state);
+	}
+#endif
+
 }
 
 static void i2c_gpio_set_sda(void *io_context, int state)

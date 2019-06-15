@@ -152,8 +152,9 @@ static bool i2c_read_bit(struct i2c_bitbang *context)
 	/* SDA hold time is zero, so no need for a delay here */
 	i2c_set_sda(context, 1); /* Stop driving low, so slave has control */
 	i2c_delay(context->delays[T_LOW]);
-	bit = i2c_get_sda(context);
+
 	i2c_set_scl(context, 1);
+	bit = i2c_get_sda(context);
 	i2c_delay(context->delays[T_HIGH]);
 	return bit;
 }
