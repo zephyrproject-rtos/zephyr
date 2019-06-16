@@ -1,0 +1,11 @@
+identifier: esp32
+name: ODROID-GO
+type: mcu
+arch: xtensa
+toolchain:
+  - espressif
+supported:
+  - gpio
+  - watchdog
+  - uart
+  - pinmux
