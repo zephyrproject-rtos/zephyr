@@ -2708,9 +2708,11 @@ __syscall s32_t k_stack_alloc_init(struct k_stack *stack,
  * if the buffer wasn't dynamically allocated.
  *
  * @param stack Address of the stack.
+ * @retval 0 on success
+ * @retval -EAGAIN when object is still in use
  * @req K-STACK-001
  */
-void k_stack_cleanup(struct k_stack *stack);
+int k_stack_cleanup(struct k_stack *stack);
 
 /**
  * @brief Push an element onto a stack.
@@ -2722,10 +2724,11 @@ void k_stack_cleanup(struct k_stack *stack);
  * @param stack Address of the stack.
  * @param data Value to push onto the stack.
  *
- * @return N/A
+ * @retval 0 on success
+ * @retval -ENOMEM if stack is full
  * @req K-STACK-001
  */
-__syscall void k_stack_push(struct k_stack *stack, stack_data_t data);
+__syscall int k_stack_push(struct k_stack *stack, stack_data_t data);
 
 /**
  * @brief Pop an element from a stack.
