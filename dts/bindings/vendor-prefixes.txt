@@ -128,6 +128,7 @@ engicam	Engicam S.r.l.
 epcos	EPCOS AG
 epfl	Ecole Polytechnique Fédérale de Lausanne
 epson	Seiko Epson Corp.
+espressif	Espressif Systems
 est	ESTeem Wireless Modems
 ettus	NI Ettus Research
 eukrea  Eukréa Electromatique

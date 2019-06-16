@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include "skeleton.dtsi"
+#include <xtensa/xtensa.dtsi>
 
 / {
 	cpus {
@@ -31,13 +31,8 @@
 	};
 
 	soc {
-		#address-cells = <1>;
-		#size-cells = <1>;
-		compatible = "simple-bus";
-		ranges;
-
 		uart0: uart@40008fd0 {
-			compatible = "xtensa,esp32-uart";
+			compatible = "espressif,esp32-uart";
 			reg = <0x40008fd0 0x400>;
 			label = "ROMUART";
 
