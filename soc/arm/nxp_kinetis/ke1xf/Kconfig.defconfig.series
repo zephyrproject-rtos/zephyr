@@ -17,6 +17,9 @@ config NUM_IRQS
 
 if CLOCK_CONTROL
 
+config CLOCK_CONTROL_MCUX_SCG
+	default y
+
 config CLOCK_CONTROL_MCUX_SIM
 	default y
 
