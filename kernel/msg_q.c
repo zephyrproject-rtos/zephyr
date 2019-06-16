@@ -23,6 +23,7 @@
 #include <init.h>
 #include <syscall_handler.h>
 #include <kernel_internal.h>
+#include <sys/check.h>
 
 #ifdef CONFIG_OBJECT_TRACING
 
@@ -98,14 +99,17 @@ int z_vrfy_k_msgq_alloc_init(struct k_msgq *q, size_t msg_size,
 #include <syscalls/k_msgq_alloc_init_mrsh.c>
 #endif
 
-void k_msgq_cleanup(struct k_msgq *msgq)
+int k_msgq_cleanup(struct k_msgq *msgq)
 {
-	__ASSERT_NO_MSG(z_waitq_head(&msgq->wait_q) == NULL);
+	CHECKIF(z_waitq_head(&msgq->wait_q) != NULL) {
+		return -EBUSY;
+	}
 
 	if ((msgq->flags & K_MSGQ_FLAG_ALLOC) != 0) {
 		k_free(msgq->buffer_start);
 		msgq->flags &= ~K_MSGQ_FLAG_ALLOC;
 	}
+	return 0;
 }
 
 
