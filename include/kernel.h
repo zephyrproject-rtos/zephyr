@@ -3698,8 +3698,10 @@ __syscall int k_msgq_alloc_init(struct k_msgq *msgq, size_t msg_size,
  *
  * @param msgq message queue to cleanup
  *
+ * @retval 0 on success
+ * @retval -EBUSY Queue not empty
  */
-void k_msgq_cleanup(struct k_msgq *msgq);
+int k_msgq_cleanup(struct k_msgq *msgq);
 
 /**
  * @brief Send a message to a message queue.
