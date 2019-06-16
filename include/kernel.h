@@ -4155,9 +4155,11 @@ void k_pipe_init(struct k_pipe *pipe, unsigned char *buffer, size_t size);
  * if the buffer wasn't dynamically allocated.
  *
  * @param pipe Address of the pipe.
+ * @retval 0 on success
+ * @retval -EAGAIN nothing to cleanup
  * @req K-PIPE-002
  */
-void k_pipe_cleanup(struct k_pipe *pipe);
+int k_pipe_cleanup(struct k_pipe *pipe);
 
 /**
  * @brief Initialize a pipe and allocate a buffer for it
@@ -4216,6 +4218,7 @@ __syscall int k_pipe_put(struct k_pipe *pipe, void *data,
  *                and K_FOREVER.
  *
  * @retval 0 At least @a min_xfer bytes of data were read.
+ * @retval -EINVAL invalid parameters supplied
  * @retval -EIO Returned without waiting; zero data bytes were read.
  * @retval -EAGAIN Waiting period timed out; between zero and @a min_xfer
  *                 minus one data bytes were read.
