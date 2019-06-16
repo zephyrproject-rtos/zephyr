@@ -16,6 +16,7 @@
 #include <spinlock.h>
 #include <errno.h>
 #include <stdbool.h>
+#include <sys/check.h>
 
 #define WORKQUEUE_THREAD_NAME	"workqueue"
 
@@ -54,7 +55,9 @@ void k_delayed_work_init(struct k_delayed_work *work, k_work_handler_t handler)
 
 static int work_cancel(struct k_delayed_work *work)
 {
-	__ASSERT(work->work_q != NULL, "");
+	CHECKIF(work->work_q == NULL) {
+		return -EAGAIN;
+	}
 
 	if (k_work_pending(&work->work)) {
 		/* Remove from the queue if already submitted */
