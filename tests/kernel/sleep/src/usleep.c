@@ -16,17 +16,23 @@
 #define RETRIES		10
 
 /*
- * Theory of operation: we can't use absolute units (e.g., "sleep for 10us")
- * in testing k_usleep() because the granularity of sleeps is highly dependent
- * on the hardware's capabilities and kernel configuration. Instead, we
- * test that k_usleep() actually sleeps for the minimum possible duration.
- * (That minimum duration is presently two ticks; see below.) So, we loop
- * k_usleep()ing for as many iterations as should comprise a second, and
- * check to see that a total of one second has elapsed.
+ * Theory of operation: we can't use absolute units (e.g., "sleep for
+ * 10us") in testing k_usleep() because the granularity of sleeps is
+ * highly dependent on the hardware's capabilities and kernel
+ * configuration. Instead, we test that k_usleep() actually sleeps for
+ * the minimum possible duration.  So, we loop k_usleep()ing for as
+ * many iterations as should comprise a second, and check to see that
+ * a total of one second has elapsed.
  */
 
-#define LOWER_BOUND_MS	900		/* +/- 10%, might be too lax */
-#define UPPER_BOUND_MS	1100
+#define LOOPS (CONFIG_SYS_CLOCK_TICKS_PER_SEC / 2)
+
+/* It should never iterate faster than the tick rate.  It might be as
+ * much as 4x slower on drivers with fast tick rates (each of the app,
+ * sleep, timeout and cycle layers may need to align).
+ */
+#define LOWER_BOUND_MS	((1000 * LOOPS) / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
+#define UPPER_BOUND_MS	((4 * 1000 * LOOPS) / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 
 void test_usleep(void)
 {
@@ -41,16 +47,7 @@ void test_usleep(void)
 		++retries;
 		start_ms = k_uptime_get();
 
-		for (i = 0; i < (CONFIG_SYS_CLOCK_TICKS_PER_SEC / 2); ++i) {
-			/*
-			 * this will always sleep for TWO ticks:
-			 *
-			 * the conversion from 1us to ticks is rounded
-			 * up to the nearest tick boundary, and sleeps
-			 * always have _TICK_ALIGN (currently 1) added
-			 * to their durations.
-			 */
-
+		for (i = 0; i < LOOPS; ++i) {
 			k_usleep(1);
 		}
 
@@ -60,12 +57,12 @@ void test_usleep(void)
 		/* if at first you don't succeed, keep sucking. */
 
 		if ((elapsed_ms >= LOWER_BOUND_MS) &&
-		    (elapsed_ms < UPPER_BOUND_MS)) {
+		    (elapsed_ms <= UPPER_BOUND_MS)) {
 			break;
 		}
 	}
 
 	printk("elapsed_ms = %lld\n", elapsed_ms);
 	zassert_true(elapsed_ms >= LOWER_BOUND_MS, "short sleep");
-	zassert_true(elapsed_ms < UPPER_BOUND_MS, "overslept");
+	zassert_true(elapsed_ms <= UPPER_BOUND_MS, "overslept");
 }
