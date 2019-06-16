@@ -8,7 +8,7 @@
 	/* Constraints:
          *
          * - changes to the size of this section between build phases
-         *   *must not* shift the memory address of any kernel obejcts,
+         *   *must not* shift the memory address of any kernel objects,
          *   since it contains a hashtable of the memory addresses of those
          *   kernel objects
          *
@@ -19,7 +19,7 @@
          * The size of the
 	 * gperf tables is both a function of the number of kernel objects,
 	 * *and* the specific memory addresses being hashed. It is not something
-	 * that can be predicted without actually building and compling it.
+	 * that can be predicted without actually building and compiling it.
          */
 	SECTION_DATA_PROLOGUE(priv_stacks,,)
 	{
