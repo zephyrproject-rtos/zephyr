@@ -3,6 +3,11 @@ tests:
     extra_args: CONF_FILE=prj.conf
     filter: CONFIG_ARCH_HAS_STACK_PROTECTION
     tags: kernel ignore_faults userspace
+  kernel.common.stack_protection_no_userspace:
+    extra_args: CONF_FILE=protection_no_userspace.conf
+    filter: CONFIG_ARCH_HAS_STACK_PROTECTION
+    arch_whitelist: arm
+    tags: kernel ignore_faults memory_protection
   kernel.common.stack_sentinel:
     extra_args: CONF_FILE=sentinel.conf
     tags: kernel ignore_faults
