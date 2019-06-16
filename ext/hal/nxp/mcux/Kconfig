@@ -101,6 +101,12 @@ config HAS_MCUX_RTC
 	help
 	  Set if the real time clock (RTC) modules is present in the SoC.
 
+config HAS_MCUX_SCG
+	bool
+	help
+	  Set if the system clock generator (SCG) module is present in the
+	  SoC.
+
 config HAS_MCUX_SIM
 	bool
 	help
