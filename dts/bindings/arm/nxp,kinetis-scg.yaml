@@ -142,3 +142,7 @@ properties:
       description: clockout clock source
       generation: define
       category: optional
+
+"#cells":
+  - name
+  - clock
