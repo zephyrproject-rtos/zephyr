@@ -4333,10 +4333,12 @@ struct k_mem_slab {
  * @param block_size Size of each memory block (in bytes).
  * @param num_blocks Number of memory blocks.
  *
- * @return N/A
+ * @retval 0 on success
+ * @retval -EINVAL invalid data supplied
+ *
  * @req K-MSLAB-002
  */
-extern void k_mem_slab_init(struct k_mem_slab *slab, void *buffer,
+extern int k_mem_slab_init(struct k_mem_slab *slab, void *buffer,
 			   size_t block_size, u32_t num_blocks);
 
 /**
@@ -4354,6 +4356,7 @@ extern void k_mem_slab_init(struct k_mem_slab *slab, void *buffer,
  *         is set to the starting address of the memory block.
  * @retval -ENOMEM Returned without waiting.
  * @retval -EAGAIN Waiting period timed out.
+ * @retval -EINVAL Invalid data supplied
  * @req K-MSLAB-002
  */
 extern int k_mem_slab_alloc(struct k_mem_slab *slab, void **mem,
