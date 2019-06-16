@@ -2073,9 +2073,11 @@ extern void k_queue_insert(struct k_queue *queue, void *prev, void *data);
  * @param head Pointer to first node in singly-linked list.
  * @param tail Pointer to last node in singly-linked list.
  *
- * @return N/A
+ * @retval 0 on success
+ * @retval -EINVAL on invalid supplied data
+ *
  */
-extern void k_queue_append_list(struct k_queue *queue, void *head, void *tail);
+extern int k_queue_append_list(struct k_queue *queue, void *head, void *tail);
 
 /**
  * @brief Atomically add a list of elements to a queue.
@@ -2089,9 +2091,10 @@ extern void k_queue_append_list(struct k_queue *queue, void *head, void *tail);
  * @param queue Address of the queue.
  * @param list Pointer to sys_slist_t object.
  *
- * @return N/A
+ * @retval 0 on success
+ * @retval -EINVAL on invalid data
  */
-extern void k_queue_merge_slist(struct k_queue *queue, sys_slist_t *list);
+extern int k_queue_merge_slist(struct k_queue *queue, sys_slist_t *list);
 
 /**
  * @brief Get an element from a queue.
