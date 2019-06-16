@@ -63,6 +63,7 @@ boundary	Boundary Devices Inc.
 brcm	Broadcom Corporation
 buffalo	Buffalo, Inc.
 bticino Bticino International
+cadence	Cadence Design Systems, Inc.
 calxeda	Calxeda
 capella	Capella Microsystems, Inc
 cascoda	Cascoda, Ltd.
