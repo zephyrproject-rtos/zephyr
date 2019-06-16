@@ -1,0 +1,8 @@
+# Kconfig - ODROID-GO Game Kit configuration
+#
+# Copyright (c) 2019 Yannis Damigos
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ODROID_GO
+	bool "ODROID-GO Game Kit"
+	depends on SOC_ESP32

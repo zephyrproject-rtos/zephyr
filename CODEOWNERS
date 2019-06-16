@@ -97,6 +97,7 @@
 /boards/x86/up_squared/                   @gnuless
 /boards/xtensa/                           @nashif @dcpleung
 /boards/xtensa/intel_s1000_crb/           @sathishkuttan @dcpleung
+/boards/xtensa/odroid_go/                 @ydamigos
 # All cmake related files
 /cmake/                                   @SebastianBoe @nashif
 /CMakeLists.txt                           @SebastianBoe @nashif
