@@ -92,6 +92,10 @@ static int mcux_scg_get_rate(struct device *dev,
 
 static int mcux_scg_init(struct device *dev)
 {
+#ifdef DT_INST_0_NXP_KINETIS_SCG_CLKOUT_SOURCE
+	CLOCK_SetClkOutSel(DT_INST_0_NXP_KINETIS_SCG_CLKOUT_SOURCE);
+#endif
+
 	return 0;
 }
 
