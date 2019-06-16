@@ -39,7 +39,7 @@ void test_kernel_start(void)
  */
 void test_kernel_systick(void)
 {
-	u32_t start_time, stop_time, diff;
+	u32_t start_time, stop_time, diff, max, min;
 
 	start_time = osKernelSysTick();
 	k_busy_wait(WAIT_TIME_US);
@@ -48,5 +48,14 @@ void test_kernel_systick(void)
 	diff = SYS_CLOCK_HW_CYCLES_TO_NS(stop_time -
 					 start_time) / NSEC_PER_USEC;
 
-	zassert_true(diff >= WAIT_TIME_US, NULL);
+	/* Check that it's within 1%.  On some Zephyr platforms
+	 * (e.g. nRF5x) the busy wait loop and the system timer are
+	 * based on different mechanisms and may not align perfectly.
+	 */
+	max = WAIT_TIME_US + (WAIT_TIME_US / 100);
+	min = WAIT_TIME_US - (WAIT_TIME_US / 100);
+
+	zassert_true(diff < max && diff > min,
+		     "start %d stop %d (diff %d) wait %d\n",
+		     start_time, stop_time, diff, WAIT_TIME_US);
 }
