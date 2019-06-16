@@ -23,14 +23,6 @@
 			compatible = "cadence,tensilica-xtensa-lx6";
 			reg = <1>;
 		};
-
-		core_intc: core_intc@0 {
-			compatible = "xtensa,core-intc";
-			reg = <0x00 0x400>;
-			interrupt-controller;
-			#interrupt-cells = <3>;
-		};
-
 	};
 
 	sram0: memory@be000000 {
@@ -46,6 +38,13 @@
 	};
 
 	soc {
+		core_intc: core_intc@0 {
+			compatible = "xtensa,core-intc";
+			reg = <0x00 0x400>;
+			interrupt-controller;
+			#interrupt-cells = <3>;
+		};
+
 		cavs0: cavs@78800  {
 			compatible = "intel,cavs-intc";
 			reg = <0x78800 0x10>;
