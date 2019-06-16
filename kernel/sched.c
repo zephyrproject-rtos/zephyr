@@ -255,9 +255,10 @@ static void reset_time_slice(void)
 	 * slice count, as we'll see those "expired" ticks arrive in a
 	 * FUTURE z_time_slice() call.
 	 */
-	_current_cpu->slice_ticks = slice_time + z_clock_elapsed();
-
-	z_set_timeout_expiry(slice_time, false);
+	if (slice_time != 0) {
+		_current_cpu->slice_ticks = slice_time + z_clock_elapsed();
+		z_set_timeout_expiry(slice_time, false);
+	}
 }
 
 void k_sched_time_slice_set(s32_t slice, int prio)
