@@ -6,7 +6,7 @@
 
 if SOC_NSIM_EM
 
-config CPU_EM4_DMIPS
+config CPU_EM4_FPUDA
 	def_bool y
 
 config NUM_IRQ_PRIO_LEVELS
