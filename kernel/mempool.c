@@ -55,7 +55,7 @@ int k_mem_pool_alloc(struct k_mem_pool *p, struct k_mem_block *block,
 	__ASSERT(!(z_is_in_isr() && timeout != K_NO_WAIT), "");
 
 	if (timeout > 0) {
-		end = z_tick_get() + z_ms_to_ticks(timeout);
+		end = k_uptime_get() + timeout;
 	}
 
 	while (true) {
@@ -93,9 +93,8 @@ int k_mem_pool_alloc(struct k_mem_pool *p, struct k_mem_block *block,
 		z_pend_curr_unlocked(&p->wait_q, timeout);
 
 		if (timeout != K_FOREVER) {
-			timeout = end - z_tick_get();
-
-			if (timeout < 0) {
+			timeout = end - k_uptime_get();
+			if (timeout <= 0) {
 				break;
 			}
 		}
