@@ -36,6 +36,9 @@ config ARC_FIRQ
 config CACHE_FLUSHING
 	default y
 
+config FP_FPU_DA
+	def_bool y
+
 if (ARC_MPU_VER = 2)
 
 config MAIN_STACK_SIZE
