@@ -7,4 +7,4 @@
 
 config BOARD_STM32L476G_DISCO
 	bool "STM32L476G Discovery Development Board"
-	depends on SOC_STM32L476XG
+	depends on SOC_STM32L476XX
