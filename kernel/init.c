@@ -50,10 +50,10 @@ LOG_MODULE_REGISTER(os);
 #endif
 
 #ifdef BUILD_VERSION
-#define BOOT_BANNER "Booting Zephyr OS "	\
+#define BOOT_BANNER "Booting Zephyr OS build "		\
 	 STRINGIFY(BUILD_VERSION) BOOT_DELAY_BANNER
 #else
-#define BOOT_BANNER "Booting Zephyr OS "	\
+#define BOOT_BANNER "Booting Zephyr OS version "	\
 	 KERNEL_VERSION_STRING BOOT_DELAY_BANNER
 #endif
 
