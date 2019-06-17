@@ -1,15 +1,15 @@
-# Kconfig - ST STM32F769XI MCU configuration options
+# Kconfig - ST STM32F746XG MCU configuration options
 #
-# Copyright (c) 2018  Yong Jin
+# Copyright (c) 2018 Yurii Hamann
 #
 # SPDX-License-Identifier: Apache-2.0
 #
 
-if SOC_STM32F769XI
+if SOC_STM32F746XX
 
 config SOC
 	string
-	default "stm32f769xx"
+	default "stm32f746xx"
 
 if GPIO_STM32
 
@@ -23,6 +23,6 @@ endif # GPIO_STM32
 
 config NUM_IRQS
 	int
-	default 110
+	default 98
 
-endif # SOC_STM32F769XI
+endif # SOC_STM32F746XX

@@ -7,4 +7,4 @@
 
 config BOARD_NUCLEO_F746ZG
 	bool "Nucleo F746ZG Development Board"
-	depends on SOC_STM32F746XG
+	depends on SOC_STM32F746XX

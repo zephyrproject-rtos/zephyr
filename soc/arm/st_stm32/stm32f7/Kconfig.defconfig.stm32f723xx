@@ -5,7 +5,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-if SOC_STM32F723XE
+if SOC_STM32F723XX
 
 config SOC
 	string
@@ -15,4 +15,4 @@ config NUM_IRQS
 	int
 	default 104
 
-endif # SOC_STM32F723XE
+endif # SOC_STM32F723XX
