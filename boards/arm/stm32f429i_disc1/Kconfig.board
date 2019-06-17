@@ -7,4 +7,4 @@
 
 config BOARD_STM32F429I_DISC1
 	bool "STM32F429I-DISC1 Development Board"
-	depends on SOC_STM32F429XI
+	depends on SOC_STM32F429XX
