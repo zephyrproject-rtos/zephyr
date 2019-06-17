@@ -76,8 +76,9 @@
 			label = "CAN_1";
 			bus-speed = <250000>;
 			sjw = <1>;
-			prop_seg_phase_seg1 = <5>;
-			phase_seg2 = <6>;
+			prop-seg = <0>;
+			phase-seg1 = <5>;
+			phase-seg2 = <6>;
 		};
 	};
 
