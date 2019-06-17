@@ -53,9 +53,6 @@ struct bt_conn_le {
 	u8_t			features[8];
 
 	struct bt_keys		*keys;
-
-	/* Delayed work for connection update and timeout handling */
-	struct k_delayed_work	update_work;
 };
 
 #if defined(CONFIG_BT_BREDR)
@@ -130,6 +127,9 @@ struct bt_conn {
 	sys_slist_t		channels;
 
 	atomic_t		ref;
+
+	/* Delayed work for connection update and other deferred tasks */
+	struct k_delayed_work	update_work;
 
 	union {
 		struct bt_conn_le	le;
