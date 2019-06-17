@@ -5,7 +5,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-if SOC_STM32WB55XG
+if SOC_STM32WB55XX
 
 config SOC
 	string
@@ -15,4 +15,4 @@ config NUM_IRQS
 	int
 	default 63
 
-endif # SOC_STM32WB55XG
+endif # SOC_STM32WB55XX

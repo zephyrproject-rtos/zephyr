@@ -7,4 +7,4 @@
 
 config BOARD_NUCLEO_WB55RG
 	bool "Nucleo WB55RG Development Board"
-	depends on SOC_STM32WB55XG
+	depends on SOC_STM32WB55XX
