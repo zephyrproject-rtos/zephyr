@@ -56,6 +56,9 @@ extern "C" {
 	st r30, [sp, ___callee_saved_stack_t_r30_OFFSET]
 
 #ifdef CONFIG_FP_SHARING
+	ld r13, [r2, ___thread_base_t_user_options_OFFSET]
+	/* K_FP_REGS is bit 1 */
+	bbit0 r13, 1, 1f
 	st r58, [sp, ___callee_saved_stack_t_r58_OFFSET]
 	st r59, [sp, ___callee_saved_stack_t_r59_OFFSET]
 	lr r13, [_ARC_V2_FPU_STATUS]
@@ -73,7 +76,7 @@ extern "C" {
 	lr r13, [_ARC_V2_FPU_DPFP2H]
 	st_s r13, [sp, ___callee_saved_stack_t_dpfp2h_OFFSET]
 #endif
-
+1 :
 #endif
 
 	/* save stack pointer in struct k_thread */
@@ -86,6 +89,9 @@ extern "C" {
 	ld sp, [r2, _thread_offset_to_sp]
 
 #ifdef CONFIG_FP_SHARING
+	ld r13, [r2, ___thread_base_t_user_options_OFFSET]
+	/* K_FP_REGS is bit 1 */
+	bbit0 r13, 1, 2f
 	ld r58, [sp, ___callee_saved_stack_t_r58_OFFSET]
 	ld r59, [sp, ___callee_saved_stack_t_r59_OFFSET]
 
@@ -104,7 +110,7 @@ extern "C" {
 	ld_s r13, [sp, ___callee_saved_stack_t_dpfp2h_OFFSET]
 	sr r13, [_ARC_V2_FPU_DPFP2H]
 #endif
-
+2 :
 #endif
 
 #ifdef CONFIG_USERSPACE

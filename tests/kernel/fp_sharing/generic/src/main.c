@@ -63,6 +63,12 @@
 #else
 #include "float_regs_arm_other.h"
 #endif /* __GNUC__ */
+#elif defined(CONFIG_CPU_ARCV2)
+#if defined(__GNUC__)
+#include "float_regs_arc_gcc.h"
+#else
+#include "float_regs_arc_other.h"
+#endif /* __GNUC__ */
 #endif
 
 #include <tc_util.h>

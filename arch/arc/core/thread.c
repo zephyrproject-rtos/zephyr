@@ -269,3 +269,21 @@ FUNC_NORETURN void z_arch_user_mode_enter(k_thread_entry_t user_entry,
 }
 
 #endif
+
+#if defined(CONFIG_FLOAT) && defined(CONFIG_FP_SHARING)
+int z_arch_float_disable(struct k_thread *thread)
+{
+	unsigned int key;
+
+	/* Ensure a preemptive context switch does not occur */
+
+	key = irq_lock();
+
+	/* Disable all floating point capabilities for the thread */
+	thread->base.user_options &= ~K_FP_REGS;
+
+	irq_unlock(key);
+
+	return 0;
+}
+#endif /* CONFIG_FLOAT && CONFIG_FP_SHARING */

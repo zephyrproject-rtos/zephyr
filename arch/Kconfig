@@ -455,7 +455,7 @@ config MPU_REQUIRES_NON_OVERLAPPING_REGIONS
 menuconfig FLOAT
 	bool "Floating point"
 	depends on CPU_HAS_FPU
-	depends on ARM || X86
+	depends on ARM || X86 || ARC
 	help
 	  This option allows threads to use the floating point registers.
 	  By default, only a single thread may use the registers.
