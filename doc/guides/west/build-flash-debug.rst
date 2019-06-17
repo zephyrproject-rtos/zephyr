@@ -219,6 +219,16 @@ You can :ref:`configure <west-config-cmd>` ``west build`` using these options.
      - String, default ``Ninja``. The `CMake Generator`_ to use to create a
        build system. (To set a generator for a single build, see the
        :ref:`above example <west-building-generator>`)
+   * - ``build.guess-dir``
+     - String, instructs west whether to try to guess what build folder to use
+       when ``build.dir-fmt`` is in use and not enough information is available
+       to resolve the build folder name. Can take these values:
+
+         - ``never`` (default): Never try to guess, bail out instead and
+           require the user to provide a build folder with ``-d``.
+         - ``runners``: Try to guess the folder when using any of the 'runner'
+           commands.  These are typically all commands that invoke an external
+           tool, such as ``flash`` and ``debug``.
    * - ``build.pristine``
      - String. Controls the way in which ``west build`` may clean the build
        folder before building. Can take the following values:

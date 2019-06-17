@@ -19,6 +19,7 @@ from west import util
 from build_helpers import find_build_dir, is_zephyr_build, \
     FIND_BUILD_DIR_DESCRIPTION
 from west.commands import CommandError
+from west.configuration import config
 
 from runners import get_runner_cls, ZephyrBinaryRunner, MissingProgram
 
@@ -170,7 +171,9 @@ def _build_dir(args, die_if_none=True):
     if args.build_dir:
         return args.build_dir
 
-    dir = find_build_dir(None)
+    guess = config.get('build', 'guess-dir', fallback='never')
+    guess = True if guess == 'runners' else False
+    dir = find_build_dir(None, guess)
 
     if dir and is_zephyr_build(dir):
         return dir
