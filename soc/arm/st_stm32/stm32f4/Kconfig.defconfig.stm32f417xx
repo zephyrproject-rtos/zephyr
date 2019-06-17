@@ -5,7 +5,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-if SOC_STM32F417XE || SOC_STM32F417XG
+if SOC_STM32F417XX
 
 config SOC
 	string
@@ -35,4 +35,4 @@ config ENTROPY_STM32_RNG
 
 endif # ENTROPY_GENERATOR
 
-endif # SOC_STM32F417XE || SOC_STM32F417XG
+endif # SOC_STM32F417XX
