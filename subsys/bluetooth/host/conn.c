@@ -236,14 +236,27 @@ static int send_conn_le_param_update(struct bt_conn *conn,
 	return bt_l2cap_update_conn_param(conn, param);
 }
 
-static void conn_le_update_timeout(struct k_work *work)
+static void conn_update_timeout(struct k_work *work)
 {
-	struct bt_conn_le *le = CONTAINER_OF(work, struct bt_conn_le,
-					     update_work);
-	struct bt_conn *conn = CONTAINER_OF(le, struct bt_conn, le);
+	struct bt_conn *conn = CONTAINER_OF(work, struct bt_conn, update_work);
 	const struct bt_le_conn_param *param;
 
 	BT_DBG("conn %p", conn);
+
+	if (conn->state == BT_CONN_DISCONNECTED) {
+		bt_l2cap_disconnected(conn);
+		notify_disconnected(conn);
+
+		/* Release the reference we took for the very first
+		 * state transition.
+		 */
+		bt_conn_unref(conn);
+		return;
+	}
+
+	if (conn->type != BT_CONN_TYPE_LE) {
+		return;
+	}
 
 	if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
 	    conn->role == BT_CONN_ROLE_MASTER) {
@@ -340,6 +353,7 @@ static struct bt_conn *conn_new(void)
 	}
 
 	(void)memset(conn, 0, sizeof(*conn));
+	k_delayed_work_init(&conn->update_work, conn_update_timeout);
 
 	atomic_set(&conn->ref, 1);
 
@@ -1442,10 +1456,7 @@ static void conn_cleanup(struct bt_conn *conn)
 
 	bt_conn_reset_rx_state(conn);
 
-	/* Release the reference we took for the very first
-	 * state transition.
-	 */
-	bt_conn_unref(conn);
+	k_delayed_work_submit(&conn->update_work, K_NO_WAIT);
 }
 
 int bt_conn_prepare_events(struct k_poll_event events[])
@@ -1530,7 +1541,6 @@ struct bt_conn *bt_conn_add_le(const bt_addr_le_t *peer)
 	conn->type = BT_CONN_TYPE_LE;
 	conn->le.interval_min = BT_GAP_INIT_CONN_INT_MIN;
 	conn->le.interval_max = BT_GAP_INIT_CONN_INT_MAX;
-	k_delayed_work_init(&conn->le.update_work, conn_le_update_timeout);
 
 	return conn;
 }
@@ -1582,7 +1592,7 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 	case BT_CONN_CONNECT:
 		if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
 		    conn->type == BT_CONN_TYPE_LE) {
-			k_delayed_work_cancel(&conn->le.update_work);
+			k_delayed_work_cancel(&conn->update_work);
 		}
 		break;
 	default:
@@ -1617,18 +1627,16 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 		 */
 		if (old_state == BT_CONN_CONNECTED ||
 		    old_state == BT_CONN_DISCONNECT) {
-			bt_l2cap_disconnected(conn);
-			notify_disconnected(conn);
 			process_unack_tx(conn);
 
 			/* Cancel Connection Update if it is pending */
 			if (conn->type == BT_CONN_TYPE_LE) {
-				k_delayed_work_cancel(&conn->le.update_work);
+				k_delayed_work_cancel(&conn->update_work);
 			}
 
 			atomic_set_bit(conn->flags, BT_CONN_CLEANUP);
 			k_poll_signal_raise(&conn_change, 0);
-			/* The last ref will be dropped by the tx_thread */
+			/* The last ref will be dropped during cleanup */
 		} else if (old_state == BT_CONN_CONNECT) {
 			/* conn->err will be set in this case */
 			notify_connected(conn);
@@ -1664,8 +1672,7 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 		 */
 		if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
 		    conn->type == BT_CONN_TYPE_LE) {
-			k_delayed_work_submit(&conn->le.update_work,
-					      CONN_TIMEOUT);
+			k_delayed_work_submit(&conn->update_work, CONN_TIMEOUT);
 		}
 
 		break;
@@ -1980,7 +1987,7 @@ int bt_conn_disconnect(struct bt_conn *conn, u8_t reason)
 #endif /* CONFIG_BT_BREDR */
 
 		if (IS_ENABLED(CONFIG_BT_CENTRAL)) {
-			k_delayed_work_cancel(&conn->le.update_work);
+			k_delayed_work_cancel(&conn->update_work);
 			return bt_hci_cmd_send(BT_HCI_OP_LE_CREATE_CONN_CANCEL,
 					       NULL);
 		}
@@ -2180,6 +2187,9 @@ struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer,
 		case BT_CONN_CONNECT:
 		case BT_CONN_CONNECTED:
 			return conn;
+		case BT_CONN_DISCONNECTED:
+			BT_WARN("Found valid but disconnected conn object");
+			goto start_scan;
 		default:
 			bt_conn_unref(conn);
 			return NULL;
@@ -2202,6 +2212,7 @@ struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer,
 	/* Only default identity supported for now */
 	conn->id = BT_ID_DEFAULT;
 
+start_scan:
 	bt_conn_set_param_le(conn, param);
 
 	bt_conn_set_state(conn, BT_CONN_CONNECT_SCAN);
@@ -2295,6 +2306,9 @@ struct bt_conn *bt_conn_create_slave_le(const bt_addr_le_t *peer,
 		case BT_CONN_CONNECT:
 		case BT_CONN_CONNECTED:
 			return conn;
+		case BT_CONN_DISCONNECTED:
+			BT_WARN("Found valid but disconnected conn object");
+			goto start_adv;
 		default:
 			bt_conn_unref(conn);
 			return NULL;
@@ -2307,6 +2321,8 @@ struct bt_conn *bt_conn_create_slave_le(const bt_addr_le_t *peer,
 	}
 
 	conn->id = param->id;
+
+start_adv:
 	bt_conn_set_state(conn, BT_CONN_CONNECT_DIR_ADV);
 
 	err = bt_le_adv_start_internal(&param_int, NULL, 0, NULL, 0, peer);

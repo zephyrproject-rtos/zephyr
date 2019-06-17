@@ -989,7 +989,7 @@ static void slave_update_conn_param(struct bt_conn *conn)
 	 * The Peripheral device should not perform a Connection Parameter
 	 * Update procedure within 5 s after establishing a connection.
 	 */
-	k_delayed_work_submit(&conn->le.update_work, CONN_UPDATE_TIMEOUT);
+	k_delayed_work_submit(&conn->update_work, CONN_UPDATE_TIMEOUT);
 }
 
 #if defined(CONFIG_BT_SMP)
