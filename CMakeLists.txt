@@ -1381,6 +1381,7 @@ add_subdirectory(cmake/flash)
 add_subdirectory(cmake/usage)
 add_subdirectory(cmake/reports)
 
+if(NOT CONFIG_TEST)
 if(CONFIG_ASSERT AND (NOT CONFIG_FORCE_NO_ASSERT))
   message(WARNING "
       ------------------------------------------------------------
@@ -1388,6 +1389,7 @@ if(CONFIG_ASSERT AND (NOT CONFIG_FORCE_NO_ASSERT))
       --- The kernel will run more slowly and use more memory  ---
       ------------------------------------------------------------"
   )
+endif()
 endif()
 
 if(CONFIG_BOARD_DEPRECATED)
