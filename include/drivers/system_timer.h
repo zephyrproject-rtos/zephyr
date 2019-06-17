@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2015 Wind River Systems, Inc.
+ * Copyright (c) 2019 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -54,16 +55,16 @@ extern int z_clock_device_ctrl(struct device *device, u32_t ctrl_command,
  * is that one tick announcement should occur within one tick BEFORE
  * the specified expiration (that is, passing ticks==1 means "announce
  * the next tick", this convention was chosen to match legacy usage).
- * A ticks value of zero (or even negative) is legal, it simply
- * indicates the kernel would like the next tick announcement as soon
- * as possible.
+ * Similarly a ticks value of zero (or even negative) is legal and
+ * treated identically: it simply indicates the kernel would like the
+ * next tick announcement as soon as possible.
  *
  * Note that ticks can also be passed the special value K_FOREVER,
  * indicating that no future timer interrupts are expected or required
  * and that the system is permitted to enter an indefinite sleep even
  * if this could cause rollover of the internal counter (i.e. the
  * system uptime counter is allowed to be wrong, see
- * k_enable_sys_clock_always_on().
+ * k_enable_sys_clock_always_on()).
  *
  * Note also that it is conventional for the kernel to pass INT_MAX
  * for ticks if it wants to preserve the uptime tick count but doesn't
@@ -107,7 +108,9 @@ extern void z_clock_idle_exit(void);
  *
  * Informs the kernel that the specified number of ticks have elapsed
  * since the last call to z_clock_announce() (or system startup for
- * the first call).
+ * the first call).  The timer driver is expected to delivery these
+ * announcements as close as practical (subject to hardware and
+ * latency limitations) to tick boundaries.
  *
  * @param ticks Elapsed time, in ticks
  */
