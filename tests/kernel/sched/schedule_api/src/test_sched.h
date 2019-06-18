@@ -14,8 +14,7 @@
 #define STACK_SIZE (640 + CONFIG_TEST_EXTRA_STACKSIZE)
 
 K_THREAD_STACK_EXTERN(tstack);
-extern k_thread_stack_t
-	tstacks[MAX_NUM_THREAD][K_THREAD_STACK_LEN(STACK_SIZE)];
+extern K_THREAD_STACK_ARRAY_DEFINE(tstacks, MAX_NUM_THREAD, STACK_SIZE);
 
 struct thread_data {
 	k_tid_t tid;
