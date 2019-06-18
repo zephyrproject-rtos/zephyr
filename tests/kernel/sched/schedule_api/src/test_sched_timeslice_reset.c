@@ -44,8 +44,16 @@ static void thread_tslice(void *p1, void *p2, void *p3)
 	#endif
 
 	/** TESTPOINT: timeslice should be reset for each preemptive thread*/
-	zassert_true(t >= expected_slice_min, NULL);
-	zassert_true(t <= expected_slice_max, NULL);
+#ifndef CONFIG_COVERAGE
+	zassert_true(t >= expected_slice_min,
+		     "timeslice too small, expected %u got %u",
+		     expected_slice_min, t);
+	zassert_true(t <= expected_slice_max,
+		     "timeslice too big, expected %u got %u",
+		     expected_slice_max, t);
+#else
+	(void)t;
+#endif /* CONFIG_COVERAGE */
 	thread_idx = (thread_idx + 1) % NUM_THREAD;
 
 	/* Keep the current thread busy for more than one slice, even though,
