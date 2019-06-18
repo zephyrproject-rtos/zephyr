@@ -4,7 +4,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
----
+
 title: Nordic nRF Family I2C Master node
 version: 0.1
 
@@ -35,4 +35,3 @@ properties:
       description: SCL pin
       generation: define
       category: required
-...

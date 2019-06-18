@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
----
+
 title: Nordic nRF Family QDEC node
 version: 0.1
 
@@ -61,4 +61,3 @@ properties:
 
     label:
       category: required
-...

@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
----
+
 title: NXP MCR20A 802.15.4 Wireless Transceiver
 version: 0.1
 
@@ -26,4 +26,3 @@ properties:
       type: compound
       category: required
       generation: define, use-prop-name
-...

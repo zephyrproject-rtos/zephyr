@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
----
+
 title: STM32 OTGHS
 version: 0.1
 
@@ -35,4 +35,3 @@ properties:
       category: optional
       generation: define
       description: PHY provider specifier
-...

@@ -1,4 +1,4 @@
----
+
 title: base device binding
 version: 0.1
 
@@ -41,5 +41,3 @@ properties:
         category: optional
         description: Human readable string describing the device (used by Zephyr for API name)
         generation: define
-
-...

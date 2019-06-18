@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
----
+
 title: SPI Device Base Structure
 version: 0.1
 
@@ -26,4 +26,3 @@ properties:
       generation: define
     label:
       category: required
-...

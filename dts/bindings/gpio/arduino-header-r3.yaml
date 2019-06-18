@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
----
+
 title: ARDUINO GPIO HEADER
 version: 0.1
 
@@ -20,5 +20,3 @@ properties:
     gpio-map:
       type: compound
       category: required
-
-...

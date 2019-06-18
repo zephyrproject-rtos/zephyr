@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
----
+
 title: CC2520 802.15.4 Wireless Transceiver
 version: 0.1
 
@@ -46,4 +46,3 @@ properties:
       type: compound
       category: optional
       generation: define, use-prop-name
-...

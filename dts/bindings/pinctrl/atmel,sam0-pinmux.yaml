@@ -1,4 +1,4 @@
----
+
 title: Atmel SAM0 PINMUX
 version: 0.1
 
@@ -21,5 +21,3 @@ properties:
 "#cells":
   - pin
   - function
-
-...

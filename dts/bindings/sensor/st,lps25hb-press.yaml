@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
----
+
 title: STMicroelectronics MEMS sensors LPS25HB
 version: 0.1
 
@@ -16,5 +16,3 @@ inherits:
 properties:
     compatible:
       constraint: "st,lps25hb-press"
-
-...

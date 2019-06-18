@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
----
+
 title: ARM SBCon two-wire serial bus interface
 version: 0.1
 
@@ -19,5 +19,3 @@ properties:
 
     reg:
       category: required
-
-...

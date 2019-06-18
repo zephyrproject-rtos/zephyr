@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
----
+
 title: MICROCHIP I2C
 version: 0.1
 
@@ -25,5 +25,3 @@ properties:
       description: soc block mapping to pin
       generation: define
       category: define
-
-...

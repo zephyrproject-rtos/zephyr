@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
----
+
 title: ST Microelectronics MPXXDTYY digital pdm microphone family
 version: 0.1
 
@@ -18,5 +18,3 @@ properties:
       constraint: "st,mpxxdtyy"
     label:
       category: required
-
-...

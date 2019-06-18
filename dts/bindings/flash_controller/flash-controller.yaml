@@ -1,4 +1,4 @@
----
+
 title: flash controller Base Structure
 version: 0.1
 
@@ -14,4 +14,3 @@ properties:
 
     reg:
       category: required
-...

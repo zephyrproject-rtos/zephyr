@@ -1,4 +1,4 @@
----
+
 title: STM32 PWM
 version: 0.1
 
@@ -25,4 +25,3 @@ properties:
   - channel
 # period in terms of nanoseconds
   - period
-...

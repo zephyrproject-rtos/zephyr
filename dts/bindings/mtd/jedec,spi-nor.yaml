@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
----
+
 title: SPI NOR flash devices (JEDEC CFI interface)
 version: 0.1
 
@@ -58,4 +58,3 @@ properties:
     category: optional
     description: RESETn pin
     generation: define, use-prop-name
-...

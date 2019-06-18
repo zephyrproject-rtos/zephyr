@@ -1,4 +1,4 @@
----
+
 title: EFM32 GPIO
 version: 0.1
 
@@ -26,4 +26,3 @@ properties:
       category: optional
       description: Serial Wire Output (SWO) PIN location
       generation: define
-...

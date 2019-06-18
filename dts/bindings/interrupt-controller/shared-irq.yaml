@@ -1,4 +1,4 @@
----
+
 title: Shared IRQ interrupt dispatcher
 version: 0.1
 
@@ -17,5 +17,3 @@ properties:
 
   label:
       category: required
-
-...

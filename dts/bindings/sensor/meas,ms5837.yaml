@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
----
+
 title: TE Connectivity digital pressure sensor MS5837
 version: 0.1
 
@@ -17,5 +17,3 @@ inherits:
 properties:
     compatible:
       constraint: "meas,ms5837"
-
-...
