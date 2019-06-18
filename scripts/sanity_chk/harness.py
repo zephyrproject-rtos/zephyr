@@ -28,6 +28,7 @@ class Harness:
         self.fail_on_fault = True
         self.fault = False
         self.capture_coverage = False
+        self.next_pattern = 0
 
     def configure(self, instance):
         config = instance.test.harness_config
@@ -53,31 +54,21 @@ class Console(Harness):
                 self.patterns.append(re.compile(r))
 
     def handle(self, line):
-
         if self.type == "one_line":
             if self.pattern.search(line):
                 self.state = "passed"
-        elif self.type == "multi_line":
+        elif self.type == "multi_line" and self.ordered:
+            if (self.next_pattern < len(self.patterns) and
+                self.patterns[self.next_pattern].search(line)):
+                self.next_pattern += 1
+                if self.next_pattern >= len(self.patterns):
+                    self.state = "passed"
+        elif self.type == "multi_line" and not self.ordered:
             for i, pattern in enumerate(self.patterns):
                 r = self.regex[i]
                 if pattern.search(line) and not r in self.matches:
                     self.matches[r] = line
-
             if len(self.matches) == len(self.regex):
-                # check ordering
-                if self.ordered:
-                    ordered = True
-                    pos = 0
-                    for k in self.matches:
-                        if k != self.regex[pos]:
-                            ordered = False
-                        pos += 1
-
-                    if ordered:
-                        self.state = "passed"
-                    else:
-                        self.state = "failed"
-                else:
                     self.state = "passed"
 
         if self.fail_on_fault:
