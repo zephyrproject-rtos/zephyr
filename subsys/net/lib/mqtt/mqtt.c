@@ -647,3 +647,25 @@ int mqtt_read_publish_payload_blocking(struct mqtt_client *client, void *buffer,
 {
 	return read_publish_payload(client, buffer, length, true);
 }
+
+int mqtt_readall_publish_payload(struct mqtt_client *client, u8_t *buffer,
+				 size_t length)
+{
+	u8_t *end = buffer + length;
+
+	while (buffer < end) {
+		int ret = mqtt_read_publish_payload_blocking(client, buffer,
+							     end - buffer);
+
+		if (ret < 0) {
+			return ret;
+		} else if (ret == 0) {
+			return -EIO;
+		}
+
+		buffer += ret;
+	}
+
+	return 0;
+}
+

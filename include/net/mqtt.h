@@ -715,6 +715,21 @@ int mqtt_read_publish_payload(struct mqtt_client *client, void *buffer,
 int mqtt_read_publish_payload_blocking(struct mqtt_client *client, void *buffer,
 				       size_t length);
 
+/**
+ * @brief Blocking version of @ref mqtt_read_publish_payload function which
+ *        runs until the required number of bytes are read.
+ *
+ * @param[in] client Client instance for which the procedure is requested.
+ *                   Shall not be NULL.
+ * @param[out] buffer Buffer where payload should be stored.
+ * @param[in] length Number of bytes to read.
+ *
+ * @return 0 if success, otherwise a negative error code (errno.h) indicating
+ *         reason of failure.
+ */
+int mqtt_readall_publish_payload(struct mqtt_client *client, u8_t *buffer,
+				 size_t length);
+
 #ifdef __cplusplus
 }
 #endif

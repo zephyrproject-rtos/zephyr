@@ -101,8 +101,7 @@ void publish_handler(struct mqtt_client *const client,
 		    const struct mqtt_evt *evt)
 {
 	int rc;
-	u8_t buf[16];
-	u32_t offset = 0U;
+	static u8_t buf[sizeof(payload_long)];
 
 	if (evt->result != 0) {
 		TC_PRINT("MQTT PUBLISH error: %d\n", evt->result);
@@ -115,25 +114,18 @@ void publish_handler(struct mqtt_client *const client,
 		goto error;
 	}
 
-	while (payload_left > 0) {
-		rc = mqtt_read_publish_payload_blocking(client, buf,
-							sizeof(buf));
-		if (rc <= 0) {
-			TC_PRINT("Failed to receive payload, err: %d\n", -rc);
-			if (rc == -EAGAIN) {
-				continue;
-			}
-			goto error;
-		}
-
-		if (memcmp(payload + offset, buf, rc) != 0) {
-			TC_PRINT("Invalid payload content\n");
-			goto error;
-		}
-
-		payload_left -= rc;
-		offset += rc;
+	rc = mqtt_readall_publish_payload(client, buf, payload_left);
+	if (rc != 0) {
+		TC_PRINT("Error while reading publish payload\n");
+		goto error;
 	}
+
+	if (memcmp(payload, buf, evt->param.publish.message.payload.len != 0)) {
+		TC_PRINT("Invalid payload content\n");
+		goto error;
+	}
+
+	payload_left = 0;
 
 	return;
 
