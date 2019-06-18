@@ -45,8 +45,6 @@
 	"66666666666666666666666666666666"   \
 	"666666666666666666666666666666666"
 
-#define PRINTF_MAX_STRING_LENGTH   200
-
 union raw_double_u {
 	double d;
 	struct {
@@ -580,7 +578,6 @@ void test_sprintf_integer(void)
 
 void test_sprintf_string(void)
 {
-	int len;
 	char buffer[400];
 
 	sprintf(buffer, "%%");
@@ -596,19 +593,9 @@ void test_sprintf_string(void)
 		     "sprintf(%%s). "
 		     "Expected 'short string', got '%s'\n", buffer);
 
-	len = sprintf(buffer, "%s", REALLY_LONG_STRING);
-#if !defined CONFIG_NEWLIB_LIBC && !defined CONFIG_ARCH_POSIX
-	zassert_true((len == PRINTF_MAX_STRING_LENGTH),
-		     "Internals changed. "
-		     "Max string length no longer %d got %d\n",
-		     PRINTF_MAX_STRING_LENGTH, len);
-#endif
-	zassert_true((strncmp(buffer, REALLY_LONG_STRING,
-			      PRINTF_MAX_STRING_LENGTH) == 0),
-		     "First %d characters of REALLY_LONG_STRING "
-		     "not printed!\n",
-		     PRINTF_MAX_STRING_LENGTH);
-
+	sprintf(buffer, "%s", REALLY_LONG_STRING);
+	zassert_true((strcmp(buffer, REALLY_LONG_STRING) == 0),
+		     "sprintf(%%s) of REALLY_LONG_STRING doesn't match!\n");
 }
 
 /**
