@@ -19,7 +19,7 @@ Hardware
 ********
 
 - MEC1701QC2SZ ARM Cortex-M4F Processor
-- 480 KB Ram and 64 KB boot Rom
+- 480 KB RAM and 64 KB boot ROM
 - 2 Microchip BC-Link Interconnection bus
 - Keyboard interface
 - ADC & GPIO headers

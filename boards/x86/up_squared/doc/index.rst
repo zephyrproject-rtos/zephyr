@@ -84,7 +84,7 @@ Serial Port Support
 
 Serial port I/O is supported in both polling and interrupt-driven modes.
 
-Baud rates beyond 115.2kbps (up to 3.6864Mbps) are supported, with additional
+Baud rates beyond 115.2Kbps (up to 3.6864Mbps) are supported, with additional
 configuration. The UARTs are fed a master clock which is fed into a PLL which
 in turn outputs the baud master clock. The PLL is controlled by a per-UART
 32-bit register called ``PRV_CLOCK_PARAMS`` (aka the ``PCP``), the format of

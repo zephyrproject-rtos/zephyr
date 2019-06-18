@@ -29,7 +29,7 @@ The HiFive 1 Rev B uses Segger J-Link OB for flashing and debugging. To flash an
 debug the board, you'll need to install the
 `Segger J-Link Software and Documentation Pack
 <https://www.segger.com/downloads/jlink#J-LinkSoftwareAndDocumentationPack>`_
-and choose version V6.46a or later (Downloads for Windows, Linux, and MacOS are
+and choose version V6.46a or later (Downloads for Windows, Linux, and macOS are
 available).
 
 With the Segger J-Link Software installed, you can flash the application as usual
