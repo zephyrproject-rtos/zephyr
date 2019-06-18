@@ -5317,6 +5317,10 @@ int bt_le_adv_start_internal(const struct bt_le_adv_param *param,
 	set_param.max_interval = sys_cpu_to_le16(param->interval_max);
 	set_param.channel_map  = 0x07;
 
+	if (bt_dev.adv_id != param->id) {
+		atomic_clear_bit(bt_dev.flags, BT_DEV_RPA_VALID);
+	}
+
 	/* Set which local identity address we're advertising with */
 	bt_dev.adv_id = param->id;
 	id_addr = &bt_dev.id_addr[param->id];
