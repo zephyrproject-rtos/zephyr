@@ -630,7 +630,7 @@ config BT_CTLR_USER_EXT
 	  Catch-all for enabling proprietary event types in Controller behavior.
 
 config BT_CTLR_USER_EVT_RANGE
-	int "Range of event contants reserved for proprietary event types"
+	int "Range of event constants reserved for proprietary event types"
 	depends on BT_CTLR_USER_EXT
 	default 5
 	range 0 10

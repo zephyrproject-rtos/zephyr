@@ -25,6 +25,6 @@ config GPIO_HT16K33_INIT_PRIORITY
 	default 99
 	help
 	  Device driver initialization priority. This driver must be
-	  initilized after the HT16K33 LED driver.
+	  initialized after the HT16K33 LED driver.
 
 endif #GPIO_HT16K33
