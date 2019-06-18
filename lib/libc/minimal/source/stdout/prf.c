@@ -38,14 +38,15 @@
 
 static void _uc(char *buf)
 {
-	for (/**/; *buf; buf++) {
+	do {
 		if (*buf >= 'a' && *buf <= 'z') {
 			*buf += 'A' - 'a';
 		}
-	}
+	} while (*buf++);
 }
 
-/* Convention note: "end" as passed in is the standard "byte after
+/*
+ * Convention note: "end" as passed in is the standard "byte after
  * last character" style, but...
  */
 static int _reverse_and_pad(char *start, char *end, int minlen)
@@ -66,7 +67,8 @@ static int _reverse_and_pad(char *start, char *end, int minlen)
 	return len;
 }
 
-/* Writes the specified number into the buffer in the given base,
+/*
+ * Writes the specified number into the buffer in the given base,
  * using the digit characters 0-9a-z (i.e. base>36 will start writing
  * odd bytes), padding with leading zeros up to the minimum length.
  */
@@ -84,7 +86,7 @@ static int _to_x(char *buf, unsigned VALTYPE n, unsigned int base, int minlen)
 }
 
 static int _to_hex(char *buf, unsigned VALTYPE value,
-		   int alt_form, int precision, int prefix)
+		   bool alt_form, int precision, char prefix)
 {
 	int len;
 	char *buf0 = buf;
@@ -103,7 +105,7 @@ static int _to_hex(char *buf, unsigned VALTYPE value,
 }
 
 static int _to_octal(char *buf, unsigned VALTYPE value,
-		     int alt_form, int precision)
+		     bool alt_form, int precision)
 {
 	char *buf0 = buf;
 
@@ -123,7 +125,8 @@ static int _to_udec(char *buf, unsigned VALTYPE value, int precision)
 	return _to_x(buf, value, 10, precision);
 }
 
-static int _to_dec(char *buf, VALTYPE value, int fplus, int fspace, int precision)
+static int _to_dec(char *buf, VALTYPE value, bool fplus, bool fspace,
+		   int precision)
 {
 	char *start = buf;
 
@@ -134,8 +137,6 @@ static int _to_dec(char *buf, VALTYPE value, int fplus, int fspace, int precisio
 		*buf++ = '+';
 	} else if (fspace) {
 		*buf++ = ' ';
-	} else {
-		/* unreachable */
 	}
 
 	return (buf + _to_udec(buf, value, precision)) - start;
@@ -146,7 +147,8 @@ static	void _rlrshift(uint64_t *v)
 	*v = (*v & 1) + (*v >> 1);
 }
 
-/* Tiny integer divide-by-five routine.  The full 64 bit division
+/*
+ * Tiny integer divide-by-five routine.  The full 64 bit division
  * implementations in libgcc are very large on some architectures, and
  * currently nothing in Zephyr pulls it into the link.  So it makes
  * sense to define this much smaller special case here to avoid
@@ -163,16 +165,19 @@ static	void _rlrshift(uint64_t *v)
  */
 static void _ldiv5(uint64_t *v)
 {
-	uint32_t i, hi;
+	uint32_t hi;
 	uint64_t rem = *v, quot = 0U, q;
+	int i;
+
 	static const char shifts[] = { 32, 3, 0 };
 
-	/* Usage in this file wants rounded behavior, not truncation.  So add
+	/*
+	 * Usage in this file wants rounded behavior, not truncation.  So add
 	 * two to get the threshold right.
 	 */
 	rem += 2U;
 
-	for (i = 0U; i < 3; i++) {
+	for (i = 0; i < 3; i++) {
 		hi = rem >> shifts[i];
 		q = (uint64_t)(hi / 5U) << shifts[i];
 		rem -= q * 5U;
@@ -184,7 +189,7 @@ static void _ldiv5(uint64_t *v)
 
 static	char _get_digit(uint64_t *fr, int *digit_count)
 {
-	int		rval;
+	char rval;
 
 	if (*digit_count > 0) {
 		*digit_count -= 1;
@@ -195,7 +200,7 @@ static	char _get_digit(uint64_t *fr, int *digit_count)
 		rval = '0';
 	}
 
-	return (char) (rval);
+	return rval;
 }
 
 /*
@@ -223,17 +228,17 @@ static	char _get_digit(uint64_t *fr, int *digit_count)
 #define	MAXFP1	0xFFFFFFFF	/* Largest # if first fp format */
 #define HIGHBIT64 (1ull<<63)
 
-static int _to_float(char *buf, uint64_t double_temp, int c,
-					 int falt, int fplus, int fspace, int precision)
+static int _to_float(char *buf, uint64_t double_temp, char c,
+		     bool falt, bool fplus, bool fspace, int precision)
 {
-	register int    decexp;
-	register int    exp;
-	int             sign;
-	int             digit_count;
-	uint64_t        fract;
-	uint64_t        ltemp;
-	int             prune_zero;
-	char           *start = buf;
+	int decexp;
+	int exp;
+	bool sign;
+	int digit_count;
+	uint64_t fract;
+	uint64_t ltemp;
+	bool prune_zero;
+	char *start = buf;
 
 	exp = double_temp >> 52 & 0x7ff;
 	fract = (double_temp << 11) & ~HIGHBIT64;
@@ -332,11 +337,7 @@ static int _to_float(char *buf, uint64_t double_temp, int c,
 			prune_zero = true;
 		}
 		if ((decexp < (-4 + 1)) || (decexp > (precision + 1))) {
-			if (c == 'g') {
-				c = 'e';
-			} else {
-				c = 'E';
-			}
+			c += 'e' - 'g';
 		} else {
 			c = 'f';
 		}
@@ -412,38 +413,35 @@ static int _to_float(char *buf, uint64_t double_temp, int c,
 	}
 
 	if ((c == 'e') || (c == 'E')) {
-		*buf++ = (char) c;
+		*buf++ = c;
 		if (decexp < 0) {
 			decexp = -decexp;
 			*buf++ = '-';
 		} else {
 			*buf++ = '+';
 		}
-		*buf++ = (char) ((decexp / 10) + '0');
+		*buf++ = (decexp / 10) + '0';
 		decexp %= 10;
-		*buf++ = (char) (decexp + '0');
+		*buf++ = decexp + '0';
 	}
 	*buf = 0;
 
 	return buf - start;
 }
 
-static int _atoi(char **sptr)
+static int _atoi(const char **sptr)
 {
-	register char *p;
-	register int   i;
+	const char *p = *sptr - 1;
+	int i = 0;
 
-	i = 0;
-	p = *sptr;
-	p--;
-	while (isdigit(((int) *p))) {
+	while (isdigit(*p)) {
 		i = 10 * i + *p++ - '0';
 	}
 	*sptr = p;
 	return i;
 }
 
-int z_prf(int (*func)(), void *dest, char *format, va_list vargs)
+int z_prf(int (*func)(), void *dest, const char *format, va_list vargs)
 {
 	/*
 	 * Due the fact that buffer is passed to functions in this file,
@@ -451,23 +449,18 @@ int z_prf(int (*func)(), void *dest, char *format, va_list vargs)
 	 * the buffer size, either MAXFLD should be changed or the change
 	 * has to be propagated across the file
 	 */
-	char			buf[MAXFLD + 1];
-	register int	c;
-	int				count;
-	register char	*cptr;
-	int				falt;
-	int				fminus;
-	int				fplus;
-	int				fspace;
-	register int	i;
-	int				need_justifying;
-	char			pad;
-	int				precision;
-	int				prefix;
-	int				width;
-	VALTYPE			val;
-	char			*cptr_temp;
-	uint64_t			double_temp;
+	char buf[MAXFLD + 1];
+	int c;
+	int count;
+	char *cptr;
+	bool falt, fminus, fplus, fspace;
+	int i;
+	bool need_justifying;
+	char pad;
+	int precision;
+	int prefix;
+	int width;
+	VALTYPE val;
 
 	count = 0;
 
@@ -615,33 +608,35 @@ int z_prf(int (*func)(), void *dest, char *format, va_list vargs)
 			case 'F':
 			case 'g':
 			case 'G':
-				/* standard platforms which supports double */
 			{
+				uint64_t double_val;
 #ifdef CONFIG_X86_64
-				/* Can't use a double here because
+				/*
+				 * Can't use a double here because
 				 * we're operating in -mno-sse and
 				 * va_arg() will expect this to be a
 				 * register argument.
 				 */
-				double_temp = va_arg(vargs, uint64_t);
+				double_val = va_arg(vargs, uint64_t);
 #else
+				/* standard platforms which supports double */
 				union {
 					double d;
 					uint64_t i;
 				} u;
 
-				u.d = (double) va_arg(vargs, double);
-				double_temp = u.i;
+				u.d = va_arg(vargs, double);
+				double_val = u.i;
 #endif
-			}
 
-				c = _to_float(buf, double_temp, c, falt, fplus,
+				c = _to_float(buf, double_val, c, falt, fplus,
 					      fspace, precision);
 				if (fplus || fspace || (buf[0] == '-')) {
 					prefix = 1;
 				}
 				need_justifying = true;
 				break;
+			}
 
 			case 'n':
 				switch (i) {
@@ -675,7 +670,8 @@ int z_prf(int (*func)(), void *dest, char *format, va_list vargs)
 				break;
 
 			case 's':
-				cptr_temp = va_arg(vargs, char *);
+			{
+				char *cptr_temp = va_arg(vargs, char *);
 				/* Get the string length */
 				for (c = 0; c < MAXFLD; c++) {
 					if (cptr_temp[c] == '\0') {
@@ -690,12 +686,7 @@ int z_prf(int (*func)(), void *dest, char *format, va_list vargs)
 					need_justifying = true;
 				}
 				break;
-
-				need_justifying = true;
-				if (precision != -1) {
-					pad = ' ';
-				}
-				break;
+			}
 
 			case 'o':
 			case 'u':
