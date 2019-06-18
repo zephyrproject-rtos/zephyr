@@ -238,13 +238,13 @@ void configure_builtin_stack_guard(struct k_thread *thread)
 
 #if defined(CONFIG_MPU_STACK_GUARD) || defined(CONFIG_USERSPACE)
 
-#define IS_MPU_GUARD_VIOLATION(guard_start, fault_addr, stack_ptr) \
-	(fault_addr == -EINVAL) ? \
+#define IS_MPU_GUARD_VIOLATION(guard_start, guard_len, fault_addr, stack_ptr) \
+	((fault_addr == -EINVAL) ? \
 	((fault_addr >= guard_start) && \
-	(fault_addr < (guard_start + MPU_GUARD_ALIGN_AND_SIZE)) && \
-	(stack_ptr < (guard_start + MPU_GUARD_ALIGN_AND_SIZE))) \
+	(fault_addr < (guard_start + guard_len)) && \
+	(stack_ptr < (guard_start + guard_len))) \
 	: \
-	(stack_ptr < (guard_start + MPU_GUARD_ALIGN_AND_SIZE))
+	(stack_ptr < (guard_start + guard_len)))
 
 /**
  * @brief Assess occurrence of current thread's stack corruption
@@ -290,14 +290,21 @@ u32_t z_check_thread_stack_fail(const u32_t fault_addr, const u32_t psp)
 		return 0;
 	}
 
+#if defined(CONFIG_FLOAT) && defined(CONFIG_FP_SHARING)
+	u32_t guard_len = (thread->base.user_options & K_FP_REGS) ?
+		MPU_GUARD_ALIGN_AND_SIZE_FLOAT : MPU_GUARD_ALIGN_AND_SIZE;
+#else
+	u32_t guard_len = MPU_GUARD_ALIGN_AND_SIZE;
+#endif /* CONFIG_FLOAT && CONFIG_FP_SHARING */
+
 #if defined(CONFIG_USERSPACE)
 	if (thread->arch.priv_stack_start) {
 		/* User thread */
 		if ((__get_CONTROL() & CONTROL_nPRIV_Msk) == 0) {
 			/* User thread in privilege mode */
 			if (IS_MPU_GUARD_VIOLATION(
-				thread->arch.priv_stack_start -
-					MPU_GUARD_ALIGN_AND_SIZE,
+				thread->arch.priv_stack_start - guard_len,
+					guard_len,
 				fault_addr, psp)) {
 				/* Thread's privilege stack corruption */
 				return thread->arch.priv_stack_start;
@@ -310,16 +317,17 @@ u32_t z_check_thread_stack_fail(const u32_t fault_addr, const u32_t psp)
 		}
 	} else {
 		/* Supervisor thread */
-		if (IS_MPU_GUARD_VIOLATION((u32_t)thread->stack_obj,
-			fault_addr, psp)) {
+		if (IS_MPU_GUARD_VIOLATION(thread->stack_info.start -
+				guard_len,
+				guard_len,
+				fault_addr, psp)) {
 			/* Supervisor thread stack corruption */
-			return (u32_t)thread->stack_obj +
-				MPU_GUARD_ALIGN_AND_SIZE;
+			return thread->stack_info.start;
 		}
 	}
 #else /* CONFIG_USERSPACE */
-	if (IS_MPU_GUARD_VIOLATION(thread->stack_info.start -
-			MPU_GUARD_ALIGN_AND_SIZE,
+	if (IS_MPU_GUARD_VIOLATION(thread->stack_info.start - guard_len,
+			guard_len,
 			fault_addr, psp)) {
 		/* Thread stack corruption */
 		return thread->stack_info.start;
