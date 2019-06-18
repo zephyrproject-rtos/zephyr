@@ -548,6 +548,7 @@ int z_prf(int (*func)(), void *dest, const char *format, va_list vargs)
 			 * This implementation only supports the following
 			 * length modifiers:
 			 *    h: short
+			 *   hh: char
 			 *    l: long
 			 *   ll: long long
 			 *    z: size_t or ssize_t
@@ -559,6 +560,9 @@ int z_prf(int (*func)(), void *dest, const char *format, va_list vargs)
 				if (IS_ENABLED(CONFIG_MINIMAL_LIBC_LL_PRINTF) &&
 				    i == 'l' && c == 'l') {
 					i = 'L';
+					c = *format++;
+				} else if (i == 'h' && c == 'h') {
+					i = 'H';
 					c = *format++;
 				}
 			}
@@ -588,6 +592,7 @@ int z_prf(int (*func)(), void *dest, const char *format, va_list vargs)
 					val = va_arg(vargs, ssize_t);
 					break;
 				case 'h':
+				case 'H':
 				default:
 					val = va_arg(vargs, int);
 					break;
@@ -642,6 +647,9 @@ int z_prf(int (*func)(), void *dest, const char *format, va_list vargs)
 				switch (i) {
 				case 'h':
 					*va_arg(vargs, short *) = count;
+					break;
+				case 'H':
+					*va_arg(vargs, char *) = count;
 					break;
 				case 'l':
 					*va_arg(vargs, long *) = count;
@@ -705,6 +713,7 @@ int z_prf(int (*func)(), void *dest, const char *format, va_list vargs)
 					val = va_arg(vargs, size_t);
 					break;
 				case 'h':
+				case 'H':
 				default:
 					val = va_arg(vargs, unsigned int);
 					break;
