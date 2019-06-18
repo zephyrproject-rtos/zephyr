@@ -351,9 +351,23 @@ int z_arch_float_disable(struct k_thread *thread)
 
 	/* Disable all floating point capabilities for the thread */
 
+	/* K_FP_REG flag is used in SWAP and stack check fail. Locking
+	 * interrupts here prevents a possible context-switch or MPU
+	 * fault to take an outdated thread user_options flag into
+	 * account.
+	 */
+	int key = z_arch_irq_lock();
+
 	thread->base.user_options &= ~K_FP_REGS;
 
 	__set_CONTROL(__get_CONTROL() & (~CONTROL_FPCA_Msk));
+
+	/* No need to add an ISB barrier after setting the CONTROL
+	 * register; z_arch_irq_unlock() already adds one.
+	 */
+
+	z_arch_irq_unlock(key);
+
 	return 0;
 }
 #endif /* CONFIG_FLOAT && CONFIG_FP_SHARING */
