@@ -77,6 +77,19 @@ This means that any thread is allowed to access the floating point registers.
 The ARM kernel automatically detects that a given thread is using the floating
 point registers the first time the thread accesses them.
 
+Pretag a thread that intends to use the FP registers by
+using one of the techniques listed below.
+
+* A statically-created ARM thread can be pretagged by passing the
+  :c:macro:`K_FP_REGS` option to :c:macro:`K_THREAD_DEFINE`.
+
+* A dynamically-created ARM thread can be pretagged by passing the
+  :c:macro:`K_FP_REGS` option to :cpp:func:`k_thread_create()`.
+
+Pretagging a thread with the :c:macro:`K_FP_REGS` option instructs the
+MPU-based stack protection mechanism to properly configure the size of
+the thread's guard region to always guarantee stack overflow detection.
+
 During thread context switching the ARM kernel saves the *callee-saved*
 floating point registers, if the switched-out thread has been using them.
 Additionally, the *caller-saved* floating point registers are saved on
