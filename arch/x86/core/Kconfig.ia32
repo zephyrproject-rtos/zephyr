@@ -272,7 +272,7 @@ config LAZY_FP_SHARING
 	  registers, using logic to lazily save/restore the floating point
 	  register state on context switch.
 
-	  On Intel Core procesors, may be vulnerable to exploits which allows
+	  On Intel Core processors, may be vulnerable to exploits which allows
 	  malware to read the contents of all floating point registers, see
 	  CVE-2018-3665.
 

@@ -64,9 +64,9 @@ config BT_GATT_DIS_PNP_VID
 	 device. This field is used in conjunction with Vendor ID Source field,
 	 which determines which organization assigned the Vendor ID field value.
 	 Note: The Bluetooth Special Interest Group assigns Device ID Vendor ID,
-	 and the USB Implementer’s Forum assigns Vendor IDs,
+	 and the USB Implementers Forum assigns Vendor IDs,
 	 either of which can be used for the Vendor ID field value.
-	 Device providers should procure the Vendor ID from the USB Implementer’s
+	 Device providers should procure the Vendor ID from the USB Implementers
 	 Forum or the Company Identifier from the Bluetooth SIG.
 
 config BT_GATT_DIS_PNP_PID
@@ -89,8 +89,8 @@ config BT_GATT_DIS_PNP_VER
 	 Product ID fields. This field is intended to differentiate between
 	 versions of products with identical Vendor IDs and Product IDs.
 	 The value of the field value is 0xJJMN for version JJ.M.N
-	 (JJ – major version number, M – minor version number,
-	 N – sub-minor version number); e.g., version 2.1.3 is represented with
+	 (JJ - major version number, M - minor version number,
+	 N - sub-minor version number); e.g., version 2.1.3 is represented with
 	 value 0x0213 and version 2.0.0 is represented with a value of 0x0200.
 	 When upward-compatible changes are made to the device, it is recommended
 	 that the minor version number be incremented. If incompatible changes are
@@ -135,7 +135,7 @@ config BT_GATT_DIS_HW_REV_STR
 config BT_GATT_DIS_SW_REV
 	bool "Enable DIS Software Revision characteristic"
 	help
-	 Enable Softwar Revision characteristic in Device Information Service.
+	 Enable Software Revision characteristic in Device Information Service.
 
 config BT_GATT_DIS_SW_REV_STR
 	string "Software revision"
