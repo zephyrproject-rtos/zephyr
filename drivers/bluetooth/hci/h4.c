@@ -34,6 +34,8 @@
 #define H4_SCO  0x03
 #define H4_EVT  0x04
 
+#define BUF_DISCARDABLE BIT(7)
+
 static K_THREAD_STACK_DEFINE(rx_thread_stack, CONFIG_BT_RX_STACK_SIZE);
 static struct k_thread rx_thread_data;
 
@@ -159,14 +161,81 @@ static void reset_rx(void)
 
 static struct net_buf *get_rx(int timeout)
 {
+	struct net_buf *buf;
+
 	BT_DBG("type 0x%02x, evt 0x%02x", rx.type, rx.evt.evt);
 
 	if (rx.type == H4_EVT) {
-		return bt_buf_get_evt(rx.evt.evt, timeout);
+		buf = bt_buf_get_evt(rx.evt.evt, timeout);
+	} else {
+		buf = bt_buf_get_rx(BT_BUF_ACL_IN, timeout);
 	}
 
-	return bt_buf_get_rx(BT_BUF_ACL_IN, timeout);
+	if (buf) {
+		if (rx.discardable) {
+			buf->flags |= BUF_DISCARDABLE;
+		} else {
+			buf->flags &= ~BUF_DISCARDABLE;
+		}
+	}
+
+	return buf;
 }
+
+#if (CONFIG_BT_H4_DISCARD_RX_WAIT >= 0)
+static struct net_buf *get_rx_blocking(void)
+{
+	sys_slist_t list = SYS_SLIST_STATIC_INIT(&list);
+	bool discarded = false;
+	struct net_buf *buf;
+
+	/* If we have ACL flow control enabled then ACL buffers come from a
+	 * dedicated pool, and we cannot benefit from trying to discard
+	 * events from the RX queue.
+	 */
+	if (IS_ENABLED(CONFIG_BT_HCI_ACL_FLOW_CONTROL) && rx.type == H4_ACL) {
+		return get_rx(K_FOREVER);
+	}
+
+	buf = get_rx(CONFIG_BT_H4_DISCARD_RX_WAIT);
+	if (buf) {
+		return buf;
+	}
+
+	BT_WARN("Attempting to discard packets from RX queue");
+
+	while ((buf = net_buf_get(&rx.fifo, K_NO_WAIT))) {
+		if (!discarded && (buf->flags & BUF_DISCARDABLE)) {
+			net_buf_unref(buf);
+			discarded = true;
+		} else {
+			/* Since we use k_fifo_put_slist() instead of
+			 * net_buf APIs to insert back to the FIFO we
+			 * cannot support fragmented buffers. This should
+			 * never happen but better to "document" it in the
+			 * form of an assert here.
+			 */
+			__ASSERT(!(buf->flags & NET_BUF_FRAGS),
+				 "Fragmented buffers not supported");
+			sys_slist_append(&list, &buf->node);
+		}
+	}
+
+	if (!discarded) {
+		BT_WARN("Unable to discard anything from the RX queue");
+	}
+
+	/* Insert non-discarded packets back to the RX queue */
+	k_fifo_put_slist(&rx.fifo, &list);
+
+	return get_rx(K_FOREVER);
+}
+#else
+static inline struct net_buf *get_rx_blocking(void)
+{
+	return get_rx(K_FOREVER);
+}
+#endif
 
 static void rx_thread(void *p1, void *p2, void *p3)
 {
@@ -186,7 +255,7 @@ static void rx_thread(void *p1, void *p2, void *p3)
 		 * original command buffer (if available).
 		 */
 		if (rx.have_hdr && !rx.buf) {
-			rx.buf = get_rx(K_FOREVER);
+			rx.buf = get_rx_blocking();
 			BT_DBG("Got rx.buf %p", rx.buf);
 			if (rx.remaining > net_buf_tailroom(rx.buf)) {
 				BT_ERR("Not enough space in buffer");

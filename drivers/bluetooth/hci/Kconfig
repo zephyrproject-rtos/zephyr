@@ -77,6 +77,20 @@ config BT_UART_ON_DEV_NAME
 	  This option specifies the name of UART device to be used
 	  for Bluetooth.
 
+if BT_H4
+
+config BT_H4_DISCARD_RX_WAIT
+	int "How many milliseconds to initially wait for RX buffers"
+	range -1 6000000
+	default 100
+	help
+	  This option specifies how many milliseconds the H4 HCI driver
+	  will initially wait for RX buffers to become available before
+	  attempting to discard discardable buffers from the RX queue. Set
+	  to -1 (K_FOREVER) to disable the feature.
+
+endif # BT_H4
+
 if BT_SPI
 
 config BT_BLUENRG_ACI
