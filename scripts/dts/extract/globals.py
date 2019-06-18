@@ -42,6 +42,7 @@ def str_to_label(s):
             .replace(',', '_') \
             .replace('@', '_') \
             .replace('/', '_') \
+            .replace('+', 'PLUS') \
             .upper()
 
 
