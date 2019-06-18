@@ -534,7 +534,7 @@ void settings_line_load_cb(const char *name, void *val_read_cb_ctx, off_t off,
 			   void *cb_arg)
 {
 	const char *name_key;
-	struct settings_handler *ch;
+	struct settings_handler_static *ch;
 	struct settings_line_read_value_cb_ctx value_ctx;
 	int rc;
 	size_t len;
