@@ -274,6 +274,10 @@ struct net_context {
 	void *offload_context;
 #endif /* CONFIG_NET_OFFLOAD */
 
+#if defined(CONFIG_NET_SOCKETS_CAN)
+	int can_filter_id;
+#endif /* CONFIG_NET_SOCKETS_CAN */
+
 	/** Option values */
 	struct {
 #if defined(CONFIG_NET_CONTEXT_PRIORITY)
@@ -431,6 +435,56 @@ static inline void net_context_set_type(struct net_context *context,
 
 	context->flags |= flag;
 }
+
+/**
+ * @brief Set CAN filter id for this network context.
+ *
+ * @details This function sets the CAN filter id of the context.
+ *
+ * @param context Network context.
+ * @param filter_id CAN filter id
+ */
+#if defined(CONFIG_NET_SOCKETS_CAN)
+static inline void net_context_set_filter_id(struct net_context *context,
+					     int filter_id)
+{
+	NET_ASSERT(context);
+
+	context->can_filter_id = filter_id;
+}
+#else
+static inline void net_context_set_filter_id(struct net_context *context,
+					     int filter_id)
+{
+	ARG_UNUSED(context);
+	ARG_UNUSED(filter_id);
+}
+#endif
+
+/**
+ * @brief Get CAN filter id for this network context.
+ *
+ * @details This function gets the CAN filter id of the context.
+ *
+ * @param context Network context.
+ *
+ * @return Filter id of this network context
+ */
+#if defined(CONFIG_NET_SOCKETS_CAN)
+static inline int net_context_get_filter_id(struct net_context *context)
+{
+	NET_ASSERT(context);
+
+	return context->can_filter_id;
+}
+#else
+static inline int net_context_get_filter_id(struct net_context *context)
+{
+	ARG_UNUSED(context);
+
+	return -1;
+}
+#endif
 
 /**
  * @brief Get context IP protocol for this network context.

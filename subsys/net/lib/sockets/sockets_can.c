@@ -102,7 +102,8 @@ static void zcan_received_cb(struct net_context *ctx, struct net_pkt *pkt,
 			(struct zcan_frame *)net_pkt_data(pkt);
 		struct can_frame frame;
 
-		if (receivers[i].iface != net_pkt_iface(pkt)) {
+		if (!receivers[i].ctx ||
+		    receivers[i].iface != net_pkt_iface(pkt)) {
 			continue;
 		}
 
@@ -343,8 +344,86 @@ static ssize_t can_sock_write_vmeth(void *obj, const void *buffer,
 	return zcan_sendto_ctx(obj, buffer, count, 0, NULL, 0);
 }
 
+static bool is_already_attached(struct can_filter *filter,
+				struct net_if *iface,
+				struct net_context *ctx)
+{
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(receivers); i++) {
+		if (receivers[i].ctx != ctx && receivers[i].iface == iface &&
+		    ((receivers[i].can_id & receivers[i].can_mask) ==
+		     (UNALIGNED_GET(&filter->can_id) &
+		      UNALIGNED_GET(&filter->can_mask)))) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+static int close_socket(struct net_context *ctx)
+{
+	const struct canbus_api *api;
+	struct net_if *iface;
+	struct device *dev;
+
+	iface = net_context_get_iface(ctx);
+	dev = net_if_get_device(iface);
+	api = dev->driver_api;
+
+	if (!api || !api->close) {
+		return -ENOTSUP;
+	}
+
+	api->close(dev, net_context_get_filter_id(ctx));
+
+	return 0;
+}
+
+static int can_close_socket(struct net_context *ctx)
+{
+	int i, ret;
+
+	for (i = 0; i < ARRAY_SIZE(receivers); i++) {
+		if (receivers[i].ctx == ctx) {
+			struct can_filter filter;
+
+			receivers[i].ctx = NULL;
+
+			filter.can_id = receivers[i].can_id;
+			filter.can_mask = receivers[i].can_mask;
+
+			if (!is_already_attached(&filter,
+						net_context_get_iface(ctx),
+						ctx)) {
+				/* We can detach now as there are no other
+				 * sockets that have same filter.
+				 */
+				ret = close_socket(ctx);
+				if (ret < 0) {
+					return ret;
+				}
+			}
+
+			return 0;
+		}
+	}
+
+	return 0;
+}
+
 static int can_sock_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 {
+	if (request == ZFD_IOCTL_CLOSE) {
+		int ret;
+
+		ret = can_close_socket(obj);
+		if (ret < 0) {
+			NET_DBG("Cannot detach net_context %p (%d)", obj, ret);
+		}
+	}
+
 	return sock_fd_op_vtable.fd_vtable.ioctl(obj, request, args);
 }
 
@@ -504,24 +583,6 @@ static void can_unregister_filters(struct net_if *iface,
 		can_unregister_receiver(iface, ctx, filters[i].can_id,
 					filters[i].can_mask);
 	}
-}
-
-static bool is_already_attached(struct can_filter *filter,
-				struct net_if *iface,
-				struct net_context *ctx)
-{
-	int i;
-
-	for (i = 0; i < ARRAY_SIZE(receivers); i++) {
-		if (receivers[i].ctx != ctx && receivers[i].iface == iface &&
-		    ((receivers[i].can_id & receivers[i].can_mask) ==
-		     (UNALIGNED_GET(&filter->can_id) &
-		      UNALIGNED_GET(&filter->can_mask)))) {
-			return true;
-		}
-	}
-
-	return false;
 }
 
 static int can_sock_setsockopt_vmeth(void *obj, int level, int optname,
