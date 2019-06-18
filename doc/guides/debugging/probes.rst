@@ -198,7 +198,7 @@ application ``CMakeList.txt`` file.
 
      set(ZEPHYR_BOARD_FLASH_RUNNER jlink)
 
-If you use West (Zephyr’s meta-tool) you can modify the default runner using
+If you use West (Zephyr's meta-tool) you can modify the default runner using
 the ``--runner`` (or ``-r``) option.
 
   .. code-block:: console
