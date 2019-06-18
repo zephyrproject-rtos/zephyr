@@ -1,4 +1,4 @@
----
+
 title: OpenISA LPUART
 version: 0.1
 
@@ -28,4 +28,3 @@ properties:
       category: optional
       description: use hw flow control
       generation: define
-...

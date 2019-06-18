@@ -5,4 +5,3 @@ tests:
     harness: sensor
     tags: sensors
     platform_whitelist: hexiwear_k64 warp7_m4
-

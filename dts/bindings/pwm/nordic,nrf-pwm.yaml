@@ -1,4 +1,4 @@
----
+
 title: nRF PWM
 version: 0.1
 
@@ -65,4 +65,3 @@ properties:
       description: Channel 3 inverted
       category: optional
       generation: define
-...

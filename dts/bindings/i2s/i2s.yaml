@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
----
+
 title: I2S Base Structure
 version: 0.1
 
@@ -32,5 +32,3 @@ properties:
       category: optional
       description: Clock gate information
       generation: define
-
-...

@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
----
+
 title: Nordic nRF Family SPIS (SPI Slave)
 version: 0.1
 
@@ -54,4 +54,3 @@ properties:
           Default character. Character clocked out when the slave was not
           provided with buffers and is ignoring the transaction.
       generation: define
-...

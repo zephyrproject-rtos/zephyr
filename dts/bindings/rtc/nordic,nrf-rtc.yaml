@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
----
+
 title: Nordic nRF Real Time Counter
 version: 0.1
 
@@ -29,4 +29,3 @@ properties:
       description: Enable wrapping with PPI
       generation: define
       category: required
-...

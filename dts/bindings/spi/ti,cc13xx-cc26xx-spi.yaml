@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
----
+
 title: TI SimpleLink CC13xx / CC26xx SPI
 version: 0.1
 
@@ -43,4 +43,3 @@ properties:
       category: optional
       description: CS pin
       generation: define
-...

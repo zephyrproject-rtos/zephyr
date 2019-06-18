@@ -1,4 +1,4 @@
----
+
 title: Xtensa Core Interrupt Controller
 version: 0.1
 
@@ -27,4 +27,3 @@ cell_string: IRQ
   - irq
   - sense
   - priority
-...

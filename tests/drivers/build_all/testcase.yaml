@@ -53,4 +53,3 @@ tests:
     extra_args: CONF_FILE=gpio.conf
     min_ram: 32
     depends_on: gpio
-

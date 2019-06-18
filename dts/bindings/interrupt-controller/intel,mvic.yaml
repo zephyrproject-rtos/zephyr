@@ -1,4 +1,4 @@
----
+
 title: Intel Quark D2000 Interrupt Controller
 version: 0.1
 
@@ -25,4 +25,3 @@ properties:
 "#cells":
   - irq
   - sense
-...

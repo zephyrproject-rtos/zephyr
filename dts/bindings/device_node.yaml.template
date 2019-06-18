@@ -1,4 +1,3 @@
----
 title: <short description of the node>
 version: 0.1
 
@@ -70,5 +69,3 @@ properties:
   - cell1    # name of second cell
   - cell2    # name of third cell
   - and so on and so forth
-
-...

@@ -1,4 +1,4 @@
----
+
 title: CC32XX I2C
 version: 0.1
 
@@ -17,5 +17,3 @@ properties:
 
     interrupts:
       category: required
-
-...

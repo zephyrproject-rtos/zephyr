@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
----
+
 title: ADXL362 Three Axis SPI accelerometer
 version: 0.1
 
@@ -21,4 +21,3 @@ properties:
       type: compound
       category: optional
       generation: define, use-prop-name
-...

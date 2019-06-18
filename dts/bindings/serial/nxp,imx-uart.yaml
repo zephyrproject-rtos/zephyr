@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
----
+
 title: iMX Uart
 version: 0.1
 
@@ -45,5 +45,3 @@ properties:
      category: required
      description: Set the RDC permission for this peripheral
      generation: define
-
-...

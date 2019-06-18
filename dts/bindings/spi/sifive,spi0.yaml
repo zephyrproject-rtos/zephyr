@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
----
+
 title: Sifive SPI driver
 version: 0.1
 
@@ -19,5 +19,3 @@ properties:
 
     reg:
       category: required
-
-...

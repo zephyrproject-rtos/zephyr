@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
----
+
 title: NXP Kinetis Ethernet
 version: 0.1
 
@@ -19,4 +19,3 @@ properties:
       category: required
     interrupts:
       category: required
-...

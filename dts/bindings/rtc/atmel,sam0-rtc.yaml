@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
----
+
 title: Atmel SAM0 RTC
 version: 0.1
 
@@ -25,4 +25,3 @@ properties:
       description: clock generator index
       generation: define
       category: required
-...

@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
----
+
 title: STMicroelectronics MEMS sensors LSM9DS0-MFD
 version: 0.1
 
@@ -21,4 +21,3 @@ properties:
       type: compound
       category: required
       generation: define, use-prop-name
-...

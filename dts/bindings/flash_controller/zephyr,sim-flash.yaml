@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
----
+
 title: simulated flash
 version: 0.1
 
@@ -15,5 +15,3 @@ properties:
 
     label:
       category: required
-
-...

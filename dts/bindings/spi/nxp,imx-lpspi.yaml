@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
----
+
 title: NXP LPSPI
 version: 0.1
 
@@ -28,4 +28,3 @@ properties:
       category: required
       description: Clock gate information
       generation: define
-...

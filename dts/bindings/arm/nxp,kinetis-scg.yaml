@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
----
+
 title: NXP Kinetis SCG (System Clock Generator)
 version: 0.1
 
@@ -142,5 +142,3 @@ properties:
       description: clockout clock source
       generation: define
       category: optional
-
-...

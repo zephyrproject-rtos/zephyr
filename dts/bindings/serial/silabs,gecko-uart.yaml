@@ -1,4 +1,4 @@
----
+
 title: GECKO UART
 version: 0.1
 
@@ -32,4 +32,3 @@ properties:
       category: required
       description: TX pin configuration defined as <location port pin>
       generation: define
-...

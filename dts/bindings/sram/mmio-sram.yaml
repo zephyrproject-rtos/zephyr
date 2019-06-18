@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
----
+
 title: Generic on-chip SRAM
 version: 0.1
 
@@ -22,5 +22,3 @@ properties:
 
     label:
       category: optional
-
-...

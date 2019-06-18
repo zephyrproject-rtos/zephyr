@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
----
+
 title: SSD1673 250x150 EPD Display Controller
 version: 0.1
 
@@ -109,5 +109,3 @@ properties:
       type: compound
       category: required
       generation: define, use-prop-name
-
-...

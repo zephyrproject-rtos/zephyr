@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
----
+
 title: NXP Kinetis ADC12
 version: 0.1
 
@@ -46,4 +46,3 @@ properties:
       category: required
       description: sample time in clock cycles
       generation: define
-...

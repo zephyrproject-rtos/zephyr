@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
----
+
 title: i.MX Clock Controller Module (CCM)
 version: 0.1
 
@@ -27,4 +27,3 @@ properties:
   - name
   - offset
   - bits
-...

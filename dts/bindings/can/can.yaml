@@ -1,4 +1,4 @@
----
+
 title: CAN Base Structure
 version: 0.1
 
@@ -46,4 +46,3 @@ properties:
       type: array
       category: optional
       description: pinmux information for RX, TX
-...
