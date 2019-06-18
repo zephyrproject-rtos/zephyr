@@ -1,0 +1,8 @@
+# Copyright (c) 2019 Antmicro Ltd
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config CIVETWEB
+	bool "Civetweb Support"
+	help
+	  This option enables the civetweb HTTP API.
