@@ -462,16 +462,14 @@ int z_prf(int (*func)(), void *dest, const char *format, va_list vargs)
 	int width;
 	VALTYPE val;
 
+#define PUTC(c)	do { if ((*func)(c, dest) == EOF) return EOF; } while (false)
+
 	count = 0;
 
 	while ((c = *format++)) {
 		if (c != '%') {
-			if ((*func) (c, dest) == EOF) {
-				return EOF;
-			}
-
+			PUTC(c);
 			count++;
-
 		} else {
 			fminus = fplus = fspace = falt = false;
 			pad = ' ';		/* Default pad character    */
@@ -735,10 +733,7 @@ int z_prf(int (*func)(), void *dest, const char *format, va_list vargs)
 				break;
 
 			case '%':
-				if ((*func)('%', dest) == EOF) {
-					return EOF;
-				}
-
+				PUTC('%');
 				count++;
 				break;
 
@@ -773,13 +768,14 @@ int z_prf(int (*func)(), void *dest, const char *format, va_list vargs)
 					c = width;
 				}
 
-				for (cptr = buf; c > 0; c--, cptr++, count++) {
-					if ((*func)(*cptr, dest) == EOF) {
-						return EOF;
-					}
+				count += c;
+				for (cptr = buf; c > 0; c--, cptr++) {
+					PUTC(*cptr);
 				}
 			}
 		}
 	}
 	return count;
+
+#undef PUTC
 }
