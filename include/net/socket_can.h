@@ -65,6 +65,9 @@ struct canbus_api {
 	/** Send a CAN packet by socket */
 	int (*send)(struct device *dev, struct net_pkt *pkt);
 
+	/** Close the related CAN socket */
+	void (*close)(struct device *dev, int filter_id);
+
 	/** Set socket CAN option */
 	int (*setsockopt)(struct device *dev, void *obj, int level, int optname,
 			  const void *optval, socklen_t optlen);
