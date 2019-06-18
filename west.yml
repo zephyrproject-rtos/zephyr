@@ -33,6 +33,9 @@ manifest:
   # This will grow over time as external code is migrated into its own
   # repositories.
   projects:
+    - name: ci-tools
+      revision: cfb83fd6f1f498fa05d788a5d2cbeff9c92742f5
+      path: tools/ci-tools
     - name: net-tools
       revision: 30b7efa827b04d2e47840716b0372737fe7d6c92
     - name: tinycbor
