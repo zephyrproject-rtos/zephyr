@@ -12,6 +12,7 @@
 #include <stdarg.h>
 #include <string.h>
 #include <ctype.h>
+#include <limits.h>
 #include <sys/types.h>
 #include <misc/util.h>
 
@@ -455,7 +456,6 @@ int z_prf(int (*func)(), void *dest, const char *format, va_list vargs)
 	char *cptr;
 	bool falt, fminus, fplus, fspace;
 	int i;
-	bool need_justifying;
 	char pad;
 	int precision;
 	int prefix;
@@ -473,7 +473,6 @@ int z_prf(int (*func)(), void *dest, const char *format, va_list vargs)
 		} else {
 			fminus = fplus = fspace = falt = false;
 			pad = ' ';		/* Default pad character    */
-			precision = -1;	/* No precision specified   */
 
 			while (strchr("-+ #0", (c = *format++)) != NULL) {
 				switch (c) {
@@ -517,16 +516,7 @@ int z_prf(int (*func)(), void *dest, const char *format, va_list vargs)
 				c = *format++;
 			}
 
-			/*
-			 * If <width> is INT_MIN, then its absolute value can
-			 * not be expressed as a positive number using 32-bit
-			 * two's complement.  To cover that case, cast it to
-			 * an unsigned before comparing it against MAXFLD.
-			 */
-			if ((unsigned) width > MAXFLD) {
-				width = MAXFLD;
-			}
-
+			precision = -1;
 			if (c == '.') {
 				c = *format++;
 				if (c == '*') {
@@ -565,14 +555,13 @@ int z_prf(int (*func)(), void *dest, const char *format, va_list vargs)
 				}
 			}
 
-			need_justifying = false;
+			cptr = buf;
 			prefix = 0;
 			switch (c) {
 			case 'c':
 				buf[0] = va_arg(vargs, int);
-				buf[1] = '\0';
-				need_justifying = true;
 				c = 1;
+				pad = ' ';
 				break;
 
 			case 'd':
@@ -599,8 +588,7 @@ int z_prf(int (*func)(), void *dest, const char *format, va_list vargs)
 				if (fplus || fspace || val < 0) {
 					prefix = 1;
 				}
-				need_justifying = true;
-				if (precision != -1) {
+				if (precision >= 0) {
 					pad = ' ';
 				}
 				break;
@@ -637,7 +625,6 @@ int z_prf(int (*func)(), void *dest, const char *format, va_list vargs)
 				if (fplus || fspace || (buf[0] == '-')) {
 					prefix = 1;
 				}
-				need_justifying = true;
 				break;
 			}
 
@@ -664,35 +651,29 @@ int z_prf(int (*func)(), void *dest, const char *format, va_list vargs)
 					*va_arg(vargs, int *) = count;
 					break;
 				}
-				break;
+				continue;
 
 			case 'p':
 				val = (uintptr_t) va_arg(vargs, void *);
 				c = _to_hex(buf, val, true, 2*sizeof(void *), 'x');
-				need_justifying = true;
-				if (precision != -1) {
+				if (precision >= 0) {
 					pad = ' ';
 				}
 				break;
 
 			case 's':
-			{
-				char *cptr_temp = va_arg(vargs, char *);
+				cptr = va_arg(vargs, char *);
 				/* Get the string length */
-				for (c = 0; c < MAXFLD; c++) {
-					if (cptr_temp[c] == '\0') {
+				if (precision < 0) {
+					precision = INT_MAX;
+				}
+				for (c = 0; c < precision; c++) {
+					if (cptr[c] == '\0') {
 						break;
 					}
 				}
-				if ((precision >= 0) && (precision < c)) {
-					c = precision;
-				}
-				if (c > 0) {
-					memcpy(buf, cptr_temp, (size_t) c);
-					need_justifying = true;
-				}
+				pad = ' ';
 				break;
-			}
 
 			case 'o':
 			case 'u':
@@ -726,8 +707,7 @@ int z_prf(int (*func)(), void *dest, const char *format, va_list vargs)
 						prefix = 2;
 					}
 				}
-				need_justifying = true;
-				if (precision != -1) {
+				if (precision >= 0) {
 					pad = ' ';
 				}
 				break;
@@ -735,48 +715,48 @@ int z_prf(int (*func)(), void *dest, const char *format, va_list vargs)
 			case '%':
 				PUTC('%');
 				count++;
-				break;
+				continue;
 
 			default:
 				PUTC('%');
 				PUTC(c);
 				count += 2;
-				break;
+				continue;
 
 			case 0:
 				return count;
 			}
 
-			if (c >= MAXFLD + 1) {
-				return EOF;
+			/* padding for right justification */
+			if (!fminus && c < width) {
+				if (pad == ' ') {
+					prefix = 0;
+				}
+				width -= prefix;
+				c -= prefix;
+				count += prefix;
+				while (prefix-- > 0) {
+					PUTC(*cptr++);
+				}
+				width -= c;
+				count += width;
+				while (width-- > 0) {
+					PUTC(pad);
+				}
 			}
 
-			if (need_justifying) {
-				if (c < width) {
-					if (fminus) {
-						/* Left justify? */
-						for (i = c; i < width; i++) {
-							buf[i] = ' ';
-						}
-					} else {
-						/* Right justify */
-						(void) memmove((buf + (width - c)), buf, (size_t) (c
-										+ 1));
-						if (pad == ' ') {
-							prefix = 0;
-						}
+			/* data out */
+			width -= c;
+			count += c;
+			while (c-- > 0) {
+				PUTC(*cptr++);
+			}
 
-						c = width - c + prefix;
-						for (i = prefix; i < c; i++) {
-							buf[i] = pad;
-						}
-					}
-					c = width;
-				}
-
-				count += c;
-				for (cptr = buf; c > 0; c--, cptr++) {
-					PUTC(*cptr);
+			/* padding for left justification */
+			if (width > 0) {
+				count += width;
+				while (width-- > 0) {
+					PUTC(' ');
 				}
 			}
 		}
