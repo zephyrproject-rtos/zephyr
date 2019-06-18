@@ -180,7 +180,13 @@ FUNC_NORETURN void z_arch_user_mode_enter(k_thread_entry_t user_entry,
 	 * privileged stack. Adjust the available (writable) stack
 	 * buffer area accordingly.
 	 */
+#if defined(CONFIG_FLOAT) && defined(CONFIG_FP_SHARING)
+	 _current->arch.priv_stack_start +=
+		(_current->base.user_options & K_FP_REGS) ?
+		MPU_GUARD_ALIGN_AND_SIZE_FLOAT : MPU_GUARD_ALIGN_AND_SIZE;
+#else
 	 _current->arch.priv_stack_start += MPU_GUARD_ALIGN_AND_SIZE;
+#endif /* CONFIG_FLOAT && CONFIG_FP_SHARING */
 #endif /* CONFIG_MPU_STACK_GUARD */
 
 	z_arm_userspace_enter(user_entry, p1, p2, p3,
