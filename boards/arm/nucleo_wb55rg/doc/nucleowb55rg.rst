@@ -214,9 +214,13 @@ Flashing
 ========
 
 Nucleo WB55RG board includes an ST-LINK/V2-1 embedded debug tool
-interface.  This interface is not yet supported by the openocd version
-included in the Zephyr SDK. You can flash your application with drag and drop
-in the drive mounted when plugging your nucleo board to your PC.
+interface.  This interface is not yet supported by the openocd version.
+Instead, support can be enabled on pyocd by adding "pack" support with
+the following pyocd command:
+
+.. code-block:: console
+
+   $ pyocd pack --install stm32wb55rg
 
 
 Flashing an application to Nucleo WB55RG
@@ -237,7 +241,7 @@ Then build and flash the application.
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
    :board: nucleo_wb55rg
-   :goals: build
+   :goals: build flash
 
 You should see the following message on the console:
 
@@ -248,18 +252,11 @@ You should see the following message on the console:
 Debugging
 =========
 
-While STM32WB55RG is not yet supported you can debug an application using pyocd.
-Here is an example for the :ref:`hello_world` application.
-Start pyocd gdbserver on your machine:
-
-.. code-block:: console
-
-   $ pyocd gdbserver
-
-Then launch debug on your board:
+You can debug an application in the usual way.  Here is an example for the
+:ref:`blinky-sample` application.
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/hello_world
+   :zephyr-app: samples/basic/blinky
    :board: nucleo_wb55rg
    :maybe-skip-config:
    :goals: debug
