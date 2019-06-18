@@ -79,7 +79,7 @@ config UPDATEHUB_SHELL
 	  Activate shell module that provides UpdateHub commands like
 
 config UPDATEHUB_DTLS
-	bool"Activite communication CoAPS/DTLS"
+	bool"Activate communication CoAPS/DTLS"
 	depends on UPDATEHUB
 	select MBEDTLS
 	select MBEDTLS_ENABLE_HEAP

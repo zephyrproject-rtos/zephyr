@@ -27,7 +27,7 @@
 /*
  * GCC can detect if memcpy is passed a NULL argument, however one of
  * the cases of relocate_vector_table() it is valid to pass NULL, so we
- * supress the warning for this case.  We need to do this before
+ * suppress the warning for this case.  We need to do this before
  * string.h is included to get the declaration of memcpy.
  */
 #pragma GCC diagnostic push

@@ -11,14 +11,14 @@
  * the backing storage.
  *
  * Enqueuing is a 2 step procedure: Alloc and commit. We say an allocated
- * buffer yet to be committed, exists in a limbo state - until comitted.
+ * buffer yet to be committed, exists in a limbo state - until committed.
  * It is only safe to write to a buffer while it is in limbo.
  *
  * Invariant: last-index refers to the buffer that is safe to write while in
  * limbo-state. Outside limbo state, last-index refers one buffer ahead of what
  * has been enqueued.
  *
- * There are essentialy two APIs, distinguished by the buffer-type:
+ * There are essentially two APIs, distinguished by the buffer-type:
  *  API 1 Value-type   : MFIFO_DEFINE(name1, sizeof(struct foo), cnt1);
  *  API 2 Pointer-type : MFIFO_DEFINE(name2, sizeof(void *),     cnt2);
  *

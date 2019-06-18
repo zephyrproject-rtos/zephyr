@@ -598,7 +598,7 @@ static int ethernet_send(struct net_if *iface, struct net_pkt *pkt)
 	}
 
 	/* If the ll dst addr has not been set before, let's assume
-	 * temporarly it's a broadcast one. When filling the header,
+	 * temporarily it's a broadcast one. When filling the header,
 	 * it might detect this should be multicast and act accordingly.
 	 */
 	if (!net_pkt_lladdr_dst(pkt)->addr) {

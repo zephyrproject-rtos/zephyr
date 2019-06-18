@@ -593,7 +593,7 @@ void test_sem_measure_timeout_from_thread(void)
 	k_sem_reset(&simple_sem);
 	k_sem_reset(&multiple_thread_sem);
 
-	/* Give a semaphore from a thread and calcualte the time taken.*/
+	/* Give a semaphore from a thread and calculate the time taken.*/
 	k_thread_create(&sem_tid, stack_1, STACK_SIZE,
 			test_sem_measure_timeout_from_thread_helper,
 			NULL, NULL, NULL,

@@ -102,7 +102,7 @@ void test_threads_abort_repeat(void)
 	k_thread_abort(tid);
 	k_sleep(100);
 	k_thread_abort(tid);
-	/* If no fault occured till now. The test case passed. */
+	/* If no fault occurred till now. The test case passed. */
 	ztest_test_pass();
 }
 

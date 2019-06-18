@@ -133,7 +133,7 @@ int z_arch_buffer_validate(void *addr, size_t size, int write)
 					MMU_PAGE_NUM((char *)addr + size - 1);
 			}
 
-			/* For all the pde's appart from the starting pde,
+			/* For all the pde's apart from the starting pde,
 			 * will have the start pte number as zero.
 			 */
 			if (pde != start_pde_num) {

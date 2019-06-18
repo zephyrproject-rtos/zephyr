@@ -58,7 +58,7 @@ SECTION_FUNC(TEXT, z_x86_trampoline_to_kernel)
 
 	/* %esp = _kernel->current->stack_info.start
 	 *
-	 * This is the lowest address of the user mode stack, and higest
+	 * This is the lowest address of the user mode stack, and highest
 	 * address of the kernel stack, they are adjacent.
 	 * We want to transplant context here.
 	 */
@@ -166,7 +166,7 @@ SECTION_FUNC(TEXT, z_x86_syscall_entry_stub)
 
 	/* %esp = _kernel->current->stack_info.start
 	 *
-	 * This is the lowest address of the user mode stack, and higest
+	 * This is the lowest address of the user mode stack, and highest
 	 * address of the kernel stack, they are adjacent.
 	 * We want to transplant context here.
 	 */

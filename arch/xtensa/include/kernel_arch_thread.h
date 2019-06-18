@@ -73,7 +73,7 @@ typedef struct s_preempCoprocReg {
 } tPreempCoprocReg;
 
 /*
- * The thread control stucture definition.  It contains the
+ * The thread control structure definition.  It contains the
  * various fields to manage a _single_ thread.
  */
 struct _thread_arch {

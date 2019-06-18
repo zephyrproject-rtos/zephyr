@@ -44,7 +44,7 @@ struct gpio_pcal9535a_drv_data {
 	struct device *i2c_master;
 
 	/**
-	 * Specify polarity inversion of pin. This is used for ouput as
+	 * Specify polarity inversion of pin. This is used for output as
 	 * the polarity inversion registers on chip affects inputs only.
 	 */
 	u32_t out_pol_inv;

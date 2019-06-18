@@ -669,7 +669,7 @@ static int sys_clock_resume(struct device *dev)
 	 *    source like TSC
 	 * 2) Expire all timers anyway
 	 * 3) Expire only the timer at the top
-	 * 4) Contine from where the timer left
+	 * 4) Continue from where the timer left
 	 *
 	 * 1 and 2 require change to how timers are handled. 4 may not
 	 * give a good user experience. After waiting for a long period

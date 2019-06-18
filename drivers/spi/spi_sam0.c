@@ -104,7 +104,7 @@ static int spi_sam0_configure(struct device *dev,
 	/* 8 bits per transfer */
 	ctrlb.bit.CHSIZE = 0;
 
-	/* Use the requested or next higest possible frequency */
+	/* Use the requested or next highest possible frequency */
 	div = (SOC_ATMEL_SAM0_GCLK0_FREQ_HZ / config->frequency) / 2U - 1;
 	div = MAX(0, MIN(UINT8_MAX, div));
 

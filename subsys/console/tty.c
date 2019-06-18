@@ -169,7 +169,7 @@ static ssize_t tty_read_unbuf(struct tty_serial *tty, void *buf, size_t size)
 		u8_t c;
 		res = uart_poll_in(tty->uart_dev, &c);
 		if (res <= -2) {
-			/* Error occured, best we can do is to return
+			/* Error occurred, best we can do is to return
 			 * accumulated data w/o error, or return error
 			 * directly if none.
 			 */

@@ -471,7 +471,7 @@ static u8_t find_info_cb(const struct bt_gatt_attr *attr, void *user_data)
 			return BT_GATT_ITER_STOP;
 		}
 
-		/* Fast foward to next item position */
+		/* Fast forward to next item position */
 		data->info16 = net_buf_add(data->buf, sizeof(*data->info16));
 		data->info16->handle = sys_cpu_to_le16(attr->handle);
 		data->info16->uuid = sys_cpu_to_le16(BT_UUID_16(attr->uuid)->val);
@@ -487,7 +487,7 @@ static u8_t find_info_cb(const struct bt_gatt_attr *attr, void *user_data)
 			return BT_GATT_ITER_STOP;
 		}
 
-		/* Fast foward to next item position */
+		/* Fast forward to next item position */
 		data->info128 = net_buf_add(data->buf, sizeof(*data->info128));
 		data->info128->handle = sys_cpu_to_le16(attr->handle);
 		memcpy(data->info128->uuid, BT_UUID_128(attr->uuid)->val,
@@ -613,7 +613,7 @@ static u8_t find_type_cb(const struct bt_gatt_attr *attr, void *user_data)
 	/* If service has been found, error should be cleared */
 	data->err = 0x00;
 
-	/* Fast foward to next item position */
+	/* Fast forward to next item position */
 	data->group = net_buf_add(data->buf, sizeof(*data->group));
 	data->group->start_handle = sys_cpu_to_le16(attr->handle);
 	data->group->end_handle = sys_cpu_to_le16(attr->handle);
@@ -809,7 +809,7 @@ static u8_t read_type_cb(const struct bt_gatt_attr *attr, void *user_data)
 	 */
 	data->err = 0x00;
 
-	/* Fast foward to next item position */
+	/* Fast forward to next item position */
 	data->item = net_buf_add(data->buf, sizeof(*data->item));
 	data->item->handle = sys_cpu_to_le16(attr->handle);
 
@@ -1115,7 +1115,7 @@ static u8_t read_group_cb(const struct bt_gatt_attr *attr, void *user_data)
 		return BT_GATT_ITER_STOP;
 	}
 
-	/* Fast foward to next group position */
+	/* Fast forward to next group position */
 	data->group = net_buf_add(data->buf, sizeof(*data->group));
 
 	/* Initialize group handle range */

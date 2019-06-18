@@ -125,7 +125,7 @@ void ili9340_lcd_init(struct ili9340_data *p_ili9340)
 	ili9340_transmit(p_ili9340, cmd, data, 1);
 
 	/* Positive Gamma Correction */
-	cmd = ILI9340_CMD_POSITVE_GAMMA_CORRECTION;
+	cmd = ILI9340_CMD_POSITIVE_GAMMA_CORRECTION;
 	data[0] = 0x0FU;
 	data[1] = 0x2AU;
 	data[2] = 0x28U;

@@ -833,7 +833,7 @@ release:
 * :github:`14753` - nrf52840_pca10056: Get rid of leading spurious 0x00 byte in UART output
 * :github:`14743` - Directed advertising to Android does not work
 * :github:`14741` - Bluetooth scanning frequent resetting
-* :github:`14714` - Mesh network traffic overflow ungraceful stop. (MMFAR Adress: 0x0)
+* :github:`14714` - Mesh network traffic overflow ungraceful stop. (MMFAR Address: 0x0)
 * :github:`14698` - USB: usb/console sample does not work for most of the boards
 * :github:`14697` - USB: cdc_acm_composite sample might lose characters
 * :github:`14693` - ARC: need test coverage for MPU stack guards
@@ -1132,7 +1132,7 @@ release:
 * :github:`13378` - Missing Documentation for Networking subsystem
 * :github:`13361` - nucleo_f103rb blinky example cannot run
 * :github:`13357` - Tracing hooks problem on POSIX
-* :github:`13353` - z_timeout_remaining should substract z_clock_elapsed
+* :github:`13353` - z_timeout_remaining should subtract z_clock_elapsed
 * :github:`13342` - arm: user thread stack overflows do not report _NANO_ERR_STACK_CHK_FAIL
 * :github:`13341` - arc: user thread stack overflows do not report _NANO_ERR_STACK_CHK_FAIL
 * :github:`13340` - NRF52 pca10040 boards open the "Flash hardware support" option, the BT Mesh example does not work properly
@@ -1373,7 +1373,7 @@ release:
 * :github:`11998` - intermittent failures in tests/kernel/common: test_timeout_order: (poll_events[ii].state not equal to K_POLL_STATE_SEM_AVAILABLE)
 * :github:`11989` - Reel Board mesh_badge sample | Light sensor bug
 * :github:`11980` - cmake: Build fails in an environment without 'python' binary
-* :github:`11967` - nrfx SPI driver blocks indefinitly when transfering
+* :github:`11967` - nrfx SPI driver blocks indefinitely when transferring
 * :github:`11961` - Python warning in process_gperf.py
 * :github:`11935` - Invalid usage of k_busy_wait()
 * :github:`11916` - ISR table (_sw_isr_table) generation is fragile and can result in corrupted binaries
@@ -1656,7 +1656,7 @@ release:
 * :github:`10186` - GPIO callback disable has no effect due to _gpio_fire_callbacks
 * :github:`10164` - logger sample fails on qemu_xtensa due to lack of backend
 * :github:`10152` - gitlint complains of apostrophe in user name
-* :github:`10146` - [bluetooth][PTS] Getting Connection failed to be established ocasionally
+* :github:`10146` - [bluetooth][PTS] Getting Connection failed to be established occasionally
 * :github:`10143` - Why does BT_SETTINGS require PRINTK?
 * :github:`10137` - sample/basic/button should configure expected pin configuration
 * :github:`10134` - sensor: vl53l0x: Warning message when building in ext/hal/st/lib/sensor/vl53l0x
@@ -1787,7 +1787,7 @@ release:
 * :github:`7986` - The scripts (debug, debugserver and flash) are not working for Intel S1000 board
 * :github:`7818` - big_http_download stuck during download on qemu_x86
 * :github:`7817` - Confusing macros: SECONDS vs K_SECONDS, MSEC vs K_MSEC
-* :github:`7760` - cmake failure using ExternalProject and dependancies w/ninja
+* :github:`7760` - cmake failure using ExternalProject and dependencies w/ninja
 * :github:`7706` - ARM NXP hardware stack overflows do not report _NANO_ERR_STACK_CHK_FAIL or provide MPU fault information
 * :github:`7638` - get FAULT when fuzzing sys_ring_buf\_ put and sys_ring_bug_get APIs
 * :github:`7510` - [Coverity CID :185395] Memory - corruptions in /samples/net/mbedtls_sslclient/src/mini_client.c

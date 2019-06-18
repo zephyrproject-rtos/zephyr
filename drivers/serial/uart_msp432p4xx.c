@@ -7,7 +7,7 @@
 /* See www.ti.com/lit/pdf/slau356f, Chapter 22, for MSP432P4XX UART info. */
 
 /* include driverlib/gpio.h (from the msp432p4xx SDK) before Z's uart.h so
- * that the definition of BIT is not overriden */
+ * that the definition of BIT is not overridden */
 #include <driverlib/gpio.h>
 
 #include <uart.h>

@@ -193,7 +193,7 @@ def merge_properties(parent, fname, to_dict, from_dict):
             # Warn when overriding a property and changing its value...
             if (k in to_dict and to_dict[k] != from_dict[k] and
                 # ...unless it's the 'title', 'description', or 'version'
-                # property. These are overriden deliberately.
+                # property. These are overridden deliberately.
                 not k in {'title', 'version', 'description'} and
                 # Also allow the category to be changed from 'optional' to
                 # 'required' without a warning

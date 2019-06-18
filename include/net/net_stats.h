@@ -128,7 +128,7 @@ struct net_stats_tcp {
 	/** Amount of retransmitted data. */
 	net_stats_t resent;
 
-	/** Number of recived TCP segments. */
+	/** Number of received TCP segments. */
 	net_stats_t recv;
 
 	/** Number of sent TCP segments. */
@@ -168,7 +168,7 @@ struct net_stats_udp {
 	/** Number of dropped UDP segments. */
 	net_stats_t drop;
 
-	/** Number of recived UDP segments. */
+	/** Number of received UDP segments. */
 	net_stats_t recv;
 
 	/** Number of sent UDP segments. */

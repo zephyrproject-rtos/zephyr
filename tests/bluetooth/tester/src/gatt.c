@@ -441,7 +441,7 @@ static void add_characteristic(u8_t *data, u16_t len)
 		goto fail;
 	}
 
-	/* characterisic must be added only sequential */
+	/* characteristic must be added only sequential */
 	if (cmd->svc_id) {
 		goto fail;
 	}

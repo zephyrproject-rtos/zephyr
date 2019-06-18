@@ -49,7 +49,7 @@ struct k_thread *z_priq_rb_best(struct _priq_rb *pq);
  * to the original Zephyr scheduler.  RAM requirements are
  * comparatively high, but performance is very fast.  Won't work with
  * features like deadline scheduling which need large priority spaces
- * to represet their requirements.
+ * to represent their requirements.
  */
 struct _priq_mq {
 	sys_dlist_t queues[32];
