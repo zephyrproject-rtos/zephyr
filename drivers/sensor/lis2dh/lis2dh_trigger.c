@@ -59,7 +59,7 @@ static int lis2dh_start_trigger_int1(struct device *dev)
 	u8_t raw[LIS2DH_BUF_SZ];
 	u8_t ctrl1 = 0U;
 
-	/* power down temporarly to align interrupt & data output sampling */
+	/* power down temporarily to align interrupt & data output sampling */
 	status = lis2dh_reg_read_byte(dev, LIS2DH_REG_CTRL1, &ctrl1);
 	if (unlikely(status < 0)) {
 		return status;

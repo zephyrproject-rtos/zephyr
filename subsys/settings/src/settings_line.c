@@ -312,7 +312,7 @@ int settings_line_val_read(off_t val_off, off_t off, char *out, size_t len_req,
 			return rc;
 		}
 
-		enc_buf[read_size] = 0; /* breaking guaranted */
+		enc_buf[read_size] = 0; /* breaking guaranteed */
 		read_size = strlen(enc_buf);
 
 		if (read_size == 0 || read_size % 4) {
@@ -396,7 +396,7 @@ size_t settings_line_val_get_len(off_t val_off, void *read_cb_ctx)
 
 /**
  * @param line_loc offset of the settings line, expect that it is aligned to rbs physically.
- * @param seek offset form the line begining.
+ * @param seek offset form the line beginning.
  * @retval 0 : read proper name
  * 1 : when read unproper name
  * -ERCODE for storage errors

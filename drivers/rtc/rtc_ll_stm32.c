@@ -238,7 +238,7 @@ static int rtc_stm32_init(struct device *dev)
 	LL_RCC_LSE_SetDriveCapability(CONFIG_RTC_STM32_LSE_DRIVE_STRENGTH);
 	LL_RCC_LSE_Enable();
 
-	/* Wait untill LSE is ready */
+	/* Wait until LSE is ready */
 	while (LL_RCC_LSE_IsReady() != 1) {
 	}
 

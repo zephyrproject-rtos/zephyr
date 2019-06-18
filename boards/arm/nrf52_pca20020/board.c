@@ -40,7 +40,7 @@ static int pwr_ctrl_init(struct device *dev)
  * from the VDD power rail. Both of these power rails need to be enabled before
  * the sensor driver init can be performed. The VDD rail also has to be powered up
  * before the CCS_VDD rail. These checks are to enforce the power up sequence
- * constraits.
+ * constraints.
  */
 
 #if CONFIG_BOARD_VDD_PWR_CTRL_INIT_PRIORITY <= CONFIG_GPIO_NRF_INIT_PRIORITY

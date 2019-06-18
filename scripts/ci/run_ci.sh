@@ -15,7 +15,7 @@
 # -b  base branch
 # -r  the remote to rebase on
 #
-# The script can be run locally using for exmaple:
+# The script can be run locally using for example:
 # ./scripts/ci/run_ci.sh -b master -r origin  -l -R <commit range>
 
 set -xe

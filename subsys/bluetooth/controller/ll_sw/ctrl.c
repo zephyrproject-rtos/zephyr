@@ -1498,7 +1498,7 @@ static inline u32_t isr_rx_scan(u8_t devmatch_ok, u8_t devmatch_id,
 		 * +/- half the 32KHz clock resolution. In order to achieve
 		 * a microsecond resolution, in the case of negative remainder,
 		 * the radio packet timer is started one 32KHz tick early,
-		 * hence substract one tick unit from the measurement of the
+		 * hence subtract one tick unit from the measurement of the
 		 * packet end.
 		 */
 		if (!_radio.remainder_anchor ||
@@ -9496,7 +9496,7 @@ static void ctrl_tx_enqueue(struct connection *conn,
 		 * by peer, hence place this new ctrl after head
 		 */
 
-		/* if data transmited once, keep it at head of the tx list,
+		/* if data transmitted once, keep it at head of the tx list,
 		 * as we will insert a ctrl after it, hence advance the
 		 * data pointer
 		 */

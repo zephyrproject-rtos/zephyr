@@ -9,7 +9,7 @@
 #
 # New users should set the env var 'ZEPHYR_TOOLCHAIN_VARIANT' to
 # 'cross-compile' and the 'CROSS_COMPILE' env var to the toolchain
-# prefix. This interface is consisent with the other non-"Zephyr SDK"
+# prefix. This interface is consistent with the other non-"Zephyr SDK"
 # toolchains.
 #
 # It can be set from either the environment or from a CMake variable

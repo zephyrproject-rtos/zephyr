@@ -661,7 +661,7 @@ struct bt_conn_auth_cb {
 
 	/** @brief notify that pairing process was complete.
 	 *
-	 * This callback notifies the applicaiton that the pairing process
+	 * This callback notifies the application that the pairing process
 	 * has been completed.
 	 *
 	 * @param conn Connection object.

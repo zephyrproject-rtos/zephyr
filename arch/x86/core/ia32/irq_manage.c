@@ -228,7 +228,7 @@ static void *get_dynamic_stub(int stub_idx)
 	u32_t offset;
 
 	/*
-	 * Because we want the sizes of the stubs to be consisent and minimized,
+	 * Because we want the sizes of the stubs to be consistent and minimized,
 	 * stubs are grouped into blocks, each containing a push and subsequent
 	 * 2-byte jump instruction to the end of the block, which then contains
 	 * a larger jump instruction to common dynamic IRQ handling code

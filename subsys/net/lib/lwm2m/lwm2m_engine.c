@@ -301,7 +301,7 @@ get_block_ctx(const u8_t *token, u8_t tkl, struct block_context **ctx)
 		if (block1_contexts[i].tkl == tkl &&
 		    memcmp(token, block1_contexts[i].token, tkl) == 0) {
 			*ctx = &block1_contexts[i];
-			/* refresh timestmap */
+			/* refresh timestamp */
 			(*ctx)->timestamp = k_uptime_get();
 			break;
 		}

@@ -15,7 +15,7 @@ source "modules/Kconfig"
 endmenu
 
 # Include these first so that any properties (e.g. defaults) below can be
-# overriden in *.defconfig files (by defining symbols in multiple locations).
+# overridden in *.defconfig files (by defining symbols in multiple locations).
 # After merging all the symbol definitions, Kconfig picks the first property
 # (e.g. the first default) with a satisfied condition.
 #
@@ -63,7 +63,7 @@ config LINKER_ORPHAN_SECTION_PLACE
 config LINKER_ORPHAN_SECTION_WARN
 	bool "Warn"
 	help
-	  Linker places the orphan sections in ouput and issues
+	  Linker places the orphan sections in output and issues
 	  warning about those sections.
 
 config LINKER_ORPHAN_SECTION_ERROR

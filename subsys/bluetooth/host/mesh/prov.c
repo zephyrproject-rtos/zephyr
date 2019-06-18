@@ -105,7 +105,7 @@
 enum {
 	REMOTE_PUB_KEY,        /* Remote key has been received */
 	LINK_ACTIVE,           /* Link has been opened */
-	HAVE_DHKEY,            /* DHKey has been calcualted */
+	HAVE_DHKEY,            /* DHKey has been calculated */
 	SEND_CONFIRM,          /* Waiting to send Confirm value */
 	WAIT_NUMBER,           /* Waiting for number input from user */
 	WAIT_STRING,           /* Waiting for string input from user */

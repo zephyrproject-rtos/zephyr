@@ -109,7 +109,7 @@ enum coap_msgtype {
 	COAP_TYPE_RESET = 3
 };
 
-#define coap_make_response_code(clas, det) ((clas << 5) | (det))
+#define coap_make_response_code(class, det) ((class << 5) | (det))
 
 /**
  * @brief Set of response codes available for a response packet.

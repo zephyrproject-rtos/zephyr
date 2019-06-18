@@ -244,7 +244,7 @@ void test_timer_periodicity(void)
 	/** TESTPOINT: set duration 0 */
 	k_timer_start(&periodicity_timer, 0, PERIOD);
 
-	/* clear the expiration that would have happenned due to
+	/* clear the expiration that would have happened due to
 	 * whatever duration that was set. Since timer is likely
 	 * to fire before call to k_timer_status_sync(), we have
 	 * to synchronize twice to ensure that the timestamp will

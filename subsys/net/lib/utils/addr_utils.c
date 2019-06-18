@@ -24,7 +24,7 @@ const char *net_addr_str_find_port(const char *addr_str)
 		return p + 1;
 	}
 
-	/* IPv6 numeric address, and ':' preceeded by ']' */
+	/* IPv6 numeric address, and ':' preceded by ']' */
 	if (p[-1] == ']') {
 		return p + 1;
 	}

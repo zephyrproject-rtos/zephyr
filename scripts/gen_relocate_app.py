@@ -256,7 +256,7 @@ def generate_linker_script(linker_file, sram_data_linker_file,
             gen_string += string_create_helper("bss",
                     memory_type, full_list_of_sections, 0)
 
-    #finally writting to the linker file
+    #finally writing to the linker file
     with open(linker_file, "a+") as file_desc:
         file_desc.write(gen_string)
 

@@ -69,7 +69,7 @@ struct hb_pub_val {
 	      indefinite:1;
 };
 
-/* Miscelaneous configuration server model states */
+/* Miscellaneous configuration server model states */
 struct cfg_val {
 	u8_t net_transmit;
 	u8_t relay;

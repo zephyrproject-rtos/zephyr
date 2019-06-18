@@ -20,7 +20,7 @@
  *  +-------------------------------------------------------+
  *
  * BUSY - Erase/Write In Progress - 1 device is executing a command, 0 ready for command
- * WEL  - Write Enable Latch - 1 write enable is received, 0 completeion of
+ * WEL  - Write Enable Latch - 1 write enable is received, 0 completion of
  * a Write Disable, Page Program, Erase, Write Status Register
  *
  *    S15    S14    S13    S12    S11    S10    S9     S8

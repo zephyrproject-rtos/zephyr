@@ -465,7 +465,7 @@ static int bt_spi_send(struct net_buf *buf)
 	 * Since a RESET has been requested, the chip will now restart.
 	 * Unfortunately the BlueNRG will reply with "reset received" but
 	 * since it does not send back a NOP, we have no way to tell when the
-	 * RESET has actually taken palce.  Instead, we use the vendor command
+	 * RESET has actually taken place.  Instead, we use the vendor command
 	 * EVT_BLUE_INITIALIZED as an indication that it is safe to proceed.
 	 */
 	if (bt_spi_get_cmd(buf->data) == BT_HCI_OP_RESET) {

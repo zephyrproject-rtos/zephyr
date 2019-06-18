@@ -71,7 +71,7 @@ def main():
     for warning in kconf.warnings:
         print("\n" + warning, file=sys.stderr)
 
-    # Turn all warnings except for explicity whitelisted ones into errors. In
+    # Turn all warnings except for explicitly whitelisted ones into errors. In
     # particular, this will turn assignments to undefined Kconfig variables
     # into errors.
     #
@@ -148,7 +148,7 @@ def verify_assigned_choice_value(choice):
     #
     # We check choice symbols separately to avoid warnings when two different
     # choice symbols within the same choice are set to y. This might happen if
-    # a choice selection from a board defconfig is overriden in a prj.conf, for
+    # a choice selection from a board defconfig is overridden in a prj.conf, for
     # example. The last choice symbol set to y becomes the selection (and all
     # other choice symbols get the value n).
     #

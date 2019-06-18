@@ -9,7 +9,7 @@
 #
 
 # Include these first so that any properties (e.g. defaults) below can be
-# overriden (by defining symbols in multiple locations)
+# overridden (by defining symbols in multiple locations)
 
 # Note: $ARCH might be a glob pattern
 source "$(ARCH_DIR)/$(ARCH)/Kconfig"

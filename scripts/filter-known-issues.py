@@ -3,7 +3,7 @@
 Filters a file, classifying output in errors, warnings and discarding
 the rest.
 
-Given a set of regular expresions read from files named *.conf in the
+Given a set of regular expressions read from files named *.conf in the
 given configuration path(s), of the format:
 
   #
@@ -49,7 +49,7 @@ config_regex = \
 
 def config_import_file(filename):
     """
-    Imports regular expresions from any file *.conf in the given path,
+    Imports regular expression from any file *.conf in the given path,
     format as given in the main doc
     """
     try:
@@ -85,7 +85,7 @@ def config_import_file(filename):
 
 def config_import_path(path):
     """
-    Imports regular expresions from any file *.conf in the given path
+    Imports regular expression from any file *.conf in the given path
     """
     file_regex = re.compile(r".*\.conf$")
     try:
@@ -104,7 +104,7 @@ def config_import_path(path):
 
 def config_import(paths):
     """
-    Imports regular expresions from any file *.conf in the list of paths.
+    Imports regular expression from any file *.conf in the list of paths.
 
     If a path is "" or None, the list of paths until then is flushed
     and only the new ones are considered.

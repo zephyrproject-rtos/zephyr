@@ -346,7 +346,7 @@ static inline void k_obj_free(void *obj)
  * The purpose of this data type is to clearly distinguish between the
  * declared symbol for a stack (of type k_thread_stack_t) and the underlying
  * buffer which composes the stack data actually used by the underlying
- * thread; they cannot be used interchangably as some arches precede the
+ * thread; they cannot be used interchangeably as some arches precede the
  * stack buffer region with guard areas that trigger a MPU or MMU fault
  * if written to.
  *

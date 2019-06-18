@@ -286,7 +286,7 @@ static void ecm_read_cb(u8_t ep, int size, void *priv)
 	}
 
 	/* Linux considers by default that network usb device controllers are
-	 * not able to handle Zero Lenght Packet (ZLP) and then generates
+	 * not able to handle Zero Length Packet (ZLP) and then generates
 	 * a short packet containing a null byte. Handle by checking the IP
 	 * header length and dropping the extra byte.
 	 */

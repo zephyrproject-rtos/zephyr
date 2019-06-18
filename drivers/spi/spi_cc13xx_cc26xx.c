@@ -209,7 +209,7 @@ static int spi_cc13xx_cc26xx_init_0(struct device *dev)
 
 	/* Enable SSI0 peripherals */
 	PRCMPeripheralRunEnable(PRCM_PERIPH_SSI0);
-	/* Enable in sleep mode until proper power managment is added */
+	/* Enable in sleep mode until proper power management is added */
 	PRCMPeripheralSleepEnable(PRCM_PERIPH_SSI0);
 	PRCMPeripheralDeepSleepEnable(PRCM_PERIPH_SSI0);
 
@@ -261,7 +261,7 @@ static int spi_cc13xx_cc26xx_init_1(struct device *dev)
 
 	/* Enable SSI1 peripherals */
 	PRCMPeripheralRunEnable(PRCM_PERIPH_SSI1);
-	/* Enable in sleep mode until proper power managment is added */
+	/* Enable in sleep mode until proper power management is added */
 	PRCMPeripheralSleepEnable(PRCM_PERIPH_SSI1);
 	PRCMPeripheralDeepSleepEnable(PRCM_PERIPH_SSI1);
 

@@ -205,9 +205,9 @@ static inline u8_t compress_tfl(struct net_ipv6_hdr *ipv6,
 
 	if (((ipv6->tcflow & 0x0F) == 0U) && (ipv6->flow == 0U)) {
 		if (((ipv6->vtc & 0x0F) == 0U) && ((ipv6->tcflow & 0xF0) == 0U)) {
-			NET_DBG("Trafic class and Flow label elided");
+			NET_DBG("Traffic class and Flow label elided");
 
-			/* Trafic class and Flow label elided */
+			/* Traffic class and Flow label elided */
 			IPHC[0] |= NET_6LO_IPHC_TF_11;
 		} else {
 			NET_DBG("Flow label elided");

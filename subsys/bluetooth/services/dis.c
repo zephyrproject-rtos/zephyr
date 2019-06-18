@@ -1,5 +1,5 @@
 /** @file
- *  @brief GATT Device Infromation Service
+ *  @brief GATT Device Information Service
  */
 
 /*

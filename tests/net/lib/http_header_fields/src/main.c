@@ -462,7 +462,7 @@ const struct url_test url_tests[] = {
 	},
 
 	{
-	.name = "proxy emtpy hostname",
+	.name = "proxy empty hostname",
 	.url = "http:///fo",
 	.rv = 1 /* s_dead */
 	},
