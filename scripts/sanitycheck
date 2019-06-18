@@ -676,6 +676,9 @@ class DeviceHandler(Handler):
 
         if options.west_flash is not None:
             command = ["west", "flash", "--skip-rebuild", "-d", self.outdir]
+            if options.west_runner is not None:
+                command.append("--runner")
+                command.append(options.west_runner)
             # There are two ways this option is used.
             # 1) bare: --west-flash
             #    This results in options.west_flash == []
@@ -3015,6 +3018,7 @@ Artificially long but functional example:
         which will ultimately disable ccache.
         """
     )
+
     parser.add_argument(
         "--west-flash", nargs='?', const=[],
         help="""Uses west instead of ninja or make to flash when running with
@@ -3025,6 +3029,18 @@ Artificially long but functional example:
                      --west-flash="--board-id=foobar"
         will translate to
          west flash -- --board-id=foobar
+        """
+    )
+    parser.add_argument(
+        "--west-runner",
+        help="""Uses the specified west runner instead of default when running
+             with --west-flash.
+
+        E.g "sanitycheck --device-testing --device-serial /dev/ttyACM0
+                         --west-flash --west-runner=pyocd"
+        will translate to "west flash --runner pyocd"
+
+        NOTE: west-flash must be enabled to use this option.
         """
     )
 
@@ -3263,6 +3279,10 @@ def main():
     # XXX: Workaround for #17239
     resource.setrlimit(resource.RLIMIT_NOFILE, (4096, 4096))
     options = parse_arguments()
+
+    if options.west_runner and not options.west_flash:
+        error("west-runner requires west-flash to be enabled")
+        sys.exit(1)
 
     if options.coverage:
         options.enable_coverage = True
