@@ -407,6 +407,10 @@ static int _to_float(char *buf, uint64_t double_temp, char c,
 		} else {
 			*buf++ = '+';
 		}
+		if (decexp >= 100) {
+			*buf++ = (decexp / 100) + '0';
+			decexp %= 100;
+		}
 		*buf++ = (decexp / 10) + '0';
 		decexp %= 10;
 		*buf++ = decexp + '0';
