@@ -82,12 +82,14 @@ def generate_prop_defines(node_path, prop):
         prop_values = reduced[node_path]['props'][prop]
         generic = prop[:-1]  # Drop the 's' from the prop
 
+        # Deprecated the non-'S' form
         extract_controller(node_path, prop, prop_values, 0,
-                           def_label, generic)
+                           def_label, generic, deprecate=True)
         extract_controller(node_path, prop, prop_values, 0,
                            def_label, prop)
+        # Deprecated the non-'S' form
         extract_cells(node_path, prop, prop_values,
-                      names, 0, def_label, generic)
+                      names, 0, def_label, generic, deprecate=True)
         extract_cells(node_path, prop, prop_values,
                       names, 0, def_label, prop)
     else:
@@ -300,7 +302,10 @@ def write_header(f):
 
         for prop in sorted(defs[node]):
             if prop != 'aliases':
-                f.write(define_str(prop, defs[node][prop], value_tabs))
+                deprecated_warn = False
+                if prop in deprecated_main:
+                    deprecated_warn = True
+                f.write(define_str(prop, defs[node][prop], value_tabs, deprecated_warn))
 
         for alias in sorted(defs[node]['aliases']):
             alias_target = defs[node]['aliases'][alias]
