@@ -84,8 +84,12 @@ def generate_prop_defines(node_path, prop):
 
         extract_controller(node_path, prop, prop_values, 0,
                            def_label, generic)
+        extract_controller(node_path, prop, prop_values, 0,
+                           def_label, prop)
         extract_cells(node_path, prop, prop_values,
                       names, 0, def_label, generic)
+        extract_cells(node_path, prop, prop_values,
+                      names, 0, def_label, prop)
     else:
         default.extract(node_path, prop,
                         binding['properties'][prop]['type'],
