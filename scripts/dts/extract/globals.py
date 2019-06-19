@@ -257,7 +257,7 @@ def enable_old_alias_names(enable):
     global old_alias_names
     old_alias_names = enable
 
-def add_compat_alias(node_path, label_postfix, label, prop_aliases):
+def add_compat_alias(node_path, label_postfix, label, prop_aliases, deprecate=False):
     if 'instance_id' in reduced[node_path]:
         instance = reduced[node_path]['instance_id']
         for k in instance:
@@ -267,9 +267,11 @@ def add_compat_alias(node_path, label_postfix, label, prop_aliases):
             prop_aliases[b] = label
             b = "DT_INST_{}_{}_{}".format(str(i), str_to_label(k), label_postfix)
             prop_aliases[b] = label
+            if deprecate:
+                deprecated.append(b)
 
 def add_prop_aliases(node_path,
-                     alias_label_function, prop_label, prop_aliases):
+                     alias_label_function, prop_label, prop_aliases, deprecate=False):
     node_compat = get_compat(node_path)
     new_alias_prefix = 'DT_'
 
@@ -280,8 +282,12 @@ def add_prop_aliases(node_path,
 
         if new_alias_label != prop_label:
             prop_aliases[new_alias_label] = prop_label
+            if deprecate:
+                deprecated.append(new_alias_label)
         if new_alias_compat_label != prop_label:
             prop_aliases[new_alias_compat_label] = prop_label
+            if deprecate:
+                deprecated.append(new_alias_compat_label)
         if old_alias_names and old_alias_label != prop_label:
             prop_aliases[old_alias_label] = prop_label
 
