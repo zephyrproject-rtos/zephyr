@@ -119,10 +119,9 @@ static struct k_sem sem_ticker_api_cb;
 /* Semaphore to wakeup thread on Rx-ed objects */
 static struct k_sem *sem_recv;
 
-/* Entropy device */
-static struct device *dev_entropy;
-
-/* Declare prepare-event FIFO: mfifo_prep: Queue of struct node_rx_event_done */
+/* Declare prepare-event FIFO: mfifo_prep.
+ * Queue of struct node_rx_event_done
+ */
 static MFIFO_DEFINE(prep, sizeof(struct lll_event), EVENT_PIPELINE_MAX);
 
 /* Declare done-event FIFO: mfifo_done.
@@ -225,11 +224,6 @@ int ll_init(struct k_sem *sem_rx)
 
 	/* Store the semaphore to be used to wakeup Thread context */
 	sem_recv = sem_rx;
-	/* Get reference to entropy device */
-	dev_entropy = device_get_binding(CONFIG_ENTROPY_NAME);
-	if (!dev_entropy) {
-		return -ENODEV;
-	}
 
 	/* Initialize counter */
 	/* TODO: Bind and use counter driver? */
@@ -1121,11 +1115,6 @@ void *ull_event_done(void *param)
 	ull_rx_sched();
 
 	return evdone;
-}
-
-u8_t ull_entropy_get(u8_t len, void *rand)
-{
-	return entropy_get_entropy_isr(dev_entropy, rand, len, 0);
 }
 
 static inline int init_reset(void)
