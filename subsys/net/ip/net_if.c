@@ -2644,7 +2644,7 @@ Z_SYSCALL_HANDLER(net_if_ipv4_set_netmask_by_index, index, netmask)
 }
 #endif /* CONFIG_USERSPACE */
 
-void net_if_ipv4_set_gw(struct net_if *iface, struct in_addr *gw)
+void net_if_ipv4_set_gw(struct net_if *iface, const struct in_addr *gw)
 {
 #if defined(CONFIG_NET_IPV4)
 	if (net_if_config_ipv4_get(iface, NULL) < 0) {
