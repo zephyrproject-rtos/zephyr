@@ -126,10 +126,7 @@ class DTClocks(DTDirective):
                             'clocks']['generation']
                     except:
                         generation = ''
-                    if 'use-prop-name' in generation:
-                        clock_cell_name = 'CLOCKS_CONTROLLER'
-                    else:
-                        clock_cell_name = 'CLOCK_CONTROLLER'
+                    clock_cell_name = 'CLOCK_CONTROLLER'
                     if clock_index == 0 and \
                         len(clocks) == (len(clock_cells) + 1):
                         index = ''
