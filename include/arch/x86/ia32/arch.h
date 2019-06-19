@@ -314,31 +314,6 @@ struct _x86_syscall_stack_frame {
 	u32_t ss;
 };
 
-/**
- * @brief "interrupt stack frame" (ISF)
- *
- * An "interrupt stack frame" (ISF) as constructed by the processor and the
- * interrupt wrapper function _interrupt_enter().  As the system always
- * operates at ring 0, only the EIP, CS and EFLAGS registers are pushed onto
- * the stack when an interrupt occurs.
- *
- * The interrupt stack frame includes the volatile registers EAX, ECX, and EDX
- * plus nonvolatile EDI pushed on the stack by _interrupt_enter().
- *
- * Only target-based debug tools such as GDB require the other non-volatile
- * registers (ESI, EBX, EBP and ESP) to be preserved during an interrupt.
- */
-
-typedef struct nanoIsf {
-	unsigned int edi;
-	unsigned int ecx;
-	unsigned int edx;
-	unsigned int eax;
-	unsigned int eip;
-	unsigned int cs;
-	unsigned int eflags;
-} NANO_ISF;
-
 #endif /* !_ASMLANGUAGE */
 
 /*
