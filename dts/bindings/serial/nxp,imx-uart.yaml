@@ -23,11 +23,6 @@ properties:
     interrupts:
       category: required
 
-    pinctrl-\d+:
-      type: array
-      category: optional
-      description: pinmux information for RX, TX, CTS, RTS
-
     clocks:
       type: array
       category: required

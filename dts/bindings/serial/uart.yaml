@@ -29,7 +29,3 @@ properties:
       generation: define
     label:
       category: required
-    pinctrl-\d+:
-      type: array
-      category: optional
-      description: pinmux information for RX, TX, CTS, RTS
