@@ -47,35 +47,14 @@ static void _uc(char *buf)
 }
 
 /*
- * Convention note: "end" as passed in is the standard "byte after
- * last character" style, but...
- */
-static int _reverse_and_pad(char *start, char *end, int minlen)
-{
-	int len;
-
-	while (end - start < minlen) {
-		*end++ = '0';
-	}
-
-	*end = 0;
-	len = end - start;
-	for (end--; end > start; end--, start++) {
-		char tmp = *end;
-		*end = *start;
-		*start = tmp;
-	}
-	return len;
-}
-
-/*
  * Writes the specified number into the buffer in the given base,
  * using the digit characters 0-9a-z (i.e. base>36 will start writing
- * odd bytes), padding with leading zeros up to the minimum length.
+ * odd bytes).
  */
-static int _to_x(char *buf, unsigned VALTYPE n, unsigned int base, int minlen)
+static int _to_x(char *buf, unsigned VALTYPE n, unsigned int base)
 {
-	char *buf0 = buf;
+	char *start = buf;
+	int len;
 
 	do {
 		unsigned int d = n % base;
@@ -83,11 +62,20 @@ static int _to_x(char *buf, unsigned VALTYPE n, unsigned int base, int minlen)
 		n /= base;
 		*buf++ = '0' + d + (d > 9 ? ('a' - '0' - 10) : 0);
 	} while (n);
-	return _reverse_and_pad(buf0, buf, minlen);
+
+	*buf = 0;
+	len = buf - start;
+
+	for (buf--; buf > start; buf--, start++) {
+		char tmp = *buf;
+		*buf = *start;
+		*start = tmp;
+	}
+
+	return len;
 }
 
-static int _to_hex(char *buf, unsigned VALTYPE value,
-		   bool alt_form, int precision, char prefix)
+static int _to_hex(char *buf, unsigned VALTYPE value, bool alt_form, char prefix)
 {
 	int len;
 	char *buf0 = buf;
@@ -97,7 +85,7 @@ static int _to_hex(char *buf, unsigned VALTYPE value,
 		*buf++ = 'x';
 	}
 
-	len = _to_x(buf, value, 16, precision);
+	len = _to_x(buf, value, 16);
 	if (prefix == 'X') {
 		_uc(buf0);
 	}
@@ -105,8 +93,7 @@ static int _to_hex(char *buf, unsigned VALTYPE value,
 	return len + (buf - buf0);
 }
 
-static int _to_octal(char *buf, unsigned VALTYPE value,
-		     bool alt_form, int precision)
+static int _to_octal(char *buf, unsigned VALTYPE value, bool alt_form)
 {
 	char *buf0 = buf;
 
@@ -118,16 +105,15 @@ static int _to_octal(char *buf, unsigned VALTYPE value,
 			return 1;
 		}
 	}
-	return (buf - buf0) + _to_x(buf, value, 8, precision);
+	return (buf - buf0) + _to_x(buf, value, 8);
 }
 
-static int _to_udec(char *buf, unsigned VALTYPE value, int precision)
+static int _to_udec(char *buf, unsigned VALTYPE value)
 {
-	return _to_x(buf, value, 10, precision);
+	return _to_x(buf, value, 10);
 }
 
-static int _to_dec(char *buf, VALTYPE value, bool fplus, bool fspace,
-		   int precision)
+static int _to_dec(char *buf, VALTYPE value, bool fplus, bool fspace)
 {
 	char *start = buf;
 
@@ -140,7 +126,7 @@ static int _to_dec(char *buf, VALTYPE value, bool fplus, bool fspace,
 		*buf++ = ' ';
 	}
 
-	return (buf + _to_udec(buf, value, precision)) - start;
+	return (buf + _to_udec(buf, value)) - start;
 }
 
 static	void _rlrshift(uint64_t *v)
@@ -451,15 +437,13 @@ int z_prf(int (*func)(), void *dest, const char *format, va_list vargs)
 	 * has to be propagated across the file
 	 */
 	char buf[MAXFLD + 1];
-	int c;
+	char c;
 	int count;
 	char *cptr;
-	bool falt, fminus, fplus, fspace;
+	bool falt, fminus, fplus, fspace, fzero;
 	int i;
-	char pad;
-	int precision;
-	int prefix;
-	int width;
+	int width, precision;
+	int clen, prefix, zero_head;
 	VALTYPE val;
 
 #define PUTC(c)	do { if ((*func)(c, dest) == EOF) return EOF; } while (false)
@@ -471,9 +455,7 @@ int z_prf(int (*func)(), void *dest, const char *format, va_list vargs)
 			PUTC(c);
 			count++;
 		} else {
-			fminus = fplus = fspace = falt = false;
-			pad = ' ';		/* Default pad character    */
-
+			fminus = fplus = fspace = falt = fzero = false;
 			while (strchr("-+ #0", (c = *format++)) != NULL) {
 				switch (c) {
 				case '-':
@@ -493,7 +475,7 @@ int z_prf(int (*func)(), void *dest, const char *format, va_list vargs)
 					break;
 
 				case '0':
-					pad = '0';
+					fzero = true;
 					break;
 
 				case '\0':
@@ -560,8 +542,8 @@ int z_prf(int (*func)(), void *dest, const char *format, va_list vargs)
 			switch (c) {
 			case 'c':
 				buf[0] = va_arg(vargs, int);
-				c = 1;
-				pad = ' ';
+				clen = 1;
+				precision = 0;
 				break;
 
 			case 'd':
@@ -584,12 +566,9 @@ int z_prf(int (*func)(), void *dest, const char *format, va_list vargs)
 					val = va_arg(vargs, int);
 					break;
 				}
-				c = _to_dec(buf, val, fplus, fspace, precision);
+				clen = _to_dec(buf, val, fplus, fspace);
 				if (fplus || fspace || val < 0) {
 					prefix = 1;
-				}
-				if (precision >= 0) {
-					pad = ' ';
 				}
 				break;
 
@@ -620,11 +599,12 @@ int z_prf(int (*func)(), void *dest, const char *format, va_list vargs)
 				double_val = u.i;
 #endif
 
-				c = _to_float(buf, double_val, c, falt, fplus,
-					      fspace, precision);
+				clen = _to_float(buf, double_val, c, falt,
+						 fplus, fspace, precision);
 				if (fplus || fspace || (buf[0] == '-')) {
 					prefix = 1;
 				}
+				precision = -1;
 				break;
 			}
 
@@ -655,10 +635,8 @@ int z_prf(int (*func)(), void *dest, const char *format, va_list vargs)
 
 			case 'p':
 				val = (uintptr_t) va_arg(vargs, void *);
-				c = _to_hex(buf, val, true, 2*sizeof(void *), 'x');
-				if (precision >= 0) {
-					pad = ' ';
-				}
+				clen = _to_hex(buf, val, true, 'x');
+				prefix = 2;
 				break;
 
 			case 's':
@@ -667,12 +645,12 @@ int z_prf(int (*func)(), void *dest, const char *format, va_list vargs)
 				if (precision < 0) {
 					precision = INT_MAX;
 				}
-				for (c = 0; c < precision; c++) {
-					if (cptr[c] == '\0') {
+				for (clen = 0; clen < precision; clen++) {
+					if (cptr[clen] == '\0') {
 						break;
 					}
 				}
-				pad = ' ';
+				precision = 0;
 				break;
 
 			case 'o':
@@ -698,17 +676,14 @@ int z_prf(int (*func)(), void *dest, const char *format, va_list vargs)
 					break;
 				}
 				if (c == 'o') {
-					c = _to_octal(buf, val, falt, precision);
+					clen = _to_octal(buf, val, falt);
 				} else if (c == 'u') {
-					c = _to_udec(buf, val, precision);
+					clen = _to_udec(buf, val);
 				} else {
-					c = _to_hex(buf, val, falt, precision, c);
+					clen = _to_hex(buf, val, falt, c);
 					if (falt) {
 						prefix = 2;
 					}
-				}
-				if (precision >= 0) {
-					pad = ' ';
 				}
 				break;
 
@@ -727,28 +702,42 @@ int z_prf(int (*func)(), void *dest, const char *format, va_list vargs)
 				return count;
 			}
 
+			if (precision >= 0) {
+				zero_head = precision - clen + prefix;
+			} else if (fzero) {
+				zero_head = width - clen;
+			} else {
+				zero_head = 0;
+			}
+			if (zero_head < 0) {
+				zero_head = 0;
+			}
+			width -= clen + zero_head;
+
 			/* padding for right justification */
-			if (!fminus && c < width) {
-				if (pad == ' ') {
-					prefix = 0;
-				}
-				width -= prefix;
-				c -= prefix;
-				count += prefix;
-				while (prefix-- > 0) {
-					PUTC(*cptr++);
-				}
-				width -= c;
+			if (!fminus && width > 0) {
 				count += width;
 				while (width-- > 0) {
-					PUTC(pad);
+					PUTC(' ');
 				}
 			}
 
-			/* data out */
-			width -= c;
-			count += c;
-			while (c-- > 0) {
+			/* data prefix */
+			clen -= prefix;
+			count += prefix;
+			while (prefix-- > 0) {
+				PUTC(*cptr++);
+			}
+
+			/* zero-padded head */
+			count += zero_head;
+			while (zero_head-- > 0) {
+				PUTC('0');
+			}
+
+			/* main data */
+			count += clen;
+			while (clen-- > 0) {
 				PUTC(*cptr++);
 			}
 
