@@ -42,7 +42,3 @@ properties:
       category: required
       description: Time quantums of phase buffer 2 segment (ISO 11898-1)
       generation: define
-    pinctrl-\d+:
-      type: array
-      category: optional
-      description: pinmux information for RX, TX

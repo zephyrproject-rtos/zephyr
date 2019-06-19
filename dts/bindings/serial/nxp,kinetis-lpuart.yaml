@@ -17,8 +17,3 @@ properties:
 
     interrupts:
       category: required
-
-    pinctrl-*:
-      type: array
-      category: optional
-      description: pinmux information for RX, TX, CTS, RTS
