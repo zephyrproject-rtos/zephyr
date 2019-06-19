@@ -313,13 +313,17 @@ static int _to_float(char *buf, uint64_t double_temp, char c,
 
 	prune_zero = false;		/* Assume trailing 0's allowed     */
 	if ((c == 'g') || (c == 'G')) {
-		if (!falt && (precision > 0)) {
-			prune_zero = true;
-		}
-		if ((decexp < (-4 + 1)) || (decexp > (precision + 1))) {
+		if (decexp < (-4 + 1) || decexp > precision) {
 			c += 'e' - 'g';
+			if (precision > 0) {
+				precision--;
+			}
 		} else {
 			c = 'f';
+			precision -= decexp;
+		}
+		if (!falt && (precision > 0)) {
+			prune_zero = true;
 		}
 	}
 
