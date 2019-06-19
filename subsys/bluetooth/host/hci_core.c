@@ -5843,11 +5843,6 @@ int bt_br_set_discoverable(bool enable)
 }
 #endif /* CONFIG_BT_BREDR */
 
-u16_t bt_hci_get_cmd_opcode(struct net_buf *buf)
-{
-	return cmd(buf)->opcode;
-}
-
 #if defined(CONFIG_BT_ECC)
 int bt_pub_key_gen(struct bt_pub_key_cb *new_cb)
 {
