@@ -321,7 +321,7 @@ static int init_spim(struct device *dev, const nrfx_spim_config_t *config)
 	static int spi_##idx##_init(struct device *dev)			       \
 	{								       \
 		IRQ_CONNECT(NRFX_IRQ_NUMBER_GET(NRF_SPIM##idx),		       \
-			    DT_NORDIC_NRF_SPI_SPI_##idx##_IRQ_PRIORITY,	       \
+			    DT_NORDIC_NRF_SPI_SPI_##idx##_IRQ_0_PRIORITY,      \
 			    nrfx_isr, nrfx_spim_##idx##_irq_handler, 0);       \
 		const nrfx_spim_config_t config = {			       \
 			.sck_pin   = DT_NORDIC_NRF_SPI_SPI_##idx##_SCK_PIN,    \

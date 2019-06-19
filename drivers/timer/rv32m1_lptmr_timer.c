@@ -56,7 +56,7 @@ int z_clock_driver_init(struct device *unused)
 	u32_t csr, psr, sircdiv; /* LPTMR registers */
 
 	ARG_UNUSED(unused);
-	IRQ_CONNECT(DT_OPENISA_RV32M1_LPTMR_SYSTEM_LPTMR_IRQ,
+	IRQ_CONNECT(DT_OPENISA_RV32M1_LPTMR_SYSTEM_LPTMR_IRQ_0,
 		    SYSTEM_TIMER_IRQ_PRIO, lptmr_irq_handler, NULL, 0);
 
 	if ((SCG->SIRCCSR & SCG_SIRCCSR_SIRCEN_MASK) == SCG_SIRCCSR_SIRCEN(0)) {
@@ -122,7 +122,7 @@ int z_clock_driver_init(struct device *unused)
 	 * Enable interrupts and the timer. There's no need to clear the
 	 * TFC bit in the csr variable, as it's already clear.
 	 */
-	irq_enable(DT_OPENISA_RV32M1_LPTMR_SYSTEM_LPTMR_IRQ);
+	irq_enable(DT_OPENISA_RV32M1_LPTMR_SYSTEM_LPTMR_IRQ_0);
 	csr = SYSTEM_TIMER_INSTANCE->CSR;
 	csr |= LPTMR_CSR_TEN(1);
 	SYSTEM_TIMER_INSTANCE->CSR = csr;

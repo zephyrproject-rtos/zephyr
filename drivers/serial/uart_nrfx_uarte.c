@@ -1263,19 +1263,19 @@ static int uarte_nrfx_pm_control(struct device *dev, u32_t ctrl_command,
 		COND_CODE_1(IS_ENABLED(CONFIG_UART_##idx##_INTERRUPT_DRIVEN),  \
 			(IRQ_CONNECT(					       \
 				NRFX_IRQ_NUMBER_GET(NRF_UARTE##idx),	       \
-				DT_NORDIC_NRF_UARTE_UART_##idx##_IRQ_PRIORITY, \
+				DT_NORDIC_NRF_UARTE_UART_##idx##_IRQ_0_PRIORITY, \
 				uarte_nrfx_isr_int,			       \
 				DEVICE_GET(uart_nrfx_uarte##idx),	       \
 				0);					       \
-			irq_enable(DT_NORDIC_NRF_UARTE_UART_##idx##_IRQ);), ())\
+			irq_enable(DT_NORDIC_NRF_UARTE_UART_##idx##_IRQ_0);), ())\
 		COND_CODE_1(IS_ENABLED(CONFIG_UART_##idx##_ASYNC),	       \
 			(IRQ_CONNECT(					       \
 				NRFX_IRQ_NUMBER_GET(NRF_UARTE##idx),	       \
-				DT_NORDIC_NRF_UARTE_UART_##idx##_IRQ_PRIORITY, \
+				DT_NORDIC_NRF_UARTE_UART_##idx##_IRQ_0_PRIORITY, \
 				uarte_nrfx_isr_async,			       \
 				DEVICE_GET(uart_nrfx_uarte##idx),	       \
 				0);					       \
-			irq_enable(DT_NORDIC_NRF_UARTE_UART_##idx##_IRQ);), ())\
+			irq_enable(DT_NORDIC_NRF_UARTE_UART_##idx##_IRQ_0);), ())\
 		return uarte_instance_init(				       \
 			dev,						       \
 			&init_config,					       \

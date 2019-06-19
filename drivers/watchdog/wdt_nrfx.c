@@ -162,10 +162,10 @@ static int init_wdt(struct device *dev)
 		return -EBUSY;
 	}
 
-	IRQ_CONNECT(DT_NORDIC_NRF_WATCHDOG_WDT_0_IRQ,
-		    DT_NORDIC_NRF_WATCHDOG_WDT_0_IRQ_PRIORITY,
+	IRQ_CONNECT(DT_NORDIC_NRF_WATCHDOG_WDT_0_IRQ_0,
+		    DT_NORDIC_NRF_WATCHDOG_WDT_0_IRQ_0_PRIORITY,
 		    nrfx_isr, nrfx_wdt_irq_handler, 0);
-	irq_enable(DT_NORDIC_NRF_WATCHDOG_WDT_0_IRQ);
+	irq_enable(DT_NORDIC_NRF_WATCHDOG_WDT_0_IRQ_0);
 
 	return 0;
 }
