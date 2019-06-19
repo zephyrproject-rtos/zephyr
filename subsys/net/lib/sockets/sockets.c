@@ -1199,11 +1199,29 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 	return -1;
 }
 
-int zsock_setsockopt(int sock, int level, int optname,
-		     const void *optval, socklen_t optlen)
+int z_impl_zsock_setsockopt(int sock, int level, int optname,
+			    const void *optval, socklen_t optlen)
 {
 	VTABLE_CALL(setsockopt, sock, level, optname, optval, optlen);
 }
+
+#ifdef CONFIG_USERSPACE
+Z_SYSCALL_HANDLER(zsock_setsockopt, sock, level, optname, optval, optlen)
+{
+	void *kernel_optval;
+	int ret;
+
+	kernel_optval = z_user_alloc_from_copy((const void *)optval, optlen);
+	Z_OOPS(!kernel_optval);
+
+	ret = z_impl_zsock_setsockopt(sock, level, optname,
+				      kernel_optval, optlen);
+
+	k_free(kernel_optval);
+
+	return ret;
+}
+#endif /* CONFIG_USERSPACE */
 
 static ssize_t sock_read_vmeth(void *obj, void *buffer, size_t count)
 {
