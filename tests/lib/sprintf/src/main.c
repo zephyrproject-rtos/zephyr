@@ -216,6 +216,39 @@ void test_sprintf_double(void)
 	zassert_true((strcmp(buffer, "1234.567890") == 0),
 		     "sprintf(-1.0) - incorrect output '%s'\n", buffer);
 
+	/*
+	 * With very large precision, the output differs significantly in
+	 * terms of string even if not in terms of actual value depending
+	 * on the library used and FPU implementation. However the length
+	 * and decimal position should remain identical.
+	 */
+	var.d = 0x1p800;
+	sprintf(buffer, "%.140f", var.d);
+	zassert_true((strlen(buffer) == 382),
+		     "sprintf(<large output>) - incorrect length %d\n",
+		     strlen(buffer));
+	buffer[10] = 0;  /* log facility doesn't support %.10s */
+	zassert_true((strcmp(buffer, "6668014432") == 0),
+		     "sprintf(<large output>) - starts with \"%s\" "
+		     "expected \"6668014432\"\n", buffer);
+	zassert_true((buffer[241] == '.'),
+		      "sprintf(<large output>) - expected '.' got '%c'\n",
+		      buffer[241]);
+
+	var.d = 0x1p-400;
+	sprintf(buffer, "% .380f", var.d);
+	zassert_true((strlen(buffer) == 383),
+		     "sprintf(<large output>) - incorrect length %d\n",
+		     strlen(buffer));
+	buffer[10] = 0;  /* log facility doesn't support %.10s */
+	zassert_true((strcmp(buffer, " 0.0000000") == 0),
+		     "sprintf(<large output>) - starts with \"%s\" "
+		     "expected \" 0.0000000\"\n", buffer);
+	buffer[119 + 10] = 0;  /* log facility doesn't support %.10s */
+	zassert_true((strcmp(buffer + 119, "0000387259") == 0),
+		      "sprintf(<large output>) - got \"%s\" "
+		      "while expecting \"0000387259\"\n", buffer + 119);
+
 	/*******************/
 	var.d = 1234.0;
 	sprintf(buffer, "%e", var.d);
