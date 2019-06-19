@@ -440,10 +440,7 @@ def extract_controller(node_path, prop, prop_values, index,
         except:
             generation = ''
 
-        if 'use-prop-name' in generation:
-            l_cellname = str_to_label(prop + '_' + 'controller')
-        else:
-            l_cellname = str_to_label(generic + '_' + 'controller')
+        l_cellname = str_to_label(generic + '_' + 'controller')
 
         label = l_base + [l_cellname] + l_idx
 
@@ -516,10 +513,7 @@ def extract_cells(node_path, prop, prop_values, names, index,
         except:
             generation = ''
 
-        if 'use-prop-name' in generation:
-            l_cell = [str_to_label(str(prop))]
-        else:
-            l_cell = [str_to_label(str(generic))]
+        l_cell = [str_to_label(str(generic))]
 
         l_base = [def_label]
         # Check if #define should be indexed (_0, _1, ...)
