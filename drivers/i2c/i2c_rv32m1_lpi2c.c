@@ -289,15 +289,16 @@ static const struct i2c_driver_api rv32m1_lpi2c_driver_api = {
 			    &rv32m1_lpi2c_driver_api);	                       \
 	static void rv32m1_lpi2c_irq_config_func_##id(struct device *dev)      \
 	{                                                                      \
-		IRQ_CONNECT(DT_OPENISA_RV32M1_LPI2C_I2C_##id##_IRQ,            \
-			    DT_OPENISA_RV32M1_LPI2C_I2C_##id##_IRQ_PRI,        \
+		IRQ_CONNECT(DT_OPENISA_RV32M1_LPI2C_I2C_##id##_IRQ_0,          \
+			    KUMARDT_OPENISA_RV32M1_LPI2C_I2C_##id##_IRQ_0_PRI,      \
 			    rv32m1_lpi2c_isr, DEVICE_GET(rv32m1_lpi2c_##id),   \
 			    0);                                                \
-		irq_enable(DT_OPENISA_RV32M1_LPI2C_I2C_##id##_IRQ);            \
+		irq_enable(DT_OPENISA_RV32M1_LPI2C_I2C_##id##_IRQ_0);          \
 	}                                                                      \
 
 #ifdef CONFIG_I2C_0
 RV32M1_LPI2C_DEVICE(0)
+#error KUMAR
 #endif
 
 #ifdef CONFIG_I2C_1

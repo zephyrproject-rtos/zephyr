@@ -328,8 +328,8 @@ static const struct counter_driver_api counter_nrfx_driver_api = {
 	}								       \
 	static int counter_##idx##_init(struct device *dev)		       \
 	{								       \
-		IRQ_CONNECT(DT_NORDIC_NRF_RTC_RTC_##idx##_IRQ,		       \
-			    DT_NORDIC_NRF_RTC_RTC_##idx##_IRQ_PRIORITY,	       \
+		IRQ_CONNECT(DT_NORDIC_NRF_RTC_RTC_##idx##_IRQ_0,	       \
+			    DT_NORDIC_NRF_RTC_RTC_##idx##_IRQ_0_PRIORITY,      \
 			    nrfx_isr, nrfx_rtc_##idx##_irq_handler, 0);	       \
 		const nrfx_rtc_config_t config = {			       \
 			.prescaler =					       \

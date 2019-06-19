@@ -475,11 +475,11 @@ static int gpio_nrfx_init(struct device *port)
 
 	if (!gpio_initialized) {
 		gpio_initialized = true;
-		IRQ_CONNECT(DT_NORDIC_NRF_GPIOTE_GPIOTE_0_IRQ,
-			    DT_NORDIC_NRF_GPIOTE_GPIOTE_0_IRQ_PRIORITY,
+		IRQ_CONNECT(DT_NORDIC_NRF_GPIOTE_GPIOTE_0_IRQ_0,
+			    DT_NORDIC_NRF_GPIOTE_GPIOTE_0_IRQ_0_PRIORITY,
 			    gpiote_event_handler, NULL, 0);
 
-		irq_enable(DT_NORDIC_NRF_GPIOTE_GPIOTE_0_IRQ);
+		irq_enable(DT_NORDIC_NRF_GPIOTE_GPIOTE_0_IRQ_0);
 		nrf_gpiote_int_enable(NRF_GPIOTE_INT_PORT_MASK);
 	}
 

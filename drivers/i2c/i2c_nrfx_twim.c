@@ -166,8 +166,8 @@ static int init_twim(struct device *dev, const nrfx_twim_config_t *config)
 		"Wrong I2C " #idx " frequency setting in dts");		       \
 	static int twim_##idx##_init(struct device *dev)		       \
 	{								       \
-		IRQ_CONNECT(DT_NORDIC_NRF_I2C_I2C_##idx##_IRQ,		       \
-			    DT_NORDIC_NRF_I2C_I2C_##idx##_IRQ_PRIORITY,	       \
+		IRQ_CONNECT(DT_NORDIC_NRF_I2C_I2C_##idx##_IRQ_0,	       \
+			    DT_NORDIC_NRF_I2C_I2C_##idx##_IRQ_0_PRIORITY,      \
 			    nrfx_isr, nrfx_twim_##idx##_irq_handler, 0);       \
 		const nrfx_twim_config_t config = {			       \
 			.scl       = DT_NORDIC_NRF_I2C_I2C_##idx##_SCL_PIN,    \
