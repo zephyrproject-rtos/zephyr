@@ -1107,11 +1107,39 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 	return -1;
 }
 
-int zsock_getsockopt(int sock, int level, int optname,
-		     void *optval, socklen_t *optlen)
+int z_impl_zsock_getsockopt(int sock, int level, int optname,
+			    void *optval, socklen_t *optlen)
 {
 	VTABLE_CALL(getsockopt, sock, level, optname, optval, optlen);
 }
+
+#ifdef CONFIG_USERSPACE
+Z_SYSCALL_HANDLER(zsock_getsockopt, sock, level, optname, optval, optlen)
+{
+	socklen_t kernel_optlen = *(socklen_t *)optlen;
+	void *kernel_optval;
+	int ret;
+
+	if (Z_SYSCALL_MEMORY_WRITE(optval, kernel_optlen)) {
+		errno = -EPERM;
+		return -1;
+	}
+
+	kernel_optval = z_thread_malloc(kernel_optlen);
+	Z_OOPS(!kernel_optval);
+
+	ret = z_impl_zsock_getsockopt(sock, level, optname,
+				      kernel_optval, &kernel_optlen);
+
+	Z_OOPS(z_user_to_copy((void *)optval, kernel_optval, kernel_optlen));
+	Z_OOPS(z_user_to_copy((void *)optlen, &kernel_optlen,
+			      sizeof(socklen_t)));
+
+	k_free(kernel_optval);
+
+	return ret;
+}
+#endif /* CONFIG_USERSPACE */
 
 int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 			 const void *optval, socklen_t optlen)
