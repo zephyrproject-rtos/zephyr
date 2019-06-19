@@ -1,0 +1,21 @@
+#
+# Copyright (c) 2019, Linaro Limited
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+title: RISC-V CPU INTC
+version: 0.1
+
+description: >
+    This binding describes the RISC-V CPU Interrupt Controller
+
+inherits:
+    !include base.yaml
+
+properties:
+  compatible:
+      constraint: "riscv,cpu-intc"
+
+"#cells":
+  - irq
