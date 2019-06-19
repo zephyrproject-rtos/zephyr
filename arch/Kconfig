@@ -14,7 +14,7 @@
 # Note: $ARCH might be a glob pattern
 source "$(ARCH_DIR)/$(ARCH)/Kconfig"
 
-choice
+choice ARCH_CHOICE
 	prompt "Architecture"
 	default X86
 
