@@ -82,12 +82,14 @@ def generate_prop_defines(node_path, prop):
         prop_values = reduced[node_path]['props'][prop]
         generic = prop[:-1]  # Drop the 's' from the prop
 
+        # Deprecated the non-'S' form
         extract_controller(node_path, prop, prop_values, 0,
-                           def_label, generic)
+                           def_label, generic, deprecate=True)
         extract_controller(node_path, prop, prop_values, 0,
                            def_label, prop)
+        # Deprecated the non-'S' form
         extract_cells(node_path, prop, prop_values,
-                      names, 0, def_label, generic)
+                      names, 0, def_label, generic, deprecate=True)
         extract_cells(node_path, prop, prop_values,
                       names, 0, def_label, prop)
     else:
