@@ -1604,21 +1604,17 @@ __syscall bool net_if_ipv4_set_netmask_by_index(int index,
  * @param iface Interface to use.
  * @param gw IPv4 address of an gateway
  */
-static inline void net_if_ipv4_set_gw(struct net_if *iface,
-				      struct in_addr *gw)
-{
-#if defined(CONFIG_NET_IPV4)
-	if (net_if_config_ipv4_get(iface, NULL) < 0) {
-		return;
-	}
+void net_if_ipv4_set_gw(struct net_if *iface, struct in_addr *gw);
 
-	if (!iface->config.ip.ipv4) {
-		return;
-	}
-
-	net_ipaddr_copy(&iface->config.ip.ipv4->gw, gw);
-#endif
-}
+/**
+ * @brief Set IPv4 gateway for an interface index.
+ *
+ * @param index Network interface index
+ * @param gw IPv4 address of an gateway
+ *
+ * @return True if gateway was added, false otherwise.
+ */
+__syscall bool net_if_ipv4_set_gw_by_index(int index, const struct in_addr *gw);
 
 /**
  * @brief Get a network interface that should be used when sending

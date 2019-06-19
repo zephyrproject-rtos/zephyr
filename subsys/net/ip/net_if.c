@@ -2677,6 +2677,51 @@ Z_SYSCALL_HANDLER(net_if_ipv4_set_netmask_by_index, index, netmask)
 }
 #endif /* CONFIG_USERSPACE */
 
+void net_if_ipv4_set_gw(struct net_if *iface, struct in_addr *gw)
+{
+#if defined(CONFIG_NET_IPV4)
+	if (net_if_config_ipv4_get(iface, NULL) < 0) {
+		return;
+	}
+
+	if (!iface->config.ip.ipv4) {
+		return;
+	}
+
+	net_ipaddr_copy(&iface->config.ip.ipv4->gw, gw);
+#endif
+}
+
+bool z_impl_net_if_ipv4_set_gw_by_index(int index,
+					const struct in_addr *gw)
+{
+	struct net_if *iface;
+
+	iface = net_if_get_by_index(index);
+	if (!iface) {
+		return false;
+	}
+
+	net_if_ipv4_set_gw(iface, gw);
+
+	return true;
+}
+
+#ifdef CONFIG_USERSPACE
+Z_SYSCALL_HANDLER(net_if_ipv4_set_gw_by_index, index, gw)
+{
+#if defined(CONFIG_NET_IF_USERSPACE_ACCESS)
+	struct in_addr gw_addr;
+
+	Z_OOPS(z_user_from_copy(&gw_addr, (void *)gw, sizeof(gw_addr)));
+
+	return z_impl_net_if_ipv4_set_gw_by_index(index, &gw_addr);
+#else
+	return false;
+#endif
+}
+#endif /* CONFIG_USERSPACE */
+
 #if defined(CONFIG_NET_IPV4)
 static struct net_if_addr *ipv4_addr_find(struct net_if *iface,
 					  struct in_addr *addr)
