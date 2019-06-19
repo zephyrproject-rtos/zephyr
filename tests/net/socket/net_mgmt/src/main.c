@@ -21,14 +21,250 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #define THREAD_PRIORITY K_PRIO_COOP(8)
 
 static ZTEST_BMEM int fd;
-static ZTEST_DMEM struct in_addr addr_v4 = { { { 192, 0, 2, 3 } } };
 static ZTEST_BMEM struct in6_addr addr_v6;
+static ZTEST_DMEM struct in_addr addr_v4 = { { { 192, 0, 2, 3 } } };
 
 #if IS_ENABLED(CONFIG_NET_SOCKETS_LOG_LEVEL_DBG)
 #define DBG(fmt, ...) printk(fmt, ##__VA_ARGS__)
 #else
 #define DBG(fmt, ...)
 #endif
+
+static const u8_t mac_addr_init[6] = { 0x01, 0x02, 0x03,
+				       0x04,  0x05,  0x06 };
+
+struct eth_fake_context {
+	struct net_if *iface;
+	u8_t mac_address[6];
+
+	bool auto_negotiation;
+	bool full_duplex;
+	bool link_10bt;
+	bool link_100bt;
+	bool promisc_mode;
+	struct {
+		bool qav_enabled;
+		int idle_slope;
+		int delta_bandwidth;
+	} priority_queues[2];
+};
+
+static struct eth_fake_context eth_fake_data;
+
+static void eth_fake_iface_init(struct net_if *iface)
+{
+	struct device *dev = net_if_get_device(iface);
+	struct eth_fake_context *ctx = dev->driver_data;
+
+	ctx->iface = iface;
+
+	net_if_set_link_addr(iface, ctx->mac_address,
+			     sizeof(ctx->mac_address),
+			     NET_LINK_ETHERNET);
+
+	ethernet_init(iface);
+}
+
+static int eth_fake_send(struct device *dev,
+			 struct net_pkt *pkt)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(pkt);
+
+	return 0;
+}
+
+static int eth_fake_get_total_bandwidth(struct eth_fake_context *ctx)
+{
+	if (ctx->link_100bt) {
+		return 100 * 1000 * 1000 / 8;
+	}
+
+	if (ctx->link_10bt) {
+		return 10 * 1000 * 1000 / 8;
+	}
+
+	/* No link */
+	return 0;
+}
+
+static void eth_fake_recalc_qav_delta_bandwidth(struct eth_fake_context *ctx)
+{
+	int bw;
+	int i;
+
+	bw = eth_fake_get_total_bandwidth(ctx);
+
+	for (i = 0; i < ARRAY_SIZE(ctx->priority_queues); ++i) {
+		if (bw == 0) {
+			ctx->priority_queues[i].delta_bandwidth = 0;
+		} else {
+			ctx->priority_queues[i].delta_bandwidth =
+				(ctx->priority_queues[i].idle_slope * 100);
+
+			ctx->priority_queues[i].delta_bandwidth /= bw;
+		}
+	}
+}
+
+static void eth_fake_recalc_qav_idle_slopes(struct eth_fake_context *ctx)
+{
+	int bw;
+	int i;
+
+	bw = eth_fake_get_total_bandwidth(ctx);
+
+	for (i = 0; i < ARRAY_SIZE(ctx->priority_queues); ++i) {
+		ctx->priority_queues[i].idle_slope =
+			(ctx->priority_queues[i].delta_bandwidth * bw) / 100;
+	}
+}
+
+static int eth_fake_set_config(struct device *dev,
+			       enum ethernet_config_type type,
+			       const struct ethernet_config *config)
+{
+	struct eth_fake_context *ctx = dev->driver_data;
+	int priority_queues_num = ARRAY_SIZE(ctx->priority_queues);
+	enum ethernet_qav_param_type qav_param_type;
+	int queue_id;
+
+	switch (type) {
+	case ETHERNET_CONFIG_TYPE_QAV_PARAM:
+		queue_id = config->qav_param.queue_id;
+		qav_param_type = config->qav_param.type;
+
+		if (queue_id < 0 || queue_id >= priority_queues_num) {
+			return -EINVAL;
+		}
+
+		switch (qav_param_type) {
+		case ETHERNET_QAV_PARAM_TYPE_STATUS:
+			ctx->priority_queues[queue_id].qav_enabled =
+				config->qav_param.enabled;
+			break;
+		case ETHERNET_QAV_PARAM_TYPE_IDLE_SLOPE:
+			ctx->priority_queues[queue_id].idle_slope =
+				config->qav_param.idle_slope;
+
+			eth_fake_recalc_qav_delta_bandwidth(ctx);
+			break;
+		case ETHERNET_QAV_PARAM_TYPE_DELTA_BANDWIDTH:
+			ctx->priority_queues[queue_id].delta_bandwidth =
+				config->qav_param.delta_bandwidth;
+
+			eth_fake_recalc_qav_idle_slopes(ctx);
+			break;
+		default:
+			return -ENOTSUP;
+		}
+
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
+static int eth_fake_get_config(struct device *dev,
+			       enum ethernet_config_type type,
+			       struct ethernet_config *config)
+{
+	struct eth_fake_context *ctx = dev->driver_data;
+	int priority_queues_num = ARRAY_SIZE(ctx->priority_queues);
+	enum ethernet_qav_param_type qav_param_type;
+	int queue_id;
+
+	switch (type) {
+	case ETHERNET_CONFIG_TYPE_QAV_PARAM:
+		queue_id = config->qav_param.queue_id;
+		qav_param_type = config->qav_param.type;
+
+		if (queue_id < 0 || queue_id >= priority_queues_num) {
+			return -EINVAL;
+		}
+
+		switch (qav_param_type) {
+		case ETHERNET_QAV_PARAM_TYPE_STATUS:
+			config->qav_param.enabled =
+				ctx->priority_queues[queue_id].qav_enabled;
+			break;
+		case ETHERNET_QAV_PARAM_TYPE_IDLE_SLOPE:
+		case ETHERNET_QAV_PARAM_TYPE_OPER_IDLE_SLOPE:
+			/* No distinction between idle slopes for fake eth */
+			config->qav_param.idle_slope =
+				ctx->priority_queues[queue_id].idle_slope;
+			break;
+		case ETHERNET_QAV_PARAM_TYPE_DELTA_BANDWIDTH:
+			config->qav_param.delta_bandwidth =
+				ctx->priority_queues[queue_id].delta_bandwidth;
+			break;
+		case ETHERNET_QAV_PARAM_TYPE_TRAFFIC_CLASS:
+			/* Default TC for BE - it doesn't really matter here */
+			config->qav_param.traffic_class =
+				net_tx_priority2tc(NET_PRIORITY_BE);
+			break;
+		default:
+			return -ENOTSUP;
+		}
+
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
+static enum ethernet_hw_caps eth_fake_get_capabilities(struct device *dev)
+{
+	return ETHERNET_AUTO_NEGOTIATION_SET | ETHERNET_LINK_10BASE_T |
+		ETHERNET_LINK_100BASE_T | ETHERNET_DUPLEX_SET | ETHERNET_QAV |
+		ETHERNET_PROMISC_MODE | ETHERNET_PRIORITY_QUEUES;
+}
+
+static struct ethernet_api eth_fake_api_funcs = {
+	.iface_api.init = eth_fake_iface_init,
+
+	.get_capabilities = eth_fake_get_capabilities,
+	.set_config = eth_fake_set_config,
+	.get_config = eth_fake_get_config,
+	.send = eth_fake_send,
+};
+
+static int eth_fake_init(struct device *dev)
+{
+	struct eth_fake_context *ctx = dev->driver_data;
+	int i;
+
+	ctx->auto_negotiation = true;
+	ctx->full_duplex = true;
+	ctx->link_10bt = true;
+	ctx->link_100bt = false;
+
+	memcpy(ctx->mac_address, mac_addr_init, 6);
+
+	/* Initialize priority queues */
+	for (i = 0; i < ARRAY_SIZE(ctx->priority_queues); ++i) {
+		ctx->priority_queues[i].qav_enabled = true;
+		if (i + 1 == ARRAY_SIZE(ctx->priority_queues)) {
+			/* 75% for the last priority queue */
+			ctx->priority_queues[i].delta_bandwidth = 75;
+		} else {
+			/* 0% for the rest */
+			ctx->priority_queues[i].delta_bandwidth = 0;
+		}
+	}
+
+	eth_fake_recalc_qav_idle_slopes(ctx);
+
+	return 0;
+}
+
+ETH_NET_DEVICE_INIT(eth_fake, "eth_fake", eth_fake_init, &eth_fake_data,
+		    NULL, CONFIG_ETH_INIT_PRIORITY, &eth_fake_api_funcs,
+		    NET_ETH_MTU);
 
 /* A test thread that spits out events that we can catch and show to user */
 static void trigger_events(void)
@@ -117,7 +353,7 @@ static void test_net_mgmt_setup(void)
 	memset(&sockaddr, 0, sizeof(sockaddr));
 
 	sockaddr.nm_family = AF_NET_MGMT;
-	sockaddr.nm_ifindex = 0; /* Any network interface */
+	sockaddr.nm_ifindex = net_if_get_by_iface(net_if_get_default());
 	sockaddr.nm_pid = (int)k_current_get();
 	sockaddr.nm_mask = NET_EVENT_IPV6_DAD_SUCCEED |
 			   NET_EVENT_IPV6_ADDR_ADD |
@@ -195,6 +431,118 @@ static void test_net_mgmt_catch_user(void)
 	test_net_mgmt_catch_events();
 }
 
+static void test_net_mgmt_cleanup(void)
+{
+	k_thread_abort(trigger_events_thread_id);
+}
+
+static void test_ethernet_set_qav(void)
+{
+	struct ethernet_req_params params;
+	int ret;
+
+	memset(&params, 0, sizeof(params));
+
+	params.qav_param.queue_id = 1;
+	params.qav_param.type = ETHERNET_QAV_PARAM_TYPE_STATUS;
+	params.qav_param.enabled = true;
+
+	ret = setsockopt(fd, SOL_NET_MGMT_RAW,
+			 NET_REQUEST_ETHERNET_SET_QAV_PARAM,
+			 &params, sizeof(params));
+	zassert_equal(ret, 0, "Cannot set Qav parameters");
+}
+
+static void test_ethernet_set_qav_kernel(void)
+{
+	test_ethernet_set_qav();
+}
+
+static void test_ethernet_set_qav_user(void)
+{
+	test_ethernet_set_qav();
+}
+
+static void test_ethernet_get_qav(void)
+{
+	struct ethernet_req_params params;
+	socklen_t optlen = sizeof(params);
+	int ret;
+
+	memset(&params, 0, sizeof(params));
+
+	params.qav_param.queue_id = 1;
+	params.qav_param.type = ETHERNET_QAV_PARAM_TYPE_STATUS;
+
+	ret = getsockopt(fd, SOL_NET_MGMT_RAW,
+			 NET_REQUEST_ETHERNET_GET_QAV_PARAM,
+			 &params, &optlen);
+	zassert_equal(ret, 0, "Cannot get Qav parameters (%d)", ret);
+	zassert_equal(optlen, sizeof(params), "Invalid optlen (%d)", optlen);
+
+	zassert_true(params.qav_param.enabled, "Qav not enabled");
+}
+
+static void test_ethernet_get_qav_kernel(void)
+{
+	test_ethernet_get_qav();
+}
+
+static void test_ethernet_get_qav_user(void)
+{
+	test_ethernet_get_qav();
+}
+
+static void test_ethernet_get_unknown_option(void)
+{
+	struct ethernet_req_params params;
+	socklen_t optlen = sizeof(params);
+	int ret;
+
+	memset(&params, 0, sizeof(params));
+
+	ret = getsockopt(fd, SOL_NET_MGMT_RAW,
+			 NET_REQUEST_ETHERNET_GET_PRIORITY_QUEUES_NUM,
+			 &params, &optlen);
+	zassert_equal(ret, -1, "Could get prio queue parameters (%d)", errno);
+	zassert_equal(errno, EINVAL, "prio queue get parameters");
+}
+
+static void test_ethernet_get_unknown_opt_kernel(void)
+{
+	test_ethernet_get_unknown_option();
+}
+
+static void test_ethernet_get_unknown_opt_user(void)
+{
+	test_ethernet_get_unknown_option();
+}
+
+static void test_ethernet_set_unknown_option(void)
+{
+	struct ethernet_req_params params;
+	socklen_t optlen = sizeof(params);
+	int ret;
+
+	memset(&params, 0, sizeof(params));
+
+	ret = setsockopt(fd, SOL_NET_MGMT_RAW,
+			 NET_REQUEST_ETHERNET_SET_MAC_ADDRESS,
+			 &params, optlen);
+	zassert_equal(ret, -1, "Could set promisc_mode parameters (%d)", errno);
+	zassert_equal(errno, EINVAL, "promisc_mode set parameters");
+}
+
+static void test_ethernet_set_unknown_opt_kernel(void)
+{
+	test_ethernet_set_unknown_option();
+}
+
+static void test_ethernet_set_unknown_opt_user(void)
+{
+	test_ethernet_set_unknown_option();
+}
+
 void test_main(void)
 {
 	k_thread_system_pool_assign(k_current_get());
@@ -202,7 +550,18 @@ void test_main(void)
 	ztest_test_suite(socket_net_mgmt,
 			 ztest_unit_test(test_net_mgmt_setup),
 			 ztest_unit_test(test_net_mgmt_catch_kernel),
-			 ztest_user_unit_test(test_net_mgmt_catch_user));
+			 ztest_user_unit_test(test_net_mgmt_catch_user),
+			 ztest_unit_test(test_net_mgmt_cleanup),
+			 ztest_unit_test(test_ethernet_set_qav_kernel),
+			 ztest_user_unit_test(test_ethernet_set_qav_user),
+			 ztest_unit_test(test_ethernet_get_qav_kernel),
+			 ztest_user_unit_test(test_ethernet_get_qav_user),
+			 ztest_unit_test(test_ethernet_get_unknown_opt_kernel),
+			 ztest_user_unit_test(
+				 test_ethernet_get_unknown_opt_user),
+			 ztest_unit_test(test_ethernet_set_unknown_opt_kernel),
+			 ztest_user_unit_test(
+				 test_ethernet_set_unknown_opt_user));
 
 	ztest_run_test_suite(socket_net_mgmt);
 }
