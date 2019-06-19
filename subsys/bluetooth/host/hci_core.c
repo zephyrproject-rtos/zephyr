@@ -101,6 +101,9 @@ static size_t discovery_results_count;
 #endif /* CONFIG_BT_BREDR */
 
 struct cmd_data {
+	/** BT_BUF_CMD */
+	u8_t  type;
+
 	/** HCI status of the command completion */
 	u8_t  status;
 
@@ -122,9 +125,7 @@ struct acl_data {
 	u16_t handle;
 };
 
-static struct cmd_data cmd_data[CONFIG_BT_HCI_CMD_COUNT];
-
-#define cmd(buf) (&cmd_data[net_buf_id(buf)])
+#define cmd(buf) ((struct cmd_data *)net_buf_user_data(buf))
 #define acl(buf) ((struct acl_data *)net_buf_user_data(buf))
 
 /* HCI command buffers. Derive the needed size from BT_BUF_RX_SIZE since
@@ -246,8 +247,7 @@ struct net_buf *bt_hci_cmd_create(u16_t opcode, u8_t param_len)
 
 	net_buf_reserve(buf, CONFIG_BT_HCI_RESERVE);
 
-	bt_buf_set_type(buf, BT_BUF_CMD);
-
+	cmd(buf)->type = BT_BUF_CMD;
 	cmd(buf)->opcode = opcode;
 	cmd(buf)->sync = NULL;
 
