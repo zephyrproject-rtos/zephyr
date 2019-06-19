@@ -28,6 +28,7 @@
 #include "lll_adv.h"
 #include "lll_scan.h"
 #include "lll_conn.h"
+#include "lll_internal.h"
 #include "lll_filter.h"
 
 #include "ull_adv_types.h"
@@ -1016,7 +1017,7 @@ static void ticker_cb(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 		u32_t random_delay;
 		u32_t ret;
 
-		ull_entropy_get(sizeof(random_delay), &random_delay);
+		lll_entropy_get(sizeof(random_delay), &random_delay);
 		random_delay %= HAL_TICKER_US_TO_TICKS(10000);
 		random_delay += 1;
 

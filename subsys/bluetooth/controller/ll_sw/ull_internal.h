@@ -37,4 +37,3 @@ void *ull_update_mark(void *param);
 void *ull_update_unmark(void *param);
 void *ull_update_mark_get(void);
 int ull_disable(void *param);
-u8_t ull_entropy_get(u8_t len, void *rand);
