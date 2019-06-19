@@ -790,6 +790,17 @@ static void netmask_addr_add(void)
 	}
 }
 
+static void gw_addr_add(void)
+{
+	struct in_addr my_gw = { { { 192, 0, 2, 254 } } };
+	bool ret;
+
+	if (IS_ENABLED(CONFIG_NET_IF_USERSPACE_ACCESS)) {
+		ret = net_if_ipv4_set_gw_by_index(1, &my_gw);
+		zassert_true(ret, "Cannot add IPv4 gateway");
+	}
+}
+
 void test_main(void)
 {
 	ztest_test_suite(net_iface_test,
@@ -819,7 +830,9 @@ void test_main(void)
 			 ztest_user_unit_test(v6_addr_lookup_user),
 			 ztest_user_unit_test(v6_addr_rm_user),
 			 ztest_unit_test(netmask_addr_add),
-			 ztest_user_unit_test(netmask_addr_add)
+			 ztest_user_unit_test(netmask_addr_add),
+			 ztest_unit_test(gw_addr_add),
+			 ztest_user_unit_test(gw_addr_add)
 		);
 
 	ztest_run_test_suite(net_iface_test);
