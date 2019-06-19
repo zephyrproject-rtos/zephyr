@@ -49,6 +49,8 @@
 			peripheral-id = <22>;
 			label = "I2C_0";
 			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
 		};
 
 		i2c1: i2c@40090000 {
@@ -59,6 +61,8 @@
 			peripheral-id = <23>;
 			label = "I2C_1";
 			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
 		};
 
 		uart0: uart@400e0800 {

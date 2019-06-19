@@ -107,30 +107,40 @@
 			reg = <0x40004000 0x80>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			label = "I2C_0";
+			#address-cells = <1>;
+			#size-cells = <0>;
 		};
 		i2c1: i2c@40004400 {
 			compatible = "microchip,xec-i2c";
 			reg = <0x40004400 0x80>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			label = "I2C_1";
+			#address-cells = <1>;
+			#size-cells = <0>;
 		};
 		i2c2: i2c@40004800 {
 			compatible = "microchip,xec-i2c";
 			reg = <0x40004800 0x80>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			label = "I2C_2";
+			#address-cells = <1>;
+			#size-cells = <0>;
 		};
 		i2c3: i2c@40004c00 {
 			compatible = "microchip,xec-i2c";
 			reg = <0x40004C00 0x80>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			label = "I2C_3";
+			#address-cells = <1>;
+			#size-cells = <0>;
 		};
 		i2c4: i2c@40005000 {
 			compatible = "microchip,xec-i2c";
 			reg = <0x40005000 0x80>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			label = "I2C_4";
+			#address-cells = <1>;
+			#size-cells = <0>;
 		};
 	};
 };

@@ -58,8 +58,6 @@
 	status = "okay";
 	clock-frequency = <16000000>;
 
-	#address-cells = <1>;
-	#size-cells = <0>;
 	reg = <0x10014000 0x1000 0x20010000 0x3c0900>;
 	flash0: flash@0 {
 		compatible = "issi,is25lp128", "jedec,spi-nor";
