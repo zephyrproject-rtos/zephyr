@@ -88,7 +88,7 @@ class DTInterrupts(DTDirective):
                                 '_'.join([str_to_label(alias)] +
                                          l_cell_prefix + name + l_cell_name),
                             full_name,
-                            prop_alias)
+                            prop_alias, True)
 
             index += 1
             insert_defs(node_path, prop_def, prop_alias)
