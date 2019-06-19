@@ -78,7 +78,7 @@ static inline struct net_buf *pool_get_uninit(struct net_buf_pool *pool,
 
 void net_buf_reset(struct net_buf *buf)
 {
-	NET_BUF_ASSERT(buf->flags == 0U);
+	NET_BUF_ASSERT((buf->flags & NET_BUF_FLAGS_MASK) == 0U);
 	NET_BUF_ASSERT(buf->frags == NULL);
 
 	net_buf_simple_reset(&buf->b);

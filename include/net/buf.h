@@ -475,6 +475,12 @@ static inline void net_buf_simple_restore(struct net_buf_simple *buf,
 #define NET_BUF_EXTERNAL_DATA  BIT(1)
 
 /**
+ * Bitmask of the lower bits of buf->flags that are reserved for net_buf
+ * internal use.
+ */
+#define NET_BUF_FLAGS_MASK BIT_MASK(5)
+
+/**
  * @brief Network buffer representation.
  *
  * This struct is used to represent network buffers. Such buffers are
@@ -493,7 +499,10 @@ struct net_buf {
 	/** Reference count. */
 	u8_t ref;
 
-	/** Bit-field of buffer flags. */
+	/** Bit-field of buffer flags. Lower 5 bits are reserved for net_buf
+	 *  internal usage. Upper 3 bits can be freely used externally as
+	 *  a form of extended user data.
+	 */
 	u8_t flags;
 
 	/** Where the buffer should go when freed up. */
