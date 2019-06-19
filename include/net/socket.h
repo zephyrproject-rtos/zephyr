@@ -367,8 +367,8 @@ int zsock_getsockopt(int sock, int level, int optname,
  * if :option:`CONFIG_NET_SOCKETS_POSIX_NAMES` is defined.
  * @endrststar
  */
-int zsock_setsockopt(int sock, int level, int optname,
-		     const void *optval, socklen_t optlen);
+__syscall int zsock_setsockopt(int sock, int level, int optname,
+			       const void *optval, socklen_t optlen);
 
 /**
  * @brief Get local host name
