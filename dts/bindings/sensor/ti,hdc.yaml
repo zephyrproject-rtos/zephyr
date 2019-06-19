@@ -20,4 +20,4 @@ properties:
     drdy-gpios:
       type: compound
       category: optional
-      generation: define, use-prop-name
+      generation: define
