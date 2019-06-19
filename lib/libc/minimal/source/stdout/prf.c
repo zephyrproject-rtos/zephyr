@@ -203,6 +203,7 @@ static	char _get_digit(uint64_t *fr, int *digit_count)
  *		"fplus"		TRUE if "+" conversion flag in effect.
  *		"fspace"	TRUE if " " conversion flag in effect.
  *		"precision"	Desired precision (negative if undefined).
+ *		"zeropad"	To store padding info to be inserted later
  */
 
 /*
@@ -215,8 +216,11 @@ static	char _get_digit(uint64_t *fr, int *digit_count)
 #define	MAXFP1	0xFFFFFFFF	/* Largest # if first fp format */
 #define HIGHBIT64 (1ull<<63)
 
+struct zero_padding { int predot, postdot, trail; };
+
 static int _to_float(char *buf, uint64_t double_temp, char c,
-		     bool falt, bool fplus, bool fspace, int precision)
+		     bool falt, bool fplus, bool fspace, int precision,
+		     struct zero_padding *zp)
 {
 	int decexp;
 	int exp;
@@ -358,24 +362,30 @@ static int _to_float(char *buf, uint64_t double_temp, char c,
 
 	if (c == 'f') {
 		if (decexp > 0) {
-			while (decexp > 0) {
+			while (decexp > 0 && digit_count > 0) {
 				*buf++ = _get_digit(&fract, &digit_count);
 				decexp--;
 			}
+			zp->predot = decexp;
+			decexp = 0;
 		} else {
 			*buf++ = '0';
 		}
 		if (falt || (precision > 0)) {
 			*buf++ = '.';
 		}
-		while (precision-- > 0) {
-			if (decexp < 0) {
-				*buf++ = '0';
-				decexp++;
-			} else {
-				*buf++ = _get_digit(&fract, &digit_count);
+		if (decexp < 0 && precision > 0) {
+			zp->postdot = -decexp;
+			if (zp->postdot > precision) {
+				zp->postdot = precision;
 			}
+			precision -= zp->postdot;
 		}
+		while (precision > 0 && digit_count > 0) {
+			*buf++ = _get_digit(&fract, &digit_count);
+			precision--;
+		}
+		zp->trail = precision;
 	} else {
 		*buf = _get_digit(&fract, &digit_count);
 		if (*buf++ != '0') {
@@ -384,16 +394,17 @@ static int _to_float(char *buf, uint64_t double_temp, char c,
 		if (falt || (precision > 0)) {
 			*buf++ = '.';
 		}
-		while (precision-- > 0) {
+		while (precision > 0 && digit_count > 0) {
 			*buf++ = _get_digit(&fract, &digit_count);
+			precision--;
 		}
+		zp->trail = precision;
 	}
 
 	if (prune_zero) {
-		while (*--buf == '0') {
+		zp->trail = 0;
+		while (*--buf == '0')
 			;
-		}
-
 		if (*buf != '.') {
 			buf++;
 		}
@@ -444,6 +455,7 @@ int z_prf(int (*func)(), void *dest, const char *format, va_list vargs)
 	int i;
 	int width, precision;
 	int clen, prefix, zero_head;
+	struct zero_padding zero;
 	VALTYPE val;
 
 #define PUTC(c)	do { if ((*func)(c, dest) == EOF) return EOF; } while (false)
@@ -539,6 +551,8 @@ int z_prf(int (*func)(), void *dest, const char *format, va_list vargs)
 
 			cptr = buf;
 			prefix = 0;
+			zero.predot = zero.postdot = zero.trail = 0;
+
 			switch (c) {
 			case 'c':
 				buf[0] = va_arg(vargs, int);
@@ -600,10 +614,12 @@ int z_prf(int (*func)(), void *dest, const char *format, va_list vargs)
 #endif
 
 				clen = _to_float(buf, double_val, c, falt,
-						 fplus, fspace, precision);
+						 fplus, fspace, precision,
+						 &zero);
 				if (fplus || fspace || (buf[0] == '-')) {
 					prefix = 1;
 				}
+				clen += zero.predot + zero.postdot + zero.trail;
 				precision = -1;
 				break;
 			}
@@ -735,8 +751,53 @@ int z_prf(int (*func)(), void *dest, const char *format, va_list vargs)
 				PUTC('0');
 			}
 
-			/* main data */
+			/*
+			 * main data:
+			 *
+			 * In the case of floats, 3 possible zero-padding
+			 * are included in the clen count, either with
+			 *	xxxxxx<zero.predot>.<zero.postdot>
+			 * or with
+			 *	x.<zero.postdot>xxxxxx<zero.trail>[e+xx]
+			 * In the non-float cases, those predot, postdot and
+			 * tail params are equal to 0.
+			 */
 			count += clen;
+			if (zero.predot) {
+				c = *cptr;
+				while (isdigit(c)) {
+					PUTC(c);
+					clen--;
+					c = *++cptr;
+				}
+				clen -= zero.predot;
+				while (zero.predot-- > 0) {
+					PUTC('0');
+				}
+			}
+			if (zero.postdot) {
+				do {
+					c = *cptr++;
+					PUTC(c);
+					clen--;
+				} while (c != '.');
+				clen -= zero.postdot;
+				while (zero.postdot-- > 0) {
+					PUTC('0');
+				}
+			}
+			if (zero.trail) {
+				c = *cptr;
+				while (isdigit(c) || c == '.') {
+					PUTC(c);
+					clen--;
+					c = *++cptr;
+				}
+				clen -= zero.trail;
+				while (zero.trail-- > 0) {
+					PUTC('0');
+				}
+			}
 			while (clen-- > 0) {
 				PUTC(*cptr++);
 			}
