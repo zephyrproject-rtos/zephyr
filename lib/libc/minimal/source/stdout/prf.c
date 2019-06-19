@@ -16,25 +16,14 @@
 #include <sys/types.h>
 #include <misc/util.h>
 
-#ifndef MAXFLD
-#define	MAXFLD	200
-#endif
-
 #ifndef EOF
 #define EOF  -1
 #endif
 
 #ifdef CONFIG_MINIMAL_LIBC_LL_PRINTF
 #define VALTYPE long long
-#define SIZEOF_VALTYPE __SIZEOF_LONG_LONG__
 #else
 #define VALTYPE long
-#define SIZEOF_VALTYPE __SIZEOF_LONG__
-#endif
-
-/* this has to fit max range octal display */
-#if MAXFLD < (1 + (SIZEOF_VALTYPE*8 + 2)/3)
-#error buffer size MAXFLD is too small
 #endif
 
 static void _uc(char *buf)
@@ -442,12 +431,14 @@ static int _atoi(const char **sptr)
 int z_prf(int (*func)(), void *dest, const char *format, va_list vargs)
 {
 	/*
-	 * Due the fact that buffer is passed to functions in this file,
-	 * they assume that its size is MAXFLD + 1. In need of change
-	 * the buffer size, either MAXFLD should be changed or the change
-	 * has to be propagated across the file
+	 * The work buffer has to accommodate for the largest data length.
+	 * The max range octal length is one prefix + 3 bits per digit
+	 * meaning 12 bytes on 32-bit and 23 bytes on 64-bit.
+	 * The float code may extract up to 16 digits, plus a prefix,
+	 * a leading 0, a dot, and an exponent in the form e+xxx for
+	 * a total of 24. Add a trailing NULL so it is 25.
 	 */
-	char buf[MAXFLD + 1];
+	char buf[25];
 	char c;
 	int count;
 	char *cptr;
@@ -517,10 +508,6 @@ int z_prf(int (*func)(), void *dest, const char *format, va_list vargs)
 					precision = va_arg(vargs, int);
 				} else {
 					precision = _atoi(&format);
-				}
-
-				if (precision > MAXFLD) {
-					precision = -1;
 				}
 
 				c = *format++;
