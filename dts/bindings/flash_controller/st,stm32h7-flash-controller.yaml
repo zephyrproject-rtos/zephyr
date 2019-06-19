@@ -1,0 +1,15 @@
+---
+title: STM32 H7 Flash Controller
+version: 0.1
+
+description: >
+    This binding gives a base representation of the STM32 H7 Flash Controller
+
+inherits:
+    !include flash-controller.yaml
+
+properties:
+    compatible:
+      constraint: "st,stm32h7-flash-controller"
+
+...
