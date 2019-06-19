@@ -70,6 +70,7 @@ enum {
 	SX1509B_REG_PULL_UP		= 0x06,
 	SX1509B_REG_PULL_DOWN		= 0x08,
 	SX1509B_REG_OPEN_DRAIN		= 0x0a,
+	SX1509B_REG_POLARITY		= 0x0c,
 	SX1509B_REG_DIR			= 0x0e,
 	SX1509B_REG_DATA		= 0x10,
 	SX1509B_REG_LED_DRIVER_ENABLE	= 0x20,
@@ -220,6 +221,13 @@ static int gpio_sx1509b_config(struct device *dev, int access_op, u32_t pin,
 	ret = i2c_reg_write_word_be(drv_data->i2c_master, cfg->i2c_slave_addr,
 				    SX1509B_REG_OPEN_DRAIN,
 				    pins->open_drain);
+	if (ret) {
+		goto out;
+	}
+
+	ret = i2c_reg_write_word_be(drv_data->i2c_master, cfg->i2c_slave_addr,
+				    SX1509B_REG_POLARITY,
+				    pins->polarity);
 
 out:
 	k_sem_give(&drv_data->lock);
