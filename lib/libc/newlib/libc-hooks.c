@@ -23,16 +23,15 @@
 #if CONFIG_NEWLIB_LIBC_ALIGNED_HEAP_SIZE
 K_APPMEM_PARTITION_DEFINE(z_malloc_partition);
 #define MALLOC_BSS	K_APP_BMEM(z_malloc_partition)
-#endif /* CONFIG_NEWLIB_LIBC_ALIGNED_HEAP_SIZE */
 
-#define USED_RAM_END_ADDR   POINTER_TO_UINT(&_end)
-
-#if CONFIG_NEWLIB_LIBC_ALIGNED_HEAP_SIZE
 /* Compiler will throw an error if the provided value isn't a power of two */
 MALLOC_BSS static unsigned char __aligned(CONFIG_NEWLIB_LIBC_ALIGNED_HEAP_SIZE)
 	heap_base[CONFIG_NEWLIB_LIBC_ALIGNED_HEAP_SIZE];
 #define MAX_HEAP_SIZE CONFIG_NEWLIB_LIBC_ALIGNED_HEAP_SIZE
-#else
+
+#else /* CONFIG_NEWLIB_LIBC_ALIGNED_HEAP_SIZE */
+
+#define USED_RAM_END_ADDR   POINTER_TO_UINT(&_end)
 
 #if CONFIG_X86
 #define USED_RAM_SIZE  (USED_RAM_END_ADDR - DT_PHYS_RAM_ADDR)
@@ -75,7 +74,7 @@ static int malloc_prepare(struct device *unused)
 }
 
 SYS_INIT(malloc_prepare, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
-#endif
+#endif /* CONFIG_USERSPACE */
 #endif /* CONFIG_NEWLIB_LIBC_ALIGNED_HEAP_SIZE */
 
 LIBC_BSS static unsigned int heap_sz;
