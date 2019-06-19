@@ -178,7 +178,9 @@ static int cmd_discover(const struct shell *shell, size_t argc, char *argv[])
 		}
 	}
 
-	if (!strcmp(argv[0], "discover-secondary")) {
+	if (!strcmp(argv[0], "discover")) {
+		discover_params.type = BT_GATT_DISCOVER_ATTRIBUTE;
+	} else if (!strcmp(argv[0], "discover-secondary")) {
 		discover_params.type = BT_GATT_DISCOVER_SECONDARY;
 	} else if (!strcmp(argv[0], "discover-include")) {
 		discover_params.type = BT_GATT_DISCOVER_INCLUDE;
@@ -768,6 +770,8 @@ static int cmd_metrics(const struct shell *shell, size_t argc, char *argv[])
 
 SHELL_STATIC_SUBCMD_SET_CREATE(gatt_cmds,
 #if defined(CONFIG_BT_GATT_CLIENT)
+	SHELL_CMD_ARG(discover, NULL,
+		      "[UUID] [start handle] [end handle]", cmd_discover, 1, 3),
 	SHELL_CMD_ARG(discover-characteristic, NULL,
 		      "[UUID] [start handle] [end handle]", cmd_discover, 1, 3),
 	SHELL_CMD_ARG(discover-descriptor, NULL,
