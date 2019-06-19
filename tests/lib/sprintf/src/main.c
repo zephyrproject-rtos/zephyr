@@ -61,7 +61,7 @@ union raw_double_u {
 
 void test_sprintf_double(void)
 {
-	char buffer[100];
+	char buffer[400];
 	union raw_double_u var;
 
 #ifndef CONFIG_FLOAT
@@ -283,6 +283,36 @@ void test_sprintf_double(void)
 	sprintf(buffer, "%G", var.d);
 	zassert_true((strcmp(buffer, "1.234E+09") == 0),
 		     "sprintf(1.234E+09) - incorrect "
+		     "output '%s'\n", buffer);
+
+	var.d = 150.0;
+	sprintf(buffer, "%#.3g", var.d);
+	zassert_true((strcmp(buffer, "150.") == 0),
+		     "sprintf(150.) - incorrect "
+		     "output '%s'\n", buffer);
+
+	var.d = 150.1;
+	sprintf(buffer, "%.2g", var.d);
+	zassert_true((strcmp(buffer, "1.5e+02") == 0),
+		     "sprintf(1.5e+02) - incorrect "
+		     "output '%s'\n", buffer);
+
+	var.d = 150.567;
+	sprintf(buffer, "%.3g", var.d);
+	zassert_true((strcmp(buffer, "151") == 0),
+		     "sprintf(151) - incorrect "
+		     "output '%s'\n", buffer);
+
+	var.d = 15e-5;
+	sprintf(buffer, "%#.3g", var.d);
+	zassert_true((strcmp(buffer, "0.000150") == 0),
+		     "sprintf(0.000150) - incorrect "
+		     "output '%s'\n", buffer);
+
+	var.d = 1505e-7;
+	sprintf(buffer, "%.4g", var.d);
+	zassert_true((strcmp(buffer, "0.0001505") == 0),
+		     "sprintf(0.0001505) - incorrect "
 		     "output '%s'\n", buffer);
 }
 
