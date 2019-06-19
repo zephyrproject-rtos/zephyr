@@ -1604,7 +1604,7 @@ __syscall bool net_if_ipv4_set_netmask_by_index(int index,
  * @param iface Interface to use.
  * @param gw IPv4 address of an gateway
  */
-void net_if_ipv4_set_gw(struct net_if *iface, struct in_addr *gw);
+void net_if_ipv4_set_gw(struct net_if *iface, const struct in_addr *gw);
 
 /**
  * @brief Set IPv4 gateway for an interface index.
