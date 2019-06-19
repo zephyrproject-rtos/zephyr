@@ -34,7 +34,7 @@ extern "C" {
 
 /* Socket NET_MGMT options */
 #define SOL_NET_MGMT_BASE 100
-#define SOL_NET_MGMT_RAW (SOL_NET_MGMT_BASE + NET_MGMT_RAW)
+#define SOL_NET_MGMT_RAW (SOL_NET_MGMT_BASE + 1)
 
 /**
  * struct sockaddr_nm - The sockaddr structure for NET_MGMT sockets
