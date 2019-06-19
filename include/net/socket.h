@@ -349,8 +349,8 @@ __syscall int zsock_poll(struct zsock_pollfd *fds, int nfds, int timeout);
  * if :option:`CONFIG_NET_SOCKETS_POSIX_NAMES` is defined.
  * @endrststar
  */
-int zsock_getsockopt(int sock, int level, int optname,
-		     void *optval, socklen_t *optlen);
+__syscall int zsock_getsockopt(int sock, int level, int optname,
+			       void *optval, socklen_t *optlen);
 
 /**
  * @brief Set various socket options
