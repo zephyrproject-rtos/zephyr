@@ -2221,6 +2221,8 @@ static void gatt_find_info_rsp(struct bt_conn *conn, u8_t err,
 		struct bt_uuid_16 u16;
 		struct bt_uuid_128 u128;
 	} u;
+	int i;
+	bool skip = false;
 
 	BT_DBG("err 0x%02x", err);
 
@@ -2244,12 +2246,17 @@ static void gatt_find_info_rsp(struct bt_conn *conn, u8_t err,
 	}
 
 	/* Parse descriptors found */
-	for (length--, pdu = rsp->info; length >= len;
-	     length -= len, pdu = (const u8_t *)pdu + len) {
+	for (i = (length - 1) / len, pdu = rsp->info; i != 0;
+	     i--, pdu = (const u8_t *)pdu + len) {
 		struct bt_gatt_attr *attr;
 
 		info.i16 = pdu;
 		handle = sys_le16_to_cpu(info.i16->handle);
+
+		if (skip) {
+			skip = false;
+			continue;
+		}
 
 		switch (u.uuid.type) {
 		case BT_UUID_TYPE_16:
@@ -2281,10 +2288,7 @@ static void gatt_find_info_rsp(struct bt_conn *conn, u8_t err,
 			 * entry must be its value.
 			 */
 			if (!bt_uuid_cmp(&u.uuid, BT_UUID_GATT_CHRC)) {
-				if (length >= len) {
-					pdu = (const u8_t *)pdu + len;
-					length -= len;
-				}
+				skip = true;
 				continue;
 			}
 		}
@@ -2299,7 +2303,7 @@ static void gatt_find_info_rsp(struct bt_conn *conn, u8_t err,
 	}
 
 	/* Stop if could not parse the whole PDU */
-	if (length > 0) {
+	if (i) {
 		goto done;
 	}
 
