@@ -16,6 +16,7 @@ LOG_MODULE_REGISTER(net_sock_mgmt, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <syscall_handler.h>
 #include <misc/fdtable.h>
 #include <net/socket_net_mgmt.h>
+#include <net/ethernet_mgmt.h>
 
 #include "sockets_internal.h"
 #include "net_private.h"
@@ -228,19 +229,77 @@ again:
 static int znet_mgmt_getsockopt(struct net_mgmt_socket *mgmt, int level,
 				int optname, void *optval, socklen_t *optlen)
 {
-	if (!optval || !optlen) {
+	int ret;
+
+	if (level != SOL_NET_MGMT_RAW || !optval || !optlen) {
 		errno = EINVAL;
 		return -1;
 	}
 
-	return 0;
+	if (mgmt->iface == NULL) {
+		errno = ENOENT;
+		return -1;
+	}
+
+#if defined(CONFIG_NET_L2_ETHERNET_MGMT)
+	if (optname == NET_REQUEST_ETHERNET_GET_QAV_PARAM) {
+		ret = net_mgmt(NET_REQUEST_ETHERNET_GET_QAV_PARAM,
+			       mgmt->iface, (void *)optval, *optlen);
+		if (ret < 0) {
+			errno = -ret;
+			return -1;
+		}
+
+		return 0;
+
+	} else {
+		errno = EINVAL;
+		return -1;
+	}
+#else
+	ARG_UNUSED(ret);
+#endif /* CONFIG_NET_L2_ETHERNET_MGMT */
+
+	errno = ENOTSUP;
+	return -1;
 }
 
 static int znet_mgmt_setsockopt(struct net_mgmt_socket *mgmt, int level,
 				int optname, const void *optval,
 				socklen_t optlen)
 {
-	return 0;
+	int ret;
+
+	if (level != SOL_NET_MGMT_RAW || !optval || !optlen) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	if (mgmt->iface == NULL) {
+		errno = ENOENT;
+		return -1;
+	}
+
+#if defined(CONFIG_NET_L2_ETHERNET_MGMT)
+	if (optname == NET_REQUEST_ETHERNET_SET_QAV_PARAM) {
+		ret = net_mgmt(NET_REQUEST_ETHERNET_SET_QAV_PARAM,
+			       mgmt->iface, (void *)optval, optlen);
+		if (ret < 0) {
+			errno = -ret;
+			return -1;
+		}
+
+		return 0;
+	} else {
+		errno = EINVAL;
+		return -1;
+	}
+#else
+	ARG_UNUSED(ret);
+#endif /* CONFIG_NET_L2_ETHERNET_MGMT */
+
+	errno = ENOTSUP;
+	return -1;
 }
 
 static ssize_t net_mgmt_sock_read(void *obj, void *buffer, size_t count)
