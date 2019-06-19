@@ -22,4 +22,4 @@ properties:
       type: compound
       category: optional
       description: DRDY pin
-      generation: define, use-prop-name
+      generation: define

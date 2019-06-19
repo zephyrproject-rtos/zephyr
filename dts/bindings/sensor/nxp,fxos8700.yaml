@@ -21,14 +21,14 @@ properties:
     reset-gpios:
       type: compound
       category: optional
-      generation: define, use-prop-name
+      generation: define
 
     int1-gpios:
       type: compound
       category: optional
-      generation: define, use-prop-name
+      generation: define
 
     int2-gpios:
       type: compound
       category: optional
-      generation: define, use-prop-name
+      generation: define

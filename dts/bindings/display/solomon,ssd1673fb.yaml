@@ -98,14 +98,14 @@ properties:
     reset-gpios:
       type: compound
       category: required
-      generation: define, use-prop-name
+      generation: define
 
     dc-gpios:
       type: compound
       category: required
-      generation: define, use-prop-name
+      generation: define
 
     busy-gpios:
       type: compound
       category: required
-      generation: define, use-prop-name
+      generation: define
