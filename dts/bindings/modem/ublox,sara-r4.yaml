@@ -23,9 +23,9 @@ properties:
     mdm-power-gpios:
       type: compound
       category: required
-      generation: define, use-prop-name
+      generation: define
 
     mdm-reset-gpios:
       type: compound
       category: required
-      generation: define, use-prop-name
+      generation: define

@@ -21,9 +21,9 @@ properties:
         type: compound
         category: required
         description: VCTL1 pin
-        generation: define, use-prop-name
+        generation: define
     vctl2-gpios:
         type: compound
         category: required
         description: VCTL2 pin
-        generation: define, use-prop-name
+        generation: define

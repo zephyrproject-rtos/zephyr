@@ -20,4 +20,4 @@ properties:
     irq-gpios:
       type: compound
       category: required
-      generation: define, use-prop-name
+      generation: define

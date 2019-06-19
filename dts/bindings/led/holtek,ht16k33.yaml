@@ -27,4 +27,4 @@ properties:
       type: compound
       category: optional
       description: IRQ pin
-      generation: define, use-prop-name
+      generation: define

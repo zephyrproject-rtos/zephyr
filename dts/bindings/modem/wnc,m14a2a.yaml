@@ -23,30 +23,30 @@ properties:
     mdm-boot-mode-sel-gpios:
       type: compound
       category: required
-      generation: define, use-prop-name
+      generation: define
 
     mdm-power-gpios:
       type: compound
       category: required
-      generation: define, use-prop-name
+      generation: define
 
     mdm-keep-awake-gpios:
       type: compound
       category: required
-      generation: define, use-prop-name
+      generation: define
 
     mdm-reset-gpios:
       type: compound
       category: required
-      generation: define, use-prop-name
+      generation: define
 
     mdm-shld-trans-ena-gpios:
       type: compound
       category: required
-      generation: define, use-prop-name
+      generation: define
 
     mdm-send-ok-gpios:
       type: compound
       category: optional
       description: UART RTS pin if no HW flow control (set to always enabled)
-      generation: define, use-prop-name
+      generation: define

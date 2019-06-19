@@ -44,10 +44,6 @@ properties:
 #     description: <description of property>
 #     generation: define
 #
-# The 'generation' attribute can be set to 'define, use-prop-name' to use the
-# property name instead of a generic controller name, e.g. *_CS_GPIO_* instead
-# of *_GPIOS_*.
-#
 # The exact value of the 'generation' attribute is ignored otherwise. The
 # output is always #define's.
 #
