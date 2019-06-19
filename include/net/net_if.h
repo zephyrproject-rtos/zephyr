@@ -1652,21 +1652,19 @@ struct in_addr *net_if_ipv4_get_global_addr(struct net_if *iface,
  * @param iface Interface to use.
  * @param netmask IPv4 netmask
  */
-static inline void net_if_ipv4_set_netmask(struct net_if *iface,
-					   const struct in_addr *netmask)
-{
-#if defined(CONFIG_NET_IPV4)
-	if (net_if_config_ipv4_get(iface, NULL) < 0) {
-		return;
-	}
+void net_if_ipv4_set_netmask(struct net_if *iface,
+			     const struct in_addr *netmask);
 
-	if (!iface->config.ip.ipv4) {
-		return;
-	}
-
-	net_ipaddr_copy(&iface->config.ip.ipv4->netmask, netmask);
-#endif
-}
+/**
+ * @brief Set IPv4 netmask for an interface index.
+ *
+ * @param index Network interface index
+ * @param netmask IPv4 netmask
+ *
+ * @return True if netmask was added, false otherwise.
+ */
+__syscall bool net_if_ipv4_set_netmask_by_index(int index,
+						const struct in_addr *netmask);
 
 /**
  * @brief Set IPv4 gateway for an interface.
