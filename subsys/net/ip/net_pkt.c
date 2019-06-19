@@ -1827,6 +1827,8 @@ u16_t net_pkt_get_current_offset(struct net_pkt *pkt)
 
 bool net_pkt_is_contiguous(struct net_pkt *pkt, size_t size)
 {
+	pkt_cursor_advance(pkt, !net_pkt_is_being_overwritten(pkt));
+
 	if (pkt->cursor.buf && pkt->cursor.pos) {
 		size_t len;
 
