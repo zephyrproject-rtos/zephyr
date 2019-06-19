@@ -2630,6 +2630,53 @@ Z_SYSCALL_HANDLER(net_if_ipv4_addr_lookup_by_index, addr)
 }
 #endif
 
+void net_if_ipv4_set_netmask(struct net_if *iface,
+			     const struct in_addr *netmask)
+{
+#if defined(CONFIG_NET_IPV4)
+	if (net_if_config_ipv4_get(iface, NULL) < 0) {
+		return;
+	}
+
+	if (!iface->config.ip.ipv4) {
+		return;
+	}
+
+	net_ipaddr_copy(&iface->config.ip.ipv4->netmask, netmask);
+#endif
+}
+
+bool z_impl_net_if_ipv4_set_netmask_by_index(int index,
+					     const struct in_addr *netmask)
+{
+	struct net_if *iface;
+
+	iface = net_if_get_by_index(index);
+	if (!iface) {
+		return false;
+	}
+
+	net_if_ipv4_set_netmask(iface, netmask);
+
+	return true;
+}
+
+#ifdef CONFIG_USERSPACE
+Z_SYSCALL_HANDLER(net_if_ipv4_set_netmask_by_index, index, netmask)
+{
+#if defined(CONFIG_NET_IF_USERSPACE_ACCESS)
+	struct in_addr netmask_addr;
+
+	Z_OOPS(z_user_from_copy(&netmask_addr, (void *)netmask,
+				sizeof(netmask_addr)));
+
+	return z_impl_net_if_ipv4_set_netmask_by_index(index, &netmask_addr);
+#else
+	return false;
+#endif
+}
+#endif /* CONFIG_USERSPACE */
+
 #if defined(CONFIG_NET_IPV4)
 static struct net_if_addr *ipv4_addr_find(struct net_if *iface,
 					  struct in_addr *addr)

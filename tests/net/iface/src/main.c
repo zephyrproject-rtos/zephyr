@@ -779,6 +779,17 @@ static void v6_addr_rm_user(void)
 	}
 }
 
+static void netmask_addr_add(void)
+{
+	struct in_addr my_netmask = { { { 255, 255, 255, 0 } } };
+	bool ret;
+
+	if (IS_ENABLED(CONFIG_NET_IF_USERSPACE_ACCESS)) {
+		ret = net_if_ipv4_set_netmask_by_index(1, &my_netmask);
+		zassert_true(ret, "Cannot add IPv4 netmask");
+	}
+}
+
 void test_main(void)
 {
 	ztest_test_suite(net_iface_test,
@@ -806,7 +817,9 @@ void test_main(void)
 			 ztest_unit_test(v6_addr_rm),
 			 ztest_user_unit_test(v6_addr_add_user),
 			 ztest_user_unit_test(v6_addr_lookup_user),
-			 ztest_user_unit_test(v6_addr_rm_user)
+			 ztest_user_unit_test(v6_addr_rm_user),
+			 ztest_unit_test(netmask_addr_add),
+			 ztest_user_unit_test(netmask_addr_add)
 		);
 
 	ztest_run_test_suite(net_iface_test);
