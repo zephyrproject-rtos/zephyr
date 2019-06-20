@@ -3094,6 +3094,9 @@ def chatty_test_cb(instances, goals, goal):
 
     if goal.handler:
         handler_type = goal.handler.type_str
+        htime = goal.metrics.get("handler_time", None)
+        if htime:
+            handler_type += " {:.3f}s".format(htime)
     else:
         handler_type = "build"
 
