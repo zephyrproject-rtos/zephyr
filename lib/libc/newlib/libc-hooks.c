@@ -31,6 +31,8 @@ MALLOC_BSS static unsigned char __aligned(CONFIG_NEWLIB_LIBC_ALIGNED_HEAP_SIZE)
 
 #else /* CONFIG_NEWLIB_LIBC_ALIGNED_HEAP_SIZE */
 
+/* Heap base and size are determined based on the available unused SRAM. */
+
 #define USED_RAM_END_ADDR   POINTER_TO_UINT(&_end)
 
 #if CONFIG_X86
@@ -46,7 +48,17 @@ MALLOC_BSS static unsigned char __aligned(CONFIG_NEWLIB_LIBC_ALIGNED_HEAP_SIZE)
 #define MAX_HEAP_SIZE  (RISCV_RAM_SIZE - USED_RAM_SIZE)
 #elif CONFIG_ARM
 #include <soc.h>
-#define USED_RAM_SIZE  (USED_RAM_END_ADDR - CONFIG_SRAM_BASE_ADDRESS)
+#if defined(CONFIG_USERSPACE)
+/* MPU shall program the heap area as user-accessible; therefore, heap base
+ * (and size) shall take into account the ARM MPU minimum region granularity.
+ */
+#define HEAP_BASE ((USED_RAM_END_ADDR + \
+		CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE) & \
+	(~(CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE - 1)))
+#else
+#define HEAP_BASE USED_RAM_END_ADDR
+#endif /* CONFIG_USERSPACE*/
+#define USED_RAM_SIZE  (HEAP_BASE - CONFIG_SRAM_BASE_ADDRESS)
 #define MAX_HEAP_SIZE ((KB(CONFIG_SRAM_SIZE)) - USED_RAM_SIZE)
 #elif CONFIG_XTENSA
 extern void *_heap_sentry;
@@ -54,6 +66,10 @@ extern void *_heap_sentry;
 #else
 #define USED_RAM_SIZE  (USED_RAM_END_ADDR - CONFIG_SRAM_BASE_ADDRESS)
 #define MAX_HEAP_SIZE ((KB(CONFIG_SRAM_SIZE)) - USED_RAM_SIZE)
+#endif
+
+#ifndef HEAP_BASE
+#define HEAP_BASE USED_RAM_END_ADDR
 #endif
 
 #ifdef CONFIG_USERSPACE
@@ -66,7 +82,7 @@ static int malloc_prepare(struct device *unused)
 #if CONFIG_NEWLIB_LIBC_ALIGNED_HEAP_SIZE
 	z_malloc_partition.start = (u32_t)heap_base;
 #else
-	z_malloc_partition.start = USED_RAM_END_ADDR;
+	z_malloc_partition.start = HEAP_BASE;
 #endif
 	z_malloc_partition.size = MAX_HEAP_SIZE;
 	z_malloc_partition.attr = K_MEM_PARTITION_P_RW_U_RW;
@@ -226,7 +242,7 @@ void *_sbrk(int count)
 #if CONFIG_NEWLIB_LIBC_ALIGNED_HEAP_SIZE
 	void *ptr = heap_base + heap_sz;
 #else
-	void *ptr = _end + heap_sz;
+	void *ptr = ((char *)HEAP_BASE) + heap_sz;
 #endif
 
 	if ((heap_sz + count) < MAX_HEAP_SIZE) {
