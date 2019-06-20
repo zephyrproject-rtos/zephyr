@@ -985,20 +985,20 @@ static inline int configure_spi(struct device *dev)
 
 #if defined(CONFIG_IEEE802154_CC2520_GPIO_SPI_CS)
 	cs_ctrl.gpio_dev = device_get_binding(
-		DT_INST_0_TI_CC2520_CS_GPIO_CONTROLLER);
+		DT_INST_0_TI_CC2520_CS_GPIOS_CONTROLLER);
 	if (!cs_ctrl.gpio_dev) {
 		LOG_ERR("Unable to get GPIO SPI CS device");
 		return -ENODEV;
 	}
 
-	cs_ctrl.gpio_pin = DT_INST_0_TI_CC2520_CS_GPIO_PIN;
+	cs_ctrl.gpio_pin = DT_INST_0_TI_CC2520_CS_GPIOS_PIN;
 	cs_ctrl.delay = 0U;
 
 	cc2520->spi_cfg.cs = &cs_ctrl;
 
 	LOG_DBG("SPI GPIO CS configured on %s:%u",
-		    DT_INST_0_TI_CC2520_CS_GPIO_CONTROLLER,
-		    DT_INST_0_TI_CC2520_CS_GPIO_PIN);
+		    DT_INST_0_TI_CC2520_CS_GPIOS_CONTROLLER,
+		    DT_INST_0_TI_CC2520_CS_GPIOS_PIN);
 #endif /* CONFIG_IEEE802154_CC2520_GPIO_SPI_CS */
 
 	cc2520->spi_cfg.frequency = DT_INST_0_TI_CC2520_SPI_MAX_FREQUENCY;

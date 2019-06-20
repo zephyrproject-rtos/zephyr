@@ -902,10 +902,10 @@ static int sdhc_init(struct device *dev)
 	data->cfg.frequency = SDHC_INITIAL_SPEED;
 	data->cfg.operation = SPI_WORD_SET(8) | SPI_HOLD_ON_CS;
 	data->cfg.slave = DT_INST_0_ZEPHYR_MMC_SPI_SLOT_BASE_ADDRESS;
-	data->cs = device_get_binding(DT_INST_0_ZEPHYR_MMC_SPI_SLOT_CS_GPIO_CONTROLLER);
+	data->cs = device_get_binding(DT_INST_0_ZEPHYR_MMC_SPI_SLOT_CS_GPIOS_CONTROLLER);
 	__ASSERT_NO_MSG(data->cs != NULL);
 
-	data->pin = DT_INST_0_ZEPHYR_MMC_SPI_SLOT_CS_GPIO_PIN;
+	data->pin = DT_INST_0_ZEPHYR_MMC_SPI_SLOT_CS_GPIOS_PIN;
 
 	disk_sdhc_init(dev);
 

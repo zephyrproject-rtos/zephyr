@@ -45,11 +45,11 @@
 #define CMD_OGF			1
 #define CMD_OCF			2
 
-#define GPIO_IRQ_PIN		DT_INST_0_ZEPHYR_BT_HCI_SPI_IRQ_GPIO_PIN
-#define GPIO_RESET_PIN		DT_INST_0_ZEPHYR_BT_HCI_SPI_RESET_GPIO_PIN
-#ifdef DT_INST_0_ZEPHYR_BT_HCI_SPI_CS_GPIO_PIN
-#define GPIO_CS_PIN		DT_INST_0_ZEPHYR_BT_HCI_SPI_CS_GPIO_PIN
-#endif /* DT_INST_0_ZEPHYR_BT_HCI_SPI_CS_GPIO_PIN */
+#define GPIO_IRQ_PIN		DT_INST_0_ZEPHYR_BT_HCI_SPI_IRQ_GPIOS_PIN
+#define GPIO_RESET_PIN		DT_INST_0_ZEPHYR_BT_HCI_SPI_RESET_GPIOS_PIN
+#ifdef DT_INST_0_ZEPHYR_BT_HCI_SPI_CS_GPIOS_PIN
+#define GPIO_CS_PIN		DT_INST_0_ZEPHYR_BT_HCI_SPI_CS_GPIOS_PIN
+#endif /* DT_INST_0_ZEPHYR_BT_HCI_SPI_CS_GPIOS_PIN */
 
 /* Max SPI buffer length for transceive operations.
  *
@@ -194,10 +194,10 @@ static void bt_spi_handle_vendor_evt(u8_t *rxmsg)
  */
 static int configure_cs(void)
 {
-	cs_dev = device_get_binding(DT_INST_0_ZEPHYR_BT_HCI_SPI_CS_GPIO_CONTROLLER);
+	cs_dev = device_get_binding(DT_INST_0_ZEPHYR_BT_HCI_SPI_CS_GPIOS_CONTROLLER);
 	if (!cs_dev) {
 		BT_ERR("Failed to initialize GPIO driver: %s",
-		       DT_INST_0_ZEPHYR_BT_HCI_SPI_CS_GPIO_CONTROLLER);
+		       DT_INST_0_ZEPHYR_BT_HCI_SPI_CS_GPIOS_CONTROLLER);
 		return -EIO;
 	}
 
@@ -254,10 +254,10 @@ static int configure_cs(void)
 
 	spi_conf_cs.gpio_pin = GPIO_CS_PIN,
 	spi_conf_cs.gpio_dev = device_get_binding(
-		DT_INST_0_ZEPHYR_BT_HCI_SPI_CS_GPIO_CONTROLLER);
+		DT_INST_0_ZEPHYR_BT_HCI_SPI_CS_GPIOS_CONTROLLER);
 	if (!spi_conf_cs.gpio_dev) {
 		BT_ERR("Failed to initialize GPIO driver: %s",
-		       DT_INST_0_ZEPHYR_BT_HCI_SPI_CS_GPIO_CONTROLLER);
+		       DT_INST_0_ZEPHYR_BT_HCI_SPI_CS_GPIOS_CONTROLLER);
 		return -EIO;
 	}
 
@@ -545,18 +545,18 @@ static int bt_spi_init(struct device *unused)
 	}
 
 	irq_dev = device_get_binding(
-		DT_INST_0_ZEPHYR_BT_HCI_SPI_IRQ_GPIO_CONTROLLER);
+		DT_INST_0_ZEPHYR_BT_HCI_SPI_IRQ_GPIOS_CONTROLLER);
 	if (!irq_dev) {
 		BT_ERR("Failed to initialize GPIO driver: %s",
-		       DT_INST_0_ZEPHYR_BT_HCI_SPI_IRQ_GPIO_CONTROLLER);
+		       DT_INST_0_ZEPHYR_BT_HCI_SPI_IRQ_GPIOS_CONTROLLER);
 		return -EIO;
 	}
 
 	rst_dev = device_get_binding(
-		DT_INST_0_ZEPHYR_BT_HCI_SPI_RESET_GPIO_CONTROLLER);
+		DT_INST_0_ZEPHYR_BT_HCI_SPI_RESET_GPIOS_CONTROLLER);
 	if (!rst_dev) {
 		BT_ERR("Failed to initialize GPIO driver: %s",
-		       DT_INST_0_ZEPHYR_BT_HCI_SPI_RESET_GPIO_CONTROLLER);
+		       DT_INST_0_ZEPHYR_BT_HCI_SPI_RESET_GPIOS_CONTROLLER);
 		return -EIO;
 	}
 
