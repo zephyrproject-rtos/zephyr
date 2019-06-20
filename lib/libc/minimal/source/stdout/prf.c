@@ -263,6 +263,12 @@ static int _to_float(char *buf, uint64_t double_temp, char c,
 	}
 
 	if ((exp | fract) != 0) {
+		if (exp == 0) {
+			/* this is a denormal */
+			while (((fract <<= 1) & HIGHBIT64) == 0) {
+				exp--;
+			}
+		}
 		exp -= (1023 - 1);	/* +1 since .1 vs 1. */
 		fract |= HIGHBIT64;
 	}
