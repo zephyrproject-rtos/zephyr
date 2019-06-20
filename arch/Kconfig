@@ -302,6 +302,16 @@ config GEN_SW_ISR_TABLE
 	  _isr_table_entry containing the interrupt service routine and supplied
 	  parameter.
 
+config ARCH_SW_ISR_TABLE_ALIGN
+	int "Alignment size of a software ISR table"
+	default 0
+	depends on GEN_SW_ISR_TABLE
+	help
+	  This option controls alignment size of generated
+	  _sw_isr_table.  Some architecture needs a software ISR table
+	  to be aligned to architecture specific size.  The default
+	  size is 0 for no alignment.
+
 config GEN_IRQ_START_VECTOR
 	int
 	default 0
