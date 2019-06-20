@@ -8,6 +8,12 @@
 #if defined(CONFIG_GEN_ISR_TABLES) && defined(CONFIG_DYNAMIC_INTERRUPTS)
 	SECTION_DATA_PROLOGUE(sw_isr_table,,)
 	{
+		/*
+		 * Some arch requires an entry to be aligned to arch
+		 * specific boundary for using double word load
+		 * instruction.  See include/sw_isr_table.h.
+		 */
+		. = ALIGN(CONFIG_ARCH_SW_ISR_TABLE_ALIGN);
 		*(SW_ISR_TABLE)
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 #endif
