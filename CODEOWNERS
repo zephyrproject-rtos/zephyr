@@ -171,6 +171,7 @@
 /drivers/*/*xec*                          @franciscomunoz @albertofloyd @scottwcpg
 /drivers/wifi/                            @jukkar @tbursztyka @pfalcon
 /drivers/wifi/eswifi/                     @loicpoulain
+/dts/arc/                                 @vonhust @ruuddw @iriszzw
 /dts/arm/atmel/samr21.dtsi                @benpicco
 /dts/arm/st/                              @erwango
 /dts/arm/ti/cc13?2*                       @bwitherspoon
