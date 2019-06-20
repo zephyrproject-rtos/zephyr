@@ -224,11 +224,15 @@ static int _to_float(char *buf, uint64_t double_temp, char c,
 	fract = (double_temp << 11) & ~HIGHBIT64;
 	sign = !!(double_temp & HIGHBIT64);
 
+	if (sign) {
+		*buf++ = '-';
+	} else if (fplus) {
+		*buf++ = '+';
+	} else if (fspace) {
+		*buf++ = ' ';
+	}
 
 	if (exp == 0x7ff) {
-		if (sign) {
-			*buf++ = '-';
-		}
 		if (!fract) {
 			if (isupper(c)) {
 				*buf++ = 'I';
@@ -261,19 +265,6 @@ static int _to_float(char *buf, uint64_t double_temp, char c,
 	if ((exp | fract) != 0) {
 		exp -= (1023 - 1);	/* +1 since .1 vs 1. */
 		fract |= HIGHBIT64;
-		decexp = true;		/* Wasn't zero */
-	} else {
-		decexp = false;		/* It was zero */
-	}
-
-	if (decexp && sign) {
-		*buf++ = '-';
-	} else if (fplus) {
-		*buf++ = '+';
-	} else if (fspace) {
-		*buf++ = ' ';
-	} else {
-		/* unreachable */
 	}
 
 	decexp = 0;
@@ -615,6 +606,10 @@ int z_prf(int (*func)(), void *dest, const char *format, va_list vargs)
 					prefix = 1;
 				}
 				clen += zero.predot + zero.postdot + zero.trail;
+				if (!isdigit(buf[prefix])) {
+					/* inf or nan: no zero padding */
+					fzero = false;
+				}
 				precision = -1;
 				break;
 			}

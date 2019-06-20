@@ -121,6 +121,10 @@ void test_sprintf_double(void)
 	zassert_true((strcmp(buffer, "-INF") == 0),
 		     "sprintf(-INF) - incorrect output '%s'\n", buffer);
 
+	sprintf(buffer, "%010f", var.d);
+	zassert_true((strcmp(buffer, "      -inf") == 0),
+		     "sprintf(      +inf) - incorrect output '%s'\n", buffer);
+
 	var.u1 = 0x00000000;
 	var.u2 = 0x7ff80000;    /* Bit pattern for NaN (double) */
 	sprintf(buffer, "%e", var.d);
@@ -146,6 +150,10 @@ void test_sprintf_double(void)
 	sprintf(buffer, "%G", var.d);
 	zassert_true((strcmp(buffer, "NAN") == 0),
 		     "sprintf(NAN) - incorrect output '%s'\n", buffer);
+
+	sprintf(buffer, "%+8.5e", var.d);
+	zassert_true((strcmp(buffer, "    +nan") == 0),
+		     "sprintf(    +nan) - incorrect output '%s'\n", buffer);
 
 	var.u1 = 0x00000000;
 	var.u2 = 0xfff80000;    /* Bit pattern for -NaN (double) */
