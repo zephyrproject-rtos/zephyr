@@ -51,7 +51,7 @@ manifest:
       revision: b6c9262eed68000e69c92bef6e820cdbd5b0a32b
       path: modules/hal/st
     - name: hal_stm32
-      revision: b454ad819f4f10cb82ce5eb1d7f709a680bc61c5
+      revision: ac2f5afcabfb934cb0b8b2df8e94163da1103032
       path: modules/hal/stm32
     - name: libmetal
       revision: 45e630d6152824f807d3f919958605c4626cbdff
