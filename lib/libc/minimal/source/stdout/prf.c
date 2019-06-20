@@ -737,6 +737,12 @@ int z_prf(int (*func)(), void *dest, const char *format, va_list vargs)
 				count++;
 				break;
 
+			default:
+				PUTC('%');
+				PUTC(c);
+				count += 2;
+				break;
+
 			case 0:
 				return count;
 			}
