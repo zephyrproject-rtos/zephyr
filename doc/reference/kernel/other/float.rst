@@ -8,9 +8,9 @@ configurations that support these registers.
 
 .. note::
     Floating point services are currently available only for boards
-    based on either ARM Cortex-M SoCs supporting the Floating Point Extension,
-    or the Intel x86 architecture. The
-    services provided are architecture specific.
+    based on ARM Cortex-M SoCs supporting the Floating Point Extension,
+    the Intel x86 architecture and ARCv2 SoCs supporting the Floating
+    Point Extension. The services provided are architecture specific.
 
     The kernel does not support the use of floating point registers by ISRs.
 
@@ -42,9 +42,9 @@ This mode is used when the application has only a single thread
 that uses floating point registers.
 
 On x86 platforms, the kernel initializes the floating point registers so they can
-be used by any thread (initialization in skipped on ARM Cortex-M platforms).
-The floating point registers are left unchanged
-whenever a context switch occurs.
+be used by any thread (initialization in skipped on ARM Cortex-M platforms and
+ARCv2 platforms). The floating point registers are left unchanged whenever a
+context switch occurs.
 
 .. note::
     The behavior is undefined, if two or more threads attempt to use
@@ -70,6 +70,9 @@ so they can be used
 by any thread, then saves and restores these registers during
 context switches to ensure the computations performed by each FPU user
 or SSE user are not impacted by the computations performed by the other users.
+
+ARM Cortex-M architecture (with the Floating Point Extension)
+-------------------------------------------------------------
 
 On the ARM Cortex-M architecture with the Floating Point Extension, the kernel
 treats *all* threads as FPU users when shared FP registers mode is enabled.
@@ -112,6 +115,37 @@ point context is active.
 If an ARM thread does not require use of the floating point registers any
 more, it can call :cpp:func:`k_float_disable()`. This instructs the kernel
 not to save or restore its FP context during thread context switching.
+
+ARCv2 architecture
+------------------
+
+On the ARCv2 architecture, the kernel treats each thread as a non-user
+or FPU user and the thread must be tagged by one of the
+following techniques.
+
+* A statically-created ARC thread can be tagged by passing the
+  :c:macro:`K_FP_REGS` option to :c:macro:`K_THREAD_DEFINE`.
+
+* A dynamically-created ARC thread can be tagged by passing the
+  :c:macro:`K_FP_REGS` to :cpp:func:`k_thread_create()`.
+
+If an ARC thread does not require use of the floating point registers any
+more, it can call :cpp:func:`k_float_disable()`. This instructs the kernel
+not to save or restore its FP context during thread context switching.
+
+During thread context switching the ARC kernel saves the *callee-saved*
+floating point registers, if the switched-out thread has been using them.
+Additionally, the *caller-saved* floating point registers are saved on
+the thread's stack. If the switched-in thread has been using the floating
+point registers, the kernel restores the *callee-saved* FP registers of
+the switched-in thread and the *caller-saved* FP context is restored from
+the thread's stack. Thus, the kernel does not save or restore the FP
+context of threads that are not using the FP registers. An extra 16 bytes
+(single floating point hardware) or 32 bytes (double floating point hardware)
+of stack space is required to load and store floating point registers.
+
+x86 architecture
+----------------
 
 On the x86 architecture the kernel treats each thread as a non-user,
 FPU user or SSE user on a case-by-case basis. A "lazy save" algorithm is used
