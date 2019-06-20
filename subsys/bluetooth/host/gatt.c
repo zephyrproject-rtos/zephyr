@@ -3629,7 +3629,7 @@ static int ccc_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 	return 0;
 }
 
-BT_SETTINGS_DEFINE(ccc, ccc_set, NULL, NULL);
+SETTINGS_STATIC_HANDLER_DEFINE(bt_ccc, "bt/ccc", NULL, ccc_set, NULL, NULL);
 
 #if defined(CONFIG_BT_GATT_CACHING)
 static int cf_set(const char *name, size_t len_rd, settings_read_cb read_cb,
@@ -3676,7 +3676,7 @@ static int cf_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 	return 0;
 }
 
-BT_SETTINGS_DEFINE(cf, cf_set, NULL, NULL);
+SETTINGS_STATIC_HANDLER_DEFINE(bt_cf, "bt/cf", NULL, cf_set, NULL, NULL);
 
 static u8_t stored_hash[16];
 
@@ -3719,6 +3719,7 @@ static int db_hash_commit(void)
 	return 0;
 }
 
-BT_SETTINGS_DEFINE(hash, db_hash_set, db_hash_commit, NULL);
+SETTINGS_STATIC_HANDLER_DEFINE(bt_hash, "bt/hash", NULL, db_hash_set,
+			       db_hash_commit, NULL);
 #endif /*CONFIG_BT_GATT_CACHING */
 #endif /* CONFIG_BT_SETTINGS */

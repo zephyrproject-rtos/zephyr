@@ -150,17 +150,29 @@ struct settings_handler_static {
 };
 
 /**
- * Register a static handler for settings items
+ * Define a static handler for settings items
  *
- * @param _handler Structure containing registration info, this must be const
- *	  The handler name in ROM needs to be unique, it is generated from
- *	  _handler and the linenumber of SETTINGS_REGISTER_STATIC()
+ * @param _hname handler name
+ * @param _tree subtree name
+ * @param _get get routine (can be NULL)
+ * @param _set set routine (can be NULL)
+ * @param _commit commit routine (can be NULL)
+ * @param _export export routine (can be NULL)
+ *
+ * This createa a variable _hname prepended by settings_handler_.
  *
  */
-#define SETTINGS_STATIC_HANDLER_DEFINE(_handler)	\
-	const Z_STRUCT_SECTION_ITERABLE(settings_handler_static, \
-					_CONCAT(_handler, __LINE__))\
-					= _handler
+
+#define SETTINGS_STATIC_HANDLER_DEFINE(_hname, _tree, _get, _set, _commit,   \
+				       _export)				     \
+	const Z_STRUCT_SECTION_ITERABLE(settings_handler_static,	     \
+					settings_handler_ ## _hname) = {     \
+		.name = _tree,						     \
+		.h_get = _get,						     \
+		.h_set = _set,						     \
+		.h_commit = _commit,					     \
+		.h_export = _export,					     \
+	}
 
 /**
  * Initialization of settings and backend

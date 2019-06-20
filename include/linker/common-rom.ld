@@ -109,15 +109,6 @@
 	} GROUP_LINK_IN(ROMABLE_REGION)
 #endif
 
-#if defined(CONFIG_BT_SETTINGS)
-	SECTION_DATA_PROLOGUE(_bt_settings_area,,SUBALIGN(4))
-	{
-		_bt_settings_start = .;
-		KEEP(*(SORT_BY_NAME("._bt_settings_handler.static.*")))
-		_bt_settings_end = .;
-	} GROUP_LINK_IN(ROMABLE_REGION)
-#endif
-
 	SECTION_DATA_PROLOGUE(log_const_sections,,)
 	{
 		__log_const_start = .;
