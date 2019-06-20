@@ -10,7 +10,6 @@ zephyr_library_sources(
 	fault.c
 	fault_s.S
 	irq_manage.c
-	cache.c
 	timestamp.c
 	isr_wrapper.S
 	regular_irq.S
@@ -21,6 +20,7 @@ zephyr_library_sources(
 	vector_table.c
 	)
 
+zephyr_library_sources_ifdef(CONFIG_CACHE_FLUSHING cache.c)
 zephyr_library_sources_ifdef(CONFIG_ARC_FIRQ fast_irq.S)
 
 zephyr_library_sources_if_kconfig(irq_offload.c)
