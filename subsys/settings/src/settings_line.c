@@ -328,6 +328,11 @@ int settings_line_val_read(off_t val_off, off_t off, char *out, size_t len_req,
 
 		rc = base64_decode(dec_buf, sizeof(dec_buf), &olen, enc_buf,
 				   read_size);
+
+		if (rc) {
+			return rc;
+		}
+
 		dec_buf[olen] = 0;
 
 		clen = MIN(olen + off_begin - off, rem_size);
