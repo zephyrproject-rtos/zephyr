@@ -961,12 +961,29 @@ struct gatt_chrc {
 	};
 } __packed;
 
+uint16_t bt_gatt_attr_value_handle(const struct bt_gatt_attr *attr)
+{
+	u16_t handle = 0;
+
+	if ((attr != NULL)
+	    && (attr->read == bt_gatt_attr_read_chrc)) {
+		struct bt_gatt_chrc *chrc = attr->user_data;
+
+		handle = chrc->value_handle;
+		if (handle == 0) {
+			/* Fall back to Zephyr value handle policy */
+			handle = (attr->handle ? : find_static_attr(attr)) + 1U;
+		}
+	}
+
+	return handle;
+}
+
 ssize_t bt_gatt_attr_read_chrc(struct bt_conn *conn,
 			       const struct bt_gatt_attr *attr, void *buf,
 			       u16_t len, u16_t offset)
 {
 	struct bt_gatt_chrc *chrc = attr->user_data;
-	u16_t handle = attr->handle ? : find_static_attr(attr);
 	struct gatt_chrc pdu;
 	u8_t value_len;
 
@@ -978,7 +995,7 @@ ssize_t bt_gatt_attr_read_chrc(struct bt_conn *conn,
 	 * declaration. All characteristic definitions shall have a
 	 * Characteristic Value declaration.
 	 */
-	pdu.value_handle = sys_cpu_to_le16(handle + 1);
+	pdu.value_handle = sys_cpu_to_le16(bt_gatt_attr_value_handle(attr));
 
 	value_len = sizeof(pdu.properties) + sizeof(pdu.value_handle);
 
@@ -1558,7 +1575,7 @@ int bt_gatt_notify_cb(struct bt_conn *conn,
 			return -EINVAL;
 		}
 
-		handle++;
+		handle = bt_gatt_attr_value_handle(attr);
 	}
 
 	if (conn) {
@@ -1597,7 +1614,7 @@ int bt_gatt_indicate(struct bt_conn *conn,
 			return -EINVAL;
 		}
 
-		handle++;
+		handle = bt_gatt_attr_value_handle(params->attr);
 	}
 
 	if (conn) {
@@ -2128,11 +2145,12 @@ done:
 	return 0;
 }
 
-#define BT_GATT_CHRC(_uuid, _props)					\
+#define BT_GATT_CHRC(_uuid, _handle, _props)				\
 	BT_GATT_ATTRIBUTE(BT_UUID_GATT_CHRC, BT_GATT_PERM_READ,		\
 			  bt_gatt_attr_read_chrc, NULL,			\
 			  (&(struct bt_gatt_chrc) { .uuid = _uuid,	\
-						   .properties = _props, }))
+						    .value_handle = _handle,  \
+						    .properties = _props, }))
 
 static u16_t parse_characteristic(struct bt_conn *conn, const void *pdu,
 				  struct bt_gatt_discover_params *params,
@@ -2190,6 +2208,7 @@ static u16_t parse_characteristic(struct bt_conn *conn, const void *pdu,
 		}
 
 		attr = (&(struct bt_gatt_attr)BT_GATT_CHRC(&u.uuid,
+							   chrc->value_handle,
 							   chrc->properties));
 		attr->handle = handle;
 
