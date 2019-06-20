@@ -16,3 +16,4 @@ supported:
   - spi
   - adc
   - can
+  - watchdog
