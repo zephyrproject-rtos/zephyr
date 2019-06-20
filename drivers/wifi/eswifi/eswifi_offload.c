@@ -260,6 +260,11 @@ static int eswifi_off_connect(struct net_context *context,
 
 	LOG_DBG("timeout=%d", timeout);
 
+	if (socket->type != ESWIFI_TRANSPORT_TCP) {
+		LOG_ERR("Only TCP needs connection");
+		return -EINVAL;
+	}
+
 	if (addr->sa_family != AF_INET) {
 		LOG_ERR("Only AF_INET is supported!");
 		return -EPFNOSUPPORT;
