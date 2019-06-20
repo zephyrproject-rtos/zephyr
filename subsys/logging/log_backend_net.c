@@ -57,13 +57,21 @@ struct net_buf_pool *get_data_pool(void)
 static int line_out(u8_t *data, size_t length, void *output_ctx)
 {
 	struct net_context *ctx = (struct net_context *)output_ctx;
+	socklen_t server_addr_len;
 	int ret = -ENOMEM;
 
 	if (ctx == NULL) {
 		return length;
 	}
 
-	ret = net_context_send(ctx, data, length, NULL, K_NO_WAIT, NULL);
+	if (server_addr.sa_family == AF_INET) {
+		server_addr_len = sizeof(struct sockaddr_in);
+	} else {
+		server_addr_len = sizeof(struct sockaddr_in6);
+	}
+
+	ret = net_context_sendto(ctx, data, length, &server_addr,
+				 server_addr_len, NULL, K_NO_WAIT, NULL);
 	if (ret < 0) {
 		goto fail;
 	}
