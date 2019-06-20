@@ -286,4 +286,21 @@ int z_arch_float_disable(struct k_thread *thread)
 
 	return 0;
 }
+
+
+int z_arch_float_enable(struct k_thread *thread)
+{
+	unsigned int key;
+
+	/* Ensure a preemptive context switch does not occur */
+
+	key = irq_lock();
+
+	/* Enable all floating point capabilities for the thread */
+	thread->base.user_options |= K_FP_REGS;
+
+	irq_unlock(key);
+
+	return 0;
+}
 #endif /* CONFIG_FLOAT && CONFIG_FP_SHARING */
