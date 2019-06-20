@@ -322,6 +322,13 @@ void test_sprintf_double(void)
 	zassert_true((strcmp(buffer, "0.0001505") == 0),
 		     "sprintf(0.0001505) - incorrect "
 		     "output '%s'\n", buffer);
+
+	var.u1 = 0x00000001;
+	var.u2 = 0x00000000;    /* smallest denormal value */
+	sprintf(buffer, "%g", var.d);
+	zassert_true((strcmp(buffer, "4.94066e-324") == 0),
+		     "sprintf(4.94066e-324) - incorrect "
+		     "output '%s'\n", buffer);
 }
 
 /**
