@@ -47,6 +47,7 @@ target_sources_if_kconfig(                        kernel PRIVATE poll.c)
 target_sources_ifdef(
   CONFIG_USERSPACE
   kernel PRIVATE
+  futex.c
   mem_domain.c
   userspace_handler.c
   userspace.c

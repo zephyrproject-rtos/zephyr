@@ -129,6 +129,7 @@ struct k_poll_event;
 struct k_poll_signal;
 struct k_mem_domain;
 struct k_mem_partition;
+struct k_futex;
 
 /* This enumeration needs to be kept in sync with the lists of kernel objects
  * and subsystems in scripts/gen_kobject_list.py, as well as the otype_to_str()
@@ -2055,6 +2056,94 @@ static inline void *z_impl_k_queue_peek_tail(struct k_queue *queue)
 		_K_QUEUE_INITIALIZER(name)
 
 /** @} */
+
+#ifdef CONFIG_USERSPACE
+/**
+ * @brief futex structure
+ *
+ * A k_futex is a lightweight mutual exclusion primitive designed
+ * to minimize kernel involvement. Uncontended operation relies
+ * only on atomic access to shared memory. k_futex are tracked as
+ * kernel objects and can live in user memory so any access bypass
+ * the kernel object permission management mechanism.
+ */
+struct k_futex {
+	atomic_t val;
+};
+
+/**
+ * @brief futex kernel data structure
+ *
+ * z_futex_data are the helper data structure for k_futex to complete
+ * futex contended operation on kernel side, structure z_futex_data
+ * of every futex object is invisible in user mode.
+ */
+struct z_futex_data {
+	_wait_q_t wait_q;
+	struct k_spinlock lock;
+};
+
+#define Z_FUTEX_DATA_INITIALIZER(obj) \
+	{ \
+	.wait_q = Z_WAIT_Q_INIT(&obj.wait_q) \
+	}
+
+/**
+ * @defgroup futex_apis FUTEX APIs
+ * @ingroup kernel_apis
+ * @{
+ */
+
+/**
+ * @brief Initialize a futex.
+ *
+ * This routine initializes a futex object, prior to its first use.
+ *
+ * @param futex Address of the k_futex.
+ *
+ * @return N/A
+ */
+__syscall void k_futex_init(struct k_futex *futex);
+
+/**
+ * @brief Pend the current thread on a futex
+ *
+ * Tests that the supplied futex contains the expected value, and if so,
+ * goes to sleep until some other thread calls k_futex_wake() on it.
+ *
+ * @param futex Address of the futex.
+ * @param expected Expected value of the futex, if it is different the caller
+ *		   will not wait on it.
+ * @param timeout Waiting period on the futex, in milliseconds, or one of the
+ *		  special values K_NO_WAIT or K_FOREVER.
+ * @retval -EACCES Caller does not have read access to futex address.
+ * @retval -EAGAIN If the futex value did not match the expected parameter.
+ * @retval -EINVAL Futex parameter address not recognized by the kernel.
+ * @retval -ETIMEDOUT Thread woke up due to timeout and not a futex wakeup.
+ * @retval 0 if the caller went to sleep and was woken up. The caller
+ *	     should check the futex's value on wakeup to determine if it needs
+ *	     to block again.
+ */
+__syscall int k_futex_wait(struct k_futex *futex, int expected, s32_t timeout);
+
+/**
+ * @brief Wake one/all threads pending on a futex
+ *
+ * Wake up the highest priority thread pending on the supplied futex, or
+ * wakeup all the threads pending on the supplied futex, and the behavior
+ * depends on wake_all.
+ *
+ * @param futex Futex to wake up pending threads.
+ * @param wake_all If true, wake up all pending threads; If false,
+ *                 wakeup the highest priority thread.
+ * @retval -EACCES Caller does not have access to the futex address.
+ * @retval -EINVAL Futex parameter address not recognized by the kernel.
+ * @retval Number of threads that were woken up.
+ */
+__syscall int k_futex_wake(struct k_futex *futex, bool wake_all);
+
+/** @} */
+#endif
 
 struct k_fifo {
 	struct k_queue _queue;
