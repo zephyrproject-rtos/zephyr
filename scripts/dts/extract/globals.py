@@ -292,19 +292,28 @@ def add_prop_aliases(node_path,
             prop_aliases[old_alias_label] = prop_label
 
 def get_binding(node_path):
-    compat = get_compat(node_path)
+    compat = reduced[node_path]['props'].get('compatible')
+    if isinstance(compat, list):
+        compat = compat[0]
 
-    # First look for a bus-specific binding
     parent_path = get_parent_path(node_path)
     parent_compat = get_compat(parent_path)
+
     if parent_compat in bindings:
         parent_binding = bindings[parent_compat]
+        # see if we're a sub-node
+        if compat is None and 'sub-node' in parent_binding:
+            return parent_binding['sub-node']
+
+        # look for a bus-specific binding
         if 'child' in parent_binding and 'bus' in parent_binding['child']:
             bus = parent_binding['child']['bus']
             return bus_bindings[bus][compat]
 
     # No bus-specific binding found, look in the main dict.
-    return bindings[compat]
+    if compat:
+        return bindings[compat]
+    return None
 
 def get_binding_compats():
     return binding_compats

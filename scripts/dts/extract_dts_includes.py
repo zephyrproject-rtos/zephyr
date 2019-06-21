@@ -105,6 +105,9 @@ def generate_node_defines(node_path):
         flash.extract_partition(node_path)
         return
 
+    if get_binding(node_path) is None:
+        return
+
     generate_bus_defines(node_path)
 
     # Generate per-property ('foo = <1 2 3>', etc.) #defines
