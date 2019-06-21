@@ -36,10 +36,10 @@
 #elif defined(CONFIG_BOARD_COLIBRI_IMX7D_M4)
 #define PWM_DRIVER	PWM_1_LABEL
 #define PWM_CHANNEL	0
-#elif defined(PWM_LED0_PWM_CONTROLLER) && defined(PWM_LED0_PWM_CHANNEL)
+#elif defined(PWM_LED0_PWMS_CONTROLLER) && defined(PWM_LED0_PWMS_CHANNEL)
 /* get the defines from dt (based on alias 'pwm-led0') */
-#define PWM_DRIVER	PWM_LED0_PWM_CONTROLLER
-#define PWM_CHANNEL	PWM_LED0_PWM_CHANNEL
+#define PWM_DRIVER	PWM_LED0_PWMS_CONTROLLER
+#define PWM_CHANNEL	PWM_LED0_PWMS_CHANNEL
 #else
 #error "Choose supported PWM driver"
 #endif

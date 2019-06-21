@@ -34,10 +34,10 @@
 #elif defined(CONFIG_SOC_ESP32)
 #define PWM_DRIVER CONFIG_PWM_LED_ESP32_DEV_NAME_0
 #define PWM_CHANNEL	21
-#elif defined(PWM_LED0_PWM_CONTROLLER) && defined(PWM_LED0_PWM_CHANNEL)
+#elif defined(PWM_LED0_PWMS_CONTROLLER) && defined(PWM_LED0_PWMS_CHANNEL)
 /* get the defines from dt (based on alias 'pwm-led0') */
-#define PWM_DRIVER	PWM_LED0_PWM_CONTROLLER
-#define PWM_CHANNEL	PWM_LED0_PWM_CHANNEL
+#define PWM_DRIVER	PWM_LED0_PWMS_CONTROLLER
+#define PWM_CHANNEL	PWM_LED0_PWMS_CHANNEL
 #elif defined(CONFIG_BOARD_HIFIVE1)
 /* Blink the blue channel of the RGB LED */
 #define PWM_DRIVER	LED1_PWM_CONTROLLER
