@@ -3,6 +3,6 @@ sample:
 tests:
   sample.button:
     tags: button gpio
-    filter: DT_GPIO_KEYS_SW0_GPIOS_CONTROLLER
+    filter: DT_ALIAS_SW0_GPIOS_CONTROLLER
     depends_on: gpio
     harness: button
