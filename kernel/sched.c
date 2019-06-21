@@ -11,7 +11,7 @@
 #include <kswap.h>
 #include <kernel_arch_func.h>
 #include <syscall_handler.h>
-#include <drivers/system_timer.h>
+#include <drivers/timer/system_timer.h>
 #include <stdbool.h>
 
 #if defined(CONFIG_SCHED_DUMB)

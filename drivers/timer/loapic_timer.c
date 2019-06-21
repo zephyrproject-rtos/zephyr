@@ -60,7 +60,7 @@
 #include <toolchain.h>
 #include <linker/sections.h>
 #include <sys_clock.h>
-#include <drivers/system_timer.h>
+#include <drivers/timer/system_timer.h>
 #include <arch/x86/irq_controller.h>
 #include <power.h>
 #include <device.h>
