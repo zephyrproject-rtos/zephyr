@@ -19,6 +19,21 @@ inherits:
 # parent and child should share same bus-type value.
    bus: <bus-type>
 
+sub-node:
+# Used for cases in which a dts node has children, and the children dont
+# require/specify a 'compatible' property.  The sub-node is effective the
+# binding for the child.
+#
+# Here's an example for a pwm-leds binding in which the child nodes
+# would be required to have 'pwms' properties.
+
+sub-node:
+    properties:
+        pwms:
+          type: compound
+          category: required
+          generation: define
+
 properties:
 
 # A typical property entry looks like this:
