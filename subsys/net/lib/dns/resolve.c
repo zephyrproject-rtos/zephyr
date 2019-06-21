@@ -20,6 +20,7 @@ LOG_MODULE_REGISTER(net_dns_resolve, CONFIG_DNS_RESOLVER_LOG_LEVEL);
 
 #include <net/net_ip.h>
 #include <net/net_pkt.h>
+#include <net/net_mgmt.h>
 #include <net/dns_resolve.h>
 #include "dns_pack.h"
 
@@ -196,6 +197,7 @@ int dns_resolve_init(struct dns_resolve_context *ctx, const char *servers[],
 	struct sockaddr *local_addr = NULL;
 	socklen_t addr_len = 0;
 	int i = 0, idx = 0;
+	struct net_if *iface;
 	int ret, count;
 
 	if (!ctx) {
@@ -276,6 +278,17 @@ int dns_resolve_init(struct dns_resolve_context *ctx, const char *servers[],
 		if (ret < 0) {
 			NET_DBG("Cannot bind DNS context (%d)", ret);
 			return ret;
+		}
+
+		iface = net_context_get_iface(ctx->servers[i].net_ctx);
+
+		if (IS_ENABLED(CONFIG_NET_MGMT_EVENT_INFO)) {
+			net_mgmt_event_notify_with_info(
+				NET_EVENT_DNS_SERVER_ADD,
+				iface, (void *)&ctx->servers[i].dns_server,
+				sizeof(struct sockaddr));
+		} else {
+			net_mgmt_event_notify(NET_EVENT_DNS_SERVER_ADD, iface);
 		}
 
 		count++;
@@ -914,6 +927,21 @@ int dns_resolve_close(struct dns_resolve_context *ctx)
 
 	for (i = 0; i < SERVER_COUNT; i++) {
 		if (ctx->servers[i].net_ctx) {
+			struct net_if *iface;
+
+			iface = net_context_get_iface(ctx->servers[i].net_ctx);
+
+			if (IS_ENABLED(CONFIG_NET_MGMT_EVENT_INFO)) {
+				net_mgmt_event_notify_with_info(
+					NET_EVENT_DNS_SERVER_DEL,
+					iface,
+					(void *)&ctx->servers[i].dns_server,
+					sizeof(struct sockaddr));
+			} else {
+				net_mgmt_event_notify(NET_EVENT_DNS_SERVER_DEL,
+						      iface);
+			}
+
 			net_context_put(ctx->servers[i].net_ctx);
 		}
 	}
