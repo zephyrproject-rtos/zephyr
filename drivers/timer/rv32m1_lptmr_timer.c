@@ -32,7 +32,6 @@
 
 #define SYSTEM_TIMER_INSTANCE \
 	((LPTMR_Type *)(DT_OPENISA_RV32M1_LPTMR_SYSTEM_LPTMR_BASE_ADDRESS))
-#define SYSTEM_TIMER_IRQ_PRIO 0
 
 #define SIRC_RANGE_8MHZ      SCG_SIRCCFG_RANGE(1)
 #define SIRCDIV3_DIVIDE_BY_1 1
@@ -57,7 +56,7 @@ int z_clock_driver_init(struct device *unused)
 
 	ARG_UNUSED(unused);
 	IRQ_CONNECT(DT_OPENISA_RV32M1_LPTMR_SYSTEM_LPTMR_IRQ_0,
-		    SYSTEM_TIMER_IRQ_PRIO, lptmr_irq_handler, NULL, 0);
+		    0, lptmr_irq_handler, NULL, 0);
 
 	if ((SCG->SIRCCSR & SCG_SIRCCSR_SIRCEN_MASK) == SCG_SIRCCSR_SIRCEN(0)) {
 		/*
