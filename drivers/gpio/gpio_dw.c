@@ -23,7 +23,7 @@
 #endif
 
 #ifdef CONFIG_IOAPIC
-#include <drivers/ioapic.h>
+#include <drivers/interrupt_controller/ioapic.h>
 #endif
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT

@@ -13,7 +13,7 @@
 #include <sys_io.h>
 
 #ifdef CONFIG_IOAPIC
-#include <drivers/ioapic.h>
+#include <drivers/interrupt_controller/ioapic.h>
 #endif
 
 /**

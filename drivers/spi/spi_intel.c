@@ -27,7 +27,7 @@ LOG_MODULE_REGISTER(spi_intel);
 #include "spi_intel.h"
 
 #ifdef CONFIG_IOAPIC
-#include <drivers/ioapic.h>
+#include <drivers/interrupt_controller/ioapic.h>
 #endif
 
 static void completed(struct device *dev, u32_t error)

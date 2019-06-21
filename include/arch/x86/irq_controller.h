@@ -12,7 +12,7 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_X86_IRQ_CONTROLLER_H_
 #define ZEPHYR_INCLUDE_ARCH_X86_IRQ_CONTROLLER_H_
 
-#include <drivers/sysapic.h>
+#include <drivers/interrupt_controller/sysapic.h>
 
 /* Triggering flags abstraction layer.
  * If a particular set of triggers is not supported, leave undefined

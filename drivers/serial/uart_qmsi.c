@@ -7,7 +7,7 @@
 
 #include <device.h>
 #if defined(CONFIG_IOAPIC)
-#include <ioapic.h>
+#include <drivers/interrupt_controller/ioapic.h>
 #endif
 #include <uart.h>
 #include <power.h>
