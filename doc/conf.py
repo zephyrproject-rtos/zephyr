@@ -409,7 +409,6 @@ html_redirect_pages = [
 		('boards/x86/galileo/doc/galileo', 'boards/x86/galileo/doc/index'),
 		('boards/x86/minnowboard/doc/minnowboard', 'boards/x86/minnowboard/doc/index'),
 		('boards/x86/qemu_x86/doc/board', 'boards/x86/qemu_x86/doc/index'),
-		('boards/x86/quark_d2000_crb/doc/quark_d2000_crb', 'boards/x86/quark_d2000_crb/doc/index'),
 		('boards/x86/tinytile/doc/board', 'boards/x86/tinytile/doc/index'),
 		('boards/x86/up_squared/doc/up_squared', 'boards/x86/up_squared/doc/index'),
 		('boards/x86/x86_jailhouse/doc/board', 'boards/x86/x86_jailhouse/doc/index'),

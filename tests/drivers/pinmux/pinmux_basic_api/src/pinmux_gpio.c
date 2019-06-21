@@ -50,11 +50,6 @@
 #define GPIO_OUT 2  /* AD0 */
 #define GPIO_IN 3  /* AD1 */
 #define PIN_IN 11  /* AD1 */
-#elif defined(CONFIG_BOARD_QUARK_D2000_CRB)
-#define GPIO_DEV_NAME DT_GPIO_QMSI_0_NAME
-#define GPIO_OUT 8  /* DIO7 */
-#define GPIO_IN 9  /* DIO8 */
-#define PIN_IN 9  /* DIO8 */
 #endif
 
 #define MAX_INT_CNT 10

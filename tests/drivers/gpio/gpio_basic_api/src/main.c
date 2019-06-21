@@ -35,12 +35,6 @@
  *
  * 1. PIN_OUT is GPIO_SS_2
  * 2. PIN_IN is GPIO_SS_3
- *
- * quark_d2000_crb - x86
- * --------------------
- *
- * 1. PIN_OUT is GPIO_8
- * 2. PIN_IN is GPIO_9
  */
 
 #include "test_gpio.h"

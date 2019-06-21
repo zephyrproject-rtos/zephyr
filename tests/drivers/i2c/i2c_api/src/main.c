@@ -24,12 +24,6 @@
  * 1. GY271_SCL - I2C0_SS_SCL
  * 2. GY271_SDA - I2C0_SS_SDA
  *
- * quark_d2000 - x86
- * ----------------------
- *
- * 1. GY271_SCL - I2C_SCL
- * 2. GY271_SDA - I2C_SDA
- *
  * arduino_101 - x86
  * ----------------------
  *

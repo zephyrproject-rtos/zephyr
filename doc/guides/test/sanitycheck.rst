@@ -183,15 +183,15 @@ required for best test coverage for this specific board:
 
 .. code-block:: yaml
 
-        identifier: quark_d2000_crb
-        name: Quark D2000 Devboard
+        identifier: tinytile
+        name: tinyTILE
         type: mcu
         arch: x86
         toolchain:
           - zephyr
           - issm
-        ram: 8
-        flash: 32
+        ram: 52
+        flash: 192
         testing:
           default: true
           ignore_tags:
@@ -205,9 +205,9 @@ identifier:
   ``cmake``::
 
      # with west
-     west build -b quark_d2000_crb
+     west build -b tinytile
      # with cmake
-     cmake -DBOARD=quark_d2000_crb ..
+     cmake -DBOARD=tinytile ..
 
 name:
   The actual name of the board as it appears in marketing material.
@@ -282,7 +282,7 @@ explained in this document.
             build_only: true
             extra_args: CONF_FILE="prj_br.conf"
             filter: not CONFIG_DEBUG
-            platform_exclude: quark_d2000_crb
+            platform_exclude: up_squared
             platform_whitelist: qemu_cortex_m3 qemu_x86
             tags: bluetooth
 

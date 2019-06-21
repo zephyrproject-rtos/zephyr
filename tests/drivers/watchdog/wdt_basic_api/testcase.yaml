@@ -2,4 +2,3 @@ tests:
   peripheral.watchdog:
     depends_on: watchdog
     tags: drivers watchdog
-    platform_exclude: quark_d2000_crb
