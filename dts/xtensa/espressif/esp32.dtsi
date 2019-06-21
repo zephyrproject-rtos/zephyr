@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <xtensa/xtensa.dtsi>
+#include <dt-bindings/gpio/gpio.h>
 
 / {
 	cpus {
@@ -55,5 +56,20 @@
 			status = "disabled";
 		};
 
+		gpio0: gpio@3ff44000 {
+			compatible = "espressif,esp32-gpio";
+			gpio-controller;
+			#gpio-cells = <2>;
+			reg = <0x3ff44000 0x800>;
+			label = "GPIO_0";
+		};
+
+		gpio1: gpio@3ff44800 {
+			compatible = "espressif,esp32-gpio";
+			gpio-controller;
+			#gpio-cells = <2>;
+			reg = <0x3ff44800 0x800>;
+			label = "GPIO_1";
+		};
 	};
 };
