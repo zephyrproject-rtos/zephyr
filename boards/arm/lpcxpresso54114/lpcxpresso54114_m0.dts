@@ -21,6 +21,10 @@
 	};
 };
 
+&cpu1 {
+	clock-frequency = <48000000>;
+};
+
 &mailbox0 {
 	status = "okay";
 };

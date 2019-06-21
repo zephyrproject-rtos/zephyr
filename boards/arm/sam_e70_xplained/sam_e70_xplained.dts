@@ -52,6 +52,10 @@
 	};
 };
 
+&cpu0 {
+	clock-frequency = <300000000>;
+};
+
 &adc0 {
 	status = "okay";
 };

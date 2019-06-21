@@ -12,3 +12,7 @@
 	model = "snps,nsim_sem";
 	compatible = "snps,nsim_sem";
 };
+
+&cpu0 {
+	clock-frequency = <5000000>;
+};
