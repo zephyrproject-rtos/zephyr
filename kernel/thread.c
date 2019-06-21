@@ -21,7 +21,7 @@
 #include <misc/printk.h>
 #include <misc/math_extras.h>
 #include <sys_clock.h>
-#include <drivers/system_timer.h>
+#include <drivers/timer/system_timer.h>
 #include <ksched.h>
 #include <wait_q.h>
 #include <atomic.h>

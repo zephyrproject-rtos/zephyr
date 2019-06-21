@@ -15,7 +15,7 @@
  */
 
 #include <random/rand32.h>
-#include <drivers/system_timer.h>
+#include <drivers/timer/system_timer.h>
 #include <kernel.h>
 #include <atomic.h>
 

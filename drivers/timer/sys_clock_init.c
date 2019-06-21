@@ -14,7 +14,7 @@
 
 #include <kernel.h>
 #include <init.h>
-#include <drivers/system_timer.h>
+#include <drivers/timer/system_timer.h>
 
 /* Weak-linked noop defaults for optional driver interfaces: */
 

@@ -6,7 +6,7 @@
 
 #include <zephyr.h>
 #include <misc/util.h>
-#include <system_timer.h>
+#include <drivers/timer/system_timer.h>
 #include <soc.h>
 
 /*

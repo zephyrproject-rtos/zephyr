@@ -11,7 +11,7 @@
  */
 
 #include <kernel.h>
-#include <drivers/system_timer.h>
+#include <drivers/timer/system_timer.h>
 #include <misc/printk.h>
 #include <misc/reboot.h>
 
