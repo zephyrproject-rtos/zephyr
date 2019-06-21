@@ -14,7 +14,6 @@
  */
 
 #include <kernel.h>
-#include <arch/cpu.h>
 
 #include <stdio.h>
 #include <zephyr/types.h>
