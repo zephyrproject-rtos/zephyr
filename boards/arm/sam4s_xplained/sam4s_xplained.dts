@@ -49,6 +49,10 @@
 	};
 };
 
+&cpu0 {
+	clock-frequency = <120000000>;
+};
+
 &i2c0 {
 	status = "okay";
 };

@@ -23,6 +23,10 @@
 	};
 };
 
+&cpu0 {
+	clock-frequency = <84000000>;
+};
+
 &wdog {
 	status = "okay";
 };
