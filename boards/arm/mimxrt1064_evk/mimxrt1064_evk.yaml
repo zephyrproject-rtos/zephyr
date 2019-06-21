@@ -19,5 +19,6 @@ supported:
   - hwinfo
   - netif:eth
   - i2c
+  - pwm
   - usb_device
   - counter

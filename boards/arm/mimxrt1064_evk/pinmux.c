@@ -169,6 +169,10 @@ static int mimxrt1064_evk_init(struct device *dev)
 	GPIO_WritePinOutput(GPIO1, 9, 0);
 #endif
 
+#ifdef CONFIG_FLEXPWM2_PWM3
+	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B0_09_FLEXPWM2_PWMA03, 0);
+#endif
+
 	return 0;
 }
 

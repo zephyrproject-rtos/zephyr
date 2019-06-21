@@ -78,4 +78,11 @@ endchoice
 
 endif # LVGL
 
+if PWM_MCUX
+
+config FLEXPWM2_PWM3
+	default y
+
+endif
+
 endif # BOARD_MIMXRT1064_EVK
