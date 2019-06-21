@@ -25,8 +25,8 @@
 #include <init.h>
 
 #include <uart.h>
-#include <console/console.h>
-#include <console/uart_console.h>
+#include <drivers/console/console.h>
+#include <drivers/console/uart_console.h>
 #include <toolchain.h>
 #include <linker/sections.h>
 #include <atomic.h>
