@@ -37,7 +37,7 @@ LOG_MODULE_REGISTER(spi_dw);
 #include <misc/util.h>
 
 #ifdef CONFIG_IOAPIC
-#include <drivers/ioapic.h>
+#include <drivers/interrupt_controller/ioapic.h>
 #endif
 
 #include <spi.h>

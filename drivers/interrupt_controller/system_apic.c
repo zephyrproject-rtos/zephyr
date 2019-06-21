@@ -13,9 +13,9 @@
 #include <misc/__assert.h>
 #include <kernel.h>
 #include <arch/cpu.h>
-#include <drivers/ioapic.h>
-#include <drivers/loapic.h>
-#include <drivers/sysapic.h>
+#include <drivers/interrupt_controller/ioapic.h>
+#include <drivers/interrupt_controller/loapic.h>
+#include <drivers/interrupt_controller/sysapic.h>
 #include <irq.h>
 
 #define IS_IOAPIC_IRQ(irq)  (irq < LOAPIC_IRQ_BASE)

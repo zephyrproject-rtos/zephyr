@@ -7,7 +7,7 @@
 #include <errno.h>
 
 #include <device.h>
-#include <drivers/ioapic.h>
+#include <drivers/interrupt_controller/ioapic.h>
 #include <counter.h>
 #include <init.h>
 #include <kernel.h>

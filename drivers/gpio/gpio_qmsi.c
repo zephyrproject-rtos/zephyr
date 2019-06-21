@@ -7,7 +7,7 @@
 #include <errno.h>
 
 #include <device.h>
-#include <drivers/ioapic.h>
+#include <drivers/interrupt_controller/ioapic.h>
 #include <gpio.h>
 #include <init.h>
 #include <sys_io.h>

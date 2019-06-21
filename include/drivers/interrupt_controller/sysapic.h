@@ -7,7 +7,7 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_SYSAPIC_H_
 #define ZEPHYR_INCLUDE_DRIVERS_SYSAPIC_H_
 
-#include <drivers/loapic.h>
+#include <drivers/interrupt_controller/loapic.h>
 
 #define _IRQ_TRIGGER_EDGE	IOAPIC_EDGE
 #define _IRQ_TRIGGER_LEVEL	IOAPIC_LEVEL
