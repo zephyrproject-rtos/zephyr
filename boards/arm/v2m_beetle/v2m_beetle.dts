@@ -37,6 +37,12 @@
 		reg = <0 0x40000>;
 	};
 
+	sysclk: system-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <24000000>;
+		#clock-cells = <0>;
+	};
+
 	soc {
 		timer0: timer@40000000 {
 			compatible = "arm,cmsdk-timer";
@@ -63,6 +69,7 @@
 			compatible = "arm,cmsdk-uart";
 			reg = <0x40004000 0x1000>;
 			interrupts = <0 3>;
+			clocks = <&sysclk>;
 			current-speed = <115200>;
 			label = "UART_0";
 		};
@@ -71,12 +78,14 @@
 			compatible = "arm,cmsdk-uart";
 			reg = <0x40005000 0x1000>;
 			interrupts = <2 3>;
+			clocks = <&sysclk>;
 			current-speed = <115200>;
 			label = "UART_1";
 		};
 
 		wdog0: wdog@40008000 {
 			compatible = "arm,cmsdk-watchdog";
+			clocks = <&sysclk>;
 			reg = <0x40008000 0x1000>;
 		};
 

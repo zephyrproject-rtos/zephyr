@@ -44,6 +44,12 @@
 		reg = <0x80000000 DT_DCCM_SIZE>;
 	};
 
+	sysclk: system-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <32000000>;
+		#clock-cells = <0>;
+	};
+
 	soc {
 		#address-cells = <1>;
 		#size-cells = <1>;
@@ -64,6 +70,7 @@
 			reg = <0xb0002000 0x400>;
 			interrupts = <41 0>;
 			interrupt-parent = <&core_intc>;
+			clocks = <&sysclk>;
 			label = "UART_0";
 
 			status = "disabled";
@@ -74,6 +81,7 @@
 			reg = <0xb0002400 0x400>;
 			interrupts = <42 0>;
 			interrupt-parent = <&core_intc>;
+			clocks = <&sysclk>;
 			label = "UART_1";
 
 			status = "disabled";
@@ -182,6 +190,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x80010000 0x400>;
+			clocks = <&sysclk>;
 			interrupts = <30 2>, <31 2>, <32 2>;
 			interrupt-names = "err-int", "rx-avail", "tx-req";
 			interrupt-parent = <&core_intc>;
@@ -194,6 +203,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x80010100 0x400>;
+			clocks = <&sysclk>;
 			interrupts = <33 2>, <34 2>, <35 2>;
 			interrupt-names = "err-int", "rx-avail", "tx-req";
 			interrupt-parent = <&core_intc>;
