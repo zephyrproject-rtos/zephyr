@@ -12,7 +12,7 @@
  *			through usec, nsec, or cycle.
  * @details
  * - Test Steps
- *   -# Bind PWM_0 port 0 (This case uses port 1 on D2000).
+ *   -# Bind PWM_0 port 0.
  *   -# Set PWM period and pulse using pwm_pin_set_cycles(),
  *	pwm_pin_set_usec(), or pwm_pin_set_nsec().
  *   -# Use multimeter or other instruments to measure the output
@@ -56,12 +56,7 @@
 #define DEFAULT_PULSE_NSEC 1000000
 #endif
 
-#ifdef CONFIG_BOARD_QUARK_D2000_CRB
-#include <pinmux.h>
-#define PINMUX_NAME CONFIG_PINMUX_NAME
-#define PWM1_PIN 24
-#define DEFAULT_PWM_PORT 1
-#elif defined CONFIG_BOARD_SAM_E70_XPLAINED
+#if defined CONFIG_BOARD_SAM_E70_XPLAINED
 #define DEFAULT_PWM_PORT 2 /* PWM on EXT2 connector, pin 8 */
 #else
 #define DEFAULT_PWM_PORT 0
@@ -82,32 +77,6 @@ static int test_task(u32_t port, u32_t period, u32_t pulse, u8_t unit)
 		TC_PRINT("Cannot get PWM device\n");
 		return TC_FAIL;
 	}
-
-#ifdef CONFIG_BOARD_QUARK_D2000_CRB
-	struct device *pinmux = device_get_binding(PINMUX_NAME);
-	u32_t function;
-
-	if (!pinmux) {
-		TC_PRINT("Cannot get PINMUX\n");
-		return TC_FAIL;
-	}
-
-	if (pinmux_pin_set(pinmux, PWM1_PIN, PINMUX_FUNC_C)) {
-		TC_PRINT("Fail to set pin func, %u : %u\n",
-			  PWM1_PIN, PINMUX_FUNC_C);
-		return TC_FAIL;
-	}
-
-	if (pinmux_pin_get(pinmux, PWM1_PIN, &function)) {
-		TC_PRINT("Fail to get pin func\n");
-		return TC_FAIL;
-	}
-
-	if (function != PINMUX_FUNC_C) {
-		TC_PRINT("Error. PINMUX get doesn't match PINMUX set\n");
-		return TC_FAIL;
-	}
-#endif
 
 	if (unit == UNIT_CYCLES) {
 		/* Verify pwm_pin_set_cycles() */
