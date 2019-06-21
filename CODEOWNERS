@@ -48,7 +48,6 @@
 /arch/x86/core/pcie.c                     @gnuless
 /arch/x86/core/multiboot.c                @gnuless
 /soc/x86/                                 @andrewboie @wentongwu
-/soc/x86/intel_quark/quark_d2000/         @nashif
 /soc/x86/intel_quark/quark_se/            @nashif
 /soc/x86/intel_quark/quark_x1000/         @nashif
 /arch/xtensa/                             @andrewboie @dcpleung @andyross

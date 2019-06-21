@@ -54,14 +54,6 @@ static qm_flash_region_t flash_region(u32_t addr)
 		return QM_FLASH_REGION_SYS;
 	}
 
-#if defined(CONFIG_SOC_QUARK_D2000)
-	if ((addr >= QM_FLASH_REGION_DATA_0_BASE) &&
-	    (addr < (QM_FLASH_REGION_DATA_0_BASE +
-	    QM_FLASH_REGION_DATA_0_SIZE))) {
-		return QM_FLASH_REGION_DATA;
-	}
-#endif
-
 	/* invalid address */
 	return QM_FLASH_REGION_NUM;
 }
@@ -72,11 +64,6 @@ static u32_t get_page_num(u32_t addr)
 	case QM_FLASH_REGION_SYS:
 		return (addr - QM_FLASH_REGION_SYS_0_BASE) >>
 		       QM_FLASH_PAGE_SIZE_BITS;
-#if defined(CONFIG_SOC_QUARK_D2000)
-	case QM_FLASH_REGION_DATA:
-		return (addr - QM_FLASH_REGION_DATA_0_BASE) >>
-		       QM_FLASH_PAGE_SIZE_BITS;
-#endif
 	default:
 		/* invalid address */
 		return 0xffffffff;
@@ -139,11 +126,6 @@ static int flash_qmsi_write(struct device *dev, off_t addr,
 		case QM_FLASH_REGION_SYS:
 			offset = f_addr - QM_FLASH_REGION_SYS_0_BASE;
 			break;
-#if defined(CONFIG_SOC_QUARK_D2000)
-		case QM_FLASH_REGION_DATA:
-			offset = f_addr - QM_FLASH_REGION_DATA_0_BASE;
-			break;
-#endif
 		default:
 			return -EIO;
 		}

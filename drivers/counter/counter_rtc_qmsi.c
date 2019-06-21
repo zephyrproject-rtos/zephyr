@@ -177,7 +177,7 @@ static int rtc_qmsi_init(struct device *dev)
 		k_sem_init(RP_GET(dev), 1, UINT_MAX);
 	}
 
-	IRQ_CONNECT(DT_RTC_0_IRQ, CONFIG_RTC_0_IRQ_PRI,
+	IRQ_CONNECT(DT_RTC_0_IRQ, DT_RTC_0_IRQ_PRI,
 		    qm_rtc_0_isr, NULL, DT_RTC_0_IRQ_FLAGS);
 
 	/* Unmask RTC interrupt */
