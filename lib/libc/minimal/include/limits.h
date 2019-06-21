@@ -13,9 +13,14 @@
 extern "C" {
 #endif
 
-#define UCHAR_MAX  0xFF
-#define SCHAR_MAX  0x7F
-#define SCHAR_MIN  (-SCHAR_MAX - 1)
+#if __CHAR_BIT__ == 8
+#define UCHAR_MAX	0xFFU
+#else
+#error "unexpected __CHAR_BIT__ value"
+#endif
+
+#define SCHAR_MAX	__SCHAR_MAX__
+#define SCHAR_MIN	(-SCHAR_MAX - 1)
 
 #ifdef __CHAR_UNSIGNED__
 	/* 'char' is an unsigned type */
@@ -27,26 +32,53 @@ extern "C" {
 	#define CHAR_MIN  SCHAR_MIN
 #endif
 
-#define CHAR_BIT    8
-#define LONG_BIT    32
-#define WORD_BIT    32
+#define CHAR_BIT	__CHAR_BIT__
+#define LONG_BIT	(__SIZEOF_LONG__ * CHAR_BIT)
+#define WORD_BIT	(__SIZEOF_POINTER__ * CHAR_BIT)
 
-#define INT_MAX     0x7FFFFFFF
-#define SHRT_MAX    0x7FFF
-#define LONG_MAX    0x7FFFFFFFL
-#define LLONG_MAX   0x7FFFFFFFFFFFFFFFLL
+#define INT_MAX		__INT_MAX__
+#define SHRT_MAX	__SHRT_MAX__
+#define LONG_MAX	__LONG_MAX__
+#define LLONG_MAX	__LONG_LONG_MAX__
 
-#define INT_MIN     (-INT_MAX - 1)
-#define SHRT_MIN    (-SHRT_MAX - 1)
-#define LONG_MIN    (-LONG_MAX - 1L)
-#define LLONG_MIN   (-LLONG_MAX - 1LL)
+#define INT_MIN		(-INT_MAX - 1)
+#define SHRT_MIN	(-SHRT_MAX - 1)
+#define LONG_MIN	(-LONG_MAX - 1L)
+#define LLONG_MIN	(-LLONG_MAX - 1LL)
 
-#define SSIZE_MAX   INT_MAX
+#if __SIZE_MAX__ == __UINT32_MAX__
+#define SSIZE_MAX	__INT32_MAX__
+#elif __SIZE_MAX__ == __UINT64_MAX__
+#define SSIZE_MAX	__INT64_MAX__
+#else
+#error "unexpected __SIZE_MAX__ value"
+#endif
 
-#define USHRT_MAX   0xFFFF
-#define UINT_MAX    0xFFFFFFFFU
-#define ULONG_MAX   0xFFFFFFFFUL
-#define ULLONG_MAX  0xFFFFFFFFFFFFFFFFULL
+#if __SIZEOF_SHORT__ == 2
+#define USHRT_MAX	0xFFFFU
+#else
+#error "unexpected __SIZEOF_SHORT__ value"
+#endif
+
+#if __SIZEOF_INT__ == 4
+#define UINT_MAX	0xFFFFFFFFU
+#else
+#error "unexpected __SIZEOF_INT__ value"
+#endif
+
+#if __SIZEOF_LONG__ == 4
+#define ULONG_MAX	0xFFFFFFFFUL
+#elif __SIZEOF_LONG__ == 8
+#define ULONG_MAX	0xFFFFFFFFFFFFFFFFUL
+#else
+#error "unexpected __SIZEOF_LONG__ value"
+#endif
+
+#if __SIZEOF_LONG_LONG__ == 8
+#define ULLONG_MAX	0xFFFFFFFFFFFFFFFFULL
+#else
+#error "unexpected __SIZEOF_LONG_LONG__ value"
+#endif
 
 #define PATH_MAX    256
 
