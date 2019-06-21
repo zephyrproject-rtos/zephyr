@@ -386,14 +386,20 @@ NET_DEVICE_INIT(net_dhcpv4_test, "net_dhcpv4_test",
 		NET_L2_GET_CTX_TYPE(DUMMY_L2), 127);
 
 static struct net_mgmt_event_callback rx_cb;
+static struct net_mgmt_event_callback dns_cb;
+static int event_count;
 
 static void receiver_cb(struct net_mgmt_event_callback *cb,
 			u32_t nm_event, struct net_if *iface)
 {
-	if (nm_event != NET_EVENT_IPV4_ADDR_ADD) {
+	if (nm_event != NET_EVENT_IPV4_ADDR_ADD &&
+	    nm_event != NET_EVENT_DNS_SERVER_ADD &&
+	    nm_event != NET_EVENT_DNS_SERVER_DEL) {
 		/* Spurious callback. */
 		return;
 	}
+
+	event_count++;
 
 	k_sem_give(&test_lock);
 }
@@ -409,6 +415,12 @@ void test_dhcp(void)
 
 	net_mgmt_add_event_callback(&rx_cb);
 
+	net_mgmt_init_event_callback(&dns_cb, receiver_cb,
+				     NET_EVENT_DNS_SERVER_ADD |
+				     NET_EVENT_DNS_SERVER_DEL);
+
+	net_mgmt_add_event_callback(&dns_cb);
+
 	iface = net_if_get_default();
 	if (!iface) {
 		zassert_true(false, "Interface not available");
@@ -416,8 +428,10 @@ void test_dhcp(void)
 
 	net_dhcpv4_start(iface);
 
-	if (k_sem_take(&test_lock, WAIT_TIME)) {
-		zassert_true(false, "Timeout while waiting");
+	while (event_count < 3) {
+		if (k_sem_take(&test_lock, WAIT_TIME)) {
+			zassert_true(false, "Timeout while waiting");
+		}
 	}
 }
 
