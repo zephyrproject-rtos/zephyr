@@ -8,8 +8,8 @@
 #include <device.h>
 #include <gpio.h>
 
-#define LED_PORT LED0_GPIO_CONTROLLER
-#define LED	LED0_GPIO_PIN
+#define LED_PORT DT_ALIAS_LED0_GPIOS_CONTROLLER
+#define LED	DT_ALIAS_LED0_GPIOS_PIN
 
 /* 1000 msec = 1 sec */
 #define SLEEP_TIME 	1000

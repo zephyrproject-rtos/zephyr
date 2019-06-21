@@ -24,10 +24,10 @@ struct led_device_info {
 };
 
 static struct led_device_info led_dev_info[] = {
-	{ NULL, LED0_GPIO_CONTROLLER, LED0_GPIO_PIN }, /* green back LED */
-	{ NULL, LED1_GPIO_CONTROLLER, LED1_GPIO_PIN }, /* red front LED */
-	{ NULL, LED2_GPIO_CONTROLLER, LED2_GPIO_PIN }, /* green front LED */
-	{ NULL, LED3_GPIO_CONTROLLER, LED3_GPIO_PIN }, /* blue front LED */
+	{ NULL, DT_ALIAS_LED0_GPIOS_CONTROLLER, DT_ALIAS_LED0_GPIOS_PIN }, /* green back LED */
+	{ NULL, DT_ALIAS_LED1_GPIOS_CONTROLLER, DT_ALIAS_LED1_GPIOS_PIN }, /* red front LED */
+	{ NULL, DT_ALIAS_LED2_GPIOS_CONTROLLER, DT_ALIAS_LED2_GPIOS_PIN }, /* green front LED */
+	{ NULL, DT_ALIAS_LED3_GPIOS_CONTROLLER, DT_ALIAS_LED3_GPIOS_PIN }, /* blue front LED */
 };
 
 static struct device_info dev_info[] = {
