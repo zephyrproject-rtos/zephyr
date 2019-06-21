@@ -59,25 +59,6 @@ void uart_console_out_debug_hook_install(uart_console_out_debug_hook_t *hook)
 
 #endif /* CONFIG_UART_CONSOLE_DEBUG_SERVER_HOOKS */
 
-#if 0 /* NOTUSED */
-/**
- *
- * @brief Get a character from UART
- *
- * @return the character or EOF if nothing present
- */
-
-static int console_in(void)
-{
-	unsigned char c;
-
-	if (uart_poll_in(uart_console_dev, &c) < 0) {
-		return EOF;
-	} else {
-		return (int)c;
-	}
-}
-#endif
 
 #if defined(CONFIG_PRINTK) || defined(CONFIG_STDOUT_CONSOLE)
 /**
