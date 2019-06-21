@@ -162,7 +162,7 @@ def parse_elf_file(partitions):
 def generate_final_linker(linker_file, partitions):
     string = linker_start_seq
     size_string = ''
-    for partition, item in partitions.items():
+    for partition, item in sorted(partitions.items()):
         string += data_template.format(partition)
         if LIB in item:
             for lib in item[LIB]:
