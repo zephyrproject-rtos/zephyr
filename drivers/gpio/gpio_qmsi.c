@@ -386,7 +386,7 @@ static int gpio_qmsi_init(struct device *port)
 				  CLK_PERIPH_GPIO_DB |
 				  CLK_PERIPH_CLK);
 		IRQ_CONNECT(DT_GPIO_QMSI_0_IRQ,
-			    CONFIG_GPIO_QMSI_0_IRQ_PRI, qm_gpio_0_isr, 0,
+			    DT_GPIO_QMSI_0_IRQ_PRI, qm_gpio_0_isr, 0,
 			    DT_GPIO_QMSI_0_IRQ_FLAGS);
 		irq_enable(DT_GPIO_QMSI_0_IRQ);
 		QM_IR_UNMASK_INTERRUPTS(QM_INTERRUPT_ROUTER->gpio_0_int_mask);
