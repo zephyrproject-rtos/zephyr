@@ -20,11 +20,11 @@
 #include <gpio.h>
 #include <misc/util.h>
 
-#if defined(SW0_GPIO_CONTROLLER) && defined(LED0_GPIO_CONTROLLER)
+#if defined(DT_ALIAS_SW0_GPIOS_CONTROLLER) && defined(LED0_GPIO_CONTROLLER)
 #define GPIO_OUT_DRV_NAME LED0_GPIO_CONTROLLER
 #define GPIO_OUT_PIN  LED0_GPIO_PIN
-#define GPIO_IN_DRV_NAME SW0_GPIO_CONTROLLER
-#define GPIO_INT_PIN  SW0_GPIO_PIN
+#define GPIO_IN_DRV_NAME DT_ALIAS_SW0_GPIOS_CONTROLLER
+#define GPIO_INT_PIN  DT_ALIAS_SW0_GPIOS_PIN
 #else
 #error Change the pins based on your configuration. This sample \
 	defaults to built-in buttons and LEDs
