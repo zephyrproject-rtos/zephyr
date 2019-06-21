@@ -21,8 +21,6 @@
 #include <clock_control/stm32_clock_control.h>
 #include <pinmux/stm32/pinmux_stm32.h>
 
-#include "pinmux.h"
-
 #ifdef CONFIG_SOC_SERIES_STM32MP1X
 #define GPIO_REG_SIZE         0x1000
 /* 0x1000 between each port, 0x400 gpio registry 0xC00 reserved */
