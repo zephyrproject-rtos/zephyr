@@ -38,6 +38,12 @@
 		compatible = "arc,dccm";
 	};
 
+	sysclk: system-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <DT_APB_CLK_HZ>;
+		#clock-cells = <0>;
+	};
+
 	soc {
 		#address-cells = <1>;
 		#size-cells = <1>;
@@ -147,6 +153,7 @@
 			compatible = "snps,designware-spi";
 			reg = <0xf0006000 0x1000>;
 			label = "SPI_0";
+			clocks = <&sysclk>;
 			interrupt-parent = <&intc>;
 
 			#address-cells = <1>;
@@ -158,6 +165,7 @@
 			compatible = "snps,designware-spi";
 			reg = <0xf0007000 0x1000>;
 			label = "SPI_1";
+			clocks = <&sysclk>;
 			interrupt-parent = <&intc>;
 
 			#address-cells = <1>;

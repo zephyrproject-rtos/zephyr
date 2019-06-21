@@ -22,3 +22,6 @@ properties:
 
     interrupts:
       category: required
+
+    clocks:
+      category: required

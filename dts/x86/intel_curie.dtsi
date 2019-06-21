@@ -50,6 +50,12 @@
 		#interrupt-cells = <3>;
 	};
 
+	sysclk: system-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <32000000>;
+		#clock-cells = <0>;
+	};
+
 	soc {
 		#address-cells = <1>;
 		#size-cells = <1>;
@@ -71,6 +77,7 @@
 			label = "UART_0";
 			interrupts = <5 IRQ_TYPE_LEVEL_HIGH 3>;
 			interrupt-parent = <&intc>;
+			clocks = <&sysclk>;
 
 			status = "disabled";
 		};
@@ -81,6 +88,7 @@
 			label = "UART_1";
 			interrupts = <6 IRQ_TYPE_LEVEL_HIGH 3>;
 			interrupt-parent = <&intc>;
+			clocks = <&sysclk>;
 
 			status = "disabled";
 		};
@@ -143,6 +151,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0xb0001000 0x400>;
+			clocks = <&sysclk>;
 			interrupts = <2 IRQ_TYPE_LEVEL_HIGH 2>;
 			interrupt-parent = <&intc>;
 			label = "SPI_0";
@@ -154,6 +163,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0xb0001400 0x400>;
+			clocks = <&sysclk>;
 			interrupts = <3 IRQ_TYPE_LEVEL_HIGH 2>;
 			interrupt-parent = <&intc>;
 			label = "SPI_1";
@@ -165,6 +175,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0xb0001800 0x400>;
+			clocks = <&sysclk>;
 			interrupts = <4 IRQ_TYPE_LEVEL_HIGH 2>;
 			interrupt-parent = <&intc>;
 			label = "SPI_2";
