@@ -33,7 +33,7 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 #include "udp_internal.h"
 #endif
 
-#include <drivers/modem/modem_receiver.h>
+#include "modem_receiver.h"
 
 /* Uncomment the #define below to enable a hexdump of all incoming
  * data from the modem receiver
