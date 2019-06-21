@@ -41,8 +41,10 @@ class DTReg(DTDirective):
                     pass
 
                 if cs_gpios:
-                    extract_controller(node_path, "cs-gpios", cs_gpios, reg[0], def_label, "cs-gpio", True)
-                    extract_cells(node_path, "cs-gpios", cs_gpios, None, reg[0], def_label, "cs-gpio", True)
+                    extract_controller(node_path, "cs-gpios", cs_gpios, reg[0], def_label, "cs-gpio", True, True)
+                    extract_controller(node_path, "cs-gpios", cs_gpios, reg[0], def_label, "cs-gpios", True)
+                    extract_cells(node_path, "cs-gpios", cs_gpios, None, reg[0], def_label, "cs-gpio", True, True)
+                    extract_cells(node_path, "cs-gpios", cs_gpios, None, reg[0], def_label, "cs-gpios", True)
 
         # generate defines
         l_base = [def_label]
