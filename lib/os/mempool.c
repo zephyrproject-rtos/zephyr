@@ -104,7 +104,7 @@ void z_sys_mem_pool_base_init(struct sys_mem_pool_base *p)
 
 		sys_dlist_init(&p->levels[i].free_list);
 
-		if (nblocks < 32) {
+		if (nblocks <= 32) {
 			p->max_inline_level = i;
 		} else {
 			p->levels[i].bits_p = bits;
