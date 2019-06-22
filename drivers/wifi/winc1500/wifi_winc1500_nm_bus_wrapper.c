@@ -114,14 +114,14 @@ s8_t nm_bus_init(void *pvinit)
 		return -ENODEV;
 	}
 
-	cs_ctrl.gpio_pin = DT_INST_0_ATMEL_WINC1500_CS_GPIO_PIN;
+	cs_ctrl.gpio_pin = DT_INST_0_ATMEL_WINC1500_CS_GPIOS_PIN;
 	cs_ctrl.delay = 0U;
 
 	winc1500.spi_cfg.cs = &cs_ctrl;
 
 	LOG_DBG("SPI GPIO CS configured on %s:%u",
 		    DT_INST_0_ATMEL_WINC1500_CS_GPIOS_CONTROLLER,
-		    DT_INST_0_ATMEL_WINC1500_CS_GPIO_PIN);
+		    DT_INST_0_ATMEL_WINC1500_CS_GPIOS_PIN);
 #endif /* CONFIG_WIFI_WINC1500_GPIO_SPI_CS */
 
 	nm_bsp_reset();

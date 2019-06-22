@@ -156,14 +156,14 @@ int lsm6dsl_spi_init(struct device *dev)
 		return -ENODEV;
 	}
 
-	lsm6dsl_cs_ctrl.gpio_pin = DT_INST_0_ST_LSM6DSL_CS_GPIO_PIN;
+	lsm6dsl_cs_ctrl.gpio_pin = DT_INST_0_ST_LSM6DSL_CS_GPIOS_PIN;
 	lsm6dsl_cs_ctrl.delay = 0U;
 
 	lsm6dsl_spi_conf.cs = &lsm6dsl_cs_ctrl;
 
 	LOG_DBG("SPI GPIO CS configured on %s:%u",
 		    DT_INST_0_ST_LSM6DSL_CS_GPIOS_CONTROLLER,
-		    DT_INST_0_ST_LSM6DSL_CS_GPIO_PIN);
+		    DT_INST_0_ST_LSM6DSL_CS_GPIOS_PIN);
 #endif
 
 	return 0;

@@ -790,7 +790,7 @@ static const struct adxl362_config adxl362_config = {
 	.spi_max_frequency = DT_INST_0_ADI_ADXL362_SPI_MAX_FREQUENCY,
 #if defined(DT_INST_0_ADI_ADXL362_CS_GPIOS_CONTROLLER)
 	.gpio_cs_port = DT_INST_0_ADI_ADXL362_CS_GPIOS_CONTROLLER,
-	.cs_gpio = DT_INST_0_ADI_ADXL362_CS_GPIO_PIN,
+	.cs_gpio = DT_INST_0_ADI_ADXL362_CS_GPIOS_PIN,
 #endif
 #if defined(CONFIG_ADXL362_TRIGGER)
 	.gpio_port = DT_INST_0_ADI_ADXL362_INT1_GPIOS_CONTROLLER,

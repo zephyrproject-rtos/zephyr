@@ -64,7 +64,7 @@ static int ili9340_init(struct device *dev)
 #ifdef DT_INST_0_ILITEK_ILI9340_CS_GPIOS_CONTROLLER
 	data->cs_ctrl.gpio_dev =
 		device_get_binding(DT_INST_0_ILITEK_ILI9340_CS_GPIOS_CONTROLLER);
-	data->cs_ctrl.gpio_pin = DT_INST_0_ILITEK_ILI9340_CS_GPIO_PIN;
+	data->cs_ctrl.gpio_pin = DT_INST_0_ILITEK_ILI9340_CS_GPIOS_PIN;
 	data->cs_ctrl.delay = 0U;
 	data->spi_config.cs = &(data->cs_ctrl);
 #else

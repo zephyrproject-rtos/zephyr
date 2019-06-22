@@ -355,7 +355,7 @@ static int spi_nor_configure(struct device *dev)
 		return -ENODEV;
 	}
 
-	data->cs_ctrl.gpio_pin = DT_INST_0_JEDEC_SPI_NOR_CS_GPIO_PIN;
+	data->cs_ctrl.gpio_pin = DT_INST_0_JEDEC_SPI_NOR_CS_GPIOS_PIN;
 	data->cs_ctrl.delay = CONFIG_SPI_NOR_CS_WAIT_DELAY;
 
 	data->spi_cfg.cs = &data->cs_ctrl;

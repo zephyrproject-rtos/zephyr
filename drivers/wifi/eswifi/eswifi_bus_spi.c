@@ -237,7 +237,7 @@ int eswifi_spi_init(struct eswifi_dev *eswifi)
 	spi->spi_cfg.slave = DT_INVENTEK_ESWIFI_ESWIFI0_BASE_ADDRESS;
 	spi->spi_cs.gpio_dev =
 		device_get_binding(DT_INVENTEK_ESWIFI_ESWIFI0_CS_GPIOS_CONTROLLER);
-	spi->spi_cs.gpio_pin = DT_INVENTEK_ESWIFI_ESWIFI0_CS_GPIO_PIN;
+	spi->spi_cs.gpio_pin = DT_INVENTEK_ESWIFI_ESWIFI0_CS_GPIOS_PIN;
 	spi->spi_cs.delay = 1000U;
 	spi->spi_cfg.cs = &spi->spi_cs;
 

@@ -417,7 +417,7 @@ static int spi_flash_wb_configure(struct device *dev)
 		return -ENODEV;
 	}
 
-	data->cs_ctrl.gpio_pin = DT_INST_0_WINBOND_W25Q16_CS_GPIO_PIN;
+	data->cs_ctrl.gpio_pin = DT_INST_0_WINBOND_W25Q16_CS_GPIOS_PIN;
 	data->cs_ctrl.delay = CONFIG_SPI_FLASH_W25QXXDV_GPIO_CS_WAIT_DELAY;
 
 	data->spi_cfg.cs = &data->cs_ctrl;

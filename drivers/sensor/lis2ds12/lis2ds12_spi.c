@@ -165,14 +165,14 @@ int lis2ds12_spi_init(struct device *dev)
 		return -ENODEV;
 	}
 
-	lis2ds12_cs_ctrl.gpio_pin = DT_INST_0_ST_LIS2DS12_CS_GPIO_PIN;
+	lis2ds12_cs_ctrl.gpio_pin = DT_INST_0_ST_LIS2DS12_CS_GPIOS_PIN;
 	lis2ds12_cs_ctrl.delay = 0U;
 
 	lis2ds12_spi_conf.cs = &lis2ds12_cs_ctrl;
 
 	LOG_DBG("SPI GPIO CS configured on %s:%u",
 		    DT_INST_0_ST_LIS2DS12_CS_GPIOS_CONTROLLER,
-		    DT_INST_0_ST_LIS2DS12_CS_GPIO_PIN);
+		    DT_INST_0_ST_LIS2DS12_CS_GPIOS_PIN);
 #endif
 
 	return 0;

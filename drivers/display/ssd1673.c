@@ -628,7 +628,7 @@ static int ssd1673_init(struct device *dev)
 		return -EIO;
 	}
 
-	driver->cs_ctrl.gpio_pin = DT_INST_0_SOLOMON_SSD1673FB_CS_GPIO_PIN;
+	driver->cs_ctrl.gpio_pin = DT_INST_0_SOLOMON_SSD1673FB_CS_GPIOS_PIN;
 	driver->cs_ctrl.delay = 0U;
 	driver->spi_config.cs = &driver->cs_ctrl;
 #endif
