@@ -18,20 +18,20 @@
 #define PRIORITY 7
 
 /* Change this if you have an LED connected to a custom port */
-#ifndef LED0_GPIO_CONTROLLER
-#define LED0_GPIO_CONTROLLER 	LED0_GPIO_PORT
+#ifndef DT_ALIAS_LED0_GPIOS_CONTROLLER
+#define DT_ALIAS_LED0_GPIOS_CONTROLLER 	LED0_GPIO_PORT
 #endif
-#ifndef LED1_GPIO_CONTROLLER
-#define LED1_GPIO_CONTROLLER 	LED1_GPIO_PORT
+#ifndef DT_ALIAS_LED1_GPIOS_CONTROLLER
+#define DT_ALIAS_LED1_GPIOS_CONTROLLER 	LED1_GPIO_PORT
 #endif
 
-#define PORT0	 LED0_GPIO_CONTROLLER
-#define PORT1	 LED1_GPIO_CONTROLLER
+#define PORT0	 DT_ALIAS_LED0_GPIOS_CONTROLLER
+#define PORT1	 DT_ALIAS_LED1_GPIOS_CONTROLLER
 
 
 /* Change this if you have an LED connected to a custom pin */
-#define LED0    LED0_GPIO_PIN
-#define LED1    LED1_GPIO_PIN
+#define LED0    DT_ALIAS_LED0_GPIOS_PIN
+#define LED1    DT_ALIAS_LED1_GPIOS_PIN
 
 struct printk_data_t {
 	void *fifo_reserved; /* 1st word reserved for use by fifo */

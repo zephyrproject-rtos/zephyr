@@ -68,10 +68,10 @@ static struct {
 	const char *name;
 	u32_t pin;
 } leds[] = {
-	{ .name = LED0_GPIO_CONTROLLER, .pin = LED0_GPIO_PIN, },
-	{ .name = LED1_GPIO_CONTROLLER, .pin = LED1_GPIO_PIN, },
-	{ .name = LED2_GPIO_CONTROLLER, .pin = LED2_GPIO_PIN, },
-	{ .name = LED3_GPIO_CONTROLLER, .pin = LED3_GPIO_PIN, },
+	{ .name = DT_ALIAS_LED0_GPIOS_CONTROLLER, .pin = DT_ALIAS_LED0_GPIOS_PIN, },
+	{ .name = DT_ALIAS_LED1_GPIOS_CONTROLLER, .pin = DT_ALIAS_LED1_GPIOS_PIN, },
+	{ .name = DT_ALIAS_LED2_GPIOS_CONTROLLER, .pin = DT_ALIAS_LED2_GPIOS_PIN, },
+	{ .name = DT_ALIAS_LED3_GPIOS_CONTROLLER, .pin = DT_ALIAS_LED3_GPIOS_PIN, },
 };
 
 struct k_delayed_work led_timer;

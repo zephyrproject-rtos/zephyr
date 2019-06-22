@@ -26,25 +26,25 @@ void app_gpio_init(void)
 
 	/* LEDs configuration & setting */
 
-	led_device[0] = device_get_binding(LED0_GPIO_CONTROLLER);
-	gpio_pin_configure(led_device[0], LED0_GPIO_PIN,
+	led_device[0] = device_get_binding(DT_ALIAS_LED0_GPIOS_CONTROLLER);
+	gpio_pin_configure(led_device[0], DT_ALIAS_LED0_GPIOS_PIN,
 			   GPIO_DIR_OUT | GPIO_PUD_PULL_UP);
-	gpio_pin_write(led_device[0], LED0_GPIO_PIN, 1);
+	gpio_pin_write(led_device[0], DT_ALIAS_LED0_GPIOS_PIN, 1);
 
-	led_device[1] = device_get_binding(LED1_GPIO_CONTROLLER);
-	gpio_pin_configure(led_device[1], LED1_GPIO_PIN,
+	led_device[1] = device_get_binding(DT_ALIAS_LED1_GPIOS_CONTROLLER);
+	gpio_pin_configure(led_device[1], DT_ALIAS_LED1_GPIOS_PIN,
 			   GPIO_DIR_OUT | GPIO_PUD_PULL_UP);
-	gpio_pin_write(led_device[1], LED1_GPIO_PIN, 1);
+	gpio_pin_write(led_device[1], DT_ALIAS_LED1_GPIOS_PIN, 1);
 
-	led_device[2] = device_get_binding(LED2_GPIO_CONTROLLER);
-	gpio_pin_configure(led_device[2], LED2_GPIO_PIN,
+	led_device[2] = device_get_binding(DT_ALIAS_LED2_GPIOS_CONTROLLER);
+	gpio_pin_configure(led_device[2], DT_ALIAS_LED2_GPIOS_PIN,
 			   GPIO_DIR_OUT | GPIO_PUD_PULL_UP);
-	gpio_pin_write(led_device[2], LED2_GPIO_PIN, 1);
+	gpio_pin_write(led_device[2], DT_ALIAS_LED2_GPIOS_PIN, 1);
 
-	led_device[3] = device_get_binding(LED3_GPIO_CONTROLLER);
-	gpio_pin_configure(led_device[3], LED3_GPIO_PIN,
+	led_device[3] = device_get_binding(DT_ALIAS_LED3_GPIOS_CONTROLLER);
+	gpio_pin_configure(led_device[3], DT_ALIAS_LED3_GPIOS_PIN,
 			   GPIO_DIR_OUT | GPIO_PUD_PULL_UP);
-	gpio_pin_write(led_device[3], LED3_GPIO_PIN, 1);
+	gpio_pin_write(led_device[3], DT_ALIAS_LED3_GPIOS_PIN, 1);
 
 	/* Buttons configuration & setting */
 
