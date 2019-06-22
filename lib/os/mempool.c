@@ -256,7 +256,7 @@ int z_sys_mem_pool_block_alloc(struct sys_mem_pool_base *p, size_t size,
 	 * way, we populate an array of sizes for each level so we
 	 * don't need to waste RAM storing it.
 	 */
-	lsizes[0] = _ALIGN4(p->max_sz);
+	lsizes[0] = p->max_sz;
 	for (i = 0; i < p->n_levels; i++) {
 		if (i > 0) {
 			lsizes[i] = _ALIGN4(lsizes[i-1] / 4);
@@ -329,7 +329,7 @@ void z_sys_mem_pool_block_free(struct sys_mem_pool_base *p, u32_t level,
 	 * doesn't inherently need to traverse all the larger
 	 * sublevels.
 	 */
-	lsizes[0] = _ALIGN4(p->max_sz);
+	lsizes[0] = p->max_sz;
 	for (i = 1; i <= level; i++) {
 		lsizes[i] = _ALIGN4(lsizes[i-1] / 4);
 	}
