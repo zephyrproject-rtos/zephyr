@@ -412,7 +412,7 @@ static int spi_flash_wb_configure(struct device *dev)
 
 #if defined(CONFIG_SPI_FLASH_W25QXXDV_GPIO_SPI_CS)
 	data->cs_ctrl.gpio_dev = device_get_binding(
-		DT_INST_0_WINBOND_W25Q16_CS_GPIO_CONTROLLER);
+		DT_INST_0_WINBOND_W25Q16_CS_GPIOS_CONTROLLER);
 	if (!data->cs_ctrl.gpio_dev) {
 		return -ENODEV;
 	}

@@ -174,7 +174,7 @@ struct adxl362_config {
 	char *spi_name;
 	u32_t spi_max_frequency;
 	u16_t spi_slave;
-#if defined(DT_INST_0_ADI_ADXL362_CS_GPIO_CONTROLLER)
+#if defined(DT_INST_0_ADI_ADXL362_CS_GPIOS_CONTROLLER)
 	const char *gpio_cs_port;
 	u8_t cs_gpio;
 #endif
@@ -189,7 +189,7 @@ struct adxl362_config {
 struct adxl362_data {
 	struct device *spi;
 	struct spi_config spi_cfg;
-#if defined(DT_INST_0_ADI_ADXL362_CS_GPIO_CONTROLLER)
+#if defined(DT_INST_0_ADI_ADXL362_CS_GPIOS_CONTROLLER)
 	struct spi_cs_control adxl362_cs_ctrl;
 #endif
 	s16_t acc_x;

@@ -108,7 +108,7 @@ s8_t nm_bus_init(void *pvinit)
 
 #ifdef CONFIG_WIFI_WINC1500_GPIO_SPI_CS
 	cs_ctrl.gpio_dev = device_get_binding(
-		DT_INST_0_ATMEL_WINC1500_CS_GPIO_CONTROLLER);
+		DT_INST_0_ATMEL_WINC1500_CS_GPIOS_CONTROLLER);
 	if (!cs_ctrl.gpio_dev) {
 		LOG_ERR("Unable to get GPIO SPI CS device");
 		return -ENODEV;
@@ -120,7 +120,7 @@ s8_t nm_bus_init(void *pvinit)
 	winc1500.spi_cfg.cs = &cs_ctrl;
 
 	LOG_DBG("SPI GPIO CS configured on %s:%u",
-		    DT_INST_0_ATMEL_WINC1500_CS_GPIO_CONTROLLER,
+		    DT_INST_0_ATMEL_WINC1500_CS_GPIOS_CONTROLLER,
 		    DT_INST_0_ATMEL_WINC1500_CS_GPIO_PIN);
 #endif /* CONFIG_WIFI_WINC1500_GPIO_SPI_CS */
 

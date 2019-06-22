@@ -278,7 +278,7 @@ static int hci_spi_init(struct device *unused)
 	}
 
 	gpio_dev = device_get_binding(
-		DT_INST_0_ZEPHYR_BT_HCI_SPI_SLAVE_IRQ_GPIO_CONTROLLER);
+		DT_INST_0_ZEPHYR_BT_HCI_SPI_SLAVE_IRQ_GPIOS_CONTROLLER);
 	if (!gpio_dev) {
 		return -EINVAL;
 	}
