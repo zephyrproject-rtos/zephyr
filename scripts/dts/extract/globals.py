@@ -19,6 +19,7 @@ bindings = {}
 bus_bindings = {}
 binding_compats = []
 deprecated = []
+deprecated_main = []
 old_alias_names = False
 
 regs_config = {
@@ -391,7 +392,8 @@ def child_to_parent_unmap(cell_parent, gpio_index):
 
 
 def extract_controller(node_path, prop, prop_values, index,
-                       def_label, generic, handle_single=False):
+                       def_label, generic, handle_single=False,
+                       deprecate=False):
 
     prop_def = {}
     prop_alias = {}
@@ -445,7 +447,7 @@ def extract_controller(node_path, prop, prop_values, index,
 
         label = l_base + [l_cellname] + l_idx
 
-        add_compat_alias(node_path, '_'.join(label[1:]), '_'.join(label), prop_alias)
+        add_compat_alias(node_path, '_'.join(label[1:]), '_'.join(label), prop_alias, deprecate)
         prop_def['_'.join(label)] = "\"" + l_cell + "\""
 
         #generate defs also if node is referenced as an alias in dts
@@ -454,13 +456,17 @@ def extract_controller(node_path, prop, prop_values, index,
                 node_path,
                 lambda alias: '_'.join([str_to_label(alias)] + label[1:]),
                 '_'.join(label),
-                prop_alias)
+                prop_alias, deprecate)
 
         insert_defs(node_path, prop_def, prop_alias)
 
+        if deprecate:
+            deprecated_main.extend(list(prop_def.keys()))
+
 
 def extract_cells(node_path, prop, prop_values, names, index,
-                  def_label, generic, handle_single=False):
+                  def_label, generic, handle_single=False,
+                  deprecate=False):
 
     prop_array = build_cell_array(prop_values)
     if handle_single:
@@ -535,7 +541,7 @@ def extract_cells(node_path, prop, prop_values, names, index,
             else:
                 label = l_base + l_cell + l_cellname + l_idx
             label_name = l_base + [name] + l_cellname
-            add_compat_alias(node_path, '_'.join(label[1:]), '_'.join(label), prop_alias)
+            add_compat_alias(node_path, '_'.join(label[1:]), '_'.join(label), prop_alias, deprecate)
             prop_def['_'.join(label)] = elem[j+1]
             if name:
                 prop_alias['_'.join(label_name)] = '_'.join(label)
@@ -546,9 +552,12 @@ def extract_cells(node_path, prop, prop_values, names, index,
                     node_path,
                     lambda alias: '_'.join([str_to_label(alias)] + label[1:]),
                     '_'.join(label),
-                    prop_alias)
+                    prop_alias, deprecate)
 
             insert_defs(node_path, prop_def, prop_alias)
+
+            if deprecate:
+                deprecated_main.extend(list(prop_def.keys()))
 
 
 def err(msg):
