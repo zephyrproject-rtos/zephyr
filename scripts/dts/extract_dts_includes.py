@@ -300,7 +300,10 @@ def write_header(f):
 
         for prop in sorted(defs[node]):
             if prop != 'aliases':
-                f.write(define_str(prop, defs[node][prop], value_tabs))
+                deprecated_warn = False
+                if prop in deprecated_main:
+                    deprecated_warn = True
+                f.write(define_str(prop, defs[node][prop], value_tabs, deprecated_warn))
 
         for alias in sorted(defs[node]['aliases']):
             alias_target = defs[node]['aliases'][alias]
