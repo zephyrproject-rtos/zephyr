@@ -46,7 +46,7 @@ static void button_pressed(struct device *dev, struct gpio_callback *cb,
 {
 	struct mb_display *disp = mb_display_get();
 
-	if (pins & BIT(SW0_GPIO_PIN)) {
+	if (pins & BIT(DT_ALIAS_SW0_GPIOS_PIN)) {
 		k_work_submit(&button_work);
 	} else {
 		u16_t target = board_set_target();
@@ -227,21 +227,21 @@ static void configure_button(void)
 
 	k_work_init(&button_work, button_send_pressed);
 
-	gpio = device_get_binding(SW0_GPIO_CONTROLLER);
+	gpio = device_get_binding(DT_ALIAS_SW0_GPIOS_CONTROLLER);
 
-	gpio_pin_configure(gpio, SW0_GPIO_PIN,
+	gpio_pin_configure(gpio, DT_ALIAS_SW0_GPIOS_PIN,
 			   (GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
 			    GPIO_INT_ACTIVE_LOW));
-	gpio_pin_configure(gpio, SW1_GPIO_PIN,
+	gpio_pin_configure(gpio, DT_ALIAS_SW1_GPIOS_PIN,
 			   (GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
 			    GPIO_INT_ACTIVE_LOW));
 
 	gpio_init_callback(&button_cb, button_pressed,
-			   BIT(SW0_GPIO_PIN) | BIT(SW1_GPIO_PIN));
+			   BIT(DT_ALIAS_SW0_GPIOS_PIN) | BIT(DT_ALIAS_SW1_GPIOS_PIN));
 	gpio_add_callback(gpio, &button_cb);
 
-	gpio_pin_enable_callback(gpio, SW0_GPIO_PIN);
-	gpio_pin_enable_callback(gpio, SW1_GPIO_PIN);
+	gpio_pin_enable_callback(gpio, DT_ALIAS_SW0_GPIOS_PIN);
+	gpio_pin_enable_callback(gpio, DT_ALIAS_SW1_GPIOS_PIN);
 }
 
 void board_init(u16_t *addr)

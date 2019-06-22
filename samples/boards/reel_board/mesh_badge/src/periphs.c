@@ -31,7 +31,7 @@ static struct led_device_info led_dev_info[] = {
 };
 
 static struct device_info dev_info[] = {
-	{ NULL, SW0_GPIO_CONTROLLER },
+	{ NULL, DT_ALIAS_SW0_GPIOS_CONTROLLER },
 	{ NULL, DT_INST_0_TI_HDC1010_LABEL },
 	{ NULL, DT_INST_0_NXP_MMA8652FC_LABEL },
 	{ NULL, DT_INST_0_AVAGO_APDS9960_LABEL },
