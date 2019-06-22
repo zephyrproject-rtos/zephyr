@@ -4033,13 +4033,13 @@ struct k_mem_pool {
  * @req K-MPOOL-001
  */
 #define K_MEM_POOL_DEFINE(name, minsz, maxsz, nmax, align)		\
-	char __aligned(align) _mpool_buf_##name[_ALIGN4(maxsz * nmax)	\
+	char __aligned(align) _mpool_buf_##name[_ALIGN4(maxsz) * nmax	\
 				  + _MPOOL_BITS_SIZE(maxsz, minsz, nmax)]; \
 	struct sys_mem_pool_lvl _mpool_lvls_##name[Z_MPOOL_LVLS(maxsz, minsz)]; \
 	struct k_mem_pool name __in_section(_k_mem_pool, static, name) = { \
 		.base = {						\
 			.buf = _mpool_buf_##name,			\
-			.max_sz = maxsz,				\
+			.max_sz = _ALIGN4(maxsz),			\
 			.n_max = nmax,					\
 			.n_levels = Z_MPOOL_LVLS(maxsz, minsz),		\
 			.levels = _mpool_lvls_##name,			\
