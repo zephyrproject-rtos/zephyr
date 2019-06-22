@@ -2,9 +2,9 @@ sample:
   name: RGB LED
 tests:
   sample.rgb_led:
-    filter: DT_PWM_LEDS_RED_PWM_LED_PWM_CONTROLLER and
-            DT_PWM_LEDS_GREEN_PWM_LED_PWM_CONTROLLER and
-            DT_PWM_LEDS_BLUE_PWM_LED_PWM_CONTROLLER
+    filter: DT_ALIAS_RED_PWM_LED_PWMS_CONTROLLER and
+            DT_ALIAS_GREEN_PWM_LED_PWMS_CONTROLLER and
+            DT_ALIAS_BLUE_PWM_LED_PWMS_CONTROLLER
     tags: drivers pwm
     depends_on: pwm
     harness: led

@@ -15,21 +15,21 @@
 #include <device.h>
 #include <pwm.h>
 
-#if defined(RED_PWM_LED_PWM_CONTROLLER) && \
-      defined(RED_PWM_LED_PWM_CHANNEL) && \
-      defined(GREEN_PWM_LED_PWM_CONTROLLER) && \
-      defined(GREEN_PWM_LED_PWM_CHANNEL) && \
-      defined(BLUE_PWM_LED_PWM_CONTROLLER) && \
-      defined(BLUE_PWM_LED_PWM_CHANNEL)
+#if defined(DT_ALIAS_RED_PWM_LED_PWMS_CONTROLLER) && \
+      defined(DT_ALIAS_RED_PWM_LED_PWMS_CHANNEL) && \
+      defined(DT_ALIAS_GREEN_PWM_LED_PWMS_CONTROLLER) && \
+      defined(DT_ALIAS_GREEN_PWM_LED_PWMS_CHANNEL) && \
+      defined(DT_ALIAS_BLUE_PWM_LED_PWMS_CONTROLLER) && \
+      defined(DT_ALIAS_BLUE_PWM_LED_PWMS_CHANNEL)
 /* Get the defines from dt (based on aliases 'red-pwm-led', 'green-pwm-led' &
  * 'blue-pwm-led')
  */
-#define PWM_DEV0	RED_PWM_LED_PWM_CONTROLLER
-#define PWM_CH0		RED_PWM_LED_PWM_CHANNEL
-#define PWM_DEV1	GREEN_PWM_LED_PWM_CONTROLLER
-#define PWM_CH1		GREEN_PWM_LED_PWM_CHANNEL
-#define PWM_DEV2	BLUE_PWM_LED_PWM_CONTROLLER
-#define PWM_CH2		BLUE_PWM_LED_PWM_CHANNEL
+#define PWM_DEV0	DT_ALIAS_RED_PWM_LED_PWMS_CONTROLLER
+#define PWM_CH0		DT_ALIAS_RED_PWM_LED_PWMS_CHANNEL
+#define PWM_DEV1	DT_ALIAS_GREEN_PWM_LED_PWMS_CONTROLLER
+#define PWM_CH1		DT_ALIAS_GREEN_PWM_LED_PWMS_CHANNEL
+#define PWM_DEV2	DT_ALIAS_BLUE_PWM_LED_PWMS_CONTROLLER
+#define PWM_CH2		DT_ALIAS_BLUE_PWM_LED_PWMS_CHANNEL
 #else
 #error "Choose supported board or add new board for the application"
 #endif
