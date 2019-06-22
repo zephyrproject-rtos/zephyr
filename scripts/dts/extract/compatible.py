@@ -58,6 +58,7 @@ class DTCompatible(DTDirective):
                 insert_defs(node_path,
                             {compat_instance + '_BUS_' + bus.upper(): '1'},
                             {})
+                deprecated_main.append(compat_instance + '_BUS_' + bus.upper())
 
 
 ##
