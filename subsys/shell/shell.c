@@ -801,6 +801,14 @@ static void ctrl_metakeys_handle(const struct shell *shell, char data)
 		shell_print_prompt_and_cmd(shell);
 		break;
 
+	case SHELL_VT100_ASCII_CTRL_N: /* CTRL + N */
+		history_handle(shell, false);
+		break;
+
+	case SHELL_VT100_ASCII_CTRL_P: /* CTRL + P */
+		history_handle(shell, true);
+		break;
+
 	case SHELL_VT100_ASCII_CTRL_U: /* CTRL + U */
 		shell_op_cursor_home_move(shell);
 		cmd_buffer_clear(shell);
