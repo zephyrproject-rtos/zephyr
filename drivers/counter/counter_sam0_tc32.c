@@ -432,12 +432,12 @@ static const struct counter_driver_api counter_sam0_tc32_driver_api = {
 			    &counter_sam0_tc32_driver_api);		      \
 	static void counter_sam0_tc32_config_##n(struct device *dev)	      \
 	{								      \
-		IRQ_CONNECT(DT_ATMEL_SAM0_TC32_TC_##n##_IRQ,		      \
-			    DT_ATMEL_SAM0_TC32_TC_##n##_IRQ_PRIORITY,	      \
+		IRQ_CONNECT(DT_ATMEL_SAM0_TC32_TC_##n##_IRQ_0,		      \
+			    DT_ATMEL_SAM0_TC32_TC_##n##_IRQ_0_PRIORITY,	      \
 			    counter_sam0_tc32_isr,			      \
 			    DEVICE_GET(counter_sam0_tc32_##n),		      \
 			    0);						      \
-		irq_enable(DT_ATMEL_SAM0_TC32_TC_##n##_IRQ);		      \
+		irq_enable(DT_ATMEL_SAM0_TC32_TC_##n##_IRQ_0);		      \
 	}
 
 #if DT_ATMEL_SAM0_TC32_TC_0_BASE_ADDRESS
