@@ -20,7 +20,7 @@ static int warp7_m4_pinmux_init(struct device *dev)
 		IOMUXC_SW_PAD_CTL_PAD_ENET1_RGMII_RD0_DSE(0);
 #endif
 
-#ifdef SW0_GPIO_PIN
+#ifdef DT_ALIAS_SW0_GPIOS_PIN
 	IOMUXC_SW_MUX_CTL_PAD_ENET1_RGMII_RD1 =
 		IOMUXC_SW_MUX_CTL_PAD_ENET1_RGMII_RD1_MUX_MODE(5);
 #endif
