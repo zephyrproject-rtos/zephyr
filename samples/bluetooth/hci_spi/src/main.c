@@ -48,7 +48,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define PACKET_TYPE             0
 #define EVT_BLUE_INITIALIZED    0x01
 
-#define GPIO_IRQ_PIN            DT_INST_0_ZEPHYR_BT_HCI_SPI_SLAVE_IRQ_GPIO_PIN
+#define GPIO_IRQ_PIN            DT_INST_0_ZEPHYR_BT_HCI_SPI_SLAVE_IRQ_GPIOS_PIN
 
 /* Needs to be aligned with the SPI master buffer size */
 #define SPI_MAX_MSG_LEN         255
@@ -278,7 +278,7 @@ static int hci_spi_init(struct device *unused)
 	}
 
 	gpio_dev = device_get_binding(
-		DT_INST_0_ZEPHYR_BT_HCI_SPI_SLAVE_IRQ_GPIO_CONTROLLER);
+		DT_INST_0_ZEPHYR_BT_HCI_SPI_SLAVE_IRQ_GPIOS_CONTROLLER);
 	if (!gpio_dev) {
 		return -EINVAL;
 	}

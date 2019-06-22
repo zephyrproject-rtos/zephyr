@@ -39,7 +39,7 @@ struct ssd1673_data {
 	struct device *busy;
 	struct device *spi_dev;
 	struct spi_config spi_config;
-#if defined(DT_INST_0_SOLOMON_SSD1673FB_CS_GPIO_CONTROLLER)
+#if defined(DT_INST_0_SOLOMON_SSD1673FB_CS_GPIOS_CONTROLLER)
 	struct spi_cs_control cs_ctrl;
 #endif
 	u8_t scan_mode;
@@ -620,15 +620,15 @@ static int ssd1673_init(struct device *dev)
 	gpio_pin_configure(driver->busy, DT_INST_0_SOLOMON_SSD1673FB_BUSY_GPIOS_PIN,
 			   GPIO_DIR_IN);
 
-#if defined(DT_INST_0_SOLOMON_SSD1673FB_CS_GPIO_CONTROLLER)
+#if defined(DT_INST_0_SOLOMON_SSD1673FB_CS_GPIOS_CONTROLLER)
 	driver->cs_ctrl.gpio_dev = device_get_binding(
-		DT_INST_0_SOLOMON_SSD1673FB_CS_GPIO_CONTROLLER);
+		DT_INST_0_SOLOMON_SSD1673FB_CS_GPIOS_CONTROLLER);
 	if (!driver->cs_ctrl.gpio_dev) {
 		LOG_ERR("Unable to get SPI GPIO CS device");
 		return -EIO;
 	}
 
-	driver->cs_ctrl.gpio_pin = DT_INST_0_SOLOMON_SSD1673FB_CS_GPIO_PIN;
+	driver->cs_ctrl.gpio_pin = DT_INST_0_SOLOMON_SSD1673FB_CS_GPIOS_PIN;
 	driver->cs_ctrl.delay = 0U;
 	driver->spi_config.cs = &driver->cs_ctrl;
 #endif

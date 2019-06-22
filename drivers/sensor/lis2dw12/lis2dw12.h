@@ -203,7 +203,7 @@ struct lis2dw12_data {
 	struct device *dev;
 #endif /* CONFIG_LIS2DW12_TRIGGER_GLOBAL_THREAD */
 #endif /* CONFIG_LIS2DW12_TRIGGER */
-#if defined(DT_INST_0_ST_LIS2DW12_CS_GPIO_CONTROLLER)
+#if defined(DT_INST_0_ST_LIS2DW12_CS_GPIOS_CONTROLLER)
 	struct spi_cs_control cs_ctrl;
 #endif
 };

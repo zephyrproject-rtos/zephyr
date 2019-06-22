@@ -47,9 +47,9 @@
 struct spi_nor_data {
 	struct device *spi;
 	struct spi_config spi_cfg;
-#ifdef DT_INST_0_JEDEC_SPI_NOR_CS_GPIO_CONTROLLER
+#ifdef DT_INST_0_JEDEC_SPI_NOR_CS_GPIOS_CONTROLLER
 	struct spi_cs_control cs_ctrl;
-#endif /* DT_INST_0_JEDEC_SPI_NOR_CS_GPIO_CONTROLLER */
+#endif /* DT_INST_0_JEDEC_SPI_NOR_CS_GPIOS_CONTROLLER */
 	struct k_sem sem;
 };
 
@@ -348,18 +348,18 @@ static int spi_nor_configure(struct device *dev)
 	data->spi_cfg.operation = SPI_WORD_SET(8);
 	data->spi_cfg.slave = DT_INST_0_JEDEC_SPI_NOR_BASE_ADDRESS;
 
-#ifdef DT_INST_0_JEDEC_SPI_NOR_CS_GPIO_CONTROLLER
+#ifdef DT_INST_0_JEDEC_SPI_NOR_CS_GPIOS_CONTROLLER
 	data->cs_ctrl.gpio_dev =
-		device_get_binding(DT_INST_0_JEDEC_SPI_NOR_CS_GPIO_CONTROLLER);
+		device_get_binding(DT_INST_0_JEDEC_SPI_NOR_CS_GPIOS_CONTROLLER);
 	if (!data->cs_ctrl.gpio_dev) {
 		return -ENODEV;
 	}
 
-	data->cs_ctrl.gpio_pin = DT_INST_0_JEDEC_SPI_NOR_CS_GPIO_PIN;
+	data->cs_ctrl.gpio_pin = DT_INST_0_JEDEC_SPI_NOR_CS_GPIOS_PIN;
 	data->cs_ctrl.delay = CONFIG_SPI_NOR_CS_WAIT_DELAY;
 
 	data->spi_cfg.cs = &data->cs_ctrl;
-#endif /* DT_INST_0_JEDEC_SPI_NOR_CS_GPIO_CONTROLLER */
+#endif /* DT_INST_0_JEDEC_SPI_NOR_CS_GPIOS_CONTROLLER */
 
 	/* now the spi bus is configured, we can verify the flash id */
 	if (spi_nor_read_id(dev, params) != 0) {

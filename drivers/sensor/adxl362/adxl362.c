@@ -734,7 +734,7 @@ static int adxl362_init(struct device *dev)
 	data->spi_cfg.frequency = config->spi_max_frequency;
 	data->spi_cfg.slave = config->spi_slave;
 
-#if defined(DT_INST_0_ADI_ADXL362_CS_GPIO_CONTROLLER)
+#if defined(DT_INST_0_ADI_ADXL362_CS_GPIOS_CONTROLLER)
 	data->adxl362_cs_ctrl.gpio_dev =
 				device_get_binding(config->gpio_cs_port);
 	if (!data->adxl362_cs_ctrl.gpio_dev) {
@@ -788,9 +788,9 @@ static const struct adxl362_config adxl362_config = {
 	.spi_name = DT_INST_0_ADI_ADXL362_BUS_NAME,
 	.spi_slave = DT_INST_0_ADI_ADXL362_BASE_ADDRESS,
 	.spi_max_frequency = DT_INST_0_ADI_ADXL362_SPI_MAX_FREQUENCY,
-#if defined(DT_INST_0_ADI_ADXL362_CS_GPIO_CONTROLLER)
-	.gpio_cs_port = DT_INST_0_ADI_ADXL362_CS_GPIO_CONTROLLER,
-	.cs_gpio = DT_INST_0_ADI_ADXL362_CS_GPIO_PIN,
+#if defined(DT_INST_0_ADI_ADXL362_CS_GPIOS_CONTROLLER)
+	.gpio_cs_port = DT_INST_0_ADI_ADXL362_CS_GPIOS_CONTROLLER,
+	.cs_gpio = DT_INST_0_ADI_ADXL362_CS_GPIOS_PIN,
 #endif
 #if defined(CONFIG_ADXL362_TRIGGER)
 	.gpio_port = DT_INST_0_ADI_ADXL362_INT1_GPIOS_CONTROLLER,
