@@ -24,9 +24,9 @@ class Harness:
         self.next_pattern = 0
 
     def configure(self, instance):
-        config = instance.test.harness_config
-        self.id = instance.test.id
-        if "ignore_faults" in instance.test.tags:
+        config = instance.testcase.harness_config
+        self.id = instance.testcase.id
+        if "ignore_faults" in instance.testcase.tags:
             self.fail_on_fault = False
 
         if config:

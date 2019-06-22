@@ -183,6 +183,9 @@ import shutil
 import shlex
 import signal
 import threading
+import concurrent.futures
+from threading import BoundedSemaphore
+import queue
 import time
 import datetime
 import csv
@@ -200,8 +203,7 @@ from pathlib import Path
 from distutils.spawn import find_executable
 
 import logging
-from sanity_chk import scl
-from sanity_chk import expr_parser
+
 
 log_format = "%(levelname)s %(name)s::%(module)s.%(funcName)s():%(lineno)d: %(message)s"
 logging.basicConfig(format=log_format, level=30)
@@ -220,6 +222,9 @@ if not ZEPHYR_BASE:
 canonical_zephyr_base = os.path.realpath(ZEPHYR_BASE)
 
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/"))
+
+from sanity_chk import scl
+from sanity_chk import expr_parser
 
 
 VERBOSE = 0
@@ -415,15 +420,12 @@ class ConfigurationError(SanityCheckException):
         return repr(self.cfile + ": " + self.message)
 
 
-class MakeError(SanityCheckException):
+
+class BuildError(SanityCheckException):
     pass
 
 
-class BuildError(MakeError):
-    pass
-
-
-class ExecutionError(MakeError):
+class ExecutionError(SanityCheckException):
     pass
 
 
@@ -476,12 +478,6 @@ class Handler:
     def __init__(self, instance, type_str="build"):
         """Constructor
 
-        @param name Arbitrary name of the created thread
-        @param outdir Working directory, should be where handler pid file (qemu.pid for example)
-            gets created by the build system
-        @param log_fn Absolute path to write out handler's log data
-        @param timeout Kill the handler process if it doesn't finish up within
-            the given number of seconds
         """
         self.lock = threading.Lock()
         self.state = "waiting"
@@ -498,12 +494,14 @@ class Handler:
 
         self.name = instance.name
         self.instance = instance
-        self.timeout = instance.test.timeout
-        self.sourcedir = instance.test.test_path
-        self.outdir = instance.outdir
-        self.log = os.path.join(self.outdir, "handler.log")
+        self.timeout = instance.testcase.timeout
+        self.sourcedir = instance.testcase.source_dir
+        self.build_dir = instance.build_dir
+        self.log = os.path.join(self.build_dir, "handler.log")
         self.returncode = 0
         self.set_state("running", {})
+
+        self.args = []
 
     def set_state(self, state, metrics):
         self.lock.acquire()
@@ -559,17 +557,13 @@ class BinaryHandler(Handler):
 
     def handle(self):
 
-        harness_name = self.instance.test.harness.capitalize()
+        harness_name = self.instance.testcase.harness.capitalize()
         harness_import = HarnessImporter(harness_name)
         harness = harness_import.instance
         harness.configure(self.instance)
 
         if self.call_make_run:
-            if options.ninja:
-                generator_cmd = "ninja"
-            else:
-                generator_cmd = "make"
-            command = [generator_cmd, "run"]
+            command = [get_generator()[0], "run"]
         else:
             command = [self.binary]
 
@@ -577,16 +571,16 @@ class BinaryHandler(Handler):
             command = ["valgrind", "--error-exitcode=2",
                        "--leak-check=full",
                        "--suppressions="+ZEPHYR_BASE+"/scripts/valgrind.supp",
-                       "--log-file="+self.outdir+"/valgrind.log"
+                       "--log-file="+self.build_dir+"/valgrind.log"
                        ] + command
 
         verbose("Spawning process: " +
                 " ".join(shlex.quote(word) for word in command) + os.linesep +
-                "Spawning process in directory: " + self.outdir)
+                "Spawning process in directory: " + self.build_dir)
 
-        start_time = time.time();
+        start_time = time.time()
 
-        with subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=self.outdir) as proc:
+        with subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=self.build_dir) as proc:
             verbose("Spawning BinaryHandler Thread for %s" % self.name)
             t = threading.Thread(target=self._output_reader, args=(proc, harness, ))
             t.start()
@@ -599,15 +593,15 @@ class BinaryHandler(Handler):
             proc.wait()
             self.returncode = proc.returncode
 
-        self.metrics["handler_time"] = time.time() - start_time;
+        self.metrics["handler_time"] = time.time() - start_time
 
         if options.enable_coverage:
-            returncode = subprocess.call(["GCOV_PREFIX=" + self.outdir,
-                "gcov", self.sourcedir, "-b", "-s", self.outdir], shell=True)
+            returncode = subprocess.call(["GCOV_PREFIX=" + self.build_dir,
+                "gcov", self.sourcedir, "-b", "-s", self.build_dir], shell=True)
 
         self.try_kill_process_by_pid()
 
-        # FIME: This is needed when killing the simulator, the console is
+        # FIXME: This is needed when killing the simulator, the console is
         # garbled and needs to be reset. Did not find a better way to do that.
 
         subprocess.call(["stty", "sane"])
@@ -688,12 +682,7 @@ class DeviceHandler(Handler):
                 command.append('--')
                 command.append(options.west_flash)
         else:
-            if options.ninja:
-                generator_cmd = "ninja"
-            else:
-                generator_cmd = "make"
-
-            command = [generator_cmd, "-C", self.outdir, "flash"]
+            command = [get_generator()[0], "-C", self.build_dir, "flash"]
 
         device = options.device_serial
         ser = serial.Serial(
@@ -707,7 +696,7 @@ class DeviceHandler(Handler):
 
         ser.flush()
 
-        harness_name = self.instance.test.harness.capitalize()
+        harness_name = self.instance.testcase.harness.capitalize()
         harness_import = HarnessImporter(harness_name)
         harness = harness_import.instance
         harness.configure(self.instance)
@@ -734,7 +723,7 @@ class DeviceHandler(Handler):
             ser.close()
 
         if out_state == "timeout":
-            for c in self.instance.test.cases:
+            for c in self.instance.testcase.cases:
                 if c not in harness.tests:
                     harness.tests[c] = "BLOCK"
 
@@ -753,6 +742,19 @@ class QEMUHandler(Handler):
     Test cases emit special messages to the console as they run, we check
     for these to collect whether the test passed or failed.
     """
+
+
+    def __init__(self, instance, type_str):
+        """Constructor
+
+        @param instance Test instance
+        """
+
+        super().__init__(instance, type_str)
+        self.fifo_fn = os.path.join(instance.build_dir, "qemu-fifo")
+
+        self.pid_fn = os.path.join(instance.build_dir, "qemu.pid")
+
 
     @staticmethod
     def _thread(handler, timeout, outdir, logfile, fifo_fn, pid_fn, results, harness):
@@ -859,32 +861,25 @@ class QEMUHandler(Handler):
         os.unlink(fifo_in)
         os.unlink(fifo_out)
 
-    def __init__(self, instance, type_str):
-        """Constructor
-
-        @param instance Test instance
-        """
-
-        super().__init__(instance, type_str)
-
+    def handle(self):
         self.results = {}
         self.run = True
 
         # We pass this to QEMU which looks for fifos with .in and .out
         # suffixes.
-        self.fifo_fn = os.path.join(instance.outdir, "qemu-fifo")
+        self.fifo_fn = os.path.join(self.instance.build_dir, "qemu-fifo")
 
-        self.pid_fn = os.path.join(instance.outdir, "qemu.pid")
+        self.pid_fn = os.path.join(self.instance.build_dir, "qemu.pid")
         if os.path.exists(self.pid_fn):
             os.unlink(self.pid_fn)
 
         self.log_fn = self.log
 
-        harness_import = HarnessImporter(instance.test.harness.capitalize())
+        harness_import = HarnessImporter(self.instance.testcase.harness.capitalize())
         harness = harness_import.instance
         harness.configure(self.instance)
         self.thread = threading.Thread(name=self.name, target=QEMUHandler._thread,
-                                       args=(self, self.timeout, self.outdir,
+                                       args=(self, self.timeout, self.build_dir,
                                              self.log_fn, self.fifo_fn,
                                              self.pid_fn, self.results, harness))
 
@@ -893,8 +888,11 @@ class QEMUHandler(Handler):
         verbose("Spawning QEMUHandler Thread for %s 'make run'" % self.name)
         self.thread.start()
 
+
     def get_fifo(self):
         return self.fifo_fn
+
+
 
 
 class SizeCalculator:
@@ -1046,438 +1044,6 @@ class SizeCalculator:
                                   "type": stype, "recognized": recognized})
 
 
-class MakeGoal:
-    """Metadata class representing one of the sub-makes called by MakeGenerator
-
-    MakeGenerator returns a dictionary of these which can then be associated
-    with TestInstances to get a complete picture of what happened during a test.
-    MakeGenerator is used for tasks outside of building tests (such as
-    defconfigs) which is why MakeGoal is a separate class from TestInstance.
-    """
-
-    def __init__(self, name, text, handler, make_log, build_log, run_log, handler_log):
-        self.name = name
-        self.text = text
-        self.handler = handler
-        self.make_log = make_log
-        self.build_log = build_log
-        self.run_log = run_log
-        self.handler_log = handler_log
-        self.make_state = "waiting"
-        self.failed = False
-        self.finished = False
-        self.reason = None
-        self.metrics = {}
-
-    def get_error_log(self):
-        if self.make_state == "waiting":
-            # Shouldn't ever see this; breakage in the main Makefile itself.
-            return self.make_log
-        elif self.make_state == "building":
-            # Failure when calling the sub-make to build the code
-            return self.build_log
-        elif self.make_state == "running":
-            # Failure in sub-make for "make run", qemu probably failed.
-            # Return qemu's output if there is one, otherwise make's.
-            h = Path(self.handler_log)
-            if h.exists() and h.stat().st_size > 0:
-                return self.handler_log
-            else:
-                return self.run_log
-        elif self.make_state == "finished":
-            # Execution handler finished, but timed out or otherwise wasn't successful
-            return self.handler_log
-
-    def fail(self, reason):
-        self.failed = True
-        self.finished = True
-        self.reason = reason
-
-    def success(self):
-        self.finished = True
-
-    def __str__(self):
-        if self.finished:
-            if self.failed:
-                return "[%s] failed (%s: see %s)" % (self.name, self.reason,
-                                                     self.get_error_log())
-            else:
-                return "[%s] passed" % self.name
-        else:
-            return "[%s] in progress (%s)" % (self.name, self.make_state)
-
-
-class MakeGenerator:
-    """Generates a Makefile which just calls a bunch of sub-make sessions
-
-    In any given test suite we may need to build dozens if not hundreds of
-    test cases. The cleanest way to parallelize this is to just let Make
-    do the parallelization, sharing the jobserver among all the different
-    sub-make targets.
-    """
-
-    GOAL_HEADER_TMPL = """.PHONY: {goal}
-{goal}:
-"""
-
-    MAKE_RULE_TMPL_CMAKE = """\t@echo sanity_test_{phase} {goal} >&2
-\tcmake  \\
-\t\t-G"{generator}"\\
-\t\t-S{directory}\\
-\t\t-B{outdir}\\
-\t\t-DEXTRA_CFLAGS="-Werror {cflags}"\\
-\t\t-DEXTRA_AFLAGS=-Wa,--fatal-warnings\\
-\t\t-DEXTRA_LDFLAGS="{ldflags}"\\
-\t\t{args}\\
-\t\t>{logfile} 2>&1
-"""
-    MAKE_RULE_TMPL_BLD = """\t{generator_cmd} -C {outdir}\\
-\t\t{verb} {make_args}\\
-\t\t>>{logfile} 2>&1
-"""
-    MAKE_RULE_TMPL_RUN = """\t@echo sanity_test_{phase} {goal} >&2
-\t{generator_cmd} -C {outdir}\\
-\t\t{verb} {make_args}\\
-\t\t>>{logfile} 2>&1
-"""
-
-    GOAL_FOOTER_TMPL = "\t@echo sanity_test_finished {goal} >&2\n\n"
-
-    re_make = re.compile(
-        "sanity_test_([A-Za-z0-9]+) (.+)|$|make[:] \*\*\* \[(.+:.+: )?(.+)\] Error.+$")
-
-    def __init__(self, base_outdir):
-        """MakeGenerator constructor
-
-        @param base_outdir Intended to be the base out directory. A make.log
-            file will be created here which contains the output of the
-            top-level Make session, as well as the dynamic control Makefile
-        @param verbose If true, pass V=1 to all the sub-makes which greatly
-            increases their verbosity
-        """
-        self.goals = {}
-        if not os.path.exists(base_outdir):
-            os.makedirs(base_outdir)
-        self.logfile = os.path.join(base_outdir, "make.log")
-        self.makefile = os.path.join(base_outdir, "Makefile")
-        self.deprecations = options.error_on_deprecations
-
-    def _get_rule_header(self, name):
-        return MakeGenerator.GOAL_HEADER_TMPL.format(goal=name)
-
-    def _get_sub_make(self, name, phase, workdir, outdir,
-                      logfile, args, make_args=""):
-        """
-        @param      args Arguments given to CMake
-        @param make_args Arguments given to the Makefile generated by CMake
-        """
-        args = " ".join(["-D{}".format(a) for a in args])
-        ldflags = ""
-        cflags = ""
-
-        if self.deprecations:
-            cflags = cflags + "  -Wno-deprecated-declarations"
-
-        ldflags="-Wl,--fatal-warnings"
-
-        if options.ninja:
-            generator = "Ninja"
-            generator_cmd = "ninja -j1"
-            verb = "-v" if VERBOSE else ""
-        else:
-            generator = "Unix Makefiles"
-            generator_cmd = "$(MAKE)"
-            verb = "VERBOSE=1" if VERBOSE else ""
-
-        if phase == 'running':
-            return MakeGenerator.MAKE_RULE_TMPL_RUN.format(
-                generator_cmd=generator_cmd,
-                phase=phase,
-                goal=name,
-                outdir=outdir,
-                verb=verb,
-                logfile=logfile,
-                make_args=make_args
-            )
-        else:
-            cmake_rule = MakeGenerator.MAKE_RULE_TMPL_CMAKE.format(
-                generator=generator,
-                phase=phase,
-                goal=name,
-                outdir=outdir,
-                cflags=cflags,
-                ldflags=ldflags,
-                directory=workdir,
-                args=args,
-                logfile=logfile,
-            )
-
-            if options.cmake_only:
-                build_rule = ""
-            else:
-                build_rule = MakeGenerator.MAKE_RULE_TMPL_BLD.format(
-                    generator_cmd=generator_cmd,
-                    outdir=outdir,
-                    verb=verb,
-                    make_args=make_args,
-                    logfile=logfile,
-                )
-
-            return cmake_rule + build_rule
-
-    def _get_rule_footer(self, name):
-        return MakeGenerator.GOAL_FOOTER_TMPL.format(goal=name)
-
-    def add_build_goal(self, name, directory, outdir,
-                       args, buildlog, make_args=""):
-        """Add a goal to invoke a build session
-
-        @param name A unique string name for this build goal. The results
-            dictionary returned by execute() will be keyed by this name.
-        @param directory Absolute path to working directory, will be passed
-            to make -C
-        @param outdir Absolute path to output directory, will be passed to
-            cmake via -B=<path>
-        @param args Extra command line arguments to pass to 'cmake', typically
-            environment variables or specific Make goals
-        """
-
-        if not os.path.exists(outdir):
-            os.makedirs(outdir)
-
-        build_logfile = os.path.join(outdir, buildlog)
-        text = self._get_rule_header(name)
-        text +=  self._get_sub_make(name, "building", directory, outdir, build_logfile,
-                args, make_args=make_args)
-        text += self._get_rule_footer(name)
-
-        self.goals[name] = MakeGoal( name, text, None, self.logfile, build_logfile, None, None)
-
-    def add_goal(self, instance, type, args, make_args=""):
-
-        """Add a goal to build a Zephyr project and then run it using a handler
-
-        The generated make goal invokes Make twice, the first time it will
-        build the default goal, and the second will invoke the 'qemu' goal.
-        The output of the handler session will be monitored, and terminated
-        either upon pass/fail result of the test program, or the timeout
-        is reached.
-
-        @param args Extra cache entries to define in CMake.
-        """
-
-        name = instance.name
-        directory = instance.test.test_path
-        outdir = instance.outdir
-
-        build_logfile = os.path.join(outdir, "build.log")
-        run_logfile = os.path.join(outdir, "run.log")
-
-        if not os.path.exists(outdir):
-            os.makedirs(outdir)
-
-        handler = None
-        if type == "qemu":
-            handler = QEMUHandler(instance, "qemu")
-        elif type == "native":
-            handler = BinaryHandler(instance, "native")
-            # defined by __build_dir in cmake/boilerplate.cmake
-            handler.binary = os.path.join(outdir, "zephyr", "zephyr.exe")
-        elif type == "nsim":
-            handler = BinaryHandler(instance, "nsim")
-            handler.call_make_run = True
-        elif type == "unit":
-            handler = BinaryHandler(instance, "unit")
-            handler.binary = os.path.join(outdir, "testbinary")
-            if options.enable_coverage:
-                args += ["EXTRA_LDFLAGS=--coverage"]
-        elif type == "device":
-            handler = DeviceHandler(instance, "device")
-        elif type == "renode":
-            handler = BinaryHandler(instance, "renode")
-            handler.pid_fn = os.path.join(instance.outdir, "renode.pid")
-            handler.call_make_run = True
-
-        if type == 'qemu':
-            args.append("QEMU_PIPE=%s" % handler.get_fifo())
-
-        text = self._get_rule_header(name)
-        if not options.test_only:
-            text += self._get_sub_make(name, "building", directory, outdir,
-                                       build_logfile, args, make_args=make_args)
-        if handler and handler.run:
-            text += self._get_sub_make(name, "running", directory,
-                                   outdir, run_logfile,
-                                   args, make_args="run")
-
-        text += self._get_rule_footer(name)
-
-        self.goals[name] = MakeGoal(name, text, handler, self.logfile, build_logfile,
-                                    run_logfile, handler.log if handler else None)
-
-
-    def add_test_instance(self, ti, extra_args=[]):
-        """Add a goal to build/test a TestInstance object
-
-        @param ti TestInstance object to build. The status dictionary returned
-            by execute() will be keyed by its .name field.
-        """
-        args = ti.test.extra_args[:]
-
-        # merge overlay files into one variable
-        overlays = ""
-        idx = 0
-        for a in args:
-            m = re.search('OVERLAY_CONFIG="(.*)"', a)
-            if m:
-                overlays += m.group(1)
-                del args[idx]
-                idx += 1
-
-        if len(ti.test.extra_configs) > 0 or options.coverage:
-            args.append("OVERLAY_CONFIG=\"%s %s\"" %(overlays,
-                        os.path.join(ti.outdir,
-                                     "sanitycheck", "testcase_extra.conf")))
-
-        if ti.test.type == "unit" and options.enable_coverage:
-            args.append("COVERAGE=1")
-
-        args.append("BOARD={}".format(ti.platform.name))
-        args.extend(extra_args)
-
-        do_build_only = ti.build_only or options.build_only
-        do_run = not do_build_only and not options.cmake_only
-        skip_slow = ti.test.slow and not options.enable_slow
-
-        # FIXME: Need refactoring and cleanup
-        type = None
-        if ti.platform.qemu_support and do_run:
-            type = "qemu"
-        elif ti.test.type == "unit":
-            type = "unit"
-        elif ti.platform.type == "native" and do_run:
-            type = "native"
-        elif ti.platform.simulation == "nsim" and do_run:
-            if find_executable("nsimdrv"):
-                type = "nsim"
-        elif ti.platform.simulation == "renode" and do_run:
-            if find_executable("renode"):
-                type = "renode"
-        elif options.device_testing and (not ti.build_only) and (not options.build_only):
-            type = "device"
-
-        if not skip_slow:
-            self.add_goal(ti, type, args)
-        else:
-            verbose("Skipping slow test: " + ti.name)
-
-    def _remove_unkept_files(self, base_path, keep_paths):
-        for dirpath, dirnames, filenames in os.walk(base_path, topdown=False):
-            for name in filenames:
-                path = os.path.join(dirpath, name)
-                if path not in keep_paths:
-                    os.remove(path)
-            # Remove empty directories and symbolic links to directories
-            for dir in dirnames:
-                path = os.path.join(dirpath, dir)
-                if os.path.islink(path):
-                    os.remove(path)
-                elif not os.listdir(path):
-                    os.rmdir(path)
-
-
-    def execute(self, callback_fn=None, context=None, keep_files=None):
-        """Execute all the registered build goals
-
-        @param callback_fn If not None, a callback function will be called
-            as individual goals transition between states. This function
-            should accept two parameters: a string state and an arbitrary
-            context object, supplied here
-        @param context Context object to pass to the callback function.
-            Type and semantics are specific to that callback function.
-        @param keep_files If not None, we will remove all files except those
-            defined in keep_files.  keep_files is a dictionary with the key
-            being the 'goal' and the value is a pair.  The pair first element
-            is the dir path of the test and the second is a list of file paths
-            that we should keep.
-        @return A dictionary mapping goal names to final status.
-        """
-
-        with open(self.makefile, "wt") as tf, \
-                open(os.devnull, "wb") as devnull, \
-                open(self.logfile, "wt") as make_log:
-            # Create our dynamic Makefile and execute it.
-            # Watch stderr output which is where we will keep
-            # track of build state
-            tf.write('\n# Generated by %s which is expected\n' % __file__)
-            tf.write('# to create QEMU_PIPE, spawn zephyr.exe, etc. \n\n')
-            for name, goal in sorted(self.goals.items()):
-                tf.write(goal.text)
-            tf.write("all: %s\n" % (" ".join(sorted(self.goals.keys()))))
-            tf.flush()
-
-            cmd = ["make", "-k", "-j", str(JOBS), "-f", tf.name, "all"]
-
-            # assure language neutral environment
-            make_env = os.environ.copy()
-            make_env['LC_MESSAGES'] = 'C.UTF-8'
-            verbose("In %s, spawning: " % os.getcwd()
-                    + " ".join(shlex.quote(word)for word in cmd))
-            p = subprocess.Popen(cmd, stderr=subprocess.PIPE,
-                                 stdout=devnull, env=make_env)
-
-            for line in iter(p.stderr.readline, b''):
-                line = line.decode("utf-8")
-                make_log.write(line)
-                verbose("MAKE: " + repr(line.strip()))
-                m = MakeGenerator.re_make.match(line)
-                if not m:
-                    continue
-
-                state, name, _, error = m.groups()
-                if error:
-                    goal = self.goals[error]
-                    # Sometimes QEMU will run an image and then crash out, which
-                    # will cause the 'make run' invocation to exit with
-                    # nonzero status.
-                    # Need to distinguish this case from a compilation failure.
-                    if goal.make_state == "building":
-                        goal.fail("build_error")
-                    elif goal.handler:
-                        goal.fail("handler_crash")
-                    else:
-                        goal.fail("unknown_error")
-
-                else:
-                    goal = self.goals[name]
-                    goal.make_state = state
-
-                    if state == "finished":
-                        if goal.handler and not options.cmake_only:
-                            if hasattr(goal.handler, "handle"):
-                                goal.handler.handle()
-                                goal.handler_log = goal.handler.log
-
-                            thread_status, metrics = goal.handler.get_state()
-                            goal.metrics.update(metrics)
-                            if thread_status == "passed":
-                                goal.success()
-                            else:
-                                goal.fail(thread_status)
-                        else:
-                            goal.success()
-
-                        if keep_files is not None:
-                            tc_path, keep_paths = keep_files[name]
-                            self._remove_unkept_files(tc_path, keep_paths)
-
-                if callback_fn:
-                    callback_fn(context, self.goals, goal)
-
-            p.wait()
-        return self.goals
-
-
 # "list" - List of strings
 # "list:<type>" - List of <type>
 # "set" - Set of unordered, unique strings
@@ -1528,14 +1094,20 @@ class SanityConfigParser:
 
         @param filename Source .yaml file to read
         """
-        self.data = scl.yaml_load_verify(filename, schema)
+        self.data = {}
+        self.schema = schema
         self.filename = filename
         self.tests = {}
         self.common = {}
+
+    def load(self):
+        self.data = scl.yaml_load_verify(self.filename, self.schema)
+
         if 'tests' in self.data:
             self.tests = self.data['tests']
         if 'common' in self.data:
             self.common = self.data['common']
+
 
     def _cast_value(self, value, typestr):
         if isinstance(value, str):
@@ -1650,20 +1222,37 @@ class Platform:
 
     Maps directly to BOARD when building"""
 
-    yaml_platform_schema = scl.yaml_load(
-        os.path.join(
-            ZEPHYR_BASE,
-            "scripts",
-            "sanity_chk",
-            "sanitycheck-platform-schema.yaml"))
+    platform_schema = scl.yaml_load(os.path.join(ZEPHYR_BASE,
+            "scripts","sanity_chk","platform-schema.yaml"))
 
-    def __init__(self, cfile):
+    def __init__(self):
         """Constructor.
 
-        @param cfile Path to platform configuration file, which gives
-            info about the platform to be added.
         """
-        scp = SanityConfigParser(cfile, self.yaml_platform_schema)
+
+        self.name = ""
+        self.sanitycheck = True
+        # if no RAM size is specified by the board, take a default of 128K
+        self.ram = 128
+
+        self.ignore_tags = []
+        self.default = False
+        # if no flash size is specified by the board, take a default of 512K
+        self.flash = 512
+        self.supported = set()
+
+        self.qemu_support = False
+        self.arch = ""
+        self.type = "na"
+        self.simulation = "na"
+        self.supported_toolchains = []
+        self.env = []
+        self.env_satisfied = True
+        self.filter_data = dict()
+
+    def load(self, platform_file):
+        scp = SanityConfigParser(platform_file, self.platform_schema)
+        scp.load()
         data = scp.data
 
         self.name = data['identifier']
@@ -1690,36 +1279,17 @@ class Platform:
         for env in self.env:
             if os.environ.get(env, None) == None:
                 self.env_satisfied = False
-        self.defconfig = None
-        pass
+
 
     def __repr__(self):
         return "<%s on %s>" % (self.name, self.arch)
 
-
-class Architecture:
-    """Class representing metadata for a particular architecture
-    """
-
-    def __init__(self, name, platforms):
-        """Architecture constructor
-
-        @param name String name for this architecture
-        @param platforms list of platforms belonging to this architecture
-        """
-        self.platforms = platforms
-
-        self.name = name
-
-    def __repr__(self):
-        return "<arch %s>" % self.name
-
-
-class TestCase:
+class TestCase(object):
     """Class representing a test application
     """
 
-    def __init__(self, testcase_root, workdir, name, tc_dict, yamlfile):
+
+    def __init__(self):
         """TestCase constructor.
 
         This gets called by TestSuite as it finds and reads test yaml files.
@@ -1741,39 +1311,34 @@ class TestCase:
         @param tc_dict Dictionary with test values for this test case
             from the testcase.yaml file
         """
-        self.test_path = os.path.join(testcase_root, workdir)
 
-        self.id = name
+        self.id = ""
+        self.source_dir = ""
         self.cases = []
-        self.type = tc_dict["type"]
-        self.tags = tc_dict["tags"]
-        self.extra_args = tc_dict["extra_args"]
-        self.extra_configs = tc_dict["extra_configs"]
-        self.arch_whitelist = tc_dict["arch_whitelist"]
-        self.arch_exclude = tc_dict["arch_exclude"]
-        self.skip = tc_dict["skip"]
-        self.platform_exclude = tc_dict["platform_exclude"]
-        self.platform_whitelist = tc_dict["platform_whitelist"]
-        self.toolchain_exclude = tc_dict["toolchain_exclude"]
-        self.toolchain_whitelist = tc_dict["toolchain_whitelist"]
-        self.tc_filter = tc_dict["filter"]
-        self.timeout = tc_dict["timeout"]
-        self.harness = tc_dict["harness"]
-        self.harness_config = tc_dict["harness_config"]
-        self.build_only = tc_dict["build_only"]
-        self.build_on_all = tc_dict["build_on_all"]
-        self.slow = tc_dict["slow"]
-        self.min_ram = tc_dict["min_ram"]
-        self.depends_on = tc_dict["depends_on"]
-        self.min_flash = tc_dict["min_flash"]
-        self.extra_sections = tc_dict["extra_sections"]
+        self.name = ""
 
-        self.name = self.get_unique(testcase_root, workdir, name)
-
-        self.defconfig = {}
-        self.dt_config = {}
-        self.cmake_cache = {}
-        self.yamlfile = yamlfile
+        self.type = None
+        self.tags = None
+        self.extra_args = None
+        self.extra_configs = None
+        self.arch_whitelist = None
+        self.arch_exclude = None
+        self.skip = None
+        self.platform_exclude = None
+        self.platform_whitelist = None
+        self.toolchain_exclude = None
+        self.toolchain_whitelist = None
+        self.tc_filter = None
+        self.timeout = 60
+        self.harness = ""
+        self.harness_config = {}
+        self.build_only = True
+        self.build_on_all = False
+        self.slow = False
+        self.min_ram = None
+        self.depends_on = None
+        self.min_flash = None
+        self.extra_sections = None
 
 
     def get_unique(self, testcase_root, workdir, name):
@@ -1862,9 +1427,8 @@ class TestCase:
                 error("%s: can't find: %s" % (filename, e))
         return subcases
 
-
-    def parse_subcases(self):
-        results = self.scan_path(self.test_path)
+    def parse_subcases(self, test_path):
+        results = self.scan_path(os.path.dirname(test_path))
         for sub in results:
             name = "{}.{}".format(self.id, sub)
             self.cases.append(name)
@@ -1886,44 +1450,92 @@ class TestInstance:
         out directory used is <outdir>/<platform>/<test case name>
     """
 
-    def __init__(self, test, platform, base_outdir):
-        self.test = test
-        self.platform = platform
-        self.name = os.path.join(platform.name, test.name)
-        self.outdir = os.path.join(base_outdir, platform.name, test.name)
+    def __init__(self, testcase, platform, base_outdir):
 
-        self.build_only = options.build_only or test.build_only \
-                or self.check_dependency() or options.cmake_only
+        self.testcase = testcase
+        self.platform = platform
+
+        self.status = None
+        self.reason = "N/A"
+        self.metrics = dict()
+        self.handler = None
+
+
+        self.name = os.path.join(platform.name, testcase.name)
+        self.build_dir = os.path.join(base_outdir, platform.name, testcase.name)
+
+        self.build_only = self.check_build_or_run()
+        self.run = not self.build_only
+
         self.results = {}
 
     def __lt__(self, other):
         return self.name < other.name
 
-    def check_dependency(self):
-        build_only = False
-        if self.test.harness == 'console':
-            if "fixture" in self.test.harness_config:
-                fixture = self.test.harness_config['fixture']
-                if fixture not in options.fixture:
-                    build_only = True
-        elif self.test.harness:
-            build_only = True
+    def check_build_or_run(self):
 
-        return build_only
+        build_only = True
+
+        # we asked for build-only on the command line
+        if options.build_only:
+            return True
+
+        # The testcase is designed to be build only.
+        if self.testcase.build_only:
+            return True
+
+        # Do not run slow tests:
+        skip_slow = self.testcase.slow and not options.enable_slow
+        if skip_slow:
+            return True
+
+        runnable = False
+
+        if self.platform.qemu_support or \
+            self.testcase.type == "unit" or \
+            self.platform.type == "native" or \
+            self.platform.simulation in ["nsim", "renode"] or \
+            options.device_testing:
+
+            runnable = True
+        else:
+            runnable = False
+
+        # console harness allows us to run the test and capture data.
+        if self.testcase.harness == 'console':
+
+            # if we have a fixture that is also being supplied on the
+            # command-line, then we need to run the test, not just build it.
+            if "fixture" in self.testcase.harness_config:
+                fixture = self.testcase.harness_config['fixture']
+                if fixture in options.fixture:
+                    build_only = False
+                else:
+                    build_only = True
+            else:
+                build_only = False
+        elif self.testcase.harness:
+            build_only = True
+        else:
+            build_only = False
+
+        verbose("{} is {} on {}".format(self.name, "runnable" if  (not build_only and runnable) else "not runnable", self.platform))
+        return not (not build_only and runnable)
+
 
     def create_overlay(self, platform):
         # Create this in a "sanitycheck/" subdirectory otherwise this
         # will pass this overlay to kconfig.py *twice* and kconfig.cmake
         # will silently give that second time precedence over any
         # --extra-args=CONFIG_*
-        subdir = os.path.join(self.outdir, "sanitycheck")
+        subdir = os.path.join(self.build_dir, "sanitycheck")
         os.makedirs(subdir, exist_ok=True)
         file = os.path.join(subdir, "testcase_extra.conf")
         with open(file, "w") as f:
             content = ""
 
-            if len(self.test.extra_configs) > 0:
-                content = "\n".join(self.test.extra_configs)
+            if len(self.testcase.extra_configs) > 0:
+                content = "\n".join(self.testcase.extra_configs)
 
             if options.enable_coverage:
                 if platform in options.coverage_platform:
@@ -1939,59 +1551,630 @@ class TestInstance:
 
         @return A SizeCalculator object
         """
-        fns = glob.glob(os.path.join(self.outdir, "zephyr", "*.elf"))
-        fns.extend(glob.glob(os.path.join(self.outdir, "zephyr", "*.exe")))
+        fns = glob.glob(os.path.join(self.build_dir, "zephyr", "*.elf"))
+        fns.extend(glob.glob(os.path.join(self.build_dir, "zephyr", "*.exe")))
         fns = [x for x in fns if not x.endswith('_prebuilt.elf')]
         if (len(fns) != 1):
             raise BuildError("Missing/multiple output ELF binary")
-        return SizeCalculator(fns[0], self.test.extra_sections)
+
+        return SizeCalculator(fns[0], self.testcase.extra_sections)
 
     def __repr__(self):
-        return "<TestCase %s on %s>" % (self.test.name, self.platform.name)
+        return "<TestCase %s on %s>" % (self.testcase.name, self.platform.name)
 
 
-def defconfig_cb(context, goals, goal):
-    if not goal.failed:
+class CMake():
+
+    config_re = re.compile('(CONFIG_[A-Za-z0-9_]+)[=]\"?([^\"]*)\"?$')
+    dt_re = re.compile('([A-Za-z0-9_]+)[=]\"?([^\"]*)\"?$')
+
+    def __init__(self, testcase, platform, source_dir, build_dir):
+
+        self.cwd = None
+        self.capture_output = True
+
+        self.defconfig = {}
+        self.cmake_cache = {}
+        self.devicetree = {}
+
+        self.instance = None
+        self.testcase = testcase
+        self.platform = platform
+        self.source_dir = source_dir
+        self.build_dir = build_dir
+        self.log = "build.log"
         return
 
-    info("%sCould not build defconfig for %s%s" %
-         (COLOR_RED, goal.name, COLOR_NORMAL))
-    if INLINE_LOGS:
-        with open(goal.get_error_log()) as fp:
-            data = fp.read()
-            sys.stdout.write(data)
-            if log_file:
-                log_file.write(data)
-    else:
-        info("\tsee: " + COLOR_YELLOW + goal.get_error_log() + COLOR_NORMAL)
+
+    def parse_generated(self):
+        return {}
+
+
+    def run_build(self, args=[]):
+
+        verbose("Building %s for %s" % (self.source_dir, self.platform.name))
+
+        cmake_args = []
+        cmake_args.extend(args)
+
+
+        cmake = shutil.which('cmake')
+        cmd = [cmake] + cmake_args
+        kwargs = dict()
+
+        if self.capture_output:
+            kwargs['stdout'] = subprocess.PIPE
+            # CMake sends the output of message() to stderr unless it's STATUS
+            kwargs['stderr'] = subprocess.STDOUT
+
+        if self.cwd:
+            kwargs['cwd'] = self.cwd
+
+        p = subprocess.Popen(cmd, **kwargs)
+        out, _ = p.communicate()
+
+        results = {}
+        if p.returncode == 0:
+            msg = "Finished building %s for %s" %(self.source_dir, self.platform.name)
+
+            results = {'msg': msg, "returncode": p.returncode, "instance": self.instance}
+
+            self.instance.status = "passed"
+            self.instance.reason = ""
+
+            if out:
+                log_msg = out.decode(sys.getdefaultencoding())
+                with open(os.path.join(self.build_dir, self.log), "a") as log:
+                    log.write(log_msg)
+
+            else:
+                return None
+        else:
+            # A real error occurred, raise an exception
+            if out:
+                log_msg = out.decode(sys.getdefaultencoding())
+                with open(os.path.join(self.build_dir, self.log), "a") as log:
+                    log.write(log_msg)
+
+
+            self.instance.status = "failed"
+            self.instance.reason = "Build failure"
+            results = {
+                    "returncode": p.returncode,
+                    "instance": self.instance,
+                    }
+
+        return results
+
+    def run_cmake(self, args=[]):
+
+        verbose("Running cmake on %s for %s" %(self.source_dir, self.platform.name))
+
+        cmake_args = ['-B{}'.format(self.build_dir),
+                      '-S{}'.format(self.source_dir),
+                      '-G{}'.format(get_generator()[1])]
+
+        args = ["-D{}".format(a.replace('"', '')) for a in args]
+        cmake_args.extend(args)
+
+        cmake_opts = ['-DBOARD={}'.format(self.platform.name)]
+        cmake_args.extend(cmake_opts)
+
+        cmake = shutil.which('cmake')
+        cmd = [cmake] + cmake_args
+        kwargs = dict()
+
+        if self.capture_output:
+            kwargs['stdout'] = subprocess.PIPE
+            # CMake sends the output of message() to stderr unless it's STATUS
+            kwargs['stderr'] = subprocess.STDOUT
+
+        if self.cwd:
+            kwargs['cwd'] = self.cwd
+
+        p = subprocess.Popen(cmd, **kwargs)
+        out, _ = p.communicate()
+
+        if p.returncode == 0:
+            filter_results = self.parse_generated()
+            msg = "Finished building %s for %s" %(self.source_dir, self.platform.name)
+
+            results = {'msg': msg, 'filter': filter_results}
+
+        else:
+            results = {"returncode": p.returncode}
+
+
+        if out:
+            with open(os.path.join(self.build_dir, self.log), "a") as log:
+                log_msg = out.decode(sys.getdefaultencoding())
+                log.write(log_msg)
+
+        return(results)
+
+
+class FilterBuilder(CMake):
+
+    def __init__(self, testcase, platform, source_dir, build_dir):
+        super().__init__(testcase, platform, source_dir, build_dir)
+
+        self.log = "config-sanitycheck.log"
+
+    def parse_generated(self):
+
+        _generated_dt_confg = "include/generated/generated_dts_board.conf"
+
+        cmake_cache_path = os.path.join(self.build_dir, "CMakeCache.txt")
+        dt_config_path = os.path.join(self.build_dir, "zephyr", _generated_dt_confg)
+        defconfig_path = os.path.join(self.build_dir, "zephyr", ".config")
+
+        with open(defconfig_path, "r") as fp:
+            defconfig = {}
+            for line in fp.readlines():
+                m = self.config_re.match(line)
+                if not m:
+                    if line.strip() and not line.startswith("#"):
+                        sys.stderr.write("Unrecognized line %s\n" % line)
+                    continue
+                defconfig[m.group(1)] = m.group(2).strip()
+
+        self.defconfig = defconfig
+
+        cmake_conf = {}
+        try:
+            cache = CMakeCache.from_file(cmake_cache_path)
+        except FileNotFoundError:
+            cache = {}
+
+        for k in iter(cache):
+            cmake_conf[k.name] = k.value
+
+        self.cmake_cache = cmake_conf
+
+        dt_conf = {}
+        if os.path.exists(dt_config_path):
+            with open(dt_config_path, "r") as fp:
+                for line in fp.readlines():
+                    m = self.dt_re.match(line)
+                    if not m:
+                        if line.strip() and not line.startswith("#"):
+                            sys.stderr.write("Unrecognized line %s\n" % line)
+                        continue
+                    dt_conf[m.group(1)] = m.group(2).strip()
+        self.devicetree = dt_conf
+
+        filter_data = {
+            "ARCH": self.platform.arch,
+            "PLATFORM": self.platform.name
+        }
+        filter_data.update(os.environ)
+        filter_data.update(self.defconfig)
+        filter_data.update(self.cmake_cache)
+        filter_data.update(self.devicetree)
+
+        if self.testcase:
+            try:
+                res = expr_parser.parse(self.testcase.tc_filter, filter_data)
+            except (ValueError, SyntaxError) as se:
+                sys.stderr.write(
+                    "Failed processing %s\n" % self.testcase.yamlfile)
+                raise se
+
+            if not res:
+                return {os.path.join(self.platform.name, self.testcase.name): True}
+            else:
+                return {os.path.join(self.platform.name, self.testcase.name): False}
+        else:
+            self.platform.filter_data = filter_data
+            return filter_data
+
+
+class ProjectBuilder(CMake):
+
+    def __init__(self, suite, instance):
+        super().__init__(instance.testcase, instance.platform, instance.testcase.source_dir, instance.build_dir)
+
+        self.log = "build.log"
+        self.instance = instance
+        self.suite = suite
+
+    def setup_handler(self):
+
+        instance = self.instance
+        args = []
+
+        if instance.run:
+            # FIXME: Needs simplification
+            if instance.platform.qemu_support:
+                instance.handler = QEMUHandler(instance, "qemu")
+                args.append("QEMU_PIPE=%s" % instance.handler.get_fifo())
+                instance.handler.call_make_run = True
+            elif instance.testcase.type == "unit":
+                instance.handler = BinaryHandler(instance, "unit")
+                instance.handler.binary = os.path.join(instance.build_dir, "testbinary")
+            elif instance.platform.type == "native":
+                instance.handler = BinaryHandler(instance, "native")
+                instance.handler.binary = os.path.join(instance.build_dir, "zephyr", "zephyr.exe")
+            elif instance.platform.simulation == "nsim":
+                if find_executable("nsimdrv"):
+                    instance.handler = BinaryHandler(instance, "nsim")
+                    instance.handler.call_make_run = True
+            elif instance.platform.simulation == "renode":
+                if find_executable("renode"):
+                    instance.handler = BinaryHandler(instance, "renode")
+                    instance.handler.pid_fn = os.path.join(instance.build_dir, "renode.pid")
+                    instance.handler.call_make_run = True
+            elif options.device_testing:
+                instance.handler = DeviceHandler(instance, "device")
+
+        if instance.handler:
+            instance.handler.args = args
+
+    def process(self, message):
+        op = message.get('op')
+
+        if not self.instance.handler:
+            self.setup_handler()
+
+        # The build process, call cmake and build with configured generator
+        if op == "cmake":
+            results = self.cmake()
+            if options.cmake_only:
+                pipeline.put({"op": "report", "test": self.instance, "status": "cmake"})
+            else:
+                pipeline.put({"op": "build", "test": self.instance, "status": "cmake"})
+
+
+        elif op == "build":
+            verbose("build test: %s" %self.instance.name)
+            results = self.build()
+
+            if results.get('returncode', 1) > 0:
+                pipeline.put({"op": "report", "test": self.instance, "status": "failure"})
+            else:
+                if self.instance.run:
+                    pipeline.put({"op": "run", "test": self.instance, "status": "built"})
+                else:
+                    pipeline.put({"op": "report", "test": self.instance, "status": "built"})
+        # Run the generated binary using one of the supported handlers
+        elif op == "run":
+            verbose("run test: %s" %self.instance.name)
+            self.run()
+            self.instance.status, self.instance.metrics = self.instance.handler.get_state()
+            pipeline.put({"op": "report", "test": self.instance, "state": "executed", "status": self.instance.status, "reason": None})
+        # Report results and output progress to screen
+        elif op == "report":
+            self.report_out(self.suite)
+
+    def report_out(self, report):
+        total_tests_width = len(str(self.suite.total_tests))
+
+        self.suite.total_done += 1
+        instance = self.instance
+        if instance.status in ["failed", "timeout"]:
+            self.suite.total_failed += 1
+            if VERBOSE or not TERMINAL:
+                status = COLOR_RED + "FAILED" + COLOR_NORMAL + ": " + instance.reason
+            else:
+                info(
+                    "\n\n{:<25} {:<50} {}FAILED{}: {}".format(
+                        instance.platform.name,
+                        instance.testcase.name,
+                        COLOR_RED,
+                        COLOR_NORMAL,
+                        instance.reason), False)
+
+        else:
+            status = COLOR_GREEN + "PASSED" + COLOR_NORMAL
+
+        if VERBOSE or not TERMINAL:
+            if options.cmake_only:
+                handler_type = "cmake"
+            else:
+                if instance.handler:
+                    handler_type = instance.handler.type_str
+                    htime = instance.metrics.get("handler_time", None)
+                    if htime:
+                        handler_type += " {:.3f}s".format(htime)
+                else:
+                    handler_type = "build"
+
+            info("{:>{}}/{} {:<25} {:<50} {} ({})".format(
+                self.suite.total_done, total_tests_width, self.suite.total_tests, instance.platform.name,
+                instance.testcase.name, status, handler_type))
+        else:
+                sys.stdout.write(
+                    "\rtotal complete: %s%4d/%4d%s  %2d%%  failed: %s%4d%s" %
+                    (COLOR_GREEN, self.suite.total_done, self.suite.total_tests, COLOR_NORMAL,
+                     int((float(self.suite.total_done) / self.suite.total_tests) * 100),
+                     COLOR_RED if self.suite.total_failed > 0 else COLOR_NORMAL, self.suite.total_failed,
+                     COLOR_NORMAL))
+        sys.stdout.flush()
+
+    def cmake(self):
+
+        instance = self.instance
+        args = self.testcase.extra_args[:]
+
+        if instance.handler:
+            args += instance.handler.args
+
+        # merge overlay files into one variable
+        overlays = ""
+        idx = 0
+        for arg in args:
+            match = re.search('OVERLAY_CONFIG="(.*)"', arg)
+            if match:
+                overlays += match.group(1)
+                del args[idx]
+                idx += 1
+
+        if len(self.testcase.extra_configs) > 0 or options.coverage:
+            args.append("OVERLAY_CONFIG=\"%s %s\"" %(overlays,
+                        os.path.join(instance.build_dir,
+                                     "sanitycheck", "testcase_extra.conf")))
+
+        results = self.run_cmake(args)
+
+        return results
+
+    def build(self):
+        results = self.run_build(['--build', self.build_dir])
+        return results
+
+    def run(self):
+        instance = self.instance
+
+        instance.handler.handle()
+        if instance.handler.type_str == "qemu":
+            verbose("Running %s (%s)" %(instance.name, instance.handler.type_str))
+
+            start_time = time.time()
+            command = [get_generator()[0]]
+            command += ["-C", self.build_dir, "run"]
+
+            with subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=self.build_dir) as proc:
+                verbose("Spawning QEMUHandler Thread for %s" % instance.name)
+                proc.wait()
+                self.returncode = proc.returncode
+
+            instance.metrics["handler_time"] = time.time() - start_time
+
+
+pipeline = queue.LifoQueue()
+
+class BoundedExecutor(concurrent.futures.ThreadPoolExecutor):
+    """BoundedExecutor behaves as a ThreadPoolExecutor which will block on
+    calls to submit() once the limit given as "bound" work items are queued for
+    execution.
+    :param bound: Integer - the maximum number of items in the work queue
+    :param max_workers: Integer - the size of the thread pool
+    """
+    def __init__(self, bound, max_workers, **kwargs):
+        super().__init__(max_workers, kwargs)
+        #self.executor = ThreadPoolExecutor(max_workers=max_workers)
+        self.semaphore = BoundedSemaphore(bound + max_workers)
+
+    """See concurrent.futures.Executor#submit"""
+    def submit(self, fn, *args, **kwargs):
+        self.semaphore.acquire()
+        try:
+            future = super().submit(fn, *args, **kwargs)
+        except:
+            self.semaphore.release()
+            raise
+        else:
+            future.add_done_callback(lambda x: self.semaphore.release())
+            return future
+
+    """See concurrent.futures.Executor#shutdown"""
+    def shutdown(self, wait=True):
+        super().shutdown(wait)
 
 
 class TestSuite:
     config_re = re.compile('(CONFIG_[A-Za-z0-9_]+)[=]\"?([^\"]*)\"?$')
     dt_re = re.compile('([A-Za-z0-9_]+)[=]\"?([^\"]*)\"?$')
 
-    yaml_tc_schema = scl.yaml_load(
+    tc_schema = scl.yaml_load(
         os.path.join(ZEPHYR_BASE,
-                     "scripts", "sanity_chk", "sanitycheck-tc-schema.yaml"))
+                     "scripts", "sanity_chk", "testcase-schema.yaml"))
 
     def __init__(self, board_root_list, testcase_roots, outdir):
+
+
+        self.roots = testcase_roots
+        self.board_roots = board_root_list
+
         # Keep track of which test cases we've filtered out and why
-        self.arches = {}
         self.testcases = {}
         self.platforms = []
         self.outdir = os.path.abspath(outdir)
-        self.instances = {}
-        self.goals = None
         self.discards = None
         self.load_errors = 0
+        self.instances = OrderedDict()
 
-        for testcase_root in testcase_roots:
-            testcase_root = os.path.abspath(testcase_root)
+        self.total_tests = 0
+        self.total_cases = 0
+        self.total_done = 0
+        self.total_failed = 0
+        self.total_platforms = 0
+        self.start_time = 0
+        self.duration = 0
+        self.warnings = 0
 
-            debug("Reading test case configuration files under %s..." %
-                  testcase_root)
-            for dirpath, dirnames, filenames in os.walk(testcase_root,
-                                                        topdown=True):
+        # figure out which report to use for size comparison
+        if options.compare_report:
+            self.report_to_use = options.compare_report
+        elif options.last_metrics:
+            self.report_to_use = LAST_SANITY
+        else:
+            self.report_to_use = RELEASE_DATA
+
+        if options.jobs:
+            self.jobs = options.jobs
+        elif options.build_only:
+            self.jobs = multiprocessing.cpu_count() * 2
+        else:
+            self.jobs = multiprocessing.cpu_count()
+
+        info("JOBS: %d" % self.jobs)
+
+    def update(self):
+        self.total_tests = len(self.instances)
+        self.total_cases = len(self.testcases)
+
+
+    def compare_metrics(self, filename):
+        # name, datatype, lower results better
+        interesting_metrics = [("ram_size", int, True),
+                               ("rom_size", int, True)]
+
+
+        if not os.path.exists(filename):
+            info("Cannot compare metrics, %s not found" % filename)
+            return []
+
+        results = []
+        saved_metrics = {}
+        with open(filename) as fp:
+            cr = csv.DictReader(fp)
+            for row in cr:
+                d = {}
+                for m, _, _ in interesting_metrics:
+                    d[m] = row[m]
+                saved_metrics[(row["test"], row["platform"])] = d
+
+        for instance in self.instances.values():
+            mkey = (instance.testcase.name, instance.platform.name)
+            if mkey not in saved_metrics:
+                continue
+            sm = saved_metrics[mkey]
+            for metric, mtype, lower_better in interesting_metrics:
+                if metric not in instance.metrics:
+                    continue
+                if sm[metric] == "":
+                    continue
+                delta = instance.metrics[metric] - mtype(sm[metric])
+                if delta == 0:
+                    continue
+                results.append((instance, metric, instance.metrics[metric], delta,
+                                lower_better))
+        return results
+
+    def misc_reports(self, report, show_footprint, all_deltas,
+                     footprint_threshold, last_metrics):
+        deltas = self.compare_metrics(report)
+        self.warnings = 0
+        if deltas and show_footprint:
+            for i, metric, value, delta, lower_better in deltas:
+                if not all_deltas and ((delta < 0 and lower_better) or
+                                            (delta > 0 and not lower_better)):
+                    continue
+
+                percentage = (float(delta) / float(value - delta))
+                if not all_deltas and (percentage <
+                                            (footprint_threshold / 100.0)):
+                    continue
+
+                info("{:<25} {:<60} {}{}{}: {} {:<+4}, is now {:6} {:+.2%}".format(
+                     i.platform.name, i.testcase.name, COLOR_YELLOW,
+                     "INFO" if all_deltas else "WARNING", COLOR_NORMAL,
+                     metric, delta, value, percentage))
+                warnings += 1
+
+        if self.warnings:
+            info("Deltas based on metrics from last %s" %
+                 ("release" if not last_metrics else "run"))
+
+    def summary(self, unrecognized_sections):
+        failed = 0
+        for instance in self.instances.values():
+            if instance.status == "fail":
+                failed += 1
+            elif instance.metrics.get("unrecognized") and not unrecognized_sections:
+                info("%sFAILED%s: %s has unrecognized binary sections: %s" %
+                     (COLOR_RED, COLOR_NORMAL, instance.name,
+                      str(instance.metrics["unrecognized"])))
+                failed += 1
+
+        info("%s%d of %d%s tests passed with %s%d%s warnings in %d seconds" %
+        (COLOR_RED if failed else COLOR_GREEN, self.total_tests - self.total_failed,
+        self.total_tests, COLOR_NORMAL, COLOR_YELLOW if self.warnings else COLOR_NORMAL,
+        self.warnings, COLOR_NORMAL, self.duration))
+
+        platforms = set(p.platform for p in self.instances.values())
+        self.total_platforms = len(self.platforms)
+        info("In total {} test cases were executed on {} out of total {} platforms ({:02.2f}%)".format(
+            self.total_cases,
+            len(platforms),
+            self.total_platforms,
+            (100 * len(platforms) / len(self.platforms))
+        ))
+
+
+    def save_reports(self, release, no_update, report_name):
+        if report_name:
+            self.testcase_report(report_name)
+
+        if not no_update:
+            self.testcase_xunit_report(LAST_SANITY_XUNIT, self.duration)
+            self.testcase_report(LAST_SANITY)
+
+        if release:
+            self.testcase_report(RELEASE_DATA)
+
+        if log_file:
+            log_file.close()
+
+
+    def add_configurations(self):
+
+        for board_root in self.board_roots:
+            board_root = os.path.abspath(board_root)
+
+            debug("Reading platform configuration files under %s..." %
+                board_root)
+
+            for file in glob.glob(os.path.join(board_root, "*", "*", "*.yaml")):
+                verbose("Found plaform configuration " + file)
+                try:
+                    platform = Platform()
+                    platform.load(file)
+                    if platform.sanitycheck:
+                        self.platforms.append(platform)
+
+                except RuntimeError as e:
+                    error("E: %s: can't load: %s" % (file, e))
+                    self.load_errors += 1
+
+        toolchain = self.get_toolchain()
+
+    def get_toolchain(self):
+        toolchain = os.environ.get("ZEPHYR_TOOLCHAIN_VARIANT", None) or \
+                    os.environ.get("ZEPHYR_GCC_VARIANT", None)
+
+        if toolchain == "gccarmemb":
+            # Remove this translation when gccarmemb is no longer supported.
+            toolchain = "gnuarmemb"
+
+        try:
+            if not toolchain:
+                raise SanityRuntimeError("E: Variable ZEPHYR_TOOLCHAIN_VARIANT is not defined")
+        except Exception as e:
+            print(str(e))
+            sys.exit(2)
+
+        return toolchain
+
+
+    def add_testcases(self):
+        for root in self.roots:
+            root = os.path.abspath(root)
+
+            debug("Reading test case configuration files under %s..." %root)
+
+            for dirpath, dirnames, filenames in os.walk(root, topdown=True):
                 verbose("scanning %s" % dirpath)
                 if 'sample.yaml' in filenames:
                     filename = 'sample.yaml'
@@ -2001,51 +2184,63 @@ class TestSuite:
                     continue
 
                 verbose("Found possible test case in " + dirpath)
+
                 dirnames[:] = []
-                yaml_path = os.path.join(dirpath, filename)
-                try:
-                    parsed_data = SanityConfigParser(
-                        yaml_path, self.yaml_tc_schema)
+                tc_path = os.path.join(dirpath, filename)
+                self.add_testcase(tc_path, root)
 
-                    workdir = os.path.relpath(dirpath, testcase_root)
+    def add_testcase(self, tc_data_file, root):
+        try:
+            parsed_data = SanityConfigParser(tc_data_file, self.tc_schema)
+            parsed_data.load()
 
-                    for name in parsed_data.tests.keys():
-                        tc_dict = parsed_data.get_test(name, testcase_valid_keys)
-                        tc = TestCase(testcase_root, workdir, name, tc_dict,
-                                      yaml_path)
-                        tc.parse_subcases()
-                        self.testcases[tc.name] = tc
+            tc_path = os.path.dirname(tc_data_file)
+            workdir = os.path.relpath(tc_path, root)
 
-                except Exception as e:
-                    error("E: %s: can't load (skipping): %s" % (yaml_path, e))
-                    self.load_errors += 1
+            for name in parsed_data.tests.keys():
+                tc = TestCase()
+                tc.name = tc.get_unique(root, workdir, name)
 
+                tc_dict = parsed_data.get_test(name, testcase_valid_keys)
 
-        for board_root in board_root_list:
-            board_root = os.path.abspath(board_root)
+                tc.source_dir = tc_path
 
-            debug(
-                "Reading platform configuration files under %s..." %
-                board_root)
-            for fn in glob.glob(os.path.join(board_root, "*", "*", "*.yaml")):
-                verbose("Found plaform configuration " + fn)
-                try:
-                    platform = Platform(fn)
-                    if platform.sanitycheck:
-                        self.platforms.append(platform)
-                except RuntimeError as e:
-                    error("E: %s: can't load: %s" % (fn, e))
-                    self.load_errors += 1
+                tc.id = name
+                tc.type = tc_dict["type"]
+                tc.tags = tc_dict["tags"]
+                tc.extra_args = tc_dict["extra_args"]
+                tc.extra_configs = tc_dict["extra_configs"]
+                tc.arch_whitelist = tc_dict["arch_whitelist"]
+                tc.arch_exclude = tc_dict["arch_exclude"]
+                tc.skip = tc_dict["skip"]
+                tc.platform_exclude = tc_dict["platform_exclude"]
+                tc.platform_whitelist = tc_dict["platform_whitelist"]
+                tc.toolchain_exclude = tc_dict["toolchain_exclude"]
+                tc.toolchain_whitelist = tc_dict["toolchain_whitelist"]
+                tc.tc_filter = tc_dict["filter"]
+                tc.timeout = tc_dict["timeout"]
+                tc.harness = tc_dict["harness"]
+                tc.harness_config = tc_dict["harness_config"]
+                tc.build_only = tc_dict["build_only"]
+                tc.build_on_all = tc_dict["build_on_all"]
+                tc.slow = tc_dict["slow"]
+                tc.min_ram = tc_dict["min_ram"]
+                tc.depends_on = tc_dict["depends_on"]
+                tc.min_flash = tc_dict["min_flash"]
+                tc.extra_sections = tc_dict["extra_sections"]
 
-        arches = []
-        for p in self.platforms:
-            arches.append(p.arch)
-        for a in list(set(arches)):
-            aplatforms = [p for p in self.platforms if p.arch == a]
-            arch = Architecture(a, aplatforms)
-            self.arches[a] = arch
+                tc.parse_subcases(tc_path)
 
-        self.instances = {}
+                if tc.name:
+                    self.testcases[tc.name] = tc
+
+        except Exception as e:
+            error("E: %s: can't load (skipping): %s" % (tc_data_file, e))
+            self.load_errors += 1
+            return False
+
+        return True
+
 
     def get_platform(self, name):
         selected_platform = None
@@ -2063,11 +2258,11 @@ class TestSuite:
             print(str(e))
             sys.exit(2)
 
-        result = []
         with open(LAST_SANITY, "r") as fp:
             cr = csv.DictReader(fp)
             instance_list = []
             for row in cr:
+
                 if row["passed"] == "True":
                     continue
                 test = row["test"]
@@ -2076,6 +2271,9 @@ class TestSuite:
                 instance.create_overlay(platform.name)
                 instance_list.append(instance)
             self.add_instances(instance_list)
+
+        print(len(self.instances))
+
 
     def load_from_file(self, file):
         try:
@@ -2099,22 +2297,9 @@ class TestSuite:
 
     def apply_filters(self):
 
-        toolchain = os.environ.get("ZEPHYR_TOOLCHAIN_VARIANT", None) or \
-                    os.environ.get("ZEPHYR_GCC_VARIANT", None)
 
-        if toolchain == "gccarmemb":
-            # Remove this translation when gccarmemb is no longer supported.
-            toolchain = "gnuarmemb"
+        toolchain = self.get_toolchain()
 
-        try:
-            if not toolchain:
-                raise SanityRuntimeError("E: Variable ZEPHYR_TOOLCHAIN_VARIANT is not defined")
-        except Exception as e:
-            print(str(e))
-            sys.exit(2)
-
-
-        instances = []
         discards = {}
         platform_filter = options.platform
         testcase_filter = run_individual_tests
@@ -2141,346 +2326,309 @@ class TestSuite:
             info("Selecting default platforms per test case")
             default_platforms = True
 
-        mg = MakeGenerator(self.outdir)
-        defconfig_list = {}
-        dt_list = {}
-        cmake_list = {}
-        tc_file_list = {}
+        jobs = []
         for tc_name, tc in self.testcases.items():
-            for arch_name, arch in self.arches.items():
-                for plat in arch.platforms:
-                    instance = TestInstance(tc, plat, self.outdir)
-
-                    if (arch_name == "unit") != (tc.type == "unit"):
-                        continue
-
-                    if tc.build_on_all and not platform_filter:
-                        platform_filter = []
-
-                    if tc.skip:
-                        continue
-
-                    if tag_filter and not tc.tags.intersection(tag_filter):
-                        continue
-
-                    if exclude_tag and tc.tags.intersection(exclude_tag):
-                        continue
-
-                    if testcase_filter and tc_name not in testcase_filter:
-                        continue
-
-                    if arch_filter and arch_name not in arch_filter:
-                        continue
-
-                    if tc.arch_whitelist and arch.name not in tc.arch_whitelist:
-                        continue
-
-                    if tc.arch_exclude and arch.name in tc.arch_exclude:
-                        continue
-
-                    if tc.platform_exclude and plat.name in tc.platform_exclude:
-                        continue
-
-                    if tc.toolchain_exclude and toolchain in tc.toolchain_exclude:
-                        continue
-
-                    if platform_filter and plat.name not in platform_filter:
-                        continue
-
-                    if plat.ram < tc.min_ram:
-                        continue
-
-                    if set(plat.ignore_tags) & tc.tags:
-                        continue
-
-                    if tc.depends_on:
-                        dep_intersection = tc.depends_on.intersection(
-                            set(plat.supported))
-                        if dep_intersection != set(tc.depends_on):
-                            continue
-
-                    if plat.flash < tc.min_flash:
-                        continue
-
-                    if tc.platform_whitelist and plat.name not in tc.platform_whitelist:
-                        continue
-
-                    if tc.toolchain_whitelist and toolchain not in tc.toolchain_whitelist:
-                        continue
-
-                    if (plat.env_satisfied and tc.tc_filter
-                            and (plat.default or all_plats or platform_filter)
-                            and (toolchain in plat.supported_toolchains or options.force_toolchain)):
-                        args = tc.extra_args[:]
-                        args.append("BOARD={}".format(plat.name))
-                        args.extend(extra_args)
-                        # FIXME would be nice to use a common outdir for this so that
-                        # conf, gen_idt, etc aren't rebuilt for every  combination,
-                        # need a way to avoid different Make processes from clobbering
-                        # each other since they all try to build them
-                        # simultaneously
-
-                        o = os.path.join(self.outdir, plat.name, tc.name)
-                        cmake_cache_path = os.path.join(o, "CMakeCache.txt")
-                        generated_dt_confg = "include/generated/generated_dts_board.conf"
-                        dt_config_path = os.path.join(o, "zephyr", generated_dt_confg)
-                        defconfig_path = os.path.join(o, "zephyr", ".config")
-                        dt_list[tc, plat, tc.name.split("/")[-1]] = dt_config_path
-                        cmake_list[tc, plat, tc.name.split("/")[-1]] = cmake_cache_path
-                        defconfig_list[tc, plat, tc.name.split("/")[-1]] = defconfig_path
-                        goal = "_".join([plat.name, "_".join(tc.name.split("/")), "config-sanitycheck"])
-                        tc_file_list[goal] = (o, [dt_config_path, cmake_cache_path, defconfig_path])
-                        mg.add_build_goal(goal, os.path.join(ZEPHYR_BASE, tc.test_path),
-                                o, args, "config-sanitycheck.log", make_args="config-sanitycheck")
-
-        info("Building testcase defconfigs...")
-        kept_files = tc_file_list if options.save_tests else None
-        results = mg.execute(defconfig_cb, keep_files=kept_files)
-
-        info("Filtering test cases...")
-        for name, goal in results.items():
-            try:
-                if goal.failed:
-                    raise SanityRuntimeError("Couldn't build some defconfigs")
-            except Exception as e:
-                error(str(e))
-                sys.exit(2)
-
-
-        for k, out_config in defconfig_list.items():
-            test, plat, name = k
-            defconfig = {}
-            with open(out_config, "r") as fp:
-                for line in fp.readlines():
-                    m = TestSuite.config_re.match(line)
-                    if not m:
-                        if line.strip() and not line.startswith("#"):
-                            sys.stderr.write("Unrecognized line %s\n" % line)
-                        continue
-                    defconfig[m.group(1)] = m.group(2).strip()
-            test.defconfig[plat] = defconfig
-
-        for k, cache_file in cmake_list.items():
-            if not os.path.exists(out_config):
-                continue
-
-            test, plat, name = k
-            cmake_conf = {}
-            try:
-                cache = CMakeCache.from_file(cache_file)
-            except FileNotFoundError:
-                cache = {}
-
-            for k in iter(cache):
-                cmake_conf[k.name] = k.value
-
-            test.cmake_cache[plat] = cmake_conf
-
-        for k, out_config in dt_list.items():
-            if not os.path.exists(out_config):
-                continue
-
-            test, plat, name = k
-            dt_conf = {}
-            with open(out_config, "r") as fp:
-                for line in fp.readlines():
-                    m = TestSuite.dt_re.match(line)
-                    if not m:
-                        if line.strip() and not line.startswith("#"):
-                            sys.stderr.write("Unrecognized line %s\n" % line)
-                        continue
-                    dt_conf[m.group(1)] = m.group(2).strip()
-            test.dt_config[plat] = dt_conf
-
-        for tc_name, tc in self.testcases.items():
-            for arch_name, arch in self.arches.items():
-                instance_list = []
-                for plat in arch.platforms:
-                    instance = TestInstance(tc, plat, self.outdir)
-
-                    if (arch_name == "unit") != (tc.type == "unit"):
-                        # Discard silently
-                        continue
-
-                    if tc.skip:
-                        discards[instance] = "Skip filter"
-                        continue
-
-                    if tc.build_on_all and not platform_filter:
-                        platform_filter = []
-
-                    if tag_filter and not tc.tags.intersection(tag_filter):
-                        discards[instance] = "Command line testcase tag filter"
-                        continue
-
-                    if exclude_tag and tc.tags.intersection(exclude_tag):
-                        discards[instance] = "Command line testcase exclude filter"
-                        continue
-
-                    if testcase_filter and tc_name not in testcase_filter:
-                        discards[instance] = "Testcase name filter"
-                        continue
-
-                    if arch_filter and arch_name not in arch_filter:
-                        discards[instance] = "Command line testcase arch filter"
-                        continue
-
-                    if tc.arch_whitelist and arch.name not in tc.arch_whitelist:
-                        discards[instance] = "Not in test case arch whitelist"
-                        continue
-
-                    if tc.arch_exclude and arch.name in tc.arch_exclude:
-                        discards[instance] = "In test case arch exclude"
-                        continue
-
-                    if tc.platform_exclude and plat.name in tc.platform_exclude:
-                        discards[instance] = "In test case platform exclude"
-                        continue
-
-                    if tc.toolchain_exclude and toolchain in tc.toolchain_exclude:
-                        discards[instance] = "In test case toolchain exclude"
-                        continue
-
-                    if platform_filter and plat.name not in platform_filter:
-                        discards[instance] = "Command line platform filter"
-                        continue
-
-                    if tc.platform_whitelist and plat.name not in tc.platform_whitelist:
-                        discards[instance] = "Not in testcase platform whitelist"
-                        continue
-
-                    if tc.toolchain_whitelist and toolchain not in tc.toolchain_whitelist:
-                        discards[instance] = "Not in testcase toolchain whitelist"
-                        continue
-
-                    if not plat.env_satisfied:
-                        discards[instance] = "Environment ({}) not satisfied".format(", ".join(plat.env))
-                        continue
-
-                    if not options.force_toolchain \
-                        and toolchain and (toolchain not in plat.supported_toolchains) \
-                        and tc.type != 'unit':
-                        discards[instance] = "Not supported by the toolchain"
-                        continue
-
-                    if plat.ram < tc.min_ram:
-                        discards[instance] = "Not enough RAM"
-                        continue
-
-                    if tc.depends_on:
-                        dep_intersection = tc.depends_on.intersection(set(plat.supported))
-                        if dep_intersection != set(tc.depends_on):
-                            discards[instance] = "No hardware support"
-                            continue
-
-                    if plat.flash < tc.min_flash:
-                        discards[instance] = "Not enough FLASH"
-                        continue
-
-                    if set(plat.ignore_tags) & tc.tags:
-                        discards[instance] = "Excluded tags per platform"
-                        continue
-
-                    defconfig = {
-                            "ARCH": arch.name,
-                            "PLATFORM": plat.name
-                            }
-                    defconfig.update(os.environ)
-                    for p, tdefconfig in tc.defconfig.items():
-                        if p == plat:
-                            defconfig.update(tdefconfig)
-                            break
-
-                    for p, tdefconfig in tc.dt_config.items():
-                        if p == plat:
-                            defconfig.update(tdefconfig)
-                            break
-
-                    for p, tdefconfig in tc.cmake_cache.items():
-                        if p == plat:
-                            defconfig.update(tdefconfig)
-                            break
-
-                    if tc.tc_filter:
-                        try:
-                            res = expr_parser.parse(tc.tc_filter, defconfig)
-                        except (ValueError, SyntaxError) as se:
-                            sys.stderr.write(
-                                "Failed processing %s\n" % tc.yamlfile)
-                            raise se
-                        if not res:
-                            discards[instance] = (
-                                "defconfig doesn't satisfy expression '%s'" %
-                                tc.tc_filter)
-                            continue
-
-                    instance_list.append(instance)
-
-                if not instance_list:
-                    # Every platform in this arch was rejected already
+            for plat in self.platforms:
+                if (plat.arch == "unit") != (tc.type == "unit"):
                     continue
 
-                if default_platforms and not tc.build_on_all:
-                    if not tc.platform_whitelist:
-                        instances = list(
-                            filter(
-                                lambda tc: tc.platform.default,
-                                instance_list))
-                        self.add_instances(instances)
-                    else:
-                        self.add_instances(instance_list[:1])
+                if tc.build_on_all and not platform_filter:
+                    platform_filter = []
 
-                    for instance in list(
-                            filter(lambda tc: not tc.platform.default, instance_list)):
-                        discards[instance] = "Not a default test platform"
+                if tc.skip:
+                    continue
+
+                if tag_filter and not tc.tags.intersection(tag_filter):
+                    continue
+
+                if exclude_tag and tc.tags.intersection(exclude_tag):
+                    continue
+
+                if testcase_filter and tc_name not in testcase_filter:
+                    continue
+
+                if arch_filter and plat.arch not in arch_filter:
+                    continue
+
+                if tc.arch_whitelist and plat.arch not in tc.arch_whitelist:
+                    continue
+
+                if tc.arch_exclude and plat.arch in tc.arch_exclude:
+                    continue
+
+                if tc.platform_exclude and plat.name in tc.platform_exclude:
+                    continue
+
+                if tc.toolchain_exclude and toolchain in tc.toolchain_exclude:
+                    continue
+
+                if platform_filter and plat.name not in platform_filter:
+                    continue
+
+                if plat.ram < tc.min_ram:
+                    continue
+
+                if set(plat.ignore_tags) & tc.tags:
+                    continue
+
+                if tc.depends_on:
+                    dep_intersection = tc.depends_on.intersection(
+                        set(plat.supported))
+                    if dep_intersection != set(tc.depends_on):
+                        continue
+
+                if plat.flash < tc.min_flash:
+                    continue
+
+                if tc.platform_whitelist and plat.name not in tc.platform_whitelist:
+                    continue
+
+                if tc.toolchain_whitelist and toolchain not in tc.toolchain_whitelist:
+                    continue
+
+                if (plat.env_satisfied and tc.tc_filter
+                        and (plat.default or all_plats or platform_filter)
+                        and (toolchain in plat.supported_toolchains or options.force_toolchain)):
+                    args = tc.extra_args[:]
+                    args.extend(extra_args)
+
+                    build_dir = os.path.join(self.outdir, plat.name, tc.name)
+                    source_dir = os.path.join(ZEPHYR_BASE, tc.source_dir)
+
+                    jobs.append({
+                        'build_dir': build_dir,
+                        'source_dir': source_dir,
+                        'generator': get_generator()[1],
+                        'platform': plat,
+                        'testcase': tc
+                    })
+
+
+        info("Building testcase defconfigs...")
+        filter_results = dict()
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=self.jobs) as executor:
+            futures = []
+            for job in jobs:
+                fb = FilterBuilder(job['testcase'], job['platform'], job['source_dir'], job['build_dir'])
+                futures.append(executor.submit(fb.run_cmake))
+
+            for future in concurrent.futures.as_completed(futures):
+                result = future.result()
+                if result:
+                    filter_results.update(result.get('filter', ""))
+                    verbose("%s" %(result.get('msg', "")))
+
+        info("Filtering test cases...")
+
+        for tc_name, tc in self.testcases.items():
+            instance_list = []
+            for plat in self.platforms:
+                instance = TestInstance(tc, plat, self.outdir)
+
+                if (plat.arch == "unit") != (tc.type == "unit"):
+                    # Discard silently
+                    continue
+
+                if tc.skip:
+                    discards[instance] = "Skip filter"
+                    continue
+
+                if tc.build_on_all and not platform_filter:
+                    platform_filter = []
+
+                if tag_filter and not tc.tags.intersection(tag_filter):
+                    discards[instance] = "Command line testcase tag filter"
+                    continue
+
+                if exclude_tag and tc.tags.intersection(exclude_tag):
+                    discards[instance] = "Command line testcase exclude filter"
+                    continue
+
+                if testcase_filter and tc_name not in testcase_filter:
+                    discards[instance] = "Testcase name filter"
+                    continue
+
+                if arch_filter and plat.arch not in arch_filter:
+                    discards[instance] = "Command line testcase arch filter"
+                    continue
+
+                if tc.arch_whitelist and plat.arch not in tc.arch_whitelist:
+                    discards[instance] = "Not in test case arch whitelist"
+                    continue
+
+                if tc.arch_exclude and plat.arch in tc.arch_exclude:
+                    discards[instance] = "In test case arch exclude"
+                    continue
+
+                if tc.platform_exclude and plat.name in tc.platform_exclude:
+                    discards[instance] = "In test case platform exclude"
+                    continue
+
+                if tc.toolchain_exclude and toolchain in tc.toolchain_exclude:
+                    discards[instance] = "In test case toolchain exclude"
+                    continue
+
+                if platform_filter and plat.name not in platform_filter:
+                    discards[instance] = "Command line platform filter"
+                    continue
+
+                if tc.platform_whitelist and plat.name not in tc.platform_whitelist:
+                    discards[instance] = "Not in testcase platform whitelist"
+                    continue
+
+                if tc.toolchain_whitelist and toolchain not in tc.toolchain_whitelist:
+                    discards[instance] = "Not in testcase toolchain whitelist"
+                    continue
+
+                if not plat.env_satisfied:
+                    discards[instance] = "Environment ({}) not satisfied".format(", ".join(plat.env))
+                    continue
+
+                if not options.force_toolchain \
+                    and toolchain and (toolchain not in plat.supported_toolchains) \
+                    and tc.type != 'unit':
+                    discards[instance] = "Not supported by the toolchain"
+                    continue
+
+                if plat.ram < tc.min_ram:
+                    discards[instance] = "Not enough RAM"
+                    continue
+
+                if tc.depends_on:
+                    dep_intersection = tc.depends_on.intersection(set(plat.supported))
+                    if dep_intersection != set(tc.depends_on):
+                        discards[instance] = "No hardware support"
+                        continue
+
+                if plat.flash < tc.min_flash:
+                    discards[instance] = "Not enough FLASH"
+                    continue
+
+                if set(plat.ignore_tags) & tc.tags:
+                    discards[instance] = "Excluded tags per platform"
+                    continue
+
+
+                if 1:
+                    # Data from kconfig, device-tree and cmake cache files used for filtering.
+                    if instance.name in filter_results and filter_results[instance.name]:
+                        discards[instance] = "Filter not satisfied: '%s'" %tc.tc_filter
+                        continue
                 else:
-                    self.add_instances(instance_list)
+                    if tc.tc_filter:
+                        try:
+                            res = expr_parser.parse(tc.tc_filter, plat.filter_data)
+                        except (ValueError, SyntaxError) as se:
+                            sys.stderr.write(
+                                "Failed processing %s\n" % self.testcase.yamlfile)
+                            raise se
 
-                for name, case in self.instances.items():
-                    case.create_overlay(case.platform.name)
+                        if not res:
+                            discards[instance] = "Filter not satisfied: '%s'" %tc.tc_filter
+                            continue
+
+                instance_list.append(instance)
+
+            if not instance_list:
+                continue
+
+            if default_platforms and not tc.build_on_all:
+                if tc.platform_whitelist:
+                    self.add_instances(instance_list)
+                else:
+                    instances = list( filter( lambda tc: tc.platform.default, instance_list))
+                    self.add_instances(instances)
+
+                for instance in list(filter(lambda tc: not tc.platform.default, instance_list)):
+                    discards[instance] = "Not a default test platform"
+            else:
+                self.add_instances(instance_list)
+
+            for name, case in self.instances.items():
+                case.create_overlay(case.platform.name)
 
         self.discards = discards
 
         return discards
 
-    def add_instances(self, ti_list):
-        for ti in ti_list:
-            self.instances[ti.name] = ti
+    def add_instances(self, instance_list):
+        for instance in instance_list:
+            self.instances[instance.name] = instance
 
-    def execute(self, cb, cb_context):
+    def add_tasks_to_queue(self):
+        for instance in self.instances.values():
+            pipeline.put({"op": "cmake", "test": instance})
 
-        def calc_one_elf_size(name, goal):
-            if not goal.failed:
-                if self.instances[name].platform.type != "native":
-                    i = self.instances[name]
-                    sc = i.calculate_sizes()
-                    goal.metrics["ram_size"] = sc.get_ram_size()
-                    goal.metrics["rom_size"] = sc.get_rom_size()
-                    goal.metrics["unrecognized"] = sc.unrecognized_sections()
+        return "DONE FEEDING"
+
+    def execute(self):
+
+        def calc_one_elf_size(instance):
+            if instance.status != "fail":
+                if instance.platform.type != "native":
+                    size_calc = instance.calculate_sizes()
+                    instance.metrics["ram_size"] = size_calc.get_ram_size()
+                    instance.metrics["rom_size"] = size_calc.get_rom_size()
+                    instance.metrics["unrecognized"] = size_calc.unrecognized_sections()
                 else:
-                    goal.metrics["ram_size"] = 0
-                    goal.metrics["rom_size"] = 0
-                    goal.metrics["unrecognized"] = []
+                    instance.metrics["ram_size"] = 0
+                    instance.metrics["rom_size"] = 0
+                    instance.metrics["unrecognized"] = []
 
-        mg = MakeGenerator(self.outdir)
-        for i in self.instances.values():
-            mg.add_test_instance(i, options.extra_args)
-        self.goals = mg.execute(cb, cb_context)
 
-        if not options.disable_size_report and not options.cmake_only:
+        # We can use a with statement to ensure threads are cleaned up promptly
+        with BoundedExecutor(bound=self.jobs, max_workers=self.jobs) as executor:
+
+            # start a future for a thread which sends work in through the queue
+            future_to_test = {
+                    executor.submit(self.add_tasks_to_queue): 'FEEDER DONE'}
+
+            while future_to_test:
+                # check for status of the futures which are currently working
+                done, not_done = concurrent.futures.wait(
+                        future_to_test, timeout=0.25,
+                        return_when=concurrent.futures.FIRST_COMPLETED)
+
+                # if there is incoming work, start a new future
+                while not pipeline.empty():
+                    # fetch a url from the queue
+                    message = pipeline.get()
+                    test = message['test']
+
+
+                    # Start the load operation and mark the future with its URL
+                    pb = ProjectBuilder(self, test)
+                    future_to_test[executor.submit(pb.process, message)] = test.name
+
+                # process any completed futures
+                for future in done:
+                    test = future_to_test[future]
+                    try:
+                        data = future.result()
+                    except Exception as exc:
+                        print('%r generated an exception: %s' % (test, exc))
+                    else:
+                        if data:
+                            verbose(data)
+
+                    # remove the now completed future
+                    del future_to_test[future]
+
+        if options.enable_size_report and not options.cmake_only:
             # Parallelize size calculation
-            executor = concurrent.futures.ThreadPoolExecutor(JOBS)
-            futures = [executor.submit(calc_one_elf_size, name, goal)
-                       for name, goal in self.goals.items()]
+            executor = concurrent.futures.ThreadPoolExecutor(self.jobs)
+            futures = [executor.submit(calc_one_elf_size, instance)
+                       for instance in self.instances.values()]
             concurrent.futures.wait(futures)
         else:
-            for goal in self.goals.values():
-                goal.metrics["ram_size"] = 0
-                goal.metrics["rom_size"] = 0
-                goal.metrics["handler_time"] = 0
-                goal.metrics["unrecognized"] = []
+            for instance in self.instances.values():
+                instance.metrics["ram_size"] = 0
+                instance.metrics["rom_size"] = 0
+                instance.metrics["handler_time"] = 0
+                instance.metrics["unrecognized"] = []
 
-        return self.goals
+
 
     def save_tests(self, filename):
         with open(filename, "at") as csvfile:
@@ -2488,8 +2636,8 @@ class TestSuite:
             cw = csv.DictWriter(csvfile, fieldnames, lineterminator=os.linesep)
             for instance in self.instances.values():
                 rowdict = {
-                    "path": os.path.dirname(instance.test.name),
-                    "test": os.path.basename(instance.test.name),
+                    "path": os.path.dirname(instance.testcase.name),
+                    "test": os.path.basename(instance.testcase.name),
                     "platform": instance.platform.name,
                     "arch": instance.platform.arch
                 }
@@ -2509,61 +2657,17 @@ class TestSuite:
             cw = csv.DictWriter(csvfile, fieldnames, lineterminator=os.linesep)
             cw.writeheader()
             for instance, reason in sorted(self.discards.items()):
-                rowdict = {"test": instance.test.name,
+                rowdict = {"test": instance.testcase.name,
                            "arch": instance.platform.arch,
                            "platform": instance.platform.name,
                            "reason": reason}
                 cw.writerow(rowdict)
 
-    def compare_metrics(self, filename):
-        # name, datatype, lower results better
-        interesting_metrics = [("ram_size", int, True),
-                               ("rom_size", int, True)]
-
-        try:
-            if self.goals is None:
-                raise SanityRuntimeError("execute() hasn't been run!")
-        except Exception as e:
-            print(str(e))
-            sys.exit(2)
-
-        if not os.path.exists(filename):
-            info("Cannot compare metrics, %s not found" % filename)
-            return []
-
-        results = []
-        saved_metrics = {}
-        with open(filename) as fp:
-            cr = csv.DictReader(fp)
-            for row in cr:
-                d = {}
-                for m, _, _ in interesting_metrics:
-                    d[m] = row[m]
-                saved_metrics[(row["test"], row["platform"])] = d
-
-        for name, goal in self.goals.items():
-            i = self.instances[name]
-            mkey = (i.test.name, i.platform.name)
-            if mkey not in saved_metrics:
-                continue
-            sm = saved_metrics[mkey]
-            for metric, mtype, lower_better in interesting_metrics:
-                if metric not in goal.metrics:
-                    continue
-                if sm[metric] == "":
-                    continue
-                delta = goal.metrics[metric] - mtype(sm[metric])
-                if delta == 0:
-                    continue
-                results.append((i, metric, goal.metrics[metric], delta,
-                                lower_better))
-        return results
 
     def testcase_target_report(self, report_file):
 
         run = "Sanitycheck"
         eleTestsuite = None
-        append = options.only_failed
 
         errors = 0
         passes = 0
@@ -2571,13 +2675,13 @@ class TestSuite:
         duration = 0
         skips = 0
 
-        for identifier, ti in self.instances.items():
-            for k in ti.results.keys():
-                if ti.results[k] == 'PASS':
+        for identifier, instance in self.instances.items():
+            for k in instance.results.keys():
+                if instance.results[k] == 'PASS':
                     passes += 1
-                elif ti.results[k] == 'BLOCK':
+                elif instance.results[k] == 'BLOCK':
                     errors += 1
-                elif ti.results[k] == 'SKIP':
+                elif instance.results[k] == 'SKIP':
                     skips += 1
                 else:
                     fails += 1
@@ -2596,7 +2700,7 @@ class TestSuite:
             for k in ti.results.keys():
 
                 eleTestcase = ET.SubElement(
-                        eleTestsuite, 'testcase', classname="%s:%s" %(ti.platform.name, os.path.basename(ti.test.name)),
+                        eleTestsuite, 'testcase', classname="%s:%s" %(ti.platform.name, os.path.basename(ti.testcase.name)),
                         name="%s" % (k), time=handler_time)
                 if ti.results[k] in ['FAIL', 'BLOCK']:
                     el = None
@@ -2613,7 +2717,7 @@ class TestSuite:
                             'error',
                             type="failure",
                             message="failed")
-                    p = os.path.join(options.outdir, ti.platform.name, ti.test.name)
+                    p = os.path.join(options.outdir, ti.platform.name, ti.testcase.name)
                     log_file = os.path.join(p, "handler.log")
 
                     if os.path.exists(log_file):
@@ -2636,20 +2740,13 @@ class TestSuite:
 
 
     def testcase_xunit_report(self, filename, duration):
-        try:
-            if self.goals is None:
-                raise SanityRuntimeError("execute() hasn't been run!")
-        except Exception as e:
-            print(str(e))
-            sys.exit(2)
-
         fails = 0
         passes = 0
         errors = 0
 
-        for name, goal in self.goals.items():
-            if goal.failed:
-                if goal.reason in ['build_error', 'handler_crash']:
+        for instance in self.instances.values():
+            if instance.status == "fail":
+                if instance.reason in ['build_error', 'handler_crash']:
                     errors += 1
                 else:
                     fails += 1
@@ -2673,33 +2770,31 @@ class TestSuite:
                                          errors="%d" % errors, skip="0")
 
         handler_time = "0"
-        for name, goal in self.goals.items():
-
-            i = self.instances[name]
+        for instance in self.instances.values():
             if append:
                 for tc in eleTestsuite.findall('testcase'):
                     if tc.get('classname') == "%s:%s" % (
-                            i.platform.name, i.test.name):
+                            instance.platform.name, instance.testcase.name):
                         eleTestsuite.remove(tc)
 
-            if not goal.failed and goal.handler:
-                handler_time = "%s" %(goal.metrics["handler_time"])
+            if instance != "fail" and instance.handler:
+                handler_time = "%s" %(instance.metrics["handler_time"])
 
             eleTestcase = ET.SubElement(
                 eleTestsuite, 'testcase', classname="%s:%s" %
-                (i.platform.name, i.test.name), name="%s" %
-                (name), time=handler_time)
-            if goal.failed:
+                (instance.platform.name, instance.testcase.name), name="%s" %
+                (instance.testcase.name), time=handler_time)
+            if instance.status == "fail":
                 failure = ET.SubElement(
                     eleTestcase,
                     'failure',
                     type="failure",
-                    message=goal.reason)
-                p = ("%s/%s/%s" % (options.outdir, i.platform.name, i.test.name))
+                    message=instance.reason)
+                p = ("%s/%s/%s" % (options.outdir, instance.platform.name, instance.testcase.name))
                 bl = os.path.join(p, "build.log")
                 hl = os.path.join(p, "handler.log")
                 log_file = bl
-                if goal.reason != 'build_error':
+                if instance.reason != 'Build error':
                     if os.path.exists(hl):
                         log_file = hl
                     else:
@@ -2718,12 +2813,7 @@ class TestSuite:
         f.close()
 
     def testcase_report(self, filename):
-        try:
-            if self.goals is None:
-                raise SanityRuntimeError("execute() hasn't been run!")
-        except Exception as e:
-            print(str(e))
-            sys.exit(2)
+
 
         with open(filename, "wt") as csvfile:
             fieldnames = ["test", "arch", "platform", "passed", "status",
@@ -2731,22 +2821,22 @@ class TestSuite:
                           "rom_size"]
             cw = csv.DictWriter(csvfile, fieldnames, lineterminator=os.linesep)
             cw.writeheader()
-            for name, goal in sorted(self.goals.items()):
-                i = self.instances[name]
-                rowdict = {"test": i.test.name,
-                           "arch": i.platform.arch,
-                           "platform": i.platform.name,
-                           "extra_args": " ".join(i.test.extra_args),
-                           "qemu": i.platform.qemu_support}
-                if goal.failed:
+            for instance in sorted(self.instances.values()):
+                rowdict = {"test": instance.testcase.name,
+                           "arch": instance.platform.arch,
+                           "platform": instance.platform.name,
+                           "extra_args": " ".join(instance.testcase.extra_args),
+                           "qemu": instance.platform.qemu_support}
+
+                if instance.status in ["failed", "timeout"]:
                     rowdict["passed"] = False
-                    rowdict["status"] = goal.reason
+                    rowdict["status"] = instance.reason
                 else:
                     rowdict["passed"] = True
-                    if goal.handler:
-                        rowdict["handler_time"] = goal.metrics["handler_time"]
-                    rowdict["ram_size"] = goal.metrics["ram_size"]
-                    rowdict["rom_size"] = goal.metrics["rom_size"]
+                    if instance.handler:
+                        rowdict["handler_time"] = instance.metrics["handler_time"]
+                    rowdict["ram_size"] = instance.metrics["ram_size"]
+                    rowdict["rom_size"] = instance.metrics["rom_size"]
                 cw.writerow(rowdict)
 
 
@@ -3028,8 +3118,8 @@ Artificially long but functional example:
                         help="deprecated, left for compatibility")
     parser.add_argument("-Q", "--error-on-deprecations", action="store_false",
                         help="Error on deprecation warnings.")
-    parser.add_argument("--disable-size-report", action="store_true",
-                        help="Skip expensive computation of ram/rom segment sizes.")
+    parser.add_argument("--enable-size-report", action="store_true",
+                        help="Enable expensive computation of ram/rom segment sizes.")
 
     parser.add_argument(
         "-x", "--extra-args", action="append", default=[],
@@ -3092,7 +3182,7 @@ Artificially long but functional example:
 
 def log_info(filename):
     filename = os.path.relpath(os.path.realpath(filename))
-    if INLINE_LOGS:
+    if options.inline_logs:
         info("{:-^100}".format(filename))
 
         try:
@@ -3107,75 +3197,6 @@ def log_info(filename):
         info("{:-^100}".format(filename))
     else:
         info("\tsee: " + COLOR_YELLOW + filename + COLOR_NORMAL)
-
-
-def terse_test_cb(instances, goals, goal):
-    total_tests = len(goals)
-    total_done = 0
-    total_failed = 0
-
-    for k, g in goals.items():
-        if g.finished:
-            total_done += 1
-        if g.failed:
-            total_failed += 1
-
-    if goal.failed:
-        i = instances[goal.name]
-        info(
-            "\n\n{:<25} {:<50} {}FAILED{}: {}".format(
-                i.platform.name,
-                i.test.name,
-                COLOR_RED,
-                COLOR_NORMAL,
-                goal.reason), False)
-        log_info(goal.get_error_log())
-        info("", False)
-
-    sys.stdout.write(
-        "\rtotal complete: %s%4d/%4d%s  %2d%%  failed: %s%4d%s" %
-        (COLOR_GREEN, total_done, total_tests, COLOR_NORMAL,
-         int((float(total_done) / total_tests) * 100),
-         COLOR_RED if total_failed > 0 else COLOR_NORMAL, total_failed,
-         COLOR_NORMAL))
-    sys.stdout.flush()
-
-
-def chatty_test_cb(instances, goals, goal):
-    i = instances[goal.name]
-
-    if VERBOSE < 2 and not goal.finished:
-        return
-
-    total_tests = len(goals)
-    total_tests_width = len(str(total_tests))
-    total_done = 0
-
-    for k, g in goals.items():
-        if g.finished:
-            total_done += 1
-
-    if goal.failed:
-        status = COLOR_RED + "FAILED" + COLOR_NORMAL + ": " + goal.reason
-    elif goal.finished:
-        status = COLOR_GREEN + "PASSED" + COLOR_NORMAL
-    else:
-        status = goal.make_state
-
-    if goal.handler:
-        handler_type = goal.handler.type_str
-        htime = goal.metrics.get("handler_time", None)
-        if htime:
-            handler_type += " {:.3f}s".format(htime)
-    else:
-        handler_type = "build"
-
-    info("{:>{}}/{} {:<25} {:<50} {} ({})".format(
-        total_done, total_tests_width, total_tests, i.platform.name,
-        i.test.name, status, handler_type))
-    if goal.failed:
-        log_info(goal.get_error_log())
-
 
 def size_report(sc):
     info(sc.filename)
@@ -3274,9 +3295,9 @@ def generate_coverage(outdir, ignores):
                              "--output-file", ztestfile,
                              "--rc", "lcov_branch_coverage=1"],
                              stdout=coveragelog)
-            files = [coveragefile, ztestfile];
+            files = [coveragefile, ztestfile]
         else:
-            files = [coveragefile];
+            files = [coveragefile]
 
         for i in ignores:
             subprocess.call(
@@ -3294,17 +3315,73 @@ def generate_coverage(outdir, ignores):
                                stdout=coveragelog)
         if ret==0:
             info("HTML report generated: %s"%
-                 os.path.join(outdir, "coverage","index.html"));
+                 os.path.join(outdir, "coverage","index.html"))
 
+def get_generator():
+    if options.ninja:
+        generator_cmd = "ninja"
+        generator = "Ninja"
+    else:
+        generator_cmd = "make"
+        generator = "Unix Makefiles"
+    return generator_cmd, generator
+
+
+def export_tests(filename, tests):
+    with open(filename, "wt") as csvfile:
+        fieldnames = ['section', 'subsection', 'title', 'reference']
+        cw = csv.DictWriter(csvfile, fieldnames, lineterminator=os.linesep)
+        for test in tests:
+            data = test.split(".")
+            subsec = " ".join(data[1].split("_")).title()
+            rowdict = {
+                    "section": data[0].capitalize(),
+                    "subsection": subsec,
+                    "title": test,
+                    "reference": test
+                    }
+            cw.writerow(rowdict)
+
+def get_unique_tests(suite):
+    unq = []
+    run_individual_tests = []
+    for n, tc in suite.testcases.items():
+        for c in tc.cases:
+            if options.sub_test and c in options.sub_test:
+                if tc.name not in run_individual_tests:
+                    run_individual_tests.append(tc.name)
+            unq.append(c)
+
+    return unq
+
+
+
+def native_and_unit_first(a, b):
+    if a[0].startswith('unit_testing'):
+        return -1
+    if b[0].startswith('unit_testing'):
+        return 1
+    if a[0].startswith('native_posix'):
+        return -1
+    if b[0].startswith('native_posix'):
+        return 1
+    if a[0].split("/",1)[0].endswith("_bsim"):
+        return -1
+    if b[0].split("/",1)[0].endswith("_bsim"):
+        return 1
+
+    return (a > b) - (a < b)
+
+
+run_individual_tests = None
+options = None
 
 def main():
     start_time = time.time()
-    global VERBOSE, INLINE_LOGS, JOBS, log_file
+    global VERBOSE, log_file
     global options
     global run_individual_tests
 
-    # XXX: Workaround for #17239
-    resource.setrlimit(resource.RLIMIT_NOFILE, (4096, 4096))
     options = parse_arguments()
 
     if options.west_runner and not options.west_flash:
@@ -3326,28 +3403,14 @@ def main():
             size_report(SizeCalculator(fn, []))
         sys.exit(0)
 
-
     if options.device_testing:
         if options.device_serial is None or len(options.platform) != 1:
             sys.exit(1)
 
     VERBOSE += options.verbose
-    INLINE_LOGS = options.inline_logs
+
     if options.log_file:
         log_file = open(options.log_file, "w")
-
-    if options.jobs:
-        JOBS = options.jobs
-    elif options.build_only:
-        JOBS = multiprocessing.cpu_count() * 2
-    else:
-        JOBS = multiprocessing.cpu_count()
-
-    # Decrease JOBS for Ninja, if jobs weren't explicitly set
-    if options.ninja and not options.jobs:
-        JOBS = int(JOBS * 0.75)
-
-    info("JOBS: %d" % JOBS);
 
     if options.subset:
         subset, sets = options.subset.split("/")
@@ -3357,22 +3420,26 @@ def main():
             error("You have provided a wrong subset value: %s." % options.subset)
             return
 
-    if os.path.exists(options.outdir) and not options.no_clean:
+    if os.path.exists(options.outdir) and not options.no_clean and not options.only_failed:
         info("Cleaning output directory " + options.outdir)
-        shutil.rmtree(options.outdir)
+        shutil.move(options.outdir, "%s.old" %(options.outdir))
+        shutil.rmtree("%s.old" %options.outdir)
 
     if not options.testcase_root:
         options.testcase_root = [os.path.join(ZEPHYR_BASE, "tests"),
                               os.path.join(ZEPHYR_BASE, "samples")]
 
-    ts = TestSuite(options.board_root, options.testcase_root, options.outdir)
+    suite = TestSuite(options.board_root, options.testcase_root, options.outdir)
+    suite.add_testcases()
+    suite.add_configurations()
 
-    if ts.load_errors:
+
+    if suite.load_errors:
         sys.exit(1)
 
     if options.list_tags:
         tags = set()
-        for n,tc in ts.testcases.items():
+        for n, tc in suite.testcases.items():
             tags = tags.union(tc.tags)
 
         for t in tags:
@@ -3380,26 +3447,10 @@ def main():
 
         return
 
-
-    def export_tests(filename, tests):
-        with open(filename, "wt") as csvfile:
-            fieldnames = ['section', 'subsection', 'title', 'reference']
-            cw = csv.DictWriter(csvfile, fieldnames, lineterminator=os.linesep)
-            for test in tests:
-                data = test.split(".")
-                subsec = " ".join(data[1].split("_")).title()
-                rowdict = {
-                        "section": data[0].capitalize(),
-                        "subsection": subsec,
-                        "title": test,
-                        "reference": test
-                        }
-                cw.writerow(rowdict)
-
     if options.export_tests:
         cnt = 0
         unq = []
-        for n,tc in ts.testcases.items():
+        for n,tc in suite.testcases.items():
             for c in tc.cases:
                 unq.append(c)
 
@@ -3413,21 +3464,9 @@ def main():
         run_individual_tests = options.test
 
 
-    def get_unique_tests(ts):
-        unq = []
-        run_individual_tests = []
-        for n,tc in ts.testcases.items():
-            for c in tc.cases:
-                if options.sub_test and c in options.sub_test:
-                    if tc.name not in run_individual_tests:
-                        run_individual_tests.append(tc.name)
-                unq.append(c)
-
-        return unq
-
     if options.list_tests or options.sub_test:
         cnt = 0
-        unq = get_unique_tests(ts)
+        unq = get_unique_tests(suite)
 
         if options.sub_test:
             if run_individual_tests:
@@ -3447,15 +3486,14 @@ def main():
 
     discards = []
     if options.load_tests:
-        ts.load_from_file(options.load_tests)
+        suite.load_from_file(options.load_tests)
     elif options.only_failed:
-        ts.get_last_failed()
+        suite.get_last_failed()
     else:
-        discards = ts.apply_filters()
-
+        discards = suite.apply_filters()
 
     if options.discard_report:
-        ts.discard_report(options.discard_report)
+        suite.discard_report(options.discard_report)
 
     if VERBOSE > 1 and discards:
         # if we are using command line platform filter, no need to list every
@@ -3469,38 +3507,20 @@ def main():
             debug(
                 "{:<25} {:<50} {}SKIPPED{}: {}".format(
                     i.platform.name,
-                    i.test.name,
+                    i.testcase.name,
                     COLOR_YELLOW,
                     COLOR_NORMAL,
                     reason))
 
 
-    def native_and_unit_first(a, b):
-        if a[0].startswith('unit_testing'):
-            return -1
-        if b[0].startswith('unit_testing'):
-            return 1
-        if a[0].startswith('native_posix'):
-            return -1
-        if b[0].startswith('native_posix'):
-            return 1
-        if a[0].split("/",1)[0].endswith("_bsim"):
-            return -1
-        if b[0].split("/",1)[0].endswith("_bsim"):
-            return 1
-
-        return (a > b) - (a < b)
-
-    ts.instances = OrderedDict(sorted(ts.instances.items(),
+    suite.instances = OrderedDict(sorted(suite.instances.items(),
                                key=cmp_to_key(native_and_unit_first)))
 
-
-
     if options.report_excluded:
-        all_tests = set(get_unique_tests(ts))
+        all_tests = set(get_unique_tests(suite))
         to_be_run = set()
-        for i,p in ts.instances.items():
-            to_be_run.update(p.test.cases)
+        for i,p in suite.instances.items():
+            to_be_run.update(p.testcase.cases)
 
         if (all_tests - to_be_run):
             print("Tests that never build or run:")
@@ -3509,15 +3529,13 @@ def main():
 
         return
 
-
     if options.save_tests:
-        ts.save_tests(options.save_tests)
+        suite.save_tests(options.save_tests)
         return
 
     if options.subset:
-
         subset, sets = options.subset.split("/")
-        total = len(ts.instances)
+        total = len(suite.instances)
         per_set = round(total / int(sets))
         start = (int(subset) - 1) * per_set
         if subset == sets:
@@ -3525,68 +3543,38 @@ def main():
         else:
             end = start + per_set
 
-        sliced_instances = islice(ts.instances.items(), start, end)
-        ts.instances = OrderedDict(sliced_instances)
+        sliced_instances = islice(suite.instances.items(), start, end)
+        suite.instances = OrderedDict(sliced_instances)
 
     info("%d tests selected, %d tests discarded due to filters" %
-         (len(ts.instances), len(discards)))
+         (len(suite.instances), len(discards)))
 
     if options.dry_run:
+        duration = time.time() - start_time
+        info("Completed in %d seconds" % (duration))
         return
 
+    suite.update()
+    suite.start_time = start_time
+
     if VERBOSE or not TERMINAL:
-        goals = ts.execute(
-            chatty_test_cb,
-            ts.instances)
+        suite.execute()
     else:
-        goals = ts.execute(
-            terse_test_cb,
-            ts.instances)
+        suite.execute()
         info("", False)
 
     if options.detailed_report:
-        ts.testcase_target_report(options.detailed_report)
+        suite.testcase_target_report(options.detailed_report)
 
-    # figure out which report to use for size comparison
-    if options.compare_report:
-        report_to_use = options.compare_report
-    elif options.last_metrics:
-        report_to_use = LAST_SANITY
-    else:
-        report_to_use = RELEASE_DATA
+        for instance in suite.instances.values():
+            if instance.status == "failed":
+                failed += 1
+            elif instance.metrics.get("unrecognized") and not options.disable_unrecognized_section_test:
+                info("%sFAILED%s: %s has unrecognized binary sections: %s" %
+                     (COLOR_RED, COLOR_NORMAL, instance.name,
+                      str(instance.metrics["unrecognized"])))
+                failed += 1
 
-    deltas = ts.compare_metrics(report_to_use)
-    warnings = 0
-    if deltas and options.show_footprint:
-        for i, metric, value, delta, lower_better in deltas:
-            if not options.all_deltas and ((delta < 0 and lower_better) or
-                                        (delta > 0 and not lower_better)):
-                continue
-
-            percentage = (float(delta) / float(value - delta))
-            if not options.all_deltas and (percentage <
-                                        (options.footprint_threshold / 100.0)):
-                continue
-
-            info("{:<25} {:<60} {}{}{}: {} {:<+4}, is now {:6} {:+.2%}".format(
-                 i.platform.name, i.test.name, COLOR_YELLOW,
-                 "INFO" if options.all_deltas else "WARNING", COLOR_NORMAL,
-                 metric, delta, value, percentage))
-            warnings += 1
-
-    if warnings:
-        info("Deltas based on metrics from last %s" %
-             ("release" if not options.last_metrics else "run"))
-
-    failed = 0
-    for name, goal in goals.items():
-        if goal.failed:
-            failed += 1
-        elif goal.metrics.get("unrecognized") and not options.disable_unrecognized_section_test:
-            info("%sFAILED%s: %s has unrecognized binary sections: %s" %
-                 (COLOR_RED, COLOR_NORMAL, goal.name,
-                  str(goal.metrics["unrecognized"])))
-            failed += 1
 
     if options.coverage:
         if options.gcov_tool == None:
@@ -3606,24 +3594,13 @@ def main():
         info("Generating coverage files...")
         generate_coverage(options.outdir, ["*generated*", "tests/*", "samples/*"])
 
-    duration = time.time() - start_time
-    info("%s%d of %d%s tests passed with %s%d%s warnings in %d seconds" %
-         (COLOR_RED if failed else COLOR_GREEN, len(goals) - failed,
-          len(goals), COLOR_NORMAL, COLOR_YELLOW if warnings else COLOR_NORMAL,
-          warnings, COLOR_NORMAL, duration))
+    suite.duration = time.time() - start_time
+    suite.summary(options.disable_unrecognized_section_test)
+    suite.save_reports(options.release, options.no_update,
+                       options.testcase_report)
 
-    if options.testcase_report:
-        ts.testcase_report(options.testcase_report)
-    if not options.no_update:
-        ts.testcase_xunit_report(LAST_SANITY_XUNIT, duration)
-        ts.testcase_report(LAST_SANITY)
-    if options.release:
-        ts.testcase_report(RELEASE_DATA)
-    if log_file:
-        log_file.close()
-    if failed or (warnings and options.warnings_as_errors):
+    if suite.total_failed or (suite.warnings and options.warnings_as_errors):
         sys.exit(1)
-
 
 if __name__ == "__main__":
     main()
