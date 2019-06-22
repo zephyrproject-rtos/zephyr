@@ -36,7 +36,7 @@ void publish(struct k_work *work)
 {
 	int err = 0;
 
-	if (button_read(button_device[0], SW0_GPIO_PIN) == 0U) {
+	if (button_read(button_device[0], DT_ALIAS_SW0_GPIOS_PIN) == 0U) {
 #if defined(ONOFF)
 		bt_mesh_model_msg_init(root_models[3].pub->msg,
 				       BT_MESH_MODEL_OP_GEN_ONOFF_SET_UNACK);
@@ -58,7 +58,7 @@ void publish(struct k_work *work)
 		net_buf_simple_add_u8(vnd_models[0].pub->msg, tid_vnd++);
 		err = bt_mesh_model_publish(&vnd_models[0]);
 #endif
-	} else if (button_read(button_device[1], SW1_GPIO_PIN) == 0U) {
+	} else if (button_read(button_device[1], DT_ALIAS_SW1_GPIOS_PIN) == 0U) {
 #if defined(ONOFF)
 		bt_mesh_model_msg_init(root_models[3].pub->msg,
 				       BT_MESH_MODEL_OP_GEN_ONOFF_SET_UNACK);
@@ -80,7 +80,7 @@ void publish(struct k_work *work)
 		net_buf_simple_add_u8(vnd_models[0].pub->msg, tid_vnd++);
 		err = bt_mesh_model_publish(&vnd_models[0]);
 #endif
-	} else if (button_read(button_device[2], SW2_GPIO_PIN) == 0U) {
+	} else if (button_read(button_device[2], DT_ALIAS_SW2_GPIOS_PIN) == 0U) {
 #if defined(GENERIC_LEVEL)
 		bt_mesh_model_msg_init(root_models[5].pub->msg,
 				       BT_MESH_MODEL_OP_GEN_LEVEL_SET_UNACK);
@@ -150,7 +150,7 @@ void publish(struct k_work *work)
 		net_buf_simple_add_u8(root_models[16].pub->msg, tid_level++);
 		err = bt_mesh_model_publish(&root_models[16]);
 #endif
-	} else if (button_read(button_device[3], SW3_GPIO_PIN) == 0U) {
+	} else if (button_read(button_device[3], DT_ALIAS_SW3_GPIOS_PIN) == 0U) {
 #if defined(GENERIC_LEVEL)
 		bt_mesh_model_msg_init(root_models[5].pub->msg,
 				       BT_MESH_MODEL_OP_GEN_LEVEL_SET_UNACK);

@@ -10,19 +10,19 @@
 #include <soc.h>
 
 /* Push button switch 0 */
-#define SW0_GPIO_PIN	11
+#define DT_ALIAS_SW0_GPIOS_PIN	11
 #define SW0_GPIO_NAME	DT_GPIO_P0_DEV_NAME
 
 /* Push button switch 1 */
-#define SW1_GPIO_PIN	12
+#define DT_ALIAS_SW1_GPIOS_PIN	12
 #define SW1_GPIO_NAME	DT_GPIO_P0_DEV_NAME
 
 /* Push button switch 2 */
-#define SW2_GPIO_PIN	24
+#define DT_ALIAS_SW2_GPIOS_PIN	24
 #define SW2_GPIO_NAME	DT_GPIO_P0_DEV_NAME
 
 /* Push button switch 3 */
-#define SW3_GPIO_PIN	25
+#define DT_ALIAS_SW3_GPIOS_PIN	25
 #define SW3_GPIO_NAME	DT_GPIO_P0_DEV_NAME
 
 /* Onboard GREEN LED 0 */
