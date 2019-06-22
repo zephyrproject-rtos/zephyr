@@ -16,17 +16,17 @@ LOG_MODULE_REGISTER(net_nats_sample, LOG_LEVEL_DBG);
 #include "nats.h"
 
 /* LED */
-#ifndef LED0_GPIO_CONTROLLER
+#ifndef DT_ALIAS_LED0_GPIOS_CONTROLLER
 #ifdef LED0_GPIO_PORT
-#define LED0_GPIO_CONTROLLER 	LED0_GPIO_PORT
+#define DT_ALIAS_LED0_GPIOS_CONTROLLER 	LED0_GPIO_PORT
 #else
-#define LED0_GPIO_CONTROLLER "(fail)"
-#define LED0_GPIO_PIN 0
+#define DT_ALIAS_LED0_GPIOS_CONTROLLER "(fail)"
+#define DT_ALIAS_LED0_GPIOS_PIN 0
 #endif
 #endif
 
-#define LED_GPIO_NAME LED0_GPIO_CONTROLLER
-#define LED_PIN LED0_GPIO_PIN
+#define LED_GPIO_NAME DT_ALIAS_LED0_GPIOS_CONTROLLER
+#define LED_PIN DT_ALIAS_LED0_GPIOS_PIN
 
 static struct device *led0;
 static bool fake_led;

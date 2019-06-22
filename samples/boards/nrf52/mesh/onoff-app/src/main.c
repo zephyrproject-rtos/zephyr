@@ -180,10 +180,10 @@ struct onoff_state {
  */
 
 static struct onoff_state onoff_state[] = {
-	{ .led_gpio_pin = LED0_GPIO_PIN },
-	{ .led_gpio_pin = LED1_GPIO_PIN },
-	{ .led_gpio_pin = LED2_GPIO_PIN },
-	{ .led_gpio_pin = LED3_GPIO_PIN },
+	{ .led_gpio_pin = DT_ALIAS_LED0_GPIOS_PIN },
+	{ .led_gpio_pin = DT_ALIAS_LED1_GPIOS_PIN },
+	{ .led_gpio_pin = DT_ALIAS_LED2_GPIOS_PIN },
+	{ .led_gpio_pin = DT_ALIAS_LED3_GPIOS_PIN },
 };
 
 /*
@@ -635,10 +635,10 @@ void main(void)
 	gpio_pin_enable_callback(sw_device, DT_ALIAS_SW3_GPIOS_PIN);
 
 	/* Initialize LED's */
-	init_led(0, LED0_GPIO_CONTROLLER, LED0_GPIO_PIN);
-	init_led(1, LED1_GPIO_CONTROLLER, LED1_GPIO_PIN);
-	init_led(2, LED2_GPIO_CONTROLLER, LED2_GPIO_PIN);
-	init_led(3, LED3_GPIO_CONTROLLER, LED3_GPIO_PIN);
+	init_led(0, DT_ALIAS_LED0_GPIOS_CONTROLLER, DT_ALIAS_LED0_GPIOS_PIN);
+	init_led(1, DT_ALIAS_LED1_GPIOS_CONTROLLER, DT_ALIAS_LED1_GPIOS_PIN);
+	init_led(2, DT_ALIAS_LED2_GPIOS_CONTROLLER, DT_ALIAS_LED2_GPIOS_PIN);
+	init_led(3, DT_ALIAS_LED3_GPIOS_CONTROLLER, DT_ALIAS_LED3_GPIOS_PIN);
 
 	/* Initialize the Bluetooth Subsystem */
 	err = bt_enable(bt_ready);
