@@ -27,9 +27,9 @@ struct mcp2515_data {
 	/* spi device data */
 	struct device *spi;
 	struct spi_config spi_cfg;
-#ifdef DT_INST_0_MICROCHIP_MCP2515_CS_GPIO_PIN
+#ifdef DT_INST_0_MICROCHIP_MCP2515_CS_GPIOS_PIN
 	struct spi_cs_control spi_cs_ctrl;
-#endif /* DT_INST_0_MICROCHIP_MCP2515_CS_GPIO_PIN */
+#endif /* DT_INST_0_MICROCHIP_MCP2515_CS_GPIOS_PIN */
 
 	/* interrupt data */
 	struct device *int_gpio;
