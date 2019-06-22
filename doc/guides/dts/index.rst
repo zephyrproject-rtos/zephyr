@@ -316,14 +316,6 @@ The full set of Zephyr-specific ``chosen`` nodes follows:
    * - ``zephyr,uart-mcumgr``
      - ``DT_UART_MCUMGR_ON_DEV_NAME``
 
-As chosen properties tend to be related to software configuration, it can be
-useful for the build system to know if a chosen property was defined. We
-generate a define for each chosen property, for example:
-
-``zephyr,flash`` will generate: ``#define DT_CHOSEN_ZEPHYR_FLASH 1``
-
-As a consequence ``zephyr,flash`` related code could safely be implemented
-under ``#ifdef DT_CHOSEN_ZEPHYR_FLASH`` instruction.
 
 Adding support for device tree in drivers
 *****************************************

@@ -447,10 +447,6 @@ def generate_defines():
     flash.extract_flash()
     flash.extract_code_partition()
 
-    # Add DT_CHOSEN_<X> defines
-    for c in sorted(chosen):
-        insert_defs('chosen', {'DT_CHOSEN_' + str_to_label(c): '1'}, {})
-
 
 def parse_arguments():
     rdh = argparse.RawDescriptionHelpFormatter
