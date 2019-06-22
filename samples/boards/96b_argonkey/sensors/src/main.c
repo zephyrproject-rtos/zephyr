@@ -133,15 +133,15 @@ void main(void)
 	}
 #endif
 
-	led0 = device_get_binding(LED0_GPIO_CONTROLLER);
-	gpio_pin_configure(led0, LED0_GPIO_PIN, GPIO_DIR_OUT);
-	gpio_pin_write(led0, LED0_GPIO_PIN, 1);
+	led0 = device_get_binding(DT_ALIAS_LED0_GPIOS_CONTROLLER);
+	gpio_pin_configure(led0, DT_ALIAS_LED0_GPIOS_PIN, GPIO_DIR_OUT);
+	gpio_pin_write(led0, DT_ALIAS_LED0_GPIOS_PIN, 1);
 
-	led1 = device_get_binding(LED1_GPIO_CONTROLLER);
-	gpio_pin_configure(led1, LED1_GPIO_PIN, GPIO_DIR_OUT);
+	led1 = device_get_binding(DT_ALIAS_LED1_GPIOS_CONTROLLER);
+	gpio_pin_configure(led1, DT_ALIAS_LED1_GPIOS_PIN, GPIO_DIR_OUT);
 
 	for (i = 0; i < 5; i++) {
-		gpio_pin_write(led1, LED1_GPIO_PIN, on);
+		gpio_pin_write(led1, DT_ALIAS_LED1_GPIOS_PIN, on);
 		k_sleep(200);
 		on = (on == 1) ? 0 : 1;
 	}
