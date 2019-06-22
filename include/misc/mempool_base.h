@@ -78,7 +78,7 @@ struct sys_mem_pool_base {
 
 /* How many bytes for the bitfields of a single level? */
 #define Z_MPOOL_LBIT_BYTES(maxsz, minsz, l, n_max)	\
-	(Z_MPOOL_LVLS((maxsz), (minsz)) >= (l) ?		\
+	(Z_MPOOL_LVLS((maxsz), (minsz)) > (l) ?		\
 	 4 * Z_MPOOL_LBIT_WORDS((n_max), l) : 0)
 
 /* Size of the bitmap array that follows the buffer in allocated memory */
