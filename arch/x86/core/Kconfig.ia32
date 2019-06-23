@@ -345,27 +345,19 @@ config X86_KERNEL_OOPS
 
 config X86_KERNEL_OOPS_VECTOR
 	int "IDT vector to use for kernel oops"
-	default 62 if MVIC
-	default 33 if !MVIC
+	default 33
 	range 32 255
 	depends on X86_KERNEL_OOPS
 	help
 	  Specify the IDT vector to use for the kernel oops exception handler.
-	  The default should be fine for most arches, but on systems like MVIC
-	  where there is a fixed IRQ-to-vector mapping another value may be
-	  needed to avoid collision.
 
 config IRQ_OFFLOAD_VECTOR
 	int "IDT vector to use for IRQ offload"
-	default 63 if MVIC
-	default 32 if !MVIC
+	default 32
 	range 32 255
 	depends on IRQ_OFFLOAD
 	help
 	  Specify the IDT vector to use for the IRQ offload interrupt handler.
-	  The default should be fine for most arches, but on systems like MVIC
-	  where there is a fixed IRQ-to-vector mapping another value may be
-	  needed to avoid collision.
 
 config X86_DYNAMIC_IRQ_STUBS
 	int "Number of dynamic interrupt stubs"

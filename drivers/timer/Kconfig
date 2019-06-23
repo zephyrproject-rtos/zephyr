@@ -44,7 +44,7 @@ endif #HPET_TIMER
 
 menuconfig LOAPIC_TIMER
 	bool "LOAPIC timer"
-	depends on (LOAPIC || MVIC) && X86
+	depends on LOAPIC && X86
 	help
 	  This option selects LOAPIC timer as a system timer.
 

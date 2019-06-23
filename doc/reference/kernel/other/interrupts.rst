@@ -389,10 +389,6 @@ scheme, interrupts of priority level 0 will be placed in vectors 32-47, level 1
 configures an interrupt it will look for a free vector in the appropriate range
 for the requested priority level and set the handler there.
 
-There are some APIC variants (such as MVIC) where priorities cannot be set
-by the user and the position in the vector table does correspond to the
-IRQ line. Systems like this will enable CONFIG_X86_FIXED_IRQ_MAPPING.
-
 On x86 when an interrupt or exception vector is executed by the CPU, there is
 no foolproof way to determine which vector was fired, so a software ISR table
 indexed by IRQ line is not used. Instead, the :c:macro:`IRQ_CONNECT` call
