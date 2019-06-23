@@ -26,17 +26,6 @@
 #ifndef _ASMLANGUAGE
 #include <zephyr/types.h>
 
-#if CONFIG_X86_FIXED_IRQ_MAPPING
-/**
- * @brief Return fixed mapping for an IRQ
- *
- * @param irq Interrupt line
- * @return Vector this interrupt has been assigned to
- */
-#define Z_IRQ_CONTROLLER_VECTOR_MAPPING(irq) \
-	__IRQ_CONTROLLER_VECTOR_MAPPING(irq)
-#endif
-
 /**
  *
  * @brief Program an interrupt

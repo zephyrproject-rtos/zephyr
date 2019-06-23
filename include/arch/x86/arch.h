@@ -165,11 +165,7 @@ typedef struct s_isrList {
  *
  * These macros are only intended to be used by IRQ_CONNECT() macro.
  */
-#if CONFIG_X86_FIXED_IRQ_MAPPING
-#define _VECTOR_ARG(irq_p)	Z_IRQ_CONTROLLER_VECTOR_MAPPING(irq_p)
-#else
 #define _VECTOR_ARG(irq_p)	(-1)
-#endif /* CONFIG_X86_FIXED_IRQ_MAPPING */
 
 /**
  * Configure a static interrupt.
@@ -245,12 +241,6 @@ typedef struct s_isrList {
 })
 
 
-#ifdef CONFIG_X86_FIXED_IRQ_MAPPING
-/* Fixed vector-to-irq association mapping.
- * No need for the table at all.
- */
-#define Z_IRQ_TO_INTERRUPT_VECTOR(irq) Z_IRQ_CONTROLLER_VECTOR_MAPPING(irq)
-#else
 /**
  * @brief Convert a statically connected IRQ to its interrupt vector number
  *
@@ -259,7 +249,6 @@ typedef struct s_isrList {
 extern unsigned char _irq_to_interrupt_vector[];
 #define Z_IRQ_TO_INTERRUPT_VECTOR(irq)                       \
 			((unsigned int) _irq_to_interrupt_vector[irq])
-#endif
 
 #ifdef CONFIG_SYS_POWER_MANAGEMENT
 extern void z_arch_irq_direct_pm(void);
