@@ -163,9 +163,6 @@ typedef struct s_isrList {
  * out the right vector to use based on our priority scheme. Groups of 16
  * vectors starting at 32 correspond to each priority level.
  *
- * On MVIC, the mapping is fixed; the vector to use is just the irq line
- * number plus 0x20. The priority argument supplied by the user is discarded.
- *
  * These macros are only intended to be used by IRQ_CONNECT() macro.
  */
 #if CONFIG_X86_FIXED_IRQ_MAPPING

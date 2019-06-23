@@ -6,7 +6,7 @@
 #include <errno.h>
 
 #include <device.h>
-#if defined(CONFIG_IOAPIC) || defined(CONFIG_MVIC)
+#if defined(CONFIG_IOAPIC)
 #include <ioapic.h>
 #endif
 #include <uart.h>

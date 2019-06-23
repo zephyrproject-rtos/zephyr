@@ -320,10 +320,7 @@ There can be significant differences between the interrupt controllers and the
 interrupt concepts across architectures.
 
 For example, x86 has the concept of an :abbr:`IDT (Interrupt Descriptor Table)`
-and different interrupt controllers. Although modern systems mostly
-standardized on the :abbr:`APIC (Advanced Programmable Interrupt Controller)`,
-some small Quark-based systems use the :abbr:`MVIC (Micro-controller Vectored
-Interrupt Controller)`. Also, the position of an interrupt in the IDT
+and different interrupt controllers. The position of an interrupt in the IDT
 determines its priority.
 
 On the other hand, the ARM Cortex-M has the :abbr:`NVIC (Nested Vectored

@@ -249,10 +249,6 @@ static void idt_vector_install(int vector, void *irq_handler)
 	key = irq_lock();
 	z_init_irq_gate(&z_x86_idt.entries[vector], CODE_SEG,
 		       (u32_t)irq_handler, 0);
-#ifdef CONFIG_MVIC
-	/* MVIC requires IDT be reloaded if the entries table is ever changed */
-	z_set_idt(&z_x86_idt);
-#endif
 	irq_unlock(key);
 }
 

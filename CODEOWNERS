@@ -230,7 +230,6 @@
 /include/drivers/modem/                   @mike-scott
 /include/drivers/ioapic.h                 @andrewboie
 /include/drivers/loapic.h                 @andrewboie
-/include/drivers/mvic.h                   @andrewboie
 /include/drivers/pcie/                    @gnuless
 /include/drivers/serial/uart_ns16550.h    @gnuless
 /include/dt-bindings/clock/kinetis_scg.h  @henrikbrixandersen
