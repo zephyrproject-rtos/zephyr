@@ -98,15 +98,10 @@
 #define IV_INTEL_RESERVED_END 31
 
 /*
- * EFLAGS value to utilize for the initial context:
- *
- *   IF (Interrupt Enable Flag) = 1
- *   IOPL bits			= 0
- *   All other "flags"          = Don't change state
+ * EFLAGS value to utilize for the initial context: IF=1.
  */
 
-#define EFLAGS_INITIAL 0x00000200LLU
-#define EFLAGS_MASK 0x00003200ULL
+#define EFLAGS_INITIAL 0x00000200U
 
 /* Enable paging and write protection */
 #define CR0_PG_WP_ENABLE 0x80010000
