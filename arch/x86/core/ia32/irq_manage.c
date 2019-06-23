@@ -129,7 +129,6 @@ static unsigned int next_irq_stub;
  */
 extern char z_dynamic_stubs_begin[];
 
-#ifndef CONFIG_X86_FIXED_IRQ_MAPPING
 /**
  * @brief Allocate a free interrupt vector given <priority>
  *
@@ -211,7 +210,6 @@ static unsigned int priority_to_free_vector(unsigned int requested_priority)
 
 	return vector;
 }
-#endif /* !CONFIG_X86_FIXED_IRQ_MAPPING */
 
 /**
  * @brief Get the memory address of an unused dynamic IRQ or exception stub
@@ -303,15 +301,11 @@ int z_arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 
 	key = irq_lock();
 
-#ifdef CONFIG_X86_FIXED_IRQ_MAPPING
-	vector = Z_IRQ_TO_INTERRUPT_VECTOR(irq);
-#else
 	vector = priority_to_free_vector(priority);
 	/* 0 indicates not used, vectors for interrupts start at 32 */
 	__ASSERT(_irq_to_interrupt_vector[irq] == 0U,
 		 "IRQ %d already configured", irq);
 	_irq_to_interrupt_vector[irq] = vector;
-#endif
 	z_irq_controller_irq_config(vector, irq, flags);
 
 	stub_idx = next_irq_stub++;

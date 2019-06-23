@@ -141,7 +141,6 @@ SECTIONS
 	. += CONFIG_IDT_NUM_VECTORS * 8;
 #endif /* LINKER_PASS2 */
 
-#ifndef CONFIG_X86_FIXED_IRQ_MAPPING
 	. = ALIGN(4);
 	_irq_to_interrupt_vector = .;
 #ifdef LINKER_PASS2
@@ -149,7 +148,6 @@ SECTIONS
 #else
 	. += CONFIG_MAX_IRQ_LINES;
 #endif
-#endif /* CONFIG_X86_FIXED_IRQ_MAPPING */
 #endif /* CONFIG_DYNAMIC_INTERRUPTS */
 
 /* Located in generated directory. This file is populated by the
@@ -276,7 +274,6 @@ SECTIONS
 	*(".kernel.*")
 
 #ifdef CONFIG_DYNAMIC_INTERRUPTS
-#ifndef CONFIG_X86_FIXED_IRQ_MAPPING
 	. = ALIGN(4);
 	_irq_to_interrupt_vector = .;
 #ifdef LINKER_PASS2
@@ -284,7 +281,6 @@ SECTIONS
 #else
 	. += CONFIG_MAX_IRQ_LINES;
 #endif /* LINKER_PASS2 */
-#endif /* CONFIG_X86_FIXED_IRQ_MAPPING */
 
 	z_interrupt_vectors_allocated = .;
 #ifdef LINKER_PASS2
