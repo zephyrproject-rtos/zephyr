@@ -97,8 +97,7 @@ void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	initial_frame->p1 = parameter1;
 	initial_frame->p2 = parameter2;
 	initial_frame->p3 = parameter3;
-	/* initial EFLAGS; only modify IF and IOPL bits */
-	initial_frame->eflags = (EflagsGet() & ~EFLAGS_MASK) | EFLAGS_INITIAL;
+	initial_frame->eflags = EFLAGS_INITIAL;
 #ifdef CONFIG_X86_USERSPACE
 	if ((options & K_USER) != 0U) {
 #ifdef _THREAD_WRAPPER_REQUIRED

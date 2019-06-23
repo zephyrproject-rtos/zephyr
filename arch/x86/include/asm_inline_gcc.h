@@ -20,26 +20,6 @@ extern "C" {
 
 #ifndef _ASMLANGUAGE
 
-/**
- *
- * @brief Return the current value of the EFLAGS register
- *
- * @return the EFLAGS register.
- */
-static inline unsigned int EflagsGet(void)
-{
-	unsigned int eflags; /* EFLAGS register contents */
-
-	__asm__ volatile(
-		"pushfl;\n\t"
-		"popl  %0;\n\t"
-		: "=r"(eflags)
-		: );
-
-	return eflags;
-}
-
-
 #ifdef CONFIG_LAZY_FP_SHARING
 
 /**
