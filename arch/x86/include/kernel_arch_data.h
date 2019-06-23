@@ -117,13 +117,6 @@ extern void z_x86_thread_entry_wrapper(k_thread_entry_t entry,
 				      void *p1, void *p2, void *p3);
 #endif /* _THREAD_WRAPPER_REQUIRED */
 
-#ifdef DEBUG
-#include <misc/printk.h>
-#define PRINTK(...) printk(__VA_ARGS__)
-#else
-#define PRINTK(...)
-#endif /* DEBUG */
-
 #ifdef __cplusplus
 extern "C" {
 #endif

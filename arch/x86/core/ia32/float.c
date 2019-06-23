@@ -238,9 +238,6 @@ void _FpNotAvailableExcHandler(NANO_ESF *pEsf)
 	 * error checking to ensure the exception was not generated in an ISR.)
 	 */
 
-	PRINTK("_FpNotAvailableExcHandler() exception handler has been "
-	       "invoked\n");
-
 	/* Enable highest level of FP capability configured into the kernel */
 
 	k_float_enable(_current, _FP_USER_MASK);
