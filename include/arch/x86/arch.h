@@ -678,13 +678,6 @@ void z_x86_reset_pages(void *start, size_t size);
 
 #endif /* !_ASMLANGUAGE */
 
-/* reboot through Reset Control Register (I/O port 0xcf9) */
-
-#define SYS_X86_RST_CNT_REG 0xcf9
-#define SYS_X86_RST_CNT_SYS_RST 0x02
-#define SYS_X86_RST_CNT_CPU_RST 0x4
-#define SYS_X86_RST_CNT_FULL_RST 0x08
-
 #ifdef __cplusplus
 }
 #endif
