@@ -1714,10 +1714,7 @@ u32_t ticker_start(u8_t instance_index, u8_t user_id, u8_t ticker_id,
 
 	user = &instance->user[user_id];
 
-	last = user->last + 1;
-	if (last >= user->count_user_op) {
-		last = 0U;
-	}
+	last = (user->last + 1) % user->count_user_op;
 
 	if (last == user->first) {
 		return TICKER_STATUS_FAILURE;
@@ -1788,10 +1785,7 @@ u32_t ticker_update(u8_t instance_index, u8_t user_id, u8_t ticker_id,
 
 	user = &instance->user[user_id];
 
-	last = user->last + 1;
-	if (last >= user->count_user_op) {
-		last = 0U;
-	}
+	last = (user->last + 1) % user->count_user_op;
 
 	if (last == user->first) {
 		return TICKER_STATUS_FAILURE;
@@ -1846,10 +1840,7 @@ u32_t ticker_stop(u8_t instance_index, u8_t user_id, u8_t ticker_id,
 
 	user = &instance->user[user_id];
 
-	last = user->last + 1;
-	if (last >= user->count_user_op) {
-		last = 0U;
-	}
+	last = (user->last + 1) % user->count_user_op;
 
 	if (last == user->first) {
 		return TICKER_STATUS_FAILURE;
@@ -1904,10 +1895,7 @@ u32_t ticker_next_slot_get(u8_t instance_index, u8_t user_id, u8_t *ticker_id,
 
 	user = &instance->user[user_id];
 
-	last = user->last + 1;
-	if (last >= user->count_user_op) {
-		last = 0U;
-	}
+	last = (user->last + 1) % user->count_user_op;
 
 	if (last == user->first) {
 		return TICKER_STATUS_FAILURE;
@@ -1959,10 +1947,7 @@ u32_t ticker_job_idle_get(u8_t instance_index, u8_t user_id,
 
 	user = &instance->user[user_id];
 
-	last = user->last + 1;
-	if (last >= user->count_user_op) {
-		last = 0U;
-	}
+	last = (user->last + 1) % user->count_user_op;
 
 	if (last == user->first) {
 		return TICKER_STATUS_FAILURE;
