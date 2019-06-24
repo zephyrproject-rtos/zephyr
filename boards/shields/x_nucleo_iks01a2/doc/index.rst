@@ -42,7 +42,7 @@ X-NUCLEO-IKS01A2 provides the following key features:
 
 
 More information about X-NUCLEO-IKS01A2 can be found here:
-       - `X-NUCLEO-IKS01A2 data sheet`_
+       - `X-NUCLEO-IKS01A2 databrief`_
 
 
 Programming
@@ -60,5 +60,5 @@ References
 .. _X-NUCLEO-IKS01A2 website:
    http://www.st.com/en/ecosystems/x-nucleo-iks01a2.html
 
-.. _X-NUCLEO-IKS01A2 data sheet:
-   http://www.st.com/resource/en/datasheet/x-nucleo-iks01a2.pdf
+.. _X-NUCLEO-IKS01A2 databrief:
+   http://www.st.com/resource/en/data_brief/x-nucleo-iks01a2.pdf
