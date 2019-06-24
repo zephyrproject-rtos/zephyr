@@ -1308,15 +1308,13 @@ def _check_valid(dialog, entry, sym, s):
 
     for low_sym, high_sym, cond in sym.ranges:
         if expr_value(cond):
-            low = int(low_sym.str_value, base)
-            val = int(s, base)
-            high = int(high_sym.str_value, base)
+            low_s = low_sym.str_value
+            high_s = high_sym.str_value
 
-            if not low <= val <= high:
+            if not int(low_s, base) <= int(s, base) <= int(high_s, base):
                 messagebox.showerror(
                     "Value out of range",
-                    "{} is outside the range {}-{}".format(
-                        s, low_sym.str_value, high_sym.str_value),
+                    "{} is outside the range {}-{}".format(s, low_s, high_s),
                     parent=dialog)
                 entry.focus_set()
                 return False
@@ -2123,7 +2121,7 @@ def _defaults_info(sc):
 
     s = "Defaults:\n"
 
-    for val, cond in sc.defaults:
+    for val, cond in sc.orig_defaults:
         s += "  - "
         if isinstance(sc, Symbol):
             s += _expr_str(val)
