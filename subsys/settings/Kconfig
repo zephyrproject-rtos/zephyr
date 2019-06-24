@@ -65,6 +65,12 @@ config SETTINGS_FS
 	help
 	  Use a file system as a settings storage back-end.
 
+config SETTINGS_NVS
+	bool "NVS non-volatile storage support"
+	depends on SETTINGS
+	help
+	  Enables NVS storage support
+
 config SETTINGS_CUSTOM
 	bool "CUSTOM"
 	help
@@ -111,3 +117,18 @@ config SETTINGS_FS_MAX_LINES
 	depends on SETTINGS && SETTINGS_FS
 	help
 	  Limit how many items stored in a file before compressing
+
+config SETTINGS_NVS_SECTOR_SIZE_MULT
+	int "Sector size of the NVS settings area"
+	default 1
+	depends on SETTINGS && SETTINGS_NVS
+	help
+	  The sector size to use for the NVS settings area as a multiple of
+	  FLASH_ERASE_BLOCK_SIZE.
+
+config SETTINGS_NVS_SECTOR_COUNT
+	int "Sector count of the NVS settings area"
+	default 8
+	depends on SETTINGS && SETTINGS_NVS
+	help
+	  Number of sectors used for the NVS settings area

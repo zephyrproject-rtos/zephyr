@@ -117,6 +117,58 @@ int settings_backend_init(void)
 
 	return rc;
 }
+
+#elif defined(CONFIG_SETTINGS_NVS)
+#include <device.h>
+#include <flash_map.h>
+#include "settings/settings_nvs.h"
+
+static struct settings_nvs default_settings_nvs;
+
+int settings_backend_init(void)
+{
+	int rc;
+	u16_t cnt = 0;
+	size_t nvs_sector_size, nvs_size = 0;
+	const struct flash_area *fa;
+
+	rc = flash_area_open(DT_FLASH_AREA_STORAGE_ID, &fa);
+	if (rc) {
+		return rc;
+	}
+
+	nvs_sector_size = CONFIG_SETTINGS_NVS_SECTOR_SIZE_MULT *
+			  DT_FLASH_ERASE_BLOCK_SIZE;
+	while (cnt < CONFIG_SETTINGS_NVS_SECTOR_COUNT) {
+		nvs_size += nvs_sector_size;
+		if (nvs_size > fa->fa_size) {
+			break;
+		}
+		cnt++;
+	}
+
+	/* define the nvs file system using the page_info */
+	default_settings_nvs.cf_nvs.sector_size = nvs_sector_size;
+	default_settings_nvs.cf_nvs.sector_count = cnt;
+	default_settings_nvs.cf_nvs.offset = fa->fa_off;
+	default_settings_nvs.flash_dev_name = fa->fa_dev_name;
+
+	rc = settings_nvs_backend_init(&default_settings_nvs);
+	if (rc) {
+		return rc;
+	}
+
+	rc = settings_nvs_src(&default_settings_nvs);
+
+	if (rc) {
+		return rc;
+	}
+
+	rc = settings_nvs_dst(&default_settings_nvs);
+
+	return rc;
+}
+
 #elif defined(CONFIG_SETTINGS_NONE)
 int settings_backend_init(void)
 {
