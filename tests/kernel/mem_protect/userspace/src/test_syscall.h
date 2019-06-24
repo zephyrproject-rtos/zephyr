@@ -9,6 +9,7 @@
 
 __syscall void stack_info_get(u32_t *start_addr, u32_t *size);
 __syscall int check_perms(void *addr, size_t size, int write);
+__syscall void missing_syscall(void);
 
 #include <syscalls/test_syscall.h>
 
