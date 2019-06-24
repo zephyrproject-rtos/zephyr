@@ -365,6 +365,10 @@ The shell module supports the following meta keys:
    * - :kbd:`Ctrl + l`
      - Clears the screen and leaves the currently typed command at the top of
        the screen.
+   * - :kbd:`Ctrl + n`
+     - Moves in history to next entry.
+   * - :kbd:`Ctrl + p`
+     - Moves in history to previous entry.
    * - :kbd:`Ctrl + u`
      - Clears the currently typed command.
    * - :kbd:`Ctrl + w`
