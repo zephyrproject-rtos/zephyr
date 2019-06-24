@@ -762,7 +762,7 @@ static u32_t handler_bad_syscall(u32_t bad_id, u32_t arg2, u32_t arg3,
 {
 	printk("Bad system call id %u invoked\n", bad_id);
 	z_arch_syscall_oops(ssf);
-	CODE_UNREACHABLE;
+	CODE_UNREACHABLE; /* LCOV_EXCL_LINE */
 }
 
 static u32_t handler_no_syscall(u32_t arg1, u32_t arg2, u32_t arg3,
@@ -770,7 +770,7 @@ static u32_t handler_no_syscall(u32_t arg1, u32_t arg2, u32_t arg3,
 {
 	printk("Unimplemented system call\n");
 	z_arch_syscall_oops(ssf);
-	CODE_UNREACHABLE;
+	CODE_UNREACHABLE; /* LCOV_EXCL_LINE */
 }
 
 #include <syscall_dispatch.c>
