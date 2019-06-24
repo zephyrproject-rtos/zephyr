@@ -12,3 +12,4 @@ by Zephyr.
 
    */*
    counter/alarm/README.rst
+   counter/maxim_ds3231/README.rst

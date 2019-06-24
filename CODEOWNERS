@@ -140,6 +140,7 @@
 /drivers/clock_control/*nrf*              @nordic-krch
 /drivers/counter/                         @nordic-krch
 /drivers/counter/counter_cmos.c           @andrewboie
+/drivers/counter/maxim_ds3231.c           @pabigot
 /drivers/crypto/*nrf_ecb*                 @maciekfabia @anangl
 /drivers/console/*mux*                    @jukkar
 /drivers/display/                         @vanwinkeljan
@@ -376,6 +377,7 @@
 /samples/drivers/display/                 @vanwinkeljan
 /samples/drivers/ht16k33/                 @henrikbrixandersen
 /samples/drivers/lora/                    @Mani-Sadhasivam
+/samples/drivers/counter/maxim_ds3231/    @pabigot
 /samples/net/                             @jukkar @tbursztyka @pfalcon
 /samples/net/dns_resolve/                 @jukkar @tbursztyka @pfalcon
 /samples/net/lwm2m_client/                @rlubos
