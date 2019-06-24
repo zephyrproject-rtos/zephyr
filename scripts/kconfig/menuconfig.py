@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 
 # Copyright (c) 2018-2019, Nordic Semiconductor ASA and Ulf Magnusson
 # SPDX-License-Identifier: ISC
@@ -7,8 +7,8 @@
 Overview
 ========
 
-A curses-based menuconfig implementation. The interface should feel familiar to
-people used to mconf ('make menuconfig').
+A curses-based Python 2/3 menuconfig implementation. The interface should feel
+familiar to people used to mconf ('make menuconfig').
 
 Supports the same keys as mconf, and also supports a set of keybindings
 inspired by Vi:
@@ -174,19 +174,15 @@ Other features
 Limitations
 ===========
 
-  - Python 3 only
+Doesn't work out of the box on Windows, but can be made to work with 'pip
+install windows-curses'. See the
+https://github.com/zephyrproject-rtos/windows-curses repository.
 
-    This is mostly due to Python 2 not having curses.get_wch(), which is needed
-    for Unicode support.
-
-  - Doesn't work out of the box on Windows
-
-    Can be made to work with 'pip install windows-curses' though. See the
-    https://github.com/zephyrproject-rtos/windows-curses repository.
-
-    'pip install kconfiglib' on Windows automatically installs windows-curses
-    to make the menuconfig usable.
+'pip install kconfiglib' on Windows automatically installs windows-curses
+to make the menuconfig usable.
 """
+from __future__ import print_function
+
 import curses
 import errno
 import locale
@@ -208,12 +204,12 @@ from kconfiglib import Symbol, Choice, MENU, COMMENT, MenuNode, \
 # Configuration variables
 #
 
-# If True, try to convert LC_CTYPE to a UTF-8 locale if it is set to the C
+# If True, try to change LC_CTYPE to a UTF-8 locale if it is set to the C
 # locale (which implies ASCII). This fixes curses Unicode I/O issues on systems
 # with bad defaults. ncurses configures itself from the locale settings.
 #
 # Related PEP: https://www.python.org/dev/peps/pep-0538/
-_CONVERT_C_LC_CTYPE_TO_UTF8 = True
+_CHANGE_C_LC_CTYPE_TO_UTF8 = True
 
 # How many steps an implicit submenu will be indented. Implicit submenus are
 # created when an item depends on the symbol before it. Note that symbols
@@ -679,8 +675,8 @@ def menuconfig(kconf):
     locale.setlocale(locale.LC_ALL, "")
 
     # Try to fix Unicode issues on systems with bad defaults
-    if _CONVERT_C_LC_CTYPE_TO_UTF8:
-        _convert_c_lc_ctype_to_utf8()
+    if _CHANGE_C_LC_CTYPE_TO_UTF8:
+        _change_c_lc_ctype_to_utf8()
 
     # Get rid of the delay between pressing ESC and jumping to the parent menu,
     # unless the user has set ESCDELAY (see ncurses(3)). This makes the UI much
@@ -804,7 +800,7 @@ def _menuconfig(stdscr):
         curses.doupdate()
 
 
-        c = _get_wch_compat(_menu_win)
+        c = _getch_compat(_menu_win)
 
         if c == curses.KEY_RESIZE:
             _resize_main()
@@ -957,10 +953,12 @@ def _init():
     # Looking for this in addition to KEY_BACKSPACE (which is unreliable) makes
     # backspace work with TERM=vt100. That makes it likely to work in sane
     # environments.
-    #
-    # erasechar() returns a 'bytes' object. Since we use get_wch(), we need to
-    # decode it. Just give up and avoid crashing if it can't be decoded.
-    _ERASE_CHAR = curses.erasechar().decode("utf-8", "ignore")
+    _ERASE_CHAR = curses.erasechar()
+    if sys.version_info[0] >= 3:
+        # erasechar() returns a one-byte bytes object on Python 3. This sets
+        # _ERASE_CHAR to a blank string if it can't be decoded, which should be
+        # harmless.
+        _ERASE_CHAR = _ERASE_CHAR.decode("utf-8", "ignore")
 
     _init_styles()
 
@@ -1717,7 +1715,7 @@ def _input_dialog(title, initial_text, info_text=None):
         curses.doupdate()
 
 
-        c = _get_wch_compat(win)
+        c = _getch_compat(win)
 
         if c == curses.KEY_RESIZE:
             # Resize the main display too. The dialog floats above it.
@@ -1921,7 +1919,7 @@ def _key_dialog(title, text, keys):
         curses.doupdate()
 
 
-        c = _get_wch_compat(win)
+        c = _getch_compat(win)
 
         if c == curses.KEY_RESIZE:
             # Resize the main display too. The dialog floats above it.
@@ -2019,30 +2017,29 @@ def _jump_to_dialog():
 
     _safe_curs_set(2)
 
-    # TODO: Code duplication with _select_{next,prev}_menu_entry(). Can this be
-    # factored out in some nice way?
+    # Logic duplication with _select_{next,prev}_menu_entry(), except we do a
+    # functional variant that returns the new (sel_node_i, scroll) values to
+    # avoid 'nonlocal'. TODO: Can this be factored out in some nice way?
 
     def select_next_match():
-        nonlocal sel_node_i
-        nonlocal scroll
+        if sel_node_i == len(matches) - 1:
+            return sel_node_i, scroll
 
-        if sel_node_i < len(matches) - 1:
-            sel_node_i += 1
+        if sel_node_i + 1 >= scroll + _height(matches_win) - _SCROLL_OFFSET \
+           and scroll < _max_scroll(matches, matches_win):
 
-            if sel_node_i >= scroll + _height(matches_win) - _SCROLL_OFFSET \
-               and scroll < _max_scroll(matches, matches_win):
+            return sel_node_i + 1, scroll + 1
 
-                scroll += 1
+        return sel_node_i + 1, scroll
 
     def select_prev_match():
-        nonlocal sel_node_i
-        nonlocal scroll
+        if sel_node_i == 0:
+            return sel_node_i, scroll
 
-        if sel_node_i > 0:
-            sel_node_i -= 1
+        if sel_node_i - 1 < scroll + _SCROLL_OFFSET:
+            return sel_node_i - 1, max(scroll - 1, 0)
 
-            if sel_node_i < scroll + _SCROLL_OFFSET:
-                scroll = max(scroll - 1, 0)
+        return sel_node_i - 1, scroll
 
     while True:
         if s != prev_s:
@@ -2118,7 +2115,7 @@ def _jump_to_dialog():
         curses.doupdate()
 
 
-        c = _get_wch_compat(edit_box)
+        c = _getch_compat(edit_box)
 
         if c == "\n":
             if matches:
@@ -2149,21 +2146,21 @@ def _jump_to_dialog():
                     sel_node_i, scroll)
 
         elif c == curses.KEY_DOWN:
-            select_next_match()
+            sel_node_i, scroll = select_next_match()
 
         elif c == curses.KEY_UP:
-            select_prev_match()
+            sel_node_i, scroll = select_prev_match()
 
         elif c in (curses.KEY_NPAGE, "\x04"):  # Page Down/Ctrl-D
             # Keep it simple. This way we get sane behavior for small windows,
             # etc., for free.
             for _ in range(_PG_JUMP):
-                select_next_match()
+                sel_node_i, scroll = select_next_match()
 
         # Page Up (no Ctrl-U, as it's already used by the edit box)
         elif c == curses.KEY_PPAGE:
             for _ in range(_PG_JUMP):
-                select_prev_match()
+                sel_node_i, scroll = select_prev_match()
 
         elif c == curses.KEY_END:
             sel_node_i = len(matches) - 1
@@ -2383,7 +2380,7 @@ def _info_dialog(node, from_jump_to_dialog):
         curses.doupdate()
 
 
-        c = _get_wch_compat(text_win)
+        c = _getch_compat(text_win)
 
         if c == curses.KEY_RESIZE:
             _resize_info_dialog(top_line_win, text_win, bot_sep_win, help_win)
@@ -2619,8 +2616,7 @@ def _help_info(sc):
 
     for node in sc.nodes:
         if node.help is not None:
-            s += "Help:\n\n{}\n\n" \
-                 .format(textwrap.indent(node.help, "  "))
+            s += "Help:\n\n{}\n\n".format(_indent(node.help, 2))
 
     return s
 
@@ -2645,7 +2641,7 @@ def _defaults_info(sc):
 
     s = "Defaults:\n"
 
-    for val, cond in sc.defaults:
+    for val, cond in sc.orig_defaults:
         s += "  - "
         if isinstance(sc, Symbol):
             s += _expr_str(val)
@@ -2708,34 +2704,34 @@ def _select_imply_info(sym):
     # 'sym'. The selecting/implying symbols are grouped according to which
     # value they select/imply 'sym' to (n/m/y).
 
-    s = ""
-
-    def add_sis(expr, val, title):
-        nonlocal s
-
+    def sis(expr, val, title):
         # sis = selects/implies
         sis = [si for si in split_expr(expr, OR) if expr_value(si) == val]
-        if sis:
-            s += title
-            for si in sis:
-                s += "  - {}\n".format(split_expr(si, AND)[0].name)
-            s += "\n"
+        if not sis:
+            return ""
+
+        res = title
+        for si in sis:
+            res += "  - {}\n".format(split_expr(si, AND)[0].name)
+        return res + "\n"
+
+    s = ""
 
     if sym.rev_dep is not _kconf.n:
-        add_sis(sym.rev_dep, 2,
-                "Symbols currently y-selecting this symbol:\n")
-        add_sis(sym.rev_dep, 1,
-                "Symbols currently m-selecting this symbol:\n")
-        add_sis(sym.rev_dep, 0,
-                "Symbols currently n-selecting this symbol (no effect):\n")
+        s += sis(sym.rev_dep, 2,
+                 "Symbols currently y-selecting this symbol:\n")
+        s += sis(sym.rev_dep, 1,
+                 "Symbols currently m-selecting this symbol:\n")
+        s += sis(sym.rev_dep, 0,
+                 "Symbols currently n-selecting this symbol (no effect):\n")
 
     if sym.weak_rev_dep is not _kconf.n:
-        add_sis(sym.weak_rev_dep, 2,
-                "Symbols currently y-implying this symbol:\n")
-        add_sis(sym.weak_rev_dep, 1,
-                "Symbols currently m-implying this symbol:\n")
-        add_sis(sym.weak_rev_dep, 0,
-                "Symbols currently n-implying this symbol (no effect):\n")
+        s += sis(sym.weak_rev_dep, 2,
+                 "Symbols currently y-implying this symbol:\n")
+        s += sis(sym.weak_rev_dep, 1,
+                 "Symbols currently m-implying this symbol:\n")
+        s += sis(sym.weak_rev_dep, 0,
+                 "Symbols currently n-implying this symbol (no effect):\n")
 
     return s
 
@@ -2759,7 +2755,7 @@ def _kconfig_def_info(item):
              .format(node.filename, node.linenr,
                      _include_path_info(node),
                      _menu_path_info(node),
-                     textwrap.indent(node.custom_str(_name_and_val_str), "  "))
+                     _indent(node.custom_str(_name_and_val_str), 2))
 
     return s
 
@@ -2789,6 +2785,13 @@ def _menu_path_info(node):
                          standard_sc_expr_str(node.item)) + path
 
     return "(Top)" + path
+
+
+def _indent(s, n):
+    # Returns 's' with each line indented 'n' spaces. textwrap.indent() is not
+    # available in Python 2 (it's 3.3+).
+
+    return "\n".join(n*" " + line for line in s.split("\n"))
 
 
 def _name_and_val_str(sc):
@@ -3074,14 +3077,12 @@ def _check_valid(sym, s):
 
     for low_sym, high_sym, cond in sym.ranges:
         if expr_value(cond):
-            low = int(low_sym.str_value, base)
-            val = int(s, base)
-            high = int(high_sym.str_value, base)
+            low_s = low_sym.str_value
+            high_s = high_sym.str_value
 
-            if not low <= val <= high:
+            if not int(low_s, base) <= int(s, base) <= int(high_s, base):
                 _error("{} is outside the range {}-{}"
-                       .format(s, low_sym.str_value, high_sym.str_value))
-
+                       .format(s, low_s, high_s))
                 return False
 
             break
@@ -3120,7 +3121,17 @@ def _is_num(name):
     return True
 
 
-def _get_wch_compat(win):
+def _getch_compat(win):
+    # Uses get_wch() if available (Python 3.3+) and getch() otherwise. Also
+    # handles a PDCurses resizing quirk.
+
+    if hasattr(win, "get_wch"):
+        c = win.get_wch()
+    else:
+        c = win.getch()
+        if 0 <= c <= 255:
+            c = chr(c)
+
     # Decent resizing behavior on PDCurses requires calling resize_term(0, 0)
     # after receiving KEY_RESIZE, while ncurses (usually) handles terminal
     # resizing automatically in get(_w)ch() (see the end of the
@@ -3129,8 +3140,6 @@ def _get_wch_compat(win):
     # resize_term(0, 0) reliably fails and does nothing on ncurses, so this
     # hack gives ncurses/PDCurses compatibility for resizing. I don't know
     # whether it would cause trouble for other implementations.
-
-    c = win.get_wch()
     if c == curses.KEY_RESIZE:
         try:
             curses.resize_term(0, 0)
@@ -3219,8 +3228,8 @@ def _safe_move(win, *args):
         pass
 
 
-def _convert_c_lc_ctype_to_utf8():
-    # See _CONVERT_C_LC_CTYPE_TO_UTF8
+def _change_c_lc_ctype_to_utf8():
+    # See _CHANGE_C_LC_CTYPE_TO_UTF8
 
     if _IS_WINDOWS:
         # Windows rarely has issues here, and the PEP 538 implementation avoids
@@ -3236,15 +3245,13 @@ def _convert_c_lc_ctype_to_utf8():
             return False
 
     # Is LC_CTYPE set to the C locale?
-    if locale.setlocale(locale.LC_CTYPE, None) == "C":
+    if locale.setlocale(locale.LC_CTYPE) == "C":
         # This list was taken from the PEP 538 implementation in the CPython
         # code, in Python/pylifecycle.c
         for loc in "C.UTF-8", "C.utf8", "UTF-8":
             if try_set_locale(loc):
-                print("Note: Your environment is configured to use ASCII. To "
-                      "avoid Unicode issues, LC_CTYPE was changed from the "
-                      "C locale to the {} locale.".format(loc))
-                break
+                # LC_CTYPE successfully changed
+                return
 
 
 # Are we running on Windows?
