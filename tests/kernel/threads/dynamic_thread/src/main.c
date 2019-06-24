@@ -10,8 +10,6 @@
 
 #define STACKSIZE (256 + CONFIG_TEST_EXTRA_STACKSIZE)
 
-#if defined(CONFIG_USERSPACE) && defined(CONFIG_DYNAMIC_OBJECTS)
-
 static K_THREAD_STACK_DEFINE(dyn_thread_stack, STACKSIZE);
 static K_SEM_DEFINE(start_sem, 0, 1);
 static K_SEM_DEFINE(end_sem, 0, 1);
@@ -106,25 +104,56 @@ static void test_dyn_thread_perms(void)
 	TC_PRINT("===== must have access denied on k_sem %p\n", &end_sem);
 }
 
-#else /* (CONFIG_USERSPACE && CONFIG_DYNAMIC_OBJECTS) */
+static struct k_thread *dynamic_threads[CONFIG_MAX_THREAD_BYTES * 8];
 
-static void prep(void)
+static void test_thread_index_management(void)
 {
-}
+	int i, ctr = 0;
 
-static void create_dynamic_thread(void)
-{
-	TC_PRINT("Test skipped. Userspace and dynamic objects required.\n");
-	ztest_test_skip();
-}
+	/* Create thread objects until we run out of ids */
+	while (true) {
+		struct k_thread *t = k_object_alloc(K_OBJ_THREAD);
 
-static void test_dyn_thread_perms(void)
-{
-	TC_PRINT("Test skipped. Userspace and dynamic objects required.\n");
-	ztest_test_skip();
-}
+		if (t == NULL) {
+			break;
+		}
 
-#endif /* !(CONFIG_USERSPACE && CONFIG_DYNAMIC_OBJECTS) */
+		dynamic_threads[ctr] = t;
+		ctr++;
+	}
+
+	zassert_true(ctr != 0, "unable to create any thread objects");
+
+	TC_PRINT("created %d thread objects\n", ctr);
+
+	/* Show that the above NULL return value wasn't because we ran out of
+	 * heap space/
+	 */
+	void *blob = k_malloc(256);
+	zassert_true(blob != NULL, "out of heap memory");
+
+	/* Free one of the threads... */
+	k_object_free(dynamic_threads[0]);
+
+	/* And show that we can now create another one, the freed thread's
+	 * index should have been garbage collected.
+	 */
+	dynamic_threads[0] = k_object_alloc(K_OBJ_THREAD);
+	zassert_true(dynamic_threads[0] != NULL,
+		     "couldn't create thread object\n");
+
+	/* TODO: Implement a test that shows that thread IDs are properly
+	 * recycled when a thread object is garbage collected due to references
+	 * dropping to zero. For example, we ought to be able to exit here
+	 * without calling k_object_free() on any of the threads we created
+	 * here; their references would drop to zero and they would be
+	 * automatically freed. However, it is known that the thread IDs are
+	 * not properly recycled when this happens, see #17023.
+	 */
+	for (i = 0; i < ctr; i++) {
+		k_object_free(dynamic_threads[i]);
+	}
+}
 
 /**
  * @ingroup kernel_thread_tests
@@ -160,7 +189,8 @@ void test_main(void)
 	ztest_test_suite(thread_dynamic,
 			 ztest_unit_test(test_kernel_create_dyn_user_thread),
 			 ztest_user_unit_test(test_user_create_dyn_user_thread),
-			 ztest_unit_test(test_dyn_thread_perms)
+			 ztest_unit_test(test_dyn_thread_perms),
+			 ztest_unit_test(test_thread_index_management)
 			 );
 	ztest_run_test_suite(thread_dynamic);
 }
