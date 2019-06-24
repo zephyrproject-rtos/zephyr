@@ -18,12 +18,15 @@ find_program(CMAKE_GDB          gdb    )
 # avoid a confusing game of "who's last on the command line wins".
 # Maybe the -m32/-miamcu FLAGS should all be next to -march= in the
 # longer term?
-if(NOT CONFIG_X86_64)
-  string(PREPEND CMAKE_ASM_FLAGS             "-m32 ")
-  string(PREPEND CMAKE_C_FLAGS               "-m32 ")
-  string(PREPEND CMAKE_CXX_FLAGS             "-m32 ")
-  string(PREPEND CMAKE_SHARED_LINKER_FLAGS   "-m32 ") # unused?
+if(CONFIG_64BIT)
+  set(FLAG_PREPEND " ")
+else()
+  set(FLAG_PREPEND "-m32 ")
 endif()
+string(PREPEND CMAKE_ASM_FLAGS             ${FLAG_PREPEND})
+string(PREPEND CMAKE_C_FLAGS               ${FLAG_PREPEND})
+string(PREPEND CMAKE_CXX_FLAGS             ${FLAG_PREPEND})
+string(PREPEND CMAKE_SHARED_LINKER_FLAGS   ${FLAG_PREPEND}) # unused?
 
 if(CONFIG_CPLUSPLUS)
   set(cplusplus_compiler g++)
