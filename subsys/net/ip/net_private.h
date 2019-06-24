@@ -156,7 +156,7 @@ static inline void net_pkt_hexdump(struct net_pkt *pkt, const char *str)
 	snprintk(pkt_str, sizeof(pkt_str), "%p", pkt);
 
 	while (buf) {
-		LOG_HEXDUMP_DBG(buf->data, buf->len, pkt_str);
+		LOG_HEXDUMP_DBG(buf->data, buf->len, log_strdup(pkt_str));
 		buf = buf->frags;
 	}
 }
