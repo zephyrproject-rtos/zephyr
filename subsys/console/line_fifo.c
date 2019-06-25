@@ -10,7 +10,7 @@
  */
 
 #include <zephyr.h>
-#include <console.h>
+#include <console/console.h>
 
 #ifdef CONFIG_UART_CONSOLE
 #include <drivers/console/uart_console.h>
