@@ -7,7 +7,7 @@
 #include <init.h>
 #include <device.h>
 #include <kernel.h>
-#include <watchdog.h>
+#include <drivers/watchdog.h>
 #include <drivers/interrupt_controller/ioapic.h>
 #include <power/power.h>
 #include <soc.h>
@@ -15,7 +15,7 @@
 #include "clk.h"
 #include "qm_isr.h"
 #include "qm_wdt.h"
-#include <watchdog.h>
+#include <drivers/watchdog.h>
 
 struct wdt_data {
 #ifdef CONFIG_WDT_QMSI_API_REENTRANCY

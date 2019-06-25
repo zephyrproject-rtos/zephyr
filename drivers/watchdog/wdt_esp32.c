@@ -10,7 +10,7 @@
 
 #include <soc.h>
 #include <string.h>
-#include <watchdog.h>
+#include <drivers/watchdog.h>
 #include <device.h>
 
 enum wdt_mode {

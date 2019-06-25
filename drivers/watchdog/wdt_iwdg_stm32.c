@@ -6,7 +6,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <watchdog.h>
+#include <drivers/watchdog.h>
 #include <soc.h>
 #include <errno.h>
 #include <assert.h>

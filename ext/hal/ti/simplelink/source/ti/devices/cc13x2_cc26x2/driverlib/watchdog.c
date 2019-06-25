@@ -36,6 +36,6 @@
 *
 ******************************************************************************/
 
-#include "watchdog.h"
+#include <drivers/watchdog.h>
 
 // See watchdog.h for implementation
