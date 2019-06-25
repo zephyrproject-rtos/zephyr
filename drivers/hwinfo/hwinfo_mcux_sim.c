@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <hwinfo.h>
+#include <drivers/hwinfo.h>
 #include <string.h>
 #include <fsl_sim.h>
 

@@ -5,7 +5,7 @@
  */
 
 #include <syscall_handler.h>
-#include <hwinfo.h>
+#include <drivers/hwinfo.h>
 
 Z_SYSCALL_HANDLER(hwinfo_get_device_id, buffer, length) {
 

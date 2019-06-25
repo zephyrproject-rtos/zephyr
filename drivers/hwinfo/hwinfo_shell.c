@@ -6,7 +6,7 @@
 
 #include <misc/printk.h>
 #include <shell/shell.h>
-#include <hwinfo.h>
+#include <drivers/hwinfo.h>
 #include <zephyr/types.h>
 #include <logging/log.h>
 
