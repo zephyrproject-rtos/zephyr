@@ -53,4 +53,6 @@ function compile(){
 
 APP=tests/bluetooth/bsim_bt/bsim_test_app compile
 APP=tests/bluetooth/bsim_bt/bsim_test_app CONF_FILE=prj_split.conf \
-	compile
+   compile
+APP=tests/bluetooth/bsim_bt/edtt_ble_test_app/hci_test_app compile
+APP=tests/bluetooth/bsim_bt/edtt_ble_test_app/gatt_test_app compile
