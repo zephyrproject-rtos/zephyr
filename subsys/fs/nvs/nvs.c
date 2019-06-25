@@ -10,7 +10,7 @@
 #include <errno.h>
 #include <inttypes.h>
 #include <fs/nvs.h>
-#include <crc.h>
+#include <sys/crc.h>
 #include "nvs_priv.h"
 
 #include <logging/log.h>

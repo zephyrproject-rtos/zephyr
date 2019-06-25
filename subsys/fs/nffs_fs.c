@@ -11,7 +11,7 @@
 #include <init.h>
 #include <flash.h>
 #include <fs/fs.h>
-#include <crc.h>
+#include <sys/crc.h>
 #include <misc/__assert.h>
 #include <misc/printk.h>
 #include <nffs/os.h>
