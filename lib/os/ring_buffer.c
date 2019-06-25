@@ -6,7 +6,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ring_buffer.h>
+#include <sys/ring_buffer.h>
 #include <string.h>
 
 /**

@@ -17,7 +17,7 @@
 #include <device.h>
 #include <drivers/uart.h>
 #include <zephyr.h>
-#include <ring_buffer.h>
+#include <sys/ring_buffer.h>
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(cdc_acm_composite, CONFIG_LOG_DEFAULT_LEVEL);

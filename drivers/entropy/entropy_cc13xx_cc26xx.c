@@ -8,7 +8,7 @@
 #include <device.h>
 #include <drivers/entropy.h>
 #include <irq.h>
-#include <ring_buffer.h>
+#include <sys/ring_buffer.h>
 #include <sys/sys_io.h>
 
 #include <driverlib/prcm.h>

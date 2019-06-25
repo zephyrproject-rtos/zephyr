@@ -15,7 +15,7 @@
 #define ZEPHYR_INCLUDE_DRIVERS_MODEM_MODEM_RECEIVER_H_
 
 #include <kernel.h>
-#include <ring_buffer.h>
+#include <sys/ring_buffer.h>
 
 #ifdef __cplusplus
 extern "C" {

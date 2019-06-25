@@ -10,7 +10,7 @@
 #include <zephyr.h>
 #include <misc/util.h>
 #include <misc/dlist.h>
-#include <ring_buffer.h>
+#include <sys/ring_buffer.h>
 #include <stdbool.h>
 
 #ifdef __cplusplus
