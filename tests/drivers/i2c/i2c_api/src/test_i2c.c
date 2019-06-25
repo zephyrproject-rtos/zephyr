@@ -12,7 +12,7 @@
  * @}
  */
 
-#include <i2c.h>
+#include <drivers/i2c.h>
 #include <zephyr.h>
 #include <ztest.h>
 

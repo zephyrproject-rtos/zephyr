@@ -11,7 +11,7 @@
 
 #include <drivers/gpio.h>
 #include <misc/util.h>
-#include <i2c.h>
+#include <drivers/i2c.h>
 
 #define LIS2MDL_EN_BIT                  1
 #define LIS2MDL_DIS_BIT                 0

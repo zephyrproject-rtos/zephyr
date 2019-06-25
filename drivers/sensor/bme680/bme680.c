@@ -12,7 +12,7 @@
 
 #include "bme680.h"
 #include <drivers/gpio.h>
-#include <i2c.h>
+#include <drivers/i2c.h>
 #include <init.h>
 #include <kernel.h>
 #include <misc/byteorder.h>

@@ -11,7 +11,7 @@
 #include <device.h>
 #include <drivers/gpio.h>
 #include <spi.h>
-#include <i2c.h>
+#include <drivers/i2c.h>
 #include <misc/util.h>
 
 /*

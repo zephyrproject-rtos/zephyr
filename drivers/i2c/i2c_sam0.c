@@ -9,7 +9,7 @@
 #include <device.h>
 #include <init.h>
 #include <soc.h>
-#include <i2c.h>
+#include <drivers/i2c.h>
 #include <drivers/dma.h>
 
 #include <logging/log.h>

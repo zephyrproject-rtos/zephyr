@@ -9,7 +9,7 @@
 
 #include <drivers/gpio.h>
 #include <led.h>
-#include <i2c.h>
+#include <drivers/i2c.h>
 #include <spi.h>
 #include <sensor.h>
 

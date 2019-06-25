@@ -17,7 +17,7 @@
  *   values for a LED will affect other LEDs also.
  */
 
-#include <i2c.h>
+#include <drivers/i2c.h>
 #include <led.h>
 #include <misc/util.h>
 #include <zephyr.h>

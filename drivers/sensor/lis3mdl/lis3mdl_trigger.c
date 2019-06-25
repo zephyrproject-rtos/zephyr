@@ -5,7 +5,7 @@
  */
 
 #include <device.h>
-#include <i2c.h>
+#include <drivers/i2c.h>
 #include <misc/__assert.h>
 #include <misc/util.h>
 #include <kernel.h>

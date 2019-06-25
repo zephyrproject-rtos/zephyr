@@ -8,7 +8,7 @@
 #include <kernel.h>
 #include <device.h>
 #include <init.h>
-#include <i2c.h>
+#include <drivers/i2c.h>
 #include <misc/byteorder.h>
 #include <misc/__assert.h>
 

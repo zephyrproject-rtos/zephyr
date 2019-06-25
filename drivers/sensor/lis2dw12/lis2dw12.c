@@ -17,7 +17,7 @@
 #if defined(DT_ST_LIS2DW12_BUS_SPI)
 #include <spi.h>
 #elif defined(DT_ST_LIS2DW12_BUS_I2C)
-#include <i2c.h>
+#include <drivers/i2c.h>
 #endif
 
 #include "lis2dw12.h"

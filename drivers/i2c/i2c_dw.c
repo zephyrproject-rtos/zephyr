@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-#include <i2c.h>
+#include <drivers/i2c.h>
 #include <kernel.h>
 #include <init.h>
 #include <arch/cpu.h>

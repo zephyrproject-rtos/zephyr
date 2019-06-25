@@ -16,7 +16,7 @@ LOG_MODULE_REGISTER(main);
 #include <stdio.h>
 #include <misc/util.h>
 
-#include <i2c.h>
+#include <drivers/i2c.h>
 #include <drivers/i2c/slave/eeprom.h>
 
 #include <ztest.h>

@@ -14,7 +14,7 @@
 #include <kernel.h>
 
 #include <drivers/gpio.h>
-#include <i2c.h>
+#include <drivers/i2c.h>
 
 #ifdef __cplusplus
 extern "C" {

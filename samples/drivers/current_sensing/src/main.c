@@ -9,7 +9,7 @@
 #include <misc/printk.h>
 
 #include <device.h>
-#include <i2c.h>
+#include <drivers/i2c.h>
 
 /**
  * @file Sample app using the TI INA219 through I2C.

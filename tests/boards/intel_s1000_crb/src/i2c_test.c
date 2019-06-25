@@ -31,7 +31,7 @@
 #include <misc/printk.h>
 
 #include <device.h>
-#include <i2c.h>
+#include <drivers/i2c.h>
 
 #define I2C_DEV                 "I2C_0"
 #define I2C_ADDR_LED_MAT0       0x65

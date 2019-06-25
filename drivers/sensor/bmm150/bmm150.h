@@ -11,7 +11,7 @@
 
 
 #include <zephyr/types.h>
-#include <i2c.h>
+#include <drivers/i2c.h>
 #include <stdint.h>
 #include <misc/util.h>
 

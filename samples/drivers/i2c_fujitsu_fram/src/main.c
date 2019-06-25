@@ -8,7 +8,7 @@
 #include <zephyr.h>
 #include <misc/printk.h>
 #include <device.h>
-#include <i2c.h>
+#include <drivers/i2c.h>
 
 #if defined(CONFIG_SOC_QUARK_SE_C1000_SS)
 #define I2C_DEV DT_I2C_SS_0_NAME

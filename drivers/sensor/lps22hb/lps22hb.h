@@ -12,7 +12,7 @@
 #define ZEPHYR_DRIVERS_SENSOR_LPS22HB_LPS22HB_H_
 
 #include <stdint.h>
-#include <i2c.h>
+#include <drivers/i2c.h>
 #include <misc/util.h>
 
 #define LPS22HB_REG_WHO_AM_I                    0x0F

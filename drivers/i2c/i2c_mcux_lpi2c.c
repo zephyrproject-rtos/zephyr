@@ -6,7 +6,7 @@
  */
 
 #include <errno.h>
-#include <i2c.h>
+#include <drivers/i2c.h>
 #include <drivers/clock_control.h>
 #include <fsl_lpi2c.h>
 

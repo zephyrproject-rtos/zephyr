@@ -9,7 +9,7 @@
  */
 
 #include <string.h>
-#include <i2c.h>
+#include <drivers/i2c.h>
 #include <logging/log.h>
 
 #include "lis2ds12.h"

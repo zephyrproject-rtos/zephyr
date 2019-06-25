@@ -5,7 +5,7 @@
  */
 
 
-#include <i2c.h>
+#include <drivers/i2c.h>
 #include <dt-bindings/i2c/i2c.h>
 #include <nrfx_twi.h>
 

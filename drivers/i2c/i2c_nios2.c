@@ -5,7 +5,7 @@
  */
 
 #include <errno.h>
-#include <i2c.h>
+#include <drivers/i2c.h>
 #include <soc.h>
 #include <misc/util.h>
 #include <altera_common.h>

@@ -9,7 +9,7 @@
 #ifndef ZEPHYR_DRIVERS_SENSOR_BMG160_BMG160_H_
 #define ZEPHYR_DRIVERS_SENSOR_BMG160_BMG160_H_
 
-#include <i2c.h>
+#include <drivers/i2c.h>
 #include <drivers/gpio.h>
 #include <misc/util.h>
 

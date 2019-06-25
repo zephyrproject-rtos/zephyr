@@ -9,7 +9,7 @@
 #include <errno.h>
 
 #include <kernel.h>
-#include <i2c.h>
+#include <drivers/i2c.h>
 #include <sensor.h>
 #include <init.h>
 #include <drivers/gpio.h>

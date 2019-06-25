@@ -15,7 +15,7 @@
 #include <misc/__assert.h>
 
 #ifdef DT_BOSCH_BME280_BUS_I2C
-#include <i2c.h>
+#include <drivers/i2c.h>
 #elif defined DT_BOSCH_BME280_BUS_SPI
 #include <spi.h>
 #endif

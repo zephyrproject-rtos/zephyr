@@ -5,7 +5,7 @@
  */
 
 #include <sensor.h>
-#include <i2c.h>
+#include <drivers/i2c.h>
 #include <drivers/gpio.h>
 
 #define FXOS8700_REG_STATUS			0x00
