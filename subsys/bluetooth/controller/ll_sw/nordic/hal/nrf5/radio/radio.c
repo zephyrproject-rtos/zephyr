@@ -29,6 +29,26 @@
 #error "Platform not defined."
 #endif
 
+#if defined(CONFIG_BT_CTLR_GPIO_PA_PIN)
+#if ((CONFIG_BT_CTLR_GPIO_PA_PIN) > 31)
+#define NRF_GPIO_PA     NRF_P1
+#define NRF_GPIO_PA_PIN ((CONFIG_BT_CTLR_GPIO_PA_PIN) - 32)
+#else
+#define NRF_GPIO_PA     NRF_GPIO
+#define NRF_GPIO_PA_PIN CONFIG_BT_CTLR_GPIO_PA_PIN
+#endif
+#endif /* CONFIG_BT_CTLR_GPIO_PA_PIN */
+
+#if defined(CONFIG_BT_CTLR_GPIO_LNA_PIN)
+#if ((CONFIG_BT_CTLR_GPIO_LNA_PIN) > 31)
+#define NRF_GPIO_LNA     NRF_P1
+#define NRF_GPIO_LNA_PIN ((CONFIG_BT_CTLR_GPIO_LNA_PIN) - 32)
+#else
+#define NRF_GPIO_LNA     NRF_GPIO
+#define NRF_GPIO_LNA_PIN CONFIG_BT_CTLR_GPIO_LNA_PIN
+#endif
+#endif /* CONFIG_BT_CTLR_GPIO_LNA_PIN */
+
 /* The following two constants are used in nrfx_glue.h for marking these PPI
  * channels and groups as occupied and thus unavailable to other modules.
  */
@@ -70,16 +90,16 @@ void radio_isr_set(radio_isr_cb_t cb, void *param)
 void radio_setup(void)
 {
 #if defined(CONFIG_BT_CTLR_GPIO_PA_PIN)
-	NRF_GPIO->DIRSET = BIT(CONFIG_BT_CTLR_GPIO_PA_PIN);
+	NRF_GPIO_PA->DIRSET = BIT(NRF_GPIO_PA_PIN);
 #if defined(CONFIG_BT_CTLR_GPIO_PA_POL_INV)
-	NRF_GPIO->OUTSET = BIT(CONFIG_BT_CTLR_GPIO_PA_PIN);
+	NRF_GPIO_PA->OUTSET = BIT(NRF_GPIO_PA_PIN);
 #else
-	NRF_GPIO->OUTCLR = BIT(CONFIG_BT_CTLR_GPIO_PA_PIN);
+	NRF_GPIO_PA->OUTCLR = BIT(NRF_GPIO_PA_PIN);
 #endif
 #endif /* CONFIG_BT_CTLR_GPIO_PA_PIN */
 
 #if defined(CONFIG_BT_CTLR_GPIO_LNA_PIN)
-	NRF_GPIO->DIRSET = BIT(CONFIG_BT_CTLR_GPIO_LNA_PIN);
+	NRF_GPIO_LNA->DIRSET = BIT(NRF_GPIO_LNA_PIN);
 
 	radio_gpio_lna_off();
 #endif /* CONFIG_BT_CTLR_GPIO_LNA_PIN */
@@ -894,6 +914,10 @@ u32_t radio_tmr_sample_get(void)
 #if defined(CONFIG_BT_CTLR_GPIO_PA_PIN)
 void radio_gpio_pa_setup(void)
 {
+	/* NOTE: With GPIO Pins above 31, left shift of
+	 *       CONFIG_BT_CTLR_GPIO_PA_PIN by GPIOTE_CONFIG_PSEL_Pos will
+	 *       set the NRF_GPIOTE->CONFIG[n].PORT to 1 (P1 port).
+	 */
 	NRF_GPIOTE->CONFIG[CONFIG_BT_CTLR_PA_LNA_GPIOTE_CHAN] =
 		(GPIOTE_CONFIG_MODE_Task <<
 		 GPIOTE_CONFIG_MODE_Pos) |
@@ -914,6 +938,10 @@ void radio_gpio_pa_setup(void)
 #if defined(CONFIG_BT_CTLR_GPIO_LNA_PIN)
 void radio_gpio_lna_setup(void)
 {
+	/* NOTE: With GPIO Pins above 31, left shift of
+	 *       CONFIG_BT_CTLR_GPIO_LNA_PIN by GPIOTE_CONFIG_PSEL_Pos will
+	 *       set the NRF_GPIOTE->CONFIG[n].PORT to 1 (P1 port).
+	 */
 	NRF_GPIOTE->CONFIG[CONFIG_BT_CTLR_PA_LNA_GPIOTE_CHAN] =
 		(GPIOTE_CONFIG_MODE_Task <<
 		 GPIOTE_CONFIG_MODE_Pos) |
@@ -933,18 +961,18 @@ void radio_gpio_lna_setup(void)
 void radio_gpio_lna_on(void)
 {
 #if defined(CONFIG_BT_CTLR_GPIO_LNA_POL_INV)
-	NRF_GPIO->OUTCLR = BIT(CONFIG_BT_CTLR_GPIO_LNA_PIN);
+	NRF_GPIO_LNA->OUTCLR = BIT(NRF_GPIO_LNA_PIN);
 #else
-	NRF_GPIO->OUTSET = BIT(CONFIG_BT_CTLR_GPIO_LNA_PIN);
+	NRF_GPIO_LNA->OUTSET = BIT(NRF_GPIO_LNA_PIN);
 #endif
 }
 
 void radio_gpio_lna_off(void)
 {
 #if defined(CONFIG_BT_CTLR_GPIO_LNA_POL_INV)
-	NRF_GPIO->OUTSET = BIT(CONFIG_BT_CTLR_GPIO_LNA_PIN);
+	NRF_GPIO_LNA->OUTSET = BIT(NRF_GPIO_LNA_PIN);
 #else
-	NRF_GPIO->OUTCLR = BIT(CONFIG_BT_CTLR_GPIO_LNA_PIN);
+	NRF_GPIO_LNA->OUTCLR = BIT(NRF_GPIO_LNA_PIN);
 #endif
 }
 #endif /* CONFIG_BT_CTLR_GPIO_LNA_PIN */
