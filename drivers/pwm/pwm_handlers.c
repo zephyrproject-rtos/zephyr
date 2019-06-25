@@ -5,7 +5,7 @@
  */
 
 #include <syscall_handler.h>
-#include <pwm.h>
+#include <drivers/pwm.h>
 
 Z_SYSCALL_HANDLER(pwm_pin_set_cycles, dev, pwm, period, pulse)
 {

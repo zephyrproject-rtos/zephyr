@@ -6,7 +6,7 @@
 
 #include <device.h>
 #include <errno.h>
-#include <pwm.h>
+#include <drivers/pwm.h>
 #include <soc.h>
 
 #define LOG_LEVEL CONFIG_PWM_LOG_LEVEL

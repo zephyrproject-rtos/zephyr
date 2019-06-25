@@ -28,7 +28,7 @@
 
 #include <device.h>
 #include <inttypes.h>
-#include <pwm.h>
+#include <drivers/pwm.h>
 #include <zephyr.h>
 #include <ztest.h>
 

@@ -6,7 +6,7 @@
 
 #include <soc.h>
 
-#include "pwm.h"
+#include <drivers/pwm.h>
 #include <nrf_peripherals.h>
 
 #define LOG_LEVEL CONFIG_PWM_LOG_LEVEL

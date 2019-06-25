@@ -12,7 +12,7 @@
 #include <misc/printk.h>
 #include <ctype.h>
 #include <drivers/gpio.h>
-#include <pwm.h>
+#include <drivers/pwm.h>
 
 #include <display/mb_display.h>
 

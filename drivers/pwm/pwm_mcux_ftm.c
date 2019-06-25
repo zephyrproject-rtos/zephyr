@@ -5,7 +5,7 @@
  */
 
 #include <errno.h>
-#include <pwm.h>
+#include <drivers/pwm.h>
 #include <soc.h>
 #include <fsl_ftm.h>
 #include <fsl_clock.h>

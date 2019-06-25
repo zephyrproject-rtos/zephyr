@@ -7,7 +7,7 @@
 #include <errno.h>
 
 #include <soc.h>
-#include <pwm.h>
+#include <drivers/pwm.h>
 #include <device.h>
 #include <kernel.h>
 #include <init.h>

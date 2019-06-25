@@ -10,7 +10,7 @@
 #include <drivers/gpio.h>
 #include <device.h>
 #include <string.h>
-#include <pwm.h>
+#include <drivers/pwm.h>
 #include <misc/stack.h>
 
 #include <display/mb_display.h>
