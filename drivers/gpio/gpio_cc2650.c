@@ -6,7 +6,7 @@
 
 #include <toolchain/gcc.h>
 #include <device.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 #include <init.h>
 #include <soc.h>
 #include <sys/sys_io.h>

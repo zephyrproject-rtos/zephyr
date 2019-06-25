@@ -10,7 +10,7 @@
 #include <misc/printk.h>
 #include <misc/__assert.h>
 #include <logging/log.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 
 void main(void)
 {

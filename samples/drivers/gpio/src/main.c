@@ -17,7 +17,7 @@
 #include <misc/printk.h>
 
 #include <device.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 #include <misc/util.h>
 
 #if defined(SW0_GPIO_CONTROLLER) && defined(LED0_GPIO_CONTROLLER)

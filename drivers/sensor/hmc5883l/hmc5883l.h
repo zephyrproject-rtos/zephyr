@@ -10,7 +10,7 @@
 #include <device.h>
 #include <misc/util.h>
 #include <zephyr/types.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 
 #define HMC5883L_I2C_ADDR		0x1E
 

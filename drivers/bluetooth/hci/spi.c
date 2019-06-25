@@ -6,7 +6,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <gpio.h>
+#include <drivers/gpio.h>
 #include <init.h>
 #include <spi.h>
 #include <misc/byteorder.h>

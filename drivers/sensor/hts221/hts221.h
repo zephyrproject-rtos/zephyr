@@ -10,7 +10,7 @@
 #include <device.h>
 #include <misc/util.h>
 #include <zephyr/types.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 
 #define HTS221_AUTOINCREMENT_ADDR	BIT(7)
 

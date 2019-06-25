@@ -9,7 +9,7 @@
 #include <init.h>
 #include <string.h>
 #include <stdio.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 #include <stdlib.h>
 #include <ctype.h>
 #include <logging/log.h>

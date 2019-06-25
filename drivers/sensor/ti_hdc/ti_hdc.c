@@ -6,7 +6,7 @@
 
 #include <device.h>
 #include <i2c.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 #include <kernel.h>
 #include <sensor.h>
 #include <misc/util.h>

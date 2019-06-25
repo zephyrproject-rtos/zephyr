@@ -11,7 +11,7 @@
 #include <device.h>
 #include <misc/util.h>
 #include <stdint.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 #include <sensor.h>
 #include <string.h>
 

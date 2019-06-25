@@ -9,7 +9,7 @@
 #include <string.h>
 #include <soc.h>
 #include <device.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 #include <misc/printk.h>
 
 #define GPIO_CFG_SENSE_LOW (GPIO_PIN_CNF_SENSE_Low << GPIO_PIN_CNF_SENSE_Pos)

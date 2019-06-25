@@ -6,7 +6,7 @@
  */
 #include <zephyr.h>
 #include <device.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 
 #include <usb/usb_device.h>
 #include <usb/class/usb_hid.h>

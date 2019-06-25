@@ -14,7 +14,7 @@
 #include <init.h>
 #include <i2c.h>
 #include <misc/byteorder.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 #include <logging/log.h>
 
 #include "lsm9ds0_mfd.h"

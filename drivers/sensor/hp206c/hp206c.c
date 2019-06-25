@@ -13,7 +13,7 @@
 #include <i2c.h>
 #include <misc/byteorder.h>
 #include <kernel.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 #include <logging/log.h>
 
 #include "hp206c.h"

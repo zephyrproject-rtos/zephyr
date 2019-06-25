@@ -9,7 +9,7 @@
  * @brief LED driver for the HT16K33 I2C LED driver with keyscan
  */
 
-#include <gpio.h>
+#include <drivers/gpio.h>
 #include <i2c.h>
 #include <kernel.h>
 #include <led.h>

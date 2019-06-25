@@ -6,7 +6,7 @@
 
 #include <zephyr.h>
 #include <device.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 
 #define PORT0  LED0_GPIO_CONTROLLER
 #define PORT1  LED1_GPIO_CONTROLLER

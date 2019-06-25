@@ -13,7 +13,7 @@
 
 #include <clock_control/stm32_clock_control.h>
 #include <pinmux/stm32/pinmux_stm32.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 
 /* GPIO buses definitions */
 

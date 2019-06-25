@@ -12,7 +12,7 @@
 #define ZEPHYR_DRIVERS_SENSOR_LIS2DW12_LIS2DW12_H_
 
 #include <spi.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 #include <misc/util.h>
 #include <sensor.h>
 #include "lis2dw12_reg.h"

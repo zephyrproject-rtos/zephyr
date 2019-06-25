@@ -8,7 +8,7 @@
 #ifndef ZEPHYR_DRIVERS_SENSOR_APDS9960_APDS9960_H_
 #define ZEPHYR_DRIVERS_SENSOR_APDS9960_APDS9960_H_
 
-#include <gpio.h>
+#include <drivers/gpio.h>
 
 #define APDS9960_ENABLE_REG		0x80
 #define APDS9960_ENABLE_GEN		BIT(6)

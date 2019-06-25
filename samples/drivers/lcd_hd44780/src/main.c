@@ -67,7 +67,7 @@
 #include <zephyr.h>
 
 #include <misc/printk.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 #include <string.h>
 
 

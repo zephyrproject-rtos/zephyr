@@ -12,7 +12,7 @@ LOG_MODULE_REGISTER(wifi_eswifi_bus_spi);
 #include <device.h>
 #include <string.h>
 #include <errno.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 #include <spi.h>
 
 #include "eswifi.h"

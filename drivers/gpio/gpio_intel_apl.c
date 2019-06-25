@@ -22,7 +22,7 @@
 #define GPIO_INTEL_APL_NR_SUBDEVS 10
 
 #include <errno.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 #include <soc.h>
 #include <sys/sys_io.h>
 #include <misc/__assert.h>

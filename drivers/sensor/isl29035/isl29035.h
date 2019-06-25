@@ -12,7 +12,7 @@
 #include <device.h>
 #include <kernel.h>
 #include <sensor.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 
 #define ISL29035_I2C_ADDRESS		0x44
 

@@ -21,7 +21,7 @@
 #include <sys/crc.h>
 #include <sys/crc.h>
 
-#include <gpio.h>
+#include <drivers/gpio.h>
 #include <led_strip.h>
 #include <spi.h>
 #include <uart.h>

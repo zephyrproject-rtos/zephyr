@@ -10,7 +10,7 @@
 #include <kernel.h>
 #include <sensor.h>
 #include <init.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 #include <misc/byteorder.h>
 #include <misc/__assert.h>
 

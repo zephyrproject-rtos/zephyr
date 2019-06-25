@@ -8,7 +8,7 @@
 #define ZEPHYR_DRIVERS_SENSOR_MPU6050_MPU6050_H_
 
 #include <device.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 #include <misc/util.h>
 #include <zephyr/types.h>
 

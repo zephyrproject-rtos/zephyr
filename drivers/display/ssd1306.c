@@ -11,7 +11,7 @@ LOG_MODULE_REGISTER(ssd1306);
 #include <string.h>
 #include <device.h>
 #include <init.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 #include <i2c.h>
 
 #include "ssd1306_regs.h"

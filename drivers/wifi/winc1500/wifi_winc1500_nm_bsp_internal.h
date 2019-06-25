@@ -8,7 +8,7 @@
 #define ZEPHYR_DRIVERS_WIFI_WINC1500_WIFI_WINC1500_NM_BSP_INTERNAL_H_
 
 #include <device.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 #include <spi.h>
 
 #include <wifi/winc1500.h>

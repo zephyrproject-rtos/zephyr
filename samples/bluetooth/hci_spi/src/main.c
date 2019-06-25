@@ -17,7 +17,7 @@
 
 #include <device.h>
 #include <init.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 #include <spi.h>
 
 #include <net/buf.h>

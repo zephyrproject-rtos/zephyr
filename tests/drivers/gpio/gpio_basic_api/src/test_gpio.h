@@ -8,7 +8,7 @@
 #define __TEST_GPIO_H__
 
 #include <zephyr.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 #include <misc/util.h>
 #include <ztest.h>
 

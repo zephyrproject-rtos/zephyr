@@ -6,7 +6,7 @@
  */
 
 #include <init.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 #include "board.h"
 
 static inline void external_antenna(bool on)

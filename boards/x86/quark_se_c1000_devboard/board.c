@@ -12,7 +12,7 @@
 #if defined(CONFIG_IEEE802154_CC2520)
 
 #include <ieee802154/cc2520.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 
 static struct cc2520_gpio_configuration cc2520_gpios[CC2520_GPIO_IDX_MAX] = {
 	{ .dev = NULL, .pin = DT_INST_0_TI_CC2520_VREG_EN_GPIOS_PIN, },

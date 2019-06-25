@@ -8,7 +8,7 @@
 #include <misc/__assert.h>
 #include <device.h>
 #include <errno.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 
 #include <driverlib/gpio.h>
 #include <driverlib/interrupt.h>

@@ -49,7 +49,7 @@
 #include <usb/usb_device.h>
 #include <clock_control/stm32_clock_control.h>
 #include <misc/util.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 
 #define LOG_LEVEL CONFIG_USB_DRIVER_LOG_LEVEL
 #include <logging/log.h>

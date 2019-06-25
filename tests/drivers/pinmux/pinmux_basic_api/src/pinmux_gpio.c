@@ -24,7 +24,7 @@
  * @}
  */
 
-#include <gpio.h>
+#include <drivers/gpio.h>
 #include <pinmux.h>
 #include <ztest.h>
 

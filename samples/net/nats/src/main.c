@@ -7,7 +7,7 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(net_nats_sample, LOG_LEVEL_DBG);
 
-#include <gpio.h>
+#include <drivers/gpio.h>
 #include <net/net_context.h>
 #include <net/net_core.h>
 #include <net/net_if.h>
