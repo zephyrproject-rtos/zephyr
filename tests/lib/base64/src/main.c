@@ -26,7 +26,7 @@
 #include <zephyr/types.h>
 #include <stdbool.h>
 #include <ztest.h>
-#include <base64.h>
+#include <sys/base64.h>
 
 static const unsigned char base64_test_dec[64] = {
 	0x24, 0x48, 0x6E, 0x56, 0x87, 0x62, 0x5A, 0xBD,
