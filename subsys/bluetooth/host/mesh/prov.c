@@ -269,7 +269,7 @@ static void prov_clear_tx(void)
 	free_segments();
 }
 
-static void reset_link(void)
+static void reset_adv_link(void)
 {
 	prov_clear_tx();
 
@@ -1150,7 +1150,7 @@ static void prov_retransmit(struct k_work *work)
 
 	if (k_uptime_get() - link.tx.start > TRANSACTION_TIMEOUT) {
 		BT_WARN("Giving up transaction");
-		reset_link();
+		reset_adv_link();
 		return;
 	}
 
@@ -1224,7 +1224,7 @@ static void link_close(struct prov_rx *rx, struct net_buf_simple *buf)
 {
 	BT_DBG("len %u", buf->len);
 
-	reset_link();
+	reset_adv_link();
 }
 
 static void gen_prov_ctl(struct prov_rx *rx, struct net_buf_simple *buf)
