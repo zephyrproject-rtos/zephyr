@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <can.h>
+#include <drivers/can.h>
 #include <ztest.h>
 #include <strings.h>
 

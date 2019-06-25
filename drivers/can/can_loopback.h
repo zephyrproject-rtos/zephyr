@@ -8,7 +8,7 @@
 #ifndef ZEPHYR_DRIVERS_CAN_LOOPBACK_CAN_H_
 #define ZEPHYR_DRIVERS_CAN_LOOPBACK_CAN_H_
 
-#include <can.h>
+#include <drivers/can.h>
 
 #define DEV_DATA(dev) ((struct can_loopback_data *const)(dev)->driver_data)
 #define DEV_CFG(dev) \

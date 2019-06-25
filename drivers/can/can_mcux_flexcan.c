@@ -6,7 +6,7 @@
 
 #include <zephyr.h>
 #include <sys/atomic.h>
-#include <can.h>
+#include <drivers/can.h>
 #include <clock_control.h>
 #include <device.h>
 #include <misc/byteorder.h>

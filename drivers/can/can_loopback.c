@@ -7,7 +7,7 @@
 #include <string.h>
 #include <kernel.h>
 #include <stdbool.h>
-#include <can.h>
+#include <drivers/can.h>
 #include "can_loopback.h"
 
 #include <logging/log.h>
