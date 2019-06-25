@@ -12,7 +12,7 @@
 #include "settings_priv.h"
 
 #ifdef CONFIG_SETTINGS_USE_BASE64
-#include "base64.h"
+#include <sys/base64.h>
 #endif
 
 #include <logging/log.h>
