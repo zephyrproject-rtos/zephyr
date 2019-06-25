@@ -22,7 +22,7 @@
 #include <sys/crc.h>
 
 #include <drivers/gpio.h>
-#include <led_strip.h>
+#include <drivers/led_strip.h>
 #include <spi.h>
 #include <uart.h>
 #include <usb/usb_device.h>

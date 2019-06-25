@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <led_strip.h>
+#include <drivers/led_strip.h>
 
 #include <errno.h>
 #include <string.h>

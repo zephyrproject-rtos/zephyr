@@ -13,7 +13,7 @@
 LOG_MODULE_REGISTER(main);
 
 #include <zephyr.h>
-#include <led_strip.h>
+#include <drivers/led_strip.h>
 #include <device.h>
 #include <spi.h>
 #include <misc/util.h>
