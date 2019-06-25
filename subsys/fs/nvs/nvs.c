@@ -9,7 +9,7 @@
 #include <string.h>
 #include <errno.h>
 #include <inttypes.h>
-#include <nvs/nvs.h>
+#include <fs/nvs.h>
 #include <crc.h>
 #include "nvs_priv.h"
 
