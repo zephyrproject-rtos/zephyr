@@ -8,7 +8,7 @@
 
 #include <device.h>
 #include <drivers/interrupt_controller/ioapic.h>
-#include <counter.h>
+#include <drivers/counter.h>
 #include <init.h>
 #include <kernel.h>
 #include <power/power.h>

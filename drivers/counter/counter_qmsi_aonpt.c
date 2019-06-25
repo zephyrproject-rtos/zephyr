@@ -9,7 +9,7 @@
 #include <device.h>
 #include <init.h>
 #include <drivers/interrupt_controller/ioapic.h>
-#include <counter.h>
+#include <drivers/counter.h>
 #include <power/power.h>
 #include <soc.h>
 #include <misc/util.h>

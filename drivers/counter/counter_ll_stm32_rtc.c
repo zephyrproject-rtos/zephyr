@@ -16,7 +16,7 @@
 #include <misc/util.h>
 #include <kernel.h>
 #include <soc.h>
-#include <counter.h>
+#include <drivers/counter.h>
 
 #include <logging/log.h>
 

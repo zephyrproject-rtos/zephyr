@@ -12,7 +12,7 @@
 #include <soc.h>
 #include <em_cmu.h>
 #include <em_rtcc.h>
-#include <counter.h>
+#include <drivers/counter.h>
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(counter_gecko, CONFIG_COUNTER_LOG_LEVEL);

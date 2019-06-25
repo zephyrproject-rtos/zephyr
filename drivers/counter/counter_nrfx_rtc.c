@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <counter.h>
+#include <drivers/counter.h>
 #include <drivers/clock_control.h>
 #include <drivers/clock_control/nrf_clock_control.h>
 #include <nrfx_rtc.h>
