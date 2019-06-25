@@ -18,7 +18,7 @@
  * (originally from x86's atomic.c)
  */
 
-#include <atomic.h>
+#include <sys/atomic.h>
 #include <toolchain.h>
 #include <arch/cpu.h>
 #include <spinlock.h>

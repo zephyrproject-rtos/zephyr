@@ -28,7 +28,7 @@
 #include <drivers/console/uart_console.h>
 #include <toolchain.h>
 #include <linker/sections.h>
-#include <atomic.h>
+#include <sys/atomic.h>
 #include <misc/printk.h>
 #ifdef CONFIG_UART_CONSOLE_MCUMGR
 #include "mgmt/serial.h"

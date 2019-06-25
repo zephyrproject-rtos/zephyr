@@ -7,7 +7,7 @@
 #define ZEPHYR_INCLUDE_LOGGING_LOG_MSG_H_
 
 #include <kernel.h>
-#include <atomic.h>
+#include <sys/atomic.h>
 #include <assert.h>
 #include <string.h>
 

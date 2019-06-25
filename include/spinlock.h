@@ -6,7 +6,7 @@
 #ifndef ZEPHYR_INCLUDE_SPINLOCK_H_
 #define ZEPHYR_INCLUDE_SPINLOCK_H_
 
-#include <atomic.h>
+#include <sys/atomic.h>
 
 /* These stubs aren't provided by the mocking framework, and I can't
  * find a proper place to put them as mocking seems not to have a

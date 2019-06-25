@@ -10,7 +10,7 @@
 #include <string.h>
 #include <errno.h>
 #include <stdbool.h>
-#include <atomic.h>
+#include <sys/atomic.h>
 #include <misc/byteorder.h>
 #include <misc/util.h>
 

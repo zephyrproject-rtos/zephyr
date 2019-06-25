@@ -9,7 +9,7 @@
 #define ZEPHYR_DRIVERS_ADC_ADC_CONTEXT_H_
 
 #include <adc.h>
-#include <atomic.h>
+#include <sys/atomic.h>
 
 #ifdef __cplusplus
 extern "C" {

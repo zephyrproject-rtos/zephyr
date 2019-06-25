@@ -6,7 +6,7 @@
 #include <kernel.h>
 #include <errno.h>
 #include <string.h>
-#include <atomic.h>
+#include <sys/atomic.h>
 #include <posix/time.h>
 #include <posix/mqueue.h>
 

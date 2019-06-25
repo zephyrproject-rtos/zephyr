@@ -21,7 +21,7 @@
  */
 
 #include <kernel.h>
-#include <atomic.h>
+#include <sys/atomic.h>
 
 #include <net/net_ip.h>
 #include <net/net_if.h>

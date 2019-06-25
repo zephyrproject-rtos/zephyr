@@ -10,7 +10,7 @@
  */
 
 #include <zephyr.h>
-#include <atomic.h>
+#include <sys/atomic.h>
 #include <misc/stack.h>
 #include <misc/byteorder.h>
 #include <tinycrypt/constants.h>

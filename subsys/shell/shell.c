@@ -6,7 +6,7 @@
 
 #include <ctype.h>
 #include <stdlib.h>
-#include <atomic.h>
+#include <sys/atomic.h>
 #include <shell/shell.h>
 #include <shell/shell_dummy.h>
 #include "shell_ops.h"

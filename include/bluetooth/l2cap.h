@@ -21,7 +21,7 @@
 extern "C" {
 #endif
 
-#include <atomic.h>
+#include <sys/atomic.h>
 #include <bluetooth/buf.h>
 #include <bluetooth/conn.h>
 #include <bluetooth/hci.h>

@@ -24,7 +24,7 @@
 #include <drivers/timer/system_timer.h>
 #include <ksched.h>
 #include <wait_q.h>
-#include <atomic.h>
+#include <sys/atomic.h>
 #include <syscall_handler.h>
 #include <kernel_internal.h>
 #include <kswap.h>

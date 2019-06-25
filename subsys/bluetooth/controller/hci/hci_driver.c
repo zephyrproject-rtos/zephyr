@@ -14,7 +14,7 @@
 #include <init.h>
 #include <device.h>
 #include <clock_control.h>
-#include <atomic.h>
+#include <sys/atomic.h>
 
 #include <misc/util.h>
 #include <misc/stack.h>

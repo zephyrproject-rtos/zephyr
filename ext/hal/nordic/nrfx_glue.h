@@ -151,7 +151,7 @@ extern "C" {
 
 //------------------------------------------------------------------------------
 
-#include <atomic.h>
+#include <sys/atomic.h>
 
 /** @brief Atomic 32-bit unsigned type. */
 #define nrfx_atomic_t  atomic_t
