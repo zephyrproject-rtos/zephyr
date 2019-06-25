@@ -21,7 +21,7 @@
 #include <misc/printk.h>
 #include <misc/__assert.h>
 #include "soc.h"
-#include <uart.h>
+#include <drivers/uart.h>
 #include <drivers/pci/pci.h>
 #include <drivers/pci/pci_mgr.h>
 #include <drivers/interrupt_controller/ioapic.h>

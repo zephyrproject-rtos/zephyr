@@ -14,7 +14,7 @@
 
 #include <errno.h>
 #include <device.h>
-#include <uart.h>
+#include <drivers/uart.h>
 #include <fsl_usart.h>
 #include <fsl_clock.h>
 #include <soc.h>

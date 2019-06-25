@@ -24,7 +24,7 @@
 #include <drivers/gpio.h>
 #include <drivers/led_strip.h>
 #include <drivers/spi.h>
-#include <uart.h>
+#include <drivers/uart.h>
 #include <usb/usb_device.h>
 #include <usb/class/usb_hid.h>
 #include <drivers/watchdog.h>

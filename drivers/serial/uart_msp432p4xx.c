@@ -10,7 +10,7 @@
  * that the definition of BIT is not overridden */
 #include <driverlib/gpio.h>
 
-#include <uart.h>
+#include <drivers/uart.h>
 
 /* Driverlib includes */
 #include <driverlib/rom.h>

@@ -17,7 +17,7 @@ LOG_MODULE_REGISTER(net_wpan_serial_sample, LOG_LEVEL_DBG);
 
 #include <string.h>
 #include <device.h>
-#include <uart.h>
+#include <drivers/uart.h>
 #include <zephyr.h>
 #include <stdio.h>
 

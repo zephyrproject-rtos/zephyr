@@ -12,7 +12,7 @@
 #include <zephyr.h>
 
 #include <init.h>
-#include <uart.h>
+#include <drivers/uart.h>
 #include <misc/util.h>
 #include <misc/byteorder.h>
 #include <misc/stack.h>

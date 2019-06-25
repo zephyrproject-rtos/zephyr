@@ -5,7 +5,7 @@
  */
 
 #include <drivers/gpio.h>
-#include <uart.h>
+#include <drivers/uart.h>
 #include <device.h>
 
 #define RESET_PIN CONFIG_BOARD_NRF52840_GPIO_RESET_PIN

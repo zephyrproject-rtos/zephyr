@@ -8,7 +8,7 @@
  * @brief Driver for Nordic Semiconductor nRF5X UART
  */
 
-#include <uart.h>
+#include <drivers/uart.h>
 #include <hal/nrf_uart.h>
 #include <hal/nrf_gpio.h>
 

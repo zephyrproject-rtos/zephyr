@@ -14,7 +14,7 @@
 #ifndef __TEST_UART_H__
 #define __TEST_UART_H__
 
-#include <uart.h>
+#include <drivers/uart.h>
 #include <ztest.h>
 
 #define UART_DEVICE_NAME CONFIG_UART_CONSOLE_ON_DEV_NAME

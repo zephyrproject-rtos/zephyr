@@ -7,7 +7,7 @@
 #include <device.h>
 #include <errno.h>
 #include <misc/__assert.h>
-#include <uart.h>
+#include <drivers/uart.h>
 
 #include <driverlib/ioc.h>
 #include <driverlib/prcm.h>

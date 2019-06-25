@@ -29,7 +29,7 @@
 #include <init.h>
 #include <toolchain.h>
 #include <linker/sections.h>
-#include <uart.h>
+#include <drivers/uart.h>
 #include <sys/sys_io.h>
 
 #include "uart_ns16550.h"

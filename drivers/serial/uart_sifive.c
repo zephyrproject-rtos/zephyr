@@ -10,7 +10,7 @@
 
 #include <kernel.h>
 #include <arch/cpu.h>
-#include <uart.h>
+#include <drivers/uart.h>
 
 #define RXDATA_EMPTY   (1 << 31)   /* Receive FIFO Empty */
 #define RXDATA_MASK    0xFF        /* Receive Data Mask */

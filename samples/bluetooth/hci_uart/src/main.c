@@ -18,7 +18,7 @@
 
 #include <device.h>
 #include <init.h>
-#include <uart.h>
+#include <drivers/uart.h>
 
 #include <net/buf.h>
 #include <bluetooth/bluetooth.h>

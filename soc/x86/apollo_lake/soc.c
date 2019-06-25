@@ -15,7 +15,7 @@
 
 #include <kernel.h>
 #include "soc.h"
-#include <uart.h>
+#include <drivers/uart.h>
 #include <device.h>
 #include <init.h>
 

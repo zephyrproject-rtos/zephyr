@@ -39,7 +39,7 @@
 
 #include <kernel.h>
 #include <init.h>
-#include <uart.h>
+#include <drivers/uart.h>
 #include <string.h>
 #include <ring_buffer.h>
 #include <misc/byteorder.h>

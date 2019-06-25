@@ -6,7 +6,7 @@
 
 #include <kernel.h>
 #include <arch/cpu.h>
-#include <uart.h>
+#include <drivers/uart.h>
 
 
 /* UART REGISTERS DEFINITIONS */

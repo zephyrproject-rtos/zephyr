@@ -17,7 +17,7 @@
 #include <misc/__assert.h>
 #include <soc.h>
 #include <init.h>
-#include <uart.h>
+#include <drivers/uart.h>
 #include <drivers/clock_control.h>
 
 #include <linker/sections.h>

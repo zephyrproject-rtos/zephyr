@@ -8,7 +8,7 @@
 #include <rom/ets_sys.h>
 
 #include <soc.h>
-#include <uart.h>
+#include <drivers/uart.h>
 #include <errno.h>
 
 static void esp32_uart_tx(struct device *dev,

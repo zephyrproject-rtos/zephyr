@@ -9,7 +9,7 @@
 #include <logging/log_msg.h>
 #include <logging/log_output.h>
 #include <device.h>
-#include <uart.h>
+#include <drivers/uart.h>
 #include <assert.h>
 
 static int char_out(u8_t *data, size_t length, void *ctx)
