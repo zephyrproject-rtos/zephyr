@@ -24,7 +24,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
-#include <sys_io.h>
+#include <sys/sys_io.h>
 #include <net/ethernet.h>
 #include "ethernet/eth_stats.h"
 

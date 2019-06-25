@@ -20,7 +20,7 @@ LOG_MODULE_REGISTER(spi_intel);
 #include <soc.h>
 #include <init.h>
 
-#include <sys_io.h>
+#include <sys/sys_io.h>
 #include <power/power.h>
 
 #include <spi.h>

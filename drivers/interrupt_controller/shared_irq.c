@@ -10,7 +10,7 @@
 #include <device.h>
 #include <shared_irq.h>
 #include <init.h>
-#include <sys_io.h>
+#include <sys/sys_io.h>
 
 #ifdef CONFIG_IOAPIC
 #include <drivers/interrupt_controller/ioapic.h>

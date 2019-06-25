@@ -11,7 +11,7 @@
 #include <misc/printk.h>
 #include <misc/rb.h>
 #include <kernel_structs.h>
-#include <sys_io.h>
+#include <sys/sys_io.h>
 #include <ksched.h>
 #include <syscall.h>
 #include <syscall_handler.h>

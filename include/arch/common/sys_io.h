@@ -19,7 +19,7 @@ extern "C" {
 #ifndef _ASMLANGUAGE
 
 #include <zephyr/types.h>
-#include <sys_io.h>
+#include <sys/sys_io.h>
 
 
 static ALWAYS_INLINE u8_t sys_read8(mem_addr_t addr)

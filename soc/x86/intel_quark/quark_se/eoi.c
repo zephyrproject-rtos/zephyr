@@ -16,7 +16,7 @@
 
 #include <kernel.h>
 #include <arch/x86/irq_controller.h>
-#include <sys_io.h>
+#include <sys/sys_io.h>
 #include <interrupt_controller/ioapic_priv.h>
 
 void z_lakemont_eoi(void)

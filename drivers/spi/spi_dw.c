@@ -32,7 +32,7 @@ LOG_MODULE_REGISTER(spi_dw);
 #include <device.h>
 #include <init.h>
 
-#include <sys_io.h>
+#include <sys/sys_io.h>
 #include <clock_control.h>
 #include <misc/util.h>
 

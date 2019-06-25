@@ -9,7 +9,7 @@
 #include <entropy.h>
 #include <irq.h>
 #include <ring_buffer.h>
-#include <sys_io.h>
+#include <sys/sys_io.h>
 
 #include <driverlib/prcm.h>
 #include <driverlib/trng.h>
