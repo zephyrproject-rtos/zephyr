@@ -570,6 +570,12 @@ config BT_CTLR_FAST_ENC
 	  Maximum CPU time in Radio ISR will increase if this feature is
 	  selected.
 
+config BT_CTLR_LLID_DATA_START_EMPTY
+	bool "Handle zero length L2CAP start frame"
+	default y if BT_HCI_RAW
+	help
+	  Handle zero length L2CAP start frame.
+
 config BT_CTLR_TX_RETRY_DISABLE
 	bool "Disable Tx Retry"
 	help
