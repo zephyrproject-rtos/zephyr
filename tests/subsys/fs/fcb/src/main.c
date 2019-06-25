@@ -9,7 +9,7 @@
 #include <string.h>
 
 #include "fcb_test.h"
-#include "flash_map.h"
+#include <storage/flash_map.h>
 
 struct fcb test_fcb;
 

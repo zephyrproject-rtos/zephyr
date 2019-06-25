@@ -7,7 +7,7 @@
 
 #include <ztest.h>
 #include <flash.h>
-#include <flash_map.h>
+#include <storage/flash_map.h>
 
 extern int flash_map_entries;
 struct flash_sector fs_sectors[256];

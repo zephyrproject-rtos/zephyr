@@ -43,7 +43,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include <flash.h>
-#include <flash_map.h>
+#include <storage/flash_map.h>
 #include <dfu/mcuboot.h>
 #include <dfu/flash_img.h>
 #include <misc/byteorder.h>
