@@ -7,7 +7,7 @@
 #include <errno.h>
 #include <device.h>
 #include <uart.h>
-#include <clock_control.h>
+#include <drivers/clock_control.h>
 #include <fsl_uart.h>
 #include <soc.h>
 

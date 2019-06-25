@@ -13,7 +13,7 @@
 
 #include <zephyr/types.h>
 #include <stddef.h>
-#include <clock_control.h>
+#include <drivers/clock_control.h>
 #ifdef CONFIG_SOC_SERIES_STM32F1X
 #include <dt-bindings/pinctrl/stm32-pinctrlf1.h>
 #else

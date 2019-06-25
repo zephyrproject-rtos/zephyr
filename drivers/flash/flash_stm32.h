@@ -13,7 +13,7 @@
 #if defined(CONFIG_SOC_SERIES_STM32L4X) || \
 	defined(CONFIG_SOC_SERIES_STM32F0X) || \
 	defined(CONFIG_SOC_SERIES_STM32F3X)
-#include <clock_control.h>
+#include <drivers/clock_control.h>
 #include <clock_control/stm32_clock_control.h>
 #endif
 

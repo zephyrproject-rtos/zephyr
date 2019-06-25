@@ -8,7 +8,7 @@
 #include <zephyr/types.h>
 #include <device.h>
 #include <entropy.h>
-#include <clock_control.h>
+#include <drivers/clock_control.h>
 #include <drivers/clock_control/nrf_clock_control.h>
 
 #include "hal/ccm.h"

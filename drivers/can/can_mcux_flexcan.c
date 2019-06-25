@@ -7,7 +7,7 @@
 #include <zephyr.h>
 #include <sys/atomic.h>
 #include <drivers/can.h>
-#include <clock_control.h>
+#include <drivers/clock_control.h>
 #include <device.h>
 #include <misc/byteorder.h>
 #include <fsl_flexcan.h>

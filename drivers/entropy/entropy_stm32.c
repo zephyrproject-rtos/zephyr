@@ -14,7 +14,7 @@
 #include <errno.h>
 #include <soc.h>
 #include <misc/printk.h>
-#include <clock_control.h>
+#include <drivers/clock_control.h>
 #include <clock_control/stm32_clock_control.h>
 
 #if !defined(CONFIG_SOC_SERIES_STM32L4X) && !defined(CONFIG_SOC_SERIES_STM32F4X) && !defined(CONFIG_SOC_SERIES_STM32F7X)

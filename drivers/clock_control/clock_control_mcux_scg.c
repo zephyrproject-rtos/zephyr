@@ -7,7 +7,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <clock_control.h>
+#include <drivers/clock_control.h>
 #include <dt-bindings/clock/kinetis_scg.h>
 #include <soc.h>
 #include <fsl_clock.h>

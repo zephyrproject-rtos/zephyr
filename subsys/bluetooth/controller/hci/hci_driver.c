@@ -13,7 +13,7 @@
 #include <soc.h>
 #include <init.h>
 #include <device.h>
-#include <clock_control.h>
+#include <drivers/clock_control.h>
 #include <sys/atomic.h>
 
 #include <misc/util.h>

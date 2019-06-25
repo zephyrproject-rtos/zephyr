@@ -19,7 +19,7 @@
 #include <kernel.h>
 #include <usb/usb_dc.h>
 #include <usb/usb_device.h>
-#include <clock_control.h>
+#include <drivers/clock_control.h>
 #include <hal/nrf_power.h>
 #include <drivers/clock_control/nrf_clock_control.h>
 #include <nrfx_usbd.h>

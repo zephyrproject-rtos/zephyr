@@ -12,7 +12,7 @@
 #include <soc.h>
 #include <device.h>
 #include <entropy.h>
-#include <clock_control.h>
+#include <drivers/clock_control.h>
 #include <bluetooth/hci.h>
 #include <misc/util.h>
 #include <misc/byteorder.h>

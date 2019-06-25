@@ -18,7 +18,7 @@
 #include <soc.h>
 #include <init.h>
 #include <uart.h>
-#include <clock_control.h>
+#include <drivers/clock_control.h>
 
 #include <linker/sections.h>
 #include <clock_control/stm32_clock_control.h>

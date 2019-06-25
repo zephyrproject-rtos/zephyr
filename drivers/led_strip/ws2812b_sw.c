@@ -16,7 +16,7 @@ LOG_MODULE_REGISTER(ws2812b_sw);
 #include <soc.h>
 #include <gpio.h>
 #include <device.h>
-#include <clock_control.h>
+#include <drivers/clock_control.h>
 
 #define BLOCKING ((void *)1)
 
