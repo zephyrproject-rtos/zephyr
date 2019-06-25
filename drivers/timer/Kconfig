@@ -190,6 +190,15 @@ config TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
 	  The drivers select this option automatically when needed. Do not modify
 	  this unless you have a very good reason for it.
 
+config SYSTEM_CLOCK_SLOPPY_IDLE
+	bool "Timer allowed to skew uptime clock during idle"
+	help
+	  When true, the timer driver is not required to maintain a
+	  correct system uptime count when the system enters idle.
+	  Some platforms may take advantage of this to reduce the
+	  overhead from regular interrupts required to handle counter
+	  wraparound conditions.
+
 config SYSTEM_CLOCK_INIT_PRIORITY
 	int "System clock driver initialization priority"
 	default 0

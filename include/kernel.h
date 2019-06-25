@@ -1629,26 +1629,36 @@ __syscall s64_t k_uptime_get(void);
 /**
  * @brief Enable clock always on in tickless kernel
  *
- * This routine enables keeping the clock running (that is, it always
- * keeps an active timer interrupt scheduled) when there are no timer
- * events programmed in tickless kernel scheduling. This is necessary
- * if the clock is used to track passage of time (e.g. via
- * k_uptime_get_32()), otherwise the internal hardware counter may
- * roll over between interrupts.
+ * Deprecated.  This does nothing (it was always just a hint).  This
+ * functionality has been migrated to the SYSTEM_CLOCK_SLOPPY_IDLE
+ * kconfig.
  *
  * @retval prev_status Previous status of always on flag
  */
-int k_enable_sys_clock_always_on(void);
+/* LCOV_EXCL_START */
+__deprecated static inline int k_enable_sys_clock_always_on(void)
+{
+	__ASSERT(IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE),
+		 "Please use CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE instead");
+
+	return !IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE);
+}
+/* LCOV_EXCL_STOP */
 
 /**
  * @brief Disable clock always on in tickless kernel
  *
- * This routine disables keeping the clock running when
- * there are no timer events programmed in tickless kernel
- * scheduling. To save power, this routine should be called
- * immediately when clock is not used to track time.
+ * Deprecated.  This does nothing (it was always just a hint).  This
+ * functionality has been migrated to the SYS_CLOCK_SLOPPY_IDLE
+ * kconfig.
  */
-void k_disable_sys_clock_always_on(void);
+/* LCOV_EXCL_START */
+__deprecated static inline void k_disable_sys_clock_always_on(void)
+{
+	__ASSERT(!IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE),
+		 "Please use CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE instead");
+}
+/* LCOV_EXCL_STOP */
 
 /**
  * @brief Get system uptime (32-bit version).
