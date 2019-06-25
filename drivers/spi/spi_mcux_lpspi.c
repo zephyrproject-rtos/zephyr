@@ -6,7 +6,7 @@
 
 #include <errno.h>
 #include <spi.h>
-#include <clock_control.h>
+#include <drivers/clock_control.h>
 #include <fsl_lpspi.h>
 
 #define LOG_LEVEL CONFIG_SPI_LOG_LEVEL

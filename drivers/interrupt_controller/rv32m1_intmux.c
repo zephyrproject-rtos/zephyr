@@ -21,7 +21,7 @@
  */
 
 #include <kernel.h>
-#include <clock_control.h>
+#include <drivers/clock_control.h>
 #include <init.h>
 #include <irq.h>
 #include <irq_nextlevel.h>

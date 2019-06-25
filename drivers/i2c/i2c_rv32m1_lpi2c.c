@@ -9,7 +9,7 @@
  */
 
 #include <i2c.h>
-#include <clock_control.h>
+#include <drivers/clock_control.h>
 #include <fsl_lpi2c.h>
 #include <logging/log.h>
 LOG_MODULE_REGISTER(rv32m1_lpi2c);

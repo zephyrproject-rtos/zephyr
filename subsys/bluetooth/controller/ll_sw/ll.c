@@ -10,7 +10,7 @@
 
 #include <soc.h>
 #include <device.h>
-#include <clock_control.h>
+#include <drivers/clock_control.h>
 #ifdef CONFIG_CLOCK_CONTROL_NRF
 #include <drivers/clock_control/nrf_clock_control.h>
 #endif

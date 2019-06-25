@@ -13,7 +13,7 @@
  */
 
 #include <soc.h>
-#include <clock_control.h>
+#include <drivers/clock_control.h>
 #include <misc/util.h>
 #include <clock_control/arm_clock_control.h>
 

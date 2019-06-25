@@ -6,7 +6,7 @@
  */
 
 #include <drivers/watchdog.h>
-#include <clock_control.h>
+#include <drivers/clock_control.h>
 #include <fsl_wdog.h>
 
 #define LOG_LEVEL CONFIG_WDT_LOG_LEVEL

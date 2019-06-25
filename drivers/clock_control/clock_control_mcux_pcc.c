@@ -9,7 +9,7 @@
 
 #include <errno.h>
 #include <soc.h>
-#include <clock_control.h>
+#include <drivers/clock_control.h>
 #include <fsl_clock.h>
 
 #define LOG_LEVEL CONFIG_CLOCK_CONTROL_LOG_LEVEL

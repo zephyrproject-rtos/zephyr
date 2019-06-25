@@ -21,7 +21,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <ethernet/eth_stats.h>
 #include <soc.h>
 #include <misc/printk.h>
-#include <clock_control.h>
+#include <drivers/clock_control.h>
 #include <clock_control/stm32_clock_control.h>
 
 #include "eth_stm32_hal_priv.h"

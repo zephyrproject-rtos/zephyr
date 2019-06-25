@@ -9,7 +9,7 @@
 #include <errno.h>
 #include <sys/atomic.h>
 #include <device.h>
-#include <clock_control.h>
+#include <drivers/clock_control.h>
 #include <misc/__assert.h>
 #include <nrf_clock.h>
 #if defined(CONFIG_USB) && defined(CONFIG_SOC_NRF52840)

@@ -5,7 +5,7 @@
  */
 #include <errno.h>
 #include <soc.h>
-#include <clock_control.h>
+#include <drivers/clock_control.h>
 #include <dt-bindings/clock/imx_ccm.h>
 #include <fsl_clock.h>
 
