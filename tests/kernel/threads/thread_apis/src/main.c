@@ -70,10 +70,6 @@ void test_systhreads_idle(void)
 		     K_IDLE_PRIO, NULL);
 }
 
-static void thread_name_entry(void)
-{
-}
-
 static void customdata_entry(void *p1, void *p2, void *p3)
 {
 	u32_t data = 1U;
@@ -107,41 +103,115 @@ void test_customdata_get_set_coop(void)
 	k_thread_abort(tid);
 }
 
+static void thread_name_entry(void *p1, void *p2, void *p3)
+{
+	/* Do nothing and exit */
+}
 
 /**
- * @ingroup kernel_thread_tests
- * @brief test thread name get/set from preempt thread
- * @see k_thread_name_get(), k_thread_name_set()
- */
+* @ingroup kernel_thread_tests
+* @brief test thread name get/set from supervisor thread
+* @see k_thread_name_get(), k_thread_name_copy(), k_thread_name_set()
+*/
 void test_thread_name_get_set(void)
 {
 	int ret;
 	const char *thread_name;
+	char thread_buf[CONFIG_THREAD_MAX_NAME_LEN];
 
 	/* Set and get current thread's name */
-	k_thread_name_set(NULL, "parent_thread");
+	ret = k_thread_name_set(NULL, "parent_thread");
+	zassert_equal(ret, 0, "k_thread_name_set() failed");
 	thread_name = k_thread_name_get(k_current_get());
-
+	zassert_true(thread_name != NULL, "thread name was null");
 	ret = strcmp(thread_name, "parent_thread");
 	zassert_equal(ret, 0, "parent thread name does not match");
 
 	/* Set and get child thread's name */
 	k_tid_t tid = k_thread_create(&tdata_name, tstack_name, STACK_SIZE,
-				      (k_thread_entry_t)thread_name_entry,
-				      NULL, NULL, NULL,
-				      K_PRIO_COOP(1), 0, 0);
+				      thread_name_entry, NULL, NULL, NULL,
+				      K_PRIO_PREEMPT(1), 0, 0);
 
-	k_thread_name_set(tid, "customdata");
+	ret = k_thread_name_set(tid, "customdata");
+	zassert_equal(ret, 0, "k_thread_name_set() failed");
+	ret = k_thread_name_copy(tid, thread_buf, sizeof(thread_buf));
+	zassert_equal(ret, 0, "couldn't get copied thread name");
+	ret = strcmp(thread_buf, "customdata");
+	zassert_equal(ret, 0, "child thread name does not match");
 
-	k_sleep(500);
+	/* cleanup environment */
+	k_thread_abort(tid);
+}
 
-	thread_name = k_thread_name_get(tid);
+#ifdef CONFIG_USERSPACE
+static char unreadable_string[64];
+static char not_my_buffer[CONFIG_THREAD_MAX_NAME_LEN];
+ZTEST_BMEM struct k_thread *main_thread_ptr;
+struct k_sem sem;
+#endif /* CONFIG_USERSPACE */
 
+/**
+ * @ingroup kernel_thread_tests
+ * @brief test thread name get/set from user thread
+ * @see k_thread_name_copy(), k_thread_name_set()
+ */
+void test_thread_name_user_get_set(void)
+{
+#ifdef CONFIG_USERSPACE
+	int ret;
+	char thread_name[CONFIG_THREAD_MAX_NAME_LEN];
+	char too_small[2];
+
+	/* Some memory-related error cases for k_thread_name_set() */
+	ret = k_thread_name_set(NULL, (const char *)0xFFFFFFF0);
+	zassert_equal(ret, -EFAULT, "accepted nonsense string (%d)", ret);
+	ret = k_thread_name_set(NULL, unreadable_string);
+	zassert_equal(ret, -EFAULT, "accepted unreadable string");
+	ret = k_thread_name_set((struct k_thread *)&sem, "some name");
+	zassert_equal(ret, -EINVAL, "accepted non-thread object");
+	ret = k_thread_name_set(main_thread_ptr, "some name");
+	zassert_equal(ret, -EINVAL, "no permission on thread object");
+
+	/* Set and get current thread's name */
+	ret = k_thread_name_set(NULL, "parent_thread");
+	zassert_equal(ret, 0, "k_thread_name_set() failed");
+	ret = k_thread_name_copy(k_current_get(), thread_name,
+				     sizeof(thread_name));
+	zassert_equal(ret, 0, "k_thread_name_copy() failed");
+	ret = strcmp(thread_name, "parent_thread");
+	zassert_equal(ret, 0, "parent thread name does not match");
+
+	/* memory-related cases for k_thread_name_get() */
+	ret = k_thread_name_copy(k_current_get(), too_small,
+				     sizeof(too_small));
+	zassert_equal(ret, -ENOSPC, "wrote to too-small buffer");
+	ret = k_thread_name_copy(k_current_get(), not_my_buffer,
+				     sizeof(not_my_buffer));
+	zassert_equal(ret, -EFAULT, "wrote to buffer without permission");
+	ret = k_thread_name_copy((struct k_thread *)&sem, thread_name,
+				     sizeof(thread_name));
+	zassert_equal(ret, -EINVAL, "not a thread object");
+	ret = k_thread_name_copy(main_thread_ptr, thread_name,
+				     sizeof(thread_name));
+	zassert_equal(ret, 0, "couldn't get main thread name");
+	printk("Main thread name is '%s'\n", thread_name);
+
+	/* Set and get child thread's name */
+	k_tid_t tid = k_thread_create(&tdata_name, tstack_name, STACK_SIZE,
+				      thread_name_entry, NULL, NULL, NULL,
+				      K_PRIO_PREEMPT(1), K_USER, 0);
+	ret = k_thread_name_set(tid, "customdata");
+	zassert_equal(ret, 0, "k_thread_name_set() failed");
+	ret = k_thread_name_copy(tid, thread_name, sizeof(thread_name));
+	zassert_equal(ret, 0, "couldn't get copied thread name");
 	ret = strcmp(thread_name, "customdata");
 	zassert_equal(ret, 0, "child thread name does not match");
 
 	/* cleanup environment */
 	k_thread_abort(tid);
+#else
+	ztest_test_skip();
+#endif /* CONFIG_USERSPACE */
 }
 
 /**
@@ -200,12 +270,20 @@ void test_user_mode(void)
 }
 #endif
 
+extern const k_tid_t _main_thread;
 
 void test_main(void)
 {
 	k_thread_access_grant(k_current_get(), &tdata, tstack);
 	k_thread_access_grant(k_current_get(), &tdata_custom, tstack_custom);
+	k_thread_access_grant(k_current_get(), &tdata_name, tstack_name);
 	main_prio = k_thread_priority_get(k_current_get());
+#ifdef CONFIG_USERSPACE
+	strncpy(unreadable_string, "unreadable string",
+		sizeof(unreadable_string));
+	/* Copy so user mode can get at it */
+	main_thread_ptr = _main_thread;
+#endif
 
 	ztest_test_suite(threads_lifecycle,
 			 ztest_user_unit_test(test_threads_spawn_params),
@@ -228,6 +306,7 @@ void test_main(void)
 			 ztest_user_unit_test(test_customdata_get_set_preempt),
 			 ztest_unit_test(test_k_thread_foreach),
 			 ztest_unit_test(test_thread_name_get_set),
+			 ztest_user_unit_test(test_thread_name_user_get_set),
 			 ztest_unit_test(test_user_mode),
 			 ztest_unit_test(test_threads_cpu_mask)
 			 );
