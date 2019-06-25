@@ -41,7 +41,7 @@
 #include <init.h>
 #include <drivers/uart.h>
 #include <string.h>
-#include <ring_buffer.h>
+#include <sys/ring_buffer.h>
 #include <misc/byteorder.h>
 #include <usb/class/usb_cdc.h>
 #include <usb/usb_device.h>

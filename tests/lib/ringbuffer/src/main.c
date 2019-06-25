@@ -16,7 +16,7 @@
 
 #include <ztest.h>
 #include <irq_offload.h>
-#include <ring_buffer.h>
+#include <sys/ring_buffer.h>
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(test);
