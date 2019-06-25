@@ -6,7 +6,7 @@
  */
 
 #include "display_ili9340.h"
-#include <display.h>
+#include <drivers/display.h>
 
 #define LOG_LEVEL CONFIG_DISPLAY_LOG_LEVEL
 #include <logging/log.h>

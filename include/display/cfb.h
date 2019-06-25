@@ -13,7 +13,7 @@
 #define __CFB_H__
 
 #include <device.h>
-#include <display.h>
+#include <drivers/display.h>
 
 #ifdef __cplusplus
 extern "C" {

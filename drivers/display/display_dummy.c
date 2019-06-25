@@ -6,7 +6,7 @@
 
 #include <string.h>
 
-#include <display.h>
+#include <drivers/display.h>
 
 struct dummy_display_data {
 	enum display_pixel_format current_pixel_format;

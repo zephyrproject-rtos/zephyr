@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <display.h>
+#include <drivers/display.h>
 
 #include <SDL.h>
 #include <string.h>

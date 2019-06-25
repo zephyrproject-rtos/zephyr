@@ -5,7 +5,7 @@
  */
 
 #include <device.h>
-#include <display.h>
+#include <drivers/display.h>
 #include <lvgl.h>
 #include <stdio.h>
 #include <string.h>
