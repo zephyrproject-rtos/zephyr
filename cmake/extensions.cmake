@@ -323,7 +323,12 @@ endmacro()
 #
 # A Zephyr library can be constructed by the function zephyr_library
 # or zephyr_library_named. The constructors create a CMake library
-# with a name accessible through the variable ZEPHYR_CURRENT_LIBRARY.
+# with a name accessible through the variable ZEPHYR_CURRENT_LIBRARY
+# until the next time either of these functions is called.
+#
+# Afterwards, the name of the library as a target can be retrieved with
+# zephyr_library_cmake_target(library_name tgt). The "tgt" variable is
+# set to the name of that library's CMake target.
 #
 # The variable ZEPHYR_CURRENT_LIBRARY should seldom be needed since
 # the zephyr libraries have methods that modify the libraries. These
@@ -367,6 +372,9 @@ endmacro()
 macro(zephyr_library_named name)
   # This is a macro because we need add_library() to be executed
   # within the scope of the caller.
+  #
+  # For now, the library's name and the corresponding target's name
+  # are the same, but this API doesn't guarantee that.
   set(ZEPHYR_CURRENT_LIBRARY ${name})
   add_library(${name} STATIC "")
 
@@ -375,6 +383,18 @@ macro(zephyr_library_named name)
   target_link_libraries(${name} PUBLIC zephyr_interface)
 endmacro()
 
+# Usage:
+#   zephyr_library_cmake_target(my_zephyr_library my_var)
+#   target_xyz(${my_var} ...)
+#
+# This allows you to set the variable "target_var" to the name of the
+# zephyr library named "lib_name". The value "lib_name" should have
+# been passed to zephyr_library_named() or
+# zephyr_interface_library_named() (see below) at some point.
+function(zephyr_library_cmake_target lib_name target_var)
+  # For now, they are the same, but this is not guaranteed.
+  set(${target_var} ${lib_name} PARENT_SCOPE)
+endfunction()
 
 function(zephyr_link_interface interface)
   target_link_libraries(${interface} INTERFACE zephyr_interface)
@@ -383,6 +403,8 @@ endfunction()
 #
 # zephyr_library versions of normal CMake target_<func> functions
 #
+# New code is encouraged to use zephyr_library_cmake_target(), then the
+# usual CMake target_<func> functions, directly. See #8439.
 function(zephyr_library_sources source)
   target_sources(${ZEPHYR_CURRENT_LIBRARY} PRIVATE ${source} ${ARGN})
 endfunction()
@@ -480,6 +502,9 @@ endfunction()
 #
 # This API has a constructor like the zephyr_library API has, but it
 # does not have wrappers over the other cmake target functions.
+#
+# The function zephyr_library_cmake_target() also works for libraries
+# created with this macro.
 macro(zephyr_interface_library_named name)
   add_library(${name} INTERFACE)
   set_property(GLOBAL APPEND PROPERTY ZEPHYR_INTERFACE_LIBS ${name})
