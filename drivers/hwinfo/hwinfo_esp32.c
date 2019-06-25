@@ -6,7 +6,7 @@
 
 #include <soc/efuse_reg.h>
 
-#include <hwinfo.h>
+#include <drivers/hwinfo.h>
 #include <string.h>
 
 ssize_t _impl_hwinfo_get_device_id(u8_t *buffer, size_t length)
