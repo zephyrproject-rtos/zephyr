@@ -9,7 +9,7 @@
 #include <bluetooth/uuid.h>
 #include <bluetooth/gatt.h>
 #include <device.h>
-#include <ipm.h>
+#include <drivers/ipm.h>
 #include <ipm/ipm_quark_se.h>
 #include <misc/byteorder.h>
 #include <misc/printk.h>

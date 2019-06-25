@@ -12,7 +12,7 @@
 #include <ring_buffer.h>
 #include <misc/printk.h>
 #include <stdio.h>
-#include <ipm.h>
+#include <drivers/ipm.h>
 #include <console/ipm_console.h>
 #include <misc/__assert.h>
 

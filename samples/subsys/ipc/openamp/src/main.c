@@ -7,7 +7,7 @@
  */
 
 #include <zephyr.h>
-#include <ipm.h>
+#include <drivers/ipm.h>
 #include <misc/printk.h>
 #include <device.h>
 #include <stdio.h>

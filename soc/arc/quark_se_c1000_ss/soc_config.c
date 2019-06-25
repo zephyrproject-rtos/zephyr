@@ -9,7 +9,7 @@
 #include "soc.h"
 
 #if CONFIG_IPM_QUARK_SE
-#include <ipm.h>
+#include <drivers/ipm.h>
 #include <ipm/ipm_quark_se.h>
 
 static int arc_quark_se_ipm_init(void)

@@ -8,7 +8,7 @@
 #include <string.h>
 #include <device.h>
 #include <soc.h>
-#include <ipm.h>
+#include <drivers/ipm.h>
 #include <mu_imx.h>
 
 #define MU(config) ((MU_Type *)config->base)

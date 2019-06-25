@@ -7,7 +7,7 @@
 
 #include <misc/printk.h>
 #include <zephyr.h>
-#include <ipm.h>
+#include <drivers/ipm.h>
 #include <ipm/ipm_quark_se.h>
 
 QUARK_SE_IPM_DEFINE(ping_ipm, 0, QUARK_SE_IPM_OUTBOUND);

@@ -5,7 +5,7 @@
  */
 
 #include <device.h>
-#include <ipm.h>
+#include <drivers/ipm.h>
 #include <ipm/ipm_quark_se.h>
 #include <misc/printk.h>
 #include <misc/util.h>

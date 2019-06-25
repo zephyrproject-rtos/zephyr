@@ -6,7 +6,7 @@
  */
 #include <zephyr.h>
 
-#include <ipm.h>
+#include <drivers/ipm.h>
 #include <ipm/ipm_quark_se.h>
 #include <device.h>
 #include <init.h>
