@@ -7,7 +7,7 @@
 #ifndef ZEPHYR_LIB_GUI_LVGL_LVGL_COLOR_H_
 #define ZEPHYR_LIB_GUI_LVGL_LVGL_COLOR_H_
 
-#include <display.h>
+#include <drivers/display.h>
 
 #ifdef __cplusplus
 extern "C" {

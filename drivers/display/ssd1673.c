@@ -10,7 +10,7 @@ LOG_MODULE_REGISTER(ssd1673);
 
 #include <string.h>
 #include <device.h>
-#include <display.h>
+#include <drivers/display.h>
 #include <init.h>
 #include <drivers/gpio.h>
 #include <drivers/spi.h>
