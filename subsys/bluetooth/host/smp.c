@@ -252,8 +252,7 @@ static struct bt_smp_br bt_smp_br_pool[CONFIG_BT_MAX_CONN];
 static struct bt_smp bt_smp_pool[CONFIG_BT_MAX_CONN];
 static bool bondable = IS_ENABLED(CONFIG_BT_BONDABLE);
 static bool sc_supported;
-static bool sc_local_pkey_valid;
-static u8_t sc_public_key[64];
+static const u8_t *sc_public_key;
 
 static u8_t get_io_capa(void)
 {
@@ -2267,6 +2266,8 @@ static int smp_init(struct bt_smp *smp)
 
 	atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_FAIL);
 
+	sc_public_key = bt_pub_key_get();
+
 	return 0;
 }
 
@@ -2634,7 +2635,7 @@ static u8_t smp_pairing_rsp(struct bt_smp *smp, struct net_buf *buf)
 		return 0;
 	}
 
-	if (!sc_local_pkey_valid) {
+	if (!sc_public_key) {
 		atomic_set_bit(smp->flags, SMP_FLAG_PKEY_SEND);
 		return 0;
 	}
@@ -3401,7 +3402,7 @@ static u8_t smp_public_key(struct bt_smp *smp, struct net_buf *buf)
 	}
 
 #if defined(CONFIG_BT_PERIPHERAL)
-	if (!sc_local_pkey_valid) {
+	if (!sc_public_key) {
 		atomic_set_bit(smp->flags, SMP_FLAG_PKEY_SEND);
 		return 0;
 	}
@@ -3569,14 +3570,12 @@ static void bt_smp_pkey_ready(const u8_t *pkey)
 
 	BT_DBG("");
 
+	sc_public_key = pkey;
+
 	if (!pkey) {
 		BT_WARN("Public key not available");
-		sc_local_pkey_valid = false;
 		return;
 	}
-
-	memcpy(sc_public_key, pkey, 64);
-	sc_local_pkey_valid = true;
 
 	for (i = 0; i < ARRAY_SIZE(bt_smp_pool); i++) {
 		struct bt_smp *smp = &bt_smp_pool[i];
@@ -4387,7 +4386,7 @@ int bt_smp_auth_pairing_confirm(struct bt_conn *conn)
 			return legacy_send_pairing_confirm(smp);
 		}
 
-		if (!sc_local_pkey_valid) {
+		if (!sc_public_key) {
 			atomic_set_bit(smp->flags, SMP_FLAG_PKEY_SEND);
 			return 0;
 		}
