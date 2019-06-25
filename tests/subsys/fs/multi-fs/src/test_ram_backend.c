@@ -7,7 +7,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <device.h>
-#include <flash.h>
+#include <drivers/flash.h>
 #include <zephyr/types.h>
 #include <ztest_assert.h>
 

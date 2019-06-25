@@ -19,7 +19,7 @@
 #include <string.h>
 #include <ztest.h>
 
-#include "flash.h"
+#include <drivers/flash.h>
 #include <storage/flash_map.h>
 #include <stats/stats.h>
 #include <fs/nvs.h>

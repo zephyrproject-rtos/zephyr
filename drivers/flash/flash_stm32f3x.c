@@ -12,7 +12,7 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 #include <kernel.h>
 #include <device.h>
 #include <string.h>
-#include <flash.h>
+#include <drivers/flash.h>
 #include <init.h>
 #include <soc.h>
 

@@ -42,7 +42,7 @@
 #include <kernel.h>
 #include <stdio.h>
 #include <errno.h>
-#include <flash.h>
+#include <drivers/flash.h>
 #include <storage/flash_map.h>
 #include <dfu/mcuboot.h>
 #include <dfu/flash_img.h>

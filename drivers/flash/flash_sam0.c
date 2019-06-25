@@ -9,7 +9,7 @@
 LOG_MODULE_REGISTER(flash_sam0);
 
 #include <device.h>
-#include <flash.h>
+#include <drivers/flash.h>
 #include <init.h>
 #include <kernel.h>
 #include <soc.h>

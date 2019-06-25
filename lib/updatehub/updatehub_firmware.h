@@ -7,7 +7,7 @@
 #ifndef __UPDATEHUB_FIRMWARE_H__
 #define __UPDATEHUB_FIRMWARE_H__
 
-#include <flash.h>
+#include <drivers/flash.h>
 #include <dfu/mcuboot.h>
 #include <dfu/flash_img.h>
 

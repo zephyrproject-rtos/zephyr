@@ -7,7 +7,7 @@
  */
 
 #include <errno.h>
-#include <flash.h>
+#include <drivers/flash.h>
 #include <spi.h>
 #include <init.h>
 #include <string.h>

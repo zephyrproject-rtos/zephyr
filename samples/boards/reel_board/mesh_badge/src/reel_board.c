@@ -10,7 +10,7 @@
 #include <gpio.h>
 #include <display/cfb.h>
 #include <misc/printk.h>
-#include <flash.h>
+#include <drivers/flash.h>
 #include <sensor.h>
 
 #include <string.h>

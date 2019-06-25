@@ -12,7 +12,7 @@
 #include <device.h>
 #include <init.h>
 #include <soc.h>
-#include <flash.h>
+#include <drivers/flash.h>
 #include <string.h>
 #include <nrfx_nvmc.h>
 

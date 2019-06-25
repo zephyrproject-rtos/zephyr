@@ -9,7 +9,7 @@
 #include <device.h>
 #include <init.h>
 
-#include <flash.h>
+#include <drivers/flash.h>
 #include <misc/util.h>
 #include "flash_priv.h"
 
