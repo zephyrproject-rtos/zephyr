@@ -16,7 +16,7 @@
 #include <kernel.h>
 #include <string.h>
 #include <device.h>
-#include <gna.h>
+#include <drivers/gna.h>
 
 #include "intel_gna.h"
 
