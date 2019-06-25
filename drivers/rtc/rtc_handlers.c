@@ -5,7 +5,7 @@
  */
 
 #include <syscall_handler.h>
-#include <rtc.h>
+#include <drivers/rtc.h>
 
 Z_SYSCALL_HANDLER(rtc_read, dev)
 {

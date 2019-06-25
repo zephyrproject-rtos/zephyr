@@ -7,7 +7,7 @@
 #include <zephyr.h>
 
 #include <device.h>
-#include <rtc.h>
+#include <drivers/rtc.h>
 #include <misc/printk.h>
 
 #define ALARM (RTC_ALARM_SECOND)
