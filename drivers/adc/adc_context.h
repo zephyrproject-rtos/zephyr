@@ -8,7 +8,7 @@
 #ifndef ZEPHYR_DRIVERS_ADC_ADC_CONTEXT_H_
 #define ZEPHYR_DRIVERS_ADC_ADC_CONTEXT_H_
 
-#include <adc.h>
+#include <drivers/adc.h>
 #include <sys/atomic.h>
 
 #ifdef __cplusplus

@@ -13,7 +13,7 @@
  * @}
  */
 
-#include <adc.h>
+#include <drivers/adc.h>
 #include <zephyr.h>
 #include <ztest.h>
 
