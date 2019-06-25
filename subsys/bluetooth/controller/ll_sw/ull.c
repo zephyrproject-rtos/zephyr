@@ -10,7 +10,7 @@
 
 #include <zephyr/types.h>
 #include <device.h>
-#include <entropy.h>
+#include <drivers/entropy.h>
 #include <bluetooth/hci.h>
 
 #include "hal/cntr.h"

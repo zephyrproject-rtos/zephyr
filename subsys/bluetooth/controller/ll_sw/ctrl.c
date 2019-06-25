@@ -11,7 +11,7 @@
 
 #include <soc.h>
 #include <device.h>
-#include <entropy.h>
+#include <drivers/entropy.h>
 #include <drivers/clock_control.h>
 #include <bluetooth/hci.h>
 #include <misc/util.h>

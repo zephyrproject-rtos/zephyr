@@ -6,7 +6,7 @@
 
 #include <kernel.h>
 #include <device.h>
-#include <entropy.h>
+#include <drivers/entropy.h>
 #include <random/rand32.h>
 #include <init.h>
 #include <misc/__assert.h>

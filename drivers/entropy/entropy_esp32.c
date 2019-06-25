@@ -5,7 +5,7 @@
  */
 
 #include <string.h>
-#include <entropy.h>
+#include <drivers/entropy.h>
 
 static inline u32_t entropy_esp32_get_u32(void)
 {

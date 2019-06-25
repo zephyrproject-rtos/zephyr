@@ -12,7 +12,7 @@
  */
 
 #include "device.h"
-#include "entropy.h"
+#include <drivers/entropy.h>
 #include "init.h"
 #include "misc/util.h"
 #include <stdlib.h>
