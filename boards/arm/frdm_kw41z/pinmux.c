@@ -5,7 +5,7 @@
  */
 
 #include <init.h>
-#include <pinmux.h>
+#include <drivers/pinmux.h>
 #include <fsl_port.h>
 
 static int frdm_kw41z_pinmux_init(struct device *dev)

@@ -9,7 +9,7 @@
 #include <soc.h>
 #include <device.h>
 #include <init.h>
-#include <pinmux.h>
+#include <drivers/pinmux.h>
 #include <sys/sys_io.h>
 #include "pinmux/pinmux.h"
 

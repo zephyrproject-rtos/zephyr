@@ -11,7 +11,7 @@
 #include <device.h>
 #include <init.h>
 
-#include <pinmux.h>
+#include <drivers/pinmux.h>
 #include <drivers/i2c.h>
 #include <drivers/gpio.h>
 #include <pwm.h>

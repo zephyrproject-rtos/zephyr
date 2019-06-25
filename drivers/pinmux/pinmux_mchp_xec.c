@@ -6,7 +6,7 @@
 
 #include <errno.h>
 #include <device.h>
-#include <pinmux.h>
+#include <drivers/pinmux.h>
 #include <soc.h>
 
 static const u32_t valid_ctrl_masks[NUM_MCHP_GPIO_PORTS] = {

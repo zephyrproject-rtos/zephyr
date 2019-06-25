@@ -16,7 +16,7 @@
 #include <kernel.h>
 #include <device.h>
 #include <soc.h>
-#include <pinmux.h>
+#include <drivers/pinmux.h>
 #include <gpio/gpio_stm32.h>
 #include <clock_control/stm32_clock_control.h>
 #include <pinmux/stm32/pinmux_stm32.h>

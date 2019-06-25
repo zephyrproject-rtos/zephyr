@@ -25,7 +25,7 @@
  */
 
 #include <drivers/gpio.h>
-#include <pinmux.h>
+#include <drivers/pinmux.h>
 #include <ztest.h>
 
 #define PINMUX_NAME CONFIG_PINMUX_NAME

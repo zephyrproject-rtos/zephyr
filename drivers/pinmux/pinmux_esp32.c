@@ -11,7 +11,7 @@
 
 #include <errno.h>
 #include <misc/util.h>
-#include <pinmux.h>
+#include <drivers/pinmux.h>
 
 /* DR_REG_IO_MUX_BASE is a 32-bit constant.  Define a pin mux table
  * using only offsets, in order to reduce ROM footprint.

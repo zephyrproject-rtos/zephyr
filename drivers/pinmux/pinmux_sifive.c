@@ -10,7 +10,7 @@
 
 #include <errno.h>
 #include <device.h>
-#include <pinmux.h>
+#include <drivers/pinmux.h>
 #include <soc.h>
 
 struct pinmux_sifive_config {

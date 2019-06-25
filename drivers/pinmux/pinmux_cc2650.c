@@ -54,7 +54,7 @@
 #include <misc/util.h>
 #include <toolchain.h>
 #include <device.h>
-#include <pinmux.h>
+#include <drivers/pinmux.h>
 #include <soc.h>
 #include <sys/sys_io.h>
 
