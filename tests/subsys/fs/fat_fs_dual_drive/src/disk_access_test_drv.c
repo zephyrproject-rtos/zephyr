@@ -7,7 +7,7 @@
 #include <string.h>
 #include <zephyr/types.h>
 #include <misc/__assert.h>
-#include <disk_access.h>
+#include <disk/disk_access.h>
 #include <errno.h>
 #include <init.h>
 #include <device.h>
