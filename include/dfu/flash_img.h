@@ -12,7 +12,7 @@
 extern "C" {
 #endif
 
-#include <flash_map.h>
+#include <storage/flash_map.h>
 
 struct flash_img_context {
 	u8_t buf[CONFIG_IMG_BLOCK_BUF_SIZE];

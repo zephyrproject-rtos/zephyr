@@ -10,7 +10,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
-#include <flash_map.h>
+#include <storage/flash_map.h>
 #include <logging/log.h>
 
 #define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL

@@ -20,7 +20,7 @@
 #include <ztest.h>
 
 #include "flash.h"
-#include "flash_map.h"
+#include <storage/flash_map.h>
 #include "stats.h"
 #include "nvs/nvs.h"
 #include "nvs_priv.h"

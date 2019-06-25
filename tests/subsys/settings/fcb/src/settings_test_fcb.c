@@ -9,7 +9,7 @@
 
 #include "settings_test.h"
 #include "settings_priv.h"
-#include "flash_map.h"
+#include <storage/flash_map.h>
 
 u8_t val8;
 u8_t val8_un;

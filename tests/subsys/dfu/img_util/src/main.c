@@ -5,7 +5,7 @@
  */
 
 #include <ztest.h>
-#include <flash_map.h>
+#include <storage/flash_map.h>
 #include <dfu/flash_img.h>
 
 void test_collecting(void)

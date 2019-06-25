@@ -6,7 +6,7 @@
  */
 
 #include <zephyr.h>
-#include <flash_map.h>
+#include <storage/flash_map.h>
 
 #define FLASH_AREA_FOO(i, _)				\
 	{.fa_id = i,					\

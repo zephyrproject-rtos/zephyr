@@ -17,7 +17,7 @@ extern "C" {
 #include <inttypes.h>
 #include <limits.h>
 
-#include "flash_map.h"
+#include <storage/flash_map.h>
 
 #include <kernel.h>
 
