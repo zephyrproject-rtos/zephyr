@@ -12,7 +12,7 @@ LOG_MODULE_DECLARE(net_google_iot_mqtt, LOG_LEVEL_DBG);
 
 #include <zephyr.h>
 #include <string.h>
-#include <zephyr/jwt.h>
+#include <data/jwt.h>
 #include <entropy.h>
 
 #include <net/tls_credentials.h>
