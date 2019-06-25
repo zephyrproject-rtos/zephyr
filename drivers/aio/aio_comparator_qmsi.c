@@ -11,7 +11,7 @@
 #include <soc.h>
 #include <device.h>
 #include <init.h>
-#include <aio_comparator.h>
+#include <drivers/aio_comparator.h>
 
 #include "qm_comparator.h"
 

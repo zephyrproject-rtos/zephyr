@@ -5,7 +5,7 @@
  */
 
 #include <syscall_handler.h>
-#include <aio_comparator.h>
+#include <drivers/aio_comparator.h>
 
 Z_SYSCALL_HANDLER(aio_cmp_disable, dev, index)
 {
