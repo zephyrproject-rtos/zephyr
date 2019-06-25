@@ -1,0 +1,36 @@
+#
+# Copyright (c) 2019, Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+title: Microchip XEC basic timer
+
+description: >
+    This binding gives a base representation of the Microchip XEC basic timer
+
+inherits:
+    !include rtc.yaml
+
+properties:
+    compatible:
+      constraint: "microchip,xec-timer"
+
+    reg:
+      category: required
+
+    interrupts:
+      category: required
+
+    clock-frequency:
+      category: required
+
+    prescaler:
+      type: int
+      category: required
+      description: Timer frequency equals clock-frequency divided by the prescaler value
+
+    max-value:
+      type: array
+      category: required
+      description: Maximum counter value the instance can handle
