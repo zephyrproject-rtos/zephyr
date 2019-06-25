@@ -23,7 +23,7 @@ void settings_init(void);
 int settings_backend_init(void);
 
 #ifdef CONFIG_SETTINGS_FS
-#include <fs.h>
+#include <fs/fs.h>
 
 static struct settings_file config_init_settings_file = {
 	.cf_name = CONFIG_SETTINGS_FS_FILE,

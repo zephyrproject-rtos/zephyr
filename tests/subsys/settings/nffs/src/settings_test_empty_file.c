@@ -7,7 +7,7 @@
 
 #include "settings_test.h"
 #include "settings/settings_file.h"
-#include <fs.h>
+#include <fs/fs.h>
 
 void test_config_empty_file(void)
 {

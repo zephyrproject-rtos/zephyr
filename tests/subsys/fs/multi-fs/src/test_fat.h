@@ -6,7 +6,7 @@
 
 #include <zephyr.h>
 #include <ztest.h>
-#include <fs.h>
+#include <fs/fs.h>
 
 #define FATFS_MNTP	"/RAM:"
 #define TEST_FILE	FATFS_MNTP"/testfile.txt"

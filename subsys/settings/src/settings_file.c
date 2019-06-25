@@ -8,7 +8,7 @@
 #include <string.h>
 #include <zephyr.h>
 
-#include <fs.h>
+#include <fs/fs.h>
 
 #include "settings/settings.h"
 #include "settings/settings_file.h"

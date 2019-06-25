@@ -7,7 +7,7 @@
 
 #include "settings_test.h"
 #include <device.h>
-#include <fs.h>
+#include <fs/fs.h>
 #include <nffs/nffs.h>
 
 /* NFFS work area strcut */

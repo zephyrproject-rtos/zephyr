@@ -6,7 +6,7 @@
 
 #include <zephyr.h>
 #include <ztest.h>
-#include <fs.h>
+#include <fs/fs.h>
 
 void test_fs_mount(void);
 void test_mkdir(void);

@@ -6,7 +6,7 @@
 
 #include <lvgl.h>
 #include <zephyr.h>
-#include <fs.h>
+#include <fs/fs.h>
 
 /* Stub for LVGL ufs (ram based FS) init function
  * as we use Zephyr FS API instead
