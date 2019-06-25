@@ -8,7 +8,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <errno.h>
-#include <crc.h>
+#include <sys/crc.h>
 #include <misc/byteorder.h>
 #include <net/buf.h>
 #include <sys/base64.h>
