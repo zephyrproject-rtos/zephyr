@@ -18,7 +18,7 @@
 #include <device.h>
 #include <init.h>
 #include <soc.h>
-#include <adc.h>
+#include <drivers/adc.h>
 
 #define ADC_CONTEXT_USES_KERNEL_TIMER
 #include "adc_context.h"

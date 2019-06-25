@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <adc.h>
+#include <drivers/adc.h>
 #include <device.h>
 #include <math.h>
 #include <sensor.h>

@@ -5,7 +5,7 @@
  */
 
 #include <errno.h>
-#include <adc.h>
+#include <drivers/adc.h>
 #include <fsl_adc16.h>
 
 #define LOG_LEVEL CONFIG_ADC_LOG_LEVEL

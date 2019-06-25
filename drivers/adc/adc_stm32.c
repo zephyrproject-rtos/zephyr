@@ -8,7 +8,7 @@
 
 #include <errno.h>
 
-#include <adc.h>
+#include <drivers/adc.h>
 #include <device.h>
 #include <kernel.h>
 #include <init.h>

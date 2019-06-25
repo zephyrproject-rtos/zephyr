@@ -19,7 +19,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <soc.h>
-#include <adc.h>
+#include <drivers/adc.h>
 #include <arch/cpu.h>
 #include <misc/util.h>
 

@@ -13,7 +13,7 @@
 #define ZEPHYR_DRIVERS_ADC_ADC_INTEL_QUARK_SE_C1000_SS_H_
 
 #include <zephyr/types.h>
-#include <adc.h>
+#include <drivers/adc.h>
 
 #ifdef __cplusplus
 extern "C" {

@@ -7,7 +7,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <adc.h>
+#include <drivers/adc.h>
 #include <fsl_adc12.h>
 
 #define LOG_LEVEL CONFIG_ADC_LOG_LEVEL

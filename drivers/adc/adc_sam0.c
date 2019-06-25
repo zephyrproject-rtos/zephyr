@@ -6,7 +6,7 @@
 
 
 #include <soc.h>
-#include <adc.h>
+#include <drivers/adc.h>
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(adc_sam0, CONFIG_ADC_LOG_LEVEL);
