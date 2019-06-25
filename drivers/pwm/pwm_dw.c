@@ -20,7 +20,7 @@
 #include <errno.h>
 
 #include <kernel.h>
-#include <pwm.h>
+#include <drivers/pwm.h>
 
 /* Register for component version */
 #define REG_COMP_VER		0xAC

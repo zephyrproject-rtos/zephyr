@@ -13,7 +13,7 @@
 #include <zephyr.h>
 #include <misc/printk.h>
 #include <device.h>
-#include <pwm.h>
+#include <drivers/pwm.h>
 
 #if defined(RED_PWM_LED_PWM_CONTROLLER) && \
       defined(RED_PWM_LED_PWM_CHANNEL) && \

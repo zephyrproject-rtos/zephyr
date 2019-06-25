@@ -13,7 +13,7 @@
 
 #include <soc.h>
 #include <errno.h>
-#include <pwm.h>
+#include <drivers/pwm.h>
 #include <kernel.h>
 #include <drivers/gpio.h>
 #include <string.h>

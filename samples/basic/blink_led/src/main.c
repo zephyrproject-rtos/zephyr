@@ -13,7 +13,7 @@
 #include <zephyr.h>
 #include <misc/printk.h>
 #include <device.h>
-#include <pwm.h>
+#include <drivers/pwm.h>
 
 #if defined(CONFIG_SOC_STM32F401XE) || defined(CONFIG_SOC_STM32F412ZG) || \
 	defined(CONFIG_SOC_STM32F413XX) || defined(CONFIG_SOC_STM32L476XX) || \

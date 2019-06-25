@@ -13,7 +13,7 @@
 #include <zephyr.h>
 #include <misc/printk.h>
 #include <device.h>
-#include <pwm.h>
+#include <drivers/pwm.h>
 
 #if defined(CONFIG_SOC_QUARK_SE_C1000)
 #define PWM_DEV CONFIG_PWM_QMSI_DEV_NAME

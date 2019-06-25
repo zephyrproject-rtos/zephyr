@@ -8,7 +8,7 @@
 #include <misc/printk.h>
 #include <board.h>
 #include <drivers/gpio.h>
-#include <pwm.h>
+#include <drivers/pwm.h>
 #include <device.h>
 
 #include <display/mb_display.h>
