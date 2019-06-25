@@ -7,7 +7,7 @@
 
 #include <kernel.h>
 #include <sensor.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 
 #include "bmi160.h"
 

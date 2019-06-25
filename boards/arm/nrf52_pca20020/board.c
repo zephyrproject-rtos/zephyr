@@ -5,7 +5,7 @@
  */
 
 #include <init.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 #include <misc/printk.h>
 
 #define VDD_PWR_CTRL_GPIO_PIN 30

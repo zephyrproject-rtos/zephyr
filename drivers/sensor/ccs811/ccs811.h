@@ -8,7 +8,7 @@
 #define ZEPHYR_DRIVERS_SENSOR_CCS811_CCS811_H_
 
 #include <device.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 #include <misc/util.h>
 
 /* Registers */

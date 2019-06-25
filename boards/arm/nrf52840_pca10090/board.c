@@ -6,7 +6,7 @@
 
 #include <zephyr.h>
 #include <init.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 #include <logging/log.h>
 
 LOG_MODULE_REGISTER(board_control, CONFIG_BOARD_PCA10090_LOG_LEVEL);

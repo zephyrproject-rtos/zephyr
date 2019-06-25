@@ -17,7 +17,7 @@
 
 #include <soc.h>
 
-#include <gpio.h>
+#include <drivers/gpio.h>
 #include "gpio_utils.h"
 
 typedef void (*config_func_t)(struct device *dev);

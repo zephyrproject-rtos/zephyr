@@ -8,7 +8,7 @@
 
 #include <device.h>
 #include <drivers/interrupt_controller/ioapic.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 #include <init.h>
 #include <sys/sys_io.h>
 #include <misc/util.h>

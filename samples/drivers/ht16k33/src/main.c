@@ -6,7 +6,7 @@
 
 #include <device.h>
 #include <led.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 #include <zephyr.h>
 
 #define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL

@@ -13,7 +13,7 @@
 
 #include <zephyr.h>
 #include <init.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 #include <device.h>
 #include <string.h>
 #include <misc/printk.h>

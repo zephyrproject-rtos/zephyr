@@ -15,7 +15,7 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 #include <ctype.h>
 #include <errno.h>
 #include <zephyr.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 #include <device.h>
 #include <init.h>
 

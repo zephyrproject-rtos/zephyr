@@ -62,7 +62,7 @@
 #include <misc/__assert.h>
 #include <init.h>
 #if defined(CONFIG_USB_VBUS_GPIO)
-#include <gpio.h>
+#include <drivers/gpio.h>
 #endif
 #include <misc/byteorder.h>
 #include <usb/usb_device.h>

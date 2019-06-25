@@ -7,7 +7,7 @@
 #include <kernel.h>
 #include <device.h>
 #include <spi.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 
 #define LOG_LEVEL CONFIG_CAN_LOG_LEVEL
 #include <logging/log.h>

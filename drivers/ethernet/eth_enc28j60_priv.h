@@ -6,7 +6,7 @@
  */
 
 #include <kernel.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 
 #ifndef _ENC28J60_
 #define _ENC28J60_

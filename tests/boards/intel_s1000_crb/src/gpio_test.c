@@ -31,7 +31,7 @@
 #include <misc/printk.h>
 
 #include <device.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 
 #define GPIO_OUT_PIN            23
 #define GPIO_INT_PIN            24

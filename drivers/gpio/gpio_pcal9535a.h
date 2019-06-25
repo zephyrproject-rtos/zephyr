@@ -13,7 +13,7 @@
 
 #include <kernel.h>
 
-#include <gpio.h>
+#include <drivers/gpio.h>
 #include <i2c.h>
 
 #ifdef __cplusplus

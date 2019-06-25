@@ -12,7 +12,7 @@ LOG_MODULE_REGISTER(wifi_eswifi_core);
 #include <device.h>
 #include <string.h>
 #include <errno.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 #include <net/net_pkt.h>
 #include <net/net_if.h>
 #include <net/net_context.h>

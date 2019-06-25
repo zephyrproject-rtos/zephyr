@@ -12,7 +12,7 @@
 #ifndef ZEPHYR_DRIVERS_SPI_SPI_CONTEXT_H_
 #define ZEPHYR_DRIVERS_SPI_SPI_CONTEXT_H_
 
-#include <gpio.h>
+#include <drivers/gpio.h>
 #include <spi.h>
 
 #ifdef __cplusplus

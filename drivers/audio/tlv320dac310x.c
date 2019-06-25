@@ -10,7 +10,7 @@
 
 #include <device.h>
 #include <i2c.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 
 #include <audio/codec.h>
 #include "tlv320dac310x.h"

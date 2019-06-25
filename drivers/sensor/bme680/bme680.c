@@ -11,7 +11,7 @@
  */
 
 #include "bme680.h"
-#include <gpio.h>
+#include <drivers/gpio.h>
 #include <i2c.h>
 #include <init.h>
 #include <kernel.h>

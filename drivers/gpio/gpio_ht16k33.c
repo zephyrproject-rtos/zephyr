@@ -9,7 +9,7 @@
  * @brief GPIO driver for the HT16K33 I2C LED driver with keyscan
  */
 
-#include <gpio.h>
+#include <drivers/gpio.h>
 #include <zephyr.h>
 
 #define LOG_LEVEL CONFIG_GPIO_LOG_LEVEL

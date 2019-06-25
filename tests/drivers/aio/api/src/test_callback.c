@@ -5,7 +5,7 @@
  */
 
 #include <ztest.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 #include <pinmux.h>
 #include <drivers/aio_comparator.h>
 

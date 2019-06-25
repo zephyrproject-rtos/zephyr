@@ -7,7 +7,7 @@
 #include <zephyr.h>
 #include <misc/printk.h>
 #include <board.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 #include <device.h>
 #include <string.h>
 #include <pwm.h>

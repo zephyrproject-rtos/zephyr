@@ -5,7 +5,7 @@
  */
 
 #include <device.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 #include <i2c.h>
 #include <kernel.h>
 #include <misc/byteorder.h>

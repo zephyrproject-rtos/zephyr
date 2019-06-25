@@ -20,7 +20,7 @@
 #include <sensor.h>
 #include <misc/byteorder.h>
 #include <misc/__assert.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 
 #define BMM150_REG_CHIP_ID         0x40
 #define BMM150_CHIP_ID_VAL         0x32

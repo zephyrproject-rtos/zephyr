@@ -13,7 +13,7 @@
 #include <misc/byteorder.h>
 #include <misc/__assert.h>
 
-#include <gpio.h>
+#include <drivers/gpio.h>
 #include <logging/log.h>
 
 #include "lsm9ds0_gyro.h"

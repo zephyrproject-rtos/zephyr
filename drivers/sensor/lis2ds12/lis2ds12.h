@@ -13,7 +13,7 @@
 
 #include <zephyr/types.h>
 #include <sensor.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 
 #define LIS2DS12_REG_WHO_AM_I			0x0F
 #define LIS2DS12_VAL_WHO_AM_I			0x43

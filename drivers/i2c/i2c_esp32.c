@@ -12,7 +12,7 @@
 
 #include <soc.h>
 #include <errno.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 #include <gpio/gpio_esp32.h>
 #include <i2c.h>
 #include <misc/util.h>

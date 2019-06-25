@@ -8,7 +8,7 @@
 
 #include <board.h>
 #include <soc.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 
 #include <misc/printk.h>
 #include <misc/util.h>

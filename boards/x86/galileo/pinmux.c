@@ -13,7 +13,7 @@
 
 #include <pinmux.h>
 #include <i2c.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 #include <pwm.h>
 
 #include <pinmux/pinmux.h>

@@ -27,7 +27,7 @@
 #include <misc/printk.h>
 
 #include <device.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 /* in millisecond */
 #define SLEEPTIME	250
 

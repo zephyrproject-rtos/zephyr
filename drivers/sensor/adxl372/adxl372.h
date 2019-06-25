@@ -9,7 +9,7 @@
 
 #include <zephyr/types.h>
 #include <device.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 #include <spi.h>
 #include <i2c.h>
 #include <misc/util.h>

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <gpio.h>
+#include <drivers/gpio.h>
 #include <hal/nrf_gpio.h>
 #include <hal/nrf_gpiote.h>
 

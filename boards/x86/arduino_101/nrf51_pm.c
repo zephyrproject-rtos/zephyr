@@ -7,7 +7,7 @@
  */
 
 #include <zephyr.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 #include <uart.h>
 
 #include <errno.h>

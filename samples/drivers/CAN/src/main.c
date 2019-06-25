@@ -9,7 +9,7 @@
 #include <misc/printk.h>
 #include <device.h>
 #include <drivers/can.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 
 #define TX_THREAD_STACK_SIZE 512
 #define LED_THREAD_STACK_SIZE 512

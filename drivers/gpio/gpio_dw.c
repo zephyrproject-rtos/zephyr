@@ -7,7 +7,7 @@
 #include <errno.h>
 
 #include <kernel.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 #include "gpio_dw.h"
 #include "gpio_utils.h"
 

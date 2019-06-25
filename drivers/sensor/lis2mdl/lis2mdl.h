@@ -9,7 +9,7 @@
 #ifndef __MAG_LIS2MDL_H
 #define __MAG_LIS2MDL_H
 
-#include <gpio.h>
+#include <drivers/gpio.h>
 #include <misc/util.h>
 #include <i2c.h>
 

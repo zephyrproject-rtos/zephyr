@@ -13,7 +13,7 @@
 
 #include <sensor.h>
 #include <zephyr/types.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 #include <misc/util.h>
 
 #define LSM6DSL_REG_FUNC_CFG_ACCESS			0x01

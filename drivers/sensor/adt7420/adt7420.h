@@ -9,7 +9,7 @@
 
 #include <zephyr/types.h>
 #include <device.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 
 /* ADT7420 registers */
 #define ADT7420_REG_TEMP_MSB		0x00 /* Temperature value MSB */

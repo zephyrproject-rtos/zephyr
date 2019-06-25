@@ -12,7 +12,7 @@
 
 #include <zephyr/types.h>
 #include <kernel.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 
 #define GPIO_SCH_REG_GEN		(0x00)
 #define GPIO_SCH_REG_GIO		(0x04)

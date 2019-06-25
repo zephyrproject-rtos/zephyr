@@ -8,7 +8,7 @@
 #include <string.h>
 #include <sensor.h>
 #include <init.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 #include <misc/printk.h>
 #include <misc/__assert.h>
 #include <stdlib.h>

@@ -6,7 +6,7 @@
 
 #include <sensor.h>
 #include <i2c.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 
 #define MAX30101_I2C_ADDRESS		0x57
 

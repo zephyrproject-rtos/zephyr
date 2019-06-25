@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <gpio.h>
+#include <drivers/gpio.h>
 #include <syscall_handler.h>
 
 Z_SYSCALL_HANDLER(gpio_config, port, access_op, pin, flags)

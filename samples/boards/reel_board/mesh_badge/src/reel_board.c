@@ -7,7 +7,7 @@
 
 #include <zephyr.h>
 #include <device.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 #include <display/cfb.h>
 #include <misc/printk.h>
 #include <drivers/flash.h>
