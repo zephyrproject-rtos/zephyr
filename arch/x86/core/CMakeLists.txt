@@ -15,7 +15,7 @@ zephyr_library_sources_ifdef(CONFIG_X86_MULTIBOOT multiboot.c)
 zephyr_library_sources_ifdef(CONFIG_X86_VERY_EARLY_CONSOLE early_serial.c)
 
 if(CONFIG_X86_LONGMODE)
-  include(x64.cmake)
+  include(intel64.cmake)
 else()
   include(ia32.cmake)
 endif()
