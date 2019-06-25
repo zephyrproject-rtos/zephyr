@@ -9,7 +9,7 @@
  */
 
 #include <kernel.h>
-#include <sensor.h>
+#include <drivers/sensor.h>
 
 #include "bmg160.h"
 

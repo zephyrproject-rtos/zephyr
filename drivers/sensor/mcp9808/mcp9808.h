@@ -11,7 +11,7 @@
 
 #include <zephyr/types.h>
 #include <device.h>
-#include <sensor.h>
+#include <drivers/sensor.h>
 #include <misc/util.h>
 #include <drivers/gpio.h>
 

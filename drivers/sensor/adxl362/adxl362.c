@@ -7,7 +7,7 @@
 
 #include <kernel.h>
 #include <string.h>
-#include <sensor.h>
+#include <drivers/sensor.h>
 #include <init.h>
 #include <drivers/gpio.h>
 #include <misc/byteorder.h>

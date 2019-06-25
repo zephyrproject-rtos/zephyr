@@ -6,7 +6,7 @@
 
 #include <zephyr.h>
 #include <device.h>
-#include <sensor.h>
+#include <drivers/sensor.h>
 #include <stdio.h>
 #include <misc/printk.h>
 #ifdef CONFIG_SX9500_TRIGGER

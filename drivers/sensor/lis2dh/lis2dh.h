@@ -12,7 +12,7 @@
 #include <misc/util.h>
 #include <stdint.h>
 #include <drivers/gpio.h>
-#include <sensor.h>
+#include <drivers/sensor.h>
 #include <string.h>
 
 #define LIS2DH_BUS_ADDRESS		DT_INST_0_ST_LIS2DH_BASE_ADDRESS

@@ -8,7 +8,7 @@
 
 #include <kernel.h>
 #include <drivers/i2c.h>
-#include <sensor.h>
+#include <drivers/sensor.h>
 #include <drivers/gpio.h>
 #include <misc/util.h>
 

@@ -8,7 +8,7 @@
 #include <drivers/gpio.h>
 #include <misc/byteorder.h>
 #include <misc/util.h>
-#include <sensor.h>
+#include <drivers/sensor.h>
 #include <string.h>
 #include <zephyr.h>
 #include <logging/log.h>

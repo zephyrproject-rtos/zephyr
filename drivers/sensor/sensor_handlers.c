@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <sensor.h>
+#include <drivers/sensor.h>
 #include <syscall_handler.h>
 
 Z_SYSCALL_HANDLER(sensor_attr_set, dev, chan, attr, val)

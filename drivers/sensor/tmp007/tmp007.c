@@ -10,7 +10,7 @@
 #include <misc/byteorder.h>
 #include <misc/util.h>
 #include <kernel.h>
-#include <sensor.h>
+#include <drivers/sensor.h>
 #include <misc/__assert.h>
 #include <logging/log.h>
 

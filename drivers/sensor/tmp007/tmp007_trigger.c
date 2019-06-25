@@ -8,7 +8,7 @@
 #include <drivers/gpio.h>
 #include <misc/util.h>
 #include <kernel.h>
-#include <sensor.h>
+#include <drivers/sensor.h>
 
 #include "tmp007.h"
 

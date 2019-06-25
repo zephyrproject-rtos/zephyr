@@ -13,7 +13,7 @@
 #include <ipm/ipm_quark_se.h>
 #include <misc/byteorder.h>
 #include <misc/printk.h>
-#include <sensor.h>
+#include <drivers/sensor.h>
 #include <zephyr.h>
 
 #define TEMPERATURE_CUD			"Temperature"

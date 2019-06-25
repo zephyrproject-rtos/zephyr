@@ -11,7 +11,7 @@
 #include <stdio.h>
 
 #include <device.h>
-#include <sensor.h>
+#include <drivers/sensor.h>
 #include <drivers/i2c.h>
 
 #define MAX_TEST_TIME	15000

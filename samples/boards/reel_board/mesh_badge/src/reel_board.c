@@ -11,7 +11,7 @@
 #include <display/cfb.h>
 #include <misc/printk.h>
 #include <drivers/flash.h>
-#include <sensor.h>
+#include <drivers/sensor.h>
 
 #include <string.h>
 #include <stdio.h>

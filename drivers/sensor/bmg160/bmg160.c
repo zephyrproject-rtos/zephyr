@@ -9,7 +9,7 @@
  */
 
 #include <init.h>
-#include <sensor.h>
+#include <drivers/sensor.h>
 #include <misc/byteorder.h>
 #include <kernel.h>
 #include <logging/log.h>

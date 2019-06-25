@@ -9,7 +9,7 @@
 #include <kernel.h>
 #include <init.h>
 #include <drivers/i2c.h>
-#include <sensor.h>
+#include <drivers/sensor.h>
 #include <misc/__assert.h>
 #include <logging/log.h>
 

@@ -6,7 +6,7 @@
  */
 
 #include <zephyr.h>
-#include <sensor.h>
+#include <drivers/sensor.h>
 #include <stdio.h>
 
 K_SEM_DEFINE(sem, 0, 1);	/* starts off "not available" */

@@ -17,7 +17,7 @@
 #include <kernel.h>
 #include <misc/byteorder.h>
 #include <misc/__assert.h>
-#include <sensor.h>
+#include <drivers/sensor.h>
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(bme680, CONFIG_SENSOR_LOG_LEVEL);

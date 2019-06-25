@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <sensor.h>
+#include <drivers/sensor.h>
 
 #include <nrfx_qdec.h>
 #include <hal/nrf_gpio.h>

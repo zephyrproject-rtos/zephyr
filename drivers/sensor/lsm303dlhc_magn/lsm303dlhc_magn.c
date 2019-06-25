@@ -6,7 +6,7 @@
 
 #include <drivers/i2c.h>
 #include <init.h>
-#include <sensor.h>
+#include <drivers/sensor.h>
 
 #define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
 #include <logging/log.h>

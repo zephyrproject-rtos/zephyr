@@ -6,7 +6,7 @@
 
 #include <zephyr.h>
 #include <device.h>
-#include <sensor.h>
+#include <drivers/sensor.h>
 
 void main(void)
 {

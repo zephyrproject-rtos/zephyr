@@ -12,7 +12,7 @@
 #include <misc/__assert.h>
 #include <misc/byteorder.h>
 #include <logging/log.h>
-#include <sensor.h>
+#include <drivers/sensor.h>
 
 #if defined(DT_ST_LIS2DW12_BUS_SPI)
 #include <spi.h>

@@ -14,7 +14,7 @@
 #include <spi.h>
 #include <drivers/gpio.h>
 #include <misc/util.h>
-#include <sensor.h>
+#include <drivers/sensor.h>
 #include "lis2dw12_reg.h"
 
 #if defined(CONFIG_LIS2DW12_ODR_1_6)

@@ -14,7 +14,7 @@
 #include <arch/cpu.h>
 #include <init.h>
 #include <kernel.h>
-#include <sensor.h>
+#include <drivers/sensor.h>
 #include <stdlib.h>
 #include <string.h>
 #include <uart.h>
