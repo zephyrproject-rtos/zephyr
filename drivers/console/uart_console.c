@@ -23,7 +23,7 @@
 #include <device.h>
 #include <init.h>
 
-#include <uart.h>
+#include <drivers/uart.h>
 #include <drivers/console/console.h>
 #include <drivers/console/uart_console.h>
 #include <toolchain.h>

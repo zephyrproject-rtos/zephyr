@@ -17,7 +17,7 @@
 #include <drivers/sensor.h>
 #include <stdlib.h>
 #include <string.h>
-#include <uart.h>
+#include <drivers/uart.h>
 #include <logging/log.h>
 
 #define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL

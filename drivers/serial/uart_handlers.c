@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <uart.h>
+#include <drivers/uart.h>
 #include <syscall_handler.h>
 
 #define UART_SIMPLE(op_) \

@@ -16,7 +16,7 @@
 #include "soc.h"
 
 #ifdef CONFIG_UART_STELLARIS
-#include <uart.h>
+#include <drivers/uart.h>
 
 #define RCGC1 (*((volatile u32_t *)0x400FE104))
 

@@ -14,7 +14,7 @@
 #include <sys/select.h>
 #include <unistd.h>
 
-#include "uart.h"
+#include <drivers/uart.h>
 #include "cmdline.h" /* native_posix command line options header */
 #include "soc.h"
 

@@ -5,7 +5,7 @@
  */
 
 #include <zephyr.h>
-#include <uart.h>
+#include <drivers/uart.h>
 #include <misc/printk.h>
 #include <console/tty.h>
 

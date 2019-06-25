@@ -14,7 +14,7 @@
 #include <misc/util.h>
 #include <string.h>
 #include <init.h>
-#include <uart.h>
+#include <drivers/uart.h>
 
 /*
  * for nsimdrv, "nsim_mem-dev=uart0,base=0xf0000000,irq=24" is

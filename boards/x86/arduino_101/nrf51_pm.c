@@ -8,7 +8,7 @@
 
 #include <zephyr.h>
 #include <drivers/gpio.h>
-#include <uart.h>
+#include <drivers/uart.h>
 
 #include <errno.h>
 

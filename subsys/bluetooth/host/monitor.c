@@ -16,7 +16,7 @@
 #include <init.h>
 #include <drivers/console/uart_pipe.h>
 #include <misc/byteorder.h>
-#include <uart.h>
+#include <drivers/uart.h>
 
 #include <logging/log_backend.h>
 #include <logging/log_output.h>

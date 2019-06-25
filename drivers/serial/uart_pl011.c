@@ -9,7 +9,7 @@
 #include <init.h>
 #include <device.h>
 #include <soc.h>
-#include <uart.h>
+#include <drivers/uart.h>
 #include <arch/arm/cortex_m/cmsis.h>
 
 

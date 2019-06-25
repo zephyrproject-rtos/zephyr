@@ -8,7 +8,7 @@
  * @brief Driver for Nordic Semiconductor nRF UARTE
  */
 
-#include <uart.h>
+#include <drivers/uart.h>
 #include <hal/nrf_gpio.h>
 #include <hal/nrf_uarte.h>
 #include <nrfx_timer.h>

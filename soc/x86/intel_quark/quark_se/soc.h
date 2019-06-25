@@ -15,7 +15,7 @@
 
 #include <zephyr/types.h>
 #include <misc/util.h>
-#include <uart.h>
+#include <drivers/uart.h>
 
 #ifdef CONFIG_IOAPIC
 #include <drivers/interrupt_controller/ioapic.h>

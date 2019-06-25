@@ -5,7 +5,7 @@
  */
 
 #include <shell/shell_uart.h>
-#include <uart.h>
+#include <drivers/uart.h>
 #include <init.h>
 #include <logging/log.h>
 

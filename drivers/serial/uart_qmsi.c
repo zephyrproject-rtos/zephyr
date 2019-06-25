@@ -9,7 +9,7 @@
 #if defined(CONFIG_IOAPIC)
 #include <drivers/interrupt_controller/ioapic.h>
 #endif
-#include <uart.h>
+#include <drivers/uart.h>
 #include <power/power.h>
 
 #include "qm_uart.h"

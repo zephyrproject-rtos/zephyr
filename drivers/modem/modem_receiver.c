@@ -13,7 +13,7 @@
 
 #include <kernel.h>
 #include <init.h>
-#include <uart.h>
+#include <drivers/uart.h>
 
 #include <logging/log.h>
 

@@ -5,7 +5,7 @@
  */
 
 #include <errno.h>
-#include <uart.h>
+#include <drivers/uart.h>
 #include <em_leuart.h>
 #include <em_gpio.h>
 #include <em_cmu.h>

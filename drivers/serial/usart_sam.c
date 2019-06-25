@@ -17,7 +17,7 @@
 #include <device.h>
 #include <init.h>
 #include <soc.h>
-#include <uart.h>
+#include <drivers/uart.h>
 
 /*
  * Verify Kconfig configuration

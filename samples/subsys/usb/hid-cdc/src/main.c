@@ -6,7 +6,7 @@
 #include <zephyr.h>
 #include <device.h>
 #include <drivers/gpio.h>
-#include <uart.h>
+#include <drivers/uart.h>
 #include <string.h>
 #include <random/rand32.h>
 

@@ -7,7 +7,7 @@
 
 #include <kernel.h>
 #include <arch/cpu.h>
-#include <uart.h>
+#include <drivers/uart.h>
 #include <sys/sys_io.h>
 
 #include "altera_avalon_jtag_uart.h"

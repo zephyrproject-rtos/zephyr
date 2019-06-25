@@ -16,7 +16,7 @@ LOG_MODULE_REGISTER(uart_pipe, CONFIG_UART_CONSOLE_LOG_LEVEL);
 
 #include <kernel.h>
 
-#include <uart.h>
+#include <drivers/uart.h>
 
 #include <console/uart_pipe.h>
 #include <misc/printk.h>
