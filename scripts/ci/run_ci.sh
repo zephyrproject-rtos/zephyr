@@ -26,6 +26,8 @@ if [ ! -d "${BSIM_OUT_PATH}" ]; then
         unset BSIM_OUT_PATH
 fi
 export BSIM_COMPONENTS_PATH="${BSIM_OUT_PATH}/components/"
+export EDTT_PATH="${EDTT_PATH:-../tools/edtt}"
+
 bsim_bt_test_results_file="./bsim_bt_out/bsim_results.xml"
 west_commands_results_file="./pytest_out/west_commands.xml"
 
