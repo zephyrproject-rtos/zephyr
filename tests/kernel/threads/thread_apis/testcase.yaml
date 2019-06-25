@@ -1,3 +1,3 @@
 tests:
   kernel.threads:
-    tags: kernel threads userspace
+    tags: kernel threads userspace ignore_faults

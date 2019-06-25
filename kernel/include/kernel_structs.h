@@ -244,7 +244,7 @@ static ALWAYS_INLINE void z_new_thread_init(struct k_thread *thread,
 #endif
 
 #ifdef CONFIG_THREAD_NAME
-	thread->name = NULL;
+	thread->name[0] = '\0';
 #endif
 
 #if defined(CONFIG_USERSPACE)

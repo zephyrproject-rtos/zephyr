@@ -361,6 +361,16 @@ config THREAD_NAME
 	bool "Thread name [EXPERIMENTAL]"
 	help
 	  This option allows to set a name for a thread.
+
+config THREAD_MAX_NAME_LEN
+	int "Max length of a thread name"
+	default 32
+	range 8 128
+	depends on THREAD_NAME
+	help
+	  Thread names get stored in the k_thread struct. Indicate the max
+	  name length, including the terminating NULL byte. Reduce this value
+	  to conserve memory.
 endmenu
 
 menu "Work Queue Options"
