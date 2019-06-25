@@ -15,9 +15,7 @@ typedef unsigned int mode_t;
 #if !defined(__ssize_t_defined)
 #define __ssize_t_defined
 
-#define unsigned signed
 typedef __SIZE_TYPE__ ssize_t;
-#undef unsigned
 
 #endif
 
