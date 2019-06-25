@@ -6,7 +6,7 @@
  */
 
 #include <init.h>
-#include <pinmux.h>
+#include <drivers/pinmux.h>
 
 static int board_pinmux_init(struct device *dev)
 {

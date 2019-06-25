@@ -7,7 +7,7 @@
 #include <stdint.h>
 #include <errno.h>
 #include <device.h>
-#include <pinmux.h>
+#include <drivers/pinmux.h>
 #include <fsl_common.h>
 #include <fsl_clock.h>
 #include <fsl_iocon.h>

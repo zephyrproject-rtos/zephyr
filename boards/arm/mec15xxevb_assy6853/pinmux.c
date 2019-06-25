@@ -7,7 +7,7 @@
 #include <device.h>
 #include <init.h>
 #include <kernel.h>
-#include <pinmux.h>
+#include <drivers/pinmux.h>
 
 #include "soc.h"
 

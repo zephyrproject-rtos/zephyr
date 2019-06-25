@@ -6,7 +6,7 @@
 
 #include <ztest.h>
 #include <drivers/gpio.h>
-#include <pinmux.h>
+#include <drivers/pinmux.h>
 #include <drivers/aio_comparator.h>
 
 #define AIO_CMP_DEV_NAME	CONFIG_AIO_COMPARATOR_0_NAME

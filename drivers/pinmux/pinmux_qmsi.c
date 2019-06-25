@@ -7,7 +7,7 @@
  */
 
 #include <errno.h>
-#include <pinmux.h>
+#include <drivers/pinmux.h>
 
 #include "qm_pinmux.h"
 
