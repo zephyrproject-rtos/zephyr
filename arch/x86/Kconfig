@@ -39,7 +39,7 @@ config CPU_APOLLO_LAKE
 	  This option signifies the use of a CPU from the Apollo Lake family.
 
 #
-# Configuration common to both IA32 and X64 sub-architectures.
+# Configuration common to both IA32 and Intel64 sub-architectures.
 #
 
 config X86_LONGMODE
@@ -109,6 +109,6 @@ endif # X86_MULTIBOOT_FRAMEBUF
 endif # X86_MULTIBOOT
 
 source "arch/x86/core/Kconfig.ia32"
-source "arch/x86/core/Kconfig.x64"
+source "arch/x86/core/Kconfig.intel64"
 
 endmenu

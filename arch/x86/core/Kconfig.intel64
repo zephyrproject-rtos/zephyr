@@ -1,4 +1,4 @@
-# Kconfig.x64 - X64-specific X86 subarchitecture options
+# Kconfig.intel64 - Intel64-specific X86 subarchitecture options
 #
 # Copyright (c) 2019 Intel Corp.
 # SPDX-License-Identifier: Apache-2.0

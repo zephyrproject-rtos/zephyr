@@ -14,7 +14,7 @@ zephyr_library_sources_if_kconfig(reboot_rst_cnt.c)
 zephyr_library_sources_ifdef(CONFIG_X86_MULTIBOOT multiboot.c)
 
 if(CONFIG_X86_LONGMODE)
-  include(x64.cmake)
+  include(intel64.cmake)
 else()
   include(ia32.cmake)
 endif()
