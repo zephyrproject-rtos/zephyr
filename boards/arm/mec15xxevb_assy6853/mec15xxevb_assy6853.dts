@@ -48,3 +48,7 @@
 	vw_girq = <24>;
 	pc_girq = <15>;
 };
+
+&timer2 {
+	status = "okay";
+};
