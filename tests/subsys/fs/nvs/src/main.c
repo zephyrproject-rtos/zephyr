@@ -22,7 +22,7 @@
 #include "flash.h"
 #include <storage/flash_map.h>
 #include "stats.h"
-#include "nvs/nvs.h"
+#include <fs/nvs.h>
 #include "nvs_priv.h"
 
 #define TEST_FLASH_AREA_STORAGE_OFFSET	DT_FLASH_AREA_STORAGE_OFFSET

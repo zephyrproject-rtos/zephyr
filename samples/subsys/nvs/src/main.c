@@ -43,7 +43,7 @@
 #include <device.h>
 #include <string.h>
 #include <flash.h>
-#include <nvs/nvs.h>
+#include <fs/nvs.h>
 
 static struct nvs_fs fs;
 
