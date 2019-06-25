@@ -272,15 +272,6 @@ struct connection {
 	} llcp_phy;
 #endif /* CONFIG_BT_CTLR_PHY */
 
-	u8_t  sn:1;
-	u8_t  nesn:1;
-	u8_t  pause_rx:1;
-	u8_t  pause_tx:1;
-	u8_t  enc_rx:1;
-	u8_t  enc_tx:1;
-	u8_t  refresh:1;
-	u8_t  empty:1;
-
 	struct ccm ccm_rx;
 	struct ccm ccm_tx;
 
@@ -291,6 +282,18 @@ struct connection {
 	struct radio_pdu_node_tx *pkt_tx_last;
 	u8_t  packet_tx_head_len;
 	u8_t  packet_tx_head_offset;
+
+	u8_t  sn:1;
+	u8_t  nesn:1;
+	u8_t  pause_rx:1;
+	u8_t  pause_tx:1;
+	u8_t  enc_rx:1;
+	u8_t  enc_tx:1;
+	u8_t  refresh:1;
+	u8_t  empty:1;
+
+	/* Detect empty L2CAP start frame */
+	u8_t  start_empty:1;
 
 #if defined(CONFIG_BT_CTLR_CONN_RSSI)
 	u8_t  rssi_latest;
