@@ -21,7 +21,8 @@ static sys_dlist_t timeout_list = SYS_DLIST_STATIC_INIT(&timeout_list);
 
 static struct k_spinlock timeout_lock;
 
-static bool can_wait_forever;
+#define MAX_WAIT (IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE) \
+		  ? K_FOREVER : INT_MAX)
 
 /* Cycles left to process in the currently-executing z_clock_announce() */
 static int announce_remaining;
@@ -67,9 +68,8 @@ static s32_t elapsed(void)
 
 static s32_t next_timeout(void)
 {
-	int maxw = can_wait_forever ? K_FOREVER : INT_MAX;
 	struct _timeout *to = first();
-	s32_t ret = to == NULL ? maxw : MAX(0, to->dticks - elapsed());
+	s32_t ret = to == NULL ? MAX_WAIT : MAX(0, to->dticks - elapsed());
 
 #ifdef CONFIG_TIMESLICING
 	if (_current_cpu->slice_ticks && _current_cpu->slice_ticks < ret) {
@@ -207,19 +207,6 @@ void z_clock_announce(s32_t ticks)
 	z_clock_set_timeout(next_timeout(), false);
 
 	k_spin_unlock(&timeout_lock, key);
-}
-
-int k_enable_sys_clock_always_on(void)
-{
-	int ret = !can_wait_forever;
-
-	can_wait_forever = 0;
-	return ret;
-}
-
-void k_disable_sys_clock_always_on(void)
-{
-	can_wait_forever = 1;
 }
 
 s64_t z_tick_get(void)
