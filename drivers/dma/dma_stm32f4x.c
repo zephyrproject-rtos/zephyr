@@ -7,7 +7,7 @@
 
 
 #include <device.h>
-#include <dma.h>
+#include <drivers/dma.h>
 #include <errno.h>
 #include <init.h>
 #include <stdio.h>

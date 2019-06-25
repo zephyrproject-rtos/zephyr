@@ -13,7 +13,7 @@ LOG_MODULE_REGISTER(spi_sam0);
 #include <device.h>
 #include <spi.h>
 #include <soc.h>
-#include <dma.h>
+#include <drivers/dma.h>
 
 /* Device constant configuration parameters */
 struct spi_sam0_config {

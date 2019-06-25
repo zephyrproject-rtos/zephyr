@@ -5,7 +5,7 @@
  */
 
 #include <string.h>
-#include <dma.h>
+#include <drivers/dma.h>
 #include <i2s.h>
 #include <soc.h>
 #include <clock_control/stm32_clock_control.h>

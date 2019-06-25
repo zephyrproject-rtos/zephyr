@@ -18,7 +18,7 @@
 #include <kernel.h>
 #include <device.h>
 #include <init.h>
-#include <dma.h>
+#include <drivers/dma.h>
 #include <i2s.h>
 #include <soc.h>
 #include "i2s_cavs.h"

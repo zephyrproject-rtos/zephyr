@@ -9,7 +9,7 @@
 #include <zephyr.h>
 
 #include <device.h>
-#include <dma.h>
+#include <drivers/dma.h>
 #include <misc/printk.h>
 #include <string.h>
 
