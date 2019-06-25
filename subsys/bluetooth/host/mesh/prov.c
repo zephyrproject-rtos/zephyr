@@ -53,6 +53,9 @@
 #define INPUT_OOB_NUMBER       0x02
 #define INPUT_OOB_STRING       0x03
 
+#define PUB_KEY_NO_OOB         0x00
+#define PUB_KEY_OOB            0x01
+
 #define PROV_ERR_NONE          0x00
 #define PROV_ERR_NVAL_PDU      0x01
 #define PROV_ERR_NVAL_FMT      0x02
@@ -529,8 +532,8 @@ static void prov_invite(const u8_t *data)
 	/* Supported algorithms - FIPS P-256 Eliptic Curve */
 	net_buf_simple_add_be16(&buf, BIT(PROV_ALG_P256));
 
-	/* Public Key Type */
-	net_buf_simple_add_u8(&buf, 0x00);
+	/* Public Key Type, Only "No OOB" Public Key is supported */
+	net_buf_simple_add_u8(&buf, PUB_KEY_NO_OOB);
 
 	/* Static OOB Type */
 	net_buf_simple_add_u8(&buf, prov->static_val ? BIT(0) : 0x00);
@@ -729,8 +732,8 @@ static void prov_start(const u8_t *data)
 		return;
 	}
 
-	if (data[1] > 0x01) {
-		BT_ERR("Invalid public key value: 0x%02x", data[1]);
+	if (data[1] != PUB_KEY_NO_OOB) {
+		BT_ERR("Invalid public key type: 0x%02x", data[1]);
 		prov_send_fail_msg(PROV_ERR_NVAL_FMT);
 		return;
 	}
