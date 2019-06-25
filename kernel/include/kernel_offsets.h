@@ -10,6 +10,12 @@
 
 #include <syscall_list.h>
 
+/* All of this is build time magic, but LCOV gets confused. Disable coverage
+ * for this whole file.
+ *
+ * LCOV_EXCL_START
+ */
+
 /*
  * The final link step uses the symbol _OffsetAbsSyms to force the linkage of
  * offsets.o into the ELF image.
@@ -78,4 +84,5 @@ GEN_ABSOLUTE_SYM(K_THREAD_SIZEOF, sizeof(struct k_thread));
 /* size of the device structure. Used by linker scripts */
 GEN_ABSOLUTE_SYM(_DEVICE_STRUCT_SIZEOF, sizeof(struct device));
 
+/* LCOV_EXCL_STOP */
 #endif /* ZEPHYR_KERNEL_INCLUDE_KERNEL_OFFSETS_H_ */
