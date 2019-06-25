@@ -20,7 +20,7 @@
 #include <zephyr/types.h>
 #include <stdbool.h>
 #include <ztest.h>
-#include <json.h>
+#include <data/json.h>
 #include <zephyr/jwt.h>
 
 #include <mbedtls/pk.h>

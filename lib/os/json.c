@@ -15,7 +15,7 @@
 #include <string.h>
 #include <zephyr/types.h>
 
-#include "json.h"
+#include <data/json.h>
 
 struct token {
 	enum json_tokens type;

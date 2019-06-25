@@ -9,7 +9,7 @@ LOG_MODULE_DECLARE(net_nats_sample, LOG_LEVEL_DBG);
 
 #include <ctype.h>
 #include <errno.h>
-#include <json.h>
+#include <data/json.h>
 #include <misc/printk.h>
 #include <misc/util.h>
 #include <net/net_pkt.h>
