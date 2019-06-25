@@ -522,7 +522,10 @@ static void prov_send_fail_msg(u8_t err)
 
 	prov_buf_init(&buf, PROV_FAILED);
 	net_buf_simple_add_u8(&buf, err);
-	prov_send(&buf);
+
+	if (prov_send(&buf)) {
+		BT_ERR("Failed to send Provisioning Failed message");
+	}
 
 	atomic_set_bit(link.flags, LINK_INVALID);
 }
@@ -569,7 +572,6 @@ static void prov_invite(const u8_t *data)
 
 	if (prov_send(&buf)) {
 		BT_ERR("Failed to send capabilities");
-		prov_send_fail_msg(PROV_ERR_RESOURCES);
 		return;
 	}
 
@@ -808,7 +810,6 @@ static void send_confirm(void)
 
 	if (prov_send(&cfm)) {
 		BT_ERR("Failed to send Provisioning Confirm");
-		prov_send_fail_msg(PROV_ERR_RESOURCES);
 		return;
 	}
 
@@ -820,7 +821,9 @@ static void send_input_complete(void)
 	PROV_BUF(buf, 1);
 
 	prov_buf_init(&buf, PROV_INPUT_COMPLETE);
-	prov_send(&buf);
+	if (prov_send(&buf)) {
+		BT_ERR("Failed to send Provisioning Input Complete");
+	}
 }
 
 int bt_mesh_input_number(u32_t num)
@@ -1019,7 +1022,6 @@ static void prov_random(const u8_t *data)
 
 	if (prov_send(&rnd)) {
 		BT_ERR("Failed to send Provisioning Random");
-		prov_send_fail_msg(PROV_ERR_RESOURCES);
 		return;
 	}
 
@@ -1103,7 +1105,10 @@ static void prov_data(const u8_t *data)
 	       net_idx, iv_index, addr);
 
 	prov_buf_init(&msg, PROV_COMPLETE);
-	prov_send(&msg);
+	if (prov_send(&msg)) {
+		BT_ERR("Failed to send Provisioning Complete");
+		return;
+	}
 
 	/* Ignore any further PDUs on this link */
 	link.expect = 0U;
