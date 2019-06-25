@@ -125,13 +125,12 @@ static u32_t count_s(const char *str, u32_t nargs)
  */
 static bool is_rodata(const void *addr)
 {
-#if defined(CONFIG_ARM) || defined(CONFIG_ARC) || defined(CONIFG_RISCV32) || \
-	defined(CONFIG_X86)
+#if defined(CONFIG_ARM) || defined(CONFIG_ARC) || defined(CONFIG_X86)
 	extern const char *_image_rodata_start[];
 	extern const char *_image_rodata_end[];
 	#define RO_START _image_rodata_start
 	#define RO_END _image_rodata_end
-#elif defined(CONFIG_NIOS2)
+#elif defined(CONFIG_NIOS2) || defined(CONFIG_RISCV32)
 	extern const char *_image_rom_start[];
 	extern const char *_image_rom_end[];
 	#define RO_START _image_rom_start
