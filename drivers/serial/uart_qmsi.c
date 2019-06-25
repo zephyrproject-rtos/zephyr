@@ -10,7 +10,7 @@
 #include <drivers/interrupt_controller/ioapic.h>
 #endif
 #include <uart.h>
-#include <power.h>
+#include <power/power.h>
 
 #include "qm_uart.h"
 #include "qm_isr.h"

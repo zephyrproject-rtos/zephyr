@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <zephyr.h>
-#include <power.h>
+#include <power/power.h>
 #include <nrf_power.h>
 
 #include <logging/log.h>

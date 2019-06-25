@@ -60,7 +60,7 @@
 #define LOPIC_SSPND_BITS_PER_IRQ  1  /* Just the one for enable disable*/
 #define LOPIC_SUSPEND_BITS_REQD (ROUND_UP((LOAPIC_IRQ_COUNT * LOPIC_SSPND_BITS_PER_IRQ), 32))
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-#include <power.h>
+#include <power/power.h>
 u32_t loapic_suspend_buf[LOPIC_SUSPEND_BITS_REQD / 32] = {0};
 static u32_t loapic_device_power_state = DEVICE_PM_ACTIVE_STATE;
 #endif

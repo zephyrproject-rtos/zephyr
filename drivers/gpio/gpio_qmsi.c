@@ -18,7 +18,7 @@
 #include "qm_isr.h"
 #include "clk.h"
 #include "soc.h"
-#include <power.h>
+#include <power/power.h>
 
 struct gpio_qmsi_config {
 	qm_gpio_t gpio;

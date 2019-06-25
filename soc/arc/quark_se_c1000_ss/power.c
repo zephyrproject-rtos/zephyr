@@ -7,7 +7,7 @@
 #include <zephyr.h>
 #include <sys_io.h>
 #include <misc/__assert.h>
-#include <power.h>
+#include <power/power.h>
 #include <soc_power.h>
 #include <init.h>
 #include <kernel_structs.h>

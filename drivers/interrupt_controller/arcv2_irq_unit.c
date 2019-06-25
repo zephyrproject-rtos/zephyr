@@ -23,7 +23,7 @@
 extern void *_VectorTable;
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-#include <power.h>
+#include <power/power.h>
 #include <kernel_structs.h>
 #include <v2/irq.h>
 

@@ -7,7 +7,7 @@
 #ifndef _PM_POLICY_H_
 #define _PM_POLICY_H_
 
-#include <power.h>
+#include <power/power.h>
 
 #ifdef __cplusplus
 extern "C" {

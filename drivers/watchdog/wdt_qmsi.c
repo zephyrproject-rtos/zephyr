@@ -9,7 +9,7 @@
 #include <kernel.h>
 #include <watchdog.h>
 #include <drivers/interrupt_controller/ioapic.h>
-#include <power.h>
+#include <power/power.h>
 #include <soc.h>
 
 #include "clk.h"
