@@ -14,7 +14,7 @@
 #include <zephyr.h>
 #include <device.h>
 #include <soc.h>
-#include <dma.h>
+#include <drivers/dma.h>
 
 #include <audio/dmic.h>
 #include "intel_dmic.h"

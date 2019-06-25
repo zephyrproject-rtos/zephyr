@@ -14,7 +14,7 @@
 #include <init.h>
 #include <string.h>
 #include <soc.h>
-#include <dma.h>
+#include <drivers/dma.h>
 #include "dma_sam_xdmac.h"
 
 #define LOG_LEVEL CONFIG_DMA_LOG_LEVEL

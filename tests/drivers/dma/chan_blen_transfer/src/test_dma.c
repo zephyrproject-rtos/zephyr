@@ -20,7 +20,7 @@
  */
 
 #include <zephyr.h>
-#include <dma.h>
+#include <drivers/dma.h>
 #include <ztest.h>
 
 #define DMA_DEVICE_NAME CONFIG_DMA_0_NAME

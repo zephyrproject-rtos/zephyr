@@ -11,7 +11,7 @@
 #include <soc.h>
 #include <device.h>
 #include <init.h>
-#include <dma.h>
+#include <drivers/dma.h>
 
 #include "qm_dma.h"
 #include "qm_isr.h"

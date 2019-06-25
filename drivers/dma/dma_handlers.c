@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <dma.h>
+#include <drivers/dma.h>
 #include <syscall_handler.h>
 
 /* Both of these APIs are assuming that the drive implementations are checking
