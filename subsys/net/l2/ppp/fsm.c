@@ -1128,7 +1128,9 @@ enum net_verdict ppp_fsm_recv_discard_req(struct ppp_fsm *fsm,
 	NET_DBG("[%s/%p] Current state %s (%d)", fsm->name, fsm,
 		ppp_state_str(fsm->state), fsm->state);
 
-	return NET_DROP;
+	net_pkt_unref(pkt);
+
+	return NET_OK;
 }
 
 void ppp_send_proto_rej(struct net_if *iface, struct net_pkt *pkt,
