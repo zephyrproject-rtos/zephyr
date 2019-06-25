@@ -25,6 +25,7 @@ SANITYCHECK_OPTIONS_RETRY="${SANITYCHECK_OPTIONS} --only-failed --outdir=out-2nd
 SANITYCHECK_OPTIONS_RETRY_2="${SANITYCHECK_OPTIONS} --only-failed --outdir=out-3nd-pass"
 export BSIM_OUT_PATH="${BSIM_OUT_PATH:-/opt/bsim/}"
 export BSIM_COMPONENTS_PATH="${BSIM_OUT_PATH}/components/"
+export EDTT_PATH="${EDTT_PATH:-../EDTT}"
 BSIM_BT_TEST_RESULTS_FILE="./bsim_bt_out/bsim_results.xml"
 WEST_COMMANDS_RESULTS_FILE="./pytest_out/west_commands.xml"
 
@@ -224,8 +225,24 @@ function build_btsim() {
 		git clone -b ${NRF_HW_MODELS_VERSION} \
 		https://github.com/BabbleSim/ext_NRF52_hw_models.git
 	fi
+
+	#TODO: this should be included in the docker image:
+	git clone https://github.com/BabbleSim/ext_device_EDTT_bridge.git
+	pip install statistics numpy enum34
+
 	cd ${BSIM_OUT_PATH}
 	make everything -j 8 -s
+	popd ;
+
+	#Provisioanlly, let's fetch the latest EDTT here
+	#TODO: have it as part of the docker image, and only update if needed
+	#      or have it fetched by west (optionally for users, manually here
+	# for CI)
+	pushd . ;
+	if [ ! -d ${EDTT_PATH} ]; then
+		mkdir -p ${EDTT_PATH} && cd ${EDTT_PATH}
+		git clone https://github.com/EDTTool/EDTT.git .
+	fi
 	popd ;
 }
 
