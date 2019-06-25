@@ -11,7 +11,7 @@
 #include <counter.h>
 #include <init.h>
 #include <kernel.h>
-#include <power.h>
+#include <power/power.h>
 #include <soc.h>
 #include <misc/util.h>
 

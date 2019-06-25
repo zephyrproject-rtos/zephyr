@@ -10,7 +10,7 @@
 #include <linker/sections.h>
 #include <drivers/timer/system_timer.h>
 #include <wait_q.h>
-#include <power.h>
+#include <power/power.h>
 #include <stdbool.h>
 
 #ifdef CONFIG_TICKLESS_IDLE_THRESH

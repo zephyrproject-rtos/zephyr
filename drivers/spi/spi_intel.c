@@ -21,7 +21,7 @@ LOG_MODULE_REGISTER(spi_intel);
 #include <init.h>
 
 #include <sys_io.h>
-#include <power.h>
+#include <power/power.h>
 
 #include <spi.h>
 #include "spi_intel.h"

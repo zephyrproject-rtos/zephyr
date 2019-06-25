@@ -27,7 +27,7 @@
 #endif
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-#include <power.h>
+#include <power/power.h>
 #endif
 
 /*

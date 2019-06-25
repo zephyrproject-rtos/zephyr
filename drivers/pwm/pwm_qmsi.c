@@ -10,7 +10,7 @@
 #include <device.h>
 #include <kernel.h>
 #include <init.h>
-#include <power.h>
+#include <power/power.h>
 #include <misc/util.h>
 
 #include "qm_pwm.h"

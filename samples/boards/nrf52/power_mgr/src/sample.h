@@ -5,7 +5,7 @@
  */
 
 #include <zephyr.h>
-#include <power.h>
+#include <power/power.h>
 #include <string.h>
 #include <soc.h>
 #include <device.h>

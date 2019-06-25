@@ -13,7 +13,7 @@ LOG_MODULE_REGISTER(rtc_mcux);
 #include <init.h>
 #include <kernel.h>
 #include <rtc.h>
-#include <power.h>
+#include <power/power.h>
 #include <soc.h>
 #include <misc/util.h>
 #include <fsl_rtc.h>

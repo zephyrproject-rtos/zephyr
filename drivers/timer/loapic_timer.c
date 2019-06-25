@@ -62,7 +62,7 @@
 #include <sys_clock.h>
 #include <drivers/timer/system_timer.h>
 #include <arch/x86/irq_controller.h>
-#include <power.h>
+#include <power/power.h>
 #include <device.h>
 #include <kernel_structs.h>
 

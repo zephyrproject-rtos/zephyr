@@ -7,7 +7,7 @@
 #ifndef _SOC_POWER_H_
 #define _SOC_POWER_H_
 
-#include <power.h>
+#include <power/power.h>
 
 #ifdef __cplusplus
 extern "C" {
