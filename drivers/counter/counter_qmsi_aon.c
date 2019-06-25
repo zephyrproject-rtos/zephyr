@@ -9,7 +9,7 @@
 #include <device.h>
 #include <init.h>
 
-#include <counter.h>
+#include <drivers/counter.h>
 
 #include "qm_aon_counters.h"
 

@@ -11,7 +11,7 @@
  * crossing clock domains (no pun intended). Use accordingly.
  */
 
-#include <counter.h>
+#include <drivers/counter.h>
 #include <device.h>
 #include <soc.h>
 

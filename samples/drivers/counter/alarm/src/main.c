@@ -7,7 +7,7 @@
 #include <zephyr.h>
 
 #include <device.h>
-#include <counter.h>
+#include <drivers/counter.h>
 #include <misc/printk.h>
 
 #define DELAY 2000000

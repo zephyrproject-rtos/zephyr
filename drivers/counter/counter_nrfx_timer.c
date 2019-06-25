@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <counter.h>
+#include <drivers/counter.h>
 #include <nrfx_timer.h>
 
 #define LOG_LEVEL CONFIG_COUNTER_LOG_LEVEL

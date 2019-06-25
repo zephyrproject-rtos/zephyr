@@ -5,7 +5,7 @@
  */
 
 #include <syscall_handler.h>
-#include <counter.h>
+#include <drivers/counter.h>
 
 /* For those APIs that just take one argument which is a counter driver
  * instance and return an integral value

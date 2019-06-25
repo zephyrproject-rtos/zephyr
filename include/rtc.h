@@ -9,7 +9,7 @@
 #include <zephyr/types.h>
 #include <device.h>
 #include <misc/util.h>
-#include <counter.h>
+#include <drivers/counter.h>
 
 #ifdef __cplusplus
 extern "C" {
