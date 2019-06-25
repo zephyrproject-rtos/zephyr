@@ -27,7 +27,7 @@
 #include <uart.h>
 #include <usb/usb_device.h>
 #include <usb/class/usb_hid.h>
-#include <watchdog.h>
+#include <drivers/watchdog.h>
 
 #include <ztest.h>
 

@@ -10,7 +10,7 @@
 
 #include <errno.h>
 #include <soc.h>
-#include <watchdog.h>
+#include <drivers/watchdog.h>
 #include <misc/printk.h>
 #include <misc/reboot.h>
 

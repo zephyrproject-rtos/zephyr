@@ -6,7 +6,7 @@
  */
 
 #include <soc.h>
-#include <watchdog.h>
+#include <drivers/watchdog.h>
 
 #define LOG_LEVEL CONFIG_WDT_LOG_LEVEL
 #include <logging/log.h>
