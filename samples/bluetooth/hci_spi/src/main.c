@@ -18,7 +18,7 @@
 #include <device.h>
 #include <init.h>
 #include <drivers/gpio.h>
-#include <spi.h>
+#include <drivers/spi.h>
 
 #include <net/buf.h>
 #include <bluetooth/bluetooth.h>

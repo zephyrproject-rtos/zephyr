@@ -12,7 +12,7 @@ LOG_MODULE_REGISTER(spi_sam);
 #include "spi_context.h"
 #include <errno.h>
 #include <device.h>
-#include <spi.h>
+#include <drivers/spi.h>
 #include <soc.h>
 
 #define SAM_SPI_CHIP_SELECT_COUNT			4

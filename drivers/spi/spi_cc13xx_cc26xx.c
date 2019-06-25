@@ -8,7 +8,7 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(spi_cc13xx_cc26xx);
 
-#include <spi.h>
+#include <drivers/spi.h>
 #include <sys_clock.h>
 
 #include <driverlib/prcm.h>

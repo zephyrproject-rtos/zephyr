@@ -6,7 +6,7 @@
  */
 
 #include <errno.h>
-#include <spi.h>
+#include <drivers/spi.h>
 #include <drivers/clock_control.h>
 #include <fsl_dspi.h>
 

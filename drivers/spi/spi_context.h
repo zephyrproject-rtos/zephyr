@@ -13,7 +13,7 @@
 #define ZEPHYR_DRIVERS_SPI_SPI_CONTEXT_H_
 
 #include <drivers/gpio.h>
-#include <spi.h>
+#include <drivers/spi.h>
 
 #ifdef __cplusplus
 extern "C" {

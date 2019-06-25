@@ -10,7 +10,7 @@
 #include <zephyr/types.h>
 #include <device.h>
 #include <drivers/gpio.h>
-#include <spi.h>
+#include <drivers/spi.h>
 
 #define ADXL362_SLAVE_ID    1
 

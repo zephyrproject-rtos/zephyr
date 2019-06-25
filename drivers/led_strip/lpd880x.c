@@ -29,7 +29,7 @@ LOG_MODULE_REGISTER(lpd880x);
 
 #include <zephyr.h>
 #include <device.h>
-#include <spi.h>
+#include <drivers/spi.h>
 #include <misc/util.h>
 
 /*

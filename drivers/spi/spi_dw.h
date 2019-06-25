@@ -9,7 +9,7 @@
 #ifndef ZEPHYR_DRIVERS_SPI_SPI_DW_H_
 #define ZEPHYR_DRIVERS_SPI_SPI_DW_H_
 
-#include <spi.h>
+#include <drivers/spi.h>
 
 #ifdef __cplusplus
 extern "C" {

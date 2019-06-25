@@ -17,7 +17,7 @@
 #ifdef DT_BOSCH_BME280_BUS_I2C
 #include <drivers/i2c.h>
 #elif defined DT_BOSCH_BME280_BUS_SPI
-#include <spi.h>
+#include <drivers/spi.h>
 #endif
 #include <logging/log.h>
 

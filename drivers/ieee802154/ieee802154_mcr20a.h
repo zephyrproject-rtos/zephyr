@@ -12,7 +12,7 @@
 
 #include <linker/sections.h>
 #include <sys/atomic.h>
-#include <spi.h>
+#include <drivers/spi.h>
 
 /* Runtime context structure
  ***************************

@@ -11,7 +11,7 @@
 
 #include <linker/sections.h>
 #include <sys/atomic.h>
-#include <spi.h>
+#include <drivers/spi.h>
 
 #include <ieee802154/cc1200.h>
 

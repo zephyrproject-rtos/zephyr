@@ -12,7 +12,7 @@ LOG_MODULE_REGISTER(winc1500);
 #include <stdint.h>
 
 #include <device.h>
-#include <spi.h>
+#include <drivers/spi.h>
 
 #include "wifi_winc1500_nm_bsp_internal.h"
 

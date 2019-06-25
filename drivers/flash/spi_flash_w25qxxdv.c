@@ -7,7 +7,7 @@
 #include <errno.h>
 
 #include <drivers/flash.h>
-#include <spi.h>
+#include <drivers/spi.h>
 #include <init.h>
 #include <string.h>
 #include "spi_flash_w25qxxdv_defs.h"

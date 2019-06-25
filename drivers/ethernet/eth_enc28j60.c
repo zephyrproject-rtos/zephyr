@@ -16,7 +16,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <string.h>
 #include <errno.h>
 #include <drivers/gpio.h>
-#include <spi.h>
+#include <drivers/spi.h>
 #include <net/net_pkt.h>
 #include <net/net_if.h>
 #include <net/ethernet.h>

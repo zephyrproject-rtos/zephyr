@@ -6,7 +6,7 @@
 
 #include <errno.h>
 #include <drivers/led_strip.h>
-#include <spi.h>
+#include <drivers/spi.h>
 
 struct apa102_data {
 	struct device *spi;

@@ -14,7 +14,7 @@ LOG_MODULE_REGISTER(main);
 #include <stdio.h>
 #include <ztest.h>
 
-#include <spi.h>
+#include <drivers/spi.h>
 
 #define SPI_DRV_NAME	CONFIG_SPI_LOOPBACK_DRV_NAME
 #define SPI_SLAVE	CONFIG_SPI_LOOPBACK_SLAVE_NUMBER

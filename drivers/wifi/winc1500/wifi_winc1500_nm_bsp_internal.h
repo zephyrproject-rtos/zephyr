@@ -9,7 +9,7 @@
 
 #include <device.h>
 #include <drivers/gpio.h>
-#include <spi.h>
+#include <drivers/spi.h>
 
 #include <wifi/winc1500.h>
 

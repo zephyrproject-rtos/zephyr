@@ -11,7 +11,7 @@
 #ifndef ZEPHYR_DRIVERS_SENSOR_LIS2DW12_LIS2DW12_H_
 #define ZEPHYR_DRIVERS_SENSOR_LIS2DW12_LIS2DW12_H_
 
-#include <spi.h>
+#include <drivers/spi.h>
 #include <drivers/gpio.h>
 #include <misc/util.h>
 #include <drivers/sensor.h>

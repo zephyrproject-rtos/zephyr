@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <spi.h>
+#include <drivers/spi.h>
 #include <nrfx_spim.h>
 #include <string.h>
 

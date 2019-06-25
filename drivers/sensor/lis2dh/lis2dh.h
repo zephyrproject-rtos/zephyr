@@ -19,7 +19,7 @@
 #define LIS2DH_BUS_DEV_NAME		DT_INST_0_ST_LIS2DH_BUS_NAME
 
 #if defined(DT_ST_LIS2DH_BUS_SPI)
-#include <spi.h>
+#include <drivers/spi.h>
 
 #define LIS2DH_SPI_READ_BIT		BIT(7)
 #define LIS2DH_SPI_AUTOINC_ADDR		BIT(6)

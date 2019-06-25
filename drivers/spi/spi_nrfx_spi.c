@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <spi.h>
+#include <drivers/spi.h>
 #include <nrfx_spi.h>
 
 #define LOG_DOMAIN "spi_nrfx_spi"

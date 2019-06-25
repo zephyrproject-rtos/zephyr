@@ -15,7 +15,7 @@
 #include <drivers/sensor.h>
 
 #if defined(DT_ST_LIS2DW12_BUS_SPI)
-#include <spi.h>
+#include <drivers/spi.h>
 #elif defined(DT_ST_LIS2DW12_BUS_I2C)
 #include <drivers/i2c.h>
 #endif
