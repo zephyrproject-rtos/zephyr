@@ -5,7 +5,7 @@
  */
 
 #include <device.h>
-#include <led.h>
+#include <drivers/led.h>
 #include <drivers/gpio.h>
 #include <zephyr.h>
 

@@ -9,7 +9,7 @@
 #include <misc/printk.h>
 
 #include <drivers/gpio.h>
-#include <led.h>
+#include <drivers/led.h>
 
 #include <audio/dmic.h>
 

@@ -8,7 +8,7 @@
 #include <misc/printk.h>
 
 #include <drivers/gpio.h>
-#include <led.h>
+#include <drivers/led.h>
 #include <drivers/i2c.h>
 #include <spi.h>
 #include <sensor.h>

@@ -12,7 +12,7 @@
 #include <drivers/gpio.h>
 #include <drivers/i2c.h>
 #include <kernel.h>
-#include <led.h>
+#include <drivers/led.h>
 #include <misc/byteorder.h>
 #include <zephyr.h>
 
