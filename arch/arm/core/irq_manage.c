@@ -23,7 +23,7 @@
 #include <sw_isr_table.h>
 #include <irq.h>
 #include <kernel_structs.h>
-#include <tracing.h>
+#include <debug/tracing.h>
 
 extern void __reserved(void);
 

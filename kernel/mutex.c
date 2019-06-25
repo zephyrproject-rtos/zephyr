@@ -36,7 +36,7 @@
 #include <errno.h>
 #include <init.h>
 #include <syscall_handler.h>
-#include <tracing.h>
+#include <debug/tracing.h>
 
 /* We use a global spinlock here because some of the synchronization
  * is protecting things like owner thread priorities which aren't

@@ -20,7 +20,7 @@
 #include <misc/__assert.h>
 #include <misc/printk.h>
 #include <irq.h>
-#include <tracing.h>
+#include <debug/tracing.h>
 #include <kswap.h>
 #include <arch/x86/segmentation.h>
 

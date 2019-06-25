@@ -9,7 +9,7 @@
 
 #include <kernel_structs.h>
 #include <timeout_q.h>
-#include <tracing.h>
+#include <debug/tracing.h>
 #include <stdbool.h>
 
 BUILD_ASSERT(K_LOWEST_APPLICATION_THREAD_PRIO

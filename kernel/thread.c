@@ -29,7 +29,7 @@
 #include <kernel_internal.h>
 #include <kswap.h>
 #include <init.h>
-#include <tracing.h>
+#include <debug/tracing.h>
 #include <stdbool.h>
 
 static struct k_spinlock lock;

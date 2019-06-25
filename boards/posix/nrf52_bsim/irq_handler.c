@@ -17,7 +17,7 @@
 #include "sw_isr_table.h"
 #include "soc.h"
 #include "bs_tracing.h"
-#include <tracing.h>
+#include <debug/tracing.h>
 #include "bstests.h"
 
 static bool CPU_will_be_awaken_from_WFE;

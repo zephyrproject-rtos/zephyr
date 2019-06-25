@@ -5,7 +5,7 @@
  */
 #include <kernel_internal.h>
 #include <kernel_structs.h>
-#include <tracing.h>
+#include <debug/tracing.h>
 #include <ksched.h>
 #include <irq_offload.h>
 #include "xuk.h"

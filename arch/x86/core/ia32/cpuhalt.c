@@ -24,7 +24,7 @@
  */
 
 #include <zephyr.h>
-#include <tracing.h>
+#include <debug/tracing.h>
 #include <arch/cpu.h>
 
 #ifdef CONFIG_BOOT_TIME_MEASUREMENT

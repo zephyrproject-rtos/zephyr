@@ -5025,7 +5025,7 @@ __syscall int k_float_disable(struct k_thread *thread);
 }
 #endif
 
-#include <tracing.h>
+#include <debug/tracing.h>
 #include <syscalls/kernel.h>
 
 #endif /* !_ASMLANGUAGE */
