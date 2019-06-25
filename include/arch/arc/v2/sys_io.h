@@ -13,7 +13,7 @@ extern "C" {
 
 #ifndef _ASMLANGUAGE
 
-#include <sys_io.h>
+#include <sys/sys_io.h>
 #include <arch/arc/v2/aux_regs.h>
 
 #include <zephyr/types.h>

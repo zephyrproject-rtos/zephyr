@@ -14,7 +14,7 @@
 #include <device.h>
 #include <init.h>
 
-#include <sys_io.h>
+#include <sys/sys_io.h>
 
 #include <clock_control.h>
 #include <clock_control/quark_se_clock_control.h>

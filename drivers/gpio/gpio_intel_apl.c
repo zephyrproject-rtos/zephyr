@@ -24,7 +24,7 @@
 #include <errno.h>
 #include <gpio.h>
 #include <soc.h>
-#include <sys_io.h>
+#include <sys/sys_io.h>
 #include <misc/__assert.h>
 #include <misc/slist.h>
 #include <misc/speculation.h>

@@ -30,7 +30,7 @@
 #include <toolchain.h>
 #include <linker/sections.h>
 #include <uart.h>
-#include <sys_io.h>
+#include <sys/sys_io.h>
 
 #include "uart_ns16550.h"
 

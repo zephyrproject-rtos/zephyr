@@ -9,7 +9,7 @@
 #include <gpio.h>
 #include <init.h>
 #include <soc.h>
-#include <sys_io.h>
+#include <sys/sys_io.h>
 
 #include "gpio_utils.h"
 

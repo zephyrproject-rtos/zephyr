@@ -10,7 +10,7 @@ LOG_MODULE_REGISTER(i2c_sifive);
 
 #include <device.h>
 #include <i2c.h>
-#include <sys_io.h>
+#include <sys/sys_io.h>
 
 #include "i2c-priv.h"
 

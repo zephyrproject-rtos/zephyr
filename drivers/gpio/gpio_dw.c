@@ -12,7 +12,7 @@
 #include "gpio_utils.h"
 
 #include <soc.h>
-#include <sys_io.h>
+#include <sys/sys_io.h>
 #include <init.h>
 #include <misc/util.h>
 #include <misc/__assert.h>
