@@ -538,7 +538,7 @@ struct k_thread {
 
 #if defined(CONFIG_THREAD_NAME)
 	/* Thread name */
-	const char *name;
+	char name[CONFIG_THREAD_MAX_NAME_LEN];
 #endif
 
 #ifdef CONFIG_THREAD_CUSTOM_DATA
@@ -1304,8 +1304,14 @@ __syscall void *k_thread_custom_data_get(void);
  * Set the name of the thread to be used when THREAD_MONITOR is enabled for
  * tracing and debugging.
  *
+ * @param thread_id Thread to set name, or NULL to set the current thread
+ * @param value Name string
+ * @retval 0 on success
+ * @retval -EFAULT Memory access error with supplied string
+ * @retval -ENOSYS Thread name configuration option not enabled
+ * @retval -EINVAL Thread name too long
  */
-__syscall void k_thread_name_set(k_tid_t thread_id, const char *value);
+__syscall int k_thread_name_set(k_tid_t thread_id, const char *value);
 
 /**
  * @brief Get thread name
@@ -1313,9 +1319,23 @@ __syscall void k_thread_name_set(k_tid_t thread_id, const char *value);
  * Get the name of a thread
  *
  * @param thread_id Thread ID
- *
+ * @retval Thread name, or NULL if configuration not enabled
  */
-__syscall const char *k_thread_name_get(k_tid_t thread_id);
+const char *k_thread_name_get(k_tid_t thread_id);
+
+/**
+ * @brief Copy the thread name into a supplied buffer
+ *
+ * @param thread_id Thread to obtain name information
+ * @param buf Destination buffer
+ * @param size Destinatiomn buffer size
+ * @retval -ENOSPC Destination buffer too small
+ * @retval -EFAULT Memory access error
+ * @retval -ENOSYS Thread name feature not enabled
+ * @retval 0 Success
+ */
+__syscall int k_thread_name_copy(k_tid_t thread_id, char *buf,
+				 size_t size);
 
 /**
  * @}
