@@ -148,6 +148,12 @@ static int frdm_k64f_pinmux_init(struct device *dev)
 	pinmux_pin_set(portc, 19, PORT_PCR_MUX(kPORT_MuxAlt4));
 #endif
 
+#if CONFIG_CAN_0
+	/* FlexCAN0 RX, TX */
+	pinmux_pin_set(portb, 18, PORT_PCR_MUX(kPORT_MuxAlt2));
+	pinmux_pin_set(portb, 19, PORT_PCR_MUX(kPORT_MuxAlt2));
+#endif
+
 	return 0;
 }
 
