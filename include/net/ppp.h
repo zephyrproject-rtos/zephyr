@@ -183,6 +183,17 @@ enum ipv6cp_option_type {
 } __packed;
 
 /**
+ * @typedef net_ppp_lcp_echo_reply_cb_t
+ * @brief A callback function that can be called if a Echo-Reply needs to
+ *        be received.
+ * @param user_data User settable data that is passed to the callback
+ *        function.
+ * @param user_data_len Length of the user data.
+ */
+typedef void (*net_ppp_lcp_echo_reply_cb_t)(void *user_data,
+					    size_t user_data_len);
+
+/**
  * Generic PPP Finite State Machine
  */
 struct ppp_fsm {
@@ -427,6 +438,18 @@ struct ppp_context {
 
 #if defined(CONFIG_NET_SHELL)
 	struct {
+		struct {
+			/** Callback to be called when Echo-Reply is received.
+			 */
+			net_ppp_lcp_echo_reply_cb_t cb;
+
+			/** User specific data for the callback */
+			void *user_data;
+
+			/** User data length */
+			size_t user_data_len;
+		} echo_reply;
+
 		/** Used when waiting Echo-Reply */
 		struct k_sem wait_echo_reply;
 

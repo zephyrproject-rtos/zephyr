@@ -3101,6 +3101,15 @@ static int cmd_net_ppp_ping(const struct shell *shell, size_t argc,
 			} else {
 				PR_INFO("PPP Echo-Req failed (%d)\n", ret);
 			}
+		} else {
+			if (ret > 1000) {
+				PR_INFO("%s%d msec\n",
+					"Received PPP Echo-Reply in ",
+					ret / 1000);
+			} else {
+				PR_INFO("%s%d usec\n",
+					"Received PPP Echo-Reply in ", ret);
+			}
 		}
 	} else {
 		PR_INFO("PPP network interface must be given.\n");
