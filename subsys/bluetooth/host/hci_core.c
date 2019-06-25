@@ -3065,6 +3065,8 @@ static void le_pkey_complete(struct net_buf *buf)
 	for (cb = pub_key_cb; cb; cb = cb->_next) {
 		cb->func(evt->status ? NULL : evt->key);
 	}
+
+	pub_key_cb = NULL;
 }
 
 static void le_dhkey_complete(struct net_buf *buf)
@@ -5850,7 +5852,6 @@ int bt_br_set_discoverable(bool enable)
 #if defined(CONFIG_BT_ECC)
 int bt_pub_key_gen(struct bt_pub_key_cb *new_cb)
 {
-	struct bt_pub_key_cb *cb;
 	int err;
 
 	/*
@@ -5880,12 +5881,6 @@ int bt_pub_key_gen(struct bt_pub_key_cb *new_cb)
 		atomic_clear_bit(bt_dev.flags, BT_DEV_PUB_KEY_BUSY);
 		pub_key_cb = NULL;
 		return err;
-	}
-
-	for (cb = pub_key_cb; cb; cb = cb->_next) {
-		if (cb != new_cb) {
-			cb->func(NULL);
-		}
 	}
 
 	return 0;
