@@ -20,7 +20,7 @@ LOG_MODULE_REGISTER(updatehub);
 #include <flash.h>
 #include <misc/reboot.h>
 #include <tinycrypt/sha256.h>
-#include <json.h>
+#include <data/json.h>
 
 #include <updatehub.h>
 #include "updatehub_priv.h"

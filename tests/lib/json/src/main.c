@@ -7,7 +7,7 @@
 #include <zephyr/types.h>
 #include <stdbool.h>
 #include <ztest.h>
-#include <json.h>
+#include <data/json.h>
 
 struct test_nested {
 	int nested_int;
