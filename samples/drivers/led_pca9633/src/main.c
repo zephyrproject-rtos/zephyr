@@ -6,7 +6,7 @@
 
 #include <device.h>
 #include <errno.h>
-#include <led.h>
+#include <drivers/led.h>
 #include <misc/util.h>
 #include <zephyr.h>
 

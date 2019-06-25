@@ -18,7 +18,7 @@
  */
 
 #include <drivers/i2c.h>
-#include <led.h>
+#include <drivers/led.h>
 #include <misc/util.h>
 #include <zephyr.h>
 

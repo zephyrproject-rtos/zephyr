@@ -5,7 +5,7 @@
  */
 
 #include <syscall_handler.h>
-#include <led.h>
+#include <drivers/led.h>
 
 Z_SYSCALL_HANDLER(led_blink, dev, led, delay_on, delay_off)
 {
