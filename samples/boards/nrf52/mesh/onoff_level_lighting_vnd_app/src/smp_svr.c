@@ -11,7 +11,7 @@
 #include <bluetooth/gatt.h>
 #include <mgmt/buf.h>
 #include <mgmt/smp_bt.h>
-#include <stats.h>
+#include <stats/stats.h>
 #include <stdlib.h>
 #include <string.h>
 #include <zephyr.h>

@@ -10,7 +10,7 @@
 #include <kernel.h>
 #include <misc/util.h>
 #include <random/rand32.h>
-#include <stats.h>
+#include <stats/stats.h>
 #include <string.h>
 
 /* configuration derived from DT */

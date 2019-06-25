@@ -21,7 +21,7 @@
 
 #include "flash.h"
 #include <storage/flash_map.h>
-#include "stats.h"
+#include <stats/stats.h>
 #include <fs/nvs.h>
 #include "nvs_priv.h"
 
