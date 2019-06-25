@@ -8,7 +8,7 @@
 #include <zephyr.h>
 #include <string.h>
 #include <stdlib.h>
-#include <stats.h>
+#include <stats/stats.h>
 #include <mgmt/buf.h>
 
 #ifdef CONFIG_MCUMGR_CMD_FS_MGMT
