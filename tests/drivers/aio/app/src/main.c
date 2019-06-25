@@ -30,7 +30,7 @@
 #include <zephyr/types.h>
 #include <stdio.h>
 #include <device.h>
-#include <aio_comparator.h>
+#include <drivers/aio_comparator.h>
 
 /* specify delay between greetings (in ms) */
 #define SLEEPTIME  5000
