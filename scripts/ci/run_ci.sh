@@ -126,7 +126,7 @@ function on_complete() {
 function run_bsim_bt_tests() {
 	WORK_DIR=${ZEPHYR_BASE}/bsim_bt_out tests/bluetooth/bsim_bt/compile.sh
 	RESULTS_FILE=${ZEPHYR_BASE}/${bsim_bt_test_results_file} \
-	SEARCH_PATH=tests/bluetooth/bsim_bt/bsim_test_app/tests_scripts \
+	SEARCH_PATH=tests/bluetooth/bsim_bt/ \
 	tests/bluetooth/bsim_bt/run_parallel.sh
 }
 
