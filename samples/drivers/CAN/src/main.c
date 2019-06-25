@@ -8,7 +8,7 @@
 #include <kernel.h>
 #include <misc/printk.h>
 #include <device.h>
-#include <can.h>
+#include <drivers/can.h>
 #include <gpio.h>
 
 #define TX_THREAD_STACK_SIZE 512

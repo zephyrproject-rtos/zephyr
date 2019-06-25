@@ -20,7 +20,7 @@ extern "C" {
 #include <zephyr/types.h>
 #include <net/net_ip.h>
 #include <net/net_if.h>
-#include <can.h>
+#include <drivers/can.h>
 
 /**
  * @brief Socket CAN library

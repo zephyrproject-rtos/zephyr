@@ -5,7 +5,7 @@
  */
 
 #include <syscall_handler.h>
-#include <can.h>
+#include <drivers/can.h>
 
 Z_SYSCALL_HANDLER(can_configure, dev, mode, bitrate) {
 

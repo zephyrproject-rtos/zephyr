@@ -12,7 +12,7 @@
 #include <soc.h>
 #include <errno.h>
 #include <stdbool.h>
-#include <can.h>
+#include <drivers/can.h>
 #include "can_stm32.h"
 
 #include <logging/log.h>

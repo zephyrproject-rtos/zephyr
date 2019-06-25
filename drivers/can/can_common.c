@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <can.h>
+#include <drivers/can.h>
 #include <kernel.h>
 
 #define LOG_LEVEL CONFIG_CAN_LOG_LEVEL

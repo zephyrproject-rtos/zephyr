@@ -8,7 +8,7 @@
 #ifndef _MCP2515_H_
 #define _MCP2515_H_
 
-#include <can.h>
+#include <drivers/can.h>
 
 #define MCP2515_TX_CNT                   3
 #define MCP2515_FRAME_LEN               13
