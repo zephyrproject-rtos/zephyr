@@ -62,7 +62,7 @@ int settings_backend_init(void)
 }
 
 #elif defined(CONFIG_SETTINGS_FCB)
-#include "fcb.h"
+#include <fs/fcb.h>
 #include "settings/settings_fcb.h"
 
 static struct flash_sector settings_fcb_area[CONFIG_SETTINGS_FCB_NUM_AREAS + 1];

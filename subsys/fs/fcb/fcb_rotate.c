@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "fcb.h"
+#include <fs/fcb.h>
 #include "fcb_priv.h"
 
 int

@@ -6,7 +6,7 @@
  */
 
 #include <errno.h>
-#include <fcb.h>
+#include <fs/fcb.h>
 #include <string.h>
 
 #include "settings/settings.h"

@@ -7,7 +7,7 @@
 
 #include <stddef.h>
 
-#include "fcb.h"
+#include <fs/fcb.h>
 #include "fcb_priv.h"
 
 int

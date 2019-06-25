@@ -8,7 +8,7 @@
 #include <limits.h>
 #include <stdlib.h>
 
-#include "fcb.h"
+#include <fs/fcb.h>
 #include "fcb_priv.h"
 #include "string.h"
 
