@@ -10,7 +10,7 @@
 #include <zephyr/types.h>
 #include <errno.h>
 #include <init.h>
-#include <fs.h>
+#include <fs/fs.h>
 #include <misc/__assert.h>
 #include <ff.h>
 

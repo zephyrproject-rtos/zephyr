@@ -13,7 +13,7 @@
 
 #ifdef CONFIG_MCUMGR_CMD_FS_MGMT
 #include <device.h>
-#include <fs.h>
+#include <fs/fs.h>
 #include "fs_mgmt/fs_mgmt.h"
 #include <nffs/nffs.h>
 #endif

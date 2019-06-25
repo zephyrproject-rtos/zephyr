@@ -9,7 +9,7 @@
 #include <zephyr/types.h>
 #include <errno.h>
 #include <init.h>
-#include <fs.h>
+#include <fs/fs.h>
 
 
 #define LOG_LEVEL CONFIG_FS_LOG_LEVEL

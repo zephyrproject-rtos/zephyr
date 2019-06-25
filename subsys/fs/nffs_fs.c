@@ -10,7 +10,7 @@
 #include <errno.h>
 #include <init.h>
 #include <flash.h>
-#include <fs.h>
+#include <fs/fs.h>
 #include <crc.h>
 #include <misc/__assert.h>
 #include <misc/printk.h>

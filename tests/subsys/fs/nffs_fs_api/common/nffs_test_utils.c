@@ -24,7 +24,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
-#include <fs.h>
+#include <fs/fs.h>
 #include <nffs/queue.h>
 #include <nffs/nffs.h>
 #include <nffs/os.h>

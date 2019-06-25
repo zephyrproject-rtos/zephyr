@@ -18,7 +18,7 @@ extern "C" {
 #endif
 
 #ifdef CONFIG_POSIX_API
-#include <fs.h>
+#include <fs/fs.h>
 
 /* File related operations */
 extern int open(const char *name, int flags);
