@@ -85,11 +85,11 @@ Clear Linux:
    sudo swupd bundle-add c-basic dev-utils dfu-util dtc \
      os-core-dev python-basic python3-basic python3-tcl
 
-Clear Linux' focus is *native* performance and security and not
+The Clear Linux focus is on *native* performance and security and not
 cross-compilation. For that reason it uniquely exports by default to the
 :ref:`environment <env_vars>` of all users a list of compiler and linker
 flags. Zephyr's CMake build system will either warn or fail because of
-these. To clear the C/C++ flags among these and fix the Zephyr build run
+these. To clear the C/C++ flags among these and fix the Zephyr build, run
 the following command as root then log out and back in:
 
 .. code-block:: console
