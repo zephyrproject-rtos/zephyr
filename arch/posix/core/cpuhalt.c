@@ -22,7 +22,7 @@
 
 #include "posix_core.h"
 #include "posix_soc_if.h"
-#include <tracing.h>
+#include <debug/tracing.h>
 
 /**
  *

@@ -19,7 +19,7 @@
 #include <sw_isr_table.h>
 #include <ksched.h>
 #include <kswap.h>
-#include <tracing.h>
+#include <debug/tracing.h>
 
 void z_irq_spurious(void *unused)
 {
