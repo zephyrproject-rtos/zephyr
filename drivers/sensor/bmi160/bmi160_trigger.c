@@ -6,7 +6,7 @@
  */
 
 #include <kernel.h>
-#include <sensor.h>
+#include <drivers/sensor.h>
 #include <drivers/gpio.h>
 
 #include "bmi160.h"

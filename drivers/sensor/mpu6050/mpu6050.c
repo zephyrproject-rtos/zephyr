@@ -7,7 +7,7 @@
 #include <drivers/i2c.h>
 #include <init.h>
 #include <misc/byteorder.h>
-#include <sensor.h>
+#include <drivers/sensor.h>
 #include <logging/log.h>
 
 #include "mpu6050.h"

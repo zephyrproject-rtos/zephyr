@@ -9,7 +9,7 @@
 #include <ipm/ipm_quark_se.h>
 #include <misc/printk.h>
 #include <misc/util.h>
-#include <sensor.h>
+#include <drivers/sensor.h>
 #include <zephyr.h>
 
 #ifdef CONFIG_GROVE_LCD_RGB

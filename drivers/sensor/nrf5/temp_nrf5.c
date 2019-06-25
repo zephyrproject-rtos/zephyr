@@ -5,7 +5,7 @@
  */
 
 #include <device.h>
-#include <sensor.h>
+#include <drivers/sensor.h>
 #include <drivers/clock_control.h>
 #include <logging/log.h>
 

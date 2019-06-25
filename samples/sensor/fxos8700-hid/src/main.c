@@ -53,7 +53,7 @@ LOG_MODULE_REGISTER(main);
 #define LED		LED0_GPIO_PIN
 
 #ifdef CONFIG_FXOS8700
-#include <sensor.h>
+#include <drivers/sensor.h>
 #define SENSOR_ACCEL_NAME DT_INST_0_NXP_FXOS8700_LABEL
 #endif
 

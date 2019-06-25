@@ -17,7 +17,7 @@
 
 #include <kernel.h>
 #include <device.h>
-#include <sensor.h>
+#include <drivers/sensor.h>
 #include <misc/byteorder.h>
 #include <misc/__assert.h>
 #include <drivers/gpio.h>

@@ -8,7 +8,7 @@
 #include <init.h>
 #include <misc/__assert.h>
 #include <misc/byteorder.h>
-#include <sensor.h>
+#include <drivers/sensor.h>
 #include <string.h>
 #include <logging/log.h>
 

@@ -10,7 +10,7 @@
 
 #include "vl53l0x_platform.h"
 
-#include <sensor.h>
+#include <drivers/sensor.h>
 #include <kernel.h>
 #include <device.h>
 #include <init.h>

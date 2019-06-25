@@ -12,7 +12,7 @@
 #define ZEPHYR_DRIVERS_SENSOR_LIS2DS12_LIS2DS12_H_
 
 #include <zephyr/types.h>
-#include <sensor.h>
+#include <drivers/sensor.h>
 #include <drivers/gpio.h>
 
 #define LIS2DS12_REG_WHO_AM_I			0x0F

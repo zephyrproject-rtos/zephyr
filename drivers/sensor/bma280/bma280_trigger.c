@@ -8,7 +8,7 @@
 #include <drivers/i2c.h>
 #include <misc/util.h>
 #include <kernel.h>
-#include <sensor.h>
+#include <drivers/sensor.h>
 
 #include "bma280.h"
 

@@ -6,7 +6,7 @@
 
 #include <zephyr.h>
 #include <drivers/gpio.h>
-#include <sensor.h>
+#include <drivers/sensor.h>
 #include "board.h"
 #include "mesh.h"
 

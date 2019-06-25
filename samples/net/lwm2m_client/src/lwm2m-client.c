@@ -13,7 +13,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <zephyr.h>
 #include <drivers/gpio.h>
-#include <sensor.h>
+#include <drivers/sensor.h>
 #include <net/lwm2m.h>
 
 #define APP_BANNER "Run LWM2M client"

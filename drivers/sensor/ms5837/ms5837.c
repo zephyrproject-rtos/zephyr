@@ -8,7 +8,7 @@
 #include <init.h>
 #include <kernel.h>
 #include <misc/byteorder.h>
-#include <sensor.h>
+#include <drivers/sensor.h>
 #include <misc/__assert.h>
 
 #include "ms5837.h"

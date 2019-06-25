@@ -7,7 +7,7 @@
 #include <device.h>
 #include <misc/util.h>
 #include <kernel.h>
-#include <sensor.h>
+#include <drivers/sensor.h>
 
 #include "sht3xd.h"
 
