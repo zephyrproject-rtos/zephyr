@@ -15,7 +15,7 @@
 #include <misc/util.h>
 #include <kernel.h>
 #include <soc.h>
-#include <rtc.h>
+#include <drivers/rtc.h>
 
 #if defined(CONFIG_SOC_SERIES_STM32L4X)
 #define EXTI_LINE	LL_EXTI_LINE_18

@@ -14,7 +14,7 @@
 #ifndef __TEST_RTC_H__
 #define __TEST_RTC_H__
 
-#include <rtc.h>
+#include <drivers/rtc.h>
 #include <zephyr.h>
 #include <ztest.h>
 
