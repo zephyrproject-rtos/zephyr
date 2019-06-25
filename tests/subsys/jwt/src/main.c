@@ -21,7 +21,7 @@
 #include <stdbool.h>
 #include <ztest.h>
 #include <data/json.h>
-#include <zephyr/jwt.h>
+#include <data/jwt.h>
 
 #include <mbedtls/pk.h>
 #include <mbedtls/rsa.h>
