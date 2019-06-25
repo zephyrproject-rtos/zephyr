@@ -11,7 +11,7 @@
 LOG_MODULE_REGISTER(net_sock_can, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 #include <kernel.h>
-#include <entropy.h>
+#include <drivers/entropy.h>
 #include <misc/util.h>
 #include <net/net_context.h>
 #include <net/net_pkt.h>

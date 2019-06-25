@@ -7,7 +7,7 @@
 #include <stddef.h>
 #include <zephyr.h>
 #include <device.h>
-#include <entropy.h>
+#include <drivers/entropy.h>
 #include <bluetooth/bluetooth.h>
 #include <misc/byteorder.h>
 

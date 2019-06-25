@@ -6,7 +6,7 @@
 
 #include <kernel.h>
 #include <device.h>
-#include <entropy.h>
+#include <drivers/entropy.h>
 #include <irq.h>
 #include <ring_buffer.h>
 #include <sys/sys_io.h>

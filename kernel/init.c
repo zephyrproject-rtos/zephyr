@@ -29,7 +29,7 @@
 #include <misc/dlist.h>
 #include <kernel_internal.h>
 #include <kswap.h>
-#include <entropy.h>
+#include <drivers/entropy.h>
 #include <logging/log_ctrl.h>
 #include <debug/tracing.h>
 #include <stdbool.h>

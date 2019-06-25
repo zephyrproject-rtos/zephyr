@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <entropy.h>
+#include <drivers/entropy.h>
 #include <syscall_handler.h>
 
 Z_SYSCALL_HANDLER(entropy_get_entropy, dev, buffer, len)

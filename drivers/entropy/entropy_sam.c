@@ -5,7 +5,7 @@
  */
 
 #include <device.h>
-#include <entropy.h>
+#include <drivers/entropy.h>
 #include <errno.h>
 #include <init.h>
 #include <soc.h>

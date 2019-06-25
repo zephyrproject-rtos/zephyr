@@ -7,7 +7,7 @@
 #include <errno.h>
 #include <zephyr/types.h>
 #include <device.h>
-#include <entropy.h>
+#include <drivers/entropy.h>
 #include <drivers/clock_control.h>
 #include <drivers/clock_control/nrf_clock_control.h>
 

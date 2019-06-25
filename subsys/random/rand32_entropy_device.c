@@ -6,7 +6,7 @@
 
 #include <sys/atomic.h>
 #include <kernel.h>
-#include <entropy.h>
+#include <drivers/entropy.h>
 
 static struct device *entropy_driver;
 
