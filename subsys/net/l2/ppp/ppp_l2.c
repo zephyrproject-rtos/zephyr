@@ -7,6 +7,7 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(net_l2_ppp, CONFIG_NET_L2_PPP_LOG_LEVEL);
 
+#include <stdlib.h>
 #include <net/net_core.h>
 #include <net/net_l2.h>
 #include <net/net_if.h>
@@ -336,6 +337,19 @@ static int get_ppp_context(int idx, struct ppp_context **ctx,
 	return 0;
 }
 
+static void echo_reply_handler(void *user_data, size_t user_data_len)
+{
+	struct ppp_context *ctx = user_data;
+	u32_t end_time = k_cycle_get_32();
+	int time_diff;
+
+	time_diff = abs(end_time - ctx->shell.echo_req_data);
+	ctx->shell.echo_req_data =
+		SYS_CLOCK_HW_CYCLES_TO_NS64(time_diff) / 1000;
+
+	k_sem_give(&ctx->shell.wait_echo_reply);
+}
+
 int net_ppp_ping(int idx, s32_t timeout)
 {
 	struct ppp_context *ctx;
@@ -347,7 +361,10 @@ int net_ppp_ping(int idx, s32_t timeout)
 		return ret;
 	}
 
-	ctx->shell.echo_req_data = sys_rand32_get();
+	ctx->shell.echo_req_data = k_cycle_get_32();
+	ctx->shell.echo_reply.cb = echo_reply_handler;
+	ctx->shell.echo_reply.user_data = ctx;
+	ctx->shell.echo_reply.user_data_len = sizeof(ctx);
 
 	ret = ppp_send_pkt(&ctx->lcp.fsm, iface, PPP_ECHO_REQ, 0,
 			   UINT_TO_POINTER(ctx->shell.echo_req_data),
@@ -356,7 +373,16 @@ int net_ppp_ping(int idx, s32_t timeout)
 		return ret;
 	}
 
-	return k_sem_take(&ctx->shell.wait_echo_reply, timeout);
+	ret = k_sem_take(&ctx->shell.wait_echo_reply, timeout);
+
+	ctx->shell.echo_reply.cb = NULL;
+
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* Returns amount of microseconds waited */
+	return ctx->shell.echo_req_data;
 }
 
 struct ppp_context *net_ppp_context_get(int idx)

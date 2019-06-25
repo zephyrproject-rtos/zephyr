@@ -1109,7 +1109,16 @@ enum net_verdict ppp_fsm_recv_echo_reply(struct ppp_fsm *fsm,
 	NET_DBG("[%s/%p] Current state %s (%d)", fsm->name, fsm,
 		ppp_state_str(fsm->state), fsm->state);
 
-	return NET_DROP;
+#if defined(CONFIG_NET_SHELL)
+	struct ppp_context *ctx = CONTAINER_OF(fsm, struct ppp_context,
+					       lcp.fsm);
+	if (ctx->shell.echo_reply.cb) {
+		ctx->shell.echo_reply.cb(ctx->shell.echo_reply.user_data,
+					 ctx->shell.echo_reply.user_data_len);
+	}
+#endif /* CONFIG_NET_SHELL */
+
+	return NET_OK;
 }
 
 enum net_verdict ppp_fsm_recv_discard_req(struct ppp_fsm *fsm,
