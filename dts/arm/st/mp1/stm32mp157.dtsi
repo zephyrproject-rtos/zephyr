@@ -9,6 +9,7 @@
 #include <arm/armv7-m.dtsi>
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/clock/stm32_clock.h>
+#include <dt-bindings/i2c/i2c.h>
 
 / {
 	cpus {
@@ -209,6 +210,20 @@
 			status = "disabled";
 			label = "UART_8";
 		};
+
+		i2c5: i2c@40015000 {
+			compatible = "st,stm32-i2c-v2";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			reg = <0x40015000 0x400>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x01000000>;
+			interrupt-names = "event", "error";
+			interrupts = <107 0>, <108 0>;
+			status = "disabled";
+			label = "I2C_5";
+		};
+
 	};
 };
 

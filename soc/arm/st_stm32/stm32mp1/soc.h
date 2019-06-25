@@ -46,6 +46,10 @@
 #include <stm32mp1xx_ll_usart.h>
 #endif
 
+#ifdef CONFIG_I2C
+#include <stm32mp1xx_ll_i2c.h>
+#endif
+
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _STM32MP1SOC_H_ */
