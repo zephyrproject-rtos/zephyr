@@ -6,7 +6,7 @@
 
 #include <kernel.h>
 #include <syscall_handler.h>
-#include <i2s.h>
+#include <drivers/i2s.h>
 
 
 Z_SYSCALL_HANDLER(i2s_configure, dev, dir, cfg_ptr)

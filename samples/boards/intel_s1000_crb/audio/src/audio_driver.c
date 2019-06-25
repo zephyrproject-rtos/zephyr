@@ -12,7 +12,7 @@ LOG_MODULE_REGISTER(audio_io);
 
 #include <soc.h>
 #include <device.h>
-#include <i2s.h>
+#include <drivers/i2s.h>
 
 #include <audio/codec.h>
 #include <audio/dmic.h>

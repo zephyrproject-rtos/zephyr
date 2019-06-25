@@ -19,7 +19,7 @@
 #include <device.h>
 #include <init.h>
 #include <drivers/dma.h>
-#include <i2s.h>
+#include <drivers/i2s.h>
 #include <soc.h>
 #include "i2s_cavs.h"
 
