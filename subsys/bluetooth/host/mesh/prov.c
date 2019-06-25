@@ -193,8 +193,15 @@ static struct prov_link link;
 
 static const struct bt_mesh_prov *prov;
 
-static void reset_state(void)
+static void pub_key_ready(const u8_t *pkey);
+
+static int reset_state(void)
 {
+	static struct bt_pub_key_cb pub_key_cb = {
+		.func = pub_key_ready,
+	};
+	int err;
+
 	k_delayed_work_cancel(&link.prot_timer);
 
 	/* Disable Attention Timer if it was set */
@@ -226,6 +233,14 @@ static void reset_state(void)
 	/* Clear everything except the protocol timer (k_delayed_work) */
 	(void)memset(&link, 0, offsetof(struct prov_link, prot_timer));
 #endif /* PB_ADV */
+
+	err = bt_pub_key_gen(&pub_key_cb);
+	if (err) {
+		BT_ERR("Failed to generate public key (%d)", err);
+		return err;
+	}
+
+	return 0;
 }
 
 #if defined(CONFIG_BT_MESH_PB_ADV)
@@ -1541,9 +1556,7 @@ int bt_mesh_pb_gatt_close(struct bt_conn *conn)
 		prov->link_close(BT_MESH_PROV_GATT);
 	}
 
-	reset_state();
-
-	return 0;
+	return reset_state();
 }
 #endif /* CONFIG_BT_MESH_PB_GATT */
 
@@ -1580,11 +1593,6 @@ static void protocol_timeout(struct k_work *work)
 
 int bt_mesh_prov_init(const struct bt_mesh_prov *prov_info)
 {
-	static struct bt_pub_key_cb pub_key_cb = {
-		.func = pub_key_ready,
-	};
-	int err;
-
 	if (!prov_info) {
 		BT_ERR("No provisioning context provided");
 		return -EINVAL;
@@ -1592,21 +1600,13 @@ int bt_mesh_prov_init(const struct bt_mesh_prov *prov_info)
 
 	k_delayed_work_init(&link.prot_timer, protocol_timeout);
 
-	err = bt_pub_key_gen(&pub_key_cb);
-	if (err) {
-		BT_ERR("Failed to generate public key (%d)", err);
-		return err;
-	}
-
 	prov = prov_info;
 
 #if defined(CONFIG_BT_MESH_PB_ADV)
 	k_delayed_work_init(&link.tx.retransmit, prov_retransmit);
 #endif
 
-	reset_state();
-
-	return 0;
+	return reset_state();
 }
 
 void bt_mesh_prov_complete(u16_t net_idx, u16_t addr)
