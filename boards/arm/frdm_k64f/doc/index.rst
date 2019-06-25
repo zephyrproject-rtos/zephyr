@@ -94,6 +94,8 @@ The frdm_k64f board configuration supports the following hardware features:
 | SENSOR    | off-chip   | fxos8700 polling;                   |
 |           |            | fxos8700 trigger                    |
 +-----------+------------+-------------------------------------+
+| CAN       | on-chip    | can                                 |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 
