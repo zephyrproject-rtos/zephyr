@@ -332,3 +332,48 @@ STM32_I2C_INIT(I2C_3);
 
 STM32_I2C_INIT(I2C_4);
 #endif /* CONFIG_I2C_4 */
+
+
+#ifdef CONFIG_I2C_5
+
+#ifndef I2C5_BASE
+#error "I2C_5 is not available on the platform that you selected"
+#endif /* I2C5_BASE */
+
+#ifdef CONFIG_I2C_STM32_INTERRUPT
+static void i2c_stm32_irq_config_func_5(struct device *port);
+#endif
+
+static const struct i2c_stm32_config i2c_stm32_cfg_5 = {
+	.i2c = (I2C_TypeDef *)DT_I2C_5_BASE_ADDRESS,
+	.pclken = {
+		.enr = DT_I2C_5_CLOCK_BITS,
+		.bus = DT_I2C_5_CLOCK_BUS,
+	},
+#ifdef CONFIG_I2C_STM32_INTERRUPT
+	.irq_config_func = i2c_stm32_irq_config_func_5,
+#endif
+	.bitrate = DT_I2C_5_BITRATE,
+};
+
+static struct i2c_stm32_data i2c_stm32_dev_data_5;
+
+DEVICE_AND_API_INIT(i2c_stm32_5, CONFIG_I2C_5_NAME, &i2c_stm32_init,
+		    &i2c_stm32_dev_data_5, &i2c_stm32_cfg_5,
+		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    &api_funcs);
+
+#ifdef CONFIG_I2C_STM32_INTERRUPT
+static void i2c_stm32_irq_config_func_5(struct device *dev)
+{
+	IRQ_CONNECT(DT_I2C_5_EVENT_IRQ, DT_I2C_5_EVENT_IRQ_PRI,
+		   stm32_i2c_event_isr, DEVICE_GET(i2c_stm32_5), 0);
+	irq_enable(DT_I2C_5_EVENT_IRQ);
+
+	IRQ_CONNECT(DT_I2C_5_ERROR_IRQ, DT_I2C_5_ERROR_IRQ_PRI,
+		   stm32_i2c_error_isr, DEVICE_GET(i2c_stm32_5), 0);
+	irq_enable(DT_I2C_5_ERROR_IRQ);
+}
+#endif
+
+#endif /* CONFIG_I2C_5 */
