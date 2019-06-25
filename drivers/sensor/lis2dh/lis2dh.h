@@ -29,7 +29,7 @@
 #define LIS2DH_SPI_CFG			SPI_WORD_SET(8)
 
 #elif defined(DT_ST_LIS2DH_BUS_I2C)
-#include <i2c.h>
+#include <drivers/i2c.h>
 #else
 #error "define bus type (I2C/SPI)"
 #endif

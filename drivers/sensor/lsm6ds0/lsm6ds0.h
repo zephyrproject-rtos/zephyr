@@ -12,7 +12,7 @@
 #define ZEPHYR_DRIVERS_SENSOR_LSM6DS0_LSM6DS0_H_
 
 #include <zephyr/types.h>
-#include <i2c.h>
+#include <drivers/i2c.h>
 #include <misc/util.h>
 
 #define LSM6DS0_REG_ACT_THS                     0x04

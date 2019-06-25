@@ -9,7 +9,7 @@
 #include <init.h>
 #include <stdbool.h>
 
-#include <i2c.h>
+#include <drivers/i2c.h>
 #include <display/grove_lcd.h>
 #include <misc/util.h>
 

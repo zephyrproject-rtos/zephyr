@@ -28,7 +28,7 @@
  * communication between the host MCU and the driver.
  */
 
-#include <i2c.h>
+#include <drivers/i2c.h>
 #include <led.h>
 #include <device.h>
 #include <zephyr.h>

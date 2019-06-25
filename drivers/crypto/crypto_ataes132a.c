@@ -8,7 +8,7 @@
 #include <kernel.h>
 #include <string.h>
 #include <device.h>
-#include <i2c.h>
+#include <drivers/i2c.h>
 #include <assert.h>
 #include <crypto/cipher.h>
 

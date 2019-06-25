@@ -10,7 +10,7 @@
  */
 
 #include <drivers/gpio.h>
-#include <i2c.h>
+#include <drivers/i2c.h>
 #include <kernel.h>
 #include <led.h>
 #include <misc/byteorder.h>

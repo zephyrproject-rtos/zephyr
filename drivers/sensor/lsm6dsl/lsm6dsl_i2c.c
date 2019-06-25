@@ -8,7 +8,7 @@
  */
 
 #include <string.h>
-#include <i2c.h>
+#include <drivers/i2c.h>
 #include <logging/log.h>
 
 #include "lsm6dsl.h"

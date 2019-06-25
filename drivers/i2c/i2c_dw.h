@@ -8,7 +8,7 @@
 #ifndef ZEPHYR_DRIVERS_I2C_I2C_DW_H_
 #define ZEPHYR_DRIVERS_I2C_I2C_DW_H_
 
-#include <i2c.h>
+#include <drivers/i2c.h>
 #include <stdbool.h>
 
 #if DT_INST_0_SNPS_DESIGNWARE_I2C_PCIE || \

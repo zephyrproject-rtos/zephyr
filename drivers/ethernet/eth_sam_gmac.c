@@ -34,7 +34,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <net/net_if.h>
 #include <net/ethernet.h>
 #include <ethernet/eth_stats.h>
-#include <i2c.h>
+#include <drivers/i2c.h>
 #include <soc.h>
 #include "phy_sam_gmac.h"
 #include "eth_sam_gmac_priv.h"

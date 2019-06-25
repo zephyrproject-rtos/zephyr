@@ -8,7 +8,7 @@
 #ifndef ZEPHYR_DRIVERS_CRYPTO_CRYPTO_ATAES132A_PRIV_H_
 #define ZEPHYR_DRIVERS_CRYPTO_CRYPTO_ATAES132A_PRIV_H_
 
-#include <i2c.h>
+#include <drivers/i2c.h>
 #include <kernel.h>
 #include <misc/util.h>
 

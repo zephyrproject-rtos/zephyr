@@ -6,7 +6,7 @@
 
 #include <errno.h>
 #include <device.h>
-#include <i2c.h>
+#include <drivers/i2c.h>
 #include <soc.h>
 
 #include "qm_ss_i2c.h"

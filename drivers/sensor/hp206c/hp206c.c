@@ -10,7 +10,7 @@
 
 #include <init.h>
 #include <sensor.h>
-#include <i2c.h>
+#include <drivers/i2c.h>
 #include <misc/byteorder.h>
 #include <kernel.h>
 #include <drivers/gpio.h>
