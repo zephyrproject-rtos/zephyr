@@ -42,4 +42,11 @@ config I2C_XEC
 
 endif # I2C
 
+if COUNTER
+
+config COUNTER_XEC
+	def_bool y
+
+endif # COUNTER
+
 endif # SOC_MEC1501_HSZ
