@@ -9,7 +9,7 @@
 #include <zephyr.h>
 #include <string.h>
 #include <stdlib.h>
-#include <atomic.h>
+#include <sys/atomic.h>
 #include <misc/util.h>
 
 #include <settings/settings.h>

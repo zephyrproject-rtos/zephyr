@@ -5,7 +5,7 @@
  */
 
 #include <kernel_structs.h>
-#include <atomic.h>
+#include <sys/atomic.h>
 #include <cmsis_os.h>
 
 #define TOTAL_CMSIS_THREAD_PRIORITIES (osPriorityRealtime - osPriorityIdle + 1)

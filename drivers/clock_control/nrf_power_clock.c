@@ -7,7 +7,7 @@
 
 #include <soc.h>
 #include <errno.h>
-#include <atomic.h>
+#include <sys/atomic.h>
 #include <device.h>
 #include <clock_control.h>
 #include <misc/__assert.h>

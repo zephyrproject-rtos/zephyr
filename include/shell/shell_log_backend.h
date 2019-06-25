@@ -10,7 +10,7 @@
 #include <zephyr.h>
 #include <logging/log_backend.h>
 #include <logging/log_output.h>
-#include <atomic.h>
+#include <sys/atomic.h>
 #ifdef __cplusplus
 extern "C" {
 #endif

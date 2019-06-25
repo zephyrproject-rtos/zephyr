@@ -10,7 +10,7 @@
 #include <kernel.h>
 
 #if !defined(_ASMLANGUAGE)
-#include <atomic.h>
+#include <sys/atomic.h>
 #include <misc/dlist.h>
 #include <misc/rb.h>
 #include <misc/util.h>

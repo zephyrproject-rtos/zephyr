@@ -6,7 +6,7 @@
  */
 
 #include <entropy.h>
-#include <atomic.h>
+#include <sys/atomic.h>
 #include <soc.h>
 #include "nrf_rng.h"
 

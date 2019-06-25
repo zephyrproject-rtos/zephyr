@@ -6,7 +6,7 @@
 
 #include <kernel.h>
 #include <stdio.h>
-#include <atomic.h>
+#include <sys/atomic.h>
 #include <ksched.h>
 #include <wait_q.h>
 #include <posix/pthread.h>

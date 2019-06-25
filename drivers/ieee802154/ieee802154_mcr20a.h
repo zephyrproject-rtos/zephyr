@@ -11,7 +11,7 @@
 #define ZEPHYR_DRIVERS_IEEE802154_IEEE802154_MCR20A_H_
 
 #include <linker/sections.h>
-#include <atomic.h>
+#include <sys/atomic.h>
 #include <spi.h>
 
 /* Runtime context structure

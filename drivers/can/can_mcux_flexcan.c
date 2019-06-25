@@ -5,7 +5,7 @@
  */
 
 #include <zephyr.h>
-#include <atomic.h>
+#include <sys/atomic.h>
 #include <can.h>
 #include <clock_control.h>
 #include <device.h>

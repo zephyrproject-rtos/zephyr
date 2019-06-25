@@ -7,7 +7,7 @@
 #include <zephyr.h>
 #include <string.h>
 #include <device.h>
-#include <atomic.h>
+#include <sys/atomic.h>
 #include "policy/pm_policy.h"
 
 #define LOG_LEVEL CONFIG_SYS_PM_LOG_LEVEL /* From power module Kconfig */

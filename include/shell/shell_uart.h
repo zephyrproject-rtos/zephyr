@@ -9,7 +9,7 @@
 
 #include <shell/shell.h>
 #include <ring_buffer.h>
-#include <atomic.h>
+#include <sys/atomic.h>
 #ifdef CONFIG_MCUMGR_SMP_SHELL
 #include "mgmt/smp_shell.h"
 #endif

@@ -8,7 +8,7 @@
 
 #include <zephyr.h>
 #include <errno.h>
-#include <atomic.h>
+#include <sys/atomic.h>
 #include <misc/util.h>
 #include <misc/byteorder.h>
 

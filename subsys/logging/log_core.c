@@ -12,7 +12,7 @@
 #include <misc/printk.h>
 #include <init.h>
 #include <assert.h>
-#include <atomic.h>
+#include <sys/atomic.h>
 #include <ctype.h>
 
 LOG_MODULE_REGISTER(log);

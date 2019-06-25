@@ -17,7 +17,7 @@
  */
 
 #ifdef CONFIG_USERSPACE
-#include <atomic.h>
+#include <sys/atomic.h>
 #include <zephyr/types.h>
 
 struct sys_mutex {
