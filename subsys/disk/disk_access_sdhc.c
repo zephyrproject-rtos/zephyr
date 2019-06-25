@@ -8,7 +8,7 @@
 
 LOG_MODULE_REGISTER(sdhc, CONFIG_DISK_LOG_LEVEL);
 
-#include <disk_access.h>
+#include <disk/disk_access.h>
 #include <gpio.h>
 #include <misc/byteorder.h>
 #include <spi.h>
