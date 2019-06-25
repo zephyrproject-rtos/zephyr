@@ -24,7 +24,7 @@
 #include <device.h>
 #include <init.h>
 #include <drivers/dma.h>
-#include <i2s.h>
+#include <drivers/i2s.h>
 #include <soc.h>
 
 #define LOG_DOMAIN dev_i2s_sam_ssc

@@ -6,7 +6,7 @@
 
 #include <string.h>
 #include <drivers/dma.h>
-#include <i2s.h>
+#include <drivers/i2s.h>
 #include <soc.h>
 #include <clock_control/stm32_clock_control.h>
 #include <drivers/clock_control.h>

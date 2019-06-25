@@ -5,7 +5,7 @@
  */
 
 #include "mpxxdtyy.h"
-#include <i2s.h>
+#include <drivers/i2s.h>
 
 #define LOG_LEVEL CONFIG_AUDIO_DMIC_LOG_LEVEL
 #include <logging/log.h>
