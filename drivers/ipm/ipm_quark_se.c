@@ -11,7 +11,7 @@
 #include <string.h>
 #include <device.h>
 #include <init.h>
-#include <ipm.h>
+#include <drivers/ipm.h>
 #include <arch/cpu.h>
 #include <misc/printk.h>
 #include <misc/__assert.h>

@@ -10,7 +10,7 @@
 
 #include <zephyr.h>
 #include <device.h>
-#include <ipm.h>
+#include <drivers/ipm.h>
 
 /* Arbitrary */
 #define DUMMY_IPM_DATA_WORDS    4

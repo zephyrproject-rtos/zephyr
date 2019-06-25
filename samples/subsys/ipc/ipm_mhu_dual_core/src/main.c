@@ -6,7 +6,7 @@
 
 #include <zephyr.h>
 #include <misc/printk.h>
-#include <ipm.h>
+#include <drivers/ipm.h>
 
 enum cpu_id_t {
 	MHU_CPU0 = 0,

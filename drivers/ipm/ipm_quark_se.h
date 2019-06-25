@@ -12,7 +12,7 @@
 
 #include <kernel.h>
 #include <soc.h> /* for SCSS_REGISTER_BASE */
-#include <ipm.h>
+#include <drivers/ipm.h>
 #include <device.h>
 #include <init.h>
 

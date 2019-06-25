@@ -8,7 +8,7 @@
 #define ZEPHYR_DRIVERS_IPM_IPM_MHU_H_
 
 #include <kernel.h>
-#include <ipm.h>
+#include <drivers/ipm.h>
 #include <device.h>
 
 #ifdef __cplusplus

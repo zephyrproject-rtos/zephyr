@@ -5,7 +5,7 @@
  */
 
 #include <syscall_handler.h>
-#include <ipm.h>
+#include <drivers/ipm.h>
 
 Z_SYSCALL_HANDLER(ipm_send, dev, wait, id, data, size)
 {

@@ -6,7 +6,7 @@
 
 #include <errno.h>
 #include <device.h>
-#include <ipm.h>
+#include <drivers/ipm.h>
 #include <fsl_mailbox.h>
 #include <fsl_clock.h>
 #include <soc.h>
