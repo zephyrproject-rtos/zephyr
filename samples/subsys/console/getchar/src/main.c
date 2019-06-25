@@ -6,7 +6,7 @@
 
 #include <zephyr.h>
 #include <misc/printk.h>
-#include <console.h>
+#include <console/console.h>
 
 void main(void)
 {
