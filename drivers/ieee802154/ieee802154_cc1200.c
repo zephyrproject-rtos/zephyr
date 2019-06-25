@@ -26,7 +26,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <string.h>
 #include <random/rand32.h>
 
-#include <spi.h>
+#include <drivers/spi.h>
 #include <drivers/gpio.h>
 
 #include <net/ieee802154_radio.h>

@@ -12,7 +12,7 @@
 #include <drivers/gpio.h>
 #include <misc/byteorder.h>
 #include <misc/__assert.h>
-#include <spi.h>
+#include <drivers/spi.h>
 #include <logging/log.h>
 
 #include "adxl362.h"

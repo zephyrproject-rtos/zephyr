@@ -12,7 +12,7 @@
 #include <misc/printk.h>
 #include <misc/__assert.h>
 #include <stdlib.h>
-#include <spi.h>
+#include <drivers/spi.h>
 #include <drivers/i2c.h>
 #include <logging/log.h>
 

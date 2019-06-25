@@ -8,7 +8,7 @@
 
 #include <errno.h>
 #include <drivers/flash.h>
-#include <spi.h>
+#include <drivers/spi.h>
 #include <init.h>
 #include <string.h>
 #include "spi_nor.h"

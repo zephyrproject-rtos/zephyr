@@ -9,7 +9,7 @@
 #define ZEPHYR_DRIVERS_SENSOR_BMI160_BMI160_H_
 
 #include <drivers/gpio.h>
-#include <spi.h>
+#include <drivers/spi.h>
 #include <misc/util.h>
 
 /* registers */

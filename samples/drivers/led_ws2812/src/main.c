@@ -15,7 +15,7 @@ LOG_MODULE_REGISTER(main);
 #include <zephyr.h>
 #include <drivers/led_strip.h>
 #include <device.h>
-#include <spi.h>
+#include <drivers/spi.h>
 #include <misc/util.h>
 
 /*

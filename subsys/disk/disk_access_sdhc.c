@@ -11,7 +11,7 @@ LOG_MODULE_REGISTER(sdhc, CONFIG_DISK_LOG_LEVEL);
 #include <disk/disk_access.h>
 #include <drivers/gpio.h>
 #include <misc/byteorder.h>
-#include <spi.h>
+#include <drivers/spi.h>
 #include <sys/crc.h>
 
 #define SDHC_SECTOR_SIZE 512

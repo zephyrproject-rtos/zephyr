@@ -8,7 +8,7 @@
  */
 
 #include <string.h>
-#include <spi.h>
+#include <drivers/spi.h>
 #include "lsm6dsl.h"
 #include <logging/log.h>
 

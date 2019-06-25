@@ -11,7 +11,7 @@ LOG_MODULE_REGISTER(spi_sam0);
 #include "spi_context.h"
 #include <errno.h>
 #include <device.h>
-#include <spi.h>
+#include <drivers/spi.h>
 #include <soc.h>
 #include <drivers/dma.h>
 

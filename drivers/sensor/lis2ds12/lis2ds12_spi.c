@@ -10,7 +10,7 @@
 
 
 #include <string.h>
-#include <spi.h>
+#include <drivers/spi.h>
 #include "lis2ds12.h"
 #include <logging/log.h>
 

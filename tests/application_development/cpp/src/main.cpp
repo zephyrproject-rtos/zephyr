@@ -23,7 +23,7 @@
 
 #include <drivers/gpio.h>
 #include <drivers/led_strip.h>
-#include <spi.h>
+#include <drivers/spi.h>
 #include <uart.h>
 #include <usb/usb_device.h>
 #include <usb/class/usb_hid.h>

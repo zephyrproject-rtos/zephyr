@@ -23,7 +23,7 @@ LOG_MODULE_REGISTER(spi_intel);
 #include <sys/sys_io.h>
 #include <power/power.h>
 
-#include <spi.h>
+#include <drivers/spi.h>
 #include "spi_intel.h"
 
 #ifdef CONFIG_IOAPIC

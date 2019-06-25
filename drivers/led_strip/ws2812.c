@@ -14,7 +14,7 @@ LOG_MODULE_REGISTER(ws2812);
 
 #include <zephyr.h>
 #include <device.h>
-#include <spi.h>
+#include <drivers/spi.h>
 #include <misc/util.h>
 
 /*

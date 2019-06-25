@@ -10,7 +10,7 @@
 #include <zephyr/types.h>
 #include <device.h>
 #include <drivers/gpio.h>
-#include <spi.h>
+#include <drivers/spi.h>
 #include <drivers/i2c.h>
 #include <misc/util.h>
 

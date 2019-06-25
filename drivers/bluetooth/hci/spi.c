@@ -8,7 +8,7 @@
 
 #include <drivers/gpio.h>
 #include <init.h>
-#include <spi.h>
+#include <drivers/spi.h>
 #include <misc/byteorder.h>
 #include <misc/util.h>
 
