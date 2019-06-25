@@ -292,10 +292,13 @@ sourcelink_suffix = '.txt'
 htmlhelp_basename = 'zephyrdoc'
 
 
-# Custom added feature to allow redirecting old URLs
+# Custom added feature to allow redirecting old URLs (caused by
+# reorganizing doc directories)
 #
 # list of tuples (old_url, new_url) for pages to redirect
-# (URLs should be relative to document root, only)
+#
+# URLs must be relative to document root (with NO leading slash),
+# and without the html extension)
 html_redirect_pages = [
         ('contribute/contribute_guidelines', 'contribute/index'),
         ('application/application', 'application/index.rst'),
