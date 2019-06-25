@@ -20,7 +20,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #ifdef CONFIG_IMG_ERASE_PROGRESSIVELY
 #include <dfu/mcuboot.h>
-#include <flash.h>
+#include <drivers/flash.h>
 #endif
 
 #include <generated_dts_board.h>

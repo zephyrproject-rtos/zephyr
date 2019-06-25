@@ -5,7 +5,7 @@
  */
 
 #include <device.h>
-#include <flash.h>
+#include <drivers/flash.h>
 #include <init.h>
 #include <kernel.h>
 #include <soc.h>

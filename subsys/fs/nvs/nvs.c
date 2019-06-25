@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <flash.h>
+#include <drivers/flash.h>
 #include <string.h>
 #include <errno.h>
 #include <inttypes.h>

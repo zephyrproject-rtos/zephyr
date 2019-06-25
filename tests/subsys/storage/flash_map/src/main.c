@@ -6,7 +6,7 @@
  */
 
 #include <ztest.h>
-#include <flash.h>
+#include <drivers/flash.h>
 #include <storage/flash_map.h>
 
 extern int flash_map_entries;

@@ -5,7 +5,7 @@
  */
 
 #include <syscall_handler.h>
-#include <flash.h>
+#include <drivers/flash.h>
 
 Z_SYSCALL_HANDLER(flash_read, dev, offset, data, len)
 {

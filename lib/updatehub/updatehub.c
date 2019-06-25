@@ -17,7 +17,7 @@ LOG_MODULE_REGISTER(updatehub);
 #include <net/udp.h>
 #include <net/coap.h>
 #include <net/dns_resolve.h>
-#include <flash.h>
+#include <drivers/flash.h>
 #include <misc/reboot.h>
 #include <tinycrypt/sha256.h>
 #include <data/json.h>

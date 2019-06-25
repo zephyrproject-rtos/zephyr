@@ -10,7 +10,7 @@
 #include <kernel.h>
 #include <device.h>
 #include <em_msc.h>
-#include <flash.h>
+#include <drivers/flash.h>
 #include <soc.h>
 
 #define LOG_LEVEL CONFIG_FLASH_LOG_LEVEL

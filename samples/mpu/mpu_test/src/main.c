@@ -7,7 +7,7 @@
 #include <stdlib.h>
 
 #include <zephyr.h>
-#include <flash.h>
+#include <drivers/flash.h>
 #include <shell/shell.h>
 
 #define PR_SHELL(shell, fmt, ...)				\

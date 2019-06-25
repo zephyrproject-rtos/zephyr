@@ -5,7 +5,7 @@
  */
 
 #include <shell/shell.h>
-#include <flash.h>
+#include <drivers/flash.h>
 #include <dfu/mcuboot.h>
 #include <dfu/flash_img.h>
 #include <updatehub.h>

@@ -11,7 +11,7 @@
 #include <sys/types.h>
 #include <device.h>
 #include <storage/flash_map.h>
-#include <flash.h>
+#include <drivers/flash.h>
 #include <soc.h>
 #include <init.h>
 

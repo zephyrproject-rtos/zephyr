@@ -9,7 +9,7 @@
 #include <stddef.h>
 #include <errno.h>
 #include <string.h>
-#include <flash.h>
+#include <drivers/flash.h>
 #include <storage/flash_map.h>
 #include <zephyr.h>
 #include <init.h>

@@ -42,7 +42,7 @@
 #include <misc/reboot.h>
 #include <device.h>
 #include <string.h>
-#include <flash.h>
+#include <drivers/flash.h>
 #include <fs/nvs.h>
 
 static struct nvs_fs fs;

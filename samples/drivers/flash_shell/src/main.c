@@ -11,7 +11,7 @@
 #include <logging/log.h>
 #include <shell/shell.h>
 #include <shell/shell_uart.h>
-#include <flash.h>
+#include <drivers/flash.h>
 #include <device.h>
 #include <soc.h>
 #include <stdlib.h>

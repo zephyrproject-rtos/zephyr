@@ -11,7 +11,7 @@
 #include <nffs/queue.h>
 #include <nffs/nffs.h>
 #include <nffs/os.h>
-#include <flash.h>
+#include <drivers/flash.h>
 #include <ztest_assert.h>
 #include "nffs_test_utils.h"
 

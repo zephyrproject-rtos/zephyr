@@ -9,7 +9,7 @@
 #include <zephyr/types.h>
 #include <errno.h>
 #include <init.h>
-#include <flash.h>
+#include <drivers/flash.h>
 #include <fs/fs.h>
 #include <sys/crc.h>
 #include <misc/__assert.h>

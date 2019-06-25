@@ -5,7 +5,7 @@
  */
 
 #include <zephyr.h>
-#include <flash.h>
+#include <drivers/flash.h>
 #include <device.h>
 #include <stdio.h>
 

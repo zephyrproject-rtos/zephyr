@@ -12,7 +12,7 @@
 #include <errno.h>
 #include <init.h>
 #include <device.h>
-#include <flash.h>
+#include <drivers/flash.h>
 
 #define SECTOR_SIZE 512
 
