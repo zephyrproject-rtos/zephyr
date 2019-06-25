@@ -5,4 +5,84 @@
 config SOF
 	bool "Sound Open Firware Support"
 	help
-	  This option enables the Sound Open Firmware.
+	  This option enables the Sound Open Firmware components.
+
+if SOF
+
+module = SOF
+module-str = sof
+source "subsys/logging/Kconfig.template.log_config"
+
+config SOF_COMP_DAI
+	bool "DAI component"
+	default y
+	help
+	  Select for DAI component
+
+config SOF_COMP_VOLUME
+	bool "Volume component"
+	default y
+	help
+	  Select for Volume component
+
+config SOF_COMP_SRC
+	bool "SRC component"
+	default y
+	help
+	  Select for SRC component
+
+config SOF_COMP_FIR
+	bool "FIR component"
+	default y
+	help
+	  Select for FIR component
+
+config SOF_COMP_IIR
+	bool "IIR component"
+	default y
+	help
+	  Select for IIR component
+
+config SOF_COMP_TONE
+	bool "Tone component"
+	default y
+	help
+	  Select for Tone component
+
+config SOF_COMP_MIXER
+	bool "Mixer component"
+	default y
+	help
+	  Select for Mixer component
+
+config SOF_COMP_MUX
+	bool "MUX component"
+	default y
+	help
+	  Select for MUX component
+
+config SOF_COMP_SWITCH
+	bool "Switch component"
+	default y
+	help
+	  Select for Switch component
+
+config SOF_COMP_KPB
+	bool "KPB component"
+	default y
+	help
+	  Select for KPB component
+
+config SOF_COMP_SEL
+	bool "Channel selector component"
+	default y
+	help
+	  Select for SEL component
+
+config SOF_STATIC_PIPELINE
+	bool "Enable static pipeline"
+	default n
+	help
+	  Enable static pipeline
+
+endif #SOF

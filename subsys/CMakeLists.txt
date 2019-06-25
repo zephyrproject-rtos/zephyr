@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
+add_subdirectory_ifdef(CONFIG_SOF                  audio)
 add_subdirectory(debug)
 add_subdirectory(logging)
 add_subdirectory_ifdef(CONFIG_BT                   bluetooth)

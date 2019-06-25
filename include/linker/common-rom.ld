@@ -160,3 +160,12 @@
 		KEEP(*(SORT_BY_NAME("._cfb_font.*")))
 		__font_entry_end = .;
 	} GROUP_LINK_IN(ROMABLE_REGION)
+
+#if defined(CONFIG_SOF)
+	SECTION_DATA_PROLOGUE(sof_module_area,,SUBALIGN(4))
+	{
+		__sof_module_list_start = .;
+		KEEP(*(SORT_BY_NAME(".__sof_module.static.*")))
+		__sof_module_list_end = .;
+	} GROUP_LINK_IN(ROMABLE_REGION)
+#endif
