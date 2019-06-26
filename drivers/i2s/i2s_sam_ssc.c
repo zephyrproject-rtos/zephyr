@@ -19,7 +19,7 @@
 
 #include <errno.h>
 #include <string.h>
-#include <misc/__assert.h>
+#include <sys/__assert.h>
 #include <kernel.h>
 #include <device.h>
 #include <init.h>

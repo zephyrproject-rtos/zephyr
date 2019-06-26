@@ -9,7 +9,7 @@
 #include <kernel.h>
 #include <arch/cpu.h>
 
-#include <misc/__assert.h>
+#include <sys/__assert.h>
 #include <soc.h>
 #include <device.h>
 #include <init.h>

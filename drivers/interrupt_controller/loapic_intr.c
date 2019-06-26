@@ -12,7 +12,7 @@
 #include <arch/cpu.h>
 #include <zephyr/types.h>
 #include <string.h>
-#include <misc/__assert.h>
+#include <sys/__assert.h>
 #include <arch/x86/msr.h>
 
 #include <toolchain.h>

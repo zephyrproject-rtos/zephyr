@@ -37,7 +37,7 @@
 #include <misc/printk.h>
 #endif
 
-#include <misc/__assert.h>
+#include <sys/__assert.h>
 
 #include "phil_obj_abstract.h"
 

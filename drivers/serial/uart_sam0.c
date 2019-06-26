@@ -7,7 +7,7 @@
 #include <device.h>
 #include <errno.h>
 #include <init.h>
-#include <misc/__assert.h>
+#include <sys/__assert.h>
 #include <soc.h>
 #include <drivers/uart.h>
 #include <drivers/dma.h>

@@ -15,7 +15,7 @@
 #include <linker/sections.h>
 #include <ksched.h>
 #include <wait_q.h>
-#include <misc/__assert.h>
+#include <sys/__assert.h>
 #include <init.h>
 #include <syscall_handler.h>
 #include <kernel_internal.h>

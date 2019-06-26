@@ -6,7 +6,7 @@
 
 #include <sw_isr_table.h>
 #include <arch/cpu.h>
-#include <misc/__assert.h>
+#include <sys/__assert.h>
 /*
  * Common code for arches that use software ISR tables (CONFIG_GEN_ISR_TABLES)
  */

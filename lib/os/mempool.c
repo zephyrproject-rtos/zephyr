@@ -6,7 +6,7 @@
 
 #include <kernel.h>
 #include <string.h>
-#include <misc/__assert.h>
+#include <sys/__assert.h>
 #include <misc/mempool_base.h>
 #include <misc/mempool.h>
 

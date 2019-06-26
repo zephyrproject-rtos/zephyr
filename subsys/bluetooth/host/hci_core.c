@@ -16,7 +16,7 @@
 #include <misc/slist.h>
 #include <misc/byteorder.h>
 #include <misc/stack.h>
-#include <misc/__assert.h>
+#include <sys/__assert.h>
 #include <soc.h>
 
 #include <settings/settings.h>

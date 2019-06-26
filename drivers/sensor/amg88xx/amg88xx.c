@@ -12,7 +12,7 @@
 #include <misc/util.h>
 #include <kernel.h>
 #include <drivers/sensor.h>
-#include <misc/__assert.h>
+#include <sys/__assert.h>
 #include <logging/log.h>
 
 #include "amg88xx.h"

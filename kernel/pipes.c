@@ -19,7 +19,7 @@
 #include <misc/dlist.h>
 #include <init.h>
 #include <syscall_handler.h>
-#include <misc/__assert.h>
+#include <sys/__assert.h>
 #include <kernel_internal.h>
 
 struct k_pipe_desc {

@@ -8,7 +8,7 @@
 #include <device.h>
 #include <drivers/gpio.h>
 #include <misc/printk.h>
-#include <misc/__assert.h>
+#include <sys/__assert.h>
 #include <string.h>
 
 /* size of stack area used by each thread */

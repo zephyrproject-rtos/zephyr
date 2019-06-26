@@ -34,7 +34,7 @@ static inline void z_arch_irq_unlock(int key)
  */
 #if (CONFIG_FLASH_SIZE == 0) || (CONFIG_FLASH_SIZE > 32)
 #if defined(CONFIG_ASSERT) && (CONFIG_MP_NUM_CPUS < 4)
-#include <misc/__assert.h>
+#include <sys/__assert.h>
 #include <stdbool.h>
 struct k_spinlock;
 bool z_spin_lock_valid(struct k_spinlock *l);

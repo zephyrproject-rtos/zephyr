@@ -15,7 +15,7 @@
 #include <misc/util.h>
 #include <misc/slist.h>
 #include <misc/stack.h>
-#include <misc/__assert.h>
+#include <sys/__assert.h>
 
 #include <bluetooth/hci.h>
 #include <bluetooth/bluetooth.h>

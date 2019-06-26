@@ -21,7 +21,7 @@
 #include <linker/linker-defs.h>
 #include <arch/arc/v2/aux_regs.h>
 #include <kernel_internal.h>
-#include <misc/__assert.h>
+#include <sys/__assert.h>
 #include <init.h>
 #include <stdbool.h>
 

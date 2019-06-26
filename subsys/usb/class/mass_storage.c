@@ -37,7 +37,7 @@
 #include <errno.h>
 #include <string.h>
 #include <misc/byteorder.h>
-#include <misc/__assert.h>
+#include <sys/__assert.h>
 #include <disk/disk_access.h>
 #include <usb/class/usb_msc.h>
 #include <usb/usb_device.h>

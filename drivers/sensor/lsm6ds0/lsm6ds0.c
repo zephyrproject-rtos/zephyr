@@ -13,7 +13,7 @@
 #include <device.h>
 #include <init.h>
 #include <misc/byteorder.h>
-#include <misc/__assert.h>
+#include <sys/__assert.h>
 #include <logging/log.h>
 
 #include "lsm6ds0.h"

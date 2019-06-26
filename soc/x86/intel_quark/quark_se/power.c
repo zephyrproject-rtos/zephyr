@@ -6,7 +6,7 @@
 
 #include <zephyr.h>
 #include <sys/sys_io.h>
-#include <misc/__assert.h>
+#include <sys/__assert.h>
 #include <power/power.h>
 #include <soc_power.h>
 #include <soc.h>

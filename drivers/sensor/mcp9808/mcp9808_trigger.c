@@ -10,7 +10,7 @@
 #include <kernel.h>
 #include <drivers/i2c.h>
 #include <misc/byteorder.h>
-#include <misc/__assert.h>
+#include <sys/__assert.h>
 
 #include "mcp9808.h"
 

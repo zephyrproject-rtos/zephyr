@@ -13,7 +13,7 @@
 #include <drivers/sensor.h>
 #include <init.h>
 #include <drivers/gpio.h>
-#include <misc/__assert.h>
+#include <sys/__assert.h>
 #include <zephyr/types.h>
 #include <device.h>
 #include <logging/log.h>

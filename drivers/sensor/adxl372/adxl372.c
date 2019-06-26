@@ -10,7 +10,7 @@
 #include <init.h>
 #include <drivers/gpio.h>
 #include <misc/printk.h>
-#include <misc/__assert.h>
+#include <sys/__assert.h>
 #include <stdlib.h>
 #include <drivers/spi.h>
 #include <drivers/i2c.h>

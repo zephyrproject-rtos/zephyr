@@ -16,7 +16,7 @@ LOG_MODULE_REGISTER(net_l2_openthread, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
 
 #include <init.h>
 #include <misc/util.h>
-#include <misc/__assert.h>
+#include <sys/__assert.h>
 
 #include <openthread/cli.h>
 #include <openthread/ip6.h>

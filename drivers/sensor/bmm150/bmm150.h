@@ -19,7 +19,7 @@
 #include <device.h>
 #include <drivers/sensor.h>
 #include <misc/byteorder.h>
-#include <misc/__assert.h>
+#include <sys/__assert.h>
 #include <drivers/gpio.h>
 
 #define BMM150_REG_CHIP_ID         0x40

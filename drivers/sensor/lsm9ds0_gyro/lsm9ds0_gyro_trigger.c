@@ -10,7 +10,7 @@
 #include <init.h>
 #include <drivers/i2c.h>
 #include <misc/byteorder.h>
-#include <misc/__assert.h>
+#include <sys/__assert.h>
 
 #include <drivers/gpio.h>
 

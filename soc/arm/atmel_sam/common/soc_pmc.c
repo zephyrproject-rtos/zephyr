@@ -9,7 +9,7 @@
  */
 
 #include <soc.h>
-#include <misc/__assert.h>
+#include <sys/__assert.h>
 #include <misc/util.h>
 
 #if ID_PERIPH_COUNT > 74

@@ -19,7 +19,7 @@
 
 #include <kernel.h>
 #include <arch/cpu.h>
-#include <misc/__assert.h>
+#include <sys/__assert.h>
 #include <toolchain.h>
 #include <linker/sections.h>
 #include <sw_isr_table.h>

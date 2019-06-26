@@ -9,7 +9,7 @@
 #include <kernel.h>
 #include <misc/byteorder.h>
 #include <drivers/sensor.h>
-#include <misc/__assert.h>
+#include <sys/__assert.h>
 
 #include "ms5837.h"
 

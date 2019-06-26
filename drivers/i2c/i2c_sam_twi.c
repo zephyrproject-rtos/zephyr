@@ -13,7 +13,7 @@
  */
 
 #include <errno.h>
-#include <misc/__assert.h>
+#include <sys/__assert.h>
 #include <stdbool.h>
 #include <kernel.h>
 #include <device.h>

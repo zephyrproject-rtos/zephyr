@@ -9,7 +9,7 @@
 #include <kernel.h>
 #include <arch/cpu.h>
 #include <linker/sections.h>
-#include <misc/__assert.h>
+#include <sys/__assert.h>
 #include <zephyr/types.h>
 #include <misc/util.h>
 #include <string.h>

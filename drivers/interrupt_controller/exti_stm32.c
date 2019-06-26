@@ -18,7 +18,7 @@
  */
 #include <device.h>
 #include <soc.h>
-#include <misc/__assert.h>
+#include <sys/__assert.h>
 #include "exti_stm32.h"
 
 #if defined(CONFIG_SOC_SERIES_STM32F0X) || \

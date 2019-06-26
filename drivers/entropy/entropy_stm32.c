@@ -9,7 +9,7 @@
 #include <drivers/entropy.h>
 #include <random/rand32.h>
 #include <init.h>
-#include <misc/__assert.h>
+#include <sys/__assert.h>
 #include <misc/util.h>
 #include <errno.h>
 #include <soc.h>

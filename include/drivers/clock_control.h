@@ -12,7 +12,7 @@
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <device.h>
-#include <misc/__assert.h>
+#include <sys/__assert.h>
 #include <misc/slist.h>
 
 #ifdef __cplusplus

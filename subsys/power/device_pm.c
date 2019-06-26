@@ -7,7 +7,7 @@
 #include <zephyr.h>
 #include <kernel.h>
 #include <device.h>
-#include <misc/__assert.h>
+#include <sys/__assert.h>
 
 #define LOG_LEVEL CONFIG_SYS_PM_LOG_LEVEL /* From power module Kconfig */
 #include <logging/log.h>

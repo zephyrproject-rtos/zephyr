@@ -43,7 +43,7 @@
 #include <misc/printk.h>
 #endif
 
-#include <misc/__assert.h>
+#include <sys/__assert.h>
 
 #define SEMAPHORES 1
 #define MUTEXES 2

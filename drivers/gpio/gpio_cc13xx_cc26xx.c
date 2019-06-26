@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/types.h>
-#include <misc/__assert.h>
+#include <sys/__assert.h>
 #include <device.h>
 #include <errno.h>
 #include <drivers/gpio.h>

@@ -7,7 +7,7 @@
  */
 
 #include <init.h>
-#include <misc/__assert.h>
+#include <sys/__assert.h>
 #include <misc/byteorder.h>
 #include <drivers/sensor.h>
 #include <string.h>
