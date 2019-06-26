@@ -11,7 +11,7 @@
 #include <linker/linker-defs.h>
 #include <misc/util.h>
 #include <kernel_internal.h>
-#include <misc/errno_private.h>
+#include <sys/errno_private.h>
 #include <misc/libc-hooks.h>
 #include <syscall_handler.h>
 #include <app_memory/app_memdomain.h>
