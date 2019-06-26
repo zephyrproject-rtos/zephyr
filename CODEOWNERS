@@ -117,6 +117,7 @@
 /drivers/bluetooth/                       @joerchan @jhedberg @Vudentz
 /drivers/can/                             @alexanderwachter
 /drivers/can/*mcp2515*                    @karstenkoenig
+/drivers/clock_control/*nrf*              @nordic-krch
 /drivers/counter/                         @nordic-krch
 /drivers/counter/counter_cmos.c           @gnuless
 /drivers/display/                         @vanwinkeljan
