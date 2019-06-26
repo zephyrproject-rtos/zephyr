@@ -7,7 +7,7 @@
  */
 
 #include <stdio.h>
-#include <misc/libc-hooks.h>
+#include <sys/libc-hooks.h>
 #include <syscall_handler.h>
 #include <string.h>
 

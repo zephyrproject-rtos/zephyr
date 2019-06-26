@@ -19,7 +19,7 @@
 #include <init.h>
 #include <stdbool.h>
 #include <app_memory/app_memdomain.h>
-#include <misc/libc-hooks.h>
+#include <sys/libc-hooks.h>
 #include <misc/mutex.h>
 
 #ifdef Z_LIBC_PARTITION_EXISTS

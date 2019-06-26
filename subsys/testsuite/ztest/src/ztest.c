@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <app_memory/app_memdomain.h>
 #ifdef CONFIG_USERSPACE
-#include <misc/libc-hooks.h>
+#include <sys/libc-hooks.h>
 #endif
 
 #ifdef KERNEL
