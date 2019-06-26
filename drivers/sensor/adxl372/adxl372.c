@@ -9,7 +9,7 @@
 #include <drivers/sensor.h>
 #include <init.h>
 #include <drivers/gpio.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 #include <sys/__assert.h>
 #include <stdlib.h>
 #include <drivers/spi.h>

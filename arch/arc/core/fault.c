@@ -17,7 +17,7 @@
 
 #include <kernel.h>
 #include <kernel_structs.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 #include <exc_handle.h>
 #include <logging/log_ctrl.h>
 

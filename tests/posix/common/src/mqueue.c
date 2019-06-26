@@ -6,7 +6,7 @@
 
 #include <ztest.h>
 #include <zephyr.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 #include <mqueue.h>
 #include <pthread.h>
 

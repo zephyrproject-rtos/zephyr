@@ -8,7 +8,7 @@
 #include <string.h>
 #include <zephyr.h>
 #include <shell/shell.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 #include <sys/byteorder.h>
 
 #include <bluetooth/hci.h>

@@ -80,7 +80,7 @@
 #endif
 
 #if __ASSERT_ON
-#include <misc/printk.h>
+#include <sys/printk.h>
 void assert_post_action(const char *file, unsigned int line);
 
 #define __ASSERT_LOC(test)                               \

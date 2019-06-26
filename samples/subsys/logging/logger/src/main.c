@@ -6,7 +6,7 @@
 
 #include <zephyr.h>
 #include <string.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 #include <logging/log_ctrl.h>
 #include "sample_instance.h"
 #include "sample_module.h"

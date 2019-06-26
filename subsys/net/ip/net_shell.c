@@ -21,7 +21,7 @@ LOG_MODULE_REGISTER(net_shell, LOG_LEVEL_DBG);
 
 #include <net/net_if.h>
 #include <net/dns_resolve.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 
 #include "route.h"
 #include "icmpv6.h"

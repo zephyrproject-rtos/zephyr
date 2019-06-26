@@ -16,7 +16,7 @@
 #include <misc/util.h>
 #include <sys/byteorder.h>
 #include <misc/stack.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 #include <string.h>
 
 #include <bluetooth/bluetooth.h>

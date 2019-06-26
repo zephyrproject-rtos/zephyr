@@ -21,7 +21,7 @@
 #include <kernel_structs.h>
 #include <wait_q.h>
 #include <mmustructs.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 
 /* forward declaration */
 

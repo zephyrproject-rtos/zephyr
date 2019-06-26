@@ -6,7 +6,7 @@
 
 #include <toolchain.h>
 #include <kernel_structs.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 
 void z_irq_spurious(void *unused)
 {

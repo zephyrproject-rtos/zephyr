@@ -10,7 +10,7 @@ LOG_MODULE_DECLARE(net_zperf_sample, LOG_LEVEL_DBG);
 #include <zephyr.h>
 
 #include <errno.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 
 #include <net/net_pkt.h>
 #include <net/net_ip.h>

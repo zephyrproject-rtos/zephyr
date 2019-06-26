@@ -7,7 +7,7 @@
 #include <string.h>
 
 #include <zephyr.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 #include <logging/log.h>
 #include <shell/shell.h>
 #include <shell/shell_uart.h>

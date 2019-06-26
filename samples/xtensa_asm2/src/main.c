@@ -6,7 +6,7 @@
 
 #include <zephyr.h>
 #include <string.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 #include <xtensa-asm2.h>
 
 #ifdef CONFIG_MULTITHREADING

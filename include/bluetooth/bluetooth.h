@@ -19,7 +19,7 @@
 
 #include <stdbool.h>
 #include <string.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 #include <misc/util.h>
 #include <net/buf.h>
 #include <bluetooth/hci.h>

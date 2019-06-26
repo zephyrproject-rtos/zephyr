@@ -13,7 +13,7 @@
 
 #include <string.h>
 #include <shell/shell.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 
 #define PRINT_DATA(fmt, ...) printk(fmt, ##__VA_ARGS__)
 

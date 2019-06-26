@@ -18,7 +18,7 @@
 #include <arch/cpu.h>
 #include <kernel_structs.h>
 #include <sys/__assert.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 #include <irq.h>
 #include <debug/tracing.h>
 #include <kswap.h>

@@ -13,7 +13,7 @@
 #include <init.h>
 #include <drivers/ipm.h>
 #include <arch/cpu.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 #include <sys/__assert.h>
 #include <errno.h>
 #include "ipm_quark_se.h"

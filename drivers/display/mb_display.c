@@ -16,7 +16,7 @@
 #include <drivers/gpio.h>
 #include <device.h>
 #include <string.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 
 #include <display/mb_display.h>
 

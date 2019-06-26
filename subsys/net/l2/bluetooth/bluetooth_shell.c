@@ -15,7 +15,7 @@ LOG_MODULE_REGISTER(net_bt_shell, CONFIG_NET_L2_BT_LOG_LEVEL);
 
 #include <shell/shell.h>
 #include <shell/shell_uart.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 
 #include <net/net_core.h>
 #include <net/net_l2.h>

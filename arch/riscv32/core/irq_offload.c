@@ -6,7 +6,7 @@
 
 #include <irq.h>
 #include <irq_offload.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 
 volatile irq_offload_routine_t _offload_routine;
 static volatile void *offload_param;

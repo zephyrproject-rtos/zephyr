@@ -8,7 +8,7 @@
 
 #include <zephyr.h>
 #include <drivers/ipm.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 #include <device.h>
 #include <stdio.h>
 #include <stdlib.h>

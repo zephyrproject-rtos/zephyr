@@ -8,7 +8,7 @@
 #define MAIN_H
 
 #include <zephyr.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 #include <kernel_structs.h>
 #include <string.h>
 #include <stdlib.h>

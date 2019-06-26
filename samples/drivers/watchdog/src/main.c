@@ -8,7 +8,7 @@
 #include <zephyr.h>
 #include <device.h>
 #include <drivers/watchdog.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 
 #define WDT_FEED_TRIES 5
 

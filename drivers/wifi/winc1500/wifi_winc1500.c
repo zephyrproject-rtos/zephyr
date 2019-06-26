@@ -22,7 +22,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <net/net_offload.h>
 #include <net/wifi_mgmt.h>
 
-#include <misc/printk.h>
+#include <sys/printk.h>
 
 /* We do not need <socket/include/socket.h>
  * It seems there is a bug in ASF side: if OS is already defining sockaddr

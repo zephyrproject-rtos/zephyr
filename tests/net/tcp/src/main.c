@@ -18,7 +18,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_TCP_LOG_LEVEL);
 #include <errno.h>
 #include <device.h>
 #include <init.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 #include <net/buf.h>
 #include <net/net_core.h>
 #include <net/net_pkt.h>

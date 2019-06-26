@@ -8,7 +8,7 @@
 
 #include <device.h>
 #include <drivers/counter.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 
 #define DELAY 2000000
 #define ALARM_CHANNEL_ID 0

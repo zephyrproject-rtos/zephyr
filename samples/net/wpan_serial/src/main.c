@@ -21,7 +21,7 @@ LOG_MODULE_REGISTER(net_wpan_serial_sample, LOG_LEVEL_DBG);
 #include <zephyr.h>
 #include <stdio.h>
 
-#include <misc/printk.h>
+#include <sys/printk.h>
 
 #include <net/buf.h>
 

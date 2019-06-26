@@ -8,7 +8,7 @@
 #include <device.h>
 #include <drivers/sensor.h>
 #include <stdio.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 #ifdef CONFIG_SX9500_TRIGGER
 
 static void sensor_trigger_handler(struct device *dev, struct sensor_trigger *trig)

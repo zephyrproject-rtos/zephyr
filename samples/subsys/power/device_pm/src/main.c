@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <misc/printk.h>
+#include <sys/printk.h>
 #include "dummy_driver.h"
 
 /* Application main Thread */

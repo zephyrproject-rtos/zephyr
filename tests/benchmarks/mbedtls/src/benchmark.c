@@ -72,7 +72,7 @@
 
 #include "kernel.h"
 
-#include <misc/printk.h>
+#include <sys/printk.h>
 #define  MBEDTLS_PRINT ((int(*)(const char *, ...)) printk)
 
 static void my_debug(void *ctx, int level,

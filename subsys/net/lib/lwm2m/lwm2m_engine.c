@@ -31,7 +31,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <ctype.h>
 #include <errno.h>
 #include <init.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 #include <net/net_ip.h>
 #include <net/http_parser_url.h>
 #include <net/socket.h>

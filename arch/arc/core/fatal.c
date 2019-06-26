@@ -16,7 +16,7 @@
 #include <offsets_short.h>
 #include <toolchain.h>
 #include <arch/cpu.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 #include <logging/log_ctrl.h>
 
 /**

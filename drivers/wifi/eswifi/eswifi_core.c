@@ -27,7 +27,7 @@ LOG_MODULE_REGISTER(wifi_eswifi_core);
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <misc/printk.h>
+#include <sys/printk.h>
 
 #include "eswifi.h"
 

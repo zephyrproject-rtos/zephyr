@@ -10,7 +10,7 @@
 
 #include <kernel.h>
 #include <sys/ring_buffer.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 #include <stdio.h>
 #include <drivers/ipm.h>
 #include <console/ipm_console.h>

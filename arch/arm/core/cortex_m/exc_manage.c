@@ -12,7 +12,7 @@
 #include <arch/cpu.h>
 #include <inttypes.h>
 
-#include <misc/printk.h>
+#include <sys/printk.h>
 void sys_exc_esf_dump(NANO_ESF *esf)
 {
 	printk("r0/a1:  0x%08x  ", esf->basic.a1);

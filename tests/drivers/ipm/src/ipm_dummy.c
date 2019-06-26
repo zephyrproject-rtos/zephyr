@@ -11,7 +11,7 @@
 #include <errno.h>
 #include <device.h>
 #include <init.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 #include <irq_offload.h>
 
 #include "ipm_dummy.h"

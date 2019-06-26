@@ -6,7 +6,7 @@
 
 #include <zephyr.h>
 
-#include <misc/printk.h>
+#include <sys/printk.h>
 #include <sys_clock.h>
 #include <stdio.h>
 

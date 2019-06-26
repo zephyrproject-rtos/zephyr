@@ -7,7 +7,7 @@
 #include <zephyr.h>
 #include <device.h>
 #include <drivers/gpio.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 #include <sys/__assert.h>
 #include <string.h>
 
