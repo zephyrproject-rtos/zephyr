@@ -10,7 +10,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <kernel.h>
-#include <misc/byteorder.h>
+#include <sys/byteorder.h>
 #include <usb/usb_device.h>
 #include <device.h>
 

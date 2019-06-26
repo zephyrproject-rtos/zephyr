@@ -46,7 +46,7 @@
 #include <storage/flash_map.h>
 #include <dfu/mcuboot.h>
 #include <dfu/flash_img.h>
-#include <misc/byteorder.h>
+#include <sys/byteorder.h>
 #include <usb/usb_device.h>
 #include <usb/usb_common.h>
 #include <usb/class/usb_dfu.h>

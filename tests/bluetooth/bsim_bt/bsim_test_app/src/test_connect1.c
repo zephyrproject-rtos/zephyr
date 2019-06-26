@@ -22,7 +22,7 @@
 #include <bluetooth/conn.h>
 #include <bluetooth/uuid.h>
 #include <bluetooth/gatt.h>
-#include <misc/byteorder.h>
+#include <sys/byteorder.h>
 
 static struct bt_conn *default_conn;
 

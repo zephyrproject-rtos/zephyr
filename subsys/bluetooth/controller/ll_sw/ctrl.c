@@ -15,7 +15,7 @@
 #include <drivers/clock_control.h>
 #include <bluetooth/hci.h>
 #include <misc/util.h>
-#include <misc/byteorder.h>
+#include <sys/byteorder.h>
 
 #include "ll.h"
 #include "ll_feat.h"

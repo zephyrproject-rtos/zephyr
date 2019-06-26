@@ -11,7 +11,7 @@
 #include <init.h>
 #include <drivers/gpio.h>
 #include <drivers/i2c.h>
-#include <misc/byteorder.h>
+#include <sys/byteorder.h>
 #include <misc/util.h>
 
 #ifdef CONFIG_HAS_DTS_I2C

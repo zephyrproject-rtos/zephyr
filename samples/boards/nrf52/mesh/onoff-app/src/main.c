@@ -38,7 +38,7 @@
 
 #include <misc/printk.h>
 #include <settings/settings.h>
-#include <misc/byteorder.h>
+#include <sys/byteorder.h>
 #include <nrf.h>
 #include <device.h>
 #include <drivers/gpio.h>

@@ -22,7 +22,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <net/net_if.h>
 #include <net/net_pkt.h>
 
-#include <misc/byteorder.h>
+#include <sys/byteorder.h>
 #include <string.h>
 #include <random/rand32.h>
 

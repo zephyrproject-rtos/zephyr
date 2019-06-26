@@ -13,7 +13,7 @@
 
 #include <toolchain.h>
 #include <bluetooth/bluetooth.h>
-#include <misc/byteorder.h>
+#include <sys/byteorder.h>
 #include <console/uart_pipe.h>
 
 #include <logging/log.h>

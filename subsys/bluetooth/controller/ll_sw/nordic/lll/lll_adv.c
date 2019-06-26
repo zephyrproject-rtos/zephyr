@@ -8,7 +8,7 @@
 #include <stddef.h>
 
 #include <zephyr/types.h>
-#include <misc/byteorder.h>
+#include <sys/byteorder.h>
 
 #include <toolchain.h>
 #include <bluetooth/hci.h>

@@ -12,7 +12,7 @@
 
 #include <zephyr.h>
 #include <arch/cpu.h>
-#include <misc/byteorder.h>
+#include <sys/byteorder.h>
 #include <logging/log.h>
 #include <misc/util.h>
 

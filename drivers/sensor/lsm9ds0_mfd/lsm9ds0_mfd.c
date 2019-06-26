@@ -13,7 +13,7 @@
 #include <device.h>
 #include <init.h>
 #include <drivers/i2c.h>
-#include <misc/byteorder.h>
+#include <sys/byteorder.h>
 #include <drivers/gpio.h>
 #include <logging/log.h>
 

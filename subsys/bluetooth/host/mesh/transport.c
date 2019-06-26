@@ -11,7 +11,7 @@
 #include <string.h>
 #include <sys/types.h>
 #include <misc/util.h>
-#include <misc/byteorder.h>
+#include <sys/byteorder.h>
 
 #include <net/buf.h>
 

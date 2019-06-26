@@ -19,7 +19,7 @@
 #include <bluetooth/buf.h>
 #include <bluetooth/bluetooth.h>
 #include <drivers/bluetooth/hci_driver.h>
-#include <misc/byteorder.h>
+#include <sys/byteorder.h>
 #include <misc/util.h>
 
 #include "util/util.h"

@@ -11,7 +11,7 @@
 #include <stdio.h>
 
 #include <zephyr.h>
-#include <misc/byteorder.h>
+#include <sys/byteorder.h>
 #include <logging/log.h>
 #include <misc/stack.h>
 

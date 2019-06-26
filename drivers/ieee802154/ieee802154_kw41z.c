@@ -20,7 +20,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <net/ieee802154_radio.h>
 #include <net/net_if.h>
 #include <net/net_pkt.h>
-#include <misc/byteorder.h>
+#include <sys/byteorder.h>
 #include <random/rand32.h>
 
 #include "fsl_xcvr.h"

@@ -65,7 +65,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <string.h>
 #include <stdint.h>
-#include <misc/byteorder.h>
+#include <sys/byteorder.h>
 
 #include "lwm2m_rw_oma_tlv.h"
 #include "lwm2m_engine.h"

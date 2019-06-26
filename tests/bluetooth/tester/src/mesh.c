@@ -11,7 +11,7 @@
 #include <errno.h>
 #include <bluetooth/mesh.h>
 #include <bluetooth/testing.h>
-#include <misc/byteorder.h>
+#include <sys/byteorder.h>
 
 #include <logging/log.h>
 #define LOG_MODULE_NAME bttester_mesh

@@ -68,7 +68,7 @@
 #include "mbedtls/debug.h"
 
 #include <zephyr/types.h>
-#include <misc/byteorder.h>
+#include <sys/byteorder.h>
 
 #include "kernel.h"
 

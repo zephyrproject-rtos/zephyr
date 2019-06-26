@@ -9,7 +9,7 @@
 #include <drivers/can.h>
 #include <drivers/clock_control.h>
 #include <device.h>
-#include <misc/byteorder.h>
+#include <sys/byteorder.h>
 #include <fsl_flexcan.h>
 
 #define LOG_LEVEL CONFIG_CAN_LOG_LEVEL

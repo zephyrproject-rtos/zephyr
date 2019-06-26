@@ -36,7 +36,7 @@
 #include <init.h>
 #include <errno.h>
 #include <string.h>
-#include <misc/byteorder.h>
+#include <sys/byteorder.h>
 #include <sys/__assert.h>
 #include <disk/disk_access.h>
 #include <usb/class/usb_msc.h>

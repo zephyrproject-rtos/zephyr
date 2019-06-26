@@ -18,7 +18,7 @@
 
 #include <misc/util.h>
 #include <misc/stack.h>
-#include <misc/byteorder.h>
+#include <sys/byteorder.h>
 
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/hci.h>

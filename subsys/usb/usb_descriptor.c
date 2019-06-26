@@ -8,7 +8,7 @@
  */
 
 #include <string.h>
-#include <misc/byteorder.h>
+#include <sys/byteorder.h>
 #include <sys/__assert.h>
 #include <usb/usbstruct.h>
 #include <usb/usb_device.h>

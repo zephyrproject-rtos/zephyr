@@ -9,7 +9,7 @@
 #include <stdbool.h>
 #include <errno.h>
 #include <sys/crc.h>
-#include <misc/byteorder.h>
+#include <sys/byteorder.h>
 #include <net/buf.h>
 #include <sys/base64.h>
 #include <mgmt/buf.h>

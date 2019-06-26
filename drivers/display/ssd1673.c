@@ -14,7 +14,7 @@ LOG_MODULE_REGISTER(ssd1673);
 #include <init.h>
 #include <drivers/gpio.h>
 #include <drivers/spi.h>
-#include <misc/byteorder.h>
+#include <sys/byteorder.h>
 
 #include "ssd1673_regs.h"
 #include <display/cfb.h>

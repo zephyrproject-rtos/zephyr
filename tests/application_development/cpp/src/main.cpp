@@ -17,7 +17,7 @@
 #include <device.h>
 #include <kernel.h>
 #include <net/buf.h>
-#include <misc/byteorder.h>
+#include <sys/byteorder.h>
 #include <sys/crc.h>
 #include <sys/crc.h>
 

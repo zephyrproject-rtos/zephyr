@@ -14,7 +14,7 @@
 #include <init.h>
 #include <drivers/uart.h>
 #include <misc/util.h>
-#include <misc/byteorder.h>
+#include <sys/byteorder.h>
 #include <misc/stack.h>
 #include <misc/printk.h>
 #include <string.h>

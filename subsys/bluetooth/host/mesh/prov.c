@@ -10,7 +10,7 @@
 #include <errno.h>
 #include <sys/atomic.h>
 #include <misc/util.h>
-#include <misc/byteorder.h>
+#include <sys/byteorder.h>
 
 #include <net/buf.h>
 #include <bluetooth/bluetooth.h>

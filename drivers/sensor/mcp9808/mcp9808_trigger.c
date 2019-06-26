@@ -9,7 +9,7 @@
 #include <errno.h>
 #include <kernel.h>
 #include <drivers/i2c.h>
-#include <misc/byteorder.h>
+#include <sys/byteorder.h>
 #include <sys/__assert.h>
 
 #include "mcp9808.h"

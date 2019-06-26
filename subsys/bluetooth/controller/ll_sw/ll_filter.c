@@ -7,7 +7,7 @@
 #include <string.h>
 
 #include <zephyr.h>
-#include <misc/byteorder.h>
+#include <sys/byteorder.h>
 #include <bluetooth/hci.h>
 
 #include "util/util.h"

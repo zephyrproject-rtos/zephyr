@@ -11,7 +11,7 @@
 #include <init.h>
 #include <drivers/sensor.h>
 #include <drivers/i2c.h>
-#include <misc/byteorder.h>
+#include <sys/byteorder.h>
 #include <kernel.h>
 #include <drivers/gpio.h>
 #include <logging/log.h>

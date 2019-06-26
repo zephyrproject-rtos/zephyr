@@ -16,7 +16,7 @@
 
 #include <string.h>
 #include <stdio.h>
-#include <misc/byteorder.h>
+#include <sys/byteorder.h>
 #include <usb/usb_device.h>
 #include "usb_dw_registers.h"
 #include <soc.h>
