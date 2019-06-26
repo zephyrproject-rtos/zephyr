@@ -30,7 +30,7 @@ manifest:
   # Please add items below based on alphabetical order
   projects:
     - name: ci-tools
-      revision: 672cb7623b89a41370f95881290a97cccdc35cb0
+      revision: pull/70/head
       path: tools/ci-tools
     - name: esp-idf
       revision: 6835bfc741bf15e98fb7971293913f770df6081f
