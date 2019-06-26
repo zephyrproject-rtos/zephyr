@@ -9,3 +9,4 @@ Networking Technologies
    ethernet.rst
    ieee802154.rst
    thread.rst
+   ppp.rst
