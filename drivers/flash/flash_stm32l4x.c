@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2017 Linaro Limited
  * Copyright (c) 2017 BayLibre, SAS
+ * Copyright (c) 2019 Centaur Analytics, Inc
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -114,7 +115,20 @@ static int erase_page(struct device *dev, unsigned int page)
 {
 	struct stm32l4x_flash *regs = FLASH_STM32_REGS(dev);
 	u32_t tmp;
+	u16_t pages_per_bank;
 	int rc;
+
+#if DT_FLASH_SIZE == 1024
+	/* The SOC has 1MB of FLASH with DUALBANKing by design */
+	pages_per_bank = 256U;
+#elif DT_FLASH_SIZE < 1024
+#ifdef FLASH_OPTR_DUALBANK
+	/* DUALBANKing is used, so find the correct number of pages per bank */
+	pages_per_bank = DT_FLASH_SIZE >> 2; /* Also there are two banks */
+#else
+	pages_per_bank = DT_FLASH_SIZE >> 1; /* Each page is of 2KB size */
+#endif /* FLASH_OPTR_DUALBANK */
+#endif
 
 	/* if the control register is locked, do not fail silently */
 	if (regs->cr & FLASH_CR_LOCK) {
@@ -132,11 +146,11 @@ static int erase_page(struct device *dev, unsigned int page)
 #ifdef FLASH_CR_BKER
 	regs->cr &= ~FLASH_CR_BKER_Msk;
 	/* Select bank, only for DUALBANK devices */
-	if (page >= 256U)
+	if (page >= pages_per_bank)
 		regs->cr |= FLASH_CR_BKER;
 #endif
 	regs->cr &= ~FLASH_CR_PNB_Msk;
-	regs->cr |= ((page % 256) << 3);
+	regs->cr |= ((page % pages_per_bank) << 3);
 
 	/* Set the STRT bit */
 	regs->cr |= FLASH_CR_STRT;
