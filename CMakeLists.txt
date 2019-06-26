@@ -69,11 +69,6 @@ set_property(   GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT elf32-little${ARCH}) # BF
 # https://cmake.org/cmake/help/latest/manual/cmake-buildsystem.7.html#interface-libraries
 add_library(zephyr_interface INTERFACE)
 
-# "zephyr" is a catch-all CMake library for source files that can be
-# built purely with the include paths, defines, and other compiler
-# flags that come with zephyr_interface.
-zephyr_library_named(zephyr)
-
 zephyr_include_directories(
   kernel/include
   ${ARCH_DIR}/${ARCH}/include

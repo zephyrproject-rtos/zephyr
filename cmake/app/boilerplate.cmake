@@ -460,6 +460,23 @@ if(NOT DEFINED USER_CACHE_DIR)
 endif()
 message(STATUS "Cache files will be written to: ${USER_CACHE_DIR}")
 
+# ZEPHYR_TARGET is available for setting properties on that are
+# "global" to the build (i.e. apply to targets from the Zephyr
+# repository, modules, etc.). Use "TARGET ${ZEPHYR_TARGET}" instead of
+# "GLOBAL" when defining or accessing such properties.
+#
+# (We use "zephyr" rather than "logical_target_for_zephyr_elf" as the
+# latter is not bound until fairly late in generation. The indirection
+# through a variable lets us change the decision of what target to use
+# easily without having to introduce wrappers around get_property()
+# and set_property() in extensions.cmake.)
+set(ZEPHYR_TARGET zephyr)
+
+# "zephyr" is a catch-all CMake library for source files that can be
+# built purely with the include paths, defines, and other compiler
+# flags that come with zephyr_interface.
+zephyr_library_named(zephyr)
+
 include(${BOARD_DIR}/board.cmake OPTIONAL)
 
 # If we are using a suitable ethernet driver inside qemu, then these options
