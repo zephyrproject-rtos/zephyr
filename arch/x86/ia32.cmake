@@ -9,13 +9,15 @@ else()
   zephyr_compile_definitions(PERF_OPT)
 endif()
 
+define_property(TARGET PROPERTY PROPERTY_OUTPUT_ARCH BRIEF_DOCS " " FULL_DOCS " ")
+
 if(CONFIG_X86_IAMCU)
   set_property(TARGET   ${ZEPHYR_TARGET} APPEND PROPERTY   PROPERTY_LINKER_SCRIPT_DEFINES -D__IAMCU)
-  set_target_properties(${ZEPHYR_TARGET}        PROPERTIES PROPERTY_OUTPUT_FORMAT         "elf32-iamcu")
-  set_property(GLOBAL                           PROPERTY   PROPERTY_OUTPUT_ARCH           "iamcu:intel")
+  set_target_properties(${ZEPHYR_TARGET}        PROPERTIES PROPERTY_OUTPUT_FORMAT         "elf32-iamcu"
+                                                           PROPERTY_OUTPUT_ARCH           "iamcu:intel")
 else()
-  set_property(GLOBAL                    PROPERTY   PROPERTY_OUTPUT_ARCH   "i386")
-  set_target_properties(${ZEPHYR_TARGET} PROPERTIES PROPERTY_OUTPUT_FORMAT "elf32-i386")
+  set_target_properties(${ZEPHYR_TARGET} PROPERTIES PROPERTY_OUTPUT_ARCH   "i386"
+                                                    PROPERTY_OUTPUT_FORMAT "elf32-i386")
 endif()
 
 
@@ -42,8 +44,6 @@ else()
 endif()
 
 set(GENIDT ${ZEPHYR_BASE}/arch/x86/gen_idt.py)
-
-define_property(GLOBAL PROPERTY PROPERTY_OUTPUT_ARCH BRIEF_DOCS " " FULL_DOCS " ")
 
 # Use gen_idt.py and objcopy to generate irq_int_vector_map.o,
 # irq_vectors_alloc.o, and staticIdt.o from the elf file ${ZEPHYR_PREBUILT_EXECUTABLE}
@@ -74,7 +74,7 @@ add_custom_command(
 # Must be last so that soc/ can override default exception handlers
 add_subdirectory(core)
 
-get_property(       OUTPUT_ARCH   GLOBAL  PROPERTY PROPERTY_OUTPUT_ARCH)
+get_target_property(OUTPUT_ARCH   ${ZEPHYR_TARGET} PROPERTY_OUTPUT_ARCH)
 get_target_property(OUTPUT_FORMAT ${ZEPHYR_TARGET} PROPERTY_OUTPUT_FORMAT)
 
 # Convert the .bin file argument to a .o file, create a wrapper
