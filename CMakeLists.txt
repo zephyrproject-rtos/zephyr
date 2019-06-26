@@ -86,6 +86,12 @@ set_target_properties(${ZEPHYR_TARGET} PROPERTIES GENERATED_KERNEL_OBJECT_FILES 
 define_property(TARGET                 PROPERTY   PROPERTY_OUTPUT_FORMAT BRIEF_DOCS " " FULL_DOCS " ")
 set_target_properties(${ZEPHYR_TARGET} PROPERTIES PROPERTY_OUTPUT_FORMAT elf32-little${ARCH}) # BFD format
 
+define_property(TARGET PROPERTY ZEPHYR_INTERFACE_LIBS
+    BRIEF_DOCS "Global list of all Zephyr interface libs that should be linked in."
+    FULL_DOCS  "Global list of all Zephyr interface libs that should be linked in.
+zephyr_interface_library_named() appends libs to this list.")
+set_target_properties(${ZEPHYR_TARGET} PROPERTIES ZEPHYR_INTERFACE_LIBS "")
+
 zephyr_include_directories(
   kernel/include
   ${ARCH_DIR}/${ARCH}/include
@@ -652,7 +658,7 @@ zephyr_get_include_directories_for_lang(C ZEPHYR_INCLUDES)
 add_subdirectory(kernel)
 
 # Read list content
-get_property(ZEPHYR_LIBS_PROPERTY GLOBAL PROPERTY ZEPHYR_LIBS)
+get_target_property(ZEPHYR_LIBS_PROPERTY ${ZEPHYR_TARGET} ZEPHYR_LIBS)
 
 foreach(zephyr_lib ${ZEPHYR_LIBS_PROPERTY})
   # TODO: Could this become an INTERFACE property of zephyr_interface?

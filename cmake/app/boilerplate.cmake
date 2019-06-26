@@ -28,18 +28,6 @@ cmake_policy(SET CMP0002 NEW)
 # CMP0079: "target_link_libraries() allows use with targets in other directories"
 cmake_policy(SET CMP0079 OLD)
 
-define_property(GLOBAL PROPERTY ZEPHYR_LIBS
-    BRIEF_DOCS "Global list of all Zephyr CMake libs that should be linked in"
-    FULL_DOCS  "Global list of all Zephyr CMake libs that should be linked in.
-zephyr_library() appends libs to this list.")
-set_property(GLOBAL PROPERTY ZEPHYR_LIBS "")
-
-define_property(GLOBAL PROPERTY ZEPHYR_INTERFACE_LIBS
-    BRIEF_DOCS "Global list of all Zephyr interface libs that should be linked in."
-    FULL_DOCS  "Global list of all Zephyr interface libs that should be linked in.
-zephyr_interface_library_named() appends libs to this list.")
-set_property(GLOBAL PROPERTY ZEPHYR_INTERFACE_LIBS "")
-
 set(APPLICATION_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR} CACHE PATH "Application Source Directory")
 set(APPLICATION_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR} CACHE PATH "Application Binary Directory")
 
@@ -501,7 +489,7 @@ add_subdirectory(${ZEPHYR_BASE} ${__build_dir})
 # done after 'add_subdirectory(${ZEPHYR_BASE} ${__build_dir})'
 # because interface libraries are defined while processing that
 # subdirectory.
-get_property(ZEPHYR_INTERFACE_LIBS_PROPERTY GLOBAL PROPERTY ZEPHYR_INTERFACE_LIBS)
+get_target_property(ZEPHYR_INTERFACE_LIBS_PROPERTY ${ZEPHYR_TARGET} ZEPHYR_INTERFACE_LIBS)
 foreach(boilerplate_lib ${ZEPHYR_INTERFACE_LIBS_PROPERTY})
   # Linking 'app' with 'boilerplate_lib' causes 'app' to inherit the INTERFACE
   # properties of 'boilerplate_lib'. The most common property is 'include
