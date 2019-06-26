@@ -86,7 +86,7 @@ static int settings_cmp(char const *val, size_t val_len, void *val_read_cb_ctx,
 	size_t len_read, exp_len;
 	size_t rem;
 	char buf[16];
-	int rc;
+	int rc = -EINVAL;
 	off_t off = 0;
 
 	for (rem = val_len; rem > 0; rem -= len_read) {
