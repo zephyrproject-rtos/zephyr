@@ -67,6 +67,6 @@ static int u32_count_trailing_zeros(u32_t x);
 static int u64_count_trailing_zeros(u64_t x);
 /**@}*/
 
-#include <misc/math_extras_impl.h>
+#include <sys/math_extras_impl.h>
 
 #endif /* ZEPHYR_INCLUDE_SYS_MATH_EXTRAS_H_ */
