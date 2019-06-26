@@ -20,7 +20,7 @@
 #include <wait_q.h>
 #include <ksched.h>
 #include <syscall_handler.h>
-#include <misc/slist.h>
+#include <sys/slist.h>
 #include <sys/dlist.h>
 #include <misc/util.h>
 #include <sys/__assert.h>

@@ -14,7 +14,7 @@
 #define ZEPHYR_INCLUDE_DRIVERS_GPIO_H_
 
 #include <sys/__assert.h>
-#include <misc/slist.h>
+#include <sys/slist.h>
 
 #include <zephyr/types.h>
 #include <stddef.h>

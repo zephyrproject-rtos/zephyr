@@ -22,7 +22,7 @@
 #include <sys/__assert.h>
 #include <sched_priq.h>
 #include <sys/dlist.h>
-#include <misc/slist.h>
+#include <sys/slist.h>
 #include <sys/sflist.h>
 #include <misc/util.h>
 #include <sys/mempool_base.h>

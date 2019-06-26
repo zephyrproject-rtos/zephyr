@@ -15,7 +15,7 @@ LOG_MODULE_REGISTER(net_route, CONFIG_NET_ROUTE_LOG_LEVEL);
 #include <kernel.h>
 #include <limits.h>
 #include <zephyr/types.h>
-#include <misc/slist.h>
+#include <sys/slist.h>
 
 #include <net/net_pkt.h>
 #include <net/net_core.h>

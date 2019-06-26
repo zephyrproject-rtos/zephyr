@@ -18,7 +18,7 @@
 #include "lll.h"
 
 #if defined(CONFIG_BT_LL_SW)
-#include <misc/slist.h>
+#include <sys/slist.h>
 #include "ctrl.h"
 #define ull_adv_is_enabled  ll_adv_is_enabled
 #define ull_scan_is_enabled ll_scan_is_enabled

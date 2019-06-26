@@ -13,7 +13,7 @@
 #include <sys/atomic.h>
 #include <sys/byteorder.h>
 #include <misc/util.h>
-#include <misc/slist.h>
+#include <sys/slist.h>
 #include <misc/stack.h>
 #include <sys/__assert.h>
 

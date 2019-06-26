@@ -13,7 +13,7 @@ extern "C" {
 
 #if defined(CONFIG_NET_ARP)
 
-#include <misc/slist.h>
+#include <sys/slist.h>
 #include <net/ethernet.h>
 
 /**

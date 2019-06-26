@@ -26,7 +26,7 @@
 #include <soc.h>
 #include <sys/sys_io.h>
 #include <sys/__assert.h>
-#include <misc/slist.h>
+#include <sys/slist.h>
 #include <misc/speculation.h>
 
 #include "gpio_utils.h"

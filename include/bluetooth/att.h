@@ -14,7 +14,7 @@
 extern "C" {
 #endif
 
-#include <misc/slist.h>
+#include <sys/slist.h>
 
 /* Error codes for Error response PDU */
 #define BT_ATT_ERR_INVALID_HANDLE		0x01

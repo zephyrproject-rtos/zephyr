@@ -22,7 +22,7 @@ extern "C" {
  * @{
  */
 
-#include <misc/slist.h>
+#include <sys/slist.h>
 #include <zephyr/types.h>
 
 /** @cond INTERNAL_HIDDEN */

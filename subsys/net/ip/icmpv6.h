@@ -13,7 +13,7 @@
 #ifndef __ICMPV6_H
 #define __ICMPV6_H
 
-#include <misc/slist.h>
+#include <sys/slist.h>
 #include <zephyr/types.h>
 
 #include <net/net_ip.h>
