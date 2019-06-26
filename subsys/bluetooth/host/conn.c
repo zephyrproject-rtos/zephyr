@@ -14,7 +14,7 @@
 #include <sys/byteorder.h>
 #include <sys/util.h>
 #include <sys/slist.h>
-#include <misc/stack.h>
+#include <debug/stack.h>
 #include <sys/__assert.h>
 
 #include <bluetooth/hci.h>

@@ -12,7 +12,7 @@
 #include <sys/atomic.h>
 #include <sys/byteorder.h>
 #include <sys/util.h>
-#include <misc/stack.h>
+#include <debug/stack.h>
 
 #include <bluetooth/hci.h>
 #include <bluetooth/bluetooth.h>

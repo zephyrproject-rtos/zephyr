@@ -7,7 +7,7 @@
 #include <ztest.h>
 #include <power/power.h>
 #include <irq_offload.h>
-#include <misc/stack.h>
+#include <debug/stack.h>
 
 #define SLEEP_MS 100
 #define NUM_OF_WORK 2

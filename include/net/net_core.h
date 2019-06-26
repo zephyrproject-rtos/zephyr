@@ -187,7 +187,7 @@ struct net_stack_info {
 #define NET_STACK_DEFINE_EMBEDDED(name, size) char name[size]
 
 #if defined(CONFIG_INIT_STACKS)
-#include <misc/stack.h>
+#include <debug/stack.h>
 
 static inline void net_analyze_stack_get_values(const char *stack,
 						size_t size,

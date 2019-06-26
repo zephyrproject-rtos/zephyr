@@ -10,7 +10,7 @@
 #include <init.h>
 #include <debug/object_tracing.h>
 #include <misc/reboot.h>
-#include <misc/stack.h>
+#include <debug/stack.h>
 #include <string.h>
 #include <device.h>
 

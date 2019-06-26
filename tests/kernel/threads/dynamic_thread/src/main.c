@@ -6,7 +6,7 @@
 
 #include <ztest.h>
 #include <irq_offload.h>
-#include <misc/stack.h>
+#include <debug/stack.h>
 
 #define STACKSIZE (256 + CONFIG_TEST_EXTRA_STACKSIZE)
 

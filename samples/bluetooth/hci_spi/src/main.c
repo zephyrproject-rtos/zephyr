@@ -13,7 +13,7 @@
 #include <zephyr.h>
 #include <sys/byteorder.h>
 #include <logging/log.h>
-#include <misc/stack.h>
+#include <debug/stack.h>
 
 #include <device.h>
 #include <init.h>
