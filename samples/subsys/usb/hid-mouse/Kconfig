@@ -7,4 +7,7 @@
 config USB_DEVICE_PID
 	default USB_PID_HID_MOUSE_SAMPLE
 
+config USB_DEVICE_REMOTE_WAKEUP
+	default SOC_NRF52840
+
 source "Kconfig.zephyr"
