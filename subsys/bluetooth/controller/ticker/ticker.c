@@ -149,8 +149,8 @@ struct ticker_user {
 /* Ticker instance
  */
 struct ticker_instance {
-	struct ticker_node *node;  /* Pointer to ticker nodes */
-	struct ticker_user *user;  /* Pointer to user nodes */
+	struct ticker_node *nodes; /* Pointer to ticker nodes */
+	struct ticker_user *users; /* Pointer to user nodes */
 	u8_t  count_node;	   /* Number of ticker nodes */
 	u8_t  count_user;	   /* Number of user nodes */
 	u8_t  ticks_elapsed_first; /* Index from which elapsed ticks count is
@@ -292,7 +292,7 @@ static void ticker_by_next_slot_get(struct ticker_instance *instance,
 	u32_t _ticks_to_expire;
 	u8_t _ticker_id_head;
 
-	node = instance->node;
+	node = instance->nodes;
 
 	_ticker_id_head = *ticker_id_head;
 	_ticks_to_expire = *ticks_to_expire;
@@ -353,7 +353,7 @@ static u8_t ticker_enqueue(struct ticker_instance *instance, u8_t id)
 	u8_t current;
 	u8_t collide;
 
-	node = &instance->node[0];
+	node = &instance->nodes[0];
 	ticker_new = &node[id];
 	ticks_to_expire = ticker_new->ticks_to_expire;
 
@@ -447,7 +447,7 @@ static u32_t ticker_dequeue(struct ticker_instance *instance, u8_t id)
 	/* Find the ticker's position in ticker node list while accumulating
 	 * ticks_to_expire
 	 */
-	node = &instance->node[0];
+	node = &instance->nodes[0];
 	previous = instance->ticker_id_head;
 	current = previous;
 	total = 0U;
@@ -536,7 +536,7 @@ void ticker_worker(void *param)
 	ticker_id_head = instance->ticker_id_head;
 
 	/* Expire all tickers within ticks_elapsed and collect ticks_expired */
-	node = &instance->node[0];
+	node = &instance->nodes[0];
 	while (ticker_id_head != TICKER_NULL) {
 		struct ticker_node *ticker;
 		u32_t ticks_to_expire;
@@ -887,8 +887,8 @@ static inline u8_t ticker_job_list_manage(struct ticker_instance *instance,
 	u8_t count_user;
 
 	pending = 0U;
-	node = &instance->node[0];
-	users = &instance->user[0];
+	node = &instance->nodes[0];
+	users = &instance->users[0];
 	count_user = instance->count_user;
 	/* Traverse users - highest id first */
 	while (count_user--) {
@@ -996,7 +996,7 @@ static inline void ticker_job_worker_bh(struct ticker_instance *instance,
 	struct ticker_node *node;
 	u32_t ticks_expired;
 
-	node = &instance->node[0];
+	node = &instance->nodes[0];
 	ticks_expired = 0U;
 	while (instance->ticker_id_head != TICKER_NULL) {
 		struct ticker_node *ticker;
@@ -1122,7 +1122,7 @@ static inline u32_t ticker_job_insert(struct ticker_instance *instance,
 				      struct ticker_node *ticker,
 				      u8_t *insert_head)
 {
-	struct ticker_node *node = &instance->node[0];
+	struct ticker_node *node = &instance->nodes[0];
 	u8_t id_collide;
 	u16_t skip;
 
@@ -1225,8 +1225,8 @@ static inline void ticker_job_list_insert(struct ticker_instance *instance,
 	struct ticker_user *users;
 	u8_t count_user;
 
-	node = &instance->node[0];
-	users = &instance->user[0];
+	node = &instance->nodes[0];
+	users = &instance->users[0];
 	count_user = instance->count_user;
 
 	/* Iterate through all user ids */
@@ -1354,7 +1354,7 @@ static inline void ticker_job_list_inquire(struct ticker_instance *instance)
 	struct ticker_user *users;
 	u8_t count_user;
 
-	users = &instance->user[0];
+	users = &instance->users[0];
 	count_user = instance->count_user;
 	/* Traverse user operation queue - first to last (with wrap) */
 	while (count_user--) {
@@ -1418,7 +1418,7 @@ static inline void ticker_job_compare_update(struct ticker_instance *instance,
 		}
 	}
 
-	ticker = &instance->node[instance->ticker_id_head];
+	ticker = &instance->nodes[instance->ticker_id_head];
 	ticks_to_expire = ticker->ticks_to_expire;
 
 	/* Iterate few times, if required, to ensure that compare is
@@ -1604,14 +1604,14 @@ u32_t ticker_init(u8_t instance_index, u8_t count_node, void *node,
 	}
 
 	instance->count_node = count_node;
-	instance->node = node;
+	instance->nodes = node;
 
 	instance->count_user = count_user;
-	instance->user = user;
+	instance->users = user;
 
 	/** @todo check if enough ticker_user_op supplied */
 
-	users = &instance->user[0];
+	users = &instance->users[0];
 	while (count_user--) {
 		users[count_user].user_op = user_op_;
 		user_op_ += users[count_user].count_user_op;
@@ -1712,7 +1712,7 @@ u32_t ticker_start(u8_t instance_index, u8_t user_id, u8_t ticker_id,
 	struct ticker_user *user;
 	u8_t last;
 
-	user = &instance->user[user_id];
+	user = &instance->users[user_id];
 
 	last = user->last + 1;
 	if (last >= user->count_user_op) {
@@ -1786,7 +1786,7 @@ u32_t ticker_update(u8_t instance_index, u8_t user_id, u8_t ticker_id,
 	struct ticker_user *user;
 	u8_t last;
 
-	user = &instance->user[user_id];
+	user = &instance->users[user_id];
 
 	last = user->last + 1;
 	if (last >= user->count_user_op) {
@@ -1844,7 +1844,7 @@ u32_t ticker_stop(u8_t instance_index, u8_t user_id, u8_t ticker_id,
 	struct ticker_user *user;
 	u8_t last;
 
-	user = &instance->user[user_id];
+	user = &instance->users[user_id];
 
 	last = user->last + 1;
 	if (last >= user->count_user_op) {
@@ -1902,7 +1902,7 @@ u32_t ticker_next_slot_get(u8_t instance_index, u8_t user_id, u8_t *ticker_id,
 	struct ticker_user *user;
 	u8_t last;
 
-	user = &instance->user[user_id];
+	user = &instance->users[user_id];
 
 	last = user->last + 1;
 	if (last >= user->count_user_op) {
@@ -1957,7 +1957,7 @@ u32_t ticker_job_idle_get(u8_t instance_index, u8_t user_id,
 	struct ticker_user *user;
 	u8_t last;
 
-	user = &instance->user[user_id];
+	user = &instance->users[user_id];
 
 	last = user->last + 1;
 	if (last >= user->count_user_op) {
