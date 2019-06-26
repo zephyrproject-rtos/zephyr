@@ -9,7 +9,7 @@
 #include <init.h>
 #include <errno.h>
 #include <sys/math_extras.h>
-#include <misc/mempool.h>
+#include <sys/mempool.h>
 #include <string.h>
 #include <app_memory/app_memdomain.h>
 
