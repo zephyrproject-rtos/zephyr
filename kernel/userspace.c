@@ -8,7 +8,7 @@
 #include <kernel.h>
 #include <string.h>
 #include <sys/math_extras.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 #include <misc/rb.h>
 #include <kernel_structs.h>
 #include <sys/sys_io.h>

@@ -29,7 +29,7 @@
 #include <toolchain.h>
 #include <linker/sections.h>
 #include <sys/atomic.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 #ifdef CONFIG_UART_CONSOLE_MCUMGR
 #include "mgmt/serial.h"
 #endif

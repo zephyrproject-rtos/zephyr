@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <device.h>
 #include <drivers/sensor.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 
 #define MAX_TEST_TIME	15000
 #define SLEEPTIME	300

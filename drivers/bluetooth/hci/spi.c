@@ -76,7 +76,7 @@ static K_THREAD_STACK_DEFINE(spi_rx_stack, 256);
 static struct k_thread spi_rx_thread_data;
 
 #if defined(CONFIG_BT_DEBUG_HCI_DRIVER)
-#include <misc/printk.h>
+#include <sys/printk.h>
 static inline void spi_dump_message(const u8_t *pre, u8_t *buf,
 				    u8_t size)
 {

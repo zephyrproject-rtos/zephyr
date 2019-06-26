@@ -10,7 +10,7 @@
 
 #include <device.h>
 #include <drivers/dma.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 #include <string.h>
 
 /* in millisecond */

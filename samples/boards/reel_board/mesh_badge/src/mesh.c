@@ -6,7 +6,7 @@
 
 #include <zephyr.h>
 #include <string.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/mesh.h>

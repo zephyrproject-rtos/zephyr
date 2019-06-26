@@ -7,7 +7,7 @@
 #include <string.h>
 #endif /* CONFIG_INIT_STACKS */
 #ifdef CONFIG_DEBUG
-#include <misc/printk.h>
+#include <sys/printk.h>
 #endif
 #include <kernel_structs.h>
 #include <wait_q.h>

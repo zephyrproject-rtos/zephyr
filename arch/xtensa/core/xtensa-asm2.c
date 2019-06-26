@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <misc/printk.h>
+#include <sys/printk.h>
 #include <string.h>
 #include <xtensa-asm2.h>
 #include <kernel.h>

@@ -12,7 +12,7 @@
 
 #include <kernel.h>
 #include <drivers/timer/system_timer.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 #include <misc/reboot.h>
 
 extern void sys_arch_reboot(int type);

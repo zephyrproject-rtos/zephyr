@@ -18,7 +18,7 @@
 #include <kernel.h>
 #include <init.h>
 #include <device.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 #include <sys/__assert.h>
 #include "soc.h"
 #include <drivers/uart.h>

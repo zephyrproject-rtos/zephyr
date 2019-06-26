@@ -7,7 +7,7 @@
 #include <zephyr.h>
 #include <device.h>
 #include <drivers/sensor.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 #include <sys/__assert.h>
 
 static void do_main(struct device *dev)

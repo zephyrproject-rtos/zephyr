@@ -54,7 +54,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <string.h>
 #include <errno.h>
 #include <init.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 
 #include "lwm2m_object.h"
 #include "lwm2m_engine.h"

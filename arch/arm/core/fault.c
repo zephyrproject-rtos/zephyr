@@ -21,7 +21,7 @@
 #include <logging/log_ctrl.h>
 
 #ifdef CONFIG_PRINTK
-#include <misc/printk.h>
+#include <sys/printk.h>
 #define PR_EXC(...) printk(__VA_ARGS__)
 #define STORE_xFAR(reg_var, reg) u32_t reg_var = (u32_t)reg
 #else

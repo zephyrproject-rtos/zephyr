@@ -7,7 +7,7 @@
  */
 
 #include <zephyr.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 
 /*
  * The hello world demo has two threads that utilize semaphores and sleeping

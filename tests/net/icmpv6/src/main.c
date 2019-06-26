@@ -13,7 +13,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_ICMPV6_LOG_LEVEL);
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <string.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 #include <linker/sections.h>
 
 #include <tc_util.h>

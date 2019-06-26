@@ -9,7 +9,7 @@
 LOG_MODULE_REGISTER(main);
 
 #include <zephyr.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 #include <string.h>
 #include <stdio.h>
 #include <ztest.h>

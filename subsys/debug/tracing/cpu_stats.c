@@ -5,7 +5,7 @@
  */
 
 #include <tracing_cpu_stats.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 
 enum cpu_state {
 	CPU_STATE_IDLE,

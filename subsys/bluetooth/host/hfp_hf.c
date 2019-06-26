@@ -10,7 +10,7 @@
 #include <sys/atomic.h>
 #include <sys/byteorder.h>
 #include <misc/util.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 
 #include <bluetooth/conn.h>
 

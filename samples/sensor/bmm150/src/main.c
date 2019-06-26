@@ -6,7 +6,7 @@
 
 #include <zephyr.h>
 #include <device.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 #include <drivers/sensor.h>
 #include <stdio.h>
 

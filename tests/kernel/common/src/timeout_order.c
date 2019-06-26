@@ -5,7 +5,7 @@
  */
 
 #include <kernel.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 #include <ztest.h>
 
 #define NUM_TIMEOUTS 3

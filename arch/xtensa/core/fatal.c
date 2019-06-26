@@ -8,7 +8,7 @@
 #include <kernel_structs.h>
 #include <inttypes.h>
 #include <kernel_arch_data.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 #include <xtensa/specreg.h>
 #include <logging/log_ctrl.h>
 

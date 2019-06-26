@@ -12,7 +12,7 @@
 
 #ifndef _ASMLANGUAGE
 #include <kernel.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 #include <sys/math_extras.h>
 #include <kernel_internal.h>
 #include <stdbool.h>

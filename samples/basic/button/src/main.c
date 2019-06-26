@@ -8,7 +8,7 @@
 #include <device.h>
 #include <drivers/gpio.h>
 #include <misc/util.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 
 /* change this to use another GPIO port */
 #ifndef SW0_GPIO_CONTROLLER

@@ -11,7 +11,7 @@
 #include <zephyr.h>
 #include <ztest.h>
 
-#include <misc/printk.h>
+#include <sys/printk.h>
 #include <arch/cpu.h>
 #include <tc_util.h>
 #if defined(CONFIG_ARCH_POSIX)

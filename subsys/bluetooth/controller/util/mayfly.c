@@ -7,7 +7,7 @@
 
 #include <stddef.h>
 #include <zephyr/types.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 #include "memq.h"
 #include "mayfly.h"
 

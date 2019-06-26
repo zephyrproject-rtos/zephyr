@@ -7,7 +7,7 @@
 #include <zephyr.h>
 #include <updatehub.h>
 #include <dfu/mcuboot.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 #include <logging/log.h>
 
 #if defined(CONFIG_UPDATEHUB_DTLS)

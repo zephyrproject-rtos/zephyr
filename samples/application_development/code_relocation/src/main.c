@@ -6,7 +6,7 @@
 
 #include <zephyr.h>
 #include <kernel.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 
 
 /* This function will allow execute from sram region.

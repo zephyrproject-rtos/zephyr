@@ -17,7 +17,7 @@
 #include <bluetooth/gatt.h>
 #include <bluetooth/uuid.h>
 #include <sys/byteorder.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 #include <net/buf.h>
 
 #include <logging/log.h>

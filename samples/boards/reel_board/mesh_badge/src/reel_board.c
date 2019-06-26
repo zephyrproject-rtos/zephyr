@@ -9,7 +9,7 @@
 #include <device.h>
 #include <drivers/gpio.h>
 #include <display/cfb.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 #include <drivers/flash.h>
 #include <drivers/sensor.h>
 

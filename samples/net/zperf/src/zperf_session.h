@@ -10,7 +10,7 @@
 #include <toolchain.h>
 
 #include <zephyr.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 
 #include <net/net_ip.h>
 #include <net/net_core.h>

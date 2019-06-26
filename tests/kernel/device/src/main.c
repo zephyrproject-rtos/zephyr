@@ -7,7 +7,7 @@
 #include <zephyr.h>
 #include <device.h>
 #include <ztest.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 
 
 #define DUMMY_PORT_1    "dummy"

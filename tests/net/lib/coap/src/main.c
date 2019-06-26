@@ -13,7 +13,7 @@ LOG_MODULE_REGISTER(net_test, LOG_LEVEL_DBG);
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 #include <kernel.h>
 
 #include <net/coap.h>

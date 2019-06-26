@@ -11,7 +11,7 @@
  */
 
 #include <errno.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 #include <net/net_context.h>
 #include <net/net_pkt.h>
 

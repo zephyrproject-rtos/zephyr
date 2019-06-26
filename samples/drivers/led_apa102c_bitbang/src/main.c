@@ -24,7 +24,7 @@
 
 #include <zephyr.h>
 
-#include <misc/printk.h>
+#include <sys/printk.h>
 
 #include <device.h>
 #include <drivers/gpio.h>

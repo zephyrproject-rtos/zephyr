@@ -13,7 +13,7 @@
  */
 
 #include <kernel.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 #include <stdarg.h>
 #include <toolchain.h>
 #include <linker/sections.h>

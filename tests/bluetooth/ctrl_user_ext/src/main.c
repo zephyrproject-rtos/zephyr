@@ -8,7 +8,7 @@
 
 #include <zephyr/types.h>
 #include <stddef.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 #include <ztest.h>
 
 #include <bluetooth/bluetooth.h>

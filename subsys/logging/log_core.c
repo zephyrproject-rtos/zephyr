@@ -9,7 +9,7 @@
 #include <logging/log_backend.h>
 #include <logging/log_ctrl.h>
 #include <logging/log_output.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 #include <init.h>
 #include <assert.h>
 #include <sys/atomic.h>

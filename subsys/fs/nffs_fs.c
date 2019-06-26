@@ -13,7 +13,7 @@
 #include <fs/fs.h>
 #include <sys/crc.h>
 #include <sys/__assert.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 #include <nffs/os.h>
 #include <nffs/nffs.h>
 

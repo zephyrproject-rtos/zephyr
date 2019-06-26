@@ -12,7 +12,7 @@
 #include <drivers/ipm.h>
 #include <ipm/ipm_quark_se.h>
 #include <sys/byteorder.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 #include <drivers/sensor.h>
 #include <zephyr.h>
 

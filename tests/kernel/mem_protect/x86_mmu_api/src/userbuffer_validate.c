@@ -5,7 +5,7 @@
  */
 
 #include <zephyr.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 #include <mmustructs.h>
 #include <arch/x86/arch.h>
 #include <linker/linker-defs.h>

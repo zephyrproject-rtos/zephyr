@@ -18,7 +18,7 @@
 #include <device.h>
 #include <shell/shell.h>
 
-#include <misc/printk.h>
+#include <sys/printk.h>
 
 #include "modem_receiver.h"
 

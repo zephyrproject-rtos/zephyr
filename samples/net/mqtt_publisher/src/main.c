@@ -11,7 +11,7 @@ LOG_MODULE_REGISTER(net_mqtt_publisher_sample, LOG_LEVEL_DBG);
 #include <net/socket.h>
 #include <net/mqtt.h>
 
-#include <misc/printk.h>
+#include <sys/printk.h>
 #include <string.h>
 #include <errno.h>
 

@@ -8,7 +8,7 @@
 
 #include <device.h>
 #include <drivers/rtc.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 
 #define ALARM (RTC_ALARM_SECOND)
 

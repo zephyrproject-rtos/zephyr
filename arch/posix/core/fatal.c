@@ -8,7 +8,7 @@
 #include <kernel.h>
 #include <arch/cpu.h>
 #include <kernel_structs.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 #include <inttypes.h>
 #include <logging/log_ctrl.h>
 #include "posix_soc_if.h"

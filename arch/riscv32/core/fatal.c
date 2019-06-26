@@ -7,7 +7,7 @@
 #include <kernel.h>
 #include <kernel_structs.h>
 #include <inttypes.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 #include <logging/log_ctrl.h>
 
 const NANO_ESF _default_esf = {

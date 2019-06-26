@@ -30,7 +30,7 @@
 #include <random/rand32.h>
 #include <kernel_arch_thread.h>
 #include <syscall.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 #include <arch/cpu.h>
 #include <misc/rb.h>
 #include <sys_clock.h>

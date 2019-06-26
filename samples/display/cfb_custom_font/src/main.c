@@ -7,7 +7,7 @@
 #include <zephyr.h>
 #include <device.h>
 #include <display/cfb.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 
 #include "cfb_font_dice.h"
 

@@ -23,7 +23,7 @@
 #include <string.h>
 #include <errno.h>
 
-#include <misc/printk.h>
+#include <sys/printk.h>
 #include <tc_util.h>
 #include <ztest.h>
 

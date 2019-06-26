@@ -6,7 +6,7 @@
 
 #include <zephyr.h>
 #include <kernel.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 #include <device.h>
 #include <drivers/can.h>
 #include <drivers/gpio.h>

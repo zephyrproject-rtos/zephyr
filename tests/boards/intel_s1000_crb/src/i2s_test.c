@@ -21,7 +21,7 @@
  */
 
 #include <zephyr.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 
 #include <device.h>
 #include <drivers/i2s.h>

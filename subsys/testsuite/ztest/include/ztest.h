@@ -46,7 +46,7 @@ extern "C" {
 #define CONFIG_PRINTK 1
 #endif
 
-#include <misc/printk.h>
+#include <sys/printk.h>
 #define PRINT printk
 
 #include <zephyr.h>

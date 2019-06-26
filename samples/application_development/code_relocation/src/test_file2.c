@@ -5,7 +5,7 @@
  */
 
 #include <zephyr.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 
 void function_in_sram(s32_t value)
 {
