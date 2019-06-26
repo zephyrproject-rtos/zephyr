@@ -47,7 +47,7 @@ static bool sane_partition(const struct k_mem_partition *part,
 		}
 #if defined(CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS)
 		/* Partitions overlap */
-		__ASSERT(false, "overlapping partitions <%x...%x>, <%x...%x>",
+		__ASSERT(false, "overlapping partitions <%lx...%x>, <%lx...%x>",
 			part->start, last,
 			parts[i].start, cur_last);
 		return false;
