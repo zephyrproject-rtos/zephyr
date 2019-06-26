@@ -9,7 +9,7 @@
 
 #include <kernel.h>
 #include <sys/mempool_base.h>
-#include <misc/mutex.h>
+#include <sys/mutex.h>
 
 struct sys_mem_pool {
 	struct sys_mem_pool_base base;

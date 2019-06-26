@@ -48,7 +48,7 @@
 #include <tc_util.h>
 #include <zephyr.h>
 #include <ztest.h>
-#include <misc/mutex.h>
+#include <sys/mutex.h>
 
 #define STACKSIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
 

@@ -9,7 +9,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 #include <stdio.h>
 #include <ztest_assert.h>
-#include <misc/mutex.h>
+#include <sys/mutex.h>
 #include <net/socket.h>
 #include <net/dns_resolve.h>
 #include <net/buf.h>

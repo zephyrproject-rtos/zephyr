@@ -5,7 +5,7 @@
  */
 
 #include <kernel.h>
-#include <misc/mutex.h>
+#include <sys/mutex.h>
 #include <syscall_handler.h>
 #include <kernel_structs.h>
 
