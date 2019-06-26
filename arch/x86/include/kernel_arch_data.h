@@ -37,7 +37,7 @@
 #include <kernel.h>
 #include <kernel_internal.h>
 #include <zephyr/types.h>
-#include <misc/dlist.h>
+#include <sys/dlist.h>
 #endif
 
 /* Some configurations require that the stack/registers be adjusted before

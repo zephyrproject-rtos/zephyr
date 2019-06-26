@@ -33,7 +33,7 @@ extern "C" {
 #include <kernel.h>            /* public kernel API */
 #include <kernel_internal.h>
 #include <zephyr/types.h>
-#include <misc/dlist.h>
+#include <sys/dlist.h>
 #include <misc/util.h>
 
 /* Bitmask definitions for the struct k_thread->flags bit field */

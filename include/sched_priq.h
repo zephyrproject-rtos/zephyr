@@ -7,7 +7,7 @@
 #define ZEPHYR_INCLUDE_SCHED_PRIQ_H_
 
 #include <misc/util.h>
-#include <misc/dlist.h>
+#include <sys/dlist.h>
 #include <misc/rb.h>
 
 /* Two abstractions are defined here for "thread priority queues".

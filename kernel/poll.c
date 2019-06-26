@@ -21,7 +21,7 @@
 #include <ksched.h>
 #include <syscall_handler.h>
 #include <misc/slist.h>
-#include <misc/dlist.h>
+#include <sys/dlist.h>
 #include <misc/util.h>
 #include <sys/__assert.h>
 #include <stdbool.h>

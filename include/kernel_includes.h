@@ -21,7 +21,7 @@
 #include <sys/atomic.h>
 #include <sys/__assert.h>
 #include <sched_priq.h>
-#include <misc/dlist.h>
+#include <sys/dlist.h>
 #include <misc/slist.h>
 #include <misc/sflist.h>
 #include <misc/util.h>

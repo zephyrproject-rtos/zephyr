@@ -9,7 +9,7 @@
 
 #include <zephyr.h>
 #include <misc/util.h>
-#include <misc/dlist.h>
+#include <sys/dlist.h>
 #include <sys/ring_buffer.h>
 #include <stdbool.h>
 

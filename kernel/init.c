@@ -26,7 +26,7 @@
 #include <ksched.h>
 #include <version.h>
 #include <string.h>
-#include <misc/dlist.h>
+#include <sys/dlist.h>
 #include <kernel_internal.h>
 #include <kswap.h>
 #include <drivers/entropy.h>

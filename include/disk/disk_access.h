@@ -19,7 +19,7 @@
 
 #include <kernel.h>
 #include <zephyr/types.h>
-#include <misc/dlist.h>
+#include <sys/dlist.h>
 
 #ifdef __cplusplus
 extern "C" {
