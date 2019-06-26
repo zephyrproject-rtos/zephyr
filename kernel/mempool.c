@@ -10,7 +10,7 @@
 #include <init.h>
 #include <string.h>
 #include <sys/__assert.h>
-#include <misc/math_extras.h>
+#include <sys/math_extras.h>
 #include <stdbool.h>
 
 static struct k_spinlock lock;

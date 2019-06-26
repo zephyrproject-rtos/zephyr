@@ -8,7 +8,7 @@
 #include <zephyr.h>
 #include <init.h>
 #include <errno.h>
-#include <misc/math_extras.h>
+#include <sys/math_extras.h>
 #include <misc/mempool.h>
 #include <string.h>
 #include <app_memory/app_memdomain.h>

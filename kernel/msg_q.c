@@ -18,7 +18,7 @@
 #include <string.h>
 #include <wait_q.h>
 #include <sys/dlist.h>
-#include <misc/math_extras.h>
+#include <sys/math_extras.h>
 #include <init.h>
 #include <syscall_handler.h>
 #include <kernel_internal.h>

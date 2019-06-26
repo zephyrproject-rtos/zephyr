@@ -7,7 +7,7 @@
 
 #include <kernel.h>
 #include <string.h>
-#include <misc/math_extras.h>
+#include <sys/math_extras.h>
 #include <misc/printk.h>
 #include <misc/rb.h>
 #include <kernel_structs.h>
