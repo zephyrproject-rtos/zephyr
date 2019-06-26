@@ -3325,6 +3325,12 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx,
 
 				_radio.conn_curr->llcp_phy.tx &= p->rx_phys;
 				_radio.conn_curr->llcp_phy.rx &= p->tx_phys;
+
+				if (!_radio.conn_curr->llcp_phy.tx ||
+				    !_radio.conn_curr->llcp_phy.rx) {
+					_radio.conn_curr->llcp_phy.tx = 0;
+					_radio.conn_curr->llcp_phy.rx = 0;
+				}
 			}
 		} else {
 			nack = phy_rsp_send(_radio.conn_curr, pdu_data_rx);
@@ -3350,6 +3356,12 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx,
 
 			_radio.conn_curr->llcp_phy.tx &= p->rx_phys;
 			_radio.conn_curr->llcp_phy.rx &= p->tx_phys;
+
+			if (!_radio.conn_curr->llcp_phy.tx ||
+			    !_radio.conn_curr->llcp_phy.rx) {
+				_radio.conn_curr->llcp_phy.tx = 0;
+				_radio.conn_curr->llcp_phy.rx = 0;
+			}
 
 			/* Procedure timeout is stopped */
 			_radio.conn_curr->procedure_expire = 0U;
