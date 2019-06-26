@@ -14,7 +14,7 @@
 #define __ROUTE_H
 
 #include <kernel.h>
-#include <misc/slist.h>
+#include <sys/slist.h>
 
 #include <net/net_ip.h>
 

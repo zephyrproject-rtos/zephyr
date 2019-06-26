@@ -12,7 +12,7 @@ extern "C" {
 #endif
 
 #ifdef CONFIG_PTHREAD_IPC
-#include <misc/slist.h>
+#include <sys/slist.h>
 #include <zephyr/types.h>
 
 typedef u32_t pthread_once_t;

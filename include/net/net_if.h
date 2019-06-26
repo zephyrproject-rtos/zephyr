@@ -20,7 +20,7 @@
  */
 
 #include <device.h>
-#include <misc/slist.h>
+#include <sys/slist.h>
 
 #include <net/net_core.h>
 #include <net/hostname.h>

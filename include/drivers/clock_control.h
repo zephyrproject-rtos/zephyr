@@ -13,7 +13,7 @@
 #include <stddef.h>
 #include <device.h>
 #include <sys/__assert.h>
-#include <misc/slist.h>
+#include <sys/slist.h>
 
 #ifdef __cplusplus
 extern "C" {

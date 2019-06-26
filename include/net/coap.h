@@ -25,7 +25,7 @@
 #include <stdbool.h>
 #include <net/net_ip.h>
 
-#include <misc/slist.h>
+#include <sys/slist.h>
 
 #ifdef __cplusplus
 extern "C" {

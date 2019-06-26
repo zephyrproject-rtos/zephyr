@@ -10,7 +10,7 @@
 #include <ksched.h>
 #include <wait_q.h>
 #include <posix/pthread.h>
-#include <misc/slist.h>
+#include <sys/slist.h>
 
 #define PTHREAD_INIT_FLAGS	PTHREAD_CANCEL_ENABLE
 #define PTHREAD_CANCELED	((void *) -1)

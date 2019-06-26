@@ -10,7 +10,7 @@
 
 #include <sys/types.h>
 #include <misc/util.h>
-#include <misc/slist.h>
+#include <sys/slist.h>
 #include <stdint.h>
 
 #ifdef __cplusplus
