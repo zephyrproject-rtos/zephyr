@@ -31,7 +31,7 @@
 #include <asm_inline.h>
 #include <exception.h>
 #include <kernel_arch_thread.h>
-#include <misc/util.h>
+#include <sys/util.h>
 
 #ifndef _ASMLANGUAGE
 #include <kernel.h>
@@ -110,7 +110,7 @@
 
 #ifndef _ASMLANGUAGE
 
-#include <misc/util.h>
+#include <sys/util.h>
 
 #ifdef _THREAD_WRAPPER_REQUIRED
 extern void z_x86_thread_entry_wrapper(k_thread_entry_t entry,

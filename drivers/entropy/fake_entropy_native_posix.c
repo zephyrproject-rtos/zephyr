@@ -14,7 +14,7 @@
 #include "device.h"
 #include <drivers/entropy.h>
 #include "init.h"
-#include "misc/util.h"
+#include <sys/util.h>
 #include <stdlib.h>
 #include <string.h>
 #include "posix_trace.h"

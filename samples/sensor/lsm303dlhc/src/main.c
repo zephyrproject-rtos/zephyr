@@ -8,7 +8,7 @@
 #include <device.h>
 #include <drivers/sensor.h>
 #include <stdio.h>
-#include <misc/util.h>
+#include <sys/util.h>
 
 static s32_t read_sensor(struct device *sensor, enum sensor_channel channel)
 {

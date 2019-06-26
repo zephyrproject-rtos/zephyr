@@ -6,7 +6,7 @@
 
 #include <kernel.h>
 #include <arch/cpu.h>
-#include <misc/util.h>
+#include <sys/util.h>
 #include <arch/arm/cortex_m/cmsis.h>
 
 /**

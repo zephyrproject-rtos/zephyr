@@ -12,7 +12,7 @@
 LOG_MODULE_REGISTER(net_conn, CONFIG_NET_CONN_LOG_LEVEL);
 
 #include <errno.h>
-#include <misc/util.h>
+#include <sys/util.h>
 
 #include <net/net_core.h>
 #include <net/net_pkt.h>

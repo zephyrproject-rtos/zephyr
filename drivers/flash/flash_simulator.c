@@ -8,7 +8,7 @@
 #include <drivers/flash.h>
 #include <init.h>
 #include <kernel.h>
-#include <misc/util.h>
+#include <sys/util.h>
 #include <random/rand32.h>
 #include <stats/stats.h>
 #include <string.h>

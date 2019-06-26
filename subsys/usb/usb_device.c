@@ -58,7 +58,7 @@
 
 #include <errno.h>
 #include <stddef.h>
-#include <misc/util.h>
+#include <sys/util.h>
 #include <sys/__assert.h>
 #include <init.h>
 #if defined(CONFIG_USB_VBUS_GPIO)

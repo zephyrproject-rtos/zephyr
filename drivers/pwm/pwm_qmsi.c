@@ -11,7 +11,7 @@
 #include <kernel.h>
 #include <init.h>
 #include <power/power.h>
-#include <misc/util.h>
+#include <sys/util.h>
 
 #include "qm_pwm.h"
 #include "clk.h"

@@ -6,7 +6,7 @@
 #ifndef ZEPHYR_INCLUDE_SCHED_PRIQ_H_
 #define ZEPHYR_INCLUDE_SCHED_PRIQ_H_
 
-#include <misc/util.h>
+#include <sys/util.h>
 #include <sys/dlist.h>
 #include <sys/rb.h>
 

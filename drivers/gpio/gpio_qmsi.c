@@ -11,7 +11,7 @@
 #include <drivers/gpio.h>
 #include <init.h>
 #include <sys/sys_io.h>
-#include <misc/util.h>
+#include <sys/util.h>
 
 #include "qm_gpio.h"
 #include "gpio_utils.h"

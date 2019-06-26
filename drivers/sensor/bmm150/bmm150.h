@@ -13,7 +13,7 @@
 #include <zephyr/types.h>
 #include <drivers/i2c.h>
 #include <stdint.h>
-#include <misc/util.h>
+#include <sys/util.h>
 
 #include <kernel.h>
 #include <device.h>

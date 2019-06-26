@@ -15,7 +15,7 @@ LOG_MODULE_REGISTER(ws2812);
 #include <zephyr.h>
 #include <device.h>
 #include <drivers/spi.h>
-#include <misc/util.h>
+#include <sys/util.h>
 
 /*
  * WS2812-ish SPI master configuration:

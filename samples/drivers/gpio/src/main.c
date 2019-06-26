@@ -18,7 +18,7 @@
 
 #include <device.h>
 #include <drivers/gpio.h>
-#include <misc/util.h>
+#include <sys/util.h>
 
 #if defined(SW0_GPIO_CONTROLLER) && defined(LED0_GPIO_CONTROLLER)
 #define GPIO_OUT_DRV_NAME LED0_GPIO_CONTROLLER

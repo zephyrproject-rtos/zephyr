@@ -29,7 +29,7 @@ extern "C" {
 
 #include <toolchain.h>
 #include <linker/sections.h>
-#include <misc/util.h>
+#include <sys/util.h>
 
 GTEXT(__start)
 GTEXT(_vector_table)

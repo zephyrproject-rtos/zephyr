@@ -9,7 +9,7 @@
 
 #include <device.h>
 #include <drivers/gpio.h>
-#include <misc/util.h>
+#include <sys/util.h>
 
 /* Registers */
 #define ENS210_REG_PART_ID    0x00

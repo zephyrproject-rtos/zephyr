@@ -24,7 +24,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <stdbool.h>
 #include <errno.h>
 #include <stddef.h>
-#include <misc/util.h>
+#include <sys/util.h>
 #include <net/ethernet.h>
 #include <net/buf.h>
 #include <net/net_pkt.h>

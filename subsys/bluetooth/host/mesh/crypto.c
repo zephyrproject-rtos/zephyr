@@ -12,7 +12,7 @@
 #include <toolchain.h>
 #include <zephyr/types.h>
 #include <sys/byteorder.h>
-#include <misc/util.h>
+#include <sys/util.h>
 
 #include <tinycrypt/constants.h>
 #include <tinycrypt/utils.h>

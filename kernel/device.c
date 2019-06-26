@@ -7,7 +7,7 @@
 #include <errno.h>
 #include <string.h>
 #include <device.h>
-#include <misc/util.h>
+#include <sys/util.h>
 #include <sys/atomic.h>
 #include <syscall_handler.h>
 

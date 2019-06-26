@@ -8,7 +8,7 @@
 #include <device.h>
 #include <drivers/gpio.h>
 #include <sys/printk.h>
-#include <misc/util.h>
+#include <sys/util.h>
 
 /* GPIO driver name */
 #define GPIO_DRV_NAME	CONFIG_GPIO_ALTERA_NIOS2_OUTPUT_DEV_NAME

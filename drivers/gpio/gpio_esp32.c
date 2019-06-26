@@ -15,7 +15,7 @@
 #include <device.h>
 #include <drivers/gpio.h>
 #include <kernel.h>
-#include <misc/util.h>
+#include <sys/util.h>
 #include <drivers/pinmux.h>
 
 #include "gpio_utils.h"

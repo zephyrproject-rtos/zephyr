@@ -10,7 +10,7 @@
 #include <random/rand32.h>
 #include <init.h>
 #include <sys/__assert.h>
-#include <misc/util.h>
+#include <sys/util.h>
 #include <errno.h>
 #include <soc.h>
 #include <sys/printk.h>

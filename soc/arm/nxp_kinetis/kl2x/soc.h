@@ -7,7 +7,7 @@
 #ifndef _SOC__H_
 #define _SOC__H_
 
-#include <misc/util.h>
+#include <sys/util.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -19,7 +19,7 @@ extern "C" {
 
 #include <fsl_common.h>
 #include <device.h>
-#include <misc/util.h>
+#include <sys/util.h>
 #include <random/rand32.h>
 
 #endif /* !_ASMLANGUAGE */

@@ -9,7 +9,7 @@
 
 #include <device.h>
 #include <drivers/gpio.h>
-#include <misc/util.h>
+#include <sys/util.h>
 
 /* Registers */
 #define CCS811_REG_STATUS		0x00

@@ -14,7 +14,7 @@
 #include <shell/shell_log_backend.h>
 #include <logging/log_instance.h>
 #include <logging/log.h>
-#include <misc/util.h>
+#include <sys/util.h>
 
 #ifdef __cplusplus
 extern "C" {

@@ -8,7 +8,7 @@
 #include <device.h>
 #include <drivers/sensor.h>
 #include <sys/printk.h>
-#include <misc/util.h>
+#include <sys/util.h>
 
 #ifdef CONFIG_GROVE_LCD_RGB
 #include <display/grove_lcd.h>

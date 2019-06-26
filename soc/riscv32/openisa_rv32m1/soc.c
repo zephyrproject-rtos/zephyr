@@ -9,7 +9,7 @@
 #include <device.h>
 #include <init.h>
 #include <fsl_clock.h>
-#include <misc/util.h>
+#include <sys/util.h>
 
 #if defined(CONFIG_MULTI_LEVEL_INTERRUPTS)
 #include <errno.h>

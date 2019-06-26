@@ -7,7 +7,7 @@
 #include <tc_util.h>
 #include <ztest.h>
 #include <arch/cpu.h>
-#include <misc/util.h>
+#include <sys/util.h>
 #include <irq_offload.h>
 #include <stdbool.h>
 

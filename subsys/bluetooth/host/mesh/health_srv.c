@@ -12,7 +12,7 @@
 #include <stdbool.h>
 #include <zephyr/types.h>
 #include <sys/byteorder.h>
-#include <misc/util.h>
+#include <sys/util.h>
 
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/mesh.h>

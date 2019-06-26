@@ -10,7 +10,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <sys/atomic.h>
-#include <misc/util.h>
+#include <sys/util.h>
 
 #include <settings/settings.h>
 

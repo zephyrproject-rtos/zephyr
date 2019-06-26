@@ -10,7 +10,7 @@
 
 #include <clock_control/stm32_clock_control.h>
 #include <drivers/clock_control.h>
-#include <misc/util.h>
+#include <sys/util.h>
 #include <kernel.h>
 #include <soc.h>
 #include <errno.h>

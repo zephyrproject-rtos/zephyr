@@ -15,7 +15,7 @@
 #include <errno.h>
 #include <string.h>
 #include <sys/atomic.h>
-#include <misc/util.h>
+#include <sys/util.h>
 #include <sys/byteorder.h>
 #include <misc/stack.h>
 

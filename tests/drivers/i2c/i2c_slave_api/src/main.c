@@ -14,7 +14,7 @@ LOG_MODULE_REGISTER(main);
 #include <zephyr.h>
 #include <device.h>
 #include <stdio.h>
-#include <misc/util.h>
+#include <sys/util.h>
 
 #include <drivers/i2c.h>
 #include <drivers/i2c/slave/eeprom.h>

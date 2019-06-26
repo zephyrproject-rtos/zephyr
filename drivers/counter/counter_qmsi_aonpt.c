@@ -12,7 +12,7 @@
 #include <drivers/counter.h>
 #include <power/power.h>
 #include <soc.h>
-#include <misc/util.h>
+#include <sys/util.h>
 
 #include "qm_aon_counters.h"
 #include "qm_isr.h"

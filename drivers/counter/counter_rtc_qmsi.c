@@ -13,7 +13,7 @@
 #include <kernel.h>
 #include <power/power.h>
 #include <soc.h>
-#include <misc/util.h>
+#include <sys/util.h>
 
 #include "qm_isr.h"
 #include "qm_rtc.h"

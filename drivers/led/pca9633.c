@@ -11,7 +11,7 @@
 
 #include <drivers/i2c.h>
 #include <drivers/led.h>
-#include <misc/util.h>
+#include <sys/util.h>
 #include <zephyr.h>
 
 #define LOG_LEVEL CONFIG_LED_LOG_LEVEL

@@ -12,7 +12,7 @@
 #include <pci/pci_mgr.h>
 #endif /* CONFIG_PCI */
 
-#include <misc/util.h>
+#include <sys/util.h>
 
 #ifdef __cplusplus
 extern "C" {

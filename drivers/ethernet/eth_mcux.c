@@ -20,7 +20,7 @@
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <device.h>
-#include <misc/util.h>
+#include <sys/util.h>
 #include <kernel.h>
 #include <net/net_pkt.h>
 #include <net/net_if.h>

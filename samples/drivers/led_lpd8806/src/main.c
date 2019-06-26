@@ -15,7 +15,7 @@ LOG_MODULE_REGISTER(main);
 #include <drivers/led_strip.h>
 #include <device.h>
 #include <drivers/spi.h>
-#include <misc/util.h>
+#include <sys/util.h>
 
 /*
  * Number of RGB LEDs in the LED strip, adjust as needed.

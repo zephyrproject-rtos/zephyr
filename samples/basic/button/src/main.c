@@ -7,7 +7,7 @@
 #include <zephyr.h>
 #include <device.h>
 #include <drivers/gpio.h>
-#include <misc/util.h>
+#include <sys/util.h>
 #include <sys/printk.h>
 
 /* change this to use another GPIO port */

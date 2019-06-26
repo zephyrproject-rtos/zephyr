@@ -42,7 +42,7 @@
 #define _ASMLANGUAGE
 #include <linker/linker-defs.h>
 #include <offsets.h>
-#include <misc/util.h>
+#include <sys/util.h>
 
 #include <linker/linker-tool.h>
 

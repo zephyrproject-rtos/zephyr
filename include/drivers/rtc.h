@@ -8,7 +8,7 @@
 #define ZEPHYR_INCLUDE_DRIVERS_RTC_H_
 #include <zephyr/types.h>
 #include <device.h>
-#include <misc/util.h>
+#include <sys/util.h>
 #include <drivers/counter.h>
 
 #ifdef __cplusplus

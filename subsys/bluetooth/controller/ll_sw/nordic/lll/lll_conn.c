@@ -9,7 +9,7 @@
 
 #include <toolchain.h>
 #include <zephyr/types.h>
-#include <misc/util.h>
+#include <sys/util.h>
 #include <drivers/clock_control/nrf_clock_control.h>
 
 #include "util/mem.h"

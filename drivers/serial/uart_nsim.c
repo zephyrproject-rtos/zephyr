@@ -11,7 +11,7 @@
 #include <linker/sections.h>
 #include <sys/__assert.h>
 #include <zephyr/types.h>
-#include <misc/util.h>
+#include <sys/util.h>
 #include <string.h>
 #include <init.h>
 #include <drivers/uart.h>

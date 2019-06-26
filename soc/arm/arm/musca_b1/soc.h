@@ -10,7 +10,7 @@
 #ifndef _ASMLANGUAGE
 #include "system_cmsdk_musca_b1.h"
 #include <generated_dts_board.h>
-#include <misc/util.h>
+#include <sys/util.h>
 #endif
 
 #endif /* _SOC_H_ */

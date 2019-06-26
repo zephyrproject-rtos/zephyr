@@ -10,7 +10,7 @@
 
 #include <drivers/i2c.h>
 #include <kernel.h>
-#include <misc/util.h>
+#include <sys/util.h>
 
 /* Configuration Read Only Registers */
 #define ATAES_SERIALNUM_REG	0xF000

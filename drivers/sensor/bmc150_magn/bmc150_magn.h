@@ -11,7 +11,7 @@
 
 #include <zephyr/types.h>
 #include <drivers/i2c.h>
-#include <misc/util.h>
+#include <sys/util.h>
 
 #define BMC150_MAGN_REG_CHIP_ID		0x40
 #define BMC150_MAGN_CHIP_ID_VAL		0x32

@@ -8,7 +8,7 @@
 #define ZEPHYR_DRIVERS_SENSOR_TH02_TH02_H_
 
 #include <device.h>
-#include <misc/util.h>
+#include <sys/util.h>
 
 #define TH02_I2C_DEV_ID         0x40
 #define TH02_REG_STATUS         0x00

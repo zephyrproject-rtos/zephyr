@@ -21,7 +21,7 @@
 #include "posix_soc_if.h"
 #include "posix_arch_internal.h"
 #include "sdl_events.h"
-#include <misc/util.h>
+#include <sys/util.h>
 
 
 static u64_t simu_time; /* The actual time as known by the HW models */

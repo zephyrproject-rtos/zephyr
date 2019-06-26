@@ -11,7 +11,7 @@
 #include <drivers/gpio.h>
 
 #include <sys/printk.h>
-#include <misc/util.h>
+#include <sys/util.h>
 
 /**
  * @file

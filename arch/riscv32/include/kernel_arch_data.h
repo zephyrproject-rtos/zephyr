@@ -27,7 +27,7 @@ extern "C" {
 #ifndef _ASMLANGUAGE
 #include <kernel.h>
 #include <zephyr/types.h>
-#include <misc/util.h>
+#include <sys/util.h>
 #include <sys/dlist.h>
 #include <kernel_internal.h>
 

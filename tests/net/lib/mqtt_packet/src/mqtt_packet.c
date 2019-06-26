@@ -6,7 +6,7 @@
 
 #include <tc_util.h>
 #include <mqtt_internal.h>
-#include <misc/util.h>	/* for ARRAY_SIZE */
+#include <sys/util.h>	/* for ARRAY_SIZE */
 #include <ztest.h>
 
 #define CLIENTID	"zephyr"

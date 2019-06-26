@@ -51,7 +51,7 @@
  */
 
 #include <sys/__assert.h>
-#include <misc/util.h>
+#include <sys/util.h>
 #include <toolchain.h>
 #include <device.h>
 #include <drivers/pinmux.h>

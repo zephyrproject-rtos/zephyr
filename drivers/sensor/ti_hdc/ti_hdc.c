@@ -9,7 +9,7 @@
 #include <drivers/gpio.h>
 #include <kernel.h>
 #include <drivers/sensor.h>
-#include <misc/util.h>
+#include <sys/util.h>
 #include <sys/__assert.h>
 #include <logging/log.h>
 

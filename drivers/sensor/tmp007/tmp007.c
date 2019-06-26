@@ -8,7 +8,7 @@
 #include <drivers/i2c.h>
 #include <drivers/gpio.h>
 #include <sys/byteorder.h>
-#include <misc/util.h>
+#include <sys/util.h>
 #include <kernel.h>
 #include <drivers/sensor.h>
 #include <sys/__assert.h>

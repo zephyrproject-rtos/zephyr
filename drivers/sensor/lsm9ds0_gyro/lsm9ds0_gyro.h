@@ -11,7 +11,7 @@
 
 #include <zephyr/types.h>
 #include <drivers/i2c.h>
-#include <misc/util.h>
+#include <sys/util.h>
 
 #define DEG2RAD					0.017453292519943295769236907684
 

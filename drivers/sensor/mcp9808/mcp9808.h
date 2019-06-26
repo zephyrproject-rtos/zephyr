@@ -12,7 +12,7 @@
 #include <zephyr/types.h>
 #include <device.h>
 #include <drivers/sensor.h>
-#include <misc/util.h>
+#include <sys/util.h>
 #include <drivers/gpio.h>
 
 #define MCP9808_REG_CONFIG		0x01

@@ -10,7 +10,7 @@
 
 #include <drivers/gpio.h>
 #include <drivers/spi.h>
-#include <misc/util.h>
+#include <sys/util.h>
 
 /* registers */
 #define BMI160_REG_CHIPID		0x00

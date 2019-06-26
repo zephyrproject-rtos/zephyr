@@ -12,7 +12,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include <sys/atomic.h>
-#include <misc/util.h>
+#include <sys/util.h>
 #include <sys/slist.h>
 #include <sys/byteorder.h>
 #include <misc/stack.h>

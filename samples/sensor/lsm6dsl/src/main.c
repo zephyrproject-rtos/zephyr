@@ -8,7 +8,7 @@
 #include <device.h>
 #include <drivers/sensor.h>
 #include <stdio.h>
-#include <misc/util.h>
+#include <sys/util.h>
 
 static inline float out_ev(struct sensor_value *val)
 {

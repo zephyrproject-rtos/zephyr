@@ -9,7 +9,7 @@
 #include <zephyr.h>
 #include <device.h>
 #include <init.h>
-#include <misc/util.h>
+#include <sys/util.h>
 #include <sys/byteorder.h>
 
 #include <errno.h>

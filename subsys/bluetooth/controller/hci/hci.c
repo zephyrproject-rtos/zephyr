@@ -20,7 +20,7 @@
 #include <bluetooth/bluetooth.h>
 #include <drivers/bluetooth/hci_driver.h>
 #include <sys/byteorder.h>
-#include <misc/util.h>
+#include <sys/util.h>
 
 #include "util/util.h"
 #include "util/memq.h"

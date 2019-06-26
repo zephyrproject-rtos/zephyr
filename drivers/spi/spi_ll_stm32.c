@@ -8,7 +8,7 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(spi_ll_stm32);
 
-#include <misc/util.h>
+#include <sys/util.h>
 #include <kernel.h>
 #include <soc.h>
 #include <errno.h>

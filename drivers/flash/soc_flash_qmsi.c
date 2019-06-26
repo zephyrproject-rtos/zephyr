@@ -10,7 +10,7 @@
 #include <init.h>
 
 #include <drivers/flash.h>
-#include <misc/util.h>
+#include <sys/util.h>
 #include "flash_priv.h"
 
 #include "qm_flash.h"

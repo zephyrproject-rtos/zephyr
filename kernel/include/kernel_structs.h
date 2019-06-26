@@ -13,7 +13,7 @@
 #include <sys/atomic.h>
 #include <sys/dlist.h>
 #include <sys/rb.h>
-#include <misc/util.h>
+#include <sys/util.h>
 #include <string.h>
 #endif
 

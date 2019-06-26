@@ -8,7 +8,7 @@
 
 #include <logging/log_msg.h>
 #include <logging/log_instance.h>
-#include <misc/util.h>
+#include <sys/util.h>
 #include <stdbool.h>
 #include <stdint.h>
 

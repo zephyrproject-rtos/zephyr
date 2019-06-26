@@ -15,7 +15,7 @@
 #include <stddef.h>
 #include <zephyr/types.h>
 #include <zephyr.h>
-#include <misc/util.h>
+#include <sys/util.h>
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/hci.h>
 

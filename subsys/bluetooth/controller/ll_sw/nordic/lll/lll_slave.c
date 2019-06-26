@@ -8,7 +8,7 @@
 
 #include <toolchain.h>
 #include <zephyr/types.h>
-#include <misc/util.h>
+#include <sys/util.h>
 
 #include "hal/ccm.h"
 #include "hal/radio.h"

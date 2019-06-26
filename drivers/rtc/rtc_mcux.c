@@ -15,7 +15,7 @@ LOG_MODULE_REGISTER(rtc_mcux);
 #include <drivers/rtc.h>
 #include <power/power.h>
 #include <soc.h>
-#include <misc/util.h>
+#include <sys/util.h>
 #include <fsl_rtc.h>
 
 struct mcux_rtc_config {

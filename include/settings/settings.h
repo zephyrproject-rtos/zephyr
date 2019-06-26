@@ -9,7 +9,7 @@
 #define ZEPHYR_INCLUDE_SETTINGS_SETTINGS_H_
 
 #include <sys/types.h>
-#include <misc/util.h>
+#include <sys/util.h>
 #include <sys/slist.h>
 #include <stdint.h>
 
