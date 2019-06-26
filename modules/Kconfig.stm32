@@ -74,6 +74,12 @@ config USE_STM32_HAL_DSI
 config USE_STM32_HAL_ETH
 	bool
 
+config USE_STM32_HAL_EXTI
+	bool
+
+config USE_STM32_HAL_FDCAN
+	bool
+
 config USE_STM32_HAL_FIREWALL
 	bool
 
@@ -111,6 +117,9 @@ config USE_STM32_HAL_HCD
 	bool
 
 config USE_STM32_HAL_HRTIM
+	bool
+
+config USE_STM32_HAL_HSEM
 	bool
 
 config USE_STM32_HAL_I2C
@@ -152,7 +161,13 @@ config USE_STM32_HAL_LTDC_EX
 config USE_STM32_HAL_MDIOS
 	bool
 
+config USE_STM32_HAL_MDMA
+	bool
+
 config USE_STM32_HAL_MMC
+	bool
+
+config USE_STM32_HAL_MMC_EX
 	bool
 
 config USE_STM32_HAL_NAND
@@ -186,6 +201,9 @@ config USE_STM32_HAL_PWR_EX
 	bool
 
 config USE_STM32_HAL_QSPI
+	bool
+
+config USE_STM32_HAL_RAMECC
 	bool
 
 config USE_STM32_HAL_RCC
@@ -272,6 +290,9 @@ config USE_STM32_HAL_WWDG
 config USE_STM32_LL_ADC
 	bool
 
+config USE_STM32_LL_BDMA
+	bool
+
 config USE_STM32_LL_COMP
 	bool
 
@@ -282,6 +303,9 @@ config USE_STM32_LL_CRS
 	bool
 
 config USE_STM32_LL_DAC
+	bool
+
+config USE_STM32_LL_DELAYBLOCK
 	bool
 
 config USE_STM32_LL_DMA
@@ -315,6 +339,9 @@ config USE_STM32_LL_LPTIM
 	bool
 
 config USE_STM32_LL_LPUART
+	bool
+
+config USE_STM32_LL_MDMA
 	bool
 
 config USE_STM32_LL_OPAMP
