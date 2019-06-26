@@ -14,7 +14,7 @@
 #include <stdio.h>
 #include <drivers/ipm.h>
 #include <console/ipm_console.h>
-#include <misc/__assert.h>
+#include <sys/__assert.h>
 
 static void ipm_console_thread(void *arg1, void *arg2, void *arg3)
 {

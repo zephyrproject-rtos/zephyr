@@ -15,7 +15,7 @@
 #include <sys/sys_io.h>
 #include <init.h>
 #include <misc/util.h>
-#include <misc/__assert.h>
+#include <sys/__assert.h>
 #include <drivers/clock_control.h>
 
 #ifdef CONFIG_SHARED_IRQ

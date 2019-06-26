@@ -12,7 +12,7 @@
 #include <init.h>
 #include <drivers/gpio.h>
 #include <misc/byteorder.h>
-#include <misc/__assert.h>
+#include <sys/__assert.h>
 
 #ifdef DT_BOSCH_BME280_BUS_I2C
 #include <drivers/i2c.h>

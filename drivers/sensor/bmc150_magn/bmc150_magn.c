@@ -14,7 +14,7 @@
 #include <device.h>
 #include <init.h>
 #include <misc/byteorder.h>
-#include <misc/__assert.h>
+#include <sys/__assert.h>
 
 #include <drivers/gpio.h>
 #include <logging/log.h>

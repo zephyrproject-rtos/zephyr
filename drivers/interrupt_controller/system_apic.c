@@ -10,7 +10,7 @@
  *
  */
 
-#include <misc/__assert.h>
+#include <sys/__assert.h>
 #include <kernel.h>
 #include <arch/cpu.h>
 #include <drivers/interrupt_controller/ioapic.h>

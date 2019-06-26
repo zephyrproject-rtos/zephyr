@@ -16,7 +16,7 @@
 #include <init.h>
 #include <kernel.h>
 #include <misc/byteorder.h>
-#include <misc/__assert.h>
+#include <sys/__assert.h>
 #include <drivers/sensor.h>
 
 #include <logging/log.h>

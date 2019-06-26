@@ -23,7 +23,7 @@
 #include <ksched.h>
 #include <kswap.h>
 #include <wait_q.h>
-#include <misc/__assert.h>
+#include <sys/__assert.h>
 
 extern void z_thread_single_abort(struct k_thread *thread);
 

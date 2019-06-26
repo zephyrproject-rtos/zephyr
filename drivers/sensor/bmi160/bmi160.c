@@ -12,7 +12,7 @@
 #include <drivers/sensor.h>
 #include <misc/byteorder.h>
 #include <kernel.h>
-#include <misc/__assert.h>
+#include <sys/__assert.h>
 #include <logging/log.h>
 
 #include "bmi160.h"

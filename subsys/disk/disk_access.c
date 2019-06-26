@@ -6,7 +6,7 @@
 
 #include <string.h>
 #include <zephyr/types.h>
-#include <misc/__assert.h>
+#include <sys/__assert.h>
 #include <misc/util.h>
 #include <init.h>
 #include <disk/disk_access.h>

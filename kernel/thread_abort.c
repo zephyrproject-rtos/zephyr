@@ -19,7 +19,7 @@
 #include <linker/sections.h>
 #include <wait_q.h>
 #include <ksched.h>
-#include <misc/__assert.h>
+#include <sys/__assert.h>
 #include <syscall_handler.h>
 
 extern void z_thread_single_abort(struct k_thread *thread);

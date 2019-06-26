@@ -8,7 +8,7 @@
  * module HAL driver.
  */
 
-#include <misc/__assert.h>
+#include <sys/__assert.h>
 #include "soc_gpio.h"
 
 /*

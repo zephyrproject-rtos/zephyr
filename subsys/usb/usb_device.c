@@ -59,7 +59,7 @@
 #include <errno.h>
 #include <stddef.h>
 #include <misc/util.h>
-#include <misc/__assert.h>
+#include <sys/__assert.h>
 #include <init.h>
 #if defined(CONFIG_USB_VBUS_GPIO)
 #include <drivers/gpio.h>

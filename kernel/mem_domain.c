@@ -8,7 +8,7 @@
 #include <kernel.h>
 #include <kernel_structs.h>
 #include <kernel_internal.h>
-#include <misc/__assert.h>
+#include <sys/__assert.h>
 #include <stdbool.h>
 #include <spinlock.h>
 

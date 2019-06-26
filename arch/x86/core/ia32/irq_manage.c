@@ -17,7 +17,7 @@
 #include <kernel.h>
 #include <arch/cpu.h>
 #include <kernel_structs.h>
-#include <misc/__assert.h>
+#include <sys/__assert.h>
 #include <misc/printk.h>
 #include <irq.h>
 #include <debug/tracing.h>

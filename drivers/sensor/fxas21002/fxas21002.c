@@ -6,7 +6,7 @@
 
 #include "fxas21002.h"
 #include <misc/util.h>
-#include <misc/__assert.h>
+#include <sys/__assert.h>
 #include <logging/log.h>
 
 #define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL

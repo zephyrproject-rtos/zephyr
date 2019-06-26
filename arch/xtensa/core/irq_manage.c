@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <xtensa_api.h>
 #include <kernel_arch_data.h>
-#include <misc/__assert.h>
+#include <sys/__assert.h>
 /*
  * @internal
  *

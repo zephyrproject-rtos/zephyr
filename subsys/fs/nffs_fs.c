@@ -12,7 +12,7 @@
 #include <drivers/flash.h>
 #include <fs/fs.h>
 #include <sys/crc.h>
-#include <misc/__assert.h>
+#include <sys/__assert.h>
 #include <misc/printk.h>
 #include <nffs/os.h>
 #include <nffs/nffs.h>

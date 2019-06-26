@@ -9,7 +9,7 @@
 #include <wait_q.h>
 #include <init.h>
 #include <string.h>
-#include <misc/__assert.h>
+#include <sys/__assert.h>
 #include <misc/math_extras.h>
 #include <stdbool.h>
 

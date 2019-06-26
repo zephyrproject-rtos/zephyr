@@ -16,7 +16,7 @@
  */
 
 #include <zephyr.h>
-#include <misc/__assert.h>
+#include <sys/__assert.h>
 #include <ztest.h>
 
 #include <limits.h>

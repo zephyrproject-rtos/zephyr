@@ -23,7 +23,7 @@ extern "C" {
  * @{
  */
 
-#include <misc/__assert.h>
+#include <sys/__assert.h>
 #include <net/net_core.h>
 
 struct net_if;

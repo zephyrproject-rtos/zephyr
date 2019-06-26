@@ -7,7 +7,7 @@
 #include <device.h>
 #include <drivers/i2c.h>
 #include <drivers/sensor.h>
-#include <misc/__assert.h>
+#include <sys/__assert.h>
 #include <logging/log.h>
 
 #include "max44009.h"

@@ -50,7 +50,7 @@
  * 0x38 - RF Core SMI command link in
  */
 
-#include <misc/__assert.h>
+#include <sys/__assert.h>
 #include <misc/util.h>
 #include <toolchain.h>
 #include <device.h>
