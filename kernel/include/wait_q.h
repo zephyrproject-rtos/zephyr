@@ -10,7 +10,7 @@
 #define ZEPHYR_KERNEL_INCLUDE_WAIT_Q_H_
 
 #include <kernel_structs.h>
-#include <misc/dlist.h>
+#include <sys/dlist.h>
 #include <misc/rb.h>
 #include <ksched.h>
 #include <sched_priq.h>

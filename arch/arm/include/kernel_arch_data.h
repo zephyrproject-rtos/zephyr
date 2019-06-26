@@ -33,7 +33,7 @@ extern "C" {
 #include <kernel.h>
 #include <kernel_internal.h>
 #include <zephyr/types.h>
-#include <misc/dlist.h>
+#include <sys/dlist.h>
 #include <sys/atomic.h>
 #endif
 

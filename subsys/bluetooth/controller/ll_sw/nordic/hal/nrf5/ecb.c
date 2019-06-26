@@ -7,7 +7,7 @@
 
 #include <string.h>
 
-#include <misc/dlist.h>
+#include <sys/dlist.h>
 #include <misc/mempool_base.h>
 
 #include "util/mem.h"

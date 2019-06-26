@@ -28,7 +28,7 @@ extern "C" {
 #include <kernel.h>
 #include <zephyr/types.h>
 #include <misc/util.h>
-#include <misc/dlist.h>
+#include <sys/dlist.h>
 #include <kernel_internal.h>
 
 extern K_THREAD_STACK_DEFINE(_interrupt_stack, CONFIG_ISR_STACK_SIZE);

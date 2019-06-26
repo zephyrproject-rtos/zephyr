@@ -26,7 +26,7 @@ typedef long long int off_t;
 #include <sys/types.h>
 #endif
 
-#include <misc/dlist.h>
+#include <sys/dlist.h>
 #include <fs/fs_interface.h>
 
 #ifdef __cplusplus

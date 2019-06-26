@@ -35,7 +35,7 @@ extern "C" {
 #include <kernel_internal.h>
 #include <zephyr/types.h>
 #include <misc/util.h>
-#include <misc/dlist.h>
+#include <sys/dlist.h>
 #endif
 
 #ifndef _ASMLANGUAGE
