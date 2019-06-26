@@ -12,7 +12,7 @@
 #include <misc/util.h>
 #include <kernel_internal.h>
 #include <sys/errno_private.h>
-#include <misc/libc-hooks.h>
+#include <sys/libc-hooks.h>
 #include <syscall_handler.h>
 #include <app_memory/app_memdomain.h>
 #include <init.h>
