@@ -5,7 +5,7 @@
  */
 
 #include <ztest.h>
-#include <misc/mempool.h>
+#include <sys/mempool.h>
 
 
 #define BLK_SIZE_MIN    256

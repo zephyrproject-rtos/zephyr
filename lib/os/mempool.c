@@ -8,7 +8,7 @@
 #include <string.h>
 #include <sys/__assert.h>
 #include <sys/mempool_base.h>
-#include <misc/mempool.h>
+#include <sys/mempool.h>
 
 #ifdef CONFIG_MISRA_SANE
 #define LVL_ARRAY_SZ(n) (8 * sizeof(void *) / 2)
