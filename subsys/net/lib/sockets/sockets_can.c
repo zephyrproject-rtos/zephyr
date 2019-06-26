@@ -17,7 +17,7 @@ LOG_MODULE_REGISTER(net_sock_can, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <net/net_pkt.h>
 #include <net/socket.h>
 #include <syscall_handler.h>
-#include <misc/fdtable.h>
+#include <sys/fdtable.h>
 #include <net/socket_can.h>
 
 #include "sockets_internal.h"

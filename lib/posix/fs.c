@@ -10,7 +10,7 @@
 #include <posix/unistd.h>
 #include <posix/dirent.h>
 #include <string.h>
-#include <misc/fdtable.h>
+#include <sys/fdtable.h>
 
 BUILD_ASSERT_MSG(PATH_MAX >= MAX_FILE_NAME,
 		"PATH_MAX is less than MAX_FILE_NAME");
