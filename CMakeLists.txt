@@ -1325,25 +1325,15 @@ if(CONFIG_BUILD_OUTPUT_EXE)
     )
 endif()
 
-get_property(extra_post_build_commands
-  GLOBAL PROPERTY
-  extra_post_build_commands
-  )
+get_target_property(extra_post_build_commands ${ZEPHYR_TARGET} extra_post_build_commands)
+if(extra_post_build_commands)
+  list(APPEND post_build_commands ${extra_post_build_commands})
+endif()
 
-list(APPEND
-  post_build_commands
-  ${extra_post_build_commands}
-  )
-
-get_property(extra_post_build_byproducts
-  GLOBAL PROPERTY
-  extra_post_build_byproducts
-  )
-
-list(APPEND
-  post_build_byproducts
-  ${extra_post_build_byproducts}
-  )
+get_target_property(extra_post_build_byproducts ${ZEPHYR_TARGET} extra_post_build_byproducts)
+if(extra_post_build_byproducts)
+  list(APPEND post_build_byproducts ${extra_post_build_byproducts})
+endif()
 
 # Add post_build_commands to post-process the final .elf file produced by
 # either the ZEPHYR_PREBUILT_EXECUTABLE or the KERNEL_ELF executable

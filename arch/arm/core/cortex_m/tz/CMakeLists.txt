@@ -20,9 +20,7 @@ if(CONFIG_ARM_FIRMWARE_HAS_SECURE_ENTRY_FUNCS)
   )
 
   # Indicate that the entry veneers library file is created during linking of this firmware.
-  set_property(
-    GLOBAL APPEND PROPERTY
-    extra_post_build_byproducts
+  set_property(TARGET ${ZEPHYR_TARGET} APPEND PROPERTY extra_post_build_byproducts
     ${CMAKE_BINARY_DIR}/${CONFIG_ARM_ENTRY_VENEERS_LIB_NAME}
     )
 endif()
