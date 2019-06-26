@@ -297,48 +297,14 @@ toolchain_cc_warning_error_implicit_int()
 # 'cmake -DEXTRA_CFLAGS="-Werror -Wno-deprecated-declarations" ..'
 include(cmake/extra_flags.cmake)
 
-zephyr_cc_option(-fno-asynchronous-unwind-tables)
-zephyr_cc_option(-fno-pie)
-zephyr_cc_option(-fno-pic)
-zephyr_cc_option(-fno-strict-overflow)
-
-if(CONFIG_OVERRIDE_FRAME_POINTER_DEFAULT)
-  if(CONFIG_OMIT_FRAME_POINTER)
-    zephyr_cc_option(-fomit-frame-pointer)
-  else()
-    zephyr_cc_option(-fno-omit-frame-pointer)
-  endif()
-endif()
+toolchain_cc_others_1()
 
 separate_arguments(COMPILER_OPT_AS_LIST UNIX_COMMAND ${CONFIG_COMPILER_OPT})
 zephyr_compile_options(${COMPILER_OPT_AS_LIST})
 
 # TODO: Include arch compiler options at this point.
 
-if(NOT CMAKE_C_COMPILER_ID STREQUAL "Clang")
-  # GCC assumed
-  zephyr_cc_option(-fno-reorder-functions)
-
-  if(NOT ${ZEPHYR_TOOLCHAIN_VARIANT} STREQUAL "xcc")
-    zephyr_cc_option(-fno-defer-pop)
-  endif()
-endif()
-
-zephyr_cc_option_ifdef(CONFIG_STACK_USAGE            -fstack-usage)
-
-# If the compiler supports it, strip the ${ZEPHYR_BASE} prefix from the
-# __FILE__ macro used in __ASSERT*, in the
-# .noinit."/home/joe/zephyr/fu/bar.c" section names and in any
-# application code. This saves some memory, stops leaking user locations
-# in binaries, makes failure logs more deterministic and most
-# importantly makes builds more deterministic
-
-# If both match then the last one wins. This matters for tests/ and
-# samples/ inside *both* CMAKE_SOURCE_DIR and ZEPHYR_BASE: for them
-# let's strip the shortest prefix.
-zephyr_cc_option(-fmacro-prefix-map=${CMAKE_SOURCE_DIR}=CMAKE_SOURCE_DIR)
-zephyr_cc_option(-fmacro-prefix-map=${ZEPHYR_BASE}=ZEPHYR_BASE)
-# TODO: -fmacro-prefix-map=modules/etc. "build/zephyr_modules.txt" might help.
+toolchain_cc_others_2()
 
 # TODO: Archiver arguments
 # ar_option(D)
