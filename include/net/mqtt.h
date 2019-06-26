@@ -27,7 +27,7 @@
 #include <zephyr.h>
 #include <zephyr/types.h>
 #include <net/tls_credentials.h>
-#include <misc/mutex.h>
+#include <sys/mutex.h>
 
 #ifdef __cplusplus
 extern "C" {

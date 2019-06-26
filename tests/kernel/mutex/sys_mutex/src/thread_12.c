@@ -17,7 +17,7 @@
 
 #include <tc_util.h>
 #include <zephyr.h>
-#include <misc/mutex.h>
+#include <sys/mutex.h>
 
 static int tc_rc = TC_PASS;         /* test case return code */
 
