@@ -11,7 +11,7 @@
 #include <device.h>
 #include <string.h>
 #include <drivers/pwm.h>
-#include <misc/stack.h>
+#include <debug/stack.h>
 
 #include <display/mb_display.h>
 

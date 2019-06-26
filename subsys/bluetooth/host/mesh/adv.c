@@ -8,7 +8,7 @@
  */
 
 #include <zephyr.h>
-#include <misc/stack.h>
+#include <debug/stack.h>
 #include <sys/util.h>
 
 #include <net/buf.h>

@@ -17,7 +17,7 @@
 #include <sys/atomic.h>
 #include <sys/util.h>
 #include <sys/byteorder.h>
-#include <misc/stack.h>
+#include <debug/stack.h>
 
 #include <tinycrypt/constants.h>
 #include <tinycrypt/aes.h>

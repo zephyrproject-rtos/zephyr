@@ -17,7 +17,7 @@
 #include <sys/atomic.h>
 
 #include <sys/util.h>
-#include <misc/stack.h>
+#include <debug/stack.h>
 #include <sys/byteorder.h>
 
 #include <bluetooth/bluetooth.h>

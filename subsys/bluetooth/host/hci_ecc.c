@@ -11,7 +11,7 @@
 
 #include <zephyr.h>
 #include <sys/atomic.h>
-#include <misc/stack.h>
+#include <debug/stack.h>
 #include <sys/byteorder.h>
 #include <tinycrypt/constants.h>
 #include <tinycrypt/utils.h>

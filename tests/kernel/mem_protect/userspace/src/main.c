@@ -14,7 +14,7 @@
 #include <stdlib.h>
 #include <app_memory/app_memdomain.h>
 #include <sys/util.h>
-#include <misc/stack.h>
+#include <debug/stack.h>
 #include <syscall_handler.h>
 #include "test_syscall.h"
 
