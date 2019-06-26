@@ -9880,6 +9880,9 @@ static inline u8_t phy_upd_ind_recv(struct radio_pdu_node_rx *node_rx,
 		conn->llcp_phy.ack = conn->llcp_phy.req;
 		conn->procedure_expire = 0U;
 
+		/* Reset packet timing restrictions */
+		conn->phy_tx_time = conn->phy_tx;
+
 		/* Ignore event generation if not local cmd initiated */
 		if (!conn->llcp_phy.cmd) {
 			return 0;
