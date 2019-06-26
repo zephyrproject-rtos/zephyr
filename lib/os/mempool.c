@@ -111,7 +111,7 @@ void z_sys_mem_pool_base_init(struct sys_mem_pool_base *p)
 			bits += (nblocks + 31)/32;
 		}
 
-		sz = _ALIGN4(sz / 4);
+		sz = WB_UP(sz / 4);
 	}
 
 	for (i = 0; i < p->n_max; i++) {
@@ -259,7 +259,7 @@ int z_sys_mem_pool_block_alloc(struct sys_mem_pool_base *p, size_t size,
 	lsizes[0] = p->max_sz;
 	for (i = 0; i < p->n_levels; i++) {
 		if (i > 0) {
-			lsizes[i] = _ALIGN4(lsizes[i-1] / 4);
+			lsizes[i] = WB_UP(lsizes[i-1] / 4);
 		}
 
 		if (lsizes[i] < size) {
@@ -331,7 +331,7 @@ void z_sys_mem_pool_block_free(struct sys_mem_pool_base *p, u32_t level,
 	 */
 	lsizes[0] = p->max_sz;
 	for (i = 1; i <= level; i++) {
-		lsizes[i] = _ALIGN4(lsizes[i-1] / 4);
+		lsizes[i] = WB_UP(lsizes[i-1] / 4);
 	}
 
 	block_free(p, level, lsizes, block);
