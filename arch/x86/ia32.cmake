@@ -86,7 +86,7 @@ function(add_bin_file_to_the_next_link target_dependency bin)
   add_library(${bin} STATIC IMPORTED GLOBAL)
   set_property(TARGET ${bin} PROPERTY IMPORTED_LOCATION ${CMAKE_CURRENT_BINARY_DIR}/${bin}.o)
   add_dependencies(${bin} ${bin}_o)
-  set_property(GLOBAL APPEND PROPERTY GENERATED_KERNEL_OBJECT_FILES ${bin})
+  set_property(TARGET ${ZEPHYR_TARGET} APPEND PROPERTY GENERATED_KERNEL_OBJECT_FILES ${bin})
 endfunction()
 
 add_bin_file_to_the_next_link(gen_idt_output staticIdt)
