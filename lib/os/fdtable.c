@@ -16,7 +16,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <kernel.h>
-#include <misc/fdtable.h>
+#include <sys/fdtable.h>
 #include <misc/speculation.h>
 
 struct fd_entry {
