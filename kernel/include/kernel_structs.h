@@ -12,7 +12,7 @@
 #if !defined(_ASMLANGUAGE)
 #include <sys/atomic.h>
 #include <sys/dlist.h>
-#include <misc/rb.h>
+#include <sys/rb.h>
 #include <misc/util.h>
 #include <string.h>
 #endif

@@ -9,7 +9,7 @@
 #include <string.h>
 #include <sys/math_extras.h>
 #include <sys/printk.h>
-#include <misc/rb.h>
+#include <sys/rb.h>
 #include <kernel_structs.h>
 #include <sys/sys_io.h>
 #include <ksched.h>

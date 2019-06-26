@@ -32,7 +32,7 @@
 #include <syscall.h>
 #include <sys/printk.h>
 #include <arch/cpu.h>
-#include <misc/rb.h>
+#include <sys/rb.h>
 #include <sys_clock.h>
 #include <spinlock.h>
 

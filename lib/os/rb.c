@@ -13,7 +13,7 @@
 /* #define CHECK(n) __ASSERT_NO_MSG(n) */
 
 #include <kernel.h>
-#include <misc/rb.h>
+#include <sys/rb.h>
 #include <stdbool.h>
 
 enum rb_color { RED = 0, BLACK = 1 };
