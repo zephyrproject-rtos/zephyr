@@ -47,15 +47,15 @@ struct sys_mem_pool_block {
  * @param section Destination binary section for pool data
  */
 #define SYS_MEM_POOL_DEFINE(name, ignored, minsz, maxsz, nmax, align, section) \
-	char __aligned(align) Z_GENERIC_SECTION(section)		\
-		_mpool_buf_##name[_ALIGN4(maxsz) * nmax			\
+	char __aligned(WB_UP(align)) Z_GENERIC_SECTION(section)		\
+		_mpool_buf_##name[WB_UP(maxsz) * nmax			\
 				  + _MPOOL_BITS_SIZE(maxsz, minsz, nmax)]; \
 	struct sys_mem_pool_lvl Z_GENERIC_SECTION(section)		\
 		_mpool_lvls_##name[Z_MPOOL_LVLS(maxsz, minsz)];		\
 	Z_GENERIC_SECTION(section) struct sys_mem_pool name = {		\
 		.base = {						\
 			.buf = _mpool_buf_##name,			\
-			.max_sz = _ALIGN4(maxsz),			\
+			.max_sz = WB_UP(maxsz),				\
 			.n_max = nmax,					\
 			.n_levels = Z_MPOOL_LVLS(maxsz, minsz),		\
 			.levels = _mpool_lvls_##name,			\
