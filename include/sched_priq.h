@@ -8,7 +8,7 @@
 
 #include <misc/util.h>
 #include <sys/dlist.h>
-#include <misc/rb.h>
+#include <sys/rb.h>
 
 /* Two abstractions are defined here for "thread priority queues".
  *
