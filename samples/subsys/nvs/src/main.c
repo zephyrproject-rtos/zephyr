@@ -39,7 +39,7 @@
 
 
 #include <zephyr.h>
-#include <misc/reboot.h>
+#include <power/reboot.h>
 #include <device.h>
 #include <string.h>
 #include <drivers/flash.h>

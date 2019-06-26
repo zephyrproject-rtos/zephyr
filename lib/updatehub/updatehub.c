@@ -18,7 +18,7 @@ LOG_MODULE_REGISTER(updatehub);
 #include <net/coap.h>
 #include <net/dns_resolve.h>
 #include <drivers/flash.h>
-#include <misc/reboot.h>
+#include <power/reboot.h>
 #include <tinycrypt/sha256.h>
 #include <data/json.h>
 

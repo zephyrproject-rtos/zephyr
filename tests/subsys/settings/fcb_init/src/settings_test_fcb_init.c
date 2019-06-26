@@ -8,7 +8,7 @@
 #include <ztest.h>
 
 #include <zephyr.h>
-#include <misc/reboot.h>
+#include <power/reboot.h>
 #include <string.h>
 
 #include <settings/settings.h>
