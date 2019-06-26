@@ -441,7 +441,7 @@ endfunction()
 # constructor but must called explicitly on CMake libraries that do
 # not use a zephyr library constructor.
 function(zephyr_append_cmake_library library)
-  set_property(GLOBAL APPEND PROPERTY ZEPHYR_LIBS ${library})
+  set_property(TARGET "${ZEPHYR_TARGET}" APPEND PROPERTY ZEPHYR_LIBS ${library})
 endfunction()
 
 # Add the imported library 'library_name', located at 'library_path' to the
@@ -482,7 +482,7 @@ endfunction()
 # does not have wrappers over the other cmake target functions.
 macro(zephyr_interface_library_named name)
   add_library(${name} INTERFACE)
-  set_property(GLOBAL APPEND PROPERTY ZEPHYR_INTERFACE_LIBS ${name})
+  set_property(TARGET ${ZEPHYR_TARGET} APPEND PROPERTY ZEPHYR_INTERFACE_LIBS ${name})
 endmacro()
 
 # 1.3 generate_inc_*
