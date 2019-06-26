@@ -11,7 +11,7 @@
 #include <drivers/sensor.h>
 #include <init.h>
 #include <drivers/gpio.h>
-#include <misc/byteorder.h>
+#include <sys/byteorder.h>
 #include <sys/__assert.h>
 
 #ifdef DT_BOSCH_BME280_BUS_I2C

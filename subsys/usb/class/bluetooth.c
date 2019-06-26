@@ -7,7 +7,7 @@
  */
 
 #include <init.h>
-#include <misc/byteorder.h>
+#include <sys/byteorder.h>
 
 #include <usb/usb_device.h>
 #include <usb/usb_common.h>

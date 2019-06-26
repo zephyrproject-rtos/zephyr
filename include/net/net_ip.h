@@ -24,7 +24,7 @@
 #include <zephyr/types.h>
 #include <stdbool.h>
 #include <misc/util.h>
-#include <misc/byteorder.h>
+#include <sys/byteorder.h>
 #include <toolchain.h>
 
 #include <net/net_linkaddr.h>

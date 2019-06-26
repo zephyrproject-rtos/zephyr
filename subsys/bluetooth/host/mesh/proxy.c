@@ -7,7 +7,7 @@
  */
 
 #include <zephyr.h>
-#include <misc/byteorder.h>
+#include <sys/byteorder.h>
 
 #include <net/buf.h>
 #include <bluetooth/bluetooth.h>

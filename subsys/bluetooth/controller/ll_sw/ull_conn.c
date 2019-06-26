@@ -9,7 +9,7 @@
 #include <device.h>
 #include <drivers/entropy.h>
 #include <bluetooth/bluetooth.h>
-#include <misc/byteorder.h>
+#include <sys/byteorder.h>
 
 #include "hal/ecb.h"
 #include "hal/ccm.h"

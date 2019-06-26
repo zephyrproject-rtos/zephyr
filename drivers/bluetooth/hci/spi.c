@@ -9,7 +9,7 @@
 #include <drivers/gpio.h>
 #include <init.h>
 #include <drivers/spi.h>
-#include <misc/byteorder.h>
+#include <sys/byteorder.h>
 #include <misc/util.h>
 
 #include <bluetooth/hci.h>

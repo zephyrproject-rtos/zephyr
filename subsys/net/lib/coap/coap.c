@@ -14,7 +14,7 @@ LOG_MODULE_REGISTER(net_coap, CONFIG_COAP_LOG_LEVEL);
 #include <errno.h>
 
 #include <zephyr/types.h>
-#include <misc/byteorder.h>
+#include <sys/byteorder.h>
 
 #include <net/net_ip.h>
 #include <net/net_core.h>

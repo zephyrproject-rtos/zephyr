@@ -14,7 +14,7 @@
 #include <sys/atomic.h>
 #include <misc/util.h>
 #include <misc/slist.h>
-#include <misc/byteorder.h>
+#include <sys/byteorder.h>
 #include <misc/stack.h>
 #include <sys/__assert.h>
 #include <soc.h>

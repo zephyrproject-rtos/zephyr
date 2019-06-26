@@ -12,7 +12,7 @@
 #include <string.h>
 #include <errno.h>
 #include <misc/printk.h>
-#include <misc/byteorder.h>
+#include <sys/byteorder.h>
 #include <zephyr.h>
 
 #include <bluetooth/bluetooth.h>

@@ -11,7 +11,7 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(usb_hid);
 
-#include <misc/byteorder.h>
+#include <sys/byteorder.h>
 #include <usb_device.h>
 #include <usb_common.h>
 

@@ -10,7 +10,7 @@
 #include <drivers/sensor.h>
 #include <init.h>
 #include <drivers/gpio.h>
-#include <misc/byteorder.h>
+#include <sys/byteorder.h>
 #include <sys/__assert.h>
 #include <drivers/spi.h>
 #include <logging/log.h>

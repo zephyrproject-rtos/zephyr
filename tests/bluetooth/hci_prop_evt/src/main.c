@@ -16,7 +16,7 @@
 #include <bluetooth/buf.h>
 #include <bluetooth/bluetooth.h>
 #include <drivers/bluetooth/hci_driver.h>
-#include <misc/byteorder.h>
+#include <sys/byteorder.h>
 
 /* HCI Proprietary vendor event */
 const u8_t hci_prop_evt_prefix[2] = { 0xAB, 0xBA };

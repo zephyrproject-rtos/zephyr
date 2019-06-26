@@ -22,7 +22,7 @@
 #include <bluetooth/conn.h>
 #include <bluetooth/uuid.h>
 #include <bluetooth/gatt.h>
-#include <misc/byteorder.h>
+#include <sys/byteorder.h>
 
 #include <gatt/hrs.h>
 #include <gatt/bas.h>

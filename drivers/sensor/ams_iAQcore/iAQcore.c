@@ -7,7 +7,7 @@
 #include <device.h>
 #include <drivers/i2c.h>
 #include <kernel.h>
-#include <misc/byteorder.h>
+#include <sys/byteorder.h>
 #include <misc/util.h>
 #include <drivers/sensor.h>
 #include <sys/__assert.h>

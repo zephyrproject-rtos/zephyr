@@ -11,7 +11,7 @@
 #include <errno.h>
 #include <stdbool.h>
 #include <zephyr/types.h>
-#include <misc/byteorder.h>
+#include <sys/byteorder.h>
 #include <misc/util.h>
 
 #include <bluetooth/bluetooth.h>

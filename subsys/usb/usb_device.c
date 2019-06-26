@@ -64,7 +64,7 @@
 #if defined(CONFIG_USB_VBUS_GPIO)
 #include <drivers/gpio.h>
 #endif
-#include <misc/byteorder.h>
+#include <sys/byteorder.h>
 #include <usb/usb_device.h>
 #include <usb/usbstruct.h>
 #include <usb/usb_common.h>

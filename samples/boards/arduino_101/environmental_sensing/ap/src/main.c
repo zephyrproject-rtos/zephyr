@@ -11,7 +11,7 @@
 #include <device.h>
 #include <drivers/ipm.h>
 #include <ipm/ipm_quark_se.h>
-#include <misc/byteorder.h>
+#include <sys/byteorder.h>
 #include <misc/printk.h>
 #include <drivers/sensor.h>
 #include <zephyr.h>

@@ -24,7 +24,7 @@ LOG_MODULE_REGISTER(net_tcp, CONFIG_NET_TCP_LOG_LEVEL);
 #include <net/net_pkt.h>
 #include <net/net_ip.h>
 #include <net/net_context.h>
-#include <misc/byteorder.h>
+#include <sys/byteorder.h>
 
 #include "connection.h"
 #include "net_private.h"

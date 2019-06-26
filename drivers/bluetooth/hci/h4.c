@@ -15,7 +15,7 @@
 #include <init.h>
 #include <drivers/uart.h>
 #include <misc/util.h>
-#include <misc/byteorder.h>
+#include <sys/byteorder.h>
 #include <string.h>
 
 #include <bluetooth/bluetooth.h>

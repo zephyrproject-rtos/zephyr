@@ -8,7 +8,7 @@
 
 #include <string.h>
 #include <errno.h>
-#include <misc/byteorder.h>
+#include <sys/byteorder.h>
 #include <misc/printk.h>
 
 #include <bluetooth/uuid.h>

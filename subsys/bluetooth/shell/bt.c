@@ -17,7 +17,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <misc/printk.h>
-#include <misc/byteorder.h>
+#include <sys/byteorder.h>
 #include <zephyr.h>
 
 #include <settings/settings.h>

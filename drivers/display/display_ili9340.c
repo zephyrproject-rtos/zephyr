@@ -13,7 +13,7 @@
 LOG_MODULE_REGISTER(display_ili9340);
 
 #include <drivers/gpio.h>
-#include <misc/byteorder.h>
+#include <sys/byteorder.h>
 #include <drivers/spi.h>
 #include <string.h>
 

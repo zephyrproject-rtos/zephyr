@@ -6,7 +6,7 @@
 
 #include <zephyr.h>
 #include <bluetooth/hci.h>
-#include <misc/byteorder.h>
+#include <sys/byteorder.h>
 
 #include "util/util.h"
 #include "util/memq.h"

@@ -7,7 +7,7 @@
 
 #include <ztest.h>
 
-#include <misc/byteorder.h>
+#include <sys/byteorder.h>
 
 /**
  * @addtogroup kernel_common_tests

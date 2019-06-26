@@ -7,7 +7,7 @@
 #include <zephyr/types.h>
 #include <toolchain.h>
 #include <bluetooth/hci.h>
-#include <misc/byteorder.h>
+#include <sys/byteorder.h>
 
 #include "hal/ccm.h"
 #include "hal/radio.h"

@@ -9,7 +9,7 @@
 #include <kernel.h>
 #include <drivers/sensor.h>
 #include <sys/__assert.h>
-#include <misc/byteorder.h>
+#include <sys/byteorder.h>
 #include <misc/util.h>
 #include <logging/log.h>
 

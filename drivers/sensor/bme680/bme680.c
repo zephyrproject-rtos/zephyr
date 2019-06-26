@@ -15,7 +15,7 @@
 #include <drivers/i2c.h>
 #include <init.h>
 #include <kernel.h>
-#include <misc/byteorder.h>
+#include <sys/byteorder.h>
 #include <sys/__assert.h>
 #include <drivers/sensor.h>
 

@@ -12,7 +12,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <sys/atomic.h>
-#include <misc/byteorder.h>
+#include <sys/byteorder.h>
 #include <misc/util.h>
 
 #include <settings/settings.h>
