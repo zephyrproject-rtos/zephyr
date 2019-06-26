@@ -1,0 +1,3 @@
+tests:
+  peripheral.rtio:
+    tags: drivers rtio
