@@ -5,7 +5,7 @@ if(CONFIG_PINMUX_INTEL_S1000)
   zephyr_library_sources(pinmux.c)
 endif()
 
-set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
+set_property(TARGET ${ZEPHYR_TARGET} APPEND PROPERTY extra_post_build_commands
   COMMAND ${PYTHON_EXECUTABLE} ${BOARD_DIR}/support/create_board_img.py
   -i ${PROJECT_BINARY_DIR}/${CONFIG_KERNEL_BIN_NAME}.bin
   -o ${PROJECT_BINARY_DIR}/${CONFIG_KERNEL_BIN_NAME}_${BOARD}.bin
