@@ -573,7 +573,7 @@ Windows (run this in a ``cmd`` prompt, from the Zephyr directory)::
 
   # Use CMake to generate a Ninja-based build system:
   type NUL > empty.ld
-  cmake -GNinja -DBOARD=rv32m1_vega_ri5cy -DCMAKE_REQUIRED_FLAGS=-Wl,-dT=empty.ld ..
+  cmake -GNinja -DBOARD=rv32m1_vega_ri5cy -DCMAKE_REQUIRED_FLAGS=-Wl,-dT=%cd%\empty.ld ..
 
   # Build the sample
   ninja
