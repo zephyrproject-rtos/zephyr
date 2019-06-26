@@ -534,23 +534,30 @@ class Codeowners(ComplianceTest):
         if not os.path.exists(codeowners):
             self.skip("CODEOWNERS not available in this repo")
 
-        commit = git("diff", "--name-only", "--diff-filter=A",
-                     self.commit_range)
-        new_files = commit.splitlines()
-        logging.debug("New files %s", new_files)
+        name_changes = git("diff", "--name-only", "--diff-filter=ARCD",
+                            self.commit_range)
 
-        if not new_files:
-            # TODO: parse CODEOWNERS to report errors in it *without*
-            # scanning the tree to keep this case very fast.
+        if not name_changes:
+            # TODO: 1. decouple basic and cheap CODEOWNERS syntax
+            # validation from the expensive ls_owned_files() scanning of
+            # the entire tree. 2. run the former always.
             return
+
+        logging.info("If this takes too long then cleanup and try again")
+        patrn2files = self.ls_owned_files(codeowners)
+
+        # The way git finds Renames and Copies is not "exact science",
+        # however if one is missed then it will always be reported as an
+        # Addition instead.
+        new_names = git("diff", "--name-only", "--diff-filter=ARC",
+                     self.commit_range)
+        new_files = new_names.splitlines()
+        logging.debug("New files %s", new_files)
 
         # Convert to pathlib.Path string representation (e.g.,
         # backslashes 'dir1\dir2\' on Windows) to be consistent
         # with self.ls_owned_files()
         new_files = [str(Path(f)) for f in new_files]
-
-        logging.info("If this takes too long then cleanup and try again")
-        patrn2files = self.ls_owned_files(codeowners)
 
         new_not_owned = []
         for newf in new_files:
