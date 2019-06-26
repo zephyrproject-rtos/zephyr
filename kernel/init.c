@@ -33,7 +33,7 @@
 #include <logging/log_ctrl.h>
 #include <debug/tracing.h>
 #include <stdbool.h>
-#include <misc/gcov.h>
+#include <debug/gcov.h>
 
 #define IDLE_THREAD_NAME	"idle"
 #define LOG_LEVEL CONFIG_KERNEL_LOG_LEVEL
