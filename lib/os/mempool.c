@@ -7,7 +7,7 @@
 #include <kernel.h>
 #include <string.h>
 #include <sys/__assert.h>
-#include <misc/mempool_base.h>
+#include <sys/mempool_base.h>
 #include <misc/mempool.h>
 
 #ifdef CONFIG_MISRA_SANE
