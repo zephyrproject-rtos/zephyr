@@ -8,7 +8,7 @@
 #define ZEPHYR_DRIVERS_SENSOR_LIS3MDL_LIS3MDL_H_
 
 #include <device.h>
-#include <misc/util.h>
+#include <sys/util.h>
 #include <zephyr/types.h>
 #include <drivers/gpio.h>
 

@@ -14,7 +14,7 @@
 #define __SOC_H_
 
 #include <zephyr/types.h>
-#include <misc/util.h>
+#include <sys/util.h>
 #include <drivers/uart.h>
 
 #ifdef CONFIG_IOAPIC

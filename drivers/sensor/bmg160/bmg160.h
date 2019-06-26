@@ -11,7 +11,7 @@
 
 #include <drivers/i2c.h>
 #include <drivers/gpio.h>
-#include <misc/util.h>
+#include <sys/util.h>
 
 /* registers */
 #define BMG160_REG_CHIPID		0x00

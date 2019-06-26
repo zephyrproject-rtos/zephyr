@@ -48,7 +48,7 @@
 #include <string.h>
 #include <usb/usb_device.h>
 #include <clock_control/stm32_clock_control.h>
-#include <misc/util.h>
+#include <sys/util.h>
 #include <drivers/gpio.h>
 
 #define LOG_LEVEL CONFIG_USB_DRIVER_LOG_LEVEL

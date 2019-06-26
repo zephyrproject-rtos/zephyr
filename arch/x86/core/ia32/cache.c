@@ -12,7 +12,7 @@
 
 #include <kernel.h>
 #include <arch/cpu.h>
-#include <misc/util.h>
+#include <sys/util.h>
 #include <toolchain.h>
 #include <cache.h>
 #include <cache_private.h>

@@ -14,7 +14,7 @@
 
 #include <errno.h>
 #include <sys/__assert.h>
-#include <misc/util.h>
+#include <sys/util.h>
 #include <device.h>
 #include <init.h>
 #include <soc.h>

@@ -12,7 +12,7 @@
 #include <drivers/gpio.h>
 #include <drivers/i2c.h>
 #include <sys/byteorder.h>
-#include <misc/util.h>
+#include <sys/util.h>
 
 #ifdef CONFIG_HAS_DTS_I2C
 #define CONFIG_GPIO_SX1509B_DEV_NAME	DT_INST_0_SEMTECH_SX1509B_LABEL

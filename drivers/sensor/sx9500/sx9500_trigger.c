@@ -10,7 +10,7 @@
 #include <drivers/i2c.h>
 #include <drivers/sensor.h>
 #include <drivers/gpio.h>
-#include <misc/util.h>
+#include <sys/util.h>
 
 #include "sx9500.h"
 

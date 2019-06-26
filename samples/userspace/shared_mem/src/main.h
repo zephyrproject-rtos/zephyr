@@ -14,7 +14,7 @@
 #include <stdlib.h>
 
 #include <app_memory/app_memdomain.h>
-#include <misc/util.h>
+#include <sys/util.h>
 
 #if defined(CONFIG_ARC)
 #include <arch/arc/v2/mpu/arc_core_mpu.h>

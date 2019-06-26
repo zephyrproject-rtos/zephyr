@@ -6,7 +6,7 @@
 
 #include <zephyr.h>
 #include <sys/printk.h>
-#include <misc/util.h>
+#include <sys/util.h>
 #include <string.h>
 
 void main(void)

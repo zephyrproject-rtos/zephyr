@@ -9,7 +9,7 @@
 
 #include <kernel.h>
 #include <device.h>
-#include <misc/util.h>
+#include <sys/util.h>
 #include <stdint.h>
 #include <drivers/gpio.h>
 #include <drivers/sensor.h>

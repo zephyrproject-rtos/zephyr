@@ -13,7 +13,7 @@
 
 #include <zephyr/types.h>
 #include <drivers/i2c.h>
-#include <misc/util.h>
+#include <sys/util.h>
 
 #define LPS25HB_REG_WHO_AM_I                    0x0F
 #define LPS25HB_VAL_WHO_AM_I                    0xBD

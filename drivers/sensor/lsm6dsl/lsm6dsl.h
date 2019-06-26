@@ -14,7 +14,7 @@
 #include <drivers/sensor.h>
 #include <zephyr/types.h>
 #include <drivers/gpio.h>
-#include <misc/util.h>
+#include <sys/util.h>
 
 #define LSM6DSL_REG_FUNC_CFG_ACCESS			0x01
 #define LSM6DSL_MASK_FUNC_CFG_EN			BIT(7)

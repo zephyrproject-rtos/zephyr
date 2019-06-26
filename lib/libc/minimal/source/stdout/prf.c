@@ -13,7 +13,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <sys/types.h>
-#include <misc/util.h>
+#include <sys/util.h>
 
 #ifndef MAXFLD
 #define	MAXFLD	200

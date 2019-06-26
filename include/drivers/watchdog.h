@@ -21,7 +21,7 @@
  */
 
 #include <zephyr/types.h>
-#include <misc/util.h>
+#include <sys/util.h>
 #include <device.h>
 
 #ifdef __cplusplus

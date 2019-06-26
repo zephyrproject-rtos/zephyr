@@ -7,7 +7,7 @@
  */
 
 #include <drivers/i2c.h>
-#include <misc/util.h>
+#include <sys/util.h>
 #include <kernel.h>
 
 #include "isl29035.h"

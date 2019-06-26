@@ -13,7 +13,7 @@
 #include <device.h>
 #include <soc.h>
 #include <drivers/gpio.h>
-#include <misc/util.h>
+#include <sys/util.h>
 
 #include "gpio_utils.h"
 

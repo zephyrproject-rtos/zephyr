@@ -15,7 +15,7 @@
 #ifndef _BOARD__H_
 #define _BOARD__H_
 
-#include <misc/util.h>
+#include <sys/util.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -72,7 +72,7 @@ extern "C" {
 #ifndef _ASMLANGUAGE
 
 #include <device.h>
-#include <misc/util.h>
+#include <sys/util.h>
 #include <random/rand32.h>
 
 /* uart configuration settings */

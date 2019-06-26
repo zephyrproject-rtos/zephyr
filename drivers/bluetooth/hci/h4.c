@@ -14,7 +14,7 @@
 
 #include <init.h>
 #include <drivers/uart.h>
-#include <misc/util.h>
+#include <sys/util.h>
 #include <sys/byteorder.h>
 #include <string.h>
 

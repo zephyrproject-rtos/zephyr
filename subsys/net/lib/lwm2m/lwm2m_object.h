@@ -51,7 +51,7 @@
 
 #include <net/net_ip.h>
 #include <sys/printk.h>
-#include <misc/util.h>
+#include <sys/util.h>
 
 #include <net/coap.h>
 #include <net/lwm2m.h>

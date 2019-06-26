@@ -14,7 +14,7 @@
 #include <arch/cpu.h>
 #include <sys/byteorder.h>
 #include <logging/log.h>
-#include <misc/util.h>
+#include <sys/util.h>
 
 #include <device.h>
 #include <init.h>

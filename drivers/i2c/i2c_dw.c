@@ -20,7 +20,7 @@
 #include <errno.h>
 #include <sys/sys_io.h>
 
-#include <misc/util.h>
+#include <sys/util.h>
 
 #ifdef CONFIG_IOAPIC
 #include <drivers/interrupt_controller/ioapic.h>

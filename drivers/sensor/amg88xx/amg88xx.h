@@ -9,7 +9,7 @@
 
 #include <device.h>
 #include <drivers/gpio.h>
-#include <misc/util.h>
+#include <sys/util.h>
 
 #define AMG88XX_I2C_ADDRESS	CONFIG_AMG88XX_I2C_ADDR
 

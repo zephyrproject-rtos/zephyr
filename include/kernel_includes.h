@@ -24,7 +24,7 @@
 #include <sys/dlist.h>
 #include <sys/slist.h>
 #include <sys/sflist.h>
-#include <misc/util.h>
+#include <sys/util.h>
 #include <sys/mempool_base.h>
 #include <kernel_version.h>
 #include <random/rand32.h>

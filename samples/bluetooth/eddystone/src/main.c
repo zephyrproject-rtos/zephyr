@@ -11,7 +11,7 @@
 #include <string.h>
 #include <errno.h>
 #include <sys/printk.h>
-#include <misc/util.h>
+#include <sys/util.h>
 #include <sys/byteorder.h>
 #include <zephyr.h>
 

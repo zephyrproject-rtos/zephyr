@@ -21,7 +21,7 @@
  * @{
  */
 
-#include <misc/util.h>
+#include <sys/util.h>
 #include <stddef.h>
 #include <zephyr/types.h>
 #include <sys/types.h>

@@ -9,7 +9,7 @@
 
 #include <device.h>
 #include <drivers/gpio.h>
-#include <misc/util.h>
+#include <sys/util.h>
 
 #define TMP007_I2C_ADDRESS		CONFIG_TMP007_I2C_ADDR
 

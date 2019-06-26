@@ -8,7 +8,7 @@
 #include <drivers/ipm.h>
 #include <ipm/ipm_quark_se.h>
 #include <sys/printk.h>
-#include <misc/util.h>
+#include <sys/util.h>
 #include <drivers/sensor.h>
 #include <zephyr.h>
 

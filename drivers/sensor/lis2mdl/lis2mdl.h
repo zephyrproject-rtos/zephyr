@@ -10,7 +10,7 @@
 #define __MAG_LIS2MDL_H
 
 #include <drivers/gpio.h>
-#include <misc/util.h>
+#include <sys/util.h>
 #include <drivers/i2c.h>
 
 #define LIS2MDL_EN_BIT                  1

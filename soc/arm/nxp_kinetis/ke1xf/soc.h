@@ -7,6 +7,6 @@
 #ifndef _SOC__H_
 #define _SOC__H_
 
-#include <misc/util.h>
+#include <sys/util.h>
 
 #endif /* _SOC__H_ */

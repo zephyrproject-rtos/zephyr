@@ -8,7 +8,7 @@
 
 #include <drivers/gpio.h>
 #include <soc.h>
-#include <misc/util.h>
+#include <sys/util.h>
 
 #include "qm_ss_gpio.h"
 #include "qm_ss_isr.h"

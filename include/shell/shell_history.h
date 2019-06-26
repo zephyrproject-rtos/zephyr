@@ -8,7 +8,7 @@
 #define SHELL_HISTORY_H__
 
 #include <zephyr.h>
-#include <misc/util.h>
+#include <sys/util.h>
 #include <sys/dlist.h>
 #include <sys/ring_buffer.h>
 #include <stdbool.h>

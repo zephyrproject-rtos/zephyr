@@ -10,7 +10,7 @@
 #include <kernel.h>
 #include <stdint.h>
 #include <device.h>
-#include <misc/util.h>
+#include <sys/util.h>
 #include <net/ptp_time.h>
 
 #ifdef __cplusplus

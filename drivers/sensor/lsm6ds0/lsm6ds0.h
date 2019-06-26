@@ -13,7 +13,7 @@
 
 #include <zephyr/types.h>
 #include <drivers/i2c.h>
-#include <misc/util.h>
+#include <sys/util.h>
 
 #define LSM6DS0_REG_ACT_THS                     0x04
 #define LSM6DS0_MASK_ACT_THS_SLEEP_ON_INACT_EN	BIT(7)

@@ -14,7 +14,7 @@
 #ifndef _BOARD__H_
 #define _BOARD__H_
 
-#include <misc/util.h>
+#include <sys/util.h>
 
 /* default system clock */
 
@@ -97,7 +97,7 @@
 
 #ifndef _ASMLANGUAGE
 
-#include <misc/util.h>
+#include <sys/util.h>
 #include <random/rand32.h>
 #include <quark_se/shared_mem.h>
 

@@ -21,7 +21,7 @@
 
 #include <toolchain.h>
 #include <linker/sections.h>
-#include <misc/util.h>
+#include <sys/util.h>
 #include <offsets.h>
 
 #ifdef _LINKER

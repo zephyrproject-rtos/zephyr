@@ -14,7 +14,7 @@
 #include <soc.h>
 #include <sys/sys_io.h>
 #include <init.h>
-#include <misc/util.h>
+#include <sys/util.h>
 #include <sys/__assert.h>
 #include <drivers/clock_control.h>
 

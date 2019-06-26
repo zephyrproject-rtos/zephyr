@@ -8,7 +8,7 @@
 
 
 #include <init.h>
-#include <misc/util.h>
+#include <sys/util.h>
 
 #include <bluetooth/hci.h>
 #include <bluetooth/hci_driver.h>

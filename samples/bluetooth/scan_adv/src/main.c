@@ -9,7 +9,7 @@
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <sys/printk.h>
-#include <misc/util.h>
+#include <sys/util.h>
 
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/hci.h>

@@ -9,7 +9,7 @@
 
 #include <zephyr.h>
 #include <drivers/gpio.h>
-#include <misc/util.h>
+#include <sys/util.h>
 #include <ztest.h>
 
 #if defined(CONFIG_BOARD_QUARK_SE_C1000_DEVBOARD)

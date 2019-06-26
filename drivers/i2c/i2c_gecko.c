@@ -6,7 +6,7 @@
 
 #include <errno.h>
 #include <drivers/i2c.h>
-#include <misc/util.h>
+#include <sys/util.h>
 #include <em_cmu.h>
 #include <em_i2c.h>
 #include <em_gpio.h>

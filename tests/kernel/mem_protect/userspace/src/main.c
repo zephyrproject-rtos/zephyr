@@ -13,7 +13,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <app_memory/app_memdomain.h>
-#include <misc/util.h>
+#include <sys/util.h>
 #include <misc/stack.h>
 #include <syscall_handler.h>
 #include "test_syscall.h"

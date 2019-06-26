@@ -10,7 +10,7 @@
 
 #include <soc.h>
 #include <sys/__assert.h>
-#include <misc/util.h>
+#include <sys/util.h>
 
 #if ID_PERIPH_COUNT > 74
 #error "Unsupported SoC, update soc_pmc.c functions"

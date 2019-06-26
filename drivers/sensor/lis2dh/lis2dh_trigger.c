@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <misc/util.h>
+#include <sys/util.h>
 #include <kernel.h>
 
 #define START_TRIG_INT1			0

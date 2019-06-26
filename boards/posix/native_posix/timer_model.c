@@ -27,7 +27,7 @@
 #include "board_soc.h"
 #include "zephyr/types.h"
 #include "posix_trace.h"
-#include "misc/util.h"
+#include <sys/util.h>
 #include "cmdline.h"
 #include "soc.h"
 

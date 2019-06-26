@@ -21,7 +21,7 @@ extern "C" {
 
 #ifndef _ASMLANGUAGE
 #include <device.h>
-#include <misc/util.h>
+#include <sys/util.h>
 #include <fsl_common.h>
 #endif /* !_ASMLANGUAGE */
 

@@ -23,7 +23,7 @@
 #include <string.h>
 #include <zephyr/types.h>
 #include <stdbool.h>
-#include <misc/util.h>
+#include <sys/util.h>
 #include <sys/byteorder.h>
 #include <toolchain.h>
 

@@ -23,7 +23,7 @@ extern "C" {
 
 #include <stddef.h>
 #include <sys/types.h>
-#include <misc/util.h>
+#include <sys/util.h>
 #include <bluetooth/conn.h>
 #include <bluetooth/uuid.h>
 #include <bluetooth/att.h>

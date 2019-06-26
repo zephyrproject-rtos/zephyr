@@ -15,7 +15,7 @@
 
 #include <zephyr/types.h>
 
-#include <misc/util.h>
+#include <sys/util.h>
 
 #include <net/net_core.h>
 #include <net/net_ip.h>

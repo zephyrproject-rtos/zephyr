@@ -8,7 +8,7 @@
 #include <irq_offload.h>
 #include <ksched.h>
 #include <sys/__assert.h>
-#include <misc/util.h>
+#include <sys/util.h>
 
 /*
  * @file

@@ -14,7 +14,7 @@
 #include <drivers/entropy.h>
 #include <drivers/clock_control.h>
 #include <bluetooth/hci.h>
-#include <misc/util.h>
+#include <sys/util.h>
 #include <sys/byteorder.h>
 
 #include "ll.h"

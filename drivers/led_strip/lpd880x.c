@@ -30,7 +30,7 @@ LOG_MODULE_REGISTER(lpd880x);
 #include <zephyr.h>
 #include <device.h>
 #include <drivers/spi.h>
-#include <misc/util.h>
+#include <sys/util.h>
 
 /*
  * LPD880X SPI master configuration:

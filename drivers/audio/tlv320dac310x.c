@@ -6,7 +6,7 @@
 
 #include <errno.h>
 
-#include <misc/util.h>
+#include <sys/util.h>
 
 #include <device.h>
 #include <drivers/i2c.h>

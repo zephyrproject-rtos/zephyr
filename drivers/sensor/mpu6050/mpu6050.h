@@ -9,7 +9,7 @@
 
 #include <device.h>
 #include <drivers/gpio.h>
-#include <misc/util.h>
+#include <sys/util.h>
 #include <zephyr/types.h>
 
 #define MPU6050_REG_CHIP_ID		0x75

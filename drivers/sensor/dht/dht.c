@@ -7,7 +7,7 @@
 #include <device.h>
 #include <drivers/gpio.h>
 #include <sys/byteorder.h>
-#include <misc/util.h>
+#include <sys/util.h>
 #include <drivers/sensor.h>
 #include <string.h>
 #include <zephyr.h>

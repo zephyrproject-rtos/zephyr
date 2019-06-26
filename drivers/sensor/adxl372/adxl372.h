@@ -12,7 +12,7 @@
 #include <drivers/gpio.h>
 #include <drivers/spi.h>
 #include <drivers/i2c.h>
-#include <misc/util.h>
+#include <sys/util.h>
 
 /*
  * ADXL372 registers definition

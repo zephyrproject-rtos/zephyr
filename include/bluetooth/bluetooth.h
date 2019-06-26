@@ -20,7 +20,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <sys/printk.h>
-#include <misc/util.h>
+#include <sys/util.h>
 #include <net/buf.h>
 #include <bluetooth/hci.h>
 #include <bluetooth/crypto.h>

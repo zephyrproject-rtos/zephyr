@@ -7,7 +7,7 @@
 #include <device.h>
 #include <errno.h>
 #include <drivers/led.h>
-#include <misc/util.h>
+#include <sys/util.h>
 #include <zephyr.h>
 
 #define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL

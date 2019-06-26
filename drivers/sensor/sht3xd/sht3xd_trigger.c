@@ -5,7 +5,7 @@
  */
 
 #include <device.h>
-#include <misc/util.h>
+#include <sys/util.h>
 #include <kernel.h>
 #include <drivers/sensor.h>
 

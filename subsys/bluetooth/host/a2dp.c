@@ -13,7 +13,7 @@
 #include <errno.h>
 #include <sys/atomic.h>
 #include <sys/byteorder.h>
-#include <misc/util.h>
+#include <sys/util.h>
 #include <sys/printk.h>
 #include <assert.h>
 

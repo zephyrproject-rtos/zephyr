@@ -9,7 +9,7 @@
 #include <stdio.h>
 #include <sys/stat.h>
 #include <linker/linker-defs.h>
-#include <misc/util.h>
+#include <sys/util.h>
 #include <kernel_internal.h>
 #include <sys/errno_private.h>
 #include <sys/libc-hooks.h>

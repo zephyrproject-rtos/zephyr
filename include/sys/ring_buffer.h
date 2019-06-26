@@ -11,7 +11,7 @@
 #define ZEPHYR_INCLUDE_SYS_RING_BUFFER_H_
 
 #include <kernel.h>
-#include <misc/util.h>
+#include <sys/util.h>
 #include <errno.h>
 #include <string.h>
 

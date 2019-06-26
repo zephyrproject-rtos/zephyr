@@ -10,7 +10,7 @@
 #include <drivers/sensor.h>
 #include <sys/__assert.h>
 #include <sys/byteorder.h>
-#include <misc/util.h>
+#include <sys/util.h>
 #include <logging/log.h>
 
 #include "ak8975.h"

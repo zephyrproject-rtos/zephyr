@@ -29,7 +29,7 @@ LOG_MODULE_REGISTER(net_pkt, CONFIG_NET_PKT_LOG_LEVEL);
 #include <zephyr/types.h>
 #include <sys/types.h>
 
-#include <misc/util.h>
+#include <sys/util.h>
 
 #include <net/net_core.h>
 #include <net/net_ip.h>

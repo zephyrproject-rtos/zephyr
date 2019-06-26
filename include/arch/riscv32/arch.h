@@ -32,7 +32,7 @@ extern "C" {
 #define STACK_ALIGN  16
 
 #ifndef _ASMLANGUAGE
-#include <misc/util.h>
+#include <sys/util.h>
 
 #define STACK_ROUND_UP(x) ROUND_UP(x, STACK_ALIGN)
 #define STACK_ROUND_DOWN(x) ROUND_DOWN(x, STACK_ALIGN)

@@ -25,7 +25,7 @@
 #include <net/lldp.h>
 #endif
 
-#include <misc/util.h>
+#include <sys/util.h>
 #include <net/net_if.h>
 #include <net/ethernet_vlan.h>
 
