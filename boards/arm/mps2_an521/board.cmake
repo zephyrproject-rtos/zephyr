@@ -2,9 +2,9 @@
 
 set(EMU_PLATFORM qemu)
 
-set(QEMU_CPU_TYPE_${ARCH} cortex-m33)
-set(QEMU_FLAGS_${ARCH}
-  -cpu ${QEMU_CPU_TYPE_${ARCH}}
+set_target_properties(${ZEPHYR_TARGET} PROPERTIES QEMU_CPU_TYPE_${ARCH} cortex-m33)
+set_property(TARGET   ${ZEPHYR_TARGET} PROPERTY   QEMU_FLAGS_${ARCH}
+  -cpu cortex-m33
   -machine mps2-an521
   -nographic
   -m 16

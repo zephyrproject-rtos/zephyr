@@ -1,11 +1,37 @@
 # SPDX-License-Identifier: Apache-2.0
 
-if("${ARCH}" STREQUAL "x86")
-  set_ifndef(QEMU_binary_suffix i386)
+# If we are using a suitable ethernet driver inside qemu, then these options
+# must be set, otherwise a zephyr instance cannot receive any network packets.
+# The Qemu supported ethernet driver should define CONFIG_ETH_NIC_MODEL
+# string that tells what nic model Qemu should use.
+if(CONFIG_QEMU_TARGET)
+  if(CONFIG_NET_QEMU_ETHERNET)
+    if(CONFIG_ETH_NIC_MODEL)
+      set_property(TARGET ${ZEPHYR_TARGET} APPEND PROPERTY QEMU_FLAGS_${ARCH}
+        -nic tap,model=${CONFIG_ETH_NIC_MODEL},script=no,downscript=no,ifname=zeth
+      )
+    else()
+      message(FATAL_ERROR "
+        No Qemu ethernet driver configured!
+        Enable Qemu supported ethernet driver like e1000 at drivers/ethernet"
+      )
+    endif()
+  else()
+    set_property(TARGET ${ZEPHYR_TARGET} APPEND PROPERTY QEMU_FLAGS_${ARCH}
+      -net none
+    )
+  endif()
+endif()
+
+get_target_property(QEMU_binary_suffix ${ZEPHYR_TARGET} QEMU_binary_suffix)
+if(QEMU_binary_suffix)
+  # Do nothing
+elseif("${ARCH}" STREQUAL "x86")
+  set(QEMU_binary_suffix i386)
 elseif(DEFINED QEMU_ARCH)
-  set_ifndef(QEMU_binary_suffix ${QEMU_ARCH})
+  set(QEMU_binary_suffix ${QEMU_ARCH})
 else()
-  set_ifndef(QEMU_binary_suffix ${ARCH})
+  set(QEMU_binary_suffix ${ARCH})
 endif()
 
 set(qemu_alternate_path $ENV{QEMU_BIN_PATH})
@@ -276,13 +302,15 @@ elseif(NOT DEFINED QEMU_KERNEL_OPTION)
   set(QEMU_KERNEL_OPTION "-kernel;$<TARGET_FILE:${logical_target_for_zephyr_elf}>")
 endif()
 
+get_target_property(qemu_flags_arch ${ZEPHYR_TARGET} QEMU_FLAGS_${ARCH})
+get_target_property(qemu_cpu_type_arch ${ZEPHYR_TARGET} QEMU_CPU_TYPE_${ARCH})
 foreach(target ${qemu_targets})
   add_custom_target(${target}
     ${PRE_QEMU_COMMANDS}
     ${PRE_QEMU_COMMANDS_FOR_${target}}
     COMMAND
     ${QEMU}
-    ${QEMU_FLAGS_${ARCH}}
+    ${qemu_flags_arch}
     ${QEMU_FLAGS}
     ${QEMU_EXTRA_FLAGS}
     ${MORE_FLAGS_FOR_${target}}
@@ -290,7 +318,7 @@ foreach(target ${qemu_targets})
     ${QEMU_KERNEL_OPTION}
     DEPENDS ${logical_target_for_zephyr_elf}
     WORKING_DIRECTORY ${APPLICATION_BINARY_DIR}
-    COMMENT "${QEMU_PIPE_COMMENT}[QEMU] CPU: ${QEMU_CPU_TYPE_${ARCH}}"
+    COMMENT "${QEMU_PIPE_COMMENT}[QEMU] CPU: ${qemu_cpu_type_arch}"
     USES_TERMINAL
     )
   if(DEFINED QEMU_KERNEL_FILE)

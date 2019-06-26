@@ -2,10 +2,9 @@
 
 set(EMU_PLATFORM qemu)
 
-set(QEMU_binary_suffix riscv64)
-set(QEMU_CPU_TYPE_${ARCH} riscv64)
-
-set(QEMU_FLAGS_${ARCH}
+set_target_properties(${ZEPHYR_TARGET} PROPERTIES QEMU_binary_suffix    riscv64)
+set_target_properties(${ZEPHYR_TARGET} PROPERTIES QEMU_CPU_TYPE_${ARCH} riscv64)
+set_property(TARGET ${ZEPHYR_TARGET} PROPERTY QEMU_FLAGS_${ARCH}
   -nographic
   -machine sifive_e
   )

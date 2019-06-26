@@ -5,8 +5,8 @@
 set(EMU_PLATFORM qemu)
 set(QEMU_ARCH aarch64)
 
-set(QEMU_CPU_TYPE_${ARCH} cortex-r5)
-set(QEMU_FLAGS_${ARCH}
+set_target_properties(${ZEPHYR_TARGET} PROPERTIES QEMU_CPU_TYPE_${ARCH} cortex-r5)
+set_property(TARGET   ${ZEPHYR_TARGET} PROPERTY   QEMU_FLAGS_${ARCH}
   -nographic
   -machine xlnx-zcu102
   -global xlnx,zynqmp.boot-cpu="rpu-cpu[0]"

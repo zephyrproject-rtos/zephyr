@@ -2,9 +2,8 @@
 
 set(EMU_PLATFORM qemu)
 
-set(QEMU_CPU_TYPE_${ARCH} riscv32)
-
-set(QEMU_FLAGS_${ARCH}
+set_target_properties(${ZEPHYR_TARGET} PROPERTIES QEMU_CPU_TYPE_${ARCH} riscv32)
+set_property(TARGET   ${ZEPHYR_TARGET} PROPERTY   QEMU_FLAGS_${ARCH}
   -nographic
   -machine sifive_e
   )

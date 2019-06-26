@@ -2,9 +2,9 @@
 
 set(EMU_PLATFORM qemu)
 
-set(QEMU_CPU_TYPE_${ARCH} cortex-m3)
-set(QEMU_FLAGS_${ARCH}
-  -cpu ${QEMU_CPU_TYPE_${ARCH}}
+set_target_properties(${ZEPHYR_TARGET} PROPERTIES QEMU_CPU_TYPE_${ARCH} cortex-m3)
+set_property(TARGET   ${ZEPHYR_TARGET} PROPERTY   QEMU_FLAGS_${ARCH}
+  -cpu cortex-m3
   -machine lm3s6965evb
   -nographic
   -vga none

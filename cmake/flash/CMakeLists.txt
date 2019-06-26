@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
-get_property(RUNNERS GLOBAL PROPERTY ZEPHYR_RUNNERS)
+get_target_property(RUNNERS ${ZEPHYR_TARGET} ZEPHYR_RUNNERS)
 
 # Enable verbose output, if requested.
 if(CMAKE_VERBOSE_MAKEFILE)
@@ -58,7 +58,7 @@ if(RUNNERS)
   foreach(runner ${RUNNERS})
     string(MAKE_C_IDENTIFIER ${runner} runner_id)
     # E.g. args = BOARD_RUNNER_ARGS_openocd, BOARD_RUNNER_ARGS_dfu_util, etc.
-    get_property(runner_args GLOBAL PROPERTY "BOARD_RUNNER_ARGS_${runner_id}")
+    get_target_property(runner_args ${ZEPHYR_TARGET} "BOARD_RUNNER_ARGS_${runner_id}")
     set(ZEPHYR_RUNNER_ARGS_${runner_id} ${runner_args} CACHE STRING
       "Runner-specific arguments for ${runner}" FORCE)
   endforeach()
