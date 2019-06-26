@@ -6,10 +6,10 @@ if(NOT CONFIG_REBOOT)
   set(REBOOT_FLAG -no-reboot)
 endif()
 
-set(QEMU_CPU_TYPE_${ARCH} qemu32,+nx,+pae)
-set(QEMU_FLAGS_${ARCH}
+set_target_properties(${ZEPHYR_TARGET} PROPERTIES QEMU_CPU_TYPE_${ARCH} qemu32,+nx,+pae)
+set_property(TARGET   ${ZEPHYR_TARGET} PROPERTY   QEMU_FLAGS_${ARCH}
   -m 12
-  -cpu ${QEMU_CPU_TYPE_${ARCH}}
+  -cpu qemu32,+nx,+pae
   -device isa-debug-exit,iobase=0xf4,iosize=0x04
   ${REBOOT_FLAG}
   -nographic

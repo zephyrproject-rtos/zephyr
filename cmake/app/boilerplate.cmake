@@ -452,38 +452,19 @@ set(ZEPHYR_TARGET zephyr)
 # flags that come with zephyr_interface.
 zephyr_library_named(zephyr)
 
-include(${BOARD_DIR}/board.cmake OPTIONAL)
-
-# If we are using a suitable ethernet driver inside qemu, then these options
-# must be set, otherwise a zephyr instance cannot receive any network packets.
-# The Qemu supported ethernet driver should define CONFIG_ETH_NIC_MODEL
-# string that tells what nic model Qemu should use.
-if(CONFIG_QEMU_TARGET)
-  if(CONFIG_NET_QEMU_ETHERNET)
-    if(CONFIG_ETH_NIC_MODEL)
-      list(APPEND QEMU_FLAGS_${ARCH}
-        -nic tap,model=${CONFIG_ETH_NIC_MODEL},script=no,downscript=no,ifname=zeth
-      )
-    else()
-      message(FATAL_ERROR "
-        No Qemu ethernet driver configured!
-        Enable Qemu supported ethernet driver like e1000 at drivers/ethernet"
-      )
-    endif()
-  else()
-    list(APPEND QEMU_FLAGS_${ARCH}
-      -net none
-    )
-  endif()
-endif()
-
 # "app" is a CMake library containing all the application code and is
 # modified by the entry point ${APPLICATION_SOURCE_DIR}/CMakeLists.txt
 # that was specified when cmake was called.
 zephyr_library_named(app)
 set_property(TARGET app PROPERTY ARCHIVE_OUTPUT_DIRECTORY app)
 
+# Add the main Zephyr build system file.
 add_subdirectory(${ZEPHYR_BASE} ${__build_dir})
+
+# Pull in the board file. This depends on ZEPHYR_TARGET in order to
+# set properties on it, so it has to come after
+# add_subdirectory(${ZEPHYR_BASE} ...)
+include(${BOARD_DIR}/board.cmake OPTIONAL)
 
 # Link 'app' with the Zephyr interface libraries.
 #
