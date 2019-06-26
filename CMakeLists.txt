@@ -56,9 +56,8 @@ set(DRIVER_VALIDATION_H_TARGET driver_validation_h_target)
 set(KOBJ_TYPES_H_TARGET        kobj_types_h_target)
 set(LINKER_SCRIPT_TARGET       linker_script_target)
 
-
-define_property(GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT BRIEF_DOCS " " FULL_DOCS " ")
-set_property(   GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT elf32-little${ARCH}) # BFD format
+define_property(TARGET                 PROPERTY   PROPERTY_OUTPUT_FORMAT BRIEF_DOCS " " FULL_DOCS " ")
+set_target_properties(${ZEPHYR_TARGET} PROPERTIES PROPERTY_OUTPUT_FORMAT elf32-little${ARCH}) # BFD format
 
 # "zephyr_interface" is a source-less library that encapsulates all the global
 # compiler options needed by all source files. All zephyr libraries,
@@ -651,7 +650,7 @@ foreach(zephyr_lib ${ZEPHYR_LIBS_PROPERTY})
   add_dependencies(${zephyr_lib} ${OFFSETS_H_TARGET})
 endforeach()
 
-get_property(OUTPUT_FORMAT        GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT)
+get_target_property(OUTPUT_FORMAT ${ZEPHYR_TARGET} PROPERTY_OUTPUT_FORMAT)
 
 if (CONFIG_CODE_DATA_RELOCATION)
   set(CODE_RELOCATION_DEP code_relocation_source_lib)

@@ -3,7 +3,8 @@
 add_subdirectory(core)
 
 if(CONFIG_64BIT)
-set_property(GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT elf64-littleriscv)
+set(output_format elf64-littleriscv)
 else()
-set_property(GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT elf32-littleriscv)
+set(output_format elf32-littleriscv)
 endif()
+set_target_properties(${ZEPHYR_TARGET} PROPERTIES PROPERTY_OUTPUT_FORMAT ${output_format})
