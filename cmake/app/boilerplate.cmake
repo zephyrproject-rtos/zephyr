@@ -86,8 +86,11 @@ add_custom_target(
   # Equivalent to rm -rf build/*
   )
 
-# Dummy add to generate files.
-zephyr_linker_sources(SECTIONS)
+# Zephyr's linker scripts are the result of running the C preprocessor
+# on per-architecture files. These files can include various sources from
+# around the zephyr tree using the zephyr_linker_sources() mechanism.
+# This helper is used to set up these files.
+zephyr_init_linker_sources()
 
 # The BOARD can be set by 3 sources. Through environment variables,
 # through the cmake CLI, and through CMakeLists.txt.

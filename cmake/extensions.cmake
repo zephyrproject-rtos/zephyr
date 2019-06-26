@@ -841,25 +841,15 @@ endfunction()
 # Friendly reminder: Beware of the different ways the location counter ('.')
 # behaves inside vs. outside section definitions.
 function(zephyr_linker_sources location)
-  # Set up the paths to the destination files. These files are #included inside
-  # the global linker.ld.
+  # Set up the paths to the destination files. These files are
+  # #included inside the global linker.ld. Keep these settings in sync
+  # with zephyr_init_linker_sources().
   set(snippet_base      "${__build_dir}/include/generated")
   set(sections_path     "${snippet_base}/snippets-sections.ld")
   set(ram_sections_path "${snippet_base}/snippets-ram-sections.ld")
   set(noinit_path       "${snippet_base}/snippets-noinit.ld")
   set(rwdata_path       "${snippet_base}/snippets-rwdata.ld")
   set(rodata_path       "${snippet_base}/snippets-rodata.ld")
-
-  # Clear destination files if this is the first time the function is called.
-  get_property(cleared GLOBAL PROPERTY snippet_files_cleared)
-  if (NOT DEFINED cleared)
-    file(WRITE ${sections_path} "")
-    file(WRITE ${ram_sections_path} "")
-    file(WRITE ${noinit_path} "")
-    file(WRITE ${rwdata_path} "")
-    file(WRITE ${rodata_path} "")
-    set_property(GLOBAL PROPERTY snippet_files_cleared true)
-  endif()
 
   # Choose destination file, based on the <location> argument.
   if ("${location}" STREQUAL "SECTIONS")
@@ -896,6 +886,21 @@ function(zephyr_linker_sources location)
   endforeach()
 endfunction(zephyr_linker_sources)
 
+# Private helper to initialize zephyr_linker_sources()
+function(zephyr_init_linker_sources)
+  set(snippet_base      "${__build_dir}/include/generated")
+  set(sections_path     "${snippet_base}/snippets-sections.ld")
+  set(ram_sections_path "${snippet_base}/snippets-ram-sections.ld")
+  set(noinit_path       "${snippet_base}/snippets-noinit.ld")
+  set(rwdata_path       "${snippet_base}/snippets-rwdata.ld")
+  set(rodata_path       "${snippet_base}/snippets-rodata.ld")
+
+  file(WRITE ${sections_path} "")
+  file(WRITE ${ram_sections_path} "")
+  file(WRITE ${noinit_path} "")
+  file(WRITE ${rwdata_path} "")
+  file(WRITE ${rodata_path} "")
+endfunction()
 
 # Helper function for CONFIG_CODE_DATA_RELOCATION
 # Call this function with 2 arguments file and then memory location
