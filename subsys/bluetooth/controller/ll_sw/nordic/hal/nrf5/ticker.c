@@ -7,7 +7,7 @@
 
 #include <stdbool.h>
 #include <sys/dlist.h>
-#include <misc/mempool_base.h>
+#include <sys/mempool_base.h>
 
 #include "hal/cntr.h"
 

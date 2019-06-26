@@ -25,7 +25,7 @@
 #include <misc/slist.h>
 #include <misc/sflist.h>
 #include <misc/util.h>
-#include <misc/mempool_base.h>
+#include <sys/mempool_base.h>
 #include <kernel_version.h>
 #include <random/rand32.h>
 #include <kernel_arch_thread.h>

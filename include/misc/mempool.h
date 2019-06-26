@@ -8,7 +8,7 @@
 #define ZEPHYR_INCLUDE_MISC_MEMPOOL_H_
 
 #include <kernel.h>
-#include <misc/mempool_base.h>
+#include <sys/mempool_base.h>
 #include <misc/mutex.h>
 
 struct sys_mem_pool {
