@@ -44,6 +44,10 @@
 #include <stm32g0xx_ll_gpio.h>
 #endif
 
+#ifdef CONFIG_SERIAL_HAS_DRIVER
+#include <stm32g0xx_ll_usart.h>
+#endif
+
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _STM32G0_SOC_H_ */
