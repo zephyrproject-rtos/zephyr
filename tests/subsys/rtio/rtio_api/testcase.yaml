@@ -1,0 +1,7 @@
+tests:
+  subsys.rtio.api:
+    tags: rtio
+  subsys.rtio.api.submit_sem:
+    tags: rtio
+    extra_configs:
+      - CONFIG_RTIO_SUBMIT_SEM=y
