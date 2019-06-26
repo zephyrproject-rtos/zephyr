@@ -10,12 +10,12 @@ else()
 endif()
 
 if(CONFIG_X86_IAMCU)
-  set_property(GLOBAL APPEND PROPERTY PROPERTY_LINKER_SCRIPT_DEFINES -D__IAMCU)
-  set_property(GLOBAL        PROPERTY PROPERTY_OUTPUT_FORMAT         "elf32-iamcu")
-  set_property(GLOBAL        PROPERTY PROPERTY_OUTPUT_ARCH           "iamcu:intel")
+  set_property(GLOBAL APPEND             PROPERTY   PROPERTY_LINKER_SCRIPT_DEFINES -D__IAMCU)
+  set_target_properties(${ZEPHYR_TARGET} PROPERTIES PROPERTY_OUTPUT_FORMAT         "elf32-iamcu")
+  set_property(GLOBAL                    PROPERTY   PROPERTY_OUTPUT_ARCH           "iamcu:intel")
 else()
-  set_property(GLOBAL PROPERTY PROPERTY_OUTPUT_ARCH "i386")
-  set_property(GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT "elf32-i386")
+  set_property(GLOBAL                    PROPERTY   PROPERTY_OUTPUT_ARCH   "i386")
+  set_target_properties(${ZEPHYR_TARGET} PROPERTIES PROPERTY_OUTPUT_FORMAT "elf32-i386")
 endif()
 
 
@@ -74,8 +74,8 @@ add_custom_command(
 # Must be last so that soc/ can override default exception handlers
 add_subdirectory(core)
 
-get_property(OUTPUT_ARCH   GLOBAL PROPERTY PROPERTY_OUTPUT_ARCH)
-get_property(OUTPUT_FORMAT GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT)
+get_property(       OUTPUT_ARCH   GLOBAL  PROPERTY PROPERTY_OUTPUT_ARCH)
+get_target_property(OUTPUT_FORMAT ${ZEPHYR_TARGET} PROPERTY_OUTPUT_FORMAT)
 
 # Convert the .bin file argument to a .o file, create a wrapper
 # library for the .o file, and register the library as a generated
