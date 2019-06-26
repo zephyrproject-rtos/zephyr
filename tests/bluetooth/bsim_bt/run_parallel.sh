@@ -72,6 +72,7 @@ if [ `command -v parallel` ]; then
   ' ::: $ALL_CASES >> $TMP_RES_FILE ; err=$?
 else #fallback in case parallel is not installed
   for CASE in $ALL_CASES; do
+    CASE_START_TIME=$SECONDS
     echo "<testcase name=\"$CASE\" time=\"0\">" >> $TMP_RES_FILE
     $CASE $@ &> $i.log
     if [ $? -ne 0 ]; then
@@ -87,6 +88,9 @@ else #fallback in case parallel is not installed
     echo "</testcase>" >> $TMP_RES_FILE
     rm $i.log
     let i=i+1
+
+    ((TIME_SPENT=SECONDS-$CASE_START_TIME))
+    echo "Took ${TIME_SPENT}s"
   done
 fi
 echo -e "</testsuite>\n</testsuites>\n" >> $TMP_RES_FILE
