@@ -65,6 +65,24 @@ set(LINKER_SCRIPT_TARGET       linker_script_target)
 # https://cmake.org/cmake/help/latest/manual/cmake-buildsystem.7.html#interface-libraries
 add_library(zephyr_interface INTERFACE)
 
+# Define common ZEPHYR_TARGET property definitions and set initial
+# values.
+define_property(TARGET PROPERTY GENERATED_KERNEL_SOURCE_FILES
+  BRIEF_DOCS "Source files that are generated after Zephyr has been linked once."
+  FULL_DOCS "\
+Source files that are generated after Zephyr has been linked once.\
+May include isr_tables.c etc."
+  )
+set_target_properties(${ZEPHYR_TARGET} PROPERTIES GENERATED_KERNEL_SOURCE_FILES "")
+
+define_property(TARGET PROPERTY GENERATED_KERNEL_OBJECT_FILES
+  BRIEF_DOCS "Object files that are generated after Zephyr has been linked once."
+  FULL_DOCS "\
+Object files that are generated after Zephyr has been linked once.\
+May include mmu tables, etc."
+  )
+set_target_properties(${ZEPHYR_TARGET} PROPERTIES GENERATED_KERNEL_OBJECT_FILES "")
+
 define_property(TARGET                 PROPERTY   PROPERTY_OUTPUT_FORMAT BRIEF_DOCS " " FULL_DOCS " ")
 set_target_properties(${ZEPHYR_TARGET} PROPERTIES PROPERTY_OUTPUT_FORMAT elf32-little${ARCH}) # BFD format
 
@@ -423,8 +441,7 @@ endforeach()
 # or tests/ as the subdirectories are ordered now.
 #
 # Another example of when the order matters is the reading and writing
-# of global properties such as ZEPHYR_LIBS or
-# GENERATED_KERNEL_OBJECT_FILES.
+# of properties such as ZEPHYR_LIBS or GENERATED_KERNEL_OBJECT_FILES.
 #
 # Arch is placed early because it defines important compiler flags
 # that must be exported to external build systems defined in
@@ -705,7 +722,7 @@ if(CONFIG_GEN_ISR_TABLES)
     ${GEN_ISR_TABLE_EXTRA_ARG}
     DEPENDS ${ZEPHYR_PREBUILT_EXECUTABLE}
     )
-  set_property(GLOBAL APPEND PROPERTY GENERATED_KERNEL_SOURCE_FILES isr_tables.c)
+  set_property(TARGET ${ZEPHYR_TARGET} APPEND PROPERTY GENERATED_KERNEL_SOURCE_FILES isr_tables.c)
 endif()
 
 if(CONFIG_CODE_DATA_RELOCATION)
@@ -852,7 +869,7 @@ if(CONFIG_ARM AND CONFIG_USERSPACE)
     priv_stacks_output_obj_renamed
     )
 
-  set_property(GLOBAL APPEND PROPERTY GENERATED_KERNEL_OBJECT_FILES priv_stacks_output_obj_renamed_lib)
+  set_property(TARGET ${ZEPHYR_TARGET} APPEND PROPERTY GENERATED_KERNEL_OBJECT_FILES priv_stacks_output_obj_renamed_lib)
 endif()
 
 # Warning: most of this gperf code is duplicated above for
@@ -976,12 +993,12 @@ if(CONFIG_USERSPACE)
     output_obj_renamed
     )
 
-  set_property(GLOBAL APPEND PROPERTY GENERATED_KERNEL_OBJECT_FILES output_obj_renamed_lib)
+  set_property(TARGET ${ZEPHYR_TARGET} APPEND PROPERTY GENERATED_KERNEL_OBJECT_FILES output_obj_renamed_lib)
 endif()
 
 # Read global variables into local variables
-get_property(GKOF GLOBAL PROPERTY GENERATED_KERNEL_OBJECT_FILES)
-get_property(GKSF GLOBAL PROPERTY GENERATED_KERNEL_SOURCE_FILES)
+get_target_property(GKOF ${ZEPHYR_TARGET} GENERATED_KERNEL_OBJECT_FILES)
+get_target_property(GKSF ${ZEPHYR_TARGET} GENERATED_KERNEL_SOURCE_FILES)
 
 
 get_property(CSTD GLOBAL PROPERTY CSTD)
