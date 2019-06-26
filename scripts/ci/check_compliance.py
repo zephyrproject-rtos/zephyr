@@ -537,7 +537,10 @@ class Codeowners(ComplianceTest):
         name_changes = git("diff", "--name-only", "--diff-filter=ARCD",
                             self.commit_range)
 
-        if not name_changes:
+        owners_changes = git("diff", "--name-only", self.commit_range,
+                             "--", codeowners)
+
+        if not name_changes and not owners_changes:
             # TODO: 1. decouple basic and cheap CODEOWNERS syntax
             # validation from the expensive ls_owned_files() scanning of
             # the entire tree. 2. run the former always.
