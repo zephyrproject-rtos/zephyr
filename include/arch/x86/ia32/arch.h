@@ -26,7 +26,7 @@
 #ifndef _ASMLANGUAGE
 #include <arch/x86/asm_inline.h>
 #include <arch/common/addr_types.h>
-#include <arch/x86/segmentation.h>
+#include <arch/x86/ia32/segmentation.h>
 #endif
 
 #ifdef __cplusplus

@@ -14,7 +14,7 @@
 #include <zephyr.h>
 #include <ztest.h>
 #include <tc_util.h>
-#include <arch/x86/segmentation.h>
+#include <arch/x86/ia32/segmentation.h>
 
 #include <kernel_structs.h>
 #if defined(__GNUC__)

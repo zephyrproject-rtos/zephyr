@@ -18,7 +18,7 @@
 #include <kernel_structs.h>
 #include <sys/printk.h>
 #include <arch/x86/irq_controller.h>
-#include <arch/x86/segmentation.h>
+#include <arch/x86/ia32/segmentation.h>
 #include <exception.h>
 #include <inttypes.h>
 #include <exc_handle.h>
