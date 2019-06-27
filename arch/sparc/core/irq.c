@@ -9,4 +9,6 @@
 void z_irq_spurious(void *unused)
 {
 	ARG_UNUSED(unused);
+
+	z_fatal_error(K_ERR_SPURIOUS_IRQ, NULL);
 }

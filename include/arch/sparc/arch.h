@@ -51,6 +51,9 @@ extern "C" {
 #define INIT_PSR_CWP (0x7 << 0)
 #define INIT_PSR     (PSR_PIL | PSR_S | PSR_PS | PSR_ET | INIT_PSR_CWP)
 
+#define THREAD_MASK_PSR (PSR_ICC | PSR_PS)
+#define THREAD_INIT_PSR           (PSR_PS)
+
 #ifndef _ASMLANGUAGE
 
 #define STACK_ROUND_UP(x) ROUND_UP(x, STACK_ALIGN_SIZE)
