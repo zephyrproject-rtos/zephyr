@@ -8,4 +8,7 @@ zephyr_library_sources(
   prep_c.c
   trap.S
   irq.c
+  cpu_idle.c
+  sched.S
+  thread.c
 )

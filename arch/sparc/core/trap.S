@@ -16,6 +16,7 @@ GTEXT(nmi_handler)
 GTEXT(fault_handler)
 
 /* imports */
+GTEXT(_kernel)
 GTEXT(_sw_isr_table)
 
 .macro _fill_all_registers_except_o0_g7_for_debugging
@@ -152,6 +153,8 @@ SECTION_FUNC(text, _isr_wrapper)
 	st %l3, [%sp + _esf_reg(psr)] /* Save %psr in psr. */
 	st %l4, [%sp + _esf_reg(y)]   /* Save %y in y. */
 
+#ifndef CONFIG_MULTITHREADING
+
 	/* * Reserve standard stack frame on the stack */
 	/*   Before calling any C function, we must have */
 	/*   a standard stack frame on the stack for spilled registers. */
@@ -159,6 +162,30 @@ SECTION_FUNC(text, _isr_wrapper)
 	/*   when !MULTITHREADING.  Use the current stack and create */
 	/*   a std stack frame on it. */
 	sub %sp, __STD_STACK_FRAME_SIZEOF, %sp
+
+#else /* CONFIG_MULTITHREADING */
+
+	/* * Switch to ISR stack. */
+	/* ** Save the stack pointer in switch_handle */
+	set _kernel, %l5                   /* Set the addr of _kernel to %l5 */
+	ld [%l5 + _kernel_to_current], %g7 /* Load the addr of current to %g7 */
+	st %sp, [%g7 + _switch_handle]     /* Store %sp in it */
+
+	/* ** Load the address of irq_stack on %fp */
+	ld [%l5 + _kernel_offset_to_irq_stack], %fp
+
+	/* ** Reserve standard stack frame on the stack */
+	/*    Before calling any C function, we must have */
+	/*    a standard stack frame on the stack for spilled registers. */
+	sub %fp, __STD_STACK_FRAME_SIZEOF, %sp /* Then, create a frame. */
+
+	/* * Increment nested */
+	/*   Load nested in %l6. We have _kernel in %l5. */
+	ld [%l5 + _kernel_offset_to_nested], %l6 /* Load nested */
+	inc %l6                                  /* Increment nested by 1 */
+	st %l6, [%l5 + _kernel_offset_to_nested] /* Put it back */
+
+#endif /* CONFIG_MULTITHREADING */
 
 	/* * Call ISR */
 	/* ** Load the argument and the function */
@@ -173,9 +200,31 @@ SECTION_FUNC(text, _isr_wrapper)
 	/* ISR should have restored all callee-saved registers */
 	/* (ins and locals). */
 
+	 /* We don't have _kernel.current set when !MULTITHREADING */
+#ifdef CONFIG_MULTITHREADING
+
+	/* * Decrement nested */
+	/*   We still have nested in %l6 */
+	dec %l6                                  /* Decrement nested by 1. */
+	st %l6, [%l5 + _kernel_offset_to_nested] /* Put int back. */
+
+#endif /* CONFIG_MULTITHREADING */
+
 	/* * Throw away standard frame on the stack */
 	/*   Get rid of the standard frame we reserved before ISR. */
 	add %sp, __STD_STACK_FRAME_SIZEOF, %sp
+
+#ifdef CONFIG_MULTITHREADING
+
+	/* 5) Switch to the next thread's stack */
+	ld [%g7 + _switch_handle], %sp /* Store %sp on switch_handle */
+
+	/* Restore %sp (%o6) for returning thread, which is %i6. */
+	/* Get rid of the context stack for the returning thread. */
+	/* We still want to access %sp until we finish restoring, so keep %sp */
+	add %sp, __z_arch_esf_t_SIZEOF, %i6
+
+#endif /* CONFIG_MULTITHREADING */
 
 	/* 5) Restore caller-saved registers from the current stack */
 	/*    The sub numbers are reversed to match save procedures */
