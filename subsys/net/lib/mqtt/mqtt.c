@@ -168,6 +168,7 @@ void mqtt_client_init(struct mqtt_client *client)
 
 	client->protocol_version = MQTT_VERSION_3_1_1;
 	client->clean_session = 1U;
+	client->keepalive = MQTT_KEEPALIVE;
 }
 
 int mqtt_connect(struct mqtt_client *client)
@@ -562,8 +563,8 @@ int mqtt_live(struct mqtt_client *client)
 		elapsed_time = mqtt_elapsed_time_in_ms_get(
 					client->internal.last_activity);
 
-		if ((MQTT_KEEPALIVE > 0) &&
-		    (elapsed_time >= (MQTT_KEEPALIVE * 1000))) {
+		if ((client->keepalive > 0) &&
+		    (elapsed_time >= (client->keepalive * 1000))) {
 			(void)mqtt_ping(client);
 		}
 	}

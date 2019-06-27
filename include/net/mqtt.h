@@ -476,6 +476,11 @@ struct mqtt_client {
 	/** Size of transmit buffer. */
 	u32_t tx_buf_size;
 
+	/** Keepalive interval for this client in seconds.
+	 *  Default is CONFIG_MQTT_KEEPALIVE.
+	 */
+	u16_t keepalive;
+
 	/** MQTT protocol version. */
 	u8_t protocol_version;
 

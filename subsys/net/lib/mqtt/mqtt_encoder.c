@@ -325,8 +325,8 @@ int connect_request_encode(const struct mqtt_client *client,
 		return err_code;
 	}
 
-	MQTT_TRC("Encoding Keep Alive Time %04x.", MQTT_KEEPALIVE);
-	err_code = pack_uint16(MQTT_KEEPALIVE, buf);
+	MQTT_TRC("Encoding Keep Alive Time %04x.", client->keepalive);
+	err_code = pack_uint16(client->keepalive, buf);
 	if (err_code != 0) {
 		return err_code;
 	}
