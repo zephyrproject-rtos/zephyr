@@ -9,7 +9,7 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_LOAPIC_H_
 #define ZEPHYR_INCLUDE_DRIVERS_LOAPIC_H_
 
-#include <arch/x86/sys_io.h>
+#include <arch/cpu.h>
 #include <arch/x86/msr.h>
 
 #ifdef __cplusplus

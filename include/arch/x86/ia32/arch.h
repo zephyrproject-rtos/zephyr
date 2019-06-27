@@ -15,12 +15,12 @@
 #define ZEPHYR_INCLUDE_ARCH_X86_IA32_ARCH_H_
 
 #include <irq.h>
+#include "sys_io.h"
 #include <arch/x86/irq_controller.h>
 #include <kernel_arch_thread.h>
 #include <generated_dts_board.h>
 #include <mmustructs.h>
 #include <stdbool.h>
-#include "../sys_io.h"
 #include <arch/common/ffs.h>
 
 #ifndef _ASMLANGUAGE
