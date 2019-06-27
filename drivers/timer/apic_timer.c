@@ -3,10 +3,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/system_timer.h>
+#include <drivers/timer/system_timer.h>
 #include <sys_clock.h>
 #include <spinlock.h>
-#include <drivers/loapic.h>
+#include <drivers/interrupt_controller/loapic.h>
 
 BUILD_ASSERT_MSG(!IS_ENABLED(CONFIG_SMP), "APIC timer doesn't support SMP");
 
@@ -40,7 +40,7 @@ BUILD_ASSERT_MSG(!IS_ENABLED(CONFIG_SMP), "APIC timer doesn't support SMP");
  *     found via CPUID 0x15 (n = EBX, m = EAX) on most CPUs.
  */
 
-/* These should be merged into include/drivers/loapic.h. */
+/* These should be merged into include/drivers/interrupt_controller/loapic.h. */
 
 #define DCR_DIVIDER_MASK	0x0000000F	/* divider bits */
 #define DCR_DIVIDER		0x0000000B	/* divide by 1 */
