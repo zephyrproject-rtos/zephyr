@@ -21,7 +21,7 @@
 #include <mmustructs.h>
 #include <stdbool.h>
 #include "../sys_io.h"
-#include "../ffs.h"
+#include <arch/common/ffs.h>
 
 #ifndef _ASMLANGUAGE
 #include <arch/x86/asm_inline.h>
