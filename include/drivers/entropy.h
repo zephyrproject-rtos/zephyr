@@ -1,5 +1,5 @@
 /**
- * @file entropy.h
+ * @file drivers/entropy.h
  *
  * @brief Public APIs for the entropy driver.
  */

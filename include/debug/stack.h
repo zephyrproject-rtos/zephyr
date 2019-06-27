@@ -1,5 +1,5 @@
 /**
- * @file stack.h
+ * @file debug/stack.h
  * Stack usage analysis helpers
  */
 
