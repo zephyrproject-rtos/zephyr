@@ -187,7 +187,6 @@ SECTION_FUNC(TEXT, z_arm_do_syscall)
     /* fixup stack frame on unprivileged stack, adding ssf */
     mov ip, sp
     push {r4,r5,ip,lr}
-    b dispatch_syscall
 
 valid_syscall:
     /* setup privileged stack */
@@ -226,7 +225,6 @@ valid_syscall:
     /* push args to complete stack frame */
     push {r4,r5}
 
-dispatch_syscall:
     ldr ip, =_k_syscall_table
     lsl r6, #2
     add ip, r6
