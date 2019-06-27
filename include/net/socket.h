@@ -271,6 +271,21 @@ static inline ssize_t zsock_send(int sock, const void *buf, size_t len,
 }
 
 /**
+ * @brief Send data to an arbitrary network address
+ *
+ * @details
+ * @rst
+ * See `POSIX.1-2017 article
+ * <http://pubs.opengroup.org/onlinepubs/9699919799/functions/sendmsg.html>`__
+ * for normative description.
+ * This function is also exposed as ``sendmsg()``
+ * if :option:`CONFIG_NET_SOCKETS_POSIX_NAMES` is defined.
+ * @endrst
+ */
+__syscall ssize_t zsock_sendmsg(int sock, const struct msghdr *msg,
+				int flags);
+
+/**
  * @brief Receive data from an arbitrary network address
  *
  * @details
@@ -595,6 +610,12 @@ static inline ssize_t sendto(int sock, const void *buf, size_t len, int flags,
 			     socklen_t addrlen)
 {
 	return zsock_sendto(sock, buf, len, flags, dest_addr, addrlen);
+}
+
+static inline ssize_t sendmsg(int sock, const struct msghdr *message,
+			      int flags)
+{
+	return zsock_sendmsg(sock, message, flags);
 }
 
 static inline ssize_t recvfrom(int sock, void *buf, size_t max_len, int flags,

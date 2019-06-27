@@ -509,6 +509,39 @@ Z_SYSCALL_HANDLER(zsock_sendto, sock, buf, len, flags, dest_addr, addrlen)
 }
 #endif /* CONFIG_USERSPACE */
 
+ssize_t zsock_sendmsg_ctx(struct net_context *ctx, const struct msghdr *msg,
+			  int flags)
+{
+	s32_t timeout = K_FOREVER;
+	int status;
+
+	if ((flags & ZSOCK_MSG_DONTWAIT) || sock_is_nonblock(ctx)) {
+		timeout = K_NO_WAIT;
+	}
+
+	status = net_context_sendmsg(ctx, msg, flags, NULL, timeout, NULL);
+	if (status < 0) {
+		errno = -status;
+		return -1;
+	}
+
+	return status;
+}
+
+ssize_t z_impl_zsock_sendmsg(int sock, const struct msghdr *msg, int flags)
+{
+	VTABLE_CALL(sendmsg, sock, msg, flags);
+}
+
+#ifdef CONFIG_USERSPACE
+Z_SYSCALL_HANDLER(zsock_sendmsg, sock, msg, flags)
+{
+	/* TODO: Create a copy of msg_buf and copy the data there */
+
+	return z_impl_zsock_sendmsg(sock, (const struct msghdr *)msg, flags);
+}
+#endif /* CONFIG_USERSPACE */
+
 static int sock_get_pkt_src_addr(struct net_pkt *pkt,
 				 enum net_ip_protocol proto,
 				 struct sockaddr *addr,
@@ -1423,6 +1456,12 @@ static ssize_t sock_sendto_vmeth(void *obj, const void *buf, size_t len,
 	return zsock_sendto_ctx(obj, buf, len, flags, dest_addr, addrlen);
 }
 
+static ssize_t sock_sendmsg_vmeth(void *obj, const struct msghdr *msg,
+				  int flags)
+{
+	return zsock_sendmsg_ctx(obj, msg, flags);
+}
+
 static ssize_t sock_recvfrom_vmeth(void *obj, void *buf, size_t max_len,
 				   int flags, struct sockaddr *src_addr,
 				   socklen_t *addrlen)
@@ -1455,6 +1494,7 @@ const struct socket_op_vtable sock_fd_op_vtable = {
 	.listen = sock_listen_vmeth,
 	.accept = sock_accept_vmeth,
 	.sendto = sock_sendto_vmeth,
+	.sendmsg = sock_sendmsg_vmeth,
 	.recvfrom = sock_recvfrom_vmeth,
 	.getsockopt = sock_getsockopt_vmeth,
 	.setsockopt = sock_setsockopt_vmeth,
