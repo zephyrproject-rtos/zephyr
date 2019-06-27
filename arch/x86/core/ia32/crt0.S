@@ -11,7 +11,7 @@
  * after having been loaded into RAM.
  */
 
-#include <arch/x86/asm.h>
+#include <arch/x86/ia32/asm.h>
 #include <arch/x86/msr.h>
 #include <kernel_arch_data.h>
 #include <arch/cpu.h>

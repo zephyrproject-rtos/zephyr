@@ -10,7 +10,7 @@
  */
 
 #include <kernel_structs.h>
-#include <arch/x86/asm.h>
+#include <arch/x86/ia32/asm.h>
 
 	GTEXT(z_loapic_spurious_handler)
 
