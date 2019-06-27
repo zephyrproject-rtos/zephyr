@@ -205,26 +205,11 @@ BUILD_ASSERT(sizeof(struct ticker_user_op) == TICKER_USER_OP_T_SIZE);
 #define TICKER_INSTANCE_MAX 1
 static struct ticker_instance _instance[TICKER_INSTANCE_MAX];
 
+#define INC_MOD(y, x) ((y) + 1 == (x) ? 0 : (y) + 1)
+
 /*****************************************************************************
  * Static Functions
  ****************************************************************************/
-
-/**
- * @brief Update elapsed index
- *
- * @param ticks_elapsed_index Pointer to current index
- *
- * @internal
- */
-static inline void ticker_next_elapsed(u8_t *ticks_elapsed_index)
-{
-	u8_t idx = *ticks_elapsed_index + 1;
-
-	if (idx == DOUBLE_BUFFER_SIZE) {
-		idx = 0U;
-	}
-	*ticks_elapsed_index = idx;
-}
 
 /**
  * @brief Get ticker expiring in a specific slot
@@ -584,8 +569,9 @@ void ticker_worker(void *param)
 
 	/* Queue the elapsed ticks */
 	if (instance->ticks_elapsed_first == instance->ticks_elapsed_last) {
-		ticker_next_elapsed(&instance->ticks_elapsed_last);
+		instance->ticks_elapsed_last = INC_MOD(instance->ticks_elapsed_last, DOUBLE_BUFFER_SIZE);
 	}
+
 	instance->ticks_elapsed[instance->ticks_elapsed_last] = ticks_expired;
 
 	instance->worker_trigger = 0U;
@@ -1487,7 +1473,7 @@ void ticker_job(void *param)
 
 	/* Update current tick with the elapsed value from queue, and dequeue */
 	if (instance->ticks_elapsed_first != instance->ticks_elapsed_last) {
-		ticker_next_elapsed(&instance->ticks_elapsed_first);
+		instance->ticks_elapsed_first = INC_MOD(instance->ticks_elapsed_first, DOUBLE_BUFFER_SIZE);
 
 		ticks_elapsed =
 		    instance->ticks_elapsed[instance->ticks_elapsed_first];
@@ -1714,10 +1700,7 @@ u32_t ticker_start(u8_t instance_index, u8_t user_id, u8_t ticker_id,
 
 	user = &instance->users[user_id];
 
-	last = user->last + 1;
-	if (last >= user->count_user_op) {
-		last = 0U;
-	}
+	last = INC_MOD(user->last, user->count_user_op);
 
 	if (last == user->first) {
 		return TICKER_STATUS_FAILURE;
@@ -1788,10 +1771,7 @@ u32_t ticker_update(u8_t instance_index, u8_t user_id, u8_t ticker_id,
 
 	user = &instance->users[user_id];
 
-	last = user->last + 1;
-	if (last >= user->count_user_op) {
-		last = 0U;
-	}
+	last = INC_MOD(user->last, user->count_user_op);
 
 	if (last == user->first) {
 		return TICKER_STATUS_FAILURE;
@@ -1846,10 +1826,7 @@ u32_t ticker_stop(u8_t instance_index, u8_t user_id, u8_t ticker_id,
 
 	user = &instance->users[user_id];
 
-	last = user->last + 1;
-	if (last >= user->count_user_op) {
-		last = 0U;
-	}
+	last = INC_MOD(user->last, user->count_user_op);
 
 	if (last == user->first) {
 		return TICKER_STATUS_FAILURE;
@@ -1904,10 +1881,7 @@ u32_t ticker_next_slot_get(u8_t instance_index, u8_t user_id, u8_t *ticker_id,
 
 	user = &instance->users[user_id];
 
-	last = user->last + 1;
-	if (last >= user->count_user_op) {
-		last = 0U;
-	}
+	last = INC_MOD(user->last, user->count_user_op);
 
 	if (last == user->first) {
 		return TICKER_STATUS_FAILURE;
@@ -1959,10 +1933,7 @@ u32_t ticker_job_idle_get(u8_t instance_index, u8_t user_id,
 
 	user = &instance->users[user_id];
 
-	last = user->last + 1;
-	if (last >= user->count_user_op) {
-		last = 0U;
-	}
+	last = INC_MOD(user->last, user->count_user_op);
 
 	if (last == user->first) {
 		return TICKER_STATUS_FAILURE;
