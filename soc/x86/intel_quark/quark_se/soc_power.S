@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <arch/x86/asm.h>
+#include <arch/x86/ia32/asm.h>
 
 #ifdef CONFIG_SYS_POWER_DEEP_SLEEP_STATES
 GDATA(_pm_save_gdtr)
