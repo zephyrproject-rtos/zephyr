@@ -62,7 +62,6 @@
 			compatible = "nxp,kinetis-scg";
 			reg = <0x40064000 0x1000>;
 			label = "SCG";
-			clock-controller;
 			#clock-cells = <1>;
 		};
 
@@ -70,7 +69,6 @@
 			compatible = "nxp,kinetis-pcc";
 			reg = <0x40065000 0x1000>;
 			label = "PCC";
-			clock-controller;
 			#clock-cells = <1>;
 		};
 

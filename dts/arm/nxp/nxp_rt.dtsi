@@ -86,7 +86,6 @@
 			reg = <0x400fc000 0x4000>;
 			label = "CCM";
 
-			clock-controller;
 			#clock-cells = <3>;
 		};
 
