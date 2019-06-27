@@ -6,8 +6,8 @@
 
 /* Implementation of sys_io.h's documented functions */
 
-#ifndef ZEPHYR_INCLUDE_ARCH_X86_SYS_IO_H_
-#define ZEPHYR_INCLUDE_ARCH_X86_SYS_IO_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_X86_IA32_SYS_IO_H_
+#define ZEPHYR_INCLUDE_ARCH_X86_IA32_SYS_IO_H_
 
 
 #if !defined(_ASMLANGUAGE)
@@ -270,4 +270,4 @@ static ALWAYS_INLINE
 
 #endif /* _ASMLANGUAGE */
 
-#endif /* ZEPHYR_INCLUDE_ARCH_X86_SYS_IO_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_X86_IA32_SYS_IO_H_ */
