@@ -852,6 +852,35 @@ int net_context_sendto(struct net_context *context,
 		       void *user_data);
 
 /**
+ * @brief Send data in iovec to a peer specified in msghdr struct.
+ *
+ * @details This function has similar semantics as Posix sendmsg() call.
+ * For unconnected socket, the msg_name field in msghdr must be set. For
+ * connected socket the msg_name should be set to NULL, and msg_namelen to 0.
+ * This function will return immediately if the timeout is set to K_NO_WAIT.
+ * If the timeout is set to K_FOREVER, the function will wait until the network
+ * buffer is sent. Timeout value > 0 will wait as many ms. After the network
+ * buffer is sent, a caller-supplied callback is called. The callback is called
+ * even if timeout was set to K_FOREVER, the callback is called before this
+ * function will return. The callback is not called if the timeout expires.
+ *
+ * @param context The network context to use.
+ * @param msghdr The data to send
+ * @param flags Flags for the sending.
+ * @param cb Caller-supplied callback function.
+ * @param timeout Timeout for the connection. Possible values
+ * @param user_data Caller-supplied user data.
+ *
+ * @return numbers of bytes sent on success, a negative errno otherwise
+ */
+int net_context_sendmsg(struct net_context *context,
+			const struct msghdr *msghdr,
+			int flags,
+			net_context_send_cb_t cb,
+			s32_t timeout,
+			void *user_data);
+
+/**
  * @brief Receive network data from a peer specified by context.
  *
  * @details This function can be used to register a callback function

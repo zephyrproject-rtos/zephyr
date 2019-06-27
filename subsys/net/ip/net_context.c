@@ -1131,10 +1131,36 @@ int net_context_get_timestamp(struct net_context *context,
 }
 #endif /* CONFIG_NET_CONTEXT_TIMESTAMP */
 
+/* If buf is not NULL, then use it. Otherwise read the data to be written
+ * to net_pkt from msghdr.
+ */
+static int context_write_data(struct net_pkt *pkt, const void *buf,
+			      int buf_len, const struct msghdr *msghdr)
+{
+	int ret = 0;
+
+	if (msghdr) {
+		int i;
+
+		for (i = 0; i < msghdr->msg_iovlen; i++) {
+			ret = net_pkt_write(pkt, msghdr->msg_iov[i].iov_base,
+					    msghdr->msg_iov[i].iov_len);
+			if (ret < 0) {
+				break;
+			}
+		}
+	} else {
+		ret = net_pkt_write(pkt, buf, buf_len);
+	}
+
+	return ret;
+}
+
 static int context_setup_udp_packet(struct net_context *context,
 				    struct net_pkt *pkt,
 				    const void *buf,
 				    size_t len,
+				    const struct msghdr *msg,
 				    const struct sockaddr *dst_addr,
 				    socklen_t addrlen)
 {
@@ -1176,7 +1202,7 @@ static int context_setup_udp_packet(struct net_context *context,
 		return ret;
 	}
 
-	ret = net_pkt_write(pkt, buf, len);
+	ret = context_write_data(pkt, buf, len, msg);
 	if (ret) {
 		return ret;
 	}
@@ -1250,6 +1276,7 @@ static int context_sendto(struct net_context *context,
 			  void *user_data,
 			  bool sendto)
 {
+	const struct msghdr *msghdr = NULL;
 	struct net_pkt *pkt;
 	size_t tmp_len;
 	int ret;
@@ -1260,7 +1287,12 @@ static int context_sendto(struct net_context *context,
 		return -EBADF;
 	}
 
-	if (!dst_addr &&
+	if (sendto && addrlen == 0 && dst_addr == NULL && buf != NULL) {
+		/* User wants to call sendmsg */
+		msghdr = buf;
+	}
+
+	if (!msghdr && !dst_addr &&
 	    !(IS_ENABLED(CONFIG_NET_SOCKETS_CAN) &&
 	      net_context_get_ip_proto(context) == CAN_RAW)) {
 		return -EDESTADDRREQ;
@@ -1270,6 +1302,19 @@ static int context_sendto(struct net_context *context,
 	    net_context_get_family(context) == AF_INET6) {
 		const struct sockaddr_in6 *addr6 =
 			(const struct sockaddr_in6 *)dst_addr;
+
+		if (msghdr) {
+			addr6 = msghdr->msg_name;
+			addrlen = msghdr->msg_namelen;
+
+			if (!addr6) {
+				return -EINVAL;
+			}
+
+			/* For sendmsg(), the dst_addr is NULL so set it here.
+			 */
+			dst_addr = (const struct sockaddr *)addr6;
+		}
 
 		if (addrlen < sizeof(struct sockaddr_in6)) {
 			return -EINVAL;
@@ -1282,6 +1327,19 @@ static int context_sendto(struct net_context *context,
 		   net_context_get_family(context) == AF_INET) {
 		const struct sockaddr_in *addr4 =
 			(const struct sockaddr_in *)dst_addr;
+
+		if (msghdr) {
+			addr4 = msghdr->msg_name;
+			addrlen = msghdr->msg_namelen;
+
+			if (!addr4) {
+				return -EINVAL;
+			}
+
+			/* For sendmsg(), the dst_addr is NULL so set it here.
+			 */
+			dst_addr = (const struct sockaddr *)addr4;
+		}
 
 		if (addrlen < sizeof(struct sockaddr_in)) {
 			return -EINVAL;
@@ -1340,6 +1398,14 @@ static int context_sendto(struct net_context *context,
 		return -EINVAL;
 	}
 
+	if (msghdr && len == 0) {
+		int i;
+
+		for (i = 0; i < msghdr->msg_iovlen; i++) {
+			len += msghdr->msg_iov[i].iov_len;
+		}
+	}
+
 	pkt = context_alloc_pkt(context, len, PKT_WAIT_TIME);
 	if (!pkt) {
 		return -ENOMEM;
@@ -1393,7 +1459,7 @@ static int context_sendto(struct net_context *context,
 
 	if (IS_ENABLED(CONFIG_NET_OFFLOAD) &&
 	    net_if_is_ip_offloaded(net_context_get_iface(context))) {
-		ret = net_pkt_write(pkt, buf, len);
+		ret = context_write_data(pkt, buf, len, msghdr);
 		if (ret < 0) {
 			goto fail;
 		}
@@ -1410,7 +1476,7 @@ static int context_sendto(struct net_context *context,
 		}
 	} else if (IS_ENABLED(CONFIG_NET_UDP) &&
 	    net_context_get_ip_proto(context) == IPPROTO_UDP) {
-		ret = context_setup_udp_packet(context, pkt, buf, len,
+		ret = context_setup_udp_packet(context, pkt, buf, len, msghdr,
 					       dst_addr, addrlen);
 		if (ret < 0) {
 			goto fail;
@@ -1421,7 +1487,7 @@ static int context_sendto(struct net_context *context,
 		ret = net_send_data(pkt);
 	} else if (IS_ENABLED(CONFIG_NET_TCP) &&
 		   net_context_get_ip_proto(context) == IPPROTO_TCP) {
-		ret = net_pkt_write(pkt, buf, len);
+		ret = context_write_data(pkt, buf, len, msghdr);
 		if (ret < 0) {
 			goto fail;
 		}
@@ -1435,7 +1501,7 @@ static int context_sendto(struct net_context *context,
 		ret = net_tcp_send_data(context, cb, user_data);
 	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) &&
 		   net_context_get_family(context) == AF_PACKET) {
-		ret = net_pkt_write(pkt, buf, len);
+		ret = context_write_data(pkt, buf, len, msghdr);
 		if (ret < 0) {
 			goto fail;
 		}
@@ -1446,7 +1512,7 @@ static int context_sendto(struct net_context *context,
 	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_CAN) &&
 		   net_context_get_family(context) == AF_CAN &&
 		   net_context_get_ip_proto(context) == CAN_RAW) {
-		ret = net_pkt_write(pkt, buf, len);
+		ret = context_write_data(pkt, buf, len, msghdr);
 		if (ret < 0) {
 			goto fail;
 		}
@@ -1514,6 +1580,24 @@ unlock:
 	return ret;
 }
 
+int net_context_sendmsg(struct net_context *context,
+			const struct msghdr *msghdr,
+			int flags,
+			net_context_send_cb_t cb,
+			s32_t timeout,
+			void *user_data)
+{
+	int ret;
+
+	k_mutex_lock(&context->lock, K_FOREVER);
+
+	ret = context_sendto(context, msghdr, 0, NULL, 0,
+			     cb, timeout, user_data, true);
+
+	k_mutex_unlock(&context->lock);
+
+	return ret;
+}
 
 int net_context_sendto(struct net_context *context,
 		       const void *buf,
