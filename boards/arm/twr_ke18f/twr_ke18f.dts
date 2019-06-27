@@ -147,7 +147,7 @@
 };
 
 &can0 {
-	status = "ok";
+	status = "okay";
 	bus-speed = <125000>;
 };
 

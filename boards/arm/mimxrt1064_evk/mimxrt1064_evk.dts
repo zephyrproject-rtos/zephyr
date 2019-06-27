@@ -90,5 +90,5 @@ arduino_i2c: &i2c1 {};
 };
 
 &usbd1 {
-	status = "ok";
+	status = "okay";
 };
