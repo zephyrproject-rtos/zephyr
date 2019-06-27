@@ -4,23 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-struct bt_settings_handler {
-	const char *name;
-	int (*set)(const char *name, size_t len, settings_read_cb read_cb,
-		   void *cb_arg);
-	int (*commit)(void);
-	int (*export)(int (*func)(const char *name,
-				  const void *val, size_t val_len));
-};
-
-#define BT_SETTINGS_DEFINE(_name, _set, _commit, _export)               \
-	const Z_STRUCT_SECTION_ITERABLE(bt_settings_handler, _name) = { \
-				.name = STRINGIFY(_name),               \
-				.set = _set,                            \
-				.commit = _commit,                      \
-				.export = _export,                      \
-			}
-
 /* Max settings key length (with all components) */
 #define BT_SETTINGS_KEY_MAX 36
 

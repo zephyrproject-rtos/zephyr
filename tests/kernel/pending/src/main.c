@@ -35,12 +35,12 @@ static K_THREAD_STACK_DEFINE(offload_work_q_stack,
 			     CONFIG_OFFLOAD_WORKQUEUE_STACK_SIZE);
 
 struct fifo_data {
-	u32_t reserved;
+	intptr_t reserved;
 	u32_t data;
 };
 
 struct lifo_data {
-	u32_t reserved;
+	intptr_t reserved;
 	u32_t data;
 };
 

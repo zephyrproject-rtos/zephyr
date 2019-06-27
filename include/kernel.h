@@ -1045,10 +1045,10 @@ __syscall void k_thread_priority_set(k_tid_t thread, int prio);
  * logic.
  *
  * @note
- *    @rststar
+ *    @rst
  *    You should enable :option:`CONFIG_SCHED_DEADLINE` in your project
  *    configuration.
- *    @endrststar
+ *    @endrst
  *
  * @param thread A thread on which to set the deadline
  * @param deadline A time delta, in cycle units
@@ -1066,10 +1066,10 @@ __syscall void k_thread_deadline_set(k_tid_t thread, int deadline);
  * CPUs.  The thread must not be currently runnable.
  *
  * @note
- *    @rststar
+ *    @rst
  *    You should enable :option:`CONFIG_SCHED_DEADLINE` in your project
  *    configuration.
- *    @endrststar
+ *    @endrst
  *
  * @param thread Thread to operate upon
  * @return Zero on success, otherwise error code
@@ -1083,10 +1083,10 @@ int k_thread_cpu_mask_clear(k_tid_t thread);
  * thread must not be currently runnable.
  *
  * @note
- *    @rststar
+ *    @rst
  *    You should enable :option:`CONFIG_SCHED_DEADLINE` in your project
  *    configuration.
- *    @endrststar
+ *    @endrst
  *
  * @param thread Thread to operate upon
  * @return Zero on success, otherwise error code
@@ -1099,10 +1099,10 @@ int k_thread_cpu_mask_enable_all(k_tid_t thread);
  * The thread must not be currently runnable.
  *
  * @note
- *    @rststar
+ *    @rst
  *    You should enable :option:`CONFIG_SCHED_DEADLINE` in your project
  *    configuration.
- *    @endrststar
+ *    @endrst
  *
  * @param thread Thread to operate upon
  * @param cpu CPU index
@@ -1116,10 +1116,10 @@ int k_thread_cpu_mask_enable(k_tid_t thread, int cpu);
  * The thread must not be currently runnable.
  *
  * @note
- *    @rststar
+ *    @rst
  *    You should enable :option:`CONFIG_SCHED_DEADLINE` in your project
  *    configuration.
- *    @endrststar
+ *    @endrst
  *
  * @param thread Thread to operate upon
  * @param cpu CPU index
@@ -1658,12 +1658,12 @@ static inline void *z_impl_k_timer_user_data_get(struct k_timer *timer)
  * in milliseconds.
  *
  * @note
- *    @rststar
+ *    @rst
  *    While this function returns time in milliseconds, it does
  *    not mean it has millisecond resolution. The actual resolution depends on
  *    :option:`CONFIG_SYS_CLOCK_TICKS_PER_SEC` config option, and with the
  *    default setting of 100, system time is updated in increments of 10ms.
- *    @endrststar
+ *    @endrst
  *
  * @return Current uptime in milliseconds.
  */
@@ -1705,12 +1705,12 @@ void k_disable_sys_clock_always_on(void);
  * caller must handle possible rollovers.
  *
  * @note
- *    @rststar
+ *    @rst
  *    While this function returns time in milliseconds, it does
  *    not mean it has millisecond resolution. The actual resolution depends on
  *    :option:`CONFIG_SYS_CLOCK_TICKS_PER_SEC` config option, and with the
  *    default setting of 100, system time is updated in increments of 10ms.
- *    @endrststar
+ *    @endrst
  *
  * @return Current uptime in milliseconds.
  */
@@ -1843,8 +1843,8 @@ __syscall void k_queue_cancel_wait(struct k_queue *queue);
  * @brief Append an element to the end of a queue.
  *
  * This routine appends a data item to @a queue. A queue data item must be
- * aligned on a 4-byte boundary, and the first 32 bits of the item are
- * reserved for the kernel's use.
+ * aligned on a word boundary, and the first word of the item is reserved
+ * for the kernel's use.
  *
  * @note Can be called by ISRs.
  *
@@ -1877,8 +1877,8 @@ __syscall s32_t k_queue_alloc_append(struct k_queue *queue, void *data);
  * @brief Prepend an element to a queue.
  *
  * This routine prepends a data item to @a queue. A queue data item must be
- * aligned on a 4-byte boundary, and the first 32 bits of the item are
- * reserved for the kernel's use.
+ * aligned on a word boundary, and the first word of the item is reserved
+ * for the kernel's use.
  *
  * @note Can be called by ISRs.
  *
@@ -1911,8 +1911,8 @@ __syscall s32_t k_queue_alloc_prepend(struct k_queue *queue, void *data);
  * @brief Inserts an element to a queue.
  *
  * This routine inserts a data item to @a queue after previous item. A queue
- * data item must be aligned on a 4-byte boundary, and the first 32 bits of the
- * item are reserved for the kernel's use.
+ * data item must be aligned on a word boundary, and the first word of
+ * the item is reserved for the kernel's use.
  *
  * @note Can be called by ISRs.
  *
@@ -1928,7 +1928,7 @@ extern void k_queue_insert(struct k_queue *queue, void *prev, void *data);
  * @brief Atomically append a list of elements to a queue.
  *
  * This routine adds a list of data items to @a queue in one operation.
- * The data items must be in a singly-linked list, with the first 32 bits
+ * The data items must be in a singly-linked list, with the first word
  * in each data item pointing to the next data item; the list must be
  * NULL-terminated.
  *
@@ -1961,8 +1961,8 @@ extern void k_queue_merge_slist(struct k_queue *queue, sys_slist_t *list);
 /**
  * @brief Get an element from a queue.
  *
- * This routine removes first data item from @a queue. The first 32 bits of the
- * data item are reserved for the kernel's use.
+ * This routine removes first data item from @a queue. The first word of the
+ * data item is reserved for the kernel's use.
  *
  * @note Can be called by ISRs, but @a timeout must be set to K_NO_WAIT.
  *
@@ -1978,8 +1978,8 @@ __syscall void *k_queue_get(struct k_queue *queue, s32_t timeout);
 /**
  * @brief Remove an element from a queue.
  *
- * This routine removes data item from @a queue. The first 32 bits of the
- * data item are reserved for the kernel's use. Removing elements from k_queue
+ * This routine removes data item from @a queue. The first word of the
+ * data item is reserved for the kernel's use. Removing elements from k_queue
  * rely on sys_slist_find_and_remove which is not a constant time operation.
  *
  * @note Can be called by ISRs
@@ -1997,8 +1997,8 @@ static inline bool k_queue_remove(struct k_queue *queue, void *data)
 /**
  * @brief Append an element to a queue only if it's not present already.
  *
- * This routine appends data item to @a queue. The first 32 bits of the
- * data item are reserved for the kernel's use. Appending elements to k_queue
+ * This routine appends data item to @a queue. The first word of the data
+ * item is reserved for the kernel's use. Appending elements to k_queue
  * relies on sys_slist_is_node_in_list which is not a constant time operation.
  *
  * @note Can be called by ISRs
@@ -2235,8 +2235,8 @@ struct k_fifo {
  * @brief Add an element to a FIFO queue.
  *
  * This routine adds a data item to @a fifo. A FIFO data item must be
- * aligned on a 4-byte boundary, and the first 32 bits of the item are
- * reserved for the kernel's use.
+ * aligned on a word boundary, and the first word of the item is reserved
+ * for the kernel's use.
  *
  * @note Can be called by ISRs.
  *
@@ -2273,7 +2273,7 @@ struct k_fifo {
  * @brief Atomically add a list of elements to a FIFO.
  *
  * This routine adds a list of data items to @a fifo in one operation.
- * The data items must be in a singly-linked list, with the first 32 bits
+ * The data items must be in a singly-linked list, with the first word of
  * each data item pointing to the next data item; the list must be
  * NULL-terminated.
  *
@@ -2312,7 +2312,7 @@ struct k_fifo {
  * @brief Get an element from a FIFO queue.
  *
  * This routine removes a data item from @a fifo in a "first in, first out"
- * manner. The first 32 bits of the data item are reserved for the kernel's use.
+ * manner. The first word of the data item is reserved for the kernel's use.
  *
  * @note Can be called by ISRs, but @a timeout must be set to K_NO_WAIT.
  *
@@ -2434,7 +2434,7 @@ struct k_lifo {
  * @brief Add an element to a LIFO queue.
  *
  * This routine adds a data item to @a lifo. A LIFO queue data item must be
- * aligned on a 4-byte boundary, and the first 32 bits of the item are
+ * aligned on a word boundary, and the first word of the item is
  * reserved for the kernel's use.
  *
  * @note Can be called by ISRs.
@@ -2472,7 +2472,7 @@ struct k_lifo {
  * @brief Get an element from a LIFO queue.
  *
  * This routine removes a data item from @a lifo in a "last in, first out"
- * manner. The first 32 bits of the data item are reserved for the kernel's use.
+ * manner. The first word of the data item is reserved for the kernel's use.
  *
  * @note Can be called by ISRs, but @a timeout must be set to K_NO_WAIT.
  *

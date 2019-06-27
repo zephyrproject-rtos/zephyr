@@ -20,9 +20,9 @@ properties:
     reset-gpios:
       type: compound
       category: required
-      generation: define, use-prop-name
+      generation: define
 
     cmd-data-gpios:
       type: compound
       category: required
-      generation: define, use-prop-name
+      generation: define

@@ -175,7 +175,7 @@ void z_arch_configure_dynamic_mpu_regions(struct k_thread *thread)
 				 */
 				continue;
 			}
-			LOG_DBG("set region 0x%x 0x%x",
+			LOG_DBG("set region 0x%lx 0x%x",
 				partition.start, partition.size);
 			__ASSERT(region_num < _MAX_DYNAMIC_MPU_REGIONS_NUM,
 				"Out-of-bounds error for dynamic region map.");

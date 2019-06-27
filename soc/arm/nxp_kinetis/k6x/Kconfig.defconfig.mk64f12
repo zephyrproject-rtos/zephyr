@@ -19,6 +19,13 @@ config ADC_MCUX_ADC16
 
 endif # ADC
 
+if CAN
+
+config CAN_MCUX_FLEXCAN
+	default y
+
+endif # CAN
+
 if CLOCK_CONTROL
 
 config CLOCK_CONTROL_MCUX_SIM

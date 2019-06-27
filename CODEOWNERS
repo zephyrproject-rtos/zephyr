@@ -57,6 +57,7 @@
 /boards/arc/quark_se_c1000_ss_devboard/   @nashif
 /boards/arm/                              @MaureenHelm @galak
 /boards/arm/96b_argonkey/                 @avisconti
+/boards/arm/96b_avenger96/                @Mani-Sadhasivam
 /boards/arm/96b_carbon/                   @rsalveti @idlethread
 /boards/arm/96b_meerkat96/                @Mani-Sadhasivam
 /boards/arm/96b_nitrogen/                 @idlethread
@@ -156,6 +157,7 @@
 /drivers/ptp_clock/                       @jukkar
 /drivers/spi/                             @tbursztyka
 /drivers/spi/spi_ll_stm32.*               @superna9999
+/drivers/timer/apic_timer.c               @gnuless
 /drivers/timer/cortex_m_systick.c         @ioannisg
 /drivers/timer/altera_avalon_timer_hal.c  @wentongwu
 /drivers/timer/riscv_machine_timer.c      @nategraff-sifive @kgugala @pgielda
@@ -178,6 +180,7 @@
 /dts/arm/microchip/                       @franciscomunoz @albertofloyd @scottwcpg
 /dts/riscv32/rv32m1*                      @MaureenHelm
 /dts/riscv32/riscv32-litex-vexriscv.dtsi  @mateusz-holenko @kgugala @pgielda
+/dts/xtensa/xtensa.dtsi                   @ydamigos
 /dts/bindings/                            @galak
 /dts/bindings/can/                        @alexanderwachter
 /dts/bindings/iio/adc/st*stm32-adc.yaml   @cybertale
@@ -227,11 +230,8 @@
 /include/display/framebuf.h               @gnuless
 /include/drivers/bluetooth/               @joerchan @jhedberg @Vudentz
 /include/drivers/led/ht16k33.h            @henrikbrixandersen
-/include/drivers/modem/                   @mike-scott
-/include/drivers/ioapic.h                 @andrewboie
-/include/drivers/loapic.h                 @andrewboie
+/include/drivers/interrupt_controller/    @andrewboie @gnuless
 /include/drivers/pcie/                    @gnuless
-/include/drivers/serial/uart_ns16550.h    @gnuless
 /include/dt-bindings/clock/kinetis_scg.h  @henrikbrixandersen
 /include/dt-bindings/pcie/                @gnuless
 /include/dt-bindings/usb/usb.h            @galak @finikorg

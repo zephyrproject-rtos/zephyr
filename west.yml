@@ -48,10 +48,10 @@ manifest:
       revision: 9151e614c23997074acd1096a3e8a9e5c255d5b9
       path: modules/hal/silabs
     - name: hal_st
-      revision: b6c9262eed68000e69c92bef6e820cdbd5b0a32b
+      revision: 0ec40aed8087f26bd9ac1b70fb5a6c326a6451aa
       path: modules/hal/st
     - name: hal_stm32
-      revision: b454ad819f4f10cb82ce5eb1d7f709a680bc61c5
+      revision: 8066e1d2477860a106e3c2e6ca841b4abbfbaad2
       path: modules/hal/stm32
     - name: libmetal
       revision: 45e630d6152824f807d3f919958605c4626cbdff

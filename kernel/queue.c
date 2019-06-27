@@ -46,7 +46,7 @@ void *z_queue_node_peek(sys_sfnode_t *node, bool needs_free)
 			k_free(anode);
 		}
 	} else {
-		/* Data was directly placed in the queue, the first 4 bytes
+		/* Data was directly placed in the queue, the first word
 		 * reserved for the linked list. User mode isn't allowed to
 		 * do this, although it can get data sent this way.
 		 */

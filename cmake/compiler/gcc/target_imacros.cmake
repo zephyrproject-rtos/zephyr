@@ -4,6 +4,6 @@
 
 macro(toolchain_cc_imacros header_file)
 
-  zephyr_compile_options(-imacros ${header_file})
+  zephyr_compile_options(--imacros=${header_file})
 
 endmacro()

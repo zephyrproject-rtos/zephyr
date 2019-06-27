@@ -28,11 +28,11 @@ static struct spi_config lis2dw12_spi_conf = {
 	.cs        = NULL,
 };
 
-static int lis2dw12_raw_read(struct lis2dw12_data *data, u8_t reg_addr,
-			    u8_t *value, u8_t len)
+static int lis2dw12_spi_read(struct lis2dw12_data *ctx, u8_t reg,
+			    u8_t *data, u16_t len)
 {
 	struct spi_config *spi_cfg = &lis2dw12_spi_conf;
-	u8_t buffer_tx[2] = { reg_addr | LIS2DW12_SPI_READ, 0 };
+	u8_t buffer_tx[2] = { reg | LIS2DW12_SPI_READ, 0 };
 	const struct spi_buf tx_buf = {
 			.buf = buffer_tx,
 			.len = 2,
@@ -47,7 +47,7 @@ static int lis2dw12_raw_read(struct lis2dw12_data *data, u8_t reg_addr,
 			.len = 1,
 		},
 		{
-			.buf = value,
+			.buf = data,
 			.len = len,
 		}
 	};
@@ -56,30 +56,25 @@ static int lis2dw12_raw_read(struct lis2dw12_data *data, u8_t reg_addr,
 		.count = 2
 	};
 
-
-	if (len > 64) {
-		return -EIO;
-	}
-
-	if (spi_transceive(data->bus, spi_cfg, &tx, &rx)) {
+	if (spi_transceive(ctx->bus, spi_cfg, &tx, &rx)) {
 		return -EIO;
 	}
 
 	return 0;
 }
 
-static int lis2dw12_raw_write(struct lis2dw12_data *data, u8_t reg_addr,
-			     u8_t *value, u8_t len)
+static int lis2dw12_spi_write(struct lis2dw12_data *ctx, u8_t reg,
+			     u8_t *data, u16_t len)
 {
 	struct spi_config *spi_cfg = &lis2dw12_spi_conf;
-	u8_t buffer_tx[1] = { reg_addr & ~LIS2DW12_SPI_READ };
+	u8_t buffer_tx[1] = { reg & ~LIS2DW12_SPI_READ };
 	const struct spi_buf tx_buf[2] = {
 		{
 			.buf = buffer_tx,
 			.len = 1,
 		},
 		{
-			.buf = value,
+			.buf = data,
 			.len = len,
 		}
 	};
@@ -89,67 +84,24 @@ static int lis2dw12_raw_write(struct lis2dw12_data *data, u8_t reg_addr,
 	};
 
 
-	if (len > 64) {
-		return -EIO;
-	}
-
-	if (spi_write(data->bus, spi_cfg, &tx)) {
+	if (spi_write(ctx->bus, spi_cfg, &tx)) {
 		return -EIO;
 	}
 
 	return 0;
 }
 
-static int lis2dw12_spi_read_data(struct lis2dw12_data *data, u8_t reg_addr,
-				 u8_t *value, u8_t len)
-{
-	return lis2dw12_raw_read(data, reg_addr, value, len);
-}
-
-static int lis2dw12_spi_write_data(struct lis2dw12_data *data, u8_t reg_addr,
-				  u8_t *value, u8_t len)
-{
-	return lis2dw12_raw_write(data, reg_addr, value, len);
-}
-
-static int lis2dw12_spi_read_reg(struct lis2dw12_data *data, u8_t reg_addr,
-				u8_t *value)
-{
-	return lis2dw12_raw_read(data, reg_addr, value, 1);
-}
-
-static int lis2dw12_spi_write_reg(struct lis2dw12_data *data, u8_t reg_addr,
-				u8_t value)
-{
-	u8_t tmp_val = value;
-
-	return lis2dw12_raw_write(data, reg_addr, &tmp_val, 1);
-}
-
-static int lis2dw12_spi_update_reg(struct lis2dw12_data *data, u8_t reg_addr,
-				  u8_t mask, u8_t value)
-{
-	u8_t tmp_val;
-
-	lis2dw12_raw_read(data, reg_addr, &tmp_val, 1);
-	tmp_val = (tmp_val & ~mask) | ((value  << __builtin_ctz(mask)) & mask);
-
-	return lis2dw12_raw_write(data, reg_addr, &tmp_val, 1);
-}
-
-static const struct lis2dw12_tf lis2dw12_spi_transfer_fn = {
-	.read_data = lis2dw12_spi_read_data,
-	.write_data = lis2dw12_spi_write_data,
-	.read_reg  = lis2dw12_spi_read_reg,
-	.write_reg  = lis2dw12_spi_write_reg,
-	.update_reg = lis2dw12_spi_update_reg,
+lis2dw12_ctx_t lis2dw12_spi_ctx = {
+	.read_reg = (lis2dw12_read_ptr) lis2dw12_spi_read,
+	.write_reg = (lis2dw12_write_ptr) lis2dw12_spi_write,
 };
 
 int lis2dw12_spi_init(struct device *dev)
 {
 	struct lis2dw12_data *data = dev->driver_data;
 
-	data->hw_tf = &lis2dw12_spi_transfer_fn;
+	data->ctx = &lis2dw12_spi_ctx;
+	data->ctx->handle = data;
 
 #if defined(DT_INST_0_ST_LIS2DW12_CS_GPIO_CONTROLLER)
 	/* handle SPI CS thru GPIO if it is the case */

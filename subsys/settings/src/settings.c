@@ -17,7 +17,10 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(settings, CONFIG_SETTINGS_LOG_LEVEL);
 
+#if defined(CONFIG_SETTINGS_DYNAMIC_HANDLERS)
 sys_slist_t settings_handlers;
+#endif /* CONFIG_SETTINGS_DYNAMIC_HANDLERS */
+
 struct k_mutex settings_lock;
 
 
@@ -25,17 +28,27 @@ void settings_store_init(void);
 
 void settings_init(void)
 {
+#if defined(CONFIG_SETTINGS_DYNAMIC_HANDLERS)
 	sys_slist_init(&settings_handlers);
+#endif /* CONFIG_SETTINGS_DYNAMIC_HANDLERS */
 	settings_store_init();
 }
 
+#if defined(CONFIG_SETTINGS_DYNAMIC_HANDLERS)
 int settings_register(struct settings_handler *handler)
 {
 	int rc;
-	struct settings_handler *ch;
 
 	k_mutex_lock(&settings_lock, K_FOREVER);
 
+	Z_STRUCT_SECTION_FOREACH(settings_handler_static, ch) {
+		if (strcmp(handler->name, ch->name) == 0) {
+			rc = -EEXIST;
+			goto end;
+		}
+	}
+
+	struct settings_handler *ch;
 	SYS_SLIST_FOR_EACH_CONTAINER(&settings_handlers, ch, node) {
 		if (strcmp(handler->name, ch->name) == 0) {
 			rc = -EEXIST;
@@ -48,6 +61,7 @@ end:
 	k_mutex_unlock(&settings_lock);
 	return rc;
 }
+#endif /* CONFIG_SETTINGS_DYNAMIC_HANDLERS */
 
 int settings_name_steq(const char *name, const char *key, const char **next)
 {
@@ -120,10 +134,10 @@ int settings_name_next(const char *name, const char **next)
 	return rc;
 }
 
-struct settings_handler *settings_parse_and_lookup(const char *name,
-						   const char **next)
+struct settings_handler_static *settings_parse_and_lookup(const char *name,
+							const char **next)
 {
-	struct settings_handler *ch, *bestmatch;
+	struct settings_handler_static *bestmatch;
 	const char *tmpnext;
 
 	bestmatch = NULL;
@@ -131,29 +145,66 @@ struct settings_handler *settings_parse_and_lookup(const char *name,
 		*next = NULL;
 	}
 
-	SYS_SLIST_FOR_EACH_CONTAINER(&settings_handlers, ch, node) {
-		if (settings_name_steq(name, ch->name, &tmpnext)) {
-			if ((!bestmatch) ||
-			    (settings_name_steq(ch->name,
-						bestmatch->name, NULL))) {
-				bestmatch = ch;
-				if (next) {
-					*next = tmpnext;
-				}
+	Z_STRUCT_SECTION_FOREACH(settings_handler_static, ch) {
+		if (!settings_name_steq(name, ch->name, &tmpnext)) {
+			continue;
+		}
+		if (!bestmatch) {
+			bestmatch = ch;
+			if (next) {
+				*next = tmpnext;
+			}
+			continue;
+		}
+		if (settings_name_steq(ch->name, bestmatch->name, NULL)) {
+			bestmatch = ch;
+			if (next) {
+				*next = tmpnext;
 			}
 		}
 	}
+
+#if defined(CONFIG_SETTINGS_DYNAMIC_HANDLERS)
+	struct settings_handler *ch;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&settings_handlers, ch, node) {
+		if (!settings_name_steq(name, ch->name, &tmpnext)) {
+			continue;
+		}
+		if (!bestmatch) {
+			bestmatch = (struct settings_handler_static *)ch;
+			if (next) {
+				*next = tmpnext;
+			}
+			continue;
+		}
+		if (settings_name_steq(ch->name, bestmatch->name, NULL)) {
+			bestmatch = (struct settings_handler_static *)ch;
+			if (next) {
+				*next = tmpnext;
+			}
+		}
+	}
+#endif /* CONFIG_SETTINGS_DYNAMIC_HANDLERS */
 	return bestmatch;
 }
 
 int settings_commit(void)
 {
-	struct settings_handler *ch;
+	return settings_commit_subtree(NULL);
+}
+
+int settings_commit_subtree(const char *subtree)
+{
 	int rc;
 	int rc2;
 
 	rc = 0;
-	SYS_SLIST_FOR_EACH_CONTAINER(&settings_handlers, ch, node) {
+
+	Z_STRUCT_SECTION_FOREACH(settings_handler_static, ch) {
+		if (subtree && !settings_name_steq(ch->name, subtree, NULL)) {
+			continue;
+		}
 		if (ch->h_commit) {
 			rc2 = ch->h_commit();
 			if (!rc) {
@@ -161,17 +212,9 @@ int settings_commit(void)
 			}
 		}
 	}
-	return rc;
-}
 
-int settings_commit_subtree(const char *subtree)
-{
+#if defined(CONFIG_SETTINGS_DYNAMIC_HANDLERS)
 	struct settings_handler *ch;
-
-	int rc;
-	int rc2;
-
-	rc = 0;
 	SYS_SLIST_FOR_EACH_CONTAINER(&settings_handlers, ch, node) {
 		if (subtree && !settings_name_steq(ch->name, subtree, NULL)) {
 			continue;
@@ -183,5 +226,7 @@ int settings_commit_subtree(const char *subtree)
 			}
 		}
 	}
+#endif /* CONFIG_SETTINGS_DYNAMIC_HANDLERS */
+
 	return rc;
 }

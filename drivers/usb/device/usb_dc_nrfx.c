@@ -637,8 +637,6 @@ static void ep_ctx_reset(struct nrf_usbd_ep_ctx *ep_ctx)
 	ep_ctx->buf.curr = ep_ctx->buf.data;
 	ep_ctx->buf.len  = 0U;
 
-	ep_ctx->cfg.en = false;
-
 	ep_ctx->read_complete = true;
 	ep_ctx->read_pending = false;
 	ep_ctx->write_in_progress = false;
@@ -1642,6 +1640,10 @@ int usb_dc_ep_write(const u8_t ep, const u8_t *const data,
 		return -EINVAL;
 	}
 
+	if (!ep_ctx->cfg.en) {
+		LOG_ERR("Endpoint 0x%02x is not enabled", ep);
+		return -EINVAL;
+	}
 
 	k_mutex_lock(&ctx->drv_lock, K_FOREVER);
 
@@ -1725,6 +1727,11 @@ int usb_dc_ep_read_wait(u8_t ep, u8_t *data, u32_t max_data_len,
 		return -EINVAL;
 	}
 
+	if (!ep_ctx->cfg.en) {
+		LOG_ERR("Endpoint 0x%02x is not enabled", ep);
+		return -EINVAL;
+	}
+
 	k_mutex_lock(&ctx->drv_lock, K_FOREVER);
 
 	bytes_to_copy = MIN(max_data_len, ep_ctx->buf.len);
@@ -1764,6 +1771,11 @@ int usb_dc_ep_read_continue(u8_t ep)
 
 	ep_ctx = endpoint_ctx(ep);
 	if (!ep_ctx) {
+		return -EINVAL;
+	}
+
+	if (!ep_ctx->cfg.en) {
+		LOG_ERR("Endpoint 0x%02x is not enabled", ep);
 		return -EINVAL;
 	}
 

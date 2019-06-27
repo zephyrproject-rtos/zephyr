@@ -105,7 +105,7 @@ void *realloc(void *ptr, size_t requested_size)
 	/* Determine size of previously allocated block by its level.
 	 * Most likely a bit larger than the original allocation
 	 */
-	block_size = _ALIGN4(blk->pool->base.max_sz);
+	block_size = blk->pool->base.max_sz;
 	for (int i = 1; i <= blk->level; i++) {
 		block_size = _ALIGN4(block_size / 4);
 	}

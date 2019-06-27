@@ -85,6 +85,24 @@ Clear Linux:
    sudo swupd bundle-add c-basic dev-utils dfu-util dtc \
      os-core-dev python-basic python3-basic python3-tcl
 
+The Clear Linux focus is on *native* performance and security and not
+cross-compilation. For that reason it uniquely exports by default to the
+:ref:`environment <env_vars>` of all users a list of compiler and linker
+flags. Zephyr's CMake build system will either warn or fail because of
+these. To clear the C/C++ flags among these and fix the Zephyr build, run
+the following command as root then log out and back in:
+
+.. code-block:: console
+
+   # echo 'unset CFLAGS CXXFLAGS' >> /etc/profile.d/unset_cflags.sh
+
+Note this command unsets the C/C++ flags for *all users on the
+system*. Each Linux distribution has a unique, relatively complex and
+potentially evolving sequence of bash initialization files sourcing each
+other and Clear Linux is no exception. If you need a more flexible
+solution, start by looking at the logic in
+``/usr/share/defaults/etc/profile``.
+
 Arch Linux:
 
 .. code-block:: console
@@ -152,18 +170,18 @@ Follow these steps to install the Zephyr SDK:
 
    .. code-block:: console
 
-      wget https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.10.0/zephyr-sdk-0.10.0-setup.run
+      wget https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.10.1/zephyr-sdk-0.10.1-setup.run
 
-   (You can change *0.10.0* to another version if needed; the `Zephyr
+   (You can change *0.10.1* to another version if needed; the `Zephyr
    Downloads`_ page contains all available SDK releases.)
 
 #. Run the installation binary, installing the SDK at
-   :file:`~/zephyr-sdk-0.10.0`:
+   :file:`~/zephyr-sdk-0.10.1`:
 
    .. code-block:: console
 
       cd <sdk download directory>
-      ./zephyr-sdk-0.10.0-setup.run -- -d ~/zephyr-sdk-0.10.0
+      ./zephyr-sdk-0.10.1-setup.run -- -d ~/zephyr-sdk-0.10.1
 
    You can pick another directory if you want. If this fails, make sure
    Zephyr's dependencies were installed as described in `Install Requirements
@@ -172,7 +190,7 @@ Follow these steps to install the Zephyr SDK:
 #. Set these :ref:`environment variables <env_vars>`:
 
    - set :envvar:`ZEPHYR_TOOLCHAIN_VARIANT` to ``zephyr``
-   - set :envvar:`ZEPHYR_SDK_INSTALL_DIR` to :file:`$HOME/zephyr-sdk-0.10.0`
+   - set :envvar:`ZEPHYR_SDK_INSTALL_DIR` to :file:`$HOME/zephyr-sdk-0.10.1`
      (or wherever you chose to install the SDK)
 
 If you ever want to uninstall the SDK, just remove the directory where you

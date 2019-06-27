@@ -303,9 +303,9 @@ typedef enum IRQn {
   */
 
 /* Peripheral and SRAM base address */
-#define CODE_SRAM_BASE          (0x000E0000UL)	/*!< (CODE SRAM ) Base Address */
-#define DATA_SRAM_BASE          (0x00118000UL)	/*!< (DATA SRAM ) Base Address */
-#define PERIPH_BASE             (0x40000000UL)	/*!< (Peripheral) Base Address */
+#define CODE_SRAM_BASE          0x000E0000UL	/*!< (CODE SRAM ) Base Address */
+#define DATA_SRAM_BASE          0x00118000UL	/*!< (DATA SRAM ) Base Address */
+#define PERIPH_BASE             0x40000000UL	/*!< (Peripheral) Base Address */
 
 /* Peripheral memory map */
 #define WDT_BASE            (PERIPH_BASE + 0x0400ul)	/*!< (WDT0   )  Base Address */
@@ -445,8 +445,10 @@ typedef enum IRQn {
 #include "component/led.h"
 #include "component/mailbox.h"
 #include "component/pcr.h"
+#include "component/port80cap.h"
 #include "component/port92.h"
 #include "component/smb.h"
+#include "component/tfdp.h"
 #include "component/timer.h"
 #include "component/uart.h"
 #include "component/vbat.h"
@@ -464,8 +466,8 @@ typedef enum IRQn {
 #define B16TMR0_REGS    ((BTMR_Type *) B16TMR0_BASE)
 #define B16TMR1_REGS    ((BTMR_Type *) B16TMR1_BASE)
 #define B32TMR0_REGS    ((BTMR_Type *) B32TMR0_BASE)
-#define B32TMR1_REGS    ((BTMR_Type *) B32TMR1_BASE)
-#define CCT_REGS        ((CCT_Type *) CCT_BASE)
+#define B32TMR1_REGS	((BTMR_Type *) B32TMR1_BASE)
+#define CCT_REGS	((CCT_Type *) (CCT_BASE))
 
 #define DMAM_REGS       ((DMAM_Type *) DMA_BASE)
 /* Individual DMA channels */
@@ -489,6 +491,8 @@ typedef enum IRQn {
 #define SMB4_REGS       ((I2C_SMB_Type *) SMB4_BASE)
 
 #define RTMR_REGS       ((RTMR_Type *) RTMR_BASE)
+
+#define TFDP_REGS	((TFDP_Type *) TFDP_BASE)
 
 #define HTMR0_REGS      ((HTMR_Type *) HTMR0_BASE)
 #define HTMR1_REGS      ((HTMR_Type *) HTMR1_BASE)
@@ -569,13 +573,16 @@ typedef enum IRQn {
 #define ESPI_MEM_BM_REGS  ((ESPI_MEM_BM_Type *)(ESPI_MEM_BM_BASE))
 
 /* eSPI Virtual Wire registers in IO component */
-#define ESPI_IO_VW_REGS      ((ESPI_IO_VW_Type *) ESPI_IO_VW_BASE)
+#define ESPI_IO_VW_REGS      ((ESPI_IO_VW_Type *) (ESPI_IO_VW_BASE))
 /* eSPI Virtual Wire registers for each group of 4 VWires */
-#define ESPI_M2S_VW_REGS    ((ESPI_M2S_VW_Type *) ESPI_VW_BASE)
+#define ESPI_M2S_VW_REGS    ((ESPI_M2S_VW_Type *) (ESPI_VW_BASE))
 #define ESPI_S2M_VW_REGS    ((ESPI_S2M_VW_Type *) (ESPI_SMVW_BASE))
 
 #define EMI0_REGS       ((EMI_Type *)(EMI0_BASE))
 #define EMI1_REGS       ((EMI_Type *)(EMI0_BASE))
+
+#define PORT80_CAP0_REGS	((PORT80_CAP_Type *)(P80CAP0_BASE))
+#define PORT80_CAP1_REGS	((PORT80_CAP_Type *)(P80CAP1_BASE))
 
 /** @} *//* End of group MEC1501 */
 

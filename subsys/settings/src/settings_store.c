@@ -96,7 +96,6 @@ int settings_delete(const char *name)
 int settings_save(void)
 {
 	struct settings_store *cs;
-	struct settings_handler *ch;
 	int rc;
 	int rc2;
 
@@ -110,6 +109,17 @@ int settings_save(void)
 	}
 	rc = 0;
 
+	Z_STRUCT_SECTION_FOREACH(settings_handler_static, ch) {
+		if (ch->h_export) {
+			rc2 = ch->h_export(settings_save_one);
+			if (!rc) {
+				rc = rc2;
+			}
+		}
+	}
+
+#if defined(CONFIG_SETTINGS_DYNAMIC_HANDLERS)
+	struct settings_handler *ch;
 	SYS_SLIST_FOR_EACH_CONTAINER(&settings_handlers, ch, node) {
 		if (ch->h_export) {
 			rc2 = ch->h_export(settings_save_one);
@@ -118,6 +128,8 @@ int settings_save(void)
 			}
 		}
 	}
+#endif /* CONFIG_SETTINGS_DYNAMIC_HANDLERS */
+
 	if (cs->cs_itf->csi_save_end) {
 		cs->cs_itf->csi_save_end(cs);
 	}

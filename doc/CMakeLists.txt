@@ -131,6 +131,7 @@ add_custom_target(
 file(GLOB_RECURSE  DOXY_SOURCES
   ${ZEPHYR_BASE}/include/*.[c,h,S]
   ${ZEPHYR_BASE}/lib/libc/*.[c,h,S]
+  ${ZEPHYR_BASE}/subsys/testsuite/ztest/include/*.[h,c,S]
   ${ZEPHYR_BASE}/tests/*.[h,c,S]
   )
 # For debug. Also find generated list in doc/_build/(build.ninja|CMakeFiles/)

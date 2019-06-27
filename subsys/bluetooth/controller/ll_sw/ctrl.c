@@ -9177,6 +9177,26 @@ static void packet_tx_enqueue(u8_t max)
 				pdu_data_q_tx->handle);
 
 		if (conn->handle == pdu_data_q_tx->handle) {
+			if (IS_ENABLED(CONFIG_BT_CTLR_LLID_DATA_START_EMPTY)) {
+				struct pdu_data *p;
+
+				p = (void *)node_tx_new->pdu_data;
+				if ((p->ll_id == PDU_DATA_LLID_DATA_START) &&
+				    !p->len) {
+					conn->start_empty = 1U;
+					pdu_node_tx_release(conn->handle,
+							    node_tx_new);
+					goto packet_tx_enqueue_release;
+				} else if (p->len && conn->start_empty) {
+					conn->start_empty = 0U;
+					if (p->ll_id ==
+					    PDU_DATA_LLID_DATA_CONTINUE) {
+						p->ll_id =
+							PDU_DATA_LLID_DATA_START;
+					}
+				}
+			}
+
 			if (conn->pkt_tx_data == 0) {
 				conn->pkt_tx_data = node_tx_new;
 
@@ -9204,6 +9224,7 @@ static void packet_tx_enqueue(u8_t max)
 			pdu_node_tx_release(pdu_data_q_tx->handle, node_tx_new);
 		}
 
+packet_tx_enqueue_release:
 		first = _radio.packet_tx_first + 1;
 		if (first == _radio.packet_tx_count) {
 			first = 0U;

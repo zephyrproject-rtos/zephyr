@@ -12,6 +12,7 @@ See build.py for the build command itself.
 
 import zcmake
 import os
+from pathlib import Path
 from west import log
 from west.configuration import config
 from west.util import escapes_directory
@@ -28,7 +29,7 @@ build.dir-fmt configuration variable is set) and the current directory are
 checked, in that order. If one is a Zephyr build directory, it is used.
 '''.format(DEFAULT_BUILD_DIR)
 
-def _resolve_build_dir(fmt, cwd, **kwargs):
+def _resolve_build_dir(fmt, guess, cwd, **kwargs):
     # Remove any None values, we do not want 'None' as a string
     kwargs = {k: v for k, v in kwargs.items() if v is not None}
     # Check if source_dir is below cwd first
@@ -40,9 +41,38 @@ def _resolve_build_dir(fmt, cwd, **kwargs):
             # no meaningful relative path possible
             kwargs['source_dir'] = ''
 
-    return fmt.format(**kwargs)
+    try:
+        return fmt.format(**kwargs)
+    except KeyError:
+        if not guess:
+            return None
 
-def find_build_dir(dir, **kwargs):
+    # Guess the build folder by iterating through all sub-folders from the
+    # root of the format string and trying to resolve. If resolving fails,
+    # proceed to iterate over subfolders only if there is a single folder
+    # present on each iteration.
+    parts = Path(fmt).parts
+    b = Path('.')
+    for p in parts:
+        # default to cwd in the first iteration
+        curr = b
+        b = b.joinpath(p)
+        try:
+            # if fmt is an absolute path, the first iteration will always
+            # resolve '/'
+            b = Path(str(b).format(**kwargs))
+        except KeyError:
+            # Missing key, check sub-folders and match if a single one exists
+            while True:
+                dirs = [f for f in curr.iterdir() if f.is_dir()]
+                if len(dirs) != 1:
+                    return None
+                curr = dirs[0]
+                if is_zephyr_build(str(curr)):
+                    return str(curr)
+    return str(b)
+
+def find_build_dir(dir, guess=False, **kwargs):
     '''Heuristic for finding a build directory.
 
     The default build directory is computed by reading the build.dir-fmt
@@ -60,12 +90,8 @@ def find_build_dir(dir, **kwargs):
     else:
         cwd = os.getcwd()
         default = config.get('build', 'dir-fmt', fallback=DEFAULT_BUILD_DIR)
-        try:
-            default = _resolve_build_dir(default, cwd, **kwargs)
-            log.dbg('config dir-fmt: {}'.format(default),
-                    level=log.VERBOSE_EXTREME)
-        except KeyError:
-            default = None
+        default = _resolve_build_dir(default, guess, cwd, **kwargs)
+        log.dbg('config dir-fmt: {}'.format(default), level=log.VERBOSE_EXTREME)
         if default and is_zephyr_build(default):
             build_dir = default
         elif is_zephyr_build(cwd):

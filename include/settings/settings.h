@@ -42,8 +42,64 @@ typedef ssize_t (*settings_read_cb)(void *cb_arg, void *data, size_t len);
  * These are registered using a call to @ref settings_register.
  */
 struct settings_handler {
+
+	char *name;
+	/**< Name of subtree. */
+
+	int (*h_get)(const char *key, char *val, int val_len_max);
+	/**< Get values handler of settings items identified by keyword names.
+	 *
+	 * Parameters:
+	 *  - key[in] the name with skipped part that was used as name in
+	 *    handler registration
+	 *  - val[out] buffer to receive value.
+	 *  - val_len_max[in] size of that buffer.
+	 */
+
+	int (*h_set)(const char *key, size_t len, settings_read_cb read_cb,
+		     void *cb_arg);
+	/**< Set value handler of settings items identified by keyword names.
+	 *
+	 * Parameters:
+	 *  - key[in] the name with skipped part that was used as name in
+	 *    handler registration
+	 *  - len[in] the size of the data found in the backend.
+	 *  - read_cb[in] function provided to read the data from the backend.
+	 *  - cb_arg[in] arguments for the read function provided by the
+	 *    backend.
+	 */
+
+	int (*h_commit)(void);
+	/**< This handler gets called after settings has been loaded in full.
+	 * User might use it to apply setting to the application.
+	 */
+
+	int (*h_export)(int (*export_func)(const char *name, const void *val,
+					   size_t val_len));
+	/**< This gets called to dump all current settings items.
+	 *
+	 * This happens when @ref settings_save tries to save the settings.
+	 * Parameters:
+	 *  - export_func: the pointer to the internal function which appends
+	 *   a single key-value pair to persisted settings. Don't store
+	 *   duplicated value. The name is subtree/key string, val is the string
+	 *   with value.
+	 *
+	 * @remarks The User might limit a implementations of handler to serving
+	 * only one keyword at one call - what will impose limit to get/set
+	 * values using full subtree/key name.
+	 */
+
 	sys_snode_t node;
 	/**< Linked list node info for module internal usage. */
+};
+
+/**
+ * @struct settings_handler_static
+ * Config handlers without the node element, used for static handlers.
+ * These are registered using a call to SETTINGS_REGISTER_STATIC().
+ */
+struct settings_handler_static {
 
 	char *name;
 	/**< Name of subtree. */
@@ -94,6 +150,31 @@ struct settings_handler {
 };
 
 /**
+ * Define a static handler for settings items
+ *
+ * @param _hname handler name
+ * @param _tree subtree name
+ * @param _get get routine (can be NULL)
+ * @param _set set routine (can be NULL)
+ * @param _commit commit routine (can be NULL)
+ * @param _export export routine (can be NULL)
+ *
+ * This createa a variable _hname prepended by settings_handler_.
+ *
+ */
+
+#define SETTINGS_STATIC_HANDLER_DEFINE(_hname, _tree, _get, _set, _commit,   \
+				       _export)				     \
+	const Z_STRUCT_SECTION_ITERABLE(settings_handler_static,	     \
+					settings_handler_ ## _hname) = {     \
+		.name = _tree,						     \
+		.h_get = _get,						     \
+		.h_set = _set,						     \
+		.h_commit = _commit,					     \
+		.h_export = _export,					     \
+	}
+
+/**
  * Initialization of settings and backend
  *
  * Can be called at application startup.
@@ -105,7 +186,7 @@ struct settings_handler {
 int settings_subsys_init(void);
 
 /**
- * Register a handler for settings items.
+ * Register a handler for settings items stored in RAM.
  *
  * @param cf Structure containing registration info.
  *
@@ -274,10 +355,10 @@ void settings_dst_register(struct settings_store *cs);
  * @param[in] name in string format
  * @param[out] next remaining of name after matched handler
  *
- * @return settings_handler node on success, NULL on failure.
+ * @return settings_handler_static on success, NULL on failure.
  */
-struct settings_handler *settings_parse_and_lookup(const char *name,
-						   const char **next);
+struct settings_handler_static *settings_parse_and_lookup(const char *name,
+							const char **next);
 
 
 /*

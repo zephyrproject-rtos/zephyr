@@ -24,6 +24,13 @@ config SETTINGS_RUNTIME
 	help
 	  Enables runtime storage back-end.
 
+config SETTINGS_DYNAMIC_HANDLERS
+	bool "dynamic settings handlers"
+	depends on SETTINGS
+	default y
+	help
+	  Enables the use of dynamic settings handlers
+
 # Hidden option to enable encoding length into settings entry
 config SETTINGS_ENCODE_LEN
 	depends on SETTINGS

@@ -365,5 +365,7 @@ static int keys_commit(void)
 	return 0;
 }
 
-BT_SETTINGS_DEFINE(keys, keys_set, keys_commit, NULL);
+SETTINGS_STATIC_HANDLER_DEFINE(bt_keys, "bt/keys", NULL, keys_set, keys_commit,
+			       NULL);
+
 #endif /* CONFIG_BT_SETTINGS */

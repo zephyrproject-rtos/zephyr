@@ -28,7 +28,7 @@ static struct k_thread cmd_thread;
 
 #define CMD_QUEUED 2
 struct btp_buf {
-	u32_t _reserved;
+	intptr_t _reserved;
 	union {
 		u8_t data[BTP_MTU];
 		struct btp_hdr hdr;
