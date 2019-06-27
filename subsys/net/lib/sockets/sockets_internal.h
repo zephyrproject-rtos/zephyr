@@ -45,6 +45,7 @@ struct socket_op_vtable {
 			  void *optval, socklen_t *optlen);
 	int (*setsockopt)(void *obj, int level, int optname,
 			  const void *optval, socklen_t optlen);
+	ssize_t (*sendmsg)(void *obj, const struct msghdr *msg, int flags);
 };
 
 #endif /* _SOCKETS_INTERNAL_H_ */
