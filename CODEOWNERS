@@ -203,7 +203,20 @@
 /ext/hal/nxp/                             @MaureenHelm
 /ext/hal/ti/simplelink/                   @vanti
 /ext/lib/crypto/tinycrypt/                @ceolin
-/include/adc.h                            @anangl
+/include/                                 @nashif @carlescufi @galak @MaureenHelm
+/include/drivers/adc.h                    @anangl
+/include/drivers/can.h                    @alexanderwachter
+/include/drivers/counter.h                @nordic-krch
+/include/drivers/display.h                @vanwinkeljan
+/include/drivers/bluetooth/               @joerchan @jhedberg @Vudentz
+/include/drivers/led/ht16k33.h            @henrikbrixandersen
+/include/drivers/interrupt_controller/    @andrewboie @gnuless
+/include/drivers/pcie/                    @gnuless
+/include/drivers/hwinfo.h                 @alexanderwachter
+/include/drivers/led.h                    @Mani-Sadhasivam
+/include/drivers/led_strip.h              @mbolivar
+/include/drivers/sensor.h                 @MaureenHelm
+/include/drivers/spi.h                    @tbursztyka
 /include/app_memory/                      @andrewboie
 /include/arch/arc/                        @vonhust @ruuddw
 /include/arch/arc/arch.h                  @andrewboie
@@ -219,32 +232,21 @@
 /include/arch/x86/arch.h                  @andrewboie
 /include/arch/x86/multiboot.h             @gnuless
 /include/arch/xtensa/                     @andrewboie
-/include/atomic.h                         @andrewboie @andyross
+/include/sys/atomic.h                     @andrewboie @andyross
 /include/bluetooth/                       @joerchan @jhedberg @Vudentz
 /include/cache.h                          @andrewboie @andyross
-/include/can.h                            @alexanderwachter
-/include/counter.h                        @nordic-krch
 /include/device.h                         @wentongwu @nashif
-/include/display.h                        @vanwinkeljan
 /include/display/                         @vanwinkeljan
 /include/display/framebuf.h               @gnuless
-/include/drivers/bluetooth/               @joerchan @jhedberg @Vudentz
-/include/drivers/led/ht16k33.h            @henrikbrixandersen
-/include/drivers/interrupt_controller/    @andrewboie @gnuless
-/include/drivers/pcie/                    @gnuless
 /include/dt-bindings/clock/kinetis_scg.h  @henrikbrixandersen
 /include/dt-bindings/pcie/                @gnuless
 /include/dt-bindings/usb/usb.h            @galak @finikorg
-/include/fs.h                             @nashif @wentongwu
 /include/fs/                              @nashif @wentongwu
-/include/hwinfo.h                         @alexanderwachter
 /include/init.h                           @andrewboie @andyross
 /include/irq.h                            @andrewboie @andyross
 /include/irq_offload.h                    @andrewboie @andyross
 /include/kernel.h                         @andrewboie @andyross
 /include/kernel_version.h                 @andrewboie @andyross
-/include/led.h                            @Mani-Sadhasivam
-/include/led_strip.h                      @mbolivar
 /include/linker/app_smem*.ld              @andrewboie
 /include/linker/                          @andrewboie @andyross
 /include/logging/                         @nordic-krch
@@ -252,15 +254,13 @@
 /include/net/                             @jukkar @tbursztyka @pfalcon
 /include/net/buf.h                        @jukkar @jhedberg @tbursztyka @pfalcon
 /include/posix/                           @pfalcon
-/include/power.h                          @wentongwu @nashif
+/include/power/power.h                    @wentongwu @nashif
 /include/ptp_clock.h                      @jukkar
-/include/sensor.h                         @MaureenHelm
 /include/shared_irq.h                     @andrewboie @andyross
 /include/shell/                           @jakub-uC @nordic-krch
-/include/spi.h                            @tbursztyka
 /include/sw_isr_table.h                   @andrewboie @andyross
 /include/sys_clock.h                      @andrewboie @andyross
-/include/sys_io.h                         @andrewboie @andyross
+/include/sys/sys_io.h                     @andrewboie @andyross
 /include/toolchain.h                      @andrewboie @andyross @nashif
 /include/toolchain/                       @andrewboie @andyross
 /include/updatehub.h                      @chtavares592 @otavio
