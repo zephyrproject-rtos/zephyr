@@ -536,15 +536,13 @@ void ticker_worker(void *param)
 	ticker_id_head = instance->ticker_id_head;
 
 	/* Expire all tickers within ticks_elapsed and collect ticks_expired */
-	node = &instance->nodes[0];
 	while (ticker_id_head != TICKER_NULL) {
-		struct ticker_node *ticker;
 		u32_t ticks_to_expire;
 
-		ticker = &node[ticker_id_head];
+		node = &instance->nodes[ticker_id_head];
 
 		/* Stop if ticker did not expire */
-		ticks_to_expire = ticker->ticks_to_expire;
+		ticks_to_expire = node->ticks_to_expire;
 		if (ticks_elapsed < ticks_to_expire) {
 			break;
 		}
@@ -554,30 +552,29 @@ void ticker_worker(void *param)
 		ticks_expired += ticks_to_expire;
 
 		/* Move to next ticker node */
-		ticker_id_head = ticker->next;
+		ticker_id_head = node->next;
 
 		/* Skip if not scheduled to execute */
-		if (((ticker->req - ticker->ack) & 0xff) != 1U) {
+		if (((node->req - node->ack) & 0xff) != 1U)
 			continue;
-		}
 
 		/* Scheduled timeout is acknowledged to be complete */
-		ticker->ack--;
+		node->ack--;
 
-		if (ticker->timeout_func) {
+		if (node->timeout_func) {
 			u32_t ticks_at_expire;
 
 			ticks_at_expire = (instance->ticks_current +
 					   ticks_expired -
-					   ticker->ticks_to_expire_minus) &
+					   node->ticks_to_expire_minus) &
 					   HAL_TICKER_CNTR_MASK;
 
 			DEBUG_TICKER_TASK(1);
 			/* Invoke the timeout callback */
-			ticker->timeout_func(ticks_at_expire,
-					     ticker->remainder_current,
-					     ticker->lazy_current,
-					     ticker->context);
+			node->timeout_func(ticks_at_expire,
+					   node->remainder_current,
+					   node->lazy_current,
+					   node->context);
 			DEBUG_TICKER_TASK(0);
 		}
 	}
