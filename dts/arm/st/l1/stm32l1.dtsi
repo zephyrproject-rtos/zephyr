@@ -144,7 +144,6 @@
 
 		rcc: rcc@40023800 {
 			compatible = "st,stm32-rcc";
-			clocks-controller;
 			#clock-cells = <2>;
 			reg = <0x40023800 0x400>;
 			label = "STM32_CLK_RCC";
