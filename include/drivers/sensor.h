@@ -1,5 +1,5 @@
 /**
- * @file sensor.h
+ * @file drivers/sensor.h
  *
  * @brief Public APIs for the sensor driver.
  */
