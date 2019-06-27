@@ -22,7 +22,7 @@
 #include <irq.h>
 #include <debug/tracing.h>
 #include <kswap.h>
-#include <arch/x86/segmentation.h>
+#include <arch/x86/ia32/segmentation.h>
 
 extern void z_SpuriousIntHandler(void *handler);
 extern void z_SpuriousIntNoErrCodeHandler(void *handler);
