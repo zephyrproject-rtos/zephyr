@@ -12,7 +12,7 @@
  * other definitions for the Intel Architecture 32 bit (IA-32) processor
  * architecture.
  * The header include/kernel.h contains the public kernel interface
- * definitions, with include/arch/x86/arch.h supplying the
+ * definitions, with include/arch/x86/ia32/arch.h supplying the
  * IA-32 specific portions of the public kernel interface.
  *
  * This file is also included by assembly language files which must #define

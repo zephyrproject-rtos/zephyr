@@ -229,7 +229,7 @@
 /include/arch/riscv32/                    @nategraff-sifive @kgugala @pgielda
 /include/arch/x86/                        @andrewboie @wentongwu
 /include/arch/common/                     @andrewboie @andyross @nashif
-/include/arch/x86/arch.h                  @andrewboie
+/include/arch/x86/ia32/arch.h             @andrewboie
 /include/arch/x86/multiboot.h             @gnuless
 /include/arch/xtensa/                     @andrewboie
 /include/sys/atomic.h                     @andrewboie @andyross

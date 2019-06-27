@@ -443,9 +443,9 @@ z_dynamic_irq_stub_common:
 
 /* Create all the dynamic IRQ stubs
  *
- * NOTE: Please update DYN_STUB_SIZE in include/arch/x86/arch.h if you change
- * how large the generated stubs are, otherwise _get_dynamic_stub() will
- * be unable to correctly determine the offset
+ * NOTE: Please update DYN_STUB_SIZE in include/arch/x86/ia32/arch.h if you
+ * change how large the generated stubs are, otherwise _get_dynamic_stub()
+ * will be unable to correctly determine the offset
  */
 
 /*

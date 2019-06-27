@@ -11,8 +11,8 @@
  * by the generic kernel interface header (include/arch/cpu.h)
  */
 
-#ifndef ZEPHYR_INCLUDE_ARCH_X86_ARCH_H_
-#define ZEPHYR_INCLUDE_ARCH_X86_ARCH_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_X86_IA32_ARCH_H_
+#define ZEPHYR_INCLUDE_ARCH_X86_IA32_ARCH_H_
 
 #include <irq.h>
 #include <arch/x86/irq_controller.h>
@@ -20,8 +20,8 @@
 #include <generated_dts_board.h>
 #include <mmustructs.h>
 #include <stdbool.h>
-#include "sys_io.h"
-#include "ffs.h"
+#include "../sys_io.h"
+#include "../ffs.h"
 
 #ifndef _ASMLANGUAGE
 #include <arch/x86/asm_inline.h>
@@ -668,4 +668,4 @@ void z_x86_reset_pages(void *start, size_t size);
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_ARCH_X86_ARCH_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_X86_IA32_ARCH_H_ */
