@@ -1130,6 +1130,28 @@ Z_SYSCALL_HANDLER(zsock_inet_pton, family, src, dst)
 int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 			 void *optval, socklen_t *optlen)
 {
+	int ret;
+
+	switch (level) {
+	case SOL_SOCKET:
+		switch (optname) {
+		case SO_TXTIME:
+			if (IS_ENABLED(CONFIG_NET_CONTEXT_TXTIME)) {
+				ret = net_context_get_option(ctx,
+							     NET_OPT_TXTIME,
+							     optval, optlen);
+				if (ret < 0) {
+					errno = -ret;
+					return -1;
+				}
+
+				return 0;
+			}
+		}
+
+		break;
+	}
+
 	errno = ENOPROTOOPT;
 	return -1;
 }
@@ -1203,6 +1225,21 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 			if (IS_ENABLED(CONFIG_NET_CONTEXT_TIMESTAMP)) {
 				ret = net_context_set_option(ctx,
 							     NET_OPT_TIMESTAMP,
+							     optval, optlen);
+				if (ret < 0) {
+					errno = -ret;
+					return -1;
+				}
+
+				return 0;
+			}
+
+			break;
+
+		case SO_TXTIME:
+			if (IS_ENABLED(CONFIG_NET_CONTEXT_TXTIME)) {
+				ret = net_context_set_option(ctx,
+							     NET_OPT_TXTIME,
 							     optval, optlen);
 				if (ret < 0) {
 					errno = -ret;

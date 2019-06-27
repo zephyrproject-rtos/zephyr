@@ -287,6 +287,9 @@ struct net_context {
 #if defined(CONFIG_NET_CONTEXT_TIMESTAMP)
 		bool timestamp;
 #endif
+#if defined(CONFIG_NET_CONTEXT_TXTIME)
+		bool txtime;
+#endif
 	} options;
 
 	/** Protocol (UDP, TCP or IEEE 802.3 protocol value) */
@@ -947,6 +950,7 @@ int net_context_update_recv_wnd(struct net_context *context,
 enum net_context_option {
 	NET_OPT_PRIORITY	= 1,
 	NET_OPT_TIMESTAMP	= 2,
+	NET_OPT_TXTIME		= 3,
 };
 
 /**

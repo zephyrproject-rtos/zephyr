@@ -767,6 +767,10 @@ static inline char *inet_ntop(sa_family_t family, const void *src, char *dst,
 /** sockopt: Socket priority */
 #define SO_PRIORITY 12
 
+/** sockopt: Socket TX time (when the data should be sent) */
+#define SO_TXTIME 61
+#define SCM_TXTIME SO_TXTIME
+
 /** @cond INTERNAL_HIDDEN */
 /**
  * @brief Registration information for a given BSD socket family.

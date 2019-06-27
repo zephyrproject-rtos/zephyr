@@ -95,10 +95,19 @@ struct net_pkt {
 	struct net_if *orig_iface; /* Original network interface */
 #endif
 
+#if defined(CONFIG_NET_PKT_TIMESTAMP) || defined(CONFIG_NET_PKT_TXTIME)
+	union {
 #if defined(CONFIG_NET_PKT_TIMESTAMP)
-	/** Timestamp if available. */
-	struct net_ptp_time timestamp;
-#endif
+		/** Timestamp if available. */
+		struct net_ptp_time timestamp;
+#endif /* CONFIG_NET_PKT_TIMESTAMP */
+#if defined(CONFIG_NET_PKT_TXTIME)
+		/** Network packet TX time in the future (in nanoseconds) */
+		u64_t txtime;
+#endif /* CONFIG_NET_PKT_TXTIME */
+	};
+#endif /* CONFIG_NET_PKT_TIMESTAMP || CONFIG_NET_PKT_TXTIME */
+
 	/** Reference counter */
 	atomic_t atomic_ref;
 
@@ -698,6 +707,31 @@ static inline void net_pkt_set_timestamp(struct net_pkt *pkt,
 	ARG_UNUSED(timestamp);
 }
 #endif /* CONFIG_NET_PKT_TIMESTAMP */
+
+#if defined(CONFIG_NET_PKT_TXTIME)
+static inline u64_t net_pkt_txtime(struct net_pkt *pkt)
+{
+	return pkt->txtime;
+}
+
+static inline void net_pkt_set_txtime(struct net_pkt *pkt, u64_t txtime)
+{
+	pkt->txtime = txtime;
+}
+#else
+static inline u64_t net_pkt_txtime(struct net_pkt *pkt)
+{
+	ARG_UNUSED(pkt);
+
+	return 0;
+}
+
+static inline void net_pkt_set_txtime(struct net_pkt *pkt, u64_t txtime)
+{
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(txtime);
+}
+#endif /* CONFIG_NET_PKT_TXTIME */
 
 static inline size_t net_pkt_get_len(struct net_pkt *pkt)
 {
