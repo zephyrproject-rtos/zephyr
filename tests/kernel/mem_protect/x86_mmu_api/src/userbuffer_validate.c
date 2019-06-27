@@ -7,9 +7,8 @@
 #include <zephyr.h>
 #include <sys/printk.h>
 #include <mmustructs.h>
-#include <arch/x86/arch.h>
+#include <arch/x86/ia32/arch.h>
 #include <linker/linker-defs.h>
-#include <arch/x86/arch.h>
 #include <ztest.h>
 #include <kernel_internal.h>
 

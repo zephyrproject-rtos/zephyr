@@ -6,7 +6,6 @@
 
 #include <kernel.h>
 #include <drivers/pcie/pcie.h>
-#include <arch/x86/arch.h>
 
 #ifdef CONFIG_PCIE_MSI
 #include <drivers/pcie/msi.h>
