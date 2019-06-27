@@ -24,10 +24,6 @@
 #define CPUID_SPEC_CTRL_SSBD	BIT(31)
 #define CPUID_SPEC_CTRL_IBRS	BIT(26)
 
-/* Bits to set in X86_SPEC_CTRL_MSR to enable */
-#define SPEC_CTRL_IBRS		BIT(0)
-#define SPEC_CTRL_SSBD		BIT(2)
-
 #if defined(CONFIG_DISABLE_SSBD) || defined(CONFIG_ENABLE_EXTENDED_IBRS)
 static u32_t cpuid_extended_features(void)
 {
@@ -50,12 +46,12 @@ static int spec_ctrl_init(struct device *dev)
 
 #ifdef CONFIG_DISABLE_SSBD
 	if ((cpuid7 & CPUID_SPEC_CTRL_SSBD) != 0U) {
-		enable_bits |= SPEC_CTRL_SSBD;
+		enable_bits |= X86_SPEC_CTRL_MSR_SSBD;
 	}
 #endif
 #ifdef CONFIG_ENABLE_EXTENDED_IBRS
 	if ((cpuid7 & CPUID_SPEC_CTRL_IBRS) != 0U) {
-		enable_bits |= SPEC_CTRL_IBRS;
+		enable_bits |= X86_SPEC_CTRL_MSR_IBRS;
 	}
 #endif
 	if (enable_bits != 0U) {
