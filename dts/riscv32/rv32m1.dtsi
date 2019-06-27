@@ -70,7 +70,6 @@
 
 		pcc0: clock-controller@4002b000 {
 			compatible = "openisa,rv32m1-pcc";
-			clock-controller;
 			reg = <0x4002b000 0x200>;
 			label = "PCC0";
 			#clock-cells = <1>;
@@ -78,7 +77,6 @@
 
 		pcc1: clock-controller@41027000 {
 			compatible = "openisa,rv32m1-pcc";
-			clock-controller;
 			reg = <0x41027000 0x200>;
 			label = "PCC1";
 			#clock-cells = <1>;

@@ -51,8 +51,6 @@
 			compatible = "nxp,k64f-mcg";
 			reg = <0x40064000 0xd>;
 			system-clock-frequency = <120000000>;
-
-			clock-controller;
 		};
 
 		clock-controller@40065000 {
@@ -78,7 +76,6 @@
 			clk-divider-flexbus = <3>;
 			clk-divider-flash = <5>;
 
-			clock-controller;
 			#clock-cells = <3>;
 		};
 

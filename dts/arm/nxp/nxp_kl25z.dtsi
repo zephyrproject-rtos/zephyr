@@ -76,7 +76,6 @@
 			clk-divider-flexbus = <3>;
 			clk-divider-flash = <5>;
 
-			clock-controller;
 			#clock-cells = <3>;
 		};
 
