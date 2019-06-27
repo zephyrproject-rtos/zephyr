@@ -20,6 +20,7 @@ LOG_MODULE_REGISTER(net_ctx, CONFIG_NET_CONTEXT_LOG_LEVEL);
 
 #include <net/net_pkt.h>
 #include <net/net_ip.h>
+#include <net/socket.h>
 #include <net/net_context.h>
 #include <net/net_offload.h>
 #include <net/ethernet.h>
@@ -1131,6 +1132,22 @@ int net_context_get_timestamp(struct net_context *context,
 }
 #endif /* CONFIG_NET_CONTEXT_TIMESTAMP */
 
+static int get_context_txtime(struct net_context *context,
+			      void *value, size_t *len)
+{
+#if defined(CONFIG_NET_CONTEXT_TXTIME)
+	*((bool *)value) = context->options.txtime;
+
+	if (len) {
+		*len = sizeof(bool);
+	}
+
+	return 0;
+#else
+	return -ENOTSUP;
+#endif
+}
+
 /* If buf is not NULL, then use it. Otherwise read the data to be written
  * to net_pkt from msghdr.
  */
@@ -1265,6 +1282,22 @@ static struct net_pkt *context_alloc_pkt(struct net_context *context,
 	return pkt;
 }
 
+static void set_pkt_txtime(struct net_pkt *pkt, const struct msghdr *msghdr)
+{
+	struct cmsghdr *cmsg;
+
+	for (cmsg = CMSG_FIRSTHDR(msghdr); cmsg != NULL;
+	     cmsg = CMSG_NXTHDR(msghdr, cmsg)) {
+		if (cmsg->cmsg_len == CMSG_LEN(sizeof(u64_t)) &&
+		    cmsg->cmsg_level == SOL_SOCKET &&
+		    cmsg->cmsg_type == SCM_TXTIME) {
+			u64_t txtime = *(u64_t *)CMSG_DATA(cmsg);
+
+			net_pkt_set_txtime(pkt, txtime);
+			break;
+		}
+	}
+}
 
 static int context_sendto(struct net_context *context,
 			  const void *buf,
@@ -1454,6 +1487,20 @@ static int context_sendto(struct net_context *context,
 			};
 
 			net_pkt_set_timestamp(pkt, &tp);
+		}
+	}
+
+	/* If there is ancillary data in msghdr, then we need to add that
+	 * to net_pkt as there is no other way to store it.
+	 */
+	if (msghdr && msghdr->msg_control && msghdr->msg_controllen) {
+		if (IS_ENABLED(CONFIG_NET_CONTEXT_TXTIME)) {
+			bool is_txtime;
+
+			get_context_txtime(context, &is_txtime, NULL);
+			if (is_txtime) {
+				set_pkt_txtime(pkt, msghdr);
+			}
 		}
 	}
 
@@ -1927,6 +1974,22 @@ static int set_context_timestamp(struct net_context *context,
 #endif
 }
 
+static int set_context_txtime(struct net_context *context,
+			      const void *value, size_t len)
+{
+#if defined(CONFIG_NET_CONTEXT_TXTIME)
+	if (len > sizeof(bool)) {
+		return -EINVAL;
+	}
+
+	context->options.txtime = *((bool *)value);
+
+	return 0;
+#else
+	return -ENOTSUP;
+#endif
+}
+
 int net_context_set_option(struct net_context *context,
 			   enum net_context_option option,
 			   const void *value, size_t len)
@@ -1947,6 +2010,9 @@ int net_context_set_option(struct net_context *context,
 		break;
 	case NET_OPT_TIMESTAMP:
 		ret = set_context_timestamp(context, value, len);
+		break;
+	case NET_OPT_TXTIME:
+		ret = set_context_txtime(context, value, len);
 		break;
 	}
 
@@ -1975,6 +2041,9 @@ int net_context_get_option(struct net_context *context,
 		break;
 	case NET_OPT_TIMESTAMP:
 		ret = get_context_timepstamp(context, value, len);
+		break;
+	case NET_OPT_TXTIME:
+		ret = get_context_txtime(context, value, len);
 		break;
 	}
 
