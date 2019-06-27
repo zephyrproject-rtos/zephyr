@@ -241,7 +241,7 @@
  * MSRs 0x0800 to 0x0BFF are reserved for x2APIC access.
  *
  * We only record the base address here, as the local APIC code
- * knows how to find the registers, see include/drivers/loapic.h.
+ * knows how to find the registers, see include/drivers/interrupt_controller/loapic.h.
  */
 
 #define X86_X2APIC_BASE_MSR 0x0800
