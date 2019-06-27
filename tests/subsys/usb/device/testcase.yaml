@@ -1,4 +1,5 @@
 tests:
   usb.device:
+    platform_exclude: reel_board
     depends_on: usb_device
     tags: usb
