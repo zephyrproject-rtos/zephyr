@@ -322,8 +322,6 @@ static u32_t usb_dc_stm32_get_maximum_speed(void)
 #else
 		speed = USB_OTG_SPEED_FULL;
 #endif /* DT_COMPAT_ST_STM32_USBPHYC && DT_USB_HS_BASE_ADDRESS */
-	} else if (!strncmp(DT_USB_MAXIMUM_SPEED, "low-speed", 9)) {
-		speed = USB_OTG_SPEED_LOW;
 	} else {
 		LOG_DBG("Unsupported maximum speed defined in device tree. "
 			"USB controller will default to its maximum HW "
