@@ -6,15 +6,15 @@
 
 /**
  * @file
- * @brief x86 specific sycall header
+ * @brief x86 (IA32) specific sycall header
  *
  * This header contains the x86 specific sycall interface.  It is
  * included by the syscall interface architecture-abstraction header
  * (include/arch/syscall.h)
  */
 
-#ifndef ZEPHYR_INCLUDE_ARCH_X86_SYSCALL_H_
-#define ZEPHYR_INCLUDE_ARCH_X86_SYSCALL_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_X86_IA32_SYSCALL_H_
+#define ZEPHYR_INCLUDE_ARCH_X86_IA32_SYSCALL_H_
 
 #define USER_CODE_SEG	0x2b /* at dpl=3 */
 #define USER_DATA_SEG	0x33 /* at dpl=3 */
@@ -169,4 +169,4 @@ static inline bool z_arch_is_user_context(void)
 
 #endif /* _ASMLANGUAGE */
 #endif /* CONFIG_USERSPACE */
-#endif /* ZEPHYR_INCLUDE_ARCH_X86_SYSCALL_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_X86_IA32_SYSCALL_H_ */
