@@ -212,6 +212,69 @@ struct sockaddr_can_ptr {
 	int         can_ifindex;
 };
 
+#if !defined(HAVE_IOVEC)
+struct iovec {
+	void  *iov_base;
+	size_t iov_len;
+};
+#endif
+
+struct msghdr {
+	void         *msg_name;       /* optional socket address */
+	socklen_t     msg_namelen;    /* size of socket address */
+	struct iovec *msg_iov;        /* scatter/gather array */
+	size_t        msg_iovlen;     /* number of elements in msg_iov */
+	void         *msg_control;    /* ancillary data */
+	size_t        msg_controllen; /* ancillary data buffer len */
+	int           msg_flags;      /* flags on received message */
+};
+
+struct cmsghdr {
+	socklen_t cmsg_len;    /* Number of bytes, including header */
+	int       cmsg_level;  /* Originating protocol */
+	int       cmsg_type;   /* Protocol-specific type */
+	/* Followed by unsigned char cmsg_data[]; */
+};
+
+/* Alignment for headers and data. These are arch specific but define
+ * them here atm if not found alredy.
+ */
+#if !defined(ALIGN_H)
+#define ALIGN_H(x) WB_UP(x)
+#endif
+#if !defined(ALIGN_D)
+#define ALIGN_D(x) WB_UP(x)
+#endif
+
+#if !defined(CMSG_FIRSTHDR)
+#define CMSG_FIRSTHDR(msghdr)					\
+	((msghdr)->msg_controllen >= sizeof(struct cmsghdr) ?	\
+	 (struct cmsghdr *)((msghdr)->msg_control) : NULL)
+#endif
+
+#if !defined(CMSG_NXTHDR)
+#define CMSG_NXTHDR(msghdr, cmsg)					 \
+	(((cmsg) == NULL) ? CMSG_FIRSTHDR(msghdr) :			 \
+	 (((u8_t *)(cmsg) + ALIGN_H((cmsg)->cmsg_len)	+		 \
+	   ALIGN_D(sizeof(struct cmsghdr)) >				 \
+	   (u8_t *)((msghdr)->msg_control) + (msghdr)->msg_controllen) ? \
+	  NULL :							 \
+	  (struct cmsghdr *)((u8_t *)(cmsg) +				 \
+			     ALIGN_H((cmsg)->cmsg_len))))
+#endif
+
+#if !defined(CMSG_DATA)
+#define CMSG_DATA(cmsg) ((u8_t *)(cmsg) + ALIGN_D(sizeof(struct cmsghdr)))
+#endif
+
+#if !defined(CMSG_SPACE)
+#define CMSG_SPACE(length) (ALIGN_D(sizeof(struct cmsghdr)) + ALIGN_H(length))
+#endif
+
+#if !defined(CMSG_LEN)
+#define CMSG_LEN(length) (ALIGN_D(sizeof(struct cmsghdr)) + length)
+#endif
+
 /** @cond INTERNAL_HIDDEN */
 
 /* Packet types.  */
