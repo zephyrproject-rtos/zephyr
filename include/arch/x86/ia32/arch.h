@@ -24,7 +24,6 @@
 #include <arch/common/ffs.h>
 
 #ifndef _ASMLANGUAGE
-#include <arch/x86/asm_inline.h>
 #include <arch/common/addr_types.h>
 #include <arch/x86/ia32/segmentation.h>
 #endif
@@ -365,6 +364,106 @@ typedef struct nanoIsf {
 #define _NANO_ERR_KERNEL_PANIC		(8)
 
 #ifndef _ASMLANGUAGE
+
+/**
+ *
+ * @internal
+ *
+ * @brief Disable all interrupts on the CPU
+ *
+ * GCC assembly internals of irq_lock(). See irq_lock() for a complete
+ * description.
+ *
+ * @return An architecture-dependent lock-out key representing the
+ * "interrupt disable state" prior to the call.
+ */
+
+static ALWAYS_INLINE unsigned int _do_irq_lock(void)
+{
+	unsigned int key;
+
+	__asm__ volatile (
+		"pushfl;\n\t"
+		"cli;\n\t"
+		"popl %0;\n\t"
+		: "=g" (key)
+		:
+		: "memory"
+		);
+
+	return key;
+}
+
+
+/**
+ *
+ * @internal
+ *
+ * @brief Enable all interrupts on the CPU (inline)
+ *
+ * GCC assembly internals of irq_lock_unlock(). See irq_lock_unlock() for a
+ * complete description.
+ *
+ * @return N/A
+ */
+
+static ALWAYS_INLINE void z_do_irq_unlock(void)
+{
+	__asm__ volatile (
+		"sti;\n\t"
+		: : : "memory"
+		);
+}
+
+
+/**
+ *  @brief read timestamp register ensuring serialization
+ */
+
+static inline u64_t z_tsc_read(void)
+{
+	union {
+		struct  {
+			u32_t lo;
+			u32_t hi;
+		};
+		u64_t  value;
+	}  rv;
+
+	/* rdtsc & cpuid clobbers eax, ebx, ecx and edx registers */
+	__asm__ volatile (/* serialize */
+		"xorl %%eax,%%eax;\n\t"
+		"cpuid;\n\t"
+		:
+		:
+		: "%eax", "%ebx", "%ecx", "%edx"
+		);
+	/*
+	 * We cannot use "=A", since this would use %rax on x86_64 and
+	 * return only the lower 32bits of the TSC
+	 */
+	__asm__ volatile ("rdtsc" : "=a" (rv.lo), "=d" (rv.hi));
+
+
+	return rv.value;
+}
+
+/**
+ *
+ * @brief Get a 32 bit CPU timestamp counter
+ *
+ * @return a 32-bit number
+ */
+
+static ALWAYS_INLINE
+	u32_t z_do_read_cpu_timestamp32(void)
+{
+	u32_t rv;
+
+	__asm__ volatile("rdtsc" : "=a"(rv) :  : "%edx");
+
+	return rv;
+}
 
 /**
  * @brief Disable all interrupts on the CPU (inline)
