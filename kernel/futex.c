@@ -24,23 +24,6 @@ static struct z_futex_data *k_futex_find_data(struct k_futex *futex)
 	return (struct z_futex_data *)obj->data;
 }
 
-void z_impl_k_futex_init(struct k_futex *futex)
-{
-	futex->val = 0U;
-	z_object_init(futex);
-}
-
-Z_SYSCALL_HANDLER(k_futex_init, futex)
-{
-	if (Z_SYSCALL_MEMORY_WRITE(futex, sizeof(struct k_futex)) != 0) {
-		return -EACCES;
-	}
-
-	z_impl_k_futex_init((struct k_futex *)futex);
-
-	return 0;
-}
-
 int z_impl_k_futex_wake(struct k_futex *futex, bool wake_all)
 {
 	k_spinlock_key_t key;

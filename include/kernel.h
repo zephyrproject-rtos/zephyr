@@ -2140,17 +2140,6 @@ struct z_futex_data {
  */
 
 /**
- * @brief Initialize a futex.
- *
- * This routine initializes a futex object, prior to its first use.
- *
- * @param futex Address of the k_futex.
- *
- * @return N/A
- */
-__syscall void k_futex_init(struct k_futex *futex);
-
-/**
  * @brief Pend the current thread on a futex
  *
  * Tests that the supplied futex contains the expected value, and if so,
