@@ -295,6 +295,11 @@ struct connection {
 	/* Detect empty L2CAP start frame */
 	u8_t  start_empty:1;
 
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH) || defined(CONFIG_BT_CTLR_PHY)
+	u8_t evt_len_upd:1;
+	u8_t evt_len_adv:1;
+#endif
+
 #if defined(CONFIG_BT_CTLR_CONN_RSSI)
 	u8_t  rssi_latest;
 	u8_t  rssi_reported;

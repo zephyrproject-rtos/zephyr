@@ -276,11 +276,11 @@ static void ticker_update_adv_assert(u32_t status, void *params);
 #if defined(CONFIG_BT_CONN)
 #if defined(CONFIG_BT_PERIPHERAL)
 static void ticker_stop_adv_assert(u32_t status, void *params);
-static void ticker_update_slave_assert(u32_t status, void *params);
 #endif /* CONFIG_BT_PERIPHERAL */
 #if defined(CONFIG_BT_CENTRAL)
 static void ticker_stop_scan_assert(u32_t status, void *params);
 #endif /* CONFIG_BT_CENTRAL */
+static void ticker_update_conn_assert(u32_t status, void *params);
 static void ticker_stop_conn_assert(u32_t status, void *params);
 static void ticker_start_conn_assert(u32_t status, void *params);
 #endif /* CONFIG_BT_CONN */
@@ -2394,6 +2394,11 @@ static inline u8_t isr_rx_conn_pkt_ctrl_dle(struct pdu_data *pdu_data_rx,
 					eff_tx_time;
 #endif /* CONFIG_BT_CTLR_PHY */
 
+				/* flag an event length update*/
+				_radio.conn_curr->evt_len_upd = 1U;
+				_radio.conn_curr->evt_len_adv = 1U;
+
+				/* Request Rx buffer resize */
 				_radio.conn_curr->llcp_length.ack =
 					(_radio.conn_curr->llcp_length.req - 1);
 				_radio.conn_curr->llcp_length.state =
@@ -2433,6 +2438,10 @@ static inline u8_t isr_rx_conn_pkt_ctrl_dle(struct pdu_data *pdu_data_rx,
 			/* accept the effective tx time */
 			_radio.conn_curr->max_tx_time = eff_tx_time;
 #endif /* CONFIG_BT_CTLR_PHY */
+
+			/* flag an event length update*/
+			_radio.conn_curr->evt_len_upd = 1U;
+			_radio.conn_curr->evt_len_adv = 0U;
 
 			/* prepare event params */
 			lr->max_rx_octets = eff_rx_octets;
@@ -4338,8 +4347,10 @@ static inline u32_t isr_close_scan(void)
 #if defined(CONFIG_BT_CONN)
 static inline void isr_close_conn(void)
 {
-	u32_t ticks_drift_plus;
 	u32_t ticks_drift_minus;
+	u32_t ticks_drift_plus;
+	u32_t ticks_slot_minus;
+	u32_t ticks_slot_plus;
 	u16_t latency_event;
 	u16_t elapsed_event;
 	u8_t reason_peer;
@@ -4365,10 +4376,12 @@ static inline void isr_close_conn(void)
 		return;
 	}
 
-	ticks_drift_plus = 0U;
-	ticks_drift_minus = 0U;
 	latency_event = _radio.conn_curr->latency_event;
 	elapsed_event = latency_event + 1;
+	ticks_drift_minus = 0U;
+	ticks_drift_plus = 0U;
+	ticks_slot_minus = 0U;
+	ticks_slot_plus = 0U;
 
 	/* calculate drift if anchor point sync-ed */
 	if (_radio.packet_counter &&
@@ -4599,8 +4612,65 @@ static inline void isr_close_conn(void)
 		lazy = _radio.conn_curr->latency_event + 1;
 	}
 
-#if defined(CONFIG_BT_PERIPHERAL)
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH) || defined(CONFIG_BT_CTLR_PHY)
+	/* TODO: Design connection event length use. for only reserve for single
+	 *       trx.
+	 */
+	if (_radio.conn_curr->evt_len_upd) {
+		u32_t ready_delay, rx_time, tx_time, ticks_slot;
+		struct connection *conn = _radio.conn_curr;
+
+		/* Reset event length update flag */
+		conn->evt_len_upd = 0U;
+
+#if defined(CONFIG_BT_CTLR_PHY)
+		ready_delay = (conn->role) ?
+			      radio_rx_ready_delay_get(conn->phy_rx, 1) :
+			      radio_tx_ready_delay_get(conn->phy_tx,
+						       conn->phy_flags);
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
+		tx_time = conn->max_tx_time;
+		if (conn->evt_len_adv) {
+			rx_time = conn->llcp_length.rx_time;
+		} else {
+			rx_time = conn->max_rx_time;
+		}
+#else /* !CONFIG_BT_CTLR_DATA_LENGTH */
+		tx_time = MAX(RADIO_PKT_TIME(PDU_DC_PAYLOAD_SIZE_MIN, 0),
+			      RADIO_PKT_TIME(PDU_DC_PAYLOAD_SIZE_MIN,
+					     conn->phy_tx));
+		rx_time = MAX(RADIO_PKT_TIME(PDU_DC_PAYLOAD_SIZE_MIN, 0),
+			      RADIO_PKT_TIME(PDU_DC_PAYLOAD_SIZE_MIN,
+					     conn->phy_rx));
+#endif /* !CONFIG_BT_CTLR_DATA_LENGTH */
+#else /* !CONFIG_BT_CTLR_PHY */
+		ready_delay = (conn->role) ?
+			      radio_rx_ready_delay_get(0, 0) :
+			      radio_tx_ready_delay_get(0, 0);
+		tx_time = RADIO_PKT_TIME(conn->max_tx_octets, 0);
+		if (conn->evt_len_adv) {
+			rx_time = RADIO_PKT_TIME(conn->llcp_length.rx_octets,
+						 0);
+		} else {
+			rx_time = RADIO_PKT_TIME(conn->max_rx_octets, 0);
+		}
+#endif /* !CONFIG_BT_CTLR_PHY */
+
+		ticks_slot = HAL_TICKER_US_TO_TICKS(RADIO_TICKER_START_PART_US +
+						    ready_delay + RADIO_TIFS +
+						    rx_time + tx_time + 4);
+
+		if (ticks_slot > conn->hdr.ticks_slot) {
+			ticks_slot_plus = ticks_slot - conn->hdr.ticks_slot;
+		} else {
+			ticks_slot_minus = conn->hdr.ticks_slot - ticks_slot;
+		}
+		conn->hdr.ticks_slot = ticks_slot;
+	}
+#endif
+
 	if ((ticks_drift_plus != 0) || (ticks_drift_minus != 0) ||
+	    (ticks_slot_plus != 0) || (ticks_slot_minus != 0) ||
 	    (lazy != 0) || (force != 0)) {
 		u32_t ticker_status;
 		u8_t ticker_id = RADIO_TICKER_ID_FIRST_CONNECTION +
@@ -4616,14 +4686,14 @@ static inline void isr_close_conn(void)
 			ticker_update(RADIO_TICKER_INSTANCE_ID_RADIO,
 				      RADIO_TICKER_USER_ID_WORKER,
 				      ticker_id,
-				      ticks_drift_plus, ticks_drift_minus, 0, 0,
-				      lazy, force, ticker_update_slave_assert,
+				      ticks_drift_plus, ticks_drift_minus,
+				      ticks_slot_plus, ticks_slot_minus,
+				      lazy, force, ticker_update_conn_assert,
 				      (void *)(u32_t)ticker_id);
 		LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
 			  (ticker_status == TICKER_STATUS_BUSY) ||
 			  (_radio.ticker_id_stop == ticker_id));
 	}
-#endif /* CONFIG_BT_PERIPHERAL */
 }
 #endif /* CONFIG_BT_CONN */
 
@@ -4829,15 +4899,6 @@ static void ticker_stop_adv_assert(u32_t status, void *params)
 		LL_ASSERT(_radio.ticker_id_prepare != RADIO_TICKER_ID_ADV);
 	}
 }
-
-static void ticker_update_slave_assert(u32_t status, void *params)
-{
-	u8_t ticker_id = (u32_t)params & 0xFF;
-
-	LL_ASSERT((status == TICKER_STATUS_SUCCESS) ||
-		  (_radio.ticker_id_stop == ticker_id) ||
-		  (_radio.ticker_id_upd == ticker_id));
-}
 #endif /* CONFIG_BT_PERIPHERAL */
 
 #if defined(CONFIG_BT_CENTRAL)
@@ -4866,6 +4927,15 @@ static void ticker_stop_scan_assert(u32_t status, void *params)
 	}
 }
 #endif /* CONFIG_BT_CENTRAL */
+
+static void ticker_update_conn_assert(u32_t status, void *params)
+{
+	u8_t ticker_id = (u32_t)params & 0xFF;
+
+	LL_ASSERT((status == TICKER_STATUS_SUCCESS) ||
+		  (_radio.ticker_id_stop == ticker_id) ||
+		  (_radio.ticker_id_upd == ticker_id));
+}
 
 static void ticker_stop_conn_assert(u32_t status, void *params)
 {
@@ -8134,6 +8204,9 @@ static inline int event_len_prep(struct connection *conn)
 		conn->max_rx_time = conn->llcp_length.rx_time;
 #endif /* CONFIG_BT_CTLR_PHY */
 
+		/* Reset event length update advanced flag */
+		conn->evt_len_adv = 0U;
+
 		/** TODO This design is exception as memory initialization
 		 * and allocation is done in radio context here, breaking the
 		 * rule that the rx buffers are allocated in application
@@ -8520,6 +8593,9 @@ static inline void event_phy_upd_ind_prep(struct connection *conn,
 		}
 		conn->max_tx_time = eff_tx_time;
 		conn->max_rx_time = eff_rx_time;
+
+		/* flag an event length update*/
+		conn->evt_len_upd = 1U;
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 		/* Prepare the rx packet structure */
