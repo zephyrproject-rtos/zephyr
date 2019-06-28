@@ -507,7 +507,7 @@ class ElfHelper:
                 self.debug_die(die,
                                "object '%s' found in invalid location %s"
                                % (name, hex(addr)))
-                continue
+                #continue
 
             if ko.type_obj.name != "device":
                 # Not a device struct so we immediately know its type

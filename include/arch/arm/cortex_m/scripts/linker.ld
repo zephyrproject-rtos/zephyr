@@ -193,6 +193,11 @@ SECTIONS
 	_image_text_start = .;
 	*(.text)
 	*(".text.*")
+
+#ifdef CONFIG_CODE_DATA_RELOCATION
+#include <linker_relocate_align.ld>
+#endif /* CONFIG_CODE_DATA_RELOCATION */
+
 	*(.gnu.linkonce.t.*)
 
 	/*

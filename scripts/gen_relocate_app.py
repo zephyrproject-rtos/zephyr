@@ -61,6 +61,24 @@ MPU_RO_REGION_END = """
 
 """
 
+SRAM_RELOCATION_TEXT_ALIGN = """
+#ifdef CONFIG_USERSPACE
+        _sram_text_align_start = _image_text_start;
+        _sram_text_align_end = .;
+        _sram_text_align_used = _sram_text_align_end - _sram_text_align_start;
+        . = MAX(., _sram_text_align_start + CONFIG_RELOCATION_SRAM_TEXT_ALIGN_SIZE);
+        ASSERT(
+              CONFIG_RELOCATION_SRAM_TEXT_ALIGN_SIZE > _sram_text_align_used,
+"The configuration system has incorrectly set
+'CONFIG_RELOCATION_SRAM_TEXT_ALIGN_SIZE' to
+CONFIG_RELOCATION_SRAM_TEXT_ALIGN_SIZE, which is not big enough.
+You must through Kconfig either disable 'CONFIG_USERSPACE', or
+set 'CONFIG_RELOCATION_SRAM_TEXT_ALIGN_SIZE' to a value larger than
+CONFIG_RELOCATION_SRAM_TEXT_ALIGN_SIZE."
+              );
+#endif
+"""
+
 # generic section creation format
 LINKER_SECTION_SEQ = """
 
@@ -229,7 +247,7 @@ def string_create_helper(region, memory_type,
 
 
 def generate_linker_script(linker_file, sram_data_linker_file,
-                sram_bss_linker_file, complete_list_of_sections):
+    sram_bss_linker_file, sram_text_align_linker_file, complete_list_of_sections):
     gen_string = ''
     gen_string_sram_data = ''
     gen_string_sram_bss = ''
@@ -267,6 +285,9 @@ def generate_linker_script(linker_file, sram_data_linker_file,
 
     with open(sram_bss_linker_file, "a+") as file_desc:
         file_desc.write(gen_string_sram_bss)
+
+    with open(sram_text_align_linker_file, "a+") as file_desc:
+        file_desc.write(SRAM_RELOCATION_TEXT_ALIGN)
 
 def generate_memcpy_code(memory_type, full_list_of_sections, code_generation):
 
@@ -338,6 +359,8 @@ def parse_args():
                         help="Output sram data ld file")
     parser.add_argument("-b", "--output_sram_bss", required=False,
                         help="Output sram bss ld file")
+    parser.add_argument("-a", "--output_sram_text_align", required=False,
+                        help="Output sram text align ld file")
     parser.add_argument("-c", "--output_code", required=False,
                         help="Output relocation code header file")
     parser.add_argument("-v", "--verbose", action="count", default=0,
@@ -389,6 +412,7 @@ def main():
     linker_file = args.output
     sram_data_linker_file = args.output_sram_data
     sram_bss_linker_file = args.output_sram_bss
+    sram_text_align_linker_file = args.output_sram_text_align
     rel_dict = create_dict_wrt_mem()
     complete_list_of_sections = {}
 
@@ -412,8 +436,8 @@ def main():
                                                                  full_list_of_sections,
                                                                  complete_list_of_sections)
 
-    generate_linker_script(linker_file, sram_data_linker_file,
-                       sram_bss_linker_file, complete_list_of_sections)
+    generate_linker_script(linker_file, sram_data_linker_file, sram_bss_linker_file,
+                             sram_text_align_linker_file, complete_list_of_sections)
 
     code_generation = {"copy_code": '', "zero_code":'', "extern":''}
     for mem_type, list_of_sections in \

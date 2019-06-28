@@ -82,6 +82,15 @@ config CODE_DATA_RELOCATION
 	  files should be specified in the CMakeList.txt file with
 	  a cmake API zephyr_code_relocation().
 
+config RELOCATION_SRAM_TEXT_ALIGN_SIZE
+	int "code relocation sram text section align size"
+	default 80000
+	depends on ARCH_HAS_USERSPACE && CODE_DATA_RELOCATION
+	help
+	  Align sram text section when userspace and code relocation
+	  enabled to generate same .rodata, .data and .bss sections
+	  in sram region for the magic building process.
+
 config HAS_FLASH_LOAD_OFFSET
 	bool
 	help

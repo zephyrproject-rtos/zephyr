@@ -8,6 +8,8 @@ macro(toolchain_ld_relocation)
        "${PROJECT_BINARY_DIR}/include/generated/linker_sram_data_relocate.ld")
   set(MEM_RELOCATAION_SRAM_BSS_LD
        "${PROJECT_BINARY_DIR}/include/generated/linker_sram_bss_relocate.ld")
+  set(MEM_RELOCATAION_SRAM_TEXT_ALIGN_LD
+       "${PROJECT_BINARY_DIR}/include/generated/linker_relocate_align.ld")
   set(MEM_RELOCATAION_CODE "${PROJECT_BINARY_DIR}/code_relocation.c")
 
   add_custom_command(
@@ -21,6 +23,7 @@ macro(toolchain_ld_relocation)
     -o ${MEM_RELOCATAION_LD}
     -s ${MEM_RELOCATAION_SRAM_DATA_LD}
     -b ${MEM_RELOCATAION_SRAM_BSS_LD}
+    -a ${MEM_RELOCATAION_SRAM_TEXT_ALIGN_LD}
     -c ${MEM_RELOCATAION_CODE}
     DEPENDS app kernel ${ZEPHYR_LIBS_PROPERTY}
     )
