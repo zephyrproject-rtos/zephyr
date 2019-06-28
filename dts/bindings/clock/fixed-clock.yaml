@@ -10,29 +10,14 @@ version: 0.1
 description: >
     This is a representation of a generic fixed rate clock provider.
 
+inherits:
+    !include clock.yaml
+
 properties:
     compatible:
-      type: string
-      category: required
-      description: compatible strings
       constraint: "fixed-clock"
-
-    label:
-      type: string
-      category: required
-      description: Human readable string describing the device (used by Zephyr for API name)
 
     clock-frequency:
       type: int
-      description: output clock frequency (Hz)
+      description: Output clock frequency (Hz).
       category: required
-
-    clocks:
-      type: array
-      category: optional
-      description: input clock source
-
-    "#clock-cells":
-      type: int
-      category: required
-      description: should be 0.
