@@ -9,11 +9,11 @@
 
 #include <drivers/interrupt_controller/loapic.h>
 
-#define _IRQ_TRIGGER_EDGE	IOAPIC_EDGE
-#define _IRQ_TRIGGER_LEVEL	IOAPIC_LEVEL
+#define IRQ_TRIGGER_EDGE	IOAPIC_EDGE
+#define IRQ_TRIGGER_LEVEL	IOAPIC_LEVEL
 
-#define _IRQ_POLARITY_HIGH	IOAPIC_HIGH
-#define _IRQ_POLARITY_LOW	IOAPIC_LOW
+#define IRQ_POLARITY_HIGH	IOAPIC_HIGH
+#define IRQ_POLARITY_LOW	IOAPIC_LOW
 
 #ifndef _ASMLANGUAGE
 #include <zephyr/types.h>
@@ -21,42 +21,25 @@
 #define LOAPIC_IRQ_BASE  CONFIG_IOAPIC_NUM_RTES
 #define LOAPIC_IRQ_COUNT 6  /* Default to LOAPIC_TIMER to LOAPIC_ERROR */
 
-/* irq_controller.h interface */
-void __irq_controller_irq_config(unsigned int vector, unsigned int irq,
+void z_irq_controller_irq_config(unsigned int vector, unsigned int irq,
 				 u32_t flags);
 
-int __irq_controller_isr_vector_get(void);
+int z_irq_controller_isr_vector_get(void);
 
 #ifdef CONFIG_X2APIC
 void z_x2apic_eoi(void);
 #endif
 
-static inline void __irq_controller_eoi(void)
+static inline void z_irq_controller_eoi(void)
 {
-#if CONFIG_EOI_FORWARDING_BUG
+#if defined(CONFIG_EOI_FORWARDING_BUG)
 	z_lakemont_eoi();
-#else
+#elif defined(CONFIG_X2APIC)
+	z_x2apic_eoi();
+#else /* xAPIC */
 	*(volatile int *)(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_EOI) = 0;
 #endif
 }
-
-#else /* _ASMLANGUAGE */
-
-#if CONFIG_EOI_FORWARDING_BUG
-.macro __irq_controller_eoi_macro
-	call	z_lakemont_eoi
-.endm
-#else
-.macro __irq_controller_eoi_macro
-#ifdef CONFIG_X2APIC
-	call	z_x2apic_eoi
-#else
-	xorl %eax, %eax			/* zeroes eax */
-	loapic_eoi_reg = (CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_EOI)
-	movl %eax, loapic_eoi_reg	/* tell LOAPIC the IRQ is handled */
-#endif
-.endm
-#endif /* CONFIG_EOI_FORWARDING_BUG */
 
 #endif /* _ASMLANGUAGE */
 

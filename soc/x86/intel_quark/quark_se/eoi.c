@@ -15,7 +15,7 @@
  */
 
 #include <kernel.h>
-#include <arch/x86/irq_controller.h>
+#include <drivers/interrupt_controller/sysapic.h>
 #include <sys/sys_io.h>
 #include <interrupt_controller/ioapic_priv.h>
 

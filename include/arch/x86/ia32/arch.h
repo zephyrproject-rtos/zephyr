@@ -16,7 +16,7 @@
 
 #include <irq.h>
 #include "sys_io.h"
-#include <arch/x86/irq_controller.h>
+#include <drivers/interrupt_controller/sysapic.h>
 #include <kernel_arch_thread.h>
 #include <generated_dts_board.h>
 #include <mmustructs.h>
@@ -193,7 +193,7 @@ typedef struct s_isrList {
  * @param priority_p Interrupt priority
  * @param isr_p Interrupt service routine
  * @param isr_param_p ISR parameter
- * @param flags_p IRQ triggering options, as defined in irq_controller.h
+ * @param flags_p IRQ triggering options, as defined in sysapic.h
  *
  * @return The vector assigned to this interrupt
  */
