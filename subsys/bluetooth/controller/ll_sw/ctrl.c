@@ -8529,6 +8529,7 @@ static void event_connection_prepare(u32_t ticks_at_expire,
 				 * lets skip this event and try in the next
 				 * event.
 				 */
+				_radio.ticker_id_prepare = 0U;
 				return;
 			}
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
