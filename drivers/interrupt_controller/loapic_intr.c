@@ -295,7 +295,7 @@ void z_loapic_irq_disable(unsigned int irq)
  * @return The vector of the interrupt that is currently being processed, or -1
  * if no IRQ is being serviced.
  */
-int __irq_controller_isr_vector_get(void)
+int z_irq_controller_isr_vector_get(void)
 {
 	int pReg, block;
 

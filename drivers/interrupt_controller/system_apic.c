@@ -43,7 +43,7 @@
  * @param flags interrupt flags
  *
  */
-void __irq_controller_irq_config(unsigned int vector, unsigned int irq,
+void z_irq_controller_irq_config(unsigned int vector, unsigned int irq,
 				 u32_t flags)
 {
 	__ASSERT(irq <= HARDWARE_IRQ_LIMIT, "invalid irq line");
