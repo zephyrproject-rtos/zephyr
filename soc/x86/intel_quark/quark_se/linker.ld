@@ -69,5 +69,5 @@ MEMORY
     MMU_LIST	    : ORIGIN = 4k, LENGTH = 1K
     }
 
-#include <arch/x86/linker.ld>
+#include <arch/x86/ia32/linker.ld>
 

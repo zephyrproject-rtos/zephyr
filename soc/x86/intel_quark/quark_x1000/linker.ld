@@ -42,5 +42,5 @@ MEMORY
     IDT_LIST        : ORIGIN = 2K, LENGTH = 2K
     }
 
-#include <arch/x86/linker.ld>
+#include <arch/x86/ia32/linker.ld>
 
