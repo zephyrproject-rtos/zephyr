@@ -1,3 +1,7 @@
 tests:
-  kernel.mutex:
+  sys.mutex:
     tags: kernel userspace
+  sys.mutex.nouser:
+    tags: kernel
+    extra_configs:
+      - CONFIG_TEST_USERSPACE=n
