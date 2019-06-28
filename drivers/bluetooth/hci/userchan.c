@@ -58,7 +58,7 @@ static int bt_dev_index = -1;
 static struct net_buf *get_rx(const u8_t *buf)
 {
 	if (buf[0] == H4_EVT) {
-		return bt_buf_get_evt(buf[1], K_FOREVER);
+		return bt_buf_get_evt(buf[1], false, K_FOREVER);
 	}
 
 	return bt_buf_get_rx(BT_BUF_ACL_IN, K_FOREVER);

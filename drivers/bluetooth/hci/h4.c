@@ -162,7 +162,7 @@ static struct net_buf *get_rx(int timeout)
 	BT_DBG("type 0x%02x, evt 0x%02x", rx.type, rx.evt.evt);
 
 	if (rx.type == H4_EVT) {
-		return bt_buf_get_evt(rx.evt.evt, timeout);
+		return bt_buf_get_evt(rx.evt.evt, rx.discardable, timeout);
 	}
 
 	return bt_buf_get_rx(BT_BUF_ACL_IN, timeout);
