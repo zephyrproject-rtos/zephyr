@@ -45,6 +45,7 @@ static void _printk_hex_ulong(out_func_t out, void *ctx,
  *
  * @return 0
  */
+/* LCOV_EXCL_START */
  __attribute__((weak)) int z_arch_printk_char_out(int c)
 {
 	ARG_UNUSED(c);
@@ -52,6 +53,7 @@ static void _printk_hex_ulong(out_func_t out, void *ctx,
 	/* do nothing */
 	return 0;
 }
+/* LCOV_EXCL_STOP */
 
 int (*_char_out)(int) = z_arch_printk_char_out;
 
