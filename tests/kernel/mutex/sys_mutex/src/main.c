@@ -62,6 +62,12 @@ ZTEST_BMEM SYS_MUTEX_DEFINE(mutex_2);
 ZTEST_BMEM SYS_MUTEX_DEFINE(mutex_3);
 ZTEST_BMEM SYS_MUTEX_DEFINE(mutex_4);
 
+#ifdef CONFIG_USERSPACE
+static SYS_MUTEX_DEFINE(no_access_mutex);
+#endif
+static ZTEST_BMEM SYS_MUTEX_DEFINE(not_my_mutex);
+static ZTEST_BMEM SYS_MUTEX_DEFINE(bad_count_mutex);
+
 /**
  *
  * thread_05 -
@@ -258,6 +264,12 @@ void test_mutex(void)
 	struct sys_mutex *givemutex[3] = { &mutex_3, &mutex_2, &mutex_1 };
 	int priority[4] = { 9, 8, 7, 5 };
 	int droppri[3] = { 8, 8, 9 };
+#ifdef CONFIG_USERSPACE
+	int thread_flags = K_USER | K_INHERIT_PERMS;
+#else
+	int thread_flags = 0;
+#endif
+
 
 	TC_START("Test kernel Mutex API");
 
@@ -336,8 +348,7 @@ void test_mutex(void)
 	/* Start thread */
 	k_thread_create(&thread_12_thread_data, thread_12_stack_area, STACKSIZE,
 			(k_thread_entry_t)thread_12, NULL, NULL, NULL,
-			K_PRIO_PREEMPT(12), K_USER | K_INHERIT_PERMS,
-			K_NO_WAIT);
+			K_PRIO_PREEMPT(12), thread_flags, K_NO_WAIT);
 	k_sleep(1);     /* Give thread_12 a chance to block on the mutex */
 
 	sys_mutex_unlock(&private_mutex);
@@ -352,6 +363,42 @@ void test_mutex(void)
 	sys_mutex_unlock(&private_mutex);
 
 	TC_PRINT("Recursive locking tests successful\n");
+}
+
+void test_supervisor_access(void)
+{
+	int rv;
+
+#ifdef CONFIG_USERSPACE
+	/* coverage for get_k_mutex checks */
+	rv = sys_mutex_lock((struct sys_mutex *)NULL, K_NO_WAIT);
+	zassert_true(rv == -EINVAL, "accepted bad mutex pointer");
+	rv = sys_mutex_lock((struct sys_mutex *)k_current_get(), K_NO_WAIT);
+	zassert_true(rv == -EINVAL, "accepted object that was not a mutex");
+	rv = sys_mutex_unlock((struct sys_mutex *)NULL);
+	zassert_true(rv == -EINVAL, "accepted bad mutex pointer");
+	rv = sys_mutex_unlock((struct sys_mutex *)k_current_get());
+	zassert_true(rv == -EINVAL, "accepted object that was not a mutex");
+#endif /* CONFIG_USERSPACE */
+
+	rv = sys_mutex_unlock(&not_my_mutex);
+	zassert_true(rv == -EPERM, "unlocked a mutex that wasn't owner");
+	rv = sys_mutex_unlock(&bad_count_mutex);
+	zassert_true(rv == -EINVAL, "mutex wasn't locked");
+}
+
+void test_user_access(void)
+{
+#ifdef CONFIG_USERSPACE
+	int rv;
+
+	rv = sys_mutex_lock(&no_access_mutex, K_NO_WAIT);
+	zassert_true(rv == -EACCES, "accessed mutex not in memory domain");
+	rv = sys_mutex_unlock(&no_access_mutex);
+	zassert_true(rv == -EACCES, "accessed mutex not in memory domain");
+#else
+	ztest_test_skip();
+#endif /* CONFIG_USERSPACE */
 }
 
 K_THREAD_DEFINE(THREAD_05, STACKSIZE, thread_05, NULL, NULL, NULL,
@@ -386,7 +433,29 @@ void test_main(void)
 	k_mem_domain_add_thread(&ztest_mem_domain, THREAD_09);
 	k_mem_domain_add_thread(&ztest_mem_domain, THREAD_11);
 #endif
+	sys_mutex_lock(&not_my_mutex, K_NO_WAIT);
 
-	ztest_test_suite(mutex_complex, ztest_user_unit_test(test_mutex));
+	/* We deliberately disable userspace, even on platforms that
+	 * support it, so that the alternate implementation of sys_mutex
+	 * (which is just a very thin wrapper to k_mutex) is exercised.
+	 * This requires us to not attempt to start the tests in user
+	 * mode, as this will otherwise fail an assertion in the thread code.
+	 */
+#ifdef CONFIG_USERSPACE
+	ztest_test_suite(mutex_complex,
+			 ztest_user_unit_test(test_mutex),
+			 ztest_user_unit_test(test_user_access),
+			 ztest_unit_test(test_supervisor_access));
+
 	ztest_run_test_suite(mutex_complex);
+#else
+	ztest_test_suite(mutex_complex,
+			 ztest_unit_test(test_mutex),
+			 ztest_unit_test(test_user_access),
+			 ztest_unit_test(test_supervisor_access));
+
+	ztest_run_test_suite(mutex_complex);
+#endif
+
+
 }
