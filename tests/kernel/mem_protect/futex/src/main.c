@@ -157,8 +157,7 @@ void test_futex_wait_forever(void)
 {
 	timeout = K_FOREVER;
 
-	k_futex_init(&simple_futex);
-	atomic_inc(&simple_futex.val);
+	atomic_set(&simple_futex.val, 1);
 
 	k_thread_create(&futex_tid, stack_1, STACK_SIZE,
 			futex_wait_task, &timeout, NULL, NULL,
@@ -178,8 +177,7 @@ void test_futex_wait_timeout(void)
 {
 	timeout = K_MSEC(50);
 
-	k_futex_init(&simple_futex);
-	atomic_inc(&simple_futex.val);
+	atomic_set(&simple_futex.val, 1);
 
 	k_thread_create(&futex_tid, stack_1, STACK_SIZE,
 			futex_wait_task, &timeout, NULL, NULL,
@@ -199,8 +197,7 @@ void test_futex_wait_nowait(void)
 {
 	timeout = K_NO_WAIT;
 
-	k_futex_init(&simple_futex);
-	atomic_inc(&simple_futex.val);
+	atomic_set(&simple_futex.val, 1);
 
 	k_thread_create(&futex_tid, stack_1, STACK_SIZE,
 			futex_wait_task, &timeout, NULL, NULL,
@@ -223,8 +220,7 @@ void test_futex_wait_forever_wake(void)
 	woken = 1;
 	timeout = K_FOREVER;
 
-	k_futex_init(&simple_futex);
-	atomic_inc(&simple_futex.val);
+	atomic_set(&simple_futex.val, 1);
 
 	k_thread_create(&futex_tid, stack_1, STACK_SIZE,
 			futex_wait_wake_task, &timeout, NULL, NULL,
@@ -257,8 +253,7 @@ void test_futex_wait_timeout_wake(void)
 	woken = 1;
 	timeout = K_MSEC(100);
 
-	k_futex_init(&simple_futex);
-	atomic_inc(&simple_futex.val);
+	atomic_set(&simple_futex.val, 1);
 
 	k_thread_create(&futex_tid, stack_1, STACK_SIZE,
 			futex_wait_wake_task, &timeout, NULL, NULL,
@@ -291,8 +286,7 @@ void test_futex_wait_nowait_wake(void)
 	woken = 0;
 	timeout = K_NO_WAIT;
 
-	k_futex_init(&simple_futex);
-	atomic_inc(&simple_futex.val);
+	atomic_set(&simple_futex.val, 1);
 
 	k_thread_create(&futex_tid, stack_1, STACK_SIZE,
 			futex_wait_wake_task, &timeout, NULL, NULL,
@@ -318,8 +312,7 @@ void test_futex_wait_forever_wake_from_isr(void)
 {
 	timeout = K_FOREVER;
 
-	k_futex_init(&simple_futex);
-	atomic_inc(&simple_futex.val);
+	atomic_set(&simple_futex.val, 1);
 
 	k_thread_create(&futex_tid, stack_1, STACK_SIZE,
 			futex_wait_wake_task, &timeout, NULL, NULL,
@@ -345,7 +338,7 @@ void test_futex_multiple_threads_wait_wake(void)
 	timeout = K_FOREVER;
 	woken = TOTAL_THREADS_WAITING;
 
-	k_futex_init(&simple_futex);
+	atomic_clear(&simple_futex.val);
 
 	for (int i = 0; i < TOTAL_THREADS_WAITING; i++) {
 		atomic_inc(&simple_futex.val);
@@ -382,8 +375,7 @@ void test_multiple_futex_wait_wake(void)
 
 	for (int i = 0; i < TOTAL_THREADS_WAITING; i++) {
 		index[i] = i;
-		k_futex_init(&multiple_futex[i]);
-		atomic_inc(&multiple_futex[i].val);
+		atomic_set(&multiple_futex[i].val, 1);
 		k_thread_create(&multiple_tid[i], multiple_stack[i],
 				STACK_SIZE, futex_multiple_wait_wake_task,
 				&timeout, &index[i], NULL, PRIO_WAIT,
