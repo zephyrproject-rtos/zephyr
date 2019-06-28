@@ -383,7 +383,7 @@ _oops:
 
 #if CONFIG_USERSPACE
     /*
-     * System call will setup a jump to the _do_arm_syscall function
+     * System call will setup a jump to the z_arm_do_syscall() function
      * when the SVC returns via the bx lr.
      *
      * There is some trickery involved here because we have to preserve
@@ -413,7 +413,7 @@ _do_syscall:
     cmp r6, ip
     blt valid_syscall_id
 
-    /* bad syscall id.  Set arg0 to bad id and set call_id to SYSCALL_BAD */
+    /* bad syscall id.  Set arg1 to bad id and set call_id to SYSCALL_BAD */
     str r6, [r0, #0]
     ldr r6, =K_SYSCALL_BAD
 
