@@ -506,18 +506,14 @@ static int str_out(int c, struct str_context *ctx)
 
 int snprintk(char *str, size_t size, const char *fmt, ...)
 {
-	struct str_context ctx = { str, size, 0 };
 	va_list ap;
+	int ret;
 
 	va_start(ap, fmt);
-	z_vprintk((out_func_t)str_out, &ctx, fmt, ap);
+	ret = vsnprintk(str, size, fmt, ap);
 	va_end(ap);
 
-	if (ctx.count < ctx.max) {
-		str[ctx.count] = '\0';
-	}
-
-	return ctx.count;
+	return ret;
 }
 
 int vsnprintk(char *str, size_t size, const char *fmt, va_list ap)
