@@ -1,5 +1,5 @@
 common:
-  tags: device
+  tags: device userspace
 tests:
   kernel.device:
     tags: device
@@ -9,4 +9,3 @@ tests:
     extra_configs:
       - CONFIG_DEVICE_POWER_MANAGEMENT=y
     platform_whitelist: native_posix qemu_x86 #cannot run on qemu_x86_64 yet
-

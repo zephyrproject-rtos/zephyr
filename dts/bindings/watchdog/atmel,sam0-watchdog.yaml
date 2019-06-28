@@ -1,4 +1,4 @@
----
+
 title: Atmel SAM0 watchdog driver
 version: 0.1
 
@@ -20,4 +20,3 @@ properties:
 
     interrupts:
       category: required
-...

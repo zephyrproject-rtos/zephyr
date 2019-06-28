@@ -1,4 +1,4 @@
----
+
 title: STM32 RCC
 version: 0.1
 
@@ -18,5 +18,3 @@ properties:
 "#cells":
   - bus
   - bits
-
-...

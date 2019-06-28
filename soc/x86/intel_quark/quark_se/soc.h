@@ -18,7 +18,7 @@
 #include <uart.h>
 
 #ifdef CONFIG_IOAPIC
-#include <drivers/ioapic.h>
+#include <drivers/interrupt_controller/ioapic.h>
 #endif
 
 #define INT_VEC_IRQ0  0x20	/* Vector number for IRQ0 */

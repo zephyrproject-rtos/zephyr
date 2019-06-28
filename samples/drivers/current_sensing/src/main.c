@@ -92,7 +92,7 @@ void main(void)
 		return;
 	}
 
-	/* Configurate the chip using default values */
+	/* Configure the chip using default values */
 	data[0] = 0x03;
 	data[1] = 0x99;
 	write_reg16(i2c_dev, 0x00, data);

@@ -45,6 +45,8 @@
 	compatible = "atmel,sam0-spi";
 	dipo = <0>;
 	dopo = <2>;
+	#address-cells = <1>;
+	#size-cells = <0>;
 };
 
 &sercom3 {

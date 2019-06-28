@@ -175,7 +175,7 @@
 #define BMG160_BUS_SPEED	I2C_SPEED_FAST
 #endif
 
-/* end of default settigns */
+/* end of default settings */
 
 struct bmg160_device_config {
 	const char *i2c_port;

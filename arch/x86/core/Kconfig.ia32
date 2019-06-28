@@ -1,0 +1,373 @@
+# Kconfig.ia32 - IA32-specific X86 subarchitecture options
+#
+# Copyright (c) 2019 Intel Corp.
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if !X86_LONGMODE
+
+config NESTED_INTERRUPTS
+	bool "Enable nested interrupts"
+	default y
+	help
+	  This option enables support for nested interrupts.
+
+config EXCEPTION_DEBUG
+	bool "Unhandled exception debugging"
+	default y
+	depends on PRINTK
+	help
+	  Install handlers for various CPU exception/trap vectors to
+	  make debugging them easier, at a small expense in code size.
+	  This prints out the specific exception vector and any associated
+	  error codes.
+
+menu "Memory Layout Options"
+
+config IDT_NUM_VECTORS
+	int "Number of IDT vectors"
+	default 256
+	range 32 256
+	help
+	  This option specifies the number of interrupt vector entries in the
+	  Interrupt Descriptor Table (IDT). By default all 256 vectors are
+	  supported in an IDT requiring 2048 bytes of memory.
+
+config MAX_IRQ_LINES
+	int "Number of IRQ lines"
+	default 128
+	range 0 256
+	help
+	  This option specifies the number of IRQ lines in the system.
+	  It can be tuned to save some bytes in ROM, as it determines the
+	  size of the _irq_to_interrupt_vector_table, which is used at runtime
+	  to program to the PIC the association between vectors and
+	  interrupts.
+
+config SET_GDT
+	bool "Setup GDT as part of boot process"
+	default y
+	help
+	  This option sets up the GDT as part of the boot process. However,
+	  this may conflict with some security scenarios where the GDT is
+	  already appropriately set by an earlier bootloader stage, in which
+	  case this should be disabled. If disabled, the global _gdt pointer
+	  will not be available.
+
+config GDT_DYNAMIC
+	bool "Store GDT in RAM so that it can be modified"
+	depends on SET_GDT
+	help
+	  This option stores the GDT in RAM instead of ROM, so that it may
+	  be modified at runtime at the expense of some memory.
+
+endmenu
+
+config DISABLE_SSBD
+	bool "Disable Speculative Store Bypass"
+	depends on USERSPACE
+	default y if !X86_NO_SPECTRE_V4
+	help
+	  This option will disable Speculative Store Bypass in order to
+	  mitigate against certain kinds of side channel attacks.  Quoting
+	  the "Speculative Execution Side Channels" document, version 2.0:
+
+	      When SSBD is set, loads will not execute speculatively
+	      until the addresses of all older stores are known.  This
+	      ensure s that a load does not speculatively consume stale
+	      data values due to bypassing an older store on the same
+	      logical processor.
+
+	  If enabled, this applies to all threads in the system.
+
+	  Even if enabled, will have no effect on CPUs that do not
+	  require this feature.
+
+config ENABLE_EXTENDED_IBRS
+	bool "Enable Extended IBRS"
+	depends on USERSPACE
+	default y if !X86_NO_SPECTRE_V2
+	help
+	  This option will enable the Extended Indirect Branch Restricted
+	  Speculation 'always on' feature. This mitigates Indirect Branch
+	  Control vulnerabilities (aka Spectre V2).
+
+config X86_RETPOLINE
+	bool "Build with retpolines enabled in x86 assembly code"
+	depends on USERSPACE
+	help
+	  This is recommended on platforms with speculative executions, to
+	  protect against branch target injection (AKA Spectre-V2).  Full
+	  description of how retpolines work can be found here[1].
+
+	  [1] https://support.google.com/faqs/answer/7625886
+
+config X86_BOUNDS_CHECK_BYPASS_MITIGATION
+	bool
+	depends on USERSPACE
+	default y if !X86_NO_SPECTRE_V1
+	select BOUNDS_CHECK_BYPASS_MITIGATION
+	help
+	  Hidden config to select arch-independent option to enable
+	  Spectre V1 mitigations by default if the CPU is not known
+	  to be immune to it.
+
+menu "Processor Capabilities"
+
+config X86_IAMCU
+	bool "IAMCU calling convention"
+	help
+	  The IAMCU calling convention changes the X86 C calling convention to
+	  pass some arguments via registers allowing for code size and performance
+	  improvements.  Great care needs to be taken if you have assembly code
+	  that will be called from C or C code called from assembly code, the
+	  assembly code will need to be updated to conform to the new calling
+	  convention.  If in doubt say N
+
+config X86_MMU
+	bool "Enable Memory Management Unit"
+	select MEMORY_PROTECTION
+	help
+	  This options enables the memory management unit present in x86
+	  and creates a set of page tables at build time. Requires an MMU
+	  which supports PAE page tables.
+
+config X86_NO_MELTDOWN
+	bool
+	help
+	  This hidden option should be set on a per-SOC basis to indicate that
+	  a particular SOC is not vulnerable to the Meltdown CPU vulnerability,
+	  as described in CVE-2017-5754.
+
+config X86_NO_SPECTRE_V1
+	bool
+	help
+	  This hidden option should be set on a per-SOC basis to indicate that
+	  a particular SOC is not vulnerable to the Spectre V1, V1.1, and V1.2
+	  CPU vulnerabilities as described in CVE-2017-5753 and CVE-2018-3693.
+
+config X86_NO_SPECTRE_V2
+	bool
+	help
+	  This hidden option should be set on a per-SOC basis to indicate that
+	  a particular SOC is not vulnerable to the Spectre V2 CPU
+	  vulnerability, as described in CVE-2017-5715.
+
+config X86_NO_SPECTRE_V4
+	bool
+	help
+	  This hidden option should be set on a per-SOC basis to indicate that
+	  a particular SOC is not vulnerable to the Spectre V4 CPU
+	  vulnerability, as described in CVE-2018-3639.
+
+config X86_NO_LAZY_FP
+	bool
+	help
+	  This hidden option should be set on a per-SOC basis to indicate
+	  that a particular SOC is not vulnerable to the Lazy FP CPU
+	  vulnerability, as described in CVE-2018-3665.
+
+config X86_NO_SPECULATIVE_VULNERABILITIES
+	bool
+	select X86_NO_MELTDOWN
+	select X86_NO_SPECTRE_V1
+	select X86_NO_SPECTRE_V2
+	select X86_NO_SPECTRE_V4
+	select X86_NO_LAZY_FP
+	help
+	  This hidden option should be set on a per-SOC basis to indicate that
+	  a particular SOC does not perform any kind of speculative execution,
+	  or is a newer chip which is immune to the class of vulnerabilities
+	  which exploit speculative execution side channel attacks.
+
+config X86_ENABLE_TSS
+	bool
+	help
+	  This hidden option enables defining a Task State Segment (TSS) for
+	  kernel execution. This is needed to handle double-faults or
+	  do privilege elevation. It also defines a special TSS and handler
+	  for correctly handling double-fault exceptions, instead of just
+	  letting the system triple-fault and reset.
+
+config X86_STACK_PROTECTION
+	bool
+	default y if HW_STACK_PROTECTION
+	select SET_GDT
+	select GDT_DYNAMIC
+	select X86_ENABLE_TSS
+	help
+	  This option leverages the MMU to cause a system fatal error if the
+	  bounds of the current process stack are overflowed. This is done
+	  by preceding all stack areas with a 4K guard page.
+
+config X86_USERSPACE
+	bool
+	default y if USERSPACE
+	select THREAD_STACK_INFO
+	select SET_GDT
+	select GDT_DYNAMIC
+	select X86_ENABLE_TSS
+	help
+	  This option enables APIs to drop a thread's privileges down to ring 3,
+	  supporting user-level threads that are protected from each other and
+	  from crashing the kernel.
+
+config X86_KPTI
+	bool "Enable kernel page table isolation"
+	default y
+	depends on USERSPACE
+	depends on !X86_NO_MELTDOWN
+	help
+	  Implements kernel page table isolation to mitigate Meltdown exploits
+	  to read Kernel RAM. Incurs a significant performance cost for
+	  user thread interrupts and system calls, and significant footprint
+	  increase for additional page tables and trampoline stacks.
+
+menu "Architecture Floating Point Options"
+depends on CPU_HAS_FPU
+
+config SSE
+	bool "SSE registers"
+	depends on FLOAT
+	help
+	  This option enables the use of SSE registers by threads.
+
+config SSE_FP_MATH
+	bool "Compiler-generated SSEx instructions"
+	depends on SSE
+	help
+	  This option allows the compiler to generate SSEx instructions for
+	  performing floating point math. This can greatly improve performance
+	  when exactly the same operations are to be performed on multiple
+	  data objects; however, it can also significantly reduce performance
+	  when preemptive task switches occur because of the larger register
+	  set that must be saved and restored.
+
+	  Disabling this option means that the compiler utilizes only the
+	  x87 instruction set for floating point operations.
+
+config EAGER_FP_SHARING
+	bool
+	depends on FLOAT
+	depends on USERSPACE
+	default y if !X86_NO_LAZY_FP
+	help
+	  This hidden option unconditionally saves/restores the FPU/SIMD
+	  register state on every context switch.
+
+	  Mitigates CVE-2018-3665, but incurs a performance hit.
+
+	  For vulnerable systems that process sensitive information in the
+	  FPU register set, should be used any time CONFIG_FLOAT is
+	  enabled, regardless if the FPU is used by one thread or multiple.
+
+config LAZY_FP_SHARING
+	bool
+	depends on FLOAT
+	depends on !EAGER_FP_SHARING
+	depends on FP_SHARING
+	default y if X86_NO_LAZY_FP || !USERSPACE
+	help
+	  This hidden option allows multiple threads to use the floating point
+	  registers, using logic to lazily save/restore the floating point
+	  register state on context switch.
+
+	  On Intel Core processors, may be vulnerable to exploits which allows
+	  malware to read the contents of all floating point registers, see
+	  CVE-2018-3665.
+
+endmenu
+
+config CACHE_LINE_SIZE_DETECT
+	bool "Detect cache line size at runtime"
+	default y
+	help
+	  This option enables querying the CPUID register for finding the cache line
+	  size at the expense of taking more memory and code and a slightly increased
+	  boot time.
+
+	  If the CPU's cache line size is known in advance, disable this option and
+	  manually enter the value for CACHE_LINE_SIZE.
+
+config CACHE_LINE_SIZE
+	int "Cache line size" if !CACHE_LINE_SIZE_DETECT
+	default 64 if CPU_ATOM
+	default 0
+	help
+	  Size in bytes of a CPU cache line.
+
+	  Detect automatically at runtime by selecting CACHE_LINE_SIZE_DETECT.
+
+config CLFLUSH_INSTRUCTION_SUPPORTED
+	bool "CLFLUSH instruction supported"
+	depends on !CLFLUSH_DETECT && CACHE_FLUSHING
+	help
+	  An implementation of sys_cache_flush() that uses CLFLUSH is made
+	  available, instead of the one using WBINVD.
+
+	  This option should only be enabled if it is known in advance that the
+	  CPU supports the CLFLUSH instruction. It disables runtime detection of
+	  CLFLUSH support thereby reducing both memory footprint and boot time.
+
+config CLFLUSH_DETECT
+	bool "Detect support of CLFLUSH instruction at runtime"
+	depends on CACHE_FLUSHING
+	help
+	  This option should be enabled if it is not known in advance whether the
+	  CPU supports the CLFLUSH instruction or not.
+
+	  The CPU is queried at boot time to determine which of the multiple
+	  implementations of sys_cache_flush() linked into the image is the
+	  correct one to use.
+
+	  If the CPU's support (or lack thereof) of CLFLUSH is known in advance, then
+	  disable this option and set CLFLUSH_INSTRUCTION_SUPPORTED as appropriate.
+
+config ARCH_CACHE_FLUSH_DETECT
+	bool
+	default y
+	depends on CLFLUSH_DETECT
+
+config CACHE_FLUSHING
+	bool "Enable cache flushing mechanism"
+	help
+	  This links in the sys_cache_flush() function. A mechanism for flushing the
+	  cache must be selected as well. By default, that mechanism is discovered at
+	  runtime.
+
+config X86_KERNEL_OOPS
+	bool "Enable handling of kernel oops as an exception"
+	default y
+	help
+	  Enable handling of k_oops() API as a CPU exception, which will provide
+	  extra debugging information such as program counter and register
+	  values when the oops is triggered. Requires an entry in the IDT.
+
+config X86_KERNEL_OOPS_VECTOR
+	int "IDT vector to use for kernel oops"
+	default 33
+	range 32 255
+	depends on X86_KERNEL_OOPS
+	help
+	  Specify the IDT vector to use for the kernel oops exception handler.
+
+config IRQ_OFFLOAD_VECTOR
+	int "IDT vector to use for IRQ offload"
+	default 32
+	range 32 255
+	depends on IRQ_OFFLOAD
+	help
+	  Specify the IDT vector to use for the IRQ offload interrupt handler.
+
+config X86_DYNAMIC_IRQ_STUBS
+	int "Number of dynamic interrupt stubs"
+	depends on DYNAMIC_INTERRUPTS
+	default 4
+	help
+	  Installing interrupt handlers with irq_connect_dynamic() requires
+	  some stub code to be generated at build time, one stub per dynamic
+	  interrupt.
+
+endmenu
+
+endif # !X86_LONGMODE

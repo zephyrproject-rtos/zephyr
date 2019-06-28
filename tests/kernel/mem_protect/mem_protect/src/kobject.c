@@ -377,7 +377,7 @@ void kobject_user_2_test9(void *p1, void *p2, void *p3)
 	USERSPACE_BARRIER;
 
 	k_sem_take(&kobject_sem, K_FOREVER);
-	zassert_unreachable("Failed to clear premission on a deleted thread");
+	zassert_unreachable("Failed to clear permission on a deleted thread");
 }
 
 /**

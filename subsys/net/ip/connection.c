@@ -306,6 +306,10 @@ int net_conn_register(u16_t proto, u8_t family,
 			if (net_sin(local_addr)->sin_addr.s_addr) {
 				flags |= NET_CONN_LOCAL_ADDR_SPEC;
 			}
+		} else if (IS_ENABLED(CONFIG_NET_SOCKETS_CAN) &&
+			   local_addr->sa_family == AF_CAN) {
+			memcpy(&conn->local_addr, local_addr,
+			       sizeof(struct sockaddr_can));
 		} else {
 			NET_ERR("Local address family not set");
 			goto error;

@@ -4,7 +4,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
----
+
 title: ST STM32 family ADC
 version: 0.1
 
@@ -29,4 +29,3 @@ properties:
 
     interrupts:
       category: required
-...

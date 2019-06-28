@@ -370,7 +370,7 @@ config NET_CONTEXT_PRIORITY
 	  also traffic class support to work as expected.
 
 config NET_CONTEXT_TIMESTAMP
-	bool "Add timepstamp support to net_context"
+	bool "Add timestamp support to net_context"
 	select NET_PKT_TIMESTAMP
 	help
 	  It is possible to timestamp outgoing packets.

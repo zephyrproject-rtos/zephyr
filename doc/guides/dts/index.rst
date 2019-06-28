@@ -316,14 +316,6 @@ The full set of Zephyr-specific ``chosen`` nodes follows:
    * - ``zephyr,uart-mcumgr``
      - ``DT_UART_MCUMGR_ON_DEV_NAME``
 
-As chosen properties tend to be related to software configuration, it can be
-useful for the build system to know if a chosen property was defined. We
-generate a define for each chosen property, for example:
-
-``zephyr,flash`` will generate: ``#define DT_CHOSEN_ZEPHYR_FLASH 1``
-
-As a consequence ``zephyr,flash`` related code could safely be implemented
-under ``#ifdef DT_CHOSEN_ZEPHYR_FLASH`` instruction.
 
 Adding support for device tree in drivers
 *****************************************
@@ -410,17 +402,17 @@ the format specified by the YAML bindings.  For example:
    #define DT_GPIO_KEYS_0		1
 
    /* button_0 */
-   #define DT_GPIO_KEYS_BUTTON_0_GPIO_CONTROLLER	"GPIO_2"
-   #define DT_GPIO_KEYS_BUTTON_0_GPIO_FLAGS	0
-   #define DT_GPIO_KEYS_BUTTON_0_GPIO_PIN		6
+   #define DT_GPIO_KEYS_BUTTON_0_GPIOS_CONTROLLER	"GPIO_2"
+   #define DT_GPIO_KEYS_BUTTON_0_GPIOS_FLAGS	0
+   #define DT_GPIO_KEYS_BUTTON_0_GPIOS_PIN		6
    #define DT_GPIO_KEYS_BUTTON_0_LABEL		"User SW2"
-   #define DT_GPIO_KEYS_SW1_GPIO_CONTROLLER	DT_GPIO_KEYS_BUTTON_0_GPIO_CONTROLLER
-   #define DT_GPIO_KEYS_SW1_GPIO_FLAGS		DT_GPIO_KEYS_BUTTON_0_GPIO_FLAGS
-   #define DT_GPIO_KEYS_SW1_GPIO_PIN		DT_GPIO_KEYS_BUTTON_0_GPIO_PIN
+   #define DT_GPIO_KEYS_SW1_GPIOS_CONTROLLER	DT_GPIO_KEYS_BUTTON_0_GPIOS_CONTROLLER
+   #define DT_GPIO_KEYS_SW1_GPIOS_FLAGS		DT_GPIO_KEYS_BUTTON_0_GPIOS_FLAGS
+   #define DT_GPIO_KEYS_SW1_GPIOS_PIN		DT_GPIO_KEYS_BUTTON_0_GPIOS_PIN
    #define DT_GPIO_KEYS_SW1_LABEL			DT_GPIO_KEYS_BUTTON_0_LABEL
-   #define SW1_GPIO_CONTROLLER			DT_GPIO_KEYS_BUTTON_0_GPIO_CONTROLLER
-   #define SW1_GPIO_FLAGS				DT_GPIO_KEYS_BUTTON_0_GPIO_FLAGS
-   #define SW1_GPIO_PIN				DT_GPIO_KEYS_BUTTON_0_GPIO_PIN
+   #define SW1_GPIO_CONTROLLER			DT_GPIO_KEYS_BUTTON_0_GPIOS_CONTROLLER
+   #define SW1_GPIO_FLAGS				DT_GPIO_KEYS_BUTTON_0_GPIOS_FLAGS
+   #define SW1_GPIO_PIN				DT_GPIO_KEYS_BUTTON_0_GPIOS_PIN
    #define SW1_LABEL				DT_GPIO_KEYS_BUTTON_0_LABEL
 
 Additionally, a file named ``generated_dts_board_fixups.h`` is

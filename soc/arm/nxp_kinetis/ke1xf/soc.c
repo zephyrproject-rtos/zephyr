@@ -223,9 +223,6 @@ static ALWAYS_INLINE void clk_init(void)
 #ifdef CONFIG_ADC_2
 	CLOCK_SetIpSrc(kCLOCK_Adc2, kCLOCK_IpSrcFircAsync);
 #endif
-#ifdef DT_INST_0_NXP_KINETIS_SCG_CLKOUT_SOURCE
-	CLOCK_SetClkOutSel(DT_INST_0_NXP_KINETIS_SCG_CLKOUT_SOURCE);
-#endif
 }
 
 static int ke1xf_init(struct device *arg)

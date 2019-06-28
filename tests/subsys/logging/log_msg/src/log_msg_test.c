@@ -20,115 +20,46 @@ extern struct k_mem_slab log_msg_pool;
 static const char my_string[] = "test_string";
 void test_log_std_msg(void)
 {
-	zassert_true(LOG_MSG_NARGS_SINGLE_CHUNK == 3,
-		     "test assumes following setting");
+	zassert_equal(LOG_MSG_NARGS_SINGLE_CHUNK,
+		      IS_ENABLED(CONFIG_64BIT) ? 4 : 3,
+		      "test assumes following setting");
 
 	u32_t used_slabs = k_mem_slab_num_used_get(&log_msg_pool);
-	u32_t args[] = {1, 2, 3, 4, 5, 6};
+	log_arg_t args[] = {1, 2, 3, 4, 5, 6};
 	struct log_msg *msg;
 
-	/* allocation of 0 argument fits in single buffer */
-	msg = log_msg_create_0(my_string);
+	/* Test for expected buffer usage based on number of arguments */
+	for (int i = 0; i <= 6; i++) {
+		switch (i) {
+		case 0:
+			msg = log_msg_create_0(my_string);
+			break;
+		case 1:
+			msg = log_msg_create_1(my_string, 1);
+			break;
+		case 2:
+			msg = log_msg_create_2(my_string, 1, 2);
+			break;
+		case 3:
+			msg = log_msg_create_3(my_string, 1, 2, 3);
+			break;
+		default:
+			msg = log_msg_create_n(my_string, args, i);
+			break;
+		}
 
-	zassert_equal((used_slabs + 1),
-		      k_mem_slab_num_used_get(&log_msg_pool),
-		      "Expected mem slab allocation.");
-	used_slabs++;
+		used_slabs += (i > LOG_MSG_NARGS_SINGLE_CHUNK) ? 2 : 1;
+		zassert_equal(used_slabs,
+			      k_mem_slab_num_used_get(&log_msg_pool),
+			      "Expected mem slab allocation.");
 
-	log_msg_put(msg);
+		log_msg_put(msg);
 
-	zassert_equal((used_slabs - 1),
-		      k_mem_slab_num_used_get(&log_msg_pool),
-		      "Expected mem slab allocation.");
-	used_slabs--;
-
-	/* allocation of 1 argument fits in single buffer */
-	msg = log_msg_create_1(my_string, 1);
-	zassert_equal((used_slabs + 1),
-		      k_mem_slab_num_used_get(&log_msg_pool),
-		      "Expected mem slab allocation.");
-	used_slabs++;
-
-	log_msg_put(msg);
-
-	zassert_equal((used_slabs - 1),
-		      k_mem_slab_num_used_get(&log_msg_pool),
-		      "Expected mem slab allocation.");
-	used_slabs--;
-
-	/* allocation of 2 argument fits in single buffer */
-	msg = log_msg_create_2(my_string, 1, 2);
-	zassert_equal((used_slabs + 1),
-		      k_mem_slab_num_used_get(&log_msg_pool),
-		      "Expected mem slab allocation.");
-	used_slabs++;
-
-	log_msg_put(msg);
-
-	zassert_equal((used_slabs - 1),
-		      k_mem_slab_num_used_get(&log_msg_pool),
-		      "Expected mem slab allocation.");
-	used_slabs--;
-
-	/* allocation of 3 argument fits in single buffer */
-	msg = log_msg_create_3(my_string, 1, 2, 3);
-
-	zassert_equal((used_slabs + 1),
-		      k_mem_slab_num_used_get(&log_msg_pool),
-		      "Expected mem slab allocation.");
-	used_slabs++;
-
-	log_msg_put(msg);
-
-	zassert_equal((used_slabs - 1),
-		      k_mem_slab_num_used_get(&log_msg_pool),
-		      "Expected mem slab allocation.");
-	used_slabs--;
-
-	/* allocation of 4 argument fits in 2 buffers */
-	msg = log_msg_create_n(my_string, args, 4);
-
-	zassert_equal((used_slabs + 2U),
-		      k_mem_slab_num_used_get(&log_msg_pool),
-		      "Expected mem slab allocation.");
-	used_slabs += 2U;
-
-	log_msg_put(msg);
-
-	zassert_equal((used_slabs - 2U),
-		      k_mem_slab_num_used_get(&log_msg_pool),
-		      "Expected mem slab allocation.");
-	used_slabs -= 2U;
-
-	/* allocation of 5 argument fits in 2 buffers */
-	msg = log_msg_create_n(my_string, args, 5);
-
-	zassert_equal((used_slabs + 2U),
-		      k_mem_slab_num_used_get(&log_msg_pool),
-		      "Expected mem slab allocation.");
-	used_slabs += 2U;
-
-	log_msg_put(msg);
-
-	zassert_equal((used_slabs - 2U),
-		      k_mem_slab_num_used_get(&log_msg_pool),
-		      "Expected mem slab allocation.");
-	used_slabs -= 2U;
-
-	/* allocation of 5 argument fits in 2 buffers */
-	msg = log_msg_create_n(my_string, args, 6);
-
-	zassert_equal((used_slabs + 2U),
-		      k_mem_slab_num_used_get(&log_msg_pool),
-		      "Expected mem slab allocation.");
-	used_slabs += 2U;
-
-	log_msg_put(msg);
-
-	zassert_equal((used_slabs - 2U),
-		      k_mem_slab_num_used_get(&log_msg_pool),
-		      "Expected mem slab allocation.");
-	used_slabs -= 2U;
+		used_slabs -= (i > LOG_MSG_NARGS_SINGLE_CHUNK) ? 2 : 1;
+		zassert_equal(used_slabs,
+			      k_mem_slab_num_used_get(&log_msg_pool),
+			      "Expected mem slab allocation.");
+	}
 }
 
 void test_log_hexdump_msg(void)

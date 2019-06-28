@@ -110,7 +110,7 @@ The STM32MP157 SoC provides the following hardware capabilities:
   - HDMI-CEC interface
   - MDIO Slave interface
   - 3 × SDMMC up to 8-bit (SD / e•MMC™ / SDIO)
-  - 2 × CAN controllers supporting CAN FD protocol, TTCAN capiblity
+  - 2 × CAN controllers supporting CAN FD protocol, TTCAN capability
   - 2 × USB 2.0 high-speed Host+ 1 × USB 2.0 full-speed OTG simultaneously
   - 10/100M or Gigabit Ethernet GMAC (IEEE 1588v2 hardware, MII/RMII/GMII/RGMI)
   - 8- to 14-bit camera interface up to 140 Mbyte/s
@@ -242,7 +242,7 @@ Debugging
 You can debug an application using OpenOCD and GDB. The Solution proposed below
 is based on the Linux STM32MP1 SDK OpenOCD and is available only for a Linux
 environment. The firmware must first be loaded by the Cortex®-A7. Developer
-then attachs the debugger to the running Zephyr using OpenOCD.
+then attaches the debugger to the running Zephyr using OpenOCD.
 
 Prerequisite
 ------------
@@ -260,17 +260,11 @@ install `stm32mp1 developer package`_.
 
 2) run gdb in Zephyr environment
 
-   .. code-block:: console
-
-      # On Linux
-      cd $ZEPHYR_BASE/samples/hello_world
-      mkdir -p build && cd build
-
-      # Use cmake to configure a Ninja-based build system:
-      cmake -GNinja -DBOARD=stm32mp157_dk2 ..
-
-      # Now run ninja on the generated build system:
-      ninja debug
+   .. zephyr-app-commands::
+      :zephyr-app: samples/hello_world
+      :tool: all
+      :board: stm32mp157_dk2
+      :goals: debug
 
 .. _STM32P157C Discovery website:
    https://www.st.com/content/st_com/en/products/evaluation-tools/product-evaluation-tools/mcu-mpu-eval-tools/stm32-mcu-mpu-eval-tools/stm32-discovery-kits/stm32mp157c-dk2.html

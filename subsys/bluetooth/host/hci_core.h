@@ -189,8 +189,6 @@ bool bt_addr_le_is_bonded(u8_t id, const bt_addr_le_t *addr);
 
 int bt_send(struct net_buf *buf);
 
-u16_t bt_hci_get_cmd_opcode(struct net_buf *buf);
-
 /* Don't require everyone to include keys.h */
 struct bt_keys;
 void bt_id_add(struct bt_keys *keys);

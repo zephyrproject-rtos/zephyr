@@ -450,7 +450,7 @@ static void test_json_escape_one(void)
 
 	ret = json_escape(buf, &len, sizeof(buf));
 	zassert_equal(ret, 0,
-		      "Escaping one character succeded");
+		      "Escaping one character succeeded");
 	zassert_equal(len, sizeof(buf) - 1,
 		      "Escaping one character length is correct");
 	zassert_true(!strcmp(buf, expected),

@@ -25,12 +25,13 @@ updatehub_manual.
 Caveats
 *******
 
-* The Zephyr port of ``UpdateHub`` is configured to run on a :ref:`Freedom-K64F <frdm_k64f>`
-  MCU by default. The application should build and run for other platforms
-  with offer support internet connection. Some platforms need some modification.
-  Overlay files would be needed to support BLE 6lowpan, 802.15.4 or OpenThread
-  configurations as well as the understanding that most other connectivity
-  options would require an edge gateway of some sort (Border Router, etc).
+* The Zephyr port of ``UpdateHub`` is configured to run on a
+  :ref:`Freedom-K64F <frdm_k64f>` MCU by default. The application should
+  build and run for other platforms with offer support internet
+  connection. Some platforms need some modification.  Overlay files would
+  be needed to support BLE 6lowpan, 802.15.4 or OpenThread configurations
+  as well as the understanding that most other connectivity options would
+  require an edge gateway of some sort (Border Router, etc).
 
 * The MCUboot bootloader is required for ``UpdateHub`` to function
   properly. More information about the Device Firmware Upgrade subsystem and
@@ -67,10 +68,10 @@ Step 3: Start the updatehub Community Edition
 By default, the updatehub application is set to start on the UpdateHub Cloud.
 For more details on how to use the UpdateHub Cloud please refer to the
 documentation on `updatehub.io`_.
-The UpdateHub Cloud has the option to use CoAPS/DTLS or not. If the user want
-to use the CoAPS/DTLS just need to add the ``overlay-dtls.conf`` at the build.
-You must use the certificate available just for test example. For you create a new certificates
-you can execute this following commands:
+The UpdateHub Cloud has the option to use CoAPS/DTLS or not. If you want
+to use the CoAPS/DTLS, simply add the ``overlay-dtls.conf`` before building.
+You must only use the provided certificate for the test example.
+Otherwise, you should create a new certificate using these commands:
 
 .. code-block:: console
 
@@ -78,7 +79,8 @@ you can execute this following commands:
 
     openssl req -new -x509 -key privkey.pem -out servercert.pem
 
-The cert and private key that is to be embedded into certificates.h in your application, can be generated like this:
+The cert and private key that will be embedded into ``certificates.h`` in
+your application, can be generated like this:
 
 .. code-block:: console
 
@@ -93,16 +95,18 @@ following Docker command:
 
 .. code-block:: console
 
-    docker run -it -p 8080:8080 -p 5683:5683/udp --rm  updatehub/updatehub-ce:latest
+    docker run -it -p 8080:8080 -p 5683:5683/udp --rm \
+      updatehub/updatehub-ce:latest
 
-Using this server the user need create own ``overaly-prj.conf`` setting the option
-:option:`CONFIG_UPDATEHUB_SERVER` with your local ip address and the option
-:option:`CONFIG_UPDATEHUB_CE` with true. If the user will use polling mode on
-UpdateHub need too set the option :option:`CONFIG_UPDATEHUB_POLL_INTERVAL` with the period of
-your preference, remembering that the limit is between 0 minute until 43200 minutes(30 days).
-This server does not use DTLS, so you must not add ``overlay-dtls.config``.
-This sample uses IPv4 by default, but if you would like use IPv6 is possible too, need just
-enable IPv6 and configure your IP address.
+Using this server, create your own ``overlay-prj.conf``, setting the
+option :option:`CONFIG_UPDATEHUB_SERVER` with your local IP address and
+the option :option:`CONFIG_UPDATEHUB_CE` with true. If you're using the
+polling mode on UpdateHub, you'll also need to set the option
+:option:`CONFIG_UPDATEHUB_POLL_INTERVAL` with the polling period of your
+preference, remembering that the limit is between 0 and 43200 minutes
+(30 days).  This server does not use DTLS, so you must not add
+``overlay-dtls.config``.  This sample uses IPv4 by default, but you can
+use IPv6 by enabling IPv6 and configuring your IP address.
 
 Step 4: Build UpdateHub
 =======================
@@ -260,7 +264,7 @@ In the terminal you used for debugging the board, type the following command:
 
     kernel reboot cold
 
-Your board will reboot and then start with the new image. After rebooting the
+Your board will reboot and then start with the new image. After rebooting, the
 board will automatically ping the server again and the message ``No update
 available`` will be printed on the terminal.
 

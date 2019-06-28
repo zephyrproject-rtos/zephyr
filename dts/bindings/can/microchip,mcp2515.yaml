@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
----
+
 title: MCP2515 CAN
 version: 0.1
 
@@ -19,5 +19,4 @@ properties:
     int-gpios:
       type: compound
       category: required
-      generation: define, use-prop-name
-...
+      generation: define

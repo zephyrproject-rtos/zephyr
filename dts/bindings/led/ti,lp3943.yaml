@@ -1,4 +1,4 @@
----
+
 title: TI LP3943 LED Driver
 version: 0.1
 
@@ -10,4 +10,3 @@ inherits:
 properties:
     compatible:
       constraint: "ti,lp3943"
-...

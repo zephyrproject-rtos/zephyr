@@ -1,4 +1,4 @@
----
+
 title: ns16550
 version: 0.1
 
@@ -41,4 +41,3 @@ properties:
       category: optional
       description: attached via PCI(e) bus
       generation: define
-...

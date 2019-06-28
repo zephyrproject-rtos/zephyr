@@ -220,8 +220,14 @@ def main():
         else:
             partitions[ptn][LIB].append(lib)
 
-    partsorted = OrderedDict(sorted(partitions.items(),
-                                     key=lambda x: x[1][SZ], reverse=True))
+
+    # Sample partitions.items() list before sorting:
+    #   [ ('part1', {'size': 64}), ('part3', {'size': 64}, ...
+    #     ('part0', {'size': 334}) ]
+    decreasing_tuples = sorted(partitions.items(),
+                           key=lambda x: (x[1][SZ], x[0]), reverse=True)
+
+    partsorted = OrderedDict(decreasing_tuples)
 
     generate_final_linker(args.output, partsorted)
     if args.verbose:

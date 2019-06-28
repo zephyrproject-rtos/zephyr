@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
----
+
 title: Atmel SAM PWM
 version: 0.1
 
@@ -45,4 +45,3 @@ properties:
   - channel
 # period in terms of nanoseconds
   - period
-...

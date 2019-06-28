@@ -302,13 +302,25 @@ static void tx_free(struct bt_conn_tx *tx)
 static void tx_notify_cb(struct k_work *work)
 {
 	struct bt_conn_tx *tx = CONTAINER_OF(work, struct bt_conn_tx, work);
+	struct bt_conn *conn;
+	struct bt_conn_tx_data data;
 
 	BT_DBG("tx %p conn %p cb %p user_data %p", tx, tx->conn, tx->data.cb,
 	       tx->data.user_data);
 
-	tx->data.cb(tx->conn, tx->data.user_data);
+	/* Copy over the params */
+	conn = bt_conn_ref(tx->conn);
+	data = tx->data;
 
+	/* Free up TX notify since there may be user waiting */
 	tx_free(tx);
+
+	/* Run the callback, at this point it should be safe to allocate new
+	 * buffers since the TX should have been unblocked by tx_free.
+	 */
+	data.cb(conn, data.user_data);
+
+	bt_conn_unref(conn);
 }
 
 static struct bt_conn *conn_new(void)

@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
----
+
 title: SPI Base Structure
 version: 0.1
 
@@ -40,7 +40,4 @@ properties:
     cs-gpios:
       type: compound
       category: optional
-      generation: define, use-prop-name
-
-
-...
+      generation: define

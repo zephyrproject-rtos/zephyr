@@ -160,7 +160,7 @@ class Message:
 
     def create_loadfw_cmd(self, size, sha):
         """
-        Creates a command to load firmware with associated paramters
+        Creates a command to load firmware with associated parameters
         """
         cmd = 'Load Firmware'
         print('CMD >>> %s.' % cmd)

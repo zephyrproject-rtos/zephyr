@@ -38,7 +38,7 @@
 
 /* Two threads at each priority (to test the case of waking up a
  * thread of equal priority).  But only one metairq, as it isn't
- * technically legal to have more than one at the smae priority.
+ * technically legal to have more than one at the same priority.
  */
 const enum { METAIRQ, COOP, PREEMPTIBLE } worker_priorities[] = {
 	METAIRQ,

@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
----
+
 title: CC1200 802.15.4 Wireless Transceiver
 version: 0.1
 
@@ -16,5 +16,3 @@ inherits:
 properties:
     compatible:
       constraint: "ti,cc1200"
-
-...

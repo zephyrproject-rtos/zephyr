@@ -146,7 +146,7 @@ coccinelle () {
 
     if [[ $VIRTUAL = "" ]]; then
 	    echo "No available modes found in \"$COCCI\" script."
-	    echo "Consider adding vitrual rules to the script."
+	    echo "Consider adding virtual rules to the script."
 	    exit 1
     elif [[ $VIRTUAL != *"$MODE"* ]]; then
 	    echo "Invalid mode \"$MODE\" supplied!"
@@ -161,7 +161,7 @@ coccinelle () {
 	    else
 		    MODE=org
 	    fi
-	    echo "Using random availble mode: \"$MODE\""
+	    echo "Using random available mode: \"$MODE\""
 	    echo ''
     fi
 

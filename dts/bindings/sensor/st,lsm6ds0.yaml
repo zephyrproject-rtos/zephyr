@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
----
+
 title: STMicroelectronics MEMS sensors LSM6DS0
 version: 0.1
 
@@ -17,5 +17,3 @@ inherits:
 properties:
     compatible:
       constraint: "st,lsm6ds0"
-
-...

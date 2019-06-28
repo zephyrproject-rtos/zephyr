@@ -1,4 +1,4 @@
----
+
 title: ARM CMSDK UART
 version: 0.1
 
@@ -17,4 +17,3 @@ properties:
 
     interrupts:
       category: required
-...

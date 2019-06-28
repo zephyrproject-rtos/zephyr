@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
----
+
 title: Texas Instruments TLV320DAC Audio DAC
 version: 0.1
 
@@ -20,5 +20,4 @@ properties:
     reset-gpios:
       type: compound
       category: required
-      generation: define, use-prop-name
-...
+      generation: define

@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # A script to generate a list of tests that have changed or added and create an
-# arguemnts file for sanitycheck to allow running those tests with --all
+# arguments file for sanitycheck to allow running those tests with --all
 
 import os
 import sh

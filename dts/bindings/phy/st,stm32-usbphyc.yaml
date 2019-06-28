@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
----
+
 title: STM32 USB HS PHY
 version: 0.1
 
@@ -22,4 +22,3 @@ properties:
 
     "#phy-cells":
       description: should be 0
-...

@@ -1,4 +1,4 @@
----
+
 title: ARM CMSDK WATCHDOG
 version: 0.1
 
@@ -14,4 +14,3 @@ properties:
 
     reg:
       category: required
-...

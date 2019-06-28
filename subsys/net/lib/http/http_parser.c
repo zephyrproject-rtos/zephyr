@@ -1842,7 +1842,7 @@ reexecute:
 			 * returns 1, we
 			 * will interpret that as saying that this message has
 			 * no body. This
-			 * is needed for the annoying case of recieving a
+			 * is needed for the annoying case of receiving a
 			 * response to a HEAD
 			 * request.
 			 *

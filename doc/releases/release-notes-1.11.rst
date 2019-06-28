@@ -346,7 +346,7 @@ release:
 * :github:`5370` - [Coverity CID: 180699] Error handling issues in /tests/bluetooth/tester/src/gatt.c
 * :github:`5374` - merge_config.sh can behave differently from merge_config.py
 * :github:`5379` - sample: net/socket/http_get: no printf output
-* :github:`5382` - P2P Device Firwmare Update (FOTA) over BLE and Serial
+* :github:`5382` - P2P Device Firmware Update (FOTA) over BLE and Serial
 * :github:`5391` - drivers: stm32 clock control: F0 Series with PREDIV1 Support uses wrong PLLSOURCE define for HSI clock
 * :github:`5401` - delta_ticks_from_prev become negative and waiting tasks never scheduled
 * :github:`5406` - UART1 on STM32F0 Series not working: errors in makro to enable clock
@@ -382,7 +382,7 @@ release:
 * :github:`5576` - None of the :github:'XYZ' links work in the 1.10 release notes
 * :github:`5589` - Issue with using generic gcc cross compile with cmake
 * :github:`5601` - docs for cc3220sf_launchxl are out of date/incorrect
-* :github:`5608` - Bluetooth LE continous scan weird behaviour
+* :github:`5608` - Bluetooth LE continuous scan weird behaviour
 * :github:`5619` - zephyr.git/tests/misc/test_build/testcase.yaml#test_newlib @ esp32:xtensa BUILD failed
 * :github:`5626` - Building samples failed
 * :github:`5640` - MacOS compile error with -std=gnu89

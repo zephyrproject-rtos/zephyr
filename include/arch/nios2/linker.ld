@@ -25,7 +25,7 @@
 #define _RESET_SECTION_NAME reset
 
 /* This linker script requires the following macros to be defined in the
- * SOC-specfic linker script. All of these values can be found defined
+ * SOC-specific linker script. All of these values can be found defined
  * in system.h for CPU configurations that can generate a HAL.
  *
  * _RESET_VECTOR     CPU entry point at boot

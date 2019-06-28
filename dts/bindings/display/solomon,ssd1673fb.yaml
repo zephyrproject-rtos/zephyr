@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
----
+
 title: SSD1673 250x150 EPD Display Controller
 version: 0.1
 
@@ -98,16 +98,14 @@ properties:
     reset-gpios:
       type: compound
       category: required
-      generation: define, use-prop-name
+      generation: define
 
     dc-gpios:
       type: compound
       category: required
-      generation: define, use-prop-name
+      generation: define
 
     busy-gpios:
       type: compound
       category: required
-      generation: define, use-prop-name
-
-...
+      generation: define

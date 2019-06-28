@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
----
+
 title: SSD1306 128x64 Dot Matrix Display Controller
 version: 0.1
 
@@ -68,6 +68,4 @@ properties:
     reset-gpios:
       type: compound
       category: optional
-      generation: define, use-prop-name
-
-...
+      generation: define

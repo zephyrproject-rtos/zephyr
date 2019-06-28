@@ -145,7 +145,7 @@
 #endif
 
 /*
- * This is meant to be used in conjonction with __in_section() and similar
+ * This is meant to be used in conjunction with __in_section() and similar
  * where scattered structure instances are concatened together by the linker
  * and walked by the code at run time just like a contiguous array of such
  * structures.

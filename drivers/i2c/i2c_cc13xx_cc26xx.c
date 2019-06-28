@@ -277,7 +277,7 @@ static int i2c_cc13xx_cc26xx_init(struct device *dev)
 
 	/* Enable I2C peripheral clock */
 	PRCMPeripheralRunEnable(PRCM_PERIPH_I2C0);
-	/* Enable in sleep mode until proper power managment is added */
+	/* Enable in sleep mode until proper power management is added */
 	PRCMPeripheralSleepEnable(PRCM_PERIPH_I2C0);
 	PRCMPeripheralDeepSleepEnable(PRCM_PERIPH_I2C0);
 

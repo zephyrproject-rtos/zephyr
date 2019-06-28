@@ -183,7 +183,7 @@ struct apic_regs {
 
 #define _apic (*((volatile struct apic_regs *)0xfee00000ll))
 
-/* Crazy encoding for this, but susceptable to a formula.  Returns the
+/* Crazy encoding for this, but susceptible to a formula.  Returns the
  * DIVIDE_CONF register value that divides the input clock by 2^n (n
  * in the range 0-7).
  */

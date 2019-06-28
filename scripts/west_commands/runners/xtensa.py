@@ -36,5 +36,5 @@ class XtensaBinaryRunner(ZephyrBinaryRunner):
 
     def do_run(self, command, **kwargs):
         gdb_cmd = [self.cfg.gdb, self.cfg.elf_file]
-
+        self.require(gdb_cmd[0])
         self.check_call(gdb_cmd)

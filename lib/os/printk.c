@@ -19,6 +19,7 @@
 #include <linker/sections.h>
 #include <syscall_handler.h>
 #include <logging/log.h>
+#include <sys/types.h>
 
 typedef int (*out_func_t)(int c, void *ctx);
 
@@ -103,7 +104,7 @@ void z_vprintk(out_func_t out, void *ctx, const char *fmt, va_list ap)
 	int might_format = 0; /* 1 if encountered a '%' */
 	enum pad_type padding = PAD_NONE;
 	int min_width = -1;
-	int long_ctr = 0;
+	char length_mod = 0;
 
 	/* fmt has already been adjusted if needed */
 
@@ -115,7 +116,7 @@ void z_vprintk(out_func_t out, void *ctx, const char *fmt, va_list ap)
 				might_format = 1;
 				min_width = -1;
 				padding = PAD_NONE;
-				long_ctr = 0;
+				length_mod = 0;
 			}
 		} else {
 			switch (*fmt) {
@@ -148,34 +149,39 @@ void z_vprintk(out_func_t out, void *ctx, const char *fmt, va_list ap)
 					padding = PAD_SPACE_BEFORE;
 				}
 				goto still_might_format;
-			case 'l':
-				long_ctr++;
-				/* Fall through */
-			case 'z':
 			case 'h':
-				/* FIXME: do nothing for these modifiers */
+			case 'l':
+			case 'z':
+				if (*fmt == 'h' && length_mod == 'h') {
+					length_mod = 'H';
+				} else if (*fmt == 'l' && length_mod == 'l') {
+					length_mod = 'L';
+				} else if (length_mod == 0) {
+					length_mod = *fmt;
+				} else {
+					out((int)'%', ctx);
+					out((int)*fmt, ctx);
+					break;
+				}
 				goto still_might_format;
 			case 'd':
 			case 'i': {
-				s32_t d;
+				long d;
 
-				if (long_ctr == 0) {
-					d = va_arg(ap, int);
-				} else if (long_ctr == 1) {
-					long ld = va_arg(ap, long);
-					if (ld > INT32_MAX || ld < INT32_MIN) {
-						print_err(out, ctx);
-						break;
-					}
-					d = (s32_t)ld;
-				} else {
+				if (length_mod == 'z') {
+					d = va_arg(ap, ssize_t);
+				} else if (length_mod == 'l') {
+					d = va_arg(ap, long);
+				} else if (length_mod == 'L') {
 					long long lld = va_arg(ap, long long);
-					if (lld > INT32_MAX ||
-					    lld < INT32_MIN) {
+					if (lld > __LONG_MAX__ ||
+					    lld < ~__LONG_MAX__) {
 						print_err(out, ctx);
 						break;
 					}
-					d = (s32_t)lld;
+					d = lld;
+				} else {
+					d = va_arg(ap, int);
 				}
 
 				if (d < 0) {
@@ -188,25 +194,22 @@ void z_vprintk(out_func_t out, void *ctx, const char *fmt, va_list ap)
 				break;
 			}
 			case 'u': {
-				u32_t u;
+				unsigned long u;
 
-				if (long_ctr == 0) {
-					u = va_arg(ap, unsigned int);
-				} else if (long_ctr == 1) {
-					long lu = va_arg(ap, unsigned long);
-					if (lu > INT32_MAX) {
-						print_err(out, ctx);
-						break;
-					}
-					u = (u32_t)lu;
-				} else {
+				if (length_mod == 'z') {
+					u = va_arg(ap, size_t);
+				} else if (length_mod == 'l') {
+					u = va_arg(ap, unsigned long);
+				} else if (length_mod == 'L') {
 					unsigned long long llu =
 						va_arg(ap, unsigned long long);
-					if (llu > INT32_MAX) {
+					if (llu > ~0UL) {
 						print_err(out, ctx);
 						break;
 					}
-					u = (u32_t)llu;
+					u = llu;
+				} else {
+					u = va_arg(ap, unsigned int);
 				}
 
 				_printk_dec_ulong(out, ctx, u, padding,
@@ -224,10 +227,14 @@ void z_vprintk(out_func_t out, void *ctx, const char *fmt, va_list ap)
 			case 'X': {
 				unsigned long long x;
 
-				if (long_ctr < 2) {
+				if (*fmt == 'p') {
+					x = (uintptr_t)va_arg(ap, void *);
+				} else if (length_mod == 'l') {
 					x = va_arg(ap, unsigned long);
-				} else {
+				} else if (length_mod == 'L') {
 					x = va_arg(ap, unsigned long long);
+				} else {
+					x = va_arg(ap, unsigned int);
 				}
 
 				_printk_hex_ulong(out, ctx, x, padding,
@@ -363,12 +370,16 @@ Z_SYSCALL_HANDLER(k_str_out, c, n)
  * printf-like formatting is available.
  *
  * Available formatting:
- * - %x/%X:  outputs a 32-bit number in ABCDWXYZ format. All eight digits
- *	    are printed: if less than 8 characters are needed, leading zeroes
- *	    are displayed.
- * - %s:	    output a null-terminated string
- * - %p:     pointer, same as %x
- * - %d/%i/%u: outputs a 32-bit number in unsigned decimal format.
+ * - %x/%X:  outputs a number in hexadecimal format
+ * - %s:     outputs a null-terminated string
+ * - %p:     pointer, same as %x with a 0x prefix
+ * - %u:     outputs a number in unsigned decimal format
+ * - %d/%i:  outputs a number in signed decimal format
+ *
+ * Field width (with or without leading zeroes) is supported.
+ * Length attributes h, hh, l, ll and z are supported. However, integral
+ * values with %lld and %lli are only printed if they fit in a long
+ * otherwise 'ERR' is printed. Full 64-bit values may be printed with %llx.
  *
  * @param fmt formatted string to output
  *
@@ -402,15 +413,17 @@ static void _printk_hex_ulong(out_func_t out, void *ctx,
 			      enum pad_type padding,
 			      int min_width)
 {
-	int size = sizeof(num) * 2;
+	int shift = sizeof(num) * 8;
 	int found_largest_digit = 0;
 	int remaining = 16; /* 16 digits max */
 	int digits = 0;
+	char nibble;
 
-	for (; size != 0; size--) {
-		char nibble = (num >> ((size - 1) << 2) & 0xf);
+	while (shift >= 4) {
+		shift -= 4;
+		nibble = (num >> shift) & 0xf;
 
-		if (nibble != 0 || found_largest_digit != 0 || size == 1) {
+		if (nibble != 0 || found_largest_digit != 0 || shift == 0) {
 			found_largest_digit = 1;
 			nibble += nibble > 9 ? 87 : 48;
 			out((int)nibble, ctx);
@@ -436,10 +449,10 @@ static void _printk_hex_ulong(out_func_t out, void *ctx,
 }
 
 /**
- * @brief Output an unsigned long (32-bit) in decimal format
+ * @brief Output an unsigned long in decimal format
  *
- * Output an unsigned long on output installed by platform at init time. Only
- * works with 32-bit values.
+ * Output an unsigned long on output installed by platform at init time.
+ *
  * @param num Number to output
  *
  * @return N/A
@@ -448,21 +461,25 @@ static void _printk_dec_ulong(out_func_t out, void *ctx,
 			      const unsigned long num, enum pad_type padding,
 			      int min_width)
 {
-	unsigned long pos = 999999999;
+	unsigned long pos = 1000000000;
 	unsigned long remainder = num;
 	int found_largest_digit = 0;
-	int remaining = 10; /* 10 digits max */
+	int remaining = sizeof(long) * 5 / 2;
 	int digits = 1;
+
+	if (sizeof(long) == 8) {
+		pos *= 10000000000;
+	}
 
 	/* make sure we don't skip if value is zero */
 	if (min_width <= 0) {
 		min_width = 1;
 	}
 
-	while (pos >= 9) {
-		if (found_largest_digit != 0 || remainder > pos) {
+	while (pos >= 10) {
+		if (found_largest_digit != 0 || remainder >= pos) {
 			found_largest_digit = 1;
-			out((int)((remainder / (pos + 1)) + 48), ctx);
+			out((int)(remainder / pos + 48), ctx);
 			digits++;
 		} else if (remaining <= min_width
 				&& padding < PAD_SPACE_AFTER) {
@@ -470,7 +487,7 @@ static void _printk_dec_ulong(out_func_t out, void *ctx,
 			digits++;
 		}
 		remaining--;
-		remainder %= (pos + 1);
+		remainder %= pos;
 		pos /= 10;
 	}
 	out((int)(remainder + 48), ctx);

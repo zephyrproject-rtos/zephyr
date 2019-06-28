@@ -34,7 +34,6 @@ bsim_bt_out
 scripts/grub
 doc/reference/kconfig/*.rst
 doc/doc.warnings
-tags
 .*project
 .settings
 .envrc
@@ -45,5 +44,7 @@ hide-defaults-note
 GPATH
 GRTAGS
 GTAGS
+TAGS
+tags
 
 .idea

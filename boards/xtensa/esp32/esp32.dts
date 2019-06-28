@@ -5,11 +5,11 @@
  */
 /dts-v1/;
 
-#include "esp32.dtsi"
+#include <espressif/esp32.dtsi>
 
 / {
 	model = "esp32";
-	compatible = "xtensa,esp32";
+	compatible = "espressif,esp32";
 
 	aliases {
 		uart-0 = &uart0;

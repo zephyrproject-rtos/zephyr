@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
----
+
 title: Kinetis System Integration Module (SIM)
 version: 0.1
 
@@ -39,4 +39,3 @@ properties:
   - name
   - offset
   - bits
-...

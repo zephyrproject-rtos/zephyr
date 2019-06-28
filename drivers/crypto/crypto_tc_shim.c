@@ -51,7 +51,7 @@ static int do_cbc_decrypt(struct cipher_ctx *ctx, struct cipher_pkt *op,
 	struct tc_shim_drv_state *data =  ctx->drv_sessn_state;
 
 	/* TinyCrypt expects the IV and cipher text to be in a contiguous
-	 * buffer for efficieny
+	 * buffer for efficiency
 	 */
 	if (iv != op->in_buf) {
 		LOG_ERR("TC needs contiguous iv and ciphertext");

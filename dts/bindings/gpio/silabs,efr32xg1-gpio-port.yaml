@@ -1,4 +1,4 @@
----
+
 title: EFR32XG1 GPIO
 version: 0.1
 
@@ -21,4 +21,3 @@ properties:
 "#cells":
   - pin
   - flags
-...

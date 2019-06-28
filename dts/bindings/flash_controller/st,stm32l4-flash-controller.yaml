@@ -1,4 +1,4 @@
----
+
 title: STM32 L4 Flash Controller
 version: 0.1
 
@@ -11,5 +11,3 @@ inherits:
 properties:
     compatible:
       constraint: "st,stm32l4-flash-controller"
-
-...

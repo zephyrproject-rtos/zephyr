@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
----
+
 title: Bluetooth controller that provides Host Controller Interface over SPI
 version: 0.1
 
@@ -25,4 +25,3 @@ properties:
       type: compound
       category: required
       generation: define
-...

@@ -24,7 +24,6 @@
 #define LOG_MODULE_NAME bt_mesh_settings
 #include "common/log.h"
 
-#include "../settings.h"
 #include "mesh.h"
 #include "net.h"
 #include "crypto.h"
@@ -69,7 +68,7 @@ struct hb_pub_val {
 	      indefinite:1;
 };
 
-/* Miscelaneous configuration server model states */
+/* Miscellaneous configuration server model states */
 struct cfg_val {
 	u8_t net_transmit;
 	u8_t relay;
@@ -146,8 +145,8 @@ static inline int mesh_x_set(settings_read_cb read_cb, void *cb_arg, void *out,
 	return 0;
 }
 
-static int net_set(int argc, char **argv, size_t len_rd,
-		   settings_read_cb read_cb, void *cb_arg)
+static int net_set(const char *name, size_t len_rd, settings_read_cb read_cb,
+		   void *cb_arg)
 {
 	struct net_val net;
 	int err;
@@ -175,8 +174,8 @@ static int net_set(int argc, char **argv, size_t len_rd,
 	return 0;
 }
 
-static int iv_set(int argc, char **argv, size_t len_rd,
-		  settings_read_cb read_cb, void *cb_arg)
+static int iv_set(const char *name, size_t len_rd, settings_read_cb read_cb,
+		  void *cb_arg)
 {
 	struct iv_val iv;
 	int err;
@@ -205,8 +204,8 @@ static int iv_set(int argc, char **argv, size_t len_rd,
 	return 0;
 }
 
-static int seq_set(int argc, char **argv, size_t len_rd,
-		   settings_read_cb read_cb, void *cb_arg)
+static int seq_set(const char *name, size_t len_rd, settings_read_cb read_cb,
+		   void *cb_arg)
 {
 	struct seq_val seq;
 	int err;
@@ -269,7 +268,7 @@ static struct bt_mesh_rpl *rpl_alloc(u16_t src)
 	return NULL;
 }
 
-static int rpl_set(int argc, char **argv, size_t len_rd,
+static int rpl_set(const char *name, size_t len_rd,
 		   settings_read_cb read_cb, void *cb_arg)
 {
 	struct bt_mesh_rpl *entry;
@@ -277,12 +276,12 @@ static int rpl_set(int argc, char **argv, size_t len_rd,
 	int err;
 	u16_t src;
 
-	if (argc < 1) {
-		BT_ERR("Invalid argc (%d)", argc);
+	if (!name) {
+		BT_ERR("Insufficient number of arguments");
 		return -ENOENT;
 	}
 
-	src = strtol(argv[0], NULL, 16);
+	src = strtol(name, NULL, 16);
 	entry = rpl_find(src);
 
 	if (len_rd == 0) {
@@ -319,7 +318,7 @@ static int rpl_set(int argc, char **argv, size_t len_rd,
 	return 0;
 }
 
-static int net_key_set(int argc, char **argv, size_t len_rd,
+static int net_key_set(const char *name, size_t len_rd,
 		       settings_read_cb read_cb, void *cb_arg)
 {
 	struct bt_mesh_subnet *sub;
@@ -327,7 +326,12 @@ static int net_key_set(int argc, char **argv, size_t len_rd,
 	int i, err;
 	u16_t net_idx;
 
-	net_idx = strtol(argv[0], NULL, 16);
+	if (!name) {
+		BT_ERR("Insufficient number of arguments");
+		return -ENOENT;
+	}
+
+	net_idx = strtol(name, NULL, 16);
 	sub = bt_mesh_subnet_get(net_idx);
 
 	if (len_rd == 0) {
@@ -382,7 +386,7 @@ static int net_key_set(int argc, char **argv, size_t len_rd,
 	return 0;
 }
 
-static int app_key_set(int argc, char **argv, size_t len_rd,
+static int app_key_set(const char *name, size_t len_rd,
 		       settings_read_cb read_cb, void *cb_arg)
 {
 	struct bt_mesh_app_key *app;
@@ -390,7 +394,12 @@ static int app_key_set(int argc, char **argv, size_t len_rd,
 	u16_t app_idx;
 	int err;
 
-	app_idx = strtol(argv[0], NULL, 16);
+	if (!name) {
+		BT_ERR("Insufficient number of arguments");
+		return -ENOENT;
+	}
+
+	app_idx = strtol(name, NULL, 16);
 
 	if (len_rd == 0) {
 		BT_DBG("val (null)");
@@ -434,7 +443,7 @@ static int app_key_set(int argc, char **argv, size_t len_rd,
 	return 0;
 }
 
-static int hb_pub_set(int argc, char **argv, size_t len_rd,
+static int hb_pub_set(const char *name, size_t len_rd,
 		      settings_read_cb read_cb, void *cb_arg)
 {
 	struct bt_mesh_hb_pub *pub = bt_mesh_hb_pub_get();
@@ -479,7 +488,7 @@ static int hb_pub_set(int argc, char **argv, size_t len_rd,
 	return 0;
 }
 
-static int cfg_set(int argc, char **argv, size_t len_rd,
+static int cfg_set(const char *name, size_t len_rd,
 		   settings_read_cb read_cb, void *cb_arg)
 {
 	struct bt_mesh_cfg_srv *cfg = bt_mesh_cfg_get();
@@ -604,19 +613,21 @@ static int mod_set_pub(struct bt_mesh_model *mod, size_t len_rd,
 	return 0;
 }
 
-static int mod_set(bool vnd, int argc, char **argv, size_t len_rd,
+static int mod_set(bool vnd, const char *name, size_t len_rd,
 		   settings_read_cb read_cb, void *cb_arg)
 {
 	struct bt_mesh_model *mod;
 	u8_t elem_idx, mod_idx;
 	u16_t mod_key;
+	int len;
+	const char *next;
 
-	if (argc < 2) {
-		BT_ERR("Too small argc (%d)", argc);
+	if (!name) {
+		BT_ERR("Insufficient number of arguments");
 		return -ENOENT;
 	}
 
-	mod_key = strtol(argv[0], NULL, 16);
+	mod_key = strtol(name, NULL, 16);
 	elem_idx = mod_key >> 8;
 	mod_idx = mod_key;
 
@@ -630,37 +641,44 @@ static int mod_set(bool vnd, int argc, char **argv, size_t len_rd,
 		return -ENOENT;
 	}
 
-	if (!strcmp(argv[1], "bind")) {
+	len = settings_name_next(name, &next);
+
+	if (!next) {
+		BT_ERR("Insufficient number of arguments");
+		return -ENOENT;
+	}
+
+	if (!strncmp(next, "bind", len)) {
 		return mod_set_bind(mod, len_rd, read_cb, cb_arg);
 	}
 
-	if (!strcmp(argv[1], "sub")) {
+	if (!strncmp(next, "sub", len)) {
 		return mod_set_sub(mod, len_rd, read_cb, cb_arg);
 	}
 
-	if (!strcmp(argv[1], "pub")) {
+	if (!strncmp(next, "pub", len)) {
 		return mod_set_pub(mod, len_rd, read_cb, cb_arg);
 	}
 
-	BT_WARN("Unknown module key %s", argv[1]);
+	BT_WARN("Unknown module key %s", next);
 	return -ENOENT;
 }
 
-static int sig_mod_set(int argc, char **argv, size_t len_rd,
+static int sig_mod_set(const char *name, size_t len_rd,
 		       settings_read_cb read_cb, void *cb_arg)
 {
-	return mod_set(false, argc, argv, len_rd, read_cb, cb_arg);
+	return mod_set(false, name, len_rd, read_cb, cb_arg);
 }
 
-static int vnd_mod_set(int argc, char **argv, size_t len_rd,
+static int vnd_mod_set(const char *name, size_t len_rd,
 		       settings_read_cb read_cb, void *cb_arg)
 {
-	return mod_set(true, argc, argv, len_rd, read_cb, cb_arg);
+	return mod_set(true, name, len_rd, read_cb, cb_arg);
 }
 
 const struct mesh_setting {
 	const char *name;
-	int (*func)(int argc, char **argv, size_t len_rd,
+	int (*func)(const char *name, size_t len_rd,
 		    settings_read_cb read_cb, void *cb_arg);
 } settings[] = {
 	{ "Net", net_set },
@@ -675,27 +693,26 @@ const struct mesh_setting {
 	{ "v", vnd_mod_set },
 };
 
-static int mesh_set(int argc, char **argv, size_t len_rd,
+static int mesh_set(const char *name, size_t len_rd,
 		    settings_read_cb read_cb, void *cb_arg)
 {
-	int i;
+	int i, len;
+	const char *next;
 
-	if (argc < 1) {
+	if (!name) {
 		BT_ERR("Insufficient number of arguments");
 		return -EINVAL;
 	}
 
-	for (i = 0; i < ARRAY_SIZE(settings); i++) {
-		if (!strcmp(settings[i].name, argv[0])) {
-			argc--;
-			argv++;
+	len = settings_name_next(name, &next);
 
-			return settings[i].func(argc, argv, len_rd, read_cb,
-						cb_arg);
+	for (i = 0; i < ARRAY_SIZE(settings); i++) {
+		if (!strncmp(settings[i].name, name, len)) {
+			return settings[i].func(next, len_rd, read_cb, cb_arg);
 		}
 	}
 
-	BT_WARN("No matching handler for key %s", log_strdup(argv[0]));
+	BT_WARN("No matching handler for key %s", log_strdup(name));
 
 	return -ENOENT;
 }
@@ -806,7 +823,8 @@ static int mesh_commit(void)
 	return 0;
 }
 
-BT_SETTINGS_DEFINE(mesh, mesh_set, mesh_commit, NULL);
+SETTINGS_STATIC_HANDLER_DEFINE(bt_mesh, "bt/mesh", NULL, mesh_set, mesh_commit,
+			       NULL);
 
 /* Pending flags that use K_NO_WAIT as the storage timeout */
 #define NO_WAIT_PENDING_BITS (BIT(BT_MESH_NET_PENDING) |           \

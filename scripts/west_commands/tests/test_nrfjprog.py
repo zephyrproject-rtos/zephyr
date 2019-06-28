@@ -186,6 +186,10 @@ def get_board_snr_patch():
     return TEST_DEF_SNR
 
 
+def require_patch(program):
+    assert program == 'nrfjprog'
+
+
 def id_fn(test_case):
     ret = ''
     for x in test_case:
@@ -197,29 +201,33 @@ def id_fn(test_case):
 
 
 @pytest.mark.parametrize('test_case', TEST_CASES, ids=id_fn)
+@patch('runners.core.ZephyrBinaryRunner.require', side_effect=require_patch)
 @patch('runners.nrfjprog.NrfJprogBinaryRunner.get_board_snr_from_user',
        side_effect=get_board_snr_patch)
 @patch('runners.nrfjprog.NrfJprogBinaryRunner.check_call')
-def test_nrfjprog_init(cc, get_snr, test_case, runner_config):
+def test_nrfjprog_init(cc, get_snr, req, test_case, runner_config):
     family, softreset, snr, erase = test_case
 
     runner = NrfJprogBinaryRunner(runner_config, family, softreset, snr,
                                   erase=erase)
-    runner.run('flash')
-
-    assert cc.call_args_list == [call(x) for x in
-                                 expected_commands(*test_case)]
     if snr is None:
-        get_snr.assert_called_once_with()
+        with pytest.raises(ValueError) as e:
+            runner.run('flash')
+        assert 'snr must not be None' in str(e)
     else:
+        runner.run('flash')
+        assert req.called
+        assert cc.call_args_list == [call(x) for x in
+                                     expected_commands(*test_case)]
         get_snr.assert_not_called()
 
 
 @pytest.mark.parametrize('test_case', TEST_CASES, ids=id_fn)
+@patch('runners.core.ZephyrBinaryRunner.require', side_effect=require_patch)
 @patch('runners.nrfjprog.NrfJprogBinaryRunner.get_board_snr_from_user',
        side_effect=get_board_snr_patch)
 @patch('runners.nrfjprog.NrfJprogBinaryRunner.check_call')
-def test_nrfjprog_create(cc, get_snr, test_case, runner_config):
+def test_nrfjprog_create(cc, get_snr, req, test_case, runner_config):
     family, softreset, snr, erase = test_case
 
     args = ['--nrf-family', family]
@@ -236,6 +244,7 @@ def test_nrfjprog_create(cc, get_snr, test_case, runner_config):
     runner = NrfJprogBinaryRunner.create(runner_config, arg_namespace)
     runner.run('flash')
 
+    assert req.called
     assert cc.call_args_list == [call(x) for x in
                                  expected_commands(*test_case)]
     if snr is None:

@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
----
+
 title: ILI9340 320x240 Display Controller
 version: 0.1
 
@@ -20,11 +20,9 @@ properties:
     reset-gpios:
       type: compound
       category: required
-      generation: define, use-prop-name
+      generation: define
 
     cmd-data-gpios:
       type: compound
       category: required
-      generation: define, use-prop-name
-
-...
+      generation: define

@@ -286,7 +286,7 @@ static void ecm_read_cb(u8_t ep, int size, void *priv)
 	}
 
 	/* Linux considers by default that network usb device controllers are
-	 * not able to handle Zero Lenght Packet (ZLP) and then generates
+	 * not able to handle Zero Length Packet (ZLP) and then generates
 	 * a short packet containing a null byte. Handle by checking the IP
 	 * header length and dropping the extra byte.
 	 */
@@ -428,7 +428,7 @@ static void ecm_interface_config(struct usb_desc_header *head,
 #endif
 }
 
-USBD_CFG_DATA_DEFINE(netusb) struct usb_cfg_data netusb_config = {
+USBD_CFG_DATA_DEFINE(primary, netusb) struct usb_cfg_data netusb_config = {
 	.usb_device_description = NULL,
 	.interface_config = ecm_interface_config,
 	.interface_descriptor = &cdc_ecm_cfg.if0,

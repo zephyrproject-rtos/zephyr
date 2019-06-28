@@ -8,7 +8,7 @@
  *
  *  Basic example of userspace thread protected memory
  *
- *  NOTE: The encryption algorithim is unverified and
+ *  NOTE: The encryption algorithm is unverified and
  *  based on a 1930's erra piece of hardware.
  *  DO NOT USE THIS CODE FOR SECURITY
  *

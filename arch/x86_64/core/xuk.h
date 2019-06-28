@@ -58,7 +58,7 @@ static inline void *xuk_get_g_ptr()
  *
  * + Values from 0x100 to 0x1ff are mapped to raw vectors 0x00-0xff
  *   and can be used for handling exceptions, for INT instructions, or
- *   for MSI- or IPI-directed interrupts that specifiy specific
+ *   for MSI- or IPI-directed interrupts that specify specific
  *   vectors.
  *
  * + Values outside this range may be exposed symbolically for other

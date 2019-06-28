@@ -1,4 +1,4 @@
----
+
 title: STM32 LPUART
 version: 0.1
 
@@ -29,4 +29,3 @@ properties:
       category: optional
       description: Set to enable RTS/CTS flow control at boot time
       generation: define
-...

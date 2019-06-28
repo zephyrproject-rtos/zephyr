@@ -8,4 +8,4 @@
 
 config BOARD_NUCLEO_L476RG
 	bool "Nucleo L476RG Development Board"
-	depends on SOC_STM32L476XG
+	depends on SOC_STM32L476XX

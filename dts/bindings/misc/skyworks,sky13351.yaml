@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
----
+
 title: Skyworks SKY13351 GaAs FET I/C switch
 version: 0.1
 
@@ -21,9 +21,9 @@ properties:
         type: compound
         category: required
         description: VCTL1 pin
-        generation: define, use-prop-name
+        generation: define
     vctl2-gpios:
         type: compound
         category: required
         description: VCTL2 pin
-        generation: define, use-prop-name
+        generation: define

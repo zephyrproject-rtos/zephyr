@@ -31,7 +31,7 @@ static bool sane_partition(const struct k_mem_partition *part,
 
 	if (exec && write) {
 		__ASSERT(false,
-			"partition is writable and executable <start %x>",
+			"partition is writable and executable <start %lx>",
 			 part->start);
 		return false;
 	}
@@ -47,7 +47,7 @@ static bool sane_partition(const struct k_mem_partition *part,
 		}
 #if defined(CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS)
 		/* Partitions overlap */
-		__ASSERT(false, "overlapping partitions <%x...%x>, <%x...%x>",
+		__ASSERT(false, "overlapping partitions <%lx...%x>, <%lx...%x>",
 			part->start, last,
 			parts[i].start, cur_last);
 		return false;
@@ -59,7 +59,7 @@ static bool sane_partition(const struct k_mem_partition *part,
 		if ((cur_write && exec) || (cur_exec && write)) {
 			__ASSERT(false, "overlapping partitions are "
 				 "writable and executable "
-				 "<%x...%x>, <%x...%x>",
+				 "<%lx...%x>, <%lx...%x>",
 				 part->start, last,
 				 parts[i].start, cur_last);
 			return false;

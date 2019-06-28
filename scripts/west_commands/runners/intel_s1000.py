@@ -7,7 +7,6 @@
 from os import path
 import time
 import signal
-from west import log
 
 from runners.core import ZephyrBinaryRunner
 
@@ -61,6 +60,7 @@ class IntelS1000BinaryRunner(ZephyrBinaryRunner):
             gdb_port=args.gdb_port)
 
     def do_run(self, command, **kwargs):
+        self.require(self.xt_ocd_dir)
         kwargs['ocd-topology'] = path.join(self.board_dir, 'support',
                                            self.ocd_topology)
         kwargs['ocd-jtag-instr'] = path.join(self.board_dir, 'support',
@@ -76,11 +76,14 @@ class IntelS1000BinaryRunner(ZephyrBinaryRunner):
             self.do_debug(**kwargs)
 
     def flash(self, **kwargs):
+        if self.gdb_cmd is None:
+            raise ValueError('Cannot debug; no gdb specified')
+        self.require(self.gdb_cmd)
         topology_file = kwargs['ocd-topology']
         jtag_instr_file = kwargs['ocd-jtag-instr']
         gdb_flash_file = kwargs['gdb-flash-file']
 
-        self.print_gdbserver_message(self.gdb_port)
+        self.log_gdbserver_message(self.gdb_port)
         server_cmd = [self.xt_ocd_dir,
                       '-c', topology_file,
                       '-I', jtag_instr_file]
@@ -113,11 +116,12 @@ class IntelS1000BinaryRunner(ZephyrBinaryRunner):
             raise ValueError('Cannot debug; elf is missing')
         if self.gdb_cmd is None:
             raise ValueError('Cannot debug; no gdb specified')
+        self.require(self.gdb_cmd)
 
         topology_file = kwargs['ocd-topology']
         jtag_instr_file = kwargs['ocd-jtag-instr']
 
-        self.print_gdbserver_message(self.gdb_port)
+        self.log_gdbserver_message(self.gdb_port)
         server_cmd = [self.xt_ocd_dir,
                       '-c', topology_file,
                       '-I', jtag_instr_file]
@@ -147,14 +151,11 @@ class IntelS1000BinaryRunner(ZephyrBinaryRunner):
             server_proc.terminate()
             server_proc.wait()
 
-    def print_gdbserver_message(self, gdb_port):
-        log.inf('Intel S1000 GDB server running on port {}'.format(gdb_port))
-
     def debugserver(self, **kwargs):
         topology_file = kwargs['ocd-topology']
         jtag_instr_file = kwargs['ocd-jtag-instr']
 
-        self.print_gdbserver_message(self.gdb_port)
+        self.log_gdbserver_message(self.gdb_port)
         server_cmd = [self.xt_ocd_dir,
                       '-c', topology_file,
                       '-I', jtag_instr_file]
@@ -165,3 +166,7 @@ class IntelS1000BinaryRunner(ZephyrBinaryRunner):
         time.sleep(6)
         server_proc.terminate()
         self.check_call(server_cmd)
+
+    def log_gdbserver_message(self, gdb_port):
+        self.logger.info('Intel S1000 GDB server running on port {}'.
+                         format(gdb_port))

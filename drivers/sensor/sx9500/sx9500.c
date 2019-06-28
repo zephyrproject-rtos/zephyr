@@ -34,7 +34,7 @@ static u8_t sx9500_reg_defaults[] = {
 	0x40,	/* Doze enabled, 2x scan period doze, no raw filter. */
 	0x30,	/* Average threshold. */
 	0x0f,	/* Debouncer off, lowest average negative filter,
-		 * highest average postive filter.
+		 * highest average positive filter.
 		 */
 	0x0e,	/* Proximity detection threshold: 280 */
 	0x00,	/* No automatic compensation, compensate each pin

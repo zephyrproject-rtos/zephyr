@@ -50,10 +50,10 @@ LOG_MODULE_REGISTER(os);
 #endif
 
 #ifdef BUILD_VERSION
-#define BOOT_BANNER "Booting Zephyr OS "	\
+#define BOOT_BANNER "Booting Zephyr OS build "		\
 	 STRINGIFY(BUILD_VERSION) BOOT_DELAY_BANNER
 #else
-#define BOOT_BANNER "Booting Zephyr OS "	\
+#define BOOT_BANNER "Booting Zephyr OS version "	\
 	 KERNEL_VERSION_STRING BOOT_DELAY_BANNER
 #endif
 
@@ -132,6 +132,13 @@ K_THREAD_STACK_DEFINE(_interrupt_stack3, CONFIG_ISR_STACK_SIZE);
 
 extern void idle(void *unused1, void *unused2, void *unused3);
 
+
+/* LCOV_EXCL_START
+ *
+ * This code is called so early in the boot process that code coverage
+ * doesn't work properly. In addition, not all arches call this code,
+ * some like x86 do this with optimized assembly
+ */
 
 /**
  *
@@ -215,7 +222,9 @@ void z_data_copy(void)
 #endif /* CONFIG_STACK_CANARIES */
 #endif /* CONFIG_USERSPACE */
 }
-#endif
+#endif /* CONFIG_XIP */
+
+/* LCOV_EXCL_STOP */
 
 /**
  *
@@ -277,18 +286,22 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 
 	main();
 
+	/* Mark nonessenrial since main() has no more work to do */
+	_main_thread->base.user_options &= ~K_ESSENTIAL;
+
 	/* Dump coverage data once the main() has exited. */
 	gcov_coverage_dump();
+} /* LCOV_EXCL_LINE ... because we just dumped final coverage data */
 
-	/* Terminate thread normally since it has no more work to do */
-	_main_thread->base.user_options &= ~K_ESSENTIAL;
-}
+/* LCOV_EXCL_START */
 
 void __weak main(void)
 {
 	/* NOP default main() if the application does not provide one. */
 	arch_nop();
 }
+
+/* LCOV_EXCL_STOP */
 
 #if defined(CONFIG_MULTITHREADING)
 static void init_idle_thread(struct k_thread *thr, k_thread_stack_t *stack)
@@ -398,7 +411,7 @@ static void prepare_multithreading(struct k_thread *dummy_thread)
 
 }
 
-static void switch_to_main_thread(void)
+static FUNC_NORETURN void switch_to_main_thread(void)
 {
 #ifdef CONFIG_ARCH_HAS_CUSTOM_SWAP_TO_MAIN
 	z_arch_switch_to_main_thread(_main_thread, _main_stack,
@@ -412,6 +425,7 @@ static void switch_to_main_thread(void)
 	 */
 	z_swap_unlocked();
 #endif
+	CODE_UNREACHABLE; /* LCOV_EXCL_LINE */
 }
 #endif /* CONFIG_MULTITHREADING */
 
@@ -506,9 +520,13 @@ FUNC_NORETURN void z_cstart(void)
 #else
 	bg_thread_main(NULL, NULL, NULL);
 
+	/* LCOV_EXCL_START
+	 * We've already dumped coverage data at this point.
+	 */
 	irq_lock();
 	while (true) {
 	}
+	/* LCOV_EXCL_STOP */
 #endif
 
 	/*
@@ -517,5 +535,5 @@ FUNC_NORETURN void z_cstart(void)
 	 * far.
 	 */
 
-	CODE_UNREACHABLE;
+	CODE_UNREACHABLE; /* LCOV_EXCL_LINE */
 }

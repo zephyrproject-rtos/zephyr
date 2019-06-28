@@ -24,9 +24,6 @@
 #elif defined(CONFIG_BOARD_QUARK_SE_C1000_DEVBOARD_SS)
 #define PIN_OUT 3	/* GPIO_SS_3 */
 #define PIN_IN 10	/* GPIO_SS_AIN_10 */
-#elif defined(CONFIG_BOARD_QUARK_D2000_CRB)
-#define PIN_OUT 8	/* GPIO_8 */
-#define PIN_IN 10	/* AIN_10 */
 #elif defined(CONFIG_BOARD_ARDUINO_101)
 #define PIN_OUT 16	/* GPIO_16 */
 #define PIN_IN 10	/* AIN_10 */

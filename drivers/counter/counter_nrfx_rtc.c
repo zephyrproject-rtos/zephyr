@@ -18,6 +18,11 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL);
 
+#define ERR(...) LOG_INST_ERR(get_nrfx_config(dev)->log, __VA_ARGS__)
+#define WRN(...) LOG_INST_WRN(get_nrfx_config(dev)->log, __VA_ARGS__)
+#define INF(...) LOG_INST_INF(get_nrfx_config(dev)->log, __VA_ARGS__)
+#define DBG(...) LOG_INST_DBG(get_nrfx_config(dev)->log, __VA_ARGS__)
+
 #define COUNTER_MAX_TOP_VALUE RTC_COUNTER_COUNTER_Msk
 
 #define CC_TO_ID(cc) ((cc) - 1)
@@ -113,8 +118,7 @@ static int counter_nrfx_set_alarm(struct device *dev, u8_t chan_id,
 		/* From Product Specification: If a CC register value is 0 when
 		 * a CLEAR task is set, this will not trigger a COMPARE event.
 		 */
-		LOG_INST_INF(nrfx_config->log,
-				"Attempt to set CC to 0, delayed to 1.");
+		INF("Attempt to set CC to 0, delayed to 1.");
 		cc_val++;
 	}
 	nrfx_rtc_cc_set(rtc, ID_TO_CC(chan_id), cc_val, true);
@@ -137,13 +141,13 @@ static int counter_nrfx_cancel_alarm(struct device *dev, u8_t chan_id)
 	return 0;
 }
 
-static int counter_nrfx_set_top_value(struct device *dev, u32_t ticks,
-				      counter_top_callback_t callback,
-				      void *user_data)
+static int counter_nrfx_set_top_value(struct device *dev,
+				      const struct counter_top_cfg *cfg)
 {
 	const struct counter_nrfx_config *nrfx_config = get_nrfx_config(dev);
 	const nrfx_rtc_t *rtc = &nrfx_config->rtc;
 	struct counter_nrfx_data *dev_data = get_dev_data(dev);
+	int err = 0;
 
 	for (int i = 0; i < counter_get_num_of_channels(dev); i++) {
 		/* Overflow can be changed only when all alarms are
@@ -155,14 +159,26 @@ static int counter_nrfx_set_top_value(struct device *dev, u32_t ticks,
 	}
 
 	nrfx_rtc_cc_disable(rtc, TOP_CH);
-	nrfx_rtc_counter_clear(rtc);
 
-	dev_data->top_cb = callback;
-	dev_data->top_user_data = user_data;
-	dev_data->top = ticks;
-	nrfx_rtc_cc_set(rtc, TOP_CH, ticks, callback ? true : false);
+	dev_data->top_cb = cfg->callback;
+	dev_data->top_user_data = cfg->user_data;
+	dev_data->top = cfg->ticks;
+	nrfx_rtc_cc_set(rtc, TOP_CH, cfg->ticks, false);
 
-	return 0;
+	if (!(cfg->flags & COUNTER_TOP_CFG_DONT_RESET)) {
+		nrfx_rtc_counter_clear(rtc);
+	} else if (counter_nrfx_read(dev) >= cfg->ticks) {
+		err = -ETIME;
+		if (cfg->flags & COUNTER_TOP_CFG_RESET_WHEN_LATE) {
+			nrfx_rtc_counter_clear(rtc);
+		}
+	}
+
+	if (cfg->callback) {
+		nrfx_rtc_int_enable(rtc, COUNTER_TOP_INT);
+	}
+
+	return err;
 }
 
 static u32_t counter_nrfx_get_pending_int(struct device *dev)
@@ -228,8 +244,7 @@ static int ppi_setup(struct device *dev)
 #ifdef DPPI_PRESENT
 	result = nrfx_dppi_channel_alloc(&data->ppi_ch);
 	if (result != NRFX_SUCCESS) {
-		LOG_INST_ERR(nrfx_config->log,
-			     "Failed to allocate PPI channel.");
+		ERR("Failed to allocate PPI channel.");
 		return -ENODEV;
 	}
 
@@ -245,8 +260,7 @@ static int ppi_setup(struct device *dev)
 
 	result = nrfx_ppi_channel_alloc(&data->ppi_ch);
 	if (result != NRFX_SUCCESS) {
-		LOG_INST_ERR(nrfx_config->log,
-			     "Failed to allocate PPI channel.");
+		ERR("Failed to allocate PPI channel.");
 		return -ENODEV;
 	}
 
@@ -277,7 +291,7 @@ static int init_rtc(struct device *dev,
 	nrfx_err_t result = nrfx_rtc_init(rtc, config, handler);
 
 	if (result != NRFX_SUCCESS) {
-		LOG_INST_ERR(nrfx_config->log, "Failed to initialize device.");
+		ERR("Failed to initialize device.");
 		return -EBUSY;
 	}
 
@@ -288,7 +302,7 @@ static int init_rtc(struct device *dev,
 
 	data->top = COUNTER_MAX_TOP_VALUE;
 
-	LOG_INST_DBG(nrfx_config->log, "Initialized");
+	DBG("Initialized");
 	return 0;
 }
 
@@ -326,8 +340,8 @@ static const struct counter_driver_api counter_nrfx_driver_api = {
 	}								       \
 	static int counter_##idx##_init(struct device *dev)		       \
 	{								       \
-		IRQ_CONNECT(DT_NORDIC_NRF_RTC_RTC_##idx##_IRQ,		       \
-			    DT_NORDIC_NRF_RTC_RTC_##idx##_IRQ_PRIORITY,	       \
+		IRQ_CONNECT(DT_NORDIC_NRF_RTC_RTC_##idx##_IRQ_0,	       \
+			    DT_NORDIC_NRF_RTC_RTC_##idx##_IRQ_0_PRIORITY,      \
 			    nrfx_isr, nrfx_rtc_##idx##_irq_handler, 0);	       \
 		const nrfx_rtc_config_t config = {			       \
 			.prescaler =					       \

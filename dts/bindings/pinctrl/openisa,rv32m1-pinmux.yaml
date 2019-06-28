@@ -1,4 +1,4 @@
----
+
 title: RV32M1 Pinmux
 version: 0.1
 
@@ -24,4 +24,3 @@ properties:
 "#cells":
   - pin
   - function
-...

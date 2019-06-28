@@ -55,4 +55,11 @@ config SPI_1
 
 endif # SPI
 
+if CAN
+
+config CAN_1
+	default y
+
+endif # CAN
+
 endif # BOARD_NUCLEO_F746ZG

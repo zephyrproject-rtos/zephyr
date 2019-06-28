@@ -1,4 +1,4 @@
----
+
 title: Atmel SAM Family AFEC
 version: 0.1
 
@@ -23,4 +23,3 @@ properties:
       description: peripheral ID
       generation: define
       category: required
-...

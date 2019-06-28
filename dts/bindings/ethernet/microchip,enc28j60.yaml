@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
----
+
 title: 10Base-T Ethernet Controller with SPI Interface
 version: 0.1
 
@@ -18,5 +18,4 @@ properties:
     int-gpios:
       type: compound
       category: required
-      generation: define, use-prop-name
-...
+      generation: define

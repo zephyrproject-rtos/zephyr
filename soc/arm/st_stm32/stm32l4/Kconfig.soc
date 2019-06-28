@@ -2,6 +2,7 @@
 #
 # Copyright (c) 2016 Open-RnD Sp. z o.o.
 # Copyright (c) 2016 BayLibre, SAS
+# Copyright (c) 2019 Centaur Analytics, Inc
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -10,26 +11,26 @@ choice
 prompt "STM32L4x MCU Selection"
 depends on SOC_SERIES_STM32L4X
 
-config SOC_STM32L476XG
-	bool "STM32L476XG"
+config SOC_STM32L476XX
+	bool "STM32L476X"
 
-config SOC_STM32L496XG
-	bool "STM32L496XG"
+config SOC_STM32L496XX
+	bool "STM32L496XX"
 
-config SOC_STM32L432XC
-	bool "STM32L432XC"
+config SOC_STM32L432XX
+	bool "STM32L432XX"
 
-config SOC_STM32L433XC
-	bool "STM32L433XC"
+config SOC_STM32L433XX
+	bool "STM32L433XX"
 
-config SOC_STM32L452XC
-	bool "STM32L452XC"
+config SOC_STM32L452XX
+	bool "STM32L452XX"
 
-config SOC_STM32L475XG
-	bool "STM32L475XG"
+config SOC_STM32L475XX
+	bool "STM32L475XX"
 
-config SOC_STM32L4R5XI
-	bool "STM32L4R5XI"
+config SOC_STM32L4R5XX
+	bool "STM32L4R5XX"
 
 config SOC_STM32L471XX
 	bool "STM32L471XX"

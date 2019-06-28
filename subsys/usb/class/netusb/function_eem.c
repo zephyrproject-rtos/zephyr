@@ -221,11 +221,14 @@ static struct netusb_function eem_function = {
 	.send_pkt = eem_send,
 };
 
-static inline void eem_status_interface(const u8_t *iface)
+static inline void eem_status_interface(const u8_t *desc)
 {
+	const struct usb_if_descriptor *if_desc = (void *)desc;
+	u8_t iface_num = if_desc->bInterfaceNumber;
+
 	LOG_DBG("");
 
-	if (*iface != eem_get_first_iface_number()) {
+	if (iface_num != eem_get_first_iface_number()) {
 		return;
 	}
 
@@ -277,7 +280,7 @@ static void eem_interface_config(struct usb_desc_header *head,
 	cdc_eem_cfg.if0.bInterfaceNumber = bInterfaceNumber;
 }
 
-USBD_CFG_DATA_DEFINE(netusb) struct usb_cfg_data netusb_config = {
+USBD_CFG_DATA_DEFINE(primary, netusb) struct usb_cfg_data netusb_config = {
 	.usb_device_description = NULL,
 	.interface_config = eem_interface_config,
 	.interface_descriptor = &cdc_eem_cfg.if0,

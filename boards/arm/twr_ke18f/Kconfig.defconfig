@@ -37,6 +37,13 @@ config SPI_1
 
 endif # SPI_MCUX_LPSPI
 
+if CAN
+
+config CAN_0
+	default y
+
+endif # CAN
+
 if PINMUX_MCUX
 
 config PINMUX_MCUX_PORTA

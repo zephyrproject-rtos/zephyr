@@ -2,7 +2,7 @@
 
 /dts-v1/;
 
-#include "intel_s1000.dtsi"
+#include <intel/intel_s1000.dtsi>
 
 / {
 	model = "intel_s1000_crb";

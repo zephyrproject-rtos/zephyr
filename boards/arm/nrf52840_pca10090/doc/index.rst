@@ -137,7 +137,7 @@ By default, the board controller firmware will route the following:
 +-----------------+----------------------------------+
 | nRF9160 UART1   | VCOM2                            |
 +-----------------+----------------------------------+
-| Leds 1-4        | physical LEDs                    |
+| LEDs 1-4        | physical LEDs                    |
 +-----------------+----------------------------------+
 | Buttons 1-2     | physical buttons                 |
 +-----------------+----------------------------------+

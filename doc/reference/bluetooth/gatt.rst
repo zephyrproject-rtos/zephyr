@@ -62,7 +62,7 @@ Client procedures can be enabled with the configuration option:
 
 Discover procedures can be initiated with the use of
 :cpp:func:`bt_gatt_discover` API which takes the
-:cpp:class:`bt_gatt_dicover_params` struct which describes the type of
+:cpp:class:`bt_gatt_discover_params` struct which describes the type of
 discovery. The parameters also serves as a filter when setting the ``uuid``
 field only attributes which matches will be discovered, in contrast setting it
 to NULL allows all attributes to be discovered.

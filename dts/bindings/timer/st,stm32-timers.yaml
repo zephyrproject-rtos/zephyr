@@ -1,4 +1,4 @@
----
+
 title: STM32 TIMERS
 version: 0.1
 
@@ -32,5 +32,3 @@ properties:
       category: required
       description: Clock gate information
       generation: define
-
-...

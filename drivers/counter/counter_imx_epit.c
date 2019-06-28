@@ -96,9 +96,8 @@ static u32_t imx_epit_read(struct device *dev)
 	return value;
 }
 
-static int imx_epit_set_top_value(struct device *dev, u32_t ticks,
-				  counter_top_callback_t callback,
-				  void *user_data)
+static int imx_epit_set_top_value(struct device *dev,
+				  const struct counter_top_cfg *cfg)
 {
 	EPIT_Type *base = get_epit_config(dev)->base;
 	struct imx_epit_data *driver_data = dev->driver_data;
@@ -106,14 +105,15 @@ static int imx_epit_set_top_value(struct device *dev, u32_t ticks,
 	/* Disable EPIT Output Compare interrupt for consistency */
 	EPIT_SetIntCmd(base, false);
 
-	driver_data->callback = callback;
-	driver_data->user_data = user_data;
+	driver_data->callback = cfg->callback;
+	driver_data->user_data = cfg->user_data;
 
-	/* Set both reload and counter values to "ticks" */
-	EPIT_SetOverwriteCounter(base, true);
-	EPIT_SetCounterLoadValue(base, ticks);
+	/* Set reload value and optionally counter to "ticks" */
+	EPIT_SetOverwriteCounter(base,
+				!(cfg->flags & COUNTER_TOP_CFG_DONT_RESET));
+	EPIT_SetCounterLoadValue(base, cfg->ticks);
 
-	if (callback != NULL) {
+	if (cfg->callback != NULL) {
 		/* (Re)enable EPIT Output Compare interrupt */
 		EPIT_SetIntCmd(base, true);
 	}

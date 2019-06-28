@@ -24,7 +24,7 @@
 #include <uart.h>
 #include <drivers/pci/pci.h>
 #include <drivers/pci/pci_mgr.h>
-#include <drivers/ioapic.h>
+#include <drivers/interrupt_controller/ioapic.h>
 
 
 #ifdef CONFIG_PCI_LEGACY_BRIDGE

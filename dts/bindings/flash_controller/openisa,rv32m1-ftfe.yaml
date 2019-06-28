@@ -1,4 +1,4 @@
----
+
 title: OpenISA Flash Memory Module (FTFE)
 version: 0.1
 
@@ -11,5 +11,3 @@ inherits:
 properties:
     compatible:
       constraint: "openisa,rv32m1-ftfe"
-
-...

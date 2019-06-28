@@ -1,4 +1,4 @@
 tests:
   arch.interrupt:
     arch_whitelist: arm
-    tags: nmi interrupt
+    tags: nmi interrupt arm

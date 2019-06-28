@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
----
+
 title: i.MX GPIO
 version: 0.1
 
@@ -35,4 +35,3 @@ properties:
 "#cells":
   - pin
   - flags
-...

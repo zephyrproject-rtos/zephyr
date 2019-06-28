@@ -330,7 +330,8 @@ int net_context_unref(struct net_context *context)
 	net_tcp_unref(context);
 
 	if (context->conn_handler) {
-		if (IS_ENABLED(CONFIG_NET_TCP) || IS_ENABLED(CONFIG_NET_UDP)) {
+		if (IS_ENABLED(CONFIG_NET_TCP) || IS_ENABLED(CONFIG_NET_UDP) ||
+		    IS_ENABLED(CONFIG_NET_SOCKETS_CAN)) {
 			net_conn_unregister(context->conn_handler);
 		}
 
@@ -1645,6 +1646,7 @@ static enum net_verdict net_context_raw_packet_received(
 static int recv_raw(struct net_context *context,
 		    net_context_recv_cb_t cb,
 		    s32_t timeout,
+		    struct sockaddr *local_addr,
 		    void *user_data)
 {
 	int ret;
@@ -1665,7 +1667,7 @@ static int recv_raw(struct net_context *context,
 
 	ret = net_conn_register(net_context_get_ip_proto(context),
 				net_context_get_family(context),
-				NULL, NULL, 0, 0,
+				NULL, local_addr, 0, 0,
 				net_context_raw_packet_received,
 				user_data,
 				&context->conn_handler);
@@ -1704,10 +1706,23 @@ int net_context_recv(struct net_context *context,
 	} else {
 		if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) &&
 		    net_context_get_family(context) == AF_PACKET) {
-			ret = recv_raw(context, cb, timeout, user_data);
+			ret = recv_raw(context, cb, timeout, NULL, user_data);
 		} else if (IS_ENABLED(CONFIG_NET_SOCKETS_CAN) &&
 			   net_context_get_family(context) == AF_CAN) {
-			ret = recv_raw(context, cb, timeout, user_data);
+			struct sockaddr_can local_addr = {
+				.can_family = AF_CAN,
+			};
+
+			ret = recv_raw(context, cb, timeout,
+				       (struct sockaddr *)&local_addr,
+				       user_data);
+			if (ret == -EALREADY) {
+				/* This is perfectly normal for CAN sockets.
+				 * The SocketCAN will dispatch the packet to
+				 * correct net_context listener.
+				 */
+				ret = 0;
+			}
 		} else {
 			ret = -EPROTOTYPE;
 		}

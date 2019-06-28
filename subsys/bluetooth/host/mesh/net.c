@@ -38,7 +38,7 @@
 #include "prov.h"
 
 /* Minimum valid Mesh Network PDU length. The Network headers
- * themselves take up 9 bytes. After that there is a minumum of 1 byte
+ * themselves take up 9 bytes. After that there is a minimum of 1 byte
  * payload for both CTL=1 and CTL=0 PDUs (smallest OpCode is 1 byte). CTL=1
  * PDUs must use a 64-bit (8 byte) NetMIC, whereas CTL=0 PDUs have at least
  * a 32-bit (4 byte) NetMIC and AppMIC giving again a total of 8 bytes.

@@ -163,16 +163,9 @@ typedef struct s_isrList {
  * out the right vector to use based on our priority scheme. Groups of 16
  * vectors starting at 32 correspond to each priority level.
  *
- * On MVIC, the mapping is fixed; the vector to use is just the irq line
- * number plus 0x20. The priority argument supplied by the user is discarded.
- *
  * These macros are only intended to be used by IRQ_CONNECT() macro.
  */
-#if CONFIG_X86_FIXED_IRQ_MAPPING
-#define _VECTOR_ARG(irq_p)	Z_IRQ_CONTROLLER_VECTOR_MAPPING(irq_p)
-#else
 #define _VECTOR_ARG(irq_p)	(-1)
-#endif /* CONFIG_X86_FIXED_IRQ_MAPPING */
 
 /**
  * Configure a static interrupt.
@@ -248,12 +241,6 @@ typedef struct s_isrList {
 })
 
 
-#ifdef CONFIG_X86_FIXED_IRQ_MAPPING
-/* Fixed vector-to-irq association mapping.
- * No need for the table at all.
- */
-#define Z_IRQ_TO_INTERRUPT_VECTOR(irq) Z_IRQ_CONTROLLER_VECTOR_MAPPING(irq)
-#else
 /**
  * @brief Convert a statically connected IRQ to its interrupt vector number
  *
@@ -262,7 +249,6 @@ typedef struct s_isrList {
 extern unsigned char _irq_to_interrupt_vector[];
 #define Z_IRQ_TO_INTERRUPT_VECTOR(irq)                       \
 			((unsigned int) _irq_to_interrupt_vector[irq])
-#endif
 
 #ifdef CONFIG_SYS_POWER_MANAGEMENT
 extern void z_arch_irq_direct_pm(void);
@@ -677,13 +663,6 @@ void z_x86_reset_pages(void *start, size_t size);
 #endif /* CONFIG_X86_MMU */
 
 #endif /* !_ASMLANGUAGE */
-
-/* reboot through Reset Control Register (I/O port 0xcf9) */
-
-#define SYS_X86_RST_CNT_REG 0xcf9
-#define SYS_X86_RST_CNT_SYS_RST 0x02
-#define SYS_X86_RST_CNT_CPU_RST 0x4
-#define SYS_X86_RST_CNT_FULL_RST 0x08
 
 #ifdef __cplusplus
 }

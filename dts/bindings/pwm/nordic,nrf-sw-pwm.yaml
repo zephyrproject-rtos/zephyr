@@ -1,4 +1,4 @@
----
+
 title: nRF SW PWM
 version: 0.1
 
@@ -44,4 +44,3 @@ properties:
       description: GPIOTE base used for GPIOTE index calculation used for PWM output generation
       category: required
       generation: define
-...

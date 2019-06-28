@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
----
+
 title: Kinetis FTM
 version: 0.1
 
@@ -27,4 +27,3 @@ properties:
   - channel
 # period in terms of nanoseconds
   - period
-...

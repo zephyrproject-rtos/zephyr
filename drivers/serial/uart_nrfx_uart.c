@@ -724,7 +724,7 @@ static void uart_nrfx_irq_tx_enable(struct device *dev)
 		/* Due to HW limitation first TXDRDY interrupt shall be
 		 * triggered by the software.
 		 */
-		NVIC_SetPendingIRQ(DT_NORDIC_NRF_UART_UART_0_IRQ);
+		NVIC_SetPendingIRQ(DT_NORDIC_NRF_UART_UART_0_IRQ_0);
 	}
 	irq_unlock(key);
 }
@@ -897,12 +897,12 @@ static int uart_nrfx_init(struct device *dev)
 
 #if defined(CONFIG_UART_0_ASYNC) || defined(CONFIG_UART_0_INTERRUPT_DRIVEN)
 
-	IRQ_CONNECT(DT_NORDIC_NRF_UART_UART_0_IRQ,
-		    DT_NORDIC_NRF_UART_UART_0_IRQ_PRIORITY,
+	IRQ_CONNECT(DT_NORDIC_NRF_UART_UART_0_IRQ_0,
+		    DT_NORDIC_NRF_UART_UART_0_IRQ_0_PRIORITY,
 		    uart_nrfx_isr,
 		    DEVICE_GET(uart_nrfx_uart0),
 		    0);
-	irq_enable(DT_NORDIC_NRF_UART_UART_0_IRQ);
+	irq_enable(DT_NORDIC_NRF_UART_UART_0_IRQ_0);
 #endif
 
 #ifdef CONFIG_UART_0_ASYNC

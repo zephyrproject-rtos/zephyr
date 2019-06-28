@@ -9,7 +9,7 @@ choice
 	prompt "STM32WBx MCU Selection"
 	depends on SOC_SERIES_STM32WBX
 
-config SOC_STM32WB55XG
+config SOC_STM32WB55XX
 	bool "STM32WB55XX"
 
 endchoice

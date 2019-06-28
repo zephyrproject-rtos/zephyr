@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2016 Open-RnD Sp. z o.o.
  * Copyright (c) 2016 BayLibre, SAS
- * Copyright (c) 2018 Centaur Analytics, Inc
+ * Copyright (c) 2018-2019 Centaur Analytics, Inc
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -40,6 +40,8 @@
 	(STM32_PINMUX_ALT_FUNC_5 | STM32_PUSHPULL_NOPULL)
 #define STM32L4X_PINMUX_FUNC_PA4_ADC12_IN9 STM32_MODER_ANALOG_MODE
 
+#define STM32L4X_PINMUX_FUNC_PA5_PWM2_CH1                                      \
+	(STM32_PINMUX_ALT_FUNC_1 | STM32_PUSHPULL_NOPULL)
 #define STM32L4X_PINMUX_FUNC_PA5_SPI1_SCK                                      \
 	(STM32_PINMUX_ALT_FUNC_5 | STM32_PUSHPULL_NOPULL)
 #define STM32L4X_PINMUX_FUNC_PA5_ADC12_IN10 STM32_MODER_ANALOG_MODE
@@ -52,6 +54,10 @@
 	(STM32_PINMUX_ALT_FUNC_8 | STM32_OPENDRAIN_PULLUP)
 #define STM32L4X_PINMUX_FUNC_PA6_ADC12_IN11 STM32_MODER_ANALOG_MODE
 
+#if defined(CONFIG_SOC_STM32L496XX)
+#define STM32L4X_PINMUX_FUNC_PA7_I2C3_SCL                                      \
+	(STM32_PINMUX_ALT_FUNC_4 | STM32_OPENDRAIN_PULLUP)
+#endif /* CONFIG_SOC_STM32L496XX */
 #define STM32L4X_PINMUX_FUNC_PA7_SPI1_MOSI                                     \
 	(STM32_PINMUX_ALT_FUNC_5 | STM32_PUSHPULL_NOPULL)
 #define STM32L4X_PINMUX_FUNC_PA7_ADC12_IN12 STM32_MODER_ANALOG_MODE
@@ -101,6 +107,10 @@
 #define STM32L4X_PINMUX_FUNC_PB3_SPI3_SCK                                      \
 	(STM32_PINMUX_ALT_FUNC_6 | STM32_PUSHPULL_NOPULL)
 
+#if defined(CONFIG_SOC_STM32L496XX)
+#define STM32L4X_PINMUX_FUNC_PB4_I2C3_SDA                                      \
+	(STM32_PINMUX_ALT_FUNC_4 | STM32_OPENDRAIN_PULLUP)
+#endif /* CONFIG_SOC_STM32L496XX */
 #define STM32L4X_PINMUX_FUNC_PB4_SPI1_MISO                                     \
 	(STM32_PINMUX_ALT_FUNC_5 | STM32_PUSHPULL_NOPULL)
 #define STM32L4X_PINMUX_FUNC_PB4_SPI3_MISO                                     \
@@ -108,6 +118,8 @@
 #define STM32L4X_PINMUX_FUNC_PB4_USART1_CTS                                    \
 	(STM32_PINMUX_ALT_FUNC_7 | STM32_OPENDRAIN_PULLUP)
 
+#define STM32L4X_PINMUX_FUNC_PB5_PWM3_CH2                                      \
+	(STM32_PINMUX_ALT_FUNC_2 | STM32_PUSHPULL_NOPULL)
 #define STM32L4X_PINMUX_FUNC_PB5_SPI1_MOSI                                     \
 	(STM32_PINMUX_ALT_FUNC_5 | STM32_PUSHPULL_NOPULL)
 #define STM32L4X_PINMUX_FUNC_PB5_SPI3_MOSI                                     \
@@ -131,6 +143,8 @@
 #define STM32L4X_PINMUX_FUNC_PB9_I2C1_SDA                                      \
 	(STM32_PINMUX_ALT_FUNC_4 | STM32_OPENDRAIN_PULLUP)
 
+#define STM32L4X_PINMUX_FUNC_PB10_SPI2_SCK                                     \
+	(STM32_PINMUX_ALT_FUNC_5 | STM32_PUSHPULL_NOPULL)
 #define STM32L4X_PINMUX_FUNC_PB10_I2C2_SCL                                     \
 	(STM32_PINMUX_ALT_FUNC_4 | STM32_OPENDRAIN_PULLUP)
 #define STM32L4X_PINMUX_FUNC_PB10_USART3_TX                                    \
@@ -164,6 +178,9 @@
 #define STM32L4X_PINMUX_FUNC_PB14_PWM15_CH1                                    \
 	(STM32_PINMUX_ALT_FUNC_14 | STM32_PUSHPULL_NOPULL)
 #define STM32L4X_PINMUX_FUNC_PB14_SPI2_MISO                                    \
+	(STM32_PINMUX_ALT_FUNC_5 | STM32_PUSHPULL_NOPULL)
+
+#define STM32L4X_PINMUX_FUNC_PB15_SPI2_MOSI                                    \
 	(STM32_PINMUX_ALT_FUNC_5 | STM32_PUSHPULL_NOPULL)
 
 /* Port C */

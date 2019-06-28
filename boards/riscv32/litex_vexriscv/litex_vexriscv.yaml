@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
----
+
 identifier: litex_vexriscv
 name: LiteX SoC with VexRiscV softcore CPU
 type: mcu

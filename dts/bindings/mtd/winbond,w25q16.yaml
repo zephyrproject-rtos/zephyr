@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
----
+
 title: SPI NOR FLASH
 version: 0.1
 
@@ -16,5 +16,3 @@ inherits:
 properties:
     compatible:
       constraint: "winbond,w25q16"
-
-...

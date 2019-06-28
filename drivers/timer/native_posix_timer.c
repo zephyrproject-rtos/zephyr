@@ -14,7 +14,7 @@
 #include "zephyr/types.h"
 #include "irq.h"
 #include "device.h"
-#include "drivers/system_timer.h"
+#include <drivers/timer/system_timer.h>
 #include "sys_clock.h"
 #include "timer_model.h"
 #include "soc.h"

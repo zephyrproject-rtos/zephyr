@@ -101,6 +101,9 @@ static size_t discovery_results_count;
 #endif /* CONFIG_BT_BREDR */
 
 struct cmd_data {
+	/** BT_BUF_CMD */
+	u8_t  type;
+
 	/** HCI status of the command completion */
 	u8_t  status;
 
@@ -122,9 +125,7 @@ struct acl_data {
 	u16_t handle;
 };
 
-static struct cmd_data cmd_data[CONFIG_BT_HCI_CMD_COUNT];
-
-#define cmd(buf) (&cmd_data[net_buf_id(buf)])
+#define cmd(buf) ((struct cmd_data *)net_buf_user_data(buf))
 #define acl(buf) ((struct acl_data *)net_buf_user_data(buf))
 
 /* HCI command buffers. Derive the needed size from BT_BUF_RX_SIZE since
@@ -246,8 +247,7 @@ struct net_buf *bt_hci_cmd_create(u16_t opcode, u8_t param_len)
 
 	net_buf_reserve(buf, CONFIG_BT_HCI_RESERVE);
 
-	bt_buf_set_type(buf, BT_BUF_CMD);
-
+	cmd(buf)->type = BT_BUF_CMD;
 	cmd(buf)->opcode = opcode;
 	cmd(buf)->sync = NULL;
 
@@ -3065,6 +3065,8 @@ static void le_pkey_complete(struct net_buf *buf)
 	for (cb = pub_key_cb; cb; cb = cb->_next) {
 		cb->func(evt->status ? NULL : evt->key);
 	}
+
+	pub_key_cb = NULL;
 }
 
 static void le_dhkey_complete(struct net_buf *buf)
@@ -5348,6 +5350,10 @@ int bt_le_adv_start_internal(const struct bt_le_adv_param *param,
 	set_param.max_interval = sys_cpu_to_le16(param->interval_max);
 	set_param.channel_map  = 0x07;
 
+	if (bt_dev.adv_id != param->id) {
+		atomic_clear_bit(bt_dev.flags, BT_DEV_RPA_VALID);
+	}
+
 	/* Set which local identity address we're advertising with */
 	bt_dev.adv_id = param->id;
 	id_addr = &bt_dev.id_addr[param->id];
@@ -5843,15 +5849,9 @@ int bt_br_set_discoverable(bool enable)
 }
 #endif /* CONFIG_BT_BREDR */
 
-u16_t bt_hci_get_cmd_opcode(struct net_buf *buf)
-{
-	return cmd(buf)->opcode;
-}
-
 #if defined(CONFIG_BT_ECC)
 int bt_pub_key_gen(struct bt_pub_key_cb *new_cb)
 {
-	struct bt_pub_key_cb *cb;
 	int err;
 
 	/*
@@ -5881,12 +5881,6 @@ int bt_pub_key_gen(struct bt_pub_key_cb *new_cb)
 		atomic_clear_bit(bt_dev.flags, BT_DEV_PUB_KEY_BUSY);
 		pub_key_cb = NULL;
 		return err;
-	}
-
-	for (cb = pub_key_cb; cb; cb = cb->_next) {
-		if (cb != new_cb) {
-			cb->func(NULL);
-		}
 	}
 
 	return 0;

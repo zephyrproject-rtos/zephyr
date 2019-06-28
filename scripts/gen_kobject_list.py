@@ -86,7 +86,8 @@ kobjects = OrderedDict ([
     ("k_timer", (None, False)),
     ("_k_thread_stack_element", (None, False)),
     ("device", (None, False)),
-    ("sys_mutex", (None, True))
+    ("sys_mutex", (None, True)),
+    ("k_futex", (None, True))
 ])
 
 
@@ -111,6 +112,7 @@ subsystems = [
     "spi_driver_api",
     "uart_driver_api",
     "can_driver_api",
+    "ptp_clock_driver_api",
 ]
 
 
@@ -167,6 +169,15 @@ def write_gperf_table(fp, eh, objs, static_begin, static_end):
         for i in range(num_mutexes):
             fp.write("_K_MUTEX_INITIALIZER(kernel_mutexes[%d])" % i)
             if i != num_mutexes - 1:
+                fp.write(", ")
+        fp.write("};\n")
+
+    num_futex = eh.get_futex_counter()
+    if (num_futex != 0):
+        fp.write("static struct z_futex_data futex_data[%d] = {\n" % num_futex)
+        for i in range(num_futex):
+            fp.write("Z_FUTEX_DATA_INITIALIZER(futex_data[%d])" % i)
+            if (i != num_futex - 1):
                 fp.write(", ")
         fp.write("};\n")
 

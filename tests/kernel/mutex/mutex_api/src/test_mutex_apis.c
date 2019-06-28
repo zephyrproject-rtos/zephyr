@@ -45,17 +45,15 @@ static void tmutex_test_lock(struct k_mutex *pmutex,
 			     void (*entry_fn)(void *, void *, void *))
 {
 	k_mutex_init(pmutex);
-	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
-				      entry_fn, pmutex, NULL, NULL,
-				      K_PRIO_PREEMPT(0), 0, 0);
+	k_thread_create(&tdata, tstack, STACK_SIZE,
+			entry_fn, pmutex, NULL, NULL,
+			K_PRIO_PREEMPT(0),
+			K_USER | K_INHERIT_PERMS, 0);
 	k_mutex_lock(pmutex, K_FOREVER);
 	TC_PRINT("access resource from main thread\n");
 
 	/* wait for spawn thread to take action */
 	k_sleep(TIMEOUT);
-
-	/* teardown */
-	k_thread_abort(tid);
 }
 
 static void tmutex_test_lock_timeout(struct k_mutex *pmutex,
@@ -63,9 +61,10 @@ static void tmutex_test_lock_timeout(struct k_mutex *pmutex,
 {
 	/**TESTPOINT: test k_mutex_init mutex*/
 	k_mutex_init(pmutex);
-	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
-				      entry_fn, pmutex, NULL, NULL,
-				      K_PRIO_PREEMPT(0), 0, 0);
+	k_thread_create(&tdata, tstack, STACK_SIZE,
+			entry_fn, pmutex, NULL, NULL,
+			K_PRIO_PREEMPT(0),
+			K_USER | K_INHERIT_PERMS, 0);
 	k_mutex_lock(pmutex, K_FOREVER);
 	TC_PRINT("access resource from main thread\n");
 
@@ -74,8 +73,6 @@ static void tmutex_test_lock_timeout(struct k_mutex *pmutex,
 	k_mutex_unlock(pmutex);
 	k_sleep(TIMEOUT);
 
-	/* teardown */
-	k_thread_abort(tid);
 }
 
 static void tmutex_test_lock_unlock(struct k_mutex *pmutex)
@@ -98,9 +95,11 @@ void test_mutex_reent_lock_forever(void)
 	/**TESTPOINT: test k_mutex_init mutex*/
 	k_mutex_init(&mutex);
 	tmutex_test_lock(&mutex, tThread_entry_lock_forever);
+	k_thread_abort(&tdata);
 
 	/**TESTPOINT: test K_MUTEX_DEFINE mutex*/
 	tmutex_test_lock(&kmutex, tThread_entry_lock_forever);
+	k_thread_abort(&tdata);
 }
 
 void test_mutex_reent_lock_no_wait(void)
@@ -137,4 +136,20 @@ void test_mutex_lock_unlock(void)
 
 	/**TESTPOINT: test K_MUTEX_DEFINE mutex*/
 	tmutex_test_lock_unlock(&kmutex);
+}
+
+/*test case main entry*/
+void test_main(void)
+{
+	k_thread_access_grant(k_current_get(), &tdata, &tstack, &kmutex,
+			      &mutex);
+
+	ztest_test_suite(mutex_api,
+			 ztest_user_unit_test(test_mutex_lock_unlock),
+			 ztest_user_unit_test(test_mutex_reent_lock_forever),
+			 ztest_user_unit_test(test_mutex_reent_lock_no_wait),
+			 ztest_user_unit_test(test_mutex_reent_lock_timeout_fail),
+			 ztest_user_unit_test(test_mutex_reent_lock_timeout_pass)
+			 );
+	ztest_run_test_suite(mutex_api);
 }

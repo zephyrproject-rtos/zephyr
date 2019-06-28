@@ -1,4 +1,4 @@
----
+
 title: STM32 UART
 version: 0.1
 
@@ -23,4 +23,3 @@ properties:
       category: optional
       description: Set to enable RTS/CTS flow control at boot time
       generation: define
-...

@@ -45,11 +45,11 @@
 #define CMD_OGF			1
 #define CMD_OCF			2
 
-#define GPIO_IRQ_PIN		DT_INST_0_ZEPHYR_BT_HCI_SPI_IRQ_GPIO_PIN
-#define GPIO_RESET_PIN		DT_INST_0_ZEPHYR_BT_HCI_SPI_RESET_GPIO_PIN
-#ifdef DT_INST_0_ZEPHYR_BT_HCI_SPI_CS_GPIO_PIN
-#define GPIO_CS_PIN		DT_INST_0_ZEPHYR_BT_HCI_SPI_CS_GPIO_PIN
-#endif /* DT_INST_0_ZEPHYR_BT_HCI_SPI_CS_GPIO_PIN */
+#define GPIO_IRQ_PIN		DT_INST_0_ZEPHYR_BT_HCI_SPI_IRQ_GPIOS_PIN
+#define GPIO_RESET_PIN		DT_INST_0_ZEPHYR_BT_HCI_SPI_RESET_GPIOS_PIN
+#ifdef DT_INST_0_ZEPHYR_BT_HCI_SPI_CS_GPIOS_PIN
+#define GPIO_CS_PIN		DT_INST_0_ZEPHYR_BT_HCI_SPI_CS_GPIOS_PIN
+#endif /* DT_INST_0_ZEPHYR_BT_HCI_SPI_CS_GPIOS_PIN */
 
 /* Max SPI buffer length for transceive operations.
  *
@@ -72,8 +72,8 @@ static K_SEM_DEFINE(sem_initialised, 0, 1);
 static K_SEM_DEFINE(sem_request, 0, 1);
 static K_SEM_DEFINE(sem_busy, 1, 1);
 
-static K_THREAD_STACK_DEFINE(rx_stack, 448);
-static struct k_thread rx_thread_data;
+static K_THREAD_STACK_DEFINE(spi_rx_stack, 256);
+static struct k_thread spi_rx_thread_data;
 
 #if defined(CONFIG_BT_DEBUG_HCI_DRIVER)
 #include <misc/printk.h>
@@ -194,10 +194,10 @@ static void bt_spi_handle_vendor_evt(u8_t *rxmsg)
  */
 static int configure_cs(void)
 {
-	cs_dev = device_get_binding(DT_INST_0_ZEPHYR_BT_HCI_SPI_CS_GPIO_CONTROLLER);
+	cs_dev = device_get_binding(DT_INST_0_ZEPHYR_BT_HCI_SPI_CS_GPIOS_CONTROLLER);
 	if (!cs_dev) {
 		BT_ERR("Failed to initialize GPIO driver: %s",
-		       DT_INST_0_ZEPHYR_BT_HCI_SPI_CS_GPIO_CONTROLLER);
+		       DT_INST_0_ZEPHYR_BT_HCI_SPI_CS_GPIOS_CONTROLLER);
 		return -EIO;
 	}
 
@@ -254,10 +254,10 @@ static int configure_cs(void)
 
 	spi_conf_cs.gpio_pin = GPIO_CS_PIN,
 	spi_conf_cs.gpio_dev = device_get_binding(
-		DT_INST_0_ZEPHYR_BT_HCI_SPI_CS_GPIO_CONTROLLER);
+		DT_INST_0_ZEPHYR_BT_HCI_SPI_CS_GPIOS_CONTROLLER);
 	if (!spi_conf_cs.gpio_dev) {
 		BT_ERR("Failed to initialize GPIO driver: %s",
-		       DT_INST_0_ZEPHYR_BT_HCI_SPI_CS_GPIO_CONTROLLER);
+		       DT_INST_0_ZEPHYR_BT_HCI_SPI_CS_GPIOS_CONTROLLER);
 		return -EIO;
 	}
 
@@ -465,7 +465,7 @@ static int bt_spi_send(struct net_buf *buf)
 	 * Since a RESET has been requested, the chip will now restart.
 	 * Unfortunately the BlueNRG will reply with "reset received" but
 	 * since it does not send back a NOP, we have no way to tell when the
-	 * RESET has actually taken palce.  Instead, we use the vendor command
+	 * RESET has actually taken place.  Instead, we use the vendor command
 	 * EVT_BLUE_INITIALIZED as an indication that it is safe to proceed.
 	 */
 	if (bt_spi_get_cmd(buf->data) == BT_HCI_OP_RESET) {
@@ -504,10 +504,10 @@ static int bt_spi_open(void)
 	}
 
 	/* Start RX thread */
-	k_thread_create(&rx_thread_data, rx_stack,
-			K_THREAD_STACK_SIZEOF(rx_stack),
+	k_thread_create(&spi_rx_thread_data, spi_rx_stack,
+			K_THREAD_STACK_SIZEOF(spi_rx_stack),
 			(k_thread_entry_t)bt_spi_rx_thread, NULL, NULL, NULL,
-			K_PRIO_COOP(CONFIG_BT_RX_PRIO),
+			K_PRIO_COOP(CONFIG_BT_RX_PRIO - 1),
 			0, K_NO_WAIT);
 
 	/* Take BLE out of reset */
@@ -545,18 +545,18 @@ static int bt_spi_init(struct device *unused)
 	}
 
 	irq_dev = device_get_binding(
-		DT_INST_0_ZEPHYR_BT_HCI_SPI_IRQ_GPIO_CONTROLLER);
+		DT_INST_0_ZEPHYR_BT_HCI_SPI_IRQ_GPIOS_CONTROLLER);
 	if (!irq_dev) {
 		BT_ERR("Failed to initialize GPIO driver: %s",
-		       DT_INST_0_ZEPHYR_BT_HCI_SPI_IRQ_GPIO_CONTROLLER);
+		       DT_INST_0_ZEPHYR_BT_HCI_SPI_IRQ_GPIOS_CONTROLLER);
 		return -EIO;
 	}
 
 	rst_dev = device_get_binding(
-		DT_INST_0_ZEPHYR_BT_HCI_SPI_RESET_GPIO_CONTROLLER);
+		DT_INST_0_ZEPHYR_BT_HCI_SPI_RESET_GPIOS_CONTROLLER);
 	if (!rst_dev) {
 		BT_ERR("Failed to initialize GPIO driver: %s",
-		       DT_INST_0_ZEPHYR_BT_HCI_SPI_RESET_GPIO_CONTROLLER);
+		       DT_INST_0_ZEPHYR_BT_HCI_SPI_RESET_GPIOS_CONTROLLER);
 		return -EIO;
 	}
 

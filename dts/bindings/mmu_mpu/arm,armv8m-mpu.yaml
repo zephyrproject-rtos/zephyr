@@ -1,4 +1,4 @@
----
+
 title: ARMv8-M Memory Protection Unit
 version: 0.1
 
@@ -20,5 +20,3 @@ properties:
       type: int
       description: number of MPU regions supported by hardware
       generation: define
-
-...

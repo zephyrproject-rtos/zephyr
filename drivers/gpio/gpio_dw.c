@@ -23,7 +23,7 @@
 #endif
 
 #ifdef CONFIG_IOAPIC
-#include <drivers/ioapic.h>
+#include <drivers/interrupt_controller/ioapic.h>
 #endif
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
@@ -387,7 +387,7 @@ static int gpio_dw_device_ctrl(struct device *port, u32_t ctrl_command,
 #define gpio_dw_set_power_state(...)
 #endif
 
-#if defined(CONFIG_SOC_QUARK_SE_C1000) || defined(CONFIG_SOC_QUARK_D2000)
+#if defined(CONFIG_SOC_QUARK_SE_C1000)
 static inline void gpio_dw_unmask_int(u32_t mask_addr)
 {
 	sys_write32(sys_read32(mask_addr) & INT_UNMASK_IA, mask_addr);

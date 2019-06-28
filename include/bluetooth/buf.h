@@ -35,7 +35,7 @@ enum bt_buf_type {
 };
 
 /** Minimum amount of user data size for buffers passed to the stack. */
-#define BT_BUF_USER_DATA_MIN 4
+#define BT_BUF_USER_DATA_MIN 8
 
 /** Data size neeed for HCI RX buffers */
 #define BT_BUF_RX_SIZE (CONFIG_BT_HCI_RESERVE + CONFIG_BT_RX_BUF_LEN)

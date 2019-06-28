@@ -1308,7 +1308,6 @@ void ull_conn_lll_tx_flush(void *param)
 	link = memq_dequeue(lll->memq_tx.tail, &lll->memq_tx.head,
 			    (void **)&tx);
 	while (link) {
-		struct pdu_data *p;
 		struct lll_tx *lll_tx;
 		u8_t idx;
 
@@ -1319,8 +1318,6 @@ void ull_conn_lll_tx_flush(void *param)
 		lll_tx->node = tx;
 		link->next = tx->next;
 		tx->link = link;
-		p = (void *)tx->pdu;
-		p->ll_id = PDU_DATA_LLID_RESV;
 
 		MFIFO_ENQUEUE(conn_ack, idx);
 
@@ -1329,27 +1326,39 @@ void ull_conn_lll_tx_flush(void *param)
 	}
 }
 
-void ull_conn_tx_ack(struct ll_conn *conn, memq_link_t *link,
-		     struct node_tx *tx)
+struct ll_conn *ull_conn_tx_ack(u16_t handle, memq_link_t *link,
+				struct node_tx *tx)
 {
+	struct ll_conn *conn = NULL;
 	struct pdu_data *pdu_tx;
 
 	pdu_tx = (void *)tx->pdu;
 	LL_ASSERT(pdu_tx->len);
 
 	if (pdu_tx->ll_id == PDU_DATA_LLID_CTRL) {
-		ctrl_tx_ack(conn, &tx, pdu_tx);
+		if (handle != 0xFFFF) {
+			conn = ll_conn_get(handle);
+
+			ctrl_tx_ack(conn, &tx, pdu_tx);
+		}
 
 		/* release mem if points to itself */
 		if (link->next == (void *)tx) {
 			mem_release(tx, &mem_conn_tx_ctrl.free);
-			return;
+
+			return conn;
 		} else if (!tx) {
-			return;
+			return conn;
 		}
+	} else if (handle != 0xFFFF) {
+		conn = ll_conn_get(handle);
+	} else {
+		pdu_tx->ll_id = PDU_DATA_LLID_RESV;
 	}
 
-	ll_tx_ack_put(conn->lll.handle, tx);
+	ll_tx_ack_put(handle, tx);
+
+	return conn;
 }
 
 u8_t ull_conn_llcp_req(void *conn)
@@ -1528,7 +1537,7 @@ static void ctrl_tx_enqueue(struct ll_conn *conn, struct node_tx *tx)
 		 * by peer, hence place this new ctrl after head
 		 */
 
-		/* if data transmited once, keep it at head of the tx list,
+		/* if data transmitted once, keep it at head of the tx list,
 		 * as we will insert a ctrl after it, hence advance the
 		 * data pointer
 		 */
@@ -1564,7 +1573,7 @@ static void ctrl_tx_enqueue(struct ll_conn *conn, struct node_tx *tx)
 	}
 
 	/* Update last pointer if ctrl added at end of tx list */
-	if (tx->next == 0) {
+	if (!tx->next) {
 		conn->tx_data_last = tx;
 	}
 }

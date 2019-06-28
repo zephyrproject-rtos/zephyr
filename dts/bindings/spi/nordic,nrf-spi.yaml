@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: BSD-5-Clause-Nordic
 #
----
+
 title: Nordic nRF Family SPI Master node
 version: 0.1
 
@@ -40,4 +40,3 @@ properties:
       category: required
       description: MISO pin
       generation: define
-...

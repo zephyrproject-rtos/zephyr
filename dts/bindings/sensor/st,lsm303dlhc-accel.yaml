@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
----
+
 title: STMicroelectronics MEMS sensors LSM303DLHC
 version: 0.1
 
@@ -16,6 +16,3 @@ inherits:
 properties:
     compatible:
       constraint: "st,lsm303dlhc-accel"
-
-...
-

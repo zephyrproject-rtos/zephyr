@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
----
+
 title: STM32 SPI FIFO
 version: 0.1
 
@@ -23,5 +23,3 @@ properties:
 
     interrupts:
       category: required
-
-...

@@ -58,8 +58,8 @@
 #include <init.h>
 #include <string.h>
 
-#include <drivers/ioapic.h> /* public API declarations */
-#include <drivers/loapic.h> /* public API declarations and registers */
+#include <drivers/interrupt_controller/ioapic.h> /* public API declarations */
+#include <drivers/interrupt_controller/loapic.h> /* public API declarations and registers */
 #include "ioapic_priv.h"
 
 #define BITS_PER_IRQ  3

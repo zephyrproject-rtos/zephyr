@@ -124,6 +124,14 @@ config NET_SOCKETS_CAN
 	help
 	  The value depends on your network needs.
 
+config NET_SOCKETS_CAN_RECEIVERS
+	int "How many simultaneous SocketCAN receivers are allowed"
+	default 1
+	depends on NET_SOCKETS_CAN
+	help
+	  The value tells how many sockets can receive data from same
+	  Socket-CAN interface.
+
 module = NET_SOCKETS
 module-dep = NET_LOG
 module-str = Log level for BSD sockets compatible API calls

@@ -7,7 +7,7 @@
 #include <kernel.h>
 #include <arch/cpu.h>
 #include <device.h>
-#include <system_timer.h>
+#include <drivers/timer/system_timer.h>
 #include <altera_common.h>
 
 #include "altera_avalon_timer_regs.h"

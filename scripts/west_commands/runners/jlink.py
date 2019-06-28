@@ -7,11 +7,9 @@
 import argparse
 import os
 import shlex
-import shutil
 import sys
 import tempfile
 
-from west import log
 from runners.core import ZephyrBinaryRunner, RunnerCaps, \
     BuildConfiguration
 
@@ -105,11 +103,8 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                                  tui=args.tui, tool_opt=args.tool_opt)
 
     def print_gdbserver_message(self):
-        log.inf('J-Link GDB server running on port {}'.format(self.gdb_port))
-
-    def check_cmd(self, cmd):
-        if shutil.which(cmd) is None:
-            log.die('{} is not installed or cannot be found'.format(cmd))
+        self.logger.info('J-Link GDB server running on port {}'.
+                         format(self.gdb_port))
 
     def do_run(self, command, **kwargs):
         server_cmd = ([self.gdbserver] +
@@ -125,11 +120,11 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
         if command == 'flash':
             self.flash(**kwargs)
         elif command == 'debugserver':
-            self.check_cmd(self.gdbserver)
+            self.require(self.gdbserver)
             self.print_gdbserver_message()
             self.check_call(server_cmd)
         else:
-            self.check_cmd(self.gdbserver)
+            self.require(self.gdbserver)
             if self.gdb_cmd is None:
                 raise ValueError('Cannot debug; gdb is missing')
             if self.elf_name is None:
@@ -149,7 +144,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
             self.run_server_and_client(server_cmd, client_cmd)
 
     def flash(self, **kwargs):
-        self.check_cmd(self.commander)
+        self.require(self.commander)
         if self.bin_name is None:
             raise ValueError('Cannot flash; bin_name is missing')
 
@@ -166,8 +161,8 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
         lines.append('g') # Start the CPU
         lines.append('q') # Close the connection and quit
 
-        log.dbg('JLink commander script:')
-        log.dbg('\n'.join(lines))
+        self.logger.debug('JLink commander script:')
+        self.logger.debug('\n'.join(lines))
 
         # Don't use NamedTemporaryFile: the resulting file can't be
         # opened again on Windows.
@@ -183,5 +178,5 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                     '-CommanderScript', fname] +
                    self.tool_opt)
 
-            log.inf('Flashing Target Device')
+            self.logger.info('Flashing Target Device')
             self.check_call(cmd)

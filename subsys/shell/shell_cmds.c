@@ -288,8 +288,8 @@ static int cmd_help(const struct shell *shell, size_t argc, char **argv)
 	shell_print(shell,
 		"Shell supports following meta-keys:\n"
 		"Ctrl+a, Ctrl+b, Ctrl+c, Ctrl+d, Ctrl+e, Ctrl+f, Ctrl+k,"
-		" Ctrl+l, Ctrl+u, Ctrl+w\nAlt+b, Alt+f.\nPlease refer to"
-		" shell documentation for more details.");
+		" Ctrl+l, Ctrl+n, Ctrl+p, Ctrl+u, Ctrl+w\nAlt+b, Alt+f.\n"
+		"Please refer to shell documentation for more details.");
 #endif
 
 	return 0;

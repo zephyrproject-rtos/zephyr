@@ -123,7 +123,7 @@ Run built sample with:
 
 .. code-block:: console
 
-   $ make run
+   make -Cbuild run
 
 In a terminal window, run the following command to list USB devices:
 

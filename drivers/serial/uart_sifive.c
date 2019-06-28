@@ -219,7 +219,7 @@ static int uart_sifive_irq_tx_complete(struct device *dev)
 	volatile struct uart_sifive_regs_t *uart = DEV_UART(dev);
 
 	/*
-	 * No TX EMTPY flag for this controller,
+	 * No TX EMPTY flag for this controller,
 	 * just check if TX FIFO is not full
 	 */
 	return !(uart->tx & TXDATA_FULL);

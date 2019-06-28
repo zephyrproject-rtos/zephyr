@@ -32,7 +32,7 @@ SECTION_FUNC(exception.other, __soc_handle_irq)
 
 /*
  * __soc_is_irq is defined as .weak to allow re-implementation by
- * SOCs that does not truely follow the riscv privilege specification.
+ * SOCs that does not truly follow the riscv privilege specification.
  */
 WTEXT(__soc_is_irq)
 

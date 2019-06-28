@@ -312,7 +312,7 @@ int settings_line_val_read(off_t val_off, off_t off, char *out, size_t len_req,
 			return rc;
 		}
 
-		enc_buf[read_size] = 0; /* breaking guaranted */
+		enc_buf[read_size] = 0; /* breaking guaranteed */
 		read_size = strlen(enc_buf);
 
 		if (read_size == 0 || read_size % 4) {
@@ -396,7 +396,7 @@ size_t settings_line_val_get_len(off_t val_off, void *read_cb_ctx)
 
 /**
  * @param line_loc offset of the settings line, expect that it is aligned to rbs physically.
- * @param seek offset form the line begining.
+ * @param seek offset form the line beginning.
  * @retval 0 : read proper name
  * 1 : when read unproper name
  * -ERCODE for storage errors
@@ -487,7 +487,7 @@ static int settings_line_cmp(char const *val, size_t val_len,
 	return rc;
 }
 
-void settings_line_dup_check_cb(char *name, void *val_read_cb_ctx,
+void settings_line_dup_check_cb(const char *name, void *val_read_cb_ctx,
 				off_t off, void *cb_arg)
 {
 	struct settings_line_dup_check_arg *cdca;
@@ -530,17 +530,20 @@ static ssize_t settings_line_read_cb(void *cb_arg, void *data, size_t len)
 	return -1;
 }
 
-void settings_line_load_cb(char *name, void *val_read_cb_ctx, off_t off,
+void settings_line_load_cb(const char *name, void *val_read_cb_ctx, off_t off,
 			   void *cb_arg)
 {
-	int name_argc;
-	char *name_argv[SETTINGS_MAX_DIR_DEPTH];
-	struct settings_handler *ch;
+	const char *name_key;
+	struct settings_handler_static *ch;
 	struct settings_line_read_value_cb_ctx value_ctx;
 	int rc;
 	size_t len;
 
-	ch = settings_parse_and_lookup(name, &name_argc, name_argv);
+	if (cb_arg && !settings_name_steq(name, cb_arg, NULL)) {
+		return;
+	}
+
+	ch = settings_parse_and_lookup(name, &name_key);
 	if (!ch) {
 		return;
 	}
@@ -550,7 +553,7 @@ void settings_line_load_cb(char *name, void *val_read_cb_ctx, off_t off,
 
 	len = settings_line_val_get_len(off, val_read_cb_ctx);
 
-	rc = ch->h_set(name_argc - 1, &name_argv[1], len, settings_line_read_cb,
+	rc = ch->h_set(name_key, len, settings_line_read_cb,
 		       (void *)&value_ctx);
 
 	if (rc != 0) {

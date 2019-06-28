@@ -13,12 +13,9 @@ menuconfig COUNTER
 
 if COUNTER
 
-config COUNTER_LOG_LEVEL
-	int "Counter log level"
-	default 0
-	range 0 4
-	help
-	  Counter logging level.
+module = COUNTER
+module-str = counter
+source "subsys/logging/Kconfig.template.log_config"
 
 source "drivers/counter/Kconfig.gecko"
 
@@ -37,5 +34,7 @@ source "drivers/counter/Kconfig.imx_epit"
 source "drivers/counter/Kconfig.stm32_rtc"
 
 source "drivers/counter/Kconfig.sam0"
+
+source "drivers/counter/Kconfig.cmos"
 
 endif # COUNTER

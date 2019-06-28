@@ -1,4 +1,4 @@
----
+
 title: Kinetis GPIO
 version: 0.1
 
@@ -24,4 +24,3 @@ properties:
 "#cells":
   - pin
   - flags
-...

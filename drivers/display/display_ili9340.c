@@ -24,7 +24,7 @@ struct ili9340_data {
 	struct device *command_data_gpio;
 	struct device *spi_dev;
 	struct spi_config spi_config;
-#ifdef DT_INST_0_ILITEK_ILI9340_CS_GPIO_CONTROLLER
+#ifdef DT_INST_0_ILITEK_ILI9340_CS_GPIOS_CONTROLLER
 	struct spi_cs_control cs_ctrl;
 #endif
 };
@@ -61,10 +61,10 @@ static int ili9340_init(struct device *dev)
 	data->spi_config.operation = SPI_OP_MODE_MASTER | SPI_WORD_SET(8);
 	data->spi_config.slave = DT_INST_0_ILITEK_ILI9340_BASE_ADDRESS;
 
-#ifdef DT_INST_0_ILITEK_ILI9340_CS_GPIO_CONTROLLER
+#ifdef DT_INST_0_ILITEK_ILI9340_CS_GPIOS_CONTROLLER
 	data->cs_ctrl.gpio_dev =
-		device_get_binding(DT_INST_0_ILITEK_ILI9340_CS_GPIO_CONTROLLER);
-	data->cs_ctrl.gpio_pin = DT_INST_0_ILITEK_ILI9340_CS_GPIO_PIN;
+		device_get_binding(DT_INST_0_ILITEK_ILI9340_CS_GPIOS_CONTROLLER);
+	data->cs_ctrl.gpio_pin = DT_INST_0_ILITEK_ILI9340_CS_GPIOS_PIN;
 	data->cs_ctrl.delay = 0U;
 	data->spi_config.cs = &(data->cs_ctrl);
 #else

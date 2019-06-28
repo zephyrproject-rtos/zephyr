@@ -146,6 +146,11 @@
 	sample-time = <12>;
 };
 
+&can0 {
+	status = "ok";
+	bus-speed = <125000>;
+};
+
 &flash0 {
 	/*
 	 * For more information, see:

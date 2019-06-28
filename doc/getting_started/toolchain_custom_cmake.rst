@@ -28,6 +28,10 @@ variables when generating a build system for a Zephyr application, like so:
 
 .. code-block:: console
 
+   west build ... -- -DZEPHYR_TOOLCHAIN_VARIANT=... -DTOOLCHAIN_ROOT=...
+
+.. code-block:: console
+
    cmake -DZEPHYR_TOOLCHAIN_VARIANT=... -DTOOLCHAIN_ROOT=...
 
 If you do this, ``-C <initial-cache>`` `cmake option`_ may useful. If you save

@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
----
+
 title: CC2520 802.15.4 Wireless Transceiver
 version: 0.1
 
@@ -20,30 +20,29 @@ properties:
     vreg-en-gpios:
       type: compound
       category: optional
-      generation: define, use-prop-name
+      generation: define
 
     reset-gpios:
       type: compound
       category: optional
-      generation: define, use-prop-name
+      generation: define
 
     fifo-gpios:
       type: compound
       category: optional
-      generation: define, use-prop-name
+      generation: define
 
     cca-gpios:
       type: compound
       category: optional
-      generation: define, use-prop-name
+      generation: define
 
     sfd-gpios:
       type: compound
       category: optional
-      generation: define, use-prop-name
+      generation: define
 
     fifop-gpios:
       type: compound
       category: optional
-      generation: define, use-prop-name
-...
+      generation: define

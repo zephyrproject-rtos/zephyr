@@ -63,7 +63,7 @@ void ili9340_lcd_init(struct ili9340_data *data)
 	tx_data[12] = 0x0E;
 	tx_data[13] = 0x09;
 	tx_data[14] = 0x00;
-	ili9340_transmit(data, ILI9340_CMD_POSITVE_GAMMA_CORRECTION, tx_data,
+	ili9340_transmit(data, ILI9340_CMD_POSITIVE_GAMMA_CORRECTION, tx_data,
 			 15);
 
 	tx_data[0] = 0x00;

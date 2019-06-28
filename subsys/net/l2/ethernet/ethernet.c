@@ -19,6 +19,8 @@ LOG_MODULE_REGISTER(net_ethernet, CONFIG_NET_L2_ETHERNET_LOG_LEVEL);
 #include <net/lldp.h>
 #endif
 
+#include <syscall_handler.h>
+
 #include "arp.h"
 #include "eth_stats.h"
 #include "net_private.h"
@@ -598,7 +600,7 @@ static int ethernet_send(struct net_if *iface, struct net_pkt *pkt)
 	}
 
 	/* If the ll dst addr has not been set before, let's assume
-	 * temporarly it's a broadcast one. When filling the header,
+	 * temporarily it's a broadcast one. When filling the header,
 	 * it might detect this should be multicast and act accordingly.
 	 */
 	if (!net_pkt_lladdr_dst(pkt)->addr) {
@@ -965,9 +967,9 @@ void net_eth_carrier_off(struct net_if *iface)
 	handle_carrier(ctx, iface, carrier_off);
 }
 
+#if defined(CONFIG_PTP_CLOCK)
 struct device *net_eth_get_ptp_clock(struct net_if *iface)
 {
-#if defined(CONFIG_PTP_CLOCK)
 	struct device *dev = net_if_get_device(iface);
 	const struct ethernet_api *api = dev->driver_api;
 
@@ -984,10 +986,36 @@ struct device *net_eth_get_ptp_clock(struct net_if *iface)
 	}
 
 	return api->get_ptp_clock(net_if_get_device(iface));
-#else
-	return NULL;
-#endif
 }
+#endif /* CONFIG_PTP_CLOCK */
+
+#if defined(CONFIG_PTP_CLOCK)
+struct device *z_impl_net_eth_get_ptp_clock_by_index(int index)
+{
+	struct net_if *iface;
+
+	iface = net_if_get_by_index(index);
+	if (!iface) {
+		return NULL;
+	}
+
+	return net_eth_get_ptp_clock(iface);
+}
+
+#ifdef CONFIG_USERSPACE
+Z_SYSCALL_HANDLER(net_eth_get_ptp_clock_by_index, index)
+{
+	return (u32_t)z_impl_net_eth_get_ptp_clock_by_index(index);
+}
+#endif /* CONFIG_USERSPACE */
+#else /* CONFIG_PTP_CLOCK */
+struct device *z_impl_net_eth_get_ptp_clock_by_index(int index)
+{
+	ARG_UNUSED(index);
+
+	return NULL;
+}
+#endif /* CONFIG_PTP_CLOCK */
 
 #if defined(CONFIG_NET_GPTP)
 int net_eth_get_ptp_port(struct net_if *iface)

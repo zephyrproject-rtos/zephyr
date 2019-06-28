@@ -1,4 +1,4 @@
----
+
 title: Kinetis UART
 version: 0.1
 
@@ -18,11 +18,6 @@ properties:
     interrupts:
       category: required
 
-    pinctrl-\d+:
-      type: array
-      category: optional
-      description: pinmux information for RX, TX, CTS, RTS
-
     hw-flow-control:
       type: boolean
       category: optional
@@ -34,4 +29,3 @@ properties:
       category: required
       description: Clock gate information
       generation: define
-...

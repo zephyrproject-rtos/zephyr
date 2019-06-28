@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
----
+
 title: I2C Device Base Structure
 version: 0.1
 
@@ -21,4 +21,3 @@ properties:
       category: required
     label:
       category: required
-...

@@ -426,9 +426,13 @@ static inline void l3_init(void)
 
 	net_ipv4_autoconf_init();
 
-#if defined(CONFIG_NET_UDP) || defined(CONFIG_NET_TCP)
-	net_conn_init();
-#endif
+	if (IS_ENABLED(CONFIG_NET_UDP) ||
+	    IS_ENABLED(CONFIG_NET_TCP) ||
+	    IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) ||
+	    IS_ENABLED(CONFIG_NET_SOCKETS_CAN)) {
+		net_conn_init();
+	}
+
 	net_tcp_init();
 
 	net_route_init();

@@ -26,7 +26,7 @@ static inline void timestamp_serialize(void)
 #elif defined(CONFIG_CPU_CORTEX_M)
 static inline void timestamp_serialize(void)
 {
-	/* isb is avaialble in all Cortex-M  */
+	/* isb is available in all Cortex-M  */
 	__asm__ __volatile__ (
 	"isb;\n\t"
 	:

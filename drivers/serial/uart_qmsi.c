@@ -6,8 +6,8 @@
 #include <errno.h>
 
 #include <device.h>
-#if defined(CONFIG_IOAPIC) || defined(CONFIG_MVIC)
-#include <ioapic.h>
+#if defined(CONFIG_IOAPIC)
+#include <drivers/interrupt_controller/ioapic.h>
 #endif
 #include <uart.h>
 #include <power.h>
@@ -380,7 +380,7 @@ static void irq_config_func_0(struct device *dev)
 	ARG_UNUSED(dev);
 
 	IRQ_CONNECT(DT_UART_QMSI_0_IRQ,
-		    CONFIG_UART_QMSI_0_IRQ_PRI, uart_qmsi_isr,
+		    DT_UART_QMSI_0_IRQ_PRI, uart_qmsi_isr,
 		    DEVICE_GET(uart_0), DT_UART_QMSI_0_IRQ_FLAGS);
 	irq_enable(DT_UART_QMSI_0_IRQ);
 	QM_IR_UNMASK_INTERRUPTS(QM_INTERRUPT_ROUTER->uart_0_int_mask);
@@ -393,7 +393,7 @@ static void irq_config_func_1(struct device *dev)
 	ARG_UNUSED(dev);
 
 	IRQ_CONNECT(DT_UART_QMSI_1_IRQ,
-		    CONFIG_UART_QMSI_1_IRQ_PRI, uart_qmsi_isr,
+		    DT_UART_QMSI_1_IRQ_PRI, uart_qmsi_isr,
 		    DEVICE_GET(uart_1), DT_UART_QMSI_1_IRQ_FLAGS);
 	irq_enable(DT_UART_QMSI_1_IRQ);
 	QM_IR_UNMASK_INTERRUPTS(QM_INTERRUPT_ROUTER->uart_1_int_mask);

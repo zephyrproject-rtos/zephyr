@@ -8,7 +8,7 @@
 
 #include <device.h>
 #include <i2c.h>
-#include <ioapic.h>
+#include <drivers/interrupt_controller/ioapic.h>
 #include <power.h>
 
 #include "qm_i2c.h"

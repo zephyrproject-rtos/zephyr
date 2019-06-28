@@ -17,95 +17,194 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(settings, CONFIG_SETTINGS_LOG_LEVEL);
 
+#if defined(CONFIG_SETTINGS_DYNAMIC_HANDLERS)
 sys_slist_t settings_handlers;
+#endif /* CONFIG_SETTINGS_DYNAMIC_HANDLERS */
 
+struct k_mutex settings_lock;
 
-static struct settings_handler *settings_handler_lookup(char *name);
 
 void settings_store_init(void);
 
 void settings_init(void)
 {
+#if defined(CONFIG_SETTINGS_DYNAMIC_HANDLERS)
 	sys_slist_init(&settings_handlers);
+#endif /* CONFIG_SETTINGS_DYNAMIC_HANDLERS */
 	settings_store_init();
 }
 
+#if defined(CONFIG_SETTINGS_DYNAMIC_HANDLERS)
 int settings_register(struct settings_handler *handler)
-{
-	if (settings_handler_lookup(handler->name)) {
-		return -EEXIST;
-	}
-	sys_slist_prepend(&settings_handlers, &handler->node);
-
-	return 0;
-}
-
-/*
- * Find settings_handler based on name.
- */
-static struct settings_handler *settings_handler_lookup(char *name)
-{
-	struct settings_handler *ch;
-
-	SYS_SLIST_FOR_EACH_CONTAINER(&settings_handlers, ch, node) {
-		if (!strcmp(name, ch->name)) {
-			return ch;
-		}
-	}
-	return NULL;
-}
-
-/*
- * Separate string into argv array.
- */
-int settings_parse_name(char *name, int *name_argc, char *name_argv[])
-{
-	int i = 0;
-
-	while (name) {
-		name_argv[i++] = name;
-
-		while (1) {
-			if (*name == '\0') {
-				name = NULL;
-				break;
-			}
-
-			if (*name == *SETTINGS_NAME_SEPARATOR) {
-				*name = '\0';
-				name++;
-				break;
-			}
-			name++;
-		}
-	}
-
-	*name_argc = i;
-
-	return 0;
-}
-
-struct settings_handler *settings_parse_and_lookup(char *name,
-						   int *name_argc,
-						   char *name_argv[])
 {
 	int rc;
 
-	rc = settings_parse_name(name, name_argc, name_argv);
-	if (rc) {
-		return NULL;
+	k_mutex_lock(&settings_lock, K_FOREVER);
+
+	Z_STRUCT_SECTION_FOREACH(settings_handler_static, ch) {
+		if (strcmp(handler->name, ch->name) == 0) {
+			rc = -EEXIST;
+			goto end;
+		}
 	}
-	return settings_handler_lookup(name_argv[0]);
+
+	struct settings_handler *ch;
+	SYS_SLIST_FOR_EACH_CONTAINER(&settings_handlers, ch, node) {
+		if (strcmp(handler->name, ch->name) == 0) {
+			rc = -EEXIST;
+			goto end;
+		}
+	}
+	sys_slist_append(&settings_handlers, &handler->node);
+	rc = 0;
+end:
+	k_mutex_unlock(&settings_lock);
+	return rc;
+}
+#endif /* CONFIG_SETTINGS_DYNAMIC_HANDLERS */
+
+int settings_name_steq(const char *name, const char *key, const char **next)
+{
+	if (next) {
+		*next = NULL;
+	}
+
+	if ((!name) || (!key)) {
+		return 0;
+	}
+
+	/* name might come from flash directly, in flash the name would end
+	 * with '=' or '\0' depending how storage is done. Flash reading is
+	 * limited to what can be read
+	 */
+
+	while ((*key != '\0') && (*key == *name) &&
+	       (*name != '\0') && (*name != SETTINGS_NAME_END)) {
+		key++;
+		name++;
+	}
+
+	if (*key != '\0') {
+		return 0;
+	}
+
+	if (*name == SETTINGS_NAME_SEPARATOR) {
+		if (next) {
+			*next = name + 1;
+		}
+		return 1;
+	}
+
+	if ((*name == SETTINGS_NAME_END) || (*name == '\0')) {
+		return 1;
+	}
+
+	return 0;
+}
+
+int settings_name_next(const char *name, const char **next)
+{
+	int rc = 0;
+
+	if (next) {
+		*next = NULL;
+	}
+
+	if (!name) {
+		return 0;
+	}
+
+	/* name might come from flash directly, in flash the name would end
+	 * with '=' or '\0' depending how storage is done. Flash reading is
+	 * limited to what can be read
+	 */
+	while ((*name != '\0') && (*name != SETTINGS_NAME_END) &&
+	       (*name != SETTINGS_NAME_SEPARATOR)) {
+		rc++;
+		name++;
+	}
+
+	if (*name == SETTINGS_NAME_SEPARATOR) {
+		if (next) {
+			*next = name + 1;
+		}
+		return rc;
+	}
+
+	return rc;
+}
+
+struct settings_handler_static *settings_parse_and_lookup(const char *name,
+							const char **next)
+{
+	struct settings_handler_static *bestmatch;
+	const char *tmpnext;
+
+	bestmatch = NULL;
+	if (next) {
+		*next = NULL;
+	}
+
+	Z_STRUCT_SECTION_FOREACH(settings_handler_static, ch) {
+		if (!settings_name_steq(name, ch->name, &tmpnext)) {
+			continue;
+		}
+		if (!bestmatch) {
+			bestmatch = ch;
+			if (next) {
+				*next = tmpnext;
+			}
+			continue;
+		}
+		if (settings_name_steq(ch->name, bestmatch->name, NULL)) {
+			bestmatch = ch;
+			if (next) {
+				*next = tmpnext;
+			}
+		}
+	}
+
+#if defined(CONFIG_SETTINGS_DYNAMIC_HANDLERS)
+	struct settings_handler *ch;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&settings_handlers, ch, node) {
+		if (!settings_name_steq(name, ch->name, &tmpnext)) {
+			continue;
+		}
+		if (!bestmatch) {
+			bestmatch = (struct settings_handler_static *)ch;
+			if (next) {
+				*next = tmpnext;
+			}
+			continue;
+		}
+		if (settings_name_steq(ch->name, bestmatch->name, NULL)) {
+			bestmatch = (struct settings_handler_static *)ch;
+			if (next) {
+				*next = tmpnext;
+			}
+		}
+	}
+#endif /* CONFIG_SETTINGS_DYNAMIC_HANDLERS */
+	return bestmatch;
 }
 
 int settings_commit(void)
 {
-	struct settings_handler *ch;
+	return settings_commit_subtree(NULL);
+}
+
+int settings_commit_subtree(const char *subtree)
+{
 	int rc;
 	int rc2;
 
 	rc = 0;
-	SYS_SLIST_FOR_EACH_CONTAINER(&settings_handlers, ch, node) {
+
+	Z_STRUCT_SECTION_FOREACH(settings_handler_static, ch) {
+		if (subtree && !settings_name_steq(ch->name, subtree, NULL)) {
+			continue;
+		}
 		if (ch->h_commit) {
 			rc2 = ch->h_commit();
 			if (!rc) {
@@ -113,5 +212,21 @@ int settings_commit(void)
 			}
 		}
 	}
+
+#if defined(CONFIG_SETTINGS_DYNAMIC_HANDLERS)
+	struct settings_handler *ch;
+	SYS_SLIST_FOR_EACH_CONTAINER(&settings_handlers, ch, node) {
+		if (subtree && !settings_name_steq(ch->name, subtree, NULL)) {
+			continue;
+		}
+		if (ch->h_commit) {
+			rc2 = ch->h_commit();
+			if (!rc) {
+				rc = rc2;
+			}
+		}
+	}
+#endif /* CONFIG_SETTINGS_DYNAMIC_HANDLERS */
+
 	return rc;
 }

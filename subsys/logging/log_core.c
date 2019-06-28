@@ -51,7 +51,7 @@ struct log_strdup_buf {
 
 static const char *log_strdup_fail_msg = "<log_strdup alloc failed>";
 struct k_mem_slab log_strdup_pool;
-static u8_t __noinit __aligned(sizeof(u32_t))
+static u8_t __noinit __aligned(sizeof(void *))
 		log_strdup_pool_buf[LOG_STRDUP_POOL_BUFFER_SIZE];
 
 static struct log_list_t list;
@@ -125,13 +125,12 @@ static u32_t count_s(const char *str, u32_t nargs)
  */
 static bool is_rodata(const void *addr)
 {
-#if defined(CONFIG_ARM) || defined(CONFIG_ARC) || defined(CONIFG_RISCV32) || \
-	defined(CONFIG_X86)
+#if defined(CONFIG_ARM) || defined(CONFIG_ARC) || defined(CONFIG_X86)
 	extern const char *_image_rodata_start[];
 	extern const char *_image_rodata_end[];
 	#define RO_START _image_rodata_start
 	#define RO_END _image_rodata_end
-#elif defined(CONFIG_NIOS2)
+#elif defined(CONFIG_NIOS2) || defined(CONFIG_RISCV32)
 	extern const char *_image_rom_start[];
 	extern const char *_image_rom_end[];
 	#define RO_START _image_rom_start
@@ -225,7 +224,7 @@ void log_0(const char *str, struct log_msg_ids src_level)
 }
 
 void log_1(const char *str,
-	   u32_t arg0,
+	   log_arg_t arg0,
 	   struct log_msg_ids src_level)
 {
 	struct log_msg *msg = log_msg_create_1(str, arg0);
@@ -237,8 +236,8 @@ void log_1(const char *str,
 }
 
 void log_2(const char *str,
-	   u32_t arg0,
-	   u32_t arg1,
+	   log_arg_t arg0,
+	   log_arg_t arg1,
 	   struct log_msg_ids src_level)
 {
 	struct log_msg *msg = log_msg_create_2(str, arg0, arg1);
@@ -251,9 +250,9 @@ void log_2(const char *str,
 }
 
 void log_3(const char *str,
-	   u32_t arg0,
-	   u32_t arg1,
-	   u32_t arg2,
+	   log_arg_t arg0,
+	   log_arg_t arg1,
+	   log_arg_t arg2,
 	   struct log_msg_ids src_level)
 {
 	struct log_msg *msg = log_msg_create_3(str, arg0, arg1, arg2);
@@ -266,7 +265,7 @@ void log_3(const char *str,
 }
 
 void log_n(const char *str,
-	   u32_t *args,
+	   log_arg_t *args,
 	   u32_t narg,
 	   struct log_msg_ids src_level)
 {
@@ -362,11 +361,11 @@ void log_generic(struct log_msg_ids src_level, const char *fmt, va_list ap)
 			}
 		}
 	} else {
-		u32_t args[LOG_MAX_NARGS];
+		log_arg_t args[LOG_MAX_NARGS];
 		u32_t nargs = count_args(fmt);
 
 		for (int i = 0; i < nargs; i++) {
-			args[i] = va_arg(ap, u32_t);
+			args[i] = va_arg(ap, log_arg_t);
 		}
 
 		log_n(fmt, args, nargs, src_level);
@@ -516,7 +515,7 @@ void log_panic(void)
 		return;
 	}
 
-	/* If panic happend early logger might not be initialized.
+	/* If panic happened early logger might not be initialized.
 	 * Forcing initialization of the logger and auto-starting backends.
 	 */
 	log_init();

@@ -1,4 +1,4 @@
----
+
 title: Holtek HT16K33 LED Driver With Keyscan
 version: 0.1
 
@@ -23,5 +23,3 @@ cell_string: GPIO
 "#cells":
   - pin
   - flags
-
-...

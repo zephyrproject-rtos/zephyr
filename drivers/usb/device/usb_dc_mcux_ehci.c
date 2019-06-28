@@ -12,6 +12,10 @@
 #include "usb_dc_mcux.h"
 #include "usb_device_ehci.h"
 
+#ifdef CONFIG_HAS_MCUX_CACHE
+#include <fsl_cache.h>
+#endif
+
 #define LOG_LEVEL CONFIG_USB_DRIVER_LOG_LEVEL
 #include <logging/log.h>
 LOG_MODULE_REGISTER(usb_dc_mcux_ehci);
@@ -34,6 +38,7 @@ extern void USB_DeviceEhciIsrFunction(void *deviceHandle);
 #define EP_BUF_NUMOF_BLOCKS     ((NUM_OF_EP_MAX + 3) / 4)
 /* The max MPS is 1023 for FS, 1024 for HS. */
 #if defined(CONFIG_NOCACHE_MEMORY)
+#define EP_BUF_NONCACHED
 __nocache K_MEM_POOL_DEFINE(ep_buf_pool, 16, 1024, EP_BUF_NUMOF_BLOCKS, 4);
 #else
 K_MEM_POOL_DEFINE(ep_buf_pool, 16, 1024, EP_BUF_NUMOF_BLOCKS, 4);
@@ -285,6 +290,10 @@ int usb_dc_ep_write(const u8_t ep, const u8_t *const data,
 	for (u32_t n = 0; n < len_to_send; n++) {
 		buffer[n] = data[n];
 	}
+
+#if defined(CONFIG_HAS_MCUX_CACHE) && !defined(EP_BUF_NONCACHED)
+	DCACHE_CleanByRange((uint32_t)buffer, len_to_send);
+#endif
 	s_Device.interface->deviceSend(s_Device.controllerHandle,
 				       ep,
 				       buffer,
@@ -376,6 +385,11 @@ int usb_dc_ep_read_continue(u8_t ep)
 {
 	/* select the index of the next endpoint buffer */
 	u8_t ep_abs_idx = EP_ABS_IDX(ep);
+
+	if (s_Device.eps[ep_abs_idx].ep_occupied) {
+		LOG_WRN("endpoint 0x%x already occupied", ep);
+		return -EBUSY;
+	}
 
 	if (EP_ADDR2IDX(ep) == USB_ENDPOINT_CONTROL) {
 		if (s_Device.setupDataStage == SETUP_DATA_STAGE_DONE) {
@@ -518,6 +532,12 @@ void USB_DeviceNotificationTrigger(void *handle, void *msg)
 			}
 		}
 		if (s_Device.eps[ep_abs_idx].callback) {
+#if defined(CONFIG_HAS_MCUX_CACHE) && !defined(EP_BUF_NONCACHED)
+			if (message->length) {
+				DCACHE_InvalidateByRange((uint32_t)message->buffer,
+							 message->length);
+			}
+#endif
 			s_Device.eps[ep_abs_idx].callback(message->code,
 							  ep_packet_type);
 		}

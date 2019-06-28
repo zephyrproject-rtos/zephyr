@@ -78,6 +78,8 @@ features:
 +-----------+------------+-------------------------------------+
 | ADC       | on-chip    | adc                                 |
 +-----------+------------+-------------------------------------+
+| CAN       | on-chip    | can                                 |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 ``boards/arm/twr_ke18f/twr_ke18f_defconfig``.
@@ -155,11 +157,12 @@ path.
 Follow the instructions in :ref:`opensda-jlink-onboard-debug-probe` to program
 the `OpenSDA J-Link Firmware for TWR-KE18F`_.
 
-Add the argument ``-DOPENSDA_FW=jlink`` when you invoke ``cmake`` or ``west
-build`` to override the default runner from pyOCD to J-Link:
+Add the argument ``-DOPENSDA_FW=jlink`` when you invoke ``west build`` or
+``cmake`` to override the default runner from pyOCD to J-Link:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
+   :tool: all
    :board: twr_ke18f
    :gen-args: -DOPENSDA_FW=jlink
    :goals: build

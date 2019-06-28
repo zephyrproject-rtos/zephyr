@@ -1,0 +1,8 @@
+# Kconfig - counter driver for x86 "CMOS" clock
+#
+# Copyright (c) 2019 Intel Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+config COUNTER_CMOS
+	bool "Counter driver for x86 CMOS/RTC clock"
+	depends on X86

@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
----
+
 title: u-blox SARA-R4 modem
 version: 0.1
 
@@ -23,10 +23,9 @@ properties:
     mdm-power-gpios:
       type: compound
       category: required
-      generation: define, use-prop-name
+      generation: define
 
     mdm-reset-gpios:
       type: compound
       category: required
-      generation: define, use-prop-name
-...
+      generation: define

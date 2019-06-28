@@ -245,7 +245,7 @@ class PageMode_PAE:
 
             # In-case the start address aligns with a page table entry other
             # than zero and the mem_size is greater than (1024*4096) i.e 4MB
-            # in case where it overflows the currenty PDE's range then limit the
+            # in case where it overflows the current PDE's range then limit the
             # PTE to 1024 and so make the mem_size reflect the actual size
             # taken up in the current PDE
             if (size + (pte_valid_addr_start * 4096)) >= \
@@ -277,7 +277,7 @@ class PageMode_PAE:
 
             # create all the extra PDEs needed to fit the requested size
             # this loop starts from the current pde till the last pde that is
-            # needed the last pde is calcualted as the (start_addr + size) >>
+            # needed the last pde is calculated as the (start_addr + size) >>
             # 22
             if overflow_size != 0:
                 for extra_pdpte in range(pdpte_index,
@@ -488,7 +488,7 @@ def read_mmu_list(mmu_list_data):
                             other_addr, other_end_addr))
                 sys.exit(2)
 
-        # add the retrived info another list
+        # add the retrieved info another list
         regions.append((addr, size, flags))
 
     return (pd_start_addr, regions)

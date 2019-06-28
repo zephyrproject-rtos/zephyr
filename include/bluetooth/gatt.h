@@ -245,6 +245,8 @@ struct bt_gatt_include {
 struct bt_gatt_chrc {
 	/** Characteristic UUID. */
 	const struct bt_uuid	*uuid;
+	/** Characteristic Value handle. */
+	u16_t			value_handle;
 	/** Characteristic properties. */
 	u8_t			properties;
 };
@@ -383,6 +385,16 @@ static inline void bt_gatt_foreach_attr(u16_t start_handle, u16_t end_handle,
  *  @return The next attribute or NULL if it cannot be found.
  */
 struct bt_gatt_attr *bt_gatt_attr_next(const struct bt_gatt_attr *attr);
+
+/** @brief Get the handle of the characteristic value descriptor.
+ *
+ * @param attr A Characteristic Attribute
+ *
+ * @return the handle of the corresponding Characteristic Value.  The
+ * value will be zero (the invalid handle) if @p attr was not a
+ * characteristic attribute.
+ */
+uint16_t bt_gatt_attr_value_handle(const struct bt_gatt_attr *attr);
 
 /** @brief Generic Read Attribute value helper.
  *
@@ -536,7 +548,8 @@ ssize_t bt_gatt_attr_read_chrc(struct bt_conn *conn,
 	BT_GATT_ATTRIBUTE(BT_UUID_GATT_CHRC, BT_GATT_PERM_READ,		\
 			  bt_gatt_attr_read_chrc, NULL,			\
 			  (&(struct bt_gatt_chrc) { .uuid = _uuid,	\
-						   .properties = _props, })), \
+						    .value_handle = 0U, \
+						    .properties = _props, })), \
 	BT_GATT_ATTRIBUTE(_uuid, _perm, _read, _write, _value)
 
 #define BT_GATT_CCC_MAX (CONFIG_BT_MAX_PAIRED + CONFIG_BT_MAX_CONN)

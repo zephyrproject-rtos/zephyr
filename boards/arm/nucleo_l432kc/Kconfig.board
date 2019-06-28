@@ -8,4 +8,4 @@
 
 config BOARD_NUCLEO_L432KC
 	bool "Nucleo L432KC Development Board"
-	depends on SOC_STM32L432XC
+	depends on SOC_STM32L432XX

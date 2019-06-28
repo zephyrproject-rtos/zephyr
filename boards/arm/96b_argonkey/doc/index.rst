@@ -125,7 +125,7 @@ I2C
 - I2C3_SCL  : PB4
 
 I2C3 goes to the P2 connector and can be used to attach external sensors.
-It goes to 100kbit maximum.
+It goes to 100Kbit maximum.
 
 SPI
 ---

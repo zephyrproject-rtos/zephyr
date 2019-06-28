@@ -9,12 +9,12 @@
 #
 
 # Include these first so that any properties (e.g. defaults) below can be
-# overriden (by defining symbols in multiple locations)
+# overridden (by defining symbols in multiple locations)
 
 # Note: $ARCH might be a glob pattern
 source "$(ARCH_DIR)/$(ARCH)/Kconfig"
 
-choice
+choice ARCH_CHOICE
 	prompt "Architecture"
 	default X86
 
@@ -92,7 +92,7 @@ config 64BIT
 	  soc/**/Kconfig, or boards/**/Kconfig and the user should generally
 	  avoid modifying it.
 
-if ARC || ARM || NIOS2 || X86
+if ARC || ARM || NIOS2 || X86 || X86_64
 
 config SRAM_SIZE
 	int "SRAM Size in kB"
@@ -126,7 +126,7 @@ config FLASH_BASE_ADDRESS
 	  normally set by the board's defconfig file and the user should generally
 	  avoid modifying it via the menu configuration.
 
-endif # ARM || ARC || NIOS2 || X86
+endif # ARM || ARC || NIOS2 || X86 || X86_64
 
 if ARCH_HAS_TRUSTED_EXECUTION
 

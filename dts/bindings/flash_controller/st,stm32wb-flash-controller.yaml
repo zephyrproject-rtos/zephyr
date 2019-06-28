@@ -1,4 +1,4 @@
----
+
 title: STM32 WB Flash Controller
 version: 0.1
 
@@ -23,4 +23,3 @@ properties:
       description: dual-bank mode enabled (page erase 2048k)
       generation: define
       category: optional
-...

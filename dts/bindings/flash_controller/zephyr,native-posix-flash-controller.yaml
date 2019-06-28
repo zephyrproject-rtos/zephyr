@@ -1,4 +1,4 @@
----
+
 title: Native POSIX Flash Controller
 version: 0.1
 
@@ -12,5 +12,3 @@ inherits:
 properties:
     compatible:
       constraint: "zephyr,native-posix-flash-controller"
-
-...

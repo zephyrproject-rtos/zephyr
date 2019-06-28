@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
----
+
 title: Colorway LPD8803 SPI LED strip
 version: 0.1
 
@@ -15,4 +15,3 @@ inherits:
 properties:
     compatible:
       constraint: "colorway,lpd8803"
-...

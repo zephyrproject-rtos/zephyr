@@ -7,4 +7,4 @@
 
 config BOARD_NUCLEO_L073RZ
 	bool "NUCLEO-64 L073RZ Development Board"
-	depends on SOC_STM32L073XZ
+	depends on SOC_STM32L073XX

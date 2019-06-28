@@ -1,4 +1,4 @@
----
+
 title: STM32 F3 Flash Controller
 version: 0.1
 
@@ -11,5 +11,3 @@ inherits:
 properties:
     compatible:
       constraint: "st,stm32f3-flash-controller"
-
-...

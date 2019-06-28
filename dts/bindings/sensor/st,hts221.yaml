@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
----
+
 title: STMicroelectronics MEMS sensors HTS221
 version: 0.1
 
@@ -22,6 +22,4 @@ properties:
       type: compound
       category: optional
       description: DRDY pin
-      generation: define, use-prop-name
-
-...
+      generation: define

@@ -17,7 +17,7 @@
 #define NUM_OF_MSGS (CONFIG_LOG_BUFFER_SIZE / MSG_SIZE)
 
 struct k_mem_slab log_msg_pool;
-static u8_t __noinit __aligned(sizeof(u32_t))
+static u8_t __noinit __aligned(sizeof(void *))
 		log_msg_pool_buf[CONFIG_LOG_BUFFER_SIZE];
 
 void log_msg_pool_init(void)
@@ -99,7 +99,7 @@ u32_t log_msg_nargs_get(struct log_msg *msg)
 	return msg->hdr.params.std.nargs;
 }
 
-static u32_t cont_arg_get(struct log_msg *msg, u32_t arg_idx)
+static log_arg_t cont_arg_get(struct log_msg *msg, u32_t arg_idx)
 {
 	struct log_msg_cont *cont;
 
@@ -119,9 +119,9 @@ static u32_t cont_arg_get(struct log_msg *msg, u32_t arg_idx)
 	return cont->payload.args[arg_idx];
 }
 
-u32_t log_msg_arg_get(struct log_msg *msg, u32_t arg_idx)
+log_arg_t log_msg_arg_get(struct log_msg *msg, u32_t arg_idx)
 {
-	u32_t arg;
+	log_arg_t arg;
 
 	/* Return early if requested argument not present in the message. */
 	if (arg_idx >= msg->hdr.params.std.nargs) {
@@ -186,18 +186,18 @@ static struct log_msg *msg_alloc(u32_t nargs)
 	return msg;
 }
 
-static void copy_args_to_msg(struct  log_msg *msg, u32_t *args, u32_t nargs)
+static void copy_args_to_msg(struct  log_msg *msg, log_arg_t *args, u32_t nargs)
 {
 	struct log_msg_cont *cont = msg->payload.ext.next;
 
 	if (nargs > LOG_MSG_NARGS_SINGLE_CHUNK) {
 		(void)memcpy(msg->payload.ext.data.args, args,
-		       LOG_MSG_NARGS_HEAD_CHUNK * sizeof(u32_t));
+		       LOG_MSG_NARGS_HEAD_CHUNK * sizeof(log_arg_t));
 		nargs -= LOG_MSG_NARGS_HEAD_CHUNK;
 		args += LOG_MSG_NARGS_HEAD_CHUNK;
 	} else {
 		(void)memcpy(msg->payload.single.args, args,
-			     nargs * sizeof(u32_t));
+			     nargs * sizeof(log_arg_t));
 		nargs  = 0U;
 	}
 
@@ -205,14 +205,14 @@ static void copy_args_to_msg(struct  log_msg *msg, u32_t *args, u32_t nargs)
 		u32_t cpy_args = MIN(nargs, ARGS_CONT_MSG);
 
 		(void)memcpy(cont->payload.args, args,
-			     cpy_args * sizeof(u32_t));
+			     cpy_args * sizeof(log_arg_t));
 		nargs -= cpy_args;
 		args += cpy_args;
 		cont = cont->next;
 	}
 }
 
-struct log_msg *log_msg_create_n(const char *str, u32_t *args, u32_t nargs)
+struct log_msg *log_msg_create_n(const char *str, log_arg_t *args, u32_t nargs)
 {
 	__ASSERT_NO_MSG(nargs < LOG_MAX_NARGS);
 

@@ -19,10 +19,6 @@
 #include "hci_core.h"
 #include "settings.h"
 
-/* Linker-defined symbols bound to the bt_settings_handler structs */
-extern const struct bt_settings_handler _bt_settings_start[];
-extern const struct bt_settings_handler _bt_settings_end[];
-
 void bt_settings_encode_key(char *path, size_t path_size, const char *subsys,
 			    bt_addr_le_t *addr, const char *key)
 {
@@ -43,12 +39,12 @@ void bt_settings_encode_key(char *path, size_t path_size, const char *subsys,
 	BT_DBG("Encoded path %s", log_strdup(path));
 }
 
-int bt_settings_decode_key(char *key, bt_addr_le_t *addr)
+int bt_settings_decode_key(const char *key, bt_addr_le_t *addr)
 {
 	bool high;
 	int i;
 
-	if (strlen(key) != 13) {
+	if (settings_name_next(key, NULL) != 13) {
 		return -EINVAL;
 	}
 
@@ -86,24 +82,20 @@ int bt_settings_decode_key(char *key, bt_addr_le_t *addr)
 	return 0;
 }
 
-static int set(int argc, char **argv, size_t len_rd, settings_read_cb read_cb,
+static int set(const char *name, size_t len_rd, settings_read_cb read_cb,
 	       void *cb_arg)
 {
 	ssize_t len;
+	const char *next;
 
-	const struct bt_settings_handler *h;
-
-	for (h = _bt_settings_start; h < _bt_settings_end; h++) {
-		if (!strcmp(argv[0], h->name)) {
-			argc--;
-			argv++;
-
-			return h->set(argc, argv, len_rd, read_cb,
-				      cb_arg);
-		}
+	if (!name) {
+		BT_ERR("Insufficient number of arguments");
+		return -ENOENT;
 	}
 
-	if (!strcmp(argv[0], "id")) {
+	len = settings_name_next(name, &next);
+
+	if (!strncmp(name, "id", len)) {
 		/* Any previously provided identities supersede flash */
 		if (atomic_test_bit(bt_dev.flags, BT_DEV_PRESET_ID)) {
 			BT_WARN("Ignoring identities stored in flash");
@@ -137,7 +129,7 @@ static int set(int argc, char **argv, size_t len_rd, settings_read_cb read_cb,
 	}
 
 #if defined(CONFIG_BT_DEVICE_NAME_DYNAMIC)
-	if (!strcmp(argv[0], "name")) {
+	if (!strncmp(name, "name", len)) {
 		len = read_cb(cb_arg, &bt_dev.name, sizeof(bt_dev.name) - 1);
 		if (len < 0) {
 			BT_ERR("Failed to read device name from storage"
@@ -152,7 +144,7 @@ static int set(int argc, char **argv, size_t len_rd, settings_read_cb read_cb,
 #endif
 
 #if defined(CONFIG_BT_PRIVACY)
-	if (!strcmp(argv[0], "irk")) {
+	if (!strncmp(name, "irk", len)) {
 		len = read_cb(cb_arg, bt_dev.irk, sizeof(bt_dev.irk));
 		if (len < sizeof(bt_dev.irk[0])) {
 			if (len < 0) {
@@ -184,7 +176,7 @@ static int set(int argc, char **argv, size_t len_rd, settings_read_cb read_cb,
 static void save_id(struct k_work *work)
 {
 	int err;
-
+	BT_INFO("Saving ID");
 	err = settings_save_one("bt/id", &bt_dev.id_addr,
 				ID_DATA_LEN(bt_dev.id_addr));
 	if (err) {
@@ -208,8 +200,6 @@ void bt_settings_save_id(void)
 
 static int commit(void)
 {
-	const struct bt_settings_handler *h;
-
 	BT_DBG("");
 
 #if defined(CONFIG_BT_DEVICE_NAME_DYNAMIC)
@@ -231,36 +221,10 @@ static int commit(void)
 		bt_finalize_init();
 	}
 
-	for (h = _bt_settings_start; h < _bt_settings_end; h++) {
-		if (h->commit) {
-			h->commit();
-		}
-	}
-
 	return 0;
 }
 
-static int export(int (*export_func)(const char *name, const void *val,
-				     size_t val_len))
-
-{
-	const struct bt_settings_handler *h;
-
-	for (h = _bt_settings_start; h < _bt_settings_end; h++) {
-		if (h->export) {
-			h->export(export_func);
-		}
-	}
-
-	return 0;
-}
-
-static struct settings_handler bt_settings = {
-	.name = "bt",
-	.h_set = set,
-	.h_commit = commit,
-	.h_export = export,
-};
+SETTINGS_STATIC_HANDLER_DEFINE(bt, "bt", NULL, set, commit, NULL);
 
 int bt_settings_init(void)
 {
@@ -271,12 +235,6 @@ int bt_settings_init(void)
 	err = settings_subsys_init();
 	if (err) {
 		BT_ERR("settings_subsys_init failed (err %d)", err);
-		return err;
-	}
-
-	err = settings_register(&bt_settings);
-	if (err) {
-		BT_ERR("settings_register failed (err %d)", err);
 		return err;
 	}
 

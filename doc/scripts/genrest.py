@@ -211,7 +211,7 @@ def direct_deps_rst(sc):
     return "Direct dependencies\n" \
            "===================\n\n" \
            "{}\n\n" \
-           "*(Includes any dependencies from if's and menus.)*\n\n" \
+           "*(Includes any dependencies from ifs and menus.)*\n\n" \
            .format(expr_str(sc.direct_dep))
 
 
@@ -228,7 +228,7 @@ def defaults_rst(sc):
           "========\n\n"
 
     if sc.defaults:
-        for value, cond in sc.defaults:
+        for value, cond in sc.orig_defaults:
             rst += "- " + expr_str(value)
             if cond is not sc.kconfig.y:
                 rst += " if " + expr_str(cond)
@@ -289,8 +289,8 @@ def select_imply_rst(sym):
 
             rst += "\n"
 
-    add_select_imply_rst("selected", sym.selects)
-    add_select_imply_rst("implied", sym.implies)
+    add_select_imply_rst("selected", sym.orig_selects)
+    add_select_imply_rst("implied", sym.orig_implies)
 
     return rst
 
@@ -389,7 +389,7 @@ def kconfig_definition_rst(sc):
             rst += "\n\n----"
 
     rst += "\n\n*(The 'depends on' condition includes propagated " \
-           "dependencies from if's and menus.)*"
+           "dependencies from ifs and menus.)*"
 
     return rst
 

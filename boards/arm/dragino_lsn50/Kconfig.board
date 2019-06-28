@@ -7,4 +7,4 @@
 
 config BOARD_DRAGINO_LSN50
 	bool "Dragino LSN50 Sensor Node"
-	depends on SOC_STM32L072XZ
+	depends on SOC_STM32L072XX

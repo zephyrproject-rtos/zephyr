@@ -1,4 +1,4 @@
----
+
 title: STM32 PINMUX
 version: 0.1
 
@@ -18,5 +18,3 @@ properties:
 "#cells":
   - pin
   - function
-
-...

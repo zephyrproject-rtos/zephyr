@@ -88,7 +88,7 @@ void drop_to_user_mode_thread(void *p1, void *p2, void *p3)
 void drop_to_user_mode(void)
 {
 #ifdef SysTick
-	/* Reset the counter so that a interrupt doesn't happen inbetween
+	/* Reset the counter so that a interrupt doesn't happen between
 	 * the benchmark test
 	 */
 	SysTick->VAL = 0;

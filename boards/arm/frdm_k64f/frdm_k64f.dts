@@ -36,6 +36,7 @@
 		sw0 = &user_button_3;
 		sw1 = &user_button_2;
 		eth = &eth;
+		can-0 = &can0;
 	};
 
 	chosen {
@@ -203,4 +204,10 @@ arduino_serial: &uart3 {};
 	ptp {
 		status = "okay";
 	};
+};
+
+
+&can0 {
+	status = "okay";
+	bus-speed = <125000>;
 };

@@ -23,7 +23,7 @@
 #include <misc/util.h>
 
 #ifdef CONFIG_IOAPIC
-#include <drivers/ioapic.h>
+#include <drivers/interrupt_controller/ioapic.h>
 #endif
 
 #include "i2c_dw.h"

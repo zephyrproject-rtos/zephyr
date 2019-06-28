@@ -36,13 +36,18 @@ config CAN_WORKQ_FRAMES_BUF_CNT
 	help
 	  Number of frames in the buffer of a zcan_work.
 
+config CAN_0
+	bool "Enable CAN 0"
+	help
+	  Enable CAN controller 0
+
 config CAN_1
 	bool "Enable CAN 1"
-	default y
 	help
 	  Enable CAN controller 1
 
 source "drivers/can/Kconfig.stm32"
+source "drivers/can/Kconfig.mcux"
 source "drivers/can/Kconfig.mcp2515"
 source "drivers/can/Kconfig.loopback"
 

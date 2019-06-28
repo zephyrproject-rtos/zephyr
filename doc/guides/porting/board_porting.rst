@@ -247,7 +247,7 @@ works like ``if y`` (is always satisfied).
 .. note::
 
     ``range`` properties on ``int`` and ``hex`` symbols work the same way, and
-    can also be added or overriden in :file:`Kconfig.defconfig` files.
+    can also be added or overridden in :file:`Kconfig.defconfig` files.
 
 If you want a symbol to only be user-configurable on some boards, make its base
 definition have no prompt, and then add a prompt to it in the

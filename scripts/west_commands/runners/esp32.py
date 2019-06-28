@@ -6,8 +6,6 @@
 
 from os import path
 
-from west import log
-
 from runners.core import ZephyrBinaryRunner, RunnerCaps
 
 
@@ -78,6 +76,7 @@ class Esp32BinaryRunner(ZephyrBinaryRunner):
             partition_table_bin=args.esp_flash_partition_table)
 
     def do_run(self, command, **kwargs):
+        self.require(self.espidf)
         bin_name = path.splitext(self.elf)[0] + path.extsep + 'bin'
         cmd_convert = [self.espidf, '--chip', 'esp32', 'elf2image', self.elf]
         cmd_flash = [self.espidf, '--chip', 'esp32', '--port', self.device,
@@ -94,8 +93,9 @@ class Esp32BinaryRunner(ZephyrBinaryRunner):
         else:
             cmd_flash.extend(['0x1000', bin_name])
 
-        log.inf("Converting ELF to BIN")
+        self.logger.info("Converting ELF to BIN")
         self.check_call(cmd_convert)
 
-        log.inf("Flashing ESP32 on {} ({}bps)".format(self.device, self.baud))
+        self.logger.info("Flashing ESP32 on {} ({}bps)".
+                         format(self.device, self.baud))
         self.check_call(cmd_flash)

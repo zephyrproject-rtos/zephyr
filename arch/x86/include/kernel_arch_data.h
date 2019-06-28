@@ -98,20 +98,13 @@
 #define IV_INTEL_RESERVED_END 31
 
 /*
- * EFLAGS value to utilize for the initial context:
- *
- *   IF (Interrupt Enable Flag) = 1
- *   IOPL bits			= 0
- *   All other "flags"          = Don't change state
+ * EFLAGS value to utilize for the initial context: IF=1.
  */
 
-#define EFLAGS_INITIAL 0x00000200LLU
-#define EFLAGS_MASK 0x00003200ULL
+#define EFLAGS_INITIAL 0x00000200U
 
 /* Enable paging and write protection */
 #define CR0_PG_WP_ENABLE 0x80010000
-/* Clear the 5th bit in  CR4 */
-#define CR4_PAE_DISABLE 0xFFFFFFEF
 /* Set the 5th bit in  CR4 */
 #define CR4_PAE_ENABLE 0x00000020
 
@@ -123,13 +116,6 @@
 extern void z_x86_thread_entry_wrapper(k_thread_entry_t entry,
 				      void *p1, void *p2, void *p3);
 #endif /* _THREAD_WRAPPER_REQUIRED */
-
-#ifdef DEBUG
-#include <misc/printk.h>
-#define PRINTK(...) printk(__VA_ARGS__)
-#else
-#define PRINTK(...)
-#endif /* DEBUG */
 
 #ifdef __cplusplus
 extern "C" {

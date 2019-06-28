@@ -33,9 +33,9 @@ extern "C" {
  *   - character: \%c
  *   - percent: \%\%
  *
- * Field width (with or without leading zeroes) are supported.
- * Length attributes such as 'h' and 'l' are supported. However,
- * integral values with %lld and %lli are only printed if they fit in 32 bits,
+ * Field width (with or without leading zeroes) is supported.
+ * Length attributes h, hh, l, ll and z are supported. However, integral
+ * values with %lld and %lli are only printed if they fit in a long
  * otherwise 'ERR' is printed. Full 64-bit values may be printed with %llx.
  * Flags and precision attributes are not supported.
  *

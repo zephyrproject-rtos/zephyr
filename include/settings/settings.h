@@ -26,7 +26,8 @@ extern "C" {
 #define SETTINGS_MAX_DIR_DEPTH	8	/* max depth of settings tree */
 #define SETTINGS_MAX_NAME_LEN	(8 * SETTINGS_MAX_DIR_DEPTH)
 #define SETTINGS_MAX_VAL_LEN	256
-#define SETTINGS_NAME_SEPARATOR	"/"
+#define SETTINGS_NAME_SEPARATOR	'/'
+#define SETTINGS_NAME_END '='
 
 /* pleace for settings additions:
  * up to 7 separators, '=', '\0'
@@ -41,32 +42,89 @@ typedef ssize_t (*settings_read_cb)(void *cb_arg, void *data, size_t len);
  * These are registered using a call to @ref settings_register.
  */
 struct settings_handler {
-	sys_snode_t node;
-	/**< Linked list node info for module internal usage. */
 
 	char *name;
 	/**< Name of subtree. */
 
-	int (*h_get)(int argc, char **argv, char *val, int val_len_max);
+	int (*h_get)(const char *key, char *val, int val_len_max);
 	/**< Get values handler of settings items identified by keyword names.
 	 *
 	 * Parameters:
-	 *  - argc - count of item in argv.
-	 *  - argv - array of pointers to keyword names.
-	 *  - val - buffer for a value.
-	 *  - val_len_max - size of that buffer.
+	 *  - key[in] the name with skipped part that was used as name in
+	 *    handler registration
+	 *  - val[out] buffer to receive value.
+	 *  - val_len_max[in] size of that buffer.
 	 */
 
-	int (*h_set)(int argc, char **argv, size_t len,
-		     settings_read_cb read_cb, void *cb_arg);
+	int (*h_set)(const char *key, size_t len, settings_read_cb read_cb,
+		     void *cb_arg);
 	/**< Set value handler of settings items identified by keyword names.
 	 *
 	 * Parameters:
-	 *  - argc - count of item in argv.
-	 *  - argv - array of pointers to keyword names.
-	 *  - len - the size of the data found in the backend.
-	 *  - read_cb - function provided to read the data from the backend.
-	 *  - cb_arg - arguments for the read function provided by the backend.
+	 *  - key[in] the name with skipped part that was used as name in
+	 *    handler registration
+	 *  - len[in] the size of the data found in the backend.
+	 *  - read_cb[in] function provided to read the data from the backend.
+	 *  - cb_arg[in] arguments for the read function provided by the
+	 *    backend.
+	 */
+
+	int (*h_commit)(void);
+	/**< This handler gets called after settings has been loaded in full.
+	 * User might use it to apply setting to the application.
+	 */
+
+	int (*h_export)(int (*export_func)(const char *name, const void *val,
+					   size_t val_len));
+	/**< This gets called to dump all current settings items.
+	 *
+	 * This happens when @ref settings_save tries to save the settings.
+	 * Parameters:
+	 *  - export_func: the pointer to the internal function which appends
+	 *   a single key-value pair to persisted settings. Don't store
+	 *   duplicated value. The name is subtree/key string, val is the string
+	 *   with value.
+	 *
+	 * @remarks The User might limit a implementations of handler to serving
+	 * only one keyword at one call - what will impose limit to get/set
+	 * values using full subtree/key name.
+	 */
+
+	sys_snode_t node;
+	/**< Linked list node info for module internal usage. */
+};
+
+/**
+ * @struct settings_handler_static
+ * Config handlers without the node element, used for static handlers.
+ * These are registered using a call to SETTINGS_REGISTER_STATIC().
+ */
+struct settings_handler_static {
+
+	char *name;
+	/**< Name of subtree. */
+
+	int (*h_get)(const char *key, char *val, int val_len_max);
+	/**< Get values handler of settings items identified by keyword names.
+	 *
+	 * Parameters:
+	 *  - key[in] the name with skipped part that was used as name in
+	 *    handler registration
+	 *  - val[out] buffer to receive value.
+	 *  - val_len_max[in] size of that buffer.
+	 */
+
+	int (*h_set)(const char *key, size_t len, settings_read_cb read_cb,
+		     void *cb_arg);
+	/**< Set value handler of settings items identified by keyword names.
+	 *
+	 * Parameters:
+	 *  - key[in] the name with skipped part that was used as name in
+	 *    handler registration
+	 *  - len[in] the size of the data found in the backend.
+	 *  - read_cb[in] function provided to read the data from the backend.
+	 *  - cb_arg[in] arguments for the read function provided by the
+	 *    backend.
 	 */
 
 	int (*h_commit)(void);
@@ -92,6 +150,31 @@ struct settings_handler {
 };
 
 /**
+ * Define a static handler for settings items
+ *
+ * @param _hname handler name
+ * @param _tree subtree name
+ * @param _get get routine (can be NULL)
+ * @param _set set routine (can be NULL)
+ * @param _commit commit routine (can be NULL)
+ * @param _export export routine (can be NULL)
+ *
+ * This createa a variable _hname prepended by settings_handler_.
+ *
+ */
+
+#define SETTINGS_STATIC_HANDLER_DEFINE(_hname, _tree, _get, _set, _commit,   \
+				       _export)				     \
+	const Z_STRUCT_SECTION_ITERABLE(settings_handler_static,	     \
+					settings_handler_ ## _hname) = {     \
+		.name = _tree,						     \
+		.h_get = _get,						     \
+		.h_set = _set,						     \
+		.h_commit = _commit,					     \
+		.h_export = _export,					     \
+	}
+
+/**
  * Initialization of settings and backend
  *
  * Can be called at application startup.
@@ -103,7 +186,7 @@ struct settings_handler {
 int settings_subsys_init(void);
 
 /**
- * Register a handler for settings items.
+ * Register a handler for settings items stored in RAM.
  *
  * @param cf Structure containing registration info.
  *
@@ -121,8 +204,18 @@ int settings_register(struct settings_handler *cf);
 int settings_load(void);
 
 /**
- * Save currently running serialized items. All serialized items which are different
- * from currently persisted values will be saved.
+ * Load limited set of serialized items from registered persistence sources.
+ * Handlers for serialized item subtrees registered earlier will be called for
+ * encountered values that belong to the subtree.
+ *
+ * @param[in] subtree name of the subtree to be loaded.
+ * @return 0 on success, non-zero on failure.
+ */
+int settings_load_subtree(const char *subtree);
+
+/**
+ * Save currently running serialized items. All serialized items which are
+ * different from currently persisted values will be saved.
  *
  * @return 0 on success, non-zero on failure.
  */
@@ -162,6 +255,16 @@ int settings_delete(const char *name);
 int settings_commit(void);
 
 /**
+ * Call commit for settings handler that belong to subtree.
+ * This should apply all settings which has been set, but not applied yet.
+ *
+ * @param[in] subtree name of the subtree to be committed.
+ *
+ * @return 0 on success, non-zero on failure.
+ */
+int settings_commit_subtree(const char *subtree);
+
+/**
  * @} settings
  */
 
@@ -191,8 +294,9 @@ struct settings_store {
  * Destinations are registered using a call to @ref settings_dst_register.
  */
 struct settings_store_itf {
-	int (*csi_load)(struct settings_store *cs);
-	/**< Loads all values from storage.
+	int (*csi_load)(struct settings_store *cs, const char *subtree);
+	/**< Loads values from storage limited to subtree defined by subtree. If
+	 * subtree = NULL loads all values.
 	 *
 	 * Parameters:
 	 *  - cs - Corresponding backend handler node
@@ -248,15 +352,52 @@ void settings_dst_register(struct settings_store *cs);
 /**
  * Parses a key to an array of elements and locate corresponding module handler.
  *
- * @param name Key in string format
- * @param name_argc Parsed number of elements.
- * @param name_argv Parsed array of elements.
+ * @param[in] name in string format
+ * @param[out] next remaining of name after matched handler
  *
- * @return settings_handler node on success, NULL on failure.
+ * @return settings_handler_static on success, NULL on failure.
  */
-struct settings_handler *settings_parse_and_lookup(char *name, int *name_argc,
-						   char *name_argv[]);
+struct settings_handler_static *settings_parse_and_lookup(const char *name,
+							const char **next);
 
+
+/*
+ * API for const name processing
+ */
+
+/**
+ * Compares the start of name with a key
+ *
+ * @param[in] name in string format
+ * @param[in] key comparison string
+ * @param[out] next pointer to remaining of name, when the remaining part
+ *             starts with a separator the separator is removed from next
+ *
+ * Some examples:
+ * settings_name_steq("bt/btmesh/iv", "b", &next) returns 1, next="t/btmesh/iv"
+ * settings_name_steq("bt/btmesh/iv", "bt", &next) returns 1, next="btmesh/iv"
+ * settings_name_steq("bt/btmesh/iv", "bt/", &next) returns 0, next=NULL
+ * settings_name_steq("bt/btmesh/iv", "bta", &next) returns 0, next=NULL
+ *
+ * REMARK: This routine could be simplified if the settings_handler names
+ * would include a separator at the end.
+ *
+ * @return 0: no match
+ *         1: match, next can be used to check if match is full
+ */
+int settings_name_steq(const char *name, const char *key, const char **next);
+
+/**
+ * determine the number of characters before the first separator
+ *
+ * @param[in] name in string format
+ * @param[out] next pointer to remaining of name (excluding separator)
+ *
+ * @return index of the first separator, in case no separator was found this
+ * is the size of name
+ *
+ */
+int settings_name_next(const char *name, const char **next);
 
 /*
  * API for runtime settings

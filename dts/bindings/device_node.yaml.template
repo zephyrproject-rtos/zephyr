@@ -1,4 +1,3 @@
----
 title: <short description of the node>
 version: 0.1
 
@@ -20,6 +19,21 @@ inherits:
 # parent and child should share same bus-type value.
    bus: <bus-type>
 
+sub-node:
+# Used for cases in which a dts node has children, and the children dont
+# require/specify a 'compatible' property.  The sub-node is effective the
+# binding for the child.
+#
+# Here's an example for a pwm-leds binding in which the child nodes
+# would be required to have 'pwms' properties.
+
+sub-node:
+    properties:
+        pwms:
+          type: compound
+          category: required
+          generation: define
+
 properties:
 
 # A typical property entry looks like this:
@@ -29,10 +43,6 @@ properties:
 #     type: <string | int | boolean | array | uint8-array | string-array | compound>
 #     description: <description of property>
 #     generation: define
-#
-# The 'generation' attribute can be set to 'define, use-prop-name' to use the
-# property name instead of a generic controller name, e.g. *_CS_GPIO_* instead
-# of *_GPIOS_*.
 #
 # The exact value of the 'generation' attribute is ignored otherwise. The
 # output is always #define's.
@@ -70,5 +80,3 @@ properties:
   - cell1    # name of second cell
   - cell2    # name of third cell
   - and so on and so forth
-
-...

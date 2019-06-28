@@ -5,7 +5,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-if SOC_STM32L452XC
+if SOC_STM32L452XX
 
 config SOC
 	string
@@ -25,4 +25,4 @@ config GPIO_STM32_PORTE
 
 endif # GPIO_STM32
 
-endif # SOC_STM32L452XC
+endif # SOC_STM32L452XX

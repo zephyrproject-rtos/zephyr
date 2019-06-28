@@ -7,4 +7,4 @@
 
 config BOARD_NUCLEO_L053R8
 	bool "NUCLEO-64 L053R8 Development Board"
-	depends on SOC_STM32L053X8
+	depends on SOC_STM32L053XX

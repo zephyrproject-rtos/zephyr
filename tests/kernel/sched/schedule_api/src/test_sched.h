@@ -14,8 +14,9 @@
 #define STACK_SIZE (640 + CONFIG_TEST_EXTRA_STACKSIZE)
 
 K_THREAD_STACK_EXTERN(tstack);
-extern k_thread_stack_t
-	tstacks[MAX_NUM_THREAD][K_THREAD_STACK_LEN(STACK_SIZE)];
+extern K_THREAD_STACK_ARRAY_DEFINE(tstacks, MAX_NUM_THREAD, STACK_SIZE);
+extern struct k_thread user_thread;
+extern struct k_sem user_sem;
 
 struct thread_data {
 	k_tid_t tid;
@@ -40,5 +41,7 @@ void test_slice_reset(void);
 void test_slice_scheduling(void);
 void test_priority_scheduling(void);
 void test_wakeup_expired_timer_thread(void);
+void test_user_k_wakeup(void);
+void test_user_k_is_preempt(void);
 
 #endif /* __TEST_SCHED_H__ */

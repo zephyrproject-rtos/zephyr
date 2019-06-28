@@ -170,7 +170,7 @@ static int audio_driver_start_host_streams(void)
 {
 	int ret = 0;
 
-	/* trigger transmision */
+	/* trigger transmission */
 	ret = i2s_trigger(i2s_host_dev, I2S_DIR_TX, I2S_TRIGGER_START);
 	if (ret) {
 		LOG_ERR("I2S TX failed with code %d", ret);
@@ -189,7 +189,7 @@ static int audio_driver_stop_host_streams(void)
 {
 	int ret;
 
-	/* stop transmision */
+	/* stop transmission */
 	ret = i2s_trigger(i2s_host_dev, I2S_DIR_TX, I2S_TRIGGER_STOP);
 	if (ret) {
 		LOG_ERR("I2S TX failed with code %d", ret);
@@ -358,7 +358,7 @@ static void audio_driver_stop_periph_streams(void)
 		LOG_ERR("I2S TX failed with code %d", ret);
 	}
 
-	/* trigger transmision */
+	/* trigger transmission */
 	ret = dmic_trigger(dmic_device, DMIC_TRIGGER_STOP);
 	if (ret) {
 		LOG_ERR("dmic_trigger failed with code %d", ret);

@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
----
+
 title: Atmel SAM Flash Controller
 version: 0.1
 
@@ -22,4 +22,3 @@ properties:
       description: peripheral ID
       generation: define
       category: required
-...

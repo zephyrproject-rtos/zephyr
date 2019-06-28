@@ -12,7 +12,7 @@
 # expect to learn how to build the kernel reading this file.
 
 if(NOT DEFINED ZEPHYR_BINARY_DIR)
-  message(FATAL_ERROR "A user error has occured.
+  message(FATAL_ERROR "A user error has occurred.
 cmake was invoked with '${CMAKE_CURRENT_LIST_DIR}' specified as the source directory,
 but it must be invoked with an application source directory,
 such as '${CMAKE_CURRENT_LIST_DIR}/samples/hello_world'.
@@ -39,10 +39,13 @@ project(Zephyr-Kernel VERSION ${PROJECT_VERSION})
 enable_language(C CXX ASM)
 
 # Verify that the toolchain can compile a dummy file, if it is not we
-# won't be able to test for compatiblity with certain C flags.
+# won't be able to test for compatibility with certain C flags.
 check_c_compiler_flag("" toolchain_is_ok)
 assert(toolchain_is_ok "The toolchain is unable to build a dummy C file. See CMakeError.log.")
 
+# In some cases the "final" things are not used at all and "_prebuilt"
+# is the last station. See "logical_target_for_zephyr_elf" below for
+# details.
 set(CMAKE_EXECUTABLE_SUFFIX .elf)
 set(ZEPHYR_PREBUILT_EXECUTABLE zephyr_prebuilt)
 set(ZEPHYR_FINAL_EXECUTABLE    zephyr_final)
@@ -217,6 +220,9 @@ toolchain_cc_nostdinc()
 # @Intent: Set compiler specific macro inclusion of AUTOCONF_H
 toolchain_cc_imacros(${AUTOCONF_H})
 
+# @Intent: Enforce standard integer type correspondance to match Zephyr usage.
+toolchain_cc_imacros(${ZEPHYR_BASE}/include/toolchain/zephyr_stdint.h)
+
 # @Intent: Set compiler specific flag for bare metal freestanding option
 toolchain_cc_freestanding()
 
@@ -326,7 +332,13 @@ zephyr_cc_option_ifdef(CONFIG_STACK_USAGE            -fstack-usage)
 # application code. This saves some memory, stops leaking user locations
 # in binaries, makes failure logs more deterministic and most
 # importantly makes builds more deterministic
-zephyr_cc_option(-fmacro-prefix-map=${ZEPHYR_BASE}=.)
+
+# If both match then the last one wins. This matters for tests/ and
+# samples/ inside *both* CMAKE_SOURCE_DIR and ZEPHYR_BASE: for them
+# let's strip the shortest prefix.
+zephyr_cc_option(-fmacro-prefix-map=${CMAKE_SOURCE_DIR}=CMAKE_SOURCE_DIR)
+zephyr_cc_option(-fmacro-prefix-map=${ZEPHYR_BASE}=ZEPHYR_BASE)
+# TODO: -fmacro-prefix-map=modules/etc. "build/zephyr_modules.txt" might help.
 
 # TODO: Archiver arguments
 # ar_option(D)
@@ -1057,7 +1069,7 @@ if(CONFIG_USERSPACE)
   add_executable(       app_smem_unaligned_prebuilt misc/empty_file.c)
   toolchain_ld_link_elf(
     TARGET_ELF            app_smem_unaligned_prebuilt
-    OUTPUT_MAP            ${PROJECT_BINARY_DIR}/${KERNEL_MAP_NAME}
+    OUTPUT_MAP            ${PROJECT_BINARY_DIR}/app_smem_unaligned_prebuilt.map
     LIBRARIES_PRE_SCRIPT  ""
     LINKER_SCRIPT         ${PROJECT_BINARY_DIR}/linker_app_smem_unaligned.cmd
     LIBRARIES_POST_SCRIPT ""
@@ -1109,7 +1121,7 @@ if(CONFIG_USERSPACE AND CONFIG_ARM)
   add_executable(       priv_stacks_prebuilt misc/empty_file.c)
   toolchain_ld_link_elf(
     TARGET_ELF            priv_stacks_prebuilt
-    OUTPUT_MAP            ${PROJECT_BINARY_DIR}/${KERNEL_MAP_NAME}
+    OUTPUT_MAP            ${PROJECT_BINARY_DIR}/priv_stacks_prebuilt.map
     LIBRARIES_PRE_SCRIPT  ""
     LINKER_SCRIPT         ${PROJECT_BINARY_DIR}/linker_priv_stacks.cmd
     LIBRARIES_POST_SCRIPT ""
@@ -1123,7 +1135,7 @@ endif()
 add_executable(       ${ZEPHYR_PREBUILT_EXECUTABLE} misc/empty_file.c)
 toolchain_ld_link_elf(
   TARGET_ELF            ${ZEPHYR_PREBUILT_EXECUTABLE}
-  OUTPUT_MAP            ${PROJECT_BINARY_DIR}/${KERNEL_MAP_NAME}
+  OUTPUT_MAP            ${PROJECT_BINARY_DIR}/${ZEPHYR_PREBUILT_EXECUTABLE}.map
   LIBRARIES_PRE_SCRIPT  ""
   LINKER_SCRIPT         ${PROJECT_BINARY_DIR}/linker.cmd
   LIBRARIES_POST_SCRIPT ${PRIV_STACK_LIB}
@@ -1166,7 +1178,7 @@ else()
   add_executable(       ${ZEPHYR_FINAL_EXECUTABLE} misc/empty_file.c ${GKSF})
   toolchain_ld_link_elf(
     TARGET_ELF            ${ZEPHYR_FINAL_EXECUTABLE}
-    OUTPUT_MAP            ${PROJECT_BINARY_DIR}/${KERNEL_MAP_NAME}
+    OUTPUT_MAP            ${PROJECT_BINARY_DIR}/${ZEPHYR_FINAL_EXECUTABLE}.map
     LIBRARIES_PRE_SCRIPT  ${GKOF}
     LINKER_SCRIPT         ${PROJECT_BINARY_DIR}/linker_pass_final.cmd
     LIBRARIES_POST_SCRIPT ""
@@ -1183,7 +1195,7 @@ endif()
 # application to know what the name of the final elf target is.
 set(logical_target_for_zephyr_elf ${logical_target_for_zephyr_elf} PARENT_SCOPE)
 
-# Override the base name of final .elf so:
+# Override the base name of the last, "logical" .elf output (and last .map) so:
 # 1. it doesn't depend on the number of passes above and the
 #    post_build_commands below can always find it no matter which is it;
 # 2. it can be defined in Kconfig
@@ -1191,6 +1203,12 @@ set_target_properties(${logical_target_for_zephyr_elf} PROPERTIES OUTPUT_NAME ${
 
 set(post_build_commands "")
 set(post_build_byproducts "")
+
+list(APPEND
+  post_build_commands
+  COMMAND
+  cmake -E rename ${logical_target_for_zephyr_elf}.map ${KERNEL_MAP_NAME}
+)
 
 if(NOT CONFIG_BUILD_NO_GAP_FILL)
   # Use ';' as separator to get proper space in resulting command.
@@ -1381,6 +1399,7 @@ add_subdirectory(cmake/flash)
 add_subdirectory(cmake/usage)
 add_subdirectory(cmake/reports)
 
+if(NOT CONFIG_TEST)
 if(CONFIG_ASSERT AND (NOT CONFIG_FORCE_NO_ASSERT))
   message(WARNING "
       ------------------------------------------------------------
@@ -1388,6 +1407,7 @@ if(CONFIG_ASSERT AND (NOT CONFIG_FORCE_NO_ASSERT))
       --- The kernel will run more slowly and use more memory  ---
       ------------------------------------------------------------"
   )
+endif()
 endif()
 
 if(CONFIG_BOARD_DEPRECATED)

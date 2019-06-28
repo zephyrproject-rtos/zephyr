@@ -33,7 +33,7 @@ static inline void timestamp_serialize(void)
 #include <arch/arm/cortex_m/cmsis.h>
 static inline void timestamp_serialize(void)
 {
-	/* isb is avaialble in all Cortex-M  */
+	/* isb is available in all Cortex-M  */
 	__ISB();
 }
 #elif defined(CONFIG_CPU_ARCV2)

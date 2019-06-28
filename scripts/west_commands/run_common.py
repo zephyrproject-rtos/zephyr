@@ -6,18 +6,22 @@
 '''
 
 import argparse
-from os import getcwd, path
+import logging
+from os import close, getcwd, path
 from subprocess import CalledProcessError
+import tempfile
 import textwrap
+import traceback
 
 from west import cmake
 from west import log
 from west import util
 from build_helpers import find_build_dir, is_zephyr_build, \
     FIND_BUILD_DIR_DESCRIPTION
-from west.commands import CommandContextError
+from west.commands import CommandError
+from west.configuration import config
 
-from runners import get_runner_cls, ZephyrBinaryRunner
+from runners import get_runner_cls, ZephyrBinaryRunner, MissingProgram
 
 from zephyr_ext_common import cached_runner_config
 
@@ -25,6 +29,46 @@ from zephyr_ext_common import cached_runner_config
 # Don't change this, or output from argparse won't match up.
 INDENT = ' ' * 2
 
+if log.VERBOSE >= log.VERBOSE_NORMAL:
+    # Using level 1 allows sub-DEBUG levels of verbosity. The
+    # west.log module decides whether or not to actually print the
+    # message.
+    #
+    # https://docs.python.org/3.7/library/logging.html#logging-levels.
+    LOG_LEVEL = 1
+else:
+    LOG_LEVEL = logging.INFO
+
+def _banner(msg):
+    log.inf('-- ' + msg, colorize=True)
+
+class WestLogFormatter(logging.Formatter):
+
+    def __init__(self):
+        super().__init__(fmt='%(name)s: %(message)s')
+
+class WestLogHandler(logging.Handler):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.setFormatter(WestLogFormatter())
+        self.setLevel(LOG_LEVEL)
+
+    def emit(self, record):
+        fmt = self.format(record)
+        lvl = record.levelno
+        if lvl > logging.CRITICAL:
+            log.die(fmt)
+        elif lvl >= logging.ERROR:
+            log.err(fmt)
+        elif lvl >= logging.WARNING:
+            log.wrn(fmt)
+        elif lvl >= logging.INFO:
+            _banner(fmt)
+        elif lvl >= logging.DEBUG:
+            log.dbg(fmt)
+        else:
+            log.dbg(fmt, level=log.VERBOSE_EXTREME)
 
 def add_parser_common(parser_adder, command):
     parser = parser_adder.add_parser(
@@ -127,7 +171,9 @@ def _build_dir(args, die_if_none=True):
     if args.build_dir:
         return args.build_dir
 
-    dir = find_build_dir(None)
+    guess = config.get('build', 'guess-dir', fallback='never')
+    guess = True if guess == 'runners' else False
+    dir = find_build_dir(None, guess)
 
     if dir and is_zephyr_build(dir):
         return dir
@@ -143,6 +189,13 @@ def _build_dir(args, die_if_none=True):
     else:
         return None
 
+def dump_traceback():
+    # Save the current exception to a file and return its path.
+    fd, name = tempfile.mkstemp(prefix='west-exc-', suffix='.txt')
+    close(fd)        # traceback has no use for the fd
+    with open(name, 'w') as f:
+        traceback.print_exc(file=f)
+    log.inf("An exception trace has been saved in", name)
 
 def do_run_common(command, args, runner_args, cached_runner_var):
     if args.context:
@@ -153,6 +206,7 @@ def do_run_common(command, args, runner_args, cached_runner_var):
     build_dir = _build_dir(args)
 
     if not args.skip_rebuild:
+        _banner('west {}: rebuilding'.format(command_name))
         try:
             cmake.run_build(build_dir)
         except CalledProcessError:
@@ -182,12 +236,11 @@ def do_run_common(command, args, runner_args, cached_runner_var):
     runner = args.runner or cache.get(cached_runner_var)
 
     if runner is None:
-        raise CommandContextError(textwrap.dedent("""
-        No {} runner available for {}. Please either specify one
-        manually, or check your board's documentation for
-        alternative instructions.""".format(command_name, board)))
+        log.die('No', command_name, 'runner available for board', board,
+                '({} is not in the cache).'.format(cached_runner_var),
+                "Check your board's documentation for instructions.")
 
-    log.inf('Using runner:', runner)
+    _banner('west {}: using runner {}'.format(command_name, runner))
     if runner not in available:
         log.wrn('Runner {} is not configured for use with {}, '
                 'this may not work'.format(runner, board))
@@ -201,9 +254,13 @@ def do_run_common(command, args, runner_args, cached_runner_var):
     # At this point, the common options above are already parsed in
     # 'args', and unrecognized arguments are in 'runner_args'.
     #
+    # - Set up runner logging to delegate to west.
     # - Pull the RunnerConfig out of the cache
     # - Override cached values with applicable command-line options
 
+    logger = logging.getLogger('runners')
+    logger.setLevel(LOG_LEVEL)
+    logger.addHandler(WestLogHandler())
     cfg = cached_runner_config(build_dir, cache)
     _override_config_from_namespace(cfg, args)
 
@@ -229,7 +286,15 @@ def do_run_common(command, args, runner_args, cached_runner_var):
     if unknown:
         log.die('Runner', runner, 'received unknown arguments:', unknown)
     runner = runner_cls.create(cfg, parsed_args)
-    runner.run(command_name)
+    try:
+        runner.run(command_name)
+    except ValueError as ve:
+        log.err(str(ve), fatal=True)
+        dump_traceback()
+        raise CommandError(1)
+    except MissingProgram as e:
+        log.die('required program', e.filename,
+                'not found; install it or add its location to PATH')
 
 
 #
@@ -252,7 +317,7 @@ def _dump_context(command, args, runner_args, cached_runner_var):
     # Load the cache itself, if possible.
     if cache_file is None:
         log.wrn('No build directory (--build-dir) or CMake cache '
-                '(--cache-file) given or found; output will be limited')
+                '(--cmake-cache) given or found; output will be limited')
         cache = None
     else:
         try:

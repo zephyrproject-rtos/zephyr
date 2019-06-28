@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
----
+
 title: TI SimpleLink CC13xx / CC26xx UART
 version: 0.1
 
@@ -34,4 +34,3 @@ properties:
       category: required
       description: RX pin
       generation: define
-...

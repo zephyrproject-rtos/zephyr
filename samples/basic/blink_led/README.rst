@@ -39,8 +39,8 @@ nrf52840_pca10056
 =================
 No special board setup is necessary because there is an on-board LED connected.
 
-Arduino 101 and Quark D2000 CRB
-===============================
+Arduino 101
+===========
 You will need to connect the LED to ground and PWM0 via the shield.
 You may need a current limiting resistor. See your LED datasheet.
 

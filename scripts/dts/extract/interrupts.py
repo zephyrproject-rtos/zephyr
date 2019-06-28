@@ -69,9 +69,26 @@ class DTInterrupts(DTDirective):
                         node_path,
                         lambda alias:
                             '_'.join([str_to_label(alias)] +
-                                     l_cell_prefix + name + l_cell_name),
+                                     l_cell_prefix + l_idx + l_cell_name),
                         full_name,
                         prop_alias)
+
+                    if name:
+                        add_prop_aliases(
+                            node_path,
+                            lambda alias:
+                                '_'.join([str_to_label(alias)] +
+                                         l_cell_prefix + name + l_cell_name),
+                            full_name,
+                            prop_alias)
+                    else:
+                        add_prop_aliases(
+                            node_path,
+                            lambda alias:
+                                '_'.join([str_to_label(alias)] +
+                                         l_cell_prefix + name + l_cell_name),
+                            full_name,
+                            prop_alias, True)
 
             index += 1
             insert_defs(node_path, prop_def, prop_alias)

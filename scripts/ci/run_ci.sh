@@ -15,7 +15,7 @@
 # -b  base branch
 # -r  the remote to rebase on
 #
-# The script can be run locally using for exmaple:
+# The script can be run locally using for example:
 # ./scripts/ci/run_ci.sh -b master -r origin  -l -R <commit range>
 
 set -xe
@@ -290,8 +290,8 @@ if [ -n "$MAIN_CI" ]; then
 	# Run a subset of tests based on matrix size
 	${SANITYCHECK} ${SANITYCHECK_OPTIONS} --load-tests test_file.txt \
 		--subset ${MATRIX}/${MATRIX_BUILDS} || \
-		( sleep 10; ${SANITYCHECK} ${SANITYCHECK_OPTIONS_RETRY} ) || \
-		( sleep 10; ${SANITYCHECK} ${SANITYCHECK_OPTIONS_RETRY_2}; )
+		( sleep 30; ${SANITYCHECK} ${SANITYCHECK_OPTIONS_RETRY} ) || \
+		( sleep 90; ${SANITYCHECK} ${SANITYCHECK_OPTIONS_RETRY_2}; )
 		# sleep 10 to let the host settle down
 
 	# cleanup

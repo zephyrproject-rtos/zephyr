@@ -1,0 +1,43 @@
+/*
+ * Copyright (c) 2019 Intel Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include <xtensa/xtensa.dtsi>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "cadence,tensilica-xtensa-lx6";
+			reg = <0>;
+		};
+
+		cpu@1 {
+			device_type = "cpu";
+			compatible = "cadence,tensilica-xtensa-lx6";
+			reg = <1>;
+		};
+
+	};
+
+	sram0: memory@3ffb0000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0x3FFB0000 0x50000>;
+	};
+
+	soc {
+		uart0: uart@40008fd0 {
+			compatible = "espressif,esp32-uart";
+			reg = <0x40008fd0 0x400>;
+			label = "ROMUART";
+
+			status = "disabled";
+		};
+
+	};
+};

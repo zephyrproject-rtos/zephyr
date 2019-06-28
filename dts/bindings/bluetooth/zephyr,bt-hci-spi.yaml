@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
----
+
 title: Bluetooth module based on Zephyr's Bluetooth HCI SPI driver
 version: 0.1
 
@@ -27,4 +27,3 @@ properties:
       type: compound
       category: required
       generation: define
-...

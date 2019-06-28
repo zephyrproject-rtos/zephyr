@@ -852,11 +852,11 @@ void shell_help(const struct shell *shell);
 
  *
  * @param[in] shell	Pointer to the shell instance.
- *			@rststar
+ *			@rst
  *			It can be NULL when
  *			the :option:`CONFIG_SHELL_BACKEND_DUMMY` option is
  *			enabled.
- *			@endrststar
+ *			@endrst
  * @param[in] cmd	Command to be executed.
  *
  * @returns		Result of the execution

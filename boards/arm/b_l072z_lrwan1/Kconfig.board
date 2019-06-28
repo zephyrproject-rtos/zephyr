@@ -7,4 +7,4 @@
 
 config BOARD_B_L072Z_LRWAN1
 	bool "STMicroelectronics B-L072Z-LRWAN1 Discovery kit"
-	depends on SOC_STM32L072XZ
+	depends on SOC_STM32L072XX

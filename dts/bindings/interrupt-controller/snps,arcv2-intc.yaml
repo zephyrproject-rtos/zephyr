@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
----
+
 title: ARCV2 Interrupt Controller
 version: 0.1
 
@@ -29,4 +29,3 @@ properties:
 "#cells":
   - irq
   - priority
-...

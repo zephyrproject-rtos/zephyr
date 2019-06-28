@@ -125,6 +125,12 @@ software keys you have downloaded from `Tensilica Tools for Sue Creek`_
    follow what the license manager expects or create a dedicated ethernet device
    for this to work.
 
+   On Ubuntu 18.04 LTS, you can install the license key manually with
+
+   .. code-block:: console
+
+      cp sue-creek-SDK-license.dat <path to  SDK>/XtDevTools/install/tools/RF-2016.4-linux/XtensaTools/Tools/lic/license.dat"
+
 After the tool chain is successfully installed, the core build needs to be
 installed as follows
 

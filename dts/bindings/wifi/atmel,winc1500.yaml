@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
----
+
 title: Atmel WINC1500 Wifi module
 version: 0.1
 
@@ -20,16 +20,14 @@ properties:
     irq-gpios:
       type: compound
       category: required
-      generation: define, use-prop-name
+      generation: define
 
     reset-gpios:
       type: compound
       category: required
-      generation: define, use-prop-name
+      generation: define
 
     enable-gpios:
       type: compound
       category: required
-      generation: define, use-prop-name
-
-...
+      generation: define

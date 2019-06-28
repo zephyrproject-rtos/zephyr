@@ -133,20 +133,27 @@ static int mcux_rtc_cancel_alarm(struct device *dev, u8_t chan_id)
 	return 0;
 }
 
-static int mcux_rtc_set_top_value(struct device *dev, u32_t ticks,
-				  counter_top_callback_t callback,
-				  void *user_data)
+static int mcux_rtc_set_top_value(struct device *dev,
+				  const struct counter_top_cfg *cfg)
 {
 	const struct counter_config_info *info = dev->config->config_info;
+	const struct mcux_rtc_config *config =
+			CONTAINER_OF(info, struct mcux_rtc_config, info);
 	struct mcux_rtc_data *data = dev->driver_data;
 
-	if (ticks != info->max_top_value) {
-		LOG_ERR("Wrap can only be set to 0x%x", info->max_top_value);
+	if (cfg->ticks != info->max_top_value) {
+		LOG_ERR("Wrap can only be set to 0x%x.", info->max_top_value);
 		return -ENOTSUP;
 	}
 
-	data->top_callback = callback;
-	data->top_user_data = user_data;
+	if (!(cfg->flags & COUNTER_TOP_CFG_DONT_RESET)) {
+		RTC_StopTimer(config->base);
+		config->base->TSR = 0;
+		RTC_StartTimer(config->base);
+	}
+
+	data->top_callback = cfg->callback;
+	data->top_user_data = cfg->user_data;
 
 	return 0;
 }

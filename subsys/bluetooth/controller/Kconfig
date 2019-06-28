@@ -570,6 +570,12 @@ config BT_CTLR_FAST_ENC
 	  Maximum CPU time in Radio ISR will increase if this feature is
 	  selected.
 
+config BT_CTLR_LLID_DATA_START_EMPTY
+	bool "Handle zero length L2CAP start frame"
+	default y if BT_HCI_RAW
+	help
+	  Handle zero length L2CAP start frame.
+
 config BT_CTLR_TX_RETRY_DISABLE
 	bool "Disable Tx Retry"
 	help
@@ -630,7 +636,7 @@ config BT_CTLR_USER_EXT
 	  Catch-all for enabling proprietary event types in Controller behavior.
 
 config BT_CTLR_USER_EVT_RANGE
-	int "Range of event contants reserved for proprietary event types"
+	int "Range of event constants reserved for proprietary event types"
 	depends on BT_CTLR_USER_EXT
 	default 5
 	range 0 10
@@ -664,6 +670,8 @@ if BT_CTLR_GPIO_PA
 
 config BT_CTLR_GPIO_PA_PIN
 	int "Power Amplifier GPIO pin number"
+	range 0 47 if SOC_NRF52840
+	range 0 31
 	help
 	  GPIO Pin number connected to a Power Amplifier.
 
@@ -693,6 +701,8 @@ if BT_CTLR_GPIO_LNA
 
 config BT_CTLR_GPIO_LNA_PIN
 	int "Low Noise Amplifier GPIO pin number"
+	range 0 47 if SOC_NRF52840
+	range 0 31
 	help
 	  GPIO Pin number connected to a Low Noise Amplifier.
 

@@ -21,55 +21,31 @@ static u16_t lis2dw12_i2c_slave_addr = DT_INST_0_ST_LIS2DW12_BASE_ADDRESS;
 #define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
 LOG_MODULE_DECLARE(LIS2DW12);
 
-static int lis2dw12_i2c_read_data(struct lis2dw12_data *data, u8_t reg_addr,
-				 u8_t *value, u8_t len)
+static int lis2dw12_i2c_read(struct lis2dw12_data *data, u8_t reg_addr,
+				 u8_t *value, u16_t len)
 {
 	return i2c_burst_read(data->bus, lis2dw12_i2c_slave_addr,
 			      reg_addr, value, len);
 }
 
-static int lis2dw12_i2c_write_data(struct lis2dw12_data *data, u8_t reg_addr,
-				  u8_t *value, u8_t len)
+static int lis2dw12_i2c_write(struct lis2dw12_data *data, u8_t reg_addr,
+				  u8_t *value, u16_t len)
 {
 	return i2c_burst_write(data->bus, lis2dw12_i2c_slave_addr,
 			       reg_addr, value, len);
 }
 
-static int lis2dw12_i2c_read_reg(struct lis2dw12_data *data, u8_t reg_addr,
-				u8_t *value)
-{
-	return i2c_reg_read_byte(data->bus, lis2dw12_i2c_slave_addr,
-				 reg_addr, value);
-}
-
-static int lis2dw12_i2c_write_reg(struct lis2dw12_data *data, u8_t reg_addr,
-				u8_t value)
-{
-	return i2c_reg_write_byte(data->bus, lis2dw12_i2c_slave_addr,
-				 reg_addr, value);
-}
-
-static int lis2dw12_i2c_update_reg(struct lis2dw12_data *data, u8_t reg_addr,
-				  u8_t mask, u8_t value)
-{
-	return i2c_reg_update_byte(data->bus, lis2dw12_i2c_slave_addr,
-				   reg_addr, mask,
-				   value << __builtin_ctz(mask));
-}
-
-static const struct lis2dw12_tf lis2dw12_i2c_transfer_fn = {
-	.read_data = lis2dw12_i2c_read_data,
-	.write_data = lis2dw12_i2c_write_data,
-	.read_reg  = lis2dw12_i2c_read_reg,
-	.write_reg  = lis2dw12_i2c_write_reg,
-	.update_reg = lis2dw12_i2c_update_reg,
+lis2dw12_ctx_t lis2dw12_i2c_ctx = {
+	.read_reg = (lis2dw12_read_ptr) lis2dw12_i2c_read,
+	.write_reg = (lis2dw12_write_ptr) lis2dw12_i2c_write,
 };
 
 int lis2dw12_i2c_init(struct device *dev)
 {
 	struct lis2dw12_data *data = dev->driver_data;
 
-	data->hw_tf = &lis2dw12_i2c_transfer_fn;
+	data->ctx = &lis2dw12_i2c_ctx;
+	data->ctx->handle = data;
 
 	return 0;
 }

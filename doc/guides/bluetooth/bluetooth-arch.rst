@@ -13,7 +13,7 @@ stack.
    Zephyr supports mainly Bluetooth Low Energy (BLE), the low-power
    version of the Bluetooth specification. Zephyr also has limited support
    for portions of the BR/EDR Host. Throughout this architecture document we
-   use BLE interchangably for Bluetooth except when noted.
+   use BLE interchangeably for Bluetooth except when noted.
 
 .. _bluetooth-layers:
 

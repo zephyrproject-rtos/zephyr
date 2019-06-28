@@ -1,4 +1,4 @@
----
+
 title: Flash base node description
 version: 0.1
 
@@ -28,5 +28,3 @@ properties:
      generation: define
      category: optional
      label: alignment
-
-...

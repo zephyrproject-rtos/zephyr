@@ -19,8 +19,11 @@ extern void test_queue_loop(void);
 #ifdef CONFIG_USERSPACE
 extern void test_queue_supv_to_user(void);
 extern void test_auto_free(void);
+extern void test_queue_alloc_prepend_user(void);
+extern void test_queue_alloc_append_user(void);
 #endif
 extern void test_queue_alloc(void);
+extern struct k_mem_pool test_pool;
 
 typedef struct qdata {
 	sys_snode_t snode;

@@ -227,7 +227,7 @@ _zxt_int_exit:
  * every timer interrupt.  Manages the tick timer and calls
  * xPortSysTickHandler() every tick.  See the detailed description of the
  * XT_RTOS_ENTER macro in xtensa_rtos.h.  Callable from C.  Implemented in
- * assmebly code for performance.
+ * assembly code for performance.
  *
  */
 	.globl  _zxt_timer_int

@@ -4,7 +4,6 @@
 
 '''Runner for NIOS II, based on quartus-flash.py and GDB.'''
 
-from west import log
 from runners.core import ZephyrBinaryRunner, NetworkPortHelper
 
 
@@ -61,11 +60,12 @@ class Nios2BinaryRunner(ZephyrBinaryRunner):
         cmd = [self.quartus_py,
                '--sof', self.cpu_sof,
                '--kernel', self.hex_name]
-
+        self.require(cmd[0])
         self.check_call(cmd)
 
     def print_gdbserver_message(self, gdb_port):
-        log.inf('Nios II GDB server running on port {}'.format(gdb_port))
+        self.logger.info('Nios II GDB server running on port {}'.
+                         format(gdb_port))
 
     def debug_debugserver(self, command, **kwargs):
         # Per comments in the shell script, the NIOSII GDB server
@@ -80,6 +80,7 @@ class Nios2BinaryRunner(ZephyrBinaryRunner):
         server_cmd = (['nios2-gdb-server',
                        '--tcpport', str(gdb_port),
                        '--stop', '--reset-target'])
+        self.require(server_cmd[0])
 
         if command == 'debugserver':
             self.print_gdbserver_message(gdb_port)
@@ -94,6 +95,7 @@ class Nios2BinaryRunner(ZephyrBinaryRunner):
                        self.tui_arg +
                        [self.elf_name,
                         '-ex', 'target remote :{}'.format(gdb_port)])
+            self.require(gdb_cmd[0])
 
             self.print_gdbserver_message(gdb_port)
             self.run_server_and_client(server_cmd, gdb_cmd)

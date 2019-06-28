@@ -84,8 +84,12 @@ def generate_prop_defines(node_path, prop):
 
         extract_controller(node_path, prop, prop_values, 0,
                            def_label, generic)
+        extract_controller(node_path, prop, prop_values, 0,
+                           def_label, prop)
         extract_cells(node_path, prop, prop_values,
                       names, 0, def_label, generic)
+        extract_cells(node_path, prop, prop_values,
+                      names, 0, def_label, prop)
     else:
         default.extract(node_path, prop,
                         binding['properties'][prop]['type'],
@@ -103,6 +107,9 @@ def generate_node_defines(node_path):
     # to handle it in one step
     if 'partition@' in node_path:
         flash.extract_partition(node_path)
+        return
+
+    if get_binding(node_path) is None:
         return
 
     generate_bus_defines(node_path)
@@ -193,7 +200,7 @@ def merge_properties(parent, fname, to_dict, from_dict):
             # Warn when overriding a property and changing its value...
             if (k in to_dict and to_dict[k] != from_dict[k] and
                 # ...unless it's the 'title', 'description', or 'version'
-                # property. These are overriden deliberately.
+                # property. These are overridden deliberately.
                 not k in {'title', 'version', 'description'} and
                 # Also allow the category to be changed from 'optional' to
                 # 'required' without a warning
@@ -293,7 +300,10 @@ def write_header(f):
 
         for prop in sorted(defs[node]):
             if prop != 'aliases':
-                f.write(define_str(prop, defs[node][prop], value_tabs))
+                deprecated_warn = False
+                if prop in deprecated_main:
+                    deprecated_warn = True
+                f.write(define_str(prop, defs[node][prop], value_tabs, deprecated_warn))
 
         for alias in sorted(defs[node]['aliases']):
             alias_target = defs[node]['aliases'][alias]
@@ -443,10 +453,6 @@ def generate_defines():
 
     flash.extract_flash()
     flash.extract_code_partition()
-
-    # Add DT_CHOSEN_<X> defines
-    for c in sorted(chosen):
-        insert_defs('chosen', {'DT_CHOSEN_' + str_to_label(c): '1'}, {})
 
 
 def parse_arguments():

@@ -961,12 +961,29 @@ struct gatt_chrc {
 	};
 } __packed;
 
+uint16_t bt_gatt_attr_value_handle(const struct bt_gatt_attr *attr)
+{
+	u16_t handle = 0;
+
+	if ((attr != NULL)
+	    && (attr->read == bt_gatt_attr_read_chrc)) {
+		struct bt_gatt_chrc *chrc = attr->user_data;
+
+		handle = chrc->value_handle;
+		if (handle == 0) {
+			/* Fall back to Zephyr value handle policy */
+			handle = (attr->handle ? : find_static_attr(attr)) + 1U;
+		}
+	}
+
+	return handle;
+}
+
 ssize_t bt_gatt_attr_read_chrc(struct bt_conn *conn,
 			       const struct bt_gatt_attr *attr, void *buf,
 			       u16_t len, u16_t offset)
 {
 	struct bt_gatt_chrc *chrc = attr->user_data;
-	u16_t handle = attr->handle ? : find_static_attr(attr);
 	struct gatt_chrc pdu;
 	u8_t value_len;
 
@@ -978,7 +995,7 @@ ssize_t bt_gatt_attr_read_chrc(struct bt_conn *conn,
 	 * declaration. All characteristic definitions shall have a
 	 * Characteristic Value declaration.
 	 */
-	pdu.value_handle = sys_cpu_to_le16(handle + 1);
+	pdu.value_handle = sys_cpu_to_le16(bt_gatt_attr_value_handle(attr));
 
 	value_len = sizeof(pdu.properties) + sizeof(pdu.value_handle);
 
@@ -1558,7 +1575,7 @@ int bt_gatt_notify_cb(struct bt_conn *conn,
 			return -EINVAL;
 		}
 
-		handle++;
+		handle = bt_gatt_attr_value_handle(attr);
 	}
 
 	if (conn) {
@@ -1597,7 +1614,7 @@ int bt_gatt_indicate(struct bt_conn *conn,
 			return -EINVAL;
 		}
 
-		handle++;
+		handle = bt_gatt_attr_value_handle(params->attr);
 	}
 
 	if (conn) {
@@ -2128,11 +2145,12 @@ done:
 	return 0;
 }
 
-#define BT_GATT_CHRC(_uuid, _props)					\
+#define BT_GATT_CHRC(_uuid, _handle, _props)				\
 	BT_GATT_ATTRIBUTE(BT_UUID_GATT_CHRC, BT_GATT_PERM_READ,		\
 			  bt_gatt_attr_read_chrc, NULL,			\
 			  (&(struct bt_gatt_chrc) { .uuid = _uuid,	\
-						   .properties = _props, }))
+						    .value_handle = _handle,  \
+						    .properties = _props, }))
 
 static u16_t parse_characteristic(struct bt_conn *conn, const void *pdu,
 				  struct bt_gatt_discover_params *params,
@@ -2190,6 +2208,7 @@ static u16_t parse_characteristic(struct bt_conn *conn, const void *pdu,
 		}
 
 		attr = (&(struct bt_gatt_attr)BT_GATT_CHRC(&u.uuid,
+							   chrc->value_handle,
 							   chrc->properties));
 		attr->handle = handle;
 
@@ -2410,6 +2429,8 @@ static void gatt_find_info_rsp(struct bt_conn *conn, u8_t err,
 		struct bt_uuid_16 u16;
 		struct bt_uuid_128 u128;
 	} u;
+	int i;
+	bool skip = false;
 
 	BT_DBG("err 0x%02x", err);
 
@@ -2433,12 +2454,17 @@ static void gatt_find_info_rsp(struct bt_conn *conn, u8_t err,
 	}
 
 	/* Parse descriptors found */
-	for (length--, pdu = rsp->info; length >= len;
-	     length -= len, pdu = (const u8_t *)pdu + len) {
+	for (i = (length - 1) / len, pdu = rsp->info; i != 0;
+	     i--, pdu = (const u8_t *)pdu + len) {
 		struct bt_gatt_attr *attr;
 
 		info.i16 = pdu;
 		handle = sys_le16_to_cpu(info.i16->handle);
+
+		if (skip) {
+			skip = false;
+			continue;
+		}
 
 		switch (u.uuid.type) {
 		case BT_UUID_TYPE_16:
@@ -2470,10 +2496,7 @@ static void gatt_find_info_rsp(struct bt_conn *conn, u8_t err,
 			 * entry must be its value.
 			 */
 			if (!bt_uuid_cmp(&u.uuid, BT_UUID_GATT_CHRC)) {
-				if (length >= len) {
-					pdu = (const u8_t *)pdu + len;
-					length -= len;
-				}
+				skip = true;
 				continue;
 			}
 		}
@@ -2488,7 +2511,7 @@ static void gatt_find_info_rsp(struct bt_conn *conn, u8_t err,
 	}
 
 	/* Stop if could not parse the whole PDU */
-	if (length > 0) {
+	if (i) {
 		goto done;
 	}
 
@@ -3550,26 +3573,29 @@ next:
 	return load->count ? BT_GATT_ITER_CONTINUE : BT_GATT_ITER_STOP;
 }
 
-static int ccc_set(int argc, char **argv, size_t len_rd,
-		   settings_read_cb read_cb, void *cb_arg)
+static int ccc_set(const char *name, size_t len_rd, settings_read_cb read_cb,
+		   void *cb_arg)
 {
 	struct ccc_store ccc_store[CCC_STORE_MAX];
 	struct ccc_load load;
 	bt_addr_le_t addr;
 	int len, err;
+	const char *next;
 
-	if (argc < 1) {
+	settings_name_next(name, &next);
+
+	if (!name) {
 		BT_ERR("Insufficient number of arguments");
 		return -EINVAL;
-	} else if (argc == 1) {
+	} else if (!next) {
 		load.addr_with_id.id = BT_ID_DEFAULT;
 	} else {
-		load.addr_with_id.id = strtol(argv[1], NULL, 10);
+		load.addr_with_id.id = strtol(next, NULL, 10);
 	}
 
-	err = bt_settings_decode_key(argv[0], &addr);
+	err = bt_settings_decode_key(name, &addr);
 	if (err) {
-		BT_ERR("Unable to decode address %s", argv[0]);
+		BT_ERR("Unable to decode address %s", name);
 		return -EINVAL;
 	}
 
@@ -3603,24 +3629,24 @@ static int ccc_set(int argc, char **argv, size_t len_rd,
 	return 0;
 }
 
-BT_SETTINGS_DEFINE(ccc, ccc_set, NULL, NULL);
+SETTINGS_STATIC_HANDLER_DEFINE(bt_ccc, "bt/ccc", NULL, ccc_set, NULL, NULL);
 
 #if defined(CONFIG_BT_GATT_CACHING)
-static int cf_set(int argc, char **argv, size_t len_rd,
-		  settings_read_cb read_cb, void *cb_arg)
+static int cf_set(const char *name, size_t len_rd, settings_read_cb read_cb,
+		  void *cb_arg)
 {
 	struct gatt_cf_cfg *cfg;
 	bt_addr_le_t addr;
 	int len, err;
 
-	if (argc < 1) {
+	if (!name) {
 		BT_ERR("Insufficient number of arguments");
 		return -EINVAL;
 	}
 
-	err = bt_settings_decode_key(argv[0], &addr);
+	err = bt_settings_decode_key(name, &addr);
 	if (err) {
-		BT_ERR("Unable to decode address %s", argv[0]);
+		BT_ERR("Unable to decode address %s", name);
 		return -EINVAL;
 	}
 
@@ -3650,11 +3676,11 @@ static int cf_set(int argc, char **argv, size_t len_rd,
 	return 0;
 }
 
-BT_SETTINGS_DEFINE(cf, cf_set, NULL, NULL);
+SETTINGS_STATIC_HANDLER_DEFINE(bt_cf, "bt/cf", NULL, cf_set, NULL, NULL);
 
 static u8_t stored_hash[16];
 
-static int db_hash_set(int argc, char **argv, size_t len_rd,
+static int db_hash_set(const char *name, size_t len_rd,
 		       settings_read_cb read_cb, void *cb_arg)
 {
 	int len;
@@ -3693,6 +3719,7 @@ static int db_hash_commit(void)
 	return 0;
 }
 
-BT_SETTINGS_DEFINE(hash, db_hash_set, db_hash_commit, NULL);
+SETTINGS_STATIC_HANDLER_DEFINE(bt_hash, "bt/hash", NULL, db_hash_set,
+			       db_hash_commit, NULL);
 #endif /*CONFIG_BT_GATT_CACHING */
 #endif /* CONFIG_BT_SETTINGS */

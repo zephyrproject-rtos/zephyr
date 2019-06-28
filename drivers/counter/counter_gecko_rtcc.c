@@ -90,11 +90,13 @@ static u32_t counter_gecko_read(struct device *dev)
 	return RTCC_CounterGet();
 }
 
-static int counter_gecko_set_top_value(struct device *dev, u32_t ticks,
-				       counter_top_callback_t callback,
-				       void *user_data)
+static int counter_gecko_set_top_value(struct device *dev,
+				       const struct counter_top_cfg *cfg)
 {
 	struct counter_gecko_data *const dev_data = DEV_DATA(dev);
+	u32_t ticks;
+	u32_t flags;
+	int err = 0;
 
 #ifdef CONFIG_SOC_GECKO_HAS_ERRATA_RTCC_E201
 	const struct counter_gecko_config *const dev_cfg = DEV_CFG(dev);
@@ -114,18 +116,31 @@ static int counter_gecko_set_top_value(struct device *dev, u32_t ticks,
 
 	RTCC_IntClear(RTCC_IF_CC1);
 
-	dev_data->top_callback = callback;
-	dev_data->top_user_data = user_data;
+	dev_data->top_callback = cfg->callback;
+	dev_data->top_user_data = cfg->user_data;
+	ticks = cfg->ticks;
+	flags = cfg->flags;
 
-	RTCC_CounterSet(0);
+	if (!(flags & COUNTER_TOP_CFG_DONT_RESET)) {
+		RTCC_CounterSet(0);
+	}
+
 	RTCC_ChannelCCVSet(1, ticks);
 
 	LOG_DBG("set top value: %u", ticks);
 
+	if ((flags & COUNTER_TOP_CFG_DONT_RESET) &&
+		RTCC_CounterGet() > ticks) {
+		err = -ETIME;
+		if (flags & COUNTER_TOP_CFG_RESET_WHEN_LATE) {
+			RTCC_CounterSet(0);
+		}
+	}
+
 	/* Enable the compare interrupt */
 	RTCC_IntEnable(RTCC_IF_CC1);
 
-	return 0;
+	return err;
 }
 
 static u32_t counter_gecko_get_top_value(struct device *dev)

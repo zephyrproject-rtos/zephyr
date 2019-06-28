@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
----
+
 title: SPI NOR flash devices (JEDEC CFI interface)
 version: 0.1
 
@@ -41,21 +41,20 @@ properties:
     type: int
     category: optional
     description: flash capacity in bits
-    generation: define, use-prop-name
+    generation: define
 
   wp-gpios:
     type: compound
     category: optional
     description: WPn pin
-    generation: define, use-prop-name
+    generation: define
   hold-gpios:
     type: compound
     category: optional
     description: HOLDn pin
-    generation: define, use-prop-name
+    generation: define
   reset-gpios:
     type: compound
     category: optional
     description: RESETn pin
-    generation: define, use-prop-name
-...
+    generation: define

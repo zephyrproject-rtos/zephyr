@@ -44,14 +44,14 @@ PROJECT_NUMBER         =
 # for a project that appears at the top of each page and should give viewer a
 # quick idea about the purpose of the project. Keep the description short.
 
-PROJECT_BRIEF          =
+PROJECT_BRIEF          = "A Scalable Open Source RTOS for IoT Embedded Devices"
 
 # With the PROJECT_LOGO tag one can specify a logo or an icon that is included
 # in the documentation. The maximum height of the logo should not exceed 55
 # pixels and the maximum width should not exceed 200 pixels. Doxygen will copy
 # the logo to the output directory.
 
-PROJECT_LOGO           =
+PROJECT_LOGO           = "images/Zephyr-Kite-small.png"
 
 # The OUTPUT_DIRECTORY tag is used to specify the (relative or absolute) path
 # into which the generated documentation will be written. If a relative path is
@@ -220,12 +220,8 @@ TAB_SIZE               = 8
 # "Side Effects:". You can put \n's in the value part of an alias to insert
 # newlines.
 
-ALIASES                = "rst=\verbatim embed:rst" \
-                         "endrst=\endverbatim" \
-                         "rststar=\verbatim embed:rst:leading-asterisk" \
-                         "endrststar=\endverbatim" \
-                         "r=\verbatim embed:rst:leading-asterisk" \
-                         "er=\endverbatim"
+ALIASES                = "rst=\verbatim embed:rst:leading-asterisk" \
+                         "endrst=\endverbatim"
 
 ALIASES 	       += "req=\xrefitem req \"Requirement\" \"Requirements\" "
 
@@ -752,16 +748,9 @@ WARN_LOGFILE           =
 
 # This MUST be kept in sync with DOXY_SOURCES in doc/CMakeLists.txt
 # for incremental (and faster) builds to work correctly.
-INPUT                  = @ZEPHYR_BASE@/include/ \
-                         @ZEPHYR_BASE@/include/misc/ \
-                         @ZEPHYR_BASE@/include/arch/x86/ \
-                         @ZEPHYR_BASE@/include/arch/arc/ \
-                         @ZEPHYR_BASE@/include/arch/arc/v2 \
-                         @ZEPHYR_BASE@/include/arch/arm/ \
-                         @ZEPHYR_BASE@/include/arch/arm/cortex_m \
-                         @ZEPHYR_BASE@/include/arch/nios2/ \
+INPUT                  = custom-doxygen/mainpage.md \
+                         @ZEPHYR_BASE@/include/ \
                          @ZEPHYR_BASE@/lib/libc/minimal/include/ \
-                         @ZEPHYR_BASE@/include/net/dns_resolve.h \
 			 @ZEPHYR_BASE@/subsys/testsuite/ztest/include/ \
 			 @ZEPHYR_BASE@/tests/kernel/
 
@@ -792,7 +781,8 @@ INPUT_ENCODING         = UTF-8
 # for incremental (and faster) builds to work correctly.
 FILE_PATTERNS          = "*.c" \
                          "*.h" \
-                         "*.S"
+                         "*.S" \
+                         "*.md"
 
 # The RECURSIVE tag can be used to specify whether or not subdirectories should
 # be searched for input files as well.
@@ -807,9 +797,7 @@ RECURSIVE              = YES
 # Note that relative paths are relative to the directory from which doxygen is
 # run.
 
-EXCLUDE                = @ZEPHYR_BASE@/include/spi_legacy.h \
-                         @ZEPHYR_BASE@/include/net/http_legacy.h \
-                         @ZEPHYR_BASE@/include/cmsis_rtos_v1/cmsis_os.h \
+EXCLUDE                = @ZEPHYR_BASE@/include/cmsis_rtos_v1/cmsis_os.h \
                          @ZEPHYR_BASE@/include/cmsis_rtos_v2/cmsis_os2.h \
 
 # The EXCLUDE_SYMLINKS tag can be used to select whether or not files or
@@ -921,7 +909,7 @@ FILTER_SOURCE_PATTERNS =
 # (index.html). This can be useful if you have a project on for instance GitHub
 # and want to reuse the introduction page also for the doxygen output.
 
-USE_MDFILE_AS_MAINPAGE = YES
+USE_MDFILE_AS_MAINPAGE = "mainpage.md"
 
 #---------------------------------------------------------------------------
 # Configuration options related to source browsing
@@ -1077,7 +1065,7 @@ HTML_FILE_EXTENSION    = .html
 # of the possible markers and block names see the documentation.
 # This tag requires that the tag GENERATE_HTML is set to YES.
 
-HTML_HEADER            =
+HTML_HEADER            = custom-doxygen/header.html
 
 # The HTML_FOOTER tag can be used to specify a user-defined HTML footer for each
 # generated HTML page. If the tag is left blank doxygen will generate a standard
@@ -1112,7 +1100,7 @@ HTML_STYLESHEET        =
 # list). For an example see the documentation.
 # This tag requires that the tag GENERATE_HTML is set to YES.
 
-HTML_EXTRA_STYLESHEET  =
+HTML_EXTRA_STYLESHEET  = custom-doxygen/customdoxygen.css
 
 # The HTML_EXTRA_FILES tag can be used to specify one or more extra images or
 # other source files which should be copied to the HTML output directory. Note
@@ -1133,7 +1121,7 @@ HTML_EXTRA_FILES       =
 # Minimum value: 0, maximum value: 359, default value: 220.
 # This tag requires that the tag GENERATE_HTML is set to YES.
 
-HTML_COLORSTYLE_HUE    = 220
+HTML_COLORSTYLE_HUE    =
 
 # The HTML_COLORSTYLE_SAT tag controls the purity (or saturation) of the colors
 # in the HTML output. For a value of 0 the output will use grayscales only. A
@@ -1141,7 +1129,7 @@ HTML_COLORSTYLE_HUE    = 220
 # Minimum value: 0, maximum value: 255, default value: 100.
 # This tag requires that the tag GENERATE_HTML is set to YES.
 
-HTML_COLORSTYLE_SAT    = 100
+HTML_COLORSTYLE_SAT    =
 
 # The HTML_COLORSTYLE_GAMMA tag controls the gamma correction applied to the
 # luminance component of the colors in the HTML output. Values below 100
@@ -1152,7 +1140,7 @@ HTML_COLORSTYLE_SAT    = 100
 # Minimum value: 40, maximum value: 240, default value: 80.
 # This tag requires that the tag GENERATE_HTML is set to YES.
 
-HTML_COLORSTYLE_GAMMA  = 80
+HTML_COLORSTYLE_GAMMA  =
 
 # If the HTML_TIMESTAMP tag is set to YES then the footer of each generated HTML
 # page will contain the date and time when the page was generated. Setting this

@@ -160,7 +160,7 @@ Run the zephyr.exe executable as you would any other Linux console application.
 
 .. code-block:: console
 
-   $ zephyr/zephyr.exe
+   $ ./build/zephyr/zephyr.exe
    # Press Ctrl+C to exit
 
 This executable accepts several command line options depending on the
@@ -168,7 +168,7 @@ compilation configuration.
 You can run it with the ``--help`` command line switch to get a list of
 available options::
 
-   $ zephyr/zephyr.exe --help
+   $ ./build/zephyr/zephyr.exe --help
 
 Note that the Zephyr kernel does not actually exit once the application is
 finished. It simply goes into the idle loop forever.
@@ -202,7 +202,7 @@ Address Sanitizer (ASan)
 
 You can also build Zephyr with `Address Sanitizer`_. To do this, set
 :option:`CONFIG_ASAN`, for example, in the application project file, or in the
-cmake command line invocation.
+``west build`` or ``cmake`` command line invocation.
 
 Note that you will need the ASan library installed in your system.
 In Debian/Ubuntu this is ``libasan1``.

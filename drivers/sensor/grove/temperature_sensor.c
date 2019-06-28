@@ -59,7 +59,7 @@ static int gts_channel_get(struct device *dev,
 	analog_val = analog_val >> 2;
 
 	/*
-	 * The formula for converting the analog value to degrees Celisus
+	 * The formula for converting the analog value to degrees Celsius
 	 * is taken from the sensor reference page:
 	 *     http://www.seeedstudio.com/wiki/Grove_-_Temperature_Sensor
 	 */

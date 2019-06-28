@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
----
+
 title: Texas Instruments Temperature and Humidity Sensor
 version: 0.1
 
@@ -20,5 +20,4 @@ properties:
     drdy-gpios:
       type: compound
       category: optional
-      generation: define, use-prop-name
-...
+      generation: define

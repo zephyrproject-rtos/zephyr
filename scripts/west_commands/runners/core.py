@@ -13,18 +13,22 @@ as well as some other helpers for concrete runner classes.
 
 import abc
 import argparse
+import errno
+import logging
 import os
 import platform
+import shlex
+import shutil
 import signal
 import subprocess
 
-from west import log
-from west.util import quote_sh_list
+# Turn on to enable just logging the commands that would be run (at
+# info rather than debug level), without actually running them. This
+# can break runners that are expecting output or if one command
+# depends on another, so it's just for debugging.
+_DRY_RUN = False
 
-# Turn on to enable just printing the commands that would be run,
-# without actually running them. This can break runners that are expecting
-# output or if one command depends on another, so it's just for debugging.
-JUST_PRINT = False
+_logger = logging.getLogger('runners')
 
 
 class _DebugDummyPopen:
@@ -157,6 +161,19 @@ class BuildConfiguration:
             return value
 
 
+class MissingProgram(FileNotFoundError):
+    '''FileNotFoundError subclass for missing program dependencies.
+
+    No significant changes from the parent FileNotFoundError; this is
+    useful for explicitly signaling that the file in question is a
+    program that some class requires to proceed.
+
+    The filename attribute contains the missing program.'''
+
+    def __init__(self, program):
+        super().__init__(errno.ENOENT, os.strerror(errno.ENOENT), program)
+
+
 class RunnerCaps:
     '''This class represents a runner class's capabilities.
 
@@ -253,7 +270,7 @@ class ZephyrBinaryRunner(abc.ABC):
     (have a breakpoint debugger and program loader on a host
     workstation attached to a running target).
 
-    This is supported by three top-level commands managed by the
+    This is supported by four top-level commands managed by the
     Zephyr build system:
 
     - 'flash': flash a previously configured binary to the board,
@@ -274,18 +291,19 @@ class ZephyrBinaryRunner(abc.ABC):
       the current binary, and block until it exits. Unlike 'debug', this
       command does not program the flash.
 
-    This class provides an API for these commands. Every runner has a
-    name (like 'pyocd'), and declares commands it can handle (like
-    'flash'). Zephyr boards (like 'nrf52_pca10040') declare compatible
-    runner(s) by name to the build system, which makes concrete runner
-    instances to execute commands via this class.
+    This class provides an API for these commands. Every subclass is
+    called a 'runner' for short. Each runner has a name (like
+    'pyocd'), and declares commands it can handle (like
+    'flash'). Boards (like 'nrf52_pca10040') declare which runner(s)
+    are compatible with them to the Zephyr build system, along with
+    information on how to configure the runner to work with the board.
 
-    If your board can use an existing runner, all you have to do is
-    give its name to the build system. How to do that is out of the
-    scope of this documentation, but use the existing boards as a
-    starting point.
+    The build system will then place enough information in the build
+    directory so to create and use runners with this class's create()
+    method, which provides a command line argument parsing API. You
+    can also create runners by instantiating subclasses directly.
 
-    If you want to define and use your own runner:
+    In order to define your own runner, you need to:
 
     1. Define a ZephyrBinaryRunner subclass, and implement its
        abstract methods. You may need to override capabilities().
@@ -295,7 +313,18 @@ class ZephyrBinaryRunner(abc.ABC):
        get_runners() won't work).
 
     3. Give your runner's name to the Zephyr build system in your
-       board's build files.
+       board's board.cmake.
+
+    Some advice on input and output:
+
+    - If you need to ask the user something (e.g. using input()), do it
+      in your create() classmethod, not do_run(). That ensures your
+      __init__() really has everything it needs to call do_run(), and also
+      avoids calling input() when not instantiating within a command line
+      application.
+
+    - Use self.logger to log messages using the standard library's
+      logging API; your logger is named "runner.<your-runner-name()>"
 
     For command-line invocation from the Zephyr build system, runners
     define their own argparse-based interface through the common
@@ -303,17 +332,21 @@ class ZephyrBinaryRunner(abc.ABC):
     to), and provide a way to create instances of themselves from
     a RunnerConfig and parsed runner-specific arguments via create().
 
-    Runners use a variety of target-specific tools and configuration
-    values, the user interface to which is abstracted by this
-    class. Each runner subclass should take any values it needs to
-    execute one of these commands in its constructor.  The actual
-    command execution is handled in the run() method.'''
+    Runners use a variety of host tools and configuration values, the
+    user interface to which is abstracted by this class. Each runner
+    subclass should take any values it needs to execute one of these
+    commands in its constructor.  The actual command execution is
+    handled in the run() method.'''
 
     def __init__(self, cfg):
         '''Initialize core runner state.
 
         ``cfg`` is a RunnerConfig instance.'''
         self.cfg = cfg
+        '''RunnerConfig for this instance.'''
+
+        self.logger = logging.getLogger('runners.{}'.format(self.name()))
+        '''logging.Logger for this instance.'''
 
     @staticmethod
     def get_runners():
@@ -415,6 +448,20 @@ class ZephyrBinaryRunner(abc.ABC):
 
         In case of an unsupported command, raise a ValueError.'''
 
+    def require(self, program):
+        '''Require that a program is installed before proceeding.
+
+        :param program: name of the program that is required,
+                        or path to a program binary.
+
+        If ``program`` is an absolute path to an existing program
+        binary, this call succeeds. Otherwise, try to find the program
+        by name on the system PATH.
+
+        On error, raises MissingProgram.'''
+        if shutil.which(program) is None:
+            raise MissingProgram(program)
+
     def run_server_and_client(self, server, client):
         '''Run a server that ignores SIGINT, and a client that handles it.
 
@@ -435,6 +482,13 @@ class ZephyrBinaryRunner(abc.ABC):
             server_proc.terminate()
             server_proc.wait()
 
+    def _log_cmd(self, cmd):
+        escaped = ' '.join(shlex.quote(s) for s in cmd)
+        if not _DRY_RUN:
+            self.logger.debug(escaped)
+        else:
+            self.logger.info(escaped)
+
     def call(self, cmd):
         '''Subclass subprocess.call() wrapper.
 
@@ -442,13 +496,9 @@ class ZephyrBinaryRunner(abc.ABC):
         subprocess and get its return code, rather than
         using subprocess directly, to keep accurate debug logs.
         '''
-        quoted = quote_sh_list(cmd)
-
-        if JUST_PRINT:
-            log.inf(quoted)
+        self._log_cmd(cmd)
+        if _DRY_RUN:
             return 0
-
-        log.dbg(quoted)
         return subprocess.call(cmd)
 
     def check_call(self, cmd):
@@ -458,13 +508,9 @@ class ZephyrBinaryRunner(abc.ABC):
         subprocess and check that it executed correctly, rather than
         using subprocess directly, to keep accurate debug logs.
         '''
-        quoted = quote_sh_list(cmd)
-
-        if JUST_PRINT:
-            log.inf(quoted)
+        self._log_cmd(cmd)
+        if _DRY_RUN:
             return
-
-        log.dbg(quoted)
         try:
             subprocess.check_call(cmd)
         except subprocess.CalledProcessError:
@@ -477,13 +523,9 @@ class ZephyrBinaryRunner(abc.ABC):
         subprocess and check that it executed correctly, rather than
         using subprocess directly, to keep accurate debug logs.
         '''
-        quoted = quote_sh_list(cmd)
-
-        if JUST_PRINT:
-            log.inf(quoted)
+        self._log_cmd(cmd)
+        if _DRY_RUN:
             return b''
-
-        log.dbg(quoted)
         try:
             return subprocess.check_output(cmd)
         except subprocess.CalledProcessError:
@@ -496,16 +538,14 @@ class ZephyrBinaryRunner(abc.ABC):
         cflags = 0
         preexec = None
         system = platform.system()
-        quoted = quote_sh_list(cmd)
 
         if system == 'Windows':
             cflags |= subprocess.CREATE_NEW_PROCESS_GROUP
         elif system in {'Linux', 'Darwin'}:
             preexec = os.setsid
 
-        if JUST_PRINT:
-            log.inf(quoted)
+        self._log_cmd(cmd)
+        if _DRY_RUN:
             return _DebugDummyPopen()
 
-        log.dbg(quoted)
         return subprocess.Popen(cmd, creationflags=cflags, preexec_fn=preexec)

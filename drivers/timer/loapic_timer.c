@@ -60,7 +60,7 @@
 #include <toolchain.h>
 #include <linker/sections.h>
 #include <sys_clock.h>
-#include <drivers/system_timer.h>
+#include <drivers/timer/system_timer.h>
 #include <arch/x86/irq_controller.h>
 #include <power.h>
 #include <device.h>
@@ -110,9 +110,7 @@ static unsigned char timer_mode = TIMER_MODE_PERIODIC;
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 static u32_t loapic_timer_device_power_state;
 static u32_t reg_timer_save;
-#ifndef CONFIG_MVIC
 static u32_t reg_timer_cfg_save;
-#endif
 #endif
 
 /**
@@ -125,13 +123,8 @@ static u32_t reg_timer_cfg_save;
  */
 static inline void periodic_mode_set(void)
 {
-#ifdef CONFIG_MVIC
-	sys_write32(sys_read32(MVIC_LVTTIMER) | LOAPIC_TIMER_PERIODIC,
-		    MVIC_LVTTIMER);
-#else
 	x86_write_loapic(LOAPIC_TIMER,
 		x86_read_loapic(LOAPIC_TIMER) | LOAPIC_TIMER_PERIODIC);
-#endif
 }
 
 
@@ -147,11 +140,7 @@ static inline void periodic_mode_set(void)
  */
 static inline void initial_count_register_set(u32_t count)
 {
-#ifdef CONFIG_MVIC
-	sys_write32(count, MVIC_ICR);
-#else
 	x86_write_loapic(LOAPIC_TIMER_ICR, count);
-#endif
 }
 
 #if defined(CONFIG_TICKLESS_IDLE)
@@ -165,13 +154,8 @@ static inline void initial_count_register_set(u32_t count)
  */
 static inline void one_shot_mode_set(void)
 {
-#ifdef CONFIG_MVIC
-	sys_write32(sys_read32(MVIC_LVTTIMER) & ~LOAPIC_TIMER_PERIODIC,
-		MVIC_LVTTIMER);
-#else
 	x86_write_loapic(LOAPIC_TIMER,
 		x86_read_loapic(LOAPIC_TIMER) & ~LOAPIC_TIMER_PERIODIC);
-#endif
 }
 #endif /* CONFIG_TICKLESS_IDLE */
 
@@ -188,11 +172,7 @@ static inline void one_shot_mode_set(void)
  */
 static inline u32_t current_count_register_get(void)
 {
-#ifdef CONFIG_MVIC
-	return sys_read32(MVIC_CCR);
-#else
 	return x86_read_loapic(LOAPIC_TIMER_CCR);
-#endif
 }
 #endif
 
@@ -207,11 +187,7 @@ static inline u32_t current_count_register_get(void)
  */
 static inline u32_t initial_count_register_get(void)
 {
-#ifdef CONFIG_MVIC
-	return sys_read32(MVIC_ICR);
-#else
 	return x86_read_loapic(LOAPIC_TIMER_ICR);
-#endif
 }
 #endif /* CONFIG_TICKLESS_IDLE */
 
@@ -603,11 +579,9 @@ int z_clock_driver_init(struct device *device)
 
 	tickless_idle_init();
 
-#ifndef CONFIG_MVIC
 	x86_write_loapic(LOAPIC_TIMER_CONFIG,
 		     (x86_read_loapic(LOAPIC_TIMER_CONFIG) & ~0xf)
 		     | LOAPIC_TIMER_DIVBY_1);
-#endif
 
 #ifdef CONFIG_TICKLESS_KERNEL
 	one_shot_mode_set();
@@ -619,14 +593,9 @@ int z_clock_driver_init(struct device *device)
 	loapic_timer_device_power_state = DEVICE_PM_ACTIVE_STATE;
 #endif
 
-#ifdef CONFIG_MVIC
-	IRQ_CONNECT(CONFIG_MVIC_TIMER_IRQ, -1, timer_int_handler, 0, 0);
-	irq_enable(CONFIG_MVIC_TIMER_IRQ);
-#else
 	IRQ_CONNECT(CONFIG_LOAPIC_TIMER_IRQ, CONFIG_LOAPIC_TIMER_IRQ_PRIORITY,
 		    timer_int_handler, 0, 0);
 	irq_enable(CONFIG_LOAPIC_TIMER_IRQ);
-#endif
 
 	return 0;
 }
@@ -636,13 +605,8 @@ static int sys_clock_suspend(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-#ifdef CONFIG_MVIC
-	reg_timer_save = sys_read32(MVIC_LVTTIMER);
-#else
 	reg_timer_save = x86_read_loapic(LOAPIC_TIMER);
 	reg_timer_cfg_save = x86_read_loapic(LOAPIC_TIMER_CONFIG);
-#endif
-
 	loapic_timer_device_power_state = DEVICE_PM_SUSPEND_STATE;
 
 	return 0;
@@ -652,12 +616,8 @@ static int sys_clock_resume(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-#ifdef CONFIG_MVIC
-	sys_write32(reg_timer_save, MVIC_LVTTIMER);
-#else
 	x86_write_loapic(LOAPIC_TIMER, reg_timer_save);
 	x86_write_loapic(LOAPIC_TIMER_CONFIG, reg_timer_cfg_save);
-#endif
 
 	/*
 	 * It is difficult to accurately know the time spent in DS.
@@ -669,7 +629,7 @@ static int sys_clock_resume(struct device *dev)
 	 *    source like TSC
 	 * 2) Expire all timers anyway
 	 * 3) Expire only the timer at the top
-	 * 4) Contine from where the timer left
+	 * 4) Continue from where the timer left
 	 *
 	 * 1 and 2 require change to how timers are handled. 4 may not
 	 * give a good user experience. After waiting for a long period
@@ -758,11 +718,7 @@ void sys_clock_disable(void)
 
 	key = irq_lock();
 
-#ifdef CONFIG_MVIC
-	irq_disable(MVIC_TIMER_IRQ);
-#else
 	irq_disable(CONFIG_LOAPIC_TIMER_IRQ);
-#endif
 
 	initial_count_register_set(0);
 	irq_unlock(key);

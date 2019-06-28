@@ -1,4 +1,4 @@
----
+
 title: Uart Base Structure
 version: 0.1
 
@@ -29,8 +29,3 @@ properties:
       generation: define
     label:
       category: required
-    pinctrl-\d+:
-      type: array
-      category: optional
-      description: pinmux information for RX, TX, CTS, RTS
-...

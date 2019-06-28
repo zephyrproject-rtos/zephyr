@@ -119,10 +119,9 @@ static struct k_sem sem_ticker_api_cb;
 /* Semaphore to wakeup thread on Rx-ed objects */
 static struct k_sem *sem_recv;
 
-/* Entropy device */
-static struct device *dev_entropy;
-
-/* Declare prepare-event FIFO: mfifo_prep: Queue of struct node_rx_event_done */
+/* Declare prepare-event FIFO: mfifo_prep.
+ * Queue of struct node_rx_event_done
+ */
 static MFIFO_DEFINE(prep, sizeof(struct lll_event), EVENT_PIPELINE_MAX);
 
 /* Declare done-event FIFO: mfifo_done.
@@ -225,11 +224,6 @@ int ll_init(struct k_sem *sem_rx)
 
 	/* Store the semaphore to be used to wakeup Thread context */
 	sem_recv = sem_rx;
-	/* Get reference to entropy device */
-	dev_entropy = device_get_binding(CONFIG_ENTROPY_NAME);
-	if (!dev_entropy) {
-		return -ENODEV;
-	}
 
 	/* Initialize counter */
 	/* TODO: Bind and use counter driver? */
@@ -1123,11 +1117,6 @@ void *ull_event_done(void *param)
 	return evdone;
 }
 
-u8_t ull_entropy_get(u8_t len, void *rand)
-{
-	return entropy_get_entropy_isr(dev_entropy, rand, len, 0);
-}
-
 static inline int init_reset(void)
 {
 	memq_link_t *link;
@@ -1350,37 +1339,26 @@ static inline void rx_demux_conn_tx_ack(u8_t ack_last, u16_t handle,
 #if !defined(CONFIG_BT_CTLR_LOW_LAT_ULL)
 	do {
 #endif /* CONFIG_BT_CTLR_LOW_LAT_ULL */
+		struct ll_conn *conn;
+
 		/* Dequeue node */
 		ull_conn_ack_dequeue();
 
-		if (handle != 0xFFFF) {
-			struct ll_conn *conn;
+		/* Process Tx ack */
+		conn = ull_conn_tx_ack(handle, link, node_tx);
 
-			/* Get the conn instance */
-			conn = ll_conn_get(handle);
+		/* Release link mem */
+		ull_conn_link_tx_release(link);
 
-			/* Process Tx ack */
-			ull_conn_tx_ack(conn, link, node_tx);
+		/* De-mux 1 tx node from FIFO */
+		ull_conn_tx_demux(1);
 
-			/* Release link mem */
-			ull_conn_link_tx_release(link);
-
-			/* De-mux 1 tx node from FIFO */
-			ull_conn_tx_demux(1);
-
-			/* Enqueue towards LLL */
+		/* Enqueue towards LLL */
+		if (conn) {
 			ull_conn_tx_lll_enqueue(conn, 1);
-		} else {
-			/* Pass through Tx ack */
-			ll_tx_ack_put(0xFFFF, node_tx);
-
-			/* Release link mem */
-			ull_conn_link_tx_release(link);
-
-			/* De-mux 1 tx node from FIFO */
-			ull_conn_tx_demux(1);
 		}
 
+		/* check for more rx ack */
 		link = ull_conn_ack_by_last_peek(ack_last, &handle, &node_tx);
 
 #if defined(CONFIG_BT_CTLR_LOW_LAT_ULL)

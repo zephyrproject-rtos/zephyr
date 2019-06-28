@@ -46,6 +46,9 @@ class DTDefault(DTDirective):
         else:
             prop_values = reduced[node_path]['props'][prop]
 
+        if prop_type == "string-array" or prop_type == "array":
+            if type(prop_values) is not list: prop_values = [ prop_values, ]
+
         if isinstance(prop_values, list):
             for i, prop_value in enumerate(prop_values):
                 prop_name = str_to_label(prop)

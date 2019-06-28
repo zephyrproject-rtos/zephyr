@@ -7,21 +7,12 @@
 /**
  * @file
  * @brief Abstraction layer for x86 interrupt controllers
- *
- * Most x86 just support APIC. However we are starting to see design
- * variants such as MVIC or APICs with reduced feature sets. This
- * interface provides a layer of abstraction between the core arch code
- * and the interrupt controller implementation for x86
  */
 
 #ifndef ZEPHYR_INCLUDE_ARCH_X86_IRQ_CONTROLLER_H_
 #define ZEPHYR_INCLUDE_ARCH_X86_IRQ_CONTROLLER_H_
 
-#ifdef CONFIG_MVIC
-#include <drivers/mvic.h>
-#else
-#include <drivers/sysapic.h>
-#endif
+#include <drivers/interrupt_controller/sysapic.h>
 
 /* Triggering flags abstraction layer.
  * If a particular set of triggers is not supported, leave undefined
@@ -34,17 +25,6 @@
 
 #ifndef _ASMLANGUAGE
 #include <zephyr/types.h>
-
-#if CONFIG_X86_FIXED_IRQ_MAPPING
-/**
- * @brief Return fixed mapping for an IRQ
- *
- * @param irq Interrupt line
- * @return Vector this interrupt has been assigned to
- */
-#define Z_IRQ_CONTROLLER_VECTOR_MAPPING(irq) \
-	__IRQ_CONTROLLER_VECTOR_MAPPING(irq)
-#endif
 
 /**
  *

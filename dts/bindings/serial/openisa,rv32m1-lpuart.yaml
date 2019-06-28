@@ -1,4 +1,4 @@
----
+
 title: OpenISA LPUART
 version: 0.1
 
@@ -18,14 +18,8 @@ properties:
     interrupts:
       category: required
 
-    pinctrl-*:
-      type: array
-      category: optional
-      description: pinmux information for RX, TX, CTS, RTS
-
     hw-flow-control:
       type: boolean
       category: optional
       description: use hw flow control
       generation: define
-...
