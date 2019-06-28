@@ -222,8 +222,8 @@ void z_arch_configure_dynamic_mpu_regions(struct k_thread *thread)
 
 #if defined(CONFIG_USERSPACE)
 	if (thread->arch.priv_stack_start) {
-		guard_start = thread->arch.priv_stack_start -
-			MPU_GUARD_ALIGN_AND_SIZE;
+		guard_start = thread->arch.priv_stack_start - guard_size;
+
 		__ASSERT((u32_t)&z_priv_stacks_ram_start <= guard_start,
 		"Guard start: (0x%x) below privilege stacks boundary: (0x%x)",
 		guard_start, (u32_t)&z_priv_stacks_ram_start);
