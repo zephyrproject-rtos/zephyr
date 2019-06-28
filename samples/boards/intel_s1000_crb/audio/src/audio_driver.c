@@ -41,7 +41,7 @@ LOG_MODULE_REGISTER(audio_io);
 #define MIC_IN_BUF_COUNT	2
 #define HOST_INOUT_BUF_COUNT	4 /* 2 for TX and 2 for RX */
 
-static void audio_drv_thread(void *unused1, void *unused2, void *unused3);
+static void audio_drv_thread(void);
 
 __attribute__((section(".dma_buffers"))) static struct {
 	s32_t	host_inout[HOST_INOUT_BUF_COUNT][HOST_FRAME_SAMPLES];
@@ -59,6 +59,7 @@ static struct k_mem_slab host_inout_mem_slab;
 static struct k_mem_slab spk_out_mem_slab;
 
 K_SEM_DEFINE(audio_drv_sync_sem, 0, 1);
+static bool audio_io_started;
 
 K_THREAD_DEFINE(audio_drv_thread_id, AUDIO_DRIVER_THREAD_STACKSIZE,
 		audio_drv_thread, NULL, NULL, NULL,
@@ -367,7 +368,13 @@ static void audio_driver_stop_periph_streams(void)
 
 int audio_driver_start(void)
 {
+	if (audio_io_started == true) {
+		LOG_INF("Audio I/O already started ...");
+		return 0;
+	}
+
 	LOG_INF("Starting Audio I/O...");
+
 	/*
 	 * start the playback path first followed by the capture path
 	 * This ensures that by the time the capture frame tick is
@@ -380,6 +387,7 @@ int audio_driver_start(void)
 	audio_driver_start_host_streams();
 	audio_driver_start_periph_streams();
 
+	audio_io_started = true;
 	k_sem_give(&audio_drv_sync_sem);
 
 	return 0;
@@ -387,21 +395,23 @@ int audio_driver_start(void)
 
 int audio_driver_stop(void)
 {
+	if (audio_io_started == false) {
+		LOG_INF("Audio I/O already stopped ...");
+		return 0;
+	}
+
 	k_sem_take(&audio_drv_sync_sem, K_FOREVER);
 	audio_driver_stop_host_streams();
 	audio_driver_stop_periph_streams();
+	audio_io_started = false;
 	LOG_INF("Stopped Audio I/O...");
 
 	return 0;
 }
 
-static void audio_drv_thread(void *unused1, void *unused2, void *unused3)
+static void audio_drv_thread(void)
 {
-	ARG_UNUSED(unused1);
-	ARG_UNUSED(unused2);
-	ARG_UNUSED(unused3);
-
-	LOG_INF("Starting Audio Driver thread (%p)", audio_drv_thread_id);
+	LOG_INF("Starting Audio Driver thread ,,,");
 
 	LOG_INF("Configuring Host Audio Streams ...");
 	audio_driver_config_host_streams();
