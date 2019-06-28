@@ -317,7 +317,7 @@ int bt_hci_cmd_send_sync(u16_t opcode, struct net_buf *buf,
 
 	BT_DBG("opcode 0x%04x status 0x%02x", opcode, cmd(buf)->status);
 
-	if (cmd(buf)->status) {
+	if (err || cmd(buf)->status) {
 		switch (cmd(buf)->status) {
 		case BT_HCI_ERR_CONN_LIMIT_EXCEEDED:
 			err = -ECONNREFUSED;
@@ -329,7 +329,6 @@ int bt_hci_cmd_send_sync(u16_t opcode, struct net_buf *buf,
 
 		net_buf_unref(buf);
 	} else {
-		err = 0;
 		if (rsp) {
 			*rsp = buf;
 		} else {
