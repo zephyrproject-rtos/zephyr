@@ -72,7 +72,7 @@ struct net_buf *bt_buf_get_cmd_complete(s32_t timeout)
 	return buf;
 }
 
-struct net_buf *bt_buf_get_evt(u8_t evt, s32_t timeout)
+struct net_buf *bt_buf_get_evt(u8_t evt, bool discardable, s32_t timeout)
 {
 	struct net_buf *buf;
 
