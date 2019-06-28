@@ -56,7 +56,7 @@ void test_timeout_order(void)
 	for (ii = 0; ii < NUM_TIMEOUTS; ii++) {
 		(void)k_thread_create(&threads[ii], stacks[ii], STACKSIZE,
 				      thread, INT_TO_POINTER(ii), 0, 0,
-				      prio, 0, 0);
+				      prio, 0, K_TIMEOUT_MS(0));
 		k_timer_init(&timer[ii], 0, 0);
 		k_sem_init(&sem[ii], 0, 1);
 		results[ii] = -1;
@@ -86,7 +86,8 @@ void test_timeout_order(void)
 	/* drop prio to get all poll events together */
 	k_thread_priority_set(k_current_get(), prio + 1);
 
-	zassert_equal(k_poll(poll_events, NUM_TIMEOUTS, 2000), 0, "");
+	zassert_equal(k_poll(poll_events, NUM_TIMEOUTS,
+			     K_TIMEOUT_MS(2000)), 0, "");
 
 	k_thread_priority_set(k_current_get(), prio - 1);
 

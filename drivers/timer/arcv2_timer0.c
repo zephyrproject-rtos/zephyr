@@ -235,7 +235,8 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 	 * that interrupts are already disabled)
 	 */
 #ifdef CONFIG_SMP
-	if (IS_ENABLED(CONFIG_TICKLESS_IDLE) && idle && ticks == K_FOREVER) {
+	if (IS_ENABLED(CONFIG_TICKLESS_IDLE) && idle
+	    && ticks == K_FOREVER_TICKS) {
 		timer0_control_register_set(0);
 		timer0_count_register_set(0);
 		timer0_limit_register_set(0);
@@ -261,7 +262,8 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 	z_arch_irq_unlock(key);
 #endif
 #else
-	if (IS_ENABLED(CONFIG_TICKLESS_IDLE) && idle && ticks == K_FOREVER) {
+	if (IS_ENABLED(CONFIG_TICKLESS_IDLE) && idle
+	    && ticks == K_FOREVER_TICKS) {
 		timer0_control_register_set(0);
 		timer0_count_register_set(0);
 		timer0_limit_register_set(0);

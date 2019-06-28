@@ -30,7 +30,7 @@ void k_work_q_start(struct k_work_q *work_q, k_thread_stack_t *stack,
 {
 	k_queue_init(&work_q->queue);
 	(void)k_thread_create(&work_q->thread, stack, stack_size, z_work_q_main,
-			work_q, NULL, NULL, prio, 0, 0);
+			      work_q, NULL, NULL, prio, 0, K_NO_WAIT);
 
 	k_thread_name_set(&work_q->thread, WORKQUEUE_THREAD_NAME);
 }
@@ -75,7 +75,7 @@ static int work_cancel(struct k_delayed_work *work)
 
 int k_delayed_work_submit_to_queue(struct k_work_q *work_q,
 				   struct k_delayed_work *work,
-				   s32_t delay)
+				   k_timeout_t delay)
 {
 	k_spinlock_key_t key = k_spin_lock(&lock);
 	int err = 0;
@@ -100,15 +100,14 @@ int k_delayed_work_submit_to_queue(struct k_work_q *work_q,
 	/* Submit work directly if no delay.  Note that this is a
 	 * blocking operation, so release the lock first.
 	 */
-	if (delay == 0) {
+	if (K_TIMEOUT_EQ(delay, K_NO_WAIT)) {
 		k_spin_unlock(&lock, key);
 		k_work_submit_to_queue(work_q, &work->work);
 		return 0;
 	}
 
 	/* Add timeout */
-	z_add_timeout(&work->timeout, work_timeout,
-		     _TICK_ALIGN + z_ms_to_ticks(delay));
+	z_add_timeout(&work->timeout, work_timeout, delay);
 
 done:
 	k_spin_unlock(&lock, key);

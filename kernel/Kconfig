@@ -577,6 +577,31 @@ config SYS_CLOCK_EXISTS
 	  this is disabled.  Obviously timeout-related APIs will not
 	  work.
 
+config SYS_TIMEOUT_64BIT
+	bool "Use 64 bit values for kernel timeouts"
+	help
+	  When enabled, kernel timeout values are uniformly 64 bits,
+	  allowing for effectively arbitrary length timeouts and
+	  unlimited precision in unit conversion without fear of
+	  rollover (a signed microsecond rollover after 63 bits is
+	  almost 300k years).  This obviously comes at the expense of
+	  code size and runtime performance on some systems.  This
+	  feature is required for some API features, like
+	  absolute-valued timeouts.
+
+config SYS_TIMEOUT_LEGACY_API
+	bool "Enable old millisecond timeout API"
+	depends on !SYS_TIMEOUT_64BIT
+	default y
+	help
+	  When enabled, k_timeout_t values passed to kernel APIs are
+	  32 bit couts of milliseconds.  This allows source-level
+	  compatibility with Zephyr versions 1.14 and below, but is
+	  incompatible with newer features (specifically
+	  SYS_TIMEOUT_64BIT and absolute/uptime-valued timeouts).
+	  This API typing convention is considered deprecated and will
+	  be going away at some point after Zephyr 2.0.
+
 config XIP
 	bool "Execute in place"
 	help

@@ -722,7 +722,7 @@ __syscall k_tid_t k_thread_create(struct k_thread *new_thread,
 				  size_t stack_size,
 				  k_thread_entry_t entry,
 				  void *p1, void *p2, void *p3,
-				  int prio, u32_t options, s32_t delay);
+				  int prio, u32_t options, k_timeout_t delay);
 
 /**
  * @brief Drop a thread's privileges permanently to user mode
@@ -1165,6 +1165,40 @@ __syscall void k_thread_suspend(k_tid_t thread);
  */
 __syscall void k_thread_resume(k_tid_t thread);
 
+/** @brief Return thread timeout expiration uptime
+ *
+ * This routine returns the system uptime count that will expire
+ * before the thread is scheduled to wake up (from whatever timeout or
+ * sleep it has pended on).  If the thread is not sleeping, it returns
+ * the current time.  If the thread is suspended indefinitely, it
+ * returns K_FOREVER_TICKS.
+ */
+__syscall k_ticks_t k_thread_timeout_end_ticks(k_tid_t thread);
+
+static inline k_ticks_t z_impl_k_thread_timeout_end_ticks(k_tid_t thread)
+{
+	extern k_ticks_t z_thread_end(k_tid_t thread);
+
+	return z_thread_end(thread);
+}
+
+/** @brief Return thread timeout remaining time
+ *
+ * This routine returns the number of ticks that will elapse before
+ * the thread is scheduled to wake up (from whatever timeout, creation
+ * delay or sleep it has pended on).  If the thread is not sleeping,
+ * it returns zero.  If the thread is suspended indefinitely or not
+ * yet started, it returns K_FOREVER_TICKS.
+ */
+__syscall k_ticks_t k_thread_timeout_remaining_ticks(k_tid_t thread);
+
+static inline k_ticks_t z_impl_k_thread_timeout_remaining_ticks(k_tid_t thread)
+{
+	extern k_ticks_t z_thread_remaining(k_tid_t thread);
+
+	return z_thread_remaining(thread);
+}
+
 /**
  * @brief Set time-slicing period and scope.
  *
@@ -1353,78 +1387,6 @@ const char *k_thread_state_str(k_tid_t thread_id);
  * @}
  */
 
-/**
- * @addtogroup clock_apis
- * @{
- */
-
-/**
- * @brief Generate null timeout delay.
- *
- * This macro generates a timeout delay that that instructs a kernel API
- * not to wait if the requested operation cannot be performed immediately.
- *
- * @return Timeout delay value.
- */
-#define K_NO_WAIT 0
-
-/**
- * @brief Generate timeout delay from milliseconds.
- *
- * This macro generates a timeout delay that that instructs a kernel API
- * to wait up to @a ms milliseconds to perform the requested operation.
- *
- * @param ms Duration in milliseconds.
- *
- * @return Timeout delay value.
- */
-#define K_MSEC(ms)     (ms)
-
-/**
- * @brief Generate timeout delay from seconds.
- *
- * This macro generates a timeout delay that that instructs a kernel API
- * to wait up to @a s seconds to perform the requested operation.
- *
- * @param s Duration in seconds.
- *
- * @return Timeout delay value.
- */
-#define K_SECONDS(s)   K_MSEC((s) * MSEC_PER_SEC)
-
-/**
- * @brief Generate timeout delay from minutes.
- *
- * This macro generates a timeout delay that that instructs a kernel API
- * to wait up to @a m minutes to perform the requested operation.
- *
- * @param m Duration in minutes.
- *
- * @return Timeout delay value.
- */
-#define K_MINUTES(m)   K_SECONDS((m) * 60)
-
-/**
- * @brief Generate timeout delay from hours.
- *
- * This macro generates a timeout delay that that instructs a kernel API
- * to wait up to @a h hours to perform the requested operation.
- *
- * @param h Duration in hours.
- *
- * @return Timeout delay value.
- */
-#define K_HOURS(h)     K_MINUTES((h) * 60)
-
-/**
- * @brief Generate infinite timeout delay.
- *
- * This macro generates a timeout delay that that instructs a kernel API
- * to wait as long as necessary to perform the requested operation.
- *
- * @return Timeout delay value.
- */
-#define K_FOREVER (-1)
 
 /**
  * @}
@@ -1452,7 +1414,7 @@ struct k_timer {
 	void (*stop_fn)(struct k_timer *timer);
 
 	/* timer period */
-	s32_t period;
+	k_timeout_t period;
 
 	/* timer status */
 	u32_t status;
@@ -1561,13 +1523,14 @@ extern void k_timer_init(struct k_timer *timer,
  * using the new duration and period values.
  *
  * @param timer     Address of timer.
- * @param duration  Initial timer duration (in milliseconds).
- * @param period    Timer period (in milliseconds).
+ * @param duration Initial timer duration, initialized with one of the
+ *                 K_TIMEOUT_*() macros, or K_NO_WAIT.
+ * @param period   Timer period (likewise).
  *
  * @return N/A
  */
 __syscall void k_timer_start(struct k_timer *timer,
-			     s32_t duration, s32_t period);
+			     k_timeout_t duration, k_timeout_t period);
 
 /**
  * @brief Stop a timer.
@@ -1620,24 +1583,55 @@ __syscall u32_t k_timer_status_get(struct k_timer *timer);
  */
 __syscall u32_t k_timer_status_sync(struct k_timer *timer);
 
-extern s32_t z_timeout_remaining(struct _timeout *timeout);
+extern k_ticks_t z_timeout_end(struct _timeout *timeout);
+extern k_ticks_t z_timeout_remaining(struct _timeout *timeout);
+
+/**
+ * @brief Get uptime expiration of a timer
+ *
+ * This routine returns the value of the system uptime counter at
+ * which point a running timer will expire. If the timer is not
+ * running, it returns K_FOREVER_TICKS.
+ *
+ * @param timer     Address of timer.
+ *
+ * @return Uptime (in ticks).
+ */
+__syscall k_ticks_t k_timer_end_ticks(struct k_timer *timer);
+
+static inline k_ticks_t z_impl_k_timer_end_ticks(struct k_timer *timer)
+{
+	return z_timeout_end(&timer->timeout);
+}
 
 /**
  * @brief Get time remaining before a timer next expires.
  *
- * This routine computes the (approximate) time remaining before a running
- * timer next expires. If the timer is not running, it returns zero.
+ * This routine returns the number of system ticks that will elapse
+ * before a running timer next expires (that is, the time until
+ * expiration is at least as long as the return value). If the timer
+ * is not running, it returns K_FOREVER_TICKS.
  *
  * @param timer     Address of timer.
  *
- * @return Remaining time (in milliseconds).
+ * @return Remaining time (in ticks).
  */
-__syscall u32_t k_timer_remaining_get(struct k_timer *timer);
+__syscall k_ticks_t k_timer_remaining_ticks(struct k_timer *timer);
 
-static inline u32_t z_impl_k_timer_remaining_get(struct k_timer *timer)
+static inline k_ticks_t z_impl_k_timer_remaining_ticks(struct k_timer *timer)
 {
-	const s32_t ticks = z_timeout_remaining(&timer->timeout);
-	return (ticks > 0) ? (u32_t)__ticks_to_ms(ticks) : 0U;
+	return z_timeout_remaining(&timer->timeout);
+}
+
+/* Legacy, to be deprecated, use k_timer_remaining_ticks() */
+static inline u32_t k_timer_remaining_get(struct k_timer *timer)
+{
+	u32_t ticks = k_timer_remaining_ticks(timer);
+
+	if (ticks == (u32_t)K_FOREVER_TICKS) {
+		return 0;
+	}
+	return (u32_t)k_ticks_to_ms_floor32(ticks);
 }
 
 /**
@@ -1686,6 +1680,17 @@ static inline void *z_impl_k_timer_user_data_get(struct k_timer *timer)
  * @{
  */
 
+/*
+ * @brief Get system uptime in ticks
+ *
+ * This routine returns the system uptime as measured by the system
+ * core timekeeping unit.  It is intended for use in applications
+ * which need careful attention to timing granularity.  The values may
+ * be converted to real time and cycle units with the k_ticks_to_*()
+ * APIs.
+ */
+__syscall u64_t k_uptime_ticks(void);
+
 /**
  * @brief Get system uptime.
  *
@@ -1701,7 +1706,10 @@ static inline void *z_impl_k_timer_user_data_get(struct k_timer *timer)
  *
  * @return Current uptime in milliseconds.
  */
-__syscall s64_t k_uptime_get(void);
+static inline s64_t k_uptime_get(void)
+{
+	return k_ticks_to_ms_floor64(k_uptime_ticks());
+}
 
 /**
  * @brief Enable clock always on in tickless kernel
@@ -2023,7 +2031,7 @@ extern void k_queue_merge_slist(struct k_queue *queue, sys_slist_t *list);
  * @return Address of the data item if successful; NULL if returned
  * without waiting, or waiting period timed out.
  */
-__syscall void *k_queue_get(struct k_queue *queue, s32_t timeout);
+__syscall void *k_queue_get(struct k_queue *queue, k_timeout_t timeout);
 
 /**
  * @brief Remove an element from a queue.
@@ -2195,7 +2203,8 @@ struct z_futex_data {
  *	     should check the futex's value on wakeup to determine if it needs
  *	     to block again.
  */
-__syscall int k_futex_wait(struct k_futex *futex, int expected, s32_t timeout);
+__syscall int k_futex_wait(struct k_futex *futex, int expected,
+			   k_timeout_t timeout);
 
 /**
  * @brief Wake one/all threads pending on a futex
@@ -2658,7 +2667,7 @@ __syscall void k_stack_push(struct k_stack *stack, stack_data_t data);
  * @retval -EAGAIN Waiting period timed out.
  * @req K-STACK-001
  */
-__syscall int k_stack_pop(struct k_stack *stack, stack_data_t *data, s32_t timeout);
+__syscall int k_stack_pop(struct k_stack *stack, stack_data_t *data, k_timeout_t timeout);
 
 /**
  * @brief Statically define and initialize a stack
@@ -2944,7 +2953,7 @@ extern void k_delayed_work_init(struct k_delayed_work *work,
  *
  * @param work_q Address of workqueue.
  * @param work Address of delayed work item.
- * @param delay Delay before submitting the work item (in milliseconds).
+ * @param delay Delay timeout before submitting the work item
  *
  * @retval 0 Work item countdown started.
  * @retval -EINVAL Work item is being processed or has completed its work.
@@ -2953,7 +2962,7 @@ extern void k_delayed_work_init(struct k_delayed_work *work,
  */
 extern int k_delayed_work_submit_to_queue(struct k_work_q *work_q,
 					  struct k_delayed_work *work,
-					  s32_t delay);
+					  k_timeout_t delay);
 
 /**
  * @brief Cancel a delayed work item.
@@ -2975,6 +2984,57 @@ extern int k_delayed_work_submit_to_queue(struct k_work_q *work_q,
  * @req K-DWORK-001
  */
 extern int k_delayed_work_cancel(struct k_delayed_work *work);
+
+/**
+ * @brief Get uptime expiration of a delayed_work
+ *
+ * This routine returns the value of the system uptime counter at
+ * which point a scheduled delayed work item will execute. If the
+ * delayed_work is not scheduled, it returns the current time.
+ *
+ * @param delayed_work     Address of delayed work item
+ *
+ * @return Uptime (in ticks).
+ */
+__syscall k_ticks_t k_delayed_work_end_ticks(struct k_delayed_work *dw);
+
+static inline
+k_ticks_t z_impl_k_delayed_work_end_ticks(struct k_delayed_work *dw)
+{
+	return z_timeout_end(&dw->timeout);
+}
+
+/**
+ * @brief Get time remaining before a k_delayed_work next expires.
+ *
+ * This routine returns the number of system ticks that will elapse
+ * before a scheduled k_delayed_work item runs (that is, the time
+ * until execution is at least as long as the return value). If the
+ * delayed_work is not running, it returns K_FOREVER_TICKS.
+ *
+ * @param delayed_work     Address of delayed work item.
+ *
+ * @return Remaining time (in ticks).
+ */
+__syscall k_ticks_t k_delayed_work_remaining_ticks(struct k_delayed_work *dw);
+
+static inline k_ticks_t
+z_impl_k_delayed_work_remaining_ticks(struct k_delayed_work *dw)
+{
+	return z_timeout_remaining(&dw->timeout);
+}
+
+/* Legacy, to be deprecated, use k_delayed_work_remaining_ticks() */
+static inline u32_t k_delayed_work_remaining_get(struct k_delayed_work *dw)
+{
+	k_ticks_t t = k_delayed_work_remaining_ticks(dw);
+
+	if (t == K_FOREVER_TICKS) {
+		return 0;
+	}
+
+	return (u32_t)k_ticks_to_ms_floor32(t);
+}
 
 /**
  * @brief Submit a work item to the system workqueue.
@@ -3036,26 +3096,9 @@ static inline void k_work_submit(struct k_work *work)
  * @req K-DWORK-001
  */
 static inline int k_delayed_work_submit(struct k_delayed_work *work,
-					s32_t delay)
+					k_timeout_t delay)
 {
 	return k_delayed_work_submit_to_queue(&k_sys_work_q, work, delay);
-}
-
-/**
- * @brief Get time remaining before a delayed work gets scheduled.
- *
- * This routine computes the (approximate) time remaining before a
- * delayed work gets executed. If the delayed work is not waiting to be
- * scheduled, it returns zero.
- *
- * @param work     Delayed work item.
- *
- * @return Remaining time (in milliseconds).
- * @req K-DWORK-001
- */
-static inline s32_t k_delayed_work_remaining_get(struct k_delayed_work *work)
-{
-	return __ticks_to_ms(z_timeout_remaining(&work->timeout));
 }
 
 /** @} */
@@ -3144,7 +3187,7 @@ __syscall void k_mutex_init(struct k_mutex *mutex);
  * @retval -EAGAIN Waiting period timed out.
  * @req K-MUTEX-002
  */
-__syscall int k_mutex_lock(struct k_mutex *mutex, s32_t timeout);
+__syscall int k_mutex_lock(struct k_mutex *mutex, k_timeout_t timeout);
 
 /**
  * @brief Unlock a mutex.
@@ -3238,7 +3281,7 @@ __syscall void k_sem_init(struct k_sem *sem, unsigned int initial_count,
  * @retval -EAGAIN Waiting period timed out.
  * @req K-SEM-001
  */
-__syscall int k_sem_take(struct k_sem *sem, s32_t timeout);
+__syscall int k_sem_take(struct k_sem *sem, k_timeout_t timeout);
 
 /**
  * @brief Give a semaphore.
@@ -3466,7 +3509,7 @@ void k_msgq_cleanup(struct k_msgq *q);
  * @retval -EAGAIN Waiting period timed out.
  * @req K-MSGQ-002
  */
-__syscall int k_msgq_put(struct k_msgq *q, void *data, s32_t timeout);
+__syscall int k_msgq_put(struct k_msgq *q, void *data, k_timeout_t timeout);
 
 /**
  * @brief Receive a message from a message queue.
@@ -3486,7 +3529,7 @@ __syscall int k_msgq_put(struct k_msgq *q, void *data, s32_t timeout);
  * @retval -EAGAIN Waiting period timed out.
  * @req K-MSGQ-002
  */
-__syscall int k_msgq_get(struct k_msgq *q, void *data, s32_t timeout);
+__syscall int k_msgq_get(struct k_msgq *q, void *data, k_timeout_t timeout);
 
 /**
  * @brief Peek/read a message from a message queue.
@@ -3696,7 +3739,7 @@ extern void k_mbox_init(struct k_mbox *mbox);
  * @req K-MBOX-002
  */
 extern int k_mbox_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
-		      s32_t timeout);
+		      k_timeout_t timeout);
 
 /**
  * @brief Send a mailbox message in an asynchronous manner.
@@ -3737,7 +3780,7 @@ extern void k_mbox_async_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
  * @req K-MBOX-002
  */
 extern int k_mbox_get(struct k_mbox *mbox, struct k_mbox_msg *rx_msg,
-		      void *buffer, s32_t timeout);
+		      void *buffer, k_timeout_t timeout);
 
 /**
  * @brief Retrieve mailbox message data into a buffer.
@@ -3790,7 +3833,7 @@ extern void k_mbox_data_get(struct k_mbox_msg *rx_msg, void *buffer);
  */
 extern int k_mbox_data_block_get(struct k_mbox_msg *rx_msg,
 				 struct k_mem_pool *pool,
-				 struct k_mem_block *block, s32_t timeout);
+				 struct k_mem_block *block, k_timeout_t timeout);
 
 /** @} */
 
@@ -3933,7 +3976,7 @@ __syscall int k_pipe_alloc_init(struct k_pipe *pipe, size_t size);
  */
 __syscall int k_pipe_put(struct k_pipe *pipe, void *data,
 			 size_t bytes_to_write, size_t *bytes_written,
-			 size_t min_xfer, s32_t timeout);
+			 size_t min_xfer, k_timeout_t timeout);
 
 /**
  * @brief Read data from a pipe.
@@ -3957,7 +4000,7 @@ __syscall int k_pipe_put(struct k_pipe *pipe, void *data,
  */
 __syscall int k_pipe_get(struct k_pipe *pipe, void *data,
 			 size_t bytes_to_read, size_t *bytes_read,
-			 size_t min_xfer, s32_t timeout);
+			 size_t min_xfer, k_timeout_t timeout);
 
 /**
  * @brief Write memory block to a pipe.
@@ -4087,7 +4130,7 @@ extern void k_mem_slab_init(struct k_mem_slab *slab, void *buffer,
  * @req K-MSLAB-002
  */
 extern int k_mem_slab_alloc(struct k_mem_slab *slab, void **mem,
-			    s32_t timeout);
+			    k_timeout_t timeout);
 
 /**
  * @brief Free memory allocated from a memory slab.
@@ -4210,7 +4253,7 @@ struct k_mem_pool {
  * @req K-MPOOL-002
  */
 extern int k_mem_pool_alloc(struct k_mem_pool *pool, struct k_mem_block *block,
-			    size_t size, s32_t timeout);
+			    size_t size, k_timeout_t timeout);
 
 /**
  * @brief Allocate memory from a memory pool with malloc() semantics
@@ -4543,7 +4586,7 @@ extern void k_poll_event_init(struct k_poll_event *event, u32_t type,
  */
 
 __syscall int k_poll(struct k_poll_event *events, int num_events,
-		     s32_t timeout);
+		     k_timeout_t timeout);
 
 /**
  * @brief Initialize a poll signal object.

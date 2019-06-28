@@ -749,7 +749,8 @@ void test_sem_multi_take_timeout_diff_sem(void)
 			   K_FOREVER);
 
 
-		zassert_true(retrieved_info.timeout == K_SECONDS(i + 1),
+		zassert_true(K_TIMEOUT_EQ(retrieved_info.timeout,
+					  K_SECONDS(i + 1)),
 			     "timeout didn't occur properly");
 	}
 

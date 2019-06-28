@@ -84,7 +84,7 @@ void k_mem_slab_init(struct k_mem_slab *slab, void *buffer,
 	z_object_init(slab);
 }
 
-int k_mem_slab_alloc(struct k_mem_slab *slab, void **mem, s32_t timeout)
+int k_mem_slab_alloc(struct k_mem_slab *slab, void **mem, k_timeout_t timeout)
 {
 	k_spinlock_key_t key = k_spin_lock(&lock);
 	int result;
@@ -95,7 +95,7 @@ int k_mem_slab_alloc(struct k_mem_slab *slab, void **mem, s32_t timeout)
 		slab->free_list = *(char **)(slab->free_list);
 		slab->num_used++;
 		result = 0;
-	} else if (timeout == K_NO_WAIT) {
+	} else if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
 		/* don't wait for a free block to become available */
 		*mem = NULL;
 		result = -ENOMEM;

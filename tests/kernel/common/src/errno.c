@@ -86,7 +86,7 @@ void test_thread_context(void)
 	}
 
 	for (int ii = 0; ii < N_THREADS; ii++) {
-		struct result *p = k_fifo_get(&fifo, 100);
+		struct result *p = k_fifo_get(&fifo, K_TIMEOUT_MS(100));
 
 		if (!p || !p->pass) {
 			rv = TC_FAIL;

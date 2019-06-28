@@ -81,12 +81,12 @@ static int __noinit task_low_state;
 
 static int __noinit counter;
 
-static inline void *my_fifo_get(struct k_fifo *fifo, s32_t timeout)
+static inline void *my_fifo_get(struct k_fifo *fifo, k_timeout_t timeout)
 {
 	return k_fifo_get(fifo, timeout);
 }
 
-static inline void *my_lifo_get(struct k_lifo *lifo, s32_t timeout)
+static inline void *my_lifo_get(struct k_lifo *lifo, k_timeout_t timeout)
 {
 	return k_lifo_get(lifo, timeout);
 }
@@ -115,8 +115,8 @@ static void sync_threads(struct k_work *work)
 }
 
 static void fifo_tests(s32_t timeout, volatile int *state,
-		       void *(*get)(struct k_fifo *, s32_t),
-		       int (*sem_take)(struct k_sem *, s32_t))
+		       void *(*get)(struct k_fifo *, k_timeout_t),
+		       int (*sem_take)(struct k_sem *, k_timeout_t))
 {
 	struct fifo_data *data;
 
@@ -153,8 +153,8 @@ static void fifo_tests(s32_t timeout, volatile int *state,
 }
 
 static void lifo_tests(s32_t timeout, volatile int *state,
-		       void *(*get)(struct k_lifo *, s32_t),
-		       int (*sem_take)(struct k_sem *, s32_t))
+		       void *(*get)(struct k_lifo *, k_timeout_t),
+		       int (*sem_take)(struct k_sem *, k_timeout_t))
 {
 	struct lifo_data *data;
 

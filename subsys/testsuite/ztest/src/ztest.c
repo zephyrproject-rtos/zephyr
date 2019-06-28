@@ -283,7 +283,7 @@ static int run_test(struct unit_test *test)
 			K_THREAD_STACK_SIZEOF(ztest_thread_stack),
 			(k_thread_entry_t) test_cb, (struct unit_test *)test,
 			NULL, NULL, CONFIG_ZTEST_THREAD_PRIORITY,
-			test->thread_options | K_INHERIT_PERMS,	0);
+			test->thread_options | K_INHERIT_PERMS,	K_NO_WAIT);
 	/*
 	 * There is an implicit expectation here that the thread that was
 	 * spawned is still higher priority than the current thread.

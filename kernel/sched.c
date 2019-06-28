@@ -357,7 +357,8 @@ void z_remove_thread_from_ready_q(struct k_thread *thread)
 	}
 }
 
-static void pend(struct k_thread *thread, _wait_q_t *wait_q, s32_t timeout)
+static void pend(struct k_thread *thread, _wait_q_t *wait_q,
+		 k_timeout_t timeout)
 {
 	z_remove_thread_from_ready_q(thread);
 	z_mark_thread_as_pending(thread);
@@ -367,16 +368,15 @@ static void pend(struct k_thread *thread, _wait_q_t *wait_q, s32_t timeout)
 		z_priq_wait_add(&wait_q->waitq, thread);
 	}
 
-	if (timeout != K_FOREVER) {
-		s32_t ticks = _TICK_ALIGN + z_ms_to_ticks(timeout);
-
-		z_add_thread_timeout(thread, ticks);
+	if (!K_TIMEOUT_EQ(timeout, K_FOREVER)) {
+		z_add_thread_timeout(thread, timeout);
 	}
 
 	sys_trace_thread_pend(thread);
 }
 
-void z_pend_thread(struct k_thread *thread, _wait_q_t *wait_q, s32_t timeout)
+void z_pend_thread(struct k_thread *thread, _wait_q_t *wait_q,
+		   k_timeout_t timeout)
 {
 	__ASSERT_NO_MSG(thread == _current || is_thread_dummy(thread));
 	pend(thread, wait_q, timeout);
@@ -428,7 +428,7 @@ void z_thread_timeout(struct _timeout *to)
 }
 #endif
 
-int z_pend_curr_irqlock(u32_t key, _wait_q_t *wait_q, s32_t timeout)
+int z_pend_curr_irqlock(u32_t key, _wait_q_t *wait_q, k_timeout_t timeout)
 {
 	pend(_current, wait_q, timeout);
 
@@ -448,7 +448,7 @@ int z_pend_curr_irqlock(u32_t key, _wait_q_t *wait_q, s32_t timeout)
 }
 
 int z_pend_curr(struct k_spinlock *lock, k_spinlock_key_t key,
-	       _wait_q_t *wait_q, s32_t timeout)
+	       _wait_q_t *wait_q, k_timeout_t timeout)
 {
 #if defined(CONFIG_TIMESLICING) && defined(CONFIG_SWAP_NONATOMIC)
 	pending_current = _current;
@@ -941,7 +941,6 @@ static s32_t z_tick_sleep(s32_t ticks)
 		return 0;
 	}
 
-	ticks += _TICK_ALIGN;
 	expected_wakeup_time = ticks + z_tick_get_32();
 
 	/* Spinlock purely for local interrupt locking to prevent us
@@ -955,7 +954,7 @@ static s32_t z_tick_sleep(s32_t ticks)
 	pending_current = _current;
 #endif
 	z_remove_thread_from_ready_q(_current);
-	z_add_thread_timeout(_current, ticks);
+	z_add_thread_timeout(_current, K_TIMEOUT_TICKS(ticks));
 	z_mark_thread_as_suspended(_current);
 
 	(void)z_swap(&local_lock, key);
@@ -969,6 +968,26 @@ static s32_t z_tick_sleep(s32_t ticks)
 #endif
 
 	return 0;
+}
+
+k_ticks_t z_thread_end(k_tid_t thread)
+{
+	k_ticks_t ret = 0;
+#ifdef CONFIG_SYS_CLOCK_EXISTS
+	LOCKED(&sched_spinlock) {
+		if (!z_is_thread_prevented_from_running(thread)) {
+			ret = K_FOREVER_TICKS;
+		} else {
+			ret = z_timeout_end(&thread->base.timeout);
+		}
+	}
+#endif
+	return ret;
+}
+
+k_ticks_t z_thread_remaining(k_tid_t thread)
+{
+	return z_thread_end(thread) - (k_ticks_t) z_tick_get();
 }
 
 s32_t z_impl_k_sleep(int ms)

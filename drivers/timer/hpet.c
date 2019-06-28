@@ -126,12 +126,12 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 	ARG_UNUSED(idle);
 
 #if defined(CONFIG_TICKLESS_KERNEL) && !defined(CONFIG_QEMU_TICKLESS_WORKAROUND)
-	if (ticks == K_FOREVER && idle) {
+	if (ticks == K_FOREVER_TICKS && idle) {
 		GENERAL_CONF_REG &= ~GCONF_ENABLE;
 		return;
 	}
 
-	ticks = ticks == K_FOREVER ? max_ticks : ticks;
+	ticks = ticks == K_FOREVER_TICKS ? max_ticks : ticks;
 	ticks = MAX(MIN(ticks - 1, (s32_t)max_ticks), 0);
 
 	k_spinlock_key_t key = k_spin_lock(&lock);

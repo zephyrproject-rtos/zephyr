@@ -110,15 +110,17 @@ int sys_sem_give(struct sys_sem *sem);
  * This routine takes @a sem.
  *
  * @param sem Address of the sys_sem.
- * @param timeout Waiting period to take the sys_sem (in milliseconds),
- *                or one of the special values K_NO_WAIT and K_FOREVER.
+ * @param timeout Waiting period to take the sys_sem, should be
+ *                initialized with one of the K_TIMEOUT_*() macros, or
+ *                be one of the special values K_NO_WAIT and
+ *                K_FOREVER.
  *
  * @retval 0 sys_sem taken.
  * @retval -EINVAL Parameter address not recognized.
  * @retval -ETIMEDOUT Waiting period timed out.
  * @retval -EACCES Caller does not have enough access.
  */
-int sys_sem_take(struct sys_sem *sem, s32_t timeout);
+int sys_sem_take(struct sys_sem *sem, k_timeout_t timeout);
 
 /**
  * @brief Get sys_sem's value

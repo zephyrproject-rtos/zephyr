@@ -54,7 +54,8 @@ static inline void sys_mutex_init(struct sys_mutex *mutex)
 	 */
 }
 
-__syscall int z_sys_mutex_kernel_lock(struct sys_mutex *mutex, s32_t timeout);
+__syscall int z_sys_mutex_kernel_lock(struct sys_mutex *mutex,
+				      k_timeout_t timeout);
 
 __syscall int z_sys_mutex_kernel_unlock(struct sys_mutex *mutex);
 
@@ -78,7 +79,8 @@ __syscall int z_sys_mutex_kernel_unlock(struct sys_mutex *mutex);
  * @retval -EACCESS Caller has no access to provided mutex address
  * @retval -EINVAL Provided mutex not recognized by the kernel
  */
-static inline int sys_mutex_lock(struct sys_mutex *mutex, s32_t timeout)
+static inline int sys_mutex_lock(struct sys_mutex *mutex,
+				 k_timeout_t timeout)
 {
 	/* For now, make the syscall unconditionally */
 	return z_sys_mutex_kernel_lock(mutex, timeout);
@@ -126,7 +128,7 @@ static inline void sys_mutex_init(struct sys_mutex *mutex)
 	k_mutex_init(&mutex->kernel_mutex);
 }
 
-static inline int sys_mutex_lock(struct sys_mutex *mutex, s32_t timeout)
+static inline int sys_mutex_lock(struct sys_mutex *mutex, k_timeout_t timeout)
 {
 	return k_mutex_lock(&mutex->kernel_mutex, timeout);
 }

@@ -15,6 +15,12 @@
 			__i.key == 0;					\
 			k_spin_unlock(lck, __key), __i.key = 1)
 
+#ifdef CONFIG_SYS_TIMEOUT_LEGACY_API
+#define FOREVER_TICKS K_FOREVER
+#else
+#define FOREVER_TICKS (K_FOREVER.ticks)
+#endif
+
 static u64_t curr_tick;
 
 static sys_dlist_t timeout_list = SYS_DLIST_STATIC_INIT(&timeout_list);
@@ -22,10 +28,12 @@ static sys_dlist_t timeout_list = SYS_DLIST_STATIC_INIT(&timeout_list);
 static struct k_spinlock timeout_lock;
 
 #define MAX_WAIT (IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE) \
-		  ? K_FOREVER : INT_MAX)
+		  ? K_FOREVER_TICKS : INT_MAX)
 
 /* Cycles left to process in the currently-executing z_clock_announce() */
 static int announce_remaining;
+
+static bool announcing;
 
 #if defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME)
 int z_clock_hw_cycles_per_sec = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
@@ -81,14 +89,53 @@ static s32_t next_timeout(void)
 	return ret;
 }
 
-void z_add_timeout(struct _timeout *to, _timeout_func_t fn, s32_t ticks)
+static bool is_absolute(k_ticks_t t)
 {
+#ifdef K_TIMEOUT_ABSOLUTE_TICKS
+	return ((s64_t)t) < ((s64_t)K_FOREVER_TICKS);
+#else
+	return false;
+#endif
+}
+
+void z_add_timeout(struct _timeout *to, _timeout_func_t fn,
+		   k_timeout_t expires)
+{
+#ifdef CONFIG_SYS_TIMEOUT_LEGACY_API
+	k_ticks_t ticks = k_ms_to_ticks_ceil32(expires);
+#else
+	k_ticks_t ticks = expires.ticks;
+#endif
+
 	__ASSERT(!sys_dnode_is_linked(&to->node), "");
+
+	if (!is_absolute(ticks)) {
+		/* In the ISR, we can assume we're perfectly aligned
+		 * to the start of the current tick, so new timeouts
+		 * can use exact tick counts.  At other, arbitrary
+		 * times, we need to wait for the next tick to start
+		 * counting so we don't expire too soon.
+		 */
+		if (!announcing) {
+			ticks += 1;
+		}
+
+		ticks = MAX(1, ticks);
+	}
+
 	to->fn = fn;
-	ticks = MAX(1, ticks);
 
 	LOCKED(&timeout_lock) {
 		struct _timeout *t;
+
+#ifdef K_TIMEOUT_ABSOLUTE_TICKS
+		/* Handle absolute expirations */
+		if (is_absolute(ticks)) {
+			s64_t abs = K_FOREVER_TICKS - 1 - ticks;
+
+			ticks = MAX(0, abs - curr_tick - z_clock_elapsed());
+		}
+#endif
 
 		to->dticks = ticks + elapsed();
 		for (t = first(); t != NULL; t = next(t)) {
@@ -126,15 +173,17 @@ int z_abort_timeout(struct _timeout *to)
 	return ret;
 }
 
-s32_t z_timeout_remaining(struct _timeout *timeout)
+k_ticks_t z_timeout_end(struct _timeout *timeout)
 {
-	s32_t ticks = 0;
+	k_ticks_t ticks = 0;
 
 	if (z_is_inactive_timeout(timeout)) {
-		return 0;
+		return K_FOREVER_TICKS;
 	}
 
 	LOCKED(&timeout_lock) {
+		ticks = (k_ticks_t) curr_tick;
+
 		for (struct _timeout *t = first(); t != NULL; t = next(t)) {
 			ticks += t->dticks;
 			if (timeout == t) {
@@ -143,12 +192,28 @@ s32_t z_timeout_remaining(struct _timeout *timeout)
 		}
 	}
 
-	return ticks - elapsed();
+	return ticks;
 }
 
-s32_t z_get_next_timeout_expiry(void)
+k_ticks_t z_timeout_remaining(struct _timeout *timeout)
 {
-	s32_t ret = K_FOREVER;
+	if (z_is_inactive_timeout(timeout)) {
+		return K_FOREVER_TICKS;
+	}
+
+	k_ticks_t rem = z_timeout_end(timeout) - ((k_ticks_t)curr_tick + elapsed());
+
+	/* Note: also handles the case where z_timeout_end() returns FOREVER */
+	if (rem < 0) {
+		return K_FOREVER_TICKS;
+	}
+
+	return rem;
+}
+
+k_ticks_t z_get_next_timeout_expiry(void)
+{
+	k_ticks_t ret = FOREVER_TICKS;
 
 	LOCKED(&timeout_lock) {
 		ret = next_timeout();
@@ -156,11 +221,11 @@ s32_t z_get_next_timeout_expiry(void)
 	return ret;
 }
 
-void z_set_timeout_expiry(s32_t ticks, bool idle)
+void z_set_timeout_expiry(k_ticks_t ticks, bool idle)
 {
 	LOCKED(&timeout_lock) {
-		int next = next_timeout();
-		bool sooner = (next == K_FOREVER) || (ticks < next);
+		k_ticks_t next = next_timeout();
+		bool sooner = (next == FOREVER_TICKS) || (ticks < next);
 		bool imminent = next <= 1;
 
 		/* Only set new timeouts when they are sooner than
@@ -188,6 +253,7 @@ void z_clock_announce(s32_t ticks)
 	k_spinlock_key_t key = k_spin_lock(&timeout_lock);
 
 	announce_remaining = ticks;
+	announcing = true;
 
 	while (first() != NULL && first()->dticks <= announce_remaining) {
 		struct _timeout *t = first();
@@ -209,6 +275,7 @@ void z_clock_announce(s32_t ticks)
 
 	curr_tick += announce_remaining;
 	announce_remaining = 0;
+	announcing = false;
 
 	z_clock_set_timeout(next_timeout(), false);
 
@@ -234,15 +301,15 @@ u32_t z_tick_get_32(void)
 #endif
 }
 
-s64_t z_impl_k_uptime_get(void)
+u64_t z_impl_k_uptime_ticks(void)
 {
-	return __ticks_to_ms(z_tick_get());
+	return z_tick_get();
 }
 
 #ifdef CONFIG_USERSPACE
-static inline s64_t z_vrfy_k_uptime_get(void)
+static inline u64_t z_vrfy_k_uptime_ticks(void)
 {
-	return z_impl_k_uptime_get();
+	return z_impl_k_uptime_ticks();
 }
-#include <syscalls/k_uptime_get_mrsh.c>
+#include <syscalls/k_uptime_ticks_mrsh.c>
 #endif

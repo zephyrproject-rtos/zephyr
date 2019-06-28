@@ -173,7 +173,8 @@ static int init(const struct shell_transport *transport,
 	} else {
 		k_timer_init(sh_uart->timer, timer_handler, NULL);
 		k_timer_user_data_set(sh_uart->timer, (void *)sh_uart);
-		k_timer_start(sh_uart->timer, RX_POLL_PERIOD, RX_POLL_PERIOD);
+		k_timer_start(sh_uart->timer, K_TIMEOUT_MS(RX_POLL_PERIOD),
+			      K_TIMEOUT_MS(RX_POLL_PERIOD));
 	}
 
 	return 0;

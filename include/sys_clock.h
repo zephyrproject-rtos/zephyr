@@ -1,16 +1,8 @@
 /*
  * Copyright (c) 2014-2015 Wind River Systems, Inc.
+ * Copyright (c) 2019 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
- */
-
-/**
- * @file
- * @brief Variables needed needed for system clock
- *
- *
- * Declare variables used by both system timer device driver and kernel
- * components that use timer functionality.
  */
 
 #ifndef ZEPHYR_INCLUDE_SYS_CLOCK_H_
@@ -18,231 +10,207 @@
 
 #include <sys/util.h>
 #include <sys/dlist.h>
-
 #include <toolchain.h>
 #include <zephyr/types.h>
+#include <time_units.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#ifdef CONFIG_TICKLESS_KERNEL
-extern int _sys_clock_always_on;
-extern void z_enable_sys_clock(void);
-#endif
-
-#if defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME)
-__syscall int z_clock_hw_cycles_per_sec_runtime_get(void);
-
-static inline int z_impl_z_clock_hw_cycles_per_sec_runtime_get(void)
-{
-	extern int z_clock_hw_cycles_per_sec;
-
-	return z_clock_hw_cycles_per_sec;
-}
-#endif /* CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME */
-
-static inline int sys_clock_hw_cycles_per_sec(void)
-{
-#if defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME)
-	return z_clock_hw_cycles_per_sec_runtime_get();
+#ifdef CONFIG_SYS_TIMEOUT_64BIT
+typedef u64_t k_ticks_t;
 #else
-	return CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
+typedef u32_t k_ticks_t;
 #endif
-}
 
-/* Note that some systems with comparatively slow cycle counters
- * experience precision loss when doing math like this.  In the
- * general case it is not correct that "cycles" are much faster than
- * "ticks".
+/* Putting the docs at the top allows the macros to be defined below
+ * more cleanly.  They vary with configuration.
  */
-static inline int sys_clock_hw_cycles_per_tick(void)
-{
-#ifdef CONFIG_SYS_CLOCK_EXISTS
-	return sys_clock_hw_cycles_per_sec() / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
+
+/** \def K_TIMEOUT_TICKS(t)
+ * @brief Initializes a k_timeout_t object with ticks
+ *
+ * Evaluates to a k_timeout_t object representing an API timeout that
+ * will expire at least @a t ticks in the future.
+ *
+ * @param t Timeout in ticks
+ */
+
+/** \def K_TIMEOUT_MS(t)
+ * @brief Initializes a k_timeout_t object with milliseconds
+ *
+ * Evaluates to a k_timeout_t object representing an API timeout that
+ * will expire at least @a t milliseconds in the future.
+ *
+ * @param t Timeout in milliseconds
+ */
+
+/** \def K_TIMEOUT_US(t)
+ * @brief Initializes a k_timeout_t object with microseconds
+ *
+ * Evaluates to a k_timeout_t object representing an API timeout that
+ * will expire at least @a t microseconds in the future.
+ *
+ * @param t Timeout in microseconds
+ */
+
+/** \def K_TIMEOUT_CYC(t)
+ * @brief Initializes a k_timeout_t object with hardware cycles
+ *
+ * Evaluates to a k_timeout_t object representing an API timeout that
+ * will expire at least @a t hardware cycles in the future.
+ *
+ * @param t Timeout in hardware cycles
+ */
+
+/** \def K_TIMEOUT_ABSOLUTE_TICKS(t)
+ * @brief Initializes a k_timeout_t object with uptime in ticks
+ *
+ * Evaluates to a k_timeout_t object representing an API timeout that
+ * will expire after the system uptime reaches @a t ticks
+ *
+ * @param t Timeout in ticks
+ */
+
+/** \def K_TIMEOUT_ABSOLUTE_MS(t)
+ * @brief Initializes a k_timeout_t object with uptime in milliseconds
+ *
+ * Evaluates to a k_timeout_t object representing an API timeout that
+ * will expire after the system uptime reaches @a t milliseconds
+ *
+ * @param t Timeout in milliseconds
+ */
+
+/** \def K_TIMEOUT_ABSOLUTE_US(t)
+ * @brief Initializes a k_timeout_t object with uptime in microseconds
+ *
+ * Evaluates to a k_timeout_t object representing an API timeout that
+ * will expire after the system uptime reaches @a t microseconds
+ *
+ * @param t Timeout in microseconds
+ */
+
+/** \def K_TIMEOUT_ABSOLUTE_CYC(t)
+ * @brief Initializes a k_timeout_t object with uptime in hardware cycles
+ *
+ * Evaluates to a k_timeout_t object representing an API timeout that
+ * will expire after the system uptime reaches @a t hardware cycles
+ *
+ * @param t Timeout in hardware cycles
+ */
+
+/** \def K_TIMEOUT_GET(t)
+ * @brief Returns the ticks expiration from a k_timeout_t
+ *
+ * Evaluates to the integer number of ticks stored in the k_timeout_t
+ * argument, or K_FOREVER_TICKS.
+ *
+ * @param t A k_timeout_t object
+ */
+
+/** \def K_NO_WAIT
+ * @brief Constant k_timeout_t representing immediate expiration
+ *
+ * Evaluates to a k_timeout_t object representing an API timeout that
+ * will expire immediately (i.e. it produces a synchronous return)
+ */
+
+/** \def K_FOREVER
+ * @brief Constaint k_timeout_t object representing "never expires"
+ *
+ * Evaluates to a k_timeout_t object representing an API timeout that
+ * will never expire (such a call will wait forever).
+ */
+
+/** @brief k_ticks_t value representing no expiration
+ *
+ * The internal ticks value of a k_timeout_t used to represent "no
+ * expiration, wait forever".
+ */
+#define K_FOREVER_TICKS ((k_ticks_t) -1)
+
+#ifdef CONFIG_SYS_TIMEOUT_LEGACY_API
+/* Fallback API where timeouts are still 32 bit millisecond counts */
+typedef k_ticks_t k_timeout_t;
+#define K_TIMEOUT_MS(t) (t)
+#define K_TIMEOUT_TICKS(t) K_TIMEOUT_MS(k_ticks_to_ms_ceil32(t))
+#define K_TIMEOUT_US(t) K_TIMEOUT_MS(((t) + 999) / 1000)
+#define K_TIMEOUT_CYC(t) K_TIMEOUT_MS(k_cyc_to_ms_ceil32(t))
+#define K_TIMEOUT_GET(t) (t)
+#define K_NO_WAIT 0
+#define K_FOREVER K_FOREVER_TICKS
 #else
-	return 1; /* Just to avoid a division by zero */
-#endif
-}
-
-#if defined(CONFIG_SYS_CLOCK_EXISTS) && \
-	(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC == 0)
-#error "SYS_CLOCK_HW_CYCLES_PER_SEC must be non-zero!"
-#endif
-
-/* number of nsec per usec */
-#define NSEC_PER_USEC 1000U
-
-/* number of microseconds per millisecond */
-#define USEC_PER_MSEC 1000U
-
-/* number of milliseconds per second */
-#define MSEC_PER_SEC 1000U
-
-/* number of microseconds per second */
-#define USEC_PER_SEC ((USEC_PER_MSEC) * (MSEC_PER_SEC))
-
-/* number of nanoseconds per second */
-#define NSEC_PER_SEC ((NSEC_PER_USEC) * (USEC_PER_MSEC) * (MSEC_PER_SEC))
-
-
-/* kernel clocks */
-
-/*
- * We default to using 64-bit intermediates in timescale conversions,
- * but if the HW timer cycles/sec, ticks/sec and ms/sec are all known
- * to be nicely related, then we can cheat with 32 bits instead.
- */
-
-#ifdef CONFIG_SYS_CLOCK_EXISTS
-
-#if defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME) || \
-	(MSEC_PER_SEC % CONFIG_SYS_CLOCK_TICKS_PER_SEC) || \
-	(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC % CONFIG_SYS_CLOCK_TICKS_PER_SEC)
-#define _NEED_PRECISE_TICK_MS_CONVERSION
+/* New API going forward: k_timeout_t is an opaque struct */
+typedef struct { k_ticks_t ticks; } k_timeout_t;
+#define K_TIMEOUT_TICKS(t) ((k_timeout_t){ (k_ticks_t)t })
+#define K_TIMEOUT_GET(t) ((t).ticks)
+#define K_NO_WAIT K_TIMEOUT_TICKS(0)
+#define K_FOREVER K_TIMEOUT_TICKS(K_FOREVER_TICKS)
 #endif
 
-#endif
-
-static ALWAYS_INLINE s32_t z_ms_to_ticks(s32_t ms)
-{
-#ifdef CONFIG_SYS_CLOCK_EXISTS
-
-#ifdef _NEED_PRECISE_TICK_MS_CONVERSION
-	int cyc = sys_clock_hw_cycles_per_sec();
-
-	/* use 64-bit math to keep precision */
-	return (s32_t)ceiling_fraction((s64_t)ms * cyc,
-		((s64_t)MSEC_PER_SEC * cyc) / CONFIG_SYS_CLOCK_TICKS_PER_SEC);
-#else
-	/* simple division keeps precision */
-	s32_t ms_per_tick = MSEC_PER_SEC / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
-
-	return (s32_t)ceiling_fraction(ms, ms_per_tick);
-#endif
-
-#else
-	__ASSERT(ms == 0, "ms not zero");
-	return 0;
-#endif
-}
-
-static inline u64_t __ticks_to_ms(s64_t ticks)
-{
-#ifdef CONFIG_SYS_CLOCK_EXISTS
-	return (u64_t)ticks * MSEC_PER_SEC /
-	       (u64_t)CONFIG_SYS_CLOCK_TICKS_PER_SEC;
-#else
-	__ASSERT(ticks == 0, "ticks not zero");
-	return 0ULL;
-#endif
-}
-
-/*
- * These are only currently used by k_usleep(), but they are
- * defined here for parity with their ms analogs above. Note:
- * we don't bother trying the 32-bit intermediate shortcuts
- * possible with ms, because of the magnitudes involved.
- */
-
-static inline s32_t z_us_to_ticks(s32_t us)
-{
-#ifdef CONFIG_SYS_CLOCK_EXISTS
-	return (s32_t) ceiling_fraction(
-		(s64_t)us * sys_clock_hw_cycles_per_sec(),
-		((s64_t)USEC_PER_SEC * sys_clock_hw_cycles_per_sec()) /
-		CONFIG_SYS_CLOCK_TICKS_PER_SEC);
-#else
-	__ASSERT(us == 0, "us not zero");
-	return 0;
-#endif
-}
-
-static inline s32_t __ticks_to_us(s32_t ticks)
-{
-#ifdef CONFIG_SYS_CLOCK_EXISTS
-	return (s32_t) ((s64_t)ticks * USEC_PER_SEC /
-	       (s64_t)CONFIG_SYS_CLOCK_TICKS_PER_SEC);
-#else
-	__ASSERT(ticks == 0, "ticks not zero");
-	return 0;
-#endif
-}
-
-/* added tick needed to account for tick in progress */
-#define _TICK_ALIGN 1
-
-/* SYS_CLOCK_HW_CYCLES_TO_NS64 converts CPU clock cycles to nanoseconds */
-#define SYS_CLOCK_HW_CYCLES_TO_NS64(X) \
-	(((u64_t)(X) * NSEC_PER_SEC) / sys_clock_hw_cycles_per_sec())
-
-/*
- * SYS_CLOCK_HW_CYCLES_TO_NS_AVG converts CPU clock cycles to nanoseconds
- * and calculates the average cycle time
- */
-#define SYS_CLOCK_HW_CYCLES_TO_NS_AVG(X, NCYCLES) \
-	(u32_t)(SYS_CLOCK_HW_CYCLES_TO_NS64(X) / NCYCLES)
-
-/**
- * @defgroup clock_apis Kernel Clock APIs
- * @ingroup kernel_apis
- * @{
- */
-
-/**
- * @brief Compute nanoseconds from hardware clock cycles.
- *
- * This macro converts a time duration expressed in hardware clock cycles
- * to the equivalent duration expressed in nanoseconds.
- *
- * @param X Duration in hardware clock cycles.
- *
- * @return Duration in nanoseconds.
- */
-#define SYS_CLOCK_HW_CYCLES_TO_NS(X) (u32_t)(SYS_CLOCK_HW_CYCLES_TO_NS64(X))
-
-/**
- * @} end defgroup clock_apis
- */
-
-/**
- *
- * @brief Return the lower part of the current system tick count
- *
- * @return the current system tick count
- *
- */
-u32_t z_tick_get_32(void);
-
-/**
- *
- * @brief Return the current system tick count
- *
- * @return the current system tick count
- *
- */
-s64_t z_tick_get(void);
-
-#ifndef CONFIG_SYS_CLOCK_EXISTS
-#define z_tick_get() (0)
-#define z_tick_get_32() (0)
-#endif
-
-/* timeouts */
+#define K_TIMEOUT_EQ(a, b) (K_TIMEOUT_GET(a) == K_TIMEOUT_GET(b))
 
 struct _timeout;
 typedef void (*_timeout_func_t)(struct _timeout *t);
 
 struct _timeout {
 	sys_dnode_t node;
-	s32_t dticks;
+	k_ticks_t dticks;
 	_timeout_func_t fn;
 };
+
+#ifndef CONFIG_SYS_TIMEOUT_LEGACY_API
+# ifdef CONFIG_SYS_TIMEOUT_64BIT
+#  define K_TIMEOUT_MS(t) K_TIMEOUT_TICKS(k_ms_to_ticks_ceil64(t))
+#  define K_TIMEOUT_US(t) K_TIMEOUT_TICKS(k_us_to_ticks_ceil64(t))
+#  define K_TIMEOUT_CYC(t) K_TIMEOUT_TICKS(k_cyc_to_ticks_ceil64(t))
+# else
+#  define K_TIMEOUT_MS(t) K_TIMEOUT_TICKS(k_ms_to_ticks_ceil32(t))
+#  define K_TIMEOUT_US(t) K_TIMEOUT_TICKS(k_us_to_ticks_ceil32(t))
+#  define K_TIMEOUT_CYC(t) K_TIMEOUT_TICKS(k_cyc_to_ticks_ceil32(t))
+# endif
+#endif
+
+#if defined(CONFIG_SYS_TIMEOUT_64BIT) && !defined(CONFIG_SYS_TIMEOUT_LEGACY_API)
+#define K_TIMEOUT_ABSOLUTE_TICKS(t) \
+	K_TIMEOUT_TICKS((k_ticks_t)(K_FOREVER_TICKS - (t + 1)))
+#define K_TIMEOUT_ABSOLUTE_MS(t) K_TIMEOUT_ABSOLUTE_TICKS(k_ms_to_ticks_ceil64(t))
+#define K_TIMEOUT_ABSOLUTE_US(t) K_TIMEOUT_ABSOLUTE_TICKS(k_us_to_ticks_ceil64(t))
+#define K_TIMEOUT_ABSOLUTE_CYC(t) K_TIMEOUT_ABSOLUTE_TICKS(k_cyc_to_ticks_ceil64(t))
+#endif
+
+s64_t z_tick_get(void);
+u32_t z_tick_get_32(void);
+
+/* Legacy timer conversion APIs.  Soon to be deprecated.
+ */
+
+#define __ticks_to_ms(t) k_ticks_to_ms_floor64(t)
+#define z_ms_to_ticks(t) k_ms_to_ticks_ceil32(t)
+#define __ticks_to_us(t) k_ticks_to_us_floor64(t)
+#define z_us_to_ticks(t) k_us_to_ticks_ceil64(t)
+#define sys_clock_hw_cycles_per_tick() k_ticks_to_cyc_floor32(1)
+#define SYS_CLOCK_HW_CYCLES_TO_NS64(t) (1000 * k_cyc_to_us_floor64(t))
+#define SYS_CLOCK_HW_CYCLES_TO_NS(t) ((u32_t)(1000 * k_cyc_to_us_floor64(t)))
+#define SYS_CLOCK_HW_CYCLES_TO_NS_AVG(x, cyc) \
+	((u32_t)(SYS_CLOCK_HW_CYCLES_TO_NS64(x) / cyc))
+
+#define MSEC_PER_SEC 1000
+#define USEC_PER_MSEC 1000
+#define USEC_PER_SEC 1000000
+#define NSEC_PER_USEC 1000
+#define NSEC_PER_SEC 1000000000
+
+#define K_MSEC(ms)     K_TIMEOUT_MS(ms)
+#define K_SECONDS(s)   K_MSEC((s) * MSEC_PER_SEC)
+#define K_MINUTES(m)   K_SECONDS((m) * 60)
+#define K_HOURS(h)     K_MINUTES((h) * 60)
+
+#define _TICK_ALIGN 1
 
 #ifdef __cplusplus
 }
 #endif
-
-#include <syscalls/sys_clock.h>
 
 #endif /* ZEPHYR_INCLUDE_SYS_CLOCK_H_ */

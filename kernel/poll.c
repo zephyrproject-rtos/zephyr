@@ -188,7 +188,8 @@ static inline void set_event_ready(struct k_poll_event *event, u32_t state)
 	event->state |= state;
 }
 
-int z_impl_k_poll(struct k_poll_event *events, int num_events, s32_t timeout)
+int z_impl_k_poll(struct k_poll_event *events, int num_events,
+		  k_timeout_t timeout)
 {
 	__ASSERT(!z_arch_is_in_isr(), "");
 	__ASSERT(events != NULL, "NULL events\n");
@@ -207,7 +208,8 @@ int z_impl_k_poll(struct k_poll_event *events, int num_events, s32_t timeout)
 		if (is_condition_met(&events[ii], &state)) {
 			set_event_ready(&events[ii], state);
 			poller.is_polling = false;
-		} else if (timeout != K_NO_WAIT && poller.is_polling) {
+		} else if (!K_TIMEOUT_EQ(timeout, K_NO_WAIT)
+			   && poller.is_polling) {
 			rc = register_event(&events[ii], &poller);
 			if (rc == 0) {
 				++last_registered;
@@ -233,7 +235,7 @@ int z_impl_k_poll(struct k_poll_event *events, int num_events, s32_t timeout)
 
 	poller.is_polling = false;
 
-	if (timeout == K_NO_WAIT) {
+	if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
 		k_spin_unlock(&lock, key);
 		return -EAGAIN;
 	}
@@ -260,7 +262,7 @@ int z_impl_k_poll(struct k_poll_event *events, int num_events, s32_t timeout)
 
 #ifdef CONFIG_USERSPACE
 static inline int z_vrfy_k_poll(struct k_poll_event *events,
-				int num_events, s32_t timeout)
+				int num_events, k_timeout_t timeout)
 {
 	int ret;
 	k_spinlock_key_t key;

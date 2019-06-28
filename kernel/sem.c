@@ -136,9 +136,10 @@ static inline void z_vrfy_k_sem_give(struct k_sem *sem)
 #include <syscalls/k_sem_give_mrsh.c>
 #endif
 
-int z_impl_k_sem_take(struct k_sem *sem, s32_t timeout)
+int z_impl_k_sem_take(struct k_sem *sem, k_timeout_t timeout)
 {
-	__ASSERT(((z_arch_is_in_isr() == false) || (timeout == K_NO_WAIT)), "");
+	__ASSERT(((z_arch_is_in_isr() == false)
+		  || K_TIMEOUT_EQ(timeout, K_NO_WAIT)), "");
 
 	sys_trace_void(SYS_TRACE_ID_SEMA_TAKE);
 	k_spinlock_key_t key = k_spin_lock(&lock);
@@ -150,7 +151,7 @@ int z_impl_k_sem_take(struct k_sem *sem, s32_t timeout)
 		return 0;
 	}
 
-	if (timeout == K_NO_WAIT) {
+	if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
 		k_spin_unlock(&lock, key);
 		sys_trace_end_call(SYS_TRACE_ID_SEMA_TAKE);
 		return -EBUSY;
@@ -163,7 +164,7 @@ int z_impl_k_sem_take(struct k_sem *sem, s32_t timeout)
 }
 
 #ifdef CONFIG_USERSPACE
-static inline int z_vrfy_k_sem_take(struct k_sem *sem, s32_t timeout)
+static inline int z_vrfy_k_sem_take(struct k_sem *sem, k_timeout_t timeout)
 {
 	Z_OOPS(Z_SYSCALL_OBJ(sem, K_OBJ_SEM));
 	return z_impl_k_sem_take((struct k_sem *)sem, timeout);

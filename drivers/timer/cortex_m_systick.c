@@ -120,7 +120,8 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 	 * the counter. (Note: we can assume if idle==true that
 	 * interrupts are already disabled)
 	 */
-	if (IS_ENABLED(CONFIG_TICKLESS_IDLE) && idle && ticks == K_FOREVER) {
+	if (IS_ENABLED(CONFIG_TICKLESS_IDLE)
+	    && idle && ticks == K_FOREVER_TICKS) {
 		SysTick->CTRL &= ~SysTick_CTRL_ENABLE_Msk;
 		last_load = TIMER_STOPPED;
 		return;
