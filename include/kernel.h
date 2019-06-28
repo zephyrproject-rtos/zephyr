@@ -207,7 +207,7 @@ struct _k_object_assignment {
  */
 void z_object_init(void *obj);
 #else
-
+/* LCOV_EXCL_START */
 #define K_THREAD_ACCESS_GRANT(thread, ...)
 
 /**
@@ -250,6 +250,7 @@ static inline void k_object_access_all_grant(void *object)
 {
 	ARG_UNUSED(object);
 }
+/* LCOV_EXCL_STOP */
 #endif /* !CONFIG_USERSPACE */
 
 /**
@@ -326,6 +327,7 @@ __syscall void *k_object_alloc(enum k_objects otype);
  */
 void k_object_free(void *obj);
 #else
+/* LCOV_EXCL_START */
 static inline void *z_impl_k_object_alloc(enum k_objects otype)
 {
 	ARG_UNUSED(otype);
@@ -337,6 +339,7 @@ static inline void k_obj_free(void *obj)
 {
 	ARG_UNUSED(obj);
 }
+/* LCOV_EXCL_STOP */
 #endif /* CONFIG_DYNAMIC_OBJECTS */
 
 /** @} */
