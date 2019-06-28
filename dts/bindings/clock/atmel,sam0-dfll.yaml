@@ -1,0 +1,30 @@
+#
+# Copyright (c) 2019 Derek Hageman <hageman@inthat.cloud>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+title: SAM0 Digital Frequency Locked Loop (DFLL)
+version: 0.1
+
+description: >
+    This is a representation of a SAM0 fixed frequency Digital Frequency
+    Locked loop.  This is a fixed frequency clock that can optionally use
+    a reference input to adjust its calibration dynamically.
+
+inherits:
+    !include clock.yaml
+
+properties:
+    compatible:
+      constraint: "atmel,sam0-dfll"
+
+    clock-output-names:
+      category: required
+
+    clock-frequency:
+      type: int
+      description: >
+        Output frequency of the DFLL.  This is fixed but determined by the
+        SoC hardware.
+      category: required

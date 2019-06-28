@@ -1,0 +1,33 @@
+#
+# Copyright (c) 2019 Derek Hageman <hageman@inthat.cloud>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+title: SAM0 Fractional Digital Phase Locked Loop (FDPLL)
+version: 0.1
+
+description: >
+    This is a representation of a SAM0 Fractional Digital Phase Locked Loop.
+    This is a programmable multiplier on an input reference clock.
+
+inherits:
+    !include clock.yaml
+
+properties:
+    compatible:
+      constraint: "atmel,sam0-fdpll"
+
+    clock-output-names:
+      category: required
+
+    clocks:
+      category: required
+
+    clock-frequency:
+      type: int
+      description: >
+        Final output frequency of the the FDPLL.  This is used to calculate
+        the hardware parameters of the FDPLL required to produce the requested
+        frequency.
+      category: required

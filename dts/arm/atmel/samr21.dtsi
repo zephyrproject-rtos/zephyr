@@ -7,6 +7,22 @@
 #include <atmel/samd.dtsi>
 
 / {
+	clocks {
+		fdpll: fdpll {
+			compatible = "atmel,sam0-fdpll";
+			#clock-cells = <0>;
+			label = "FDPLL";
+			clock-output-names = "disabled";
+		};
+
+		gclk8: gclk8 {
+			compatible = "atmel,sam0-gclk";
+			status = "disabled";
+			#clock-cells = <0>;
+			clock-output-names = "GCLK_8";
+		};
+	};
+
 	aliases {
 		pinmux-c = &pinmux_c;
 		port-c = &portc;
@@ -20,6 +36,7 @@
 			interrupts = <7 0>;
 			num-bidir-endpoints = <8>;
 			label = "USB0";
+			clocks = <&gclk0>;
 		};
 
 		dma: dmac@41004800 {

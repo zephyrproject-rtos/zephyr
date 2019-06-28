@@ -19,6 +19,7 @@
 			reg = <0x42002000 0x20>;
 			interrupts = <13 0>;
 			label = "TIMER_0";
+			clocks = <&gclk0>;
 		};
 
 		tc2: tc@42002800 {
@@ -26,6 +27,7 @@
 			reg = <0x42002800 0x20>;
 			interrupts = <15 0>;
 			label = "TIMER_2";
+			clocks = <&gclk0>;
 		};
 
 		tc6: tc@42003800 {
@@ -34,6 +36,7 @@
 			reg = <0x42003800 0x20>;
 			interrupts = <19 0>;
 			label = "TIMER_6";
+			clocks = <&gclk0>;
 		};
 	};
 };

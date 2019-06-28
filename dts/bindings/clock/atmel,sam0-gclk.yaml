@@ -1,0 +1,35 @@
+#
+# Copyright (c) 2019 Derek Hageman <hageman@inthat.cloud>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+title: SAM0 Generic Clock (GCLK) provider
+version: 0.1
+
+description: >
+    This is a representation of a SAM0 Generic Clock provider.  A GCLK is
+    a clock distribution mechanism that connects an input clock with various
+    consumers.  It can optionally provide a divisor on the input clock, so
+    the output clock frequency may be different than the input frequency.
+
+inherits:
+    !include clock.yaml
+
+properties:
+    compatible:
+      constraint: "atmel,sam0-gclk"
+
+    clock-output-names:
+      category: required
+
+    clocks:
+      category: required
+
+    clock-frequency:
+      type: int
+      description: >
+        Output frequency of the the GCLK (Hz).  This is used to calculate
+        the divisor applied to the input clock source that the GCLK is
+        connected to.
+      category: required
