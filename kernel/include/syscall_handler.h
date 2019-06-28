@@ -519,7 +519,7 @@ static inline int z_obj_validation_check(struct _k_object *ko,
  * the bolierplate. The macros ensure that the seventh argument is named
  * "ssf" as this is now referenced by various other Z_SYSCALL macros.
  *
- * Use the Z_SYSCALL_HANDLER(name_, arg0, ..., arg6) variant, as it will
+ * Use the Z_SYSCALL_HANDLER(name_, arg1, ..., arg6) variant, as it will
  * automatically deduce the correct version of Z__SYSCALL_HANDLERn() to
  * use depending on the number of arguments.
  */
