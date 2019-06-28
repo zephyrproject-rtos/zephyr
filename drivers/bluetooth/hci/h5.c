@@ -408,7 +408,7 @@ static inline struct net_buf *get_evt_buf(u8_t evt)
 {
 	struct net_buf *buf;
 
-	buf = bt_buf_get_evt(evt, K_NO_WAIT);
+	buf = bt_buf_get_evt(evt, false, K_NO_WAIT);
 	if (buf) {
 		net_buf_add_u8(h5.rx_buf, evt);
 	}

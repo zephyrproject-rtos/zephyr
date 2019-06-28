@@ -355,7 +355,7 @@ static void bt_spi_rx_thread(void)
 					continue;
 				default:
 					buf = bt_buf_get_evt(rxmsg[EVT_HEADER_EVENT],
-							     K_FOREVER);
+							     false, K_FOREVER);
 					break;
 				}
 
