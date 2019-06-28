@@ -200,7 +200,7 @@ int flash_mimxrt_write(struct device *dev, off_t offset,
 }
 
 
-#define SECTOR_MASK (SECTOR_SIZE - 1)
+#define SECTOR_MASK (DT_FLASH_ERASE_BLOCK_SIZE - 1)
 
 int flash_mimxrt_erase(struct device *dev, off_t offset, size_t len)
 {

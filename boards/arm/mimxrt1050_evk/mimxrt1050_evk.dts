@@ -19,13 +19,16 @@
 
 
 &flexspi0 {
+	#address-cells = <1>;
+	#size-cells = <1>;
 	reg = <0x402a8000 0x4000>, <0x60000000 0x4000000>;
+
 	hyperflash0: hyperflash@0 {
+		reg = <0x60000000 0x4000000>;
 		label = "HYPERFLASH0";
 		compatible = "cypress,s26kl";
-		/*erase-block-size = <262144>;
-		write-block-size = <512>;*/
-		reg = <0x60000000 0x4000000>;
+		erase-block-size = <0x40000>;
+		write-block-size = <0x200>;
 		status = "okay";
 	};
 };

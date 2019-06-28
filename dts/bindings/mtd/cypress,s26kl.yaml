@@ -8,11 +8,11 @@ title: Hyperflash (Octo-SPI) NOR FLASH
 version: 0.1
 
 description: >
-    This binding gives a base representation of Crypress S26LKxxxS familly devices.
+  This binding gives a base representation of Crypress S26LKxxxS familly devices.
 
 inherits:
-    !include jedec,spi-nor.yaml
+  !include jedec,spi-nor.yaml
 
 properties:
-    compatible:
-      constraint: "cypress,s26kl"
+  compatible:
+    constraint: "cypress,s26kl"

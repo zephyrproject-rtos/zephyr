@@ -233,8 +233,8 @@ static int flash_mimxrt_write_protection(struct device *dev, bool enable)
 
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 static const struct flash_pages_layout dev_layout = {
-	.pages_count = (DT_FLASH_SIZE << 10) / SECTOR_SIZE, 
-	.pages_size = SECTOR_SIZE,
+	.pages_count = (DT_FLASH_SIZE << 10) / DT_FLASH_ERASE_BLOCK_SIZE, 
+	.pages_size = DT_FLASH_ERASE_BLOCK_SIZE,
 };
 
 
@@ -257,7 +257,7 @@ static const struct flash_driver_api flash_mimxrt_api = {
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 	.page_layout = flash_mimxrt_pages_layout,
 #endif
-	.write_block_size = 512,
+	.write_block_size = DT_FLASH_WRITE_BLOCK_SIZE,
 };
 
 
