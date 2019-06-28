@@ -22,6 +22,8 @@
 #include <toolchain.h>
 #include <zephyr/types.h>
 
+#include <time_units.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -30,26 +32,6 @@ extern "C" {
 extern int _sys_clock_always_on;
 extern void z_enable_sys_clock(void);
 #endif
-
-#if defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME)
-__syscall int z_clock_hw_cycles_per_sec_runtime_get(void);
-
-static inline int z_impl_z_clock_hw_cycles_per_sec_runtime_get(void)
-{
-	extern int z_clock_hw_cycles_per_sec;
-
-	return z_clock_hw_cycles_per_sec;
-}
-#endif /* CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME */
-
-static inline int sys_clock_hw_cycles_per_sec(void)
-{
-#if defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME)
-	return z_clock_hw_cycles_per_sec_runtime_get();
-#else
-	return CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
-#endif
-}
 
 /* Note that some systems with comparatively slow cycle counters
  * experience precision loss when doing math like this.  In the
@@ -242,7 +224,5 @@ struct _timeout {
 #ifdef __cplusplus
 }
 #endif
-
-#include <syscalls/sys_clock.h>
 
 #endif /* ZEPHYR_INCLUDE_SYS_CLOCK_H_ */
