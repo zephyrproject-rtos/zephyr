@@ -27,13 +27,11 @@
 extern "C" {
 #endif
 
-/**
- * @brief Write to a model specific register (MSR)
- *
- * This function is used to write to an MSR.
- *
- * @return N/A
+/*
+ * z_x86_msr_write() is shared between 32- and 64-bit implementations, but
+ * due to ABI differences with long return values, z_x86_msr_read() is not.
  */
+
 static inline void z_x86_msr_write(unsigned int msr, u64_t data)
 {
 	u32_t high = data >> 32;
@@ -42,13 +40,8 @@ static inline void z_x86_msr_write(unsigned int msr, u64_t data)
 	__asm__ volatile ("wrmsr" : : "c"(msr), "a"(low), "d"(high));
 }
 
-/**
- * @brief Read from a model specific register (MSR)
- *
- * This function is used to read from an MSR.
- *
- * @return N/A
- */
+#ifndef CONFIG_X86_LONGMODE
+
 static inline u64_t z_x86_msr_read(unsigned int msr)
 {
 	u64_t ret;
@@ -57,6 +50,8 @@ static inline u64_t z_x86_msr_read(unsigned int msr)
 
 	return ret;
 }
+
+#endif
 
 #ifdef __cplusplus
 }
