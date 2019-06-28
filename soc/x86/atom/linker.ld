@@ -44,5 +44,5 @@ MEMORY
 #endif
     }
 
-#include <arch/x86/linker.ld>
+#include <arch/x86/ia32/linker.ld>
 
