@@ -28,7 +28,6 @@
 
 #include <toolchain.h>
 #include <linker/sections.h>
-#include <asm_inline.h>
 #include <exception.h>
 #include <kernel_arch_thread.h>
 #include <sys/util.h>

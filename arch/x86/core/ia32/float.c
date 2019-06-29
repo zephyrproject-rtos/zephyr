@@ -45,10 +45,96 @@
 
 #include <kernel_structs.h>
 #include <toolchain.h>
-#include <asm_inline.h>
 
 /* SSE control/status register default value (used by assembler code) */
 extern u32_t _sse_mxcsr_default_value;
+
+/**
+ *
+ * @brief Disallow use of floating point capabilities
+ *
+ * This routine sets CR0[TS] to 1, which disallows the use of FP instructions
+ * by the currently executing thread.
+ *
+ * @return N/A
+ */
+static inline void z_FpAccessDisable(void)
+{
+	void *tempReg;
+
+	__asm__ volatile(
+		"movl %%cr0, %0;\n\t"
+		"orl $0x8, %0;\n\t"
+		"movl %0, %%cr0;\n\t"
+		: "=r"(tempReg)
+		:
+		: "memory");
+}
+
+
+/**
+ *
+ * @brief Save non-integer context information
+ *
+ * This routine saves the system's "live" non-integer context into the
+ * specified area.  If the specified thread supports SSE then
+ * x87/MMX/SSEx thread info is saved, otherwise only x87/MMX thread is saved.
+ * Function is invoked by FpCtxSave(struct k_thread *thread)
+ *
+ * @return N/A
+ */
+static inline void z_do_fp_regs_save(void *preemp_float_reg)
+{
+	__asm__ volatile("fnsave (%0);\n\t"
+			 :
+			 : "r"(preemp_float_reg)
+			 : "memory");
+}
+
+/**
+ *
+ * @brief Save non-integer context information
+ *
+ * This routine saves the system's "live" non-integer context into the
+ * specified area.  If the specified thread supports SSE then
+ * x87/MMX/SSEx thread info is saved, otherwise only x87/MMX thread is saved.
+ * Function is invoked by FpCtxSave(struct k_thread *thread)
+ *
+ * @return N/A
+ */
+static inline void z_do_fp_and_sse_regs_save(void *preemp_float_reg)
+{
+	__asm__ volatile("fxsave (%0);\n\t"
+			 :
+			 : "r"(preemp_float_reg)
+			 : "memory");
+}
+
+/**
+ *
+ * @brief Initialize floating point register context information.
+ *
+ * This routine initializes the system's "live" floating point registers.
+ *
+ * @return N/A
+ */
+static inline void z_do_fp_regs_init(void)
+{
+	__asm__ volatile("fninit\n\t");
+}
+
+/**
+ *
+ * @brief Initialize SSE register context information.
+ *
+ * This routine initializes the system's "live" SSE registers.
+ *
+ * @return N/A
+ */
+static inline void z_do_sse_regs_init(void)
+{
+	__asm__ volatile("ldmxcsr _sse_mxcsr_default_value\n\t");
+}
 
 /*
  * Save a thread's floating point context information.
