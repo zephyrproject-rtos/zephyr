@@ -89,35 +89,19 @@ struct gpio_callback {
 /**
  * @cond INTERNAL_HIDDEN
  *
- * GPIO driver API definition and system call entry points
- *
- * (Internal use only.)
+ * For internal use only, skip these in public documentation.
  */
-typedef int (*gpio_config_t)(struct device *port, int access_op,
-			     u32_t pin, int flags);
-typedef int (*gpio_write_t)(struct device *port, int access_op,
-			    u32_t pin, u32_t value);
-typedef int (*gpio_read_t)(struct device *port, int access_op,
-			   u32_t pin, u32_t *value);
-typedef int (*gpio_manage_callback_t)(struct device *port,
-				      struct gpio_callback *callback,
-				      bool set);
-typedef int (*gpio_enable_callback_t)(struct device *port,
-				      int access_op,
-				      u32_t pin);
-typedef int (*gpio_disable_callback_t)(struct device *port,
-				       int access_op,
-				       u32_t pin);
-typedef u32_t (*gpio_api_get_pending_int)(struct device *dev);
-
 struct gpio_driver_api {
-	gpio_config_t config;
-	gpio_write_t write;
-	gpio_read_t read;
-	gpio_manage_callback_t manage_callback;
-	gpio_enable_callback_t enable_callback;
-	gpio_disable_callback_t disable_callback;
-	gpio_api_get_pending_int get_pending_int;
+	int (*config)(struct device *port, int access_op, u32_t pin, int flags);
+	int (*write)(struct device *port, int access_op, u32_t pin,
+		     u32_t value);
+	int (*read)(struct device *port, int access_op, u32_t pin,
+		    u32_t *value);
+	int (*manage_callback)(struct device *port, struct gpio_callback *cb,
+			       bool set);
+	int (*enable_callback)(struct device *port, int access_op, u32_t pin);
+	int (*disable_callback)(struct device *port, int access_op, u32_t pin);
+	u32_t (*get_pending_int)(struct device *dev);
 };
 
 __syscall int gpio_config(struct device *port, int access_op, u32_t pin,
@@ -345,9 +329,6 @@ static inline int gpio_pin_disable_callback(struct device *port, u32_t pin)
  */
 __syscall int gpio_get_pending_int(struct device *dev);
 
-/**
- * @internal
- */
 static inline int z_impl_gpio_get_pending_int(struct device *dev)
 {
 	const struct gpio_driver_api *api =
@@ -360,6 +341,7 @@ static inline int z_impl_gpio_get_pending_int(struct device *dev)
 	return api->get_pending_int(dev);
 }
 
+/** @cond INTERNAL_HIDDEN */
 struct gpio_pin_config {
 	char *gpio_controller;
 	u32_t gpio_pin;
@@ -385,6 +367,7 @@ struct gpio_pin_config {
 
 #define GPIO_GET_CONTROLLER(_conf)	GPIO_GET_CONTROLLER_IDX(, _conf)
 #define GPIO_GET_PIN(_conf)		GPIO_GET_PIN_IDX(, _conf)
+/** @endcond */
 
 /**
  * @}
