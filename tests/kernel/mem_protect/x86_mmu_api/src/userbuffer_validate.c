@@ -6,7 +6,7 @@
 
 #include <zephyr.h>
 #include <sys/printk.h>
-#include <mmustructs.h>
+#include <ia32/mmustructs.h>
 #include <arch/x86/ia32/arch.h>
 #include <linker/linker-defs.h>
 #include <ztest.h>

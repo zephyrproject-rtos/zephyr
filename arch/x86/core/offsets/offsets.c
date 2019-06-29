@@ -28,7 +28,7 @@
 
 #include <kernel_structs.h>
 #include <swapstk.h>
-#include <mmustructs.h>
+#include <ia32/mmustructs.h>
 #include <arch/x86/multiboot.h>
 
 #include <kernel_offsets.h>
