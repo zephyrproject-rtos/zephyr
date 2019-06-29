@@ -267,7 +267,7 @@ _firq_reschedule:
 	pop_s r2
 #endif
 
-	ld_s r3, [r2, _thread_offset_to_relinquish_cause]
+	ld r3, [r2, _thread_offset_to_relinquish_cause]
 
 	breq r3, _CAUSE_RIRQ, _firq_return_from_rirq
 	nop
@@ -279,7 +279,7 @@ _firq_reschedule:
 .balign 4
 _firq_return_from_coop:
 
-	ld_s r3, [r2, _thread_offset_to_intlock_key]
+	ld r3, [r2, _thread_offset_to_intlock_key]
 	st  0, [r2, _thread_offset_to_intlock_key]
 
 	/* pc into ilink */
@@ -298,7 +298,7 @@ _firq_return_from_coop:
 	or.nz r0, r0, _ARC_V2_STATUS32_IE
 	sr r0, [_ARC_V2_STATUS32_P0]
 
-	ld_s r0, [r2, _thread_offset_to_return_value]
+	ld r0, [r2, _thread_offset_to_return_value]
 	rtie
 
 .balign 4

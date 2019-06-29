@@ -82,7 +82,7 @@ SECTION_FUNC(TEXT, __swap)
 	ld_s r2, [r1, _kernel_offset_to_current]
 
 	/* save intlock key */
-	st_s r0, [r2, _thread_offset_to_intlock_key]
+	st r0, [r2, _thread_offset_to_intlock_key]
 	st _CAUSE_COOP, [r2, _thread_offset_to_relinquish_cause]
 
 	/*
@@ -92,7 +92,7 @@ SECTION_FUNC(TEXT, __swap)
          * z_set_thread_return_value().
          */
 	ld r3, [_k_neg_eagain]
-	st_s r3, [r2, _thread_offset_to_return_value]
+	st r3, [r2, _thread_offset_to_return_value]
 
 	/*
 	 * Save status32 and blink on the stack before the callee-saved registers.
@@ -142,7 +142,7 @@ SECTION_FUNC(TEXT, __swap)
 	pop_s r2
 #endif
 
-	ld_s r3, [r2, _thread_offset_to_relinquish_cause]
+	ld r3, [r2, _thread_offset_to_relinquish_cause]
 
 	breq r3, _CAUSE_RIRQ, _swap_return_from_rirq
 	nop
@@ -154,9 +154,9 @@ SECTION_FUNC(TEXT, __swap)
 .balign 4
 _swap_return_from_coop:
 
-	ld_s r1, [r2, _thread_offset_to_intlock_key]
+	ld r1, [r2, _thread_offset_to_intlock_key]
 	st  0, [r2, _thread_offset_to_intlock_key]
-	ld_s r0, [r2, _thread_offset_to_return_value]
+	ld r0, [r2, _thread_offset_to_return_value]
 
 	lr ilink, [_ARC_V2_STATUS32]
 	bbit1 ilink, _ARC_V2_STATUS32_AE_BIT, _return_from_exc

@@ -181,7 +181,7 @@ _rirq_common_interrupt_swap:
 	pop_s r2
 #endif
 
-	ld_s r3, [r2, _thread_offset_to_relinquish_cause]
+	ld r3, [r2, _thread_offset_to_relinquish_cause]
 
 	breq r3, _CAUSE_RIRQ, _rirq_return_from_rirq
 	nop
@@ -201,7 +201,7 @@ _rirq_return_from_coop:
 
 	/* update status32.ie (explanation in firq_exit:_firq_return_from_coop) */
 
-	ld_s r3, [r2, _thread_offset_to_intlock_key]
+	ld r3, [r2, _thread_offset_to_intlock_key]
 	st  0, [r2, _thread_offset_to_intlock_key]
 	cmp r3, 0
 	or.ne r0, r0, _ARC_V2_STATUS32_IE
@@ -212,7 +212,7 @@ _rirq_return_from_coop:
 	sub sp, sp, ___isf_t_pc_OFFSET
 
 	/* update return value on stack */
-	ld_s r0, [r2, _thread_offset_to_return_value]
+	ld r0, [r2, _thread_offset_to_return_value]
 	st_s r0, [sp, ___isf_t_r0_OFFSET]
 
 	/* reset zero-overhead loops */
