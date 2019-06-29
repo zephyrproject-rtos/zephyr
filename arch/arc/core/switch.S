@@ -126,7 +126,7 @@ _switch_to_target_thread:
 	pop_s r2
 #endif
 
-	ld_s r3, [r2, _thread_offset_to_relinquish_cause]
+	ld r3, [r2, _thread_offset_to_relinquish_cause]
 
 	breq r3, _CAUSE_RIRQ, _switch_return_from_rirq
 	nop
