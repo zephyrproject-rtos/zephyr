@@ -20,7 +20,7 @@
 #include <linker/sections.h>
 #include <kernel_structs.h>
 #include <wait_q.h>
-#include <mmustructs.h>
+#include <ia32/mmustructs.h>
 #include <sys/printk.h>
 
 /* forward declaration */
