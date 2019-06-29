@@ -27,7 +27,6 @@
 /* list of headers that define whose structure offsets will be generated */
 
 #include <kernel_structs.h>
-#include <swapstk.h>
 #include <ia32/mmustructs.h>
 #include <arch/x86/multiboot.h>
 
@@ -48,18 +47,6 @@ GEN_ABSOLUTE_SYM(_K_THREAD_NO_FLOAT_SIZEOF,
 		 sizeof(struct k_thread) - sizeof(tPreempFloatReg));
 
 GEN_OFFSET_SYM(_callee_saved_t, esp);
-
-GEN_OFFSET_SYM(tSwapStk, eax);
-GEN_OFFSET_SYM(tSwapStk, ebp);
-GEN_OFFSET_SYM(tSwapStk, ebx);
-GEN_OFFSET_SYM(tSwapStk, esi);
-GEN_OFFSET_SYM(tSwapStk, edi);
-GEN_OFFSET_SYM(tSwapStk, retAddr);
-GEN_OFFSET_SYM(tSwapStk, param);
-
-/* size of the entire tSwapStk structure */
-
-GEN_ABSOLUTE_SYM(__tSwapStk_SIZEOF, sizeof(tSwapStk));
 
 /* NANO_ESF structure member offsets */
 
