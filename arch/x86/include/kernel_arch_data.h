@@ -28,7 +28,7 @@
 
 #include <toolchain.h>
 #include <linker/sections.h>
-#include <exception.h>
+#include <ia32/exception.h>
 #include <kernel_arch_thread.h>
 #include <sys/util.h>
 
