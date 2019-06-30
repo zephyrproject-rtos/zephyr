@@ -450,6 +450,8 @@ struct gpio_driver_api {
 	int (*port_set_bits_raw)(struct device *port, gpio_pins_t pins);
 	int (*port_clear_bits_raw)(struct device *port, gpio_pins_t pins);
 	int (*port_toggle_bits)(struct device *port, gpio_pins_t pins);
+	int (*pin_interrupt_configure)(struct device *port, unsigned int pin,
+				       unsigned int flags);
 	int (*manage_callback)(struct device *port, struct gpio_callback *cb,
 			       bool set);
 	int (*enable_callback)(struct device *port, int access_op, u32_t pin);
@@ -964,6 +966,41 @@ static inline int gpio_pin_read(struct device *port, u32_t pin,
 				u32_t *value)
 {
 	return gpio_read(port, GPIO_ACCESS_BY_PIN, pin, value);
+}
+
+/**
+ * @brief Configure pin interrupt.
+ *
+ * @note This function can also be used to configure interrupts on pins
+ *       not controlled directly by the GPIO module. That is, pins which are
+ *       routed to other modules such as I2C, SPI, UART.
+ *
+ * @param port Pointer to device structure for the driver instance.
+ * @param pin Pin number.
+ * @param flags Interrupt configuration flags as defined by GPIO_INT_*.
+ *
+ * @retval 0 If successful.
+ * @retval -ENOTSUP If any of the configuration options is not supported.
+ * @retval -EINVAL  Invalid argument.
+ * @retval -EBUSY   Interrupt line required to configure pin interrupt is
+ *                  already in use.
+ */
+__syscall int gpio_pin_interrupt_configure(struct device *port,
+		unsigned int pin, unsigned int flags);
+
+static inline int z_impl_gpio_pin_interrupt_configure(struct device *port,
+		unsigned int pin, unsigned int flags)
+{
+	const struct gpio_driver_api *api =
+		(const struct gpio_driver_api *)port->driver_api;
+
+	__ASSERT(pin < GPIO_MAX_PINS_PER_PORT, "Invalid pin number");
+
+	__ASSERT(((flags & GPIO_INT_ENABLE) == 0) ||
+		 ((flags & (GPIO_INT_LOW_0 | GPIO_INT_HIGH_1)) != 0),
+		 "At least one of GPIO_INT_LOW_0, GPIO_INT_HIGH_1 has to be "
+		 "enabled.");
+	return api->pin_interrupt_configure(port, pin, flags);
 }
 
 /**
