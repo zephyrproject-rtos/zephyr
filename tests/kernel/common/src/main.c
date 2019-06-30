@@ -7,6 +7,7 @@
 
 #include <ztest.h>
 #include <kernel_version.h>
+#include <misc/speculation.h>
 #include "version.h"
 
 extern void test_byteorder_memcpy_swap(void);
@@ -68,6 +69,24 @@ static void test_version(void)
 
 }
 
+static void test_bounds_check_mitigation(void)
+{
+	/* Very hard to test against speculation attacks, but we can
+	 * at least assert that logically this function does
+	 * what it says it does.
+	 */
+
+	int index = 17;
+
+	index = k_array_index_sanitize(index, 24);
+	zassert_equal(index, 17, "bad index");
+
+#ifdef CONFIG_USERSPACE
+	index = k_array_index_sanitize(index, 5);
+	zassert_equal(index, 0, "bad index");
+#endif
+}
+
 void test_main(void)
 {
 	ztest_test_suite(common,
@@ -86,7 +105,8 @@ void test_main(void)
 			 ztest_unit_test(test_clock_cycle),
 			 ztest_unit_test(test_version),
 			 ztest_unit_test(test_multilib),
-			 ztest_unit_test(test_thread_context)
+			 ztest_unit_test(test_thread_context),
+			 ztest_unit_test(test_bounds_check_mitigation)
 			 );
 
 	ztest_run_test_suite(common);
