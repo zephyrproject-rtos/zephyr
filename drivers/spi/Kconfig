@@ -176,6 +176,46 @@ config SPI_6_OP_MODES
 
 endif # SPI_6
 
+config SPI_7
+	bool "SPI port 7"
+	help
+	  Enable SPI controller port 7.
+
+if SPI_7
+
+config SPI_7_OP_MODES
+	int "Port 7 supported operation modes (master/slave/both)"
+	default 1
+	range 1 3
+	help
+	  This sets the supported operation modes at runtime, by the SPI
+	  port 7, where:
+	  1 is MASTER mode only (default)
+	  2 is SLAVE mode only
+	  3 is both modes are available.
+
+endif # SPI_7
+
+config SPI_8
+	bool "SPI port 8"
+	help
+	  Enable SPI controller port 8.
+
+if SPI_8
+
+config SPI_8_OP_MODES
+	int "Port 8 supported operation modes (master/slave/both)"
+	default 1
+	range 1 3
+	help
+	  This sets the supported operation modes at runtime, by the SPI
+	  port 8, where:
+	  1 is MASTER mode only (default)
+	  2 is SLAVE mode only
+	  3 is both modes are available.
+
+endif # SPI_8
+
 source "drivers/spi/Kconfig.stm32"
 
 source "drivers/spi/Kconfig.dw"
