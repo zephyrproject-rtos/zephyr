@@ -39,7 +39,7 @@ config BUILTIN_STACK_GUARD
 config ARM_STACK_PROTECTION
 	bool
 	default y if HW_STACK_PROTECTION
-	select BUILTIN_STACK_GUARD if CPU_CORTEX_M_HAS_SPLIM
+	imply BUILTIN_STACK_GUARD if CPU_CORTEX_M_HAS_SPLIM
 	select MPU_STACK_GUARD if (!BUILTIN_STACK_GUARD && ARM_MPU)
 	help
 	  This option enables either:
@@ -49,7 +49,9 @@ config ARM_STACK_PROTECTION
 	  if the bounds of the current process stack are overflowed.
 	  The two stack guard options are mutually exclusive. The
 	  selection of the built-in Stack Pointer limit checking is
-	  prioritized over the MPU-based stack guard.
+	  prioritized over the MPU-based stack guard. The developer
+	  still has the option to manually select the MPU-based
+	  stack guard, if this is desired.
 
 config ARM_SECURE_FIRMWARE
 	bool
