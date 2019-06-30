@@ -8,6 +8,7 @@
 #include <misc/slist.h>
 
 static sys_slist_t test_list;
+static sys_slist_t append_list;
 
 struct container_node {
 	sys_snode_t node;
@@ -174,7 +175,8 @@ static inline bool verify_tail_head(sys_slist_t *list,
  *
  * @see sys_slist_init(), sys_slist_append(),
  * sys_slist_find_and_remove(), sys_slist_prepend(),
- * sys_slist_remove()
+ * sys_slist_remove(), sys_slist_get(), sys_slist_get_not_empty(),
+ * sys_slist_append_list(), sys_slist_merge_list()
  */
 void test_slist(void)
 {
@@ -236,14 +238,14 @@ void test_slist(void)
 		      &test_node_1.node),
 		     "test_list node links are wrong");
 
-	/* Inserting node 4 after node 2 */
+	/* Inserting node 4 after node 2, peek with nocheck variant */
 	sys_slist_insert(&test_list, &test_node_2.node, &test_node_4.node);
 
 	zassert_true((verify_tail_head(&test_list, &test_node_2.node,
 				       &test_node_3.node, false)),
 		     "test_list head/tail are wrong");
 
-	zassert_true((sys_slist_peek_next(&test_node_2.node) ==
+	zassert_true((sys_slist_peek_next_no_check(&test_node_2.node) ==
 		      &test_node_4.node),
 		     "test_list node links are wrong");
 
@@ -323,6 +325,65 @@ void test_slist(void)
 		ii++;
 	}
 	zassert_equal(ii, 2, "");
+
+	/* test sys_slist_get_not_empty() and sys_slist_get() APIs */
+	for (ii = 0; ii < 6; ii++) {
+		node = sys_slist_get_not_empty(&test_list);
+		zassert_equal(((struct data_node *)node)->data, ii, "");
+	}
+	for (ii = 0; ii < 6; ii++) {
+		/* regenerate test_list since we just emptied it */
+		sys_slist_append(&test_list, &data_node[ii].node);
+	}
+	for (ii = 0; ii < 6; ii++) {
+		node = sys_slist_get(&test_list);
+		zassert_equal(((struct data_node *)node)->data, ii, "");
+	}
+	node = sys_slist_get(&test_list);
+	zassert_equal(node, NULL, "");
+
+	/* test sys_slist_append_list() */
+	sys_slist_init(&append_list);
+	struct data_node data_node_append[6] = {
+		{ .data = 6 },
+		{ .data = 7 },
+		{ .data = 8 },
+		{ .data = 9 },
+		{ .data = 10 },
+		{ .data = 11 },
+	};
+	for (ii = 0; ii < 6; ii++) {
+		/* regenerate test_list, which we just emptied */
+		sys_slist_append(&test_list, &data_node[ii].node);
+		/* Build append_list so that the node pointers are correct */
+		sys_slist_append(&append_list, &data_node_append[ii].node);
+	}
+	sys_slist_append_list(&test_list, &data_node_append[0].node,
+			      &data_node_append[5].node);
+	for (ii = 0; ii < 12; ii++) {
+		node = sys_slist_get(&test_list);
+		zassert_equal(((struct data_node *)node)->data, ii,
+			      "expected %d got %d", ii,
+			      ((struct data_node *)node)->data);
+	}
+
+	/* test sys_slist_merge_slist */
+	sys_slist_init(&test_list);
+	sys_slist_init(&append_list);
+	for (ii = 0; ii < 6; ii++) {
+		/* regenerate both lists */
+		sys_slist_append(&test_list, &data_node[ii].node);
+		sys_slist_append(&append_list, &data_node_append[ii].node);
+	}
+	sys_slist_merge_slist(&test_list, &append_list);
+	for (ii = 0; ii < 12; ii++) {
+		node = sys_slist_get(&test_list);
+		zassert_equal(((struct data_node *)node)->data, ii,
+			      "expected %d got %d", ii,
+			      ((struct data_node *)node)->data);
+	}
+	zassert_true(sys_slist_is_empty(&append_list),
+		     "merged list is not empty");
 }
 
 /**
