@@ -14,10 +14,11 @@ Building and Running
 ********************
 
 This project outputs sensor data to the console. FXOS8700
-sensor is present on the :ref:`frdm_k64f`, :ref:`frdm_kw41z`, and
-:ref:`hexiwear_k64` boards. Accelerometer only devices are
-present on the :ref:`frdm_kl25z`, :ref:`bbc_microbit`, and
-:ref:`reel_board` boards. It does not work on QEMU.
+sensor is present on the :ref:`frdm_k64f`, :ref:`frdm_kw41z`,
+:ref:`hexiwear_k64`, and :ref:`twr_ke18f` boards.
+Accelerometer only devices are present on the :ref:`frdm_kl25z`,
+:ref:`bbc_microbit`, and :ref:`reel_board` boards. It does not work on
+QEMU.
 
 Building and Running for FRDM-K64F
 ==================================
@@ -36,6 +37,20 @@ Example building for the FRDM-K64F with motion detection support:
    :zephyr-app: samples/sensor/fxos8700
    :board: frdm_k64f
    :conf: "prj.conf overlay-motion.conf"
+   :goals: build flash
+   :compact:
+
+Building and Running for TWR-KE18F
+==================================
+TWR-KE18F is equipped with FXOS8700CQ accelerometer and magnetometer.
+The FXOS8700CQ IRQ lines, however, are not connected by default, so
+motion detection is not supported.
+
+Sample can be built and executed for the TWR-KE18F as follows:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/sensor/fxos8700
+   :board: twr_ke18f
    :goals: build flash
    :compact:
 
