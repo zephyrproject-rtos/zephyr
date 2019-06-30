@@ -6,6 +6,7 @@
 
 #include <ztest.h>
 #include <irq_offload.h>
+#include <sys/mutex.h>
 
 /* Macro declarations */
 #define TOTAL_THREADS_WAITING (3)
@@ -27,6 +28,9 @@ ZTEST_BMEM int timeout;
 ZTEST_BMEM int index[TOTAL_THREADS_WAITING];
 ZTEST_BMEM struct k_futex simple_futex;
 ZTEST_BMEM struct k_futex multiple_futex[TOTAL_THREADS_WAITING];
+struct k_futex no_access_futex;
+ZTEST_BMEM atomic_t not_a_futex;
+ZTEST_BMEM struct sys_mutex also_not_a_futex;
 
 struct k_thread futex_tid;
 struct k_thread futex_wake_tid;
@@ -414,10 +418,43 @@ void test_multiple_futex_wait_wake(void)
 	}
 }
 
+void test_user_futex_bad(void)
+{
+	int ret;
+
+	/* Is a futex, but no access to its memory */
+	ret = k_futex_wait(&no_access_futex, 0, K_NO_WAIT);
+	zassert_equal(ret, -EACCES, "shouldn't have been able to access");
+	ret = k_futex_wake(&no_access_futex, false);
+	zassert_equal(ret, -EACCES, "shouldn't have been able to access");
+
+	/* Access to memory, but not a kernel object */
+	ret = k_futex_wait((struct k_futex *)&not_a_futex, 0, K_NO_WAIT);
+	zassert_equal(ret, -EINVAL, "waited on non-futex");
+	ret = k_futex_wake((struct k_futex *)&not_a_futex, false);
+	zassert_equal(ret, -EINVAL, "woke non-futex");
+
+	/* Access to memory, but wrong object type */
+	ret = k_futex_wait((struct k_futex *)&also_not_a_futex, 0, K_NO_WAIT);
+	zassert_equal(ret, -EINVAL, "waited on non-futex");
+	ret = k_futex_wake((struct k_futex *)&also_not_a_futex, false);
+	zassert_equal(ret, -EINVAL, "woke non-futex");
+
+	/* Wait with unexpected value */
+	atomic_set(&simple_futex.val, 100);
+	ret = k_futex_wait(&simple_futex, 0, K_NO_WAIT);
+	zassert_equal(ret, -EAGAIN, "waited when values did not match");
+
+	/* Timeout case */
+	ret = k_futex_wait(&simple_futex, 100, K_NO_WAIT);
+	zassert_equal(ret, -ETIMEDOUT, "didn't time out");
+}
+
 /* ztest main entry*/
 void test_main(void)
 {
 	ztest_test_suite(test_futex,
+			 ztest_user_unit_test(test_user_futex_bad),
 			 ztest_unit_test(test_futex_wait_forever_wake),
 			 ztest_unit_test(test_futex_wait_timeout_wake),
 			 ztest_unit_test(test_futex_wait_nowait_wake),
