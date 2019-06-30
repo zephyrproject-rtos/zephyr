@@ -752,6 +752,10 @@ int usb_dc_ep_write(const u8_t ep, const u8_t *const data,
 	if (status != HAL_OK) {
 		LOG_ERR("HAL_PCD_EP_Transmit failed(0x%02x), %d", ep,
 			(int)status);
+
+		if (!k_is_in_isr()) {
+			irq_enable(DT_USB_IRQ);
+		}
 		k_sem_give(&ep_state->write_sem);
 		ret = -EIO;
 	}
