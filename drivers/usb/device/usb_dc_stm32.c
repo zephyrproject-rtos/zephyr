@@ -767,7 +767,7 @@ int usb_dc_ep_write(const u8_t ep, const u8_t *const data,
 		irq_enable(DT_USB_IRQ);
 	}
 
-	if (ret_bytes) {
+	if (!ret && ret_bytes) {
 		*ret_bytes = len;
 	}
 
