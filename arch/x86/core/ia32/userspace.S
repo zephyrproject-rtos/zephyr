@@ -199,7 +199,7 @@ SECTION_FUNC(TEXT, z_x86_syscall_entry_stub)
 	jae	_bad_syscall
 
 _id_ok:
-#ifdef CONFIG_BOUNDS_CHECK_BYPASS_MITIGATION
+#ifdef CONFIG_X86_BOUNDS_CHECK_BYPASS_MITIGATION
 	/* Prevent speculation with bogus system call IDs */
 	lfence
 #endif
