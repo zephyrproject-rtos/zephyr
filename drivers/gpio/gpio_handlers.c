@@ -76,6 +76,15 @@ static inline int z_vrfy_gpio_port_toggle_bits(struct device *port,
 }
 #include <syscalls/gpio_port_toggle_bits_mrsh.c>
 
+static inline int z_vrfy_gpio_pin_interrupt_configure(struct device *port,
+		unsigned int pin, unsigned int flags)
+{
+	Z_OOPS(Z_SYSCALL_DRIVER_GPIO(port, pin_interrupt_configure));
+	return z_impl_gpio_pin_interrupt_configure((struct device *)port, pin,
+						   flags);
+}
+#include <syscalls/gpio_pin_interrupt_configure_mrsh.c>
+
 static inline int z_vrfy_gpio_enable_callback(struct device *port,
 					     int access_op, u32_t pin)
 {
