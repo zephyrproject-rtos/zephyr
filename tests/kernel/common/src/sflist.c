@@ -384,6 +384,31 @@ void test_sflist(void)
 	}
 	zassert_true(sys_sflist_is_empty(&append_list),
 		     "merged list is not empty");
+
+	/* tests for sys_sfnode_flags_get(), sys_sfnode_flags_set()
+	 * sys_sfnode_init()
+	 */
+	sys_sflist_init(&test_list);
+	/* Only iterating 0..3 due to limited range of flag values */
+	for (ii = 0; ii < 4; ii++) {
+		sys_sfnode_init(&data_node[ii].node, ii);
+		sys_sflist_append(&test_list, &data_node[ii].node);
+	}
+	for (ii = 0; ii < 4; ii++) {
+		node = sys_sflist_get(&test_list);
+		zassert_equal(sys_sfnode_flags_get(node), ii,
+			      "wrong flags value");
+		/* Place the nodes back on the list with the flags set
+		 * in reverse order for the next test
+		 */
+		sys_sfnode_flags_set(node, 3 - ii);
+		sys_sflist_append(&test_list, node);
+	}
+	for (ii = 3; ii <= 0; ii--) {
+		node = sys_sflist_get(&test_list);
+		zassert_equal(sys_sfnode_flags_get(node), ii,
+			      "wrong flags value");
+	}
 }
 
 /**
