@@ -1,0 +1,8 @@
+/*
+ * Copyright (c) 2019 Philippe Retornaz <philippe@shapescale.com>
+ * Copyright (c) 2019 ST Microelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/g0/stm32g0.dtsi>
