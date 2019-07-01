@@ -54,5 +54,5 @@ the following documents:
    l2cap-pics.rst
    sm-pics.rst
    rfcomm-pics.rst
-
+   mesh-pics.rst
 
