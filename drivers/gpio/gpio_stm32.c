@@ -267,6 +267,11 @@ static int gpio_stm32_config(struct device *dev, int access_op,
 		return -ENOTSUP;
 	}
 
+#if defined(CONFIG_STM32H7_DUAL_CORE)
+	while (LL_HSEM_1StepLock(HSEM, LL_HSEM_ID_1)) {
+	}
+#endif /* CONFIG_STM32H7_DUAL_CORE */
+
 	/* figure out if we can map the requested GPIO
 	 * configuration
 	 */
@@ -311,6 +316,10 @@ static int gpio_stm32_config(struct device *dev, int access_op,
 		}
 
 	}
+
+#if defined(CONFIG_STM32H7_DUAL_CORE)
+	LL_HSEM_ReleaseLock(HSEM, LL_HSEM_ID_1, HSEM_CR_COREID_CURRENT);
+#endif /* CONFIG_STM32H7_DUAL_CORE */
 
 	return 0;
 }

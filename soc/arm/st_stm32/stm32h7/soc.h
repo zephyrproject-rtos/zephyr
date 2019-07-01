@@ -21,6 +21,8 @@
 
 #define LL_HSEM_ID_0   (0U) /* HW semaphore 0 */
 #define LL_HSEM_MASK_0 (1 << LL_HSEM_ID_0)
+#define LL_HSEM_ID_1   (1U) /* HW semaphore 1 */
+#define LL_HSEM_MASK_1 (1 << LL_HSEM_ID_1)
 
 #include <stm32h7xx_ll_hsem.h>
 
