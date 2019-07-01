@@ -61,6 +61,10 @@
 #include <stm32wbxx_ll_spi.h>
 #endif /* CONFIG_SPI_STM32 */
 
+#ifdef CONFIG_ADC_STM32
+#include <stm32wbxx_ll_adc.h>
+#endif
+
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _STM32WBX_SOC_H_ */
