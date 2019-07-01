@@ -238,6 +238,14 @@ _firq_reschedule:
 	pop_s r2
 #endif
 
+#if defined(CONFIG_USERSPACE)
+/*
+ * see comments in regular_irq.S
+ */
+	lr r0, [_ARC_V2_AUX_IRQ_ACT]
+	bclr r0, r0, 31
+	sr r0, [_ARC_V2_AUX_IRQ_ACT]
+#endif
 	ld r3, [r2, _thread_offset_to_relinquish_cause]
 
 	breq r3, _CAUSE_RIRQ, _firq_return_from_rirq
