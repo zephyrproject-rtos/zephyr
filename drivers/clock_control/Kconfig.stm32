@@ -122,11 +122,14 @@ endchoice
 source "drivers/clock_control/Kconfig.stm32f0_f3"
 source "drivers/clock_control/Kconfig.stm32f1"
 source "drivers/clock_control/Kconfig.stm32f2_f4_f7"
+source "drivers/clock_control/Kconfig.stm32h7"
 source "drivers/clock_control/Kconfig.stm32l0_l1"
 source "drivers/clock_control/Kconfig.stm32l4_wb"
 
 
 # Bus clocks configuration options
+
+if !SOC_SERIES_STM32H7X
 
 config CLOCK_STM32_AHB_PRESCALER
 	int "AHB prescaler"
@@ -181,6 +184,7 @@ config CLOCK_STM32_AHB4_PRESCALER
 	  HCLK4 prescaler, allowed values: 1, 2, 4, 8, 16, 64, 128,
 	  256, 512.
 
+endif # !SOC_SERIES_STM32H7X
 
 # Micro-controller Clock output configuration options
 

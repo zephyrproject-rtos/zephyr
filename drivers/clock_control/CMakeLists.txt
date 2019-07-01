@@ -12,6 +12,8 @@ zephyr_sources_ifdef(CONFIG_CLOCK_CONTROL_RV32M1_PCC          clock_control_rv32
 if(CONFIG_CLOCK_CONTROL_STM32_CUBE)
 if(CONFIG_SOC_SERIES_STM32MP1X)
   zephyr_sources(clock_stm32_ll_mp1.c)
+elseif(CONFIG_SOC_SERIES_STM32H7X)
+  zephyr_sources(clock_stm32_ll_h7.c)
 else()
   zephyr_sources(clock_stm32_ll_common.c)
   zephyr_sources_ifdef(CONFIG_SOC_SERIES_STM32F0X clock_stm32f0_f3.c)
