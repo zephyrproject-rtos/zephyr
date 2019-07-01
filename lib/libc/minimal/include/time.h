@@ -9,6 +9,7 @@
 #define ZEPHYR_LIB_LIBC_MINIMAL_INCLUDE_TIME_H_
 
 #include <stdint.h>
+#include <bits/restrict.h>
 
 /* Minimal time.h to fulfill the requirements of certain libraries
  * like mbedTLS and to support time APIs.
@@ -37,6 +38,15 @@ struct timespec {
 	time_t tv_sec;
 	long tv_nsec;
 };
+
+/*
+ * Conversion between civil time and UNIX time.  The companion
+ * localtime() and inverse mktime() are not provided here since they
+ * require access to time zone information.
+ */
+struct tm *gmtime(const time_t *timep);
+struct tm *gmtime_r(const time_t *_MLIBC_RESTRICT timep,
+		    struct tm *_MLIBC_RESTRICT result);
 
 #ifdef __cplusplus
 }
