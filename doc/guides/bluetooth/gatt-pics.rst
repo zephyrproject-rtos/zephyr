@@ -1,9 +1,9 @@
 .. _gatt-pics:
 
-GATT PICS
-=========
+GATT ICS
+********
 
-PTS version: 7.2.0
+PTS version: 7.4.1
 
 \* - different than PTS defaults
 
@@ -37,7 +37,7 @@ TSPC_GATT_1a_3	True		GATT Server over LE (C.3)
 TSPC_GATT_1a_4	False		GATT Server over BR/EDR (C.4)
 TSPC_GATT_1a_5	False		Complete GATT Client layer over LE (C.5)
 TSPC_GATT_1a_6	False		Complete GATT Client layer over BR/EDR (C.6)
-TSPC_GATT_1a_7	False		Complete GATT Server layer over LE (C.7)
+TSPC_GATT_1a_7	True		Complete GATT Server layer over LE (C.7)
 TSPC_GATT_1a_8	False		Complete GATT Server layer over BR/EDR (C.8)
 ==============	===========	============================================
 
@@ -61,7 +61,7 @@ Generic Attribute Profile Support
 Parameter Name	Selected	Description
 ==============	===========	============================================
 TSPC_GATT_3_1	True		Client: Exchange MTU (C.1)
-TSPC_GATT_3_2	False (*)	Client: Discover All Primary Services (C.1)
+TSPC_GATT_3_2	True		Client: Discover All Primary Services (C.1)
 TSPC_GATT_3_3	True		Client: Discover Primary Services Service
 				UUID (C.1)
 TSPC_GATT_3_4	True		Client: Find Included Services (C.1)
@@ -71,7 +71,7 @@ TSPC_GATT_3_6	True		Client: Discover Characteristics by UUID (C.1)
 TSPC_GATT_3_7	True		Client: Discover All Characteristic Descriptors
 				(C.1)
 TSPC_GATT_3_8	True		Client: Read Characteristic Value (C.1)
-TSPC_GATT_3_9	False (*)	Client: Read using Characteristic UUID (C.1)
+TSPC_GATT_3_9	True		Client: Read using Characteristic UUID (C.1)
 TSPC_GATT_3_10	True		Client: Read Long Characteristic Values (C.1)
 TSPC_GATT_3_11	True		Client: Read Multiple Characteristic
 				Values (C.1)
@@ -91,6 +91,9 @@ TSPC_GATT_3_22	True		Client: Write Long Characteristic Descriptors
 				(C.1)
 TSPC_GATT_3_23	True		Client: Service Changed Characteristic (M)
 TSPC_GATT_3_24	False (*)	Client: Configured Broadcast (C.3)
+TSPC_GATT_3_25	False (*)	Client: Client Supported Features Characteristic
+				(C.4)
+TSPC_GATT_3_26	False (*)	Client: Database Hash Characteristic (C.4)
 ==============	===========	============================================
 
 
@@ -183,6 +186,9 @@ TSPC_GATT_4_22	True		Server: Write Long Characteristic
 TSPC_GATT_4_23	True		Server: Service Changed Characteristic (C.1)
 TSPC_GATT_4_24	False (*)	Server: Configured Broadcast (C.5)
 TSPC_GATT_4_25	False (*)	Server: Execute Write Request with empty queue (C.7)
+TSPC_GATT_4_26	True		Server: Client Supported Features Characteristic
+				(C.9)
+TSPC_GATT_4_27	True    	Server: Database Hash Characteristic (C.8)
 ==============	===========	============================================
 
 
@@ -237,8 +243,8 @@ TSPC_GATT_4B_38	True		Server: Characteristic Format: struct (M)
 ===============	===========	============================================
 
 
-Generic Attribute Profile Service - SDP Interoperability
-========================================================
+SDP Interoperability
+====================
 
 ==============	===========	============================================
 Parameter Name	Selected	Description
@@ -276,12 +282,3 @@ TSPC_GATT_8_1	False (*)	Support for Multiple ATT bearers from same
 				device (C.1)
 ==============	===========	============================================
 
-
-Device Configuration
-====================
-
-==============	===========	============================================
-Parameter Name	Selected	Description
-==============	===========	============================================
-TSPC_GAP_0_2	True		LE (C.2)
-==============	===========	============================================
