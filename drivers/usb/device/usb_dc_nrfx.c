@@ -1348,8 +1348,14 @@ int usb_dc_detach(void)
 	usbd_evt_flush();
 	eps_ctx_uninit();
 
-	nrfx_usbd_disable();
-	nrfx_usbd_uninit();
+	if (nrfx_usbd_is_enabled()) {
+		nrfx_usbd_disable();
+	}
+
+	if (nrfx_usbd_is_initialized()) {
+		nrfx_usbd_uninit();
+	}
+
 	(void) hf_clock_enable(false, false);
 	nrf5_power_usb_power_int_enable(false);
 
