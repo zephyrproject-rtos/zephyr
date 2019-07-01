@@ -1,12 +1,12 @@
-L2CAP PICS
-==========
+L2CAP ICS
+*********
 
-PTS version: 7.2.0
+PTS version: 7.4.1
 
 * - different than PTS defaults
 
-Device Configuration
-====================
+L2CAP Transport Configuration
+=============================
 
 ================	===========	=======================================
 Parameter Name		Selected	Description
@@ -97,7 +97,7 @@ TSPC_L2CAP_2_42		True		Send Connection Parameter Update Request
 TSPC_L2CAP_2_43		True		Send Connection Parameter Update
 					Response
 TSPC_L2CAP_2_44		False (*)	Extended Flow Specification for AMP
-TSPC_L2CAP_2_45		True		Send disconnect request command
+TSPC_L2CAP_2_45		False (*)	Send disconnect request command
 TSPC_L2CAP_2_45a	True		Send disconnect request command - LE
 TSCP_L2CAP_2_46		True		Support LE Credit Based Flow Control
 					Mode
@@ -141,3 +141,4 @@ TSPC_L2CAP_3_15		False (*)	Negotiate and support service type
 TSPC_L2CAP_3_16		True		Support Multiple Simultaneous LE Data
 					Channels
 ================	===========	=======================================
+
