@@ -3,4 +3,4 @@ common:
 tests:
   net.ptp.clock:
     min_ram: 32
-    tags: net ptp gptp
+    tags: net ptp gptp userspace
