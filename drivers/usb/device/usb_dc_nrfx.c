@@ -1545,6 +1545,10 @@ int usb_dc_ep_is_stalled(const u8_t ep, u8_t *const stalled)
 		return -EINVAL;
 	}
 
+	if (!stalled) {
+		return -EINVAL;
+	}
+
 	*stalled = (u8_t) nrfx_usbd_ep_stall_check(ep_addr_to_nrfx(ep));
 
 	return 0;
