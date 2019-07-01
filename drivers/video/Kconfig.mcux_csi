@@ -1,0 +1,11 @@
+# Kconfig - NXP MCUX CSI driver configuration options
+
+#
+# Copyright (c) 2019, Linaro Limited
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig VIDEO_MCUX_CSI
+	bool "NXP MCUX CMOS Sensor Interface (CSI) driver"
+	depends on HAS_MCUX_CSI
