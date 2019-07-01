@@ -24,6 +24,10 @@
 #include <stm32h7xx_ll_system.h>
 #endif /* CONFIG_CLOCK_CONTROL_STM32_CUBE */
 
+#ifdef CONFIG_EXTI_STM32
+#include <stm32h7xx_ll_exti.h>
+#endif /* CONFIG_EXTI_STM32 */
+
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _STM32F7_SOC_H7_ */
