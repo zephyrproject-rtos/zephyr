@@ -5,10 +5,10 @@ config SOC_FLASH_IMXRT
 	select FLASH_HAS_DRIVER_ENABLED
 	select CODE_DATA_RELOCATION
 	help
-	  Driver for external flash over FlexSPI interface. Work for Hyperflash memory.
+		Driver for external flash over FlexSPI interface. Work for Hyperflash memory.
 		This will enable CODE_DATA_RELOCATION, as RAM run is required while writing the
 		external flash.
-	  QSPI will be implemented in a second time.
+		QSPI will be implemented in future release.
 
 
 if SOC_FLASH_IMXRT
