@@ -489,7 +489,7 @@ static int eswifi_mgmt_connect(struct device *dev,
 
 void eswifi_async_msg(struct eswifi_dev *eswifi, char *msg, size_t len)
 {
-	LOG_DBG("len %u", len);
+	eswifi_offload_async_msg(eswifi, msg, len);
 }
 
 #if defined(CONFIG_NET_IPV4)
