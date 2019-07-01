@@ -1,9 +1,9 @@
 .. _sm-pics:
 
-SM PICS
-*******
+SM ICS
+******
 
-PTS version: 7.2.0
+PTS version: 7.4.1
 
 \* - different than PTS defaults
 
@@ -35,7 +35,7 @@ TSPC_SM_2_1	True		Authenticated MITM protection (O)
 TSPC_SM_2_2	True		Unauthenticated no MITM protection (C.1)
 TSPC_SM_2_3	True		No security requirements (M)
 TSPC_SM_2_4	False		OOB supported (O)
-TSPC_SM_2_5	True		LE Secure Connections (C.2)
+TSPC_SM_2_5	True		Slave Role (Responder) (C.2)
 ===============	===========	=======================================
 
 
@@ -71,7 +71,7 @@ TSPC_SM_5_1	True		Encryption Setup using STK (C.3)
 TSPC_SM_5_2	True		Encryption Setup using LTK (O)
 TSPC_SM_5_3	True		Slave Initiated Security (C.1)
 TSPC_SM_5_4	True		Slave Initiated Security - Master response(C.2)
-TSPC_SM_5_5	True		Link Key Conversion Function h7 (C.4)
+TSPC_SM_5_5	False (*)	Link Key Conversion Function h7 (C.4)
 ===============	===========	=======================================
 
 
