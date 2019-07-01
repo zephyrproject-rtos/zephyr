@@ -17,6 +17,23 @@
  */
 #include <kernel_includes.h>
 
+#ifdef CONFIG_STM32H7_DUAL_CORE
+
+#define LL_HSEM_ID_0   (0U) /* HW semaphore 0 */
+#define LL_HSEM_MASK_0 (1 << LL_HSEM_ID_0)
+
+#include <stm32h7xx_ll_hsem.h>
+
+#ifdef CONFIG_CPU_CORTEX_M4
+
+#include <stm32h7xx_ll_bus.h>
+#include <stm32h7xx_ll_pwr.h>
+#include <stm32h7xx_ll_cortex.h>
+
+#endif /* CONFIG_CPU_CORTEX_M4 */
+
+#endif /* CONFIG_STM32H7_DUAL_CORE */
+
 #ifdef CONFIG_CLOCK_CONTROL_STM32_CUBE
 #include <stm32h7xx_ll_bus.h>
 #include <stm32h7xx_ll_rcc.h>
