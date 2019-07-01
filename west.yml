@@ -28,6 +28,9 @@ manifest:
     - name: hal_atmel
       revision: 5690f5b84495c8b657ff204c5c827df1ab9e12e3
       path: modules/hal/atmel
+    - name: canopennode
+      path: modules/lib/canopennode
+      revision: 5c6b0566d56264efd4bf23ed58bc7cb8b32fe063
     - name: ci-tools
       revision: c7d432c9c3674f5d646cf8f8a56f79a469e4e2a2
       path: tools/ci-tools
