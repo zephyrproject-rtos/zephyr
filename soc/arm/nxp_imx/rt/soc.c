@@ -200,6 +200,11 @@ static ALWAYS_INLINE void clock_init(void)
 	CLOCK_EnableClock(kCLOCK_Usdhc2);
 #endif
 #endif
+#ifdef CONFIG_VIDEO_MCUX_CSI
+	CLOCK_EnableClock(kCLOCK_Csi); /* Disable CSI clock gate */
+	CLOCK_SetDiv(kCLOCK_CsiDiv, 0); /* Set CSI divider to 1 */
+	CLOCK_SetMux(kCLOCK_CsiMux, 0); /* Set CSI source to OSC 24M */
+#endif
 
 	/* Keep the system clock running so SYSTICK can wake up the system from
 	 * wfi.
