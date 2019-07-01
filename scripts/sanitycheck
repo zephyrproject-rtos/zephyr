@@ -816,7 +816,7 @@ class QEMUHandler(Handler):
                 if not timeout_extended or harness.capture_coverage:
                     timeout_extended= True
                     if harness.capture_coverage:
-                        timeout_time = time.time() + 10
+                        timeout_time = time.time() + 30
                     else:
                         timeout_time = time.time() + 2
 
