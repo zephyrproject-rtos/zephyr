@@ -15,3 +15,4 @@ supported:
   - counter
   - spi
   - pwm
+  - adc
