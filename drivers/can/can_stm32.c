@@ -18,6 +18,8 @@
 #include <logging/log.h>
 LOG_MODULE_DECLARE(can_driver, CONFIG_CAN_LOG_LEVEL);
 
+#define INIT_TIMEOUT  (10 * sys_clock_hw_cycles_per_sec() / MSEC_PER_SEC)
+
 /*
  * Translation tables
  * filter_in_bank[enum can_filter_type] = number of filters in bank for this type
@@ -184,9 +186,52 @@ static void can_stm32_tx_isr(void *arg)
 
 #endif
 
-void HAL_CAN_MspInit(CAN_HandleTypeDef *hcan)
+static int can_enter_init_mode(CAN_TypeDef *can)
 {
-	ARG_UNUSED(hcan);
+	u32_t start_time;
+
+	can->MCR |= CAN_MCR_INRQ;
+	start_time = k_cycle_get_32();
+
+	while ((can->MSR & CAN_MSR_INAK) == 0U) {
+		if (k_cycle_get_32() - start_time > INIT_TIMEOUT) {
+			return CAN_TIMEOUT;
+		}
+	}
+
+	return 0;
+}
+
+static int can_leave_init_mode(CAN_TypeDef *can)
+{
+	u32_t start_time;
+
+	can->MCR &= ~CAN_MCR_INRQ;
+	start_time = k_cycle_get_32();
+
+	while ((can->MSR & CAN_MSR_INAK) != 0U) {
+		if (k_cycle_get_32() - start_time > INIT_TIMEOUT) {
+			return CAN_TIMEOUT;
+		}
+	}
+
+	return 0;
+}
+
+static int can_leave_sleep_mode(CAN_TypeDef *can)
+{
+	u32_t start_time;
+
+	can->MCR &= ~CAN_MCR_SLEEP;
+	start_time = k_cycle_get_32();
+
+	while ((can->MSR & CAN_MSR_SLAK) != 0) {
+		if (k_cycle_get_32() - start_time > INIT_TIMEOUT) {
+			return CAN_TIMEOUT;
+		}
+	}
+
+	return 0;
 }
 
 int can_stm32_runtime_configure(struct device *dev, enum can_mode mode,
@@ -198,10 +243,9 @@ int can_stm32_runtime_configure(struct device *dev, enum can_mode mode,
 	struct device *clock;
 	u32_t clock_rate;
 	u32_t prescaler;
-	u32_t hal_mode;
-	int hal_ret;
-	u32_t bs1;
-	u32_t bs2;
+	u32_t reg_mode;
+	u32_t ts1;
+	u32_t ts2;
 	u32_t sjw;
 	int ret;
 
@@ -232,42 +276,36 @@ int can_stm32_runtime_configure(struct device *dev, enum can_mode mode,
 			    " * bus_speed); "
 			    "prescaler = %d / ((%d + %d + 1) * %d)",
 			    clock_rate,
-			    cfg->prop_bs1,
-			    cfg->bs2,
+			    cfg->prop_ts1,
+			    cfg->ts2,
 			    bitrate);
 	}
 
 	__ASSERT(cfg->sjw <= 0x03,      "SJW maximum is 3");
-	__ASSERT(cfg->prop_bs1 <= 0x0F, "PROP_BS1 maximum is 15");
-	__ASSERT(cfg->bs2 <= 0x07,      "BS2 maximum is 7");
+	__ASSERT(cfg->prop_ts1 <= 0x0F, "PROP_BS1 maximum is 15");
+	__ASSERT(cfg->ts2 <= 0x07,      "BS2 maximum is 7");
 
-	bs1 = ((cfg->prop_bs1 & 0x0F) - 1) << CAN_BTR_TS1_Pos;
-	bs2 = ((cfg->bs2      & 0x07) - 1) << CAN_BTR_TS2_Pos;
+	ts1 = ((cfg->prop_ts1 & 0x0F) - 1) << CAN_BTR_TS1_Pos;
+	ts2 = ((cfg->ts2      & 0x07) - 1) << CAN_BTR_TS2_Pos;
 	sjw = ((cfg->sjw      & 0x07) - 1) << CAN_BTR_SJW_Pos;
 
-	hal_mode =  mode == CAN_NORMAL_MODE   ? CAN_MODE_NORMAL   :
-		    mode == CAN_LOOPBACK_MODE ? CAN_MODE_LOOPBACK :
-		    mode == CAN_SILENT_MODE   ? CAN_MODE_SILENT   :
-						CAN_MODE_SILENT_LOOPBACK;
+	reg_mode =  (mode == CAN_NORMAL_MODE)   ? 0U   :
+		    (mode == CAN_LOOPBACK_MODE) ? CAN_BTR_LBKM :
+		    (mode == CAN_SILENT_MODE)   ? CAN_BTR_SILM :
+						CAN_BTR_LBKM | CAN_BTR_SILM;
 
-	hcan.Init.TTCM = DISABLE;
-	hcan.Init.ABOM = DISABLE;
-	hcan.Init.AWUM = DISABLE;
-	hcan.Init.NART = DISABLE;
-	hcan.Init.RFLM = DISABLE;
-	hcan.Init.TXFP = DISABLE;
-	hcan.Init.Mode = hal_mode;
-	hcan.Init.SJW  = sjw;
-	hcan.Init.BS1  = bs1;
-	hcan.Init.BS2  = bs2;
-	hcan.Init.Prescaler = prescaler;
+	ret = can_enter_init_mode(can);
+	if (ret) {
+		LOG_ERR("Failed to enter init mode");
+		return ret;
+	}
 
-	hcan.State = HAL_CAN_STATE_RESET;
+	can->BTR = reg_mode | sjw | ts1 | ts2 | (prescaler - 1U);
 
-	hal_ret = HAL_CAN_Init(&hcan);
-	if (hal_ret != HAL_OK) {
-		LOG_ERR("HAL_CAN_Init failed: %d", hal_ret);
-		return -EIO;
+	ret = can_leave_init_mode(can);
+	if (ret) {
+		LOG_ERR("Failed to leave init mode");
+		return ret;
 	}
 
 	LOG_DBG("Runtime configure of %s done", dev->config->name);
@@ -305,13 +343,32 @@ static int can_stm32_init(struct device *dev)
 		return -EIO;
 	}
 
+	ret = can_leave_sleep_mode(can);
+	if (ret) {
+		LOG_ERR("Failed to exit sleep mode");
+		return ret;
+	}
+
+	ret = can_enter_init_mode(can);
+	if (ret) {
+		LOG_ERR("Failed to enter init mode");
+		return ret;
+	}
+	
+	can->MCR &= ~CAN_MCR_TTCM & ~CAN_MCR_TTCM & ~CAN_MCR_ABOM &
+		    ~CAN_MCR_AWUM & ~CAN_MCR_NART & ~CAN_MCR_RFLM &
+		    ~CAN_MCR_TXFP;
+
 	ret = can_stm32_runtime_configure(dev, CAN_NORMAL_MODE, 0);
 	if (ret) {
 		return ret;
 	}
 
+	/* Leave sleep mode after reset*/
+	can->MCR &= ~CAN_MCR_SLEEP;
+
 	cfg->config_irq(can);
-	can->IER |= CAN_IT_TME;
+	can->IER |= CAN_IER_TMEIE;
 	LOG_INF("Init of %s done", dev->config->name);
 	return 0;
 }
@@ -360,15 +417,15 @@ int can_stm32_send(struct device *dev, const struct zcan_frame *msg,
 
 	if (transmit_status_register & CAN_TSR_TME0) {
 		LOG_DBG("Using mailbox 0");
-		mailbox = &can->sTxMailBox[CAN_TXMAILBOX_0];
+		mailbox = &can->sTxMailBox[0];
 		mb = &(data->mb0);
 	} else if (transmit_status_register & CAN_TSR_TME1) {
 		LOG_DBG("Using mailbox 1");
-		mailbox = &can->sTxMailBox[CAN_TXMAILBOX_1];
+		mailbox = &can->sTxMailBox[1];
 		mb = &data->mb1;
 	} else if (transmit_status_register & CAN_TSR_TME2) {
 		LOG_DBG("Using mailbox 2");
-		mailbox = &can->sTxMailBox[CAN_TXMAILBOX_2];
+		mailbox = &can->sTxMailBox[2];
 		mb = &data->mb2;
 	}
 
@@ -820,8 +877,8 @@ static const struct can_stm32_config can_stm32_cfg_1 = {
 	.can = (CAN_TypeDef *)DT_CAN_1_BASE_ADDRESS,
 	.bus_speed = DT_CAN_1_BUS_SPEED,
 	.sjw = DT_CAN_1_SJW,
-	.prop_bs1 = DT_CAN_1_PROP_SEG + DT_CAN_1_PHASE_SEG1,
-	.bs2 = DT_CAN_1_PHASE_SEG2,
+	.prop_ts1 = DT_CAN_1_PROP_SEG + DT_CAN_1_PHASE_SEG1,
+	.ts2 = DT_CAN_1_PHASE_SEG2,
 	.pclken = {
 		.enr = DT_CAN_1_CLOCK_BITS,
 		.bus = DT_CAN_1_CLOCK_BUS,
@@ -856,7 +913,8 @@ static void config_can_1_irq(CAN_TypeDef *can)
 		    can_stm32_tx_isr, DEVICE_GET(can_stm32_1), 0);
 	irq_enable(DT_CAN_1_IRQ_SCE);
 #endif
-	can->IER |= CAN_IT_TME | CAN_IT_ERR | CAN_IT_FMP0 | CAN_IT_FMP1;
+	can->IER |= CAN_IER_TMEIE | CAN_IER_ERRIE | CAN_IER_FMPIE0 |
+		    CAN_IER_FMPIE1 | CAN_IER_BOFIE;
 }
 
 #if defined(CONFIG_NET_SOCKETS_CAN)
