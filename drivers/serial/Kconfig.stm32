@@ -97,7 +97,7 @@ config UART_10
 	  Enable support for UART10 port in the driver.
 	  Say y here if you want to use UART10 device.
 
-if SOC_SERIES_STM32L0X || SOC_SERIES_STM32L4X || SOC_SERIES_STM32WBX
+if SOC_SERIES_STM32L0X || SOC_SERIES_STM32L4X || SOC_SERIES_STM32WBX || SOC_SERIES_STM32H7X
 
 # --- low power port 1 ---
 
