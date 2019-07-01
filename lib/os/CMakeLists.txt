@@ -12,6 +12,7 @@ zephyr_sources(
   mempool.c
   rb.c
   thread_entry.c
+  timeutil.c
   work_q.c
   )
 
