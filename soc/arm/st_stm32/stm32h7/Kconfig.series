@@ -1,0 +1,17 @@
+# Kconfig - ST Microelectronics STM32H7 MCU series
+#
+# Copyright (c) 2019 Linaro Limited
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config SOC_SERIES_STM32H7X
+	bool "STM32H7x Series MCU"
+	select CPU_HAS_FPU
+	select SOC_FAMILY_STM32
+	select HAS_STM32CUBE
+	select CPU_HAS_ARM_MPU
+	select CLOCK_CONTROL_STM32_CUBE if CLOCK_CONTROL
+	select NEWLIB_LIBC
+	help
+	 Enable support for STM32H7 MCU series
