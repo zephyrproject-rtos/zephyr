@@ -17,6 +17,13 @@
  */
 #include <kernel_includes.h>
 
+#ifdef CONFIG_CLOCK_CONTROL_STM32_CUBE
+#include <stm32h7xx_ll_bus.h>
+#include <stm32h7xx_ll_rcc.h>
+#include <stm32h7xx_ll_pwr.h>
+#include <stm32h7xx_ll_system.h>
+#endif /* CONFIG_CLOCK_CONTROL_STM32_CUBE */
+
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _STM32F7_SOC_H7_ */
