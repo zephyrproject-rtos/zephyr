@@ -732,7 +732,7 @@ config BT_CTLR_PA_LNA_GPIOTE_CHAN
 comment "BLE Controller debug configuration"
 
 config BT_CTLR_ASSERT_HANDLER
-	bool "Bluetooth Controller Assertion Handler"
+	bool "Application Defined Assertion Handler"
 	help
 	  This option enables an application-defined sink for the
 	  controller assertion mechanism. This must be defined in
