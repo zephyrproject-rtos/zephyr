@@ -1,0 +1,21 @@
+# Kconfig - STM32 Nucleo-64 development board with STM32G071RB MCU
+#
+# Copyright (c) 2019 Philippe Retornaz <philippe@shapescale.com>
+# Copyright (c) 2019 STMicroelectronics
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if BOARD_NUCLEO_G071RB
+
+config BOARD
+	default "nucleo_g071rb"
+
+if UART_CONSOLE
+
+config UART_2
+	default y
+
+endif # UART_CONSOLE
+
+endif # BOARD_NUCLEO_G071RB
