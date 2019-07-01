@@ -733,7 +733,6 @@ comment "BLE Controller debug configuration"
 
 config BT_CTLR_ASSERT_HANDLER
 	bool "Bluetooth Controller Assertion Handler"
-	depends on BT_HCI_RAW
 	help
 	  This option enables an application-defined sink for the
 	  controller assertion mechanism. This must be defined in
