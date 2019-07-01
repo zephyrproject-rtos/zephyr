@@ -20,6 +20,7 @@
 		gpio-5= &gpio5;
 		uart-1 = &uart1;
 		led0 = &green_led;
+		pwm-led0 = &green_pwm_led;
 		sw0 = &user_button;
 		eth = &eth;
 	};
@@ -41,6 +42,14 @@
 		green_led: led-1 {
 			gpios = <&gpio1 9 GPIO_INT_ACTIVE_LOW>;
 			label = "User LD1";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		green_pwm_led: green_pwm_led {
+			pwms = <&flexpwm2_pwm3 0>;
 		};
 	};
 
