@@ -6,6 +6,7 @@
 
 #include <arm/armv7-m.dtsi>
 #include <dt-bindings/clock/stm32_clock.h>
+#include <dt-bindings/gpio/gpio.h>
 
 / {
 	cpus {
@@ -48,6 +49,112 @@
 			#clock-cells = <2>;
 			reg = <0x58024400 0x400>;
 			label = "STM32_CLK_RCC";
+		};
+
+		pinctrl: pin-controller@58020000 {
+			compatible = "st,stm32-pinmux";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			reg = <0x58020000 0x2400>;
+
+			gpioa: gpio@58020000 {
+				compatible = "st,stm32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x58020000 0x400>;
+				clocks = <&rcc STM32_CLOCK_BUS_AHB4 0x00000001>;
+				label = "GPIOA";
+			};
+
+			gpiob: gpio@58020400 {
+				compatible = "st,stm32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x58020400 0x400>;
+				clocks = <&rcc STM32_CLOCK_BUS_AHB4 0x00000002>;
+				label = "GPIOB";
+			};
+
+			gpioc: gpio@58020800 {
+				compatible = "st,stm32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x58020800 0x400>;
+				clocks = <&rcc STM32_CLOCK_BUS_AHB4 0x00000004>;
+				label = "GPIOC";
+			};
+
+			gpiod: gpio@58020C00 {
+				compatible = "st,stm32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x58020C00 0x400>;
+				clocks = <&rcc STM32_CLOCK_BUS_AHB4 0x00000008>;
+				label = "GPIOD";
+			};
+
+			gpioe: gpio@58021000 {
+				compatible = "st,stm32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x58021000 0x400>;
+				clocks = <&rcc STM32_CLOCK_BUS_AHB4 0x00000010>;
+				label = "GPIOE";
+			};
+
+			gpiof: gpio@58021400 {
+				compatible = "st,stm32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x58021400 0x400>;
+				clocks = <&rcc STM32_CLOCK_BUS_AHB4 0x00000020>;
+				label = "GPIOF";
+			};
+
+			gpiog: gpio@58021800 {
+				compatible = "st,stm32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x58021800 0x400>;
+				clocks = <&rcc STM32_CLOCK_BUS_AHB4 0x00000040>;
+				label = "GPIOG";
+			};
+
+			gpioh: gpio@58021C00 {
+				compatible = "st,stm32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x58021C00 0x400>;
+				clocks = <&rcc STM32_CLOCK_BUS_AHB4 0x00000080>;
+				label = "GPIOH";
+			};
+
+			gpioi: gpio@58022000 {
+				compatible = "st,stm32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x58022000 0x400>;
+				clocks = <&rcc STM32_CLOCK_BUS_AHB4 0x00000100>;
+				label = "GPIOI";
+			};
+
+			gpioj: gpio@58022400 {
+				compatible = "st,stm32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x58022400 0x400>;
+				clocks = <&rcc STM32_CLOCK_BUS_AHB4 0x00000200>;
+				label = "GPIOJ";
+			};
+
+			gpiok: gpio@58022800 {
+				compatible = "st,stm32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x58022800 0x400>;
+				clocks = <&rcc STM32_CLOCK_BUS_AHB4 0x00000400>;
+				label = "GPIOK";
+			};
 		};
 	};
 };
