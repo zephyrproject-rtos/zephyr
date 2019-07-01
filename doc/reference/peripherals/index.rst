@@ -24,3 +24,4 @@ Peripherals
    spi.rst
    uart.rst
    watchdog.rst
+   video.rst
