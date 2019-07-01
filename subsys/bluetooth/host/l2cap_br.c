@@ -79,9 +79,6 @@ enum {
 
 static sys_slist_t br_servers;
 
-/* Linker-defined symbols bound to the bt_l2cap_fixed_chan structs */
-extern const struct bt_l2cap_fixed_chan _bt_br_channels_start[];
-extern const struct bt_l2cap_fixed_chan _bt_br_channels_end[];
 
 /* Pool for outgoing BR/EDR signaling packets, min MTU is 48 */
 NET_BUF_POOL_DEFINE(br_sig_pool, CONFIG_BT_MAX_CONN,
@@ -386,12 +383,10 @@ done:
 
 static u8_t get_fixed_channels_mask(void)
 {
-	const struct bt_l2cap_fixed_chan *fchan;
 	u8_t mask = 0U;
 
 	/* this needs to be enhanced if AMP Test Manager support is added */
-	for (fchan = _bt_br_channels_start; fchan < _bt_br_channels_end;
-	     fchan++) {
+	Z_STRUCT_SECTION_FOREACH(bt_l2cap_br_fixed_chan, fchan) {
 		mask |= BIT(fchan->cid);
 	}
 
@@ -454,11 +449,9 @@ static int l2cap_br_info_req(struct bt_l2cap_br *l2cap, u8_t ident,
 
 void bt_l2cap_br_connected(struct bt_conn *conn)
 {
-	const struct bt_l2cap_fixed_chan *fchan;
 	struct bt_l2cap_chan *chan;
 
-	for (fchan = _bt_br_channels_start; fchan < _bt_br_channels_end;
-	     fchan++) {
+	Z_STRUCT_SECTION_FOREACH(bt_l2cap_br_fixed_chan, fchan) {
 		struct bt_l2cap_br_chan *ch;
 
 		if (!fchan->accept) {
@@ -1550,7 +1543,7 @@ static int l2cap_br_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 	return -ENOMEM;
 }
 
-BT_L2CAP_CHANNEL_DEFINE(br_fixed_chan, BT_L2CAP_CID_BR_SIG, l2cap_br_accept);
+BT_L2CAP_BR_CHANNEL_DEFINE(br_fixed_chan, BT_L2CAP_CID_BR_SIG, l2cap_br_accept);
 
 void bt_l2cap_br_init(void)
 {

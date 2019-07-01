@@ -205,8 +205,16 @@ struct bt_l2cap_fixed_chan {
 };
 
 #define BT_L2CAP_CHANNEL_DEFINE(_name, _cid, _accept)		\
-	const struct bt_l2cap_fixed_chan _name __aligned(4)	\
-			__in_section(_bt_channels, static, _name) = { \
+	const Z_STRUCT_SECTION_ITERABLE(bt_l2cap_fixed_chan, _name) = { \
+				.cid = _cid,			\
+				.accept = _accept,		\
+			}
+
+/* Need a different name for the sections not to conflict */
+#define bt_l2cap_br_fixed_chan bt_l2cap_fixed_chan
+
+#define BT_L2CAP_BR_CHANNEL_DEFINE(_name, _cid, _accept)		\
+	const Z_STRUCT_SECTION_ITERABLE(bt_l2cap_br_fixed_chan, _name) = { \
 				.cid = _cid,			\
 				.accept = _accept,		\
 			}
