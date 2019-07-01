@@ -62,6 +62,9 @@ config HAS_HW_NRF_GPIOTE
 config HAS_HW_NRF_I2S
 	bool
 
+config HAS_HW_NRF_IPC
+	bool
+
 config HAS_HW_NRF_LPCOMP
 	bool
 
