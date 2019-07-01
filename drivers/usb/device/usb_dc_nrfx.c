@@ -310,10 +310,10 @@ static inline uint8_t nrfx_addr_to_ep(nrfx_usbd_ep_t ep)
 
 static inline bool ep_is_valid(const u8_t ep)
 {
-	u8_t ep_num = NRF_USBD_EP_NR_GET(ep);
+	u8_t ep_num = ep & ~USB_EP_DIR_MASK;
 
 	if (NRF_USBD_EPIN_CHECK(ep)) {
-		if (unlikely(NRF_USBD_EPISO_CHECK(ep))) {
+		if (unlikely(ep_num == NRF_USBD_EPISO_FIRST)) {
 			if (CFG_EP_ISOIN_CNT == 0) {
 				return false;
 			}
@@ -323,7 +323,7 @@ static inline bool ep_is_valid(const u8_t ep)
 			}
 		}
 	} else {
-		if (unlikely(NRF_USBD_EPISO_CHECK(ep))) {
+		if (unlikely(ep_num == NRF_USBD_EPISO_FIRST)) {
 			if (CFG_EP_ISOOUT_CNT == 0) {
 				return false;
 			}
