@@ -56,7 +56,6 @@ MPU_RO_REGION_START = """
 
 MPU_RO_REGION_END = """
 
-    MPU_ALIGN(_{0}_mpu_ro_region_end - _{0}_mpu_ro_region_start);
     _{0}_mpu_ro_region_end = .;
 
 """
@@ -75,6 +74,20 @@ LINKER_SECTION_SEQ = """
         __{0}_{1}_end = .;
         __{0}_{1}_start = ADDR(_{2}_{3}_SECTION_NAME);
         __{0}_{1}_size = SIZEOF(_{2}_{3}_SECTION_NAME);
+"""
+
+LINKER_SECTION_SEQ_MPU = """
+
+/* Linker section for memory region {2} for {3} section  */
+
+	SECTION_PROLOGUE(_{2}_{3}_SECTION_NAME,,)
+        {{
+                __{0}_{1}_start = .;
+                {4}
+                MPU_ALIGN(__{0}_{1}_size);
+                __{0}_{1}_end = .;
+	}} {5}
+        __{0}_{1}_size = __{0}_{1}_end - __{0}_{1}_start;
 """
 
 SOURCE_CODE_INCLUDES = """
@@ -215,7 +228,12 @@ def string_create_helper(region, memory_type,
         if memory_type == 'SRAM' and (region == 'data' or region == 'bss'):
             linker_string += tmp
         else:
-            linker_string += LINKER_SECTION_SEQ.format(memory_type.lower(), region,
+            if memory_type != 'SRAM' and region == 'rodata':
+                linker_string += LINKER_SECTION_SEQ_MPU.format(memory_type.lower(),
+                                                        region, memory_type.upper(),
+                                            region.upper(), tmp, load_address_string)
+            else:
+                linker_string += LINKER_SECTION_SEQ.format(memory_type.lower(), region,
                                                    memory_type.upper(), region.upper(),
                                                    tmp, load_address_string)
 
