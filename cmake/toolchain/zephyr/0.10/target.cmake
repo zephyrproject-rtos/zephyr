@@ -7,7 +7,12 @@ set(CROSS_COMPILE_TARGET_mips     mipsel-zephyr-elf)
 set(CROSS_COMPILE_TARGET_xtensa   xtensa-zephyr-elf)
 set(CROSS_COMPILE_TARGET_arc         arc-zephyr-elf)
 set(CROSS_COMPILE_TARGET_x86_64   x86_64-zephyr-elf)
-set(CROSS_COMPILE_TARGET_x86        i586-zephyr-elf)
+
+if(CONFIG_X86_LONGMODE)
+  set(CROSS_COMPILE_TARGET_x86 x86_64-zephyr-elf)
+else()
+  set(CROSS_COMPILE_TARGET_x86 i586-zephyr-elf)
+endif()
 
 set(CROSS_COMPILE_TARGET ${CROSS_COMPILE_TARGET_${ARCH}})
 set(SYSROOT_TARGET       ${CROSS_COMPILE_TARGET})
