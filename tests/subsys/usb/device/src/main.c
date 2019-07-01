@@ -111,9 +111,6 @@ static void test_usb_dc_api(void)
 	/* Bulk EP is not configured yet */
 	zassert_equal(usb_dc_ep_mps(ENDP_BULK_IN), 0,
 		      "usb_dc_ep_mps(ENDP_BULK_IN) not configured");
-
-	zassert_equal(usb_dc_set_address(0x01), TC_PASS,
-		      "usb_dc_set_address(0x01)");
 }
 
 /* Test USB Device Cotnroller API for invalid parameters */
