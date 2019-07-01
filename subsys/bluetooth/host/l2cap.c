@@ -50,10 +50,6 @@
 #define L2CAP_CONN_TIMEOUT	K_SECONDS(40)
 #define L2CAP_DISC_TIMEOUT	K_SECONDS(2)
 
-/* Linker-defined symbols bound to the bt_l2cap_fixed_chan structs */
-extern const struct bt_l2cap_fixed_chan _bt_channels_start[];
-extern const struct bt_l2cap_fixed_chan _bt_channels_end[];
-
 #if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
 /* Size of MTU is based on the maximum amount of data the buffer can hold
  * excluding ACL and driver headers.
@@ -323,7 +319,6 @@ static bool l2cap_chan_add(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 
 void bt_l2cap_connected(struct bt_conn *conn)
 {
-	const struct bt_l2cap_fixed_chan *fchan;
 	struct bt_l2cap_chan *chan;
 
 	if (IS_ENABLED(CONFIG_BT_BREDR) &&
@@ -332,7 +327,7 @@ void bt_l2cap_connected(struct bt_conn *conn)
 		return;
 	}
 
-	for (fchan = _bt_channels_start; fchan < _bt_channels_end; fchan++) {
+	Z_STRUCT_SECTION_FOREACH(bt_l2cap_fixed_chan, fchan) {
 		struct bt_l2cap_le_chan *ch;
 
 		if (fchan->accept(conn, &chan) < 0) {
