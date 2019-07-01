@@ -1,0 +1,32 @@
+/*
+ * Copyright (c) 2019 Philippe Retornaz <philippe@shapescale.com>
+ * Copyright (c) 2019 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/pinctrl/stm32-pinctrl.h>
+
+/ {
+	soc {
+		pinctrl: pin-controller@50000000 {
+			usart2_pins_a: usart2_a {
+				rx_tx {
+					rx = <STM32_PIN_PA3 (STM32_PINMUX_ALT_FUNC_1 | STM32_PUPDR_NO_PULL)>;
+					tx = <STM32_PIN_PA2 (STM32_PINMUX_ALT_FUNC_1 | STM32_PUSHPULL_NOPULL)>;
+				};
+			};
+			usart1_pins_a: usart1_a {
+				rx_tx {
+					rx = <STM32_PIN_PB7 (STM32_PINMUX_ALT_FUNC_0 | STM32_PUPDR_NO_PULL)>;
+					tx = <STM32_PIN_PB6 (STM32_PINMUX_ALT_FUNC_0 | STM32_PUSHPULL_NOPULL)>;
+				};
+			};
+			usart1_pins_a_hd: usart1_a_hd {
+				rx_tx {
+					tx = <STM32_PIN_PB6 (STM32_PINMUX_ALT_FUNC_0 | STM32_OPENDRAIN_PULLUP)>;
+				};
+			};
+		};
+	};
+};
