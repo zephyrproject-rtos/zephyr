@@ -50,9 +50,6 @@
 
 #define DB_HASH_TIMEOUT	K_MSEC(10)
 
-/* Linker-defined symbols bound to the bt_gatt_service_static structs */
-extern const struct bt_gatt_service_static _bt_services_start[];
-extern const struct bt_gatt_service_static _bt_services_end[];
 static u16_t last_static_handle;
 
 /* Persistent storage format for GATT CCC */
@@ -734,13 +731,11 @@ static void ccc_delayed_store(struct k_work *work)
 
 void bt_gatt_init(void)
 {
-	const struct bt_gatt_service_static *svc;
-
 	if (!atomic_cas(&init, 0, 1)) {
 		return;
 	}
 
-	for (svc = _bt_services_start; svc < _bt_services_end; svc++) {
+	Z_STRUCT_SECTION_FOREACH(bt_gatt_service_static, svc) {
 		last_static_handle += svc->attr_count;
 	}
 
@@ -933,11 +928,9 @@ static u8_t get_service_handles(const struct bt_gatt_attr *attr,
 
 static u16_t find_static_attr(const struct bt_gatt_attr *attr)
 {
-	const struct bt_gatt_service_static *static_svc;
-	u16_t handle;
+	u16_t handle = 1;
 
-	for (static_svc = _bt_services_start, handle = 1;
-	     static_svc < _bt_services_end; static_svc++) {
+	Z_STRUCT_SECTION_FOREACH(bt_gatt_service_static, static_svc) {
 		for (int i = 0; i < static_svc->attr_count; i++, handle++) {
 			if (attr == &static_svc->attrs[i]) {
 				return handle;
@@ -1088,11 +1081,9 @@ void bt_gatt_foreach_attr_type(u16_t start_handle, u16_t end_handle,
 	}
 
 	if (start_handle <= last_static_handle) {
-		const struct bt_gatt_service_static *static_svc;
-		u16_t handle;
+		u16_t handle = 1;
 
-		for (static_svc = _bt_services_start, handle = 1;
-		     static_svc < _bt_services_end; static_svc++) {
+		Z_STRUCT_SECTION_FOREACH(bt_gatt_service_static, static_svc) {
 			/* Skip ahead if start is not within service handles */
 			if (handle + static_svc->attr_count < start_handle) {
 				handle += static_svc->attr_count;
