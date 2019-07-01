@@ -166,6 +166,8 @@ The Zephyr nucleo_wb55rg board configuration supports the following hardware fea
 +-----------+------------+-------------------------------------+
 | PWM       | on-chip    | pwm                                 |
 +-----------+------------+-------------------------------------+
+| ADC       | on-chip    | adc                                 |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 
@@ -199,6 +201,7 @@ Default Zephyr Peripheral Mapping:
 - SPI_1_MISO : PA6 (arduino_spi)
 - SPI_1_MOSI : PA7 (arduino_spi)
 - PWM_2 CH 1 : PA0
+- ADC_1_CH3 : PC2
 
 System Clock
 ------------

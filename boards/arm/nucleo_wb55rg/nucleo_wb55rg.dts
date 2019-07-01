@@ -93,6 +93,10 @@ arduino_serial: &lpuart1 {
 	status = "okay";
 };
 
+&adc1 {
+	status = "okay";
+};
+
 &flash0 {
 	/*
 	 * For more information, see:
