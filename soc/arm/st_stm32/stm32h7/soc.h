@@ -33,6 +33,10 @@
 #include <stm32h7xx_ll_system.h>
 #endif /* CONFIG_GPIO_STM32 */
 
+#ifdef CONFIG_SERIAL_HAS_DRIVER
+#include <stm32h7xx_ll_usart.h>
+#endif /* CONFIG_SERIAL_HAS_DRIVER */
+
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _STM32F7_SOC_H7_ */
