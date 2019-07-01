@@ -81,37 +81,37 @@
 };
 
 &hyperflash0 {
-    partitions {
-	    compatible = "fixed-partitions";
-	    #address-cells = <1>;
-	    #size-cells = <1>;
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
 
-	    boot_partition: partition@0 {
-	        label = "mcuboot";
-	        reg = <0x00000000 0x00040000>;
-	        read-only;
-	    };
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0x00040000>;
+			read-only;
+		};
 
-	    slot0_partition: partition@40000 {
-	        label = "image-0";
-	        reg = <0x00040000 0x01800000>;
-	    };
+		slot0_partition: partition@40000 {
+			label = "image-0";
+			reg = <0x00040000 0x01800000>;
+		};
 
-	    slot1_partition: partition@1840000  {
-	        label = "image-1";
-	        reg = <0x01840000 0x01800000>;
-	    };
+		slot1_partition: partition@1840000  {
+			label = "image-1";
+			reg = <0x01840000 0x01800000>;
+		};
 
-	    scratch_partition: partition@3040000 {
-	        label = "image-scratch";
-	        reg = <0x03040000 0x00200000>;
-   		};
+		scratch_partition: partition@3040000 {
+			label = "image-scratch";
+			reg = <0x03040000 0x00200000>;
+		};
 
 		storage_partition: partition@0240000 {
 			label = "storage";
 			reg = <0x3240000 0x00C00000>;
 		};
-   	};
+	};
 
 };
 

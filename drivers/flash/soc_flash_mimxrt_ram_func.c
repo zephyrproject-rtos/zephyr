@@ -4,9 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  *
  *
- * This is the driver for the S26KL family of HyperFlash devices connected to i.MX-RT
- * hybrid micro-controller family. Tested on mimxrt1050_evk. This code is based on
- * the example "flexspi_hyper_flash_polling_transfer" from NXP's EVKB-IMXRT1050-SDK package.
+ * This is the driver for the S26KL family of HyperFlash devices connected
+ * to i.MX-RT hybrid micro-controller family. Tested on mimxrt1050_evk.
+ * This code is based on the example "flexspi_hyper_flash_polling_transfer"
+ * from NXP's EVKB-IMXRT1050-SDK package.
  *
  * This file contains the RAM function needed for the driver.
  */
@@ -30,7 +31,7 @@
 
 #if CONFIG_FLASH_IMXRT_HYPERFLASH_S26KL
 extern flexspi_device_config_t s26kl_deviceconfig;
-extern const uint32_t s26kl_lut[CUSTOM_LUT_LENGTH];
+extern const u32_t s26kl_lut[CUSTOM_LUT_LENGTH];
 
 #endif /* CONFIG_FLASH_IMXRT_HYPERFLASH_S26KL */
 
@@ -39,13 +40,14 @@ static inline void flexspi_clock_update(void)
 	/* Program finished, speed the clock to 166M. */
 	FLEXSPI_Enable(FLEXSPI, false);
 	CLOCK_DisableClock(kCLOCK_FlexSpi);
-	CLOCK_SetDiv(kCLOCK_FlexspiDiv, 0); /* flexspi clock 332M, DDR mode, internal clock 166M. */
+	 /* flexspi clock 332M, DDR mode, internal clock 166M. */
+	CLOCK_SetDiv(kCLOCK_FlexspiDiv, 0);
 	CLOCK_EnableClock(kCLOCK_FlexSpi);
 	FLEXSPI_Enable(FLEXSPI, true);
 }
 
 #if CONFIG_FLASH_IMXRT_HYPERFLASH_S26KL
-int _sk25kl_unlock()
+int _sk25kl_unlock(void)
 {
 	flexspi_transfer_t flashXfer;
 	int status;
@@ -69,11 +71,14 @@ static inline void _sk26kl_felxspi_clock_init(void)
 	const clock_usb_pll_config_t g_ccmConfigUsbPll = { .loopDivider = 0U };
 
 	CLOCK_InitUsb1Pll(&g_ccmConfigUsbPll);
-	CLOCK_InitUsb1Pfd(kCLOCK_Pfd0, 26);     /* Set PLL3 PFD0 clock 332MHZ. */
-	CLOCK_SetMux(kCLOCK_FlexspiMux, 0x3);   /* Choose PLL3 PFD0 clock as flexspi source clock. */
-	CLOCK_SetDiv(kCLOCK_FlexspiDiv, 3);     /* flexspi clock 83M, DDR mode, internal clock 42M. */
+	/* Set PLL3 PFD0 clock 332MHZ. */
+	CLOCK_InitUsb1Pfd(kCLOCK_Pfd0, 26);
+	/* Choose PLL3 PFD0 clock as flexspi source clock. */
+	CLOCK_SetMux(kCLOCK_FlexspiMux, 0x3);
+	/* flexspi clock 83M, DDR mode, internal clock 42M. */
+	CLOCK_SetDiv(kCLOCK_FlexspiDiv, 3);
 }
-#endif // CONFIG_FLASH_IMXRT_HYPERFLASH_S26KL
+#endif /* CONFIG_FLASH_IMXRT_HYPERFLASH_S26KL  */
 
 int flash_mimxrt_init(struct device *dev)
 {
@@ -90,9 +95,11 @@ int flash_mimxrt_init(struct device *dev)
 
 #if CONFIG_FLASH_IMXRT_HYPERFLASH_S26KL
 
-	/*Set AHB buffer size for reading data through AHB bus. */
+	/* Set AHB buffer size for reading data through AHB bus. */
 	config.ahbConfig.enableAHBPrefetch = true;
-	/*Allow AHB read start address do not follow the alignment requirement. */
+	/* Allow AHB read start address do not follow
+	 * the alignment requirement.
+	 */
 	config.ahbConfig.enableReadAddressOpt = true;
 	config.ahbConfig.enableAHBBufferable = true;
 	config.ahbConfig.enableAHBCachable = true;
@@ -107,7 +114,7 @@ int flash_mimxrt_init(struct device *dev)
 
 	/* Update LUT table. */
 	FLEXSPI_UpdateLUT(FLEXSPI, 0, s26kl_lut, CUSTOM_LUT_LENGTH);
-#endif  // CONFIG_FLASH_IMXRT_HYPERFLASH_S26KL
+#endif  /* CONFIG_FLASH_IMXRT_HYPERFLASH_S26KL */
 
 	/* Do software reset. */
 	FLEXSPI_SoftwareReset(FLEXSPI);
@@ -119,11 +126,11 @@ int flash_mimxrt_init(struct device *dev)
 }
 
 #if CONFIG_FLASH_IMXRT_HYPERFLASH_S26KL
-static status_t _flexspi_sk26kl_wait_bus_busy()
+static status_t _flexspi_sk26kl_wait_bus_busy(void)
 {
 	/* Wait status ready. */
 	bool isBusy;
-	uint32_t readValue;
+	u32_t readValue;
 	status_t status;
 	flexspi_transfer_t flashXfer;
 
@@ -143,7 +150,7 @@ static status_t _flexspi_sk26kl_wait_bus_busy()
 		}
 		if (readValue & 0x8000) {
 			isBusy = false;
-		} else   {
+		} else {
 			isBusy = true;
 		}
 
@@ -178,7 +185,7 @@ int flash_mimxrt_write(struct device *dev, off_t offset,
 		flashXfer.cmdType = kFLEXSPI_Write;
 		flashXfer.SeqNumber = 2;
 		flashXfer.seqIndex = HYPERFLASH_CMD_LUT_SEQ_IDX_PAGEPROGRAM;
-		flashXfer.data = (uint32_t *)data;
+		flashXfer.data = (u32_t *)data;
 		flashXfer.dataSize = len;
 		status = FLEXSPI_TransferBlocking(FLEXSPI, &flashXfer);
 
@@ -190,7 +197,7 @@ int flash_mimxrt_write(struct device *dev, off_t offset,
 			return_val = -EIO;
 		}
 
-#endif   /* CONFIG_FLASH_IMXRT_HYPERFLASH_S26KL */
+#endif          /* CONFIG_FLASH_IMXRT_HYPERFLASH_S26KL */
 	}
 	irq_unlock(key);
 

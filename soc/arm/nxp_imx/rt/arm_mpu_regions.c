@@ -19,8 +19,9 @@ static const struct arm_mpu_region mpu_regions[] = {
 			 REGION_FLASH_ATTR(REGION_FLASH_SIZE)),
 	/* Region 1 */
 	MPU_REGION_ENTRY("SRAM_0",
-			 CONFIG_SRAM_BASE_ADDRESS,
-			 {(NORMAL_OUTER_INNER_WRITE_BACK_WRITE_READ_ALLOCATE_NON_SHAREABLE) | (REGION_SRAM_0_SIZE) | (P_RW_U_RW_Msk)}),
+	CONFIG_SRAM_BASE_ADDRESS,
+	{(NORMAL_OUTER_INNER_WRITE_BACK_WRITE_READ_ALLOCATE_NON_SHAREABLE)
+		| (REGION_SRAM_0_SIZE) | (P_RW_U_RW_Msk)}),
 };
 
 const struct arm_mpu_config mpu_config = {

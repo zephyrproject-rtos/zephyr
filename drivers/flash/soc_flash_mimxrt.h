@@ -4,9 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  *
  *
- * This is the driver for the S26KL family of HyperFlash devices connected to i.MX-RT
- * hybrid micro-controller family. Tested on mimxrt1050_evk. This code is based on
- * the example "flexspi_hyper_flash_polling_transfer" from NXP's EVKB-IMXRT1050-SDK package.
+ * This is the driver for the S26KL family of HyperFlash devices connected
+ * to i.MX-RT hybrid micro-controller family. Tested on mimxrt1050_evk.
+ * This code is based on * the example "flexspi_hyper_flash_polling_transfer"
+ * from NXP's EVKB-IMXRT1050-SDK package.
  */
 
 #ifndef __SOC_FLASH_MIMXRT_H_
