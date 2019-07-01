@@ -87,6 +87,40 @@ static int lpcxpresso_55s69_pinmux_init(struct device *dev)
 	pinmux_pin_set(port1, DT_ALIAS_SW0_GPIOS_PIN, sw2_config);
 #endif
 
+#ifdef CONFIG_SPI_8
+	/* PORT0 PIN26 is configured as HS_SPI_MOSI */
+	pinmux_pin_set(port0, 26, IOCON_PIO_FUNC9 |
+				  IOCON_PIO_MODE_PULLUP |
+				  IOCON_PIO_INV_DI |
+				  IOCON_PIO_DIGITAL_EN |
+				  IOCON_PIO_SLEW_STANDARD |
+				  IOCON_PIO_OPENDRAIN_DI);
+
+	/* PORT1 PIN1 is configured as HS_SPI_SSEL1 */
+	pinmux_pin_set(port1,  1, IOCON_PIO_FUNC5 |
+				  IOCON_PIO_MODE_PULLUP |
+				  IOCON_PIO_INV_DI |
+				  IOCON_PIO_DIGITAL_EN |
+				  IOCON_PIO_SLEW_STANDARD |
+				  IOCON_PIO_OPENDRAIN_DI);
+
+	/* PORT1 PIN2 is configured as HS_SPI_SCK */
+	pinmux_pin_set(port1,  2, IOCON_PIO_FUNC6 |
+				  IOCON_PIO_MODE_PULLUP |
+				  IOCON_PIO_INV_DI |
+				  IOCON_PIO_DIGITAL_EN |
+				  IOCON_PIO_SLEW_STANDARD |
+				  IOCON_PIO_OPENDRAIN_DI);
+
+	/* PORT1 PIN3 is configured as HS_SPI_MISO */
+	pinmux_pin_set(port1,  3, IOCON_PIO_FUNC6 |
+				  IOCON_PIO_MODE_PULLUP |
+				  IOCON_PIO_INV_DI |
+				  IOCON_PIO_DIGITAL_EN |
+				  IOCON_PIO_SLEW_STANDARD |
+				  IOCON_PIO_OPENDRAIN_DI);
+#endif /* CONFIG_SPI_8 */
+
 	return 0;
 }
 
