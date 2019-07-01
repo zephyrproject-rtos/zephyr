@@ -173,6 +173,7 @@
 /drivers/timer/cc13x2_cc26x2_rtc_timer.c  @vanti
 /drivers/usb/                             @jfischer-phytec-iot @finikorg
 /drivers/usb/device/usb_dc_stm32.c        @ydamigos @loicpoulain
+/drivers/video/                           @loicpoulain
 /drivers/i2c/i2c_ll_stm32*                @ldts @ydamigos
 /drivers/i2c/i2c_rv32m1_lpi2c*            @henrikbrixandersen
 /drivers/i2c/*sam0*                       @Sizurka
