@@ -5,11 +5,7 @@
  */
 
 #include <ztest.h>
-
-#include <lib/os/crc32_sw.c>
-#include <lib/os/crc16_sw.c>
-#include <lib/os/crc8_sw.c>
-#include <lib/os/crc7_sw.c>
+#include <crc.h>
 
 void test_crc32_ieee(void)
 {
