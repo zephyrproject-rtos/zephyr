@@ -3009,19 +3009,30 @@ Artificially long but functional example:
          west flash -- --board-id=foobar
         """
     )
-    parser.add_argument("--gcov-tool", default="gcov",
-                        help="Path to the gcov tool. Default is gcov in the path.")
+
+    if "ZEPHYR_SDK_INSTALL_DIR" in os.environ:
+        # Use the x86 build of GCOV from the SDK. This can parse gcov data
+        # from any arch built with the same GCC version.
+        gcov_bin = os.path.join(os.environ["ZEPHYR_SDK_INSTALL_DIR"],
+                "i586-zephyr-elf/bin/i586-zephyr-elf-gcov")
+    else:
+        # No SDK in use, just rely on PATH to find it
+        gcov_bin = "gcov"
+
+    parser.add_argument("--gcov-tool", default=gcov_bin,
+                        help="Path to the gcov tool. Default is %s" % gcov_bin)
 
     parser.add_argument("--enable-coverage", action="store_true",
                         help="Enable code coverage using gcov.")
 
     parser.add_argument("-C", "--coverage", action="store_true",
-                        help="Generate coverage reports. Implies --enable_coverage")
+                        help="Generate coverage reports. Implies "
+                        "--enable_coverage and --enable-slow")
 
-    coverage_platforms = ["native_posix", "nrf52_bsim"]
-    parser.add_argument("--coverage-platform", action="append", default=coverage_platforms,
+    parser.add_argument("--coverage-platform", action="append", default=[],
                         help="Plarforms to run coverage reports on. "
-                        "This option may be used multiple times.")
+                        "This option may be used multiple times. "
+                        "Default to what was selected with --platform.")
 
     return parser.parse_args()
 
@@ -3242,6 +3253,9 @@ def main():
 
     if options.coverage:
         options.enable_coverage = True
+        options.enable_slow = True
+        if not options.coverage_platform:
+            options.coverage_platform = options.platform
 
     if options.size:
         for fn in options.size:
