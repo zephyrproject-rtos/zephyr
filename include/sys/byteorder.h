@@ -140,6 +140,21 @@ static inline void sys_put_be16(u16_t val, u8_t dst[2])
 }
 
 /**
+ *  @brief Put a 24-bit integer as big-endian to arbitrary location.
+ *
+ *  Put a 24-bit integer, originally in host endianness, to a
+ *  potentially unaligned memory location in big-endian format.
+ *
+ *  @param val 32-bit integer in host endianness.
+ *  @param dst Destination memory address to store the result.
+ */
+static inline void sys_put_be24(u32_t val, u8_t dst[3])
+{
+	dst[0] = val >> 16;
+	sys_put_be16(val, &dst[1]);
+}
+
+/**
  *  @brief Put a 32-bit integer as big-endian to arbitrary location.
  *
  *  Put a 32-bit integer, originally in host endianness, to a
@@ -167,6 +182,21 @@ static inline void sys_put_le16(u16_t val, u8_t dst[2])
 {
 	dst[0] = val;
 	dst[1] = val >> 8;
+}
+
+/**
+ *  @brief Put a 24-bit integer as little-endian to arbitrary location.
+ *
+ *  Put a 24-bit integer, originally in host endianness, to a
+ *  potentially unaligned memory location in little-endian format.
+ *
+ *  @param val 32-bit integer in host endianness.
+ *  @param dst Destination memory address to store the result.
+ */
+static inline void sys_put_le24(u32_t val, u8_t dst[3])
+{
+	sys_put_le16(val, dst);
+	dst[2] = val >> 16;
 }
 
 /**
@@ -215,6 +245,21 @@ static inline u16_t sys_get_be16(const u8_t src[2])
 }
 
 /**
+ *  @brief Get a 24-bit integer stored in big-endian format.
+ *
+ *  Get a 24-bit integer, stored in big-endian format in a potentially
+ *  unaligned memory location, and convert it to the host endianness.
+ *
+ *  @param src Location of the big-endian 24-bit integer to get.
+ *
+ *  @return 32-bit integer in host endianness.
+ */
+static inline u32_t sys_get_be24(const u8_t src[3])
+{
+	return ((u32_t)src[0] << 16) | sys_get_be16(&src[1]);
+}
+
+/**
  *  @brief Get a 32-bit integer stored in big-endian format.
  *
  *  Get a 32-bit integer, stored in big-endian format in a potentially
@@ -242,6 +287,21 @@ static inline u32_t sys_get_be32(const u8_t src[4])
 static inline u16_t sys_get_le16(const u8_t src[2])
 {
 	return ((u16_t)src[1] << 8) | src[0];
+}
+
+/**
+ *  @brief Get a 24-bit integer stored in little-endian format.
+ *
+ *  Get a 24-bit integer, stored in little-endian format in a potentially
+ *  unaligned memory location, and convert it to the host endianness.
+ *
+ *  @param src Location of the little-endian 24-bit integer to get.
+ *
+ *  @return 32-bit integer in host endianness.
+ */
+static inline u32_t sys_get_le24(const u8_t src[3])
+{
+	return ((u32_t)src[2] << 16) | sys_get_le16(&src[0]);
 }
 
 /**
