@@ -144,6 +144,8 @@ static struct usb_dev_priv {
 	s32_t data_buf_residue;
 	/** Total length of control transfer */
 	s32_t data_buf_len;
+	/** Zero length packet flag of control transfer */
+	bool zlp_flag;
 	/** Installed custom request handler */
 	usb_request_handler custom_req_handler;
 	/** USB stack status clalback */
@@ -234,20 +236,26 @@ static bool usb_handle_request(struct usb_setup_packet *setup,
  */
 static void usb_data_to_host(u16_t len)
 {
-	u32_t chunk = usb_dev.data_buf_residue;
+	if (usb_dev.zlp_flag == false) {
+		u32_t chunk = usb_dev.data_buf_residue;
 
-	/* Always EP0 for control*/
-	usb_write(USB_CONTROL_IN_EP0, usb_dev.data_buf, chunk, &chunk);
-	usb_dev.data_buf += chunk;
-	usb_dev.data_buf_residue -= chunk;
+		/*Always EP0 for control*/
+		usb_write(USB_CONTROL_IN_EP0, usb_dev.data_buf, chunk, &chunk);
+		usb_dev.data_buf += chunk;
+		usb_dev.data_buf_residue -= chunk;
 
-	/*
-	 * Send ZLP when host asks for a bigger length and the last chunk
-	 * is wMaxPacketSize long, to indicate the last packet.
-	 */
-	if (!usb_dev.data_buf_residue && chunk == USB_MAX_CTRL_MPS
-	    && len > chunk) {
-		usb_write(USB_CONTROL_IN_EP0, NULL, 0, NULL);
+		/*
+		 * Set ZLP flag when host asks for a bigger length and the
+		 * last chunk is wMaxPacketSize long, to indicate the last
+		 * packet.
+		 */
+		if (!usb_dev.data_buf_residue && chunk == USB_MAX_CTRL_MPS
+		    && len > chunk) {
+			usb_dev.zlp_flag = true;
+		}
+	} else {
+		usb_dev.zlp_flag = false;
+		usb_dc_ep_write(USB_CONTROL_IN_EP0, NULL, 0, NULL);
 	}
 }
 
@@ -298,6 +306,7 @@ static void usb_handle_control_transfer(u8_t ep,
 		usb_dev.data_buf = usb_dev.req_data;
 		usb_dev.data_buf_residue = length;
 		usb_dev.data_buf_len = length;
+		usb_dev.zlp_flag = false;
 
 		if (length &&
 		    REQTYPE_GET_DIR(setup->bmRequestType)
@@ -358,7 +367,7 @@ static void usb_handle_control_transfer(u8_t ep,
 		}
 	} else if (ep == USB_CONTROL_IN_EP0) {
 		/* Send more data if available */
-		if (usb_dev.data_buf_residue != 0) {
+		if (usb_dev.data_buf_residue != 0 || usb_dev.zlp_flag == true) {
 			usb_data_to_host(sys_le16_to_cpu(setup->wLength));
 		}
 	} else {
