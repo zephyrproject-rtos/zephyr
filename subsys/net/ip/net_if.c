@@ -534,7 +534,10 @@ static void dad_timeout(struct k_work *work)
 	 */
 	tmp = net_if_ipv6_addr_lookup(&ifaddr->address.in6_addr, &iface);
 	if (tmp == ifaddr) {
-		net_mgmt_event_notify(NET_EVENT_IPV6_DAD_SUCCEED, iface);
+		net_mgmt_event_notify_with_info(NET_EVENT_IPV6_DAD_SUCCEED,
+						iface,
+						&ifaddr->address.in6_addr,
+						sizeof(struct in6_addr));
 
 		/* The address gets added to neighbor cache which is not needed
 		 * in this case as the address is our own one.
@@ -621,7 +624,9 @@ void net_if_ipv6_dad_failed(struct net_if *iface, const struct in6_addr *addr)
 
 	k_delayed_work_cancel(&ifaddr->dad_timer);
 
-	net_mgmt_event_notify(NET_EVENT_IPV6_DAD_FAILED, iface);
+	net_mgmt_event_notify_with_info(NET_EVENT_IPV6_DAD_FAILED, iface,
+					&ifaddr->address.in6_addr,
+					sizeof(struct in6_addr));
 
 	net_if_ipv6_addr_rm(iface, addr);
 }
@@ -1021,7 +1026,10 @@ struct net_if_addr *net_if_ipv6_addr_add(struct net_if *iface,
 
 		net_if_ipv6_start_dad(iface, &ipv6->unicast[i]);
 
-		net_mgmt_event_notify(NET_EVENT_IPV6_ADDR_ADD, iface);
+		net_mgmt_event_notify_with_info(
+			NET_EVENT_IPV6_ADDR_ADD, iface,
+			&ipv6->unicast[i].address.in6_addr,
+			sizeof(struct in6_addr));
 
 		return &ipv6->unicast[i];
 	}
@@ -1075,7 +1083,15 @@ bool net_if_ipv6_addr_rm(struct net_if *iface, const struct in6_addr *addr)
 			i, iface, log_strdup(net_sprint_ipv6_addr(addr)),
 			net_addr_type2str(ipv6->unicast[i].addr_type));
 
-		net_mgmt_event_notify(NET_EVENT_IPV6_ADDR_DEL, iface);
+		/* Using the IPv6 address pointer here can give false
+		 * info if someone adds a new IP address into this position
+		 * in the address array. This is quite unlikely thou.
+		 */
+		net_mgmt_event_notify_with_info(
+			NET_EVENT_IPV6_ADDR_DEL,
+			iface,
+			&ipv6->unicast[i].address.in6_addr,
+			sizeof(struct in6_addr));
 
 		return true;
 	}
@@ -1113,7 +1129,10 @@ struct net_if_mcast_addr *net_if_ipv6_maddr_add(struct net_if *iface,
 		NET_DBG("[%d] interface %p address %s added", i, iface,
 			log_strdup(net_sprint_ipv6_addr(addr)));
 
-		net_mgmt_event_notify(NET_EVENT_IPV6_MADDR_ADD, iface);
+		net_mgmt_event_notify_with_info(
+			NET_EVENT_IPV6_MADDR_ADD, iface,
+			&ipv6->mcast[i].address.in6_addr,
+			sizeof(struct in6_addr));
 
 		return &ipv6->mcast[i];
 	}
@@ -1147,7 +1166,10 @@ bool net_if_ipv6_maddr_rm(struct net_if *iface, const struct in6_addr *addr)
 		NET_DBG("[%d] interface %p address %s removed",
 			i, iface, log_strdup(net_sprint_ipv6_addr(addr)));
 
-		net_mgmt_event_notify(NET_EVENT_IPV6_MADDR_DEL, iface);
+		net_mgmt_event_notify_with_info(
+			NET_EVENT_IPV6_MADDR_DEL, iface,
+			&ipv6->mcast[i].address.in6_addr,
+			sizeof(struct in6_addr));
 
 		return true;
 	}
@@ -1277,7 +1299,9 @@ static void prefix_lifetime_expired(struct net_if_ipv6_prefix *ifprefix)
 	remove_prefix_addresses(ifprefix->iface, ipv6, &ifprefix->prefix,
 				ifprefix->len);
 
-	net_mgmt_event_notify(NET_EVENT_IPV6_PREFIX_DEL, ifprefix->iface);
+	net_mgmt_event_notify_with_info(
+		NET_EVENT_IPV6_PREFIX_DEL, ifprefix->iface,
+		&ifprefix->prefix, sizeof(struct in6_addr));
 }
 
 static void prefix_timer_remove(struct net_if_ipv6_prefix *ifprefix)
@@ -1476,7 +1500,9 @@ struct net_if_ipv6_prefix *net_if_ipv6_prefix_add(struct net_if *iface,
 		NET_DBG("[%d] interface %p prefix %s/%d added", i, iface,
 			log_strdup(net_sprint_ipv6_addr(prefix)), len);
 
-		net_mgmt_event_notify(NET_EVENT_IPV6_PREFIX_ADD, iface);
+		net_mgmt_event_notify_with_info(
+			NET_EVENT_IPV6_PREFIX_ADD, iface,
+			&ipv6->prefix[i].prefix, sizeof(struct in6_addr));
 
 		return &ipv6->prefix[i];
 	}
@@ -1515,7 +1541,9 @@ bool net_if_ipv6_prefix_rm(struct net_if *iface, struct in6_addr *addr,
 		 */
 		remove_prefix_addresses(iface, ipv6, addr, len);
 
-		net_mgmt_event_notify(NET_EVENT_IPV6_PREFIX_DEL, iface);
+		net_mgmt_event_notify_with_info(
+			NET_EVENT_IPV6_PREFIX_DEL, iface,
+			&ipv6->prefix[i].prefix, sizeof(struct in6_addr));
 
 		return true;
 	}
@@ -1770,7 +1798,10 @@ struct net_if_router *net_if_ipv6_router_add(struct net_if *iface,
 			i, iface, log_strdup(net_sprint_ipv6_addr(addr)),
 			lifetime, routers[i].is_default);
 
-		net_mgmt_event_notify(NET_EVENT_IPV6_ROUTER_ADD, iface);
+		net_mgmt_event_notify_with_info(
+			NET_EVENT_IPV6_ROUTER_ADD, iface,
+			&routers[i].address.in6_addr,
+			sizeof(struct in6_addr));
 
 		return &routers[i];
 	}
@@ -1797,8 +1828,10 @@ bool net_if_ipv6_router_rm(struct net_if_router *router)
 
 		routers[i].is_used = false;
 
-		net_mgmt_event_notify(NET_EVENT_IPV6_ROUTER_DEL,
-				      routers[i].iface);
+		net_mgmt_event_notify_with_info(NET_EVENT_IPV6_ROUTER_DEL,
+						routers[i].iface,
+						&routers[i].address.in6_addr,
+						sizeof(struct in6_addr));
 
 		NET_DBG("[%d] router %s removed",
 			i, log_strdup(net_sprint_ipv6_addr(
@@ -2181,7 +2214,10 @@ struct net_if_router *net_if_ipv4_router_add(struct net_if *iface,
 			i, iface, log_strdup(net_sprint_ipv4_addr(addr)),
 			lifetime, is_default);
 
-		net_mgmt_event_notify(NET_EVENT_IPV4_ROUTER_ADD, iface);
+		net_mgmt_event_notify_with_info(
+			NET_EVENT_IPV4_ROUTER_ADD, iface,
+			&routers[i].address.in_addr,
+			sizeof(struct in_addr));
 
 		return &routers[i];
 	}
@@ -2563,7 +2599,9 @@ struct net_if_addr *net_if_ipv4_addr_add(struct net_if *iface,
 			log_strdup(net_sprint_ipv4_addr(addr)),
 			net_addr_type2str(addr_type));
 
-		net_mgmt_event_notify(NET_EVENT_IPV4_ADDR_ADD, iface);
+		net_mgmt_event_notify_with_info(NET_EVENT_IPV4_ADDR_ADD, iface,
+						&ifaddr->address.in_addr,
+						sizeof(struct in_addr));
 
 		return ifaddr;
 	}
@@ -2597,7 +2635,10 @@ bool net_if_ipv4_addr_rm(struct net_if *iface, struct in_addr *addr)
 		NET_DBG("[%d] interface %p address %s removed",
 			i, iface, log_strdup(net_sprint_ipv4_addr(addr)));
 
-		net_mgmt_event_notify(NET_EVENT_IPV4_ADDR_DEL, iface);
+		net_mgmt_event_notify_with_info(
+			NET_EVENT_IPV4_ADDR_DEL, iface,
+			&ipv4->unicast[i].address.in_addr,
+			sizeof(struct in_addr));
 
 		return true;
 	}
