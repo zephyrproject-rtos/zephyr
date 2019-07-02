@@ -220,9 +220,6 @@ toolchain_cc_nostdinc()
 # @Intent: Set compiler specific macro inclusion of AUTOCONF_H
 toolchain_cc_imacros(${AUTOCONF_H})
 
-# @Intent: Enforce standard integer type correspondance to match Zephyr usage.
-toolchain_cc_imacros(${ZEPHYR_BASE}/include/toolchain/zephyr_stdint.h)
-
 # @Intent: Set compiler specific flag for bare metal freestanding option
 toolchain_cc_freestanding()
 
@@ -239,6 +236,10 @@ toolchain_cc_asm_base_flags(ASM_BASE_FLAG)
 zephyr_compile_options(
   $<$<COMPILE_LANGUAGE:ASM>:${ASM_BASE_FLAG}>
 )
+
+# @Intent: Enforce standard integer type correspondance to match Zephyr usage.
+# (must be after compiler specific flags)
+toolchain_cc_imacros(${ZEPHYR_BASE}/include/toolchain/zephyr_stdint.h)
 
 # Common toolchain-agnostic assembly flags
 zephyr_compile_options(
