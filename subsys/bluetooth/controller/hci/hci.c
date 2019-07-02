@@ -2658,17 +2658,13 @@ static void le_adv_ext_report(struct pdu_data *pdu_data,
 		}
 
 		if (h->adv_addr) {
-			char addr_str[BT_ADDR_LE_STR_LEN];
 			bt_addr_le_t addr;
 
 			addr.type = adv->tx_addr;
 			memcpy(&addr.a.val[0], ptr, sizeof(bt_addr_t));
 			ptr += BDADDR_SIZE;
 
-			bt_addr_le_to_str(&addr, addr_str, sizeof(addr_str));
-
-			BT_DBG("AdvA: %s", addr_str);
-
+			BT_DBG("AdvA: %s", bt_addr_le_str(&addr));
 		}
 
 		if (h->tx_pwr) {
@@ -2715,7 +2711,6 @@ static void le_scan_req_received(struct pdu_data *pdu_data,
 
 	if (!(event_mask & BT_EVT_MASK_LE_META_EVENT) ||
 	    !(le_event_mask & BT_EVT_MASK_LE_SCAN_REQ_RECEIVED)) {
-		char addr_str[BT_ADDR_LE_STR_LEN];
 		bt_addr_le_t addr;
 		u8_t handle;
 #if !defined(CONFIG_BT_LL_SW_SPLIT)
@@ -2736,10 +2731,8 @@ static void le_scan_req_received(struct pdu_data *pdu_data,
 		rssi = -(*extra);
 #endif /* CONFIG_BT_LL_SW_SPLIT */
 
-		bt_addr_le_to_str(&addr, addr_str, sizeof(addr_str));
-
 		BT_DBG("handle: %d, addr: %s, rssi: %d dB.",
-		       handle, addr_str, rssi);
+		       handle, bt_addr_le_str(&addr), rssi);
 
 		return;
 	}
