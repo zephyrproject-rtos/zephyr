@@ -125,7 +125,7 @@ source "drivers/clock_control/Kconfig.stm32f2_f4_f7"
 source "drivers/clock_control/Kconfig.stm32h7"
 source "drivers/clock_control/Kconfig.stm32l0_l1"
 source "drivers/clock_control/Kconfig.stm32l4_wb"
-
+source "drivers/clock_control/Kconfig.stm32g0"
 
 # Bus clocks configuration options
 
