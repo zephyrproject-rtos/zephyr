@@ -2960,9 +2960,10 @@ static void hci_encrypt_key_refresh_complete(struct net_buf *buf)
 #endif /* CONFIG_BT_SMP || CONFIG_BT_BREDR */
 
 #if defined(CONFIG_BT_TESTING)
-static void bt_hci_evt_read_remote_version_complete(struct net_buf *buf){
+static void bt_hci_evt_read_remote_version_complete(struct net_buf *buf)
+{
 	struct bt_hci_evt_remote_version_info *evt;
-    evt = net_buf_pull_mem(buf, sizeof(*evt));
+	evt = net_buf_pull_mem(buf, sizeof(*evt));
 
 	u16_t handle = sys_le16_to_cpu(evt->handle);
 	struct bt_conn *conn;
