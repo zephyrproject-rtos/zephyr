@@ -169,6 +169,15 @@ static const char user_data[] =
 		"0123456789012345678901234567890123456789"
 		"0123456789012345678901234567890123456789";
 
+struct user_data_small {
+	char data[SIZE_OF_SMALL_DATA];
+};
+
+struct user_data_large {
+	char data[SIZE_OF_LARGE_DATA];
+};
+
+
 struct net_6lo_data {
 	struct net_ipv6_hdr ipv6;
 
@@ -213,13 +222,121 @@ NET_DEVICE_INIT(net_6lo_test, "net_6lo_test",
 		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		&net_6lo_if_api, DUMMY_L2, NET_L2_GET_CTX_TYPE(DUMMY_L2), 127);
 
-static bool compare_data(struct net_pkt *pkt, struct net_6lo_data *data)
+static bool compare_ipv6_hdr(struct net_pkt *pkt, struct net_6lo_data *data)
 {
-	struct net_buf *frag;
-	u8_t bytes;
-	u8_t compare;
-	u8_t pos = 0U;
-	u8_t offset = 0U;
+	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ipv6_access, struct net_ipv6_hdr);
+	struct net_ipv6_hdr *ipv6_hdr = net_pkt_get_data(pkt, &ipv6_access);
+	int res;
+
+	if (!ipv6_hdr) {
+		TC_PRINT("Failed to read IPv6 HDR\n");
+		return false;
+	}
+
+	net_pkt_acknowledge_data(pkt, &ipv6_access);
+
+	res = memcmp((u8_t *)ipv6_hdr, (u8_t *)&data->ipv6,
+		      sizeof(struct net_ipv6_hdr));
+	if (res) {
+		TC_PRINT("Missmatch IPv6 HDR\n");
+		return false;
+	}
+
+	return true;
+}
+
+static bool compare_udp_hdr(struct net_pkt *pkt, struct net_6lo_data *data)
+{
+	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(udp_access, struct net_udp_hdr);
+	struct net_udp_hdr *udp_hdr = net_pkt_get_data(pkt, &udp_access);
+	int res;
+
+	if (!udp_hdr) {
+		TC_PRINT("Failed to read UDP HDR\n");
+		return false;
+	}
+
+	net_pkt_acknowledge_data(pkt, &udp_access);
+
+	res = memcmp((u8_t *)udp_hdr, (u8_t *)&data->nh.udp,
+		      sizeof(struct net_udp_hdr));
+	if (res) {
+		TC_PRINT("Missmatch UDP HDR\n");
+		return false;
+	}
+
+	return true;
+}
+
+static bool compare_icmp_hdr(struct net_pkt *pkt, struct net_6lo_data *data)
+{
+	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(icmp_access, struct net_icmp_hdr);
+	struct net_icmp_hdr *icmp_hdr = net_pkt_get_data(pkt, &icmp_access);
+	int res;
+
+	if (!icmp_hdr) {
+		TC_PRINT("Failed to read ICMP HDR\n");
+		return false;
+	}
+
+	net_pkt_acknowledge_data(pkt, &icmp_access);
+
+	res = memcmp((u8_t *)icmp_hdr, (u8_t *)&data->nh.icmp,
+		      sizeof(struct net_icmp_hdr));
+	if (res) {
+		TC_PRINT("Missmatch ICMP HDR\n");
+		return false;
+	}
+
+	return true;
+}
+
+static bool compare_data_small(struct net_pkt *pkt, const char *data)
+{
+	NET_PKT_DATA_ACCESS_DEFINE(data_access, struct user_data_small);
+	struct user_data_small *test_data = net_pkt_get_data(pkt, &data_access);
+	int res;
+
+	if (!test_data) {
+		TC_PRINT("Failed to read user data\n");
+		return false;
+	}
+
+	net_pkt_acknowledge_data(pkt, &data_access);
+
+	res = memcmp(test_data->data, data, sizeof(struct user_data_small));
+	if (res) {
+		TC_PRINT("User data missmatch\n");
+		return false;
+	}
+
+	return true;
+}
+
+static bool compare_data_large(struct net_pkt *pkt, const char *data)
+{
+	NET_PKT_DATA_ACCESS_DEFINE(data_access, struct user_data_large);
+	struct user_data_large *test_data = net_pkt_get_data(pkt, &data_access);
+	int res;
+
+	if (!test_data) {
+		TC_PRINT("Failed to read user data\n");
+		return false;
+	}
+
+	net_pkt_acknowledge_data(pkt, &data_access);
+
+	res = memcmp(test_data->data, data, sizeof(struct user_data_large));
+	if (res) {
+		TC_PRINT("User data missmatch\n");
+		return false;
+	}
+
+	return true;
+}
+
+static bool compare_pkt(struct net_pkt *pkt, struct net_6lo_data *data)
+{
 	int remaining = data->small ? SIZE_OF_SMALL_DATA : SIZE_OF_LARGE_DATA;
 
 	if (data->nh_udp) {
@@ -254,47 +371,30 @@ static bool compare_data(struct net_pkt *pkt, struct net_6lo_data *data)
 		}
 	}
 
-	frag = pkt->frags;
+	net_pkt_set_overwrite(pkt, true);
+
+	if (!compare_ipv6_hdr(pkt, data)) {
+		return false;
+	}
 
 	if (data->nh_udp) {
-		if (memcmp(frag->data, (u8_t *)data, NET_IPV6UDPH_LEN)) {
-			TC_PRINT("mismatch headers\n");
+		if (!compare_udp_hdr(pkt, data)) {
 			return false;
 		}
 	} else	if (data->nh_icmp) {
-		if (memcmp(frag->data, (u8_t *)data, NET_IPV6ICMPH_LEN)) {
-			TC_PRINT("mismatch headers\n");
-			return false;
-		}
-	} else {
-		if (memcmp(frag->data, (u8_t *)data, NET_IPV6H_LEN)) {
-			TC_PRINT("mismatch headers\n");
+		if (!compare_icmp_hdr(pkt, data)) {
 			return false;
 		}
 	}
 
-	if (data->nh_udp) {
-		offset = NET_IPV6UDPH_LEN;
-	} else if (data->nh_icmp) {
-		offset = NET_IPV6ICMPH_LEN;
-	} else {
-		offset = NET_IPV6H_LEN;
-	}
-
-	while (remaining > 0 && frag) {
-
-		bytes = frag->len - offset;
-		compare = remaining > bytes ? bytes : remaining;
-
-		if (memcmp(frag->data + offset, user_data + pos, compare)) {
-			TC_PRINT("data mismatch\n");
+	if (data->small) {
+		if (!compare_data_small(pkt, user_data)) {
 			return false;
 		}
-
-		pos += compare;
-		remaining -= compare;
-		frag = frag->frags;
-		offset = 0U;
+	} else {
+		if (!compare_data_large(pkt, user_data)) {
+			return false;
+		}
 	}
 
 	return true;
@@ -861,6 +961,8 @@ static void test_6lo(struct net_6lo_data *data)
 	net_pkt_hexdump(pkt, "before-compression");
 #endif
 
+	net_pkt_cursor_init(pkt);
+
 	zassert_true((net_6lo_compress(pkt, data->iphc) >= 0),
 		     "compression failed");
 
@@ -878,7 +980,7 @@ static void test_6lo(struct net_6lo_data *data)
 	net_pkt_hexdump(pkt, "after-uncompression");
 #endif
 
-	zassert_true(compare_data(pkt, data), NULL);
+	zassert_true(compare_pkt(pkt, data), NULL);
 
 	net_pkt_unref(pkt);
 }
