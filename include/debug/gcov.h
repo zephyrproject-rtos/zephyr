@@ -11,8 +11,8 @@
 void gcov_coverage_dump(void);
 void gcov_static_init(void);
 #else
-void gcov_coverage_dump(void) { }
-void gcov_static_init(void) { }
+static inline void gcov_coverage_dump(void) { }
+static inline void gcov_static_init(void) { }
 
 #endif	/* CONFIG_COVERAGE */
 
