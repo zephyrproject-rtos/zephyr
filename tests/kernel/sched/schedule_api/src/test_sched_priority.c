@@ -5,6 +5,7 @@
  */
 
 #include "test_sched.h"
+#include <ksched.h>
 
 static struct k_thread tdata;
 static int last_prio;
@@ -93,3 +94,41 @@ void test_priority_preemptible(void)
 	/* restore environment */
 	k_thread_priority_set(k_current_get(), old_prio);
 }
+
+extern void idle(void *p1, void *p2, void *p3);
+
+/**
+ * Validate checking priority values
+ *
+ * Our test cases don't cover every outcome of whether a priority is valid,
+ * do so here.
+ *
+ * @ingroup kernel_sched_tests
+ */
+void test_bad_priorities(void)
+{
+	struct prio_test {
+		int prio;
+		void *entry;
+		bool result;
+	} testcases[] = {
+		{ K_IDLE_PRIO, idle, true },
+		{ K_IDLE_PRIO, NULL, false },
+		{ K_HIGHEST_APPLICATION_THREAD_PRIO - 1, NULL, false },
+		{ K_LOWEST_APPLICATION_THREAD_PRIO + 1, NULL, false },
+		{ K_HIGHEST_APPLICATION_THREAD_PRIO, NULL, true },
+		{ K_LOWEST_APPLICATION_THREAD_PRIO, NULL, true },
+		{ CONFIG_MAIN_THREAD_PRIORITY, NULL, true }
+	};
+
+	for (int i = 0; i < ARRAY_SIZE(testcases); i++) {
+		zassert_equal(_is_valid_prio(testcases[i].prio,
+					     testcases[i].entry),
+			      testcases[i].result, "failed check %d", i);
+		/* XXX why are these even separate APIs? */
+		zassert_equal(Z_VALID_PRIO(testcases[i].prio,
+					   testcases[i].entry),
+			      testcases[i].result, "failed check %d", i);
+	}
+}
+
