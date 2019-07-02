@@ -566,7 +566,7 @@ static int gatt_register(struct bt_gatt_service *svc)
 	u16_t count = svc->attr_count;
 
 	if (sys_slist_is_empty(&db)) {
-		handle = 0;
+		handle = last_static_handle;
 		last_handle = 0;
 		goto populate;
 	}
