@@ -139,7 +139,7 @@
 
 			gpiof: gpio@4000a0f0 {
 				compatible = "silabs,efr32xg1-gpio-port";
-				reg = <0x4000af0 0x30>;
+				reg = <0x4000a0f0 0x30>;
 				label = "GPIO_F";
 				gpio-controller;
 				#gpio-cells = <2>;
