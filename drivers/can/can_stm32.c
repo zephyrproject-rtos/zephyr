@@ -83,6 +83,10 @@ void can_stm32_rx_isr_handler(CAN_TypeDef *can, struct can_stm32_data *data)
 		/* Release message */
 		can->RF0R |= CAN_RF0R_RFOM0;
 	}
+
+	if (can->RF0R & CAN_RF0R_FOVR0) {
+		LOG_ERR("RX FIFO Overflow");
+	}
 }
 
 static inline
