@@ -29,10 +29,8 @@ set(NOSYSDEF_CFLAG "")
 
 list(APPEND TOOLCHAIN_C_FLAGS -fms-extensions)
 
-# xcc doesn't have this, so we need to define it here.
-# This is the same as in the xcc toolchain spec files.
 list(APPEND TOOLCHAIN_C_FLAGS
-  -D__SIZEOF_LONG__=4
+  -imacros${ZEPHYR_BASE}/include/toolchain/xcc_missing_defs.h
   )
 
 set(TOOLCHAIN_HAS_NEWLIB OFF CACHE BOOL "True if toolchain supports newlib")
