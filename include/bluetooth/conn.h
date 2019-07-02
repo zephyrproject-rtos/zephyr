@@ -129,11 +129,19 @@ struct bt_conn_le_info {
 	u16_t interval; /** Connection interval */
 	u16_t latency; /** Connection slave latency */
 	u16_t timeout; /** Connection supervision timeout */
+	u8_t features[8]; /** Remote device's ble features */
 };
 
 /** BR/EDR Connection Info Structure */
 struct bt_conn_br_info {
 	const bt_addr_t *dst; /** Destination (Remote) BR/EDR address */
+};
+
+/** Remote Version Info Structure */
+struct bt_conn_rv_info {
+	u8_t  version;
+	u16_t manufacturer;
+	u16_t subversion;
 };
 
 /** Connection role (master or slave) */
@@ -150,6 +158,7 @@ enum {
  *  @param id Which local identity the connection was created with
  *  @param le LE Connection specific Info
  *  @param br BR/EDR Connection specific Info
+ *  @param rv Remote Version Info
  */
 struct bt_conn_info {
 	u8_t type;
@@ -162,6 +171,8 @@ struct bt_conn_info {
 		struct bt_conn_le_info le;
 
 		struct bt_conn_br_info br;
+		
+		struct bt_conn_rv_info rv;
 	};
 };
 

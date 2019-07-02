@@ -1812,6 +1812,12 @@ int bt_conn_get_info(const struct bt_conn *conn, struct bt_conn_info *info)
 		info->le.interval = conn->le.interval;
 		info->le.latency = conn->le.latency;
 		info->le.timeout = conn->le.timeout;
+		memcpy(info->le.features, conn->le.features, sizeof(info->le.features));	
+#if defined(CONFIG_BT_TESTING)
+		info->rv.version = conn->rv.version;
+		info->rv.manufacturer = conn->rv.manufacturer;
+		info->rv.subversion = conn->rv.subversion;
+#endif /* CONFIG_BT_TESTING */
 		return 0;
 #if defined(CONFIG_BT_BREDR)
 	case BT_CONN_TYPE_BR:

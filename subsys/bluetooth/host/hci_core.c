@@ -749,6 +749,25 @@ static int hci_le_read_remote_features(struct bt_conn *conn)
 	return 0;
 }
 
+#if defined(CONFIG_BT_TESTING)
+static int hci_read_remote_version(struct bt_conn *conn)
+{
+	struct bt_hci_cp_read_remote_version_info *cp;
+	struct net_buf *buf;
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_READ_REMOTE_VERSION_INFO, 0);
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	cp->handle = sys_cpu_to_le16(conn->handle);
+	bt_hci_cmd_send(BT_HCI_OP_READ_REMOTE_VERSION_INFO, buf);
+
+	return 0;
+}
+#endif /* CONFIG_BT_TESTING */
+
 /* LE Data Length Change Event is optional so this function just ignore
  * error and stack will continue to use default values.
  */
@@ -1015,6 +1034,10 @@ static void enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 	 */
 	if (conn->state != BT_CONN_CONNECTED) {
 		goto done;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_TESTING)) {
+		hci_read_remote_version(conn);
 	}
 
 	if ((evt->role == BT_HCI_ROLE_MASTER) ||
@@ -2936,6 +2959,28 @@ static void hci_encrypt_key_refresh_complete(struct net_buf *buf)
 }
 #endif /* CONFIG_BT_SMP || CONFIG_BT_BREDR */
 
+#if defined(CONFIG_BT_TESTING)
+static void bt_hci_evt_read_remote_version_complete(struct net_buf *buf){
+	struct bt_hci_evt_remote_version_info *evt;
+    evt = net_buf_pull_mem(buf, sizeof(*evt));
+
+	u16_t handle = sys_le16_to_cpu(evt->handle);
+	struct bt_conn *conn;
+
+	conn = bt_conn_lookup_handle(handle);
+	if (!conn) {
+		BT_ERR("Unable to lookup conn for handle %u", handle);
+		return;
+	}
+
+	if (!evt->status) {
+		conn->rv.version = evt->version;
+		conn->rv.manufacturer = evt->manufacturer;
+		conn->rv.subversion = evt->subversion;
+	}
+}
+#endif /* CONFIG_BT_TESTING */
+
 #if defined(CONFIG_BT_SMP)
 static void le_ltk_neg_reply(u16_t handle)
 {
@@ -3536,6 +3581,11 @@ static const struct event_handler normal_events[] = {
 		      hci_encrypt_key_refresh_complete,
 		      sizeof(struct bt_hci_evt_encrypt_key_refresh_complete)),
 #endif /* CONFIG_BT_SMP || CONFIG_BT_BREDR */
+#if defined(CONFIG_BT_TESTING)
+	EVENT_HANDLER(BT_HCI_EVT_REMOTE_VERSION_INFO,
+			  bt_hci_evt_read_remote_version_complete,
+			  sizeof(struct bt_hci_evt_remote_version_info)),
+#endif /* CONFIG_BT_TESTING */
 };
 
 static void hci_event(struct net_buf *buf)

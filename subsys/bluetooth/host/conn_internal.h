@@ -79,6 +79,19 @@ struct bt_conn_sco {
 };
 #endif
 
+#if defined(CONFIG_BT_TESTING)
+
+struct bt_conn_rv {
+	/* Remote version info */
+	u8_t  			status;
+	u16_t 			handle;
+	u8_t  			version;
+	u16_t 			manufacturer;
+	u16_t 			subversion;
+};
+
+#endif /* CONFIG_BT_TESTING */
+
 typedef void (*bt_conn_tx_cb_t)(struct bt_conn *conn, void *user_data);
 
 struct bt_conn_tx_data {
@@ -135,7 +148,10 @@ struct bt_conn {
 #if defined(CONFIG_BT_BREDR)
 		struct bt_conn_br	br;
 		struct bt_conn_sco	sco;
-#endif
+#endif /* CONFIG_BT_BREDR */
+#if defined(CONFIG_BT_TESTING)
+		struct bt_conn_rv rv;
+#endif /* CONFIG_BT_TESTING */
 	};
 };
 
