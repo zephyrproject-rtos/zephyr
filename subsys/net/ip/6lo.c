@@ -1469,6 +1469,8 @@ static bool uncompress_IPHC_header(struct net_pkt *pkt)
 		}
 	}
 
+	net_pkt_cursor_init(pkt);
+
 	return true;
 
 fail:
@@ -1482,17 +1484,24 @@ fail:
 /* Adds IPv6 dispatch as first byte and adjust fragments  */
 static inline int compress_ipv6_header(struct net_pkt *pkt)
 {
-	struct net_buf *frag;
+	struct net_buf *buffer = pkt->buffer;
 
-	frag = net_pkt_get_frag(pkt, K_FOREVER);
-	if (!frag) {
+	if (net_buf_tailroom(buffer) >= 1U) {
+		memmove(buffer->data + 1U, buffer->data, buffer->len);
+		net_buf_add(buffer, 1U);
+		buffer->data[0] = NET_6LO_DISPATCH_IPV6;
+		return 0;
+	}
+
+	buffer = net_pkt_get_frag(pkt, K_FOREVER);
+	if (!buffer) {
 		return -ENOBUFS;
 	}
 
-	frag->data[0] = NET_6LO_DISPATCH_IPV6;
-	net_buf_add(frag, 1);
+	buffer->data[0] = NET_6LO_DISPATCH_IPV6;
+	net_buf_add(buffer, 1);
 
-	net_pkt_frag_insert(pkt, frag);
+	net_pkt_frag_insert(pkt, buffer);
 
 	/* Compact the fragments, so that gaps will be filled */
 	net_pkt_compact(pkt);
@@ -1502,11 +1511,9 @@ static inline int compress_ipv6_header(struct net_pkt *pkt)
 
 static inline bool uncompress_ipv6_header(struct net_pkt *pkt)
 {
-	struct net_buf *frag = pkt->frags;
-
 	/* Pull off IPv6 dispatch header and adjust data and length */
-	memmove(frag->data, frag->data + 1, frag->len - 1U);
-	frag->len -= 1U;
+	net_buf_pull(pkt->buffer, 1U);
+	net_pkt_cursor_init(pkt);
 
 	return true;
 }
