@@ -171,7 +171,7 @@ struct bt_conn_info {
 		struct bt_conn_le_info le;
 
 		struct bt_conn_br_info br;
-		
+
 		struct bt_conn_rv_info rv;
 	};
 };

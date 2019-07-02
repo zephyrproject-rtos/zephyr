@@ -82,12 +82,11 @@ struct bt_conn_sco {
 #if defined(CONFIG_BT_TESTING)
 
 struct bt_conn_rv {
-	/* Remote version info */
-	u8_t  			status;
-	u16_t 			handle;
-	u8_t  			version;
-	u16_t 			manufacturer;
-	u16_t 			subversion;
+	u8_t			status;
+	u16_t			handle;
+	u8_t			version;
+	u16_t			manufacturer;
+	u16_t			subversion;
 };
 
 #endif /* CONFIG_BT_TESTING */
