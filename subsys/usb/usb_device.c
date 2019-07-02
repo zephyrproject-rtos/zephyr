@@ -140,7 +140,7 @@ static struct usb_dev_priv {
 	struct usb_setup_packet setup;
 	/** Pointer to data buffer */
 	u8_t *data_buf;
-	/** Eemaining bytes in buffer */
+	/** Remaining bytes in buffer */
 	s32_t data_buf_residue;
 	/** Total length of control transfer */
 	s32_t data_buf_len;
