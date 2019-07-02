@@ -1250,7 +1250,7 @@ int zsock_getsockname_ctx(struct net_context *ctx, struct sockaddr *addr,
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV4) && ctx->local.family == AF_INET) {
-		struct sockaddr_in addr4;
+		struct sockaddr_in addr4 = { 0 };
 
 		addr4.sin_family = AF_INET;
 		addr4.sin_port = net_sin_ptr(&ctx->local)->sin_port;
@@ -1261,7 +1261,7 @@ int zsock_getsockname_ctx(struct net_context *ctx, struct sockaddr *addr,
 		memcpy(addr, &addr4, MIN(*addrlen, newlen));
 	} else if (IS_ENABLED(CONFIG_NET_IPV6) &&
 		   ctx->local.family == AF_INET6) {
-		struct sockaddr_in6 addr6;
+		struct sockaddr_in6 addr6 = { 0 };
 
 		addr6.sin6_family = AF_INET6;
 		addr6.sin6_port = net_sin6_ptr(&ctx->local)->sin6_port;
