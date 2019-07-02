@@ -115,6 +115,12 @@ void alt_thread3(void)
 	irq_unlock(key);
 }
 
+void alt_thread4(void)
+{
+	__ASSERT(0, "intentionally failed assertion");
+	rv = TC_FAIL;
+}
+
 #ifndef CONFIG_ARCH_POSIX
 #ifdef CONFIG_STACK_SENTINEL
 void blow_up_stack(void)
@@ -261,6 +267,19 @@ void test_fatal(void)
 			NULL, NULL, NULL, K_PRIO_COOP(PRIORITY), 0,
 			K_NO_WAIT);
 	k_thread_abort(&alt_thread);
+	zassert_equal(crash_reason, _NANO_ERR_KERNEL_PANIC,
+		      "bad reason code got %d expected %d\n",
+		      crash_reason, _NANO_ERR_KERNEL_PANIC);
+	zassert_not_equal(rv, TC_FAIL, "thread was not aborted");
+
+	TC_PRINT("test alt thread 4: fail assertion\n");
+	k_thread_create(&alt_thread, alt_stack,
+			K_THREAD_STACK_SIZEOF(alt_stack),
+			(k_thread_entry_t)alt_thread4,
+			NULL, NULL, NULL, K_PRIO_COOP(PRIORITY), 0,
+			K_NO_WAIT);
+	k_thread_abort(&alt_thread);
+	/* Default assert_post_action() induces a kernel panic */
 	zassert_equal(crash_reason, _NANO_ERR_KERNEL_PANIC,
 		      "bad reason code got %d expected %d\n",
 		      crash_reason, _NANO_ERR_KERNEL_PANIC);
