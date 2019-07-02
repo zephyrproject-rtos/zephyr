@@ -54,10 +54,10 @@ static void config_bus_clk_init(LL_UTILS_ClkInitTypeDef *clk_init)
 	clk_init->APB1CLKDivider = apb1_prescaler(
 					CONFIG_CLOCK_STM32_APB1_PRESCALER);
 
-#ifndef CONFIG_SOC_SERIES_STM32F0X
+#if !defined (CONFIG_SOC_SERIES_STM32F0X) && !defined (CONFIG_SOC_SERIES_STM32G0X)
 	clk_init->APB2CLKDivider = apb2_prescaler(
 					CONFIG_CLOCK_STM32_APB2_PRESCALER);
-#endif /* CONFIG_SOC_SERIES_STM32F0X  */
+#endif /* CONFIG_SOC_SERIES_STM32F0X && CONFIG_SOC_SERIES_STM32G0X */
 }
 
 static u32_t get_bus_clock(u32_t clock, u32_t prescaler)
@@ -96,16 +96,16 @@ static inline int stm32_clock_control_on(struct device *dev,
 		LL_APB1_GRP2_EnableClock(pclken->enr);
 		break;
 #endif /* CONFIG_SOC_SERIES_STM32L4X || CONFIG_SOC_SERIES_STM32F0X */
-#ifndef CONFIG_SOC_SERIES_STM32F0X
+#if !defined (CONFIG_SOC_SERIES_STM32F0X) && !defined (CONFIG_SOC_SERIES_STM32G0X)
 	case STM32_CLOCK_BUS_APB2:
 		LL_APB2_GRP1_EnableClock(pclken->enr);
 		break;
-#endif /* CONFIG_SOC_SERIES_STM32F0X */
-#ifdef CONFIG_SOC_SERIES_STM32L0X
+#endif /* CONFIG_SOC_SERIES_STM32F0X && CONFIG_SOC_SERIES_STM32G0X */
+#if defined (CONFIG_SOC_SERIES_STM32L0X) || defined (CONFIG_SOC_SERIES_STM32G0X)
 	case STM32_CLOCK_BUS_IOP:
 		LL_IOP_GRP1_EnableClock(pclken->enr);
 		break;
-#endif /* CONFIG_SOC_SERIES_STM32L0X */
+#endif /* CONFIG_SOC_SERIES_STM32L0X || CONFIG_SOC_SERIES_STM32G0X */
 	default:
 		return -ENOTSUP;
 	}
@@ -144,11 +144,11 @@ static inline int stm32_clock_control_off(struct device *dev,
 		LL_APB1_GRP2_DisableClock(pclken->enr);
 		break;
 #endif /* CONFIG_SOC_SERIES_STM32L4X || CONFIG_SOC_SERIES_STM32F0X */
-#ifndef CONFIG_SOC_SERIES_STM32F0X
+#if !defined (CONFIG_SOC_SERIES_STM32F0X) && !defined (CONFIG_SOC_SERIES_STM32G0X)
 	case STM32_CLOCK_BUS_APB2:
 		LL_APB2_GRP1_DisableClock(pclken->enr);
 		break;
-#endif /* CONFIG_SOC_SERIES_STM32F0X */
+#endif /* CONFIG_SOC_SERIES_STM32F0X && CONFIG_SOC_SERIES_STM32G0X */
 #ifdef CONFIG_SOC_SERIES_STM32L0X
 	case STM32_CLOCK_BUS_IOP:
 		LL_IOP_GRP1_DisableClock(pclken->enr);
@@ -176,10 +176,10 @@ static int stm32_clock_control_get_subsys_rate(struct device *clock,
 	u32_t ahb_clock = SystemCoreClock;
 	u32_t apb1_clock = get_bus_clock(ahb_clock,
 				CONFIG_CLOCK_STM32_APB1_PRESCALER);
-#ifndef CONFIG_SOC_SERIES_STM32F0X
+#if !defined (CONFIG_SOC_SERIES_STM32F0X) && !defined (CONFIG_SOC_SERIES_STM32G0X)
 	u32_t apb2_clock = get_bus_clock(ahb_clock,
 				CONFIG_CLOCK_STM32_APB2_PRESCALER);
-#endif /* CONFIG_SOC_SERIES_STM32F0X */
+#endif /* CONFIG_SOC_SERIES_STM32F0X && CONFIG_SOC_SERIES_STM32G0X */
 
 	ARG_UNUSED(clock);
 
@@ -199,11 +199,11 @@ static int stm32_clock_control_get_subsys_rate(struct device *clock,
 #endif
 		*rate = apb1_clock;
 		break;
-#ifndef CONFIG_SOC_SERIES_STM32F0X
+#if !defined (CONFIG_SOC_SERIES_STM32F0X) && !defined (CONFIG_SOC_SERIES_STM32G0X)
 	case STM32_CLOCK_BUS_APB2:
 		*rate = apb2_clock;
 		break;
-#endif /* CONFIG_SOC_SERIES_STM32F0X */
+#endif /* CONFIG_SOC_SERIES_STM32F0X && CONFIG_SOC_SERIES_STM32G0X */
 	default:
 		return -ENOTSUP;
 	}
@@ -376,9 +376,9 @@ static int stm32_clock_control_init(struct device *dev)
 
 	/* Set APB1 & APB2 prescaler*/
 	LL_RCC_SetAPB1Prescaler(s_ClkInitStruct.APB1CLKDivider);
-#ifndef CONFIG_SOC_SERIES_STM32F0X
+#if !defined (CONFIG_SOC_SERIES_STM32F0X) && !defined (CONFIG_SOC_SERIES_STM32G0X)
 	LL_RCC_SetAPB2Prescaler(s_ClkInitStruct.APB2CLKDivider);
-#endif /* CONFIG_SOC_SERIES_STM32F0X */
+#endif /* CONFIG_SOC_SERIES_STM32F0X && CONFIG_SOC_SERIES_STM32G0X */
 
 	/* Set flash latency */
 	/* HSI used as SYSCLK, set latency to 0 */
@@ -447,9 +447,9 @@ static int stm32_clock_control_init(struct device *dev)
 
 	/* Set APB1 & APB2 prescaler*/
 	LL_RCC_SetAPB1Prescaler(s_ClkInitStruct.APB1CLKDivider);
-#ifndef CONFIG_SOC_SERIES_STM32F0X
+#if !defined (CONFIG_SOC_SERIES_STM32F0X) && !defined (CONFIG_SOC_SERIES_STM32G0X)
 	LL_RCC_SetAPB2Prescaler(s_ClkInitStruct.APB2CLKDivider);
-#endif /* CONFIG_SOC_SERIES_STM32F0X */
+#endif /* CONFIG_SOC_SERIES_STM32F0X && CONFIG_SOC_SERIES_STM32G0X */
 
 	/* Set flash latency */
 	/* HSI used as SYSCLK, set latency to 0 */
