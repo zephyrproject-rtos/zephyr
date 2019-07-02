@@ -1355,6 +1355,7 @@ struct bt_hci_cp_le_set_privacy_mode {
 
 /* Event definitions */
 
+#define BT_HCI_EVT_UNKNOWN                      0x00
 #define BT_HCI_EVT_VENDOR                       0xff
 
 #define BT_HCI_EVT_INQUIRY_COMPLETE             0x01

@@ -87,7 +87,8 @@ static void prio_recv_thread(void *p1, void *p2, void *p3)
 #if defined(CONFIG_BT_CONN)
 			struct net_buf *buf;
 
-			buf = bt_buf_get_rx(BT_BUF_EVT, K_FOREVER);
+			buf = bt_buf_get_evt(BT_HCI_EVT_NUM_COMPLETED_PACKETS,
+					     false, K_FOREVER);
 			hci_num_cmplt_encode(buf, handle, num_cmplt);
 			BT_DBG("Num Complete: 0x%04x:%u", handle, num_cmplt);
 			bt_recv_prio(buf);
@@ -142,7 +143,8 @@ static inline struct net_buf *encode_node(struct node_rx_pdu *node_rx,
 	case HCI_CLASS_EVT_REQUIRED:
 	case HCI_CLASS_EVT_CONNECTION:
 		if (class == HCI_CLASS_EVT_DISCARDABLE) {
-			buf = bt_buf_get_rx(BT_BUF_EVT, K_NO_WAIT);
+			buf = bt_buf_get_evt(BT_HCI_EVT_UNKNOWN, true,
+					     K_NO_WAIT);
 		} else {
 			buf = bt_buf_get_rx(BT_BUF_EVT, K_FOREVER);
 		}

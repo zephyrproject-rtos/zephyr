@@ -353,12 +353,9 @@ static void bt_spi_rx_thread(void)
 					/* Vendor events are currently unsupported */
 					bt_spi_handle_vendor_evt(rxmsg);
 					continue;
-				case BT_HCI_EVT_CMD_COMPLETE:
-				case BT_HCI_EVT_CMD_STATUS:
-					buf = bt_buf_get_cmd_complete(K_FOREVER);
-					break;
 				default:
-					buf = bt_buf_get_rx(BT_BUF_EVT, K_FOREVER);
+					buf = bt_buf_get_evt(rxmsg[EVT_HEADER_EVENT],
+							     false, K_FOREVER);
 					break;
 				}
 

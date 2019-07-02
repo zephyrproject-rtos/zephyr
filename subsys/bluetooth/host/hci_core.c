@@ -133,6 +133,21 @@ NET_BUF_POOL_DEFINE(hci_cmd_pool, CONFIG_BT_HCI_CMD_COUNT,
 NET_BUF_POOL_DEFINE(hci_rx_pool, CONFIG_BT_RX_BUF_COUNT,
 		    BT_BUF_RX_SIZE, BT_BUF_USER_DATA_MIN, NULL);
 
+#if defined(CONFIG_BT_CONN)
+/* Dedicated pool for HCI_Number_of_Completed_Packets. This event is always
+ * consumed synchronously by bt_recv_prio() so a single buffer is enough.
+ * Having a dedicated pool for it ensures that exhaustion of the RX pool
+ * cannot block the delivery of this priority event.
+ */
+NET_BUF_POOL_DEFINE(num_complete_pool, 1, BT_BUF_RX_SIZE,
+		    BT_BUF_USER_DATA_MIN, NULL);
+#endif /* CONFIG_BT_CONN */
+
+#if defined(CONFIG_BT_DISCARDABLE_BUF_COUNT)
+NET_BUF_POOL_DEFINE(discardable_pool, CONFIG_BT_DISCARDABLE_BUF_COUNT,
+		    BT_BUF_RX_SIZE, BT_BUF_USER_DATA_MIN, NULL);
+#endif /* CONFIG_BT_DISCARDABLE_BUF_COUNT */
+
 struct event_handler {
 	u8_t event;
 	u8_t min_len;
@@ -5627,6 +5642,45 @@ struct net_buf *bt_buf_get_cmd_complete(s32_t timeout)
 	}
 
 	return bt_buf_get_rx(BT_BUF_EVT, timeout);
+}
+
+struct net_buf *bt_buf_get_evt(u8_t evt, bool discardable, s32_t timeout)
+{
+	switch (evt) {
+#if defined(CONFIG_BT_CONN)
+	case BT_HCI_EVT_NUM_COMPLETED_PACKETS:
+		{
+			struct net_buf *buf;
+
+			buf = net_buf_alloc(&num_complete_pool, timeout);
+			if (buf) {
+				net_buf_reserve(buf, CONFIG_BT_HCI_RESERVE);
+				bt_buf_set_type(buf, BT_BUF_EVT);
+			}
+
+			return buf;
+		}
+#endif /* CONFIG_BT_CONN */
+	case BT_HCI_EVT_CMD_COMPLETE:
+	case BT_HCI_EVT_CMD_STATUS:
+		return bt_buf_get_cmd_complete(timeout);
+	default:
+#if defined(CONFIG_BT_DISCARDABLE_BUF_COUNT)
+		if (discardable) {
+			struct net_buf *buf;
+
+			buf = net_buf_alloc(&discardable_pool, timeout);
+			if (buf) {
+				net_buf_reserve(buf, CONFIG_BT_HCI_RESERVE);
+				bt_buf_set_type(buf, BT_BUF_EVT);
+			}
+
+			return buf;
+		}
+#endif /* CONFIG_BT_DISCARDABLE_BUF_COUNT */
+
+		return bt_buf_get_rx(BT_BUF_EVT, timeout);
+	}
 }
 
 #if defined(CONFIG_BT_BREDR)
