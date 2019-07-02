@@ -354,10 +354,11 @@ static int can_stm32_init(struct device *dev)
 		LOG_ERR("Failed to enter init mode");
 		return ret;
 	}
-	
+
+	/* Set TX priority to chronological order */
+	can->MCR |= CAN_MCR_TXFP;
 	can->MCR &= ~CAN_MCR_TTCM & ~CAN_MCR_TTCM & ~CAN_MCR_ABOM &
-		    ~CAN_MCR_AWUM & ~CAN_MCR_NART & ~CAN_MCR_RFLM &
-		    ~CAN_MCR_TXFP;
+		    ~CAN_MCR_AWUM & ~CAN_MCR_NART & ~CAN_MCR_RFLM;
 
 	ret = can_stm32_runtime_configure(dev, CAN_NORMAL_MODE, 0);
 	if (ret) {
