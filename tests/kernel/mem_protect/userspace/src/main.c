@@ -1085,6 +1085,52 @@ void test_stack_buffer(void)
 
 }
 
+void z_impl_missing_syscall(void)
+{
+	/* Shouldn't ever get here; no handler function compiled */
+	k_panic();
+}
+
+void test_unimplemented_syscall(void)
+{
+	expect_fault = true;
+	expected_reason = REASON_KERNEL_OOPS;
+
+	missing_syscall();
+}
+
+void test_bad_syscall(void)
+{
+	expect_fault = true;
+	expected_reason = REASON_KERNEL_OOPS;
+
+	z_arch_syscall_invoke0(INT_MAX);
+
+}
+
+static struct k_sem recycle_sem;
+
+
+void test_object_recycle(void)
+{
+	struct _k_object *ko;
+	int perms_count = 0;
+
+	ko = z_object_find(&recycle_sem);
+	(void)memset(ko->perms, 0xFF, sizeof(ko->perms));
+
+	z_object_recycle(&recycle_sem);
+	zassert_true(ko != NULL, "kernel object not found");
+	zassert_true(ko->flags & K_OBJ_FLAG_INITIALIZED,
+		     "object wasn't marked as initialized");
+
+	for (int i = 0; i < CONFIG_MAX_THREAD_BYTES; i++) {
+		perms_count += popcount(ko->perms[i]);
+	}
+
+	zassert_true(perms_count == 1, "invalid number of thread permissions");
+}
+
 void test_main(void)
 {
 	struct k_mem_partition *parts[] = {&part0, &part1,
@@ -1135,7 +1181,10 @@ void test_main(void)
 			 ztest_unit_test(domain_add_part_context_switch),
 			 ztest_unit_test(domain_remove_part_context_switch),
 			 ztest_unit_test(domain_remove_thread_context_switch),
-			 ztest_unit_test(test_stack_buffer)
+			 ztest_unit_test(test_stack_buffer),
+			 ztest_user_unit_test(test_unimplemented_syscall),
+			 ztest_user_unit_test(test_bad_syscall),
+			 ztest_unit_test(test_object_recycle)
 			 );
 	ztest_run_test_suite(userspace);
 }
