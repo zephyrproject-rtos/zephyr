@@ -24,4 +24,11 @@ config UART_7
 
 endif # SERIAL
 
+if I2C
+
+config I2C_5
+	default y
+
+endif # I2C
+
 endif # BOARD_STM32MP157_Dk2
