@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2016 ARM Ltd.
+ * Copyright (c) 2019 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,9 +9,9 @@
 #include <drivers/sensor.h>
 #include <drivers/clock_control.h>
 #include <logging/log.h>
+#include <nrf_temp.h>
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_REGISTER(TEMPNRF5);
+LOG_MODULE_REGISTER(temp_nrf5, CONFIG_SENSOR_LOG_LEVEL);
 
 #include "nrf.h"
 
@@ -23,7 +24,7 @@ LOG_MODULE_REGISTER(TEMPNRF5);
 struct temp_nrf5_data {
 	struct k_sem device_sync_sem;
 	s32_t sample;
-	struct device *clk_m16_dev;
+	struct device *hfclk_dev;
 };
 
 
@@ -32,7 +33,6 @@ static int temp_nrf5_sample_fetch(struct device *dev, enum sensor_channel chan)
 	struct temp_nrf5_data *data = dev->driver_data;
 	int r;
 
-	LOG_DBG("");
 
 	if (chan != SENSOR_CHAN_ALL && chan != SENSOR_CHAN_DIE_TEMP) {
 		return -ENOTSUP;
@@ -42,18 +42,18 @@ static int temp_nrf5_sample_fetch(struct device *dev, enum sensor_channel chan)
 	 * subsystem parameter with a flag to indicate whether or not
 	 * it should block.
 	 */
-	r = clock_control_on(data->clk_m16_dev, (void *)1);
+	r = clock_control_on(data->hfclk_dev, (void *)1);
 	__ASSERT_NO_MSG(!r);
 
-	NRF_TEMP->TASKS_START = 1;
+	nrf_temp_task_trigger(NRF_TEMP, NRF_TEMP_TASK_START);
 	k_sem_take(&data->device_sync_sem, K_FOREVER);
 
-	r = clock_control_off(data->clk_m16_dev, (void *)1);
+	r = clock_control_off(data->hfclk_dev, (void *)1);
 	__ASSERT_NO_MSG(!r || r == -EBUSY);
 
-	data->sample = NRF_TEMP->TEMP;
-
-	NRF_TEMP->TASKS_STOP = 1;
+	data->sample = nrf_temp_result_get(NRF_TEMP);
+	LOG_DBG("sample: %d", data->sample);
+	nrf_temp_task_trigger(NRF_TEMP, NRF_TEMP_TASK_STOP);
 
 	return 0;
 }
@@ -65,7 +65,6 @@ static int temp_nrf5_channel_get(struct device *dev,
 	struct temp_nrf5_data *data = dev->driver_data;
 	s32_t uval;
 
-	LOG_DBG("");
 
 	if (chan != SENSOR_CHAN_DIE_TEMP) {
 		return -ENOTSUP;
@@ -75,6 +74,8 @@ static int temp_nrf5_channel_get(struct device *dev,
 	val->val1 = uval / 1000000;
 	val->val2 = uval % 1000000;
 
+	LOG_DBG("Temperature:%d,%d", val->val1, val->val2);
+
 	return 0;
 }
 
@@ -83,7 +84,7 @@ static void temp_nrf5_isr(void *arg)
 	struct device *dev = (struct device *)arg;
 	struct temp_nrf5_data *data = dev->driver_data;
 
-	NRF_TEMP->EVENTS_DATARDY = 0;
+	nrf_temp_event_clear(NRF_TEMP, NRF_TEMP_EVENT_DATARDY);
 	k_sem_give(&data->device_sync_sem);
 }
 
@@ -100,9 +101,9 @@ static int temp_nrf5_init(struct device *dev)
 
 	LOG_DBG("");
 
-	data->clk_m16_dev =
+	data->hfclk_dev =
 		device_get_binding(DT_INST_0_NORDIC_NRF_CLOCK_LABEL "_16M");
-	__ASSERT_NO_MSG(data->clk_m16_dev);
+	__ASSERT_NO_MSG(data->hfclk_dev);
 
 	k_sem_init(&data->device_sync_sem, 0, UINT_MAX);
 	IRQ_CONNECT(
@@ -113,7 +114,7 @@ static int temp_nrf5_init(struct device *dev)
 		0);
 	irq_enable(DT_INST_0_NORDIC_NRF_TEMP_IRQ_0);
 
-	NRF_TEMP->INTENSET = TEMP_INTENSET_DATARDY_Set;
+	nrf_temp_int_enable(NRF_TEMP, NRF_TEMP_INT_DATARDY_MASK);
 
 	return 0;
 }
