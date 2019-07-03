@@ -119,7 +119,7 @@ static void test_usb_dc_api(void)
 /* Test USB Device Cotnroller API for invalid parameters */
 static void test_usb_dc_api_invalid(void)
 {
-	size_t size;
+	u32_t size;
 	u8_t byte;
 
 	/* Set stall to invalid EP */
@@ -178,7 +178,7 @@ static void test_usb_dc_api_invalid(void)
 
 static void test_usb_dc_api_read_write(void)
 {
-	size_t size;
+	u32_t size;
 	u8_t byte;
 
 	/* Read invalid EP */
