@@ -11,6 +11,7 @@
 		led0 = &red_led;
 		led1 = &green_led;
 		led2 = &blue_led;
+		spi-5 = &spi5;
 	};
 
 	leds {
@@ -32,3 +33,5 @@
 		};
 	};
 };
+
+arduino_spi: &spi5 {};
