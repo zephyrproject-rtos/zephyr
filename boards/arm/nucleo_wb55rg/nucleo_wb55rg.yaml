@@ -12,3 +12,4 @@ supported:
   - gpio
   - arduino_i2c
   - i2c
+  - counter
