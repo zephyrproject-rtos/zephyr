@@ -28,6 +28,7 @@ GPIO_MMIO32_INIT(fpgaio_misc, FPGAIO_MISC_GPIO_NAME,
 
 #define NON_SECURE_FLASH_ADDRESS	(0x100000)
 #define NON_SECURE_FLASH_OFFSET	(0x10000000)
+#define BL2_HEADER_SIZE		(0x400)
 
 /**
  * @brief Wake up CPU 1 from another CPU, this is plaform specific.
@@ -38,6 +39,7 @@ void wakeup_cpu1(void)
 	/* Set the Initial Secure Reset Vector Register for CPU 1 */
 	*(u32_t *)(SSE_200_SYSTEM_CTRL_INITSVTOR1) =
 					CONFIG_FLASH_BASE_ADDRESS +
+					BL2_HEADER_SIZE +
 					NON_SECURE_FLASH_ADDRESS -
 					NON_SECURE_FLASH_OFFSET;
 
