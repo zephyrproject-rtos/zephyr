@@ -79,9 +79,9 @@
 
 	SECTION_DATA_PROLOGUE(_bt_channels_area,,SUBALIGN(4))
 	{
-		_bt_channels_start = .;
-		KEEP(*(SORT_BY_NAME("._bt_channels.static.*")))
-		_bt_channels_end = .;
+		_bt_l2cap_fixed_chan_list_start = .;
+		KEEP(*(SORT_BY_NAME("._bt_l2cap_fixed_chan.*")))
+		_bt_l2cap_fixed_chan_list_end = .;
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
 #if defined(CONFIG_BT_BREDR)
