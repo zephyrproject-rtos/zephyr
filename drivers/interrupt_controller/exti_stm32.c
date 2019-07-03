@@ -98,7 +98,7 @@ int stm32_exti_enable(int line)
 	}
 
 	/* Get matching exti irq mathcing provided line thanks to irq_table */
-	if (line <= ARRAY_SIZE(exti_irq_table)) {
+	if (line < ARRAY_SIZE(exti_irq_table)) {
 		irqnum = exti_irq_table[line];
 		if (irqnum == 0xFF)
 			return 0;
