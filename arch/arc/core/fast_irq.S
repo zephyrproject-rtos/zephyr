@@ -22,9 +22,6 @@
 GTEXT(_firq_enter)
 GTEXT(_firq_exit)
 
-GDATA(exc_nest_count)
-
-
 /**
  *
  * @brief Work to be done before handing control to a FIRQ ISR
@@ -81,12 +78,9 @@ SECTION_FUNC(TEXT, _firq_enter)
 	lr r25, [_ARC_V2_LP_END]
 #endif
 
-	ld r1, [exc_nest_count]
-	add r0, r1, 1
-	st r0, [exc_nest_count]
-	cmp r1, 0
+	_check_nest_int_by_irq_act r0, r1
 
-	bgt.d  firq_nest
+	bne.d firq_nest
 	mov r0, sp
 
 	mov r1, _kernel
@@ -147,19 +141,10 @@ SECTION_FUNC(TEXT, _firq_exit)
 	sr r24, [_ARC_V2_LP_START]
 	sr r25, [_ARC_V2_LP_END]
 #endif
-	/* check if we're a nested interrupt: if so, let the interrupted
-	 * interrupt handle the reschedule */
-	mov	r1, exc_nest_count
-	ld	r0, [r1]
-	sub	r0, r0, 1
-	st	r0, [r1]
-/* see comments in _rirq_exit */
-	lr 	r0, [_ARC_V2_AUX_IRQ_ACT]
-	and 	r0, r0, 0xffff
-	ffs	r1, r0
-	fls	r2, r0
-	cmp 	r1, r2
-	jne	_firq_no_reschedule
+
+	_check_nest_int_by_irq_act r0, r1
+
+	jne _firq_no_reschedule
 
 #ifdef CONFIG_STACK_SENTINEL
 	bl z_check_stack_sentinel

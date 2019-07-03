@@ -24,12 +24,6 @@
 GTEXT(_isr_wrapper)
 GTEXT(_isr_demux)
 
-GDATA(exc_nest_count)
-SECTION_VAR(BSS, exc_nest_count)
-	.balign 4
-	.word 0
-
-
 #if defined(CONFIG_SYS_POWER_MANAGEMENT)
 GTEXT(z_sys_power_save_idle_exit)
 #endif
