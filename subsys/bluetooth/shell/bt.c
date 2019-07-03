@@ -1239,13 +1239,15 @@ static void auth_pairing_complete(struct bt_conn *conn, bool bonded)
 		    addr);
 }
 
-static void auth_pairing_failed(struct bt_conn *conn)
+static void auth_pairing_failed(struct bt_conn *conn,
+				enum bt_security_err reason)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
 
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
-	shell_print(ctx_shell, "Pairing failed with %s", addr);
+	shell_print(ctx_shell, "Pairing failed with %s reason %d", addr,
+		    reason);
 }
 
 #if defined(CONFIG_BT_BREDR)

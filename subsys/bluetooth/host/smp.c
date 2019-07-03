@@ -330,6 +330,34 @@ static u8_t get_pair_method(struct bt_smp *smp, u8_t remote_io)
 	return gen_method_sc[remote_io][get_io_capa()];
 }
 
+static enum bt_security_err auth_err_get(u8_t smp_err)
+{
+	switch (smp_err) {
+	case BT_SMP_ERR_PASSKEY_ENTRY_FAILED:
+	case BT_SMP_ERR_DHKEY_CHECK_FAILED:
+	case BT_SMP_ERR_NUMERIC_COMP_FAILED:
+	case BT_SMP_ERR_CONFIRM_FAILED:
+		return BT_SECURITY_ERR_AUTHENTICATION_FAIL;
+	case BT_SMP_ERR_OOB_NOT_AVAIL:
+		return BT_SECURITY_ERR_OOB_NOT_AVAILABLE;
+	case BT_SMP_ERR_AUTH_REQUIREMENTS:
+	case BT_SMP_ERR_ENC_KEY_SIZE:
+		return BT_SECURITY_ERR_AUTHENTICATION_REQUIREMENT;
+	case BT_SMP_ERR_PAIRING_NOTSUPP:
+	case BT_SMP_ERR_CMD_NOTSUPP:
+		return BT_SECURITY_ERR_PAIR_NOT_SUPPORTED;
+	case BT_SMP_ERR_REPEATED_ATTEMPTS:
+	case BT_SMP_ERR_BREDR_PAIRING_IN_PROGRESS:
+	case BT_SMP_ERR_CROSS_TRANSP_NOT_ALLOWED:
+		return BT_SECURITY_ERR_PAIR_NOT_ALLOWED;
+	case BT_SMP_ERR_INVALID_PARAMS:
+		return BT_SECURITY_ERR_INVALID_PARAM;
+	case BT_SMP_ERR_UNSPECIFIED:
+	default:
+		return BT_SECURITY_ERR_UNSPECIFIED;
+	}
+}
+
 static struct net_buf *smp_create_pdu(struct bt_conn *conn, u8_t op,
 				      size_t len)
 {
@@ -756,7 +784,8 @@ static void smp_pairing_br_complete(struct bt_smp_br *smp, u8_t status)
 		}
 
 		if (bt_auth && bt_auth->pairing_failed) {
-			bt_auth->pairing_failed(smp->chan.chan.conn);
+			bt_auth->pairing_failed(smp->chan.chan.conn,
+						auth_err_get(status));
 		}
 	} else {
 		bool bond_flag = atomic_test_bit(smp->flags, SMP_FLAG_BOND);
@@ -1556,7 +1585,8 @@ static void smp_pairing_complete(struct bt_smp *smp, u8_t status)
 						  bond_flag);
 		}
 	} else if (bt_auth && bt_auth->pairing_failed) {
-		bt_auth->pairing_failed(smp->chan.chan.conn);
+		bt_auth->pairing_failed(smp->chan.chan.conn,
+					auth_err_get(status));
 	}
 
 	smp_reset(smp);
