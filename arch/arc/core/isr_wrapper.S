@@ -30,20 +30,6 @@ SECTION_VAR(BSS, exc_nest_count)
 	.word 0
 
 
-#if CONFIG_RGF_NUM_BANKS == 1
-GDATA(saved_r0)
-
-SECTION_VAR(BSS, saved_r0)
-	.balign 4
-	.word 0
-#else
-GDATA(saved_sp)
-
-SECTION_VAR(BSS, saved_sp)
-	.balign 4
-	.word 0
-#endif
-
 #if defined(CONFIG_SYS_POWER_MANAGEMENT)
 GTEXT(z_sys_power_save_idle_exit)
 #endif
@@ -228,21 +214,26 @@ From RIRQ:
 SECTION_FUNC(TEXT, _isr_wrapper)
 #if defined(CONFIG_ARC_FIRQ)
 #if CONFIG_RGF_NUM_BANKS == 1
-	st r0,[saved_r0]
+/* free r0 here, use r0 to check whether irq is firq.
+ * for rirq,  as sp will not change and r0 already saved, this action
+ * in fact is an action like nop.
+ * for firq,  r0 will be restored later
+ */
+  st r0, [sp]
 #endif
 	lr r0, [_ARC_V2_AUX_IRQ_ACT]
 	ffs r0, r0
 	cmp r0, 0
 #if CONFIG_RGF_NUM_BANKS == 1
 	bnz rirq_path
+  ld r0, [sp]
 	/* 1-register bank FIRQ handling must save registers on stack */
 	_create_irq_stack_frame
 	lr r0, [_ARC_V2_STATUS32_P0]
 	st_s r0, [sp, ___isf_t_status32_OFFSET]
-	mov r0,ilink
+  lr r0, [_ARC_V2_ERET]
 	st_s r0, [sp, ___isf_t_pc_OFFSET]
-	ld r0,[saved_r0]
-	st_s r0, [sp, ___isf_t_r0_OFFSET]
+
 	mov r3, _firq_exit
 	mov r2, _firq_enter
 	j_s [r2]
