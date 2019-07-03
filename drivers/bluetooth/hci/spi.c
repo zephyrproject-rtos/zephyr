@@ -326,9 +326,8 @@ static void bt_spi_rx_thread(void)
 				    header_slave[STATUS_HEADER_TOREAD] == 0xFF) &&
 				   !ret)) && exit_irq_high_loop());
 
-			if (!ret) {
-				size = header_slave[STATUS_HEADER_TOREAD];
-
+			size = header_slave[STATUS_HEADER_TOREAD];
+			if (!ret || size != 0) {
 				do {
 					ret = bt_spi_transceive(&txmsg, size,
 								&rxmsg, size);
@@ -339,8 +338,10 @@ static void bt_spi_rx_thread(void)
 			gpio_pin_enable_callback(irq_dev, GPIO_IRQ_PIN);
 			k_sem_give(&sem_busy);
 
-			if (ret) {
-				BT_ERR("Error %d", ret);
+			if (ret || size == 0) {
+				if (ret) {
+					BT_ERR("Error %d", ret);
+				}
 				continue;
 			}
 
