@@ -102,9 +102,9 @@ static void pairing_complete(struct bt_conn *conn, bool bonded)
 	printk("Pairing Complete\n");
 }
 
-static void pairing_failed(struct bt_conn *conn)
+static void pairing_failed(struct bt_conn *conn, enum bt_security_err reason)
 {
-	printk("Pairing Failed. Disconnecting.\n");
+	printk("Pairing Failed (%d). Disconnecting.\n", reason);
 	bt_conn_disconnect(conn, BT_HCI_ERR_AUTHENTICATION_FAIL);
 }
 
