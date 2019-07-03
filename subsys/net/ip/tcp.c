@@ -1884,6 +1884,24 @@ static int send_reset(struct net_context *context,
 	return ret;
 }
 
+static u16_t adjust_data_len(struct net_pkt *pkt, struct net_tcp_hdr *tcp_hdr,
+			     u16_t data_len)
+{
+	u8_t offset = tcp_hdr->offset >> 4;
+
+	/* We need to adjust the length of the data part if there
+	 * are TCP options.
+	 */
+	if ((offset << 2) > sizeof(struct net_tcp_hdr)) {
+		net_pkt_skip(pkt, (offset << 2) -
+			     sizeof(struct net_tcp_hdr));
+
+		data_len -= (offset << 2) - sizeof(struct net_tcp_hdr);
+	}
+
+	return data_len;
+}
+
 /* This is called when we receive data after the connection has been
  * established. The core TCP logic is located here.
  *
@@ -2043,6 +2061,8 @@ resend_ack:
 	 * release the pkt. Otherwise, release the pkt immediately.
 	 */
 	if (data_len > 0) {
+		data_len = adjust_data_len(pkt, tcp_hdr, data_len);
+
 		ret = net_context_packet_received(conn, pkt, ip_hdr, proto_hdr,
 						  context->tcp->recv_user_data);
 	} else if (data_len == 0U) {
