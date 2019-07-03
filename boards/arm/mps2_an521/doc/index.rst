@@ -379,15 +379,8 @@ Follow the build steps for AN521 target while replacing the platform with
 ``-DTARGET_PLATFORM=AN521`` and compiler (if required) with ``-DCOMPILER=GNUARM``
 
 Copy over tfm as a library to the Zephyr project source and create a shortcut
-for the secure veneers.
-
-.. code-block:: bash
-
-   cp -r install/ $ZEPHYR_PROJECT/src/ext
-   cp $ZEPHYR_PROJECT/src/ext/install/export/tfm/veneers/s_veneers.o $ZEPHYR_PROJECT/src/ext
-
-
-Build the Zephyr app in the usual way.
+for the secure veneers and necessary header files. All files are in the install
+folder after TF-M built.
 
 Uploading an application to MPS2+ AN521
 ---------------------------------------
@@ -424,6 +417,8 @@ serial port:
 .. code-block:: console
 
    Hello World! mps2_an521
+
+.. note:: Please refer to the tfm_integration sample for more details about integrating with TF-M and multiple images scenario.
 
 
 .. _MPS2 FPGA Website:
