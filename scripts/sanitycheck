@@ -226,7 +226,6 @@ LAST_SANITY_XUNIT = os.path.join(ZEPHYR_BASE, "scripts", "sanity_chk",
                                  "last_sanity.xml")
 RELEASE_DATA = os.path.join(ZEPHYR_BASE, "scripts", "sanity_chk",
                             "sanity_last_release.csv")
-JOBS = multiprocessing.cpu_count() * 2
 
 if os.isatty(sys.stdout.fileno()):
     TERMINAL = True
@@ -3259,6 +3258,10 @@ def main():
 
     if options.jobs:
         JOBS = options.jobs
+    elif options.build_only:
+        JOBS = multiprocessing.cpu_count() * 2
+    else:
+        JOBS = multiprocessing.cpu_count()
 
     # Decrease JOBS for Ninja, if jobs weren't explicitly set
     if options.ninja and not options.jobs:
