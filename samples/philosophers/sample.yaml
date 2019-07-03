@@ -1,6 +1,7 @@
 sample:
   name: Dining Philosophers
 common:
+  timeout: 180
   extra_args: "-DDEBUG_PRINTF=1"
   tags: introduction
   harness: console
