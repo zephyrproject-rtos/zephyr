@@ -39,3 +39,7 @@
 	pinctrl-names = "default";
 	status = "okay";
 };
+
+&mailbox {
+	status = "okay";
+};
