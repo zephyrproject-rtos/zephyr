@@ -125,7 +125,7 @@ struct counter_top_cfg {
  *			counted.
  * @param flags		Flags. See @ref COUNTER_FLAGS.
  * @param channels	Number of channels that can be used for setting alarm,
- *			see @ref counter_set_alarm.
+ *			see @ref counter_set_channel_alarm.
  */
 struct counter_config_info {
 	u32_t max_top_value;
@@ -443,8 +443,8 @@ static inline u32_t z_impl_counter_get_top_value(struct device *dev)
 }
 
 /**
- * @brief Function to retrieve maximum relative value that can be set by
- *        counter_set_alarm.
+ * @brief Function to retrieve maximum relative value that can be set by @ref
+ *        counter_set_channel_alarm.
  *
  * @param[in]  dev    Pointer to the device structure for the driver instance.
  *
