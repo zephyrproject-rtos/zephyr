@@ -69,6 +69,7 @@ menuconfig USB_NRF52840
 
 config USB_NRFX_EVT_QUEUE_SIZE
 	int "USBD event queue size"
+	range 4 64
 	default 32
 	depends on USB_NRF52840
 	help

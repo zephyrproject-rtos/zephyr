@@ -177,15 +177,14 @@ struct usbd_event {
  */
 #define FIFO_ELEM_MIN_SZ        sizeof(struct usbd_event)
 #define FIFO_ELEM_MAX_SZ        sizeof(struct usbd_event)
-#define FIFO_ELEM_COUNT         CONFIG_USB_NRFX_EVT_QUEUE_SIZE
 #define FIFO_ELEM_ALIGN         sizeof(unsigned int)
 
-K_MEM_POOL_DEFINE(fifo_elem_pool, FIFO_ELEM_MIN_SZ, FIFO_ELEM_MAX_SZ,
-		  FIFO_ELEM_COUNT, FIFO_ELEM_ALIGN);
-
 #if CONFIG_USB_NRFX_EVT_QUEUE_SIZE < 4
-#error Invalid USBD event queue size (CONFIG_USB_NRFX_EVT_QUEUE_SIZE). Minimum size: 4.
+#error Invalid USBD event queue size (CONFIG_USB_NRFX_EVT_QUEUE_SIZE).
 #endif
+
+K_MEM_POOL_DEFINE(fifo_elem_pool, FIFO_ELEM_MIN_SZ, FIFO_ELEM_MAX_SZ,
+		  CONFIG_USB_NRFX_EVT_QUEUE_SIZE, FIFO_ELEM_ALIGN);
 
 /**
  * @brief Endpoint buffer pool
