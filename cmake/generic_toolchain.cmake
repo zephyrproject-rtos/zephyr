@@ -65,4 +65,5 @@ include(${TOOLCHAIN_ROOT}/cmake/toolchain/${ZEPHYR_TOOLCHAIN_VARIANT}/generic.cm
 
 # Configure the toolchain based on what toolchain technology is used
 # (gcc, host-gcc etc.)
-include(${ZEPHYR_BASE}/cmake/compiler/${COMPILER}/generic.cmake OPTIONAL)
+include(${TOOLCHAIN_ROOT}/cmake/compiler/${COMPILER}/generic.cmake OPTIONAL)
+include(${TOOLCHAIN_ROOT}/cmake/linker/${LINKER}/generic.cmake OPTIONAL)
