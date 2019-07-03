@@ -28,7 +28,7 @@ struct net_mgmt_socket {
 	struct net_if *iface;
 
 	/* A way to separate different sockets that listen same events */
-	u32_t pid;
+	uintptr_t pid;
 
 	/* net_mgmt mask */
 	u32_t mask;

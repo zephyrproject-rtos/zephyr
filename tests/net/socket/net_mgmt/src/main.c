@@ -354,7 +354,7 @@ static void test_net_mgmt_setup(void)
 
 	sockaddr.nm_family = AF_NET_MGMT;
 	sockaddr.nm_ifindex = net_if_get_by_iface(net_if_get_default());
-	sockaddr.nm_pid = (int)k_current_get();
+	sockaddr.nm_pid = (uintptr_t)k_current_get();
 	sockaddr.nm_mask = NET_EVENT_IPV6_DAD_SUCCEED |
 			   NET_EVENT_IPV6_ADDR_ADD |
 			   NET_EVENT_IPV6_ADDR_DEL;
