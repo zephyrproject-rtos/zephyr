@@ -29,9 +29,6 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(usb_nrfx);
 
-#define MAX_EP_BUF_SZ           64UL
-#define MAX_ISO_EP_BUF_SZ       1024UL
-
 /**
  * @brief nRF USBD peripheral states
  */
@@ -204,14 +201,17 @@ K_MEM_POOL_DEFINE(fifo_elem_pool, FIFO_ELEM_MIN_SZ, FIFO_ELEM_MAX_SZ,
 #define EP_ISOIN_INDEX CFG_EPIN_CNT
 #define EP_ISOOUT_INDEX (CFG_EPIN_CNT + CFG_EP_ISOIN_CNT + CFG_EPOUT_CNT)
 
-/** Minimum endpoint buffer size */
-#define EP_BUF_MIN_SZ MAX_EP_BUF_SZ
+#define EP_BUF_MAX_SZ		64UL
+#define ISO_EP_BUF_MAX_SZ	1024UL
 
-/** Maximum endpoint buffer size */
+/** Minimum endpoint buffer size (minimum block size) */
+#define EP_BUF_POOL_BLOCK_MIN_SZ EP_BUF_MAX_SZ
+
+/** Maximum endpoint buffer size (maximum block size) */
 #if (CFG_EP_ISOIN_CNT || CFG_EP_ISOOUT_CNT)
-#define EP_BUF_MAX_SZ MAX_ISO_EP_BUF_SZ
+#define EP_BUF_POOL_BLOCK_MAX_SZ ISO_EP_BUF_MAX_SZ
 #else
-#define EP_BUF_MAX_SZ MAX_EP_BUF_SZ
+#define EP_BUF_POOL_BLOCK_MAX_SZ EP_BUF_MAX_SZ
 #endif
 
 /** Total endpoints configured */
@@ -219,20 +219,21 @@ K_MEM_POOL_DEFINE(fifo_elem_pool, FIFO_ELEM_MIN_SZ, FIFO_ELEM_MAX_SZ,
 		    CFG_EPOUT_CNT + CFG_EP_ISOOUT_CNT)
 
 /** Total buffer size for all endpoints */
-#define EP_BUF_TOTAL ((CFG_EPIN_CNT * MAX_EP_BUF_SZ) +	       \
-		      (CFG_EPOUT_CNT * MAX_EP_BUF_SZ) +	       \
-		      (CFG_EP_ISOIN_CNT * MAX_ISO_EP_BUF_SZ) + \
-		      (CFG_EP_ISOOUT_CNT * MAX_ISO_EP_BUF_SZ))
+#define EP_BUF_TOTAL ((CFG_EPIN_CNT * EP_BUF_MAX_SZ) +	       \
+		      (CFG_EPOUT_CNT * EP_BUF_MAX_SZ) +	       \
+		      (CFG_EP_ISOIN_CNT * ISO_EP_BUF_MAX_SZ) + \
+		      (CFG_EP_ISOOUT_CNT * ISO_EP_BUF_MAX_SZ))
 
 /** Total number of maximum sized buffers needed */
-#define EP_BUF_COUNT ((EP_BUF_TOTAL / EP_BUF_MAX_SZ) + \
-		      ((EP_BUF_TOTAL % EP_BUF_MAX_SZ) ? 1 : 0))
+#define EP_BUF_POOL_BLOCK_COUNT ((EP_BUF_TOTAL / EP_BUF_POOL_BLOCK_MAX_SZ) + \
+		      ((EP_BUF_TOTAL % EP_BUF_POOL_BLOCK_MAX_SZ) ? 1 : 0))
 
 /** 4 Byte Buffer alignment required by hardware */
-#define EP_BUF_ALIGN sizeof(unsigned int)
+#define EP_BUF_POOL_ALIGNMENT sizeof(unsigned int)
 
-K_MEM_POOL_DEFINE(ep_buf_pool, EP_BUF_MIN_SZ, EP_BUF_MAX_SZ,
-		  EP_BUF_COUNT, EP_BUF_ALIGN);
+K_MEM_POOL_DEFINE(ep_buf_pool, EP_BUF_POOL_BLOCK_MIN_SZ,
+		  EP_BUF_POOL_BLOCK_MAX_SZ, EP_BUF_POOL_BLOCK_COUNT,
+		  EP_BUF_POOL_ALIGNMENT);
 
 /**
  * @brief USBD control structure
@@ -650,7 +651,7 @@ static int eps_ctx_init(void)
 
 		if (!ep_ctx->buf.block.data) {
 			err = k_mem_pool_alloc(&ep_buf_pool, &ep_ctx->buf.block,
-					       MAX_EP_BUF_SZ, K_NO_WAIT);
+					       EP_BUF_MAX_SZ, K_NO_WAIT);
 			if (err < 0) {
 				LOG_ERR("Buffer alloc failed for EP 0x%02x", i);
 				return -ENOMEM;
@@ -666,7 +667,7 @@ static int eps_ctx_init(void)
 
 		if (!ep_ctx->buf.block.data) {
 			err = k_mem_pool_alloc(&ep_buf_pool, &ep_ctx->buf.block,
-					       MAX_EP_BUF_SZ, K_NO_WAIT);
+					       EP_BUF_MAX_SZ, K_NO_WAIT);
 			if (err < 0) {
 				LOG_ERR("Buffer alloc failed for EP 0x%02x", i);
 				return -ENOMEM;
@@ -682,7 +683,8 @@ static int eps_ctx_init(void)
 
 		if (!ep_ctx->buf.block.data) {
 			err = k_mem_pool_alloc(&ep_buf_pool, &ep_ctx->buf.block,
-					       MAX_ISO_EP_BUF_SZ, K_NO_WAIT);
+					       ISO_EP_BUF_MAX_SZ,
+					       K_NO_WAIT);
 			if (err < 0) {
 				LOG_ERR("EP buffer alloc failed for ISOIN");
 				return -ENOMEM;
@@ -698,7 +700,8 @@ static int eps_ctx_init(void)
 
 		if (!ep_ctx->buf.block.data) {
 			err = k_mem_pool_alloc(&ep_buf_pool, &ep_ctx->buf.block,
-					       MAX_ISO_EP_BUF_SZ, K_NO_WAIT);
+					       ISO_EP_BUF_MAX_SZ,
+					       K_NO_WAIT);
 			if (err < 0) {
 				LOG_ERR("EP buffer alloc failed for ISOOUT");
 				return -ENOMEM;
