@@ -577,6 +577,13 @@ config BT_CTLR_LLID_DATA_START_EMPTY
 	help
 	  Handle zero length L2CAP start frame.
 
+config BT_CTLR_RX_ENQUEUE_HOLD
+	bool "Procedure Complete after on-air instant"
+	default y if BT_HCI_RAW
+	help
+	  Hold enqueue of Procedure Complete events with instant until after the
+	  on-air instant is reached.
+
 config BT_CTLR_TX_RETRY_DISABLE
 	bool "Disable Tx Retry"
 	help
