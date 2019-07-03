@@ -817,7 +817,9 @@ class QEMUHandler(Handler):
 
                 # if we get some state, that means test is doing well, we reset
                 # the timeout and wait for 2 more seconds just in case we have
-                # crashed after test has completed
+                # crashed after test has completed. We wait longer if code
+                # coverage is enabled since dumping this information can
+                # take some time.
                 if not timeout_extended or harness.capture_coverage:
                     timeout_extended= True
                     if harness.capture_coverage:
