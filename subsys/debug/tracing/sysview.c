@@ -65,8 +65,8 @@ static void send_task_list_cb(void)
 			continue;
 		}
 
-		snprintk(name, sizeof(name), "T%xE%x", (uintptr_t)thread,
-			 (uintptr_t)&thread->entry);
+		snprintk(name, sizeof(name), "T%" PRIxPTR "E%" PRIxPTR,
+			 (uintptr_t)thread, (uintptr_t)&thread->entry);
 		SEGGER_SYSVIEW_SendTaskInfo(&(SEGGER_SYSVIEW_TASKINFO) {
 			.TaskID = (u32_t)(uintptr_t)thread,
 		      .sName = tname?tname:name,
