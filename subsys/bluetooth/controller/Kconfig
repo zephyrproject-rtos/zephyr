@@ -550,6 +550,7 @@ if BT_CONN
 config BT_CTLR_FAST_ENC
 	bool "Fast Encryption Setup"
 	depends on BT_CTLR_LE_ENC
+	default y if BT_HCI_RAW
 	help
 	  Enable connection encryption setup in 3 connection intervals.
 	  Peripheral will respond to Encryption Request with Encryption Response
@@ -582,6 +583,7 @@ config BT_CTLR_TX_RETRY_DISABLE
 
 config BT_CTLR_CONN_RSSI
 	bool "Connection RSSI"
+	default y if BT_HCI_RAW
 	help
 	  Enable connection RSSI measurement.
 
