@@ -26,7 +26,7 @@ extern "C" {
 /** @cond INTERNAL_HIDDEN */
 
 /* Network Interface events */
-#define _NET_IF_LAYER		NET_MGMT_LAYER_L1
+#define _NET_IF_LAYER		NET_MGMT_LAYER_L2
 #define _NET_IF_CORE_CODE	0x001
 #define _NET_EVENT_IF_BASE	(NET_MGMT_EVENT_BIT |			\
 				 NET_MGMT_IFACE_BIT |			\
