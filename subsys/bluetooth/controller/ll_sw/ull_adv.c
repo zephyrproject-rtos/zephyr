@@ -925,6 +925,11 @@ inline u16_t ull_adv_handle_get(struct ll_adv_set *adv)
 	return ((u8_t *)adv - (u8_t *)ll_adv) / sizeof(*adv);
 }
 
+u16_t ull_adv_lll_handle_get(struct lll_adv *lll)
+{
+	return ull_adv_handle_get((void *)lll->hdr.parent);
+}
+
 inline struct ll_adv_set *ull_adv_is_enabled_get(u16_t handle)
 {
 	struct ll_adv_set *adv;

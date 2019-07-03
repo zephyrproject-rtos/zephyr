@@ -296,6 +296,11 @@ u16_t ull_scan_handle_get(struct ll_scan_set *scan)
 	return ((u8_t *)scan - (u8_t *)ll_scan) / sizeof(*scan);
 }
 
+u16_t ull_scan_lll_handle_get(struct lll_scan *lll)
+{
+	return ull_scan_handle_get((void *)lll->hdr.parent);
+}
+
 struct ll_scan_set *ull_scan_is_enabled_get(u16_t handle)
 {
 	struct ll_scan_set *scan;
