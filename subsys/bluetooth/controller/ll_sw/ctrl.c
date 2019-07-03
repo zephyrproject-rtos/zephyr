@@ -319,6 +319,11 @@ static void rx_packet_set(struct connection *conn,
 static void packet_rx_allocate(u8_t max);
 static inline u8_t packet_rx_acquired_count_get(void);
 static inline struct radio_pdu_node_rx *packet_rx_reserve_get(u8_t count);
+static void packet_rx_callback(void);
+static inline struct radio_pdu_node_rx *packet_rx_enqueue_get(void);
+static inline void packet_rx_enqueue_commit(struct radio_pdu_node_rx *node_rx);
+static inline void packet_rx_enqueue_hold(struct radio_pdu_node_rx *node_rx);
+static inline void packet_rx_enqueue_forward(void);
 static void packet_rx_enqueue(void);
 static void packet_tx_enqueue(u8_t max);
 static void pdu_node_tx_release(u16_t handle,
@@ -3891,6 +3896,11 @@ isr_rx_conn_exit:
 
 	/* release tx node and generate event for num complete */
 	if (tx_release) {
+		/* forward held rx nodes */
+		if (IS_ENABLED(CONFIG_BT_CTLR_RX_ENQUEUE_HOLD)) {
+			packet_rx_enqueue_forward();
+		}
+
 		pdu_node_tx_release(_radio.conn_curr->handle, tx_release);
 	}
 
@@ -3902,6 +3912,15 @@ isr_rx_conn_exit:
 		/* set the connection handle and enqueue */
 		node_rx->hdr.handle = _radio.conn_curr->handle;
 		packet_rx_enqueue();
+	}
+
+	/* forward held rx nodes, if any, and no tx release or rx enqueued */
+	if (IS_ENABLED(CONFIG_BT_CTLR_RX_ENQUEUE_HOLD) && !tx_release &&
+	    !rx_enqueue) {
+		packet_rx_enqueue_forward();
+
+		/* callback to trigger application action */
+		packet_rx_callback();
 	}
 
 #if defined(CONFIG_BT_CTLR_CONN_RSSI)
@@ -7280,7 +7299,14 @@ static inline u32_t event_conn_upd_prep(struct connection *conn,
 			/* enqueue connection update complete structure
 			 * into queue.
 			 */
-			packet_rx_enqueue();
+			if (IS_ENABLED(CONFIG_BT_CTLR_RX_ENQUEUE_HOLD)) {
+				packet_rx_enqueue_get(); /* ignore return as its
+							  * same node_rx
+							  */
+				packet_rx_enqueue_hold(node_rx);
+			} else {
+				packet_rx_enqueue();
+			}
 		}
 
 #if defined(CONFIG_BT_CTLR_XTAL_ADVANCED)
@@ -8583,8 +8609,16 @@ static inline void event_phy_upd_ind_prep(struct connection *conn,
 		upd->tx = conn->phy_tx;
 		upd->rx = conn->phy_rx;
 
-		/* enqueue phy update structure into rx queue */
-		packet_rx_enqueue();
+		if (IS_ENABLED(CONFIG_BT_CTLR_RX_ENQUEUE_HOLD)) {
+			/* deferred enqueue phy update structure into rx queue
+			 */
+			packet_rx_enqueue_get(); /* ignore return as its same
+						  * node_rx
+						  */
+			packet_rx_enqueue_hold(node_rx);
+		} else {
+			packet_rx_enqueue();
+		}
 
 		/* Update max tx and/or max rx if changed */
 		if ((eff_tx_time == conn->max_tx_time) &&
@@ -8620,8 +8654,17 @@ static inline void event_phy_upd_ind_prep(struct connection *conn,
 		lr->max_rx_time = conn->max_rx_time;
 		lr->max_tx_time = conn->max_tx_time;
 
-		/* enqueue length rsp structure into rx queue */
-		packet_rx_enqueue();
+		if (IS_ENABLED(CONFIG_BT_CTLR_RX_ENQUEUE_HOLD)) {
+			/* deferred enqueue data length update structure into
+			 * rx queue
+			 */
+			packet_rx_enqueue_get(); /* ignore return as its same
+						  * node_rx
+						  */
+			packet_rx_enqueue_hold(node_rx);
+		} else {
+			packet_rx_enqueue();
+		}
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 	}
 }
@@ -9254,7 +9297,7 @@ static void packet_rx_allocate(u8_t max)
 	}
 
 	while ((max--) && (acquire != _radio.packet_rx_last)) {
-		void *link;
+		memq_link_t *link;
 		struct radio_pdu_node_rx *node_rx;
 
 		link = mem_acquire(&_radio.link_rx_free);
@@ -9266,6 +9309,10 @@ static void packet_rx_allocate(u8_t max)
 		if (!node_rx) {
 			mem_release(link, &_radio.link_rx_free);
 			break;
+		}
+
+		if (IS_ENABLED(CONFIG_BT_CTLR_RX_ENQUEUE_HOLD)) {
+			link->next = link->mem = NULL;
 		}
 
 		node_rx->hdr.link = link;
@@ -9322,22 +9369,14 @@ static void packet_rx_callback(void)
 #endif
 }
 
-static void packet_rx_enqueue(void)
+static inline struct radio_pdu_node_rx *packet_rx_enqueue_get(void)
 {
 	struct radio_pdu_node_rx *node_rx;
-	memq_link_t *link;
 	u8_t last;
 
 	LL_ASSERT(_radio.packet_rx_last != _radio.packet_rx_acquire);
 
-	/* Remember the rx node and acquired link mem */
 	node_rx = _radio.packet_rx[_radio.packet_rx_last];
-	link = node_rx->hdr.link;
-
-	/* serialize release queue with rx queue by storing reference to last
-	 * element in release queue
-	 */
-	node_rx->hdr.packet_release_last = _radio.packet_release_last;
 
 	/* dequeue from acquired rx queue */
 	last = _radio.packet_rx_last + 1;
@@ -9346,9 +9385,103 @@ static void packet_rx_enqueue(void)
 	}
 	_radio.packet_rx_last = last;
 
+	return node_rx;
+}
+
+static inline void packet_rx_enqueue_commit(struct radio_pdu_node_rx *node_rx)
+{
+	memq_link_t *link;
+
+	/* back up link stored in rx node */
+	link = node_rx->hdr.link;
+
+	/* serialize release queue with rx queue by storing reference to last
+	 * element in release queue
+	 */
+	node_rx->hdr.packet_release_last = _radio.packet_release_last;
+
 	/* Enqueue into event-cum-data queue */
 	link = memq_enqueue(link, node_rx, (void *)&_radio.link_rx_tail);
 	LL_ASSERT(link);
+}
+
+static inline void packet_rx_enqueue_hold(struct radio_pdu_node_rx *node_rx)
+{
+	struct radio_pdu_node_rx *next;
+	memq_link_t *link, *link_last;
+
+	LL_ASSERT(_radio.packet_rx_last != _radio.packet_rx_acquire);
+
+	/* fetch the next available free rx node */
+	next = _radio.packet_rx[_radio.packet_rx_last];
+
+	/* hold the rx node inside the link of the first free rx node */
+	link = next->hdr.link;
+	if (!link->next) {
+		link_last = (void *)node_rx->hdr.link;
+		if (!link_last->next) {
+			link->mem = (void *)node_rx;
+			link->next = (void *)node_rx;
+		} else {
+			struct radio_pdu_node_rx *last = (void *)link_last->mem;
+
+			link->mem = node_rx;
+			link->next = link_last->next;
+			link_last->next = NULL;
+
+			link_last = last->hdr.link;
+			link_last->next = (void *)node_rx;
+		}
+	} else {
+		struct radio_pdu_node_rx *last = (void *)link->mem;
+
+		link_last = (void *)last->hdr.link;
+		link_last->next = (void *)node_rx;
+		link_last = (void *)node_rx->hdr.link;
+		link->mem = link_last->mem;
+	}
+}
+
+static inline void packet_rx_enqueue_forward(void)
+{
+	struct radio_pdu_node_rx *next, *p;
+	memq_link_t *link;
+
+	/* fetch the next available free rx node */
+	next = _radio.packet_rx[_radio.packet_rx_last];
+
+	link = next->hdr.link;
+	p = (void *)link->next;
+	if (!p) {
+		return;
+	}
+
+	link->next = link->mem = NULL;
+
+	do {
+		struct radio_pdu_node_rx *node_rx = p;
+
+		link = p->hdr.link;
+		p = (void *)link->next;
+
+		packet_rx_enqueue_commit(node_rx);
+	} while (p);
+}
+
+static void packet_rx_enqueue(void)
+{
+	struct radio_pdu_node_rx *node_rx;
+
+	/* forward held rx nodes */
+	if (IS_ENABLED(CONFIG_BT_CTLR_RX_ENQUEUE_HOLD)) {
+		packet_rx_enqueue_forward();
+	}
+
+	/* Get the populated rx node from the free queue */
+	node_rx = packet_rx_enqueue_get();
+
+	/* Link the rx node with tx ack queue and enqueue towards host */
+	packet_rx_enqueue_commit(node_rx);
 
 	/* callback to trigger application action */
 	packet_rx_callback();
@@ -9874,7 +10007,11 @@ static void connection_release(struct connection *conn)
 static void terminate_ind_rx_enqueue(struct connection *conn, u8_t reason)
 {
 	struct radio_pdu_node_rx *node_rx;
-	memq_link_t *link;
+
+	/* forward held rx nodes */
+	if (IS_ENABLED(CONFIG_BT_CTLR_RX_ENQUEUE_HOLD)) {
+		packet_rx_enqueue_forward();
+	}
 
 	/* Prepare the rx packet structure */
 	node_rx = (void *)&conn->llcp_terminate.radio_pdu_node_rx;
@@ -9884,17 +10021,8 @@ static void terminate_ind_rx_enqueue(struct connection *conn, u8_t reason)
 	node_rx->hdr.type = NODE_RX_TYPE_TERMINATE;
 	*((u8_t *)node_rx->pdu_data) = reason;
 
-	/* Get the link mem reserved in the connection context */
-	link = node_rx->hdr.link;
-
-	/* Serialize release queue with rx queue by storing reference to
-	 * last element in release queue
-	 */
-	node_rx->hdr.packet_release_last = _radio.packet_release_last;
-
-	/* Enqueue into event-cum-data queue */
-	link = memq_enqueue(link, node_rx, (void *)&_radio.link_rx_tail);
-	LL_ASSERT(link);
+	/* Link the rx node with tx ack queue and enqueue towards host */
+	packet_rx_enqueue_commit(node_rx);
 
 	/* callback to trigger application action */
 	packet_rx_callback();
@@ -10907,7 +11035,7 @@ u32_t radio_adv_enable(u16_t interval, u8_t chan_map, u8_t filter_policy,
 					[_radio.advertiser.adv_data.last][0];
 	if ((pdu_adv->type == PDU_ADV_TYPE_ADV_IND) ||
 	    (pdu_adv->type == PDU_ADV_TYPE_DIRECT_IND)) {
-		void *link;
+		memq_link_t *link;
 
 		if (_radio.advertiser.conn) {
 			return BT_HCI_ERR_CMD_DISALLOWED;
@@ -10980,6 +11108,10 @@ u32_t radio_adv_enable(u16_t interval, u8_t chan_map, u8_t filter_policy,
 		conn->llcp_terminate.ack = 0U;
 		conn->llcp_terminate.reason_peer = 0U;
 		conn->llcp_terminate.radio_pdu_node_rx.hdr.link = link;
+
+		if (IS_ENABLED(CONFIG_BT_CTLR_RX_ENQUEUE_HOLD)) {
+			link->next = link->mem = NULL;
+		}
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 		conn->llcp_enc.req = 0U;
@@ -11415,7 +11547,7 @@ u32_t radio_connect_enable(u8_t adv_addr_type, u8_t *adv_addr, u16_t interval,
 	struct connection *conn;
 	u32_t conn_interval_us;
 	u32_t access_addr;
-	void *link;
+	memq_link_t *link;
 
 	if (_radio.scanner.conn) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
@@ -11517,6 +11649,10 @@ u32_t radio_connect_enable(u8_t adv_addr_type, u8_t *adv_addr, u16_t interval,
 	conn->llcp_terminate.ack = 0U;
 	conn->llcp_terminate.reason_peer = 0U;
 	conn->llcp_terminate.radio_pdu_node_rx.hdr.link = link;
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_RX_ENQUEUE_HOLD)) {
+		link->next = link->mem = NULL;
+	}
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 	conn->llcp_enc.req = 0U;
