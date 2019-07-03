@@ -20,7 +20,6 @@
 #include <exc_handle.h>
 #include <logging/log_ctrl.h>
 
-u32_t arc_exc_saved_sp;
 
 #ifdef CONFIG_USERSPACE
 Z_EXC_DECLARE(z_arch_user_string_nlen);
@@ -363,7 +362,7 @@ static void dump_exception_info(u32_t vector, u32_t cause, u32_t parameter)
  * invokes the user provided routine k_sys_fatal_error_handler() which is
  * responsible for implementing the error handling policy.
  */
-void _Fault(z_arch_esf_t *esf)
+void _Fault(z_arch_esf_t *esf, u32_t old_sp)
 {
 	u32_t vector, cause, parameter;
 	u32_t exc_addr = z_arc_v2_aux_reg_read(_ARC_V2_EFA);
@@ -413,7 +412,7 @@ void _Fault(z_arch_esf_t *esf)
 #ifdef CONFIG_MPU_STACK_GUARD
 	if (vector == ARC_EV_PROT_V && ((parameter == 0x4) ||
 					(parameter == 0x24))) {
-		if (z_check_thread_stack_fail(exc_addr, arc_exc_saved_sp)) {
+		if (z_check_thread_stack_fail(exc_addr, old_sp)) {
 			z_arc_fatal_error(K_ERR_STACK_CHK_FAIL, esf);
 			return;
 		}
