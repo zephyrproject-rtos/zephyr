@@ -68,6 +68,10 @@ struct k_sem sem[3];
 void isr0(void)
 {
 	printk("%s ran!\n", __func__);
+	/* Test which interrupt can preempt current context */
+	zassert_false(z_arm_irq_can_preempt(0 + _ISR_OFFSET), "");
+	zassert_false(z_arm_irq_can_preempt(1 + _ISR_OFFSET), "");
+	zassert_false(z_arm_irq_can_preempt(2 + _ISR_OFFSET), "");
 	k_sem_give(&sem[0]);
 	_IntExit();
 }
@@ -82,6 +86,10 @@ void isr0(void)
 void isr1(void)
 {
 	printk("%s ran!\n", __func__);
+	/* Test which interrupt can preempt current context */
+	zassert_true(z_arm_irq_can_preempt(0 + _ISR_OFFSET), "");
+	zassert_false(z_arm_irq_can_preempt(1 + _ISR_OFFSET), "");
+	zassert_false(z_arm_irq_can_preempt(2 + _ISR_OFFSET), "");
 	k_sem_give(&sem[1]);
 	_IntExit();
 }
@@ -96,6 +104,9 @@ void isr1(void)
 void isr2(void)
 {
 	printk("%s ran!\n", __func__);
+	zassert_true(z_arm_irq_can_preempt(0 + _ISR_OFFSET), "");
+	zassert_true(z_arm_irq_can_preempt(1 + _ISR_OFFSET), "");
+	zassert_false(z_arm_irq_can_preempt(2 + _ISR_OFFSET), "");
 	k_sem_give(&sem[2]);
 	_IntExit();
 }
@@ -116,18 +127,28 @@ void isr2(void)
  * NVIC_SetPendingIRQ(), to trigger the pending interrupt. And we check
  * that the corresponding interrupt handler is getting called or not.
  *
- * @see irq_enable(), z_irq_priority_set(), NVIC_SetPendingIRQ()
+ * Addtionally, z_arm_irq_can_preempt() is tested in the thread mode and
+ * interrupt context.
+ *
+ * @see irq_enable(), z_irq_priority_set(), NVIC_SetPendingIRQ(),
+ *	z_arm_irq_can_preempt()
  *
  */
 void test_arm_irq_vector_table(void)
 {
 	printk("Test Cortex-M IRQs installed directly in the vector table\n");
 
+
 	for (int ii = 0; ii < 3; ii++) {
 		irq_enable(_ISR_OFFSET + ii);
-		z_irq_priority_set(_ISR_OFFSET + ii, 0, 0);
+		z_irq_priority_set(_ISR_OFFSET + ii, ii, 0);
 		k_sem_init(&sem[ii], 0, UINT_MAX);
 	}
+
+	/* Test that context can be preempted by each interrupt */
+	zassert_true(z_arm_irq_can_preempt(0 + _ISR_OFFSET), "");
+	zassert_true(z_arm_irq_can_preempt(1 + _ISR_OFFSET), "");
+	zassert_true(z_arm_irq_can_preempt(2 + _ISR_OFFSET), "");
 
 	zassert_true((k_sem_take(&sem[0], K_NO_WAIT) ||
 		      k_sem_take(&sem[1], K_NO_WAIT) ||
