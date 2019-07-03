@@ -21,9 +21,6 @@ LOG_MODULE_REGISTER(net_sock, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 #include "sockets_internal.h"
 
-extern struct net_socket_register __net_socket_register_start[];
-extern struct net_socket_register __net_socket_register_end[];
-
 #define SET_ERRNO(x) \
 	{ int _err = x; if (_err < 0) { errno = -_err; return -1; } }
 
@@ -133,11 +130,7 @@ int zsock_socket_internal(int family, int type, int proto)
 
 int z_impl_zsock_socket(int family, int type, int proto)
 {
-	struct net_socket_register *sock_family;
-
-	for (sock_family = __net_socket_register_start;
-	     sock_family != __net_socket_register_end;
-	     sock_family++) {
+	Z_STRUCT_SECTION_FOREACH(net_socket_register, sock_family) {
 		if (sock_family->family != family &&
 		    sock_family->family != AF_UNSPEC) {
 			continue;
