@@ -155,6 +155,10 @@ void z_bss_zero(void)
 	(void)memset(&__ccm_bss_start, 0,
 		     ((u32_t) &__ccm_bss_end - (u32_t) &__ccm_bss_start));
 #endif
+#ifdef DT_DTCM_BASE_ADDRESS
+	(void)memset(&__dtcm_bss_start, 0,
+		     ((u32_t) &__dtcm_bss_end - (u32_t) &__dtcm_bss_start));
+#endif
 #ifdef CONFIG_CODE_DATA_RELOCATION
 	extern void bss_zeroing_relocation(void);
 
@@ -191,6 +195,10 @@ void z_data_copy(void)
 #ifdef DT_CCM_BASE_ADDRESS
 	(void)memcpy(&__ccm_data_start, &__ccm_data_rom_start,
 		 __ccm_data_end - __ccm_data_start);
+#endif
+#ifdef DT_DTCM_BASE_ADDRESS
+	(void)memcpy(&__dtcm_data_start, &__dtcm_data_rom_start,
+		 __dtcm_data_end - __dtcm_data_start);
 #endif
 #ifdef CONFIG_CODE_DATA_RELOCATION
 	extern void data_copy_xip_relocation(void);
