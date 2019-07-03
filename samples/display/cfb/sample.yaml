@@ -7,5 +7,5 @@ sample:
 tests:
   sample.display.cfb.ssd1306:
     platform_whitelist: frdm_k64f
-  sample.display.cfb.ssd1673:
+  sample.display.cfb.ssd16xx:
     platform_whitelist: reel_board

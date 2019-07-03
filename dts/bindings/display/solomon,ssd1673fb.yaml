@@ -4,18 +4,18 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-title: SSD1673 250x150 EPD Display Controller
+title: SSD16XX 250x150 EPD Display Controller
 version: 0.1
 
 description: >
-    This is a representation of the SSD1673 250x150 EPD Display Controller
+    This is a representation of the SSD16XX 250x150 EPD Display Controller
 
 inherits:
     !include spi-device.yaml
 
 properties:
     compatible:
-      constraint: "solomon,ssd1673fb"
+      constraint: "solomon,ssd16xxfb"
 
     height:
       type: int

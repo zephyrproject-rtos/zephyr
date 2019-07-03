@@ -117,9 +117,9 @@
 	miso-pin = <21>;
 	cs-gpios = <&gpio0 17 0>;
 
-	ssd1673fb@0 {
-		compatible = "solomon,ssd1673fb", "gd,gde0213b1";
-		label = "SSD1673";
+	ssd16xxfb@0 {
+		compatible = "solomon,ssd16xxfb", "gd,gde0213b1";
+		label = "SSD16XX";
 		spi-max-frequency = <4000000>;
 		reg = <0>;
 		width = <250>;
