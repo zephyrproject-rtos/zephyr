@@ -752,7 +752,7 @@ int z_clock_device_ctrl(struct device *port, u32_t ctrl_command,
 	}
 
 	if (cb) {
-		cb(dev, ret, context, arg);
+		cb(port, ret, context, arg);
 	}
 
 	return ret;
