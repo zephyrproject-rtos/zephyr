@@ -67,3 +67,7 @@
 &blue_led {
 	status = "okay";
 };
+
+&spi5 {
+	status = "okay";
+};

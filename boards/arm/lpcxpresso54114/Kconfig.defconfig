@@ -36,4 +36,11 @@ config GPIO_MCUX_LPC_PORT1
 
 endif # GPIO_MCUX_LPC
 
+if SPI
+
+config SPI_5
+	default y
+
+endif # SPI
+
 endif # BOARD_LPCXPRESSO54114_M4 || BOARD_LPCXPRESSO54114_M0
