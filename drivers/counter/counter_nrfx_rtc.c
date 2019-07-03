@@ -295,7 +295,7 @@ static int init_rtc(struct device *dev,
 		return -ENODEV;
 	}
 
-	clock_control_on(clock, (void *)CLOCK_CONTROL_NRF_K32SRC);
+	clock_control_on(clock, NULL);
 
 	nrfx_err_t result = nrfx_rtc_init(rtc, config, handler);
 
