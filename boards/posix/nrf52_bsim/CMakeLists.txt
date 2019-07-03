@@ -62,6 +62,7 @@ zephyr_include_directories(
   fake
   $ENV{BSIM_COMPONENTS_PATH}/ext_NRF52_hw_models/src/
   $ENV{BSIM_COMPONENTS_PATH}/ext_NRF52_hw_models/src/nrfx/hal/
+  $ENV{BSIM_COMPONENTS_PATH}/ext_NRF52_hw_models/src/nrfx/
   $ENV{BSIM_COMPONENTS_PATH}/ext_NRF52_hw_models/src/HW_models/
 )
 
