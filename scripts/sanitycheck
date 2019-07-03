@@ -816,8 +816,8 @@ class QEMUHandler(Handler):
                     out_state = harness.state
 
                 # if we get some state, that means test is doing well, we reset
-                # the timeout and wait for 2 more seconds just in case we have
-                # crashed after test has completed. We wait longer if code
+                # the timeout and wait for 2 more seconds to catch anything
+                # printed late. We wait much longer if code
                 # coverage is enabled since dumping this information can
                 # take some time.
                 if not timeout_extended or harness.capture_coverage:
@@ -1275,6 +1275,7 @@ class MakeGenerator:
             handler = QEMUHandler(instance, "qemu")
         elif type == "native":
             handler = BinaryHandler(instance, "native")
+            # defined by __build_dir in cmake/boilerplate.cmake
             handler.binary = os.path.join(outdir, "zephyr", "zephyr.exe")
             if options.enable_coverage:
                 args += ["EXTRA_LDFLAGS=--coverage"]
@@ -1395,6 +1396,8 @@ class MakeGenerator:
             # assure language neutral environment
             make_env = os.environ.copy()
             make_env['LC_MESSAGES'] = 'C.UTF-8'
+            verbose("In %s, spawning: " % os.getcwd()
+                    + " ".join(shlex.quote(word)for word in cmd))
             p = subprocess.Popen(cmd, stderr=subprocess.PIPE,
                                  stdout=devnull, env=make_env)
 
@@ -2908,8 +2911,8 @@ Artificially long but functional example:
 
     parser.add_argument(
         "-j", "--jobs", type=int,
-        help="Number of jobs for building, defaults to number of CPU threads "
-        "overcommited by factor 2")
+        help="Number of jobs for building, defaults to number of CPU threads, "
+        "overcommited by factor 2 when --build-only")
 
     parser.add_argument(
         "--device-testing", action="store_true",
@@ -2921,7 +2924,7 @@ Artificially long but functional example:
         help="Specify a fixture that a board might support")
     parser.add_argument(
         "--device-serial",
-		help="Serial device for accessing the board (e.g., /dev/ttyACM0)")
+        help="Serial device for accessing the board (e.g., /dev/ttyACM0)")
     parser.add_argument(
             "--show-footprint", action="store_true",
             help="Show footprint statistics and deltas since last release."
