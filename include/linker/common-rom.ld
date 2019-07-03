@@ -70,10 +70,9 @@
 #if defined(CONFIG_NET_SOCKETS)
 	SECTION_PROLOGUE(net_socket_register,,)
 	{
-		__net_socket_register_start = .;
-		*(".net_socket_register.init")
-		KEEP(*(SORT_BY_NAME(".net_socket_register.init*")))
-		__net_socket_register_end = .;
+		_net_socket_register_list_start = .;
+		KEEP(*(SORT_BY_NAME("._net_socket_register.*")))
+		_net_socket_register_list_end = .;
 	} GROUP_LINK_IN(ROMABLE_REGION)
 #endif
 
