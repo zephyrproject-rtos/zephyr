@@ -19,7 +19,7 @@ config SSD1306_DEFAULT_CONTRAST
 	default 128
 	range 0 255
 	help
-	  SSD1673 default contrast.
+	  SSD16XX default contrast.
 
 choice
 	prompt "Display controller type"
