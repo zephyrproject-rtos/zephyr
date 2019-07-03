@@ -111,10 +111,14 @@ struct nrf_usbd_ep_buf {
  *
  * @param cfg			Endpoint configuration
  * @param buf			Endpoint buffer
- * @param read_complete		A flag indicating that DMA read operation has been completed.
- * @param read_pending		A flag indicating that the Host has requested a data transfer.
- * @param write_in_progress	A flag indicating that write operation has been scheduled.
- * @param write_fragmented	A flag indicating that IN transfer has been fragmented.
+ * @param read_complete		A flag indicating that DMA read operation
+ *				has been completed.
+ * @param read_pending		A flag indicating that the Host has requested
+ *				a data transfer.
+ * @param write_in_progress	A flag indicating that write operation has
+ *				been scheduled.
+ * @param write_fragmented	A flag indicating that IN transfer has
+ *				been fragmented.
  */
 struct nrf_usbd_ep_ctx {
 	struct nrf_usbd_ep_cfg cfg;
@@ -443,9 +447,10 @@ static inline struct usbd_event *usbd_evt_alloc(void)
 		LOG_ERR("USBD event allocation failed!");
 
 		/* This should NOT happen in a properly designed system.
-		 * Allocation may fail if workqueue thread is starved
-		 * or event queue size is too small (CONFIG_USB_NRFX_EVT_QUEUE_SIZE).
-		 * Wipe all events, free the space and schedule reinitialization.
+		 * Allocation may fail if workqueue thread is starved or event
+		 * queue size is too small (CONFIG_USB_NRFX_EVT_QUEUE_SIZE).
+		 * Wipe all events, free the space and schedule
+		 * reinitialization.
 		 */
 		usbd_evt_flush();
 
@@ -453,7 +458,9 @@ static inline struct usbd_event *usbd_evt_alloc(void)
 					       sizeof(struct usbd_event),
 					       K_NO_WAIT);
 		if (ret < 0) {
-			/* This should never fail in a properly operating system. */
+			/* This should never fail in a properly
+			 * operating system.
+			 */
 			LOG_ERR("USBD event memory corrupted");
 			__ASSERT_NO_MSG(0);
 			return NULL;
@@ -1625,6 +1632,7 @@ int usb_dc_ep_write(const u8_t ep, const u8_t *const data,
 	struct nrf_usbd_ctx *ctx = get_usbd_ctx();
 	struct nrf_usbd_ep_ctx *ep_ctx;
 	u32_t bytes_to_copy;
+	int result = 0;
 
 	if (!dev_attached() || !dev_ready()) {
 		return -ENODEV;
@@ -1687,7 +1695,6 @@ int usb_dc_ep_write(const u8_t ep, const u8_t *const data,
 		return 0;
 	}
 
-	int result = 0;
 	ep_ctx->write_in_progress = true;
 	NRFX_USBD_TRANSFER_IN(transfer, ep_ctx->buf.data, ep_ctx->buf.len, 0);
 	nrfx_err_t err = nrfx_usbd_ep_transfer(ep_addr_to_nrfx(ep), &transfer);
