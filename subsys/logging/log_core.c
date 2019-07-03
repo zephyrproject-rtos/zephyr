@@ -204,7 +204,9 @@ static inline void msg_finalize(struct log_msg *msg,
 	irq_unlock(key);
 
 	if (panic_mode) {
+		key = irq_lock();
 		(void)log_process(false);
+		irq_unlock(key);
 	} else if (CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD) {
 		if ((buffered_cnt == CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD) &&
 		    (proc_tid != NULL)) {
