@@ -272,6 +272,17 @@ extern "C" {
 #endif /* CONFIG_ARC_HAS_SECURE */
 .endm
 
+/* If multi bits in IRQ_ACT are set, i.e. last bit != fist bit, it's
+ * in nest interrupt. The result will be EQ bit of status32
+ */
+.macro _check_nest_int_by_irq_act  reg1, reg2
+	lr \reg1, [_ARC_V2_AUX_IRQ_ACT]
+	and \reg1, \reg1, 0xffff
+	ffs \reg2, \reg1
+	fls \reg1, \reg1
+	cmp \reg1, \reg2
+.endm
+
 #endif /* _ASMLANGUAGE */
 
 #ifdef __cplusplus
