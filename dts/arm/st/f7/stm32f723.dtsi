@@ -15,6 +15,11 @@
 		reg = <0x20010000 DT_SIZE_K(192)>;
 	};
 
+	dtcm: memory@20000000 {
+		compatible = "arm,dtcm";
+		reg = <0x20000000 DT_SIZE_K(64)>;
+	};
+
 	soc {
 		usbphyc: usbphyc@40017c00 {
 			compatible = "st,stm32-usbphyc";
