@@ -153,7 +153,20 @@ extern void z_irq_spurious(void *unused);
 extern void _isr_wrapper(void);
 #endif
 
+/**
+ * @brief Check if current context can be preempted by given interrupt.
+ *
+ * @note Function does not check if interrupt is enabled.
+ *
+ * @param irq_line Interrupt ID.
+ *
+ * @return true if current context can be preempted by given interrupt, false
+ *		otherwise.
+ */
+extern bool z_arm_irq_can_preempt(u32_t irq_line);
+
 #endif /* _ASMLANGUAGE */
+
 
 #ifdef __cplusplus
 }
