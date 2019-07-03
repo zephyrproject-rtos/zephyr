@@ -260,7 +260,7 @@ void test_gatt_write(void)
 	zassert_not_null(attr, "Attribute don't match");
 
 	ret = attr->write(NULL, attr, (void *)value, strlen(value), 0, 0);
-	zassert_equal(ret, sizeof(value), "Attribute write unexpected return");
+	zassert_equal(ret, strlen(value), "Attribute write unexpected return");
 	zassert_mem_equal(value, test_value, ret,
 			  "Attribute write value don't match");
 }
