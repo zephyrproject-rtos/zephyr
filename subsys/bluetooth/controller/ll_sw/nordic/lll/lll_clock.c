@@ -28,7 +28,9 @@ void lll_clock_wait(void)
 
 	LL_ASSERT(lf_clock);
 
-	while (clock_control_on(lf_clock, (void *)CLOCK_CONTROL_NRF_K32SRC)) {
+	clock_control_on(lf_clock, NULL);
+	while (clock_control_get_status(lf_clock, NULL) !=
+			CLOCK_CONTROL_STATUS_ON) {
 		DEBUG_CPU_SLEEP(1);
 		k_cpu_idle();
 		DEBUG_CPU_SLEEP(0);

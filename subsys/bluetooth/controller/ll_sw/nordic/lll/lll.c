@@ -139,7 +139,7 @@ int lll_init(void)
 		return -ENODEV;
 	}
 
-	clock_control_on(clk_k32, (void *)CLOCK_CONTROL_NRF_K32SRC);
+	clock_control_on(clk_k32, NULL);
 
 	/* Initialize HF CLK */
 	lll.clk_hf =
@@ -328,10 +328,14 @@ int lll_clk_on_wait(void)
 	int err;
 
 	/* turn on radio clock in blocking mode. */
-	err = clock_control_on(lll.clk_hf, (void *)1);
-	if (!err || err == -EINPROGRESS) {
-		DEBUG_RADIO_XTAL(1);
+	err = clock_control_on(lll.clk_hf, NULL);
+
+	while (clock_control_get_status(lll.clk_hf, NULL) !=
+			CLOCK_CONTROL_STATUS_ON) {
+		k_cpu_idle();
 	}
+
+	DEBUG_RADIO_XTAL(1);
 
 	return err;
 }
