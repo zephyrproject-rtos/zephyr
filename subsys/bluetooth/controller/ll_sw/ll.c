@@ -132,7 +132,7 @@ int ll_init(struct k_sem *sem_rx)
 		return -ENODEV;
 	}
 
-	clock_control_on(clk_k32, (void *)CLOCK_CONTROL_NRF_K32SRC);
+	clock_control_on(clk_k32, NULL);
 
 	entropy = device_get_binding(CONFIG_ENTROPY_NAME);
 	if (!entropy) {
