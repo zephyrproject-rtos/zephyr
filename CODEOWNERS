@@ -15,14 +15,14 @@
 
 /.known-issues/                           @inakypg @nashif
 /arch/arc/                                @vonhust @ruuddw
-/arch/arm/                                @MaureenHelm @galak
+/arch/arm/                                @MaureenHelm @galak @ioannisg
 /arch/arm/core/cortex_m/cmse/             @ioannisg
 /arch/arm/include/cortex_m/cmse.h         @ioannisg
 /arch/common/                             @andrewboie @ioannisg @andyross
 /arch/x86_64/                             @andyross
 /soc/arc/snps_*/                          @vonhust @ruuddw
 /soc/nios2/                               @nashif @wentongwu
-/soc/arm/                                 @MaureenHelm @galak
+/soc/arm/                                 @MaureenHelm @galak @ioannisg
 /soc/arm/arm/mps2/                        @fvincenzo
 /soc/arm/atmel_sam/sam3x/                 @ioannisg
 /soc/arm/atmel_sam/sam4s/                 @fallrisk
@@ -36,18 +36,18 @@
 /soc/arm/ti_simplelink/msp432p4xx/        @Mani-Sadhasivam
 /soc/xtensa/intel_s1000/                  @sathishkuttan @dcpleung
 /soc/x86_64/                              @andyross
+/arch/x86/                                @andrewboie @gnuless
 /arch/nios2/                              @andrewboie @wentongwu
 /arch/posix/                              @aescolar
 /arch/riscv32/                            @kgugala @pgielda @nategraff-sifive
 /soc/posix/                               @aescolar
 /soc/riscv32/                             @kgugala @pgielda @nategraff-sifive
 /soc/riscv32/openisa*/                    @MaureenHelm
-/arch/x86/                                @andrewboie @wentongwu
-/arch/x86/core/                           @andrewboie
-/arch/x86/core/ia32/crt0.S                @wentongwu @nashif
+/arch/x86/core/                           @andrewboie @gnuless
+/arch/x86/core/ia32/crt0.S                @andrewboie @gnuless
 /arch/x86/core/pcie.c                     @gnuless
 /arch/x86/core/multiboot.c                @gnuless
-/soc/x86/                                 @andrewboie @wentongwu
+/soc/x86/                                 @andrewboie @gnuless
 /soc/x86/intel_quark/quark_se/            @nashif
 /soc/x86/intel_quark/quark_x1000/         @nashif
 /arch/xtensa/                             @andrewboie @dcpleung @andyross
@@ -221,7 +221,7 @@
 /include/arch/arc/                        @vonhust @ruuddw
 /include/arch/arc/arch.h                  @andrewboie
 /include/arch/arc/v2/irq.h                @andrewboie
-/include/arch/arm/                        @MaureenHelm @galak
+/include/arch/arm/                        @MaureenHelm @galak @ioannisg
 /include/arch/arm/cortex_m/irq.h          @andrewboie
 /include/arch/nios2/                      @andrewboie
 /include/arch/nios2/arch.h                @andrewboie
