@@ -216,6 +216,18 @@ extern char __ccm_noinit_end[];
 extern char __ccm_end[];
 #endif /* DT_CCM_BASE_ADDRESS */
 
+#ifdef DT_DTCM_BASE_ADDRESS
+extern char __dtcm_data_start[];
+extern char __dtcm_data_end[];
+extern char __dtcm_bss_start[];
+extern char __dtcm_bss_end[];
+extern char __dtcm_noinit_start[];
+extern char __dtcm_noinit_end[];
+extern char __dtcm_data_rom_start[];
+extern char __dtcm_start[];
+extern char __dtcm_end[];
+#endif /* DT_DTCM_BASE_ADDRESS */
+
 /* Used by the Security Attribution Unit to configure the
  * Non-Secure Callable region.
  */
