@@ -22,3 +22,4 @@ supported:
   - hwinfo
   - usb_device
   - counter
+  - sdhc
