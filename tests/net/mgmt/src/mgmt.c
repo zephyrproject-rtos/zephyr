@@ -31,7 +31,7 @@ static u32_t event2throw;
 static u32_t throw_times;
 static int throw_sleep;
 static bool with_info;
-static K_THREAD_STACK_DEFINE(thrower_stack, 512);
+static K_THREAD_STACK_DEFINE(thrower_stack, 512 + CONFIG_TEST_EXTRA_STACKSIZE);
 static struct k_thread thrower_thread_data;
 static struct k_sem thrower_lock;
 
