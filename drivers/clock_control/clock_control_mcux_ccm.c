@@ -73,6 +73,20 @@ static int mcux_ccm_get_subsys_rate(struct device *dev,
 		}
 
 		break;
+
+#ifdef CONFIG_DISK_ACCESS_USDHC1
+	case IMX_CCM_USDHC1_CLK:
+		*rate = CLOCK_GetSysPfdFreq(kCLOCK_Pfd0) /
+				(CLOCK_GetDiv(kCLOCK_Usdhc1Div) + 1U);
+		break;
+#endif
+
+#ifdef CONFIG_DISK_ACCESS_USDHC2
+	case IMX_CCM_USDHC2_CLK:
+		*rate = CLOCK_GetSysPfdFreq(kCLOCK_Pfd0) /
+				(CLOCK_GetDiv(kCLOCK_Usdhc2Div) + 1U);
+		break;
+#endif
 	}
 
 	return 0;
