@@ -19,11 +19,12 @@ set_ifndef(DTS_SOURCE ${BOARD_DIR}/${BOARD}.dts)
 set_ifndef(DTS_COMMON_OVERLAYS ${ZEPHYR_BASE}/dts/common/common.dts)
 
 # 'DTS_ROOT' is a list of directories where a directory tree with DT
-# files may be found. It always includes the application directory and
-# ${ZEPHYR_BASE}.
+# files may be found. It always includes the application directory,
+# the board directory, and ${ZEPHYR_BASE}.
 list(APPEND
   DTS_ROOT
   ${APPLICATION_SOURCE_DIR}
+  ${BOARD_DIR}
   ${ZEPHYR_BASE}
   )
 
