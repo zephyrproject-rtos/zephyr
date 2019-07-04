@@ -1,11 +1,19 @@
 /*
  * Copyright (c) 2011-2014, Wind River Systems, Inc.
+ * Copyright (c) 2019 Intel Corp.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <autoconf.h>
 #include <generated_dts_board.h>
+
+#ifdef CONFIG_X86_LONGMODE
+
+#include <arch/x86/intel64/linker.ld>
+
+#else /* IA32 */
+
 /* physical address where the kernel is loaded */
 #define PHYS_LOAD_ADDR DT_PHYS_LOAD_ADDR
 
@@ -38,4 +46,6 @@ MEMORY
     }
 
 #include <arch/x86/ia32/linker.ld>
+
+#endif /* CONFIG_X86_LONGMODE */
 
