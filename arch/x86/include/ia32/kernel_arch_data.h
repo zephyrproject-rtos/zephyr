@@ -68,17 +68,6 @@
 #define _FP_USER_MASK (K_FP_REGS)
 #endif
 
-/*
- * EFLAGS value to utilize for the initial context: IF=1.
- */
-
-#define EFLAGS_INITIAL 0x00000200U
-
-/* Enable paging and write protection */
-#define CR0_PG_WP_ENABLE 0x80010000
-/* Set the 5th bit in  CR4 */
-#define CR4_PAE_ENABLE 0x00000020
-
 #ifndef _ASMLANGUAGE
 
 #include <sys/util.h>
