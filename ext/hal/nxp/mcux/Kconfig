@@ -129,6 +129,16 @@ config HAS_MCUX_USB_EHCI
 	help
 	  Set if the USB controller EHCI module is present in the SoC.
 
+config HAS_MCUX_USDHC1
+	bool
+	help
+	  Set if the USDHC instance 1 module is present in the SoC.
+
+config HAS_MCUX_USDHC2
+	bool
+	help
+	  Set if the USDHC2 instance 2 module is present in the SoC.
+
 config HAS_MCUX_WDOG32
 	bool
 	help
