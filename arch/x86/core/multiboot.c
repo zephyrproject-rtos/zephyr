@@ -41,11 +41,10 @@ static int multiboot_framebuf_init(struct device *dev)
 
 		adj_x = info->fb_width - CONFIG_X86_MULTIBOOT_FRAMEBUF_X;
 		adj_y = info->fb_height - CONFIG_X86_MULTIBOOT_FRAMEBUF_Y;
-		buffer = (uint32_t *) info->fb_addr_lo;
 		data->pitch = (info->fb_pitch / 4) + adj_x;
 		adj_x /= 2;
 		adj_y /= 2;
-		buffer = (uint32_t *) info->fb_addr_lo;
+		buffer = (uint32_t *) (uintptr_t) info->fb_addr_lo;
 		buffer += adj_x;
 		buffer += adj_y * data->pitch;
 		data->buffer = buffer;
