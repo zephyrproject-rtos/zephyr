@@ -14,14 +14,10 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_X86_IA32_ARCH_H_
 #define ZEPHYR_INCLUDE_ARCH_X86_IA32_ARCH_H_
 
-#include <irq.h>
 #include "sys_io.h"
 #include <drivers/interrupt_controller/sysapic.h>
 #include <kernel_arch_thread.h>
-#include <generated_dts_board.h>
 #include <ia32/mmustructs.h>
-#include <stdbool.h>
-#include <arch/common/ffs.h>
 
 #ifndef _ASMLANGUAGE
 #include <arch/common/addr_types.h>
@@ -370,38 +366,6 @@ static ALWAYS_INLINE void z_do_irq_unlock(void)
 
 
 /**
- *  @brief read timestamp register ensuring serialization
- */
-
-static inline u64_t z_tsc_read(void)
-{
-	union {
-		struct  {
-			u32_t lo;
-			u32_t hi;
-		};
-		u64_t  value;
-	}  rv;
-
-	/* rdtsc & cpuid clobbers eax, ebx, ecx and edx registers */
-	__asm__ volatile (/* serialize */
-		"xorl %%eax,%%eax;\n\t"
-		"cpuid;\n\t"
-		:
-		:
-		: "%eax", "%ebx", "%ecx", "%edx"
-		);
-	/*
-	 * We cannot use "=A", since this would use %rax on x86_64 and
-	 * return only the lower 32bits of the TSC
-	 */
-	__asm__ volatile ("rdtsc" : "=a" (rv.lo), "=d" (rv.hi));
-
-
-	return rv.value;
-}
-
-/**
  *
  * @brief Get a 32 bit CPU timestamp counter
  *
@@ -482,40 +446,11 @@ static ALWAYS_INLINE void z_arch_irq_unlock(unsigned int key)
 }
 
 /**
- * Returns true if interrupts were unlocked prior to the
- * z_arch_irq_lock() call that produced the key argument.
- */
-static ALWAYS_INLINE bool z_arch_irq_unlocked(unsigned int key)
-{
-	return (key & 0x200) != 0;
-}
-
-/**
- * @brief Explicitly nop operation.
- */
-static ALWAYS_INLINE void arch_nop(void)
-{
-	__asm__ volatile("nop");
-}
-
-
-/**
  * The NANO_SOFT_IRQ macro must be used as the value for the @a irq parameter
  * to NANO_CPU_INT_REGISTER when connecting to an interrupt that does not
  * correspond to any IRQ line (such as spurious vector or SW IRQ)
  */
 #define NANO_SOFT_IRQ	((unsigned int) (-1))
-
-/**
- * @brief Enable a specific IRQ
- * @param irq IRQ
- */
-extern void	z_arch_irq_enable(unsigned int irq);
-/**
- * @brief Disable a specific IRQ
- * @param irq IRQ
- */
-extern void	z_arch_irq_disable(unsigned int irq);
 
 /**
  * @defgroup float_apis Floating Point APIs
@@ -563,9 +498,6 @@ extern void k_float_enable(struct k_thread *thread, unsigned int options);
 #include <stddef.h>	/* for size_t */
 
 extern void	k_cpu_idle(void);
-
-extern u32_t z_timer_cycle_get_32(void);
-#define z_arch_k_cycle_get_32()	z_timer_cycle_get_32()
 
 #ifdef CONFIG_X86_ENABLE_TSS
 extern struct task_state_segment _main_tss;
