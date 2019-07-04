@@ -9,8 +9,8 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_CPU_H_
 #define ZEPHYR_INCLUDE_ARCH_CPU_H_
 
-#if defined(CONFIG_X86) && !defined(CONFIG_X86_LONGMODE)
-#include <arch/x86/ia32/arch.h>
+#if defined(CONFIG_X86)
+#include <arch/x86/arch.h>
 #elif defined(CONFIG_X86_64)
 #include <arch/x86_64/arch.h>
 #elif defined(CONFIG_ARM)
