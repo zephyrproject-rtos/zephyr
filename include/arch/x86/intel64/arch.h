@@ -24,11 +24,4 @@
 
 #define z_x86_msr_read(a)		(0)
 
-#define sys_read8(x)			(0)
-#define sys_read32(x)			(0)
-#define sys_in32(x)			(0)
-#define sys_write8(x,y)
-#define sys_write32(x,y)
-#define sys_out32(x, y)
-
 #endif /* ZEPHYR_INCLUDE_ARCH_X86_INTEL64_ARCH_H_ */
