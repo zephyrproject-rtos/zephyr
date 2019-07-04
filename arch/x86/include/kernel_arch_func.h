@@ -6,7 +6,9 @@
 #ifndef ZEPHYR_ARCH_X86_INCLUDE_KERNEL_ARCH_FUNC_H_
 #define ZEPHYR_ARCH_X86_INCLUDE_KERNEL_ARCH_FUNC_H_
 
-#ifndef CONFIG_X86_LONGMODE
+#ifdef CONFIG_X86_LONGMODE
+#include <intel64/kernel_arch_func.h>
+#else
 #include <ia32/kernel_arch_func.h>
 #endif
 
