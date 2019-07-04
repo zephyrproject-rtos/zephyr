@@ -23,11 +23,11 @@
 
 #include <shell/shell.h>
 
-#include <gatt/hrs.h>
+#include <bluetooth/services/hrs.h>
 
 #define DEVICE_NAME CONFIG_BT_DEVICE_NAME
 
-#if defined(CONFIG_BT_CONN)
+#if defined(CONFIG_BT_GATT_HRS)
 static bool hrs_simulate;
 
 static int cmd_hrs_simulate(const struct shell *shell,
@@ -38,7 +38,6 @@ static int cmd_hrs_simulate(const struct shell *shell,
 
 		if (!hrs_registered) {
 			shell_print(shell, "Registering HRS Service");
-			hrs_init(0x01);
 			hrs_registered = true;
 		}
 
@@ -55,17 +54,17 @@ static int cmd_hrs_simulate(const struct shell *shell,
 
 	return 0;
 }
-#endif /* CONFIG_BT_CONN */
+#endif /* CONFIG_BT_GATT_HRS */
 
 #define HELP_NONE "[none]"
 #define HELP_ADDR_LE "<address: XX:XX:XX:XX:XX:XX> <type: (public|random)>"
 
 SHELL_STATIC_SUBCMD_SET_CREATE(hrs_cmds,
-#if defined(CONFIG_BT_CONN)
+#if defined(CONFIG_BT_GATT_HRS)
 	SHELL_CMD_ARG(hrs-simulate, NULL,
 		"register and simulate Heart Rate Service <value: on, off>",
 		cmd_hrs_simulate, 2, 0),
-#endif /* CONFIG_BT_CONN */
+#endif /* CONFIG_BT_GATT_HRS*/
 	SHELL_SUBCMD_SET_END
 );
 
@@ -79,6 +78,21 @@ static int cmd_hrs(const struct shell *shell, size_t argc, char **argv)
 SHELL_CMD_ARG_REGISTER(hrs, &hrs_cmds, "Heart Rate Service shell commands",
 		       cmd_hrs, 2, 0);
 
+#if defined(CONFIG_BT_GATT_HRS)
+static void hrs_notify(void)
+{
+	static u8_t heartrate = 90U;
+
+	/* Heartrate measurements simulation */
+	heartrate++;
+	if (heartrate == 160U) {
+		heartrate = 90U;
+	}
+
+	bt_gatt_hrs_notify(heartrate);
+}
+#endif /* CONFIG_BT_GATT_HRS */
+
 void main(void)
 {
 	printk("Type \"help\" for supported commands.");
@@ -88,11 +102,11 @@ void main(void)
 	while (1) {
 		k_sleep(MSEC_PER_SEC);
 
-#if defined(CONFIG_BT_CONN)
+#if defined(CONFIG_BT_GATT_HRS)
 		/* Heartrate measurements simulation */
 		if (hrs_simulate) {
 			hrs_notify();
 		}
-#endif /* CONFIG_BT_CONN */
+#endif /* CONFIG_BT_GATT_HRS */
 	}
 }

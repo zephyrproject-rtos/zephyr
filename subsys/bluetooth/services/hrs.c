@@ -12,9 +12,8 @@
 #include <stddef.h>
 #include <string.h>
 #include <errno.h>
-#include <sys/printk.h>
-#include <sys/byteorder.h>
 #include <zephyr.h>
+#include <init.h>
 
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/hci.h>
@@ -22,15 +21,20 @@
 #include <bluetooth/uuid.h>
 #include <bluetooth/gatt.h>
 
+#define LOG_LEVEL CONFIG_BT_GATT_HRS_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(hrs);
+
 static struct bt_gatt_ccc_cfg hrmc_ccc_cfg[BT_GATT_CCC_MAX] = {};
-static u8_t simulate_hrm;
-static u8_t heartrate = 90U;
 static u8_t hrs_blsc;
 
-static void hrmc_ccc_cfg_changed(const struct bt_gatt_attr *attr,
-				 u16_t value)
+static void hrmc_ccc_cfg_changed(const struct bt_gatt_attr *attr, u16_t value)
 {
-	simulate_hrm = (value == BT_GATT_CCC_NOTIFY) ? 1 : 0;
+	ARG_UNUSED(attr);
+
+	bool notif_enabled = (value == BT_GATT_CCC_NOTIFY);
+
+	LOG_INF("HRS notifications %s", notif_enabled ? "enabled" : "disabled");
 }
 
 static ssize_t read_blsc(struct bt_conn *conn, const struct bt_gatt_attr *attr,
@@ -52,27 +56,26 @@ BT_GATT_SERVICE_DEFINE(hrs_svc,
 			       BT_GATT_PERM_NONE, NULL, NULL, NULL),
 );
 
-void hrs_init(u8_t blsc)
+static int hrs_init(struct device *dev)
 {
-	hrs_blsc = blsc;
+	ARG_UNUSED(dev);
+
+	hrs_blsc = 0x01;
+
+	return 0;
 }
 
-void hrs_notify(void)
+int bt_gatt_hrs_notify(u16_t heartrate)
 {
+	int rc;
 	static u8_t hrm[2];
-
-	/* Heartrate measurements simulation */
-	if (!simulate_hrm) {
-		return;
-	}
-
-	heartrate++;
-	if (heartrate == 160U) {
-		heartrate = 90U;
-	}
 
 	hrm[0] = 0x06; /* uint8, sensor contact */
 	hrm[1] = heartrate;
 
-	bt_gatt_notify(NULL, &hrs_svc.attrs[1], &hrm, sizeof(hrm));
+	rc = bt_gatt_notify(NULL, &hrs_svc.attrs[1], &hrm, sizeof(hrm));
+
+	return rc == -ENOTCONN ? 0 : rc;
 }
+
+SYS_INIT(hrs_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);

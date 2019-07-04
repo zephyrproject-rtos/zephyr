@@ -20,8 +20,7 @@
 #include <bluetooth/uuid.h>
 #include <bluetooth/gatt.h>
 #include <bluetooth/services/bas.h>
-
-#include <gatt/hrs.h>
+#include <bluetooth/services/hrs.h>
 
 struct bt_conn *default_conn;
 
@@ -64,8 +63,6 @@ static void bt_ready(int err)
 
 	printk("Bluetooth initialized\n");
 
-	hrs_init(0x01);
-
 	err = bt_le_adv_start(BT_LE_ADV_CONN_NAME, ad, ARRAY_SIZE(ad), NULL, 0);
 	if (err) {
 		printk("Advertising failed to start (err %d)\n", err);
@@ -99,6 +96,19 @@ static void bas_notify(void)
 	}
 
 	bt_gatt_bas_set_battery_level(battery_level);
+}
+
+static void hrs_notify(void)
+{
+	static u8_t heartrate = 90U;
+
+	/* Heartrate measurements simulation */
+	heartrate++;
+	if (heartrate == 160U) {
+		heartrate = 90U;
+	}
+
+	bt_gatt_hrs_notify(heartrate);
 }
 
 void main(void)

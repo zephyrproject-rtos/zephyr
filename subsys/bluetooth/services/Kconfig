@@ -13,6 +13,8 @@ source "subsys/bluetooth/services/Kconfig.dis"
 
 source "subsys/bluetooth/services/Kconfig.bas"
 
+source "subsys/bluetooth/services/Kconfig.hrs"
+
 endmenu
 
 endif #BT_CONN

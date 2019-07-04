@@ -22,8 +22,8 @@
 #include <bluetooth/uuid.h>
 #include <bluetooth/gatt.h>
 #include <bluetooth/services/bas.h>
+#include <bluetooth/services/hrs.h>
 
-#include <gatt/hrs.h>
 #include <gatt/cts.h>
 
 /* Custom Service Variables */
@@ -254,7 +254,6 @@ static void bt_ready(int err)
 
 	printk("Bluetooth initialized\n");
 
-	hrs_init(0x01);
 	cts_init();
 
 	if (IS_ENABLED(CONFIG_SETTINGS)) {
@@ -305,6 +304,19 @@ static void bas_notify(void)
 	}
 
 	bt_gatt_bas_set_battery_level(battery_level);
+}
+
+static void hrs_notify(void)
+{
+	static u8_t heartrate = 90U;
+
+	/* Heartrate measurements simulation */
+	heartrate++;
+	if (heartrate == 160U) {
+		heartrate = 90U;
+	}
+
+	bt_gatt_hrs_notify(heartrate);
 }
 
 void main(void)

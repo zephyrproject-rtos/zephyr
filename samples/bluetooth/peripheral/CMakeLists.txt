@@ -6,7 +6,6 @@ project(peripheral)
 
 target_sources(app PRIVATE
   src/main.c
-  ../gatt/hrs.c
   ../gatt/cts.c
 )
 
