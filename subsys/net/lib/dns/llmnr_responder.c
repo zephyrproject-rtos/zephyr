@@ -487,8 +487,13 @@ static int dns_read(struct net_context *ctx,
 		/* If the query matches to our hostname, then send reply */
 		if (!strncasecmp(hostname, result->data + 1, hostname_len) &&
 		    (result->len - 1) >= hostname_len) {
-			NET_DBG("LLMNR query to our hostname %s", hostname);
-			send_response(ctx, pkt, ip_hdr, result, qtype, dns_id);
+			NET_DBG("LLMNR query to our hostname %s",
+				log_strdup(hostname));
+			ret = send_response(ctx, pkt, ip_hdr, result, qtype,
+					    dns_id);
+			if (ret < 0) {
+				NET_DBG("Cannot send response (%d)", ret);
+			}
 		}
 	} while (--queries);
 
