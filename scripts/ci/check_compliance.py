@@ -485,7 +485,7 @@ class Codeowners(ComplianceTest):
                 if line.startswith("#") or not line.strip():
                     continue
 
-                match = re.match(r"^([^\s]+)\s+[^\s]+", line)
+                match = re.match(r"^([^\s,]+)\s+[^\s]+", line)
                 if not match:
                     self.add_failure(
                         "Invalid CODEOWNERS line %d\n\t%s" %
