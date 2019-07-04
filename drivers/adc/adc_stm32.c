@@ -547,7 +547,8 @@ static int adc_stm32_init(struct device *dev)
 	 * These two series STM32 has one internal voltage reference source
 	 * to be enabled.
 	 */
-	LL_ADC_SetCommonPathInternalCh(ADC, LL_ADC_PATH_INTERNAL_VREFINT);
+	LL_ADC_SetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(adc),
+				      LL_ADC_PATH_INTERNAL_VREFINT);
 #endif
 
 #if defined(CONFIG_SOC_SERIES_STM32F0X) || \
