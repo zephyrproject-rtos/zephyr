@@ -375,7 +375,7 @@ __csSet:
 
 	/* Enable PAE */
 	movl %cr4, %eax
-	orl $CR4_PAE_ENABLE, %eax
+	orl $CR4_PAE, %eax
 	movl %eax, %cr4
 
 	/* IA32_EFER NXE bit set */
@@ -386,7 +386,7 @@ __csSet:
 
 	/* Enable paging (CR0.PG, bit 31) / write protect (CR0.WP, bit 16) */
 	movl %cr0, %eax
-	orl $CR0_PG_WP_ENABLE, %eax
+	orl $(CR0_PG | CR0_WP), %eax
 	movl %eax, %cr0
 
 #endif /* CONFIG_X86_MMU */

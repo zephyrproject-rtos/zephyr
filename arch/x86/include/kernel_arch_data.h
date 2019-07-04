@@ -33,7 +33,24 @@
 #define IV_SIMD_FP 19
 #define IV_INTEL_RESERVED_END 31
 
-#ifndef CONFIG_X86_LONGMODE
+/*
+ * EFLAGS/RFLAGS definitions. (RFLAGS is just zero-extended EFLAGS.)
+ */
+
+#define EFLAGS_IF	0x00000200U	/* interrupts enabled */
+#define EFLAGS_INITIAL	(EFLAGS_IF)
+
+/*
+ * Control register definitions.
+ */
+
+#define CR0_PG		0x80000000	/* enable paging */
+#define CR0_WP		0x00010000	/* honor W bit even when supervisor */
+#define CR4_PAE		0x00000020	/* enable PAE */
+
+#ifdef CONFIG_X86_LONGMODE
+#include <intel64/kernel_arch_data.h>
+#else
 #include <ia32/kernel_arch_data.h>
 #endif
 
