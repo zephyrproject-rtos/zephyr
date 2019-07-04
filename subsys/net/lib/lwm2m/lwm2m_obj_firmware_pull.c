@@ -451,7 +451,7 @@ int lwm2m_firmware_start_transfer(char *package_uri)
 	/* close old socket */
 	if (firmware_ctx.sock_fd > 0) {
 		lwm2m_socket_del(&firmware_ctx);
-		close(firmware_ctx.sock_fd);
+		(void)close(firmware_ctx.sock_fd);
 	}
 
 	(void)memset(&firmware_ctx, 0, sizeof(struct lwm2m_ctx));
