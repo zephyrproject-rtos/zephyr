@@ -173,6 +173,7 @@ void bt_conn_pin_code_req(struct bt_conn *conn);
 u8_t bt_conn_get_io_capa(void);
 u8_t bt_conn_ssp_get_auth(const struct bt_conn *conn);
 void bt_conn_ssp_auth(struct bt_conn *conn, u32_t passkey);
+void bt_conn_ssp_auth_complete(struct bt_conn *conn, u8_t status);
 
 void bt_conn_disconnect_all(u8_t id);
 
