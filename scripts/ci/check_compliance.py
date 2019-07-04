@@ -499,9 +499,9 @@ class Codeowners(ComplianceTest):
                     # comparing strings is much faster later
                     files.append(str(abs_path.relative_to(top_path)))
 
-                #if not files:
-                #    self.add_failure("Path '{}' not found, in "
-                #                     "CODEOWNERS".format(git_patrn))
+                if not files:
+                    self.add_failure("Path '{}' not found, in "
+                                     "CODEOWNERS".format(git_patrn))
 
                 pattern2files[git_patrn] = files
 
