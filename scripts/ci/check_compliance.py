@@ -500,7 +500,7 @@ class Codeowners(ComplianceTest):
                     files.append(str(abs_path.relative_to(top_path)))
 
                 if not files:
-                    self.add_failure("Path '{}' not found, in "
+                    self.add_failure("Path '{}' not found in the tree but is listed in "
                                      "CODEOWNERS".format(git_patrn))
 
                 pattern2files[git_patrn] = files
