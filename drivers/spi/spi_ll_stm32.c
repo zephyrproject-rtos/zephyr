@@ -139,7 +139,8 @@ static void spi_stm32_shift_s(SPI_TypeDef *spi, struct spi_stm32_data *data)
 		LL_SPI_DisableIT_TXE(spi);
 	}
 
-	if (LL_SPI_IsActiveFlag_RXNE(spi) && spi_context_rx_buf_on(&data->ctx)) {
+	if (LL_SPI_IsActiveFlag_RXNE(spi) &&
+	    spi_context_rx_buf_on(&data->ctx)) {
 		u16_t rx_frame;
 
 		if (SPI_WORD_SIZE_GET(data->ctx.config->operation) == 8) {
