@@ -122,3 +122,9 @@ arduino_serial: &uart3 {};
 &usbd1 {
 	status = "okay";
 };
+
+&usdhc1 {
+	status = "okay";
+	pwr-gpios = <&gpio1 5 0>;
+	cd-gpios = <&gpio2 28 0>;
+};
