@@ -192,6 +192,34 @@ static ALWAYS_INLINE void clkInit(void)
 
 }
 
+#if defined(CONFIG_DISK_ACCESS_USDHC1) ||	\
+	defined(CONFIG_DISK_ACCESS_USDHC2)
+
+/* Usdhc driver needs to re-configure pinmux
+ * Pinmux depends on board design.
+ * From the perspective of Usdhc driver,
+ * it can't access board specific function.
+ * So SoC provides this for board to register
+ * its usdhc pinmux and for usdhc to access
+ * pinmux.
+ */
+
+static usdhc_pin_cfg_cb g_usdhc_pin_cfg_cb;
+
+void imxrt_usdhc_pinmux_cb_register(usdhc_pin_cfg_cb cb)
+{
+	g_usdhc_pin_cfg_cb = cb;
+}
+
+void imxrt_usdhc_pinmux(u16_t nusdhc, bool init,
+	u32_t speed, u32_t strength)
+{
+	if (g_usdhc_pin_cfg_cb)
+		g_usdhc_pin_cfg_cb(nusdhc, init,
+			speed, strength);
+}
+#endif
+
 /**
  *
  * @brief Perform basic hardware initialization
