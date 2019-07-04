@@ -14,7 +14,7 @@
 
 #include <shell/shell_history.h>
 
-#define HIST_BUF_SIZE 128
+#define HIST_BUF_SIZE 160
 SHELL_HISTORY_DEFINE(history, HIST_BUF_SIZE);
 
 static void init_test_buf(u8_t *buf, size_t len, u8_t offset)
