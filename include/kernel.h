@@ -4157,7 +4157,6 @@ struct k_mem_pool {
  * @req K-MPOOL-001
  */
 #define K_MEM_POOL_DEFINE(name, minsz, maxsz, nmax, align)		\
-	BUILD_ASSERT(WB_UP(maxsz) >= _MPOOL_MINBLK);			\
 	char __aligned(WB_UP(align)) _mpool_buf_##name[WB_UP(maxsz) * nmax \
 				  + _MPOOL_BITS_SIZE(maxsz, minsz, nmax)]; \
 	struct sys_mem_pool_lvl _mpool_lvls_##name[Z_MPOOL_LVLS(maxsz, minsz)]; \
@@ -4170,7 +4169,8 @@ struct k_mem_pool {
 			.levels = _mpool_lvls_##name,			\
 			.flags = SYS_MEM_POOL_KERNEL			\
 		} \
-	}
+	}; \
+	BUILD_ASSERT(WB_UP(maxsz) >= _MPOOL_MINBLK);
 
 /**
  * @brief Allocate memory from a memory pool.
