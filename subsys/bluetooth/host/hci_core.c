@@ -1679,6 +1679,28 @@ int bt_unpair(u8_t id, const bt_addr_le_t *addr)
 
 #endif /* CONFIG_BT_CONN */
 
+#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR)
+static enum bt_security_err security_err_get(u8_t hci_err)
+{
+	switch (hci_err) {
+	case BT_HCI_ERR_SUCCESS:
+		return BT_SECURITY_ERR_SUCCESS;
+	case BT_HCI_ERR_AUTHENTICATION_FAIL:
+		return BT_SECURITY_ERR_AUTHENTICATION_FAIL;
+	case BT_HCI_ERR_PIN_OR_KEY_MISSING:
+		return BT_SECURITY_ERR_PIN_OR_KEY_MISSING;
+	case BT_HCI_ERR_PAIRING_NOT_SUPPORTED:
+		return BT_SECURITY_ERR_PAIR_NOT_SUPPORTED;
+	case BT_HCI_ERR_PAIRING_NOT_ALLOWED:
+		return BT_SECURITY_ERR_PAIR_NOT_ALLOWED;
+	case BT_HCI_ERR_INVALID_PARAM:
+		return BT_SECURITY_ERR_INVALID_PARAM;
+	default:
+		return BT_SECURITY_ERR_UNSPECIFIED;
+	}
+}
+#endif /* defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR) */
+
 #if defined(CONFIG_BT_BREDR)
 static void reset_pairing(struct bt_conn *conn)
 {
@@ -2186,6 +2208,7 @@ static void ssp_complete(struct net_buf *buf)
 		return;
 	}
 
+	bt_conn_ssp_auth_complete(conn, security_err_get(evt->status));
 	if (evt->status) {
 		bt_conn_disconnect(conn, BT_HCI_ERR_AUTHENTICATION_FAIL);
 	}

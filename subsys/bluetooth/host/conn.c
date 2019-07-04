@@ -744,6 +744,21 @@ static int ssp_confirm_neg_reply(struct bt_conn *conn)
 				    NULL);
 }
 
+void bt_conn_ssp_auth_complete(struct bt_conn *conn, u8_t status)
+{
+	if (!status) {
+		bool bond = !atomic_test_bit(conn->flags, BT_CONN_BR_NOBOND);
+
+		if (bt_auth && bt_auth->pairing_complete) {
+			bt_auth->pairing_complete(conn, bond);
+		}
+	} else {
+		if (bt_auth && bt_auth->pairing_failed) {
+			bt_auth->pairing_failed(conn, status);
+		}
+	}
+}
+
 void bt_conn_ssp_auth(struct bt_conn *conn, u32_t passkey)
 {
 	conn->br.pairing_method = ssp_pair_method(conn);
