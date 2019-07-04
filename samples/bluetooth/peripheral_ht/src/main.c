@@ -21,7 +21,7 @@
 #include <bluetooth/gatt.h>
 #include <bluetooth/services/bas.h>
 
-#include <gatt/hts.h>
+#include "hts.h"
 
 struct bt_conn *default_conn;
 
