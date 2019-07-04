@@ -326,6 +326,8 @@
 /subsys/bluetooth/                        @joerchan @jhedberg @Vudentz
 /subsys/bluetooth/controller/             @carlescufi @cvinayak @thoh-ot
 /subsys/debug/                            @nashif
+/subsys/disk/disk_access_spi_sdhc.c       @JunYangNXP
+/subsys/disk/disk_access_sdhc.h           @JunYangNXP
 /subsys/fs/                               @nashif
 /subsys/fs/fcb/                           @nvlsianpu
 /subsys/fs/fuse_fs_access.c               @vanwinkeljan

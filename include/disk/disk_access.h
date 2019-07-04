@@ -50,6 +50,9 @@ struct disk_info {
 	sys_dnode_t node;
 	char *name;
 	const struct disk_operations *ops;
+	/* Disk device associated to this disk.
+	 */
+	struct device *dev;
 };
 
 struct disk_operations {

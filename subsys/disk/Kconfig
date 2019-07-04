@@ -94,9 +94,16 @@ config DISK_VOLUME_SIZE
 endif # DISK_ACCESS_FLASH
 
 config DISK_ACCESS_SDHC
-	bool "SDHC card over SPI"
-	select SPI
+	bool "SDHC card access"
 	select FLASH
+	help
+	  File system on a SDHC card.
+
+if DISK_ACCESS_SDHC
+
+config DISK_ACCESS_SPI_SDHC
+	bool "SDHC access over SPI"
+	depends on SPI
 	help
 	  File system on a SDHC card accessed over SPI.
 
@@ -107,4 +114,5 @@ config DISK_SDHC_VOLUME_NAME
 	help
 	  Disk name as per file system naming guidelines.
 
+endif # DISK_ACCESS_SDHC
 endif # DISK_ACCESS
