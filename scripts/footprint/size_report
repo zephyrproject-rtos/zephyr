@@ -54,8 +54,10 @@ def load_symbols_and_paths(bin_nm, elf_file, path_to_strip=""):
 #   (symbol_name, "path/to/file")
 #   or
 #   (symbol_name, "")
+#   or
+#   ("", "")
 #
-#   depending on if the file is found or not
+#   depending on whether the symbol name and the file are found or not
 # }
 def parse_symbol_path_pair(line):
     # Line's output from nm might look like this:
@@ -65,9 +67,10 @@ def parse_symbol_path_pair(line):
     #
     # In general lines look something like this:
     #
-    # 'number number string symbol[\t<absolute_path>:line]
+    # 'number number string[\t<symbol>][\t<absolute_path>:line]
     #
-    # The file is optional, nm might not find out where a symbol came from.
+    # The symbol and file is optional, nm might not find out what a
+    # symbol is named or where it came from.
     #
     # NB: <absolute_path> looks different on Windows and Linux
 
@@ -77,12 +80,20 @@ def parse_symbol_path_pair(line):
 
     fields = line_without_tabs.split()
 
-    assert len(fields) >= 4
+    assert len(fields) >= 3
 
-    symbol = fields[3]
+    # When a symbol has been stripped, it's symbol name does not show
+    # in the 'nm' output, but it is still listed as something that
+    # takes up space. We use the empty string to denote these stripped
+    # symbols.
+    symbol_is_missing = len(fields) < 4
+    if symbol_is_missing:
+        symbol = ""
+    else:
+        symbol = fields[3]
 
-    file_is_missing = len(fields) == 4
 
+    file_is_missing = len(fields) < 5
     if file_is_missing:
         path = ""
     else:
