@@ -701,13 +701,15 @@ You can also define the ``SOC_ROOT`` variable in the application
 DeviceTree Definitions
 ======================
 
-Additional DeviceTree directory trees, or DTS_ROOTs, can be added by
-creating this directory tree::
+DeviceTree directory trees are found in ``APPLICATION_SOURCE_DIR``,
+``BOARD_DIR``, and ``ZEPHYR_BASE``, but additional trees, or DTS_ROOTs,
+can be added by creating this directory tree::
 
-    dts/bindings/
+    include/
     dts/common/
     dts/arm/
-    include/
+    dts/
+    dts/bindings/
 
 Where 'arm' is changed to the appropriate architecture. Each directory
 is optional. The binding directory contains bindings and the other
