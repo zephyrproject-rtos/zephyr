@@ -210,8 +210,11 @@ struct bt_l2cap_fixed_chan {
 				.accept = _accept,		\
 			}
 
-/* Need a different name for the sections not to conflict */
-#define bt_l2cap_br_fixed_chan bt_l2cap_fixed_chan
+/* Need a name different than bt_l2cap_fixed_chan for a different section */
+struct bt_l2cap_br_fixed_chan {
+	u16_t		cid;
+	int (*accept)(struct bt_conn *conn, struct bt_l2cap_chan **chan);
+};
 
 #define BT_L2CAP_BR_CHANNEL_DEFINE(_name, _cid, _accept)		\
 	const Z_STRUCT_SECTION_ITERABLE(bt_l2cap_br_fixed_chan, _name) = { \
