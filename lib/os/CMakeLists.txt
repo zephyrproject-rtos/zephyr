@@ -23,6 +23,8 @@ zephyr_sources_if_kconfig(printk.c)
 
 zephyr_sources_if_kconfig(ring_buffer.c)
 
+zephyr_sources_if_kconfig(memobj.c)
+
 zephyr_sources_ifdef(CONFIG_ASSERT assert.c)
 
 zephyr_sources_ifdef(CONFIG_USERSPACE mutex.c)

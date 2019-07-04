@@ -19,6 +19,14 @@ config RING_BUFFER
 	  buffers manage their own buffer memory and can store arbitrary data.
 	  For optimal performance, use buffer sizes that are a power of 2.
 
+config MEMOBJ
+	bool "Enable memory object"
+	help
+	  Enable usage of memory object. It allows to store variable length data
+	  in fragmented chunks providing efficient memory utilization at the
+	  cost of data access time (data is copied in and out from memory
+	  object).
+
 config BASE64
 	bool "Enable base64 encoding and decoding"
 	help
