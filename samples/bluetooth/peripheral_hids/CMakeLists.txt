@@ -7,7 +7,5 @@ project(peripheral_hids)
 FILE(GLOB app_sources src/*.c)
 target_sources(app PRIVATE
   ${app_sources}
-  ../gatt/hog.c
   )
 
-zephyr_library_include_directories($ENV{ZEPHYR_BASE}/samples/bluetooth)
