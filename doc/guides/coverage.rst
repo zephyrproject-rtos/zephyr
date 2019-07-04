@@ -125,29 +125,21 @@ You may postprocess these with your preferred tools. For example:
    genhtml lcov.info --output-directory lcov_html -q --ignore-errors source --branch-coverage --highlight --legend
 
 Sanitycheck coverage reports
-============================
+****************************
 
-When targeting boards based on the POSIX architecture,
 Zephyr's :ref:`sanitycheck script <sanitycheck_script>` can automatically
 generate a coverage report from the tests which were executed.
-You just need to invoke it with the ``-C`` command line option.
+You just need to invoke it with the ``--coverage`` command line option.
 
-For example you may run::
+For example, you may invoke::
 
-    $ sanitycheck -p native_posix -T tests/kernel -C
+    $ sanitycheck --coverage -p qemu_x86 -T tests/kernel
+
+or::
+
+    $ sanitycheck --coverage -p native_posix -T tests/bluetooth
 
 which will produce ``sanity-out/coverage/index.html`` with the report.
-
-For emulated targets you will need to pass the correct ``gcov`` binary from
-the SDK, the default of using the ``gcov`` found in the default path is likely
-not going to work. For example, to produce reports using the
-``qemu_x86_coverage`` target::
-
-    $ sanitycheck --coverage --coverage-platform=qemu_x86_coverage -p qemu_x86_coverage --gcov-tool $ZEPHYR_SDK_INSTALL_DIR/i586-zephyr-elf/bin/i586-zephyr-elf-gcov
-
-You can find the paths to all the ``gcov`` binaries in the SDK with::
-
-    $ find $ZEPHYR_SDK_INSTALL_DIR -iregex ".*gcov"
 
 .. _gcov:
    https://gcc.gnu.org/onlinedocs/gcc/Gcov.html
