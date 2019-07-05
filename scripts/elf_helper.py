@@ -385,10 +385,8 @@ class ElfHelper:
             sys.stderr.write("ELF file has no DWARF information\n")
             sys.exit(1)
 
-        kram_start = syms["__kernel_ram_start"]
-        kram_end = syms["__kernel_ram_end"]
-        krom_start = syms["_image_rom_start"]
-        krom_end = syms["_image_rom_end"]
+        app_smem_start = syms["_app_smem_start"]
+        app_smem_end = syms["_app_smem_end"]
 
         di = self.elf.get_dwarf_info()
 
@@ -501,8 +499,7 @@ class ElfHelper:
 
             _, user_ram_allowed = kobjects[ko.type_obj.name]
             if (not user_ram_allowed and
-                    (addr < kram_start or addr >= kram_end) and
-                    (addr < krom_start or addr >= krom_end)):
+                    (addr >= app_smem_start and addr < app_smem_end)):
 
                 self.debug_die(die,
                                "object '%s' found in invalid location %s"
