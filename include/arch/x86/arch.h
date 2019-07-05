@@ -16,6 +16,16 @@
 #include <zephyr/types.h>
 #include <stddef.h>
 
+static ALWAYS_INLINE void z_arch_irq_unlock(unsigned int key)
+{
+	if ((key & 0x00000200U) != 0U) { /* 'IF' bit */
+		__asm__ volatile (
+			"sti;\n\t"
+			: : : "memory"
+			);
+	}
+}
+
 static ALWAYS_INLINE void sys_out8(u8_t data, io_port_t port)
 {
 	__asm__ volatile("outb	%b0, %w1;\n\t"
