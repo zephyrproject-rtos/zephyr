@@ -316,57 +316,6 @@ struct _x86_syscall_stack_frame {
 
 /**
  *
- * @internal
- *
- * @brief Disable all interrupts on the CPU
- *
- * GCC assembly internals of irq_lock(). See irq_lock() for a complete
- * description.
- *
- * @return An architecture-dependent lock-out key representing the
- * "interrupt disable state" prior to the call.
- */
-
-static ALWAYS_INLINE unsigned int _do_irq_lock(void)
-{
-	unsigned int key;
-
-	__asm__ volatile (
-		"pushfl;\n\t"
-		"cli;\n\t"
-		"popl %0;\n\t"
-		: "=g" (key)
-		:
-		: "memory"
-		);
-
-	return key;
-}
-
-
-/**
- *
- * @internal
- *
- * @brief Enable all interrupts on the CPU (inline)
- *
- * GCC assembly internals of irq_lock_unlock(). See irq_lock_unlock() for a
- * complete description.
- *
- * @return N/A
- */
-
-static ALWAYS_INLINE void z_do_irq_unlock(void)
-{
-	__asm__ volatile (
-		"sti;\n\t"
-		: : : "memory"
-		);
-}
-
-
-/**
- *
  * @brief Get a 32 bit CPU timestamp counter
  *
  * @return a 32-bit number
@@ -416,34 +365,20 @@ static ALWAYS_INLINE
 
 static ALWAYS_INLINE unsigned int z_arch_irq_lock(void)
 {
-	unsigned int key = _do_irq_lock();
+	unsigned int key;
+
+	__asm__ volatile (
+		"pushfl;\n\t"
+		"cli;\n\t"
+		"popl %0;\n\t"
+		: "=g" (key)
+		:
+		: "memory"
+		);
 
 	return key;
 }
 
-
-/**
- *
- * @brief Enable all interrupts on the CPU (inline)
- *
- * This routine re-enables interrupts on the CPU.  The @a key parameter
- * is an architecture-dependent lock-out key that is returned by a previous
- * invocation of irq_lock().
- *
- * This routine can be called from either interrupt or thread level.
- *
- * @return N/A
- *
- */
-
-static ALWAYS_INLINE void z_arch_irq_unlock(unsigned int key)
-{
-	if ((key & 0x200U) == 0U) {
-		return;
-	}
-
-	z_do_irq_unlock();
-}
 
 /**
  * The NANO_SOFT_IRQ macro must be used as the value for the @a irq parameter
