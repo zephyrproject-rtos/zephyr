@@ -43,7 +43,24 @@ static inline void z_x86_msr_write(unsigned int msr, u64_t data)
 	__asm__ volatile ("wrmsr" : : "c"(msr), "a"(low), "d"(high));
 }
 
-#ifndef CONFIG_X86_LONGMODE
+#ifdef CONFIG_X86_LONGMODE
+
+static inline u64_t z_x86_msr_read(unsigned int msr)
+{
+	union {
+		struct {
+			u32_t lo;
+			u32_t hi;
+		};
+		u64_t value;
+	} rv;
+
+	__asm__ volatile ("rdmsr" : "=a" (rv.lo), "=d" (rv.hi) : "c" (msr));
+
+	return rv.value;
+}
+
+#else
 
 static inline u64_t z_x86_msr_read(unsigned int msr)
 {

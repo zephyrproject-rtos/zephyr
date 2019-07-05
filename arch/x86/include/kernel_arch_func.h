@@ -12,4 +12,6 @@
 #include <ia32/kernel_arch_func.h>
 #endif
 
+#define z_is_in_isr() (_kernel.nested != 0U)
+
 #endif /* ZEPHYR_ARCH_X86_INCLUDE_KERNEL_ARCH_FUNC_H_ */

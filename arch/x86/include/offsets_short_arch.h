@@ -6,7 +6,9 @@
 #ifndef ZEPHYR_ARCH_X86_INCLUDE_OFFSETS_SHORT_ARCH_H_
 #define ZEPHYR_ARCH_X86_INCLUDE_OFFSETS_SHORT_ARCH_H_
 
-#ifndef CONFIG_X86_LONGMODE
+#ifdef CONFIG_X86_LONGMODE
+#include <intel64/offsets_short_arch.h>
+#else
 #include <ia32/offsets_short_arch.h>
 #endif
 
