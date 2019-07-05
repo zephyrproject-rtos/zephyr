@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
+add_subdirectory(sensor)
+
 zephyr_library()
 
 zephyr_library_sources(video_common.c)
