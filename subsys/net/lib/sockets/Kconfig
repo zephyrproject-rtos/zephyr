@@ -15,7 +15,6 @@ if NET_SOCKETS
 
 config NET_SOCKETS_POSIX_NAMES
 	bool "Standard POSIX names for Sockets API"
-	depends on !POSIX_API
 	help
 	  By default, Sockets API function are prefixed with ``zsock_`` to avoid
 	  namespacing issues. If this option is enabled, they will be provided
