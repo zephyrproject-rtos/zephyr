@@ -21,6 +21,8 @@ zephyr_sources_ifdef(CONFIG_JSON_LIBRARY json.c)
 
 zephyr_sources_if_kconfig(printk.c)
 
+zephyr_sources_ifdef(CONFIG_PRINTK_CUSTOM_FORMAT printk_custom_format.c)
+
 zephyr_sources_if_kconfig(ring_buffer.c)
 
 zephyr_sources_if_kconfig(memobj.c)

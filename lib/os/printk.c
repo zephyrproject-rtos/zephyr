@@ -20,22 +20,10 @@
 #include <syscall_handler.h>
 #include <logging/log.h>
 #include <sys/types.h>
+#include "../../include/sys/printk_custom_format.h"
 
 typedef int (*out_func_t)(int c, void *ctx);
 
-enum pad_type {
-	PAD_NONE,
-	PAD_ZERO_BEFORE,
-	PAD_SPACE_BEFORE,
-	PAD_SPACE_AFTER,
-};
-
-static void _printk_dec_ulong(out_func_t out, void *ctx,
-			      const unsigned long num, enum pad_type padding,
-			      int min_width);
-static void _printk_hex_ulong(out_func_t out, void *ctx,
-			      const unsigned long long num, enum pad_type padding,
-			      int min_width);
 
 /**
  * @brief Default character output routine that does nothing
@@ -104,7 +92,7 @@ static void print_err(out_func_t out, void *ctx)
 void z_vprintk(out_func_t out, void *ctx, const char *fmt, va_list ap)
 {
 	int might_format = 0; /* 1 if encountered a '%' */
-	enum pad_type padding = PAD_NONE;
+	enum printk_pad_type padding = PRINTK_PAD_NONE;
 	int min_width = -1;
 	char length_mod = 0;
 
@@ -117,17 +105,18 @@ void z_vprintk(out_func_t out, void *ctx, const char *fmt, va_list ap)
 			} else {
 				might_format = 1;
 				min_width = -1;
-				padding = PAD_NONE;
+				padding = PRINTK_PAD_NONE;
 				length_mod = 0;
 			}
 		} else {
 			switch (*fmt) {
 			case '-':
-				padding = PAD_SPACE_AFTER;
+				padding = PRINTK_PAD_SPACE_AFTER;
 				goto still_might_format;
 			case '0':
-				if (min_width < 0 && padding == PAD_NONE) {
-					padding = PAD_ZERO_BEFORE;
+				if (min_width < 0 &&
+				    padding == PRINTK_PAD_NONE) {
+					padding = PRINTK_PAD_ZERO_BEFORE;
 					goto still_might_format;
 				}
 				/* Fall through */
@@ -147,8 +136,8 @@ void z_vprintk(out_func_t out, void *ctx, const char *fmt, va_list ap)
 					min_width = 10 * min_width + *fmt - '0';
 				}
 
-				if (padding == PAD_NONE) {
-					padding = PAD_SPACE_BEFORE;
+				if (padding == PRINTK_PAD_NONE) {
+					padding = PRINTK_PAD_SPACE_BEFORE;
 				}
 				goto still_might_format;
 			case 'h':
@@ -191,7 +180,7 @@ void z_vprintk(out_func_t out, void *ctx, const char *fmt, va_list ap)
 					d = -d;
 					min_width--;
 				}
-				_printk_dec_ulong(out, ctx, d, padding,
+				z_printk_dec_ulong(out, ctx, d, padding,
 						  min_width);
 				break;
 			}
@@ -214,17 +203,28 @@ void z_vprintk(out_func_t out, void *ctx, const char *fmt, va_list ap)
 					u = va_arg(ap, unsigned int);
 				}
 
-				_printk_dec_ulong(out, ctx, u, padding,
+				z_printk_dec_ulong(out, ctx, u, padding,
 						  min_width);
 				break;
 			}
 			case 'p':
-				  out('0', ctx);
-				  out('x', ctx);
-				  /* left-pad pointers with zeros */
-				  padding = PAD_ZERO_BEFORE;
-				  min_width = 8;
-				  /* Fall through */
+				if (*(fmt + 1) == 'Z') {
+					memobj_t *obj = va_arg(ap, void *);
+
+					if (obj) {
+						printk_custom_format_handle(obj,
+								      out, ctx);
+					}
+					++fmt;
+					break;
+				}
+
+				out('0', ctx);
+				out('x', ctx);
+				/* left-pad pointers with zeros */
+				padding = PRINTK_PAD_ZERO_BEFORE;
+				min_width = 8;
+				/* Fall through */
 			case 'x':
 			case 'X': {
 				unsigned long long x;
@@ -239,7 +239,7 @@ void z_vprintk(out_func_t out, void *ctx, const char *fmt, va_list ap)
 					x = va_arg(ap, unsigned int);
 				}
 
-				_printk_hex_ulong(out, ctx, x, padding,
+				z_printk_hex_ulong(out, ctx, x, padding,
 						  min_width);
 				break;
 			}
@@ -251,7 +251,7 @@ void z_vprintk(out_func_t out, void *ctx, const char *fmt, va_list ap)
 					out((int)(*s++), ctx);
 				}
 
-				if (padding == PAD_SPACE_AFTER) {
+				if (padding == PRINTK_PAD_SPACE_AFTER) {
 					int remaining = min_width - (s - start);
 					while (remaining-- > 0) {
 						out(' ', ctx);
@@ -410,9 +410,9 @@ void printk(const char *fmt, ...)
  *
  * @return N/A
  */
-static void _printk_hex_ulong(out_func_t out, void *ctx,
+void z_printk_hex_ulong(out_func_t out, void *ctx,
 			      const unsigned long long num,
-			      enum pad_type padding,
+			      enum printk_pad_type padding,
 			      int min_width)
 {
 	int shift = sizeof(num) * 8;
@@ -434,15 +434,15 @@ static void _printk_hex_ulong(out_func_t out, void *ctx,
 		}
 
 		if (remaining-- <= min_width) {
-			if (padding == PAD_ZERO_BEFORE) {
+			if (padding == PRINTK_PAD_ZERO_BEFORE) {
 				out('0', ctx);
-			} else if (padding == PAD_SPACE_BEFORE) {
+			} else if (padding == PRINTK_PAD_SPACE_BEFORE) {
 				out(' ', ctx);
 			}
 		}
 	}
 
-	if (padding == PAD_SPACE_AFTER) {
+	if (padding == PRINTK_PAD_SPACE_AFTER) {
 		remaining = min_width * 2 - digits;
 		while (remaining-- > 0) {
 			out(' ', ctx);
@@ -459,9 +459,8 @@ static void _printk_hex_ulong(out_func_t out, void *ctx,
  *
  * @return N/A
  */
-static void _printk_dec_ulong(out_func_t out, void *ctx,
-			      const unsigned long num, enum pad_type padding,
-			      int min_width)
+void z_printk_dec_ulong(out_func_t out, void *ctx, const unsigned long num,
+			enum printk_pad_type padding, int min_width)
 {
 	unsigned long pos = 1000000000;
 	unsigned long remainder = num;
@@ -484,8 +483,9 @@ static void _printk_dec_ulong(out_func_t out, void *ctx,
 			out((int)(remainder / pos + 48), ctx);
 			digits++;
 		} else if (remaining <= min_width
-				&& padding < PAD_SPACE_AFTER) {
-			out((int)(padding == PAD_ZERO_BEFORE ? '0' : ' '), ctx);
+				&& padding < PRINTK_PAD_SPACE_AFTER) {
+			out((int)(padding == PRINTK_PAD_ZERO_BEFORE ?
+					'0' : ' '), ctx);
 			digits++;
 		}
 		remaining--;
@@ -494,7 +494,7 @@ static void _printk_dec_ulong(out_func_t out, void *ctx,
 	}
 	out((int)(remainder + 48), ctx);
 
-	if (padding == PAD_SPACE_AFTER) {
+	if (padding == PRINTK_PAD_SPACE_AFTER) {
 		remaining = min_width - digits;
 		while (remaining-- > 0) {
 			out(' ', ctx);

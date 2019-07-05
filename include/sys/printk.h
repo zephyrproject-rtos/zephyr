@@ -13,9 +13,27 @@
 #include <stdarg.h>
 #include <inttypes.h>
 
+
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+typedef int (*printk_out_func_t)(int c, void *ctx);
+
+enum printk_pad_type {
+	PRINTK_PAD_NONE,
+	PRINTK_PAD_ZERO_BEFORE,
+	PRINTK_PAD_SPACE_BEFORE,
+	PRINTK_PAD_SPACE_AFTER,
+};
+
+void z_printk_dec_ulong(printk_out_func_t out, void *ctx,
+		       const unsigned long num, enum printk_pad_type padding,
+		       int min_width);
+void z_printk_hex_ulong(printk_out_func_t out, void *ctx,
+		       const unsigned long long num,
+		       enum printk_pad_type padding,
+		       int min_width);
 
 /**
  *
