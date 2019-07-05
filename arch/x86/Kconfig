@@ -47,6 +47,15 @@ config X86_LONGMODE
 	prompt "Run in long (64-bit) mode"
 	default n
 
+config MAX_IRQ_LINES
+	int "Number of IRQ lines"
+	default 128
+	range 0 256
+	help
+	  This option specifies the number of IRQ lines in the system. It
+	  determines the size of the _irq_to_interrupt_vector_table, which
+	  is used to track the association between vectors and IRQ numbers.
+
 config XIP
 	default n
 

@@ -7,14 +7,14 @@
 #define ZEPHYR_INCLUDE_ARCH_X86_ARCH_H_
 
 #include <generated_dts_board.h>
-#include <stdbool.h>
-#include <irq.h>
 
 #if !defined(_ASMLANGUAGE)
 
 #include <sys/sys_io.h>
 #include <zephyr/types.h>
 #include <stddef.h>
+#include <stdbool.h>
+#include <irq.h>
 
 static ALWAYS_INLINE void z_arch_irq_unlock(unsigned int key)
 {
@@ -136,6 +136,17 @@ static ALWAYS_INLINE u32_t sys_read32(mm_reg_t addr)
 
 	return ret;
 }
+
+/*
+ * Map of IRQ numbers to their assigned vectors. On IA32, this is generated
+ * at build time and defined via the linker script. On Intel64, it's an array.
+ */
+
+extern unsigned char _irq_to_interrupt_vector[];
+
+#define Z_IRQ_TO_INTERRUPT_VECTOR(irq) \
+	((unsigned int) _irq_to_interrupt_vector[irq])
+
 
 #endif /* _ASMLANGUAGE */
 

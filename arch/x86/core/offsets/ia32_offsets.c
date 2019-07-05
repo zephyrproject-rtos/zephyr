@@ -22,13 +22,9 @@
  * completeness.
  */
 
-#include <gen_offset.h> /* located in kernel/include */
-
 /* list of headers that define whose structure offsets will be generated */
 
-#include <kernel_structs.h>
 #include <ia32/mmustructs.h>
-#include <arch/x86/multiboot.h>
 
 #include <kernel_offsets.h>
 
@@ -69,10 +65,3 @@ GEN_OFFSET_SYM(z_arch_esf_t, eflags);
 /* size of the MMU_REGION structure. Used by linker scripts */
 
 GEN_ABSOLUTE_SYM(__MMU_REGION_SIZEOF, sizeof(struct mmu_region));
-
-/* size of struct x86_multiboot_info, used by crt0.S */
-
-GEN_ABSOLUTE_SYM(__X86_MULTIBOOT_INFO_SIZEOF,
-	sizeof(struct x86_multiboot_info));
-
-GEN_ABS_SYM_END

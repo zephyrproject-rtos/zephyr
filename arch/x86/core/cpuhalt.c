@@ -1,26 +1,6 @@
 /*
  * Copyright (c) 2011-2015 Wind River Systems, Inc.
- *
  * SPDX-License-Identifier: Apache-2.0
- */
-/**
- * @file  CPU power management code for IA-32
- *
- * This module provides an implementation of the architecture-specific
- * k_cpu_idle() primitive required by the kernel idle loop component.
- * It can be called within an implementation of _sys_power_save_idle(),
- * which is provided for the kernel by the platform.
- *
- * The module also provides an implementation of k_cpu_atomic_idle(), which
- * atomically re-enables interrupts and enters low power mode.
- *
- * INTERNAL
- * These implementations of k_cpu_idle() and k_cpu_atomic_idle() could be
- * used when operating as a Hypervisor guest.  More specifically, the Hypervisor
- * supports the execution of the 'hlt' instruction from a guest (results in a
- * VM exit), and more importantly, the Hypervisor will respect the
- * single instruction delay slot after the 'sti' instruction as required
- * by k_cpu_atomic_idle().
  */
 
 #include <zephyr.h>
@@ -33,11 +13,11 @@ extern u64_t __idle_time_stamp;  /* timestamp when CPU went idle */
 
 /**
  *
- * @brief Power save idle routine for IA-32
+ * @brief Power save idle routine
  *
  * This function will be called by the kernel idle loop or possibly within
  * an implementation of _sys_power_save_idle in the kernel when the
- * '_sys_power_save_flag' variable is non-zero.  The IA-32 'hlt' instruction
+ * '_sys_power_save_flag' variable is non-zero.  The 'hlt' instruction
  * will be issued causing a low-power consumption sleep mode.
  *
  * @return N/A

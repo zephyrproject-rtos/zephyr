@@ -9,9 +9,6 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_LOAPIC_H_
 #define ZEPHYR_INCLUDE_DRIVERS_LOAPIC_H_
 
-#include <arch/cpu.h>
-#include <arch/x86/msr.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -48,6 +45,9 @@ extern "C" {
 #define LOAPIC_LVT_MASKED 0x00010000   /* mask */
 
 #ifndef _ASMLANGUAGE
+
+#include <arch/cpu.h>
+#include <arch/x86/msr.h>
 
 extern void z_loapic_int_vec_set(unsigned int irq, unsigned int vector);
 extern void z_loapic_irq_enable(unsigned int irq);

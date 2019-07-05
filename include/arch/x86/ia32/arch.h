@@ -236,15 +236,6 @@ typedef struct s_isrList {
 })
 
 
-/**
- * @brief Convert a statically connected IRQ to its interrupt vector number
- *
- * @param irq IRQ number
- */
-extern unsigned char _irq_to_interrupt_vector[];
-#define Z_IRQ_TO_INTERRUPT_VECTOR(irq)                       \
-			((unsigned int) _irq_to_interrupt_vector[irq])
-
 #ifdef CONFIG_SYS_POWER_MANAGEMENT
 extern void z_arch_irq_direct_pm(void);
 #define Z_ARCH_ISR_DIRECT_PM() z_arch_irq_direct_pm()

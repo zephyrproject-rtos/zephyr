@@ -31,7 +31,9 @@
 #define IV_ALIGNMENT_CHECK 17
 #define IV_MACHINE_CHECK 18
 #define IV_SIMD_FP 19
-#define IV_INTEL_RESERVED_END 31
+
+#define IV_IRQS 32		/* start of vectors available for IRQs */
+#define IV_NR_VECTORS 256	/* total number of vectors */
 
 /*
  * EFLAGS/RFLAGS definitions. (RFLAGS is just zero-extended EFLAGS.)
