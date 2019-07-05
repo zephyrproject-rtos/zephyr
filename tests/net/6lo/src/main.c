@@ -164,6 +164,56 @@ static struct net_icmpv6_nd_opt_6co ctx2 = {
 #define udp_src_port_16bit 0xff11
 #define udp_dst_port_16bit 0xff22
 
+/* Inlinded data size */
+#define TF_00 4
+#define TF_01 3
+#define TF_10 1
+#define TF_11 0
+
+#define CID_0 0
+#define CID_1 1
+#define NHC_0 1
+#define NHC_1 0
+
+#define HLIM_1 0
+#define HLOM_0 1
+
+#define SAC0_SAM00     16
+#define SAC0_SAM01     8
+#define SAC0_SAM10     2
+#define SAC0_SAM11     0
+#define SAC1_SAM00     0
+#define SAC1_SAM01     8
+#define SAC1_SAM10     2
+#define SAC1_SAM11     0
+
+#define M0_DAC0_DAM00  16
+#define M0_DAC0_DAM01  8
+#define M0_DAC0_DAM10  2
+#define M0_DAC0_DAM11  0
+#define M0_DAC1_DAM01  8
+#define M0_DAC1_DAM10  2
+#define M0_DAC1_DAM11  0
+#define M1_DAC0_DAM00  16
+#define M1_DAC0_DAM01  6
+#define M1_DAC0_DAM10  4
+#define M1_DAC0_DAM11  1
+#define M1_DAC1_DAM00  6
+
+#define UDP_CHKSUM_0   2
+#define UDP_CHKSUM_1   0
+
+#define UDP_P00        4
+#define UDP_P01        3
+#define UDP_P10        3
+#define UDP_P11        1
+
+
+#define IPHC_SIZE      2
+#define NHC_SIZE       1
+
+#define IPV6_DISPATCH_DIFF -1
+
 static const char user_data[] =
 		"0123456789012345678901234567890123456789"
 		"0123456789012345678901234567890123456789"
@@ -185,6 +235,8 @@ struct net_6lo_data {
 		struct net_udp_hdr udp;
 		struct net_icmp_hdr icmp;
 	} nh;
+
+	int hdr_diff;
 
 	bool nh_udp;
 	bool nh_icmp;
@@ -472,8 +524,8 @@ static struct net_pkt *create_pkt(struct net_6lo_data *data)
 		copy = remaining > bytes ? bytes : remaining;
 		memcpy(net_buf_add(frag, copy), &user_data[pos], copy);
 
-		pos += bytes;
-		remaining -= bytes;
+		pos += copy;
+		remaining -= copy;
 
 		if (net_buf_tailroom(frag) - (bytes - copy)) {
 			net_pkt_unref(pkt);
@@ -503,6 +555,9 @@ static struct net_6lo_data test_data_1 = {
 	.nh.udp.dst_port = htons(udp_dst_port_4bit),
 	.nh.udp.len = 0x00,
 	.nh.udp.chksum = 0x00,
+	.hdr_diff = NET_IPV6UDPH_LEN - IPHC_SIZE - NHC_SIZE -
+		    (TF_11 + NHC_1 + CID_0 + SAC0_SAM00 + M0_DAC0_DAM00) -
+		    UDP_CHKSUM_0 - UDP_P11,
 	.nh_udp = true,
 	.nh_icmp = false,
 	.small = true,
@@ -522,6 +577,9 @@ static struct net_6lo_data test_data_2 = {
 	.nh.udp.dst_port = htons(udp_dst_port_8bit),
 	.nh.udp.len = 0x00,
 	.nh.udp.chksum = 0x00,
+	.hdr_diff = NET_IPV6UDPH_LEN - IPHC_SIZE - NHC_SIZE -
+		    (TF_01 + NHC_1 + CID_0 + SAC0_SAM01 + M0_DAC0_DAM01) -
+		    UDP_CHKSUM_0 - UDP_P10,
 	.nh_udp = true,
 	.nh_icmp = false,
 	.small = false,
@@ -541,6 +599,9 @@ static struct net_6lo_data test_data_3 = {
 	.nh.udp.dst_port = htons(udp_dst_port_8bit_y),
 	.nh.udp.len = 0x00,
 	.nh.udp.chksum = 0x00,
+	.hdr_diff = NET_IPV6UDPH_LEN - IPHC_SIZE - NHC_SIZE -
+		    (TF_01 + NHC_1 + CID_0 + SAC0_SAM10 + M0_DAC0_DAM10) -
+		    UDP_CHKSUM_0 - UDP_P01,
 	.nh_udp = true,
 	.nh_icmp = false,
 	.small = true,
@@ -560,6 +621,9 @@ static struct net_6lo_data test_data_4 = {
 	.nh.udp.dst_port = htons(udp_dst_port_16bit),
 	.nh.udp.len = 0x00,
 	.nh.udp.chksum = 0x00,
+	.hdr_diff = NET_IPV6UDPH_LEN - IPHC_SIZE - NHC_SIZE -
+		    (TF_10 + NHC_1 + CID_0 + SAC0_SAM00 + M1_DAC0_DAM00) -
+		    UDP_CHKSUM_0 - UDP_P00,
 	.nh_udp = true,
 	.nh_icmp = false,
 	.small = false,
@@ -579,6 +643,9 @@ static struct net_6lo_data test_data_5 = {
 	.nh.udp.dst_port = htons(udp_dst_port_16bit),
 	.nh.udp.len = 0x00,
 	.nh.udp.chksum = 0x00,
+	.hdr_diff = NET_IPV6UDPH_LEN - IPHC_SIZE - NHC_SIZE -
+		    (TF_00 + NHC_1 + CID_0 + SAC0_SAM01 + M1_DAC0_DAM01) -
+		    UDP_CHKSUM_0 - UDP_P00,
 	.nh_udp = true,
 	.nh_icmp = false,
 	.small = true,
@@ -598,6 +665,9 @@ static struct net_6lo_data test_data_6 = {
 	.nh.udp.dst_port = htons(udp_dst_port_8bit),
 	.nh.udp.len = 0x00,
 	.nh.udp.chksum = 0x00,
+	.hdr_diff = NET_IPV6UDPH_LEN - IPHC_SIZE - NHC_SIZE -
+		    (TF_11 + NHC_1 + CID_0 + SAC0_SAM10 + M1_DAC0_DAM10) -
+		    UDP_CHKSUM_0 - UDP_P00,
 	.nh_udp = true,
 	.nh_icmp = false,
 	.small = true,
@@ -613,6 +683,8 @@ static struct net_6lo_data test_data_7 = {
 	.ipv6.hop_limit = 0xff,
 	.ipv6.src = src_sam10,
 	.ipv6.dst = dst_m1_dam10,
+	.hdr_diff = NET_IPV6H_LEN - IPHC_SIZE -
+		    (TF_11 + NHC_0 + CID_0 + SAC0_SAM10 + M1_DAC0_DAM10),
 	.nh_udp = false,
 	.nh_icmp = false,
 	.small = true,
@@ -631,6 +703,8 @@ static struct net_6lo_data test_data_8 = {
 	.nh.icmp.type = NET_ICMPV6_ECHO_REQUEST,
 	.nh.icmp.code = 0,
 	.nh.icmp.chksum = 0,
+	.hdr_diff = NET_IPV6H_LEN - IPHC_SIZE -
+		    (TF_11 + NHC_0 + CID_0 + SAC0_SAM10 + M1_DAC0_DAM10),
 	.nh_udp = false,
 	.nh_icmp = true,
 	.small = true,
@@ -650,6 +724,7 @@ static struct net_6lo_data test_data_9 = {
 	.nh.udp.dst_port = htons(udp_dst_port_16bit),
 	.nh.udp.len = 0x00,
 	.nh.udp.chksum = 0x00,
+	.hdr_diff = IPV6_DISPATCH_DIFF,
 	.nh_udp = true,
 	.nh_icmp = false,
 	.small = true,
@@ -669,6 +744,7 @@ static struct net_6lo_data test_data_10 = {
 	.nh.udp.dst_port = htons(udp_dst_port_16bit),
 	.nh.udp.len = 0x00,
 	.nh.udp.chksum = 0x00,
+	.hdr_diff = IPV6_DISPATCH_DIFF,
 	.nh_udp = false,
 	.nh_icmp = false,
 	.small = false,
@@ -684,6 +760,7 @@ static struct net_6lo_data test_data_11 = {
 	.ipv6.hop_limit = 0xff,
 	.ipv6.src = src_sac1_sam00,
 	.ipv6.dst = dst_m1_dam00,
+	.hdr_diff = IPV6_DISPATCH_DIFF,
 	.nh_udp = false,
 	.nh_icmp = false,
 	.small = false,
@@ -702,6 +779,7 @@ static struct net_6lo_data test_data_12 = {
 	.nh.icmp.type = NET_ICMPV6_ECHO_REQUEST,
 	.nh.icmp.code = 0,
 	.nh.icmp.chksum = 0,
+	.hdr_diff = IPV6_DISPATCH_DIFF,
 	.nh_udp = false,
 	.nh_icmp = true,
 	.small = false,
@@ -721,6 +799,9 @@ static struct net_6lo_data test_data_13 = {
 	.nh.udp.dst_port = htons(udp_dst_port_8bit_y),
 	.nh.udp.len = 0x00,
 	.nh.udp.chksum = 0x00,
+	.hdr_diff = NET_IPV6UDPH_LEN - IPHC_SIZE - NHC_SIZE -
+		    (TF_01 + NHC_1 + CID_0 + SAC0_SAM11 + M0_DAC0_DAM11) -
+		    UDP_CHKSUM_0 - UDP_P01,
 	.nh_udp = true,
 	.nh_icmp = false,
 	.small = true,
@@ -736,6 +817,8 @@ static struct net_6lo_data test_data_14 = {
 	.ipv6.hop_limit = 0xff,
 	.ipv6.src = src_sac1_sam00,
 	.ipv6.dst = dst_m1_dam11,
+	.hdr_diff = NET_IPV6H_LEN - IPHC_SIZE  -
+		    (TF_11 + NHC_0 + CID_0 + SAC1_SAM00 + M1_DAC0_DAM11),
 	.nh_udp = false,
 	.nh_icmp = false,
 	.small = true,
@@ -756,6 +839,9 @@ static struct net_6lo_data test_data_15 = {
 	.nh.udp.dst_port = htons(udp_dst_port_8bit),
 	.nh.udp.len = 0x00,
 	.nh.udp.chksum = 0x00,
+	.hdr_diff = NET_IPV6UDPH_LEN - IPHC_SIZE - NHC_SIZE -
+		    (TF_01 + NHC_1 + CID_1 + SAC1_SAM01 + M0_DAC1_DAM01) -
+		    UDP_CHKSUM_0 - UDP_P10,
 	.nh_udp = true,
 	.nh_icmp = false,
 	.small = false,
@@ -775,6 +861,9 @@ static struct net_6lo_data test_data_16 = {
 	.nh.udp.dst_port = htons(udp_dst_port_8bit_y),
 	.nh.udp.len = 0x00,
 	.nh.udp.chksum = 0x00,
+	.hdr_diff = NET_IPV6UDPH_LEN - IPHC_SIZE - NHC_SIZE -
+		    (TF_01 + NHC_1 + CID_1 + SAC1_SAM10 + M0_DAC1_DAM10) -
+		    UDP_CHKSUM_0 - UDP_P01,
 	.nh_udp = true,
 	.nh_icmp = false,
 	.small = true,
@@ -794,6 +883,9 @@ static struct net_6lo_data test_data_17 = {
 	.nh.udp.dst_port = htons(udp_dst_port_8bit_y),
 	.nh.udp.len = 0x00,
 	.nh.udp.chksum = 0x00,
+	.hdr_diff = NET_IPV6UDPH_LEN - IPHC_SIZE - NHC_SIZE -
+		    (TF_01 + NHC_1 + CID_1 + SAC1_SAM11 + M0_DAC1_DAM11) -
+		    UDP_CHKSUM_0 - UDP_P10,
 	.nh_udp = true,
 	.nh_icmp = false,
 	.small = true,
@@ -813,6 +905,9 @@ static struct net_6lo_data test_data_18 = {
 	.nh.udp.dst_port = htons(udp_dst_port_8bit),
 	.nh.udp.len = 0x00,
 	.nh.udp.chksum = 0x00,
+	.hdr_diff = NET_IPV6UDPH_LEN - IPHC_SIZE - NHC_SIZE -
+		    (TF_01 + NHC_1 + CID_1 + SAC0_SAM01 + M0_DAC1_DAM01) -
+		    UDP_CHKSUM_0 - UDP_P10,
 	.nh_udp = true,
 	.nh_icmp = false,
 	.small = false,
@@ -832,6 +927,9 @@ static struct net_6lo_data test_data_19 = {
 	.nh.udp.dst_port = htons(udp_dst_port_8bit),
 	.nh.udp.len = 0x00,
 	.nh.udp.chksum = 0x00,
+	.hdr_diff = NET_IPV6UDPH_LEN - IPHC_SIZE - NHC_SIZE -
+		    (TF_01 + NHC_1 + CID_1 + SAC1_SAM01 + M0_DAC0_DAM01) -
+		    UDP_CHKSUM_0 - UDP_P10,
 	.nh_udp = true,
 	.nh_icmp = false,
 	.small = false,
@@ -851,6 +949,9 @@ static struct net_6lo_data test_data_20 = {
 	.nh.udp.dst_port = htons(udp_dst_port_16bit),
 	.nh.udp.len = 0x00,
 	.nh.udp.chksum = 0x00,
+	.hdr_diff = NET_IPV6UDPH_LEN - IPHC_SIZE - NHC_SIZE -
+		    (TF_00 + NHC_1 + CID_1 + SAC1_SAM01 + M1_DAC0_DAM00) -
+		    UDP_CHKSUM_0 - UDP_P00,
 	.nh_udp = true,
 	.nh_icmp = false,
 	.small = true,
@@ -869,6 +970,9 @@ static struct net_6lo_data test_data_21 = {
 	.nh.udp.dst_port = htons(udp_dst_port_16bit),
 	.nh.udp.len = 0x00,
 	.nh.udp.chksum = 0x00,
+	.hdr_diff = NET_IPV6UDPH_LEN - IPHC_SIZE - NHC_SIZE -
+		    (TF_00 + NHC_1 + CID_1 + SAC1_SAM01 + M1_DAC0_DAM01) -
+		    UDP_CHKSUM_0 - UDP_P00,
 	.nh_udp = true,
 	.nh_icmp = false,
 	.small = true,
@@ -888,6 +992,9 @@ static struct net_6lo_data test_data_22 = {
 	.nh.udp.dst_port = htons(udp_dst_port_8bit),
 	.nh.udp.len = 0x00,
 	.nh.udp.chksum = 0x00,
+	.hdr_diff = NET_IPV6UDPH_LEN - IPHC_SIZE - NHC_SIZE -
+		    (TF_11 + NHC_1 + CID_1 + SAC1_SAM10 + M1_DAC0_DAM10) -
+		    UDP_CHKSUM_0 - UDP_P00,
 	.nh_udp = true,
 	.nh_icmp = false,
 	.small = true,
@@ -903,6 +1010,8 @@ static struct net_6lo_data test_data_23 = {
 	.ipv6.hop_limit = 0xff,
 	.ipv6.src = src_sac1_sam11,
 	.ipv6.dst = dst_m1_dam10,
+	.hdr_diff = NET_IPV6H_LEN - IPHC_SIZE -
+		    (TF_11 + NHC_0 + CID_1 + SAC0_SAM11 + M1_DAC0_DAM10),
 	.nh_udp = false,
 	.nh_icmp = false,
 	.small = true,
@@ -922,6 +1031,9 @@ static struct net_6lo_data test_data_24 = {
 	.nh.udp.dst_port = htons(udp_dst_port_8bit),
 	.nh.udp.len = 0x00,
 	.nh.udp.chksum = 0x00,
+	.hdr_diff = NET_IPV6UDPH_LEN - IPHC_SIZE - NHC_SIZE -
+		    (TF_01 + NHC_1 + CID_1 + SAC0_SAM00 + M0_DAC1_DAM01) -
+		    UDP_CHKSUM_0 - UDP_P10,
 	.nh_udp = true,
 	.nh_icmp = false,
 	.small = false,
@@ -941,6 +1053,9 @@ static struct net_6lo_data test_data_25 = {
 	.nh.udp.dst_port = htons(udp_dst_port_8bit),
 	.nh.udp.len = 0x00,
 	.nh.udp.chksum = 0x00,
+	.hdr_diff = NET_IPV6UDPH_LEN - IPHC_SIZE - NHC_SIZE -
+		    (TF_11 + NHC_1 + CID_0 + SAC1_SAM00 + M1_DAC0_DAM00) -
+		    UDP_CHKSUM_0 - UDP_P10,
 	.nh_udp = true,
 	.nh_icmp = false,
 	.small = true,
@@ -952,6 +1067,7 @@ static struct net_6lo_data test_data_25 = {
 static void test_6lo(struct net_6lo_data *data)
 {
 	struct net_pkt *pkt;
+	int diff;
 
 	pkt = create_pkt(data);
 	zassert_not_null(pkt, "failed to create buffer");
@@ -971,6 +1087,9 @@ static void test_6lo(struct net_6lo_data *data)
 		 net_pkt_get_len(pkt));
 	net_pkt_hexdump(pkt, "after-compression");
 #endif
+
+	diff = net_6lo_uncompress_hdr_diff(pkt);
+	zassert_true(diff == data->hdr_diff, "unexpected HDR diff");
 
 	zassert_true(net_6lo_uncompress(pkt),
 		     "uncompression failed");
