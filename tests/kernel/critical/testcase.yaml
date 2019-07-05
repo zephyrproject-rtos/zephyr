@@ -4,6 +4,11 @@ common:
 tests:
   kernel.common:
     platform_exclude: nsim_sem_mpu_stack_guard nsim_em_mpu_stack_guard
+    filter: not CONFIG_WDT_SAM
+  kernel.common.sam:
+    filter: CONFIG_WDT_SAM
+    extra_configs:
+     - CONFIG_WDT_DISABLE_AT_BOOT=y
   kernel.common.nsim:
     platform_whitelist: nsim_sem_mpu_stack_guard nsim_em_mpu_stack_guard
     extra_configs:
