@@ -7,12 +7,21 @@
 #define ZEPHYR_ARCH_X86_INCLUDE_INTEL64_KERNEL_ARCH_DATA_H_
 
 /*
+ * A flag for k_thread.thread_state to tell __resume that the thread
+ * voluntarily switched itself out, so only a portion of the register
+ * state needs to be restored. See kernel_arch_thread.h and locore.S.
+ */
+
+#define _THREAD_SWAPPED BIT(7)
+
+/*
  * GDT selectors - these must agree with the GDT layout in locore.S.
  */
 
 #define X86_KERNEL_CS_32	0x08	/* 32-bit kernel code */
 #define X86_KERNEL_DS_32	0x10	/* 32-bit kernel data */
 #define X86_KERNEL_CS_64	0x18	/* 64-bit kernel code */
-#define X86_KERNEL_DS_64	0x00	/* 64-bit kernel data (null!) */
+#define X86_KERNEL_DS_64	0x20	/* 64-bit kernel data */
+#define X86_KERNEL_TSS		0x28	/* 64-bit task state segment */
 
 #endif /* ZEPHYR_ARCH_X86_INCLUDE_INTEL64_KERNEL_ARCH_DATA_H_ */

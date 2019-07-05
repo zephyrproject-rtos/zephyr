@@ -9,6 +9,7 @@ zephyr_compile_options_ifdef(CONFIG_COVERAGE_GCOV
   -fno-inline
   )
 
+zephyr_library_sources(cpuhalt.c)
 zephyr_library_sources_if_kconfig(pcie.c)
 zephyr_library_sources_if_kconfig(reboot_rst_cnt.c)
 zephyr_library_sources_ifdef(CONFIG_X86_MULTIBOOT multiboot.c)

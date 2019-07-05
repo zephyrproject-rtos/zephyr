@@ -8,17 +8,15 @@
 
 #ifndef _ASMLANGUAGE
 
-#define z_is_in_isr()	(0)
-
 static ALWAYS_INLINE void
 z_set_thread_return_value(struct k_thread *thread, unsigned int value)
 {
-	/* nothing */ ;
+	thread->callee_saved.rax = value;
 }
 
 static inline void kernel_arch_init(void)
 {
-	/* nothing */ ;
+	/* nothing */;
 }
 
 #endif /* _ASMLANGUAGE */

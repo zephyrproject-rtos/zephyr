@@ -98,8 +98,6 @@ void z_x86_enable_paging(void);
 }
 #endif
 
-#define z_is_in_isr() (_kernel.nested != 0U)
-
 #endif /* _ASMLANGUAGE */
 
 #endif /* ZEPHYR_ARCH_X86_INCLUDE_IA32_KERNEL_ARCH_FUNC_H_ */
