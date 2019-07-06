@@ -409,7 +409,6 @@ html_redirect_pages = [
 		('boards/riscv32/qemu_riscv32/doc/board', 'boards/riscv32/qemu_riscv32/doc/index'),
 		('boards/riscv32/zedboard_pulpino/doc/zedboard_pulpino', 'boards/riscv32/zedboard_pulpino/doc/index'),
 		('boards/x86/arduino_101/doc/board', 'boards/x86/arduino_101/doc/index'),
-		('boards/x86/galileo/doc/galileo', 'boards/x86/galileo/doc/index'),
 		('boards/x86/minnowboard/doc/minnowboard', 'boards/x86/minnowboard/doc/index'),
 		('boards/x86/qemu_x86/doc/board', 'boards/x86/qemu_x86/doc/index'),
 		('boards/x86/tinytile/doc/board', 'boards/x86/tinytile/doc/index'),

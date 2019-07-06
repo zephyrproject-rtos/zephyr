@@ -49,7 +49,6 @@
 /arch/x86/core/multiboot.c                @gnuless
 /soc/x86/                                 @andrewboie @gnuless
 /soc/x86/intel_quark/quark_se/            @nashif
-/soc/x86/intel_quark/quark_x1000/         @nashif
 /arch/xtensa/                             @andrewboie @dcpleung @andyross
 /soc/xtensa/                              @andrewboie @dcpleung @andyross
 /boards/arc/                              @vonhust @ruuddw
