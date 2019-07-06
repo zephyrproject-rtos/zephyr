@@ -215,6 +215,99 @@ SECTION_FUNC(text, _isr_wrapper)
 	add %sp, __STD_STACK_FRAME_SIZEOF, %sp
 
 #ifdef CONFIG_MULTITHREADING
+#ifdef CONFIG_PREEMPT_ENABLED
+
+	/* * Do we have a thread to switch to? */
+	/*   _kernel.ready_q.cache have the next thread to run. */
+	/*   If it matches to the current thread, we don't switch. */
+	/*   If it differ, switch to the new thread. */
+	/*   We have _kernel in %l5, _kernel.current in %g7. */
+	/*   Store the new thread in %g6.  This allows us to keep using it */
+	/*   after the register window is shifted by "RESTORE". */
+	ld [%l5 + _kernel_offset_to_ready_q_cache], %g6
+	cmp %g6, %g7
+
+	/*   If the next thread is the same as the current, skip saving */
+	/*   registers and jump to where we restore caller-saved register */
+	be .Lskip_callee_saved_and_restore_caller_saved
+	nop
+
+	/* * Prepare switching to the new thread */
+	/*   We decided to switch to the new thread. */
+
+	/* ** First, switch _kernel.current to the new thread */
+	/*    Move current %g7 -> old %5 */
+	/*    Move new %g6 -> current %g7 */
+	/*    Store current on _kernel.current */
+	mov %g7, %g5 /* Keep old thread in %g5 */
+	mov %g6, %g7 /* Move new thread in %g7 */
+	st %g7, [%l5 + _kernel_offset_to_current]
+
+	/* ** Second, shift window register */
+	/*    In order to access in and local registers, */
+	/*    we shift the window register. */
+	restore
+
+	/* * Save callee-saved in and local registers */
+	/*   We have to save the callee-saved in and local */
+	/*   registers we haven't saved. */
+	/*   Save callee-saved registers on the k_thread.callee_saved. */
+	/*   We have _kernel.current in %g5 */
+	st %l0, [%g5 + _thread_offset_to_callee_saved_reg(l0)]
+	st %l1, [%g5 + _thread_offset_to_callee_saved_reg(l1)]
+	st %l2, [%g5 + _thread_offset_to_callee_saved_reg(l2)]
+	st %l3, [%g5 + _thread_offset_to_callee_saved_reg(l3)]
+	st %l4, [%g5 + _thread_offset_to_callee_saved_reg(l4)]
+	st %l5, [%g5 + _thread_offset_to_callee_saved_reg(l5)]
+	st %l6, [%g5 + _thread_offset_to_callee_saved_reg(l6)]
+	st %l7, [%g5 + _thread_offset_to_callee_saved_reg(l7)]
+
+	st %i0, [%g5 + _thread_offset_to_callee_saved_reg(i0)]
+	st %i1, [%g5 + _thread_offset_to_callee_saved_reg(i1)]
+	st %i2, [%g5 + _thread_offset_to_callee_saved_reg(i2)]
+	st %i3, [%g5 + _thread_offset_to_callee_saved_reg(i3)]
+	st %i4, [%g5 + _thread_offset_to_callee_saved_reg(i4)]
+	st %i5, [%g5 + _thread_offset_to_callee_saved_reg(i5)]
+	st %i6, [%g5 + _thread_offset_to_callee_saved_reg(i6)]
+	st %i7, [%g5 + _thread_offset_to_callee_saved_reg(i7)]
+
+	/*******************************************************
+	 * At this point, the old thread context is all saved. *
+	 *******************************************************/
+
+	_fill_all_registers_except_o0_g7_for_debugging
+
+	/* 5) Load the new thread's context */
+	/*    We have new thread in %g7 */
+	/* 5-3) Restore callee-saved registers from the k_thread */
+	ld [%g7 + _thread_offset_to_callee_saved_reg(i0)], %i0
+	ld [%g7 + _thread_offset_to_callee_saved_reg(i1)], %i1
+	ld [%g7 + _thread_offset_to_callee_saved_reg(i2)], %i2
+	ld [%g7 + _thread_offset_to_callee_saved_reg(i3)], %i3
+	ld [%g7 + _thread_offset_to_callee_saved_reg(i4)], %i4
+	ld [%g7 + _thread_offset_to_callee_saved_reg(i5)], %i5
+	ld [%g7 + _thread_offset_to_callee_saved_reg(i6)], %i6
+	ld [%g7 + _thread_offset_to_callee_saved_reg(i7)], %i7
+
+	ld [%g7 + _thread_offset_to_callee_saved_reg(l0)], %l0
+	ld [%g7 + _thread_offset_to_callee_saved_reg(l1)], %l1
+	ld [%g7 + _thread_offset_to_callee_saved_reg(l2)], %l2
+	ld [%g7 + _thread_offset_to_callee_saved_reg(l3)], %l3
+	ld [%g7 + _thread_offset_to_callee_saved_reg(l4)], %l4
+	ld [%g7 + _thread_offset_to_callee_saved_reg(l5)], %l5
+	ld [%g7 + _thread_offset_to_callee_saved_reg(l6)], %l6
+	ld [%g7 + _thread_offset_to_callee_saved_reg(l7)], %l7
+
+	/* Now we have in and local registers ready. */
+	/* Shift window register to save them, */
+	/* so that we can use some registers. */
+
+	save
+	/* We have local and out registers free to use. */
+
+.Lskip_callee_saved_and_restore_caller_saved:
+
+#endif /* CONFIG_PREEMPT_ENABLED */
 
 	/* 5) Switch to the next thread's stack */
 	ld [%g7 + _switch_handle], %sp /* Store %sp on switch_handle */
