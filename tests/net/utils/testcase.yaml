@@ -4,4 +4,4 @@ common:
 tests:
   net.util:
     min_ram: 24
-    tags: net
+    tags: net userspace
