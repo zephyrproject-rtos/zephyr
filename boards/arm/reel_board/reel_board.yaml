@@ -13,5 +13,6 @@ supported:
   - spi
   - gpio
   - usb_device
+  - usb_cdc
   - ble
   - ieee802154
