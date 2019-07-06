@@ -11,5 +11,6 @@ tests:
     extra_configs:
       - CONFIG_USERSPACE=n
   sample.net.sockets.net_mgmt.usermode:
+    tags: userspace
     extra_configs:
       - CONFIG_USERSPACE=y
