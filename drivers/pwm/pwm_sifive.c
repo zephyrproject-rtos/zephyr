@@ -225,12 +225,12 @@ static const struct pwm_driver_api pwm_sifive_api = {
 #define PWM_SIFIVE_INIT(n)	\
 	static struct pwm_sifive_data pwm_sifive_data_##n;	\
 	static const struct pwm_sifive_cfg pwm_sifive_cfg_##n = {	\
-			.base = DT_SIFIVE_PWM0_##n##_BASE_ADDRESS,	\
-			.f_sys = DT_SIFIVE_PWM0_##n##_CLOCK_FREQUENCY,  \
-			.cmpwidth = DT_SIFIVE_PWM0_##n##_SIFIVE_COMPARE_WIDTH, \
+			.base = DT_INST_##n##_SIFIVE_PWM0_BASE_ADDRESS,	\
+			.f_sys = DT_INST_##n##_SIFIVE_PWM0_CLOCK_FREQUENCY,  \
+			.cmpwidth = DT_INST_##n##_SIFIVE_PWM0_SIFIVE_COMPARE_WIDTH, \
 		};	\
 	DEVICE_AND_API_INIT(pwm_##n,	\
-			    DT_SIFIVE_PWM0_##n##_LABEL,	\
+			    DT_INST_##n##_SIFIVE_PWM0_LABEL,	\
 			    pwm_sifive_init,	\
 			    &pwm_sifive_data_##n,	\
 			    &pwm_sifive_cfg_##n,	\
