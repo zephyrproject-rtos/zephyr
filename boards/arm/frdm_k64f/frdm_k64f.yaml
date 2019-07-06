@@ -17,5 +17,6 @@ supported:
   - watchdog
   - hwinfo
   - can
+  - pwm
 testing:
   default: true
