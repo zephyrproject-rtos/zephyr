@@ -94,7 +94,7 @@ get_cmake_property(cache_variable_names CACHE_VARIABLES)
 foreach (name ${cache_variable_names})
   if("${name}" MATCHES "^CONFIG_")
     # When a cache variable starts with 'CONFIG_', it is assumed to be
-    # a CLI Kconfig symbol assignment.
+    # a Kconfig symbol assignment from the CMake command line.
     set(EXTRA_KCONFIG_OPTIONS
       "${EXTRA_KCONFIG_OPTIONS}\n${name}=${${name}}"
       )
