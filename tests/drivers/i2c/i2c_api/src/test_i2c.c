@@ -16,10 +16,14 @@
 #include <zephyr.h>
 #include <ztest.h>
 
-#ifdef CONFIG_ARC
-#define I2C_DEV_NAME DT_I2C_SS_0_NAME
+#if defined(DT_ALIAS_I2C_0_LABEL)
+#define I2C_DEV_NAME	DT_ALIAS_I2C_0_LABEL
+#elif defined(DT_ALIAS_I2C_1_LABEL)
+#define I2C_DEV_NAME	DT_ALIAS_I2C_1_LABEL
+#elif defined(DT_ALIAS_I2C_2_LABEL)
+#define I2C_DEV_NAME	DT_ALIAS_I2C_2_LABEL
 #else
-#define I2C_DEV_NAME CONFIG_I2C_0_NAME
+#error "Please set the correct I2C device"
 #endif
 
 u32_t i2c_cfg = I2C_SPEED_SET(I2C_SPEED_STANDARD) | I2C_MODE_MASTER;
