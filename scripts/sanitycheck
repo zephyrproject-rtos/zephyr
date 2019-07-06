@@ -1332,7 +1332,8 @@ class MakeGenerator:
 
         if len(ti.test.extra_configs) > 0 or options.coverage:
             args.append("OVERLAY_CONFIG=\"%s %s\"" %(overlays,
-                        os.path.join(ti.outdir, "overlay.conf")))
+                        os.path.join(ti.outdir,
+                                     "sanitycheck", "testcase_extra.conf")))
 
         if ti.test.type == "unit" and options.enable_coverage:
             args.append("COVERAGE=1")
@@ -1883,8 +1884,13 @@ class TestInstance:
         return build_only
 
     def create_overlay(self, platform):
-        file = os.path.join(self.outdir, "overlay.conf")
-        os.makedirs(self.outdir, exist_ok=True)
+        # Create this in a "sanitycheck/" subdirectory otherwise this
+        # will pass this overlay to kconfig.py *twice* and kconfig.cmake
+        # will silently give that second time precedence over any
+        # --extra-args=CONFIG_*
+        subdir = os.path.join(self.outdir, "sanitycheck")
+        os.makedirs(subdir, exist_ok=True)
+        file = os.path.join(subdir, "testcase_extra.conf")
         with open(file, "w") as f:
             content = ""
 
