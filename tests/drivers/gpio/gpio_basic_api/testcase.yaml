@@ -2,6 +2,5 @@ tests:
   peripheral.gpio:
     tags: drivers gpio
     depends_on: gpio
-    # FIXME: code is board specific, it should be generalised
-    platform_whitelist: quark_se_c1000_devboard esp32
     harness: loopback # see documentation
+    filter: DT_ALIAS_GPIO_0_LABEL or DT_ALIAS_GPIO_1_LABEL
