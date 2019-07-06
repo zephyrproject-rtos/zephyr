@@ -34,5 +34,6 @@ struct spi_nor_config {
 #define SPI_NOR_CMD_BE          0xD8    /* Block erase */
 #define SPI_NOR_CMD_CE          0xC7    /* Chip erase */
 #define SPI_NOR_CMD_RDID        0x9F    /* Read JEDEC ID */
+#define SPI_NOR_CMD_MCHP_UNLOCK 0x98    /* Microchip: Global unblock */
 
 #endif /*__SPI_NOR_H__*/

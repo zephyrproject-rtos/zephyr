@@ -322,6 +322,12 @@ static int spi_nor_write_protection_set(struct device *dev, bool write_protect)
 	ret = spi_nor_cmd_write(dev, (write_protect) ?
 	      SPI_NOR_CMD_WRDI : SPI_NOR_CMD_WREN);
 
+#if DT_INST_0_JEDEC_SPI_NOR_JEDEC_ID_0 == 0xbf && DT_INST_0_JEDEC_SPI_NOR_JEDEC_ID_1 == 0x26
+	if (ret == 0 && !write_protect) {
+		ret = spi_nor_cmd_write(dev, SPI_NOR_CMD_MCHP_UNLOCK);
+	}
+#endif
+
 	SYNC_UNLOCK();
 
 	return ret;
