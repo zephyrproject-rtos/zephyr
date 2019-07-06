@@ -25,13 +25,6 @@ BBC micro:bit
 You will need to connect the motor's red wire to external 5V, the black wire to
 ground and the white wire to pad 0 on the edge connector.
 
-Arduino 101
-===========
-
-You will need to connect the motor's red wire to 5V, the black wire to ground
-and the white wire to PWM 0 via the shield.
-
-
 Building and Running
 ********************
 
