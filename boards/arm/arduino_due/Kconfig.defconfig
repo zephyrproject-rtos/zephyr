@@ -26,6 +26,9 @@ config GPIO_ATMEL_SAM3_PORTC
 config GPIO_ATMEL_SAM3_PORTD
 	default y
 
+config GPIO_SAM
+	default n
+
 endif # GPIO
 
 if I2C
