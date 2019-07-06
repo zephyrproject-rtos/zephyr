@@ -32,12 +32,16 @@
 #include <zephyr.h>
 #include <ztest.h>
 
-#ifdef CONFIG_PWM_QMSI_DEV_NAME
-#define PWM_DEV_NAME CONFIG_PWM_QMSI_DEV_NAME
-#elif defined CONFIG_BOARD_COLIBRI_IMX7D_M4
-#define PWM_DEV_NAME PWM_1_LABEL
-#elif defined CONFIG_BOARD_SAM_E70_XPLAINED
-#define PWM_DEV_NAME DT_INST_0_ATMEL_SAM_PWM_LABEL
+#if defined(DT_ALIAS_PWM_0_LABEL)
+#define PWM_DEV_NAME DT_ALIAS_PWM_0_LABEL
+#elif defined(DT_ALIAS_PWM_1_LABEL)
+#define PWM_DEV_NAME DT_ALIAS_PWM_1_LABEL
+#elif defined(DT_ALIAS_PWM_2_LABEL)
+#define PWM_DEV_NAME DT_ALIAS_PWM_2_LABEL
+#elif defined(DT_ALIAS_PWM_3_LABEL)
+#define PWM_DEV_NAME DT_ALIAS_PWM_3_LABEL
+#else
+#error "Define a PWM device"
 #endif
 
 #ifdef CONFIG_BOARD_COLIBRI_IMX7D_M4
