@@ -4,53 +4,25 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @addtogroup t_pinmux_basic
- * @{
- * @defgroup t_pinmux_gpio test_pinmux_gpio
- * @brief TestPurpose: verify PINMUX works on GPIO port
- * @details
- * - Test Steps (Quark_se_c1000_devboard)
- *   -# Connect pin_53(GPIO_19) and pin_50(GPIO_16).
- *   -# Configure GPIO_19 as output pin and set init  LOW.
- *   -# Configure GPIO_16 as input pin and set LEVEL HIGH interrupt.
- *   -# Set pin_50 to PINMUX_FUNC_A and test GPIO functionality.
- *   -# Set pin_50 to PINMUX_FUNC_B and test GPIO functionality.
- * - Expected Results
- *   -# When set pin_50 to PINMUX_FUNC_A, pin_50 works as GPIO and gpio
- *	callback will be triggered.
- *   -# When set pin_50 to PINMUX_FUNC_B, pin_50 works as I2S and gpio
- *	callback will not be triggered.
- * @}
- */
-
 #include <drivers/gpio.h>
 #include <drivers/pinmux.h>
 #include <ztest.h>
 
 #define PINMUX_NAME CONFIG_PINMUX_NAME
 
-#if defined(CONFIG_BOARD_QUARK_SE_C1000_DEVBOARD)
-#define GPIO_DEV_NAME DT_GPIO_QMSI_0_NAME
-#define GPIO_OUT 15 /* GPIO15_I2S_RXD */
-#define GPIO_IN 16 /* GPIO16_I2S_RSCK */
-#define PIN_IN 50 /* GPIO16_I2S_RSCK */
-#elif defined(CONFIG_BOARD_QUARK_SE_C1000_DEVBOARD_SS)
-#define GPIO_DEV_NAME DT_GPIO_QMSI_SS_0_NAME
-#define GPIO_OUT 4  /* GPIO_SS_AIN_12 */
-#define GPIO_IN 5  /* GPIO_SS_AIN_13 */
-#define PIN_IN 13  /* GPIO_SS_AIN_13 */
-#elif defined(CONFIG_BOARD_ARDUINO_101)
-#define GPIO_DEV_NAME DT_GPIO_QMSI_0_NAME
-#define GPIO_OUT 16  /* IO8 */
-#define GPIO_IN 19  /* IO4 */
-#define PIN_IN 53  /* IO4 */
-#elif defined(CONFIG_BOARD_ARDUINO_101_SSS)
-#define GPIO_DEV_NAME DT_GPIO_QMSI_SS_0_NAME
-#define GPIO_OUT 2  /* AD0 */
-#define GPIO_IN 3  /* AD1 */
-#define PIN_IN 11  /* AD1 */
+#if defined(DT_ALIAS_GPIO_0_LABEL)
+#define GPIO_DEV_NAME DT_ALIAS_GPIO_0_LABEL
+#elif defined(DT_ALIAS_GPIO_1_LABEL)
+#define GPIO_DEV_NAME DT_ALIAS_GPIO_1_LABEL
+#elif defined(DT_ALIAS_GPIO_3_LABEL)
+#define GPIO_DEV_NAME DT_ALIAS_GPIO_3_LABEL
+#else
+#error Unsupported board
 #endif
+
+#define GPIO_OUT 4
+#define GPIO_IN 5
+#define PIN_IN 3
 
 #define MAX_INT_CNT 10
 
