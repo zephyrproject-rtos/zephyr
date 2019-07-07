@@ -1,6 +1,7 @@
 tests:
   peripheral.pinmux:
-    platform_whitelist: quark_se_c1000_devboard
     tags: drivers
     harness: loopback
-    depends_on: pinmux
+    filter: DT_ALIAS_GPIO_0_LABEL or DT_ALIAS_GPIO_1_LABEL
+    depends_on: gpio
+
