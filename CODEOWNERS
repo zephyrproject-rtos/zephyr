@@ -188,7 +188,7 @@
 /dts/bindings/*/nordic*                   @anangl
 /dts/bindings/*/nxp*                      @MaureenHelm
 /dts/bindings/*/openisa*                  @MaureenHelm
-/dts/bindings/*/st*                       @erwango
+/dts/bindings/*/st,*                      @erwango
 /dts/bindings/sensor/ams*                 @alexanderwachter
 /dts/bindings/*/sifive*                   @mateusz-holenko @kgugala @pgielda @nategraff-sifive
 /dts/bindings/*/litex*                    @mateusz-holenko @kgugala @pgielda
@@ -197,7 +197,7 @@
 /ext/hal/atmel/asf/sam/include/same70*/   @aurel32
 /ext/hal/atmel/asf/sam0/include/samr21/   @benpicco
 /dts/bindings/sensor/*bme680*             @BoschSensortec
-/dts/bindings/sensor/st*                  @avisconti
+/dts/bindings/sensor/st,*                 @avisconti
 /ext/hal/cmsis/                           @MaureenHelm @galak
 /ext/hal/microchip/                       @franciscomunoz @albertofloyd @scottwcpg
 /ext/hal/nordic/                          @carlescufi @anangl
