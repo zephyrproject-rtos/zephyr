@@ -241,12 +241,14 @@ struct connection {
 	struct {
 		u8_t  req;
 		u8_t  ack;
-		u8_t  state:2;
-#define LLCP_LENGTH_STATE_REQ        0
-#define LLCP_LENGTH_STATE_ACK_WAIT   1
-#define LLCP_LENGTH_STATE_RSP_WAIT   2
-#define LLCP_LENGTH_STATE_RESIZE     3
-		u8_t  pause_tx:1;
+		u8_t  state:3;
+#define LLCP_LENGTH_STATE_REQ                 0
+#define LLCP_LENGTH_STATE_REQ_ACK_WAIT        1
+#define LLCP_LENGTH_STATE_RSP_WAIT            2
+#define LLCP_LENGTH_STATE_RSP_ACK_WAIT        3
+#define LLCP_LENGTH_STATE_RESIZE              4
+#define LLCP_LENGTH_STATE_RESIZE_RSP          5
+#define LLCP_LENGTH_STATE_RESIZE_RSP_ACK_WAIT 6
 		u16_t rx_octets;
 		u16_t tx_octets;
 #if defined(CONFIG_BT_CTLR_PHY)
