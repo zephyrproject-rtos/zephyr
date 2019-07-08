@@ -109,7 +109,7 @@ static int transfer_request(struct coap_block_context *ctx,
 	ret = coap_packet_append_option(&msg->cpkt, COAP_OPTION_URI_PATH,
 					cursor, strlen(cursor));
 	if (ret < 0) {
-		LOG_ERR("Error adding URI_PATH '%s'", cursor);
+		LOG_ERR("Error adding URI_PATH '%s'", log_strdup(cursor));
 		goto cleanup;
 	}
 #else
@@ -117,7 +117,7 @@ static int transfer_request(struct coap_block_context *ctx,
 	ret = http_parser_parse_url(firmware_uri, strlen(firmware_uri), 0,
 				    &parser);
 	if (ret < 0) {
-		LOG_ERR("Invalid firmware url: %s", firmware_uri);
+		LOG_ERR("Invalid firmware url: %s", log_strdup(firmware_uri));
 		ret = -ENOTSUP;
 		goto cleanup;
 	}
@@ -167,7 +167,8 @@ static int transfer_request(struct coap_block_context *ctx,
 	ret = coap_packet_append_option(&msg->cpkt, COAP_OPTION_PROXY_URI,
 					firmware_uri, strlen(firmware_uri));
 	if (ret < 0) {
-		LOG_ERR("Error adding PROXY_URI '%s'", firmware_uri);
+		LOG_ERR("Error adding PROXY_URI '%s'",
+			log_strdup(firmware_uri));
 		goto cleanup;
 	}
 #else
@@ -396,7 +397,7 @@ static void firmware_transfer(struct k_work *work)
 #if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_SUPPORT)
 	server_addr = CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_ADDR;
 	if (strlen(server_addr) >= URI_LEN) {
-		LOG_ERR("Invalid Proxy URI: %s", server_addr);
+		LOG_ERR("Invalid Proxy URI: %s", log_strdup(server_addr));
 		ret = -ENOTSUP;
 		goto error;
 	}
@@ -422,7 +423,7 @@ static void firmware_transfer(struct k_work *work)
 		goto error;
 	}
 
-	LOG_INF("Connecting to server %s", firmware_uri);
+	LOG_INF("Connecting to server %s", log_strdup(firmware_uri));
 
 	/* reset block transfer context */
 	coap_block_transfer_init(&firmware_block_ctx,
