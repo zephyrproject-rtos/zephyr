@@ -4096,21 +4096,15 @@ int lwm2m_parse_peerinfo(char *url, struct sockaddr *addr, bool *use_dtls)
 	(void)memset(addr, 0, sizeof(*addr));
 
 	/* try and set IP address directly */
-	ret = -EINVAL;
-
-#if defined(CONFIG_NET_IPV6)
 	addr->sa_family = AF_INET6;
 	ret = net_addr_pton(AF_INET6, url + off,
 			    &((struct sockaddr_in6 *)addr)->sin6_addr);
-#endif /* CONFIG_NET_IPV6 */
-
-#if defined(CONFIG_NET_IPV4)
+	/* Try to parse again using AF_INET */
 	if (ret < 0) {
 		addr->sa_family = AF_INET;
 		ret = net_addr_pton(AF_INET, url + off,
 				    &((struct sockaddr_in *)addr)->sin_addr);
 	}
-#endif /* CONFIG_NET_IPV4 */
 
 	if (ret < 0) {
 #if defined(CONFIG_DNS_RESOLVER)
@@ -4118,8 +4112,10 @@ int lwm2m_parse_peerinfo(char *url, struct sockaddr *addr, bool *use_dtls)
 		hints.ai_family = AF_UNSPEC;
 #elif defined(CONFIG_NET_IPV6)
 		hints.ai_family = AF_INET6;
-#else
+#elif defined(CONFIG_NET_IPV4)
 		hints.ai_family = AF_INET;
+#else
+		hints.ai_family = AF_UNSPEC;
 #endif /* defined(CONFIG_NET_IPV6) && defined(CONFIG_NET_IPV4) */
 		hints.ai_socktype = SOCK_DGRAM;
 		ret = getaddrinfo(url + off, NULL, &hints, &res);
