@@ -46,10 +46,18 @@ class DTDefault(DTDirective):
         else:
             prop_values = reduced[node_path]['props'][prop]
 
-        if prop_type == "string-array" or prop_type == "array":
+        if prop_type == "string-array" or prop_type == "array" or prop_type == "uint8-array":
             if type(prop_values) is not list: prop_values = [ prop_values, ]
 
-        if isinstance(prop_values, list):
+        if prop_type == "uint8-array":
+            prop_name = str_to_label(prop)
+            label = def_label + '_' + prop_name
+            prop_value = ''.join(['{ ',
+                                  ', '.join(["0x%02x" % b for b in prop_values]),
+                                  ' }'])
+            prop_def[label] = prop_value
+            add_compat_alias(node_path, prop_name, label, prop_alias)
+        elif isinstance(prop_values, list):
             for i, prop_value in enumerate(prop_values):
                 prop_name = str_to_label(prop)
                 label = def_label + '_' + prop_name

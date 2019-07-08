@@ -113,7 +113,7 @@ def parse_value(value):
     if value[0] == '"':
         return parse_values(value, '"', '"', ',')
     if value[0] == '[':
-        return parse_values(value, '[', ']', ' ')
+        return list(bytes.fromhex(value[1:value.find(']')]))
 
     if value[0] == '&':
         return {'ref': value[1:]}

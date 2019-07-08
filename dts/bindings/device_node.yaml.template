@@ -47,6 +47,10 @@ properties:
 # The exact value of the 'generation' attribute is ignored otherwise. The
 # output is always #define's.
 #
+# Note that uint8-array is the name for what devicetree standard calls
+# bytestring: its value is hexadecimal text with whitespace ignored,
+# enclosed in square brackets.
+#
 # The 'type' attribute is currently ignored.
 
 # At a minimum, an entry for the 'compatible' property is required, for
