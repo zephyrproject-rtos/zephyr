@@ -71,6 +71,11 @@ struct lwm2m_ctx {
 	 *  LwM2M engine calls tls_credential_(add|delete)
 	 */
 	int tls_tag;
+
+	/** Client can set load_credentials function as a way of overriding
+	 *  the default behavior of load_tls_credential() in lwm2m_engine.c
+	 */
+	int (*load_credentials)(struct lwm2m_ctx *client_ctx);
 #endif
 	/** Flag to indicate if context should use DTLS.
 	 *  Enabled via the use of coaps:// protocol prefix in connection
