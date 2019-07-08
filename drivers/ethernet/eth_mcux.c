@@ -39,6 +39,9 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define FREESCALE_OUI_B1 0x04
 #define FREESCALE_OUI_B2 0x9f
 
+#define ETH_MAC_FRAME_SIZE      ROUND_UP(NET_ETH_MAX_FRAME_SIZE, ENET_BUFF_ALIGNMENT)
+#define ETH_MAC_FRAME_BUFFER_NO (CONFIG_ETH_MCUX_RX_BUFFERS + CONFIG_ETH_MCUX_TX_BUFFERS)
+
 enum eth_mcux_phy_state {
 	eth_mcux_phy_state_initial,
 	eth_mcux_phy_state_reset,
@@ -82,7 +85,6 @@ struct eth_context {
 	enet_ptp_config_t ptp_config;
 	float clk_ratio;
 #endif
-	struct k_sem tx_buf_sem;
 	enum eth_mcux_phy_state phy_state;
 	bool enabled;
 	bool link_up;
@@ -91,8 +93,7 @@ struct eth_context {
 	u8_t mac_addr[6];
 	struct k_work phy_work;
 	struct k_delayed_work delayed_phy_work;
-	/* TODO: FIXME. This Ethernet frame sized buffer is used for
-	 * interfacing with MCUX. How it works is that hardware uses
+	/* TODO: FIXME. How it works is that hardware uses
 	 * DMA scatter buffers to receive a frame, and then public
 	 * MCUX call gathers them into this buffer (there's no other
 	 * public interface). All this happens only for this driver
@@ -106,7 +107,8 @@ struct eth_context {
 	 * Note that we do not copy FCS into this buffer thus the
 	 * size is 1514 bytes.
 	 */
-	u8_t frame_buf[NET_ETH_MAX_FRAME_SIZE]; /* Max MTU + ethernet header */
+	u8_t frame_buf[ETH_MAC_FRAME_SIZE * ETH_MAC_FRAME_BUFFER_NO]; /* Max MTU + ethernet header */
+	u8_t fbidx;
 };
 
 static void eth_0_config_func(void);
@@ -291,8 +293,8 @@ static void eth_mcux_phy_event(struct eth_context *context)
 		if (context->enabled) {
 			eth_mcux_phy_enter_reset(context);
 		} else {
-			/* @todo, actually power down the PHY ? */
 			context->phy_state = eth_mcux_phy_state_initial;
+			net_eth_carrier_off(context->iface);
 		}
 		break;
 	case eth_mcux_phy_state_reset:
@@ -497,31 +499,26 @@ static int eth_tx(struct device *dev, struct net_pkt *pkt)
 	u16_t total_len = net_pkt_get_len(pkt);
 	status_t status;
 	unsigned int imask;
+	u8_t idx;
 #if defined(CONFIG_PTP_CLOCK_MCUX)
 	bool timestamped_frame;
 #endif
 
-	/* As context->frame_buf is shared resource used by both eth_tx
-	 * and eth_rx, we need to protect it with irq_lock.
-	 */
 	imask = irq_lock();
+	idx = context->fbidx;
+	context->fbidx = (idx + 1) % ETH_MAC_FRAME_BUFFER_NO;
 
-	if (net_pkt_read(pkt, context->frame_buf, total_len)) {
+	if (net_pkt_read(pkt, &(context->frame_buf[idx * ETH_MAC_FRAME_SIZE]), total_len)) {
 		irq_unlock(imask);
 		return -EIO;
 	}
 
-	/* FIXME: Dirty workaround.
-	 * With current implementation of ENET_StoreTxFrameTime in the MCUX
-	 * library, a frame may not be timestamped when a non-timestamped frame
-	 * is sent.
-	 */
 #ifdef ENET_ENHANCEDBUFFERDESCRIPTOR_MODE
 	context->enet_handle.txBdDirtyTime[0] =
 				context->enet_handle.txBdCurrent[0];
 #endif
 
-	status = ENET_SendFrame(ENET, &context->enet_handle, context->frame_buf,
+	status = ENET_SendFrame(ENET, &context->enet_handle, &(context->frame_buf[idx * ETH_MAC_FRAME_SIZE]),
 				total_len);
 
 #if defined(CONFIG_PTP_CLOCK_MCUX)
@@ -548,8 +545,6 @@ static int eth_tx(struct device *dev, struct net_pkt *pkt)
 		return -1;
 	}
 
-	k_sem_take(&context->tx_buf_sem, K_FOREVER);
-
 	return 0;
 }
 
@@ -561,6 +556,7 @@ static void eth_rx(struct device *iface)
 	struct net_pkt *pkt;
 	status_t status;
 	unsigned int imask;
+	u8_t idx;
 
 #if defined(CONFIG_PTP_CLOCK_MCUX)
 	enet_ptp_time_data_t ptpTimeData;
@@ -578,7 +574,7 @@ static void eth_rx(struct device *iface)
 		goto flush;
 	}
 
-	if (sizeof(context->frame_buf) < frame_length) {
+	if (ETH_MAC_FRAME_SIZE < frame_length) {
 		LOG_ERR("frame too large (%d)", frame_length);
 		goto flush;
 	}
@@ -590,13 +586,12 @@ static void eth_rx(struct device *iface)
 		goto flush;
 	}
 
-	/* As context->frame_buf is shared resource used by both eth_tx
-	 * and eth_rx, we need to protect it with irq_lock.
-	 */
 	imask = irq_lock();
+	idx = context->fbidx;
+	context->fbidx = (idx + 1) % ETH_MAC_FRAME_BUFFER_NO;
 
 	status = ENET_ReadFrame(ENET, &context->enet_handle,
-				context->frame_buf, frame_length);
+				&(context->frame_buf[idx * ETH_MAC_FRAME_SIZE]), frame_length);
 	if (status) {
 		irq_unlock(imask);
 		LOG_ERR("ENET_ReadFrame failed: %d", (int)status);
@@ -604,7 +599,7 @@ static void eth_rx(struct device *iface)
 		goto error;
 	}
 
-	if (net_pkt_write(pkt, context->frame_buf, frame_length)) {
+	if (net_pkt_write(pkt, &(context->frame_buf[idx * ETH_MAC_FRAME_SIZE]), frame_length)) {
 		irq_unlock(imask);
 		LOG_ERR("Unable to write frame into the pkt");
 		net_pkt_unref(pkt);
@@ -712,6 +707,7 @@ static void eth_callback(ENET_Type *base, enet_handle_t *handle,
 {
 	struct device *iface = param;
 	struct eth_context *context = iface->driver_data;
+	u32_t pending = ENET_GetInterruptStatus(ENET);
 
 	switch (event) {
 	case kENET_RxEvent:
@@ -722,12 +718,16 @@ static void eth_callback(ENET_Type *base, enet_handle_t *handle,
 		/* Register event */
 		ts_register_tx_event(context);
 #endif /* CONFIG_PTP_CLOCK_MCUX */
-
-		/* Free the TX buffer. */
-		k_sem_give(&context->tx_buf_sem);
 		break;
 	case kENET_ErrEvent:
 		/* Error event: BABR/BABT/EBERR/LC/RL/UN/PLR.  */
+		if (pending & ENET_EIR_MII_MASK) {
+			ENET_ClearInterruptStatus(ENET, kENET_MiiInterrupt);
+			k_work_submit(&context->phy_work);
+		} else if (pending != 0) {
+			eth_mcux_phy_enter_reset(context);
+			LOG_DBG("Unhandled ENET interrupt");
+		}
 		break;
 	case kENET_WakeUpEvent:
 		/* Wake up from sleep mode event. */
@@ -802,8 +802,6 @@ static int eth_0_init(struct device *dev)
 	(void)memset(ts_tx_pkt, 0, sizeof(ts_tx_pkt));
 #endif
 
-	k_sem_init(&context->tx_buf_sem,
-		   0, CONFIG_ETH_MCUX_TX_BUFFERS);
 	k_work_init(&context->phy_work, eth_mcux_phy_work);
 	k_delayed_work_init(&context->delayed_phy_work,
 			    eth_mcux_delayed_phy_work);
@@ -966,11 +964,8 @@ static void eth_mcux_dispacher_isr(void *p)
 		ENET_ReceiveIRQHandler(ENET, &context->enet_handle);
 	} else if (EIR & (kENET_TxBufferInterrupt | kENET_TxFrameInterrupt)) {
 		ENET_TransmitIRQHandler(ENET, &context->enet_handle);
-	} else if (EIR & ENET_EIR_MII_MASK) {
-		k_work_submit(&context->phy_work);
-		ENET_ClearInterruptStatus(ENET, kENET_MiiInterrupt);
-	} else if (EIR) {
-		ENET_ClearInterruptStatus(ENET, 0xFFFFFFFF);
+	} else {
+		ENET_ErrorIRQHandler(ENET, &context->enet_handle);
 	}
 
 	irq_unlock(irq_lock_key);
@@ -1002,12 +997,8 @@ static void eth_mcux_error_isr(void *p)
 {
 	struct device *dev = p;
 	struct eth_context *context = dev->driver_data;
-	u32_t pending = ENET_GetInterruptStatus(ENET);
 
-	if (pending & ENET_EIR_MII_MASK) {
-		k_work_submit(&context->phy_work);
-		ENET_ClearInterruptStatus(ENET, kENET_MiiInterrupt);
-	}
+	ENET_ErrorIRQHandler(ENET, &context->enet_handle);
 }
 #endif
 

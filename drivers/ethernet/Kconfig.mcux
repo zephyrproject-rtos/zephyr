@@ -9,6 +9,7 @@ menuconfig ETH_MCUX
 	depends on HAS_MCUX_ENET
 	select NOCACHE_MEMORY if HAS_MCUX_CACHE
 	select ARM_MPU if CPU_CORTEX_M7
+	select MULTI_LEVEL_INTERRUPTS
 	help
 	  Enable MCUX Ethernet driver.  Note, this driver performs one shot PHY
 	  setup.  There is no support for PHY disconnect, reconnect or
@@ -44,8 +45,8 @@ config ETH_MCUX_RX_BUFFERS
 
 config ETH_MCUX_TX_BUFFERS
 	int "Number of MCUX TX buffers"
-	default 1
-	range 1 1
+	default 4
+	range 1 16
 	help
 	  Set the number of TX buffers provided to the MCUX driver.
 
