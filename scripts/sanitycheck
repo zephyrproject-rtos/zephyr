@@ -3022,17 +3022,9 @@ Artificially long but functional example:
         """
     )
 
-    if "ZEPHYR_SDK_INSTALL_DIR" in os.environ:
-        # Use the x86 build of GCOV from the SDK. This can parse gcov data
-        # from any arch built with the same GCC version.
-        gcov_bin = os.path.join(os.environ["ZEPHYR_SDK_INSTALL_DIR"],
-                "i586-zephyr-elf/bin/i586-zephyr-elf-gcov")
-    else:
-        # No SDK in use, just rely on PATH to find it
-        gcov_bin = "gcov"
-
-    parser.add_argument("--gcov-tool", default=gcov_bin,
-                        help="Path to the gcov tool. Default is %s" % gcov_bin)
+    parser.add_argument("--gcov-tool", default=None,
+                        help="Path to the gcov tool to use for code coverage "
+                        "reports")
 
     parser.add_argument("--enable-coverage", action="store_true",
                         help="Enable code coverage using gcov.")
@@ -3540,6 +3532,20 @@ def main():
             failed += 1
 
     if options.coverage:
+        if options.gcov_tool == None:
+            using_posix = False
+
+            for plat in options.coverage_platform:
+                ts_plat = ts.get_platform(plat)
+                if ts_plat and ts_plat.type == "native":
+                    using_posix = True
+
+            if using_posix or "ZEPHYR_SDK_INSTALL_DIR" not in os.environ:
+                options.gcov_tool = "gcov"
+            else:
+                options.gcov_tool = os.path.join(os.environ["ZEPHYR_SDK_INSTALL_DIR"],
+                    "i586-zephyr-elf/bin/i586-zephyr-elf-gcov")
+
         info("Generating coverage files...")
         generate_coverage(options.outdir, ["*generated*", "tests/*", "samples/*"])
 
