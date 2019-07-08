@@ -48,6 +48,7 @@ static void ticker_op_start_cb(u32_t status, void *param);
 static void isr_rx(void *param);
 static void isr_tx(void *param);
 static void isr_done(void *param);
+static void isr_window(void *param);
 static void isr_abort(void *param);
 static void isr_cleanup(void *param);
 static void isr_race(void *param);
@@ -289,7 +290,7 @@ static int is_abort_cb(void *next, int prio, void *curr,
 		return -EAGAIN;
 	}
 
-	radio_isr_set(isr_done, lll);
+	radio_isr_set(isr_window, lll);
 	radio_disable();
 
 	if (++lll->chan == 3U) {
@@ -467,10 +468,9 @@ static void isr_tx(void *param)
 #endif /* CONFIG_BT_CTLR_GPIO_LNA_PIN */
 }
 
-static void isr_done(void *param)
+static void isr_common_done(void *param)
 {
 	struct node_rx_pdu *node_rx;
-	u32_t start_us;
 
 	/* TODO: MOVE to a common interface, isr_lll_radio_status? */
 	/* Clear radio status and events */
@@ -503,6 +503,13 @@ static void isr_done(void *param)
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 
 	radio_isr_set(isr_rx, param);
+}
+
+static void isr_done(void *param)
+{
+	u32_t start_us;
+
+	isr_common_done(param);
 
 #if defined(CONFIG_BT_CTLR_GPIO_LNA_PIN)
 	start_us = radio_tmr_start_now(0);
@@ -521,6 +528,31 @@ static void isr_done(void *param)
 	 * master event.
 	 */
 	radio_tmr_end_capture();
+}
+
+static void isr_window(void *param)
+{
+	u32_t ticks_at_start, remainder_us;
+
+	isr_common_done(param);
+
+	ticks_at_start = ticker_ticks_now_get() +
+			 HAL_TICKER_CNTR_CMP_OFFSET_MIN;
+	remainder_us = radio_tmr_start_tick(0, ticks_at_start);
+
+	/* capture end of Rx-ed PDU, for initiator to calculate first
+	 * master event.
+	 */
+	radio_tmr_end_capture();
+
+#if defined(CONFIG_BT_CTLR_GPIO_LNA_PIN)
+	radio_gpio_lna_setup();
+	radio_gpio_pa_lna_enable(remainder_us +
+				 radio_rx_ready_delay_get(0, 0) -
+				 CONFIG_BT_CTLR_GPIO_LNA_OFFSET);
+#else /* !CONFIG_BT_CTLR_GPIO_LNA_PIN */
+	ARG_UNUSED(remainder_us);
+#endif /* !CONFIG_BT_CTLR_GPIO_LNA_PIN */
 }
 
 static void isr_abort(void *param)

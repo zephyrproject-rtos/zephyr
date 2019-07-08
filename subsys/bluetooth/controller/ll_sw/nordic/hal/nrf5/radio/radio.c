@@ -12,6 +12,7 @@
 #include "util/mem.h"
 #include "hal/ccm.h"
 #include "hal/radio.h"
+#include "hal/ticker.h"
 #include "ll_sw/pdu.h"
 #include "radio_nrf5.h"
 
@@ -729,6 +730,7 @@ u32_t radio_tmr_start(u8_t trx, u32_t ticks_start, u32_t remainder)
 	SW_SWITCH_TIMER->MODE = 0;
 	SW_SWITCH_TIMER->PRESCALER = 4;
 	SW_SWITCH_TIMER->BITMODE = 0; /* 16 bit */
+	/* FIXME: start alongwith EVENT_TIMER, to save power */
 	nrf_timer_task_trigger(SW_SWITCH_TIMER, NRF_TIMER_TASK_START);
 #endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 
@@ -766,6 +768,34 @@ u32_t radio_tmr_start(u8_t trx, u32_t ticks_start, u32_t remainder)
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 
 	return remainder;
+}
+
+u32_t radio_tmr_start_tick(u8_t trx, u32_t tick)
+{
+	u32_t remainder_us;
+
+	nrf_timer_task_trigger(EVENT_TIMER, NRF_TIMER_TASK_STOP);
+	nrf_timer_task_trigger(EVENT_TIMER, NRF_TIMER_TASK_CLEAR);
+
+	/* Setup compare event with min. 1 us offset */
+	remainder_us = 1;
+	nrf_timer_cc_write(EVENT_TIMER, 0, remainder_us);
+
+	nrf_rtc_cc_set(NRF_RTC0, 2, tick);
+	nrf_rtc_event_enable(NRF_RTC0, RTC_EVTENSET_COMPARE2_Msk);
+
+	hal_event_timer_start_ppi_config();
+	nrf_ppi_channels_enable(BIT(HAL_EVENT_TIMER_START_PPI));
+
+	hal_radio_enable_on_tick_ppi_config_and_enable(trx);
+
+#if !defined(CONFIG_BT_CTLR_TIFS_HW)
+#if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
+	last_pdu_end_us = 0U;
+#endif /* CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
+#endif /* !CONFIG_BT_CTLR_TIFS_HW */
+
+	return remainder_us;
 }
 
 void radio_tmr_start_us(u8_t trx, u32_t us)
