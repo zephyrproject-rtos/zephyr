@@ -231,7 +231,7 @@ static int package_uri_write_cb(u16_t obj_inst_id,
 				u8_t *data, u16_t data_len,
 				bool last_block, size_t total_size)
 {
-	LOG_DBG("PACKAGE_URI WRITE: %s", package_uri);
+	LOG_DBG("PACKAGE_URI WRITE: %s", log_strdup(package_uri));
 
 #ifdef CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT
 	u8_t state = lwm2m_firmware_get_update_state();
