@@ -1931,16 +1931,46 @@ static inline u32_t isr_rx_conn_pkt_ack(struct pdu_data *pdu_data_tx,
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	case PDU_DATA_LLCTRL_TYPE_LENGTH_REQ:
-		if ((_radio.conn_curr->llcp_length.req !=
-		     _radio.conn_curr->llcp_length.ack) &&
-		    (_radio.conn_curr->llcp_length.state ==
-		     LLCP_LENGTH_STATE_ACK_WAIT)){
-			/* pause data packet tx */
-			_radio.conn_curr->llcp_length.pause_tx = 1U;
+		/* wait for response */
+		_radio.conn_curr->llcp_length.state =
+			LLCP_LENGTH_STATE_RSP_WAIT;
+		break;
 
-			/* wait for response */
-			_radio.conn_curr->llcp_length.state =
-				LLCP_LENGTH_STATE_RSP_WAIT;
+	case PDU_DATA_LLCTRL_TYPE_LENGTH_RSP:
+		if (_radio.conn_curr->llcp_length.req !=
+		    _radio.conn_curr->llcp_length.ack) {
+			struct connection *conn = _radio.conn_curr;
+
+			switch (conn->llcp_length.state) {
+			case LLCP_LENGTH_STATE_RSP_ACK_WAIT:
+			case LLCP_LENGTH_STATE_RESIZE_RSP:
+			case LLCP_LENGTH_STATE_RESIZE_RSP_ACK_WAIT:
+				/* accept the effective tx */
+				conn->max_tx_octets =
+					conn->llcp_length.tx_octets;
+
+#if defined(CONFIG_BT_CTLR_PHY)
+				/* accept the effective tx time */
+				conn->max_tx_time = conn->llcp_length.tx_time;
+#endif /* CONFIG_BT_CTLR_PHY */
+
+				if (conn->llcp_length.state ==
+				    LLCP_LENGTH_STATE_RESIZE_RSP) {
+					conn->llcp_length.state =
+						LLCP_LENGTH_STATE_RESIZE;
+
+					break;
+				}
+
+				/* Procedure complete */
+				conn->llcp_length.ack = conn->llcp_length.req;
+				conn->procedure_expire = 0U;
+
+				break;
+
+			default:
+				break;
+			}
 		}
 		break;
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
@@ -2111,7 +2141,6 @@ isr_rx_conn_pkt_ctrl_rej_dle(struct radio_pdu_node_rx *node_rx,
 
 		/* Procedure complete */
 		conn->llcp_length.ack = conn->llcp_length.req;
-		conn->llcp_length.pause_tx = 0U;
 		conn->procedure_expire = 0U;
 
 		/* prepare length rsp structure */
@@ -2286,7 +2315,7 @@ static inline u8_t isr_rx_conn_pkt_ctrl_dle(struct pdu_data *pdu_data_rx,
 	     ((((_radio.conn_curr->llcp_length.state ==
 		 LLCP_LENGTH_STATE_REQ) ||
 		(_radio.conn_curr->llcp_length.state ==
-		 LLCP_LENGTH_STATE_ACK_WAIT)) &&
+		 LLCP_LENGTH_STATE_REQ_ACK_WAIT)) &&
 	       (pdu_data_rx->llctrl.opcode ==
 		PDU_DATA_LLCTRL_TYPE_LENGTH_REQ)) ||
 	      /* with Local waiting for response, and Peer response then
@@ -2363,10 +2392,6 @@ static inline u8_t isr_rx_conn_pkt_ctrl_dle(struct pdu_data *pdu_data_rx,
 			LL_ASSERT(free_count_rx <= 0xFF);
 
 			if (_radio.packet_rx_data_count == free_count_rx) {
-
-				/* accept the effective tx */
-				_radio.conn_curr->max_tx_octets = eff_tx_octets;
-
 				/* trigger or retain the ctrl procedure so as
 				 * to resize the rx buffers.
 				 */
@@ -2376,9 +2401,6 @@ static inline u8_t isr_rx_conn_pkt_ctrl_dle(struct pdu_data *pdu_data_rx,
 					eff_tx_octets;
 
 #if defined(CONFIG_BT_CTLR_PHY)
-				/* accept the effective tx time */
-				_radio.conn_curr->max_tx_time = eff_tx_time;
-
 				_radio.conn_curr->llcp_length.rx_time =
 					eff_rx_time;
 				_radio.conn_curr->llcp_length.tx_time =
@@ -2392,8 +2414,22 @@ static inline u8_t isr_rx_conn_pkt_ctrl_dle(struct pdu_data *pdu_data_rx,
 				/* Request Rx buffer resize */
 				_radio.conn_curr->llcp_length.ack =
 					(_radio.conn_curr->llcp_length.req - 1);
-				_radio.conn_curr->llcp_length.state =
-					LLCP_LENGTH_STATE_RESIZE;
+
+				if (node_tx) {
+					_radio.conn_curr->llcp_length.state =
+						LLCP_LENGTH_STATE_RESIZE_RSP;
+				} else {
+					/* accept the effective tx */
+					_radio.conn_curr->max_tx_octets =
+						eff_tx_octets;
+#if defined(CONFIG_BT_CTLR_PHY)
+					/* accept the effective tx time */
+					_radio.conn_curr->max_tx_time =
+						eff_tx_time;
+#endif /* CONFIG_BT_CTLR_PHY */
+					_radio.conn_curr->llcp_length.state =
+						LLCP_LENGTH_STATE_RESIZE;
+				}
 
 				/* close the current connection event, so as
 				 * to perform rx octet change.
@@ -2406,7 +2442,6 @@ static inline u8_t isr_rx_conn_pkt_ctrl_dle(struct pdu_data *pdu_data_rx,
 			/* Procedure complete */
 			_radio.conn_curr->llcp_length.ack =
 				_radio.conn_curr->llcp_length.req;
-			_radio.conn_curr->llcp_length.pause_tx = 0U;
 			_radio.conn_curr->procedure_expire = 0U;
 
 			/* No change in effective octets or time */
@@ -2419,16 +2454,41 @@ static inline u8_t isr_rx_conn_pkt_ctrl_dle(struct pdu_data *pdu_data_rx,
 				goto send_length_resp;
 			}
 
-			/* accept the effective tx */
-			_radio.conn_curr->max_tx_octets = eff_tx_octets;
-
 #if defined(CONFIG_BT_CTLR_PHY)
 			/* accept the effective rx time */
 			_radio.conn_curr->max_rx_time = eff_rx_time;
-
-			/* accept the effective tx time */
-			_radio.conn_curr->max_tx_time = eff_tx_time;
 #endif /* CONFIG_BT_CTLR_PHY */
+
+			if (node_tx) {
+				/* trigger or retain the ctrl procedure so as
+				 * to resize the rx buffers.
+				 */
+				_radio.conn_curr->llcp_length.rx_octets =
+					eff_rx_octets;
+				_radio.conn_curr->llcp_length.tx_octets =
+					eff_tx_octets;
+
+#if defined(CONFIG_BT_CTLR_PHY)
+				_radio.conn_curr->llcp_length.rx_time =
+					eff_rx_time;
+				_radio.conn_curr->llcp_length.tx_time =
+					eff_tx_time;
+#endif /* CONFIG_BT_CTLR_PHY */
+
+				/* Wait for rsp ack before tx change  */
+				_radio.conn_curr->llcp_length.ack =
+					(_radio.conn_curr->llcp_length.req - 1);
+				_radio.conn_curr->llcp_length.state =
+					LLCP_LENGTH_STATE_RSP_ACK_WAIT;
+			} else {
+				/* accept the effective tx */
+				_radio.conn_curr->max_tx_octets = eff_tx_octets;
+
+#if defined(CONFIG_BT_CTLR_PHY)
+				/* accept the effective tx time */
+				_radio.conn_curr->max_tx_time = eff_tx_time;
+#endif /* CONFIG_BT_CTLR_PHY */
+			}
 
 			/* flag an event length update*/
 			_radio.conn_curr->evt_len_upd = 1U;
@@ -3180,7 +3240,6 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx,
 			/* Procedure complete */
 			_radio.conn_curr->llcp_length.ack =
 				_radio.conn_curr->llcp_length.req;
-			_radio.conn_curr->llcp_length.pause_tx = 0U;
 
 			/* propagate the data length procedure to
 			 * host
@@ -8125,7 +8184,7 @@ static inline int event_len_prep(struct connection *conn)
 		}
 
 		/* wait for resp before completing the procedure */
-		conn->llcp_length.state = LLCP_LENGTH_STATE_ACK_WAIT;
+		conn->llcp_length.state = LLCP_LENGTH_STATE_REQ_ACK_WAIT;
 
 		/* set the default tx octets/time to requested value */
 		conn->default_tx_octets = conn->llcp_length.tx_octets;
@@ -8163,6 +8222,7 @@ static inline int event_len_prep(struct connection *conn)
 	break;
 
 	case LLCP_LENGTH_STATE_RESIZE:
+	case LLCP_LENGTH_STATE_RESIZE_RSP:
 	{
 		struct pdu_data_llctrl_length_rsp *lr;
 		struct radio_pdu_node_rx *node_rx;
@@ -8189,10 +8249,14 @@ static inline int event_len_prep(struct connection *conn)
 			return -EAGAIN;
 		}
 
-		/* Procedure complete */
-		conn->llcp_length.ack = conn->llcp_length.req;
-		conn->llcp_length.pause_tx = 0U;
-		conn->procedure_expire = 0U;
+		if (conn->llcp_length.state == LLCP_LENGTH_STATE_RESIZE) {
+			/* Procedure complete */
+			conn->llcp_length.ack = conn->llcp_length.req;
+			conn->procedure_expire = 0U;
+		} else {
+			conn->llcp_length.state =
+				LLCP_LENGTH_STATE_RESIZE_RSP_ACK_WAIT;
+		}
 
 		/* Use the new rx octets/time in the connection */
 		conn->max_rx_octets = conn->llcp_length.rx_octets;
@@ -8300,13 +8364,13 @@ static inline int event_len_prep(struct connection *conn)
 
 		lr = &pdu_ctrl_rx->llctrl.length_rsp;
 		lr->max_rx_octets = conn->max_rx_octets;
-		lr->max_tx_octets = conn->max_tx_octets;
+		lr->max_tx_octets = conn->llcp_length.tx_octets;
 #if !defined(CONFIG_BT_CTLR_PHY)
 		lr->max_rx_time = RADIO_PKT_TIME(conn->max_rx_octets, 0);
-		lr->max_tx_time = RADIO_PKT_TIME(conn->max_tx_octets, 0);
+		lr->max_tx_time = RADIO_PKT_TIME(lr->max_tx_octets, 0);
 #else /* CONFIG_BT_CTLR_PHY */
 		lr->max_rx_time = conn->max_rx_time;
-		lr->max_tx_time = conn->max_tx_time;
+		lr->max_tx_time = conn->llcp_length.tx_time;
 #endif /* CONFIG_BT_CTLR_PHY */
 
 		/* enqueue version ind structure into rx queue */
@@ -8314,8 +8378,10 @@ static inline int event_len_prep(struct connection *conn)
 	}
 	break;
 
-	case LLCP_LENGTH_STATE_ACK_WAIT:
+	case LLCP_LENGTH_STATE_REQ_ACK_WAIT:
 	case LLCP_LENGTH_STATE_RSP_WAIT:
+	case LLCP_LENGTH_STATE_RSP_ACK_WAIT:
+	case LLCP_LENGTH_STATE_RESIZE_RSP_ACK_WAIT:
 		/* no nothing */
 		break;
 
@@ -8715,7 +8781,8 @@ static void event_connection_prepare(u32_t ticks_at_expire,
 				 * event.
 				 */
 				_radio.ticker_id_prepare = 0U;
-				return;
+
+				goto event_connection_prepare_skip;
 			}
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 		}
@@ -8835,6 +8902,10 @@ static void event_connection_prepare(u32_t ticks_at_expire,
 			     event_master,
 #endif
 			     conn);
+
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
+event_connection_prepare_skip:
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
 	/* store the next event counter value */
 	conn->event_counter = event_counter + 1;
@@ -9679,9 +9750,6 @@ static void prepare_pdu_data_tx(struct connection *conn,
 	    !conn->pkt_tx_head ||
 	    /* data tx paused, only control packets allowed */
 	    ((
-#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
-	      conn->llcp_length.pause_tx ||
-#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 	      conn->pause_tx ||
 	      /* Encryption setup queued */
@@ -11104,7 +11172,6 @@ u32_t radio_adv_enable(u16_t interval, u8_t chan_map, u8_t filter_policy,
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 		conn->llcp_length.req = 0U;
 		conn->llcp_length.ack = 0U;
-		conn->llcp_length.pause_tx = 0U;
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
 #if defined(CONFIG_BT_CTLR_PHY)
@@ -11645,7 +11712,6 @@ u32_t radio_connect_enable(u8_t adv_addr_type, u8_t *adv_addr, u16_t interval,
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	conn->llcp_length.req = 0U;
 	conn->llcp_length.ack = 0U;
-	conn->llcp_length.pause_tx = 0U;
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
 #if defined(CONFIG_BT_CTLR_PHY)
