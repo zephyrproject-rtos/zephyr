@@ -77,6 +77,10 @@ arduino_i2c: &i2c1 {
 	status = "okay";
 };
 
+arduino_spi: &spi1 {
+	status = "okay";
+};
+
 arduino_serial: &lpuart1 {
 	current-speed = <115200>;
 	status = "okay";
