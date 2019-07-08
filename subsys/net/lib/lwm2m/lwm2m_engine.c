@@ -3992,14 +3992,21 @@ int lwm2m_socket_start(struct lwm2m_ctx *client_ctx)
 #if defined(CONFIG_LWM2M_DTLS_SUPPORT)
 	int ret;
 
-	ret = load_tls_credential(client_ctx, 3, TLS_CREDENTIAL_PSK_ID);
-	if (ret < 0) {
-		return ret;
-	}
+	if (client_ctx->load_credentials) {
+		ret = client_ctx->load_credentials(client_ctx);
+		if (ret < 0) {
+			return ret;
+		}
+	} else {
+		ret = load_tls_credential(client_ctx, 3, TLS_CREDENTIAL_PSK_ID);
+		if (ret < 0) {
+			return ret;
+		}
 
-	ret = load_tls_credential(client_ctx, 5, TLS_CREDENTIAL_PSK);
-	if (ret < 0) {
-		return ret;
+		ret = load_tls_credential(client_ctx, 5, TLS_CREDENTIAL_PSK);
+		if (ret < 0) {
+			return ret;
+		}
 	}
 
 	if (client_ctx->use_dtls) {
