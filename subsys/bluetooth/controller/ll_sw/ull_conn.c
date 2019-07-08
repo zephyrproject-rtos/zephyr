@@ -1269,9 +1269,6 @@ void ull_conn_tx_lll_enqueue(struct ll_conn *conn, u8_t count)
 
 	while (conn->tx_head &&
 	       ((
-#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
-		 !conn->llcp_length.pause_tx &&
-#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 #if defined(CONFIG_BT_CTLR_PHY)
 		 !conn->llcp_phy.pause_tx &&
 #endif /* CONFIG_BT_CTLR_PHY */
@@ -1757,9 +1754,6 @@ static void ctrl_tx_enqueue(struct ll_conn *conn, struct node_tx *tx)
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 	    !conn->llcp_enc.pause_tx &&
 #endif /* CONFIG_BT_CTLR_LE_ENC */
-#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
-	    !conn->llcp_length.pause_tx &&
-#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 #if defined(CONFIG_BT_CTLR_PHY)
 	    !conn->llcp_phy.pause_tx &&
 #endif /* CONFIG_BT_CTLR_PHY */
@@ -2978,7 +2972,7 @@ static inline void event_len_prep(struct ll_conn *conn)
 		}
 
 		/* wait for resp before completing the procedure */
-		conn->llcp_length.state = LLCP_LENGTH_STATE_ACK_WAIT;
+		conn->llcp_length.state = LLCP_LENGTH_STATE_REQ_ACK_WAIT;
 
 		/* set the default tx octets/time to requested value */
 		conn->default_tx_octets = conn->llcp_length.tx_octets;
@@ -3021,16 +3015,12 @@ static inline void event_len_prep(struct ll_conn *conn)
 	break;
 
 	case LLCP_LENGTH_STATE_RESIZE:
+	case LLCP_LENGTH_STATE_RESIZE_RSP:
 	{
 		struct pdu_data_llctrl_length_rsp *lr;
 		struct pdu_data *pdu_ctrl_rx;
 		struct node_rx_pdu *rx;
 		struct lll_conn *lll;
-
-		/* Procedure complete */
-		conn->llcp_length.ack = conn->llcp_length.req;
-		conn->llcp_length.pause_tx = 0U;
-		conn->procedure_expire = 0U;
 
 		lll = &conn->lll;
 
@@ -3040,6 +3030,15 @@ static inline void event_len_prep(struct ll_conn *conn)
 #if defined(CONFIG_BT_CTLR_PHY)
 		lll->max_rx_time = conn->llcp_length.rx_time;
 #endif /* CONFIG_BT_CTLR_PHY */
+
+		if (conn->llcp_length.state == LLCP_LENGTH_STATE_RESIZE) {
+			/* Procedure complete */
+			conn->llcp_length.ack = conn->llcp_length.req;
+			conn->procedure_expire = 0U;
+		} else {
+			conn->llcp_length.state =
+				LLCP_LENGTH_STATE_RESIZE_RSP_ACK_WAIT;
+		}
 
 		/* Prepare the rx packet structure */
 		rx = conn->llcp_rx;
@@ -3059,15 +3058,16 @@ static inline void event_len_prep(struct ll_conn *conn)
 
 		lr = &pdu_ctrl_rx->llctrl.length_rsp;
 		lr->max_rx_octets = sys_cpu_to_le16(lll->max_rx_octets);
-		lr->max_tx_octets = sys_cpu_to_le16(lll->max_tx_octets);
+		lr->max_tx_octets =
+			sys_cpu_to_le16(conn->llcp_length.tx_octets);
 #if !defined(CONFIG_BT_CTLR_PHY)
 		lr->max_rx_time =
 			sys_cpu_to_le16(PKT_US(lll->max_rx_octets, 0));
 		lr->max_tx_time =
-			sys_cpu_to_le16(PKT_US(lll->max_tx_octets, 0));
+			sys_cpu_to_le16(PKT_US(conn->llcp_length.tx_octets, 0));
 #else /* CONFIG_BT_CTLR_PHY */
 		lr->max_rx_time = sys_cpu_to_le16(lll->max_rx_time);
-		lr->max_tx_time = sys_cpu_to_le16(lll->max_tx_time);
+		lr->max_tx_time = sys_cpu_to_le16(conn->llcp_length.tx_time);
 #endif /* CONFIG_BT_CTLR_PHY */
 
 		/* enqueue rx node towards Thread */
@@ -3076,8 +3076,10 @@ static inline void event_len_prep(struct ll_conn *conn)
 	}
 	break;
 
-	case LLCP_LENGTH_STATE_ACK_WAIT:
+	case LLCP_LENGTH_STATE_REQ_ACK_WAIT:
 	case LLCP_LENGTH_STATE_RSP_WAIT:
+	case LLCP_LENGTH_STATE_RSP_ACK_WAIT:
+	case LLCP_LENGTH_STATE_RESIZE_RSP_ACK_WAIT:
 		/* no nothing */
 		break;
 
@@ -4015,7 +4017,6 @@ static inline void reject_ind_dle_recv(struct ll_conn *conn,
 
 		/* Procedure complete */
 		conn->llcp_length.ack = conn->llcp_length.req;
-		conn->llcp_length.pause_tx = 0U;
 		conn->procedure_expire = 0U;
 
 		/* prepare length rsp structure */
@@ -4220,7 +4221,7 @@ static inline int length_req_rsp_recv(struct ll_conn *conn, memq_link_t *link,
 	      * Peer procedure with response.
 	      */
 	     ((((conn->llcp_length.state == LLCP_LENGTH_STATE_REQ) ||
-		(conn->llcp_length.state == LLCP_LENGTH_STATE_ACK_WAIT)) &&
+		(conn->llcp_length.state == LLCP_LENGTH_STATE_REQ_ACK_WAIT)) &&
 	       (pdu_rx->llctrl.opcode ==
 		PDU_DATA_LLCTRL_TYPE_LENGTH_REQ)) ||
 	      /* with Local waiting for response, and Peer response then
@@ -4299,9 +4300,6 @@ static inline int length_req_rsp_recv(struct ll_conn *conn, memq_link_t *link,
 			 *        closing the current event may be needed.
 			 */
 
-			/* accept the effective tx */
-			conn->lll.max_tx_octets = eff_tx_octets;
-
 			/* trigger or retain the ctrl procedure so as
 			 * to resize the rx buffers.
 			 */
@@ -4309,17 +4307,26 @@ static inline int length_req_rsp_recv(struct ll_conn *conn, memq_link_t *link,
 			conn->llcp_length.tx_octets = eff_tx_octets;
 
 #if defined(CONFIG_BT_CTLR_PHY)
-			/* accept the effective tx time */
-			conn->lll.max_tx_time = eff_tx_time;
-
 			conn->llcp_length.rx_time = eff_rx_time;
 			conn->llcp_length.tx_time = eff_tx_time;
 #endif /* CONFIG_BT_CTLR_PHY */
 
 			conn->llcp_length.ack = (conn->llcp_length.req -
 						 1);
-			conn->llcp_length.state =
-				LLCP_LENGTH_STATE_RESIZE;
+
+			if (tx) {
+				conn->llcp_length.state =
+					LLCP_LENGTH_STATE_RESIZE_RSP;
+			} else {
+				/* accept the effective tx */
+				conn->lll.max_tx_octets = eff_tx_octets;
+#if defined(CONFIG_BT_CTLR_PHY)
+				/* accept the effective tx time */
+				conn->lll.max_tx_time = eff_tx_time;
+#endif /* CONFIG_BT_CTLR_PHY */
+				conn->llcp_length.state =
+					LLCP_LENGTH_STATE_RESIZE;
+			}
 
 			link->mem = conn->llcp_rx;
 			(*rx)->hdr.link = link;
@@ -4328,7 +4335,6 @@ static inline int length_req_rsp_recv(struct ll_conn *conn, memq_link_t *link,
 		} else {
 			/* Procedure complete */
 			conn->llcp_length.ack = conn->llcp_length.req;
-			conn->llcp_length.pause_tx = 0U;
 			conn->procedure_expire = 0U;
 
 			/* No change in effective octets or time */
@@ -4344,16 +4350,37 @@ static inline int length_req_rsp_recv(struct ll_conn *conn, memq_link_t *link,
 				goto send_length_resp;
 			}
 
-			/* accept the effective tx */
-			conn->lll.max_tx_octets = eff_tx_octets;
-
 #if defined(CONFIG_BT_CTLR_PHY)
 			/* accept the effective rx time */
 			conn->lll.max_rx_time = eff_rx_time;
-
-			/* accept the effective tx time */
-			conn->lll.max_tx_time = eff_tx_time;
 #endif /* CONFIG_BT_CTLR_PHY */
+
+			if (tx) {
+				/* trigger or retain the ctrl procedure so as
+				 * to resize the rx buffers.
+				 */
+				conn->llcp_length.rx_octets = eff_rx_octets;
+				conn->llcp_length.tx_octets = eff_tx_octets;
+
+#if defined(CONFIG_BT_CTLR_PHY)
+				conn->llcp_length.rx_time = eff_rx_time;
+				conn->llcp_length.tx_time = eff_tx_time;
+#endif /* CONFIG_BT_CTLR_PHY */
+
+				/* Wait for rsp ack before tx change  */
+				conn->llcp_length.ack =
+					(conn->llcp_length.req - 1);
+				conn->llcp_length.state =
+					LLCP_LENGTH_STATE_RSP_ACK_WAIT;
+			} else {
+				/* accept the effective tx */
+				conn->lll.max_tx_octets = eff_tx_octets;
+
+#if defined(CONFIG_BT_CTLR_PHY)
+				/* accept the effective tx time */
+				conn->lll.max_tx_time = eff_tx_time;
+#endif /* CONFIG_BT_CTLR_PHY */
+			}
 
 			/* prepare event params */
 			lr->max_rx_octets = sys_cpu_to_le16(eff_rx_octets);
@@ -4603,16 +4630,6 @@ static inline void ctrl_tx_pre_ack(struct ll_conn *conn,
 
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
-#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
-	case PDU_DATA_LLCTRL_TYPE_LENGTH_REQ:
-		if ((conn->llcp_length.req != conn->llcp_length.ack) &&
-		    (conn->llcp_length.state == LLCP_LENGTH_STATE_ACK_WAIT)) {
-			/* pause data packet tx */
-			conn->llcp_length.pause_tx = 1U;
-		}
-		break;
-#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
-
 	default:
 		/* Do nothing for other ctrl packet ack */
 		break;
@@ -4710,13 +4727,42 @@ static inline void ctrl_tx_ack(struct ll_conn *conn, struct node_tx **tx,
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	case PDU_DATA_LLCTRL_TYPE_LENGTH_REQ:
-		if ((conn->llcp_length.req != conn->llcp_length.ack) &&
-		    (conn->llcp_length.state == LLCP_LENGTH_STATE_ACK_WAIT)) {
-			/* pause data packet tx */
-			conn->llcp_length.pause_tx = 1U;
+		/* wait for response */
+		conn->llcp_length.state = LLCP_LENGTH_STATE_RSP_WAIT;
+		break;
 
-			/* wait for response */
-			conn->llcp_length.state = LLCP_LENGTH_STATE_RSP_WAIT;
+	case PDU_DATA_LLCTRL_TYPE_LENGTH_RSP:
+		if (conn->llcp_length.req != conn->llcp_length.ack) {
+			switch (conn->llcp_length.state) {
+			case LLCP_LENGTH_STATE_RSP_ACK_WAIT:
+			case LLCP_LENGTH_STATE_RESIZE_RSP:
+			case LLCP_LENGTH_STATE_RESIZE_RSP_ACK_WAIT:
+				/* accept the effective tx */
+				conn->lll.max_tx_octets =
+					conn->llcp_length.tx_octets;
+
+#if defined(CONFIG_BT_CTLR_PHY)
+				/* accept the effective tx time */
+				conn->lll.max_tx_time =
+					conn->llcp_length.tx_time;
+#endif /* CONFIG_BT_CTLR_PHY */
+
+				if (conn->llcp_length.state ==
+				    LLCP_LENGTH_STATE_RESIZE_RSP) {
+					conn->llcp_length.state =
+						LLCP_LENGTH_STATE_RESIZE;
+
+					break;
+				}
+
+				/* Procedure complete */
+				conn->llcp_length.ack = conn->llcp_length.req;
+				conn->procedure_expire = 0U;
+				break;
+
+			default:
+				break;
+			}
 		}
 		break;
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
@@ -5523,7 +5569,6 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 		} else if (conn->llcp_length.req != conn->llcp_length.ack) {
 			/* Procedure complete */
 			conn->llcp_length.ack = conn->llcp_length.req;
-			conn->llcp_length.pause_tx = 0U;
 
 			/* propagate the data length procedure to
 			 * host
