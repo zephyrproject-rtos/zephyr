@@ -88,8 +88,98 @@ static void verify_callee_saved(const _callee_saved_t *src,
 	);
 }
 
+#if defined(CONFIG_FLOAT) && defined(CONFIG_FP_SHARING)
+/* Arbitrary values for the floating-point callee-saved registers */
+struct _preempt_float ztest_thread_fp_callee_saved_regs = {
+	.s16 = 0x11111111, .s17 = 0x22222222,
+	.s18 = 0x33333333, .s19 = 0x44444444,
+	.s20 = 0x55555555, .s21 = 0x66666666,
+	.s22 = 0x77777777, .s23 = 0x88888888,
+	.s24 = 0x99999999, .s25 = 0xaaaaaaaa,
+	.s26 = 0xbbbbbbbb, .s27 = 0xcccccccc,
+	.s28 = 0xdddddddd, .s29 = 0xeeeeeeee,
+	.s30 = 0xffffffff, .s31 = 0x00000000,
+};
+
+static void load_fp_callee_saved_regs(
+	const volatile struct _preempt_float *regs)
+{
+	__asm__ volatile (
+		"vldmia %0, {s16-s31};\n\t"
+		:
+		: "r" (regs)
+		: "memory"
+		);
+	__DSB();
+}
+
+static void verify_fp_callee_saved(const struct _preempt_float *src,
+		const struct _preempt_float *dst)
+{
+	/* Verify FP callee-saved registers are as expected */
+	zassert_true((src->s16 == dst->s16)
+			&& (src->s17 == dst->s17)
+			&& (src->s18 == dst->s18)
+			&& (src->s19 == dst->s19)
+			&& (src->s20 == dst->s20)
+			&& (src->s21 == dst->s21)
+			&& (src->s22 == dst->s22)
+			&& (src->s23 == dst->s23)
+			&& (src->s24 == dst->s24)
+			&& (src->s25 == dst->s25)
+			&& (src->s26 == dst->s26)
+			&& (src->s27 == dst->s27)
+			&& (src->s28 == dst->s28)
+			&& (src->s29 == dst->s29)
+			&& (src->s30 == dst->s30)
+			&& (src->s31 == dst->s31),
+		" got: 0x%0x 0x%0x 0x%0x 0x%0x 0x%0x 0x%0x 0x%0x 0x%0x"
+		" 0x%0x 0x%0x 0x%0x 0x%0x 0x%0x 0x%0x 0x%0x 0x%0x\n"
+		" expected:  0x%0x 0x%0x 0x%0x 0x%0x 0x%0x 0x%0x 0x%0x 0x%0x"
+		" 0x%0x 0x%0x 0x%0x 0x%0x 0x%0x 0x%0x 0x%0x 0x%0x\n",
+		src->s16,
+		src->s17,
+		src->s18,
+		src->s19,
+		src->s20,
+		src->s21,
+		src->s22,
+		src->s23,
+		src->s24,
+		src->s25,
+		src->s26,
+		src->s27,
+		src->s28,
+		src->s29,
+		src->s30,
+		src->s31,
+		dst->s16,
+		dst->s17,
+		dst->s18,
+		dst->s19,
+		dst->s20,
+		dst->s21,
+		dst->s22,
+		dst->s23,
+		dst->s24,
+		dst->s25,
+		dst->s26,
+		dst->s27,
+		dst->s28,
+		dst->s29,
+		dst->s30,
+		dst->s31
+	);
+}
+
+#endif /* CONFIG_FLOAT && CONFIG_FP_SHARING */
+
 static void alt_thread_entry(void)
 {
+	/* Lock interrupts to make sure we get preempted only when
+	 * it is required by the test */
+	(void)irq_lock();
+
 	zassert_true(switch_flag == false,
 		"Alternative thread: switch flag not false on thread entry\n");
 
@@ -124,6 +214,27 @@ static void alt_thread_entry(void)
 	memset(&ztest_thread_callee_saved_regs_container,
 		0, sizeof(_callee_saved_t));
 
+#if defined(CONFIG_FLOAT) && defined(CONFIG_FP_SHARING)
+	zassert_true((p_ztest_thread->arch.mode & CONTROL_FPCA_Msk) != 0,
+		"ztest thread mode FPCA flag not updated at swap-out: 0x%0x\n",
+		p_ztest_thread->arch.mode);
+
+	/* Verify that the main test thread (ztest) has stored the FP
+	 *  callee-saved registers properly in its corresponding FP
+	 *  callee-saved container.
+	 */
+	verify_fp_callee_saved((const struct _preempt_float *)
+		&p_ztest_thread->arch.preempt_float,
+		&ztest_thread_fp_callee_saved_regs);
+
+	/* Zero the container of the FP callee-saved registers, to validate,
+	 * later, that it is populated properly.
+	 */
+	memset(&ztest_thread_fp_callee_saved_regs,
+		0, sizeof(_callee_saved_t));
+
+#endif /* CONFIG_FLOAT && CONFIG_FP_SHARING */
+
 	/* Modify the arch.basepri flag of the main test thread, to verify,
 	 * later, that this is passed properly to the BASEPRI.
 	 */
@@ -142,6 +253,8 @@ static void alt_thread_entry(void)
 	 * The main test thread will, later, assert that they
 	 * are restored to their original values upon context
 	 * switch.
+	 *
+	 * Note: preserve r7 register (frame pointer).
 	 */
 	__asm__ volatile (
 		"mov r0, r7;\n\t"
@@ -156,8 +269,15 @@ static void alt_thread_entry(void)
 	 */
 	__DMB();
 	SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
-	__DSB();
-	__ISB();
+	irq_unlock(0);
+
+	/* Verify that the main test thread has managed to resume, before
+	 * we return to the alternative thread (we verify this by checking
+	 * the status of the switch flag; the main test thread will clear
+	 * it when it is swapped-back in.
+	 */
+	zassert_true(switch_flag == false,
+		"Alternative thread: switch flag not false on thread exit\n");
 }
 
 void test_arm_thread_swap(void)
@@ -166,6 +286,8 @@ void test_arm_thread_swap(void)
 	 *
 	 * Simulating initial conditions:
 	 * - set arbitrary values at the callee-saved registers
+	 * - set arbitrary values at the FP callee-saved registers,
+	 *   if building with CONFIG_FLOAT/CONFIG_FP_SHARING
 	 * - zero the thread's callee-saved data structure
 	 * - set thread's priority same as the alternative test thread
 	 */
@@ -209,6 +331,21 @@ void test_arm_thread_swap(void)
 	zassert_true((_current->arch.mode & CONTROL_FPCA_Msk) == 0,
 		"Thread FPCA flag not clear at initialization 0x%0x\n",
 		_current->arch.mode);
+
+	/* Clear the thread's floating-point callee-saved registers' container.
+	 * The container will, later, be populated by the swap mechanism.
+	 */
+	memcpy(&_current->arch.preempt_float, 0,
+		sizeof(struct _preempt_float));
+
+	/* Randomize the FP callee-saved registers at test initialization */
+	load_fp_callee_saved_regs(&ztest_thread_fp_callee_saved_regs);
+
+	/* The main test thread is using the FP registers, but the .mode
+	 * flag is not updated until the next context switch.
+	 */
+	zassert_true((_current->arch.mode & CONTROL_FPCA_Msk) == 0,
+		"Thread FPCA flag not clear at initialization\n");
 #endif /* CONFIG_FLOAT && CONFIG_FP_SHARING */
 
 	/* Create an alternative (supervisor) testing thread */
@@ -227,12 +364,12 @@ void test_arm_thread_swap(void)
 	/* Prepare to force a context switch to the alternative thread,
 	 * by manually adding the current thread to the end of the queue,
 	 * so it will be context switched-out.
+	 *
+	 * Lock interrupts to make sure we get preempted only when it is
+	 * explicitly required by the test.
 	 */
-	int key;
-
-	key = irq_lock();
+	(void)irq_lock();
 	z_move_thread_to_end_of_prio_q(_current);
-	irq_unlock(key);
 
 	/* Clear the thread's callee-saved registers' container.
 	 * The container will, later, be populated by the swap
@@ -251,7 +388,7 @@ void test_arm_thread_swap(void)
 	 * registers' container.
 	 */
 	__asm__ volatile (
-		"stmia %0, {r4-r11};\n\t"
+		"stmia %0, {v1-v8};\n\t"
 		:
 		: "r" (&ztest_thread_callee_saved_regs_container)
 		: "memory"
@@ -264,9 +401,7 @@ void test_arm_thread_swap(void)
 
 #if defined(CONFIG_NO_OPTIMIZATIONS)
 	SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
-	__DSB();
-	__ISB();
-
+	irq_unlock(0);
 	/* The thread is now swapped-back in. */
 
 #else/* CONFIG_NO_OPTIMIZATIONS */
@@ -281,7 +416,7 @@ void test_arm_thread_swap(void)
 
 	/* Dump callee-saved registers to memory. */
 	__asm__ volatile (
-		"stmia %0, {r4-r11};\n\t"
+		"stmia %0, {v1-v8};\n\t"
 		:
 		: "r" (&ztest_thread_callee_saved_regs_container)
 		: "memory"
@@ -299,6 +434,10 @@ void test_arm_thread_swap(void)
 	zassert_true(switch_flag == true,
 		"Switch flag not incremented as expected %u\n",
 		switch_flag);
+	/* Clear the switch flag to signal that the main test thread
+	 * has been successfully swapped-in, as expected by the test.
+	 */
+	switch_flag = false;
 
 	/* Verify that the arch.basepri flag is cleared, after
 	 * the alternative thread modified it, since the thread
@@ -321,6 +460,25 @@ void test_arm_thread_swap(void)
 	zassert_true(_current->arch.swap_return_value = swap_return_val,
 			"Swap value not returned as expected\n");
 #endif
+
+#if defined(CONFIG_FLOAT) && defined(CONFIG_FP_SHARING)
+	/* Dump callee-saved registers to memory. */
+	__asm__ volatile (
+		"vstmia %0, {s16-s31};\n\t"
+		:
+		: "r" (&ztest_thread_fp_callee_saved_regs)
+		: "memory"
+	);
+
+	/* After swap-back, verify that the FP callee-saved registers loaded,
+	 * look exactly as what is located in the respective FP callee-saved
+	 * container of the thread.
+	 */
+	verify_fp_callee_saved(
+		&ztest_thread_fp_callee_saved_regs,
+		&_current->arch.preempt_float);
+#endif /* CONFIG_FLOAT && CONFIG_FP_SHARING */
+
 }
 /**
  * @}
