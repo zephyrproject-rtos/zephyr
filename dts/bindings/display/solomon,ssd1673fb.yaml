@@ -31,20 +31,15 @@ properties:
       required: true
       description: Number of bits used for the width parameters
 
-    gdv-a:
-      type: int
+    gdv:
+      type: uint8-array
       required: true
-      description: Gate driving voltage (A value)
-
-    gdv-b:
-      type: int
-      required: false
-      description: Gate driving voltage (B value)
+      description: Gate driving voltage values
 
     sdv:
-      type: int
+      type: uint8-array
       required: true
-      description: Source driving voltage
+      description: Source driving voltage values
 
     vcom:
       type: int
@@ -56,20 +51,10 @@ properties:
       required: true
       description: Border waveform
 
-    softstart-1:
-      type: int
+    softstart:
+      type: uint8-array
       required: false
-      description: Booster soft start phase 1
-
-    softstart-2:
-      type: int
-      required: false
-      description: Booster soft start phase 2
-
-    softstart-3:
-      type: int
-      required: false
-      description: Booster soft start phase 3
+      description: Booster soft start values
 
     orientation-flipped:
       type: boolean
@@ -86,4 +71,12 @@ properties:
 
     busy-gpios:
       type: phandle-array
+      required: true
+
+    lut-initial:
+      type: uint8-array
+      required: true
+
+    lut-default:
+      type: uint8-array
       required: true

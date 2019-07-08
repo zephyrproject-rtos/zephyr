@@ -62,50 +62,20 @@ struct ssd16xx_data {
 	u8_t scan_mode;
 };
 
-#if defined(DT_INST_0_GD_GDE0213B1)
-static u8_t ssd16xx_lut_initial[] = {
-	0x22, 0x55, 0xAA, 0x55, 0xAA, 0x55, 0xAA, 0x11,
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-	0x1E, 0x1E, 0x1E, 0x1E, 0x1E, 0x1E, 0x1E, 0x1E,
-	0x01, 0x00, 0x00, 0x00, 0x00
-};
+static u8_t ssd16xx_lut_initial[] = DT_INST_0_SOLOMON_SSD16XXFB_LUT_INITIAL;
+static u8_t ssd16xx_lut_default[] = DT_INST_0_SOLOMON_SSD16XXFB_LUT_DEFAULT;
+#if defined(DT_INST_0_SOLOMON_SSD16XXFB_SOFTSTART)
+static u8_t ssd16xx_softstart[] = DT_INST_0_SOLOMON_SSD16XXFB_SOFTSTART;
+#endif
+static u8_t ssd16xx_gdv[] = DT_INST_0_SOLOMON_SSD16XXFB_GDV;
+static u8_t ssd16xx_sdv[] = DT_INST_0_SOLOMON_SSD16XXFB_SDV;
 
-static u8_t ssd16xx_lut_default[] = {
-	0x18, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-	0x0F, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-	0x00, 0x00, 0x00, 0x00, 0x00
-};
-#elif defined(DT_INST_0_GD_GDE029A1)
-static u8_t ssd16xx_lut_initial[] = {
-	0x50, 0xAA, 0x55, 0xAA, 0x11, 0x00, 0x00, 0x00,
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-	0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0x1F, 0x00,
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-};
+#ifndef DT_INST_0_SOLOMON_SSD16XXFB_LUT_INITIAL
+#error "No initial waveform look up table (LUT) selected!"
+#endif
 
-static u8_t ssd16xx_lut_default[] = {
-	0x10, 0x18, 0x18, 0x08, 0x18, 0x18, 0x08, 0x00,
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-	0x00, 0x00, 0x00, 0x00, 0x13, 0x14, 0x44, 0x12,
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-};
-#elif defined(DT_INST_0_HINK_E0154A05)
-static u8_t ssd16xx_lut_initial[] = {
-	0x02, 0x02, 0x01, 0x11, 0x12, 0x12, 0x22, 0x22,
-	0x66, 0x69, 0x69, 0x59, 0x58, 0x99, 0x99, 0x88,
-	0x00, 0x00, 0x00, 0x00, 0xF8, 0xB4, 0x13, 0x51,
-	0x35, 0x51, 0x51, 0x19, 0x01, 0x00
-};
-
-static u8_t ssd16xx_lut_default[] = {
-	0x10, 0x18, 0x18, 0x08, 0x18, 0x18, 0x08, 0x00,
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-	0x00, 0x00, 0x00, 0x00, 0x13, 0x14, 0x44, 0x12,
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-};
-#else
-#error "No waveform look up table (LUT) selected!"
+#ifndef DT_INST_0_SOLOMON_SSD16XXFB_LUT_DEFAULT
+#error "No default waveform look up table (LUT) selected!"
 #endif
 
 static inline int ssd16xx_write_cmd(struct ssd16xx_data *driver,
@@ -500,29 +470,22 @@ static int ssd16xx_controller_init(struct device *dev)
 		return err;
 	}
 
-#if defined(DT_INST_0_SOLOMON_SSD16XXFB_SOFTSTART_1)
-	tmp[0] = DT_INST_0_SOLOMON_SSD16XXFB_SOFTSTART_1;
-	tmp[1] = DT_INST_0_SOLOMON_SSD16XXFB_SOFTSTART_2;
-	tmp[2] = DT_INST_0_SOLOMON_SSD16XXFB_SOFTSTART_3;
-	err = ssd16xx_write_cmd(driver, SSD16XX_CMD_SOFTSTART, tmp, 3);
+#if defined(DT_INST_0_SOLOMON_SSD16XXFB_SOFTSTART)
+	err = ssd16xx_write_cmd(driver, SSD16XX_CMD_SOFTSTART,
+				ssd16xx_softstart, sizeof(ssd16xx_softstart));
 	if (err < 0) {
 		return err;
 	}
 #endif
 
-	tmp[0] = DT_INST_0_SOLOMON_SSD16XXFB_GDV_A;
-#if defined(DT_INST_0_SOLOMON_SSD16XXFB_GDV_B)
-	tmp[1] = DT_INST_0_SOLOMON_SSD16XXFB_GDV_B;
-	err = ssd16xx_write_cmd(driver, SSD16XX_CMD_GDV_CTRL, tmp, 2);
-#else
-	err = ssd16xx_write_cmd(driver, SSD16XX_CMD_GDV_CTRL, tmp, 1);
-#endif
+	err = ssd16xx_write_cmd(driver, SSD16XX_CMD_GDV_CTRL, ssd16xx_gdv,
+				sizeof(ssd16xx_gdv));
 	if (err < 0) {
 		return err;
 	}
 
-	tmp[0] = DT_INST_0_SOLOMON_SSD16XXFB_SDV;
-	err = ssd16xx_write_cmd(driver, SSD16XX_CMD_SDV_CTRL, tmp, 1);
+	err = ssd16xx_write_cmd(driver, SSD16XX_CMD_SDV_CTRL, ssd16xx_sdv,
+				sizeof(ssd16xx_sdv));
 	if (err < 0) {
 		return err;
 	}
