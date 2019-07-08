@@ -3981,8 +3981,8 @@ static int load_tls_credential(struct lwm2m_ctx *client_ctx, u16_t res_id,
 
 	ret = tls_credential_add(client_ctx->tls_tag, type, cred, cred_len);
 	if (ret < 0) {
-		LOG_ERR("Unable to get resource data for '%s'",
-			log_strdup(pathstr));
+		LOG_ERR("Error setting cred tag %d type %d: Error %d",
+			client_ctx->tls_tag, type, ret);
 	}
 
 	return ret;
