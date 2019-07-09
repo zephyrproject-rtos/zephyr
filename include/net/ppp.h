@@ -575,6 +575,25 @@ static inline int net_ppp_ping(int idx, s32_t timeout)
 }
 #endif
 
+/**
+ * @brief Get PPP context information. This is only used by net-shell to
+ * print information about PPP.
+ *
+ * @param idx PPP network interface index
+ *
+ * @return PPP context or NULL if idx is invalid.
+ */
+#if defined(CONFIG_NET_L2_PPP) && defined(CONFIG_NET_SHELL)
+struct ppp_context *net_ppp_context_get(int idx);
+#else
+static inline struct ppp_context *net_ppp_context_get(int idx)
+{
+	ARG_UNUSED(idx);
+
+	return NULL;
+}
+#endif
+
 #ifdef __cplusplus
 }
 #endif

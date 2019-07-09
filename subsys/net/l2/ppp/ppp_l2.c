@@ -300,21 +300,34 @@ void net_ppp_carrier_off(struct net_if *iface)
 }
 
 #if defined(CONFIG_NET_SHELL)
-int net_ppp_ping(int idx, s32_t timeout)
+static int get_ppp_context(int idx, struct ppp_context **ctx,
+			   struct net_if **iface)
 {
-	struct net_if *iface = net_if_get_by_index(idx);
-	struct ppp_context *ctx;
-	int ret;
+	*iface = net_if_get_by_index(idx);
 
-	if (!iface) {
+	if (!*iface) {
 		return -ENOENT;
 	}
 
-	if (net_if_l2(iface) != &NET_L2_GET_NAME(PPP)) {
+	if (net_if_l2(*iface) != &NET_L2_GET_NAME(PPP)) {
 		return -ENODEV;
 	}
 
-	ctx = net_if_l2_data(iface);
+	*ctx = net_if_l2_data(*iface);
+
+	return 0;
+}
+
+int net_ppp_ping(int idx, s32_t timeout)
+{
+	struct ppp_context *ctx;
+	struct net_if *iface;
+	int ret;
+
+	ret = get_ppp_context(idx, &ctx, &iface);
+	if (ret < 0) {
+		return ret;
+	}
 
 	ctx->shell.echo_req_data = sys_rand32_get();
 
@@ -326,6 +339,29 @@ int net_ppp_ping(int idx, s32_t timeout)
 	}
 
 	return k_sem_take(&ctx->shell.wait_echo_reply, timeout);
+}
+
+struct ppp_context *net_ppp_context_get(int idx)
+{
+	struct ppp_context *ctx;
+	struct net_if *iface;
+	int ret;
+
+	if (idx == 0) {
+		iface = net_if_get_first_by_type(&NET_L2_GET_NAME(PPP));
+		if (!iface) {
+			return NULL;
+		}
+
+		return net_if_l2_data(iface);
+	}
+
+	ret = get_ppp_context(idx, &ctx, &iface);
+	if (ret < 0) {
+		return NULL;
+	}
+
+	return ctx;
 }
 #endif
 
