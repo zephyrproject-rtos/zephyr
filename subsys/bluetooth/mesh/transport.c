@@ -22,7 +22,7 @@
 #define LOG_MODULE_NAME bt_mesh_transport
 #include "common/log.h"
 
-#include "../testing.h"
+#include "host/testing.h"
 
 #include "crypto.h"
 #include "adv.h"
