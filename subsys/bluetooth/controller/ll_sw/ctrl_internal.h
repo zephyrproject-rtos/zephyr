@@ -265,6 +265,12 @@ struct connection {
 		u16_t rx_time;
 		u16_t tx_time;
 #endif /* CONFIG_BT_CTLR_PHY */
+		struct {
+			u16_t tx_octets;
+#if defined(CONFIG_BT_CTLR_PHY)
+			u16_t tx_time;
+#endif /* CONFIG_BT_CTLR_PHY */
+		} cache;
 	} llcp_length;
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
