@@ -13,7 +13,7 @@ from PIL import Image
 from PIL import ImageDraw
 
 PRINTABLE_MIN = 32
-PRINTABLE_MAX = 127
+PRINTABLE_MAX = 126
 
 def generate_element(image, charcode):
     """Generate CFB font element for a given character code from an image"""
