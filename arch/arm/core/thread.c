@@ -300,7 +300,7 @@ u32_t z_check_thread_stack_fail(const u32_t fault_addr, const u32_t psp)
 #if defined(CONFIG_USERSPACE)
 	if (thread->arch.priv_stack_start) {
 		/* User thread */
-		if ( z_arch_is_user_context() ) {
+		if (z_arch_is_user_context()) {
 			/* User thread in privilege mode */
 			if (IS_MPU_GUARD_VIOLATION(
 				thread->arch.priv_stack_start - guard_len,
