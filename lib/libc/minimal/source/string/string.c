@@ -338,13 +338,13 @@ void *memset(void *buf, int c, size_t n)
  * @return pointer to start of found byte
  */
 
-void *memchr(const void *s, unsigned char c, size_t n)
+void *memchr(const void *s, int c, size_t n)
 {
 	if (n != 0) {
 		const unsigned char *p = s;
 
 		do {
-			if (*p++ == c) {
+			if (*p++ == (unsigned char)c) {
 				return ((void *)(p - 1));
 			}
 
