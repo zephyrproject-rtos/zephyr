@@ -1,13 +1,14 @@
 # Kconfig - reel board configuration
 #
-# Copyright (c) 2018 Phytec Messtechnik GmbH
+# Copyright (c) 2018-2019 PHYTEC Messtechnik GmbH
 #
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_REEL_BOARD
+if BOARD_REEL_BOARD || BOARD_REEL_BOARD_V2
 
 config BOARD
-	default "reel_board"
+	default "reel_board" if BOARD_REEL_BOARD
+	default "reel_board_v2" if BOARD_REEL_BOARD_V2
 
 config I2C
 	default y
@@ -81,4 +82,4 @@ config BT_CTLR
 
 endif # BT
 
-endif # BOARD_REEL_BOARD
+endif # BOARD_REEL_BOARD || BOARD_REEL_BOARD_V2
