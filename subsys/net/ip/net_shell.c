@@ -21,6 +21,7 @@ LOG_MODULE_REGISTER(net_shell, LOG_LEVEL_DBG);
 
 #include <net/net_if.h>
 #include <net/dns_resolve.h>
+#include <net/net_stats.h>
 #include <sys/printk.h>
 
 #include "route.h"
@@ -676,6 +677,74 @@ static void print_eth_stats(struct net_if *iface, struct net_stats_eth *data,
 }
 #endif /* CONFIG_NET_STATISTICS_ETHERNET && CONFIG_NET_STATISTICS_USER_API */
 
+static void print_tc_tx_stats(const struct shell *shell, struct net_if *iface)
+{
+#if NET_TC_TX_COUNT > 1
+	int i;
+
+	PR("TX traffic class statistics:\n");
+
+#if defined(CONFIG_NET_CONTEXT_TIMESTAMP)
+	PR("TC  Priority\tSent pkts\tbytes\ttime\n");
+
+	for (i = 0; i < NET_TC_TX_COUNT; i++) {
+		net_stats_t count = GET_STAT(iface,
+					     tc.sent[i].tx_time.time_count);
+		if (count == 0) {
+			PR("[%d] %s (%d)\t%d\t\t%d\t-\n", i,
+			   priority2str(GET_STAT(iface, tc.sent[i].priority)),
+			   GET_STAT(iface, tc.sent[i].priority),
+			   GET_STAT(iface, tc.sent[i].pkts),
+			   GET_STAT(iface, tc.sent[i].bytes));
+		} else {
+			PR("[%d] %s (%d)\t%d\t\t%d\t%lu us\n", i,
+			   priority2str(GET_STAT(iface, tc.sent[i].priority)),
+			   GET_STAT(iface, tc.sent[i].priority),
+			   GET_STAT(iface, tc.sent[i].pkts),
+			   GET_STAT(iface, tc.sent[i].bytes),
+			   (u32_t)(GET_STAT(iface,
+					    tc.sent[i].tx_time.time_sum) /
+				   (u64_t)count));
+		}
+	}
+#else
+	PR("TC  Priority\tSent pkts\tbytes\n");
+
+	for (i = 0; i < NET_TC_TX_COUNT; i++) {
+		PR("[%d] %s (%d)\t%d\t\t%d\n", i,
+		   priority2str(GET_STAT(iface, tc.sent[i].priority)),
+		   GET_STAT(iface, tc.sent[i].priority),
+		   GET_STAT(iface, tc.sent[i].pkts),
+		   GET_STAT(iface, tc.sent[i].bytes));
+	}
+#endif /* CONFIG_NET_CONTEXT_TIMESTAMP */
+#else
+	ARG_UNUSED(shell);
+	ARG_UNUSED(iface);
+#endif /* NET_TC_TX_COUNT > 1 */
+}
+
+static void print_tc_rx_stats(const struct shell *shell, struct net_if *iface)
+{
+#if NET_TC_RX_COUNT > 1
+	int i;
+
+	PR("RX traffic class statistics:\n");
+	PR("TC  Priority\tRecv pkts\tbytes\n");
+
+	for (i = 0; i < NET_TC_RX_COUNT; i++) {
+		PR("[%d] %s (%d)\t%d\t\t%d\n", i,
+		   priority2str(GET_STAT(iface, tc.recv[i].priority)),
+		   GET_STAT(iface, tc.recv[i].priority),
+		   GET_STAT(iface, tc.recv[i].pkts),
+		   GET_STAT(iface, tc.recv[i].bytes));
+	}
+#else
+	ARG_UNUSED(shell);
+	ARG_UNUSED(iface);
+#endif /* NET_TC_RX_COUNT > 1 */
+}
+
 static void net_shell_print_statistics(struct net_if *iface, void *user_data)
 {
 	struct net_shell_user_data *data = user_data;
@@ -781,55 +850,8 @@ static void net_shell_print_statistics(struct net_if *iface, void *user_data)
 	PR("Bytes sent     %u\n", GET_STAT(iface, bytes.sent));
 	PR("Processing err %d\n", GET_STAT(iface, processing_error));
 
-#if NET_TC_COUNT > 1
-	{
-		int i;
-
-#if NET_TC_TX_COUNT > 1
-		PR("TX traffic class statistics:\n");
-
-#if defined(CONFIG_NET_CONTEXT_TIMESTAMP)
-		PR("TC  Priority\tSent pkts\tbytes\ttime\n");
-
-		for (i = 0; i < NET_TC_TX_COUNT; i++) {
-			PR("[%d] %s (%d)\t%d\t\t%d\t%lu us\n", i,
-			   priority2str(GET_STAT(iface, tc.sent[i].priority)),
-			   GET_STAT(iface, tc.sent[i].priority),
-			   GET_STAT(iface, tc.sent[i].pkts),
-			   GET_STAT(iface, tc.sent[i].bytes),
-			   GET_STAT(iface, tc.sent[i].tx_time.time_count) ?
-			   (u32_t)(GET_STAT(iface,
-					tc.sent[i].tx_time.time_sum) /
-				   (u64_t)GET_STAT(iface,
-					tc.sent[i].tx_time.time_count)) : 0);
-		}
-#else
-		PR("TC  Priority\tSent pkts\tbytes\n");
-
-		for (i = 0; i < NET_TC_TX_COUNT; i++) {
-			PR("[%d] %s (%d)\t%d\t\t%d\n", i,
-			   priority2str(GET_STAT(iface, tc.sent[i].priority)),
-			   GET_STAT(iface, tc.sent[i].priority),
-			   GET_STAT(iface, tc.sent[i].pkts),
-			   GET_STAT(iface, tc.sent[i].bytes));
-		}
-#endif /* CONFIG_NET_CONTEXT_TIMESTAMP */
-#endif
-
-#if NET_TC_RX_COUNT > 1
-		PR("RX traffic class statistics:\n");
-		PR("TC  Priority\tRecv pkts\tbytes\n");
-
-		for (i = 0; i < NET_TC_RX_COUNT; i++) {
-			PR("[%d] %s (%d)\t%d\t\t%d\n", i,
-			   priority2str(GET_STAT(iface, tc.recv[i].priority)),
-			   GET_STAT(iface, tc.recv[i].priority),
-			   GET_STAT(iface, tc.recv[i].pkts),
-			   GET_STAT(iface, tc.recv[i].bytes));
-		}
-#endif
-	}
-#endif /* NET_TC_COUNT > 1 */
+	print_tc_tx_stats(shell, iface);
+	print_tc_rx_stats(shell, iface);
 
 #if defined(CONFIG_NET_STATISTICS_ETHERNET) && \
 					defined(CONFIG_NET_STATISTICS_USER_API)
