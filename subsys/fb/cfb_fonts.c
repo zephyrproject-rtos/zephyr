@@ -12,7 +12,7 @@
 #include <display/cfb.h>
 
 #define CFB_FONTS_FIRST_CHAR	32
-#define CFB_FONTS_LAST_CHAR	127
+#define CFB_FONTS_LAST_CHAR	126
 
 const u8_t cfb_font_1016[95][20] = {
 	/*   */
