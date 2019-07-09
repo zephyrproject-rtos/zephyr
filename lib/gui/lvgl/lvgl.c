@@ -101,6 +101,9 @@ static int lvgl_input_pointer_init(void)
 		return -ENODEV;
 	}
 
+	/* lvgl doesn't suppot multitouch input */
+	zio_dev_set_attr(lvgl_input_pointer_dev, FT5336_TOUCHES_IDX, (u8_t) 1);
+
 	zio_buf_attach(&inputbuf, lvgl_input_pointer_dev);
 
 	lv_indev_drv_init(&indev_drv);
