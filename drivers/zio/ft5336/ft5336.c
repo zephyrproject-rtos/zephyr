@@ -24,6 +24,7 @@ struct ft5336_data {
 	struct k_work work;
 	struct device *dev;
 	ZIO_FIFO_BUF_DECLARE(fifo, struct ft5336_datum, CONFIG_FT5336_FIFO_SIZE);
+	u8_t touches;
 };
 
 struct ft5336_raw {
@@ -73,6 +74,57 @@ static const struct zio_chan_desc ft5336_chans[] = {
 	},
 };
 
+static const struct zio_attr_desc ft5336_attr_descs[] = {
+	[FT5336_TOUCHES_IDX] = {
+		.type = FT5336_TOUCHES_TYPE,
+		.data_type = zio_variant_u8,
+	}
+};
+
+static int ft5336_set_attr(struct device *dev, const u32_t attr_idx,
+		const struct zio_variant val)
+{
+	struct ft5336_data *data = dev->driver_data;
+
+	int res = 0;
+	u8_t touches;
+
+	switch (attr_idx) {
+	case FT5336_TOUCHES_IDX:
+		res = zio_variant_unwrap(val, touches);
+		if ((res != 0) || (touches > MAX_TOUCHES)) {
+			return -EINVAL;
+		}
+		data->touches = touches;
+		return 0;
+	default:
+		return -EINVAL;
+	}
+}
+
+static int ft5336_get_attr(struct device *dev, u32_t attr_idx,
+		struct zio_variant *var)
+{
+	struct ft5336_data *data = dev->driver_data;
+
+	switch (attr_idx) {
+	case FT5336_TOUCHES_IDX:
+		*var = zio_variant_wrap(data->touches);
+		return 0;
+	default:
+		return -EINVAL;
+	}
+}
+
+static int ft5336_get_attr_descs(struct device *dev,
+		const struct zio_attr_desc **attrs,
+		u32_t *num_attrs)
+{
+	*attrs = ft5336_attr_descs;
+	*num_attrs = sizeof(ft5336_attr_descs);
+	return 0;
+}
+
 static int ft5336_get_chan_descs(struct device *dev,
 		const struct zio_chan_desc **chans,
 		u32_t *num_chans)
@@ -96,7 +148,7 @@ static int ft5336_read(struct device *dev)
 		return -EIO;
 	}
 
-	for (i = 0; i < MAX_TOUCHES; i++) {
+	for (i = 0; i < data->touches; i++) {
 		datum.id = i;
 		datum.event = raw.touch[i].xh >> 6;
 		datum.x = ((raw.touch[i].xh & 0xf) << 8) | raw.touch[i].xl;
@@ -158,15 +210,17 @@ static int ft5336_init(struct device *dev)
 	}
 
 	data->dev = dev;
+	data->touches = MAX_TOUCHES;
+
 	k_work_init(&data->work, ft5336_work_handler);
 
 	return 0;
 }
 
 static const struct zio_dev_api ft5336_driver_api = {
-	.set_attr = NULL,
-	.get_attr = NULL,
-	.get_attr_descs = NULL,
+	.set_attr = ft5336_set_attr,
+	.get_attr = ft5336_get_attr,
+	.get_attr_descs = ft5336_get_attr_descs,
 	.get_chan_descs = ft5336_get_chan_descs,
 	.get_chan_attr_descs = NULL,
 	.trigger = ft5336_trigger,

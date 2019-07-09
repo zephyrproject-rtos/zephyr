@@ -14,6 +14,12 @@
 #define FT5336_EVENT_TYPE	(ZIO_CHAN_TYPES + 2)
 #define FT5336_ID_TYPE		(ZIO_CHAN_TYPES + 3)
 
+/* device attribute type(s) */
+#define FT5336_TOUCHES_TYPE	(ZIO_ATTR_TYPES + 1)
+
+/* device attribute indices */
+#define FT5336_TOUCHES_IDX	0
+
 /* device attributes */
 
 /* channel attribute type(s) */
