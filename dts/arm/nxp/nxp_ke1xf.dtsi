@@ -72,7 +72,7 @@
 			label = "PMC";
 			/* LPO clock */
 			clock-frequency = <125000>;
-			#clock-cells = <1>;
+			#clock-cells = <0>;
 		};
 
 		pcc: pcc@40065000 {
@@ -96,7 +96,7 @@
 			compatible = "nxp,kinetis-wdog32";
 			reg = <0x40052000 0x1000>;
 			interrupts = <22 0>;
-			clocks = <&pmc 0>;
+			clocks = <&pmc>;
 			clk-source = <1>;
 			clk-divider = <256>;
 			label = "WDT_0";

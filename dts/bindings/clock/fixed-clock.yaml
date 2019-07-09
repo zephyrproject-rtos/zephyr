@@ -38,4 +38,4 @@ properties:
     "#clock-cells":
       type: int
       category: required
-      description: should be 1.
+      description: should be 0.
