@@ -209,13 +209,6 @@ static int ssd16xx_update_display(const struct device *dev)
 	u8_t tmp;
 	int err;
 
-	tmp = SSD16XX_CTRL1_INITIAL_UPDATE_LH;
-	err = ssd16xx_write_cmd(driver, SSD16XX_CMD_UPDATE_CTRL1,
-				&tmp, sizeof(tmp));
-	if (err < 0) {
-		return err;
-	}
-
 	tmp = (SSD16XX_CTRL2_ENABLE_CLK |
 	       SSD16XX_CTRL2_ENABLE_ANALOG |
 	       SSD16XX_CTRL2_TO_PATTERN |
