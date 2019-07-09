@@ -1,0 +1,11 @@
+/*
+ * Copyright (c) 2019, Markus Fuchs <markus.fuchs@de.sauter-bc.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/f4/stm32f437.dtsi>
+
+/delete-node/ &spi5;
+
+/delete-node/ &spi6;
