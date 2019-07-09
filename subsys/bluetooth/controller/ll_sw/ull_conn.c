@@ -398,9 +398,23 @@ u32_t ll_length_req_send(u16_t handle, u16_t tx_octets, u16_t tx_time)
 		return BT_HCI_ERR_UNKNOWN_CONN_ID;
 	}
 
-	if ((conn->llcp_req != conn->llcp_ack) ||
-	    (conn->llcp_length.req != conn->llcp_length.ack)) {
-		return BT_HCI_ERR_CMD_DISALLOWED;
+	if (conn->llcp_length.req != conn->llcp_length.ack) {
+		switch (conn->llcp_length.state) {
+		case LLCP_LENGTH_STATE_RSP_ACK_WAIT:
+		case LLCP_LENGTH_STATE_RESIZE_RSP:
+		case LLCP_LENGTH_STATE_RESIZE_RSP_ACK_WAIT:
+			/* cached until peer procedure completes */
+			if (!conn->llcp_length.cache.tx_octets) {
+				conn->llcp_length.cache.tx_octets = tx_octets;
+#if defined(CONFIG_BT_CTLR_PHY)
+				conn->llcp_length.cache.tx_time = tx_time;
+#endif /* CONFIG_BT_CTLR_PHY */
+				return 0;
+			}
+			/* pass through */
+		default:
+			return BT_HCI_ERR_CMD_DISALLOWED;
+		}
 	}
 
 	/* TODO: parameter check tx_octets and tx_time */
@@ -3119,20 +3133,44 @@ static inline void event_len_prep(struct ll_conn *conn)
 		struct pdu_data *pdu_ctrl_rx;
 		struct node_rx_pdu *rx;
 		struct lll_conn *lll;
+		u16_t tx_octets;
 
 		lll = &conn->lll;
 
 		/* Use the new rx octets/time in the connection */
 		lll->max_rx_octets = conn->llcp_length.rx_octets;
 
+		/* backup tx_octets */
+		tx_octets = conn->llcp_length.tx_octets;
+
 #if defined(CONFIG_BT_CTLR_PHY)
+		/* Use the new rx time in the connection */
 		lll->max_rx_time = conn->llcp_length.rx_time;
+
+		/* backup tx time */
+		u16_t tx_time = conn->llcp_length.tx_time;
 #endif /* CONFIG_BT_CTLR_PHY */
 
+		/* switch states, to wait for ack, to request cached values or
+		 * complete the procedure
+		 */
 		if (conn->llcp_length.state == LLCP_LENGTH_STATE_RESIZE) {
-			/* Procedure complete */
-			conn->llcp_length.ack = conn->llcp_length.req;
-			conn->procedure_expire = 0U;
+			/* check cache */
+			if (!conn->llcp_length.cache.tx_octets) {
+				/* Procedure complete */
+				conn->llcp_length.ack = conn->llcp_length.req;
+				conn->procedure_expire = 0U;
+			} else {
+				/* Initiate cached procedure */
+				conn->llcp_length.tx_octets =
+					conn->llcp_length.cache.tx_octets;
+				conn->llcp_length.cache.tx_octets = 0;
+#if defined(CONFIG_BT_CTLR_PHY)
+				conn->llcp_length.tx_time =
+					conn->llcp_length.cache.tx_time;
+#endif /* CONFIG_BT_CTLR_PHY */
+				conn->llcp_length.state = LLCP_LENGTH_STATE_REQ;
+			}
 		} else {
 			conn->llcp_length.state =
 				LLCP_LENGTH_STATE_RESIZE_RSP_ACK_WAIT;
@@ -3156,16 +3194,14 @@ static inline void event_len_prep(struct ll_conn *conn)
 
 		lr = &pdu_ctrl_rx->llctrl.length_rsp;
 		lr->max_rx_octets = sys_cpu_to_le16(lll->max_rx_octets);
-		lr->max_tx_octets =
-			sys_cpu_to_le16(conn->llcp_length.tx_octets);
+		lr->max_tx_octets = sys_cpu_to_le16(tx_octets);
 #if !defined(CONFIG_BT_CTLR_PHY)
 		lr->max_rx_time =
 			sys_cpu_to_le16(PKT_US(lll->max_rx_octets, 0));
-		lr->max_tx_time =
-			sys_cpu_to_le16(PKT_US(conn->llcp_length.tx_octets, 0));
+		lr->max_tx_time = sys_cpu_to_le16(PKT_US(tx_octets, 0));
 #else /* CONFIG_BT_CTLR_PHY */
 		lr->max_rx_time = sys_cpu_to_le16(lll->max_rx_time);
-		lr->max_tx_time = sys_cpu_to_le16(conn->llcp_length.tx_time);
+		lr->max_tx_time = sys_cpu_to_le16(tx_time);
 #endif /* CONFIG_BT_CTLR_PHY */
 
 		/* enqueue rx node towards Thread */
@@ -4857,9 +4893,25 @@ static inline void ctrl_tx_ack(struct ll_conn *conn, struct node_tx **tx,
 					break;
 				}
 
-				/* Procedure complete */
-				conn->llcp_length.ack = conn->llcp_length.req;
-				conn->procedure_expire = 0U;
+				/* check cache */
+				if (!conn->llcp_length.cache.tx_octets) {
+					/* Procedure complete */
+					conn->llcp_length.ack =
+						conn->llcp_length.req;
+					conn->procedure_expire = 0U;
+
+					break;
+				}
+
+				/* Initiate cached procedure */
+				conn->llcp_length.tx_octets =
+					conn->llcp_length.cache.tx_octets;
+				conn->llcp_length.cache.tx_octets = 0;
+#if defined(CONFIG_BT_CTLR_PHY)
+				conn->llcp_length.tx_time =
+					conn->llcp_length.cache.tx_time;
+#endif /* CONFIG_BT_CTLR_PHY */
+				conn->llcp_length.state = LLCP_LENGTH_STATE_REQ;
 				break;
 
 			default:
