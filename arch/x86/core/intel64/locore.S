@@ -10,8 +10,6 @@
 #include <offsets_short.h>
 #include <drivers/interrupt_controller/loapic.h>
 
-#define IST1_SIZE	4096	/* must be a multiple of 16 */
-
 .section .locore,"ax"
 .code32
 
@@ -52,7 +50,7 @@ __start:
 	movw %ax, %fs
 	movw %ax, %gs
 
-	movl $(ist1 + IST1_SIZE), %esp
+	movl $(ist1 + CONFIG_ISR_STACK_SIZE), %esp
 
 	/* transition to long mode, by the book. */
 
@@ -158,7 +156,7 @@ __swap:
 	movq %r14, _thread_offset_to_r14(%rsi)
 	movq %r15, _thread_offset_to_r15(%rsi)
 
-	movq $(ist1 + IST1_SIZE), %rsp
+	movq $(ist1 + CONFIG_ISR_STACK_SIZE), %rsp
 
 	/* fall through to __resume */
 
@@ -237,7 +235,7 @@ tss:	.long 0
 	.long 0, 0				/* RSP1 */
 	.long 0, 0				/* RSP2 */
 	.long 0, 0
-	.long (ist1 + IST1_SIZE), 0		/* IST1 */
+	.long (ist1 + CONFIG_ISR_STACK_SIZE), 0	/* IST1 */
 	.long 0, 0				/* IST2 */
 	.long 0, 0				/* IST3 */
 	.long 0, 0				/* IST4 */
@@ -479,5 +477,5 @@ pdp:	.long 0x00000183		/* 0x183 = G, 1GB, R/W, P */
 
 .align 16
 ist1:
-	.fill IST1_SIZE, 1, 0xFF
+	.fill CONFIG_ISR_STACK_SIZE, 1, 0xFF
 
