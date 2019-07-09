@@ -387,7 +387,8 @@ static int ssd16xx_set_pixel_format(const struct device *dev,
 	return -ENOTSUP;
 }
 
-static int ssd16xx_clear_and_write_buffer(struct device *dev)
+static int ssd16xx_clear_and_write_buffer(struct device *dev, u8_t ram_cmd,
+					  bool update)
 {
 	int err;
 	u8_t clear_page[EPD_PANEL_WIDTH];
@@ -419,8 +420,7 @@ static int ssd16xx_clear_and_write_buffer(struct device *dev)
 
 	gpio_pin_write(driver->dc, SSD16XX_DC_PIN, 0);
 
-	tmp = SSD16XX_CMD_WRITE_RAM;
-	sbuf.buf = &tmp;
+	sbuf.buf = &ram_cmd;
 	sbuf.len = 1;
 	err = spi_write(driver->spi_dev, &driver->spi_config, &buf_set);
 	if (err < 0) {
@@ -439,7 +439,11 @@ static int ssd16xx_clear_and_write_buffer(struct device *dev)
 		}
 	}
 
-	return ssd16xx_update_display(dev);
+	if (update) {
+		return ssd16xx_update_display(dev);
+	}
+
+	return 0;
 }
 
 static int ssd16xx_controller_init(struct device *dev)
@@ -523,7 +527,15 @@ static int ssd16xx_controller_init(struct device *dev)
 		return err;
 	}
 
-	err = ssd16xx_clear_and_write_buffer(dev);
+	err = ssd16xx_clear_and_write_buffer(dev, SSD16XX_CMD_WRITE_RAM, true);
+	if (err < 0) {
+		return err;
+	}
+
+	ssd16xx_busy_wait(driver);
+
+	err = ssd16xx_clear_and_write_buffer(dev, SSD16XX_CMD_WRITE_RED_RAM,
+					     false);
 	if (err < 0) {
 		return err;
 	}
@@ -537,7 +549,7 @@ static int ssd16xx_controller_init(struct device *dev)
 		return err;
 	}
 
-	return ssd16xx_clear_and_write_buffer(dev);
+	return ssd16xx_clear_and_write_buffer(dev, SSD16XX_CMD_WRITE_RAM, true);
 }
 
 static int ssd16xx_init(struct device *dev)
