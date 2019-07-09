@@ -1963,9 +1963,25 @@ static inline u32_t isr_rx_conn_pkt_ack(struct pdu_data *pdu_data_tx,
 					break;
 				}
 
-				/* Procedure complete */
-				conn->llcp_length.ack = conn->llcp_length.req;
-				conn->procedure_expire = 0U;
+				/* check cache */
+				if (!conn->llcp_length.cache.tx_octets) {
+					/* Procedure complete */
+					conn->llcp_length.ack =
+						conn->llcp_length.req;
+					conn->procedure_expire = 0U;
+
+					break;
+				}
+
+				/* Initiate cached procedure */
+				conn->llcp_length.tx_octets =
+					conn->llcp_length.cache.tx_octets;
+				conn->llcp_length.cache.tx_octets = 0;
+#if defined(CONFIG_BT_CTLR_PHY)
+				conn->llcp_length.tx_time =
+					conn->llcp_length.cache.tx_time;
+#endif /* CONFIG_BT_CTLR_PHY */
+				conn->llcp_length.state = LLCP_LENGTH_STATE_REQ;
 
 				break;
 
@@ -8256,6 +8272,7 @@ static inline int event_len_prep(struct connection *conn)
 		u16_t packet_rx_data_size;
 		u16_t free_count_conn;
 		u16_t free_count_rx;
+		u16_t tx_octets;
 
 		/* Ensure the rx pool is not in use.
 		 * This is important to be able to re-size the pool
@@ -8275,24 +8292,47 @@ static inline int event_len_prep(struct connection *conn)
 			return -EAGAIN;
 		}
 
-		if (conn->llcp_length.state == LLCP_LENGTH_STATE_RESIZE) {
-			/* Procedure complete */
-			conn->llcp_length.ack = conn->llcp_length.req;
-			conn->procedure_expire = 0U;
-		} else {
-			conn->llcp_length.state =
-				LLCP_LENGTH_STATE_RESIZE_RSP_ACK_WAIT;
-		}
-
-		/* Use the new rx octets/time in the connection */
+		/* Use the new rx octets in the connection */
 		conn->max_rx_octets = conn->llcp_length.rx_octets;
 
+		/* backup tx_octets */
+		tx_octets = conn->llcp_length.tx_octets;
+
 #if defined(CONFIG_BT_CTLR_PHY)
+		/* Use the new rx time in the connection */
 		conn->max_rx_time = conn->llcp_length.rx_time;
+
+		/* backup tx time */
+		u16_t tx_time = conn->llcp_length.tx_time;
 #endif /* CONFIG_BT_CTLR_PHY */
 
 		/* Reset event length update advanced flag */
 		conn->evt_len_adv = 0U;
+
+		/* switch states, to wait for ack, to request cached values or
+		 * complete the procedure
+		 */
+		if (conn->llcp_length.state == LLCP_LENGTH_STATE_RESIZE) {
+			/* check cache */
+			if (!conn->llcp_length.cache.tx_octets) {
+				/* Procedure complete */
+				conn->llcp_length.ack = conn->llcp_length.req;
+				conn->procedure_expire = 0U;
+			} else {
+				/* Initiate cached procedure */
+				conn->llcp_length.tx_octets =
+					conn->llcp_length.cache.tx_octets;
+				conn->llcp_length.cache.tx_octets = 0;
+#if defined(CONFIG_BT_CTLR_PHY)
+				conn->llcp_length.tx_time =
+					conn->llcp_length.cache.tx_time;
+#endif /* CONFIG_BT_CTLR_PHY */
+				conn->llcp_length.state = LLCP_LENGTH_STATE_REQ;
+			}
+		} else {
+			conn->llcp_length.state =
+				LLCP_LENGTH_STATE_RESIZE_RSP_ACK_WAIT;
+		}
 
 		/** TODO This design is exception as memory initialization
 		 * and allocation is done in radio context here, breaking the
@@ -8390,13 +8430,13 @@ static inline int event_len_prep(struct connection *conn)
 
 		lr = &pdu_ctrl_rx->llctrl.length_rsp;
 		lr->max_rx_octets = conn->max_rx_octets;
-		lr->max_tx_octets = conn->llcp_length.tx_octets;
+		lr->max_tx_octets = tx_octets;
 #if !defined(CONFIG_BT_CTLR_PHY)
 		lr->max_rx_time = RADIO_PKT_TIME(conn->max_rx_octets, 0);
-		lr->max_tx_time = RADIO_PKT_TIME(lr->max_tx_octets, 0);
+		lr->max_tx_time = RADIO_PKT_TIME(tx_octets, 0);
 #else /* CONFIG_BT_CTLR_PHY */
 		lr->max_rx_time = conn->max_rx_time;
-		lr->max_tx_time = conn->llcp_length.tx_time;
+		lr->max_tx_time = tx_time;
 #endif /* CONFIG_BT_CTLR_PHY */
 
 		/* enqueue version ind structure into rx queue */
@@ -11214,6 +11254,7 @@ u32_t radio_adv_enable(u16_t interval, u8_t chan_map, u8_t filter_policy,
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 		conn->llcp_length.req = 0U;
 		conn->llcp_length.ack = 0U;
+		conn->llcp_length.cache.tx_octets = 0U;
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
 #if defined(CONFIG_BT_CTLR_PHY)
@@ -11758,6 +11799,7 @@ u32_t radio_connect_enable(u8_t adv_addr_type, u8_t *adv_addr, u16_t interval,
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	conn->llcp_length.req = 0U;
 	conn->llcp_length.ack = 0U;
+	conn->llcp_length.cache.tx_octets = 0U;
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
 #if defined(CONFIG_BT_CTLR_PHY)
@@ -12214,7 +12256,22 @@ u32_t ll_length_req_send(u16_t handle, u16_t tx_octets, u16_t tx_time)
 	}
 
 	if (conn->llcp_length.req != conn->llcp_length.ack) {
-		return BT_HCI_ERR_CMD_DISALLOWED;
+		switch (conn->llcp_length.state) {
+		case LLCP_LENGTH_STATE_RSP_ACK_WAIT:
+		case LLCP_LENGTH_STATE_RESIZE_RSP:
+		case LLCP_LENGTH_STATE_RESIZE_RSP_ACK_WAIT:
+			/* cached until peer procedure completes */
+			if (!conn->llcp_length.cache.tx_octets) {
+				conn->llcp_length.cache.tx_octets = tx_octets;
+#if defined(CONFIG_BT_CTLR_PHY)
+				conn->llcp_length.cache.tx_time = tx_time;
+#endif /* CONFIG_BT_CTLR_PHY */
+				return 0;
+			}
+			/* pass through */
+		default:
+			return BT_HCI_ERR_CMD_DISALLOWED;
+		}
 	}
 
 	/* TODO: parameter check tx_octets and tx_time */
