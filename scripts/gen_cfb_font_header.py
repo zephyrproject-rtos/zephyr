@@ -75,7 +75,7 @@ def generate_header():
         if arg.startswith("--bindir"):
             # Drop. Assumes --bindir= was passed with '=' sign.
             continue
-        if arg.startswith(args.bindir):
+        if args.bindir and arg.startswith(args.bindir):
             # +1 to also strip '/' or '\' separator
             striplen = min(len(args.bindir)+1, len(arg))
             clean_cmd.append(arg[striplen:])
@@ -158,7 +158,7 @@ def parse_args():
         "-o", "--output", type=argparse.FileType('w'), default="-", metavar="FILE",
         help="CFB font header file (default: stdout)")
     group.add_argument(
-        "--bindir", type=str, default="",
+        "--bindir", type=str,
         help="CMAKE_BINARY_DIR for pure logging purposes. No trailing slash.")
     group.add_argument(
         "-x", "--width", required=True, type=int,
