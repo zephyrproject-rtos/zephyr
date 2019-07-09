@@ -204,3 +204,17 @@ extern void z_x86_syscall_entry_stub(void);
 NANO_CPU_INT_REGISTER(z_x86_syscall_entry_stub, -1, -1, 0x80, 3);
 
 #endif /* CONFIG_X86_USERSPACE */
+
+#if defined(CONFIG_FLOAT) && defined(CONFIG_FP_SHARING)
+
+extern int z_float_disable(struct k_thread *thread);
+
+int z_arch_float_disable(struct k_thread *thread)
+{
+#if defined(CONFIG_LAZY_FP_SHARING)
+	return z_float_disable(thread);
+#else
+	return -ENOSYS;
+#endif /* CONFIG_LAZY_FP_SHARING */
+}
+#endif /* CONFIG_FLOAT && CONFIG_FP_SHARING */
