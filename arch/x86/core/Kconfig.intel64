@@ -6,4 +6,22 @@
 
 if X86_LONGMODE
 
+config MAIN_STACK_SIZE
+	default 8192
+
+config IDLE_STACK_SIZE
+	default 4096
+
+config ISR_STACK_SIZE
+	default 4096
+
+config TEST_EXTRA_STACKSIZE
+	default 4096
+
+config SYSTEM_WORKQUEUE_STACK_SIZE
+	default 8192
+
+config OFFLOAD_WORKQUEUE_STACK_SIZE
+	default 8192
+
 endif # X86_LONGMODE
