@@ -55,5 +55,3 @@ if(CONFIG_BT_HCI_HOST)
     endif()
   endif()
 endif()
-
-add_subdirectory_ifdef(CONFIG_BT_MESH mesh)

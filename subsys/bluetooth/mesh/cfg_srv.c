@@ -22,7 +22,7 @@
 #define LOG_MODULE_NAME bt_mesh_cfg_srv
 #include "common/log.h"
 
-#include "../testing.h"
+#include "host/testing.h"
 
 #include "mesh.h"
 #include "adv.h"

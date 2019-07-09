@@ -21,7 +21,7 @@
 #define LOG_MODULE_NAME bt_mesh_adv
 #include "common/log.h"
 
-#include "../hci_core.h"
+#include "host/hci_core.h"
 
 #include "adv.h"
 #include "net.h"

@@ -22,8 +22,8 @@
 #define LOG_MODULE_NAME bt_mesh_prov
 #include "common/log.h"
 
-#include "../ecc.h"
-#include "../testing.h"
+#include "host/ecc.h"
+#include "host/testing.h"
 
 #include "crypto.h"
 #include "adv.h"

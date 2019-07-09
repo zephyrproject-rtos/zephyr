@@ -145,4 +145,6 @@ source "subsys/bluetooth/shell/Kconfig"
 
 endif # BT_HCI
 
+source "subsys/bluetooth/mesh/Kconfig"
+
 endif # BT
