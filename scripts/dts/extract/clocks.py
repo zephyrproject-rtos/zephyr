@@ -47,7 +47,7 @@ class DTClocks(DTDirective):
             else:
                 clock_cells.append(cell)
             clock_cell_index += 1
-            if clock_cell_index > nr_clock_cells:
+            if clock_cell_index > nr_clock_cells or nr_clock_cells == 0:
                 # clock consumer device - clocks info
                 #####################################
                 prop_def = {}
