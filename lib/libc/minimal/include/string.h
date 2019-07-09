@@ -36,7 +36,7 @@ extern void  *memmove(void *d, const void *s, size_t n);
 extern void  *memcpy(void *_MLIBC_RESTRICT d, const void *_MLIBC_RESTRICT s,
 		     size_t n);
 extern void  *memset(void *buf, int c, size_t n);
-extern void  *memchr(const void *s, unsigned char c, size_t n);
+extern void  *memchr(const void *s, int c, size_t n);
 
 #ifdef __cplusplus
 }
