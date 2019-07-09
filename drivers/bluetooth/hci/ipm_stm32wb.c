@@ -115,7 +115,7 @@ void TM_EvtReceivedCb(TL_EvtPacket_t *hcievt)
 			       hcievt->evtserial.evt.evtcode);
 			goto out;
 		default:
-			buf = bt_buf_get_evt(evtserial.evt.evtcode, false,
+			buf = bt_buf_get_evt(hcievt->evtserial.evt.evtcode, false,
 					     K_FOREVER);
 			break;
 		}
