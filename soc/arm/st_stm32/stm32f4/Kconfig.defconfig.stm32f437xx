@@ -1,0 +1,44 @@
+# Kconfig - ST STM32F437XX MCU configuration options
+#
+# Copyright (c) 2019, Markus Fuchs <markus.fuchs@de.sauter-bc.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_STM32F437XX
+
+config SOC
+	string
+	default "stm32f437xx"
+
+config NUM_IRQS
+	int
+	default 91
+
+if GPIO_STM32
+
+config GPIO_STM32_PORTF
+	default y
+
+config GPIO_STM32_PORTG
+	default y
+
+config GPIO_STM32_PORTI
+	default y
+
+config GPIO_STM32_PORTJ
+	default y
+
+config GPIO_STM32_PORTK
+	default y
+
+endif # GPIO_STM32
+
+if ENTROPY_GENERATOR
+
+config ENTROPY_STM32_RNG
+	default y
+
+endif # ENTROPY_GENERATOR
+
+endif # SOC_STM32F437XX
