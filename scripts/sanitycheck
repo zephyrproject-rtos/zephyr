@@ -3022,13 +3022,13 @@ Artificially long but functional example:
     parser.add_argument(
         "--west-flash", nargs='?', const=[],
         help="""Uses west instead of ninja or make to flash when running with
-             --device-testing"
+             --device-testing.
 
-        E.g
-         sanitycheck --device-testing --device-serial /dev/ttyACM0 \
-                     --west-flash="--board-id=foobar"
-        will translate to
-         west flash -- --board-id=foobar
+        E.g "sanitycheck --device-testing --device-serial /dev/ttyACM0
+                         --west-flash="--board-id=foobar"
+        will translate to "west flash -- --board-id=foobar"
+
+        NOTE: device-testing must be enabled to use this option.
         """
     )
     parser.add_argument(
@@ -3282,6 +3282,10 @@ def main():
 
     if options.west_runner and not options.west_flash:
         error("west-runner requires west-flash to be enabled")
+        sys.exit(1)
+
+    if options.west_flash and not options.device_testing:
+        error("west-flash requires device-testing to be enabled")
         sys.exit(1)
 
     if options.coverage:
