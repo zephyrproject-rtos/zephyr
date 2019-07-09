@@ -209,4 +209,11 @@
 
 #endif /* CONFIG_POSIX_API */
 
+/*
+ * Enforce invariance wrt intptr_t as expected by the rest of Zephyr assuming
+ * ILP32 and LP64 systems. Unfortunately we can't catch uintptr_t as easily.
+ */
+typedef long intptr_t;
+#define __intptr_t_defined
+
 #endif /* ZEPHYR_ARCH_POSIX_INCLUDE_POSIX_CHEATS_H_ */
