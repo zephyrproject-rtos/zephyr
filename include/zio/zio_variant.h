@@ -58,6 +58,8 @@ struct zio_variant {
 	};
 };
 
+#define zio_variant_wrap_u8(val) \
+	(struct zio_variant){ .type = zio_variant_u8, .u8_val = val }
 #define zio_variant_wrap_u16(val) \
 	(struct zio_variant){ .type = zio_variant_u16, .u16_val = val }
 #define zio_variant_wrap_u32(val) \
@@ -77,11 +79,24 @@ struct zio_variant {
  * scenario.
  */
 #define zio_variant_wrap(val) _Generic((val), \
+		unsigned char : zio_variant_wrap_u8(val), \
 		unsigned short : zio_variant_wrap_u16(val), \
 		unsigned int : zio_variant_wrap_u32(val), \
 		unsigned long : zio_variant_wrap_u32(val), \
 		unsigned long long : zio_variant_wrap_u64(val) \
 		)
+
+static inline int zio_variant_unwrap_u8(struct zio_variant var, u8_t *val)
+{
+	__ASSERT(var.type == zio_variant_u8,
+		"Unwrap variant into mismatched type");
+	if (var.type == zio_variant_u8) {
+		*val = var.u8_val;
+		return 0;
+	}  else {
+		return -EINVAL;
+	}
+}
 
 static inline int zio_variant_unwrap_u32(struct zio_variant var, u32_t *val)
 {
@@ -105,6 +120,7 @@ static inline int zio_variant_unwrap_u32(struct zio_variant var, u32_t *val)
  * when asserts are enabled
  */
 #define zio_variant_unwrap(variant, val)  _Generic((val), \
+		unsigned char : zio_variant_unwrap_u8, \
 		unsigned int : zio_variant_unwrap_u32, \
 		unsigned long : zio_variant_unwrap_u32 \
 		)(variant, &val)
