@@ -1754,26 +1754,47 @@ struct bt_conn *bt_conn_lookup_state_le(const bt_addr_le_t *peer,
 	return NULL;
 }
 
-void bt_conn_disconnect_all(u8_t id)
+void bt_conn_foreach(int type, void (*func)(struct bt_conn *conn, void *data),
+		     void *data)
 {
 	int i;
 
 	for (i = 0; i < ARRAY_SIZE(conns); i++) {
-		struct bt_conn *conn = &conns[i];
-
-		if (!atomic_get(&conn->ref)) {
+		if (!atomic_get(&conns[i].ref)) {
 			continue;
 		}
 
-		if (conn->id != id) {
+		if (!(conns[i].type & type)) {
 			continue;
 		}
 
-		if (conn->state == BT_CONN_CONNECTED) {
-			bt_conn_disconnect(conn,
-					   BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+		func(&conns[i], data);
+	}
+#if defined(CONFIG_BT_BREDR)
+	if (type & BT_CONN_TYPE_SCO) {
+		for (i = 0; i < ARRAY_SIZE(sco_conns); i++) {
+			if (!atomic_get(&sco_conns[i].ref)) {
+				continue;
+			}
+
+			func(&sco_conns[i], data);
 		}
 	}
+#endif /* defined(CONFIG_BT_BREDR) */
+}
+
+static void disconnect_all(struct bt_conn *conn, void *data)
+{
+	u8_t *id = (u8_t *)data;
+
+	if (conn->id == *id && conn->state == BT_CONN_CONNECTED) {
+		bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+	}
+}
+
+void bt_conn_disconnect_all(u8_t id)
+{
+	bt_conn_foreach(BT_CONN_TYPE_ALL, disconnect_all, &id);
 }
 
 struct bt_conn *bt_conn_ref(struct bt_conn *conn)
