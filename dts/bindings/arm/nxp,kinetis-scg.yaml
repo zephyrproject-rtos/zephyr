@@ -143,5 +143,10 @@ properties:
       generation: define
       category: optional
 
+    "#clock-cells":
+      type: int
+      category: required
+      description: should be 1.
+
 "#cells":
   - name

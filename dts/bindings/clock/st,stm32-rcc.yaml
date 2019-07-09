@@ -15,6 +15,11 @@ properties:
     reg:
       category: required
 
+    "#clock-cells":
+      type: int
+      category: required
+      description: should be 2.
+
 "#cells":
   - bus
   - bits

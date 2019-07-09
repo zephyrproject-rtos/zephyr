@@ -23,5 +23,10 @@ properties:
     label:
       category: required
 
+    "#clock-cells":
+      type: int
+      category: required
+      description: should be 1.
+
 "#cells":
   - name
