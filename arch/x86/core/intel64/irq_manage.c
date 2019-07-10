@@ -15,6 +15,10 @@ unsigned char _irq_to_interrupt_vector[CONFIG_MAX_IRQ_LINES];
  * The low-level interrupt code consults these arrays to dispatch IRQs, so
  * so be sure to keep locore.S up to date with any changes. Note the indices:
  * use (vector - IV_IRQS), since exception vectors do not appear here.
+ *
+ * Entries which are NULL in x86_irq_funcs[] correspond to unassigned vectors.
+ * The locore IRQ handler should (read: doesn't currently) raise an exception
+ * rather than attempt to dispatch to a NULL x86_irq_func[]. FIXME.
  */
 
 #define NR_IRQ_VECTORS (IV_NR_VECTORS - IV_IRQS)  /* # vectors free for IRQs */
@@ -23,7 +27,7 @@ void (*x86_irq_funcs[NR_IRQ_VECTORS])(void *);
 void *x86_irq_args[NR_IRQ_VECTORS];
 
 /*
- *
+ * Find a free IRQ vector at the specified priority, or return -1 if none left.
  */
 
 static int allocate_vector(unsigned int priority)
@@ -41,6 +45,11 @@ static int allocate_vector(unsigned int priority)
 	vector = (priority * VECTORS_PER_PRIORITY) + IV_IRQS;
 
 	for (i = 0; i < VECTORS_PER_PRIORITY; ++i, ++vector) {
+#ifdef CONFIG_IRQ_OFFLOAD
+		if (vector == CONFIG_IRQ_OFFLOAD_VECTOR) {
+			continue;
+		}
+#endif
 		if (x86_irq_funcs[vector - IV_IRQS] == NULL) {
 			return vector;
 		}
@@ -76,3 +85,21 @@ int z_arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 	irq_unlock(key);
 	return vector;
 }
+
+#ifdef CONFIG_IRQ_OFFLOAD
+#include <irq_offload.h>
+
+void irq_offload(irq_offload_routine_t routine, void *parameter)
+{
+	u32_t key;
+
+	key = irq_lock();
+	x86_irq_funcs[CONFIG_IRQ_OFFLOAD_VECTOR - IV_IRQS] = routine;
+	x86_irq_args[CONFIG_IRQ_OFFLOAD_VECTOR - IV_IRQS] = parameter;
+	__asm__ volatile("int %0" : : "i" (CONFIG_IRQ_OFFLOAD_VECTOR)
+			  : "memory");
+	x86_irq_funcs[CONFIG_IRQ_OFFLOAD_VECTOR - IV_IRQS] = NULL;
+	irq_unlock(key);
+}
+
+#endif /* CONFIG_IRQ_OFFLOAD */
