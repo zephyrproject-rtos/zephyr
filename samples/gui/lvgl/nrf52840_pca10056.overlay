@@ -1,11 +1,15 @@
 /*
  * Copyright (c) 2018 Jan Van Winkel <jan.van_winkel@dxplore.eu>
+ * Copyright (c) 2019 O.S.Systems
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 &spi1 {
 	status = "okay";
+	sck-pin = <47>;
+	mosi-pin = <45>;
+	miso-pin = <46>;
 	cs-gpios = <&gpio0 4 0>;
 
 	ili9340@0 {
