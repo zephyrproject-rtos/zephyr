@@ -819,6 +819,7 @@ if(CONFIG_ARM AND CONFIG_USERSPACE)
   add_library(priv_stacks_output_lib STATIC
     ${CMAKE_CURRENT_BINARY_DIR}/${PRIV_STACKS_OUTPUT_SRC}
     )
+  strip_nondeterminism_if_found(priv_stacks_output_lib)
 
   # Turn off -ffunction-sections, etc.
   # NB: Using a library instead of target_compile_options(priv_stacks_output_lib
@@ -937,6 +938,7 @@ if(CONFIG_USERSPACE)
   add_library(output_lib STATIC
     ${CMAKE_CURRENT_BINARY_DIR}/${OUTPUT_SRC}
     )
+  strip_nondeterminism_if_found(output_lib)
 
   set_source_files_properties(${OUTPUT_SRC} PROPERTIES COMPILE_FLAGS
     "${NO_COVERAGE_FLAGS} -fno-function-sections -fno-data-sections")

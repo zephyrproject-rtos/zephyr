@@ -26,5 +26,6 @@ macro(toolchain_ld_relocation)
     )
 
   add_library(code_relocation_source_lib  STATIC ${MEM_RELOCATAION_CODE})
+  strip_nondeterminism_if_found(code_relocation_source_lib)
   target_link_libraries(code_relocation_source_lib zephyr_interface)
 endmacro()

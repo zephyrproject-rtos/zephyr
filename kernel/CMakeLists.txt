@@ -24,6 +24,7 @@ add_library(kernel
   work_q.c
   smp.c
   )
+strip_nondeterminism_if_found(kernel)
 
 # Kernel files has the macro __ZEPHYR_SUPERVISOR__ set so that it
 # optimizes the code when userspace is enabled.

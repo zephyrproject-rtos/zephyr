@@ -363,6 +363,19 @@ macro(zephyr_library_get_current_dir_lib_name lib_name)
   set(${lib_name} ${name})
 endmacro()
 
+find_program(STRIP_NONDETERMINISM strip-nondeterminism)
+
+if (NOT ${STRIP_NONDETERMINISM} STREQUAL STRIP_NONDETERMINISM-NOTFOUND)
+  macro(strip_nondeterminism_if_found name)
+    add_custom_command(TARGET ${name}
+      COMMAND ${STRIP_NONDETERMINISM} $<TARGET_FILE:${name}>
+      )
+  endmacro()
+else()
+  macro(strip_nondeterminism_if_found name)
+  endmacro()
+endif()
+
 # Constructor with an explicitly given name.
 macro(zephyr_library_named name)
   # This is a macro because we need add_library() to be executed
@@ -373,6 +386,8 @@ macro(zephyr_library_named name)
   zephyr_append_cmake_library(${name})
 
   target_link_libraries(${name} PUBLIC zephyr_interface)
+  strip_nondeterminism_if_found(${name})
+
 endmacro()
 
 
