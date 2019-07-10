@@ -96,7 +96,7 @@ int file_str_cmp(const char *fname, char const *string, size_t pattern_len)
 {
 	int rc;
 	u32_t len;
-	u32_t rlen;
+	size_t rlen;
 	char *buf;
 	struct fs_dirent entry;
 
