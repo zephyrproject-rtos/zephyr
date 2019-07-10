@@ -14,7 +14,7 @@
 LOG_MODULE_REGISTER(lis2dh);
 #include "lis2dh.h"
 
-#if defined(DT_ST_LIS2DH_0_BUS_SPI)
+#if defined(DT_ST_LIS2DH_BUS_SPI)
 int lis2dh_spi_access(struct lis2dh_data *ctx, u8_t cmd,
 		      void *data, size_t length)
 {
