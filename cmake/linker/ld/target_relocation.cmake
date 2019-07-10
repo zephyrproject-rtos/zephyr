@@ -26,5 +26,8 @@ macro(toolchain_ld_relocation)
     )
 
   add_library(code_relocation_source_lib  STATIC ${MEM_RELOCATAION_CODE})
+  set_target_properties(code_relocation_source_lib PROPERTIES
+    STATIC_LIBRARY_OPTIONS "${DETERMINISTIC_AR_OPTION}"
+    )
   target_link_libraries(code_relocation_source_lib zephyr_interface)
 endmacro()

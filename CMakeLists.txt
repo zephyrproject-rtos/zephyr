@@ -819,6 +819,9 @@ if(CONFIG_ARM AND CONFIG_USERSPACE)
   add_library(priv_stacks_output_lib STATIC
     ${CMAKE_CURRENT_BINARY_DIR}/${PRIV_STACKS_OUTPUT_SRC}
     )
+  set_target_properties(priv_stacks_output_lib PROPERTIES
+    STATIC_LIBRARY_OPTIONS "${DETERMINISTIC_AR_OPTION}"
+    )
 
   # Turn off -ffunction-sections, etc.
   # NB: Using a library instead of target_compile_options(priv_stacks_output_lib
@@ -936,6 +939,9 @@ if(CONFIG_USERSPACE)
   # generated data into special section names
   add_library(output_lib STATIC
     ${CMAKE_CURRENT_BINARY_DIR}/${OUTPUT_SRC}
+    )
+  set_target_properties(output_lib PROPERTIES
+    STATIC_LIBRARY_OPTIONS "${DETERMINISTIC_AR_OPTION}"
     )
 
   set_source_files_properties(${OUTPUT_SRC} PROPERTIES COMPILE_FLAGS

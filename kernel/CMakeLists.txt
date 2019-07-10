@@ -32,6 +32,7 @@ set_target_properties(
   PROPERTIES
   COMPILE_DEFINITIONS
   __ZEPHYR_SUPERVISOR__
+  STATIC_LIBRARY_OPTIONS "${DETERMINISTIC_AR_OPTION}"
   )
 
 target_sources_ifdef(CONFIG_STACK_CANARIES        kernel PRIVATE compiler_stack_protect.c)

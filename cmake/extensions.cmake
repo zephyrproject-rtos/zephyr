@@ -373,6 +373,10 @@ macro(zephyr_library_named name)
   zephyr_append_cmake_library(${name})
 
   target_link_libraries(${name} PUBLIC zephyr_interface)
+  set_target_properties(${name} PROPERTIES
+    STATIC_LIBRARY_OPTIONS "${DETERMINISTIC_AR_OPTION}"
+    )
+
 endmacro()
 
 
