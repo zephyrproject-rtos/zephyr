@@ -13,6 +13,5 @@ toolchain:
 ram: 262144
 testing:
   ignore_tags:
-    - net
     - bluetooth
     - xip
