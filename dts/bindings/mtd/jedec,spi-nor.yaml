@@ -21,19 +21,16 @@ properties:
     type: array
     category: required
     description: JEDEC ID as manufacturer ID, memory type, memory density
-    generation: define
 
   erase-block-size:
    type: int
    description: address alignment required by flash erase operations
-   generation: define
    category: optional
    label: alignment
 
   write-block-size:
    type: int
    description: address alignment required by flash write operations
-   generation: define
    category: optional
    label: alignment
 
@@ -41,20 +38,16 @@ properties:
     type: int
     category: optional
     description: flash capacity in bits
-    generation: define
 
   wp-gpios:
     type: compound
     category: optional
     description: WPn pin
-    generation: define
   hold-gpios:
     type: compound
     category: optional
     description: HOLDn pin
-    generation: define
   reset-gpios:
     type: compound
     category: optional
     description: RESETn pin
-    generation: define

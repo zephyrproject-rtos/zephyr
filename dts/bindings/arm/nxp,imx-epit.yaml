@@ -30,10 +30,8 @@ properties:
      type: int
      category: required
      description: Set the EPIT prescaler between 0 and 4095
-     generation: define
 
   rdc:
      type: int
      category: required
      description: Set the RDC permission for this peripheral
-     generation: define

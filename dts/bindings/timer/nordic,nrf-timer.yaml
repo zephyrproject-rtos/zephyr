@@ -30,4 +30,3 @@ properties:
       type: int
       category: required
       description: Prescaler value determines frequency (16MHz/2^prescaler)
-      generation: define

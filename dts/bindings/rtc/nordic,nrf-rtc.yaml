@@ -27,5 +27,4 @@ properties:
     ppi-wrap:
       type: boolean
       description: Enable wrapping with PPI
-      generation: define
       category: required

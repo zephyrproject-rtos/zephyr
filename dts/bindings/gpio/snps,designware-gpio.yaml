@@ -23,7 +23,6 @@ properties:
     bits:
       type: int
       description: gpio bits
-      generation: define
       category: required
 
     interrupts:

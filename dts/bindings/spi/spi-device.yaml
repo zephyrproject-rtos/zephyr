@@ -23,6 +23,5 @@ properties:
       type: int
       category: required
       description: Maximum clock frequency of device's SPI interface in Hz
-      generation: define
     label:
       category: required

@@ -18,4 +18,3 @@ properties:
     int-gpios:
       type: compound
       category: required
-      generation: define

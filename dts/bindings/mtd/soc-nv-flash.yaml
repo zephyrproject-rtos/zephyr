@@ -18,13 +18,11 @@ properties:
     erase-block-size:
      type: int
      description: address alignment required by flash erase operations
-     generation: define
      category: optional
      label: alignment
 
     write-block-size:
      type: int
      description: address alignment required by flash write operations
-     generation: define
      category: optional
      label: alignment

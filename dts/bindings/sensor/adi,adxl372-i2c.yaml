@@ -20,4 +20,3 @@ properties:
     int1-gpios:
       type: compound
       category: optional
-      generation: define

@@ -27,10 +27,8 @@ properties:
       type: int
       category: required
       description: TX pin
-      generation: define
 
     rx-pin:
       type: int
       category: required
       description: RX pin
-      generation: define

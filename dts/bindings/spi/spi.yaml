@@ -21,7 +21,6 @@ properties:
       type: int
       category: optional
       description: Clock frequency the SPI peripheral is being driven at
-      generation: define
     "#address-cells":
       type: int
       category: required
@@ -36,8 +35,6 @@ properties:
       type: array
       category: optional
       description: Clock gate information
-      generation: define
     cs-gpios:
       type: compound
       category: optional
-      generation: define

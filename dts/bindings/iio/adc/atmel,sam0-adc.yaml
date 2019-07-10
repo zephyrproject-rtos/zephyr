@@ -27,10 +27,8 @@ properties:
       type: int
       category: required
       description: generic clock generator source
-      generation: define
 
     prescaler:
       type: int
       category: required
       description: clock prescaler divisor applied to the generic clock
-      generation: define

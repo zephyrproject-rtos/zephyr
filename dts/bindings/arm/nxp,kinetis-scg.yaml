@@ -26,121 +26,101 @@ properties:
     clk-divider-slow:
       type: int
       description: system clock to slow clock divider
-      generation: define
       category: required
 
     clk-divider-bus:
       type: int
       description: system clock to bus clock divider
-      generation: define
       category: required
 
     clk-divider-core:
       type: int
       description: system clock to core clock divider
-      generation: define
       category: required
 
     clk-source:
       type: int
       description: system clock source
-      generation: define
       category: optional
 
     sosc-freq:
       type: int
       description: system oscillator (e.g. xtal) frequency
-      generation: define
       category: optional
 
     sosc-mode:
       type: int
       description: system oscillator mode
-      generation: define
       category: optional
 
     sosc-divider-1:
       type: int
       description: system oscillator divider 1
-      generation: define
       category: optional
 
     sosc-divider-2:
       type: int
       description: system oscillator divider 2
-      generation: define
       category: optional
 
     sirc-range:
       type: int
       description: slow internal reference clock range in MHz
-      generation: define
       category: required
 
     sirc-divider-1:
       type: int
       description: slow internal reference clock divider 1
-      generation: define
       category: required
 
     sirc-divider-2:
       type: int
       description: slow internal reference clock divider 2
-      generation: define
       category: required
 
     firc-range:
       type: int
       description: fast internal reference clock range in MHz
-      generation: define
       category: required
 
     firc-divider-1:
       type: int
       description: fast internal reference clock divider 1
-      generation: define
       category: required
 
     firc-divider-2:
       type: int
       description: fast internal reference clock divider 2
-      generation: define
       category: required
 
     spll-source:
       type: int
       description: system phase-locked loop clock source
-      generation: define
       category: required
 
     spll-divider-pre:
       type: int
       description: system phase-locked loop reference clock divider
-      generation: define
       category: required
 
     spll-multiplier:
       type: int
       description: system phase-locked loop reference clock multiplier
-      generation: define
       category: required
 
     spll-divider-1:
       type: int
       description: system phase-locked loop divider 1
-      generation: define
       category: required
 
     spll-divider-2:
       type: int
       description: system phase-locked loop divider 2
-      generation: define
       category: required
 
     clkout-source:
       type: int
       description: clockout clock source
-      generation: define
       category: optional
 
     "#clock-cells":

@@ -20,9 +20,7 @@ properties:
     reset-gpios:
       type: compound
       category: required
-      generation: define
 
     cmd-data-gpios:
       type: compound
       category: required
-      generation: define

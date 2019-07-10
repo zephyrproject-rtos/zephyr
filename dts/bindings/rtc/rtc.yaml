@@ -18,7 +18,6 @@ properties:
       type: int
       category: optional
       description: Clock frequency information for RTC operation
-      generation: define
     label:
       category: required
     interrupts:
@@ -28,4 +27,3 @@ properties:
       type: int
       category: required
       description: RTC frequency equals clock-frequency divided by the prescaler value
-      generation: define

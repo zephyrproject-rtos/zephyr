@@ -18,7 +18,6 @@ properties:
     clocks:
       type: array
       description: clock gate information
-      generation: define
       category: required
 
 "#cells":

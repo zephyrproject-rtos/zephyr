@@ -21,19 +21,16 @@ properties:
       type: string
       category: required
       description: Human readable string describing the device (used by Zephyr for API name)
-      generation: define
 
     clock-frequency:
       type: int
       description: output clock frequency (Hz)
-      generation: define
       category: required
 
     clocks:
       type: array
       category: optional
       description: input clock source
-      generation: define
 
     "#clock-cells":
       type: int

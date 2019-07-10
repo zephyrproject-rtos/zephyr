@@ -25,4 +25,3 @@ properties:
       type: int
       category: optional
       description: Serial Wire Output (SWO) PIN location
-      generation: define

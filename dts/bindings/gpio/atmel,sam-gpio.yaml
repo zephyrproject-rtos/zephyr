@@ -24,7 +24,6 @@ properties:
     peripheral-id:
       type: int
       description: peripheral ID
-      generation: define
       category: required
 
 "#cells":

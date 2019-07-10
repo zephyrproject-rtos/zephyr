@@ -22,4 +22,3 @@ properties:
       type: boolean
       category: optional
       description: Set to enable RTS/CTS flow control at boot time
-      generation: define

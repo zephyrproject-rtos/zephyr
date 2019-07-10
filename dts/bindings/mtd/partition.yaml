@@ -11,7 +11,6 @@ properties:
       type: string-array
       category: required
       description: compatible strings
-      generation: define
 
 sub-node:
     properties:
@@ -20,14 +19,11 @@ sub-node:
           type: string
           category: optional
           description: Human readable string describing the device (used by Zephyr for API name)
-          generation: define
        read-only:
           type: boolean
           category: optional
           description: if the partition is read-only or not
-          generation: define
        reg:
           type: array
           description: register space
-          generation: define
           category: required

@@ -27,13 +27,11 @@ properties:
       type: int
       category: optional
       description: clkout clock source
-      generation: define
 
     clkout-divider:
       type: int
       category: optional
       description: clkout divider
-      generation: define
 
     "#clock-cells":
       type: int

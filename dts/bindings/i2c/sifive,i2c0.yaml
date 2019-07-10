@@ -21,7 +21,6 @@ properties:
       type: int
       category: optional
       description: Frequency of the peripheral input clock.
-      generation: define
 
     reg:
       category: required

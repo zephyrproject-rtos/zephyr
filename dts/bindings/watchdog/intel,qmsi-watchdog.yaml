@@ -30,4 +30,3 @@ properties:
       type: array
       category: required
       description: Clock gate control information
-      generation: structures
