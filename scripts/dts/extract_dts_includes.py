@@ -274,7 +274,7 @@ def write_conf(f):
         f.write('\n')
 
 
-def write_header(f):
+def write_header(f, deprecate_only):
     f.write('''\
 /**********************************************
 *                 Generated include file
@@ -307,6 +307,8 @@ def write_header(f):
                     deprecated_warn = True
                 if not prop.startswith('DT_'):
                     deprecated_warn = True
+                if deprecate_only and not deprecated_warn:
+                    continue
                 f.write(define_str(prop, defs[node][prop], value_tabs, deprecated_warn))
 
         for alias in sorted(defs[node]['aliases']):
@@ -318,6 +320,8 @@ def write_header(f):
                 deprecated_warn = True
             if alias in deprecated:
                 deprecated_warn = True
+            if deprecate_only and not deprecated_warn:
+                continue
             f.write(define_str(alias, alias_target, value_tabs, deprecated_warn))
 
         f.write('\n')
@@ -473,6 +477,8 @@ def parse_arguments():
     parser.add_argument("--old-alias-names", action='store_true',
                         help="Generate aliases also in the old way, without "
                              "compatibility information in their labels")
+    parser.add_argument("--deprecate-only", action='store_true',
+                        help="Generate only the deprecated defines")
     return parser.parse_args()
 
 
@@ -527,7 +533,7 @@ def main():
 
     if args.include is not None:
         with open(args.include, 'w', encoding='utf-8') as f:
-            write_header(f)
+            write_header(f, args.deprecate_only)
 
 
 if __name__ == '__main__':
