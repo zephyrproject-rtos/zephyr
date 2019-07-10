@@ -7160,10 +7160,6 @@ static inline u32_t event_conn_upd_prep(struct connection *conn,
 			conn->procedure_expire = 0U;
 		}
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
-		/* Reset ticker_id_prepare as role is not continued further
-		 * due to conn update at this event.
-		 */
-		_radio.ticker_id_prepare = 0U;
 
 		/* reset mutex */
 		if (_radio.conn_upd == conn) {
@@ -8549,8 +8545,13 @@ static void event_connection_prepare(u32_t ticks_at_expire,
 
 		switch (conn->llcp_type) {
 		case LLCP_CONN_UPD:
-			if (event_conn_upd_prep(conn, event_counter,
-						ticks_at_expire) == 0) {
+			if (!event_conn_upd_prep(conn, event_counter,
+						 ticks_at_expire)) {
+				/* Reset ticker_id_prepare as role is not
+				 * continued further due to conn update at
+				 * this event.
+				 */
+				_radio.ticker_id_prepare = 0U;
 				return;
 			}
 			break;
