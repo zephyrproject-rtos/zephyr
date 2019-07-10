@@ -2362,10 +2362,11 @@ int bt_gatt_discover(struct bt_conn *conn,
 		return gatt_read_type(conn, params);
 	case BT_GATT_DISCOVER_DESCRIPTOR:
 		/* Only descriptors can be filtered */
-		if (!bt_uuid_cmp(params->uuid, BT_UUID_GATT_PRIMARY) ||
-		    !bt_uuid_cmp(params->uuid, BT_UUID_GATT_SECONDARY) ||
-		    !bt_uuid_cmp(params->uuid, BT_UUID_GATT_INCLUDE) ||
-		    !bt_uuid_cmp(params->uuid, BT_UUID_GATT_CHRC)) {
+		if (params->uuid &&
+		    (!bt_uuid_cmp(params->uuid, BT_UUID_GATT_PRIMARY) ||
+		     !bt_uuid_cmp(params->uuid, BT_UUID_GATT_SECONDARY) ||
+		     !bt_uuid_cmp(params->uuid, BT_UUID_GATT_INCLUDE) ||
+		     !bt_uuid_cmp(params->uuid, BT_UUID_GATT_CHRC))) {
 			return -EINVAL;
 		}
 	 /* Fallthrough. */
