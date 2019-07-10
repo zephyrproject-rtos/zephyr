@@ -22,4 +22,3 @@ properties:
       type: boolean
       category: optional
       description: use hw flow control
-      generation: define

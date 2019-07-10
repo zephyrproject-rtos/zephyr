@@ -17,6 +17,5 @@ properties:
       type: uint8-array
       category: optional
       description: mac address
-      generation: define
     label:
       category: required

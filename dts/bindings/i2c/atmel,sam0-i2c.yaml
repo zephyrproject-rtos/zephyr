@@ -27,4 +27,3 @@ properties:
       type: int
       category: optional
       description: DMA channel
-      generation: define

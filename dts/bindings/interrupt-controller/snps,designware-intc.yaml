@@ -19,7 +19,6 @@ properties:
       category: required
       type: int
       description: number of bits of IRQ priorities
-      generation: define
 
   interrupts:
       category: required

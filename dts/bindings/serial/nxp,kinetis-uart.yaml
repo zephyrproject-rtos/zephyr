@@ -22,10 +22,8 @@ properties:
       type: boolean
       category: optional
       description: use hw flow control
-      generation: define
 
     clocks:
       type: array
       category: required
       description: Clock gate information
-      generation: define

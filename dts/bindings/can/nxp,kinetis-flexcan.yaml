@@ -27,10 +27,8 @@ properties:
       type: array
       category: required
       description: clock gate information
-      generation: define
 
     clk-source:
       type: int
       category: required
       description: CAN engine clock source
-      generation: define

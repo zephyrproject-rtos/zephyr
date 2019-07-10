@@ -20,19 +20,15 @@ properties:
     resetn-gpios:
       type: compound
       category: required
-      generation: define
 
     data-gpios:
       type: compound
       category: required
-      generation: define
 
     wakeup-gpios:
       type: compound
       category: optional
-      generation: define
 
     boot0-gpios:
       type: compound
       category: optional
-      generation: define

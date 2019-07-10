@@ -20,14 +20,11 @@ properties:
     irq-gpios:
       type: compound
       category: required
-      generation: define
 
     reset-gpios:
       type: compound
       category: required
-      generation: define
 
     enable-gpios:
       type: compound
       category: required
-      generation: define

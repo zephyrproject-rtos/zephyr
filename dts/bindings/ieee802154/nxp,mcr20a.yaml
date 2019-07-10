@@ -20,9 +20,7 @@ properties:
     irqb-gpios:
       type: compound
       category: required
-      generation: define
 
     reset-gpios:
       type: compound
       category: required
-      generation: define

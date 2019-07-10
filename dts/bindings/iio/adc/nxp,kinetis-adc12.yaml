@@ -27,22 +27,18 @@ properties:
       type: int
       category: required
       description: converter clock source
-      generation: define
 
     clk-divider:
       type: int
       category: required
       description: clock divider for the converter
-      generation: define
 
     alternate-voltage-reference:
       type: boolean
       category: optional
       description: use alternate voltage reference source
-      generation: define
 
     sample-time:
       type: int
       category: required
       description: sample time in clock cycles
-      generation: define

@@ -20,4 +20,3 @@ properties:
     reset-gpios:
       type: compound
       category: required
-      generation: define

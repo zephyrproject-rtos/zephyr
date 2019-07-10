@@ -27,4 +27,3 @@ properties:
       type: array
       category: required
       description: Clock gate information
-      generation: define

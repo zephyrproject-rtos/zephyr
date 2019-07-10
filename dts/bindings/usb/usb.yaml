@@ -22,7 +22,6 @@ properties:
                    "full-speed" and "low-speed". If this is not passed
                    via DT, USB controllers should use their maximum
                    hardware capability.
-      generation: define
       enum:
          - "low-speed"
          - "full-speed"

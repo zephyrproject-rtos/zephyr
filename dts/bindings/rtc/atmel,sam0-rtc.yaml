@@ -23,5 +23,4 @@ properties:
     clock-generator:
       type: int
       description: clock generator index
-      generation: define
       category: required

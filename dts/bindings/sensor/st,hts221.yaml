@@ -22,4 +22,3 @@ properties:
       type: compound
       category: optional
       description: DRDY pin
-      generation: define

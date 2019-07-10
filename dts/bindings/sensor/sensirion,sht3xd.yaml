@@ -21,4 +21,3 @@ properties:
       type: compound
       category: optional
       description: ALERT pin
-      generation: define

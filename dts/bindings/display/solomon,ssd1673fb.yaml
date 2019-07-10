@@ -21,91 +21,75 @@ properties:
       type: int
       category: required
       description: Height in pixel of the panel driven by the controller
-      generation: define
 
     width:
       type: int
       category: required
       description: Width in pixel of the panel driven by the controller
-      generation: define
 
     pp-height-bits:
       type: int
       category: required
       description: Number of bits used for the height parameters
-      generation: define
 
     pp-width-bits:
       type: int
       category: required
       description: Number of bits used for the width parameters
-      generation: define
 
     gdv-a:
       type: int
       category: required
       description: Gate driving voltage (A value)
-      generation: define
 
     gdv-b:
       type: int
       category: optional
       description: Gate driving voltage (B value)
-      generation: define
 
     sdv:
       type: int
       category: required
       description: Source driving voltage
-      generation: define
 
     vcom:
       type: int
       category: required
       description: VCOM voltage
-      generation: define
 
     border-waveform:
       type: int
       category: required
       description: Border waveform
-      generation: define
 
     softstart-1:
       type: int
       category: optional
       description: Booster soft start phase 1
-      generation: define
 
     softstart-2:
       type: int
       category: optional
       description: Booster soft start phase 2
-      generation: define
 
     softstart-3:
       type: int
       category: optional
       description: Booster soft start phase 3
-      generation: define
 
     orientation-flipped:
       type: boolean
       category: optional
       description: Last column address is mapped to first segment
-      generation: define
 
     reset-gpios:
       type: compound
       category: required
-      generation: define
 
     dc-gpios:
       type: compound
       category: required
-      generation: define
 
     busy-gpios:
       type: compound
       category: required
-      generation: define

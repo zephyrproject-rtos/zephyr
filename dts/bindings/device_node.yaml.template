@@ -32,7 +32,6 @@ sub-node:
         pwms:
           type: compound
           category: required
-          generation: define
 
 properties:
 
@@ -42,10 +41,6 @@ properties:
 #     category: <required | optional>
 #     type: <string | int | boolean | array | uint8-array | string-array | compound>
 #     description: <description of property>
-#     generation: define
-#
-# The exact value of the 'generation' attribute is ignored otherwise. The
-# output is always #define's.
 #
 # Note that uint8-array is the name for what devicetree standard calls
 # bytestring: its value is hexadecimal text with whitespace ignored,
@@ -59,21 +54,18 @@ properties:
       category: required
       type: string
       description: compatible of node
-      generation: define
 
 # 'reg' describes mmio registers
     reg:
       category: required
       type: array
       description: mmio register space
-      generation: define
 
 # 'interrupts' specifies the interrupts that the driver may use
     interrupts:
       category: required
       type: array
       description: required interrupts
-      generation: define
 
 # If the binding describes an interrupt controller, GPIO controller, pinmux
 # device, or any other device referenced via a phandle plus a specifier (some

@@ -24,7 +24,6 @@ properties:
       type: int
       description: maximum interrupt priority
       category: required
-      generation: define
 
 "#cells":
   - irq

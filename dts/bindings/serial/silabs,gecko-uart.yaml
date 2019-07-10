@@ -25,10 +25,8 @@ properties:
       type: array
       category: required
       description: RX pin configuration defined as <location port pin>
-      generation: define
 
     location-tx:
       type: array
       category: required
       description: TX pin configuration defined as <location port pin>
-      generation: define

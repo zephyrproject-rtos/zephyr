@@ -16,16 +16,13 @@ properties:
       type: int
       category: optional
       description: Clock frequency information for UART operation
-      generation: define
     current-speed:
       type: int
       category: required
       description: Initial baud rate setting for UART
-      generation: define
     clocks:
       type: array
       category: optional
       description: Clock gate information
-      generation: define
     label:
       category: required

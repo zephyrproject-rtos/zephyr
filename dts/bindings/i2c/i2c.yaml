@@ -29,11 +29,9 @@ properties:
       type: int
       category: optional
       description: Initial clock frequency in Hz
-      generation: define
     clocks:
       type: array
       category: required
       description: Clock gate information
-      generation: define
     label:
       category: required

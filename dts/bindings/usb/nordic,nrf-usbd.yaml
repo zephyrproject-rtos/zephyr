@@ -27,10 +27,8 @@ properties:
       type: int
       category: required
       description: Number of ISOIN endpoints supported by hardware
-      generation: define
 
     num-isoout-endpoints:
       type: int
       category: required
       description: Number of ISOOUT endpoints supported by hardware
-      generation: define

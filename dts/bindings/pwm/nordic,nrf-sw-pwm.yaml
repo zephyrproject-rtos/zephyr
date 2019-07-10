@@ -19,28 +19,23 @@ properties:
       type: int
       description: Timer instance to use for generating the PWM output signals
       category: required
-      generation: define
 
     channel-count:
       type: int
       description: Number of PWM channels. Limited by timer instance compare registers minus 1.
       category: required
-      generation: define
 
     clock-prescaler:
       type: int
       description: Clock prescaler for timer used for generating the PWM output signals with frequency = 16 MHz / 2^prescaler
       category: required
-      generation: define
 
     ppi-base:
       type: int
       description: PPI base used for PPI index calculation used for PWM output generation
       category: required
-      generation: define
 
     gpiote-base:
       type: int
       description: GPIOTE base used for GPIOTE index calculation used for PWM output generation
       category: required
-      generation: define

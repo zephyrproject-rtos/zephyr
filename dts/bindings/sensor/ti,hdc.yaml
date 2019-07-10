@@ -20,4 +20,3 @@ properties:
     drdy-gpios:
       type: compound
       category: optional
-      generation: define

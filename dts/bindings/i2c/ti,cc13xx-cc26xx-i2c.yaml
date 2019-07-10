@@ -27,10 +27,8 @@ properties:
       type: int
       category: required
       description: SDA pin
-      generation: define
 
     scl-pin:
       type: int
       category: required
       description: SCL pin
-      generation: define

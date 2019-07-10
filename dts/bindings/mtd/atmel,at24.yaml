@@ -20,4 +20,3 @@ properties:
       type: int
       category: required
       description: I2C Slave EEPROM Size in KiB
-      generation: define

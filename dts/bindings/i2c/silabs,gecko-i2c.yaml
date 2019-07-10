@@ -30,10 +30,8 @@ properties:
       type: array
       category: required
       description: SDA pin configuration defined as <location port pin>
-      generation: define
 
     location-scl:
       type: array
       category: required
       description: SCL pin configuration defined as <location port pin>
-      generation: define

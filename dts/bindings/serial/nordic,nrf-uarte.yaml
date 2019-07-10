@@ -21,23 +21,19 @@ properties:
     tx-pin:
       type: int
       description: TX pin
-      generation: define
       category: required
 
     rx-pin:
       type: int
       description: RX pin
-      generation: define
       category: required
 
     rts-pin:
       type: int
       description: RTS pin
-      generation: define
       category: optional
 
     cts-pin:
       type: int
       description: CTS pin
-      generation: define
       category: optional

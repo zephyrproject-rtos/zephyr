@@ -20,29 +20,23 @@ properties:
     vreg-en-gpios:
       type: compound
       category: optional
-      generation: define
 
     reset-gpios:
       type: compound
       category: optional
-      generation: define
 
     fifo-gpios:
       type: compound
       category: optional
-      generation: define
 
     cca-gpios:
       type: compound
       category: optional
-      generation: define
 
     sfd-gpios:
       type: compound
       category: optional
-      generation: define
 
     fifop-gpios:
       type: compound
       category: optional
-      generation: define

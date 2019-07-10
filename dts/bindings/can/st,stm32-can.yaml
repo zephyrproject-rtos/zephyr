@@ -22,22 +22,18 @@ properties:
       type: string
       category: required
       description: gpio port name
-      generation: define
 
     rx-pin:
       type: string
       category: required
       description: rx pin name
-      generation: define
 
     tx-pin:
       type: string
       category: required
       description: tx pin name
-      generation: define
 
     clocks:
       type: array
       category: required
       description: Clock gate control information
-      generation: define

@@ -21,7 +21,6 @@ properties:
       type: int
       category: optional
       description: Clock frequency information for PWM operation
-      generation: define
 
     reg:
       category: required
@@ -33,7 +32,6 @@ properties:
       type: int
       category: required
       description: Width of the PWM comparator in bits
-      generation: define
 
 "#cells":
   - channel

@@ -23,5 +23,4 @@ properties:
     port_sel:
       type: int
       description: soc block mapping to pin
-      generation: define
       category: define

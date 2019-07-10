@@ -24,22 +24,18 @@ properties:
       type: int
       category: required
       description: SCK pin
-      generation: define
 
     mosi-pin:
       type: int
       category: required
       description: MOSI pin
-      generation: define
 
     miso-pin:
       type: int
       category: required
       description: MISO pin
-      generation: define
 
     cs-pin:
       type: int
       category: optional
       description: CS pin
-      generation: define
