@@ -20,17 +20,18 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 static void eth_stellaris_assign_mac(struct device *dev)
 {
+	u8_t mac_addr[6] = DT_ETH_MAC_ADDR;
 	u32_t value = 0x0;
 
-	value |= DT_ETH_MAC_ADDR_0;
-	value |= DT_ETH_MAC_ADDR_1 << 8;
-	value |= DT_ETH_MAC_ADDR_2 << 16;
-	value |= DT_ETH_MAC_ADDR_3 << 24;
+	value |= mac_addr[0];
+	value |= mac_addr[1] << 8;
+	value |= mac_addr[2] << 16;
+	value |= mac_addr[3] << 24;
 	sys_write32(value, REG_MACIA0);
 
 	value = 0x0;
-	value |= DT_ETH_MAC_ADDR_4;
-	value |= DT_ETH_MAC_ADDR_5 << 8;
+	value |= mac_addr[4];
+	value |= mac_addr[5] << 8;
 	sys_write32(value, REG_MACIA1);
 }
 
@@ -334,14 +335,7 @@ struct eth_stellaris_config eth_cfg = {
 };
 
 struct eth_stellaris_runtime eth_data = {
-	.mac_addr = {
-		(u8_t)DT_ETH_MAC_ADDR_0,
-		(u8_t)DT_ETH_MAC_ADDR_1,
-		(u8_t)DT_ETH_MAC_ADDR_2,
-		(u8_t)DT_ETH_MAC_ADDR_3,
-		(u8_t)DT_ETH_MAC_ADDR_4,
-		(u8_t)DT_ETH_MAC_ADDR_5
-	},
+	.mac_addr = DT_ETH_MAC_ADDR,
 	.tx_err = false,
 	.tx_word = 0,
 	.tx_pos = 0,
