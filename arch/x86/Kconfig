@@ -56,6 +56,12 @@ config MAX_IRQ_LINES
 	  determines the size of the _irq_to_interrupt_vector_table, which
 	  is used to track the association between vectors and IRQ numbers.
 
+config IRQ_OFFLOAD_VECTOR
+	int "IDT vector to use for IRQ offload"
+	default 32
+	range 32 255
+	depends on IRQ_OFFLOAD
+
 config XIP
 	default n
 

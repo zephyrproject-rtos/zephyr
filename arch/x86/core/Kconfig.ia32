@@ -340,14 +340,6 @@ config X86_KERNEL_OOPS_VECTOR
 	help
 	  Specify the IDT vector to use for the kernel oops exception handler.
 
-config IRQ_OFFLOAD_VECTOR
-	int "IDT vector to use for IRQ offload"
-	default 32
-	range 32 255
-	depends on IRQ_OFFLOAD
-	help
-	  Specify the IDT vector to use for the IRQ offload interrupt handler.
-
 config X86_DYNAMIC_IRQ_STUBS
 	int "Number of dynamic interrupt stubs"
 	depends on DYNAMIC_INTERRUPTS
