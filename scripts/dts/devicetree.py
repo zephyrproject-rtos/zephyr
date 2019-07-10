@@ -66,7 +66,7 @@ def parse_node_name(line):
 
     return label, name.strip(), addr, int(addr, 16), alt_label
 
-def parse_values_internal(value, start, end, separator):
+def parse_values_internal(value, start, end, separator, is_byte_string):
     out = []
 
     inside = False
@@ -88,24 +88,24 @@ def parse_values_internal(value, start, end, separator):
         out = [v.split() for v in out]
 
     if len(out) == 1:
-        return parse_value(out[0])
+        return parse_value(out[0], is_byte_string)
 
-    return [parse_value(v) for v in out]
+    return [parse_value(v, is_byte_string) for v in out]
 
-def parse_values(value, start, end, separator):
-    out = parse_values_internal(value, start, end, separator)
+def parse_values(value, start, end, separator, is_byte_string=False):
+    out = parse_values_internal(value, start, end, separator, is_byte_string)
     if isinstance(out, list) and \
        all(isinstance(v, str) and len(v) == 1 and not v.isalpha() for v in out):
         return bytearray(out)
 
     return out
 
-def parse_value(value):
+def parse_value(value, is_byte_string=False):
     if value == '':
         return value
 
     if isinstance(value, list):
-        out = [parse_value(v) for v in value]
+        out = [parse_value(v, is_byte_string) for v in value]
         return out[0] if len(out) == 1 else out
 
     if value[0] == '<':
@@ -113,12 +113,15 @@ def parse_value(value):
     if value[0] == '"':
         return parse_values(value, '"', '"', ',')
     if value[0] == '[':
-        return parse_values(value, '[', ']', ' ')
+        z = parse_values(value, '[', ']', ' ', True)
+        return z
 
     if value[0] == '&':
         return {'ref': value[1:]}
 
     if value[0].isdigit():
+        if is_byte_string:
+            return int(value, 16)
         if value.startswith("0x"):
             return int(value, 16)
         if value[0] == '0':
