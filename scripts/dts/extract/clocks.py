@@ -121,11 +121,6 @@ class DTClocks(DTDirective):
                 clock_provider_label_str = clock_provider['props'].get('label',
                                                                        None)
                 if clock_provider_label_str is not None:
-                    try:
-                        generation = clock_consumer_bindings['properties'][
-                            'clocks']['generation']
-                    except:
-                        generation = ''
                     clock_cell_name = 'CLOCK_CONTROLLER'
                     if clock_index == 0 and \
                         len(clocks) == (len(clock_cells) + 1):
