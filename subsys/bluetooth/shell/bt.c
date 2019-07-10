@@ -919,11 +919,6 @@ static int cmd_clear(const struct shell *shell, size_t argc, char *argv[])
 	bt_addr_le_t addr;
 	int err;
 
-	if (argc < 2) {
-		shell_error(shell, "Specify remote address or \"all\"");
-		return -ENOEXEC;
-	}
-
 	if (strcmp(argv[1], "all") == 0) {
 		err = bt_unpair(selected_id, NULL);
 		if (err) {
@@ -1335,7 +1330,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 		      cmd_chan_map, 2, 1),
 #endif /* CONFIG_BT_CENTRAL */
 	SHELL_CMD_ARG(oob, NULL, NULL, cmd_oob, 1, 0),
-	SHELL_CMD_ARG(clear, NULL, NULL, cmd_clear, 1, 0),
+	SHELL_CMD_ARG(clear, NULL, "<remote: addr, all>", cmd_clear, 2, 1),
 #if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR)
 	SHELL_CMD_ARG(security, NULL, "<security level: 0, 1, 2, 3>",
 		      cmd_security, 2, 0),
