@@ -287,6 +287,14 @@ config BT_BONDABLE
 	  Bonding flag in AuthReq of SMP Pairing Request/Response will be set
 	  indicating the support for this mode.
 
+config BT_SMP_ENFORCE_MITM
+	bool "Enforce MITM protection"
+	default y
+	help
+	  With this option enabled, the Security Manager will set MITM option in
+	  the Authentication Requirements Flags whenever local IO Capabilities
+	  allow the generated key to be authenticated.
+
 config BT_OOB_DATA_FIXED
 	bool "Use a fixed random number for LESC OOB pairing"
 	depends on BT_TESTING
