@@ -118,7 +118,7 @@ def generate_node_defines(node_path):
 
     # Generate per-property ('foo = <1 2 3>', etc.) #defines
     for yaml_prop, yaml_val in get_binding(node_path)['properties'].items():
-        if 'generation' not in yaml_val:
+        if yaml_prop.startswith("#") or yaml_prop.endswith("-map"):
             continue
 
         match = False
