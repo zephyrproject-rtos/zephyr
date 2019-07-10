@@ -17,6 +17,9 @@
 
 #define TIMER0_IRQ		DT_LITEX_TIMER0_E0002800_IRQ_0
 #define UART0_IRQ		DT_LITEX_UART0_E0001800_IRQ_0
+
+#define ETH0_IRQ		DT_INST_0_LITEX_ETH0_IRQ_0
+
 static inline void vexriscv_litex_irq_setmask(u32_t mask)
 {
 	__asm__ volatile ("csrw %0, %1" :: "i"(IRQ_MASK), "r"(mask));
@@ -68,6 +71,13 @@ static void vexriscv_litex_irq_handler(void *device)
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	if (irqs & (1 << UART0_IRQ)) {
 		ite = &_sw_isr_table[UART0_IRQ];
+		ite->isr(ite->arg);
+	}
+#endif
+
+#ifdef CONFIG_ETH_LITEETH
+	if (irqs & (1 << ETH0_IRQ)) {
+		ite = (struct _isr_table_entry *)&_sw_isr_table[ETH0_IRQ];
 		ite->isr(ite->arg);
 	}
 #endif

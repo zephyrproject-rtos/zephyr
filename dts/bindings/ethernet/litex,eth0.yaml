@@ -1,0 +1,25 @@
+#
+# Copyright (c) 2019 Antmicro <www.antmicro.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: LiteX Ethernet
+version: 0.1
+
+description: >
+    This binding gives a base representation of LiteX Ethernet
+
+inherits:
+    !include ethernet.yaml
+
+properties:
+    compatible:
+        constraint: "litex,eth0"
+
+    reg:
+        category: required
+
+    interrupts:
+        category: required
+...
