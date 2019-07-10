@@ -35,6 +35,10 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "fsl_enet.h"
 #include "fsl_phy.h"
 
+#define FREESCALE_OUI_B0 0x00
+#define FREESCALE_OUI_B1 0x04
+#define FREESCALE_OUI_B2 0x9f
+
 enum eth_mcux_phy_state {
 	eth_mcux_phy_state_initial,
 	eth_mcux_phy_state_reset,
@@ -817,6 +821,12 @@ static int eth_0_init(struct device *dev)
 	enet_config.macSpecialConfig |= kENET_ControlPromiscuousEnable;
 #endif
 
+	/* Initialize/override OUI which may not be correct in
+	 * devicetree.
+	 */
+	context->mac_addr[0] = FREESCALE_OUI_B0;
+	context->mac_addr[1] = FREESCALE_OUI_B1;
+	context->mac_addr[2] = FREESCALE_OUI_B2;
 #if defined(CONFIG_ETH_MCUX_0_UNIQUE_MAC) || \
     defined(CONFIG_ETH_MCUX_0_RANDOM_MAC)
 	generate_mac(context->mac_addr);
@@ -1004,17 +1014,9 @@ static void eth_mcux_error_isr(void *p)
 static struct eth_context eth_0_context = {
 	.phy_duplex = kPHY_FullDuplex,
 	.phy_speed = kPHY_Speed100M,
-	.mac_addr = {
-		/* Freescale's OUI */
-		0x00,
-		0x04,
-		0x9f,
 #if defined(CONFIG_ETH_MCUX_0_MANUAL_MAC)
-		DT_ETH_MCUX_0_MAC3,
-		DT_ETH_MCUX_0_MAC4,
-		DT_ETH_MCUX_0_MAC5
+	.mac_addr = DT_ETH_MCUX_0_MAC,
 #endif
-	}
 };
 
 ETH_NET_DEVICE_INIT(eth_mcux_0, DT_ETH_MCUX_0_NAME, eth_0_init,
