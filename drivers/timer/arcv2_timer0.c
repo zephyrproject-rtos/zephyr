@@ -35,10 +35,16 @@
 
 static struct k_spinlock lock;
 
+
+#ifdef CONFIG_SMP
+volatile static u64_t last_time;
+volatile static u64_t start_time;
+
+#else
 static u32_t last_load;
 
 static u32_t cycle_count;
-
+#endif
 
 /**
  *
@@ -106,6 +112,7 @@ static ALWAYS_INLINE void timer0_limit_register_set(u32_t count)
 	z_arc_v2_aux_reg_write(_ARC_V2_TMR0_LIMIT, count);
 }
 
+#ifndef CONFIG_SMP
 static u32_t elapsed(void)
 {
 	u32_t val, ov, ctrl;
@@ -118,6 +125,7 @@ static u32_t elapsed(void)
 	ov = (ctrl & _ARC_V2_TMR_CTRL_IP) ? last_load : 0;
 	return val + ov;
 }
+#endif
 
 /**
  *
@@ -137,10 +145,25 @@ static void timer_int_handler(void *unused)
 	/* clear the interrupt by writing 0 to IP bit of the control register */
 	timer0_control_register_set(_ARC_V2_TMR_CTRL_NH | _ARC_V2_TMR_CTRL_IE);
 
+#ifdef CONFIG_SMP
+	u64_t curr_time;
+	k_spinlock_key_t key;
+
+	key = k_spin_lock(&lock);
+	/* gfrc is the wall clock */
+	curr_time = z_arc_connect_gfrc_read();
+
+	dticks = (curr_time - last_time) / CYC_PER_TICK;
+	last_time = curr_time;
+
+	k_spin_unlock(&lock, key);
+
+	z_clock_announce(dticks);
+#else
 	cycle_count += last_load;
 	dticks = last_load / CYC_PER_TICK;
-
 	z_clock_announce(TICKLESS ? dticks : 1);
+#endif
 
 }
 
@@ -161,6 +184,14 @@ int z_clock_driver_init(struct device *device)
 	/* ensure that the timer will not generate interrupts */
 	timer0_control_register_set(0);
 
+#ifdef CONFIG_SMP
+	IRQ_CONNECT(IRQ_TIMER0, CONFIG_ARCV2_TIMER_IRQ_PRIORITY,
+		    timer_int_handler, NULL, 0);
+
+	timer0_limit_register_set(CYC_PER_TICK - 1);
+	last_time = z_arc_connect_gfrc_read();
+	start_time = last_time;
+#else
 	last_load = CYC_PER_TICK;
 
 	IRQ_CONNECT(IRQ_TIMER0, CONFIG_ARCV2_TIMER_IRQ_PRIORITY,
@@ -169,6 +200,7 @@ int z_clock_driver_init(struct device *device)
 	timer0_limit_register_set(last_load - 1);
 #ifdef CONFIG_BOOT_TIME_MEASUREMENT
 	cycle_count = timer0_count_register_get();
+#endif
 #endif
 	timer0_count_register_set(0);
 	timer0_control_register_set(_ARC_V2_TMR_CTRL_NH | _ARC_V2_TMR_CTRL_IE);
@@ -186,6 +218,33 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 	 * then shut off the counter. (Note: we can assume if idle==true
 	 * that interrupts are already disabled)
 	 */
+#ifdef CONFIG_SMP
+	if (IS_ENABLED(CONFIG_TICKLESS_IDLE) && idle && ticks == K_FOREVER) {
+		timer0_control_register_set(0);
+		timer0_count_register_set(0);
+		timer0_limit_register_set(0);
+		return;
+	}
+
+#if defined(CONFIG_TICKLESS_KERNEL)
+	u32_t delay;
+	u32_t key;
+
+	ticks = MIN(MAX_TICKS, MAX(ticks - 1, 0));
+
+	/* Desired delay in the future */
+	delay = (ticks == 0) ? CYC_PER_TICK : ticks * CYC_PER_TICK;
+
+	key = z_arch_irq_lock();
+
+	timer0_limit_register_set(delay - 1);
+	timer0_count_register_set(0);
+	timer0_control_register_set(_ARC_V2_TMR_CTRL_NH |
+						_ARC_V2_TMR_CTRL_IE);
+
+	z_arch_irq_unlock(key);
+#endif
+#else
 	if (IS_ENABLED(CONFIG_TICKLESS_IDLE) && idle && ticks == K_FOREVER) {
 		timer0_control_register_set(0);
 		timer0_count_register_set(0);
@@ -221,6 +280,7 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 
 	k_spin_unlock(&lock, key);
 #endif
+#endif
 }
 
 u32_t z_clock_elapsed(void)
@@ -229,20 +289,31 @@ u32_t z_clock_elapsed(void)
 		return 0;
 	}
 
+	u32_t cyc;
 	k_spinlock_key_t key = k_spin_lock(&lock);
-	u32_t cyc = elapsed();
+
+#ifdef CONFIG_SMP
+	cyc = (z_arc_connect_gfrc_read() - last_time) / CYC_PER_TICK;
+#else
+	cyc = elapsed() / CYC_PER_TICK;
+#endif
 
 	k_spin_unlock(&lock, key);
-	return cyc / CYC_PER_TICK;
+
+	return cyc;
 }
 
 u32_t z_timer_cycle_get_32(void)
 {
+#ifdef CONFIG_SMP
+	return z_arc_connect_gfrc_read() - start_time;
+#else
 	k_spinlock_key_t key = k_spin_lock(&lock);
 	u32_t ret = elapsed() + cycle_count;
 
 	k_spin_unlock(&lock, key);
 	return ret;
+#endif
 }
 
 /**
@@ -272,3 +343,18 @@ void sys_clock_disable(void)
 
 	irq_disable(IRQ_TIMER0);
 }
+
+
+#ifdef CONFIG_SMP
+void smp_timer_init(void)
+{
+	/* set the initial status of timer0 of each slave core
+	 */
+	timer0_control_register_set(0);
+	timer0_count_register_set(0);
+	timer0_limit_register_set(0);
+
+	z_irq_priority_set(IRQ_TIMER0, CONFIG_ARCV2_TIMER_IRQ_PRIORITY, 0);
+	irq_enable(IRQ_TIMER0);
+}
+#endif
