@@ -2276,7 +2276,7 @@ void bt_set_bondable(bool enable)
 	bondable = enable;
 }
 
-static u8_t get_auth(u8_t auth)
+static u8_t get_auth(struct bt_conn *conn, u8_t auth)
 {
 	if (sc_supported) {
 		auth &= BT_SMP_AUTH_MASK_SC;
@@ -2284,7 +2284,9 @@ static u8_t get_auth(u8_t auth)
 		auth &= BT_SMP_AUTH_MASK;
 	}
 
-	if (get_io_capa() == BT_SMP_IO_NO_INPUT_OUTPUT) {
+	if ((get_io_capa() == BT_SMP_IO_NO_INPUT_OUTPUT) ||
+	    (!IS_ENABLED(CONFIG_BT_SMP_ENFORCE_MITM) &&
+	    (conn->required_sec_level < BT_SECURITY_HIGH))) {
 		auth &= ~(BT_SMP_AUTH_MITM);
 	} else {
 		auth |= BT_SMP_AUTH_MITM;
@@ -2367,7 +2369,7 @@ int bt_smp_send_security_req(struct bt_conn *conn)
 	}
 
 	req = net_buf_add(req_buf, sizeof(*req));
-	req->auth_req = get_auth(BT_SMP_AUTH_DEFAULT);
+	req->auth_req = get_auth(conn, BT_SMP_AUTH_DEFAULT);
 
 	/* SMP timer is not restarted for SecRequest so don't use smp_send */
 	bt_l2cap_send(conn, BT_L2CAP_CID_SMP, req_buf);
@@ -2410,7 +2412,7 @@ static u8_t smp_pairing_req(struct bt_smp *smp, struct net_buf *buf)
 	smp->prsp[0] = BT_SMP_CMD_PAIRING_RSP;
 	rsp = (struct bt_smp_pairing *)&smp->prsp[1];
 
-	rsp->auth_req = get_auth(req->auth_req);
+	rsp->auth_req = get_auth(conn, req->auth_req);
 	rsp->io_capability = get_io_capa();
 	rsp->oob_flag = BT_SMP_OOB_NOT_PRESENT;
 	rsp->max_key_size = BT_SMP_MAX_ENC_KEY_SIZE;
@@ -2545,7 +2547,7 @@ int bt_smp_send_pairing_req(struct bt_conn *conn)
 
 	req = net_buf_add(req_buf, sizeof(*req));
 
-	req->auth_req = get_auth(BT_SMP_AUTH_DEFAULT);
+	req->auth_req = get_auth(conn, BT_SMP_AUTH_DEFAULT);
 	req->io_capability = get_io_capa();
 	req->oob_flag = BT_SMP_OOB_NOT_PRESENT;
 	req->max_key_size = BT_SMP_MAX_ENC_KEY_SIZE;
