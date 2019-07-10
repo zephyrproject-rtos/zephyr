@@ -226,7 +226,7 @@ static void reset_pin_wait_low(struct device *port, u32_t pin)
 static int reset_pin_configure(struct device *p0, struct device *p1)
 {
 	int err;
-	u32_t pin;
+	u32_t pin = 0;
 	struct device *port = NULL;
 
 	static struct gpio_callback gpio_ctx;
