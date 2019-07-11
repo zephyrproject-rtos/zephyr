@@ -942,8 +942,10 @@ static void forward_status_cb(enum usb_dc_status_code status, const u8_t *param)
 	if (status == USB_DC_DISCONNECTED || status == USB_DC_SUSPEND) {
 		if (usb_dev.configured) {
 			usb_cancel_transfers();
-			foreach_ep(disable_interface_ep);
-			usb_dev.configured = false;
+			if (status == USB_DC_DISCONNECTED) {
+				foreach_ep(disable_interface_ep);
+				usb_dev.configured = false;
+			}
 		}
 	}
 
