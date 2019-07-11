@@ -268,7 +268,7 @@ static int settings_fcb_save_priv(struct settings_store *cs, const char *name,
 
 	for (i = 0; i < cf->cf_fcb.f_sector_cnt - 1; i++) {
 		rc = fcb_append(&cf->cf_fcb, len, &loc.loc);
-		if (rc != FCB_ERR_NOSPACE) {
+		if (rc != -ENOSPC) {
 			break;
 		}
 		settings_fcb_compress(cf);
