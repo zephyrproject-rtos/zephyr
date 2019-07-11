@@ -19,7 +19,6 @@ zephyr_library_sources(
   cpu_idle.S
   fault_s.S
   fatal.c
-  sys_fatal_error_handler.c
   thread_abort.c
 )
 

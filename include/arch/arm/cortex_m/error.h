@@ -22,17 +22,6 @@
 extern "C" {
 #endif
 
-#ifndef _ASMLANGUAGE
-extern void z_NanoFatalErrorHandler(unsigned int reason, const NANO_ESF *esf);
-extern void z_SysFatalErrorHandler(unsigned int reason, const NANO_ESF *esf);
-#endif
-
-#define _NANO_ERR_HW_EXCEPTION (0)      /* MPU/Bus/Usage fault */
-#define _NANO_ERR_STACK_CHK_FAIL (2)    /* Stack corruption detected */
-#define _NANO_ERR_ALLOCATION_FAIL (3)   /* Kernel Allocation Failure */
-#define _NANO_ERR_KERNEL_OOPS (4)       /* Kernel oops (fatal to thread) */
-#define _NANO_ERR_KERNEL_PANIC (5)	/* Kernel panic (fatal to system) */
-
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
 /* ARMv6 will hard-fault if SVC is called with interrupts locked. Just
  * force them unlocked, the thread is in an undefined state anyway

@@ -5,6 +5,7 @@
 add_library(kernel
   device.c
   errno.c
+  fatal.c
   idle.c
   init.c
   mailbox.c

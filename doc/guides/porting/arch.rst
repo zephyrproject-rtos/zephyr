@@ -441,13 +441,14 @@ However, a real implementation is strongly recommended.
 Fault Management
 ****************
 
-Each architecture provides two fatal error handlers:
-
-* :code:`_NanoFatalErrorHandler`, called by software for unrecoverable errors.
-* :code:`_SysFatalErrorHandler`, which makes the decision on how to handle
-  the thread where the error is generated, most likely by terminating it.
-
-See the current architecture implementations for examples.
+In the event of an unhandled CPU exception, the architecture
+code must call into :c:func:`z_fatal_error`.  This function dumps
+out architecture-agnostic information and makes a policy
+decision on what to do next by invoking :c:func:`k_sys_fatal_error`.
+This function can be overridden to implement application-specific
+policies that could include locking interrupts and spinning forever
+(the default implementation) or even powering off the
+system (if supported).
 
 Toolchain and Linking
 *********************

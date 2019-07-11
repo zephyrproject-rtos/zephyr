@@ -87,7 +87,7 @@ void z_irq_spurious(void *arg)
 	__asm__ volatile("rsr.intenable %0" : "=r"(ie));
 	printk(" ** Spurious INTERRUPT(s) %p, INTENABLE = %p\n",
 	       (void *)irqs, (void *)ie);
-	z_NanoFatalErrorHandler(_NANO_ERR_RESERVED_IRQ, &_default_esf);
+	z_xtensa_fatal_error(K_ERR_SPURIOUS_IRQ, &_default_esf);
 }
 #endif
 
@@ -201,7 +201,7 @@ void *xtensa_excint1_c(int *interrupted_stack)
 		 * as these are software errors.  Should clean this
 		 * up.
 		 */
-		z_NanoFatalErrorHandler(_NANO_ERR_HW_EXCEPTION, &_default_esf);
+		z_xtensa_fatal_error(K_ERR_CPU_EXCEPTION, &_default_esf);
 	}
 
 	return z_get_next_switch_handle(interrupted_stack);

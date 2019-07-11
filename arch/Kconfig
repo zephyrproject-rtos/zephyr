@@ -241,15 +241,6 @@ config DYNAMIC_OBJECTS
 	API call, or when the number of references to that object drops to
 	zero.
 
-config SIMPLE_FATAL_ERROR_HANDLER
-	bool "Simple system fatal error handler"
-	default y if !MULTITHREADING
-	help
-	  Provides an implementation of _SysFatalErrorHandler() that hard hangs
-	  instead of aborting the faulting thread, and does not print anything,
-	  for footprint-concerned systems. Only enable this option if you do not
-	  want debug capabilities in case of system fatal error.
-
 if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
 
 config NOCACHE_MEMORY

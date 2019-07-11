@@ -267,6 +267,11 @@ extern int z_stack_adjust_initialized;
 extern void z_arch_busy_wait(u32_t usec_to_wait);
 #endif
 
+/**
+ * TODO: document
+ */
+extern FUNC_NORETURN void z_arch_system_halt(unsigned int reason);
+
 #ifdef __cplusplus
 }
 #endif

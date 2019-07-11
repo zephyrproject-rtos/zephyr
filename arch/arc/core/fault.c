@@ -371,7 +371,7 @@ static void dump_exception_info(u32_t vector, u32_t cause, u32_t parameter)
  *
  * This routine is called when fatal error conditions are detected by hardware
  * and is responsible only for reporting the error. Once reported, it then
- * invokes the user provided routine z_SysFatalErrorHandler() which is
+ * invokes the user provided routine k_sys_fatal_error_handler() which is
  * responsible for implementing the error handling policy.
  */
 void _Fault(NANO_ESF *esf)
@@ -391,7 +391,6 @@ void _Fault(NANO_ESF *esf)
 		}
 	}
 #endif
-	LOG_PANIC();
 
 	vector = Z_ARC_V2_ECR_VECTOR(ecr);
 	cause =  Z_ARC_V2_ECR_CODE(ecr);
@@ -399,7 +398,7 @@ void _Fault(NANO_ESF *esf)
 
 	/* exception raised by kernel */
 	if (vector == ARC_EV_TRAP && parameter == _TRAP_S_CALL_RUNTIME_EXCEPT) {
-		z_NanoFatalErrorHandler(esf->r0, esf);
+		z_arc_fatal_error(esf->r0, esf);
 		return;
 	}
 
@@ -417,7 +416,7 @@ void _Fault(NANO_ESF *esf)
 	 * parameter = 0x2 | [0x4 | 0x8 | 0x1]
 	 */
 	if (vector == ARC_EV_PROT_V && parameter & 0x2) {
-		z_NanoFatalErrorHandler(_NANO_ERR_STACK_CHK_FAIL, esf);
+		z_arc_fatal_error(K_ERR_STACK_CHK_FAIL, esf);
 		return;
 	}
 #endif
@@ -426,10 +425,10 @@ void _Fault(NANO_ESF *esf)
 	if (vector == ARC_EV_PROT_V && ((parameter == 0x4) ||
 					(parameter == 0x24))) {
 		if (z_check_thread_stack_fail(exc_addr, arc_exc_saved_sp)) {
-			z_NanoFatalErrorHandler(_NANO_ERR_STACK_CHK_FAIL, esf);
+			z_arc_fatal_error(K_ERR_STACK_CHK_FAIL, esf);
 			return;
 		}
 	}
 #endif
-	z_NanoFatalErrorHandler(_NANO_ERR_HW_EXCEPTION, esf);
+	z_arc_fatal_error(K_ERR_CPU_EXCEPTION, esf);
 }

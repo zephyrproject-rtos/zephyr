@@ -34,6 +34,7 @@ extern "C" {
 
 extern void FatalErrorHandler(void);
 extern void ReservedInterruptHandler(unsigned int intNo);
+extern void z_xtensa_fatal_error(unsigned int reason, const NANO_ESF *esf);
 
 /* Defined in xtensa_context.S */
 extern void z_xt_coproc_init(void);

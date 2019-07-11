@@ -35,5 +35,6 @@
 #include <sys/rb.h>
 #include <sys_clock.h>
 #include <spinlock.h>
+#include <fatal.h>
 
 #endif /* ZEPHYR_INCLUDE_KERNEL_INCLUDES_H_ */

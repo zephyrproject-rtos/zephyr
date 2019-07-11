@@ -13,6 +13,13 @@
 static K_THREAD_STACK_DEFINE(dyn_thread_stack, STACKSIZE);
 static K_SEM_DEFINE(start_sem, 0, 1);
 static K_SEM_DEFINE(end_sem, 0, 1);
+static ZTEST_BMEM struct k_thread *dyn_thread;
+
+void k_sys_fatal_error_handler(unsigned int reason, const NANO_ESF *esf)
+{
+	zassert_equal(reason, K_ERR_KERNEL_OOPS, "wrong error reason");
+	zassert_equal(k_current_get(), dyn_thread, "wrong thread crashed");
+}
 
 static void dyn_thread_entry(void *p1, void *p2, void *p3)
 {
@@ -29,7 +36,6 @@ static void prep(void)
 
 static void create_dynamic_thread(void)
 {
-	struct k_thread *dyn_thread;
 	k_tid_t tid;
 
 	dyn_thread = k_object_alloc(K_OBJ_THREAD);

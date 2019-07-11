@@ -44,37 +44,10 @@ volatile int rv;
 
 static volatile int crash_reason;
 
-/* On some architectures, k_thread_abort(_current) will return instead
- * of z_swap'ing away.
- *
- * On ARM the PendSV exception is queued and immediately fires upon
- * completing the exception path; the faulting thread is never run
- * again.
- *
- * On Xtensa/asm2 and x86_64 the handler is running in interrupt
- * context and on the interrupt stack and needs to return through the
- * interrupt exit code.
- *
- * In both cases the thread is guaranteed never to run again once we
- * return from the z_SysFatalErrorHandler().
- */
-#if !(defined(CONFIG_ARM) || defined(CONFIG_XTENSA_ASM2) \
-	|| defined(CONFIG_ARC) || defined(CONFIG_X86_64))
-#define ERR_IS_NORETURN 1
-#endif
-
-#ifdef ERR_IS_NORETURN
-FUNC_NORETURN
-#endif
-void z_SysFatalErrorHandler(unsigned int reason, const NANO_ESF *pEsf)
+void k_sys_fatal_error_handler(unsigned int reason, const NANO_ESF *pEsf)
 {
 	TC_PRINT("Caught system error -- reason %d\n", reason);
 	crash_reason = reason;
-
-	k_thread_abort(_current);
-#ifdef ERR_IS_NORETURN
-	CODE_UNREACHABLE;
-#endif
 }
 
 void alt_thread1(void)
@@ -226,9 +199,9 @@ void check_stack_overflow(void *handler, u32_t flags)
 			NULL, NULL, NULL, K_PRIO_PREEMPT(PRIORITY), flags,
 			K_NO_WAIT);
 
-	zassert_equal(crash_reason, _NANO_ERR_STACK_CHK_FAIL,
+	zassert_equal(crash_reason, K_ERR_STACK_CHK_FAIL,
 		      "bad reason code got %d expected %d\n",
-		      crash_reason, _NANO_ERR_STACK_CHK_FAIL);
+		      crash_reason, K_ERR_STACK_CHK_FAIL);
 	zassert_not_equal(rv, TC_FAIL, "thread was not aborted");
 }
 #endif /* !CONFIG_ARCH_POSIX */
@@ -276,9 +249,9 @@ void test_fatal(void)
 			NULL, NULL, NULL, K_PRIO_COOP(PRIORITY), 0,
 			K_NO_WAIT);
 	k_thread_abort(&alt_thread);
-	zassert_equal(crash_reason, _NANO_ERR_KERNEL_OOPS,
+	zassert_equal(crash_reason, K_ERR_KERNEL_OOPS,
 		      "bad reason code got %d expected %d\n",
-		      crash_reason, _NANO_ERR_KERNEL_OOPS);
+		      crash_reason, K_ERR_KERNEL_OOPS);
 	zassert_not_equal(rv, TC_FAIL, "thread was not aborted");
 
 	TC_PRINT("test alt thread 3: initiate kernel panic\n");
@@ -288,9 +261,9 @@ void test_fatal(void)
 			NULL, NULL, NULL, K_PRIO_COOP(PRIORITY), 0,
 			K_NO_WAIT);
 	k_thread_abort(&alt_thread);
-	zassert_equal(crash_reason, _NANO_ERR_KERNEL_PANIC,
+	zassert_equal(crash_reason, K_ERR_KERNEL_PANIC,
 		      "bad reason code got %d expected %d\n",
-		      crash_reason, _NANO_ERR_KERNEL_PANIC);
+		      crash_reason, K_ERR_KERNEL_PANIC);
 	zassert_not_equal(rv, TC_FAIL, "thread was not aborted");
 
 	TC_PRINT("test alt thread 4: fail assertion\n");
@@ -301,9 +274,9 @@ void test_fatal(void)
 			K_NO_WAIT);
 	k_thread_abort(&alt_thread);
 	/* Default assert_post_action() induces a kernel panic */
-	zassert_equal(crash_reason, _NANO_ERR_KERNEL_PANIC,
+	zassert_equal(crash_reason, K_ERR_KERNEL_PANIC,
 		      "bad reason code got %d expected %d\n",
-		      crash_reason, _NANO_ERR_KERNEL_PANIC);
+		      crash_reason, K_ERR_KERNEL_PANIC);
 	zassert_not_equal(rv, TC_FAIL, "thread was not aborted");
 
 #ifndef CONFIG_ARCH_POSIX

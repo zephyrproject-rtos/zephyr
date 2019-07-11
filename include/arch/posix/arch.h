@@ -33,14 +33,6 @@ extern "C" {
 #define STACK_ALIGN 4
 #define STACK_ALIGN_SIZE 4
 
-#define _NANO_ERR_CPU_EXCEPTION (0)     /* Any unhandled exception */
-#define _NANO_ERR_INVALID_TASK_EXIT (1) /* Invalid task exit */
-#define _NANO_ERR_STACK_CHK_FAIL (2)    /* Stack corruption detected */
-#define _NANO_ERR_ALLOCATION_FAIL (3)   /* Kernel Allocation Failure */
-#define _NANO_ERR_SPURIOUS_INT (4)  /* Spurious interrupt */
-#define _NANO_ERR_KERNEL_OOPS (5)       /* Kernel oops (fatal to thread) */
-#define _NANO_ERR_KERNEL_PANIC (6)  /* Kernel panic (fatal to system) */
-
 struct __esf {
 	u32_t dummy; /*maybe we will want to add something someday*/
 };
@@ -50,12 +42,6 @@ extern const NANO_ESF _default_esf;
 
 extern u32_t z_timer_cycle_get_32(void);
 #define z_arch_k_cycle_get_32()  z_timer_cycle_get_32()
-
-FUNC_NORETURN void z_SysFatalErrorHandler(unsigned int reason,
-					 const NANO_ESF *esf);
-
-FUNC_NORETURN void z_NanoFatalErrorHandler(unsigned int reason,
-					  const NANO_ESF *esf);
 
 /**
  * @brief Explicitly nop operation.
