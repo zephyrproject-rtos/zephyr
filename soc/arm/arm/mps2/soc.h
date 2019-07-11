@@ -16,6 +16,7 @@
 #endif
 
 #include <soc_devices.h>
+#include <generated_dts_board.h>
 
 extern void wakeup_cpu1(void);
 
