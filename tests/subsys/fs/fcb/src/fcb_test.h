@@ -14,6 +14,7 @@
 
 #include <fs/fcb.h>
 #include "fcb_priv.h"
+#include <errno.h>
 
 #ifdef __cplusplus
 #extern "C" {

@@ -123,18 +123,6 @@ struct fcb {
 	 */
 };
 
-/*
- * Error codes.
- */
-#define FCB_OK		0
-#define FCB_ERR_ARGS	-1
-#define FCB_ERR_FLASH	-2
-#define FCB_ERR_NOVAR   -3
-#define FCB_ERR_NOSPACE	-4
-#define FCB_ERR_NOMEM	-5
-#define FCB_ERR_CRC	-6
-#define FCB_ERR_MAGIC   -7
-
 /**
  * @}
  */
