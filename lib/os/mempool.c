@@ -67,30 +67,6 @@ static int partner_bits(struct sys_mem_pool_base *p, int level, int bn)
 	return (*word >> (4*(bit / 4))) & 0xf;
 }
 
-static size_t buf_size(struct sys_mem_pool_base *p)
-{
-	return p->n_max * p->max_sz;
-}
-
-static bool block_fits(struct sys_mem_pool_base *p,
-		       int lvl, int bn, size_t *lsizes)
-{
-	u8_t *parent, *block_end;
-	size_t parent_sz;
-
-	block_end = (u8_t *)block_ptr(p, lsizes[lvl], bn) + lsizes[lvl];
-
-	if (lvl == 0) {
-		parent_sz = buf_size(p);
-		parent = p->buf;
-	} else {
-		parent_sz = lsizes[lvl - 1];
-		parent = block_ptr(p, lsizes[lvl - 1], bn / 4);
-	}
-
-	return block_end <= (parent + parent_sz);
-}
-
 void z_sys_mem_pool_base_init(struct sys_mem_pool_base *p)
 {
 	int i;
@@ -111,7 +87,7 @@ void z_sys_mem_pool_base_init(struct sys_mem_pool_base *p)
 			bits += (nblocks + 31)/32;
 		}
 
-		sz = WB_UP(sz / 4);
+		sz = WB_DN(sz / 4);
 	}
 
 	for (i = 0; i < p->n_max; i++) {
@@ -175,8 +151,6 @@ static unsigned int bfree_recombine(struct sys_mem_pool_base *p, int level,
 		int i, lsz = lsizes[level];
 		void *block = block_ptr(p, lsz, bn);
 
-		__ASSERT(block_fits(p, level, bn, lsizes), "");
-
 		/* Put it back */
 		set_free_bit(p, level, bn);
 		sys_dlist_append(&p->levels[level].free_list, block);
@@ -193,10 +167,8 @@ static unsigned int bfree_recombine(struct sys_mem_pool_base *p, int level,
 		for (i = 0; i < 4; i++) {
 			int b = (bn & ~3) + i;
 
-			if (block_fits(p, level, b, lsizes)) {
-				clear_free_bit(p, level, b);
-				sys_dlist_remove(block_ptr(p, lsz, b));
-			}
+			clear_free_bit(p, level, b);
+			sys_dlist_remove(block_ptr(p, lsz, b));
 		}
 
 		/* Free the larger block */
@@ -234,9 +206,7 @@ static void *block_break(struct sys_mem_pool_base *p, void *block, int l,
 		void *block2 = (lsz * i) + (char *)block;
 
 		set_free_bit(p, l + 1, lbn);
-		if (block_fits(p, l + 1, lbn, lsizes)) {
-			sys_dlist_append(&p->levels[l + 1].free_list, block2);
-		}
+		sys_dlist_append(&p->levels[l + 1].free_list, block2);
 	}
 
 	return block;
@@ -259,7 +229,7 @@ int z_sys_mem_pool_block_alloc(struct sys_mem_pool_base *p, size_t size,
 	lsizes[0] = p->max_sz;
 	for (i = 0; i < p->n_levels; i++) {
 		if (i > 0) {
-			lsizes[i] = WB_UP(lsizes[i-1] / 4);
+			lsizes[i] = WB_DN(lsizes[i-1] / 4);
 		}
 
 		if (lsizes[i] < size) {
@@ -331,7 +301,7 @@ void z_sys_mem_pool_block_free(struct sys_mem_pool_base *p, u32_t level,
 	 */
 	lsizes[0] = p->max_sz;
 	for (i = 1; i <= level; i++) {
-		lsizes[i] = WB_UP(lsizes[i-1] / 4);
+		lsizes[i] = WB_DN(lsizes[i-1] / 4);
 	}
 
 	block_free(p, level, lsizes, block);
