@@ -107,7 +107,7 @@ void *realloc(void *ptr, size_t requested_size)
 	 */
 	block_size = blk->pool->base.max_sz;
 	for (int i = 1; i <= blk->level; i++) {
-		block_size = WB_UP(block_size / 4);
+		block_size = WB_DN(block_size / 4);
 	}
 
 	/* We really need this much memory */
