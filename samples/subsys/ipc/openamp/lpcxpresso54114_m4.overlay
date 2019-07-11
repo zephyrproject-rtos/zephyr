@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2019 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		/*
+		 * shared memory reserved for the inter-processor communication
+		 */
+		zephyr,ipc_shm = &sramx1;
+		zephyr,ipc = &mailbox0;
+	};
+
+	sramx1:memory@4000000{
+		compatible = "mmio-sram";
+		reg = <0x4000000 0x8000>;
+	};
+};
