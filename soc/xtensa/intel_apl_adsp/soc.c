@@ -257,6 +257,7 @@ static inline void soc_read_bootstraps(void)
 	}
 }
 
+#if 0
 static int soc_init(struct device *dev)
 {
 	soc_read_bootstraps();
@@ -270,6 +271,7 @@ static int soc_init(struct device *dev)
 }
 
 SYS_INIT(soc_init, PRE_KERNEL_1, 99);
+#endif
 
 #define SOF_GLB_TYPE_SHIFT			28
 #define SOF_GLB_TYPE(x)				((x) << SOF_GLB_TYPE_SHIFT)
