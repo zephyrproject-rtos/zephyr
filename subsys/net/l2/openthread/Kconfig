@@ -162,6 +162,16 @@ config OPENTHREAD_JOINER_PSKD
 	help
 	  Pre Shared Key for the Device to start joiner
 
+config OPENTHREAD_DHCP6_CLIENT
+       bool "DHCPv6 client support"
+       help
+         Enable DHCPv6 client capability in OpenThread stack
+
+config OPENTHREAD_DHCP6_SERVER
+       bool "DHCPv6 server support"
+       help
+         Enable DHCPv6 server capability in OpenThread stack
+
 config OPENTHREAD_PLATFORM_INFO
 	string "Platform information for OpenThread"
 	default "ZEPHYR"
