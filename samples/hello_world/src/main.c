@@ -12,6 +12,8 @@
 #include <xtensa/config/core.h>
 #include <xtensa/hal.h>
 
+#define CONFIG_TRACE 1
+
 /* SRAM window 0 FW "registers" */
 #define SRAM_REG_ROM_STATUS                     0x0
 #define SRAM_REG_FW_STATUS                      0x4
