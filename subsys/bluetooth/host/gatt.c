@@ -739,12 +739,15 @@ void bt_gatt_init(void)
 		last_static_handle += svc->attr_count;
 	}
 
-#if defined(CONFIG_BT_GATT_DYNAMIC_DB)
 #if defined(CONFIG_BT_GATT_CACHING)
 	k_delayed_work_init(&db_hash_work, db_hash_process);
-	db_hash_gen(false);
-#endif /* COFNIG_BT_GATT_CACHING */
 
+	/* Submit work to Generate initial hash as there could be static
+	 * services already in the database.
+	 */
+	k_delayed_work_submit(&db_hash_work, DB_HASH_TIMEOUT);
+#endif /* CONFIG_BT_GATT_CACHING */
+#if defined(CONFIG_BT_GATT_DYNAMIC_DB)
 	k_delayed_work_init(&gatt_sc.work, sc_process);
 #endif /* CONFIG_BT_GATT_DYNAMIC_DB */
 #if defined(CONFIG_BT_SETTINGS_CCC_STORE_ON_WRITE)
