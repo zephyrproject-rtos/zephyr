@@ -8,7 +8,7 @@
 #include <kernel_structs.h>
 #include <sys/printk.h>
 
-void z_irq_spurious(void *unused)
+FUNC_NORETURN void z_irq_spurious(void *unused)
 {
 	u32_t mcause;
 
@@ -25,8 +25,7 @@ void z_irq_spurious(void *unused)
 		       riscv_plic_get_irq());
 	}
 #endif
-
-	z_NanoFatalErrorHandler(_NANO_ERR_SPURIOUS_INT, &_default_esf);
+	z_riscv32_fatal_error(K_ERR_SPURIOUS_IRQ, &_default_esf);
 }
 
 #ifdef CONFIG_DYNAMIC_INTERRUPTS

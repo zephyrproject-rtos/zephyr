@@ -213,7 +213,7 @@ u32_t z_check_thread_stack_fail(const u32_t fault_addr,
  */
 static u32_t MpuFault(NANO_ESF *esf, int fromHardFault, bool *recoverable)
 {
-	u32_t reason = _NANO_ERR_HW_EXCEPTION;
+	u32_t reason = K_ERR_CPU_EXCEPTION;
 	u32_t mmfar = -EINVAL;
 
 	PR_FAULT_INFO("***** MPU FAULT *****\n");
@@ -304,7 +304,7 @@ static u32_t MpuFault(NANO_ESF *esf, int fromHardFault, bool *recoverable)
 				 */
 				__set_PSP(min_stack_ptr);
 
-				reason = _NANO_ERR_STACK_CHK_FAIL;
+				reason = K_ERR_STACK_CHK_FAIL;
 			} else {
 				__ASSERT(0,
 					"Stacking error not a stack fail\n");
@@ -336,7 +336,7 @@ static u32_t MpuFault(NANO_ESF *esf, int fromHardFault, bool *recoverable)
  */
 static int BusFault(NANO_ESF *esf, int fromHardFault, bool *recoverable)
 {
-	u32_t reason = _NANO_ERR_HW_EXCEPTION;
+	u32_t reason = K_ERR_CPU_EXCEPTION;
 
 	PR_FAULT_INFO("***** BUS FAULT *****\n");
 
@@ -456,7 +456,7 @@ static int BusFault(NANO_ESF *esf, int fromHardFault, bool *recoverable)
 						__set_PSP(min_stack_ptr);
 
 						reason =
-							_NANO_ERR_STACK_CHK_FAIL;
+							K_ERR_STACK_CHK_FAIL;
 						break;
 					}
 				}
@@ -490,7 +490,7 @@ static int BusFault(NANO_ESF *esf, int fromHardFault, bool *recoverable)
  */
 static u32_t UsageFault(const NANO_ESF *esf)
 {
-	u32_t reason = _NANO_ERR_HW_EXCEPTION;
+	u32_t reason = K_ERR_CPU_EXCEPTION;
 
 	PR_FAULT_INFO("***** USAGE FAULT *****\n");
 
@@ -512,7 +512,7 @@ static u32_t UsageFault(const NANO_ESF *esf)
 		 * on the reported faulty instruction address, to determine
 		 * the instruction that triggered the stack overflow.
 		 */
-		reason = _NANO_ERR_STACK_CHK_FAIL;
+		reason = K_ERR_STACK_CHK_FAIL;
 #endif /* CONFIG_BUILTIN_STACK_GUARD */
 	}
 #endif /* CONFIG_ARMV8_M_MAINLINE */
@@ -605,7 +605,7 @@ static void DebugMonitor(const NANO_ESF *esf)
  */
 static u32_t HardFault(NANO_ESF *esf, bool *recoverable)
 {
-	u32_t reason = _NANO_ERR_HW_EXCEPTION;
+	u32_t reason = K_ERR_CPU_EXCEPTION;
 
 	PR_FAULT_INFO("***** HARD FAULT *****\n");
 
@@ -657,7 +657,8 @@ static void ReservedException(const NANO_ESF *esf, int fault)
 /* Handler function for ARM fault conditions. */
 static u32_t FaultHandle(NANO_ESF *esf, int fault, bool *recoverable)
 {
-	u32_t reason = _NANO_ERR_HW_EXCEPTION;
+	u32_t reason = K_ERR_CPU_EXCEPTION;
+
 	*recoverable = false;
 
 	switch (fault) {
@@ -761,8 +762,8 @@ static void SecureStackDump(const NANO_ESF *secure_esf)
  *   error handling policy allows the system to recover from the error),
  * - reporting the error information,
  * - determining the error reason to be provided as input to the user-
- *   provided routine, z_NanoFatalErrorHandler().
- * The z_NanoFatalErrorHandler() is invoked once the above operations are
+ *   provided routine, k_sys_fatal_error_handler().
+ * The k_sys_fatal_error_handler() is invoked once the above operations are
  * completed, and is responsible for implementing the error handling policy.
  *
  * The provided ESF pointer points to the exception stack frame of the current
@@ -782,11 +783,9 @@ static void SecureStackDump(const NANO_ESF *secure_esf)
  */
 void _Fault(NANO_ESF *esf, u32_t exc_return)
 {
-	u32_t reason = _NANO_ERR_HW_EXCEPTION;
+	u32_t reason = K_ERR_CPU_EXCEPTION;
 	int fault = SCB->ICSR & SCB_ICSR_VECTACTIVE_Msk;
 	bool recoverable;
-
-	LOG_PANIC();
 
 #if defined(CONFIG_ARM_SECURE_FIRMWARE)
 	if ((exc_return & EXC_RETURN_INDICATOR_PREFIX) !=
@@ -866,7 +865,7 @@ void _Fault(NANO_ESF *esf, u32_t exc_return)
 	defined(CONFIG_ARM_NONSECURE_FIRMWARE)
 _exit_fatal:
 #endif
-	z_NanoFatalErrorHandler(reason, esf);
+	z_arm_fatal_error(reason, esf);
 }
 
 /**

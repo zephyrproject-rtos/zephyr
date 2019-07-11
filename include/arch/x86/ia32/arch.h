@@ -316,28 +316,6 @@ struct _x86_syscall_stack_frame {
 
 #endif /* !_ASMLANGUAGE */
 
-/*
- * Reason codes passed to both z_NanoFatalErrorHandler()
- * and z_SysFatalErrorHandler().
- */
-
-/** Unhandled exception/interrupt */
-#define _NANO_ERR_SPURIOUS_INT		 (0)
-/** Page fault */
-#define _NANO_ERR_PAGE_FAULT		 (1)
-/** General protection fault */
-#define _NANO_ERR_GEN_PROT_FAULT	 (2)
-/** Stack corruption detected */
-#define _NANO_ERR_STACK_CHK_FAIL	 (4)
-/** Kernel Allocation Failure */
-#define _NANO_ERR_ALLOCATION_FAIL    (5)
-/** Unhandled exception */
-#define _NANO_ERR_CPU_EXCEPTION		(6)
-/** Kernel oops (fatal to thread) */
-#define _NANO_ERR_KERNEL_OOPS		(7)
-/** Kernel panic (fatal to system) */
-#define _NANO_ERR_KERNEL_PANIC		(8)
-
 #ifndef _ASMLANGUAGE
 
 /**
@@ -588,15 +566,6 @@ extern void	k_cpu_idle(void);
 
 extern u32_t z_timer_cycle_get_32(void);
 #define z_arch_k_cycle_get_32()	z_timer_cycle_get_32()
-
-/** kernel provided routine to report any detected fatal error. */
-extern FUNC_NORETURN void z_NanoFatalErrorHandler(unsigned int reason,
-						 const NANO_ESF * pEsf);
-
-/** User provided routine to handle any detected fatal error post reporting. */
-extern FUNC_NORETURN void z_SysFatalErrorHandler(unsigned int reason,
-						const NANO_ESF * pEsf);
-
 
 #ifdef CONFIG_X86_ENABLE_TSS
 extern struct task_state_segment _main_tss;

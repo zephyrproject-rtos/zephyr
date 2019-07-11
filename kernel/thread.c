@@ -310,7 +310,7 @@ void z_check_stack_sentinel(void)
 	if (*stack != STACK_SENTINEL) {
 		/* Restore it so further checks don't trigger this same error */
 		*stack = STACK_SENTINEL;
-		z_except_reason(_NANO_ERR_STACK_CHK_FAIL);
+		z_except_reason(K_ERR_STACK_CHK_FAIL);
 	}
 }
 #endif

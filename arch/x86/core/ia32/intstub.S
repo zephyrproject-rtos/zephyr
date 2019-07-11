@@ -17,7 +17,7 @@
 #include <kernel_structs.h>
 #include <arch/x86/ia32/asm.h>
 #include <offsets_short.h>
-#include <arch/cpu.h>	/* _NANO_ERR_SPURIOUS_INT */
+#include <arch/cpu.h>
 #include <drivers/interrupt_controller/sysapic.h>
 
 	/* exports (internal APIs) */
@@ -370,11 +370,9 @@ handle_idle:
  * error code onto the stack (or kernel stack) in addition to the EFLAGS/CS/EIP
  * records.
  *
- * A spurious interrupt is considered a fatal condition, thus this routine
- * merely sets up the 'reason' and 'pEsf' parameters to the routine
- *  _SysFatalHwErrorHandler().  In other words, there is no provision to return
- * to the interrupted execution context and thus the volatile registers are not
- * saved.
+ * A spurious interrupt is considered a fatal condition; there is no provision
+ * to return to the interrupted execution context and thus the volatile
+ * registers are not saved.
  *
  * @return Never returns
  *
@@ -416,20 +414,14 @@ SECTION_FUNC(TEXT, z_SpuriousIntHandler)
 #ifndef CONFIG_X86_IAMCU
 	pushl	%esp			/* push cur stack pointer: pEsf arg */
 #else
-	mov	%esp, %edx
+	mov	%esp, %eax
 #endif
 
 	/* re-enable interrupts */
 	sti
 
-	/* push the 'unsigned int reason' parameter */
-#ifndef CONFIG_X86_IAMCU
-	pushl	$_NANO_ERR_SPURIOUS_INT
-#else
-	movl	$_NANO_ERR_SPURIOUS_INT, %eax
-#endif
 	/* call the fatal error handler */
-	call	z_NanoFatalErrorHandler
+	call	z_x86_spurious_irq
 
 	/* handler doesn't  return */
 

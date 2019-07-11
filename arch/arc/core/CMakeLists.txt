@@ -14,7 +14,6 @@ zephyr_library_sources(
 	isr_wrapper.S
 	regular_irq.S
 	switch.S
-	sys_fatal_error_handler.c
 	prep_c.c
 	reset.S
 	vector_table.c

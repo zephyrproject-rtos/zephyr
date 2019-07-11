@@ -48,6 +48,11 @@ static volatile int int_handler_executed;
 /* Assume the spurious interrupt handler will execute and abort the task */
 static volatile int spur_handler_aborted_thread = 1;
 
+void k_sys_fatal_error_handler(unsigned int reason, const NANO_ESF *esf)
+{
+	zassert_equal(reason, K_ERR_SPURIOUS_IRQ, "wrong error reason");
+	zassert_equal(k_current_get(), &my_thread, "wrong thread crashed");
+}
 
 /**
  * Handler to perform various actions from within an ISR context

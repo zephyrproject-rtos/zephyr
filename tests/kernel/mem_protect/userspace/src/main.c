@@ -57,14 +57,14 @@ K_APP_DMEM(part0) bool mem_access_check;
 K_APP_BMEM(part0) static volatile bool expect_fault;
 
 #if defined(CONFIG_X86)
-#define REASON_HW_EXCEPTION _NANO_ERR_CPU_EXCEPTION
-#define REASON_KERNEL_OOPS  _NANO_ERR_KERNEL_OOPS
+#define REASON_HW_EXCEPTION K_ERR_CPU_EXCEPTION
+#define REASON_KERNEL_OOPS  K_ERR_KERNEL_OOPS
 #elif defined(CONFIG_ARM)
-#define REASON_HW_EXCEPTION _NANO_ERR_HW_EXCEPTION
-#define REASON_KERNEL_OOPS  _NANO_ERR_HW_EXCEPTION
+#define REASON_HW_EXCEPTION K_ERR_CPU_EXCEPTION
+#define REASON_KERNEL_OOPS  K_ERR_CPU_EXCEPTION
 #elif defined(CONFIG_ARC)
-#define REASON_HW_EXCEPTION _NANO_ERR_HW_EXCEPTION
-#define REASON_KERNEL_OOPS  _NANO_ERR_KERNEL_OOPS
+#define REASON_HW_EXCEPTION K_ERR_CPU_EXCEPTION
+#define REASON_KERNEL_OOPS  K_ERR_KERNEL_OOPS
 #else
 #error "Not implemented for this architecture"
 #endif
@@ -86,7 +86,7 @@ K_APP_BMEM(part0) static volatile unsigned int expected_reason;
 #if !(defined(CONFIG_ARM) || defined(CONFIG_ARC))
 FUNC_NORETURN
 #endif
-void z_SysFatalErrorHandler(unsigned int reason, const NANO_ESF *pEsf)
+void k_sys_fatal_error_handler(unsigned int reason, const NANO_ESF *pEsf)
 {
 	INFO("Caught system error -- reason %d\n", reason);
 	/*

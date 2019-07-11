@@ -59,7 +59,7 @@ void z_unhandled_vector(int vector, int err, struct xuk_entry_frame *f)
 	printk("***  R8 0x%llx R9 0x%llx R10 0x%llx R11 0x%llx\n",
 	       f->r8, f->r9, f->r10, f->r11);
 
-	z_NanoFatalErrorHandler(x86_64_except_reason, NULL);
+	z_fatal_error(x86_64_except_reason, NULL);
 }
 
 void z_isr_entry(void)
@@ -214,16 +214,3 @@ void x86_apic_set_timeout(u32_t cyc_from_now)
 const NANO_ESF _default_esf;
 
 int x86_64_except_reason;
-
-void z_NanoFatalErrorHandler(unsigned int reason, const NANO_ESF *esf)
-{
-	z_SysFatalErrorHandler(reason, esf);
-}
-
-/* App-overridable handler.  Does nothing here */
-void __weak z_SysFatalErrorHandler(unsigned int reason, const NANO_ESF *esf)
-{
-	ARG_UNUSED(reason);
-	ARG_UNUSED(esf);
-	k_thread_abort(_current);
-}

@@ -15,6 +15,11 @@
 ZTEST_BMEM static int count;
 ZTEST_BMEM static int ret = TC_PASS;
 
+void k_sys_fatal_error_handler(unsigned int reason, const NANO_ESF *esf)
+{
+	zassert_equal(reason, K_ERR_STACK_CHK_FAIL, "wrong error type");
+}
+
 void check_input(const char *name, const char *input);
 
 /**

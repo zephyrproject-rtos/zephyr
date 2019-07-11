@@ -31,13 +31,6 @@ extern "C" {
 
 #define STACK_ALIGN 16
 
-#define _NANO_ERR_HW_EXCEPTION (0)      /* MPU/Bus/Usage fault */
-#define _NANO_ERR_STACK_CHK_FAIL (2)    /* Stack corruption detected */
-#define _NANO_ERR_ALLOCATION_FAIL (3)   /* Kernel Allocation Failure */
-#define _NANO_ERR_RESERVED_IRQ (4)	/* Reserved interrupt */
-#define _NANO_ERR_KERNEL_OOPS (5)       /* Kernel oops (fatal to thread) */
-#define _NANO_ERR_KERNEL_PANIC (6)	/* Kernel panic (fatal to system) */
-
 /* Xtensa GPRs are often designated by two different names */
 #define sys_define_gpr_with_alias(name1, name2) union { u32_t name1, name2; }
 
@@ -90,12 +83,6 @@ extern void z_irq_spurious(void *unused);
 #else
 #define XTENSA_ERR_NORET FUNC_NORETURN
 #endif
-
-XTENSA_ERR_NORET void z_SysFatalErrorHandler(unsigned int reason,
-					    const NANO_ESF *esf);
-
-XTENSA_ERR_NORET void z_NanoFatalErrorHandler(unsigned int reason,
-					     const NANO_ESF *pEsf);
 
 extern u32_t z_timer_cycle_get_32(void);
 #define z_arch_k_cycle_get_32()	z_timer_cycle_get_32()

@@ -31,70 +31,6 @@ const NANO_ESF _default_esf = {
 	retval; \
 	})
 
-/**
- *
- * @brief Fatal error handler
- *
- * This routine is called when fatal error conditions are detected by software
- * and is responsible only for reporting the error. Once reported, it then
- * invokes the user provided routine z_SysFatalErrorHandler() which is
- * responsible for implementing the error handling policy.
- *
- * The caller is expected to always provide a usable ESF. In the event that the
- * fatal error does not have a hardware generated ESF, the caller should either
- * create its own or use a pointer to the global default ESF <_default_esf>.
- *
- * @param reason the reason that the handler was called
- * @param pEsf pointer to the exception stack frame
- *
- * @return This function does not return.
- */
-XTENSA_ERR_NORET void z_NanoFatalErrorHandler(unsigned int reason,
-					     const NANO_ESF *pEsf)
-{
-	LOG_PANIC();
-
-	switch (reason) {
-	case _NANO_ERR_HW_EXCEPTION:
-	case _NANO_ERR_RESERVED_IRQ:
-		break;
-
-#if defined(CONFIG_STACK_CANARIES) || defined(CONFIG_STACK_SENTINEL)
-	case _NANO_ERR_STACK_CHK_FAIL:
-		printk("***** Stack Check Fail! *****\n");
-		break;
-#endif /* CONFIG_STACK_CANARIES */
-	case _NANO_ERR_ALLOCATION_FAIL:
-		printk("**** Kernel Allocation Failure! ****\n");
-		break;
-
-	case _NANO_ERR_KERNEL_OOPS:
-		printk("***** Kernel OOPS! *****\n");
-		break;
-
-	case _NANO_ERR_KERNEL_PANIC:
-		printk("***** Kernel Panic! *****\n");
-		break;
-
-	default:
-		printk("**** Unknown Fatal Error %d! ****\n", reason);
-		break;
-	}
-	printk("Current thread ID = %p\n"
-	       "Faulting instruction address = 0x%x\n",
-	       k_current_get(),
-	       pEsf->pc);
-
-	/*
-	 * Now that the error has been reported, call the user implemented
-	 * policy
-	 * to respond to the error.  The decisions as to what responses are
-	 * appropriate to the various errors are something the customer must
-	 * decide.
-	 */
-	z_SysFatalErrorHandler(reason, pEsf);
-}
-
 
 #ifdef CONFIG_PRINTK
 static char *cause_str(unsigned int cause_code)
@@ -185,22 +121,27 @@ static void dump_exc_state(void)
 #endif /* CONFIG_PRINTK */
 }
 
+XTENSA_ERR_NORET void z_xtensa_fatal_error(unsigned int reason,
+					   const NANO_ESF *esf)
+{
+	dump_exc_state();
+
+	printk("Faulting instruction address = 0x%x\n", esf->pc);
+
+	z_fatal_error(reason, esf);
+}
 
 XTENSA_ERR_NORET void FatalErrorHandler(void)
 {
-	printk("*** Unhandled exception ****\n");
-	dump_exc_state();
-	z_NanoFatalErrorHandler(_NANO_ERR_HW_EXCEPTION, &_default_esf);
+	z_xtensa_fatal_error(K_ERR_CPU_EXCEPTION, &_default_esf);
 }
 
 XTENSA_ERR_NORET void ReservedInterruptHandler(unsigned int intNo)
 {
-	printk("*** Reserved Interrupt ***\n");
-	dump_exc_state();
 	printk("INTENABLE = 0x%x\n"
 	       "INTERRUPT = 0x%x (%x)\n",
 	       get_sreg(INTENABLE), (1 << intNo), intNo);
-	z_NanoFatalErrorHandler(_NANO_ERR_RESERVED_IRQ, &_default_esf);
+	z_xtensa_fatal_error(K_ERR_SPURIOUS_IRQ, &_default_esf);
 }
 
 void exit(int return_code)
@@ -219,60 +160,10 @@ void exit(int return_code)
 #endif
 }
 
-/**
- *
- * @brief Fatal error handler
- *
- * This routine implements the corrective action to be taken when the system
- * detects a fatal error.
- *
- * This sample implementation attempts to abort the current thread and allow
- * the system to continue executing, which may permit the system to continue
- * functioning with degraded capabilities.
- *
- * System designers may wish to enhance or substitute this sample
- * implementation to take other actions, such as logging error (or debug)
- * information to a persistent repository and/or rebooting the system.
- *
- * @param reason the fatal error reason
- * @param pEsf pointer to exception stack frame
- *
- * @return N/A
- */
-XTENSA_ERR_NORET __weak void z_SysFatalErrorHandler(unsigned int reason,
-						   const NANO_ESF *pEsf)
-{
-	ARG_UNUSED(pEsf);
-
-#if !defined(CONFIG_SIMPLE_FATAL_ERROR_HANDLER)
-#ifdef CONFIG_STACK_SENTINEL
-	if (reason == _NANO_ERR_STACK_CHK_FAIL) {
-		goto hang_system;
-	}
-#endif
-	if (reason == _NANO_ERR_KERNEL_PANIC) {
-		goto hang_system;
-	}
-	if (k_is_in_isr() || z_is_thread_essential()) {
-		printk("Fatal fault in %s! Spinning...\n",
-		       k_is_in_isr() ? "ISR" : "essential thread");
-		goto hang_system;
-	}
-	printk("Fatal fault in thread %p! Aborting.\n", _current);
-	k_thread_abort(_current);
-
-hang_system:
-#else
-	ARG_UNUSED(reason);
-#endif
-
 #ifdef XT_SIMULATOR
+FUNC_NORETURN void z_system_halt(unsigned int reason)
+{
 	exit(255 - reason);
-#else
-	for (;;) {
-		k_cpu_idle();
-	}
-#endif
 	CODE_UNREACHABLE;
 }
-
+#endif

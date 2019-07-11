@@ -4658,8 +4658,7 @@ extern void z_sys_power_save_idle_exit(s32_t ticks);
  */
 #define z_except_reason(reason) do { \
 		printk("@ %s:%d:\n", __FILE__,  __LINE__); \
-		z_NanoFatalErrorHandler(reason, &_default_esf); \
-		k_thread_abort(k_current_get()); \
+		z_fatal_error(reason, &_default_esf); \
 	} while (false)
 
 #endif /* _ARCH__EXCEPT */
@@ -4670,13 +4669,13 @@ extern void z_sys_power_save_idle_exit(s32_t ticks);
  * This should be called when a thread has encountered an unrecoverable
  * runtime condition and needs to terminate. What this ultimately
  * means is determined by the _fatal_error_handler() implementation, which
- * will be called will reason code _NANO_ERR_KERNEL_OOPS.
+ * will be called will reason code K_ERR_KERNEL_OOPS.
  *
  * If this is called from ISR context, the default system fatal error handler
  * will treat it as an unrecoverable system error, just like k_panic().
  * @req K-MISC-003
  */
-#define k_oops()	z_except_reason(_NANO_ERR_KERNEL_OOPS)
+#define k_oops()	z_except_reason(K_ERR_KERNEL_OOPS)
 
 /**
  * @brief Fatally terminate the system
@@ -4684,10 +4683,10 @@ extern void z_sys_power_save_idle_exit(s32_t ticks);
  * This should be called when the Zephyr kernel has encountered an
  * unrecoverable runtime condition and needs to terminate. What this ultimately
  * means is determined by the _fatal_error_handler() implementation, which
- * will be called will reason code _NANO_ERR_KERNEL_PANIC.
+ * will be called will reason code K_ERR_KERNEL_PANIC.
  * @req K-MISC-004
  */
-#define k_panic()	z_except_reason(_NANO_ERR_KERNEL_PANIC)
+#define k_panic()	z_except_reason(K_ERR_KERNEL_PANIC)
 
 /*
  * private APIs that are utilized by one or more public APIs

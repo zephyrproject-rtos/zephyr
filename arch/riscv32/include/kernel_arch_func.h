@@ -37,9 +37,8 @@ z_set_thread_return_value(struct k_thread *thread, unsigned int value)
 	thread->arch.swap_return_value = value;
 }
 
-FUNC_NORETURN void z_NanoFatalErrorHandler(unsigned int reason,
-					  const NANO_ESF *esf);
-
+FUNC_NORETURN void z_riscv32_fatal_error(unsigned int reason,
+					 const NANO_ESF *esf);
 
 #define z_is_in_isr() (_kernel.nested != 0U)
 
