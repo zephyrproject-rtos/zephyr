@@ -165,6 +165,18 @@ if(CONFIG_OPENTHREAD_JOINER)
     )
 endif()
 
+if(CONFIG_OPENTHREAD_DHCP6_CLIENT)
+  list(APPEND configure_flags
+    --enable-dhcp6-client
+    )
+endif()
+
+if(CONFIG_OPENTHREAD_DHCP6_SERVER)
+  list(APPEND configure_flags
+    --enable-dhcp6-server
+    )
+endif()
+
 if(CONFIG_OPENTHREAD_SHELL)
   list(APPEND configure_flags
     --enable-cli
