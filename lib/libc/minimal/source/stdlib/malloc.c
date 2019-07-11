@@ -88,6 +88,7 @@ void *calloc(size_t nmemb, size_t size)
 void *realloc(void *ptr, size_t requested_size)
 {
 	struct sys_mem_pool_block *blk;
+	size_t struct_blk_size = WB_UP(sizeof(struct sys_mem_pool_block));
 	size_t block_size, total_requested_size;
 	void *new_ptr;
 
@@ -100,7 +101,7 @@ void *realloc(void *ptr, size_t requested_size)
 	}
 
 	/* Stored right before the pointer passed to the user */
-	blk = (struct sys_mem_pool_block *)((char *)ptr - sizeof(*blk));
+	blk = (struct sys_mem_pool_block *)((char *)ptr - struct_blk_size);
 
 	/* Determine size of previously allocated block by its level.
 	 * Most likely a bit larger than the original allocation
@@ -111,8 +112,7 @@ void *realloc(void *ptr, size_t requested_size)
 	}
 
 	/* We really need this much memory */
-	total_requested_size = requested_size +
-		sizeof(struct sys_mem_pool_block);
+	total_requested_size = requested_size + struct_blk_size;
 
 	if (block_size >= total_requested_size) {
 		/* Existing block large enough, nothing to do */
@@ -124,7 +124,7 @@ void *realloc(void *ptr, size_t requested_size)
 		return NULL;
 	}
 
-	memcpy(new_ptr, ptr, block_size - sizeof(struct sys_mem_pool_block));
+	memcpy(new_ptr, ptr, block_size - struct_blk_size);
 	free(ptr);
 
 	return new_ptr;
