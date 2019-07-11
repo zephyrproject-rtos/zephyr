@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2018, NXP
  * Copyright (c) 2018, Nordic Semiconductor ASA
- * Copyright (c) 2018, Linaro Limited
+ * Copyright (c) 2018-2019, Linaro Limited
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -192,7 +192,7 @@ void app_task(void *arg1, void *arg2, void *arg3)
 	}
 
 	/* setup IPM */
-	ipm_handle = device_get_binding("MAILBOX_0");
+	ipm_handle = device_get_binding(CONFIG_OPENAMP_IPC_DEV_NAME);
 	if (ipm_handle == NULL) {
 		printk("device_get_binding failed to find device\n");
 		return;
