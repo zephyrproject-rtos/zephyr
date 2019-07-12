@@ -414,7 +414,9 @@ static bool model_has_key(struct bt_mesh_model *mod, u16_t key)
 	int i;
 
 	for (i = 0; i < ARRAY_SIZE(mod->keys); i++) {
-		if (mod->keys[i] == key) {
+		if (mod->keys[i] == key ||
+		    (mod->keys[i] == BT_MESH_KEY_DEV_ANY &&
+		     BT_MESH_IS_DEV_KEY(key))) {
 			return true;
 		}
 	}

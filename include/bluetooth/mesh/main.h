@@ -179,6 +179,18 @@ struct bt_mesh_prov {
 	 */
 	void        (*complete)(u16_t net_idx, u16_t addr);
 
+	/** @brief A new node has been added to the provisioning database.
+	 *
+	 *  This callback notifies the application that provisioning has
+	 *  been successfully completed, and that a node has been assigned
+	 *  the specified NetKeyIndex and primary element address.
+	 *
+	 *  @param net_idx NetKeyIndex given during provisioning.
+	 *  @param addr Primary element address.
+	 *  @param num_elem Number of elements that this node has.
+	 */
+	void        (*node_added)(u16_t net_idx, u16_t addr, u8_t num_elem);
+
 	/** @brief Node has been reset.
 	 *
 	 *  This callback notifies the application that the local node
