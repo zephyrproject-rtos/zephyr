@@ -64,13 +64,6 @@ struct usb_dw_ctrl_prv {
 
 static struct usb_dw_ctrl_prv usb_dw_ctrl;
 
-static inline void usb_dw_int_unmask(void)
-{
-#if defined(CONFIG_SOC_QUARK_SE_C1000)
-	QM_INTERRUPT_ROUTER->usb_0_int_mask &= ~BIT(0);
-#endif
-}
-
 static void usb_dw_reg_dump(void)
 {
 	u8_t i;
@@ -170,36 +163,6 @@ static int usb_dw_reset(void)
 	usb_dw_udelay(100);
 
 	return 0;
-}
-
-static int usb_dw_clock_enable(void)
-{
-#if defined(CONFIG_SOC_QUARK_SE_C1000)
-	/* 7.2.7 USB Clock Operation */
-	clk_sys_set_mode(CLK_SYS_CRYSTAL_OSC, CLK_SYS_DIV_1);
-
-	/* Enable the USB Clock */
-	QM_SCSS_CCU->ccu_mlayer_ahb_ctl |= QM_CCU_USB_CLK_EN;
-
-	/* Set up the PLL. */
-	QM_USB_PLL_CFG0 = QM_USB_PLL_CFG0_DEFAULT | QM_USB_PLL_PDLD;
-
-	/* Wait for the PLL lock */
-	while (0 == (QM_USB_PLL_CFG0 & QM_USB_PLL_LOCK)) {
-	}
-#endif
-	return 0;
-}
-
-static void usb_dw_clock_disable(void)
-{
-#if defined(CONFIG_SOC_QUARK_SE_C1000)
-	/* Disable the USB Clock */
-	QM_SCSS_CCU->ccu_mlayer_ahb_ctl &= ~QM_CCU_USB_CLK_EN;
-
-	/* Disable the PLL */
-	QM_USB_PLL_CFG0 &= ~QM_USB_PLL_PDLD;
-#endif
 }
 
 static int usb_dw_num_dev_eps(void)
@@ -737,11 +700,6 @@ int usb_dc_attach(void)
 		return 0;
 	}
 
-	ret = usb_dw_clock_enable();
-	if (ret) {
-		return ret;
-	}
-
 	ret = usb_dw_init();
 	if (ret) {
 		return ret;
@@ -751,8 +709,6 @@ int usb_dc_attach(void)
 	IRQ_CONNECT(USB_DW_IRQ, CONFIG_USB_DW_IRQ_PRI,
 	    usb_dw_isr_handler, 0, IOAPIC_EDGE | IOAPIC_HIGH);
 	irq_enable(USB_DW_IRQ);
-
-	usb_dw_int_unmask();
 
 	usb_dw_ctrl.attached = 1U;
 
@@ -764,8 +720,6 @@ int usb_dc_detach(void)
 	if (!usb_dw_ctrl.attached) {
 		return 0;
 	}
-
-	usb_dw_clock_disable();
 
 	irq_disable(USB_DW_IRQ);
 

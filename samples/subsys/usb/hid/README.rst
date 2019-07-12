@@ -20,11 +20,11 @@ Building and Running
 ********************
 
 This sample can be built for multiple boards, in this example we will build it
-for the quark_se_c1000_devboard board:
+for the reel_board board:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/usb/hid
-   :board: quark_se_c1000_devboard
+   :board: reel_board
    :goals: build
    :compact:
 

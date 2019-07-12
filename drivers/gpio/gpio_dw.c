@@ -113,22 +113,6 @@ static inline void gpio_dw_clock_off(struct device *port)
 #define gpio_dw_clock_off(...)
 #endif
 
-#ifdef CONFIG_SOC_QUARK_SE_C1000_SS
-static inline void dw_set_both_edges(u32_t base_addr, u32_t pin)
-{
-	ARG_UNUSED(base_addr);
-	ARG_UNUSED(pin);
-}
-static inline int dw_base_to_block_base(u32_t base_addr)
-{
-	return base_addr;
-}
-static inline int dw_interrupt_support(const struct gpio_dw_config *config)
-{
-	ARG_UNUSED(config);
-	return 1;
-}
-#else
 static inline void dw_set_both_edges(u32_t base_addr, u32_t pin)
 {
 	dw_set_bit(base_addr, INT_BOTHEDGE, pin, 1);
@@ -146,7 +130,6 @@ static inline int dw_interrupt_support(const struct gpio_dw_config *config)
 {
 	return ((int)(config->irq_num) > 0);
 }
-#endif
 
 static inline void dw_interrupt_config(struct device *port, int access_op,
 				       u32_t pin, int flags)
@@ -254,13 +237,8 @@ static inline int gpio_dw_read(struct device *port, int access_op,
 {
 	struct gpio_dw_runtime *context = port->driver_data;
 	u32_t base_addr = context->base_addr;
-#ifndef CONFIG_SOC_QUARK_SE_C1000_SS
 	u32_t ext_port = EXT_PORTA;
-#endif
 
-#ifdef CONFIG_SOC_QUARK_SE_C1000_SS
-	*value = dw_read(base_addr, EXT_PORTA);
-#else
 	/* 4-port GPIO implementation translates from base address to port */
 	switch (dw_derive_port_from_base(base_addr)) {
 	case 1:
@@ -277,7 +255,6 @@ static inline int gpio_dw_read(struct device *port, int access_op,
 		break;
 	}
 	*value = dw_read(dw_base_to_block_base(base_addr), ext_port);
-#endif
 
 	if (GPIO_ACCESS_BY_PIN == access_op) {
 		*value = !!(*value & BIT(pin));
@@ -387,19 +364,7 @@ static int gpio_dw_device_ctrl(struct device *port, u32_t ctrl_command,
 #define gpio_dw_set_power_state(...)
 #endif
 
-#if defined(CONFIG_SOC_QUARK_SE_C1000)
-static inline void gpio_dw_unmask_int(u32_t mask_addr)
-{
-	sys_write32(sys_read32(mask_addr) & INT_UNMASK_IA, mask_addr);
-}
-#elif CONFIG_SOC_QUARK_SE_C1000_SS
-static inline void gpio_dw_unmask_int(u32_t mask_addr)
-{
-	sys_write32(sys_read32(mask_addr) & INT_ENABLE_ARC, mask_addr);
-}
-#else
 #define gpio_dw_unmask_int(...)
-#endif
 
 static void gpio_dw_isr(void *arg)
 {
@@ -473,10 +438,6 @@ static int gpio_dw_initialize(struct device *port)
 	if (dw_interrupt_support(config)) {
 
 		base_addr = dw_base_to_block_base(context->base_addr);
-#ifdef CONFIG_SOC_QUARK_SE_C1000_SS
-		/* Need to enable clock for GPIO controller */
-		dw_set_bit(base_addr, INT_CLOCK_SYNC, CLK_ENA_POS, 1);
-#endif /* CONFIG_SOC_QUARK_SE_C1000_SS */
 
 		/* interrupts in sync with system clock */
 		dw_set_bit(base_addr, INT_CLOCK_SYNC, LS_SYNC_POS, 1);

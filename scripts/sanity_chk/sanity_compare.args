@@ -8,11 +8,3 @@ frdm_k64f
 nrf51_pca10028
 -p
 nrf52_pca10040
--p
-quark_d2000_crb
--p
-quark_se_c1000_devboard
--p
-quark_se_c1000_ss_devboard
--p
-altera_max10

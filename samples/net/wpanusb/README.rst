@@ -49,16 +49,6 @@ Example building for the Nordic nRF52840 Development Kit:
    :goals: run
    :compact:
 
-Example building for the Quark SE C1000 Devboard with TI CC2520 support:
-
-.. zephyr-app-commands::
-   :zephyr-app: samples/net/wpanusb
-   :host-os: unix
-   :board: quark_se_c1000_devboard
-   :conf: "prj.conf overlay-cc2520.conf"
-   :goals: run
-   :compact:
-
 When connected to Linux with wpanusb kernel driver, it is recognized as:
 
 .. code-block:: console

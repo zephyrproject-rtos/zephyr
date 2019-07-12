@@ -48,11 +48,9 @@
 /arch/x86/core/pcie.c                     @gnuless
 /arch/x86/core/multiboot.c                @gnuless
 /soc/x86/                                 @andrewboie @gnuless
-/soc/x86/intel_quark/quark_se/            @nashif
 /arch/xtensa/                             @andrewboie @dcpleung @andyross
 /soc/xtensa/                              @andrewboie @dcpleung @andyross
 /boards/arc/                              @vonhust @ruuddw
-/boards/arc/quark_se_c1000_ss_devboard/   @nashif
 /boards/arm/                              @MaureenHelm @galak
 /boards/arm/96b_argonkey/                 @avisconti
 /boards/arm/96b_avenger96/                @Mani-Sadhasivam

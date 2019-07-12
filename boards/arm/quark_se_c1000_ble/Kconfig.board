@@ -1,9 +1,0 @@
-# Kconfig - Quark SE C1000 BLE (nRF51822) configuration
-#
-# Copyright (c) 2016 Intel Corporation
-#
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_QUARK_SE_C1000_BLE
-	bool "Quark SE C1000 Devboard - BLE Core"
-	depends on SOC_NRF51822_QFAA
