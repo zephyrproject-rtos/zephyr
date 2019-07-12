@@ -250,6 +250,8 @@ static void reassemble_packet(struct net_ipv6_reassembly *reass)
 
 		pkt = reass->pkt[i];
 
+		net_pkt_cursor_init(pkt);
+
 		/* Get rid of IPv6 and fragment header which are at
 		 * the beginning of the fragment.
 		 */
@@ -316,7 +318,6 @@ static void reassemble_packet(struct net_ipv6_reassembly *reass)
 	if (!ipv6.hdr) {
 		goto error;
 	}
-
 
 	/* Fix the total length of the IPv6 packet. */
 	len = net_pkt_ipv6_ext_len(pkt);
