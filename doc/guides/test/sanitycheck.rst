@@ -292,7 +292,7 @@ explained in this document.
         tests:
           test:
             build_only: true
-            platform_whitelist: qemu_cortex_m3 qemu_x86 arduino_101
+            platform_whitelist: qemu_cortex_m3 qemu_x86
             tags: bluetooth
           test_br:
             build_only: true

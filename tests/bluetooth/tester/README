@@ -42,21 +42,9 @@ Note: Target board have to support enough UARTs for BTP and controller.
 to control tester application.
 --------------------------------------------------------------------------------
 
-Building and running on Arduino 101:
-
-Arduino 101 is equipped with Nordic nRF51 Bluetooth LE controller.
-Please refer to the Zephyr Project docs [1] to see how to build and flash the
-controller with the HCI Bluetooth LE firmware.
-
 Next, build and flash tester application by employing the "flash" build
 target.
-
-While running tester application on Arduino 101, serial converter, typically
-UART <-> USB is required by BTP to operate. Connect Arduino 101 Tx and Rx lines
-(0 and 1 ports on Arduino 101 board) through the UART converter to the host
-USB port.
 
 Use serial client, e.g. PUTTY to communicate over the serial port
 (typically /dev/ttyUSBx) with the tester using BTP.
 
-[1] https://www.zephyrproject.org/doc/boards/x86/arduino_101/doc/board.html#flashing-the-bluetooth-core

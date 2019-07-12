@@ -5,13 +5,7 @@
  */
 
 /**
- * @file Sample app to utilize APA102C LED on Arduino 101 (x86).
- *
- * On x86 side of Arduino 101:
- * 1. GPIO_16 is on IO8 (for data)
- * 2. GPIO_19 is on IO4 (for clock)
- *
- * The gpio_dw driver is being used for bit-banging.
+ * @file Sample app to utilize APA102C LED.
  *
  * The APA102/C requires 5V data and clock signals, so logic
  * level shifter (preferred) or pull-up resistors are needed.

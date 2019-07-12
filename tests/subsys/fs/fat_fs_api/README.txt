@@ -7,10 +7,10 @@ Demonstrates basic file and dir operations using the Zephyr file system.
 
 Building and Running Project:
 
-The demo will run on Arduino 101 and will use the on-board SPI flash.
+The demo will run on native_posix and will use the on-board SPI flash.
 
        mkdir build; cd build
-       cmake -DBOARD=arduino_101 ..
+       cmake -DBOARD=native_posix ..
        make run
 
 --------------------------------------------------------------------------------

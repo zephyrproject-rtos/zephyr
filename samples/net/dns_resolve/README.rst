@@ -23,7 +23,7 @@ Requirements
 
 - screen terminal emulator or equivalent.
 
-- For the Arduino 101 board, the ENC28J60 Ethernet module is required.
+- For most boards without ethernet, the ENC28J60 Ethernet module is required.
 
 - dnsmasq application. The dnsmasq version used in this sample is:
 

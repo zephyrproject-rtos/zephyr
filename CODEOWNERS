@@ -52,7 +52,6 @@
 /arch/xtensa/                             @andrewboie @dcpleung @andyross
 /soc/xtensa/                              @andrewboie @dcpleung @andyross
 /boards/arc/                              @vonhust @ruuddw
-/boards/arc/arduino_101_sss/              @nashif
 /boards/arc/quark_se_c1000_ss_devboard/   @nashif
 /boards/arm/                              @MaureenHelm @galak
 /boards/arm/96b_argonkey/                 @avisconti
@@ -67,7 +66,6 @@
 /boards/arm/cc1352r1_launchxl/            @bwitherspoon
 /boards/arm/cc26x2r1_launchxl/            @bwitherspoon
 /boards/arm/cc3220sf_launchxl/            @vanti
-/boards/arm/curie_ble/                    @jhedberg
 /boards/arm/disco_l475_iot1/              @erwango
 /boards/arm/frdm*/                        @MaureenHelm
 /boards/arm/frdm*/doc/                    @MaureenHelm @MeganHansen

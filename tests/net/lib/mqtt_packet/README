@@ -16,19 +16,6 @@ Build and Run
   cmake -DBOARD=qemu_x86 ..
   make run
 
-* Arduino 101
-
-  Build:
-  mkdir build; cd build
-  cmake -DBOARD=arduino_101 ..
-  make run
-
-  Flashing:
-  sudo dfu-util -a x86_app -D outdir/arduino_101/zephyr.bin
-
-  For more information about this board, see:
-  https://www.zephyrproject.org/doc/boards/x86/arduino_101/doc/board.html
-
 * NXP Freedom-K64F (frdm-k64f)
 
   Build:
