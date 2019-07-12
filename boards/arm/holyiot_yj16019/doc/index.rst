@@ -15,7 +15,7 @@ Semiconductor nRF52832 ARM Cortex-M4 CPU and the following devices:
 * :abbr:`MPU (Memory Protection Unit)`
 * :abbr:`NVIC (Nested Vectored Interrupt Controller)`
 * :abbr:`PWM (Pulse Width Modulation)`
-* RADIO (Bluetooth Low Energy and 802.15.4)
+* RADIO (Bluetooth Low Energy)
 * :abbr:`RTC (nRF RTC System Clock)`
 * Segger RTT (RTT Console)
 * :abbr:`WDT (Watchdog Timer)`
@@ -58,8 +58,7 @@ hardware features:
 +-----------+------------+----------------------+
 | PWM       | on-chip    | pwm                  |
 +-----------+------------+----------------------+
-| RADIO     | on-chip    | Bluetooth,           |
-|           |            | ieee802154           |
+| RADIO     | on-chip    | Bluetooth            |
 +-----------+------------+----------------------+
 | RTC       | on-chip    | system clock         |
 +-----------+------------+----------------------+
@@ -148,4 +147,3 @@ References
 
 .. _Holyiot: http://www.holyiot.com
 .. _Nordic Semiconductor Documentation library: https://www.nordicsemi.com/DocLib
-
