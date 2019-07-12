@@ -165,12 +165,29 @@ static inline int z_impl_flash_erase(struct device *dev, off_t offset,
  *  @brief  Enable or disable write protection for a flash memory
  *
  *  This API is required to be called before the invocation of write or erase
- *  API. Please note that on some flash components, the write protection is
+ *  API. Any calls to flash_write() or flash_erase() that do not first disable
+ *  write protection using this function result in undefined behavior.
+ *  Usage Example:
+ *  @code
+ *   flash_write_protection_set(flash_dev, false);
+ *   flash_erase(flash_dev, page_offset, page_size);
+ *
+ *   flash_write_protection_set(flash_dev, false);
+ *   flash_write(flash_dev, offset, data, sizeof(data));
+ *
+ *   flash_write_protection_set(flash_dev, true); // enable is recommended
+ *  @endcode
+ *
+ *  Please note that on some flash components, the write protection is
  *  automatically turned on again by the device after the completion of each
- *  write or erase calls. Therefore, on those flash parts, write protection needs
- *  to be disabled before each invocation of the write or erase API. Please refer
- *  to the sub-driver API or the data sheet of the flash component to get details
- *  on the write protection behavior.
+ *  call to flash_write or flash_erase(). Therefore, portable programs must
+ *  disable write protection using this function before each call to
+ *  flash_erase() or flash_write().
+ *
+ *  For some flash devices, this function may implement a no-operation, as some
+ *  flash hardware does not support write protection, or may not support it in
+ *  a manner that is compatible with this API. For these drivers, this function
+ *  always returns success.
  *
  *  @param  dev             : flash device
  *  @param  enable          : enable or disable flash write protection
