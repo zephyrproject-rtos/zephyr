@@ -37,7 +37,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <net/ieee802154_radio.h>
 
-#include "nrf52840.h"
 #include "ieee802154_nrf5.h"
 #include "nrf_802154.h"
 
