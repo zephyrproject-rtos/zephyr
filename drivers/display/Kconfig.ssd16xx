@@ -7,22 +7,7 @@
 #
 
 menuconfig SSD16XX
-	bool "SSD16XX display driver"
+	bool "SSD16XX compatible display controller driver"
 	depends on SPI
 	help
-	  Enable driver for SSD16XX display driver.
-
-if SSD16XX
-
-choice
-	prompt "EPD display"
-	default SSD16XX_EPD_GDE0213B1
-	help
-	  Specify the type of EPD connected to the SSD16XX controller.
-
-config SSD16XX_EPD_GDE0213B1
-	bool "GDE0213B1 2.13\""
-
-endchoice
-
-endif #SSD16XX
+	  Enable driver for SSD16XX compatible controller.
