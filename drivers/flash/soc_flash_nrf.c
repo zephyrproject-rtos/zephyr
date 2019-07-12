@@ -78,7 +78,6 @@ static struct k_sem sem_lock;
 #define SYNC_UNLOCK()
 #endif
 
-static bool write_protect;
 
 static int write(off_t addr, const void *data, size_t len);
 static int erase(u32_t addr, u32_t size);
@@ -148,10 +147,6 @@ static int flash_nrf_write(struct device *dev, off_t addr,
 {
 	int ret;
 
-	if (write_protect) {
-		return -EACCES;
-	}
-
 	if (is_regular_addr_valid(addr, len)) {
 		addr += DT_FLASH_BASE_ADDRESS;
 	} else if (!is_uicr_addr_valid(addr, len)) {
@@ -183,10 +178,6 @@ static int flash_nrf_erase(struct device *dev, off_t addr, size_t size)
 	u32_t pg_size = nrfx_nvmc_flash_page_size_get();
 	u32_t n_pages = size / pg_size;
 	int ret;
-
-	if (write_protect) {
-		return -EACCES;
-	}
 
 	if (is_regular_addr_valid(addr, size)) {
 		/* Erase can only be done per page */
@@ -227,9 +218,6 @@ static int flash_nrf_erase(struct device *dev, off_t addr, size_t size)
 
 static int flash_nrf_write_protection(struct device *dev, bool enable)
 {
-	/* virtual write-erase protection */
-	write_protect = enable;
-
 	return 0;
 }
 
@@ -268,7 +256,6 @@ static int nrf_flash_init(struct device *dev)
 	dev_layout.pages_count = nrfx_nvmc_flash_page_count_get();
 	dev_layout.pages_size = nrfx_nvmc_flash_page_size_get();
 #endif
-	write_protect = true;
 
 	return 0;
 }
