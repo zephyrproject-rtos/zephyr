@@ -4,39 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @addtogroup t_driver_i2c
- * @{
- * @defgroup t_i2c_basic test_i2c_basic_operations
- * @}
- *
- * Setup: Connect Sensor GY271 to I2C_0 on X86 and I2C_SS_0 on ARC
- *
- * quark_se_c1000_devboard - x86
- * ----------------------
- *
- * 1. GY271_SCL - I2C0_SCL
- * 2. GY271_SDA - I2C0_SDA
- *
- * quark_se_c1000_ss_devboard - arc
- * ----------------------
- *
- * 1. GY271_SCL - I2C0_SS_SCL
- * 2. GY271_SDA - I2C0_SS_SDA
- *
- * arduino_101 - x86
- * ----------------------
- *
- * 1. GY271_SCL - I2C0_SCL
- * 2. GY271_SDA - I2C0_SDA
- *
- * arduino_101_ss - arc
- * ----------------------
- *
- * 1. GY271_SCL - I2C0_SS_SCL
- * 2. GY271_SDA - I2C0_SS_SDA
- */
-
 #include <zephyr.h>
 #include <ztest.h>
 
