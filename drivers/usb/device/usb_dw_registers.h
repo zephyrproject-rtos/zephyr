@@ -17,10 +17,6 @@
 
 #include <sys/util.h>
 
-#if defined(CONFIG_SOC_QUARK_SE_C1000)
-#include "qm_soc_regs.h"
-#endif
-
 #ifdef __cplusplus
 extern "C" {
 #endif

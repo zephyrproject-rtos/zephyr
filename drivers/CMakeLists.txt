@@ -37,7 +37,6 @@ add_subdirectory_if_kconfig(espi)
 
 add_subdirectory_ifdef(CONFIG_FLASH_HAS_DRIVER_ENABLED flash)
 add_subdirectory_ifdef(CONFIG_SERIAL_HAS_DRIVER serial)
-add_subdirectory_ifdef(CONFIG_AIO_COMPARATOR   aio)
 add_subdirectory_ifdef(CONFIG_BT               bluetooth)
 add_subdirectory_ifdef(CONFIG_NETWORKING       net)
 add_subdirectory_ifdef(CONFIG_NET_L2_ETHERNET  ethernet)

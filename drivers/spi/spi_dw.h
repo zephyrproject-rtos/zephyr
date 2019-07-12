@@ -195,31 +195,10 @@ struct spi_dw_data {
  * Including the right register definition file
  * SoC SPECIFIC!
  */
-#ifdef CONFIG_SOC_QUARK_SE_C1000_SS
-#include "spi_dw_quark_se_ss_regs.h"
-#else
 #include "spi_dw_regs.h"
 
 #define z_extra_clock_on(...)
 #define z_extra_clock_off(...)
-
-#endif
-
-/* Interrupt mask
- * SoC SPECIFIC!
- */
-#if defined(CONFIG_SOC_QUARK_SE_C1000) || defined(CONFIG_SOC_QUARK_SE_C1000_SS)
-#ifdef CONFIG_ARC
-#define _INT_UNMASK     INT_ENABLE_ARC
-#else
-#define _INT_UNMASK	INT_UNMASK_IA
-#endif
-
-#define z_spi_int_unmask(__mask)						\
-	sys_write32(sys_read32(__mask) & _INT_UNMASK, __mask)
-#else
-#define z_spi_int_unmask(...)
-#endif /* CONFIG_SOC_QUARK_SE_C1000 || CONFIG_SOC_QUARK_SE_C1000_SS */
 
 /* Based on those macros above, here are common helpers for some registers */
 DEFINE_MM_REG_WRITE(baudr, DW_SPI_REG_BAUDR, 16)

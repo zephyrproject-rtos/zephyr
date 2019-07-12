@@ -23,11 +23,11 @@ Building and Running
 This sample can be built for multiple boards. The selection between a RAM-based
 or a FLASH-based disk can be selected using the ``overlay-ram-disk.conf`` or
 the ``overlay-flash-disk.conf`` overlays.  In this example we will build the sample
-with a RAM-based disk and for the quark_se_c1000_devboard board:
+with a RAM-based disk:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/usb/mass
-   :board: quark_se_c1000_devboard
+   :board: reel_board
    :gen-args: -DOVERLAY_CONFIG="overlay-ram-disk.conf"
    :goals: build
    :compact:

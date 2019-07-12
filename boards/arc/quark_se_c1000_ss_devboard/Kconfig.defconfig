@@ -1,8 +1,0 @@
-# SPDX-License-Identifier: Apache-2.0
-
-if BOARD_QUARK_SE_C1000_DEVBOARD_SS
-
-config BOARD
-	default "quark_se_c1000_ss_devboard"
-
-endif # BOARD_QUARK_SE_C1000_DEVBOARD_SS

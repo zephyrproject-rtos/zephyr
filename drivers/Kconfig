@@ -57,8 +57,6 @@ source "drivers/ptp_clock/Kconfig"
 
 source "drivers/ipm/Kconfig"
 
-source "drivers/aio/Kconfig"
-
 source "drivers/flash/Kconfig"
 
 source "drivers/sensor/Kconfig"

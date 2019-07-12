@@ -186,7 +186,7 @@ void ticklessTestThread(void)
 #elif defined(CONFIG_ARCH_POSIX)
 	printk("diff  time stamp: %llu\n", diff_tsc);
 	printk("Cal   time stamp: %llu\n", cal_tsc);
-#elif defined(CONFIG_ARM) || defined(CONFIG_SOC_QUARK_SE_C1000_SS)
+#elif defined(CONFIG_ARM)
 	printk("diff  time stamp: 0x%x\n", diff_tsc);
 	printk("Cal   time stamp: 0x%x\n", cal_tsc);
 #endif
