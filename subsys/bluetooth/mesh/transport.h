@@ -99,4 +99,4 @@ void bt_mesh_rpl_clear(void);
 void bt_mesh_heartbeat_send(void);
 
 int bt_mesh_app_key_get(const struct bt_mesh_subnet *subnet, u16_t app_idx,
-			const u8_t **key, u8_t *aid);
+			u16_t addr, const u8_t **key, u8_t *aid);

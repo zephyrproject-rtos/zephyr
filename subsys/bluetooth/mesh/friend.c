@@ -337,10 +337,10 @@ static int unseg_app_sdu_unpack(struct bt_mesh_friend *frnd,
 	int err;
 
 	meta->subnet = bt_mesh_subnet_get(frnd->net_idx);
-	meta->is_dev_key = (app_idx == BT_MESH_KEY_DEV);
+	meta->is_dev_key = BT_MESH_IS_DEV_KEY(app_idx);
 	bt_mesh_net_header_parse(&buf->b, &meta->net);
-	err = bt_mesh_app_key_get(meta->subnet, app_idx, &meta->key,
-				  &meta->aid);
+	err = bt_mesh_app_key_get(meta->subnet, app_idx, meta->net.ctx.recv_dst,
+				  &meta->key, &meta->aid);
 	if (err) {
 		return err;
 	}
