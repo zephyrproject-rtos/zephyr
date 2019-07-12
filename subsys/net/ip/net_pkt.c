@@ -1774,7 +1774,7 @@ int net_pkt_pull(struct net_pkt *pkt, size_t length)
 		c_op->buf->len -= rem;
 		left -= rem;
 		if (left) {
-			memmove(c_op->pos, c_op->pos+rem, rem);
+			memmove(c_op->pos, c_op->pos+rem, left);
 		}
 
 		/* For now, empty buffer are not freed, and there is no
