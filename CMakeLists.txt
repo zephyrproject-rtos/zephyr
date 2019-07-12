@@ -1216,18 +1216,6 @@ if(NOT CONFIG_BUILD_NO_GAP_FILL)
   set(GAP_FILL "--gap-fill;0xff")
 endif()
 
-if(CONFIG_CHECK_LINK_MAP)
-  list(APPEND
-    post_build_commands
-    COMMAND
-    ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/check_link_map.py ${KERNEL_MAP_NAME}
-    )
-  list(APPEND
-    post_build_byproducts
-    ${KERNEL_MAP_NAME}
-    )
-endif()
-
 if(CONFIG_BUILD_OUTPUT_HEX)
   list(APPEND
     post_build_commands

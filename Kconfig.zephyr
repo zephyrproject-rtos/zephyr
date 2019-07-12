@@ -188,13 +188,6 @@ config KERNEL_ENTRY
 	help
 	  Code entry symbol, to be set at linking phase.
 
-config CHECK_LINK_MAP
-	bool "Check linker map"
-	default y
-	help
-	  Run a linker address generation validity checker at the end of the
-	  build.
-
 config LINKER_SORT_BY_ALIGNMENT
 	bool "Sort input sections by alignment"
 	default y
