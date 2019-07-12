@@ -8,7 +8,6 @@ toolchain:
   - xtools
 supported:
   - ble
-  - ieee802154
   - pwm
   - watchdog
 ram: 64
