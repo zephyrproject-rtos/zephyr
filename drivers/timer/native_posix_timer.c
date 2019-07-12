@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Oticon A/S
+ * Copyright (c) 2017-2019 Oticon A/S
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,7 +10,6 @@
  * It also provides a custom k_busy_wait() which can be used with the
  * POSIX arch and InfClock SOC
  */
-
 #include "zephyr/types.h"
 #include "irq.h"
 #include "device.h"
@@ -20,11 +19,9 @@
 #include "soc.h"
 #include "posix_trace.h"
 
-#include "legacy_api.h"
-
-static u64_t tick_period; /* System tick period in number of hw cycles */
-static s64_t silent_ticks;
-static s32_t _sys_idle_elapsed_ticks = 1;
+static u64_t tick_period; /* System tick period in microseconds */
+/* Time (microseconds since boot) of the last timer tick interrupt */
+static u64_t last_tick_time;
 
 /**
  * Return the current HW cycle counter
@@ -35,71 +32,24 @@ u32_t z_timer_cycle_get_32(void)
 	return hwm_get_time();
 }
 
-#ifdef CONFIG_TICKLESS_IDLE
-
-/*
- * Do not raise another ticker interrupt until the sys_ticks'th one
- * e.g. if sys_ticks is 10, do not raise the next 9 ones
- *
- * if sys_ticks is K_FOREVER (or another negative number),
- * we will effectively silence the tick interrupts forever
- */
-void z_timer_idle_enter(s32_t sys_ticks)
-{
-	if (silent_ticks > 0) { /* LCOV_EXCL_BR_LINE */
-		/* LCOV_EXCL_START */
-		posix_print_warning("native timer: Re-entering idle mode with "
-				    "%i ticks pending\n",
-				    silent_ticks);
-		z_clock_idle_exit();
-		/* LCOV_EXCL_STOP */
-	}
-	if (sys_ticks < 0) {
-		silent_ticks = INT64_MAX;
-	} else if (sys_ticks > 0) {
-		silent_ticks = sys_ticks - 1;
-	} else {
-		silent_ticks = 0;
-	}
-	hwtimer_set_silent_ticks(silent_ticks);
-}
-
-/*
- * Exit from idle mode
- *
- * If we have been silent for a number of ticks, announce immediately to the
- * kernel how many silent ticks have passed.
- * If this is called due to the 1st non silent timer interrupt, sp_timer_isr()
- * will be called right away, which will announce that last (non silent) one.
- *
- * Note that we do not assume this function is called before the interrupt is
- * raised (the interrupt can handle it announcing all ticks)
- */
-void z_clock_idle_exit(void)
-{
-	silent_ticks -= hwtimer_get_pending_silent_ticks();
-	if (silent_ticks > 0) {
-		_sys_idle_elapsed_ticks = silent_ticks;
-		z_clock_announce(_sys_idle_elapsed_ticks);
-	}
-	silent_ticks = 0;
-	hwtimer_set_silent_ticks(0);
-}
-#endif
-
 /**
  * Interrupt handler for the timer interrupt
- * Announce to the kernel that a tick has passed
+ * Announce to the kernel that a number of ticks have passed
  */
-static void sp_timer_isr(void *arg)
+static void np_timer_isr(void *arg)
 {
 	ARG_UNUSED(arg);
-	_sys_idle_elapsed_ticks = silent_ticks + 1;
-	silent_ticks = 0;
-	z_clock_announce(_sys_idle_elapsed_ticks);
+
+	u64_t now = hwm_get_time();
+	s32_t elapsed_ticks = (now - last_tick_time)/tick_period;
+
+	last_tick_time += elapsed_ticks*tick_period;
+	z_clock_announce(elapsed_ticks);
 }
 
 /*
+ * @brief Initialize system timer driver
+ *
  * Enable the hw timer, setting its tick period, and setup its interrupt
  */
 int z_clock_driver_init(struct device *device)
@@ -108,12 +58,60 @@ int z_clock_driver_init(struct device *device)
 
 	tick_period = 1000000ul / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
 
+	last_tick_time = hwm_get_time();
 	hwtimer_enable(tick_period);
 
-	IRQ_CONNECT(TIMER_TICK_IRQ, 1, sp_timer_isr, 0, 0);
+	IRQ_CONNECT(TIMER_TICK_IRQ, 1, np_timer_isr, 0, 0);
 	irq_enable(TIMER_TICK_IRQ);
 
 	return 0;
+}
+
+/**
+ * @brief Set system clock timeout
+ *
+ * Informs the system clock driver that the next needed call to
+ * z_clock_announce() will not be until the specified number of ticks
+ * from the the current time have elapsed.
+ *
+ * See system_timer.h for more information
+ *
+ * @param ticks Timeout in tick units
+ * @param idle Hint to the driver that the system is about to enter
+ *        the idle state immediately after setting the timeout
+ */
+void z_clock_set_timeout(s32_t ticks, bool idle)
+{
+	ARG_UNUSED(idle);
+
+#if defined(CONFIG_TICKLESS_KERNEL)
+	u64_t silent_ticks;
+
+	/* Note that we treat INT_MAX literally as anyhow the maximum amount of
+	 * ticks we can report with z_clock_announce() is INT_MAX
+	 */
+	if (ticks == K_FOREVER) {
+		silent_ticks = INT64_MAX;
+	} else if (ticks > 0) {
+		silent_ticks = ticks - 1;
+	} else {
+		silent_ticks = 0;
+	}
+	hwtimer_set_silent_ticks(silent_ticks);
+#endif
+}
+
+/**
+ * @brief Ticks elapsed since last z_clock_announce() call
+ *
+ * Queries the clock driver for the current time elapsed since the
+ * last call to z_clock_announce() was made.  The kernel will call
+ * this with appropriate locking, the driver needs only provide an
+ * instantaneous answer.
+ */
+u32_t z_clock_elapsed(void)
+{
+	return (hwm_get_time() - last_tick_time)/tick_period;
 }
 
 

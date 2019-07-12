@@ -196,6 +196,7 @@ config NATIVE_POSIX_TIMER
 	bool "(POSIX) native_posix timer driver"
 	default y
 	depends on BOARD_NATIVE_POSIX
+	select TICKLESS_CAPABLE
 	help
 	  This module implements a kernel device driver for the native_posix HW timer
 	  model
