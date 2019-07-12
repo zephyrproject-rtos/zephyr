@@ -14,6 +14,7 @@ zephyr_library_sources_ifdef(CONFIG_PWM_LED_ESP32	pwm_led_esp32.c)
 zephyr_library_sources_ifdef(CONFIG_PWM_SAM		pwm_sam.c)
 zephyr_library_sources_ifdef(CONFIG_PWM_MCUX		pwm_mcux.c)
 zephyr_library_sources_ifdef(CONFIG_PWM_XEC		pwm_mchp_xec.c)
+zephyr_library_sources_ifdef(CONFIG_PWM_LITEX		pwm_litex.c)
 
 zephyr_library_sources_ifdef(CONFIG_USERSPACE   pwm_handlers.c)
 zephyr_library_sources_ifdef(CONFIG_PWM_SHELL   pwm_shell.c)
