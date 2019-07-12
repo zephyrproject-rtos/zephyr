@@ -245,6 +245,9 @@ struct net_buf *bt_att_create_pdu(struct bt_conn *conn, u8_t op,
 int bt_att_send(struct bt_conn *conn, struct net_buf *buf, bt_conn_tx_cb_t cb,
 		void *user_data);
 
+/* Check if the ATT request is not already in progress. */
+int bt_att_req_check(struct bt_conn *conn, struct bt_att_req *req);
+
 /* Send ATT Request over a connection */
 int bt_att_req_send(struct bt_conn *conn, struct bt_att_req *req);
 

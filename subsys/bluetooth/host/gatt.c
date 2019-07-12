@@ -1388,11 +1388,14 @@ static int gatt_send(struct bt_conn *conn, struct net_buf *buf,
 	if (params) {
 		struct bt_att_req *req = params;
 
-		req->buf = buf;
-		req->func = func;
-		req->destroy = destroy;
+		err = bt_att_req_check(conn, req);
+		if (!err) {
+			req->buf = buf;
+			req->func = func;
+			req->destroy = destroy;
 
-		err = bt_att_req_send(conn, req);
+			err = bt_att_req_send(conn, req);
+		}
 	} else {
 		err = bt_att_send(conn, buf, NULL, NULL);
 	}
@@ -3105,12 +3108,18 @@ int bt_gatt_unsubscribe(struct bt_conn *conn,
 	struct bt_gatt_subscribe_params *tmp, *next;
 	bool has_subscription = false, found = false;
 	sys_snode_t *prev = NULL;
+	int err;
 
 	__ASSERT(conn, "invalid parameters\n");
 	__ASSERT(params, "invalid parameters\n");
 
 	if (conn->state != BT_CONN_CONNECTED) {
 		return -ENOTCONN;
+	}
+
+	err = bt_att_req_check(conn, &params->_req);
+	if (err) {
+		return err;
 	}
 
 	/* Lookup existing subscriptions */

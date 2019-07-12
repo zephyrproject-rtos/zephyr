@@ -2276,6 +2276,31 @@ int bt_att_send(struct bt_conn *conn, struct net_buf *buf, bt_conn_tx_cb_t cb,
 	return 0;
 }
 
+int bt_att_req_check(struct bt_conn *conn, struct bt_att_req *req)
+{
+	struct bt_att *att;
+	sys_snode_t *tmp;
+
+	att = att_chan_get(conn);
+	if (!att) {
+		return -ENOTCONN;
+	}
+
+	/* The current ATT request can be reused if the func pointer has been
+	 * cleared, happens when the callback sends a new request. */
+	if (att->req && att->req == req && req->func) {
+		return -EBUSY;
+	}
+
+	SYS_SLIST_FOR_EACH_NODE(&att->reqs, tmp) {
+		if (tmp == &req->node) {
+			return -EBUSY;
+		}
+	}
+
+	return 0;
+}
+
 int bt_att_req_send(struct bt_conn *conn, struct bt_att_req *req)
 {
 	struct bt_att *att;
