@@ -89,7 +89,8 @@ typedef signed int _SlFd_t;
     \warning
 */
 
-#define SL_MEMORY_MGMT_DYNAMIC
+/* Using the static memory model as malloc() is not thread-safe */
+/* #define SL_MEMORY_MGMT_DYNAMIC */
 
 #ifdef SL_MEMORY_MGMT_DYNAMIC
 

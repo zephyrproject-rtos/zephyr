@@ -697,8 +697,10 @@ _SlDrvDriverCBDeinit - De init Driver Control Block
 *****************************************************************************/
 _SlReturnVal_t _SlDrvDriverCBDeinit(void)
 {
+#ifdef SL_MEMORY_MGMT_DYNAMIC
     _SlSpawnMsgItem_t* pCurr;
     _SlSpawnMsgItem_t* pNext;
+#endif
 
     /* Flow control de-init */
     g_pCB->FlowContCB.TxPoolCnt = 0;
