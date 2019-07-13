@@ -26,9 +26,6 @@
 #define POINTER_TO_INT(x)  ((intptr_t) (x))
 #define INT_TO_POINTER(x)  ((void *) (intptr_t) (x))
 
-/* Helper to get the difference between two pointers as an int */
-#define PTR_DIFF(y, x) ((int)((intptr_t)(y) - (intptr_t)(x)))
-
 #if !(defined (__CHAR_BIT__) && defined (__SIZEOF_LONG__))
 #	error Missing required predefined macros for BITS_PER_LONG calculation
 #endif
