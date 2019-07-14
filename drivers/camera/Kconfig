@@ -16,6 +16,12 @@ if CAMERA
 module = CAMERA
 module-str = camera
 
+config CAMERA_DISPLAY_DEV_NAME
+	string "Camera display device name"
+	default "CAMERA DISPLAY"
+	help
+	  Name of the display device to display camera.
+
 config IMAGE_SENSOR_INIT_PRIO
 	int "Image sensor initalization priority level"
 	default 70
@@ -25,5 +31,17 @@ config IMAGE_SENSOR_INIT_PRIO
 	  This number tells how early in the boot
 	  the image sensor driver and image sensor vendor
 	  driver are initialized.
+
+config CAMERA_INIT_PRIO
+	int "Camera initalization priority level"
+	default 81
+	range 81 90
+	help
+	  Camera initialization priority level.
+	  This number tells how early in the boot
+	  the camera vendor drivers are initialized.
+	  Camera initalization depneds on image sensors,
+	  so CAMERA_INIT_PRIO must be greater than
+	  IMAGE_SENSOR_INIT_PRIO.
 
 endif

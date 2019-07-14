@@ -1,0 +1,31 @@
+#
+# Copyright (c) 2019, NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: camera module
+version: 0.1
+
+description: >
+    This binding specifies the camera module.
+    If there are two cameras present, one is primary
+    camera and the other is secondary camera.
+
+inherits:
+    !include base.yaml
+
+properties:
+    compatible:
+      category: required
+
+    clocks:
+      type: array
+      category: optional
+      description: Clock gate information
+      generation: define
+
+    label:
+      category: optional
+      description: Primary camera("primary") or Secondary camera("secondary").
+...
