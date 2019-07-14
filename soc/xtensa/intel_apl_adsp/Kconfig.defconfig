@@ -20,4 +20,7 @@ config XTENSA_ASM2
 config XTENSA_KERNEL_CPU_PTR_SR
 	default "EXCSAVE2"
 
+config KERNEL_ENTRY
+	default "_MainEntry" if !XTENSA_RESET_VECTOR
+
 endif
