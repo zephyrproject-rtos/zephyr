@@ -1,0 +1,29 @@
+# Kconfig - Camera drivers
+
+#
+# Copyright (c) 2019 NXP Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig CAMERA
+	bool "Camera Drivers"
+	help
+	  Enable camera drivers
+
+if CAMERA
+
+module = CAMERA
+module-str = camera
+
+config IMAGE_SENSOR_INIT_PRIO
+	int "Image sensor initalization priority level"
+	default 70
+	range 70 80
+	help
+	  Image sensor initialization priority level.
+	  This number tells how early in the boot
+	  the image sensor driver and image sensor vendor
+	  driver are initialized.
+
+endif

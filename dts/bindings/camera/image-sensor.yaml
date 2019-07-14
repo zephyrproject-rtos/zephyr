@@ -1,0 +1,25 @@
+#
+# Copyright (c) 2019, NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: CMOS Image Sensor
+version: 0.1
+
+description: >
+    This is a representation of the CMOS Sensor nodes.
+
+inherits:
+    !include i2c-device.yaml
+
+properties:
+    compatible:
+      constraint: "zephyr,image-sensor"
+
+    pwr-gpios:
+      type: compound
+      category: optional
+      description: power control
+      generation: define
+...
