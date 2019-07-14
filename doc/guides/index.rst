@@ -7,7 +7,6 @@ User and Developer Guides
    :maxdepth: 1
 
    getting-help.rst
-   portability/index.rst
    bluetooth/index.rst
    c_library
    ../README.rst
@@ -24,6 +23,7 @@ User and Developer Guides
    kconfig/index
    modules.rst
    networking/index
+   portability/index.rst
    porting/index
    test/index
    tracing/index
