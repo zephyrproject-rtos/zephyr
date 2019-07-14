@@ -655,8 +655,8 @@ static int ssd16xx_init(struct device *dev)
 static struct ssd16xx_data ssd16xx_driver;
 
 static struct display_driver_api ssd16xx_driver_api = {
-	.blanking_on = ssd16xx_resume,
-	.blanking_off = ssd16xx_suspend,
+	.blanking_on = ssd16xx_suspend,
+	.blanking_off = ssd16xx_resume,
 	.write = ssd16xx_write,
 	.read = ssd16xx_read,
 	.get_framebuffer = ssd16xx_get_framebuffer,
