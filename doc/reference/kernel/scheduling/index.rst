@@ -52,10 +52,16 @@ based on each thread's priority.
   Once it becomes the current thread, a cooperative thread remains
   the current thread until it performs an action that makes it unready.
 
+  .. image:: cooperative.svg
+     :align: center
+
 * A :dfn:`preemptible thread` has a non-negative priority value.
   Once it becomes the current thread, a preemptible thread may be supplanted
   at any time if a cooperative thread, or a preemptible thread of higher
   or equal priority, becomes ready.
+
+  .. image:: preemptive.svg
+     :align: center
 
 A thread's initial priority value can be altered up or down after the thread
 has been started. Thus it possible for a preemptible thread to become
@@ -69,6 +75,9 @@ ranges:
 
 * cooperative threads: (-:option:`CONFIG_NUM_COOP_PRIORITIES`) to -1
 * preemptive threads: 0 to (:option:`CONFIG_NUM_PREEMPT_PRIORITIES` - 1)
+
+.. image:: priorities.svg
+   :align: center
 
 For example, configuring 5 cooperative priorities and 10 preemptive priorities
 results in the ranges -5 to -1 and 0 to 9, respectively.
@@ -125,6 +134,9 @@ including those of equal priority.
 To overcome such problems, a preemptive thread can perform cooperative
 time slicing (as described above), or the scheduler's time slicing capability
 can be used to allow other threads of the same priority to execute.
+
+.. image:: timeslicing.svg
+   :align: center
 
 The scheduler divides time into a series of **time slices**, where slices
 are measured in system clock ticks. The time slice size is configurable,
@@ -194,7 +206,7 @@ in driver subsystems.  The thread, once woken, will be guaranteed to
 run before the current CPU returns into application code.
 
 Unlike similar features in other OSes, meta-IRQ threads are true
-threads and run on their own stack (which much be allocated normally),
+threads and run on their own stack (which must be allocated normally),
 not the per-CPU interrupt stack.  Design work to enable the use of the
 IRQ stack on supported architectures is pending.
 
