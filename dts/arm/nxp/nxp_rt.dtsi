@@ -388,6 +388,14 @@
 			clocks = <&ccm IMX_CCM_USDHC2_CLK 0 0>;
 			label = "USDHC_2";
 		};
+
+		csi1: csi@402bc000 {
+			compatible = "nxp,imx-csi";
+			reg = <0x402bc000 0x4000>;
+			status = "disabled";
+			interrupts = <43 0>;
+			clocks = <&ccm IMX_CCM_CSI_CLK 0 0>;
+		};
 	};
 };
 

@@ -101,6 +101,16 @@ arduino_serial: &uart3 {};
 		int1-gpios = <&gpio1 10 0>;
 		int2-gpios = <&gpio1 11 0>;
 	};
+
+	/* I2C address of image sensor is not fixed.
+	 * Camera driver scans the image sensor support list to
+	 * identify the image sensor present.
+	 */
+	image-senosr@3ff {
+		compatible = "zephyr,image-sensor";
+		reg = <0x3ff>;
+		pwr-gpios = <&gpio1 4 1>;
+	};
 };
 
 &uart1 {
@@ -127,4 +137,8 @@ arduino_serial: &uart3 {};
 	status = "okay";
 	pwr-gpios = <&gpio1 5 0>;
 	cd-gpios = <&gpio2 28 0>;
+};
+
+&csi1 {
+	status = "okay";
 };

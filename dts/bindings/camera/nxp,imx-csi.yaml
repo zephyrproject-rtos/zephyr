@@ -1,0 +1,22 @@
+#
+# Copyright (c) 2019, NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: NXP CMOS SENSOR INTERFACE
+version: 0.1
+
+description: >
+    This binding gives a base representation of the NXP i.MX RT CSI nodes.
+
+inherits:
+    !include camera.yaml
+
+properties:
+    compatible:
+      constraint: "nxp,imx-csi"
+
+    clocks:
+      category: required
+...
