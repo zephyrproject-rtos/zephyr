@@ -289,6 +289,17 @@ static inline void *display_get_framebuffer(const struct device *dev)
 /**
  * @brief Turn display blanking on
  *
+ * This function blanks the complete display.
+ * The content of the frame buffer will be retained while blanking is enabled
+ * and the frame buffer will be accessible for read and write operations.
+ *
+ * In case backlight control is supported by the driver the backlight is
+ * turned off. The backlight configuration is retained and accessible for
+ * configuration.
+ *
+ * In case the driver supports display blanking the initial state of the driver
+ * would be the same as if this function was called.
+ *
  * @param dev Pointer to device structure
  *
  * @retval 0 on success else negative errno code.
@@ -303,6 +314,10 @@ static inline int display_blanking_on(const struct device *dev)
 
 /**
  * @brief Turn display blanking off
+ *
+ * Restore the frame buffer content to the display.
+ * In case backlight control is supported by the driver the backlight
+ * configuration is restored.
  *
  * @param dev Pointer to device structure
  *
