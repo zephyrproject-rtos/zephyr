@@ -32,6 +32,15 @@ static int mcux_ccm_off(struct device *dev,
 	return 0;
 }
 
+#ifdef CONFIG_NXP_MCUX_CSI
+enum mcux_csi_clk_sel {
+	CSI_CLK_SEL_24M = 0,
+	CSI_CLK_SEL_PLL2_PFD2 = 1,
+	CSI_CLK_SEL_120M = 2,
+	CSI_CLK_SEL_PLL3_PFD1 = 3,
+};
+#endif
+
 static int mcux_ccm_get_subsys_rate(struct device *dev,
 				    clock_control_subsys_t sub_system,
 				    u32_t *rate)
@@ -86,6 +95,32 @@ static int mcux_ccm_get_subsys_rate(struct device *dev,
 		*rate = CLOCK_GetSysPfdFreq(kCLOCK_Pfd0) /
 				(CLOCK_GetDiv(kCLOCK_Usdhc2Div) + 1U);
 		break;
+#endif
+
+#ifdef CONFIG_NXP_MCUX_CSI
+	case IMX_CCM_CSI_CLK:
+	{
+		enum mcux_csi_clk_sel clk_sel =
+			(enum mcux_csi_clk_sel)
+			CLOCK_GetMux(kCLOCK_CsiMux);
+
+		if (clk_sel == CSI_CLK_SEL_24M) {
+			*rate = (24 * 1024 * 1024) /
+				(CLOCK_GetDiv(kCLOCK_CsiDiv) + 1U);
+		} else if (clk_sel == CSI_CLK_SEL_PLL2_PFD2) {
+			*rate = CLOCK_GetSysPfdFreq(kCLOCK_Pfd2) /
+				(CLOCK_GetDiv(kCLOCK_CsiDiv) + 1U);
+		} else if (clk_sel == CSI_CLK_SEL_120M) {
+			*rate = (120 * 1024 * 1024) /
+				(CLOCK_GetDiv(kCLOCK_CsiDiv) + 1U);
+		} else if (clk_sel == CSI_CLK_SEL_PLL3_PFD1) {
+			*rate = CLOCK_GetSysPfdFreq(kCLOCK_Pfd1) /
+				(CLOCK_GetDiv(kCLOCK_CsiDiv) + 1U);
+		} else {
+			return -EINVAL;
+		}
+	}
+	break;
 #endif
 	}
 

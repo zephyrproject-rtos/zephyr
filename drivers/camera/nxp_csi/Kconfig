@@ -1,0 +1,8 @@
+#
+# Copyright (c) 2019, NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if NXP_MCUX_CSI
+endif

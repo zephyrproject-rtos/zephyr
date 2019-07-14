@@ -236,6 +236,20 @@ void imxrt_usdhc_pinmux(u16_t nusdhc, bool init,
 }
 #endif
 
+#ifdef CONFIG_NXP_MCUX_CSI
+
+static csi_mclk_enable_cb g_csi_mclk_enable_cb;
+void imxrt_csi_mclk_cb_register(csi_mclk_enable_cb cb)
+{
+	g_csi_mclk_enable_cb = cb;
+}
+
+void imxrt_csi_mclk_enable(bool enable)
+{
+	if (g_csi_mclk_enable_cb)
+		g_csi_mclk_enable_cb(enable);
+}
+#endif
 /**
  *
  * @brief Perform basic hardware initialization

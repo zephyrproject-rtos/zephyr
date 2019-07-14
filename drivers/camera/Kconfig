@@ -44,6 +44,14 @@ config CAMERA_INIT_PRIO
 	  so CAMERA_INIT_PRIO must be greater than
 	  IMAGE_SENSOR_INIT_PRIO.
 
+menuconfig NXP_MCUX_CSI
+	bool "NXP i.MXRT cmos sensor interface"
+	depends on HAS_MCUX_CSI
+	help
+	  Enable NXP i.MXRT cmos sensor driver.
+
+source "drivers/camera/nxp_csi/Kconfig"
+
 menuconfig MT9M114
 	bool "MT9M114 image sensor"
 	depends on I2C

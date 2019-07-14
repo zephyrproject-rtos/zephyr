@@ -97,4 +97,11 @@ endchoice
 
 endif # LVGL
 
+if CAMERA
+
+config CAMERA_DISPLAY_DEV_NAME
+	default "ELCDIF_1"
+
+endif
+
 endif # BOARD_MIMXRT1050_EVK || BOARD_MIMXRT1050_EVK_QSPI

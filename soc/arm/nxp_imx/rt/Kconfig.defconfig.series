@@ -141,6 +141,13 @@ config USB_DC_NXP_EHCI
 
 endif # USB
 
+if CAMERA
+
+config NXP_MCUX_CSI
+	default y if HAS_MCUX_CSI
+
+endif # CAMERA
+
 source "soc/arm/nxp_imx/rt/Kconfig.defconfig.mimxrt*"
 
 endif # SOC_SERIES_IMX_RT

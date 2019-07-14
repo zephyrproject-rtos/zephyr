@@ -36,6 +36,13 @@ void imxrt_usdhc_pinmux_cb_register(usdhc_pin_cfg_cb cb);
 
 #endif
 
+#ifdef CONFIG_NXP_MCUX_CSI
+typedef void (*csi_mclk_enable_cb)(bool enable);
+
+void imxrt_csi_mclk_enable(bool enable);
+
+void imxrt_csi_mclk_cb_register(csi_mclk_enable_cb cb);
+#endif
 #endif /* !_ASMLANGUAGE */
 
 #ifdef __cplusplus

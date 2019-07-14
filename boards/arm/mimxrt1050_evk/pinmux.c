@@ -102,6 +102,43 @@ static void mimxrt1050_evk_usdhc_pinmux(
 }
 #endif
 
+#ifdef CONFIG_CAMERA
+static void mimxrt1050_evk_csi_mclk_enable(bool enable)
+{
+	if (enable) {
+		IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B1_05_CSI_MCLK, 0U);
+	} else {
+		IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B1_05_GPIO1_IO21, 0U);
+	}
+}
+
+static void mimxrt1050_evk_csi_input_cfg(void)
+{
+	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B1_04_CSI_PIXCLK, 0U);
+	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B1_06_CSI_VSYNC, 0U);
+	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B1_07_CSI_HSYNC, 0U);
+	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B1_08_CSI_DATA09, 0U);
+	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B1_09_CSI_DATA08, 0U);
+	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B1_10_CSI_DATA07, 0U);
+	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B1_11_CSI_DATA06, 0U);
+	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B1_12_CSI_DATA05, 0U);
+	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B1_13_CSI_DATA04, 0U);
+	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B1_14_CSI_DATA03, 0U);
+	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B1_15_CSI_DATA02, 0U);
+}
+
+static void mimxrt1050_evk_camera_init(void)
+{
+	mimxrt1050_evk_csi_mclk_enable(false);
+	mimxrt1050_evk_csi_input_cfg();
+	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B0_04_GPIO1_IO04, 0U);
+	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B1_00_LPI2C1_SCL, 1U);
+	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B1_01_LPI2C1_SDA, 1U);
+	IOMUXC_SetPinConfig(IOMUXC_GPIO_AD_B1_00_LPI2C1_SCL, 0xD8B0u);
+	IOMUXC_SetPinConfig(IOMUXC_GPIO_AD_B1_01_LPI2C1_SDA, 0xD8B0u);
+}
+#endif
+
 static int mimxrt1050_evk_init(struct device *dev)
 {
 	ARG_UNUSED(dev);
@@ -302,6 +339,11 @@ static int mimxrt1050_evk_init(struct device *dev)
 #ifdef CONFIG_DISK_ACCESS_USDHC1
 	mimxrt1050_evk_usdhc_pinmux(0, true, 2, 1);
 	imxrt_usdhc_pinmux_cb_register(mimxrt1050_evk_usdhc_pinmux);
+#endif
+
+#ifdef CONFIG_CAMERA
+	mimxrt1050_evk_camera_init();
+	imxrt_csi_mclk_cb_register(mimxrt1050_evk_csi_mclk_enable);
 #endif
 
 	return 0;
