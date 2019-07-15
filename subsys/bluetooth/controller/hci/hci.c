@@ -47,6 +47,10 @@
 #include "ll_sw/ll_test.h"
 #endif /* CONFIG_BT_CTLR_DTM_HCI */
 
+#if defined(CONFIG_BT_CTLR_USER_EXT)
+#include "hci_user_ext.h"
+#endif /* CONFIG_BT_CTLR_USER_EXT */
+
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bt_ctlr_hci
 #include "common/log.h"
@@ -3102,6 +3106,12 @@ static void encode_control(struct node_rx_pdu *node_rx,
 		return;
 #endif /* CONFIG_BT_HCI_MESH_EXT */
 
+#if defined(CONFIG_BT_CTLR_USER_EXT)
+	case NODE_RX_TYPE_USER_START ... NODE_RX_TYPE_USER_END:
+		hci_user_ext_encode_control(node_rx, pdu_data, buf);
+		return;
+#endif /* CONFIG_BT_CTLR_USER_EXT */
+
 	default:
 		LL_ASSERT(0);
 		return;
@@ -3469,6 +3479,11 @@ s8_t hci_get_class(struct node_rx_pdu *node_rx)
 #endif /* CONFIG_BT_CTLR_PHY */
 			return HCI_CLASS_EVT_CONNECTION;
 #endif /* CONFIG_BT_CONN */
+
+#if defined(CONFIG_BT_CTLR_USER_EXT)
+		case NODE_RX_TYPE_USER_START ... NODE_RX_TYPE_USER_END:
+			return hci_user_ext_get_class(node_rx);
+#endif /* CONFIG_BT_CTLR_USER_EXT */
 
 		default:
 			return -1;
