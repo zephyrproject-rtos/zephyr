@@ -6,9 +6,9 @@
 #ifndef ZEPHYR_ARCH_X86_INCLUDE_INTEL64_KERNEL_ARCH_THREAD_H_
 #define ZEPHYR_ARCH_X86_INCLUDE_INTEL64_KERNEL_ARCH_THREAD_H_
 
-#include <zephyr/types.h>
-
 #ifndef _ASMLANGUAGE
+
+#include <zephyr/types.h>
 
 /*
  * The _callee_saved registers are unconditionally saved/restored across
