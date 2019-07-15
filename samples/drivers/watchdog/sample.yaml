@@ -13,3 +13,18 @@ tests:
             - "Waiting for reset..."
             - "Watchdog sample application"
     depends_on: watchdog
+    platform_exclude: nucleo_l496zg nucleo_f401re
+  sample.driver.window_watchdog_nucleo_l496zg:
+    tags: drivers
+    harness: console
+    harness_config:
+        type: multi_line
+        ordered: true
+        regex:
+            - "Watchdog sample application"
+            - "Feeding watchdog..."
+            - "Waiting for reset..."
+            - "Watchdog sample application"
+    depends_on: watchdog
+    platform_whitelist: nucleo_l496zg
+    extra_args: CONF_FILE="prj.conf;nucleo_l496zg.conf"
