@@ -233,17 +233,17 @@ gdt48:
 
 .align 8
 tss:	.long 0
-	.long 0, 0  /* RSP0 */
+rsp0:	.long 0, 0
 	.long 0, 0
 	.long 0, 0
 	.long 0, 0
-	.long (ist + CONFIG_ISR_STACK_SIZE), 0  /* IST1 */
+ist1:	.long (ist + CONFIG_ISR_STACK_SIZE), 0
 	.long 0, 0
 	.long 0, 0
 	.long 0, 0
 	.long 0, 0
 	.long 0, 0
-	.long (exception_stack + CONFIG_EXCEPTION_STACK_SIZE), 0  /* IST7 */
+ist7:	.long (exception_stack + CONFIG_EXCEPTION_STACK_SIZE), 0
 	.long 0, 0
 	.long 0
 
@@ -370,8 +370,8 @@ EXCEPT      (24); EXCEPT      (25); EXCEPT      (26); EXCEPT      (27)
 EXCEPT      (28); EXCEPT      (29); EXCEPT      (30); EXCEPT      (31)
 
 /*
- * When we arrive at 'irq' from one of the IRQ(X)
- * stubs, we're on IST1 and it contains:
+ * When we arrive at 'irq' from one of the IRQ(X) stubs,
+ * we're on the "freshest" IRQ stack and it contains:
  *
  *   SS
  *   RSP
@@ -380,11 +380,6 @@ EXCEPT      (28); EXCEPT      (29); EXCEPT      (30); EXCEPT      (31)
  *   RIP
  *   (vector number - IV_IRQS) <-- RSP points here
  *   RSI <-- we push this on entry
- *
- * Our job is to save the state of the interrupted thread so that
- * __resume can restart it where it left off, then service the IRQ.
- * We can then EOI the local APIC and head out via __resume - which
- * may resume a different thread, if the scheduler decided to preempt.
  */
 
 .globl x86_irq_funcs	/* see irq_manage.c .. */
@@ -393,11 +388,42 @@ EXCEPT      (28); EXCEPT      (29); EXCEPT      (30); EXCEPT      (31)
 irq:
 	pushq %rsi
 	movq $_kernel, %rsi
+
+	/*
+	 * Bump the IRQ nesting count and move to the next IRQ stack.
+	 * That's sufficient to safely re-enable interrupts, so if we
+	 * haven't reached the maximum nesting depth yet, do it.
+	 */
+
 	incl _kernel_offset_to_nested(%rsi)
+	addq $CONFIG_ISR_STACK_SIZE, ist1
+	cmpl $CONFIG_ISR_DEPTH, _kernel_offset_to_nested(%rsi)
+	jz 1f
+	sti
+1:	cmpl $1, _kernel_offset_to_nested(%rsi)
+	je irq_enter_unnested
+
+irq_enter_nested: /* Nested IRQ: dump register state to stack. */
+	pushq %rcx
+	movq 16(%rsp), %rcx /* RCX = vector */
+	movq %rax, 16(%rsp) /* looks like we pushed RAX, not the vector */
+	pushq %rdx
+	pushq %rbx
+	pushq %rdi
+	pushq %rbp
+	pushq %r8
+	pushq %r9
+	pushq %r10
+	pushq %r11
+	pushq %r12
+	pushq %r13
+	pushq %r14
+	pushq %r15
+	jmp irq_dispatch
+
+irq_enter_unnested: /* Not nested: dump state to thread struct for __resume */
 	movq _kernel_offset_to_current(%rsi), %rsi
-
 	andb $(~_THREAD_SWAPPED), _thread_offset_to_thread_state(%rsi)
-
 	movq %rbx, _thread_offset_to_rbx(%rsi)
 	movq %rbp, _thread_offset_to_rbp(%rsi)
 	movq %r12, _thread_offset_to_r12(%rsi)
@@ -405,7 +431,6 @@ irq:
 	movq %r14, _thread_offset_to_r14(%rsi)
 	movq %r15, _thread_offset_to_r15(%rsi)
 	movq %rax, _thread_offset_to_rax(%rsi)
-
 	movq %rcx, _thread_offset_to_rcx(%rsi)
 	movq %rdx, _thread_offset_to_rdx(%rsi)
 	movq %rdi, _thread_offset_to_rdi(%rsi)
@@ -413,7 +438,6 @@ irq:
 	movq %r9, _thread_offset_to_r9(%rsi)
 	movq %r10, _thread_offset_to_r10(%rsi)
 	movq %r11, _thread_offset_to_r11(%rsi)
-
 	popq %rax /* RSI */
 	movq %rax, _thread_offset_to_rsi(%rsi)
 	popq %rcx /* vector number */
@@ -426,6 +450,7 @@ irq:
 	movq %rax, _thread_offset_to_rsp(%rsi)
 	popq %rax /* SS: discard */
 
+irq_dispatch:
 	movq x86_irq_funcs(,%rcx,8), %rbx
 	movq x86_irq_args(,%rcx,8), %rdi
 	call *%rbx
@@ -438,9 +463,28 @@ irq:
 #endif
 
 	movq $_kernel, %rsi
+	cli
+	subq $CONFIG_ISR_STACK_SIZE, ist1
 	decl _kernel_offset_to_nested(%rsi)
+	jz __resume /* not nested, just __resume (might change threads) */
 
-	jmp __resume
+irq_exit_nested:
+	popq %r15
+	popq %r14
+	popq %r13
+	popq %r12
+	popq %r11
+	popq %r10
+	popq %r9
+	popq %r8
+	popq %rbp
+	popq %rdi
+	popq %rbx
+	popq %rdx
+	popq %rcx
+	popq %rsi
+	popq %rax
+	iretq
 
 #define IRQ(nr) vector_ ## nr: pushq $(nr - IV_IRQS); jmp irq
 
