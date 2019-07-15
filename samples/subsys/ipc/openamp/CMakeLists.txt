@@ -5,8 +5,13 @@ cmake_minimum_required(VERSION 3.13.1)
 # SPDX-License-Identifier: Apache-2.0
 #
 
+set(REMOTE_ZEPHYR_DIR ${CMAKE_CURRENT_BINARY_DIR}/openamp_remote-prefix/src/openamp_remote-build/zephyr)
+
 if("${BOARD}" STREQUAL "lpcxpresso54114_m4")
   set(BOARD_REMOTE "lpcxpresso54114_m0")
+elseif("${BOARD}" STREQUAL "mps2_an521")
+  set(QEMU_EXTRA_FLAGS "-device;loader,file=${REMOTE_ZEPHYR_DIR}/zephyr.elf")
+  set(BOARD_REMOTE "mps2_an521_nonsecure")
 else()
   message(FATAL_ERROR "${BOARD} was not supported for this sample")
 endif()
@@ -28,7 +33,7 @@ ExternalProject_Add(
   INSTALL_COMMAND ""      # This particular build system has no install command
   CMAKE_CACHE_ARGS -DBOARD:string=${BOARD_REMOTE}
   CMAKE_CACHE_ARGS -DDTC_OVERLAY_FILE:string=${DTC_OVERLAY_FILE}
-  BUILD_BYPRODUCTS "${CMAKE_CURRENT_BINARY_DIR}/openamp_remote-prefix/src/openamp_remote-build/zephyr/zephyr.bin"
+  BUILD_BYPRODUCTS "${REMOTE_ZEPHYR_DIR}/zephyr.bin"
   # NB: Do we need to pass on more CMake variables?
   BUILD_ALWAYS True
 )

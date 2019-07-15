@@ -4,7 +4,9 @@ cmake_minimum_required(VERSION 3.13.1)
 #
 # SPDX-License-Identifier: Apache-2.0
 #
-if(("${BOARD}" STREQUAL "lpcxpresso54114_m0"))
+
+if(("${BOARD}" STREQUAL "lpcxpresso54114_m0")
+	OR "${BOARD}" STREQUAL "mps2_an521_nonsecure")
 	message(INFO " ${BOARD} compile as slave in this sample")
 else()
 	message(FATAL_ERROR "${BOARD} was not supported for this sample")
