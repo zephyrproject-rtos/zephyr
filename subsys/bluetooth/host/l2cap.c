@@ -953,9 +953,7 @@ static int l2cap_change_security(struct bt_l2cap_le_chan *chan, u16_t err)
 		chan->chan.required_sec_level = BT_SECURITY_MEDIUM;
 		break;
 	case BT_L2CAP_LE_ERR_AUTHENTICATION:
-		if (chan->chan.required_sec_level < BT_SECURITY_MEDIUM) {
-			chan->chan.required_sec_level = BT_SECURITY_MEDIUM;
-		} else if (chan->chan.required_sec_level < BT_SECURITY_HIGH) {
+		if (chan->chan.required_sec_level < BT_SECURITY_HIGH) {
 			chan->chan.required_sec_level = BT_SECURITY_HIGH;
 		} else if (chan->chan.required_sec_level < BT_SECURITY_FIPS) {
 			chan->chan.required_sec_level = BT_SECURITY_FIPS;
