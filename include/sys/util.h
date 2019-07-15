@@ -655,7 +655,7 @@ static inline s64_t arithmetic_shift_right(s64_t value, u8_t shift)
 #define UTIL_LISTIFY(LEN, F, F_ARG) UTIL_EVAL(UTIL_REPEAT(LEN, F, F_ARG))
 
 /**@brief Implementation details for NUM_VAR_ARGS */
-#define NUM_VA_ARGS_LESS_1_IMPL(				\
+#define NUM_VA_ARGS_IMPL(					\
 	_ignored,						\
 	_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10,		\
 	_11, _12, _13, _14, _15, _16, _17, _18, _19, _20,	\
@@ -673,12 +673,29 @@ static inline s64_t arithmetic_shift_right(s64_t value, u8_t shift)
  * @retval  Number of variadic arguments in the argument list
  */
 #define NUM_VA_ARGS_LESS_1(...) \
-	NUM_VA_ARGS_LESS_1_IMPL(__VA_ARGS__, 63, 62, 61, \
-	60, 59, 58, 57, 56, 55, 54, 53, 52, 51,		 \
-	50, 49, 48, 47, 46, 45, 44, 43, 42, 41,		 \
-	40, 39, 38, 37, 36, 35, 34, 33, 32, 31,		 \
-	30, 29, 28, 27, 26, 25, 24, 23, 22, 21,		 \
-	20, 19, 18, 17, 16, 15, 14, 13, 12, 11,		 \
+	NUM_VA_ARGS_IMPL(__VA_ARGS__, 63, 62, 61,	\
+	60, 59, 58, 57, 56, 55, 54, 53, 52, 51,		\
+	50, 49, 48, 47, 46, 45, 44, 43, 42, 41,		\
+	40, 39, 38, 37, 36, 35, 34, 33, 32, 31,		\
+	30, 29, 28, 27, 26, 25, 24, 23, 22, 21,		\
+	20, 19, 18, 17, 16, 15, 14, 13, 12, 11,		\
+	10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, ~)
+
+
+/**@brief Macro to get the number of arguments in a call variadic macro call.
+ * First and second argument are not counted.
+ *
+ * param[in]    ...     List of arguments
+ *
+ * @retval  Number of variadic arguments in the argument list
+ */
+#define NUM_VA_ARGS_LESS_2(...) \
+	NUM_VA_ARGS_IMPL(__VA_ARGS__, 62, 61,	\
+	60, 59, 58, 57, 56, 55, 54, 53, 52, 51,	\
+	50, 49, 48, 47, 46, 45, 44, 43, 42, 41,	\
+	40, 39, 38, 37, 36, 35, 34, 33, 32, 31,	\
+	30, 29, 28, 27, 26, 25, 24, 23, 22, 21,	\
+	20, 19, 18, 17, 16, 15, 14, 13, 12, 11,	\
 	10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, ~)
 
 /**
