@@ -174,9 +174,9 @@ static const struct z_exc_handle exceptions[] = {
 /* Perform an assessment whether an MPU fault shall be
  * treated as recoverable.
  *
- * @return 1 if error is recoverable, otherwise return 0.
+ * @return true if error is recoverable, otherwise return false.
  */
-static int MemoryFaultIsRecoverable(NANO_ESF *esf)
+static bool memory_fault_recoverable(NANO_ESF *esf)
 {
 #ifdef CONFIG_USERSPACE
 	for (int i = 0; i < ARRAY_SIZE(exceptions); i++) {
@@ -186,12 +186,12 @@ static int MemoryFaultIsRecoverable(NANO_ESF *esf)
 
 		if (esf->basic.pc >= start && esf->basic.pc < end) {
 			esf->basic.pc = (u32_t)(exceptions[i].fixup);
-			return 1;
+			return true;
 		}
 	}
 #endif
 
-	return 0;
+	return false;
 }
 
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
@@ -211,7 +211,7 @@ u32_t z_check_thread_stack_fail(const u32_t fault_addr,
  *
  * @return error code to identify the fatal error reason
  */
-static u32_t MpuFault(NANO_ESF *esf, int fromHardFault)
+static u32_t MpuFault(NANO_ESF *esf, int fromHardFault, bool *recoverable)
 {
 	u32_t reason = _NANO_ERR_HW_EXCEPTION;
 	u32_t mmfar = -EINVAL;
@@ -321,9 +321,7 @@ static u32_t MpuFault(NANO_ESF *esf, int fromHardFault)
 	SCB->CFSR |= SCB_CFSR_MEMFAULTSR_Msk;
 
 	/* Assess whether system shall ignore/recover from this MPU fault. */
-	if (MemoryFaultIsRecoverable(esf)) {
-		reason = _NANO_ERR_RECOVERABLE;
-	}
+	*recoverable = memory_fault_recoverable(esf);
 
 	return reason;
 }
@@ -336,7 +334,7 @@ static u32_t MpuFault(NANO_ESF *esf, int fromHardFault)
  *
  * @return N/A
  */
-static int BusFault(NANO_ESF *esf, int fromHardFault)
+static int BusFault(NANO_ESF *esf, int fromHardFault, bool *recoverable)
 {
 	u32_t reason = _NANO_ERR_HW_EXCEPTION;
 
@@ -477,9 +475,7 @@ static int BusFault(NANO_ESF *esf, int fromHardFault)
 	/* clear BFSR sticky bits */
 	SCB->CFSR |= SCB_CFSR_BUSFAULTSR_Msk;
 
-	if (MemoryFaultIsRecoverable(esf)) {
-		reason = _NANO_ERR_RECOVERABLE;
-	}
+	*recoverable = memory_fault_recoverable(esf);
 
 	return reason;
 }
@@ -607,25 +603,25 @@ static void DebugMonitor(const NANO_ESF *esf)
  *
  * @return error code to identify the fatal error reason
  */
-static u32_t HardFault(NANO_ESF *esf)
+static u32_t HardFault(NANO_ESF *esf, bool *recoverable)
 {
 	u32_t reason = _NANO_ERR_HW_EXCEPTION;
 
 	PR_FAULT_INFO("***** HARD FAULT *****\n");
 
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
-	if (MemoryFaultIsRecoverable(esf) != 0) {
-		reason = _NANO_ERR_RECOVERABLE;
-	}
+	*recoverable = memory_fault_recoverable(esf);
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
+	*recoverable = false;
+
 	if ((SCB->HFSR & SCB_HFSR_VECTTBL_Msk) != 0) {
 		PR_EXC("  Bus fault on vector table read\n");
 	} else if ((SCB->HFSR & SCB_HFSR_FORCED_Msk) != 0) {
 		PR_EXC("  Fault escalation (see below)\n");
 		if (SCB_MMFSR != 0) {
-			reason = MpuFault(esf, 1);
+			reason = MpuFault(esf, 1, recoverable);
 		} else if (SCB_BFSR != 0) {
-			reason = BusFault(esf, 1);
+			reason = BusFault(esf, 1, recoverable);
 		} else if (SCB_UFSR != 0) {
 			reason = UsageFault(esf);
 #if defined(CONFIG_ARM_SECURE_FIRMWARE)
@@ -659,22 +655,23 @@ static void ReservedException(const NANO_ESF *esf, int fault)
 }
 
 /* Handler function for ARM fault conditions. */
-static u32_t FaultHandle(NANO_ESF *esf, int fault)
+static u32_t FaultHandle(NANO_ESF *esf, int fault, bool *recoverable)
 {
 	u32_t reason = _NANO_ERR_HW_EXCEPTION;
+	*recoverable = false;
 
 	switch (fault) {
 	case 3:
-		reason = HardFault(esf);
+		reason = HardFault(esf, recoverable);
 		break;
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
 	/* HardFault is used for all fault conditions on ARMv6-M. */
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 	case 4:
-		reason = MpuFault(esf, 0);
+		reason = MpuFault(esf, 0, recoverable);
 		break;
 	case 5:
-		reason = BusFault(esf, 0);
+		reason = BusFault(esf, 0, recoverable);
 		break;
 	case 6:
 		reason = UsageFault(esf);
@@ -695,7 +692,7 @@ static u32_t FaultHandle(NANO_ESF *esf, int fault)
 		break;
 	}
 
-	if (reason != _NANO_ERR_RECOVERABLE) {
+	if (!recoverable) {
 		/* Dump generic information about the fault. */
 		FaultShow(esf, fault);
 	}
@@ -787,6 +784,7 @@ void _Fault(NANO_ESF *esf, u32_t exc_return)
 {
 	u32_t reason = _NANO_ERR_HW_EXCEPTION;
 	int fault = SCB->ICSR & SCB_ICSR_VECTACTIVE_Msk;
+	bool recoverable;
 
 	LOG_PANIC();
 
@@ -859,9 +857,8 @@ void _Fault(NANO_ESF *esf, u32_t exc_return)
 	(void) exc_return;
 #endif /* CONFIG_ARM_SECURE_FIRMWARE */
 
-	reason = FaultHandle(esf, fault);
-
-	if (reason == _NANO_ERR_RECOVERABLE) {
+	reason = FaultHandle(esf, fault, &recoverable);
+	if (recoverable) {
 		return;
 	}
 
