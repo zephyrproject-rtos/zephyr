@@ -55,6 +55,7 @@ arduino_serial: &uart4 {};
 		compatible = "adesto,at25sf128a", "jedec,spi-nor";
 		reg = <0>;
 		status = "okay";
+		jedec-id = <0x1f 0x89 0x01>;
 	};
 };
 

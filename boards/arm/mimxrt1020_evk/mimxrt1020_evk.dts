@@ -63,6 +63,7 @@ arduino_serial: &uart2 {};
 		compatible = "issi,is25wp064", "jedec,spi-nor";
 		reg = <0>;
 		status = "okay";
+		jedec-id = <0x9d 0x70 0x17>;
 	};
 };
 
