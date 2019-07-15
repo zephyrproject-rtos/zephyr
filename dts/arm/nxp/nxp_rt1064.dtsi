@@ -13,5 +13,6 @@
 		compatible = "winbond,w25q32jvwj", "jedec,spi-nor";
 		reg = <0>;
 		status = "okay";
+		jedec-id = <0xef 0x40 0x16>;
 	};
 };
