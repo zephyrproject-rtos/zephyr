@@ -43,11 +43,32 @@ static ALWAYS_INLINE unsigned int z_arch_irq_lock(void)
 }
 
 /*
- * Bogus ESF stuff until I figure out what to with it. I suspect
- * this is legacy cruft that we'll want to excise sometime soon, anyway.
+ * the exception stack frame
  */
 
 struct x86_esf {
+	unsigned long rax;
+	unsigned long rbx;
+	unsigned long rcx;
+	unsigned long rdx;
+	unsigned long rbp;
+	unsigned long rsi;
+	unsigned long rdi;
+	unsigned long r8;
+	unsigned long r9;
+	unsigned long r10;
+	unsigned long r11;
+	unsigned long r12;
+	unsigned long r13;
+	unsigned long r14;
+	unsigned long r15;
+	unsigned long vector;
+	unsigned long code;
+	unsigned long rip;
+	unsigned long cs;
+	unsigned long rflags;
+	unsigned long rsp;
+	unsigned long ss;
 };
 
 typedef struct x86_esf z_arch_esf_t;

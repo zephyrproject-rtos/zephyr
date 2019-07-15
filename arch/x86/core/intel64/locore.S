@@ -9,6 +9,7 @@
 #include <kernel_arch_data.h>
 #include <offsets_short.h>
 #include <drivers/interrupt_controller/loapic.h>
+#include <arch/cpu.h>
 
 .section .locore,"ax"
 .code32
@@ -50,7 +51,7 @@ __start:
 	movw %ax, %fs
 	movw %ax, %gs
 
-	movl $(ist1 + CONFIG_ISR_STACK_SIZE), %esp
+	movl $(exception_stack + CONFIG_EXCEPTION_STACK_SIZE), %esp
 
 	/* transition to long mode, by the book. */
 
@@ -156,13 +157,13 @@ __swap:
 	movq %r14, _thread_offset_to_r14(%rsi)
 	movq %r15, _thread_offset_to_r15(%rsi)
 
-	movq $(ist1 + CONFIG_ISR_STACK_SIZE), %rsp
+	movq $(ist + CONFIG_ISR_STACK_SIZE), %rsp
 
 	/* fall through to __resume */
 
 /*
  * Entry:
- *   RSP = top of ist1
+ *   RSP = top of ist
  */
 
 __resume:
@@ -226,22 +227,23 @@ gdt48:
 	.long gdt
 
 /*
- * TSS - no privilege transitions (yet) so only used for IST1.
+ * TSS - no privilege transitions (yet) so only used for
+ * interrupt (IST1) and exception stack (IST7) locations.
  */
 
 .align 8
 tss:	.long 0
-	.long 0, 0				/* RSP0 */
-	.long 0, 0				/* RSP1 */
-	.long 0, 0				/* RSP2 */
+	.long 0, 0  /* RSP0 */
 	.long 0, 0
-	.long (ist1 + CONFIG_ISR_STACK_SIZE), 0	/* IST1 */
-	.long 0, 0				/* IST2 */
-	.long 0, 0				/* IST3 */
-	.long 0, 0				/* IST4 */
-	.long 0, 0				/* IST5 */
-	.long 0, 0				/* IST6 */
-	.long 0, 0				/* IST7 */
+	.long 0, 0
+	.long 0, 0
+	.long (ist + CONFIG_ISR_STACK_SIZE), 0  /* IST1 */
+	.long 0, 0
+	.long 0, 0
+	.long 0, 0
+	.long 0, 0
+	.long 0, 0
+	.long (exception_stack + CONFIG_EXCEPTION_STACK_SIZE), 0  /* IST7 */
 	.long 0, 0
 	.long 0
 
@@ -259,14 +261,14 @@ tss:	.long 0
 
 .align 16
 idt:
-    IDT(  0, TRAP, 0); IDT(  1, TRAP, 0); IDT(  2, TRAP, 0); IDT(  3, TRAP, 0)
-    IDT(  4, TRAP, 0); IDT(  5, TRAP, 0); IDT(  6, TRAP, 0); IDT(  7, TRAP, 0)
-    IDT(  8, TRAP, 0); IDT(  9, TRAP, 0); IDT( 10, TRAP, 0); IDT( 11, TRAP, 0)
-    IDT( 12, TRAP, 0); IDT( 13, TRAP, 0); IDT( 14, TRAP, 0); IDT( 15, TRAP, 0)
-    IDT( 16, TRAP, 0); IDT( 17, TRAP, 0); IDT( 18, TRAP, 0); IDT( 19, TRAP, 0)
-    IDT( 20, TRAP, 0); IDT( 21, TRAP, 0); IDT( 22, TRAP, 0); IDT( 23, TRAP, 0)
-    IDT( 24, TRAP, 0); IDT( 25, TRAP, 0); IDT( 26, TRAP, 0); IDT( 27, TRAP, 0)
-    IDT( 28, TRAP, 0); IDT( 29, TRAP, 0); IDT( 30, TRAP, 0); IDT( 31, TRAP, 0)
+    IDT(  0, TRAP, 7); IDT(  1, TRAP, 7); IDT(  2, TRAP, 7); IDT(  3, TRAP, 7)
+    IDT(  4, TRAP, 7); IDT(  5, TRAP, 7); IDT(  6, TRAP, 7); IDT(  7, TRAP, 7)
+    IDT(  8, TRAP, 7); IDT(  9, TRAP, 7); IDT( 10, TRAP, 7); IDT( 11, TRAP, 7)
+    IDT( 12, TRAP, 7); IDT( 13, TRAP, 7); IDT( 14, TRAP, 7); IDT( 15, TRAP, 7)
+    IDT( 16, TRAP, 7); IDT( 17, TRAP, 7); IDT( 18, TRAP, 7); IDT( 19, TRAP, 7)
+    IDT( 20, TRAP, 7); IDT( 21, TRAP, 7); IDT( 22, TRAP, 7); IDT( 23, TRAP, 7)
+    IDT( 24, TRAP, 7); IDT( 25, TRAP, 7); IDT( 26, TRAP, 7); IDT( 27, TRAP, 7)
+    IDT( 28, TRAP, 7); IDT( 29, TRAP, 7); IDT( 30, TRAP, 7); IDT( 31, TRAP, 7)
 
     IDT( 32, INTR, 1); IDT( 33, INTR, 1); IDT( 34, INTR, 1); IDT( 35, INTR, 1)
     IDT( 36, INTR, 1); IDT( 37, INTR, 1); IDT( 38, INTR, 1); IDT( 39, INTR, 1)
@@ -332,9 +334,31 @@ idt48:
 #define EXCEPT_CODE(nr) vector_ ## nr: pushq $nr; jmp except
 #define EXCEPT(nr)	vector_ ## nr: pushq $0; pushq $nr; jmp except
 
-except:
-	/* save registers and dispatch to x86_exception() */
-	hlt
+except: /*
+	 * finish struct NANO_ESF on stack. 'vector' .. 'ss' are
+	 * already there from hardware trap and EXCEPT_*() stub.
+	 */
+
+	pushq %r15
+	pushq %r14
+	pushq %r13
+	pushq %r12
+	pushq %r11
+	pushq %r10
+	pushq %r9
+	pushq %r8
+	pushq %rdi
+	pushq %rsi
+	pushq %rbp
+	pushq %rdx
+	pushq %rcx
+	pushq %rbx
+	pushq %rax
+
+	movq %rsp, %rdi
+	call z_x86_exception
+
+	hlt /* should not return, but just in case .. */
 
 EXCEPT      ( 0); EXCEPT      ( 1); EXCEPT      ( 2); EXCEPT      ( 3)
 EXCEPT      ( 4); EXCEPT      ( 5); EXCEPT      ( 6); EXCEPT      ( 7)
@@ -472,10 +496,10 @@ pdp:	.long 0x00000183		/* 0x183 = G, 1GB, R/W, P */
 	.fill 4064, 1, 0
 
 /*
- * IST1 is used both during IRQ processing and early kernel initialization.
+ * The exception stack is used both for exceptions and early initialization.
  */
 
 .align 16
-ist1:
-	.fill CONFIG_ISR_STACK_SIZE, 1, 0xFF
+exception_stack:
+	.fill CONFIG_EXCEPTION_STACK_SIZE, 1, 0xFF
 

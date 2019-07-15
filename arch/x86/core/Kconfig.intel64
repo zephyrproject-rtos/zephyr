@@ -24,4 +24,13 @@ config SYSTEM_WORKQUEUE_STACK_SIZE
 config OFFLOAD_WORKQUEUE_STACK_SIZE
 	default 8192
 
+config EXCEPTION_STACK_SIZE
+	int "Size of the exception stack(s)"
+	default 1024
+	help
+	  The exception stack(s) (one per CPU) are used both for exception
+	  processing and early kernel/CPU initialization. They need only
+	  support limited call-tree depth and must fit into the low core,
+	  so they are typically smaller than the ISR stacks.
+
 endif # X86_LONGMODE
