@@ -19,10 +19,8 @@ properties:
      type: int
      description: address alignment required by flash erase operations
      category: optional
-     label: alignment
 
     write-block-size:
      type: int
      description: address alignment required by flash write operations
      category: optional
-     label: alignment

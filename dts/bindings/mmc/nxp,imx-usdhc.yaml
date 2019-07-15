@@ -24,13 +24,11 @@ properties:
       type: compound
       category: optional
       description: Power pin
-      generation: define
 
     cd-gpios:
       type: compound
       category: optional
       description: Detect pin
-      generation: define
 
     label:
       category: required
