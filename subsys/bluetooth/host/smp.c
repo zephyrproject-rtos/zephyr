@@ -2291,7 +2291,11 @@ static int smp_init(struct bt_smp *smp)
 
 	atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_FAIL);
 
+#if CONFIG_BT_USE_DEBUG_KEYS
+	sc_public_key = sc_debug_public_key;
+#else
 	sc_public_key = bt_pub_key_get();
+#endif
 
 	return 0;
 }
@@ -4841,9 +4845,11 @@ BT_L2CAP_CHANNEL_DEFINE(smp_br_fixed_chan, BT_L2CAP_CID_BR_SMP,
 
 int bt_smp_init(void)
 {
+#if CONFIG_BT_USE_DEBUG_KEYS == 0
 	static struct bt_pub_key_cb pub_key_cb = {
 		.func           = bt_smp_pkey_ready,
 	};
+#endif
 
 	sc_supported = le_sc_supported();
 	if (IS_ENABLED(CONFIG_BT_SMP_SC_PAIR_ONLY) && !sc_supported) {
@@ -4853,7 +4859,11 @@ int bt_smp_init(void)
 
 	BT_DBG("LE SC %s", sc_supported ? "enabled" : "disabled");
 
+#if CONFIG_BT_USE_DEBUG_KEYS
+	bt_smp_pkey_ready(sc_debug_public_key);
+#else
 	bt_pub_key_gen(&pub_key_cb);
+#endif
 
 	return smp_self_test();
 }
