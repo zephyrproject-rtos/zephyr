@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2015 Intel Corporation
  * Copyright (c) 2018 Nordic Semiconductor
+ * Copyright (c) 2019 Centaur Analytics, Inc
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +10,7 @@
 #include <device.h>
 #include <drivers/watchdog.h>
 #include <sys/printk.h>
+#include <stdbool.h>
 
 #define WDT_FEED_TRIES 5
 
@@ -16,16 +18,25 @@
 #ifdef CONFIG_WDT_0_NAME
 #define WDT_DEV_NAME CONFIG_WDT_0_NAME
 #else
+#ifdef CONFIG_WWDG_STM32
+#define WDT_DEV_NAME DT_WWDT_0_NAME
+#else
 #define WDT_DEV_NAME DT_WDT_0_NAME
+#endif
 #endif
 
 static void wdt_callback(struct device *wdt_dev, int channel_id)
 {
-	ARG_UNUSED(wdt_dev);
-	ARG_UNUSED(channel_id);
-	/* Watchdog timer expired. Handle it here.
-	 * Remember that SoC reset will be done soon.
-	 */
+	static bool handled_event;
+
+	if (handled_event) {
+		return;
+	}
+
+	wdt_feed(wdt_dev, channel_id);
+
+	printk("Handled things..ready to reset\n");
+	handled_event = true;
 }
 
 void main(void)
@@ -46,9 +57,9 @@ void main(void)
 	/* Reset SoC when watchdog timer expires. */
 	wdt_config.flags = WDT_FLAG_RESET_SOC;
 
-	/* Expire watchdog after 5000 milliseconds. */
+	/* Expire watchdog after 1000 milliseconds. */
 	wdt_config.window.min = 0U;
-	wdt_config.window.max = 5000U;
+	wdt_config.window.max = 1000U;
 
 	/* Set up watchdog callback. Jump into it when watchdog expired. */
 	wdt_config.callback = wdt_callback;
@@ -75,12 +86,12 @@ void main(void)
 	for (int i = 0; i < WDT_FEED_TRIES; ++i) {
 		printk("Feeding watchdog...\n");
 		wdt_feed(wdt, wdt_channel_id);
-		k_sleep(1000);
+		k_sleep(50);
 	}
 
 	/* Waiting for the SoC reset. */
 	printk("Waiting for reset...\n");
 	while (1) {
 		k_yield();
-	};
+	}
 }
