@@ -1,0 +1,25 @@
+/*
+ * Copyright (c) 2019 Creative Product Design
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&spi0 {
+	status = "okay";
+	sck-pin = <3>;
+	mosi-pin = <5>;
+	miso-pin = <26>;
+	cs-gpios = <&gpio0 27 0>;
+
+	st7789v@0 {
+		compatible = "sitronix,st7789v";
+		label = "DISPLAY";
+		spi-max-frequency = <20000000>;
+		reg = <0>;
+		cmd-data-gpios = <&gpio0 25 0>;
+		reset-gpios = <&gpio0 2 0>;
+		width = <320>;
+		height = <170>;
+		y-offset = <35>;
+	};
+};
