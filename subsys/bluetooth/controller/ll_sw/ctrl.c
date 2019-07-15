@@ -2665,6 +2665,17 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx,
 			goto isr_rx_conn_unknown_rsp_send;
 		}
 
+		/* NOTE: workaround to defer peer initiated encryption while
+		 *       local initiated procedure with instant is not complete.
+		 *       Peer master has sent CONN_UPDATE_IND in response to
+		 *	 CONN_PARAM_REQ, and also has initiated a Encryption
+		 *       Setup thereafter.
+		 */
+		if (_radio.conn_curr->llcp_req != _radio.conn_curr->llcp_ack) {
+			nack = 1U;
+			break;
+		}
+
 #if defined(CONFIG_BT_CTLR_FAST_ENC)
 		/* TODO: BT Spec. text: may finalize the sending of additional
 		 * data channel PDUs queued in the controller.
