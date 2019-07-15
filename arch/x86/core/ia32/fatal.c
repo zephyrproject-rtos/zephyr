@@ -131,19 +131,21 @@ FUNC_NORETURN void z_arch_system_halt(unsigned int reason)
 
 FUNC_NORETURN void z_x86_fatal_error(unsigned int reason, const NANO_ESF *esf)
 {
-	printk("eax: 0x%08x, ebx: 0x%08x, ecx: 0x%08x, edx: 0x%08x\n"
-	       "esi: 0x%08x, edi: 0x%08x, ebp: 0x%08x, esp: 0x%08x\n"
-	       "eflags: 0x%08x cs: 0x%04x\n"
+	if (esf != NULL) {
+		printk("eax: 0x%08x, ebx: 0x%08x, ecx: 0x%08x, edx: 0x%08x\n"
+		       "esi: 0x%08x, edi: 0x%08x, ebp: 0x%08x, esp: 0x%08x\n"
+		       "eflags: 0x%08x cs: 0x%04x\n"
 #ifdef CONFIG_EXCEPTION_STACK_TRACE
-	       "call trace:\n"
+		       "call trace:\n"
 #endif
-	       "eip: 0x%08x\n",
-	       esf->eax, esf->ebx, esf->ecx, esf->edx,
-	       esf->esi, esf->edi, esf->ebp, esf->esp,
-	       esf->eflags, esf->cs & 0xFFFFU, esf->eip);
+		       "eip: 0x%08x\n",
+		       esf->eax, esf->ebx, esf->ecx, esf->edx,
+		       esf->esi, esf->edi, esf->ebp, esf->esp,
+		       esf->eflags, esf->cs & 0xFFFFU, esf->eip);
 #ifdef CONFIG_EXCEPTION_STACK_TRACE
-	unwind_stack(esf->ebp, esf->cs);
+		unwind_stack(esf->ebp, esf->cs);
 #endif
+	}
 
 	z_fatal_error(reason, esf);
 	CODE_UNREACHABLE;
@@ -201,25 +203,6 @@ NANO_CPU_INT_REGISTER(_kernel_oops_handler, NANO_SOFT_IRQ,
 		      CONFIG_X86_KERNEL_OOPS_VECTOR / 16,
 		      CONFIG_X86_KERNEL_OOPS_VECTOR, 3);
 #endif
-
-/*
- * Define a default ESF for use with z_fatal_error() in the event
- * the caller does not have a NANO_ESF to pass
- */
-const NANO_ESF _default_esf = {
-	0xdeaddead, /* ESP */
-	0xdeaddead, /* EBP */
-	0xdeaddead, /* EBX */
-	0xdeaddead, /* ESI */
-	0xdeaddead, /* EDI */
-	0xdeaddead, /* EDX */
-	0xdeaddead, /* ECX */
-	0xdeaddead, /* EAX */
-	0xdeaddead, /* error code */
-	0xdeaddead, /* EIP */
-	0xdeaddead, /* CS */
-	0xdeaddead, /* EFLAGS */
-};
 
 #if CONFIG_EXCEPTION_DEBUG
 

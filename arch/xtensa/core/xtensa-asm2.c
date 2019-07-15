@@ -87,7 +87,7 @@ void z_irq_spurious(void *arg)
 	__asm__ volatile("rsr.intenable %0" : "=r"(ie));
 	printk(" ** Spurious INTERRUPT(s) %p, INTENABLE = %p\n",
 	       (void *)irqs, (void *)ie);
-	z_xtensa_fatal_error(K_ERR_SPURIOUS_IRQ, &_default_esf);
+	z_xtensa_fatal_error(K_ERR_SPURIOUS_IRQ, NULL);
 }
 #endif
 
@@ -200,8 +200,10 @@ void *xtensa_excint1_c(int *interrupted_stack)
 		 * for all unhandled exceptions, which seems incorrect
 		 * as these are software errors.  Should clean this
 		 * up.
+		 *
+		 * FIXME: interrupted_stack and NANO_ESF ought to be the same
 		 */
-		z_xtensa_fatal_error(K_ERR_CPU_EXCEPTION, &_default_esf);
+		z_xtensa_fatal_error(K_ERR_CPU_EXCEPTION, NULL);
 	}
 
 	return z_get_next_switch_handle(interrupted_stack);

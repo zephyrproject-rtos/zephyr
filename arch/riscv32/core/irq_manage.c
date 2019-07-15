@@ -25,7 +25,7 @@ FUNC_NORETURN void z_irq_spurious(void *unused)
 		       riscv_plic_get_irq());
 	}
 #endif
-	z_riscv32_fatal_error(K_ERR_SPURIOUS_IRQ, &_default_esf);
+	z_riscv32_fatal_error(K_ERR_SPURIOUS_IRQ, NULL);
 }
 
 #ifdef CONFIG_DYNAMIC_INTERRUPTS

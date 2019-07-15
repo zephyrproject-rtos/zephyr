@@ -26,7 +26,7 @@ FUNC_NORETURN void z_irq_spurious(void *unused)
 	ARG_UNUSED(unused);
 	printk("Spurious interrupt detected! ipending: %x\n",
 	       z_nios2_creg_read(NIOS2_CR_IPENDING));
-	z_nios2_fatal_error(K_ERR_SPURIOUS_IRQ, &_default_esf);
+	z_nios2_fatal_error(K_ERR_SPURIOUS_IRQ, NULL);
 }
 
 

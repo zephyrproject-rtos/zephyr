@@ -75,7 +75,6 @@ typedef struct __esf NANO_ESF;
 #ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE
 typedef struct soc_esf soc_esf_t;
 #endif
-extern const NANO_ESF _default_esf;
 #endif /* _ASMLANGUAGE */
 
 #ifdef __cplusplus
