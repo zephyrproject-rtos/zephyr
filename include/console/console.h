@@ -23,9 +23,9 @@ extern "C" {
  *  and incompatible with, callback (push-style) console handling
  *  (via console_input_fn callback, etc.).
  *
- *  @return N/A
+ * @return 0 on success, error code (<0) otherwise
  */
-void console_init(void);
+int console_init(void);
 
 /**
  * @brief Read data from console.
