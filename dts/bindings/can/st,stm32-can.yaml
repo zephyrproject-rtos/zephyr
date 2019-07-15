@@ -18,21 +18,6 @@ properties:
     interrupts:
       category: required
 
-    gpio-port:
-      type: string
-      category: required
-      description: gpio port name
-
-    rx-pin:
-      type: string
-      category: required
-      description: rx pin name
-
-    tx-pin:
-      type: string
-      category: required
-      description: tx pin name
-
     clocks:
       type: array
       category: required
