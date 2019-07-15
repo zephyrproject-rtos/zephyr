@@ -196,29 +196,8 @@ static int usb_dc_stm32_clock_enable(void)
 {
 	struct device *clk = device_get_binding(STM32_CLOCK_CONTROL_NAME);
 	struct stm32_pclken pclken = {
-
-#ifdef DT_USB_HS_BASE_ADDRESS
-		.bus = STM32_CLOCK_BUS_AHB1,
-		.enr = LL_AHB1_GRP1_PERIPH_OTGHS
-#else /* DT_USB_HS_BASE_ADDRESS */
-
-#ifdef USB
-		.bus = STM32_CLOCK_BUS_APB1,
-		.enr = LL_APB1_GRP1_PERIPH_USB,
-
-#else /* USB_OTG_FS */
-
-#ifdef CONFIG_SOC_SERIES_STM32F1X
-		.bus = STM32_CLOCK_BUS_AHB1,
-		.enr = LL_AHB1_GRP1_PERIPH_OTGFS,
-#else
-		.bus = STM32_CLOCK_BUS_AHB2,
-		.enr = LL_AHB2_GRP1_PERIPH_OTGFS,
-#endif /* CONFIG_SOC_SERIES_STM32F1X */
-
-#endif /* USB */
-
-#endif /* DT_USB_HS_BASE_ADDRESS */
+		.bus = DT_USB_CLOCK_BUS,
+		.enr = DT_USB_CLOCK_BITS,
 	};
 
 	/*
