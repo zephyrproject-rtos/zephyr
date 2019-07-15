@@ -33,3 +33,9 @@ properties:
       type: array
       category: optional
       description: PHY provider specifier
+
+    clocks:
+      type: array
+      category: required
+      description: Clock gate control information
+      generation: define

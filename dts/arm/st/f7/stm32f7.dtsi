@@ -571,6 +571,7 @@
 			ram-size = <1280>;
 			maximum-speed = "full-speed";
 			phys = <&otgfs_phy>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000080>;
 			status = "disabled";
 			label = "OTGFS";
 		};
@@ -583,6 +584,7 @@
 			num-bidir-endpoints = <9>;
 			ram-size = <4096>;
 			maximum-speed = "full-speed";
+			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x20000000>;
 			phys = <&otghs_fs_phy>;
 			status = "disabled";
 			label= "OTGHS";
