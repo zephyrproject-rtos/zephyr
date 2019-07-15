@@ -59,6 +59,7 @@ void z_unhandled_vector(int vector, int err, struct xuk_entry_frame *f)
 	printk("***  R8 0x%llx R9 0x%llx R10 0x%llx R11 0x%llx\n",
 	       f->r8, f->r9, f->r10, f->r11);
 
+	/* FIXME: Why isn't xuk_entry_frame a NANO_ESF? */
 	z_fatal_error(x86_64_except_reason, NULL);
 }
 
@@ -210,7 +211,5 @@ void x86_apic_set_timeout(u32_t cyc_from_now)
 {
 	_apic.INIT_COUNT = cyc_from_now;
 }
-
-const NANO_ESF _default_esf;
 
 int x86_64_except_reason;

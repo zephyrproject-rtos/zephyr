@@ -16,11 +16,6 @@
 #include <xtensa/simcall.h>
 #endif
 
-const NANO_ESF _default_esf = {
-	{0xdeaddead}, /* sp */
-	0xdeaddead, /* pc */
-};
-
 /* Need to do this as a macro since regnum must be an immediate value */
 #define get_sreg(regnum_p) ({ \
 	unsigned int retval; \
@@ -126,14 +121,16 @@ XTENSA_ERR_NORET void z_xtensa_fatal_error(unsigned int reason,
 {
 	dump_exc_state();
 
-	printk("Faulting instruction address = 0x%x\n", esf->pc);
+	if (esf) {
+		printk("Faulting instruction address = 0x%x\n", esf->pc);
+	}
 
 	z_fatal_error(reason, esf);
 }
 
 XTENSA_ERR_NORET void FatalErrorHandler(void)
 {
-	z_xtensa_fatal_error(K_ERR_CPU_EXCEPTION, &_default_esf);
+	z_xtensa_fatal_error(K_ERR_CPU_EXCEPTION, NULL);
 }
 
 XTENSA_ERR_NORET void ReservedInterruptHandler(unsigned int intNo)
@@ -141,7 +138,7 @@ XTENSA_ERR_NORET void ReservedInterruptHandler(unsigned int intNo)
 	printk("INTENABLE = 0x%x\n"
 	       "INTERRUPT = 0x%x (%x)\n",
 	       get_sreg(INTENABLE), (1 << intNo), intNo);
-	z_xtensa_fatal_error(K_ERR_SPURIOUS_IRQ, &_default_esf);
+	z_xtensa_fatal_error(K_ERR_SPURIOUS_IRQ, NULL);
 }
 
 void exit(int return_code)

@@ -10,49 +10,23 @@
 #include <sys/printk.h>
 #include <logging/log_ctrl.h>
 
-const NANO_ESF _default_esf = {
-	0xdeadbaad,
-	0xdeadbaad,
-	0xdeadbaad,
-	0xdeadbaad,
-	0xdeadbaad,
-	0xdeadbaad,
-	0xdeadbaad,
-	0xdeadbaad,
-	0xdeadbaad,
-	0xdeadbaad,
-	0xdeadbaad,
-	0xdeadbaad,
-	0xdeadbaad,
-	0xdeadbaad,
-	0xdeadbaad,
-	0xdeadbaad,
-	0xdeadbaad,
-	0xdeadbaad,
-	0xdeadbaad,
-	0xdeadbaad,
-#if defined(CONFIG_RISCV_SOC_CONTEXT_SAVE)
-	{
-		SOC_ESF_INIT,
-	},
-#endif
-};
-
 FUNC_NORETURN void z_riscv32_fatal_error(unsigned int reason,
 					 const NANO_ESF *esf)
 {
-	printk("Faulting instruction address = 0x%x\n"
-	       "  ra: 0x%x  gp: 0x%x  tp: 0x%x  t0: 0x%x\n"
-	       "  t1: 0x%x  t2: 0x%x  t3: 0x%x  t4: 0x%x\n"
-	       "  t5: 0x%x  t6: 0x%x  a0: 0x%x  a1: 0x%x\n"
-	       "  a2: 0x%x  a3: 0x%x  a4: 0x%x  a5: 0x%x\n"
-	       "  a6: 0x%x  a7: 0x%x\n",
-	       (esf->mepc == 0xdeadbaad) ? 0xdeadbaad : esf->mepc,
-	       esf->ra, esf->gp, esf->tp, esf->t0,
-	       esf->t1, esf->t2, esf->t3, esf->t4,
-	       esf->t5, esf->t6, esf->a0, esf->a1,
-	       esf->a2, esf->a3, esf->a4, esf->a5,
-	       esf->a6, esf->a7);
+	if (esf != NULL) {
+		printk("Faulting instruction address = 0x%x\n"
+		       "  ra: 0x%x  gp: 0x%x  tp: 0x%x  t0: 0x%x\n"
+		       "  t1: 0x%x  t2: 0x%x  t3: 0x%x  t4: 0x%x\n"
+		       "  t5: 0x%x  t6: 0x%x  a0: 0x%x  a1: 0x%x\n"
+		       "  a2: 0x%x  a3: 0x%x  a4: 0x%x  a5: 0x%x\n"
+		       "  a6: 0x%x  a7: 0x%x\n",
+		       esf->mepc,
+		       esf->ra, esf->gp, esf->tp, esf->t0,
+		       esf->t1, esf->t2, esf->t3, esf->t4,
+		       esf->t5, esf->t6, esf->a0, esf->a1,
+		       esf->a2, esf->a3, esf->a4, esf->a5,
+		       esf->a6, esf->a7);
+	}
 
 	z_fatal_error(reason, esf);
 	CODE_UNREACHABLE;

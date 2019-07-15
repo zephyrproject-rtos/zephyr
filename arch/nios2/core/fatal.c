@@ -11,48 +11,29 @@
 #include <inttypes.h>
 #include <logging/log_ctrl.h>
 
-const NANO_ESF _default_esf = {
-	0xdeadbaad,
-	0xdeadbaad,
-	0xdeadbaad,
-	0xdeadbaad,
-	0xdeadbaad,
-	0xdeadbaad,
-	0xdeadbaad,
-	0xdeadbaad,
-	0xdeadbaad,
-	0xdeadbaad,
-	0xdeadbaad,
-	0xdeadbaad,
-	0xdeadbaad,
-	0xdeadbaad,
-	0xdeadbaad,
-	0xdeadbaad,
-	0xdeadbaad,
-	0xdeadbaad
-};
-
 FUNC_NORETURN void z_nios2_fatal_error(unsigned int reason,
 				       const NANO_ESF *esf)
 {
-	/* Subtract 4 from EA since we added 4 earlier so that the faulting
-	 * instruction isn't retried.
-	 *
-	 * TODO: Only caller-saved registers get saved upon exception entry.
-	 * We may want to introduce a config option to save and dump all
-	 * registers, at the expense of some stack space.
-	 */
-	printk("Faulting instruction: 0x%x\n"
-	       "  r1: 0x%x  r2: 0x%x  r3: 0x%x  r4: 0x%x\n"
-	       "  r5: 0x%x  r6: 0x%x  r7: 0x%x  r8: 0x%x\n"
-	       "  r9: 0x%x r10: 0x%x r11: 0x%x r12: 0x%x\n"
-	       " r13: 0x%x r14: 0x%x r15: 0x%x  ra: 0x%x\n"
-	       "estatus: %x\n", esf->instr - 4,
-	       esf->r1, esf->r2, esf->r3, esf->r4,
-	       esf->r5, esf->r6, esf->r7, esf->r8,
-	       esf->r9, esf->r10, esf->r11, esf->r12,
-	       esf->r13, esf->r14, esf->r15, esf->ra,
-	       esf->estatus);
+	if (esf != NULL) {
+		/* Subtract 4 from EA since we added 4 earlier so that the
+		 * faulting instruction isn't retried.
+		 *
+		 * TODO: Only caller-saved registers get saved upon exception
+		 * entry.  We may want to introduce a config option to save and
+		 * dump all registers, at the expense of some stack space.
+		 */
+		printk("Faulting instruction: 0x%x\n"
+		       "  r1: 0x%x  r2: 0x%x  r3: 0x%x  r4: 0x%x\n"
+		       "  r5: 0x%x  r6: 0x%x  r7: 0x%x  r8: 0x%x\n"
+		       "  r9: 0x%x r10: 0x%x r11: 0x%x r12: 0x%x\n"
+		       " r13: 0x%x r14: 0x%x r15: 0x%x  ra: 0x%x\n"
+		       "estatus: %x\n", esf->instr - 4,
+		       esf->r1, esf->r2, esf->r3, esf->r4,
+		       esf->r5, esf->r6, esf->r7, esf->r8,
+		       esf->r9, esf->r10, esf->r11, esf->r12,
+		       esf->r13, esf->r14, esf->r15, esf->ra,
+		       esf->estatus);
+	}
 
 	z_fatal_error(reason, esf);
 	CODE_UNREACHABLE;

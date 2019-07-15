@@ -33,7 +33,6 @@ struct __esf {
 };
 
 typedef struct __esf NANO_ESF;
-extern const NANO_ESF _default_esf;
 #endif
 
 #ifdef __cplusplus

@@ -13,5 +13,4 @@
 #define STACK_ALIGN 8
 
 typedef struct NANO_ESF NANO_ESF;
-extern const NANO_ESF _default_esf;
 #endif /* _X86_64_ARCH_H */

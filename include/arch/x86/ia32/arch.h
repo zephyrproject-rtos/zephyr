@@ -655,9 +655,6 @@ extern struct task_state_segment _main_tss;
 } while (false)
 #endif
 
-/** Dummy ESF for fatal errors that would otherwise not have an ESF */
-extern const NANO_ESF _default_esf;
-
 #ifdef CONFIG_X86_MMU
 /* kernel's page table */
 extern struct x86_mmu_pdpt z_x86_kernel_pdpt;

@@ -9,13 +9,6 @@
 
 #include <arch/cpu.h>
 
-/* TODO Items:
- *
- * - Delete default_esf everywhere, just pass a NULL pointer around in that
- * situation
- *
- */
-
 enum k_fatal_error_reason {
 	/** Generic CPU exception, not covered by other codes */
 	K_ERR_CPU_EXCEPTION,

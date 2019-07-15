@@ -13,10 +13,6 @@
 #include <logging/log_ctrl.h>
 #include "posix_soc_if.h"
 
-const NANO_ESF _default_esf = {
-	0xdeadbaad
-};
-
 FUNC_NORETURN void z_arch_system_halt(unsigned int reason)
 {
 	ARG_UNUSED(reason);
