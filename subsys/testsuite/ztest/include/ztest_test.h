@@ -167,6 +167,119 @@ extern struct k_mem_domain ztest_mem_domain;
 #define ztest_run_test_suite(suite) \
 	z_ztest_run_test_suite(#suite, _##suite)
 
+/** @internal
+ * @brief Create test function name from base test and index
+ */
+#define __ztest_func_from_list_name(func, i) test_##func##_##i
+
+/**@internal
+ * @brief Create test function with index.
+ */
+#define __ztest_func_from_list_create(i, func) \
+	void __ztest_func_from_list_name(func, i)(void) \
+	{ \
+		func(i); \
+	}
+
+/** @internal
+ * @brief Internal macro for declaring single test in test list.
+ */
+#define __ztest_func_from_list_declare(i, func) \
+	ztest_unit_test(__ztest_func_from_list_name(func, i)),
+
+
+/** @internal
+ * @brief Internal macro for installing set of tests.
+ *
+ * A trick must be used to ensure that last element is without comma and to
+ * support single element list.
+ */
+#define __ztest_unit_tests_from_list(num_less_1, func) \
+	COND_CODE_0(num_less_1, \
+	  (), \
+	  (UTIL_LISTIFY(num_less_1, __ztest_func_from_list_declare, func)) \
+	) \
+	ztest_unit_test(__ztest_func_from_list_name(func,num_less_1))
+
+/** @internal
+ * @brief Internal macro fro creating test functions.
+ */
+#define __ztest_unit_tests_from_list_create(num_of_devices, func) \
+	UTIL_LISTIFY(num_of_devices, __ztest_func_from_list_create, func)
+
+/**
+ * @brief Install test spawned based on the list.
+ *
+ * Following example:
+ * ztest_unit_tests_from_list(func, ELEMENT1, ELEMENT2, ELEMENT3,)
+ *
+ * resolves to:
+ * ztest_unit_tests(test_func_0),
+ * ztest_unit_tests(test_func_1),
+ * ztest_unit_tests(test_func_2)
+ *
+ * Test names are suffixed with index rather than element name. That is becuase
+ * elements can be strings and in that case they cannot form a valid token.
+ * Note that last generated element is not terminated with comma.
+ *
+ * @note list provided as macro argument should be terminated with comma.
+ *
+ * See @ref ztest_unit_tests_from_list_create for more details.
+ */
+#define ztest_unit_tests_from_list(func, ...) \
+	__ztest_unit_tests_from_list(NUM_VA_ARGS_LESS_2(__VA_ARGS__), func)
+
+/**
+ * @brief Spawn test function based on size of the provided list.
+ *
+ * @note list provided as macro argument should be terminated with comma.
+ *
+ * Following example:
+ * ztest_unit_tests_from_list(func, ELEMENT1, ELEMENT2, ELEMENT3,)
+ *
+ * resolves to:
+ * void test_func_0(void)
+ * {
+ *	func(0);
+ * }
+ * void test_func_1(void)
+ * {
+ *	func(0);
+ * }
+ * void test_func_2(void)
+ * {
+ *	func(0);
+ * }
+ *
+ * Test names are suffixed with index rather than element name. That is becuase
+ * elements can be strings and in that case they cannot form a valid token.
+ *
+ * Macro should be used together with @ref ztest_unit_tests_from_list to
+ * create set of tests for list of objects (e.g. devices).
+ *
+ * Example below shows how same test can be created for multiple devices.
+ *
+ * #define DEVICE_LIST "dev1", "dev2", "dev3",
+ * const char *devlist[] = { DEVICE_LIST }
+ *
+ * void foo(u32_t idx) {
+ *	const char *name = devlist[idx];
+ *	...
+ * }
+ *
+ * ztest_unit_tests_from_list_create(foo, DEVICE_LIST)
+ *
+ * void test_main(void)
+ * {
+ *	ztest_test_suite(test_foo,
+ *		ztest_unit_tests_from_list(foo, DEVICE_LIST)
+ *	);
+ *	ztest_run_test_suite(test_foo);
+ *}
+ */
+#define ztest_unit_tests_from_list_create(func, ...) \
+	__ztest_unit_tests_from_list_create(NUM_VA_ARGS_LESS_1(__VA_ARGS__), \
+						func)
 /**
  * @}
  */
