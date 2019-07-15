@@ -1,6 +1,7 @@
 # Kconfig - NUCLEO-64 F401RE board configuration
 #
 # Copyright (c) 2016 Linaro Limited.
+# Copyright (c) 2019 Centaur Analytics, Inc
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -43,5 +44,15 @@ config PWM_STM32_2
 	default y
 
 endif # PWM
+
+if WATCHDOG
+
+config WWDG_STM32
+	default y
+
+config IWDG_STM32
+	default n
+
+endif # WATCHDOG
 
 endif # BOARD_NUCLEO_F401RE

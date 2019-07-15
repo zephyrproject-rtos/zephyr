@@ -85,6 +85,8 @@ The Zephyr nucleo_401re board configuration supports the following hardware feat
 +-----------+------------+-------------------------------------+
 | ADC       | on-chip    | ADC Controller                      |
 +-----------+------------+-------------------------------------+
+| WATCHDOG  | on-chip    | System Window Watchdog              |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on Zephyr porting.
 
