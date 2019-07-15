@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
----
+
 title: MMC/SDHC module
 version: 0.1
 
@@ -18,5 +18,3 @@ properties:
       type: array
       category: optional
       description: Clock gate information
-      generation: define
-...
