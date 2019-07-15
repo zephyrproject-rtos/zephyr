@@ -24,60 +24,68 @@ void *exp_user_data = (void *)199;
 struct counter_alarm_cfg alarm_cfg;
 struct counter_alarm_cfg alarm_cfg2;
 
-const char *devices[] = {
-
-#ifdef CONFIG_COUNTER_TIMER0
-	/* Nordic TIMER0 may be reserved for Bluetooth */
-	DT_NORDIC_NRF_TIMER_TIMER_0_LABEL,
-#endif
-#ifdef CONFIG_COUNTER_TIMER1
-	DT_NORDIC_NRF_TIMER_TIMER_1_LABEL,
-#endif
-#ifdef CONFIG_COUNTER_TIMER2
-	DT_NORDIC_NRF_TIMER_TIMER_2_LABEL,
-#endif
-#ifdef CONFIG_COUNTER_TIMER3
-	DT_NORDIC_NRF_TIMER_TIMER_3_LABEL,
-#endif
-#ifdef CONFIG_COUNTER_TIMER4
-	DT_NORDIC_NRF_TIMER_TIMER_4_LABEL,
-#endif
-#ifdef CONFIG_COUNTER_RTC0
-	/* Nordic RTC0 may be reserved for Bluetooth */
-	DT_NORDIC_NRF_RTC_RTC_0_LABEL,
-#endif
-	/* Nordic RTC1 is used for the system clock */
-#ifdef CONFIG_COUNTER_RTC2
-	DT_NORDIC_NRF_RTC_RTC_2_LABEL,
-#endif
-#ifdef CONFIG_COUNTER_IMX_EPIT_1
-	DT_COUNTER_IMX_EPIT_1_LABEL,
-#endif
-#ifdef CONFIG_COUNTER_IMX_EPIT_2
-	DT_COUNTER_IMX_EPIT_2_LABEL,
-#endif
-#ifdef DT_RTC_MCUX_0_NAME
-	DT_RTC_MCUX_0_NAME,
-#endif
 #ifdef DT_INST_0_ARM_CMSDK_TIMER_LABEL
-	DT_INST_0_ARM_CMSDK_TIMER_LABEL,
+#define DT_INST_0_ARM_CMSDK_TIMER_PRESENT 1
 #endif
+
 #ifdef DT_INST_1_ARM_CMSDK_TIMER_LABEL
-	DT_INST_1_ARM_CMSDK_TIMER_LABEL,
+#define DT_INST_1_ARM_CMSDK_TIMER_PRESENT 1
 #endif
+
 #ifdef DT_INST_0_ARM_CMSDK_DTIMER_LABEL
-	DT_INST_0_ARM_CMSDK_DTIMER_LABEL,
+#define DT_INST_0_ARM_CMSDK_DTIMER_PRESENT 1
 #endif
+
 #ifdef DT_RTC_0_NAME
-	DT_RTC_0_NAME,
+#define	DT_RTC_0_PRESENT 1
 #endif
 
 #ifdef CONFIG_COUNTER_0_NAME
-	CONFIG_COUNTER_0_NAME,
+#define CONFIG_COUNTER_0_PRESENT 1
 #endif
+
+#define DEVICES_LIST \
+	COND_CODE_1(CONFIG_COUNTER_TIMER0, \
+		    (DT_NORDIC_NRF_TIMER_TIMER_0_LABEL,), ()) \
+	COND_CODE_1(CONFIG_COUNTER_TIMER1, \
+		    (DT_NORDIC_NRF_TIMER_TIMER_1_LABEL,), ()) \
+	COND_CODE_1(CONFIG_COUNTER_TIMER2, \
+		    (DT_NORDIC_NRF_TIMER_TIMER_2_LABEL,), ()) \
+	COND_CODE_1(CONFIG_COUNTER_TIMER3, \
+		    (DT_NORDIC_NRF_TIMER_TIMER_3_LABEL,), ()) \
+	COND_CODE_1(CONFIG_COUNTER_TIMER4, \
+		    (DT_NORDIC_NRF_TIMER_TIMER_4_LABEL,), ()) \
+	COND_CODE_1(CONFIG_COUNTER_RTC0, \
+		    (DT_NORDIC_NRF_RTC_RTC_0_LABEL,), ()) \
+	/* Nordic RTC1 is used for the system clock */ \
+	COND_CODE_1(CONFIG_COUNTER_RTC2, \
+		    (DT_NORDIC_NRF_RTC_RTC_2_LABEL,), ()) \
+	COND_CODE_1(CONFIG_COUNTER_IMX_EPIT_1, \
+		    (DT_COUNTER_IMX_EPIT_1_LABEL,), ()) \
+	COND_CODE_1(CONFIG_COUNTER_IMX_EPIT_2, \
+		    (DT_COUNTER_IMX_EPIT_2_LABEL,), ()) \
+	COND_CODE_1(CONFIG_COUNTER_MCUX_RTC, \
+		    (DT_RTC_MCUX_0_NAME,), ()) \
+	COND_CODE_1(CONFIG_COUNTER_MCUX_RTC, \
+		    (DT_INST_0_ARM_CMSDK_TIMER_LABEL,), ()) \
+	COND_CODE_1(DT_INST_0_ARM_CMSDK_TIMER_PRESENT, \
+		    (DT_INST_0_ARM_CMSDK_TIMER_LABEL,), ()) \
+	COND_CODE_1(DT_INST_1_ARM_CMSDK_TIMER_PRESENT, \
+		    (DT_INST_1_ARM_CMSDK_TIMER_LABEL,), ()) \
+	COND_CODE_1(DT_INST_0_ARM_CMSDK_DTIMER_PRESENT, \
+		    (DT_INST_0_ARM_CMSDK_DTIMER_LABEL,), ()) \
+	COND_CODE_1(DT_RTC_0_PRESENT, \
+		    (DT_RTC_0_NAME,), ()) \
+	COND_CODE_1(CONFIG_COUNTER_0_PRESENT, \
+		    (CONFIG_COUNTER_0_NAME,), ())
+
+const char *devices[] = {
+	DEVICES_LIST
 };
+
 typedef void (*counter_test_func_t)(const char *dev_name);
 
+typedef bool (*counter_capability_func_t)(const char *dev_name);
 
 static void counter_setup_instance(const char *dev_name)
 {
@@ -106,15 +114,30 @@ static void counter_tear_down_instance(const char *dev_name)
 
 }
 
-static void test_all_instances(counter_test_func_t func)
+/* Function perfoms given test on one device instance. Optionally, it can
+ * check if instance is capable to perform the test. If not test is skipped
+ * for given instance.
+ */
+static void test_instance(u32_t dev_idx, counter_test_func_t test_func,
+			  counter_capability_func_t capability_check)
 {
-	for (int i = 0; i < ARRAY_SIZE(devices); i++) {
-		counter_setup_instance(devices[i]);
-		func(devices[i]);
-		counter_tear_down_instance(devices[i]);
-		/* Allow logs to be printed. */
-		k_sleep(100);
+	const char *name = devices[dev_idx];
+
+	TC_PRINT("Testing %s device\n", name);
+
+	counter_setup_instance(name);
+
+	if ((capability_check == NULL) ||
+	     capability_check(name)) {
+		test_func(name);
+	} else {
+		ztest_test_skip();
 	}
+
+	counter_tear_down_instance(name);
+
+	/* Allow logs to be printed. */
+	k_sleep(100);
 }
 
 static void top_handler(struct device *dev, void *user_data)
@@ -124,7 +147,7 @@ static void top_handler(struct device *dev, void *user_data)
 	top_cnt++;
 }
 
-void test_set_top_value_with_alarm_instance(const char *dev_name)
+static void change_top_value_on_instance(const char *dev_name)
 {
 	struct device *dev;
 	int err;
@@ -161,15 +184,31 @@ void test_set_top_value_with_alarm_instance(const char *dev_name)
 			dev_name, tmp_top_cnt);
 }
 
-void test_set_top_value_with_alarm(void)
+static bool custom_top_value_capable(const char *dev_name)
 {
-#if defined(CONFIG_COUNTER_MCUX_RTC) || defined(CONFIG_COUNTER_RTC_STM32)\
-|| defined(DT_RTC_0_NAME)
-	ztest_test_skip();
-#else
-	test_all_instances(test_set_top_value_with_alarm_instance);
-#endif
+	struct device *dev = device_get_binding(dev_name);
+	struct counter_top_cfg cfg = {
+		.ticks = counter_get_top_value(dev) - 1
+	};
+
+	int err = counter_set_top_value(dev, &cfg);
+
+	if (err == -ENOTSUP) {
+		return false;
+	}
+
+	cfg.ticks++;
+	counter_set_top_value(dev, &cfg);
+	return true;
 }
+
+static void change_top_value(u32_t dev_idx)
+{
+	test_instance(dev_idx, change_top_value_on_instance,
+			custom_top_value_capable);
+}
+
+ztest_unit_tests_from_list_create(change_top_value, DEVICES_LIST)
 
 static void alarm_handler(struct device *dev, u8_t chan_id, u32_t counter,
 			  void *user_data)
@@ -184,7 +223,7 @@ static void alarm_handler(struct device *dev, u8_t chan_id, u32_t counter,
 	alarm_cnt++;
 }
 
-void test_single_shot_alarm_instance(const char *dev_name, bool set_top)
+static void test_single_shot_alarm_instance(const char *dev_name, bool set_top)
 {
 	struct device *dev;
 	int err;
@@ -256,30 +295,47 @@ void test_single_shot_alarm_instance(const char *dev_name, bool set_top)
 	zassert_equal(0, err, "%s: Counter failed to stop", dev_name);
 }
 
-void test_single_shot_alarm_notop_instance(const char *dev_name)
+static bool single_alarm_capable(const char *dev_name)
+{
+	struct device *dev = device_get_binding(dev_name);
+	const struct counter_config_info *config =
+			(struct counter_config_info *)dev->config->config_info;
+
+	return config->channels > 0;
+}
+
+static bool single_alarm_and_top_value_capable(const char *dev_name)
+{
+	return single_alarm_capable(dev_name) &&
+		custom_top_value_capable(dev_name);
+}
+
+static void test_single_shot_alarm_notop_on_instance(const char *dev_name)
 {
 	test_single_shot_alarm_instance(dev_name, false);
 }
 
-void test_single_shot_alarm_top_instance(const char *dev_name)
+static void test_single_shot_alarm_top_on_instance(const char *dev_name)
 {
 	test_single_shot_alarm_instance(dev_name, true);
 }
 
-void test_single_shot_alarm_notop(void)
+static void single_shot_alarm_notop(u32_t dev_idx)
 {
-	test_all_instances(test_single_shot_alarm_notop_instance);
+	test_instance(dev_idx, test_single_shot_alarm_notop_on_instance,
+			single_alarm_capable);
 }
 
-void test_single_shot_alarm_top(void)
+ztest_unit_tests_from_list_create(single_shot_alarm_notop, DEVICES_LIST)
+
+static void single_shot_alarm_top(u32_t dev_idx)
 {
-#if defined(CONFIG_COUNTER_MCUX_RTC) || defined(CONFIG_COUNTER_RTC_STM32)\
-|| defined(DT_RTC_0_NAME)
-	ztest_test_skip();
-#else
-	test_all_instances(test_single_shot_alarm_top_instance);
-#endif
+	test_instance(dev_idx, test_single_shot_alarm_top_on_instance,
+			single_alarm_and_top_value_capable);
 }
+
+ztest_unit_tests_from_list_create(single_shot_alarm_top, DEVICES_LIST)
+
 
 static void *clbk_data[10];
 
@@ -296,7 +352,7 @@ static void alarm_handler2(struct device *dev, u8_t chan_id, u32_t counter,
  * will expire first (relative to the time called) while first alarm
  * will expire after next wrap around.
  */
-void test_multiple_alarms_instance(const char *dev_name)
+static void test_multiple_alarms_instance(const char *dev_name)
 {
 	struct device *dev;
 	int err;
@@ -363,12 +419,24 @@ void test_multiple_alarms_instance(const char *dev_name)
 	zassert_equal(0, err, "%s: Counter disabling alarm failed", dev_name);
 }
 
-void test_multiple_alarms(void)
+static bool multi_alarm_capable(const char *dev_name)
 {
-	test_all_instances(test_multiple_alarms_instance);
+	struct device *dev = device_get_binding(dev_name);
+	const struct counter_config_info *config =
+			(struct counter_config_info *)dev->config->config_info;
+
+	return config->channels > 1;
 }
 
-void test_all_channels_instance(const char *dev_name)
+static void multiple_alarms(u32_t dev_idx)
+{
+	test_instance(dev_idx, test_multiple_alarms_instance,
+			multi_alarm_capable);
+}
+
+ztest_unit_tests_from_list_create(multiple_alarms, DEVICES_LIST)
+
+static void test_all_channels_instance(const char *dev_name)
 {
 	struct device *dev;
 	int err;
@@ -420,19 +488,23 @@ void test_all_channels_instance(const char *dev_name)
 	}
 }
 
-void test_all_channels(void)
+/* Test alarm on all channels */
+static void all_channels(u32_t dev_idx)
 {
-	test_all_instances(test_all_channels_instance);
+	test_instance(dev_idx, test_all_channels_instance,
+			multi_alarm_capable);
 }
+
+ztest_unit_tests_from_list_create(all_channels, DEVICES_LIST)
 
 void test_main(void)
 {
 	ztest_test_suite(test_counter,
-		ztest_unit_test(test_set_top_value_with_alarm),
-		ztest_unit_test(test_single_shot_alarm_notop),
-		ztest_unit_test(test_single_shot_alarm_top),
-		ztest_unit_test(test_multiple_alarms),
-		ztest_unit_test(test_all_channels)
-			 );
+	  ztest_unit_tests_from_list(change_top_value, DEVICES_LIST),
+	  ztest_unit_tests_from_list(single_shot_alarm_notop, DEVICES_LIST),
+	  ztest_unit_tests_from_list(single_shot_alarm_top, DEVICES_LIST),
+	  ztest_unit_tests_from_list(multiple_alarms, DEVICES_LIST),
+	  ztest_unit_tests_from_list(all_channels, DEVICES_LIST)
+	);
 	ztest_run_test_suite(test_counter);
 }
