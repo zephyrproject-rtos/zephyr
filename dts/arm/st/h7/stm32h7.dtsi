@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019 Linaro Limited
+ * Copyright (c) 2019 Centaur Analytics, Inc
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -155,6 +156,15 @@
 				clocks = <&rcc STM32_CLOCK_BUS_AHB4 0x00000400>;
 				label = "GPIOK";
 			};
+		};
+
+		wwdg1: watchdog@50003000 {
+			compatible = "st,stm32-window-watchdog";
+			reg = <0x50003000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB3 0x00000800>;
+			interrupts = <0 7>;
+			status = "disabled";
+			label = "WWDG_1";
 		};
 
 		usart1: serial@40011000 {
