@@ -2985,6 +2985,14 @@ static void mesh_adv_cplt(struct pdu_data *pdu_data,
 }
 #endif /* CONFIG_BT_HCI_MESH_EXT */
 
+/**
+ * @brief Encode a control-PDU into an HCI buffer
+ * @details Execution context: Host thread
+ *
+ * @param node_rx_pdu[in] RX node containing header and PDU
+ * @param pdu_data[in]    PDU. Same as node_rx_pdu->pdu, but more convenient
+ * @param net_buf[out]    Upwards-going HCI buffer to fill
+ */
 static void encode_control(struct node_rx_pdu *node_rx,
 			   struct pdu_data *pdu_data, struct net_buf *buf)
 {
