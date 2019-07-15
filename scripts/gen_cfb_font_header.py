@@ -20,6 +20,7 @@ def generate_element(image, charcode):
     blackwhite = image.convert("1", dither=Image.NONE)
     pixels = blackwhite.load()
 
+    width, height = image.size
     if args.dump:
         blackwhite.save("{}_{}.png".format(args.name, charcode))
 
@@ -30,9 +31,9 @@ def generate_element(image, charcode):
 
     args.output.write("""\t/* {:d}{} */\n\t{{\n""".format(charcode, char))
 
-    for col in range(0, args.width):
+    for col in range(0, width):
         args.output.write("\t\t")
-        for octet in range(0, int(args.height / 8)):
+        for octet in range(0, int(height / 8)):
             value = ""
             for bit in range(0, 8):
                 row = octet * 8 + bit
@@ -47,10 +48,39 @@ def generate_element(image, charcode):
 def extract_font_glyphs():
     """Extract font glyphs from a TrueType/OpenType font file"""
     font = ImageFont.truetype(args.input, args.size)
+
+    # Figure out the bounding box for the desired glyphs
+    fw_max = 0
+    fh_max = 0
     for i in range(args.first, args.last + 1):
-        image = Image.new("RGB", (args.width, args.height), (255, 255, 255))
+        fw, fh = font.getsize(chr(i))
+        if fw > fw_max:
+            fw_max = fw
+        if fh > fh_max:
+            fh_max = fh
+
+    # Round the vtiled length up to pack into bytes.
+    width = fw_max
+    height = 8 * int((fh_max + args.y_offset + 7) / 8)
+
+    # Diagnose inconsistencies with arguments
+    if width != args.width:
+        raise Exception('text width {} mismatch with -x {}'.format(width, args.width))
+    if height != args.height:
+        raise Exception('text height {} mismatch with -y {}'.format(height, args.height))
+
+    for i in range(args.first, args.last + 1):
+        image = Image.new('1', (width, height), 'white')
         draw = ImageDraw.Draw(image)
-        draw.text((0, 0), chr(i), (0, 0, 0), font=font)
+
+        fw, fh = draw.textsize(chr(i), font=font)
+
+        xpos = 0
+        if args.center_x:
+            xpos = (width - fw) / 2 + 1
+        ypos = args.y_offset
+
+        draw.text((xpos, ypos), chr(i), font=font)
         generate_element(image, i)
 
 def extract_image_glyphs():
@@ -167,6 +197,12 @@ def parse_args():
     group.add_argument(
         "--last", type=int, default=PRINTABLE_MAX, metavar="CHARCODE",
         help="character code mapped to the last CFB font element (default: %(default)s)")
+    group.add_argument(
+        "--center-x", action='store_true',
+        help="center character glyphs horizontally")
+    group.add_argument(
+        "--y-offset", type=int, default=0,
+        help="vertical offset for character glyphs (default: %(default)s)")
 
     args = parser.parse_args()
 
