@@ -76,13 +76,50 @@ void test_UTIL_LISTIFY(void)
 	zassert_equal(i, 0 + 1 + 2 + 3, NULL);
 }
 
+void test_NUM_VA_ARGS_LESS_1(void)
+{
+	zassert_equal(NUM_VA_ARGS_LESS_1(1), 0, NULL);
+	zassert_equal(NUM_VA_ARGS_LESS_1(1, 1), 1, NULL);
+	zassert_equal(NUM_VA_ARGS_LESS_1(1, 1, 1), 2, NULL);
+	zassert_equal(NUM_VA_ARGS_LESS_1(1, 1, 1, 1), 3, NULL);
+	zassert_equal(NUM_VA_ARGS_LESS_1(1, 1, 1, 1, 1), 4, NULL);
+	zassert_equal(NUM_VA_ARGS_LESS_1(1, 1, 1, 1, 1, 1), 5, NULL);
+	zassert_equal(NUM_VA_ARGS_LESS_1(1, 1, 1, 1, 1, 1, 1), 6, NULL);
+	zassert_equal(
+		NUM_VA_ARGS_LESS_1(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
+		14, NULL);
+	zassert_equal(
+		NUM_VA_ARGS_LESS_1(1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+				   1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
+		19, NULL);
+}
+
+void test_NUM_VA_ARGS_LESS_2(void)
+{
+	zassert_equal(NUM_VA_ARGS_LESS_2(1, 1), 0, NULL);
+	zassert_equal(NUM_VA_ARGS_LESS_2(1, 1, 1), 1, NULL);
+	zassert_equal(NUM_VA_ARGS_LESS_2(1, 1, 1, 1), 2, NULL);
+	zassert_equal(NUM_VA_ARGS_LESS_2(1, 1, 1, 1, 1), 3, NULL);
+	zassert_equal(NUM_VA_ARGS_LESS_2(1, 1, 1, 1, 1, 1), 4, NULL);
+	zassert_equal(NUM_VA_ARGS_LESS_2(1, 1, 1, 1, 1, 1, 1), 5, NULL);
+	zassert_equal(
+		NUM_VA_ARGS_LESS_2(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
+		13, NULL);
+	zassert_equal(
+		NUM_VA_ARGS_LESS_2(1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+			    1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
+		18, NULL);
+}
+
 /*test case main entry*/
 void test_main(void)
 {
 	ztest_test_suite(test_util_api,
 			 ztest_unit_test(test_COND_CODE_1),
 			 ztest_unit_test(test_COND_CODE_0),
-			 ztest_unit_test(test_UTIL_LISTIFY)
+			 ztest_unit_test(test_UTIL_LISTIFY),
+			 ztest_unit_test(test_NUM_VA_ARGS_LESS_1),
+			 ztest_unit_test(test_NUM_VA_ARGS_LESS_2)
 			 );
 	ztest_run_test_suite(test_util_api);
 }
