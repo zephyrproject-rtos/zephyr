@@ -1,0 +1,41 @@
+/*
+ * Copyright (c) 2019, PHYTEC Messtechnik GmbH
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&arduino_spi {
+	status = "okay";
+	cs-gpios = <&arduino_header 16 0>;		/* D10 */
+
+	ssd16xxfb@0 {
+		compatible = "solomon,ssd16xxfb", "gooddisplay,gdeh029a1";
+		label = "SSD16XX";
+		spi-max-frequency = <4000000>;
+		reg = <0>;
+		width = <296>;
+		height = <128>;
+		pp-width-bits = <16>;
+		pp-height-bits = <16>;
+		dc-gpios = <&arduino_header 15 0>;	/* D9 */
+		reset-gpios = <&arduino_header 14 0>;	/* D8 */
+		busy-gpios = <&arduino_header 13 0>;	/* D7 */
+		gdv = [16];
+		sdv = [0a];
+		vcom = <0xa8>;
+		border-waveform = <0x33>;
+		softstart = [d7 d6 9d];
+		lut-initial = [
+			50 AA 55 AA 11 00 00 00
+			00 00 00 00 00 00 00 00
+			00 00 00 00 FF FF 1F 00
+			00 00 00 00 00 00
+		];
+		lut-default = [
+			10 18 18 08 18 18 08 00
+			00 00 00 00 00 00 00 00
+			00 00 00 00 13 14 44 12
+			00 00 00 00 00 00
+		];
+	};
+};
