@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2019 Philippe Retornaz <philippe@shapescale.com>
  * Copyright (c) 2019 ST Microelectronics
+ * Copyright (c) 2019 Centaur Analytics, Inc
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -102,6 +103,15 @@
 				clocks = <&rcc STM32_CLOCK_BUS_IOP 0x00000020>;
 				label = "GPIOF";
 			};
+		};
+
+		wwdg: watchdog@40002c00 {
+			compatible = "st,stm32-window-watchdog";
+			reg = <0x40002C00 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000800>;
+			label = "WWDG";
+			interrupts = <0 7>;
+			status = "disabled";
 		};
 
 		usart1: serial@40013800 {
