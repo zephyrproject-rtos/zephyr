@@ -33,4 +33,10 @@ config EXCEPTION_STACK_SIZE
 	  support limited call-tree depth and must fit into the low core,
 	  so they are typically smaller than the ISR stacks.
 
+config ISR_DEPTH
+	int "Maximum IRQ nesting depth"
+	default 4
+	help
+	  The more nesting allowed, the more room is required for IRQ stacks.
+
 endif # X86_LONGMODE

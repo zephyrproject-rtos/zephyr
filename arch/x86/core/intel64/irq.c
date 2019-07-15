@@ -30,7 +30,7 @@ void *x86_irq_args[NR_IRQ_VECTORS];
  * Interrupt stack.
  */
 
-char __aligned(STACK_ALIGN) ist[CONFIG_ISR_STACK_SIZE];
+char __aligned(STACK_ALIGN) ist[CONFIG_ISR_DEPTH][CONFIG_ISR_STACK_SIZE];
 
 /*
  * Find a free IRQ vector at the specified priority, or return -1 if none left.
