@@ -238,6 +238,10 @@ ssize_t tty_read(struct tty_serial *tty, void *buf, size_t size)
 
 int tty_init(struct tty_serial *tty, struct device *uart_dev)
 {
+	if (!uart_dev) {
+		return -ENODEV;
+	}
+
 	tty->uart_dev = uart_dev;
 
 	/* We start in unbuffer mode. */
