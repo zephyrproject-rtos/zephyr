@@ -20,8 +20,6 @@ properties:
     label:
       category: required
 
-cell_string: GPIO
-
 "#cells":
   - pin
   - flags

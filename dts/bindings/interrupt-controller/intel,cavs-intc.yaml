@@ -23,8 +23,6 @@ properties:
   interrupts:
       category: required
 
-cell_string: IRQ
-
 "#cells":
   - irq
   - sense

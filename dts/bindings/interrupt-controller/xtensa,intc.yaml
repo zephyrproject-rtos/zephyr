@@ -20,8 +20,6 @@ properties:
       type: int
       description: number of bits of IRQ priorities
 
-cell_string: IRQ
-
 "#cells":
   - irq
   - sense
