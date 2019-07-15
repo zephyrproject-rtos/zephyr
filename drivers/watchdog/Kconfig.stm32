@@ -2,6 +2,7 @@
 #
 # Copyright (c) 2016 Open-RnD Sp. z o.o.
 # Copyright (c) 2017 RnDity Sp. z o.o.
+# Copyright (c) 2019 Centaur Analytics, Inc
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -30,3 +31,10 @@ config IWDG_STM32_TIMEOUT
 	 help
 	  Set timeout value for IWDG in microseconds.
 	  The min timeout supported is 0.1ms, the max timeout is 26214.4ms.
+
+config WWDG_STM32
+	bool "System Window Watchdog (WWDG) Driver for STM32 family of MCUs"
+	depends on SOC_FAMILY_STM32
+	select HAS_DTS_WDT
+	help
+	  Enable WWDG driver for STM32 line of MCUs
