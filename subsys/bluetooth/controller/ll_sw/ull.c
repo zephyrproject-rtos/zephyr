@@ -1584,12 +1584,16 @@ static inline void rx_demux_event_done(memq_link_t *link,
 	release = done_release(link, done);
 	LL_ASSERT(release == done);
 
-	/* dequeue prepare pipeline */
+	/* get reference to head event in the pipeline */
 	next = ull_prepare_dequeue_get();
+
+	/* dequeue prepare pipeline */
 	while (next) {
 		u8_t is_resume = next->is_resume;
 
-		if (!next->is_aborted) {
+		if (!next->is_aborted &&
+		    (!ull_hdr ||
+		     (HDR_ULL2LLL(ull_hdr) != next->prepare_param.param))) {
 			static memq_link_t link;
 			static struct mayfly mfy = {0, 0, &link, NULL,
 						    lll_resume};
