@@ -44,6 +44,10 @@
 #include <stm32g0xx_ll_gpio.h>
 #endif
 
+#ifdef CONFIG_WWDG_STM32
+#include <stm32g0xx_ll_wwdg.h>
+#endif
+
 #ifdef CONFIG_SERIAL_HAS_DRIVER
 #include <stm32g0xx_ll_usart.h>
 #endif

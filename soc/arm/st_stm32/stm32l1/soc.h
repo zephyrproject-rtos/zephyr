@@ -51,6 +51,10 @@
 #include <stm32l1xx_ll_i2c.h>
 #endif
 
+#ifdef CONFIG_WWDG_STM32
+#include <stm32l1xx_ll_wwdg.h>
+#endif
+
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _STM32L1_SOC_H_ */

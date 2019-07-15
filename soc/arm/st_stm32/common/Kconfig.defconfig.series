@@ -44,6 +44,9 @@ if WATCHDOG
 config IWDG_STM32
 	default y
 
+config WWDG_STM32
+	default n
+
 endif # WATCHDOG
 
 if PWM
