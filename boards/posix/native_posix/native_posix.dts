@@ -70,5 +70,9 @@
 		compatible = "zephyr,native-posix-uart";
 		reg = <1 0>;
 		label = "UART_0";
+		/* Dummy current_speed entry to comply with serial
+		 * DTS binding
+		 */
+		current_speed = <0>;
 	};
 };
