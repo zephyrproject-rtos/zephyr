@@ -5246,6 +5246,11 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 				conn->llcp_phy.tx &= p->rx_phys;
 				conn->llcp_phy.rx &= p->tx_phys;
 
+				if (!conn->llcp_phy.tx || !conn->llcp_phy.rx) {
+					conn->llcp_phy.tx = 0;
+					conn->llcp_phy.rx = 0;
+				}
+
 				/* pause data packet tx */
 				conn->llcp_phy.pause_tx = 1U;
 
@@ -5273,6 +5278,11 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 
 			conn->llcp_phy.tx &= p->rx_phys;
 			conn->llcp_phy.rx &= p->tx_phys;
+
+			if (!conn->llcp_phy.tx || !conn->llcp_phy.rx) {
+				conn->llcp_phy.tx = 0;
+				conn->llcp_phy.rx = 0;
+			}
 
 			/* pause data packet tx */
 			conn->llcp_phy.pause_tx = 1U;
