@@ -15,6 +15,14 @@ LOG_MODULE_REGISTER(cfb);
 extern const struct cfb_font __font_entry_start[];
 extern const struct cfb_font __font_entry_end[];
 
+static inline u8_t byte_reverse(u8_t b)
+{
+	b = (b & 0xf0) >> 4 | (b & 0x0f) << 4;
+	b = (b & 0xcc) >> 2 | (b & 0x33) << 2;
+	b = (b & 0xaa) >> 1 | (b & 0x55) << 1;
+	return b;
+}
+
 struct char_framebuffer {
 	/** Pointer to a buffer in RAM */
 	u8_t *buf;
@@ -75,6 +83,8 @@ static u8_t draw_char_vtmono(const struct char_framebuffer *fb,
 {
 	const struct cfb_font *fptr = &(fb->fonts[fb->font_idx]);
 	u8_t *glyph_ptr;
+	bool need_reverse = (((fb->screen_info & SCREEN_INFO_MONO_MSB_FIRST) != 0)
+			     != ((fptr->caps & CFB_FONT_MSB_FIRST) != 0));
 
 	if (c < fptr->first_char || c > fptr->last_char) {
 		c = ' ';
@@ -90,12 +100,18 @@ static u8_t draw_char_vtmono(const struct char_framebuffer *fb,
 
 		for (size_t g_y = 0; g_y < fptr->height / 8U; g_y++) {
 			u32_t fb_y = (y_segment + g_y) * fb->x_res;
+			u8_t byte;
 
 			if ((fb_y + x + g_x) >= fb->size) {
 				return 0;
 			}
-			fb->buf[fb_y + x + g_x] =
-				glyph_ptr[g_x * (fptr->height / 8U) + g_y];
+
+			byte = glyph_ptr[g_x * (fptr->height / 8U) + g_y];
+			if (need_reverse) {
+				byte = byte_reverse(byte);
+			}
+
+			fb->buf[fb_y + x + g_x] = byte;
 		}
 
 	}
@@ -132,25 +148,6 @@ int cfb_print(struct device *dev, char *str, u16_t x, u16_t y)
 
 	LOG_ERR("Unsupported framebuffer configuration");
 	return -1;
-}
-
-static int cfb_reverse_bytes(const struct char_framebuffer *fb)
-{
-	if (!(fb->screen_info & SCREEN_INFO_MONO_VTILED)) {
-		LOG_ERR("Unsupported framebuffer configuration");
-		return -1;
-	}
-
-	for (size_t i = 0; i < fb->x_res * fb->y_res / 8U; i++) {
-		fb->buf[i] = (fb->buf[i] & 0xf0) >> 4 |
-			      (fb->buf[i] & 0x0f) << 4;
-		fb->buf[i] = (fb->buf[i] & 0xcc) >> 2 |
-			      (fb->buf[i] & 0x33) << 2;
-		fb->buf[i] = (fb->buf[i] & 0xaa) >> 1 |
-			      (fb->buf[i] & 0x55) << 1;
-	}
-
-	return 0;
 }
 
 static int cfb_invert(const struct char_framebuffer *fb)
@@ -211,10 +208,6 @@ int cfb_framebuffer_finalize(struct device *dev)
 
 	if (!(fb->pixel_format & PIXEL_FORMAT_MONO10) != !(fb->inverted)) {
 		cfb_invert(fb);
-	}
-
-	if (fb->screen_info & SCREEN_INFO_MONO_MSB_FIRST) {
-		cfb_reverse_bytes(fb);
 	}
 
 	return api->write(dev, 0, 0, &desc, fb->buf);
