@@ -114,6 +114,15 @@ event {
 };
 
 event {
+	name = thread_name_set;
+	id = 0x1a;
+	fields := struct {
+		uint32_t thread_id;
+		ctf_bounded_string_t name[20];
+	};
+};
+
+event {
 	name = isr_enter;
 	id = 0x20;
 };

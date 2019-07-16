@@ -42,7 +42,7 @@ void sys_trace_thread_switched_in(void)
 void sys_trace_thread_priority_set(struct k_thread *thread)
 {
 	ctf_middle_thread_priority_set((u32_t)(uintptr_t)thread,
-				       thread->base.prio);
+					   thread->base.prio);
 }
 
 void sys_trace_thread_create(struct k_thread *thread)
@@ -104,6 +104,23 @@ void sys_trace_thread_info(struct k_thread *thread)
 		(u32_t)(uintptr_t)thread,
 		thread->stack_info.size,
 		thread->stack_info.start
+		);
+#endif
+}
+
+void sys_trace_thread_name_set(struct k_thread *thread)
+{
+#if defined(CONFIG_THREAD_NAME)
+	ctf_bounded_string_t name = { "Unnamed thread" };
+
+	if (thread->name != NULL) {
+		strncpy(name.buf, thread->name, sizeof(name.buf));
+		/* strncpy may not always null-terminate */
+		name.buf[sizeof(name.buf) - 1] = 0;
+	}
+	ctf_middle_thread_name_set(
+		(u32_t)(uintptr_t)thread,
+		name
 		);
 #endif
 }

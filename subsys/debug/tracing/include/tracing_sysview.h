@@ -74,6 +74,8 @@ static inline void sys_trace_thread_info(struct k_thread *thread)
 		sys_trace_thread_info(thread);			       \
 	} while (0)
 
+#define sys_trace_thread_name_set(thread)
+
 #define sys_trace_thread_abort(thread)
 
 #define sys_trace_thread_suspend(thread)
