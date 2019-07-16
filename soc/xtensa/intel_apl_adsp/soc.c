@@ -331,7 +331,6 @@ static const struct sof_ipc_fw_ready fw_ready_apl
 		.major = 1,
 #ifdef CONFIG_DEBUG
 		/* only added in debug for reproducability in releases */
-		.build = "zephyr-build",
 		.date = __DATE__,
 		.time = __TIME__,
 #endif
