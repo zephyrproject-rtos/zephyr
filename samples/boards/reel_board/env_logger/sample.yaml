@@ -1,0 +1,7 @@
+sample:
+  name: Environmental Logger
+tests:
+  sample.bluetooth.peripheral:
+    harness: bluetooth
+    platform_whitelist: reel_board
+    tags: bluetooth
