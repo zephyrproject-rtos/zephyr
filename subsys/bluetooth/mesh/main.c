@@ -88,6 +88,26 @@ int bt_mesh_provision(const u8_t net_key[16], u16_t net_idx,
 	return 0;
 }
 
+int bt_mesh_provision_adv(const u8_t uuid[16], u16_t net_idx, u16_t addr,
+			  u8_t attention_duration)
+{
+	if (!atomic_test_bit(bt_mesh.flags, BT_MESH_VALID)) {
+		return -EINVAL;
+	}
+
+	if (bt_mesh_subnet_get(net_idx) == NULL) {
+		return -EINVAL;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_MESH_PROVISIONER) &&
+	    IS_ENABLED(CONFIG_BT_MESH_PB_ADV)) {
+		return bt_mesh_pb_adv_open(uuid, net_idx, addr,
+					   attention_duration);
+	}
+
+	return -ENOTSUP;
+}
+
 void bt_mesh_reset(void)
 {
 	if (!atomic_test_bit(bt_mesh.flags, BT_MESH_VALID)) {
