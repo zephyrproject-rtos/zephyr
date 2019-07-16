@@ -16,6 +16,7 @@
 #include <syscall_handler.h>
 #include <app_memory/app_memdomain.h>
 #include <init.h>
+#include <sys/sem.h>
 
 #define LIBC_BSS	K_APP_BMEM(z_libc_partition)
 #define LIBC_DATA	K_APP_DMEM(z_libc_partition)
@@ -237,20 +238,30 @@ void _exit(int status)
 	}
 }
 
+static LIBC_DATA SYS_SEM_DEFINE(heap_sem, 1, 1);
+
 void *_sbrk(int count)
 {
+	void *ret, *ptr;
+
+	sys_sem_take(&heap_sem, K_FOREVER);
+
 #if CONFIG_NEWLIB_LIBC_ALIGNED_HEAP_SIZE
-	void *ptr = heap_base + heap_sz;
+	ptr = heap_base + heap_sz;
 #else
-	void *ptr = ((char *)HEAP_BASE) + heap_sz;
+	ptr = ((char *)HEAP_BASE) + heap_sz;
 #endif
 
 	if ((heap_sz + count) < MAX_HEAP_SIZE) {
 		heap_sz += count;
-		return ptr;
+		ret = ptr;
 	} else {
-		return (void *)-1;
+		ret = (void *)-1;
 	}
+
+	sys_sem_give(&heap_sem);
+
+	return ret;
 }
 FUNC_ALIAS(_sbrk, sbrk, void *);
 
