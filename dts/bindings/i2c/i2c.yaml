@@ -29,7 +29,5 @@ properties:
       type: int
       category: optional
       description: Initial clock frequency in Hz
-    clocks:
-      category: required
     label:
       category: required
