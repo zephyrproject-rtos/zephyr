@@ -198,10 +198,14 @@ static int init(struct device *dev)
 	return 0;
 }
 
+static const struct counter_config_info info = {
+	.max_top_value = UINT_MAX,
+	.freq = 1
+};
+
 static const struct counter_driver_api api = {
 	.read = read
 };
 
-DEVICE_AND_API_INIT(counter_cmos, "CMOS", init, NULL, NULL,
+DEVICE_AND_API_INIT(counter_cmos, "CMOS", init, NULL, &info,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &api);
-
