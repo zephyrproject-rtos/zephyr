@@ -19,8 +19,3 @@ properties:
 
     reg:
       category: required
-
-    clocks:
-      type: array
-      category: optional
-      description: Clock gate information

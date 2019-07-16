@@ -30,8 +30,6 @@ properties:
       category: optional
       description: Initial clock frequency in Hz
     clocks:
-      type: array
       category: required
-      description: Clock gate information
     label:
       category: required

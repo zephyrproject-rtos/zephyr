@@ -48,7 +48,4 @@ properties:
       generation: define
 
     clocks:
-      type: array
       category: required
-      description: Clock gate control information
-      generation: define

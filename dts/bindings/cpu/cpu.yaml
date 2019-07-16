@@ -18,8 +18,3 @@ properties:
       type: int
       category: optional
       description: Clock frequency in Hz
-
-    clocks:
-      type: array
-      category: optional
-      description: Clock gate information

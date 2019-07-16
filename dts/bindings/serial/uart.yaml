@@ -20,9 +20,5 @@ properties:
       type: int
       category: required
       description: Initial baud rate setting for UART
-    clocks:
-      type: array
-      category: optional
-      description: Clock gate information
     label:
       category: required

@@ -24,6 +24,4 @@ properties:
       description: use hw flow control
 
     clocks:
-      type: array
       category: required
-      description: Clock gate information
