@@ -9,7 +9,6 @@ zephyr_library_sources(
   prep_c.c
   scb.c
   nmi.c
-  exc_manage.c
   )
 
 zephyr_linker_sources_ifdef(CONFIG_SW_VECTOR_RELAY
