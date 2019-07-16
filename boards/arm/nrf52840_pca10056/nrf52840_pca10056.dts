@@ -129,7 +129,14 @@
 	cts-pin = <7>;
 };
 
-&i2c0 {
+arduino_serial: &uart1 {
+	status = "okay";
+	current-speed = <115200>;
+	rx-pin = <33>;
+	tx-pin = <34>;
+};
+
+arduino_i2c: &i2c0 {
 	status = "okay";
 	sda-pin = <26>;
 	scl-pin = <27>;
@@ -181,11 +188,11 @@
 	};
 };
 
-&spi3 {
+arduino_spi: &spi3 {
 	status = "okay";
-	sck-pin = <41>;
-	mosi-pin = <42>;
-	miso-pin = <43>;
+	sck-pin = <47>;
+	miso-pin = <46>;
+	mosi-pin = <45>;
 };
 
 &flash0 {
