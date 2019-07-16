@@ -7,14 +7,7 @@ result_re = re.compile("(PASS|FAIL|SKIP) - (test_)?(.*)")
 class Harness:
     GCOV_START = "GCOV_COVERAGE_DUMP_START"
     GCOV_END = "GCOV_COVERAGE_DUMP_END"
-    FAULTS = [
-            "Unknown Fatal Error",
-            "MPU FAULT",
-            "Kernel Panic",
-            "Kernel OOPS",
-            "BUS FAULT",
-            "CPU Page Fault"
-            ]
+    FAULT = "ZEPHYR FATAL ERROR"
 
     def __init__(self):
         self.state = None
@@ -72,9 +65,8 @@ class Console(Harness):
                     self.state = "passed"
 
         if self.fail_on_fault:
-            for fault in self.FAULTS:
-                if fault in line:
-                    self.fault = True
+            if self.FAULT in line:
+                self.fault = True
 
         if self.GCOV_START in line:
             self.capture_coverage = True
@@ -107,9 +99,8 @@ class Test(Harness):
             self.state = "failed"
 
         if self.fail_on_fault:
-            for fault in self.FAULTS:
-                if fault in line:
-                    self.fault = True
+            if self.FAULT in line:
+                self.fault = True
 
         if self.GCOV_START in line:
             self.capture_coverage = True
