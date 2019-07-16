@@ -10,6 +10,10 @@
 
 #include <net/socket.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief Simple Network Time Protocol API
  * @defgroup sntp SNTP
@@ -97,6 +101,10 @@ void sntp_close(struct sntp_ctx *ctx);
  */
 int sntp_simple(const char *server, u32_t timeout,
 		struct sntp_time *time);
+
+#ifdef __cplusplus
+}
+#endif
 
 /**
  * @}
