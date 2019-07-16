@@ -67,8 +67,7 @@ struct cfb_font {
  * @param _lc     Character mapped to last font element.
  */
 #define FONT_ENTRY_DEFINE(_name, _width, _height, _caps, _data, _fc, _lc)      \
-	static const struct cfb_font _name				       \
-	__attribute__ ((section(".font_entry."))) __attribute__((used)) =      \
+	static const Z_STRUCT_SECTION_ITERABLE(cfb_font, _name) =	       \
 	{								       \
 		.width = _width,					       \
 		.height = _height,					       \

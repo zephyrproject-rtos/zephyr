@@ -132,6 +132,6 @@
 	SECTION_DATA_PROLOGUE(font_entry_sections,,)
 	{
 		__font_entry_start = .;
-		KEEP(*(SORT_BY_NAME(".font_entry.*")))
+		KEEP(*(SORT_BY_NAME("._cfb_font.*")))
 		__font_entry_end = .;
 	} GROUP_LINK_IN(ROMABLE_REGION)
