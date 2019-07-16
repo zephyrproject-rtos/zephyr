@@ -243,13 +243,25 @@ FUNC_NORETURN void z_arch_syscall_oops(void *ssf_ptr)
 FUNC_NORETURN void z_do_kernel_oops(const NANO_ESF *esf)
 {
 	u32_t *stack_ptr = (u32_t *)esf->esp;
-	z_NanoFatalErrorHandler(*stack_ptr, esf);
+	u32_t reason = *stack_ptr;
+
+#ifdef CONFIG_USERSPACE
+	/* User mode is only allowed to induce oopses and stack check
+	 * failures via this software interrupt
+	 */
+	if (esf->cs == USER_CODE_SEG && !(reason == _NANO_ERR_KERNEL_OOPS ||
+					  reason == _NANO_ERR_STACK_CHK_FAIL)) {
+		reason = _NANO_ERR_KERNEL_OOPS;
+	}
+#endif
+
+	z_NanoFatalErrorHandler(reason, esf);
 }
 
 extern void (*_kernel_oops_handler)(void);
 NANO_CPU_INT_REGISTER(_kernel_oops_handler, NANO_SOFT_IRQ,
 		      CONFIG_X86_KERNEL_OOPS_VECTOR / 16,
-		      CONFIG_X86_KERNEL_OOPS_VECTOR, 0);
+		      CONFIG_X86_KERNEL_OOPS_VECTOR, 3);
 #endif
 
 /*
