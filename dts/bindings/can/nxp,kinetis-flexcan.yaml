@@ -24,9 +24,7 @@ properties:
       category: required
 
     clocks:
-      type: array
       category: required
-      description: clock gate information
 
     clk-source:
       type: int

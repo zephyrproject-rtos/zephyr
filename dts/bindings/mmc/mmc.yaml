@@ -12,9 +12,3 @@ description: >
 
 inherits:
     !include base.yaml
-
-properties:
-    clocks:
-      type: array
-      category: optional
-      description: Clock gate information

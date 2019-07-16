@@ -27,7 +27,3 @@ properties:
       description: should be 0.
     label:
       category: required
-    clocks:
-      type: array
-      category: optional
-      description: Clock gate information

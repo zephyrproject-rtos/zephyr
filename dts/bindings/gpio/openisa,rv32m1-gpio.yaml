@@ -21,11 +21,6 @@ properties:
     label:
       category: required
 
-    clocks:
-      type: array
-      category: optional
-      description: Clock gate control information
-
 "#cells":
   - pin
   - flags
