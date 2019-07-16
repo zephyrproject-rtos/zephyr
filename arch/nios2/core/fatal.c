@@ -7,7 +7,6 @@
 #include <kernel.h>
 #include <arch/cpu.h>
 #include <kernel_structs.h>
-#include <sys/printk.h>
 #include <inttypes.h>
 #include <logging/log_ctrl.h>
 
@@ -22,24 +21,24 @@ FUNC_NORETURN void z_nios2_fatal_error(unsigned int reason,
 		 * entry.  We may want to introduce a config option to save and
 		 * dump all registers, at the expense of some stack space.
 		 */
-		printk("Faulting instruction: 0x%x\n"
-		       "  r1: 0x%x  r2: 0x%x  r3: 0x%x  r4: 0x%x\n"
-		       "  r5: 0x%x  r6: 0x%x  r7: 0x%x  r8: 0x%x\n"
-		       "  r9: 0x%x r10: 0x%x r11: 0x%x r12: 0x%x\n"
-		       " r13: 0x%x r14: 0x%x r15: 0x%x  ra: 0x%x\n"
-		       "estatus: %x\n", esf->instr - 4,
-		       esf->r1, esf->r2, esf->r3, esf->r4,
-		       esf->r5, esf->r6, esf->r7, esf->r8,
-		       esf->r9, esf->r10, esf->r11, esf->r12,
-		       esf->r13, esf->r14, esf->r15, esf->ra,
-		       esf->estatus);
+		z_fatal_print("Faulting instruction: 0x%08x", esf->instr - 4);
+		z_fatal_print("  r1: 0x%08x  r2: 0x%08x  r3: 0x%08x  r4: 0x%08x",
+			      esf->r1, esf->r2, esf->r3, esf->r4);
+		z_fatal_print("  r5: 0x%08x  r6: 0x%08x  r7: 0x%08x  r8: 0x%08x",
+			      esf->r5, esf->r6, esf->r7, esf->r8);
+		z_fatal_print("  r9: 0x%08x r10: 0x%08x r11: 0x%08x r12: 0x%08x",
+			      esf->r9, esf->r10, esf->r11, esf->r12);
+		z_fatal_print(" r13: 0x%08x r14: 0x%08x r15: 0x%08x  ra: 0x%08x",
+			      esf->r13, esf->r14, esf->r15, esf->ra);
+		z_fatal_print("estatus: %08x", esf->estatus);
 	}
 
 	z_fatal_error(reason, esf);
 	CODE_UNREACHABLE;
 }
 
-#if defined(CONFIG_EXTRA_EXCEPTION_INFO) && defined(CONFIG_PRINTK) \
+#if defined(CONFIG_EXTRA_EXCEPTION_INFO) && \
+	(defined(CONFIG_PRINTK) || defined(CONFIG_LOG)) \
 	&& defined(ALT_CPU_HAS_EXTRA_EXCEPTION_INFO)
 static char *cause_str(u32_t cause_code)
 {
@@ -102,7 +101,7 @@ static char *cause_str(u32_t cause_code)
 
 FUNC_NORETURN void _Fault(const NANO_ESF *esf)
 {
-#ifdef CONFIG_PRINTK
+#if defined(CONFIG_PRINTK) || defined(CONFIG_LOG)
 	/* Unfortunately, completely unavailable on Nios II/e cores */
 #ifdef ALT_CPU_HAS_EXTRA_EXCEPTION_INFO
 	u32_t exc_reg, badaddr_reg, eccftl;
@@ -117,16 +116,16 @@ FUNC_NORETURN void _Fault(const NANO_ESF *esf)
 	cause = (exc_reg & NIOS2_EXCEPTION_REG_CAUSE_MASK)
 		 >> NIOS2_EXCEPTION_REG_CAUSE_OFST;
 
-	printk("Exception cause: %d ECCFTL: 0x%x\n", cause, eccftl);
+	z_fatal_print("Exception cause: %d ECCFTL: 0x%x", cause, eccftl);
 #if CONFIG_EXTRA_EXCEPTION_INFO
-	printk("reason: %s\n", cause_str(cause));
+	z_fatal_print("reason: %s", cause_str(cause));
 #endif
 	if (BIT(cause) & NIOS2_BADADDR_CAUSE_MASK) {
 		badaddr_reg = z_nios2_creg_read(NIOS2_CR_BADADDR);
-		printk("Badaddr: 0x%x\n", badaddr_reg);
+		z_fatal_print("Badaddr: 0x%x", badaddr_reg);
 	}
 #endif /* ALT_CPU_HAS_EXTRA_EXCEPTION_INFO */
-#endif /* CONFIG_PRINTK */
+#endif /* CONFIG_PRINTK || CONFIG_LOG */
 
 	z_nios2_fatal_error(K_ERR_CPU_EXCEPTION, esf);
 }

@@ -10,7 +10,10 @@
 #include <sys/__assert.h>
 #include <arch/cpu.h>
 #include <logging/log_ctrl.h>
+#include <logging/log.h>
 #include <fatal.h>
+
+LOG_MODULE_DECLARE(os);
 
 /* LCOV_EXCL_START */
 FUNC_NORETURN __weak void z_arch_system_halt(unsigned int reason)
@@ -35,13 +38,13 @@ __weak void k_sys_fatal_error_handler(unsigned int reason,
 	ARG_UNUSED(esf);
 
 	LOG_PANIC();
-
-	printk("Halting system.\n");
+	z_fatal_print("Halting system");
 	z_arch_system_halt(reason);
 	CODE_UNREACHABLE;
 }
 /* LCOV_EXCL_STOP */
 
+#if defined(CONFIG_LOG) || defined(CONFIG_PRINTK)
 static const char *thread_name_get(struct k_thread *thread)
 {
 	const char *thread_name = k_thread_name_get(thread);
@@ -71,19 +74,33 @@ static const char *reason_to_str(unsigned int reason)
 	}
 }
 
+void z_fatal_print(const char *fmt, ...)
+{
+	va_list ap;
+
+	va_start(ap, fmt);
+	if (IS_ENABLED(CONFIG_LOG)) {
+		struct log_msg_ids src_level = {
+			.level = LOG_LEVEL_ERR,
+			.source_id = LOG_CURRENT_MODULE_ID(),
+			.domain_id = CONFIG_LOG_DOMAIN_ID
+		};
+		log_generic(src_level, fmt, ap);
+	} else {
+		printk("FATAL: ");
+		vprintk(fmt, ap);
+		printk("\n");
+	}
+	va_end(ap);
+}
+#endif /* CONFIG_LOG || CONFIG_PRINTK */
+
 void z_fatal_error(unsigned int reason, const NANO_ESF *esf)
 {
 	struct k_thread *thread = k_current_get();
 
-	/* TODO: Replace all printk()s here and in arch error handling code
-	 * to some special printk_fatal() function, which enables panic
-	 * mode and routes messages to printk or LOG subsystem appropriately
-	 * based on configuration.
-	 */
-
-#ifdef CONFIG_PRINTK
-	printk(">>> ZEPHYR FATAL ERROR %d: %s\n", reason,
-	       reason_to_str(reason));
+	z_fatal_print(">>> ZEPHYR FATAL ERROR %d: %s", reason,
+		      reason_to_str(reason));
 
 	/* FIXME: This doesn't seem to work as expected on all arches.
 	 * Need a reliable way to determine whether the fault happened when
@@ -96,8 +113,8 @@ void z_fatal_error(unsigned int reason, const NANO_ESF *esf)
 	 * }
 	 */
 
-	printk("Current thread: %p (%s)\n", thread, thread_name_get(thread));
-#endif /* CONFIG_PRINTK */
+	z_fatal_print("Current thread: %p (%s)", thread,
+		      thread_name_get(thread));
 
 	k_sys_fatal_error_handler(reason, esf);
 

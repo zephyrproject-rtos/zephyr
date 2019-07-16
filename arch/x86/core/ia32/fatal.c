@@ -14,7 +14,6 @@
 
 #include <kernel.h>
 #include <kernel_structs.h>
-#include <sys/printk.h>
 #include <drivers/interrupt_controller/sysapic.h>
 #include <arch/x86/ia32/segmentation.h>
 #include <ia32/exception.h>
@@ -78,13 +77,13 @@ static void unwind_stack(u32_t base_ptr, u16_t cs)
 	int i;
 
 	if (base_ptr == 0U) {
-		printk("NULL base ptr\n");
+		z_fatal_print("NULL base ptr");
 		return;
 	}
 
 	for (i = 0; i < MAX_STACK_FRAMES; i++) {
 		if (base_ptr % sizeof(base_ptr) != 0U) {
-			printk("unaligned frame ptr\n");
+			z_fatal_print("unaligned frame ptr");
 			return;
 		}
 
@@ -98,7 +97,7 @@ static void unwind_stack(u32_t base_ptr, u16_t cs)
 		 * stack buffer
 		 */
 		if (check_stack_bounds((u32_t)frame, sizeof(*frame), cs)) {
-			printk("     corrupted? (bp=%p)\n", frame);
+			z_fatal_print("     corrupted? (bp=%p)", frame);
 			break;
 		}
 #endif
@@ -107,9 +106,10 @@ static void unwind_stack(u32_t base_ptr, u16_t cs)
 			break;
 		}
 #ifdef CONFIG_X86_IAMCU
-		printk("     0x%08x\n", frame->ret_addr);
+		z_fatal_print("     0x%08x", frame->ret_addr);
 #else
-		printk("     0x%08x (0x%x)\n", frame->ret_addr, frame->args);
+		z_fatal_print("     0x%08x (0x%x)", frame->ret_addr,
+			      frame->args);
 #endif
 		base_ptr = frame->next;
 	}
@@ -132,16 +132,17 @@ FUNC_NORETURN void z_arch_system_halt(unsigned int reason)
 FUNC_NORETURN void z_x86_fatal_error(unsigned int reason, const NANO_ESF *esf)
 {
 	if (esf != NULL) {
-		printk("eax: 0x%08x, ebx: 0x%08x, ecx: 0x%08x, edx: 0x%08x\n"
-		       "esi: 0x%08x, edi: 0x%08x, ebp: 0x%08x, esp: 0x%08x\n"
-		       "eflags: 0x%08x cs: 0x%04x\n"
+		z_fatal_print("eax: 0x%08x, ebx: 0x%08x, ecx: 0x%08x, edx: 0x%08x",
+			      esf->eax, esf->ebx, esf->ecx, esf->edx);
+		z_fatal_print("esi: 0x%08x, edi: 0x%08x, ebp: 0x%08x, esp: 0x%08x",
+			      esf->esi, esf->edi, esf->ebp, esf->esp);
+		z_fatal_print("eflags: 0x%08x cs: 0x%04x", esf->eflags,
+			      esf->cs & 0xFFFFU);
+
 #ifdef CONFIG_EXCEPTION_STACK_TRACE
-		       "call trace:\n"
+		z_fatal_print("call trace:");
 #endif
-		       "eip: 0x%08x\n",
-		       esf->eax, esf->ebx, esf->ecx, esf->edx,
-		       esf->esi, esf->edi, esf->ebp, esf->esp,
-		       esf->eflags, esf->cs & 0xFFFFU, esf->eip);
+		z_fatal_print("eip: 0x%08x", esf->eip);
 #ifdef CONFIG_EXCEPTION_STACK_TRACE
 		unwind_stack(esf->ebp, esf->cs);
 #endif
@@ -156,7 +157,7 @@ void z_x86_spurious_irq(const NANO_ESF *esf)
 	int vector = z_irq_controller_isr_vector_get();
 
 	if (vector >= 0) {
-		printk("IRQ vector: %d\n", vector);
+		z_fatal_print("IRQ vector: %d", vector);
 	}
 
 	z_x86_fatal_error(K_ERR_SPURIOUS_IRQ, esf);
@@ -209,20 +210,19 @@ NANO_CPU_INT_REGISTER(_kernel_oops_handler, NANO_SOFT_IRQ,
 FUNC_NORETURN static void generic_exc_handle(unsigned int vector,
 					     const NANO_ESF *pEsf)
 {
-	printk("***** ");
 	switch (vector) {
 	case IV_GENERAL_PROTECTION:
-		printk("General Protection Fault\n");
+		z_fatal_print("General Protection Fault");
 		break;
 	case IV_DEVICE_NOT_AVAILABLE:
-		printk("Floating point unit not enabled\n");
+		z_fatal_print("Floating point unit not enabled");
 		break;
 	default:
-		printk("CPU exception %d\n", vector);
+		z_fatal_print("CPU exception %d", vector);
 		break;
 	}
 	if ((BIT(vector) & _EXC_ERROR_CODE_FAULTS) != 0) {
-		printk("***** Exception code: 0x%x\n", pEsf->errorCode);
+		z_fatal_print("Exception code: 0x%x", pEsf->errorCode);
 	}
 	z_x86_fatal_error(K_ERR_CPU_EXCEPTION, pEsf);
 }
@@ -277,9 +277,9 @@ EXC_FUNC_NOCODE(IV_MACHINE_CHECK);
 #define SGX	BIT(15)
 
 #ifdef CONFIG_X86_MMU
-static void dump_entry_flags(x86_page_entry_data_t flags)
+static void dump_entry_flags(const char *name, x86_page_entry_data_t flags)
 {
-	printk("0x%x%x %s, %s, %s, %s\n", (u32_t)(flags>>32),
+	z_fatal_print("%s: 0x%x%x %s, %s, %s, %s", name, (u32_t)(flags>>32),
 	       (u32_t)(flags),
 	       flags & (x86_page_entry_data_t)MMU_ENTRY_PRESENT ?
 	       "Present" : "Non-present",
@@ -297,11 +297,8 @@ static void dump_mmu_flags(struct x86_mmu_pdpt *pdpt, void *addr)
 
 	z_x86_mmu_get_flags(pdpt, addr, &pde_flags, &pte_flags);
 
-	printk("PDE: ");
-	dump_entry_flags(pde_flags);
-
-	printk("PTE: ");
-	dump_entry_flags(pte_flags);
+	dump_entry_flags("PDE", pde_flags);
+	dump_entry_flags("PTE", pte_flags);
 }
 #endif /* CONFIG_X86_MMU */
 
@@ -313,12 +310,13 @@ static void dump_page_fault(NANO_ESF *esf)
 	__asm__ ("mov %%cr2, %0" : "=r" (cr2));
 
 	err = esf->errorCode;
-	printk("***** CPU Page Fault (error code 0x%08x)\n", err);
+	z_fatal_print("***** CPU Page Fault (error code 0x%08x)", err);
 
-	printk("%s thread %s address 0x%08x\n",
-	       (err & US) != 0U ? "User" : "Supervisor",
-	       (err & ID) != 0U ? "executed" : ((err & WR) != 0U ? "wrote" :
-						"read"), cr2);
+	z_fatal_print("%s thread %s address 0x%08x",
+		      (err & US) != 0U ? "User" : "Supervisor",
+		      (err & ID) != 0U ? "executed" : ((err & WR) != 0U ?
+						       "wrote" :
+						       "read"), cr2);
 
 #ifdef CONFIG_X86_MMU
 #ifdef CONFIG_X86_KPTI
@@ -414,7 +412,7 @@ static __used void df_handler_bottom(void)
 	_df_tss.esp = (u32_t)(_df_stack + sizeof(_df_stack));
 	_df_tss.eip = (u32_t)df_handler_top;
 
-	printk("***** Double Fault *****\n");
+	z_fatal_print("Double Fault");
 #ifdef CONFIG_THREAD_STACK_INFO
 	if (check_stack_bounds(_df_esf.esp, 0, _df_esf.cs)) {
 		reason = K_ERR_STACK_CHK_FAIL;

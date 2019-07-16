@@ -51,13 +51,13 @@ void z_unhandled_vector(int vector, int err, struct xuk_entry_frame *f)
 	/* Yes, there are five regsiters missing.  See notes on
 	 * xuk_entry_frame/xuk_stack_frame.
 	 */
-	printk("*** FATAL ERROR vector %d code %d\n", vector, err);
-	printk("***  RIP %d:0x%llx RSP %d:0x%llx RFLAGS 0x%llx\n",
-	       (int)f->cs, f->rip, (int)f->ss, f->rsp, f->rflags);
-	printk("***  RAX 0x%llx RCX 0x%llx RDX 0x%llx RSI 0x%llx RDI 0x%llx\n",
-	       f->rax, f->rcx, f->rdx, f->rsi, f->rdi);
-	printk("***  R8 0x%llx R9 0x%llx R10 0x%llx R11 0x%llx\n",
-	       f->r8, f->r9, f->r10, f->r11);
+	z_fatal_print("*** FATAL ERROR vector %d code %d", vector, err);
+	z_fatal_print("***  RIP %d:0x%llx RSP %d:0x%llx RFLAGS 0x%llx",
+		      (int)f->cs, f->rip, (int)f->ss, f->rsp, f->rflags);
+	z_fatal_print("***  RAX 0x%llx RCX 0x%llx RDX 0x%llx RSI 0x%llx RDI 0x%llx",
+		      f->rax, f->rcx, f->rdx, f->rsi, f->rdi);
+	z_fatal_print("***  R8 0x%llx R9 0x%llx R10 0x%llx R11 0x%llx",
+		      f->r8, f->r9, f->r10, f->r11);
 
 	/* FIXME: Why isn't xuk_entry_frame a NANO_ESF? */
 	z_fatal_error(x86_64_except_reason, NULL);
