@@ -99,6 +99,9 @@ void z_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
 {
 	struct k_thread *thread = k_current_get();
 
+	/* sanitycheck looks for the "ZEPHYR FATAL ERROR" string, don't
+	 * change it without also updating sanitycheck
+	 */
 	z_fatal_print(">>> ZEPHYR FATAL ERROR %d: %s", reason,
 		      reason_to_str(reason));
 
