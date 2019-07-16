@@ -36,8 +36,9 @@ FUNC_NORETURN void z_arch_syscall_oops(void *ssf_ptr)
 	u32_t *ssf_contents = ssf_ptr;
 	NANO_ESF oops_esf = { 0 };
 
+	/* TODO: Copy the rest of the register set out of ssf_ptr */
 	oops_esf.basic.pc = ssf_contents[3];
 
-	z_do_kernel_oops(&oops_esf);
+	z_arm_fatal_error(K_ERR_KERNEL_OOPS, &oops_esf);
 	CODE_UNREACHABLE;
 }
