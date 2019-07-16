@@ -13,6 +13,7 @@
 	is25wp064: is25wp064@0 {
 		compatible = "issi,is25wp064", "jedec,spi-nor";
 		reg = <0>;
+		spi-max-frequency = <133000000>;
 		status = "okay";
 		jedec-id = <0x9d 0x70 0x17>;
 	};

@@ -41,6 +41,8 @@
 		compatible = "issi,is25lp128", "jedec,spi-nor";
 		jedec-id = <0x96 0x60 0x18>;
 		reg = <0>;
+		// Dummy entry
+		spi-max-frequency = <0>;
 	};
 };
 
