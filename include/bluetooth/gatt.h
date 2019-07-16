@@ -1133,6 +1133,13 @@ enum {
 	 * issue a new subscription.
 	 */
 	BT_GATT_SUBSCRIBE_FLAG_VOLATILE = BIT(0),
+
+	/** Write pending flag
+	 *
+	 * If set, indicates write operation is pending waiting remote end to
+	 * respond.
+	 */
+	BT_GATT_SUBSCRIBE_WRITE_PENDING = BIT(1),
 };
 
 /** @brief GATT Subscribe parameters */
