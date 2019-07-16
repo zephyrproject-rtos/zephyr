@@ -17,13 +17,12 @@
 
 #include <kernel.h>
 #include <kernel_structs.h>
-#include <sys/printk.h>
 #include <logging/log_ctrl.h>
 
 void z_arm_fatal_error(unsigned int reason, const NANO_ESF *esf)
 {
-	printk("Faulting instruction address = 0x%x\n",
-	       esf->basic.pc);
+	z_fatal_print("Faulting instruction address = 0x%x",
+		      esf->basic.pc);
 	z_fatal_error(reason, esf);
 }
 

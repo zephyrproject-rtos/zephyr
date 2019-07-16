@@ -7,25 +7,24 @@
 #include <kernel.h>
 #include <kernel_structs.h>
 #include <inttypes.h>
-#include <sys/printk.h>
 #include <logging/log_ctrl.h>
 
 FUNC_NORETURN void z_riscv32_fatal_error(unsigned int reason,
 					 const NANO_ESF *esf)
 {
 	if (esf != NULL) {
-		printk("Faulting instruction address = 0x%x\n"
-		       "  ra: 0x%x  gp: 0x%x  tp: 0x%x  t0: 0x%x\n"
-		       "  t1: 0x%x  t2: 0x%x  t3: 0x%x  t4: 0x%x\n"
-		       "  t5: 0x%x  t6: 0x%x  a0: 0x%x  a1: 0x%x\n"
-		       "  a2: 0x%x  a3: 0x%x  a4: 0x%x  a5: 0x%x\n"
-		       "  a6: 0x%x  a7: 0x%x\n",
-		       esf->mepc,
-		       esf->ra, esf->gp, esf->tp, esf->t0,
-		       esf->t1, esf->t2, esf->t3, esf->t4,
-		       esf->t5, esf->t6, esf->a0, esf->a1,
-		       esf->a2, esf->a3, esf->a4, esf->a5,
-		       esf->a6, esf->a7);
+		z_fatal_print("Faulting instruction address = 0x%08x",
+			      esf->mepc);
+		z_fatal_print("  ra: 0x%08x  gp: 0x%08x  tp: 0x%08x  t0: 0x%08x",
+			      esf->ra, esf->gp, esf->tp, esf->t0);
+		z_fatal_print("  t1: 0x%08x  t2: 0x%08x  t3: 0x%08x  t4: 0x%08x",
+			      esf->t1, esf->t2, esf->t3, esf->t4);
+		z_fatal_print("  t5: 0x%08x  t6: 0x%08x  a0: 0x%08x  a1: 0x%08x",
+			      esf->t5, esf->t6, esf->a0, esf->a1);
+		z_fatal_print("  a2: 0x%08x  a3: 0x%08x  a4: 0x%08x  a5: 0x%08x",
+			      esf->a2, esf->a3, esf->a4, esf->a5);
+		z_fatal_print("  a6: 0x%08x  a7: 0x%08x\n",
+			      esf->a6, esf->a7);
 	}
 
 	z_fatal_error(reason, esf);
@@ -59,7 +58,8 @@ FUNC_NORETURN void _Fault(const NANO_ESF *esf)
 	__asm__ volatile("csrr %0, mcause" : "=r" (mcause));
 
 	mcause &= SOC_MCAUSE_EXP_MASK;
-	printk("Exception cause %s (%d)\n", cause_str(mcause), (int)mcause);
+	z_fatal_print("Exception cause %s (%d)", cause_str(mcause),
+		      (int)mcause);
 
 	z_riscv32_fatal_error(K_ERR_CPU_EXCEPTION, esf);
 }

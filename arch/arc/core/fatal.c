@@ -16,14 +16,13 @@
 #include <offsets_short.h>
 #include <toolchain.h>
 #include <arch/cpu.h>
-#include <sys/printk.h>
 #include <logging/log_ctrl.h>
 
 void z_arc_fatal_error(unsigned int reason, const NANO_ESF *esf)
 {
 	if (reason == K_ERR_CPU_EXCEPTION) {
-		printk("Faulting instruction address = 0x%lx\n",
-		z_arc_v2_aux_reg_read(_ARC_V2_ERET));
+		z_fatal_print("Faulting instruction address = 0x%lx",
+			      z_arc_v2_aux_reg_read(_ARC_V2_ERET));
 	}
 
 	z_fatal_error(reason, esf);

@@ -6,7 +6,6 @@
 
 #include <toolchain.h>
 #include <kernel_structs.h>
-#include <sys/printk.h>
 
 FUNC_NORETURN void z_irq_spurious(void *unused)
 {
@@ -18,11 +17,11 @@ FUNC_NORETURN void z_irq_spurious(void *unused)
 
 	mcause &= SOC_MCAUSE_EXP_MASK;
 
-	printk("Spurious interrupt detected! IRQ: %d\n", (int)mcause);
+	z_fatal_print("Spurious interrupt detected! IRQ: %d", (int)mcause);
 #if defined(CONFIG_RISCV_HAS_PLIC)
 	if (mcause == RISCV_MACHINE_EXT_IRQ) {
-		printk("PLIC interrupt line causing the IRQ: %d\n",
-		       riscv_plic_get_irq());
+		z_fatal_print("PLIC interrupt line causing the IRQ: %d",
+			      riscv_plic_get_irq());
 	}
 #endif
 	z_riscv32_fatal_error(K_ERR_SPURIOUS_IRQ, NULL);
