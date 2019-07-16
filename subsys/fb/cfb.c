@@ -12,8 +12,8 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(cfb);
 
-extern const struct cfb_font __font_entry_start[0];
-extern const struct cfb_font __font_entry_end[0];
+extern const struct cfb_font __font_entry_start[];
+extern const struct cfb_font __font_entry_end[];
 
 struct char_framebuffer {
 	/** Pointer to a buffer in RAM */
