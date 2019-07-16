@@ -84,7 +84,8 @@ static void virtio_set_features(struct virtio_device *vdev,
 
 static void virtio_notify(struct virtqueue *vq)
 {
-#if defined(CONFIG_SOC_MPS2_AN521)
+#if defined(CONFIG_SOC_MPS2_AN521) || \
+	defined(CONFIG_SOC_V2M_MUSCA_A)
 	u32_t current_core = sse_200_platform_get_cpu_id();
 
 	ipm_send(ipm_handle, 0, current_core ? 0 : 1, 0, 1);
@@ -286,7 +287,8 @@ void main(void)
 			(k_thread_entry_t)app_task,
 			NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
 
-#if defined(CONFIG_SOC_MPS2_AN521)
+#if defined(CONFIG_SOC_MPS2_AN521) || \
+	defined(CONFIG_SOC_V2M_MUSCA_A)
 	wakeup_cpu1();
 	k_sleep(500);
 #endif /* #if defined(CONFIG_SOC_MPS2_AN521) */
