@@ -14,8 +14,5 @@ inherits:
     !include base.yaml
 
 properties:
-    clocks:
-      category: required
-
     label:
       category: required
