@@ -8,10 +8,10 @@ Overview
 
 This application demonstrates how to use OpenAMP with Zephyr. It is designed to
 demonstrate how to integrate OpenAMP with Zephyr both from a build perspective
-and code.  Currently this integration is specific to the LPC54114 SoC.
+and code.
 
-Building the application
-*************************
+Building the application for lpcxpresso54114_m4
+***********************************************
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/ipc/openamp
@@ -27,17 +27,31 @@ following settings:
 - Stop bits: 1
 
 Reset the board and the following message will appear on the corresponding
-serial port:
+serial port, one is master another is remote:
 
 .. code-block:: console
 
-   ***** Booting Zephyr OS v1.11.0-1377-g580b9add47 *****
+   **** Booting Zephyr OS build zephyr-v1.14.0-2064-g888fc98fddaa ****
    Starting application thread!
 
-   OpenAMP demo started
-   Primary core received a message: 1
-   Primary core received a message: 3
-   Primary core received a message: 5
+   OpenAMP[master] demo started
+   Master core received a message: 1
+   Master core received a message: 3
+   Master core received a message: 5
    ...
-   Primary core received a message: 101
+   Master core received a message: 99
+   OpenAMP demo ended.
+
+
+.. code-block:: console
+
+   **** Booting Zephyr OS build zephyr-v1.14.0-2064-g888fc98fddaa ****
+   Starting application thread!
+
+   OpenAMP[remote] demo started
+   Remote core received a message: 0
+   Remote core received a message: 2
+   Remote core received a message: 4
+   ...
+   Remote core received a message: 98
    OpenAMP demo ended.
