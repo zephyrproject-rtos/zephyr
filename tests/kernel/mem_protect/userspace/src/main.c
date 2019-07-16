@@ -1131,6 +1131,37 @@ void test_object_recycle(void)
 	zassert_true(perms_count == 1, "invalid number of thread permissions");
 }
 
+#define test_oops(provided, expected) do { \
+	expect_fault = true; \
+	expected_reason = expected; \
+	z_except_reason(provided); \
+} while (false)
+
+void test_oops_panic(void)
+{
+	test_oops(_NANO_ERR_KERNEL_PANIC, _NANO_ERR_KERNEL_OOPS);
+}
+
+void test_oops_oops(void)
+{
+	test_oops(_NANO_ERR_KERNEL_OOPS, _NANO_ERR_KERNEL_OOPS);
+}
+
+void test_oops_exception(void)
+{
+	test_oops(REASON_HW_EXCEPTION, _NANO_ERR_KERNEL_OOPS);
+}
+
+void test_oops_maxint(void)
+{
+	test_oops(INT_MAX, _NANO_ERR_KERNEL_OOPS);
+}
+
+void test_oops_stackcheck(void)
+{
+	test_oops(_NANO_ERR_STACK_CHK_FAIL, _NANO_ERR_STACK_CHK_FAIL);
+}
+
 void test_main(void)
 {
 	struct k_mem_partition *parts[] = {&part0, &part1,
@@ -1183,7 +1214,12 @@ void test_main(void)
 			 ztest_unit_test(test_stack_buffer),
 			 ztest_user_unit_test(test_unimplemented_syscall),
 			 ztest_user_unit_test(test_bad_syscall),
-			 ztest_unit_test(test_object_recycle)
+			 ztest_unit_test(test_object_recycle),
+			 ztest_user_unit_test(test_oops_panic),
+			 ztest_user_unit_test(test_oops_oops),
+			 ztest_user_unit_test(test_oops_exception),
+			 ztest_user_unit_test(test_oops_maxint),
+			 ztest_user_unit_test(test_oops_stackcheck)
 			 );
 	ztest_run_test_suite(userspace);
 }
