@@ -167,13 +167,13 @@ static inline struct net_buf *encode_node(struct node_rx_pdu *node_rx,
 		break;
 	}
 
-#if defined(CONFIG_BT_LL_SW)
+#if defined(CONFIG_BT_LL_SW_LEGACY)
 	{
 		extern u8_t radio_rx_fc_set(u16_t handle, u8_t fc);
 
 		radio_rx_fc_set(node_rx->hdr.handle, 0);
 	}
-#endif /* CONFIG_BT_LL_SW */
+#endif /* CONFIG_BT_LL_SW_LEGACY */
 
 	node_rx->hdr.next = NULL;
 	ll_rx_mem_release((void **)&node_rx);

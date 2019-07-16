@@ -20,7 +20,7 @@ choice BT_LL_CHOICE
 	help
 	  Select the Bluetooth Link Layer to compile.
 
-config BT_LL_SW
+config BT_LL_SW_LEGACY
 	bool "Software-based BLE Link Layer"
 	select BT_RECV_IS_RX_THREAD
 	select BT_HAS_HCI_VS
@@ -399,7 +399,7 @@ config BT_CTLR_PHY_CODED
 	  Enable support for Bluetooth 5.0 Coded PHY in the Controller.
 endif # BT_PHY_UPDATE
 
-if BT_LL_SW
+if BT_LL_SW_LEGACY
 
 config BT_CTLR_WORKER_PRIO
 	int "Radio and Ticker's Worker IRQ priority"
@@ -419,7 +419,7 @@ config BT_CTLR_JOB_PRIO
 	  The interrupt priority for Ticker's Job (SWI4) IRQ. This value shall
 	  be greater than or equal to the Ticker's Worker IRQ priority value.
 
-endif # BT_LL_SW
+endif # BT_LL_SW_LEGACY
 
 config BT_CTLR_XTAL_ADVANCED
 	bool "Advanced event preparation"

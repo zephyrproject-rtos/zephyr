@@ -17,7 +17,7 @@
 #include "pdu.h"
 #include "lll.h"
 
-#if defined(CONFIG_BT_LL_SW)
+#if defined(CONFIG_BT_LL_SW_LEGACY)
 #include <sys/slist.h>
 #include "ctrl.h"
 #define ull_adv_is_enabled  ll_adv_is_enabled

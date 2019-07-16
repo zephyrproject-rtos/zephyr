@@ -17,7 +17,7 @@
 #include "hal/ccm.h"
 #include "hal/radio.h"
 
-#if defined(CONFIG_BT_LL_SW)
+#if defined(CONFIG_BT_LL_SW_LEGACY)
 #include "util/util.h"
 #include "util/memq.h"
 #include "pdu.h"

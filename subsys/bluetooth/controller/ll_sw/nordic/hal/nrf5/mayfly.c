@@ -15,7 +15,7 @@
 #include "common/log.h"
 #include "hal/debug.h"
 
-#if defined(CONFIG_BT_LL_SW)
+#if defined(CONFIG_BT_LL_SW_LEGACY)
 #define MAYFLY_CALL_ID_WORKER MAYFLY_CALL_ID_0
 #define MAYFLY_CALL_ID_JOB    MAYFLY_CALL_ID_1
 #elif defined(CONFIG_BT_LL_SW_SPLIT)
@@ -67,7 +67,7 @@ u32_t mayfly_is_enabled(u8_t caller_id, u8_t callee_id)
 u32_t mayfly_prio_is_equal(u8_t caller_id, u8_t callee_id)
 {
 	return (caller_id == callee_id) ||
-#if defined(CONFIG_BT_LL_SW)
+#if defined(CONFIG_BT_LL_SW_LEGACY)
 #if (CONFIG_BT_CTLR_WORKER_PRIO == CONFIG_BT_CTLR_JOB_PRIO)
 	       ((caller_id == MAYFLY_CALL_ID_WORKER) &&
 		(callee_id == MAYFLY_CALL_ID_JOB)) ||

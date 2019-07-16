@@ -110,7 +110,7 @@ BLE-enabled builds that can be produced from the Zephyr project codebase:
   * :option:`CONFIG_BT_HCI` ``=y``
   * :option:`CONFIG_BT_HCI_RAW` ``=y``
   * :option:`CONFIG_BT_CTLR` ``=y``
-  * :option:`CONFIG_BT_LL_SW` ``=y`` (if using the open source Link Layer)
+  * :option:`CONFIG_BT_LL_SW_SPLIT` ``=y`` (if using the open source Link Layer)
 
 * **Host-only build**: A Zephyr OS Host build will contain the Application and
   the BLE Host, along with an HCI driver (UART or SPI) to interface with an
@@ -131,7 +131,7 @@ BLE-enabled builds that can be produced from the Zephyr project codebase:
   * :option:`CONFIG_BT` ``=y``
   * :option:`CONFIG_BT_HCI` ``=y``
   * :option:`CONFIG_BT_CTLR` ``=y``
-  * :option:`CONFIG_BT_LL_SW` ``=y`` (if using the open source Link Layer)
+  * :option:`CONFIG_BT_LL_SW_SPLIT` ``=y`` (if using the open source Link Layer)
 
   All of the samples located in ``samples/bluetooth`` except for the ones
   used for Controller-only builds can be built as Combined
