@@ -17,9 +17,6 @@ properties:
     compatible:
       constraint: "snps,arcv2-intc"
 
-    reg:
-      category: required
-
 "#cells":
   - irq
   - priority
