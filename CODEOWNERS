@@ -149,6 +149,7 @@
 /drivers/sensor/lis*/                     @avisconti
 /drivers/sensor/lps*/                     @avisconti
 /drivers/sensor/lsm*/                     @avisconti
+/drivers/sensor/st*/                      @avisconti
 /drivers/serial/uart_altera_jtag_hal.c    @wentongwu
 /drivers/serial/*ns16550*                 @gnuless
 /drivers/serial/Kconfig.litex             @mateusz-holenko @kgugala @pgielda
