@@ -23,9 +23,6 @@ properties:
     interrupts:
       category: required
 
-    clocks:
-      category: required
-
     modem-mode:
      type: int
      category: required
