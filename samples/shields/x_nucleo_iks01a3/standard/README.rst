@@ -17,6 +17,7 @@ periodically reads and displays data from the shield sensors:
 - LIS2MDL 3-Axis magnetic field intensity
 - LIS2DW12 3-Axis acceleration
 - LSM6DSO 6-Axis acceleration and angular velocity
+- STTS751 temperature sensor
 
 Requirements
 ************
@@ -64,6 +65,7 @@ Sample Output
     HTS221: Relative Humidity: 27.0%
     LPS22HH: Temperature: 27.3 C
     LPS22HH: Pressure:99.150 kpa
+    STTS751: Temperature: 27.6 C
     LIS2MDL: Magn (gauss): x: -0.445, y: -0.054, z: -0.066
     LIS2DW12: Accel (m.s-2): x: -0.413, y: 0.077, z: 10.337
     LSM6DSO: Accel (m.s-2): x: 0.133, y: -0.133, z: 10.102
