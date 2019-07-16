@@ -18,7 +18,7 @@ zephyr_library_sources_ifdef(
   crypto/crypto.c
   )
 
-if(CONFIG_BT_LL_SW)
+if(CONFIG_BT_LL_SW_LEGACY)
   zephyr_library_sources(
     ll_sw/ctrl.c
     ll_sw/ll.c

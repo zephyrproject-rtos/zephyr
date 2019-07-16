@@ -11,7 +11,7 @@ add_subdirectory_ifdef(CONFIG_BT_CONN services)
 add_subdirectory_ifdef(CONFIG_BT_MESH mesh)
 
 if(CONFIG_BT_CTLR)
-  if(CONFIG_BT_LL_SW OR CONFIG_BT_LL_SW_SPLIT)
+  if(CONFIG_BT_LL_SW_LEGACY OR CONFIG_BT_LL_SW_SPLIT)
     add_subdirectory(controller)
   endif()
 endif()

@@ -1395,7 +1395,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 		      2, 1),
 #endif /* CONFIG_BT_OBSERVER */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
-#if defined(CONFIG_BT_LL_SW)
+#if defined(CONFIG_BT_LL_SW_LEGACY)
 	SHELL_CMD_ARG(ll-addr, NULL, "<random|public>", cmd_ll_addr_get, 2, 0),
 #endif
 #if defined(CONFIG_BT_CTLR_DTM)
