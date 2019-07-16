@@ -116,6 +116,15 @@ config	ARC_STACK_PROTECTION
 	  selection of the ARC stack checking is
 	  prioritized over the MPU-based stack guard.
 
+config	ARC_USE_UNALIGNED_MEM_ACCESS
+	bool "Enable unaligned access in HW"
+	default n if CPU_ARCEM
+	depends on (CPU_ARCEM && !ARC_HAS_SECURE)
+	help
+	  ARC EM cores w/o secure shield 2+2 mode support might be configured
+	  to support unaligned memory access which is then disabled by default.
+	  Enable unaligned access in hardware and make software to use it.
+
 config	FAULT_DUMP
 	int "Fault dump level"
 	default 2

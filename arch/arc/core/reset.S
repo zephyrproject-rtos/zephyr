@@ -71,6 +71,13 @@ SECTION_FUNC(TEXT,__start)
 	bset r0, r0, _ARC_V2_STATUS32_US_BIT
 	kflag r0
 #endif
+
+#ifdef CONFIG_ARC_USE_UNALIGNED_MEM_ACCESS
+	lr r0, [_ARC_V2_STATUS32]
+	bset r0, r0, _ARC_V2_STATUS32_AD_BIT
+	kflag r0
+#endif
+
 	mov r1, 1
 
 invalidate_and_disable_icache:
