@@ -99,10 +99,7 @@ void z_irq_priority_set(unsigned int irq, unsigned int prio, u32_t flags)
 void z_irq_spurious(void *unused)
 {
 	ARG_UNUSED(unused);
-	printk("z_irq_spurious(). Spinning...\n");
-	for (;;) {
-		;
-	}
+	z_fatal_error(K_ERR_SPURIOUS_IRQ, NULL);
 }
 
 #ifdef CONFIG_DYNAMIC_INTERRUPTS
