@@ -440,6 +440,12 @@ config LOG_BACKEND_NET_MAX_BUF_SIZE
 
 endif # LOG_BACKEND_NET
 
+config LOG_BACKEND_ADSP
+	bool "Enable Intel ADSP backend"
+	depends on SOC_INTEL_APL_ADSP
+	help
+	  Enable backend in APL ADSP using memory mailbox
+
 config LOG_BACKEND_SHOW_COLOR
 	bool "Enable colors in the backend"
 	depends on LOG_BACKEND_UART || LOG_BACKEND_NATIVE_POSIX || LOG_BACKEND_RTT \
