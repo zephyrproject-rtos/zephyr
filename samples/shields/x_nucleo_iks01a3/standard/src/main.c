@@ -21,6 +21,16 @@ static void lps22hh_trigger_handler(struct device *dev,
 }
 #endif
 
+#ifdef CONFIG_STTS751_TRIGGER
+static int stts751_trig_cnt;
+
+static void stts751_trigger_handler(struct device *dev,
+				       struct sensor_trigger *trig)
+{
+	stts751_trig_cnt++;
+}
+#endif
+
 #ifdef CONFIG_LIS2DW12_TRIGGER
 static int lis2dw12_trig_cnt;
 
@@ -79,6 +89,29 @@ static void lps22hh_config(struct device *lps22hh)
 	trig.type = SENSOR_TRIG_DATA_READY;
 	trig.chan = SENSOR_CHAN_ALL;
 	sensor_trigger_set(lps22hh, &trig, lps22hh_trigger_handler);
+#endif
+}
+
+static void stts751_config(struct device *stts751)
+{
+	struct sensor_value odr_attr;
+
+	/* set STTS751 conversion rate to 16 Hz */
+	odr_attr.val1 = 16;
+	odr_attr.val2 = 0;
+
+	if (sensor_attr_set(stts751, SENSOR_CHAN_ALL,
+			    SENSOR_ATTR_SAMPLING_FREQUENCY, &odr_attr) < 0) {
+		printk("Cannot set sampling frequency for STTS751\n");
+		return;
+	}
+
+#ifdef CONFIG_STTS751_TRIGGER
+	struct sensor_trigger trig;
+
+	trig.type = SENSOR_TRIG_THRESHOLD;
+	trig.chan = SENSOR_CHAN_ALL;
+	sensor_trigger_set(stts751, &trig, stts751_trigger_handler);
 #endif
 }
 
@@ -172,7 +205,7 @@ static void lsm6dso_config(struct device *lsm6dso)
 
 void main(void)
 {
-	struct sensor_value temp1, temp2, hum, press;
+	struct sensor_value temp1, temp2, temp3, hum, press;
 #ifdef CONFIG_LSM6DSO_ENABLE_TEMP
 	struct sensor_value die_temp;
 #endif
@@ -181,6 +214,7 @@ void main(void)
 	struct sensor_value magn[3];
 	struct device *hts221 = device_get_binding(DT_INST_0_ST_HTS221_LABEL);
 	struct device *lps22hh = device_get_binding(DT_INST_0_ST_LPS22HH_LABEL);
+	struct device *stts751 = device_get_binding(DT_INST_0_ST_STTS751_LABEL);
 	struct device *lis2mdl = device_get_binding(DT_INST_0_ST_LIS2MDL_MAGN_LABEL);
 	struct device *lis2dw12 = device_get_binding(DT_INST_0_ST_LIS2DW12_LABEL);
 	struct device *lsm6dso = device_get_binding(DT_INST_0_ST_LSM6DSO_LABEL);
@@ -192,6 +226,10 @@ void main(void)
 	}
 	if (lps22hh == NULL) {
 		printf("Could not get LPS22HH device\n");
+		return;
+	}
+	if (stts751 == NULL) {
+		printf("Could not get STTS751 device\n");
 		return;
 	}
 	if (lis2mdl == NULL) {
@@ -208,6 +246,7 @@ void main(void)
 	}
 
 	lps22hh_config(lps22hh);
+	stts751_config(stts751);
 	lis2dw12_config(lis2dw12);
 	lsm6dso_config(lsm6dso);
 
@@ -224,6 +263,11 @@ void main(void)
 			return;
 		}
 #endif
+		if (sensor_sample_fetch(stts751) < 0) {
+			printf("STTS751 Sensor sample update error\n");
+			return;
+		}
+
 		if (sensor_sample_fetch(lis2mdl) < 0) {
 			printf("LIS2MDL Magn Sensor sample update error\n");
 			return;
@@ -248,6 +292,7 @@ void main(void)
 		sensor_channel_get(hts221, SENSOR_CHAN_HUMIDITY, &hum);
 		sensor_channel_get(lps22hh, SENSOR_CHAN_AMBIENT_TEMP, &temp2);
 		sensor_channel_get(lps22hh, SENSOR_CHAN_PRESS, &press);
+		sensor_channel_get(stts751, SENSOR_CHAN_AMBIENT_TEMP, &temp3);
 		sensor_channel_get(lis2mdl, SENSOR_CHAN_MAGN_XYZ, magn);
 		sensor_channel_get(lis2dw12, SENSOR_CHAN_ACCEL_XYZ, accel2);
 		sensor_channel_get(lsm6dso, SENSOR_CHAN_ACCEL_XYZ, accel1);
@@ -279,6 +324,10 @@ void main(void)
 		printf("LPS22HH: Pressure:%.3f kpa\n",
 		       sensor_value_to_double(&press));
 
+		/* temperature */
+		printf("STTS751: Temperature: %.1f C\n",
+		       sensor_value_to_double(&temp3));
+
 		/* lis2mdl */
 		printf("LIS2MDL: Magn (gauss): x: %.3f, y: %.3f, z: %.3f\n",
 		       sensor_value_to_double(&magn[0]),
@@ -308,6 +357,10 @@ void main(void)
 
 #if defined(CONFIG_LPS22HH_TRIGGER)
 		printk("%d:: lps22hh trig %d\n", cnt, lps22hh_trig_cnt);
+#endif
+
+#if defined(CONFIG_STTS751_TRIGGER)
+		printk("%d:: stts751 trig %d\n", cnt, stts751_trig_cnt);
 #endif
 
 #ifdef CONFIG_LIS2DW12_TRIGGER
