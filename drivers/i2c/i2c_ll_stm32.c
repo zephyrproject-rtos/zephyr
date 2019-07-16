@@ -60,10 +60,6 @@ static int i2c_stm32_transfer(struct device *dev, struct i2c_msg *msg,
 			      u8_t num_msgs, u16_t slave)
 {
 	struct i2c_stm32_data *data = DEV_DATA(dev);
-#if defined(CONFIG_I2C_STM32_V1)
-	const struct i2c_stm32_config *cfg = DEV_CFG(dev);
-	I2C_TypeDef *i2c = cfg->i2c;
-#endif
 	struct i2c_msg *current, *next;
 	int ret = 0;
 
@@ -113,9 +109,6 @@ static int i2c_stm32_transfer(struct device *dev, struct i2c_msg *msg,
 
 	/* Send out messages */
 	k_sem_take(&data->bus_mutex, K_FOREVER);
-#if defined(CONFIG_I2C_STM32_V1)
-	LL_I2C_Enable(i2c);
-#endif
 
 	current = msg;
 
@@ -164,9 +157,6 @@ static int i2c_stm32_transfer(struct device *dev, struct i2c_msg *msg,
 		num_msgs--;
 	}
 exit:
-#if defined(CONFIG_I2C_STM32_V1)
-	LL_I2C_Disable(i2c);
-#endif
 	k_sem_give(&data->bus_mutex);
 	return ret;
 }
@@ -174,7 +164,7 @@ exit:
 static const struct i2c_driver_api api_funcs = {
 	.configure = i2c_stm32_runtime_configure,
 	.transfer = i2c_stm32_transfer,
-#if defined(CONFIG_I2C_SLAVE) && defined(CONFIG_I2C_STM32_V2)
+#if defined(CONFIG_I2C_SLAVE)
 	.slave_register = i2c_stm32_slave_register,
 	.slave_unregister = i2c_stm32_slave_unregister,
 #endif
