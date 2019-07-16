@@ -46,6 +46,11 @@ static int init_reset(void);
 static void ticker_update_conn_op_cb(u32_t status, void *param);
 static inline void disable(u16_t handle);
 static void conn_cleanup(struct ll_conn *conn);
+
+#if defined(CONFIG_BT_CTLR_LLID_DATA_START_EMPTY)
+static int empty_data_start_release(struct ll_conn *conn, struct node_tx *tx);
+#endif /* CONFIG_BT_CTLR_LLID_DATA_START_EMPTY */
+
 static void ctrl_tx_enqueue(struct ll_conn *conn, struct node_tx *tx);
 static inline void event_fex_prep(struct ll_conn *conn);
 static inline void event_vex_prep(struct ll_conn *conn);
@@ -1153,6 +1158,12 @@ void ull_conn_tx_demux(u8_t count)
 		if (conn) {
 			struct node_tx *tx = lll_tx->node;
 
+#if defined(CONFIG_BT_CTLR_LLID_DATA_START_EMPTY)
+			if (empty_data_start_release(conn, tx)) {
+				goto ull_conn_tx_demux_release;
+			}
+#endif /* CONFIG_BT_CTLR_LLID_DATA_START_EMPTY */
+
 			tx->next = NULL;
 			if (!conn->tx_data) {
 				conn->tx_data = tx;
@@ -1174,6 +1185,10 @@ void ull_conn_tx_demux(u8_t count)
 			p->ll_id = PDU_DATA_LLID_RESV;
 			ll_tx_ack_put(0xFFFF, tx);
 		}
+
+#if defined(CONFIG_BT_CTLR_LLID_DATA_START_EMPTY)
+ull_conn_tx_demux_release:
+#endif /* CONFIG_BT_CTLR_LLID_DATA_START_EMPTY */
 
 		MFIFO_DEQUEUE(conn_tx);
 	} while (--count);
@@ -1500,6 +1515,29 @@ static void conn_cleanup(struct ll_conn *conn)
 	/* Invalidate the connection context */
 	lll->handle = 0xFFFF;
 }
+
+#if defined(CONFIG_BT_CTLR_LLID_DATA_START_EMPTY)
+static int empty_data_start_release(struct ll_conn *conn, struct node_tx *tx)
+{
+	struct pdu_data *p = (void *)tx->pdu;
+
+	if ((p->ll_id == PDU_DATA_LLID_DATA_START) && !p->len) {
+		conn->start_empty = 1U;
+
+		ll_tx_ack_put(conn->lll.handle, tx);
+
+		return -EINVAL;
+	} else if (p->len && conn->start_empty) {
+		conn->start_empty = 0U;
+
+		if (p->ll_id == PDU_DATA_LLID_DATA_CONTINUE) {
+			p->ll_id = PDU_DATA_LLID_DATA_START;
+		}
+	}
+
+	return 0;
+}
+#endif /* CONFIG_BT_CTLR_LLID_DATA_START_EMPTY */
 
 static void ctrl_tx_last_enqueue(struct ll_conn *conn,
 				      struct node_tx *tx)
