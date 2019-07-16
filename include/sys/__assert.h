@@ -83,6 +83,7 @@
 #include <sys/printk.h>
 void assert_post_action(const char *file, unsigned int line);
 
+/* Message spelling must be kept identical to sanity_chk/harness.py */
 #define __ASSERT_LOC(test)                               \
 	printk("ASSERTION FAIL [%s] @ %s:%d\n",    \
 	       Z_STRINGIFY(test),                         \

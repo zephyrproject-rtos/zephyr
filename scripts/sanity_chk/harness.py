@@ -13,6 +13,8 @@ class Harness:
             "Kernel Panic",
             "Kernel OOPS",
             "BUS FAULT",
+    # Spelling must be kept identical to include/sys/__assert.h
+            "ASSERTION FAIL",
             "CPU Page Fault"
             ]
 
