@@ -301,7 +301,7 @@ typedef struct nanoEsf {
 	unsigned int eip;
 	unsigned int cs;
 	unsigned int eflags;
-} NANO_ESF;
+} z_arch_esf_t;
 
 
 struct _x86_syscall_stack_frame {

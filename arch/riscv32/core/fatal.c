@@ -10,7 +10,7 @@
 #include <logging/log_ctrl.h>
 
 FUNC_NORETURN void z_riscv32_fatal_error(unsigned int reason,
-					 const NANO_ESF *esf)
+					 const z_arch_esf_t *esf)
 {
 	if (esf != NULL) {
 		z_fatal_print("Faulting instruction address = 0x%08x",
@@ -51,7 +51,7 @@ static char *cause_str(u32_t cause)
 	}
 }
 
-FUNC_NORETURN void _Fault(const NANO_ESF *esf)
+FUNC_NORETURN void _Fault(const z_arch_esf_t *esf)
 {
 	u32_t mcause;
 

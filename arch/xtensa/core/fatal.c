@@ -115,7 +115,7 @@ static void dump_exc_state(void)
 }
 
 XTENSA_ERR_NORET void z_xtensa_fatal_error(unsigned int reason,
-					   const NANO_ESF *esf)
+					   const z_arch_esf_t *esf)
 {
 	dump_exc_state();
 

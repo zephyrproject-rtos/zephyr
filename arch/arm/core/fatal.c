@@ -19,7 +19,7 @@
 #include <kernel_structs.h>
 #include <logging/log_ctrl.h>
 
-static void esf_dump(const NANO_ESF *esf)
+static void esf_dump(const z_arch_esf_t *esf)
 {
 	z_fatal_print("r0/a1:  0x%08x  r1/a2:  0x%08x  r2/a3:  0x%08x",
 		      esf->basic.a1, esf->basic.a2, esf->basic.a3);
@@ -41,7 +41,7 @@ static void esf_dump(const NANO_ESF *esf)
 		      esf->basic.pc);
 }
 
-void z_arm_fatal_error(unsigned int reason, const NANO_ESF *esf)
+void z_arm_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
 {
 
 	if (esf != NULL) {
@@ -50,7 +50,7 @@ void z_arm_fatal_error(unsigned int reason, const NANO_ESF *esf)
 	z_fatal_error(reason, esf);
 }
 
-void z_do_kernel_oops(const NANO_ESF *esf)
+void z_do_kernel_oops(const z_arch_esf_t *esf)
 {
 	z_arm_fatal_error(esf->basic.r0, esf);
 }
@@ -58,7 +58,7 @@ void z_do_kernel_oops(const NANO_ESF *esf)
 FUNC_NORETURN void z_arch_syscall_oops(void *ssf_ptr)
 {
 	u32_t *ssf_contents = ssf_ptr;
-	NANO_ESF oops_esf = { 0 };
+	z_arch_esf_t oops_esf = { 0 };
 
 	/* TODO: Copy the rest of the register set out of ssf_ptr */
 	oops_esf.basic.pc = ssf_contents[3];

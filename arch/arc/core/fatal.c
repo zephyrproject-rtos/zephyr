@@ -18,7 +18,7 @@
 #include <arch/cpu.h>
 #include <logging/log_ctrl.h>
 
-void z_arc_fatal_error(unsigned int reason, const NANO_ESF *esf)
+void z_arc_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
 {
 	if (reason == K_ERR_CPU_EXCEPTION) {
 		z_fatal_print("Faulting instruction address = 0x%lx",

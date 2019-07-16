@@ -146,7 +146,7 @@ extern FUNC_NORETURN void z_arm_userspace_enter(k_thread_entry_t user_entry,
 					       u32_t stack_end,
 					       u32_t stack_start);
 
-extern void z_arm_fatal_error(unsigned int reason, const NANO_ESF *esf);
+extern void z_arm_fatal_error(unsigned int reason, const z_arch_esf_t *esf);
 
 #endif /* _ASMLANGUAGE */
 

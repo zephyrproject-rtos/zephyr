@@ -43,30 +43,30 @@ GEN_OFFSET_SYM(_callee_saved_t, s10);
 GEN_OFFSET_SYM(_callee_saved_t, s11);
 
 /* esf member offsets */
-GEN_OFFSET_SYM(NANO_ESF, ra);
-GEN_OFFSET_SYM(NANO_ESF, gp);
-GEN_OFFSET_SYM(NANO_ESF, tp);
-GEN_OFFSET_SYM(NANO_ESF, t0);
-GEN_OFFSET_SYM(NANO_ESF, t1);
-GEN_OFFSET_SYM(NANO_ESF, t2);
-GEN_OFFSET_SYM(NANO_ESF, t3);
-GEN_OFFSET_SYM(NANO_ESF, t4);
-GEN_OFFSET_SYM(NANO_ESF, t5);
-GEN_OFFSET_SYM(NANO_ESF, t6);
-GEN_OFFSET_SYM(NANO_ESF, a0);
-GEN_OFFSET_SYM(NANO_ESF, a1);
-GEN_OFFSET_SYM(NANO_ESF, a2);
-GEN_OFFSET_SYM(NANO_ESF, a3);
-GEN_OFFSET_SYM(NANO_ESF, a4);
-GEN_OFFSET_SYM(NANO_ESF, a5);
-GEN_OFFSET_SYM(NANO_ESF, a6);
-GEN_OFFSET_SYM(NANO_ESF, a7);
+GEN_OFFSET_SYM(z_arch_esf_t, ra);
+GEN_OFFSET_SYM(z_arch_esf_t, gp);
+GEN_OFFSET_SYM(z_arch_esf_t, tp);
+GEN_OFFSET_SYM(z_arch_esf_t, t0);
+GEN_OFFSET_SYM(z_arch_esf_t, t1);
+GEN_OFFSET_SYM(z_arch_esf_t, t2);
+GEN_OFFSET_SYM(z_arch_esf_t, t3);
+GEN_OFFSET_SYM(z_arch_esf_t, t4);
+GEN_OFFSET_SYM(z_arch_esf_t, t5);
+GEN_OFFSET_SYM(z_arch_esf_t, t6);
+GEN_OFFSET_SYM(z_arch_esf_t, a0);
+GEN_OFFSET_SYM(z_arch_esf_t, a1);
+GEN_OFFSET_SYM(z_arch_esf_t, a2);
+GEN_OFFSET_SYM(z_arch_esf_t, a3);
+GEN_OFFSET_SYM(z_arch_esf_t, a4);
+GEN_OFFSET_SYM(z_arch_esf_t, a5);
+GEN_OFFSET_SYM(z_arch_esf_t, a6);
+GEN_OFFSET_SYM(z_arch_esf_t, a7);
 
-GEN_OFFSET_SYM(NANO_ESF, mepc);
-GEN_OFFSET_SYM(NANO_ESF, mstatus);
+GEN_OFFSET_SYM(z_arch_esf_t, mepc);
+GEN_OFFSET_SYM(z_arch_esf_t, mstatus);
 
 #if defined(CONFIG_RISCV_SOC_CONTEXT_SAVE)
-GEN_OFFSET_SYM(NANO_ESF, soc_context);
+GEN_OFFSET_SYM(z_arch_esf_t, soc_context);
 #endif
 #if defined(CONFIG_RISCV_SOC_OFFSETS)
 GEN_SOC_OFFSET_SYMS();
@@ -75,10 +75,10 @@ GEN_SOC_OFFSET_SYMS();
 /*
  * RISC-V requires the stack to be 16-bytes aligned, hence SP needs to grow or
  * shrink by a size, which follows the RISC-V stack alignment requirements
- * Hence, ensure that __NANO_ESF_SIZEOF and _K_THREAD_NO_FLOAT_SIZEOF sizes
+ * Hence, ensure that __z_arch_esf_t_SIZEOF and _K_THREAD_NO_FLOAT_SIZEOF sizes
  * are aligned accordingly.
  */
-GEN_ABSOLUTE_SYM(__NANO_ESF_SIZEOF, STACK_ROUND_UP(sizeof(NANO_ESF)));
+GEN_ABSOLUTE_SYM(__z_arch_esf_t_SIZEOF, STACK_ROUND_UP(sizeof(z_arch_esf_t)));
 
 /*
  * size of the struct k_thread structure sans save area for floating

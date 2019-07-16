@@ -60,7 +60,7 @@ enum k_fatal_error_reason {
  * @param esf Exception context, with details and partial or full register
  *            state when the error occurred. May in some cases be NULL.
  */
-void k_sys_fatal_error_handler(unsigned int reason, const NANO_ESF *esf);
+void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *esf);
 
 /**
  * Called by architecture code upon a fatal error.
@@ -76,7 +76,7 @@ void k_sys_fatal_error_handler(unsigned int reason, const NANO_ESF *esf);
  * @param esf Exception context, with details and partial or full register
  *            state when the error occurred. May in some cases be NULL.
  */
-void z_fatal_error(unsigned int reason, const NANO_ESF *esf);
+void z_fatal_error(unsigned int reason, const z_arch_esf_t *esf);
 
 /**
  * Print messages related to an exception

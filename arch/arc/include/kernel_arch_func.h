@@ -61,7 +61,7 @@ extern void z_arc_userspace_enter(k_thread_entry_t user_entry, void *p1,
 
 
 extern void z_arch_switch(void *switch_to, void **switched_from);
-extern void z_arc_fatal_error(unsigned int reason, const NANO_ESF *esf);
+extern void z_arc_fatal_error(unsigned int reason, const z_arch_esf_t *esf);
 #endif /* _ASMLANGUAGE */
 
 #ifdef __cplusplus
