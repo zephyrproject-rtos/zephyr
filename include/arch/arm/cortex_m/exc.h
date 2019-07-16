@@ -66,14 +66,6 @@ typedef struct __esf NANO_ESF;
 
 extern void z_ExcExit(void);
 
-/**
- * @brief display the contents of a exception stack frame
- *
- * @return N/A
- */
-
-extern void sys_exc_esf_dump(NANO_ESF *esf);
-
 #endif /* _ASMLANGUAGE */
 
 #ifdef __cplusplus

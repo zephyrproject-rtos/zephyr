@@ -19,10 +19,34 @@
 #include <kernel_structs.h>
 #include <logging/log_ctrl.h>
 
+static void esf_dump(const NANO_ESF *esf)
+{
+	z_fatal_print("r0/a1:  0x%08x  r1/a2:  0x%08x  r2/a3:  0x%08x",
+		      esf->basic.a1, esf->basic.a2, esf->basic.a3);
+	z_fatal_print("r3/a4:  0x%08x r12/ip:  0x%08x r14/lr:  0x%08x",
+		      esf->basic.a4, esf->basic.ip, esf->basic.lr);
+	z_fatal_print(" xpsr:  0x%08x", esf->basic.xpsr);
+#if defined(CONFIG_FLOAT) && defined(CONFIG_FP_SHARING)
+	for (int i = 0; i < 16; i += 4) {
+		z_fatal_print("s[%d]:  0x%08x  s[%d]:  0x%08x"
+			      "  s[%d]:  0x%08x  s[%d]:  0x%08x\n",
+			      i, (u32_t)esf->s[i],
+			      i + 1, (u32_t)esf->s[i + 1],
+			      i + 2, (u32_t)esf->s[i + 2],
+			      i + 3, (u32_t)esf->s[i + 3]);
+	}
+	z_fatal_print("fpscr:  0x%08x\n", esf->fpscr);
+#endif
+	z_fatal_print("Faulting instruction address (r15/pc): 0x%08x",
+		      esf->basic.pc);
+}
+
 void z_arm_fatal_error(unsigned int reason, const NANO_ESF *esf)
 {
-	z_fatal_print("Faulting instruction address = 0x%x",
-		      esf->basic.pc);
+
+	if (esf != NULL) {
+		esf_dump(esf);
+	}
 	z_fatal_error(reason, esf);
 }
 
