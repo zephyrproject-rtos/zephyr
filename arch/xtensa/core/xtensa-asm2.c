@@ -201,7 +201,7 @@ void *xtensa_excint1_c(int *interrupted_stack)
 		 * as these are software errors.  Should clean this
 		 * up.
 		 *
-		 * FIXME: interrupted_stack and NANO_ESF ought to be the same
+		 * FIXME: interrupted_stack and z_arch_esf_t ought to be the same
 		 */
 		z_xtensa_fatal_error(K_ERR_CPU_EXCEPTION, NULL);
 	}

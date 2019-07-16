@@ -21,7 +21,7 @@
 #include <exc_handle.h>
 #include <logging/log_ctrl.h>
 
-__weak void z_debug_fatal_hook(const NANO_ESF *esf) { ARG_UNUSED(esf); }
+__weak void z_debug_fatal_hook(const z_arch_esf_t *esf) { ARG_UNUSED(esf); }
 
 #ifdef CONFIG_THREAD_STACK_INFO
 /**
@@ -129,7 +129,7 @@ FUNC_NORETURN void z_arch_system_halt(unsigned int reason)
 }
 #endif
 
-FUNC_NORETURN void z_x86_fatal_error(unsigned int reason, const NANO_ESF *esf)
+FUNC_NORETURN void z_x86_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
 {
 	if (esf != NULL) {
 		z_fatal_print("eax: 0x%08x, ebx: 0x%08x, ecx: 0x%08x, edx: 0x%08x",
@@ -152,7 +152,7 @@ FUNC_NORETURN void z_x86_fatal_error(unsigned int reason, const NANO_ESF *esf)
 	CODE_UNREACHABLE;
 }
 
-void z_x86_spurious_irq(const NANO_ESF *esf)
+void z_x86_spurious_irq(const z_arch_esf_t *esf)
 {
 	int vector = z_irq_controller_isr_vector_get();
 
@@ -167,7 +167,7 @@ void z_arch_syscall_oops(void *ssf_ptr)
 {
 	struct _x86_syscall_stack_frame *ssf =
 		(struct _x86_syscall_stack_frame *)ssf_ptr;
-	NANO_ESF oops = {
+	z_arch_esf_t oops = {
 		.eip = ssf->eip,
 		.cs = ssf->cs,
 		.eflags = ssf->eflags
@@ -181,7 +181,7 @@ void z_arch_syscall_oops(void *ssf_ptr)
 }
 
 #ifdef CONFIG_X86_KERNEL_OOPS
-void z_do_kernel_oops(const NANO_ESF *esf)
+void z_do_kernel_oops(const z_arch_esf_t *esf)
 {
 	u32_t *stack_ptr = (u32_t *)esf->esp;
 	u32_t reason = *stack_ptr;
@@ -208,7 +208,7 @@ NANO_CPU_INT_REGISTER(_kernel_oops_handler, NANO_SOFT_IRQ,
 #if CONFIG_EXCEPTION_DEBUG
 
 FUNC_NORETURN static void generic_exc_handle(unsigned int vector,
-					     const NANO_ESF *pEsf)
+					     const z_arch_esf_t *pEsf)
 {
 	switch (vector) {
 	case IV_GENERAL_PROTECTION:
@@ -228,7 +228,7 @@ FUNC_NORETURN static void generic_exc_handle(unsigned int vector,
 }
 
 #define _EXC_FUNC(vector) \
-FUNC_NORETURN void handle_exc_##vector(const NANO_ESF *pEsf) \
+FUNC_NORETURN void handle_exc_##vector(const z_arch_esf_t *pEsf) \
 { \
 	generic_exc_handle(vector, pEsf); \
 }
@@ -302,7 +302,7 @@ static void dump_mmu_flags(struct x86_mmu_pdpt *pdpt, void *addr)
 }
 #endif /* CONFIG_X86_MMU */
 
-static void dump_page_fault(NANO_ESF *esf)
+static void dump_page_fault(z_arch_esf_t *esf)
 {
 	u32_t err, cr2;
 
@@ -338,7 +338,7 @@ static const struct z_exc_handle exceptions[] = {
 };
 #endif
 
-void page_fault_handler(NANO_ESF *esf)
+void page_fault_handler(z_arch_esf_t *esf)
 {
 #ifdef CONFIG_USERSPACE
 	int i;
@@ -365,7 +365,7 @@ void page_fault_handler(NANO_ESF *esf)
 _EXCEPTION_CONNECT_CODE(page_fault_handler, IV_PAGE_FAULT);
 
 #ifdef CONFIG_X86_ENABLE_TSS
-static __noinit volatile NANO_ESF _df_esf;
+static __noinit volatile z_arch_esf_t _df_esf;
 
 /* Very tiny stack; just enough for the bogus error code pushed by the CPU
  * and a frame pointer push by the compiler. All df_handler_top does is
@@ -418,13 +418,13 @@ static __used void df_handler_bottom(void)
 		reason = K_ERR_STACK_CHK_FAIL;
 	}
 #endif
-	z_x86_fatal_error(reason, (NANO_ESF *)&_df_esf);
+	z_x86_fatal_error(reason, (z_arch_esf_t *)&_df_esf);
 }
 
 static FUNC_NORETURN __used void df_handler_top(void)
 {
 	/* State of the system when the double-fault forced a task switch
-	 * will be in _main_tss. Set up a NANO_ESF and copy system state into
+	 * will be in _main_tss. Set up a z_arch_esf_t and copy system state into
 	 * it
 	 */
 	_df_esf.esp = _main_tss.esp;

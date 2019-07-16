@@ -136,7 +136,7 @@
  */
 
 #if (CONFIG_FAULT_DUMP == 1)
-static void FaultShow(const NANO_ESF *esf, int fault)
+static void FaultShow(const z_arch_esf_t *esf, int fault)
 {
 	PR_EXC("Fault! EXC #%d", fault);
 
@@ -155,7 +155,7 @@ static void FaultShow(const NANO_ESF *esf, int fault)
  *
  * For Dump level 0, no information needs to be generated.
  */
-static void FaultShow(const NANO_ESF *esf, int fault)
+static void FaultShow(const z_arch_esf_t *esf, int fault)
 {
 	(void)esf;
 	(void)fault;
@@ -175,7 +175,7 @@ static const struct z_exc_handle exceptions[] = {
  *
  * @return true if error is recoverable, otherwise return false.
  */
-static bool memory_fault_recoverable(NANO_ESF *esf)
+static bool memory_fault_recoverable(z_arch_esf_t *esf)
 {
 #ifdef CONFIG_USERSPACE
 	for (int i = 0; i < ARRAY_SIZE(exceptions); i++) {
@@ -210,7 +210,7 @@ u32_t z_check_thread_stack_fail(const u32_t fault_addr,
  *
  * @return error code to identify the fatal error reason
  */
-static u32_t MpuFault(NANO_ESF *esf, int fromHardFault, bool *recoverable)
+static u32_t MpuFault(z_arch_esf_t *esf, int fromHardFault, bool *recoverable)
 {
 	u32_t reason = K_ERR_CPU_EXCEPTION;
 	u32_t mmfar = -EINVAL;
@@ -333,7 +333,7 @@ static u32_t MpuFault(NANO_ESF *esf, int fromHardFault, bool *recoverable)
  *
  * @return N/A
  */
-static int BusFault(NANO_ESF *esf, int fromHardFault, bool *recoverable)
+static int BusFault(z_arch_esf_t *esf, int fromHardFault, bool *recoverable)
 {
 	u32_t reason = K_ERR_CPU_EXCEPTION;
 
@@ -487,7 +487,7 @@ static int BusFault(NANO_ESF *esf, int fromHardFault, bool *recoverable)
  *
  * @return error code to identify the fatal error reason
  */
-static u32_t UsageFault(const NANO_ESF *esf)
+static u32_t UsageFault(const z_arch_esf_t *esf)
 {
 	u32_t reason = K_ERR_CPU_EXCEPTION;
 
@@ -543,7 +543,7 @@ static u32_t UsageFault(const NANO_ESF *esf)
  *
  * @return N/A
  */
-static void SecureFault(const NANO_ESF *esf)
+static void SecureFault(const z_arch_esf_t *esf)
 {
 	PR_FAULT_INFO("***** SECURE FAULT *****");
 
@@ -582,7 +582,7 @@ static void SecureFault(const NANO_ESF *esf)
  *
  * @return N/A
  */
-static void DebugMonitor(const NANO_ESF *esf)
+static void DebugMonitor(const z_arch_esf_t *esf)
 {
 	ARG_UNUSED(esf);
 
@@ -602,7 +602,7 @@ static void DebugMonitor(const NANO_ESF *esf)
  *
  * @return error code to identify the fatal error reason
  */
-static u32_t HardFault(NANO_ESF *esf, bool *recoverable)
+static u32_t HardFault(z_arch_esf_t *esf, bool *recoverable)
 {
 	u32_t reason = K_ERR_CPU_EXCEPTION;
 
@@ -644,7 +644,7 @@ static u32_t HardFault(NANO_ESF *esf, bool *recoverable)
  *
  * @return N/A
  */
-static void ReservedException(const NANO_ESF *esf, int fault)
+static void ReservedException(const z_arch_esf_t *esf, int fault)
 {
 	ARG_UNUSED(esf);
 
@@ -654,7 +654,7 @@ static void ReservedException(const NANO_ESF *esf, int fault)
 }
 
 /* Handler function for ARM fault conditions. */
-static u32_t FaultHandle(NANO_ESF *esf, int fault, bool *recoverable)
+static u32_t FaultHandle(z_arch_esf_t *esf, int fault, bool *recoverable)
 {
 	u32_t reason = K_ERR_CPU_EXCEPTION;
 
@@ -708,7 +708,7 @@ static u32_t FaultHandle(NANO_ESF *esf, int fault, bool *recoverable)
  *
  * @param secure_esf Pointer to the secure stack frame.
  */
-static void SecureStackDump(const NANO_ESF *secure_esf)
+static void SecureStackDump(const z_arch_esf_t *secure_esf)
 {
 	/*
 	 * In case a Non-Secure exception interrupted the Secure
@@ -733,7 +733,7 @@ static void SecureStackDump(const NANO_ESF *secure_esf)
 		 * Non-Secure exception entry.
 		 */
 		top_of_sec_stack += ADDITIONAL_STATE_CONTEXT_WORDS;
-		secure_esf = (const NANO_ESF *)top_of_sec_stack;
+		secure_esf = (const z_arch_esf_t *)top_of_sec_stack;
 		sec_ret_addr = secure_esf->basic.pc;
 	} else {
 		/* Exception during Non-Secure function call.
@@ -780,7 +780,7 @@ static void SecureStackDump(const NANO_ESF *secure_esf)
  * Note: exc_return argument shall only be used by the Fault handler if we are
  * running a Secure Firmware.
  */
-void _Fault(NANO_ESF *esf, u32_t exc_return)
+void _Fault(z_arch_esf_t *esf, u32_t exc_return)
 {
 	u32_t reason = K_ERR_CPU_EXCEPTION;
 	int fault = SCB->ICSR & SCB_ICSR_VECTACTIVE_Msk;
@@ -815,13 +815,13 @@ void _Fault(NANO_ESF *esf, u32_t exc_return)
 		 * and supply it to the fault handing function.
 		 */
 		if (exc_return & EXC_RETURN_MODE_THREAD) {
-			esf = (NANO_ESF *)__TZ_get_PSP_NS();
+			esf = (z_arch_esf_t *)__TZ_get_PSP_NS();
 			if ((SCB->ICSR & SCB_ICSR_RETTOBASE_Msk) == 0) {
 				PR_EXC("RETTOBASE does not match EXC_RETURN");
 				goto _exit_fatal;
 			}
 		} else {
-			esf = (NANO_ESF *)__TZ_get_MSP_NS();
+			esf = (z_arch_esf_t *)__TZ_get_MSP_NS();
 			if ((SCB->ICSR & SCB_ICSR_RETTOBASE_Msk) != 0) {
 				PR_EXC("RETTOBASE does not match EXC_RETURN");
 				goto _exit_fatal;

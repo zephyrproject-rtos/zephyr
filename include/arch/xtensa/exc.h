@@ -32,7 +32,7 @@ struct __esf {
 	u32_t pc;
 };
 
-typedef struct __esf NANO_ESF;
+typedef struct __esf z_arch_esf_t;
 #endif
 
 #ifdef __cplusplus

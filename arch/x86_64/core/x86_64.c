@@ -18,7 +18,7 @@
 
 struct device;
 
-struct NANO_ESF {
+struct z_arch_esf_t {
 };
 
 void z_new_thread(struct k_thread *t, k_thread_stack_t *stack,
@@ -59,7 +59,7 @@ void z_unhandled_vector(int vector, int err, struct xuk_entry_frame *f)
 	z_fatal_print("***  R8 0x%llx R9 0x%llx R10 0x%llx R11 0x%llx",
 		      f->r8, f->r9, f->r10, f->r11);
 
-	/* FIXME: Why isn't xuk_entry_frame a NANO_ESF? */
+	/* FIXME: Why isn't xuk_entry_frame a z_arch_esf_t? */
 	z_fatal_error(x86_64_except_reason, NULL);
 }
 

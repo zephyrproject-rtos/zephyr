@@ -11,7 +11,7 @@
 #include <logging/log_ctrl.h>
 
 FUNC_NORETURN void z_nios2_fatal_error(unsigned int reason,
-				       const NANO_ESF *esf)
+				       const z_arch_esf_t *esf)
 {
 	if (esf != NULL) {
 		/* Subtract 4 from EA since we added 4 earlier so that the
@@ -99,7 +99,7 @@ static char *cause_str(u32_t cause_code)
 }
 #endif
 
-FUNC_NORETURN void _Fault(const NANO_ESF *esf)
+FUNC_NORETURN void _Fault(const z_arch_esf_t *esf)
 {
 #if defined(CONFIG_PRINTK) || defined(CONFIG_LOG)
 	/* Unfortunately, completely unavailable on Nios II/e cores */

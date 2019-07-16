@@ -33,7 +33,7 @@ FUNC_NORETURN __weak void z_arch_system_halt(unsigned int reason)
 
 /* LCOV_EXCL_START */
 __weak void k_sys_fatal_error_handler(unsigned int reason,
-				      const NANO_ESF *esf)
+				      const z_arch_esf_t *esf)
 {
 	ARG_UNUSED(esf);
 
@@ -95,7 +95,7 @@ void z_fatal_print(const char *fmt, ...)
 }
 #endif /* CONFIG_LOG || CONFIG_PRINTK */
 
-void z_fatal_error(unsigned int reason, const NANO_ESF *esf)
+void z_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
 {
 	struct k_thread *thread = k_current_get();
 

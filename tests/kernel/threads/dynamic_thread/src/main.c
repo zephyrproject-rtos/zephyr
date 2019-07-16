@@ -15,7 +15,7 @@ static K_SEM_DEFINE(start_sem, 0, 1);
 static K_SEM_DEFINE(end_sem, 0, 1);
 static ZTEST_BMEM struct k_thread *dyn_thread;
 
-void k_sys_fatal_error_handler(unsigned int reason, const NANO_ESF *esf)
+void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *esf)
 {
 	zassert_equal(reason, K_ERR_KERNEL_OOPS, "wrong error reason");
 	zassert_equal(k_current_get(), dyn_thread, "wrong thread crashed");

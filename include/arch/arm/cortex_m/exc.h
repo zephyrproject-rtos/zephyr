@@ -62,7 +62,7 @@ struct __esf {
 #endif
 };
 
-typedef struct __esf NANO_ESF;
+typedef struct __esf z_arch_esf_t;
 
 extern void z_ExcExit(void);
 

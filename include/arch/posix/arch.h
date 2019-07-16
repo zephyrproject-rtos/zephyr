@@ -37,7 +37,7 @@ struct __esf {
 	u32_t dummy; /*maybe we will want to add something someday*/
 };
 
-typedef struct __esf NANO_ESF;
+typedef struct __esf z_arch_esf_t;
 
 extern u32_t z_timer_cycle_get_32(void);
 #define z_arch_k_cycle_get_32()  z_timer_cycle_get_32()

@@ -44,7 +44,7 @@ volatile int rv;
 
 static volatile int crash_reason;
 
-void k_sys_fatal_error_handler(unsigned int reason, const NANO_ESF *pEsf)
+void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
 {
 	TC_PRINT("Caught system error -- reason %d\n", reason);
 	crash_reason = reason;

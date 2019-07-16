@@ -150,13 +150,13 @@ struct __esf {
 	u32_t instr; /* Instruction being executed when exc occurred */
 };
 
-typedef struct __esf NANO_ESF;
+typedef struct __esf z_arch_esf_t;
 
 FUNC_NORETURN void z_SysFatalErrorHandler(unsigned int reason,
-					 const NANO_ESF *esf);
+					 const z_arch_esf_t *esf);
 
 FUNC_NORETURN void z_NanoFatalErrorHandler(unsigned int reason,
-					  const NANO_ESF *esf);
+					  const z_arch_esf_t *esf);
 
 enum nios2_exception_cause {
 	NIOS2_EXCEPTION_UNKNOWN                      = -1,

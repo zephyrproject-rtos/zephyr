@@ -66,7 +66,7 @@ GTEXT(__irq_wrapper)
  */
 SECTION_FUNC(exception.entry, __irq_wrapper)
 	/* Allocate space on thread stack to save registers */
-	addi sp, sp, -__NANO_ESF_SIZEOF
+	addi sp, sp, -__z_arch_esf_t_SIZEOF
 
 	/*
 	 * Save caller-saved registers on current thread stack.
@@ -74,36 +74,36 @@ SECTION_FUNC(exception.entry, __irq_wrapper)
 	 * floating-point registers should be accounted for when corresponding
 	 * config variable is set
 	 */
-	sw ra, __NANO_ESF_ra_OFFSET(sp)
-	sw gp, __NANO_ESF_gp_OFFSET(sp)
-	sw tp, __NANO_ESF_tp_OFFSET(sp)
-	sw t0, __NANO_ESF_t0_OFFSET(sp)
-	sw t1, __NANO_ESF_t1_OFFSET(sp)
-	sw t2, __NANO_ESF_t2_OFFSET(sp)
-	sw t3, __NANO_ESF_t3_OFFSET(sp)
-	sw t4, __NANO_ESF_t4_OFFSET(sp)
-	sw t5, __NANO_ESF_t5_OFFSET(sp)
-	sw t6, __NANO_ESF_t6_OFFSET(sp)
-	sw a0, __NANO_ESF_a0_OFFSET(sp)
-	sw a1, __NANO_ESF_a1_OFFSET(sp)
-	sw a2, __NANO_ESF_a2_OFFSET(sp)
-	sw a3, __NANO_ESF_a3_OFFSET(sp)
-	sw a4, __NANO_ESF_a4_OFFSET(sp)
-	sw a5, __NANO_ESF_a5_OFFSET(sp)
-	sw a6, __NANO_ESF_a6_OFFSET(sp)
-	sw a7, __NANO_ESF_a7_OFFSET(sp)
+	sw ra, __z_arch_esf_t_ra_OFFSET(sp)
+	sw gp, __z_arch_esf_t_gp_OFFSET(sp)
+	sw tp, __z_arch_esf_t_tp_OFFSET(sp)
+	sw t0, __z_arch_esf_t_t0_OFFSET(sp)
+	sw t1, __z_arch_esf_t_t1_OFFSET(sp)
+	sw t2, __z_arch_esf_t_t2_OFFSET(sp)
+	sw t3, __z_arch_esf_t_t3_OFFSET(sp)
+	sw t4, __z_arch_esf_t_t4_OFFSET(sp)
+	sw t5, __z_arch_esf_t_t5_OFFSET(sp)
+	sw t6, __z_arch_esf_t_t6_OFFSET(sp)
+	sw a0, __z_arch_esf_t_a0_OFFSET(sp)
+	sw a1, __z_arch_esf_t_a1_OFFSET(sp)
+	sw a2, __z_arch_esf_t_a2_OFFSET(sp)
+	sw a3, __z_arch_esf_t_a3_OFFSET(sp)
+	sw a4, __z_arch_esf_t_a4_OFFSET(sp)
+	sw a5, __z_arch_esf_t_a5_OFFSET(sp)
+	sw a6, __z_arch_esf_t_a6_OFFSET(sp)
+	sw a7, __z_arch_esf_t_a7_OFFSET(sp)
 
 	/* Save MEPC register */
 	csrr t0, mepc
-	sw t0, __NANO_ESF_mepc_OFFSET(sp)
+	sw t0, __z_arch_esf_t_mepc_OFFSET(sp)
 
 	/* Save SOC-specific MSTATUS register */
 	csrr t0, SOC_MSTATUS_REG
-	sw t0, __NANO_ESF_mstatus_OFFSET(sp)
+	sw t0, __z_arch_esf_t_mstatus_OFFSET(sp)
 
 #ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE
 	/* Handle context saving at SOC level. */
-	addi a0, sp, __NANO_ESF_soc_context_OFFSET
+	addi a0, sp, __z_arch_esf_t_soc_context_OFFSET
 	jal ra, __soc_save_context
 #endif /* CONFIG_RISCV_SOC_CONTEXT_SAVE */
 
@@ -145,7 +145,7 @@ SECTION_FUNC(exception.entry, __irq_wrapper)
 
 	/*
 	 * Call _Fault to handle exception.
-	 * Stack pointer is pointing to a NANO_ESF structure, pass it
+	 * Stack pointer is pointing to a z_arch_esf_t structure, pass it
 	 * to _Fault (via register a0).
 	 * If _Fault shall return, set return address to no_reschedule
 	 * to restore stack.
@@ -164,9 +164,9 @@ is_syscall:
 	 * It's safe to always increment by 4, even with compressed
 	 * instructions, because the ecall instruction is always 4 bytes.
 	 */
-	lw t0, __NANO_ESF_mepc_OFFSET(sp)
+	lw t0, __z_arch_esf_t_mepc_OFFSET(sp)
 	addi t0, t0, 4
-	sw t0, __NANO_ESF_mepc_OFFSET(sp)
+	sw t0, __z_arch_esf_t_mepc_OFFSET(sp)
 
 #ifdef CONFIG_IRQ_OFFLOAD
 	/*
@@ -365,89 +365,89 @@ reschedule:
 	lw s11, _thread_offset_to_s11(t1)
 
 #ifdef CONFIG_EXECUTION_BENCHMARKING
-	addi sp, sp, -__NANO_ESF_SIZEOF
+	addi sp, sp, -__z_arch_esf_t_SIZEOF
 
-	sw ra, __NANO_ESF_ra_OFFSET(sp)
-	sw gp, __NANO_ESF_gp_OFFSET(sp)
-	sw tp, __NANO_ESF_tp_OFFSET(sp)
-	sw t0, __NANO_ESF_t0_OFFSET(sp)
-	sw t1, __NANO_ESF_t1_OFFSET(sp)
-	sw t2, __NANO_ESF_t2_OFFSET(sp)
-	sw t3, __NANO_ESF_t3_OFFSET(sp)
-	sw t4, __NANO_ESF_t4_OFFSET(sp)
-	sw t5, __NANO_ESF_t5_OFFSET(sp)
-	sw t6, __NANO_ESF_t6_OFFSET(sp)
-	sw a0, __NANO_ESF_a0_OFFSET(sp)
-	sw a1, __NANO_ESF_a1_OFFSET(sp)
-	sw a2, __NANO_ESF_a2_OFFSET(sp)
-	sw a3, __NANO_ESF_a3_OFFSET(sp)
-	sw a4, __NANO_ESF_a4_OFFSET(sp)
-	sw a5, __NANO_ESF_a5_OFFSET(sp)
-	sw a6, __NANO_ESF_a6_OFFSET(sp)
-	sw a7, __NANO_ESF_a7_OFFSET(sp)
+	sw ra, __z_arch_esf_t_ra_OFFSET(sp)
+	sw gp, __z_arch_esf_t_gp_OFFSET(sp)
+	sw tp, __z_arch_esf_t_tp_OFFSET(sp)
+	sw t0, __z_arch_esf_t_t0_OFFSET(sp)
+	sw t1, __z_arch_esf_t_t1_OFFSET(sp)
+	sw t2, __z_arch_esf_t_t2_OFFSET(sp)
+	sw t3, __z_arch_esf_t_t3_OFFSET(sp)
+	sw t4, __z_arch_esf_t_t4_OFFSET(sp)
+	sw t5, __z_arch_esf_t_t5_OFFSET(sp)
+	sw t6, __z_arch_esf_t_t6_OFFSET(sp)
+	sw a0, __z_arch_esf_t_a0_OFFSET(sp)
+	sw a1, __z_arch_esf_t_a1_OFFSET(sp)
+	sw a2, __z_arch_esf_t_a2_OFFSET(sp)
+	sw a3, __z_arch_esf_t_a3_OFFSET(sp)
+	sw a4, __z_arch_esf_t_a4_OFFSET(sp)
+	sw a5, __z_arch_esf_t_a5_OFFSET(sp)
+	sw a6, __z_arch_esf_t_a6_OFFSET(sp)
+	sw a7, __z_arch_esf_t_a7_OFFSET(sp)
 
 	call read_timer_end_of_swap
 
-	lw ra, __NANO_ESF_ra_OFFSET(sp)
-	lw gp, __NANO_ESF_gp_OFFSET(sp)
-	lw tp, __NANO_ESF_tp_OFFSET(sp)
-	lw t0, __NANO_ESF_t0_OFFSET(sp)
-	lw t1, __NANO_ESF_t1_OFFSET(sp)
-	lw t2, __NANO_ESF_t2_OFFSET(sp)
-	lw t3, __NANO_ESF_t3_OFFSET(sp)
-	lw t4, __NANO_ESF_t4_OFFSET(sp)
-	lw t5, __NANO_ESF_t5_OFFSET(sp)
-	lw t6, __NANO_ESF_t6_OFFSET(sp)
-	lw a0, __NANO_ESF_a0_OFFSET(sp)
-	lw a1, __NANO_ESF_a1_OFFSET(sp)
-	lw a2, __NANO_ESF_a2_OFFSET(sp)
-	lw a3, __NANO_ESF_a3_OFFSET(sp)
-	lw a4, __NANO_ESF_a4_OFFSET(sp)
-	lw a5, __NANO_ESF_a5_OFFSET(sp)
-	lw a6, __NANO_ESF_a6_OFFSET(sp)
-	lw a7, __NANO_ESF_a7_OFFSET(sp)
+	lw ra, __z_arch_esf_t_ra_OFFSET(sp)
+	lw gp, __z_arch_esf_t_gp_OFFSET(sp)
+	lw tp, __z_arch_esf_t_tp_OFFSET(sp)
+	lw t0, __z_arch_esf_t_t0_OFFSET(sp)
+	lw t1, __z_arch_esf_t_t1_OFFSET(sp)
+	lw t2, __z_arch_esf_t_t2_OFFSET(sp)
+	lw t3, __z_arch_esf_t_t3_OFFSET(sp)
+	lw t4, __z_arch_esf_t_t4_OFFSET(sp)
+	lw t5, __z_arch_esf_t_t5_OFFSET(sp)
+	lw t6, __z_arch_esf_t_t6_OFFSET(sp)
+	lw a0, __z_arch_esf_t_a0_OFFSET(sp)
+	lw a1, __z_arch_esf_t_a1_OFFSET(sp)
+	lw a2, __z_arch_esf_t_a2_OFFSET(sp)
+	lw a3, __z_arch_esf_t_a3_OFFSET(sp)
+	lw a4, __z_arch_esf_t_a4_OFFSET(sp)
+	lw a5, __z_arch_esf_t_a5_OFFSET(sp)
+	lw a6, __z_arch_esf_t_a6_OFFSET(sp)
+	lw a7, __z_arch_esf_t_a7_OFFSET(sp)
 
 	/* Release stack space */
-	addi sp, sp, __NANO_ESF_SIZEOF
+	addi sp, sp, __z_arch_esf_t_SIZEOF
 #endif
 
 no_reschedule:
 #ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE
 	/* Restore context at SOC level */
-	addi a0, sp, __NANO_ESF_soc_context_OFFSET
+	addi a0, sp, __z_arch_esf_t_soc_context_OFFSET
 	jal ra, __soc_restore_context
 #endif /* CONFIG_RISCV_SOC_CONTEXT_SAVE */
 
 	/* Restore MEPC register */
-	lw t0, __NANO_ESF_mepc_OFFSET(sp)
+	lw t0, __z_arch_esf_t_mepc_OFFSET(sp)
 	csrw mepc, t0
 
 	/* Restore SOC-specific MSTATUS register */
-	lw t0, __NANO_ESF_mstatus_OFFSET(sp)
+	lw t0, __z_arch_esf_t_mstatus_OFFSET(sp)
 	csrw SOC_MSTATUS_REG, t0
 
 	/* Restore caller-saved registers from thread stack */
-	lw ra, __NANO_ESF_ra_OFFSET(sp)
-	lw gp, __NANO_ESF_gp_OFFSET(sp)
-	lw tp, __NANO_ESF_tp_OFFSET(sp)
-	lw t0, __NANO_ESF_t0_OFFSET(sp)
-	lw t1, __NANO_ESF_t1_OFFSET(sp)
-	lw t2, __NANO_ESF_t2_OFFSET(sp)
-	lw t3, __NANO_ESF_t3_OFFSET(sp)
-	lw t4, __NANO_ESF_t4_OFFSET(sp)
-	lw t5, __NANO_ESF_t5_OFFSET(sp)
-	lw t6, __NANO_ESF_t6_OFFSET(sp)
-	lw a0, __NANO_ESF_a0_OFFSET(sp)
-	lw a1, __NANO_ESF_a1_OFFSET(sp)
-	lw a2, __NANO_ESF_a2_OFFSET(sp)
-	lw a3, __NANO_ESF_a3_OFFSET(sp)
-	lw a4, __NANO_ESF_a4_OFFSET(sp)
-	lw a5, __NANO_ESF_a5_OFFSET(sp)
-	lw a6, __NANO_ESF_a6_OFFSET(sp)
-	lw a7, __NANO_ESF_a7_OFFSET(sp)
+	lw ra, __z_arch_esf_t_ra_OFFSET(sp)
+	lw gp, __z_arch_esf_t_gp_OFFSET(sp)
+	lw tp, __z_arch_esf_t_tp_OFFSET(sp)
+	lw t0, __z_arch_esf_t_t0_OFFSET(sp)
+	lw t1, __z_arch_esf_t_t1_OFFSET(sp)
+	lw t2, __z_arch_esf_t_t2_OFFSET(sp)
+	lw t3, __z_arch_esf_t_t3_OFFSET(sp)
+	lw t4, __z_arch_esf_t_t4_OFFSET(sp)
+	lw t5, __z_arch_esf_t_t5_OFFSET(sp)
+	lw t6, __z_arch_esf_t_t6_OFFSET(sp)
+	lw a0, __z_arch_esf_t_a0_OFFSET(sp)
+	lw a1, __z_arch_esf_t_a1_OFFSET(sp)
+	lw a2, __z_arch_esf_t_a2_OFFSET(sp)
+	lw a3, __z_arch_esf_t_a3_OFFSET(sp)
+	lw a4, __z_arch_esf_t_a4_OFFSET(sp)
+	lw a5, __z_arch_esf_t_a5_OFFSET(sp)
+	lw a6, __z_arch_esf_t_a6_OFFSET(sp)
+	lw a7, __z_arch_esf_t_a7_OFFSET(sp)
 
 	/* Release stack space */
-	addi sp, sp, __NANO_ESF_SIZEOF
+	addi sp, sp, __z_arch_esf_t_SIZEOF
 
 	/* Call SOC_ERET to exit ISR */
 	SOC_ERET
