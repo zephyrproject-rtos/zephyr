@@ -12,6 +12,7 @@
 	w25q32jvwj0: w25q32jvwj@0 {
 		compatible = "winbond,w25q32jvwj", "jedec,spi-nor";
 		reg = <0>;
+		spi-max-frequency = <133000000>;
 		status = "okay";
 		jedec-id = <0xef 0x40 0x16>;
 	};
