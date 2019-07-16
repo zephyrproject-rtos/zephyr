@@ -19,6 +19,13 @@
 		label = "LPS22HH";
 	};
 
+	stts751@4a {
+		compatible = "st,stts751";
+		reg = <0x4a>;
+		drdy-gpios =  <&arduino_header 4 0>; /* A4 */
+		label = "STTS751";
+	};
+
 	lis2mdl@1e {
 		compatible = "st,lis2mdl-magn";
 		reg = <0x1e>;
