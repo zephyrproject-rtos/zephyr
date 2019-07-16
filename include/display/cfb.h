@@ -48,9 +48,9 @@ enum cfb_font_caps {
 
 struct cfb_font {
 	const void *data;
+	enum cfb_font_caps caps;
 	u8_t width;
 	u8_t height;
-	enum cfb_font_caps caps;
 	u8_t first_char;
 	u8_t last_char;
 };
@@ -69,10 +69,10 @@ struct cfb_font {
 #define FONT_ENTRY_DEFINE(_name, _width, _height, _caps, _data, _fc, _lc)      \
 	static const Z_STRUCT_SECTION_ITERABLE(cfb_font, _name) =	       \
 	{								       \
+		.data = _data,						       \
+		.caps = _caps,						       \
 		.width = _width,					       \
 		.height = _height,					       \
-		.caps = _caps,						       \
-		.data = _data,						       \
 		.first_char = _fc,					       \
 		.last_char = _lc,					       \
 	}
