@@ -4122,6 +4122,9 @@ static inline u8_t phy_upd_ind_recv(struct ll_conn *conn, memq_link_t *link,
 		conn->llcp_phy.pause_tx = 0U;
 		conn->procedure_expire = 0U;
 
+		/* Reset packet timing restrictions */
+		conn->lll.phy_tx_time = conn->lll.phy_tx;
+
 		/* Ignore event generation if not local cmd initiated */
 		if (!conn->llcp_phy.cmd) {
 			/* Mark for buffer for release */
