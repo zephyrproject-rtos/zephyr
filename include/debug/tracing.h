@@ -95,6 +95,12 @@ void z_sys_trace_thread_switched_out(void);
 #define sys_trace_thread_info(thread)
 
 /**
+ * @brief Called when a thread name is set
+ * @param thread Thread structure
+ */
+#define sys_trace_thread_name_set(thread)
+
+/**
  * @brief Called when entering an ISR
  */
 #define sys_trace_isr_enter()

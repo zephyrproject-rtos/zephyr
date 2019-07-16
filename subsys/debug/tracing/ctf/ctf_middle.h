@@ -64,6 +64,7 @@ typedef enum {
 	CTF_EVENT_THREAD_READY          =  0x17,
 	CTF_EVENT_THREAD_PENDING        =  0x18,
 	CTF_EVENT_THREAD_INFO           =  0x19,
+	CTF_EVENT_THREAD_NAME_SET       =  0x1A,
 	CTF_EVENT_ISR_ENTER             =  0x20,
 	CTF_EVENT_ISR_EXIT              =  0x21,
 	CTF_EVENT_ISR_EXIT_TO_SCHEDULER =  0x22,
@@ -167,6 +168,18 @@ static inline void ctf_middle_thread_info(
 		thread_id,
 		stack_base,
 		stack_size
+		);
+}
+
+static inline void ctf_middle_thread_name_set(
+	u32_t thread_id,
+	ctf_bounded_string_t name
+	)
+{
+	CTF_EVENT(
+		CTF_LITERAL(u8_t, CTF_EVENT_THREAD_NAME_SET),
+		thread_id,
+		name
 		);
 }
 

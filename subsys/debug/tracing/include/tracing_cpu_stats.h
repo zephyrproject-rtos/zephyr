@@ -36,6 +36,7 @@ void cpu_stats_reset_counters(void);
 #define sys_trace_thread_resume(thread)
 #define sys_trace_thread_ready(thread)
 #define sys_trace_thread_pend(thread)
+#define sys_trace_thread_name_set(thread)
 
 #define sys_trace_void(id)
 #define sys_trace_end_call(id)

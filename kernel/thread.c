@@ -187,6 +187,7 @@ int z_impl_k_thread_name_set(struct k_thread *thread, const char *value)
 
 	strncpy(thread->name, value, CONFIG_THREAD_MAX_NAME_LEN);
 	thread->name[CONFIG_THREAD_MAX_NAME_LEN - 1] = '\0';
+	sys_trace_thread_name_set(thread);
 	return 0;
 #else
 	ARG_UNUSED(thread);

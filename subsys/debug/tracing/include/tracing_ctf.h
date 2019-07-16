@@ -25,6 +25,7 @@ void sys_trace_thread_resume(struct k_thread *thread);
 void sys_trace_thread_ready(struct k_thread *thread);
 void sys_trace_thread_pend(struct k_thread *thread);
 void sys_trace_thread_info(struct k_thread *thread);
+void sys_trace_thread_name_set(struct k_thread *thread);
 void sys_trace_isr_enter(void);
 void sys_trace_isr_exit(void);
 void sys_trace_isr_exit_to_scheduler(void);
