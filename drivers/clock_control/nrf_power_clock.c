@@ -215,7 +215,7 @@ static int hfclk_init(struct device *dev)
 	nrf_clock_int_enable(NRF_CLOCK,
 		(NRF_CLOCK_INT_HF_STARTED_MASK |
 		 NRF_CLOCK_INT_LF_STARTED_MASK |
-		 COND_CODE_1(CONFIG_USB_NRF52840,
+		 COND_CODE_1(CONFIG_USB_NRFX,
 			(NRF_POWER_INT_USBDETECTED_MASK |
 			 NRF_POWER_INT_USBREMOVED_MASK |
 			 NRF_POWER_INT_USBPWRRDY_MASK),
@@ -289,7 +289,7 @@ static void clkstarted_handle(struct device *dev)
 	}
 }
 
-#if defined(CONFIG_USB_NRF52840)
+#if defined(CONFIG_USB_NRFX)
 static bool power_event_check_and_clean(nrf_power_event_t evt, u32_t intmask)
 {
 	bool ret = nrf_power_event_check(NRF_POWER, evt) &&
@@ -305,7 +305,7 @@ static bool power_event_check_and_clean(nrf_power_event_t evt, u32_t intmask)
 
 static void usb_power_isr(void)
 {
-#if defined(CONFIG_USB_NRF52840)
+#if defined(CONFIG_USB_NRFX)
 	extern void usb_dc_nrfx_power_event_callback(nrf_power_event_t event);
 
 	if (power_event_check_and_clean(NRF_POWER_EVENT_USBDETECTED,
@@ -360,9 +360,9 @@ void nrf_power_clock_isr(void *arg)
 	}
 }
 
+#ifdef CONFIG_USB_NRFX
 void nrf5_power_usb_power_int_enable(bool enable)
 {
-#ifdef CONFIG_USB_NRF52840
 	u32_t mask;
 
 	mask = NRF_POWER_INT_USBDETECTED_MASK |
@@ -375,5 +375,5 @@ void nrf5_power_usb_power_int_enable(bool enable)
 	} else {
 		nrf_power_int_disable(NRF_POWER, mask);
 	}
-#endif
 }
+#endif

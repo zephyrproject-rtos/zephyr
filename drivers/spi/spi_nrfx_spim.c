@@ -59,7 +59,7 @@ static inline nrf_spim_frequency_t get_nrf_spim_frequency(u32_t frequency)
 		return NRF_SPIM_FREQ_2M;
 	} else if (frequency < 8000000) {
 		return NRF_SPIM_FREQ_4M;
-#ifdef CONFIG_SOC_NRF52840
+#if defined(CONFIG_SOC_NRF52833) || defined(CONFIG_SOC_NRF52840)
 	} else if (frequency < 16000000) {
 		return NRF_SPIM_FREQ_8M;
 	} else if (frequency < 32000000) {
