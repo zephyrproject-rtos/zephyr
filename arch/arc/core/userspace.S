@@ -155,11 +155,13 @@ _arc_go_to_user_space:
 
 	mov r1, z_thread_entry_wrapper1
 
-	/* fake exception return */
-	kflag _ARC_V2_STATUS32_AE
-
 	sr r0, [_ARC_V2_ERSTATUS]
 	sr r1, [_ARC_V2_ERET]
+
+	/* fake exception return */
+	lr r0, [_ARC_V2_STATUS32]
+	bclr r0, r0, _ARC_V2_STATUS32_AE_BIT
+	kflag r0
 
 #ifdef CONFIG_ARC_HAS_SECURE
 	lr r0, [_ARC_V2_SEC_STAT]
@@ -225,7 +227,9 @@ SECTION_FUNC(TEXT, _arc_do_syscall)
 	pop_s blink
 
 	/* through fake exception return, go back to the caller */
-	kflag _ARC_V2_STATUS32_AE
+	lr r6, [_ARC_V2_STATUS32]
+	bclr r6, r6, _ARC_V2_STATUS32_AE_BIT
+	kflag r6
 
 	/* the status and return address are saved in trap_s handler */
 	pop r6
