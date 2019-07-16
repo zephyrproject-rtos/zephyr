@@ -23,16 +23,11 @@
 #error "Choose supported PWM driver"
 #endif
 
-/* in micro second */
-#define MIN_PERIOD	(USEC_PER_SEC / 64U)
-
-/* in micro second */
-#define MAX_PERIOD	USEC_PER_SEC
-
 void main(void)
 {
 	struct device *pwm_dev;
-	u32_t period = MAX_PERIOD;
+	u32_t period, min_period, max_period;
+	u64_t cycles;
 	u8_t dir = 0U;
 
 	printk("PWM demo app-blink LED\n");
@@ -42,6 +37,12 @@ void main(void)
 		printk("Cannot find %s!\n", PWM_DRIVER);
 		return;
 	}
+
+	/* Adjust max_period depending pwm capabilities */
+	pwm_get_cycles_per_sec(pwm_dev, PWM_CHANNEL, &cycles);
+	/* in very worst case, PWM has a 8 bit resolution and count up to 256 */
+	period = max_period = 256 * USEC_PER_SEC / cycles;
+	min_period = max_period / 64;
 
 	while (1) {
 		if (pwm_pin_set_usec(pwm_dev, PWM_CHANNEL,
@@ -53,16 +54,16 @@ void main(void)
 		if (dir) {
 			period *= 2U;
 
-			if (period > MAX_PERIOD) {
+			if (period > max_period) {
 				dir = 0U;
-				period = MAX_PERIOD;
+				period = max_period;
 			}
 		} else {
 			period /= 2U;
 
-			if (period < MIN_PERIOD) {
+			if (period < min_period) {
 				dir = 1U;
-				period = MIN_PERIOD;
+				period = min_period;
 			}
 		}
 
