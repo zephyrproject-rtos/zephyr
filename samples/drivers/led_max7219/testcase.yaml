@@ -1,0 +1,12 @@
+sample:
+  name: led_max7219
+  description: Simple driver for max7219 led display.
+tests:
+  sample.driver.led_max7219:
+    platform_whitelist: nrf51_pca10028 nrf52_pca10040 nrf52840_pca10056
+    tags: LED SPI
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "Animation test complete."
