@@ -68,15 +68,7 @@ static ALWAYS_INLINE bool z_IsInIsr(void)
 		/* If not in thread mode, and if RETTOBASE bit in ICSR is 0,
 		 * then there are preempted active exceptions to execute.
 		 */
-#ifndef CONFIG_BOARD_QEMU_CORTEX_M3
-		/* The polarity of RETTOBASE is incorrectly flipped in
-		 * all but the very latest master tip of QEMU's NVIC driver,
-		 * see commit "armv7m: Rewrite NVIC to not use any GIC code".
-		 * Until QEMU 2.9 is released, and the SDK is updated to
-		 * include it, skip this check in QEMU.
-		 */
 		|| (vector && !(SCB->ICSR & SCB_ICSR_RETTOBASE_Msk))
-#endif /* CONFIG_BOARD_QEMU_CORTEX_M3 */
 #else
 #error Unknown ARM architecture
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
