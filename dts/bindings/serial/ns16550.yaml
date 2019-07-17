@@ -20,9 +20,6 @@ properties:
       category: optional
       description: quantity to shift the register offsets by
 
-    interrupts:
-      category: required
-
     pcp:
       type: int
       category: optional
