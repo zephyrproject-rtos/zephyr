@@ -34,9 +34,13 @@
 	#endif
 #elif defined(CONFIG_NIOS2)
 	OUTPUT_FORMAT("elf32-littlenios2", "elf32-bignios2", "elf32-littlenios2")
-#elif defined(CONFIG_RISCV32)
+#elif defined(CONFIG_RISCV)
 	OUTPUT_ARCH("riscv")
+#ifdef CONFIG_64BIT
+	OUTPUT_FORMAT("elf64-littleriscv")
+#else
 	OUTPUT_FORMAT("elf32-littleriscv")
+#endif
 #elif defined(CONFIG_XTENSA)
 	/* Not needed */
 #elif defined(CONFIG_ARCH_POSIX)

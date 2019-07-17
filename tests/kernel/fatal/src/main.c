@@ -59,7 +59,7 @@ void alt_thread1(void)
 #elif defined(CONFIG_ARC)
 	__asm__ volatile ("swi");
 #else
-	/* Triggers usage fault on ARM, illegal instruction on RISCV32
+	/* Triggers usage fault on ARM, illegal instruction on RISCV
 	 * and xtensa
 	 */
 	{
