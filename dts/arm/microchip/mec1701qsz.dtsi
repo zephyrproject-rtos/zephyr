@@ -35,6 +35,7 @@
 			current-speed = <38400>;
 			label = "UART_0";
 			reg-shift = <0>;
+			status = "disabled";
 		};
 		uart1: uart@400f2800 {
 			compatible = "ns16550";
@@ -43,6 +44,7 @@
 			current-speed = <38400>;
 			label = "UART_1";
 			reg-shift = <0>;
+			status = "disabled";
 		};
 	};
 };
