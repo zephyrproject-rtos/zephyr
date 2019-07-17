@@ -141,6 +141,13 @@ or::
 
 which will produce ``sanity-out/coverage/index.html`` with the report.
 
+Note that the sanitycheck coverage reports are currently created with
+`lcov`_, with a minimum version of 1.14. Some Linux distributions may
+not be up-to-date.
+
 .. _gcov:
    https://gcc.gnu.org/onlinedocs/gcc/Gcov.html
+
+.. _lcov:
+    http://ltp.sourceforge.net/coverage/lcov.php
 
