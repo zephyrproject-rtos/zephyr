@@ -15,9 +15,6 @@ properties:
     reg:
       category: required
 
-    interrupts:
-      category: required
-
     label:
       category: required
 
