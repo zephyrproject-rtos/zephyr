@@ -39,10 +39,10 @@
 /arch/x86/                                @andrewboie @gnuless
 /arch/nios2/                              @andrewboie @wentongwu
 /arch/posix/                              @aescolar
-/arch/riscv32/                            @kgugala @pgielda @nategraff-sifive
+/arch/riscv/                              @kgugala @pgielda @nategraff-sifive
 /soc/posix/                               @aescolar
-/soc/riscv32/                             @kgugala @pgielda @nategraff-sifive
-/soc/riscv32/openisa*/                    @MaureenHelm
+/soc/riscv/                               @kgugala @pgielda @nategraff-sifive
+/soc/riscv/openisa*/                      @MaureenHelm
 /arch/x86/core/                           @andrewboie @gnuless
 /arch/x86/core/ia32/crt0.S                @andrewboie @gnuless
 /arch/x86/core/pcie.c                     @gnuless
@@ -88,8 +88,8 @@
 /boards/nios2/altera_max10/               @wentongwu
 /boards/arm/stm32_min_dev/                @cbsiddharth
 /boards/posix/                            @aescolar
-/boards/riscv32/                          @kgugala @pgielda @nategraff-sifive
-/boards/riscv32/rv32m1_vega/              @MaureenHelm
+/boards/riscv/                            @kgugala @pgielda @nategraff-sifive
+/boards/riscv/rv32m1_vega/                @MaureenHelm
 /boards/shields/                          @erwango
 /boards/x86/                              @andrewboie @nashif
 /boards/x86/up_squared/                   @gnuless
@@ -178,8 +178,10 @@
 /dts/arm/nordic/                          @ioannisg @carlescufi
 /dts/arm/nxp/                             @MaureenHelm
 /dts/arm/microchip/                       @franciscomunoz @albertofloyd @scottwcpg
-/dts/riscv32/rv32m1*                      @MaureenHelm
-/dts/riscv32/riscv32-litex-vexriscv.dtsi  @mateusz-holenko @kgugala @pgielda
+/dts/riscv/microsemi-miv.dtsi             @galak
+/dts/riscv/rv32m1*                        @MaureenHelm
+/dts/riscv/riscv32-fe310.dtsi             @nategraff-sifive
+/dts/riscv/riscv32-litex-vexriscv.dtsi    @mateusz-holenko @kgugala @pgielda
 /dts/xtensa/xtensa.dtsi                   @ydamigos
 /dts/bindings/                            @galak
 /dts/bindings/can/                        @alexanderwachter
@@ -227,7 +229,7 @@
 /include/arch/nios2/                      @andrewboie
 /include/arch/nios2/arch.h                @andrewboie
 /include/arch/posix/                      @aescolar
-/include/arch/riscv32/                    @nategraff-sifive @kgugala @pgielda
+/include/arch/riscv/                      @nategraff-sifive @kgugala @pgielda
 /include/arch/x86/                        @andrewboie @wentongwu
 /include/arch/common/                     @andrewboie @andyross @nashif
 /include/arch/x86/ia32/arch.h             @andrewboie

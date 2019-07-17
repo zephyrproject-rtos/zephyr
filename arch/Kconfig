@@ -41,8 +41,8 @@ config NIOS2
 	select ATOMIC_OPERATIONS_C
 	select HAS_DTS
 
-config RISCV32
-	bool "RISCV32 architecture"
+config RISCV
+	bool "RISCV architecture"
 	select HAS_DTS
 
 config XTENSA

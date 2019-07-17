@@ -22,7 +22,7 @@ static void trigger_irq(int irq)
 #endif
 }
 
-#elif defined(CONFIG_RISCV32)
+#elif defined(CONFIG_RISCV)
 static void trigger_irq(int irq)
 {
 	u32_t mip;

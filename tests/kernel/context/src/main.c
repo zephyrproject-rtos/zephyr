@@ -86,11 +86,11 @@
 #error Timer type is not defined for this platform
 #endif
 
-/* Nios II and RISCV32 without CONFIG_RISCV_HAS_CPU_IDLE
+/* Nios II and RISCV without CONFIG_RISCV_HAS_CPU_IDLE
  * do have a power saving instruction, so k_cpu_idle() returns immediately
  */
 #if !defined(CONFIG_NIOS2) && \
-	(!defined(CONFIG_RISCV32) || defined(CONFIG_RISCV_HAS_CPU_IDLE))
+	(!defined(CONFIG_RISCV) || defined(CONFIG_RISCV_HAS_CPU_IDLE))
 #define HAS_POWERSAVE_INSTRUCTION
 #endif
 

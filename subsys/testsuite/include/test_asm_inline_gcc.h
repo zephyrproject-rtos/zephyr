@@ -44,7 +44,7 @@ static inline void timestamp_serialize(void)
 #define timestamp_serialize()
 #elif defined(CONFIG_NIOS2)
 #define timestamp_serialize()
-#elif defined(CONFIG_RISCV32)
+#elif defined(CONFIG_RISCV)
 #define timestamp_serialize()
 #else
 #error implementation of timestamp_serialize() not provided for your CPU target

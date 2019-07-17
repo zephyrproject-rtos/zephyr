@@ -100,7 +100,7 @@ int riscv_plic_irq_is_enabled(u32_t irq)
  * @brief Set priority of a riscv PLIC-specific interrupt line
  *
  * This routine set the priority of a RISCV PLIC-specific interrupt line.
- * riscv_plic_irq_set_prio is called by riscv32 Z_ARCH_IRQ_CONNECT to set
+ * riscv_plic_irq_set_prio is called by riscv Z_ARCH_IRQ_CONNECT to set
  * the priority of an interrupt whenever CONFIG_RISCV_HAS_PLIC variable is set.
  * @param irq IRQ number for which to set priority
  *
