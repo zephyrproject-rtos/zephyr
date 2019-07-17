@@ -1227,14 +1227,16 @@ enum {
 	 * when the client reconnects, it will have to
 	 * issue a new subscription.
 	 */
-	BT_GATT_SUBSCRIBE_FLAG_VOLATILE = BIT(0),
+	BT_GATT_SUBSCRIBE_FLAG_VOLATILE,
 
 	/** Write pending flag
 	 *
 	 * If set, indicates write operation is pending waiting remote end to
 	 * respond.
 	 */
-	BT_GATT_SUBSCRIBE_WRITE_PENDING = BIT(1),
+	BT_GATT_SUBSCRIBE_FLAG_WRITE_PENDING,
+
+	BT_GATT_SUBSCRIBE_NUM_FLAGS
 };
 
 /** @brief GATT Subscribe parameters */
@@ -1250,7 +1252,8 @@ struct bt_gatt_subscribe_params {
 	/** Subscribe value */
 	u16_t value;
 	/** Subscription flags */
-	u8_t flags;
+	ATOMIC_DEFINE(flags, BT_GATT_SUBSCRIBE_NUM_FLAGS);
+
 	sys_snode_t node;
 };
 
