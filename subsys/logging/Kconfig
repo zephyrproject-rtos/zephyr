@@ -372,6 +372,12 @@ config LOG_BACKEND_NATIVE_POSIX
 	help
 	  Enable backend in native_posix
 
+config LOG_BACKEND_QEMU_X86_64
+	bool "Enable QEMU x86_64 backend"
+	depends on BOARD_QEMU_X86_64
+	help
+	  Enable backend for qemu_x86_64 board
+
 config LOG_BACKEND_XTENSA_SIM
 	bool "Enable xtensa simulator backend"
 	depends on SOC_XTENSA_SAMPLE_CONTROLLER
