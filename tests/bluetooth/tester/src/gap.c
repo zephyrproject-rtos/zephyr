@@ -35,14 +35,19 @@ struct bt_conn_auth_cb cb;
 static void le_connected(struct bt_conn *conn, u8_t err)
 {
 	struct gap_device_connected_ev ev;
-	const bt_addr_le_t *addr = bt_conn_get_dst(conn);
+	struct bt_conn_info info;
 
 	if (err) {
 		return;
 	}
 
-	memcpy(ev.address, addr->a.val, sizeof(ev.address));
-	ev.address_type = addr->type;
+	bt_conn_get_info(conn, &info);
+
+	memcpy(ev.address, info.le.dst->a.val, sizeof(ev.address));
+	ev.address_type = info.le.dst->type;
+	ev.interval = sys_cpu_to_le16(info.le.interval);
+	ev.latency = sys_cpu_to_le16(info.le.latency);
+	ev.timeout = sys_cpu_to_le16(info.le.timeout);
 
 	tester_send(BTP_SERVICE_ID_GAP, GAP_EV_DEVICE_CONNECTED,
 		    CONTROLLER_INDEX, (u8_t *) &ev, sizeof(ev));
@@ -76,10 +81,27 @@ static void le_identity_resolved(struct bt_conn *conn, const bt_addr_le_t *rpa,
 		    CONTROLLER_INDEX, (u8_t *) &ev, sizeof(ev));
 }
 
+static void le_param_updated(struct bt_conn *conn, u16_t interval,
+			     u16_t latency, u16_t timeout)
+{
+	struct gap_conn_param_update_ev ev;
+	const bt_addr_le_t *addr = bt_conn_get_dst(conn);
+
+	memcpy(ev.address, addr->a.val, sizeof(ev.address));
+	ev.address_type = addr->type;
+	ev.interval = sys_cpu_to_le16(interval);
+	ev.latency = sys_cpu_to_le16(latency);
+	ev.timeout = sys_cpu_to_le16(timeout);
+
+	tester_send(BTP_SERVICE_ID_GAP, GAP_EV_CONN_PARAM_UPDATE,
+		    CONTROLLER_INDEX, (u8_t *) &ev, sizeof(ev));
+}
+
 static struct bt_conn_cb conn_callbacks = {
 	.connected = le_connected,
 	.disconnected = le_disconnected,
 	.identity_resolved = le_identity_resolved,
+	.le_param_updated = le_param_updated,
 };
 
 static void supported_commands(u8_t *data, u16_t len)
@@ -103,6 +125,7 @@ static void supported_commands(u8_t *data, u16_t len)
 	tester_set_bit(cmds, GAP_SET_IO_CAP);
 	tester_set_bit(cmds, GAP_PAIR);
 	tester_set_bit(cmds, GAP_PASSKEY_ENTRY);
+	tester_set_bit(cmds, GAP_CONN_PARAM_UPDATE);
 
 	tester_send(BTP_SERVICE_ID_GAP, GAP_READ_SUPPORTED_COMMANDS,
 		    CONTROLLER_INDEX, (u8_t *) rp, sizeof(cmds));
@@ -640,6 +663,34 @@ rsp:
 		   status);
 }
 
+static void conn_param_update(const u8_t *data, u16_t len)
+{
+	const struct gap_conn_param_update_cmd *cmd = (void *) data;
+	struct bt_le_conn_param param = {
+		.interval_min = sys_le16_to_cpu(cmd->interval_min),
+		.interval_max = sys_le16_to_cpu(cmd->interval_max),
+		.latency = sys_le16_to_cpu(cmd->latency),
+		.timeout = sys_le16_to_cpu(cmd->timeout),
+	};
+	struct bt_conn *conn;
+	u8_t status = BTP_STATUS_FAILED;
+
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, (bt_addr_le_t *)data);
+	if (!conn) {
+		goto rsp;
+	}
+
+	if (!bt_conn_le_param_update(conn, &param)) {
+		status = BTP_STATUS_SUCCESS;
+	}
+
+	bt_conn_unref(conn);
+
+rsp:
+	tester_rsp(BTP_SERVICE_ID_GAP, GAP_PASSKEY_ENTRY, CONTROLLER_INDEX,
+		   status);
+}
+
 void tester_handle_gap(u8_t opcode, u8_t index, u8_t *data,
 		       u16_t len)
 {
@@ -706,6 +757,9 @@ void tester_handle_gap(u8_t opcode, u8_t index, u8_t *data,
 		return;
 	case GAP_PASSKEY_ENTRY:
 		passkey_entry(data, len);
+		return;
+	case GAP_CONN_PARAM_UPDATE:
+		conn_param_update(data, len);
 		return;
 	default:
 		tester_rsp(BTP_SERVICE_ID_GAP, opcode, index,
