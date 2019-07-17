@@ -443,6 +443,7 @@ endif # LOG_BACKEND_NET
 config LOG_BACKEND_ADSP
 	bool "Enable Intel ADSP backend"
 	depends on SOC_INTEL_APL_ADSP
+	select RING_BUFFER
 	help
 	  Enable backend in APL ADSP using memory mailbox
 

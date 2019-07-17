@@ -8,6 +8,7 @@
 #include <logging/log_core.h>
 #include <logging/log_msg.h>
 #include <logging/log_output.h>
+#include <sys/ring_buffer.h>
 #include <device.h>
 #include <assert.h>
 
@@ -15,6 +16,14 @@
 
 #define MAILBOX_TRACE_BASE	0xbe008000
 #define MAILBOX_TRACE_SIZE	0x2000
+
+static struct ring_buf ringbuf;
+
+static void init(void)
+{
+	ring_buf_init(&ringbuf, MAILBOX_TRACE_SIZE,
+		      (void *)MAILBOX_TRACE_BASE);
+}
 
 static inline void dcache_writeback_region(void *addr, size_t size)
 {
@@ -25,14 +34,26 @@ static inline void dcache_writeback_region(void *addr, size_t size)
 
 static void trace(const u8_t *data, size_t length)
 {
-	volatile u8_t *t = MAILBOX_TRACE_BASE;
+	volatile u8_t *t;
 	int i;
+
+	if (ring_buf_put_claim(&ringbuf, &t, BUF_SIZE) < BUF_SIZE) {
+		u8_t *dummy;
+
+		/* Remove oldest entry */
+		ring_buf_get_claim(&ringbuf, &dummy, BUF_SIZE);
+		ring_buf_get_finish(&ringbuf, BUF_SIZE);
+
+		ring_buf_put_claim(&ringbuf, &t, BUF_SIZE);
+	}
 
 	for (i = 0; i < length; i++) {
 		t[i] = data[i];
 	}
 
 	dcache_writeback_region(t, i);
+
+	ring_buf_put_finish(&ringbuf, BUF_SIZE);
 }
 
 static int char_out(u8_t *data, size_t length, void *ctx)
@@ -114,6 +135,7 @@ const struct log_backend_api log_backend_adsp_api = {
 	.put_sync_hexdump = IS_ENABLED(CONFIG_LOG_IMMEDIATE) ?
 			sync_hexdump : NULL,
 	.panic = panic,
+	.init = init,
 	.dropped = IS_ENABLED(CONFIG_LOG_IMMEDIATE) ? NULL : dropped,
 };
 
