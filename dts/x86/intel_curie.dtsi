@@ -107,11 +107,6 @@
 			#gpio-cells = <2>;
 		};
 
-		usb_cdc: virtualcom {
-			compatible = "intel,qmsi-usb";
-			label = "CDC_ACM_0";
-		};
-
 		i2c0: i2c@b0002800 {
 			compatible = "intel,qmsi-i2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
