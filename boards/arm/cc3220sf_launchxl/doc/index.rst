@@ -152,17 +152,31 @@ Prerequisites:
 
    Remove power from the board (disconnect USB cable) before switching jumpers.
 
-#. Install TI OpenOCD
+#. Install OpenOCD
 
-   Clone the TI OpenOCD git repository from: http://git.ti.com/sdo-emu/openocd.
-   Follow the instructions in the Release Notes in that repository to build
-   and install.
+   You can obtain OpenOCD by following these
+   :ref:`installing the latest Zephyr SDK instructions <zephyr_sdk>`.
 
-   Since the default TI OpenOCD installation is /usr/local/bin/,
-   and /usr/local/share/, you may want to backup any current openocd
-   installations there.
-   If you decide to change the default installation location, also update
-   the OPENOCD path variable in :zephyr_file:`boards/arm/cc3220sf_launchxl/board.cmake`.
+   After the installation, add the directory containing the OpenOCD executable
+   to your environment's PATH variable. For example, use this command in Linux:
+
+   .. code-block:: console
+
+      export PATH=$ZEPHYR_SDK_INSTALL_DIR/sysroots/x86_64-pokysdk-linux/usr/bin/openocd:$PATH
+
+   If you had previously installed TI OpenOCD, you can simply switch to use
+   the one in the Zephyr SDK. If for some reason you wish to continue to use
+   your TI OpenOCD installation, you can set the OPENOCD and
+   OPENOCD_DEFAULT_PATH variables in
+   :zephyr_file:`boards/arm/cc3220sf_launchxl/board.cmake` to point the build
+   to the paths of the OpenOCD binary and its scripts, before
+   including the common openocd.board.cmake file:
+
+   .. code-block:: none
+
+      set(OPENOCD "/usr/local/bin/openocd" CACHE FILEPATH "" FORCE)
+      set(OPENOCD_DEFAULT_PATH /usr/local/share/openocd/scripts)
+      include(${ZEPHYR_BASE}/boards/common/openocd.board.cmake)
 
 #. Ensure CONFIG_XIP=y (default) is set.
 
