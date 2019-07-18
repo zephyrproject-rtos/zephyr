@@ -81,6 +81,8 @@ static void timer_isr(void *arg)
 
 int z_clock_driver_init(struct device *device)
 {
+	ARG_UNUSED(device);
+
 	IRQ_CONNECT(RISCV_MACHINE_TIMER_IRQ, 0, timer_isr, NULL, 0);
 	last_count = mtime();
 	set_mtimecmp(last_count + CYC_PER_TICK);
