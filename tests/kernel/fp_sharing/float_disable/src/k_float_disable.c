@@ -7,7 +7,12 @@
 #include <ztest.h>
 
 #define STACKSIZE 1024
-#define PRIORITY  5
+
+/* Priority level of the threads used in this test.
+ * The priority level, itself, is arbitrary; we only
+ * want to ensure they are cooperative threads.
+ */
+#define PRIORITY  K_PRIO_COOP(0)
 
 #if defined(CONFIG_ARM)
 #define K_FP_OPTS K_FP_REGS
@@ -24,7 +29,7 @@ ZTEST_BMEM static volatile int ret = TC_PASS;
 
 static void usr_fp_thread_entry_1(void)
 {
-	k_sleep(1);
+	k_yield();
 }
 
 #if defined(CONFIG_ARM) || \
@@ -36,7 +41,7 @@ static void usr_fp_thread_entry_1(void)
 
 static void usr_fp_thread_entry_2(void)
 {
-	k_sleep(1);
+	k_yield();
 
 	/* System call to disable FP mode */
 	if (k_float_disable(k_current_get()) != K_FLOAT_DISABLE_SYSCALL_RETVAL) {
@@ -49,13 +54,23 @@ static void usr_fp_thread_entry_2(void)
 
 void test_k_float_disable_common(void)
 {
-	/* Create an FP-capable User thread */
+	ret = TC_PASS;
+
+	/* Set thread priority level to the one used
+	 * in this test suite for cooperative threads.
+	 */
+	k_thread_priority_set(k_current_get(), PRIORITY);
+
+	/* Create an FP-capable User thread with the same cooperative
+	 * priority as the current thread.
+	 */
 	k_thread_create(&usr_fp_thread, usr_fp_thread_stack, STACKSIZE,
 		(k_thread_entry_t)usr_fp_thread_entry_1, NULL, NULL, NULL,
-		K_PRIO_COOP(PRIORITY), K_USER | K_FP_OPTS,
+		PRIORITY, K_USER | K_FP_OPTS,
 		K_NO_WAIT);
 
-	k_sleep(1);
+	/* Yield will swap-in usr_fp_thread */
+	k_yield();
 
 	/* Verify K_FP_OPTS are set properly */
 	zassert_true(
@@ -92,13 +107,19 @@ void test_k_float_disable_syscall(void)
 {
 	ret = TC_PASS;
 
-	/* Create an FP-capable User thread that will disable its FP mode */
+	k_thread_priority_set(k_current_get(), PRIORITY);
+
+	/* Create an FP-capable User thread with the same cooperative
+	 * priority as the current thread. The thread will disable its
+	 * FP mode.
+	 */
 	k_thread_create(&usr_fp_thread, usr_fp_thread_stack, STACKSIZE,
 		(k_thread_entry_t)usr_fp_thread_entry_2, NULL, NULL, NULL,
-		K_PRIO_COOP(PRIORITY), K_INHERIT_PERMS | K_USER | K_FP_OPTS,
+		PRIORITY, K_INHERIT_PERMS | K_USER | K_FP_OPTS,
 		K_NO_WAIT);
 
-	k_sleep(1);
+	/* Yield will swap-in usr_fp_thread */
+	k_yield();
 
 	/* Verify K_FP_OPTS are set properly */
 	zassert_true(
@@ -106,7 +127,8 @@ void test_k_float_disable_syscall(void)
 		"usr_fp_thread FP options not set (0x%0x)",
 		usr_fp_thread.base.user_options);
 
-	k_sleep(1);
+	/* Yield will swap-in usr_fp_thread */
+	k_yield();
 
 #if defined(CONFIG_ARM) || \
 	(defined(CONFIG_X86) && defined(CONFIG_LAZY_FP_SHARING))
@@ -201,13 +223,19 @@ void test_k_float_disable_irq(void)
 {
 	ret = TC_PASS;
 
-	/* Create an FP-capable User thread */
+	k_thread_priority_set(k_current_get(), PRIORITY);
+
+
+	/* Create an FP-capable Supervisor thread with the same cooperative
+	 * priority as the current thread.
+	 */
 	k_thread_create(&sup_fp_thread, sup_fp_thread_stack, STACKSIZE,
 		(k_thread_entry_t)sup_fp_thread_entry, NULL, NULL, NULL,
-		K_PRIO_COOP(PRIORITY), K_FP_REGS,
+		PRIORITY, K_FP_REGS,
 		K_NO_WAIT);
 
-	k_sleep(1);
+	/* Yield will swap-in sup_fp_thread */
+	k_yield();
 
 	zassert_true(ret == TC_PASS, "");
 }
@@ -215,6 +243,7 @@ void test_k_float_disable_irq(void)
 void test_k_float_disable_irq(void)
 {
 	TC_PRINT("Skipped for x86 or ARM without support for dynamic IRQs\n");
+	ztest_test_skip();
 }
 #endif /* CONFIG_ARM && CONFIG_DYNAMIC_INTERRUPTS */
 /**
