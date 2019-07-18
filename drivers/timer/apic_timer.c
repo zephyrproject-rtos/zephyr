@@ -217,6 +217,8 @@ int z_clock_driver_init(struct device *device)
 {
 	uint32_t val;
 
+	ARG_UNUSED(device);
+
 	val = x86_read_loapic(LOAPIC_TIMER_CONFIG);	/* set divider */
 	val &= ~DCR_DIVIDER_MASK;
 	val |= DCR_DIVIDER;
