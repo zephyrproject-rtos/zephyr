@@ -65,8 +65,6 @@ def extract_image_glyphs():
 
 def generate_header():
     """Generate CFB font header file"""
-    guard = "__CFB_FONT_{:s}_{:d}{:d}_H__".format(args.name.upper(), args.width,
-                                                  args.height)
 
     zephyr_base = os.environ.get('ZEPHYR_BASE', "")
 
@@ -89,15 +87,11 @@ def generate_header():
  *
  */
 
-#ifndef {guard}
-#define {guard}
-
 #include <zephyr.h>
 #include <display/cfb.h>
 
-const u8_t cfb_font_{name:s}_{width:d}{height:d}[{elem:d}][{b:.0f}] = {{\n"""
+static const u8_t cfb_font_{name:s}_{width:d}{height:d}[{elem:d}][{b:.0f}] = {{\n"""
                       .format(cmd=" ".join(clean_cmd),
-                              guard=guard,
                               name=args.name,
                               width=args.width,
                               height=args.height,
@@ -124,10 +118,8 @@ FONT_ENTRY_DEFINE({name}_{width}{height},
 		  {first},
 		  {last}
 );
-
-#endif /* {guard} */""" .format(name=args.name, width=args.width,
-                                height=args.height, first=args.first,
-                                last=args.last, guard=guard))
+""" .format(name=args.name, width=args.width, height=args.height,
+            first=args.first, last=args.last))
 
 def parse_args():
     """Parse arguments"""
