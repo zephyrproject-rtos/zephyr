@@ -1219,6 +1219,24 @@ if(NOT CONFIG_BUILD_NO_GAP_FILL)
   set(GAP_FILL "--gap-fill;0xff")
 endif()
 
+if(CONFIG_OUTPUT_PRINT_MEMORY_USAGE)
+  # @Intent: Use the toolchain bintools method for printing memory usage
+  set(memUsageCmd    "")
+  set(memUsageByProd "")
+  bintools_print_mem_usage(
+    RESULT_CMD_LIST    memUsageCmd
+    RESULT_BYPROD_LIST memUsageByProd
+  )
+  list(APPEND
+    post_build_commands
+    ${memUsageCmd}
+    )
+  list(APPEND
+    post_build_byproducts
+    ${memUsageByProd}
+    )
+endif()
+
 if(CONFIG_BUILD_OUTPUT_HEX)
   list(APPEND
     post_build_commands
@@ -1356,23 +1374,6 @@ if(HEX_FILES_TO_MERGE)
 
   add_custom_target(mergehex ALL DEPENDS ${MERGED_HEX_NAME})
   list(APPEND FLASH_DEPS mergehex)
-endif()
-
-if(CONFIG_OUTPUT_PRINT_MEMORY_USAGE)
-  # Use --print-memory-usage with the first link.
-  #
-  # Don't use this option with the second link because seeing it twice
-  # could confuse users and using it on the second link would suppress
-  # it when the first link has a ram/flash-usage issue.
-  set(option ${LINKERFLAGPREFIX},--print-memory-usage)
-  string(MAKE_C_IDENTIFIER check${option} check)
-
-  set(SAVED_CMAKE_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS})
-  set(CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS} ${option}")
-  zephyr_check_compiler_flag(C "" ${check})
-  set(CMAKE_REQUIRED_FLAGS ${SAVED_CMAKE_REQUIRED_FLAGS})
-
-  target_link_libraries_ifdef(${check} ${ZEPHYR_PREBUILT_EXECUTABLE} ${option})
 endif()
 
 if(EMU_PLATFORM)

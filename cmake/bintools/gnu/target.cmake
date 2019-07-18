@@ -12,3 +12,6 @@ find_program(CMAKE_NM      ${CROSS_COMPILE}nm      PATH ${TOOLCHAIN_HOME} NO_DEF
 
 find_program(CMAKE_GDB     ${CROSS_COMPILE}gdb     PATH ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
 find_program(CMAKE_GDB     gdb-multiarch           PATH ${TOOLCHAIN_HOME}                )
+
+# Include bin tool abstraction macros
+include(${ZEPHYR_BASE}/cmake/bintools/gnu/target_memusage.cmake)
