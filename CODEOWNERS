@@ -329,6 +329,7 @@
 /subsys/disk/disk_access_spi_sdhc.c       @JunYangNXP
 /subsys/disk/disk_access_sdhc.h           @JunYangNXP
 /subsys/disk/disk_access_usdhc.c          @JunYangNXP
+/subsys/fb/                               @jfischer-phytec-iot
 /subsys/fs/                               @nashif
 /subsys/fs/fcb/                           @nvlsianpu
 /subsys/fs/fuse_fs_access.c               @vanwinkeljan
