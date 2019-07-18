@@ -19,6 +19,7 @@
 
 #include "ll.h"
 #include "ll_feat.h"
+#include "ll_settings.h"
 
 #if defined(CONFIG_SOC_COMPATIBLE_NRF)
 #include <drivers/clock_control/nrf_clock_control.h>
@@ -7815,9 +7816,9 @@ static inline void event_vex_prep(struct connection *conn)
 			pdu_ctrl_tx->llctrl.version_ind.version_number =
 				LL_VERSION_NUMBER;
 			pdu_ctrl_tx->llctrl.version_ind.company_id =
-				CONFIG_BT_CTLR_COMPANY_ID;
+				ll_settings_company_id();
 			pdu_ctrl_tx->llctrl.version_ind.sub_version_number =
-				CONFIG_BT_CTLR_SUBVERSION_NUMBER;
+				ll_settings_subversion_number();
 
 			ctrl_tx_enqueue(conn, node_tx);
 

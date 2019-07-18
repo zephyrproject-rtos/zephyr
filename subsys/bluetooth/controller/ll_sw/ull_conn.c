@@ -36,6 +36,7 @@
 
 #include "ll.h"
 #include "ll_feat.h"
+#include "ll_settings.h"
 
 #define LOG_MODULE_NAME bt_ctlr_llsw_ull_conn
 #include "common/log.h"
@@ -2377,8 +2378,8 @@ static inline void event_vex_prep(struct ll_conn *conn)
 				PDU_DATA_LLCTRL_TYPE_VERSION_IND;
 			pdu->llctrl.version_ind.version_number =
 				LL_VERSION_NUMBER;
-			cid = sys_cpu_to_le16(CONFIG_BT_CTLR_COMPANY_ID);
-			svn = sys_cpu_to_le16(CONFIG_BT_CTLR_SUBVERSION_NUMBER);
+			cid = sys_cpu_to_le16(ll_settings_company_id());
+			svn = sys_cpu_to_le16(ll_settings_subversion_number());
 			pdu->llctrl.version_ind.company_id = cid;
 			pdu->llctrl.version_ind.sub_version_number = svn;
 
@@ -3530,9 +3531,9 @@ static int version_ind_send(struct ll_conn *conn, struct node_rx_pdu *rx,
 		pdu_tx->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_VERSION_IND;
 		v = &pdu_tx->llctrl.version_ind;
 		v->version_number = LL_VERSION_NUMBER;
-		v->company_id =	sys_cpu_to_le16(CONFIG_BT_CTLR_COMPANY_ID);
+		v->company_id =	sys_cpu_to_le16(ll_settings_company_id());
 		v->sub_version_number =
-			sys_cpu_to_le16(CONFIG_BT_CTLR_SUBVERSION_NUMBER);
+			sys_cpu_to_le16(ll_settings_subversion_number());
 
 		ctrl_tx_sec_enqueue(conn, tx);
 
