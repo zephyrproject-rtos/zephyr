@@ -147,7 +147,6 @@ static struct {
 #define RX_CNT        (PDU_RX_CNT + LL_PDU_RX_CNT)
 
 static MFIFO_DEFINE(pdu_rx_free, sizeof(void *), PDU_RX_CNT);
-static MFIFO_DEFINE(ll_pdu_rx_free, sizeof(void *), LL_PDU_RX_CNT);
 
 #if defined(CONFIG_BT_RX_USER_PDU_LEN)
 #define PDU_RX_USER_PDU_OCTETS_MAX (CONFIG_BT_RX_USER_PDU_LEN)
@@ -194,6 +193,7 @@ static MEMQ_DECLARE(ull_rx);
 static MEMQ_DECLARE(ll_rx);
 
 #if defined(CONFIG_BT_CONN)
+static MFIFO_DEFINE(ll_pdu_rx_free, sizeof(void *), LL_PDU_RX_CNT);
 static MFIFO_DEFINE(tx_ack, sizeof(struct lll_tx),
 		    CONFIG_BT_CTLR_TX_BUFFERS);
 
@@ -376,8 +376,10 @@ void ll_reset(void)
 	/* Re-initialize the free rx mfifo */
 	MFIFO_INIT(pdu_rx_free);
 
+#if defined(CONFIG_BT_CONN)
 	/* Re-initialize the free ll rx mfifo */
 	MFIFO_INIT(ll_pdu_rx_free);
+#endif /* CONFIG_BT_CONN */
 
 	/* Common to init and reset */
 	err = init_reset();
@@ -835,20 +837,6 @@ void ll_rx_release(void *node_rx)
 	mem_release(node_rx, &mem_pdu_rx.free);
 }
 
-void *ll_pdu_rx_alloc_peek(u8_t count)
-{
-	if (count > MFIFO_AVAIL_COUNT_GET(ll_pdu_rx_free)) {
-		return NULL;
-	}
-
-	return MFIFO_DEQUEUE_PEEK(ll_pdu_rx_free);
-}
-
-void *ll_pdu_rx_alloc(void)
-{
-	return MFIFO_DEQUEUE(ll_pdu_rx_free);
-}
-
 void ll_rx_put(memq_link_t *link, void *rx)
 {
 	struct node_rx_hdr *rx_hdr = rx;
@@ -879,6 +867,20 @@ void ll_rx_sched(void)
 }
 
 #if defined(CONFIG_BT_CONN)
+void *ll_pdu_rx_alloc_peek(u8_t count)
+{
+	if (count > MFIFO_AVAIL_COUNT_GET(ll_pdu_rx_free)) {
+		return NULL;
+	}
+
+	return MFIFO_DEQUEUE_PEEK(ll_pdu_rx_free);
+}
+
+void *ll_pdu_rx_alloc(void)
+{
+	return MFIFO_DEQUEUE(ll_pdu_rx_free);
+}
+
 void ll_tx_ack_put(u16_t handle, struct node_tx *node_tx)
 {
 	struct lll_tx *tx;
@@ -1237,6 +1239,7 @@ static inline void rx_alloc(u8_t max)
 {
 	u8_t idx;
 
+#if defined(CONFIG_BT_CONN)
 	while (mem_link_rx.quota_pdu &&
 	       MFIFO_ENQUEUE_IDX_GET(ll_pdu_rx_free, &idx)) {
 		memq_link_t *link;
@@ -1259,6 +1262,7 @@ static inline void rx_alloc(u8_t max)
 
 		mem_link_rx.quota_pdu--;
 	}
+#endif /* CONFIG_BT_CONN */
 
 	if (max > mem_link_rx.quota_pdu) {
 		max = mem_link_rx.quota_pdu;
