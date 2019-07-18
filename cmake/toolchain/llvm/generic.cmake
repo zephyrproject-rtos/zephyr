@@ -14,6 +14,7 @@ endif()
 
 set(COMPILER clang)
 set(LINKER ld) # TODO: Use lld eventually rather than GNU ld
+set(BINTOOLS llvm)
 
 if("${ARCH}" STREQUAL "arm")
   set(triple arm-none-eabi)

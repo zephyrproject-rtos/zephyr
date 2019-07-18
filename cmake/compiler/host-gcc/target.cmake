@@ -2,14 +2,7 @@
 
 # Configures CMake for using GCC
 
-find_program(CMAKE_C_COMPILER   gcc    )
-find_program(CMAKE_OBJCOPY      objcopy)
-find_program(CMAKE_OBJDUMP      objdump)
-#find_program(CMAKE_LINKER      ld     ) # Not in use yet
-find_program(CMAKE_AR           ar     )
-find_program(CMAKE_RANLILB      ranlib )
-find_program(CMAKE_READELF      readelf)
-find_program(CMAKE_GDB          gdb    )
+find_program(CMAKE_C_COMPILER gcc)
 
 # -march={pentium,lakemont,...} do not automagically imply -m32, so
 # adding it here.
