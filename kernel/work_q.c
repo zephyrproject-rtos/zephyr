@@ -48,7 +48,7 @@ static void work_timeout(struct _timeout *t)
 void k_delayed_work_init(struct k_delayed_work *work, k_work_handler_t handler)
 {
 	k_work_init(&work->work, handler);
-	z_init_timeout(&work->timeout, work_timeout);
+	z_init_timeout(&work->timeout);
 	work->work_q = NULL;
 }
 
