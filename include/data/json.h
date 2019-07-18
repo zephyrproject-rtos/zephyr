@@ -7,7 +7,14 @@
 #ifndef ZEPHYR_INCLUDE_DATA_JSON_H_
 #define ZEPHYR_INCLUDE_DATA_JSON_H_
 
+#include <sys/util.h>
+#include <stddef.h>
+#include <zephyr/types.h>
+#include <sys/types.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * @brief Structured Data
@@ -20,11 +27,6 @@
  * @ingroup structured_data
  * @{
  */
-
-#include <sys/util.h>
-#include <stddef.h>
-#include <zephyr/types.h>
-#include <sys/types.h>
 
 enum json_tokens {
 	/* Before changing this enum, ensure that its maximum
@@ -631,6 +633,10 @@ int json_obj_encode_buf(const struct json_obj_descr *descr, size_t descr_len,
 int json_obj_encode(const struct json_obj_descr *descr, size_t descr_len,
 		    const void *val, json_append_bytes_t append_bytes,
 		    void *data);
+
+#ifdef __cplusplus
+}
+#endif
 
 /**
  * @}
