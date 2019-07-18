@@ -8599,7 +8599,6 @@ static inline void event_phy_upd_ind_prep(struct connection *conn,
 	} else if (((event_counter - conn->llcp.phy_upd_ind.instant) & 0xFFFF)
 			    <= 0x7FFF) {
 		struct radio_pdu_node_rx *node_rx;
-		u16_t eff_tx_time, eff_rx_time;
 		u8_t old_tx, old_rx;
 
 		/* procedure request acked */
@@ -8608,15 +8607,18 @@ static inline void event_phy_upd_ind_prep(struct connection *conn,
 		/* apply new phy */
 		old_tx = conn->phy_tx;
 		old_rx = conn->phy_rx;
-		eff_tx_time = conn->max_tx_time;
-		eff_rx_time = conn->max_rx_time;
-		if (conn->llcp.phy_upd_ind.tx) {
-			u16_t tx_time;
 
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
+		u16_t eff_tx_time = conn->max_tx_time;
+		u16_t eff_rx_time = conn->max_rx_time;
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+
+		if (conn->llcp.phy_upd_ind.tx) {
 			conn->phy_tx = conn->llcp.phy_upd_ind.tx;
 
-			tx_time = RADIO_PKT_TIME(conn->max_tx_octets,
-						 conn->phy_tx);
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
+			u16_t tx_time = RADIO_PKT_TIME(conn->max_tx_octets,
+						       conn->phy_tx);
 			if (tx_time >=
 			    RADIO_PKT_TIME(PDU_DC_PAYLOAD_SIZE_MIN, 0)) {
 				eff_tx_time = MIN(tx_time,
@@ -8631,14 +8633,15 @@ static inline void event_phy_upd_ind_prep(struct connection *conn,
 					RADIO_PKT_TIME(PDU_DC_PAYLOAD_SIZE_MIN,
 						       0);
 			}
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 		}
-		if (conn->llcp.phy_upd_ind.rx) {
-			u16_t rx_time;
 
+		if (conn->llcp.phy_upd_ind.rx) {
 			conn->phy_rx = conn->llcp.phy_upd_ind.rx;
 
-			rx_time = RADIO_PKT_TIME(conn->max_rx_octets,
-						 conn->phy_rx);
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
+			u16_t rx_time = RADIO_PKT_TIME(conn->max_rx_octets,
+						       conn->phy_rx);
 			if (rx_time >=
 			    RADIO_PKT_TIME(PDU_DC_PAYLOAD_SIZE_MIN, 0)) {
 				eff_rx_time = MIN(rx_time,
@@ -8654,6 +8657,7 @@ static inline void event_phy_upd_ind_prep(struct connection *conn,
 					RADIO_PKT_TIME(PDU_DC_PAYLOAD_SIZE_MIN,
 						       0);
 			}
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 		}
 		conn->phy_flags = conn->phy_pref_flags;
 
@@ -8686,6 +8690,7 @@ static inline void event_phy_upd_ind_prep(struct connection *conn,
 			packet_rx_enqueue();
 		}
 
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 		/* Update max tx and/or max rx if changed */
 		if ((eff_tx_time == conn->max_tx_time) &&
 		    (eff_rx_time == conn->max_rx_time)) {
@@ -8694,10 +8699,6 @@ static inline void event_phy_upd_ind_prep(struct connection *conn,
 		conn->max_tx_time = eff_tx_time;
 		conn->max_rx_time = eff_rx_time;
 
-		/* flag an event length update*/
-		conn->evt_len_upd = 1U;
-
-#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 		/* Prepare the rx packet structure */
 		node_rx = packet_rx_reserve_get(2);
 		LL_ASSERT(node_rx);
@@ -8732,6 +8733,9 @@ static inline void event_phy_upd_ind_prep(struct connection *conn,
 			packet_rx_enqueue();
 		}
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+
+		/* flag an event length update*/
+		conn->evt_len_upd = 1U;
 	}
 }
 #endif /* CONFIG_BT_CTLR_PHY */
