@@ -10,6 +10,10 @@
 #include <zephyr/types.h>
 #include <stdbool.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief JSON Web Token (JWT)
  * @defgroup jwt JSON Web Token (JWT)
@@ -88,6 +92,10 @@ static inline size_t jwt_payload_len(struct jwt_builder *builder)
 {
 	return (builder->buf - builder->base);
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 /**
  * @}
