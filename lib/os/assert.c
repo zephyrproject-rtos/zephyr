@@ -24,8 +24,17 @@
  */
 __weak void assert_post_action(const char *file, unsigned int line)
 {
-  ARG_UNUSED(file);
-  ARG_UNUSED(line);
+	ARG_UNUSED(file);
+	ARG_UNUSED(line);
 
-  k_panic();
+#ifdef CONFIG_USERSPACE
+	/* User threads aren't allowed to induce kernel panics; generate
+	 * an oops instead.
+	 */
+	if (_is_user_context()) {
+		k_oops();
+	}
+#endif
+
+	k_panic();
 }
