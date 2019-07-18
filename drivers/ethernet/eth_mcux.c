@@ -220,7 +220,11 @@ static void eth_mcux_phy_start(struct eth_context *context)
 		ENET_StartSMIWrite(ENET, phy_addr, PHY_BASICCONTROL_REG,
 			   kENET_MiiWriteValidFrame,
 			   PHY_BCTL_RESET_MASK);
+#ifdef CONFIG_SOC_SERIES_IMX_RT
 		context->phy_state = eth_mcux_phy_state_initial;
+#else
+		context->phy_state = eth_mcux_phy_state_reset;
+#endif
 		break;
 	case eth_mcux_phy_state_reset:
 		eth_mcux_phy_enter_reset(context);
@@ -870,7 +874,6 @@ static int eth_0_init(struct device *dev)
 		context->mac_addr[4], context->mac_addr[5]);
 
 	ENET_SetCallback(&context->enet_handle, eth_callback, dev);
-	eth_0_config_func();
 
 	eth_mcux_phy_start(context);
 
@@ -913,6 +916,9 @@ static void eth_iface_init(struct net_if *iface)
 	context->iface = iface;
 
 	ethernet_init(iface);
+	net_if_flag_set(iface, NET_IF_NO_AUTO_START);
+
+	eth_0_config_func();
 }
 
 static enum ethernet_hw_caps eth_mcux_get_capabilities(struct device *dev)
