@@ -147,10 +147,10 @@ def main():
         projects += args.extra_modules
 
     if args.kconfig_out:
-        kconfig_out_file = open(args.kconfig_out, 'w')
+        kconfig_out_file = open(args.kconfig_out, 'w', encoding="utf-8")
 
     if args.cmake_out:
-        cmake_out_file = open(args.cmake_out, 'w')
+        cmake_out_file = open(args.cmake_out, 'w', encoding="utf-8")
 
     try:
         for project in projects:

@@ -459,7 +459,8 @@ add_subdirectory(drivers)
 
 # Include zephyr modules generated CMake file.
 if(EXISTS ${CMAKE_BINARY_DIR}/zephyr_modules.txt)
-  file(STRINGS ${CMAKE_BINARY_DIR}/zephyr_modules.txt ZEPHYR_MODULES_TXT)
+	file(STRINGS ${CMAKE_BINARY_DIR}/zephyr_modules.txt ZEPHYR_MODULES_TXT
+		ENCODING UTF-8)
 
   foreach(module ${ZEPHYR_MODULES_TXT})
     # Match "<name>":"<path>" for each line of file, each corresponding to
@@ -517,7 +518,7 @@ execute_process(
   --trigger          ${syscalls_subdirs_trigger} # Trigger file that is used for json generation
   ${syscalls_links}                              # If defined, create symlinks for dependencies
 )
-file(STRINGS ${syscalls_subdirs_txt} PARSE_SYSCALLS_PATHS_DEPENDS)
+file(STRINGS ${syscalls_subdirs_txt} PARSE_SYSCALLS_PATHS_DEPENDS ENCODING UTF-8)
 
 if(${CMAKE_HOST_SYSTEM_NAME} STREQUAL Windows)
   # On windows only adding/removing files or folders will be reflected in depends.
