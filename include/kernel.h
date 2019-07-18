@@ -1821,11 +1821,18 @@ struct k_queue {
 	_OBJECT_TRACING_NEXT_PTR(k_queue)
 };
 
+#ifndef CONFIG_POLL
+#define _INIT_K_QUEUE_ENUM(obj) \
+	.wait_q = Z_WAIT_Q_INIT(&obj.wait_q),
+#else
+#define _INIT_K_QUEUE_ENUM(obj) \
+	_POLL_EVENT_OBJ_INIT(obj)
+#endif
+
 #define _K_QUEUE_INITIALIZER(obj) \
 	{ \
 	.data_q = SYS_SLIST_STATIC_INIT(&obj.data_q), \
-	.wait_q = Z_WAIT_Q_INIT(&obj.wait_q), \
-	_POLL_EVENT_OBJ_INIT(obj) \
+	_INIT_K_QUEUE_ENUM(obj) \
 	_OBJECT_TRACING_INIT \
 	}
 
