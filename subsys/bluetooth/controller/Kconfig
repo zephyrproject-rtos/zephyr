@@ -201,6 +201,19 @@ config BT_CTLR_TX_PWR_MINUS_40
 
 endchoice
 
+config BT_CTLR_SETTINGS
+	bool "Settings System"
+	depends on BT_SETTINGS
+	help
+	  Enable use of settings system in controller.
+
+config BT_CTLR_VERSION_SETTINGS
+	bool "Version Settings"
+	depends on BT_CTLR_SETTINGS
+	help
+	  Make Company Id and Subversion Number configurable through
+	  settings system.
+
 config BT_CTLR_COMPANY_ID
 	hex "Company Id"
 	default 0x05F1

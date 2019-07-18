@@ -141,6 +141,11 @@ if(CONFIG_BT_LL_SW_SPLIT)
 endif()
 
 zephyr_library_sources_ifdef(
+  CONFIG_BT_CTLR_SETTINGS
+  ll_sw/ll_settings.c
+)
+
+zephyr_library_sources_ifdef(
   CONFIG_SOC_COMPATIBLE_NRF
   ll_sw/nordic/hal/nrf5/cntr.c
   ll_sw/nordic/hal/nrf5/ecb.c

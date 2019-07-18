@@ -32,6 +32,7 @@
 #include "ll_sw/ull_conn_types.h"
 #include "ll.h"
 #include "ll_feat.h"
+#include "ll_settings.h"
 #include "hci_internal.h"
 #include "hci_vendor.h"
 
@@ -518,8 +519,8 @@ static void read_local_version_info(struct net_buf *buf, struct net_buf **evt)
 	rp->hci_version = LL_VERSION_NUMBER;
 	rp->hci_revision = sys_cpu_to_le16(0);
 	rp->lmp_version = LL_VERSION_NUMBER;
-	rp->manufacturer = sys_cpu_to_le16(CONFIG_BT_CTLR_COMPANY_ID);
-	rp->lmp_subversion = sys_cpu_to_le16(CONFIG_BT_CTLR_SUBVERSION_NUMBER);
+	rp->manufacturer = sys_cpu_to_le16(ll_settings_company_id());
+	rp->lmp_subversion = sys_cpu_to_le16(ll_settings_subversion_number());
 }
 
 static void read_supported_commands(struct net_buf *buf, struct net_buf **evt)
