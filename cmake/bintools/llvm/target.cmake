@@ -13,3 +13,6 @@ find_program(CMAKE_OBJDUMP llvm-objdump ${find_program_clang_args}   )
 find_program(CMAKE_RANLIB  llvm-ranlib  ${find_program_clang_args}   )
 find_program(CMAKE_OBJCOPY objcopy      ${find_program_binutils_args})
 find_program(CMAKE_READELF readelf      ${find_program_binutils_args})
+
+# Use the gnu binutil abstraction macros
+include(${ZEPHYR_BASE}/cmake/bintools/gnu/target_memusage.cmake)
