@@ -9,6 +9,18 @@
 #include <device.h>
 #include <stdio.h>
 
+#if (CONFIG_SPI_FLASH_W25QXXDV - 0)
+#define FLASH_DEVICE CONFIG_SPI_FLASH_W25QXXDV_DRV_NAME
+#elif (CONFIG_SOC_FLASH_NIOS2_QSPI - 0)
+#define FLASH_DEVICE SOC_FLASH_NIOS2_QSPI_DEV_NAME
+#elif (CONFIG_SOC_FLASH_QMSI - 0)
+#define FLASH_DEVICE SOC_FLASH_QMSI_DEV_NAME
+#elif (CONFIG_SPI_NOR - 0) || defined(DT_INST_0_JEDEC_SPI_NOR_LABEL)
+#define FLASH_DEVICE DT_INST_0_JEDEC_SPI_NOR_LABEL
+#else
+#error Unsupported flash driver
+#endif
+
 #define FLASH_TEST_REGION_OFFSET 0xff000
 #define FLASH_SECTOR_SIZE        4096
 #define TEST_DATA_BYTE_0         0x55
@@ -23,10 +35,10 @@ void main(void)
 	printf("\nW25QXXDV SPI flash testing\n");
 	printf("==========================\n");
 
-	flash_dev = device_get_binding(DT_INST_0_JEDEC_SPI_NOR_BUS_NAME);
+	flash_dev = device_get_binding(FLASH_DEVICE);
 
 	if (!flash_dev) {
-		printf("SPI flash driver was not found!\n");
+		printf("SPI flash driver %s was not found!\n", FLASH_DEVICE);
 		return;
 	}
 
