@@ -12,6 +12,7 @@ set(TOOLCHAIN_HOME ${XTENSA_TOOLCHAIN_PATH}/XtDevTools/install/tools/$ENV{TOOLCH
 
 set(COMPILER xcc)
 set(LINKER ld)
+set(BINTOOLS gnu)
 
 set(CROSS_COMPILE_TARGET xt)
 set(SYSROOT_TARGET       xtensa-elf)

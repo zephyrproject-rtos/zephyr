@@ -13,20 +13,10 @@ endif()
 
 if(DEFINED TOOLCHAIN_HOME)
   set(find_program_clang_args PATH ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
-  set(find_program_binutils_args PATH ${TOOLCHAIN_HOME})
 endif()
 
-
-find_program(CMAKE_C_COMPILER    clang          ${find_program_clang_args})
-find_program(CMAKE_CXX_COMPILER  clang++        ${find_program_clang_args})
-find_program(CMAKE_AR            llvm-ar        ${find_program_clang_args})
-find_program(CMAKE_LINKER        llvm-link      ${find_program_clang_args})
-find_program(CMAKE_NM            llvm-nm        ${find_program_clang_args})
-find_program(CMAKE_OBJDUMP       llvm-objdump   ${find_program_clang_args})
-find_program(CMAKE_RANLIB        llvm-ranlib    ${find_program_clang_args})
-
-find_program(CMAKE_OBJCOPY       objcopy        ${find_program_binutils_args})
-find_program(CMAKE_READELF       readelf        ${find_program_binutils_args})
+find_program(CMAKE_C_COMPILER   clang   ${find_program_clang_args})
+find_program(CMAKE_CXX_COMPILER clang++ ${find_program_clang_args})
 
 if(NOT "${ARCH}" STREQUAL "posix")
 

@@ -26,3 +26,4 @@ assert(CROSS_COMPILE "CROSS_COMPILE is not set")
 
 set(COMPILER gcc)
 set(LINKER ld)
+set(BINTOOLS gnu)

@@ -48,6 +48,7 @@ unset(CMAKE_C_COMPILER CACHE)
 # E.g. toolchain/llvm may pick {clang, ld} or {clang, lld}.
 include(${TOOLCHAIN_ROOT}/cmake/compiler/${COMPILER}/target.cmake OPTIONAL)
 include(${TOOLCHAIN_ROOT}/cmake/linker/${LINKER}/target.cmake OPTIONAL)
+include(${TOOLCHAIN_ROOT}/cmake/bintools/${BINTOOLS}/target.cmake OPTIONAL)
 
 # Uniquely identify the toolchain wrt. it's capabilities.
 #

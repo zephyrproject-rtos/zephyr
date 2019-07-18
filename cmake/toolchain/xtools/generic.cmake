@@ -8,6 +8,7 @@ set(TOOLCHAIN_HOME ${XTOOLS_TOOLCHAIN_PATH})
 
 set(COMPILER gcc)
 set(LINKER ld)
+set(BINTOOLS gnu)
 
 # Choose one of the toolchains in 'TOOLCHAIN_HOME' at random to use as
 # a 'generic' toolchain until we know for sure which toolchain we
