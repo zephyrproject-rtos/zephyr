@@ -26,6 +26,13 @@
 #define MASK_32K 0x7FFF
 #define MASK_64K 0xFFFF
 
+#if (CONFIG_SPI_NOR_PAGE_SIZE - 0) == 0
+#error SPI_NOR_PAGE_SIZE cannot be zero
+#endif
+#if (CONFIG_SPI_NOR_SECTOR_SIZE - 0) == 0
+#error SPI_NOR_SECTOR_SIZE cannot be zero
+#endif
+
 #define SPI_NOR_MAX_ADDR_WIDTH 4
 #define SECTORS_COUNT ((DT_INST_0_JEDEC_SPI_NOR_SIZE / 8) \
 		       / CONFIG_SPI_NOR_SECTOR_SIZE)
