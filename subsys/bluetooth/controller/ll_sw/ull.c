@@ -146,8 +146,13 @@ static struct {
 	u8_t pool[sizeof(memq_link_t) * EVENT_DONE_MAX];
 } mem_link_done;
 
-#define PDU_RX_CNT    (CONFIG_BT_CTLR_RX_BUFFERS + 3)
+#if defined(CONFIG_BT_CTLR_PHY) && defined(CONFIG_BT_CTLR_DATA_LENGTH)
+#define LL_PDU_RX_CNT 2
+#else
 #define LL_PDU_RX_CNT 1
+#endif
+
+#define PDU_RX_CNT    (CONFIG_BT_CTLR_RX_BUFFERS + 3)
 #define RX_CNT        (PDU_RX_CNT + LL_PDU_RX_CNT)
 
 static MFIFO_DEFINE(pdu_rx_free, sizeof(void *), PDU_RX_CNT);
@@ -1249,6 +1254,7 @@ static inline void rx_alloc(u8_t max)
 			break;
 		}
 
+		link->mem = NULL;
 		rx->link = link;
 
 		MFIFO_BY_IDX_ENQUEUE(ll_pdu_rx_free, idx, rx);
