@@ -25,6 +25,8 @@ void __weak z_clock_isr(void *arg)
 
 int __weak z_clock_driver_init(struct device *device)
 {
+	ARG_UNUSED(device);
+
 	return 0;
 }
 

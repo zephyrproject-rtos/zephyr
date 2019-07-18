@@ -69,6 +69,8 @@ int z_clock_driver_init(struct device *device)
 	extern int z_clock_hw_cycles_per_sec;
 	u32_t hz;
 
+	ARG_UNUSED(device);
+
 	IRQ_CONNECT(CONFIG_HPET_TIMER_IRQ, CONFIG_HPET_TIMER_IRQ_PRIORITY,
 		    hpet_isr, 0, 0);
 	set_timer0_irq(CONFIG_HPET_TIMER_IRQ);

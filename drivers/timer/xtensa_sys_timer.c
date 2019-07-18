@@ -70,6 +70,8 @@ void timer_int_handler(void *arg)
 
 int z_clock_driver_init(struct device *device)
 {
+	ARG_UNUSED(device);
+
 	IRQ_CONNECT(TIMER_IRQ, 0, ccompare_isr, 0, 0);
 	set_ccompare(ccount() + CYC_PER_TICK);
 	irq_enable(TIMER_IRQ);
