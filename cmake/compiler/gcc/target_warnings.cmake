@@ -13,6 +13,12 @@ macro(toolchain_cc_warning_base)
     -Woverride-init
   )
 
+if(CMAKE_C_COMPILER_VERSION VERSION_GREATER "7.1.0")
+  zephyr_compile_options(
+    -Wimplicit-fallthrough=2
+    )
+endif()
+
 if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "9.1.0")
   zephyr_compile_options(
     # FIXME: Remove once #16587 is fixed
