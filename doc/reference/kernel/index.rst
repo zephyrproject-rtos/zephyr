@@ -26,6 +26,7 @@ include: fitness wearables, smart watches, and IoT wireless gateways.
    :maxdepth: 2
 
    threads/index.rst
+   scheduling/index.rst
    other/interrupts.rst
    synchronization/semaphores.rst
    synchronization/mutexes.rst
