@@ -5,7 +5,6 @@
 #
 
 title: Kinetis System Integration Module (SIM)
-version: 0.1
 
 description: >
     This is a representation of the Kinetis SIM IP node

@@ -5,7 +5,6 @@
 #
 
 title: u-blox SARA-R4 modem
-version: 0.1
 
 description: >
     This is a representation of the u-blox SARA-R4 modem.

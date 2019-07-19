@@ -5,7 +5,6 @@
 #
 
 title: SiFive GPIO
-version: 0.1
 
 description: >
     This is a representation of the SiFive GPIO nodes

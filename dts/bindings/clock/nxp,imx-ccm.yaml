@@ -5,7 +5,6 @@
 #
 
 title: i.MX Clock Controller Module (CCM)
-version: 0.1
 
 description: >
     This is a representation of the i.MX CCM IP node

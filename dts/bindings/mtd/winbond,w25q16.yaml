@@ -5,7 +5,6 @@
 #
 
 title: SPI NOR FLASH
-version: 0.1
 
 description: >
     This binding gives a base representation of SPI slave NOR FLASH

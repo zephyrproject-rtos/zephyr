@@ -5,7 +5,6 @@
 #
 
 title: FXOS8700 6-axis accelerometer/magnetometer
-version: 0.1
 
 description: >
     This is a representation of the FXOS8700 6-axis accelerometer/magnetometer

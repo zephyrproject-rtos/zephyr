@@ -5,7 +5,6 @@
 #
 
 title: Sensirion Humidity Sensor SHT-3x-DIS
-version: 0.1
 
 description: >
     This binding gives a base representation of SHT3x-DIS humidity and temperature

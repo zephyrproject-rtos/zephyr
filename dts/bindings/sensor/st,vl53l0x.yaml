@@ -5,7 +5,6 @@
 #
 
 title: STMicroelectronics MEMS sensors VL53L0X
-version: 0.1
 
 description: >
     This binding gives a base representation of VL53L0X Time Of Flight sensor

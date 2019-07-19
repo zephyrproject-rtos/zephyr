@@ -5,7 +5,6 @@
 #
 
 title: NXP SEMC
-version: 0.1
 
 description: >
     This binding gives a base representation of the NXP smart external memory

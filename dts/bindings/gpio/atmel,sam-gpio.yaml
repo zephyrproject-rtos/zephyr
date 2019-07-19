@@ -1,6 +1,4 @@
-
 title: Atmel SAM GPIO PORT driver
-version: 0.1
 
 description: >
     This is a representation of the SAM GPIO PORT nodes

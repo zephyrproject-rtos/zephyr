@@ -1,7 +1,5 @@
-
 # SPDX-License-Identifier: Apache-2.0
 title: TI CC32XX GPIO
-version: 0.1
 
 description: >
     This is a representation of the TI CC32XX GPIO node

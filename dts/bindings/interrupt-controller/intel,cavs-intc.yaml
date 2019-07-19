@@ -1,6 +1,4 @@
-
 title: CAVS Interrupt Controller
-version: 0.1
 
 description: >
     This binding describes CAVS Interrupt controller

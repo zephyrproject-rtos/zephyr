@@ -5,7 +5,6 @@
 #
 
 title: Worldsemi WS2812 SPI LED strip
-version: 0.1
 
 description: Worldsemi WS2812 SPI LED strip binding
 

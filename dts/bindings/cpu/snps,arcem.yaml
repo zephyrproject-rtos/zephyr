@@ -5,7 +5,6 @@
 #
 
 title: Synopsys ARC EM CPU
-version: 0.1
 
 description: >
     This binding gives a base representation for Synopsys ARC EM CPU.

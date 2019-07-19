@@ -5,7 +5,6 @@
 #
 
 title: TI SimpleLink CC13xx / CC26xx UART
-version: 0.1
 
 description: >
     This is a representation of the TI SimpleLink CC13xx / CC26xx UART node

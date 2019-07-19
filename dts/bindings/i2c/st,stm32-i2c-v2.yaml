@@ -5,7 +5,6 @@
 #
 
 title: STM32 I2C V2
-version: 0.1
 
 description: >
     This binding gives a base representation of the STM32 I2C V2 controller

@@ -5,7 +5,6 @@
 #
 ---
 title: NXP i.MXRT USDHC module
-version: 0.1
 
 description: >
     This binding specifies the NXP i.MXRT USDHC module.

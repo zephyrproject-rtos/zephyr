@@ -1,7 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
 title: simulated flash
-version: 0.1
 
 description: >
     This binding gives a base representation of a simulated flash memory

@@ -5,7 +5,6 @@
 #
 
 title: STMicroelectronics MEMS sensors LSM303DLHC
-version: 0.1
 
 description: >
     This binding gives a base representation of LSM303DLHC acceleration sensor

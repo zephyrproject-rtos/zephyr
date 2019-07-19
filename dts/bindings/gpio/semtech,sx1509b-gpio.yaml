@@ -5,7 +5,6 @@
 #
 
 title: Semtech SX1509B I2C GPIO
-version: 0.1
 
 description: >
         This is a representation of the SX1509B GPIO node

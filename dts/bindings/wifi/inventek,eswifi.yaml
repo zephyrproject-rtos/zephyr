@@ -5,7 +5,6 @@
 #
 
 title: Inventek eS-WiFi WiFi module
-version: 0.1
 
 description: >
     This binding gives the base representation of es-WiFi module

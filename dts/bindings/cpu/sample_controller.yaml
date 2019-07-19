@@ -5,7 +5,6 @@
 #
 
 title: Sample Controller CPU
-version: 0.1
 
 description: >
     This binding gives a base representation for Sample Controller CPU.

@@ -5,7 +5,6 @@
 #
 
 title: Atmel SAM USBHS
-version: 0.1
 
 description: >
     Atmel SAM Family USB (USBHS) in device mode

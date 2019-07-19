@@ -5,7 +5,6 @@
 #
 
 title: RV32M1 INTMUX
-version: 0.1
 
 description: >
     This binding describes the RV32M1 INTMUX IP

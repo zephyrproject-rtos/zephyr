@@ -5,7 +5,6 @@
 #
 
 title: STMicroelectronics MEMS sensors LSM6DS0
-version: 0.1
 
 description: >
     This binding gives a base representation of LSM6DS0 6-axis accelerometer

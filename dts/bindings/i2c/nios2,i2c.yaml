@@ -5,7 +5,6 @@
 #
 
 title: NIOS2 i2c
-version: 0.1
 
 description: >
     This binding gives a base representation of the NIOS2 i2c

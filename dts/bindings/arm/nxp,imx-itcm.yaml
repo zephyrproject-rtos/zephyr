@@ -5,7 +5,6 @@
 #
 
 title: i.MX ITCM (Instruction Tightly Coupled Memory)
-version: 0.1
 
 description: >
   This binding gives a base representation of the i.MX ITCM

@@ -5,7 +5,6 @@
 #
 
 title: MICROCHIP I2C
-version: 0.1
 
 description: >
     This binding gives a base representation for I2C/SMB controller for Microchip

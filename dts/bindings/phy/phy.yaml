@@ -5,7 +5,6 @@
 #
 
 title: PHY Base Structure
-version: 0.1
 
 description: >
     This binding gives the base structures for all PHY providers

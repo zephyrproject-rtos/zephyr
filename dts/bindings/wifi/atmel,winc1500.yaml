@@ -5,7 +5,6 @@
 #
 
 title: Atmel WINC1500 Wifi module
-version: 0.1
 
 description: >
     This binding gives the base representation of the Atmel WINC1500 Wifi module

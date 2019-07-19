@@ -5,7 +5,6 @@
 #
 
 title: NXP Kinetis watchdog (WDOG32) driver
-version: 0.1
 
 description: >
     This is a representation of the Kinetis watchdog (WDOG32)

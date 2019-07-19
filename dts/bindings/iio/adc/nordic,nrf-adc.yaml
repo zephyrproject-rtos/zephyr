@@ -5,7 +5,6 @@
 #
 
 title: Nordic Semiconductor nRF Family ADC
-version: 0.1
 
 description: >
     This is a representation of the nRF ADC node

@@ -5,7 +5,6 @@
 #
 
 title: ARM TrustZone CryptoCell 310
-version: 0.1
 
 description: >
     This is a representation of the ARM TrustZone CryptoCell 310

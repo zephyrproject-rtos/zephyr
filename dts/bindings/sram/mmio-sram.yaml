@@ -5,7 +5,6 @@
 #
 
 title: Generic on-chip SRAM
-version: 0.1
 
 description: >
     This binding gives a generic on-chip SRAM description

@@ -237,7 +237,7 @@ def check_binding_properties(node):
     if 'title' not in node:
         print("extract_dts_includes.py: node without 'title' -", node)
 
-    for prop in 'title', 'version', 'description':
+    for prop in 'title', 'description':
         if prop not in node:
             node[prop] = "<unknown {}>".format(prop)
             print("extract_dts_includes.py: '{}' property missing "

@@ -5,7 +5,6 @@
 #
 
 title: NXP Kinetis PCC (Peripheral Clock Controller)
-version: 0.1
 
 description: >
     This is a representation of the NXP Kinetis PCC IP node

@@ -5,7 +5,6 @@
 #
 
 title: Silabs Gecko Real Time Counter
-version: 0.1
 
 description: >
     This is a representation of the Silabs Gecko RTCC node

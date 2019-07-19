@@ -5,7 +5,6 @@
 #
 
 title: Virtual I2C slave eeprom
-version: 0.1
 
 description: >
     This binding gives a base representation of a generic I2C slave EEPROM

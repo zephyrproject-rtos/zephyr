@@ -1,6 +1,4 @@
-
 title: SAM Family UART
-version: 0.1
 
 description: >
     This binding gives a base representation of the SAM UART

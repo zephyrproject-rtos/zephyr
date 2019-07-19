@@ -1,6 +1,4 @@
-
 title: Native POSIX Flash Controller
-version: 0.1
 
 description: >
     This binding gives a base representation of the Native POSIX flash

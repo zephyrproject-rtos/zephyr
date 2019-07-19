@@ -5,7 +5,6 @@
 #
 
 title: MAX30101 heart rate sensor
-version: 0.1
 
 description: >
     This is a representation of the MAX30101 heart rate sensor

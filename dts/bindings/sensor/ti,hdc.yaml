@@ -5,7 +5,6 @@
 #
 
 title: Texas Instruments Temperature and Humidity Sensor
-version: 0.1
 
 description: >
     This is a representation of the TI Temperature and Humidity sensor (e.g. HDC1008)

@@ -5,7 +5,6 @@
 #
 
 title: NOP USB Transceiver
-version: 0.1
 
 description: >
     This binding is to be used by all the usb transceivers which are built-in

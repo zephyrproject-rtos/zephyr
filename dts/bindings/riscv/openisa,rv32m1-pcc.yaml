@@ -5,7 +5,6 @@
 #
 
 title: RV32M1 PCC (Peripheral Clock Control)
-version: 0.1
 
 description: >
     This is a representation of the RV32M1 PCC IP node

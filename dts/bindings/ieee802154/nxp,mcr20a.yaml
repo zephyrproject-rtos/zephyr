@@ -5,7 +5,6 @@
 #
 
 title: NXP MCR20A 802.15.4 Wireless Transceiver
-version: 0.1
 
 description: >
     This is a representation of the NXP MCR20A wireless transceiver.

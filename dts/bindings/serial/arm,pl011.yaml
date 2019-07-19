@@ -1,6 +1,4 @@
-
 title: ARM PL011 UART
-version: 0.1
 
 description: >
     This binding gives a base representation of the ARM PL011 UART

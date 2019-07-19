@@ -5,7 +5,6 @@
 #
 
 title: Atmel SAM0 32-bit Basic Timer
-version: 0.1
 
 description: >
     This binding gives a base representation of the Atmel SAM0 timer

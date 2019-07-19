@@ -1,6 +1,4 @@
-
 title: RV32M1 Pinmux
-version: 0.1
 
 description: >
     This is a representation of the RV32M1 Pinmux node

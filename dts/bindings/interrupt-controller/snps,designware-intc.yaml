@@ -1,6 +1,4 @@
-
 title: DesignWare Interrupt Controller
-version: 0.1
 
 description: >
     This binding describes DesignWare Programmable Interrupt controller

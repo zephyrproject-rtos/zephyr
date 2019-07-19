@@ -5,7 +5,6 @@
 #
 
 title: Intel QMSI Uart
-version: 0.1
 
 description: >
     This binding gives a base representation of the INTEL QMSI UART

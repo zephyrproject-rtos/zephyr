@@ -5,7 +5,6 @@
 #
 
 title: USB Endpoints' properties
-version: 0.1
 
 description: >
     This binding gives number of endpoints that the USB hardware supports

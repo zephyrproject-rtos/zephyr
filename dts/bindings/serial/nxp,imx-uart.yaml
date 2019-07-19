@@ -5,7 +5,6 @@
 #
 
 title: iMX Uart
-version: 0.1
 
 description: >
     This binding gives a base representation of the iMX UART
