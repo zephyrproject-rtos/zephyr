@@ -7,7 +7,7 @@
 
 menuconfig UART_SIFIVE
 	bool "SiFive Freedom serial driver"
-	depends on SOC_RISCV32_SIFIVE_FREEDOM
+	depends on SOC_RISCV_SIFIVE_FREEDOM
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
 	help
