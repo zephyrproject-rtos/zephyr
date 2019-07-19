@@ -5,7 +5,6 @@
 #
 
 title: TI CC13xx / CC26xx I2C
-version: 0.1
 
 description: >
     This is a representation of the TI CC13xx / CC26xx I2C node

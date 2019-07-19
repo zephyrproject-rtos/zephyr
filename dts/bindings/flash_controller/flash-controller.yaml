@@ -1,6 +1,4 @@
-
 title: flash controller Base Structure
-version: 0.1
 
 description: >
     This binding gives the base structures for all flash controller devices

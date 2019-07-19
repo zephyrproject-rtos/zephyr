@@ -5,7 +5,6 @@
 #
 
 title: Data Tightly-Integrated Memory
-version: 0.1
 
 description: >
     This bindings describes the SiFive Data Tightly-Integrated Memory

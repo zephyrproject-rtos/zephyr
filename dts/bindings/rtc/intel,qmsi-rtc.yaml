@@ -5,7 +5,6 @@
 #
 
 title: Intel QMSI RTC
-version: 0.1
 
 description: >
     This is a representation of the Intel QMSI RTC nodes

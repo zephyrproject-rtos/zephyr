@@ -1,6 +1,4 @@
-
 title: ARMv8-M Memory Protection Unit
-version: 0.1
 
 description: >
     This binding describes the ARMv8-M Memory Protection Unit (MPU).

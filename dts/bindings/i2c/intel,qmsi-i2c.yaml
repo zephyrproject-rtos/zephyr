@@ -5,7 +5,6 @@
 #
 
 title: Intel QMSI i2c
-version: 0.1
 
 description: >
     This binding gives a base representation of the Intel QMSI i2c

@@ -5,7 +5,6 @@
 #
 
 title: BMI160 Inertial measurement unit
-version: 0.1
 
 description: >
     This is a representation of the BMI160 Inertial measurement unit

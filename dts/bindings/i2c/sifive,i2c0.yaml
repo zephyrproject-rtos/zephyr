@@ -5,7 +5,6 @@
 #
 
 title: SiFive Freedom I2C
-version: 0.1
 
 description: >
     This is a binding for the SiFive Freedom I2C interface

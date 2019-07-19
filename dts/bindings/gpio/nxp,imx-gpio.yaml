@@ -5,7 +5,6 @@
 #
 
 title: i.MX GPIO
-version: 0.1
 
 description: >
     This is a representation of the i.MX GPIO nodes

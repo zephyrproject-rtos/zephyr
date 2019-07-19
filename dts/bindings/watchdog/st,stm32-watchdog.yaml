@@ -5,7 +5,6 @@
 #
 
 title: STMicroelectronics STM32 watchdog driver
-version: 0.1
 
 description: >
     This is a representation of the STM32 watchdog

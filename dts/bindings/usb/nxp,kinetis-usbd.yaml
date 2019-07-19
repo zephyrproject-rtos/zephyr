@@ -5,7 +5,6 @@
 #
 
 title: NXP Kinetis USBD
-version: 0.1
 
 description: >
     NPX Kinetis USBFSOTG Controller in device mode

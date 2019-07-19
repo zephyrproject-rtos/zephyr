@@ -5,7 +5,6 @@
 #
 
 title: CYPRESS UART
-version: 0.1
 
 description: >
     This binding gives a base representation of the Cypress UART

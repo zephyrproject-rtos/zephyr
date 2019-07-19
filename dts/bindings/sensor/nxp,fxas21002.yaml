@@ -5,7 +5,6 @@
 #
 
 title: FXAS21002 3-axis gyroscope
-version: 0.1
 
 description: >
     This is a representation of the FXAS21002 3-axis gyroscope sensor

@@ -5,7 +5,6 @@
 #
 
 title: NXP Kinetis Ethernet PTP
-version: 0.1
 
 description: >
     This binding gives a base representation of the NXP Kinetis Ethernet PTP

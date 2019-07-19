@@ -1,6 +1,4 @@
-
 title: NXP Kinetis Flash Memory Module (FTFA)
-version: 0.1
 
 description: >
     This binding gives for the NXP Kinetis Flash Memory Module A (FTFA)

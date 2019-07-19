@@ -5,7 +5,6 @@
 #
 
 title: OpenISA LPI2C
-version: 0.1
 
 description: >
     This binding gives a base representation of the OpenISA LPI2C controller

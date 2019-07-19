@@ -5,7 +5,6 @@
 #
 
 title: Atmel SAM Family I2C (TWIHS) node
-version: 0.1
 
 description: >
     This is a representation of the Atmel SAM Family I2C (TWIHS) node

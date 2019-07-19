@@ -5,7 +5,6 @@
 #
 
 title: Sifive SPI driver
-version: 0.1
 
 description: >
     This binding gives a base representation of the Sifive SPI controller

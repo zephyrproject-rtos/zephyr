@@ -5,7 +5,6 @@
 #
 
 title: STM32 OTGFS
-version: 0.1
 
 description: >
     This binding gives a base representation of the STM32 OTGFS controller

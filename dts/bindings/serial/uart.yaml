@@ -1,6 +1,4 @@
-
 title: Uart Base Structure
-version: 0.1
 
 description: >
     This binding gives the base structures for all UART devices

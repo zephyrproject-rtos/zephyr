@@ -5,7 +5,6 @@
 #
 
 title: ARDUINO GPIO HEADER
-version: 0.1
 
 description: >
     This is a representation of GPIO pin nodes exposed as headers on Arduino R3

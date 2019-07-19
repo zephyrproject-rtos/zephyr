@@ -1,6 +1,4 @@
-
 title: Atmel SERCOM binding
-version: 0.1
 
 description: >
     Binding for the Atmel SAM0 multi-protocol (UART, SPI, I2C) SERCOM unit.

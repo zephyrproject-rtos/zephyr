@@ -5,7 +5,6 @@
 #
 
 title: BME680 integrated environmental sensor
-version: 0.1
 
 description: >
     The BME680 is an integrated environmental sensor that measures

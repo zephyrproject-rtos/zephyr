@@ -5,7 +5,6 @@
 #
 
 title: ARM Cortex-M3 CPU
-version: 0.1
 
 description: >
     This binding gives a base representation for ARM Cortex-M3 CPU.

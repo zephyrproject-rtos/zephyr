@@ -5,7 +5,6 @@
 #
 
 title: Bluetooth controller that provides Host Controller Interface over SPI
-version: 0.1
 
 description: >
     This binding gives the base representation of a bluetooth controller node

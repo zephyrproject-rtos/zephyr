@@ -5,7 +5,6 @@
 #
 
 title: MMC/SDHC module
-version: 0.1
 
 description: >
     This binding specifies the MMC/SDHC module.

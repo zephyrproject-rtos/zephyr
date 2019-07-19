@@ -5,7 +5,6 @@
 #
 
 title: Kinetis I2C Controller
-version: 0.1
 
 description: >
     This is a representation of the Kinetis I2C nodes

@@ -5,7 +5,6 @@
 #
 
 title: I2C Device Base Structure
-version: 0.1
 
 description: >
     This binding gives the base structures for all i2c devices

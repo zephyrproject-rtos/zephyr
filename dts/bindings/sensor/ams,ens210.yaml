@@ -5,7 +5,6 @@
 #
 
 title: AMS (Austria Mikro Systeme) Relative Humidity and Temperature Sensor
-version: 0.1
 
 description: >
     This binding gives a base representation of ens210 Relative Humidity and

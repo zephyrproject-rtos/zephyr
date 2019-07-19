@@ -5,7 +5,6 @@
 #
 
 title: STMicroelectronics MEMS sensors LIS2DS12 SPI
-version: 0.1
 
 description: >
     This binding gives a base representation of LIS2DS12 3-axis accelerometer

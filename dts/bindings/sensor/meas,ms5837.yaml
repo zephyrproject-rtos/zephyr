@@ -5,7 +5,6 @@
 #
 
 title: TE Connectivity digital pressure sensor MS5837
-version: 0.1
 
 description: >
     This binding gives a base representation of the MS5837 digital pressure

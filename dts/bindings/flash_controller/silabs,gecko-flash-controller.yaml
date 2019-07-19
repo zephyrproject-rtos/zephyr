@@ -5,7 +5,6 @@
 #
 
 title: Silicon Labs Gecko Flash Controller
-version: 0.1
 
 description: >
     This binding gives a base representation of the Silicon Labs Gecko Flash Controller

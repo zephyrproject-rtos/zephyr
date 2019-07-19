@@ -1,6 +1,4 @@
-
 title: OpenISA RV32M1 LPTMR
-version: 0.1
 
 description: >
     This binding represents the OpenISA RV32M1 LPTMR peripheral.

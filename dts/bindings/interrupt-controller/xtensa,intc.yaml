@@ -1,6 +1,4 @@
-
 title: Xtensa Core Interrupt Controller
-version: 0.1
 
 description: >
     This binding describes Xtensa Core Interrupt controller

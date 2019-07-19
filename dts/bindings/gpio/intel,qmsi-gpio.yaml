@@ -5,7 +5,6 @@
 #
 
 title: Intel QMSI GPIO
-version: 0.1
 
 description: >
     This is a representation of the Intel QMSI GPIO nodes

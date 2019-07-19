@@ -5,7 +5,6 @@
 #
 
 title: Intel SPI Controller
-version: 0.1
 
 description: >
      This is a representation of the Intel SPI controller found on quark x1000.

@@ -5,7 +5,6 @@
 #
 
 title: 10Base-T Ethernet Controller with SPI Interface
-version: 0.1
 
 description: >
     This binding gives a base representation of the standalone ENC28J60 chip

@@ -5,7 +5,6 @@
 #
 
 title: Synopys DesignWare I2C controller
-version: 0.1
 
 description: >
     This is a representation of the Synopsys DesignWare i2c node

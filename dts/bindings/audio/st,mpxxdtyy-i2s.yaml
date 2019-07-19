@@ -5,7 +5,6 @@
 #
 
 title: ST Microelectronics MPXXDTYY digital pdm microphone family
-version: 0.1
 
 description: >
     This binding gives a base representation of MPXXDTYY digital microphone family

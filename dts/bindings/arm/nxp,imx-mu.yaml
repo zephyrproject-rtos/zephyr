@@ -5,7 +5,6 @@
 #
 
 title: IMX MESSAGING UNIT
-version: 0.1
 
 description: >
     This binding gives a base representation of the i.MX Messaging Unit

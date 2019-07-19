@@ -1,6 +1,4 @@
-
 title: Atmel SAM0 External Interrupt Controller
-version: 0.1
 
 description: >
     This binding describes the Atmel SAM0 series External Interrupt Controller

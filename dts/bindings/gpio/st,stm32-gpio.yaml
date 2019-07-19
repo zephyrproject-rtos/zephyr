@@ -5,7 +5,6 @@
 #
 
 title: STM32 GPIO
-version: 0.1
 
 description: >
     This is a representation of the STM32 GPIO nodes

@@ -5,7 +5,6 @@
 #
 
 title: SPI NOR flash devices (JEDEC CFI interface)
-version: 0.1
 
 description: >
   Any SPI NOR flash that supports the JEDEC CFI interface.

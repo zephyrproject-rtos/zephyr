@@ -5,7 +5,6 @@
 #
 
 title: Generic fixed rate clock provider
-version: 0.1
 
 description: >
     This is a representation of a generic fixed rate clock provider.

@@ -1,6 +1,4 @@
-
 title: nRF SW PWM
-version: 0.1
 
 description: >
     This binding gives a base representation of the nRFx S/W PWM

@@ -5,7 +5,6 @@
 #
 
 title: Ethernet Base Structure
-version: 0.1
 
 description: >
     This binding gives a base structures for all Ethernet devices

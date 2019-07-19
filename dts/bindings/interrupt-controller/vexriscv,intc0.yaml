@@ -5,7 +5,6 @@
 #
 
 title: LiteX VexRiscV Interrupt Controller
-version: 0.1
 
 description: >
     This binding describes LiteX VexRiscV Interrupt Controller

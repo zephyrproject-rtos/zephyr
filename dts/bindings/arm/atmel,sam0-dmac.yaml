@@ -1,6 +1,4 @@
-
 title: Atmel DMAC binding
-version: 0.1
 
 description: >
     Binding for the Atmel SAM0 DMA controller.

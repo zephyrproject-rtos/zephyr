@@ -5,7 +5,6 @@
 #
 
 title: NXP Kinetis SCG (System Clock Generator)
-version: 0.1
 
 description: >
     This is a representation of the NXP Kinetis SCG IP node

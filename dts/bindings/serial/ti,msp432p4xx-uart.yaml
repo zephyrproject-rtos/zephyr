@@ -1,6 +1,4 @@
-
 title: TI MSP432P4XX UART
-version: 0.1
 
 description: >
     This binding gives a base representation of the TI MSP432P4XX UART
