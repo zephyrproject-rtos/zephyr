@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_SERIES_RISCV32_SIFIVE_FREEDOM
+if SOC_SERIES_RISCV_SIFIVE_FREEDOM
 
 config SOC_SERIES
 	string
@@ -30,4 +30,4 @@ config XIP
 	bool
 	default y
 
-endif # SOC_SERIES_RISCV32_SIFIVE_FREEDOM
+endif # SOC_SERIES_RISCV_SIFIVE_FREEDOM

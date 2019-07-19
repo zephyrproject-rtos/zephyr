@@ -2,4 +2,4 @@
 
 config BOARD_HIFIVE1
 	bool "HiFive1 target"
-	depends on SOC_RISCV32_SIFIVE_FREEDOM
+	depends on SOC_RISCV_SIFIVE_FREEDOM

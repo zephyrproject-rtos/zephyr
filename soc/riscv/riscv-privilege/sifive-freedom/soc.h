@@ -8,8 +8,8 @@
  * @file SoC configuration macros for the SiFive Freedom processor
  */
 
-#ifndef __RISCV32_SIFIVE_FREEDOM_SOC_H_
-#define __RISCV32_SIFIVE_FREEDOM_SOC_H_
+#ifndef __RISCV_SIFIVE_FREEDOM_SOC_H_
+#define __RISCV_SIFIVE_FREEDOM_SOC_H_
 
 #include <soc_common.h>
 #include <generated_dts_board.h>
@@ -44,4 +44,4 @@
 #define RISCV_RAM_BASE               DT_SRAM_BASE_ADDRESS
 #define RISCV_RAM_SIZE               KB(DT_SRAM_SIZE)
 
-#endif /* __RISCV32_SIFIVE_FREEDOM_SOC_H_ */
+#endif /* __RISCV_SIFIVE_FREEDOM_SOC_H_ */
