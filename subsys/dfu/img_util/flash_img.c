@@ -162,7 +162,7 @@ int flash_img_buffered_write(struct flash_img_context *ctx, u8_t *data,
 	int rc = 0;
 	int buf_empty_bytes;
 
-	while ((len - processed) >
+	while ((len - processed) >=
 	       (buf_empty_bytes = CONFIG_IMG_BLOCK_BUF_SIZE - ctx->buf_bytes)) {
 		memcpy(ctx->buf + ctx->buf_bytes, data + processed,
 		       buf_empty_bytes);
