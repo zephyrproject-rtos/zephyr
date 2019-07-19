@@ -103,6 +103,7 @@
 			reg = <0x4004f000 0x20>;
 			clocks = <&pcc0 0x13c>;
 			label = "INTMUX0";
+			status = "disabled";
 		};
 
 		intmux1: interrupt-controller@41022000 {
@@ -112,6 +113,7 @@
 			reg = <0x41022000 0x20>;
 			clocks = <&pcc1 0x88>;
 			label = "INTMUX1";
+			status = "disabled";
 		};
 
 		lptmr0: timer@40032000 {
