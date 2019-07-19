@@ -22,6 +22,7 @@ timer: timer@10c000 {
 	compatible = "arm,cmsdk-timer";
 	reg = <0x10c000 0x1000>;
 	interrupts = <3 3>;
+	label = "TIMER_0";
 };
 
 uart0: uart@105000 {
