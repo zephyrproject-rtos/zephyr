@@ -30,6 +30,8 @@
 #include "radio_nrf52811.h"
 #elif defined(CONFIG_SOC_NRF52832)
 #include "radio_nrf52832.h"
+#elif defined(CONFIG_SOC_NRF52833)
+#include "radio_nrf52833.h"
 #elif defined(CONFIG_SOC_NRF52840)
 #include "radio_nrf52840.h"
 #elif defined(CONFIG_SOC_NRF5340_CPUNET)
