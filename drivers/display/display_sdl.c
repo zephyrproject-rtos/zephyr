@@ -33,7 +33,17 @@ static int sdl_display_init(struct device *dev)
 
 	memset(disp_data, 0, sizeof(struct sdl_display_data));
 
-	disp_data->current_pixel_format = PIXEL_FORMAT_ARGB_8888;
+	disp_data->current_pixel_format =
+#if defined(CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_RGB_888)
+		PIXEL_FORMAT_RGB_888
+#elif defined(CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_MONO01)
+		PIXEL_FORMAT_MONO01
+#elif defined(CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_MONO10)
+		PIXEL_FORMAT_MONO10
+#else /* SDL_DISPLAY_DEFAULT_PIXEL_FORMAT */
+		PIXEL_FORMAT_ARGB_8888
+#endif /* SDL_DISPLAY_DEFAULT_PIXEL_FORMAT */
+		;
 
 	disp_data->window =
 	    SDL_CreateWindow("Zephyr Display", SDL_WINDOWPOS_UNDEFINED,
