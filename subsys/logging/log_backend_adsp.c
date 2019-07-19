@@ -19,6 +19,15 @@
 
 static struct ring_buf ringbuf;
 
+static u16_t magic = 0x55aa;
+static u16_t log_id;
+
+/*
+ * Log message format
+ * logging started with magic number 0x55aa followed by lo message id.
+ * Log message ended with null terminator and takes BUF_SIZE slot
+ */
+
 static void init(void)
 {
 	ring_buf_init(&ringbuf, MAILBOX_TRACE_SIZE,
@@ -35,20 +44,30 @@ static inline void dcache_writeback_region(void *addr, size_t size)
 static void trace(const u8_t *data, size_t length)
 {
 	volatile u8_t *t;
+	int space;
 	int i;
 
-	if (ring_buf_put_claim(&ringbuf, &t, BUF_SIZE) < BUF_SIZE) {
+	space = ring_buf_space_get(&ringbuf);
+	if (space < BUF_SIZE) {
 		u8_t *dummy;
 
 		/* Remove oldest entry */
 		ring_buf_get_claim(&ringbuf, &dummy, BUF_SIZE);
 		ring_buf_get_finish(&ringbuf, BUF_SIZE);
-
-		ring_buf_put_claim(&ringbuf, &t, BUF_SIZE);
 	}
 
+	ring_buf_put_claim(&ringbuf, &t, BUF_SIZE);
+
+	/* Add magic number at the beginning of the slot */
+	*(u16_t *)t = magic;
+	t += 2;
+
+	/* Add log id */
+	*(u16_t *)t = log_id++;
+	t += 2;
+
 	for (i = 0; i < length; i++) {
-		t[i] = data[i];
+		*t++ = data[i];
 	}
 
 	dcache_writeback_region(t, i);
@@ -63,7 +82,8 @@ static int char_out(u8_t *data, size_t length, void *ctx)
 	return length;
 }
 
-static u8_t buf[BUF_SIZE];
+/* magic and log id takes space */
+static u8_t buf[BUF_SIZE - 4];
 
 LOG_OUTPUT_DEFINE(log_output, char_out, buf, sizeof(buf));
 
