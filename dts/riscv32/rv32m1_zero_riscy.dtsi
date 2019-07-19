@@ -54,6 +54,7 @@
 &intmux1 {
 	interrupt-parent = <&event1>;
 	interrupts = <INTMUX_CH0_IRQ>, <INTMUX_CH1_IRQ>, <INTMUX_CH2_IRQ>, <INTMUX_CH3_IRQ>, <INTMUX_CH4_IRQ>, <INTMUX_CH5_IRQ>, <INTMUX_CH6_IRQ>, <INTMUX_CH7_IRQ>;
+	status = "okay";
 };
 
 &lptmr0 {
