@@ -717,7 +717,11 @@ static int lsm6dsl_init_chip(struct device *dev)
 		LOG_DBG("failed reading chip id");
 		return -EIO;
 	}
-	if (chip_id != LSM6DSL_VAL_WHO_AM_I) {
+	switch (chip_id) {
+	case LSM6DS3_VAL_WHO_AM_I:
+	case LSM6DSL_VAL_WHO_AM_I:
+		break;
+	default:
 		LOG_DBG("invalid chip id 0x%x", chip_id);
 		return -EIO;
 	}
