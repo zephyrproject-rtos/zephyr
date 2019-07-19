@@ -163,7 +163,7 @@ static inline bool ipv6_drop_on_unknown_option(struct net_pkt *pkt,
 			break;
 		}
 
-		/* passthrough */
+		/* fallthrough */
 	case 0x80:
 		net_icmpv6_send_error(pkt, NET_ICMPV6_PARAM_PROBLEM,
 				      NET_ICMPV6_PARAM_PROB_OPTION,

@@ -12533,7 +12533,7 @@ void ll_rx_mem_release(void **node_rx)
 					break;
 				}
 			}
-			/* passthrough */
+			/* fallthrough */
 		case NODE_RX_TYPE_DC_PDU:
 #endif /* CONFIG_BT_CONN */
 
