@@ -19,7 +19,7 @@ properties:
 
     label:
       type: string
-      category: required
+      category: optional
       description: Human readable string describing the device (used by Zephyr for API name)
 
     clock-frequency:
