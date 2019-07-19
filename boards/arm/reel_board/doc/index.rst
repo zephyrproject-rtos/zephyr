@@ -62,6 +62,31 @@ which can be used as an interrupt source.
 
      reel board back (Credit: PHYTEC)
 
+.. _reel_board_display:
+
+Display
+=======
+
+GDEH0213B1 is the display with which the board was introduced
+in 2018. Unfortunately, this display has been discontinued.
+Currently the board is delivered with the display GDEH0213B72.
+It is expected that the display will be replaced over time
+due the short product lifecycle of this type of displays.
+The following table lists the displays used on the reel board.
+The label on the ribbon cable can help to distinguish the displays.
+According to the display type, the correct designation must be
+used for building an application.
+
++--------------+--------------------+----------------------+-------------------+
+| Display      | Ribbon Cable Label | Controller / Driver  | Board Designation |
++==============+====================+======================+===================+
+| Good Display | HINK-E0213         | SSD1673 /            | reel_board        |
+| GDEH0213B1   |                    | ssd16xx              |                   |
++--------------+--------------------+----------------------+-------------------+
+| Good Display | HINK-E0213A22      | IL3897 /             | reel_board_v2     |
+| GDEH0213B72  |                    | ssd16xx              |                   |
++--------------+--------------------+----------------------+-------------------+
+
 Power supply
 ============
 
@@ -412,6 +437,15 @@ Then build and flash the application in the usual way.
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
    :board: reel_board
+   :goals: build flash
+
+.. note::
+   Please use reel_board_v2 to build a application for the board equipped with
+   the GDEH0213B72, see :ref:`reel_board_display`.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: reel_board_v2
    :goals: build flash
 
 Debugging
