@@ -1232,6 +1232,7 @@ static void link_open(struct prov_rx *rx, struct net_buf_simple *buf)
 
 	link.id = rx->link_id;
 	atomic_set_bit(link.flags, LINK_ACTIVE);
+	atomic_clear_bit(link.flags, LINK_INVALID);
 	net_buf_simple_reset(link.rx.buf);
 
 	bearer_ctl_send(LINK_ACK, NULL, 0);
