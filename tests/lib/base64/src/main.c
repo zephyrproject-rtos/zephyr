@@ -43,15 +43,34 @@ static const unsigned char base64_test_enc[] =
 	"JEhuVodiWr2/F9mixBcaAZTtjx4Rs9cJDLbpEG8i7hPK"
 	"swcFdsn6MWwINP+Nwmw4AEPpVJevUEvRQbqVMVoLlw==";
 
+static const unsigned char base64_test_enc2[] =
+	"Jkwo048//dw 0sf356efdaKFLowLKAfJdw410Lw3PdKl"
+	"swcFdsn6MWwINP+Nwmw4AEPpVJevUEvRQbqVMVoLlw==";
+
+static const unsigned char base64_test_enc3[] =
+	"PsdA1lf04JJ3nc00A30F8ker09i0ldkw36bv=SDW2\r\nv"
+	"swcFdsn6MWwINP+Nwmw4AEPpVJevUEvRQbqVMVoLlw==";
+
+static const unsigned char base64_test_enc4[] =
+	"===uVodiWr2/F9mixBcaAZTtjx4Rs9cJDLbpEG8i7hPK"
+	"swcFdsn6MWwINP+Nwmw4AEPpVJevUEvRQbqVMVoLlw==";
+
+static const unsigned char base64_test_enc5[] =
+	"JEhuVodiWr2/F9mixBcaAZTtjx4Rs9cJDLbpEG8i\n\r\ni"
+	"swcFdsn6MWwINP+Nwmw4AEPpVJevUEvRQbqVMVoLlw= ";
+
 static void test_base64_codec(void)
 {
 	size_t len;
 	int rc;
 	const unsigned char *src;
 	unsigned char buffer[128];
+	int slen;
+	int n;
 
 	src = base64_test_dec;
 
+	/* test base64_encode */
 	rc = base64_encode(buffer, sizeof(buffer), &len, src, 64);
 	zassert_equal(rc, 0, "Encode test return value");
 	rc = memcmp(base64_test_enc, buffer, 88);
@@ -59,10 +78,54 @@ static void test_base64_codec(void)
 
 	src = base64_test_enc;
 
+	/* test base64_decode */
 	rc = base64_decode(buffer, sizeof(buffer), &len, src, 88);
 	zassert_equal(rc, 0, "Decode test return value");
 	rc = memcmp(base64_test_dec, buffer, 64);
 	zassert_equal(rc, 0, "Decode test comparison");
+
+	/* test error paths - encode */
+	rc = base64_encode(buffer, sizeof(buffer), &len, src, 0);
+	zassert_equal(rc, 0, "Error: slen: encode test return value");
+	zassert_equal(len, 0, "Error: slen: length value");
+
+	slen = ((-1 - 1) / 4) * 3 - 1;
+	rc = base64_encode(buffer, sizeof(buffer), &len, src, slen);
+	zassert_equal(rc, -ENOMEM, "Error: n: encode test return value");
+	zassert_equal(len, -1, "Error: n: length value");
+
+	slen = 100;
+	n = slen / 3 + (slen % 3 != 0);
+	n *= 4;
+	rc = base64_encode(buffer, sizeof(buffer), &len, src, slen);
+	zassert_equal(rc, -ENOMEM, "Error: dlen: encode test return value");
+	zassert_equal(len, n + 1, "Error: dlen: length value");
+
+	/* test error paths - decode */
+	src = base64_test_enc2;
+	rc = base64_decode(buffer, sizeof(buffer), &len, src, 88);
+	zassert_equal(rc, -EINVAL, "Error: space: decode test return value");
+
+	src = base64_test_enc3;
+	rc = base64_decode(buffer, sizeof(buffer), &len, src, 88);
+	zassert_equal(rc, -EINVAL, "Error: dec_map: decode test return value");
+
+	src = base64_test_enc4;
+	rc = base64_decode(buffer, sizeof(buffer), &len, src, 88);
+	zassert_equal(rc, -EINVAL, "Error: equal: decode test return value");
+
+	src = base64_test_enc5;
+	rc = base64_decode(buffer, sizeof(buffer), &len, src, 88);
+	zassert_equal(rc, 0, "return, newline: decode test return value");
+
+	src = base64_test_enc;
+	rc = base64_decode(buffer, sizeof(buffer), &len, src, 0);
+	zassert_equal(rc, 0, "Error: n: decode test return value");
+	zassert_equal(len, 0, "Error: n: length value");
+
+	src = base64_test_enc;
+	rc = base64_decode(NULL, -1, &len, src, 88);
+	zassert_equal(rc, -ENOMEM, "Error: dst NULL: decode test return value");
 }
 
 void test_main(void)
