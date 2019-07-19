@@ -18,6 +18,7 @@ source "drivers/entropy/Kconfig.nrf5"
 source "drivers/entropy/Kconfig.sam"
 source "drivers/entropy/Kconfig.native_posix"
 source "drivers/entropy/Kconfig.rv32m1"
+source "drivers/entropy/Kconfig.litex"
 
 config ENTROPY_HAS_DRIVER
 	bool
