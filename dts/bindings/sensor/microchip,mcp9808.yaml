@@ -1,0 +1,16 @@
+# Copyright (c) 2019, Grinn
+# SPDX-License-Identifier: Apache-2.0
+
+title: MCP9808 temperature sensor
+
+description: >
+    This is a representation of the MCP9808 temperature sensor
+
+compatible: "microchip,mcp9808"
+
+include: i2c-device.yaml
+
+properties:
+    int-gpios:
+      type: phandle-array
+      required: false
