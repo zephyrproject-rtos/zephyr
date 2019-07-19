@@ -1858,6 +1858,7 @@ reexecute:
 
 				case 2:
 					parser->upgrade = 1U;
+					/* fallthrough */
 
 				case 1:
 					parser->flags |= F_SKIPBODY;
