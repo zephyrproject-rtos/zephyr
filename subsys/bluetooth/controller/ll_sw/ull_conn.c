@@ -4290,7 +4290,7 @@ static inline void ctrl_tx_pre_ack(struct ll_conn *conn,
 		if (!conn->lll.role) {
 			break;
 		}
-		/* Pass Through */
+		/* Fall through */
 
 	case PDU_DATA_LLCTRL_TYPE_ENC_REQ:
 	case PDU_DATA_LLCTRL_TYPE_ENC_RSP:

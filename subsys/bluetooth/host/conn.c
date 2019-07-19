@@ -2270,7 +2270,7 @@ struct bt_conn *bt_conn_create_slave_le(const bt_addr_le_t *peer,
 				bt_conn_unref(conn);
 				return NULL;
 			}
-
+			/* fallthrough */
 		case BT_CONN_CONNECT:
 		case BT_CONN_CONNECTED:
 			return conn;

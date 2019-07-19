@@ -1064,6 +1064,7 @@ static void le_conn_rsp(struct bt_l2cap *l2cap, u8_t ident,
 			return;
 		}
 		bt_l2cap_chan_remove(conn, &chan->chan);
+		/* fallthrough */
 	default:
 		bt_l2cap_chan_del(&chan->chan);
 	}

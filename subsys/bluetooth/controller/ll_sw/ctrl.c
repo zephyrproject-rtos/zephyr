@@ -1918,7 +1918,7 @@ static inline u32_t isr_rx_conn_pkt_ack(struct pdu_data *pdu_data_tx,
 		    PDU_DATA_LLCTRL_TYPE_ENC_REQ) {
 			break;
 		}
-		/* Pass through */
+		/* Fall through */
 
 	case PDU_DATA_LLCTRL_TYPE_REJECT_IND:
 		/* resume data packet rx and tx */
