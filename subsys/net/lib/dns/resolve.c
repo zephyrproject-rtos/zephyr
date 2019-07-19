@@ -1001,6 +1001,18 @@ void dns_init_resolver(void)
 		count = 5;
 	}
 
+	/* GCC is not recognizing the comments in clause under
+	 * ifdef. Disabling this check in this switch statment to
+	 * avoid warning messages.
+	 * There are other two solutions but they seem more intrusive:
+	 * a) use __attribute__(fallthrough)
+	 * b) ask the preprocessor to keep all comments using -C option.
+	 *    But this can cause some side effects because causes the
+	 *    preprocessor to treat comments as tokens in their own right.
+	 */
+#pragma GCC diagnostic push
+	DISABLE_FALLTHROUGH;
+
 	switch (count) {
 #if DNS_SERVER_COUNT > 4
 	case 5:
@@ -1030,6 +1042,8 @@ void dns_init_resolver(void)
 	case 0:
 		break;
 	}
+
+#pragma GCC diagnostic pop
 
 #if defined(CONFIG_MDNS_RESOLVER) && (MDNS_SERVER_COUNT > 0)
 #if defined(CONFIG_NET_IPV6) && defined(CONFIG_NET_IPV4)
