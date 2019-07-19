@@ -66,6 +66,7 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 		compatible = "winbond,w25q16", "jedec,spi-nor";
+		label = "W25Q16";
 		reg = <0>;
 		spi-max-frequency = <8000000>;
 	};
