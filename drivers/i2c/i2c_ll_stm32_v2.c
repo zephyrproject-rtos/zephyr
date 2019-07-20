@@ -246,6 +246,8 @@ int i2c_stm32_slave_unregister(struct device *dev,
 
 	LL_I2C_Disable(i2c);
 
+	data->slave_attached = false;
+
 	LOG_DBG("i2c: slave unregistered");
 
 	return 0;
