@@ -27,11 +27,6 @@ properties:
     category: optional
     description: Indicates the device supports the BE32K command
 
-  write-block-size:
-   type: int
-   description: address alignment required by flash write operations
-   category: optional
-
   size:
     type: int
     category: optional
