@@ -358,14 +358,26 @@ static int spi_nor_init(struct device *dev)
 }
 
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
+
+/* instance 0 size in bytes */
+#define INST_0_BYTES (DT_INST_0_JEDEC_SPI_NOR_SIZE / 8)
+
+/* instance 0 page count */
+#define LAYOUT_PAGES_COUNT (INST_0_BYTES / CONFIG_SPI_NOR_FLASH_LAYOUT_PAGE_SIZE)
+
+BUILD_ASSERT_MSG((CONFIG_SPI_NOR_FLASH_LAYOUT_PAGE_SIZE * LAYOUT_PAGES_COUNT)
+		 == INST_0_BYTES,
+		 "SPI_NOR_FLASH_LAYOUT_PAGE_SIZE incompatible with flash size");
+
 static const struct flash_pages_layout dev_layout = {
-	.pages_count = DT_INST_0_JEDEC_SPI_NOR_SIZE / 8 / SPI_NOR_BLOCK_SIZE,
-	.pages_size = SPI_NOR_BLOCK_SIZE,
+	.pages_count = LAYOUT_PAGES_COUNT,
+	.pages_size = CONFIG_SPI_NOR_FLASH_LAYOUT_PAGE_SIZE,
 };
+#undef LAYOUT_PAGES_COUNT
 
 static void spi_nor_pages_layout(struct device *dev,
-				const struct flash_pages_layout **layout,
-				size_t *layout_size)
+				 const struct flash_pages_layout **layout,
+				 size_t *layout_size)
 {
 	*layout = &dev_layout;
 	*layout_size = 1;
