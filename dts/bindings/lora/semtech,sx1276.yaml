@@ -1,0 +1,39 @@
+#
+# Copyright (c) 2019, Manivannan Sadhasivam
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: Semtech SX1276 LoRa Modem
+version: 0.1
+
+description: >
+    This is a representation of the SX1276 LoRa Modem
+
+inherits:
+    !include spi-device.yaml
+
+properties:
+    compatible:
+      type: string
+      category: required
+      constraint: "semtech,sx1276"
+      generation: define
+
+    clock-frequency:
+      type: int
+      category: required
+      description: Input clock frequency of the LoRa device
+      generation: define
+
+    reset-gpios:
+      type: compound
+      category: optional
+      generation: define, use-prop-name
+
+    dio-gpios:
+      type: compound
+      category: optional
+      generation: define, use-prop-name
+
+...
