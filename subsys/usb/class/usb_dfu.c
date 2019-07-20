@@ -490,6 +490,8 @@ static int dfu_class_handle_req(struct usb_setup_packet *pSetup,
 		case dfuIDLE:
 			dfu_reset_counters();
 			LOG_DBG("DFU_UPLOAD start");
+			/* fallthrough */
+
 		case dfuUPLOAD_IDLE:
 			if (!pSetup->wLength ||
 			    dfu_data.block_nr != pSetup->wValue) {
@@ -743,6 +745,7 @@ static void dfu_work_handler(struct k_work *item)
 			break;
 		}
 #endif
+		/* fallthrough */
 	case dfuDNLOAD_IDLE:
 		dfu_flash_write(dfu_data_worker.buf,
 				dfu_data_worker.worker_len);
