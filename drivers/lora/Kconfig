@@ -7,7 +7,7 @@
 # Top-level configuration file for LORA drivers.
 
 menuconfig LORA
-	bool "LoRa drivers"
+	bool "LoRa support"
 	help
 	  Include LoRa drivers in the system configuration.
 
@@ -22,5 +22,7 @@ config LORA_INIT_PRIORITY
 	default 90
 	help
 	  System initialization priority for LoRa drivers.
+
+source "drivers/lora/Kconfig.sx1276"
 
 endif # LORA
