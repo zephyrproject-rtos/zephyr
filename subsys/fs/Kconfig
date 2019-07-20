@@ -4,10 +4,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-# Hidden. Automatically selected by file systems or FCB that need it
-config FS_FLASH_STORAGE_PARTITION
-	bool
-
 menu "File Systems"
 
 config FILE_SYSTEM
@@ -38,7 +34,6 @@ config FAT_FILESYSTEM_ELM
 config FILE_SYSTEM_NFFS
 	bool "NFFS file system support"
 	depends on FLASH_PAGE_LAYOUT
-	select FS_FLASH_STORAGE_PARTITION
 	help
 	  Enables NFFS file system support.
 	  Note: NFFS requires 1-byte unaligned access to flash thus it

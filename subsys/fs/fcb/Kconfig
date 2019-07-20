@@ -12,6 +12,5 @@
 config FCB
 	bool "Flash Circular Buffer support"
 	depends on FLASH_MAP
-	select FS_FLASH_STORAGE_PARTITION
 	help
 	  Enable support of Flash Circular Buffer.
