@@ -380,7 +380,7 @@ static const struct flash_driver_api spi_nor_api = {
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 	.page_layout = spi_nor_pages_layout,
 #endif
-	.write_block_size = DT_JEDEC_SPI_NOR_0_WRITE_BLOCK_SIZE,
+	.write_block_size = 1,
 };
 
 static const struct spi_nor_config flash_id = {
