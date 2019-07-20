@@ -139,6 +139,9 @@ flash_page_cb cb, struct layout_data *cb_data)
 	cb_data->status = 0;
 
 	flash_dev = device_get_binding(fa->fa_dev_name);
+	if (flash_dev == NULL) {
+		return -ENODEV;
+	}
 
 	flash_page_foreach(flash_dev, cb, cb_data);
 

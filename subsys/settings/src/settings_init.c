@@ -80,7 +80,9 @@ int settings_backend_init(void)
 
 	rc = flash_area_get_sectors(DT_FLASH_AREA_STORAGE_ID, &cnt,
 				    settings_fcb_area);
-	if (rc != 0 && rc != -ENOMEM) {
+	if (rc == -ENODEV) {
+		return rc;
+	} else if (rc != 0 && rc != -ENOMEM) {
 		k_panic();
 	}
 
