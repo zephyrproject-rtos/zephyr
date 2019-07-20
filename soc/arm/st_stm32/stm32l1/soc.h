@@ -51,6 +51,10 @@
 #include <stm32l1xx_ll_i2c.h>
 #endif
 
+#ifdef CONFIG_SPI
+#include <stm32l1xx_ll_spi.h>
+#endif
+
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _STM32L1_SOC_H_ */

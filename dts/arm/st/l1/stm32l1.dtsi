@@ -72,6 +72,17 @@
 			label= "I2C_2";
 		};
 
+		spi1: spi@40013000 {
+			compatible = "st,stm32-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40013000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00001000>;
+			interrupts = <35 5>;
+			status = "disabled";
+			label = "SPI_1";
+		};
+
 		usart1: serial@40013800 {
 			compatible = "st,stm32-usart", "st,stm32-uart";
 			reg = <0x40013800 0x400>;
@@ -144,6 +155,7 @@
 
 		rcc: rcc@40023800 {
 			compatible = "st,stm32-rcc";
+			clocks-controller;
 			#clock-cells = <2>;
 			reg = <0x40023800 0x400>;
 			label = "STM32_CLK_RCC";
