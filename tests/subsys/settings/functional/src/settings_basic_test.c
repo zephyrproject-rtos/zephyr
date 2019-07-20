@@ -16,6 +16,27 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(settings_basic_test);
 
+#ifdef CONFIG_SETTINGS_FCB
+#include <storage/flash_map.h>
+#endif
+
+/* The standard test expects a cleared flash area.  Make sure it has
+ * one.
+ */
+static void test_clear_settings(void)
+{
+	if (IS_ENABLED(CONFIG_SETTINGS_FCB)) {
+		const struct flash_area *fap;
+		int rc = flash_area_open(DT_FLASH_AREA_STORAGE_ID, &fap);
+
+		if (rc == 0) {
+			rc = flash_area_erase(fap, 0, fap->fa_size);
+			flash_area_close(fap);
+		}
+		zassert_true(rc == 0, "clear settings failed");
+	}
+}
+
 /*
  * Test the two support routines that settings provides:
  *
@@ -304,8 +325,9 @@ static void test_register_and_loading(void)
 void test_main(void)
 {
 	ztest_test_suite(settings_test_suite,
-			ztest_unit_test(test_support_rtn),
-			ztest_unit_test(test_register_and_loading)
+			 ztest_unit_test(test_clear_settings),
+			 ztest_unit_test(test_support_rtn),
+			 ztest_unit_test(test_register_and_loading)
 			);
 
 	ztest_run_test_suite(settings_test_suite);
