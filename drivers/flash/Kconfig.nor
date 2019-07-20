@@ -30,12 +30,14 @@ config SPI_NOR_PAGE_SIZE
 	int "Page size of SPI flash"
 	default 0
 	help
-	This option specifies page size of SPI flash
+	  Note: This option is deprecated and is ignored.  Page size is
+	  always 256.
 
 config SPI_NOR_SECTOR_SIZE
 	int "Sector size of SPI flash"
 	default 0
 	help
-	This option specifies sector size of SPI flash
+	  Note: This option is deprecated and is ignored.  Sector size
+	  is always 4096.
 
 endif # SPI_NOR

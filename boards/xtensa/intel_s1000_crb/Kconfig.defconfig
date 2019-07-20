@@ -174,12 +174,6 @@ config SPI
 config SPI_NOR
 	default y
 
-config SPI_NOR_PAGE_SIZE
-	default 256
-
-config SPI_NOR_SECTOR_SIZE
-	default 4096
-
 config FLASH_HAS_PAGE_LAYOUT
 	default y
 

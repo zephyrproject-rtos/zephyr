@@ -22,10 +22,10 @@ properties:
     category: required
     description: JEDEC ID as manufacturer ID, memory type, memory density
 
-  erase-block-size:
-   type: int
-   description: address alignment required by flash erase operations
-   category: optional
+  has-be32k:
+    type: boolean
+    category: optional
+    description: Indicates the device supports the BE32K command
 
   write-block-size:
    type: int

@@ -14,28 +14,7 @@
 #include "spi_nor.h"
 #include "flash_priv.h"
 
-#define SZ_256  0x100
-#define SZ_512  0x200
-#define SZ_1024 0x400
-#define SZ_4K   0x1000
-#define SZ_32K  0x8000
-#define SZ_64K  0x10000
-
-#define MASK_256 0xFF
-#define MASK_4K  0xFFF
-#define MASK_32K 0x7FFF
-#define MASK_64K 0xFFFF
-
 #define SPI_NOR_MAX_ADDR_WIDTH 4
-#define SECTORS_COUNT ((DT_INST_0_JEDEC_SPI_NOR_SIZE / 8) \
-		       / CONFIG_SPI_NOR_SECTOR_SIZE)
-
-#define JEDEC_ID(x)		    \
-	{			    \
-		((x) >> 16) & 0xFF, \
-		((x) >> 8) & 0xFF,  \
-		(x) & 0xFF,	    \
-	}
 
 /**
  * struct spi_nor_data - Structure for defining the SPI NOR access
@@ -178,8 +157,7 @@ static int spi_nor_read(struct device *dev, off_t addr, void *dest,
 	int to_read;
 
 	/* should be between 0 and flash size */
-	if ((addr < 0) || (addr + size) >  (params->sector_size
-					   * params->n_sectors)) {
+	if ((addr < 0) || ((addr + size) > params->size)) {
 		return -EINVAL;
 	}
 
@@ -189,8 +167,8 @@ static int spi_nor_read(struct device *dev, off_t addr, void *dest,
 
 	while (size) {
 		to_read = size;
-		if (size > params->page_size) {
-			to_read = params->page_size;
+		if (size > SPI_NOR_PAGE_SIZE) {
+			to_read = SPI_NOR_PAGE_SIZE;
 		}
 
 		ret = spi_nor_cmd_addr_read(dev, SPI_NOR_CMD_READ, addr,
@@ -218,8 +196,7 @@ static int spi_nor_write(struct device *dev, off_t addr, const void *src,
 	size_t to_write;
 
 	/* should be between 0 and flash size */
-	if ((addr < 0) || ((size + addr) > (params->sector_size *
-						params->n_sectors))) {
+	if ((addr < 0) || ((size + addr) > params->size)) {
 		return -EINVAL;
 	}
 
@@ -230,8 +207,8 @@ static int spi_nor_write(struct device *dev, off_t addr, const void *src,
 		spi_nor_cmd_write(dev, SPI_NOR_CMD_WREN);
 
 		to_write = size;
-		if (size >= params->page_size) {
-			to_write = params->page_size;
+		if (size >= SPI_NOR_PAGE_SIZE) {
+			to_write = SPI_NOR_PAGE_SIZE;
 		}
 
 		ret = spi_nor_cmd_addr_write(dev, SPI_NOR_CMD_PP, addr,
@@ -258,8 +235,7 @@ static int spi_nor_erase(struct device *dev, off_t addr, size_t size)
 	const struct spi_nor_config *params = dev->config->config_info;
 
 	/* should be between 0 and flash size */
-	if ((addr < 0) || ((size + addr) >
-		(params->sector_size * params->n_sectors))) {
+	if ((addr < 0) || ((size + addr) > params->size)) {
 		return -ENODEV;
 	}
 
@@ -269,33 +245,31 @@ static int spi_nor_erase(struct device *dev, off_t addr, size_t size)
 		/* write enable */
 		spi_nor_cmd_write(dev, SPI_NOR_CMD_WREN);
 
-		if (size == (params->sector_size * params->n_sectors)) {
+		if (size == params->size) {
 			/* chip erase */
 			spi_nor_cmd_write(dev, SPI_NOR_CMD_CE);
-			size -= (params->sector_size * params->n_sectors);
-		} else if ((DT_JEDEC_SPI_NOR_0_ERASE_BLOCK_SIZE == SZ_64K)
-			  && (size >= SZ_64K)
-			  && ((addr & MASK_64K) == 0)) {
+			size -= params->size;
+		} else if ((size >= SPI_NOR_BLOCK_SIZE)
+			   && SPI_NOR_IS_BLOCK_ALIGNED(addr)) {
 			/* 64 KiB block erase */
 			spi_nor_cmd_addr_write(dev, SPI_NOR_CMD_BE, addr,
 			NULL, 0);
-			addr += SZ_64K;
-			size -= SZ_64K;
-		} else if ((DT_JEDEC_SPI_NOR_0_ERASE_BLOCK_SIZE == SZ_32K)
-			  && (size >= SZ_32K)
-			  && ((addr & MASK_32K) == 0)) {
+			addr += SPI_NOR_BLOCK_SIZE;
+			size -= SPI_NOR_BLOCK_SIZE;
+		} else if ((size >= SPI_NOR_BLOCK32_SIZE)
+			   && SPI_NOR_IS_BLOCK32_ALIGNED(addr)) {
 			/* 32 KiB block erase */
 			spi_nor_cmd_addr_write(dev, SPI_NOR_CMD_BE_32K, addr,
 					       NULL, 0);
-			addr += SZ_32K;
-			size -= SZ_32K;
-		} else if ((size >= params->sector_size) &&
-			  ((addr & (params->sector_size - 1)) == 0)) {
+			addr += SPI_NOR_BLOCK32_SIZE;
+			size -= SPI_NOR_BLOCK32_SIZE;
+		} else if ((size >= SPI_NOR_SECTOR_SIZE)
+			   && SPI_NOR_IS_SECTOR_ALIGNED(addr)) {
 			/* sector erase */
 			spi_nor_cmd_addr_write(dev, SPI_NOR_CMD_SE, addr,
 					       NULL, 0);
-			addr += params->sector_size;
-			size -= params->sector_size;
+			addr += SPI_NOR_SECTOR_SIZE;
+			size -= SPI_NOR_SECTOR_SIZE;
 		} else {
 			/* minimal erase size is at least a sector size */
 			SYNC_UNLOCK();
@@ -385,8 +359,8 @@ static int spi_nor_init(struct device *dev)
 
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 static const struct flash_pages_layout dev_layout = {
-	.pages_count = DT_INST_0_JEDEC_SPI_NOR_SIZE / 8 / DT_JEDEC_SPI_NOR_0_ERASE_BLOCK_SIZE,
-	.pages_size = DT_JEDEC_SPI_NOR_0_ERASE_BLOCK_SIZE,
+	.pages_count = DT_INST_0_JEDEC_SPI_NOR_SIZE / 8 / SPI_NOR_BLOCK_SIZE,
+	.pages_size = SPI_NOR_BLOCK_SIZE,
 };
 
 static void spi_nor_pages_layout(struct device *dev,
@@ -415,9 +389,10 @@ static const struct spi_nor_config flash_id = {
 		DT_INST_0_JEDEC_SPI_NOR_JEDEC_ID_1,
 		DT_INST_0_JEDEC_SPI_NOR_JEDEC_ID_2,
 	},
-	.page_size = CONFIG_SPI_NOR_PAGE_SIZE,
-	.sector_size = CONFIG_SPI_NOR_SECTOR_SIZE,
-	.n_sectors = SECTORS_COUNT,
+#ifdef DT_INST_0_JEDEC_SPI_NOR_HAS_BE32K
+	.has_be32k = true,
+#endif /* DT_INST_0_JEDEC_SPI_NOR_HAS_BE32K */
+	.size = DT_INST_0_JEDEC_SPI_NOR_SIZE / 8,
 };
 
 static struct spi_nor_data spi_nor_memory_data;
