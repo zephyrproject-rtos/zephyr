@@ -1,0 +1,8 @@
+common:
+   tags: lora
+sample:
+   description: Demonstration of LoRa Send functionality
+   name: LoRa Send Sample
+tests:
+   sample.driver.lora.send:
+     platform_whitelist: 96b_wistrio
