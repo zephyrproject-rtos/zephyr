@@ -6,6 +6,7 @@ macro(toolchain_cc_warning_base)
 
   zephyr_compile_options(
     -Wall
+    -Wempty-body
     -Wformat
     -Wformat-security
     -Wmissing-parameter-type
