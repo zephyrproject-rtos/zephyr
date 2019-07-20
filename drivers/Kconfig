@@ -13,6 +13,8 @@ source "drivers/bluetooth/Kconfig"
 
 source "drivers/ieee802154/Kconfig"
 
+source "drivers/lora/Kconfig"
+
 source "drivers/console/Kconfig"
 
 source "drivers/ethernet/Kconfig"
