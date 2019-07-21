@@ -533,11 +533,26 @@ static void mcp2515_recover(struct device *dev, s32_t timeout)
 
 static void mcp2515_handle_interrupts(struct device *dev)
 {
+	const struct mcp2515_config *dev_cfg = DEV_CFG(dev);
+	struct mcp2515_data *dev_data = DEV_DATA(dev);
+	u32_t pin;
+	int ret;
 	u8_t canintf;
 
-	mcp2515_cmd_read_reg(dev, MCP2515_ADDR_CANINTF, &canintf, 1);
+	/* Loop until INT pin is high (all interrupt flags handled) */
+	while (1) {
+		ret = mcp2515_cmd_read_reg(dev, MCP2515_ADDR_CANINTF,
+				&canintf, 1);
+		if (ret != 0) {
+			LOG_ERR("Couldn't read INTF register %d", ret);
+			continue;
+		}
 
-	while (canintf != 0) {
+		if (canintf == 0) {
+			/* No interrupt flags set */
+			break;
+		}
+
 		if (canintf & MCP2515_CANINTF_RX0IF) {
 			mcp2515_rx(dev, 0);
 		}
@@ -566,9 +581,14 @@ static void mcp2515_handle_interrupts(struct device *dev)
 		mcp2515_cmd_bit_modify(dev, MCP2515_ADDR_CANINTF, canintf,
 				       ~canintf);
 
-		/* check that no new interrupts happened while clearing known
-		 * ones */
-		mcp2515_cmd_read_reg(dev, MCP2515_ADDR_CANINTF, &canintf, 1);
+		/* Break from loop if INT pin is no longer low */
+		ret = gpio_pin_read(dev_data->int_gpio, dev_cfg->int_pin, &pin);
+		if (ret != 0) {
+			LOG_ERR("Couldn't read INT pin");
+		} else if (pin != 0) {
+			/* All interrupt flags handled */
+			break;
+		}
 	}
 }
 
@@ -610,7 +630,7 @@ static int mcp2515_init(struct device *dev)
 	struct mcp2515_data *dev_data = DEV_DATA(dev);
 	int ret;
 
-	k_sem_init(&dev_data->int_sem, 0, UINT_MAX);
+	k_sem_init(&dev_data->int_sem, 0, 1);
 	k_mutex_init(&dev_data->mutex);
 	k_sem_init(&dev_data->tx_sem, 3, 3);
 	k_sem_init(&dev_data->tx_cb[0].sem, 0, 1);
