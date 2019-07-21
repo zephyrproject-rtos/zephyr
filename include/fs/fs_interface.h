@@ -11,7 +11,7 @@
 extern "C" {
 #endif
 
-#ifdef CONFIG_FILE_SYSTEM_NFFS
+#if defined(CONFIG_FILE_SYSTEM_LITTLEFS) || defined(CONFIG_FILE_SYSTEM_NFFS)
 #define MAX_FILE_NAME 256
 #else /* FAT_FS */
 #define MAX_FILE_NAME 12 /* Uses 8.3 SFN */

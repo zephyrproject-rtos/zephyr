@@ -337,6 +337,7 @@
 /subsys/fs/                               @nashif
 /subsys/fs/fcb/                           @nvlsianpu
 /subsys/fs/fuse_fs_access.c               @vanwinkeljan
+/subsys/fs/littlefs_fs.c                  @pabigot
 /subsys/fs/nvs/                           @Laczen
 /subsys/logging/                          @nordic-krch
 /subsys/mgmt/                             @carlescufi @nvlsianpu

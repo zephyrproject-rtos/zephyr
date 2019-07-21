@@ -85,6 +85,9 @@ manifest:
     - name: tinycbor
       path: modules/lib/tinycbor
       revision: 31ae89e4b768612722620cb6cb173a0de4a19cc9
+    - name: littlefs
+      path: modules/fs/littlefs
+      revision: 52b038794b1ba34bd9aaf4df3e37e65558046342
 
   self:
     path: zephyr
