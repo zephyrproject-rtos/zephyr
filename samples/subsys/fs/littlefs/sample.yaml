@@ -1,0 +1,7 @@
+sample:
+  name: littlefs filesystem sample
+tests:
+  sample.subsys.fs.littlefs:
+    build_only: true
+    platform_whitelist: nrf52840_pca10056 particle_xenon
+    tags: filesystem
