@@ -23,7 +23,7 @@ both the ``nrf52840_blip.overlay`` and the ``dts_fixup.h`` for nrf52840_blip
 to work:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/subsys/fs
+   :zephyr-app: samples/subsys/fs/fat_fs
    :board: nrf52840_blip
    :goals: build
    :compact:
