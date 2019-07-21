@@ -32,6 +32,9 @@ config I2C_1
 config I2C_2
 	default y
 
+config I2C_3
+	default y
+
 endif # I2C
 
 if SPI
