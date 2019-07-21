@@ -39,6 +39,13 @@ config FILE_SYSTEM_NFFS
 	  Note: NFFS requires 1-byte unaligned access to flash thus it
 	  will not work on devices that support only aligned flash access.
 
+config FILE_SYSTEM_LITTLEFS
+	bool "LittleFS file system support"
+	depends on FLASH_MAP
+	depends on FLASH_PAGE_LAYOUT
+	help
+	  Enables LittleFS file system support.
+
 config FILE_SYSTEM_SHELL
 	bool "Enable file system shell"
 	depends on SHELL
@@ -118,6 +125,63 @@ config NFFS_FILESYSTEM_MAX_BLOCK_SIZE
         help
           This determines the maximum size of data block written to flash.
           Writes larger than this size are split into multiple write operations.
+
+endmenu
+
+menu "LittleFS Settings"
+	visible if FILE_SYSTEM_LITTLEFS
+
+config FS_LITTLEFS_NUM_FILES
+	int "Maximum number of opened files"
+	default 4
+	help
+	  This is a global maximum across all mounted littlefs filesystems.
+
+config FS_LITTLEFS_NUM_DIRS
+	int "Maximum number of opened directories"
+	default 4
+	help
+	  This is a global maximum across all mounted littlefs filesystems.
+
+config FS_LITTLEFS_READ_SIZE
+	int "Minimum size of a block read"
+	default 16
+	help
+	  All read operations will be a multiple of this value.
+
+config FS_LITTLEFS_PROG_SIZE
+	int "Minimum size of a block program"
+	default 16
+	help
+	  All program operations will be a multiple of this value.
+
+config FS_LITTLEFS_CACHE_SIZE
+	int "Size of block caches in bytes"
+	default 64
+	help
+	  Each cache buffers a portion of a block in RAM.  The littlefs
+	  needs a read cache, a program cache, and one additional cache
+	  per file. Larger caches can improve performance by storing
+	  more data and reducing the number of disk accesses. Must be a
+	  multiple of the read and program sizes of the underlying flash
+	  device, and a factor of the block size.
+
+config FS_LITTLEFS_LOOKAHEAD_SIZE
+	int "Size of lookahead buffer in bytes"
+	default 32
+	help
+	  A larger lookahead buffer increases the number of blocks found
+	  during an allocation pass. The lookahead buffer is stored as a
+	  compact bitmap, so each byte of RAM can track 8 blocks. Must
+	  be a multiple of 8.
+
+config FS_LITTLEFS_BLOCK_CYCLES
+	int "Number of erase cycles before moving data to another block"
+	default 512
+	help
+	  For dynamic wear leveling, the number of erase cycles before data
+	  is moved to another block.  Set to a non-positive value to
+	  disable leveling.
 
 endmenu
 
