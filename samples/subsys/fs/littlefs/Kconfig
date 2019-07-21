@@ -1,0 +1,11 @@
+# Copyright (c) 2019 Peter Bigot Consulting, LLC
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config APP_WIPE_STORAGE
+	bool "Option to clear the flash area before mounting"
+	help
+	  Use this to force an existing file system to be created.
+
+source "$ZEPHYR_BASE/Kconfig"
