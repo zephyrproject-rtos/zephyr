@@ -4395,7 +4395,7 @@ static inline void ctrl_tx_ack(struct ll_conn *conn, struct node_tx **tx,
 		    PDU_DATA_LLCTRL_TYPE_ENC_REQ) {
 			break;
 		}
-		/* Pass through */
+		/* Falls through */
 
 	case PDU_DATA_LLCTRL_TYPE_REJECT_IND:
 		/* resume data packet rx and tx */

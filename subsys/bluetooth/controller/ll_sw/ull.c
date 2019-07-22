@@ -473,6 +473,12 @@ void ll_rx_dequeue(void)
 
 	mem_release(link, &mem_link_rx.free);
 
+	/* GCC is not able to recognize comments in clause under ifdef.
+	 * Disabling -Wimplicit-fallthrough warning in this switch.
+	 */
+#pragma GCC diagnostic push
+	DISABLE_FALLTHROUGH;
+
 	/* handle object specific clean up */
 	switch (rx->type) {
 #if defined(CONFIG_BT_OBSERVER) || \
@@ -580,6 +586,7 @@ void ll_rx_dequeue(void)
 		LL_ASSERT(0);
 		break;
 	}
+#pragma GCC diagnostic pop
 
 	if (0) {
 #if defined(CONFIG_BT_CONN)
