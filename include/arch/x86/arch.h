@@ -176,6 +176,19 @@ static ALWAYS_INLINE bool z_arch_irq_unlocked(unsigned int key)
 }
 
 /**
+ * @brief read timestamp register, 32-bits only, unserialized
+ */
+
+static ALWAYS_INLINE u32_t z_do_read_cpu_timestamp32(void)
+{
+	u32_t rv;
+
+	__asm__ volatile("rdtsc" : "=a" (rv) : : "%edx");
+
+	return rv;
+}
+
+/**
  *  @brief read timestamp register ensuring serialization
  */
 

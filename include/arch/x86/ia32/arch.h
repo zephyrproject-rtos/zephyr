@@ -306,23 +306,6 @@ struct _x86_syscall_stack_frame {
 #ifndef _ASMLANGUAGE
 
 /**
- *
- * @brief Get a 32 bit CPU timestamp counter
- *
- * @return a 32-bit number
- */
-
-static ALWAYS_INLINE
-	u32_t z_do_read_cpu_timestamp32(void)
-{
-	u32_t rv;
-
-	__asm__ volatile("rdtsc" : "=a"(rv) :  : "%edx");
-
-	return rv;
-}
-
-/**
  * @brief Disable all interrupts on the CPU (inline)
  *
  * This routine disables interrupts.  It can be called from either interrupt
