@@ -177,6 +177,24 @@ config BT_SETTINGS_CCC_STORE_ON_WRITE
 	  workqueue stack space.
 endif # BT_SETTINGS
 
+config BT_WHITELIST
+	bool "Enable whitelist support"
+	help
+	  This option enables the whitelist API. This takes advantage of the
+	  whitelisting feature of a BLE controller.
+	  The whitelist is a global list and the same whitelist is used
+	  by both scanner and advertiser. The whitelist cannot be modified while
+	  it is in use.
+
+	  An Advertiser can whitelist which peers can connect or request scan
+	  response data.
+	  A scanner can whitelist advertiser for which it will generate
+	  advertising reports.
+	  Connections can be established automatically for whitelisted peers.
+
+	  This options deprecates the bt_le_set_auto_conn API in favor of the
+	  bt_conn_create_aute_le API.
+
 if BT_CONN
 
 if BT_HCI_ACL_FLOW_CONTROL
