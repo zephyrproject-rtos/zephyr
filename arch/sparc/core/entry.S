@@ -61,6 +61,18 @@ GDATA(_interrupt_stack)
 	nop;                        \
 	nop;
 
+#ifdef CONFIG_IRQ_OFFLOAD
+/* We must return to the next instruction after "ta". */
+/* The address of "ta" is in %l1 and the next instruction is in %l2. */
+/* Thus, move %l2 to %l1 and %l2 + 4 to %l2. */
+#define IRQ_OFFLOAD_ENTRY()	\
+	mov %l2, %l1;               \
+	ba _isr_wrapper;             \
+	inc 4, %l2;                 \
+	nop;
+#else
+#define IRQ_OFFLOAD_ENTRY() SOFT_TRAP_ENTRY()
+#endif /* CONFIG_IRQ_OFFLOAD */
 
 SECTION_FUNC(vector_table, __start)
 
@@ -193,7 +205,7 @@ SOFT_TRAP_ENTRY() SOFT_TRAP_ENTRY() SOFT_TRAP_ENTRY() SOFT_TRAP_ENTRY()
 SOFT_TRAP_ENTRY() SOFT_TRAP_ENTRY() SOFT_TRAP_ENTRY() SOFT_TRAP_ENTRY()
 SOFT_TRAP_ENTRY() SOFT_TRAP_ENTRY() SOFT_TRAP_ENTRY() SOFT_TRAP_ENTRY()
 SOFT_TRAP_ENTRY() SOFT_TRAP_ENTRY() SOFT_TRAP_ENTRY() SOFT_TRAP_ENTRY()
-SOFT_TRAP_ENTRY() SOFT_TRAP_ENTRY() SOFT_TRAP_ENTRY() SOFT_TRAP_ENTRY()
+SOFT_TRAP_ENTRY() SOFT_TRAP_ENTRY() SOFT_TRAP_ENTRY() IRQ_OFFLOAD_ENTRY()
 
 
 	.align  32

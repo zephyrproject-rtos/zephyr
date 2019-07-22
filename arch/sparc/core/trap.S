@@ -187,7 +187,27 @@ SECTION_FUNC(text, _isr_wrapper)
 
 #endif /* CONFIG_MULTITHREADING */
 
+#ifdef CONFIG_IRQ_OFFLOAD
+	/* * Test to see we are called for irq_offload() */
+	/*   Software ISR for irq offload is 0xff. */
+	/*   Check to see TT value is 0xff. */
+	/*   Otherwise, just restore and get out. */
+	/*   Do not call a regular ISR. */
+	/*   We don't know we have a pending irq or not. */
+	/*   And the ISR value at %l1 is bogus. */
+	mov %tbr, %o2         /* Load %tbr */
+	and %o2, TBR_TT, %o2  /* Take just TT field. */
+	cmp %o2, TBR_TT       /* Is TT 0xff? It's the number for Soft ISR. */
+	bne .Lcall_isr        /* If not, must be called for ISR. Jump to it. */
+	nop                   /* A delay slot. */
+	call z_irq_do_offload /* Otherwise, call z_irq_do_offload. */
+	nop                   /* A delay slot. */
+	ba .Ldone_isr         /* Get out. */
+	nop                   /* A delay slot. */
+#endif /* CONFIG_IRQ_OFFLOAD */
+
 	/* * Call ISR */
+.Lcall_isr:
 	/* ** Load the argument and the function */
 	/*    They are in _isr_table_entry offset by %l0 */
 	/*    (8 byte per entry). */
@@ -199,6 +219,7 @@ SECTION_FUNC(text, _isr_wrapper)
 	/* ISR is now done */
 	/* ISR should have restored all callee-saved registers */
 	/* (ins and locals). */
+.Ldone_isr:
 
 	 /* We don't have _kernel.current set when !MULTITHREADING */
 #ifdef CONFIG_MULTITHREADING
