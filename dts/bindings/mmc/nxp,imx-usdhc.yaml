@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
----
+
 title: NXP i.MXRT USDHC module
 
 description: >
@@ -31,4 +31,3 @@ properties:
 
     label:
       category: required
-...
