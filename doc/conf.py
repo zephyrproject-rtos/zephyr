@@ -32,22 +32,10 @@ sys.path.insert(0, os.path.join(ZEPHYR_BASE, 'doc', 'extensions'))
 # for autodoc directives on runners.xyz.
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, 'scripts', 'west_commands'))
 
-west_found = False
-
 try:
-    desc = check_output(['west', 'list', '-f{abspath}', 'west'],
-			stderr=DEVNULL,
-			cwd=os.path.dirname(__file__))
-    west_path = desc.decode(sys.getdefaultencoding()).strip()
-    # Add west, to be able to pull in its API docs.
-    sys.path.append(os.path.join(west_path, 'src'))
-    west_found = True
-except FileNotFoundError as e:
-    # west not installed
-    pass
-except CalledProcessError as e:
-    # west not able to list itself
-    pass
+    import west as west_found
+except ImportError:
+    west_found = False
 
 # -- General configuration ------------------------------------------------
 

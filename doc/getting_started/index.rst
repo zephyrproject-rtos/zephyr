@@ -60,10 +60,10 @@ Zephyr's multi-purpose :ref:`west <west>` tool lets you easily get the Zephyr
 project repositories. (While it's easiest to develop with Zephyr using west,
 we also have :ref:`documentation for doing without it <no-west>`.)
 
-Bootstrap west
-==============
+Install west
+============
 
-First, install the ``west`` binary and bootstrapper using ``pip3``:
+First, install ``west`` using ``pip3``:
 
 .. code-block:: console
 

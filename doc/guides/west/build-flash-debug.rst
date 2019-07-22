@@ -466,7 +466,7 @@ individual runner implementations are in other submodules, such as
 Hacking
 *******
 
-This section contains documentation the ``runners.core`` module used by the
+This section documents the ``runners.core`` module used by the
 flash and debug commands. This is the core abstraction used to implement
 support for these features.
 

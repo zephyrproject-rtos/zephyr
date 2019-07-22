@@ -15,6 +15,11 @@ endif()
 file(TO_CMAKE_PATH "$ENV{ZEPHYR_BASE}" ZEPHYR_BASE)
 
 message(STATUS "Zephyr base: ${ZEPHYR_BASE}")
+if(DEFINED WEST)
+  message(STATUS "West: ${WEST}")
+else()
+  message(STATUS "West: not found")
+endif()
 
 find_package(PythonInterp 3.4)
 set(DOXYGEN_SKIP_DOT True)

@@ -271,8 +271,7 @@ if [ -n "$MAIN_CI" ]; then
 		# run pytest could go here too.
 		PYTEST=$(type -p pytest-3 || echo "pytest")
 		mkdir -p $(dirname ${WEST_COMMANDS_RESULTS_FILE})
-		WEST_SRC=$(west list --format='{abspath}' west)/src
-		PYTHONPATH=./scripts/west_commands:$WEST_SRC "${PYTEST}" \
+		PYTHONPATH=./scripts/west_commands "${PYTEST}" \
 			  --junitxml=${WEST_COMMANDS_RESULTS_FILE} \
 			  ./scripts/west_commands/tests
 	else
