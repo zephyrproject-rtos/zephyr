@@ -23,6 +23,6 @@ sub-node:
           category: required
 
         label:
-          category: required
+          category: optional
           type: string
           description: Human readable string describing the device (used by Zephyr for API name)
