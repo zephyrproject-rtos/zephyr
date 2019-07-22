@@ -1871,10 +1871,12 @@ int bt_conn_disconnect(struct bt_conn *conn, u8_t reason)
 	 * and we could send LE Create Connection as soon as the remote
 	 * starts advertising.
 	 */
+#if !defined(CONFIG_BT_WHITELIST)
 	if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
 	    conn->type == BT_CONN_TYPE_LE) {
 		bt_le_set_auto_conn(&conn->le.dst, NULL);
 	}
+#endif /* !defined(CONFIG_BT_WHITELIST) */
 
 	switch (conn->state) {
 	case BT_CONN_CONNECT_SCAN:
@@ -1927,6 +1929,148 @@ static void bt_conn_set_param_le(struct bt_conn *conn,
 	conn->le.timeout = param->timeout;
 }
 
+#if defined(CONFIG_BT_WHITELIST)
+int bt_le_whitelist_add(const bt_addr_le_t *addr)
+{
+	struct bt_hci_cp_le_add_dev_to_wl *cp;
+	struct net_buf *buf;
+	int err;
+
+	if (!(bt_dev.le.wl_entries < bt_dev.le.wl_size)) {
+		return -ENOMEM;
+	}
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_ADD_DEV_TO_WL, sizeof(*cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	bt_addr_le_copy(&cp->addr, addr);
+
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_ADD_DEV_TO_WL, buf, NULL);
+	if (err) {
+		BT_ERR("Failed to add device to whitelist");
+
+		return err;
+	}
+
+	bt_dev.le.wl_entries++;
+
+	return 0;
+}
+
+int bt_le_whitelist_rem(const bt_addr_le_t *addr)
+{
+	struct bt_hci_cp_le_rem_dev_from_wl *cp;
+	struct net_buf *buf;
+	int err;
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_REM_DEV_FROM_WL, sizeof(*cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	bt_addr_le_copy(&cp->addr, addr);
+
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_REM_DEV_FROM_WL, buf, NULL);
+	if (err) {
+		BT_ERR("Failed to remove device from whitelist");
+		return err;
+	}
+
+	bt_dev.le.wl_entries--;
+	return 0;
+}
+
+int bt_le_whitelist_clear(void)
+{
+	int err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_CLEAR_WL, NULL, NULL);
+
+	if (err) {
+		BT_ERR("Failed to clear whitelist");
+		return err;
+	}
+
+	bt_dev.le.wl_entries = 0;
+	return 0;
+}
+
+int bt_conn_create_auto_le(const struct bt_le_conn_param *param)
+{
+	struct bt_conn *conn;
+	int err;
+
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
+		return -EINVAL;
+	}
+
+	if (!bt_le_conn_params_valid(param)) {
+		return -EINVAL;
+	}
+
+	if (atomic_test_bit(bt_dev.flags, BT_DEV_EXPLICIT_SCAN)) {
+		return -EINVAL;
+	}
+
+	if (atomic_test_bit(bt_dev.flags, BT_DEV_AUTO_CONN)) {
+		return -EALREADY;
+	}
+
+	if (!bt_dev.le.wl_entries) {
+		return -EINVAL;
+	}
+
+	/* Don't start initiator if we have general discovery procedure. */
+	conn = bt_conn_lookup_state_le(NULL, BT_CONN_CONNECT_SCAN);
+	if (conn) {
+		bt_conn_unref(conn);
+		return -EINVAL;
+	}
+
+	/* Don't start initiator if we have direct discovery procedure. */
+	conn = bt_conn_lookup_state_le(NULL, BT_CONN_CONNECT);
+	if (conn) {
+		bt_conn_unref(conn);
+		return -EINVAL;
+	}
+
+	err = bt_le_auto_conn(param);
+	if (err) {
+		BT_ERR("Failed to start whitelist scan");
+		return err;
+	}
+
+	atomic_set_bit(bt_dev.flags, BT_DEV_AUTO_CONN);
+
+	return 0;
+}
+
+int bt_conn_create_auto_stop(void)
+{
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
+		return -EINVAL;
+	}
+
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_AUTO_CONN)) {
+		return -EINVAL;
+	}
+
+	int err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_CREATE_CONN_CANCEL, NULL,
+				       NULL);
+
+	atomic_clear_bit(bt_dev.flags, BT_DEV_AUTO_CONN);
+
+	if (err) {
+		BT_ERR("Failed to stop initiator");
+		return err;
+	}
+
+	return 0;
+}
+#endif /* defined(CONFIG_BT_WHITELIST) */
+
 struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer,
 				  const struct bt_le_conn_param *param)
 {
@@ -1942,6 +2086,11 @@ struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer,
 	}
 
 	if (atomic_test_bit(bt_dev.flags, BT_DEV_EXPLICIT_SCAN)) {
+		return NULL;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_WHITELIST) &&
+	    atomic_test_bit(bt_dev.flags, BT_DEV_AUTO_CONN)) {
 		return NULL;
 	}
 
@@ -1985,6 +2134,7 @@ struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer,
 	return conn;
 }
 
+#if !defined(CONFIG_BT_WHITELIST)
 int bt_le_set_auto_conn(const bt_addr_le_t *addr,
 			const struct bt_le_conn_param *param)
 {
@@ -2034,6 +2184,7 @@ int bt_le_set_auto_conn(const bt_addr_le_t *addr,
 
 	return 0;
 }
+#endif /* !defined(CONFIG_BT_WHITELIST) */
 #endif /* CONFIG_BT_CENTRAL */
 
 #if defined(CONFIG_BT_PERIPHERAL)

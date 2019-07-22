@@ -209,6 +209,8 @@ int bt_conn_disconnect(struct bt_conn *conn, u8_t reason);
  *  Allows initiate new LE link to remote peer using its address.
  *  Returns a new reference that the the caller is responsible for managing.
  *
+ *  This uses the General Connection Establishment procedure.
+ *
  *  @param peer  Remote address.
  *  @param param Initial connection parameters.
  *
@@ -216,6 +218,22 @@ int bt_conn_disconnect(struct bt_conn *conn, u8_t reason);
  */
 struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer,
 				  const struct bt_le_conn_param *param);
+
+/** @brief Automatically connect to remote devices in whitelist.
+ *
+ *  This uses the Auto Connection Establishment procedure.
+ *
+ *  @param param Initial connection parameters.
+ *
+ *  @return Zero on success or (negative) error code on failure.
+ */
+int bt_conn_create_auto_le(const struct bt_le_conn_param *param);
+
+/** @brief Stop automatic connect creation.
+ *
+ *  @return Zero on success or (negative) error code on failure.
+ */
+int bt_conn_create_auto_stop(void);
 
 /** @brief Automatically connect to remote device if it's in range.
  *

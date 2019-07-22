@@ -193,6 +193,15 @@ static inline void handle_event(u8_t event, struct net_buf *buf,
 		buf->len, bt_hex(buf->data, buf->len));
 }
 
+static inline bool is_wl_empty(void)
+{
+#if defined(CONFIG_BT_WHITELIST)
+	return !bt_dev.le.wl_entries;
+#else
+	return true;
+#endif /* defined(CONFIG_BT_WHITELIST) */
+}
+
 #if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
 static void report_completed_packet(struct net_buf *buf)
 {
@@ -686,6 +695,69 @@ static void hci_num_completed_packets(struct net_buf *buf)
 }
 
 #if defined(CONFIG_BT_CENTRAL)
+#if defined(CONFIG_BT_WHITELIST)
+int bt_le_auto_conn(const struct bt_le_conn_param *conn_param)
+{
+	struct net_buf *buf;
+	struct bt_hci_cp_le_create_conn *cp;
+	u8_t own_addr_type;
+	int err;
+
+	if (atomic_test_bit(bt_dev.flags, BT_DEV_SCANNING)) {
+		err = set_le_scan_enable(BT_HCI_LE_SCAN_DISABLE);
+		if (err) {
+			return err;
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_BT_PRIVACY)) {
+		err = le_set_private_addr(BT_ID_DEFAULT);
+		if (err) {
+			return err;
+		}
+		if (BT_FEAT_LE_PRIVACY(bt_dev.le.features)) {
+			own_addr_type = BT_HCI_OWN_ADDR_RPA_OR_RANDOM;
+		} else {
+			own_addr_type = BT_ADDR_LE_RANDOM;
+		}
+	} else {
+		const bt_addr_le_t *addr = &bt_dev.id_addr[BT_ID_DEFAULT];
+
+		/* If Static Random address is used as Identity address we
+		 * need to restore it before creating connection. Otherwise
+		 * NRPA used for active scan could be used for connection.
+		 */
+		if (addr->type == BT_ADDR_LE_RANDOM) {
+			set_random_address(&addr->a);
+		}
+
+		own_addr_type = addr->type;
+	}
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_CREATE_CONN, sizeof(*cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	(void)memset(cp, 0, sizeof(*cp));
+
+	cp->filter_policy = BT_HCI_LE_CREATE_CONN_FP_WHITELIST;
+	cp->own_addr_type = own_addr_type;
+
+	/* User Initiated procedure use fast scan parameters. */
+	cp->scan_interval = sys_cpu_to_le16(BT_GAP_SCAN_FAST_INTERVAL);
+	cp->scan_window = sys_cpu_to_le16(BT_GAP_SCAN_FAST_WINDOW);
+
+	cp->conn_interval_min = sys_cpu_to_le16(conn_param->interval_min);
+	cp->conn_interval_max = sys_cpu_to_le16(conn_param->interval_max);
+	cp->conn_latency = sys_cpu_to_le16(conn_param->latency);
+	cp->supervision_timeout = sys_cpu_to_le16(conn_param->timeout);
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_CREATE_CONN, buf, NULL);
+}
+#endif /* defined(CONFIG_BT_WHITELIST) */
+
 static int hci_le_create_conn(const struct bt_conn *conn)
 {
 	struct net_buf *buf;
@@ -790,12 +862,12 @@ static void hci_disconn_complete(struct net_buf *buf)
 		return;
 	}
 
-#if defined(CONFIG_BT_CENTRAL)
+#if defined(CONFIG_BT_CENTRAL) && !defined(CONFIG_BT_WHITELIST)
 	if (atomic_test_bit(conn->flags, BT_CONN_AUTO_CONNECT)) {
 		bt_conn_set_state(conn, BT_CONN_CONNECT_SCAN);
 		bt_le_scan_update(false);
 	}
-#endif /* CONFIG_BT_CENTRAL */
+#endif /* defined(CONFIG_BT_CENTRAL) && !defined(CONFIG_BT_WHITELIST) */
 
 	bt_conn_unref(conn);
 
@@ -996,13 +1068,14 @@ static void enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 				 */
 				bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
 
+#if !defined(CONFIG_BT_WHITELIST)
 				/* Check if device is marked for autoconnect. */
 				if (atomic_test_bit(conn->flags,
 						    BT_CONN_AUTO_CONNECT)) {
 					bt_conn_set_state(conn,
 							  BT_CONN_CONNECT_SCAN);
 				}
-
+#endif /* !defined(CONFIG_BT_WHITELIST) */
 				goto done;
 			}
 		}
@@ -1028,14 +1101,24 @@ static void enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 
 	conn = find_pending_connect(&id_addr);
 
-	if (evt->role == BT_CONN_ROLE_SLAVE) {
+	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) &&
+	    evt->role == BT_HCI_ROLE_SLAVE) {
 		/*
 		 * clear advertising even if we are not able to add connection
 		 * object to keep host in sync with controller state
 		 */
 		atomic_clear_bit(bt_dev.flags, BT_DEV_ADVERTISING);
 
-		/* only for slave we may need to add new connection */
+		/* for slave we may need to add new connection */
+		if (!conn) {
+			conn = bt_conn_add_le(&id_addr);
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
+	    IS_ENABLED(CONFIG_BT_WHITELIST) &&
+	    evt->role == BT_HCI_ROLE_MASTER) {
+		/* for whitelist initiator me may need to add new connection. */
 		if (!conn) {
 			conn = bt_conn_add_le(&id_addr);
 		}
@@ -1059,7 +1142,8 @@ static void enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 	 * or responder address. Only slave needs to be updated. For master all
 	 * was set during outgoing connection creation.
 	 */
-	if (conn->role == BT_HCI_ROLE_SLAVE) {
+	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) &&
+	    conn->role == BT_HCI_ROLE_SLAVE) {
 		conn->id = bt_dev.adv_id;
 		bt_addr_le_copy(&conn->le.init_addr, &peer_addr);
 
@@ -1086,7 +1170,14 @@ static void enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 		}
 	}
 
-	if (conn->role == BT_HCI_ROLE_MASTER) {
+	if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
+	    conn->role == BT_HCI_ROLE_MASTER) {
+		if (IS_ENABLED(CONFIG_BT_WHITELIST) &&
+		    atomic_test_bit(bt_dev.flags, BT_DEV_AUTO_CONN)) {
+			conn->id = BT_ID_DEFAULT;
+			atomic_clear_bit(bt_dev.flags, BT_DEV_AUTO_CONN);
+		}
+
 		bt_addr_le_copy(&conn->le.resp_addr, &peer_addr);
 
 		if (IS_ENABLED(CONFIG_BT_PRIVACY)) {
@@ -3274,7 +3365,13 @@ static int start_le_scan(u8_t scan_type, u16_t interval, u16_t window)
 	 */
 	set_param.interval = sys_cpu_to_le16(interval);
 	set_param.window = sys_cpu_to_le16(window);
-	set_param.filter_policy = 0x00;
+
+	if (IS_ENABLED(CONFIG_BT_WHITELIST) &&
+	    atomic_test_bit(bt_dev.flags, BT_DEV_SCAN_WL)) {
+		set_param.filter_policy = BT_HCI_LE_SCAN_FP_USE_WHITELIST;
+	} else {
+		set_param.filter_policy = BT_HCI_LE_SCAN_FP_NO_WHITELIST;
+	}
 
 	if (IS_ENABLED(CONFIG_BT_PRIVACY)) {
 		err = le_set_private_addr(BT_ID_DEFAULT);
@@ -3878,6 +3975,29 @@ static void le_read_supp_states_complete(struct net_buf *buf)
 	bt_dev.le.states = sys_get_le64(rp->le_states);
 }
 
+#if defined(CONFIG_BT_SMP)
+static void le_read_resolving_list_size_complete(struct net_buf *buf)
+{
+	struct bt_hci_rp_le_read_rl_size *rp = (void *)buf->data;
+
+	BT_DBG("Resolving List size %u", rp->rl_size);
+
+	bt_dev.le.rl_size = rp->rl_size;
+}
+#endif /* defined(CONFIG_BT_SMP) */
+
+#if defined(CONFIG_BT_WHITELIST)
+static void le_read_wl_size_complete(struct net_buf *buf)
+{
+	struct bt_hci_rp_le_read_wl_size *rp =
+		(struct bt_hci_rp_le_read_wl_size *)buf->data;
+
+	BT_DBG("Whitelist size %u", rp->wl_size);
+
+	bt_dev.le.wl_size = rp->wl_size;
+}
+#endif
+
 static int common_init(void)
 {
 	struct net_buf *rsp;
@@ -4111,23 +4231,26 @@ static int le_init(void)
 
 #if defined(CONFIG_BT_SMP)
 	if (BT_FEAT_LE_PRIVACY(bt_dev.le.features)) {
-		struct bt_hci_rp_le_read_rl_size *rp;
-
 		err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_READ_RL_SIZE, NULL,
 					   &rsp);
 		if (err) {
 			return err;
 		}
-
-		rp = (void *)rsp->data;
-
-		BT_DBG("Resolving List size %u", rp->rl_size);
-
-		bt_dev.le.rl_size = rp->rl_size;
-
+		le_read_resolving_list_size_complete(rsp);
 		net_buf_unref(rsp);
 	}
 #endif
+
+#if defined(CONFIG_BT_WHITELIST)
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_READ_WL_SIZE, NULL,
+				   &rsp);
+	if (err) {
+		return err;
+	}
+
+	le_read_wl_size_complete(rsp);
+	net_buf_unref(rsp);
+#endif /* defined(CONFIG_BT_WHITELIST) */
 
 	return  le_set_event_mask();
 }
@@ -5299,6 +5422,13 @@ static bool valid_adv_param(const struct bt_le_adv_param *param, bool dir_adv)
 		}
 	}
 
+	if (is_wl_empty() &&
+	    ((param->options & BT_LE_ADV_OPT_FILTER_SCAN_REQ) ||
+	     (param->options & BT_LE_ADV_OPT_FILTER_CONN))) {
+		return false;
+	}
+
+
 	if ((param->options & BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY) || !dir_adv) {
 		if (param->interval_min > param->interval_max ||
 		    param->interval_min < 0x0020 ||
@@ -5439,6 +5569,21 @@ int bt_le_adv_start_internal(const struct bt_le_adv_param *param,
 
 	if (bt_dev.adv_id != param->id) {
 		atomic_clear_bit(bt_dev.flags, BT_DEV_RPA_VALID);
+	}
+
+#if defined(CONFIG_BT_WHITELIST)
+	if ((param->options & BT_LE_ADV_OPT_FILTER_SCAN_REQ) &&
+	    (param->options & BT_LE_ADV_OPT_FILTER_CONN)) {
+		set_param.filter_policy = BT_LE_ADV_FP_WHITELIST_BOTH;
+	} else if (param->options & BT_LE_ADV_OPT_FILTER_SCAN_REQ) {
+		set_param.filter_policy = BT_LE_ADV_FP_WHITELIST_SCAN_REQ;
+	} else if (param->options & BT_LE_ADV_OPT_FILTER_CONN) {
+		set_param.filter_policy = BT_LE_ADV_FP_WHITELIST_CONN_IND;
+	} else {
+#else
+	{
+#endif /* defined(CONFIG_BT_WHITELIST) */
+		set_param.filter_policy = BT_LE_ADV_FP_NO_WHITELIST;
 	}
 
 	/* Set which local identity address we're advertising with */
@@ -5595,8 +5740,13 @@ static bool valid_le_scan_param(const struct bt_le_scan_param *param)
 		return false;
 	}
 
-	if (param->filter_dup != BT_HCI_LE_SCAN_FILTER_DUP_DISABLE &&
-	    param->filter_dup != BT_HCI_LE_SCAN_FILTER_DUP_ENABLE) {
+	if (param->filter_dup &
+	    ~(BT_LE_SCAN_FILTER_DUPLICATE | BT_LE_SCAN_FILTER_WHITELIST)) {
+		return false;
+	}
+
+	if (is_wl_empty() &&
+	    param->filter_dup & BT_LE_SCAN_FILTER_WHITELIST) {
 		return false;
 	}
 
@@ -5642,7 +5792,12 @@ int bt_le_scan_start(const struct bt_le_scan_param *param, bt_le_scan_cb_t cb)
 	}
 
 	atomic_set_bit_to(bt_dev.flags, BT_DEV_SCAN_FILTER_DUP,
-			  param->filter_dup);
+			  param->filter_dup & BT_LE_SCAN_FILTER_DUPLICATE);
+
+#if defined(CONFIG_BT_WHITELIST)
+	atomic_set_bit_to(bt_dev.flags, BT_DEV_SCAN_WL,
+			  param->filter_dup & BT_LE_SCAN_FILTER_WHITELIST);
+#endif /* defined(CONFIG_BT_WHITELIST) */
 
 	err = start_le_scan(param->type, param->interval, param->window);
 	if (err) {

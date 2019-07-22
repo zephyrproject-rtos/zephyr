@@ -752,6 +752,11 @@ struct bt_hci_cp_le_set_random_address {
 /* Needed in advertising reports when getting info about */
 #define BT_LE_ADV_SCAN_RSP                      0x04
 
+#define BT_LE_ADV_FP_NO_WHITELIST               0x00
+#define BT_LE_ADV_FP_WHITELIST_SCAN_REQ         0x01
+#define BT_LE_ADV_FP_WHITELIST_CONN_IND         0x02
+#define BT_LE_ADV_FP_WHITELIST_BOTH             0x03
+
 #define BT_HCI_OP_LE_SET_ADV_PARAM              BT_OP(BT_OGF_LE, 0x0006)
 struct bt_hci_cp_le_set_adv_param {
 	u16_t        min_interval;
@@ -794,6 +799,9 @@ struct bt_hci_cp_le_set_adv_enable {
 #define BT_HCI_LE_SCAN_PASSIVE                  0x00
 #define BT_HCI_LE_SCAN_ACTIVE                   0x01
 
+#define BT_HCI_LE_SCAN_FP_NO_WHITELIST          0x00
+#define BT_HCI_LE_SCAN_FP_USE_WHITELIST         0x01
+
 struct bt_hci_cp_le_set_scan_param {
 	u8_t  scan_type;
 	u16_t interval;
@@ -816,6 +824,10 @@ struct bt_hci_cp_le_set_scan_enable {
 } __packed;
 
 #define BT_HCI_OP_LE_CREATE_CONN                BT_OP(BT_OGF_LE, 0x000d)
+
+#define BT_HCI_LE_CREATE_CONN_FP_DIRECT         0x00
+#define BT_HCI_LE_CREATE_CONN_FP_WHITELIST      0x01
+
 struct bt_hci_cp_le_create_conn {
 	u16_t        scan_interval;
 	u16_t        scan_window;
