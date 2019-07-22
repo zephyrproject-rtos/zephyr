@@ -104,7 +104,7 @@ static int spi_nor_access(const struct device *const dev,
 #define spi_nor_cmd_write(dev, opcode) \
 	spi_nor_access(dev, opcode, false, 0, NULL, 0, true)
 #define spi_nor_cmd_addr_write(dev, opcode, addr, src, length) \
-	spi_nor_access(dev, opcode, true, addr, src, length, true)
+	spi_nor_access(dev, opcode, true, addr, (void *)src, length, true)
 
 /**
  * @brief Retrieve the Flash JEDEC ID and compare it with the one expected
@@ -193,7 +193,6 @@ static int spi_nor_write(struct device *dev, off_t addr, const void *src,
 	struct spi_nor_data *const driver_data = dev->driver_data;
 	const struct spi_nor_config *params = dev->config->config_info;
 	int ret;
-	size_t to_write;
 
 	/* should be between 0 and flash size */
 	if ((addr < 0) || ((size + addr) > params->size)) {
@@ -202,25 +201,30 @@ static int spi_nor_write(struct device *dev, off_t addr, const void *src,
 
 	SYNC_LOCK();
 
-	while (size) {
-		/* write enable */
-		spi_nor_cmd_write(dev, SPI_NOR_CMD_WREN);
+	while (size > 0) {
+		size_t to_write = size;
 
-		to_write = size;
-		if (size >= SPI_NOR_PAGE_SIZE) {
+		/* Don't write more than a page. */
+		if (to_write >= SPI_NOR_PAGE_SIZE) {
 			to_write = SPI_NOR_PAGE_SIZE;
 		}
 
+		/* Don't write across a page boundary */
+		if (((addr + to_write - 1U) / SPI_NOR_PAGE_SIZE)
+		    != (addr / SPI_NOR_PAGE_SIZE)) {
+			to_write = SPI_NOR_PAGE_SIZE - (addr % SPI_NOR_PAGE_SIZE);
+		}
+
+		spi_nor_cmd_write(dev, SPI_NOR_CMD_WREN);
 		ret = spi_nor_cmd_addr_write(dev, SPI_NOR_CMD_PP, addr,
-					     (void *)src, to_write);
+					     src, to_write);
 		if (ret != 0) {
 			SYNC_UNLOCK();
 			return ret;
 		}
 
 		size -= to_write;
-		addr += to_write;
-		src = (u8_t *)src + to_write;
+		src = (const u8_t *)src + to_write;
 
 		spi_nor_wait_until_ready(dev);
 	}
