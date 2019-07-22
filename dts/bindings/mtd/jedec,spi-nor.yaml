@@ -18,7 +18,7 @@ properties:
     constraint: "jedec,spi-nor"
 
   jedec-id:
-    type: array
+    type: uint8-array
     category: required
     description: JEDEC ID as manufacturer ID, memory type, memory density
 

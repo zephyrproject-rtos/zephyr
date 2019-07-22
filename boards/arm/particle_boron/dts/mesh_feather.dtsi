@@ -140,7 +140,7 @@
 		hold-gpios = <&gpio0 23 0>;
 		size = <0x2000000>;
 		has-be32k;
-		jedec-id = <0xc2 0x20 0x16>;
+		jedec-id = [c2 20 16];
 	};
 };
 
