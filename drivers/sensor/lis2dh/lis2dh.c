@@ -341,7 +341,7 @@ int lis2dh_init(struct device *dev)
 	/* set full scale range and store it for later conversion */
 	lis2dh->scale = LIS2DH_ACCEL_SCALE(1 << (LIS2DH_FS_IDX + 1));
 	status = lis2dh_reg_write_byte(dev, LIS2DH_REG_CTRL4,
-				       LIS2DH_FS_BITS);
+				       LIS2DH_FS_BITS | LIS2DH_HR_BIT);
 	if (status < 0) {
 		LOG_ERR("Failed to set full scale ctrl register.");
 		return status;
