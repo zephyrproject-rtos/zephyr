@@ -28,6 +28,9 @@
 	#if  defined(__IAMCU)
 		OUTPUT_FORMAT("elf32-iamcu")
 		OUTPUT_ARCH("iamcu:intel")
+	#elif defined (CONFIG_X86_LONGMODE)
+		OUTPUT_FORMAT("elf64-x86-64")
+		OUTPUT_ARCH("i386:x86-64")
 	#else
 		OUTPUT_FORMAT("elf32-i386", "elf32-i386", "elf32-i386")
 		OUTPUT_ARCH("i386")

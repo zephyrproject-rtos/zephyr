@@ -3,70 +3,75 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DEVICE_INIT_LEVEL(level) \
-	__device_##level##_start = .; \
-	KEEP(*(SORT(.init_##level[0-9]))); \
-	KEEP(*(SORT(.init_##level[1-9][0-9])));
+#define _LINKER
+#define _ASMLANGUAGE
+
+#include <linker/linker-defs.h>
+#include <linker/linker-tool.h>
+
+#define ROMABLE_REGION RAM
+#define RAMABLE_REGION RAM
 
 ENTRY(CONFIG_KERNEL_ENTRY)
 
 SECTIONS
 {
-    /*
-     * The "locore" must be in the 64K of RAM, so that 16-bit code (with
-     * segment registers == 0x0000) and 32/64-bit code agree on addresses.
-     * ... there is no 16-bit code yet, but there will be when we add SMP.
-     */
+	/*
+	 * The "locore" must be in the 64K of RAM, so that 16-bit code (with
+	 * segment registers == 0x0000) and 32/64-bit code agree on addresses.
+	 * ... there is no 16-bit code yet, but there will be when we add SMP.
+	 */
 
-    .locore 0x8000 : ALIGN(16)
+	.locore 0x8000 : ALIGN(16)
 	{
 	*(.locore)
 	*(.locore.*)
 	}
 
-    /*
-     * The parts of the system that don't benefit from being in the locore
-     * start at the 1MB mark, otherwise the system size would be artificially
-     * clamped by the ISA memory hole/ROM space at 0x90000-0xFFFFF.
-     */
+	/*
+	 * The rest of the system is loaded in "normal" memory (typically
+	 * placed above 1MB to avoid the by memory hole at 0x90000-0xFFFFF).
+	 */
 
-    .text 0x100000 : ALIGN(16)
+	SECTION_PROLOGUE(_TEXT_SECTION_NAME,,ALIGN(16))
 	{
 	*(.text)
 	*(.text.*)
+	} GROUP_LINK_IN(ROMABLE_REGION)
+
+	#include <linker/common-rom.ld>
+
+	SECTION_PROLOGUE(_RODATA_SECTION_NAME,,ALIGN(16))
+	{
+	_image_rodata_start = .;
+
+	*(.rodata)
 	*(.rodata.*)
 
-	. = ALIGN(8);
-	__devconfig_start = .;
-	*(.devconfig.*)
-	KEEP(*(SORT_BY_NAME(.devconfig*)))
-	__devconfig_end = .;
-	}
+	#include <snippets-rodata.ld>
 
-    .data : ALIGN(16)
+	#ifdef CONFIG_CUSTOM_RODATA_LD
+	#include <custom-rodata.ld>
+	#endif /* CONFIG_CUSTOM_RODATA_LD */
+
+	_image_rodata_end = .;
+	_image_rodata_size = _image_rodata_end - _image_rodata_start;
+	} GROUP_LINK_IN(ROMABLE_REGION)
+
+	SECTION_PROLOGUE(_DATA_SECTION_NAME,,ALIGN(16))
 	{
-	*(.data*)
+	*(.data)
+	*(.data.*)
+	#include <snippets-rwdata.ld>
+	#ifdef CONFIG_CUSTOM_RWDATA_LD
+	#include <custom-rwdata.ld>
+	#endif /* CONFIG_CUSTOM_RWDATA_LD */
+	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
-	. = ALIGN(8);
-	__device_init_start = .;
-	DEVICE_INIT_LEVEL(PRE_KERNEL_1)
-	DEVICE_INIT_LEVEL(PRE_KERNEL_2)
-	DEVICE_INIT_LEVEL(POST_KERNEL)
-	DEVICE_INIT_LEVEL(APPLICATION)
-	__device_init_end = .;
+#include <snippets-ram-sections.ld>
+#include <linker/common-ram.ld>
 
-	. = ALIGN(8);
-	__static_thread_data_list_start = .;
-	KEEP(*(SORT_BY_NAME(.__static_thread_data.static.*)))
-	__static_thread_data_list_end = .;
-
-	. = ALIGN(8);
-	_k_mem_pool_list_start = .;
-	KEEP(*(._k_mem_pool_static.*))
-	_k_mem_pool_list_end = .;
-	}
-
-    .bss : ALIGN(16)
+	SECTION_PROLOGUE(_BSS_SECTION_NAME, (NOLOAD), ALIGN(16))
 	{
 	__bss_start = .;
 	*(.bss)
@@ -74,23 +79,34 @@ SECTIONS
 	*(COMMON)
 	. = ALIGN(8);	/* so __bss_num_qwords is exact */
 	__bss_end = .;
-	}
+	} GROUP_DATA_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
 
 	__bss_num_qwords = (__bss_end - __bss_start) >> 3;
 
-    .noinit (NOLOAD) : ALIGN(16)
+	SECTION_PROLOGUE(_NOINIT_SECTION_NAME, (NOLOAD), ALIGN(16))
 	{
+	*(.noinit)
 	*(.noinit.*)
-	}
+	#include <snippets-noinit.ld>
+	} GROUP_DATA_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
 
-    /DISCARD/ :
+#include <snippets-sections.ld>
+#ifdef CONFIG_CUSTOM_SECTIONS_LD
+#include <custom-sections.ld>
+#endif /* CONFIG_CUSTOM_SECTIONS_LD */
+
+	/DISCARD/ :
 	{
 	*(.comment*)
 	*(.debug*)
-	*(.got*)
-	*(.igot.*)
+	*(.got)
+	*(.got.plt)
+	*(.igot)
+	*(.igot.plt)
 	*(.iplt)
+	*(.plt)
 	*(.note.GNU-stack)
+	*(.rel.*)
 	*(.rela.*)
 	}
 }
