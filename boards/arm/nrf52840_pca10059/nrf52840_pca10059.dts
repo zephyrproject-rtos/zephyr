@@ -66,6 +66,10 @@
 	};
 };
 
+&adc {
+	status = "okay";
+};
+
 &gpiote {
 	status = "okay";
 };
