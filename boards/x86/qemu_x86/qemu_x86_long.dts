@@ -1,0 +1,10 @@
+/*
+ * Copyright (c) 2019 Intel Corp.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "qemu_x86.dts"
+
+&flash0 {
+	reg = <0x00100000 DT_FLASH_SIZE>;
+};

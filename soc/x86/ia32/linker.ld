@@ -45,5 +45,8 @@ MEMORY
     IDT_LIST        : ORIGIN = 0xFFFF1000, LENGTH = 2K
     }
 
+#ifdef CONFIG_X86_LONGMODE
+#include <arch/x86/intel64/linker.ld>
+#else
 #include <arch/x86/ia32/linker.ld>
-
+#endif

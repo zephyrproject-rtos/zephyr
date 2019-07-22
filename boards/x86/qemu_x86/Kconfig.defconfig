@@ -2,7 +2,6 @@
 
 if BOARD_QEMU_X86
 
-
 config BUILD_OUTPUT_BIN
         default n
 
@@ -17,3 +16,10 @@ config FLASH_SIMULATOR
 endif
 
 endif # BOARD_QEMU_X86
+
+if BOARD_QEMU_X86_LONG
+
+config BOARD
+	default "qemu_x86_long"
+
+endif # BOARD_QEMU_X86_LONG
