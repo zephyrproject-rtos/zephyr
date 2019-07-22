@@ -44,6 +44,18 @@ Reel Board
    :goals: build
    :compact:
 
+Particle Xenon
+==============
+
+This target is customized to support the same SPI NOR partition table as
+the :ref:`littlefs-sample`.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/subsys/shell/fs
+   :board: particle_xenon
+   :goals: build
+   :compact:
+
 Running
 *******
 

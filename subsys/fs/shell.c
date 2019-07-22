@@ -31,12 +31,24 @@ static struct fs_mount_t fatfs_mnt = {
 #ifdef CONFIG_FILE_SYSTEM_NFFS
 #include <nffs/nffs.h>
 #define NFFS_MNTP       "/nffs"
-/* NFFS work area strcut */
+/* NFFS work area struct */
 static struct nffs_flash_desc flash_desc;
 /* mounting info */
 static struct fs_mount_t nffs_mnt = {
 	.type = FS_NFFS,
 	.fs_data = &flash_desc,
+};
+#endif
+/* LITTLEFS */
+#ifdef CONFIG_FILE_SYSTEM_LITTLEFS
+#include <fs/littlefs.h>
+#include <storage/flash_map.h>
+
+FS_LITTLEFS_DECLARE_DEFAULT_CONFIG(lfs_data);
+static struct fs_mount_t littlefs_mnt = {
+	.type = FS_LITTLEFS,
+	.fs_data = &lfs_data,
+	.storage_dev = (void *)DT_FLASH_AREA_STORAGE_ID,
 };
 #endif
 
@@ -404,7 +416,9 @@ static int cmd_write(const struct shell *shell, size_t argc, char **argv)
 	return 0;
 }
 
-#if defined(CONFIG_FILE_SYSTEM_NFFS) || defined(CONFIG_FAT_FILESYSTEM_ELM)
+#if defined(CONFIG_FAT_FILESYSTEM_ELM)		\
+	|| defined(CONFIG_FILE_SYSTEM_LITTLEFS)	\
+	|| defined(CONFIG_FILE_SYSTEM_NFFS)
 static char *mntpt_prepare(char *mntpt)
 {
 	char *cpy_mntpt;
@@ -481,12 +495,48 @@ static int cmd_mount_nffs(const struct shell *shell, size_t argc, char **argv)
 }
 #endif
 
-#if defined(CONFIG_FILE_SYSTEM_NFFS) || defined(CONFIG_FAT_FILESYSTEM_ELM)
+#if defined(CONFIG_FILE_SYSTEM_LITTLEFS)
+
+static int cmd_mount_littlefs(const struct shell *shell, size_t argc, char **argv)
+{
+	if (littlefs_mnt.mnt_point != NULL) {
+		return -EBUSY;
+	}
+
+	char *mntpt = mntpt_prepare(argv[1]);
+
+	if (!mntpt) {
+		shell_error(shell, "Failed to allocate mount point");
+		return -ENOEXEC; /* ?!? */
+	}
+
+	littlefs_mnt.mnt_point = mntpt;
+
+	int rc = fs_mount(&littlefs_mnt);
+
+	if (rc != 0) {
+		shell_error(shell, "Error mounting %u as littlefs: %d", rc);
+		return -ENOEXEC;
+	}
+
+	return rc;
+}
+#endif
+
+#if defined(CONFIG_FAT_FILESYSTEM_ELM)		\
+	|| defined(CONFIG_FILE_SYSTEM_LITTLEFS)	\
+	|| defined(CONFIG_FILE_SYSTEM_NFFS)
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_fs_mount,
 #if defined(CONFIG_FAT_FILESYSTEM_ELM)
 	SHELL_CMD_ARG(fat, NULL,
 		      "Mount fatfs. fs mount fat <mount-point>",
 		      cmd_mount_fat, 2, 0),
+#endif
+
+#if defined(CONFIG_FILE_SYSTEM_LITTLEFS)
+	SHELL_CMD_ARG(littlefs, NULL,
+		      "Mount littlefs. fs mount littlefs <mount-point>",
+		      cmd_mount_littlefs, 2, 0),
 #endif
 
 #if defined(CONFIG_FILE_SYSTEM_NFFS)
@@ -503,7 +553,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_fs,
 	SHELL_CMD(cd, NULL, "Change working directory", cmd_cd),
 	SHELL_CMD(ls, NULL, "List files in current directory", cmd_ls),
 	SHELL_CMD_ARG(mkdir, NULL, "Create directory", cmd_mkdir, 2, 0),
-#if defined(CONFIG_FILE_SYSTEM_NFFS) || defined(CONFIG_FAT_FILESYSTEM_ELM)
+#if defined(CONFIG_FAT_FILESYSTEM_ELM)		\
+	|| defined(CONFIG_FILE_SYSTEM_LITTLEFS)	\
+	|| defined(CONFIG_FILE_SYSTEM_NFFS)
 	SHELL_CMD(mount, &sub_fs_mount,
 		  "<Mount fs, syntax:- fs mount <fs type> <mount-point>", NULL),
 #endif
