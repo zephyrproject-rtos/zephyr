@@ -148,6 +148,7 @@
 /drivers/ipm/ipm_stm32_ipcc.c             @arnopo
 /drivers/led/                             @Mani-Sadhasivam
 /drivers/led_strip/                       @mbolivar
+/drivers/lora/                            @Mani-Sadhasivam
 /drivers/modem/                           @mike-scott
 /drivers/pcie/                            @andrewboie
 /drivers/pinmux/stm32/                    @rsalveti @idlethread
@@ -242,6 +243,7 @@
 /include/drivers/led_strip.h              @mbolivar
 /include/drivers/sensor.h                 @MaureenHelm
 /include/drivers/spi.h                    @tbursztyka
+/include/drivers/lora.h                   @Mani-Sadhasivam
 /include/app_memory/                      @andrewboie
 /include/arch/arc/                        @vonhust @ruuddw
 /include/arch/arc/arch.h                  @andrewboie
@@ -306,6 +308,7 @@
 /samples/display/                         @vanwinkeljan
 /samples/drivers/CAN/                     @alexanderwachter
 /samples/drivers/ht16k33/                 @henrikbrixandersen
+/samples/drivers/lora/                    @Mani-Sadhasivam
 /samples/gui/                             @vanwinkeljan
 /samples/net/                             @jukkar @tbursztyka @pfalcon
 /samples/net/dns_resolve/                 @jukkar @tbursztyka @pfalcon
