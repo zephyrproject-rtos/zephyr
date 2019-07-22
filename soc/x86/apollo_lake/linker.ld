@@ -8,12 +8,6 @@
 #include <autoconf.h>
 #include <generated_dts_board.h>
 
-#ifdef CONFIG_X86_LONGMODE
-
-#include <arch/x86/intel64/linker.ld>
-
-#else /* IA32 */
-
 #define PHYS_LOAD_ADDR	DT_PHYS_RAM_ADDR
 #define PHYS_RAM_ADDR	DT_PHYS_RAM_ADDR
 
@@ -30,6 +24,8 @@ MEMORY
     IDT_LIST        : ORIGIN = 2K, LENGTH = 2K
     }
 
+#ifdef CONFIG_X86_LONGMODE
+#include <arch/x86/intel64/linker.ld>
+#else
 #include <arch/x86/ia32/linker.ld>
-
 #endif /* CONFIG_X86_LONGMODE */
