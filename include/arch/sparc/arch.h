@@ -54,6 +54,9 @@ extern "C" {
 #define THREAD_MASK_PSR (PSR_ICC | PSR_PS)
 #define THREAD_INIT_PSR           (PSR_PS)
 
+#define TBR_TT (0xff << 4)
+#define SOFTWARE_TRAP_IRQ_OFFLOAD (0xff)
+
 #ifndef _ASMLANGUAGE
 
 #define STACK_ROUND_UP(x) ROUND_UP(x, STACK_ALIGN_SIZE)

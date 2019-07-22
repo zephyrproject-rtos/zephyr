@@ -12,3 +12,5 @@ zephyr_library_sources(
   sched.S
   thread.c
 )
+
+zephyr_library_sources_if_kconfig(irq_offload.c)
