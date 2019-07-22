@@ -224,6 +224,17 @@ if(CONFIG_X86_IAMCU)
     )
 endif()
 
+if(CONFIG_X86_LONGMODE)
+  # QEMU doesn't like 64-bit ELF files. Since we don't use any >4GB
+  # addresses, converting it to 32-bit is safe enough for emulation.
+  list(APPEND PRE_QEMU_COMMANDS
+    COMMAND
+    ${CMAKE_OBJCOPY}
+    -O elf32-i386
+    $<TARGET_FILE:${logical_target_for_zephyr_elf}>
+    )
+endif()
+
 if(CONFIG_X86_64)
   set(QEMU_KERNEL_FILE "${CMAKE_BINARY_DIR}/zephyr-qemu.elf")
 endif()

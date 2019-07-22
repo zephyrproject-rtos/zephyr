@@ -35,3 +35,10 @@ config X86_NO_SPECULATIVE_VULNERABILITIES
 	default y
 
 endif # BOARD_QEMU_X86_IAMCU
+
+if BOARD_QEMU_X86_LONG
+
+config BOARD
+	default "qemu_x86_long"
+
+endif # BOARD_QEMU_X86_LONG
