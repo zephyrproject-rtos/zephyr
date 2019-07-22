@@ -242,7 +242,6 @@ K_MEM_POOL_DEFINE(ep_buf_pool, EP_BUF_POOL_BLOCK_MIN_SZ,
  * @param attached	USBD Attached flag
  * @param ready		USBD Ready flag set after pullup
  * @param usb_work	USBD work item
- * @param work_queue	FIFO used for queuing up events from ISR
  * @param drv_lock	Mutex for thread-safe nrfx driver use
  * @param ep_ctx	Endpoint contexts
  * @param ctrl_read_len	State of control read operation (EP0).
@@ -262,7 +261,20 @@ struct nrf_usbd_ctx {
 };
 
 
-K_FIFO_DEFINE(work_queue);
+/* FIFO used for queuing up events from ISR. */
+K_FIFO_DEFINE(usbd_evt_fifo);
+
+/* Work queue used for handling the ISR events (i.e. for notifying the USB
+ * device stack, for executing the endpoints callbacks, etc.) out of the ISR
+ * context.
+ * The system work queue cannot be used for this purpose as it might be used in
+ * applications for scheduling USB transfers and this could lead to a deadlock
+ * when the USB device stack would not be notified about certain event because
+ * of a system work queue item waiting for a USB transfer to be finished.
+ */
+static struct k_work_q usbd_work_queue;
+static K_THREAD_STACK_DEFINE(usbd_work_queue_stack,
+			     CONFIG_USB_NRFX_WORK_QUEUE_STACK_SIZE);
 
 
 static struct nrf_usbd_ctx usbd_ctx = {
@@ -372,7 +384,7 @@ static struct nrf_usbd_ep_ctx *out_endpoint_ctx(const u8_t ep)
  */
 static inline void usbd_work_schedule(void)
 {
-	k_work_submit(&get_usbd_ctx()->usb_work);
+	k_work_submit_to_queue(&usbd_work_queue, &get_usbd_ctx()->usb_work);
 }
 
 /**
@@ -394,7 +406,7 @@ static inline void usbd_evt_free(struct usbd_event *ev)
  */
 static inline void usbd_evt_put(struct usbd_event *ev)
 {
-	k_fifo_put(&work_queue, ev);
+	k_fifo_put(&usbd_evt_fifo, ev);
 }
 
 /**
@@ -402,7 +414,7 @@ static inline void usbd_evt_put(struct usbd_event *ev)
  */
 static inline struct usbd_event *usbd_evt_get(void)
 {
-	return k_fifo_get(&work_queue, K_NO_WAIT);
+	return k_fifo_get(&usbd_evt_fifo, K_NO_WAIT);
 }
 
 /**
@@ -1293,6 +1305,11 @@ int usb_dc_attach(void)
 		return 0;
 	}
 
+	k_work_q_start(&usbd_work_queue,
+		       usbd_work_queue_stack,
+		       K_THREAD_STACK_SIZEOF(usbd_work_queue_stack),
+		       CONFIG_SYSTEM_WORKQUEUE_PRIORITY);
+
 	k_work_init(&ctx->usb_work, usbd_work_handler);
 	k_mutex_init(&ctx->drv_lock);
 
@@ -1313,7 +1330,7 @@ int usb_dc_attach(void)
 		ctx->attached = true;
 	}
 
-	if (!k_fifo_is_empty(&work_queue)) {
+	if (!k_fifo_is_empty(&usbd_evt_fifo)) {
 		usbd_work_schedule();
 	}
 

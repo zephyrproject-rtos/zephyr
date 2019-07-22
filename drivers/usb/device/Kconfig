@@ -76,6 +76,15 @@ config USB_NRFX_EVT_QUEUE_SIZE
 	  Size of the driver's internal event queue.
 	  Required size will depend on number of endpoints (class instances) in use.
 
+config USB_NRFX_WORK_QUEUE_STACK_SIZE
+	int "USBD work queue stack size"
+	default 1024
+	depends on USB_NRF52840
+	help
+	  Size of the stack for the work queue thread that is used in the driver
+	  for handling the events from the USBD ISR, i.e. executing endpoint
+	  callbacks and providing proper notifications to the USB device stack.
+
 config USB_KINETIS
 	bool "Kinetis USB Device Controller Driver"
 	select USB_DEVICE_DRIVER
