@@ -396,11 +396,7 @@ static const struct flash_driver_api spi_nor_api = {
 };
 
 static const struct spi_nor_config flash_id = {
-	.id = {
-		DT_INST_0_JEDEC_SPI_NOR_JEDEC_ID_0,
-		DT_INST_0_JEDEC_SPI_NOR_JEDEC_ID_1,
-		DT_INST_0_JEDEC_SPI_NOR_JEDEC_ID_2,
-	},
+	.id = DT_INST_0_JEDEC_SPI_NOR_JEDEC_ID,
 #ifdef DT_INST_0_JEDEC_SPI_NOR_HAS_BE32K
 	.has_be32k = true,
 #endif /* DT_INST_0_JEDEC_SPI_NOR_HAS_BE32K */

@@ -132,7 +132,7 @@
 		reg = <0>;
 		spi-max-frequency = <80000000>;
 		label = "MX25R64";
-		jedec-id = <0xc2 0x28 0x17>;
+		jedec-id = [c2 28 17];
 		size = <67108864>;
 		wp-gpios = <&gpio0 22 0>;
 		hold-gpios = <&gpio0 23 0>;

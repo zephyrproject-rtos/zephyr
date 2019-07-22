@@ -57,7 +57,7 @@ arduino_serial: &uart4 {};
 		reg = <0>;
 		spi-max-frequency = <133000000>;
 		status = "okay";
-		jedec-id = <0x1f 0x89 0x01>;
+		jedec-id = [1f 89 01];
 	};
 };
 
