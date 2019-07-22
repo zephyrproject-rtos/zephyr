@@ -138,6 +138,7 @@
 /drivers/*/vexriscv_litex.c               @mateusz-holenko @kgugala @pgielda
 /drivers/led/                             @Mani-Sadhasivam
 /drivers/led_strip/                       @mbolivar
+/drivers/lora/                            @Mani-Sadhasivam
 /drivers/modem/                           @mike-scott
 /drivers/pci/                             @gnuless
 /drivers/pcie/                            @gnuless
@@ -254,6 +255,7 @@
 /include/misc/                            @andrewboie @andyross
 /include/net/                             @jukkar @tbursztyka @pfalcon
 /include/net/buf.h                        @jukkar @jhedberg @tbursztyka @pfalcon
+/include/net/lora.h                       @Mani-Sadhasivam
 /include/posix/                           @pfalcon
 /include/power/power.h                    @wentongwu @nashif
 /include/ptp_clock.h                      @jukkar
@@ -287,6 +289,7 @@
 /samples/display/                         @vanwinkeljan
 /samples/drivers/CAN/                     @alexanderwachter
 /samples/drivers/ht16k33/                 @henrikbrixandersen
+/samples/drivers/lora/                    @Mani-Sadhasivam
 /samples/gui/                             @vanwinkeljan
 /samples/net/                             @jukkar @tbursztyka @pfalcon
 /samples/net/dns_resolve/                 @jukkar @tbursztyka @pfalcon
