@@ -76,16 +76,20 @@ config LIS2DH_ACCEL_RANGE_16G
 endchoice
 
 choice
-	prompt "Power mode"
-	default LIS2DH_POWER_MODE_NORMAL
+	prompt "Operation mode"
+	default LIS2DH_OPER_MODE_NORMAL
 	help
-	  Choose between normal or low power operation mode for chip at init.
+	  Choose between high resolution, normal or low power operation
+	  mode for chip at init.
 
-config LIS2DH_POWER_MODE_NORMAL
-	bool "normal"
+config LIS2DH_OPER_MODE_HIGH_RES
+	bool "high resolution (12 bit)"
 
-config LIS2DH_POWER_MODE_LOW
-	bool "low"
+config LIS2DH_OPER_MODE_NORMAL
+	bool "normal (10 bit)"
+
+config LIS2DH_OPER_MODE_LOW_POWER
+	bool "low power (8 bit)"
 
 endchoice
 
@@ -125,15 +129,15 @@ config LIS2DH_ODR_7
 
 config LIS2DH_ODR_8
 	bool "1.6KHz"
-	depends on LIS2DH_POWER_MODE_LOW
+	depends on LIS2DH_OPER_MODE_LOW_POWER
 
 config LIS2DH_ODR_9_NORMAL
 	bool "1.25KHz"
-	depends on LIS2DH_POWER_MODE_NORMAL
+	depends on LIS2DH_OPER_MODE_NORMAL || LIS2DH_OPER_MODE_HIGH_RES
 
 config LIS2DH_ODR_9_LOW
 	bool "5KHz"
-	depends on LIS2DH_POWER_MODE_LOW
+	depends on LIS2DH_OPER_MODE_LOW_POWER
 
 endchoice
 
