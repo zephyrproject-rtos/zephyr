@@ -46,8 +46,7 @@ context about the tool.
    planned.rst
    release-notes.rst
 
-For details on west's Python APIs (including APIs provided by extensions in the
-zephyr), see :ref:`west-apis`.
+For details on west's Python APIs, see :ref:`west-apis`.
 
 .. rubric:: Footnotes
 
