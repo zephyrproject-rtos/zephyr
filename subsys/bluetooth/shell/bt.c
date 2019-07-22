@@ -448,7 +448,7 @@ static int cmd_id_select(const struct shell *shell, size_t argc, char *argv[])
 }
 
 #if defined(CONFIG_BT_OBSERVER)
-static int cmd_active_scan_on(const struct shell *shell, int dups)
+static int cmd_active_scan_on(const struct shell *shell, u8_t filter)
 {
 	int err;
 	struct bt_le_scan_param param = {
@@ -457,9 +457,7 @@ static int cmd_active_scan_on(const struct shell *shell, int dups)
 			.interval   = BT_GAP_SCAN_FAST_INTERVAL,
 			.window     = BT_GAP_SCAN_FAST_WINDOW };
 
-	if (dups >= 0) {
-		param.filter_dup = dups;
-	}
+	param.filter_dup = filter;
 
 	err = bt_le_scan_start(&param, device_found);
 	if (err) {
@@ -473,7 +471,7 @@ static int cmd_active_scan_on(const struct shell *shell, int dups)
 	return 0;
 }
 
-static int cmd_passive_scan_on(const struct shell *shell, int dups)
+static int cmd_passive_scan_on(const struct shell *shell, u8_t filter)
 {
 	struct bt_le_scan_param param = {
 			.type       = BT_HCI_LE_SCAN_PASSIVE,
@@ -482,9 +480,7 @@ static int cmd_passive_scan_on(const struct shell *shell, int dups)
 			.window     = 0x10 };
 	int err;
 
-	if (dups >= 0) {
-		param.filter_dup = dups;
-	}
+	param.filter_dup = filter;
 
 	err = bt_le_scan_start(&param, device_found);
 	if (err) {
@@ -516,16 +512,18 @@ static int cmd_scan_off(const struct shell *shell)
 static int cmd_scan(const struct shell *shell, size_t argc, char *argv[])
 {
 	const char *action;
-	int dups = -1;
+	u8_t filter = 0;
 
 	/* Parse duplicate filtering data */
-	if (argc >= 3) {
-		const char *dup_filter = argv[2];
+	for (size_t argn = 2; argn < argc; argn++) {
+		const char *arg = argv[argn];
 
-		if (!strcmp(dup_filter, "dups")) {
-			dups = BT_HCI_LE_SCAN_FILTER_DUP_DISABLE;
-		} else if (!strcmp(dup_filter, "nodups")) {
-			dups = BT_HCI_LE_SCAN_FILTER_DUP_ENABLE;
+		if (!strcmp(arg, "dups")) {
+			filter |= BT_LE_SCAN_FILTER_DUPLICATE;
+		} else if (!strcmp(arg, "nodups")) {
+			filter &= ~BT_LE_SCAN_FILTER_DUPLICATE;
+		} else if (!strcmp(arg, "wl")) {
+			filter |= BT_LE_SCAN_FILTER_WHITELIST;
 		} else {
 			shell_help(shell);
 			return SHELL_CMD_HELP_PRINTED;
@@ -534,11 +532,11 @@ static int cmd_scan(const struct shell *shell, size_t argc, char *argv[])
 
 	action = argv[1];
 	if (!strcmp(action, "on")) {
-		return cmd_active_scan_on(shell, dups);
+		return cmd_active_scan_on(shell, filter);
 	} else if (!strcmp(action, "off")) {
 		return cmd_scan_off(shell);
 	} else if (!strcmp(action, "passive")) {
-		return cmd_passive_scan_on(shell, dups);
+		return cmd_passive_scan_on(shell, filter);
 	} else {
 		shell_help(shell);
 		return SHELL_CMD_HELP_PRINTED;
@@ -586,22 +584,27 @@ static int cmd_advertise(const struct shell *shell, size_t argc, char *argv[])
 		goto fail;
 	}
 
-	/* Parse advertisement data */
-	if (argc >= 3) {
-		const char *mode = argv[2];
+	ad = ad_discov;
+	ad_len = ARRAY_SIZE(ad_discov);
 
-		if (!strcmp(mode, "discov")) {
-			ad = ad_discov;
-			ad_len = ARRAY_SIZE(ad_discov);
-		} else if (!strcmp(mode, "non_discov")) {
+	for (size_t argn = 2; argn < argc; argn++) {
+		const char *arg = argv[argn];
+
+		if (!strcmp(arg, "discov")) {
+			/* Default */
+		} else if (!strcmp(arg, "non_discov")) {
 			ad = NULL;
 			ad_len = 0;
+		} else if (!strcmp(arg, "wl")) {
+			param.options |= BT_LE_ADV_OPT_FILTER_SCAN_REQ;
+			param.options |= BT_LE_ADV_OPT_FILTER_CONN;
+		} else if (!strcmp(arg, "wl-scan")) {
+			param.options |= BT_LE_ADV_OPT_FILTER_SCAN_REQ;
+		} else if (!strcmp(arg, "wl-conn")) {
+			param.options |= BT_LE_ADV_OPT_FILTER_CONN;
 		} else {
 			goto fail;
 		}
-	} else {
-		ad = ad_discov;
-		ad_len = ARRAY_SIZE(ad_discov);
 	}
 
 	err = bt_le_adv_start(&param, ad, ad_len, NULL, 0);
@@ -690,6 +693,7 @@ static int cmd_connect_le(const struct shell *shell, size_t argc, char *argv[])
 	return 0;
 }
 
+#if !defined(CONFIG_BT_WHITELIST)
 static int cmd_auto_conn(const struct shell *shell, size_t argc, char *argv[])
 {
 	bt_addr_le_t addr;
@@ -714,6 +718,7 @@ static int cmd_auto_conn(const struct shell *shell, size_t argc, char *argv[])
 
 	return 0;
 }
+#endif /* !defined(CONFIG_BT_WHITELIST) */
 #endif /* CONFIG_BT_CENTRAL */
 
 static int cmd_disconnect(const struct shell *shell, size_t argc, char *argv[])
@@ -1431,6 +1436,85 @@ static int cmd_auth_pairing_confirm(const struct shell *shell,
 	return 0;
 }
 
+#if defined(CONFIG_BT_WHITELIST)
+static int cmd_wl_add(const struct shell *shell, size_t argc, char *argv[])
+{
+	bt_addr_le_t addr;
+	int err;
+
+	err = bt_addr_le_from_str(argv[1], argv[2], &addr);
+	if (err) {
+		shell_error(shell, "Invalid peer address (err %d)", err);
+		return err;
+	}
+
+	err = bt_le_whitelist_add(&addr);
+	if (err) {
+		shell_error(shell, "Add to whitelist failed (err %d)", err);
+		return err;
+	}
+
+	return 0;
+}
+
+static int cmd_wl_rem(const struct shell *shell, size_t argc, char *argv[])
+{
+	bt_addr_le_t addr;
+	int err;
+
+	err = bt_addr_le_from_str(argv[1], argv[2], &addr);
+	if (err) {
+		shell_error(shell, "Invalid peer address (err %d)", err);
+		return err;
+	}
+
+	err = bt_le_whitelist_rem(&addr);
+	if (err) {
+		shell_error(shell, "Remove from whitelist failed (err %d)",
+			    err);
+		return err;
+	}
+	return 0;
+}
+
+static int cmd_wl_clear(const struct shell *shell, size_t argc, char *argv[])
+{
+	int err;
+
+	err = bt_le_whitelist_clear();
+	if (err) {
+		shell_error(shell, "Clearing whitelist failed (err %d)", err);
+		return err;
+	}
+
+	return 0;
+}
+
+static int cmd_wl_connect(const struct shell *shell, size_t argc, char *argv[])
+{
+	int err;
+	const char *action = argv[1];
+
+	if (!strcmp(action, "on")) {
+		err = bt_conn_create_auto_le(BT_LE_CONN_PARAM_DEFAULT);
+
+		if (err) {
+			shell_error(shell, "Auto connect failed (err %d)", err);
+			return err;
+		}
+	} else if (!strcmp(action, "off")) {
+		err = bt_conn_create_auto_stop();
+		if (err) {
+			shell_error(shell, "Auto connect stop failed (err %d)",
+				    err);
+		}
+		return err;
+	}
+
+	return 0;
+}
+#endif /* defined(CONFIG_BT_WHITELIST) */
+
 #if defined(CONFIG_BT_FIXED_PASSKEY)
 static int cmd_fixed_passkey(const struct shell *shell,
 			     size_t argc, char *argv[])
@@ -1498,13 +1582,14 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 	SHELL_CMD_ARG(name, NULL, "[name]", cmd_name, 1, 1),
 #if defined(CONFIG_BT_OBSERVER)
 	SHELL_CMD_ARG(scan, NULL,
-		      "<value: on, passive, off> <dup filter: dups, nodups>",
-		      cmd_scan, 2, 1),
+		      "<value: on, passive, off> [filter: dups, nodups] [wl]",
+		      cmd_scan, 2, 2),
 #endif /* CONFIG_BT_OBSERVER */
 #if defined(CONFIG_BT_BROADCASTER)
 	SHELL_CMD_ARG(advertise, NULL,
-		      "<type: off, on, scan, nconn> <mode: discov, non_discov>",
-		      cmd_advertise, 2, 1),
+		      "<type: off, on, scan, nconn> [mode: discov, non_discov] "
+		      "[whitelist: wl, wl-scan, wl-conn]",
+		      cmd_advertise, 2, 2),
 #if defined(CONFIG_BT_PERIPHERAL)
 	SHELL_CMD_ARG(directed-adv, NULL, HELP_ADDR_LE " [mode: low]",
 		      cmd_directed_adv, 3, 1),
@@ -1513,7 +1598,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 #if defined(CONFIG_BT_CONN)
 #if defined(CONFIG_BT_CENTRAL)
 	SHELL_CMD_ARG(connect, NULL, HELP_ADDR_LE, cmd_connect_le, 3, 0),
+#if !defined(CONFIG_BT_WHITELIST)
 	SHELL_CMD_ARG(auto-conn, NULL, HELP_ADDR_LE, cmd_auto_conn, 3, 0),
+#endif /* !defined(CONFIG_BT_WHITELIST) */
 #endif /* CONFIG_BT_CENTRAL */
 	SHELL_CMD_ARG(disconnect, NULL, HELP_NONE, cmd_disconnect, 1, 2),
 	SHELL_CMD_ARG(select, NULL, HELP_ADDR_LE, cmd_select, 3, 0),
@@ -1546,6 +1633,12 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 		      HELP_ADDR_LE" <oob rand> <oob confirm>",
 		      cmd_oob_remote, 3, 2),
 	SHELL_CMD_ARG(oob-clear, NULL, HELP_NONE, cmd_oob_clear, 1, 0),
+#if defined(CONFIG_BT_WHITELIST)
+	SHELL_CMD_ARG(wl-add, NULL, HELP_ADDR_LE, cmd_wl_add, 3, 0),
+	SHELL_CMD_ARG(wl-rem, NULL, HELP_ADDR_LE, cmd_wl_rem, 3, 0),
+	SHELL_CMD_ARG(wl-clear, NULL, HELP_NONE, cmd_wl_clear, 2, 0),
+	SHELL_CMD_ARG(wl-connect, NULL, "<on, off>", cmd_wl_connect, 2, 0),
+#endif /* defined(CONFIG_BT_WHITELIST) */
 #if defined(CONFIG_BT_FIXED_PASSKEY)
 	SHELL_CMD_ARG(fixed-passkey, NULL, "[passkey]", cmd_fixed_passkey,
 		      1, 1),
