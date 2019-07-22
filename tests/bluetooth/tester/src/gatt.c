@@ -1739,7 +1739,7 @@ static void config_subscription(u8_t *data, u16_t len, u16_t op)
 		}
 
 		/* on success response will be sent from callback */
-		if (enable_subscription(conn, ccc_handle, value) == 0) {
+		if (enable_subscription(conn, ccc_handle, value) >= 0) {
 			bt_conn_unref(conn);
 			return;
 		}

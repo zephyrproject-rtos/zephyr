@@ -82,7 +82,7 @@ static u8_t discover_func(struct bt_conn *conn,
 		subscribe_params.ccc_handle = attr->handle;
 
 		err = bt_gatt_subscribe(conn, &subscribe_params);
-		if (err && err != -EALREADY) {
+		if (err < 0 && err != -EALREADY) {
 			printk("Subscribe failed (err %d)\n", err);
 		} else {
 			printk("[SUBSCRIBED]\n");

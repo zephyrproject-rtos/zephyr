@@ -183,7 +183,7 @@ static u8_t discover_func(struct bt_conn *conn,
 		discov_param.type = BT_GATT_DISCOVER_CHARACTERISTIC;
 
 		err = bt_gatt_discover(conn, &discov_param);
-		if (err) {
+		if (err < 0) {
 			printk("Char Discovery failed (err %d)\n", err);
 		}
 	} else if (param->uuid == &pong_chr_uuid.uuid) {
@@ -194,7 +194,7 @@ static u8_t discover_func(struct bt_conn *conn,
 		subscribe_param.value_handle = attr->handle + 1;
 
 		err = bt_gatt_discover(conn, &discov_param);
-		if (err) {
+		if (err < 0) {
 			printk("CCC Discovery failed (err %d)\n", err);
 		}
 	} else {
@@ -209,7 +209,7 @@ static u8_t discover_func(struct bt_conn *conn,
 		       subscribe_param.value_handle);
 
 		err = bt_gatt_subscribe(conn, &subscribe_param);
-		if (err && err != -EALREADY) {
+		if (err < 0 && err != -EALREADY) {
 			printk("Subscribe failed (err %d)\n", err);
 		} else {
 			printk("Subscribed\n");
@@ -486,7 +486,7 @@ static void ble_timeout(struct k_work *work)
 		discov_param.type = BT_GATT_DISCOVER_PRIMARY;
 
 		err = bt_gatt_discover(default_conn, &discov_param);
-		if (err) {
+		if (err < 0) {
 			printk("Discover failed (err %d)\n", err);
 			return;
 		}

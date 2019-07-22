@@ -149,7 +149,7 @@ static u8_t discover_func(struct bt_conn *conn,
 		discover_params.type = BT_GATT_DISCOVER_CHARACTERISTIC;
 
 		err = bt_gatt_discover(conn, &discover_params);
-		if (err) {
+		if (err < 0) {
 			FAIL("Discover failed (err %d)\n", err);
 		}
 	} else if (!bt_uuid_cmp(discover_params.uuid,
@@ -161,7 +161,7 @@ static u8_t discover_func(struct bt_conn *conn,
 		subscribe_params.value_handle = attr->handle + 1;
 
 		err = bt_gatt_discover(conn, &discover_params);
-		if (err) {
+		if (err < 0) {
 			FAIL("Discover failed (err %d)\n", err);
 		}
 	} else {
@@ -170,7 +170,7 @@ static u8_t discover_func(struct bt_conn *conn,
 		subscribe_params.ccc_handle = attr->handle;
 
 		err = bt_gatt_subscribe(conn, &subscribe_params);
-		if (err && err != -EALREADY) {
+		if (err < 0 && err != -EALREADY) {
 			FAIL("Subscribe failed (err %d)\n", err);
 		} else {
 			printk("[SUBSCRIBED]\n");
@@ -268,7 +268,7 @@ static void params_updated(struct bt_conn *conn, u16_t interval,
 	discover_params.type = BT_GATT_DISCOVER_PRIMARY;
 
 	err = bt_gatt_discover(conn, &discover_params);
-	if (err) {
+	if (err < 0) {
 		FAIL("Discover failed(err %d)\n", err);
 		return;
 	}

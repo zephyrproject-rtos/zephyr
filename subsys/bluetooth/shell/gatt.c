@@ -193,7 +193,7 @@ static int cmd_discover(const struct shell *shell, size_t argc, char *argv[])
 	}
 
 	err = bt_gatt_discover(default_conn, &discover_params);
-	if (err) {
+	if (err < 0) {
 		shell_error(shell, "Discover failed (err %d)", err);
 	} else {
 		shell_print(shell, "Discover pending");
@@ -237,7 +237,7 @@ static int cmd_read(const struct shell *shell, size_t argc, char *argv[])
 	}
 
 	err = bt_gatt_read(default_conn, &read_params);
-	if (err) {
+	if (err < 0) {
 		shell_error(shell, "Read failed (err %d)", err);
 	} else {
 		shell_print(shell, "Read pending");
@@ -271,7 +271,7 @@ static int cmd_mread(const struct shell *shell, size_t argc, char *argv[])
 	read_params.handles = h; /* not used in read func */
 
 	err = bt_gatt_read(default_conn, &read_params);
-	if (err) {
+	if (err < 0) {
 		shell_error(shell, "GATT multiple read request failed (err %d)",
 			    err);
 	}
@@ -309,7 +309,7 @@ static int cmd_read_uuid(const struct shell *shell, size_t argc, char *argv[])
 	}
 
 	err = bt_gatt_read(default_conn, &read_params);
-	if (err) {
+	if (err < 0) {
 		shell_error(shell, "Read failed (err %d)", err);
 	} else {
 		shell_print(shell, "Read pending");
@@ -369,7 +369,7 @@ static int cmd_write(const struct shell *shell, size_t argc, char *argv[])
 	}
 
 	err = bt_gatt_write(default_conn, &write_params);
-	if (err) {
+	if (err < 0) {
 		shell_error(shell, "Write failed (err %d)", err);
 	} else {
 		shell_print(shell, "Write pending");
@@ -450,7 +450,7 @@ static u8_t notify_func(struct bt_conn *conn,
 {
 	if (!data) {
 		shell_print(ctx_shell, "Unsubscribed");
-		params->value_handle = 0U;
+		subscribe_params.value_handle = 0U;
 		return BT_GATT_ITER_STOP;
 	}
 
@@ -484,7 +484,7 @@ static int cmd_subscribe(const struct shell *shell, size_t argc, char *argv[])
 	}
 
 	err = bt_gatt_subscribe(default_conn, &subscribe_params);
-	if (err) {
+	if (err < 0) {
 		shell_error(shell, "Subscribe failed (err %d)", err);
 	} else {
 		shell_print(shell, "Subscribed");
@@ -509,7 +509,7 @@ static int cmd_unsubscribe(const struct shell *shell,
 	}
 
 	err = bt_gatt_unsubscribe(default_conn, &subscribe_params);
-	if (err) {
+	if (err < 0) {
 		shell_error(shell, "Unsubscribe failed (err %d)", err);
 	} else {
 		shell_print(shell, "Unsubscribe success");
