@@ -72,24 +72,5 @@ west.util
 .. automodule:: west.util
    :members: west_dir, west_topdir, WestNotFound
 
-.. _west-apis-zext:
-
-Zephyr Extensions
-*****************
-
-This section contains documentation for APIs used by the extension commands
-which are part of the Zephyr repository. In particular, it documents the
-``runners.core`` module used by the :ref:`west-build-flash-debug`
-commands. This is the core abstraction used to implement support for these
-features.
-
-.. warning::
-
-   These APIs are provided for reference, but they are more "shared code" used
-   to implement multiple extension commands than a stable API.
-
-.. automodule:: runners.core
-   :members:
-
 .. _west #38:
    https://github.com/zephyrproject-rtos/west/issues/38

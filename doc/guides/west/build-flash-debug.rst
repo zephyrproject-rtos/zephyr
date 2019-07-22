@@ -463,13 +463,22 @@ determined by the imported subclasses of ``ZephyrBinaryRunner``.
 individual runner implementations are in other submodules, such as
 ``runners.nrfjprog``, ``runners.openocd``, etc.
 
-Hacking and APIs
-****************
+Hacking
+*******
 
-Developers can add support for new ways to flash and debug Zephyr
-programs by implementing additional runners. To get this support into
-upstream Zephyr, the runner should be added into a new or existing
-``runners`` module, and imported from :file:`runner/__init__.py`.
+This section contains documentation the ``runners.core`` module used by the
+flash and debug commands. This is the core abstraction used to implement
+support for these features.
+
+.. warning::
+
+   These APIs are provided for reference, but they are more "shared code" used
+   to implement multiple extension commands than a stable API.
+
+Developers can add support for new ways to flash and debug Zephyr programs by
+implementing additional runners. To get this support into upstream Zephyr, the
+runner should be added into a new or existing ``runners`` module, and imported
+from :file:`runners/__init__.py`.
 
 .. note::
 
@@ -480,8 +489,8 @@ upstream Zephyr, the runner should be added into a new or existing
    changes break existing test cases, CI testing on upstream pull
    requests will fail.
 
-API Documentation for the ``runners.core`` module can be found in
-:ref:`west-apis`.
+.. automodule:: runners.core
+   :members:
 
 Doing it By Hand
 ****************
