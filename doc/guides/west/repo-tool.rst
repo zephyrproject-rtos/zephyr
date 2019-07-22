@@ -26,16 +26,14 @@ Git repositories installed under a common parent directory, which we call a
 <https://gerrit.googlesource.com/git-repo/>`_.
 
 A west installation is the result of running the ``west init`` command, which
-is described in more detail below. This command can either create a new
-installation, or convert a standalone "mono-repo" zephyr repository into a full
-west installation. For upstream Zephyr, the installation looks like this:
+is described in more detail below. For upstream Zephyr, the installation looks
+like this:
 
 .. code-block:: none
 
    zephyrproject
    ├── .west
-   │   ├── config
-   │   └── west
+   │   └── config
    ├── zephyr
    │   ├── west.yml
    │   └── [... other files ...]
@@ -48,9 +46,7 @@ west installation. For upstream Zephyr, the installation looks like this:
 Above, :file:`zephyrproject` is the name of the west installation's root
 directory. This name is just an example -- it could be anything, like ``z``,
 ``my-zephyr-installation``, etc.  The file :file:`.west/config` is the
-installation's :ref:`local configuration file <west-config>`. The directory
-:file:`.west/west` is a clone of the west repository itself; more details on
-why that is currently needed are given in the next section.
+installation's :ref:`local configuration file <west-config>`.
 
 Every west installation contains exactly one *manifest repository*, which is a
 Git repository containing a file named :file:`west.yml`, which is the *west
@@ -152,62 +148,12 @@ The following three source code topologies supported by west:
 West Structure
 **************
 
-West is currently split in two:
+West's code is distributed via PyPI in a `namespace package`_ named ``west``.
+See :ref:`west-apis` for API documentation.
 
-* Bootstrapper: Installed by ``pip3 install west``, which provides the ``west``
-  binary and the ``west init`` command.
-* Per-installation clone: this is the west repository cloned into each
-  installation, which provides the built-in commands.
-
-.. note::
-
-   This "bootstrapper" / "everything else" separation is similar to the model
-   used by Google's ``repo`` tool, but unfortunately in retrospect was not a
-   good strategy for west.
-
-   In future versions, the ``west`` binary and all built-in commands (including
-   ``init``) will be installed by ``pip3 install west``. Besides eliminating
-   complexity, this will also make it possible to use :ref:`West's APIs
-   <west-apis-west>` from any Python file, not just extension
-   commands.
-
-   Updating west will still be possible manually, e.g. with ``pip3
-   install --upgrade west``. If necessary, it will also still be possible to
-   use different versions of west on the same computer through Python virtual
-   environments.
-
-Bootstrapper
-============
-
-The bootstrapper module is distributed using `PyPI`_ and installed using
-:file:`pip3`. A launcher named ``west`` is placed by :file:`pip3` in the user's
-``PATH``. This the only entry point to west.  It implements a single command:
-``west init``. This command needs to be run first to use the rest of
-functionality included in ``west``, by creating a west installation. The
-command ``west init`` does the following:
-
-* Clones west itself in a :file:`.west/west` folder in the installation.
-* Clones the manifest repository in the folder specified by the manifest file's
-  ``self.path`` section.
-* Creates an initial local configuration file.
-
-Once ``west init`` has been run, the bootstrapper will delegate the handling of
-any west commands other than ``init`` to the cloned west repository. This means
-that there is a single bootstrapper instance installed at any time (unless you
-use virtual environments), which can then be used to initialize as many
-installations as needed, each of which can have a different version of west.
-
-.. _west-struct-installation:
-
-Per-Installation Clone
-======================
-
-A west installation, as described above, contains a clone of the west
-repository in :file:`.west/west`. This is where the built-in command
-implementations are currently provided. The rest of :ref:`West's APIs
-<west-apis-west>` are also currently provided to extension commands by this
-repository. So that west can update itself, the built-in ``west update`` and
-``west selfupdate`` commands fetch and update the :file:`.west/west` repository.
+This distribution also includes a launcher executable, also named ``west``. When
+west is installed, the launcher is placed by :file:`pip3` somewhere in the
+user's ``PATH``. This is the command-line entry point.
 
 The ``manifest-rev`` branch
 ***************************
@@ -266,7 +212,8 @@ important to understand.
 
   1. If you already have a local clone of the zephyr repository and want to
      create a west installation around it, you can use the ``-l`` switch to
-     pass its path to west, as in: ``west init -l path/to/zephyr``.
+     pass its path to west, as in: ``west init -l path/to/zephyr``. This is
+     the only reason to use ``-l``.
 
   2. Otherwise, omit ``-l`` to create a new installation from a remote manifest
      repository. You can give the manifest URL using the ``-m`` switch, and its
@@ -290,9 +237,6 @@ important to understand.
   operation that will not modify any of your local branches. See the help for
   the ``--rebase`` / ``-r`` and ``--keep-descendants`` / ``-k`` options for
   ways to influence this.
-
-  By default, ``west update`` also updates the west repository in the
-  installation. To prevent this, use ``--exclude-west``.
 
 .. _west-multi-repo-misc:
 
@@ -324,10 +268,11 @@ discussed here.
   forall -c 'git <command> --options'``. Note that ``west forall`` can be used
   to run any command, though, not just Git commands.
 
-- ``west selfupdate``: Updates the west repository in the installation.
-
 .. _PyPI:
    https://pypi.org/project/west/
 
 .. _Zephyr issue #6770:
    https://github.com/zephyrproject-rtos/zephyr/issues/6770
+
+.. _namespace package:
+   https://www.python.org/dev/peps/pep-0420/
