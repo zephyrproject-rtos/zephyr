@@ -71,6 +71,26 @@ NET_BUF_POOL_DEFINE(prep_pool, CONFIG_BT_ATT_PREPARE_COUNT, BT_ATT_MTU,
 		    sizeof(struct bt_attr_data), NULL);
 #endif /* CONFIG_BT_ATT_PREPARE_COUNT */
 
+struct gatt_params {
+	union {
+		struct bt_gatt_notify_params notify;
+		struct bt_gatt_indicate_params indicate;
+#if defined(CONFIG_BT_GATT_CLIENT)
+		struct bt_gatt_exchange_params exchange;
+		struct bt_gatt_discover_params discover;
+		struct bt_gatt_read_params read;
+		struct bt_gatt_write_params write;
+		struct bt_gatt_subscribe_params subscribe;
+#endif /* CONFIG_BT_GATT_CLIENT */
+	};
+};
+
+#define ATT_REQ_MAX_PARAMS \
+	(sizeof(struct bt_att_req) + sizeof(struct gatt_params))
+
+K_MEM_POOL_DEFINE(req_pool, sizeof(struct bt_att_req), ATT_REQ_MAX_PARAMS,
+		  CONFIG_BT_ATT_TX_MAX, 16);
+
 enum {
 	ATT_PENDING_RSP,
 	ATT_PENDING_CFM,
@@ -109,7 +129,7 @@ static void att_req_destroy(struct bt_att_req *req)
 		req->destroy(req);
 	}
 
-	(void)memset(req, 0, sizeof(*req));
+	bt_att_req_free(req);
 }
 
 static struct bt_att *att_get(struct bt_conn *conn)
@@ -347,6 +367,7 @@ static void att_process(struct bt_att *att)
 static u8_t att_handle_rsp(struct bt_att *att, void *pdu, u16_t len, u8_t err)
 {
 	bt_att_func_t func;
+	struct gatt_params params;
 
 	BT_DBG("err %u len %u: %s", err, len, bt_hex(pdu, len));
 
@@ -364,18 +385,15 @@ static u8_t att_handle_rsp(struct bt_att *att, void *pdu, u16_t len, u8_t err)
 		att->req->buf = NULL;
 	}
 
-	/* Reset func so it can be reused by the callback */
+	/* Copy params over to stack variables so request can be freed */
 	func = att->req->func;
-	att->req->func = NULL;
+	memcpy(&params, att->req->params, att->req->size);
 
-	func(att->chan.chan.conn, err, pdu, len, att->req);
-
-	/* Don't destroy if callback had reused the request */
-	if (!att->req->func) {
-		att_req_destroy(att->req);
-	}
-
+	/* free allocated request so its memory can be reused */
+	att_req_destroy(att->req);
 	att->req = NULL;
+
+	func(att->chan.chan.conn, err, pdu, len, &params);
 
 process:
 	/* Process pending requests */
@@ -2274,6 +2292,33 @@ int bt_att_send(struct bt_conn *conn, struct net_buf *buf, bt_conn_tx_cb_t cb,
 	}
 
 	return 0;
+}
+
+struct bt_att_req *bt_att_req_alloc(size_t size, s32_t timeout)
+{
+	struct bt_att_req *req;
+	struct k_mem_block block;
+
+	/* Reserve space for request + parameters */
+	if (k_mem_pool_alloc(&req_pool, &block, sizeof(*req) + size,
+			     timeout)) {
+		return NULL;
+	}
+
+	req = block.data;
+	req->size = size;
+	memcpy(&req->id, &block.id, sizeof(req->id));
+
+	BT_DBG("req %p size %zu", req, req->size);
+
+	return req;
+}
+
+void bt_att_req_free(struct bt_att_req *req)
+{
+	BT_DBG("req %p size %zu", req, req->size);
+
+	k_mem_pool_free_id(&req->id);
 }
 
 int bt_att_req_send(struct bt_conn *conn, struct bt_att_req *req)

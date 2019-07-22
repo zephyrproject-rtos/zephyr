@@ -1383,29 +1383,38 @@ static void gatt_indicate_rsp(struct bt_conn *conn, u8_t err,
 }
 
 static int gatt_send(struct bt_conn *conn, struct net_buf *buf,
-		     bt_att_func_t func, void *params,
+		     bt_att_func_t func, void *params, size_t params_size,
 		     bt_att_destroy_t destroy)
 {
-	int err;
+	int ret;
 
 	if (params) {
-		struct bt_att_req *req = params;
+		struct bt_att_req *req;
+
+		/* Allocate new request */
+		req = bt_att_req_alloc(params_size, K_FOREVER);
+		memcpy(req->params, params, params_size);
 
 		req->buf = buf;
 		req->func = func;
 		req->destroy = destroy;
 
-		err = bt_att_req_send(conn, req);
+		ret = bt_att_req_send(conn, req);
+		if (ret) {
+			bt_att_req_free(req);
+		} else {
+			ret = POINTER_TO_INT(req);
+		}
 	} else {
-		err = bt_att_send(conn, buf, NULL, NULL);
+		ret = bt_att_send(conn, buf, NULL, NULL);
 	}
 
-	if (err) {
-		BT_ERR("Error sending ATT PDU: %d", err);
+	if (ret < 0) {
+		BT_ERR("Error sending ATT PDU: %d", ret);
 		net_buf_unref(buf);
 	}
 
-	return err;
+	return ret;
 }
 
 static int gatt_indicate(struct bt_conn *conn, u16_t handle,
@@ -1441,7 +1450,8 @@ static int gatt_indicate(struct bt_conn *conn, u16_t handle,
 	net_buf_add(buf, params->len);
 	memcpy(ind->value, params->data, params->len);
 
-	return gatt_send(conn, buf, gatt_indicate_rsp, params, NULL);
+	return gatt_send(conn, buf, gatt_indicate_rsp, params,
+			 sizeof(*params), NULL);
 }
 
 #if defined(CONFIG_BT_GATT_DYNAMIC_DB)
@@ -1811,7 +1821,7 @@ static void gatt_subscription_remove(struct bt_conn *conn, sys_snode_t *prev,
 				     struct bt_gatt_subscribe_params *params)
 {
 	/* Remove subscription from the list*/
-	sys_slist_remove(&subscriptions, prev, &params->node);
+	sys_slist_remove(&subscriptions, prev, params->pnode);
 
 	params->notify(conn, params, NULL, 0);
 }
@@ -1874,7 +1884,8 @@ int bt_gatt_exchange_mtu(struct bt_conn *conn,
 	req = net_buf_add(buf, sizeof(*req));
 	req->mtu = sys_cpu_to_le16(mtu);
 
-	return gatt_send(conn, buf, gatt_mtu_rsp, params, NULL);
+	return gatt_send(conn, buf, gatt_mtu_rsp, params, sizeof(*params),
+			 NULL);
 }
 
 static void gatt_discover_next(struct bt_conn *conn, u16_t last_handle,
@@ -1899,7 +1910,7 @@ static void gatt_discover_next(struct bt_conn *conn, u16_t last_handle,
 
 discover:
 	/* Discover next range */
-	if (!bt_gatt_discover(conn, params)) {
+	if (bt_gatt_discover(conn, params) > 0) {
 		return;
 	}
 
@@ -2004,7 +2015,8 @@ static int gatt_find_type(struct bt_conn *conn,
 		return -EINVAL;
 	}
 
-	return gatt_send(conn, buf, gatt_find_type_rsp, params, NULL);
+	return gatt_send(conn, buf, gatt_find_type_rsp, params, sizeof(*params),
+			 NULL);
 }
 
 static void read_included_uuid_cb(struct bt_conn *conn, u8_t err,
@@ -2070,7 +2082,8 @@ static int read_included_uuid(struct bt_conn *conn,
 
 	BT_DBG("handle 0x%04x", params->_included.start_handle);
 
-	return gatt_send(conn, buf, read_included_uuid_cb, params, NULL);
+	return gatt_send(conn, buf, read_included_uuid_cb, params,
+			 sizeof(*params), NULL);
 }
 
 static u16_t parse_include(struct bt_conn *conn, const void *pdu,
@@ -2298,7 +2311,8 @@ static int gatt_read_type(struct bt_conn *conn,
 	BT_DBG("start_handle 0x%04x end_handle 0x%04x", params->start_handle,
 	       params->end_handle);
 
-	return gatt_send(conn, buf, gatt_read_type_rsp, params, NULL);
+	return gatt_send(conn, buf, gatt_read_type_rsp, params, sizeof(*params),
+			 NULL);
 }
 
 static u16_t parse_service(struct bt_conn *conn, const void *pdu,
@@ -2429,7 +2443,8 @@ static int gatt_read_group(struct bt_conn *conn,
 	BT_DBG("start_handle 0x%04x end_handle 0x%04x", params->start_handle,
 	       params->end_handle);
 
-	return gatt_send(conn, buf, gatt_read_group_rsp, params, NULL);
+	return gatt_send(conn, buf, gatt_read_group_rsp, params,
+			 sizeof(*params), NULL);
 }
 
 static void gatt_find_info_rsp(struct bt_conn *conn, u8_t err,
@@ -2561,7 +2576,8 @@ static int gatt_find_info(struct bt_conn *conn,
 	BT_DBG("start_handle 0x%04x end_handle 0x%04x", params->start_handle,
 	       params->end_handle);
 
-	return gatt_send(conn, buf, gatt_find_info_rsp, params, NULL);
+	return gatt_send(conn, buf, gatt_find_info_rsp, params,
+			 sizeof(*params), NULL);
 }
 
 int bt_gatt_discover(struct bt_conn *conn,
@@ -2718,7 +2734,8 @@ static int gatt_read_blob(struct bt_conn *conn,
 	BT_DBG("handle 0x%04x offset 0x%04x", params->single.handle,
 	       params->single.offset);
 
-	return gatt_send(conn, buf, gatt_read_rsp, params, NULL);
+	return gatt_send(conn, buf, gatt_read_rsp, params,
+			 sizeof(*params), NULL);
 }
 
 static int gatt_read_uuid(struct bt_conn *conn,
@@ -2746,7 +2763,8 @@ static int gatt_read_uuid(struct bt_conn *conn,
 		params->by_uuid.start_handle, params->by_uuid.end_handle,
 		bt_uuid_str(params->by_uuid.uuid));
 
-	return gatt_send(conn, buf, gatt_read_rsp, params, NULL);
+	return gatt_send(conn, buf, gatt_read_rsp, params, sizeof(*params),
+			 NULL);
 }
 
 #if defined(CONFIG_BT_GATT_READ_MULTIPLE)
@@ -2785,7 +2803,8 @@ static int gatt_read_multiple(struct bt_conn *conn,
 		net_buf_add_le16(buf, params->handles[i]);
 	}
 
-	return gatt_send(conn, buf, gatt_read_multiple_rsp, params, NULL);
+	return gatt_send(conn, buf, gatt_read_multiple_rsp, params,
+			 sizeof(*params), NULL);
 }
 #else
 static int gatt_read_multiple(struct bt_conn *conn,
@@ -2829,7 +2848,8 @@ int bt_gatt_read(struct bt_conn *conn, struct bt_gatt_read_params *params)
 
 	BT_DBG("handle 0x%04x", params->single.handle);
 
-	return gatt_send(conn, buf, gatt_read_rsp, params, NULL);
+	return gatt_send(conn, buf, gatt_read_rsp, params,
+			 sizeof(*params), NULL);
 }
 
 static void gatt_write_rsp(struct bt_conn *conn, u8_t err, const void *pdu,
@@ -2901,7 +2921,8 @@ static int gatt_exec_write(struct bt_conn *conn,
 
 	BT_DBG("");
 
-	return gatt_send(conn, buf, gatt_write_rsp, params, NULL);
+	return gatt_send(conn, buf, gatt_write_rsp, params, sizeof(*params),
+			 NULL);
 }
 
 static void gatt_prepare_write_rsp(struct bt_conn *conn, u8_t err,
@@ -2958,7 +2979,8 @@ static int gatt_prepare_write(struct bt_conn *conn,
 	BT_DBG("handle 0x%04x offset %u len %u", params->handle, params->offset,
 	       params->length);
 
-	return gatt_send(conn, buf, gatt_prepare_write_rsp, params, NULL);
+	return gatt_send(conn, buf, gatt_prepare_write_rsp, params,
+			 sizeof(*params), NULL);
 }
 
 int bt_gatt_write(struct bt_conn *conn, struct bt_gatt_write_params *params)
@@ -2993,7 +3015,8 @@ int bt_gatt_write(struct bt_conn *conn, struct bt_gatt_write_params *params)
 
 	BT_DBG("handle 0x%04x length %u", params->handle, params->length);
 
-	return gatt_send(conn, buf, gatt_write_rsp, params, NULL);
+	return gatt_send(conn, buf, gatt_write_rsp, params, sizeof(*params),
+			 NULL);
 }
 
 static void gatt_subscription_add(struct bt_conn *conn,
@@ -3003,6 +3026,9 @@ static void gatt_subscription_add(struct bt_conn *conn,
 
 	/* Prepend subscription */
 	sys_slist_prepend(&subscriptions, &params->node);
+
+	/* Assign node pointer so it can be found later */
+	params->pnode = &params->node;
 }
 
 static void gatt_write_ccc_rsp(struct bt_conn *conn, u8_t err,
@@ -3013,12 +3039,12 @@ static void gatt_write_ccc_rsp(struct bt_conn *conn, u8_t err,
 
 	BT_DBG("err 0x%02x", err);
 
-	/* if write to CCC failed we remove subscription and notify app */
+	/* if write to CCC failed we remove subscription and no < 0tify app */
 	if (err) {
 		sys_snode_t *node, *tmp, *prev = NULL;
 
 		SYS_SLIST_FOR_EACH_NODE_SAFE(&subscriptions, node, tmp) {
-			if (node == &params->node) {
+			if (node == params->pnode) {
 				gatt_subscription_remove(conn, tmp, params);
 				break;
 			}
@@ -3050,7 +3076,7 @@ static int gatt_write_ccc(struct bt_conn *conn, u16_t handle, u16_t value,
 
 	BT_DBG("handle 0x%04x value 0x%04x", handle, value);
 
-	return gatt_send(conn, buf, func, params, NULL);
+	return gatt_send(conn, buf, func, params, sizeof(*params), NULL);
 }
 
 int bt_gatt_subscribe(struct bt_conn *conn,
@@ -3058,6 +3084,7 @@ int bt_gatt_subscribe(struct bt_conn *conn,
 {
 	struct bt_gatt_subscribe_params *tmp;
 	bool has_subscription = false;
+	int ret;
 
 	__ASSERT(conn, "invalid parameters\n");
 	__ASSERT(params && params->notify,  "invalid parameters\n");
@@ -3083,16 +3110,7 @@ int bt_gatt_subscribe(struct bt_conn *conn,
 		}
 	}
 
-	/* Skip write if already subscribed */
-	if (!has_subscription) {
-		int err;
-
-		err = gatt_write_ccc(conn, params->ccc_handle, params->value,
-				     gatt_write_ccc_rsp, params);
-		if (err) {
-			return err;
-		}
-	}
+	ret = 0;
 
 	/*
 	 * Add subscription before write complete as some implementation were
@@ -3100,7 +3118,17 @@ int bt_gatt_subscribe(struct bt_conn *conn,
 	 */
 	gatt_subscription_add(conn, params);
 
-	return 0;
+	/* Skip write if already subscribed */
+	if (!has_subscription) {
+		ret = gatt_write_ccc(conn, params->ccc_handle, params->value,
+				     gatt_write_ccc_rsp, params);
+		if (ret < 0) {
+			gatt_subscription_remove(conn, NULL, params);
+			return ret;
+		}
+	}
+
+	return ret;
 }
 
 int bt_gatt_unsubscribe(struct bt_conn *conn,
@@ -3120,9 +3148,9 @@ int bt_gatt_unsubscribe(struct bt_conn *conn,
 	/* Lookup existing subscriptions */
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&subscriptions, tmp, next, node) {
 		/* Remove subscription */
-		if (params == tmp) {
+		if (params->pnode == tmp->pnode) {
 			found = true;
-			sys_slist_remove(&subscriptions, prev, &tmp->node);
+			sys_slist_remove(&subscriptions, prev, params->pnode);
 			continue;
 		} else {
 			prev = &tmp->node;
@@ -3151,9 +3179,9 @@ int bt_gatt_unsubscribe(struct bt_conn *conn,
 			      gatt_write_ccc_rsp, params);
 }
 
-void bt_gatt_cancel(struct bt_conn *conn, void *params)
+void bt_gatt_cancel(struct bt_conn *conn, int id)
 {
-	bt_att_req_cancel(conn, params);
+	bt_att_req_cancel(conn, INT_TO_POINTER(id));
 }
 
 static void add_subscriptions(struct bt_conn *conn)

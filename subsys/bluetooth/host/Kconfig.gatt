@@ -29,8 +29,8 @@ config BT_ATT_PREPARE_COUNT
 
 config BT_ATT_TX_MAX
 	int "Maximum number of queued outgoing ATT PDUs"
-	default 2
-	range 1 BT_L2CAP_TX_BUF_COUNT
+	default BT_L2CAP_TX_BUF_COUNT
+	range 2 BT_L2CAP_TX_BUF_COUNT
 	help
 	  Number of ATT PDUs that can be at a single moment queued for
 	  transmission. If the application tries to send more than this

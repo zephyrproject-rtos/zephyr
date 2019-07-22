@@ -811,7 +811,7 @@ struct bt_gatt_notify_params {
  *  @param conn Connection object.
  *  @param params Notification parameters.
  *
- *  @return 0 in case of success or negative value in case of error.
+ *  @return request id in case of success or negative value in case of error.
  */
 int bt_gatt_notify_cb(struct bt_conn *conn,
 		      struct bt_gatt_notify_params *params);
@@ -833,7 +833,7 @@ int bt_gatt_notify_cb(struct bt_conn *conn,
  *  @param data Pointer to Attribute data.
  *  @param len Attribute value length.
  *
- *  @return 0 in case of success or negative value in case of error.
+ *  @return request id in case of success or negative value in case of error.
  */
 static inline int bt_gatt_notify(struct bt_conn *conn,
 				 const struct bt_gatt_attr *attr,
@@ -865,7 +865,6 @@ typedef void (*bt_gatt_indicate_func_t)(struct bt_conn *conn,
 
 /** @brief GATT Indicate Value parameters */
 struct bt_gatt_indicate_params {
-	struct bt_att_req _req;
 	/** Indicate Attribute object*/
 	const struct bt_gatt_attr *attr;
 	/** Indicate Value callback */
@@ -882,13 +881,10 @@ struct bt_gatt_indicate_params {
  *  Note: This function should only be called if CCC is declared with
  *  BT_GATT_CCC otherwise it cannot find a valid peer configuration.
  *
- *  Note: This procedure is asynchronous therefore the parameters need to
- *  remains valid while it is active.
- *
  *  @param conn Connection object.
  *  @param params Indicate parameters.
  *
- *  @return 0 in case of success or negative value in case of error.
+ *  @return request id in case of success or negative value in case of error.
  */
 int bt_gatt_indicate(struct bt_conn *conn,
 		     struct bt_gatt_indicate_params *params);
@@ -914,7 +910,6 @@ u16_t bt_gatt_get_mtu(struct bt_conn *conn);
 
 /** @brief GATT Exchange MTU parameters */
 struct bt_gatt_exchange_params {
-	struct bt_att_req _req;
 	/** Response callback */
 	void (*func)(struct bt_conn *conn, u8_t err,
 		     struct bt_gatt_exchange_params *params);
@@ -930,7 +925,7 @@ struct bt_gatt_exchange_params {
  *  @param conn Connection object.
  *  @param params Exchange MTU parameters.
  *
- *  @return 0 in case of success or negative value in case of error.
+ *  @return request id in case of success or negative value in case of error.
  */
 int bt_gatt_exchange_mtu(struct bt_conn *conn,
 			 struct bt_gatt_exchange_params *params);
@@ -991,7 +986,6 @@ enum {
 
 /** @brief GATT Discover Attributes parameters */
 struct bt_gatt_discover_params {
-	struct bt_att_req _req;
 	/** Discover UUID type */
 	struct bt_uuid *uuid;
 	/** Discover attribute callback */
@@ -1031,13 +1025,10 @@ struct bt_gatt_discover_params {
  *  For each attribute found the callback is called which can then decide
  *  whether to continue discovering or stop.
  *
- *  Note: This procedure is asynchronous therefore the parameters need to
- *  remains valid while it is active.
- *
  *  @param conn Connection object.
  *  @param params Discover parameters.
  *
- *  @return 0 in case of success or negative value in case of error.
+ *  @return request id in case of success or negative value in case of error.
  */
 int bt_gatt_discover(struct bt_conn *conn,
 		     struct bt_gatt_discover_params *params);
@@ -1072,7 +1063,6 @@ typedef u8_t (*bt_gatt_read_func_t)(struct bt_conn *conn, u8_t err,
  *  @param uuid 2 or 16 octet UUID
  */
 struct bt_gatt_read_params {
-	struct bt_att_req _req;
 	bt_gatt_read_func_t func;
 	size_t handle_count;
 	union {
@@ -1101,13 +1091,10 @@ struct bt_gatt_read_params {
  *  caller will need to read the remaining data separately using the handle and
  *  offset.
  *
- *  Note: This procedure is asynchronous therefore the parameters need to
- *  remains valid while it is active.
- *
  *  @param conn Connection object.
  *  @param params Read parameters.
  *
- *  @return 0 in case of success or negative value in case of error.
+ *  @return request id in case of success or negative value in case of error.
  */
 int bt_gatt_read(struct bt_conn *conn, struct bt_gatt_read_params *params);
 
@@ -1125,7 +1112,6 @@ typedef void (*bt_gatt_write_func_t)(struct bt_conn *conn, u8_t err,
 
 /** @brief GATT Write parameters */
 struct bt_gatt_write_params {
-	struct bt_att_req _req;
 	/** Response callback */
 	bt_gatt_write_func_t func;
 	/** Attribute handle */
@@ -1143,13 +1129,10 @@ struct bt_gatt_write_params {
  * This procedure write the attribute value and return the result in the
  * callback.
  *
- * Note: This procedure is asynchronous therefore the parameters need to
- *  remains valid while it is active.
- *
  * @param conn Connection object.
  * @param params Write parameters.
  *
- * @return 0 in case of success or negative value in case of error.
+ * @return request id in case of success or negative value in case of error.
  */
 int bt_gatt_write(struct bt_conn *conn, struct bt_gatt_write_params *params);
 
@@ -1174,7 +1157,7 @@ int bt_gatt_write(struct bt_conn *conn, struct bt_gatt_write_params *params);
  * @param func Transmission complete callback.
  * @param user_data User data to be passed back to callback.
  *
- * @return 0 in case of success or negative value in case of error.
+ * @return request id in case of success or negative value in case of error.
  */
 int bt_gatt_write_without_response_cb(struct bt_conn *conn, u16_t handle,
 				      const void *data, u16_t length,
@@ -1192,7 +1175,7 @@ int bt_gatt_write_without_response_cb(struct bt_conn *conn, u16_t handle,
  * @param length Data length.
  * @param sign Whether to sign data
  *
- * @return 0 in case of success or negative value in case of error.
+ * @return request id in case of success or negative value in case of error.
  */
 static inline int bt_gatt_write_without_response(struct bt_conn *conn,
 						 u16_t handle, const void *data,
@@ -1232,7 +1215,6 @@ enum {
 
 /** @brief GATT Subscribe parameters */
 struct bt_gatt_subscribe_params {
-	struct bt_att_req _req;
 	bt_addr_le_t _peer;
 	/** Notification value callback */
 	bt_gatt_notify_func_t notify;
@@ -1244,6 +1226,7 @@ struct bt_gatt_subscribe_params {
 	u16_t value;
 	/** Subscription flags */
 	u8_t flags;
+	sys_snode_t *pnode;
 	sys_snode_t node;
 };
 
@@ -1256,13 +1239,10 @@ struct bt_gatt_subscribe_params {
  *  this callback. Notification callback with NULL data will not be called if
  *  subscription was removed by this method.
  *
- *  Note: This procedure is asynchronous therefore the parameters need to
- *  remains valid while it is active.
- *
  *  @param conn Connection object.
  *  @param params Subscribe parameters.
  *
- *  @return 0 in case of success or negative value in case of error.
+ *  @return request id in case of success or negative value in case of error.
  */
 int bt_gatt_subscribe(struct bt_conn *conn,
 		      struct bt_gatt_subscribe_params *params);
@@ -1277,7 +1257,7 @@ int bt_gatt_subscribe(struct bt_conn *conn,
  * @param conn Connection object.
  * @param params Subscribe parameters.
  *
- * @return 0 in case of success or negative value in case of error.
+ * @return request id in case of success or negative value in case of error.
  */
 int bt_gatt_unsubscribe(struct bt_conn *conn,
 			struct bt_gatt_subscribe_params *params);
@@ -1287,7 +1267,7 @@ int bt_gatt_unsubscribe(struct bt_conn *conn,
  *  @param conn Connection object.
  *  @param params Requested params address.
  */
-void bt_gatt_cancel(struct bt_conn *conn, void *params);
+void bt_gatt_cancel(struct bt_conn *conn, int id);
 
 /** @} */
 

@@ -48,18 +48,6 @@ typedef void (*bt_att_func_t)(struct bt_conn *conn, u8_t err,
 			      void *user_data);
 typedef void (*bt_att_destroy_t)(void *user_data);
 
-/* ATT request context */
-struct bt_att_req {
-	sys_snode_t node;
-	bt_att_func_t func;
-	bt_att_destroy_t destroy;
-	struct net_buf_simple_state state;
-	struct net_buf *buf;
-#if defined(CONFIG_BT_SMP)
-	bool retrying;
-#endif /* CONFIG_BT_SMP */
-};
-
 #ifdef __cplusplus
 }
 #endif

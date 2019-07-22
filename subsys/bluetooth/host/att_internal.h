@@ -236,6 +236,21 @@ struct bt_att_signed_write_cmd {
 	u8_t  value[0];
 } __packed;
 
+/* ATT request context */
+struct bt_att_req {
+	sys_snode_t node;
+	struct k_mem_block_id id;
+	bt_att_func_t func;
+	bt_att_destroy_t destroy;
+	struct net_buf_simple_state state;
+	struct net_buf *buf;
+#if defined(CONFIG_BT_SMP)
+	bool retrying;
+#endif /* CONFIG_BT_SMP */
+	size_t size;
+	u8_t params[0];
+};
+
 void bt_att_init(void);
 u16_t bt_att_get_mtu(struct bt_conn *conn);
 struct net_buf *bt_att_create_pdu(struct bt_conn *conn, u8_t op,
@@ -244,6 +259,12 @@ struct net_buf *bt_att_create_pdu(struct bt_conn *conn, u8_t op,
 /* Send ATT PDU over a connection */
 int bt_att_send(struct bt_conn *conn, struct net_buf *buf, bt_conn_tx_cb_t cb,
 		void *user_data);
+
+/* Allocate a new request */
+struct bt_att_req *bt_att_req_alloc(size_t params_size, s32_t timeout);
+
+/* Free a new request */
+void bt_att_req_free(struct bt_att_req *req);
 
 /* Send ATT Request over a connection */
 int bt_att_req_send(struct bt_conn *conn, struct bt_att_req *req);
