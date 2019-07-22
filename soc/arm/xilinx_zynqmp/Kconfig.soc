@@ -1,0 +1,10 @@
+# Copyright (c) 2019 Lexmark International, Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+config SOC_XILINX_ZYNQMP
+	bool "Xilinx ZynqMP"
+	select CPU_CORTEX_R5
+	select GIC
+	select MULTI_LEVEL_INTERRUPTS
+	select 2ND_LEVEL_INTERRUPTS

@@ -188,6 +188,7 @@
 /dts/riscv/riscv32-fe310.dtsi             @nategraff-sifive
 /dts/riscv/riscv32-litex-vexriscv.dtsi    @mateusz-holenko @kgugala @pgielda
 /dts/arm/armv7-r.dtsi                     @bbolen
+/dts/arm/xilinx/                          @bbolen
 /dts/xtensa/xtensa.dtsi                   @ydamigos
 /dts/bindings/                            @galak
 /dts/bindings/can/                        @alexanderwachter

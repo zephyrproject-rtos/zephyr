@@ -1,0 +1,35 @@
+# Copyright (c) 2019 Lexmark International, Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_XILINX_ZYNQMP
+
+config SOC
+	default "xilinx_zynqmp"
+
+config NUM_IRQS
+	int
+	# must be >= the highest interrupt number used
+	# - include the UART interrupts
+	default 220
+
+config 2ND_LVL_ISR_TBL_OFFSET
+	default 1
+
+config MAX_IRQ_PER_AGGREGATOR
+	default 219
+
+config NUM_2ND_LEVEL_AGGREGATORS
+	default 1
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	int
+	default 12000000
+
+config FLASH_SIZE
+	default $(dt_int_val,DT_FLASH_SIZE)
+
+config FLASH_BASE_ADDRESS
+	default $(dt_hex_val,DT_FLASH_BASE_ADDRESS)
+
+endif
