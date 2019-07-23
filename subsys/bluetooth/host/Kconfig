@@ -179,6 +179,13 @@ endif # BT_SETTINGS
 
 if BT_CONN
 
+config BT_CONN_LOOPBACK
+	bool "Enable loopback connection"
+	default y if TEST
+	help
+	  This option enabled loopback connection which when used loopback back
+	  any buffer sent.
+
 if BT_HCI_ACL_FLOW_CONTROL
 config BT_ACL_RX_COUNT
 	int "Number of incoming ACL data buffers"

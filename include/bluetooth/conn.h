@@ -120,6 +120,7 @@ enum {
 	BT_CONN_TYPE_BR,
 	/** SCO Connection Type */
 	BT_CONN_TYPE_SCO,
+	BT_CONN_TYPE_LOOPBACK,
 };
 
 /** LE Connection Info Structure */

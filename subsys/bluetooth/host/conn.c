@@ -1198,6 +1198,17 @@ int bt_conn_send_cb(struct bt_conn *conn, struct net_buf *buf,
 	conn_tx(buf)->cb = cb;
 	conn_tx(buf)->user_data = user_data;
 
+	if (IS_ENABLED(CONFIG_BT_CONN_LOOPBACK) &&
+	    conn->type == BT_CONN_TYPE_LOOPBACK) {
+		/* Complete packet if cb is set */
+		if (cb) {
+			cb(conn, user_data);
+		}
+		/* Push buffer back */
+		bt_conn_recv(conn, buf, BT_ACL_START);
+		return 0;
+	}
+
 	net_buf_put(&conn->tx_queue, buf);
 	return 0;
 }
@@ -1496,7 +1507,12 @@ struct bt_conn *bt_conn_add_le(const bt_addr_le_t *peer)
 	conn->sec_level = BT_SECURITY_LOW;
 	conn->required_sec_level = BT_SECURITY_LOW;
 #endif /* CONFIG_BT_SMP */
-	conn->type = BT_CONN_TYPE_LE;
+	if (IS_ENABLED(CONFIG_BT_CONN_LOOPBACK) &&
+	    !bt_addr_cmp(&peer->a, BT_ADDR_NONE)) {
+		conn->type = BT_CONN_TYPE_LOOPBACK;
+	} else {
+		conn->type = BT_CONN_TYPE_LE;
+	}
 	conn->le.interval_min = BT_GAP_INIT_CONN_INT_MIN;
 	conn->le.interval_max = BT_GAP_INIT_CONN_INT_MAX;
 	k_delayed_work_init(&conn->le.update_work, conn_le_update_timeout);
@@ -1712,7 +1728,9 @@ struct bt_conn *bt_conn_lookup_addr_le(u8_t id, const bt_addr_le_t *peer)
 			continue;
 		}
 
-		if (conns[i].type != BT_CONN_TYPE_LE) {
+		if (conns[i].type != BT_CONN_TYPE_LE &&
+		    (IS_ENABLED(CONFIG_BT_CONN_LOOPBACK) &&
+		    conns[i].type != BT_CONN_TYPE_LOOPBACK)) {
 			continue;
 		}
 
@@ -1954,7 +1972,8 @@ struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer,
 {
 	struct bt_conn *conn;
 
-	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
+	if (!IS_ENABLED(CONFIG_BT_CONN_LOOPBACK) &&
+	    !atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
 		return NULL;
 	}
 
@@ -1993,6 +2012,13 @@ struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer,
 	bt_addr_le_copy(&conn->le.resp_addr, peer);
 
 	bt_conn_set_param_le(conn, param);
+
+	/* If loopback mark as set state as connected */
+	if (IS_ENABLED(CONFIG_BT_CONN_LOOPBACK) &&
+	    conn->type == BT_CONN_TYPE_LOOPBACK) {
+		bt_conn_set_state(conn, BT_CONN_CONNECTED);
+		return conn;
+	}
 
 	bt_conn_set_state(conn, BT_CONN_CONNECT_SCAN);
 
