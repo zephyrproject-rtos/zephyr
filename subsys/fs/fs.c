@@ -25,8 +25,8 @@ static struct k_mutex mutex;
 /* file system map table */
 static struct fs_file_system_t *fs_map[FS_TYPE_END];
 
-int fs_get_mnt_point(struct fs_mount_t **mnt_pntp,
-		     const char *name, size_t *match_len)
+static int fs_get_mnt_point(struct fs_mount_t **mnt_pntp,
+			    const char *name, size_t *match_len)
 {
 	struct fs_mount_t *mnt_p = NULL, *itr;
 	size_t longest_match = 0;
