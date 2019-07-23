@@ -46,6 +46,7 @@ config X86_LONGMODE
 	bool
 	prompt "Run in long (64-bit) mode"
 	default n
+	select 64BIT
 
 config MAX_IRQ_LINES
 	int "Number of IRQ lines"
