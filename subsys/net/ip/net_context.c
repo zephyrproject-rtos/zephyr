@@ -1268,7 +1268,8 @@ static int context_sendto(struct net_context *context,
 
 	if (IS_ENABLED(CONFIG_NET_IPV6) &&
 	    net_context_get_family(context) == AF_INET6) {
-		struct sockaddr_in6 *addr6 = (struct sockaddr_in6 *)dst_addr;
+		const struct sockaddr_in6 *addr6 =
+			(const struct sockaddr_in6 *)dst_addr;
 
 		if (addrlen < sizeof(struct sockaddr_in6)) {
 			return -EINVAL;
@@ -1279,7 +1280,8 @@ static int context_sendto(struct net_context *context,
 		}
 	} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
 		   net_context_get_family(context) == AF_INET) {
-		struct sockaddr_in *addr4 = (struct sockaddr_in *)dst_addr;
+		const struct sockaddr_in *addr4 =
+			(const struct sockaddr_in *)dst_addr;
 
 		if (addrlen < sizeof(struct sockaddr_in)) {
 			return -EINVAL;
