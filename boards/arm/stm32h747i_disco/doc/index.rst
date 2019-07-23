@@ -34,9 +34,9 @@ Additionally, the board features:
 - Arduino Uno V3 connectors
 
 .. image:: img/stm32h747i_disco.jpg
-     :width: 2362px
+     :width: 472px
      :align: center
-     :height: 1763px
+     :height: 352px
      :alt: STM32H747I-DISCO
 
 More information about the board can be found at the `STM32H747I-DISCO website`_.
