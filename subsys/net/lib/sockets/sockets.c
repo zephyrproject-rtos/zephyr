@@ -1119,7 +1119,8 @@ Z_SYSCALL_HANDLER(zsock_getsockopt, sock, level, optname, optval, optlen)
 		return -1;
 	}
 
-	kernel_optval = z_thread_malloc(kernel_optlen);
+	kernel_optval = z_user_alloc_from_copy((const void *)optval,
+					       kernel_optlen);
 	Z_OOPS(!kernel_optval);
 
 	ret = z_impl_zsock_getsockopt(sock, level, optname,
