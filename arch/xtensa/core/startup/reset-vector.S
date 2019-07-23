@@ -597,9 +597,12 @@ unpackdone:
 	 *  it is not VECBASE relative) to have the same memory error vector,
 	 *  yet each have their own handler and associated data save area.
 	 */
+#ifndef CONFIG_SOC_INTEL_APL_ADSP
+	/* FIXME: skip this for now, as WSR raises exception on APL ADSP */
 #if XCHAL_HAVE_MEM_ECC_PARITY
 	movi	a4, _MemErrorHandler
 	wsr	a4, MESAVE
+#endif
 #endif
 
 

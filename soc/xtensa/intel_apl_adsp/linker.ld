@@ -32,12 +32,14 @@ PROVIDE(_MemErrorHandler = 0x00000000);
 
 MEMORY
 {
+#ifndef CONFIG_USE_SOF_BOOT_LDR
   vector_reset_text :
         org = XCHAL_RESET_VECTOR0_PADDR_SRAM,
         len = MEM_RESET_TEXT_SIZE
   vector_reset_lit :
         org = XCHAL_RESET_VECTOR0_PADDR_SRAM + MEM_RESET_TEXT_SIZE,
         len = MEM_RESET_LIT_SIZE
+#endif
   vector_memory_lit :
 	org = XCHAL_MEMERROR_VECTOR_PADDR + MEM_ERROR_LIT_SIZE,
         len = MEM_ERROR_LIT_SIZE
@@ -116,8 +118,10 @@ MEMORY
 
 PHDRS
 {
+#ifndef CONFIG_USE_SOF_BOOT_LDR
   vector_reset_text_phdr PT_LOAD;
   vector_reset_lit_phdr PT_LOAD;
+#endif
   vector_memory_lit_phdr PT_LOAD;
   vector_memory_text_phdr PT_LOAD;
   vector_base_text_phdr PT_LOAD;
@@ -189,6 +193,7 @@ SECTIONS
 
 #include <linker/rel-sections.ld>
 
+#ifndef CONFIG_USE_SOF_BOOT_LDR
   .ResetVector.text : ALIGN(4)
   {
     . = CONFIG_TEXT_SECTION_OFFSET;
@@ -202,6 +207,8 @@ SECTIONS
     *(.ResetVector.literal)
     _ResetVector_literal_end = ABSOLUTE(.);
   } >vector_reset_lit :vector_reset_lit_phdr
+#endif
+
  .MemoryExceptionVector.literal : ALIGN(4)
   {
     _MemoryExceptionVector_literal_start = ABSOLUTE(.);
@@ -334,7 +341,11 @@ SECTIONS
     _stext = .;
     _text_start = ABSOLUTE(.);
     KEEP(*(.MainEntry.text))
-    KEEP(*(.MainEntry.literal))
+    *(.MainEntry.literal)
+#ifdef CONFIG_USE_SOF_BOOT_LDR
+    KEEP (*(.ResetVector.text))
+    *(.ResetVector.literal)
+#endif
     *(.entry.text)
     *(.init.literal)
     *(.iram0.text)

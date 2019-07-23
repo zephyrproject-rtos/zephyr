@@ -3,3 +3,14 @@
 
 config SOC_INTEL_APL_ADSP
 	bool "intel_apl_adsp"
+
+if SOC_INTEL_APL_ADSP
+
+config USE_SOF_BOOT_LDR
+	bool "Use SOF Bootloader"
+	select XTENSA_RESET_VECTOR
+	select XTENSA_USE_CORE_CRT1
+	help
+	  Set y if being bootstrapped with SOF bootloader.
+
+endif
