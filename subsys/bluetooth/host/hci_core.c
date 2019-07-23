@@ -5516,17 +5516,14 @@ int bt_le_adv_start_internal(const struct bt_le_adv_param *param,
 		return err;
 	}
 
-	if (!(param->options & BT_LE_ADV_OPT_ONE_TIME)) {
-		atomic_set_bit(bt_dev.flags, BT_DEV_KEEP_ADVERTISING);
-	}
+	atomic_set_bit_to(bt_dev.flags, BT_DEV_KEEP_ADVERTISING,
+			  !(param->options & BT_LE_ADV_OPT_ONE_TIME));
 
-	if (param->options & BT_LE_ADV_OPT_USE_NAME) {
-		atomic_set_bit(bt_dev.flags, BT_DEV_ADVERTISING_NAME);
-	}
+	atomic_set_bit_to(bt_dev.flags, BT_DEV_ADVERTISING_NAME,
+			  param->options & BT_LE_ADV_OPT_USE_NAME);
 
-	if (param->options & BT_LE_ADV_OPT_CONNECTABLE) {
-		atomic_set_bit(bt_dev.flags, BT_DEV_ADVERTISING_CONNECTABLE);
-	}
+	atomic_set_bit_to(bt_dev.flags, BT_DEV_ADVERTISING_CONNECTABLE,
+			  param->options & BT_LE_ADV_OPT_CONNECTABLE);
 
 	return 0;
 }
