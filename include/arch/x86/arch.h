@@ -137,6 +137,65 @@ static ALWAYS_INLINE u32_t sys_read32(mm_reg_t addr)
 	return ret;
 }
 
+static ALWAYS_INLINE void sys_set_bit(mem_addr_t addr, unsigned int bit)
+{
+	__asm__ volatile("btsl	%1, %0;\n\t"
+			 : "+m" (*(volatile u32_t *) (addr))
+			 : "Ir" (bit)
+			 : "memory");
+}
+
+static ALWAYS_INLINE void sys_clear_bit(mem_addr_t addr, unsigned int bit)
+{
+	__asm__ volatile("btrl	%1, %0;\n\t"
+			 : "+m" (*(volatile u32_t *) (addr))
+			 : "Ir" (bit));
+}
+
+static ALWAYS_INLINE int sys_test_bit(mem_addr_t addr, unsigned int bit)
+{
+	int ret;
+
+	__asm__ volatile("btl	%2, %1;\n\t"
+			 "sbb	%0, %0\n\t"
+			 : "=r" (ret), "+m" (*(volatile u32_t *) (addr))
+			 : "Ir" (bit));
+
+	return ret;
+}
+
+static ALWAYS_INLINE int sys_test_and_set_bit(mem_addr_t addr,
+					      unsigned int bit)
+{
+	int ret;
+
+	__asm__ volatile("btsl	%2, %1;\n\t"
+			 "sbb	%0, %0\n\t"
+			 : "=r" (ret), "+m" (*(volatile u32_t *) (addr))
+			 : "Ir" (bit));
+
+	return ret;
+}
+
+static ALWAYS_INLINE int sys_test_and_clear_bit(mem_addr_t addr,
+						unsigned int bit)
+{
+	int ret;
+
+	__asm__ volatile("btrl	%2, %1;\n\t"
+			 "sbb	%0, %0\n\t"
+			 : "=r" (ret), "+m" (*(volatile u32_t *) (addr))
+			 : "Ir" (bit));
+
+	return ret;
+}
+
+#define sys_bitfield_set_bit sys_set_bit
+#define sys_bitfield_clear_bit sys_clear_bit
+#define sys_bitfield_test_bit sys_test_bit
+#define sys_bitfield_test_and_set_bit sys_test_and_set_bit
+#define sys_bitfield_test_and_clear_bit sys_test_and_clear_bit
+
 /*
  * Map of IRQ numbers to their assigned vectors. On IA32, this is generated
  * at build time and defined via the linker script. On Intel64, it's an array.
