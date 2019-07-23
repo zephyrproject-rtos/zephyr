@@ -195,6 +195,7 @@ struct _k_object_assignment {
 #define K_OBJ_FLAG_INITIALIZED	BIT(0)
 #define K_OBJ_FLAG_PUBLIC	BIT(1)
 #define K_OBJ_FLAG_ALLOC	BIT(2)
+#define K_OBJ_FLAG_DRIVER	BIT(3)
 
 /**
  * Lookup a kernel object and init its metadata if it exists
