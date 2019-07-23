@@ -756,7 +756,7 @@ static void smp_pairing_br_complete(struct bt_smp_br *smp, u8_t status)
 		}
 
 		if (bt_auth && bt_auth->pairing_failed) {
-			bt_auth->pairing_failed(smp->chan.chan.conn);
+			bt_auth->pairing_failed(smp->chan.chan.conn, status);
 		}
 	} else {
 		bool bond_flag = atomic_test_bit(smp->flags, SMP_FLAG_BOND);
@@ -1555,7 +1555,7 @@ static void smp_pairing_complete(struct bt_smp *smp, u8_t status)
 						  bond_flag);
 		}
 	} else if (bt_auth && bt_auth->pairing_failed) {
-		bt_auth->pairing_failed(smp->chan.chan.conn);
+		bt_auth->pairing_failed(smp->chan.chan.conn, status);
 	}
 
 	smp_reset(smp);

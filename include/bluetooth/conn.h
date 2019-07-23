@@ -672,8 +672,9 @@ struct bt_conn_auth_cb {
 	/** @brief notify that pairing process has failed.
 	 *
 	 * @param conn Connection object.
+	 * @param reason SMP reason for the failure.
 	 */
-	void (*pairing_failed)(struct bt_conn *conn);
+	void (*pairing_failed)(struct bt_conn *conn, u8_t reason);
 };
 
 /** @brief Register authentication callbacks.
