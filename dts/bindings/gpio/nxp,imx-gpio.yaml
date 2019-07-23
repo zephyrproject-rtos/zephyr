@@ -17,17 +17,17 @@ properties:
       constraint: "nxp,imx-gpio"
 
     reg:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true
 
     label:
-      category: required
+      required: true
 
     rdc:
      type: int
-     category: optional
+     required: false
      description: Set the RDC permission for this peripheral
 
 "#cells":

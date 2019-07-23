@@ -17,7 +17,7 @@ properties:
       constraint: "nxp,kinetis-adc16"
 
     reg:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true

@@ -18,24 +18,24 @@ properties:
 
     vreg-en-gpios:
       type: compound
-      category: optional
+      required: false
 
     reset-gpios:
       type: compound
-      category: optional
+      required: false
 
     fifo-gpios:
       type: compound
-      category: optional
+      required: false
 
     cca-gpios:
       type: compound
-      category: optional
+      required: false
 
     sfd-gpios:
       type: compound
-      category: optional
+      required: false
 
     fifop-gpios:
       type: compound
-      category: optional
+      required: false

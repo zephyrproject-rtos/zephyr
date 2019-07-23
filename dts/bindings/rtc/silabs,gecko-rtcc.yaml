@@ -17,4 +17,4 @@ properties:
       constraint: "silabs,gecko-rtcc"
 
     reg:
-      category: required
+      required: true

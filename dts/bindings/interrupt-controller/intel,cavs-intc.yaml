@@ -11,10 +11,10 @@ properties:
       constraint: "intel,cavs-intc"
 
   reg:
-      category: required
+      required: true
 
   interrupts:
-      category: required
+      required: true
 
 "#cells":
   - irq

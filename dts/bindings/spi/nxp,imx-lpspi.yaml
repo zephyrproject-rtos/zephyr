@@ -17,10 +17,10 @@ properties:
       constraint: "nxp,imx-lpspi"
 
     reg:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true
 
     clocks:
-      category: required
+      required: true

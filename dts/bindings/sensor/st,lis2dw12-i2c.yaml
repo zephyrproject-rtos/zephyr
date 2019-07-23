@@ -18,4 +18,4 @@ properties:
 
     irq-gpios:
       type: compound
-      category: required
+      required: true

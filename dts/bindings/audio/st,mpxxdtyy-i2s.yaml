@@ -16,4 +16,4 @@ properties:
     compatible:
       constraint: "st,mpxxdtyy"
     label:
-      category: required
+      required: true

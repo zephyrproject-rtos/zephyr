@@ -13,15 +13,15 @@ properties:
     compatible:
       constraint: "gpio-keys"
       type: string-array
-      category: required
+      required: true
       description: compatible strings
 
 sub-node:
     properties:
        gpios:
           type: compound
-          category: required
+          required: true
        label:
-          category: required
+          required: true
           type: string
           description: Human readable string describing the device (used by Zephyr for API name)

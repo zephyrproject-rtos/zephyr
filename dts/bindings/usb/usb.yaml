@@ -15,7 +15,7 @@ inherits:
 properties:
     maximum-speed:
       type: string
-      category: optional
+      required: false
       description: Configures USB controllers to work up to a specific
                    speed. Valid arguments are "super-speed", "high-speed",
                    "full-speed" and "low-speed". If this is not passed
@@ -28,4 +28,4 @@ properties:
          - "super-speed"
 
     label:
-      category: required
+      required: true

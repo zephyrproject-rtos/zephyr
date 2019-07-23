@@ -11,11 +11,11 @@ properties:
       constraint: "st,stm32-rcc"
 
     reg:
-      category: required
+      required: true
 
     "#clock-cells":
       type: int
-      category: required
+      required: true
       description: should be 2.
 
 "#cells":

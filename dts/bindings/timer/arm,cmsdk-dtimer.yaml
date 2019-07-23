@@ -11,10 +11,10 @@ properties:
       constraint: "arm,cmsdk-dtimer"
 
     reg:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true
 
     label:
-      category: required
+      required: true

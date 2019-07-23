@@ -14,4 +14,4 @@ inherits:
 
 properties:
     label:
-      category: required
+      required: true

@@ -9,21 +9,21 @@ inherits:
 properties:
     "#address-cells":
       type: int
-      category: required
+      required: true
       description: should be 1.
     "#size-cells":
       type: int
-      category: required
+      required: true
       description: should be 0.
 
     compatible:
       constraint: "st,stm32-timers"
 
     label:
-      category: required
+      required: true
 
     reg:
-      category: required
+      required: true
 
     clocks:
-      category: required
+      required: true

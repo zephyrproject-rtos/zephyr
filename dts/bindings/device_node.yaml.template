@@ -30,14 +30,14 @@ sub-node:
     properties:
         pwms:
           type: compound
-          category: required
+          required: true
 
 properties:
 
 # A typical property entry looks like this:
 #
 #   <name of the property in the device tree - regexes are supported>:
-#     category: <required | optional>
+#     required: <true | false>
 #     type: <string | int | boolean | array | uint8-array | string-array | compound>
 #     description: <description of property>
 #
@@ -50,19 +50,19 @@ properties:
 # At a minimum, an entry for the 'compatible' property is required, for
 # matching nodes
     compatible: <list of string compatible matches>
-      category: required
+      required: true
       type: string
       description: compatible of node
 
 # 'reg' describes mmio registers
     reg:
-      category: required
+      required: true
       type: array
       description: mmio register space
 
 # 'interrupts' specifies the interrupts that the driver may use
     interrupts:
-      category: required
+      required: true
       type: array
       description: required interrupts
 

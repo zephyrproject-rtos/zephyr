@@ -18,10 +18,10 @@ properties:
       constraint: "st,stm32-adc"
 
     reg:
-      category: required
+      required: true
 
     clocks:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true

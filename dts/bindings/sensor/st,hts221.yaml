@@ -19,5 +19,5 @@ properties:
 
     drdy-gpios:
       type: compound
-      category: optional
+      required: false
       description: DRDY pin

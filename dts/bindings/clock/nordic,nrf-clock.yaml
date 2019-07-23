@@ -17,10 +17,10 @@ properties:
       constraint: "nordic,nrf-clock"
 
     label:
-      category: required
+      required: true
 
     reg:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true

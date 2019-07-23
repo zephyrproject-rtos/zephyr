@@ -17,4 +17,4 @@ properties:
       constraint: "microchip,mcp2515"
     int-gpios:
       type: compound
-      category: required
+      required: true

@@ -12,7 +12,7 @@ properties:
       constraint: "intel,ioapic"
 
   reg:
-      category: required
+      required: true
 
 "#cells":
   - irq

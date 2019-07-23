@@ -18,8 +18,8 @@ properties:
 
     irqb-gpios:
       type: compound
-      category: required
+      required: true
 
     reset-gpios:
       type: compound
-      category: required
+      required: true

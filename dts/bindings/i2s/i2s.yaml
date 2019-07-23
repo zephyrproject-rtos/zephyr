@@ -18,11 +18,11 @@ child:
 properties:
     "#address-cells":
       type: int
-      category: required
+      required: true
       description: should be 1.
     "#size-cells":
       type: int
-      category: required
+      required: true
       description: should be 0.
     label:
-      category: required
+      required: true

@@ -17,12 +17,12 @@ properties:
       constraint: "vexriscv,intc0"
 
   reg:
-      category: required
+      required: true
 
   riscv,max-priority:
       type: int
       description: maximum interrupt priority
-      category: required
+      required: true
 
 "#cells":
   - irq

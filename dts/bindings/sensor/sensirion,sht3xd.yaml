@@ -18,5 +18,5 @@ properties:
       constraint: "sensirion,sht3xd"
     alert-gpios:
       type: compound
-      category: optional
+      required: false
       description: ALERT pin

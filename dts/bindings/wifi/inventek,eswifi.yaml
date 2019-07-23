@@ -18,16 +18,16 @@ properties:
 
     resetn-gpios:
       type: compound
-      category: required
+      required: true
 
     data-gpios:
       type: compound
-      category: required
+      required: true
 
     wakeup-gpios:
       type: compound
-      category: optional
+      required: false
 
     boot0-gpios:
       type: compound
-      category: optional
+      required: false

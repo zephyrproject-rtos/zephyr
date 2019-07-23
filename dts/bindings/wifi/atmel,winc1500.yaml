@@ -18,12 +18,12 @@ properties:
 
     irq-gpios:
       type: compound
-      category: required
+      required: true
 
     reset-gpios:
       type: compound
-      category: required
+      required: true
 
     enable-gpios:
       type: compound
-      category: required
+      required: true

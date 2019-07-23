@@ -23,23 +23,23 @@ properties:
 
   has-be32k:
     type: boolean
-    category: optional
+    required: false
     description: Indicates the device supports the BE32K command
 
   size:
     type: int
-    category: optional
+    required: false
     description: flash capacity in bits
 
   wp-gpios:
     type: compound
-    category: optional
+    required: false
     description: WPn pin
   hold-gpios:
     type: compound
-    category: optional
+    required: false
     description: HOLDn pin
   reset-gpios:
     type: compound
-    category: optional
+    required: false
     description: RESETn pin

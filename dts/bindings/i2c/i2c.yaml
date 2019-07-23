@@ -18,15 +18,15 @@ child:
 properties:
     "#address-cells":
       type: int
-      category: required
+      required: true
       description: should be 1.
     "#size-cells":
       type: int
-      category: required
+      required: true
       description: should be 0.
     clock-frequency :
       type: int
-      category: optional
+      required: false
       description: Initial clock frequency in Hz
     label:
-      category: required
+      required: true

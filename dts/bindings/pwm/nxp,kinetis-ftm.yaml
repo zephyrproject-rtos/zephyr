@@ -17,10 +17,10 @@ properties:
       constraint: "nxp,kinetis-ftm"
 
     reg:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true
 
 "#cells":
   - channel

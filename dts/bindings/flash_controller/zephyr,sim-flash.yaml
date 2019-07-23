@@ -13,4 +13,4 @@ properties:
       constraint: "zephyr,sim-flash"
 
     label:
-      category: required
+      required: true

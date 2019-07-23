@@ -17,12 +17,12 @@ properties:
       constraint: "ublox,sara-r4"
 
     label:
-      category: required
+      required: true
 
     mdm-power-gpios:
       type: compound
-      category: required
+      required: true
 
     mdm-reset-gpios:
       type: compound
-      category: required
+      required: true

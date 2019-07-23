@@ -12,7 +12,7 @@ properties:
       constraint: "intel,s1000-pinmux"
 
     reg:
-      category: required
+      required: true
 
 "#cells":
   - pin

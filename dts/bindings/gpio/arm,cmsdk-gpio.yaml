@@ -11,7 +11,7 @@ properties:
       constraint: "arm,cmsdk-gpio"
 
     reg:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true

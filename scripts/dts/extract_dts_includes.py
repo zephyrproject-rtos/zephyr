@@ -204,10 +204,9 @@ def merge_properties(parent, fname, to_dict, from_dict):
                 # ...unless it's the 'title', 'description', or 'version'
                 # property. These are overridden deliberately.
                 not k in {'title', 'version', 'description'} and
-                # Also allow the category to be changed from 'optional' to
-                # 'required' without a warning
-                not (k == "category" and to_dict[k] == "optional" and
-                     from_dict[k] == "required")):
+                # Also allow 'required' to be changed from false to true
+                # without a warning
+                not (k == "required" and not to_dict[k] and from_dict[k])):
 
                 print("extract_dts_includes.py: {}('{}') merge of property "
                       "'{}': '{}' overwrites '{}'"
@@ -247,6 +246,15 @@ def check_binding_properties(node):
     if 'id' in node:
         print("extract_dts_includes.py: WARNING: id field set "
               "in '{}', should be removed.".format(node['title']))
+
+    if 'properties' in node:
+        for prop_name, keys in node['properties'].items():
+            if 'category' in keys:
+                print("extract_dts_includes.py: WARNING: please replace "
+                      "'category: required/optional' with "
+                      "'required: true/false' in the settings for the "
+                      "property '{}' in the binding titled '{}'"
+                      .format(prop_name, node['title']))
 
 
 def define_str(name, value, value_tabs, is_deprecated=False):

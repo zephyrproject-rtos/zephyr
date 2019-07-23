@@ -12,7 +12,7 @@ properties:
       constraint: "ti,cc2650-gpio"
 
     reg:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true

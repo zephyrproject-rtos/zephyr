@@ -17,13 +17,13 @@ properties:
       constraint: "st,stm32-gpio"
 
     reg:
-      category: required
+      required: true
 
     label:
-      category: required
+      required: true
 
     clocks:
-      category: required
+      required: true
 
 "#cells":
   - pin

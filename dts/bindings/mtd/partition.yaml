@@ -7,21 +7,21 @@ properties:
     compatible:
       constraint: "fixed-partitions"
       type: string-array
-      category: required
+      required: true
       description: compatible strings
 
 sub-node:
     properties:
        label:
-          category: required
+          required: true
           type: string
-          category: optional
+          required: false
           description: Human readable string describing the device (used by Zephyr for API name)
        read-only:
           type: boolean
-          category: optional
+          required: false
           description: if the partition is read-only or not
        reg:
           type: array
           description: register space
-          category: required
+          required: true

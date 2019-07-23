@@ -17,7 +17,7 @@ properties:
       constraint: "st,stm32-i2s"
 
     reg:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true

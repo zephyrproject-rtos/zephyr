@@ -17,19 +17,19 @@ properties:
       constraint: "fsl,imx7d-pwm"
 
     reg:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true
 
     prescaler:
      type: int
-     category: required
+     required: true
      description: Set the PWM prescale between 0 and 4096
 
     rdc:
      type: int
-     category: required
+     required: true
      description: Set the RDC permission for this peripheral
 
 "#cells":

@@ -18,8 +18,8 @@ properties:
 
     reset-gpios:
       type: compound
-      category: required
+      required: true
 
     cmd-data-gpios:
       type: compound
-      category: required
+      required: true

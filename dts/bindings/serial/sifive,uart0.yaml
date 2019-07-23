@@ -17,7 +17,7 @@ properties:
       constraint: "sifive,uart0"
 
     reg:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true

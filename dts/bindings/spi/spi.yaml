@@ -18,18 +18,18 @@ child:
 properties:
     clock-frequency:
       type: int
-      category: optional
+      required: false
       description: Clock frequency the SPI peripheral is being driven at
     "#address-cells":
       type: int
-      category: required
+      required: true
       description: should be 1.
     "#size-cells":
       type: int
-      category: required
+      required: true
       description: should be 0.
     label:
-      category: required
+      required: true
     cs-gpios:
       type: compound
-      category: optional
+      required: false

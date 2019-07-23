@@ -16,4 +16,4 @@ properties:
       constraint: "microchip,enc28j60"
     int-gpios:
       type: compound
-      category: required
+      required: true

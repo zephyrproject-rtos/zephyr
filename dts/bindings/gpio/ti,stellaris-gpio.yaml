@@ -12,13 +12,13 @@ properties:
       constraint: "ti,stellaris-gpio"
 
     reg:
-      category: required
+      required: true
 
     label:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true
 
 "#cells":
   - pin

@@ -17,24 +17,24 @@ properties:
       constraint: "nxp,kinetis-sim"
 
     reg:
-      category: required
+      required: true
 
     label:
-      category: required
+      required: true
 
     clkout-source:
       type: int
-      category: optional
+      required: false
       description: clkout clock source
 
     clkout-divider:
       type: int
-      category: optional
+      required: false
       description: clkout divider
 
     "#clock-cells":
       type: int
-      category: required
+      required: true
       description: should be 3.
 
 "#cells":

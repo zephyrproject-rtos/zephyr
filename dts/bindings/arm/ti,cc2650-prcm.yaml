@@ -13,4 +13,4 @@ properties:
       constraint: "ti,cc2650-prcm"
 
     reg:
-      category: required
+      required: true
