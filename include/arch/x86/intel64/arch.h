@@ -13,15 +13,17 @@
 
 #ifndef _ASMLANGUAGE
 
+#define Z_ARCH_THREAD_STACK_LEN(size) (ROUND_UP((size), STACK_SIZE_ALIGN))
+
 #define Z_ARCH_THREAD_STACK_DEFINE(sym, size) \
 	struct _k_thread_stack_element __noinit \
 		__aligned(STACK_ALIGN) \
-		sym[ROUND_UP((size), STACK_SIZE_ALIGN)]
+		sym[Z_ARCH_THREAD_STACK_LEN(size)]
 
 #define Z_ARCH_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size) \
 	struct _k_thread_stack_element __noinit \
 		__aligned(STACK_ALIGN) \
-		sym[nmemb][ROUND_UP((size), STACK_SIZE_ALIGN)]
+		sym[nmemb][Z_ARCH_THREAD_STACK_LEN(size)]
 
 #define Z_ARCH_THREAD_STACK_SIZEOF(sym)	sizeof(sym)
 #define Z_ARCH_THREAD_STACK_BUFFER(sym) ((char *) sym)
