@@ -307,4 +307,18 @@ _KernelExceptionVector:
 	j _Level1Vector
 .popsection
 
+#ifdef XCHAL_DOUBLEEXC_VECTOR_VADDR
+.pushsection .DoubleExceptionVector.text, "ax"
+.global _DoubleExceptionVector
+_DoubleExceptionVector:
+#if XCHAL_HAVE_DEBUG
+/* Signals an unhandled double exception */
+1:	break	1, 4
+#else
+1:
+#endif
+	j	1b
+.popsection
+#endif
+
 #endif /* CONFIG_XTENSA_ASM2 */
