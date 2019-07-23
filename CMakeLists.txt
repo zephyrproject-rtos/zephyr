@@ -226,8 +226,10 @@ toolchain_cc_freestanding()
 # @Intent: Set compiler specific flag for tentative definitions, no-common
 toolchain_cc_nocommon()
 
+# @Intent: Set compiler specific flag for production of debug information
+toolchain_cc_produce_debug_info()
+
 zephyr_compile_options(
-  -g # TODO: build configuration enough?
   ${TOOLCHAIN_C_FLAGS}
 )
 
