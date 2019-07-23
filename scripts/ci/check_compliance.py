@@ -44,7 +44,9 @@ def git(*args):
     return sh.git(*args, _tty_out=False, _cwd=os.getcwd())
 
 
+# This ends up as None when we're not running in a Zephyr tree
 ZEPHYR_BASE = os.environ.get('ZEPHYR_BASE')
+
 # The absolute path of the top-level git directory
 GIT_TOP = git("rev-parse", "--show-toplevel").strip()
 
@@ -452,6 +454,43 @@ UNDEF_KCONFIG_WHITELIST = {
     "USE_STDC_",
     "WHATEVER",
 }
+
+
+class DeviceTreeCheck(ComplianceTest):
+    """
+    Runs the dtlib and edtlib test suites in scripts/dts/.
+    """
+    _name = "Device tree"
+    _doc = "https://docs.zephyrproject.org/latest/guides/dts/index.html"
+
+    def run(self):
+        self.prepare(ZEPHYR_BASE)
+        if not ZEPHYR_BASE:
+            self.skip("Not a Zephyr tree (ZEPHYR_BASE unset)")
+
+        scripts_path = os.path.join(ZEPHYR_BASE, "scripts", "dts")
+
+        sys.path.insert(0, scripts_path)
+        import testdtlib
+        import testedtlib
+
+        # Hack: The test suites expect to be run from the scripts/dts
+        # directory, because they compare repr() output that contains relative
+        # paths against an expected string. Temporarily change the working
+        # directory to scripts/dts/.
+        #
+        # Warning: This is not thread-safe, though the test suites run in a
+        # fraction of a second.
+        old_dir = os.getcwd()
+        os.chdir(scripts_path)
+        try:
+            testdtlib.run()
+            testedtlib.run()
+        except Exception as e:
+            self.add_failure(str(e))
+        finally:
+            # Restore working directory
+            os.chdir(old_dir)
 
 
 class Codeowners(ComplianceTest):
