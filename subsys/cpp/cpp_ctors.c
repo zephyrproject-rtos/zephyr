@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <sys/util.h>
+
 /**
  * @file - Constructor module
  * @brief
@@ -35,7 +37,7 @@ void __do_global_ctors_aux(void)
 {
 	unsigned int nCtors;
 
-	nCtors = (unsigned int)__CTOR_LIST__[0];
+	nCtors = POINTER_TO_UINT(__CTOR_LIST__[0]);
 
 	while (nCtors >= 1U) {
 		__CTOR_LIST__[nCtors--]();
