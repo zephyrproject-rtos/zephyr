@@ -442,16 +442,15 @@ static int cmd_mount_nffs(const struct shell *shell, size_t argc, char **argv)
 	nffs_mnt.mnt_point = (const char *)mntpt;
 	flash_dev = device_get_binding(CONFIG_FS_NFFS_FLASH_DEV_NAME);
 	if (!flash_dev) {
-		shell_error(shell,
-			"Error in device_get_binding, while mounting nffs fs");
+		shell_error(shell, "nffs device %s not found",
+			    CONFIG_FS_NFFS_FLASH_DEV_NAME);
 		return -ENOEXEC;
 	}
 
 	nffs_mnt.storage_dev = flash_dev;
 	res = fs_mount(&nffs_mnt);
 	if (res != 0) {
-		shell_error(shell,
-			      "Error mounting fat fs.Error Code [%d]", res);
+		shell_error(shell, "Error mounting nffs: %d", res);
 		return -ENOEXEC;
 	}
 
