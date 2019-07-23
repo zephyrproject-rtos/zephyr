@@ -7,6 +7,7 @@
 #include <ztest.h>
 #include <kernel.h>
 #include <pthread.h>
+#include <sys/util.h>
 
 #define N_THR 2
 #define N_KEY 2
@@ -28,9 +29,10 @@ void *thread_top(void *p1)
 
 	value = k_malloc(sizeof(buffer));
 
-	zassert_true((int)value, "thread could not allocate storage");
+	zassert_true((int) POINTER_TO_INT(value),
+		     "thread could not allocate storage");
 
-	ret = pthread_setspecific(key, (void *)value);
+	ret = pthread_setspecific(key, value);
 
 	/* TESTPOINT: Check if thread's value is associated with key */
 	zassert_false(ret, "pthread_setspecific failed");
@@ -46,7 +48,7 @@ void *thread_top(void *p1)
 			"set and retrieved values are different");
 
 	printk("set value = %d and retrieved value = %d\n",
-			(int)value, (int)getval);
+		(int) POINTER_TO_INT(value), (int) POINTER_TO_INT(getval));
 
 	return NULL;
 }
@@ -61,10 +63,11 @@ void *thread_func(void *p1)
 
 	value = k_malloc(sizeof(buffer));
 
-	zassert_true((int)value, "thread could not allocate storage");
+	zassert_true((int) POINTER_TO_INT(value),
+		     "thread could not allocate storage");
 
 	for (i = 0; i < N_KEY; i++) {
-		ret = pthread_setspecific(keys[i], (void *)value);
+		ret = pthread_setspecific(keys[i], value);
 
 		/* TESTPOINT: Check if thread's value is associated with keys */
 		zassert_false(ret, "pthread_setspecific failed");
@@ -81,7 +84,8 @@ void *thread_func(void *p1)
 				"set and retrieved values are different");
 
 		printk("key %d: set value = %d and retrieved value = %d\n",
-				i, (int)value, (int)getval);
+				i, (int) POINTER_TO_INT(value),
+				(int) POINTER_TO_INT(getval));
 	}
 	return NULL;
 }
@@ -148,7 +152,7 @@ void test_posix_multiple_threads_single_key(void)
 		pthread_attr_setstack(&attr[i], &stackp[i][0], STACKSZ);
 
 		ret = pthread_create(&newthread[i], &attr[i], thread_top,
-				(void *)i);
+				INT_TO_POINTER(i));
 
 		/* TESTPOINT: Check if threads are created successfully */
 		zassert_false(ret, "attempt to create threads failed");
