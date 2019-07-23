@@ -175,7 +175,6 @@ if(SUPPORTS_DTS)
     message(FATAL_ERROR "command failed with return code: ${ret}")
   endif()
 
-  import_kconfig(CONFIG_ ${GENERATED_DTS_BOARD_CONF})
   import_kconfig(DT_     ${GENERATED_DTS_BOARD_CONF})
 
 else()
