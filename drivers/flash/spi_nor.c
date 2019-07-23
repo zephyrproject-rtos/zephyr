@@ -11,8 +11,12 @@
 #include <drivers/spi.h>
 #include <init.h>
 #include <string.h>
+#include <logging/log.h>
+
 #include "spi_nor.h"
 #include "flash_priv.h"
+
+LOG_MODULE_REGISTER(spi_nor, CONFIG_FLASH_LOG_LEVEL);
 
 #define SPI_NOR_MAX_ADDR_WIDTH 4
 
@@ -277,6 +281,7 @@ static int spi_nor_erase(struct device *dev, off_t addr, size_t size)
 		} else {
 			/* minimal erase size is at least a sector size */
 			SYNC_UNLOCK();
+			LOG_DBG("unsupported at %x size %u", (u32_t)addr, size);
 			return -EINVAL;
 		}
 
