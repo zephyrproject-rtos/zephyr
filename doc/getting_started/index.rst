@@ -74,7 +74,7 @@ Next, clone the Zephyr source code repositories from GitHub using the
 
 .. code-block:: console
 
-   west init zephyrproject
+   west init zephyrproject --mr v1.14.1
    cd zephyrproject
    west update
 
