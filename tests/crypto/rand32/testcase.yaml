@@ -11,3 +11,8 @@ tests:
     filter: CONFIG_ENTROPY_HAS_DRIVER
     tags: crypto security
     min_ram: 16
+  crypto.rand32.random_ctr_drbg:
+    extra_args: CONF_FILE=prj_ctr_drbg.conf
+    filter: CONFIG_ENTROPY_HAS_DRIVER
+    tags: crypto security
+    min_ram: 16
