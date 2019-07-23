@@ -60,7 +60,7 @@
 			interrupts = <3 0>;
 			reg = <0xb0000000 0x2000 0xe0009800 0x6b>;
 			local-mac-address = [10 e2 d5 00 00 02];
-			reg-names = "control";
+			reg-names = "buffers", "control";
 			label = "eth0";
 			status = "disabled";
 		};
