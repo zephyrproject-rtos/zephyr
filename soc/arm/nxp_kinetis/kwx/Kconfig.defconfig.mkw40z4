@@ -66,6 +66,17 @@ config ENTROPY_MCUX_TRNG
 
 endif # ENTROPY_GENERATOR
 
+choice CSPRNG_GENERATOR_CHOICE
+	default CTR_DRBG_CSPRNG_GENERATOR
+endchoice
+
+choice RNG_GENERATOR_CHOICE
+	default XOROSHIRO_RANDOM_GENERATOR
+endchoice
+
+config TINYCRYPT
+	default y
+
 if FLASH
 
 config SOC_FLASH_MCUX

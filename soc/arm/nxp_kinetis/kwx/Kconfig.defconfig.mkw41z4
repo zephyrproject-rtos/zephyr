@@ -96,4 +96,25 @@ config NET_CONFIG_IEEE802154_DEV_NAME
 
 endif # NETWORKING
 
+choice CSPRNG_GENERATOR_CHOICE
+	default CTR_DRBG_CSPRNG_GENERATOR
+endchoice
+
+if ENTROPY_GENERATOR
+#
+# MBEDTLS is larger but much faster than TinyCrypt so choose wisely
+#
+#config MBEDTLS
+config TINYCRYPT
+	default y
+endif
+
+#
+# KW41Z TRNG entropy source cannot be used as a Hardware RNG source so
+# use XOROSHIRO for PRNG
+#
+choice RNG_GENERATOR_CHOICE
+	default XOROSHIRO_RANDOM_GENERATOR
+endchoice
+
 endif # SOC_MKW41Z4

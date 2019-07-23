@@ -41,10 +41,9 @@
 #include <device.h>
 #include <drivers/entropy.h>
 #include <kernel.h>
+#include <string.h>
 
 static u64_t state[2];
-
-K_SEM_DEFINE(state_sem, 1, 1);
 
 static inline u64_t rotl(const u64_t x, int k)
 {
@@ -72,8 +71,6 @@ static int xoroshiro128_initialize(struct device *dev)
 		return -EINVAL;
 	}
 
-	k_object_access_all_grant(&state_sem);
-
 	return 0;
 }
 
@@ -94,20 +91,28 @@ u32_t sys_rand32_get(void)
 {
 	u32_t ret;
 
-	if (k_sem_take(&state_sem, K_FOREVER) < 0) {
-		/* FIXME: with all threads having access to this semaphore,
-		 * it's possible that they can corrupt state_sem in a way
-		 * that k_sem_take will fail.  This can be abused to
-		 * generate numbers without using the xoroshiro128+ RNG.
-		 */
-		return k_cycle_get_32();
-	}
-
 	ret = xoroshiro128_next();
 
-	k_sem_give(&state_sem);
-
 	return ret;
+}
+
+void sys_rand_get(void *dst, size_t outlen)
+{
+	u32_t ret;
+	u32_t blocksize = 4;
+	u32_t len = 0;
+	u32_t *udst = (u32_t *)dst;
+
+	while (len < outlen) {
+		ret = xoroshiro128_next();
+		if ((outlen-len) < sizeof(ret)) {
+			blocksize = len;
+			(void *)memcpy(udst, &ret, blocksize);
+		} else {
+			(*udst++) = ret;
+		}
+		len += blocksize;
+	}
 }
 
 /* In-tree entropy drivers will initialize in PRE_KERNEL_1; ensure that they're
