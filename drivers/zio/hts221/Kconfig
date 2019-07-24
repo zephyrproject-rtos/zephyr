@@ -1,0 +1,67 @@
+#
+# Copyright (c) 2019 STMicroelectronics
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig HTS221
+	bool "HTS221 temperature and humidity sensor"
+	depends on I2C && HAS_DTS_I2C && HAS_DTS_GPIO
+	select HAS_STMEMSC
+	select USE_STDC_HTS221
+	help
+	  Enable driver for HTS221 I2C-based temperature and humidity sensor.
+
+if HTS221
+
+choice HTS221_TRIGGER_MODE
+	prompt "Trigger mode"
+	default HTS221_TRIGGER_GLOBAL_THREAD
+	help
+	  Specify the type of triggering to be used by the driver.
+
+config HTS221_TRIGGER_NONE
+	bool "No trigger"
+
+config HTS221_TRIGGER_GLOBAL_THREAD
+	bool "Use global thread"
+	depends on GPIO
+	select HTS221_TRIGGER
+
+config HTS221_TRIGGER_OWN_THREAD
+	bool "Use own thread"
+	depends on GPIO
+	select HTS221_TRIGGER
+
+endchoice # HTS221_TRIGGER_MODE
+
+config HTS221_TRIGGER
+	bool
+
+config HTS221_THREAD_PRIORITY
+	int "Thread priority"
+	depends on HTS221_TRIGGER_OWN_THREAD
+	default 10
+	help
+	  Priority of thread used by the driver to handle interrupts.
+
+config HTS221_THREAD_STACK_SIZE
+	int "Thread stack size"
+	depends on HTS221_TRIGGER_OWN_THREAD
+	default 1024
+	help
+	  Stack size of thread used by the driver to handle interrupts.
+
+config HTS221_SAMPLING_RATE
+	int "Output data rate"
+	range 0 3
+	default 0
+	help
+	  Sensor output data rate expressed in samples per second.
+	  Data rates supported by the chip are:
+	  0: ODR selected at runtime
+	  1: 1Hz
+	  2: 7Hz
+	  3: 12.5Hz
+
+endif # HTS221
