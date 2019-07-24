@@ -173,6 +173,13 @@ struct zcan_frame {
 		u8_t data[8];
 		u32_t data_32[2];
 	};
+#if defined(CONFIG_CAN_RX_TIMESTAMP)
+	/** Timer value of the CAN free running timer.
+	 * The timer is incremented every bit time and captured at the start
+	 * of frame bit (SOF).
+	 */
+	u16_t timestamp;
+#endif
 } __packed;
 
 /**
