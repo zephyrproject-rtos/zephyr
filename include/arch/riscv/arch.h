@@ -31,6 +31,18 @@ extern "C" {
 /* stacks, for RISCV architecture stack should be 16byte-aligned */
 #define STACK_ALIGN  16
 
+#ifdef CONFIG_64BIT
+#define LR ld
+#define SR sd
+#define RV_REGSIZE 8
+#define RV_REGSHIFT 3
+#else
+#define LR lw
+#define SR sw
+#define RV_REGSIZE 4
+#define RV_REGSHIFT 2
+#endif
+
 #ifndef _ASMLANGUAGE
 #include <sys/util.h>
 
@@ -91,7 +103,8 @@ void z_irq_spurious(void *unused);
  */
 static ALWAYS_INLINE unsigned int z_arch_irq_lock(void)
 {
-	unsigned int key, mstatus;
+	unsigned int key;
+	ulong_t mstatus;
 
 	__asm__ volatile ("csrrc %0, mstatus, %1"
 			  : "=r" (mstatus)
@@ -108,7 +121,7 @@ static ALWAYS_INLINE unsigned int z_arch_irq_lock(void)
  */
 static ALWAYS_INLINE void z_arch_irq_unlock(unsigned int key)
 {
-	unsigned int mstatus;
+	ulong_t mstatus;
 
 	__asm__ volatile ("csrrs %0, mstatus, %1"
 			  : "=r" (mstatus)

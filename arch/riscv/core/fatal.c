@@ -13,17 +13,17 @@ FUNC_NORETURN void z_riscv_fatal_error(unsigned int reason,
 				       const z_arch_esf_t *esf)
 {
 	if (esf != NULL) {
-		z_fatal_print("Faulting instruction address = 0x%08x",
+		z_fatal_print("Faulting instruction address = 0x%08lx",
 			      esf->mepc);
-		z_fatal_print("  ra: 0x%08x  gp: 0x%08x  tp: 0x%08x  t0: 0x%08x",
+		z_fatal_print("  ra: 0x%08lx  gp: 0x%08lx  tp: 0x%08lx  t0: 0x%08lx",
 			      esf->ra, esf->gp, esf->tp, esf->t0);
-		z_fatal_print("  t1: 0x%08x  t2: 0x%08x  t3: 0x%08x  t4: 0x%08x",
+		z_fatal_print("  t1: 0x%08lx  t2: 0x%08lx  t3: 0x%08lx  t4: 0x%08lx",
 			      esf->t1, esf->t2, esf->t3, esf->t4);
-		z_fatal_print("  t5: 0x%08x  t6: 0x%08x  a0: 0x%08x  a1: 0x%08x",
+		z_fatal_print("  t5: 0x%08lx  t6: 0x%08lx  a0: 0x%08lx  a1: 0x%08lx",
 			      esf->t5, esf->t6, esf->a0, esf->a1);
-		z_fatal_print("  a2: 0x%08x  a3: 0x%08x  a4: 0x%08x  a5: 0x%08x",
+		z_fatal_print("  a2: 0x%08lx  a3: 0x%08lx  a4: 0x%08lx  a5: 0x%08lx",
 			      esf->a2, esf->a3, esf->a4, esf->a5);
-		z_fatal_print("  a6: 0x%08x  a7: 0x%08x\n",
+		z_fatal_print("  a6: 0x%08lx  a7: 0x%08lx\n",
 			      esf->a6, esf->a7);
 	}
 
@@ -31,7 +31,7 @@ FUNC_NORETURN void z_riscv_fatal_error(unsigned int reason,
 	CODE_UNREACHABLE;
 }
 
-static char *cause_str(u32_t cause)
+static char *cause_str(ulong_t cause)
 {
 	switch (cause) {
 	case 0:
@@ -53,13 +53,12 @@ static char *cause_str(u32_t cause)
 
 FUNC_NORETURN void _Fault(const z_arch_esf_t *esf)
 {
-	u32_t mcause;
+	ulong_t mcause;
 
 	__asm__ volatile("csrr %0, mcause" : "=r" (mcause));
 
 	mcause &= SOC_MCAUSE_EXP_MASK;
-	z_fatal_print("Exception cause %s (%d)", cause_str(mcause),
-		      (int)mcause);
+	z_fatal_print("Exception cause %s (%ld)", cause_str(mcause), mcause);
 
 	z_riscv_fatal_error(K_ERR_CPU_EXCEPTION, esf);
 }
