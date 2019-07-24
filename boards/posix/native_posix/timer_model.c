@@ -73,7 +73,7 @@ static u64_t tick_p; /* Period of the ticker */
 static s64_t silent_ticks;
 
 static bool real_time_mode =
-#if (CONFIG_NATIVE_POSIX_SLOWDOWN_TO_REAL_TIME)
+#if defined(CONFIG_NATIVE_POSIX_SLOWDOWN_TO_REAL_TIME)
 	true;
 #else
 	false;
