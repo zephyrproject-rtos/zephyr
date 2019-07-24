@@ -94,7 +94,7 @@ respective websites.
 
    .. code-block:: console
 
-      choco install git python ninja dtc-msys2 gperf
+      choco install git python ninja dtc-msys2 gperf make
 
 #. Close the Administrator command prompt window.
 

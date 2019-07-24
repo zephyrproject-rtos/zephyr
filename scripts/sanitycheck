@@ -165,11 +165,6 @@ Most everyday users will run with no arguments.
 """
 
 import os
-if os.name == 'nt':
-    print("Running sanitycheck on Windows is not supported yet.")
-    print("https://github.com/zephyrproject-rtos/zephyr/issues/2664")
-    exit(1)
-
 import contextlib
 import string
 import mmap
@@ -1451,7 +1446,7 @@ class MakeGenerator:
                         goal.fail("unknown_error")
 
                 else:
-                    goal = self.goals[name]
+                    goal = self.goals[name.strip()]
                     goal.make_state = state
 
                     if state == "finished":
@@ -1822,11 +1817,14 @@ class TestCase:
         achtung_regex = re.compile(
             br"(#ifdef|#endif)",
             re.MULTILINE)
-        warnings = None
 
+        warnings = ""
         with open(inf_name) as inf:
-            with contextlib.closing(mmap.mmap(inf.fileno(), 0, mmap.MAP_PRIVATE,
-                                              mmap.PROT_READ, 0)) as main_c:
+            if os.name == 'nt':
+                mmap_args = {'fileno':inf.fileno(), 'length':0, 'access':mmap.ACCESS_READ}
+            else:
+                mmap_args = {'fileno':inf.fileno(), 'length':0, 'flags':mmap.MAP_PRIVATE, 'prot':mmap.PROT_READ, 'offset':0}
+            with contextlib.closing(mmap.mmap(**mmap_args)) as main_c:
                 suite_regex_match = suite_regex.search(main_c)
                 if not suite_regex_match:
                     # can't find ztest_test_suite, maybe a client, because
@@ -2252,6 +2250,7 @@ class TestSuite:
         for k, out_config in defconfig_list.items():
             test, plat, name = k
             defconfig = {}
+            os.makedirs(os.path.dirname(out_config), exist_ok=True)
             with open(out_config, "r") as fp:
                 for line in fp.readlines():
                     m = TestSuite.config_re.match(line)
@@ -3316,6 +3315,16 @@ def main():
     if options.west_flash and not options.device_testing:
         error("west-flash requires device-testing to be enabled")
         sys.exit(1)
+
+    if os.name == 'nt' and \
+       (not options.build_only or not options.disable_size_report):
+        print("Testing with sanitycheck on Windows is not fully supported yet.")
+        print("Only build without size report works for now:")
+        print("\t- '--build-only --disable-size-report'")
+        print("\t- Requires make: 'choco install make'")
+        print("\t- May require long-path support in Windows OS.")
+        print("\t- https://github.com/zephyrproject-rtos/zephyr/issues/2664")
+        sys.exit(-1)
 
     if options.coverage:
         options.enable_coverage = True
