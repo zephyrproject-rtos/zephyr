@@ -1,0 +1,8 @@
+tests:
+  kernel.memory_protection.sys_sem:
+    min_ram: 36
+    tags: kernel userspace
+  kernel.memory_protection.sys_sem.nouser:
+    tags: kernel
+    extra_configs:
+      - CONFIG_TEST_USERSPACE=n
