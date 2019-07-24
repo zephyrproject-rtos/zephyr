@@ -60,17 +60,35 @@ static struct fs_mount_t littlefs_mnt = {
 
 #define SHELL_FS    "fs"
 
+/* Maintenance guarantees this begins with '/' and is NUL-terminated. */
 static char cwd[MAX_PATH_LEN] = "/";
+
 static void create_abs_path(const char *name, char *path, size_t len)
 {
 	if (name[0] == '/') {
-		strncpy(path, name, len - 1);
+		strncpy(path, name, len);
 		path[len - 1] = '\0';
 	} else {
-		if (strcmp(cwd, "/") == 0) {
-			snprintf(path, len, "/%s", name);
+		if (cwd[1] == '\0') {
+			__ASSERT_NO_MSG(len >= 2);
+			*path++ = '/';
+			--len;
+
+			strncpy(path, name, len);
+			path[len - 1] = '\0';
 		} else {
-			snprintf(path, len, "%s/%s", cwd, name);
+			strncpy(path, cwd, len);
+			path[len - 1] = '\0';
+
+			size_t plen = strlen(path);
+
+			if (plen < len) {
+				path += plen;
+				*path++ = '/';
+				len -= plen - 1U;
+				strncpy(path, name, len);
+				path[len - 1] = '\0';
+			}
 		}
 	}
 }
@@ -112,7 +130,8 @@ static int cmd_cd(const struct shell *shell, size_t argc, char **argv)
 		return -ENOEXEC;
 	}
 
-	strcpy(cwd, path);
+	strncpy(cwd, path, sizeof(cwd));
+	cwd[sizeof(cwd) - 1] = '\0';
 
 	return 0;
 }
@@ -124,7 +143,8 @@ static int cmd_ls(const struct shell *shell, size_t argc, char **argv)
 	int err;
 
 	if (argc < 2) {
-		strcpy(path, cwd);
+		strncpy(path, cwd, sizeof(path));
+		path[sizeof(path) - 1] = '\0';
 	} else {
 		create_abs_path(argv[1], path, sizeof(path));
 	}
@@ -172,16 +192,7 @@ static int cmd_trunc(const struct shell *shell, size_t argc, char **argv)
 	int length;
 	int err;
 
-	if (argv[1][0] == '/') {
-		strncpy(path, argv[1], sizeof(path) - 1);
-		path[MAX_PATH_LEN - 1] = '\0';
-	} else {
-		if (strcmp(cwd, "/") == 0) {
-			snprintf(path, sizeof(path), "/%s", argv[1]);
-		} else {
-			snprintf(path, sizeof(path), "%s/%s", cwd, argv[1]);
-		}
-	}
+	create_abs_path(argv[1], path, sizeof(path));
 
 	if (argc > 2) {
 		length = strtol(argv[2], NULL, 0);
