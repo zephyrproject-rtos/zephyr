@@ -103,6 +103,14 @@ config 	ARC_HAS_STACK_CHECKING
 	  checking stack accesses and raising an exception when a stack
 	  overflow or underflow is detected.
 
+config	ARC_CONNECT
+	bool "ARC has ARC connect"
+	select SCHED_IPI_SUPPORTED
+	default n
+	help
+	  ARC is configured with ARC CONNECT which is a hardware for connecting
+	  multi cores.
+
 config  ARC_STACK_CHECKING
 	bool
 	help
