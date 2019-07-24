@@ -42,6 +42,14 @@ config CAN_WORKQ_FRAMES_BUF_CNT
 	help
 	  Number of frames in the buffer of a zcan_work.
 
+config CAN_RX_TIMESTAMP
+	bool "Enable receiving timestamps"
+	depends on CAN_STM32
+	help
+	  This option enables a timestamp value of the CAN free running timer.
+	  The value is incremented every bit time and starts when the controller
+	  is initialized.
+
 config CAN_0
 	bool "Enable CAN 0"
 	help
