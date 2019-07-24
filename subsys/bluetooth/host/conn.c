@@ -973,33 +973,9 @@ static int start_security(struct bt_conn *conn)
 #if defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_SMP)
 	case BT_HCI_ROLE_MASTER:
 	{
-		if (!conn->le.keys) {
-			conn->le.keys = bt_keys_find(BT_KEYS_LTK_P256,
-						     conn->id, &conn->le.dst);
-			if (!conn->le.keys) {
-				conn->le.keys = bt_keys_find(BT_KEYS_LTK,
-							     conn->id,
-							     &conn->le.dst);
-			}
-		}
-
-		if (!conn->le.keys ||
-		    !(conn->le.keys->keys & (BT_KEYS_LTK | BT_KEYS_LTK_P256))) {
+		if (!bt_smp_keys_check(conn)) {
 			return bt_smp_send_pairing_req(conn);
 		}
-
-		if (conn->required_sec_level > BT_SECURITY_MEDIUM &&
-		    !(conn->le.keys->flags & BT_KEYS_AUTHENTICATED)) {
-			return bt_smp_send_pairing_req(conn);
-		}
-
-		if (conn->required_sec_level > BT_SECURITY_HIGH &&
-		    !(conn->le.keys->flags & BT_KEYS_AUTHENTICATED) &&
-		    !(conn->le.keys->keys & BT_KEYS_LTK_P256) &&
-		    !(conn->le.keys->enc_size == BT_SMP_MAX_ENC_KEY_SIZE)) {
-			return bt_smp_send_pairing_req(conn);
-		}
-
 		/* LE SC LTK and legacy master LTK are stored in same place */
 		return bt_conn_le_start_encryption(conn,
 						   conn->le.keys->ltk.rand,
