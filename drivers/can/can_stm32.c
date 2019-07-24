@@ -52,6 +52,9 @@ static void can_stm32_get_msg_fifo(CAN_FIFOMailBox_TypeDef *mbox,
 	msg->dlc = mbox->RDTR & (CAN_RDT0R_DLC >> CAN_RDT0R_DLC_Pos);
 	msg->data_32[0] = mbox->RDLR;
 	msg->data_32[1] = mbox->RDHR;
+#ifdef CONFIG_CAN_RX_TIMESTAMP
+	msg->timestamp = ((mbox->RDTR & CAN_RDT0R_TIME) >> CAN_RDT0R_TIME_Pos);
+#endif
 }
 
 static inline
@@ -363,6 +366,9 @@ static int can_stm32_init(struct device *dev)
 	can->MCR |= CAN_MCR_TXFP;
 	can->MCR &= ~CAN_MCR_TTCM & ~CAN_MCR_TTCM & ~CAN_MCR_ABOM &
 		    ~CAN_MCR_AWUM & ~CAN_MCR_NART & ~CAN_MCR_RFLM;
+#ifdef CONFIG_CAN_RX_TIMESTAMP
+	can->MCR |= CAN_MCR_TTCM;
+#endif
 
 	ret = can_stm32_runtime_configure(dev, CAN_NORMAL_MODE, 0);
 	if (ret) {
