@@ -53,11 +53,12 @@ __start:
 
 	movl $(exception_stack + CONFIG_EXCEPTION_STACK_SIZE), %esp
 
-	/* transition to long mode, by the book. */
+	/* transition to long mode. along the way, we enable SSE. */
 
-	movl %cr4, %eax			/* enable PAE */
-	orl $CR4_PAE, %eax
+	movl %cr4, %eax			/* enable PAE and SSE */
+	orl $(CR4_PAE | CR4_OSFXSR), %eax
 	movl %eax, %cr4
+	clts
 
 	movl $pml4, %eax		/* load page base */
 	movl %eax, %cr3
@@ -105,11 +106,37 @@ __start:
 1:
 #endif /* CONFIG_X86_MULTIBOOT_INFO */
 
+	/*
+	 * set up SSE in case something uses the floating-point unit during
+	 * early initialization (either directly, or if GCC gets clever)
+	 */
+
+	xorl %edi, %edi
+	call x86_sse_init
+
 	/* don't replace CALL with JMP; honor the ABI stack alignment! */
 
 	call z_cstart
 
 stop:	jmp stop
+
+/*
+ * void x86_sse_init(struct k_thread *thread);
+ *
+ * Initialize floating-point state to something sane. If 'thread' is
+ * not NULL, then the resulting FP state is saved to thread->arch.sse.
+ */
+
+.global x86_sse_init
+x86_sse_init:
+	fninit
+	ldmxcsr mxcsr
+	testq %rdi, %rdi
+	jz 1f
+	fxsave _thread_offset_to_sse(%rdi)
+1:	retq
+
+mxcsr:	.long X86_MXCSR_SANE
 
 /*
  * FIXME: The multiboot header is identical (for obvious reasons) to the
@@ -188,6 +215,7 @@ __resume:
 	testb $_THREAD_SWAPPED, _thread_offset_to_thread_state(%rsi)
 	jnz 1f
 
+	fxrstor _thread_offset_to_sse(%rsi)
 	movq _thread_offset_to_rcx(%rsi), %rcx
 	movq _thread_offset_to_rdx(%rsi), %rdx
 	movq _thread_offset_to_rdi(%rsi), %rdi
@@ -403,6 +431,18 @@ irq:
 1:	cmpl $1, _kernel_offset_to_nested(%rsi)
 	je irq_enter_unnested
 
+	/*
+	 * if we're a nested interrupt, we have to dump the state to the
+	 * stack. we play some games here to re-arrange the stack thusly:
+	 *
+	 * SS RSP RFLAGS CS RIP RAX RSI RCX RDX RBX
+	 * RDI RBP R8 R9 R10 R11 R12 R13 R14 R15
+	 * X86_FXSAVE_SIZE bytes of SSE data <-- RSP points here
+	 *
+	 * note that the final value of RSP must be 16-byte aligned here,
+	 * both to satisfy FXSAVE/FXRSTOR but also to honor the C ABI.
+	 */
+
 irq_enter_nested: /* Nested IRQ: dump register state to stack. */
 	pushq %rcx
 	movq 16(%rsp), %rcx /* RCX = vector */
@@ -419,11 +459,14 @@ irq_enter_nested: /* Nested IRQ: dump register state to stack. */
 	pushq %r13
 	pushq %r14
 	pushq %r15
+	subq $X86_FXSAVE_SIZE, %rsp
+	fxsave (%rsp)
 	jmp irq_dispatch
 
 irq_enter_unnested: /* Not nested: dump state to thread struct for __resume */
 	movq _kernel_offset_to_current(%rsi), %rsi
 	andb $(~_THREAD_SWAPPED), _thread_offset_to_thread_state(%rsi)
+	fxsave _thread_offset_to_sse(%rsi)
 	movq %rbx, _thread_offset_to_rbx(%rsi)
 	movq %rbp, _thread_offset_to_rbp(%rsi)
 	movq %r12, _thread_offset_to_r12(%rsi)
@@ -469,6 +512,8 @@ irq_dispatch:
 	jz __resume /* not nested, just __resume (might change threads) */
 
 irq_exit_nested:
+	fxrstor (%rsp)
+	addq $X86_FXSAVE_SIZE, %rsp
 	popq %r15
 	popq %r14
 	popq %r13

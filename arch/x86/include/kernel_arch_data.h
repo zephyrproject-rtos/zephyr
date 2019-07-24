@@ -49,6 +49,7 @@
 #define CR0_PG		0x80000000	/* enable paging */
 #define CR0_WP		0x00010000	/* honor W bit even when supervisor */
 #define CR4_PAE		0x00000020	/* enable PAE */
+#define CR4_OSFXSR	0x00000200	/* enable SSE (OS FXSAVE/RSTOR) */
 
 #ifdef CONFIG_X86_LONGMODE
 #include <intel64/kernel_arch_data.h>
