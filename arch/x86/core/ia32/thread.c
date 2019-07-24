@@ -72,15 +72,15 @@ void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 		/* Running in kernel mode, kernel stack region is also a guard
 		 * page */
 		z_x86_mmu_set_flags(&z_x86_kernel_pdpt,
-				   (void *)(stack_buf - MMU_PAGE_SIZE),
-				   MMU_PAGE_SIZE, MMU_ENTRY_NOT_PRESENT,
-				   MMU_PTE_P_MASK);
+				    (void *)(stack_buf - MMU_PAGE_SIZE),
+				    MMU_PAGE_SIZE, MMU_ENTRY_READ,
+				    MMU_PTE_RW_MASK);
 	}
 #endif /* CONFIG_X86_USERSPACE */
 
 #if CONFIG_X86_STACK_PROTECTION
 	z_x86_mmu_set_flags(&z_x86_kernel_pdpt, stack, MMU_PAGE_SIZE,
-			   MMU_ENTRY_NOT_PRESENT, MMU_PTE_P_MASK);
+			    MMU_ENTRY_READ, MMU_PTE_RW_MASK);
 #endif
 
 	stack_high = (char *)STACK_ROUND_DOWN(stack_buf + stack_size);
@@ -178,12 +178,8 @@ FUNC_NORETURN void z_arch_user_mode_enter(k_thread_entry_t user_entry,
 
 	/* Set up the kernel stack used during privilege elevation */
 	z_x86_mmu_set_flags(&z_x86_kernel_pdpt,
-			   (void *)(_current->stack_info.start - MMU_PAGE_SIZE),
-			   MMU_PAGE_SIZE,
-			   (MMU_ENTRY_PRESENT | MMU_ENTRY_WRITE |
-			    MMU_ENTRY_SUPERVISOR),
-			   (MMU_PTE_P_MASK | MMU_PTE_RW_MASK |
-			    MMU_PTE_US_MASK));
+			    (void *)(_current->stack_info.start - MMU_PAGE_SIZE),
+			    MMU_PAGE_SIZE, MMU_ENTRY_WRITE, MMU_PTE_RW_MASK);
 
 	z_x86_userspace_enter(user_entry, p1, p2, p3, stack_end,
 			     _current->stack_info.start);
