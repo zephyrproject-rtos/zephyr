@@ -107,7 +107,7 @@ static inline const char *TC_RESULT_TO_STR(int result)
 		TC_END_POST(result);                                    \
 	} while (0)
 
-#if CONFIG_SHELL
+#if defined(CONFIG_SHELL)
 #define TC_CMD_DEFINE(name)						\
 	static int cmd_##name(const struct shell *shell, size_t argc,	\
 			      char **argv) \
