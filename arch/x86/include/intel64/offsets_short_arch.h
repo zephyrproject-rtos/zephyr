@@ -62,4 +62,7 @@
 #define _thread_offset_to_r11 \
 	(___thread_t_arch_OFFSET + ___thread_arch_t_r11_OFFSET)
 
+#define _thread_offset_to_sse \
+	(___thread_t_arch_OFFSET + ___thread_arch_t_sse_OFFSET)
+
 #endif /* ZEPHYR_ARCH_X86_INCLUDE_INTEL64_OFFSETS_SHORT_ARCH_H_ */

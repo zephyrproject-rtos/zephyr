@@ -26,3 +26,4 @@ GEN_OFFSET_SYM(_thread_arch_t, r8);
 GEN_OFFSET_SYM(_thread_arch_t, r9);
 GEN_OFFSET_SYM(_thread_arch_t, r10);
 GEN_OFFSET_SYM(_thread_arch_t, r11);
+GEN_OFFSET_SYM(_thread_arch_t, sse);
