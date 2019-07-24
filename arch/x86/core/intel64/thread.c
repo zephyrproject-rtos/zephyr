@@ -8,6 +8,8 @@
 #include <kernel_structs.h>
 #include <kernel_internal.h>
 
+extern void x86_sse_init(struct k_thread *); /* in locore.S */
+
 void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 			size_t stack_size, k_thread_entry_t entry,
 			void *parameter1, void *parameter2, void *parameter3,
@@ -26,4 +28,6 @@ void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	thread->arch.rsi = (long) parameter1;
 	thread->arch.rdx = (long) parameter2;
 	thread->arch.rcx = (long) parameter3;
+
+	x86_sse_init(thread);
 }

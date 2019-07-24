@@ -9,6 +9,7 @@
 #ifndef _ASMLANGUAGE
 
 #include <zephyr/types.h>
+#include <kernel_arch_data.h>
 
 /*
  * The _callee_saved registers are unconditionally saved/restored across
@@ -41,6 +42,7 @@ struct _thread_arch {
 	u64_t r9;
 	u64_t r10;
 	u64_t r11;
+	char __aligned(X86_FXSAVE_ALIGN) sse[X86_FXSAVE_SIZE];
 };
 
 typedef struct _thread_arch _thread_arch_t;

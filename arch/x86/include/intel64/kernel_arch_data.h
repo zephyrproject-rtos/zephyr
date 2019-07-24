@@ -7,6 +7,14 @@
 #define ZEPHYR_ARCH_X86_INCLUDE_INTEL64_KERNEL_ARCH_DATA_H_
 
 /*
+ * Some SSE definitions. Ideally these will ultimately be shared with 32-bit.
+ */
+
+#define X86_FXSAVE_SIZE		512	/* size and alignment of buffer ... */
+#define X86_FXSAVE_ALIGN	16	/* ... for FXSAVE/FXRSTOR ops */
+#define X86_MXCSR_SANE		0x1dc0	/* enable division-by-zero exception */
+
+/*
  * A flag for k_thread.thread_state to tell __resume that the thread
  * voluntarily switched itself out, so only a portion of the register
  * state needs to be restored. See kernel_arch_thread.h and locore.S.
