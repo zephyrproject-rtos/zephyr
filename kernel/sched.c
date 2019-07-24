@@ -297,6 +297,8 @@ void z_time_slice(int ticks)
 		} else {
 			_current_cpu->slice_ticks -= ticks;
 		}
+	} else {
+		_current_cpu->slice_ticks = 0;
 	}
 }
 #else
