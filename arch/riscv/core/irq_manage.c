@@ -9,7 +9,7 @@
 
 FUNC_NORETURN void z_irq_spurious(void *unused)
 {
-	u32_t mcause;
+	ulong_t mcause;
 
 	ARG_UNUSED(unused);
 
@@ -17,7 +17,7 @@ FUNC_NORETURN void z_irq_spurious(void *unused)
 
 	mcause &= SOC_MCAUSE_EXP_MASK;
 
-	z_fatal_print("Spurious interrupt detected! IRQ: %d", (int)mcause);
+	z_fatal_print("Spurious interrupt detected! IRQ: %ld", mcause);
 #if defined(CONFIG_RISCV_HAS_PLIC)
 	if (mcause == RISCV_MACHINE_EXT_IRQ) {
 		z_fatal_print("PLIC interrupt line causing the IRQ: %d",

@@ -74,32 +74,32 @@ SECTION_FUNC(exception.entry, __irq_wrapper)
 	 * floating-point registers should be accounted for when corresponding
 	 * config variable is set
 	 */
-	sw ra, __z_arch_esf_t_ra_OFFSET(sp)
-	sw gp, __z_arch_esf_t_gp_OFFSET(sp)
-	sw tp, __z_arch_esf_t_tp_OFFSET(sp)
-	sw t0, __z_arch_esf_t_t0_OFFSET(sp)
-	sw t1, __z_arch_esf_t_t1_OFFSET(sp)
-	sw t2, __z_arch_esf_t_t2_OFFSET(sp)
-	sw t3, __z_arch_esf_t_t3_OFFSET(sp)
-	sw t4, __z_arch_esf_t_t4_OFFSET(sp)
-	sw t5, __z_arch_esf_t_t5_OFFSET(sp)
-	sw t6, __z_arch_esf_t_t6_OFFSET(sp)
-	sw a0, __z_arch_esf_t_a0_OFFSET(sp)
-	sw a1, __z_arch_esf_t_a1_OFFSET(sp)
-	sw a2, __z_arch_esf_t_a2_OFFSET(sp)
-	sw a3, __z_arch_esf_t_a3_OFFSET(sp)
-	sw a4, __z_arch_esf_t_a4_OFFSET(sp)
-	sw a5, __z_arch_esf_t_a5_OFFSET(sp)
-	sw a6, __z_arch_esf_t_a6_OFFSET(sp)
-	sw a7, __z_arch_esf_t_a7_OFFSET(sp)
+	SR ra, __z_arch_esf_t_ra_OFFSET(sp)
+	SR gp, __z_arch_esf_t_gp_OFFSET(sp)
+	SR tp, __z_arch_esf_t_tp_OFFSET(sp)
+	SR t0, __z_arch_esf_t_t0_OFFSET(sp)
+	SR t1, __z_arch_esf_t_t1_OFFSET(sp)
+	SR t2, __z_arch_esf_t_t2_OFFSET(sp)
+	SR t3, __z_arch_esf_t_t3_OFFSET(sp)
+	SR t4, __z_arch_esf_t_t4_OFFSET(sp)
+	SR t5, __z_arch_esf_t_t5_OFFSET(sp)
+	SR t6, __z_arch_esf_t_t6_OFFSET(sp)
+	SR a0, __z_arch_esf_t_a0_OFFSET(sp)
+	SR a1, __z_arch_esf_t_a1_OFFSET(sp)
+	SR a2, __z_arch_esf_t_a2_OFFSET(sp)
+	SR a3, __z_arch_esf_t_a3_OFFSET(sp)
+	SR a4, __z_arch_esf_t_a4_OFFSET(sp)
+	SR a5, __z_arch_esf_t_a5_OFFSET(sp)
+	SR a6, __z_arch_esf_t_a6_OFFSET(sp)
+	SR a7, __z_arch_esf_t_a7_OFFSET(sp)
 
 	/* Save MEPC register */
 	csrr t0, mepc
-	sw t0, __z_arch_esf_t_mepc_OFFSET(sp)
+	SR t0, __z_arch_esf_t_mepc_OFFSET(sp)
 
 	/* Save SOC-specific MSTATUS register */
 	csrr t0, SOC_MSTATUS_REG
-	sw t0, __z_arch_esf_t_mstatus_OFFSET(sp)
+	SR t0, __z_arch_esf_t_mstatus_OFFSET(sp)
 
 #ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE
 	/* Handle context saving at SOC level. */
@@ -164,9 +164,9 @@ is_syscall:
 	 * It's safe to always increment by 4, even with compressed
 	 * instructions, because the ecall instruction is always 4 bytes.
 	 */
-	lw t0, __z_arch_esf_t_mepc_OFFSET(sp)
+	LR t0, __z_arch_esf_t_mepc_OFFSET(sp)
 	addi t0, t0, 4
-	sw t0, __z_arch_esf_t_mepc_OFFSET(sp)
+	SR t0, __z_arch_esf_t_mepc_OFFSET(sp)
 
 #ifdef CONFIG_IRQ_OFFLOAD
 	/*
@@ -176,7 +176,7 @@ is_syscall:
 	 * jump to is_interrupt to handle the IRQ offload.
 	 */
 	la t0, _offload_routine
-	lw t1, 0x00(t0)
+	LR t1, 0x00(t0)
 	bnez t1, is_interrupt
 #endif
 
@@ -196,14 +196,14 @@ is_interrupt:
 
 	/* Switch to interrupt stack */
 	la t2, _kernel
-	lw sp, _kernel_offset_to_irq_stack(t2)
+	LR sp, _kernel_offset_to_irq_stack(t2)
 
 	/*
 	 * Save thread stack pointer on interrupt stack
 	 * In RISC-V, stack pointer needs to be 16-byte aligned
 	 */
 	addi sp, sp, -16
-	sw t0, 0x00(sp)
+	SR t0, 0x00(sp)
 
 on_irq_stack:
 	/* Increment _kernel.nested variable */
@@ -243,25 +243,25 @@ call_irq:
 
 	/*
 	 * Call corresponding registered function in _sw_isr_table.
-	 * (table is 8-bytes wide, we should shift index by 3)
+	 * (table is 2-word wide, we should shift index accordingly)
 	 */
 	la t0, _sw_isr_table
-	slli a0, a0, 3
+	slli a0, a0, (RV_REGSHIFT + 1)
 	add t0, t0, a0
 
 	/* Load argument in a0 register */
-	lw a0, 0x00(t0)
+	LR a0, 0x00(t0)
 
 	/* Load ISR function address in register t1 */
-	lw t1, 0x04(t0)
+	lw t1, RV_REGSIZE(t0)
 
 #ifdef CONFIG_EXECUTION_BENCHMARKING
 	addi sp, sp, -16
-	sw a0, 0x00(sp)
-	sw t1, 0x04(sp)
+	SR a0, 0x00(sp)
+	SR t1, RV_REGSIZE(sp)
 	call read_timer_end_of_isr
-	lw t1, 0x04(sp)
-	lw a0, 0x00(sp)
+	LR t1, RV_REGSIZE(sp)
+	LR a0, 0x00(sp)
 	addi sp, sp, 16
 #endif
 	/* Call ISR function */
@@ -277,7 +277,7 @@ on_thread_stack:
 	sw t2, _kernel_offset_to_nested(t1)
 
 	/* Restore thread stack pointer */
-	lw t0, 0x00(sp)
+	LR t0, 0x00(sp)
 	addi sp, t0, 0
 
 #ifdef CONFIG_STACK_SENTINEL
@@ -291,13 +291,13 @@ on_thread_stack:
 	 */
 
 	/* Get pointer to _kernel.current */
-	lw t2, _kernel_offset_to_current(t1)
+	LR t2, _kernel_offset_to_current(t1)
 
 	/*
 	 * Check if next thread to schedule is current thread.
 	 * If yes do not perform a reschedule
 	 */
-	lw t3, _kernel_offset_to_ready_q_cache(t1)
+	LR t3, _kernel_offset_to_ready_q_cache(t1)
 	beq t3, t2, no_reschedule
 #else
 	j no_reschedule
@@ -311,101 +311,101 @@ reschedule:
 	la t0, _kernel
 
 	/* Get pointer to _kernel.current */
-	lw t1, _kernel_offset_to_current(t0)
+	LR t1, _kernel_offset_to_current(t0)
 
 	/*
 	 * Save callee-saved registers of current thread
 	 * prior to handle context-switching
 	 */
-	sw s0, _thread_offset_to_s0(t1)
-	sw s1, _thread_offset_to_s1(t1)
-	sw s2, _thread_offset_to_s2(t1)
-	sw s3, _thread_offset_to_s3(t1)
-	sw s4, _thread_offset_to_s4(t1)
-	sw s5, _thread_offset_to_s5(t1)
-	sw s6, _thread_offset_to_s6(t1)
-	sw s7, _thread_offset_to_s7(t1)
-	sw s8, _thread_offset_to_s8(t1)
-	sw s9, _thread_offset_to_s9(t1)
-	sw s10, _thread_offset_to_s10(t1)
-	sw s11, _thread_offset_to_s11(t1)
+	SR s0, _thread_offset_to_s0(t1)
+	SR s1, _thread_offset_to_s1(t1)
+	SR s2, _thread_offset_to_s2(t1)
+	SR s3, _thread_offset_to_s3(t1)
+	SR s4, _thread_offset_to_s4(t1)
+	SR s5, _thread_offset_to_s5(t1)
+	SR s6, _thread_offset_to_s6(t1)
+	SR s7, _thread_offset_to_s7(t1)
+	SR s8, _thread_offset_to_s8(t1)
+	SR s9, _thread_offset_to_s9(t1)
+	SR s10, _thread_offset_to_s10(t1)
+	SR s11, _thread_offset_to_s11(t1)
 
 	/*
 	 * Save stack pointer of current thread and set the default return value
 	 * of z_swap to _k_neg_eagain for the thread.
 	 */
-	sw sp, _thread_offset_to_sp(t1)
+	SR sp, _thread_offset_to_sp(t1)
 	la t2, _k_neg_eagain
 	lw t3, 0x00(t2)
 	sw t3, _thread_offset_to_swap_return_value(t1)
 
 	/* Get next thread to schedule. */
-	lw t1, _kernel_offset_to_ready_q_cache(t0)
+	LR t1, _kernel_offset_to_ready_q_cache(t0)
 
 	/*
 	 * Set _kernel.current to new thread loaded in t1
 	 */
-	sw t1, _kernel_offset_to_current(t0)
+	SR t1, _kernel_offset_to_current(t0)
 
 	/* Switch to new thread stack */
-	lw sp, _thread_offset_to_sp(t1)
+	LR sp, _thread_offset_to_sp(t1)
 
 	/* Restore callee-saved registers of new thread */
-	lw s0, _thread_offset_to_s0(t1)
-	lw s1, _thread_offset_to_s1(t1)
-	lw s2, _thread_offset_to_s2(t1)
-	lw s3, _thread_offset_to_s3(t1)
-	lw s4, _thread_offset_to_s4(t1)
-	lw s5, _thread_offset_to_s5(t1)
-	lw s6, _thread_offset_to_s6(t1)
-	lw s7, _thread_offset_to_s7(t1)
-	lw s8, _thread_offset_to_s8(t1)
-	lw s9, _thread_offset_to_s9(t1)
-	lw s10, _thread_offset_to_s10(t1)
-	lw s11, _thread_offset_to_s11(t1)
+	LR s0, _thread_offset_to_s0(t1)
+	LR s1, _thread_offset_to_s1(t1)
+	LR s2, _thread_offset_to_s2(t1)
+	LR s3, _thread_offset_to_s3(t1)
+	LR s4, _thread_offset_to_s4(t1)
+	LR s5, _thread_offset_to_s5(t1)
+	LR s6, _thread_offset_to_s6(t1)
+	LR s7, _thread_offset_to_s7(t1)
+	LR s8, _thread_offset_to_s8(t1)
+	LR s9, _thread_offset_to_s9(t1)
+	LR s10, _thread_offset_to_s10(t1)
+	LR s11, _thread_offset_to_s11(t1)
 
 #ifdef CONFIG_EXECUTION_BENCHMARKING
 	addi sp, sp, -__z_arch_esf_t_SIZEOF
 
-	sw ra, __z_arch_esf_t_ra_OFFSET(sp)
-	sw gp, __z_arch_esf_t_gp_OFFSET(sp)
-	sw tp, __z_arch_esf_t_tp_OFFSET(sp)
-	sw t0, __z_arch_esf_t_t0_OFFSET(sp)
-	sw t1, __z_arch_esf_t_t1_OFFSET(sp)
-	sw t2, __z_arch_esf_t_t2_OFFSET(sp)
-	sw t3, __z_arch_esf_t_t3_OFFSET(sp)
-	sw t4, __z_arch_esf_t_t4_OFFSET(sp)
-	sw t5, __z_arch_esf_t_t5_OFFSET(sp)
-	sw t6, __z_arch_esf_t_t6_OFFSET(sp)
-	sw a0, __z_arch_esf_t_a0_OFFSET(sp)
-	sw a1, __z_arch_esf_t_a1_OFFSET(sp)
-	sw a2, __z_arch_esf_t_a2_OFFSET(sp)
-	sw a3, __z_arch_esf_t_a3_OFFSET(sp)
-	sw a4, __z_arch_esf_t_a4_OFFSET(sp)
-	sw a5, __z_arch_esf_t_a5_OFFSET(sp)
-	sw a6, __z_arch_esf_t_a6_OFFSET(sp)
-	sw a7, __z_arch_esf_t_a7_OFFSET(sp)
+	SR ra, __z_arch_esf_t_ra_OFFSET(sp)
+	SR gp, __z_arch_esf_t_gp_OFFSET(sp)
+	SR tp, __z_arch_esf_t_tp_OFFSET(sp)
+	SR t0, __z_arch_esf_t_t0_OFFSET(sp)
+	SR t1, __z_arch_esf_t_t1_OFFSET(sp)
+	SR t2, __z_arch_esf_t_t2_OFFSET(sp)
+	SR t3, __z_arch_esf_t_t3_OFFSET(sp)
+	SR t4, __z_arch_esf_t_t4_OFFSET(sp)
+	SR t5, __z_arch_esf_t_t5_OFFSET(sp)
+	SR t6, __z_arch_esf_t_t6_OFFSET(sp)
+	SR a0, __z_arch_esf_t_a0_OFFSET(sp)
+	SR a1, __z_arch_esf_t_a1_OFFSET(sp)
+	SR a2, __z_arch_esf_t_a2_OFFSET(sp)
+	SR a3, __z_arch_esf_t_a3_OFFSET(sp)
+	SR a4, __z_arch_esf_t_a4_OFFSET(sp)
+	SR a5, __z_arch_esf_t_a5_OFFSET(sp)
+	SR a6, __z_arch_esf_t_a6_OFFSET(sp)
+	SR a7, __z_arch_esf_t_a7_OFFSET(sp)
 
 	call read_timer_end_of_swap
 
-	lw ra, __z_arch_esf_t_ra_OFFSET(sp)
-	lw gp, __z_arch_esf_t_gp_OFFSET(sp)
-	lw tp, __z_arch_esf_t_tp_OFFSET(sp)
-	lw t0, __z_arch_esf_t_t0_OFFSET(sp)
-	lw t1, __z_arch_esf_t_t1_OFFSET(sp)
-	lw t2, __z_arch_esf_t_t2_OFFSET(sp)
-	lw t3, __z_arch_esf_t_t3_OFFSET(sp)
-	lw t4, __z_arch_esf_t_t4_OFFSET(sp)
-	lw t5, __z_arch_esf_t_t5_OFFSET(sp)
-	lw t6, __z_arch_esf_t_t6_OFFSET(sp)
-	lw a0, __z_arch_esf_t_a0_OFFSET(sp)
-	lw a1, __z_arch_esf_t_a1_OFFSET(sp)
-	lw a2, __z_arch_esf_t_a2_OFFSET(sp)
-	lw a3, __z_arch_esf_t_a3_OFFSET(sp)
-	lw a4, __z_arch_esf_t_a4_OFFSET(sp)
-	lw a5, __z_arch_esf_t_a5_OFFSET(sp)
-	lw a6, __z_arch_esf_t_a6_OFFSET(sp)
-	lw a7, __z_arch_esf_t_a7_OFFSET(sp)
+	LR ra, __z_arch_esf_t_ra_OFFSET(sp)
+	LR gp, __z_arch_esf_t_gp_OFFSET(sp)
+	LR tp, __z_arch_esf_t_tp_OFFSET(sp)
+	LR t0, __z_arch_esf_t_t0_OFFSET(sp)
+	LR t1, __z_arch_esf_t_t1_OFFSET(sp)
+	LR t2, __z_arch_esf_t_t2_OFFSET(sp)
+	LR t3, __z_arch_esf_t_t3_OFFSET(sp)
+	LR t4, __z_arch_esf_t_t4_OFFSET(sp)
+	LR t5, __z_arch_esf_t_t5_OFFSET(sp)
+	LR t6, __z_arch_esf_t_t6_OFFSET(sp)
+	LR a0, __z_arch_esf_t_a0_OFFSET(sp)
+	LR a1, __z_arch_esf_t_a1_OFFSET(sp)
+	LR a2, __z_arch_esf_t_a2_OFFSET(sp)
+	LR a3, __z_arch_esf_t_a3_OFFSET(sp)
+	LR a4, __z_arch_esf_t_a4_OFFSET(sp)
+	LR a5, __z_arch_esf_t_a5_OFFSET(sp)
+	LR a6, __z_arch_esf_t_a6_OFFSET(sp)
+	LR a7, __z_arch_esf_t_a7_OFFSET(sp)
 
 	/* Release stack space */
 	addi sp, sp, __z_arch_esf_t_SIZEOF
@@ -419,32 +419,32 @@ no_reschedule:
 #endif /* CONFIG_RISCV_SOC_CONTEXT_SAVE */
 
 	/* Restore MEPC register */
-	lw t0, __z_arch_esf_t_mepc_OFFSET(sp)
+	LR t0, __z_arch_esf_t_mepc_OFFSET(sp)
 	csrw mepc, t0
 
 	/* Restore SOC-specific MSTATUS register */
-	lw t0, __z_arch_esf_t_mstatus_OFFSET(sp)
+	LR t0, __z_arch_esf_t_mstatus_OFFSET(sp)
 	csrw SOC_MSTATUS_REG, t0
 
 	/* Restore caller-saved registers from thread stack */
-	lw ra, __z_arch_esf_t_ra_OFFSET(sp)
-	lw gp, __z_arch_esf_t_gp_OFFSET(sp)
-	lw tp, __z_arch_esf_t_tp_OFFSET(sp)
-	lw t0, __z_arch_esf_t_t0_OFFSET(sp)
-	lw t1, __z_arch_esf_t_t1_OFFSET(sp)
-	lw t2, __z_arch_esf_t_t2_OFFSET(sp)
-	lw t3, __z_arch_esf_t_t3_OFFSET(sp)
-	lw t4, __z_arch_esf_t_t4_OFFSET(sp)
-	lw t5, __z_arch_esf_t_t5_OFFSET(sp)
-	lw t6, __z_arch_esf_t_t6_OFFSET(sp)
-	lw a0, __z_arch_esf_t_a0_OFFSET(sp)
-	lw a1, __z_arch_esf_t_a1_OFFSET(sp)
-	lw a2, __z_arch_esf_t_a2_OFFSET(sp)
-	lw a3, __z_arch_esf_t_a3_OFFSET(sp)
-	lw a4, __z_arch_esf_t_a4_OFFSET(sp)
-	lw a5, __z_arch_esf_t_a5_OFFSET(sp)
-	lw a6, __z_arch_esf_t_a6_OFFSET(sp)
-	lw a7, __z_arch_esf_t_a7_OFFSET(sp)
+	LR ra, __z_arch_esf_t_ra_OFFSET(sp)
+	LR gp, __z_arch_esf_t_gp_OFFSET(sp)
+	LR tp, __z_arch_esf_t_tp_OFFSET(sp)
+	LR t0, __z_arch_esf_t_t0_OFFSET(sp)
+	LR t1, __z_arch_esf_t_t1_OFFSET(sp)
+	LR t2, __z_arch_esf_t_t2_OFFSET(sp)
+	LR t3, __z_arch_esf_t_t3_OFFSET(sp)
+	LR t4, __z_arch_esf_t_t4_OFFSET(sp)
+	LR t5, __z_arch_esf_t_t5_OFFSET(sp)
+	LR t6, __z_arch_esf_t_t6_OFFSET(sp)
+	LR a0, __z_arch_esf_t_a0_OFFSET(sp)
+	LR a1, __z_arch_esf_t_a1_OFFSET(sp)
+	LR a2, __z_arch_esf_t_a2_OFFSET(sp)
+	LR a3, __z_arch_esf_t_a3_OFFSET(sp)
+	LR a4, __z_arch_esf_t_a4_OFFSET(sp)
+	LR a5, __z_arch_esf_t_a5_OFFSET(sp)
+	LR a6, __z_arch_esf_t_a6_OFFSET(sp)
+	LR a7, __z_arch_esf_t_a7_OFFSET(sp)
 
 	/* Release stack space */
 	addi sp, sp, __z_arch_esf_t_SIZEOF

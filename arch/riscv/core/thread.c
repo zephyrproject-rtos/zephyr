@@ -33,10 +33,10 @@ void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 				 stack_size - sizeof(struct __esf));
 
 	/* Setup the initial stack frame */
-	stack_init->a0 = (u32_t)thread_func;
-	stack_init->a1 = (u32_t)arg1;
-	stack_init->a2 = (u32_t)arg2;
-	stack_init->a3 = (u32_t)arg3;
+	stack_init->a0 = (ulong_t)thread_func;
+	stack_init->a1 = (ulong_t)arg1;
+	stack_init->a2 = (ulong_t)arg2;
+	stack_init->a3 = (ulong_t)arg3;
 	/*
 	 * Following the RISC-V architecture,
 	 * the MSTATUS register (used to globally enable/disable interrupt),
@@ -47,7 +47,7 @@ void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	 * This shall allow to handle nested interrupts.
 	 *
 	 * Given that context switching is performed via a system call exception
-	 * within the RISCV32 architecture implementation, initially set:
+	 * within the RISCV architecture implementation, initially set:
 	 * 1) MSTATUS to SOC_MSTATUS_DEF_RESTORE in the thread stack to enable
 	 *    interrupts when the newly created thread will be scheduled;
 	 * 2) MEPC to the address of the z_thread_entry_wrapper in the thread
@@ -61,7 +61,7 @@ void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	 *    thread stack.
 	 */
 	stack_init->mstatus = SOC_MSTATUS_DEF_RESTORE;
-	stack_init->mepc = (u32_t)z_thread_entry_wrapper;
+	stack_init->mepc = (ulong_t)z_thread_entry_wrapper;
 
-	thread->callee_saved.sp = (u32_t)stack_init;
+	thread->callee_saved.sp = (ulong_t)stack_init;
 }

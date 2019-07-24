@@ -23,6 +23,9 @@ typedef unsigned short      u16_t;
 typedef unsigned int        u32_t;
 typedef unsigned long long  u64_t;
 
+/* 32 bits on ILP32 builds, 64 bits on LP64 builts */
+typedef unsigned long       ulong_t;
+
 #ifdef __cplusplus
 }
 #endif
