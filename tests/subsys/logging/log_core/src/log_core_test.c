@@ -18,6 +18,7 @@
 #include <logging/log_backend.h>
 #include <logging/log_ctrl.h>
 #include <logging/log.h>
+#include <sys/printk_custom_format.h>
 #include "test_module.h"
 
 #define LOG_MODULE_NAME test
@@ -471,6 +472,49 @@ static void test_log_msg_dropped_notification(void)
 	k_sched_unlock();
 }
 
+static void test_str_log_dup(void)
+{
+	extern struct k_mem_slab log_msg_pool;
+	char tmp[sizeof(union log_msg_chunk)+sizeof(u32_t)];
+	/*long string not fitting in single chunk */
+	static const char const_tmp[] = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa "
+					"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb "
+					"cccccccccccccccccccccccccccccccccccc";
+	u32_t slabs;
+
+	BUILD_ASSERT_MSG(sizeof(const_tmp) > sizeof(union log_msg_chunk),
+			  "Not exceeding single chunk");
+
+	memset(tmp, 'a', sizeof(tmp));
+	tmp[sizeof(tmp) - 1] = '\0';
+
+	log_setup(false);
+	slabs = k_mem_slab_num_free_get(&log_msg_pool);
+
+	/* standard string format specifier */
+	LOG_INF("test %s", log_strdup(tmp));
+	zassert_equal(slabs - 1, k_mem_slab_num_free_get(&log_msg_pool),
+			"Expected one slab used for log");
+
+	LOG_INF("test %pZ", log_string_dup(tmp));
+	zassert_equal(slabs - 4, k_mem_slab_num_free_get(&log_msg_pool),
+			"Expected 3 slabs used for log with custom specifier");
+
+	/* string is ro so duplication should figure out and store only
+	 * a pointer.
+	 */
+	LOG_INF("test %pZ", log_string_dup(const_tmp));
+	zassert_equal(slabs - 6, k_mem_slab_num_free_get(&log_msg_pool),
+			"Expected 2 slabs used for log with custom specifier");
+
+	while (log_process(false)) {
+	}
+
+	zassert_equal(slabs, k_mem_slab_num_free_get(&log_msg_pool),
+			"Expeted all (%d) used slabs being in the pool. Got %d",
+			slabs, k_mem_slab_num_free_get(&log_msg_pool));
+}
+
 /*
  * Test checks if panic is correctly executed. On panic logger should flush all
  * messages and process logs in place (not in deferred way).
@@ -516,6 +560,8 @@ void test_main(void)
 			 ztest_unit_test(test_log_strdup_detect_miss),
 			 ztest_unit_test(test_strdup_trimming),
 			 ztest_unit_test(test_log_msg_dropped_notification),
-			 ztest_unit_test(test_log_panic));
+			 ztest_unit_test(test_str_log_dup),
+			 ztest_unit_test(test_log_panic)
+			 );
 	ztest_run_test_suite(test_log_list);
 }
