@@ -307,12 +307,6 @@ static int spi_stm32_configure(struct device *dev,
 
 	LL_SPI_DisableCRC(spi);
 
-	if (config->operation & SPI_OP_MODE_SLAVE) {
-		LL_SPI_SetMode(spi, LL_SPI_MODE_SLAVE);
-	} else {
-		LL_SPI_SetMode(spi, LL_SPI_MODE_MASTER);
-	}
-
 	if (config->cs || !IS_ENABLED(CONFIG_SPI_STM32_USE_HW_SS)) {
 		LL_SPI_SetNSSMode(spi, LL_SPI_NSS_SOFT);
 	} else {
@@ -321,6 +315,12 @@ static int spi_stm32_configure(struct device *dev,
 		} else {
 			LL_SPI_SetNSSMode(spi, LL_SPI_NSS_HARD_OUTPUT);
 		}
+	}
+
+	if (config->operation & SPI_OP_MODE_SLAVE) {
+		LL_SPI_SetMode(spi, LL_SPI_MODE_SLAVE);
+	} else {
+		LL_SPI_SetMode(spi, LL_SPI_MODE_MASTER);
 	}
 
 	if (SPI_WORD_SIZE_GET(config->operation) ==  8) {
