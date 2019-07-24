@@ -1409,7 +1409,7 @@ int shell_execute_cmd(const struct shell *shell, const char *cmd)
 	}
 
 	if (shell == NULL) {
-#if CONFIG_SHELL_BACKEND_DUMMY
+#if defined(CONFIG_SHELL_BACKEND_DUMMY)
 		shell = shell_backend_dummy_get_ptr();
 #else
 		return -EINVAL;
