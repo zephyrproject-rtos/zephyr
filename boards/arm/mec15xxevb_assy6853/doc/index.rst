@@ -10,8 +10,8 @@ The MEC15xxEVB_ASSY6853 kit is a future development platform to evaluate the
 Microchip MEC15XX series microcontrollers. This board needs to be mated with
 part number MEC1501 144WFBA SOLDER DC ASSY 6860(cpu board) in order to operate.
 
-.. image:: ./mec15xxevb_assy6853.jpg
-     :width: 500px
+.. image:: ./mec15xxevb_assy6853.png
+     :width: 600px
      :align: center
      :alt: MEC15XX EVB ASSY 6853
 
@@ -59,6 +59,10 @@ features:
 +-----------+------------+-------------------------------------+
 | GPIO      | on-chip    | gpio                                |
 +-----------+------------+-------------------------------------+
+| I2C       | on-chip    | i2c                                 |
++-----------+------------+-------------------------------------+
+| PINMUX    | on-chip    | pinmux                              |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not currently supported by Zephyr (at the moment)
 
@@ -69,7 +73,11 @@ Kconfig file.
 Connections and IOs
 ===================
 
-Microchip to provide the schematic for this board.
+This evaluation board kit is comprised of the following HW blocks:
+
+- MEC15xx EVB ASSY 6853 Rev A `MEC15xx EVB Schematic`_
+- MEC1501 144WFBA SOLDER DC ASSY 6860 `MEC1501 Daughter Card Schematic`_
+- SPI DONGLE ASSY 6791 `SPI Dongle Schematic`_
 
 System Clock
 ============
@@ -82,7 +90,7 @@ the references at the end of this document.
 Serial Port
 ===========
 
-UART0 is configured for serial logs.
+UART2 is configured for serial logs.
 
 Jumper settings
 ***************
@@ -93,14 +101,17 @@ board. Advanced users may deviate from this recommendation.
 Jumper setting for MEC15xx EVB Assy 6853 Rev A1p0
 =================================================
 
-Power-related jumpers.
-----------------------
+Power-related jumpers
+---------------------
 
-Power from +5V power brick connected to barrel connector P11 (5.5mm OD, 2.1mm ID)
-JP88 5-6 only
+If you wish to power from +5V power brick, then connect to barrel connector ``P11``
+(5.5mm OD, 2.1mm ID) and move the jumper to ``JP88 5-6``.
 
-Power from micro-USB type A/B connector P12.
-JP88 7-8 only
+If you wish to power from micro-USB type A/B connector ``P12``, move the
+jumper to ``JP88 7-8``.
+
+
+.. note:: A single jumper is required in JP88.
 
 +-------+------+------+------+------+------+------+------+------+------+------+
 | JP22  | JP32 | JP33 | JP37 | JP43 | JP47 | JP54 | JP56 | JP58 | JP64 | JP65 |
@@ -141,34 +152,33 @@ These jumpers configure MEC1501 Boot-ROM straps.
 | 2-3         | 1-2        | 2-3          | 1-2         |
 +-------------+------------+--------------+-------------+
 
-JP96 1-2 pulls SHD SPI CS0# up to VTR2
-MEC1501 Boot-ROM samples SHD SPI CS0# and if high
-loads from SHD SPI.
+``JP96 1-2`` pulls SHD SPI CS0# up to VTR2. MEC1501 Boot-ROM samples
+SHD SPI CS0# and if high, it loads code from SHD SPI.
 
 Peripheral Routing Jumpers
 --------------------------
 
-Each column of the following table illustrates how to enable SWD,
+Each column of the following table illustrates how to enable UART2, SWD,
 PVT SPI, SHD SPI and LED0-2 respectively.
 
-+---------+--------+-----------+----------+---------+
-| JP9     | JP9    | JP38      | JP98     | JP41    |
-| (UART2) | (SWD)  | (PVT SPI) | (SHD SPI)| (LED0-2)|
-+=========+========+===========+==========+=========+
-|         | 2-3    | 2-3       | 2-3      | 1-2     |
-+---------+--------+-----------+----------+---------+
-| 4-5     |        | 5-6       | 5-6      | 3-4     |
-+---------+--------+-----------+----------+---------+
-|         | 8-9    | 8-9       | 8-9      | 5-6     |
-+---------+--------+-----------+----------+---------+
-| 10-11   |        | 11-12     | 11-12    |         |
-+---------+--------+-----------+----------+---------+
-|         |        | 14-15     | 14-15    |         |
-+---------+--------+-----------+----------+---------+
-|         |        | 17-18     | 20-21    |         |
-+---------+--------+-----------+----------+---------+
++----------+----------+--------+-----------+----------+---------+
+|  JP48    |  JP9     | JP9    | JP38      | JP98     | JP41    |
+|  (UART2) |  (UART2) | (SWD)  | (PVT SPI) | (SHD SPI)| (LED0-2)|
++==========+==========+========+===========+==========+=========+
+|  1-2     |          | 2-3    | 2-3       | 2-3      | 1-2     |
++----------+----------+--------+-----------+----------+---------+
+|  4-5     |  4-5     |        | 5-6       | 5-6      | 3-4     |
++----------+----------+--------+-----------+----------+---------+
+|  7-8     |          | 8-9    | 8-9       | 8-9      | 5-6     |
++----------+----------+--------+-----------+----------+---------+
+|  10-12   |  10-11   |        | 11-12     | 11-12    |         |
++----------+----------+--------+-----------+----------+---------+
+|          |          |        | 14-15     | 14-15    |         |
++----------+----------+--------+-----------+----------+---------+
+|          |          |        | 17-18     | 20-21    |         |
++----------+----------+--------+-----------+----------+---------+
 
-An additional setting for UART2 is to make sure JP39 does not have any jumper.
+.. note:: An additional setting for UART2 is to make sure JP39 does not have any jumper.
 
 Jumper settings for MEC1501 144WFBGA Socket DC Assy 6883 Rev B1p0
 =================================================================
@@ -180,7 +190,7 @@ also be configured to use an external 50% duty cycle 32KHz source on the
 XTAL2/32KHZ_IN pin. Note, firmware must set the MEC15xx clock enable
 register to select the external source matching the jumper settings. If
 using the MEC15xx internal silicon oscillator then the 32K jumper settings
-are don't cares. JP1 is for scoping test clock outputs. Please refer to
+are don't cares. ``JP1`` is for scoping test clock outputs. Please refer to
 the schematic in reference section below.
 
 Parallel 32KHz crystal configuration
@@ -204,23 +214,34 @@ Jumper settings for MEC1503 144WFBGA Socket DC Assy 6856 Rev B1p0
 =================================================================
 
 The MEC1503 ASSY 6856 CPU card does not include an onboard external
-32K crystal or oscillator. The one jumper block JP1 is for scoping
+32K crystal or oscillator. The one jumper block ``JP1`` is for scoping
 test clock outputs not for configuration. Please refer to schematic
 in reference section below.
 
 Programming and Debugging
 *************************
 
-This board comes with a Cortex ETM port which facilitates tracing and debugging
-using a single physical connection.  In addition, it comes with sockets for
-JTAG only sessions.
+Building
+==========
+
+#. Build :ref:`hello_world` application as you would normally do.
+
+#. Once you have ``zephyr.bin``, proceed to use the `SPI Image Gen`_ microchip tool
+   in order to create the the final binary. You need the output from  this tool
+   to flash in the SHD SPI memory.
 
 Flashing
 ========
 
-#. Connect the SPI Dongle ASSY 6791 to J36 (SPI dongle) in order to flash and
-   boot from SHD SPI NOR. Then proceed to flash using Dediprog SF100 or a
-   similar tool for flashing SPI chips.
+.. image:: ./spidongle_assy6791.png
+     :width: 300px
+     :align: center
+     :alt: SPI DONGLE ASSY 6791
+
+#. Connect the SPI Dongle ASSY 6791 to ``J36`` in the EVB. See the image above.
+
+#. Then proceed to flash the SPI NOR ``U3`` at offset 0x0 using Dediprog SF100
+   or a similar tool for flashing SPI chips.
 
    .. note:: Remember that SPI MISO/MOSI are swapped on dediprog headers!
 
@@ -240,33 +261,21 @@ Flashing
    - Stop bits: 1
 
 #. Connect the MEC15xxEVB_ASSY_6853 board to your host computer using the
-   UART2 port. Then build :ref: `hello_world` application. It is important
-   to generate a binary with a new load address, for example do the following::
+   UART2 port and apply power.
 
-        ${OBJCOPY} --change-addresses -0xe0000 -O binary -S ${in_elf} ${out_bin}
-
-   Once you obtain the binary, proceed to use the microchip tool mec15xx_spi_gen
-   in order to create the final binary. This binary is what you need to flash
-   in your spi nor.
-
-   .. zephyr-app-commands::
-      :zephyr-app: samples/hello_world
-      :board: mec15xxevb_assy6853
-      :goals: build flash
-
-   You should see "Hello World! mec15xxevb_assy6853" in your terminal.
+   You should see ``"Hello World! mec15xxevb_assy6853"`` in your terminal.
 
 Debugging
 =========
+This board comes with a Cortex ETM port which facilitates tracing and debugging
+using a single physical connection.  In addition, it comes with sockets for
+JTAG only sessions.
 
-You can debug an application in the usual way.  Here is an example for the
-:ref:`hello_world` application.
-
-.. zephyr-app-commands::
-   :zephyr-app: samples/hello_world
-   :board: mec15xxevb_assy6853
-   :maybe-skip-config:
-   :goals: debug
+HW Issues
+=========
+In case you don't see your application running, please make sure ``LED7``,
+``LED8``, and ``LED1`` are lit. If one of these is off, then check the power-
+related jumpers again.
 
 References
 **********
@@ -284,3 +293,5 @@ References
     https://github.com/MicrochipTech/CPGZephyrDocs/blob/master/MEC1501/MEC1503%20Socket%20DC%20for%20EVERGLADES%20EVB%20-%20Assy_6856%20Rev%20A1p0%20-%20SCH.pdf
 .. _SPI Dongle Schematic:
     https://github.com/MicrochipTech/CPGZephyrDocs/blob/master/MEC1501/SPI%20Dongles%20and%20Aardvark%20Interposer%20Assy%206791%20Rev%20A1p1%20-%20SCH.pdf
+.. _SPI Image Gen:
+    https://github.com/MicrochipTech/CPGZephyrDocs/tree/master/MEC1501/SPI_image_gen
