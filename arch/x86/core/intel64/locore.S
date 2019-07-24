@@ -509,7 +509,11 @@ irq_dispatch:
 	cli
 	subq $CONFIG_ISR_STACK_SIZE, ist1
 	decl _kernel_offset_to_nested(%rsi)
-	jz __resume /* not nested, just __resume (might change threads) */
+	/* not nested, exit via __resume (might change threads) */
+#ifdef CONFIG_STACK_SENTINEL
+	call z_check_stack_sentinel
+#endif
+	jz __resume
 
 irq_exit_nested:
 	fxrstor (%rsp)
