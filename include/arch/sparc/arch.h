@@ -59,6 +59,14 @@ extern "C" {
 #define STACK_ROUND_UP(x) ROUND_UP(x, STACK_ALIGN_SIZE)
 #define STACK_ROUND_DOWN(x) ROUND_DOWN(x, STACK_ALIGN_SIZE)
 
+static ALWAYS_INLINE unsigned int z_sparc_get_psr(void)
+{
+	unsigned int psr;
+
+	__asm__ volatile("mov %%psr, %0" : "=r"(psr) : : "memory");
+	return psr;
+}
+
 static ALWAYS_INLINE unsigned int arch_irq_lock(void)
 {
 	unsigned int key;
