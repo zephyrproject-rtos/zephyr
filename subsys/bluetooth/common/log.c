@@ -55,3 +55,54 @@ const char *bt_addr_le_str_real(const bt_addr_le_t *addr)
 
 	return str;
 }
+
+static void format_bt_addr_le_t(memobj_t *memobj, u8_t flags,
+				printk_out_func_t out_func, void *ctx)
+{
+	bt_addr_le_t addr_buf;
+	bt_addr_le_t *addr;
+	const char *type = NULL;
+
+	if (flags & PRINTK_CUST_FORMAT_PTR) {
+		printk_custom_format_data_get(memobj, (u8_t *)&addr,
+					    sizeof(addr), 0);
+	} else {
+		printk_custom_format_data_get(memobj, (u8_t *)&addr_buf,
+					    sizeof(addr_buf), 0);
+		addr = &addr_buf;
+	}
+
+	switch (addr->type) {
+	case BT_ADDR_LE_PUBLIC:
+		type = "public";
+		break;
+	case BT_ADDR_LE_RANDOM:
+		type = "random";
+		break;
+	case BT_ADDR_LE_PUBLIC_ID:
+		type = "public id";
+		break;
+	case BT_ADDR_LE_RANDOM_ID:
+		type = "random id";
+		break;
+	}
+
+	while (*type) {
+		out_func(*type++, ctx);
+	}
+
+	out_func(' ', ctx);
+	for (int i = 0; i < 6; i++) {
+		z_printk_hex_ulong(out_func, ctx, addr->a.val[i],
+				PRINTK_PAD_ZERO_BEFORE, 2);
+		if (i != 5) {
+			out_func(':', ctx);
+		}
+	}
+}
+
+void *z_bt_addr_le_t_dup(u8_t *buf, const bt_addr_le_t *addr)
+{
+	return printk_cust_format_dup(buf, (void *)addr, sizeof(bt_addr_le_t),
+				      format_bt_addr_le_t);
+}

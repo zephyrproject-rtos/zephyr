@@ -24,6 +24,7 @@
 #include <net/buf.h>
 #include <bluetooth/hci.h>
 #include <bluetooth/crypto.h>
+#include "../sys/printk_custom_format.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -771,6 +772,32 @@ void bt_foreach_bond(u8_t id, void (*func)(const struct bt_bond_info *info,
 					   void *user_data),
 		     void *user_data);
 
+/** @brief Duplicates address to the provided buffer or buffer allocated from
+ *	   the log message buffer pool.
+ *
+ * @param buf	Output buffer that will contain memory object. If NULL then
+ *		function allocates from the log message buffer pool.
+ * @addr addr	Address structure to be duplicated.
+ *
+ * @param Pointer to the object (same as input buffer if it is not NULL).
+ */
+void *z_bt_addr_le_t_dup(u8_t *buf, const bt_addr_le_t *addr);
+
+/** @brief Macro to be used in synchronous string formatting functions (e.g.
+ *	   printk) which are later on formatted by printk module.
+ *
+ * Example: printk("addr: %pZ\n", bt_addr_le_t_dup(addr));
+ */
+#define bt_addr_le_t_dup(addr) \
+	PRINTK_CUST_FORMAT_DUP(addr, z_bt_addr_le_t_dup)
+
+/** @brief MAcro to be used in log messages.
+ *
+ * Example: LOG_INF("addr: %pZ", bt_addr_le_t_log_dup(addr));
+ */
+#define log_bt_addr_le_t_dup(addr) \
+	(IS_ENABLED(CONFIG_LOG_IMMEDIATE) ? \
+		bt_addr_le_t_dup(addr) : z_bt_addr_le_t_dup(NULL, addr))
 /**
  * @}
  */
