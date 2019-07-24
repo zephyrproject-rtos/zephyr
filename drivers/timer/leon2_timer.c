@@ -24,8 +24,6 @@
 #include <soc.h>
 #include <drivers/timer/system_timer.h>
 
-#define TIMER1_IRQ (8)
-#define TIMER2_IRQ (9)
 #define TIMER_EN (BIT(0))
 #define TIMER_RL (BIT(1))
 #define TIMER_LD (BIT(2))

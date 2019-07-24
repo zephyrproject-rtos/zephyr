@@ -32,4 +32,7 @@
 #define LEON2_INTR_FRC (0x80000098)
 #define LEON2_INTR_CLR (0x8000009C)
 
+#define TIMER1_IRQ (8)
+#define TIMER2_IRQ (9)
+
 #endif /*_SPARC_AT697_SOC_H_*/
