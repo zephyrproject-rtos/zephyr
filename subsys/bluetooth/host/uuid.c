@@ -80,6 +80,53 @@ int bt_uuid_cmp(const struct bt_uuid *u1, const struct bt_uuid *u2)
 	return -EINVAL;
 }
 
+bool bt_uuid_create_le(struct bt_uuid *uuid, const u8_t *data, u8_t data_len)
+{
+	/* Copy UUID from packet data to internal bt_uuid */
+	switch (data_len) {
+	case 2:
+		uuid->type = BT_UUID_TYPE_16;
+		BT_UUID_16(uuid)->val = sys_get_le16(data);
+		break;
+	case 16:
+		uuid->type = BT_UUID_TYPE_128;
+		memcpy(&BT_UUID_128(uuid)->val, data, 16);
+		break;
+	default:
+		return false;
+	}
+	return true;
+}
+
+bool bt_uuid_create(struct bt_uuid *uuid, u8_t *data, u8_t data_len)
+{
+	/* Copy UUID from internal variable to internal bt_uuid */
+	union {
+		u16_t *u16;
+		u32_t *u32;
+		u8_t *u128;
+	} v;
+
+	v.u128 = data;
+	switch (data_len) {
+	case 2:
+		uuid->type = BT_UUID_TYPE_16;
+		BT_UUID_16(uuid)->val = *v.u16;
+		break;
+	case 4:
+		uuid->type = BT_UUID_TYPE_32;
+		BT_UUID_32(uuid)->val = *v.u32;
+		break;
+	case 16:
+		uuid->type = BT_UUID_TYPE_128;
+		memcpy(&BT_UUID_128(uuid)->val, v.u128, 16);
+		break;
+	default:
+		return false;
+	}
+	return true;
+}
+
 #if defined(CONFIG_BT_DEBUG)
 void bt_uuid_to_str(const struct bt_uuid *uuid, char *str, size_t len)
 {
