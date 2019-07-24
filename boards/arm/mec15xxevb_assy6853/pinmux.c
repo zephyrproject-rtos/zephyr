@@ -44,7 +44,8 @@ static int board_pinmux_init(struct device *dev)
 	 * controlled by their respective PCR register (UART2).
 	 * For more details see table 44-1
 	 */
-	ECS_REGS->DEBUG_CTRL |= 0x4;
+	ECS_REGS->DEBUG_CTRL = (MCHP_ECS_DCTRL_DBG_EN |
+				MCHP_ECS_DCTRL_MODE_SWD);
 
 	/* See table 2-4 from the data sheet for pin multiplexing*/
 #ifdef CONFIG_UART_NS16550_PORT_2
