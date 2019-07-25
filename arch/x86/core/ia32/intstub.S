@@ -210,9 +210,7 @@ alreadyOnIntStack:
 	cli			/* disable interrupts again */
 #endif
 
-#if defined(CONFIG_EOI_FORWARDING_BUG)
-	call	z_lakemont_eoi
-#elif defined(CONFIG_X2APIC)
+#if defined(CONFIG_X2APIC)
 	call	z_x2apic_eoi
 #else /* xAPIC EOI */
 	xorl	%eax, %eax

@@ -163,11 +163,7 @@ static int loapic_init(struct device *unused)
 #endif
 
 	/* discard a pending interrupt if any */
-#if CONFIG_EOI_FORWARDING_BUG
-	z_lakemont_eoi();
-#else
 	x86_write_loapic(LOAPIC_EOI, 0);
-#endif
 
 	return 0;
 }
