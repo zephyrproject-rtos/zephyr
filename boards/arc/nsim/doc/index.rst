@@ -13,16 +13,18 @@ ARC EM or ARC HS based board including the following features:
 * ARC internal timer
 * a virtual output only console (uart-nsim)
 
-There are three supported board sub-configurations:
+There are four supported board sub-configurations:
 
 * ``nsim_em`` which includes normal ARC EM features and ARC MPUv2
 * ``nsim_sem`` which includes secure ARC EM features and ARC MPUv3
 * ``nsim_hs`` which includes base ARC HS features, i.e. w/o PMU and MMU
+* ``nsim_hs_smp`` which includes base ARC HS features in multi-core cluster, still w/o PMU and MMU
 
 For detailed arc features, please refer to
 :zephyr_file:`boards/arc/nsim/support/nsim_em.props`,
-:zephyr_file:`boards/arc/nsim/support/nsim_sem.props` and
-:zephyr_file:`boards/arc/nsim/support/nsim_hs.props`.
+:zephyr_file:`boards/arc/nsim/support/nsim_sem.props`,
+:zephyr_file:`boards/arc/nsim/support/nsim_hs.props` and
+:zephyr_file:`boards/arc/nsim/support/mdb_hs_smp.args`
 
 
 Hardware

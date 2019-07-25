@@ -25,6 +25,10 @@ config SOC_NSIM_HS
 	bool "Synopsys ARC HS in nSIM"
 	select CPU_HAS_FPU
 
+config SOC_NSIM_HS_SMP
+	bool "Multi-core Synopsys ARC HS in nSIM"
+	select CPU_HAS_FPU
+
 endchoice
 
 endif #SOC_NSIM
