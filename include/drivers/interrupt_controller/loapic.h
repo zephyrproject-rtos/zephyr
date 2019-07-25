@@ -136,10 +136,6 @@ static inline void x86_write_loapic(unsigned int reg, u32_t val)
 #endif
 }
 
-#if CONFIG_EOI_FORWARDING_BUG
-extern void z_lakemont_eoi(void);
-#endif
-
 #endif /* _ASMLANGUAGE */
 
 #ifdef __cplusplus

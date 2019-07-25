@@ -32,9 +32,7 @@ void z_x2apic_eoi(void);
 
 static inline void z_irq_controller_eoi(void)
 {
-#if defined(CONFIG_EOI_FORWARDING_BUG)
-	z_lakemont_eoi();
-#elif defined(CONFIG_X2APIC)
+#if defined(CONFIG_X2APIC)
 	z_x2apic_eoi();
 #else /* xAPIC */
 	*(volatile int *)(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_EOI) = 0;
