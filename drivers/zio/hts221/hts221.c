@@ -291,7 +291,7 @@ static struct hts221_data hts221_data = {
 					 1),
 };
 
-DEVICE_AND_API_INIT(hts221, DT_ST_HTS221_0_LABEL, hts221_init,
+DEVICE_AND_API_INIT(hts221, DT_INST_0_ST_HTS221_LABEL, hts221_init,
 		    &hts221_data, &hts221_config,
 		    POST_KERNEL, CONFIG_ZIO_INIT_PRIORITY,
 		    &hts221_driver_api);
