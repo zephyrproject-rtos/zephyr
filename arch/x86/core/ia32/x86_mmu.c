@@ -9,6 +9,7 @@
 #include <linker/linker-defs.h>
 #include <kernel_internal.h>
 #include <init.h>
+#include <ctype.h>
 
 /* Common regions for all x86 processors.
  * Peripheral I/O ranges configured at the SOC level
@@ -44,6 +45,122 @@ MMU_BOOT_REGION((u32_t)&__kernel_ram_start, (u32_t)&__kernel_ram_size,
 		MMU_ENTRY_RUNTIME_USER |
 		MMU_ENTRY_EXECUTE_DISABLE);
 
+/* Works for PDPT, PD, PT entries, the bits we check here are all the same.
+ *
+ * Not trying to capture every flag, just the most interesting stuff,
+ * Present, write, XD, user, in typically encountered combinations.
+ */
+static char get_entry_code(u64_t value)
+{
+	char ret;
+
+	if ((value & MMU_ENTRY_PRESENT) == 0) {
+		ret = '.';
+	} else {
+		if ((value & MMU_ENTRY_WRITE) != 0) {
+			/* Writable page */
+			if ((value & MMU_ENTRY_EXECUTE_DISABLE) != 0) {
+				/* RW */
+				ret = 'w';
+			} else {
+				/* RWX */
+				ret = 'a';
+			}
+		} else {
+			if ((value & MMU_ENTRY_EXECUTE_DISABLE) != 0) {
+				/* R */
+				ret = 'r';
+			} else {
+				/* RX */
+				ret = 'x';
+			}
+		}
+
+		if ((value & MMU_ENTRY_USER) != 0) {
+			/* Uppercase indicates user mode access */
+			ret = toupper(ret);
+		}
+	}
+
+	return ret;
+}
+
+static void z_x86_dump_pt(struct x86_mmu_pt *pt, uintptr_t base, int index)
+{
+	int column = 0;
+
+	printk("Page table %d for 0x%08lX - 0x%08lX at %p\n",
+	       index, base, base + Z_X86_PT_AREA - 1, pt);
+
+	for (int i = 0; i < Z_X86_NUM_PT_ENTRIES; i++) {
+		printk("%c", get_entry_code(pt->entry[i].value));
+
+		column++;
+		if (column == 64) {
+			column = 0;
+			printk("\n");
+		}
+	}
+}
+
+static void z_x86_dump_pd(struct x86_mmu_pd *pd, uintptr_t base, int index)
+{
+	int column = 0;
+
+	printk("Page directory %d for 0x%08lX - 0x%08lX at %p\n",
+	       index, base, base + Z_X86_PD_AREA - 1, pd);
+
+	for (int i = 0; i < Z_X86_NUM_PD_ENTRIES; i++) {
+		printk("%c", get_entry_code(pd->entry[i].pt.value));
+
+		column++;
+		if (column == 64) {
+			column = 0;
+			printk("\n");
+		}
+	}
+
+	for (int i = 0; i < Z_X86_NUM_PD_ENTRIES; i++) {
+		struct x86_mmu_pt *pt;
+		union x86_mmu_pde_pt *pde = &pd->entry[i].pt;
+
+		if (pde->p == 0 || pde->ps == 1) {
+			/* Skip non-present, or 2MB directory entries, there's
+			 * no page table to examine */
+			continue;
+		}
+		pt = (struct x86_mmu_pt *)(pde->pt << MMU_PAGE_SHIFT);
+
+		z_x86_dump_pt(pt, base + (i * Z_X86_PT_AREA), i);
+	}
+}
+
+static void z_x86_dump_pdpt(struct x86_mmu_pdpt *pdpt, uintptr_t base,
+			    int index)
+{
+	printk("Page directory pointer table %d for 0x%08lX - 0x%08lX at %p\n",
+	       index, base, base + Z_X86_PDPT_AREA - 1, pdpt);
+
+	for (int i = 0; i < Z_X86_NUM_PDPT_ENTRIES; i++) {
+		printk("%c", get_entry_code(pdpt->entry[i].value));
+	}
+	printk("\n");
+	for (int i = 0; i < Z_X86_NUM_PDPT_ENTRIES; i++) {
+		struct x86_mmu_pd *pd;
+
+		if (pdpt->entry[i].p == 0) {
+			continue;
+		}
+		pd = (struct x86_mmu_pd *)(pdpt->entry[i].pd << MMU_PAGE_SHIFT);
+
+		z_x86_dump_pd(pd, base + (i * Z_X86_PD_AREA), i);
+	}
+}
+
+void z_x86_dump_page_tables(struct x86_mmu_pdpt *pdpt)
+{
+	z_x86_dump_pdpt(pdpt, 0, 0);
+}
 
 void z_x86_mmu_get_flags(struct x86_mmu_pdpt *pdpt, void *addr,
 			x86_page_entry_data_t *pde_flags,
