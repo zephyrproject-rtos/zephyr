@@ -50,51 +50,6 @@ GNU ARM Embedded
       > echo %GNUARMEMB_TOOLCHAIN_PATH%
       C:\gnu_arm_embedded
 
-Intel ISSM
-**********
-
-.. note::
-
-   The ISSM toolset only supports development for Intel |reg| Quark |trade|
-   Microcontrollers, for example, the Arduino 101 board.  (Check out the
-   "Zephyr Development Environment
-   Setup" in this `Getting Started on Arduino 101 with ISSM`_ document.)
-   Additional setup is required to use the ISSM GUI for development.
-
-#. Install the ISSM toolchain by downloading it from the Intel Developer Zone's
-   `ISSM Toolchain`_ downloads page, then extracting the archive somewhere on
-   your system.
-
-   .. warning::
-
-      Like the Zephyr repository, do not install the toolchain in a directory
-      with spaces anywhere in the path.
-
-#. :ref:`Set these environment variables <env_vars>`:
-
-   - Set :envvar:`ZEPHYR_TOOLCHAIN_VARIANT` to ``issm``.
-   - Set :envvar:`ISSM_INSTALLATION_PATH` to the directory containing the
-     extracted files.
-
-#. To check that you have set these variables correctly in your current
-   environment, follow these example shell sessions (the
-   :envvar:`ISSM_INSTALLATION_PATH` values may be different on your system):
-
-   .. code-block:: console
-
-      # Linux
-      $ echo $ZEPHYR_TOOLCHAIN_VARIANT
-      issm
-      $ echo $ISSM_INSTALLATION_PATH
-      /home/you/Downloads/issm0-toolchain-windows-2017-02-07
-
-      # Windows
-      > echo %ZEPHYR_TOOLCHAIN_VARIANT%
-      issm
-      > echo %ISSM_INSTALLATION_PATH%
-      c:\issm0-toolchain-windows-2017-01-25
-
-.. _xtools_x_compilers:
 
 Crosstool-NG
 ************
@@ -137,6 +92,4 @@ You can build toolchains from source code using crosstool-NG.
       /Volumes/CrossToolNGNew/build/output/
 
 .. _GNU ARM Embedded: https://developer.arm.com/open-source/gnu-toolchain/gnu-rm
-.. _ISSM Toolchain: https://software.intel.com/en-us/articles/issm-toolchain-only-download
-.. _Getting Started on Arduino 101 with ISSM: https://software.intel.com/en-us/articles/getting-started-arduino-101genuino-101-with-intel-system-studio-for-microcontrollers
 .. _crosstool-ng site: http://crosstool-ng.org
