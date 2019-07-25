@@ -16,114 +16,49 @@
 
 LOG_MODULE_REGISTER(hts221, CONFIG_ZIO_LOG_LEVEL);
 
-#if 0
-struct ft5336_raw {
-	u8_t gest_id;
-	u8_t td_status;
-	struct {
-		u8_t xh;
-		u8_t xl;
-		u8_t yh;
-		u8_t yl;
-		u8_t reserved[2];
-	} touch[MAX_TOUCHES];
-} __packed;
-
-static const struct zio_chan_desc ft5336_chans[] = {
+static const struct zio_chan_desc hts221_chans[] = {
 	{
-		.name = "x",
-		.type = FT5336_COORD_TYPE,
+		.name = "Humidity",
+		.type = HTS221_HUMIDITY_TYPE,
 		.bit_width = 16,
 		.byte_size = 2,
 		.byte_order = ZIO_BYTEORDER_BIG,
 		.sign_bit = ZIO_SIGN_NONE,
 	},
 	{
-		.name = "y",
-		.type = FT5336_COORD_TYPE,
+		.name = "Temperature",
+		.type = HTS221_TEMPERATURE_TYPE,
 		.bit_width = 16,
 		.byte_size = 2,
 		.byte_order = ZIO_BYTEORDER_BIG,
-		.sign_bit = ZIO_SIGN_NONE,
-	},
-	{
-		.name = "event",
-		.type = FT5336_EVENT_TYPE,
-		.bit_width = 8,
-		.byte_size = 1,
-		.byte_order = ZIO_BYTEORDER_BIG,
-		.sign_bit = ZIO_SIGN_NONE,
-	},
-	{
-		.name = "id",
-		.type = FT5336_ID_TYPE,
-		.bit_width = 8,
-		.byte_size = 1,
-		.byte_order = ZIO_BYTEORDER_BIG,
-		.sign_bit = ZIO_SIGN_NONE,
+		.sign_bit = ZIO_SIGN_MSB,
 	},
 };
 
-static const struct zio_attr_desc ft5336_attr_descs[] = {
-	[FT5336_TOUCHES_IDX] = {
-		.type = FT5336_TOUCHES_TYPE,
-		.data_type = zio_variant_u8,
+static const struct zio_attr_desc hts221_attr_descs[] = {
+	{
+		.type = ZIO_SAMPLE_RATE,
+		.data_type = zio_variant_float,
 	}
 };
 
-static int ft5336_set_attr(struct device *dev, const u32_t attr_idx,
-		const struct zio_variant val)
-{
-	struct ft5336_data *data = dev->driver_data;
-
-	int res = 0;
-	u8_t touches;
-
-	switch (attr_idx) {
-	case FT5336_TOUCHES_IDX:
-		res = zio_variant_unwrap(val, touches);
-		if ((res != 0) || (touches > MAX_TOUCHES)) {
-			return -EINVAL;
-		}
-		data->touches = touches;
-		return 0;
-	default:
-		return -EINVAL;
-	}
-}
-
-static int ft5336_get_attr(struct device *dev, u32_t attr_idx,
-		struct zio_variant *var)
-{
-	struct ft5336_data *data = dev->driver_data;
-
-	switch (attr_idx) {
-	case FT5336_TOUCHES_IDX:
-		*var = zio_variant_wrap(data->touches);
-		return 0;
-	default:
-		return -EINVAL;
-	}
-}
-
-static int ft5336_get_attr_descs(struct device *dev,
+static int hts221_get_attr_descs(struct device *dev,
 		const struct zio_attr_desc **attrs,
 		u32_t *num_attrs)
 {
-	*attrs = ft5336_attr_descs;
-	*num_attrs = sizeof(ft5336_attr_descs);
+	*attrs = hts221_attr_descs;
+	*num_attrs = sizeof(hts221_attr_descs);
 	return 0;
 }
 
-static int ft5336_get_chan_descs(struct device *dev,
+static int hts221_get_chan_descs(struct device *dev,
 		const struct zio_chan_desc **chans,
 		u32_t *num_chans)
 {
-	*chans = ft5336_chans;
-	*num_chans = sizeof(ft5336_chans);
+	*chans = hts221_chans;
+	*num_chans = sizeof(hts221_chans);
 	return 0;
 }
-#endif
 
 float linear_interpolation(lin_t *lin, s16_t x)
 {
@@ -198,13 +133,6 @@ static int hts221_detach_buf(struct device *dev)
 	return zio_fifo_buf_detach(&data->fifo);
 }
 
-static const struct zio_attr_desc hts221_attr_descs[] = {
-	{
-		.type = ZIO_SAMPLE_RATE,
-		.data_type = zio_variant_float,
-	}
-};
-
 static const u32_t hts221_odr_table[] = {0, 1, 7, 12};
 
 static int hts221_get_odr_val(u32_t rate, u8_t *val)
@@ -266,15 +194,6 @@ static int hts221_get_attr(struct device *dev, u32_t attr_idx,
 	default:
 		return -EINVAL;
 	}
-}
-
-static int hts221_get_attr_descs(struct device *dev,
-		const struct zio_attr_desc **attrs,
-		u32_t *num_attrs)
-{
-	*attrs = hts221_attr_descs;
-	*num_attrs = sizeof(hts221_attr_descs);
-	return 0;
 }
 
 static int hts221_init(struct device *dev)
@@ -347,10 +266,8 @@ static const struct zio_dev_api hts221_driver_api = {
 	.set_attr = hts221_set_attr,
 	.get_attr = hts221_get_attr,
 	.get_attr_descs = hts221_get_attr_descs,
-    /*
-	.get_chan_descs = ft5336_get_chan_descs,
+	.get_chan_descs = hts221_get_chan_descs,
 	.get_chan_attr_descs = NULL,
-	*/
 	.trigger = hts221_trigger,
 	.attach_buf = hts221_attach_buf,
 	.detach_buf = hts221_detach_buf,

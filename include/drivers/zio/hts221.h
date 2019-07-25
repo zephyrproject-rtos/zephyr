@@ -18,6 +18,10 @@
 /* device attributes */
 #define HTS221_SAMPLE_RATE_IDX 0
 
+/* channel type(s) */
+#define HTS221_HUMIDITY_TYPE	(ZIO_CHAN_TYPES + 1)
+#define HTS221_TEMPERATURE_TYPE	(ZIO_CHAN_TYPES + 2)
+
 /* datum type */
 struct hts221_datum {
 	s32_t hum_perc;
