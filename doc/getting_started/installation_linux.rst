@@ -198,6 +198,7 @@ Follow these steps to install the Zephyr SDK:
    .. code-block:: console
 
       cd <sdk download directory>
+      chmod +x zephyr-sdk-0.10.1-setup.run
       ./zephyr-sdk-0.10.1-setup.run -- -d ~/zephyr-sdk-0.10.1
 
    You can pick another directory if you want. If this fails, make sure
