@@ -407,9 +407,9 @@ into account when mapping nodes to bindings. See the description of ``parent``
 and ``child`` in the template below.
 
 Below is a template that shows the format of binding files, stored in
-:zephyr_file:`dts/bindings/device_node.yaml.template`.
+:zephyr_file:`dts/bindings/binding-template.yaml`.
 
-.. literalinclude:: ../../../dts/bindings/device_node.yaml.template
+.. literalinclude:: ../../../dts/bindings/binding-template.yaml
    :language: yaml
 
 
