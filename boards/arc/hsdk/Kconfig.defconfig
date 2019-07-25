@@ -1,0 +1,11 @@
+#
+# Copyright (c) 2019 Synopsys, Inc. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_HSDK
+
+config BOARD
+	default "hsdk"
+
+endif # BOARD_HSDK
