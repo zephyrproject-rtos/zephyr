@@ -345,6 +345,46 @@ __STATIC_INLINE void nrf_gpiote_te_default(uint32_t idx);
  */
 __STATIC_INLINE bool nrf_gpiote_te_is_enabled(uint32_t idx);
 
+/**
+ * @brief Function for getting the OUT task associated with the specified GPIOTE channel.
+ *
+ * @param[in] index Channel index.
+ *
+ * @return Requested OUT task.
+ */
+__STATIC_INLINE nrf_gpiote_tasks_t nrf_gpiote_out_task_get(uint8_t index);
+
+#if defined(GPIOTE_FEATURE_SET_PRESENT) || defined(__NRFX_DOXYGEN__)
+/**
+ * @brief Function for getting the SET task associated with the specified GPIOTE channel.
+ *
+ * @param[in] index Channel index.
+ *
+ * @return Requested SET task.
+ */
+__STATIC_INLINE nrf_gpiote_tasks_t nrf_gpiote_set_task_get(uint8_t index);
+#endif
+
+#if defined(GPIOTE_FEATURE_CLR_PRESENT) || defined(__NRFX_DOXYGEN__)
+/**
+ * @brief Function for getting the CLR task associated with the specified GPIOTE channel.
+ *
+ * @param[in] index Channel index.
+ *
+ * @return Requested CLR task.
+ */
+__STATIC_INLINE nrf_gpiote_tasks_t nrf_gpiote_clr_task_get(uint8_t index);
+#endif
+
+/**
+ * @brief Function for getting the IN event associated with the specified GPIOTE channel.
+ *
+ * @param[in] index Channel index.
+ *
+ * @return Requested IN event.
+ */
+__STATIC_INLINE nrf_gpiote_events_t nrf_gpiote_in_event_get(uint8_t index);
+
 #ifndef SUPPRESS_INLINE_IMPLEMENTATION
 
 __STATIC_INLINE void nrf_gpiote_task_set(nrf_gpiote_tasks_t task)
@@ -493,6 +533,35 @@ __STATIC_INLINE bool nrf_gpiote_te_is_enabled(uint32_t idx)
 {
     return (NRF_GPIOTE->CONFIG[idx] & GPIOTE_CONFIG_MODE_Msk) != GPIOTE_CONFIG_MODE_Disabled;
 }
+
+__STATIC_INLINE nrf_gpiote_tasks_t nrf_gpiote_out_task_get(uint8_t index)
+{
+    NRFX_ASSERT(index < NRFX_ARRAY_SIZE(NRF_GPIOTE->TASKS_OUT));
+    return (nrf_gpiote_tasks_t)NRFX_OFFSETOF(NRF_GPIOTE_Type, TASKS_OUT[index]);
+}
+
+#if defined(GPIOTE_FEATURE_SET_PRESENT)
+__STATIC_INLINE nrf_gpiote_tasks_t nrf_gpiote_set_task_get(uint8_t index)
+{
+    NRFX_ASSERT(index < NRFX_ARRAY_SIZE(NRF_GPIOTE->TASKS_SET));
+    return (nrf_gpiote_tasks_t)NRFX_OFFSETOF(NRF_GPIOTE_Type, TASKS_SET[index]);
+}
+#endif
+
+#if defined(GPIOTE_FEATURE_CLR_PRESENT)
+__STATIC_INLINE nrf_gpiote_tasks_t nrf_gpiote_clr_task_get(uint8_t index)
+{
+    NRFX_ASSERT(index < NRFX_ARRAY_SIZE(NRF_GPIOTE->TASKS_CLR));
+    return (nrf_gpiote_tasks_t)NRFX_OFFSETOF(NRF_GPIOTE_Type, TASKS_CLR[index]);
+}
+#endif
+
+__STATIC_INLINE nrf_gpiote_events_t nrf_gpiote_in_event_get(uint8_t index)
+{
+    NRFX_ASSERT(index < NRFX_ARRAY_SIZE(NRF_GPIOTE->EVENTS_IN));
+    return (nrf_gpiote_events_t)NRFX_OFFSETOF(NRF_GPIOTE_Type, EVENTS_IN[index]);
+}
+
 #endif //SUPPRESS_INLINE_IMPLEMENTATION
 
 /** @} */

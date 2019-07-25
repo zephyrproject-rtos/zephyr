@@ -333,6 +333,24 @@ __STATIC_INLINE uint32_t * nrf_ppi_task_group_enable_address_get(nrf_ppi_channel
  */
 __STATIC_INLINE uint32_t * nrf_ppi_task_group_disable_address_get(nrf_ppi_channel_group_t group);
 
+/**
+ * @brief Function for getting the ENABLE task associated with the specified channel group.
+ *
+ * @param[in] index Channel group index.
+ *
+ * @return Requested ENABLE task.
+ */
+__STATIC_INLINE nrf_ppi_task_t nrf_ppi_group_enable_task_get(uint8_t index);
+
+/**
+ * @brief Function for getting the DISABLE task associated with the specified channel group.
+ *
+ * @param[in] index Channel group index.
+ *
+ * @return Requested DISABLE task.
+ */
+__STATIC_INLINE nrf_ppi_task_t nrf_ppi_group_disable_task_get(uint8_t index);
+
 
 #ifndef SUPPRESS_INLINE_IMPLEMENTATION
 
@@ -472,6 +490,18 @@ __STATIC_INLINE uint32_t * nrf_ppi_task_group_enable_address_get(nrf_ppi_channel
 __STATIC_INLINE uint32_t * nrf_ppi_task_group_disable_address_get(nrf_ppi_channel_group_t group)
 {
     return (uint32_t *) &NRF_PPI->TASKS_CHG[(uint32_t) group].DIS;
+}
+
+__STATIC_INLINE nrf_ppi_task_t nrf_ppi_group_enable_task_get(uint8_t index)
+{
+    NRFX_ASSERT(index < NRFX_ARRAY_SIZE(NRF_PPI->TASKS_CHG));
+    return (nrf_ppi_task_t)NRFX_OFFSETOF(NRF_PPI_Type, TASKS_CHG[index].EN);
+}
+
+__STATIC_INLINE nrf_ppi_task_t nrf_ppi_group_disable_task_get(uint8_t index)
+{
+    NRFX_ASSERT(index < NRFX_ARRAY_SIZE(NRF_PPI->TASKS_CHG));
+    return (nrf_ppi_task_t)NRFX_OFFSETOF(NRF_PPI_Type, TASKS_CHG[index].DIS);
 }
 
 #endif // SUPPRESS_INLINE_IMPLEMENTATION

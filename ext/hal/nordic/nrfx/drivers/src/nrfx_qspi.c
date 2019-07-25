@@ -179,6 +179,7 @@ nrfx_err_t nrfx_qspi_cinstr_xfer(nrf_qspi_cinstr_conf_t const * p_config,
     {
         nrf_qspi_cinstrdata_set(NRF_QSPI, p_config->length, p_tx_buffer);
     }
+
     nrf_qspi_int_disable(NRF_QSPI, NRF_QSPI_INT_READY_MASK);
 
     nrf_qspi_cinstr_transfer_start(NRF_QSPI, p_config);
@@ -193,7 +194,6 @@ nrfx_err_t nrfx_qspi_cinstr_xfer(nrf_qspi_cinstr_conf_t const * p_config,
         return NRFX_ERROR_TIMEOUT;
     }
     nrf_qspi_event_clear(NRF_QSPI, NRF_QSPI_EVENT_READY);
-    nrf_qspi_int_enable(NRF_QSPI, NRF_QSPI_INT_READY_MASK);
 
     if (p_rx_buffer)
     {
@@ -349,17 +349,14 @@ nrfx_err_t nrfx_qspi_write(void const * p_tx_buffer,
 {
     NRFX_ASSERT(m_cb.state != NRFX_DRV_STATE_UNINITIALIZED);
     NRFX_ASSERT(p_tx_buffer != NULL);
-    NRFX_ASSERT(nrfx_is_in_ram(p_tx_buffer));
-    NRFX_ASSERT(nrfx_is_word_aligned(p_tx_buffer));
 
-    if (!nrfx_is_in_ram(p_tx_buffer))
+    if (!nrfx_is_in_ram(p_tx_buffer) || !nrfx_is_word_aligned(p_tx_buffer))
     {
         return NRFX_ERROR_INVALID_ADDR;
     }
 
     nrf_qspi_write_buffer_set(NRF_QSPI, p_tx_buffer, tx_buffer_length, dst_address);
     return qspi_task_perform(NRF_QSPI_TASK_WRITESTART);
-
 }
 
 nrfx_err_t nrfx_qspi_read(void *   p_rx_buffer,
@@ -368,10 +365,8 @@ nrfx_err_t nrfx_qspi_read(void *   p_rx_buffer,
 {
     NRFX_ASSERT(m_cb.state != NRFX_DRV_STATE_UNINITIALIZED);
     NRFX_ASSERT(p_rx_buffer != NULL);
-    NRFX_ASSERT(nrfx_is_in_ram(p_rx_buffer));
-    NRFX_ASSERT(nrfx_is_word_aligned(p_rx_buffer));
 
-    if (!nrfx_is_in_ram(p_rx_buffer))
+    if (!nrfx_is_in_ram(p_rx_buffer) || !nrfx_is_word_aligned(p_rx_buffer))
     {
         return NRFX_ERROR_INVALID_ADDR;
     }
@@ -384,6 +379,12 @@ nrfx_err_t nrfx_qspi_erase(nrf_qspi_erase_len_t length,
                            uint32_t             start_address)
 {
     NRFX_ASSERT(m_cb.state != NRFX_DRV_STATE_UNINITIALIZED);
+
+    if (!nrfx_is_word_aligned((void const *)start_address))
+    {
+        return NRFX_ERROR_INVALID_ADDR;
+    }
+
     nrf_qspi_erase_ptr_set(NRF_QSPI, start_address, length);
     return qspi_task_perform(NRF_QSPI_TASK_ERASESTART);
 }

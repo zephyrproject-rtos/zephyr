@@ -1042,7 +1042,7 @@ __STATIC_INLINE void nrf_radio_frequency_set(uint16_t radio_frequency)
     NRF_RADIO->FREQUENCY = delta;
 #else
     NRFX_ASSERT(radio_frequency >= 2400);
-    NRF_RADIO->FREQUENCY = (uint32_t)(2400 - radio_frequency);
+    NRF_RADIO->FREQUENCY = (uint32_t)(radio_frequency - 2400);
 #endif //defined(RADIO_FREQUENCY_MAP_Msk)
 }
 

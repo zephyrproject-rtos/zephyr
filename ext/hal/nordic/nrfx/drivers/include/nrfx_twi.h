@@ -98,6 +98,8 @@ typedef struct
 #define NRFX_TWI_FLAG_NO_XFER_EVT_HANDLER (1UL << 2)
 /** @brief Flag indicating that the TX transfer will not end with a stop condition. */
 #define NRFX_TWI_FLAG_TX_NO_STOP          (1UL << 5)
+/** @brief Flag indicating that the transfer will be suspended. */
+#define NRFX_TWI_FLAG_SUSPEND             (1UL << 6)
 
 /** @brief TWI master driver event types. */
 typedef enum
@@ -131,45 +133,45 @@ typedef struct
 /** @brief Macro for setting the TX transfer descriptor. */
 #define NRFX_TWI_XFER_DESC_TX(addr, p_data, length) \
 {                                                   \
-    .type = NRFX_TWI_XFER_TX,                       \
-    .address = addr,                                \
-    .primary_length = length,                       \
+    .type             = NRFX_TWI_XFER_TX,           \
+    .address          = (addr),                     \
+    .primary_length   = (length),                   \
     .secondary_length = 0,                          \
-    .p_primary_buf  = p_data,                       \
+    .p_primary_buf    = (p_data),                   \
     .p_secondary_buf  = NULL,                       \
 }
 
 /** @brief Macro for setting the RX transfer descriptor. */
 #define NRFX_TWI_XFER_DESC_RX(addr, p_data, length) \
 {                                                   \
-    .type = NRFX_TWI_XFER_RX,                       \
-    .address = addr,                                \
-    .primary_length = length,                       \
+    .type             = NRFX_TWI_XFER_RX,           \
+    .address          = (addr),                     \
+    .primary_length   = (length),                   \
     .secondary_length = 0,                          \
-    .p_primary_buf  = p_data,                       \
+    .p_primary_buf    = (p_data),                   \
     .p_secondary_buf  = NULL,                       \
 }
 
 /** @brief Macro for setting the TX-RX transfer descriptor. */
 #define NRFX_TWI_XFER_DESC_TXRX(addr, p_tx, tx_len, p_rx, rx_len) \
 {                                                                 \
-    .type = NRFX_TWI_XFER_TXRX,                                   \
-    .address = addr,                                              \
-    .primary_length   = tx_len,                                   \
-    .secondary_length = rx_len,                                   \
-    .p_primary_buf    = p_tx,                                     \
-    .p_secondary_buf  = p_rx,                                     \
+    .type             = NRFX_TWI_XFER_TXRX,                       \
+    .address          = (addr),                                   \
+    .primary_length   = (tx_len),                                 \
+    .secondary_length = (rx_len),                                 \
+    .p_primary_buf    = (p_tx),                                   \
+    .p_secondary_buf  = (p_rx),                                   \
 }
 
 /** @brief Macro for setting the TX-TX transfer descriptor. */
 #define NRFX_TWI_XFER_DESC_TXTX(addr, p_tx, tx_len, p_tx2, tx_len2) \
 {                                                                   \
-    .type = NRFX_TWI_XFER_TXTX,                                     \
-    .address = addr,                                                \
-    .primary_length   = tx_len,                                     \
-    .secondary_length = tx_len2,                                    \
-    .p_primary_buf    = p_tx,                                       \
-    .p_secondary_buf  = p_tx2,                                      \
+    .type             = NRFX_TWI_XFER_TXTX,                         \
+    .address          = (addr),                                     \
+    .primary_length   = (tx_len),                                   \
+    .secondary_length = (tx_len2),                                  \
+    .p_primary_buf    = (p_tx),                                     \
+    .p_secondary_buf  = (p_tx2),                                    \
 }
 
 /** @brief Structure for a TWI event. */
@@ -230,6 +232,8 @@ void nrfx_twi_disable(nrfx_twi_t const * p_instance);
  * The transmission will be stopped when an error occurs. If a transfer is ongoing,
  * the function returns the error code @ref NRFX_ERROR_BUSY.
  *
+ * @note This function is deprecated. Use @ref nrfx_twi_xfer instead.
+ *
  * @param[in] p_instance Pointer to the driver instance structure.
  * @param[in] address    Address of a specific slave device (only 7 LSB).
  * @param[in] p_data     Pointer to a transmit buffer.
@@ -241,8 +245,11 @@ void nrfx_twi_disable(nrfx_twi_t const * p_instance);
  * @retval NRFX_SUCCESS                 The procedure is successful.
  * @retval NRFX_ERROR_BUSY              The driver is not ready for a new transfer.
  * @retval NRFX_ERROR_INTERNAL          An error is detected by hardware.
- * @retval NRFX_ERROR_DRV_TWI_ERR_ANACK NACK is received after sending the address in polling mode.
- * @retval NRFX_ERROR_DRV_TWI_ERR_DNACK NACK is received after sending a data byte in polling mode.
+ * @retval NRFX_ERROR_INVALID_STATE     RX transaction is suspended on bus.
+ * @retval NRFX_ERROR_DRV_TWI_ERR_ANACK Negative acknowledgement (NACK) is received after sending
+ *                                      the address in polling mode.
+ * @retval NRFX_ERROR_DRV_TWI_ERR_DNACK Negative acknowledgement (NACK) is received after sending
+ *                                      a data byte in polling mode.
  */
 nrfx_err_t nrfx_twi_tx(nrfx_twi_t const * p_instance,
                        uint8_t            address,
@@ -256,6 +263,8 @@ nrfx_err_t nrfx_twi_tx(nrfx_twi_t const * p_instance,
  * The transmission will be stopped when an error occurs. If a transfer is ongoing,
  * the function returns the error code @ref NRFX_ERROR_BUSY.
  *
+ * @note This function is deprecated. Use @ref nrfx_twi_xfer instead.
+ *
  * @param[in] p_instance Pointer to the driver instance structure.
  * @param[in] address    Address of a specific slave device (only 7 LSB).
  * @param[in] p_data     Pointer to a receive buffer.
@@ -264,17 +273,21 @@ nrfx_err_t nrfx_twi_tx(nrfx_twi_t const * p_instance,
  * @retval NRFX_SUCCESS                   The procedure is successful.
  * @retval NRFX_ERROR_BUSY                The driver is not ready for a new transfer.
  * @retval NRFX_ERROR_INTERNAL            An error is detected by hardware.
+ * @retval NRFX_ERROR_INVALID_STATE       TX transaction is suspended on bus.
  * @retval NRFX_ERROR_DRV_TWI_ERR_OVERRUN The unread data is replaced by new data.
- * @retval NRFX_ERROR_DRV_TWI_ERR_ANACK   NACK is received after sending the address in polling mode.
- * @retval NRFX_ERROR_DRV_TWI_ERR_DNACK   NACK is received after sending a data byte in polling mode.
+ * @retval NRFX_ERROR_DRV_TWI_ERR_ANACK   Negative acknowledgement (NACK) is received after sending
+ *                                        the address in polling mode.
+ * @retval NRFX_ERROR_DRV_TWI_ERR_DNACK   Negative acknowledgement (NACK) is received after sending
+ *                                        a data byte in polling mode.
  */
 nrfx_err_t nrfx_twi_rx(nrfx_twi_t const * p_instance,
                        uint8_t            address,
                        uint8_t *          p_data,
                        size_t             length);
 
+
 /**
- * @brief Function for preparing a TWI transfer.
+ * @brief Function for performing a TWI transfer.
  *
  * The following transfer types can be configured (@ref nrfx_twi_xfer_desc_t::type):
  * - @ref NRFX_TWI_XFER_TXRX - Write operation followed by a read operation (without STOP condition in between).
@@ -287,6 +300,8 @@ nrfx_err_t nrfx_twi_rx(nrfx_twi_t const * p_instance,
  * Additional options are provided using the flags parameter:
  * - @ref NRFX_TWI_FLAG_NO_XFER_EVT_HANDLER - No user event handler after transfer completion. In most cases, this also means no interrupt at the end of the transfer.
  * - @ref NRFX_TWI_FLAG_TX_NO_STOP - No stop condition after TX transfer.
+ * - @ref NRFX_TWI_FLAG_SUSPEND - Transfer will be suspended. This allows for combining multiple transfers into one transaction.
+ *                                Only transactions with the same direction can be combined. To finish the transaction, call the function without this flag.
  *
  * @note
  * Some flag combinations are invalid:
@@ -300,9 +315,12 @@ nrfx_err_t nrfx_twi_rx(nrfx_twi_t const * p_instance,
  * @retval NRFX_ERROR_BUSY                The driver is not ready for a new transfer.
  * @retval NRFX_ERROR_NOT_SUPPORTED       The provided parameters are not supported.
  * @retval NRFX_ERROR_INTERNAL            An error is detected by hardware.
+ * @retval NRFX_ERROR_INVALID_STATE       Other direction of transaction is suspended on the bus.
  * @retval NRFX_ERROR_DRV_TWI_ERR_OVERRUN The unread data is replaced by new data (TXRX and RX)
- * @retval NRFX_ERROR_DRV_TWI_ERR_ANACK   NACK is received after sending the address.
- * @retval NRFX_ERROR_DRV_TWI_ERR_DNACK   NACK is received after sending a data byte.
+ * @retval NRFX_ERROR_DRV_TWI_ERR_ANACK   Negative acknowledgement (NACK) is received after sending
+ *                                        the address in polling mode.
+ * @retval NRFX_ERROR_DRV_TWI_ERR_DNACK   Negative acknowledgement (NACK) is received after sending
+ *                                        a data byte in polling mode.
  */
 nrfx_err_t nrfx_twi_xfer(nrfx_twi_t           const * p_instance,
                          nrfx_twi_xfer_desc_t const * p_xfer_desc,

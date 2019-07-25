@@ -85,7 +85,6 @@
      UARTE2_LENGTH_VALIDATE(drv_inst_idx, length, 0) || \
      UARTE3_LENGTH_VALIDATE(drv_inst_idx, length, 0))
 
-
 typedef struct
 {
     void                     * p_context;
@@ -260,13 +259,20 @@ void nrfx_uarte_uninit(nrfx_uarte_t const * p_instance)
 {
     uarte_control_block_t * p_cb = &m_cb[p_instance->drv_inst_idx];
 
-    nrf_uarte_disable(p_instance->p_reg);
-
     if (p_cb->handler)
     {
         interrupts_disable(p_instance);
     }
+    // Make sure all transfers are finished before UARTE is disabled
+    // to achieve the lowest power consumption.
+    nrf_uarte_shorts_disable(p_instance->p_reg, NRF_UARTE_SHORT_ENDRX_STARTRX);
+    nrf_uarte_task_trigger(p_instance->p_reg, NRF_UARTE_TASK_STOPRX);
+    nrf_uarte_event_clear(p_instance->p_reg, NRF_UARTE_EVENT_TXSTOPPED);
+    nrf_uarte_task_trigger(p_instance->p_reg, NRF_UARTE_TASK_STOPTX);
+    while (!nrf_uarte_event_check(p_instance->p_reg, NRF_UARTE_EVENT_TXSTOPPED))
+    {}
 
+    nrf_uarte_disable(p_instance->p_reg);
     pins_to_default(p_instance);
 
 #if NRFX_CHECK(NRFX_PRS_ENABLED)

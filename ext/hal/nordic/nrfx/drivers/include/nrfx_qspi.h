@@ -155,7 +155,8 @@ void nrfx_qspi_uninit(void);
  * @retval NRFX_SUCCESS            The operation was successful (blocking mode) or operation
  *                                 was commissioned (handler mode).
  * @retval NRFX_ERROR_BUSY         The driver currently handles another operation.
- * @retval NRFX_ERROR_INVALID_ADDR The provided buffer is not placed in the Data RAM region.
+ * @retval NRFX_ERROR_INVALID_ADDR The provided buffer is not placed in the Data RAM region
+ *                                 or its address is not aligned to a 32-bit word.
  */
 nrfx_err_t nrfx_qspi_read(void *   p_rx_buffer,
                           size_t   rx_buffer_length,
@@ -182,7 +183,8 @@ nrfx_err_t nrfx_qspi_read(void *   p_rx_buffer,
  * @retval NRFX_SUCCESS            The operation was successful (blocking mode) or operation
  *                                 was commissioned (handler mode).
  * @retval NRFX_ERROR_BUSY         The driver currently handles other operation.
- * @retval NRFX_ERROR_INVALID_ADDR The provided buffer is not placed in the Data RAM region.
+ * @retval NRFX_ERROR_INVALID_ADDR The provided buffer is not placed in the Data RAM region
+ *                                 or its address is not aligned to a 32-bit word.
  */
 nrfx_err_t nrfx_qspi_write(void const * p_tx_buffer,
                            size_t       tx_buffer_length,
@@ -206,9 +208,10 @@ nrfx_err_t nrfx_qspi_write(void const * p_tx_buffer,
  * @param[in] start_address Memory address to start erasing. If chip erase is performed, address
  *                          field is ommited.
  *
- * @retval NRFX_SUCCESS    The operation was successful (blocking mode) or operation
- *                         was commissioned (handler mode).
- * @retval NRFX_ERROR_BUSY The driver currently handles another operation.
+ * @retval NRFX_SUCCESS            The operation was successful (blocking mode) or operation
+ *                                 was commissioned (handler mode).
+ * @retval NRFX_ERROR_INVALID_ADDR The provided start address is not aligned to a 32-bit word.
+ * @retval NRFX_ERROR_BUSY         The driver currently handles another operation.
  */
 nrfx_err_t nrfx_qspi_erase(nrf_qspi_erase_len_t length,
                            uint32_t             start_address);
