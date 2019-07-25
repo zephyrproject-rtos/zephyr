@@ -284,6 +284,7 @@ extern "C" {
 #endif /* CONFIG_ARC_HAS_SECURE */
 .endm
 
+
 /* If multi bits in IRQ_ACT are set, i.e. last bit != fist bit, it's
  * in nest interrupt. The result will be EQ bit of status32
  */
@@ -298,6 +299,16 @@ extern "C" {
 .macro _get_cpu_id reg
 	lr \reg, [_ARC_V2_IDENTITY]
 	xbfu \reg, \reg, 0xe8
+.endm
+
+.macro _get_curr_cpu_irq_stack irq_sp
+#ifdef CONFIG_SMP
+	_get_cpu_id \irq_sp
+	ld.as \irq_sp, [@_curr_irq_stack, \irq_sp]
+#else
+	mov \irq_sp, _kernel
+	ld \irq_sp, [\irq_sp, _kernel_offset_to_irq_stack]
+#endif
 .endm
 
 #endif /* _ASMLANGUAGE */

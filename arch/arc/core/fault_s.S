@@ -59,14 +59,14 @@ SECTION_SUBSEC_FUNC(TEXT,__fault,__ev_dc_error)
 SECTION_SUBSEC_FUNC(TEXT,__fault,__ev_maligned)
 
 _exc_entry:
-	mov_s ilink, sp
 	/*
 	 * re-use the top part of interrupt stack as exception
 	 * stack. If this top part is used by interrupt handling,
 	 * and exception is raised, then here it's guaranteed that
 	 * exception handling has necessary stack to use
 	 */
-	mov_s sp, _interrupt_stack
+	mov_s ilink, sp
+	_get_curr_cpu_irq_stack sp
 	add sp, sp, EXCEPTION_STACK_SIZE
 
 	/*
@@ -98,6 +98,11 @@ _exc_entry:
 _exc_return:
 
 #ifdef CONFIG_PREEMPT_ENABLED
+#ifdef CONFIG_SMP
+	bl z_arch_smp_switch_in_isr
+	breq r0, 0, _exc_return_from_exc
+	mov r2, r0
+#else
 	mov_s r1, _kernel
 	ld_s r2, [r1, _kernel_offset_to_current]
 
@@ -107,6 +112,7 @@ _exc_return:
 
 	ld_s r2, [r1, _kernel_offset_to_ready_q_cache]
 	st_s r2, [r1, _kernel_offset_to_current]
+#endif
 
 #ifdef CONFIG_ARC_HAS_SECURE
 	/*
@@ -208,8 +214,7 @@ _do_non_syscall_trap:
 	bne.d exc_nest_handle
 	mov r0, sp
 
-	mov r1, _kernel
-	ld sp, [r1, _kernel_offset_to_irq_stack]
+	_get_curr_cpu_irq_stack sp
 exc_nest_handle:
 	push_s r0
 
@@ -223,6 +228,16 @@ exc_nest_handle:
 	bne _exc_return_from_exc
 
 #ifdef CONFIG_PREEMPT_ENABLED
+#ifdef CONFIG_SMP
+	bl z_arch_smp_switch_in_isr
+	breq r0, 0, _exc_return_from_irqoffload_trap
+	mov r2, r1
+
+	_save_callee_saved_regs
+
+	st _CAUSE_RIRQ, [r2, _thread_offset_to_relinquish_cause]
+	mov r2, r0
+#else
 	mov_s r1, _kernel
 	ld_s r2, [r1, _kernel_offset_to_current]
 
@@ -237,6 +252,7 @@ exc_nest_handle:
 
 	ld_s r2, [r1, _kernel_offset_to_ready_q_cache]
 	st_s r2, [r1, _kernel_offset_to_current]
+#endif
 
 #ifdef CONFIG_ARC_HAS_SECURE
 	/*

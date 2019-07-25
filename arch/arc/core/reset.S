@@ -14,9 +14,11 @@
 #include <toolchain.h>
 #include <linker/sections.h>
 #include <arch/cpu.h>
+#include <swap_macros.h>
 
 GDATA(_interrupt_stack)
 GDATA(_main_stack)
+GDATA(_VectorTable)
 
 /* use one of the available interrupt stacks during init */
 
@@ -66,6 +68,16 @@ SECTION_FUNC(TEXT,__start)
 
 	/* \todo: MPU init, gp for small data? */
 
+	/* set the vector table base early,
+	 * so that exception vectors can be handled.
+	 */
+	mov r0, _VectorTable
+#ifdef CONFIG_ARC_HAS_SECURE
+	sr r0, [_ARC_V2_IRQ_VECT_BASE_S]
+#else
+	sr r0, [_ARC_V2_IRQ_VECT_BASE]
+#endif
+
 #if defined(CONFIG_USERSPACE)
 	lr r0, [_ARC_V2_STATUS32]
 	bset r0, r0, _ARC_V2_STATUS32_US_BIT
@@ -107,6 +119,28 @@ done_cache_invalidate:
 #if defined(CONFIG_SYS_POWER_DEEP_SLEEP_STATES) && \
 	!defined(CONFIG_BOOTLOADER_CONTEXT_RESTORE)
         jl @_sys_resume_from_deep_sleep
+#endif
+
+#ifdef CONFIG_SMP
+	_get_cpu_id r0
+	breq r0, 0, _master_core_startup
+
+/*
+ * Non-masters wait for master core (core 0) to boot enough
+ */
+_slave_core_wait:
+	ld r1, [arc_cpu_wake_flag]
+	brne r0, r1, _slave_core_wait
+
+	/* signal master core that slave core runs */
+	st 0, [arc_cpu_wake_flag]
+
+	/* get sp set by master core */
+	_get_curr_cpu_irq_stack sp
+
+	j z_arch_slave_start
+
+_master_core_startup:
 #endif
 
 #ifdef CONFIG_INIT_STACKS

@@ -83,8 +83,7 @@ SECTION_FUNC(TEXT, _firq_enter)
 	bne.d firq_nest
 	mov r0, sp
 
-	mov r1, _kernel
-	ld sp, [r1, _kernel_offset_to_irq_stack]
+	_get_curr_cpu_irq_stack sp
 #if CONFIG_RGF_NUM_BANKS != 1
 	b firq_nest_1
 firq_nest:
@@ -152,13 +151,18 @@ SECTION_FUNC(TEXT, _firq_exit)
 
 #ifdef CONFIG_PREEMPT_ENABLED
 
+#ifdef CONFIG_SMP
+	bl z_arch_smp_switch_in_isr
+	/* r0 points to new thread, r1 points to old thread */
+	brne r0, 0, _firq_reschedule
+#else
 	mov_s r1, _kernel
 	ld_s r2, [r1, _kernel_offset_to_current]
 
 	/* Check if the current thread (in r2) is the cached thread */
 	ld_s r0, [r1, _kernel_offset_to_ready_q_cache]
 	brne r0, r2, _firq_reschedule
-
+#endif
 	/* fall to no rescheduling */
 
 #endif /* CONFIG_PREEMPT_ENABLED */
@@ -184,6 +188,15 @@ _firq_reschedule:
 	pop sp
 
 #if CONFIG_RGF_NUM_BANKS != 1
+#ifdef CONFIG_SMP
+/*
+ * save r0, r1 in irq stack for a while, as they will be changed by register
+ * bank switch
+ */
+	_get_curr_cpu_irq_stack r2
+	st r0, [r2, -4]
+	st r1, [r2, -8]
+#endif
 	/*
 	 * We know there is no interrupted interrupt of lower priority at this
 	 * point, so when switching back to register bank 0, it will contain the
@@ -206,18 +219,34 @@ _firq_reschedule:
 	lr r0, [_ARC_V2_STATUS32_P0]
 	st_s r0, [sp, ___isf_t_status32_OFFSET]
 
+	lr ilink, [_ARC_V2_ERET]
 	st ilink, [sp, ___isf_t_pc_OFFSET] /* ilink into pc */
+#ifdef CONFIG_SMP
+/*
+ * load r0, r1 from irq stack
+ */
+	_get_curr_cpu_irq_stack r2
+	ld r0, [r2, -4]
+	ld r1, [r2, -8]
+#endif
 #endif
 
+#ifdef CONFIG_SMP
+	mov r2, r1
+#else
 	mov_s r1, _kernel
 	ld_s r2, [r1, _kernel_offset_to_current]
-
+#endif
 	_save_callee_saved_regs
 
 	st _CAUSE_FIRQ, [r2, _thread_offset_to_relinquish_cause]
 
+#ifdef CONFIG_SMP
+	mov r2, r0
+#else
 	ld_s r2, [r1, _kernel_offset_to_ready_q_cache]
 	st_s r2, [r1, _kernel_offset_to_current]
+#endif
 
 #ifdef CONFIG_ARC_STACK_CHECKING
 	_load_stack_check_regs

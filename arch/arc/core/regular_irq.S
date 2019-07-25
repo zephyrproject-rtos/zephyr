@@ -24,6 +24,7 @@ GTEXT(_rirq_enter)
 GTEXT(_rirq_exit)
 GTEXT(_rirq_common_interrupt_swap)
 
+
 #if 0 /* TODO: when FIRQ is not present, all would be regular */
 #define NUM_REGULAR_IRQ_PRIO_LEVELS CONFIG_NUM_IRQ_PRIO_LEVELS
 #else
@@ -72,8 +73,7 @@ SECTION_FUNC(TEXT, _rirq_enter)
 	bne.d rirq_nest
 	mov r0, sp
 
-	mov r1, _kernel
-	ld sp, [r1, _kernel_offset_to_irq_stack]
+	_get_curr_cpu_irq_stack sp
 rirq_nest:
 	push_s r0
 
@@ -103,6 +103,13 @@ SECTION_FUNC(TEXT, _rirq_exit)
 
 #ifdef CONFIG_PREEMPT_ENABLED
 
+#ifdef CONFIG_SMP
+	bl z_arch_smp_switch_in_isr
+	/* r0 points to new thread, r1 points to old thread */
+	cmp r0, 0
+	beq _rirq_no_reschedule
+	mov r2, r1
+#else
 	mov r1, _kernel
 	ld_s r2, [r1, _kernel_offset_to_current]
 
@@ -127,7 +134,7 @@ SECTION_FUNC(TEXT, _rirq_exit)
 	beq _rirq_no_reschedule
 
 	/* cached thread to run is in r0, fall through */
-
+#endif
 .balign 4
 _rirq_reschedule:
 
@@ -136,9 +143,13 @@ _rirq_reschedule:
 
 	st _CAUSE_RIRQ, [r2, _thread_offset_to_relinquish_cause]
 
+#ifdef CONFIG_SMP
+	mov r2, r0
+#else
 	/* incoming thread is in r0: it becomes the new 'current' */
 	mov r2, r0
 	st_s r2, [r1, _kernel_offset_to_current]
+#endif
 
 .balign 4
 _rirq_common_interrupt_swap:
