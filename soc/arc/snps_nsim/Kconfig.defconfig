@@ -17,5 +17,6 @@ config UART_CONSOLE_ON_DEV_NAME
 source "soc/arc/snps_nsim/Kconfig.defconfig.em"
 source "soc/arc/snps_nsim/Kconfig.defconfig.sem"
 source "soc/arc/snps_nsim/Kconfig.defconfig.hs"
+source "soc/arc/snps_nsim/Kconfig.defconfig.hs_smp"
 
 endif #SOC_NSIM
