@@ -658,14 +658,12 @@ __STATIC_INLINE uint32_t nrf_timer_cc_read(NRF_TIMER_Type * p_reg,
 
 __STATIC_INLINE nrf_timer_task_t nrf_timer_capture_task_get(uint32_t channel)
 {
-    return (nrf_timer_task_t)
-        ((uint32_t)NRF_TIMER_TASK_CAPTURE0 + (channel * sizeof(uint32_t)));
+    return (nrf_timer_task_t)NRFX_OFFSETOF(NRF_TIMER_Type, TASKS_CAPTURE[channel]);
 }
 
 __STATIC_INLINE nrf_timer_event_t nrf_timer_compare_event_get(uint32_t channel)
 {
-    return (nrf_timer_event_t)
-        ((uint32_t)NRF_TIMER_EVENT_COMPARE0 + (channel * sizeof(uint32_t)));
+    return (nrf_timer_event_t)NRFX_OFFSETOF(NRF_TIMER_Type, EVENTS_COMPARE[channel]);
 }
 
 __STATIC_INLINE nrf_timer_int_mask_t nrf_timer_compare_int_get(uint32_t channel)

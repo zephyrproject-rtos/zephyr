@@ -144,10 +144,10 @@ typedef struct
 #define NRFX_TWIM_XFER_DESC_TX(addr, p_data, length) \
 {                                                    \
     .type             = NRFX_TWIM_XFER_TX,           \
-    .address          = addr,                        \
-    .primary_length   = length,                      \
+    .address          = (addr),                      \
+    .primary_length   = (length),                    \
     .secondary_length = 0,                           \
-    .p_primary_buf    = p_data,                      \
+    .p_primary_buf    = (p_data),                    \
     .p_secondary_buf  = NULL,                        \
 }
 
@@ -155,10 +155,10 @@ typedef struct
 #define NRFX_TWIM_XFER_DESC_RX(addr, p_data, length) \
 {                                                    \
     .type             = NRFX_TWIM_XFER_RX,           \
-    .address          = addr,                        \
-    .primary_length   = length,                      \
+    .address          = (addr),                      \
+    .primary_length   = (length),                    \
     .secondary_length = 0,                           \
-    .p_primary_buf    = p_data,                      \
+    .p_primary_buf    = (p_data),                    \
     .p_secondary_buf  = NULL,                        \
 }
 
@@ -166,22 +166,22 @@ typedef struct
 #define NRFX_TWIM_XFER_DESC_TXRX(addr, p_tx, tx_len, p_rx, rx_len) \
 {                                                                  \
     .type             = NRFX_TWIM_XFER_TXRX,                       \
-    .address          = addr,                                      \
-    .primary_length   = tx_len,                                    \
-    .secondary_length = rx_len,                                    \
-    .p_primary_buf    = p_tx,                                      \
-    .p_secondary_buf  = p_rx,                                      \
+    .address          = (addr),                                    \
+    .primary_length   = (tx_len),                                  \
+    .secondary_length = (rx_len),                                  \
+    .p_primary_buf    = (p_tx),                                    \
+    .p_secondary_buf  = (p_rx),                                    \
 }
 
 /** @brief Macro for setting the TX-TX transfer descriptor. */
 #define NRFX_TWIM_XFER_DESC_TXTX(addr, p_tx, tx_len, p_tx2, tx_len2) \
 {                                                                    \
     .type             = NRFX_TWIM_XFER_TXTX,                         \
-    .address          = addr,                                        \
-    .primary_length   = tx_len,                                      \
-    .secondary_length = tx_len2,                                     \
-    .p_primary_buf    = p_tx,                                        \
-    .p_secondary_buf  = p_tx2,                                       \
+    .address          = (addr),                                      \
+    .primary_length   = (tx_len),                                    \
+    .secondary_length = (tx_len2),                                   \
+    .p_primary_buf    = (p_tx),                                      \
+    .p_secondary_buf  = (p_tx2),                                     \
 }
 
 /** @brief Structure for a TWI event. */
@@ -242,6 +242,8 @@ void nrfx_twim_disable(nrfx_twim_t const * p_instance);
  * The transmission will be stopped when an error occurs. If a transfer is ongoing,
  * the function returns the error code @ref NRFX_ERROR_BUSY.
  *
+ * @note This function is deprecated. Use @ref nrfx_twim_xfer instead.
+ *
  * @note Peripherals using EasyDMA (including TWIM) require the transfer buffers
  *       to be placed in the Data RAM region. If this condition is not met,
  *       this function fails with the error code NRFX_ERROR_INVALID_ADDR.
@@ -276,6 +278,8 @@ nrfx_err_t nrfx_twim_tx(nrfx_twim_t const * p_instance,
  * The transmission will be stopped when an error occurs. If a transfer is ongoing,
  * the function returns the error code @ref NRFX_ERROR_BUSY.
  *
+ * @note This function is deprecated. Use @ref nrfx_twim_xfer instead.
+ *
  * @param[in] p_instance Pointer to the driver instance structure.
  * @param[in] address    Address of a specific slave device (only 7 LSB).
  * @param[in] p_data     Pointer to a receive buffer.
@@ -296,7 +300,7 @@ nrfx_err_t nrfx_twim_rx(nrfx_twim_t const * p_instance,
                         size_t              length);
 
 /**
- * @brief Function for preparing a TWI transfer.
+ * @brief Function for performing a TWI transfer.
  *
  * The following transfer types can be configured (@ref nrfx_twim_xfer_desc_t::type):
  * - @ref NRFX_TWIM_XFER_TXRX - Write operation followed by a read operation (without STOP condition in between).
