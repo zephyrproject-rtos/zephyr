@@ -22,6 +22,7 @@
 #include <ia32/mmustructs.h>
 #include <stdbool.h>
 #include <arch/common/ffs.h>
+#include <misc/util.h>
 
 #ifndef _ASMLANGUAGE
 #include <arch/common/addr_types.h>
@@ -571,41 +572,122 @@ extern u32_t z_timer_cycle_get_32(void);
 extern struct task_state_segment _main_tss;
 #endif
 
+#ifdef CONFIG_USERSPACE
+/* We need a set of page tables for each thread in the system which runs in
+ * user mode. For each thread, we have:
+ *
+ *   - a toplevel PDPT
+ *   - a set of page directories for the memory range covered by system RAM
+ *   - a set of page tbales for the memory range covered by system RAM
+ *
+ * Directories and tables for memory ranges outside of system RAM will be
+ * shared and not thread-specific.
+ *
+ * NOTE: We are operating under the assumption that memory domain partitions
+ * will not be configured which grant permission to address ranges outside
+ * of system RAM.
+ *
+ * Each of these page tables will be programmed to reflect the memory
+ * permission policy for that thread, which will be the union of:
+ *
+ *   - The boot time memory regions (text, rodata, and so forth)
+ *   - The thread's stack buffer
+ *   - Partitions in the memory domain configuration (if a member of a
+ *     memory domain)
+ *
+ * The PDPT is fairly small singleton on x86 PAE (32 bytes) and also must
+ * be aligned to 32 bytes, so we place it at the highest addresses of the
+ * page reserved for the privilege elevation stack.
+ *
+ * The page directories and tables require page alignment so we put them as
+ * additional fields in the stack object, using the below macros to compute how
+ * many pages we need.
+ */
+
+/* Define a range [Z_X86_PT_START, Z_X86_PT_END) which is the memory range
+ * covered by all the page tables needed for system RAM
+ */
+#define Z_X86_PT_START	((u32_t)ROUND_DOWN(DT_PHYS_RAM_ADDR, Z_X86_PT_AREA))
+#define Z_X86_PT_END	((u32_t)ROUND_UP(DT_PHYS_RAM_ADDR + \
+					 (DT_RAM_SIZE * 1024U), \
+					 Z_X86_PT_AREA))
+
+/* Number of page tables needed to cover system RAM. Depends on the specific
+ * bounds of system RAM, but roughly 1 page table per 2MB of RAM */
+#define Z_X86_NUM_PT	((Z_X86_PT_END - Z_X86_PT_START) / Z_X86_PT_AREA)
+
+/* Same semantics as above, but for the page directories needed to cover
+ * system RAM.
+ */
+#define Z_X86_PD_START	((u32_t)ROUND_DOWN(DT_PHYS_RAM_ADDR, Z_X86_PD_AREA))
+#define Z_X86_PD_END	((u32_t)ROUND_UP(DT_PHYS_RAM_ADDR + \
+					 (DT_RAM_SIZE * 1024U), \
+					 Z_X86_PD_AREA))
+/* Number of page directories needed to cover system RAM. Depends on the
+ * specific bounds of system RAM, but roughly 1 page directory per 1GB of RAM */
+#define Z_X86_NUM_PD	((Z_X86_PD_END - Z_X86_PD_START) / Z_X86_PD_AREA)
+
+/* Number of pages we need to reserve in the stack for per-thread page tables */
+#define Z_X86_NUM_TABLE_PAGES	(Z_X86_NUM_PT + Z_X86_NUM_PD)
+#else
+/* If we're not implementing user mode, then the MMU tables don't get changed
+ * on context switch and we don't need any per-thread page tables
+ */
+#define Z_X86_NUM_TABLE_PAGES	0U
+#endif /* CONFIG_USERSPACE */
+
+#define Z_X86_THREAD_PT_AREA	(Z_X86_NUM_TABLE_PAGES * MMU_PAGE_SIZE)
+
 #if defined(CONFIG_HW_STACK_PROTECTION) && defined(CONFIG_USERSPACE)
 /* With both hardware stack protection and userspace enabled, stacks are
  * arranged as follows:
  *
  * High memory addresses
- * +---------------+
- * | Thread stack  |
- * +---------------+
- * | Kernel stack  |
- * +---------------+
- * | Guard page    |
- * +---------------+
+ * +-----------------------------------------+
+ * | Thread stack (varies)                   |
+ * +-----------------------------------------+
+ * | PDPT (32 bytes)		             |
+ * | Privilege elevation stack (4064 bytes)  |
+ * +-----------------------------------------+
+ * | Guard page (4096 bytes)                 |
+ * +-----------------------------------------+
+ * | User page tables (Z_X86_THREAD_PT_AREA) |
+ * +-----------------------------------------+
  * Low Memory addresses
  *
- * Kernel stacks are fixed at 4K. All the pages containing the thread stack
- * are marked as user-accessible.
- * All threads start in supervisor mode, and the kernel stack/guard page
- * are both marked non-present in the MMU.
- * If a thread drops down to user mode, the kernel stack page will be marked
- * as present, supervior-only, and the _main_tss.esp0 field updated to point
- * to the top of it.
- * All context switches will save/restore the esp0 field in the TSS.
+ * Privilege elevation stacks are fixed-size. All the pages containing the
+ * thread stack are marked as user-accessible. The guard page is marked
+ * read-only to catch stack overflows in supervisor mode.
+ *
+ * If a thread starts in supervisor mode, the page containing the PDPT and
+ * privilege elevation stack is also marked read-only.
+ *
+ * If a thread starts in, or drops down to user mode, the privilege stack page
+ * will be marked as present, supervior-only. The PDPT will be initialized and
+ * used as the active page tables when that thread is active.
+ *
+ * If KPTI is not enabled, the _main_tss.esp0 field will always be updated
+ * updated to point to the top of the privilege elevation stack. Otherwise
+ * _main_tss.esp0 always points to the trampoline stack, which handles the
+ * page table switch to the kernel PDPT and transplants context to the
+ * privileged mode stack.
+ *
+ * TODO: The stack object layout is getting rather complex. We should define
+ * its layout in a struct definition, rather than doing math in the kernel
+ * code to find the parts we want or to obtain sizes.
  */
-#define Z_ARCH_THREAD_STACK_RESERVED	(MMU_PAGE_SIZE * 2)
-#define _STACK_BASE_ALIGN	MMU_PAGE_SIZE
+#define Z_ARCH_THREAD_STACK_RESERVED	(MMU_PAGE_SIZE * (2 + Z_X86_NUM_TABLE_PAGES))
+#define _STACK_BASE_ALIGN		MMU_PAGE_SIZE
 #elif defined(CONFIG_HW_STACK_PROTECTION) || defined(CONFIG_USERSPACE)
 /* If only one of HW stack protection or userspace is enabled, then the
  * stack will be preceded by one page which is a guard page or a kernel mode
  * stack, respectively.
  */
-#define Z_ARCH_THREAD_STACK_RESERVED	MMU_PAGE_SIZE
-#define _STACK_BASE_ALIGN	MMU_PAGE_SIZE
+#define Z_ARCH_THREAD_STACK_RESERVED	(MMU_PAGE_SIZE * (1 + Z_X86_NUM_TABLE_PAGES))
+#define _STACK_BASE_ALIGN		MMU_PAGE_SIZE
 #else /* Neither feature */
 #define Z_ARCH_THREAD_STACK_RESERVED	0
-#define _STACK_BASE_ALIGN	STACK_ALIGN
+#define _STACK_BASE_ALIGN		STACK_ALIGN
 #endif
 
 #ifdef CONFIG_USERSPACE
