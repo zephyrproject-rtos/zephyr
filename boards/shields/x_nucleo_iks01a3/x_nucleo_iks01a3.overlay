@@ -9,6 +9,7 @@
 	hts221@5f {
 		compatible = "st,hts221";
 		reg = <0x5f>;
+		drdy-gpios =  <&arduino_header 8 0>; /* D2 */
 		label = "HTS221";
 	};
 
