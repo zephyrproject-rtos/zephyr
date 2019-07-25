@@ -151,22 +151,53 @@ a given SoC family.
 Example: FRDM K64F Board and Hexiwear K64
 =========================================
 
-Both of these boards are based on the same NXP Kinetis SoC family, the K6X.  The
-following shows the include hierarchy for both boards.
+.. Give the filenames instead of the full paths below, as it's easier to read.
+   The cramped 'foo.dts<path>' style avoids extra spaces before commas.
 
-boards/arm/frdm_k64f/frdm_k64f.dts includes the following files::
+These boards are defined in :zephyr_file:`frdm_k64fs.dts
+<boards/arm/frdm_k64f/frdm_k64f.dts>` and :zephyr_file:`hexiwear_k64.dts
+<boards/arm/hexiwear_k64/hexiwear_k64.dts>`. They are based on the same NXP
+Kinetis SoC family, the K6X.
 
-  dts/arm/nxp/nxp_k6x.dtsi
-  dts/arm/armv7-m.dtsi
+Common definitions for K6X are stored in :zephyr_file:`nxp_k6x.dtsi
+<dts/arm/nxp/nxp_k6x.dtsi>`, which is included by both board :file:`.dts`
+files. :zephyr_file:`nxp_k6x.dtsi<dts/arm/nxp/nxp_k6x.dtsi>` in turn includes
+:zephyr_file:`armv7-m.dtsi<dts/arm/armv7-m.dtsi>`, which has common
+definitions for ARMv7-M-based systems.
 
-boards/arm/hexiwear_k64/hexiwear_k64.dts includes the same files::
+Since :zephyr_file:`nxp_k6x.dtsi<dts/arm/nxp/nxp_k6x.dtsi>` is meant to be
+generic across K6X-based boards, it leaves many devices disabled by default.
+For example, there is a CAN controller defined as follows (with unimportant
+parts skipped):
 
-  dts/arm/nxp/nxp_k6x.dtsi
-  dts/arm/armv7-m.dtsi
+.. code-block:: none
 
-The board-specific .dts files enable nodes, define the Zephyr-specific items,
-and also adds board-specific changes like gpio/pinmux assignments.  These types
-of things will vary based on the board layout and application use.
+   can0: can@40024000 {
+   	...
+   	status = "disabled";
+   	...
+   };
+
+It is up to the board :file:`.dts` files to enable devices (by setting
+``status = "okay"``). The board :file:`.dts` files are also responsible for any
+board-specific configuration of the device.
+
+For example, FRDM K64 (but not Hexiwear K64) enables the CAN controller, also
+setting the bus speed:
+
+.. code-block:: none
+
+   &can0 {
+   	status = "okay";
+   	bus-speed = <125000>;
+   };
+
+The ``&can0 { ... };`` syntax adds/overrides properties on the node with label
+``can0``, i.e. the ``can@4002400`` node.
+
+Other examples of board-specific customization is pointing properties in
+``aliases`` and ``chosen`` to the right nodes (see :ref:`dt-alias-chosen`), and
+making GPIO/PinMux assignments.
 
 Currently supported boards
 **************************
