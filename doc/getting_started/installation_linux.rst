@@ -119,7 +119,7 @@ Arch Linux:
 using ``cmake --version``. If you have an older version, there are several ways
 of obtaining a more recent one:
 
-* Use ``pip``:
+* Use ``pip3`` (see :ref:`python-pip` for more details):
 
   .. code-block:: console
 

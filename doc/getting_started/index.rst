@@ -15,6 +15,33 @@ environment, then build and run a sample application.
 Install Host Dependencies
 *************************
 
+.. _python-pip:
+
+Python and pip
+==============
+
+Python 3 and its package manager, pip\ [#pip]_, are used extensively by Zephyr
+to install and run scripts that are required to compile and run Zephyr
+applications.
+
+Depending on your operating system, you may or may not need to provide the
+``--user`` flag to the ``pip3`` command when installing new packages. This is
+documented throughout the instructions.
+See `Installing Packages`_ in the Python Packaging User Guide for more
+information about pip\ [#pip]_, including this `information on -\\-user`_.
+
+- On Linux, make sure ``~/.local/bin`` is on your :envvar:`PATH`
+  :ref:`environment variable <env_vars>`, or programs installed with ``--user``
+  won't be found\ [#linux_user]_.
+
+- On macOS, `Homebrew disables -\\-user`_.
+
+- On Windows, see the Installing Packages information on ``--user`` if you
+  require using this option.
+
+Install the required tools
+===========================
+
 Follow an operating system specific guide, then come back to this page.
 
 .. toctree::
@@ -46,18 +73,7 @@ First, install the ``west`` binary and bootstrapper using ``pip3``:
    # macOS (Terminal) and Windows (cmd.exe)
    pip3 install west
 
-See :ref:`west-install` for additional details on installing west. See
-`Installing Packages`_ in the Python Packaging User Guide for more information
-about pip\ [#pip]_, including this `information on -\\-user`_.
-
-- On Linux, make sure ``~/.local/bin`` is on your :envvar:`PATH`
-  :ref:`environment variable <env_vars>`, or programs installed with ``--user``
-  -- like west -- won't be found\ [#linux_user]_.
-
-- On macOS, `Homebrew disables -\\-user`_.
-
-- On Windows, see the Installing Packages information on ``--user`` if you
-  require using this option.
+See :ref:`west-install` for additional details on installing west.
 
 .. _clone-zephyr:
 
