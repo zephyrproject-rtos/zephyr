@@ -21,7 +21,7 @@ config PINMUX_XEC_GPIO000_036
 	default y
 
 config PINMUX_XEC_GPIO040_076
-	default n
+	default y
 
 config PINMUX_XEC_GPIO100_136
 	default y
@@ -81,5 +81,12 @@ config MCHP_XEC_RTOS_TIMER
 	default y
 
 endif # SYS_CLOCK_EXISTS
+
+if ESPI
+
+config ESPI_XEC
+	default y
+
+endif # ESPI
 
 endif # BOARD_MEC15XXEVB_ASSY6853
