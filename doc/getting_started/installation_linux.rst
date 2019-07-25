@@ -9,10 +9,15 @@ Install Linux Host Dependencies
 
 Documentation is available for these Linux distributions:
 
-* Ubuntu 16.04 LTS or 18.04 LTS 64-bit
-* Fedora 28 64-bit
+* Ubuntu
+* Fedora
 * Clear Linux
 * Arch Linux
+
+For distributions that are not based on rolling releases, some of the
+requirements and dependencies may not be met by your package manager. In that
+case please follow the additional instructions that are provided to find
+software from sources other than the package manager.
 
 Update Your Operating System
 ****************************
