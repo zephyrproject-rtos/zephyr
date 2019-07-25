@@ -177,7 +177,18 @@ extern "C" {
 				     : "ir"(val), "i"(reg)); \
 	})
 #endif /* __GNUC__ */
+
 #endif /* _ASMLANGUAGE */
+
+#define z_arc_v2_core_id() \
+	({                                               \
+		unsigned int __ret;                      \
+		__asm__ __volatile__("lr %0, [%1]\n" \
+				     "xbfu %0, %0, 0xe8\n" \
+				     : "=r"(__ret)       \
+				     : "i"(_ARC_V2_IDENTITY));        \
+		__ret;                                   \
+	})
 
 #ifdef __cplusplus
 }

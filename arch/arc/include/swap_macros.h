@@ -295,6 +295,11 @@ extern "C" {
 	cmp \reg1, \reg2
 .endm
 
+.macro _get_cpu_id reg
+	lr \reg, [_ARC_V2_IDENTITY]
+	xbfu \reg, \reg, 0xe8
+.endm
+
 #endif /* _ASMLANGUAGE */
 
 #ifdef __cplusplus
