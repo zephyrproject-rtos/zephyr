@@ -506,6 +506,26 @@ struct x86_mmu_pt {
 	union x86_mmu_pte entry[Z_X86_NUM_PT_ENTRIES];
 };
 
+/**
+ * Debug function for dumping out page tables
+ *
+ * Iterates through the entire linked set of page table structures,
+ * dumping out codes for the configuration of each table entry.
+ *
+ * Entry codes:
+ *
+ *   . - not present
+ *   w - present, writable, not executable
+ *   a - present, writable, executable
+ *   r - present, read-only, not executable
+ *   x - present, read-only, executable
+ *
+ * Entry codes in uppercase indicate that user mode may access.
+ *
+ * @param pdpt Top-level pointer to the page tables, as programmed in CR3
+ */
+void z_x86_dump_page_tables(struct x86_mmu_pdpt *pdpt);
+
 #endif /* _ASMLANGUAGE */
 
 #endif /* ZEPHYR_ARCH_X86_INCLUDE_IA32_MMUSTRUCTS_H_ */
