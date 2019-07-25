@@ -34,10 +34,7 @@ struct tm {
 typedef int64_t time_t;
 typedef int32_t suseconds_t;
 
-struct timespec {
-	time_t tv_sec;
-	long tv_nsec;
-};
+#include <sys/_timespec.h>
 
 /*
  * Conversion between civil time and UNIX time.  The companion
