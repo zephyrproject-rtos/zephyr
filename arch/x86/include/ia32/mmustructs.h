@@ -476,13 +476,21 @@ union x86_mmu_pte {
 	};
 };
 
+#define Z_X86_NUM_PDPT_ENTRIES	4
+#define Z_X86_NUM_PD_ENTRIES	512
+#define Z_X86_NUM_PT_ENTRIES	512
+
+/* Memory range covered by an instance of various table types */
+#define Z_X86_PT_AREA	(MMU_PAGE_SIZE * Z_X86_NUM_PT_ENTRIES)
+#define Z_X86_PD_AREA	(Z_X86_PT_AREA * Z_X86_NUM_PD_ENTRIES)
+#define Z_X86_PDPT_AREA (Z_X86_PD_AREA * Z_X86_NUM_PDPT_ENTRIES)
 
 typedef u64_t x86_page_entry_data_t;
 
 typedef x86_page_entry_data_t k_mem_partition_attr_t;
 
 struct x86_mmu_pdpt {
-	union x86_mmu_pdpte entry[4];
+	union x86_mmu_pdpte entry[Z_X86_NUM_PDPT_ENTRIES];
 };
 
 union x86_mmu_pde {
@@ -491,11 +499,11 @@ union x86_mmu_pde {
 };
 
 struct x86_mmu_pd {
-	union x86_mmu_pde entry[512];
+	union x86_mmu_pde entry[Z_X86_NUM_PD_ENTRIES];
 };
 
 struct x86_mmu_pt {
-	union x86_mmu_pte entry[512];
+	union x86_mmu_pte entry[Z_X86_NUM_PT_ENTRIES];
 };
 
 #endif /* _ASMLANGUAGE */

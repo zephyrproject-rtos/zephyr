@@ -79,8 +79,8 @@ void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 #endif /* CONFIG_X86_USERSPACE */
 
 #if CONFIG_X86_STACK_PROTECTION
-	z_x86_mmu_set_flags(&z_x86_kernel_pdpt, stack, MMU_PAGE_SIZE,
-			    MMU_ENTRY_READ, MMU_PTE_RW_MASK);
+	z_x86_mmu_set_flags(&z_x86_kernel_pdpt, stack + Z_X86_THREAD_PT_AREA,
+			    MMU_PAGE_SIZE, MMU_ENTRY_READ, MMU_PTE_RW_MASK);
 #endif
 
 	stack_high = (char *)STACK_ROUND_DOWN(stack_buf + stack_size);
