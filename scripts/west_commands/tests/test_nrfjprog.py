@@ -213,7 +213,7 @@ def test_nrfjprog_init(cc, get_snr, req, test_case, runner_config):
     if snr is None:
         with pytest.raises(ValueError) as e:
             runner.run('flash')
-        assert 'snr must not be None' in str(e)
+        assert 'snr must not be None' in str(e.value)
     else:
         runner.run('flash')
         assert req.called
