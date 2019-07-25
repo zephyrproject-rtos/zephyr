@@ -134,6 +134,12 @@ of obtaining a more recent one:
 * Check your distribution's beta or unstable release package library for an
   update.
 
+* On Ubuntu you can also use snap to get the latest version available:
+
+  .. code-block:: console
+
+     sudo snap install cmake
+
 You might also want to uninstall the CMake provided by your package manager to
 avoid conflicts.
 
