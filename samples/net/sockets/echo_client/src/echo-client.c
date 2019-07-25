@@ -81,8 +81,11 @@ struct configs conf = {
 	},
 };
 
-struct pollfd fds[4];
-int nfds;
+static struct pollfd fds[4];
+static int nfds;
+
+static bool connected;
+K_SEM_DEFINE(run_app, 0, 1);
 
 static struct net_mgmt_event_callback mgmt_cb;
 
@@ -123,7 +126,7 @@ static void wait(void)
 	}
 }
 
-static void start_udp_and_tcp(struct k_work *work)
+static int start_udp_and_tcp(void)
 {
 	int ret;
 
@@ -132,39 +135,46 @@ static void start_udp_and_tcp(struct k_work *work)
 	if (IS_ENABLED(CONFIG_NET_TCP)) {
 		ret = start_tcp();
 		if (ret < 0) {
-			return;
+			return ret;
 		}
 	}
 
 	if (IS_ENABLED(CONFIG_NET_UDP)) {
 		ret = start_udp();
 		if (ret < 0) {
-			return;
+			return ret;
 		}
 	}
 
 	prepare_fds();
 
-	while (true) {
-		if (IS_ENABLED(CONFIG_NET_TCP)) {
-			ret = process_tcp();
-			if (ret < 0) {
-				break;
-			}
-		}
-
-		if (IS_ENABLED(CONFIG_NET_UDP)) {
-			ret = process_udp();
-			if (ret < 0) {
-				break;
-			}
-		}
-
-		wait();
-	}
+	return 0;
 }
 
-static void stop_udp_and_tcp(struct k_work *work)
+static int run_udp_and_tcp(void)
+{
+	int ret;
+
+	wait();
+
+	if (IS_ENABLED(CONFIG_NET_TCP)) {
+		ret = process_tcp();
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_NET_UDP)) {
+		ret = process_udp();
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	return 0;
+}
+
+static void stop_udp_and_tcp(void)
 {
 	LOG_INF("Stopping...");
 
@@ -177,15 +187,6 @@ static void stop_udp_and_tcp(struct k_work *work)
 	}
 }
 
-static void do_service(k_work_handler_t handler)
-{
-	static struct k_work work;
-
-	k_work_init(&work, handler);
-
-	k_work_submit(&work);
-}
-
 static void event_handler(struct net_mgmt_event_callback *cb,
 			  u32_t mgmt_event, struct net_if *iface)
 {
@@ -196,7 +197,8 @@ static void event_handler(struct net_mgmt_event_callback *cb,
 	if (mgmt_event == NET_EVENT_L4_CONNECTED) {
 		LOG_INF("Network connected");
 
-		do_service(start_udp_and_tcp);
+		connected = true;
+		k_sem_give(&run_app);
 
 		return;
 	}
@@ -204,7 +206,8 @@ static void event_handler(struct net_mgmt_event_callback *cb,
 	if (mgmt_event == NET_EVENT_L4_DISCONNECTED) {
 		LOG_INF("Network disconnected");
 
-		do_service(stop_udp_and_tcp);
+		connected = false;
+		k_sem_reset(&run_app);
 
 		return;
 	}
@@ -237,6 +240,8 @@ static void init_app(void)
 
 void main(void)
 {
+	int ret;
+
 	init_app();
 
 	if (!IS_ENABLED(CONFIG_NET_CONNECTION_MANAGER)) {
@@ -244,6 +249,19 @@ void main(void)
 		 * app only after we have a connection, then we can start
 		 * it right away.
 		 */
-		do_service(start_udp_and_tcp);
+		k_sem_give(&run_app);
+	}
+
+	while (true) {
+		/* Wait for the connection. */
+		k_sem_take(&run_app, K_FOREVER);
+
+		ret = start_udp_and_tcp();
+
+		while (connected && (ret == 0)) {
+			ret = run_udp_and_tcp();
+		}
+
+		stop_udp_and_tcp();
 	}
 }
