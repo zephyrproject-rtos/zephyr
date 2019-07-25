@@ -103,7 +103,8 @@ the directory if it doesn't exist. See :ref:`west-multi-repo` for more details.
 Install Python Dependencies
 ***************************
 
-Install Python packages required by Zephyr:
+Install Python packages required by Zephyr. From the :file:`zephyrproject`
+folder that you :ref:`cloned Zephyr into <clone-zephyr>`:
 
 .. code-block:: console
 
