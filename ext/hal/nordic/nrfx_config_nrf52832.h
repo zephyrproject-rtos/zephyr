@@ -2695,7 +2695,7 @@
 #ifdef CONFIG_NRFX_UARTE
 #define NRFX_UARTE_ENABLED 1
 #endif
-// <o> NRFX_UARTE0_ENABLED - Enable UARTE0 instance
+// <q> NRFX_UARTE0_ENABLED - Enable UARTE0 instance
 #ifdef CONFIG_NRFX_UARTE0
 #define NRFX_UARTE0_ENABLED 1
 #endif
@@ -2816,7 +2816,7 @@
 #ifdef CONFIG_NRFX_UART
 #define NRFX_UART_ENABLED 1
 #endif
-// <o> NRFX_UART0_ENABLED - Enable UART0 instance
+// <q> NRFX_UART0_ENABLED - Enable UART0 instance
 #ifdef CONFIG_NRFX_UART
 #define NRFX_UART0_ENABLED 1
 #endif
