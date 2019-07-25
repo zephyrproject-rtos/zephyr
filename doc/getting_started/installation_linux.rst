@@ -143,6 +143,12 @@ of obtaining a more recent one:
 You might also want to uninstall the CMake provided by your package manager to
 avoid conflicts.
 
+**A recent DTC version (1.4.6 or higher) is required**. Check what version you
+have by using ``dtc --version``. If you have an older version, either install a
+more recent one by building from source, or use the one that is bundled in
+the :ref:`Zephyr SDK <zephyr_sdk>` by installing it and setting the
+:envvar:`ZEPHYR_SDK_INSTALL_DIR` environment variable.
+
 .. _zephyr_sdk:
 
 Install the Zephyr Software Development Kit (SDK)
