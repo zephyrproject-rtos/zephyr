@@ -31,9 +31,24 @@ extern "C" {
 #include <v2/irq.h>
 #endif
 
+static ALWAYS_INLINE _cpu_t *z_arch_curr_cpu(void)
+{
+#ifdef CONFIG_SMP
+	u32_t core;
+
+	core = z_arc_v2_core_id();
+
+	return &_kernel.cpus[core];
+#else
+	return &_kernel.cpus[0];
+#endif
+}
+
 static ALWAYS_INLINE void kernel_arch_init(void)
 {
 	z_irq_setup();
+	_current_cpu->irq_stack =
+		Z_THREAD_STACK_BUFFER(_interrupt_stack) + CONFIG_ISR_STACK_SIZE;
 }
 
 
@@ -62,6 +77,9 @@ extern void z_arc_userspace_enter(k_thread_entry_t user_entry, void *p1,
 
 extern void z_arch_switch(void *switch_to, void **switched_from);
 extern void z_arc_fatal_error(unsigned int reason, const z_arch_esf_t *esf);
+
+extern void z_arch_sched_ipi(void);
+
 #endif /* _ASMLANGUAGE */
 
 #ifdef __cplusplus
