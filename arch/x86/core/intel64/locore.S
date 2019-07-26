@@ -435,8 +435,8 @@ irq:
 	 * if we're a nested interrupt, we have to dump the state to the
 	 * stack. we play some games here to re-arrange the stack thusly:
 	 *
-	 * SS RSP RFLAGS CS RIP RAX RSI RCX RDX RBX
-	 * RDI RBP R8 R9 R10 R11 R12 R13 R14 R15
+	 * SS RSP RFLAGS CS RIP RAX RSI
+	 * RCX RDX RDI R8 R9 R10 R11
 	 * X86_FXSAVE_SIZE bytes of SSE data <-- RSP points here
 	 *
 	 * note that the final value of RSP must be 16-byte aligned here,
@@ -448,17 +448,11 @@ irq_enter_nested: /* Nested IRQ: dump register state to stack. */
 	movq 16(%rsp), %rcx /* RCX = vector */
 	movq %rax, 16(%rsp) /* looks like we pushed RAX, not the vector */
 	pushq %rdx
-	pushq %rbx
 	pushq %rdi
-	pushq %rbp
 	pushq %r8
 	pushq %r9
 	pushq %r10
 	pushq %r11
-	pushq %r12
-	pushq %r13
-	pushq %r14
-	pushq %r15
 	subq $X86_FXSAVE_SIZE, %rsp
 	fxsave (%rsp)
 	jmp irq_dispatch
@@ -518,17 +512,11 @@ irq_dispatch:
 irq_exit_nested:
 	fxrstor (%rsp)
 	addq $X86_FXSAVE_SIZE, %rsp
-	popq %r15
-	popq %r14
-	popq %r13
-	popq %r12
 	popq %r11
 	popq %r10
 	popq %r9
 	popq %r8
-	popq %rbp
 	popq %rdi
-	popq %rbx
 	popq %rdx
 	popq %rcx
 	popq %rsi
