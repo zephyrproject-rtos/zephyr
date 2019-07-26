@@ -60,11 +60,40 @@ static int i2c_nrfx_twi_transfer(struct device *dev, struct i2c_msg *msgs,
 			.type		= (msgs[i].flags & I2C_MSG_READ) ?
 					  NRFX_TWI_XFER_RX : NRFX_TWI_XFER_TX
 		};
+		u32_t xfer_flags = 0;
+		nrfx_err_t res;
 
-		nrfx_err_t res = nrfx_twi_xfer(&get_dev_config(dev)->twi,
-					       &cur_xfer,
-					       (msgs[i].flags & I2C_MSG_STOP) ?
-					       0 : NRFX_TWI_FLAG_TX_NO_STOP);
+		/* In case the STOP condition is not supposed to appear after
+		 * the current message, check what is requested further:
+		 */
+		if (!(msgs[i].flags & I2C_MSG_STOP)) {
+			/* - if the transfer consists of more messages
+			 *   and the I2C repeated START is not requested
+			 *   to appear before the next message, suspend
+			 *   the transfer after the current message,
+			 *   so that it can be resumed with the next one,
+			 *   resulting in the two messages merged into
+			 *   a continuous transfer on the bus
+			 */
+			if ((i < (num_msgs - 1)) &&
+			    !(msgs[i + 1].flags & I2C_MSG_RESTART)) {
+				xfer_flags |= NRFX_TWI_FLAG_SUSPEND;
+			/* - otherwise, just finish the transfer without
+			 *   generating the STOP condition, unless the current
+			 *   message is an RX request, for which such feature
+			 *   is not supported
+			 */
+			} else if (msgs[i].flags & I2C_MSG_READ) {
+				ret = -ENOTSUP;
+				break;
+			} else {
+				xfer_flags |= NRFX_TWI_FLAG_TX_NO_STOP;
+			}
+		}
+
+		res = nrfx_twi_xfer(&get_dev_config(dev)->twi,
+				    &cur_xfer,
+				    xfer_flags);
 		if (res != NRFX_SUCCESS) {
 			if (res == NRFX_ERROR_BUSY) {
 				ret = -EBUSY;
