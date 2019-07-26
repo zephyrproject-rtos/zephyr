@@ -341,14 +341,7 @@ static ALWAYS_INLINE unsigned int z_arch_irq_lock(void)
 {
 	unsigned int key;
 
-	__asm__ volatile (
-		"pushfl;\n\t"
-		"cli;\n\t"
-		"popl %0;\n\t"
-		: "=g" (key)
-		:
-		: "memory"
-		);
+	__asm__ volatile ("pushfl; cli; popl %0" : "=g" (key) :: "memory");
 
 	return key;
 }
