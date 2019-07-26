@@ -59,7 +59,7 @@ static int mcumgr_serial_extract_len(struct mcumgr_serial_rx_ctxt *rx_ctxt)
 static int mcumgr_serial_decode_frag(struct mcumgr_serial_rx_ctxt *rx_ctxt,
 				     const u8_t *frag, int frag_len)
 {
-	int dec_len;
+	size_t dec_len;
 	int rc;
 
 	rc = base64_decode(rx_ctxt->nb->data + rx_ctxt->nb->len,
