@@ -108,12 +108,11 @@ static ALWAYS_INLINE u64_t z_tmcvt(u64_t t, u32_t from_hz, u32_t to_hz,
  * code, which enumerates all possible combinations of units, rounding
  * modes and precision.  Do not edit directly.
  *
- * Note that no "microsecond" conversions are defined with anything
- * but 64 bit precision.  This unit was added to Zephyr after the
- * introduction of 64 bit timeout support, so there is no backward
- * compatibility requirement.  And doing 32 bit math with units that
- * small microseconds has precision traps that we probably don't want
- * to support in an official API.
+ * Note that nano/microsecond conversions are only defined with 64 bit
+ * precision.  These units conversions were not available in 32 bit
+ * variants historically, and doing 32 bit math with units that small
+ * has precision traps that we probably don't want to support in an
+ * official API.
  *
  * #!/usr/bin/perl -w
  * use strict;
