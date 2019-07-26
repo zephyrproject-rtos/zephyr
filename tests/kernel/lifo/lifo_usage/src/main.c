@@ -324,7 +324,8 @@ static void test_timeout_lifo_thread(void)
 				&timeout, NULL,
 				LIFO_THREAD_PRIO, K_INHERIT_PERMS, 0);
 
-	packet = k_lifo_get(&lifo_timeout[0], timeout + 10);
+	packet = k_lifo_get(&lifo_timeout[0], timeout
+			    + k_ticks_to_ms_ceil32(2));
 	zassert_true(packet != NULL, NULL);
 	zassert_true(is_timeout_in_range(start_time, timeout), NULL);
 	put_scratch_packet(packet);
