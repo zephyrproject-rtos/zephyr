@@ -71,15 +71,18 @@ The device tree files are compiled using the device tree compiler.  The compiler
 runs the .dts file through the C preprocessor to resolve any macro or #defines
 utilized in the file.  The output of the compile is another dts formatted file.
 
-After compilation, a python script extracts information from the compiled device
-tree file using a set of rules specified in YAML binding files.  The extracted
-information is placed in a header file that is used by the rest of the code as
-the project is compiled.
+After compilation, a Python script extracts information from the compiled
+device tree file using rules specified in *bindings* (see the :ref:`bindings`
+section). The extracted information is placed in a header file that is used by
+the rest of the code as the project is compiled.
 
 Temporary fixup files are required for device tree support on most devices.
 These fixup files by default reside in the board and soc directories and are
 named ``dts_fixup.h``.  These fixup files map the generated include information to
 the current driver/source usage.
+
+The Python code that deals with device tree and bindings is in
+:zephyr_file:`scripts/dts/`.
 
 .. _dt_vs_kconfig:
 
@@ -356,32 +359,58 @@ Example: Subset of DTS/YAML files for NXP FRDM K64F (Subject to Change)::
   dts/bindings/pinctrl/nxp,kinetis-pinmux.yaml
   dts/bindings/serial/nxp,kinetis-uart.yaml
 
-YAML bindings for device nodes
-******************************
+.. _bindings:
 
-Device tree describes hardware and configuration, but it doesn't tell the
-system which pieces of information are useful, or how to generate configuration
-data from the device tree nodes.  For this, we rely on YAML binding files to
-describe the contents or definition of a device tree node and instruct how the
-extracted information should be formatted.
+Bindings
+********
 
-A YAML description (called "YAML binding") must be provided for every device node
-that is a source of information for the system.  A YAML binding file
-is associated to each node ``compatible`` property.  Information within the YAML
-file will instruct the python DTS parsing script (located in ``scripts/dts``) how
-each property of the node is expected to be generated, either the type of the
-value or the format of its name.  Node properties are generated as C-style
-``#define``'s in include files
-made available to all Zephyr components.
+``.dts`` files describe the available hardware devices, but don't tell the
+system which pieces of information are useful, or what kind of configuration
+output (``#define``'s) should be generated. *Bindings* provide this
+information. Bindings are files in YAML format.
 
-A YAML template file is provided to show the required format.  This file is
-located at::
+Configuration output is only generated for devices that have bindings.
 
-  dts/bindings/device_node.yaml.template
+Nodes are mapped to bindings via their ``compatible`` string(s). Take
+the following node as an example:
 
-YAML files must end in a .yaml suffix.  YAML files are scanned during the
-information extraction phase and are matched to device tree nodes via the
-compatible property.
+.. code-block:: none
+
+   bar-device {
+   	compatible = "foo-company,bar-device";
+   	...
+   };
+
+This node would get mapped to a binding with this in it:
+
+.. code-block:: yaml
+
+   ...
+
+   properties:
+       compatible:
+           constraint: "foo-company,bar-device"
+
+       ...
+
+Bindings are stored in :zephyr_file:`dts/bindings/`. The filename usually
+matches the ``compatible`` string.
+
+If a node has more than one ``compatible`` string, then the first binding found
+is used, going from the first string to the last. For example, a node with
+``compatible = "foo-company,bar-device", "generic-bar-device"`` would get
+mapped to the binding for ``generic-bar-device`` if there is no binding for
+``foo-company,bar-device``.
+
+If a node appears on a bus (e.g. I2C or SPI), then the bus type is also taken
+into account when mapping nodes to bindings. See the description of ``parent``
+and ``child`` in the template below.
+
+Below is a template that shows the format of binding files, stored in
+:zephyr_file:`dts/bindings/device_node.yaml.template`.
+
+.. literalinclude:: ../../../dts/bindings/device_node.yaml.template
+   :language: yaml
 
 
 Include files generation
