@@ -81,6 +81,13 @@ extern FUNC_NORETURN void z_x86_userspace_enter(k_thread_entry_t user_entry,
 					       u32_t stack_end,
 					       u32_t stack_start);
 
+/* Helper macros needed to be passed to x86_update_mem_domain_pages */
+#define X86_MEM_DOMAIN_SET_PAGES   (0U)
+#define X86_MEM_DOMAIN_RESET_PAGES (1U)
+
+extern void z_x86_mem_domain_pages_update(struct k_mem_domain *mem_domain,
+					  u32_t page_conf);
+
 #include <stddef.h> /* For size_t */
 
 #ifdef __cplusplus

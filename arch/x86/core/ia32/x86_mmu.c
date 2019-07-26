@@ -8,6 +8,7 @@
 #include <ia32/mmustructs.h>
 #include <linker/linker-defs.h>
 #include <kernel_internal.h>
+#include <kernel_structs.h>
 #include <init.h>
 #include <ctype.h>
 
@@ -377,12 +378,9 @@ static inline void activate_partition(struct k_mem_partition *partition)
 			    partition->size, attr, mask);
 }
 
-/* Helper macros needed to be passed to x86_update_mem_domain_pages */
-#define X86_MEM_DOMAIN_SET_PAGES   (0U)
-#define X86_MEM_DOMAIN_RESET_PAGES (1U)
 /* Pass 1 to page_conf if reset of mem domain pages is needed else pass a 0*/
-static inline void x86_mem_domain_pages_update(struct k_mem_domain *mem_domain,
-						u32_t page_conf)
+void z_x86_mem_domain_pages_update(struct k_mem_domain *mem_domain,
+				   u32_t page_conf)
 {
 	u32_t partition_index;
 	u32_t total_partitions;
@@ -424,10 +422,14 @@ out:
 }
 
 /* Load the partitions of the thread. */
-void z_arch_mem_domain_configure(struct k_thread *thread)
+void z_arch_mem_domain_thread_add(struct k_thread *thread)
 {
-	x86_mem_domain_pages_update(thread->mem_domain_info.mem_domain,
-				     X86_MEM_DOMAIN_SET_PAGES);
+	if (_current != thread) {
+		return;
+	}
+
+	z_x86_mem_domain_pages_update(thread->mem_domain_info.mem_domain,
+				      X86_MEM_DOMAIN_SET_PAGES);
 }
 
 /* Destroy or reset the mmu page tables when necessary.
@@ -435,7 +437,20 @@ void z_arch_mem_domain_configure(struct k_thread *thread)
  */
 void z_arch_mem_domain_destroy(struct k_mem_domain *domain)
 {
-	x86_mem_domain_pages_update(domain, X86_MEM_DOMAIN_RESET_PAGES);
+	if (_current->mem_domain_info.mem_domain != domain) {
+		return;
+	}
+
+	z_x86_mem_domain_pages_update(domain, X86_MEM_DOMAIN_RESET_PAGES);
+}
+
+void z_arch_mem_domain_thread_remove(struct k_thread *thread)
+{
+	if (_current != thread) {
+		return;
+	}
+
+	z_arch_mem_domain_destroy(thread->mem_domain_info.mem_domain);
 }
 
 /* Reset/destroy one partition specified in the argument of the API. */
@@ -443,6 +458,10 @@ void z_arch_mem_domain_partition_remove(struct k_mem_domain *domain,
 					u32_t partition_id)
 {
 	struct k_mem_partition *partition;
+
+	if (_current->mem_domain_info.mem_domain != domain) {
+		return;
+	}
 
 	__ASSERT_NO_MSG(domain != NULL);
 	__ASSERT(partition_id <= domain->num_partitions,
@@ -457,6 +476,10 @@ void z_arch_mem_domain_partition_add(struct k_mem_domain *domain,
 				    u32_t partition_id)
 {
 	struct k_mem_partition *partition;
+
+	if (_current->mem_domain_info.mem_domain != domain) {
+		return;
+	}
 
 	__ASSERT_NO_MSG(domain != NULL);
 	__ASSERT(partition_id <= domain->num_partitions,
