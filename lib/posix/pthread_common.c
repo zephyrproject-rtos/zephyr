@@ -9,7 +9,7 @@
 #include <wait_q.h>
 #include <posix/time.h>
 
-s64_t timespec_to_timeoutms(const struct timespec *abstime)
+s64_t _timespec_to_timeoutms(const struct timespec *abstime)
 {
 	s64_t milli_secs, secs, nsecs;
 	struct timespec curtime;

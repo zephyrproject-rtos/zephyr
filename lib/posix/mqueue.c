@@ -30,7 +30,6 @@ K_SEM_DEFINE(mq_sem, 1, 1);
 /* Initialize the list */
 sys_slist_t mq_list = SYS_SLIST_STATIC_INIT(&mq_list);
 
-s64_t timespec_to_timeoutms(const struct timespec *abstime);
 static mqueue_object *find_in_list(const char *name);
 static s32_t send_message(mqueue_desc *mqd, const char *msg_ptr, size_t msg_len,
 			  s32_t timeout);
@@ -251,7 +250,10 @@ int mq_timedsend(mqd_t mqdes, const char *msg_ptr, size_t msg_len,
 	mqueue_desc *mqd = (mqueue_desc *)mqdes;
 	s32_t  timeout;
 
-	timeout = (s32_t) timespec_to_timeoutms(abstime);
+	timeout = (s32_t) _timespec_to_timeoutms(abstime);
+	if (timeout <= 0)
+		return ETIMEDOUT;
+
 	return send_message(mqd, msg_ptr, msg_len, timeout);
 }
 
@@ -285,7 +287,10 @@ int mq_timedreceive(mqd_t mqdes, char *msg_ptr, size_t msg_len,
 	mqueue_desc *mqd = (mqueue_desc *)mqdes;
 	s32_t  timeout = K_NO_WAIT;
 
-	timeout = (s32_t) timespec_to_timeoutms(abstime);
+	timeout = (s32_t) _timespec_to_timeoutms(abstime);
+	if (timeout <= 0)
+		return ETIMEDOUT;
+
 	return receive_message(mqd, msg_ptr, msg_len, timeout);
 }
 

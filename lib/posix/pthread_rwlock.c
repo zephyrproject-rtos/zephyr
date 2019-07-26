@@ -13,7 +13,6 @@
 
 #define CONCURRENT_READER_LIMIT  (CONFIG_MAX_PTHREAD_COUNT + 1)
 
-s64_t timespec_to_timeoutms(const struct timespec *abstime);
 static u32_t read_lock_acquire(pthread_rwlock_t *rwlock, s32_t timeout);
 static u32_t write_lock_acquire(pthread_rwlock_t *rwlock, s32_t timeout);
 
@@ -93,9 +92,9 @@ int pthread_rwlock_timedrdlock(pthread_rwlock_t *rwlock,
 		return EINVAL;
 	}
 
-	timeout = (s32_t) timespec_to_timeoutms(abstime);
+	timeout = (s32_t) _timespec_to_timeoutms(abstime);
 
-	if (read_lock_acquire(rwlock, timeout) != 0U) {
+	if (timeout <= 0 || read_lock_acquire(rwlock, timeout) != 0U) {
 		ret = ETIMEDOUT;
 	}
 
@@ -155,9 +154,9 @@ int pthread_rwlock_timedwrlock(pthread_rwlock_t *rwlock,
 		return EINVAL;
 	}
 
-	timeout = (s32_t) timespec_to_timeoutms(abstime);
+	timeout = (s32_t) _timespec_to_timeoutms(abstime);
 
-	if (write_lock_acquire(rwlock, timeout) != 0U) {
+	if (timeout <= 0 || write_lock_acquire(rwlock, timeout) != 0U) {
 		ret = ETIMEDOUT;
 	}
 
@@ -253,5 +252,3 @@ static u32_t write_lock_acquire(pthread_rwlock_t *rwlock, s32_t timeout)
 	}
 	return ret;
 }
-
-

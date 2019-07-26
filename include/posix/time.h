@@ -69,6 +69,8 @@ struct itimerspec {
 #define TIMER_ABSTIME 4
 #endif
 
+s64_t _timespec_to_timeoutms(const struct timespec *abstime);
+
 static inline s32_t _ts_to_ms(const struct timespec *to)
 {
 	return (to->tv_sec * MSEC_PER_SEC) + (to->tv_nsec / NSEC_PER_MSEC);

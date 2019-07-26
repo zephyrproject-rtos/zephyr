@@ -18,7 +18,7 @@ static const pthread_mutexattr_t def_attr = {
 	.type = PTHREAD_MUTEX_DEFAULT,
 };
 
-static int acquire_mutex(pthread_mutex_t *m, int timeout)
+static int acquire_mutex(pthread_mutex_t *m, s32_t timeout)
 {
 	int rc = 0, key = irq_lock();
 
@@ -73,9 +73,12 @@ int pthread_mutex_trylock(pthread_mutex_t *m)
  * See IEEE 1003.1
  */
 int pthread_mutex_timedlock(pthread_mutex_t *m,
-			    const struct timespec *to)
+			    const struct timespec *abstime)
 {
-	return acquire_mutex(m, _ts_to_ms(to));
+	s32_t timeout = (s32_t) _timespec_to_timeoutms(abstime);
+	if (timeout <= 0)
+		return ETIMEDOUT;
+	return acquire_mutex(m, timeout);
 }
 
 /**
