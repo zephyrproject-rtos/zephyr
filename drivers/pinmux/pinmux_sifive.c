@@ -14,7 +14,7 @@
 #include <soc.h>
 
 struct pinmux_sifive_config {
-	u32_t base;
+	uintptr_t base;
 };
 
 struct pinmux_sifive_regs_t {

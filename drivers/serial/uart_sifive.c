@@ -45,7 +45,7 @@ typedef void (*irq_cfg_func_t)(void);
 #endif
 
 struct uart_sifive_device_config {
-	u32_t       port;
+	uintptr_t   port;
 	u32_t       sys_clk_freq;
 	u32_t       baud_rate;
 	u32_t       rxcnt_irq;
