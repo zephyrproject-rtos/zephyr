@@ -5312,6 +5312,7 @@ static int le_adv_update(const struct bt_data *ad, size_t ad_len,
 			 bool connectable, bool use_name)
 {
 	struct bt_ad d[2] = {};
+	struct bt_data data;
 	int err;
 
 	d[0].data = ad;
@@ -5336,10 +5337,11 @@ static int le_adv_update(const struct bt_data *ad, size_t ad_len,
 		}
 
 		name = bt_get_name();
+		data = (struct bt_data)BT_DATA(
+			BT_DATA_NAME_COMPLETE,
+			name, strlen(name));
 
-		d[1].data = (&(struct bt_data)BT_DATA(
-					BT_DATA_NAME_COMPLETE,
-					name, strlen(name)));
+		d[1].data = &data;
 		d[1].len = 1;
 	}
 
