@@ -73,40 +73,48 @@ extern int z_arch_float_disable(struct k_thread *thread);
 /**
  * @brief Get the maximum number of partitions for a memory domain
  *
- * A memory domain is a container data structure containing some number of
- * memory partitions, where each partition represents a memory range with
- * access policies.
- *
- * MMU-based systems don't have a limit here, but MPU-based systems will
- * have an upper bound on how many different regions they can manage
- * simultaneously.
- *
- * @return Max number of free regions, or -1 if there is no limit
+ * @return Max number of partitions, or -1 if there is no limit
  */
 extern int z_arch_mem_domain_max_partitions_get(void);
 
 /**
- * @brief Configure the memory domain of the thread.
+ * @brief Add a thread to a memory domain (arch-specific)
  *
- * A memory domain is a container data structure containing some number of
- * memory partitions, where each partition represents a memory range with
- * access policies. This api will configure the appropriate hardware
- * registers to make it work.
+ * Architecture-specific hook to manage internal data structures or hardware
+ * state when the provided thread has been added to a memory domain.
+ *
+ * The thread's memory domain pointer will be set to the domain to be added
+ * to.
  *
  * @param thread Thread which needs to be configured.
  */
-extern void z_arch_mem_domain_configure(struct k_thread *thread);
+extern void z_arch_mem_domain_thread_add(struct k_thread *thread);
 
 /**
- * @brief Remove a partition from the memory domain
+ * @brief Remove a thread from a memory domain (arch-specific)
  *
- * A memory domain contains multiple partitions and this API provides the
- * freedom to remove a particular partition while keeping others intact.
- * This API will handle any arch/HW specific changes that needs to be done.
- * Only called if the active thread's domain was modified.
+ * Architecture-specific hook to manage internal data structures or hardware
+ * state when the provided thread has been removed from a memory domain.
+ *
+ * The thread's memory domain pointer will be the domain that the thread
+ * is being removed from.
+ *
+ * @param thread Thread being removed from its memory domain
+ */
+extern void z_arch_mem_domain_thread_remove(struct k_thread *thread);
+
+/**
+ * @brief Remove a partition from the memory domain (arch-specific)
+ *
+ * Architecture-specific hook to manage internal data structures or hardware
+ * state when a memory domain has had a partition removed.
+ *
+ * The partition index data, and the number of partitions configured, are not
+ * respectively cleared and decremented in the domain until after this function
+ * runs.
  *
  * @param domain The memory domain structure
- * @param partition_id The partition that needs to be deleted
+ * @param partition_id The partition index that needs to be deleted
  */
 extern void z_arch_mem_domain_partition_remove(struct k_mem_domain *domain,
 					       u32_t partition_id);
@@ -114,10 +122,8 @@ extern void z_arch_mem_domain_partition_remove(struct k_mem_domain *domain,
 /**
  * @brief Add a partition to the memory domain
  *
- * A memory domain contains multiple partitions and this API provides the
- * freedom to add an additional partition to a memory domain.
- * This API will handle any arch/HW specific changes that needs to be done.
- * Only called if the active thread's domain was modified.
+ * Architecture-specific hook to manage internal data structures or hardware
+ * state when a memory domain has a partition added.
  *
  * @param domain The memory domain structure
  * @param partition_id The partition that needs to be added
@@ -128,9 +134,11 @@ extern void z_arch_mem_domain_partition_add(struct k_mem_domain *domain,
 /**
  * @brief Remove the memory domain
  *
- * A memory domain contains multiple partitions and this API will traverse
- * all these to reset them back to default setting.
- * This API will handle any arch/HW specific changes that needs to be done.
+ * Architecture-specific hook to manage internal data structures or hardware
+ * state when a memory domain has been destroyed.
+ *
+ * Thread assignments to the memory domain are only cleared after this function
+ * runs.
  *
  * @param domain The memory domain structure which needs to be deleted.
  */

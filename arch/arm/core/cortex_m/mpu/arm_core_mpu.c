@@ -8,6 +8,7 @@
 #include <init.h>
 #include <kernel.h>
 #include <soc.h>
+#include <kernel_structs.h>
 
 #include "arm_core_mpu_dev.h"
 #include <linker/linker-defs.h>
@@ -282,8 +283,12 @@ int z_arch_mem_domain_max_partitions_get(void)
 /**
  * @brief Configure the memory domain of the thread.
  */
-void z_arch_mem_domain_configure(struct k_thread *thread)
+void z_arch_mem_domain_thread_add(struct k_thread *thread)
 {
+	if (_current != thread) {
+		return;
+	}
+
 	/* Request to configure memory domain for a thread.
 	 * This triggers re-programming of the entire dynamic
 	 * memory map.
@@ -304,6 +309,11 @@ void z_arch_mem_domain_destroy(struct k_mem_domain *domain)
 	 */
 	int i;
 	struct k_mem_partition partition;
+
+	if (_current->mem_domain_info.mem_domain != domain) {
+		return;
+	}
+
 	/* Partitions belonging to the memory domain will be reset
 	 * to default (Privileged RW, Unprivileged NA) permissions.
 	 */
@@ -338,6 +348,10 @@ void z_arch_mem_domain_partition_remove(struct k_mem_domain *domain,
 	 */
 	k_mem_partition_attr_t reset_attr = K_MEM_PARTITION_P_RW_U_NA;
 
+	if (_current->mem_domain_info.mem_domain != domain) {
+		return;
+	}
+
 	arm_core_mpu_mem_partition_config_update(
 		&domain->partitions[partition_id], &reset_attr);
 }
@@ -346,6 +360,15 @@ void z_arch_mem_domain_partition_add(struct k_mem_domain *domain,
 				    u32_t partition_id)
 {
 	/* No-op on this architecture */
+}
+
+void z_arch_mem_domain_thread_remove(struct k_thread *thread)
+{
+	if (_current != thread) {
+		return;
+	}
+
+	z_arch_mem_domain_destroy(thread->mem_domain_info.mem_domain);
 }
 
 /*
