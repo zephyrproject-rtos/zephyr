@@ -307,7 +307,7 @@ static void *k_queue_poll(struct k_queue *queue, s32_t timeout)
 
 		if ((val == NULL) && (timeout != K_FOREVER)) {
 			elapsed = k_uptime_get_32() - start;
-			done = elapsed > timeout;
+			done = elapsed >= timeout;
 		}
 	} while (!val && !done);
 
