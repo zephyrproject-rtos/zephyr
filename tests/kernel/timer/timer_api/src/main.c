@@ -37,6 +37,8 @@ static struct k_timer remain_timer;
 
 static ZTEST_BMEM struct timer_data tdata;
 
+extern void test_time_conversions(void);
+
 #define TIMER_ASSERT(exp, tmr)			 \
 	do {					 \
 		if (!(exp)) {			 \
@@ -564,6 +566,7 @@ void test_main(void)
 			      &timer2, &timer3, &timer4);
 
 	ztest_test_suite(timer_api,
+			 ztest_unit_test(test_time_conversions),
 			 ztest_user_unit_test(test_timer_duration_period),
 			 ztest_user_unit_test(test_timer_period_0),
 			 ztest_user_unit_test(test_timer_expirefn_null),
