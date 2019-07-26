@@ -556,6 +556,46 @@ static bool usb_set_configuration(u8_t config_index, u8_t alt_setting)
 	return found;
 }
 
+static bool usb_clear_interface(u8_t iface, u8_t alt_setting)
+{
+	const u8_t *p = usb_dev.descriptors;
+	const u8_t *if_desc = NULL;
+	u8_t cur_alt_setting = 0xFF;
+	u8_t cur_iface = 0xFF;
+	bool found = false;
+
+	while (p[DESC_bLength] != 0U) {
+		switch (p[DESC_bDescriptorType]) {
+		case DESC_INTERFACE:
+			/* remember current alternate setting */
+			cur_alt_setting = p[INTF_DESC_bAlternateSetting];
+			cur_iface = p[INTF_DESC_bInterfaceNumber];
+
+			if (cur_iface == iface &&
+			    cur_alt_setting == alt_setting) {
+				if_desc = (void *)p;
+			}
+
+			break;
+		case DESC_ENDPOINT:
+			if ((cur_iface != iface) ||
+			    (cur_alt_setting != alt_setting)) {
+				break;
+			}
+			found = usb_dc_ep_disable(((struct usb_ep_descriptor *)p)->bEndpointAddress);
+
+			break;
+		default:
+			break;
+		}
+
+		/* skip to next descriptor */
+		p += p[DESC_bLength];
+	}
+
+	return found;
+}
+
 /*
  * @brief set USB interface
  *
@@ -564,6 +604,9 @@ static bool usb_set_configuration(u8_t config_index, u8_t alt_setting)
  *
  * @return true if successfully configured false if error or unconfigured
  */
+u8_t oldIface = 0xff;
+u8_t oldAlt_setting = 0xff;
+
 static bool usb_set_interface(u8_t iface, u8_t alt_setting)
 {
 	const u8_t *p = usb_dev.descriptors;
@@ -571,6 +614,11 @@ static bool usb_set_interface(u8_t iface, u8_t alt_setting)
 	u8_t cur_alt_setting = 0xFF;
 	u8_t cur_iface = 0xFF;
 	bool found = false;
+
+	if ((oldIface != 0xFF) && (oldAlt_setting != 0xFF))
+	{
+		usb_clear_interface(oldIface, oldAlt_setting);
+	}
 
 	LOG_DBG("iface %u alt_setting %u", iface, alt_setting);
 
@@ -593,7 +641,7 @@ static bool usb_set_interface(u8_t iface, u8_t alt_setting)
 			    (cur_alt_setting != alt_setting)) {
 				break;
 			}
-
+			usb_dc_ep_disable(((struct usb_ep_descriptor *)p)->bEndpointAddress);
 			found = set_endpoint((struct usb_ep_descriptor *)p);
 			break;
 		default:
@@ -608,6 +656,8 @@ static bool usb_set_interface(u8_t iface, u8_t alt_setting)
 		usb_dev.status_callback(USB_DC_INTERFACE, if_desc);
 	}
 
+	oldIface = iface;
+	oldAlt_setting = alt_setting;
 	return found;
 }
 

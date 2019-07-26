@@ -2039,6 +2039,9 @@ void nrfx_usbd_ep_enable(nrfx_usbd_ep_t ep)
         m_ep_dma_waiting &= ~(1U << ep2bit(ep));
         NRFX_CRITICAL_SECTION_EXIT();
     }
+
+    usbd_ep_state_t * p_state = ep_state_access(ep);
+    p_state->status = NRFX_USBD_EP_OK;
 }
 
 void nrfx_usbd_ep_disable(nrfx_usbd_ep_t ep)
