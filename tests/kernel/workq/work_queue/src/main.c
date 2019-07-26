@@ -107,7 +107,7 @@ static void test_items_submit(void)
 
 	k_thread_create(&co_op_data, co_op_stack, STACK_SIZE,
 			(k_thread_entry_t)coop_work_main,
-			NULL, NULL, NULL, K_PRIO_COOP(10), 0, 0);
+			NULL, NULL, NULL, K_PRIO_COOP(10), 0, K_NO_WAIT);
 
 	for (i = 0; i < NUM_TEST_ITEMS; i += 2) {
 		TC_PRINT(" - Submitting work %d from preempt thread\n", i + 1);
@@ -236,7 +236,7 @@ static void coop_delayed_work_main(int arg1, int arg2)
 		TC_PRINT(" - Submitting delayed work %d from"
 			 " coop thread\n", i + 1);
 		k_delayed_work_submit(&tests[i].work,
-				      (i + 1) * WORK_ITEM_WAIT);
+				      K_TIMEOUT_MS((i + 1) * WORK_ITEM_WAIT));
 	}
 }
 
@@ -253,13 +253,15 @@ static void test_delayed_submit(void)
 
 	k_thread_create(&co_op_data, co_op_stack, STACK_SIZE,
 			(k_thread_entry_t)coop_delayed_work_main,
-			NULL, NULL, NULL, K_PRIO_COOP(10), 0, 0);
+			NULL, NULL, NULL, K_PRIO_COOP(10), 0, K_NO_WAIT);
 
 	for (i = 0; i < NUM_TEST_ITEMS; i += 2) {
+		k_timeout_t timeout = K_TIMEOUT_MS((i + 1) * WORK_ITEM_WAIT);
+
 		TC_PRINT(" - Submitting delayed work %d from"
 			 " preempt thread\n", i + 1);
 		zassert_true(k_delayed_work_submit(&tests[i].work,
-						   (i + 1) * WORK_ITEM_WAIT) == 0, NULL);
+						   timeout) == 0, NULL);
 	}
 
 }
@@ -269,13 +271,13 @@ static void coop_delayed_work_cancel_main(int arg1, int arg2)
 	ARG_UNUSED(arg1);
 	ARG_UNUSED(arg2);
 
-	k_delayed_work_submit(&tests[1].work, WORK_ITEM_WAIT);
+	k_delayed_work_submit(&tests[1].work, K_TIMEOUT_MS(WORK_ITEM_WAIT));
 
 	TC_PRINT(" - Cancel delayed work from coop thread\n");
 	k_delayed_work_cancel(&tests[1].work);
 
 #if defined(CONFIG_POLL)
-	k_delayed_work_submit(&tests[2].work, 0 /* Submit immediately */);
+	k_delayed_work_submit(&tests[2].work, K_NO_WAIT);
 
 	TC_PRINT(" - Cancel pending delayed work from coop thread\n");
 	k_delayed_work_cancel(&tests[2].work);
@@ -294,14 +296,14 @@ static void test_delayed_cancel(void)
 {
 	TC_PRINT("Starting delayed cancel test\n");
 
-	k_delayed_work_submit(&tests[0].work, WORK_ITEM_WAIT);
+	k_delayed_work_submit(&tests[0].work, K_TIMEOUT_MS(WORK_ITEM_WAIT));
 
 	TC_PRINT(" - Cancel delayed work from preempt thread\n");
 	k_delayed_work_cancel(&tests[0].work);
 
 	k_thread_create(&co_op_data, co_op_stack, STACK_SIZE,
 			(k_thread_entry_t)coop_delayed_work_cancel_main,
-			NULL, NULL, NULL, K_HIGHEST_THREAD_PRIO, 0, 0);
+			NULL, NULL, NULL, K_HIGHEST_THREAD_PRIO, 0, K_NO_WAIT);
 
 	TC_PRINT(" - Waiting for work to finish\n");
 	k_sleep(WORK_ITEM_WAIT_ALIGNED);
@@ -319,7 +321,7 @@ static void delayed_resubmit_work_handler(struct k_work *work)
 	if (ti->key < NUM_TEST_ITEMS) {
 		ti->key++;
 		TC_PRINT(" - Resubmitting delayed work\n");
-		k_delayed_work_submit(&ti->work, WORK_ITEM_WAIT);
+		k_delayed_work_submit(&ti->work, K_TIMEOUT_MS(WORK_ITEM_WAIT));
 	}
 }
 
@@ -338,7 +340,7 @@ static void test_delayed_resubmit(void)
 	k_delayed_work_init(&tests[0].work, delayed_resubmit_work_handler);
 
 	TC_PRINT(" - Submitting delayed work\n");
-	k_delayed_work_submit(&tests[0].work, WORK_ITEM_WAIT);
+	k_delayed_work_submit(&tests[0].work, K_TIMEOUT_MS(WORK_ITEM_WAIT));
 
 	TC_PRINT(" - Waiting for work to finish\n");
 	k_sleep(CHECK_WAIT);
@@ -354,7 +356,7 @@ static void coop_delayed_work_resubmit(void)
 
 	for (i = 0; i < NUM_TEST_ITEMS; i++) {
 		TC_PRINT(" - Resubmitting delayed work with 1 ms\n");
-		k_delayed_work_submit(&tests[0].work, 1);
+		k_delayed_work_submit(&tests[0].work, K_TIMEOUT_MS(1));
 
 		/* Busy wait 1 ms to force a clash with workqueue */
 #if defined(CONFIG_ARCH_POSIX)
@@ -385,7 +387,7 @@ static void test_delayed_resubmit_thread(void)
 
 	k_thread_create(&co_op_data, co_op_stack, STACK_SIZE,
 			(k_thread_entry_t)coop_delayed_work_resubmit,
-			NULL, NULL, NULL, K_PRIO_COOP(10), 0, 0);
+			NULL, NULL, NULL, K_PRIO_COOP(10), 0, K_NO_WAIT);
 
 	TC_PRINT(" - Waiting for work to finish\n");
 	k_sleep(WORK_ITEM_WAIT_ALIGNED);

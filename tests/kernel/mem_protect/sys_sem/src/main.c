@@ -11,7 +11,7 @@
 /* Macro declarations */
 #define SEM_INIT_VAL (0U)
 #define SEM_MAX_VAL  (10U)
-#define SEM_TIMEOUT (K_MSEC(100))
+#define SEM_TIMEOUT K_TIMEOUT_MS(100)
 #define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
 #define TOTAL_THREADS_WAITING (3)
 
@@ -60,7 +60,7 @@ void sem_give_task(void *p1, void *p2, void *p3)
 
 void sem_take_timeout_forever_helper(void *p1, void *p2, void *p3)
 {
-	k_sleep(K_MSEC(100));
+	k_sleep(100);
 	sys_sem_give(&simple_sem);
 }
 

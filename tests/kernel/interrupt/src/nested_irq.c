@@ -33,7 +33,7 @@ u32_t irq_line_1;
 #define ISR1_PRIO 0
 #endif /* CONFIG_ARM */
 
-#define MS_TO_US(ms)  (K_MSEC(ms) * USEC_PER_MSEC)
+#define MS_TO_US(ms)  ((ms) * USEC_PER_MSEC)
 volatile u32_t new_val;
 u32_t old_val = 0xDEAD;
 volatile u32_t check_lock_new;
@@ -100,7 +100,7 @@ void test_nested_isr(void)
 #endif /* CONFIG_ARM */
 
 	k_timer_init(&timer, handler, NULL);
-	k_timer_start(&timer, DURATION, 0);
+	k_timer_start(&timer, K_TIMEOUT_MS(DURATION), K_NO_WAIT);
 
 #if defined(CONFIG_ARM)
 	irq_enable(irq_line_0);
@@ -131,7 +131,7 @@ static void offload_function(void *param)
 	zassert_true(k_is_in_isr(), "Not in IRQ context!");
 	k_timer_init(&timer, timer_handler, NULL);
 	k_busy_wait(MS_TO_US(1));
-	k_timer_start(&timer, DURATION, 0);
+	k_timer_start(&timer, K_TIMEOUT_MS(DURATION), K_NO_WAIT);
 	zassert_not_equal(check_lock_new, check_lock_old,
 		"Interrupt locking didn't work properly");
 }

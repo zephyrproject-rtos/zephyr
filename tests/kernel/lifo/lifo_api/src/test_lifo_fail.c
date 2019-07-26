@@ -6,7 +6,7 @@
 
 #include "test_lifo.h"
 
-#define TIMEOUT 100
+#define TIMEOUT K_TIMEOUT_MS(100)
 
 /*test cases*/
 /**

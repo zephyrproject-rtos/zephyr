@@ -10,7 +10,7 @@
 #define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
 #define THREAD_NUM 4
 #define SLAB_NUM 2
-#define TIMEOUT 200
+#define TIMEOUT K_TIMEOUT_MS(200)
 #define BLK_NUM 3
 #define BLK_ALIGN 8
 #define BLK_SIZE1 16
@@ -81,7 +81,7 @@ void test_mslab_threadsafe(void)
 	for (int i = 0; i < THREAD_NUM; i++) {
 		tid[i] = k_thread_create(&tdata[i], tstack[i], STACK_SIZE,
 					 tmslab_api, NULL, NULL, NULL,
-					 K_PRIO_PREEMPT(1), 0, 0);
+					 K_PRIO_PREEMPT(1), 0, K_NO_WAIT);
 	}
 	/* TESTPOINT: all threads complete and exit the entry function*/
 	for (int i = 0; i < THREAD_NUM; i++) {

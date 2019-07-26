@@ -175,7 +175,7 @@ void stack_sentinel_timer(void)
 
 	blow_up_stack();
 	k_timer_init(&timer, NULL, NULL);
-	k_timer_start(&timer, 1, 0);
+	k_timer_start(&timer, K_TIMEOUT_MS(1), K_NO_WAIT);
 	while (true) {
 	}
 }

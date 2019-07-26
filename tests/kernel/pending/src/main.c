@@ -124,7 +124,7 @@ static void fifo_tests(s32_t timeout, volatile int *state,
 
 	*state = FIFO_TEST_START;
 	/* Expect this to time out */
-	data = get(&fifo, timeout);
+	data = get(&fifo, K_TIMEOUT_MS(timeout));
 	if (data != NULL) {
 		TC_ERROR("**** Unexpected data on FIFO get\n");
 		return;
@@ -136,7 +136,7 @@ static void fifo_tests(s32_t timeout, volatile int *state,
 
 	/* Expect this to receive data from the fifo */
 	*state = FIFO_TEST_END;
-	data = get(&fifo, timeout);
+	data = get(&fifo, K_TIMEOUT_MS(timeout));
 	if (data == NULL) {
 		TC_ERROR("**** No data on FIFO get\n");
 		return;
@@ -162,7 +162,7 @@ static void lifo_tests(s32_t timeout, volatile int *state,
 
 	*state = LIFO_TEST_START;
 	/* Expect this to time out */
-	data = get(&lifo, timeout);
+	data = get(&lifo, K_TIMEOUT_MS(timeout));
 	if (data != NULL) {
 		TC_ERROR("**** Unexpected data on LIFO get\n");
 		return;
@@ -174,7 +174,7 @@ static void lifo_tests(s32_t timeout, volatile int *state,
 
 	/* Expect this to receive data from the lifo */
 	*state = LIFO_TEST_END;
-	data = get(&lifo, timeout);
+	data = get(&lifo, K_TIMEOUT_MS(timeout));
 	if (data == NULL) {
 		TC_ERROR("**** No data on LIFO get\n");
 		return;
@@ -196,7 +196,7 @@ static void timer_tests(void)
 
 	timer_start_tick = k_uptime_get_32();
 
-	k_timer_start(&timer, NUM_SECONDS(1), 0);
+	k_timer_start(&timer, K_TIMEOUT_MS(1000), K_NO_WAIT);
 
 	if (k_timer_status_sync(&timer)) {
 		timer_data = timer.user_data;
@@ -249,10 +249,12 @@ void task_high(void)
 	counter = SEM_TEST_START;
 
 	k_thread_create(&coop_thread[0], coop_stack[0], COOP_STACKSIZE,
-			coop_high, NULL, NULL, NULL, K_PRIO_COOP(3), 0, 0);
+			coop_high, NULL, NULL, NULL, K_PRIO_COOP(3), 0,
+			K_NO_WAIT);
 
 	k_thread_create(&coop_thread[1], coop_stack[1], COOP_STACKSIZE,
-			coop_low, NULL, NULL, NULL, K_PRIO_COOP(7), 0, 0);
+			coop_low, NULL, NULL, NULL, K_PRIO_COOP(7), 0,
+			K_NO_WAIT);
 
 	counter = FIFO_TEST_START;
 	fifo_tests(THIRD_SECOND, &task_high_state, my_fifo_get, k_sem_take);
@@ -443,8 +445,8 @@ void test_main(void)
 }
 
 K_THREAD_DEFINE(TASK_LOW, PREEM_STACKSIZE, task_low, NULL, NULL, NULL,
-		7, 0, K_NO_WAIT);
+		7, 0, 0);
 
 K_THREAD_DEFINE(TASK_HIGH, PREEM_STACKSIZE, task_high, NULL, NULL, NULL,
-		5, 0, K_NO_WAIT);
+		5, 0, 0);
 

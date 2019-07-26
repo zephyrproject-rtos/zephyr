@@ -330,12 +330,12 @@ void test_preempt(void)
 		k_thread_create(&worker_threads[i],
 				worker_stacks[i], STACK_SIZE,
 				worker, INT_TO_POINTER(i), NULL, NULL,
-				priority, 0, 0);
+				priority, 0, K_NO_WAIT);
 	}
 
 	k_thread_create(&manager_thread, manager_stack, STACK_SIZE,
 			manager, NULL, NULL, NULL,
-			K_LOWEST_APPLICATION_THREAD_PRIO, 0, 0);
+			K_LOWEST_APPLICATION_THREAD_PRIO, 0, K_NO_WAIT);
 
 	/* We don't control the priority of this thread so can't make
 	 * it part of the test.  Just get out of the way until the

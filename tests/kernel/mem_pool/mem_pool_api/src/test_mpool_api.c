@@ -158,7 +158,8 @@ void test_mpool_alloc_timeout(void)
 				       K_NO_WAIT), -ENOMEM, NULL);
 	/** TESTPOINT: @retval -EAGAIN Waiting period timed out*/
 	tms = k_uptime_get();
-	zassert_equal(k_mem_pool_alloc(&kmpool, &fblock, BLK_SIZE_MIN, TIMEOUT),
+	zassert_equal(k_mem_pool_alloc(&kmpool, &fblock, BLK_SIZE_MIN,
+				       K_TIMEOUT_MS(TIMEOUT)),
 		      -EAGAIN, NULL);
 	/**
 	 * TESTPOINT: Maximum time to wait for operation to complete (in

@@ -6,7 +6,7 @@
 
 #include <ztest.h>
 
-#define TIMEOUT 100
+#define TIMEOUT K_TIMEOUT_MS(100)
 #if !defined(CONFIG_BOARD_QEMU_X86)
 #define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
 #else
@@ -419,7 +419,8 @@ static void tmbox_get(struct k_mbox *pmbox)
 			     NULL);
 
 		zassert_true(k_mbox_data_block_get
-			     (&mmsg, &mpoolrx, &rxblock, 1) == -EAGAIN, NULL);
+			     (&mmsg, &mpoolrx, &rxblock,
+			      K_TIMEOUT_MS(1)) == -EAGAIN, NULL);
 
 		/* Now dispose of the block since the test case finished */
 		k_mbox_data_get(&mmsg, NULL);
@@ -537,7 +538,7 @@ static void tmbox(struct k_mbox *pmbox)
 	sender_tid = k_current_get();
 	receiver_tid = k_thread_create(&tdata, tstack, STACK_SIZE,
 				       tmbox_entry, pmbox, NULL, NULL,
-				       K_PRIO_PREEMPT(0), 0, 0);
+				       K_PRIO_PREEMPT(0), 0, K_NO_WAIT);
 	tmbox_put(pmbox);
 	k_sem_take(&end_sema, K_FOREVER);
 

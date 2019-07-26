@@ -10,7 +10,7 @@
 #define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
 #define POOL_NUM 2
 #define LOOPS 10
-#define TIMEOUT 200
+#define TIMEOUT K_TIMEOUT_MS(200)
 #define BLK_SIZE_MIN 8
 #define BLK_SIZE_MAX 32
 #define BLK_NUM_MIN 8
@@ -74,7 +74,7 @@ void test_mpool_threadsafe(void)
 	for (int i = 0; i < THREAD_NUM; i++) {
 		tid[i] = k_thread_create(&tdata[i], tstack[i], STACK_SIZE,
 					 tmpool_api, NULL, NULL, NULL,
-					 K_PRIO_PREEMPT(1), 0, 0);
+					 K_PRIO_PREEMPT(1), 0, K_NO_WAIT);
 	}
 	/* TESTPOINT: all threads complete and exit the entry function*/
 	for (int i = 0; i < THREAD_NUM; i++) {

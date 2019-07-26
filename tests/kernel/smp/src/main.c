@@ -198,7 +198,8 @@ static void spawn_threads(int prio, int thread_num,
 		tinfo[i].tid = k_thread_create(&tthread[i], tstack[i],
 					       STACK_SIZE, thread_entry,
 					       (void *)i, NULL, NULL,
-					       tinfo[i].priority, 0, delay);
+					       tinfo[i].priority, 0,
+					       K_TIMEOUT_MS(delay));
 		if (delay) {
 			/* Increase delay for each thread */
 			delay = delay + 10;

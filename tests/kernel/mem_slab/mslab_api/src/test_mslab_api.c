@@ -81,7 +81,7 @@ static void tmslab_alloc_timeout(void *data)
 	 * TESTPOINT: timeout Maximum time to wait for operation to
 	 * complete (in milliseconds)
 	 */
-	zassert_true(k_uptime_delta(&tms) >= TIMEOUT, NULL);
+	zassert_true(k_uptime_delta(&tms) >= K_TIMEOUT_GET(TIMEOUT), NULL);
 
 	for (int i = 0; i < BLK_NUM; i++) {
 		k_mem_slab_free(pslab, &block[i]);

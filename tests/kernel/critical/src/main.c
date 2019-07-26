@@ -33,7 +33,7 @@
 #include <ztest.h>
 
 #define NUM_MILLISECONDS        5000
-#define TEST_TIMEOUT            20000
+#define TEST_TIMEOUT            K_TIMEOUT_MS(20000)
 
 static u32_t critical_var;
 static u32_t alt_thread_iterations;
@@ -196,11 +196,11 @@ static void start_threads(void)
 {
 	k_thread_create(&thread1, stack1, STACK_SIZE,
 			alternate_thread, NULL, NULL, NULL,
-			K_PRIO_PREEMPT(12), 0, 0);
+			K_PRIO_PREEMPT(12), 0, K_NO_WAIT);
 
 	k_thread_create(&thread2, stack2, STACK_SIZE,
 			regression_thread, NULL, NULL, NULL,
-			K_PRIO_PREEMPT(12), 0, 0);
+			K_PRIO_PREEMPT(12), 0, K_NO_WAIT);
 }
 
 /**
@@ -216,7 +216,7 @@ void test_critical(void)
 	init_objects();
 	start_threads();
 
-	zassert_true(k_sem_take(&TEST_SEM, TEST_TIMEOUT * 2) == 0,
+	zassert_true(k_sem_take(&TEST_SEM, TEST_TIMEOUT) == 0,
 		     "Timed out waiting for TEST_SEM");
 }
 

@@ -43,7 +43,7 @@ void test_threads_abort_self(void)
 {
 	execute_flag = 0;
 	k_thread_create(&tdata, tstack, STACK_SIZE, thread_entry_abort,
-			NULL, NULL, NULL, 0, K_USER, 0);
+			NULL, NULL, NULL, 0, K_USER, K_NO_WAIT);
 	k_sleep(100);
 	/**TESTPOINT: spawned thread executed but abort itself*/
 	zassert_true(execute_flag == 1, NULL);
@@ -64,7 +64,7 @@ void test_threads_abort_others(void)
 	execute_flag = 0;
 	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
 				      thread_entry, NULL, NULL, NULL,
-				      0, K_USER, 0);
+				      0, K_USER, K_NO_WAIT);
 
 	k_thread_abort(tid);
 	k_sleep(100);
@@ -73,7 +73,7 @@ void test_threads_abort_others(void)
 
 	tid = k_thread_create(&tdata, tstack, STACK_SIZE,
 			      thread_entry, NULL, NULL, NULL,
-			      0, K_USER, 0);
+			      0, K_USER, K_NO_WAIT);
 	k_sleep(50);
 	k_thread_abort(tid);
 	/**TESTPOINT: check running thread is aborted*/
@@ -93,7 +93,7 @@ void test_threads_abort_repeat(void)
 	execute_flag = 0;
 	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
 				      thread_entry, NULL, NULL, NULL,
-				      0, K_USER, 0);
+				      0, K_USER, K_NO_WAIT);
 
 	k_thread_abort(tid);
 	k_sleep(100);
@@ -119,7 +119,7 @@ static void uthread_entry(void)
 	block = k_malloc(BLOCK_SIZE);
 	zassert_true(block != NULL, NULL);
 	printk("Child thread is running\n");
-	k_sleep(K_MSEC(2));
+	k_sleep(2);
 }
 
 /**
@@ -133,11 +133,11 @@ void test_abort_handler(void)
 {
 	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
 				      (k_thread_entry_t)uthread_entry, NULL, NULL, NULL,
-				      0, 0, 0);
+				      0, 0, K_NO_WAIT);
 
 	tdata.fn_abort = &abort_function;
 
-	k_sleep(K_MSEC(1));
+	k_sleep(1);
 
 	abort_called = false;
 
@@ -174,7 +174,7 @@ void test_delayed_thread_abort(void)
 	 */
 	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
 				      (k_thread_entry_t)delayed_thread_entry, NULL, NULL, NULL,
-				      K_PRIO_PREEMPT(1), 0, 100);
+				      K_PRIO_PREEMPT(1), 0, K_TIMEOUT_MS(100));
 
 	/* Give up CPU */
 	k_sleep(50);

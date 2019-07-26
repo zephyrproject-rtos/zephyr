@@ -1435,7 +1435,6 @@ struct k_timer {
 	.wait_q = Z_WAIT_Q_INIT(&obj.wait_q), \
 	.expiry_fn = expiry, \
 	.stop_fn = stop, \
-	.period = 0, \
 	.status = 0, \
 	.user_data = 0, \
 	_OBJECT_TRACING_INIT \

@@ -56,7 +56,7 @@ void test_deadline(void)
 				worker_stacks[i], STACK_SIZE,
 				worker, INT_TO_POINTER(i), NULL, NULL,
 				K_LOWEST_APPLICATION_THREAD_PRIO,
-				0, 0);
+				0, K_NO_WAIT);
 
 		/* Positive-definite number with the bottom 8 bits
 		 * masked off to prevent aliasing where "very close"

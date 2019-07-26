@@ -59,7 +59,8 @@ static void spawn_threads(int sleep_sec)
 					       STACK_SIZE, thread_entry,
 					       INT_TO_POINTER(i),
 					       INT_TO_POINTER(sleep_sec),
-					       NULL, tdata[i].priority, 0, 0);
+					       NULL, tdata[i].priority, 0,
+					       K_NO_WAIT);
 	}
 }
 
@@ -80,7 +81,7 @@ static void timer_handler(struct k_timer *timer)
 static void thread_handler(void *p1, void *p2, void *p3)
 {
 	k_timer_init(&timer, timer_handler, NULL);
-	k_timer_start(&timer, DURATION, 0);
+	k_timer_start(&timer, K_TIMEOUT_MS(DURATION), K_NO_WAIT);
 }
 
 /*test cases*/
@@ -188,7 +189,7 @@ void test_sleep_wakeup_preemptible(void)
 static int executed;
 static void coop_thread(void *p1, void *p2, void *p3)
 {
-	k_sem_take(&pend_sema, 100);
+	k_sem_take(&pend_sema, K_TIMEOUT_MS(100));
 	executed = 1;
 }
 
@@ -212,7 +213,7 @@ void test_pending_thread_wakeup(void)
 	k_tid_t tid = k_thread_create(&t, tstack, STACK_SIZE,
 				      (k_thread_entry_t)coop_thread,
 				      NULL, NULL, NULL,
-				      K_PRIO_COOP(1), 0, 0);
+				      K_PRIO_COOP(1), 0, K_NO_WAIT);
 
 	zassert_false(executed == 1, "The thread didn't wait"
 		      " for semaphore acquisition");
@@ -434,7 +435,7 @@ void test_wakeup_expired_timer_thread(void)
 {
 	k_tid_t tid = k_thread_create(&tthread[0], tstack, STACK_SIZE,
 					thread_handler, NULL, NULL, NULL,
-					K_PRIO_PREEMPT(0), 0, 0);
+					K_PRIO_PREEMPT(0), 0, K_NO_WAIT);
 	k_sem_take(&timer_sema, K_FOREVER);
 	/* wakeup a thread if the timer is expired */
 	k_wakeup(tid);

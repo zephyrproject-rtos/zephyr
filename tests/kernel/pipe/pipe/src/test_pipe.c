@@ -701,7 +701,7 @@ void test_pipe_on_single_elements(void)
 
 	k_thread_create(&get_single_tid, stack_1, STACK_SIZE,
 			pipe_get_single, NULL, NULL, NULL,
-			K_PRIO_PREEMPT(0), K_INHERIT_PERMS | K_USER, 0);
+			K_PRIO_PREEMPT(0), K_INHERIT_PERMS | K_USER, K_NO_WAIT);
 
 	pipe_put_single();
 	k_sem_take(&sync_sem, K_FOREVER);
@@ -718,7 +718,7 @@ void test_pipe_on_multiple_elements(void)
 {
 	k_thread_create(&get_single_tid, stack_1, STACK_SIZE,
 			pipe_get_multiple, NULL, NULL, NULL,
-			K_PRIO_PREEMPT(0), K_INHERIT_PERMS | K_USER, 0);
+			K_PRIO_PREEMPT(0), K_INHERIT_PERMS | K_USER, K_NO_WAIT);
 
 	pipe_put_multiple();
 	k_sem_take(&sync_sem, K_FOREVER);
@@ -735,7 +735,7 @@ void test_pipe_forever_wait(void)
 {
 	k_thread_create(&get_single_tid, stack_1, STACK_SIZE,
 			pipe_get_forever_wait, NULL, NULL, NULL,
-			K_PRIO_PREEMPT(0), K_INHERIT_PERMS | K_USER, 0);
+			K_PRIO_PREEMPT(0), K_INHERIT_PERMS | K_USER, K_NO_WAIT);
 
 	pipe_put_forever_wait();
 	k_sem_take(&sync_sem, K_FOREVER);
@@ -752,7 +752,7 @@ void test_pipe_timeout(void)
 {
 	k_thread_create(&get_single_tid, stack_1, STACK_SIZE,
 			pipe_get_timeout, NULL, NULL, NULL,
-			K_PRIO_PREEMPT(0), K_INHERIT_PERMS | K_USER, 0);
+			K_PRIO_PREEMPT(0), K_INHERIT_PERMS | K_USER, K_NO_WAIT);
 
 	pipe_put_timeout();
 	k_sem_take(&sync_sem, K_FOREVER);
@@ -784,7 +784,7 @@ void test_pipe_forever_timeout(void)
 
 	k_thread_create(&get_single_tid, stack_1, STACK_SIZE,
 			pipe_get_forever_timeout, NULL, NULL, NULL,
-			K_PRIO_PREEMPT(0), K_INHERIT_PERMS | K_USER, 0);
+			K_PRIO_PREEMPT(0), K_INHERIT_PERMS | K_USER, K_NO_WAIT);
 
 	pipe_put_forever_timeout();
 	k_sem_take(&sync_sem, K_FOREVER);

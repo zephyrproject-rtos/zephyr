@@ -80,7 +80,8 @@ void test_priority_scheduling(void)
 	for (int i = 0; i < NUM_THREAD; i++) {
 		tid[i] = k_thread_create(&t[i], tstacks[i], STACK_SIZE,
 					 thread_tslice, INT_TO_POINTER(i), NULL, NULL,
-					 K_PRIO_PREEMPT(BASE_PRIORITY + i), 0, 0);
+					 K_PRIO_PREEMPT(BASE_PRIORITY + i), 0,
+					 K_NO_WAIT);
 	}
 
 	while (count < ITRERATION_COUNT) {

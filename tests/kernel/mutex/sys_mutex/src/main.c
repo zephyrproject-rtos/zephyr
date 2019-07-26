@@ -79,10 +79,10 @@ void thread_05(void)
 {
 	int rv;
 
-	k_sleep(K_MSEC(3500));
+	k_sleep(3500);
 
 	/* Wait and boost owner priority to 5 */
-	rv = sys_mutex_lock(&mutex_4, K_SECONDS(1));
+	rv = sys_mutex_lock(&mutex_4, K_TIMEOUT_MS(1000));
 	if (rv != -EAGAIN) {
 		tc_rc = TC_FAIL;
 		TC_ERROR("Failed to timeout on mutex %p\n", &mutex_4);
@@ -102,7 +102,7 @@ void thread_06(void)
 {
 	int rv;
 
-	k_sleep(K_MSEC(3750));
+	k_sleep(3750);
 
 	/*
 	 * Wait for the mutex.  There is a higher priority level thread waiting
@@ -113,7 +113,7 @@ void thread_06(void)
 	 * drop back to 7, but will instead drop to 6.
 	 */
 
-	rv = sys_mutex_lock(&mutex_4, K_SECONDS(2));
+	rv = sys_mutex_lock(&mutex_4, K_TIMEOUT_MS(2000));
 	if (rv != 0) {
 		tc_rc = TC_FAIL;
 		TC_ERROR("Failed to take mutex %p\n", &mutex_4);
@@ -134,7 +134,7 @@ void thread_07(void)
 {
 	int rv;
 
-	k_sleep(K_MSEC(2500));
+	k_sleep(2500);
 
 	/*
 	 * Wait and boost owner priority to 7.  While waiting, another thread of
@@ -144,7 +144,7 @@ void thread_07(void)
 	 * priority of the owning main thread will drop to 8.
 	 */
 
-	rv = sys_mutex_lock(&mutex_3, K_SECONDS(3));
+	rv = sys_mutex_lock(&mutex_3, K_TIMEOUT_MS(3000));
 	if (rv != -EAGAIN) {
 		tc_rc = TC_FAIL;
 		TC_ERROR("Failed to timeout on mutex %p\n", &mutex_3);
@@ -164,7 +164,7 @@ void thread_08(void)
 {
 	int rv;
 
-	k_sleep(K_MSEC(1500));
+	k_sleep(1500);
 
 	/* Wait and boost owner priority to 8 */
 	rv = sys_mutex_lock(&mutex_2, K_FOREVER);
@@ -188,7 +188,7 @@ void thread_09(void)
 {
 	int rv;
 
-	k_sleep(K_MSEC(500));	/* Allow lower priority thread to run */
+	k_sleep(500);	/* Allow lower priority thread to run */
 
 	/*<mutex_1> is already locked. */
 	rv = sys_mutex_lock(&mutex_1, K_NO_WAIT);
@@ -221,7 +221,7 @@ void thread_11(void)
 {
 	int rv;
 
-	k_sleep(K_MSEC(3500));
+	k_sleep(3500);
 	rv = sys_mutex_lock(&mutex_3, K_FOREVER);
 	if (rv != 0) {
 		tc_rc = TC_FAIL;
@@ -282,7 +282,7 @@ void test_mutex(void)
 	for (i = 0; i < 4; i++) {
 		rv = sys_mutex_lock(mutexes[i], K_NO_WAIT);
 		zassert_equal(rv, 0, "Failed to lock mutex %p\n", mutexes[i]);
-		k_sleep(K_SECONDS(1));
+		k_sleep(1000);
 
 		rv = k_thread_priority_get(k_current_get());
 		zassert_equal(rv, priority[i], "expected priority %d, not %d\n",
@@ -297,7 +297,7 @@ void test_mutex(void)
 	TC_PRINT("Done LOCKING!  Current priority = %d\n",
 		 k_thread_priority_get(k_current_get()));
 
-	k_sleep(K_SECONDS(1));       /* thread_05 should time out */
+	k_sleep(1000);       /* thread_05 should time out */
 
 	/* ~ 5 seconds have passed */
 
@@ -311,7 +311,7 @@ void test_mutex(void)
 	zassert_equal(rv, 7, "Gave %s and priority should drop.\n", "mutex_4");
 	zassert_equal(rv, 7, "Expected priority %d, not %d\n", 7, rv);
 
-	k_sleep(K_SECONDS(1));       /* thread_07 should time out */
+	k_sleep(1000);       /* thread_07 should time out */
 
 	/* ~ 6 seconds have passed */
 
@@ -327,7 +327,7 @@ void test_mutex(void)
 	rv = k_thread_priority_get(k_current_get());
 	zassert_equal(rv, 10, "Expected priority %d, not %d\n", 10, rv);
 
-	k_sleep(K_SECONDS(1));     /* Give thread_11 time to run */
+	k_sleep(1000);     /* Give thread_11 time to run */
 
 	zassert_equal(tc_rc, TC_PASS, NULL);
 
@@ -353,7 +353,7 @@ void test_mutex(void)
 	rv = sys_mutex_lock(&private_mutex, K_NO_WAIT);
 	zassert_equal(rv, -EBUSY, "Unexpectedly got lock on private mutex");
 
-	rv = sys_mutex_lock(&private_mutex, K_SECONDS(1));
+	rv = sys_mutex_lock(&private_mutex, K_TIMEOUT_MS(1000));
 	zassert_equal(rv, 0, "Failed to re-obtain lock on private mutex");
 
 	sys_mutex_unlock(&private_mutex);
@@ -398,22 +398,22 @@ void test_user_access(void)
 }
 
 K_THREAD_DEFINE(THREAD_05, STACKSIZE, thread_05, NULL, NULL, NULL,
-		5, K_USER, K_NO_WAIT);
+		5, K_USER, 0);
 
 K_THREAD_DEFINE(THREAD_06, STACKSIZE, thread_06, NULL, NULL, NULL,
-		6, K_USER, K_NO_WAIT);
+		6, K_USER, 0);
 
 K_THREAD_DEFINE(THREAD_07, STACKSIZE, thread_07, NULL, NULL, NULL,
-		7, K_USER, K_NO_WAIT);
+		7, K_USER, 0);
 
 K_THREAD_DEFINE(THREAD_08, STACKSIZE, thread_08, NULL, NULL, NULL,
-		8, K_USER, K_NO_WAIT);
+		8, K_USER, 0);
 
 K_THREAD_DEFINE(THREAD_09, STACKSIZE, thread_09, NULL, NULL, NULL,
-		9, K_USER, K_NO_WAIT);
+		9, K_USER, 0);
 
 K_THREAD_DEFINE(THREAD_11, STACKSIZE, thread_11, NULL, NULL, NULL,
-		11, K_USER, K_NO_WAIT);
+		11, K_USER, 0);
 
 /*test case main entry*/
 void test_main(void)

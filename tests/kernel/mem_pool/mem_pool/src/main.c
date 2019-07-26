@@ -107,7 +107,7 @@ static int pool_block_get_func(struct k_mem_block *block, struct k_mem_pool *poo
 static int pool_block_get_wt_func(struct k_mem_block *block, struct k_mem_pool *pool,
 			   int size, s32_t timeout)
 {
-	return k_mem_pool_alloc(pool, block, size, timeout);
+	return k_mem_pool_alloc(pool, block, size, K_TIMEOUT_MS(timeout));
 }
 
 /**
@@ -204,7 +204,7 @@ static void test_pool_block_get_timeout(void)
 		free_blocks(getwt_set, ARRAY_SIZE(getwt_set));
 	}
 
-	rv = k_mem_pool_alloc(&POOL_ID, &helper_block, 3148, 5);
+	rv = k_mem_pool_alloc(&POOL_ID, &helper_block, 3148, K_TIMEOUT_MS(5));
 	zassert_true(rv == 0,
 		     "Failed to get size 3148 byte block from POOL_ID");
 
@@ -213,7 +213,7 @@ static void test_pool_block_get_timeout(void)
 		     "byte block from POOL_ID");
 
 	k_sem_give(&HELPER_SEM);    /* Activate helper_task */
-	rv = k_mem_pool_alloc(&POOL_ID, &block, 3148, 20);
+	rv = k_mem_pool_alloc(&POOL_ID, &block, 3148, K_TIMEOUT_MS(20));
 	zassert_true(rv == 0, "Failed to get size 3148 byte block from POOL_ID");
 
 	rv = k_sem_take(&REGRESS_SEM, K_NO_WAIT);
@@ -337,10 +337,10 @@ static void test_pool_malloc(void)
 }
 
 K_THREAD_DEFINE(t_alternate, STACKSIZE, alternate_task, NULL, NULL, NULL,
-		6, 0, K_NO_WAIT);
+		6, 0, 0);
 
 K_THREAD_DEFINE(t_helper, STACKSIZE, helper_task, NULL, NULL, NULL,
-		7, 0, K_NO_WAIT);
+		7, 0, 0);
 
 void test_main(void)
 {
