@@ -33,4 +33,11 @@ config UART_PL011_PORT1
 
 endif # SERIAL
 
+if IPM
+
+config IPM_MHU
+	default y
+
+endif # IPM
+
 endif
