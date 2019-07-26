@@ -41,8 +41,8 @@ struct gpio_sifive_t {
 };
 
 struct gpio_sifive_config {
-	u32_t            gpio_base_addr;
-	u32_t            gpio_irq_base;
+	uintptr_t            gpio_base_addr;
+	u32_t                gpio_irq_base;
 	sifive_cfg_func_t    gpio_cfg_func;
 };
 
