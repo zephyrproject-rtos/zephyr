@@ -14,6 +14,7 @@ config ZTEST
 config ZTEST_STACKSIZE
 	int "Test function thread stack size"
 	depends on ZTEST
+	default 2048 if COVERAGE_GCOV
 	default 1024
 
 config ZTEST_FAIL_FAST
