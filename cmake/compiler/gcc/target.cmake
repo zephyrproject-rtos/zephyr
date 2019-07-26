@@ -69,6 +69,12 @@ elseif("${ARCH}" STREQUAL "arc")
   list(APPEND TOOLCHAIN_C_FLAGS
     -mcpu=${GCC_M_CPU}
     )
+elseif("${ARCH}" STREQUAL "riscv")
+  if(CONFIG_64BIT)
+    list(APPEND TOOLCHAIN_C_FLAGS -mabi=lp64 -march=rv64imac -mcmodel=medany)
+  else()
+    list(APPEND TOOLCHAIN_C_FLAGS -mabi=ilp32 -march=rv32ima)
+  endif()
 endif()
 
 if(NOT no_libgcc)
