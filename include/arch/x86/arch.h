@@ -19,67 +19,55 @@
 static ALWAYS_INLINE void z_arch_irq_unlock(unsigned int key)
 {
 	if ((key & 0x00000200U) != 0U) { /* 'IF' bit */
-		__asm__ volatile (
-			"sti;\n\t"
-			: : : "memory"
-			);
+		__asm__ volatile ("sti" ::: "memory");
 	}
 }
 
 static ALWAYS_INLINE void sys_out8(u8_t data, io_port_t port)
 {
-	__asm__ volatile("outb	%b0, %w1;\n\t"
-			 :
-			 : "a"(data), "Nd"(port));
+	__asm__ volatile("outb %b0, %w1" :: "a"(data), "Nd"(port));
 }
 
 static ALWAYS_INLINE u8_t sys_in8(io_port_t port)
 {
 	u8_t ret;
 
-	__asm__ volatile("inb	%w1, %b0;\n\t"
-			 : "=a"(ret)
-			 : "Nd"(port));
+	__asm__ volatile("inb %w1, %b0" : "=a"(ret) : "Nd"(port));
+
 	return ret;
 }
 
 static ALWAYS_INLINE void sys_out16(u16_t data, io_port_t port)
 {
-	__asm__ volatile("outw	%w0, %w1;\n\t"
-			 :
-			 : "a"(data), "Nd"(port));
+	__asm__ volatile("outw %w0, %w1" :: "a"(data), "Nd"(port));
 }
 
 static ALWAYS_INLINE u16_t sys_in16(io_port_t port)
 {
 	u16_t ret;
 
-	__asm__ volatile("inw	%w1, %w0;\n\t"
-			 : "=a"(ret)
-			 : "Nd"(port));
+	__asm__ volatile("inw %w1, %w0" : "=a"(ret) : "Nd"(port));
+
 	return ret;
 }
 
 static ALWAYS_INLINE void sys_out32(u32_t data, io_port_t port)
 {
-	__asm__ volatile("outl	%0, %w1;\n\t"
-			 :
-			 : "a"(data), "Nd"(port));
+	__asm__ volatile("outl %0, %w1" :: "a"(data), "Nd"(port));
 }
 
 static ALWAYS_INLINE u32_t sys_in32(io_port_t port)
 {
 	u32_t ret;
 
-	__asm__ volatile("inl	%w1, %0;\n\t"
-			 : "=a"(ret)
-			 : "Nd"(port));
+	__asm__ volatile("inl %w1, %0" : "=a"(ret) : "Nd"(port));
+
 	return ret;
 }
 
 static ALWAYS_INLINE void sys_write8(u8_t data, mm_reg_t addr)
 {
-	__asm__ volatile("movb	%0, %1;\n\t"
+	__asm__ volatile("movb %0, %1"
 			 :
 			 : "q"(data), "m" (*(volatile u8_t *)(uintptr_t) addr)
 			 : "memory");
@@ -89,7 +77,7 @@ static ALWAYS_INLINE u8_t sys_read8(mm_reg_t addr)
 {
 	u8_t ret;
 
-	__asm__ volatile("movb	%1, %0;\n\t"
+	__asm__ volatile("movb %1, %0"
 			 : "=q"(ret)
 			 : "m" (*(volatile u8_t *)(uintptr_t) addr)
 			 : "memory");
@@ -99,7 +87,7 @@ static ALWAYS_INLINE u8_t sys_read8(mm_reg_t addr)
 
 static ALWAYS_INLINE void sys_write16(u16_t data, mm_reg_t addr)
 {
-	__asm__ volatile("movw	%0, %1;\n\t"
+	__asm__ volatile("movw %0, %1"
 			 :
 			 : "r"(data), "m" (*(volatile u16_t *)(uintptr_t) addr)
 			 : "memory");
@@ -109,7 +97,7 @@ static ALWAYS_INLINE u16_t sys_read16(mm_reg_t addr)
 {
 	u16_t ret;
 
-	__asm__ volatile("movw	%1, %0;\n\t"
+	__asm__ volatile("movw %1, %0"
 			 : "=r"(ret)
 			 : "m" (*(volatile u16_t *)(uintptr_t) addr)
 			 : "memory");
@@ -119,7 +107,7 @@ static ALWAYS_INLINE u16_t sys_read16(mm_reg_t addr)
 
 static ALWAYS_INLINE void sys_write32(u32_t data, mm_reg_t addr)
 {
-	__asm__ volatile("movl	%0, %1;\n\t"
+	__asm__ volatile("movl %0, %1"
 			 :
 			 : "r"(data), "m" (*(volatile u32_t *)(uintptr_t) addr)
 			 : "memory");
@@ -129,7 +117,7 @@ static ALWAYS_INLINE u32_t sys_read32(mm_reg_t addr)
 {
 	u32_t ret;
 
-	__asm__ volatile("movl	%1, %0;\n\t"
+	__asm__ volatile("movl %1, %0"
 			 : "=r"(ret)
 			 : "m" (*(volatile u32_t *)(uintptr_t) addr)
 			 : "memory");
@@ -139,7 +127,7 @@ static ALWAYS_INLINE u32_t sys_read32(mm_reg_t addr)
 
 static ALWAYS_INLINE void sys_set_bit(mem_addr_t addr, unsigned int bit)
 {
-	__asm__ volatile("btsl	%1, %0;\n\t"
+	__asm__ volatile("btsl %1, %0"
 			 : "+m" (*(volatile u32_t *) (addr))
 			 : "Ir" (bit)
 			 : "memory");
@@ -147,7 +135,7 @@ static ALWAYS_INLINE void sys_set_bit(mem_addr_t addr, unsigned int bit)
 
 static ALWAYS_INLINE void sys_clear_bit(mem_addr_t addr, unsigned int bit)
 {
-	__asm__ volatile("btrl	%1, %0;\n\t"
+	__asm__ volatile("btrl %1, %0"
 			 : "+m" (*(volatile u32_t *) (addr))
 			 : "Ir" (bit));
 }
@@ -156,8 +144,8 @@ static ALWAYS_INLINE int sys_test_bit(mem_addr_t addr, unsigned int bit)
 {
 	int ret;
 
-	__asm__ volatile("btl	%2, %1;\n\t"
-			 "sbb	%0, %0\n\t"
+	__asm__ volatile("btl %2, %1;"
+			 "sbb %0, %0"
 			 : "=r" (ret), "+m" (*(volatile u32_t *) (addr))
 			 : "Ir" (bit));
 
@@ -169,8 +157,8 @@ static ALWAYS_INLINE int sys_test_and_set_bit(mem_addr_t addr,
 {
 	int ret;
 
-	__asm__ volatile("btsl	%2, %1;\n\t"
-			 "sbb	%0, %0\n\t"
+	__asm__ volatile("btsl %2, %1;"
+			 "sbb %0, %0"
 			 : "=r" (ret), "+m" (*(volatile u32_t *) (addr))
 			 : "Ir" (bit));
 
@@ -182,8 +170,8 @@ static ALWAYS_INLINE int sys_test_and_clear_bit(mem_addr_t addr,
 {
 	int ret;
 
-	__asm__ volatile("btrl	%2, %1;\n\t"
-			 "sbb	%0, %0\n\t"
+	__asm__ volatile("btrl %2, %1;"
+			 "sbb %0, %0"
 			 : "=r" (ret), "+m" (*(volatile u32_t *) (addr))
 			 : "Ir" (bit));
 
@@ -263,8 +251,8 @@ static inline u64_t z_tsc_read(void)
 
 	/* rdtsc & cpuid clobbers eax, ebx, ecx and edx registers */
 	__asm__ volatile (/* serialize */
-		"xorl %%eax,%%eax;\n\t"
-		"cpuid;\n\t"
+		"xorl %%eax,%%eax;"
+		"cpuid"
 		:
 		:
 		: "%eax", "%ebx", "%ecx", "%edx"
