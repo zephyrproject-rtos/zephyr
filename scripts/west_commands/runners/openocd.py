@@ -114,9 +114,9 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
                 '-c', 'targets'] +
                pre_cmd +
                ['-c', 'reset halt',
-                '-c', self.load_cmd,
+                '-c', self.load_cmd + ' ' + self.elf_name,
                 '-c', 'reset halt',
-                '-c', self.verify_cmd] +
+                '-c', self.verify_cmd + ' ' + self.elf_name] +
                post_cmd +
                ['-c', 'reset run',
                 '-c', 'shutdown'])
