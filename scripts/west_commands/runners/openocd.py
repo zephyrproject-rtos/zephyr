@@ -34,6 +34,7 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
         if cfg.openocd_search is not None:
             search_args = ['-s', cfg.openocd_search]
         self.openocd_cmd = [cfg.openocd] + search_args
+        self.hex_name = cfg.hex_file
         self.elf_name = cfg.elf_file
         self.load_cmd = load_cmd
         self.verify_cmd = verify_cmd
@@ -114,9 +115,9 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
                 '-c', 'targets'] +
                pre_cmd +
                ['-c', 'reset halt',
-                '-c', self.load_cmd + ' ' + self.elf_name,
+                '-c', self.load_cmd + ' ' + self.hex_name,
                 '-c', 'reset halt',
-                '-c', self.verify_cmd + ' ' + self.elf_name] +
+                '-c', self.verify_cmd + ' ' + self.hex_name] +
                post_cmd +
                ['-c', 'reset run',
                 '-c', 'shutdown'])
