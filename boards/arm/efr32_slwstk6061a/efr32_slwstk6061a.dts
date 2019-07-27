@@ -98,22 +98,29 @@
 			read-only;
 		};
 
-		/* Reserve 96 kB for the application in slot 0 */
+		/* Reserve 94 kB for the application in slot 0 */
 		slot0_partition: partition@8000 {
 			label = "image-0";
-			reg = <0x0008000 0x00018000>;
+			reg = <0x0008000 0x00017800>;
 		};
 
-		/* Reserve 96 kB for the application in slot 1 */
-		slot1_partition: partition@20000 {
+		/* Reserve 94 kB for the application in slot 1 */
+		slot1_partition: partition@1f800 {
 			label = "image-1";
-			reg = <0x00020000 0x00018000>;
+			reg = <0x0001f800 0x00017800>;
 		};
 
 		/* Reserve 32 kB for the scratch partition */
-		scratch_partition: partition@38000 {
+		scratch_partition: partition@37000 {
 			label = "image-scratch";
-			reg = <0x00038000 0x00008000>;
+			reg = <0x00037000 0x00008000>;
 		};
+
+		/* Set 4Kb of storage at the end of the 256Kb of flash */
+		storage_partition: partition@3f000 {
+			label = "storage";
+			reg = <0x0003f000 0x00001000>;
+		};
+
 	};
 };
