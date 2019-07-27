@@ -52,7 +52,26 @@ void z_arm_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
 
 void z_do_kernel_oops(const z_arch_esf_t *esf)
 {
-	z_arm_fatal_error(esf->basic.r0, esf);
+	/* Stacked R0 holds the exception reason. */
+	unsigned int reason = esf->basic.r0;
+
+#if defined(CONFIG_USERSPACE)
+	if ((__get_CONTROL() & CONTROL_nPRIV_Msk) == CONTROL_nPRIV_Msk) {
+		/*
+		 * Exception triggered from nPRIV mode.
+		 *
+		 * User mode is only allowed to induce oopses and stack check
+		 * failures via software-triggered system fatal exceptions.
+		 */
+		if (!((esf->basic.r0 == K_ERR_KERNEL_OOPS) ||
+			(esf->basic.r0 == K_ERR_STACK_CHK_FAIL))) {
+
+			reason = K_ERR_KERNEL_OOPS;
+		}
+	}
+
+#endif /* CONFIG_USERSPACE */
+	z_arm_fatal_error(reason, esf);
 }
 
 FUNC_NORETURN void z_arch_syscall_oops(void *ssf_ptr)
