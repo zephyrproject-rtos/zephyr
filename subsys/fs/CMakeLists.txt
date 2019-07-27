@@ -2,8 +2,6 @@
 
 if(CONFIG_FILE_SYSTEM)
   zephyr_interface_library_named(FS)
-  #zephyr_link_interface_ifdef(CONFIG_FAT_FILESYSTEM_ELM ELMFAT)
-  #zephyr_link_interface_ifdef(CONFIG_FILE_SYSTEM_NFFS   NFFS)
 
   zephyr_library()
   zephyr_library_include_directories(${CMAKE_CURRENT_SOURCE_DIR})
