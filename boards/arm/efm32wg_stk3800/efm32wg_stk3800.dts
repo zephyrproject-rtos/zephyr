@@ -63,3 +63,22 @@
 	location-tx = <GECKO_LOCATION(1) GECKO_PORT_E GECKO_PIN(0)>;
 	status = "okay";
 };
+
+&flash0 {
+	/*
+	 * For more information, see:
+	 * http://docs.zephyrproject.org/latest/guides/dts/index.html#flash-partitions
+	 */
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* Set 4Kb of storage at the end of the 256Kb of flash */
+		storage_partition: partition@3f000 {
+			label = "storage";
+			reg = <0x0003f000 0x00001000>;
+		};
+
+	};
+};
