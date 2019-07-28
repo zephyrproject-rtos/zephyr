@@ -3821,6 +3821,9 @@ int lwm2m_engine_context_close(struct lwm2m_ctx *client_ctx)
 	sys_snode_t *prev_node = NULL;
 	int sock_fd = client_ctx->sock_fd;
 
+	/* Cancel pending retransmit work */
+	k_delayed_work_cancel(&client_ctx->retransmit_work);
+
 	/* Remove observes for this context */
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&engine_observer_list,
 					  obs, tmp, node) {
