@@ -281,7 +281,8 @@ static int spi_nor_erase(struct device *dev, off_t addr, size_t size)
 		} else {
 			/* minimal erase size is at least a sector size */
 			SYNC_UNLOCK();
-			LOG_DBG("unsupported at %x size %u", (u32_t)addr, size);
+			LOG_DBG("unsupported at 0x%lx size %zu", (long)addr,
+				size);
 			return -EINVAL;
 		}
 
