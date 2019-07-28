@@ -167,6 +167,9 @@ static void mcux_flexcan_copy_frame_to_zframe(const flexcan_frame_t *src,
 	dest->dlc = src->length;
 	dest->data_32[0] = sys_be32_to_cpu(src->dataWord0);
 	dest->data_32[1] = sys_be32_to_cpu(src->dataWord1);
+#ifdef CONFIG_CAN_RX_TIMESTAMP
+	dest->timestamp = src->timestamp;
+#endif /* CAN_RX_TIMESTAMP */
 }
 
 static void mcux_flexcan_copy_zfilter_to_mbconfig(const struct zcan_filter *src,
