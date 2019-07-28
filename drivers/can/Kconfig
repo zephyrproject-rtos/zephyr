@@ -44,7 +44,7 @@ config CAN_WORKQ_FRAMES_BUF_CNT
 
 config CAN_RX_TIMESTAMP
 	bool "Enable receiving timestamps"
-	depends on CAN_STM32
+	depends on CAN_STM32 || CAN_MCUX_FLEXCAN
 	help
 	  This option enables a timestamp value of the CAN free running timer.
 	  The value is incremented every bit time and starts when the controller
