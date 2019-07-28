@@ -379,6 +379,7 @@ static const struct gpio_driver_api gpio_sx1509b_drv_api_funcs = {
 	.config	= gpio_sx1509b_config,
 	.write	= gpio_sx1509b_write,
 	.read	= gpio_sx1509b_read,
+	.not_isr_safe = true,
 };
 
 DEVICE_AND_API_INIT(gpio_sx1509b, CONFIG_GPIO_SX1509B_DEV_NAME,

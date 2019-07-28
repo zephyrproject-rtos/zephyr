@@ -118,6 +118,7 @@ struct gpio_driver_api {
 	gpio_enable_callback_t enable_callback;
 	gpio_disable_callback_t disable_callback;
 	gpio_api_get_pending_int get_pending_int;
+	bool not_isr_safe;
 };
 
 __syscall int gpio_config(struct device *port, int access_op, u32_t pin,
@@ -433,6 +434,25 @@ static inline int z_impl_gpio_get_pending_int(struct device *dev)
 	}
 
 	return api->get_pending_int(dev);
+}
+
+/**
+ * @brief Function to check safety of operations from interrupts
+ *
+ * Some GPIO implementations may have operations that interact with
+ * peripherals outside the SOC, and so cannot be called from interrupt
+ * context.  This method can be used to determine whether the GPIO
+ * being used has such limitations.
+ *
+ * @return 1 if operations on this GPIO can be safely invoked from an
+ * interrupt; 0 if they cannot.
+ */
+static inline int gpio_is_isr_safe(struct device *dev)
+{
+	const struct gpio_driver_api *api =
+		(const struct gpio_driver_api *)dev->driver_api;
+
+	return !api->not_isr_safe;
 }
 
 struct gpio_pin_config {
