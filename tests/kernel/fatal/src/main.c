@@ -169,7 +169,9 @@ void stack_sentinel_timer(void)
 {
 	/* We need to guarantee that we receive an interrupt, so set a
 	 * k_timer and spin until we die.  Spinning alone won't work
-	 * on a tickless kernel.
+	 * on a tickless kernel.  Note static: we can't place it on
+	 * our stack, because it can be clobbered by the next test
+	 * before it expires!
 	 */
 	static struct k_timer timer;
 
