@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018 Jan Van Winkel <jan.van_winkel@dxplore.eu>
+# Copyright (c) 2018-2019 Jan Van Winkel <jan.van_winkel@dxplore.eu>
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -61,10 +61,11 @@ endchoice
 
 config LVGL_BITS_PER_PIXEL
 	int "Bits per pixel"
-	default 0
+	default 32
+	range 1 32
+	depends on LVGL_BUFFER_ALLOC_STATIC
 	help
-	  Number of bits per pixel, in case the number of pixels should be derived
-	  from the color depth set the number of pixels to zero.
+	  Number of bits per pixel.
 
 if LVGL_COLOR_DEPTH_16
 
@@ -181,34 +182,42 @@ config LVGL_MEM_POOL_NUMBER_BLOCKS
 
 endif
 
-if !LVGL_TRUE_DOUBLE_BUFFERED
 config LVGL_VDB_SIZE
-	int "Virtual Display Buffer Size"
+	int "Rendering buffer size"
 	default 10
 	range 1 100
 	help
-	  Virtual Display Buffer (double buffering) size as a percentage of
-	  total display size.
-endif
-
-config LVGL_VDB_STATIC
-	bool "Statically allocate virtual display buffer"
-	default y
-	help
-	  Statically allocate virtual display buffer. If disabled pointer should be
-	  passed via lv_vdb_set_adr().
+	  Size of the buffer used for rendering screen content as a percentage
+	  of total display size.
 
 config LVGL_DOUBLE_VDB
-	bool "Use 2 Virtual Display Buffers"
+	bool "Use two rendering buffers"
 	help
-	  Use 2 virtual display buffers to render and flush data in parallel
+	  Use two buffers to render and flush data in parallel
 
-if LVGL_DOUBLE_VDB
-config LVGL_TRUE_DOUBLE_BUFFERED
-	bool "True double buffered"
+choice
+	prompt "Rendering Buffer Allocation"
+	default LVGL_BUFFER_ALLOC_STATIC
 	help
-	  Use true double buffering, VDB size will be set to 100%.
-endif
+	  Type of allocation that should be used for allocating rendering buffers
+
+config LVGL_BUFFER_ALLOC_STATIC
+	bool "Static"
+	help
+	  Rendering buffers are statically allocated based on the following
+	  configuration parameters:
+	  * Horizontal screen resolution
+	  * Vertical screen resolution
+	  * Rendering buffer size
+	  * Bytes per pixel
+
+config LVGL_BUFFER_ALLOC_DYNAMIC
+	bool "Dynamic"
+	help
+	  Rendering buffers are dynamically allocated based on the actual
+	  display parameters
+
+endchoice
 
 config LVGL_SCREEN_REFRESH_PERIOD
 	int "Screen refresh period"
@@ -221,12 +230,6 @@ config LVGL_INPUT_REFRESH_PERIOD
 	default 50
 	help
 	  Refresh period for input devices in milliseconds
-
-config LVGL_INPUT_MARK_PRESSED_POINTS
-	bool "Mark pressed points"
-	depends on LVGL_DIRECT_DRAW
-	help
-	  Mark the pressed points on the screen.
 
 config LVGL_INPUT_DRAG_THRESHOLD
 	int "Drag Threshold"
@@ -255,37 +258,23 @@ config LVGL_INPUT_LONG_RESS_REPEAT_TIME
 	  Period in milliseconds after which a new trigger is generated
 	  for a long press
 
-config LVGL_UTF_8
-	bool "Enable UTF-8 support"
-	default y
-	help
-	  Enable UTF-8 support
+choice
+	prompt "String character encoding"
+	default LVGL_TXT_ENC_ASCII
+
+config LVGL_TXT_ENC_ASCII
+	bool "ASCII string encoding"
+
+config LVGL_TXT_ENC_UTF8
+	bool "UTF-8 string encoding"
+
+endchoice
 
 config LVGL_TEXT_BREAK_CHARACTERS
 	string "Text break characters"
 	default " ,.;:-_"
 	help
 	  Characters on which a text break can take place
-
-config LVGL_TEXT_BREAK_LONG_WORD_SIZE
-	int "Long word size for text break"
-	default 12
-	help
-	  Number of characters in a word before considering a word for a text break
-
-config LVGL_TEXT_BREAK_LONG_WORD_PRE_MIN_LEN
-	int "Minimum long word length before text break"
-	default 3
-	help
-	  Minimum number of characters of a long word that should be put before a
-	  break
-
-config LVGL_TEXT_BREAK_LONG_WORD_POST_MIN_LEN
-	int "Minimum long word length after text break"
-	default 1
-	help
-	  Minimum number of characters of a long word that should be placed after a
-	  break
 
 config LVGL_ANTIALIAS
 	bool "Enable anti-aliasing"
@@ -317,13 +306,17 @@ config LVGL_GPU
 	help
 	  Enable GPU support
 
-config LVGL_DIRECT_DRAW
-	bool "Enable direct draw"
+config LVGL_IMG_CF_INDEXED
+	bool "Enable indexed image support"
 	default y
 	help
-	  Enable direct draw support.
-	  Direct draw bypasses virtual display buffer and directly writes to
-	  frame buffer
+	  Enable support for indexed images
+
+config LVGL_IMG_CF_ALPHA
+	bool "Enable alpha indexed image support"
+	default y
+	help
+	  Enable support for alpha indexed images
 
 config LVGL_FILESYSTEM
 	bool "Enable file system"
@@ -332,35 +325,18 @@ config LVGL_FILESYSTEM
 	help
 	  Enable LittlevGL file system
 
-config LVGL_MULTI_LANGUAGE
-	bool "Multi language support"
-	help
-	  Enable multi language support
-
-if LVGL_MULTI_LANGUAGE
-config LVGL_NBR_OF_LANGUAGES
-	int "Number of languages"
+config LVGL_IMG_CACHE_DEF_SIZE
+	int "Default image cache size"
 	default 1
 	help
-	  Number of languages to support
-endif
-
-config LVGL_VLA_SUPPORT
-	bool "Enable variable length array support"
-	default y
-	help
-	  Enable variable length array support
-
-config LVGL_COMPILER_NON_CONST_INIT_SUPPORTED
-	bool "Enable non constant init"
-	default y
-	help
-	  Indicate if initialization with non constant values is supported
+	  Default image cache size, image caching keeps the images open.
+	  If only the built-in image formats are used there is no real
+	  advantage of caching. With complex image decoders (e.g. PNG or JPG)
+	  caching can save the continuous decoding of images. However the
+	  opened images might consume additional RAM.
 
 rsource "Kconfig.themes"
-
 rsource "Kconfig.fonts"
-
 rsource "Kconfig.objects"
 
 config APP_LINK_WITH_LVGL
