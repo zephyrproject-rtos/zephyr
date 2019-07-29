@@ -274,6 +274,7 @@ static const struct adc_driver_api adc_nrfx_driver_api = {
 #ifdef CONFIG_ADC_ASYNC
 	.read_async    = adc_nrfx_read_async,
 #endif
+	.ref_internal  = 1200,
 };
 
 #ifdef CONFIG_ADC_0
