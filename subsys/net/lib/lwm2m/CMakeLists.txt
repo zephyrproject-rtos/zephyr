@@ -29,6 +29,9 @@ zephyr_library_sources_ifdef(CONFIG_LWM2M_FIRMWARE_UPDATE_OBJ_SUPPORT
 zephyr_library_sources_ifdef(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT
     lwm2m_obj_firmware_pull.c
     )
+zephyr_library_sources_ifdef(CONFIG_LWM2M_LOCATION_OBJ_SUPPORT
+    lwm2m_obj_location.c
+    )
 
 # JSON Support
 zephyr_library_sources_ifdef(CONFIG_LWM2M_RW_JSON_SUPPORT
