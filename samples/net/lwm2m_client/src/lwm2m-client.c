@@ -203,6 +203,8 @@ static void *temperature_get_buf(u16_t obj_inst_id, size_t *data_len)
 		LOG_DBG("LWM2M temperature set to %d.%d", v.val1, v.val2);
 	}
 
+	/* echo the value back through the engine to update min/max values */
+	lwm2m_engine_set_float32("3303/0/5700", &v);
 	*data_len = sizeof(v);
 	return &v;
 }
