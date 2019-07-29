@@ -31,8 +31,9 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define LIGHT_POWER_FACTOR_ID			5820
 #define LIGHT_COLOUR_ID				5706
 #define LIGHT_SENSOR_UNITS_ID			5701
+#define LIGHT_APPLICATION_TYPE_ID		5750
 
-#define LIGHT_MAX_ID		7
+#define LIGHT_MAX_ID		8
 
 #define MAX_INSTANCE_COUNT	CONFIG_LWM2M_IPSO_LIGHT_CONTROL_INSTANCE_COUNT
 
@@ -58,6 +59,7 @@ static struct lwm2m_engine_obj_field fields[] = {
 	OBJ_FIELD_DATA(LIGHT_POWER_FACTOR_ID, R_OPT, FLOAT32),
 	OBJ_FIELD_DATA(LIGHT_COLOUR_ID, RW_OPT, STRING),
 	OBJ_FIELD_DATA(LIGHT_SENSOR_UNITS_ID, R_OPT, STRING),
+	OBJ_FIELD_DATA(LIGHT_APPLICATION_TYPE_ID, RW_OPT, STRING),
 };
 
 static struct lwm2m_engine_obj_inst inst[MAX_INSTANCE_COUNT];
@@ -166,6 +168,7 @@ static struct lwm2m_engine_obj_inst *light_control_create(u16_t obj_inst_id)
 		colour[avail], LIGHT_STRING_LONG);
 	INIT_OBJ_RES_DATA(res[avail], i, LIGHT_SENSOR_UNITS_ID,
 		units[avail], LIGHT_STRING_SHORT);
+	INIT_OBJ_RES_DUMMY(res[avail], i, LIGHT_APPLICATION_TYPE_ID);
 
 	inst[avail].resources = res[avail];
 	inst[avail].resource_count = i;
