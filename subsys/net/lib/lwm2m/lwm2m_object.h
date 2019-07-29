@@ -145,7 +145,7 @@ struct lwm2m_obj_path {
 	u16_t obj_inst_id;
 	u16_t res_id;
 	u16_t res_inst_id;
-	u8_t  level;  /* 0/1/2/3 = 3 = resource */
+	u8_t  level;  /* 0/1/2/3/4 (4 = resource instance) */
 };
 
 #define OBJ_FIELD(res_id, perm, type, multi_max) \
