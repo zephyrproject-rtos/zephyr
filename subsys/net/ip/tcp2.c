@@ -453,7 +453,8 @@ static size_t tcp_data_len(struct net_pkt *pkt)
 	u8_t off = th->th_off;
 	ssize_t data_len = ntohs(ip->len) - sizeof(*ip) - off * 4;
 
-	if (off > 5 && false == tcp_options_check((th + 1), (off - 5) * 4)) {
+	if (off < 5 || (off > 5 &&
+			false == tcp_options_check((th + 1), (off - 5) * 4))) {
 		data_len = 0;
 	}
 
