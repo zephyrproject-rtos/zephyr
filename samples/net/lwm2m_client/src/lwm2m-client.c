@@ -46,6 +46,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define CLIENT_DEVICE_TYPE	"OMA-LWM2M Client"
 #define CLIENT_HW_VER		"1.0.1"
 
+#define TIMER_NAME		"Test timer"
+
 #define ENDPOINT_LEN		32
 
 #ifndef DT_ALIAS_LED0_GPIOS_CONTROLLER
@@ -341,7 +343,8 @@ static int lwm2m_setup(void)
 	lwm2m_engine_create_obj_inst("3340/0");
 	lwm2m_engine_register_post_write_callback("3340/0/5543",
 			timer_digital_state_cb);
-	lwm2m_engine_set_string("3340/0/5750", "Test timer");
+	lwm2m_engine_set_res_data("3340/0/5750", TIMER_NAME, sizeof(TIMER_NAME),
+				  LWM2M_RES_DATA_FLAG_RO);
 
 	return 0;
 }

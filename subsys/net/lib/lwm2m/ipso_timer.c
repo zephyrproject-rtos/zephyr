@@ -38,8 +38,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #define MAX_INSTANCE_COUNT	CONFIG_LWM2M_IPSO_TIMER_INSTANCE_COUNT
 
-#define TIMER_STRING_LONG       64
-
 enum ipso_timer_mode {
 	TIMER_MODE_OFF = 0,
 	TIMER_MODE_ONE_SHOT,
@@ -61,7 +59,6 @@ struct ipso_timer_data {
 
 	struct k_delayed_work timer_work;
 
-	char app_type[TIMER_STRING_LONG];
 	u16_t obj_inst_id;
 	u8_t timer_mode;
 	bool enabled;
@@ -355,8 +352,7 @@ static struct lwm2m_engine_obj_inst *timer_create(u16_t obj_inst_id)
 	INIT_OBJ_RES_DATA(res[avail], i, TIMER_MODE_ID,
 		&timer_data[avail].timer_mode,
 		sizeof(timer_data[avail].timer_mode));
-	INIT_OBJ_RES_DATA(res[avail], i, TIMER_APPLICATION_TYPE_ID,
-		&timer_data[avail].app_type, TIMER_STRING_LONG);
+	INIT_OBJ_RES_DUMMY(res[avail], i, TIMER_APPLICATION_TYPE_ID);
 
 	inst[avail].resources = res[avail];
 	inst[avail].resource_count = i;
