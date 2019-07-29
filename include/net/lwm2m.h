@@ -53,6 +53,7 @@
 #define IPSO_OBJECT_LIGHT_CONTROL_ID			3311
 #define IPSO_OBJECT_BUZZER_ID				3338
 #define IPSO_OBJECT_TIMER_ID				3340
+#define IPSO_OBJECT_ONOFF_SWITCH_ID			3342
 
 /**
  * @brief LwM2M context structure to maintain information for a single
