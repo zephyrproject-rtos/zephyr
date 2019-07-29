@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018 Jan Van Winkel <jan.van_winkel@dxplore.eu>
+# Copyright (c) 2018-2019 Jan Van Winkel <jan.van_winkel@dxplore.eu>
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -11,6 +11,21 @@ config LVGL_OBJ_REALIGN
 	default y
 	help
 	  Enable object realign support
+
+choice
+	prompt "Extend objects clickable area"
+	default LVGL_EXT_CLICK_AREA_OFF
+
+	config LVGL_EXT_CLICK_AREA_OFF
+		bool "Disabled"
+
+	config LVGL_EXT_CLICK_AREA_TINY
+		bool "Only horizontally and vertical"
+
+	config LVGL_EXT_CLICK_AREA_FULL
+		bool "Full flexibility"
+
+endchoice
 
 config LVGL_OBJ_LABEL
 	bool "Label Object"
@@ -26,7 +41,23 @@ config LVGL_OBJ_LABEL_SCROLL_SPEED
 	help
 	  Scroll speed in pixels per second if scroll mode is enabled for a label
 
-endif
+config LVGL_OBJ_LABEL_TEXT_SEL
+	bool "Enable label text selection"
+	help
+	  Enable label text selection
+
+config LVGL_OBJ_LABEL_WAIT_CHAR_COUNT
+	int "Waiting period for label animation"
+	default 3
+	help
+	  Waiting period at beginning/end of the label animation cycle
+
+config LVGL_OBJ_LABEL_LONG_TXT_HINT
+	bool "Enable long text hint for labels"
+	help
+	  Enable support for long text hints
+
+endif # LVGL_OBJ_LABEL
 
 config LVGL_OBJ_IMAGE
 	bool "Image Object"
@@ -34,22 +65,6 @@ config LVGL_OBJ_IMAGE
 	depends on LVGL_OBJ_LABEL
 	help
 	  Enable image object support
-
-if LVGL_OBJ_IMAGE
-
-config LVGL_IMG_CF_INDEXED
-	bool "Enable indexed image support"
-	default y
-	help
-	  Enable support for indexed images
-
-config LVGL_IMG_CF_ALPHA
-	bool "Enable alpha indexed image support"
-	default y
-	help
-	  Enable support for alpha indexed images
-
-endif
 
 config LVGL_OBJ_LINE
 	bool "Line Object"
@@ -75,6 +90,14 @@ config LVGL_OBJ_PAGE
 	depends on LVGL_OBJ_CONTAINER
 	help
 	  Enable page object support
+
+if LVGL_OBJ_PAGE
+config LVGL_OBJ_PAGE_DEF_ANIM_TIME
+	int "Default page focus animation time"
+	default 400
+	help
+	  Default page focus animation time in milliseconds
+endif
 
 config LVGL_OBJ_WINDOW
 	bool "Window object"
@@ -190,6 +213,14 @@ config LVGL_OBJ_CHART
 	default y
 	help
 	  Enable chart object support
+
+if LVGL_OBJ_CHART
+config LVGL_OBJ_CHART_AXIS_TICK_LABEL_MAX_LEN
+	int "Maximum length of axis label"
+	default 20
+	help
+	  Maximum length of axis label
+endif
 
 config LVGL_OBJ_TABLE
 	bool "Table object"
@@ -347,6 +378,12 @@ config LVGL_OBJ_ROLLER_ANIM_TIME
 	default 200
 	help
 	  Roller animation time in milliseconds
+
+config LVGL_OBJ_ROLLER_INF_PAGES
+	int "Number of pages for infinite roller"
+	default 7
+	help
+	  Number of extra pages in case the roller is infinite
 
 endif
 
