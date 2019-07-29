@@ -783,6 +783,7 @@ next_state:
 		}
 		break;
 	case TCP_CLOSED:
+		fl = 0;
 		tcp_conn_delete(conn);
 		break;
 	case TCP_TIME_WAIT:
