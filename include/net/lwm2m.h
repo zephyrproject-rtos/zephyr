@@ -54,6 +54,7 @@
 #define IPSO_OBJECT_BUZZER_ID				3338
 #define IPSO_OBJECT_TIMER_ID				3340
 #define IPSO_OBJECT_ONOFF_SWITCH_ID			3342
+#define IPSO_OBJECT_PUSH_BUTTON_ID			3347
 
 /**
  * @brief LwM2M context structure to maintain information for a single
