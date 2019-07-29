@@ -7,6 +7,7 @@
 #define ZEPHYR_INCLUDE_LOGGING_LOG_CTRL_H_
 
 #include <logging/log_backend.h>
+#include <kernel.h>
 
 #ifdef __cplusplus
 extern "C" {

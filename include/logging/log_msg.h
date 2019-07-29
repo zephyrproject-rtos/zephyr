@@ -6,9 +6,7 @@
 #ifndef ZEPHYR_INCLUDE_LOGGING_LOG_MSG_H_
 #define ZEPHYR_INCLUDE_LOGGING_LOG_MSG_H_
 
-#include <kernel.h>
 #include <sys/atomic.h>
-#include <assert.h>
 #include <string.h>
 
 #ifdef __cplusplus
@@ -88,17 +86,11 @@ struct log_msg_ids {
 	u16_t source_id : 10;   /*!< Source ID. */
 };
 
-BUILD_ASSERT_MSG((sizeof(struct log_msg_ids) == sizeof(u16_t)),
-		  "Structure must fit in 2 bytes");
-
 /** Part of log message header common to standard and hexdump log message. */
 struct log_msg_generic_hdr {
 	COMMON_PARAM_HDR();
 	u16_t reserved : 14;
 };
-
-BUILD_ASSERT_MSG((sizeof(struct log_msg_generic_hdr) == sizeof(u16_t)),
-		 "Structure must fit in 2 bytes");
 
 /** Part of log message header specific to standard log message. */
 struct log_msg_std_hdr {
@@ -107,17 +99,11 @@ struct log_msg_std_hdr {
 	u16_t nargs    : 4;
 };
 
-BUILD_ASSERT_MSG((sizeof(struct log_msg_std_hdr) == sizeof(u16_t)),
-		 "Structure must fit in 2 bytes");
-
 /** Part of log message header specific to hexdump log message. */
 struct log_msg_hexdump_hdr {
 	COMMON_PARAM_HDR();
 	u16_t length     : LOG_MSG_HEXDUMP_LENGTH_BITS;
 };
-
-BUILD_ASSERT_MSG((sizeof(struct log_msg_hexdump_hdr) == sizeof(u16_t)),
-		 "Structure must fit in 2 bytes");
 
 /** Log message header structure */
 struct log_msg_hdr {
@@ -158,10 +144,6 @@ struct log_msg {
 	} payload;                 /*!< Message data. */
 };
 
-BUILD_ASSERT_MSG((sizeof(union log_msg_head_data) ==
-		  sizeof(struct log_msg_ext_head_data)),
-		  "Structure must be same size");
-
 /** @brief Chunks following message head when message is extended. */
 struct log_msg_cont {
 	struct log_msg_cont *next; /*!< Pointer to the next chunk. */
@@ -176,8 +158,6 @@ union log_msg_chunk {
 	struct log_msg head;
 	struct log_msg_cont cont;
 };
-
-extern struct k_mem_slab log_msg_pool;
 
 /** @brief Function for initialization of the log message pool. */
 void log_msg_pool_init(void);
@@ -327,17 +307,11 @@ void log_msg_hexdump_data_get(struct log_msg *msg,
 
 union log_msg_chunk *log_msg_no_space_handle(void);
 
-static inline union log_msg_chunk *log_msg_chunk_alloc(void)
-{
-	union log_msg_chunk *msg = NULL;
-	int err = k_mem_slab_alloc(&log_msg_pool, (void **)&msg, K_NO_WAIT);
-
-	if (err != 0) {
-		msg = log_msg_no_space_handle();
-	}
-
-	return msg;
-}
+/** @brief Allocate single chunk from the pool.
+ *
+ * @return Pointer to the allocated chunk or NULL if failed to allocate.
+ */
+union log_msg_chunk *log_msg_chunk_alloc(void);
 
 /** @brief Allocate chunk for standard log message.
  *

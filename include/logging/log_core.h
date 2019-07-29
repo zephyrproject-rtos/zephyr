@@ -11,6 +11,7 @@
 #include <sys/util.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdarg.h>
 
 #ifdef __cplusplus
 extern "C" {

@@ -7,7 +7,9 @@
 #define ZEPHYR_INCLUDE_LOGGING_LOG_BACKEND_H_
 
 #include <logging/log_msg.h>
-#include <assert.h>
+#include <stdarg.h>
+#include <sys/__assert.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif

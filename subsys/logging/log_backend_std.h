@@ -8,6 +8,7 @@
 
 #include <logging/log_msg.h>
 #include <logging/log_output.h>
+#include <irq.h>
 
 #ifdef __cplusplus
 extern "C" {
