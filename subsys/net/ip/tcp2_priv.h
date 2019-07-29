@@ -118,6 +118,11 @@ static struct net_pkt *tcp_pkt_alloc(size_t len)
 	(_conn)->state = _s;					\
 } while (0)
 
+#define TCPOPT_PAD	0
+#define TCPOPT_NOP	1
+#define TCPOPT_MAXSEG	2
+#define TCPOPT_WINDOW	3
+
 enum pkt_addr {
 	SRC = 1,
 	DST = 0

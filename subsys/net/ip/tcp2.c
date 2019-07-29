@@ -393,13 +393,65 @@ static const char *tcp_conn_state(struct tcp *conn, struct net_pkt *pkt)
 	return buf;
 }
 
+static bool tcp_options_check(void *buf, ssize_t len)
+{
+	bool result = len > 0 && ((len % 4) == 0) ? true : false;
+	u8_t *options = buf, opt, opt_len;
+
+	tcp_dbg("len=%zd", len);
+
+	for ( ; len >= 2; options += opt_len, len -= opt_len) {
+		opt = options[0];
+		opt_len = options[1];
+
+		tcp_dbg("opt: %hu, opt_len: %hu", opt, opt_len);
+
+		if (TCPOPT_PAD == opt) {
+			break;
+		}
+		if (TCPOPT_NOP == opt) {
+			opt_len = 1;
+		} else if (opt_len < 2 || opt_len > len) {
+			break;
+		}
+
+		switch (opt) {
+		case TCPOPT_MAXSEG:
+			if (4 != opt_len) {
+				result = false;
+				goto end;
+			}
+			break;
+		case TCPOPT_WINDOW:
+			if (3 != opt_len) {
+				result = false;
+				goto end;
+			}
+			break;
+		default:
+			continue;
+		}
+	}
+end:
+	if (false == result) {
+		tcp_warn("Invalid TCP options");
+	}
+
+	return result;
+}
+
 static size_t tcp_data_len(struct net_pkt *pkt)
 {
 	struct net_ipv4_hdr *ip = ip_get(pkt);
 	struct tcphdr *th = th_get(pkt);
-	ssize_t len = ntohs(ip->len) - sizeof(*ip) - th->th_off * 4;
+	u8_t off = th->th_off;
+	ssize_t data_len = ntohs(ip->len) - sizeof(*ip) - off * 4;
 
-	return (size_t) len;
+	if (off > 5 && false == tcp_options_check((th + 1), (off - 5) * 4)) {
+		data_len = 0;
+	}
+
+	return data_len > 0 ? data_len : 0;
 }
 
 static size_t tcp_data_get(struct tcp *conn, struct net_pkt *pkt)
