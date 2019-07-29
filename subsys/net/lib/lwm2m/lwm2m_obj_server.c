@@ -98,6 +98,32 @@ static int update_trigger_cb(u16_t obj_inst_id)
 #endif
 }
 
+static s32_t server_get_instance_s32(u16_t obj_inst_id, s32_t *data,
+				     s32_t default_value)
+{
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(inst); i++) {
+		if (inst[i].obj && inst[i].obj_inst_id == obj_inst_id) {
+			return data[i];
+		}
+	}
+
+	return default_value;
+}
+
+s32_t lwm2m_server_get_pmin(u16_t obj_inst_id)
+{
+	return server_get_instance_s32(obj_inst_id, default_min_period,
+				       CONFIG_LWM2M_SERVER_DEFAULT_PMIN);
+}
+
+s32_t lwm2m_server_get_pmax(u16_t obj_inst_id)
+{
+	return server_get_instance_s32(obj_inst_id, default_max_period,
+				       CONFIG_LWM2M_SERVER_DEFAULT_PMAX);
+}
+
 static struct lwm2m_engine_obj_inst *server_create(u16_t obj_inst_id)
 {
 	int index, i = 0;
@@ -128,8 +154,8 @@ static struct lwm2m_engine_obj_inst *server_create(u16_t obj_inst_id)
 	server_flag_store_notify[index] = 0U;
 	server_id[index] = index + 1;
 	lifetime[index] = CONFIG_LWM2M_ENGINE_DEFAULT_LIFETIME;
-	default_min_period[index] = 0U;
-	default_max_period[index] = 0U;
+	default_min_period[index] = CONFIG_LWM2M_SERVER_DEFAULT_PMIN;
+	default_max_period[index] = CONFIG_LWM2M_SERVER_DEFAULT_PMAX;
 	disabled_timeout[index] = 86400U;
 	strcpy(transport_binding[index], "U");
 
