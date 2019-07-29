@@ -10,6 +10,7 @@ menu "Networking"
 
 config NET_BUF
 	bool "Network buffer support"
+	select SYS_TIMEOUT_LEGACY_API
 	help
 	  This option enables support for generic network protocol
 	  buffers.

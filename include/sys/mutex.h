@@ -19,6 +19,7 @@
 #ifdef CONFIG_USERSPACE
 #include <sys/atomic.h>
 #include <zephyr/types.h>
+#include <sys_clock.h>
 
 struct sys_mutex {
 	/* Currently unused, but will be used to store state for fast mutexes

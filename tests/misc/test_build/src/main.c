@@ -87,4 +87,4 @@ void threadA(void *dummy1, void *dummy2, void *dummy3)
 }
 
 K_THREAD_DEFINE(threadA_id, STACKSIZE, threadA, NULL, NULL, NULL,
-		PRIORITY, 0, K_NO_WAIT);
+		PRIORITY, 0, 0);
