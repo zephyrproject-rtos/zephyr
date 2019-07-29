@@ -8,8 +8,8 @@
 
 static const struct nxp_mpu_region mpu_regions[] = {
 	/* Region 0 */
-	/* Debugger access can't be disabled; ENET devices will not be able to
-	 * access RAM when it's region is dynamically disabled in NXP MPU.
+	/* Debugger access can't be disabled; ENET and USB devices will not be able
+	 * to access RAM when their regions are dynamically disabled in NXP MPU.
 	 */
 	MPU_REGION_ENTRY("DEBUGGER_0",
 			 0,
