@@ -81,24 +81,11 @@ SECTIONS
 
 
 	GROUP_START(ROMABLE_REGION)
-#ifdef CONFIG_REALMODE
-	/* 16-bit sections */
-	. = PHYS_RAM_ADDR;
 
-	SECTION_PROLOGUE(boot,,)
-	{
-	*(.boot)
-	. = ALIGN(16);
-	} GROUP_LINK_IN(ROMABLE_REGION)
-#endif
 	. = ALIGN(8);
 
 	_image_rom_start = PHYS_LOAD_ADDR;
-#ifndef CONFIG_REALMODE
 	_image_text_start = PHYS_LOAD_ADDR;
-#else
-	_image_text_start = .;
-#endif
 	SECTION_PROLOGUE(_TEXT_SECTION_NAME,,)
 	{
 	. = CONFIG_TEXT_SECTION_OFFSET;
