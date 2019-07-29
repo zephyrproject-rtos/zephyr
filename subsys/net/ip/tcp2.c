@@ -685,6 +685,12 @@ static void tcp_in(struct tcp *conn, struct net_pkt *pkt)
 
 	tcp_dbg("%s", tcp_conn_state(conn, pkt));
 
+	if (th && th->th_off < 5) {
+		tcp_out(conn, RST);
+		conn_state(conn, TCP_CLOSED);
+		goto next_state;
+	}
+
 	if (FL(&fl, &, RST)) {
 		conn_state(conn, TCP_CLOSED);
 	}
