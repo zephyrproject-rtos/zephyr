@@ -43,6 +43,20 @@ config LWM2M_IPSO_LIGHT_CONTROL_INSTANCE_COUNT
 	  This setting establishes the total count of IPSO Light Control
 	  instances available to the LWM2M client.
 
+config LWM2M_IPSO_BUZZER
+	bool "IPSO Buzzer Support"
+	help
+	  This Object is used to actuate an audible alarm such as a buzzer,
+	  beeper, or vibration alarm.
+
+config LWM2M_IPSO_BUZZER_INSTANCE_COUNT
+	int "Maximum # of IPSO Buzzer instances"
+	default 1
+	depends on LWM2M_IPSO_BUZZER
+	help
+	  This setting establishes the total count of IPSO Buzzer
+	  instances available to the LWM2M client.
+
 config LWM2M_IPSO_TIMER
 	bool "IPSO Light Control Support"
 	help
