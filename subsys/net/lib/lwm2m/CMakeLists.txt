@@ -39,6 +39,9 @@ zephyr_library_sources_ifdef(CONFIG_LWM2M_IPSO_TEMP_SENSOR
 zephyr_library_sources_ifdef(CONFIG_LWM2M_IPSO_LIGHT_CONTROL
     ipso_light_control.c
     )
+zephyr_library_sources_ifdef(CONFIG_LWM2M_IPSO_BUZZER
+    ipso_buzzer.c
+    )
 zephyr_library_sources_ifdef(CONFIG_LWM2M_IPSO_TIMER
     ipso_timer.c
     )
