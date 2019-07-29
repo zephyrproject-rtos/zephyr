@@ -702,8 +702,7 @@ const struct lwm2m_reader json_reader = {
 	.get_opaque = get_opaque,
 };
 
-int do_read_op_json(struct lwm2m_engine_obj *obj, struct lwm2m_message *msg,
-		    int content_format)
+int do_read_op_json(struct lwm2m_message *msg, int content_format)
 {
 	struct json_out_formatter_data fd;
 	int ret;
@@ -712,7 +711,7 @@ int do_read_op_json(struct lwm2m_engine_obj *obj, struct lwm2m_message *msg,
 	engine_set_out_user_data(&msg->out, &fd);
 	/* save the level for output processing */
 	fd.path_level = msg->path.level;
-	ret = lwm2m_perform_read_op(obj, msg, content_format);
+	ret = lwm2m_perform_read_op(msg, content_format);
 	engine_clear_out_user_data(&msg->out);
 
 	return ret;
@@ -762,7 +761,7 @@ static int parse_path(const u8_t *buf, u16_t buflen,
 	return ret;
 }
 
-int do_write_op_json(struct lwm2m_engine_obj *obj, struct lwm2m_message *msg)
+int do_write_op_json(struct lwm2m_message *msg)
 {
 	struct lwm2m_engine_obj_field *obj_field;
 	struct lwm2m_engine_obj_inst *obj_inst = NULL;
@@ -842,7 +841,8 @@ int do_write_op_json(struct lwm2m_engine_obj *obj, struct lwm2m_message *msg)
 			}
 
 			obj_field = lwm2m_get_engine_obj_field(
-							obj, msg->path.res_id);
+							obj_inst->obj,
+							msg->path.res_id);
 			/*
 			 * if obj_field is not found,
 			 * treat as an optional resource

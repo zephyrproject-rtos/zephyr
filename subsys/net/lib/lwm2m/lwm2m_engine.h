@@ -81,8 +81,7 @@ int lwm2m_send_message(struct lwm2m_message *msg);
 
 u16_t lwm2m_get_rd_data(u8_t *client_data, u16_t size);
 
-int lwm2m_perform_read_op(struct lwm2m_engine_obj *obj,
-			  struct lwm2m_message *msg, u16_t content_format);
+int lwm2m_perform_read_op(struct lwm2m_message *msg, u16_t content_format);
 
 int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst,
 			struct lwm2m_engine_res_inst *res,

@@ -776,15 +776,14 @@ const struct lwm2m_reader oma_tlv_reader = {
 	.get_opaque = get_opaque,
 };
 
-int do_read_op_tlv(struct lwm2m_engine_obj *obj, struct lwm2m_message *msg,
-		   int content_format)
+int do_read_op_tlv(struct lwm2m_message *msg, int content_format)
 {
 	struct tlv_out_formatter_data fd;
 	int ret;
 
 	(void)memset(&fd, 0, sizeof(fd));
 	engine_set_out_user_data(&msg->out, &fd);
-	ret = lwm2m_perform_read_op(obj, msg, content_format);
+	ret = lwm2m_perform_read_op(msg, content_format);
 	engine_clear_out_user_data(&msg->out);
 	return ret;
 }
@@ -869,7 +868,7 @@ error:
 	return ret;
 }
 
-int do_write_op_tlv(struct lwm2m_engine_obj *obj, struct lwm2m_message *msg)
+int do_write_op_tlv(struct lwm2m_message *msg)
 {
 	struct lwm2m_engine_obj_inst *obj_inst = NULL;
 	size_t len;
