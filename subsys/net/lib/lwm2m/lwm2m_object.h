@@ -192,32 +192,112 @@ struct lwm2m_engine_obj {
 	u16_t max_instance_count;
 };
 
-#define INIT_OBJ_RES(res_var, index_var, id_val, multi_var, \
-		     data_val, data_val_len, r_cb, pre_w_cb, post_w_cb, ex_cb) \
-	res_var[index_var].res_id = id_val; \
-	res_var[index_var].multi_count_var = multi_var; \
-	res_var[index_var].data_ptr = data_val; \
-	res_var[index_var].data_len = data_val_len; \
-	res_var[index_var].read_cb = r_cb; \
-	res_var[index_var].pre_write_cb = pre_w_cb; \
-	res_var[index_var].post_write_cb = post_w_cb; \
-	res_var[index_var++].execute_cb = ex_cb
+/* Resource instances with this value are considered "not created" yet */
+#define RES_INSTANCE_NOT_CREATED 65535
 
-#define INIT_OBJ_RES_MULTI_DATA(res_var, index_var, id_val, multi_var, \
-				data_val, data_val_len) \
-	INIT_OBJ_RES(res_var, index_var, id_val, multi_var, data_val, \
-		     data_val_len, NULL, NULL, NULL, NULL)
+/* Resource macros */
+#define _INIT_OBJ_RES(_id, _r_ptr, _r_idx, _ri_ptr, _ri_count, \
+		      _r_cb, _pre_w_cb, _post_w_cb, _ex_cb) \
+	_r_ptr[_r_idx].res_id = _id; \
+	_r_ptr[_r_idx].res_instances = _ri_ptr; \
+	_r_ptr[_r_idx].res_inst_count = _ri_count; \
+	_r_ptr[_r_idx].read_cb = _r_cb; \
+	_r_ptr[_r_idx].pre_write_cb = _pre_w_cb; \
+	_r_ptr[_r_idx].post_write_cb = _post_w_cb; \
+	_r_ptr[_r_idx].execute_cb = _ex_cb
 
-#define INIT_OBJ_RES_DATA(res_var, index_var, id_val, data_val, data_val_len) \
-	INIT_OBJ_RES_MULTI_DATA(res_var, index_var, id_val, NULL, \
-				data_val, data_val_len)
+#define _INIT_OBJ_RES_INST(_ri_ptr, _ri_idx, _ri_count, _ri_create, \
+			   _data_ptr, _data_len) \
+	do { \
+		if (_ri_ptr != NULL && _ri_count > 0) { \
+			for (int _i = 0; _i < _ri_count; _i++) { \
+				_ri_ptr[_ri_idx + _i].data_ptr = \
+						(_data_ptr + _i); \
+				_ri_ptr[_ri_idx + _i].data_len = \
+						_data_len; \
+				if (_ri_create) { \
+					_ri_ptr[_ri_idx + _i].res_inst_id = \
+						_i; \
+				} else { \
+					_ri_ptr[_ri_idx + _i].res_inst_id = \
+						RES_INSTANCE_NOT_CREATED; \
+				} \
+			} \
+		} \
+		_ri_idx += _ri_count; \
+	} while (false)
 
-#define INIT_OBJ_RES_DUMMY(res_var, index_var, id_val) \
-	INIT_OBJ_RES_MULTI_DATA(res_var, index_var, id_val, NULL, NULL, 0)
+#define _INIT_OBJ_RES_INST_OPT(_ri_ptr, _ri_idx, _ri_count, _ri_create) \
+	do { \
+		if (_ri_count > 0) { \
+			for (int _i = 0; _i < _ri_count; _i++) { \
+				_ri_ptr[_ri_idx + _i].data_ptr = NULL; \
+				_ri_ptr[_ri_idx + _i].data_len = 0; \
+				if (_ri_create) { \
+					_ri_ptr[_ri_idx + _i].res_inst_id = \
+						_i; \
+				} else { \
+					_ri_ptr[_ri_idx + _i].res_inst_id = \
+						RES_INSTANCE_NOT_CREATED; \
+				} \
+			} \
+		} \
+		_ri_idx += _ri_count; \
+	} while (false)
 
-#define INIT_OBJ_RES_EXECUTE(res_var, index_var, id_val, ex_cb) \
-	INIT_OBJ_RES(res_var, index_var, id_val, NULL, NULL, 0, \
-		     NULL, NULL, NULL, ex_cb)
+#define INIT_OBJ_RES(_id, _r_ptr, _r_idx, \
+		     _ri_ptr, _ri_idx, _ri_count, _ri_create, \
+		     _data_ptr, _data_len, \
+		     _r_cb, _pre_w_cb, _post_w_cb, _ex_cb) \
+	do { \
+		_INIT_OBJ_RES(_id, _r_ptr, _r_idx, \
+			      (_ri_ptr + _ri_idx), _ri_count, \
+			      _r_cb, _pre_w_cb, _post_w_cb, _ex_cb); \
+		_INIT_OBJ_RES_INST(_ri_ptr, _ri_idx, _ri_count, _ri_create, \
+				   _data_ptr, _data_len); \
+	++_r_idx; \
+	} while (false)
+
+
+#define INIT_OBJ_RES_OPT(_id, _r_ptr, _r_idx, \
+			 _ri_ptr, _ri_idx, _ri_count, _ri_create, \
+			 _r_cb, _pre_w_cb, _post_w_cb, _ex_cb) \
+	do { \
+		_INIT_OBJ_RES(_id, _r_ptr, _r_idx, \
+			      (_ri_ptr + _ri_idx), _ri_count, \
+			      _r_cb, _pre_w_cb, _post_w_cb, _ex_cb); \
+		_INIT_OBJ_RES_INST_OPT(_ri_ptr, _ri_idx, _ri_count, _ri_create); \
+		++_r_idx; \
+	} while (false)
+
+#define INIT_OBJ_RES_MULTI_DATA(_id, _r_ptr, _r_idx, \
+				_ri_ptr, _ri_idx, _ri_count, _ri_create, \
+				_data_ptr, _data_len) \
+	INIT_OBJ_RES(_id, _r_ptr, _r_idx, \
+		     _ri_ptr, _ri_idx, _ri_count, _ri_create, \
+		     _data_ptr, _data_len, NULL, NULL, NULL, NULL)
+
+#define INIT_OBJ_RES_MULTI_OPTDATA(_id, _r_ptr, _r_idx, \
+				   _ri_ptr, _ri_idx, _ri_count, _ri_create) \
+	INIT_OBJ_RES_OPT(_id, _r_ptr, _r_idx, \
+			 _ri_ptr, _ri_idx, _ri_count, _ri_create, \
+			 NULL, NULL, NULL, NULL)
+
+#define INIT_OBJ_RES_DATA(_id, _r_ptr, _r_idx, _ri_ptr, _ri_idx, \
+			  _data_ptr, _data_len) \
+	INIT_OBJ_RES(_id, _r_ptr, _r_idx, _ri_ptr, _ri_idx, 1U, true, \
+		     _data_ptr, _data_len, NULL, NULL, NULL, NULL)
+
+#define INIT_OBJ_RES_OPTDATA(_id, _r_ptr, _r_idx, _ri_ptr, _ri_idx) \
+	INIT_OBJ_RES_OPT(_id, _r_ptr, _r_idx, _ri_ptr, _ri_idx, 1U, true, \
+			 NULL, NULL, NULL, NULL)
+
+#define INIT_OBJ_RES_EXECUTE(_id, _r_ptr, _r_idx, _ex_cb) \
+	do { \
+		_INIT_OBJ_RES(_id, _r_ptr, _r_idx, NULL, 0, \
+			      NULL, NULL, NULL, _ex_cb); \
+		++_r_idx; \
+	} while (false)
 
 
 #define LWM2M_ATTR_PMIN	0
@@ -241,17 +321,21 @@ struct lwm2m_attr {
 };
 
 struct lwm2m_engine_res_inst {
-	/* callbacks set by user code on obj instance */
-	lwm2m_engine_get_data_cb_t	read_cb;
-	lwm2m_engine_get_data_cb_t	pre_write_cb;
-	lwm2m_engine_set_data_cb_t	post_write_cb;
-	lwm2m_engine_user_cb_t		execute_cb;
-
-	u8_t  *multi_count_var;
 	void  *data_ptr;
 	u16_t data_len;
-	u16_t res_id;
+	u16_t res_inst_id; /* 65535 == not "created" */
 	u8_t  data_flags;
+};
+
+struct lwm2m_engine_res {
+	lwm2m_engine_get_data_cb_t		read_cb;
+	lwm2m_engine_get_data_cb_t		pre_write_cb;
+	lwm2m_engine_set_data_cb_t		post_write_cb;
+	lwm2m_engine_user_cb_t			execute_cb;
+
+	struct lwm2m_engine_res_inst *res_instances;
+	u16_t res_id;
+	u8_t  res_inst_count;
 };
 
 struct lwm2m_engine_obj_inst {
@@ -259,12 +343,24 @@ struct lwm2m_engine_obj_inst {
 	sys_snode_t node;
 
 	struct lwm2m_engine_obj *obj;
-	struct lwm2m_engine_res_inst *resources;
+	struct lwm2m_engine_res *resources;
 
 	/* object instance member data */
 	u16_t obj_inst_id;
 	u16_t resource_count;
 };
+
+/* Initialize resource instances prior to use */
+static inline void init_res_instance(struct lwm2m_engine_res_inst *ri,
+				     size_t ri_len)
+{
+	size_t i;
+
+	memset(ri, 0, sizeof(*ri) * ri_len);
+	for (i = 0; i < ri_len; i++) {
+		ri[i].res_inst_id = RES_INSTANCE_NOT_CREATED;
+	}
+}
 
 struct lwm2m_output_context {
 	const struct lwm2m_writer *writer;

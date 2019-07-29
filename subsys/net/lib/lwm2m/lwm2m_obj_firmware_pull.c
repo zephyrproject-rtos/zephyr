@@ -238,7 +238,7 @@ do_firmware_transfer_reply_cb(const struct coap_packet *response,
 	u8_t tkl;
 	u16_t payload_len, payload_offset, len;
 	struct coap_packet *check_response = (struct coap_packet *)response;
-	struct lwm2m_engine_res_inst *res = NULL;
+	struct lwm2m_engine_res *res = NULL;
 	lwm2m_engine_set_data_cb_t write_cb;
 	size_t write_buflen;
 	u8_t resp_code, *write_buf;
@@ -311,12 +311,12 @@ do_firmware_transfer_reply_cb(const struct coap_packet *response,
 		}
 
 		/* get buffer data */
-		write_buf = res->data_ptr;
-		write_buflen = res->data_len;
+		write_buf = res->res_instances->data_ptr;
+		write_buflen = res->res_instances->data_len;
 
 		/* check for user override to buffer */
 		if (res->pre_write_cb) {
-			write_buf = res->pre_write_cb(0, &write_buflen);
+			write_buf = res->pre_write_cb(0, 0, 0, &write_buflen);
 		}
 
 		write_cb = lwm2m_firmware_get_write_cb();
@@ -335,7 +335,8 @@ do_firmware_transfer_reply_cb(const struct coap_packet *response,
 					goto error;
 				}
 
-				ret = write_cb(0, write_buf, len, last_block,
+				ret = write_cb(0, 0, 0,
+					       write_buf, len, last_block,
 					       firmware_block_ctx.total_size);
 				if (ret < 0) {
 					goto error;

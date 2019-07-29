@@ -778,7 +778,7 @@ int lwm2m_delete_obj_inst(u16_t obj_id, u16_t obj_inst_id)
 	for (i = 0; i < obj_inst->resource_count; i++) {
 		clear_attrs(&obj_inst->resources[i]);
 		(void)memset(obj_inst->resources + i, 0,
-			     sizeof(struct lwm2m_engine_res_inst));
+			     sizeof(struct lwm2m_engine_res));
 	}
 
 	clear_attrs(obj_inst);
@@ -1246,11 +1246,13 @@ static int string_to_path(char *pathstr, struct lwm2m_obj_path *path,
 static int path_to_objs(const struct lwm2m_obj_path *path,
 			struct lwm2m_engine_obj_inst **obj_inst,
 			struct lwm2m_engine_obj_field **obj_field,
-			struct lwm2m_engine_res_inst **res)
+			struct lwm2m_engine_res **res,
+			struct lwm2m_engine_res_inst **res_inst)
 {
 	struct lwm2m_engine_obj_inst *oi;
 	struct lwm2m_engine_obj_field *of;
-	struct lwm2m_engine_res_inst *r = NULL;
+	struct lwm2m_engine_res *r = NULL;
+	struct lwm2m_engine_res_inst *ri = NULL;
 	int i;
 
 	if (!path) {
@@ -1283,9 +1285,18 @@ static int path_to_objs(const struct lwm2m_obj_path *path,
 	}
 
 	if (!r) {
-		LOG_ERR("res instance %d not found", path->res_id);
+		LOG_ERR("resource %d not found", path->res_id);
 		return -ENOENT;
 	}
+
+	for (i = 0; i < r->res_inst_count; i++) {
+		if (r->res_instances[i].res_inst_id == path->res_inst_id) {
+			ri = &r->res_instances[i];
+			break;
+		}
+	}
+
+	/* specifically don't complain about missing resource instance */
 
 	if (obj_inst) {
 		*obj_inst = oi;
@@ -1297,6 +1308,10 @@ static int path_to_objs(const struct lwm2m_obj_path *path,
 
 	if (res) {
 		*res = r;
+	}
+
+	if (ri && res_inst) {
+		*res_inst = ri;
 	}
 
 	return 0;
@@ -1328,7 +1343,7 @@ int lwm2m_engine_set_res_data(char *pathstr, void *data_ptr, u16_t data_len,
 			      u8_t data_flags)
 {
 	struct lwm2m_obj_path path;
-	struct lwm2m_engine_res_inst *res = NULL;
+	struct lwm2m_engine_res_inst *res_inst = NULL;
 	int ret = 0;
 
 	/* translate path -> path_obj */
@@ -1338,20 +1353,25 @@ int lwm2m_engine_set_res_data(char *pathstr, void *data_ptr, u16_t data_len,
 	}
 
 	if (path.level < 3) {
-		LOG_ERR("path must have 3 parts");
+		LOG_ERR("path must have at least 3 parts");
 		return -EINVAL;
 	}
 
 	/* look up resource obj */
-	ret = path_to_objs(&path, NULL, NULL, &res);
+	ret = path_to_objs(&path, NULL, NULL, NULL, &res_inst);
 	if (ret < 0) {
 		return ret;
 	}
 
+	if (!res_inst) {
+		LOG_ERR("res instance %d not found", path.res_inst_id);
+		return -ENOENT;
+	}
+
 	/* assign data elements */
-	res->data_ptr = data_ptr;
-	res->data_len = data_len;
-	res->data_flags = data_flags;
+	res_inst->data_ptr = data_ptr;
+	res_inst->data_len = data_len;
+	res_inst->data_flags = data_flags;
 
 	return ret;
 }
@@ -1361,7 +1381,8 @@ static int lwm2m_engine_set(char *pathstr, void *value, u16_t len)
 	struct lwm2m_obj_path path;
 	struct lwm2m_engine_obj_inst *obj_inst;
 	struct lwm2m_engine_obj_field *obj_field;
-	struct lwm2m_engine_res_inst *res = NULL;
+	struct lwm2m_engine_res *res = NULL;
+	struct lwm2m_engine_res_inst *res_inst = NULL;
 	void *data_ptr = NULL;
 	size_t data_len = 0;
 	int ret = 0;
@@ -1376,44 +1397,46 @@ static int lwm2m_engine_set(char *pathstr, void *value, u16_t len)
 	}
 
 	if (path.level < 3) {
-		LOG_ERR("path must have 3 parts");
+		LOG_ERR("path must have at least 3 parts");
 		return -EINVAL;
 	}
 
 	/* look up resource obj */
-	ret = path_to_objs(&path, &obj_inst, &obj_field, &res);
+	ret = path_to_objs(&path, &obj_inst, &obj_field, &res, &res_inst);
 	if (ret < 0) {
 		return ret;
 	}
 
-	if (!res) {
-		LOG_ERR("res instance %d not found", path.res_id);
+	if (!res_inst) {
+		LOG_ERR("res instance %d not found", path.res_inst_id);
 		return -ENOENT;
 	}
 
-	if (LWM2M_HAS_RES_FLAG(res, LWM2M_RES_DATA_FLAG_RO)) {
-		LOG_ERR("res data pointer is read-only");
+	if (LWM2M_HAS_RES_FLAG(res_inst, LWM2M_RES_DATA_FLAG_RO)) {
+		LOG_ERR("res instance data pointer is read-only");
 		return -EACCES;
 	}
 
 	/* setup initial data elements */
-	data_ptr = res->data_ptr;
-	data_len = res->data_len;
+	data_ptr = res_inst->data_ptr;
+	data_len = res_inst->data_len;
 
 	/* allow user to override data elements via callback */
 	if (res->pre_write_cb) {
-		data_ptr = res->pre_write_cb(obj_inst->obj_inst_id, &data_len);
+		data_ptr = res->pre_write_cb(obj_inst->obj_inst_id,
+					     res->res_id, res_inst->res_inst_id,
+					     &data_len);
 	}
 
 	if (!data_ptr) {
-		LOG_ERR("res data pointer is NULL");
+		LOG_ERR("res instance data pointer is NULL");
 		return -EINVAL;
 	}
 
 	/* check length (note: we add 1 to string length for NULL pad) */
-	if (len > res->data_len -
+	if (len > res_inst->data_len -
 		(obj_field->data_type == LWM2M_RES_TYPE_STRING ? 1 : 0)) {
-		LOG_ERR("length %u is too long for resource %d data",
+		LOG_ERR("length %u is too long for res instance %d data",
 			len, path.res_id);
 		return -ENOMEM;
 	}
@@ -1491,8 +1514,9 @@ static int lwm2m_engine_set(char *pathstr, void *value, u16_t len)
 	}
 
 	if (res->post_write_cb) {
-		ret = res->post_write_cb(obj_inst->obj_inst_id, data_ptr, len,
-					 false, 0);
+		ret = res->post_write_cb(obj_inst->obj_inst_id,
+					 res->res_id, res_inst->res_inst_id,
+					 data_ptr, len, false, 0);
 	}
 
 	if (changed) {
@@ -1575,7 +1599,7 @@ int lwm2m_engine_get_res_data(char *pathstr, void **data_ptr, u16_t *data_len,
 			      u8_t *data_flags)
 {
 	struct lwm2m_obj_path path;
-	struct lwm2m_engine_res_inst *res = NULL;
+	struct lwm2m_engine_res_inst *res_inst = NULL;
 	int ret = 0;
 
 	/* translate path -> path_obj */
@@ -1585,19 +1609,24 @@ int lwm2m_engine_get_res_data(char *pathstr, void **data_ptr, u16_t *data_len,
 	}
 
 	if (path.level < 3) {
-		LOG_ERR("path must have 3 parts");
+		LOG_ERR("path must have at least 3 parts");
 		return -EINVAL;
 	}
 
 	/* look up resource obj */
-	ret = path_to_objs(&path, NULL, NULL, &res);
+	ret = path_to_objs(&path, NULL, NULL, NULL, &res_inst);
 	if (ret < 0) {
 		return ret;
 	}
 
-	*data_ptr = res->data_ptr;
-	*data_len = res->data_len;
-	*data_flags = res->data_flags;
+	if (!res_inst) {
+		LOG_ERR("res instance %d not found", path.res_inst_id);
+		return -ENOENT;
+	}
+
+	*data_ptr = res_inst->data_ptr;
+	*data_len = res_inst->data_len;
+	*data_flags = res_inst->data_flags;
 
 	return 0;
 }
@@ -1608,7 +1637,8 @@ static int lwm2m_engine_get(char *pathstr, void *buf, u16_t buflen)
 	struct lwm2m_obj_path path;
 	struct lwm2m_engine_obj_inst *obj_inst;
 	struct lwm2m_engine_obj_field *obj_field;
-	struct lwm2m_engine_res_inst *res = NULL;
+	struct lwm2m_engine_res *res = NULL;
+	struct lwm2m_engine_res_inst *res_inst = NULL;
 	void *data_ptr = NULL;
 	size_t data_len = 0;
 
@@ -1621,28 +1651,30 @@ static int lwm2m_engine_get(char *pathstr, void *buf, u16_t buflen)
 	}
 
 	if (path.level < 3) {
-		LOG_ERR("path must have 3 parts");
+		LOG_ERR("path must have at least 3 parts");
 		return -EINVAL;
 	}
 
 	/* look up resource obj */
-	ret = path_to_objs(&path, &obj_inst, &obj_field, &res);
+	ret = path_to_objs(&path, &obj_inst, &obj_field, &res, &res_inst);
 	if (ret < 0) {
 		return ret;
 	}
 
-	if (!res) {
-		LOG_ERR("res instance %d not found", path.res_id);
+	if (!res_inst) {
+		LOG_ERR("res instance %d not found", path.res_inst_id);
 		return -ENOENT;
 	}
 
 	/* setup initial data elements */
-	data_ptr = res->data_ptr;
-	data_len = res->data_len;
+	data_ptr = res_inst->data_ptr;
+	data_len = res_inst->data_len;
 
 	/* allow user to override data elements via callback */
 	if (res->read_cb) {
-		data_ptr = res->read_cb(obj_inst->obj_inst_id, &data_len);
+		data_ptr = res->read_cb(obj_inst->obj_inst_id,
+					res->res_id, res_inst->res_inst_id,
+					&data_len);
 	}
 
 	/* TODO: handle data_len > buflen case */
@@ -1797,7 +1829,7 @@ int lwm2m_engine_get_float64(char *pathstr, float64_value_t *buf)
 	return lwm2m_engine_get(pathstr, buf, sizeof(float64_value_t));
 }
 
-int lwm2m_engine_get_resource(char *pathstr, struct lwm2m_engine_res_inst **res)
+int lwm2m_engine_get_resource(char *pathstr, struct lwm2m_engine_res **res)
 {
 	int ret;
 	struct lwm2m_obj_path path;
@@ -1812,14 +1844,100 @@ int lwm2m_engine_get_resource(char *pathstr, struct lwm2m_engine_res_inst **res)
 		return -EINVAL;
 	}
 
-	return path_to_objs(&path, NULL, NULL, res);
+	return path_to_objs(&path, NULL, NULL, res, NULL);
+}
+
+int lwm2m_engine_create_res_inst(char *pathstr)
+{
+	int ret, i;
+	struct lwm2m_engine_res *res = NULL;
+	struct lwm2m_engine_res_inst *res_inst = NULL;
+	struct lwm2m_obj_path path;
+
+	ret = string_to_path(pathstr, &path, '/');
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (path.level < 4) {
+		LOG_ERR("path must have 4 parts");
+		return -EINVAL;
+	}
+
+	ret = path_to_objs(&path, NULL, NULL, &res, &res_inst);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (!res) {
+		LOG_ERR("resource %u not found", path.res_id);
+		return -ENOENT;
+	}
+
+	if (res_inst && res_inst->res_inst_id != RES_INSTANCE_NOT_CREATED) {
+		LOG_ERR("res instance %u already exists", path.res_inst_id);
+		return -EINVAL;
+	}
+
+	if (!res->res_instances || res->res_inst_count == 0) {
+		LOG_ERR("no available res instances");
+		return -ENOMEM;
+	}
+
+	for (i = 0; i < res->res_inst_count; i++) {
+		if (res->res_instances[i].res_inst_id ==
+		    RES_INSTANCE_NOT_CREATED) {
+			break;
+		}
+	}
+
+	if (i >= res->res_inst_count) {
+		LOG_ERR("no available res instances");
+		return -ENOMEM;
+	}
+
+	res->res_instances[i].res_inst_id = path.res_inst_id;
+	return 0;
+}
+
+int lwm2m_engine_delete_res_inst(char *pathstr)
+{
+	int ret;
+	struct lwm2m_engine_res_inst *res_inst = NULL;
+	struct lwm2m_obj_path path;
+
+	ret = string_to_path(pathstr, &path, '/');
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (path.level < 4) {
+		LOG_ERR("path must have 4 parts");
+		return -EINVAL;
+	}
+
+	ret = path_to_objs(&path, NULL, NULL, NULL, &res_inst);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (!res_inst) {
+		LOG_ERR("res instance %u not found", path.res_inst_id);
+		return -ENOENT;
+	}
+
+	res_inst->data_ptr = NULL;
+	res_inst->data_len = 0U;
+	res_inst->res_inst_id = RES_INSTANCE_NOT_CREATED;
+
+	return 0;
 }
 
 int lwm2m_engine_register_read_callback(char *pathstr,
 					lwm2m_engine_get_data_cb_t cb)
 {
 	int ret;
-	struct lwm2m_engine_res_inst *res = NULL;
+	struct lwm2m_engine_res *res = NULL;
 
 	ret = lwm2m_engine_get_resource(pathstr, &res);
 	if (ret < 0) {
@@ -1834,7 +1952,7 @@ int lwm2m_engine_register_pre_write_callback(char *pathstr,
 					     lwm2m_engine_get_data_cb_t cb)
 {
 	int ret;
-	struct lwm2m_engine_res_inst *res = NULL;
+	struct lwm2m_engine_res *res = NULL;
 
 	ret = lwm2m_engine_get_resource(pathstr, &res);
 	if (ret < 0) {
@@ -1849,7 +1967,7 @@ int lwm2m_engine_register_post_write_callback(char *pathstr,
 					 lwm2m_engine_set_data_cb_t cb)
 {
 	int ret;
-	struct lwm2m_engine_res_inst *res = NULL;
+	struct lwm2m_engine_res *res = NULL;
 
 	ret = lwm2m_engine_get_resource(pathstr, &res);
 	if (ret < 0) {
@@ -1864,7 +1982,7 @@ int lwm2m_engine_register_exec_callback(char *pathstr,
 					lwm2m_engine_user_cb_t cb)
 {
 	int ret;
-	struct lwm2m_engine_res_inst *res = NULL;
+	struct lwm2m_engine_res *res = NULL;
 
 	ret = lwm2m_engine_get_resource(pathstr, &res);
 	if (ret < 0) {
@@ -1908,11 +2026,11 @@ int lwm2m_engine_register_delete_callback(u16_t obj_id,
 /* generic data handlers */
 
 static int lwm2m_read_handler(struct lwm2m_engine_obj_inst *obj_inst,
-			      struct lwm2m_engine_res_inst *res,
+			      struct lwm2m_engine_res *res,
 			      struct lwm2m_engine_obj_field *obj_field,
 			      struct lwm2m_message *msg)
 {
-	int i, loop_max = 1;
+	int i, loop_max = 1, found_values = 0;
 	u16_t res_inst_id_tmp = 0U;
 	void *data_ptr = NULL;
 	size_t data_len = 0;
@@ -1921,33 +2039,50 @@ static int lwm2m_read_handler(struct lwm2m_engine_obj_inst *obj_inst,
 		return -EINVAL;
 	}
 
-	/* setup initial data elements */
-	data_ptr = res->data_ptr;
-	data_len = res->data_len;
+	loop_max = res->res_inst_count;
+	if (loop_max > 1) {
+		/* search for valid resource instances */
+		for (i = 0; i < loop_max; i++) {
+			if (res->res_instances[i].res_inst_id !=
+			    RES_INSTANCE_NOT_CREATED) {
+				found_values = 1;
+				break;
+			}
+		}
 
-	/* allow user to override data elements via callback */
-	if (res->read_cb) {
-		data_ptr = res->read_cb(obj_inst->obj_inst_id, &data_len);
-	}
-
-	if (!data_ptr || data_len == 0) {
-		return -ENOENT;
-	}
-
-	if (res->multi_count_var != NULL) {
-		/* if multi_count_var is 0 (none assigned) return NOT_FOUND */
-		if (*res->multi_count_var == 0U) {
+		if (!found_values) {
 			return -ENOENT;
 		}
 
 		engine_put_begin_ri(&msg->out, &msg->path);
-		loop_max = *res->multi_count_var;
 		res_inst_id_tmp = msg->path.res_inst_id;
 	}
 
 	for (i = 0; i < loop_max; i++) {
-		if (res->multi_count_var != NULL) {
-			msg->path.res_inst_id = (u16_t) i;
+		if (res->res_instances[i].res_inst_id ==
+		    RES_INSTANCE_NOT_CREATED) {
+			continue;
+		}
+
+		if (res->res_inst_count > 1) {
+			msg->path.res_inst_id =
+				res->res_instances[i].res_inst_id;
+		}
+
+		/* setup initial data elements */
+		data_ptr = res->res_instances[i].data_ptr;
+		data_len = res->res_instances[i].data_len;
+
+		/* allow user to override data elements via callback */
+		if (res->read_cb) {
+			data_ptr = res->read_cb(obj_inst->obj_inst_id,
+					res->res_id,
+					res->res_instances[i].res_inst_id,
+					&data_len);
+		}
+
+		if (!data_ptr || data_len == 0) {
+			return -ENOENT;
 		}
 
 		switch (obj_field->data_type) {
@@ -1956,7 +2091,6 @@ static int lwm2m_read_handler(struct lwm2m_engine_obj_inst *obj_inst,
 		case LWM2M_RES_TYPE_OPAQUE:
 			break;
 
-		/* TODO: handle multi count for string? */
 		case LWM2M_RES_TYPE_STRING:
 			engine_put_string(&msg->out, &msg->path,
 					  (u8_t *)data_ptr,
@@ -1965,58 +2099,58 @@ static int lwm2m_read_handler(struct lwm2m_engine_obj_inst *obj_inst,
 
 		case LWM2M_RES_TYPE_U64:
 			engine_put_s64(&msg->out, &msg->path,
-				       (s64_t)((u64_t *)data_ptr)[i]);
+				       (s64_t)*(u64_t *)data_ptr);
 			break;
 
 		case LWM2M_RES_TYPE_U32:
 		case LWM2M_RES_TYPE_TIME:
 			engine_put_s32(&msg->out, &msg->path,
-				       (s32_t)((u32_t *)data_ptr)[i]);
+				       (s32_t)*(u32_t *)data_ptr);
 			break;
 
 		case LWM2M_RES_TYPE_U16:
 			engine_put_s16(&msg->out, &msg->path,
-				       (s16_t)((u16_t *)data_ptr)[i]);
+				       (s16_t)*(u16_t *)data_ptr);
 			break;
 
 		case LWM2M_RES_TYPE_U8:
 			engine_put_s8(&msg->out, &msg->path,
-				      (s8_t)((u8_t *)data_ptr)[i]);
+				      (s8_t)*(u8_t *)data_ptr);
 			break;
 
 		case LWM2M_RES_TYPE_S64:
 			engine_put_s64(&msg->out, &msg->path,
-				       ((s64_t *)data_ptr)[i]);
+				       *(s64_t *)data_ptr);
 			break;
 
 		case LWM2M_RES_TYPE_S32:
 			engine_put_s32(&msg->out, &msg->path,
-				       ((s32_t *)data_ptr)[i]);
+				       *(s32_t *)data_ptr);
 			break;
 
 		case LWM2M_RES_TYPE_S16:
 			engine_put_s16(&msg->out, &msg->path,
-				       ((s16_t *)data_ptr)[i]);
+				       *(s16_t *)data_ptr);
 			break;
 
 		case LWM2M_RES_TYPE_S8:
 			engine_put_s8(&msg->out, &msg->path,
-				      ((s8_t *)data_ptr)[i]);
+				      *(s8_t *)data_ptr);
 			break;
 
 		case LWM2M_RES_TYPE_BOOL:
 			engine_put_bool(&msg->out, &msg->path,
-					((bool *)data_ptr)[i]);
+					*(bool *)data_ptr);
 			break;
 
 		case LWM2M_RES_TYPE_FLOAT32:
 			engine_put_float32fix(&msg->out, &msg->path,
-				&((float32_value_t *)data_ptr)[i]);
+				(float32_value_t *)data_ptr);
 			break;
 
 		case LWM2M_RES_TYPE_FLOAT64:
 			engine_put_float64fix(&msg->out, &msg->path,
-				&((float64_value_t *)data_ptr)[i]);
+				(float64_value_t *)data_ptr);
 			break;
 
 		default:
@@ -2027,7 +2161,7 @@ static int lwm2m_read_handler(struct lwm2m_engine_obj_inst *obj_inst,
 		}
 	}
 
-	if (res->multi_count_var != NULL) {
+	if (res->res_inst_count > 1) {
 		engine_put_end_ri(&msg->out, &msg->path);
 		msg->path.res_inst_id = res_inst_id_tmp;
 	}
@@ -2059,7 +2193,8 @@ size_t lwm2m_engine_get_opaque_more(struct lwm2m_input_context *in,
 }
 
 static int lwm2m_write_handler_opaque(struct lwm2m_engine_obj_inst *obj_inst,
-				      struct lwm2m_engine_res_inst *res,
+				      struct lwm2m_engine_res *res,
+				      struct lwm2m_engine_res_inst *res_inst,
 				      struct lwm2m_input_context *in,
 				      void *data_ptr, size_t data_len,
 				      bool last_block, size_t total_size)
@@ -2090,6 +2225,8 @@ static int lwm2m_write_handler_opaque(struct lwm2m_engine_obj_inst *obj_inst,
 
 		if (res->post_write_cb) {
 			ret = res->post_write_cb(obj_inst->obj_inst_id,
+						 res->res_id,
+						 res_inst->res_inst_id,
 						 data_ptr, len,
 						 last_pkt_block && last_block,
 						 total_size);
@@ -2104,7 +2241,8 @@ static int lwm2m_write_handler_opaque(struct lwm2m_engine_obj_inst *obj_inst,
 
 /* This function is exposed for the content format writers */
 int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst,
-			struct lwm2m_engine_res_inst *res,
+			struct lwm2m_engine_res *res,
+			struct lwm2m_engine_res_inst *res_inst,
 			struct lwm2m_engine_obj_field *obj_field,
 			struct lwm2m_message *msg)
 {
@@ -2120,21 +2258,23 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst,
 	u8_t tkl = 0U;
 	bool last_block = true;
 
-	if (!obj_inst || !res || !obj_field || !msg) {
+	if (!obj_inst || !res || !res_inst || !obj_field || !msg) {
 		return -EINVAL;
 	}
 
-	if (LWM2M_HAS_RES_FLAG(res, LWM2M_RES_DATA_FLAG_RO)) {
+	if (LWM2M_HAS_RES_FLAG(res_inst, LWM2M_RES_DATA_FLAG_RO)) {
 		return -EACCES;
 	}
 
 	/* setup initial data elements */
-	data_ptr = res->data_ptr;
-	data_len = res->data_len;
+	data_ptr = res_inst->data_ptr;
+	data_len = res_inst->data_len;
 
 	/* allow user to override data elements via callback */
 	if (res->pre_write_cb) {
-		data_ptr = res->pre_write_cb(obj_inst->obj_inst_id, &data_len);
+		data_ptr = res->pre_write_cb(obj_inst->obj_inst_id,
+					     res->res_id, res_inst->res_inst_id,
+					     &data_len);
 	}
 
 	if (res->post_write_cb) {
@@ -2161,7 +2301,7 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst,
 
 		case LWM2M_RES_TYPE_OPAQUE:
 			ret = lwm2m_write_handler_opaque(obj_inst, res,
-							 &msg->in,
+							 res_inst, &msg->in,
 							 data_ptr, data_len,
 							 last_block,
 							 total_size);
@@ -2252,7 +2392,9 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst,
 
 	if (res->post_write_cb &&
 	    obj_field->data_type != LWM2M_RES_TYPE_OPAQUE) {
-		ret = res->post_write_cb(obj_inst->obj_inst_id, data_ptr, len,
+		ret = res->post_write_cb(obj_inst->obj_inst_id,
+					 res->res_id, res_inst->res_inst_id,
+					 data_ptr, len,
 					 last_block, total_size);
 	}
 
@@ -2269,7 +2411,7 @@ static int lwm2m_write_attr_handler(struct lwm2m_engine_obj *obj,
 	int nr_opt, i, ret = 0;
 	struct coap_option options[NR_LWM2M_ATTR];
 	struct lwm2m_engine_obj_inst *obj_inst = NULL;
-	struct lwm2m_engine_res_inst *res = NULL;
+	struct lwm2m_engine_res *res = NULL;
 	struct lwm2m_attr *attr;
 	struct notification_attrs nattrs = { 0 };
 	struct observe_node *obs;
@@ -2298,7 +2440,7 @@ static int lwm2m_write_attr_handler(struct lwm2m_engine_obj *obj,
 
 	/* get lwm2m_attr slist */
 	if (msg->path.level == 3U) {
-		ret = path_to_objs(&msg->path, NULL, NULL, &res);
+		ret = path_to_objs(&msg->path, NULL, NULL, &res, NULL);
 		if (ret < 0) {
 			return ret;
 		}
@@ -2571,7 +2713,7 @@ static int lwm2m_write_attr_handler(struct lwm2m_engine_obj *obj,
 
 			if (!res || res->res_id != obs->path.res_id) {
 				ret = path_to_objs(&obs->path, NULL, NULL,
-						   &res);
+						   &res, NULL);
 				if (ret < 0) {
 					return ret;
 				}
@@ -2599,14 +2741,14 @@ static int lwm2m_write_attr_handler(struct lwm2m_engine_obj *obj,
 static int lwm2m_exec_handler(struct lwm2m_message *msg)
 {
 	struct lwm2m_engine_obj_inst *obj_inst;
-	struct lwm2m_engine_res_inst *res = NULL;
+	struct lwm2m_engine_res *res = NULL;
 	int ret;
 
 	if (!msg) {
 		return -EINVAL;
 	}
 
-	ret = path_to_objs(&msg->path, &obj_inst, NULL, &res);
+	ret = path_to_objs(&msg->path, &obj_inst, NULL, &res, NULL);
 	if (ret < 0) {
 		return ret;
 	}
@@ -2666,7 +2808,7 @@ static int do_read_op(struct lwm2m_message *msg, u16_t content_format)
 int lwm2m_perform_read_op(struct lwm2m_message *msg, u16_t content_format)
 {
 	struct lwm2m_engine_obj_inst *obj_inst = NULL;
-	struct lwm2m_engine_res_inst *res = NULL;
+	struct lwm2m_engine_res *res = NULL;
 	struct lwm2m_engine_obj_field *obj_field;
 	struct lwm2m_obj_path temp_path;
 	int ret = 0, index;
