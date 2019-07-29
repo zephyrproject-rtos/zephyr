@@ -45,6 +45,7 @@ static struct {
 } wl[WL_SIZE];
 
 static u8_t rl_enable;
+
 static struct rl_dev {
 	u8_t      taken:1;
 	u8_t      rpas_ready:1;
@@ -684,20 +685,12 @@ static void rpa_timeout(struct k_work *work)
 
 static void rpa_refresh_start(void)
 {
-	if (!rl_enable) {
-		return;
-	}
-
 	BT_DBG("");
 	k_delayed_work_submit(&rpa_work, rpa_timeout_ms);
 }
 
 static void rpa_refresh_stop(void)
 {
-	if (!rl_enable) {
-		return;
-	}
-
 	k_delayed_work_cancel(&rpa_work);
 }
 
