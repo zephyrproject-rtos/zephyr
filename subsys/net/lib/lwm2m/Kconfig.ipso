@@ -70,4 +70,17 @@ config LWM2M_IPSO_TIMER_INSTANCE_COUNT
 	  This setting establishes the total count of IPSO Timer
 	  instances available to the LWM2M client.
 
+config LWM2M_IPSO_ONOFF_SWITCH
+	bool "IPSO On/Off Switch Support"
+	help
+	  This object is used with an On/Off switch to report it's state.
+
+config LWM2M_IPSO_ONOFF_SWITCH_INSTANCE_COUNT
+	int "Maximum # of IPSO On/Off Switch object instances"
+	default 1
+	depends on LWM2M_IPSO_ONOFF_SWITCH
+	help
+	  This setting establishes the total count of IPSO On/Off Switch
+	  instances available to the LWM2M client.
+
 endif # LWM2M_LWM2M_IPSO_SUPPORT

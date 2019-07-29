@@ -45,5 +45,8 @@ zephyr_library_sources_ifdef(CONFIG_LWM2M_IPSO_BUZZER
 zephyr_library_sources_ifdef(CONFIG_LWM2M_IPSO_TIMER
     ipso_timer.c
     )
+zephyr_library_sources_ifdef(CONFIG_LWM2M_IPSO_ONOFF_SWITCH
+    ipso_onoff_switch.c
+    )
 
 zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS mbedTLS)
