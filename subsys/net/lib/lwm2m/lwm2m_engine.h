@@ -84,7 +84,8 @@ u16_t lwm2m_get_rd_data(u8_t *client_data, u16_t size);
 int lwm2m_perform_read_op(struct lwm2m_message *msg, u16_t content_format);
 
 int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst,
-			struct lwm2m_engine_res_inst *res,
+			struct lwm2m_engine_res *res,
+			struct lwm2m_engine_res_inst *res_inst,
 			struct lwm2m_engine_obj_field *obj_field,
 			struct lwm2m_message *msg);
 
@@ -93,7 +94,7 @@ enum coap_block_size lwm2m_default_block_size(void);
 int lwm2m_engine_add_service(k_work_handler_t service, u32_t period_ms);
 
 int lwm2m_engine_get_resource(char *pathstr,
-			      struct lwm2m_engine_res_inst **res);
+			      struct lwm2m_engine_res **res);
 
 size_t lwm2m_engine_get_opaque_more(struct lwm2m_input_context *in,
 				    u8_t *buf, size_t buflen, bool *last_block);

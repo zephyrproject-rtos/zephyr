@@ -117,12 +117,16 @@ struct lwm2m_ctx {
  * lwm2m_engine_register_pre_write_callback()
  *
  * @param[in] obj_inst_id Object instance ID generating the callback.
+ * @param[in] res_id Resource ID generating the callback.
+ * @param[in] res_inst_id Resource instance ID generating the callback
+ *                        (typically 0 for non-multi instance resources).
  * @param[out] data_len Length of the data buffer.
  *
  * @return Callback returns a pointer to the data buffer or NULL for failure.
  */
 typedef void *(*lwm2m_engine_get_data_cb_t)(u16_t obj_inst_id,
-				       size_t *data_len);
+					    u16_t res_id, u16_t res_inst_id,
+					    size_t *data_len);
 
 /**
  * @brief Asynchronous callback when data has been set to a resource buffer.
@@ -135,6 +139,9 @@ typedef void *(*lwm2m_engine_get_data_cb_t)(u16_t obj_inst_id,
  * lwm2m_engine_register_post_write_callback()
  *
  * @param[in] obj_inst_id Object instance ID generating the callback.
+ * @param[in] res_id Resource ID generating the callback.
+ * @param[in] res_inst_id Resource instance ID generating the callback
+ *                        (typically 0 for non-multi instance resources).
  * @param[in] data Pointer to data.
  * @param[in] data_len Length of the data.
  * @param[in] last_block Flag used during block transfer to indicate the last
@@ -147,8 +154,9 @@ typedef void *(*lwm2m_engine_get_data_cb_t)(u16_t obj_inst_id,
  *         reason of failure or 0 for success.
  */
 typedef int (*lwm2m_engine_set_data_cb_t)(u16_t obj_inst_id,
-				       u8_t *data, u16_t data_len,
-				       bool last_block, size_t total_size);
+					  u16_t res_id, u16_t res_inst_id,
+					  u8_t *data, u16_t data_len,
+					  bool last_block, size_t total_size);
 
 /**
  * @brief Asynchronous event notification callback.
@@ -221,7 +229,7 @@ typedef int (*lwm2m_engine_user_cb_t)(u16_t obj_inst_id);
  * @return The newly added index of the power source.  The index is used
  *         for removing the power source, setting voltage or setting current.
  */
-int lwm2m_device_add_pwrsrc(u8_t pwr_src_type); /* returns index */
+__deprecated int lwm2m_device_add_pwrsrc(u8_t pwr_src_type);
 
 /**
  * @brief Remove power source previously registered in the LwM2M Device object.
@@ -231,7 +239,7 @@ int lwm2m_device_add_pwrsrc(u8_t pwr_src_type); /* returns index */
  *
  * @return 0 for success or negative in case of error.
  */
-int lwm2m_device_remove_pwrsrc(int index);
+__deprecated int lwm2m_device_remove_pwrsrc(int index);
 
 /**
  * @brief Set power source voltage (in millivolts).
@@ -242,7 +250,7 @@ int lwm2m_device_remove_pwrsrc(int index);
  *
  * @return 0 for success or negative in case of error.
  */
-int lwm2m_device_set_pwrsrc_voltage_mv(int index, int voltage_mv);
+__deprecated int lwm2m_device_set_pwrsrc_voltage_mv(int index, int voltage_mv);
 
 /**
  * @brief Set power source current (in milliamps).
@@ -253,7 +261,7 @@ int lwm2m_device_set_pwrsrc_voltage_mv(int index, int voltage_mv);
  *
  * @return 0 for success or negative in case of error.
  */
-int lwm2m_device_set_pwrsrc_current_ma(int index, int current_ma);
+__deprecated int lwm2m_device_set_pwrsrc_current_ma(int index, int current_ma);
 
 /**
  * @brief Register a new error code with LwM2M Device object.
@@ -771,6 +779,30 @@ int lwm2m_engine_set_res_data(char *pathstr, void *data_ptr, u16_t data_len,
  */
 int lwm2m_engine_get_res_data(char *pathstr, void **data_ptr, u16_t *data_len,
 			      u8_t *data_flags);
+
+/**
+ * @brief Create a resource instance
+ *
+ * LwM2M clients use this function to create multi-resource instances:
+ * Example to create 0 instance of device available power sources:
+ * lwm2m_engine_create_res_inst("3/0/6/0");
+ *
+ * @param[in] pathstr LwM2M path string "obj/obj-inst/res/res-inst"
+ *
+ * @return 0 for success or negative in case of error.
+ */
+int lwm2m_engine_create_res_inst(char *pathstr);
+
+/**
+ * @brief Delete a resource instance
+ *
+ * Use this function to remove an existing resource instance
+ *
+ * @param[in] pathstr LwM2M path string "obj/obj-inst/res/res-inst"
+ *
+ * @return 0 for success or negative in case of error.
+ */
+int lwm2m_engine_delete_res_inst(char *pathstr);
 
 /**
  * @brief Start the LwM2M engine

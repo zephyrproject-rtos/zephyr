@@ -63,12 +63,16 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define LED_GPIO_PORT DT_ALIAS_LED0_GPIOS_CONTROLLER
 #define LED_GPIO_PIN DT_ALIAS_LED0_GPIOS_PIN
 
-static int pwrsrc_bat;
-static int pwrsrc_usb;
-static int battery_voltage = 3800;
-static int battery_current = 125;
-static int usb_voltage = 5000;
-static int usb_current = 900;
+static u8_t bat_idx = LWM2M_DEVICE_PWR_SRC_TYPE_BAT_INT;
+static int bat_mv = 3800;
+static int bat_ma = 125;
+static u8_t usb_idx = LWM2M_DEVICE_PWR_SRC_TYPE_USB;
+static int usb_mv = 5000;
+static int usb_ma = 900;
+static u8_t bat_level = 95;
+static u8_t bat_status = LWM2M_DEVICE_BATTERY_STATUS_CHARGING;
+static int mem_free = 15;
+static int mem_total = 25;
 
 static struct device *led_dev;
 static u32_t led_state;
@@ -94,7 +98,8 @@ static u8_t firmware_buf[64];
 #endif
 
 /* TODO: Move to a pre write hook that can handle ret codes once available */
-static int led_on_off_cb(u16_t obj_inst_id, u8_t *data, u16_t data_len,
+static int led_on_off_cb(u16_t obj_inst_id, u16_t res_id, u16_t res_inst_id,
+			 u8_t *data, u16_t data_len,
 			 bool last_block, size_t total_size)
 {
 	int ret = 0;
@@ -150,7 +155,7 @@ static int device_reboot_cb(u16_t obj_inst_id)
 	/* Add an error for testing */
 	lwm2m_device_add_err(LWM2M_DEVICE_ERROR_LOW_POWER);
 	/* Change the battery voltage for testing */
-	lwm2m_device_set_pwrsrc_voltage_mv(pwrsrc_bat, --battery_voltage);
+	lwm2m_engine_set_s32("3/0/7/0", (bat_mv - 1));
 
 	return 0;
 }
@@ -161,7 +166,7 @@ static int device_factory_default_cb(u16_t obj_inst_id)
 	/* Add an error for testing */
 	lwm2m_device_add_err(LWM2M_DEVICE_ERROR_GPS_FAILURE);
 	/* Change the USB current for testing */
-	lwm2m_device_set_pwrsrc_current_ma(pwrsrc_usb, --usb_current);
+	lwm2m_engine_set_s32("3/0/8/1", (usb_ma - 1));
 
 	return 0;
 }
@@ -183,7 +188,8 @@ static int firmware_update_cb(u16_t obj_inst_id)
 #endif
 
 
-static void *temperature_get_buf(u16_t obj_inst_id, size_t *data_len)
+static void *temperature_get_buf(u16_t obj_inst_id, u16_t res_id,
+				 u16_t res_inst_id, size_t *data_len)
 {
 	/* Last read temperature value, will use 25.5C if no sensor available */
 	static struct float32_value v = { 25, 500000 };
@@ -211,13 +217,15 @@ static void *temperature_get_buf(u16_t obj_inst_id, size_t *data_len)
 
 
 #if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_OBJ_SUPPORT)
-static void *firmware_get_buf(u16_t obj_inst_id, size_t *data_len)
+static void *firmware_get_buf(u16_t obj_inst_id, u16_t res_id,
+			      u16_t res_inst_id, size_t *data_len)
 {
 	*data_len = sizeof(firmware_buf);
 	return firmware_buf;
 }
 
 static int firmware_block_received_cb(u16_t obj_inst_id,
+				      u16_t res_id, u16_t res_inst_id,
 				      u8_t *data, u16_t data_len,
 				      bool last_block, size_t total_size)
 {
@@ -228,6 +236,7 @@ static int firmware_block_received_cb(u16_t obj_inst_id,
 #endif
 
 static int timer_digital_state_cb(u16_t obj_inst_id,
+				  u16_t res_id, u16_t res_inst_id,
 				  u8_t *data, u16_t data_len,
 				  bool last_block, size_t total_size)
 {
@@ -291,34 +300,30 @@ static int lwm2m_setup(void)
 				  LWM2M_RES_DATA_FLAG_RO);
 	lwm2m_engine_register_exec_callback("3/0/4", device_reboot_cb);
 	lwm2m_engine_register_exec_callback("3/0/5", device_factory_default_cb);
-	lwm2m_engine_set_u8("3/0/9", 95); /* battery level */
-	lwm2m_engine_set_u32("3/0/10", 15); /* mem free */
+	lwm2m_engine_set_res_data("3/0/9", &bat_level, sizeof(bat_level), 0);
+	lwm2m_engine_set_res_data("3/0/10", &mem_free, sizeof(mem_free), 0);
 	lwm2m_engine_set_res_data("3/0/17", CLIENT_DEVICE_TYPE,
 				  sizeof(CLIENT_DEVICE_TYPE),
 				  LWM2M_RES_DATA_FLAG_RO);
 	lwm2m_engine_set_res_data("3/0/18", CLIENT_HW_VER,
 				  sizeof(CLIENT_HW_VER),
 				  LWM2M_RES_DATA_FLAG_RO);
-	lwm2m_engine_set_u8("3/0/20", LWM2M_DEVICE_BATTERY_STATUS_CHARGING);
-	lwm2m_engine_set_u32("3/0/21", 25); /* mem total */
+	lwm2m_engine_set_res_data("3/0/20", &bat_status, sizeof(bat_status), 0);
+	lwm2m_engine_set_res_data("3/0/21", &mem_total, sizeof(mem_total), 0);
 
-	pwrsrc_bat = lwm2m_device_add_pwrsrc(LWM2M_DEVICE_PWR_SRC_TYPE_BAT_INT);
-	if (pwrsrc_bat < 0) {
-		LOG_ERR("LWM2M battery power source enable error (err:%d)",
-			pwrsrc_bat);
-		return pwrsrc_bat;
-	}
-	lwm2m_device_set_pwrsrc_voltage_mv(pwrsrc_bat, battery_voltage);
-	lwm2m_device_set_pwrsrc_current_ma(pwrsrc_bat, battery_current);
-
-	pwrsrc_usb = lwm2m_device_add_pwrsrc(LWM2M_DEVICE_PWR_SRC_TYPE_USB);
-	if (pwrsrc_usb < 0) {
-		LOG_ERR("LWM2M usb power source enable error (err:%d)",
-			pwrsrc_usb);
-		return pwrsrc_usb;
-	}
-	lwm2m_device_set_pwrsrc_voltage_mv(pwrsrc_usb, usb_voltage);
-	lwm2m_device_set_pwrsrc_current_ma(pwrsrc_usb, usb_current);
+	/* add power source resource instances */
+	lwm2m_engine_create_res_inst("3/0/6/0");
+	lwm2m_engine_set_res_data("3/0/6/0", &bat_idx, sizeof(bat_idx), 0);
+	lwm2m_engine_create_res_inst("3/0/7/0");
+	lwm2m_engine_set_res_data("3/0/7/0", &bat_mv, sizeof(bat_mv), 0);
+	lwm2m_engine_create_res_inst("3/0/8/0");
+	lwm2m_engine_set_res_data("3/0/8/0", &bat_ma, sizeof(bat_ma), 0);
+	lwm2m_engine_create_res_inst("3/0/6/1");
+	lwm2m_engine_set_res_data("3/0/6/1", &usb_idx, sizeof(usb_idx), 0);
+	lwm2m_engine_create_res_inst("3/0/7/1");
+	lwm2m_engine_set_res_data("3/0/7/1", &usb_mv, sizeof(usb_mv), 0);
+	lwm2m_engine_create_res_inst("3/0/8/1");
+	lwm2m_engine_set_res_data("3/0/8/1", &usb_ma, sizeof(usb_ma), 0);
 
 	/* setup FIRMWARE object */
 
