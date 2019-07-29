@@ -302,6 +302,7 @@ struct adc_driver_api {
 #ifdef CONFIG_ADC_ASYNC
 	adc_api_read_async    read_async;
 #endif
+	u16_t ref_internal;	/* mV */
 };
 
 /**
@@ -393,6 +394,23 @@ static inline int z_impl_adc_read_async(struct device *dev,
 	return api->read_async(dev, sequence, async);
 }
 #endif /* CONFIG_ADC_ASYNC */
+
+/**
+ * @brief Get the internal reference voltage.
+ *
+ * Returns the voltage corresponding to @ref ADC_REF_INTERNAL,
+ * measured in millivolts.
+ *
+ * @return a positive value is the reference voltage value.  Returns
+ * zero if reference voltage information is not available.
+ */
+static inline u16_t adc_ref_internal(struct device *dev)
+{
+	const struct adc_driver_api *api =
+				(const struct adc_driver_api *)dev->driver_api;
+
+	return api->ref_internal;
+}
 
 #include <syscalls/adc.h>
 
