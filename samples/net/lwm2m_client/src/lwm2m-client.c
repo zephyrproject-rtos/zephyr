@@ -46,6 +46,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define CLIENT_DEVICE_TYPE	"OMA-LWM2M Client"
 #define CLIENT_HW_VER		"1.0.1"
 
+#define LIGHT_NAME		"Test light"
 #define TIMER_NAME		"Test timer"
 
 #define ENDPOINT_LEN		32
@@ -337,6 +338,9 @@ static int lwm2m_setup(void)
 		lwm2m_engine_create_obj_inst("3311/0");
 		lwm2m_engine_register_post_write_callback("3311/0/5850",
 				led_on_off_cb);
+		lwm2m_engine_set_res_data("3311/0/5750",
+					  LIGHT_NAME, sizeof(LIGHT_NAME),
+					  LWM2M_RES_DATA_FLAG_RO);
 	}
 
 	/* IPSO: Timer object */
