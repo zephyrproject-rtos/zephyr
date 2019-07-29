@@ -250,6 +250,11 @@ config LWM2M_NUM_ATTR
 	  This value sets up the maximum number of LwM2M attributes that
 	  we can handle at the same time.
 
+config LWM2M_LOCATION_OBJ_SUPPORT
+	bool "Location object support"
+	help
+	  Include support for LWM2M Location Object (ID 6)
+
 menu "IPSO Alliance Smart Object Support"
 
 source "subsys/net/lib/lwm2m/Kconfig.ipso"
