@@ -151,6 +151,28 @@ config LWM2M_PEER_PORT
 	help
 	  This is the default server port to connect to for LWM2M communication
 
+config LWM2M_CONN_MON_OBJ_SUPPORT
+	bool "Connectivity Monitoring object support"
+	help
+	  Include support for LWM2M Connectivity Monitoring Object (ID 4)
+
+config LWM2M_CONN_MON_BEARER_MAX
+	int "Maximum # of available network bearer resource instances"
+	depends on LWM2M_CONN_MON_OBJ_SUPPORT
+	default 1
+	help
+	  This value sets the maximum number of available network bearer
+	  resource instances.  These are displayed via the
+	  "Connection Monitoring" object /4/0/1.
+
+config LWM2M_CONN_MON_APN_MAX
+	int "Maximum # of APN resource instances"
+	depends on LWM2M_CONN_MON_OBJ_SUPPORT
+	default 1
+	help
+	  This value sets the maximum number of APN resource instances.
+	  These are displayed via the "Connection Monitoring" object /4/0/7.
+
 config LWM2M_FIRMWARE_UPDATE_OBJ_SUPPORT
 	bool "Firmware Update object support"
 	default y
