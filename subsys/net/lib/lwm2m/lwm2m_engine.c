@@ -2596,14 +2596,13 @@ static int lwm2m_write_attr_handler(struct lwm2m_engine_obj *obj,
 	return 0;
 }
 
-static int lwm2m_exec_handler(struct lwm2m_engine_obj *obj,
-			      struct lwm2m_message *msg)
+static int lwm2m_exec_handler(struct lwm2m_message *msg)
 {
 	struct lwm2m_engine_obj_inst *obj_inst;
 	struct lwm2m_engine_res_inst *res = NULL;
 	int ret;
 
-	if (!obj || !msg) {
+	if (!msg) {
 		return -EINVAL;
 	}
 
@@ -2620,8 +2619,7 @@ static int lwm2m_exec_handler(struct lwm2m_engine_obj *obj,
 	return -ENOENT;
 }
 
-static int lwm2m_delete_handler(struct lwm2m_engine_obj *obj,
-				struct lwm2m_message *msg)
+static int lwm2m_delete_handler(struct lwm2m_message *msg)
 {
 	int ret;
 
@@ -2639,24 +2637,23 @@ static int lwm2m_delete_handler(struct lwm2m_engine_obj *obj,
 	return ret;
 }
 
-static int do_read_op(struct lwm2m_engine_obj *obj,
-		      struct lwm2m_message *msg, u16_t content_format)
+static int do_read_op(struct lwm2m_message *msg, u16_t content_format)
 {
 	switch (content_format) {
 
 	case LWM2M_FORMAT_APP_OCTET_STREAM:
 	case LWM2M_FORMAT_PLAIN_TEXT:
 	case LWM2M_FORMAT_OMA_PLAIN_TEXT:
-		return do_read_op_plain_text(obj, msg, content_format);
+		return do_read_op_plain_text(msg, content_format);
 
 	case LWM2M_FORMAT_OMA_TLV:
 	case LWM2M_FORMAT_OMA_OLD_TLV:
-		return do_read_op_tlv(obj, msg, content_format);
+		return do_read_op_tlv(msg, content_format);
 
 #if defined(CONFIG_LWM2M_RW_JSON_SUPPORT)
 	case LWM2M_FORMAT_OMA_JSON:
 	case LWM2M_FORMAT_OMA_OLD_JSON:
-		return do_read_op_json(obj, msg, content_format);
+		return do_read_op_json(msg, content_format);
 #endif
 
 	default:
@@ -2666,8 +2663,7 @@ static int do_read_op(struct lwm2m_engine_obj *obj,
 	}
 }
 
-int lwm2m_perform_read_op(struct lwm2m_engine_obj *obj,
-			  struct lwm2m_message *msg, u16_t content_format)
+int lwm2m_perform_read_op(struct lwm2m_message *msg, u16_t content_format)
 {
 	struct lwm2m_engine_obj_inst *obj_inst = NULL;
 	struct lwm2m_engine_res_inst *res = NULL;
@@ -3043,8 +3039,7 @@ int lwm2m_get_or_create_engine_obj(struct lwm2m_message *msg,
 	return ret;
 }
 
-static int do_write_op(struct lwm2m_engine_obj *obj,
-		       struct lwm2m_message *msg,
+static int do_write_op(struct lwm2m_message *msg,
 		       u16_t format)
 {
 	switch (format) {
@@ -3052,16 +3047,16 @@ static int do_write_op(struct lwm2m_engine_obj *obj,
 	case LWM2M_FORMAT_APP_OCTET_STREAM:
 	case LWM2M_FORMAT_PLAIN_TEXT:
 	case LWM2M_FORMAT_OMA_PLAIN_TEXT:
-		return do_write_op_plain_text(obj, msg);
+		return do_write_op_plain_text(msg);
 
 	case LWM2M_FORMAT_OMA_TLV:
 	case LWM2M_FORMAT_OMA_OLD_TLV:
-		return do_write_op_tlv(obj, msg);
+		return do_write_op_tlv(msg);
 
 #ifdef CONFIG_LWM2M_RW_JSON_SUPPORT
 	case LWM2M_FORMAT_OMA_JSON:
 	case LWM2M_FORMAT_OMA_OLD_JSON:
-		return do_write_op_json(obj, msg);
+		return do_write_op_json(msg);
 #endif
 
 	default:
@@ -3349,7 +3344,7 @@ static int handle_request(struct coap_packet *request,
 			}
 		}
 
-		r = do_read_op(obj, msg, accept);
+		r = do_read_op(msg, accept);
 		break;
 
 	case LWM2M_OP_DISCOVER:
@@ -3358,7 +3353,7 @@ static int handle_request(struct coap_packet *request,
 
 	case LWM2M_OP_WRITE:
 	case LWM2M_OP_CREATE:
-		r = do_write_op(obj, msg, format);
+		r = do_write_op(msg, format);
 		break;
 
 	case LWM2M_OP_WRITE_ATTR:
@@ -3366,11 +3361,11 @@ static int handle_request(struct coap_packet *request,
 		break;
 
 	case LWM2M_OP_EXECUTE:
-		r = lwm2m_exec_handler(obj, msg);
+		r = lwm2m_exec_handler(msg);
 		break;
 
 	case LWM2M_OP_DELETE:
-		r = lwm2m_delete_handler(obj, msg);
+		r = lwm2m_delete_handler(msg);
 		break;
 
 	default:
@@ -3689,7 +3684,7 @@ static int generate_notify_message(struct observe_node *obs,
 	/* set the output writer */
 	select_writer(&msg->out, obs->format);
 
-	ret = do_read_op(obj_inst->obj, msg, obs->format);
+	ret = do_read_op(msg, obs->format);
 	if (ret < 0) {
 		LOG_ERR("error in multi-format read (err:%d)", ret);
 		goto cleanup;
