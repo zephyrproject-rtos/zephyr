@@ -380,13 +380,6 @@ config BOOTLOADER_ESP_IDF
 	  inside the build folder.
 	  At flash time, the bootloader will be flashed with the zephyr image
 
-config REALMODE
-	bool "boot from x86 real mode"
-	depends on X86
-	help
-	  This option enabled Zephyr to start in x86 real mode, instead of
-	  protected mode.
-
 config BOOTLOADER_KEXEC
 	bool "Boot using Linux kexec() system call"
 	depends on X86
