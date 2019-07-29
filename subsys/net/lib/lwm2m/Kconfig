@@ -107,6 +107,23 @@ config LWM2M_SECURITY_KEY_SIZE
 	  This setting establishes the size of the key (pre-shared / public)
 	  resources in the security object instances.
 
+config LWM2M_SERVER_DEFAULT_PMIN
+	int "Default server record PMIN"
+	default 10
+	help
+	  Default minimum amount of time in seconds the client must wait
+	  between notifications.  If a resource has to be notified during this
+	  minimum time period, the notification must be sent after the time
+	  period expires.
+
+config LWM2M_SERVER_DEFAULT_PMAX
+	int "Default server record PMAX"
+	default 60
+	help
+	  Default maximum amount of time in seconds the client may wait
+	  between notifications.  When this time period expires a notification
+	  must be sent.
+
 config LWM2M_SERVER_INSTANCE_COUNT
 	int "Maximum # of LWM2M Server object instances"
 	default 1

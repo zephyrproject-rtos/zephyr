@@ -83,10 +83,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define	COAP_OPTION_BUF_LEN	13
 #endif
 
-/* TODO: grab this from server obj */
-#define DEFAULT_SERVER_PMIN	10
-#define DEFAULT_SERVER_PMAX	60
-
 #define MAX_TOKEN_LEN		8
 
 struct observe_node {
@@ -414,8 +410,6 @@ static int engine_add_observer(struct lwm2m_message *msg,
 	struct observe_node *obs;
 	struct notification_attrs attrs = {
 		.flags = BIT(LWM2M_ATTR_PMIN) | BIT(LWM2M_ATTR_PMAX),
-		.pmin  = DEFAULT_SERVER_PMIN,
-		.pmax  = DEFAULT_SERVER_PMAX,
 	};
 	int i, ret;
 
@@ -430,9 +424,11 @@ static int engine_add_observer(struct lwm2m_message *msg,
 		return -EINVAL;
 	}
 
-	/* TODO: get server object for default pmin/pmax
-	 * and observe dup checking
-	 */
+	/* defaults from server object */
+	attrs.pmin = lwm2m_server_get_pmin(msg->ctx->sec_obj_inst);
+	attrs.pmax = lwm2m_server_get_pmax(msg->ctx->sec_obj_inst);
+
+	/* TODO: observe dup checking */
 
 	/* make sure this observer doesn't exist already */
 	SYS_SLIST_FOR_EACH_CONTAINER(&engine_observer_list, obs, node) {
@@ -2535,9 +2531,9 @@ static int lwm2m_write_attr_handler(struct lwm2m_engine_obj *obj,
 			continue;
 		}
 
-		/* TODO: grab default from server obj */
-		nattrs.pmin = DEFAULT_SERVER_PMIN;
-		nattrs.pmax = DEFAULT_SERVER_PMAX;
+		/* defaults from server object */
+		nattrs.pmin = lwm2m_server_get_pmin(msg->ctx->sec_obj_inst);
+		nattrs.pmax = lwm2m_server_get_pmax(msg->ctx->sec_obj_inst);
 
 		ret = update_attrs(obj, &nattrs);
 		if (ret < 0) {
