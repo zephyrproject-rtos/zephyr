@@ -1048,13 +1048,26 @@ static int cmd_clear(const struct shell *shell, size_t argc, char *argv[])
 static int cmd_security(const struct shell *shell, size_t argc, char *argv[])
 {
 	int err, sec;
+	struct bt_conn_info info;
 
-	if (!default_conn) {
+	if (!default_conn || (bt_conn_get_info(default_conn, &info) < 0)) {
 		shell_error(shell, "Not connected");
 		return -ENOEXEC;
 	}
 
 	sec = *argv[1] - '0';
+
+	if ((info.type == BT_CONN_TYPE_BR &&
+	    (sec < BT_SECURITY_NONE || sec > BT_SECURITY_HIGH))) {
+		shell_error(shell, "Invalid BR/EDR security level (%d)", sec);
+		return -ENOEXEC;
+	}
+
+	if ((info.type == BT_CONN_TYPE_LE &&
+	    (sec < BT_SECURITY_LOW || sec > BT_SECURITY_FIPS))) {
+		shell_error(shell, "Invalid LE security level (%d)", sec);
+		return -ENOEXEC;
+	}
 
 	err = bt_conn_security(default_conn, sec);
 	if (err) {
@@ -1492,7 +1505,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 	SHELL_CMD_ARG(oob, NULL, NULL, cmd_oob, 1, 0),
 	SHELL_CMD_ARG(clear, NULL, "<remote: addr, all>", cmd_clear, 2, 1),
 #if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR)
-	SHELL_CMD_ARG(security, NULL, "<security level: 0, 1, 2, 3>",
+	SHELL_CMD_ARG(security, NULL, "<security level BR/EDR: 0 - 3, "
+				      "LE: 1 - 4>",
 		      cmd_security, 2, 0),
 	SHELL_CMD_ARG(bondable, NULL, "<bondable: on, off>", cmd_bondable,
 		      2, 0),
