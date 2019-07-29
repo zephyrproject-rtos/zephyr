@@ -415,4 +415,32 @@ do {                                                                    \
 	__asm__ __volatile__ ("" ::: "memory"); \
 } while (false)
 
+/** @brief Return larger value of two provided expressions.
+ *
+ * Macro ensures that expressions are evaluated only once.
+ *
+ * @note Macro has limited usage compared to the standard macro as it cannot be
+ *	 used:
+ *	 - to generate constant integer, e.g. __aligned(Z_MAX(4,5))
+ *	 - static variable, e.g. array like static u8_t array[Z_MAX(...)];
+ */
+#define Z_MAX(a, b) ({ \
+		/* random suffix to avoid naming conflict */ \
+		__typeof__(a) _value_a_ = (a); \
+		__typeof__(b) _value_b_ = (b); \
+		_value_a_ > _value_b_ ? _value_a_ : _value_b_; \
+	})
+
+/** @brief Return smaller value of two provided expressions.
+ *
+ * Macro ensures that expressions are evaluated only once. See @ref Z_MAX for
+ * macro limitations.
+ */
+#define Z_MIN(a, b) ({ \
+		/* random suffix to avoid naming conflict */ \
+		__typeof__(a) _value_a_ = (a); \
+		__typeof__(b) _value_b_ = (b); \
+		_value_a_ < _value_b_ ? _value_a_ : _value_b_; \
+	})
+
 #endif /* ZEPHYR_INCLUDE_TOOLCHAIN_GCC_H_ */

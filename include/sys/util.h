@@ -89,10 +89,20 @@ constexpr size_t ARRAY_SIZE(T(&)[N]) { return N; }
 #define INLINE
 #endif
 
+/** @brief Return larger value of two provided expressions.
+ *
+ * @note Arguments are evaluated twice. See Z_MAX for GCC only, single
+ * evaluation version.
+ */
 #ifndef MAX
 #define MAX(a, b) (((a) > (b)) ? (a) : (b))
 #endif
 
+/** @brief Return smaller value of two provided expressions.
+ *
+ * @note Arguments are evaluated twice. See Z_MIN for GCC only, single
+ * evaluation version.
+ */
 #ifndef MIN
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
 #endif
