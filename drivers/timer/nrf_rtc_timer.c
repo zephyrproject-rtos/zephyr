@@ -166,7 +166,7 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 			}
 		} else if (dt == 1) {
 			/* Too soon, interrupt won't arrive. */
-			set_comparator(cyc + 1);
+			set_comparator(cyc + 2);
 		}
 		/* Otherwise it was two cycles out, we're fine */
 	}
