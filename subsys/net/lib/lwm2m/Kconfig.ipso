@@ -43,6 +43,19 @@ config LWM2M_IPSO_LIGHT_CONTROL_INSTANCE_COUNT
 	  This setting establishes the total count of IPSO Light Control
 	  instances available to the LWM2M client.
 
+config LWM2M_IPSO_ACCELEROMETER
+	bool "IPSO Accelerometer Support"
+	help
+	  This Object is used to used to represent a 1-3 axis accelerometer.
+
+config LWM2M_IPSO_ACCELEROMETER_INSTANCE_COUNT
+	int "Maximum # of IPSO Accelerometer object instances"
+	default 1
+	depends on LWM2M_IPSO_ACCELEROMETER
+	help
+	  This setting establishes the total count of IPSO Accelerometer
+	  instances available to the LWM2M client.
+
 config LWM2M_IPSO_BUZZER
 	bool "IPSO Buzzer Support"
 	help
