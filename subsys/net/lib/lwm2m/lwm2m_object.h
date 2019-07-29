@@ -148,23 +148,25 @@ struct lwm2m_obj_path {
 	u8_t  level;  /* 0/1/2/3/4 (4 = resource instance) */
 };
 
-#define OBJ_FIELD(res_id, perm, type, multi_max) \
-	{ res_id, LWM2M_PERM_ ## perm, LWM2M_RES_TYPE_ ## type, multi_max }
+#define OBJ_FIELD(_id, _perm, _type) \
+	{ .res_id = _id, \
+	  .permissions = LWM2M_PERM_ ## _perm, \
+	  .data_type = LWM2M_RES_TYPE_ ## _type, }
 
+/* Keep OBJ_FIELD_DATA around for historical reasons */
 #define OBJ_FIELD_DATA(res_id, perm, type) \
-	OBJ_FIELD(res_id, perm, type, 1)
+	OBJ_FIELD(res_id, perm, type)
 
 #define OBJ_FIELD_EXECUTE(res_id) \
-	OBJ_FIELD(res_id, X, NONE, 0)
+	OBJ_FIELD(res_id, X, NONE)
 
 #define OBJ_FIELD_EXECUTE_OPT(res_id) \
-	OBJ_FIELD(res_id, X_OPT, NONE, 0)
+	OBJ_FIELD(res_id, X_OPT, NONE)
 
 struct lwm2m_engine_obj_field {
 	u16_t  res_id;
 	u8_t   permissions;
 	u8_t   data_type;
-	u8_t   multi_max_count;
 };
 
 typedef struct lwm2m_engine_obj_inst *
