@@ -171,7 +171,6 @@ struct lwm2m_engine_obj_field {
 
 typedef struct lwm2m_engine_obj_inst *
 	(*lwm2m_engine_obj_create_cb_t)(u16_t obj_inst_id);
-typedef int (*lwm2m_engine_obj_delete_cb_t)(u16_t obj_inst_id);
 
 struct lwm2m_engine_obj {
 	/* object list */
@@ -182,7 +181,7 @@ struct lwm2m_engine_obj {
 
 	/* object event callbacks */
 	lwm2m_engine_obj_create_cb_t create_cb;
-	lwm2m_engine_obj_delete_cb_t delete_cb;
+	lwm2m_engine_user_cb_t delete_cb;
 	lwm2m_engine_user_cb_t user_create_cb;
 	lwm2m_engine_user_cb_t user_delete_cb;
 
