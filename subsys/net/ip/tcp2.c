@@ -118,6 +118,12 @@ static const char *tcp_th(struct net_pkt *pkt)
 
 	*s = '\0';
 
+	if (th->th_off < 5) {
+		s += snprintf(s, buf_size, "Bogus th_off: %hu", th->th_off);
+		buf_size -= s - buf;
+		goto end;
+	}
+
 	if (fl) {
 		if (fl & SYN) {
 			s += snprintf(s, buf_size, "SYN=%u,", th_seq(th));
@@ -155,9 +161,9 @@ static const char *tcp_th(struct net_pkt *pkt)
 	if (((bool)(PSH & fl)) != (data_len > 0)) {
 		tcp_warn("Invalid TCP packet: %s, data_len=%zd", buf, data_len);
 	}
-
-#undef BUF_SIZE
+end:
 	return buf;
+#undef BUF_SIZE
 }
 
 static void tcp_send(struct net_pkt *pkt)
