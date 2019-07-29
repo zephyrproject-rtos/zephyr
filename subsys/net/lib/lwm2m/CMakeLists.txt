@@ -20,6 +20,9 @@ zephyr_library_sources_ifdef(CONFIG_LWM2M_RD_CLIENT_SUPPORT
     )
 
 # LWM2M Object Support
+zephyr_library_sources_ifdef(CONFIG_LWM2M_CONN_MON_OBJ_SUPPORT
+    lwm2m_obj_connmon.c
+    )
 zephyr_library_sources_ifdef(CONFIG_LWM2M_FIRMWARE_UPDATE_OBJ_SUPPORT
     lwm2m_obj_firmware.c
     )
