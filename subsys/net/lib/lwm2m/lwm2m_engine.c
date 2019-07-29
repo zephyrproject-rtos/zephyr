@@ -1413,7 +1413,9 @@ static int lwm2m_engine_set(char *pathstr, void *value, u16_t len)
 	}
 
 	if (LWM2M_HAS_RES_FLAG(res_inst, LWM2M_RES_DATA_FLAG_RO)) {
-		LOG_ERR("res instance data pointer is read-only");
+		LOG_ERR("res instance data pointer is read-only "
+			"[%u/%u/%u/%u:%u]", path.obj_id, path.obj_inst_id,
+			path.res_id, path.res_inst_id, path.level);
 		return -EACCES;
 	}
 
@@ -1429,7 +1431,9 @@ static int lwm2m_engine_set(char *pathstr, void *value, u16_t len)
 	}
 
 	if (!data_ptr) {
-		LOG_ERR("res instance data pointer is NULL");
+		LOG_ERR("res instance data pointer is NULL [%u/%u/%u/%u:%u]",
+			path.obj_id, path.obj_inst_id, path.res_id,
+			path.res_inst_id, path.level);
 		return -EINVAL;
 	}
 
