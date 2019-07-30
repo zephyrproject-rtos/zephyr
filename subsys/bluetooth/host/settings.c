@@ -217,6 +217,12 @@ static int commit(void)
 		}
 	}
 
+	/* Make sure that the identities created by bt_id_create after
+	 * bt_enable is saved to persistent storage. */
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_PRESET_ID)) {
+		bt_settings_save_id();
+	}
+
 	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
 		bt_finalize_init();
 	}
