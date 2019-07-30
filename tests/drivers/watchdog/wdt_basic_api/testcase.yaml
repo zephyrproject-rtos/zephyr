@@ -2,3 +2,9 @@ tests:
   peripheral.watchdog:
     depends_on: watchdog
     tags: drivers watchdog
+    platform_exclude: nucleo_l496zg nucleo_f401re
+  peripheral.window_watchdog_nucleo_l496zg:
+    depends_on: watchdog
+    tags: drivers watchdog
+    extra_args: CONF_FILE="prj.conf;nucleo_l496zg.conf"
+    platform_whitelist: nucleo_l496zg
