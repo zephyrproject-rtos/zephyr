@@ -148,7 +148,7 @@ config SCHED_CPU_MASK
 config MAIN_STACK_SIZE
 	int "Size of stack for initialization and main thread"
 	default 2048 if COVERAGE_GCOV
-	default 512 if ZTEST && !RISCV
+	default 512 if ZTEST && !(RISCV || X86)
 	default 1024
 	help
 	  When the initialization is complete, the thread executing it then
