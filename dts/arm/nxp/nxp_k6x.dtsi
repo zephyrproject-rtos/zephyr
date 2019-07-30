@@ -11,7 +11,6 @@
 		#size-cells = <0>;
 
 		cpu0: cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-m4f";
 			reg = <0>;
 		};
@@ -27,13 +26,11 @@
 	 * https://sourceware.org/ml/binutils/2017-02/msg00250.html
 	 */
 	sram_l: memory@1fff0000 {
-		device_type = "memory";
 		compatible = "mmio-sram";
 		reg = <0x1fff0000 0x10000>;
 	};
 
 	sram0: memory@20000000 {
-		device_type = "memory";
 		compatible = "mmio-sram";
 		reg = <0x20000000 0x30000>;
 	};

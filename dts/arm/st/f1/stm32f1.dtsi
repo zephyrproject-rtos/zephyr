@@ -16,7 +16,6 @@
 		#size-cells = <0>;
 
 		cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-m3";
 			reg = <0>;
 		};
@@ -28,7 +27,6 @@
 	};
 
 	sram0: memory@20000000 {
-		device_type = "memory";
 		compatible = "mmio-sram";
 	};
 

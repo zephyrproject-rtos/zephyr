@@ -15,7 +15,6 @@
 		#size-cells = <0>;
 
 		cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-m4";
 			reg = <0>;
 		};
@@ -30,7 +29,6 @@
 		};
 
 		ddr_sys: memory@80000000 {
-			device_type = "memory";
 			compatible = "nxp,imx-sys-bus";
 			reg = <0x80000000 0x60000000>;
 			label = "DDR SYSTEM";
@@ -55,7 +53,6 @@
 		};
 
 		ocram_sys: memory@20200000 {
-			device_type = "memory";
 			compatible = "nxp,imx-sys-bus";
 			reg = <0x20200000 0x20000>;
 			label = "OCRAM SYSTEM";
@@ -68,7 +65,6 @@
 		};
 
 		ocram_s_sys: memory@180000 {
-			device_type = "memory";
 			compatible = "nxp,imx-sys-bus";
 			reg = <0x00180000 0x8000>;
 			label = "OCRAM_S SYSTEM";

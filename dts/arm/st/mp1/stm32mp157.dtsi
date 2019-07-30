@@ -16,19 +16,16 @@
 		#size-cells = <0>;
 
 		cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-m4";
 			reg = <0>;
 		};
 	};
 
 	retram: memory0@0 {
-		device_type = "memory";
 		compatible = "mmio-sram";
 		reg = <0x00000000 DT_SIZE_K(64)>;
 	};
 	mcusram: memory1@10000000 {
-		device_type = "memory";
 		compatible = "mmio-sram";
 		reg = <0x10000000 DT_SIZE_K(256)>;
 	};

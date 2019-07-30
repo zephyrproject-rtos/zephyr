@@ -13,26 +13,22 @@
 		#size-cells = <0>;
 
 		cpu0: cpu@0 {
-			device_type = "cpu";
 			compatible = "cadence,tensilica-xtensa-lx6";
 			reg = <0>;
 		};
 
 		cpu1: cpu@1 {
-			device_type = "cpu";
 			compatible = "cadence,tensilica-xtensa-lx6";
 			reg = <1>;
 		};
 	};
 
 	sram0: memory@be000000 {
-		device_type = "memory";
 		compatible = "mmio-sram";
 		reg = <0xbe000000 DT_SIZE_M(4)>;
 	};
 
 	sram1: memory@be800000 {
-		device_type = "memory";
 		compatible = "mmio-sram";
 		reg = <0xbe800000 DT_SIZE_K(64)>;
 	};

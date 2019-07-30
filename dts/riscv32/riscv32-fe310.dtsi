@@ -13,7 +13,6 @@
 		cpu@0 {
 			clock-frequency = <0>;
 			compatible = "sifive,rocket0", "riscv";
-			device_type = "cpu";
 			i-cache-block-size = <64>;
 			i-cache-sets = <128>;
 			i-cache-size = <16384>;

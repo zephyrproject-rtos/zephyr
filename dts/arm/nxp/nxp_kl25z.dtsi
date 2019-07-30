@@ -11,14 +11,12 @@
 		#size-cells = <0>;
 
 		cpu0: cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-m0+";
 			reg = <0>;
 		};
 	};
 
 	sram0: memory@1FFFF000 {
-		device_type = "memory";
 		compatible = "mmio-sram";
 		reg = <0x1FFFF000 0x4000>;
 	};

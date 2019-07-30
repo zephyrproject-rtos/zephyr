@@ -14,7 +14,6 @@
 		cpu@0 {
 			clock-frequency = <0>;
 			compatible = "microsemi,miv", "riscv";
-			device_type = "cpu";
 			reg = <0>;
 			riscv,isa = "rv32imac";
 			hlic: interrupt-controller {
@@ -37,7 +36,6 @@
 		};
 
 		sram0: memory@80040000 {
-			device_type = "memory";
 			compatible = "mmio-sram";
 			reg = <0x80040000 0x40000>;
 		};

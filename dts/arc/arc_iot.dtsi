@@ -15,7 +15,6 @@
 		#size-cells = <0>;
 
 		cpu0: cpu@0 {
-			device_type = "cpu";
 			compatible = "snps,arcem";
 			reg = <0>;
 		};
@@ -28,20 +27,17 @@
 	};
 
 	iccm0: iccm@20000000 {
-		device_type = "memory";
 		compatible = "arc,iccm";
 		reg = <0x20000000 0x40000>;
 	};
 
 	dccm0: dccm@80000000 {
-		device_type = "memory";
 		compatible = "arc,dccm";
 		reg = <0x80000000 0x20000>;
 	};
 
 
 	sram: memory@30000000 {
-		device_type = "memory";
 		compatible = "mmio-sram";
 		reg = <0x30000000 0x20000>;
 	};

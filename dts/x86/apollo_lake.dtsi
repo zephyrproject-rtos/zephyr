@@ -15,7 +15,6 @@
 		#size-cells = <0>;
 
 		cpu@0 {
-			device_type = "cpu";
 			compatible = "apollo_lake";
 			reg = <0>;
 		};
@@ -28,7 +27,6 @@
 	};
 
 	sram0: memory@400000 {
-		device_type = "memory";
 		compatible = "mmio-sram";
 		reg = <0x00400000 DT_SRAM_SIZE>;
 	};
