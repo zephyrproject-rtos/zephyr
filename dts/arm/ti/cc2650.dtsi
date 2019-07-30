@@ -40,7 +40,6 @@
 			compatible = "ti,cc2650-gpio";
 			reg = <0x40022000 0xE4>;
 			interrupts = <0 0>;
-			zephyr,irq-prio = <0>;
 			status = "disabled";
 
 			gpio-controller;
