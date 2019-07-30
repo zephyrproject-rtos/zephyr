@@ -65,6 +65,9 @@ static sys_slist_t servers;
 
 #endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
 
+K_THREAD_STACK_DEFINE(rx_work_q_stack, CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE);
+static struct k_work_q rx_work_q;
+
 /* L2CAP signalling channel specific context */
 struct bt_l2cap {
 	/* The channel this context is associated with */
@@ -1639,7 +1642,7 @@ static void l2cap_chan_recv_queue(struct bt_l2cap_chan *chan,
 				  struct net_buf *buf)
 {
 	net_buf_put(&chan->rx_queue, buf);
-	k_work_submit(&chan->rx_work);
+	k_work_submit_to_queue(&rx_work_q, &chan->rx_work);
 }
 
 void bt_l2cap_recv(struct bt_conn *conn, struct net_buf *buf)
@@ -1743,6 +1746,11 @@ void bt_l2cap_init(void)
 	if (IS_ENABLED(CONFIG_BT_BREDR)) {
 		bt_l2cap_br_init();
 	}
+
+	k_work_q_start(&rx_work_q, rx_work_q_stack,
+		       K_THREAD_STACK_SIZEOF(rx_work_q_stack),
+		       CONFIG_SYSTEM_WORKQUEUE_PRIORITY);
+	k_thread_name_set(&rx_work_q.thread, "l2cap_rx_work_q");
 }
 
 #if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
