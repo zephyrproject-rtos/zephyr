@@ -1591,9 +1591,10 @@ static inline void rx_demux_event_done(memq_link_t *link,
 	/* dequeue prepare pipeline */
 	next = ull_prepare_dequeue_get();
 	while (next) {
+		u8_t is_aborted = next->is_aborted;
 		u8_t is_resume = next->is_resume;
 
-		if (!next->is_aborted) {
+		if (!is_aborted) {
 			static memq_link_t link;
 			static struct mayfly mfy = {0, 0, &link, NULL,
 						    lll_resume};
@@ -1609,7 +1610,7 @@ static inline void rx_demux_event_done(memq_link_t *link,
 
 		next = ull_prepare_dequeue_get();
 
-		if (!next || next->is_resume || !is_resume) {
+		if (!next || (!is_aborted && (!is_resume || next->is_resume))) {
 			break;
 		}
 	}
