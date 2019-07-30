@@ -136,8 +136,8 @@ FUNC_NORETURN void z_x86_fatal_error(unsigned int reason, const z_arch_esf_t *es
 			      esf->eax, esf->ebx, esf->ecx, esf->edx);
 		z_fatal_print("esi: 0x%08x, edi: 0x%08x, ebp: 0x%08x, esp: 0x%08x",
 			      esf->esi, esf->edi, esf->ebp, esf->esp);
-		z_fatal_print("eflags: 0x%08x cs: 0x%04x", esf->eflags,
-			      esf->cs & 0xFFFFU);
+		z_fatal_print("eflags: 0x%08x cs: 0x%04x cr3: %p", esf->eflags,
+			      esf->cs & 0xFFFFU, z_x86_page_tables_get());
 
 #ifdef CONFIG_EXCEPTION_STACK_TRACE
 		z_fatal_print("call trace:");
