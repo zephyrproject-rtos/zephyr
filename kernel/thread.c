@@ -403,6 +403,14 @@ void z_setup_new_thread(struct k_thread *new_thread,
 		       void *p1, void *p2, void *p3,
 		       int prio, u32_t options, const char *name)
 {
+#ifdef CONFIG_USERSPACE
+	z_object_init(new_thread);
+	z_object_init(stack);
+	new_thread->stack_obj = stack;
+
+	/* Any given thread has access to itself */
+	k_object_access_grant(new_thread, new_thread);
+#endif
 	stack_size = adjust_stack_size(stack_size);
 
 #ifdef CONFIG_THREAD_USERSPACE_LOCAL_DATA
@@ -446,14 +454,6 @@ void z_setup_new_thread(struct k_thread *new_thread,
 		/* Ensure NULL termination, truncate if longer */
 		new_thread->name[CONFIG_THREAD_MAX_NAME_LEN - 1] = '\0';
 	}
-#endif
-#ifdef CONFIG_USERSPACE
-	z_object_init(new_thread);
-	z_object_init(stack);
-	new_thread->stack_obj = stack;
-
-	/* Any given thread has access to itself */
-	k_object_access_grant(new_thread, new_thread);
 #endif
 #ifdef CONFIG_SCHED_CPU_MASK
 	new_thread->base.cpu_mask = -1;
