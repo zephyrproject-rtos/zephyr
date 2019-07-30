@@ -644,6 +644,9 @@ static const struct bt_uuid_128 vnd_long_uuid1 = BT_UUID_INIT_128(
 static const struct bt_uuid_128 vnd_long_uuid2 = BT_UUID_INIT_128(
 	0xde, 0xad, 0xfa, 0xce, 0x78, 0x56, 0x34, 0x12,
 	0x78, 0x56, 0x34, 0x12, 0x78, 0x56, 0x34, 0x12);
+static const struct bt_uuid_128 vnd_short_uuid = BT_UUID_INIT_128(
+	0xf6, 0xde, 0xbc, 0x9a, 0x78, 0x56, 0x34, 0x12,
+	0x78, 0x56, 0x34, 0x12, 0x78, 0x56, 0x34, 0x12);
 
 static u8_t vnd_value[] = { 'V', 'e', 'n', 'd', 'o', 'r' };
 
@@ -733,6 +736,35 @@ static ssize_t write_long_vnd(struct bt_conn *conn,
 	return len;
 }
 
+static u8_t vnd_short_value = 0x01;
+
+static ssize_t read_short_vnd(struct bt_conn *conn,
+			     const struct bt_gatt_attr *attr, void *buf,
+			     u16_t len, u16_t offset)
+{
+	u8_t *value = attr->user_data;
+
+	return bt_gatt_attr_read(conn, attr, buf, len, offset, value,
+				 sizeof(vnd_short_value));
+}
+
+static ssize_t write_short_vnd(struct bt_conn *conn,
+			      const struct bt_gatt_attr *attr, const void *buf,
+			      u16_t len, u16_t offset, u8_t flags)
+{
+	if (len > sizeof(vnd_short_value)) {
+		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
+	}
+
+	if (offset + len > sizeof(vnd_short_value)) {
+		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
+	}
+
+	vnd_short_value = *(u8_t *)buf;
+
+	return len;
+}
+
 static struct bt_gatt_attr vnd_attrs[] = {
 	/* Vendor Primary Service Declaration */
 	BT_GATT_PRIMARY_SERVICE(&vnd_uuid),
@@ -756,6 +788,12 @@ static struct bt_gatt_attr vnd_attrs[] = {
 			       BT_GATT_PERM_PREPARE_WRITE,
 			       read_long_vnd, write_long_vnd,
 			       &vnd_long_value2),
+
+	BT_GATT_CHARACTERISTIC(&vnd_short_uuid.uuid, BT_GATT_CHRC_READ |
+			       BT_GATT_CHRC_WRITE_WITHOUT_RESP,
+			       BT_GATT_PERM_READ | BT_GATT_PERM_WRITE,
+			       read_short_vnd, write_short_vnd,
+			       &vnd_short_value),
 };
 
 static struct bt_gatt_service vnd_svc = BT_GATT_SERVICE(vnd_attrs);
