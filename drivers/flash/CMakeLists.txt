@@ -19,6 +19,7 @@ if(CONFIG_CLOCK_CONTROL_STM32_CUBE)
   zephyr_sources(flash_stm32.c)
 
   zephyr_sources_ifdef(CONFIG_SOC_SERIES_STM32F0X flash_stm32f0x.c)
+  zephyr_sources_ifdef(CONFIG_SOC_SERIES_STM32F1X flash_stm32f1x.c)
   zephyr_sources_ifdef(CONFIG_SOC_SERIES_STM32F3X flash_stm32f3x.c)
   zephyr_sources_ifdef(CONFIG_SOC_SERIES_STM32F4X flash_stm32f4x.c)
   zephyr_sources_ifdef(CONFIG_SOC_SERIES_STM32F7X flash_stm32f7x.c)
