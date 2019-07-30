@@ -51,12 +51,13 @@
 
 #define CFG_HW_FLASH_SEMID	2
 
+#if defined(CONFIG_MULTITHREADING)
 /*
  * This is named flash_stm32_sem_take instead of flash_stm32_lock (and
  * similarly for flash_stm32_sem_give) to avoid confusion with locking
  * actual flash pages.
  */
-static inline void flash_stm32_sem_take(struct device *dev)
+static inline void _flash_stm32_sem_take(struct device *dev)
 {
 
 #ifdef CONFIG_SOC_SERIES_STM32WBX
@@ -67,7 +68,7 @@ static inline void flash_stm32_sem_take(struct device *dev)
 	k_sem_take(&FLASH_STM32_PRIV(dev)->sem, K_FOREVER);
 }
 
-static inline void flash_stm32_sem_give(struct device *dev)
+static inline void _flash_stm32_sem_give(struct device *dev)
 {
 
 	k_sem_give(&FLASH_STM32_PRIV(dev)->sem);
@@ -77,6 +78,15 @@ static inline void flash_stm32_sem_give(struct device *dev)
 #endif /* CONFIG_SOC_SERIES_STM32WBX */
 
 }
+
+#define flash_stm32_sem_init(dev) k_sem_init(&FLASH_STM32_PRIV(dev)->sem, 1, 1)
+#define flash_stm32_sem_take(dev) _flash_stm32_sem_take(dev)
+#define flash_stm32_sem_give(dev) _flash_stm32_sem_give(dev)
+#else
+#define flash_stm32_sem_init(dev)
+#define flash_stm32_sem_take(dev)
+#define flash_stm32_sem_give(dev)
+#endif
 
 #if !defined(CONFIG_SOC_SERIES_STM32WBX)
 static int flash_stm32_check_status(struct device *dev)
@@ -322,12 +332,12 @@ static const struct flash_driver_api flash_stm32_api = {
 
 static int stm32_flash_init(struct device *dev)
 {
-	struct flash_stm32_priv *p = FLASH_STM32_PRIV(dev);
 #if defined(CONFIG_SOC_SERIES_STM32L4X) || \
 	defined(CONFIG_SOC_SERIES_STM32F0X) || \
 	defined(CONFIG_SOC_SERIES_STM32F1X) || \
 	defined(CONFIG_SOC_SERIES_STM32F3X) || \
 	defined(CONFIG_SOC_SERIES_STM32G0X)
+	struct flash_stm32_priv *p = FLASH_STM32_PRIV(dev);
 	struct device *clk = device_get_binding(STM32_CLOCK_CONTROL_NAME);
 
 	/*
@@ -353,7 +363,7 @@ static int stm32_flash_init(struct device *dev)
 	LL_AHB3_GRP1_EnableClock(LL_AHB3_GRP1_PERIPH_HSEM);
 #endif /* CONFIG_SOC_SERIES_STM32WBX */
 
-	k_sem_init(&p->sem, 1, 1);
+	flash_stm32_sem_init(dev);
 
 	return flash_stm32_write_protection(dev, false);
 }
