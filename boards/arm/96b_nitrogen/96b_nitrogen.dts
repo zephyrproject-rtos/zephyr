@@ -83,7 +83,6 @@
 	sck-pin = <26>;
 	mosi-pin = <23>;
 	miso-pin = <25>;
-	csn-pin = <24>;
 };
 
 &flash0 {
