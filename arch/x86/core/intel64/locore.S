@@ -92,6 +92,13 @@ __start:
 	movq $__bss_num_qwords, %rcx
 	rep stosq
 
+#ifdef CONFIG_INIT_STACKS
+	movq $0xAAAAAAAAAAAAAAAA, %rax
+	movq $ist, %rdi
+	movq $((CONFIG_ISR_DEPTH*CONFIG_ISR_STACK_SIZE)>>3), %rcx
+	rep stosq
+#endif
+
 #ifdef CONFIG_X86_MULTIBOOT_INFO
 	/* If EBX isn't 0, then we have a valid multiboot info struct. */
 
