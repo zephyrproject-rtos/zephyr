@@ -9,6 +9,7 @@
 #include <drivers/gpio.h>
 #include <sys/util.h>
 #include <sys/printk.h>
+#include <inttypes.h>
 
 /* change this to use another GPIO port */
 #ifndef DT_ALIAS_SW0_GPIOS_CONTROLLER
@@ -55,7 +56,7 @@
 void button_pressed(struct device *gpiob, struct gpio_callback *cb,
 		    u32_t pins)
 {
-	printk("Button pressed at %d\n", k_cycle_get_32());
+	printk("Button pressed at %" PRIu32 "\n", k_cycle_get_32());
 }
 
 static struct gpio_callback gpio_cb;
