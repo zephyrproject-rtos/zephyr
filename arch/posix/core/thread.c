@@ -13,10 +13,6 @@
  * architecture
  */
 
-#ifdef CONFIG_INIT_STACKS
-#include <string.h>
-#endif /* CONFIG_INIT_STACKS */
-
 #include <toolchain.h>
 #include <kernel_structs.h>
 #include <wait_q.h>

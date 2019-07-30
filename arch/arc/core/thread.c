@@ -16,9 +16,6 @@
 #include <kernel_structs.h>
 #include <offsets_short.h>
 #include <wait_q.h>
-#ifdef CONFIG_INIT_STACKS
-#include <string.h>
-#endif /* CONFIG_INIT_STACKS */
 
 #ifdef CONFIG_USERSPACE
 #include <arch/arc/v2/mpu/arc_core_mpu.h>

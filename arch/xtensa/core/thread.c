@@ -3,9 +3,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifdef CONFIG_INIT_STACKS
-#include <string.h>
-#endif /* CONFIG_INIT_STACKS */
 #ifdef CONFIG_DEBUG
 #include <sys/printk.h>
 #endif

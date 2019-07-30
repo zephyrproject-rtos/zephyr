@@ -12,10 +12,6 @@
  * processor architecture.
  */
 
-#ifdef CONFIG_INIT_STACKS
-#include <string.h>
-#endif /* CONFIG_INIT_STACKS */
-
 #include <toolchain.h>
 #include <linker/sections.h>
 #include <kernel_structs.h>
