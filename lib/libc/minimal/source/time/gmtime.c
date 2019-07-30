@@ -84,6 +84,8 @@ struct tm *gmtime_r(const time_t *_MLIBC_RESTRICT timep,
 	bigint_type days = (z >= 0 ? z : z - 86399) / 86400;
 	unsigned int rem = z - days * 86400;
 
+	*tp = (struct tm){ 0 };
+
 	time_civil_from_days(days, tp);
 
 	tp->tm_hour = rem / 60U / 60U;
