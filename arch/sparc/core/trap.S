@@ -235,6 +235,11 @@ SECTION_FUNC(text, _isr_wrapper)
 	/*   Get rid of the standard frame we reserved before ISR. */
 	add %sp, __STD_STACK_FRAME_SIZEOF, %sp
 
+#ifdef CONFIG_STACK_SENTINEL
+	call z_check_stack_sentinel
+	nop
+#endif
+
 #ifdef CONFIG_MULTITHREADING
 #ifdef CONFIG_PREEMPT_ENABLED
 
