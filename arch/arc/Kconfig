@@ -175,6 +175,14 @@ config ARC_HAS_SECURE
 	help
 	  This option is enabled when ARC core supports secure mode
 
+config ARC_HAS_ACCL_REGS
+	bool "Reg Pair ACCL:ACCH (FPU and/or MPY > 6)"
+	default y if FLOAT
+	help
+	  Depending on the configuration, CPU can contain accumulator reg-pair
+	  (also referred to as r58:r59). These can also be used by gcc as GPR so
+	  kernel needs to save/restore per process
+
 menu "ARC MPU Options"
 depends on CPU_HAS_MPU
 
