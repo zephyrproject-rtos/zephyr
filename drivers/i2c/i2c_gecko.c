@@ -183,7 +183,7 @@ static const struct i2c_driver_api i2c_gecko_driver_api = {
 	.transfer = i2c_gecko_transfer,
 };
 
-#ifdef DT_SILABS_GECKO_I2C_0
+#ifdef DT_INST_0_SILABS_GECKO_I2C
 
 #define PIN_I2C_0_SDA {DT_INST_0_SILABS_GECKO_I2C_LOCATION_SDA_1, \
 		DT_INST_0_SILABS_GECKO_I2C_LOCATION_SDA_2, gpioModeWiredAnd, 1}
@@ -215,9 +215,9 @@ DEVICE_AND_API_INIT(i2c_gecko_0, DT_INST_0_SILABS_GECKO_I2C_LABEL,
 		    &i2c_gecko_init, &i2c_gecko_data_0, &i2c_gecko_config_0,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &i2c_gecko_driver_api);
-#endif /* DT_SILABS_GECKO_I2C_0 */
+#endif /* DT_INST_0_SILABS_GECKO_I2C */
 
-#ifdef DT_SILABS_GECKO_I2C_1
+#ifdef DT_INST_1_SILABS_GECKO_I2C
 
 #define PIN_I2C_1_SDA {DT_INST_1_SILABS_GECKO_I2C_LOCATION_SDA_1, \
 		DT_INST_1_SILABS_GECKO_I2C_LOCATION_SDA_2, gpioModeWiredAnd, 1}
@@ -249,4 +249,4 @@ DEVICE_AND_API_INIT(i2c_gecko_1, DT_INST_1_SILABS_GECKO_I2C_LABEL,
 		    &i2c_gecko_init, &i2c_gecko_data_1, &i2c_gecko_config_1,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &i2c_gecko_driver_api);
-#endif /* DT_SILABS_GECKO_I2C_1 */
+#endif /* DT_INST_1_SILABS_GECKO_I2C */

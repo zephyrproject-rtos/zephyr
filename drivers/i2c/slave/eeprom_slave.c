@@ -203,7 +203,7 @@ static int i2c_eeprom_slave_init(struct device *dev)
 	return 0;
 }
 
-#ifdef DT_ATMEL_AT24_0
+#ifdef DT_INST_0_ATMEL_AT24
 
 static struct i2c_eeprom_slave_data i2c_eeprom_slave_0_dev_data;
 
@@ -222,9 +222,9 @@ DEVICE_AND_API_INIT(i2c_eeprom_slave_0, DT_INST_0_ATMEL_AT24_LABEL,
 		    POST_KERNEL, CONFIG_I2C_SLAVE_INIT_PRIORITY,
 		    &api_funcs);
 
-#endif /* DT_ATMEL_AT24_0 */
+#endif /* DT_INST_0_ATMEL_AT24 */
 
-#ifdef DT_ATMEL_AT24_1
+#ifdef DT_INST_1_ATMEL_AT24
 
 static struct i2c_eeprom_slave_data i2c_eeprom_slave_1_dev_data;
 
@@ -243,4 +243,4 @@ DEVICE_AND_API_INIT(i2c_eeprom_slave_1, DT_INST_1_ATMEL_AT24_LABEL,
 		    POST_KERNEL, CONFIG_I2C_SLAVE_INIT_PRIORITY,
 		    &api_funcs);
 
-#endif /* DT_ATMEL_AT24_1 */
+#endif /* DT_INST_1_ATMEL_AT24 */

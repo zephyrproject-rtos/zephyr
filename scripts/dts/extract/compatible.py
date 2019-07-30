@@ -56,6 +56,7 @@ class DTCompatible(DTDirective):
             compat_instance = 'DT_' + str_to_label(compat) + '_' + str(instance_id)
 
             insert_defs(node_path, {compat_instance: '1'}, {})
+            deprecated_main.append(compat_instance)
 
             # Generate defines of the form:
             # #define DT_<COMPAT>_<INSTANCE ID>_BUS_<BUS> 1

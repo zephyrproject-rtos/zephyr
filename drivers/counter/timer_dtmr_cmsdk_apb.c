@@ -165,7 +165,7 @@ static int dtmr_cmsdk_apb_init(struct device *dev)
 }
 
 /* TIMER 0 */
-#ifdef DT_ARM_CMSDK_DTIMER_0
+#ifdef DT_INST_0_ARM_CMSDK_DTIMER
 static void dtimer_cmsdk_apb_config_0(struct device *dev);
 
 static const struct dtmr_cmsdk_apb_cfg dtmr_cmsdk_apb_cfg_0 = {
@@ -205,4 +205,4 @@ static void dtimer_cmsdk_apb_config_0(struct device *dev)
 		    DEVICE_GET(dtmr_cmsdk_apb_0), 0);
 	irq_enable(DT_INST_0_ARM_CMSDK_DTIMER_IRQ_0);
 }
-#endif /* DT_ARM_CMSDK_DTIMER_0 */
+#endif /* DT_INST_0_ARM_CMSDK_DTIMER */

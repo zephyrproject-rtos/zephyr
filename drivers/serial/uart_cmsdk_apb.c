@@ -456,7 +456,7 @@ static const struct uart_driver_api uart_cmsdk_apb_driver_api = {
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 };
 
-#ifdef DT_ARM_CMSDK_UART_0
+#ifdef DT_INST_0_ARM_CMSDK_UART
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void uart_cmsdk_apb_irq_config_func_0(struct device *dev);
@@ -519,9 +519,9 @@ static void uart_cmsdk_apb_irq_config_func_0(struct device *dev)
 #endif
 #endif
 
-#endif /* DT_ARM_CMSDK_UART_0 */
+#endif /* DT_INST_0_ARM_CMSDK_UART */
 
-#ifdef DT_ARM_CMSDK_UART_1
+#ifdef DT_INST_1_ARM_CMSDK_UART
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void uart_cmsdk_apb_irq_config_func_1(struct device *dev);
@@ -584,9 +584,9 @@ static void uart_cmsdk_apb_irq_config_func_1(struct device *dev)
 #endif
 #endif
 
-#endif /* DT_ARM_CMSDK_UART_1 */
+#endif /* DT_INST_1_ARM_CMSDK_UART */
 
-#ifdef DT_ARM_CMSDK_UART_2
+#ifdef DT_INST_2_ARM_CMSDK_UART
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void uart_cmsdk_apb_irq_config_func_2(struct device *dev);
@@ -623,7 +623,7 @@ DEVICE_AND_API_INIT(uart_cmsdk_apb_2,
 static void uart_cmsdk_apb_irq_config_func_2(struct device *dev)
 {
 	IRQ_CONNECT(CMSDK_APB_UART_2_IRQ,
-		    DT_ARM_CMSDK_UART_2_IRQ_PRIORITY,
+		    DT_INST_2_ARM_CMSDK_UART_IRQ_PRIORITY,
 		    uart_cmsdk_apb_isr,
 		    DEVICE_GET(uart_cmsdk_apb_2),
 		    0);
@@ -649,9 +649,9 @@ static void uart_cmsdk_apb_irq_config_func_2(struct device *dev)
 #endif
 #endif
 
-#endif /* DT_ARM_CMSDK_UART_2 */
+#endif /* DT_INST_2_ARM_CMSDK_UART */
 
-#ifdef DT_ARM_CMSDK_UART_3
+#ifdef DT_INST_3_ARM_CMSDK_UART
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void uart_cmsdk_apb_irq_config_func_3(struct device *dev);
@@ -688,7 +688,7 @@ DEVICE_AND_API_INIT(uart_cmsdk_apb_3,
 static void uart_cmsdk_apb_irq_config_func_3(struct device *dev)
 {
 	IRQ_CONNECT(CMSDK_APB_UART_3_IRQ,
-		    DT_ARM_CMSDK_UART_3_IRQ_PRIORITY,
+		    DT_INST_3_ARM_CMSDK_UART_IRQ_PRIORITY,
 		    uart_cmsdk_apb_isr,
 		    DEVICE_GET(uart_cmsdk_apb_3),
 		    0);
@@ -714,9 +714,9 @@ static void uart_cmsdk_apb_irq_config_func_3(struct device *dev)
 #endif
 #endif
 
-#endif /* DT_ARM_CMSDK_UART_3 */
+#endif /* DT_INST_3_ARM_CMSDK_UART */
 
-#ifdef DT_ARM_CMSDK_UART_4
+#ifdef DT_INST_4_ARM_CMSDK_UART
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void uart_cmsdk_apb_irq_config_func_4(struct device *dev);
@@ -753,7 +753,7 @@ DEVICE_AND_API_INIT(uart_cmsdk_apb_4,
 static void uart_cmsdk_apb_irq_config_func_4(struct device *dev)
 {
 	IRQ_CONNECT(CMSDK_APB_UART_4_IRQ,
-		    DT_ARM_CMSDK_UART_4_IRQ_PRIORITY,
+		    DT_INST_4_ARM_CMSDK_UART_IRQ_PRIORITY,
 		    uart_cmsdk_apb_isr,
 		    DEVICE_GET(uart_cmsdk_apb_4),
 		    0);
@@ -779,4 +779,4 @@ static void uart_cmsdk_apb_irq_config_func_4(struct device *dev)
 #endif
 #endif
 
-#endif /* DT_ARM_CMSDK_UART_4 */
+#endif /* DT_INST_4_ARM_CMSDK_UART */

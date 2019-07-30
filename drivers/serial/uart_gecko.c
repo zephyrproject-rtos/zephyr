@@ -294,7 +294,7 @@ static const struct uart_driver_api uart_gecko_driver_api = {
 #endif
 };
 
-#ifdef DT_SILABS_GECKO_UART_0
+#ifdef DT_INST_0_SILABS_GECKO_UART
 
 #define PIN_UART0_RXD {DT_INST_0_SILABS_GECKO_UART_LOCATION_RX_1, \
 		DT_INST_0_SILABS_GECKO_UART_LOCATION_RX_2, gpioModeInput, 1}
@@ -347,9 +347,9 @@ static void uart_gecko_config_func_0(struct device *dev)
 }
 #endif
 
-#endif /* DT_SILABS_GECKO_UART_0 */
+#endif /* DT_INST_0_SILABS_GECKO_UART */
 
-#ifdef DT_SILABS_GECKO_UART_1
+#ifdef DT_INST_1_SILABS_GECKO_UART
 
 #define PIN_UART1_RXD {DT_INST_1_SILABS_GECKO_UART_LOCATION_RX_1, \
 		DT_INST_1_SILABS_GECKO_UART_LOCATION_RX_2, gpioModeInput, 1}
@@ -402,9 +402,9 @@ static void uart_gecko_config_func_1(struct device *dev)
 }
 #endif
 
-#endif /* DT_SILABS_GECKO_UART_1 */
+#endif /* DT_INST_1_SILABS_GECKO_UART */
 
-#ifdef DT_SILABS_GECKO_USART_0
+#ifdef DT_INST_0_SILABS_GECKO_USART
 
 #define PIN_USART0_RXD {DT_INST_0_SILABS_GECKO_USART_LOCATION_RX_1, \
 		DT_INST_0_SILABS_GECKO_USART_LOCATION_RX_2, gpioModeInput, 1}
@@ -458,9 +458,9 @@ static void usart_gecko_config_func_0(struct device *dev)
 }
 #endif
 
-#endif /* DT_SILABS_GECKO_USART_0 */
+#endif /* DT_INST_0_SILABS_GECKO_USART */
 
-#ifdef DT_SILABS_GECKO_USART_1
+#ifdef DT_INST_1_SILABS_GECKO_USART
 
 #define PIN_USART1_RXD {DT_INST_1_SILABS_GECKO_USART_LOCATION_RX_1, \
 		DT_INST_1_SILABS_GECKO_USART_LOCATION_RX_2, gpioModeInput, 1}
@@ -514,9 +514,9 @@ static void usart_gecko_config_func_1(struct device *dev)
 }
 #endif
 
-#endif /* DT_SILABS_GECKO_USART_1 */
+#endif /* DT_INST_1_SILABS_GECKO_USART */
 
-#ifdef DT_SILABS_GECKO_USART_2
+#ifdef DT_INST_2_SILABS_GECKO_USART
 
 #define PIN_USART2_RXD {DT_INST_2_SILABS_GECKO_USART_LOCATION_RX_1, \
 		DT_INST_2_SILABS_GECKO_USART_LOCATION_RX_2, gpioModeInput, 1}
@@ -570,9 +570,9 @@ static void usart_gecko_config_func_2(struct device *dev)
 }
 #endif
 
-#endif /* DT_SILABS_GECKO_USART_2 */
+#endif /* DT_INST_2_SILABS_GECKO_USART */
 
-#ifdef DT_SILABS_GECKO_USART_3
+#ifdef DT_INST_3_SILABS_GECKO_USART
 
 #define PIN_USART3_RXD {DT_INST_3_SILABS_GECKO_USART_LOCATION_RX_1, \
 		DT_INST_3_SILABS_GECKO_USART_LOCATION_RX_2, gpioModeInput, 1}
@@ -626,4 +626,4 @@ static void usart_gecko_config_func_3(struct device *dev)
 }
 #endif
 
-#endif /* DT_SILABS_GECKO_USART_3 */
+#endif /* DT_INST_3_SILABS_GECKO_USART */

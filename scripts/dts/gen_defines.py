@@ -201,12 +201,12 @@ def write_bus(dev):
 def write_existence_flags(dev):
     # Generate #defines of the form
     #
-    #   #define DT_<COMPAT>_<INSTANCE> 1
+    #   #define DT_INST_<INSTANCE>_<COMPAT> 1
     #
     # These are flags for which devices exist.
 
     for compat in dev.compats:
-        out("{}_{}".format(str2ident(compat), dev.instance_no[compat]), 1)
+        out("INST_{}_{}".format(dev.instance_no[compat], str2ident(compat)), 1)
 
 
 def reg_addr_ident(reg):
