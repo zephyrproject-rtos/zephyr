@@ -12,7 +12,10 @@
 
 void test_gmtime(void)
 {
-	struct tm tm;
+	struct tm tm = {
+		/* Initialize an unset field */
+		.tm_isdst = 1234,
+	};
 	time_t time = 1561994005;
 
 	zassert_equal(&tm, gmtime_r(&time, &tm),
