@@ -387,6 +387,12 @@ struct gatt_descriptor {
 
 #define GATT_EXCHANGE_MTU		0x0a
 
+#define GATT_DISC_ALL_PRIM		0x0b
+struct gatt_disc_all_prim_cmd {
+	u8_t address_type;
+	u8_t address[6];
+} __packed;
+
 #define GATT_DISC_PRIM_UUID		0x0c
 struct gatt_disc_prim_uuid_cmd {
 	u8_t address_type;
@@ -394,7 +400,7 @@ struct gatt_disc_prim_uuid_cmd {
 	u8_t uuid_length;
 	u8_t uuid[0];
 } __packed;
-struct gatt_disc_prim_uuid_rp {
+struct gatt_disc_prim_rp {
 	u8_t services_count;
 	struct gatt_service services[0];
 } __packed;
