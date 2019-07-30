@@ -1953,6 +1953,7 @@ static int usdhc_select_bus_timing(struct usdhc_priv *priv)
 						SDMMCHOST_SUPPORT_SDR104_FREQ);
 				break;
 			}
+			/* fallthrough */
 		case SD_TIMING_DDR50_MODE:
 			error = usdhc_select_fun(priv, SD_GRP_TIMING_MODE,
 				SD_TIMING_DDR50_MODE);
