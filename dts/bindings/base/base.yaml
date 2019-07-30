@@ -80,3 +80,20 @@ properties:
       required: false
       type: string-array
       description: Provided names of DMA channel specifiers
+
+    # pinctrl-0 and pinctrl-names appear in .dts files but are unused as of
+    # writing. Declare them here just so that we can require that all device
+    # node properties are declared in bindings.
+    #
+    # See commit b023fbf938 ("dts/bindings: Remove pinctrl from bindings") as
+    # well.
+
+    pinctrl-0:
+        type: compound
+        category: optional
+        description: PinMux information
+
+    pinctrl-names:
+        type: string-array
+        category: optional
+        description: PinMux names
