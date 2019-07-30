@@ -72,21 +72,42 @@ config I2C_XEC_2
 
 endif # I2C
 
-if SYS_CLOCK_EXISTS
-# If the kernel has timer support, enable both clock control and timer
-config CLOCK_CONTROL
-	default y
-
-config MCHP_XEC_RTOS_TIMER
-	default y
-
-endif # SYS_CLOCK_EXISTS
-
 if ESPI
 
 config ESPI_XEC
 	default y
 
 endif # ESPI
+
+if RTOS_TIMER
+
+config MCHP_XEC_RTOS_TIMER
+	bool
+	default y
+
+# XEC RTOS timer HW frequency is fixed at 32768
+# The driver requires tickless mode and ticks per
+# second to be 32768 for accurate operation.
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 32768
+
+config SYS_CLOCK_TICKS_PER_SEC
+	default 32768
+
+endif # RTOS_TIMER
+
+if !RTOS_TIMER
+
+config CORTEX_M_SYSTICK
+	default y
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 48000000
+
+config SYS_CLOCK_TICKS_PER_SEC
+	default 1000
+
+endif # RTOS_TIMER
 
 endif # BOARD_MEC15XXEVB_ASSY6853
