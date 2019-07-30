@@ -198,7 +198,8 @@ static void tcp_send_process(struct k_timer *timer)
 		}
 	} else {
 		u8_t fl = th_get(pkt)->th_flags;
-		bool forget = ACK == fl || PSH == fl || (ACK | PSH) == fl;
+		bool forget = ACK == fl || PSH == fl || (ACK | PSH) == fl ||
+			RST & fl;
 
 		pkt = forget ? tcp_slist(&conn->send_queue, get, struct net_pkt,
 						next) : tcp_pkt_clone(pkt);
