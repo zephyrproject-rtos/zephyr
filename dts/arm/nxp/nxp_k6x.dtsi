@@ -334,7 +334,6 @@
 			interrupts = <22 0>;
 			clocks = <&sim KINETIS_SIM_LPO_CLK 0 0>;
 			label = "WDT_0";
-			prescaler = <2>;
 		};
 
 		pwm0: pwm@40038000{
