@@ -306,6 +306,16 @@ _skip_sys_power_save_idle_exit:
 SECTION_FUNC(TEXT, _isr_demux)
 	push_s r3
 
+/* according to ARCv2 ISA, r25, r30, r58, r59 are caller-saved
+ * scratch registers, possibly used by interrupt handlers
+ */
+	push r25
+	push r30
+#ifdef CONFIG_ARC_HAS_ACCL_REGS
+	push r58
+	push r59
+#endif
+
 #ifdef CONFIG_EXECUTION_BENCHMARKING
 	bl read_timer_start_of_isr
 #endif
@@ -336,6 +346,14 @@ irq_hint_handled:
 #endif
 	jl_s.d [r1]
 	ld_s r0, [r0] /* delay slot: ISR parameter into r0  */
+
+#ifdef CONFIG_ARC_HAS_ACCL_REGS
+	pop r59
+	pop r58
+#endif
+
+	pop r30
+	pop r25
 
 	/* back from ISR, jump to exit stub */
 	pop_s r3

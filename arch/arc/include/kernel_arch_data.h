@@ -141,9 +141,13 @@ struct _callee_saved_stack {
 	/* r28 is the stack pointer and saved separately */
 	/* r29 is ILINK and does not need to be saved */
 	u32_t r30;
-#ifdef CONFIG_FP_SHARING
+
+#ifdef CONFIG_ARC_HAS_ACCL_REGS
 	u32_t r58;
 	u32_t r59;
+#endif
+
+#ifdef CONFIG_FP_SHARING
 	u32_t fpu_status;
 	u32_t fpu_ctrl;
 #ifdef CONFIG_FP_FPU_DA

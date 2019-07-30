@@ -55,12 +55,15 @@ extern "C" {
 #endif
 	st r30, [sp, ___callee_saved_stack_t_r30_OFFSET]
 
+#ifdef CONFIG_ARC_HAS_ACCL_REGS
+	st r58, [sp, ___callee_saved_stack_t_r58_OFFSET]
+	st r59, [sp, ___callee_saved_stack_t_r59_OFFSET]
+#endif
+
 #ifdef CONFIG_FP_SHARING
 	ld r13, [r2, ___thread_base_t_user_options_OFFSET]
 	/* K_FP_REGS is bit 1 */
 	bbit0 r13, 1, 1f
-	st r58, [sp, ___callee_saved_stack_t_r58_OFFSET]
-	st r59, [sp, ___callee_saved_stack_t_r59_OFFSET]
 	lr r13, [_ARC_V2_FPU_STATUS]
 	st_s r13, [sp, ___callee_saved_stack_t_fpu_status_OFFSET]
 	lr r13, [_ARC_V2_FPU_CTRL]
@@ -88,12 +91,15 @@ extern "C" {
 	/* restore stack pointer from struct k_thread */
 	ld sp, [r2, _thread_offset_to_sp]
 
+#ifdef CONFIG_ARC_HAS_ACCL_REGS
+	ld r58, [sp, ___callee_saved_stack_t_r58_OFFSET]
+	ld r59, [sp, ___callee_saved_stack_t_r59_OFFSET]
+#endif
+
 #ifdef CONFIG_FP_SHARING
 	ld r13, [r2, ___thread_base_t_user_options_OFFSET]
 	/* K_FP_REGS is bit 1 */
 	bbit0 r13, 1, 2f
-	ld r58, [sp, ___callee_saved_stack_t_r58_OFFSET]
-	ld r59, [sp, ___callee_saved_stack_t_r59_OFFSET]
 
 	ld_s r13, [sp, ___callee_saved_stack_t_fpu_status_OFFSET]
 	sr r13, [_ARC_V2_FPU_STATUS]
