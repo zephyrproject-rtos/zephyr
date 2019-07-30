@@ -101,6 +101,11 @@ void z_clock_isr(void *arg)
 
 int z_clock_driver_init(struct device *device)
 {
+#if defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME)
+	SystemCoreClockUpdate();
+	z_clock_hw_cycles_per_sec = SystemCoreClock;
+#endif
+
 	NVIC_SetPriority(SysTick_IRQn, _IRQ_PRIO_OFFSET);
 	last_load = CYC_PER_TICK - 1;
 	overflow_cyc = 0U;
@@ -142,6 +147,25 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 	delay = delay + (cycle_count - announced_cycles);
 	delay = ((delay + CYC_PER_TICK - 1) / CYC_PER_TICK) * CYC_PER_TICK;
 	last_load = delay - (cycle_count - announced_cycles);
+
+	overflow_cyc = 0U;
+	SysTick->LOAD = last_load - 1;
+	SysTick->VAL = 0; /* resets timer to last_load */
+
+	k_spin_unlock(&lock, key);
+#endif
+}
+
+void z_clock_update(void)
+{
+#if defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME)
+	k_spinlock_key_t key = k_spin_lock(&lock);
+
+	cycle_count += elapsed();
+	SystemCoreClockUpdate();
+	z_clock_hw_cycles_per_sec = SystemCoreClock;
+
+	last_load = CYC_PER_TICK - 1;
 
 	overflow_cyc = 0U;
 	SysTick->LOAD = last_load - 1;

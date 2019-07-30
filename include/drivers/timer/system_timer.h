@@ -90,6 +90,15 @@ extern int z_clock_device_ctrl(struct device *device, u32_t ctrl_command,
 extern void z_clock_set_timeout(s32_t ticks, bool idle);
 
 /**
+ * @brief Updates system clock driver
+ *
+ * This notifies the timer driver that the system core clock have
+ * changed during program execution. The function calculates and
+ * updates the new tick units from the system core clock.
+ */
+extern void z_clock_update(void);
+
+/**
  * @brief Timer idle exit notification
  *
  * This notifies the timer driver that the system is exiting the idle
