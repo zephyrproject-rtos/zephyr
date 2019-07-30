@@ -1127,27 +1127,47 @@ void test_object_recycle(void)
 
 void test_oops_panic(void)
 {
+#if !defined(CONFIG_ARC)
 	test_oops(K_ERR_KERNEL_PANIC, K_ERR_KERNEL_OOPS);
+#else
+	ztest_test_skip(); /* FIXME: #17590 */
+#endif
 }
 
 void test_oops_oops(void)
 {
+#if !defined(CONFIG_ARC)
 	test_oops(K_ERR_KERNEL_OOPS, K_ERR_KERNEL_OOPS);
+#else
+	ztest_test_skip(); /* FIXME: #17590 */
+#endif
 }
 
 void test_oops_exception(void)
 {
+#if !defined(CONFIG_ARC)
 	test_oops(K_ERR_CPU_EXCEPTION, K_ERR_KERNEL_OOPS);
+#else
+	ztest_test_skip(); /* FIXME: #17590 */
+#endif
 }
 
 void test_oops_maxint(void)
 {
+#if !defined(CONFIG_ARC)
 	test_oops(INT_MAX, K_ERR_KERNEL_OOPS);
+#else
+	ztest_test_skip(); /* FIXME: #17590 */
+#endif
 }
 
 void test_oops_stackcheck(void)
 {
+#if !defined(CONFIG_ARC)
 	test_oops(K_ERR_STACK_CHK_FAIL, K_ERR_STACK_CHK_FAIL);
+#else
+	ztest_test_skip(); /* FIXME: #17590 */
+#endif
 }
 
 void test_main(void)
@@ -1202,13 +1222,11 @@ void test_main(void)
 			 ztest_unit_test(test_stack_buffer),
 			 ztest_user_unit_test(test_unimplemented_syscall),
 			 ztest_user_unit_test(test_bad_syscall),
-#if !defined(CONFIG_ARC) /* FIXME: #17590 */
 			 ztest_user_unit_test(test_oops_panic),
 			 ztest_user_unit_test(test_oops_oops),
 			 ztest_user_unit_test(test_oops_exception),
 			 ztest_user_unit_test(test_oops_maxint),
 			 ztest_user_unit_test(test_oops_stackcheck),
-#endif /* !defined(CONFIG_ARC) */
 			 ztest_unit_test(test_object_recycle)
 			 );
 	ztest_run_test_suite(userspace);
