@@ -49,10 +49,6 @@
 			reg = <0x40047000 0x1060>;
 			label = "SIM";
 
-			clk-divider-core = <1>;
-			clk-divider-bus = <1>;
-			clk-divider-flash = <2>;
-
 			#clock-cells = <3>;
 		};
 
