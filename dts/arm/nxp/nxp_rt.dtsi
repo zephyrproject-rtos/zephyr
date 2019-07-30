@@ -60,7 +60,7 @@
 			};
 		};
 
-		flexspi0: flexspi0@402a8000 {
+		flexspi0: spi@402a8000 {
 			compatible = "nxp,imx-flexspi";
 			reg = <0x402a8000 0x4000>;
 			interrupts = <108 0>;
@@ -69,7 +69,7 @@
 			#size-cells = <0>;
 		};
 
-		flexspi1: flexspi1@402a4000 {
+		flexspi1: spi@402a4000 {
 			compatible = "nxp,imx-flexspi";
 			reg = <0x402a4000 0x4000>;
 			interrupts = <107 0>;
