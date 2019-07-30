@@ -49,7 +49,7 @@ static inline void kernel_arch_init(void)
 #endif
 #if CONFIG_X86_STACK_PROTECTION
 	z_x86_mmu_set_flags(&z_x86_kernel_pdpt, _interrupt_stack, MMU_PAGE_SIZE,
-			    MMU_ENTRY_READ, MMU_PTE_RW_MASK);
+			    MMU_ENTRY_READ, MMU_PTE_RW_MASK, true);
 #endif
 }
 
@@ -76,18 +76,24 @@ z_set_thread_return_value(struct k_thread *thread, unsigned int value)
 
 extern void k_cpu_atomic_idle(unsigned int key);
 
+#ifdef CONFIG_USERSPACE
 extern FUNC_NORETURN void z_x86_userspace_enter(k_thread_entry_t user_entry,
 					       void *p1, void *p2, void *p3,
 					       u32_t stack_end,
 					       u32_t stack_start);
 
-/* Helper macros needed to be passed to x86_update_mem_domain_pages */
-#define X86_MEM_DOMAIN_SET_PAGES   (0U)
-#define X86_MEM_DOMAIN_RESET_PAGES (1U)
+void z_x86_thread_pt_init(struct k_thread *thread);
 
-extern void z_x86_mem_domain_pages_update(struct k_mem_domain *mem_domain,
-					  u32_t page_conf);
+void z_x86_apply_mem_domain(struct x86_mmu_pdpt *pdpt,
+			    struct k_mem_domain *mem_domain);
 
+static inline struct x86_mmu_pdpt *z_x86_pdpt_get(struct k_thread *thread)
+{
+	uintptr_t addr = thread->stack_info.start;
+
+	return (struct x86_mmu_pdpt *)(addr - sizeof(struct x86_mmu_pdpt));
+}
+#endif /* CONFIG_USERSPACE */
 #include <stddef.h> /* For size_t */
 
 #ifdef __cplusplus

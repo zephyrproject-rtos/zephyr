@@ -58,13 +58,14 @@ SECTION_FUNC(TEXT, z_x86_trampoline_to_kernel)
 
 	/* %esp = _kernel->current->stack_info.start
 	 *
-	 * This is the lowest address of the user mode stack, and highest
-	 * address of the kernel stack, they are adjacent.
-	 * We want to transplant context here.
+	 * This is the lowest address of the user mode stack, the PDPT is
+	 * immediately before it, and then the highest address of the kernel
+	 * stack. We want to transplant context here.
 	 */
 	movl	$_kernel, %esi
 	movl	_kernel_offset_to_current(%esi), %esi
 	movl	_thread_offset_to_stack_start(%esi), %esp
+	subl	$Z_X86_PDPT_SIZE, %esp
 
 	/* Transplant stack context and restore ESI/EDI. Taking care to zero
 	 * or put uninteresting values where we stashed ESI/EDI since the
@@ -134,9 +135,15 @@ SECTION_FUNC(TEXT, z_x86_trampoline_to_user_always)
 	xchgl	%edi, (%edi)	/* Exchange old edi to restore it and put
 				   trampoline stack address in its old storage
 				   area */
-	/* Switch to user page table */
+	/* Switch to user page table. The per-thread user page table is
+	 * located at the highest addresses of the privilege mode elevation
+	 * stack, immediately below the thread stack buffer.
+	 */
 	pushl	%eax
-	movl	$z_x86_user_pdpt, %eax
+	movl	$_kernel, %eax
+	movl	_kernel_offset_to_current(%eax), %eax
+	movl	_thread_offset_to_stack_start(%eax), %eax
+	subl	$Z_X86_PDPT_SIZE, %eax
 	movl	%eax, %cr3
 	popl	%eax
 	movl	$0, -4(%esp)	/* Delete stashed EAX data */
@@ -166,13 +173,14 @@ SECTION_FUNC(TEXT, z_x86_syscall_entry_stub)
 
 	/* %esp = _kernel->current->stack_info.start
 	 *
-	 * This is the lowest address of the user mode stack, and highest
-	 * address of the kernel stack, they are adjacent.
-	 * We want to transplant context here.
+	 * This is the lowest address of the user mode stack, the PDPT is
+	 * immediately before it, and then the highest address of the kernel
+	 * stack. We want to transplant context here.
 	 */
 	movl	$_kernel, %esi
 	movl	_kernel_offset_to_current(%esi), %esi
 	movl	_thread_offset_to_stack_start(%esi), %esp
+	subl	$Z_X86_PDPT_SIZE, %esp
 
 	/* Transplant context according to layout above. Variant of logic
 	 * in x86_trampoline_to_kernel */
@@ -324,6 +332,7 @@ SECTION_FUNC(TEXT, z_x86_userspace_enter)
 	 * want to leak any information.
 	 */
 	mov	%edi, %esp
+	subl	$Z_X86_PDPT_SIZE, %esp
 
 	/* Stash some registers we are going to need to erase the user
 	 * stack.

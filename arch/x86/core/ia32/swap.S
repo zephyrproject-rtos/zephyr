@@ -22,8 +22,8 @@
 	GTEXT(_x86_user_thread_entry_wrapper)
 
 	/* externs */
-#ifdef CONFIG_X86_USERSPACE
-	GTEXT(_x86_swap_update_page_tables)
+#if !defined(CONFIG_X86_KPTI) && defined(CONFIG_X86_USERSPACE)
+	GTEXT(z_x86_swap_update_page_tables)
 #endif
 	GDATA(_k_neg_eagain)
 
@@ -148,21 +148,23 @@ SECTION_FUNC(TEXT, __swap)
 	 * thread to be swapped in, and %edi still contains &_kernel. %edx
 	 * has the pointer to the outgoing thread.
 	 */
-#ifdef CONFIG_X86_USERSPACE
+#if defined(CONFIG_X86_USERSPACE) && !defined(CONFIG_X86_KPTI)
 
 #ifdef CONFIG_X86_IAMCU
 	push	%eax
 #else
-	push	%edx
 	push	%eax
 #endif
-	call	_x86_swap_update_page_tables
+	call	z_x86_swap_update_page_tables
 #ifdef CONFIG_X86_IAMCU
 	pop	%eax
 #else
 	pop	%eax
-	pop	%edx
 #endif
+	/* Page tables updated. All memory access after this point needs to be
+	 * to memory that has the same mappings and access attributes wrt
+	 * supervisor mode!
+	 */
 #endif
 
 #ifdef CONFIG_EAGER_FP_SHARING

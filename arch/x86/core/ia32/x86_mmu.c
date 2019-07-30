@@ -11,6 +11,7 @@
 #include <kernel_structs.h>
 #include <init.h>
 #include <ctype.h>
+#include <string.h>
 
 /* Common regions for all x86 processors.
  * Peripheral I/O ranges configured at the SOC level
@@ -180,8 +181,8 @@ void z_x86_mmu_get_flags(struct x86_mmu_pdpt *pdpt, void *addr,
 	}
 }
 
-
-int z_arch_buffer_validate(void *addr, size_t size, int write)
+int z_x86_mmu_validate(struct x86_mmu_pdpt *pdpt, void *addr, size_t size,
+		       int write)
 {
 	u32_t start_pde_num;
 	u32_t end_pde_num;
@@ -212,12 +213,12 @@ int z_arch_buffer_validate(void *addr, size_t size, int write)
 		}
 
 		/* Ensure page directory pointer table entry is present */
-		if (X86_MMU_GET_PDPTE_INDEX(&USER_PDPT, pdpte)->p == 0) {
+		if (X86_MMU_GET_PDPTE_INDEX(pdpt, pdpte)->p == 0) {
 			goto out;
 		}
 
 		struct x86_mmu_pd *pd_address =
-			X86_MMU_GET_PD_ADDR_INDEX(&USER_PDPT, pdpte);
+			X86_MMU_GET_PD_ADDR_INDEX(pdpt, pdpte);
 
 		/* Iterate for all the pde's the buffer might take up.
 		 * (depends on the size of the buffer and start address
@@ -298,10 +299,9 @@ static inline void tlb_flush_page(void *addr)
 }
 
 
-void z_x86_mmu_set_flags(struct x86_mmu_pdpt *pdpt, void *ptr,
-			size_t size,
-			x86_page_entry_data_t flags,
-			x86_page_entry_data_t mask)
+void z_x86_mmu_set_flags(struct x86_mmu_pdpt *pdpt, void *ptr, size_t size,
+			 x86_page_entry_data_t flags,
+			 x86_page_entry_data_t mask, bool flush)
 {
 	union x86_mmu_pte *pte;
 
@@ -335,7 +335,9 @@ void z_x86_mmu_set_flags(struct x86_mmu_pdpt *pdpt, void *ptr,
 		}
 
 		pte->value = (pte->value & ~mask) | cur_flags;
-		tlb_flush_page((void *)addr);
+		if (flush) {
+			tlb_flush_page((void *)addr);
+		}
 
 		size -= MMU_PAGE_SIZE;
 		addr += MMU_PAGE_SIZE;
@@ -343,150 +345,317 @@ void z_x86_mmu_set_flags(struct x86_mmu_pdpt *pdpt, void *ptr,
 }
 
 #ifdef CONFIG_X86_USERSPACE
-void z_x86_reset_pages(void *start, size_t size)
+int z_arch_buffer_validate(void *addr, size_t size, int write)
 {
-#ifdef CONFIG_X86_KPTI
-	/* Clear both present bit and access flags. Only applies
-	 * to threads running in user mode.
-	 */
-	z_x86_mmu_set_flags(&z_x86_user_pdpt, start, size,
-			   MMU_ENTRY_NOT_PRESENT,
-			   K_MEM_PARTITION_PERM_MASK | MMU_PTE_P_MASK);
-#else
-	/* Mark as supervisor read-write, user mode no access */
-	z_x86_mmu_set_flags(&z_x86_kernel_pdpt, start, size,
-			   K_MEM_PARTITION_P_RW_U_NA,
-			   K_MEM_PARTITION_PERM_MASK);
-#endif /* CONFIG_X86_KPTI */
+	return z_x86_mmu_validate(z_x86_pdpt_get(_current), addr, size, write);
 }
 
-static inline void activate_partition(struct k_mem_partition *partition)
+static uintptr_t thread_pd_create(uintptr_t pages,
+				  struct x86_mmu_pdpt *thread_pdpt,
+				  struct x86_mmu_pdpt *master_pdpt)
 {
-	/* Set the partition attributes */
-	u64_t attr, mask;
+	uintptr_t pos = pages, phys_addr = Z_X86_PD_START;
 
-#if CONFIG_X86_KPTI
-	attr = partition->attr | MMU_ENTRY_PRESENT;
-	mask = K_MEM_PARTITION_PERM_MASK | MMU_PTE_P_MASK;
-#else
-	attr = partition->attr;
-	mask = K_MEM_PARTITION_PERM_MASK;
-#endif /* CONFIG_X86_KPTI */
+	for (int i = 0; i < Z_X86_NUM_PD; i++, phys_addr += Z_X86_PD_AREA) {
+		union x86_mmu_pdpte *pdpte;
+		struct x86_mmu_pd *master_pd, *dest_pd;
 
-	z_x86_mmu_set_flags(&USER_PDPT,
-			    (void *)partition->start,
-			    partition->size, attr, mask);
-}
+		/* Obtain PD in master tables for the address range and copy
+		 * into the per-thread PD for this range
+		 */
+		master_pd = X86_MMU_GET_PD_ADDR(master_pdpt, phys_addr);
+		dest_pd = (struct x86_mmu_pd *)pos;
 
-/* Pass 1 to page_conf if reset of mem domain pages is needed else pass a 0*/
-void z_x86_mem_domain_pages_update(struct k_mem_domain *mem_domain,
-				   u32_t page_conf)
-{
-	u32_t partition_index;
-	u32_t total_partitions;
-	struct k_mem_partition *partition;
-	u32_t partitions_count;
+		(void)memcpy(dest_pd, master_pd, sizeof(struct x86_mmu_pd));
 
-	/* If mem_domain doesn't point to a valid location return.*/
-	if (mem_domain == NULL) {
-		goto out;
+		/* Update pointer in per-thread pdpt to point to the per-thread
+		 * directory we just copied
+		 */
+		pdpte = X86_MMU_GET_PDPTE(thread_pdpt, phys_addr);
+		pdpte->pd = pos >> MMU_PAGE_SHIFT;
+		pos += MMU_PAGE_SIZE;
 	}
 
-	/* Get the total number of partitions*/
-	total_partitions = mem_domain->num_partitions;
+	return pos;
+}
 
-	/* Iterate over all the partitions for the given mem_domain
-	 * For x86: iterate over all the partitions and set the
-	 * required flags in the correct MMU page tables.
+/* thread_pdpt must be initialized, as well as all the page directories */
+static uintptr_t thread_pt_create(uintptr_t pages,
+				  struct x86_mmu_pdpt *thread_pdpt,
+				  struct x86_mmu_pdpt *master_pdpt)
+{
+	uintptr_t pos = pages, phys_addr = Z_X86_PT_START;
+
+	for (int i = 0; i < Z_X86_NUM_PT; i++, phys_addr += Z_X86_PT_AREA) {
+		union x86_mmu_pde_pt *pde;
+		struct x86_mmu_pt *master_pt, *dest_pt;
+
+		/* Same as we did with the directories, obtain PT in master
+		 * tables for the address range and copy into per-thread PT
+		 * for this range
+		 */
+		master_pt = X86_MMU_GET_PT_ADDR(master_pdpt, phys_addr);
+		dest_pt = (struct x86_mmu_pt *)pos;
+		(void)memcpy(dest_pt, master_pt, sizeof(struct x86_mmu_pd));
+
+		/* And then wire this up to the relevant per-thread
+		 * page directory entry
+		 */
+		pde = X86_MMU_GET_PDE(thread_pdpt, phys_addr);
+		pde->pt = pos >> MMU_PAGE_SHIFT;
+		pos += MMU_PAGE_SIZE;
+	}
+
+	return pos;
+}
+
+/* Initialize the page tables for a thread. This will contain, once done,
+ * the boot-time configuration for a user thread page tables. There are
+ * no pre-conditions on the existing state of the per-thread tables.
+ */
+static void copy_page_tables(struct k_thread *thread,
+			     struct x86_mmu_pdpt *master_pdpt)
+{
+	uintptr_t pos, start;
+	struct x86_mmu_pdpt *thread_pdpt = z_x86_pdpt_get(thread);
+
+	__ASSERT(thread->stack_obj != NULL, "no stack object assigned");
+	__ASSERT(z_x86_page_tables_get() != thread_pdpt, "PDPT is active");
+	__ASSERT(((uintptr_t)thread_pdpt & 0x1f) == 0, "unaligned pdpt at %p",
+		 thread_pdpt);
+	__ASSERT(((uintptr_t)thread_pdpt) == ((uintptr_t)thread->stack_obj +
+					      Z_ARCH_THREAD_STACK_RESERVED -
+					      sizeof(struct x86_mmu_pdpt)),
+		 "misplaced pdpt\n");
+	__ASSERT(thread->stack_info.start == ((uintptr_t)thread->stack_obj +
+					      Z_ARCH_THREAD_STACK_RESERVED),
+		"stack_info.start is wrong");
+
+	(void)memcpy(thread_pdpt, master_pdpt, sizeof(struct x86_mmu_pdpt));
+
+	/* pos represents the page we are working with in the reserved area
+	 * in the stack buffer for per-thread tables. As we create tables in
+	 * this area, pos is incremented to the next free page.
+	 *
+	 * The layout of the stack object, when this is done:
+	 *
+	 * +---------------------------+  <- thread->stack_obj
+	 * | PDE(0)                    |
+	 * +---------------------------+
+	 * | ...                       |
+	 * +---------------------------+
+	 * | PDE(Z_X86_NUM_PD - 1)     |
+	 * +---------------------------+
+	 * | PTE(0)                    |
+	 * +---------------------------+
+	 * | ...                       |
+	 * +---------------------------+
+	 * | PTE(Z_X86_NUM_PT - 1)     |
+	 * +---------------------------+ <- pos once this logic completes
+	 * | Stack guard               |
+	 * +---------------------------+
+	 * | Privilege elevation stack |
+	 * | PDPT                      |
+	 * +---------------------------+ <- thread->stack_info.start
+	 * | Thread stack              |
+	 * | ...                       |
+	 *
 	 */
-	partitions_count = 0U;
-	for (partition_index = 0U;
-	     partitions_count < total_partitions;
-	     partition_index++) {
+	start = (uintptr_t)(thread->stack_obj);
+	pos = thread_pd_create(start, thread_pdpt, master_pdpt);
+	pos = thread_pt_create(pos, thread_pdpt, master_pdpt);
 
-		/* Get the partition info */
-		partition = &mem_domain->partitions[partition_index];
-		if (partition->size == 0U) {
+	__ASSERT(pos == (start + Z_X86_THREAD_PT_AREA),
+		 "wrong amount of stack object memory used");
+}
+
+static void reset_mem_partition(struct x86_mmu_pdpt *thread_pdpt,
+				struct k_mem_partition *partition)
+{
+	uintptr_t addr = partition->start;
+	size_t size = partition->size;
+
+	__ASSERT((addr & MMU_PAGE_MASK) == 0U, "unaligned address provided");
+	__ASSERT((size & MMU_PAGE_MASK) == 0U, "unaligned size provided");
+
+	while (size != 0) {
+		union x86_mmu_pte *thread_pte, *master_pte;
+
+		thread_pte = X86_MMU_GET_PTE(thread_pdpt, addr);
+		master_pte = X86_MMU_GET_PTE(&USER_PDPT, addr);
+
+		(void)memcpy(thread_pte, master_pte, sizeof(union x86_mmu_pte));
+
+		size -= MMU_PAGE_SIZE;
+		addr += MMU_PAGE_SIZE;
+	}
+}
+
+static void apply_mem_partition(struct x86_mmu_pdpt *pdpt,
+				struct k_mem_partition *partition)
+{
+	x86_page_entry_data_t x86_attr;
+	x86_page_entry_data_t mask;
+
+	if (IS_ENABLED(CONFIG_X86_KPTI)) {
+		x86_attr = partition->attr | MMU_ENTRY_PRESENT;
+		mask = K_MEM_PARTITION_PERM_MASK | MMU_PTE_P_MASK;
+	} else {
+		x86_attr = partition->attr;
+		mask = K_MEM_PARTITION_PERM_MASK;
+	}
+
+	__ASSERT(partition->start >= DT_PHYS_RAM_ADDR,
+		 "region at %08lx[%u] extends below system ram start 0x%08x",
+		 partition->start, partition->size, DT_PHYS_RAM_ADDR);
+	__ASSERT(((partition->start + partition->size) <=
+		  (DT_PHYS_RAM_ADDR + (DT_RAM_SIZE * 1024U))),
+		 "region at %08lx[%u] end at %08lx extends beyond system ram end 0x%08x",
+		 partition->start, partition->size,
+		 partition->start + partition->size,
+		 (DT_PHYS_RAM_ADDR + (DT_RAM_SIZE * 1024U)));
+
+	z_x86_mmu_set_flags(pdpt, (void *)partition->start, partition->size,
+			    x86_attr, mask, false);
+}
+
+void z_x86_apply_mem_domain(struct x86_mmu_pdpt *pdpt,
+			    struct k_mem_domain *mem_domain)
+{
+	for (int i = 0, pcount = 0; pcount < mem_domain->num_partitions; i++) {
+		struct k_mem_partition *partition;
+
+		partition = &mem_domain->partitions[i];
+		if (partition->size == 0) {
 			continue;
 		}
-		partitions_count++;
-		if (page_conf == X86_MEM_DOMAIN_SET_PAGES) {
-			activate_partition(partition);
-		} else {
-			z_x86_reset_pages((void *)partition->start,
-					  partition->size);
-		}
+		pcount++;
+
+		apply_mem_partition(pdpt, partition);
 	}
-out:
-	return;
 }
 
-/* Load the partitions of the thread. */
-void z_arch_mem_domain_thread_add(struct k_thread *thread)
-{
-	if (_current != thread) {
-		return;
-	}
-
-	z_x86_mem_domain_pages_update(thread->mem_domain_info.mem_domain,
-				      X86_MEM_DOMAIN_SET_PAGES);
-}
-
-/* Destroy or reset the mmu page tables when necessary.
- * Needed when either swap takes place or k_mem_domain_destroy is called.
+/* Called on creation of a user thread or when a supervisor thread drops to
+ * user mode.
+ *
+ * Sets up the per-thread page tables, such that when they are activated on
+ * context switch, everything is ready to go.
  */
+void z_x86_thread_pt_init(struct k_thread *thread)
+{
+	struct x86_mmu_pdpt *pdpt = z_x86_pdpt_get(thread);
+
+	/* USER_PDPT contains the page tables with the boot time memory
+	 * policy. We use it as a template to set up the per-thread page
+	 * tables.
+	 *
+	 * With KPTI, this is a distinct set of tables z_x86_user_pdpt from the
+	 * kernel page tables in z_x86_kernel_pdpt; it has all non user
+	 * accessible pages except the trampoline page marked as non-present.
+	 * Without KPTI, they are the same object.
+	 */
+	copy_page_tables(thread, &USER_PDPT);
+
+	/* Enable access to the thread's own stack buffer */
+	z_x86_mmu_set_flags(pdpt, (void *)thread->stack_info.start,
+			    ROUND_UP(thread->stack_info.size, MMU_PAGE_SIZE),
+			    MMU_ENTRY_PRESENT | K_MEM_PARTITION_P_RW_U_RW,
+			    MMU_PTE_P_MASK | K_MEM_PARTITION_PERM_MASK,
+			    false);
+}
+
+/*
+ * Memory domain interface
+ *
+ * In all cases, if one of these APIs is called on a supervisor thread,
+ * we don't need to do anything. If the thread later drops into supervisor
+ * mode the per-thread page tables will be generated and the memory domain
+ * configuration applied.
+ */
+void z_arch_mem_domain_partition_remove(struct k_mem_domain *domain,
+					u32_t partition_id)
+{
+	sys_dnode_t *node, *next_node;
+
+	/* Removing a partition. Need to reset the relevant memory range
+	 * to the defaults in USER_PDPT for each thread.
+	 */
+	SYS_DLIST_FOR_EACH_NODE_SAFE(&domain->mem_domain_q, node, next_node) {
+		struct k_thread *thread =
+			CONTAINER_OF(node, struct k_thread, mem_domain_info);
+
+		if ((thread->base.user_options & K_USER) == 0) {
+			continue;
+		}
+
+		reset_mem_partition(z_x86_pdpt_get(thread),
+				    &domain->partitions[partition_id]);
+	}
+}
+
 void z_arch_mem_domain_destroy(struct k_mem_domain *domain)
 {
-	if (_current->mem_domain_info.mem_domain != domain) {
-		return;
-	}
+	for (int i = 0, pcount = 0; pcount < domain->num_partitions; i++) {
+		struct k_mem_partition *partition;
 
-	z_x86_mem_domain_pages_update(domain, X86_MEM_DOMAIN_RESET_PAGES);
+		partition = &domain->partitions[i];
+		if (partition->size == 0) {
+			continue;
+		}
+		pcount++;
+
+		z_arch_mem_domain_partition_remove(domain, i);
+	}
 }
 
 void z_arch_mem_domain_thread_remove(struct k_thread *thread)
 {
-	if (_current != thread) {
+	struct k_mem_domain *domain = thread->mem_domain_info.mem_domain;
+
+	/* Non-user threads don't have per-thread page tables set up */
+	if ((thread->base.user_options & K_USER) == 0) {
 		return;
 	}
 
-	z_arch_mem_domain_destroy(thread->mem_domain_info.mem_domain);
-}
+	for (int i = 0, pcount = 0; pcount < domain->num_partitions; i++) {
+		struct k_mem_partition *partition;
 
-/* Reset/destroy one partition specified in the argument of the API. */
-void z_arch_mem_domain_partition_remove(struct k_mem_domain *domain,
-					u32_t partition_id)
-{
-	struct k_mem_partition *partition;
+		partition = &domain->partitions[i];
+		if (partition->size == 0) {
+			continue;
+		}
+		pcount++;
 
-	if (_current->mem_domain_info.mem_domain != domain) {
-		return;
+		reset_mem_partition(z_x86_pdpt_get(thread), partition);
 	}
-
-	__ASSERT_NO_MSG(domain != NULL);
-	__ASSERT(partition_id <= domain->num_partitions,
-		 "invalid partitions");
-
-	partition = &domain->partitions[partition_id];
-	z_x86_reset_pages((void *)partition->start, partition->size);
 }
 
-/* Add one partition specified in the argument of the API. */
 void z_arch_mem_domain_partition_add(struct k_mem_domain *domain,
-				    u32_t partition_id)
+				     u32_t partition_id)
 {
-	struct k_mem_partition *partition;
+	sys_dnode_t *node, *next_node;
 
-	if (_current->mem_domain_info.mem_domain != domain) {
+	SYS_DLIST_FOR_EACH_NODE_SAFE(&domain->mem_domain_q, node, next_node) {
+		struct k_thread *thread =
+			CONTAINER_OF(node, struct k_thread, mem_domain_info);
+
+		if ((thread->base.user_options & K_USER) == 0) {
+			continue;
+		}
+
+		apply_mem_partition(z_x86_pdpt_get(thread),
+				    &domain->partitions[partition_id]);
+	}
+}
+
+void z_arch_mem_domain_thread_add(struct k_thread *thread)
+{
+	if ((thread->base.user_options & K_USER) == 0) {
 		return;
 	}
 
-	__ASSERT_NO_MSG(domain != NULL);
-	__ASSERT(partition_id <= domain->num_partitions,
-		 "invalid partitions");
-
-	partition = &domain->partitions[partition_id];
-	activate_partition(partition);
+	z_x86_apply_mem_domain(z_x86_pdpt_get(thread),
+			       thread->mem_domain_info.mem_domain);
 }
 
 int z_arch_mem_domain_max_partitions_get(void)
