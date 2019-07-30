@@ -160,7 +160,7 @@ void test_eeprom_slave(void)
 	 * label property ("EEPROM_SLAVE_0") rather than the generated
 	 * macro DT_INST_0_ATMEL_AT24_LABEL.  There is no guarantee that
 	 * the index for the compatible is persistent across builds;
-	 * for example DT_ATMEL_AT24_0 might refer to "EEPROM_SLAVE_1"
+	 * for example DT_INST_0_ATMEL_AT24 might refer to "EEPROM_SLAVE_1"
 	 * if the order of the node declarations were changed in the
 	 * overlay file.
 	 *

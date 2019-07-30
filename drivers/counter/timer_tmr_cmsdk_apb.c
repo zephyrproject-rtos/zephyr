@@ -160,7 +160,7 @@ static int tmr_cmsdk_apb_init(struct device *dev)
 }
 
 /* TIMER 0 */
-#ifdef DT_ARM_CMSDK_TIMER_0
+#ifdef DT_INST_0_ARM_CMSDK_TIMER
 static void timer_cmsdk_apb_config_0(struct device *dev);
 
 static const struct tmr_cmsdk_apb_cfg tmr_cmsdk_apb_cfg_0 = {
@@ -198,10 +198,10 @@ static void timer_cmsdk_apb_config_0(struct device *dev)
 		    DEVICE_GET(tmr_cmsdk_apb_0), 0);
 	irq_enable(DT_INST_0_ARM_CMSDK_TIMER_IRQ_0);
 }
-#endif /* DT_ARM_CMSDK_TIMER_0 */
+#endif /* DT_INST_0_ARM_CMSDK_TIMER */
 
 /* TIMER 1 */
-#ifdef DT_ARM_CMSDK_TIMER_1
+#ifdef DT_INST_1_ARM_CMSDK_TIMER
 static void timer_cmsdk_apb_config_1(struct device *dev);
 
 static const struct tmr_cmsdk_apb_cfg tmr_cmsdk_apb_cfg_1 = {
@@ -239,4 +239,4 @@ static void timer_cmsdk_apb_config_1(struct device *dev)
 		    DEVICE_GET(tmr_cmsdk_apb_1), 0);
 	irq_enable(DT_INST_1_ARM_CMSDK_TIMER_IRQ_0);
 }
-#endif /* DT_ARM_CMSDK_TIMER_1 */
+#endif /* DT_INST_1_ARM_CMSDK_TIMER */
