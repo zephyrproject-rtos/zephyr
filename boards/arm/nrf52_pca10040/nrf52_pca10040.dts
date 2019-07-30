@@ -123,19 +123,19 @@ arduino_i2c: &i2c0 {
 	/* status = "okay"; */
 	sck-pin = <27>;
 	mosi-pin = <26>;
-	miso-pin = <25>;
+	miso-pin = <28>;
 };
 
-arduino_spi: &spi1 {
+&spi1 {
 	status = "okay";
 	sck-pin = <31>;
 	mosi-pin = <30>;
 	miso-pin = <29>;
 };
 
-&spi2 {
+arduino_spi: &spi2 {
 	status = "okay";
-	sck-pin = <22>;
+	sck-pin = <25>;
 	mosi-pin = <23>;
 	miso-pin = <24>;
 };
