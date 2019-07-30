@@ -80,10 +80,6 @@ IRQ stack frame layout:
 
   low address
 
-Registers not taken into account in the current implementation.
-          accl
-          acch
-
 The context switch code adopts this standard so that it is easier to follow:
 
   - r1 contains _kernel ASAP and is not overwritten over the lifespan of
@@ -124,7 +120,7 @@ done upfront, and the rest is done when needed:
 
 o RIRQ
 
-  All needed regisers to run C code in the ISR are saved automatically
+  All needed registers to run C code in the ISR are saved automatically
   on the outgoing thread's stack: loop, status32, pc, and the caller-
   saved GPRs. That stack frame layout is pre-determined. If returning
   to a thread, the stack is popped and no registers have to be saved by
@@ -198,7 +194,7 @@ From FIRQ:
   o to any irq
 
     The IRQ has saved the caller-saved registers in a stack frame, which must be
-    popped, and statu32 and pc loaded in status32_p0 and ilink.
+    popped, and status32 and pc loaded in status32_p0 and ilink.
 
 From RIRQ:
 
