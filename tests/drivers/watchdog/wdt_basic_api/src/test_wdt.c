@@ -65,7 +65,11 @@
 #ifdef CONFIG_WDT_0_NAME
 #define WDT_DEV_NAME CONFIG_WDT_0_NAME
 #else
+#ifdef CONFIG_WWDG_STM32
+#define WDT_DEV_NAME DT_WWDT_0_NAME
+#else
 #define WDT_DEV_NAME DT_WDT_0_NAME
+#endif
 #endif
 
 #define WDT_TEST_STATE_IDLE        0
