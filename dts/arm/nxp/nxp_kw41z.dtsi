@@ -216,7 +216,6 @@
 			reg = <0x40038000 0x88>;
 			prescaler = <2>;
 			period = <1000>;
-			clock-source = <0>;
 			/* channel information needed - fixme */
 		};
 
@@ -225,7 +224,6 @@
 			reg = <0x40039000 0x88>;
 			prescaler = <2>;
 			period = <1000>;
-			clock-source = <0>;
 			/* channel information needed - fixme */
 		};
 
@@ -234,7 +232,6 @@
 			reg = <0x4003a000 0x88>;
 			prescaler = <2>;
 			period = <1000>;
-			clock-source = <0>;
 			/* channel information needed - fixme */
 		};
 
