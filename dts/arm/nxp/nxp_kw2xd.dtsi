@@ -270,7 +270,6 @@
 			interrupts = <22 0>;
 			clocks = <&sim KINETIS_SIM_LPO_CLK 0 0>;
 			label = "WDT_0";
-			reload-counter = <40000>;
 			start-on-boot;
 			prescaler = <2>;
 		};
