@@ -553,6 +553,37 @@ static u8_t print_attr(const struct bt_gatt_attr *attr, void *user_data)
 	shell_print(shell, "attr %p handle 0x%04x uuid %s perm 0x%02x",
 		    attr, attr->handle, bt_uuid_str(attr->uuid), attr->perm);
 
+	if (attr->read) {
+		u16_t offset = 0;
+		u8_t value;
+		ssize_t len;
+
+		while (true) {
+			len = attr->read(default_conn, attr, &value,
+					 sizeof(value), offset);
+
+			offset += len;
+
+			if (len < 0) {
+				shell_print(shell, "read err %d", len);
+				break;
+			}
+
+			if (len == 0) {
+				/* read completed */
+				shell_print(shell, "");
+				break;
+			}
+
+			shell_fprintf(shell, SHELL_NORMAL, "0x%02x ", value);
+
+			if (!(offset % 10)) {
+				shell_print(shell, "");
+			}
+		};
+
+	}
+
 	return BT_GATT_ITER_CONTINUE;
 }
 
