@@ -35,6 +35,7 @@
 
 #ifndef _ASMLANGUAGE
 #include <stdint.h>
+#include <ia32/mmustructs.h>
 
 /*
  * The following structure defines the set of 'non-volatile' integer registers.
@@ -221,6 +222,24 @@ struct _thread_arch {
 	 * struct without ill effect.
 	 */
 	tPreempFloatReg preempFloatReg; /* volatile float register storage */
+
+#ifdef CONFIG_USERSPACE
+	/* Per-thread page directory pointer table when a thread is running
+	 * in user mode.
+	 *
+	 * With KPTI enabled, any privilege elevation while that thread is
+	 * running, or ISR will switch to the master kernel pdpt at
+	 * z_x86_kernel_pdpt; the memory domain policy will not apply at
+	 * all.
+	 *
+	 * With KPTI disabled, this pdpt will be active at all times when
+	 * the thread is running. This has implications for memory domain
+	 * partitions that are read-only!!
+	 *
+	 * See #17833 for more discussion.
+	 */
+	__aligned(0x20) struct x86_mmu_pdpt user_pdpt;
+#endif /* CONFIG_USERSPACE */
 };
 
 typedef struct _thread_arch _thread_arch_t;

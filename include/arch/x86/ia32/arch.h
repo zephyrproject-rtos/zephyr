@@ -738,9 +738,18 @@ extern struct task_state_segment _main_tss;
 #endif
 
 #ifdef CONFIG_X86_MMU
-/* kernel's page table */
+/* Kernel's page table. Always active when threads are running in supervisor
+ * mode, or handling an interrupt.
+ *
+ * If KPTI is not enabled, this is used as a template to create per-thread
+ * page tables for when threads run in user mode.
+ */
 extern struct x86_mmu_pdpt z_x86_kernel_pdpt;
 #ifdef CONFIG_X86_KPTI
+/* Separate page tables for user mode threads. The top-level PDPT is never
+ * installed into the CPU; instead used as a template for creating per-thread
+ * page tables.
+ */
 extern struct x86_mmu_pdpt z_x86_user_pdpt;
 #define USER_PDPT	z_x86_user_pdpt
 #else
@@ -774,14 +783,16 @@ void z_x86_mmu_get_flags(struct x86_mmu_pdpt *pdpt, void *addr,
  * @param flags Value of bits to set in the page table entries
  * @param mask Mask indicating which particular bits in the page table entries to
  *	 modify
+ * @param flush Whether to flush the TLB for the modified pages, only needed
+ *        when modifying the active page tables
  */
 void z_x86_mmu_set_flags(struct x86_mmu_pdpt *pdpt, void *ptr,
-			size_t size,
-			x86_page_entry_data_t flags,
-			x86_page_entry_data_t mask);
+			 size_t size,
+			 x86_page_entry_data_t flags,
+			 x86_page_entry_data_t mask, bool flush);
 
-void z_x86_reset_pages(void *start, size_t size);
-
+int z_x86_mmu_validate(struct x86_mmu_pdpt *pdpt, void *addr, size_t size,
+		       int write);
 #endif /* CONFIG_X86_MMU */
 
 #endif /* !_ASMLANGUAGE */

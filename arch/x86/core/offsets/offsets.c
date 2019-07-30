@@ -38,6 +38,10 @@ GEN_OFFSET_SYM(_thread_arch_t, excNestCount);
 
 GEN_OFFSET_SYM(_thread_arch_t, preempFloatReg);
 
+#ifdef CONFIG_USERSPACE
+GEN_ABSOLUTE_SYM(Z_X86_PDPT_SIZE, sizeof(struct x86_mmu_pdpt));
+#endif
+
 /**
  * size of the struct k_thread structure sans save area for floating
  * point regs

@@ -526,11 +526,6 @@ struct x86_mmu_pt {
  */
 void z_x86_dump_page_tables(struct x86_mmu_pdpt *pdpt);
 
-static inline void z_x86_page_tables_set(struct x86_mmu_pdpt *pdpt)
-{
-	__asm__ volatile("movl %0, %%cr3\n\t" : : "r" (pdpt));
-}
-
 static inline struct x86_mmu_pdpt *z_x86_page_tables_get(void)
 {
 	struct x86_mmu_pdpt *ret;

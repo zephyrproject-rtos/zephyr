@@ -38,6 +38,141 @@ struct _x86_initial_frame {
 	void *p3;
 };
 
+#ifdef CONFIG_X86_USERSPACE
+/* Nothing to do here if KPTI is enabled. We are in supervisor mode, so the
+ * active PDPT is the kernel's page tables. If the incoming thread is in user
+ * mode we are going to switch CR3 to the thread- specific tables when we go
+ * through z_x86_trampoline_to_user.
+ *
+ * We don't need to update _main_tss either, privilege elevation always lands
+ * on the trampoline stack and the irq/sycall code has to manually transition
+ * off of it to the thread's kernel stack after switching page tables.
+ */
+#ifndef CONFIG_X86_KPTI
+/* Change to new set of page tables. ONLY intended for use from
+ * z_x88_swap_update_page_tables(). This changes CR3, no memory access
+ * afterwards is legal unless it is known for sure that the relevant
+ * mappings are identical wrt supervisor mode until we iret out.
+ */
+static inline void page_tables_set(struct x86_mmu_pdpt *pdpt)
+{
+	__asm__ volatile("movl %0, %%cr3\n\t" : : "r" (pdpt) : "memory");
+}
+
+/* Update the to the incoming thread's page table, and update the location
+ * of the privilege elevation stack.
+ *
+ * May be called ONLY during context switch and when supervisor
+ * threads drop synchronously to user mode. Hot code path!
+ */
+void z_x86_swap_update_page_tables(struct k_thread *incoming)
+{
+	struct x86_mmu_pdpt *pdpt;
+
+	/* If we're a user thread, we want the active page tables to
+	 * be the per-thread instance.
+	 *
+	 * However, if we're a supervisor thread, use the master
+	 * kernel page tables instead.
+	 */
+	if ((incoming->base.user_options & K_USER) != 0) {
+		pdpt = z_x86_pdpt_get(incoming);
+
+		/* In case of privilege elevation, use the incoming
+		 * thread's kernel stack. This area starts immediately
+		 * before the PDPT.
+		 */
+		_main_tss.esp0 = (uintptr_t)pdpt;
+	} else {
+		pdpt = &z_x86_kernel_pdpt;
+	}
+
+	/* Check first that we actually need to do this, since setting
+	 * CR3 involves an expensive full TLB flush.
+	 */
+	if (pdpt != z_x86_page_tables_get()) {
+		page_tables_set(pdpt);
+	}
+}
+#endif /* CONFIG_X86_KPTI */
+
+static FUNC_NORETURN void drop_to_user(k_thread_entry_t user_entry,
+				       void *p1, void *p2, void *p3)
+{
+	u32_t stack_end;
+
+	/* Transition will reset stack pointer to initial, discarding
+	 * any old context since this is a one-way operation
+	 */
+	stack_end = STACK_ROUND_DOWN(_current->stack_info.start +
+				     _current->stack_info.size);
+
+	z_x86_userspace_enter(user_entry, p1, p2, p3, stack_end,
+			      _current->stack_info.start);
+	CODE_UNREACHABLE;
+}
+
+FUNC_NORETURN void z_arch_user_mode_enter(k_thread_entry_t user_entry,
+					 void *p1, void *p2, void *p3)
+{
+	/* Set up the kernel stack used during privilege elevation */
+	z_x86_mmu_set_flags(&z_x86_kernel_pdpt,
+			    (void *)(_current->stack_info.start -
+				     MMU_PAGE_SIZE),
+			    MMU_PAGE_SIZE, MMU_ENTRY_WRITE, MMU_PTE_RW_MASK,
+			    true);
+
+	/* Initialize per-thread page tables, since that wasn't done when
+	 * the thread was initialized (K_USER was not set at creation time)
+	 */
+	z_x86_thread_pt_init(_current);
+
+	/* Apply memory domain configuration, if assigned */
+	if (_current->mem_domain_info.mem_domain != NULL) {
+		z_x86_apply_mem_domain(z_x86_pdpt_get(_current),
+				       _current->mem_domain_info.mem_domain);
+	}
+
+#ifndef CONFIG_X86_KPTI
+	/* We're synchronously dropping into user mode from a thread that
+	 * used to be in supervisor mode. K_USER flag has now been set, but
+	 * Need to swap from the kernel's page tables to the per-thread page
+	 * tables.
+	 *
+	 * Safe to update page tables from here, all tables are identity-
+	 * mapped and memory areas used before the ring 3 transition all
+	 * have the same attributes wrt supervisor mode access.
+	 */
+	z_x86_swap_update_page_tables(_current);
+#endif
+
+	drop_to_user(user_entry, p1, p2, p3);
+}
+
+/* Implemented in userspace.S */
+extern void z_x86_syscall_entry_stub(void);
+
+/* Syscalls invoked by 'int 0x80'. Installed in the IDT at DPL=3 so that
+ * userspace can invoke it.
+ */
+NANO_CPU_INT_REGISTER(z_x86_syscall_entry_stub, -1, -1, 0x80, 3);
+
+#endif /* CONFIG_X86_USERSPACE */
+
+#if defined(CONFIG_FLOAT) && defined(CONFIG_FP_SHARING)
+
+extern int z_float_disable(struct k_thread *thread);
+
+int z_arch_float_disable(struct k_thread *thread)
+{
+#if defined(CONFIG_LAZY_FP_SHARING)
+	return z_float_disable(thread);
+#else
+	return -ENOSYS;
+#endif /* CONFIG_LAZY_FP_SHARING */
+}
+#endif /* CONFIG_FLOAT && CONFIG_FP_SHARING */
+
 /**
  * @brief Create a new kernel execution thread
  *
@@ -67,20 +202,22 @@ void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	stack_buf = Z_THREAD_STACK_BUFFER(stack);
 	z_new_thread_init(thread, stack_buf, stack_size, priority, options);
 
-#if CONFIG_X86_USERSPACE
-	if ((options & K_USER) == 0U) {
-		/* Running in kernel mode, kernel stack region is also a guard
-		 * page */
-		z_x86_mmu_set_flags(&z_x86_kernel_pdpt,
-				    (void *)(stack_buf - MMU_PAGE_SIZE),
-				    MMU_PAGE_SIZE, MMU_ENTRY_READ,
-				    MMU_PTE_RW_MASK);
-	}
+#ifdef CONFIG_X86_USERSPACE
+	/* Set MMU properties for the privilege mode elevation stack.
+	 * If we're not starting in user mode, this functions as a guard
+	 * area.
+	 */
+	z_x86_mmu_set_flags(&z_x86_kernel_pdpt,
+		(void *)(stack_buf - MMU_PAGE_SIZE), MMU_PAGE_SIZE,
+		((options & K_USER) == 0U) ? MMU_ENTRY_READ : MMU_ENTRY_WRITE,
+		MMU_PTE_RW_MASK, true);
 #endif /* CONFIG_X86_USERSPACE */
 
 #if CONFIG_X86_STACK_PROTECTION
+	/* Set guard area to read-only to catch stack overflows */
 	z_x86_mmu_set_flags(&z_x86_kernel_pdpt, stack + Z_X86_THREAD_PT_AREA,
-			    MMU_PAGE_SIZE, MMU_ENTRY_READ, MMU_PTE_RW_MASK);
+			    MMU_PAGE_SIZE, MMU_ENTRY_READ, MMU_PTE_RW_MASK,
+			    true);
 #endif
 
 	stack_high = (char *)STACK_ROUND_DOWN(stack_buf + stack_size);
@@ -96,11 +233,12 @@ void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	initial_frame->eflags = EFLAGS_INITIAL;
 #ifdef CONFIG_X86_USERSPACE
 	if ((options & K_USER) != 0U) {
+		z_x86_thread_pt_init(thread);
 #ifdef _THREAD_WRAPPER_REQUIRED
-		initial_frame->edi = (u32_t)z_arch_user_mode_enter;
+		initial_frame->edi = (u32_t)drop_to_user;
 		initial_frame->thread_entry = z_x86_thread_entry_wrapper;
 #else
-		initial_frame->thread_entry = z_arch_user_mode_enter;
+		initial_frame->thread_entry = drop_to_user;
 #endif /* _THREAD_WRAPPER_REQUIRED */
 	} else
 #endif /* CONFIG_X86_USERSPACE */
@@ -121,94 +259,3 @@ void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	thread->arch.excNestCount = 0;
 #endif /* CONFIG_LAZY_FP_SHARING */
 }
-
-#ifdef CONFIG_X86_USERSPACE
-void _x86_swap_update_page_tables(struct k_thread *incoming,
-				  struct k_thread *outgoing)
-{
-	/* Outgoing thread stack no longer accessible */
-	z_x86_reset_pages((void *)outgoing->stack_info.start,
-			   ROUND_UP(outgoing->stack_info.size, MMU_PAGE_SIZE));
-
-	/* Userspace can now access the incoming thread's stack */
-	z_x86_mmu_set_flags(&USER_PDPT,
-			   (void *)incoming->stack_info.start,
-			   ROUND_UP(incoming->stack_info.size, MMU_PAGE_SIZE),
-			   MMU_ENTRY_PRESENT | K_MEM_PARTITION_P_RW_U_RW,
-			   K_MEM_PARTITION_PERM_MASK | MMU_PTE_P_MASK);
-
-#ifndef CONFIG_X86_KPTI
-	/* In case of privilege elevation, use the incoming thread's kernel
-	 * stack, the top of the thread stack is the bottom of the kernel
-	 * stack.
-	 *
-	 * If KPTI is enabled, then privilege elevation always lands on the
-	 * trampoline stack and the irq/sycall code has to manually transition
-	 * off of it to the thread's kernel stack after switching page
-	 * tables.
-	 */
-	_main_tss.esp0 = incoming->stack_info.start;
-#endif
-
-	/* If either thread defines different memory domains, efficiently
-	 * switch between them
-	 */
-	if (incoming->mem_domain_info.mem_domain !=
-	   outgoing->mem_domain_info.mem_domain){
-
-		 /* Ensure that the outgoing mem domain configuration
-		  * is set back to default state.
-		  */
-		z_x86_mem_domain_pages_update(outgoing->mem_domain_info.mem_domain,
-					    X86_MEM_DOMAIN_RESET_PAGES);
-		z_x86_mem_domain_pages_update(incoming->mem_domain_info.mem_domain,
-					    X86_MEM_DOMAIN_SET_PAGES);
-	}
-}
-
-
-FUNC_NORETURN void z_arch_user_mode_enter(k_thread_entry_t user_entry,
-					 void *p1, void *p2, void *p3)
-{
-	u32_t stack_end;
-
-	/* Transition will reset stack pointer to initial, discarding
-	 * any old context since this is a one-way operation
-	 */
-	stack_end = STACK_ROUND_DOWN(_current->stack_info.start +
-				     _current->stack_info.size);
-
-	/* Set up the kernel stack used during privilege elevation */
-	z_x86_mmu_set_flags(&z_x86_kernel_pdpt,
-			    (void *)(_current->stack_info.start - MMU_PAGE_SIZE),
-			    MMU_PAGE_SIZE, MMU_ENTRY_WRITE, MMU_PTE_RW_MASK);
-
-	z_x86_userspace_enter(user_entry, p1, p2, p3, stack_end,
-			     _current->stack_info.start);
-	CODE_UNREACHABLE;
-}
-
-
-/* Implemented in userspace.S */
-extern void z_x86_syscall_entry_stub(void);
-
-/* Syscalls invoked by 'int 0x80'. Installed in the IDT at DPL=3 so that
- * userspace can invoke it.
- */
-NANO_CPU_INT_REGISTER(z_x86_syscall_entry_stub, -1, -1, 0x80, 3);
-
-#endif /* CONFIG_X86_USERSPACE */
-
-#if defined(CONFIG_FLOAT) && defined(CONFIG_FP_SHARING)
-
-extern int z_float_disable(struct k_thread *thread);
-
-int z_arch_float_disable(struct k_thread *thread)
-{
-#if defined(CONFIG_LAZY_FP_SHARING)
-	return z_float_disable(thread);
-#else
-	return -ENOSYS;
-#endif /* CONFIG_LAZY_FP_SHARING */
-}
-#endif /* CONFIG_FLOAT && CONFIG_FP_SHARING */
