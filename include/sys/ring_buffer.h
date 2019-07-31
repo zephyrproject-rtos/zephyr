@@ -173,7 +173,7 @@ __deprecated static inline void sys_ring_buf_init(struct ring_buf *buf,
  *
  *  @return Ring buffer free space (in 32-bit words or bytes).
  */
-static inline int z_ring_buf_custom_space_get(u32_t size, u32_t head,
+static inline u32_t z_ring_buf_custom_space_get(u32_t size, u32_t head,
 					      u32_t tail)
 {
 	if (tail < head) {
@@ -221,7 +221,7 @@ __deprecated static inline int sys_ring_buf_is_empty(struct ring_buf *buf)
  *
  * @return Ring buffer free space (in 32-bit words or bytes).
  */
-static inline int ring_buf_space_get(struct ring_buf *buf)
+static inline u32_t ring_buf_space_get(struct ring_buf *buf)
 {
 	return z_ring_buf_custom_space_get(buf->size, buf->head, buf->tail);
 }
@@ -233,7 +233,7 @@ static inline int ring_buf_space_get(struct ring_buf *buf)
  *
  * @return Ring buffer capacity (in 32-bit words or bytes).
  */
-static inline int ring_buf_capacity_get(struct ring_buf *buf)
+static inline u32_t ring_buf_capacity_get(struct ring_buf *buf)
 {
 	/* One element is used to distinguish between empty and full state. */
 	return buf->size - 1;
