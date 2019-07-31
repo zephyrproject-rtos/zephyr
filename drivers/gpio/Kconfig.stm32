@@ -47,4 +47,27 @@ config GPIO_STM32_PORTJ
 config GPIO_STM32_PORTK
 	bool "Enable GPIO port K support"
 
+if SOC_SERIES_STM32F1X
+
+choice GPIO_STM32_SWJ
+	prompt "Serial wire JTAG configuration"
+
+config GPIO_STM32_SWJ_ENABLE
+	depends on !(SOC_STM32F103XE && SPI_3)
+	bool "Full SWJ (JTAG-DP + SW-DP): Reset State"
+
+config GPIO_STM32_SWJ_NONJTRST
+	depends on !(SOC_STM32F103XE && SPI_3)
+	bool "Full SWJ (JTAG-DP + SW-DP) but without NJTRST"
+
+config GPIO_STM32_SWJ_NOJTAG
+	bool "JTAG-DP Disabled and SW-DP Enabled"
+
+config GPIO_STM32_SWJ_DISABLE
+	bool "JTAG-DP Disabled and SW-DP Disabled"
+
+endchoice
+
+endif # SOC_SERIES_STM32F1X
+
 endif # GPIO_STM32

@@ -456,7 +456,6 @@ static int gpio_stm32_init(struct device *device)
 	return 0;
 }
 
-
 #define GPIO_DEVICE_INIT(__name, __suffix, __base_addr, __port, __cenr, __bus) \
 	static const struct gpio_stm32_config gpio_stm32_cfg_## __suffix = {   \
 		.base = (u32_t *)__base_addr,				       \
@@ -524,3 +523,32 @@ GPIO_DEVICE_INIT_STM32(j, J);
 #ifdef CONFIG_GPIO_STM32_PORTK
 GPIO_DEVICE_INIT_STM32(k, K);
 #endif /* CONFIG_GPIO_STM32_PORTK */
+
+
+#if defined(CONFIG_SOC_SERIES_STM32F1X)
+
+static int gpio_stm32_afio_init(struct device *device)
+{
+	UNUSED(device);
+
+	LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_AFIO);
+
+#if defined(CONFIG_GPIO_STM32_SWJ_NONJTRST)
+	/* released PB4 */
+	__HAL_AFIO_REMAP_SWJ_NONJTRST();
+#elif defined(CONFIG_GPIO_STM32_SWJ_NOJTAG)
+	/* released PB4 PB3 PA15 */
+	__HAL_AFIO_REMAP_SWJ_NOJTAG();
+#elif defined(CONFIG_GPIO_STM32_SWJ_DISABLE)
+	/* released PB4 PB3 PA13 PA14 PA15 */
+	__HAL_AFIO_REMAP_SWJ_DISABLE();
+#endif
+
+	LL_APB2_GRP1_DisableClock(LL_APB2_GRP1_PERIPH_AFIO);
+
+	return 0;
+}
+
+DEVICE_INIT(gpio_stm32_afio, "", gpio_stm32_afio_init, NULL, NULL, PRE_KERNEL_2, 0);
+
+#endif /* CONFIG_SOC_SERIES_STM32F1X */
