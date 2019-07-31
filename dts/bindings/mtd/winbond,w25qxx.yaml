@@ -1,0 +1,32 @@
+#
+# Copyright (c) 2018, Linaro Limited
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+title: SPI NOR FLASH
+
+description: >
+    This binding gives a base representation of SPI slave NOR FLASH
+
+inherits:
+    !include spi-device.yaml
+
+properties:
+    compatible:
+      constraint: "winbond,w25qxx"
+
+    size:
+        type: int
+        category: required
+        description: flash capacity in bits
+
+    device-id:
+        type: uint8-array
+        category: required
+        description: DEVICE ID as manufacturer ID, memory type, memory density
+
+    page-program-size:
+        type: int
+        category: required
+        description: This is the maximum size of a page program operation

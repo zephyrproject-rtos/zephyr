@@ -72,7 +72,7 @@ static int spi_flash_wb_access(struct spi_flash_data *ctx,
 static inline int spi_flash_wb_id(struct device *dev)
 {
 	struct spi_flash_data *const driver_data = dev->driver_data;
-	u32_t temp_data;
+	const u8_t id[] = DT_INST_0_WINBOND_W25QXX_DEVICE_ID;
 	u8_t buf[3];
 
 	if (spi_flash_wb_access(driver_data, W25QXXDV_CMD_RDID,
@@ -80,11 +80,7 @@ static inline int spi_flash_wb_id(struct device *dev)
 		return -EIO;
 	}
 
-	temp_data = ((u32_t) buf[0]) << 16;
-	temp_data |= ((u32_t) buf[1]) << 8;
-	temp_data |= (u32_t) buf[2];
-
-	if (temp_data != CONFIG_SPI_FLASH_W25QXXDV_DEVICE_ID) {
+	if (memcmp(buf, id, 3)) {
 		return -ENODEV;
 	}
 
@@ -185,9 +181,9 @@ static int spi_flash_wb_program_page(struct device *dev, off_t offset,
 	u8_t reg;
 	struct spi_flash_data *const driver_data = dev->driver_data;
 
-	__ASSERT(len <= CONFIG_SPI_FLASH_W25QXXDV_PAGE_PROGRAM_SIZE,
+	__ASSERT(len <= DT_INST_0_WINBOND_W25QXX_PAGE_PROGRAM_SIZE,
 		 "Maximum length is %d for page programming (actual:%d)",
-		 CONFIG_SPI_FLASH_W25QXXDV_PAGE_PROGRAM_SIZE, len);
+		 DT_INST_0_WINBOND_W25QXX_PAGE_PROGRAM_SIZE, len);
 
 	wait_for_flash_idle(dev);
 
@@ -223,7 +219,7 @@ static int spi_flash_wb_write(struct device *dev, off_t offset,
 	SYNC_LOCK();
 
 	/* Calculate the offset in the first page we write */
-	page_offset = offset % CONFIG_SPI_FLASH_W25QXXDV_PAGE_PROGRAM_SIZE;
+	page_offset = offset % DT_INST_0_WINBOND_W25QXX_PAGE_PROGRAM_SIZE;
 
 	/*
 	 * Write all data that does not fit into a single programmable page.
@@ -232,9 +228,9 @@ static int spi_flash_wb_write(struct device *dev, off_t offset,
 	 * it will fail on the first write.
 	 */
 	while ((page_offset + len) >
-			CONFIG_SPI_FLASH_W25QXXDV_PAGE_PROGRAM_SIZE) {
+	       DT_INST_0_WINBOND_W25QXX_PAGE_PROGRAM_SIZE) {
 		size_t len_to_write_in_page =
-			CONFIG_SPI_FLASH_W25QXXDV_PAGE_PROGRAM_SIZE -
+			DT_INST_0_WINBOND_W25QXX_PAGE_PROGRAM_SIZE -
 			page_offset;
 
 		ret = spi_flash_wb_program_page(dev, offset,
@@ -296,7 +292,7 @@ static inline int spi_flash_wb_erase_internal(struct device *dev,
 	case W25QXXDV_BLOCK_SIZE:
 		erase_opcode = W25QXXDV_CMD_BE;
 		break;
-	case CONFIG_SPI_FLASH_W25QXXDV_FLASH_SIZE:
+	case DT_INST_0_WINBOND_W25QXX_SIZE:
 		erase_opcode = W25QXXDV_CMD_CE;
 		need_offset = false;
 		break;
@@ -322,7 +318,7 @@ static int spi_flash_wb_erase(struct device *dev, off_t offset, size_t size)
 	u8_t reg;
 
 	if ((offset < 0) || ((offset & W25QXXDV_SECTOR_MASK) != 0) ||
-	    ((size + offset) > CONFIG_SPI_FLASH_W25QXXDV_FLASH_SIZE) ||
+	    ((size + offset) > DT_INST_0_WINBOND_W25QXX_SIZE) ||
 	    ((size & W25QXXDV_SECTOR_MASK) != 0)) {
 		return -ENODEV;
 	}
@@ -337,7 +333,7 @@ static int spi_flash_wb_erase(struct device *dev, off_t offset, size_t size)
 	}
 
 	while ((size_remaining >= W25QXXDV_SECTOR_SIZE) && (ret == 0)) {
-		if (size_remaining == CONFIG_SPI_FLASH_W25QXXDV_FLASH_SIZE) {
+		if (size_remaining == DT_INST_0_WINBOND_W25QXX_SIZE) {
 			ret = spi_flash_wb_erase_internal(dev, offset, size);
 			break;
 		}
@@ -362,7 +358,7 @@ static int spi_flash_wb_erase(struct device *dev, off_t offset, size_t size)
 
 		if (size_remaining >= W25QXXDV_SECTOR_SIZE) {
 			ret = spi_flash_wb_erase_internal(dev, new_offset,
-							W25QXXDV_SECTOR_SIZE);
+							  W25QXXDV_SECTOR_SIZE);
 			new_offset += W25QXXDV_SECTOR_SIZE;
 			size_remaining -= W25QXXDV_SECTOR_SIZE;
 			continue;
@@ -401,27 +397,27 @@ static int spi_flash_wb_configure(struct device *dev)
 {
 	struct spi_flash_data *data = dev->driver_data;
 
-	data->spi = device_get_binding(DT_INST_0_WINBOND_W25Q16_BUS_NAME);
+	data->spi = device_get_binding(DT_INST_0_WINBOND_W25QXX_BUS_NAME);
 	if (!data->spi) {
 		return -EINVAL;
 	}
 
-	data->spi_cfg.frequency = DT_INST_0_WINBOND_W25Q16_SPI_MAX_FREQUENCY;
+	data->spi_cfg.frequency = DT_INST_0_WINBOND_W25QXX_SPI_MAX_FREQUENCY;
 	data->spi_cfg.operation = SPI_WORD_SET(8);
-	data->spi_cfg.slave = DT_INST_0_WINBOND_W25Q16_BASE_ADDRESS;
+	data->spi_cfg.slave = DT_INST_0_WINBOND_W25QXX_BASE_ADDRESS;
 
-#if defined(CONFIG_SPI_FLASH_W25QXXDV_GPIO_SPI_CS)
+#if defined(DT_INST_0_WINBOND_W25QXX_CS_GPIOS_CONTROLLER)
 	data->cs_ctrl.gpio_dev = device_get_binding(
-		DT_INST_0_WINBOND_W25Q16_CS_GPIOS_CONTROLLER);
+		DT_INST_0_WINBOND_W25QXX_CS_GPIOS_CONTROLLER);
 	if (!data->cs_ctrl.gpio_dev) {
 		return -ENODEV;
 	}
 
-	data->cs_ctrl.gpio_pin = DT_INST_0_WINBOND_W25Q16_CS_GPIOS_PIN;
+	data->cs_ctrl.gpio_pin = DT_INST_0_WINBOND_W25QXX_CS_GPIOS_PIN;
 	data->cs_ctrl.delay = CONFIG_SPI_FLASH_W25QXXDV_GPIO_CS_WAIT_DELAY;
 
 	data->spi_cfg.cs = &data->cs_ctrl;
-#endif /* CONFIG_SPI_FLASH_W25QXXDV_GPIO_SPI_CS */
+#endif /* DT_INST_0_WINBOND_W25QXX_CS_GPIOS_CONTROLLER */
 
 	return spi_flash_wb_id(dev);
 }
@@ -440,7 +436,8 @@ static int spi_flash_init(struct device *dev)
 	 * modules that consumes the flash page layout assume the page
 	 * size is the minimal size they can erase.
 	 */
-	dev_layout.pages_count = (CONFIG_SPI_FLASH_W25QXXDV_FLASH_SIZE / W25QXXDV_SECTOR_SIZE);
+	dev_layout.pages_count = (DT_INST_0_WINBOND_W25QXX_SIZE
+				  / W25QXXDV_SECTOR_SIZE);
 	dev_layout.pages_size = W25QXXDV_SECTOR_SIZE;
 #endif
 
@@ -449,6 +446,6 @@ static int spi_flash_init(struct device *dev)
 
 static struct spi_flash_data spi_flash_memory_data;
 
-DEVICE_AND_API_INIT(spi_flash_memory, CONFIG_SPI_FLASH_W25QXXDV_DRV_NAME,
-	    spi_flash_init, &spi_flash_memory_data, NULL, POST_KERNEL,
-	    CONFIG_SPI_FLASH_W25QXXDV_INIT_PRIORITY, &spi_flash_api);
+DEVICE_AND_API_INIT(spi_flash_memory, DT_INST_0_WINBOND_W25QXX_LABEL,
+		    spi_flash_init, &spi_flash_memory_data, NULL, POST_KERNEL,
+		    CONFIG_SPI_FLASH_W25QXXDV_INIT_PRIORITY, &spi_flash_api);
