@@ -248,6 +248,37 @@ int z_impl_k_thread_name_copy(k_tid_t thread_id, char *buf, size_t size)
 #endif /* CONFIG_THREAD_NAME */
 }
 
+const char *k_thread_state_str(k_tid_t thread_id)
+{
+	switch (thread_id->base.thread_state) {
+	case 0:
+		return "";
+		break;
+	case _THREAD_DUMMY:
+		return "dummy";
+		break;
+	case _THREAD_PENDING:
+		return "pending";
+		break;
+	case _THREAD_PRESTART:
+		return "restart";
+		break;
+	case _THREAD_DEAD:
+		return "dead";
+		break;
+	case _THREAD_SUSPENDED:
+		return "suspended";
+		break;
+	case _THREAD_ABORTING:
+		return "aborting";
+		break;
+	case _THREAD_QUEUED:
+		return "queued";
+		break;
+	}
+	return "unknown";
+}
+
 #ifdef CONFIG_USERSPACE
 Z_SYSCALL_HANDLER(k_thread_name_copy, thread_id, buf, size)
 {
