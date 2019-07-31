@@ -13,21 +13,6 @@
 
 #define FN_MISSING() printf("[IMPLEMENTATION MISSING : %s]\n", __func__)
 
-size_t strcspn(const char *s1, const char *s2)
-{
-	int i, j;
-
-	for (i = 0; i < strlen(s2); ++i) {
-		for (j = 0; j < strlen(s1); ++j) {
-			if (s1[j] == s2[i]) {
-				return j;
-			}
-		}
-	}
-
-	return strlen(s1);
-}
-
 int iscntrl(int c)
 {
 	/* All the characters placed before the space on the ASCII table
