@@ -13,6 +13,7 @@
 #include <debug/stack.h>
 #include <string.h>
 #include <device.h>
+#include <drivers/timer/system_timer.h>
 
 static int cmd_kernel_version(const struct shell *shell,
 			      size_t argc, char **argv)
@@ -22,7 +23,7 @@ static int cmd_kernel_version(const struct shell *shell,
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	shell_fprintf(shell, SHELL_NORMAL, "Zephyr version %d.%d.%d\n",
+	shell_print(shell, "Zephyr version %d.%d.%d",
 		      SYS_KERNEL_VER_MAJOR(version),
 		      SYS_KERNEL_VER_MINOR(version),
 		      SYS_KERNEL_VER_PATCHLEVEL(version));
@@ -35,8 +36,7 @@ static int cmd_kernel_uptime(const struct shell *shell,
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	shell_fprintf(shell, SHELL_NORMAL, "Uptime: %u ms\n",
-			k_uptime_get_32());
+	shell_print(shell, "Uptime: %u ms", k_uptime_get_32());
 	return 0;
 }
 
@@ -46,38 +46,37 @@ static int cmd_kernel_cycles(const struct shell *shell,
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	shell_fprintf(shell, SHELL_NORMAL, "cycles: %u hw cycles\n",
-			k_cycle_get_32());
+	shell_print(shell, "cycles: %u hw cycles", k_cycle_get_32());
 	return 0;
 }
 
 #if defined(CONFIG_INIT_STACKS) && defined(CONFIG_THREAD_MONITOR) \
 				&& defined(CONFIG_THREAD_STACK_INFO)
-static void shell_tdata_dump(const struct k_thread *thread, void *user_data)
+static void shell_tdata_dump(const struct k_thread *cthread, void *user_data)
 {
+	struct k_thread *thread = (struct k_thread *)cthread;
+	const struct shell *shell = (const struct shell *)user_data;
 	unsigned int pcnt, unused = 0U;
 	unsigned int size = thread->stack_info.size;
 	const char *tname;
 
-	unused = stack_unused_space_get((char *)thread->stack_info.start,
-					size);
+	unused = stack_unused_space_get((char *)thread->stack_info.start, size);
 
 	/* Calculate the real size reserved for the stack */
 	pcnt = ((size - unused) * 100U) / size;
 
-	tname = k_thread_name_get((struct k_thread *)thread);
+	tname = k_thread_name_get(thread);
 
-	shell_fprintf((const struct shell *)user_data, SHELL_NORMAL,
-		      "%s%p %-10s\n",
+	shell_print(shell, "%s%p %-10s",
 		      (thread == k_current_get()) ? "*" : " ",
 		      thread,
 		      tname ? tname : "NA");
-	shell_fprintf((const struct shell *)user_data, SHELL_NORMAL,
-		      "\toptions: 0x%x, priority: %d\n",
+	shell_print(shell, "\toptions: 0x%x, priority: %d timeout: %d",
 		      thread->base.user_options,
-		      thread->base.prio);
-	shell_fprintf((const struct shell *)user_data, SHELL_NORMAL,
-		"\tstack size %u, unused %u, usage %u / %u (%u %%)\n\n",
+		      thread->base.prio,
+		      thread->base.timeout.dticks);
+	shell_print(shell, "\tstate: %s", k_thread_state_str(thread));
+	shell_print(shell, "\tstack size %u, unused %u, usage %u / %u (%u %%)\n",
 		      size, unused, size - unused, size, pcnt);
 
 }
@@ -88,7 +87,8 @@ static int cmd_kernel_threads(const struct shell *shell,
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	shell_fprintf(shell, SHELL_NORMAL, "Threads:\n");
+	shell_print(shell, "Scheduler: %u since last call", z_clock_elapsed());
+	shell_print(shell, "Threads:");
 	k_thread_foreach(shell_tdata_dump, (void *)shell);
 	return 0;
 }
@@ -100,14 +100,13 @@ static void shell_stack_dump(const struct k_thread *thread, void *user_data)
 	const char *tname;
 
 	tname = k_thread_name_get((struct k_thread *)thread);
-	unused = stack_unused_space_get((char *)thread->stack_info.start,
-					size);
+	unused = stack_unused_space_get((char *)thread->stack_info.start, size);
 
 	/* Calculate the real size reserved for the stack */
 	pcnt = ((size - unused) * 100U) / size;
 
-	shell_fprintf((const struct shell *)user_data, SHELL_NORMAL,
-		"0x%08X %-10s (real size %u):\tunused %u\tusage %u / %u (%u %%)\n",
+	shell_print((const struct shell *)user_data,
+		"0x%08X %-10s (real size %u):\tunused %u\tusage %u / %u (%u %%)",
 		      (u32_t)thread,
 		      tname ? tname : "NA",
 		      size, unused, size - unused, size, pcnt);
