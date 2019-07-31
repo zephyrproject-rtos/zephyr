@@ -196,6 +196,10 @@ static void spi_stm32_complete(struct spi_stm32_data *data, SPI_TypeDef *spi,
 			/* NOP */
 		}
 	}
+	/* BSY flag is cleared when MODF flag is raised */
+	if (LL_SPI_IsActiveFlag_MODF(spi)) {
+		LL_SPI_ClearFlag_MODF(spi);
+	}
 
 	LL_SPI_Disable(spi);
 
