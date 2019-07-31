@@ -186,10 +186,10 @@ void *thread_top_term(void *p1)
 {
 	pthread_t self;
 	int oldstate, policy, ret;
-	int val = (u32_t) POINTER_TO_INT(p1);
+	int id = POINTER_TO_INT(p1);
 	struct sched_param param, getschedparam;
 
-	param.sched_priority = N_THR_T - (s32_t) POINTER_TO_INT(p1);
+	param.sched_priority = N_THR_T - id;
 
 	self = pthread_self();
 
@@ -201,25 +201,24 @@ void *thread_top_term(void *p1)
 			"Unable to get thread priority!");
 
 	printk("Thread %d starting with a priority of %d\n",
-			(s32_t) POINTER_TO_INT(p1),
+			id,
 			getschedparam.sched_priority);
 
-	if (val % 2) {
+	if (id % 2) {
 		ret = pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &oldstate);
 		zassert_false(ret, "Unable to set cancel state!");
 	}
 
-	if (val >= 2) {
+	if (id >= 2) {
 		ret = pthread_detach(self);
-		if (val == 2) {
+		if (id == 2) {
 			zassert_equal(ret, EINVAL, "re-detached thread!");
 		}
 	}
 
-	printk("Cancelling thread %d\n", (s32_t) POINTER_TO_INT(p1));
+	printk("Cancelling thread %d\n", id);
 	pthread_cancel(self);
-	printk("Thread %d could not be cancelled\n",
-		(s32_t) POINTER_TO_INT(p1));
+	printk("Thread %d could not be cancelled\n", id);
 	sleep(ONE_SECOND);
 	pthread_exit(p1);
 	return NULL;
