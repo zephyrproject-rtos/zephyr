@@ -1,0 +1,23 @@
+#
+# Copyright (c) 2019 STMicroelectronics
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+title: STMicroelectronics MEMS sensors HTS221
+
+description: >
+    This binding gives a base representation of HTS221 humidity and
+    temperature sensor connected to SPI bus
+
+inherits:
+    !include spi-device.yaml
+
+properties:
+    compatible:
+      constraint: "st,hts221"
+
+    drdy-gpios:
+      type: compound
+      category: optional
+      description: DRDY pin
