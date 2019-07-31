@@ -63,6 +63,7 @@ config SOC_NRF52811
 	select HAS_HW_NRF_PPI
 	select HAS_HW_NRF_PWM0
 	select HAS_HW_NRF_QDEC
+	select HAS_HW_NRF_RADIO_IEEE802154
 	select HAS_HW_NRF_RNG
 	select HAS_HW_NRF_RTC0
 	select HAS_HW_NRF_RTC1
@@ -187,6 +188,7 @@ config SOC_NRF52840
 	select HAS_HW_NRF_PWM3
 	select HAS_HW_NRF_QDEC
 	select HAS_HW_NRF_QSPI
+	select HAS_HW_NRF_RADIO_IEEE802154
 	select HAS_HW_NRF_RNG
 	select HAS_HW_NRF_RTC0
 	select HAS_HW_NRF_RTC1
