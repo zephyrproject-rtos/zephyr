@@ -4917,6 +4917,9 @@ struct k_mem_domain {
  *
  * Initialize a memory domain with given name and memory partitions.
  *
+ * See documentation for k_mem_domain_add_partition() for details about
+ * partition constraints.
+ *
  * @param domain The memory domain to be initialized.
  * @param num_parts The number of array items of "parts" parameter.
  * @param parts An array of pointers to the memory partitions. Can be NULL
@@ -4938,7 +4941,22 @@ extern void k_mem_domain_destroy(struct k_mem_domain *domain);
 /**
  * @brief Add a memory partition into a memory domain.
  *
- * Add a memory partition into a memory domain.
+ * Add a memory partition into a memory domain. Partitions must conform to
+ * the following constraints:
+ *
+ * - Partition bounds must be within system RAM boundaries on MMU-based
+ *   systems.
+ * - Partitions in the same memory domain may not overlap each other.
+ * - Partitions must not be defined which expose private kernel
+ *   data structures or kernel objects.
+ * - The starting address alignment, and the partition size must conform to
+ *   the constraints of the underlying memory management hardware, which
+ *   varies per architecture.
+ * - Memory domain partitions are only intended to control access to memory
+ *   from user mode threads.
+ *
+ * Violating these constraints may lead to CPU exceptions or undefined
+ * behavior.
  *
  * @param domain The memory domain to be added a memory partition.
  * @param part The memory partition to be added
