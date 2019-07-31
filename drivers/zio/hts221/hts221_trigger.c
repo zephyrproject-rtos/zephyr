@@ -9,7 +9,6 @@
  */
 
 #include <kernel.h>
-#include <sensor.h>
 #include <gpio.h>
 #include <logging/log.h>
 

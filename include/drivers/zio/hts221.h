@@ -12,6 +12,8 @@
 #define ZEPHYR_INCLUDE_DRIVERS_ZIO_HTS221_H_
 
 #include <gpio.h>
+#include <drivers/i2c.h>
+#include <drivers/spi.h>
 #include <zio.h>
 #include "hts221_reg.h"
 
@@ -33,7 +35,13 @@ struct hts221_config {
 	int (*bus_init)(struct device *dev);
 #ifdef DT_ST_HTS221_BUS_I2C
 	u16_t i2c_slv_addr;
-#endif
+#elif DT_ST_HTS221_BUS_SPI
+	struct spi_config spi_conf;
+#if defined(DT_INST_0_ST_HTS221_CS_GPIO_CONTROLLER)
+	const char *gpio_cs_port;
+	u8_t cs_gpio;
+#endif /* DT_INST_0_ST_HTS221_CS_GPIO_CONTROLLER */
+#endif /* DT_ST_HTS221_BUS_I2C */
 #ifdef CONFIG_HTS221_TRIGGER
 	const char *drdy_port;
 	u8_t drdy_pin;
@@ -61,8 +69,6 @@ struct hts221_data {
 	struct device *gpio;
 	u32_t pin;
 	struct gpio_callback gpio_cb;
-	//struct sensor_trigger data_ready_trigger;
-	//sensor_trigger_handler_t handler_drdy;
 
 #if defined(CONFIG_HTS221_TRIGGER_OWN_THREAD)
 	K_THREAD_STACK_MEMBER(thread_stack, CONFIG_HTS221_THREAD_STACK_SIZE);
@@ -73,6 +79,9 @@ struct hts221_data {
 	struct device *dev;
 #endif
 #endif /* CONFIG_HTS221_TRIGGER */
+#if defined(DT_INST_0_ST_HTS221_CS_GPIO_CONTROLLER)
+	struct spi_cs_control cs_ctrl;
+#endif
 
 	lin_t lin_hum;
 	lin_t lin_temp;
@@ -83,6 +92,7 @@ struct hts221_data {
 };
 
 int hts221_i2c_init(struct device *dev);
+int hts221_spi_init(struct device *dev);
 #ifdef CONFIG_HTS221_TRIGGER
 int hts221_init_interrupt(struct device *dev);
 #endif /* CONFIG_HTS221_TRIGGER */

@@ -204,7 +204,7 @@ static int hts221_init(struct device *dev)
 
 	data->bus = device_get_binding(config->master_dev_name);
 	if (data->bus == NULL) {
-		LOG_ERR("Could not find I2C device");
+		LOG_ERR("Could not find device");
 		return -EINVAL;
 	}
 
@@ -273,12 +273,28 @@ static const struct zio_dev_api hts221_driver_api = {
 	.detach_buf = hts221_detach_buf,
 };
 
+static struct hts221_data hts221_data;
+
 static const struct hts221_config hts221_config = {
 	.master_dev_name = DT_INST_0_ST_HTS221_BUS_NAME,
 #if defined(DT_ST_HTS221_BUS_I2C)
 	.bus_init = hts221_i2c_init,
 	.i2c_slv_addr = DT_INST_0_ST_HTS221_BASE_ADDRESS,
+#elif defined(DT_ST_HTS221_BUS_SPI)
+	.bus_init = hts221_spi_init,
+	.spi_conf.frequency = DT_INST_0_ST_HTS221_SPI_MAX_FREQUENCY,
+	.spi_conf.operation = (SPI_OP_MODE_MASTER | SPI_MODE_CPOL |
+				    SPI_MODE_CPHA | SPI_WORD_SET(8) |
+				    SPI_LINES_SINGLE),
+	.spi_conf.slave     = DT_INST_0_ST_HTS221_BASE_ADDRESS,
+#if defined(DT_INST_0_ST_HTS221_CS_GPIO_CONTROLLER)
+	.gpio_cs_port       = DT_INST_0_ST_HTS221_CS_GPIO_CONTROLLER,
+	.cs_gpio            = DT_INST_0_ST_HTS221_CS_GPIO_PIN,
+	.spi_conf.cs        =  &hts221_data.cs_ctrl,
+#else
+	.spi_conf.cs        = NULL,
 #endif
+#endif /* DT_ST_HTS221_BUS_I2C */
 #ifdef CONFIG_HTS221_TRIGGER
 	.drdy_port = DT_INST_0_ST_HTS221_DRDY_GPIOS_CONTROLLER,
 	.drdy_pin = DT_INST_0_ST_HTS221_DRDY_GPIOS_PIN,
