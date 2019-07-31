@@ -555,7 +555,7 @@ void k_sched_unlock(void)
 
 	LOCKED(&sched_spinlock) {
 		++_current->base.sched_locked;
-		update_cache(1);
+		update_cache(0);
 	}
 
 	K_DEBUG("scheduler unlocked (%p:%d)\n",
