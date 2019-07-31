@@ -658,8 +658,8 @@ static void hci_num_completed_packets(struct net_buf *buf)
 
 		conn = bt_conn_lookup_handle(handle);
 		if (!conn) {
-			BT_ERR("No connection for handle %u", handle);
 			irq_unlock(key);
+			BT_ERR("No connection for handle %u", handle);
 			continue;
 		}
 
