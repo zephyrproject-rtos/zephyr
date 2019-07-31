@@ -544,7 +544,7 @@ static int nvs_startup(struct nvs_fs *fs)
 	 * Coverity and GCC believe the contrary.
 	 */
 	u32_t addr = 0U;
-	u16_t i;
+	u16_t i, closed_sectors = 0;
 
 	k_mutex_lock(&fs->nvs_lock, K_FOREVER);
 
@@ -558,6 +558,7 @@ static int nvs_startup(struct nvs_fs *fs)
 					  sizeof(struct nvs_ate));
 		if (rc) {
 			/* closed sector */
+			closed_sectors++;
 			nvs_sector_advance(fs, &addr);
 			rc = nvs_flash_cmp_const(fs, addr, 0xff,
 						  sizeof(struct nvs_ate));
@@ -566,6 +567,10 @@ static int nvs_startup(struct nvs_fs *fs)
 				break;
 			}
 		}
+	}
+	/* all sectors are closed, this is not a nvs fs */
+	if (closed_sectors == fs->sector_count) {
+		return -EDEADLK;
 	}
 
 	if (i == fs->sector_count) {
@@ -585,42 +590,43 @@ static int nvs_startup(struct nvs_fs *fs)
 	/* addr contains address of the last ate in the most recent sector
 	 * search for the first ate containing all 0xff
 	 */
-	while (1) {
-		addr -= ate_size;
-		rc = nvs_flash_cmp_const(fs, addr, 0xff,
-					  sizeof(struct nvs_ate));
+	fs->ate_wra = addr - ate_size;
+	fs->data_wra = addr & ADDR_SECT_MASK;
+
+	while (fs->ate_wra >= fs->data_wra) {
+		rc = nvs_flash_ate_rd(fs, fs->ate_wra, &last_ate);
+		if (rc) {
+			goto end;
+		}
+
+		rc = nvs_ate_cmp_const(&last_ate, 0xff);
 		if (!rc) {
 			/* found ff empty location */
 			break;
 		}
-	}
 
-	fs->ate_wra = addr;
-	fs->data_wra = addr & ADDR_SECT_MASK;
-
-	/* read the last ate to update data_wra, only do this if the ate_wra
-	 * is not at the start of a sector
-	 */
-
-	if ((addr & ADDR_OFFS_MASK) != fs->sector_size - 2 * ate_size) {
-		addr += ate_size;
-		rc = nvs_flash_ate_rd(fs, addr, &last_ate);
-		if (rc) {
-			goto end;
-		}
 		if (!nvs_ate_crc8_check(&last_ate)) {
 			/* crc8 is ok, complete write of ate was performed */
+			fs->data_wra = addr & ADDR_SECT_MASK;
 			fs->data_wra += last_ate.offset;
 			fs->data_wra += nvs_al_size(fs, last_ate.len);
+
+			/* ate on the last possition within the sector is
+			 * reserved for deletion an entry
+			 */
+			if (fs->ate_wra == fs->data_wra && last_ate.len) {
+				/* not a delete ate */
+				return -ESPIPE;
+			}
 		}
+
+		fs->ate_wra -= ate_size;
 	}
 
 	/* possible data write after last ate write, update data_wra */
-	while (1) {
+	while (fs->ate_wra > fs->data_wra) {
 		empty_len = fs->ate_wra - fs->data_wra;
-		if (!empty_len) {
-			break;
-		}
+
 		rc = nvs_flash_cmp_const(fs, fs->data_wra, 0xff, empty_len);
 		if (rc < 0) {
 			goto end;
@@ -628,6 +634,7 @@ static int nvs_startup(struct nvs_fs *fs)
 		if (!rc) {
 			break;
 		}
+
 		fs->data_wra += fs->write_block_size;
 	}
 
