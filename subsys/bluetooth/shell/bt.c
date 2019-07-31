@@ -973,10 +973,6 @@ static int cmd_oob_remote(const struct shell *shell, size_t argc,
 	int err;
 	bt_addr_le_t addr;
 
-	if (argc < 3) {
-		shell_error(shell, "too few args");
-	}
-
 	err = bt_addr_le_from_str(argv[1], argv[2], &addr);
 	if (err) {
 		shell_error(shell, "Invalid peer address (err %d)", err);
@@ -993,7 +989,16 @@ static int cmd_oob_remote(const struct shell *shell, size_t argc,
 		bt_set_oob_data_flag(true);
 	} else {
 		shell_error(shell, "legacy not implemented (%d)", argc);
+		return -ENOEXEC;
 	}
+
+	return 0;
+}
+
+static int cmd_oob_clear(const struct shell *shell, size_t argc, char *argv[])
+{
+	memset(&oob_remote, 0, sizeof(oob_remote));
+	bt_set_oob_data_flag(false);
 
 	return 0;
 }
@@ -1338,6 +1343,21 @@ static struct bt_conn_auth_cb auth_cb_all = {
 	.pairing_complete = auth_pairing_complete,
 };
 
+static struct bt_conn_auth_cb auth_cb_oob = {
+	.passkey_display = NULL,
+	.passkey_entry = NULL,
+	.passkey_confirm = NULL,
+#if defined(CONFIG_BT_BREDR)
+	.pincode_entry = NULL,
+#endif
+	.oob_data_request = auth_pairing_oob_data_request,
+	.cancel = auth_cancel,
+	.pairing_confirm = NULL,
+	.pairing_failed = NULL,
+	.pairing_complete = NULL,
+};
+
+
 static int cmd_auth(const struct shell *shell, size_t argc, char *argv[])
 {
 	int err;
@@ -1352,6 +1372,8 @@ static int cmd_auth(const struct shell *shell, size_t argc, char *argv[])
 		err = bt_conn_auth_cb_register(&auth_cb_display_yes_no);
 	} else if (!strcmp(argv[1], "confirm")) {
 		err = bt_conn_auth_cb_register(&auth_cb_confirm);
+	} else if (!strcmp(argv[1], "oob")) {
+		err = bt_conn_auth_cb_register(&auth_cb_oob);
 	} else if (!strcmp(argv[1], "none")) {
 		err = bt_conn_auth_cb_register(NULL);
 	} else {
@@ -1511,7 +1533,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 	SHELL_CMD_ARG(bondable, NULL, "<bondable: on, off>", cmd_bondable,
 		      2, 0),
 	SHELL_CMD_ARG(auth, NULL,
-		      "<method: all, input, display, yesno, confirm, none>",
+		      "<method: all, input, display, yesno, confirm, "
+		      "oob, none>",
 		      cmd_auth, 2, 0),
 	SHELL_CMD_ARG(auth-cancel, NULL, HELP_NONE, cmd_auth_cancel, 1, 0),
 	SHELL_CMD_ARG(auth-passkey, NULL, "<passkey>", cmd_auth_passkey, 2, 0),
@@ -1521,7 +1544,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 		      cmd_auth_pairing_confirm, 1, 0),
 	SHELL_CMD_ARG(oob-remote, NULL,
 		      HELP_ADDR_LE" <oob rand> <oob confirm>",
-		      cmd_oob_remote, 5, 0),
+		      cmd_oob_remote, 3, 2),
+	SHELL_CMD_ARG(oob-clear, NULL, HELP_NONE, cmd_oob_clear, 1, 0),
 #if defined(CONFIG_BT_FIXED_PASSKEY)
 	SHELL_CMD_ARG(fixed-passkey, NULL, "[passkey]", cmd_fixed_passkey,
 		      1, 1),
