@@ -2338,9 +2338,12 @@ static bool sec_level_reachable(struct bt_conn *conn)
 	case BT_SECURITY_MEDIUM:
 		return true;
 	case BT_SECURITY_HIGH:
-		return get_io_capa() != BT_SMP_IO_NO_INPUT_OUTPUT;
+		return get_io_capa() != BT_SMP_IO_NO_INPUT_OUTPUT ||
+		       (bt_auth && bt_auth->oob_data_request && oobd_present);
 	case BT_SECURITY_FIPS:
-		return get_io_capa() != BT_SMP_IO_NO_INPUT_OUTPUT &&
+		return (get_io_capa() != BT_SMP_IO_NO_INPUT_OUTPUT ||
+			(bt_auth && bt_auth->oob_data_request &&
+			 oobd_present)) &&
 		       sc_supported;
 	default:
 		return false;
