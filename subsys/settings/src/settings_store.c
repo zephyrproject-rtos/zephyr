@@ -12,6 +12,7 @@
 #include <stddef.h>
 #include <sys/types.h>
 #include <errno.h>
+#include <kernel.h>
 
 #include "settings/settings.h"
 #include "settings_priv.h"
