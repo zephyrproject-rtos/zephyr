@@ -1075,7 +1075,10 @@ def _load_binding(path):
     # lists/dictionaries/strings/etc. representing the file).
 
     with open(path, encoding="utf-8") as f:
-        return _merge_included_bindings(yaml.load(f, Loader=yaml.Loader), path)
+        binding = _merge_included_bindings(yaml.load(f, Loader=yaml.Loader),
+                                           path)
+    _check_binding(binding, path)
+    return binding
 
 
 def _merge_included_bindings(binding, binding_path):
@@ -1085,10 +1088,6 @@ def _merge_included_bindings(binding, binding_path):
     #
     # Properties in 'binding' take precedence over properties from included
     # bindings.
-
-    # Currently, we require that each !include'd file is a well-formed
-    # binding in itself
-    _check_binding(binding, binding_path)
 
     if "inherits" in binding:
         for inherited in binding.pop("inherits"):
@@ -1175,7 +1174,9 @@ def _check_binding(binding, binding_path):
     # Check properties
 
     if "properties" not in binding:
-        return
+        # Can end up here since we currently use a regex to scan bindings for
+        # 'constraint: <compatible string>' (for performance reasons)
+        _err("missing 'properties:' in " + binding_path)
 
     ok_prop_keys = {"description", "type", "default", "category",
                     "constraint", "enum"}
@@ -1189,14 +1190,14 @@ def _check_binding(binding, binding_path):
                          key, prop, binding_path, ", ".join(ok_prop_keys)))
 
         if "category" in keys and keys["category"] not in ok_categories:
-            _err("unrecognized category '{}' for '{}' in 'properties' in {}, "
+            _err("unrecognized category '{}' for '{}' in 'properties:' in {}, "
                  "expected one of {}".format(
                      keys["category"], prop, binding_path,
                      ", ".join(ok_categories)))
 
         if "description" in keys and not isinstance(keys["description"], str):
             _err("missing, malformed, or empty 'description' for '{}' in "
-                 "'properties' in {}".format(prop, binding_path))
+                 "'properties:' in {}".format(prop, binding_path))
 
 
 def _translate(addr, node):
