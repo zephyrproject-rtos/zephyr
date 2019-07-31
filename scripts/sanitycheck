@@ -1373,7 +1373,22 @@ class MakeGenerator:
         else:
             verbose("Skipping slow test: " + ti.name)
 
-    def execute(self, callback_fn=None, context=None):
+    def _remove_unkept_files(self, base_path, keep_paths):
+        for dirpath, dirnames, filenames in os.walk(base_path, topdown=False):
+            for name in filenames:
+                path = os.path.join(dirpath, name)
+                if path not in keep_paths:
+                    os.remove(path)
+            # Remove empty directories and symbolic links to directories
+            for dir in dirnames:
+                path = os.path.join(dirpath, dir)
+                if os.path.islink(path):
+                    os.remove(path)
+                elif not os.listdir(path):
+                    os.rmdir(path)
+
+
+    def execute(self, callback_fn=None, context=None, keep_files=None):
         """Execute all the registered build goals
 
         @param callback_fn If not None, a callback function will be called
@@ -1382,6 +1397,11 @@ class MakeGenerator:
             context object, supplied here
         @param context Context object to pass to the callback function.
             Type and semantics are specific to that callback function.
+        @param keep_files If not None, we will remove all files except those
+            defined in keep_files.  keep_files is a dictionary with the key
+            being the 'goal' and the value is a pair.  The pair first element
+            is the dir path of the test and the second is a list of file paths
+            that we should keep.
         @return A dictionary mapping goal names to final status.
         """
 
@@ -1448,6 +1468,10 @@ class MakeGenerator:
                                 goal.fail(thread_status)
                         else:
                             goal.success()
+
+                        if keep_files is not None:
+                            tc_path, keep_paths = keep_files[name]
+                            self._remove_unkept_files(tc_path, keep_paths)
 
                 if callback_fn:
                     callback_fn(context, self.goals, goal)
@@ -2123,6 +2147,7 @@ class TestSuite:
         defconfig_list = {}
         dt_list = {}
         cmake_list = {}
+        tc_file_list = {}
         for tc_name, tc in self.testcases.items():
             for arch_name, arch in self.arches.items():
                 for plat in arch.platforms:
@@ -2201,15 +2226,18 @@ class TestSuite:
                         cmake_cache_path = os.path.join(o, "CMakeCache.txt")
                         generated_dt_confg = "include/generated/generated_dts_board.conf"
                         dt_config_path = os.path.join(o, "zephyr", generated_dt_confg)
+                        defconfig_path = os.path.join(o, "zephyr", ".config")
                         dt_list[tc, plat, tc.name.split("/")[-1]] = dt_config_path
                         cmake_list[tc, plat, tc.name.split("/")[-1]] = cmake_cache_path
-                        defconfig_list[tc, plat, tc.name.split("/")[-1]] = os.path.join(o, "zephyr", ".config")
+                        defconfig_list[tc, plat, tc.name.split("/")[-1]] = defconfig_path
                         goal = "_".join([plat.name, "_".join(tc.name.split("/")), "config-sanitycheck"])
+                        tc_file_list[goal] = (o, [dt_config_path, cmake_cache_path, defconfig_path])
                         mg.add_build_goal(goal, os.path.join(ZEPHYR_BASE, tc.test_path),
                                 o, args, "config-sanitycheck.log", make_args="config-sanitycheck")
 
         info("Building testcase defconfigs...")
-        results = mg.execute(defconfig_cb)
+        kept_files = tc_file_list if options.save_tests else None
+        results = mg.execute(defconfig_cb, keep_files=kept_files)
 
         info("Filtering test cases...")
         for name, goal in results.items():
