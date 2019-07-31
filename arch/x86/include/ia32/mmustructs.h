@@ -228,8 +228,8 @@
  * In order to populate this structure use macro MMU_BOOT_REGION.
  */
 struct mmu_region {
-	u32_t address; /*Start address of the memory region */
-	u32_t size; /* Size of the memory region*/
+	uintptr_t address; /*Start address of the memory region */
+	size_t size; /* Size of the memory region*/
 	u64_t flags; /* Permissions needed for this region*/
 };
 

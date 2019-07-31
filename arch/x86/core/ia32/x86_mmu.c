@@ -298,13 +298,19 @@ static inline void tlb_flush_page(void *addr)
 	__asm__ ("invlpg %0" :: "m" (*page));
 }
 
+#define PDPTE_FLAGS_MASK	MMU_ENTRY_PRESENT
+
+#define PDE_FLAGS_MASK		(MMU_ENTRY_WRITE | MMU_ENTRY_USER | \
+				 PDPTE_FLAGS_MASK)
+
+#define PTE_FLAGS_MASK		(PDE_FLAGS_MASK | MMU_ENTRY_EXECUTE_DISABLE | \
+				 MMU_ENTRY_WRITE_THROUGH | \
+				 MMU_ENTRY_CACHING_DISABLE)
 
 void z_x86_mmu_set_flags(struct x86_mmu_pdpt *pdpt, void *ptr, size_t size,
 			 x86_page_entry_data_t flags,
 			 x86_page_entry_data_t mask, bool flush)
 {
-	union x86_mmu_pte *pte;
-
 	u32_t addr = (u32_t)ptr;
 
 	__ASSERT((addr & MMU_PAGE_MASK) == 0U, "unaligned address provided");
@@ -319,12 +325,26 @@ void z_x86_mmu_set_flags(struct x86_mmu_pdpt *pdpt, void *ptr, size_t size,
 	}
 
 	while (size != 0) {
+		union x86_mmu_pte *pte;
+		union x86_mmu_pde_pt *pde;
+		union x86_mmu_pdpte *pdpte;
 		x86_page_entry_data_t cur_flags = flags;
 
-		/* TODO we're not generating 2MB entries at the moment */
-		__ASSERT(X86_MMU_GET_PDE(pdpt, addr)->ps != 1, "2MB PDE found");
-		pte = X86_MMU_GET_PTE(pdpt, addr);
+		pdpte = X86_MMU_GET_PDPTE(pdpt, addr);
+		__ASSERT(pdpte->p == 1, "set flags on non-present PDPTE");
+		pdpte->value |= (flags & PDPTE_FLAGS_MASK);
 
+		pde = X86_MMU_GET_PDE(pdpt, addr);
+		__ASSERT(pde->p == 1, "set flags on non-present PDE");
+		pde->value |= (flags & PDE_FLAGS_MASK);
+		/* If any flags enable execution, clear execute disable at the
+		 * page directory level
+		 */
+		if ((flags & MMU_ENTRY_EXECUTE_DISABLE) == 0) {
+			pde->value &= ~MMU_ENTRY_EXECUTE_DISABLE;
+		}
+
+		pte = X86_MMU_GET_PTE(pdpt, addr);
 		/* If we're setting the present bit, restore the address
 		 * field. If we're clearing it, then the address field
 		 * will be zeroed instead, mapping the PTE to the NULL page.
@@ -342,6 +362,172 @@ void z_x86_mmu_set_flags(struct x86_mmu_pdpt *pdpt, void *ptr, size_t size,
 		size -= MMU_PAGE_SIZE;
 		addr += MMU_PAGE_SIZE;
 	}
+}
+
+static char __aligned(MMU_PAGE_SIZE)
+	page_pool[MMU_PAGE_SIZE * CONFIG_X86_MMU_PAGE_POOL_PAGES];
+
+static char *page_pos = page_pool + sizeof(page_pool);
+
+static void *get_page(void)
+{
+	page_pos -= MMU_PAGE_SIZE;
+
+	__ASSERT(page_pos >= page_pool, "out of MMU pages\n");
+
+	return page_pos;
+}
+
+__aligned(0x20) struct x86_mmu_pdpt z_x86_kernel_pdpt;
+#ifdef CONFIG_X86_KPTI
+__aligned(0x20) struct x86_mmu_pdpt z_x86_user_pdpt;
+#endif
+
+extern char z_shared_kernel_page_start[];
+
+static void add_mmu_region_page(struct x86_mmu_pdpt *pdpt, uintptr_t addr,
+				u64_t flags, bool user_table)
+{
+	union x86_mmu_pdpte *pdpte;
+	struct x86_mmu_pd *pd;
+	union x86_mmu_pde_pt *pde;
+	struct x86_mmu_pt *pt;
+	union x86_mmu_pte *pte;
+
+	/* Setup the PDPTE entry for the address, creating a page directory
+	 * if one didn't exist
+	 */
+	pdpte = X86_MMU_GET_PDPTE(pdpt, addr);
+	if (pdpte->p == 0) {
+		pd = get_page();
+		pdpte->pd = ((uintptr_t)pd) >> MMU_PAGE_SHIFT;
+	} else {
+		pd = (struct x86_mmu_pd *)(pdpte->pd << MMU_PAGE_SHIFT);
+	}
+	pdpte->value |= (flags & PDPTE_FLAGS_MASK);
+
+	/* Setup the PDE entry for the address, creating a page table
+	 * if necessary
+	 */
+	pde = X86_MMU_GET_PDE(pdpt, addr);
+	if (pde->p == 0) {
+		pt = get_page();
+		pde->pt = ((uintptr_t)pt) >> MMU_PAGE_SHIFT;
+	} else {
+		pt = (struct x86_mmu_pt *)(pde->pt << MMU_PAGE_SHIFT);
+	}
+	pde->value |= (flags & PDE_FLAGS_MASK);
+	/* Execute disable bit needs special handling, we should only set it
+	 * at the page directory level if ALL pages have XD set (instead of
+	 * just one).
+	 *
+	 * Use the 'ignored2' field to store a marker on whether any
+	 * configured region allows execution, the CPU never looks at
+	 * or modifies it.
+	 */
+	if ((flags & MMU_ENTRY_EXECUTE_DISABLE) == 0) {
+		pde->ignored2 = 1;
+		pde->value &= ~MMU_ENTRY_EXECUTE_DISABLE;
+	} else if (pde->ignored2 == 0) {
+		pde->value |= MMU_ENTRY_EXECUTE_DISABLE;
+	}
+
+#ifdef CONFIG_X86_KPTI
+	if (user_table && (flags & MMU_ENTRY_USER) == 0 &&
+	    addr != (uintptr_t)(&z_shared_kernel_page_start)) {
+		/* All non-user accessible pages except the shared page
+		 * are marked non-present in the page table.
+		 */
+		return;
+	}
+#else
+	ARG_UNUSED(user_table);
+#endif
+
+	/* Finally set up the page table entry */
+	pte = X86_MMU_GET_PTE(pdpt, addr);
+	pte->page = addr >> MMU_PAGE_SHIFT;
+	pte->value |= (flags & PTE_FLAGS_MASK);
+}
+
+static void add_mmu_region(struct x86_mmu_pdpt *pdpt, struct mmu_region *rgn,
+			   bool user_table)
+{
+	size_t size;
+	u64_t flags;
+	uintptr_t addr;
+
+	__ASSERT((rgn->address & MMU_PAGE_MASK) == 0U,
+		 "unaligned address provided");
+	__ASSERT((rgn->size & MMU_PAGE_MASK) == 0U,
+		 "unaligned size provided");
+
+	addr = rgn->address;
+
+#ifdef CONFIG_X86_KPTI
+	/* MMU_ENTRY_RUNTIME_USER is a special flag; it indicates that the
+	 * region isn't acessible to user mode at boot, but may be granted
+	 * access later. The implications are that the PDPT/PD entries will
+	 * have the user flag set, but not the PTE.
+	 */
+	bool never_user = (rgn->flags &
+			   (MMU_ENTRY_RUNTIME_USER | MMU_ENTRY_USER)) == 0;
+
+	if (user_table && never_user &&
+	    addr != (uintptr_t)(&z_shared_kernel_page_start)) {
+		/* If a region is not noted as being either accessible to
+		 * user mode, and never will be acessible to user mode, then
+		 * just leave as-is (non-present) in the user page tables
+		 * and don't bother generating PDs/PTs.
+		 *
+		 * The shared kernel page is an exception and must be
+		 * generated.
+		 */
+		return;
+	}
+#endif /* CONFIG_X86_KPTI */
+
+	/* Add the present flag, and filter out 'runtime user' since this
+	 * has no meaning to the actual MMU
+	 */
+	flags = (rgn->flags | MMU_ENTRY_PRESENT) & ~MMU_ENTRY_RUNTIME_USER;
+
+	/* Iterate through the region a page at a time, creating entries as
+	 * necessary.
+	 */
+	size = rgn->size;
+	while (size > 0) {
+		add_mmu_region_page(pdpt, addr, flags, user_table);
+
+		size -= MMU_PAGE_SIZE;
+		addr += MMU_PAGE_SIZE;
+	}
+}
+
+extern struct mmu_region z_x86_mmulist_start[];
+extern struct mmu_region z_x86_mmulist_end[];
+
+/* Called from x86's kernel_arch_init() */
+void z_x86_paging_init(void)
+{
+	size_t pages_free;
+
+	for (struct mmu_region *rgn = z_x86_mmulist_start;
+	     rgn < z_x86_mmulist_end; rgn++) {
+		add_mmu_region(&z_x86_kernel_pdpt, rgn, false);
+#ifdef CONFIG_X86_KPTI
+		add_mmu_region(&z_x86_user_pdpt, rgn, true);
+#endif
+	}
+
+	pages_free = (page_pos - page_pool) / MMU_PAGE_SIZE;
+
+	if (pages_free != 0) {
+		printk("Optimal CONFIG_X86_MMU_PAGE_POOL_PAGES %zu\n",
+		       CONFIG_X86_MMU_PAGE_POOL_PAGES - pages_free);
+	}
+
+	z_x86_enable_paging();
 }
 
 #ifdef CONFIG_X86_USERSPACE
