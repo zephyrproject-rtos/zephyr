@@ -6,12 +6,14 @@
 
 &arduino_i2c {
 
+#if 1
 	hts221@5f {
 		compatible = "st,hts221";
 		reg = <0x5f>;
 		drdy-gpios =  <&arduino_header 8 0>; /* D2 */
 		label = "HTS221";
 	};
+#endif
 
 	lps22hh@5d {
 		compatible = "st,lps22hh";
@@ -40,3 +42,17 @@
 		label = "LSM6DSO";
 	};
 };
+&arduino_spi {
+	cs-gpios = <&gpiob 6 0>;
+
+#if 0
+	hts221@0 {
+		compatible = "st,hts221";
+		reg = <0>;
+		spi-max-frequency = <1000000>;
+		drdy-gpios = <&gpioc 0 0>;
+		label = "HTS221";
+	};
+#endif
+};
+
