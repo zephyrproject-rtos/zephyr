@@ -28,6 +28,9 @@ extern K_THREAD_STACK_DEFINE(_interrupt_stack, CONFIG_ISR_STACK_SIZE);
 void z_x86_early_serial_init(void);
 #endif
 
+/* Create all page tables with boot configuration and enable paging */
+void z_x86_paging_init(void);
+
 /**
  *
  * @brief Performs architecture-specific initialization
@@ -46,6 +49,9 @@ static inline void kernel_arch_init(void)
 
 #ifdef CONFIG_X86_VERY_EARLY_CONSOLE
 	z_x86_early_serial_init();
+#endif
+#ifdef CONFIG_X86_MMU
+	z_x86_paging_init();
 #endif
 #if CONFIG_X86_STACK_PROTECTION
 	z_x86_mmu_set_flags(&z_x86_kernel_pdpt, _interrupt_stack, MMU_PAGE_SIZE,
@@ -95,6 +101,10 @@ static inline struct x86_mmu_pdpt *z_x86_pdpt_get(struct k_thread *thread)
 	return &header->kernel_data.pdpt;
 }
 #endif /* CONFIG_USERSPACE */
+
+/* ASM code to fiddle with registers to enable the MMU with PAE paging */
+void z_x86_enable_paging(void);
+
 #include <stddef.h> /* For size_t */
 
 #ifdef __cplusplus

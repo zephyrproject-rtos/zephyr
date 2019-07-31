@@ -39,9 +39,6 @@ MEMORY
      */
 
     IDT_LIST        : ORIGIN = 2K, LENGTH = 2K
-#ifdef CONFIG_X86_MMU
-    MMU_LIST	    : ORIGIN = 4k, LENGTH = 1K
-#endif
     }
 
 #include <arch/x86/ia32/linker.ld>
