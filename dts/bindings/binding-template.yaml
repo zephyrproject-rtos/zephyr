@@ -57,6 +57,7 @@ sub-node:
 #   <property name>:
 #     category: <required | optional>
 #     type: <string | int | boolean | array | uint8-array | string-array | compound>
+#     default: <default>
 #     description: <description of the property>
 #
 # 'uint8-array' is our name for what the device tree specification calls
@@ -65,6 +66,15 @@ sub-node:
 #   foo = [89 AB CD];
 #
 # Each value is a byte in hex.
+#
+# The optional 'default:' setting gives a value that will be used if the
+# property is missing from the device tree node. If 'default: <default>' is
+# given for a property <prop> and <prop> is missing, then the output will be as
+# if '<prop> = <default>' had appeared (except YAML data types are used for the
+# default value). Note that it only makes sense to combine 'default:' with
+# 'category: optional'.
+#
+# See below for examples of 'default:'.
 properties:
     # An entry for 'compatible' must appear, as it's used to map nodes to
     # bindings
@@ -83,6 +93,31 @@ properties:
         type: string-array
         category: optional
         description: Keys for bar-device
+
+    int-with-default:
+        type: int
+        category: optional
+        default: 123
+
+    array-with-default:
+        type: array
+        category: optional
+        default: [1, 2, 3] # Same as 'array-with-default = <1 2 3>'
+
+    string-with-default:
+        type: string
+        category: optional
+        default: "foo"
+
+    string-array-with-default:
+        type: string-array
+        category: optional
+        default: ["foo", "bar"] # Same as 'string-array-with-default = "foo", "bar"'
+
+    uint8-array-with-default:
+        type: uint8-array
+        category: optional
+        default: [0x12, 0x34] # Same as 'uint8-array-with-default = [12 34]'
 
 # If the binding describes an interrupt controller, GPIO controller, pinmux
 # device, or any other device referenced via a phandle plus a specifier (some

@@ -285,6 +285,16 @@
 	};
 
 	//
+	// For testing Device.props with 'default:' values in binding
+	//
+
+	defaults {
+		compatible = "defaults";
+		// Should override the 'default:' in the binding
+		default-not-used = <234>;
+	};
+
+	//
 	// Parent with 'sub-node:' in binding
 	//
 

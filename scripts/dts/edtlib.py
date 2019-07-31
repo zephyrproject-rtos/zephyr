@@ -542,7 +542,8 @@ class Device:
             return
 
         val = self._prop_val(name, prop_type,
-                             options.get("category") == "optional")
+                             options.get("category") == "optional",
+                             options.get("default"))
         if val is None:
             # 'category: optional' property that wasn't there
             return
@@ -566,8 +567,21 @@ class Device:
 
         self.props[name] = prop
 
-    def _prop_val(self, name, prop_type, optional):
-        # _init_prop() helper for getting the property's value
+    def _prop_val(self, name, prop_type, optional, default):
+        # _init_prop() helper for getting the property's value.
+        #
+        # name:
+        #   Property name from binding
+        #
+        # prop_type:
+        #   Property type from binding (a string like "int")
+        #
+        # optional:
+        #   True if the property isn't required to appear in the device tree
+        #
+        # default:
+        #   Default value for the property from the binding, or None if the
+        #   binding doesn't give a default value
 
         node = self._node
 
@@ -577,13 +591,19 @@ class Device:
 
         prop = node.props.get(name)
         if not prop:
-            if not optional and \
-                ("status" not in node.props or
-                 node.props["status"].to_string() != "disabled"):
-
+            if not optional and self.enabled:
                 _err("'{}' is marked as required in 'properties:' in {}, but "
                      "does not appear in {!r}".format(
                          name, self.binding_path, node))
+
+            if default is not None:
+                # YAML doesn't have a native format for byte arrays. We need to
+                # convert those from an array like [0x12, 0x34, ...]. The
+                # format has already been checked in
+                # _check_prop_type_and_default().
+                if prop_type == "uint8-array":
+                    return bytes(default)
+                return default
 
             return None
 
@@ -1157,7 +1177,8 @@ def _check_binding(binding, binding_path):
     if "properties" not in binding:
         return
 
-    ok_prop_keys = {"description", "type", "category", "constraint", "enum"}
+    ok_prop_keys = {"description", "type", "default", "category",
+                    "constraint", "enum"}
     ok_categories = {"required", "optional"}
 
     for prop, keys in binding["properties"].items():

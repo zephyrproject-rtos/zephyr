@@ -115,6 +115,13 @@ def run():
     verify_streq(edt.get_dev("/props").props,
                  r"{'compatible': <Property, name: compatible, value: ['props']>, 'int': <Property, name: int, value: 1>, 'array': <Property, name: array, value: [1, 2, 3]>, 'uint8-array': <Property, name: uint8-array, value: b'\x124'>, 'string': <Property, name: string, value: 'foo'>, 'string-array': <Property, name: string-array, value: ['foo', 'bar', 'baz']>}")
 
+    #
+    # Test property default values given in bindings
+    #
+
+    verify_streq(edt.get_dev("/defaults").props,
+                 r"{'compatible': <Property, name: compatible, value: ['defaults']>, 'int': <Property, name: int, value: 123>, 'array': <Property, name: array, value: [1, 2, 3]>, 'uint8-array': <Property, name: uint8-array, value: b'\x89\xab\xcd'>, 'string': <Property, name: string, value: 'hello'>, 'string-array': <Property, name: string-array, value: ['hello', 'there']>, 'default-not-used': <Property, name: default-not-used, value: 234>}")
+
 
     print("all tests passed")
 

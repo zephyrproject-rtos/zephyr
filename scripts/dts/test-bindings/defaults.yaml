@@ -1,0 +1,39 @@
+# SPDX-License-Identifier: BSD-3-Clause
+
+title: Property default value test
+description: Property default value test
+
+properties:
+    compatible:
+        constraint: "defaults"
+        type: string-array
+
+    int:
+        type: int
+        category: optional
+        default: 123
+
+    array:
+        type: array
+        category: optional
+        default: [1, 2, 3]
+
+    uint8-array:
+        type: uint8-array
+        category: optional
+        default: [0x89, 0xAB, 0xCD]
+
+    string:
+        type: string
+        category: optional
+        default: "hello"
+
+    string-array:
+        type: string-array
+        category: optional
+        default: ["hello", "there"]
+
+    default-not-used:
+        type: int
+        category: optional
+        default: 123
