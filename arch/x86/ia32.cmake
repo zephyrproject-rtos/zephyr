@@ -105,38 +105,6 @@ add_bin_file_to_the_next_link(gen_idt_output staticIdt)
 add_bin_file_to_the_next_link(gen_idt_output irq_int_vector_map)
 add_bin_file_to_the_next_link(gen_idt_output irq_vectors_alloc)
 
-if(CONFIG_X86_MMU)
-  if(CONFIG_X86_KPTI)
-    set(user_mmu_tables_bin user_mmu_tables.bin)
-  endif()
-
-  add_custom_target(
-    mmu_tables_bin_target
-    DEPENDS
-    mmu_tables.bin
-    ${user_mmu_tables_bin}
-  )
-  add_custom_command(
-    OUTPUT
-    mmu_tables.bin
-    ${user_mmu_tables_bin}
-    COMMAND
-    ${PYTHON_EXECUTABLE}
-    ${ZEPHYR_BASE}/arch/x86/gen_mmu_x86.py
-    -k $<TARGET_FILE:${ZEPHYR_PREBUILT_EXECUTABLE}>
-    -o mmu_tables.bin
-    -u user_mmu_tables.bin
-    $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:-v>
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-    DEPENDS ${ZEPHYR_PREBUILT_EXECUTABLE}
-    )
-
-  add_bin_file_to_the_next_link(  mmu_tables_bin_target      mmu_tables)
-  if(CONFIG_X86_KPTI)
-    add_bin_file_to_the_next_link(mmu_tables_bin_target user_mmu_tables)
-  endif()
-endif()
-
 if(CONFIG_GDT_DYNAMIC)
   # Use gen_gdt.py and objcopy to generate gdt.o from from the elf
   # file ${ZEPHYR_PREBUILT_EXECUTABLE}, creating the temp file gdt.bin along the

@@ -116,29 +116,6 @@
 
 #define MMU_ENTRY_EXECUTE_DISABLE   0x8000000000000000ULL
 
-/* Special flag argument for MMU_BOOT region invocations */
-
-/* Indicates that pages within this region may have their user/supervisor
- * permissions adjusted at runtime. Unnecessary if MMU_ENTRY_USER is already
- * set.
- *
- * The result of this is a guarantee that the 'user' bit for all PDEs referring
- * to the region will be set, even if the boot configuration has no user pages
- * in it.
- */
-#define MMU_ENTRY_RUNTIME_USER      0x10000000ULL
-
-/* Indicates that pages within this region may have their read/write
- * permissions adjusted at runtime. Unnecessary if MMU_ENTRY_WRITE is already
- * set.
- *
- * The result of this is a guarantee that the 'write' bit for all PDEs
- * referring to the region will be set, even if the boot configuration has no
- * writable pages in it.
- */
-#define MMU_ENTRY_RUNTIME_WRITE	    0x20000000ULL
-
-
 /* Helper macros to ease the usage of the MMU page table structures.
  */
 
@@ -228,8 +205,8 @@
  * In order to populate this structure use macro MMU_BOOT_REGION.
  */
 struct mmu_region {
-	u32_t address; /*Start address of the memory region */
-	u32_t size; /* Size of the memory region*/
+	uintptr_t address; /*Start address of the memory region */
+	size_t size; /* Size of the memory region*/
 	u64_t flags; /* Permissions needed for this region*/
 };
 
