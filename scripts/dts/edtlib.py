@@ -1182,22 +1182,22 @@ def _check_binding(binding, binding_path):
                     "constraint", "enum"}
     ok_categories = {"required", "optional"}
 
-    for prop, keys in binding["properties"].items():
-        for key in keys:
+    for prop_name, settings in binding["properties"].items():
+        for key in settings:
             if key not in ok_prop_keys:
                 _err("unknown setting '{}' in 'properties: {}: ...' in {}, "
                      "expected one of {}".format(
-                         key, prop, binding_path, ", ".join(ok_prop_keys)))
+                         key, prop_name, binding_path, ", ".join(ok_prop_keys)))
 
-        if "category" in keys and keys["category"] not in ok_categories:
+        if "category" in settings and settings["category"] not in ok_categories:
             _err("unrecognized category '{}' for '{}' in 'properties:' in {}, "
                  "expected one of {}".format(
-                     keys["category"], prop, binding_path,
+                     settings["category"], prop_name, binding_path,
                      ", ".join(ok_categories)))
 
-        if "description" in keys and not isinstance(keys["description"], str):
+        if "description" in settings and not isinstance(settings["description"], str):
             _err("missing, malformed, or empty 'description' for '{}' in "
-                 "'properties:' in {}".format(prop, binding_path))
+                 "'properties:' in {}".format(prop_name, binding_path))
 
 
 def _translate(addr, node):
