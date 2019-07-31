@@ -2,6 +2,8 @@
 
 if("${ARCH}" STREQUAL "x86")
   set_ifndef(QEMU_binary_suffix i386)
+elseif(DEFINED QEMU_ARCH)
+  set_ifndef(QEMU_binary_suffix ${QEMU_ARCH})
 else()
   set_ifndef(QEMU_binary_suffix ${ARCH})
 endif()
