@@ -177,6 +177,8 @@ features:
 +-----------+------------+-------------------------------------+
 | I2C       | on-chip    | i2c                                 |
 +-----------+------------+-------------------------------------+
+| SPI       | on-chip    | spi                                 |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 ``boards/arm/stm32mp157c_dk2/stm32mp157c_dk2_defconfig``
@@ -195,6 +197,8 @@ Default Zephyr Peripheral Mapping:
 - USART_3 TX/RX : PB10/PB12 (UART console)
 - UART_7 TX/RX : PE8/PE7 (Arduino Serial)
 - I2C5 SCL/SDA : PA11/PA12 (Arduino I2C)
+- SPI4 SCK/MISO/MOSI : PE12/PE13/PE14 (Arduino SPI)
+- SPI5 SCK/MISO/MOSI : PF7/PF8/PF9
 
 System Clock
 ------------

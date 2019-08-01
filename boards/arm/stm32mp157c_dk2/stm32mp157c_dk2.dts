@@ -26,6 +26,14 @@
 	};
 };
 
+&spi4{
+	status = "okay";
+};
+
+&spi5{
+	status = "okay";
+};
+
 &usart3 {
 	current-speed = <115200>;
 	pinctrl-0 = <&usart3_pins_a>;

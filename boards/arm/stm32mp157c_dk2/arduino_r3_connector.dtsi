@@ -35,4 +35,4 @@
 
 arduino_i2c: &i2c5 {};
 arduino_serial: &uart7 {};
-/* arduino_spi: SPI is not yet supported on STM32MP1 */
+arduino_spi: &spi4 {};
