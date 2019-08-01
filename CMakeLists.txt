@@ -1356,14 +1356,23 @@ if(CONFIG_OUTPUT_DISASSEMBLY)
 endif()
 
 if(CONFIG_OUTPUT_STAT)
+  set(out_stat_cmd    "")
+  set(out_stat_byprod "")
+  bintools_readelf(
+    RESULT_CMD_LIST    out_stat_cmd
+    RESULT_BYPROD_LIST out_stat_byprod
+    HEADERS
+    FILE_INPUT         ${KERNEL_ELF_NAME}
+    FILE_OUTPUT        ${KERNEL_STAT_NAME}
+    )
   list(APPEND
     post_build_commands
-    COMMAND
-    ${CMAKE_READELF} -e ${KERNEL_ELF_NAME} > ${KERNEL_STAT_NAME}
+    ${out_stat_cmd}
     )
   list(APPEND
     post_build_byproducts
     ${KERNEL_STAT_NAME}
+    ${out_stat_byprod}
     )
 endif()
 

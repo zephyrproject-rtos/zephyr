@@ -17,3 +17,4 @@ find_program(CMAKE_GDB     gdb-multiarch           PATH ${TOOLCHAIN_HOME}       
 include(${ZEPHYR_BASE}/cmake/bintools/gnu/target_memusage.cmake)
 include(${ZEPHYR_BASE}/cmake/bintools/gnu/target_objcopy.cmake)
 include(${ZEPHYR_BASE}/cmake/bintools/gnu/target_objdump.cmake)
+include(${ZEPHYR_BASE}/cmake/bintools/gnu/target_readelf.cmake)
