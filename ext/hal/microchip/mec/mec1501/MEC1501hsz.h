@@ -439,6 +439,7 @@ typedef enum IRQn {
 #include "component/espi_io.h"
 #include "component/espi_mem.h"
 #include "component/espi_vw.h"
+#include "component/global_cfg.h"
 #include "component/i2c.h"
 #include "component/kbc.h"
 #include "component/keyscan.h"
@@ -447,6 +448,7 @@ typedef enum IRQn {
 #include "component/pcr.h"
 #include "component/port80cap.h"
 #include "component/port92.h"
+#include "component/ps2_ctrl.h"
 #include "component/smb.h"
 #include "component/tfdp.h"
 #include "component/timer.h"
@@ -493,6 +495,9 @@ typedef enum IRQn {
 #define RTMR_REGS       ((RTMR_Type *) RTMR_BASE)
 
 #define TFDP_REGS	((TFDP_Type *) TFDP_BASE)
+
+#define PS2_0_REGS	((PS2_Type *) PS2_0_BASE)
+#define PS2_1_REGS	((PS2_Type *) PS2_1_BASE)
 
 #define HTMR0_REGS      ((HTMR_Type *) HTMR0_BASE)
 #define HTMR1_REGS      ((HTMR_Type *) HTMR1_BASE)
@@ -583,6 +588,8 @@ typedef enum IRQn {
 
 #define PORT80_CAP0_REGS	((PORT80_CAP_Type *)(P80CAP0_BASE))
 #define PORT80_CAP1_REGS	((PORT80_CAP_Type *)(P80CAP1_BASE))
+
+#define GLOBAL_CFG_REGS		((GLOBAL_CFG_Type *) GCFG_BASE)
 
 /** @} *//* End of group MEC1501 */
 
