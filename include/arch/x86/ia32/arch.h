@@ -638,7 +638,26 @@ extern struct task_state_segment _main_tss;
 
 #define Z_X86_THREAD_PT_AREA	(Z_X86_NUM_TABLE_PAGES * MMU_PAGE_SIZE)
 
-#if defined(CONFIG_HW_STACK_PROTECTION) && defined(CONFIG_USERSPACE)
+#if defined(CONFIG_HW_STACK_PROTECTION) || defined(CONFIG_USERSPACE)
+#define Z_X86_STACK_BASE_ALIGN	MMU_PAGE_SIZE
+#else
+#define Z_X86_STACK_BASE_ALIGN	STACK_ALIGN
+#endif
+
+#ifdef CONFIG_USERSPACE
+/* If user mode enabled, expand any stack size to fill a page since that is
+ * the access control granularity and we don't want other kernel data to
+ * unintentionally fall in the latter part of the page
+ */
+#define Z_X86_STACK_SIZE_ALIGN	MMU_PAGE_SIZE
+#else
+#define Z_X86_STACK_SIZE_ALIGN	1
+#endif
+
+struct z_x86_kernel_stack_data {
+	struct x86_mmu_pdpt pdpt;
+} __aligned(0x20);
+
 /* With both hardware stack protection and userspace enabled, stacks are
  * arranged as follows:
  *
@@ -671,53 +690,48 @@ extern struct task_state_segment _main_tss;
  * _main_tss.esp0 always points to the trampoline stack, which handles the
  * page table switch to the kernel PDPT and transplants context to the
  * privileged mode stack.
- *
- * TODO: The stack object layout is getting rather complex. We should define
- * its layout in a struct definition, rather than doing math in the kernel
- * code to find the parts we want or to obtain sizes.
  */
-#define Z_ARCH_THREAD_STACK_RESERVED	(MMU_PAGE_SIZE * (2 + Z_X86_NUM_TABLE_PAGES))
-#define _STACK_BASE_ALIGN		MMU_PAGE_SIZE
-#elif defined(CONFIG_HW_STACK_PROTECTION) || defined(CONFIG_USERSPACE)
-/* If only one of HW stack protection or userspace is enabled, then the
- * stack will be preceded by one page which is a guard page or a kernel mode
- * stack, respectively.
- */
-#define Z_ARCH_THREAD_STACK_RESERVED	(MMU_PAGE_SIZE * (1 + Z_X86_NUM_TABLE_PAGES))
-#define _STACK_BASE_ALIGN		MMU_PAGE_SIZE
-#else /* Neither feature */
-#define Z_ARCH_THREAD_STACK_RESERVED	0
-#define _STACK_BASE_ALIGN		STACK_ALIGN
+struct z_x86_thread_stack_header {
+#ifdef CONFIG_USERSPACE
+	char page_tables[Z_X86_THREAD_PT_AREA];
+#endif
+
+#ifdef CONFIG_HW_STACK_PROTECTION
+	char guard_page[MMU_PAGE_SIZE];
 #endif
 
 #ifdef CONFIG_USERSPACE
-/* If user mode enabled, expand any stack size to fill a page since that is
- * the access control granularity and we don't want other kernel data to
- * unintentionally fall in the latter part of the page
- */
-#define _STACK_SIZE_ALIGN	MMU_PAGE_SIZE
-#else
-#define _STACK_SIZE_ALIGN	1
+	char privilege_stack[MMU_PAGE_SIZE -
+		sizeof(struct z_x86_kernel_stack_data)];
+
+	struct z_x86_kernel_stack_data kernel_data;
 #endif
+} __packed __aligned(Z_X86_STACK_SIZE_ALIGN);
+
+#define Z_ARCH_THREAD_STACK_RESERVED \
+	((u32_t)sizeof(struct z_x86_thread_stack_header))
 
 #define Z_ARCH_THREAD_STACK_DEFINE(sym, size) \
 	struct _k_thread_stack_element __noinit \
-		__aligned(_STACK_BASE_ALIGN) \
-		sym[ROUND_UP((size), _STACK_SIZE_ALIGN) + Z_ARCH_THREAD_STACK_RESERVED]
+		__aligned(Z_X86_STACK_BASE_ALIGN) \
+		sym[ROUND_UP((size), Z_X86_STACK_SIZE_ALIGN) + \
+			Z_ARCH_THREAD_STACK_RESERVED]
 
 #define Z_ARCH_THREAD_STACK_LEN(size) \
 		(ROUND_UP((size), \
-			  MAX(_STACK_BASE_ALIGN, _STACK_SIZE_ALIGN)) + \
+			  MAX(Z_X86_STACK_BASE_ALIGN, \
+			      Z_X86_STACK_SIZE_ALIGN)) + \
 		Z_ARCH_THREAD_STACK_RESERVED)
 
 #define Z_ARCH_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size) \
 	struct _k_thread_stack_element __noinit \
-		__aligned(_STACK_BASE_ALIGN) \
+		__aligned(Z_X86_STACK_BASE_ALIGN) \
 		sym[nmemb][Z_ARCH_THREAD_STACK_LEN(size)]
 
 #define Z_ARCH_THREAD_STACK_MEMBER(sym, size) \
-	struct _k_thread_stack_element __aligned(_STACK_BASE_ALIGN) \
-		sym[ROUND_UP((size), _STACK_SIZE_ALIGN) + Z_ARCH_THREAD_STACK_RESERVED]
+	struct _k_thread_stack_element __aligned(Z_X86_STACK_BASE_ALIGN) \
+		sym[ROUND_UP((size), Z_X86_STACK_SIZE_ALIGN) + \
+			Z_ARCH_THREAD_STACK_RESERVED]
 
 #define Z_ARCH_THREAD_STACK_SIZEOF(sym) \
 	(sizeof(sym) - Z_ARCH_THREAD_STACK_RESERVED)

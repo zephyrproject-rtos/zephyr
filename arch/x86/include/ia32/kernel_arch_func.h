@@ -89,9 +89,10 @@ void z_x86_apply_mem_domain(struct x86_mmu_pdpt *pdpt,
 
 static inline struct x86_mmu_pdpt *z_x86_pdpt_get(struct k_thread *thread)
 {
-	uintptr_t addr = thread->stack_info.start;
+	struct z_x86_thread_stack_header *header =
+		(struct z_x86_thread_stack_header *)thread->stack_obj;
 
-	return (struct x86_mmu_pdpt *)(addr - sizeof(struct x86_mmu_pdpt));
+	return &header->kernel_data.pdpt;
 }
 #endif /* CONFIG_USERSPACE */
 #include <stddef.h> /* For size_t */

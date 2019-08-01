@@ -418,18 +418,13 @@ static void copy_page_tables(struct k_thread *thread,
 {
 	uintptr_t pos, start;
 	struct x86_mmu_pdpt *thread_pdpt = z_x86_pdpt_get(thread);
+	struct z_x86_thread_stack_header *header =
+		(struct z_x86_thread_stack_header *)thread->stack_obj;
 
 	__ASSERT(thread->stack_obj != NULL, "no stack object assigned");
 	__ASSERT(z_x86_page_tables_get() != thread_pdpt, "PDPT is active");
 	__ASSERT(((uintptr_t)thread_pdpt & 0x1f) == 0, "unaligned pdpt at %p",
 		 thread_pdpt);
-	__ASSERT(((uintptr_t)thread_pdpt) == ((uintptr_t)thread->stack_obj +
-					      Z_ARCH_THREAD_STACK_RESERVED -
-					      sizeof(struct x86_mmu_pdpt)),
-		 "misplaced pdpt\n");
-	__ASSERT(thread->stack_info.start == ((uintptr_t)thread->stack_obj +
-					      Z_ARCH_THREAD_STACK_RESERVED),
-		"stack_info.start is wrong");
 
 	(void)memcpy(thread_pdpt, master_pdpt, sizeof(struct x86_mmu_pdpt));
 
@@ -461,7 +456,7 @@ static void copy_page_tables(struct k_thread *thread,
 	 * | ...                       |
 	 *
 	 */
-	start = (uintptr_t)(thread->stack_obj);
+	start = (uintptr_t)(&header->page_tables);
 	pos = thread_pd_create(start, thread_pdpt, master_pdpt);
 	pos = thread_pt_create(pos, thread_pdpt, master_pdpt);
 
