@@ -13,8 +13,24 @@
 /*
  * note: This implementation assumes Timer0 is present. Be sure
  * to build the ARC CPU with Timer0.
+ *
+ * If secureshield is present and secure firmware is configured,
+ * use secure Timer 0
  */
 
+#ifdef CONFIG_ARC_SECURE_FIRMWARE
+
+#undef _ARC_V2_TMR0_COUNT
+#undef _ARC_V2_TMR0_CONTROL
+#undef _ARC_V2_TMR0_LIMIT
+#undef IRQ_TIMER0
+
+#define _ARC_V2_TMR0_COUNT _ARC_V2_S_TMR0_COUNT
+#define _ARC_V2_TMR0_CONTROL _ARC_V2_S_TMR0_CONTROL
+#define _ARC_V2_TMR0_LIMIT _ARC_V2_S_TMR0_LIMIT
+#define IRQ_TIMER0 IRQ_SEC_TIMER0
+
+#endif
 
 #define _ARC_V2_TMR_CTRL_IE 0x1 /* interrupt enable */
 #define _ARC_V2_TMR_CTRL_NH 0x2 /* count only while not halted */

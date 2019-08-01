@@ -85,6 +85,9 @@ GEN_OFFSET_SYM(_callee_saved_stack_t, r24);
 GEN_OFFSET_SYM(_callee_saved_stack_t, r25);
 GEN_OFFSET_SYM(_callee_saved_stack_t, r26);
 GEN_OFFSET_SYM(_callee_saved_stack_t, fp);
+#ifdef CONFIG_ARC_SECURE_FIRMWARE
+GEN_OFFSET_SYM(_callee_saved_stack_t, sec_stat);
+#endif
 #ifdef CONFIG_USERSPACE
 #ifdef CONFIG_ARC_HAS_SECURE
 GEN_OFFSET_SYM(_callee_saved_stack_t, kernel_sp);

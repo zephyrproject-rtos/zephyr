@@ -177,12 +177,6 @@ config CODE_DENSITY
 	help
 	  Enable code density option to get better code density
 
-config ARC_HAS_SECURE
-	bool
-	#  a hidden option
-	help
-	  This option is enabled when ARC core supports secure mode
-
 config ARC_HAS_ACCL_REGS
 	bool "Reg Pair ACCL:ACCH (FPU and/or MPY > 6)"
 	default y if FLOAT
@@ -190,6 +184,60 @@ config ARC_HAS_ACCL_REGS
 	  Depending on the configuration, CPU can contain accumulator reg-pair
 	  (also referred to as r58:r59). These can also be used by gcc as GPR so
 	  kernel needs to save/restore per process
+
+config ARC_HAS_SECURE
+	bool "ARC has SecureShield"
+	select CPU_HAS_TEE
+	select ARCH_HAS_TRUSTED_EXECUTION
+	help
+	  This option is enabled when ARC core supports secure mode
+
+config SJLI_TABLE_SIZE
+	int "SJLI table size"
+	depends on ARC_SECURE_FIRMWARE
+	default 8
+	help
+	  The size of sjli (Secure Jump and Link Indexed) table. The
+	  code in normal mode call secure services in secure mode through
+	  sjli instruction.
+
+config ARC_SECURE_FIRMWARE
+	prompt "Generate Secure Firmware"
+	bool
+	depends on ARC_HAS_SECURE
+	default y if TRUSTED_EXECUTION_SECURE
+	help
+	  This option indicates that we are building a Zephyr image that
+	  is intended to execute in secure mode. The option is only
+	  applicable to ARC processors that implement the SecureShield.
+
+	  This option enables Zephyr to include code that executes in
+	  secure mode, as well as to exclude code that is designed to
+	  execute only in normal mode.
+
+	  Code executing in secure mode has access to both the secure
+	  and normal resources of the ARC processors.
+
+config ARC_NORMAL_FIRMWARE
+	prompt "Generate Normal Firmware"
+	bool
+	depends on !ARC_SECURE_FIRMWARE
+	depends on ARC_HAS_SECURE
+	default y if TRUSTED_EXECUTION_NONSECURE
+	help
+	  This option indicates that we are building a Zephyr image that
+	  is intended to execute in normal mode. Execution of this
+	  image is triggered by secure firmware that executes in secure
+	  mode. The option is only applicable to ARC processors that
+	  implement the SecureShield.
+
+	  This option enables Zephyr to include code that executes in
+	  normal mode only, as well as to exclude code that is
+	  designed to execute only in secure mode.
+
+	  Code executing in normal mode has no access to secure
+	  resources of the ARC processors, and, therefore, it shall avoid
+	  accessing them.
 
 menu "ARC MPU Options"
 depends on CPU_HAS_MPU

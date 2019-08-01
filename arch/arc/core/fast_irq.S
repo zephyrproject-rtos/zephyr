@@ -53,12 +53,10 @@ SECTION_FUNC(TEXT, _firq_enter)
  * This has already been done by _isr_wrapper.
  */
 #ifdef CONFIG_ARC_STACK_CHECKING
-#ifdef CONFIG_ARC_HAS_SECURE
+#ifdef CONFIG_ARC_SECURE_FIRMWARE
 	lr r2, [_ARC_V2_SEC_STAT]
 	bclr r2, r2, _ARC_V2_SEC_STAT_SSC_BIT
-	/* sflag r2 */
-	/* sflag instruction is not supported in current ARC GNU */
-	.long 0x00bf302f
+	sflag r2
 #else
 	/* disable stack checking */
 	lr r2, [_ARC_V2_STATUS32]

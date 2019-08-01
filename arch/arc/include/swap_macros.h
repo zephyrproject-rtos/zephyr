@@ -42,12 +42,24 @@ extern "C" {
 	st r26, [sp, ___callee_saved_stack_t_r26_OFFSET]
 	st fp,  [sp, ___callee_saved_stack_t_fp_OFFSET]
 
+#ifdef CONFIG_ARC_SECURE_FIRMWARE
+	lr r13, [_ARC_V2_SEC_STAT]
+	st_s r13, [sp, ___callee_saved_stack_t_sec_stat_OFFSET]
+#endif
+
 #ifdef CONFIG_USERSPACE
 #ifdef CONFIG_ARC_HAS_SECURE
+#ifdef CONFIG_ARC_SECURE_FIRMWARE
 	lr r13, [_ARC_V2_SEC_U_SP]
 	st r13, [sp, ___callee_saved_stack_t_user_sp_OFFSET]
 	lr r13, [_ARC_V2_SEC_K_SP]
 	st r13, [sp, ___callee_saved_stack_t_kernel_sp_OFFSET]
+#else
+	lr r13, [_ARC_V2_USER_SP]
+	st r13, [sp, ___callee_saved_stack_t_user_sp_OFFSET]
+	lr r13, [_ARC_V2_KERNEL_SP]
+	st r13, [sp, ___callee_saved_stack_t_kernel_sp_OFFSET]
+#endif /* CONFIG_ARC_SECURE_FIRMWARE */
 #else
 	lr r13, [_ARC_V2_USER_SP]
 	st r13, [sp, ___callee_saved_stack_t_user_sp_OFFSET]
@@ -121,6 +133,7 @@ extern "C" {
 
 #ifdef CONFIG_USERSPACE
 #ifdef CONFIG_ARC_HAS_SECURE
+#ifdef CONFIG_ARC_SECURE_FIRMWARE
 	ld r13, [sp, ___callee_saved_stack_t_user_sp_OFFSET]
 	sr r13, [_ARC_V2_SEC_U_SP]
 	ld r13, [sp, ___callee_saved_stack_t_kernel_sp_OFFSET]
@@ -128,7 +141,19 @@ extern "C" {
 #else
 	ld_s r13, [sp, ___callee_saved_stack_t_user_sp_OFFSET]
 	sr r13, [_ARC_V2_USER_SP]
+	ld r13, [sp, ___callee_saved_stack_t_kernel_sp_OFFSET]
+	sr r13, [_ARC_V2_KERNEL_SP]
+#endif /* CONFIG_ARC_SECURE_FIRMWARE */
+#else
+	ld r13, [sp, ___callee_saved_stack_t_user_sp_OFFSET]
+	sr r13, [_ARC_V2_USER_SP]
 #endif
+#endif
+
+#ifdef CONFIG_ARC_SECURE_FIRMWARE
+	ld r13, [sp, ___callee_saved_stack_t_sec_stat_OFFSET]
+
+	sflag r13
 #endif
 
 	ld_s r13, [sp, ___callee_saved_stack_t_r13_OFFSET]
@@ -259,7 +284,7 @@ extern "C" {
  * _kernel.current. r3 is a scratch reg.
  */
 .macro _load_stack_check_regs
-#ifdef CONFIG_ARC_HAS_SECURE
+#if defined(CONFIG_ARC_SECURE_FIRMWARE)
 	ld r3, [r2, _thread_offset_to_k_stack_base]
 	sr r3, [_ARC_V2_S_KSTACK_BASE]
 	ld r3, [r2, _thread_offset_to_k_stack_top]
@@ -281,7 +306,7 @@ extern "C" {
 	ld r3, [r2, _thread_offset_to_u_stack_top]
 	sr r3, [_ARC_V2_USTACK_TOP]
 #endif
-#endif /* CONFIG_ARC_HAS_SECURE */
+#endif /* CONFIG_ARC_SECURE_FIRMWARE */
 .endm
 
 

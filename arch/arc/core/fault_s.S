@@ -81,6 +81,7 @@ _exc_entry:
 	_create_irq_stack_frame
 
 #ifdef CONFIG_ARC_HAS_SECURE
+	/* ERSEC_STAT is IOW/RAZ in normal mode */
 	lr r0,[_ARC_V2_ERSEC_STAT]
 	st_s r0, [sp, ___isf_t_sec_stat_OFFSET]
 #endif
@@ -121,7 +122,7 @@ _exc_return:
 	st_s r2, [r1, _kernel_offset_to_current]
 #endif
 
-#ifdef CONFIG_ARC_HAS_SECURE
+#ifdef CONFIG_ARC_SECURE_FIRMWARE
 	/*
 	 * sync up the ERSEC_STAT.ERM and SEC_STAT.IRM.
 	 * use a fake interrupt return to simulate an exception turn.
@@ -130,11 +131,9 @@ _exc_return:
 	 */
 	lr r3,[_ARC_V2_ERSEC_STAT]
 	btst r3, 31
-	bset.nz r3, r3, 3
-	bclr.z r3, r3, 3
-	/* sflag r3 */
-	/* sflag instruction is not supported in current ARC GNU */
-	.long 0x00ff302f
+	bset.nz r3, r3, _ARC_V2_SEC_STAT_IRM_BIT
+	bclr.z r3, r3, _ARC_V2_SEC_STAT_IRM_BIT
+	sflag r3
 #endif
 	/* clear AE bit to forget this was an exception, and go to
 	 * register bank0 (if exception is raised in firq with 2 reg
@@ -155,8 +154,23 @@ _exc_return:
 	 * raise exception again. The ignored interrupts will be re-triggered
 	 * if not cleared, or re-triggered by interrupt sources, or just missed
 	 */
-	mov r3,(1 << (CONFIG_NUM_IRQ_PRIO_LEVELS - 1)) /* use lowest */
+
+#ifdef CONFIG_ARC_SECURE_FIRMWARE
+	mov r3, (1 << (ARC_N_IRQ_START_LEVEL - 1))
+#else
+	mov r3, (1 << (CONFIG_NUM_IRQ_PRIO_LEVELS - 1))
+#endif
+
+#ifdef CONFIG_ARC_NORMAL_FIRMWARE
+	push r2
+	mov r0, _ARC_V2_AUX_IRQ_ACT
+	mov r1, r3
+	mov r6, ARC_S_CALL_AUX_WRITE
+	sjli SJLI_CALL_ARC_SECURE
+	pop r2
+#else
 	sr r3, [_ARC_V2_AUX_IRQ_ACT]
+#endif
 
 #if defined(CONFIG_ARC_FIRQ) && CONFIG_RGF_NUM_BANKS != 1
 	mov r2, ilink
@@ -191,7 +205,7 @@ SECTION_SUBSEC_FUNC(TEXT,__fault,__ev_trap)
 	mov r6, K_SYSCALL_BAD
 
 valid_syscall_id:
-#ifdef CONFIG_ARC_HAS_SECURE
+#ifdef CONFIG_ARC_SECURE_FIRMWARE
 	lr ilink, [_ARC_V2_ERSEC_STAT]
 	push ilink
 #endif
@@ -268,17 +282,8 @@ exc_nest_handle:
 	/* check if the current thread needs to be rescheduled */
 	ld_s r0, [r1, _kernel_offset_to_ready_q_cache]
 	breq r0, r2, _exc_return_from_irqoffload_trap
-
-	_save_callee_saved_regs
-
-	st _CAUSE_RIRQ, [r2, _thread_offset_to_relinquish_cause]
-	/* note: Ok to use _CAUSE_RIRQ since everything is saved */
-
-	ld_s r2, [r1, _kernel_offset_to_ready_q_cache]
-	st_s r2, [r1, _kernel_offset_to_current]
 #endif
-
-#ifdef CONFIG_ARC_HAS_SECURE
+#ifdef CONFIG_ARC_SECURE_FIRMWARE
 	/*
 	 * sync up the ERSEC_STAT.ERM and SEC_STAT.IRM.
 	 * use a fake interrupt return to simulate an exception turn.
@@ -287,21 +292,42 @@ exc_nest_handle:
 	 */
 	lr r3,[_ARC_V2_ERSEC_STAT]
 	btst r3, 31
-	bset.nz r3, r3, 3
-	bclr.z r3, r3, 3
-	/* sflag r3 */
-	/* sflag instruction is not supported in current ARC GNU */
-	.long 0x00ff302f
+	bset.nz r3, r3, _ARC_V2_SEC_STAT_IRM_BIT
+	bclr.z r3, r3, _ARC_V2_SEC_STAT_IRM_BIT
+	sflag r3
 #endif
+
+	_save_callee_saved_regs
+
+	st _CAUSE_RIRQ, [r2, _thread_offset_to_relinquish_cause]
+	/* note: Ok to use _CAUSE_RIRQ since everything is saved */
+
+	ld_s r2, [r1, _kernel_offset_to_ready_q_cache]
+	st_s r2, [r1, _kernel_offset_to_current]
+
 	/* clear AE bit to forget this was an exception */
 	lr r3, [_ARC_V2_STATUS32]
 	and r3,r3,(~_ARC_V2_STATUS32_AE)
 	kflag r3
 	/* pretend lowest priority interrupt happened to use common handler */
 	lr r3, [_ARC_V2_AUX_IRQ_ACT]
-	or r3,r3,(1<<(CONFIG_NUM_IRQ_PRIO_LEVELS-1)) /* use lowest */
-	sr r3, [_ARC_V2_AUX_IRQ_ACT]
 
+#ifdef CONFIG_ARC_SECURE_FIRMWARE
+	or r3, r3, (1 << (ARC_N_IRQ_START_LEVEL - 1))
+#else
+	or r3, r3, (1 << (CONFIG_NUM_IRQ_PRIO_LEVELS - 1))
+#endif
+
+#ifdef CONFIG_ARC_NORMAL_FIRMWARE
+	push_s r2
+	mov r0, _ARC_V2_AUX_IRQ_ACT
+	mov r1, r3
+	mov r6, ARC_S_CALL_AUX_WRITE
+	sjli SJLI_CALL_ARC_SECURE
+	pop_s r2
+#else
+	sr r3, [_ARC_V2_AUX_IRQ_ACT]
+#endif
 	/* Assumption: r2 has current thread */
 	b _rirq_common_interrupt_swap
 #endif
