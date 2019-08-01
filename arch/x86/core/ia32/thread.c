@@ -115,10 +115,11 @@ static FUNC_NORETURN void drop_to_user(k_thread_entry_t user_entry,
 FUNC_NORETURN void z_arch_user_mode_enter(k_thread_entry_t user_entry,
 					 void *p1, void *p2, void *p3)
 {
+	struct z_x86_thread_stack_header *header =
+		(struct z_x86_thread_stack_header *)_current->stack_obj;
+
 	/* Set up the kernel stack used during privilege elevation */
-	z_x86_mmu_set_flags(&z_x86_kernel_pdpt,
-			    (void *)(_current->stack_info.start -
-				     MMU_PAGE_SIZE),
+	z_x86_mmu_set_flags(&z_x86_kernel_pdpt, &header->privilege_stack,
 			    MMU_PAGE_SIZE, MMU_ENTRY_WRITE, MMU_PTE_RW_MASK,
 			    true);
 
@@ -197,6 +198,10 @@ void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	char *stack_buf;
 	char *stack_high;
 	struct _x86_initial_frame *initial_frame;
+#if defined(CONFIG_X86_USERSPACE) || defined(CONFIG_X86_STACK_PROTECTION)
+	struct z_x86_thread_stack_header *header =
+		(struct z_x86_thread_stack_header *)stack;
+#endif
 
 	Z_ASSERT_VALID_PRIO(priority, entry);
 	stack_buf = Z_THREAD_STACK_BUFFER(stack);
@@ -207,15 +212,15 @@ void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	 * If we're not starting in user mode, this functions as a guard
 	 * area.
 	 */
-	z_x86_mmu_set_flags(&z_x86_kernel_pdpt,
-		(void *)(stack_buf - MMU_PAGE_SIZE), MMU_PAGE_SIZE,
+	z_x86_mmu_set_flags(&z_x86_kernel_pdpt, &header->privilege_stack,
+		MMU_PAGE_SIZE,
 		((options & K_USER) == 0U) ? MMU_ENTRY_READ : MMU_ENTRY_WRITE,
 		MMU_PTE_RW_MASK, true);
 #endif /* CONFIG_X86_USERSPACE */
 
 #if CONFIG_X86_STACK_PROTECTION
 	/* Set guard area to read-only to catch stack overflows */
-	z_x86_mmu_set_flags(&z_x86_kernel_pdpt, stack + Z_X86_THREAD_PT_AREA,
+	z_x86_mmu_set_flags(&z_x86_kernel_pdpt, &header->guard_page,
 			    MMU_PAGE_SIZE, MMU_ENTRY_READ, MMU_PTE_RW_MASK,
 			    true);
 #endif
