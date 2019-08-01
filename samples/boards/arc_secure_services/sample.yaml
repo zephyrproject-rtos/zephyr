@@ -1,0 +1,8 @@
+sample:
+  description: Sample application to verify the secure monitor for
+     Designware ARC SecureShiled.
+  name: Designware ARC Secure monitor
+tests:
+  test:
+    platform_whitelist: nsim_sem em_starterkit_em7d_secure
+    tags: secure
