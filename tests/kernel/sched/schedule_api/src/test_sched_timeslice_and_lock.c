@@ -366,6 +366,55 @@ void test_unlock_preemptible(void)
 }
 
 /**
+ * @brief Validate nested k_sched_lock() and k_sched_unlock()
+ *
+ * @details In a preemptive thread, lock the scheduler twice and
+ * create a cooperative thread.  Call k_sched_unlock() and check the
+ * cooperative thread haven't executed.  Unlock it again to see the
+ * thread have executed this time.
+ *
+ * @see k_sched_lock(), k_sched_unlock()
+ *
+ * @ingroup kernel_sched_tests
+ */
+void test_unlock_nested_sched_lock(void)
+{
+	/* set current thread to a preemptible priority */
+	init_prio = 0;
+	setup_threads();
+
+	/* take the scheduler lock twice */
+	k_sched_lock();
+	k_sched_lock();
+
+	/* spawn threads without wait */
+	spawn_threads(0);
+
+	/* do critical thing */
+	k_busy_wait(100000);
+
+	/* unlock once; this shouldn't let other threads to run */
+	k_sched_unlock();
+
+	/* checkpoint: no threads get executed */
+	for (int i = 0; i < THREADS_NUM; i++) {
+		zassert_true(tdata[i].executed == 0, NULL);
+	}
+
+	/* unlock another; this let the higher thread to run */
+	k_sched_unlock();
+
+	/* checkpoint: higher threads NOT get executed */
+	zassert_true(tdata[0].executed == 1, NULL);
+	for (int i = 1; i < THREADS_NUM; i++) {
+		zassert_true(tdata[i].executed == 0, NULL);
+	}
+
+	/* restore environment */
+	teardown_threads();
+}
+
+/**
  * @brief validate k_wakeup() in some corner scenario
  * @details trigger a timer and after expiration of timer
  * call k_wakeup(), even the thread is not in sleep state neither
