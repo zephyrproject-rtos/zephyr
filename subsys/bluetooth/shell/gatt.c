@@ -881,14 +881,8 @@ static int cmd_metrics(const struct shell *shell, size_t argc, char *argv[])
 	}
 
 	if (!strcmp(argv[1], "on")) {
-		static bool registered;
-
-		if (!registered) {
-			shell_print(shell, "Registering GATT metrics test "
-			      "Service.");
-			err = bt_gatt_service_register(&met_svc);
-			registered = true;
-		}
+		shell_print(shell, "Registering GATT metrics test Service.");
+		err = bt_gatt_service_register(&met_svc);
 	} else if (!strcmp(argv[1], "off")) {
 		shell_print(shell, "Unregistering GATT metrics test Service.");
 		err = bt_gatt_service_unregister(&met_svc);
