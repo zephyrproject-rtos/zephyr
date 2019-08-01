@@ -55,7 +55,7 @@ void test_kernel_systick(void)
 	max = WAIT_TIME_US + (WAIT_TIME_US / 100);
 	min = WAIT_TIME_US - (WAIT_TIME_US / 100);
 
-	zassert_true(diff < max && diff > min,
+	zassert_true(diff <= max && diff >= min,
 		     "start %d stop %d (diff %d) wait %d\n",
 		     start_time, stop_time, diff, WAIT_TIME_US);
 }
