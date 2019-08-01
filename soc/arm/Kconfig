@@ -25,7 +25,7 @@ config CPU_HAS_ARM_SAU
 
 config CPU_HAS_NRF_IDAU
 	bool
-	depends on SOC_SERIES_NRF91X
+	depends on SOC_SERIES_NRF91X || SOC_NRF5340_CPUAPP
 	select CPU_HAS_TEE
 	help
 	  MCU implements the nRF (vendor-specific) Security Attribution Unit.
