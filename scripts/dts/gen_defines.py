@@ -524,6 +524,7 @@ def str2ident(s):
             .replace(",", "_") \
             .replace("@", "_") \
             .replace("/", "_") \
+            .replace(".", "_") \
             .replace("+", "PLUS") \
             .upper()
 
