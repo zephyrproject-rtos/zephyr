@@ -112,7 +112,7 @@ static int soc_ecia_init(void)
 
 	/* Clear all GIRQn source enables and source status */
 	pg = &ECIA_REGS->GIRQ08;
-	for (n = 0u; n < MCHP_GIRQ_ZID_MAX; n++) {
+	for (n = MCHP_FIRST_GIRQ; n <= MCHP_LAST_GIRQ; n++) {
 		pg->EN_CLR = 0xFFFFFFFFul;
 		pg->SRC = 0xFFFFFFFFul;
 		pg++;
