@@ -1250,6 +1250,23 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 			}
 
 			break;
+
+		case SO_SOCKS5:
+			if (IS_ENABLED(CONFIG_SOCKS)) {
+				ret = net_context_set_option(ctx,
+							     NET_OPT_SOCKS5,
+							     optval, optlen);
+				if (ret < 0) {
+					errno = -ret;
+					return -1;
+				}
+
+				net_context_set_proxy_enabled(ctx, true);
+
+				return 0;
+			}
+
+			break;
 		}
 
 		break;
