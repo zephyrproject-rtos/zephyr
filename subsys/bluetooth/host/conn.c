@@ -1220,7 +1220,16 @@ static struct bt_conn_tx *add_pending_tx(struct bt_conn *conn,
 
 	BT_DBG("conn %p cb %p user_data %p", conn, cb, user_data);
 
-	tx = k_fifo_get(&free_tx, K_FOREVER);
+	if (IS_ENABLED(CONFIG_BT_DEBUG_CONN)) {
+		tx = k_fifo_get(&free_tx, K_NO_WAIT);
+		if (!tx) {
+			BT_WARN("Unable to get a free conn_tx, yielding...");
+			tx = k_fifo_get(&free_tx, K_FOREVER);
+		}
+	} else {
+		tx = k_fifo_get(&free_tx, K_FOREVER);
+	}
+
 	tx->conn = bt_conn_ref(conn);
 	k_work_init(&tx->work, tx_notify_cb);
 	tx->data.cb = cb;
@@ -2281,7 +2290,16 @@ struct net_buf *bt_conn_create_pdu(struct net_buf_pool *pool, size_t reserve)
 		pool = &acl_tx_pool;
 	}
 
-	buf = net_buf_alloc(pool, K_FOREVER);
+	if (IS_ENABLED(CONFIG_BT_DEBUG_CONN)) {
+		buf = net_buf_alloc(pool, K_NO_WAIT);
+		if (!buf) {
+			BT_WARN("Unable to allocate buffer");
+			buf = net_buf_alloc(pool, K_FOREVER);
+		}
+	} else {
+		buf = net_buf_alloc(pool, K_FOREVER);
+	}
+
 	__ASSERT_NO_MSG(buf);
 
 	reserve += sizeof(struct bt_hci_acl_hdr) + CONFIG_BT_HCI_RESERVE;
