@@ -1377,14 +1377,23 @@ if(CONFIG_OUTPUT_STAT)
 endif()
 
 if(CONFIG_BUILD_OUTPUT_STRIPPED)
+  set(out_stripped_cmd    "")
+  set(out_stripped_byprod "")
+  bintools_strip(
+    RESULT_CMD_LIST    out_stripped_cmd
+    RESULT_BYPROD_LIST out_stripped_byprod
+    STRIP_ALL
+    FILE_INPUT         ${KERNEL_ELF_NAME}
+    FILE_OUTPUT        ${KERNEL_STRIP_NAME}
+    )
   list(APPEND
     post_build_commands
-    COMMAND
-    ${CMAKE_STRIP} --strip-all ${KERNEL_ELF_NAME} -o ${KERNEL_STRIP_NAME}
+    ${out_stripped_cmd}
     )
   list(APPEND
     post_build_byproducts
     ${KERNEL_STRIP_NAME}
+    ${out_stripped_byprod}
     )
 endif()
 
