@@ -177,7 +177,7 @@ void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	pInitCtx->pc = ((u32_t)z_thread_entry_wrapper);
 #endif
 
-#ifdef CONFIG_ARC_HAS_SECURE
+#ifdef CONFIG_ARC_SECURE_FIRMWARE
 	pInitCtx->sec_stat = z_arc_v2_aux_reg_read(_ARC_V2_SEC_STAT);
 #endif
 
@@ -188,7 +188,7 @@ void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 
 /* stack check configuration */
 #ifdef CONFIG_ARC_STACK_CHECKING
-#ifdef CONFIG_ARC_HAS_SECURE
+#ifdef CONFIG_ARC_SECURE_FIRMWARE
 	pInitCtx->sec_stat |= _ARC_V2_SEC_STAT_SSC;
 #else
 	pInitCtx->status32 |= _ARC_V2_STATUS32_SC;

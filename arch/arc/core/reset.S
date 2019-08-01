@@ -45,7 +45,6 @@ GTEXT(__start)
 
 SECTION_FUNC(TEXT,__reset)
 SECTION_FUNC(TEXT,__start)
-
 	/* lock interrupts: will get unlocked when switch to main task
 	 * also make sure the processor in the correct status
 	 */
@@ -62,8 +61,11 @@ SECTION_FUNC(TEXT,__start)
 	sr r0, [_ARC_V2_TMR0_COUNT]
 #endif
 	/* interrupt related init */
+#ifndef CONFIG_ARC_NORMAL_FIRMWARE
+	/* IRQ_ACT and IRQ_CTRL should be initialized and set in secure mode */
 	sr r0, [_ARC_V2_AUX_IRQ_ACT]
 	sr r0, [_ARC_V2_AUX_IRQ_CTRL]
+#endif
 	sr r0, [_ARC_V2_AUX_IRQ_HINT]
 
 	/* \todo: MPU init, gp for small data? */
@@ -72,7 +74,7 @@ SECTION_FUNC(TEXT,__start)
 	 * so that exception vectors can be handled.
 	 */
 	mov r0, _VectorTable
-#ifdef CONFIG_ARC_HAS_SECURE
+#ifdef CONFIG_ARC_SECURE_FIRMWARE
 	sr r0, [_ARC_V2_IRQ_VECT_BASE_S]
 #else
 	sr r0, [_ARC_V2_IRQ_VECT_BASE]

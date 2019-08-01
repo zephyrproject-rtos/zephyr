@@ -130,6 +130,10 @@ struct _callee_saved_stack {
 	u32_t r26;
 	u32_t fp; /* r27 */
 
+#ifdef CONFIG_ARC_SECURE_FIRMWARE
+	u32_t sec_stat;
+#endif
+
 #ifdef CONFIG_USERSPACE
 #ifdef CONFIG_ARC_HAS_SECURE
 	u32_t user_sp;

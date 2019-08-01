@@ -37,6 +37,7 @@ extern "C" {
 #define _ARC_V2_TMR0_LIMIT 0x023
 #define _ARC_V2_IRQ_VECT_BASE    0x025
 #define _ARC_V2_IRQ_VECT_BASE_S 0x26
+#define _ARC_V2_KERNEL_SP 0x38
 #define _ARC_V2_SEC_U_SP 0x39
 #define _ARC_V2_SEC_K_SP 0x3a
 #define _ARC_V2_AUX_IRQ_ACT 0x043
@@ -73,6 +74,12 @@ extern "C" {
 #define _ARC_V2_TMR1_COUNT 0x100
 #define _ARC_V2_TMR1_CONTROL 0x101
 #define _ARC_V2_TMR1_LIMIT 0x102
+#define _ARC_V2_S_TMR0_COUNT 0x106
+#define _ARC_V2_S_TMR0_CONTROL 0x107
+#define _ARC_V2_S_TMR0_LIMIT 0x108
+#define _ARC_V2_S_TMR1_COUNT 0x109
+#define _ARC_V2_S_TMR1_CONTROL 0x10a
+#define _ARC_V2_S_TMR1_LIMIT 0x10b
 #define _ARC_V2_IRQ_PRIO_PEND 0x200
 #define _ARC_V2_AUX_IRQ_HINT 0x201
 #define _ARC_V2_IRQ_PRIORITY 0x206
@@ -84,6 +91,8 @@ extern "C" {
 #define _ARC_V2_KSTACK_BASE 0x265
 #define _ARC_V2_S_KSTACK_TOP 0x266
 #define _ARC_V2_S_KSTACK_BASE 0x267
+#define _ARC_V2_NSC_TABLE_TOP 0x268
+#define _ARC_V2_NSC_TABLE_BASE 0x269
 #define _ARC_V2_JLI_BASE 0x290
 #define _ARC_V2_LDI_BASE 0x291
 #define _ARC_V2_EI_BASE 0x292
@@ -128,6 +137,8 @@ extern "C" {
 #define _ARC_V2_STATUS32_AD (1 << _ARC_V2_STATUS32_AD_BIT)
 #define _ARC_V2_STATUS32_US_BIT 20
 #define _ARC_V2_STATUS32_US (1 << _ARC_V2_STATUS32_US_BIT)
+#define _ARC_V2_STATUS32_S_BIT 21
+#define _ARC_V2_STATUS32_S (1 << _ARC_V2_STATUS32_US_BIT)
 #define _ARC_V2_STATUS32_IE (1 << 31)
 
 /* SEC_STAT bits */

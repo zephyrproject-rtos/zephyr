@@ -86,7 +86,11 @@ SECTION_FUNC(TEXT, z_arch_switch)
 	push_s r3
 
 #ifdef CONFIG_ARC_HAS_SECURE
+#ifdef CONFIG_ARC_SECURE_FIRMWARE
 	lr r3, [_ARC_V2_SEC_STAT]
+#else
+	mov r3, 0
+#endif
 	push_s r3
 #endif
 
@@ -98,11 +102,9 @@ SECTION_FUNC(TEXT, z_arch_switch)
 /* disable stack checking here, as sp will be changed to target
  * thread'sp
  */
-#ifdef CONFIG_ARC_HAS_SECURE
+#if defined(CONFIG_ARC_HAS_SECURE) && defined(CONFIG_ARC_SECURE_FIRMWARE)
 	bclr r3, r3, _ARC_V2_SEC_STAT_SSC_BIT
-	/* sflag r3 */
-	/* sflag instruction is not supported in current ARC GNU */
-	.long 0x00ff302f
+	sflag r3
 #else
 	bclr r3, r3, _ARC_V2_STATUS32_SC_BIT
 	kflag r3
@@ -144,9 +146,9 @@ _switch_return_from_coop:
 	pop_s blink /* pc into blink */
 #ifdef CONFIG_ARC_HAS_SECURE
 	pop_s r3    /* pop SEC_STAT */
-	/* sflag r3 */
-	/* sflag instruction is not supported in current ARC GNU */
-	.long 0x00ff302f
+#ifdef CONFIG_ARC_SECURE_FIRMWARE
+	sflag r3
+#endif
 #endif
 	pop_s r3    /* status32 into r3 */
 	kflag r3    /* write status32 */
@@ -166,22 +168,19 @@ _switch_return_from_firq:
 	bbit1 r3, _ARC_V2_STATUS32_AE_BIT, _return_from_exc_irq
 
 	/* pretend interrupt happened to use rtie instruction */
-
-#ifdef CONFIG_ARC_HAS_SECURE
-	lr r3, [_ARC_V2_SEC_STAT]
-	/* set SEC_STAT.IRM = SECURE for interrupt return */
-	bset r3, r3, 3
-	/* sflag r3 */
-	/* sflag instruction is not supported in current ARC GNU */
-	.long 0x00ff302f
-#endif
-
 	lr r3, [_ARC_V2_AUX_IRQ_ACT]
 	brne r3, 0, _switch_already_in_irq
 
 	/* use lowest interrupt priority */
 	or r3, r3, (1 << (CONFIG_NUM_IRQ_PRIO_LEVELS-1))
+#ifdef CONFIG_ARC_NORMAL_FIRMWARE
+	mov r0, _ARC_V2_AUX_IRQ_ACT
+	mov r1, r3
+	mov r6, ARC_S_CALL_AUX_WRITE
+	sjli SJLI_CALL_ARC_SECURE
+#else
 	sr r3, [_ARC_V2_AUX_IRQ_ACT]
+#endif
 
 _switch_already_in_irq:
 	rtie

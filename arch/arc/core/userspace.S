@@ -95,12 +95,10 @@ SECTION_FUNC(TEXT, z_arc_userspace_enter)
 	 */
 #ifdef CONFIG_ARC_STACK_CHECKING
 	/* disable stack checking as the stack should be initialized */
-#ifdef CONFIG_ARC_HAS_SECURE
+#ifdef CONFIG_ARC_SECURE_FIRMWARE
 	lr blink, [_ARC_V2_SEC_STAT]
 	bclr blink, blink, _ARC_V2_SEC_STAT_SSC_BIT
-	/* sflag blink */
-	/* sflag instruction is not supported in current ARC GNU */
-	.long 0x07ff302f
+	sflag blink
 #else
 	lr blink, [_ARC_V2_STATUS32]
 	bclr blink, blink, _ARC_V2_STATUS32_SC_BIT
@@ -136,12 +134,10 @@ _clear_user_stack:
 
 	_load_stack_check_regs
 
-#ifdef CONFIG_ARC_HAS_SECURE
+#ifdef CONFIG_ARC_SECURE_FIRMWARE
 	lr r0, [_ARC_V2_SEC_STAT]
 	bset r0, r0, _ARC_V2_SEC_STAT_SSC_BIT
-	/* sflag r0 */
-	/* sflag instruction is not supported in current ARC GNU */
-	.long 0x003f302f
+	sflag r0
 #else
 	lr r0, [_ARC_V2_STATUS32]
 	bset r0, r0, _ARC_V2_STATUS32_SC_BIT
@@ -163,16 +159,16 @@ _arc_go_to_user_space:
 	bclr r0, r0, _ARC_V2_STATUS32_AE_BIT
 	kflag r0
 
-#ifdef CONFIG_ARC_HAS_SECURE
+/* when exception returns from kernel to user, sp and _ARC_V2_USER_SP
+ * /_ARC_V2_SECU_SP will be switched
+ */
+#if defined(CONFIG_ARC_HAS_SECURE) && defined(CONFIG_ARC_SECURE_FIRMWARE)
 	lr r0, [_ARC_V2_SEC_STAT]
 	/* the mode returns from exception return is secure mode */
 	bset r0, r0, 31
 	sr r0, [_ARC_V2_ERSEC_STAT]
 	sr r5, [_ARC_V2_SEC_U_SP]
 #else
-	/* when exception returns from kernel to user, sp and _ARC_V2_USER_SP
-	 * will be switched
-	 */
 	sr r5, [_ARC_V2_USER_SP]
 #endif
 	mov sp, blink
@@ -236,7 +232,7 @@ SECTION_FUNC(TEXT, _arc_do_syscall)
 	sr r6, [_ARC_V2_ERSTATUS]
 	pop r6
 	sr r6, [_ARC_V2_ERET]
-#ifdef CONFIG_ARC_HAS_SECURE
+#ifdef CONFIG_ARC_SECURE_FIRMWARE
 	pop r6
 	sr r6, [_ARC_V2_ERSEC_STAT]
 #endif

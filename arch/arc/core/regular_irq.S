@@ -53,12 +53,11 @@ SECTION_FUNC(TEXT, _rirq_enter)
 
 
 #ifdef CONFIG_ARC_STACK_CHECKING
-#ifdef CONFIG_ARC_HAS_SECURE
+#ifdef CONFIG_ARC_SECURE_FIRMWARE
 	lr r2, [_ARC_V2_SEC_STAT]
 	bclr r2, r2, _ARC_V2_SEC_STAT_SSC_BIT
-	/* sflag r2 */
-	/* sflag instruction is not supported in current ARC GNU */
-	.long 0x00bf302f
+	sflag r2
+
 #else
 	/* disable stack checking */
 	lr r2, [_ARC_V2_STATUS32]
@@ -199,6 +198,12 @@ _rirq_common_interrupt_swap:
 .balign 4
 _rirq_return_from_coop:
 
+#ifdef CONFIG_ARC_SECURE_FIRMWARE
+	/* must return to secure mode, so set IRM bit to 1 */
+	lr r0, [_ARC_V2_SEC_STAT]
+	bset r0, r0, _ARC_V2_SEC_STAT_IRM_BIT
+	sflag r0
+#endif
 	/* carve fake stack */
 	sub sp, sp, ___isf_t_pc_OFFSET
 
