@@ -461,11 +461,11 @@ static void mcp2515_handle_interrupts(struct device *dev)
 			mcp2515_tx_done(dev, 0);
 		}
 
-		if (canintf & MCP2515_CANINTF_TX0IF) {
+		if (canintf & MCP2515_CANINTF_TX1IF) {
 			mcp2515_tx_done(dev, 1);
 		}
 
-		if (canintf & MCP2515_CANINTF_TX0IF) {
+		if (canintf & MCP2515_CANINTF_TX2IF) {
 			mcp2515_tx_done(dev, 2);
 		}
 
