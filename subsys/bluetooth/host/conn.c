@@ -1178,6 +1178,19 @@ int bt_conn_send_cb(struct bt_conn *conn, struct net_buf *buf,
 	return 0;
 }
 
+static bool conn_tx_internal(bt_conn_tx_cb_t cb)
+{
+	if (cb == att_pdu_sent || cb == att_cfm_sent || cb == att_rsp_sent ||
+#if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
+	    cb == l2cap_chan_sdu_sent ||
+#endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
+	    cb == att_req_sent) {
+		return true;
+	}
+
+	return false;
+}
+
 void bt_conn_notify_tx(struct bt_conn *conn)
 {
 	struct bt_conn_tx *tx;
@@ -1189,7 +1202,12 @@ void bt_conn_notify_tx(struct bt_conn *conn)
 
 		/* Only submit if there is a callback set */
 		if (tx->data.cb) {
-			k_work_submit(&tx->work);
+			/* Submit using RX thread if internal callback */
+			if (conn_tx_internal(tx->data.cb)) {
+				tx_notify_cb(&tx->work);
+			} else {
+				k_work_submit(&tx->work);
+			}
 		} else {
 			tx_free(tx);
 		}

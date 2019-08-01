@@ -1128,7 +1128,7 @@ segment:
 	return seg;
 }
 
-static void l2cap_chan_sdu_sent(struct bt_conn *conn, void *user_data)
+void l2cap_chan_sdu_sent(struct bt_conn *conn, void *user_data)
 {
 	struct bt_l2cap_chan *chan = user_data;
 
