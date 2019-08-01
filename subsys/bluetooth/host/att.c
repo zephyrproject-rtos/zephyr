@@ -150,7 +150,7 @@ static int att_send(struct bt_conn *conn, struct net_buf *buf,
 	return 0;
 }
 
-static void att_pdu_sent(struct bt_conn *conn, void *user_data)
+void att_pdu_sent(struct bt_conn *conn, void *user_data)
 {
 	struct bt_att *att = att_get(conn);
 	struct net_buf *buf;
@@ -175,7 +175,7 @@ static void att_pdu_sent(struct bt_conn *conn, void *user_data)
 	k_sem_give(&att->tx_sem);
 }
 
-static void att_cfm_sent(struct bt_conn *conn, void *user_data)
+void att_cfm_sent(struct bt_conn *conn, void *user_data)
 {
 	struct bt_att *att = att_get(conn);
 
@@ -188,7 +188,7 @@ static void att_cfm_sent(struct bt_conn *conn, void *user_data)
 	att_pdu_sent(conn, user_data);
 }
 
-static void att_rsp_sent(struct bt_conn *conn, void *user_data)
+void att_rsp_sent(struct bt_conn *conn, void *user_data)
 {
 	struct bt_att *att = att_get(conn);
 
@@ -201,7 +201,7 @@ static void att_rsp_sent(struct bt_conn *conn, void *user_data)
 	att_pdu_sent(conn, user_data);
 }
 
-static void att_req_sent(struct bt_conn *conn, void *user_data)
+void att_req_sent(struct bt_conn *conn, void *user_data)
 {
 	struct bt_att *att = att_get(conn);
 
@@ -2048,6 +2048,9 @@ struct net_buf *bt_att_create_pdu(struct bt_conn *conn, u8_t op, size_t len)
 	}
 
 	buf = bt_l2cap_create_pdu(NULL, 0);
+	if (!buf) {
+		return NULL;
+	}
 
 	hdr = net_buf_add(buf, sizeof(*hdr));
 	hdr->code = op;

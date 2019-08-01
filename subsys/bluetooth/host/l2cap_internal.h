@@ -222,6 +222,8 @@ struct bt_l2cap_br_fixed_chan {
 				.accept = _accept,		\
 			}
 
+void l2cap_chan_sdu_sent(struct bt_conn *conn, void *user_data);
+
 /* Notify L2CAP channels of a new connection */
 void bt_l2cap_connected(struct bt_conn *conn);
 
