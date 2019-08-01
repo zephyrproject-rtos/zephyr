@@ -2290,10 +2290,18 @@ struct net_buf *bt_conn_create_pdu(struct net_buf_pool *pool, size_t reserve)
 		pool = &acl_tx_pool;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_DEBUG_CONN)) {
+	if (IS_ENABLED(CONFIG_BT_DEBUG_CONN) ||
+	    k_current_get() == &k_sys_work_q.thread) {
 		buf = net_buf_alloc(pool, K_NO_WAIT);
 		if (!buf) {
 			BT_WARN("Unable to allocate buffer");
+			/* Cannot block with K_FOREVER on k_sys_work_q as that
+			 * can cause a deadlock when trying to dispatch TX
+			 * notification.
+			 */
+			if (k_current_get() == &k_sys_work_q.thread) {
+				return NULL;
+			}
 			buf = net_buf_alloc(pool, K_FOREVER);
 		}
 	} else {
