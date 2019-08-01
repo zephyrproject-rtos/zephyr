@@ -324,21 +324,15 @@ static struct lwm2m_engine_obj_inst *timer_create(u16_t obj_inst_id)
 	}
 
 	/* Set default values */
+	(void)memset(&timer_data[avail], 0, sizeof(timer_data[avail]));
 	k_delayed_work_init(&timer_data[avail].timer_work, timer_work_cb);
-	timer_data[avail].trigger_offset = 0U;
 	timer_data[avail].delay_duration.val1 = 5; /* 5 seconds */
-	timer_data[avail].delay_duration.val2 = 0;
-	timer_data[avail].remaining_time.val1 = 0;
-	timer_data[avail].remaining_time.val2 = 0;
-	timer_data[avail].min_off_time.val1 = 0;
-	timer_data[avail].min_off_time.val2 = 0;
-	timer_data[avail].cumulative_time.val1 = 0;
-	timer_data[avail].cumulative_time.val2 = 0;
-	timer_data[avail].active = false;
 	timer_data[avail].enabled = true;
 	timer_data[avail].timer_mode = TIMER_MODE_ONE_SHOT;
 	timer_data[avail].obj_inst_id = obj_inst_id;
 
+	(void)memset(res[avail], 0,
+		     sizeof(res[avail][0]) * ARRAY_SIZE(res[avail]));
 	init_res_instance(res_inst[avail], ARRAY_SIZE(res_inst[avail]));
 
 	/* initialize instance resource data */
@@ -390,11 +384,6 @@ static struct lwm2m_engine_obj_inst *timer_create(u16_t obj_inst_id)
 
 static int ipso_timer_init(struct device *dev)
 {
-	/* Set default values */
-	(void)memset(inst, 0, sizeof(*inst) * MAX_INSTANCE_COUNT);
-	(void)memset(res, 0, sizeof(struct lwm2m_engine_res) *
-			MAX_INSTANCE_COUNT * TIMER_MAX_ID);
-
 	timer.obj_id = IPSO_OBJECT_TIMER_ID;
 	timer.fields = fields;
 	timer.field_count = ARRAY_SIZE(fields);

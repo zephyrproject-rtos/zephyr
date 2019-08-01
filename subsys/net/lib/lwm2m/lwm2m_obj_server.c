@@ -168,6 +168,8 @@ static struct lwm2m_engine_obj_inst *server_create(u16_t obj_inst_id)
 	disabled_timeout[index] = 86400U;
 	strcpy(transport_binding[index], "U");
 
+	(void)memset(res[index], 0,
+		     sizeof(res[index][0]) * ARRAY_SIZE(res[index]));
 	init_res_instance(res_inst[index], ARRAY_SIZE(res_inst[index]));
 
 	/* initialize instance resource data */
@@ -211,11 +213,6 @@ static int lwm2m_server_init(struct device *dev)
 {
 	struct lwm2m_engine_obj_inst *obj_inst = NULL;
 	int ret = 0;
-
-	/* Set default values */
-	(void)memset(inst, 0, sizeof(*inst) * MAX_INSTANCE_COUNT);
-	(void)memset(res, 0, sizeof(struct lwm2m_engine_res) *
-			MAX_INSTANCE_COUNT * SERVER_MAX_ID);
 
 	server.obj_id = LWM2M_OBJECT_SERVER_ID;
 	server.fields = fields;

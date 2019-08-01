@@ -161,6 +161,8 @@ static struct lwm2m_engine_obj_inst *light_control_create(u16_t obj_inst_id)
 	colour[avail][0] = '\0';
 	units[avail][0] = '\0';
 
+	(void)memset(res[avail], 0,
+		     sizeof(res[avail][0]) * ARRAY_SIZE(res[avail]));
 	init_res_instance(res_inst[avail], ARRAY_SIZE(res_inst[avail]));
 
 	/* initialize instance resource data */
@@ -199,11 +201,6 @@ static struct lwm2m_engine_obj_inst *light_control_create(u16_t obj_inst_id)
 
 static int ipso_light_control_init(struct device *dev)
 {
-	/* Set default values */
-	(void)memset(inst, 0, sizeof(*inst) * MAX_INSTANCE_COUNT);
-	(void)memset(res, 0, sizeof(struct lwm2m_engine_res) *
-			MAX_INSTANCE_COUNT * LIGHT_MAX_ID);
-
 	light_control.obj_id = IPSO_OBJECT_LIGHT_CONTROL_ID;
 	light_control.fields = fields;
 	light_control.field_count = ARRAY_SIZE(fields);
