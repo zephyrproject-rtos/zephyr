@@ -290,6 +290,12 @@ struct net_context {
 #if defined(CONFIG_NET_CONTEXT_TXTIME)
 		bool txtime;
 #endif
+#if defined(CONFIG_SOCKS)
+		struct {
+			struct sockaddr addr;
+			socklen_t addrlen;
+		} proxy;
+#endif
 	} options;
 
 	/** Protocol (UDP, TCP or IEEE 802.3 protocol value) */
@@ -306,6 +312,11 @@ struct net_context {
 		u8_t ipv6_hop_limit;
 		u8_t ipv4_ttl;
 	};
+
+#if defined(CONFIG_SOCKS)
+	bool proxy_enabled;
+#endif
+
 };
 
 static inline bool net_context_is_used(struct net_context *context)
@@ -575,6 +586,31 @@ static inline void net_context_set_ipv6_hop_limit(struct net_context *context,
 {
 	context->ipv6_hop_limit = hop_limit;
 }
+
+#if defined(CONFIG_SOCKS)
+static inline void net_context_set_proxy_enabled(struct net_context *context,
+						 bool enable)
+{
+	context->proxy_enabled = enable;
+}
+
+static inline bool net_context_is_proxy_enabled(struct net_context *context)
+{
+	return context->proxy_enabled;
+}
+#else
+static inline void net_context_set_proxy_enabled(struct net_context *context,
+						 bool enable)
+{
+	ARG_UNUSED(context);
+	ARG_UNUSED(enable);
+}
+
+static inline bool net_context_is_proxy_enabled(struct net_context *context)
+{
+	return false;
+}
+#endif
 
 /**
  * @brief Get network context.
@@ -951,6 +987,7 @@ enum net_context_option {
 	NET_OPT_PRIORITY	= 1,
 	NET_OPT_TIMESTAMP	= 2,
 	NET_OPT_TXTIME		= 3,
+	NET_OPT_SOCKS5		= 4,
 };
 
 /**

@@ -771,6 +771,10 @@ static inline char *inet_ntop(sa_family_t family, const void *src, char *dst,
 #define SO_TXTIME 61
 #define SCM_TXTIME SO_TXTIME
 
+/* Socket options for SOCKS5 proxy */
+/** sockopt: Enable SOCKS5 for Socket */
+#define SO_SOCKS5 60
+
 /** @cond INTERNAL_HIDDEN */
 /**
  * @brief Registration information for a given BSD socket family.

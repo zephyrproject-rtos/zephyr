@@ -1115,6 +1115,30 @@ static int get_context_timepstamp(struct net_context *context,
 #endif
 }
 
+static int get_context_proxy(struct net_context *context,
+			     void *value, size_t *len)
+{
+#if defined(CONFIG_SOCKS)
+	struct sockaddr *addr = (struct sockaddr *)value;
+
+	if (!value || !len) {
+		return -EINVAL;
+	}
+
+	if (*len < context->options.proxy.addrlen) {
+		return -EINVAL;
+	}
+
+	*len = MIN(context->options.proxy.addrlen, *len);
+
+	memcpy(addr, &context->options.proxy.addr, *len);
+
+	return 0;
+#else
+	return -ENOTSUP;
+#endif
+}
+
 #if defined(CONFIG_NET_CONTEXT_TIMESTAMP)
 int net_context_get_timestamp(struct net_context *context,
 			      struct net_pkt *pkt,
@@ -1990,6 +2014,29 @@ static int set_context_txtime(struct net_context *context,
 #endif
 }
 
+static int set_context_proxy(struct net_context *context,
+			     const void *value, size_t len)
+{
+#if defined(CONFIG_SOCKS)
+	struct sockaddr *addr = (struct sockaddr *)value;
+
+	if (len > NET_SOCKADDR_MAX_SIZE) {
+		return -EINVAL;
+	}
+
+	if (addr->sa_family != net_context_get_family(context)) {
+		return -EINVAL;
+	}
+
+	context->options.proxy.addrlen = len;
+	memcpy(&context->options.proxy.addr, addr, len);
+
+	return 0;
+#else
+	return -ENOTSUP;
+#endif
+}
+
 int net_context_set_option(struct net_context *context,
 			   enum net_context_option option,
 			   const void *value, size_t len)
@@ -2013,6 +2060,9 @@ int net_context_set_option(struct net_context *context,
 		break;
 	case NET_OPT_TXTIME:
 		ret = set_context_txtime(context, value, len);
+		break;
+	case NET_OPT_SOCKS5:
+		ret = set_context_proxy(context, value, len);
 		break;
 	}
 
@@ -2044,6 +2094,9 @@ int net_context_get_option(struct net_context *context,
 		break;
 	case NET_OPT_TXTIME:
 		ret = get_context_txtime(context, value, len);
+		break;
+	case NET_OPT_SOCKS5:
+		ret = get_context_proxy(context, value, len);
 		break;
 	}
 
