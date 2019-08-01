@@ -37,6 +37,7 @@ void test_time_slicing_preemptible(void);
 void test_time_slicing_disable_preemptible(void);
 void test_lock_preemptible(void);
 void test_unlock_preemptible(void);
+void test_unlock_nested_sched_lock(void);
 void test_sched_is_preempt_thread(void);
 void test_slice_reset(void);
 void test_slice_scheduling(void);
