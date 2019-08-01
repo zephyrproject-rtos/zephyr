@@ -41,7 +41,6 @@
 
 &espi0 {
 	status = "okay";
-	reg = <0x400f3800 0x400>;
 	agg_io_irq = <11>;
 	agg_vw_irq = <15>;
 	agg_pc_irq = <7>;
