@@ -7,5 +7,5 @@
 
 config SOC_EMSK
 	bool "Synopsys ARC EM Starter Kit SoC"
-	select HAS_I2C_DW
-	select HAS_SPI_DW
+	select HAS_I2C_DW if I2C
+	select HAS_SPI_DW if SPI
