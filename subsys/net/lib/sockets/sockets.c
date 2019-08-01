@@ -18,6 +18,7 @@ LOG_MODULE_REGISTER(net_sock, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <syscall_handler.h>
 #include <sys/fdtable.h>
 #include <sys/math_extras.h>
+#include <net/socks.h>
 
 #include "sockets_internal.h"
 
@@ -318,6 +319,14 @@ Z_SYSCALL_HANDLER(zsock_bind, sock, addr, addrlen)
 int zsock_connect_ctx(struct net_context *ctx, const struct sockaddr *addr,
 		      socklen_t addrlen)
 {
+#if defined(CONFIG_SOCKS)
+	if (net_context_is_proxy_enabled(ctx)) {
+		SET_ERRNO(net_socks5_connect(ctx, addr, addrlen));
+		SET_ERRNO(net_context_recv(ctx, zsock_received_cb,
+					   K_NO_WAIT, ctx->user_data));
+		return 0;
+	}
+#endif
 	SET_ERRNO(net_context_connect(ctx, addr, addrlen, NULL,
 			      K_MSEC(CONFIG_NET_SOCKETS_CONNECT_TIMEOUT),
 			      NULL));
