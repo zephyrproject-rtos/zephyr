@@ -72,7 +72,7 @@
 			#include "nrf9160_common.dtsi"
 		};
 
-		/* Addditional Secure peripherals */
+		/* Additional Secure peripherals */
 		gpiote: gpiote@5000d000 {
 			compatible = "nordic,nrf-gpiote";
 			reg = <0x5000d000 0x1000>;
