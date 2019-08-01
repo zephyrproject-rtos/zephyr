@@ -108,6 +108,17 @@ endif # X86_MULTIBOOT_FRAMEBUF
 
 endif # X86_MULTIBOOT
 
+config X86_VERY_EARLY_CONSOLE
+	bool "Support very early boot printk"
+	depends on PRINTK
+	help
+	  Non-emulated X86 devices often require special hardware to attach
+	  a debugger, which may not be easily available. This option adds a
+	  very minimal serial driver which gets initialized at the very
+	  beginning of z_cstart(), via kernel_arch_init(). This driver enables
+	  printk to emit messages to the 16550 UART port 0 instance in device
+	  tree. This mini-driver assumes I/O to the UART is done via ports.
+
 source "arch/x86/core/Kconfig.ia32"
 source "arch/x86/core/Kconfig.x64"
 
