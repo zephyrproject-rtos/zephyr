@@ -171,6 +171,26 @@ void mqtt_client_init(struct mqtt_client *client)
 	client->keepalive = MQTT_KEEPALIVE;
 }
 
+#if defined(CONFIG_SOCKS)
+int mqtt_client_set_proxy(struct mqtt_client *client,
+			  struct sockaddr *proxy_addr,
+			  socklen_t addrlen)
+{
+	if (IS_ENABLED(CONFIG_SOCKS)) {
+		if (!client || !proxy_addr) {
+			return -EINVAL;
+		}
+
+		client->transport.proxy.addrlen = addrlen;
+		memcpy(&client->transport.proxy.addr, proxy_addr, addrlen);
+
+		return 0;
+	}
+
+	return -ENOTSUP;
+}
+#endif
+
 int mqtt_connect(struct mqtt_client *client)
 {
 	int err_code;

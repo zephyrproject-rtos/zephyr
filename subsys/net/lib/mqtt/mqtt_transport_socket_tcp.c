@@ -35,6 +35,18 @@ int mqtt_client_tcp_connect(struct mqtt_client *client)
 		return -errno;
 	}
 
+#if defined(CONFIG_SOCKS)
+	if (client->transport.proxy.addrlen != 0) {
+		ret = setsockopt(client->transport.tcp.sock,
+				 SOL_SOCKET, SO_SOCKS5,
+				 &client->transport.proxy.addr,
+				 client->transport.proxy.addrlen);
+		if (ret < 0) {
+			return -errno;
+		}
+	}
+#endif
+
 	MQTT_TRC("Created socket %d", client->transport.tcp.sock);
 
 	size_t peer_addr_size = sizeof(struct sockaddr_in6);
