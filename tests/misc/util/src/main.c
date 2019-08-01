@@ -76,13 +76,35 @@ void test_UTIL_LISTIFY(void)
 	zassert_equal(i, 0 + 1 + 2 + 3, NULL);
 }
 
+static int inc_func(void)
+{
+	static int a = 1;
+
+	return a++;
+}
+
+/* Test checks if @ref Z_MAX and @ref Z_MIN return correct result and perform
+ * single evaluation of input arguments.
+ */
+static void test_z_max_z_min(void)
+{
+	zassert_equal(Z_MAX(inc_func(), 0), 1, "Unexpected macro result");
+	/* Z_MAX should have call inc_func only once */
+	zassert_equal(inc_func(), 2, "Unexpected return value");
+
+	zassert_equal(Z_MIN(inc_func(), 2), 2, "Unexpected macro result");
+	/* Z_MIN should have call inc_func only once */
+	zassert_equal(inc_func(), 4, "Unexpected return value");
+}
+
 /*test case main entry*/
 void test_main(void)
 {
 	ztest_test_suite(test_util_api,
 			 ztest_unit_test(test_COND_CODE_1),
 			 ztest_unit_test(test_COND_CODE_0),
-			 ztest_unit_test(test_UTIL_LISTIFY)
+			 ztest_unit_test(test_UTIL_LISTIFY),
+			 ztest_unit_test(test_z_max_z_min)
 			 );
 	ztest_run_test_suite(test_util_api);
 }
