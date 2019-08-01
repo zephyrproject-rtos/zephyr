@@ -519,10 +519,10 @@ class Device:
         if not self._binding or "properties" not in self._binding:
             return
 
-        for name, options in self._binding["properties"].items():
-            self._init_prop(name, options)
+        for name, settings in self._binding["properties"].items():
+            self._init_prop(name, settings)
 
-    def _init_prop(self, name, options):
+    def _init_prop(self, name, settings):
         # _init_props() helper for initializing a single property
 
         if _special_prop(name):
@@ -532,12 +532,12 @@ class Device:
         # all entries in 'properties:' to have a 'type: ...'. It might make
         # sense to have gpios in 'properties:' for other reasons, e.g. to set
         # 'category: required'.
-        if options["type"] == "compound":
+        if settings["type"] == "compound":
             return
 
-        val = self._prop_val(name, options["type"],
-                             options.get("category") == "optional",
-                             options.get("default"))
+        val = self._prop_val(name, settings["type"],
+                             settings.get("category") == "optional",
+                             settings.get("default"))
         if val is None:
             # 'category: optional' property that wasn't there
             return
@@ -545,11 +545,11 @@ class Device:
         prop = Property()
         prop.dev = self
         prop.name = name
-        prop.description = options.get("description")
+        prop.description = settings.get("description")
         if prop.description:
             prop.description = prop.description.rstrip()
         prop.val = val
-        enum = options.get("enum")
+        enum = settings.get("enum")
         if enum is None:
             prop.enum_index = None
         else:
