@@ -109,6 +109,8 @@ static struct lwm2m_engine_obj_inst *security_create(u16_t obj_inst_id)
 	security_mode[index] = 0U;
 	short_server_id[index] = 0U;
 
+	(void)memset(res[index], 0,
+		     sizeof(res[index][0]) * ARRAY_SIZE(res[index]));
 	init_res_instance(res_inst[index], ARRAY_SIZE(res_inst[index]));
 
 	/* initialize instance resource data */
@@ -172,11 +174,6 @@ static int lwm2m_security_init(struct device *dev)
 {
 	struct lwm2m_engine_obj_inst *obj_inst = NULL;
 	int ret = 0;
-
-	/* Set default values */
-	(void)memset(inst, 0, sizeof(*inst) * MAX_INSTANCE_COUNT);
-	(void)memset(res, 0, sizeof(struct lwm2m_engine_res) *
-			MAX_INSTANCE_COUNT * SECURITY_MAX_ID);
 
 	security.obj_id = LWM2M_OBJECT_SECURITY_ID;
 	security.fields = fields;

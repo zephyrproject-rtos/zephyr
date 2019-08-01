@@ -182,6 +182,8 @@ static struct lwm2m_engine_obj_inst *temp_sensor_create(u16_t obj_inst_id)
 	max_range_value[index].val1 = 0;
 	max_range_value[index].val2 = 0;
 
+	(void)memset(res[index], 0,
+		     sizeof(res[index][0]) * ARRAY_SIZE(res[index]));
 	init_res_instance(res_inst[index], ARRAY_SIZE(res_inst[index]));
 
 	/* initialize instance resource data */
@@ -214,11 +216,6 @@ static struct lwm2m_engine_obj_inst *temp_sensor_create(u16_t obj_inst_id)
 
 static int ipso_temp_sensor_init(struct device *dev)
 {
-	/* Set default values */
-	(void)memset(inst, 0, sizeof(*inst) * MAX_INSTANCE_COUNT);
-	(void)memset(res, 0, sizeof(struct lwm2m_engine_res) *
-			MAX_INSTANCE_COUNT * TEMP_MAX_ID);
-
 	temp_sensor.obj_id = IPSO_OBJECT_TEMP_SENSOR_ID;
 	temp_sensor.fields = fields;
 	temp_sensor.field_count = ARRAY_SIZE(fields);
