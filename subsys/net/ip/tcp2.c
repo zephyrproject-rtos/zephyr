@@ -871,11 +871,115 @@ ssize_t _tcp_send(int fd, const void *buf, size_t len, int flags)
 	return len;
 }
 
-void tcp_bind(void) { }
-void tcp_listen(void) { }
-void tcp_connect(void) { }
-void tcp_accept(void) { }
-void tcp_close(void) { }
+/* API into the TCP stack as seen by the IP stack in net_context.c */
+int net_tcp_get(struct net_context *context)
+{
+	ARG_UNUSED(context);
+
+	return -EPROTONOSUPPORT;
+}
+
+int net_tcp_unref(struct net_context *context)
+{
+	ARG_UNUSED(context);
+
+	return -EPROTONOSUPPORT;
+}
+
+int net_tcp_put(struct net_context *context)
+{
+	ARG_UNUSED(context);
+
+	return -EPROTONOSUPPORT;
+}
+
+int net_tcp_listen(struct net_context *context)
+{
+	ARG_UNUSED(context);
+
+	return -EPROTONOSUPPORT;
+}
+
+int net_tcp_update_recv_wnd(struct net_context *context, s32_t delta)
+{
+	ARG_UNUSED(context);
+	ARG_UNUSED(delta);
+
+	return -EPROTONOSUPPORT;
+}
+
+int net_tcp_queue_data(struct net_context *context, struct net_pkt *pkt)
+{
+	ARG_UNUSED(context);
+	ARG_UNUSED(pkt);
+
+	return -EPROTONOSUPPORT;
+}
+
+int net_tcp_send_data(struct net_context *context, net_context_send_cb_t cb,
+		      void *user_data)
+{
+	ARG_UNUSED(context);
+	ARG_UNUSED(cb);
+	ARG_UNUSED(user_data);
+
+	return 0;
+}
+
+int net_tcp_connect(struct net_context *context, const struct sockaddr *addr,
+		    struct sockaddr *laddr, u16_t rport, u16_t lport,
+		    s32_t timeout, net_context_connect_cb_t cb, void *user_data)
+{
+	ARG_UNUSED(context);
+	ARG_UNUSED(addr);
+	ARG_UNUSED(laddr);
+	ARG_UNUSED(rport);
+	ARG_UNUSED(lport);
+	ARG_UNUSED(cb);
+	ARG_UNUSED(user_data);
+
+	return -EPROTONOSUPPORT;
+}
+
+int net_tcp_accept(struct net_context *context, net_tcp_accept_cb_t cb,
+		   void *user_data)
+{
+	ARG_UNUSED(context);
+	ARG_UNUSED(cb);
+	ARG_UNUSED(user_data);
+
+	return -EPROTONOSUPPORT;
+}
+
+int net_tcp_recv(struct net_context *context, net_context_recv_cb_t cb,
+		 void *user_data)
+{
+	ARG_UNUSED(context);
+	ARG_UNUSED(cb);
+	ARG_UNUSED(user_data);
+
+	return -EPROTOTYPE;
+}
+
+void net_tcp_init(void)
+{
+}
+
+int net_tcp_finalize(struct net_pkt *pkt)
+{
+	ARG_UNUSED(pkt);
+
+	return 0;
+}
+
+struct net_tcp_hdr *net_tcp_input(struct net_pkt *pkt,
+				  struct net_pkt_data_access *tcp_access)
+{
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(tcp_access);
+
+	return NULL;
+}
 
 #if IS_ENABLED(CONFIG_NET_TP)
 static sys_slist_t tp_q = SYS_SLIST_STATIC_INIT(&tp_q);
