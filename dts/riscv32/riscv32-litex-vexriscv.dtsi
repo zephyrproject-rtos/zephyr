@@ -34,7 +34,6 @@
 			reg = <0xbc0 0x4 0xfc0 0x4>;
 			reg-names = "irq_mask", "irq_pending";
 			riscv,max-priority = <7>;
-			riscv,ndev = <52>;
 		};
 		uart0: serial@e0001800 {
 			compatible = "litex,uart0";

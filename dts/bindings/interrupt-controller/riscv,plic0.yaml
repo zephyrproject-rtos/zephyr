@@ -13,9 +13,6 @@ inherits:
     !include base.yaml
 
 properties:
-  compatible:
-      constraint: "riscv,plic0"
-
   reg:
       category: required
 
