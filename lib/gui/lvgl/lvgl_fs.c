@@ -53,6 +53,11 @@ static lv_fs_res_t lvgl_fs_open(struct _lv_fs_drv_t *drv, void *file,
 {
 	int err;
 
+	/* LVGL is passing absolute paths without the root slash add it back
+	 * by decrementing the path pointer.
+	 */
+	path--;
+
 	err = fs_open((struct fs_file_t *)file, path);
 	return errno_to_lv_fs_res(err);
 }
@@ -68,6 +73,11 @@ static lv_fs_res_t lvgl_fs_close(struct _lv_fs_drv_t *drv, void *file)
 static lv_fs_res_t lvgl_fs_remove(struct _lv_fs_drv_t *drv, const char *path)
 {
 	int err;
+
+	/* LVGL is passing absolute paths without the root slash add it back
+	 * by decrementing the path pointer.
+	 */
+	path--;
 
 	err = fs_unlink(path);
 	return errno_to_lv_fs_res(err);
@@ -171,6 +181,12 @@ static lv_fs_res_t lvgl_fs_rename(struct _lv_fs_drv_t *drv, const char *from,
 {
 	int err;
 
+	/* LVGL is passing absolute paths without the root slash add it back
+	 * by decrementing the path pointer.
+	 */
+	from--;
+	to--;
+
 	err = fs_rename(from, to);
 	return errno_to_lv_fs_res(err);
 }
@@ -188,6 +204,11 @@ static lv_fs_res_t lvgl_fs_dir_open(struct _lv_fs_drv_t *drv, void *dir,
 		const char *path)
 {
 	int err;
+
+	/* LVGL is passing absolute paths without the root slash add it back
+	 * by decrementing the path pointer.
+	 */
+	path--;
 
 	err = fs_opendir((struct fs_dir_t *)dir, path);
 	return errno_to_lv_fs_res(err);
@@ -217,6 +238,12 @@ void lvgl_fs_init(void)
 
 	fs_drv.file_size = sizeof(struct fs_file_t);
 	fs_drv.rddir_size = sizeof(struct fs_dir_t);
+	/* LVGL uses letter based mount points, just pass the root slash as a
+	 * letter. Note that LVGL will remove the drive letter, or in this case
+	 * the root slash, from the path passed via the FS callbacks.
+	 * Zephyr FS API assumes this slash is present so we will need to add
+	 * it back.
+	 */
 	fs_drv.letter = '/';
 	fs_drv.ready_cb = lvgl_fs_ready;
 
