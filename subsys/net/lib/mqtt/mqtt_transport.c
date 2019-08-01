@@ -29,11 +29,6 @@ extern int mqtt_client_tls_read(struct mqtt_client *client, u8_t *data,
 extern int mqtt_client_tls_disconnect(struct mqtt_client *client);
 #endif /* CONFIG_MQTT_LIB_TLS */
 
-#if defined(CONFIG_MQTT_LIB_SOCKS)
-/* Transport handler functions for SOCKS5 proxy socket transport. */
-extern int mqtt_client_socks5_connect(struct mqtt_client *client);
-#endif /* CONFIG_MQTT_LIB_SOCKS */
-
 /**@brief Function pointer array for TCP/TLS transport handlers. */
 const struct transport_procedure transport_fn[MQTT_TRANSPORT_NUM] = {
 	{
@@ -50,14 +45,6 @@ const struct transport_procedure transport_fn[MQTT_TRANSPORT_NUM] = {
 		mqtt_client_tls_disconnect,
 	},
 #endif /* CONFIG_MQTT_LIB_TLS */
-#if defined(CONFIG_MQTT_LIB_SOCKS)
-	{
-		mqtt_client_socks5_connect,
-		mqtt_client_tcp_write,
-		mqtt_client_tcp_read,
-		mqtt_client_tcp_disconnect,
-	},
-#endif /* CONFIG_MQTT_LIB_SOCKS */
 };
 
 int mqtt_transport_connect(struct mqtt_client *client)

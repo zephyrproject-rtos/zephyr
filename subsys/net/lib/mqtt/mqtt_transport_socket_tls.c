@@ -38,6 +38,17 @@ int mqtt_client_tls_connect(struct mqtt_client *client)
 
 	MQTT_TRC("Created socket %d", client->transport.tls.sock);
 
+#if defined(CONFIG_SOCKS)
+	if (client->transport.proxy.addrlen != 0) {
+		ret = setsockopt(client->transport.tls.sock,
+				 SOL_SOCKET, SO_SOCKS5,
+				 &client->transport.proxy.addr,
+				 client->transport.proxy.addrlen);
+		if (ret < 0) {
+			return -errno;
+		}
+	}
+#endif
 	/* Set secure socket options. */
 	ret = setsockopt(client->transport.tls.sock, SOL_TLS, TLS_PEER_VERIFY,
 			 &tls_config->peer_verify,
