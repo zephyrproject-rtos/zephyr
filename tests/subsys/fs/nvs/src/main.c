@@ -484,6 +484,61 @@ void test_nvs_corrupted_sector_close_operation(void)
 	execute_long_pattern_write(max_id);
 }
 
+/**
+ * @brief Test case when storage become full, so only deletion is possible.
+ */
+void test_nvs_full_sector(void)
+{
+	int err;
+	ssize_t len;
+	u16_t filling_id = 0;
+	u16_t i, data_read;
+
+	fs.sector_count = 3;
+
+	err = nvs_init(&fs, DT_FLASH_DEV_NAME);
+	zassert_true(err == 0,  "nvs_init call failure: %d", err);
+
+	while (1) {
+		len = nvs_write(&fs, filling_id, &filling_id,
+				sizeof(filling_id));
+		if (len == -ENOSPC) {
+			filling_id--;
+			break;
+		}
+		zassert_true(len == sizeof(filling_id), "nvs_write failed: %d",
+			     len);
+		filling_id++;
+	}
+
+	/* check whether can delete whatever from full storage */
+	err = nvs_delete(&fs, 1);
+	zassert_true(err == 0,  "nvs_delete call failure: %d", err);
+
+	/* the last sector is full now, test re-initialization */
+	err = nvs_init(&fs, DT_FLASH_DEV_NAME);
+	zassert_true(err == 0,  "nvs_init call failure: %d", err);
+
+	len = nvs_write(&fs, filling_id, &filling_id, sizeof(filling_id));
+	zassert_true(len == sizeof(filling_id), "nvs_write failed: %d", len);
+
+	/* sanitycheck on NVS content */
+	for (i = 0; i <= filling_id; i++) {
+		len = nvs_read(&fs, i, &data_read, sizeof(data_read));
+		if (i == 1) {
+			zassert_true(len == -ENOENT,
+				     "nvs_read shouldn't found the entry: %d",
+				     len);
+		} else {
+			zassert_true(len == sizeof(data_read),
+				     "nvs_read failed: %d", i, len);
+			zassert_equal(data_read, i,
+				      "read unexpected data: %d instead of %d",
+				      data_read, i);
+		}
+	}
+}
+
 void test_main(void)
 {
 	ztest_test_suite(test_nvs,
@@ -499,6 +554,8 @@ void test_main(void)
 				 test_nvs_gc_3sectors, setup, teardown),
 			 ztest_unit_test_setup_teardown(
 				 test_nvs_corrupted_sector_close_operation,
+				 setup, teardown),
+			 ztest_unit_test_setup_teardown(test_nvs_full_sector,
 				 setup, teardown)
 			);
 
