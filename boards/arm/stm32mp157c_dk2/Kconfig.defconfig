@@ -31,4 +31,14 @@ config I2C_5
 
 endif # I2C
 
+if SPI
+
+config SPI_STM32_INTERRUPT
+	default y
+
+config SPI_4
+	default y
+
+endif # SPI
+
 endif # BOARD_STM32MP157_Dk2
