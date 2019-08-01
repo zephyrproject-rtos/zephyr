@@ -148,6 +148,56 @@
 			};
 		};
 
+		spi1: spi@44004000 {
+			compatible = "st,stm32-spi-fifo";
+			reg = <0x44004000 0x400>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x100>;
+			interrupts = <35 5>;
+			label = "SPI_1";
+		};
+
+		spi2: spi@4400b000 {
+			compatible = "st,stm32-spi-fifo";
+			reg = <0x4400b000 0x400>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x800>;
+			interrupts = <36 5>;
+			label = "SPI_2";
+		};
+
+		spi3: spi@4400c000 {
+			compatible = "st,stm32-spi-fifo";
+			reg = <0x4400c000 0x400>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x1000>;
+			interrupts = <51 5>;
+			label = "SPI_3";
+		};
+
+		spi4: spi@44005000 {
+			compatible = "st,stm32-spi-fifo";
+			reg = <0x44005000 0x400>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x200>;
+			interrupts = <84 5>;
+			label = "SPI_4";
+		};
+
+		spi5: spi@44009000 {
+			compatible = "st,stm32-spi-fifo";
+			reg = <0x44009000 0x400>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x400>;
+			interrupts = <85 5>;
+			label = "SPI_5";
+		};
+
 		usart2: serial@4000e000 {
 			compatible = "st,stm32-usart", "st,stm32-uart";
 			reg = <0x4000e000 0x400>;
