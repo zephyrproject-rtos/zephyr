@@ -525,23 +525,17 @@ class Device:
     def _init_prop(self, name, options):
         # _init_props() helper for initializing a single property
 
-        # Skip properties that start with '#', like '#size-cells', and mapping
-        # properties like 'gpio-map'/'interrupt-map'
-        if name[0] == "#" or name.endswith("-map"):
+        if _special_prop(name):
             return
-
-        prop_type = options.get("type")
-        if not prop_type:
-            _err("'{}' in {} lacks 'type'".format(name, self.binding_path))
 
         # "Dummy" type for properties like '...-gpios', so that we can require
         # all entries in 'properties:' to have a 'type: ...'. It might make
         # sense to have gpios in 'properties:' for other reasons, e.g. to set
         # 'category: required'.
-        if prop_type == "compound":
+        if options["type"] == "compound":
             return
 
-        val = self._prop_val(name, prop_type,
+        val = self._prop_val(name, options["type"],
                              options.get("category") == "optional",
                              options.get("default"))
         if val is None:
@@ -619,11 +613,9 @@ class Device:
         if prop_type == "string":
             return prop.to_string()
 
-        if prop_type == "string-array":
-            return prop.to_strings()
-
-        _err("'{}' in 'properties:' in {} has unknown type '{}'"
-             .format(name, self.binding_path, prop_type))
+        # prop_type == "string-array". We have already checked that the 'type:'
+        # value is valid, in _check_binding().
+        return prop.to_strings()
 
     def _init_regs(self):
         # Initializes self.regs with a list of Register objects
@@ -1199,6 +1191,65 @@ def _check_binding(binding, binding_path):
             _err("missing, malformed, or empty 'description' for '{}' in "
                  "'properties:' in {}".format(prop_name, binding_path))
 
+        _check_prop_type_and_default(prop_name, settings.get("type"),
+                                     settings.get("default"), binding_path)
+
+
+def _check_prop_type_and_default(prop_name, prop_type, default, binding_path):
+    # _check_binding() helper. Checks 'type:' and 'default:' for the property
+    # named 'prop_name'.
+
+    if _special_prop(prop_name):
+        return
+
+    if prop_type is None:
+        _err("'{}' in 'properties:' in {} lacks 'type:'"
+             .format(prop_name, binding_path))
+
+    ok_types = {"boolean", "int", "array", "uint8-array", "string",
+                "string-array", "compound"}
+
+    if prop_type not in ok_types:
+        _err("'{}' in 'properties:' in {} has unknown type '{}', expected one "
+             "of {}".format(prop_name, binding_path, prop_type,
+                            ", ".join(ok_types)))
+
+    # Check default
+
+    if default is None:
+        return
+
+    if prop_type in {"boolean", "compound"}:
+        _err("'default:' can't be combined with 'type: {}' for '{}' in "
+             "'properties:' in {}".format(prop_type, prop_name, binding_path))
+
+    def ok_default():
+        # Returns True if 'default' is an okay default for the property's type
+
+        if prop_type == "int" and isinstance(default, int) or \
+           prop_type == "string" and isinstance(default, str):
+            return True
+
+        # array, uint8-array, or string-array
+
+        if not isinstance(default, list):
+            return False
+
+        if prop_type == "array" and \
+           all(isinstance(val, int) for val in default):
+            return True
+
+        if prop_type == "uint8-array" and \
+           all(isinstance(val, int) and 0 <= val <= 255 for val in default):
+            return True
+
+        # string-array
+        return all(isinstance(val, str) for val in default)
+
+    if not ok_default():
+        _err("'default: {}' is invalid for '{}' in 'properties:' in {}, which "
+             "has type {}".format(default, prop_name, binding_path, prop_type))
+
 
 def _translate(addr, node):
     # Recursively translates 'addr' on 'node' to the address space(s) of its
@@ -1651,6 +1702,14 @@ def _slice(node, prop_name, size):
              "divisible by {}".format(prop_name, node, len(raw), size))
 
     return [raw[i:i + size] for i in range(0, len(raw), size)]
+
+
+def _special_prop(prop_name):
+    # Returns True if 'prop_name' is a special property that we check a bit
+    # more leniently
+
+    # Properties like #address-cells/#size-cells and gpio-map/interrupt-map
+    return prop_name[0] == "#" or prop_name.endswith("-map")
 
 
 def _err(msg):
