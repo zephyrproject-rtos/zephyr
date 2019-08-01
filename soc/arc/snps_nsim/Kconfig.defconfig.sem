@@ -16,7 +16,7 @@ config NUM_IRQ_PRIO_LEVELS
 
 config NUM_IRQS
 	# must be > the highest interrupt number used
-	default 22
+	default 30
 
 config ARC_MPU_VER
 	default 3
