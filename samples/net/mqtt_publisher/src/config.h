@@ -25,7 +25,7 @@
 #endif
 #endif
 
-#if defined(CONFIG_MQTT_LIB_SOCKS)
+#if defined(CONFIG_SOCKS)
 #define SOCKS5_PROXY_ADDR	SERVER_ADDR
 #define SOCKS5_PROXY_PORT	1080
 #endif

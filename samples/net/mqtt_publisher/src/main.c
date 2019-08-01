@@ -26,8 +26,9 @@ static struct mqtt_client client_ctx;
 
 /* MQTT Broker details. */
 static struct sockaddr_storage broker;
-#if defined(CONFIG_MQTT_LIB_SOCKS)
-static struct sockaddr_storage socks5_proxy;
+
+#if defined(CONFIG_SOCKS)
+static struct sockaddr socks5_proxy;
 #endif
 
 static struct pollfd fds[1];
@@ -246,7 +247,7 @@ static void broker_init(void)
 	broker6->sin6_port = htons(SERVER_PORT);
 	inet_pton(AF_INET6, SERVER_ADDR, &broker6->sin6_addr);
 
-#if defined(CONFIG_MQTT_LIB_SOCKS)
+#if defined(CONFIG_SOCKS)
 	struct sockaddr_in6 *proxy6 = (struct sockaddr_in6 *)&socks5_proxy;
 
 	proxy6->sin6_family = AF_INET6;
@@ -259,8 +260,7 @@ static void broker_init(void)
 	broker4->sin_family = AF_INET;
 	broker4->sin_port = htons(SERVER_PORT);
 	inet_pton(AF_INET, SERVER_ADDR, &broker4->sin_addr);
-
-#if defined(CONFIG_MQTT_LIB_SOCKS)
+#if defined(CONFIG_SOCKS)
 	struct sockaddr_in *proxy4 = (struct sockaddr_in *)&socks5_proxy;
 
 	proxy4->sin_family = AF_INET;
@@ -308,12 +308,14 @@ static void client_init(struct mqtt_client *client)
 #endif
 
 #else
-#if defined(CONFIG_MQTT_LIB_SOCKS)
-	client->transport.type = MQTT_TRANSPORT_SOCKS;
-	client->transport.socks5.proxy = &socks5_proxy;
-#else
 	client->transport.type = MQTT_TRANSPORT_NON_SECURE;
 #endif
+
+#if defined(CONFIG_SOCKS)
+	mqtt_client_set_proxy(client, &socks5_proxy,
+			      socks5_proxy.sa_family == AF_INET ?
+			      sizeof(struct sockaddr_in) :
+			      sizeof(struct sockaddr_in6));
 #endif
 }
 
