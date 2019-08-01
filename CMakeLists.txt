@@ -1335,14 +1335,23 @@ if(CONFIG_BUILD_OUTPUT_S19)
 endif()
 
 if(CONFIG_OUTPUT_DISASSEMBLY)
+  set(out_disassembly_cmd    "")
+  set(out_disassembly_byprod "")
+  bintools_objdump(
+    RESULT_CMD_LIST    out_disassembly_cmd
+    RESULT_BYPROD_LIST out_disassembly_byprod
+    DISASSEMBLE_SOURCE
+    FILE_INPUT         ${KERNEL_ELF_NAME}
+    FILE_OUTPUT        ${KERNEL_LST_NAME}
+    )
   list(APPEND
     post_build_commands
-    COMMAND
-    ${CMAKE_OBJDUMP} -S ${KERNEL_ELF_NAME} > ${KERNEL_LST_NAME}
+    ${out_disassembly_cmd}
     )
   list(APPEND
     post_build_byproducts
     ${KERNEL_LST_NAME}
+    ${out_disassembly_byprod}
     )
 endif()
 
