@@ -160,6 +160,7 @@ class EDT:
         # are loaded.
 
         dt_compats = _dt_compats(self._dt)
+        dt_device_types = _dt_device_types(self._dt)
         self._binding_paths = _binding_paths(bindings_dirs)
 
         # Add '!include foo.yaml' handling.
@@ -172,12 +173,17 @@ class EDT:
         yaml.Loader.add_constructor("!include", self._binding_include)
 
         self._compat2binding = {}
+        self._device_type2binding = {}
         for binding_path in self._binding_paths:
             constraint = _binding_constraint(binding_path)
             if constraint in dt_compats:
                 binding = _load_binding(binding_path)
                 self._compat2binding[constraint, _binding_bus(binding)] = \
                     (binding, binding_path)
+            if constraint in dt_device_types:
+                binding = _load_binding(binding_path)
+                self._device_type2binding[constraint] = (binding, binding_path)
+
 
     def _binding_include(self, loader, node):
         # Implements !include. Returns a list with the YAML structures for the
@@ -292,6 +298,11 @@ class Device:
       the 'compatible' string that matched), or None if the device has no
       binding
 
+    matching_property:
+      A string with the property name that the binding matched on.  This would
+      be something like 'compatible' or 'device_type'.  None if the device has
+      no binding
+
     description:
       The description string from the binding file for the device, or None if
       the device has no binding. Trailing whitespace (including newlines) is
@@ -304,6 +315,10 @@ class Device:
     compats:
       A list of 'compatible' strings for the device, in the same order that
       they're listed in the .dts file
+
+    device_type:
+      The 'device_type' string for the device if it has a 'device_type' property
+      or None if the property doesn't exist
 
     regs:
       A list of Register objects for the device's registers
@@ -443,6 +458,11 @@ class Device:
         self.edt = edt
         self._node = node
 
+        if "device_type" in self._node.props:
+            self.device_type = self._node.props["device_type"].to_string()
+        else:
+            self.device_type = None
+
         self._init_binding()
         self._init_props()
         self._init_regs()
@@ -459,6 +479,7 @@ class Device:
         # This relies on the parent of the Device having already been
         # initialized, which is guaranteed by going through the nodes in
         # node_iter() order.
+        self.compats = []
 
         if "compatible" in self._node.props:
             self.compats = self._node.props["compatible"].to_strings()
@@ -468,6 +489,7 @@ class Device:
                 if (compat, bus) in self.edt._compat2binding:
                     # Binding found
                     self.matching_constraint = compat
+                    self.matching_property = "compatible"
                     self._binding, self.binding_path = \
                         self.edt._compat2binding[compat, bus]
 
@@ -476,6 +498,19 @@ class Device:
                         self.description = self.description.rstrip()
 
                     return
+        elif self.device_type:
+            if self.device_type in self.edt._device_type2binding:
+                # Binding found
+                self.matching_constraint = self.device_type
+                self.matching_property = "device_type"
+                self._binding, self.binding_path = \
+                    self.edt._device_type2binding[self.device_type]
+
+                self.description = self._binding.get("description")
+                if self.description:
+                    self.description = self.description.rstrip()
+
+                return
         else:
             # No 'compatible' property. See if the parent has a 'sub-node:' key
             # that gives the binding.
@@ -494,11 +529,12 @@ class Device:
                     self.description = self.description.rstrip()
 
                 self.matching_constraint = self.parent.matching_constraint
+                self.matching_property = self.parent.matching_property
                 return
 
         # No binding found
         self.matching_constraint = self._binding = self.binding_path = \
-            self.description = None
+            self.description = self.matching_property = None
 
     def _bus_from_parent_binding(self):
         # _init_binding() helper. Returns the bus specified by
@@ -778,6 +814,13 @@ class Device:
                 if compat in other_dev.compats and other_dev.enabled:
                     self.instance_no[compat] += 1
 
+        device_type = self.device_type
+        if device_type:
+            self.instance_no[device_type] = 0
+            for other_dev in self.edt.devices:
+                if device_type == other_dev.device_type and other_dev.enabled:
+                    self.instance_no[device_type] += 1
+
 
 class Register:
     """
@@ -1031,6 +1074,16 @@ def _dt_compats(dt):
             for node in dt.node_iter()
                 if "compatible" in node.props
                     for compat in node.props["compatible"].to_strings()}
+
+
+def _dt_device_types(dt):
+    # Returns a set() with all 'device_type' strings in the device tree
+    # represented by dt (a dtlib.DT instance)
+
+    return {device_type
+            for node in dt.node_iter()
+                if "device_type" in node.props
+                    for device_type in node.props["device_type"].to_strings()}
 
 
 def _binding_paths(bindings_dirs):
