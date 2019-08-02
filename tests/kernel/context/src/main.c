@@ -85,6 +85,8 @@
  * unless TICK_IRQ is defined here for them
  */
 #endif /* defined(CONFIG_ARCH_POSIX) */
+#elif defined(CONFIG_SPARC)
+#define TICK_IRQ TIMER1_IRQ
 #else
 /* generate an error */
 #error Timer type is not defined for this platform
@@ -94,7 +96,8 @@
  * do have a power saving instruction, so k_cpu_idle() returns immediately
  */
 #if !defined(CONFIG_NIOS2) && \
-	(!defined(CONFIG_RISCV) || defined(CONFIG_RISCV_HAS_CPU_IDLE))
+	(!defined(CONFIG_RISCV) || defined(CONFIG_RISCV_HAS_CPU_IDLE)) && \
+	!defined(CONFIG_SPARC)
 #define HAS_POWERSAVE_INSTRUCTION
 #endif
 
