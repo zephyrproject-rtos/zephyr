@@ -29,12 +29,10 @@
 	};
 
 	iccm0: iccm@0 {
-		device_type = "memory";
 		compatible = "arc,iccm";
 	};
 
 	dccm0: dccm@80000000 {
-		device_type = "memory";
 		compatible = "arc,dccm";
 	};
 
