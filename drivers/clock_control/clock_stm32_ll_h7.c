@@ -29,6 +29,18 @@
 #define z_apb4_prescaler(v) LL_RCC_APB4_DIV_ ## v
 #define apb4_prescaler(v) z_apb4_prescaler(v)
 
+#if defined(CONFIG_CPU_CORTEX_M7)
+#if CONFIG_CLOCK_STM32_D1CPRE > 1
+/*
+ * D1CPRE prescaler allows to set a HCLK frequency lower than SYSCLK frequency.
+ * Though, zephyr doesn't make a difference today between these two clocks.
+ * So, changing this prescaler is not allowed until it is made possible to
+ * use them independently in zephyr clock subsystem.
+ */
+#error "D1CPRE presacler can't be higher than 1"
+#endif
+#endif /* CONFIG_CPU_CORTEX_M7 */
+
 /**
  * @brief fill in AHB/APB buses configuration structure
  */

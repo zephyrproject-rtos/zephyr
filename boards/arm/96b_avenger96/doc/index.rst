@@ -185,7 +185,8 @@ Default Zephyr Peripheral Mapping:
 System Clock
 ------------
 
-The Cortex®-M4 Core is configured to run at a 209 MHz clock speed.
+The Cortex®-M4 Core is configured to run at a 209 MHz clock speed. This value
+must match the configured mlhclk_ck frequency.
 
 Serial Port
 -----------

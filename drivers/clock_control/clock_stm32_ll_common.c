@@ -34,6 +34,17 @@
 #define __LL_RCC_CALC_HCLK_FREQ __LL_RCC_CALC_HCLK1_FREQ
 #endif /* CONFIG_SOC_SERIES_STM32F0X */
 
+#if CONFIG_CLOCK_STM32_AHB_PRESCALER > 1
+/*
+ * AHB prescaler allows to set a HCLK frequency (feeding cortex systick)
+ * lower than SYSCLK frequency (actual core frequency).
+ * Though, zephyr doesn't make a difference today between these two clocks.
+ * So, changing this prescaler is not allowed until it is made possible to
+ * use them independently in zephyr clock subsystem.
+ */
+#error "AHB presacler can't be higher than 1"
+#endif
+
 /**
  * @brief fill in AHB/APB buses configuration structure
  */
