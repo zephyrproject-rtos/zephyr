@@ -46,6 +46,10 @@
 #include <stm32mp1xx_ll_usart.h>
 #endif
 
+#ifdef CONFIG_SPI_STM32
+#include <stm32mp1xx_ll_spi.h>
+#endif
+
 #ifdef CONFIG_IPM_STM32_IPCC
 #include <stm32mp1xx_ll_ipcc.h>
 #endif
