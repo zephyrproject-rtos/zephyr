@@ -67,4 +67,6 @@ source "drivers/gpio/Kconfig.ht16k33"
 
 source "drivers/gpio/Kconfig.lmp90xxx"
 
+source "drivers/gpio/Kconfig.litex"
+
 endif # GPIO
