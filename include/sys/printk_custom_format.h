@@ -109,6 +109,16 @@ void *z_printk_custom_format_string_dup(u8_t *buf, char *str);
 	PRINTK_CUST_FORMAT_DUP(str, z_printk_custom_format_string_dup)
 
 
+/** @brief Macro to be used in log messages to log string using custom printk
+ *	   formatting.
+ *
+ * Example: LOG_INF("%pZ", log_string_dup(addr));
+ */
+#define log_string_dup(str) \
+	(IS_ENABLED(CONFIG_LOG_IMMEDIATE) ? \
+		string_dup(str) : \
+		z_printk_custom_format_string_dup(NULL, (u8_t *)str))
+
 #ifdef __cplusplus
 }
 #endif
