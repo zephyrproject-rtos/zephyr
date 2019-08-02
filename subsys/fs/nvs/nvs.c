@@ -797,6 +797,9 @@ ssize_t nvs_write(struct nvs_fs *fs, u16_t id, const void *data, size_t len)
 		if (len == 0) {
 			/* do not try to compare with empty data */
 			if (wlk_ate.len == 0U) {
+				/* skip delete entry as it is already the
+				 * last one
+				 */
 				return 0;
 			}
 		} else {
@@ -805,6 +808,11 @@ ssize_t nvs_write(struct nvs_fs *fs, u16_t id, const void *data, size_t len)
 			if (rc <= 0) {
 				return rc;
 			}
+		}
+	} else {
+		/* skip delete entry for non-existing entry */
+		if (len == 0) {
+			return 0;
 		}
 	}
 
