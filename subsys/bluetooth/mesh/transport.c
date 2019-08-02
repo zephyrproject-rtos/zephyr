@@ -147,7 +147,11 @@ static int send_unseg(struct bt_mesh_net_tx *tx, struct net_buf_simple *sdu,
 			 * out through the Friend Queue.
 			 */
 			net_buf_unref(buf);
-			return 0;
+			
+			/*Should save the rest of the Seg message
+			* to the friend queue.
+			*/
+			continue;
 		}
 	}
 
@@ -402,7 +406,11 @@ static int send_seg(struct bt_mesh_net_tx *net_tx, struct net_buf_simple *sdu,
 				 * out through the Friend Queue.
 				 */
 				net_buf_unref(seg);
-				return 0;
+
+				/* PDUs for a specific Friend should only go
+				 * out through the Friend Queue.
+				 */
+				continue;
 			}
 		}
 
@@ -1405,104 +1413,4 @@ int bt_mesh_trans_recv(struct net_buf_simple *buf, struct bt_mesh_net_rx *rx)
 	if (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER) &&
 	    bt_mesh_lpn_established() && rx->net_if == BT_MESH_NET_IF_ADV &&
 	    (!bt_mesh_lpn_waiting_update() || !rx->friend_cred)) {
-		BT_WARN("Ignoring unexpected message in Low Power mode");
-		return -EAGAIN;
-	}
-
-	/* Save the app-level state so the buffer can later be placed in
-	 * the Friend Queue.
-	 */
-	net_buf_simple_save(buf, &state);
-
-	if (SEG(buf->data)) {
-		/* Segmented messages must match a local element or an
-		 * LPN of this Friend.
-		 */
-		if (!rx->local_match && !rx->friend_match) {
-			return 0;
-		}
-
-		err = trans_seg(buf, rx, &pdu_type, &seq_auth);
-	} else {
-		err = trans_unseg(buf, rx, &seq_auth);
-	}
-
-	/* Notify LPN state machine so a Friend Poll will be sent. If the
-	 * message was a Friend Update it's possible that a Poll was already
-	 * queued for sending, however that's fine since then the
-	 * bt_mesh_lpn_waiting_update() function will return false:
-	 * we still need to go through the actual sending to the bearer and
-	 * wait for ReceiveDelay before transitioning to WAIT_UPDATE state.
-	 * Another situation where we want to notify the LPN state machine
-	 * is if it's configured to use an automatic Friendship establishment
-	 * timer, in which case we want to reset the timer at this point.
-	 *
-	 */
-	if (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER) &&
-	    (bt_mesh_lpn_timer() ||
-	     (bt_mesh_lpn_established() && bt_mesh_lpn_waiting_update()))) {
-		bt_mesh_lpn_msg_received(rx);
-	}
-
-	net_buf_simple_restore(buf, &state);
-
-	if (IS_ENABLED(CONFIG_BT_MESH_FRIEND) && rx->friend_match && !err) {
-		if (seq_auth == TRANS_SEQ_AUTH_NVAL) {
-			bt_mesh_friend_enqueue_rx(rx, pdu_type, NULL, buf);
-		} else {
-			bt_mesh_friend_enqueue_rx(rx, pdu_type, &seq_auth, buf);
-		}
-	}
-
-	return err;
-}
-
-void bt_mesh_rx_reset(void)
-{
-	int i;
-
-	BT_DBG("");
-
-	for (i = 0; i < ARRAY_SIZE(seg_rx); i++) {
-		seg_rx_reset(&seg_rx[i], true);
-	}
-
-	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
-		bt_mesh_clear_rpl();
-	} else {
-		(void)memset(bt_mesh.rpl, 0, sizeof(bt_mesh.rpl));
-	}
-}
-
-void bt_mesh_tx_reset(void)
-{
-	int i;
-
-	BT_DBG("");
-
-	for (i = 0; i < ARRAY_SIZE(seg_tx); i++) {
-		seg_tx_reset(&seg_tx[i]);
-	}
-}
-
-void bt_mesh_trans_init(void)
-{
-	int i;
-
-	for (i = 0; i < ARRAY_SIZE(seg_tx); i++) {
-		k_delayed_work_init(&seg_tx[i].retransmit, seg_retransmit);
-	}
-
-	for (i = 0; i < ARRAY_SIZE(seg_rx); i++) {
-		k_delayed_work_init(&seg_rx[i].ack, seg_ack);
-		seg_rx[i].buf.__buf = (seg_rx_buf_data +
-				       (i * CONFIG_BT_MESH_RX_SDU_MAX));
-		seg_rx[i].buf.data = seg_rx[i].buf.__buf;
-	}
-}
-
-void bt_mesh_rpl_clear(void)
-{
-	BT_DBG("");
-	(void)memset(bt_mesh.rpl, 0, sizeof(bt_mesh.rpl));
-}
+		BT_WARN(
