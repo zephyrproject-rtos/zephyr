@@ -14,7 +14,6 @@
 
 	/* system data RAM accessible over over AXI bus */
 	sram1: memory@10000000 {
-		device_type = "memory";
 		reg = <0x10000000 DT_SIZE_K(288)>;
 		compatible = "mmio-sram";
 	};

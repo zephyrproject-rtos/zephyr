@@ -21,13 +21,11 @@
 	};
 
 	sram0: memory@20000000 {
-		device_type = "memory";
 		compatible = "mmio-sram";
 	};
 
 	/* VIMS RAM configurable in CCFG as GPRAM or cache for FLASH (default) */
 	sram1: memory@11000000 {
-		device_type = "memory";
 		compatible = "mmio-sram";
 		reg = <0x11000000 0x2000>;
 	};

@@ -10,7 +10,6 @@
 	/* 64KB DTCM @ 0x20000000, 176KB SRAM1 @ 0x20010000, 16KB SRAM2 @ 0x2003C00 */
 
 	sram0: memory@20010000 {
-		device_type = "memory";
 		compatible = "mmio-sram";
 		reg = <0x20010000 DT_SIZE_K(192)>;
 	};
