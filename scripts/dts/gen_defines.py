@@ -53,8 +53,9 @@ def main():
                 continue
 
             out_comment("Device tree node: " + dev.path)
-            out_comment("Binding (compatible = {}): {}".format(
-                            dev.matching_constraint, dev.binding_path),
+            out_comment("Binding ({} = {}): {}".format(
+                            dev.matching_property, dev.matching_constraint,
+                            dev.binding_path),
                         blank_before=False)
             out_comment("Binding description: " + dev.description,
                         blank_before=False)
@@ -154,7 +155,7 @@ def write_props(dev):
             continue
 
         # Skip properties that we handle elsewhere
-        if prop.name in {"reg", "interrupts", "compatible"}:
+        if prop.name in {"reg", "interrupts", "compatible", "device_type"}:
             continue
 
         if prop.description is not None:
@@ -205,8 +206,11 @@ def write_existence_flags(dev):
     #
     # These are flags for which devices exist.
 
-    for compat in dev.compats:
-        out("INST_{}_{}".format(dev.instance_no[compat], str2ident(compat)), 1)
+    if dev.compats:
+        for compat in dev.compats:
+            out("INST_{}_{}".format(dev.instance_no[compat], str2ident(compat)), 1)
+    if dev.device_type:
+        out("INST_{}_{}".format(dev.instance_no[dev.device_type], str2ident(dev.device_type)), 1)
 
 
 def reg_addr_ident(reg):
@@ -297,8 +301,12 @@ def dev_instance_aliases(dev):
     # This is a list since a device can have multiple 'compatible' strings,
     # each with their own instance number.
 
-    return ["INST_{}_{}".format(dev.instance_no[compat], str2ident(compat))
-            for compat in dev.compats]
+    if dev.compats:
+        return ["INST_{}_{}".format(dev.instance_no[compat], str2ident(compat))
+                for compat in dev.compats]
+    elif dev.device_type:
+        return ["INST_{}_{}".format(dev.instance_no[dev.device_type], str2ident(dev.device_type))]
+    return []
 
 
 def write_addr_size(edt, prop_name, prefix):
