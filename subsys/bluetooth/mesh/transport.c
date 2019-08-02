@@ -402,7 +402,8 @@ static int send_seg(struct bt_mesh_net_tx *net_tx, struct net_buf_simple *sdu,
 				 * out through the Friend Queue.
 				 */
 				net_buf_unref(seg);
-				return 0;
+				/*Rest of the Seg message to Friend queue*/
+				continue;
 			}
 		}
 
