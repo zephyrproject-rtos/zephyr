@@ -21,7 +21,6 @@
 	};
 
 	sram0: memory@400000 {
-		device_type = "memory";
 		compatible = "mmio-sram";
 		reg = <0x400000 0x20000>;
 	};
