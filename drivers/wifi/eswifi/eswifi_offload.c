@@ -637,6 +637,13 @@ static int eswifi_off_get(sa_family_t family,
 		return -ENOMEM;
 	}
 
+	err = __select_socket(eswifi, socket->index);
+	if (err < 0) {
+		LOG_ERR("Unable to select socket %u", socket->index);
+		eswifi_unlock(eswifi);
+		return -EIO;
+	}
+
 	/* Set Transport Protocol */
 	if (ip_proto == IPPROTO_TCP) {
 		socket->type = ESWIFI_TRANSPORT_TCP;
@@ -665,13 +672,6 @@ static int eswifi_off_get(sa_family_t family,
 	k_sem_init(&socket->read_sem, 1, 1);
 	k_sem_init(&socket->accept_sem, 1, 1);
 	socket->usage = 1;
-
-	err = __select_socket(eswifi, socket->index);
-	if (err < 0) {
-		LOG_ERR("Unable to select socket %u", socket->index);
-		eswifi_unlock(eswifi);
-		return -EIO;
-	}
 
 	k_delayed_work_submit_to_queue(&eswifi->work_q, &socket->read_work,
 				       500);
