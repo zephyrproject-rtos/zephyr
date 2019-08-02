@@ -30,7 +30,7 @@ def run():
             fail("not equal (expected value last):\n'{}'\n'{}'"
                  .format(actual, expected))
 
-    edt = edtlib.EDT("test.dts", "test-bindings")
+    edt = edtlib.EDT("test.dts", ["test-bindings"])
 
     #
     # Test interrupts
@@ -114,6 +114,18 @@ def run():
 
     verify_streq(edt.get_dev("/props").props,
                  r"{'compatible': <Property, name: compatible, value: ['props']>, 'int': <Property, name: int, value: 1>, 'array': <Property, name: array, value: [1, 2, 3]>, 'uint8-array': <Property, name: uint8-array, value: b'\x124'>, 'string': <Property, name: string, value: 'foo'>, 'string-array': <Property, name: string-array, value: ['foo', 'bar', 'baz']>}")
+
+    #
+    # Test having multiple directories with bindings, with a different .dts file
+    #
+
+    edt = edtlib.EDT("test-multidir.dts", ["test-bindings", "test-bindings-2"])
+
+    verify_streq(edt.get_dev("/in-dir-1").binding_path,
+                 "test-bindings/multidir.yaml")
+
+    verify_streq(edt.get_dev("/in-dir-2").binding_path,
+                 "test-bindings-2/multidir.yaml")
 
 
     print("all tests passed")
