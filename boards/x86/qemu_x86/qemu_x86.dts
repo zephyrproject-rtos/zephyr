@@ -4,7 +4,7 @@
 
 #include <mem.h>
 
-#define DT_FLASH_SIZE		DT_SIZE_K(4092)
+#define DT_FLASH_SIZE		DT_SIZE_K(4096)
 #define DT_SRAM_SIZE		DT_SIZE_K(4096)
 
 #include <ia32.dtsi>
