@@ -90,26 +90,26 @@ class EDT:
     dts_path:
       The .dts path passed to __init__()
 
-    bindings_dir:
-      The bindings directory path passed to __init__()
+    bindings_dirs:
+      The bindings directory paths passed to __init__()
     """
-    def __init__(self, dts, bindings_dir):
+    def __init__(self, dts, bindings_dirs):
         """
         EDT constructor. This is the top-level entry point to the library.
 
         dts:
           Path to device tree .dts file
 
-        bindings_dir:
-          Path to directory containing bindings, in YAML format. This directory
-          is recursively searched for .yaml files.
+        bindings_dirs:
+          List of paths to directories containing bindings, in YAML format.
+          These directories are recursively searched for .yaml files.
         """
         self.dts_path = dts
-        self.bindings_dir = bindings_dir
+        self.bindings_dirs = bindings_dirs
 
         self._dt = DT(dts)
 
-        self._init_compat2binding(bindings_dir)
+        self._init_compat2binding(bindings_dirs)
         self._init_devices()
 
     def get_dev(self, path):
@@ -143,7 +143,7 @@ class EDT:
             _err("{} in /chosen points to {}, which does not exist"
                  .format(name, path))
 
-    def _init_compat2binding(self, bindings_dir):
+    def _init_compat2binding(self, bindings_dirs):
         # Creates self._compat2binding. This is a dictionary that maps
         # (<compatible>, <bus>) tuples (both strings) to (<binding>, <path>)
         # tuples. <binding> is the binding in parsed PyYAML format, and <path>
@@ -160,7 +160,7 @@ class EDT:
         # are loaded.
 
         dt_compats = _dt_compats(self._dt)
-        self._binding_paths = _binding_paths(bindings_dir)
+        self._binding_paths = _binding_paths(bindings_dirs)
 
         # Add '!include foo.yaml' handling.
         #
@@ -238,8 +238,8 @@ class EDT:
             dev._init_clocks()
 
     def __repr__(self):
-        return "<EDT for '{}', binding directory '{}'>".format(
-            self.dts_path, self.bindings_dir)
+        return "<EDT for '{}', binding directories '{}'>".format(
+            self.dts_path, self.bindings_dirs)
 
 
 class Device:
@@ -1009,14 +1009,19 @@ def _dt_compats(dt):
                     for compat in node.props["compatible"].to_strings()}
 
 
-def _binding_paths(bindings_dir):
+def _binding_paths(bindings_dirs):
     # Returns a list with the paths to all bindings (.yaml files) in
-    # 'bindings_dir'
+    # 'bindings_dirs'
 
-    return [os.path.join(root, filename)
-            for root, _, filenames in os.walk(bindings_dir)
-                for filename in filenames
-                    if filename.endswith(".yaml")]
+    binding_paths = []
+
+    for bindings_dir in bindings_dirs:
+        for root, _, filenames in os.walk(bindings_dir):
+            for filename in filenames:
+                if filename.endswith(".yaml"):
+                    binding_paths.append(os.path.join(root, filename))
+
+    return binding_paths
 
 
 def _binding_compat(binding_path):
