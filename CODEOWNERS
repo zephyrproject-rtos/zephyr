@@ -149,6 +149,7 @@
 /drivers/gpio/*lmp90xxx*                  @henrikbrixandersen
 /drivers/gpio/*stm32*                     @erwango
 /drivers/gpio/*sx1509b*                   @pabigot
+/drivers/gpio/*litex*                     @mateusz-holenko @kgugala @pgielda
 /drivers/hwinfo/                          @alexanderwachter
 /drivers/i2c/*litex*                      @mateusz-holenko @kgugala @pgielda
 /drivers/i2s/i2s_ll_stm32*                @avisconti
