@@ -362,7 +362,12 @@ int fs_opendir(struct fs_dir_t *zdp, const char *path);
 /**
  * @brief Directory read entry
  *
- * Reads directory entries of a open directory
+ * Reads directory entries of a open directory.
+ *
+ * @note: Most existing underlying file systems do not generate POSIX
+ * special directory entries "." or "..".  For consistency the
+ * abstraction layer will remove these from lower layer results so
+ * higher layers see consistent results.
  *
  * @param zdp Pointer to the directory object
  * @param entry Pointer to zfs_dirent structure to read the entry into

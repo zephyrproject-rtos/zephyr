@@ -255,11 +255,25 @@ int fs_readdir(struct fs_dir_t *zdp, struct fs_dirent *entry)
 		int rc = -EINVAL;
 
 		if (zdp->mp->fs->readdir != NULL) {
-			rc = zdp->mp->fs->readdir(zdp, entry);
+			/* Loop until error or not special directory */
+			while (true) {
+				rc = zdp->mp->fs->readdir(zdp, entry);
+				if (rc < 0) {
+					break;
+				}
+				if (entry->type != FS_DIR_ENTRY_DIR) {
+					break;
+				}
+				if ((strcmp(entry->name, ".") != 0)
+				    && (strcmp(entry->name, "..") != 0)) {
+					break;
+				}
+			}
 			if (rc < 0) {
 				LOG_ERR("directory read error (%d)", rc);
 			}
 		}
+
 		return rc;
 	}
 
