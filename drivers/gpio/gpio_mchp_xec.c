@@ -36,7 +36,7 @@ struct gpio_xec_config {
 };
 
 static int gpio_xec_configure(struct device *dev,
-				int access_op, u32_t pin, int flags)
+			      int access_op, u32_t pin, int flags)
 {
 	const struct gpio_xec_config *config = dev->config->config_info;
 	__IO u32_t *current_pcr1;
@@ -45,8 +45,9 @@ static int gpio_xec_configure(struct device *dev,
 	u32_t gpio_interrupt = 0;
 
 	/* Validate pin number range in terms of current port */
-	if ((valid_ctrl_masks[config->port_num] & BIT(pin)) == 0)
+	if ((valid_ctrl_masks[config->port_num] & BIT(pin)) == 0) {
 		return -EINVAL;
+	}
 
 	/* Check for an invalid pin configuration */
 	if ((flags & GPIO_INT) && (flags & GPIO_DIR_OUT)) {
@@ -135,7 +136,7 @@ static int gpio_xec_configure(struct device *dev,
 
 
 static int gpio_xec_write(struct device *dev,
-				int access_op, u32_t pin, u32_t value)
+			  int access_op, u32_t pin, u32_t value)
 {
 	const struct gpio_xec_config *config = dev->config->config_info;
 	u32_t port_n = config->port_num;
@@ -167,7 +168,7 @@ static int gpio_xec_write(struct device *dev,
 }
 
 static int gpio_xec_read(struct device *dev,
-				int access_op, u32_t pin, u32_t *value)
+			 int access_op, u32_t pin, u32_t *value)
 {
 	const struct gpio_xec_config *config = dev->config->config_info;
 	u32_t port_n = config->port_num;
@@ -187,7 +188,7 @@ static int gpio_xec_read(struct device *dev,
 
 
 static int gpio_xec_manage_callback(struct device *dev,
-				struct gpio_callback *callback, bool set)
+				    struct gpio_callback *callback, bool set)
 {
 	struct gpio_xec_data *data = dev->driver_data;
 
@@ -197,7 +198,7 @@ static int gpio_xec_manage_callback(struct device *dev,
 }
 
 static int gpio_xec_enable_callback(struct device *dev,
-					int access_op, u32_t pin)
+				    int access_op, u32_t pin)
 {
 	struct gpio_xec_data *data = dev->driver_data;
 
@@ -211,7 +212,7 @@ static int gpio_xec_enable_callback(struct device *dev,
 }
 
 static int gpio_xec_disable_callback(struct device *dev,
-					int access_op, u32_t pin)
+				     int access_op, u32_t pin)
 {
 	struct gpio_xec_data *data = dev->driver_data;
 
