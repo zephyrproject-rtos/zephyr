@@ -90,7 +90,7 @@ static void spi_stm32_shift_m(SPI_TypeDef *spi, struct spi_stm32_data *data)
 	u16_t rx_frame;
 
 	tx_frame = spi_stm32_next_tx(data);
-	while (!LL_SPI_IsActiveFlag_TXE(spi)) {
+	while (!ll_func_tx_is_empty(spi)) {
 		/* NOP */
 	}
 	if (SPI_WORD_SIZE_GET(data->ctx.config->operation) == 8) {
@@ -103,7 +103,7 @@ static void spi_stm32_shift_m(SPI_TypeDef *spi, struct spi_stm32_data *data)
 		spi_context_update_tx(&data->ctx, 2, 1);
 	}
 
-	while (!LL_SPI_IsActiveFlag_RXNE(spi)) {
+	while (!ll_func_rx_is_not_empty(spi)) {
 		/* NOP */
 	}
 
@@ -125,7 +125,7 @@ static void spi_stm32_shift_m(SPI_TypeDef *spi, struct spi_stm32_data *data)
 /* Shift a SPI frame as slave. */
 static void spi_stm32_shift_s(SPI_TypeDef *spi, struct spi_stm32_data *data)
 {
-	if (LL_SPI_IsActiveFlag_TXE(spi) && spi_context_tx_on(&data->ctx)) {
+	if (ll_func_tx_is_empty(spi) && spi_context_tx_on(&data->ctx)) {
 		u16_t tx_frame = spi_stm32_next_tx(data);
 
 		if (SPI_WORD_SIZE_GET(data->ctx.config->operation) == 8) {
@@ -136,10 +136,10 @@ static void spi_stm32_shift_s(SPI_TypeDef *spi, struct spi_stm32_data *data)
 			spi_context_update_tx(&data->ctx, 2, 1);
 		}
 	} else {
-		LL_SPI_DisableIT_TXE(spi);
+		ll_func_disable_int_tx_empty(spi);
 	}
 
-	if (LL_SPI_IsActiveFlag_RXNE(spi) &&
+	if (ll_func_rx_is_not_empty(spi) &&
 	    spi_context_rx_buf_on(&data->ctx)) {
 		u16_t rx_frame;
 
@@ -178,22 +178,22 @@ static void spi_stm32_complete(struct spi_stm32_data *data, SPI_TypeDef *spi,
 			       int status)
 {
 #ifdef CONFIG_SPI_STM32_INTERRUPT
-	LL_SPI_DisableIT_TXE(spi);
-	LL_SPI_DisableIT_RXNE(spi);
-	LL_SPI_DisableIT_ERR(spi);
+	ll_func_disable_int_tx_empty(spi);
+	ll_func_disable_int_rx_not_empty(spi);
+	ll_func_disable_int_errors(spi);
 #endif
 
 	spi_context_cs_control(&data->ctx, false);
 
 #if defined(CONFIG_SPI_STM32_HAS_FIFO)
 	/* Flush RX buffer */
-	while (LL_SPI_IsActiveFlag_RXNE(spi)) {
+	while (ll_func_rx_is_not_empty(spi)) {
 		(void) LL_SPI_ReceiveData8(spi);
 	}
 #endif
 
 	if (LL_SPI_GetMode(spi) == LL_SPI_MODE_MASTER) {
-		while (LL_SPI_IsActiveFlag_BSY(spi)) {
+		while (ll_func_spi_is_busy(spi)) {
 			/* NOP */
 		}
 	}
@@ -202,7 +202,7 @@ static void spi_stm32_complete(struct spi_stm32_data *data, SPI_TypeDef *spi,
 		LL_SPI_ClearFlag_MODF(spi);
 	}
 
-	LL_SPI_Disable(spi);
+	ll_func_disable_spi(spi);
 
 #ifdef CONFIG_SPI_STM32_INTERRUPT
 	spi_context_complete(&data->ctx, status);
@@ -330,7 +330,7 @@ static int spi_stm32_configure(struct device *dev,
 	}
 
 #if defined(CONFIG_SPI_STM32_HAS_FIFO)
-	LL_SPI_SetRxFIFOThreshold(spi, LL_SPI_RX_FIFO_TH_QUARTER);
+	ll_func_set_fifo_threshold_8bit(spi);
 #endif
 
 #ifndef CONFIG_SOC_SERIES_STM32F1X
@@ -396,7 +396,7 @@ static int transceive(struct device *dev,
 
 #if defined(CONFIG_SPI_STM32_HAS_FIFO)
 	/* Flush RX buffer */
-	while (LL_SPI_IsActiveFlag_RXNE(spi)) {
+	while (ll_func_rx_is_not_empty(spi)) {
 		(void) LL_SPI_ReceiveData8(spi);
 	}
 #endif
@@ -407,13 +407,13 @@ static int transceive(struct device *dev,
 	spi_context_cs_control(&data->ctx, true);
 
 #ifdef CONFIG_SPI_STM32_INTERRUPT
-	LL_SPI_EnableIT_ERR(spi);
+	ll_func_enable_int_errors(spi);
 
 	if (rx_bufs) {
-		LL_SPI_EnableIT_RXNE(spi);
+		ll_func_enable_int_rx_not_empty(spi);
 	}
 
-	LL_SPI_EnableIT_TXE(spi);
+	ll_func_enable_int_tx_empty(spi);
 
 	ret = spi_context_wait_for_completion(&data->ctx);
 #else
