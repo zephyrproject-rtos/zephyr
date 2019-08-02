@@ -745,7 +745,7 @@ ssize_t nvs_write(struct nvs_fs *fs, u16_t id, const void *data, size_t len)
 	size_t ate_size, data_size;
 	struct nvs_ate wlk_ate;
 	u32_t wlk_addr, rd_addr;
-	u16_t sector_freespace;
+	u16_t required_space = 0U; /* no space, appropriate for delete ate */
 
 	if (!fs->ready) {
 		LOG_ERR("NVS not initialized");
@@ -801,6 +801,12 @@ ssize_t nvs_write(struct nvs_fs *fs, u16_t id, const void *data, size_t len)
 		}
 	}
 
+	/* calculate required space if the entry contains data */
+	if (data_size) {
+		/* Leave space for delete ate */
+		required_space = data_size + ate_size;
+	}
+
 	k_mutex_lock(&fs->nvs_lock, K_FOREVER);
 
 	gc_count = 0;
@@ -813,10 +819,7 @@ ssize_t nvs_write(struct nvs_fs *fs, u16_t id, const void *data, size_t len)
 			goto end;
 		}
 
-		sector_freespace = fs->ate_wra - fs->data_wra;
-
-		/* Leave space for delete ate */
-		if (sector_freespace >= data_size + ate_size) {
+		if (fs->ate_wra >= fs->data_wra + required_space) {
 
 			rc = nvs_flash_wrt_entry(fs, id, data, len);
 			if (rc) {
@@ -824,6 +827,7 @@ ssize_t nvs_write(struct nvs_fs *fs, u16_t id, const void *data, size_t len)
 			}
 			break;
 		}
+
 
 		rc = nvs_sector_close(fs);
 		if (rc) {
