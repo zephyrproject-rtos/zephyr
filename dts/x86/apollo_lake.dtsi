@@ -15,7 +15,6 @@
 		#size-cells = <0>;
 
 		cpu@0 {
-			device_type = "cpu";
 			compatible = "apollo_lake";
 			reg = <0>;
 		};
