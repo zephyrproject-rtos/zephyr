@@ -1,0 +1,8 @@
+# nRF5340 DK NRF5340 board configuration
+
+# Copyright (c) 2019 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_NRF5340_DK_NRF5340_CPUAPP || BOARD_NRF5340_DK_NRF5340_CPUAPPNS
+
+endif # BOARD_NRF5340_DK_NRF5340_CPUAPP || BOARD_NRF5340_DK_NRF5340_CPUAPPNS
