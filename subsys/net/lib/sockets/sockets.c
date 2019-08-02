@@ -29,7 +29,7 @@ LOG_MODULE_REGISTER(net_sock, CONFIG_NET_SOCKETS_LOG_LEVEL);
 	do { \
 		const struct socket_op_vtable *vtable; \
 		void *ctx = get_sock_vtable(sock, &vtable); \
-		if (ctx == NULL) { \
+		if (ctx == NULL || vtable->fn == NULL) { \
 			return -1; \
 		} \
 		return vtable->fn(ctx, __VA_ARGS__); \
