@@ -14,6 +14,7 @@
 #include <assert.h>
 #include <sys/atomic.h>
 #include <ctype.h>
+#include <sys/printk_custom_format.h>
 #include <logging/log_frontend.h>
 
 LOG_MODULE_REGISTER(log);
@@ -78,10 +79,10 @@ static u32_t dummy_timestamp(void)
 }
 
 /**
- * @brief Count number of string format specifiers (%s).
+ * @brief Find all %s and %pZ format specifiers in a string.
  *
- * Result is stored as the mask (argument n is n'th bit). Bit is set if %s was
- * found.
+ * Result is stored as the mask (argument n is n'th bit). Bit is set if format
+ * specifier was found.
  *
  * @note Algorithm does not take into account complex format specifiers as they
  *	 hardly used in log messages and including them would significantly
@@ -93,7 +94,8 @@ static u32_t dummy_timestamp(void)
  *
  * @return Mask with %s format specifiers found.
  */
-static u32_t count_s(const char *str, u32_t nargs)
+static u32_t get_s_pZ_masks(const char *str, u32_t nargs,
+			    u32_t *s_mask, u32_t *pZ_mask)
 {
 	char curr;
 	bool arm = false;
@@ -106,8 +108,11 @@ static u32_t count_s(const char *str, u32_t nargs)
 		if (curr == '%') {
 			arm = !arm;
 		} else if (arm && isalpha(curr)) {
-			if (curr == 's') {
-				mask |= BIT(arg);
+			if (s_mask && curr == 's') {
+				*s_mask |= BIT(arg);
+			} else if (pZ_mask && (curr == 'p') &&
+					(*str++ == 'Z')) {
+				*pZ_mask |= BIT(arg);
 			}
 			arm = false;
 			arg++;
@@ -117,6 +122,34 @@ static u32_t count_s(const char *str, u32_t nargs)
 	return mask;
 }
 
+void log_free_arguments(struct log_msg *msg)
+{
+	int i;
+	u32_t nargs = log_msg_nargs_get(msg);
+	const char *str = log_msg_str_get(msg);
+	u32_t cust_format_mask = 0;
+	u32_t str_mask = 0;
+	u32_t mask = 1;
+
+	get_s_pZ_masks(str, nargs, &str_mask, &cust_format_mask);
+
+	if ((cust_format_mask | str_mask) == 0) {
+		return;
+	}
+
+	for (i = 0; i < nargs; ++i, mask <<= 1) {
+		if (cust_format_mask & mask) {
+			memobj_free((struct memobj *)log_msg_arg_get(msg, i));
+		} else if (str_mask & mask) {
+			void *buf = (void *)log_msg_arg_get(msg, i);
+
+			if (log_is_strdup(buf)) {
+				log_free(buf);
+			}
+		}
+	}
+}
+
 /**
  * @brief Check if address is in read only section.
  *
@@ -124,7 +157,7 @@ static u32_t count_s(const char *str, u32_t nargs)
  *
  * @return True if address identified within read only section.
  */
-static bool is_rodata(const void *addr)
+bool log_is_rodata(const void *addr)
 {
 #if defined(CONFIG_ARM) || defined(CONFIG_ARC) || defined(CONFIG_X86)
 	extern const char *_image_rodata_start[];
@@ -162,19 +195,19 @@ static void detect_missed_strdup(struct log_msg *msg)
 	u32_t idx;
 	const char *str;
 	const char *msg_str;
-	u32_t mask;
+	u32_t mask = 0;
 
 	if (!log_msg_is_std(msg)) {
 		return;
 	}
 
 	msg_str = log_msg_str_get(msg);
-	mask = count_s(msg_str, log_msg_nargs_get(msg));
+	get_s_pZ_masks(msg_str, log_msg_nargs_get(msg), &mask, NULL);
 
 	while (mask) {
 		idx = 31 - __builtin_clz(mask);
 		str = (const char *)log_msg_arg_get(msg, idx);
-		if (!is_rodata(str) && !log_is_strdup(str) &&
+		if (!log_is_rodata(str) && !log_is_strdup(str) &&
 			(str != log_strdup_fail_msg)) {
 			if (IS_ENABLED(CONFIG_ASSERT)) {
 				__ASSERT(0, ERR_MSG, idx, msg_str);
@@ -801,7 +834,7 @@ char *log_strdup(const char *str)
 	struct log_strdup_buf *dup;
 	int err;
 
-	if (IS_ENABLED(CONFIG_LOG_IMMEDIATE) || is_rodata(str)) {
+	if (IS_ENABLED(CONFIG_LOG_IMMEDIATE) || log_is_rodata(str)) {
 		return (char *)str;
 	}
 

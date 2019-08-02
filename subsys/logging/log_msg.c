@@ -70,21 +70,15 @@ static void cont_free(struct log_msg_cont *cont)
 	}
 }
 
+extern void log_free_arguments(struct log_msg *msg);
+
 static void msg_free(struct log_msg *msg)
 {
 	u32_t nargs = msg->hdr.params.std.nargs;
 
 	/* Free any transient string found in arguments. */
 	if (log_msg_is_std(msg) && nargs) {
-		int i;
-
-		for (i = 0; i < nargs; i++) {
-			void *buf = (void *)log_msg_arg_get(msg, i);
-
-			if (log_is_strdup(buf)) {
-				log_free(buf);
-			}
-		}
+		log_free_arguments(msg);
 	}
 
 	if (msg->hdr.params.generic.ext == 1) {

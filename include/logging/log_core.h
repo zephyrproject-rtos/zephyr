@@ -559,6 +559,14 @@ u32_t log_get_strdup_longest_string(void);
  */
 void log_dropped(void);
 
+/** @brief Check if address is in read only memory.
+ *
+ * @param addr Address.
+ *
+ * @return True if in read only memory, false otherwise.
+ */
+bool log_is_rodata(const void *addr);
+
 #ifdef __cplusplus
 }
 #endif

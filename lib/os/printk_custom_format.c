@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <sys/printk_custom_format.h>
+#include <logging/log_core.h>
 
 static void put(memobj_t *memobj, printk_custom_formatter_t func, u8_t flags,
 		u8_t *data, u32_t len)
@@ -18,15 +19,41 @@ static void put(memobj_t *memobj, printk_custom_formatter_t func, u8_t flags,
 		      (sizeof(printk_custom_formatter_t) + sizeof(u8_t) + len));
 }
 
+static void *log_mem_dup(u32_t len)
+{
+	int err;
+	memobj_t *memobj;
+	extern struct k_mem_slab log_msg_pool;
+
+	len += Z_PRINTK_CUST_FORMAT_OVERHEAD;
+	err = memobj_alloc(&log_msg_pool, &memobj, len, K_NO_WAIT);
+	if (err != 0) {
+		return NULL;
+	}
+
+	return memobj;
+}
+
 void *printk_cust_format_dup(u8_t *buf, void *data, u32_t size,
 			     printk_custom_formatter_t func)
 {
 	memobj_t *memobj;
+	bool just_ptr = buf || (IS_ENABLED(CONFIG_LOG) && log_is_rodata(data));
+	u32_t obj_size = just_ptr ? sizeof(data) : size;
+	void *obj_data = just_ptr ? &data : data;
+	u8_t flags = just_ptr ? PRINTK_CUST_FORMAT_PTR : 0;
 
-	__ASSERT_NO_MSG(buf);
-	memobj = memobjectize(buf, Z_PRINTK_CUST_FORMAT_SIZE(sizeof(void *)));
+	if (IS_ENABLED(CONFIG_LOG)) {
+		memobj = buf ?
+		  memobjectize(buf, Z_PRINTK_CUST_FORMAT_SIZE(sizeof(void *))) :
+		  log_mem_dup(obj_size);
+	} else {
+		__ASSERT_NO_MSG(buf);
+		memobj =
+		   memobjectize(buf, Z_PRINTK_CUST_FORMAT_SIZE(sizeof(void *)));
+	}
 
-	put(memobj, func, PRINTK_CUST_FORMAT_PTR, &data, sizeof(data));
+	put(memobj, func, flags, obj_data, obj_size);
 
 	return memobj;
 }
