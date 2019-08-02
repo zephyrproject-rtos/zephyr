@@ -31,8 +31,9 @@ static int pinmux_xec_set(struct device *dev, u32_t pin, u32_t func)
 	u32_t mask = 0;
 
 	/* Validate pin number in terms of current port */
-	if ((valid_ctrl_masks[config->port_num] & BIT(pin)) == 0)
+	if ((valid_ctrl_masks[config->port_num] & BIT(pin)) == 0) {
 		return -EINVAL;
+	}
 
 	mask |= MCHP_GPIO_CTRL_BUFT_MASK | MCHP_GPIO_CTRL_MUX_MASK;
 
@@ -81,8 +82,9 @@ static int pinmux_xec_get(struct device *dev, u32_t pin, u32_t *func)
 	__IO u32_t *current_pcr1;
 
 	/* Validate pin number in terms of current port */
-	if ((valid_ctrl_masks[config->port_num] & BIT(pin)) == 0)
+	if ((valid_ctrl_masks[config->port_num] & BIT(pin)) == 0) {
 		return -EINVAL;
+	}
 
 	current_pcr1 = config->pcr1_base + pin;
 	*func = *current_pcr1 & (MCHP_GPIO_CTRL_BUFT_MASK
