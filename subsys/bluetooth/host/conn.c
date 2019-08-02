@@ -1929,6 +1929,7 @@ struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer,
 				  const struct bt_le_conn_param *param)
 {
 	struct bt_conn *conn;
+	bt_addr_le_t dst;
 
 	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
 		return NULL;
@@ -1957,16 +1958,21 @@ struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer,
 		}
 	}
 
-	conn = bt_conn_add_le(peer);
+	if (peer->type == BT_ADDR_LE_PUBLIC_ID ||
+	    peer->type == BT_ADDR_LE_RANDOM_ID) {
+		bt_addr_le_copy(&dst, peer);
+		dst.type -= BT_ADDR_LE_PUBLIC_ID;
+	} else {
+		bt_addr_le_copy(&dst, bt_lookup_id_addr(BT_ID_DEFAULT, peer));
+	}
+
+	conn = bt_conn_add_le(&dst);
 	if (!conn) {
 		return NULL;
 	}
 
 	/* Only default identity supported for now */
 	conn->id = BT_ID_DEFAULT;
-
-	/* Set initial address - will be updated later if necessary. */
-	bt_addr_le_copy(&conn->le.resp_addr, peer);
 
 	bt_conn_set_param_le(conn, param);
 

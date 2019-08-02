@@ -356,7 +356,7 @@ int bt_hci_cmd_send_sync(u16_t opcode, struct net_buf *buf,
 }
 
 #if defined(CONFIG_BT_OBSERVER) || defined(CONFIG_BT_CONN)
-static const bt_addr_le_t *find_id_addr(u8_t id, const bt_addr_le_t *addr)
+const bt_addr_le_t *bt_lookup_id_addr(u8_t id, const bt_addr_le_t *addr)
 {
 	if (IS_ENABLED(CONFIG_BT_SMP)) {
 		struct bt_keys *keys;
@@ -703,8 +703,8 @@ static int hci_le_create_conn(const struct bt_conn *conn)
 	cp->scan_interval = sys_cpu_to_le16(BT_GAP_SCAN_FAST_INTERVAL);
 	cp->scan_window = cp->scan_interval;
 
-	bt_addr_le_copy(&cp->peer_addr, &conn->le.resp_addr);
-	cp->own_addr_type = conn->le.init_addr.type;
+	bt_addr_le_copy(&cp->peer_addr, &conn->le.dst);
+	cp->own_addr_type = conn->le.dst.type;
 	cp->conn_interval_min = sys_cpu_to_le16(conn->le.interval_min);
 	cp->conn_interval_max = sys_cpu_to_le16(conn->le.interval_max);
 	cp->conn_latency = sys_cpu_to_le16(conn->le.latency);
@@ -1059,6 +1059,18 @@ static void enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 		}
 	}
 
+	if (conn->role == BT_HCI_ROLE_MASTER) {
+		bt_addr_le_copy(&conn->le.resp_addr, &peer_addr);
+
+		if (IS_ENABLED(CONFIG_BT_PRIVACY)) {
+			bt_addr_copy(&conn->le.init_addr.a, &evt->local_rpa);
+			conn->le.init_addr.type = BT_ADDR_LE_RANDOM;
+		} else {
+			bt_addr_le_copy(&conn->le.init_addr,
+					&bt_dev.id_addr[conn->id]);
+		}
+	}
+
 	bt_conn_set_state(conn, BT_CONN_CONNECTED);
 
 	/*
@@ -1135,9 +1147,9 @@ static void le_legacy_conn_complete(struct net_buf *buf)
 	}
 
 	if (evt->role == BT_HCI_ROLE_SLAVE) {
-		id_addr = find_id_addr(bt_dev.adv_id, &enh.peer_addr);
+		id_addr = bt_lookup_id_addr(bt_dev.adv_id, &enh.peer_addr);
 	} else {
-		id_addr = find_id_addr(BT_ID_DEFAULT, &enh.peer_addr);
+		id_addr = bt_lookup_id_addr(BT_ID_DEFAULT, &enh.peer_addr);
 	}
 
 	if (id_addr != &enh.peer_addr) {
@@ -1420,23 +1432,17 @@ static void check_pending_conn(const bt_addr_le_t *id_addr,
 		if (le_set_private_addr(BT_ID_DEFAULT)) {
 			goto failed;
 		}
-
-		bt_addr_le_copy(&conn->le.init_addr, &bt_dev.random_addr);
 	} else {
-		const bt_addr_le_t *addr = &bt_dev.id_addr[conn->id];
+		const bt_addr_le_t *own_addr = &bt_dev.id_addr[conn->id];
 
 		/* If Static Random address is used as Identity address we
 		 * need to restore it before creating connection. Otherwise
 		 * NRPA used for active scan could be used for connection.
 		 */
-		if (addr->type == BT_ADDR_LE_RANDOM) {
-			set_random_address(&addr->a);
+		if (own_addr->type == BT_ADDR_LE_RANDOM) {
+			set_random_address(&own_addr->a);
 		}
-
-		bt_addr_le_copy(&conn->le.init_addr, addr);
 	}
-
-	bt_addr_le_copy(&conn->le.resp_addr, addr);
 
 	if (hci_le_create_conn(conn)) {
 		goto failed;
@@ -3419,8 +3425,8 @@ static void le_adv_report(struct net_buf *buf)
 			id_addr.type -= BT_ADDR_LE_PUBLIC_ID;
 		} else {
 			bt_addr_le_copy(&id_addr,
-					find_id_addr(bt_dev.adv_id,
-						     &info->addr));
+					bt_lookup_id_addr(bt_dev.adv_id,
+							  &info->addr));
 		}
 
 		if (scan_dev_found_cb) {

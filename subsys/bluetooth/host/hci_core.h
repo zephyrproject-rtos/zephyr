@@ -186,6 +186,7 @@ bool bt_le_conn_params_valid(const struct bt_le_conn_param *param);
 int bt_le_scan_update(bool fast_scan);
 
 bool bt_addr_le_is_bonded(u8_t id, const bt_addr_le_t *addr);
+const bt_addr_le_t *bt_lookup_id_addr(u8_t id, const bt_addr_le_t *addr);
 
 int bt_send(struct net_buf *buf);
 
