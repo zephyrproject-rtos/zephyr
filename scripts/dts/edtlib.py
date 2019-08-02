@@ -173,10 +173,10 @@ class EDT:
 
         self._compat2binding = {}
         for binding_path in self._binding_paths:
-            compat = _binding_compat(binding_path)
-            if compat in dt_compats:
+            constraint = _binding_constraint(binding_path)
+            if constraint in dt_compats:
                 binding = _load_binding(binding_path)
-                self._compat2binding[compat, _binding_bus(binding)] = \
+                self._compat2binding[constraint, _binding_bus(binding)] = \
                     (binding, binding_path)
 
     def _binding_include(self, loader, node):
@@ -1047,8 +1047,8 @@ def _binding_paths(bindings_dirs):
     return binding_paths
 
 
-def _binding_compat(binding_path):
-    # Returns the compatible string specified in the binding at 'binding_path'.
+def _binding_constraint(binding_path):
+    # Returns the constraint string specified in the binding at 'binding_path'.
     # Uses a regex to avoid having to parse the bindings, which is slow when
     # done for all bindings.
 
