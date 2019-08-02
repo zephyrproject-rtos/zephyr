@@ -287,9 +287,10 @@ class Device:
       Only enabled devices (status != "disabled") are counted. 'instance_no' is
       meaningless for disabled devices.
 
-    matching_compat:
-      The 'compatible' string for the binding that matched the device, or
-      None if the device has no binding
+    matching_constraint:
+      The constraint string for the binding that matched the device (typically
+      the 'compatible' string that matched), or None if the device has no
+      binding
 
     description:
       The description string from the binding file for the device, or None if
@@ -423,7 +424,7 @@ class Device:
                  .format(self))
 
         controller = self.parent.parent
-        if controller.matching_compat == "soc-nv-flash":
+        if controller.matching_constraint == "soc-nv-flash":
             return controller.parent
         return controller
 
@@ -448,7 +449,7 @@ class Device:
         self._set_instance_no()
 
     def _init_binding(self):
-        # Initializes Device.matching_compat, Device._binding, and
+        # Initializes Device.matching_constraint, Device._binding, and
         # Device.binding_path.
         #
         # Device._binding holds the data from the device's binding file, in the
@@ -466,7 +467,7 @@ class Device:
             for compat in self.compats:
                 if (compat, bus) in self.edt._compat2binding:
                     # Binding found
-                    self.matching_compat = compat
+                    self.matching_constraint = compat
                     self._binding, self.binding_path = \
                         self.edt._compat2binding[compat, bus]
 
@@ -492,11 +493,11 @@ class Device:
                 if self.description:
                     self.description = self.description.rstrip()
 
-                self.matching_compat = self.parent.matching_compat
+                self.matching_constraint = self.parent.matching_constraint
                 return
 
         # No binding found
-        self.matching_compat = self._binding = self.binding_path = \
+        self.matching_constraint = self._binding = self.binding_path = \
             self.description = None
 
     def _bus_from_parent_binding(self):

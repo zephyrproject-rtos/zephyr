@@ -46,15 +46,15 @@ def main():
     active_compats = set()
 
     for dev in edt.devices:
-        if dev.enabled and dev.matching_compat:
+        if dev.enabled and dev.matching_constraint:
             # Skip 'fixed-partitions' devices since they are handled by
             # write_flash() and would generate extra spurious #defines
-            if dev.matching_compat == "fixed-partitions":
+            if dev.matching_constraint == "fixed-partitions":
                 continue
 
             out_comment("Device tree node: " + dev.path)
             out_comment("Binding (compatible = {}): {}".format(
-                            dev.matching_compat, dev.binding_path),
+                            dev.matching_constraint, dev.binding_path),
                         blank_before=False)
             out_comment("Binding description: " + dev.description,
                         blank_before=False)
@@ -248,9 +248,9 @@ def dev_ident(dev):
 
     if dev.bus:
         ident += "{}_{:X}_".format(
-            str2ident(dev.parent.matching_compat), dev.parent.unit_addr)
+            str2ident(dev.parent.matching_constraint), dev.parent.unit_addr)
 
-    ident += "{}_".format(str2ident(dev.matching_compat))
+    ident += "{}_".format(str2ident(dev.matching_constraint))
 
     if dev.unit_addr is not None:
         ident += "{:X}".format(dev.unit_addr)
@@ -275,10 +275,10 @@ def dev_path_aliases(dev):
     # registered for the device, in the /aliases node. Used when building e.g.
     # macro names.
 
-    if dev.matching_compat is None:
+    if dev.matching_constraint is None:
         return []
 
-    compat_s = str2ident(dev.matching_compat)
+    compat_s = str2ident(dev.matching_constraint)
 
     aliases = []
     for alias in dev.aliases:
