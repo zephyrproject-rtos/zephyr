@@ -31,6 +31,10 @@ LOG_MODULE_REGISTER(spi_ll_stm32);
  * error flag, because STM32F1 SoCs do not support it and  STM32CUBE
  * for F1 family defines an unused LL_SPI_SR_FRE.
  */
+#ifdef CONFIG_SOC_SERIES_STM32MP1X
+#define SPI_STM32_ERR_MSK (LL_SPI_SR_UDR | LL_SPI_SR_CRCE | LL_SPI_SR_MODF | \
+			   LL_SPI_SR_OVR | LL_SPI_SR_TIFRE)
+#else
 #if defined(LL_SPI_SR_UDR)
 #define SPI_STM32_ERR_MSK (LL_SPI_SR_UDR | LL_SPI_SR_CRCERR | LL_SPI_SR_MODF | \
 			   LL_SPI_SR_OVR | LL_SPI_SR_FRE)
@@ -40,6 +44,7 @@ LOG_MODULE_REGISTER(spi_ll_stm32);
 #else
 #define SPI_STM32_ERR_MSK (LL_SPI_SR_CRCERR | LL_SPI_SR_MODF | LL_SPI_SR_OVR)
 #endif
+#endif /* CONFIG_SOC_SERIES_STM32MP1X */
 
 /* Value to shift out when no application data needs transmitting. */
 #define SPI_STM32_TX_NOP 0x00
@@ -93,6 +98,19 @@ static void spi_stm32_shift_m(SPI_TypeDef *spi, struct spi_stm32_data *data)
 	while (!ll_func_tx_is_empty(spi)) {
 		/* NOP */
 	}
+
+#ifdef CONFIG_SOC_SERIES_STM32MP1X
+	/* With the STM32MP1, if the device is the SPI master, we need to enable
+	 * the start of the transfer with LL_SPI_StartMasterTransfer(spi)
+	 */
+	if (LL_SPI_GetMode(spi) == LL_SPI_MODE_MASTER) {
+		LL_SPI_StartMasterTransfer(spi);
+		while (!LL_SPI_IsActiveMasterTransfer(spi)) {
+			/* NOP */
+		}
+	}
+#endif
+
 	if (SPI_WORD_SIZE_GET(data->ctx.config->operation) == 8) {
 		LL_SPI_TransmitData8(spi, tx_frame);
 		/* The update is ignored if TX is off. */
