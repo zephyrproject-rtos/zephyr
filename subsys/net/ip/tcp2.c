@@ -670,7 +670,7 @@ static void tcp_out(struct tcp *conn, u8_t flags, ...)
 
 	if (PSH & flags) {
 		size_t len = conn->snd->len;
-		struct net_buf *buf = tcp_win_pop(conn->snd, len);
+		struct net_buf *buf = tcp_win_peek(conn->snd, len);
 
 		{
 			va_list ap;
@@ -792,7 +792,8 @@ next_state:
 			break;
 		}
 		if (FL(&fl, ==, ACK, th_seq(th) == conn->ack)) {
-			/* tcp_win_clear(&conn->snd); */
+			tcp_win_free(conn->snd);
+			conn->snd = tcp_win_new("SND");
 		}
 		break; /* TODO: Catch all the rest here */
 	case TCP_CLOSE_WAIT:
