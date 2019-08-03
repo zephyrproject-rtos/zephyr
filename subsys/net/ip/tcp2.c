@@ -388,6 +388,28 @@ static struct net_buf *tcp_win_pop(struct tcp_win *w, size_t len)
 	return out;
 }
 
+static struct net_buf *tcp_win_peek(struct tcp_win *w, size_t len)
+{
+	struct net_buf *buf, *out = tcp_nbuf_alloc(&tcp_nbufs, len);
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&w->bufs, buf, next) {
+
+		if (len <= 0) {
+			break;
+		}
+
+		memcpy(net_buf_add(out, buf->len), buf->data, buf->len);
+
+		len -= buf->len;
+	}
+
+	tcp_assert(len == 0, "Unfulfilled request, len: %zu", len);
+
+	tcp_dbg("%s len=%zu", w->name, net_buf_frags_len(out));
+
+	return out;
+}
+
 static const char *tcp_conn_state(struct tcp *conn, struct net_pkt *pkt)
 {
 #define BUF_SIZE 64
