@@ -158,7 +158,6 @@ static int spi_nor_read(struct device *dev, off_t addr, void *dest,
 	struct spi_nor_data *const driver_data = dev->driver_data;
 	const struct spi_nor_config *params = dev->config->config_info;
 	int ret;
-	int to_read;
 
 	/* should be between 0 and flash size */
 	if ((addr < 0) || ((addr + size) > params->size)) {
@@ -169,26 +168,10 @@ static int spi_nor_read(struct device *dev, off_t addr, void *dest,
 
 	spi_nor_wait_until_ready(dev);
 
-	while (size) {
-		to_read = size;
-		if (size > SPI_NOR_PAGE_SIZE) {
-			to_read = SPI_NOR_PAGE_SIZE;
-		}
-
-		ret = spi_nor_cmd_addr_read(dev, SPI_NOR_CMD_READ, addr,
-					    dest, to_read);
-		if (ret != 0) {
-			SYNC_UNLOCK();
-			return ret;
-		}
-
-		size -= to_read;
-		addr += to_read;
-		dest = (u8_t *)dest + to_read;
-	}
+	ret = spi_nor_cmd_addr_read(dev, SPI_NOR_CMD_READ, addr, dest, size);
 
 	SYNC_UNLOCK();
-	return 0;
+	return ret;
 }
 
 static int spi_nor_write(struct device *dev, off_t addr, const void *src,
