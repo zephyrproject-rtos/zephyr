@@ -12,6 +12,10 @@
 #include <xtensa/config/core.h>
 #include <xtensa/hal.h>
 
+#define LOG_LEVEL LOG_LEVEL_DBG
+#include <logging/log.h>
+LOG_MODULE_REGISTER(main);
+
 #define CONFIG_TRACE 1
 
 /* SRAM window 0 FW "registers" */
@@ -79,8 +83,15 @@ static inline void shim_write(uint32_t reg, uint32_t val)
 
 void main(void)
 {
+	int i = 0;
+
 	mailbox_sw_reg_write(SRAM_REG_ROM_STATUS, 0xabbac0fe);
 #if 0
 	platform_trace_point(0xabbac0ffe);
 #endif
+
+	do {
+		LOG_DBG("iteration %d", i++);
+	} while (true);
+
 }
