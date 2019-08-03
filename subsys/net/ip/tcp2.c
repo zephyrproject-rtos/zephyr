@@ -943,6 +943,7 @@ bool tp_input(struct net_pkt *pkt)
 			size_t len = tp_str_to_hex(data_to_send,
 						sizeof(data_to_send), tp->data);
 			conn = tcp_conn_new(pkt);
+			conn->seq = tp->seq;
 			if (len > 0) {
 				tcp_win_push(conn->snd, data_to_send, len);
 			}
