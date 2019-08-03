@@ -22,19 +22,34 @@
 
 #include "fs_impl.h"
 
-struct lfs_file_cache {
+struct lfs_file_data {
 	struct lfs_file file;
 	struct lfs_file_config config;
-	u8_t cache[CONFIG_FS_LITTLEFS_CACHE_SIZE];
+	struct k_mem_block cache_block;
 };
 
-#define LFS_FILEP(fp) (&((struct lfs_file_cache *)(fp->filep))->file)
+#define LFS_FILEP(fp) (&((struct lfs_file_data *)(fp->filep))->file)
 
 /* Global memory pool for open files and dirs */
-K_MEM_SLAB_DEFINE(lfs_file_pool, sizeof(struct lfs_file_cache),
+K_MEM_SLAB_DEFINE(file_data_pool, sizeof(struct lfs_file_data),
 		  CONFIG_FS_LITTLEFS_NUM_FILES, 4);
 K_MEM_SLAB_DEFINE(lfs_dir_pool, sizeof(struct lfs_dir),
 		  CONFIG_FS_LITTLEFS_NUM_DIRS, 4);
+
+/* If not explicitly customizing provide a default that's appropriate
+ * based on other configuration options.
+ */
+#ifndef CONFIG_FS_LITTLEFS_FC_MEM_POOL
+BUILD_ASSERT(CONFIG_FS_LITTLEFS_CACHE_SIZE >= 4);
+#define CONFIG_FS_LITTLEFS_FC_MEM_POOL_MIN_SIZE 4
+#define CONFIG_FS_LITTLEFS_FC_MEM_POOL_MAX_SIZE CONFIG_FS_LITTLEFS_CACHE_SIZE
+#define CONFIG_FS_LITTLEFS_FC_MEM_POOL_NUM_BLOCKS CONFIG_FS_LITTLEFS_NUM_FILES
+#endif
+
+K_MEM_POOL_DEFINE(file_cache_pool,
+		  CONFIG_FS_LITTLEFS_FC_MEM_POOL_MIN_SIZE,
+		  CONFIG_FS_LITTLEFS_FC_MEM_POOL_MAX_SIZE,
+		  CONFIG_FS_LITTLEFS_FC_MEM_POOL_NUM_BLOCKS, 4);
 
 static inline void fs_lock(struct fs_littlefs *fs)
 {
@@ -154,36 +169,53 @@ static int lfs_api_sync(const struct lfs_config *c)
 	return LFS_ERR_OK;
 }
 
+static void release_file_data(struct fs_file_t *fp)
+{
+	struct lfs_file_data *fdp = fp->filep;
+
+	if (fdp->config.buffer) {
+		k_mem_pool_free(&fdp->cache_block);
+	}
+
+	k_mem_slab_free(&file_data_pool, &fp->filep);
+	fp->filep = NULL;
+}
+
 static int littlefs_open(struct fs_file_t *fp, const char *path)
 {
 	struct fs_littlefs *fs = fp->mp->fs_data;
+	struct lfs *lfs = &fs->lfs;
 	int flags = LFS_O_CREAT | LFS_O_RDWR;
+	int ret;
 
-	if (k_mem_slab_alloc(&lfs_file_pool, &fp->filep, K_NO_WAIT) != 0) {
-		return -ENOMEM;
+	ret = k_mem_slab_alloc(&file_data_pool, &fp->filep, K_NO_WAIT);
+	if (ret != 0) {
+		return ret;
 	}
+
+	struct lfs_file_data *fdp = fp->filep;
+
+	memset(fdp, 0, sizeof(*fdp));
+
+	ret = k_mem_pool_alloc(&file_cache_pool, &fdp->cache_block,
+			       lfs->cfg->cache_size, K_NO_WAIT);
+	LOG_DBG("alloc %u file cache: %d", lfs->cfg->cache_size, ret);
+	if (ret != 0) {
+		goto out;
+	}
+
+	fdp->config.buffer = fdp->cache_block.data;
+	path = fs_impl_strip_prefix(path, fp->mp);
 
 	fs_lock(fs);
 
-	/* Use cache inside the slab allocation, instead of letting
-	 * littlefs allocate it from the heap.
-	 */
-	struct lfs_file_cache *fc = fp->filep;
-
-	fc->config = (struct lfs_file_config) {
-		.buffer = fc->cache,
-	};
-	memset(&fc->file, 0, sizeof(struct lfs_file));
-
-	path = fs_impl_strip_prefix(path, fp->mp);
-
-	int ret = lfs_file_opencfg(&fs->lfs, &fc->file,
-				   path, flags, &fc->config);
+	ret = lfs_file_opencfg(&fs->lfs, &fdp->file,
+			       path, flags, &fdp->config);
 
 	fs_unlock(fs);
-
+out:
 	if (ret < 0) {
-		k_mem_slab_free(&lfs_file_pool, &fp->filep);
+		release_file_data(fp);
 	}
 
 	return lfs_to_errno(ret);
@@ -197,9 +229,10 @@ static int littlefs_close(struct fs_file_t *fp)
 
 	int ret = lfs_file_close(&fs->lfs, LFS_FILEP(fp));
 
-	k_mem_slab_free(&lfs_file_pool, &fp->filep);
-
 	fs_unlock(fs);
+
+	release_file_data(fp);
+
 	return lfs_to_errno(ret);
 }
 
@@ -542,24 +575,63 @@ static int littlefs_mount(struct fs_mount_t *mountp)
 	BUILD_ASSERT((CONFIG_FS_LITTLEFS_CACHE_SIZE
 		      % CONFIG_FS_LITTLEFS_PROG_SIZE) == 0);
 
-	lfs_size_t read_size = CONFIG_FS_LITTLEFS_READ_SIZE;
-	lfs_size_t prog_size = CONFIG_FS_LITTLEFS_PROG_SIZE;
-	lfs_size_t block_size = get_block_size(fs->area);
-	s32_t block_cycles = CONFIG_FS_LITTLEFS_BLOCK_CYCLES;
-	lfs_size_t cache_size = CONFIG_FS_LITTLEFS_CACHE_SIZE;
-	lfs_size_t lookahead_size = CONFIG_FS_LITTLEFS_LOOKAHEAD_SIZE;
+	struct lfs_config *lcp = &fs->cfg;
 
+	lfs_size_t read_size = lcp->read_size;
+
+	if (read_size == 0) {
+		read_size = CONFIG_FS_LITTLEFS_READ_SIZE;
+	}
+
+	lfs_size_t prog_size = lcp->prog_size;
+
+	if (prog_size == 0) {
+		prog_size = CONFIG_FS_LITTLEFS_PROG_SIZE;
+	}
+
+	/* Yes, you can override block size. */
+	lfs_size_t block_size = lcp->block_size;
+
+	if (block_size == 0) {
+		block_size = get_block_size(fs->area);
+	}
+
+	s32_t block_cycles = lcp->block_cycles;
+
+	if (block_cycles == 0) {
+		block_cycles = CONFIG_FS_LITTLEFS_BLOCK_CYCLES;
+	}
 	if (block_cycles <= 0) {
 		/* Disable leveling (littlefs v2.1+ semantics) */
 		block_cycles = -1;
 	}
 
+	lfs_size_t cache_size = lcp->cache_size;
+
+	if (cache_size == 0) {
+		cache_size = CONFIG_FS_LITTLEFS_CACHE_SIZE;
+	}
+
+	lfs_size_t lookahead_size = lcp->lookahead_size;
+
+	if (lookahead_size == 0) {
+		lookahead_size = CONFIG_FS_LITTLEFS_LOOKAHEAD_SIZE;
+	}
+
+
+	/* No, you don't get to override this. */
 	lfs_size_t block_count = fs->area->fa_size / block_size;
 
-	LOG_DBG("FS at %s is %u 0x%x-byte blocks with %u cycle", dev->config->name,
+	LOG_INF("FS at %s:0x%x is %u 0x%x-byte blocks with %u cycle",
+		dev->config->name, (u32_t)fs->area->fa_off,
 		block_count, block_size, block_cycles);
-	LOG_DBG("sizes: rd %u ; pr %u ; ca %u ; la %u",
+	LOG_INF("sizes: rd %u ; pr %u ; ca %u ; la %u",
 		read_size, prog_size, cache_size, lookahead_size);
+
+	__ASSERT_NO_MSG(prog_size != 0);
+	__ASSERT_NO_MSG(read_size != 0);
+	__ASSERT_NO_MSG(cache_size != 0);
+	__ASSERT_NO_MSG(block_size != 0);
 
 	__ASSERT((fs->area->fa_size % block_size) == 0,
 		 "partition size must be multiple of block size");
@@ -568,24 +640,19 @@ static int littlefs_mount(struct fs_mount_t *mountp)
 	__ASSERT((block_size % cache_size) == 0,
 		 "cache size incompatible with block size");
 
-	/* Build littlefs config */
-	fs->cfg = (struct lfs_config) {
-		.context = (void *)fs->area,
-		.read = lfs_api_read,
-		.prog = lfs_api_prog,
-		.erase = lfs_api_erase,
-		.sync = lfs_api_sync,
-		.read_size = read_size,
-		.prog_size = prog_size,
-		.block_size = block_size,
-		.block_count = block_count,
-		.block_cycles = block_cycles,
-		.cache_size = cache_size,
-		.lookahead_size = lookahead_size,
-		.read_buffer = fs->read_buffer,
-		.prog_buffer = fs->prog_buffer,
-		.lookahead_buffer = fs->lookahead_buffer
-	};
+	/* Set the validated/defaulted values. */
+	lcp->context = (void *)fs->area;
+	lcp->read = lfs_api_read;
+	lcp->prog = lfs_api_prog;
+	lcp->erase = lfs_api_erase;
+	lcp->sync = lfs_api_sync;
+	lcp->read_size = read_size;
+	lcp->prog_size = prog_size;
+	lcp->block_size = block_size;
+	lcp->block_count = block_count;
+	lcp->block_cycles = block_cycles;
+	lcp->cache_size = cache_size;
+	lcp->lookahead_size = lookahead_size;
 
 	/* Mount it, formatting if needed. */
 	ret = lfs_mount(&fs->lfs, &fs->cfg);

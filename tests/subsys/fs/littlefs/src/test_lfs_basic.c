@@ -409,6 +409,70 @@ static int verify_goodbye(const struct fs_mount_t *mp)
 	return TC_PASS;
 }
 
+static int check_medium(void)
+{
+	struct fs_mount_t *mp = &testfs_medium_mnt;
+	struct fs_statvfs stat;
+
+	zassert_equal(clear_partition(mp), TC_PASS,
+		      "clear partition failed");
+
+	zassert_equal(fs_mount(mp), 0,
+		      "medium mount failed");
+
+	zassert_equal(fs_statvfs(mp->mnt_point, &stat), 0,
+		      "statvfs failed");
+
+	TC_PRINT("%s: bsize %lu ; frsize %lu ; blocks %lu ; bfree %lu\n",
+		 mp->mnt_point,
+		 stat.f_bsize, stat.f_frsize, stat.f_blocks, stat.f_bfree);
+	zassert_equal(stat.f_bsize, MEDIUM_IO_SIZE,
+		      "bsize fail");
+	zassert_equal(stat.f_frsize, 4096,
+		      "frsize fail");
+	zassert_equal(stat.f_blocks, 240,
+		      "blocks fail");
+	zassert_equal(stat.f_bfree, stat.f_blocks - 2U,
+		      "bfree fail");
+
+	zassert_equal(fs_unmount(mp), 0,
+		      "medium unmount failed");
+
+	return TC_PASS;
+}
+
+static int check_large(void)
+{
+	struct fs_mount_t *mp = &testfs_large_mnt;
+	struct fs_statvfs stat;
+
+	zassert_equal(clear_partition(mp), TC_PASS,
+		      "clear partition failed");
+
+	zassert_equal(fs_mount(mp), 0,
+		      "large mount failed");
+
+	zassert_equal(fs_statvfs(mp->mnt_point, &stat), 0,
+		      "statvfs failed");
+
+	TC_PRINT("%s: bsize %lu ; frsize %lu ; blocks %lu ; bfree %lu\n",
+		 mp->mnt_point,
+		 stat.f_bsize, stat.f_frsize, stat.f_blocks, stat.f_bfree);
+	zassert_equal(stat.f_bsize, LARGE_IO_SIZE,
+		      "bsize fail");
+	zassert_equal(stat.f_frsize, 32768,
+		      "frsize fail");
+	zassert_equal(stat.f_blocks, 96,
+		      "blocks fail");
+	zassert_equal(stat.f_bfree, stat.f_blocks - 2U,
+		      "bfree fail");
+
+	zassert_equal(fs_unmount(mp), 0,
+		      "large unmount failed");
+
+	return TC_PASS;
+}
+
 void test_lfs_basic(void)
 {
 	struct fs_mount_t *mp = &testfs_small_mnt;
@@ -457,4 +521,11 @@ void test_lfs_basic(void)
 
 	zassert_equal(fs_unmount(mp), 0,
 		      "unmount2 small failed");
+
+	zassert_equal(check_medium(), TC_PASS,
+		      "check medium failed");
+
+	zassert_equal(check_large(), TC_PASS,
+		      "check large failed");
+
 }

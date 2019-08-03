@@ -18,6 +18,14 @@ extern struct fs_mount_t testfs_small_mnt;
 extern struct fs_mount_t testfs_medium_mnt;
 extern struct fs_mount_t testfs_large_mnt;
 
+#define MEDIUM_IO_SIZE 64
+#define MEDIUM_CACHE_SIZE 256
+#define MEDIUM_LOOKAHEAD_SIZE 64
+
+#define LARGE_IO_SIZE 256
+#define LARGE_CACHE_SIZE 1024
+#define LARGE_LOOKAHEAD_SIZE 128
+
 /** Wipe all data from the flash partition associated with the given
  * mount point.
  *
