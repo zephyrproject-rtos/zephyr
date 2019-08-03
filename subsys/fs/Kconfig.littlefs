@@ -1,0 +1,95 @@
+#
+# Copyright (c) 2019 Bolt Innovation Management, LLC
+# Copyright (c) 2019 Peter Bigot Consulting, LLC
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menu "LittleFS Settings"
+	visible if FILE_SYSTEM_LITTLEFS
+
+config FS_LITTLEFS_NUM_FILES
+	int "Maximum number of opened files"
+	default 4
+	help
+	  This is a global maximum across all mounted littlefs filesystems.
+
+config FS_LITTLEFS_NUM_DIRS
+	int "Maximum number of opened directories"
+	default 4
+	help
+	  This is a global maximum across all mounted littlefs filesystems.
+
+config FS_LITTLEFS_READ_SIZE
+	int "Minimum size of a block read"
+	default 16
+	help
+	  All read operations will be a multiple of this value.
+
+config FS_LITTLEFS_PROG_SIZE
+	int "Minimum size of a block program"
+	default 16
+	help
+	  All program operations will be a multiple of this value.
+
+config FS_LITTLEFS_CACHE_SIZE
+	int "Size of block caches in bytes"
+	default 64
+	help
+	  Each cache buffers a portion of a block in RAM.  The littlefs
+	  needs a read cache, a program cache, and one additional cache
+	  per file. Larger caches can improve performance by storing
+	  more data and reducing the number of disk accesses. Must be a
+	  multiple of the read and program sizes of the underlying flash
+	  device, and a factor of the block size.
+
+config FS_LITTLEFS_LOOKAHEAD_SIZE
+	int "Size of lookahead buffer in bytes"
+	default 32
+	help
+	  A larger lookahead buffer increases the number of blocks found
+	  during an allocation pass. The lookahead buffer is stored as a
+	  compact bitmap, so each byte of RAM can track 8 blocks. Must
+	  be a multiple of 8.
+
+config FS_LITTLEFS_BLOCK_CYCLES
+	int "Number of erase cycles before moving data to another block"
+	default 512
+	help
+	  For dynamic wear leveling, the number of erase cycles before data
+	  is moved to another block.  Set to a non-positive value to
+	  disable leveling.
+
+menuconfig FS_LITTLEFS_FC_MEM_POOL
+	bool "Enable flexible file cache sizes for littlefs"
+	help
+	  littlefs requires a per-file buffer to cache data.  For
+	  applications that use the default configuration parameters a
+	  memory slab is reserved to support up to
+	  FS_LITTLE_FS_NUM_FILES blocks of FS_LITTLEFS_CACHE_SIZE bytes.
+
+	  When applications customize littlefs configurations and
+	  support different cache sizes for different partitions this
+	  preallocation is inadequate.
+
+	  Select this feature to enable a memory pool allocator for
+	  littlefs file caches.
+
+if FS_LITTLEFS_FC_MEM_POOL
+
+config FS_LITTLEFS_FC_MEM_POOL_MIN_SIZE
+	int "Minimum block size for littlefs file cache memory pool"
+	default 16
+
+config FS_LITTLEFS_FC_MEM_POOL_MAX_SIZE
+	int "Maximum block size for littlefs file cache memory pool"
+	default 1024
+
+config FS_LITTLEFS_FC_MEM_POOL_NUM_BLOCKS
+	int "Number of maximum sized blocks in littlefs file cache memory pool"
+	default 2
+
+endif # FS_LITTLEFS_FC_MEM_POOL
+
+endmenu
+

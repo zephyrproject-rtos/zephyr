@@ -9,26 +9,41 @@
 #include <storage/flash_map.h>
 #include "testfs_lfs.h"
 
-static struct fs_littlefs small_data;
+FS_LITTLEFS_DECLARE_DEFAULT_CONFIG(small);
 struct fs_mount_t testfs_small_mnt = {
 	.type = FS_LITTLEFS,
-	.fs_data = &small_data,
+	.fs_data = &small,
 	.storage_dev = (void *)DT_FLASH_AREA_SMALL_ID,
 	.mnt_point = TESTFS_MNT_POINT_SMALL,
 };
 
-static struct fs_littlefs medium_data;
+FS_LITTLEFS_DECLARE_CUSTOM_CONFIG(medium, MEDIUM_IO_SIZE, MEDIUM_IO_SIZE,
+				  MEDIUM_CACHE_SIZE, MEDIUM_LOOKAHEAD_SIZE);
 struct fs_mount_t testfs_medium_mnt = {
 	.type = FS_LITTLEFS,
-	.fs_data = &medium_data,
+	.fs_data = &medium,
 	.storage_dev = (void *)DT_FLASH_AREA_MEDIUM_ID,
 	.mnt_point = TESTFS_MNT_POINT_MEDIUM,
 };
 
-static struct fs_littlefs large_data;
+static u8_t large_read_buffer[LARGE_CACHE_SIZE];
+static u8_t large_prog_buffer[LARGE_CACHE_SIZE];
+static u32_t large_lookahead_buffer[LARGE_LOOKAHEAD_SIZE / 4U];
+static struct fs_littlefs large = {
+	.cfg = {
+		.read_size = LARGE_IO_SIZE,
+		.prog_size = LARGE_IO_SIZE,
+		.cache_size = LARGE_CACHE_SIZE,
+		.lookahead_size = LARGE_LOOKAHEAD_SIZE,
+		.block_size = 32768, /* increase erase size */
+		.read_buffer = large_read_buffer,
+		.prog_buffer = large_prog_buffer,
+		.lookahead_buffer = large_lookahead_buffer,
+	},
+};
 struct fs_mount_t testfs_large_mnt = {
 	.type = FS_LITTLEFS,
-	.fs_data = &large_data,
+	.fs_data = &large,
 	.storage_dev = (void *)DT_FLASH_AREA_LARGE_ID,
 	.mnt_point = TESTFS_MNT_POINT_LARGE,
 };

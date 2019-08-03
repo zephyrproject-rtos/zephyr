@@ -17,10 +17,10 @@
 /* Matches LFS_NAME_MAX */
 #define MAX_PATH_LEN 255
 
-static struct fs_littlefs lfs_storage;
+FS_LITTLEFS_DECLARE_DEFAULT_CONFIG(storage);
 static struct fs_mount_t lfs_storage_mnt = {
 	.type = FS_LITTLEFS,
-	.fs_data = &lfs_storage,
+	.fs_data = &storage,
 	.storage_dev = (void *)DT_FLASH_AREA_STORAGE_ID,
 	.mnt_point = "/lfs",
 };

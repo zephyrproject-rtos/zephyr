@@ -21,4 +21,7 @@ void test_lfs_basic(void);
 /* Tests in test_lfs_dirops */
 void test_lfs_dirops(void);
 
+/* Tests in test_lfs_perf */
+void test_lfs_perf(void);
+
 #endif /* _ZEPHYR_TESTS_SUBSYS_FS_LITTLEFS_TESTFS_TESTS_H_ */

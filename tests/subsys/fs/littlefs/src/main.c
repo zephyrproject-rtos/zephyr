@@ -20,7 +20,8 @@ void test_main(void)
 			 ztest_unit_test(test_util_path_extend_up),
 			 ztest_unit_test(test_util_path_extend_overrun),
 			 ztest_unit_test(test_lfs_basic),
-			 ztest_unit_test(test_lfs_dirops)
+			 ztest_unit_test(test_lfs_dirops),
+			 ztest_unit_test(test_lfs_perf)
 			 );
 	ztest_run_test_suite(littlefs_test);
 }
