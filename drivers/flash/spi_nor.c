@@ -229,6 +229,7 @@ static int spi_nor_write(struct device *dev, off_t addr, const void *src,
 
 		size -= to_write;
 		src = (const u8_t *)src + to_write;
+		addr += to_write;
 
 		spi_nor_wait_until_ready(dev);
 	}
