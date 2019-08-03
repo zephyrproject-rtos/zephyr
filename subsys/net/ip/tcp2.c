@@ -346,7 +346,7 @@ static void tcp_win_free(struct tcp_win *w)
 	tcp_free(w);
 }
 
-static void tcp_win_push(struct tcp_win *w, const void *data, size_t len)
+static void tcp_win_append(struct tcp_win *w, const void *data, size_t len)
 {
 	struct net_buf *buf = tcp_nbuf_alloc(&tcp_nbufs, len);
 	size_t prev_len = w->len;
@@ -496,10 +496,10 @@ static size_t tcp_data_get(struct tcp *conn, struct net_pkt *pkt)
 
 		net_pkt_read(pkt, buf, len);
 
-		tcp_win_push(conn->rcv, buf, len);
+		tcp_win_append(conn->rcv, buf, len);
 
 		if (tcp_echo) {
-			tcp_win_push(conn->snd, buf, len);
+			tcp_win_append(conn->snd, buf, len);
 		}
 
 		tcp_free(buf);
@@ -863,7 +863,7 @@ ssize_t _tcp_send(int fd, const void *buf, size_t len, int flags)
 {
 	struct tcp *conn = (void *) sys_slist_peek_head(&tcp_conns);
 
-	tcp_win_push(conn->snd, buf, len);
+	tcp_win_append(conn->snd, buf, len);
 
 	tcp_in(conn, NULL);
 
@@ -967,7 +967,7 @@ bool tp_input(struct net_pkt *pkt)
 			conn = tcp_conn_new(pkt);
 			conn->seq = tp->seq;
 			if (len > 0) {
-				tcp_win_push(conn->snd, data_to_send, len);
+				tcp_win_append(conn->snd, data_to_send, len);
 			}
 			tcp_in(conn, NULL);
 		}
