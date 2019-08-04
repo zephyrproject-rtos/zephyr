@@ -701,7 +701,7 @@ int nvs_init(struct nvs_fs *fs, const char *dev_name)
 		LOG_ERR("Unable to get page info");
 		return -EINVAL;
 	}
-	if (fs->sector_size % info.size) {
+	if (!fs->sector_size || fs->sector_size % info.size) {
 		LOG_ERR("Invalid sector size");
 		return -EINVAL;
 	}
