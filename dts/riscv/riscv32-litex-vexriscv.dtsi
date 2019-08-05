@@ -86,5 +86,26 @@
 			label = "dna0";
 			status = "disabled";
 		};
+		gpio_out: gpio@e0005800 {
+			compatible = "litex,gpio";
+			reg = <0xe0005800 0x4>;
+			reg-names = "control";
+			ngpios = <4>;
+			label = "gpio_out";
+			port-is-output;
+			status = "disabled";
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+		gpio_in: gpio@e0006000 {
+			compatible = "litex,gpio";
+			reg = <0xe0006000 0x4>;
+			reg-names = "control";
+			ngpios = <4>;
+			label = "gpio_in";
+			status = "disabled";
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
 	};
 };
