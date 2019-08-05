@@ -6,6 +6,9 @@
 
 if SOC_EMSDP_EM7D_ESP
 
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 50000000
+
 config CPU_EM4_FPUDA
 	def_bool y
 
@@ -26,22 +29,5 @@ config CACHE_FLUSHING
 
 config FP_FPU_DA
 	def_bool y
-
-if (ARC_MPU_VER = 2)
-
-config MAIN_STACK_SIZE
-	default 2048
-
-config IDLE_STACK_SIZE
-	default 2048
-
-if ZTEST
-
-config ZTEST_STACKSIZE
-	default 2048
-
-endif # ZTEST
-
-endif # ARC_MPU_VER
 
 endif #SOC_EMSDP_EM7D_ESP

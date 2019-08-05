@@ -19,6 +19,3 @@ elseif(CONFIG_SOC_EMSDP_EM11D)
   zephyr_compile_options_ifdef(CONFIG_FLOAT -mfpu=fpuda_all)
 endif()
 
-zephyr_sources(
-  soc.c
-  )

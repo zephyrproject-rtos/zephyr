@@ -33,11 +33,11 @@
 	soc {
 
 		uart@f0004000 {
-			interrupts = <107 1>;
+			interrupts = <108 1>;
 		};
 
 		gpio@f0002000 {
-			interrupts = <85 1>;
+			interrupts = <86 1>;
 		};
 
 	};
