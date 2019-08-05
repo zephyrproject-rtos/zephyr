@@ -349,7 +349,7 @@ static u8_t att_handle_rsp(struct bt_att *att, void *pdu, u16_t len, u8_t err)
 {
 	bt_att_func_t func;
 
-	BT_DBG("err %u len %u: %s", err, len, bt_hex(pdu, len));
+	BT_DBG("err 0x%02x len %u: %s", err, len, bt_hex(pdu, len));
 
 	/* Cancel timeout if ongoing */
 	k_delayed_work_cancel(&att->timeout_work);

@@ -208,7 +208,7 @@ static u8_t read_func(struct bt_conn *conn, u8_t err,
 			 struct bt_gatt_read_params *params,
 			 const void *data, u16_t length)
 {
-	shell_print(ctx_shell, "Read complete: err %u length %u", err, length);
+	shell_print(ctx_shell, "Read complete: err 0x%02x length %u", err, length);
 
 	if (!data) {
 		(void)memset(params, 0, sizeof(*params));
@@ -324,7 +324,7 @@ static u8_t gatt_write_buf[CHAR_SIZE_MAX];
 static void write_func(struct bt_conn *conn, u8_t err,
 		       struct bt_gatt_write_params *params)
 {
-	shell_print(ctx_shell, "Write complete: err %u", err);
+	shell_print(ctx_shell, "Write complete: err 0x%02x", err);
 
 	(void)memset(&write_params, 0, sizeof(write_params));
 }

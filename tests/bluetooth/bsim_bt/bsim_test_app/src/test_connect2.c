@@ -77,7 +77,7 @@ static const struct bt_data ad[] = {
 static void connected(struct bt_conn *conn, u8_t err)
 {
 	if (err) {
-		FAIL("Connection failed (err %u)\n", err);
+		FAIL("Connection failed (err 0x%02x)\n", err);
 	} else {
 		default_conn = bt_conn_ref(conn);
 		printk("Connected\n");
@@ -86,7 +86,7 @@ static void connected(struct bt_conn *conn, u8_t err)
 
 static void disconnected(struct bt_conn *conn, u8_t reason)
 {
-	printk("Disconnected (reason %u)\n", reason);
+	printk("Disconnected (reason 0x%02x)\n", reason);
 
 	if (default_conn) {
 		bt_conn_unref(default_conn);
