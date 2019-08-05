@@ -23,7 +23,7 @@
 	GTEXT(z_x86_enable_paging)
 
 	/* externs */
-	GTEXT(z_cstart)
+	GTEXT(z_x86_prep_c)
 
 	GDATA(_idt_base_address)
 	GDATA(_interrupt_stack)
@@ -308,10 +308,8 @@ __csSet:
 	outb %al, $0xA1		/* set i8259 slave mask (IRQs 8-15) */
 #endif
 
-	/* Jump to C portion of kernel initialization and never return */
-
-	jmp	z_cstart
-
+	/* call C portion of kernel initialization and never return */
+	call	z_x86_prep_c
 
 _x86_bss_zero:
 	/* ECX = size, EDI = starting address */
