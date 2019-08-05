@@ -55,7 +55,7 @@ static void disconnected(struct bt_conn *conn, u8_t reason)
 
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
-	printk("Disconnected from %s (reason %u)\n", addr, reason);
+	printk("Disconnected from %s (reason 0x%02x)\n", addr, reason);
 }
 
 static void security_changed(struct bt_conn *conn, bt_security_t level)

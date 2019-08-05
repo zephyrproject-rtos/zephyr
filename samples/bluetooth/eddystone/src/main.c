@@ -649,7 +649,7 @@ static void idle_timeout(struct k_work *work)
 static void connected(struct bt_conn *conn, u8_t err)
 {
 	if (err) {
-		printk("Connection failed (err %u)\n", err);
+		printk("Connection failed (err 0x%02x)\n", err);
 	} else {
 		printk("Connected\n");
 		k_delayed_work_cancel(&idle_work);
@@ -660,7 +660,7 @@ static void disconnected(struct bt_conn *conn, u8_t reason)
 {
 	struct eds_slot *slot = &eds_slots[eds_active_slot];
 
-	printk("Disconnected (reason %u)\n", reason);
+	printk("Disconnected (reason 0x%02x)\n", reason);
 
 	if (!slot->connectable) {
 		k_delayed_work_submit(&idle_work, 0);

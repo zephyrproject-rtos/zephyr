@@ -720,7 +720,7 @@ static void hci_disconn_complete(struct net_buf *buf)
 	u16_t handle = sys_le16_to_cpu(evt->handle);
 	struct bt_conn *conn;
 
-	BT_DBG("status %u handle %u reason %u", evt->status, handle,
+	BT_DBG("status 0x%02x handle %u reason 0x%02x", evt->status, handle,
 	       evt->reason);
 
 	if (evt->status) {
@@ -920,7 +920,7 @@ static void enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 	struct bt_conn *conn;
 	int err;
 
-	BT_DBG("status %u handle %u role %u %s", evt->status, handle,
+	BT_DBG("status 0x%02x handle %u role %u %s", evt->status, handle,
 	       evt->role, bt_addr_le_str(&evt->peer_addr));
 
 #if defined(CONFIG_BT_SMP)
@@ -1115,7 +1115,7 @@ static void le_legacy_conn_complete(struct net_buf *buf)
 	struct bt_hci_evt_le_enh_conn_complete enh;
 	const bt_addr_le_t *id_addr;
 
-	BT_DBG("status %u role %u %s", evt->status, evt->role,
+	BT_DBG("status 0x%02x role %u %s", evt->status, evt->role,
 	       bt_addr_le_str(&evt->peer_addr));
 
 	enh.status         = evt->status;
@@ -1234,7 +1234,7 @@ static void le_phy_update_complete(struct net_buf *buf)
 		return;
 	}
 
-	BT_DBG("PHY updated: status: 0x%x, tx: %u, rx: %u",
+	BT_DBG("PHY updated: status: 0x%02x, tx: %u, rx: %u",
 	       evt->status, evt->tx_phy, evt->rx_phy);
 
 	if (!IS_ENABLED(CONFIG_BT_AUTO_PHY_UPDATE) ||
@@ -1359,7 +1359,7 @@ static void le_conn_update_complete(struct net_buf *buf)
 
 	handle = sys_le16_to_cpu(evt->handle);
 
-	BT_DBG("status %u, handle %u", evt->status, handle);
+	BT_DBG("status 0x%02x, handle %u", evt->status, handle);
 
 	conn = bt_conn_lookup_handle(handle);
 	if (!conn) {
@@ -2062,7 +2062,7 @@ static void ssp_complete(struct net_buf *buf)
 	struct bt_hci_evt_ssp_complete *evt = (void *)buf->data;
 	struct bt_conn *conn;
 
-	BT_DBG("status %u", evt->status);
+	BT_DBG("status 0x%02x", evt->status);
 
 	conn = bt_conn_lookup_addr_br(&evt->bdaddr);
 	if (!conn) {
@@ -2463,7 +2463,7 @@ static void auth_complete(struct net_buf *buf)
 	struct bt_conn *conn;
 	u16_t handle = sys_le16_to_cpu(evt->handle);
 
-	BT_DBG("status %u, handle %u", evt->status, handle);
+	BT_DBG("status 0x%02x, handle %u", evt->status, handle);
 
 	conn = bt_conn_lookup_handle(handle);
 	if (!conn) {
@@ -2494,7 +2494,7 @@ static void read_remote_features_complete(struct net_buf *buf)
 	struct bt_hci_cp_read_remote_ext_features *cp;
 	struct bt_conn *conn;
 
-	BT_DBG("status %u handle %u", evt->status, handle);
+	BT_DBG("status 0x%02x handle %u", evt->status, handle);
 
 	conn = bt_conn_lookup_handle(handle);
 	if (!conn) {
@@ -2535,7 +2535,7 @@ static void read_remote_ext_features_complete(struct net_buf *buf)
 	u16_t handle = sys_le16_to_cpu(evt->handle);
 	struct bt_conn *conn;
 
-	BT_DBG("status %u handle %u", evt->status, handle);
+	BT_DBG("status 0x%02x handle %u", evt->status, handle);
 
 	conn = bt_conn_lookup_handle(handle);
 	if (!conn) {
@@ -2556,7 +2556,7 @@ static void role_change(struct net_buf *buf)
 	struct bt_hci_evt_role_change *evt = (void *)buf->data;
 	struct bt_conn *conn;
 
-	BT_DBG("status %u role %u addr %s", evt->status, evt->role,
+	BT_DBG("status 0x%02x role %u addr %s", evt->status, evt->role,
 	       bt_addr_str(&evt->bdaddr));
 
 	if (evt->status) {
@@ -2877,7 +2877,7 @@ static void hci_encrypt_change(struct net_buf *buf)
 	u16_t handle = sys_le16_to_cpu(evt->handle);
 	struct bt_conn *conn;
 
-	BT_DBG("status %u handle %u encrypt 0x%02x", evt->status, handle,
+	BT_DBG("status 0x%02x handle %u encrypt 0x%02x", evt->status, handle,
 	       evt->encrypt);
 
 	conn = bt_conn_lookup_handle(handle);
@@ -2952,7 +2952,7 @@ static void hci_encrypt_key_refresh_complete(struct net_buf *buf)
 
 	handle = sys_le16_to_cpu(evt->handle);
 
-	BT_DBG("status %u handle %u", evt->status, handle);
+	BT_DBG("status 0x%02x handle %u", evt->status, handle);
 
 	conn = bt_conn_lookup_handle(handle);
 	if (!conn) {
@@ -3121,7 +3121,7 @@ static void le_pkey_complete(struct net_buf *buf)
 	struct bt_hci_evt_le_p256_public_key_complete *evt = (void *)buf->data;
 	struct bt_pub_key_cb *cb;
 
-	BT_DBG("status: 0x%x", evt->status);
+	BT_DBG("status: 0x%02x", evt->status);
 
 	atomic_clear_bit(bt_dev.flags, BT_DEV_PUB_KEY_BUSY);
 
@@ -3141,7 +3141,7 @@ static void le_dhkey_complete(struct net_buf *buf)
 {
 	struct bt_hci_evt_le_generate_dhkey_complete *evt = (void *)buf->data;
 
-	BT_DBG("status: 0x%x", evt->status);
+	BT_DBG("status: 0x%02x", evt->status);
 
 	if (dh_key_cb) {
 		dh_key_cb(evt->status ? NULL : evt->dhkey);
@@ -3155,7 +3155,7 @@ static void hci_reset_complete(struct net_buf *buf)
 	u8_t status = buf->data[0];
 	atomic_t flags;
 
-	BT_DBG("status %u", status);
+	BT_DBG("status 0x%02x", status);
 
 	if (status) {
 		return;
@@ -3730,7 +3730,7 @@ static void read_local_ver_complete(struct net_buf *buf)
 {
 	struct bt_hci_rp_read_local_version_info *rp = (void *)buf->data;
 
-	BT_DBG("status %u", rp->status);
+	BT_DBG("status 0x%02x", rp->status);
 
 	bt_dev.hci_version = rp->hci_version;
 	bt_dev.hci_revision = sys_le16_to_cpu(rp->hci_revision);
@@ -3743,7 +3743,7 @@ static void read_bdaddr_complete(struct net_buf *buf)
 {
 	struct bt_hci_rp_read_bd_addr *rp = (void *)buf->data;
 
-	BT_DBG("status %u", rp->status);
+	BT_DBG("status 0x%02x", rp->status);
 
 	if (!bt_addr_cmp(&rp->bdaddr, BT_ADDR_ANY) ||
 	    !bt_addr_cmp(&rp->bdaddr, BT_ADDR_NONE)) {
@@ -3760,7 +3760,7 @@ static void read_le_features_complete(struct net_buf *buf)
 {
 	struct bt_hci_rp_le_read_local_features *rp = (void *)buf->data;
 
-	BT_DBG("status %u", rp->status);
+	BT_DBG("status 0x%02x", rp->status);
 
 	memcpy(bt_dev.le.features, rp->features, sizeof(bt_dev.le.features));
 }
@@ -3771,7 +3771,7 @@ static void read_buffer_size_complete(struct net_buf *buf)
 	struct bt_hci_rp_read_buffer_size *rp = (void *)buf->data;
 	u16_t pkts;
 
-	BT_DBG("status %u", rp->status);
+	BT_DBG("status 0x%02x", rp->status);
 
 	bt_dev.br.mtu = sys_le16_to_cpu(rp->acl_max_len);
 	pkts = sys_le16_to_cpu(rp->acl_max_num);
@@ -3786,7 +3786,7 @@ static void read_buffer_size_complete(struct net_buf *buf)
 	struct bt_hci_rp_read_buffer_size *rp = (void *)buf->data;
 	u16_t pkts;
 
-	BT_DBG("status %u", rp->status);
+	BT_DBG("status 0x%02x", rp->status);
 
 	/* If LE-side has buffers we can ignore the BR/EDR values */
 	if (bt_dev.le.mtu) {
@@ -3810,7 +3810,7 @@ static void le_read_buffer_size_complete(struct net_buf *buf)
 	struct bt_hci_rp_le_read_buffer_size *rp = (void *)buf->data;
 	u8_t le_max_num;
 
-	BT_DBG("status %u", rp->status);
+	BT_DBG("status 0x%02x", rp->status);
 
 	bt_dev.le.mtu = sys_le16_to_cpu(rp->le_max_len);
 	if (!bt_dev.le.mtu) {
@@ -3828,7 +3828,7 @@ static void read_supported_commands_complete(struct net_buf *buf)
 {
 	struct bt_hci_rp_read_supported_commands *rp = (void *)buf->data;
 
-	BT_DBG("status %u", rp->status);
+	BT_DBG("status 0x%02x", rp->status);
 
 	memcpy(bt_dev.supported_commands, rp->commands,
 	       sizeof(bt_dev.supported_commands));
@@ -3847,7 +3847,7 @@ static void read_local_features_complete(struct net_buf *buf)
 {
 	struct bt_hci_rp_read_local_features *rp = (void *)buf->data;
 
-	BT_DBG("status %u", rp->status);
+	BT_DBG("status 0x%02x", rp->status);
 
 	memcpy(bt_dev.features[0], rp->features, sizeof(bt_dev.features[0]));
 }
@@ -3856,7 +3856,7 @@ static void le_read_supp_states_complete(struct net_buf *buf)
 {
 	struct bt_hci_rp_le_read_supp_states *rp = (void *)buf->data;
 
-	BT_DBG("status %u", rp->status);
+	BT_DBG("status 0x%02x", rp->status);
 
 	bt_dev.le.states = sys_get_le64(rp->le_states);
 }

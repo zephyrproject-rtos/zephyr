@@ -230,7 +230,7 @@ static void connected(struct bt_conn *conn, u8_t err)
 	struct bt_conn_info info;
 
 	if (err) {
-		printk("Connection failed (err %u)\n", err);
+		printk("Connection failed (err 0x%02x)\n", err);
 		return;
 	}
 
@@ -255,7 +255,7 @@ static void connected(struct bt_conn *conn, u8_t err)
 
 static void disconnected(struct bt_conn *conn, u8_t reason)
 {
-	printk("Disconnected (reason %u)\n", reason);
+	printk("Disconnected (reason 0x%02x)\n", reason);
 
 	if (default_conn) {
 		bt_conn_unref(default_conn);
