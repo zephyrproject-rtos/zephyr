@@ -278,25 +278,21 @@ config LVGL_TEXT_BREAK_CHARACTERS
 
 config LVGL_ANTIALIAS
 	bool "Enable anti-aliasing"
-	default y
 	help
 	  Enable anti-aliasing
 
 config LVGL_ANIMATION
 	bool "Enable animations"
-	default y
 	help
 	  Enable animations
 
 config LVGL_SHADOW
 	bool "Enable shadows"
-	default y
 	help
 	  Enable shadows
 
 config LVGL_GROUP
 	bool "Enable group support"
-	default y
 	help
 	  Enable group support.
 	  Used by keyboard and button input

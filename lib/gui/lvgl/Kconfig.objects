@@ -8,7 +8,6 @@ menu "Objects"
 
 config LVGL_OBJ_REALIGN
 	bool "Object realign support"
-	default y
 	help
 	  Enable object realign support
 
@@ -29,7 +28,6 @@ endchoice
 
 config LVGL_OBJ_LABEL
 	bool "Label Object"
-	default y
 	help
 	  Enable label support
 
@@ -61,32 +59,27 @@ endif # LVGL_OBJ_LABEL
 
 config LVGL_OBJ_IMAGE
 	bool "Image Object"
-	default y
 	depends on LVGL_OBJ_LABEL
 	help
 	  Enable image object support
 
 config LVGL_OBJ_LINE
 	bool "Line Object"
-	default y
 	help
 	  Enable line object support
 
 config LVGL_OBJ_ARC
 	bool "Arc Object"
-	default y
 	help
 	  Enable arc object support
 
 config LVGL_OBJ_CONTAINER
 	bool "Container Object"
-	default y
 	help
 	  Enable container object support
 
 config LVGL_OBJ_PAGE
 	bool "Page object"
-	default y
 	depends on LVGL_OBJ_CONTAINER
 	help
 	  Enable page object support
@@ -101,14 +94,12 @@ endif
 
 config LVGL_OBJ_WINDOW
 	bool "Window object"
-	default y
 	depends on LVGL_OBJ_CONTAINER && LVGL_OBJ_BUTTON && LVGL_OBJ_LABEL && LVGL_OBJ_IMAGE && LVGL_OBJ_PAGE
 	help
 	  Enable window object support
 
 config LVGL_OBJ_TAB_VIEW
 	bool "Tab view object"
-	default y
 	depends on LVGL_OBJ_PAGE && LVGL_OBJ_BUTTON_MATRIX
 	help
 	  Enable tab view object support
@@ -125,7 +116,6 @@ endif
 
 config LVGL_OBJ_TILE_VIEW
 	bool "Tile view object"
-	default y
 	depends on LVGL_OBJ_PAGE
 	help
 	  Enable tile view object support
@@ -141,13 +131,11 @@ endif
 
 config LVGL_OBJ_CALENDAR
 	bool "Calendar object"
-	default y
 	help
 	  Enable calendar object support
 
 config LVGL_OBJ_PRELOAD
 	bool "Pre-load object"
-	default y
 	depends on LVGL_OBJ_ARC
 	help
 	  Enabled pre-load object support
@@ -184,33 +172,28 @@ endif
 
 config LVGL_OBJ_CANVAS
 	bool "Canvas object"
-	default y
 	depends on LVGL_OBJ_IMAGE
 	help
 	  Enabled canvas object support
 
 config LVGL_OBJ_BAR
 	bool "Bar object"
-	default y
 	help
 	  Enable bar object support
 
 config LVGL_OBJ_LINE_METER
 	bool "Line meter object"
-	default y
 	help
 	  Enable line meter object support
 
 config LVGL_OBJ_GAUGE
 	bool "Gauge object"
-	default y
 	depends on LVGL_OBJ_BAR && LVGL_OBJ_LINE_METER
 	help
 	  Enable gauge object support
 
 config LVGL_OBJ_CHART
 	bool "Chart object"
-	default y
 	help
 	  Enable chart object support
 
@@ -224,7 +207,6 @@ endif
 
 config LVGL_OBJ_TABLE
 	bool "Table object"
-	default y
 	depends on LVGL_OBJ_LABEL
 	help
 	  Enable table object support
@@ -239,20 +221,17 @@ endif
 
 config LVGL_OBJ_LED
 	bool "LED object"
-	default y
 	help
 	  Enable LED object support
 
 config LVGL_OBJ_MSG_BOX
 	bool "Message box object"
-	default y
 	depends on LVGL_OBJ_BUTTON_MATRIX && LVGL_OBJ_LABEL
 	help
 	  Enable message box object support
 
 config LVGL_OBJ_TEXT_AREA
 	bool "Text area object"
-	default y
 	depends on LVGL_OBJ_LABEL && LVGL_OBJ_PAGE
 	help
 	  Enable text area object support
@@ -275,14 +254,12 @@ endif
 
 config LVGL_OBJ_SPINBOX
 	bool "Spinbox object"
-	default y
 	depends on LVGL_OBJ_TEXT_AREA
 	help
 	  Enable spinbox object support
 
 config LVGL_OBJ_BUTTON
 	bool "Button object"
-	default y
 	depends on LVGL_OBJ_CONTAINER
 	help
 	  Enable button object support
@@ -291,13 +268,11 @@ if LVGL_OBJ_BUTTON
 
 config LVGL_OBJ_BUTTON_INK_EFFECT
 	bool "Enable ink effect"
-	default y
 	help
 	  Enable ink, press, effect for buttons
 
 config LVGL_OBJ_IMG_BUTTON
 	bool "Image Button"
-	default y
 	help
 	  Enable image button object support
 
@@ -312,27 +287,23 @@ endif
 
 config LVGL_OBJ_BUTTON_MATRIX
 	bool "Button Matrix object"
-	default y
 	help
 	  Enable button matrix object support
 
 config LVGL_OBJ_KEYBOARD
 	bool "Keyboard object"
-	default y
 	depends on LVGL_OBJ_BUTTON_MATRIX
 	help
 	  Enable keyboard object support
 
 config LVGL_OBJ_CHECK_BOX
 	bool "Check box object"
-	default y
 	depends on LVGL_OBJ_BUTTON && LVGL_OBJ_LABEL
 	help
 	  Enable check box object support
 
 config LVGL_OBJ_LIST
 	bool "List object"
-	default y
 	depends on LVGL_OBJ_BUTTON && LVGL_OBJ_LABEL && LVGL_OBJ_PAGE
 	help
 	  Enable list object support
@@ -349,7 +320,6 @@ endif
 
 config LVGL_OBJ_DROP_DOWN_LIST
 	bool "Drop Down List object"
-	default y
 	depends on LVGL_OBJ_LABEL && LVGL_OBJ_PAGE
 	help
 	  Enable drop down list object support
@@ -366,7 +336,6 @@ endif
 
 config LVGL_OBJ_ROLLER
 	bool "Roller object"
-	default y
 	depends on LVGL_OBJ_DROP_DOWN_LIST
 	help
 	  Enable roller object support
@@ -389,14 +358,12 @@ endif
 
 config LVGL_OBJ_SLIDER
 	bool "Slider object"
-	default y
 	depends on LVGL_OBJ_BAR
 	help
 	  Enable slider object support
 
 config LVGL_OBJ_SWITCH
 	bool "Switch object"
-	default y
 	depends on LVGL_OBJ_SLIDER
 	help
 	  Enable switch object support
