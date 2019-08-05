@@ -1308,24 +1308,26 @@ static struct bt_conn_auth_cb auth_cb_all = {
 
 static int cmd_auth(const struct shell *shell, size_t argc, char *argv[])
 {
+	int err;
+
 	if (!strcmp(argv[1], "all")) {
-		bt_conn_auth_cb_register(&auth_cb_all);
+		err = bt_conn_auth_cb_register(&auth_cb_all);
 	} else if (!strcmp(argv[1], "input")) {
-		bt_conn_auth_cb_register(&auth_cb_input);
+		err = bt_conn_auth_cb_register(&auth_cb_input);
 	} else if (!strcmp(argv[1], "display")) {
-		bt_conn_auth_cb_register(&auth_cb_display);
+		err = bt_conn_auth_cb_register(&auth_cb_display);
 	} else if (!strcmp(argv[1], "yesno")) {
-		bt_conn_auth_cb_register(&auth_cb_display_yes_no);
+		err = bt_conn_auth_cb_register(&auth_cb_display_yes_no);
 	} else if (!strcmp(argv[1], "confirm")) {
-		bt_conn_auth_cb_register(&auth_cb_confirm);
+		err = bt_conn_auth_cb_register(&auth_cb_confirm);
 	} else if (!strcmp(argv[1], "none")) {
-		bt_conn_auth_cb_register(NULL);
+		err = bt_conn_auth_cb_register(NULL);
 	} else {
 		shell_help(shell);
 		return SHELL_CMD_HELP_PRINTED;
 	}
 
-	return 0;
+	return err;
 }
 
 static int cmd_auth_cancel(const struct shell *shell,
