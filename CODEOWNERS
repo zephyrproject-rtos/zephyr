@@ -82,6 +82,7 @@
 /boards/arm/sam4s_xplained/               @fallrisk
 /boards/arm/v2m_beetle/                   @fvincenzo
 /boards/arm/olimexino_stm32/              @ydamigos
+/boards/arm/sensortile_box/               @avisconti
 /boards/arm/stm32*_disco/                 @erwango
 /boards/arm/stm32f3_disco/                @ydamigos
 /boards/arm/stm32*_eval/                  @erwango
