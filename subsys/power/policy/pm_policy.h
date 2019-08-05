@@ -24,6 +24,11 @@ extern  void sys_pm_create_device_list(void);
 extern int sys_pm_suspend_devices(void);
 
 /**
+ * @brief Function to low power the devices in PM device list
+ */
+extern int sys_pm_low_power_devices(void);
+
+/**
  * @brief Function to force suspend the devices in PM device list
  */
 extern int sys_pm_force_suspend_devices(void);

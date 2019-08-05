@@ -116,6 +116,17 @@ enum power_states _sys_suspend(s32_t ticks)
 		 * in deep sleep mode.
 		 */
 		_sys_pm_idle_exit_notification_disable();
+#if CONFIG_DEVICE_POWER_MANAGEMENT
+	} else if (sys_pm_is_sleep_state(pm_state)) {
+		/* low power peripherals. */
+		if (sys_pm_low_power_devices()) {
+			LOG_ERR("Device enter low power state failed!");
+			sys_pm_resume_devices();
+			sys_pm_notify_power_state_exit(pm_state);
+			pm_state = SYS_POWER_STATE_ACTIVE;
+			return pm_state;
+		}
+#endif
 	}
 
 	/* Enter power state */
@@ -124,7 +135,7 @@ enum power_states _sys_suspend(s32_t ticks)
 	sys_pm_debug_stop_timer();
 
 #if CONFIG_DEVICE_POWER_MANAGEMENT
-	if (deep_sleep) {
+	if (deep_sleep || sys_pm_is_sleep_state(pm_state)) {
 		/* Turn on peripherals and restore device states as necessary */
 		sys_pm_resume_devices();
 	}
