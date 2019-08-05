@@ -886,7 +886,7 @@ class DT:
         except UnicodeDecodeError:
             self._parse_error("filename is not valid UTF-8")
 
-        with self._open(filename, "r") as f:
+        with self._open(filename, encoding="utf-8") as f:
             try:
                 self._file_contents = f.read()
             except OSError as e:
@@ -1156,9 +1156,10 @@ class DT:
 
         return _unescape_re.sub(sub, b)
 
-    def _open(self, filename, mode):
-        # Opens 'filename' in mode 'mode', returning the 'file' object.
-        # Searches the directory of the current file and the include path.
+    def _open(self, filename, mode="r", **kwargs):
+        # Wrapper around standard Python open(), accepting the same params.
+        # But searches for a 'filename' file in the directory of the current
+        # file and the include path.
 
         # The C tools support specifying stdin with '-' too
         if filename == "-":
@@ -1167,7 +1168,7 @@ class DT:
         # Try the directory of the current file first
         dirname = os.path.dirname(self.filename)
         try:
-            return open(os.path.join(dirname, filename), mode)
+            return open(os.path.join(dirname, filename), mode, **kwargs)
         except OSError as e:
             if e.errno != errno.ENOENT:
                 self._parse_error(e)
@@ -1175,7 +1176,7 @@ class DT:
             # Try each directory from the include path
             for path in self._include_path:
                 try:
-                    return open(os.path.join(path, filename), mode)
+                    return open(os.path.join(path, filename), mode, **kwargs)
                 except OSError as e:
                     if e.errno != errno.ENOENT:
                         self._parse_error(e)

@@ -1029,7 +1029,7 @@ def _binding_compat(binding_path):
     # Uses a regex to avoid having to parse the bindings, which is slow when
     # done for all bindings.
 
-    with open(binding_path) as binding:
+    with open(binding_path, encoding="utf-8") as binding:
         for line in binding:
             match = re.match(r'\s+constraint:\s*"([^"]*)"', line)
             if match:
