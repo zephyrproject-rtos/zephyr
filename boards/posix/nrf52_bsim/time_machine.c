@@ -195,11 +195,17 @@ bs_time_t tm_get_next_timer_abstime(void)
 
 bs_time_t tm_hw_time_to_abs_time(bs_time_t hwtime)
 {
+	if (hwtime == TIME_NEVER) {
+		return TIME_NEVER;
+	}
 	return hwtime + hw_time_delta;
 }
 
 bs_time_t tm_abs_time_to_hw_time(bs_time_t abstime)
 {
+	if (abstime == TIME_NEVER) {
+		return TIME_NEVER;
+	}
 	return abstime - hw_time_delta;
 }
 
