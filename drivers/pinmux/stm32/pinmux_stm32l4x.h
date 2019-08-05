@@ -88,6 +88,8 @@
 	(STM32_PINMUX_ALT_FUNC_1 | STM32_PUSHPULL_NOPULL)
 #define STM32L4X_PINMUX_FUNC_PA15_USART2_RX                                    \
 	(STM32_PINMUX_ALT_FUNC_3 | STM32_PUPDR_NO_PULL)
+#define STM32L4X_PINMUX_FUNC_PA15_SPI3_NSS                                     \
+	(STM32_PINMUX_ALT_FUNC_5 | STM32_PUSHPULL_PULLUP)
 #define STM32L4X_PINMUX_FUNC_PA15_USART3_RTS                                   \
 	(STM32_PINMUX_ALT_FUNC_7 | STM32_OPENDRAIN_PULLUP)
 #define STM32L4X_PINMUX_FUNC_PA15_UART4_RTS                                    \
@@ -272,8 +274,19 @@
 #define STM32L4X_PINMUX_FUNC_PE11_PWM1_CH2                                     \
 	(STM32_PINMUX_ALT_FUNC_1 | STM32_PUSHPULL_NOPULL)
 
+#define STM32L4X_PINMUX_FUNC_PE12_SPI1_NSS                                     \
+	(STM32_PINMUX_ALT_FUNC_5 | STM32_PUSHPULL_PULLUP)
+
 #define STM32L4X_PINMUX_FUNC_PE13_PWM1_CH3                                     \
 	(STM32_PINMUX_ALT_FUNC_1 | STM32_PUSHPULL_NOPULL)
+#define STM32L4X_PINMUX_FUNC_PE13_SPI1_SCK                                     \
+	(STM32_PINMUX_ALT_FUNC_5 | STM32_PUSHPULL_NOPULL)
+
+#define STM32L4X_PINMUX_FUNC_PE14_SPI1_MISO                                    \
+	(STM32_PINMUX_ALT_FUNC_5 | STM32_PUSHPULL_NOPULL)
+
+#define STM32L4X_PINMUX_FUNC_PE15_SPI1_MOSI                                    \
+	(STM32_PINMUX_ALT_FUNC_5 | STM32_PUSHPULL_NOPULL)
 
 /* Port F */
 #define STM32L4X_PINMUX_FUNC_PF0_I2C3_SDA                                      \
