@@ -5,7 +5,6 @@
 #
 
 title: STMicroelectronics MEMS sensors STTS751
-version: 0.1
 
 description: >
     This binding gives a base representation of STTS751
