@@ -16,5 +16,11 @@
 		label = "CAN_1";
 		reg = <0>;
 		bus-speed = <250000>;
+		sjw = <1>;
+		prop-seg = <2>;
+		phase-seg1 = <7>;
+		phase-seg2 = <6>;
+		#address-cells = <1>;
+		#size-cells = <0>;
 	};
 };
