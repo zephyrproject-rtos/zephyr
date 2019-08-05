@@ -13,14 +13,14 @@
 #ifndef ZEPHYR_INCLUDE_NET_SOCKET_CAN_H_
 #define ZEPHYR_INCLUDE_NET_SOCKET_CAN_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <zephyr/types.h>
 #include <net/net_ip.h>
 #include <net/net_if.h>
 #include <drivers/can.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * @brief Socket CAN library

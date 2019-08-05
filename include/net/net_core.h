@@ -13,11 +13,11 @@
 #ifndef ZEPHYR_INCLUDE_NET_NET_CORE_H_
 #define ZEPHYR_INCLUDE_NET_NET_CORE_H_
 
+#include <stdbool.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <stdbool.h>
 
 /**
  * @brief Networking

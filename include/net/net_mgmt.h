@@ -12,6 +12,9 @@
 #ifndef ZEPHYR_INCLUDE_NET_NET_MGMT_H_
 #define ZEPHYR_INCLUDE_NET_NET_MGMT_H_
 
+#include <sys/__assert.h>
+#include <net/net_core.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -22,9 +25,6 @@ extern "C" {
  * @ingroup networking
  * @{
  */
-
-#include <sys/__assert.h>
-#include <net/net_core.h>
 
 struct net_if;
 
