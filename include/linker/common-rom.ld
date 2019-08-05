@@ -143,7 +143,7 @@
 	SECTION_DATA_PROLOGUE(log_backends_sections,,)
 	{
 		__log_backends_start = .;
-		KEEP(*(".log_backends"));
+		KEEP(*("._log_backend.*"));
 		__log_backends_end = .;
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
