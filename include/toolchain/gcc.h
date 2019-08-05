@@ -28,6 +28,14 @@
 #define BUILD_ASSERT_MSG(EXPR, MSG) _Static_assert(EXPR, MSG)
 #endif
 
+#if (__GNUC__ >= 7 && __GNUC_MINOR__ >= 1)
+#define DISABLE_FALLTHROUGH \
+	_Pragma("GCC diagnostic ignored \"-Wimplicit-fallthrough\"")
+#else
+#define DISABLE_FALLTHROUGH
+#endif
+
+
 #include <toolchain/common.h>
 #include <stdbool.h>
 
