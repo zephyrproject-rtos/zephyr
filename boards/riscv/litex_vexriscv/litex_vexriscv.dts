@@ -49,3 +49,8 @@
 &prbs0 {
 	status = "okay";
 };
+
+&i2c0 {
+	status = "okay";
+	label = "I2C_0";
+};
