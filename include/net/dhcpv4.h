@@ -11,6 +11,9 @@
 #ifndef ZEPHYR_INCLUDE_NET_DHCPV4_H_
 #define ZEPHYR_INCLUDE_NET_DHCPV4_H_
 
+#include <sys/slist.h>
+#include <zephyr/types.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -21,9 +24,6 @@ extern "C" {
  * @ingroup networking
  * @{
  */
-
-#include <sys/slist.h>
-#include <zephyr/types.h>
 
 /** @cond INTERNAL_HIDDEN */
 

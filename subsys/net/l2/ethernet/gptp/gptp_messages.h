@@ -14,13 +14,13 @@
 #ifndef __GPTP_MESSAGES_H
 #define __GPTP_MESSAGES_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <net/net_pkt.h>
 #include <net/ethernet.h>
 #include <net/gptp.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* Helpers to access gPTP messages. */
 #define GPTP_HDR(pkt) gptp_get_hdr(pkt)

@@ -13,14 +13,14 @@
 #ifndef ZEPHYR_INCLUDE_NET_SOCKET_NET_MGMT_H_
 #define ZEPHYR_INCLUDE_NET_SOCKET_NET_MGMT_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <zephyr/types.h>
 #include <net/net_ip.h>
 #include <net/net_if.h>
 #include <net/net_mgmt.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * @brief Socket NET_MGMT library

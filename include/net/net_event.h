@@ -12,11 +12,11 @@
 #ifndef ZEPHYR_INCLUDE_NET_NET_EVENT_H_
 #define ZEPHYR_INCLUDE_NET_NET_EVENT_H_
 
+#include <net/net_ip.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <net/net_ip.h>
 
 /**
  * @addtogroup net_mgmt
