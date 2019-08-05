@@ -28,6 +28,7 @@
 #include <bluetooth/conn.h>
 #include <bluetooth/rfcomm.h>
 #include <bluetooth/sdp.h>
+#include <bluetooth/hci.h>
 
 #include <shell/shell.h>
 
@@ -136,7 +137,7 @@ void conn_addr_str(struct bt_conn *conn, char *addr, size_t len)
 		break;
 #endif
 	case BT_CONN_TYPE_LE:
-		bt_addr_le_to_str(bt_conn_get_dst(conn), addr, len);
+		bt_addr_le_to_str(info.le.dst, addr, len);
 		break;
 	}
 }
@@ -783,6 +784,119 @@ static int cmd_select(const struct shell *shell, size_t argc, char *argv[])
 	return 0;
 }
 
+static const char *get_conn_type_str(u8_t type)
+{
+	switch (type) {
+	case BT_CONN_TYPE_LE: return "LE";
+	case BT_CONN_TYPE_BR: return "BR/EDR";
+	case BT_CONN_TYPE_SCO: return "SCO";
+	default: return "Invalid";
+	}
+}
+
+static const char *get_conn_role_str(u8_t role)
+{
+	switch (role) {
+	case BT_CONN_ROLE_MASTER: return "master";
+	case BT_CONN_ROLE_SLAVE: return "slave";
+	default: return "Invalid";
+	}
+}
+
+static void print_le_addr(const char *desc, const bt_addr_le_t *addr)
+{
+	char addr_str[BT_ADDR_LE_STR_LEN];
+
+	const char *addr_desc = bt_addr_le_is_identity(addr) ? "identity" :
+				bt_addr_le_is_rpa(addr) ? "resolvable" :
+				"non-resolvable";
+
+	bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
+
+	shell_print(ctx_shell, "%s address: %s (%s)", desc, addr_str,
+		    addr_desc);
+}
+
+static int cmd_info(const struct shell *shell, size_t argc, char *argv[])
+{
+	struct bt_conn *conn = NULL;
+	bt_addr_le_t addr;
+	struct bt_conn_info info;
+	int err;
+
+	switch (argc) {
+	case 1:
+		if (default_conn) {
+			conn = bt_conn_ref(default_conn);
+		}
+		break;
+	case 2:
+		addr.type = BT_ADDR_LE_PUBLIC;
+		err = bt_addr_from_str(argv[1], &addr.a);
+		if (err) {
+			shell_error(shell, "Invalid peer address (err %d)",
+				    err);
+			return err;
+		}
+		conn = bt_conn_lookup_addr_le(selected_id, &addr);
+		break;
+	case 3:
+		err = bt_addr_le_from_str(argv[1], argv[2], &addr);
+
+		if (err) {
+			shell_error(shell, "Invalid peer address (err %d)",
+				    err);
+			return err;
+		}
+		conn = bt_conn_lookup_addr_le(selected_id, &addr);
+		break;
+	}
+
+	if (!conn) {
+		shell_error(shell, "Not connected");
+		return -ENOEXEC;
+	}
+
+	err = bt_conn_get_info(conn, &info);
+	if (err) {
+		shell_print(ctx_shell, "Failed to get info");
+		goto done;
+	}
+
+	shell_print(ctx_shell, "Type: %s, Role: %s, Id: %u",
+		    get_conn_type_str(info.type),
+		    get_conn_role_str(info.role),
+		    info.id);
+
+	if (info.type == BT_CONN_TYPE_LE) {
+		print_le_addr("Remote", info.le.dst);
+		print_le_addr("Local", info.le.src);
+		print_le_addr("Remote on-air", info.le.remote);
+		print_le_addr("Local on-air", info.le.local);
+
+		shell_print(ctx_shell, "Interval: 0x%04x (%.2f ms)",
+			    info.le.interval, info.le.interval * 1.25);
+		shell_print(ctx_shell, "Latency: 0x%04x (%.2f ms)",
+			    info.le.latency, info.le.latency * 1.25);
+		shell_print(ctx_shell, "Supervision timeout: 0x%04x (%d ms)",
+			    info.le.timeout, info.le.timeout * 10);
+	}
+
+#if defined(CONFIG_BT_BREDR)
+	if (info.type == BT_CONN_TYPE_BR) {
+		char addr_str[BT_ADDR_STR_LEN];
+
+		bt_addr_to_str(info.br.dst, addr_str, sizeof(addr_str));
+		shell_print(ctx_shell, "Peer address %s", addr_str);
+	}
+#endif /* defined(CONFIG_BT_BREDR) */
+
+done:
+	bt_conn_unref(conn);
+
+	return err;
+}
+
 static int cmd_conn_update(const struct shell *shell,
 			    size_t argc, char *argv[])
 {
@@ -1347,6 +1461,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 #endif /* CONFIG_BT_CENTRAL */
 	SHELL_CMD_ARG(disconnect, NULL, HELP_NONE, cmd_disconnect, 1, 2),
 	SHELL_CMD_ARG(select, NULL, HELP_ADDR_LE, cmd_select, 3, 0),
+	SHELL_CMD_ARG(info, NULL, HELP_ADDR_LE, cmd_info, 1, 2),
 	SHELL_CMD_ARG(conn-update, NULL, "<min> <max> <latency> <timeout>",
 		      cmd_conn_update, 5, 0),
 #if defined(CONFIG_BT_CENTRAL)
