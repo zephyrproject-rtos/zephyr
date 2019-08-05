@@ -20,34 +20,6 @@ config CAN_MCP2515_OSC_FREQ
 	help
 	  Specify the frequency of the oscillator connected to the MCP2515.
 
-config CAN_PROP_SEG
-	int "Prop_Seg"
-	default 2
-	range 1 8
-	help
-	  Time quanta of propagation segment (ISO 11898-1)
-
-config CAN_PHASE_SEG1
-	int "Phase_Seg1"
-	default 7
-	range 1 8
-	help
-	  Time quanta of phase buffer 1 segment (ISO 11898-1)
-
-config CAN_PHASE_SEG2
-	int "Phase_Seg2"
-	default 6
-	range 2 8
-	help
-	  Time quanta of phase buffer 2 segment (ISO 11898-1)
-
-config CAN_SJW
-	int "SJW"
-	default 1
-	range 1 4
-	help
-	  Resynchronization jump width  (ISO 11898-1)
-
 config CAN_MCP2515_INT_THREAD_STACK_SIZE
 	int "Stack size for interrupt handler"
 	default 512
