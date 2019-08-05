@@ -94,9 +94,11 @@ GEN_OFFSET_SYM(_callee_saved_stack_t, user_sp);
 #endif
 #endif
 GEN_OFFSET_SYM(_callee_saved_stack_t, r30);
-#ifdef CONFIG_FP_SHARING
+#ifdef CONFIG_ARC_HAS_ACCL_REGS
 GEN_OFFSET_SYM(_callee_saved_stack_t, r58);
 GEN_OFFSET_SYM(_callee_saved_stack_t, r59);
+#endif
+#ifdef CONFIG_FP_SHARING
 GEN_OFFSET_SYM(_callee_saved_stack_t, fpu_status);
 GEN_OFFSET_SYM(_callee_saved_stack_t, fpu_ctrl);
 #ifdef CONFIG_FP_FPU_DA
