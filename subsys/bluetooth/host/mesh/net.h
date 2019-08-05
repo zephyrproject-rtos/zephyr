@@ -269,6 +269,7 @@ struct bt_mesh_net_rx {
 	       local_match:1,  /* Matched a local element */
 	       friend_match:1; /* Matched an LPN we're friends for */
 	s8_t   rssi;
+	u16_t  msg_cache_idx;  /* Index of entry in message cache */
 };
 
 /* Encoding context for Network/Transport data */
