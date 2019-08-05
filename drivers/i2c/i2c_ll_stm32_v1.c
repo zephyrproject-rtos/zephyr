@@ -285,6 +285,7 @@ static inline void handle_rxne(struct device *dev)
 		case 2:
 			LL_I2C_AcknowledgeNextData(i2c, LL_I2C_NACK);
 			LL_I2C_EnableBitPOS(i2c);
+			/* Fallthrough */
 		case 3:
 			/*
 			 * 2-byte, 3-byte reception and for N-2, N-1,
