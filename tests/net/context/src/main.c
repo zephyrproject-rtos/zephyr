@@ -389,7 +389,9 @@ static void net_ctx_send_v6(void)
 	test_sending = true;
 
 	ret = net_context_send(udp_v6_ctx, test_data, strlen(test_data),
-			       send_cb, K_NO_WAIT, INT_TO_POINTER(AF_INET6));
+			       send_cb, K_FOREVER, INT_TO_POINTER(AF_INET6));
+	k_yield();
+
 	zassert_false(((ret < 0) || cb_failure),
 		     "Context send IPv6 UDP test failed");
 }
@@ -401,7 +403,9 @@ static void net_ctx_send_v4(void)
 	test_sending = true;
 
 	ret = net_context_send(udp_v4_ctx, test_data, strlen(test_data),
-			       send_cb, K_NO_WAIT, INT_TO_POINTER(AF_INET));
+			       send_cb, K_FOREVER, INT_TO_POINTER(AF_INET));
+	k_yield();
+
 	zassert_false(((ret < 0) || cb_failure),
 		      "Context send IPv4 UDP test failed");
 }
