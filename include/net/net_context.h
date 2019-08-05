@@ -825,24 +825,17 @@ int net_context_accept(struct net_context *context,
  * @brief Send data to a peer.
  *
  * @details This function can be used to send network data to a peer
- * connection. This function will return immediately if the timeout
- * is set to K_NO_WAIT. If the timeout is set to K_FOREVER, the function
- * will wait until the network buffer is sent. Timeout value > 0 will
- * wait as many ms. After the network buffer is sent,
- * a caller-supplied callback is called. The callback is called even
- * if timeout was set to K_FOREVER, the callback is called
- * before this function will return in this case. The callback is not
- * called if the timeout expires. For context of type SOCK_DGRAM,
- * the destination address must have been set by the call to
- * net_context_connect().
+ * connection. After the network buffer is sent, a caller-supplied
+ * callback is called. Note that the callback might be called after this
+ * function has returned. For context of type SOCK_DGRAM, the destination
+ * address must have been set by the call to net_context_connect().
  * This is similar as BSD send() function.
  *
  * @param context The network context to use.
  * @param buf The data buffer to send
  * @param len Length of the buffer
  * @param cb Caller-supplied callback function.
- * @param timeout Timeout for the connection. Possible values
- * are K_FOREVER, K_NO_WAIT, >0.
+ * @param timeout Currently this value is not used.
  * @param user_data Caller-supplied user data.
  *
  * @return 0 if ok, < 0 if error
@@ -859,14 +852,9 @@ int net_context_send(struct net_context *context,
  *
  * @details This function can be used to send network data to a peer
  * specified by address. This variant can only be used for datagram
- * connections of type SOCK_DGRAM. This function will return immediately
- * if the timeout is set to K_NO_WAIT. If the timeout is set to K_FOREVER,
- * the function will wait until the network buffer is sent. Timeout
- * value > 0 will wait as many ms. After the network buffer
- * is sent, a caller-supplied callback is called. The callback is called
- * even if timeout was set to K_FOREVER, the callback is called
- * before this function will return. The callback is not called if the
- * timeout expires.
+ * connections of type SOCK_DGRAM. After the network buffer is sent,
+ * a caller-supplied callback is called. Note that the callback might be
+ * called after this function has returned.
  * This is similar as BSD sendto() function.
  *
  * @param context The network context to use.
@@ -875,8 +863,7 @@ int net_context_send(struct net_context *context,
  * @param dst_addr Destination address.
  * @param addrlen Length of the address.
  * @param cb Caller-supplied callback function.
- * @param timeout Timeout for the connection. Possible values
- * are K_FOREVER, K_NO_WAIT, >0.
+ * @param timeout Currently this value is not used.
  * @param user_data Caller-supplied user data.
  *
  * @return numbers of bytes sent on success, a negative errno otherwise
@@ -896,18 +883,14 @@ int net_context_sendto(struct net_context *context,
  * @details This function has similar semantics as Posix sendmsg() call.
  * For unconnected socket, the msg_name field in msghdr must be set. For
  * connected socket the msg_name should be set to NULL, and msg_namelen to 0.
- * This function will return immediately if the timeout is set to K_NO_WAIT.
- * If the timeout is set to K_FOREVER, the function will wait until the network
- * buffer is sent. Timeout value > 0 will wait as many ms. After the network
- * buffer is sent, a caller-supplied callback is called. The callback is called
- * even if timeout was set to K_FOREVER, the callback is called before this
- * function will return. The callback is not called if the timeout expires.
+ * After the network buffer is sent, a caller-supplied callback is called.
+ * Note that the callback might be called after this function has returned.
  *
  * @param context The network context to use.
  * @param msghdr The data to send
  * @param flags Flags for the sending.
  * @param cb Caller-supplied callback function.
- * @param timeout Timeout for the connection. Possible values
+ * @param timeout Currently this value is not used.
  * @param user_data Caller-supplied user data.
  *
  * @return numbers of bytes sent on success, a negative errno otherwise
