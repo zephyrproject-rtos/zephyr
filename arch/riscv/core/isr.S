@@ -253,7 +253,7 @@ call_irq:
 	LR a0, 0x00(t0)
 
 	/* Load ISR function address in register t1 */
-	lw t1, RV_REGSIZE(t0)
+	LR t1, RV_REGSIZE(t0)
 
 #ifdef CONFIG_EXECUTION_BENCHMARKING
 	addi sp, sp, -16
