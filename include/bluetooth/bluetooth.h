@@ -641,7 +641,7 @@ int bt_br_oob_get_local(struct bt_br_oob *oob);
  *  conversion will not lose valuable information about address being
  *  processed.
  */
-#define BT_ADDR_LE_STR_LEN 27
+#define BT_ADDR_LE_STR_LEN 30
 
 /** @brief Converts binary Bluetooth address to string.
  *
