@@ -1090,7 +1090,7 @@ static inline u32_t isr_rx_adv(u8_t devmatch_ok, u8_t devmatch_id,
 		radio_le_conn_cmplt->own_addr_type = pdu_adv->rx_addr;
 		memcpy(&radio_le_conn_cmplt->own_addr[0],
 		       &pdu_adv->connect_ind.adv_addr[0], BDADDR_SIZE);
-		if (rl_idx != FILTER_IDX_NONE) {
+		if (irkmatch_ok && rl_idx != FILTER_IDX_NONE) {
 			/* TODO: store rl_idx instead if safe */
 			/* Store identity address */
 			ll_rl_id_addr_get(rl_idx,
