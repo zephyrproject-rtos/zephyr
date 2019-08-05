@@ -59,16 +59,12 @@
 		/* Push button switch 0 KEY1 */
 		compatible = "gpio-keys";
 		button0: button_0 {
-			gpios = <&gpio0 16 (GPIO_PUD_PULL_UP |
-					    GPIO_INT_ACTIVE_LOW |
-					    GPIO_INT_EDGE)>;
+			gpios = <&gpio0 16 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Push button switch 0";
 		};
 		/* Push button switch 1 KEY2 */
 		button1: button_1 {
-			gpios = <&gpio0 17 (GPIO_PUD_PULL_UP |
-					    GPIO_INT_ACTIVE_LOW |
-					    GPIO_INT_EDGE)>;
+			gpios = <&gpio0 17 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Push button switch 1";
 		};
 	};

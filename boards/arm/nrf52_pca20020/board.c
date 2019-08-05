@@ -27,8 +27,7 @@ static int pwr_ctrl_init(struct device *dev)
 		return -ENODEV;
 	}
 
-	gpio_pin_configure(gpio, cfg->pin, GPIO_DIR_OUT);
-	gpio_pin_write(gpio, cfg->pin, 1);
+	gpio_pin_configure(gpio, cfg->pin, GPIO_OUTPUT_HIGH);
 
 	k_sleep(K_MSEC(1)); /* Wait for the rail to come up and stabilize */
 

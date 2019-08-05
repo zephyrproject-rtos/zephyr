@@ -27,15 +27,8 @@ int bt_hci_transport_setup(struct device *h4)
 		return -EIO;
 	}
 
-	/* Pull the pin low before configuring it as output, to ensure that
-	 * it is driven to the correct level as soon as it is configured.
-	 */
-	err = gpio_pin_write(port, RESET_PIN, 0);
-	if (err) {
-		return err;
-	}
-
-	err = gpio_pin_configure(port, RESET_PIN, GPIO_DIR_OUT);
+	/* Configure pin as output and initialize it to low. */
+	err = gpio_pin_configure(port, RESET_PIN, GPIO_OUTPUT_LOW);
 	if (err) {
 		return err;
 	}
@@ -45,7 +38,7 @@ int bt_hci_transport_setup(struct device *h4)
 	 * that it won't send any data until the H4 device
 	 * is setup and ready to receive.
 	 */
-	err = gpio_pin_write(port, RESET_PIN, 1);
+	err = gpio_pin_set(port, RESET_PIN, 1);
 	if (err) {
 		return err;
 	}
@@ -63,7 +56,7 @@ int bt_hci_transport_setup(struct device *h4)
 	}
 
 	/* We are ready, let the nRF52840 run to main */
-	err = gpio_pin_write(port, RESET_PIN, 0);
+	err = gpio_pin_set(port, RESET_PIN, 0);
 	if (err) {
 		return err;
 	}
