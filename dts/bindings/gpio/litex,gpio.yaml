@@ -4,10 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-title: Litex GPIO
-
-description: >
-    This is a representation of the Litex GPIO nodes
+description: Litex GPIO
 
 compatible: "litex,gpio"
 
