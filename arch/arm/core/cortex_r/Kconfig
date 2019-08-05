@@ -14,6 +14,14 @@
 # if one selects a different ARM Cortex Family (Cortex-A or Cortex-M)
 
 
+config CPU_CORTEX_R4
+	bool
+	select CPU_CORTEX_R
+	select ARMV7_R
+	select ARMV7_R_FP if CPU_HAS_FPU
+	help
+	  This option signifies the use of a Cortex-R4 CPU
+
 if CPU_CORTEX_R
 
 config ARMV7_R
