@@ -21,10 +21,6 @@
 _ASM_FILE_PROLOGUE
 
 GTEXT(z_CpuIdleInit)
-#ifdef CONFIG_SYS_POWER_MANAGEMENT
-GTEXT(_NanoIdleValGet)
-GTEXT(_NanoIdleValClear)
-#endif
 GTEXT(k_cpu_idle)
 GTEXT(k_cpu_atomic_idle)
 
@@ -54,47 +50,6 @@ SECTION_FUNC(TEXT, z_CpuIdleInit)
 	movs.n r2, #_SCR_INIT_BITS
 	str r2, [r1]
 	bx lr
-
-#ifdef CONFIG_SYS_POWER_MANAGEMENT
-
-/**
- *
- * @brief Get the kernel idle setting
- *
- * Returns the kernel idle setting, in ticks. Only called by __systick().
- *
- * @return the requested number of ticks for the kernel to be idle
- *
- * C function prototype:
- *
- * s32_t _NanoIdleValGet (void);
- */
-
-SECTION_FUNC(TEXT, _NanoIdleValGet)
-	ldr r0, =_kernel
-	ldr r0, [r0, #_kernel_offset_to_idle]
-	bx lr
-
-/**
- *
- * @brief Clear the kernel idle setting
- *
- * Sets the kernel idle setting to 0. Only called by __systick().
- *
- * @return N/A
- *
- * C function prototype:
- *
- * void _NanoIdleValClear (void);
- */
-
-SECTION_FUNC(TEXT, _NanoIdleValClear)
-	ldr r0, =_kernel
-	eors.n r1, r1
-	str r1, [r0, #_kernel_offset_to_idle]
-	bx lr
-
-#endif /* CONFIG_SYS_POWER_MANAGEMENT */
 
 /**
  *
