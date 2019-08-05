@@ -5,7 +5,7 @@
  */
 
 /**
- * @brief Board configuration macros for EM Starter kit board
+ * @brief Board configuration macros for EM Software Development Platform board
  *
  * This header file is used to specify and describe board-level
  * aspects for the target.
@@ -18,13 +18,6 @@
 
 /* default system clock */
 #define SYSCLK_DEFAULT_IOSC_HZ			MHZ(100)
-
-/*
- * UART: use lr and sr to access subsystem uart IP
- */
-// #define UART_NS16550_ACCESS_IOPORT
-// #define UART_REG_ADDR_INTERVAL 4
-
 
 /* ARC EM Core IRQs */
 #define IRQ_TIMER0				16

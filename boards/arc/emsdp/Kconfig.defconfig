@@ -10,8 +10,6 @@ if BOARD_EMSDP
 config BOARD
 	default "emsdp"
 
-config CPU_ARCEM
-	default y
 
 if GPIO
 

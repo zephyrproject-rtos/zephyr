@@ -24,6 +24,27 @@ For details about the board, see: `DesignWare ARC EM Software Development Platfo
 Hardware
 ********
 
+The EM Software Development Platform supports different core configurations, such as EM4,
+EM5D, EM6, EM7D, EM9D, EM9D+ESP, EM11D, the default core configuration is EM11D. Use
+:option:`CONFIG_SOC_EMSDP_EM4`, :option:`CONFIG_SOC_EMSDP_EM5D`,
+:option:`CONFIG_SOC_EMSDP_EM6`, :option:`CONFIG_SOC_EMSDP_EM7D`,
+:option:`CONFIG_SOC_EMSDP_EM7D_ESP`, :option:`CONFIG_SOC_EMSDP_EM9D` or
+:option:`CONFIG_SOC_EMSDP_EM11D` to select different core configuration.
+
+The following table shows the hardware features supported for different core configuration:
+
++-----------+-----+-----+------+------+----------+------+-------+
+| Features  | EM4 | EM6 | EM5D | EM7D | EM7D_ESP | EM9D | EM11D |
++===========+=====+=====+======+======+==========+======+=======+
+| Caches    | N   | Y   | N    | Y    | Y        | N    | Y     |
++-----------+-----+-----+------+------+----------+------+-------+
+| DSP       | N   | N   | Y    | Y    | Y        | Y    | Y     |
++-----------+-----+-----+------+------+----------+------+-------+
+| XY Memory | N   | N   | N    | N    | N        | Y    | Y     |
++-----------+-----+-----+------+------+----------+------+-------+
+| Secure    | N   | N   | N    | N    | Y        | N    | N     |
++-----------+-----+-----+------+------+----------+------+-------+
+
 For hardware feature details, refer to : `ARC EM Software Development Platform
 <https://embarc.org/embarc_osp/doc/build/html/board/emsdp.html>`__
 
@@ -177,12 +198,13 @@ Most of the time you will not be flashing your program but will instead debug
 it using openocd and gdb. The program can be download via the USB cable into
 the code and data memories.
 
-Release Notes
-*************
-
 References
 **********
 
-.. _Digilent Pmod Modules: http://store.digilentinc.com/pmod-modules
+.. target-notes::
 
-.. _Putty website: http://www.putty.org
+.. _Digilent Pmod Modules:
+   http://store.digilentinc.com/pmod-modules
+
+.. _Putty website:
+   http://www.putty.org
