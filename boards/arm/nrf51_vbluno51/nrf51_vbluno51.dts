@@ -41,7 +41,7 @@
 		compatible = "gpio-keys";
 		button0: button_0 {
 			/* gpio flags need validation */
-			gpios = <&gpio0 15 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
 			label = "Button";
 		};
 	};
