@@ -86,13 +86,6 @@
 			label = "dna0";
 			status = "disabled";
 		};
-		prbs0: prbs@e0006800 {
-			compatible = "litex,prbs";
-			reg = <0xe0006800 0x4>;
-			reg-names = "status";
-			label = "prbs0";
-			status = "disabled";
-		};
 		i2c0: i2c@e0005000 {
 			compatible = "litex,i2c";
 			reg = <0xe0005000 0x4 0xe0005004 0x4>;
@@ -100,6 +93,34 @@
 			label = "i2c0";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			status = "disabled";
+		};
+		gpio_out: gpio@e0005800 {
+			compatible = "litex,gpio";
+			reg = <0xe0005800 0x4>;
+			reg-names = "control";
+			ngpios = <4>;
+			label = "gpio_out";
+			port-is-output;
+			status = "disabled";
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+		gpio_in: gpio@e0006000 {
+			compatible = "litex,gpio";
+			reg = <0xe0006000 0x4>;
+			reg-names = "control";
+			ngpios = <4>;
+			label = "gpio_in";
+			status = "disabled";
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+		prbs0: prbs@e0006800 {
+			compatible = "litex,prbs";
+			reg = <0xe0006800 0x4>;
+			reg-names = "status";
+			label = "prbs0";
 			status = "disabled";
 		};
 		pwm0: pwm@e0007000 {

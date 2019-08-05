@@ -57,3 +57,11 @@
 &pwm0 {
 	status = "okay";
 };
+
+&gpio_out {
+	status = "okay";
+};
+
+&gpio_in {
+	status = "okay";
+};
