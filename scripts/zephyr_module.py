@@ -130,7 +130,8 @@ def main():
         out, err = p.communicate()
         if p.returncode == 0:
             projects = out.decode(sys.getdefaultencoding()).splitlines()
-        elif re.match(r'Error: .* is not in a west installation\..*',
+        elif re.match((r'Error: .* is not in a west installation\.'
+                        '|FATAL ERROR: no west installation found from .*'),
                       err.decode(sys.getdefaultencoding())):
             # Only accept the error from bootstrapper in the event we are
             # outside a west managed project.
