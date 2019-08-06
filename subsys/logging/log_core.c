@@ -159,7 +159,8 @@ void log_free_arguments(struct log_msg *msg)
  */
 bool log_is_rodata(const void *addr)
 {
-#if defined(CONFIG_ARM) || defined(CONFIG_ARC) || defined(CONFIG_X86)
+#if defined(CONFIG_ARM) || defined(CONFIG_ARC) || defined(CONFIG_X86) || \
+	defined(CONFIG_X86_64)
 	extern const char *_image_rodata_start[];
 	extern const char *_image_rodata_end[];
 	#define RO_START _image_rodata_start
