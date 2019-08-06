@@ -40,6 +40,41 @@ struct sys_sem {
 };
 
 /**
+ * @brief Statically define and initialize a sys_sem
+ *
+ * The semaphore can be accessed outside the module where it is defined using:
+ *
+ * @code extern struct sys_sem <name>; @endcode
+ *
+ * Route this to memory domains using K_APP_DMEM().
+ *
+ * @param _name Name of the semaphore.
+ * @param _initial_count Initial semaphore count.
+ * @param _count_limit Maximum permitted semaphore count.
+ */
+#ifdef CONFIG_USERSPACE
+#define SYS_SEM_DEFINE(_name, _initial_count, _count_limit) \
+	struct sys_sem _name = { \
+		.futex = { _initial_count }, \
+		.limit = _count_limit \
+	}; \
+	BUILD_ASSERT(((_count_limit) != 0) && \
+		     ((_initial_count) <= (_count_limit)))
+#else
+/* Stuff this in the section with the rest of the k_sem objects, since they
+ * are identical and can be treated as a k_sem in the boot initialization code
+ */
+#define SYS_SEM_DEFINE(_name, _initial_count, _count_limit) \
+	Z_DECL_ALIGN(struct sys_sem) _name \
+		__in_section(_k_sem, static, _name) = { \
+		.kernel_sem = Z_SEM_INITIALIZER(_name.kernel_sem, \
+						_initial_count, _count_limit) \
+	}; \
+	BUILD_ASSERT(((_count_limit) != 0) && \
+		     ((_initial_count) <= (_count_limit)))
+#endif
+
+/**
  * @brief Initialize a semaphore.
  *
  * This routine initializes a semaphore instance, prior to its first use.
