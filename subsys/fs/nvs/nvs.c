@@ -235,7 +235,8 @@ static int nvs_flash_erase_sector(struct nvs_fs *fs, u32_t addr)
 		/* flash protection set error */
 		return rc;
 	}
-	LOG_DBG("Erasing flash at %zx, len %d", offset, fs->sector_size);
+	LOG_DBG("Erasing flash at %lx, len %d", (long int) offset,
+		fs->sector_size);
 	rc = flash_erase(fs->flash_device, offset, fs->sector_size);
 	if (rc) {
 		/* flash erase error */
