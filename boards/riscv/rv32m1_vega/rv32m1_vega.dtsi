@@ -109,6 +109,10 @@ arduino_i2c: &i2c0 {
 	};
 };
 
+arduino_spi: &spi0 {
+	status = "okay";
+};
+
 &spi1 {
 	status = "okay";
 	cs-gpios = <&gpiob 22 0>;
