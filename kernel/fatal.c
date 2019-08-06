@@ -79,18 +79,9 @@ void z_fatal_print(const char *fmt, ...)
 	va_list ap;
 
 	va_start(ap, fmt);
-	if (IS_ENABLED(CONFIG_LOG)) {
-		struct log_msg_ids src_level = {
-			.level = LOG_LEVEL_ERR,
-			.source_id = LOG_CURRENT_MODULE_ID(),
-			.domain_id = CONFIG_LOG_DOMAIN_ID
-		};
-		log_generic(src_level, fmt, ap);
-	} else {
-		printk("FATAL: ");
-		vprintk(fmt, ap);
-		printk("\n");
-	}
+	printk("FATAL: ");
+	vprintk(fmt, ap);
+	printk("\n");
 	va_end(ap);
 }
 #endif /* CONFIG_LOG || CONFIG_PRINTK */
