@@ -17,7 +17,10 @@ ZTEST_BMEM static int ret = TC_PASS;
 
 void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *esf)
 {
-	zassert_equal(reason, K_ERR_STACK_CHK_FAIL, "wrong error type");
+	if (reason != K_ERR_STACK_CHK_FAIL) {
+		printk("wrong error type\n");
+		k_fatal_halt(reason);
+	}
 }
 
 void check_input(const char *name, const char *input);
