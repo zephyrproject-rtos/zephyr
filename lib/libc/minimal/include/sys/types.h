@@ -42,8 +42,15 @@ typedef int off_t;
 
 #endif
 
+#if !defined(__time_t_defined)
+#define __time_t_defined
 typedef int64_t time_t;
+#endif
+
+#if !defined(__suseconds_t_defined)
+#define __suseconds_t_defined
 typedef int32_t suseconds_t;
+#endif
 
 #if !defined(__mem_word_t_defined)
 #define __mem_word_t_defined
