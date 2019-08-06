@@ -690,6 +690,33 @@ static int hci_le_create_conn(const struct bt_conn *conn)
 {
 	struct net_buf *buf;
 	struct bt_hci_cp_le_create_conn *cp;
+	u8_t own_addr_type;
+	int err;
+
+	if (IS_ENABLED(CONFIG_BT_PRIVACY)) {
+		err = le_set_private_addr(conn->id);
+		if (err) {
+			return err;
+		}
+
+		if (BT_FEAT_LE_PRIVACY(bt_dev.le.features)) {
+			own_addr_type = BT_HCI_OWN_ADDR_RPA_OR_RANDOM;
+		} else {
+			own_addr_type = BT_ADDR_LE_RANDOM;
+		}
+	} else {
+		/* If Static Random address is used as Identity address we
+		 * need to restore it before creating connection. Otherwise
+		 * NRPA used for active scan could be used for connection.
+		 */
+		const bt_addr_le_t *own_addr = &bt_dev.id_addr[conn->id];
+
+		if (own_addr->type == BT_ADDR_LE_RANDOM) {
+			set_random_address(&own_addr->a);
+		}
+
+		own_addr_type = own_addr->type;
+	}
 
 	buf = bt_hci_cmd_create(BT_HCI_OP_LE_CREATE_CONN, sizeof(*cp));
 	if (!buf) {
@@ -704,7 +731,7 @@ static int hci_le_create_conn(const struct bt_conn *conn)
 	cp->scan_window = cp->scan_interval;
 
 	bt_addr_le_copy(&cp->peer_addr, &conn->le.dst);
-	cp->own_addr_type = conn->le.dst.type;
+	cp->own_addr_type = own_addr_type;
 	cp->conn_interval_min = sys_cpu_to_le16(conn->le.interval_min);
 	cp->conn_interval_max = sys_cpu_to_le16(conn->le.interval_max);
 	cp->conn_latency = sys_cpu_to_le16(conn->le.latency);
@@ -1426,22 +1453,6 @@ static void check_pending_conn(const bt_addr_le_t *id_addr,
 	if (atomic_test_bit(bt_dev.flags, BT_DEV_SCANNING) &&
 	    set_le_scan_enable(BT_HCI_LE_SCAN_DISABLE)) {
 		goto failed;
-	}
-
-	if (IS_ENABLED(CONFIG_BT_PRIVACY)) {
-		if (le_set_private_addr(BT_ID_DEFAULT)) {
-			goto failed;
-		}
-	} else {
-		const bt_addr_le_t *own_addr = &bt_dev.id_addr[conn->id];
-
-		/* If Static Random address is used as Identity address we
-		 * need to restore it before creating connection. Otherwise
-		 * NRPA used for active scan could be used for connection.
-		 */
-		if (own_addr->type == BT_ADDR_LE_RANDOM) {
-			set_random_address(&own_addr->a);
-		}
 	}
 
 	if (hci_le_create_conn(conn)) {
