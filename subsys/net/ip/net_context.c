@@ -1364,8 +1364,14 @@ static int context_sendto(struct net_context *context,
 			addr6 = msghdr->msg_name;
 			addrlen = msghdr->msg_namelen;
 
-			if (!addr6) {
-				return -EINVAL;
+			if (net_context_get_ip_proto(context) ==
+								IPPROTO_TCP) {
+				addr6 = net_sin6(&context->remote);
+				addrlen = sizeof(struct sockaddr_in6);
+			} else {
+				if (!addr6) {
+					return -EINVAL;
+				}
 			}
 
 			/* For sendmsg(), the dst_addr is NULL so set it here.
@@ -1389,8 +1395,14 @@ static int context_sendto(struct net_context *context,
 			addr4 = msghdr->msg_name;
 			addrlen = msghdr->msg_namelen;
 
-			if (!addr4) {
-				return -EINVAL;
+			if (net_context_get_ip_proto(context) ==
+								IPPROTO_TCP) {
+				addr4 = net_sin(&context->remote);
+				addrlen = sizeof(struct sockaddr_in);
+			} else {
+				if (!addr4) {
+					return -EINVAL;
+				}
 			}
 
 			/* For sendmsg(), the dst_addr is NULL so set it here.
