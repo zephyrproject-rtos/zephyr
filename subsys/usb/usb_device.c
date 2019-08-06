@@ -1398,7 +1398,7 @@ static int class_handler(struct usb_setup_packet *pSetup,
 
 		if ((iface->class_handler) &&
 		    (if_descr->bInterfaceNumber ==
-		     sys_le16_to_cpu(pSetup->wIndex))) {
+		     (sys_le16_to_cpu(pSetup->wIndex) & 0xFF))) {
 			return iface->class_handler(pSetup, len, data);
 		}
 	}
