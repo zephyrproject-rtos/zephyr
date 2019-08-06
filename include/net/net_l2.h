@@ -114,11 +114,11 @@ NET_L2_DECLARE_PUBLIC(BLUETOOTH_L2);
 NET_L2_DECLARE_PUBLIC(OPENTHREAD_L2);
 #endif /* CONFIG_NET_L2_OPENTHREAD */
 
-#ifdef CONFIG_NET_L2_CANBUS
-#define CANBUS_L2		CANBUS
-#define CANBUS_L2_CTX_TYPE	void*
-NET_L2_DECLARE_PUBLIC(CANBUS_L2);
-#endif /* CONFIG_NET_L2_CANBUS */
+#ifdef CONFIG_NET_L2_CANBUS_RAW
+#define CANBUS_RAW_L2		CANBUS_RAW
+#define CANBUS_RAW_L2_CTX_TYPE	void*
+NET_L2_DECLARE_PUBLIC(CANBUS_RAW_L2);
+#endif /* CONFIG_NET_L2_CANBUS_RAW */
 
 #define NET_L2_INIT(_name, _recv_fn, _send_fn, _enable_fn, _get_flags_fn) \
 	const struct net_l2 (NET_L2_GET_NAME(_name)) __used		\
