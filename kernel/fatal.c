@@ -95,6 +95,11 @@ void z_fatal_print(const char *fmt, ...)
 }
 #endif /* CONFIG_LOG || CONFIG_PRINTK */
 
+FUNC_NORETURN void k_fatal_halt(unsigned int reason)
+{
+	z_arch_system_halt(reason);
+}
+
 void z_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
 {
 	struct k_thread *thread = k_current_get();
