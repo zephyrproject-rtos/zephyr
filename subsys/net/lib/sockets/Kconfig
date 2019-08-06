@@ -129,7 +129,7 @@ config NET_SOCKETS_PACKET
 
 config NET_SOCKETS_CAN
 	bool "Enable socket CAN support [EXPERIMENTAL]"
-	select NET_L2_CANBUS
+	select NET_L2_CANBUS_RAW
 	help
 	  The value depends on your network needs.
 
