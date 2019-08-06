@@ -17,8 +17,14 @@ static ZTEST_BMEM struct k_thread *dyn_thread;
 
 void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *esf)
 {
-	zassert_equal(reason, K_ERR_KERNEL_OOPS, "wrong error reason");
-	zassert_equal(k_current_get(), dyn_thread, "wrong thread crashed");
+	if (reason != K_ERR_KERNEL_OOPS) {
+		printk("wrong error reason\n");
+		k_fatal_halt(reason);
+	}
+	if (k_current_get() != dyn_thread) {
+		printk("wrong thread crashed\n");
+		k_fatal_halt(reason);
+	}
 }
 
 static void dyn_thread_entry(void *p1, void *p2, void *p3)

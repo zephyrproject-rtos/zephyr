@@ -50,8 +50,14 @@ static volatile int spur_handler_aborted_thread = 1;
 
 void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *esf)
 {
-	zassert_equal(reason, K_ERR_SPURIOUS_IRQ, "wrong error reason");
-	zassert_equal(k_current_get(), &my_thread, "wrong thread crashed");
+	if (reason != K_ERR_SPURIOUS_IRQ) {
+		printk("wrong error reason\n");
+		k_fatal_halt(reason);
+	}
+	if (k_current_get() != &my_thread) {
+		printk("wrong thread crashed\n");
+		k_fatal_halt(reason);
+	}
 }
 
 /**

@@ -682,12 +682,8 @@ void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
 		valid_fault = false; /* reset back to normal */
 		ztest_test_pass();
 	} else {
-		ztest_test_fail();
+		k_fatal_halt(reason);
 	}
-#if !(defined(CONFIG_ARM) || defined(CONFIG_ARC))
-	CODE_UNREACHABLE;
-#endif
-
 }
 /******************************************************************************/
 /* Test case entry points */
