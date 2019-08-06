@@ -594,7 +594,11 @@ void z_impl_log_panic(void)
 }
 
 #ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER0_SIMPLE_VOID(log_panic);
+void z_vrfy_log_panic(void)
+{
+	z_impl_log_panic();
+}
+#include <syscalls/log_panic_mrsh.c>
 #endif
 
 static bool msg_filter_check(struct log_backend const *backend,
@@ -677,10 +681,11 @@ bool z_impl_log_process(bool bypass)
 }
 
 #ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER(log_process, bypass)
+bool z_vrfy_log_process(bool bypass)
 {
-	return (u32_t)log_process((bool)(bypass));
+	return z_impl_log_process(bypass);
 }
+#include <syscalls/log_process_mrsh.c>
 #endif
 
 u32_t z_impl_log_buffered_cnt(void)
@@ -689,7 +694,11 @@ u32_t z_impl_log_buffered_cnt(void)
 }
 
 #ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER0_SIMPLE(log_buffered_cnt);
+u32_t z_vrfy_log_buffered_cnt(void)
+{
+	return z_impl_log_buffered_cnt();
+}
+#include <syscalls/log_buffered_cnt_mrsh.c>
 #endif
 
 void log_dropped(void)
@@ -774,7 +783,10 @@ u32_t z_impl_log_filter_set(struct log_backend const *const backend,
 }
 
 #ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER(log_filter_set, backend, domain_id, src_id, level)
+u32_t z_vrfy_log_filter_set(struct log_backend const *const backend,
+			    u32_t domain_id,
+			    u32_t src_id,
+			    u32_t level)
 {
 	Z_OOPS(Z_SYSCALL_VERIFY_MSG(backend == 0,
 		"Setting per-backend filters from user mode is not supported"));
@@ -788,6 +800,7 @@ Z_SYSCALL_HANDLER(log_filter_set, backend, domain_id, src_id, level)
 
 	return z_impl_log_filter_set(NULL, domain_id, src_id, level);
 }
+#include <syscalls/log_filter_set_mrsh.c>
 #endif
 
 static void backend_filter_set(struct log_backend const *const backend,
@@ -916,9 +929,8 @@ void z_impl_z_log_string_from_user(u32_t src_level_val, const char *str)
 	__ASSERT(false, "This function can be called from user mode only.");
 }
 
-Z_SYSCALL_HANDLER(z_log_string_from_user, src_level_val, user_string_ptr)
+void z_vrfy_z_log_string_from_user(u32_t src_level_val, const char *str)
 {
-	const char *str = (const char *)(user_string_ptr);
 	u8_t level, domain_id, source_id;
 	union {
 		struct log_msg_ids structure;
@@ -946,7 +958,7 @@ Z_SYSCALL_HANDLER(z_log_string_from_user, src_level_val, user_string_ptr)
 	    (level > LOG_FILTER_SLOT_GET(log_dynamic_filters_get(source_id),
 					LOG_FILTER_AGGR_SLOT_IDX))) {
 		/* Skip filtered out messages. */
-		return 0;
+		return;
 	}
 
 	/*
@@ -975,9 +987,8 @@ Z_SYSCALL_HANDLER(z_log_string_from_user, src_level_val, user_string_ptr)
 		str = log_strdup(str);
 		log_1("%s", (log_arg_t)str, src_level_union.structure);
 	}
-
-	return 0;
 }
+#include <syscalls/z_log_string_from_user_mrsh.c>
 
 void log_generic_from_user(struct log_msg_ids src_level,
 			   const char *fmt, va_list ap)
@@ -1015,11 +1026,9 @@ void z_impl_z_log_hexdump_from_user(u32_t src_level_val, const char *metadata,
 	__ASSERT(false, "This function can be called from user mode only.");
 }
 
-Z_SYSCALL_HANDLER(z_log_hexdump_from_user, src_level_val,
-		  user_metadata_ptr, user_data_ptr, len)
+void z_vrfy_z_log_hexdump_from_user(u32_t src_level_val, const char *metadata,
+				    const u8_t *data, u32_t len)
 {
-	const char *metadata = (const char *)(user_metadata_ptr);
-	const void *data = (const void *)(user_data_ptr);
 	union {
 		struct log_msg_ids structure;
 		u32_t value;
@@ -1045,7 +1054,7 @@ Z_SYSCALL_HANDLER(z_log_hexdump_from_user, src_level_val,
 	     log_dynamic_filters_get(src_level_union.structure.source_id),
 	     LOG_FILTER_AGGR_SLOT_IDX))) {
 		/* Skip filtered out messages. */
-		return 0;
+		return;
 	}
 
 	/*
@@ -1065,9 +1074,8 @@ Z_SYSCALL_HANDLER(z_log_hexdump_from_user, src_level_val,
 		metadata = log_strdup(metadata);
 		log_hexdump(metadata, data, len, src_level_union.structure);
 	}
-
-	return 0;
 }
+#include <syscalls/z_log_hexdump_from_user_mrsh.c>
 
 void log_hexdump_from_user(struct log_msg_ids src_level, const char *metadata,
 			   const u8_t *data, u32_t len)
@@ -1097,7 +1105,7 @@ void z_impl_z_log_string_from_user(u32_t src_level_val, const char *str)
 	__ASSERT_NO_MSG(false);
 }
 
-void z_impl_z_log_hexdump_from_user(u32_t src_level_val, const char *metadata,
+void z_vrfy_z_log_hexdump_from_user(u32_t src_level_val, const char *metadata,
 				    const u8_t *data, u32_t len)
 {
 	ARG_UNUSED(src_level_val);
