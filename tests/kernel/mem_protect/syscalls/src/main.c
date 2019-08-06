@@ -20,7 +20,7 @@ size_t z_impl_string_nlen(char *src, size_t maxlen, int *err)
 	return z_user_string_nlen(src, maxlen, err);
 }
 
-Z_SYSCALL_HANDLER(string_nlen, src, maxlen, err)
+static inline size_t z_vrfy_string_nlen(char *src, size_t maxlen, int *err)
 {
 	int err_copy;
 	size_t ret;
@@ -34,6 +34,7 @@ Z_SYSCALL_HANDLER(string_nlen, src, maxlen, err)
 
 	return ret;
 }
+#include <syscalls/string_nlen_mrsh.c>
 
 int z_impl_string_alloc_copy(char *src)
 {
@@ -44,7 +45,7 @@ int z_impl_string_alloc_copy(char *src)
 	}
 }
 
-Z_SYSCALL_HANDLER(string_alloc_copy, src)
+static inline int z_vrfy_string_alloc_copy(char *src)
 {
 	char *src_copy;
 	int ret;
@@ -59,6 +60,7 @@ Z_SYSCALL_HANDLER(string_alloc_copy, src)
 
 	return ret;
 }
+#include <syscalls/string_alloc_copy_mrsh.c>
 
 int z_impl_string_copy(char *src)
 {
@@ -69,7 +71,7 @@ int z_impl_string_copy(char *src)
 	}
 }
 
-Z_SYSCALL_HANDLER(string_copy, src)
+static inline int z_vrfy_string_copy(char *src)
 {
 	int ret = z_user_string_copy(kernel_buf, (char *)src, BUF_SIZE);
 
@@ -79,6 +81,7 @@ Z_SYSCALL_HANDLER(string_copy, src)
 
 	return z_impl_string_copy(kernel_buf);
 }
+#include <syscalls/string_copy_mrsh.c>
 
 /* Not actually used, but will copy wrong string if called by mistake instead
  * of the handler
@@ -89,10 +92,11 @@ int z_impl_to_copy(char *dest)
 	return 0;
 }
 
-Z_SYSCALL_HANDLER(to_copy, dest)
+static inline int z_vrfy_to_copy(char *dest)
 {
 	return z_user_to_copy((char *)dest, user_string, BUF_SIZE);
 }
+#include <syscalls/to_copy_mrsh.c>
 
 /**
  * @brief Test to demonstrate usage of z_user_string_nlen()

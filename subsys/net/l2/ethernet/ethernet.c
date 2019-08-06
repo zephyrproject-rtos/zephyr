@@ -1012,10 +1012,11 @@ struct device *z_impl_net_eth_get_ptp_clock_by_index(int index)
 }
 
 #ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER(net_eth_get_ptp_clock_by_index, index)
+static inline struct device *z_vrfy_net_eth_get_ptp_clock_by_index(int index)
 {
-	return (u32_t)z_impl_net_eth_get_ptp_clock_by_index(index);
+	return z_impl_net_eth_get_ptp_clock_by_index(index);
 }
+#include <syscalls/net_eth_get_ptp_clock_by_index_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 #else /* CONFIG_PTP_CLOCK */
 struct device *z_impl_net_eth_get_ptp_clock_by_index(int index)

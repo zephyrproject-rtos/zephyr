@@ -899,25 +899,25 @@ void z_impl_stack_info_get(u32_t *start_addr, u32_t *size)
 	*size = k_current_get()->stack_info.size;
 }
 
-Z_SYSCALL_HANDLER(stack_info_get, start_addr, size)
+static inline void z_vrfy_stack_info_get(u32_t *start_addr, u32_t *size)
 {
 	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(start_addr, sizeof(u32_t)));
 	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(size, sizeof(u32_t)));
 
 	z_impl_stack_info_get((u32_t *)start_addr, (u32_t *)size);
-
-	return 0;
 }
+#include <syscalls/stack_info_get_mrsh.c>
 
 int z_impl_check_perms(void *addr, size_t size, int write)
 {
 	return z_arch_buffer_validate(addr, size, write);
 }
 
-Z_SYSCALL_HANDLER(check_perms, addr, size, write)
+static inline int z_vrfy_check_perms(void *addr, size_t size, int write)
 {
 	return z_impl_check_perms((void *)addr, size, write);
 }
+#include <syscalls/check_perms_mrsh.c>
 
 void stack_buffer_scenarios(k_thread_stack_t *stack_obj, size_t obj_size)
 {

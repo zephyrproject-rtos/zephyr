@@ -71,13 +71,13 @@ s32_t z_impl_k_stack_alloc_init(struct k_stack *stack, u32_t num_entries)
 }
 
 #ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER(k_stack_alloc_init, stack, num_entries)
+static inline s32_t z_vrfy_k_stack_alloc_init(struct k_stack *stack, u32_t num_entries)
 {
 	Z_OOPS(Z_SYSCALL_OBJ_NEVER_INIT(stack, K_OBJ_STACK));
 	Z_OOPS(Z_SYSCALL_VERIFY(num_entries > 0));
-
-	return z_impl_k_stack_alloc_init((struct k_stack *)stack, num_entries);
+	return z_impl_k_stack_alloc_init(stack, num_entries);
 }
+#include <syscalls/k_stack_alloc_init_mrsh.c>
 #endif
 
 void k_stack_cleanup(struct k_stack *stack)
@@ -118,17 +118,14 @@ void z_impl_k_stack_push(struct k_stack *stack, stack_data_t data)
 }
 
 #ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER(k_stack_push, stack_p, data)
+static inline void z_vrfy_k_stack_push(struct k_stack *stack, stack_data_t data)
 {
-	struct k_stack *stack = (struct k_stack *)stack_p;
-
 	Z_OOPS(Z_SYSCALL_OBJ(stack, K_OBJ_STACK));
 	Z_OOPS(Z_SYSCALL_VERIFY_MSG(stack->next != stack->top,
 				    "stack is full"));
-
 	z_impl_k_stack_push(stack, data);
-	return 0;
 }
+#include <syscalls/k_stack_push_mrsh.c>
 #endif
 
 int z_impl_k_stack_pop(struct k_stack *stack, stack_data_t *data, s32_t timeout)
@@ -160,12 +157,11 @@ int z_impl_k_stack_pop(struct k_stack *stack, stack_data_t *data, s32_t timeout)
 }
 
 #ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER(k_stack_pop, stack, data, timeout)
+static inline int z_vrfy_k_stack_pop(struct k_stack *stack, stack_data_t *data, s32_t timeout)
 {
 	Z_OOPS(Z_SYSCALL_OBJ(stack, K_OBJ_STACK));
 	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(data, sizeof(stack_data_t)));
-
-	return z_impl_k_stack_pop((struct k_stack *)stack, (stack_data_t *)data,
-				 timeout);
+	return z_impl_k_stack_pop(stack, data, timeout);
 }
+#include <syscalls/k_stack_pop_mrsh.c>
 #endif

@@ -31,10 +31,11 @@ int z_impl_zephyr_fputc(int c, FILE *stream)
 }
 
 #ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER(zephyr_fputc, c, stream)
+static inline int z_vrfy_zephyr_fputc(int c, FILE *stream)
 {
-	return z_impl_zephyr_fputc(c, (FILE *)stream);
+	return z_impl_zephyr_fputc(c, stream);
 }
+#include <syscalls/zephyr_fputc_mrsh.c>
 #endif
 
 int fputc(int c, FILE *stream)
