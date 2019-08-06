@@ -34,6 +34,14 @@ Building the application for v2m_musca
    :board: v2m_musca
    :goals: debug
 
+Building the application for v2m_musca_b1
+*****************************************
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/subsys/ipc/openamp
+   :board: v2m_musca_b1
+   :goals: debug
+
 Open a serial terminal (minicom, putty, etc.) and connect the board with the
 following settings:
 
