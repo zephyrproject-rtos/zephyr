@@ -383,8 +383,6 @@ static int send_seg(struct bt_mesh_net_tx *net_tx, struct net_buf_simple *sdu,
 		net_buf_add_mem(seg, sdu->data, len);
 		net_buf_simple_pull(sdu, len);
 
-		tx->seg[seg_o] = net_buf_ref(seg);
-
 		if (IS_ENABLED(CONFIG_BT_MESH_FRIEND)) {
 			enum bt_mesh_friend_pdu_type type;
 
@@ -402,9 +400,11 @@ static int send_seg(struct bt_mesh_net_tx *net_tx, struct net_buf_simple *sdu,
 				 * out through the Friend Queue.
 				 */
 				net_buf_unref(seg);
-				return 0;
+				continue;
 			}
 		}
+
+		tx->seg[seg_o] = net_buf_ref(seg);
 
 		BT_DBG("Sending %u/%u", seg_o, tx->seg_n);
 

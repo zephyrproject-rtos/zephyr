@@ -187,6 +187,10 @@ static void adv_thread(void *p1, void *p2, void *p3)
 			BT_MESH_ADV(buf)->busy = 0U;
 			adv_send(buf);
 		}
+		else{
+			/*free the canceled buffer */
+			net_buf_unref(buf);
+		}
 
 		STACK_ANALYZE("adv stack", adv_thread_stack);
 		k_thread_foreach(adv_stack_dump, "BT_MESH");
