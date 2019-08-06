@@ -606,7 +606,7 @@ class Device:
              .format(name, self.binding_path, prop_type))
 
     def _init_regs(self):
-        # Initializes self.regs with a list of Register objects
+        # Initializes self.regs
 
         node = self._node
 
@@ -630,10 +630,10 @@ class Device:
 
             self.regs.append(reg)
 
-        _add_names(node, "reg-names", self.regs)
+        _add_names(node, "reg", self.regs)
 
     def _init_interrupts(self):
-        # Initializes self.interrupts with a list of Interrupt objects
+        # Initializes self.interrupts
 
         node = self._node
 
@@ -649,7 +649,7 @@ class Device:
 
             self.interrupts.append(interrupt)
 
-        _add_names(node, "interrupt-names", self.interrupts)
+        _add_names(node, "interrupt", self.interrupts)
 
     def _init_gpios(self):
         # Initializes self.gpios
@@ -664,7 +664,7 @@ class Device:
                 gpio = GPIO()
                 gpio.dev = self
                 gpio.controller = controller
-                gpio.specifier = self._named_cells(controller, spec, "GPIOS")
+                gpio.specifier = self._named_cells(controller, spec, "GPIO")
                 gpio.name = prefix
 
                 self.gpios[prefix].append(gpio)
@@ -672,17 +672,11 @@ class Device:
     def _init_clocks(self):
         # Initializes self.clocks
 
-        node = self._node
+        self.clocks = self._simple_phandle_val_list("clock", Clock)
 
-        self.clocks = []
-
-        for controller_node, spec in _clocks(node):
-            controller = self.edt._node2dev[controller_node]
-
-            clock = Clock()
-            clock.dev = self
-            clock.controller = controller
-            clock.specifier = self._named_cells(controller, spec, "clocks")
+        # Initialize Clock.frequency
+        for clock in self.clocks:
+            controller = clock.controller
             if "fixed-clock" in controller.compats:
                 if "clock-frequency" not in controller.props:
                     _err("{!r} is a 'fixed-clock', but either lacks a "
@@ -693,26 +687,55 @@ class Device:
             else:
                 clock.frequency = None
 
-            self.clocks.append(clock)
-
-        _add_names(node, "clock-names", self.clocks)
-
     def _init_pwms(self):
         # Initializes self.pwms
 
-        self.pwms = []
+        self.pwms = self._simple_phandle_val_list("pwm", PWM)
 
-        for controller_node, spec in _pwms(self._node):
-            controller = self.edt._node2dev[controller_node]
+    def _simple_phandle_val_list(self, name, cls):
+        # Helper for parsing properties like
+        #
+        #     <name>s = <phandle value phandle value ...>
+        #     (e.g., gpios = <&foo 1 2 &bar 3 4>)
+        #
+        # , where each phandle points to a node that has a
+        #
+        #     #<name>-cells = <size>
+        #
+        # property that gives the number of cells in the value after the
+        # phandle. Also parses any
+        #
+        #     <name>-names = "...", "...", ...
+        #
+        # Arguments:
+        #
+        # name:
+        #   The <name>, e.g. "clock" or "pwm". Note: no -s in the argument.
+        #
+        # cls:
+        #   A class object. Instances of this class will be created and the
+        #   'dev', 'controller', 'specifier', and 'name' fields initialized.
+        #   See the documentation for e.g. the PWM class.
+        #
+        # Returns a list of 'cls' instances.
 
-            pwm = PWM()
-            pwm.dev = self
-            pwm.controller = controller
-            pwm.specifier = self._named_cells(controller, spec, "pwms")
+        prop = self._node.props.get(name + "s")
+        if not prop:
+            return []
 
-            self.pwms.append(pwm)
+        res = []
 
-        _add_names(self._node, "pwm-names", self.pwms)
+        for controller_node, spec in _phandle_val_list(prop, name):
+            obj = cls()
+            obj.dev = self
+            obj.controller = self.edt._node2dev[controller_node]
+            obj.specifier = self._named_cells(obj.controller, spec, name)
+
+            res.append(obj)
+
+        _add_names(self._node, name, res)
+
+        return res
 
     def _named_cells(self, controller, spec, controller_s):
         # _init_{interrupts,gpios}() helper. Returns a dictionary that maps
@@ -1234,16 +1257,18 @@ def _add_names(node, names_ident, objs):
     #   Device tree node
     #
     # names-ident:
-    #   name of property holding names, e.g. "reg-names"
+    #   The <foo> part of <foo>-names, e.g. "reg" for "reg-names"
     #
     # objs:
     #   list of objects whose .name field should be set
 
-    if names_ident in node.props:
-        names = node.props[names_ident].to_strings()
+    full_names_ident = names_ident + "-names"
+
+    if full_names_ident in node.props:
+        names = node.props[full_names_ident].to_strings()
         if len(names) != len(objs):
             _err("{} property in {} has {} strings, expected {} strings"
-                 .format(names_ident, node.name, len(names), len(objs)))
+                 .format(full_names_ident, node.name, len(names), len(objs)))
 
         for obj, name in zip(objs, names):
             obj.name = name
@@ -1276,7 +1301,7 @@ def _interrupts(node):
     if "interrupts-extended" in node.props:
         prop = node.props["interrupts-extended"]
         return [_map_interrupt(node, iparent, spec)
-                for iparent, spec in _phandle_val_list(prop, _interrupt_cells)]
+                for iparent, spec in _phandle_val_list(prop, "interrupt")]
 
     if "interrupts" in node.props:
         # Treat 'interrupts' as a special case of 'interrupts-extended', with
@@ -1324,26 +1349,6 @@ def _map_interrupt(child, parent, child_spec):
     return (parent, raw_spec[4*own_address_cells(parent):])
 
 
-def _clocks(node):
-    # Returns a list of (<controller>, <specifier>) tuples for any 'clocks'
-    # property on 'node', or an empty list if 'node' has no 'clocks'.
-    # <controller> is a dtlib.Node.
-
-    if "clocks" not in node.props:
-        return []
-    return _phandle_val_list(node.props["clocks"], _clock_cells)
-
-
-def _pwms(node):
-    # Returns a list of (<controller>, <specifier>) tuples for any 'pwms'
-    # property on 'node', or an empty list if 'node' has no 'pwms'.
-    # <controller> is a dtlib.Node.
-
-    if "pwms" not in node.props:
-        return []
-    return _phandle_val_list(node.props["pwms"], _pwm_cells)
-
-
 def _gpios(node):
     # Returns a dictionary that maps '<prefix>-gpios' prefixes to lists of
     # (<controller>, <specifier>) tuples (possibly after mapping through an
@@ -1363,7 +1368,7 @@ def _gpios(node):
 
             res[prefix] = [
                 _map_gpio(prop.node, controller, spec)
-                for controller, spec in _phandle_val_list(prop, _gpio_cells)
+                for controller, spec in _phandle_val_list(prop, "gpio")
             ]
 
     return res
@@ -1540,19 +1545,22 @@ def _not(b):
     return bytes(~x & 0xFF for x in b)
 
 
-def _phandle_val_list(prop, n_cells_fn):
-    # Parses a '<phandle> <value> <phandle> <value> ...' value
+def _phandle_val_list(prop, n_cells_name):
+    # Parses a '<phandle> <value> <phandle> <value> ...' value. The number of
+    # cells that make up each <value> is derived from the node pointed at by
+    # the preceding <phandle>.
     #
     # prop:
     #   dtlib.Property with value to parse
     #
-    # cells_fn:
-    #   A function that returns the number of cells for a <value>. Takes the
-    #   node pointed at by the preceding <phandle> as its argument.
+    # n_cells_name:
+    #   The <name> part of the #<name>-cells property to look for on the nodes
+    #   the phandles point to, e.g. "gpio" for #gpio-cells.
     #
     # Returns a list of (<node>, <value>) tuples, where <node> is the node
-    # pointed at by <phandle>. 'cells_fn' is a function called on <node> to get
-    # the number of cells for <value>.
+    # pointed at by <phandle>.
+
+    full_n_cells_name = "#{}-cells".format(n_cells_name)
 
     res = []
 
@@ -1568,7 +1576,10 @@ def _phandle_val_list(prop, n_cells_fn):
         if not node:
             _err("bad phandle in " + repr(prop))
 
-        n_cells = n_cells_fn(node)
+        if full_n_cells_name not in node.props:
+            _err("{!r} lacks {}".format(node, full_n_cells_name))
+
+        n_cells = node.props[full_n_cells_name].to_num()
         if len(raw) < 4*n_cells:
             _err("missing data after phandle in " + repr(prop))
 
@@ -1609,18 +1620,6 @@ def _gpio_cells(node):
     if "#gpio-cells" not in node.props:
         _err("{!r} lacks #gpio-cells".format(node))
     return node.props["#gpio-cells"].to_num()
-
-
-def _pwm_cells(node):
-    if "#pwm-cells" not in node.props:
-        _err("{!r} lacks #pwm-cells".format(node))
-    return node.props["#pwm-cells"].to_num()
-
-
-def _clock_cells(node):
-    if "#clock-cells" not in node.props:
-        _err("{!r} lacks #clock-cells".format(node))
-    return node.props["#clock-cells"].to_num()
 
 
 def _slice(node, prop_name, size):
