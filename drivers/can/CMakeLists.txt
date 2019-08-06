@@ -8,3 +8,4 @@ zephyr_sources_ifdef(CONFIG_CAN_MCUX_FLEXCAN can_mcux_flexcan.c)
 
 zephyr_sources_ifdef(CONFIG_USERSPACE        can_handlers.c)
 zephyr_sources_ifdef(CONFIG_CAN_SHELL        can_shell.c)
+zephyr_sources_ifdef(CONFIG_CAN_NET          can_net.c)

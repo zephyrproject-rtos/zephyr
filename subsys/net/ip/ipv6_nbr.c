@@ -976,6 +976,8 @@ static inline u8_t get_llao_len(struct net_if *iface)
 		return 8;
 	} else if (net_if_get_link_addr(iface)->len == 8U) {
 		return 16;
+	} else if (net_if_get_link_addr(iface)->len == 2U) {
+		return 8;
 	}
 
 	/* What else could it be? */
