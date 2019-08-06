@@ -92,6 +92,12 @@
 			reg = <0xff0000 0x1000>;
 			status = "okay";
 		};
+
+		uicr: uicr@ff8000 {
+			compatible = "nordic,nrf-uicr";
+			reg = <0xff8000 0x1000>;
+			status = "okay";
+		};
 	};
 };
 
