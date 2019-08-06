@@ -105,7 +105,7 @@ int lsm6dso_spi_init(struct device *dev)
 	data->ctx = &data->ctx_spi;
 	data->ctx->handle = dev;
 
-#if defined(DT_INST_0_ST_LSM6DSO_CS_GPIO_CONTROLLER)
+#if defined(DT_INST_0_ST_LSM6DSO_CS_GPIOS_CONTROLLER)
 	const struct lsm6dso_config *cfg = dev->config->config_info;
 
 	/* handle SPI CS thru GPIO if it is the case */
