@@ -14,9 +14,6 @@
 
 #define BUF_SIZE 256
 
-#define MAILBOX_TRACE_BASE	0xbe008000
-#define MAILBOX_TRACE_SIZE	0x2000
-
 static struct ring_buf ringbuf;
 
 static u16_t magic = 0x55aa;

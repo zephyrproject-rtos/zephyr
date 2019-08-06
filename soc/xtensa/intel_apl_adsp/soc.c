@@ -339,3 +339,117 @@ static const struct sof_ipc_fw_ready fw_ready_apl
 	},
 	.flags = 0,
 };
+
+enum sof_ipc_ext_data {
+	SOF_IPC_EXT_DMA_BUFFER = 0,
+	SOF_IPC_EXT_WINDOW,
+};
+
+enum sof_ipc_region {
+	SOF_IPC_REGION_DOWNBOX  = 0,
+	SOF_IPC_REGION_UPBOX,
+	SOF_IPC_REGION_TRACE,
+	SOF_IPC_REGION_DEBUG,
+	SOF_IPC_REGION_STREAM,
+	SOF_IPC_REGION_REGS,
+	SOF_IPC_REGION_EXCEPTION,
+};
+
+struct sof_ipc_ext_data_hdr {
+	struct sof_ipc_cmd_hdr hdr;
+	uint32_t type;		/**< SOF_IPC_EXT_ */
+} __attribute__((packed));
+
+struct sof_ipc_window_elem {
+	struct sof_ipc_hdr hdr;
+	uint32_t type;		/**< SOF_IPC_REGION_ */
+	uint32_t id;		/**< platform specific - used to map to host memory */
+	uint32_t flags;		/**< R, W, RW, etc - to define */
+	uint32_t size;		/**< size of region in bytes */
+	/* offset in window region as windows can be partitioned */
+	uint32_t offset;
+} __attribute__((packed));
+
+/* extended data memory windows for IPC, trace and debug */
+struct sof_ipc_window {
+	struct sof_ipc_ext_data_hdr ext_hdr;
+	uint32_t num_windows;
+	struct sof_ipc_window_elem window[];
+} __attribute__((packed));
+
+#define NUM_WINDOWS		7
+
+static const struct sof_ipc_window sram_window = {
+	.ext_hdr = {
+		.hdr.cmd = SOF_IPC_FW_READY,
+		.hdr.size = sizeof(struct sof_ipc_window) +
+			    sizeof(struct sof_ipc_window_elem) * NUM_WINDOWS,
+		.type = SOF_IPC_EXT_WINDOW,
+	},
+	.num_windows = NUM_WINDOWS,
+	.window = {
+		{
+			.type   = SOF_IPC_REGION_REGS,
+			.id     = 0,    /* map to host window 0 */
+			.flags  = 0, // TODO: set later
+			.size   = MAILBOX_SW_REG_SIZE,
+			.offset = 0,
+		},
+		{
+			.type   = SOF_IPC_REGION_UPBOX,
+			.id     = 0,    /* map to host window 0 */
+			.flags  = 0, // TODO: set later
+			.size   = MAILBOX_DSPBOX_SIZE,
+			.offset = MAILBOX_SW_REG_SIZE,
+		},
+		{
+			.type   = SOF_IPC_REGION_DOWNBOX,
+			.id     = 1,    /* map to host window 1 */
+			.flags  = 0, // TODO: set later
+			.size   = MAILBOX_HOSTBOX_SIZE,
+			.offset = 0,
+		},
+		{
+			.type   = SOF_IPC_REGION_DEBUG,
+			.id     = 2,    /* map to host window 2 */
+			.flags  = 0, // TODO: set later
+			.size   = MAILBOX_EXCEPTION_SIZE + MAILBOX_DEBUG_SIZE,
+			.offset = 0,
+		},
+		{
+			.type   = SOF_IPC_REGION_EXCEPTION,
+			.id     = 2,    /* map to host window 2 */
+			.flags  = 0, // TODO: set later
+			.size   = MAILBOX_EXCEPTION_SIZE,
+			.offset = MAILBOX_EXCEPTION_OFFSET,
+		},
+		{
+			.type   = SOF_IPC_REGION_STREAM,
+			.id     = 2,    /* map to host window 2 */
+			.flags  = 0, // TODO: set later
+			.size   = MAILBOX_STREAM_SIZE,
+			.offset = MAILBOX_STREAM_OFFSET,
+		},
+		{
+			.type   = SOF_IPC_REGION_TRACE,
+			.id     = 3,    /* map to host window 3 */
+			.flags  = 0, // TODO: set later
+			.size   = MAILBOX_TRACE_SIZE,
+			.offset = 0,
+		},
+	},
+};
+
+static int soc_boot_complete(struct device *dev)
+{
+	mailbox_dspbox_write(0, &fw_ready_apl, sizeof(fw_ready_apl));
+        mailbox_dspbox_write(sizeof(fw_ready_apl), &sram_window,
+			     sram_window.ext_hdr.hdr.size);
+
+	ipc_write(IPC_DIPCIE, 0);
+	ipc_write(IPC_DIPCI, (0x80000000 | SOF_IPC_FW_READY));
+
+	return 0;
+}
+
+SYS_INIT(soc_boot_complete, POST_KERNEL, 99);
