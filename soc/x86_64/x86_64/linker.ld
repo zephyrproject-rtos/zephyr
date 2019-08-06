@@ -45,12 +45,16 @@ SECTIONS {
 		KEEP(*(.openocd_dbg*))
 	} :ram
 
+	_image_rodata_start = .;
+
 #include <linker/common-rom.ld>
 
 	rodata : {
 		*(.rodata*)
 		*(.gnu.linkonce.r.*)
 	} :ram
+
+	_image_rodata_end = .;
 
 	datas : {
 		*(.data*)
