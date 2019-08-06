@@ -66,6 +66,9 @@ LOG_MODULE_REGISTER(net_shell, LOG_LEVEL_DBG);
 #include "net_shell.h"
 #include "net_stats.h"
 
+#include <sys/fdtable.h>
+#include "websocket/websocket_internal.h"
+
 #define PR(fmt, ...)						\
 	shell_fprintf(shell, SHELL_NORMAL, fmt, ##__VA_ARGS__)
 
@@ -3934,6 +3937,72 @@ usage:
 	return 0;
 }
 
+#if defined(CONFIG_WEBSOCKET_CLIENT)
+static void websocket_context_cb(struct websocket_context *context,
+				 void *user_data)
+{
+#if defined(CONFIG_NET_IPV6) && !defined(CONFIG_NET_IPV4)
+#define ADDR_LEN NET_IPV6_ADDR_LEN
+#elif defined(CONFIG_NET_IPV4) && !defined(CONFIG_NET_IPV6)
+#define ADDR_LEN NET_IPV4_ADDR_LEN
+#else
+#define ADDR_LEN NET_IPV6_ADDR_LEN
+#endif
+	struct net_shell_user_data *data = user_data;
+	const struct shell *shell = data->shell;
+	struct net_context *net_ctx;
+	int *count = data->user_data;
+	/* +7 for []:port */
+	char addr_local[ADDR_LEN + 7];
+	char addr_remote[ADDR_LEN + 7] = "";
+
+	net_ctx = z_get_fd_obj(context->real_sock, NULL, 0);
+	if (net_ctx == NULL) {
+		PR_ERROR("Invalid fd %d");
+		return;
+	}
+
+	get_addresses(net_ctx, addr_local, sizeof(addr_local),
+		      addr_remote, sizeof(addr_remote));
+
+	PR("[%2d] %p/%p\t%p   %16s\t%16s\n",
+	   (*count) + 1, context, net_ctx,
+	   net_context_get_iface(net_ctx),
+	   addr_local, addr_remote);
+
+	(*count)++;
+}
+#endif /* CONFIG_WEBSOCKET_CLIENT */
+
+static int cmd_net_websocket(const struct shell *shell, size_t argc,
+			     char *argv[])
+{
+#if defined(CONFIG_WEBSOCKET_CLIENT)
+	struct net_shell_user_data user_data;
+	int count = 0;
+
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
+	PR("     websocket/net_ctx\tIface         "
+	   "Local              \tRemote\n");
+
+	user_data.shell = shell;
+	user_data.user_data = &count;
+
+	websocket_context_foreach(websocket_context_cb, &user_data);
+
+	if (count == 0) {
+		PR("No connections\n");
+	}
+#else
+	PR_INFO("Set CONFIG_WEBSOCKET_CLIENT to enable Websocket client "
+		"support.\n");
+#endif /* CONFIG_WEBSOCKET_CLIENT */
+
+	return 0;
+}
+
 SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_arp,
 	SHELL_CMD(flush, NULL, "Remove all entries from ARP cache.",
 		  cmd_net_arp_flush),
@@ -4249,6 +4318,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(net_commands,
 	SHELL_CMD(tcp, &net_cmd_tcp, "Connect/send/close TCP connection.",
 		  cmd_net_tcp),
 	SHELL_CMD(vlan, &net_cmd_vlan, "Show VLAN information.", cmd_net_vlan),
+	SHELL_CMD(websocket, NULL, "Print information about WebSocket "
+								"connections.",
+		  cmd_net_websocket),
 	SHELL_SUBCMD_SET_END
 );
 
