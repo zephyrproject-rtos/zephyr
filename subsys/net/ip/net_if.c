@@ -1148,7 +1148,7 @@ int z_impl_net_if_ipv6_addr_lookup_by_index(const struct in6_addr *addr)
 }
 
 #ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER(net_if_ipv6_addr_lookup_by_index, addr)
+static inline int z_vrfy_net_if_ipv6_addr_lookup_by_index(const struct in6_addr *addr)
 {
 	struct in6_addr addr_v6;
 
@@ -1156,6 +1156,7 @@ Z_SYSCALL_HANDLER(net_if_ipv6_addr_lookup_by_index, addr)
 
 	return z_impl_net_if_ipv6_addr_lookup_by_index(&addr_v6);
 }
+#include <syscalls/net_if_ipv6_addr_lookup_by_index_mrsh.c>
 #endif
 
 static bool check_timeout(u32_t start, s32_t timeout, u32_t counter,
@@ -1491,8 +1492,10 @@ bool z_impl_net_if_ipv6_addr_add_by_index(int index,
 }
 
 #ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER(net_if_ipv6_addr_add_by_index, index, addr, addr_type,
-		  vlifetime)
+bool z_vrfy_net_if_ipv6_addr_add_by_index(int index,
+					  struct in6_addr *addr,
+					  enum net_addr_type addr_type,
+					  u32_t vlifetime)
 {
 #if defined(CONFIG_NET_IF_USERSPACE_ACCESS)
 	struct in6_addr addr_v6;
@@ -1507,6 +1510,7 @@ Z_SYSCALL_HANDLER(net_if_ipv6_addr_add_by_index, index, addr, addr_type,
 	return false;
 #endif /* CONFIG_NET_IF_USERSPACE_ACCESS */
 }
+#include <syscalls/net_if_ipv6_addr_add_by_index_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 bool z_impl_net_if_ipv6_addr_rm_by_index(int index,
@@ -1523,7 +1527,8 @@ bool z_impl_net_if_ipv6_addr_rm_by_index(int index,
 }
 
 #ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER(net_if_ipv6_addr_rm_by_index, index, addr)
+bool z_vrfy_net_if_ipv6_addr_rm_by_index(int index,
+					 const struct in6_addr *addr)
 {
 #if defined(CONFIG_NET_IF_USERSPACE_ACCESS)
 	struct in6_addr addr_v6;
@@ -1535,6 +1540,7 @@ Z_SYSCALL_HANDLER(net_if_ipv6_addr_rm_by_index, index, addr)
 	return false;
 #endif /* CONFIG_NET_IF_USERSPACE_ACCESS */
 }
+#include <syscalls/net_if_ipv6_addr_rm_by_index_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 struct net_if_mcast_addr *net_if_ipv6_maddr_add(struct net_if *iface,
@@ -2795,7 +2801,7 @@ int z_impl_net_if_ipv4_addr_lookup_by_index(const struct in_addr *addr)
 }
 
 #ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER(net_if_ipv4_addr_lookup_by_index, addr)
+static inline int z_vrfy_net_if_ipv4_addr_lookup_by_index(const struct in_addr *addr)
 {
 	struct in_addr addr_v4;
 
@@ -2803,6 +2809,7 @@ Z_SYSCALL_HANDLER(net_if_ipv4_addr_lookup_by_index, addr)
 
 	return z_impl_net_if_ipv4_addr_lookup_by_index(&addr_v4);
 }
+#include <syscalls/net_if_ipv4_addr_lookup_by_index_mrsh.c>
 #endif
 
 void net_if_ipv4_set_netmask(struct net_if *iface,
@@ -2835,7 +2842,8 @@ bool z_impl_net_if_ipv4_set_netmask_by_index(int index,
 }
 
 #ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER(net_if_ipv4_set_netmask_by_index, index, netmask)
+bool z_vrfy_net_if_ipv4_set_netmask_by_index(int index,
+					     const struct in_addr *netmask)
 {
 #if defined(CONFIG_NET_IF_USERSPACE_ACCESS)
 	struct in_addr netmask_addr;
@@ -2848,6 +2856,7 @@ Z_SYSCALL_HANDLER(net_if_ipv4_set_netmask_by_index, index, netmask)
 	return false;
 #endif
 }
+#include <syscalls/net_if_ipv4_set_netmask_by_index_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 void net_if_ipv4_set_gw(struct net_if *iface, const struct in_addr *gw)
@@ -2879,7 +2888,8 @@ bool z_impl_net_if_ipv4_set_gw_by_index(int index,
 }
 
 #ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER(net_if_ipv4_set_gw_by_index, index, gw)
+bool z_vrfy_net_if_ipv4_set_gw_by_index(int index,
+					const struct in_addr *gw)
 {
 #if defined(CONFIG_NET_IF_USERSPACE_ACCESS)
 	struct in_addr gw_addr;
@@ -2891,6 +2901,7 @@ Z_SYSCALL_HANDLER(net_if_ipv4_set_gw_by_index, index, gw)
 	return false;
 #endif
 }
+#include <syscalls/net_if_ipv4_set_gw_by_index_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 static struct net_if_addr *ipv4_addr_find(struct net_if *iface,
@@ -3034,8 +3045,10 @@ bool z_impl_net_if_ipv4_addr_add_by_index(int index,
 }
 
 #ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER(net_if_ipv4_addr_add_by_index, index, addr, addr_type,
-		  vlifetime)
+bool z_vrfy_net_if_ipv4_addr_add_by_index(int index,
+					  struct in_addr *addr,
+					  enum net_addr_type addr_type,
+					  u32_t vlifetime)
 {
 #if defined(CONFIG_NET_IF_USERSPACE_ACCESS)
 	struct in_addr addr_v4;
@@ -3050,6 +3063,7 @@ Z_SYSCALL_HANDLER(net_if_ipv4_addr_add_by_index, index, addr, addr_type,
 	return false;
 #endif /* CONFIG_NET_IF_USERSPACE_ACCESS */
 }
+#include <syscalls/net_if_ipv4_addr_add_by_index_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 bool z_impl_net_if_ipv4_addr_rm_by_index(int index,
@@ -3066,7 +3080,8 @@ bool z_impl_net_if_ipv4_addr_rm_by_index(int index,
 }
 
 #ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER(net_if_ipv4_addr_rm_by_index, index, addr)
+bool z_vrfy_net_if_ipv4_addr_rm_by_index(int index,
+					 const struct in_addr *addr)
 {
 #if defined(CONFIG_NET_IF_USERSPACE_ACCESS)
 	struct in_addr addr_v4;
@@ -3078,6 +3093,7 @@ Z_SYSCALL_HANDLER(net_if_ipv4_addr_rm_by_index, index, addr)
 	return false;
 #endif /* CONFIG_NET_IF_USERSPACE_ACCESS */
 }
+#include <syscalls/net_if_ipv4_addr_rm_by_index_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 static struct net_if_mcast_addr *ipv4_maddr_find(struct net_if *iface,

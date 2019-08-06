@@ -356,13 +356,12 @@ void z_impl_k_str_out(char *c, size_t n)
 }
 
 #ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER(k_str_out, c, n)
+static inline void z_vrfy_k_str_out(char *c, size_t n)
 {
 	Z_OOPS(Z_SYSCALL_MEMORY_READ(c, n));
 	z_impl_k_str_out((char *)c, n);
-
-	return 0;
 }
+#include <syscalls/k_str_out_mrsh.c>
 #endif
 
 /**

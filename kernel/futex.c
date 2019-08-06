@@ -52,14 +52,15 @@ int z_impl_k_futex_wake(struct k_futex *futex, bool wake_all)
 	return woken;
 }
 
-Z_SYSCALL_HANDLER(k_futex_wake, futex, wake_all)
+static inline int z_vrfy_k_futex_wake(struct k_futex *futex, bool wake_all)
 {
 	if (Z_SYSCALL_MEMORY_WRITE(futex, sizeof(struct k_futex)) != 0) {
 		return -EACCES;
 	}
 
-	return z_impl_k_futex_wake((struct k_futex *)futex, (bool)wake_all);
+	return z_impl_k_futex_wake(futex, wake_all);
 }
+#include <syscalls/k_futex_wake_mrsh.c>
 
 int z_impl_k_futex_wait(struct k_futex *futex, int expected, s32_t timeout)
 {
@@ -88,12 +89,12 @@ int z_impl_k_futex_wait(struct k_futex *futex, int expected, s32_t timeout)
 	return ret;
 }
 
-Z_SYSCALL_HANDLER(k_futex_wait, futex, expected, timeout)
+static inline int z_vrfy_k_futex_wait(struct k_futex *futex, int expected, s32_t timeout)
 {
 	if (Z_SYSCALL_MEMORY_WRITE(futex, sizeof(struct k_futex)) != 0) {
 		return -EACCES;
 	}
 
-	return z_impl_k_futex_wait((struct k_futex *)futex,
-			expected, (s32_t)timeout);
+	return z_impl_k_futex_wait(futex, expected, timeout);
 }
+#include <syscalls/k_futex_wait_mrsh.c>

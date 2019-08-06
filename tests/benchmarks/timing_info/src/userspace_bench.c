@@ -38,11 +38,12 @@ u32_t z_impl_userspace_read_timer_value(void)
 	return TIMING_INFO_GET_TIMER_VALUE();
 }
 
-Z_SYSCALL_HANDLER(userspace_read_timer_value)
+static inline u32_t z_vrfy_userspace_read_timer_value(void)
 {
 	TIMING_INFO_PRE_READ();
 	return TIMING_INFO_GET_TIMER_VALUE();
 }
+#include <syscalls/userspace_read_timer_value_mrsh.c>
 
 /******************************************************************************/
 
@@ -163,12 +164,13 @@ int z_impl_k_dummy_syscall(void)
 	return 0;
 }
 
-Z_SYSCALL_HANDLER(k_dummy_syscall)
+static inline int z_vrfy_k_dummy_syscall(void)
 {
 	TIMING_INFO_PRE_READ();
 	syscall_overhead_end_time = TIMING_INFO_GET_TIMER_VALUE();
 	return 0;
 }
+#include <syscalls/k_dummy_syscall_mrsh.c>
 
 
 void syscall_overhead_user_thread(void *p1, void *p2, void *p3)
@@ -215,7 +217,7 @@ int z_impl_validation_overhead_syscall(void)
 	return 0;
 }
 
-Z_SYSCALL_HANDLER(validation_overhead_syscall)
+static inline int z_vrfy_validation_overhead_syscall(void)
 {
 	TIMING_INFO_PRE_READ();
 	validation_overhead_obj_init_start_time = TIMING_INFO_GET_TIMER_VALUE();
@@ -235,7 +237,7 @@ Z_SYSCALL_HANDLER(validation_overhead_syscall)
 	validation_overhead_obj_end_time = TIMING_INFO_GET_TIMER_VALUE();
 	return status_0 || status_1;
 }
-
+#include <syscalls/validation_overhead_syscall_mrsh.c>
 
 void validation_overhead_user_thread(void *p1, void *p2, void *p3)
 {

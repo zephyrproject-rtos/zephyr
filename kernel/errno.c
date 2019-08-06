@@ -32,7 +32,12 @@ int *z_impl_z_errno(void)
 	return &_current->userspace_local_data->errno_var;
 }
 
-Z_SYSCALL_HANDLER0_SIMPLE(z_errno);
+static inline int *z_vrfy_z_errno(void)
+{
+	return z_impl_z_errno();
+}
+#include <syscalls/z_errno_mrsh.c>
+
 #else
 int *z_impl_z_errno(void)
 {

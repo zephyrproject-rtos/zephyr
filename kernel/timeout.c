@@ -31,10 +31,11 @@ static int announce_remaining;
 int z_clock_hw_cycles_per_sec = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
 
 #ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER(z_clock_hw_cycles_per_sec_runtime_get)
+static inline int z_vrfy_z_clock_hw_cycles_per_sec_runtime_get(void)
 {
 	return z_impl_z_clock_hw_cycles_per_sec_runtime_get();
 }
+#include <syscalls/z_clock_hw_cycles_per_sec_runtime_get_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 #endif /* CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME */
 
@@ -235,12 +236,9 @@ s64_t z_impl_k_uptime_get(void)
 }
 
 #ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER(k_uptime_get, ret_p)
+static inline s64_t z_vrfy_k_uptime_get(void)
 {
-	u64_t *ret = (u64_t *)ret_p;
-
-	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(ret, sizeof(*ret)));
-	*ret = z_impl_k_uptime_get();
-	return 0;
+	return z_impl_k_uptime_get();
 }
+#include <syscalls/k_uptime_get_mrsh.c>
 #endif
