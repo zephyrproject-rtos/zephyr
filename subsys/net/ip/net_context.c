@@ -446,11 +446,11 @@ static int bind_default(struct net_context *context)
 		if (context->iface >= 0) {
 			return 0;
 		} else {
-#if defined(CONFIG_NET_L2_CANBUS)
+#if defined(CONFIG_NET_L2_CANBUS_RAW)
 			struct net_if *iface;
 
 			iface = net_if_get_first_by_type(
-						&NET_L2_GET_NAME(CANBUS));
+						&NET_L2_GET_NAME(CANBUS_RAW));
 			if (!iface) {
 				return -ENOENT;
 			}

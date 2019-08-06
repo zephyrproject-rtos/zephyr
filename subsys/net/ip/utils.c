@@ -95,6 +95,9 @@ char *net_sprint_ll_addr_buf(const u8_t *ll, u8_t ll_len,
 	case 6:
 		len = 6U;
 		break;
+	case 2:
+		len = 2U;
+		break;
 	default:
 		len = 6U;
 		break;

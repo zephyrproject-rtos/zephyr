@@ -353,6 +353,7 @@
 /subsys/net/lib/sockets/                  @jukkar @tbursztyka @pfalcon
 /subsys/net/lib/tls_credentials/          @rlubos
 /subsys/net/l2/                           @jukkar @tbursztyka
+/subsys/net/l2/canbus/                    @alexanderwachter @jukkar
 /subsys/power/                            @wentongwu @pizi-nordic
 /subsys/settings/                         @nvlsianpu
 /subsys/shell/                            @jakub-uC @nordic-krch

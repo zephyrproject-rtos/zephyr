@@ -81,7 +81,7 @@ static int create_socket(const struct can_filter *filter)
 	}
 
 	can_addr.can_ifindex = net_if_get_by_iface(
-		net_if_get_first_by_type(&NET_L2_GET_NAME(CANBUS)));
+		net_if_get_first_by_type(&NET_L2_GET_NAME(CANBUS_RAW)));
 	can_addr.can_family = PF_CAN;
 
 	ret = bind(fd, (struct sockaddr *)&can_addr, sizeof(can_addr));
@@ -170,7 +170,7 @@ static int setup_socket(void)
 
 	can_copy_zfilter_to_filter(&zfilter, &filter);
 
-	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(CANBUS));
+	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(CANBUS_RAW));
 	if (!iface) {
 		LOG_ERR("No CANBUS network interface found!");
 		return -ENOENT;

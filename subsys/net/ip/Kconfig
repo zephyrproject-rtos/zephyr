@@ -547,8 +547,13 @@ config NET_DEFAULT_IF_DUMMY
 	depends on NET_L2_DUMMY
 
 config NET_DEFAULT_IF_CANBUS
-	bool "Socket CAN interface"
+	bool "6LoCAN (IPv6 over CAN) interface"
 	depends on NET_L2_CANBUS
+
+config NET_DEFAULT_IF_CANBUS_RAW
+	bool "Socket CAN interface"
+	depends on NET_L2_CANBUS_RAW
+
 
 endchoice
 

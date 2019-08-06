@@ -120,6 +120,11 @@ NET_L2_DECLARE_PUBLIC(OPENTHREAD_L2);
 NET_L2_DECLARE_PUBLIC(CANBUS_RAW_L2);
 #endif /* CONFIG_NET_L2_CANBUS_RAW */
 
+#ifdef CONFIG_NET_L2_CANBUS
+#define CANBUS_L2		CANBUS
+NET_L2_DECLARE_PUBLIC(CANBUS_L2);
+#endif /* CONFIG_NET_L2_CANBUS */
+
 #define NET_L2_INIT(_name, _recv_fn, _send_fn, _enable_fn, _get_flags_fn) \
 	const struct net_l2 (NET_L2_GET_NAME(_name)) __used		\
 	__attribute__((__section__(".net_l2.init"))) = {		\

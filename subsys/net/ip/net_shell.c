@@ -207,6 +207,16 @@ static const char *iface2str(struct net_if *iface, const char **extra)
 	}
 #endif
 
+#ifdef CONFIG_NET_L2_CANBUS_RAW
+	if (net_if_l2(iface) == &NET_L2_GET_NAME(CANBUS_RAW)) {
+		if (extra) {
+			*extra = "==========";
+		}
+
+		return "CANBUS_RAW";
+	}
+#endif
+
 	if (extra) {
 		*extra = "==============";
 	}
