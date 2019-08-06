@@ -758,9 +758,9 @@ static const struct lsm6dso_config lsm6dso_config = {
 			       SPI_MODE_CPHA | SPI_WORD_SET(8) |
 			       SPI_LINES_SINGLE),
 	.spi_conf.slave     = DT_INST_0_ST_LSM6DSO_BASE_ADDRESS,
-#if defined(DT_INST_0_ST_LSM6DSO_CS_GPIO_CONTROLLER)
-	.gpio_cs_port	    = DT_INST_0_ST_LSM6DSO_CS_GPIO_CONTROLLER,
-	.cs_gpio	    = DT_INST_0_ST_LSM6DSO_CS_GPIO_PIN,
+#if defined(DT_INST_0_ST_LSM6DSO_CS_GPIOS_CONTROLLER)
+	.gpio_cs_port	    = DT_INST_0_ST_LSM6DSO_CS_GPIOS_CONTROLLER,
+	.cs_gpio	    = DT_INST_0_ST_LSM6DSO_CS_GPIOS_PIN,
 
 	.spi_conf.cs        =  &lsm6dso_data.cs_ctrl,
 #else
