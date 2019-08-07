@@ -1,6 +1,4 @@
----
 title: MCUX PWM
-version: 0.1
 
 description: >
     This binding gives a base representation of the NXP eFLEX PWM module which
