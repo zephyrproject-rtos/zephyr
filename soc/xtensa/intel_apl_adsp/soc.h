@@ -292,6 +292,22 @@ static inline int mailbox_dspbox_write(size_t offset, const void *src,
 	return ret;
 }
 
+/* Clock control */
+#define SHIM_CLKCTL			0x78
+
+/* Power control and status */
+#define SHIM_PWRCTL			0x90
+#define SHIM_PWRSTS			0x92
+#define SHIM_LPSCTL			0x94
+
+#define SHIM_CLKCTL_HDCS_PLL		0
+#define SHIM_CLKCTL_LDCS_PLL		0
+#define SHIM_CLKCTL_DPCS_DIV1(x)	(0x0 << (8 + x * 2))
+#define SHIM_CLKCTL_HPMPCS_DIV2		0
+#define SHIM_CLKCTL_LPMPCS_DIV4		BIT(1)
+#define SHIM_CLKCTL_TCPAPLLS_DIS	0
+#define SHIM_CLKCTL_TCPLCG_DIS(x)	0
+
 static inline uint32_t shim_read(uint32_t reg)
 {
 	return sys_read32(SHIM_BASE + reg);
