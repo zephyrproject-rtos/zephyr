@@ -98,6 +98,25 @@ config MODEM_CMD_HANDLER_MAX_PARAM_COUNT
 	  of the match_buf (match_buf_len) field as it needs to be large
 	  enough to hold a single line of data (ending with /r).
 
+config MODEM_SOCKET
+	bool "Generic modem socket support layer"
+	help
+	  This layer provides much of the groundwork for keeping track of
+	  modem "sockets" throughout their lifecycle (from the initial offload
+	  API calls through the command handler call back layers).
+	  To configure this layer for use, create a modem_socket_config
+	  object with your socket data and pass it's reference to
+	  modem_socket_init().
+
+config MODEM_SOCKET_PACKET_COUNT
+	int "Maximum number of stored packet sizes per socket"
+	depends on MODEM_SOCKET
+	default 6
+	help
+	  As the modem indicates more data is available to be received,
+	  these values are organized into "packets".  This setting limits
+	  the maximum number of packet sizes the socket can keep track of.
+
 endif # MODEM_CONTEXT
 
 config MODEM_SHELL
