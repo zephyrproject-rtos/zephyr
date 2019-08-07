@@ -63,6 +63,7 @@ def main():
             write_irqs(dev)
             write_gpios(dev)
             write_pwms(dev)
+            write_iochannels(dev)
             write_clocks(dev)
             write_spi_dev(dev)
             write_props(dev)
@@ -494,6 +495,18 @@ def write_pwms(dev):
 
         for spec, val in pwm.specifier.items():
             out_dev(dev, "PWMS_" + str2ident(spec), val)
+
+
+def write_iochannels(dev):
+    # Writes IO channel controller and specifier info for the IO
+    # channels in dev's 'io-channels' property
+
+    for iochannel in dev.iochannels:
+        if iochannel.controller.label is not None:
+            out_dev_s(dev, "IO_CHANNELS_CONTROLLER", iochannel.controller.label)
+
+        for spec, val in iochannel.specifier.items():
+            out_dev(dev, "IO_CHANNELS_" + str2ident(spec), val)
 
 
 def write_clocks(dev):

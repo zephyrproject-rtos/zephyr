@@ -236,6 +236,7 @@ class EDT:
             dev._init_interrupts()
             dev._init_gpios()
             dev._init_pwms()
+            dev._init_iochannels()
             dev._init_clocks()
 
     def __repr__(self):
@@ -329,6 +330,11 @@ class Device:
     pwms:
       A list of PWM objects, derived from the 'pwms' property. The list is
       empty if the device has no 'pwms' property.
+
+    iochannels:
+      A list of IOChannel objects, derived from the 'io-channels'
+      property. The list is empty if the device has no 'io-channels'
+      property.
 
     clocks:
       A list of Clock objects, derived from the 'clocks' property. The list is
@@ -437,8 +443,9 @@ class Device:
     def __init__(self, edt, node):
         "Private constructor. Not meant to be called by clients."
 
-        # Interrupts, GPIOs, PWMs, and clocks are initialized separately,
-        # because they depend on all Devices existing
+        # Interrupts, GPIOs, PWMs, io-channels, and clocks are
+        # initialized separately, because they depend on all Devices
+        # existing
 
         self.edt = edt
         self._node = node
@@ -687,6 +694,11 @@ class Device:
         # Initializes self.pwms
 
         self.pwms = self._simple_phandle_val_list("pwm", PWM)
+
+    def _init_iochannels(self):
+        # Initializes self.iochannels
+
+        self.iochannels = self._simple_phandle_val_list("io-channel", IOChannel)
 
     def _simple_phandle_val_list(self, name, cls):
         # Helper for parsing properties like
@@ -944,6 +956,41 @@ class PWM:
         fields.append("specifier: {}".format(self.specifier))
 
         return "<PWM, {}>".format(", ".join(fields))
+
+
+class IOChannel:
+    """
+    Represents an IO channel used by a device, similar to the property used
+    by the Linux IIO bindings and described at:
+      https://www.kernel.org/doc/Documentation/devicetree/bindings/iio/iio-bindings.txt
+
+    These attributes are available on IO channel objects:
+
+    dev:
+      The Device instance that uses the IO channel
+
+    name:
+      The name of the IO channel as given in the 'io-channel-names' property,
+      or the  node name if the 'io-channel-names' property doesn't exist.
+
+    controller:
+      The Device instance for the controller of the IO channel
+
+    specifier:
+      A dictionary that maps names from the #cells portion of the binding to
+      cell values in the io-channel specifier. 'io-channels = <&adc 3>' might
+      give {"input": 3}, for example.
+    """
+    def __repr__(self):
+        fields = []
+
+        if self.name is not None:
+            fields.append("name: " + self.name)
+
+        fields.append("target: {}".format(self.controller))
+        fields.append("specifier: {}".format(self.specifier))
+
+        return "<IOChannel, {}>".format(", ".join(fields))
 
 
 class Property:
