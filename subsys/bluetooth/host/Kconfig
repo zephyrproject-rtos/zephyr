@@ -26,7 +26,7 @@ config BT_HCI_CMD_COUNT
 config BT_RX_BUF_COUNT
 	int "Number of HCI RX buffers"
 	default 3 if BT_RECV_IS_RX_THREAD
-	default 20 if (BT_MESH && !BT_DISCARDABLE_BUF_COUNT)
+	default 20 if (BT_MESH && !(BT_DISCARDABLE_BUF_COUNT > 0))
 	default 10
 	range 2 255
 	help
