@@ -21,3 +21,6 @@ properties:
 
     interrupts:
       category: required
+
+"#cells":
+    - input
