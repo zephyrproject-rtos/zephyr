@@ -1357,7 +1357,7 @@ def _gpios(node):
     res = {}
 
     for name, prop in node.props.items():
-        if name.endswith("gpios"):
+        if name.endswith("-gpios") or name == "gpios":
             # Get the prefix from the property name:
             #   - gpios     -> "" (deprecated, should have a prefix)
             #   - foo-gpios -> "foo"
