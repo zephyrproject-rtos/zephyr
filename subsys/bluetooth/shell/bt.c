@@ -1154,33 +1154,52 @@ static const char *oob_config_str(int oob_config)
 }
 
 static void auth_pairing_oob_data_request(struct bt_conn *conn,
-					  struct bt_conn_oob_info *info)
+					  struct bt_conn_oob_info *oob_info)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
+	struct bt_conn_info info;
+	int err;
 
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
-	if (info->lesc.oob_config != BT_CONN_OOB_LOCAL_ONLY &&
-	    bt_addr_le_cmp(bt_conn_get_dst(conn), &oob_remote.addr)) {
-		shell_print(ctx_shell, "No OOB data available for %s", addr);
-		bt_conn_auth_cancel(conn);
+	err = bt_conn_get_info(conn, &info);
+	if (err) {
 		return;
 	}
 
-	if (info->type == BT_CONN_OOB_LE_SC) {
+	if (oob_info->type == BT_CONN_OOB_LE_SC) {
 		struct bt_le_oob_sc_data *oobd_local =
-			info->lesc.oob_config != BT_CONN_OOB_REMOTE_ONLY
-					      ? &oob_local.le_sc_data
-					      : NULL;
+			oob_info->lesc.oob_config != BT_CONN_OOB_REMOTE_ONLY
+						  ? &oob_local.le_sc_data
+						  : NULL;
 		struct bt_le_oob_sc_data *oobd_remote =
-			info->lesc.oob_config != BT_CONN_OOB_LOCAL_ONLY
-					      ? &oob_remote.le_sc_data
-					      : NULL;
-		bt_le_oob_set_sc_data(conn, oobd_local,
-					    oobd_remote);
+			oob_info->lesc.oob_config != BT_CONN_OOB_LOCAL_ONLY
+						  ? &oob_remote.le_sc_data
+						  : NULL;
 
+		if (oobd_remote &&
+		    bt_addr_le_cmp(info.le.remote, &oob_remote.addr)) {
+			bt_addr_le_to_str(info.le.remote, addr, sizeof(addr));
+			shell_print(ctx_shell,
+				    "No OOB data available for remote %s",
+				    addr);
+			bt_conn_auth_cancel(conn);
+			return;
+		}
+
+		if (oobd_local &&
+		    bt_addr_le_cmp(info.le.local, &oob_local.addr)) {
+			bt_addr_le_to_str(info.le.local, addr, sizeof(addr));
+			shell_print(ctx_shell,
+				    "No OOB data available for local %s",
+				    addr);
+			bt_conn_auth_cancel(conn);
+			return;
+		}
+
+		bt_le_oob_set_sc_data(conn, oobd_local, oobd_remote);
+
+		bt_addr_le_to_str(info.le.dst, addr, sizeof(addr));
 		shell_print(ctx_shell, "Set %s OOB SC data for %s, ",
-			oob_config_str(info->lesc.oob_config), addr);
+			    oob_config_str(oob_info->lesc.oob_config), addr);
 	} else {
 		shell_print(ctx_shell, "Legacy OOB not supported");
 		bt_conn_auth_cancel(conn);
