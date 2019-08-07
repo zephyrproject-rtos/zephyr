@@ -8,6 +8,8 @@ zephyr_sources_ifdef(CONFIG_MODEM_CONTEXT
 	modem_pin.c
 )
 
+zephyr_sources_ifdef(CONFIG_MODEM_IFACE_UART modem_iface_uart.c)
+
 if(CONFIG_MODEM_UBLOX_SARA_R4)
 	zephyr_library_include_directories(${ZEPHYR_BASE}/subsys/net/ip)
 	zephyr_library_sources(ublox-sara-r4.c)
