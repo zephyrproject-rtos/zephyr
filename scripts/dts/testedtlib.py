@@ -73,6 +73,13 @@ def run():
                  "[<PWM, name: zero-cell, target: <Device /pwm-test/pwm-0 in 'test.dts', binding test-bindings/pwm-0-cell.yaml>, specifier: {}>, <PWM, name: one-cell, target: <Device /pwm-test/pwm-1 in 'test.dts', binding test-bindings/pwm-1-cell.yaml>, specifier: {'one': 1}>]")
 
     #
+    # Test IO channels
+    #
+
+    verify_streq(edt.get_dev("/io-channel-test/node").iochannels,
+                 "[<IOChannel, name: io-channel, target: <Device /io-channel-test/io-channel in 'test.dts', binding test-bindings/io-channel.yaml>, specifier: {'one': 1}>]")
+
+    #
     # Test 'reg'
     #
 
