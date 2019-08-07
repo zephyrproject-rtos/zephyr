@@ -9,7 +9,7 @@ endif()
 
 set(CROSS_COMPILE_TARGET_arm         arm-zephyr-eabi)
 set(CROSS_COMPILE_TARGET_nios2     nios2-zephyr-elf)
-set(CROSS_COMPILE_TARGET_riscv   riscv32-zephyr-elf)
+set(CROSS_COMPILE_TARGET_riscv   riscv64-zephyr-elf)
 set(CROSS_COMPILE_TARGET_mips     mipsel-zephyr-elf)
 set(CROSS_COMPILE_TARGET_xtensa   xtensa-zephyr-elf)
 set(CROSS_COMPILE_TARGET_arc         arc-zephyr-elf)
