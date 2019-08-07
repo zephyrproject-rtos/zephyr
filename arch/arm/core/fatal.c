@@ -17,7 +17,8 @@
 
 #include <kernel.h>
 #include <kernel_structs.h>
-#include <logging/log_ctrl.h>
+#include <logging/log.h>
+LOG_MODULE_DECLARE(os);
 
 static void esf_dump(const z_arch_esf_t *esf)
 {

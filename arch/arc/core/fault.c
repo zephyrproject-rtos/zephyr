@@ -18,8 +18,8 @@
 #include <kernel.h>
 #include <kernel_structs.h>
 #include <exc_handle.h>
-#include <logging/log_ctrl.h>
-
+#include <logging/log.h>
+LOG_MODULE_DECLARE(os);
 
 #ifdef CONFIG_USERSPACE
 Z_EXC_DECLARE(z_arch_user_string_nlen);

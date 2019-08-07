@@ -9,6 +9,8 @@
 #include <inttypes.h>
 #include <kernel_arch_data.h>
 #include <xtensa/specreg.h>
+#include <logging/log.h>
+LOG_MODULE_DECLARE(os);
 
 #ifdef XT_SIMULATOR
 #include <xtensa/simcall.h>

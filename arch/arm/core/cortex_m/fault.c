@@ -18,7 +18,8 @@
 #include <kernel_structs.h>
 #include <inttypes.h>
 #include <exc_handle.h>
-#include <logging/log_ctrl.h>
+#include <logging/log.h>
+LOG_MODULE_DECLARE(os);
 
 #if defined(CONFIG_PRINTK) || defined(CONFIG_LOG)
 #define PR_EXC(...) z_fatal_print(__VA_ARGS__)

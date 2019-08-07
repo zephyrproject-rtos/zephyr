@@ -19,7 +19,8 @@
 #include <ia32/exception.h>
 #include <inttypes.h>
 #include <exc_handle.h>
-#include <logging/log_ctrl.h>
+#include <logging/log.h>
+LOG_MODULE_DECLARE(os);
 
 __weak void z_debug_fatal_hook(const z_arch_esf_t *esf) { ARG_UNUSED(esf); }
 

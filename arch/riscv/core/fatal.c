@@ -7,7 +7,8 @@
 #include <kernel.h>
 #include <kernel_structs.h>
 #include <inttypes.h>
-#include <logging/log_ctrl.h>
+#include <logging/log.h>
+LOG_MODULE_DECLARE(os);
 
 FUNC_NORETURN void z_riscv_fatal_error(unsigned int reason,
 				       const z_arch_esf_t *esf)

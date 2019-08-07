@@ -19,6 +19,8 @@
 #include <ksched.h>
 #include <kswap.h>
 #include <debug/tracing.h>
+#include <logging/log.h>
+LOG_MODULE_DECLARE(os);
 
 FUNC_NORETURN void z_irq_spurious(void *unused)
 {

@@ -16,7 +16,8 @@
 #include <offsets_short.h>
 #include <toolchain.h>
 #include <arch/cpu.h>
-#include <logging/log_ctrl.h>
+#include <logging/log.h>
+LOG_MODULE_DECLARE(os);
 
 void z_arc_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
 {
