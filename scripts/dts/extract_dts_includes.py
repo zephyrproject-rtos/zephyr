@@ -84,7 +84,7 @@ def generate_prop_defines(node_path, prop):
         compatible.extract(node_path, prop, def_label)
     elif 'clocks' in prop:
         clocks.extract(node_path, prop, def_label)
-    elif 'pwms' in prop or 'gpios' in prop:
+    elif 'pwms' in prop or '-gpios' in prop or prop == "gpios":
         prop_values = reduced[node_path]['props'][prop]
         generic = prop[:-1]  # Drop the 's' from the prop
 
