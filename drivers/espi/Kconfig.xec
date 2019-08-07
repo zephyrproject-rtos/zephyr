@@ -7,7 +7,6 @@
 
 menuconfig ESPI_XEC
 	bool "XEC Microchip ESPI driver"
-	depends on ESPI
 	help
 	  Enable the Microchip XEC ESPI driver.
 
