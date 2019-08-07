@@ -378,16 +378,17 @@ static const struct sof_ipc_fw_ready fw_ready_apl
 	},
 	.version = {
 		.hdr.size = sizeof(struct sof_ipc_fw_version),
-		.micro = 3,
-		.minor = 2,
+		.micro = 0,
+		.minor = 1,
 		.major = 1,
 #ifdef CONFIG_DEBUG
 		/* only added in debug for reproducability in releases */
+		.build = 8,
 		.date = __DATE__,
 		.time = __TIME__,
 #endif
-		.tag = "1234",
-		.abi_version = 0x1234,
+		.tag = "9e2aa",
+		.abi_version = (3 << 24) | (9 << 12) | (0 << 0),
 	},
 	.flags = 0,
 };
