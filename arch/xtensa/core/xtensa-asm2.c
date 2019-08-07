@@ -11,6 +11,9 @@
 #include <kernel_internal.h>
 #include <kswap.h>
 #include <_soc_inthandlers.h>
+#include <logging/log.h>
+
+LOG_MODULE_DECLARE(os);
 
 void *xtensa_init_stack(int *stack_top,
 			void (*entry)(void *, void *, void *),
@@ -77,8 +80,8 @@ void z_irq_spurious(void *arg)
 
 	__asm__ volatile("rsr.interrupt %0" : "=r"(irqs));
 	__asm__ volatile("rsr.intenable %0" : "=r"(ie));
-	z_fatal_print(" ** Spurious INTERRUPT(s) %p, INTENABLE = %p",
-		      (void *)irqs, (void *)ie);
+	LOG_ERR(" ** Spurious INTERRUPT(s) %p, INTENABLE = %p",
+		(void *)irqs, (void *)ie);
 	z_xtensa_fatal_error(K_ERR_SPURIOUS_IRQ, NULL);
 }
 
@@ -86,38 +89,37 @@ void z_xtensa_dump_stack(const z_arch_esf_t *stack)
 {
 	int *bsa = *(int **)stack;
 
-	z_fatal_print(" **  A0 %p  SP %p  A2 %p  A3 %p",
-		      (void *)bsa[BSA_A0_OFF/4],
-		      ((char *)bsa) + BASE_SAVE_AREA_SIZE,
-		      (void *)bsa[BSA_A2_OFF/4], (void *)bsa[BSA_A3_OFF/4]);
+	LOG_ERR(" **  A0 %p  SP %p  A2 %p  A3 %p",
+		(void *)bsa[BSA_A0_OFF/4],
+		((char *)bsa) + BASE_SAVE_AREA_SIZE,
+		(void *)bsa[BSA_A2_OFF/4], (void *)bsa[BSA_A3_OFF/4]);
 
 	if (bsa - stack > 4) {
-		z_fatal_print(" **  A4 %p  A5 %p  A6 %p  A7 %p",
-			      (void *)bsa[-4], (void *)bsa[-3],
-			      (void *)bsa[-2], (void *)bsa[-1]);
+		LOG_ERR(" **  A4 %p  A5 %p  A6 %p  A7 %p",
+			(void *)bsa[-4], (void *)bsa[-3],
+			(void *)bsa[-2], (void *)bsa[-1]);
 	}
 
 	if (bsa - stack > 8) {
-		z_fatal_print(" **  A8 %p  A9 %p A10 %p A11 %p",
-			      (void *)bsa[-8], (void *)bsa[-7],
-			      (void *)bsa[-6], (void *)bsa[-5]);
+		LOG_ERR(" **  A8 %p  A9 %p A10 %p A11 %p",
+			(void *)bsa[-8], (void *)bsa[-7],
+			(void *)bsa[-6], (void *)bsa[-5]);
 	}
 
 	if (bsa - stack > 12) {
-		z_fatal_print(" ** A12 %p A13 %p A14 %p A15 %p",
-			      (void *)bsa[-12], (void *)bsa[-11],
-			      (void *)bsa[-10], (void *)bsa[-9]);
+		LOG_ERR(" ** A12 %p A13 %p A14 %p A15 %p",
+			(void *)bsa[-12], (void *)bsa[-11],
+			(void *)bsa[-10], (void *)bsa[-9]);
 	}
 
 #if XCHAL_HAVE_LOOPS
-	z_fatal_print(" ** LBEG %p LEND %p LCOUNT %p",
-	       (void *)bsa[BSA_LBEG_OFF/4],
-	       (void *)bsa[BSA_LEND_OFF/4],
-	       (void *)bsa[BSA_LCOUNT_OFF/4]);
-
+	LOG_ERR(" ** LBEG %p LEND %p LCOUNT %p",
+		(void *)bsa[BSA_LBEG_OFF/4],
+		(void *)bsa[BSA_LEND_OFF/4],
+		(void *)bsa[BSA_LCOUNT_OFF/4]);
 #endif
 
-	z_fatal_print(" ** SAR %p", (void *)bsa[BSA_SAR_OFF/4]);
+	LOG_ERR(" ** SAR %p", (void *)bsa[BSA_SAR_OFF/4]);
 }
 
 static inline unsigned int get_bits(int offset, int num_bits, unsigned int val)
@@ -174,8 +176,8 @@ void *xtensa_excint1_c(int *interrupted_stack)
 	} else if (cause == EXCCAUSE_SYSCALL) {
 
 		/* Just report it to the console for now */
-		z_fatal_print(" ** SYSCALL PS %p PC %p",
-		       (void *)bsa[BSA_PS_OFF/4], (void *)bsa[BSA_PC_OFF/4]);
+		LOG_ERR(" ** SYSCALL PS %p PC %p",
+			(void *)bsa[BSA_PS_OFF/4], (void *)bsa[BSA_PC_OFF/4]);
 		z_xtensa_dump_stack(interrupted_stack);
 
 		/* Xtensa exceptions don't automatically advance PC,
@@ -189,18 +191,18 @@ void *xtensa_excint1_c(int *interrupted_stack)
 
 		__asm__ volatile("rsr.excvaddr %0" : "=r"(vaddr));
 
-		z_fatal_print(" ** FATAL EXCEPTION");
-		z_fatal_print(" ** CPU %d EXCCAUSE %d (%s)",
-			      z_arch_curr_cpu()->id, cause,
-			      z_xtensa_exccause(cause));
-		z_fatal_print(" **  PC %p VADDR %p",
-			      (void *)bsa[BSA_PC_OFF/4], (void *)vaddr);
-		z_fatal_print(" **  PS %p", (void *)bsa[BSA_PS_OFF/4]);
-		z_fatal_print(" **    (INTLEVEL:%d EXCM: %d UM:%d RING:%d WOE:%d OWB:%d CALLINC:%d)",
-			      get_bits(0, 4, ps), get_bits(4, 1, ps),
-			      get_bits(5, 1, ps), get_bits(6, 2, ps),
-			      get_bits(18, 1, ps),
-			      get_bits(8, 4, ps), get_bits(16, 2, ps));
+		LOG_ERR(" ** FATAL EXCEPTION");
+		LOG_ERR(" ** CPU %d EXCCAUSE %d (%s)",
+			z_arch_curr_cpu()->id, cause,
+			z_xtensa_exccause(cause));
+		LOG_ERR(" **  PC %p VADDR %p",
+			(void *)bsa[BSA_PC_OFF/4], (void *)vaddr);
+		LOG_ERR(" **  PS %p", (void *)bsa[BSA_PS_OFF/4]);
+		LOG_ERR(" **    (INTLEVEL:%d EXCM: %d UM:%d RING:%d WOE:%d OWB:%d CALLINC:%d)",
+			get_bits(0, 4, ps), get_bits(4, 1, ps),
+			get_bits(5, 1, ps), get_bits(6, 2, ps),
+			get_bits(18, 1, ps),
+			get_bits(8, 4, ps), get_bits(16, 2, ps));
 
 		/* FIXME: legacy xtensa port reported "HW" exception
 		 * for all unhandled exceptions, which seems incorrect

@@ -10,6 +10,8 @@
 #include <kernel_arch_data.h>
 #include <xtensa/specreg.h>
 #include <xtensa-asm2-context.h>
+#include <logging/log.h>
+LOG_MODULE_DECLARE(os);
 
 #ifdef XT_SIMULATOR
 #include <xtensa/simcall.h>
@@ -101,8 +103,8 @@ XTENSA_ERR_NORET void FatalErrorHandler(void)
 
 XTENSA_ERR_NORET void ReservedInterruptHandler(unsigned int intNo)
 {
-	z_fatal_print("INTENABLE = 0x%x INTERRUPT = 0x%x (%x)",
-		      get_sreg(INTENABLE), (1 << intNo), intNo);
+	LOG_ERR("INTENABLE = 0x%x INTERRUPT = 0x%x (%x)",
+		get_sreg(INTENABLE), (1 << intNo), intNo);
 	z_xtensa_fatal_error(K_ERR_SPURIOUS_IRQ, NULL);
 }
 
@@ -117,7 +119,7 @@ void exit(int return_code)
 	    : [code] "r" (return_code), [call] "i" (SYS_exit)
 	    : "a3", "a2");
 #else
-	z_fatal_print("exit(%d)", return_code);
+	LOG_ERR("exit(%d)", return_code);
 	k_panic();
 #endif
 }

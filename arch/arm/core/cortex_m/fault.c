@@ -18,10 +18,11 @@
 #include <kernel_structs.h>
 #include <inttypes.h>
 #include <exc_handle.h>
-#include <logging/log_ctrl.h>
+#include <logging/log.h>
+LOG_MODULE_DECLARE(os);
 
 #if defined(CONFIG_PRINTK) || defined(CONFIG_LOG)
-#define PR_EXC(...) z_fatal_print(__VA_ARGS__)
+#define PR_EXC(...) LOG_ERR(__VA_ARGS__)
 #define STORE_xFAR(reg_var, reg) u32_t reg_var = (u32_t)reg
 #else
 #define PR_EXC(...)

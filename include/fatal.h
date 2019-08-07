@@ -88,27 +88,4 @@ void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *esf);
  */
 void z_fatal_error(unsigned int reason, const z_arch_esf_t *esf);
 
-/**
- * Print messages related to an exception
- *
- * This ensures the following:
- *  - The log system will enter panic mode if it is not already
- *  - Messages will be sent to printk() or the log subsystem if it is enabled
- *
- * Log subsystem filtering is disabled.
- * To conform with log subsystem semantics, newlines are automatically
- * appended, invoke this once per line.
- *
- * @param fmt Format string
- * @param ... Optional list of format arguments
- *
- * FIXME: Implemented in C file to avoid #include loops, disentangle and
- * make this a macro
- */
-#if defined(CONFIG_LOG) || defined(CONFIG_PRINTK)
-__printf_like(1, 2) void z_fatal_print(const char *fmt, ...);
-#else
-#define z_fatal_print(...) do { } while (false)
-#endif
-
 #endif /* ZEPHYR_INCLUDE_FATAL_H */
