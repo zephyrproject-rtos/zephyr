@@ -38,13 +38,12 @@ __weak void k_sys_fatal_error_handler(unsigned int reason,
 	ARG_UNUSED(esf);
 
 	LOG_PANIC();
-	z_fatal_print("Halting system");
+	LOG_ERR("Halting system");
 	z_arch_system_halt(reason);
 	CODE_UNREACHABLE;
 }
 /* LCOV_EXCL_STOP */
 
-#if defined(CONFIG_LOG) || defined(CONFIG_PRINTK)
 static const char *thread_name_get(struct k_thread *thread)
 {
 	const char *thread_name = k_thread_name_get(thread);
@@ -74,25 +73,12 @@ static const char *reason_to_str(unsigned int reason)
 	}
 }
 
-void z_fatal_print(const char *fmt, ...)
-{
-	va_list ap;
-
-	va_start(ap, fmt);
-	printk("FATAL: ");
-	vprintk(fmt, ap);
-	printk("\n");
-	va_end(ap);
-}
-#endif /* CONFIG_LOG || CONFIG_PRINTK */
-
 /* LCOV_EXCL_START */
 FUNC_NORETURN void k_fatal_halt(unsigned int reason)
 {
 	z_arch_system_halt(reason);
 }
 /* LCOV_EXCL_STOP */
-
 
 void z_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
 {
@@ -101,8 +87,7 @@ void z_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
 	/* sanitycheck looks for the "ZEPHYR FATAL ERROR" string, don't
 	 * change it without also updating sanitycheck
 	 */
-	z_fatal_print(">>> ZEPHYR FATAL ERROR %d: %s", reason,
-		      reason_to_str(reason));
+	LOG_ERR(">>> ZEPHYR FATAL ERROR %d: %s", reason, reason_to_str(reason));
 
 	/* FIXME: This doesn't seem to work as expected on all arches.
 	 * Need a reliable way to determine whether the fault happened when
@@ -115,8 +100,8 @@ void z_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
 	 * }
 	 */
 
-	z_fatal_print("Current thread: %p (%s)", thread,
-		      thread_name_get(thread));
+	LOG_ERR("Current thread: %p (%s)", thread,
+		log_strdup(thread_name_get(thread)));
 
 	k_sys_fatal_error_handler(reason, esf);
 

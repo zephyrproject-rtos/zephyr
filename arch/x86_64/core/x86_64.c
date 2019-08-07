@@ -8,7 +8,10 @@
 #include <debug/tracing.h>
 #include <ksched.h>
 #include <irq_offload.h>
+#include <logging/log.h>
 #include "xuk.h"
+
+LOG_MODULE_DECLARE(os);
 
 /* Always pick a lowest priority interrupt for scheduling IPI's, by
  * definition they're done on behalf of thread mode code and should
@@ -51,13 +54,13 @@ void z_unhandled_vector(int vector, int err, struct xuk_entry_frame *f)
 	/* Yes, there are five regsiters missing.  See notes on
 	 * xuk_entry_frame/xuk_stack_frame.
 	 */
-	z_fatal_print("*** FATAL ERROR vector %d code %d", vector, err);
-	z_fatal_print("***  RIP %d:0x%llx RSP %d:0x%llx RFLAGS 0x%llx",
-		      (int)f->cs, f->rip, (int)f->ss, f->rsp, f->rflags);
-	z_fatal_print("***  RAX 0x%llx RCX 0x%llx RDX 0x%llx RSI 0x%llx RDI 0x%llx",
-		      f->rax, f->rcx, f->rdx, f->rsi, f->rdi);
-	z_fatal_print("***  R8 0x%llx R9 0x%llx R10 0x%llx R11 0x%llx",
-		      f->r8, f->r9, f->r10, f->r11);
+	LOG_ERR("*** FATAL ERROR vector %d code %d", vector, err);
+	LOG_ERR("***  RIP %d:0x%llx RSP %d:0x%llx RFLAGS 0x%llx",
+		(int)f->cs, f->rip, (int)f->ss, f->rsp, f->rflags);
+	LOG_ERR("***  RAX 0x%llx RCX 0x%llx RDX 0x%llx RSI 0x%llx RDI 0x%llx",
+		f->rax, f->rcx, f->rdx, f->rsi, f->rdi);
+	LOG_ERR("***  R8 0x%llx R9 0x%llx R10 0x%llx R11 0x%llx",
+		f->r8, f->r9, f->r10, f->r11);
 
 	/* FIXME: Why isn't xuk_entry_frame a z_arch_esf_t? */
 	z_fatal_error(x86_64_except_reason, NULL);

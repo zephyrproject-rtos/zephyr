@@ -19,12 +19,14 @@
 #include <ksched.h>
 #include <kswap.h>
 #include <debug/tracing.h>
+#include <logging/log.h>
+LOG_MODULE_DECLARE(os);
 
 FUNC_NORETURN void z_irq_spurious(void *unused)
 {
 	ARG_UNUSED(unused);
-	z_fatal_print("Spurious interrupt detected! ipending: %x",
-		      z_nios2_creg_read(NIOS2_CR_IPENDING));
+	LOG_ERR("Spurious interrupt detected! ipending: %x",
+		z_nios2_creg_read(NIOS2_CR_IPENDING));
 	z_nios2_fatal_error(K_ERR_SPURIOUS_IRQ, NULL);
 }
 

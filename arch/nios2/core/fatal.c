@@ -8,7 +8,8 @@
 #include <arch/cpu.h>
 #include <kernel_structs.h>
 #include <inttypes.h>
-#include <logging/log_ctrl.h>
+#include <logging/log.h>
+LOG_MODULE_DECLARE(os);
 
 FUNC_NORETURN void z_nios2_fatal_error(unsigned int reason,
 				       const z_arch_esf_t *esf)
@@ -21,16 +22,16 @@ FUNC_NORETURN void z_nios2_fatal_error(unsigned int reason,
 		 * entry.  We may want to introduce a config option to save and
 		 * dump all registers, at the expense of some stack space.
 		 */
-		z_fatal_print("Faulting instruction: 0x%08x", esf->instr - 4);
-		z_fatal_print("  r1: 0x%08x  r2: 0x%08x  r3: 0x%08x  r4: 0x%08x",
-			      esf->r1, esf->r2, esf->r3, esf->r4);
-		z_fatal_print("  r5: 0x%08x  r6: 0x%08x  r7: 0x%08x  r8: 0x%08x",
-			      esf->r5, esf->r6, esf->r7, esf->r8);
-		z_fatal_print("  r9: 0x%08x r10: 0x%08x r11: 0x%08x r12: 0x%08x",
-			      esf->r9, esf->r10, esf->r11, esf->r12);
-		z_fatal_print(" r13: 0x%08x r14: 0x%08x r15: 0x%08x  ra: 0x%08x",
-			      esf->r13, esf->r14, esf->r15, esf->ra);
-		z_fatal_print("estatus: %08x", esf->estatus);
+		LOG_ERR("Faulting instruction: 0x%08x", esf->instr - 4);
+		LOG_ERR("  r1: 0x%08x  r2: 0x%08x  r3: 0x%08x  r4: 0x%08x",
+			esf->r1, esf->r2, esf->r3, esf->r4);
+		LOG_ERR("  r5: 0x%08x  r6: 0x%08x  r7: 0x%08x  r8: 0x%08x",
+			esf->r5, esf->r6, esf->r7, esf->r8);
+		LOG_ERR("  r9: 0x%08x r10: 0x%08x r11: 0x%08x r12: 0x%08x",
+			esf->r9, esf->r10, esf->r11, esf->r12);
+		LOG_ERR(" r13: 0x%08x r14: 0x%08x r15: 0x%08x  ra: 0x%08x",
+			esf->r13, esf->r14, esf->r15, esf->ra);
+		LOG_ERR("estatus: %08x", esf->estatus);
 	}
 
 	z_fatal_error(reason, esf);
@@ -116,13 +117,13 @@ FUNC_NORETURN void _Fault(const z_arch_esf_t *esf)
 	cause = (exc_reg & NIOS2_EXCEPTION_REG_CAUSE_MASK)
 		 >> NIOS2_EXCEPTION_REG_CAUSE_OFST;
 
-	z_fatal_print("Exception cause: %d ECCFTL: 0x%x", cause, eccftl);
+	LOG_ERR("Exception cause: %d ECCFTL: 0x%x", cause, eccftl);
 #if CONFIG_EXTRA_EXCEPTION_INFO
-	z_fatal_print("reason: %s", cause_str(cause));
+	LOG_ERR("reason: %s", cause_str(cause));
 #endif
 	if (BIT(cause) & NIOS2_BADADDR_CAUSE_MASK) {
 		badaddr_reg = z_nios2_creg_read(NIOS2_CR_BADADDR);
-		z_fatal_print("Badaddr: 0x%x", badaddr_reg);
+		LOG_ERR("Badaddr: 0x%x", badaddr_reg);
 	}
 #endif /* ALT_CPU_HAS_EXTRA_EXCEPTION_INFO */
 #endif /* CONFIG_PRINTK || CONFIG_LOG */
