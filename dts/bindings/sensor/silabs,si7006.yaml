@@ -3,9 +3,8 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
----
+
 title: Si7006 Temperature and Humidity sensor
-version: 0.1
 
 description: >
     This is a representation of Si7006 Temperature and Humidity sensor
