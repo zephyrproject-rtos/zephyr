@@ -595,6 +595,11 @@ static void rpa_adv_refresh(struct ll_adv_set *adv)
 		return;
 	}
 
+	idx = ull_filter_rl_find(adv->id_addr_type, adv->id_addr, NULL);
+	if (idx >= ARRAY_SIZE(rl)) {
+		return;
+	}
+
 	radio_adv_data = radio_adv_data_get();
 	prev = (struct pdu_adv *)&radio_adv_data->data[radio_adv_data->last][0];
 	/* use the last index in double buffer, */
@@ -618,8 +623,6 @@ static void rpa_adv_refresh(struct ll_adv_set *adv)
 		pdu->chan_sel = 0;
 	}
 
-	idx = ll_rl_find(adv->id_addr_type, adv->id_addr, NULL);
-	LL_ASSERT(idx < ARRAY_SIZE(rl));
 	ll_rl_pdu_adv_update(adv, idx, pdu);
 
 	memcpy(&pdu->adv_ind.data[0], &prev->adv_ind.data[0],
