@@ -83,6 +83,7 @@ struct mcp2515_config {
 #define MCP2515_OPCODE_READ             0x03
 #define MCP2515_OPCODE_BIT_MODIFY       0x05
 #define MCP2515_OPCODE_LOAD_TX_BUFFER   0x40
+#define MCP2515_OPCODE_RTS              0x80
 #define MCP2515_OPCODE_READ_STATUS      0xA0
 #define MCP2515_OPCODE_RESET            0xC0
 
