@@ -161,6 +161,14 @@ config I2C_RV32M1_LPI2C
 
 endif # I2C
 
+if SPI
+
+config SPI_RV32M1_LPSPI
+	default y
+
+endif # SPI
+
+
 if FLASH
 
 config SOC_FLASH_RV32M1

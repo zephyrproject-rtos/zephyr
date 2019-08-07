@@ -1,0 +1,21 @@
+#
+# Copyright (c) 2019, Karsten Koenig <karsten.koenig.030@gmail.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+title: OpenISA LPSPI
+
+description: >
+    This binding gives a base representation of the OpenISA LPSPI controller
+
+compatible: "openisa,rv32m1-lpspi"
+
+include: spi-controller.yaml
+
+properties:
+    reg:
+      required: true
+
+    interrupts:
+      required: true
