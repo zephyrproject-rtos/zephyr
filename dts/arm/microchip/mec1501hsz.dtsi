@@ -197,6 +197,23 @@
 			label = "TIMER_3";
 			max-value = <0xFFFFFFFF>;
 			prescaler = <0>;
+		};
+		ps2_0: ps2@40009000 {
+			compatible = "microchip,xec-ps2";
+			reg = <0x40009000 0x40>;
+			interrupts = <100 1>;
+			label = "PS2_0";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+		ps2_1: ps2@40009040 {
+			compatible = "microchip,xec-ps2";
+			reg = <0x40009040 0x40>;
+			interrupts = <101 1>;
+			label = "PS2_1";
+			#address-cells = <1>;
+			#size-cells = <0>;
 			status = "disabled";
 		};
 	};
