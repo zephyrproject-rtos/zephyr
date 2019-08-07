@@ -1,0 +1,14 @@
+#
+# SPDX-License-Identifier: BSD-3-Clause
+#
+
+title: IO channel with one cell
+description: IO channel with one cell
+
+properties:
+    compatible:
+        constraint: "io-channel"
+        type: string-array
+
+"#cells":
+  - one

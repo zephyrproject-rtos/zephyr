@@ -196,6 +196,22 @@
 	};
 
 	//
+	// IO channels
+	//
+
+	// Lots of common code with PWMs and clocks, so just test the basics
+	io-channel-test {
+		io-channel {
+			compatible = "io-channel";
+			#io-channel-cells = <1>;
+		};
+		node {
+			io-channels = <&{/io-channel-test/io-channel} 1>;
+			io-channel-names = "io-channel";
+		};
+	};
+
+	//
 	// 'reg'
 	//
 
