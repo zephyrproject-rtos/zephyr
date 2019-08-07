@@ -7,7 +7,17 @@
 #ifndef ZEPHYR_LIB_LIBC_MINIMAL_INCLUDE_SYS__TIMEVAL_H_
 #define ZEPHYR_LIB_LIBC_MINIMAL_INCLUDE_SYS__TIMEVAL_H_
 
-#include <sys/types.h>
+#include <sys/_types.h>
+
+#if !defined(__time_t_defined)
+#define __time_t_defined
+typedef _TIME_T_ time_t;
+#endif
+
+#if !defined(__suseconds_t_defined)
+#define __suseconds_t_defined
+typedef _SUSECONDS_T_ suseconds_t;
+#endif
 
 struct timeval {
 	time_t tv_sec;

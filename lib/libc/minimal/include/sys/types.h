@@ -9,6 +9,7 @@
 #define ZEPHYR_LIB_LIBC_MINIMAL_INCLUDE_SYS_TYPES_H_
 
 #include <stdint.h>
+#include <sys/_types.h>
 
 typedef unsigned int mode_t;
 
@@ -44,12 +45,12 @@ typedef int off_t;
 
 #if !defined(__time_t_defined)
 #define __time_t_defined
-typedef int64_t time_t;
+typedef _TIME_T_ time_t;
 #endif
 
 #if !defined(__suseconds_t_defined)
 #define __suseconds_t_defined
-typedef int32_t suseconds_t;
+typedef _SUSECONDS_T_ suseconds_t;
 #endif
 
 #if !defined(__mem_word_t_defined)

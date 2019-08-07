@@ -9,6 +9,7 @@
 #define ZEPHYR_LIB_LIBC_MINIMAL_INCLUDE_TIME_H_
 
 #include <stdint.h>
+#include <sys/_types.h>
 #include <bits/restrict.h>
 
 /* Minimal time.h to fulfill the requirements of certain libraries
@@ -33,12 +34,12 @@ struct tm {
 
 #if !defined(__time_t_defined)
 #define __time_t_defined
-typedef int64_t time_t;
+typedef _TIME_T_ time_t;
 #endif
 
 #if !defined(__suseconds_t_defined)
 #define __suseconds_t_defined
-typedef int32_t suseconds_t;
+typedef _SUSECONDS_T_ suseconds_t;
 #endif
 
 #include <sys/_timespec.h>
