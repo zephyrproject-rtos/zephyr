@@ -39,6 +39,33 @@ config MODEM_RECEIVER_MAX_CONTEXTS
 	  Maximum number of modem receiver contexts to handle.  For most
 	  purposes this should stay at 1.
 
+config MODEM_CONTEXT
+	bool "Modem context helper driver [EXPERIMENTAL]"
+	help
+	  This driver allows modem drivers to communicate with an interface
+	  using custom defined protocols. Driver doesn't inspect received data
+	  and all aspects of received protocol data are handled by application
+	  work method provided.  This driver combines abstractions for:
+	  modem interface, command handler, pin config and socket handling each
+	  of which will need to be configured.
+
+if MODEM_CONTEXT
+
+config MODEM_CONTEXT_MAX_NUM
+	int "Maximum number of modem contexts"
+	default 1
+	help
+	  Maximum number of modem contexts to handle.  For most
+	  purposes this should stay at 1.
+
+config MODEM_CONTEXT_VERBOSE_DEBUG
+	bool "Verbose debug output in the modem context"
+	help
+	  Enabling this setting will turn on VERY heavy debugging from the
+	  modem context helper.  Do NOT leave on for production.
+
+endif # MODEM_CONTEXT
+
 config MODEM_SHELL
 	bool "Enable modem shell utilities"
 	select SHELL
