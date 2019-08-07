@@ -58,35 +58,30 @@ if ESPI_PERIPHERAL_CHANNEL
 
 config ESPI_PERIPHERAL_UART
 	bool "UART peripheral"
-	depends on ESPI_PERIPHERAL_CHANNEL
 	default n
 	help
 	  Enables UART over eSPI peripheral channel
 
 config ESPI_PERIPHERAL_8042_KEYBOARD
 	bool "8042 keyboard peripheral"
-	depends on ESPI_PERIPHERAL_CHANNEL
 	default n
 	help
 	  Enables 8042 keyboard over eSPI peripheral channel
 
 config ESPI_PERIPHERAL_HOST_IO
 	bool "Host I/O peripheral"
-	depends on ESPI_PERIPHERAL_CHANNEL
 	default n
 	help
 	  Enables ACPI Host I/O over eSPI peripheral channel
 
 config ESPI_PERIPHERAL_PORT_92
 	bool "Legacy Port 92 peripheral"
-	depends on ESPI_PERIPHERAL_CHANNEL
 	default n
 	help
 	  Enables legacy Port 92 over eSPI peripheral channel
 
 config ESPI_PERIPHERAL_DEBUG_PORT_80
 	bool "Debug Port 80 peripheral"
-	depends on ESPI_PERIPHERAL_CHANNEL
 	default n
 	help
 	  Enables debug Port 80 over eSPI peripheral channel
