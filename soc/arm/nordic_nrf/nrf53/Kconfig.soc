@@ -48,6 +48,33 @@ config SOC_NRF5340_CPUAPP
 	select HAS_HW_NRF_UARTE1
 	select HAS_HW_NRF_WDT
 
+config SOC_NRF5340_CPUNET
+	depends on SOC_SERIES_NRF53X
+	bool
+	select HAS_HW_NRF_CLOCK
+	select HAS_HW_NRF_DPPIC
+	select HAS_HW_NRF_EGU0
+	select HAS_HW_NRF_GPIO0
+	select HAS_HW_NRF_GPIO1
+	select HAS_HW_NRF_GPIOTE
+	select HAS_HW_NRF_IPC
+	select HAS_HW_NRF_POWER
+	select HAS_HW_NRF_RADIO_BLE_CODED
+	select HAS_HW_NRF_RADIO_IEEE802154
+	select HAS_HW_NRF_RNG
+	select HAS_HW_NRF_RTC0
+	select HAS_HW_NRF_RTC1
+	select HAS_HW_NRF_SPIM0
+	select HAS_HW_NRF_SPIS0
+	select HAS_HW_NRF_TEMP
+	select HAS_HW_NRF_TIMER0
+	select HAS_HW_NRF_TIMER1
+	select HAS_HW_NRF_TIMER2
+	select HAS_HW_NRF_TWIM0
+	select HAS_HW_NRF_TWIS0
+	select HAS_HW_NRF_UARTE0
+	select HAS_HW_NRF_WDT
+
 choice
 	prompt "nRF53x MCU Selection"
 	depends on SOC_SERIES_NRF53X
@@ -56,11 +83,16 @@ config SOC_NRF5340_CPUAPP_QKAA
 	bool "NRF5340_CPUAPP_QKAA"
 	select SOC_NRF5340_CPUAPP
 
+config SOC_NRF5340_CPUNET_QKAA
+	bool "NRF5340_CPUNET_QKAA"
+	select SOC_NRF5340_CPUNET
+
 endchoice
 
 config NRF_ENABLE_CACHE
 	bool "Enable cache"
-	depends on SOC_NRF5340_CPUAPP && !TRUSTED_EXECUTION_NONSECURE
+	depends on (SOC_NRF5340_CPUAPP && !TRUSTED_EXECUTION_NONSECURE) \
+			|| SOC_NRF5340_CPUNET
 	default y
 	help
 	  Instruction and Data cache is available on nRF5340 CPUAPP
