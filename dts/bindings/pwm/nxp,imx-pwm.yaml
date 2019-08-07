@@ -1,6 +1,4 @@
----
 title: MCUX PWM
-version: 0.1
 
 description: >
     This binding gives a base representation of the NXP MCUX PWM
@@ -15,7 +13,6 @@ properties:
     index:
       type: int
       description: flexpwm submodule index
-      generation: define
       category: required
 
     interrupts:
