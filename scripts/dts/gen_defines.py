@@ -446,11 +446,27 @@ def write_irqs(dev):
             alias += "_" + str2ident(cell_name)
         return alias
 
+    def encode_zephyr_multi_level_irq(irq, irq_num):
+        # See doc/reference/kernel/other/interrupts.rst for details
+        # on how this encoding works
+
+        irq_ctrl = irq.controller
+        # Look for interrupt controller parent until we have none
+        while irq_ctrl.interrupts:
+            irq_num = (irq_num + 1) << 8
+            if "irq" not in irq_ctrl.interrupts[0].specifier:
+                err("Expected binding for {!r} to have 'irq' "
+                    "in '#cells'".format(irq_ctrl))
+            irq_num |= irq_ctrl.interrupts[0].specifier["irq"]
+            irq_ctrl = irq_ctrl.interrupts[0].controller
+        return irq_num
+
     for irq_i, irq in enumerate(dev.interrupts):
-        # We ignore the controller for now
         for cell_name, cell_value in irq.specifier.items():
             ident = "IRQ_{}".format(irq_i)
-            if cell_name != "irq":
+            if cell_name == "irq":
+                cell_value = encode_zephyr_multi_level_irq(irq, cell_value)
+            else:
                 ident += "_" + str2ident(cell_name)
 
             out_dev(dev, ident, cell_value,
