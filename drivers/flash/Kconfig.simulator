@@ -6,7 +6,6 @@
 menuconfig FLASH_SIMULATOR
 	bool
 	prompt "Flash simulator"
-	depends on FLASH
 	select STATS
 	select STATS_NAMES
 	select FLASH_HAS_PAGE_LAYOUT
