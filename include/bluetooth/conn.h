@@ -124,8 +124,16 @@ enum {
 
 /** LE Connection Info Structure */
 struct bt_conn_le_info {
-	const bt_addr_le_t *src; /** Source (Local) Address */
-	const bt_addr_le_t *dst; /** Destination (Remote) Address */
+	/** Source (Local) Identity Address */
+	const bt_addr_le_t *src;
+	/** Destination (Remote) Identity Address or remote Resolvable Private
+	 *  Address (RPA) before identity has been resolved.
+	 */
+	const bt_addr_le_t *dst;
+	/** Local device address used during connection setup. */
+	const bt_addr_le_t *local;
+	/** Remote device address used during connection setup. */
+	const bt_addr_le_t *remote;
 	u16_t interval; /** Connection interval */
 	u16_t latency; /** Connection slave latency */
 	u16_t timeout; /** Connection supervision timeout */
