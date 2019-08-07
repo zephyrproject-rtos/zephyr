@@ -6,8 +6,8 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-config MODEM_UBLOX_SARA_R4
-	bool "Enable u-blox SARA-R4 LTE-CatM1/NB-IoT modem driver"
+config MODEM_UBLOX_SARA
+	bool "Enable u-blox SARA modem driver"
 	select MODEM_CONTEXT
 	select MODEM_CMD_HANDLER
 	select MODEM_IFACE_UART
@@ -19,7 +19,23 @@ config MODEM_UBLOX_SARA_R4
 	  Choose this setting to enable u-blox SARA-R4 LTE-CatM1/NB-IoT modem
 	  driver.
 
-if MODEM_UBLOX_SARA_R4
+if MODEM_UBLOX_SARA
+
+choice MODEM_UBLOX_SARA_VARIANT
+	bool "u-blox SARA variant selection"
+	default MODEM_UBLOX_SARA_R4
+
+config MODEM_UBLOX_SARA_R4
+	bool "u-blox SARA-R4"
+	help
+	  Enable support for SARA-R4 modem
+
+config MODEM_UBLOX_SARA_U2
+	bool "u-blox SARA-U2"
+	help
+	  Enable support for SARA-U2 modem
+
+endchoice
 
 config MODEM_UBLOX_SARA_R4_NAME
 	string "Driver name"
@@ -64,4 +80,4 @@ config MODEM_UBLOX_SARA_R4_INIT_PRIORITY
 	  Note that the priority needs to be lower than the net stack
 	  so that it can start before the networking sub-system.
 
-endif # MODEM_UBLOX_SARA_R4
+endif # MODEM_UBLOX_SARA

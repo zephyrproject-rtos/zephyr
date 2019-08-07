@@ -26,3 +26,7 @@ properties:
     mdm-reset-gpios:
       type: compound
       category: required
+
+    mdm-vint-gpios:
+      type: compound
+      category: optional
