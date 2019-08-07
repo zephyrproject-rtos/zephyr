@@ -6,7 +6,7 @@
 
 menuconfig GPIO_HT16K33
 	bool "HT16K33 keyscan driver"
-	depends on HT16K33_KEYSCAN && GPIO
+	depends on HT16K33_KEYSCAN
 	help
 	  Enable keyscan driver for HT16K33.
 
@@ -27,4 +27,4 @@ config GPIO_HT16K33_INIT_PRIORITY
 	  Device driver initialization priority. This driver must be
 	  initialized after the HT16K33 LED driver.
 
-endif #GPIO_HT16K33
+endif # GPIO_HT16K33
