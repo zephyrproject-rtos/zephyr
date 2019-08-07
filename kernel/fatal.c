@@ -117,7 +117,7 @@ void z_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
 	 */
 
 	z_fatal_print("Current thread: %p (%s)", thread,
-		      thread_name_get(thread));
+		      log_strdup(thread_name_get(thread)));
 
 	k_sys_fatal_error_handler(reason, esf);
 
