@@ -257,21 +257,60 @@ static inline void soc_read_bootstraps(void)
 	}
 }
 
-#if 0
+/* host windows */
+#define DMWBA(x)	(HOST_WIN_BASE(x) + 0x0)
+#define DMWLO(x)	(HOST_WIN_BASE(x) + 0x4)
+#define DMWBA_ENABLE	(1 << 0)
+#define DMWBA_READONLY	(1 << 1)
+
+static void prepare_host_windows()
+{
+	/* window0, for fw status & outbox/uplink mbox */
+	sys_write32((HP_SRAM_WIN0_SIZE | 0x7), DMWLO(0));
+	sys_write32((HP_SRAM_WIN0_BASE | DMWBA_READONLY | DMWBA_ENABLE),
+		    DMWBA(0));
+	memset((void *)(HP_SRAM_WIN0_BASE + SRAM_REG_FW_END), 0,
+	      HP_SRAM_WIN0_SIZE - SRAM_REG_FW_END);
+	SOC_DCACHE_FLUSH((void *)(HP_SRAM_WIN0_BASE + SRAM_REG_FW_END),
+			 HP_SRAM_WIN0_SIZE - SRAM_REG_FW_END);
+
+	/* window1, for inbox/downlink mbox */
+	sys_write32((HP_SRAM_WIN1_SIZE | 0x7), DMWLO(1));
+	sys_write32((HP_SRAM_WIN1_BASE | DMWBA_ENABLE), DMWBA(1));
+	memset((void *)HP_SRAM_WIN1_BASE, 0, HP_SRAM_WIN1_SIZE);
+	SOC_DCACHE_FLUSH((void *)HP_SRAM_WIN1_BASE, HP_SRAM_WIN1_SIZE);
+
+	/* window2, for debug */
+	sys_write32((HP_SRAM_WIN2_SIZE | 0x7), DMWLO(2));
+	sys_write32((HP_SRAM_WIN2_BASE | DMWBA_ENABLE), DMWBA(2));
+	memset((void *)HP_SRAM_WIN2_BASE, 0, HP_SRAM_WIN2_SIZE);
+	SOC_DCACHE_FLUSH((void *)HP_SRAM_WIN2_BASE, HP_SRAM_WIN2_SIZE);
+
+	/* window3, for trace
+	 * zeroed by trace initialization
+	 */
+	sys_write32((HP_SRAM_WIN3_SIZE | 0x7), DMWLO(3));
+	sys_write32((HP_SRAM_WIN3_BASE | DMWBA_READONLY | DMWBA_ENABLE),
+		    DMWBA(3));
+}
+
 static int soc_init(struct device *dev)
 {
+#if 0
 	soc_read_bootstraps();
 
 	LOG_INF("Reference clock frequency: %u Hz", ref_clk_freq);
 
 	soc_set_resource_ownership();
 	soc_set_power_and_clock();
+#endif
+
+	prepare_host_windows();
 
 	return 0;
 }
 
 SYS_INIT(soc_init, PRE_KERNEL_1, 99);
-#endif
 
 #define SOF_GLB_TYPE_SHIFT			28
 #define SOF_GLB_TYPE(x)				((x) << SOF_GLB_TYPE_SHIFT)
