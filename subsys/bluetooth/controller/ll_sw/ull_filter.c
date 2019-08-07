@@ -872,6 +872,11 @@ static void rpa_adv_refresh(struct ll_adv_set *adv)
 		return;
 	}
 
+	idx = ull_filter_rl_find(adv->id_addr_type, adv->id_addr, NULL);
+	if (idx >= ARRAY_SIZE(rl)) {
+		return;
+	}
+
 	prev = lll_adv_data_peek(&adv->lll);
 	pdu = lll_adv_data_alloc(&adv->lll, &idx);
 	pdu->type = prev->type;
@@ -883,8 +888,6 @@ static void rpa_adv_refresh(struct ll_adv_set *adv)
 		pdu->chan_sel = 0;
 	}
 
-	idx = ull_filter_rl_find(adv->id_addr_type, adv->id_addr, NULL);
-	LL_ASSERT(idx < ARRAY_SIZE(rl));
 	ull_filter_adv_pdu_update(adv, idx, pdu);
 
 	memcpy(&pdu->adv_ind.data[0], &prev->adv_ind.data[0],
