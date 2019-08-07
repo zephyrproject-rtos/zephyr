@@ -108,6 +108,7 @@ class EDT:
         self.bindings_dirs = bindings_dirs
 
         self._dt = DT(dts)
+        _check_dt(self._dt)
 
         self._init_compat2binding(bindings_dirs)
         self._init_devices()
@@ -1633,6 +1634,30 @@ def _slice(node, prop_name, size):
              "divisible by {}".format(prop_name, node, len(raw), size))
 
     return [raw[i:i + size] for i in range(0, len(raw), size)]
+
+
+def _check_dt(dt):
+    # Does devicetree sanity checks. dtlib is meant to be general and
+    # anything-goes except for very special properties like phandle, but in
+    # edtlib we can be pickier.
+
+    # Check that 'status' has one of the values given in the devicetree spec.
+
+    ok_status = {"okay", "disabled", "reserved", "fail", "fail-sss"}
+
+    for node in dt.node_iter():
+        if "status" in node.props:
+            try:
+                status_val = node.props["status"].to_string()
+            except DTError as e:
+                # The error message gives the path
+                _err(str(e))
+
+            if status_val not in ok_status:
+                _err("unknown 'status' value \"{}\" in {} in {}, expected one "
+                     "of {} (see the devicetree specification)"
+                     .format(status_val, node.path, node.dt.filename,
+                             ", ".join(ok_status)))
 
 
 def _err(msg):
