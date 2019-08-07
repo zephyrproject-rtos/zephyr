@@ -53,9 +53,12 @@
 /arch/posix/                              @aescolar @daor-oti
 /arch/riscv/                              @kgugala @pgielda @nategraff-sifive
 /soc/posix/                               @aescolar @daor-oti
+/arch/sparc/                              @yashi
+/soc/posix/                               @aescolar
 /soc/riscv/                               @kgugala @pgielda @nategraff-sifive
 /soc/riscv/openisa*/                      @MaureenHelm
 /soc/x86/                                 @andrewboie
+/soc/sparc/                               @yashi
 /arch/xtensa/                             @andrewboie @dcpleung @andyross
 /soc/xtensa/                              @andrewboie @dcpleung @andyross
 /boards/arc/                              @vonhust @ruuddw
@@ -116,6 +119,7 @@
 /boards/riscv/rv32m1_vega/                @MaureenHelm
 /boards/shields/                          @erwango
 /boards/shields/atmel_rf2xx/              @nandojve
+/boards/sparc/                            @yashi
 /boards/x86/                              @andrewboie @nashif
 /boards/xtensa/                           @nashif @dcpleung
 /boards/xtensa/intel_s1000_crb/           @sathishkuttan @dcpleung
@@ -185,6 +189,7 @@
 /drivers/ieee802154/ieee802154_rf2xx*     @jukkar @tbursztyka @nandojve
 /drivers/interrupt_controller/            @andrewboie
 /drivers/interrupt_controller/intc_gic.c  @stephanosio
+/drivers/interrupt_controller/leon2_ictl.c @yashi
 /drivers/*/intc_vexriscv_litex.c          @mateusz-holenko @kgugala @pgielda
 /drivers/ipm/ipm_mhu*                     @karl-zh
 /drivers/ipm/Kconfig.nrfx                 @masz-nordic @ioannisg
@@ -221,6 +226,8 @@
 /drivers/serial/uart_xlnx_ps.c            @wjliang
 /drivers/serial/*xmc4xxx*                 @parthitce
 /drivers/serial/*nuvoton*                 @ssekar15
+/drivers/serial/Kconfig.leon2             @yashi
+/drivers/serial/uart_leon2.c              @yashi
 /drivers/net/                             @jukkar @tbursztyka
 /drivers/ptp_clock/                       @jukkar
 /drivers/pwm/*rv32m1*                     @henrikbrixandersen
@@ -237,6 +244,7 @@
 /drivers/timer/xlnx_psttc_timer*          @wjliang @stephanosio
 /drivers/timer/cc13x2_cc26x2_rtc_timer.c  @vanti
 /drivers/timer/cavs_timer.c               @dcpleung
+/drivers/timer/leon2_timer.c              @yashi
 /drivers/usb/                             @jfischer-phytec-iot @finikorg
 /drivers/usb/device/usb_dc_stm32.c        @ydamigos @loicpoulain
 /drivers/video/                           @loicpoulain
@@ -328,6 +336,7 @@
 /include/arch/nios2/arch.h                @andrewboie
 /include/arch/posix/                      @aescolar @daor-oti
 /include/arch/riscv/                      @nategraff-sifive @kgugala @pgielda
+/include/arch/sparc/                      @yashi
 /include/arch/x86/                        @andrewboie @wentongwu
 /include/arch/common/                     @andrewboie @andyross @nashif
 /include/arch/xtensa/                     @andrewboie
