@@ -29,13 +29,18 @@
 #define TICKER_NULL_PERIOD      0
 #define TICKER_NULL_SLOT        0
 #define TICKER_NULL_LAZY        0
+#define TICKER_NULL_MUST_EXPIRE 0
 /**
  * @}
  */
 
 /** \brief Timer node type size.
  */
+#if defined(CONFIG_BT_TICKER_COMPATIBILITY_MODE)
 #define TICKER_NODE_T_SIZE      40
+#else
+#define TICKER_NODE_T_SIZE      44
+#endif
 
 /** \brief Timer user type size.
  */
@@ -51,6 +56,16 @@
 #define TICKER_CALL_ID_WORKER   3
 #define TICKER_CALL_ID_JOB      4
 #define TICKER_CALL_ID_PROGRAM  5
+
+/* Use to ensure callback is invoked in all intervals, even when latencies
+ * occur
+ */
+#define TICKER_LAZY_MUST_EXPIRE 0xFFFF
+
+/* Set this priority to ensure ticker node is always scheduled. Only one
+ * ticker node can have priority TICKER_PRIORITY_CRITICAL at a time
+ */
+#define TICKER_PRIORITY_CRITICAL -128
 
 typedef u8_t (*ticker_caller_id_get_cb_t)(u8_t user_id);
 typedef void (*ticker_sched_cb_t)(u8_t caller_id, u8_t callee_id, u8_t chain,
@@ -106,3 +121,8 @@ u32_t ticker_job_idle_get(u8_t instance_index, u8_t user_id,
 void ticker_job_sched(u8_t instance_index, u8_t user_id);
 u32_t ticker_ticks_now_get(void);
 u32_t ticker_ticks_diff_get(u32_t ticks_now, u32_t ticks_old);
+#if !defined(CONFIG_BT_TICKER_COMPATIBILITY_MODE)
+u32_t ticker_priority_set(u8_t instance_index, u8_t user_id, u8_t ticker_id,
+			  s8_t priority, ticker_op_func fp_op_func,
+			  void *op_context);
+#endif /* !CONFIG_BT_TICKER_COMPATIBILITY_MODE */
