@@ -20,28 +20,45 @@
 
 #include <sys/printk.h>
 
+#if defined(CONFIG_MODEM_CONTEXT)
+#include "modem_context.h"
+#define ms_context		modem_context
+#define ms_max_context		CONFIG_MODEM_CONTEXT_MAX_NUM
+#define ms_send(ctx_, buf_, size_) \
+			(ctx_->iface.write(&ctx_->iface, buf_, size_))
+#define ms_context_from_id	modem_context_from_id
+#define UART_DEV_NAME(ctx)	(ctx->iface.dev->config->name)
+#elif defined(CONFIG_MODEM_RECEIVER)
 #include "modem_receiver.h"
+#define ms_context		mdm_receiver_context
+#define ms_max_context		CONFIG_MODEM_RECEIVER_MAX_CONTEXTS
+#define ms_send			mdm_receiver_send
+#define ms_context_from_id	mdm_receiver_context_from_id
+#define UART_DEV_NAME(ctx_)	(ctx_->uart_dev->config->name)
+#else
+#error "MODEM_CONTEXT or MODEM_RECEIVER need to be enabled"
+#endif
 
 static int cmd_modem_list(const struct shell *shell, size_t argc,
 			  char *argv[])
 {
-	struct mdm_receiver_context *mdm_ctx;
+	struct ms_context *mdm_ctx;
 	int i, count = 0;
 
 	shell_fprintf(shell, SHELL_NORMAL, "Modem receivers:\n");
 
-	for (i = 0; i < CONFIG_MODEM_RECEIVER_MAX_CONTEXTS; i++) {
-		mdm_ctx = mdm_receiver_context_from_id(i);
+	for (i = 0; i < ms_max_context; i++) {
+		mdm_ctx = ms_context_from_id(i);
 		if (mdm_ctx) {
 			count++;
 			shell_fprintf(shell, SHELL_NORMAL,
-				"%d:\tUART Name:    %s\n"
+			     "%d:\tIface Device: %s\n"
 				"\tManufacturer: %s\n"
 				"\tModel:        %s\n"
 				"\tRevision:     %s\n"
 				"\tIMEI:         %s\n"
 				"\tRSSI:         %d\n", i,
-			       mdm_ctx->uart_dev->config->name,
+			       UART_DEV_NAME(mdm_ctx),
 			       mdm_ctx->data_manufacturer,
 			       mdm_ctx->data_model,
 			       mdm_ctx->data_revision,
@@ -60,7 +77,7 @@ static int cmd_modem_list(const struct shell *shell, size_t argc,
 static int cmd_modem_send(const struct shell *shell, size_t argc,
 			  char *argv[])
 {
-	struct mdm_receiver_context *mdm_ctx;
+	struct ms_context *mdm_ctx;
 	char *endptr;
 	int ret, i, arg = 1;
 
@@ -79,14 +96,14 @@ static int cmd_modem_send(const struct shell *shell, size_t argc,
 		return -EINVAL;
 	}
 
-	mdm_ctx = mdm_receiver_context_from_id(i);
+	mdm_ctx = ms_context_from_id(i);
 	if (!mdm_ctx) {
 		shell_fprintf(shell, SHELL_ERROR, "Modem receiver not found!");
 		return 0;
 	}
 
 	for (i = arg + 1; i < argc; i++) {
-		ret = mdm_receiver_send(mdm_ctx, argv[i], strlen(argv[i]));
+		ret = ms_send(mdm_ctx, argv[i], strlen(argv[i]));
 		if (ret < 0) {
 			shell_fprintf(shell, SHELL_ERROR,
 				      "Error sending '%s': %d\n", argv[i], ret);
@@ -94,9 +111,9 @@ static int cmd_modem_send(const struct shell *shell, size_t argc,
 		}
 
 		if (i == argc - 1) {
-			ret = mdm_receiver_send(mdm_ctx, "\r\n", 2);
+			ret = ms_send(mdm_ctx, "\r", 2);
 		} else {
-			ret = mdm_receiver_send(mdm_ctx, " ", 1);
+			ret = ms_send(mdm_ctx, " ", 1);
 		}
 
 		if (ret < 0) {
