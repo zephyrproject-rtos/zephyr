@@ -651,6 +651,15 @@ config BT_MAYFLY_YIELD_AFTER_CALL
 	  If set to 'n', all pending mayflies for callee are executed before
 	  yielding
 
+config BT_TICKER_COMPATIBILITY_MODE
+	bool "Ticker compatibility mode"
+	default y if SOC_SERIES_NRF51X
+	help
+	  This option enables legacy ticker scheduling which defers overlapping
+	  ticker node timeouts and thereby prevents ticker interrupts during
+	  radio RX/TX. Enabling this option disables the ticker priority- and
+	  'must expire' features.
+
 config BT_CTLR_USER_EXT
 	prompt "Enable proprietary extensions in Controller"
 	depends on BT_LL_SW_SPLIT
