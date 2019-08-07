@@ -35,6 +35,6 @@ properties:
         description: Human readable string describing the device (used by Zephyr for API name)
 
     clocks:
-        type: array
+        type: compound
         category: optional
         description: Clock gate information
