@@ -46,11 +46,11 @@
 &usart1 {
 	current-speed = <115200>;
 	pinctrl-names = "default";
-	status = "ok";
+	status = "okay";
 };
 
 &uart8 {
 	current-speed = <115200>;
 	pinctrl-names = "default";
-	status = "ok";
+	status = "okay";
 };
