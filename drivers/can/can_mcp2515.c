@@ -92,6 +92,29 @@ static int mcp2515_cmd_load_tx_buffer(struct device *dev, u8_t abc,
 	return spi_write(DEV_DATA(dev)->spi, &DEV_DATA(dev)->spi_cfg, &tx);
 }
 
+/*
+ * Request-to-Send Instruction
+ *
+ * Parameter nnn is the combination of bits at positions 0, 1 and 2 in the RTS
+ * opcode that respectively initiate transmission for buffers TXB0, TXB1 and
+ * TXB2.
+ */
+static int mcp2515_cmd_rts(struct device *dev, u8_t nnn)
+{
+	__ASSERT(nnn < BIT(MCP2515_TX_CNT), "nnn < BIT(MCP2515_TX_CNT)");
+
+	u8_t cmd_buf[] = { MCP2515_OPCODE_RTS | nnn };
+
+	struct spi_buf tx_buf[] = {
+		{ .buf = cmd_buf, .len = sizeof(cmd_buf) }
+	};
+	const struct spi_buf_set tx = {
+		.buffers = tx_buf, .count = ARRAY_SIZE(tx_buf)
+	};
+
+	return spi_write(DEV_DATA(dev)->spi, &DEV_DATA(dev)->spi_cfg, &tx);
+}
+
 static int mcp2515_cmd_read_reg(struct device *dev, u8_t reg_addr,
 				u8_t *buf_data, u8_t buf_len)
 {
@@ -325,7 +348,7 @@ static int mcp2515_send(struct device *dev, const struct zcan_frame *msg,
 	struct mcp2515_data *dev_data = DEV_DATA(dev);
 	u8_t tx_idx = 0U;
 	u8_t abc;
-	u8_t addr_tx_ctrl;
+	u8_t nnn;
 	u8_t tx_frame[MCP2515_FRAME_LEN];
 
 	if (k_sem_take(&dev_data->tx_sem, timeout) != 0) {
@@ -352,9 +375,6 @@ static int mcp2515_send(struct device *dev, const struct zcan_frame *msg,
 	dev_data->tx_cb[tx_idx].cb = callback;
 	dev_data->tx_cb[tx_idx].cb_arg = callback_arg;
 
-	addr_tx_ctrl = MCP2515_ADDR_TXB0CTRL +
-		       (tx_idx * MCP2515_ADDR_OFFSET_FRAME2FRAME);
-
 	mcp2515_convert_zcanframe_to_mcp2515frame(msg, tx_frame);
 
 	/* Address Pointer selection */
@@ -363,8 +383,8 @@ static int mcp2515_send(struct device *dev, const struct zcan_frame *msg,
 	mcp2515_cmd_load_tx_buffer(dev, abc, tx_frame, sizeof(tx_frame));
 
 	/* request tx slot transmission */
-	mcp2515_cmd_bit_modify(dev, addr_tx_ctrl, MCP2515_TXCTRL_TXREQ,
-			       MCP2515_TXCTRL_TXREQ);
+	nnn = BIT(tx_idx);
+	mcp2515_cmd_rts(dev, nnn);
 
 	if (callback == NULL) {
 		k_sem_take(&dev_data->tx_cb[tx_idx].sem, K_FOREVER);
