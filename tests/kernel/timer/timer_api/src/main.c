@@ -4,8 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdlib.h>
 #include <ztest.h>
 #include <zephyr/types.h>
+#include <sys_clock.h>
 
 struct timer_data {
 	int expire_cnt;
@@ -141,6 +143,26 @@ void test_timer_duration_period(void)
 
 	/* cleanup environemtn */
 	k_timer_stop(&duration_timer);
+}
+
+void test_timer_absolute(void)
+{
+#ifdef K_TIMEOUT_ABSOLUTE_TICKS
+	u64_t start, end, now;
+	k_timeout_t timeout;
+
+	start = k_uptime_ticks();
+	end = start + DURATION;
+	timeout = K_TIMEOUT_ABSOLUTE_TICKS(end);
+
+	k_timer_start(&duration_timer, timeout, K_FOREVER);
+	k_timer_status_sync(&duration_timer);
+
+	now = k_uptime_ticks();
+	zassert_true((now - end) == 0 || (now - end) == 1,
+		     "Absolute timeout expected at %lld, got %lld",
+		     end, now);
+#endif
 }
 
 /**
@@ -529,7 +551,16 @@ void test_timer_remaining_get(void)
 	u32_t remaining;
 
 	init_timer_data();
+
+	u64_t start = k_uptime_ticks();
+
 	k_timer_start(&remain_timer, K_TIMEOUT_MS(DURATION), K_NO_WAIT);
+
+	s32_t end = k_timer_end_ticks(&remain_timer);
+
+	zassert_true(abs(end - start - k_ms_to_ticks_ceil32(DURATION)) <= 2,
+		     "k_timer end time incorrect");
+
 	busy_wait_ms(DURATION / 2);
 	remaining = k_timer_remaining_get(&remain_timer);
 	k_timer_stop(&remain_timer);
@@ -568,6 +599,7 @@ void test_main(void)
 	ztest_test_suite(timer_api,
 			 ztest_unit_test(test_time_conversions),
 			 ztest_user_unit_test(test_timer_duration_period),
+			 ztest_user_unit_test(test_timer_absolute),
 			 ztest_user_unit_test(test_timer_period_0),
 			 ztest_user_unit_test(test_timer_expirefn_null),
 			 ztest_user_unit_test(test_timer_periodicity),

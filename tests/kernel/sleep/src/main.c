@@ -10,6 +10,7 @@
 #include <sys/util.h>
 #include <irq_offload.h>
 #include <stdbool.h>
+#include <stdlib.h>
 
 #if defined(CONFIG_ASSERT) && defined(CONFIG_DEBUG)
 #define THREAD_STACK    (512 + CONFIG_TEST_EXTRA_STACKSIZE)
@@ -166,6 +167,12 @@ static void helper_thread(int arg1, int arg2)
 {
 
 	k_sem_take(&helper_thread_sem, K_FOREVER);
+
+	s32_t dt = k_thread_timeout_remaining_ticks(&test_thread_data);
+
+	zassert_true(abs(dt - k_ms_to_ticks_ceil32(ONE_SECOND)) <= 2,
+		     "thread timeout incorrect");
+
 	/* Wake the test thread */
 	k_wakeup(test_thread_id);
 	k_sem_take(&helper_thread_sem, K_FOREVER);

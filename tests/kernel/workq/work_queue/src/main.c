@@ -5,6 +5,7 @@
  */
 
 #include <stdbool.h>
+#include <stdlib.h>
 
 #include <zephyr.h>
 #include <ztest.h>
@@ -256,12 +257,25 @@ static void test_delayed_submit(void)
 			NULL, NULL, NULL, K_PRIO_COOP(10), 0, K_NO_WAIT);
 
 	for (i = 0; i < NUM_TEST_ITEMS; i += 2) {
-		k_timeout_t timeout = K_TIMEOUT_MS((i + 1) * WORK_ITEM_WAIT);
+		u32_t ms = (i + 1) * WORK_ITEM_WAIT;
+		k_timeout_t timeout = K_TIMEOUT_MS(ms);
 
 		TC_PRINT(" - Submitting delayed work %d from"
 			 " preempt thread\n", i + 1);
+		u64_t start = k_uptime_ticks();
 		zassert_true(k_delayed_work_submit(&tests[i].work,
 						   timeout) == 0, NULL);
+
+		s32_t dt = k_delayed_work_remaining_ticks(&tests[i].work);
+		s32_t delay = k_ms_to_ticks_ceil32(ms);
+
+		zassert_true(abs(delay - dt) <= 2,
+			     "wrong ticks dt %d ticks %d", dt, delay);
+
+		dt = k_delayed_work_end_ticks(&tests[i].work) - start;
+		zassert_true(abs(delay - dt) <= 2,
+			     "wrong ticks (absolute) dt %d ticks %d",
+			     dt, delay);
 	}
 
 }
