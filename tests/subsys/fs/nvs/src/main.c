@@ -539,6 +539,52 @@ void test_nvs_full_sector(void)
 	}
 }
 
+void test_delete(void)
+{
+	int err;
+	ssize_t len;
+	u16_t filling_id, data_read;
+	u32_t ate_wra, data_wra;
+
+	fs.sector_count = 3;
+
+	err = nvs_init(&fs, DT_FLASH_DEV_NAME);
+	zassert_true(err == 0,  "nvs_init call failure: %d", err);
+
+	for (filling_id = 0; filling_id < 10; filling_id++) {
+		len = nvs_write(&fs, filling_id, &filling_id,
+				sizeof(filling_id));
+
+		zassert_true(len == sizeof(filling_id), "nvs_write failed: %d",
+			     len);
+	}
+
+	/* delete existing entry */
+	err = nvs_delete(&fs, 1);
+	zassert_true(err == 0,  "nvs_delete call failure: %d", err);
+
+	len = nvs_read(&fs, 1, &data_read, sizeof(data_read));
+	zassert_true(len == -ENOENT, "nvs_read shouldn't found the entry: %d",
+		     len);
+
+	ate_wra = fs.ate_wra;
+	data_wra = fs.data_wra;
+
+	/* delete already deleted entry */
+	err = nvs_delete(&fs, 1);
+	zassert_true(err == 0,  "nvs_delete call failure: %d", err);
+	zassert_true(ate_wra == fs.ate_wra && data_wra == fs.data_wra,
+		     "delete already deleted entry should not make"
+		     " any footprint in the storage");
+
+	/* delete nonexisting entry */
+	err = nvs_delete(&fs, filling_id);
+	zassert_true(err == 0,  "nvs_delete call failure: %d", err);
+	zassert_true(ate_wra == fs.ate_wra && data_wra == fs.data_wra,
+		     "delete nonexistent entry should not make"
+		     " any footprint in the storage");
+}
+
 void test_main(void)
 {
 	ztest_test_suite(test_nvs,
@@ -556,7 +602,9 @@ void test_main(void)
 				 test_nvs_corrupted_sector_close_operation,
 				 setup, teardown),
 			 ztest_unit_test_setup_teardown(test_nvs_full_sector,
-				 setup, teardown)
+				 setup, teardown),
+			 ztest_unit_test_setup_teardown(test_delete, setup,
+				 teardown)
 			);
 
 	ztest_run_test_suite(test_nvs);
