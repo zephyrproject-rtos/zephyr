@@ -3134,7 +3134,7 @@ static u8_t smp_pairing_random(struct bt_smp *smp, struct net_buf *buf)
 
 			return 0;
 		} else {
-			return BT_SMP_ERR_UNSPECIFIED;
+			return BT_SMP_ERR_OOB_NOT_AVAIL;
 		}
 	default:
 		return BT_SMP_ERR_UNSPECIFIED;
@@ -3544,7 +3544,7 @@ static u8_t smp_public_key(struct bt_smp *smp, struct net_buf *buf)
 				bt_auth->oob_data_request(smp->chan.chan.conn,
 							  &info);
 			} else {
-				return BT_SMP_ERR_UNSPECIFIED;
+				return BT_SMP_ERR_OOB_NOT_AVAIL;
 			}
 			break;
 		default:
@@ -4658,6 +4658,7 @@ int bt_smp_auth_cancel(struct bt_conn *conn)
 	case PASSKEY_CONFIRM:
 		return smp_error(smp, BT_SMP_ERR_CONFIRM_FAILED);
 	case LE_SC_OOB:
+		return smp_error(smp, BT_SMP_ERR_OOB_NOT_AVAIL);
 	case JUST_WORKS:
 		return smp_error(smp, BT_SMP_ERR_UNSPECIFIED);
 	default:
