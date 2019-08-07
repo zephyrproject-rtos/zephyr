@@ -64,6 +64,17 @@ config MODEM_CONTEXT_VERBOSE_DEBUG
 	  Enabling this setting will turn on VERY heavy debugging from the
 	  modem context helper.  Do NOT leave on for production.
 
+config MODEM_IFACE_UART
+	bool "UART-based modem interface"
+	depends on SERIAL_SUPPORT_INTERRUPT
+	select UART_INTERRUPT_DRIVEN
+	select RING_BUFFER
+	help
+	  To configure this layer for use, create a modem_iface_uart_data
+	  object and pass it's reference to modem_iface_uart_init()
+	  along with the modem_iface reference from your modem_context object
+	  and the UART device name.
+
 endif # MODEM_CONTEXT
 
 config MODEM_SHELL
