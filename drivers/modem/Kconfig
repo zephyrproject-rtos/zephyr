@@ -75,6 +75,29 @@ config MODEM_IFACE_UART
 	  along with the modem_iface reference from your modem_context object
 	  and the UART device name.
 
+config MODEM_CMD_HANDLER
+	bool "Generic modem command handler"
+	help
+	  This generic command handler uses a modem interface to process
+	  incoming data and hand it back to the modem driver via callbacks
+	  defined for:
+	  - modem responses
+	  - unsolicited messages
+	  - specified handlers for current operation
+	  To configure this layer for use, create a modem_cmd_handler_data
+	  object and pass it's reference to modem_cmd_handler_init() along with
+	  the modem_cmd_handler reference from your modem_context object.
+
+config MODEM_CMD_HANDLER_MAX_PARAM_COUNT
+	int "Maximum number of params parsed per command"
+	depends on MODEM_CMD_HANDLER
+	default 6
+	help
+	  This option sets the maximum number of parameters which may be
+	  parsed by the command handler.  This is also limited by the length
+	  of the match_buf (match_buf_len) field as it needs to be large
+	  enough to hold a single line of data (ending with /r).
+
 endif # MODEM_CONTEXT
 
 config MODEM_SHELL
