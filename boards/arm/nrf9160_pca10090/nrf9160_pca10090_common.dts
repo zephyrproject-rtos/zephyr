@@ -98,6 +98,11 @@
 	cts-pin = <15>;
 };
 
+&uart2 {
+	tx-pin = <24>;
+	rx-pin = <23>;
+};
+
 &i2c2 {
 	status = "okay";
 	sda-pin = <30>;
