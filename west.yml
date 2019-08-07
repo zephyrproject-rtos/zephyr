@@ -22,7 +22,7 @@ manifest:
     - name: upstream
       url-base: https://github.com/zephyrproject-rtos
     - name: civetweb
-      url-base: https://github.com/antmicro
+      url-base: https://github.com/civetweb
 
   #
   # Please add items below based on alphabetical order
