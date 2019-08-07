@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 
-add_library(PTHREAD INTERFACE)
+add_library(posix_subsys INTERFACE)
 
-target_include_directories(PTHREAD INTERFACE ${ZEPHYR_BASE}/include/posix)
+target_include_directories(posix_subsys INTERFACE ${ZEPHYR_BASE}/include/posix)
 
 zephyr_library()
 zephyr_library_sources(pthread_common.c)
@@ -21,5 +21,5 @@ zephyr_library_sources_ifdef(CONFIG_PTHREAD_IPC pthread_key.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_MQUEUE mqueue.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_FS fs.c)
 
-zephyr_library_link_libraries(PTHREAD)
-target_link_libraries(PTHREAD INTERFACE zephyr_interface)
+zephyr_library_link_libraries(posix_subsys)
+target_link_libraries(posix_subsys INTERFACE zephyr_interface)
