@@ -9,7 +9,6 @@ menuconfig FLASH_NATIVE_POSIX
 	prompt "Native POSIX Flash driver"
 	select FLASH_HAS_DRIVER_ENABLED
 	select FLASH_HAS_PAGE_LAYOUT
-	depends on FLASH
 	help
 	  Enable Native POSIX flash driver.
 
