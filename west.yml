@@ -32,7 +32,7 @@ manifest:
       path: tools/ci-tools
     - name: civetweb
       remote: civetweb
-      revision: 7ffad765f9a63a7bab3432ca45248981f559d559
+      revision: 99129c5efc907ea613c4b73ccff07581feb58a7a
       path: modules/lib/civetweb
     - name: esp-idf
       revision: 6835bfc741bf15e98fb7971293913f770df6081f
