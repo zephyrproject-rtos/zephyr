@@ -1778,12 +1778,14 @@ int bt_conn_get_info(const struct bt_conn *conn, struct bt_conn_info *info)
 
 	switch (conn->type) {
 	case BT_CONN_TYPE_LE:
+		info->le.dst = &conn->le.dst;
+		info->le.src = &bt_dev.id_addr[conn->id];
 		if (conn->role == BT_HCI_ROLE_MASTER) {
-			info->le.src = &conn->le.init_addr;
-			info->le.dst = &conn->le.resp_addr;
+			info->le.local = &conn->le.init_addr;
+			info->le.remote = &conn->le.resp_addr;
 		} else {
-			info->le.src = &conn->le.resp_addr;
-			info->le.dst = &conn->le.init_addr;
+			info->le.local = &conn->le.resp_addr;
+			info->le.remote = &conn->le.init_addr;
 		}
 		info->le.interval = conn->le.interval;
 		info->le.latency = conn->le.latency;
