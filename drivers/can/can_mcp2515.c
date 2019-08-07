@@ -60,6 +60,38 @@ static int mcp2515_cmd_write_reg(struct device *dev, u8_t reg_addr,
 	return spi_write(DEV_DATA(dev)->spi, &DEV_DATA(dev)->spi_cfg, &tx);
 }
 
+/*
+ * Load TX buffer instruction
+ *
+ * When loading a transmit buffer, reduces the overhead of a normal WRITE
+ * command by placing the Address Pointer at one of six locations, as
+ * selected by parameter abc.
+ *
+ *   0: TX Buffer 0, Start at TXB0SIDH (0x31)
+ *   1: TX Buffer 0, Start at TXB0D0 (0x36)
+ *   2: TX Buffer 1, Start at TXB1SIDH (0x41)
+ *   3: TX Buffer 1, Start at TXB1D0 (0x46)
+ *   4: TX Buffer 2, Start at TXB2SIDH (0x51)
+ *   5: TX Buffer 2, Start at TXB2D0 (0x56)
+ */
+static int mcp2515_cmd_load_tx_buffer(struct device *dev, u8_t abc,
+				 u8_t *buf_data, u8_t buf_len)
+{
+	__ASSERT(abc <= 5, "abc <= 5");
+
+	u8_t cmd_buf[] = { MCP2515_OPCODE_LOAD_TX_BUFFER | abc };
+
+	struct spi_buf tx_buf[] = {
+		{ .buf = cmd_buf, .len = sizeof(cmd_buf) },
+		{ .buf = buf_data, .len = buf_len }
+	};
+	const struct spi_buf_set tx = {
+		.buffers = tx_buf, .count = ARRAY_SIZE(tx_buf)
+	};
+
+	return spi_write(DEV_DATA(dev)->spi, &DEV_DATA(dev)->spi_cfg, &tx);
+}
+
 static int mcp2515_cmd_read_reg(struct device *dev, u8_t reg_addr,
 				u8_t *buf_data, u8_t buf_len)
 {
@@ -292,6 +324,7 @@ static int mcp2515_send(struct device *dev, const struct zcan_frame *msg,
 {
 	struct mcp2515_data *dev_data = DEV_DATA(dev);
 	u8_t tx_idx = 0U;
+	u8_t abc;
 	u8_t addr_tx_ctrl;
 	u8_t tx_frame[MCP2515_FRAME_LEN];
 
@@ -323,9 +356,12 @@ static int mcp2515_send(struct device *dev, const struct zcan_frame *msg,
 		       (tx_idx * MCP2515_ADDR_OFFSET_FRAME2FRAME);
 
 	mcp2515_convert_zcanframe_to_mcp2515frame(msg, tx_frame);
-	mcp2515_cmd_write_reg(dev,
-			      addr_tx_ctrl + MCP2515_ADDR_OFFSET_CTRL2FRAME,
-			      tx_frame, sizeof(tx_frame));
+
+	/* Address Pointer selection */
+	abc = 2 * tx_idx;
+
+	mcp2515_cmd_load_tx_buffer(dev, abc, tx_frame, sizeof(tx_frame));
+
 	/* request tx slot transmission */
 	mcp2515_cmd_bit_modify(dev, addr_tx_ctrl, MCP2515_TXCTRL_TXREQ,
 			       MCP2515_TXCTRL_TXREQ);
@@ -632,7 +668,7 @@ static int mcp2515_init(struct device *dev)
 
 	k_sem_init(&dev_data->int_sem, 0, 1);
 	k_mutex_init(&dev_data->mutex);
-	k_sem_init(&dev_data->tx_sem, 3, 3);
+	k_sem_init(&dev_data->tx_sem, MCP2515_TX_CNT, MCP2515_TX_CNT);
 	k_sem_init(&dev_data->tx_cb[0].sem, 0, 1);
 	k_sem_init(&dev_data->tx_cb[1].sem, 0, 1);
 	k_sem_init(&dev_data->tx_cb[2].sem, 0, 1);
