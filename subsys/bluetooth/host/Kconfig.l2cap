@@ -59,7 +59,6 @@ config BT_L2CAP_DYNAMIC_CHANNEL
 if BT_DEBUG
 config BT_DEBUG_L2CAP
 	bool "Bluetooth L2CAP debug"
-	depends on BT_CONN
 	help
 	  This option enables debug support for the Bluetooth
 	  L2ACP layer.
