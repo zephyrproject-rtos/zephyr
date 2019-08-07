@@ -13,6 +13,12 @@
 #include <ctype.h>
 #include <string.h>
 
+/* Despite our use of PAE page tables, we do not (and will never) actually
+ * support PAE. Use a 64-bit x86 target if you have that much RAM.
+ */
+BUILD_ASSERT(DT_PHYS_RAM_ADDR + (DT_RAM_SIZE * 1024ULL) - 1ULL <=
+				 (unsigned long long)UINTPTR_MAX);
+
 /* Common regions for all x86 processors.
  * Peripheral I/O ranges configured at the SOC level
  */
