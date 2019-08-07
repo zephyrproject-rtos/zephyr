@@ -322,6 +322,7 @@ config BT_CREATE_CONN_TIMEOUT
         int "Timeout for pending LE Create Connection command in seconds"
         default 3
         range 1 65535
+
 endif # BT_CONN
 
 if BT_OBSERVER
