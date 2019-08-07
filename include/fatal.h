@@ -89,26 +89,38 @@ void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *esf);
 void z_fatal_error(unsigned int reason, const z_arch_esf_t *esf);
 
 /**
- * Print messages related to an exception
+ * @brief Print messages related to an exception
  *
- * This ensures the following:
- *  - The log system will enter panic mode if it is not already
- *  - Messages will be sent to printk() or the log subsystem if it is enabled
+ * Messages will be sent to the log subsystem if it is enabled else they will
+ * be sent to printk() (if enabled).
  *
- * Log subsystem filtering is disabled.
  * To conform with log subsystem semantics, newlines are automatically
  * appended, invoke this once per line.
  *
- * @param fmt Format string
- * @param ... Optional list of format arguments
- *
- * FIXME: Implemented in C file to avoid #include loops, disentangle and
- * make this a macro
+ * @param ... String with optional list of format arguments
  */
-#if defined(CONFIG_LOG) || defined(CONFIG_PRINTK)
-__printf_like(1, 2) void z_fatal_print(const char *fmt, ...);
-#else
-#define z_fatal_print(...) do { } while (false)
-#endif
+#define z_fatal_print(...) \
+	do { \
+		if (IS_ENABLED(CONFIG_LOG)) { \
+			LOG_ERR(__VA_ARGS__); \
+		} else if (IS_ENABLED(CONFIG_PRINTK)) { \
+			printk("FATAL: "); \
+			printk(__VA_ARGS__); \
+			printk("\n"); \
+		} \
+	} while (0)
+
+/**
+ * @brief Macro for handling transient strings passed as arguments to
+ *	  @ref z_fatal_print.
+ *
+ * Macro is performing string duplication if @ref z_fatal_print resolves to the
+ * log message and should be used if string is not constant.
+ *
+ * @param str Transient string.
+ */
+#define z_fatal_transient_string_handle(str) \
+	(IS_ENABLED(CONFIG_LOG) ? log_strdup((str)) : \
+	(IS_ENABLED(CONFIG_PRINTK) ? (str) : NULL))
 
 #endif /* ZEPHYR_INCLUDE_FATAL_H */
