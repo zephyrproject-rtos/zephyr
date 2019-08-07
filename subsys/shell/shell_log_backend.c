@@ -222,10 +222,14 @@ static void put_sync_string(const struct log_backend *const backend,
 	}
 
 	key = irq_lock();
-	shell_cmd_line_erase(shell);
+	if (!flag_cmd_ctx_get(shell)) {
+		shell_cmd_line_erase(shell);
+	}
 	log_output_string(shell->log_backend->log_output, src_level, timestamp,
 			  fmt, ap, flags);
-	shell_print_prompt_and_cmd(shell);
+	if (!flag_cmd_ctx_get(shell)) {
+		shell_print_prompt_and_cmd(shell);
+	}
 	irq_unlock(key);
 }
 
@@ -234,7 +238,6 @@ static void put_sync_hexdump(const struct log_backend *const backend,
 			 const char *metadata, const u8_t *data, u32_t length)
 {
 	const struct shell *shell = (const struct shell *)backend->cb->ctx;
-	struct k_poll_signal *signal;
 	u32_t key;
 	u32_t flags = LOG_OUTPUT_FLAG_LEVEL |
 		      LOG_OUTPUT_FLAG_TIMESTAMP |
@@ -245,18 +248,15 @@ static void put_sync_hexdump(const struct log_backend *const backend,
 	}
 
 	key = irq_lock();
-	shell_cmd_line_erase(shell);
+	if (!flag_cmd_ctx_get(shell)) {
+		shell_cmd_line_erase(shell);
+	}
 	log_output_hexdump(shell->log_backend->log_output, src_level, timestamp,
 			   metadata, data, length, flags);
-	irq_unlock(key);
-
-	/* Even though log message is handled notify shell thread which
-	 * will print command buffer after the log message.
-	 */
-	if (IS_ENABLED(CONFIG_MULTITHREADING)) {
-		signal = &shell->ctx->signals[SHELL_SIGNAL_LOG_MSG];
-		k_poll_signal_raise(signal, 0);
+	if (!flag_cmd_ctx_get(shell)) {
+		shell_print_prompt_and_cmd(shell);
 	}
+	irq_unlock(key);
 }
 
 static void panic(const struct log_backend *const backend)
