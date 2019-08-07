@@ -135,7 +135,6 @@ endif # DISK_ACCESS_USDHC
 config DISK_SDHC_VOLUME_NAME
 	string "SDHC Disk mount point or drive name"
 	default "SDHC"
-	depends on DISK_ACCESS_SDHC
 	help
 	  Disk name as per file system naming guidelines.
 
