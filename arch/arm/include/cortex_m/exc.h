@@ -112,7 +112,8 @@ static ALWAYS_INLINE void z_ExcSetup(void)
 #endif /* CONFIG_ARM_SECURE_FIRMWARE */
 #endif /* CONFIG_CPU_CORTEX_M_HAS_PROGRAMMABLE_FAULT_PRIOS */
 
-#if defined(CONFIG_ARM_SECURE_FIRMWARE)
+#if defined(CONFIG_ARM_SECURE_FIRMWARE) && \
+	!defined(CONFIG_ARM_SECURE_BUSFAULT_HARDFAULT_NMI)
 	/* Set NMI, Hard, and Bus Faults as Non-Secure.
 	 * NMI and Bus Faults targeting the Secure state will
 	 * escalate to a SecureFault or SecureHardFault.
@@ -126,7 +127,7 @@ static ALWAYS_INLINE void z_ExcSetup(void)
 	 * in a PE with the Main Extension instead generate a
 	 * SecureHardFault in a PE without the Main Extension.
 	 */
-#endif /* CONFIG_ARM_SECURE_FIRMWARE */
+#endif /* ARM_SECURE_FIRMWARE && !ARM_SECURE_BUSFAULT_HARDFAULT_NMI */
 }
 
 /**
