@@ -13,7 +13,7 @@ LOG_MODULE_DECLARE(conn_mgr, CONFIG_NET_CONNECTION_MANAGER_LOG_LEVEL);
 
 #include <conn_mgr.h>
 
-extern u16_t *iface_states;
+extern u16_t iface_states[CONN_MGR_IFACE_MAX];
 
 static struct net_mgmt_event_callback iface_events_cb;
 static struct net_mgmt_event_callback ipv6_events_cb;
@@ -35,11 +35,11 @@ static void conn_mgr_iface_events_handler(struct net_mgmt_event_callback *cb,
 
 	NET_DBG("Iface index %u", idx);
 
-	switch (NET_MGMT_EVENT(mgmt_event)) {
-	case NET_EVENT_IF_DOWN:
+	switch (NET_MGMT_GET_COMMAND(mgmt_event)) {
+	case NET_EVENT_IF_CMD_DOWN:
 		iface_states[idx] &= ~NET_STATE_IFACE_UP;
 		break;
-	case NET_EVENT_IF_UP:
+	case NET_EVENT_IF_CMD_UP:
 		iface_states[idx] |= NET_STATE_IFACE_UP;
 		break;
 	default:
@@ -67,21 +67,21 @@ static void conn_mgr_ipv6_events_handler(struct net_mgmt_event_callback *cb,
 
 	NET_DBG("Iface index %u", idx);
 
-	switch (NET_MGMT_EVENT(mgmt_event)) {
-	case NET_EVENT_IPV6_ADDR_ADD:
+	switch (NET_MGMT_GET_COMMAND(mgmt_event)) {
+	case NET_EVENT_IPV6_CMD_ADDR_ADD:
 		iface_states[idx] |= NET_STATE_IPV6_ADDR_SET;
 		break;
-	case NET_EVENT_IPV6_ADDR_DEL:
+	case NET_EVENT_IPV6_CMD_ADDR_DEL:
 		if (net_if_ipv6_get_global_addr(NET_ADDR_PREFERRED, &iface)) {
 			break;
 		}
 
 		iface_states[idx] &= ~NET_STATE_IPV6_ADDR_SET;
 		break;
-	case NET_EVENT_IPV6_DAD_SUCCEED:
+	case NET_EVENT_IPV6_CMD_DAD_SUCCEED:
 		iface_states[idx] |= NET_STATE_IPV6_DAD_OK;
 		break;
-	case NET_EVENT_IPV6_DAD_FAILED:
+	case NET_EVENT_IPV6_CMD_DAD_FAILED:
 		if (net_if_ipv6_get_global_addr(NET_ADDR_PREFERRED, &iface)) {
 			break;
 		}
