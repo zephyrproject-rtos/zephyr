@@ -634,19 +634,15 @@ static int cmd_directed_adv(const struct shell *shell,
 		return err;
 	}
 
-	if (argc == 3) {
-		goto connect;
+	if (argc > 3) {
+		if (!strcmp(argv[3], "low")) {
+			param = BT_LE_ADV_CONN_DIR_LOW_DUTY;
+		} else {
+			shell_help(shell);
+			return -ENOEXEC;
+		}
 	}
 
-	if (strcmp(argv[3], "low")) {
-		shell_help(shell);
-		/* shell returns 1 when help is printed */
-		return 1;
-	}
-
-	param = BT_LE_ADV_CONN_DIR_LOW_DUTY;
-
-connect:
 	conn = bt_conn_create_slave_le(&addr, param);
 	if (!conn) {
 		shell_error(shell, "Failed to start directed advertising");
@@ -1341,7 +1337,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 		      cmd_advertise, 2, 1),
 #if defined(CONFIG_BT_PERIPHERAL)
 	SHELL_CMD_ARG(directed-adv, NULL, HELP_ADDR_LE " [mode: low]",
-		      cmd_directed_adv, 1, 1),
+		      cmd_directed_adv, 3, 1),
 #endif /* CONFIG_BT_PERIPHERAL */
 #endif /* CONFIG_BT_BROADCASTER */
 #if defined(CONFIG_BT_CONN)
