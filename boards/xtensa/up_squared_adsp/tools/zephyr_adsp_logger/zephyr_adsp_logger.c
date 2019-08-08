@@ -37,10 +37,10 @@ void usage(char *prog_name)
 	fprintf(stdout, "  -i infile : Use infile as input\n");
 	fprintf(stdout, "\n");
 	fprintf(stdout,
-		"  -t size   : Size of the trace buffer (in bytes, default %d)\n",
+		"  -t size   : Size of the trace buffer (in bytes, default %lu)\n",
 		default_trace_size);
 	fprintf(stdout,
-		"  -b size   : Size of buffer of one log line (in bytes, default %d)\n",
+		"  -b size   : Size of buffer of one log line (in bytes, default %lu)\n",
 		default_buf_size);
 	fprintf(stdout, "\n");
 	fprintf(stdout,
