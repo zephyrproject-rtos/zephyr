@@ -188,7 +188,7 @@ def write_bus(dev):
         return
 
     if dev.parent.label is None:
-        _err("missing 'label' property on {!r}".format(dev.parent))
+        err("missing 'label' property on {!r}".format(dev.parent))
 
     # #define DT_<DEV-IDENT>_BUS_NAME <BUS-LABEL>
     out_dev_s(dev, "BUS_NAME", str2ident(dev.parent.label))
