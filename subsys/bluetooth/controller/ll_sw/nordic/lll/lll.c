@@ -191,21 +191,9 @@ void lll_resume(void *param)
 	struct lll_event *next = param;
 	int ret;
 
-	if (event.curr.abort_cb) {
-		ret = prepare(next->is_abort_cb, next->abort_cb,
-			      next->prepare_cb, next->prio,
-			      &next->prepare_param, next->is_resume);
-		LL_ASSERT(!ret || ret == -EINPROGRESS);
-
-		return;
-	}
-
-	event.curr.is_abort_cb = next->is_abort_cb;
-	event.curr.abort_cb = next->abort_cb;
-	event.curr.param = next->prepare_param.param;
-
-	ret = next->prepare_cb(&next->prepare_param);
-	LL_ASSERT(!ret);
+	ret = prepare(next->is_abort_cb, next->abort_cb, next->prepare_cb,
+		      next->prio, &next->prepare_param, next->is_resume);
+	LL_ASSERT(!ret || ret == -EINPROGRESS);
 }
 
 void lll_disable(void *param)
@@ -426,12 +414,14 @@ static int prepare(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 	struct lll_event *p;
 	u8_t idx = UINT8_MAX;
 
+	/* Find the ready prepare in the pipeline */
 	p = ull_prepare_dequeue_iter(&idx);
-	while (p && p->is_aborted) {
+	while (p && (p->is_aborted || p->is_resume)) {
 		p = ull_prepare_dequeue_iter(&idx);
 	}
 
-	if (event.curr.abort_cb || p) {
+	/* Current event active or another prepare is ready in the pipeline */
+	if (event.curr.abort_cb || (p && is_resume)) {
 #if !defined(CONFIG_BT_CTLR_LOW_LAT)
 		u32_t preempt_anchor;
 		struct evt_hdr *evt;
@@ -453,11 +443,11 @@ static int prepare(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 					  prepare_cb, prio, is_resume);
 		LL_ASSERT(!ret);
 
+#if !defined(CONFIG_BT_CTLR_LOW_LAT)
 		if (is_resume) {
 			return -EINPROGRESS;
 		}
 
-#if !defined(CONFIG_BT_CTLR_LOW_LAT)
 		/* Calc the preempt timeout */
 		evt = HDR_LLL2EVT(prepare_param->param);
 		preempt_anchor = prepare_param->ticks_at_expire;
@@ -571,7 +561,7 @@ static void preempt(void *param)
 		return;
 	}
 
-	while (next && next->is_resume) {
+	while (next && (next->is_aborted || next->is_resume)) {
 		next = ull_prepare_dequeue_iter(&idx);
 	}
 
