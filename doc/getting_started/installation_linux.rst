@@ -187,19 +187,19 @@ Follow these steps to install the Zephyr SDK:
 
    .. code-block:: console
 
-      wget https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.10.1/zephyr-sdk-0.10.1-setup.run
+      wget https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.10.2/zephyr-sdk-0.10.2-setup.run
 
-   (You can change *0.10.1* to another version if needed; the `Zephyr
+   (You can change *0.10.2* to another version if needed; the `Zephyr
    Downloads`_ page contains all available SDK releases.)
 
 #. Run the installation binary, installing the SDK at
-   :file:`~/zephyr-sdk-0.10.1`:
+   :file:`~/zephyr-sdk-0.10.2`:
 
    .. code-block:: console
 
       cd <sdk download directory>
-      chmod +x zephyr-sdk-0.10.1-setup.run
-      ./zephyr-sdk-0.10.1-setup.run -- -d ~/zephyr-sdk-0.10.1
+      chmod +x zephyr-sdk-0.10.2-setup.run
+      ./zephyr-sdk-0.10.2-setup.run -- -d ~/zephyr-sdk-0.10.2
 
    You can pick another directory if you want. If this fails, make sure
    Zephyr's dependencies were installed as described in `Install Requirements
@@ -208,7 +208,7 @@ Follow these steps to install the Zephyr SDK:
 #. Set these :ref:`environment variables <env_vars>`:
 
    - set :envvar:`ZEPHYR_TOOLCHAIN_VARIANT` to ``zephyr``
-   - set :envvar:`ZEPHYR_SDK_INSTALL_DIR` to :file:`$HOME/zephyr-sdk-0.10.1`
+   - set :envvar:`ZEPHYR_SDK_INSTALL_DIR` to :file:`$HOME/zephyr-sdk-0.10.2`
      (or wherever you chose to install the SDK)
 
 If you ever want to uninstall the SDK, just remove the directory where you
