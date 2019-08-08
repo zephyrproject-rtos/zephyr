@@ -111,4 +111,19 @@ config TEST_FLASH_DRIVERS
 	  This option will help test the flash drivers. This should be enabled
 	  only when using qemu_x86.
 
+config TEST_ARM_CORTEX_M
+	bool
+	depends on CPU_CORTEX_M
+	default y
+	select ARM_SECURE_BUSFAULT_HARDFAULT_NMI if ARM_SECURE_FIRMWARE
+	help
+	  ARM Cortex-M configuration required when testing.
+
+	  Currently, this option is only utilized, to force routing
+	  BusFault, HardFault, and NMI exceptions to Secure State,
+	  when building a Secure ARMv8-M firmware. This will allow
+	  the testing suite to utilize these exceptions, in tests.
+	  Note that by default, when building with ARM_SECURE_FIRMWARE
+	  set, these exceptions are set to target the Non-Secure state.
+
 endmenu

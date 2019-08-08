@@ -105,6 +105,13 @@ comment "Secure firmware"
 comment "Non-secure firmware"
 	depends on !ARM_SECURE_FIRMWARE
 
+config ARM_SECURE_BUSFAULT_HARDFAULT_NMI
+	bool "BusFault, HardFault, and NMI target Secure state"
+	depends on ARM_SECURE_FIRMWARE
+	help
+	  Force NMI, HardFault, and BusFault (in Mainline ARMv8-M)
+	  exceptions as Secure exceptions.
+
 config ARM_FIRMWARE_HAS_SECURE_ENTRY_FUNCS
 	bool "Secure Firmware has Secure Entry functions"
 	depends on ARM_SECURE_FIRMWARE
