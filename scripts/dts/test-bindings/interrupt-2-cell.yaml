@@ -1,6 +1,4 @@
-#
 # SPDX-License-Identifier: BSD-3-Clause
-#
 
 title: Interrupt controller with two cells
 description: Interrupt controller with two cells

@@ -1,6 +1,4 @@
-#
 # SPDX-License-Identifier: BSD-3-Clause
-#
 
 title: GPIO controller with one cell
 description: GPIO controller with one cell
