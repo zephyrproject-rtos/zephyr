@@ -578,10 +578,7 @@ class Device:
 
         prop = node.props.get(name)
         if not prop:
-            if not optional and \
-                ("status" not in node.props or
-                 node.props["status"].to_string() != "disabled"):
-
+            if not optional and self.enabled:
                 _err("'{}' is marked as required in 'properties:' in {}, but "
                      "does not appear in {!r}".format(
                          name, self.binding_path, node))
