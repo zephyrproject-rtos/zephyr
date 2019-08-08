@@ -638,12 +638,11 @@ class Device:
         self.interrupts = []
 
         for controller_node, spec in _interrupts(node):
-            controller = self.edt._node2dev[controller_node]
-
             interrupt = Interrupt()
             interrupt.dev = self
-            interrupt.controller = controller
-            interrupt.specifier = self._named_cells(controller, spec, "interrupt")
+            interrupt.controller = self.edt._node2dev[controller_node]
+            interrupt.specifier = self._named_cells(interrupt.controller, spec,
+                                                    "interrupt")
 
             self.interrupts.append(interrupt)
 
@@ -657,12 +656,11 @@ class Device:
         for prefix, gpios in _gpios(self._node).items():
             self.gpios[prefix] = []
             for controller_node, spec in gpios:
-                controller = self.edt._node2dev[controller_node]
-
                 gpio = GPIO()
                 gpio.dev = self
-                gpio.controller = controller
-                gpio.specifier = self._named_cells(controller, spec, "GPIO")
+                gpio.controller = self.edt._node2dev[controller_node]
+                gpio.specifier = self._named_cells(gpio.controller, spec,
+                                                   "GPIO")
                 gpio.name = prefix
 
                 self.gpios[prefix].append(gpio)
