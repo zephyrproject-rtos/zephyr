@@ -21,11 +21,52 @@ struct gpio_mcux_config {
 };
 
 struct gpio_mcux_data {
+	struct gpio_driver_data general;
 	/* port ISR callback routine address */
 	sys_slist_t callbacks;
 	/* pin callback routine enable flags, by pin number */
 	u32_t pin_callback_enables;
 };
+
+static u32_t get_port_pcr_irqc_value_from_flags(struct device *dev,
+		u32_t pin, unsigned int flags)
+{
+	struct gpio_mcux_data *data = dev->driver_data;
+	port_interrupt_t port_interrupt = 0;
+	bool rising_edge;
+	bool falling_edge;
+
+	if ((flags & GPIO_INT_LEVELS_LOGICAL) &&
+	    (data->general.invert & BIT(pin))) {
+		rising_edge = flags & GPIO_INT_LOW_0;
+		falling_edge = flags & GPIO_INT_HIGH_1;
+	} else {
+		rising_edge = flags & GPIO_INT_HIGH_1;
+		falling_edge = flags & GPIO_INT_LOW_0;
+	}
+
+	if (flags & GPIO_INT_ENABLE) {
+		if (flags & GPIO_INT_EDGE) {
+			if (rising_edge && falling_edge) {
+				port_interrupt = kPORT_InterruptEitherEdge;
+			} else if (rising_edge) {
+				port_interrupt = kPORT_InterruptRisingEdge;
+			} else {
+				port_interrupt = kPORT_InterruptFallingEdge;
+			}
+		} else { /* GPIO_INT_LEVEL */
+			if (rising_edge) {
+				port_interrupt = kPORT_InterruptLogicOne;
+			} else {
+				port_interrupt = kPORT_InterruptLogicZero;
+			}
+		}
+	} else {
+		port_interrupt = kPORT_InterruptOrDMADisabled;
+	}
+
+	return PORT_PCR_IRQC(port_interrupt);
+}
 
 static int gpio_mcux_configure(struct device *dev,
 			       int access_op, u32_t pin, int flags)
@@ -33,7 +74,7 @@ static int gpio_mcux_configure(struct device *dev,
 	const struct gpio_mcux_config *config = dev->config->config_info;
 	GPIO_Type *gpio_base = config->gpio_base;
 	PORT_Type *port_base = config->port_base;
-	port_interrupt_t port_interrupt = 0;
+	struct gpio_mcux_data *data = dev->driver_data;
 	u32_t mask = 0U;
 	u32_t pcr = 0U;
 	u8_t i;
@@ -44,13 +85,28 @@ static int gpio_mcux_configure(struct device *dev,
 	}
 
 	/* Check for an invalid pin configuration */
-	if ((flags & GPIO_INT) && (flags & GPIO_DIR_OUT)) {
+	if ((flags & GPIO_INT_ENABLE) && ((flags & GPIO_INPUT) == 0)) {
 		return -EINVAL;
 	}
 
-	/* Check if GPIO port supports interrupts */
-	if ((flags & GPIO_INT) && ((config->flags & GPIO_INT) == 0U)) {
+	if (((flags & GPIO_INPUT) != 0) && ((flags & GPIO_OUTPUT) != 0)) {
 		return -ENOTSUP;
+	}
+
+	if ((flags & GPIO_SINGLE_ENDED) != 0) {
+		return -ENOTSUP;
+	}
+
+	/* Check if GPIO port supports interrupts */
+	if ((flags & GPIO_INT_ENABLE) &&
+	    ((config->flags & GPIO_INT_ENABLE) == 0U)) {
+		return -ENOTSUP;
+	}
+
+	if ((flags & GPIO_ACTIVE_LOW) != 0) {
+		data->general.invert |= BIT(pin);
+	} else {
+		data->general.invert &= ~BIT(pin);
 	}
 
 	/* The flags contain options that require touching registers in the
@@ -61,15 +117,20 @@ static int gpio_mcux_configure(struct device *dev,
 	 */
 
 	if (access_op == GPIO_ACCESS_BY_PIN) {
-		if ((flags & GPIO_DIR_MASK) == GPIO_DIR_IN) {
+		if ((flags & GPIO_INPUT) != 0) {
 			gpio_base->PDDR &= ~BIT(pin);
-		} else {  /* GPIO_DIR_OUT */
+		} else {  /* GPIO_OUTPUT */
+			if ((flags & GPIO_OUTPUT_INIT_HIGH) != 0) {
+				gpio_base->PSOR = BIT(pin);
+			} else if ((flags & GPIO_OUTPUT_INIT_LOW) != 0) {
+				gpio_base->PCOR = BIT(pin);
+			}
 			gpio_base->PDDR |= BIT(pin);
 		}
 	} else {	/* GPIO_ACCESS_BY_PORT */
-		if ((flags & GPIO_DIR_MASK) == GPIO_DIR_IN) {
+		if ((flags & GPIO_INPUT) != 0) {
 			gpio_base->PDDR = 0x0;
-		} else {  /* GPIO_DIR_OUT */
+		} else {  /* GPIO_OUTPUT */
 			gpio_base->PDDR = 0xFFFFFFFF;
 		}
 	}
@@ -79,11 +140,11 @@ static int gpio_mcux_configure(struct device *dev,
 	 */
 	mask |= PORT_PCR_PE_MASK | PORT_PCR_PS_MASK;
 
-	if ((flags & GPIO_PUD_MASK) == GPIO_PUD_PULL_UP) {
+	if ((flags & GPIO_PULL_UP) != 0) {
 		/* Enable the pull and select the pullup resistor. */
 		pcr |= PORT_PCR_PE_MASK | PORT_PCR_PS_MASK;
 
-	} else if ((flags & GPIO_PUD_MASK) == GPIO_PUD_PULL_DOWN) {
+	} else if ((flags & GPIO_PULL_DOWN) != 0) {
 		/* Enable the pull and select the pulldown resistor (deselect
 		 * the pullup resistor.
 		 */
@@ -94,25 +155,7 @@ static int gpio_mcux_configure(struct device *dev,
 	 * but don't write it to the PCR register yet.
 	 */
 	mask |= PORT_PCR_IRQC_MASK;
-
-	if (flags & GPIO_INT) {
-		if (flags & GPIO_INT_EDGE) {
-			if (flags & GPIO_INT_ACTIVE_HIGH) {
-				port_interrupt = kPORT_InterruptRisingEdge;
-			} else if (flags & GPIO_INT_DOUBLE_EDGE) {
-				port_interrupt = kPORT_InterruptEitherEdge;
-			} else {
-				port_interrupt = kPORT_InterruptFallingEdge;
-			}
-		} else { /* GPIO_INT_LEVEL */
-			if (flags & GPIO_INT_ACTIVE_HIGH) {
-				port_interrupt = kPORT_InterruptLogicOne;
-			} else {
-				port_interrupt = kPORT_InterruptLogicZero;
-			}
-		}
-		pcr |= PORT_PCR_IRQC(port_interrupt);
-	}
+	pcr |= get_port_pcr_irqc_value_from_flags(dev, pin, flags);
 
 	/* Now we can write the PORT PCR register(s). If accessing by pin, we
 	 * only need to write one PCR register. Otherwise, write all the PCR
@@ -120,9 +163,16 @@ static int gpio_mcux_configure(struct device *dev,
 	 */
 	if (access_op == GPIO_ACCESS_BY_PIN) {
 		port_base->PCR[pin] = (port_base->PCR[pin] & ~mask) | pcr;
+		WRITE_BIT(data->pin_callback_enables, pin,
+			  flags & GPIO_INT_ENABLE);
 	} else {  /* GPIO_ACCESS_BY_PORT */
 		for (i = 0U; i < ARRAY_SIZE(port_base->PCR); i++) {
 			port_base->PCR[i] = (port_base->PCR[pin] & ~mask) | pcr;
+		}
+		if (flags & GPIO_INT_ENABLE) {
+			data->pin_callback_enables = 0xFFFFFFFF;
+		} else {
+			data->pin_callback_enables = 0x0;
 		}
 	}
 
@@ -170,6 +220,84 @@ static int gpio_mcux_read(struct device *dev,
 	}
 
 	/* nothing more to do for GPIO_ACCESS_BY_PORT */
+
+	return 0;
+}
+
+static int gpio_mcux_port_get_raw(struct device *dev, u32_t *value)
+{
+	const struct gpio_mcux_config *config = dev->config->config_info;
+	GPIO_Type *gpio_base = config->gpio_base;
+
+	*value = gpio_base->PDIR;
+
+	return 0;
+}
+
+static int gpio_mcux_port_set_masked_raw(struct device *dev, u32_t mask,
+					 u32_t value)
+{
+	const struct gpio_mcux_config *config = dev->config->config_info;
+	GPIO_Type *gpio_base = config->gpio_base;
+
+	gpio_base->PDOR = (gpio_base->PDOR & ~mask) | (mask & value);
+
+	return 0;
+}
+
+static int gpio_mcux_port_set_bits_raw(struct device *dev, u32_t mask)
+{
+	const struct gpio_mcux_config *config = dev->config->config_info;
+	GPIO_Type *gpio_base = config->gpio_base;
+
+	gpio_base->PSOR = mask;
+
+	return 0;
+}
+
+static int gpio_mcux_port_clear_bits_raw(struct device *dev, u32_t mask)
+{
+	const struct gpio_mcux_config *config = dev->config->config_info;
+	GPIO_Type *gpio_base = config->gpio_base;
+
+	gpio_base->PCOR = mask;
+
+	return 0;
+}
+
+static int gpio_mcux_port_toggle_bits(struct device *dev, u32_t mask)
+{
+	const struct gpio_mcux_config *config = dev->config->config_info;
+	GPIO_Type *gpio_base = config->gpio_base;
+
+	gpio_base->PTOR = mask;
+
+	return 0;
+}
+
+static int gpio_mcux_pin_interrupt_configure(struct device *dev,
+		unsigned int pin, unsigned int flags)
+{
+	const struct gpio_mcux_config *config = dev->config->config_info;
+	PORT_Type *port_base = config->port_base;
+	struct gpio_mcux_data *data = dev->driver_data;
+
+	/* Check for an invalid pin number */
+	if (pin >= ARRAY_SIZE(port_base->PCR)) {
+		return -EINVAL;
+	}
+
+	/* Check if GPIO port supports interrupts */
+	if ((flags & GPIO_INT_ENABLE) &&
+	    ((config->flags & GPIO_INT_ENABLE) == 0U)) {
+		return -ENOTSUP;
+	}
+
+	u32_t pcr = get_port_pcr_irqc_value_from_flags(dev, pin, flags);
+
+	port_base->PCR[pin] = (port_base->PCR[pin] & ~PORT_PCR_IRQC_MASK) | pcr;
+
+	WRITE_BIT(data->pin_callback_enables, pin, flags & GPIO_INT_ENABLE);
 
 	return 0;
 }
@@ -231,6 +359,12 @@ static const struct gpio_driver_api gpio_mcux_driver_api = {
 	.config = gpio_mcux_configure,
 	.write = gpio_mcux_write,
 	.read = gpio_mcux_read,
+	.port_get_raw = gpio_mcux_port_get_raw,
+	.port_set_masked_raw = gpio_mcux_port_set_masked_raw,
+	.port_set_bits_raw = gpio_mcux_port_set_bits_raw,
+	.port_clear_bits_raw = gpio_mcux_port_clear_bits_raw,
+	.port_toggle_bits = gpio_mcux_port_toggle_bits,
+	.pin_interrupt_configure = gpio_mcux_pin_interrupt_configure,
 	.manage_callback = gpio_mcux_manage_callback,
 	.enable_callback = gpio_mcux_enable_callback,
 	.disable_callback = gpio_mcux_disable_callback,
@@ -243,7 +377,7 @@ static const struct gpio_mcux_config gpio_mcux_porta_config = {
 	.gpio_base = (GPIO_Type *) DT_NXP_KINETIS_GPIO_GPIO_A_BASE_ADDRESS,
 	.port_base = PORTA,
 #ifdef DT_NXP_KINETIS_GPIO_GPIO_A_IRQ_0
-	.flags = GPIO_INT,
+	.flags = GPIO_INT_ENABLE,
 #else
 	.flags = 0,
 #endif
@@ -276,7 +410,7 @@ static const struct gpio_mcux_config gpio_mcux_portb_config = {
 	.gpio_base = (GPIO_Type *) DT_NXP_KINETIS_GPIO_GPIO_B_BASE_ADDRESS,
 	.port_base = PORTB,
 #ifdef DT_NXP_KINETIS_GPIO_GPIO_B_IRQ_0
-	.flags = GPIO_INT,
+	.flags = GPIO_INT_ENABLE,
 #else
 	.flags = 0,
 #endif
@@ -309,7 +443,7 @@ static const struct gpio_mcux_config gpio_mcux_portc_config = {
 	.gpio_base = (GPIO_Type *) DT_NXP_KINETIS_GPIO_GPIO_C_BASE_ADDRESS,
 	.port_base = PORTC,
 #ifdef DT_NXP_KINETIS_GPIO_GPIO_C_IRQ_0
-	.flags = GPIO_INT,
+	.flags = GPIO_INT_ENABLE,
 #else
 	.flags = 0,
 #endif
@@ -342,7 +476,7 @@ static const struct gpio_mcux_config gpio_mcux_portd_config = {
 	.gpio_base = (GPIO_Type *) DT_NXP_KINETIS_GPIO_GPIO_D_BASE_ADDRESS,
 	.port_base = PORTD,
 #ifdef DT_NXP_KINETIS_GPIO_GPIO_D_IRQ_0
-	.flags = GPIO_INT,
+	.flags = GPIO_INT_ENABLE,
 #else
 	.flags = 0,
 #endif
@@ -375,7 +509,7 @@ static const struct gpio_mcux_config gpio_mcux_porte_config = {
 	.gpio_base = (GPIO_Type *) DT_NXP_KINETIS_GPIO_GPIO_E_BASE_ADDRESS,
 	.port_base = PORTE,
 #ifdef DT_NXP_KINETIS_GPIO_GPIO_E_IRQ_0
-	.flags = GPIO_INT,
+	.flags = GPIO_INT_ENABLE,
 #else
 	.flags = 0,
 #endif
