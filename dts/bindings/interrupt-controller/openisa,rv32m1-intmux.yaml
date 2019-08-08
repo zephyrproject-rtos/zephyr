@@ -8,7 +8,7 @@ description: >
 
 compatible: "openisa,rv32m1-intmux"
 
-include: [interrupt-controller.yaml, base.yaml]
+include: base.yaml
 
 properties:
   reg:
@@ -16,12 +16,3 @@ properties:
 
   label:
       required: true
-
-  interrupts:
-      required: true
-
-  "#interrupt-cells":
-      const: 1
-
-"#cells":
-  - irq
