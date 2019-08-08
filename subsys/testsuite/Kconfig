@@ -78,6 +78,18 @@ config TEST_USERSPACE
 	  pass, CONFIG_ARCH_HAS_USERSPACE should be filtered in its
 	  testcase.yaml.
 
+config TEST_LOGGING_DEFAULTS
+	bool "Enable test case logging defaults"
+	depends on TEST
+	select LOG
+	select LOG_IMMEDIATE
+	default y
+	help
+	  Option which implements default policy of enabling logging in
+	  immediate mode for all test cases. For tests that need alternate
+	  logging configuration, or no logging at all, disable this
+	  in the project-level defconfig.
+
 config TEST_ENABLE_USERSPACE
 	bool
 	depends on TEST_USERSPACE
