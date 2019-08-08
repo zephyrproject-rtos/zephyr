@@ -66,11 +66,6 @@ config SOC_NRF9160_SICA
 
 endchoice
 
-config GPIO_AS_PINRESET
-	bool "GPIO as pin reset (reset button)"
-	depends on SOC_SERIES_NRF91X
-	default y
-
 config NRF_ENABLE_ICACHE
 	bool "Enable the instruction cache (I-Cache)"
 	depends on SOC_NRF9160

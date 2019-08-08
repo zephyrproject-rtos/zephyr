@@ -22,6 +22,3 @@ CONFIG_UART_0_NRF_UARTE=y
 # enable console
 CONFIG_CONSOLE=y
 CONFIG_UART_CONSOLE=y
-
-# additional board options
-CONFIG_GPIO_AS_PINRESET=y
