@@ -17,7 +17,7 @@ if(NOT ZEPHYR_SDK_INSTALL_DIR)
   return()
 endif()
 
-set(REQUIRED_SDK_VER 0.10.1)
+set(REQUIRED_SDK_VER 0.10.2)
 set(TOOLCHAIN_VENDOR zephyr)
 set(TOOLCHAIN_ARCH x86_64)
 
