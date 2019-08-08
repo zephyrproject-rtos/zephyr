@@ -28,6 +28,3 @@ CONFIG_UART_CONSOLE=y
 
 # additional board options
 CONFIG_GPIO_AS_PINRESET=y
-
-# entropy driver doesn't support nRF9160 yet
-CONFIG_ENTROPY_NRF5_RNG=n
