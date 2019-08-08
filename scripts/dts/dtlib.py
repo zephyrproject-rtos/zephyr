@@ -431,14 +431,14 @@ class DT:
             tok = self._next_token()
 
             if tok.val == "<":
-                self._parse_cells(prop, 32)
+                self._parse_cells(prop, 4)
 
             elif tok.id is _T_BITS:
                 n_bits = self._expect_num()
                 if n_bits not in {8, 16, 32, 64}:
                     self._parse_error("expected 8, 16, 32, or 64")
                 self._expect_token("<")
-                self._parse_cells(prop, n_bits)
+                self._parse_cells(prop, n_bits//8)
 
             elif tok.val == "[":
                 self._parse_bytes(prop)
@@ -450,10 +450,11 @@ class DT:
                 prop.value += val
 
             elif tok.id is _T_STRING:
+                prop._add_marker(_TYPE_STRING)
                 prop.value += self._unescape(tok.val.encode("utf-8")) + b"\0"
 
             elif tok.id is _T_REF:
-                prop._add_marker(tok.val, _PATH)
+                prop._add_marker(_REF_PATH, tok.val)
 
             elif tok.id is _T_INCBIN:
                 self._parse_incbin(prop)
@@ -471,20 +472,22 @@ class DT:
                 continue
             self._parse_error("expected ';' or ','")
 
-    def _parse_cells(self, prop, bits):
+    def _parse_cells(self, prop, n_bytes):
         # Parses '<...>'
+
+        prop._add_marker(_N_BYTES_TO_TYPE[n_bytes])
 
         while True:
             tok = self._peek_token()
             if tok.id is _T_REF:
                 self._next_token()
-                if bits != 32:
+                if n_bytes != 4:
                     self._parse_error("phandle references are only allowed in "
                                       "arrays with 32-bit elements")
-                prop._add_marker(tok.val, _PHANDLE)
+                prop._add_marker(_REF_PHANDLE, tok.val)
 
             elif tok.id is _T_LABEL:
-                prop._add_marker(tok.val, _LABEL)
+                prop._add_marker(_REF_LABEL, tok.val)
                 self._next_token()
 
             elif self._check_token(">"):
@@ -494,17 +497,19 @@ class DT:
                 # Literal value
                 num = self._eval_prim()
                 try:
-                    prop.value += num.to_bytes(bits//8, "big")
+                    prop.value += num.to_bytes(n_bytes, "big")
                 except OverflowError:
                     try:
                         # Try again as a signed number, in case it's negative
-                        prop.value += num.to_bytes(bits//8, "big", signed=True)
+                        prop.value += num.to_bytes(n_bytes, "big", signed=True)
                     except OverflowError:
                         self._parse_error("{} does not fit in {} bits"
-                                          .format(num, bits))
+                                          .format(num, 8*n_bytes))
 
     def _parse_bytes(self, prop):
         # Parses '[ ... ]'
+
+        prop._add_marker(_TYPE_UINT8)
 
         while True:
             tok = self._next_token()
@@ -512,7 +517,7 @@ class DT:
                 prop.value += tok.val.to_bytes(1, "big")
 
             elif tok.id is _T_LABEL:
-                prop._add_marker(tok.val, _LABEL)
+                prop._add_marker(_REF_LABEL, tok.val)
 
             elif tok.val == "]":
                 return
@@ -528,6 +533,8 @@ class DT:
         # and
         #
         #   /incbin/ ("filename", <offset>, <size>)
+
+        prop._add_marker(_TYPE_UINT8)
 
         self._expect_token("(")
 
@@ -566,7 +573,7 @@ class DT:
             tok = self._peek_token()
             if tok.id is not _T_LABEL:
                 return
-            prop._add_marker(tok.val, _LABEL)
+            prop._add_marker(_REF_LABEL, tok.val)
             self._next_token()
 
     def _node_prop(self, node, name):
@@ -590,6 +597,7 @@ class DT:
             phandle_prop = node.props["phandle"]
         else:
             phandle_prop = Property(node, "phandle")
+            phandle_prop._add_marker(_TYPE_UINT32)  # For displaying
             phandle_prop.value = b'\0\0\0\0'
 
         if phandle_prop.value == b'\0\0\0\0':
@@ -955,8 +963,8 @@ class DT:
 
                 is_self_referential = False
                 for marker in phandle._markers:
-                    _, ref, marker_type = marker
-                    if marker_type == _PHANDLE:
+                    _, marker_type, ref = marker
+                    if marker_type is _REF_PHANDLE:
                         # The phandle's value is itself a phandle reference
                         if self._ref2node(ref) is node:
                             # Alright to set a node's phandle equal to its own
@@ -1001,17 +1009,26 @@ class DT:
                 prev_pos = 0
                 res = b""
 
-                for pos, ref, ref_type in prop._markers:
-                    # Add data before the marker
+                for marker in prop._markers:
+                    pos, marker_type, ref = marker
+
+                    # Add data before the marker, reading from the unpatched
+                    # property value
                     res += prop.value[prev_pos:pos]
 
-                    if ref_type is _LABEL:
+                    # Fix the marker offset so that it's correct for the
+                    # patched property value, for later (not used in this
+                    # function). The offset might change due to path
+                    # references, which expand to something like "/foo/bar".
+                    marker[0] = len(res)
+
+                    if marker_type is _REF_LABEL:
                         # This is a temporary format so that we can catch
                         # duplicate references. prop.offset_labels is changed
                         # to a dictionary that maps labels to offsets in
                         # _register_labels().
                         _append_no_dup(prop.offset_labels, (ref, len(res)))
-                    else:
+                    elif marker_type in (_REF_PATH, _REF_PHANDLE):
                         # Path or phandle reference
                         try:
                             ref_node = self._ref2node(ref)
@@ -1021,16 +1038,17 @@ class DT:
                         # For /omit-if-no-ref/
                         ref_node._is_referenced = True
 
-                        if ref_type is _PATH:
+                        if marker_type is _REF_PATH:
                             res += ref_node.path.encode("utf-8") + b'\0'
-                        else:  # ref_type is PHANDLE
+                        else:  # marker_type is PHANDLE
                             res += self._node_phandle(ref_node)
                             # Skip over the dummy phandle placeholder
                             pos += 4
 
                     prev_pos = pos
 
-                # Add data after the last marker
+                # Store the final fixed-up value. Add the data after the last
+                # marker.
                 prop.value = res + prop.value[prev_pos:]
 
     def _register_aliases(self):
@@ -1370,10 +1388,10 @@ class Property:
         self.offset_labels = []
 
         # A list of (offset, label, type) tuples (sorted by offset), giving the
-        # locations of references within the value. 'type' is either _PATH, for
-        # a node path reference, _PHANDLE, for a phandle reference, or _LABEL,
-        # for a label on/within data. Node paths and phandles need to be
-        # patched in after parsing.
+        # locations of references within the value. 'type' is either _REF_PATH,
+        # for a node path reference, _REF_PHANDLE, for a phandle reference, or
+        # _REF_LABEL, for a label on/within data. Node paths and phandles need
+        # to be patched in after parsing.
         self._markers = []
 
     def to_num(self, length=4, signed=False):
@@ -1460,26 +1478,57 @@ class Property:
 
     def __str__(self):
         s = "".join(label + ": " for label in self.labels) + self.name
-
         if not self.value:
             return s + ";"
 
-        s += " = ["
+        s += " ="
 
-        offset_labels = [(offset, label)
-                         for label, offset in self.offset_labels.items()]
+        for i, (pos, marker_type, ref) in enumerate(self._markers):
+            if i < len(self._markers) - 1:
+                next_marker = self._markers[i + 1]
+            else:
+                next_marker = None
 
-        label_offset = offset = 0
-        for label_offset, label in offset_labels:
-            s += "".join(" {:02X}".format(byte)
-                         for byte in self.value[offset:label_offset]) \
-                 + " " + label + ":"
-            offset = label_offset
+            # End of current marker
+            end = next_marker[0] if next_marker else len(self.value)
 
-        for byte in self.value[label_offset:]:
-            s += " {:02X}".format(byte)
+            if marker_type in (_TYPE_STRING, _REF_PATH):
+                # end - 1 to strip off the null terminator
+                s += ' "{}"'.format(_decode_and_escape(
+                    self.value[pos:end - 1]))
+                if end != len(self.value):
+                    s += ","
+            else:
+                # Raw data (<>/[])
 
-        return s + " ];"
+                if marker_type is _REF_LABEL:
+                    s += " {}:".format(ref)
+                elif marker_type is not _REF_PHANDLE:
+                    # marker_type is _TYPE_UINT_*
+                    elm_size = _TYPE_TO_N_BYTES[marker_type]
+                    s += _N_BYTES_TO_START_STR[elm_size]
+
+                while pos != end:
+                    num = int.from_bytes(self.value[pos:pos + elm_size],
+                                         "big")
+                    if elm_size == 1:
+                        s += " {:02X}".format(num)
+                    else:
+                        s += " " + hex(num)
+
+                    pos += elm_size
+
+                if pos != 0 and \
+                   (not next_marker or
+                    next_marker[1] not in (_REF_PHANDLE, _REF_LABEL)):
+
+                    s += _N_BYTES_TO_END_STR[elm_size]
+                    if pos != len(self.value):
+                        s += ","
+
+
+        return s + ";"
+
 
     def __repr__(self):
         return "<Property '{}' at '{}' in '{}'>" \
@@ -1489,17 +1538,20 @@ class Property:
     # Internal functions
     #
 
-    def _add_marker(self, ref, marker_type):
+    def _add_marker(self, marker_type, data=None):
         # Helper for registering markers in the value that are processed after
-        # parsing. See _fixup_props().
+        # parsing. See _fixup_props(). 'marker_type' identifies the type of
+        # marker, and 'data' has any optional data associated with the marker.
 
         # len(self.value) gives the current offset. This function is called
-        # while the value is built.
-        self._markers.append((len(self.value), ref, marker_type))
+        # while the value is built. We use a list instead of a tuple to be able
+        # to fix up offsets later (they might increase if the value includes
+        # path references, e.g. 'foo = &bar, <3>;', which are expanded later).
+        self._markers.append([len(self.value), marker_type, data])
 
         # For phandle references, add a dummy value with the same length as a
         # phandle. This is handy for the length check in _register_phandles().
-        if marker_type is _PHANDLE:
+        if marker_type is _REF_PHANDLE:
             self.value += b"\0\0\0\0"
 
     def _err_with_context(self, e):
@@ -1599,6 +1651,32 @@ def _append_no_dup(lst, elm):
         lst.append(elm)
 
 
+def _decode_and_escape(b):
+    # Decodes the 'bytes' array 'b' as UTF-8 and backslash-escapes special
+    # characters
+
+    # Hacky but robust way to avoid double-escaping any '\' spit out by
+    # 'backslashreplace' bytes.translate() can't map to more than a single
+    # byte, but str.translate() can map to more than one character, so it's
+    # nice here. There's probably a nicer way to do this.
+    return b.decode("utf-8", "surrogateescape") \
+            .translate(_escape_table) \
+            .encode("utf-8", "surrogateescape") \
+            .decode("utf-8", "backslashreplace")
+
+
+_escape_table = str.maketrans({
+    "\\": "\\\\",
+    '"': '\\"',
+    "\a": "\\a",
+    "\b": "\\b",
+    "\t": "\\t",
+    "\n": "\\n",
+    "\v": "\\v",
+    "\f": "\\f",
+    "\r": "\\r"})
+
+
 class DTError(Exception):
     "Exception raised for Device Tree-related errors"
 
@@ -1684,7 +1762,43 @@ def _init_tokens():
 
 _init_tokens()
 
-# Types of markers in property values (for references and in-value labels)
-_PATH = 0
-_PHANDLE = 1
-_LABEL = 2
+# Markers in property values
+
+# References
+_REF_PATH = 0     # &foo
+_REF_PHANDLE = 1  # <&foo>
+_REF_LABEL = 2    # foo: <1 2 3>
+# Start of data blocks of specific type
+_TYPE_UINT8 = 3   # [00 01 02] (and also used for /incbin/)
+_TYPE_UINT16 = 4  # /bits/ 16 <1 2 3>
+_TYPE_UINT32 = 5  # <1 2 3>
+_TYPE_UINT64 = 6  # /bits/ 64 <1 2 3>
+_TYPE_STRING = 7  # "foo"
+
+_TYPE_TO_N_BYTES = {
+    _TYPE_UINT8: 1,
+    _TYPE_UINT16: 2,
+    _TYPE_UINT32: 4,
+    _TYPE_UINT64: 8,
+}
+
+_N_BYTES_TO_TYPE = {
+    1: _TYPE_UINT8,
+    2: _TYPE_UINT16,
+    4: _TYPE_UINT32,
+    8: _TYPE_UINT64,
+}
+
+_N_BYTES_TO_START_STR = {
+    1: " [",
+    2: " /bits/ 16 <",
+    4: " <",
+    8: " /bits/ 64 <",
+}
+
+_N_BYTES_TO_END_STR = {
+    1: " ]",
+    2: " >",
+    4: " >",
+    8: " >",
+}

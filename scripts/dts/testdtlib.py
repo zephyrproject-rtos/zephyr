@@ -77,15 +77,17 @@ def run():
 /dts-v1/;
 
 / {
-	a = < >;
-	b = < 10 20 >;
-	c = < 0U 1L 2UL 3LL 4ULL >;
-	d = < 0x10 0x20 >;
-	e = < 010 020 >;
-	f = /bits/ 8 < 0x10 0x20 (-1) >;
-	g = /bits/ 16 < 0x10 0x20 (-1) >;
-	h = /bits/ 32 < 0x10 0x20 (-1) >;
-	i = /bits/ 64 < 0x10 0x20 (-1) >;
+	a;
+	b = < >;
+	c = [ ];
+	d = < 10 20 >;
+	e = < 0U 1L 2UL 3LL 4ULL >;
+	f = < 0x10 0x20 >;
+	g = < 010 020 >;
+	h = /bits/ 8 < 0x10 0x20 (-1) >;
+	i = /bits/ 16 < 0x10 0x20 (-1) >;
+	j = /bits/ 32 < 0x10 0x20 (-1) >;
+	k = /bits/ 64 < 0x10 0x20 (-1) >;
 };
 """,
 """
@@ -93,14 +95,16 @@ def run():
 
 / {
 	a;
-	b = [ 00 00 00 0A 00 00 00 14 ];
-	c = [ 00 00 00 00 00 00 00 01 00 00 00 02 00 00 00 03 00 00 00 04 ];
-	d = [ 00 00 00 10 00 00 00 20 ];
-	e = [ 00 00 00 08 00 00 00 10 ];
-	f = [ 10 20 FF ];
-	g = [ 00 10 00 20 FF FF ];
-	h = [ 00 00 00 10 00 00 00 20 FF FF FF FF ];
-	i = [ 00 00 00 00 00 00 00 10 00 00 00 00 00 00 00 20 FF FF FF FF FF FF FF FF ];
+	b;
+	c;
+	d = < 0xa 0x14 >;
+	e = < 0x0 0x1 0x2 0x3 0x4 >;
+	f = < 0x10 0x20 >;
+	g = < 0x8 0x10 >;
+	h = [ 10 20 FF ];
+	i = /bits/ 16 < 0x10 0x20 0xffff >;
+	j = < 0x10 0x20 0xffffffff >;
+	k = /bits/ 64 < 0x10 0x20 0xffffffffffffffff >;
 };
 """)
 
@@ -173,16 +177,16 @@ def run():
 / {
 	a = "";
 	b = "ABC";
-	c = "\\\"\xAB\377\a\b\t\n\v\f\r";
+	c = "\\\"\xab\377\a\b\t\n\v\f\r";
 };
 """,
-"""
+r"""
 /dts-v1/;
 
 / {
-	a = [ 00 ];
-	b = [ 41 42 43 00 ];
-	c = [ 5C 22 AB FF 07 08 09 0A 0B 0C 0D 00 ];
+	a = "";
+	b = "ABC";
+	c = "\\\"\xab\xff\a\b\t\n\v\f\r";
 };
 """)
 
@@ -377,7 +381,7 @@ l3: &l1 {
 	a;
 	l1: b;
 	l2: l3: c;
-	l4: l5: l6: d = [ 00 00 00 00 ];
+	l4: l5: l6: d = < 0x0 >;
 };
 """)
 
@@ -405,9 +409,8 @@ l3: &l1 {
 /dts-v1/;
 
 / {
-    a = l01: l02: < l03: l04: &node l05: l06: 2 l07: l08: > l09: l10:,
-        l11: l12: [ l13: l14: 03 l15: l16: 04 l17: l18: ] l19: l20:,
-        l21: l22: "A";
+    a = l01: l02: < l03: &node l04: l05: 2 l06: >,
+        l07: l08: [ l09: 03 l10: l11: 04 l12: l13: ] l14:, "A";
 
     b = < 0 > l23: l24:;
 
@@ -419,20 +422,21 @@ l3: &l1 {
 /dts-v1/;
 
 / {
-	a = [ l01: l02: l03: l04: 00 00 00 01 l05: l06: 00 00 00 02 l07: l08: l09: l10: l11: l12: l13: l14: 03 l15: l16: 04 l17: l18: l19: l20: l21: l22: 41 00 ];
-	b = [ 00 00 00 00 l23: l24: ];
+	a = l01: l02: < l03: 0x1 l04: l05: 0x2 l06: l07: l08: >, [ l09: 03 l10: l11: 04 l12: l13: l14: ], "A";
+	b = < 0x0 l23: l24: >;
 	node: node {
-		phandle = [ 00 00 00 01 ];
+		phandle = < 0x1 >;
 	};
 };
 """)
 
     verify_label2offset("l01", "a", 0)
-    verify_label2offset("l04", "a", 0)
+    verify_label2offset("l02", "a", 0)
+    verify_label2offset("l04", "a", 4)
     verify_label2offset("l05", "a", 4)
-    verify_label2offset("l14", "a", 8)
-    verify_label2offset("l15", "a", 9)
-    verify_label2offset("l22", "a", 10)
+    verify_label2offset("l06", "a", 8)
+    verify_label2offset("l09", "a", 8)
+    verify_label2offset("l10", "a", 9)
 
     verify_label2offset("l23", "b", 4)
     verify_label2offset("l24", "b", 4)
@@ -487,10 +491,12 @@ l3: &l1 {
 
 / {
 	a = &label;
-	b = &{/abc};
+	b = [ 01 ], &label;
+	c = [ 01 ], &label, <2>;
+	d = &{/abc};
 	label: abc {
-		c = &label;
-		d = &{/abc};
+		e = &label;
+		f = &{/abc};
 	};
 };
 """,
@@ -498,11 +504,13 @@ l3: &l1 {
 /dts-v1/;
 
 / {
-	a = [ 2F 61 62 63 00 ];
-	b = [ 2F 61 62 63 00 ];
+	a = "/abc";
+	b = [ 01 ], "/abc";
+	c = [ 01 ], "/abc", < 0x2 >;
+	d = "/abc";
 	label: abc {
-		c = [ 2F 61 62 63 00 ];
-		d = [ 2F 61 62 63 00 ];
+		e = "/abc";
+		f = "/abc";
 	};
 };
 """)
@@ -563,21 +571,21 @@ l3: &l1 {
 /dts-v1/;
 
 / {
-	x = [ 00 00 00 02 00 00 00 04 00 00 00 FF ];
+	x = < 0x2 0x4 0xff >;
 	dummy1 {
-		phandle = [ 00 00 00 01 ];
+		phandle = < 0x1 >;
 	};
 	dummy2 {
-		phandle = [ 00 00 00 03 ];
+		phandle = < 0x3 >;
 	};
 	a: a {
-		phandle = [ 00 00 00 02 ];
+		phandle = < 0x2 >;
 	};
 	b {
-		phandle = [ 00 00 00 04 ];
+		phandle = < 0x4 >;
 	};
 	c: c {
-		phandle = [ 00 00 00 FF ];
+		phandle = < 0xff >;
 	};
 };
 """)
@@ -606,13 +614,13 @@ l3: &l1 {
 
 / {
 	dummy {
-		phandle = [ 00 00 00 01 ];
+		phandle = < 0x1 >;
 	};
 	a {
-		foo: phandle = [ 00 00 00 02 ];
+		foo: phandle = < 0x2 >;
 	};
 	label: b {
-		bar: phandle = [ 00 00 00 03 ];
+		bar: phandle = < 0x3 >;
 	};
 };
 """)
@@ -757,9 +765,9 @@ l3: &l1 {
 /dts-v1/;
 
 / {
-	x = [ FF FF 2F 61 62 63 00 00 00 00 FF 00 00 00 01 00 00 00 FF 00 00 00 01 2F 61 62 63 00 FF FF 61 62 63 00 ];
+	x = [ FF FF ], "/abc", < 0xff 0x1 0xff 0x1 >, "/abc", [ FF FF ], "abc";
 	abc: abc {
-		phandle = [ 00 00 00 01 ];
+		phandle = < 0x1 >;
 	};
 };
 """)
@@ -789,7 +797,7 @@ l3: &l1 {
 /dts-v1/;
 
 / {
-	keep = [ 00 00 00 01 ];
+	keep = < 0x1 >;
 	sub: sub {
 	};
 };
@@ -828,7 +836,7 @@ l3: &l1 {
 
 / {
 	sub1 {
-		x = [ 00 00 00 01 ];
+		x = < 0x1 >;
 	};
 };
 """)
@@ -904,8 +912,8 @@ y /include/ "via-include-path-1"
 /dts-v1/;
 
 / {
-	x = [ 00 00 00 01 ];
-	y = [ 00 00 00 02 ];
+	x = < 0x1 >;
+	y = < 0x2 >;
 };
 """,
     include_path=(".tmp", ".tmp2",))
@@ -999,9 +1007,9 @@ y /include/ "via-include-path-1"
 /dts-v1/;
 
 / {
-	x = [ 00 00 00 01 2F 72 65 66 65 72 65 6E 63 65 64 32 00 ];
+	x = < 0x1 >, "/referenced2";
 	referenced {
-		phandle = [ 00 00 00 01 ];
+		phandle = < 0x1 >;
 	};
 	referenced2: referenced2 {
 	};
@@ -1114,51 +1122,51 @@ y /include/ "via-include-path-1"
 /dts-v1/;
 
 / {
-	ter1 = [ 00 00 00 03 ];
-	ter2 = [ 00 00 00 02 ];
-	ter3 = [ 00 00 00 01 ];
-	ter4 = [ 00 00 00 01 ];
-	or1 = [ 00 00 00 00 ];
-	or2 = [ 00 00 00 01 ];
-	or3 = [ 00 00 00 01 ];
-	or4 = [ 00 00 00 01 ];
-	and1 = [ 00 00 00 00 ];
-	and2 = [ 00 00 00 00 ];
-	and3 = [ 00 00 00 00 ];
-	and4 = [ 00 00 00 01 ];
-	bitor = [ 00 00 00 03 ];
-	bitxor = [ 00 00 00 05 ];
-	bitand = [ 00 00 00 02 ];
-	eq1 = [ 00 00 00 00 ];
-	eq2 = [ 00 00 00 01 ];
-	neq1 = [ 00 00 00 01 ];
-	neq2 = [ 00 00 00 00 ];
-	lt1 = [ 00 00 00 01 ];
-	lt2 = [ 00 00 00 00 ];
-	lt3 = [ 00 00 00 00 ];
-	lteq1 = [ 00 00 00 01 ];
-	lteq2 = [ 00 00 00 01 ];
-	lteq3 = [ 00 00 00 00 ];
-	gt1 = [ 00 00 00 00 ];
-	gt2 = [ 00 00 00 00 ];
-	gt3 = [ 00 00 00 01 ];
-	gteq1 = [ 00 00 00 00 ];
-	gteq2 = [ 00 00 00 01 ];
-	gteq3 = [ 00 00 00 01 ];
-	lshift = [ 00 00 00 10 ];
-	rshift = [ 00 00 00 02 ];
-	add = [ 00 00 00 07 ];
-	sub = [ 00 00 00 03 ];
-	mul = [ 00 00 00 0C ];
-	div = [ 00 00 00 03 ];
-	mod = [ 00 00 00 02 ];
-	unary_minus = [ FF FF FF FD ];
-	bitnot = [ FF FF FF FE ];
-	not0 = [ 00 00 00 00 ];
-	not1 = [ 00 00 00 01 ];
-	not2 = [ 00 00 00 00 ];
-	not3 = [ 00 00 00 00 ];
-	nest = [ FF FF FF FE ];
+	ter1 = < 0x3 >;
+	ter2 = < 0x2 >;
+	ter3 = < 0x1 >;
+	ter4 = < 0x1 >;
+	or1 = < 0x0 >;
+	or2 = < 0x1 >;
+	or3 = < 0x1 >;
+	or4 = < 0x1 >;
+	and1 = < 0x0 >;
+	and2 = < 0x0 >;
+	and3 = < 0x0 >;
+	and4 = < 0x1 >;
+	bitor = < 0x3 >;
+	bitxor = < 0x5 >;
+	bitand = < 0x2 >;
+	eq1 = < 0x0 >;
+	eq2 = < 0x1 >;
+	neq1 = < 0x1 >;
+	neq2 = < 0x0 >;
+	lt1 = < 0x1 >;
+	lt2 = < 0x0 >;
+	lt3 = < 0x0 >;
+	lteq1 = < 0x1 >;
+	lteq2 = < 0x1 >;
+	lteq3 = < 0x0 >;
+	gt1 = < 0x0 >;
+	gt2 = < 0x0 >;
+	gt3 = < 0x1 >;
+	gteq1 = < 0x0 >;
+	gteq2 = < 0x1 >;
+	gteq3 = < 0x1 >;
+	lshift = < 0x10 >;
+	rshift = < 0x2 >;
+	add = < 0x7 >;
+	sub = < 0x3 >;
+	mul = < 0xc >;
+	div = < 0x3 >;
+	mod = < 0x2 >;
+	unary_minus = < 0xfffffffd >;
+	bitnot = < 0xfffffffe >;
+	not0 = < 0x0 >;
+	not1 = < 0x1 >;
+	not2 = < 0x0 >;
+	not3 = < 0x0 >;
+	nest = < 0xfffffffe >;
 };
 """)
 
@@ -1197,7 +1205,7 @@ foo
 /dts-v1/;
 
 / {
-	x = [ 00 00 00 01 ];
+	x = < 0x1 >;
 };
 """)
 
@@ -1788,7 +1796,7 @@ r"b'\xff\x00' is not valid UTF-8 (for property 'a' on /aliases)")
 /dts-v1/;
 
 / {
-	x = [ 00 00 00 01 ];
+	x = < 0x1 >;
 	foo: foo {
 	};
 };
@@ -1812,8 +1820,8 @@ r"b'\xff\x00' is not valid UTF-8 (for property 'a' on /aliases)")
 
 / {
 	label: foo {
-		x = [ 2F 66 6F 6F 00 2F 66 6F 6F 00 00 00 00 01 ];
-		phandle = [ 00 00 00 01 ];
+		x = "/foo", "/foo", < 0x1 >;
+		phandle = < 0x1 >;
 	};
 };
 """)
@@ -1899,7 +1907,7 @@ l1: l2: /memreserve/ 0x0000000000000002 0x0000000000000004;
 /dts-v1/;
 
 / {
-	aA0,._+*#?- = [ 2F 61 41 30 2C 2E 5F 2B 2A 23 3F 40 2D 00 2F 61 41 30 2C 2E 5F 2B 2A 23 3F 40 2D 00 ];
+	aA0,._+*#?- = "/aA0,._+*#?@-", "/aA0,._+*#?@-";
 	+ = [ 00 ];
 	* = [ 02 ];
 	- = [ 01 ];
@@ -1950,7 +1958,7 @@ l1: l2: /memreserve/ 0x0000000000000002 0x0000000000000004;
 / {
 	l1: l2: foo {
 		l3: l4: bar {
-			l5: x = [ l6: l7: 01 l8: 02 l9: 03 61 00 ];
+			l5: x = l6: [ l7: 01 l8: 02 l9: ], [ 03 ], "a";
 		};
 	};
 };
