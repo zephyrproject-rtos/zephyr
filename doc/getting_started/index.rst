@@ -39,6 +39,11 @@ information about pip\ [#pip]_, including this `information on -\\-user`_.
 - On Windows, see the Installing Packages information on ``--user`` if you
   require using this option.
 
+On all operating systems, the ``-U`` flag installs or updates the package if the
+package is already installed locally but a more recent version is available. It
+is good practice to use this flag if the latest version of a package is
+required.
+
 Install the required tools
 ===========================
 
@@ -68,10 +73,10 @@ First, install ``west`` using ``pip3``:
 .. code-block:: console
 
    # Linux
-   pip3 install --user west
+   pip3 install --user -U west
 
    # macOS (Terminal) and Windows (cmd.exe)
-   pip3 install west
+   pip3 install -U west
 
 See :ref:`west-install` for additional details on installing west.
 
