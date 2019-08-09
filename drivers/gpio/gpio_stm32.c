@@ -228,7 +228,7 @@ const int gpio_stm32_enable_int(int port, int pin)
 	line = (0xF << ((pin % 4 * 4) + 16)) | (pin / 4);
 #endif
 
-#ifdef CONFIG_SOC_SERIES_STM32L0X
+#if defined(CONFIG_SOC_SERIES_STM32L0X) && defined(LL_SYSCFG_EXTI_PORTH)
 	/*
 	 * Ports F and G are not present on some STM32L0 parts, so
 	 * for these parts port H external interrupt should be enabled
