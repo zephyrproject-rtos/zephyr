@@ -23,7 +23,7 @@ properties:
       category: required
 
     "#clock-cells":
-      description: should be 3.
+      const: 3
 
 "#cells":
   - name

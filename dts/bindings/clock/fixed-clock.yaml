@@ -35,4 +35,4 @@ properties:
       description: input clock source
 
     "#clock-cells":
-      description: should be 0.
+      const: 0

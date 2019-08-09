@@ -18,6 +18,9 @@ properties:
       type: int
       description: number of bits of IRQ priorities
 
+    "#interrupt-cells":
+      const: 2
+
 "#cells":
   - irq
   - priority
