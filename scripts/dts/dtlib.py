@@ -1456,7 +1456,7 @@ class Property:
         """
         if self.type not in (TYPE_NUM, TYPE_NUMS):
             raise DTError("expected property '{0}' on {1} in {2} to be "
-                          "assigned with '{0} = < (number) (number) ... >', "
+                          "assigned with '{0} = < (number) (number) ... >;', "
                           "not '{3}'"
                           .format(self.name, self.node.path,
                                   self.node.dt.filename, self))
@@ -1476,7 +1476,7 @@ class Property:
         """
         if self.type is not TYPE_BYTES:
             raise DTError("expected property '{0}' on {1} in {2} to be "
-                          "assigned with '{0} = [ (byte) (byte) ... ]', "
+                          "assigned with '{0} = [ (byte) (byte) ... ];', "
                           "not '{3}'".format(self.name, self.node.path,
                                              self.node.dt.filename, self))
 
@@ -1496,7 +1496,7 @@ class Property:
         """
         if self.type is not TYPE_STRING:
             raise DTError("expected property '{0}' on {1} in {2} to be "
-                          "assigned with '{0} = \"string\"', not '{3}'"
+                          "assigned with '{0} = \"string\";', not '{3}'"
                           .format(self.name, self.node.path,
                                   self.node.dt.filename, self))
 
@@ -1521,10 +1521,9 @@ class Property:
         """
         if self.type not in (TYPE_STRING, TYPE_STRINGS):
             raise DTError("expected property '{0}' on {1} in {2} to be "
-                          "assigned with '{0} = \"string\", \"string\", ...', "
-                          "not {3}"
-                          .format(self.name, self.node.path,
-                                  self.node.dt.filename, self))
+                          "assigned with '{0} = \"string\", \"string\", ... ;'"
+                          ", not '{3}'".format(self.name, self.node.path,
+                                               self.node.dt.filename, self))
 
         try:
             return self.value.decode("utf-8").split("\0")[:-1]
@@ -1538,30 +1537,18 @@ class Property:
         """
         Returns the Node the phandle in the property points to.
 
-        Raises DTError if the property was not assigned with either of these
-        syntaxes (has Property.type TYPE_PHANDLE or TYPE_NUM).
+        Raises DTError if the property was not assigned with this syntax (has
+        Property.type TYPE_PHANDLE).
 
             foo = < &bar >;
-            foo = < 1 >;
-
-        For the second case, DTError is raised if the phandle does not exist.
         """
-        if self.type not in (TYPE_PHANDLE, TYPE_NUM):
+        if self.type is not TYPE_PHANDLE:
             raise DTError("expected property '{0}' on {1} in {2} to be "
-                          "assigned with either '{0} = < &foo >' or "
-                          "'{0} = < (valid phandle number) >', not {3}"
+                          "assigned with '{0} = < &foo >;', not '{3}'"
                           .format(self.name, self.node.path,
                                   self.node.dt.filename, self))
 
-        phandle = int.from_bytes(self.value, "big")
-        node = self.node.dt.phandle2node.get(phandle)
-        if not node:
-            raise DTError("the phandle given in property '{}' ({}) on {} in "
-                          "{} does not exist"
-                          .format(self.name, phandle, self.node.path,
-                                  self.node.dt.filename))
-        return node
-
+        return self.node.dt.phandle2node[int.from_bytes(self.value, "big")]
 
     def to_path(self):
         """
