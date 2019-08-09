@@ -111,15 +111,22 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
         else:
             self.debug_debugserver(command, **kwargs)
 
-    def flash(self, **kwargs):
+    def _getfname(self):
         if os.path.isfile(self.hex_name):
-            fname = self.hex_name
-        elif os.path.isfile(self.bin_name):
-            fname = self.bin_name
-        else:
-            raise ValueError(
-                'Cannot flash; no hex ({}) or bin ({}) files'.format(
-                    self.hex_name, self.bin_name))
+            return self.hex_name
+
+        if os.path.isfile(self.bin_name):
+            self.logger.warning(
+                'Hex file "{}" not found, falling back to binary "{}"'
+                    .format(self.hex_name, self.bin_name))
+            return self.bin_name
+
+        raise ValueError(
+            'Cannot flash; no hex ({}) or bin ({}) files'.format(
+                self.hex_name, self.bin_name))
+
+    def flash(self, **kwargs):
+        fname = self._getfname()
 
         cmd = ([self.pyocd] +
                ['flash'] +
@@ -132,7 +139,8 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
                self.flash_extra +
                [fname])
 
-        self.logger.info('Flashing Target Device')
+        self.logger.info('Flashing Target Device ({})'
+            .format(os.path.basename(fname)))
         self.check_call(cmd)
 
     def log_gdbserver_message(self):
