@@ -58,7 +58,7 @@
 		};
 
 		sim: sim@40048000 {
-			compatible = "nxp,kinetis-sim";
+			compatible = "nxp,kinetis-ke1xf-sim";
 			reg = <0x40048000 0x1000>;
 			label = "SIM";
 		};
