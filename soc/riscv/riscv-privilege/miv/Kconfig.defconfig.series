@@ -22,6 +22,18 @@ config RISCV_HAS_PLIC
 	bool
 	default y
 
+config 2ND_LVL_ISR_TBL_OFFSET
+	int
+	default 12
+
+config 2ND_LVL_INTR_00_OFFSET
+	int
+	default 11
+
+config MAX_IRQ_PER_AGGREGATOR
+	int
+	default 30
+
 config NUM_IRQS
 	int
 	default 42

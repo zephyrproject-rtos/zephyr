@@ -17,8 +17,6 @@
 #define RISCV_MACHINE_TIMER_IRQ      7  /* Machine Timer Interrupt */
 #define RISCV_MACHINE_EXT_IRQ        11 /* Machine External Interrupt */
 
-#define RISCV_MAX_GENERIC_IRQ        11 /* Max Generic Interrupt */
-
 /* Exception numbers */
 #define RISCV_MACHINE_ECALL_EXP      11 /* Machine ECALL instruction */
 

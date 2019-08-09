@@ -17,7 +17,7 @@
 
 #include <sw_isr_table.h>
 
-#define PLIC_IRQS        (CONFIG_NUM_IRQS - RISCV_MAX_GENERIC_IRQ)
+#define PLIC_IRQS        (CONFIG_NUM_IRQS - CONFIG_2ND_LVL_ISR_TBL_OFFSET)
 #define PLIC_EN_SIZE     ((PLIC_IRQS >> 5) + 1)
 
 struct plic_regs_t {
@@ -34,8 +34,7 @@ static int save_irq;
  * This routine enables a RISCV PLIC-specific interrupt line.
  * riscv_plic_irq_enable is called by SOC_FAMILY_RISCV_PRIVILEGE
  * z_arch_irq_enable function to enable external interrupts for
- * IRQS > RISCV_MAX_GENERIC_IRQ, whenever CONFIG_RISCV_HAS_PLIC
- * variable is set.
+ * IRQS level == 2, whenever CONFIG_RISCV_HAS_PLIC variable is set.
  * @param irq IRQ number to enable
  *
  * @return N/A
@@ -43,13 +42,12 @@ static int save_irq;
 void riscv_plic_irq_enable(u32_t irq)
 {
 	u32_t key;
-	u32_t plic_irq = irq - RISCV_MAX_GENERIC_IRQ;
 	volatile u32_t *en =
 		(volatile u32_t *)DT_INST_0_SIFIVE_PLIC_1_0_0_IRQ_EN_BASE_ADDRESS;
 
 	key = irq_lock();
-	en += (plic_irq >> 5);
-	*en |= (1 << (plic_irq & 31));
+	en += (irq >> 5);
+	*en |= (1 << (irq & 31));
 	irq_unlock(key);
 }
 
@@ -60,8 +58,7 @@ void riscv_plic_irq_enable(u32_t irq)
  * This routine disables a RISCV PLIC-specific interrupt line.
  * riscv_plic_irq_disable is called by SOC_FAMILY_RISCV_PRIVILEGE
  * z_arch_irq_disable function to disable external interrupts, for
- * IRQS > RISCV_MAX_GENERIC_IRQ, whenever CONFIG_RISCV_HAS_PLIC
- * variable is set.
+ * IRQS level == 2, whenever CONFIG_RISCV_HAS_PLIC variable is set.
  * @param irq IRQ number to disable
  *
  * @return N/A
@@ -69,13 +66,12 @@ void riscv_plic_irq_enable(u32_t irq)
 void riscv_plic_irq_disable(u32_t irq)
 {
 	u32_t key;
-	u32_t plic_irq = irq - RISCV_MAX_GENERIC_IRQ;
 	volatile u32_t *en =
 		(volatile u32_t *)DT_INST_0_SIFIVE_PLIC_1_0_0_IRQ_EN_BASE_ADDRESS;
 
 	key = irq_lock();
-	en += (plic_irq >> 5);
-	*en &= ~(1 << (plic_irq & 31));
+	en += (irq >> 5);
+	*en &= ~(1 << (irq & 31));
 	irq_unlock(key);
 }
 
@@ -92,10 +88,9 @@ int riscv_plic_irq_is_enabled(u32_t irq)
 {
 	volatile u32_t *en =
 		(volatile u32_t *)DT_INST_0_SIFIVE_PLIC_1_0_0_IRQ_EN_BASE_ADDRESS;
-	u32_t plic_irq = irq - RISCV_MAX_GENERIC_IRQ;
 
-	en += (plic_irq >> 5);
-	return !!(*en & (1 << (plic_irq & 31)));
+	en += (irq >> 5);
+	return !!(*en & (1 << (irq & 31)));
 }
 
 /**
@@ -103,7 +98,7 @@ int riscv_plic_irq_is_enabled(u32_t irq)
  * @brief Set priority of a riscv PLIC-specific interrupt line
  *
  * This routine set the priority of a RISCV PLIC-specific interrupt line.
- * riscv_plic_irq_set_prio is called by riscv Z_ARCH_IRQ_CONNECT to set
+ * riscv_plic_irq_set_prio is called by riscv z_arch_irq_priority_set to set
  * the priority of an interrupt whenever CONFIG_RISCV_HAS_PLIC variable is set.
  * @param irq IRQ number for which to set priority
  *
@@ -114,14 +109,10 @@ void riscv_plic_set_priority(u32_t irq, u32_t priority)
 	volatile u32_t *prio =
 		(volatile u32_t *)DT_INST_0_SIFIVE_PLIC_1_0_0_PRIO_BASE_ADDRESS;
 
-	/* Can set priority only for PLIC-specific interrupt line */
-	if (irq <= RISCV_MAX_GENERIC_IRQ)
-		return;
-
 	if (priority > DT_INST_0_SIFIVE_PLIC_1_0_0_RISCV_MAX_PRIORITY)
 		priority = DT_INST_0_SIFIVE_PLIC_1_0_0_RISCV_MAX_PRIORITY;
 
-	prio += (irq - RISCV_MAX_GENERIC_IRQ);
+	prio += irq;
 	*prio = priority;
 }
 
@@ -166,7 +157,7 @@ static void plic_irq_handler(void *arg)
 	if (irq == 0U || irq >= PLIC_IRQS)
 		z_irq_spurious(NULL);
 
-	irq += RISCV_MAX_GENERIC_IRQ;
+	irq += CONFIG_2ND_LVL_ISR_TBL_OFFSET;
 
 	/* Call the corresponding IRQ handler in _sw_isr_table */
 	ite = (struct _isr_table_entry *)&_sw_isr_table[irq];

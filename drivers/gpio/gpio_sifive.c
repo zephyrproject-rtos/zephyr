@@ -68,8 +68,7 @@ static void gpio_sifive_irq_handler(void *arg)
 	int pin_mask;
 
 	/* Get the pin number generating the interrupt */
-	pin_mask = 1 << (riscv_plic_get_irq() -
-			 (cfg->gpio_irq_base - RISCV_MAX_GENERIC_IRQ));
+	pin_mask = 1 << (riscv_plic_get_irq() - cfg->gpio_irq_base);
 
 	/* Call the corresponding callback registered for the pin */
 	gpio_fire_callbacks(&data->cb, dev, pin_mask);
@@ -375,7 +374,7 @@ static void gpio_sifive_cfg_0(void);
 
 static const struct gpio_sifive_config gpio_sifive_config0 = {
 	.gpio_base_addr    = DT_INST_0_SIFIVE_GPIO0_BASE_ADDRESS,
-	.gpio_irq_base     = RISCV_MAX_GENERIC_IRQ + DT_INST_0_SIFIVE_GPIO0_IRQ_0,
+	.gpio_irq_base     = DT_INST_0_SIFIVE_GPIO0_IRQ_0,
 	.gpio_cfg_func     = gpio_sifive_cfg_0,
 };
 
@@ -388,7 +387,7 @@ DEVICE_AND_API_INIT(gpio_sifive_0, DT_INST_0_SIFIVE_GPIO0_LABEL,
 		    &gpio_sifive_driver);
 
 #define		IRQ_INIT(n)					\
-IRQ_CONNECT(RISCV_MAX_GENERIC_IRQ + DT_INST_0_SIFIVE_GPIO0_IRQ_##n,	\
+IRQ_CONNECT(DT_INST_0_SIFIVE_GPIO0_IRQ_##n,	\
 		CONFIG_GPIO_SIFIVE_##n##_PRIORITY,		\
 		gpio_sifive_irq_handler,			\
 		DEVICE_GET(gpio_sifive_0),			\

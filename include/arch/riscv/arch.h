@@ -66,6 +66,7 @@ extern u32_t __soc_get_irq(void);
 void z_arch_irq_enable(unsigned int irq);
 void z_arch_irq_disable(unsigned int irq);
 int z_arch_irq_is_enabled(unsigned int irq);
+void z_arch_irq_priority_set(unsigned int irq, unsigned int prio);
 void z_irq_spurious(void *unused);
 
 
@@ -86,7 +87,7 @@ void z_irq_spurious(void *unused);
 #define Z_ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
 ({ \
 	Z_ISR_DECLARE(irq_p, 0, isr_p, isr_param_p); \
-	riscv_plic_set_priority(irq_p, priority_p); \
+	z_arch_irq_priority_set(irq_p, priority_p); \
 	irq_p; \
 })
 #else
