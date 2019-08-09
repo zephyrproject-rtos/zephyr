@@ -96,6 +96,13 @@ _exc_entry:
 	jl _Fault
 
 _exc_return:
+/* the exception cause must be fixed in exception handler when exception returns
+ * directly, or exception will be repeated.
+ *
+ * If thread switch is raised in exception handler, the context of old thread will
+ * not be saved, i.e., it cannot be recovered, because we don't know where the
+ * exception comes out,  thread context?irq_context?nest irq context?
+ */
 
 #ifdef CONFIG_PREEMPT_ENABLED
 #ifdef CONFIG_SMP
@@ -129,14 +136,31 @@ _exc_return:
 	/* sflag instruction is not supported in current ARC GNU */
 	.long 0x00ff302f
 #endif
-	/* clear AE bit to forget this was an exception */
+	/* clear AE bit to forget this was an exception, and go to
+	 * register bank0 (if exception is raised in firq with 2 reg
+	 * banks, then we may be bank1)
+	 */
+#if defined(CONFIG_ARC_FIRQ) && CONFIG_RGF_NUM_BANKS != 1
+	/* save r2 in ilink because of the possible following reg
+	 * bank switch
+	 */
+	mov ilink, r2
+#endif
 	lr r3, [_ARC_V2_STATUS32]
-	and r3,r3,(~_ARC_V2_STATUS32_AE)
+	and r3,r3,(~(_ARC_V2_STATUS32_AE | _ARC_V2_STATUS32_RB(7)))
 	kflag r3
-	/* pretend lowest priority interrupt happened to use common handler */
-	lr r3, [_ARC_V2_AUX_IRQ_ACT]
-	or r3,r3,(1 << (CONFIG_NUM_IRQ_PRIO_LEVELS - 1)) /* use lowest */
+	/* pretend lowest priority interrupt happened to use common handler
+	 * if exception is raised in irq, i.e., _ARC_V2_AUX_IRQ_ACT !=0,
+	 * ignore irq handling, we cannot return to irq handling which may
+	 * raise exception again. The ignored interrupts will be re-triggered
+	 * if not cleared, or re-triggered by interrupt sources, or just missed
+	 */
+	mov r3,(1 << (CONFIG_NUM_IRQ_PRIO_LEVELS - 1)) /* use lowest */
 	sr r3, [_ARC_V2_AUX_IRQ_ACT]
+
+#if defined(CONFIG_ARC_FIRQ) && CONFIG_RGF_NUM_BANKS != 1
+	mov r2, ilink
+#endif
 
 	/* Assumption: r2 has current thread */
 	b _rirq_common_interrupt_swap
