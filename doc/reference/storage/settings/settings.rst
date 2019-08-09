@@ -130,7 +130,9 @@ export functionality, for example, writing to the shell console).
 
 .. code-block:: c
 
-    static int8 foo_val;
+    #define DEFAULT_FOO_VAL_VALUE 1
+
+    static int8 foo_val = DEFAULT_FOO_VAL_VALUE;
 
     struct settings_handler my_conf = {
         .name = "foo",
@@ -141,9 +143,25 @@ export functionality, for example, writing to the shell console).
     static int foo_settings_set(int argc, char **argv, settings_read_cb read_cb,
                                 void *cb_arg)
     {
+        int rc;
+
         if (argc == 1) {
             if (!strcmp(argv[0], "bar")) {
-                return read_cb(cb_arg, &foo_val, sizeof(foo_val));
+                rc = read_cb(cb_arg, &foo_val, sizeof(foo_val));
+                if (rc >= 0) {
+                    /* key-value pair was properly read.
+                     * rc contains value length.
+                     * key-value is deleted if length equals 0.
+                     * Let's return success.
+                     */
+                    if (rc == 0) {
+                        /* set the default value as its key is deleted */
+                        foo_val = DEFAULT_FOO_VAL_VALUE;
+                    }
+                    return 0;
+                }
+                /* read-out error */
+                return rc;
             }
         }
 
@@ -181,9 +199,16 @@ up from where it was before restart.
     static int foo_settings_set(int argc, char **argv, settings_read_cb read_cb,
                                 void *cb_arg)
     {
+        int rc;
+
         if (argc == 1) {
             if (!strcmp(argv[0], "bar")) {
-                return read_cb(cb_arg, &foo_val, sizeof(foo_val));
+                rc = read_cb(cb_arg, &foo_val, sizeof(foo_val));
+                if (rc >= 0) {
+                    return 0;
+                }
+
+                return rc;
             }
         }
 
