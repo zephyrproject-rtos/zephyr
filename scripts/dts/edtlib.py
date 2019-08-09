@@ -526,11 +526,6 @@ class Device:
     def _init_prop(self, name, options):
         # _init_props() helper for initializing a single property
 
-        # Skip properties that start with '#', like '#size-cells', and mapping
-        # properties like 'gpio-map'/'interrupt-map'
-        if name[0] == "#" or name.endswith("-map"):
-            return
-
         prop_type = options.get("type")
         if not prop_type:
             _err("'{}' in {} lacks 'type'".format(name, self.binding_path))
@@ -546,6 +541,11 @@ class Device:
                              options.get("category") == "optional")
         if val is None:
             # 'category: optional' property that wasn't there
+            return
+
+        # Skip properties that start with '#', like '#size-cells', and mapping
+        # properties like 'gpio-map'/'interrupt-map'
+        if name[0] == "#" or name.endswith("-map"):
             return
 
         prop = Property()
