@@ -155,7 +155,8 @@ def write_props(dev):
             continue
 
         # Skip properties that we handle elsewhere
-        if prop.name in {"reg", "interrupts", "compatible", "interrupt-controller"}:
+        if prop.name in {"reg", "interrupts", "compatible", "interrupt-controller",
+                "gpio-controller"}:
             continue
 
         if prop.description is not None:
