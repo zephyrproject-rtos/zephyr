@@ -15,3 +15,8 @@ inherits:
 properties:
     label:
       category: required
+
+    "#pwm-cells":
+      type: int
+      category: required
+      description: Number of items to expect in a pwm specifier
