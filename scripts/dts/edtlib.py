@@ -1251,6 +1251,10 @@ def _check_binding(binding, binding_path):
             _err("missing, malformed, or empty 'description' for '{}' in "
                  "'properties' in {}".format(prop_name, binding_path))
 
+        if "enum" in options and not isinstance(options["enum"], list):
+            _err("enum in {} for property '{}' is not a list"
+                 .format(binding_path, prop_name))
+
 
 def _translate(addr, node):
     # Recursively translates 'addr' on 'node' to the address space(s) of its
