@@ -35,7 +35,7 @@ properties:
                    the pull-up resistor on USB Data Positive signal.
 
     phys:
-      type: array
+      type: phandle
       category: optional
       description: PHY provider specifier
 

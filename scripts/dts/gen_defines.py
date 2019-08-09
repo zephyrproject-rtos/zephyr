@@ -154,6 +154,10 @@ def write_props(dev):
         if prop.name[0] == "#" or prop.name.endswith("-map"):
             continue
 
+        # Skip phandles
+        if isinstance(prop.val, edtlib.Device):
+            continue
+
         # Skip properties that we handle elsewhere
         if prop.name in {"reg", "interrupts", "compatible", "interrupt-controller",
                 "gpio-controller"}:

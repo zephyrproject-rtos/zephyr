@@ -8,6 +8,12 @@ properties:
         constraint: "props"
         type: string-array
 
+    nonexistent-boolean:
+        type: boolean
+
+    existent-boolean:
+        type: boolean
+
     int:
         type: int
 
@@ -22,3 +28,6 @@ properties:
 
     string-array:
         type: string-array
+
+    phandle-ref:
+        type: phandle

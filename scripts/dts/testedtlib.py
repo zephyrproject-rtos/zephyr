@@ -120,7 +120,7 @@ def run():
     #
 
     verify_streq(edt.get_dev("/props").props,
-                 r"{'compatible': <Property, name: compatible, value: ['props']>, 'int': <Property, name: int, value: 1>, 'array': <Property, name: array, value: [1, 2, 3]>, 'uint8-array': <Property, name: uint8-array, value: b'\x124'>, 'string': <Property, name: string, value: 'foo'>, 'string-array': <Property, name: string-array, value: ['foo', 'bar', 'baz']>}")
+                 r"{'compatible': <Property, name: compatible, value: ['props']>, 'nonexistent-boolean': <Property, name: nonexistent-boolean, value: False>, 'existent-boolean': <Property, name: existent-boolean, value: True>, 'int': <Property, name: int, value: 1>, 'array': <Property, name: array, value: [1, 2, 3]>, 'uint8-array': <Property, name: uint8-array, value: b'\x124'>, 'string': <Property, name: string, value: 'foo'>, 'string-array': <Property, name: string-array, value: ['foo', 'bar', 'baz']>, 'phandle-ref': <Property, name: phandle-ref, value: <Device /props/node in 'test.dts', no binding>>}")
 
     #
     # Test having multiple directories with bindings, with a different .dts file
