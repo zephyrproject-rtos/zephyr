@@ -9,9 +9,6 @@ title: PWM Base Structure
 description: >
     This binding gives the base structures for all PWM devices
 
-inherits:
-    !include base.yaml
-
 properties:
     label:
       category: required

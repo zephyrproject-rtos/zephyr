@@ -10,7 +10,7 @@ description: >
     This binding gives a base representation of the i.MX7D PWM
 
 inherits:
-    !include pwm.yaml
+    !include [pwm.yaml, base.yaml]
 
 properties:
     compatible:
