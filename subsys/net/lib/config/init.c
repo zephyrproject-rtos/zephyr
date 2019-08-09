@@ -33,7 +33,7 @@ extern const struct log_backend *log_backend_net_get(void);
 static K_SEM_DEFINE(waiter, 0, 1);
 static struct k_sem counter;
 
-#if defined(CONFIG_NET_DHCPV4)
+#if defined(CONFIG_NET_DHCPV4) && defined(CONFIG_NET_NATIVE_IPV4)
 static struct net_mgmt_event_callback mgmt4_cb;
 
 static void ipv4_addr_add_handler(struct net_mgmt_event_callback *cb,
@@ -95,12 +95,12 @@ static void setup_dhcpv4(struct net_if *iface)
 #define setup_dhcpv4(...)
 #endif /* CONFIG_NET_DHCPV4 */
 
-#if defined(CONFIG_NET_IPV4) && !defined(CONFIG_NET_DHCPV4) && \
-    !defined(CONFIG_NET_CONFIG_MY_IPV4_ADDR)
+#if defined(CONFIG_NET_NATIVE_IPV4) && !defined(CONFIG_NET_DHCPV4) && \
+	!defined(CONFIG_NET_CONFIG_MY_IPV4_ADDR)
 #error "You need to define an IPv4 address or enable DHCPv4!"
 #endif
 
-#if defined(CONFIG_NET_IPV4) && defined(CONFIG_NET_CONFIG_MY_IPV4_ADDR)
+#if defined(CONFIG_NET_NATIVE_IPV4) && defined(CONFIG_NET_CONFIG_MY_IPV4_ADDR)
 
 static void setup_ipv4(struct net_if *iface)
 {
@@ -171,7 +171,7 @@ static void setup_ipv4(struct net_if *iface)
 #define setup_ipv4(...)
 #endif /* CONFIG_NET_IPV4 && !CONFIG_NET_DHCPV4 */
 
-#if defined(CONFIG_NET_IPV6)
+#if defined(CONFIG_NET_NATIVE_IPV6)
 #if !defined(CONFIG_NET_CONFIG_MY_IPV6_ADDR)
 #error "You need to define an IPv6 address!"
 #endif

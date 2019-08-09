@@ -39,7 +39,7 @@ extern "C" {
  *
  * @return 0 on success, negative errno otherwise.
  */
-#if defined(CONFIG_NET_UDP)
+#if defined(CONFIG_NET_NATIVE_UDP)
 int net_udp_create(struct net_pkt *pkt, u16_t src_port, u16_t dst_port);
 #else
 static inline int net_udp_create(struct net_pkt *pkt,
@@ -62,7 +62,7 @@ static inline int net_udp_create(struct net_pkt *pkt,
  *
  * @return 0 on success, negative errno otherwise.
  */
-#if defined(CONFIG_NET_UDP)
+#if defined(CONFIG_NET_NATIVE_UDP)
 int net_udp_finalize(struct net_pkt *pkt);
 #else
 static inline int net_udp_finalize(struct net_pkt *pkt)
@@ -81,7 +81,7 @@ static inline int net_udp_finalize(struct net_pkt *pkt)
  *
  * @return UDP header on success, NULL on error
  */
-#if defined(CONFIG_NET_UDP)
+#if defined(CONFIG_NET_NATIVE_UDP)
 struct net_udp_hdr *net_udp_input(struct net_pkt *pkt,
 				  struct net_pkt_data_access *udp_access);
 #else

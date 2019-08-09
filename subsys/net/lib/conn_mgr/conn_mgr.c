@@ -126,7 +126,7 @@ static void conn_mgr_initial_state(struct net_if *iface)
 		iface_states[idx] = NET_STATE_IFACE_UP;
 	}
 
-	if (IS_ENABLED(CONFIG_NET_IPV6)) {
+	if (IS_ENABLED(CONFIG_NET_NATIVE_IPV6)) {
 		if (net_if_ipv6_get_global_addr(NET_ADDR_PREFERRED, &iface)) {
 			NET_DBG("IPv6 addr set");
 			iface_states[idx] |= NET_STATE_IPV6_ADDR_SET |
@@ -137,7 +137,7 @@ static void conn_mgr_initial_state(struct net_if *iface)
 		}
 	}
 
-	if (IS_ENABLED(CONFIG_NET_IPV4)) {
+	if (IS_ENABLED(CONFIG_NET_NATIVE_IPV4)) {
 		if (net_if_ipv4_get_global_addr(iface, NET_ADDR_PREFERRED)) {
 			NET_DBG("IPv4 addr set");
 			iface_states[idx] |= NET_STATE_IPV4_ADDR_SET;

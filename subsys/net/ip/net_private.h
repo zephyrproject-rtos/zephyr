@@ -38,15 +38,42 @@
 
 #include "connection.h"
 
-extern void net_pkt_init(void);
 extern void net_if_init(void);
 extern void net_if_post_init(void);
 extern void net_if_carrier_down(struct net_if *iface);
+
+#if defined(CONFIG_NET_NATIVE) || defined(CONFIG_NET_OFFLOAD)
 extern void net_context_init(void);
-enum net_verdict net_ipv4_input(struct net_pkt *pkt);
-enum net_verdict net_ipv6_input(struct net_pkt *pkt, bool is_loopback);
+extern void net_pkt_init(void);
 extern void net_tc_tx_init(void);
 extern void net_tc_rx_init(void);
+#else
+static inline void net_context_init(void) { }
+static inline void net_pkt_init(void) { }
+static inline void net_tc_tx_init(void) { }
+static inline void net_tc_rx_init(void) { }
+#endif
+
+#if defined(CONFIG_NET_NATIVE)
+enum net_verdict net_ipv4_input(struct net_pkt *pkt);
+enum net_verdict net_ipv6_input(struct net_pkt *pkt, bool is_loopback);
+#else
+static inline enum net_verdict net_ipv4_input(struct net_pkt *pkt)
+{
+	ARG_UNUSED(pkt);
+
+	return NET_CONTINUE;
+}
+
+static inline enum net_verdict net_ipv6_input(struct net_pkt *pkt,
+					      bool is_loopback)
+{
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(is_loopback);
+
+	return NET_CONTINUE;
+}
+#endif
 extern void net_tc_submit_to_tx_queue(u8_t tc, struct net_pkt *pkt);
 extern void net_tc_submit_to_rx_queue(u8_t tc, struct net_pkt *pkt);
 extern enum net_verdict net_promisc_mode_input(struct net_pkt *pkt);

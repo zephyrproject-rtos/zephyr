@@ -184,13 +184,33 @@ int net_icmpv6_send_error(struct net_pkt *pkt, u8_t type, u8_t code,
  *
  * @return Return 0 if the sending succeed, <0 otherwise.
  */
+#if defined(CONFIG_NET_NATIVE_IPV6)
 int net_icmpv6_send_echo_request(struct net_if *iface,
 				 struct in6_addr *dst,
 				 u16_t identifier,
 				 u16_t sequence,
 				 const void *data,
 				 size_t data_size);
+#else
+static inline int net_icmpv6_send_echo_request(struct net_if *iface,
+					       struct in6_addr *dst,
+					       u16_t identifier,
+					       u16_t sequence,
+					       const void *data,
+					       size_t data_size)
+{
+	ARG_UNUSED(iface);
+	ARG_UNUSED(dst);
+	ARG_UNUSED(identifier);
+	ARG_UNUSED(sequence);
+	ARG_UNUSED(data);
+	ARG_UNUSED(data_size);
 
+	return -ENOTSUP;
+}
+#endif
+
+#if defined(CONFIG_NET_NATIVE_IPV6)
 void net_icmpv6_register_handler(struct net_icmpv6_handler *handler);
 void net_icmpv6_unregister_handler(struct net_icmpv6_handler *handler);
 enum net_verdict net_icmpv6_input(struct net_pkt *pkt,
@@ -199,10 +219,11 @@ enum net_verdict net_icmpv6_input(struct net_pkt *pkt,
 int net_icmpv6_create(struct net_pkt *pkt, u8_t icmp_type, u8_t icmp_code);
 int net_icmpv6_finalize(struct net_pkt *pkt);
 
-#if defined(CONFIG_NET_IPV6)
 void net_icmpv6_init(void);
 #else
 #define net_icmpv6_init(...)
+#define net_icmpv6_register_handler(...)
+#define net_icmpv6_unregister_handler(...)
 #endif
 
 #endif /* __ICMPV6_H */

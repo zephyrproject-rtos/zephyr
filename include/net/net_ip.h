@@ -800,6 +800,7 @@ extern bool net_if_ipv4_is_addr_bcast(struct net_if *iface,
  *
  * @return True if address is a broadcast address, false otherwise.
  */
+#if defined(CONFIG_NET_NATIVE_IPV4)
 static inline bool net_ipv4_is_addr_bcast(struct net_if *iface,
 					  const struct in_addr *addr)
 {
@@ -809,6 +810,16 @@ static inline bool net_ipv4_is_addr_bcast(struct net_if *iface,
 
 	return net_if_ipv4_is_addr_bcast(iface, addr);
 }
+#else
+static inline bool net_ipv4_is_addr_bcast(struct net_if *iface,
+					  const struct in_addr *addr)
+{
+	ARG_UNUSED(iface);
+	ARG_UNUSED(addr);
+
+	return false;
+}
+#endif
 
 extern struct net_if_addr *net_if_ipv4_addr_lookup(const struct in_addr *addr,
 						   struct net_if **iface);
