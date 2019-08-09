@@ -13,9 +13,12 @@
 #include <kernel.h>
 #include <arch/cpu.h>
 #include <init.h>
-#include "plic.h"
+#include <soc.h>
+
 #include <sw_isr_table.h>
 
+#define PLIC_IRQS        (CONFIG_NUM_IRQS - RISCV_MAX_GENERIC_IRQ)
+#define PLIC_EN_SIZE     ((PLIC_IRQS >> 5) + 1)
 
 struct plic_regs_t {
 	u32_t threshold_prio;
