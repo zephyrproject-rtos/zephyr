@@ -1,0 +1,20 @@
+#
+# Copyright (c) 2019, Linaro Limited
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+title: GPIO Controller Base Structure
+
+description: >
+    This binding gives the base structure for all GPIO Controller devices
+
+properties:
+    "gpio-controller":
+      type: boolean
+      category: required
+      description: Convey's this node is a GPIO controller
+    "#gpio-cells":
+      type: int
+      category: required
+      description: Number of items to expect in a GPIO specifier

@@ -5,7 +5,7 @@ description: >
     This is a representation of the TI CC32XX GPIO node
 
 inherits:
-    !include base.yaml
+    !include [gpio-controller.yaml, base.yaml]
 
 properties:
     compatible:

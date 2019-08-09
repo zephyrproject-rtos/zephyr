@@ -10,7 +10,7 @@ description: >
     This is a representation of the SiFive GPIO nodes
 
 inherits:
-    !include base.yaml
+    !include [gpio-controller.yaml, base.yaml]
 
 properties:
     compatible:
