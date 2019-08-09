@@ -31,6 +31,10 @@
 extern "C" {
 #endif
 
+#if defined(CONFIG_NET_TCP2)
+#define net_tcp tcp
+#endif
+
 /** Is this context used or not */
 #define NET_CONTEXT_IN_USE BIT(0)
 

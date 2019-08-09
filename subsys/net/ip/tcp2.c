@@ -31,11 +31,17 @@ static bool _tcp_conn_delete = true;
 
 static sys_slist_t tcp_conns = SYS_SLIST_STATIC_INIT(&tcp_conns);
 
+int net_tcp_unref(struct net_context *context);
+
+#define NET_MAX_TCP_CONTEXT CONFIG_NET_MAX_CONTEXTS
+static struct tcp tcp_context[NET_MAX_TCP_CONTEXT];
+
 NET_BUF_POOL_DEFINE(tcp_nbufs, 64/*count*/, 128/*size*/, 0, NULL);
 
 static void tcp_in(struct tcp *conn, struct net_pkt *pkt);
 static void *tcp_conn_delete(struct tcp *conn);
 
+#if IS_ENABLED(CONFIG_NET_TP)
 static size_t tcp_endpoint_len(sa_family_t af)
 {
 	return (af == AF_INET) ? sizeof(struct sockaddr_in) :
@@ -66,6 +72,7 @@ static union tcp_endpoint *tcp_endpoint_new(struct net_pkt *pkt, int src)
 
 	return ep;
 }
+#endif
 
 static const char *tcp_flags(u8_t fl)
 {
@@ -184,7 +191,8 @@ static void tcp_send(struct net_pkt *pkt)
 
 static void tcp_send_process(struct k_timer *timer)
 {
-	struct tcp *conn = k_timer_user_data_get(timer);
+	struct net_context *context = k_timer_user_data_get(timer);
+	struct tcp *conn = context->tcp;
 	struct net_pkt *pkt = tcp_slist(&conn->send_queue, peek_head,
 					struct net_pkt, next);
 
@@ -196,7 +204,8 @@ static void tcp_send_process(struct k_timer *timer)
 			tcp_send(tcp_pkt_clone(pkt));
 			conn->send_retries--;
 		} else {
-			conn = tcp_conn_delete(conn);
+			net_tcp_unref(context);
+			conn = NULL;
 		}
 	} else {
 		u8_t fl = th_get(pkt)->th_flags;
@@ -276,6 +285,7 @@ out:
 	return prefix ? s : (s + 4);
 }
 
+#if IS_ENABLED(CONFIG_NET_TP)
 static struct tcp *tcp_conn_new(struct net_pkt *pkt)
 {
 	struct tcp *conn = tcp_calloc(1, sizeof(struct tcp));
@@ -334,6 +344,7 @@ static struct tcp *tcp_conn_search(struct net_pkt *pkt)
 
 	return found ? conn : NULL;
 }
+#endif
 
 static void tcp_win_free(struct tcp_win *w)
 {
@@ -831,6 +842,7 @@ next_state:
 	}
 }
 
+#if IS_ENABLED(CONFIG_NET_TP)
 void tcp_input(struct net_pkt *pkt)
 {
 	struct tcphdr *th = tp_tap_input(pkt) ? NULL : th_get(pkt);
@@ -847,6 +859,7 @@ void tcp_input(struct net_pkt *pkt)
 		}
 	}
 }
+#endif
 
 ssize_t tcp_recv(int fd, void *buf, size_t len, int flags)
 {
@@ -886,18 +899,77 @@ int tcp_close(int fd)
 }
 
 /* API into the TCP stack as seen by the IP stack in net_context.c */
+
+/** TCP context flag; is this TCP context/socket used or not */
+#define NET_TCP_IN_USE BIT(0)
+
+static inline bool net_tcp_is_used(struct tcp *tcp)
+{
+	NET_ASSERT(tcp);
+
+	return tcp->flags & NET_TCP_IN_USE;
+}
+
+/* Set up a new TCP state struct if one is available */
 int net_tcp_get(struct net_context *context)
 {
-	ARG_UNUSED(context);
+	int i, key;
 
-	return -EPROTONOSUPPORT;
+	key = irq_lock();
+	for (i = 0; i < NET_MAX_TCP_CONTEXT; i++) {
+		if (!net_tcp_is_used(&tcp_context[i])) {
+			break;
+		}
+	}
+	irq_unlock(key);
+
+	if (i >= NET_MAX_TCP_CONTEXT) {
+		return -EPROTONOSUPPORT;
+	}
+
+	memset(&tcp_context[i], 0, sizeof(tcp_context[i]));
+	tcp_context[i].flags |= NET_TCP_IN_USE;
+
+	tcp_context[i].win = tcp_window;
+
+	tcp_context[i].src = tcp_calloc(1, sizeof(struct sockaddr));
+	tcp_context[i].dst = tcp_calloc(1, sizeof(struct sockaddr));
+
+	tcp_context[i].rcv = tcp_win_new("RCV");
+	tcp_context[i].snd = tcp_win_new("SND");
+
+	tcp_context[i].state = TCP_LISTEN;
+	context->tcp = &tcp_context[i];
+
+	sys_slist_init(&tcp_context[i].send_queue);
+	k_timer_init(&tcp_context[i].send_timer, tcp_send_process, NULL);
+	k_timer_user_data_set(&tcp_context[i].send_timer, context);
+
+	return 0;
 }
 
 int net_tcp_unref(struct net_context *context)
 {
-	ARG_UNUSED(context);
+	int key;
 
-	return -EPROTONOSUPPORT;
+	tp_out(context->tcp->iface, "TP_TRACE", "event", "CONN_DELETE");
+
+	tcp_send_queue_flush(context->tcp);
+
+	tcp_win_free(context->tcp->snd);
+	tcp_win_free(context->tcp->rcv);
+
+	tcp_free(context->tcp->src);
+	tcp_free(context->tcp->dst);
+
+	key = irq_lock();
+
+	memset(context->tcp, 0, sizeof(*context->tcp));
+	context->tcp = NULL;
+
+	irq_unlock(key);
+
+	return 0;
 }
 
 int net_tcp_put(struct net_context *context)
