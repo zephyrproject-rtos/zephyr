@@ -34,7 +34,7 @@ properties:
 
     "#clock-cells":
       type: int
-      category: required
+      category: optional
       description: should be 3.
 
 "#cells":
