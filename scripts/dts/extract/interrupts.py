@@ -28,6 +28,8 @@ class DTInterrupts(DTDirective):
     #                  compatible definition.
     #
     def extract(self, node_path, prop, names, def_label):
+        if prop == "interrupts-extended":
+            return
         vals = reduced[node_path]['props'][prop]
         if not isinstance(vals, list):
             vals = [vals]
