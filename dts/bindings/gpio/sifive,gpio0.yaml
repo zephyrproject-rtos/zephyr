@@ -25,6 +25,9 @@ properties:
     interrupts:
       category: required
 
+    "#gpio-cells":
+      const: 2
+
 "#cells":
   - pin
   - flags

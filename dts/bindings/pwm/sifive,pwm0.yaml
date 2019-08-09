@@ -32,6 +32,9 @@ properties:
       category: required
       description: Width of the PWM comparator in bits
 
+    "#pwm-cells":
+      const: 2
+
 "#cells":
   - channel
 # period in terms of nanoseconds

@@ -18,4 +18,4 @@ properties:
       constraint: "usb-nop-xceiv"
 
     "#phy-cells":
-      description: should be 0
+      const: 0

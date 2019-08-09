@@ -16,6 +16,9 @@ properties:
     compatible:
       constraint: "snps,arcv2-intc"
 
+    "#interrupt-cells":
+      const: 2
+
 "#cells":
   - irq
   - priority

@@ -23,11 +23,11 @@ properties:
     "#address-cells":
       type: int
       category: required
-      description: should be 1.
+      const: 1
     "#size-cells":
       type: int
       category: required
-      description: should be 0.
+      const: 0
     label:
       category: required
     cs-gpios:

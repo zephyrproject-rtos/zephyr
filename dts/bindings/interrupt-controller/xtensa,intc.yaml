@@ -13,6 +13,9 @@ properties:
   reg:
       category: required
 
+  "#interrupt-cells":
+      const: 3
+
 "#cells":
   - irq
   - sense
