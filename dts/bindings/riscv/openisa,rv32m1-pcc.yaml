@@ -22,5 +22,8 @@ properties:
     label:
       category: required
 
+    "#clock-cells":
+      const: 1
+
 "#cells":
   - name

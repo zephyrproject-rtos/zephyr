@@ -24,6 +24,9 @@ properties:
       description: peripheral ID
       category: required
 
+    "#gpio-cells":
+      const: 2
+
 "#cells":
   - pin
   - flags

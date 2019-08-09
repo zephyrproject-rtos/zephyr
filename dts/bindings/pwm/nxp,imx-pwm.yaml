@@ -27,6 +27,9 @@ properties:
     label:
       category: required
 
+    "#pwm-cells":
+      const: 1
+
 "#cells":
   - channel
 ...
