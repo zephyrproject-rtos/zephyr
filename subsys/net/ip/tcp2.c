@@ -1012,29 +1012,130 @@ int net_tcp_send_data(struct net_context *context, net_context_send_cb_t cb,
 	return 0;
 }
 
-int net_tcp_connect(struct net_context *context, const struct sockaddr *addr,
-		    struct sockaddr *laddr, u16_t rport, u16_t lport,
+enum net_verdict tcp_pkt_received(struct net_conn *conn,
+				  struct net_pkt *pkt,
+				  union net_ip_header *ip_hdr,
+				  union net_proto_header *proto_hdr,
+				  void *user_data)
+{
+	ARG_UNUSED(conn);
+	ARG_UNUSED(ip_hdr);
+	ARG_UNUSED(proto_hdr);
+
+	struct net_context *context = (struct net_context *)user_data;
+
+	tcp_in(context->tcp, pkt);
+
+	return NET_OK;
+}
+
+/* When connect() is called on a TCP socket, register the socket for incoming
+ * traffic with net context and give the TCP packet receiving function, which
+ * in turn will call tcp_in() to deliver the TCP packet to the stack */
+int net_tcp_connect(struct net_context *context,
+		    const struct sockaddr *remote_addr,
+		    struct sockaddr *local_addr,
+		    u16_t remote_port, u16_t local_port,
 		    s32_t timeout, net_context_connect_cb_t cb, void *user_data)
 {
-	ARG_UNUSED(context);
-	ARG_UNUSED(addr);
-	ARG_UNUSED(laddr);
-	ARG_UNUSED(rport);
-	ARG_UNUSED(lport);
-	ARG_UNUSED(cb);
-	ARG_UNUSED(user_data);
+	int ret;
 
-	return -EPROTONOSUPPORT;
+	switch (net_context_get_family(context)) {
+	case AF_INET:
+		net_sin(&context->tcp->src->sa)->sin_port = local_port;
+		net_sin(&context->tcp->dst->sa)->sin_port = remote_port;
+		break;
+
+	case AF_INET6:
+		net_sin6(&context->tcp->src->sa)->sin6_port = local_port;
+		net_sin6(&context->tcp->dst->sa)->sin6_port = remote_port;
+		break;
+
+	default:
+		return -EPROTONOSUPPORT;
+	}
+
+	context->tcp->src->sa = *local_addr;
+	context->tcp->dst->sa = *remote_addr;
+
+	net_context_set_state(context, NET_CONTEXT_CONNECTING);
+
+	ret = net_conn_register(net_context_get_ip_proto(context),
+				net_context_get_family(context),
+				remote_addr, local_addr,
+				ntohs(remote_port), ntohs(local_port),
+				tcp_pkt_received, context,
+				&context->conn_handler);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* Input of a (nonexistent) packet with no flags set will cause
+	 * a TCP connection to be established */
+	tcp_in(context->tcp, NULL);
+
+	return 0;
 }
 
 int net_tcp_accept(struct net_context *context, net_tcp_accept_cb_t cb,
 		   void *user_data)
 {
-	ARG_UNUSED(context);
-	ARG_UNUSED(cb);
-	ARG_UNUSED(user_data);
+	struct sockaddr local_addr = { };
+	u16_t local_port, remote_port;
 
-	return -EPROTONOSUPPORT;
+	if (!context->tcp || context->tcp->state != TCP_LISTEN) {
+		return -EINVAL;
+	}
+
+	local_addr.sa_family = net_context_get_family(context);
+
+	switch (local_addr.sa_family) {
+		struct sockaddr_in *in;
+		struct sockaddr_in6 *in6;
+
+	case AF_INET:
+		in = (struct sockaddr_in *)&local_addr;
+
+		if (net_sin_ptr(&context->local)->sin_addr) {
+			net_ipaddr_copy(&in->sin_addr, net_sin_ptr(&context->local)->sin_addr);
+		}
+
+		in->sin_port = net_sin((struct sockaddr *)&context->local)->sin_port;
+		local_port = ntohs(in->sin_port);
+		remote_port = ntohs(net_sin(&context->remote)->sin_port);
+
+		break;
+
+	case AF_INET6:
+		in6 = (struct sockaddr_in6 *)&local_addr;
+
+		if (net_sin6_ptr(&context->local)->sin6_addr) {
+			net_ipaddr_copy(&in6->sin6_addr, net_sin6_ptr(&context->local)->sin6_addr);
+		}
+
+		in6->sin6_port = net_sin6((struct sockaddr *)&context->local)->sin6_port;
+		local_port = ntohs(in6->sin6_port);
+		remote_port = ntohs(net_sin6(&context->remote)->sin6_port);
+
+		break;
+
+	default:
+		return -EINVAL;
+	}
+
+	context->user_data = user_data;
+
+	context->tcp->src->sa = local_addr;
+	context->tcp->dst->sa = context->remote;
+
+	return net_conn_register(net_context_get_ip_proto(context),
+				 local_addr.sa_family,
+				 context->flags & NET_CONTEXT_REMOTE_ADDR_SET ?
+				 &context->remote : NULL,
+				 &local_addr,
+				 remote_port, local_port,
+				 tcp_pkt_received, context,
+				 &context->conn_handler);
 }
 
 int net_tcp_recv(struct net_context *context, net_context_recv_cb_t cb,
