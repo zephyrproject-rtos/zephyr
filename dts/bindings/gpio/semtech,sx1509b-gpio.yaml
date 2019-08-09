@@ -10,7 +10,7 @@ description: >
         This is a representation of the SX1509B GPIO node
 
 inherits:
-    !include i2c-device.yaml
+    !include [i2c-device.yaml, gpio-controller.yaml]
 
 properties:
     compatible:
