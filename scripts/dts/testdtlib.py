@@ -422,7 +422,7 @@ l3: &l1 {
 /dts-v1/;
 
 / {
-	a = l01: l02: < l03: 0x1 l04: l05: 0x2 l06: l07: l08: >, [ l09: 03 l10: l11: 04 l12: l13: l14: ], "A";
+	a = l01: l02: < l03: &node l04: l05: 0x2 l06: l07: l08: >, [ l09: 03 l10: l11: 04 l12: l13: l14: ], "A";
 	b = < 0x0 l23: l24: >;
 	node: node {
 		phandle = < 0x1 >;
@@ -504,13 +504,13 @@ l3: &l1 {
 /dts-v1/;
 
 / {
-	a = "/abc";
-	b = [ 01 ], "/abc";
-	c = [ 01 ], "/abc", < 0x2 >;
-	d = "/abc";
+	a = &label;
+	b = [ 01 ], &label;
+	c = [ 01 ], &label, < 0x2 >;
+	d = &{/abc};
 	label: abc {
-		e = "/abc";
-		f = "/abc";
+		e = &label;
+		f = &{/abc};
 	};
 };
 """)
@@ -541,7 +541,6 @@ l3: &l1 {
     # Test phandles
     #
 
-    # Check that existing phandles are used (and not reused)
     verify_parse("""
 /dts-v1/;
 
@@ -571,7 +570,7 @@ l3: &l1 {
 /dts-v1/;
 
 / {
-	x = < 0x2 0x4 0xff >;
+	x = < &a &{/b} &c >;
 	dummy1 {
 		phandle = < 0x1 >;
 	};
@@ -617,10 +616,10 @@ l3: &l1 {
 		phandle = < 0x1 >;
 	};
 	a {
-		foo: phandle = < 0x2 >;
+		foo: phandle = < &{/a} >;
 	};
 	label: b {
-		bar: phandle = < 0x3 >;
+		bar: phandle = < &label >;
 	};
 };
 """)
@@ -765,7 +764,7 @@ l3: &l1 {
 /dts-v1/;
 
 / {
-	x = [ FF FF ], "/abc", < 0xff 0x1 0xff 0x1 >, "/abc", [ FF FF ], "abc";
+	x = [ FF FF ], &abc, < 0xff &abc 0xff &abc >, &abc, [ FF FF ], "abc";
 	abc: abc {
 		phandle = < 0x1 >;
 	};
@@ -1007,7 +1006,7 @@ y /include/ "via-include-path-1"
 /dts-v1/;
 
 / {
-	x = < 0x1 >, "/referenced2";
+	x = < &{/referenced} >, &referenced2;
 	referenced {
 		phandle = < 0x1 >;
 	};
@@ -1299,7 +1298,7 @@ foo
 		alias1 = &l1;
 		alias2 = &l2;
 		alias3 = &{/sub/node3};
-		alias4 = [2F 6E 6F 64 65 34 00]; // "/node4";
+		alias4 = &{/node4};
 	};
 
 	l1: node1 {
@@ -1323,11 +1322,32 @@ foo
     verify_alias_target("alias1", "node1")
     verify_alias_target("alias2", "node2")
     verify_alias_target("alias3", "node3")
-    verify_alias_target("alias4", "node4")
     verify_path_is("alias4/node5", "node5")
 
     verify_path_error("alias4/node5/node6",
                       "component 3 ('node6') in path 'alias4/node5/node6' does not exist")
+
+    verify_error("""
+/dts-v1/;
+
+/ {
+	aliases {
+		a = [ 00 ];
+	};
+};
+""",
+"expected property 'a' on /aliases in .tmp.dts to be assigned with either 'a = &foo' or 'a = \"/path/to/node\"', not 'a = [ 00 ];'")
+
+    verify_error(r"""
+/dts-v1/;
+
+/ {
+	aliases {
+		a = "\xFF";
+	};
+};
+""",
+r"value of property 'a' (b'\xff\x00') on /aliases in .tmp.dts is not valid UTF-8")
 
     verify_error("""
 /dts-v1/;
@@ -1345,56 +1365,130 @@ foo
 
 / {
 	aliases {
-		a = "\xFF";
-	};
-};
-""",
-r"b'\xff\x00' is not valid UTF-8 (for property 'a' on /aliases)")
-
-    verify_error(r"""
-/dts-v1/;
-
-/ {
-	aliases {
-		a = [ 41 ]; // "A"
-	};
-};
-""",
-"b'A' is not null-terminated (for property 'a' on /aliases)")
-
-    verify_error(r"""
-/dts-v1/;
-
-/ {
-	aliases {
 		a = "/missing";
 	};
 };
 """,
-"/aliases: bad path for 'a': component 1 ('missing') in path '/missing' does not exist")
+"property 'a' on /aliases in .tmp.dts points to the non-existent node \"/missing\"")
 
     #
-    # Test to_{num,nums,string,strings,node}()
+    # Test Property.type
     #
 
-    def verify_to_num(prop, size, signed, expected):
+    def verify_type(prop, expected):
+        actual = dt.root.props[prop].type
+        if actual != expected:
+            fail("expected {} to have type {}, had type {}"
+                 .format(prop, expected, actual))
+
+    dt = parse("""
+/dts-v1/;
+
+/ {
+	empty;
+	bytes1 = [ ];
+	bytes2 = [ 01 ];
+	bytes3 = [ 01 02 ];
+	bytes4 = foo: [ 01 bar: 02 ];
+	bytes5 = /bits/ 8 < 1 2 3 >;
+	num = < 1 >;
+	nums1 = < >;
+	nums2 = < >, < >;
+	nums3 = < 1 2 >;
+	nums4 = < 1 2 >, < 3 >, < 4 >;
+	string = "foo";
+	strings = "foo", "bar";
+	phandle1 = < &node >;
+	phandle2 = < &{/node} >;
+	path1 = &node;
+	path2 = &{/node};
+	compound1 = < 1 >, [ 02 ];
+	compound2 = "foo", < >;
+	compound3 = < 1 &{/node} 2>;
+
+	node: node {
+	};
+};
+""")
+
+    verify_type("empty", dtlib.TYPE_EMPTY)
+    verify_type("bytes1", dtlib.TYPE_BYTES)
+    verify_type("bytes2", dtlib.TYPE_BYTES)
+    verify_type("bytes3", dtlib.TYPE_BYTES)
+    verify_type("bytes4", dtlib.TYPE_BYTES)
+    verify_type("bytes5", dtlib.TYPE_BYTES)
+    verify_type("num", dtlib.TYPE_NUM)
+    verify_type("nums1", dtlib.TYPE_NUMS)
+    verify_type("nums2", dtlib.TYPE_NUMS)
+    verify_type("nums3", dtlib.TYPE_NUMS)
+    verify_type("nums4", dtlib.TYPE_NUMS)
+    verify_type("string", dtlib.TYPE_STRING)
+    verify_type("strings", dtlib.TYPE_STRINGS)
+    verify_type("phandle1", dtlib.TYPE_PHANDLE)
+    verify_type("phandle2", dtlib.TYPE_PHANDLE)
+    verify_type("path1", dtlib.TYPE_PATH)
+    verify_type("path2", dtlib.TYPE_PATH)
+    verify_type("compound1", dtlib.TYPE_COMPOUND)
+    verify_type("compound2", dtlib.TYPE_COMPOUND)
+    verify_type("compound3", dtlib.TYPE_COMPOUND)
+
+    #
+    # Test Property.to_{num,nums,string,strings,node}()
+    #
+
+    dt = parse(r"""
+/dts-v1/;
+
+/ {
+	u = < 1 >;
+	s = < 0xFFFFFFFF >;
+	u8 = /bits/ 8 < 1 >;
+	u16 = /bits/ 16 < 1 2 >;
+	u64 = /bits/ 64 < 1 >;
+        bytes = [ 01 02 03 ];
+	empty;
+	zero = < >;
+	two_u = < 1 2 >;
+	two_s = < 0xFFFFFFFF 0xFFFFFFFE >;
+	three_u = < 1 2 3 >;
+	three_u_split = < 1 >, < 2 >, < 3 >;
+	empty_string = "";
+	string = "foo\tbar baz";
+	invalid_string = "\xff";
+	strings = "foo", "bar", "baz";
+	invalid_strings = "foo", "\xff", "bar";
+	ref = <&{/target}>;
+	manualref = < 100 >;
+	missingref = < 123 >;
+	path = &{/target};
+	manualpath = "/target";
+	missingpath = "/missing";
+
+	target {
+		phandle = < 100 >;
+	};
+};
+""")
+
+    # Test Property.to_num()
+
+    def verify_to_num(prop, signed, expected):
         try:
-            actual = dt.root.props[prop].to_num(size, signed)
+            actual = dt.root.props[prop].to_num(signed)
         except dtlib.DTError as e:
-            fail("failed to convert {} to {} number with {} bytes: {}"
-                 .format(prop, "a signed" if signed else "an unsigned", size,
-                         e))
+            fail("failed to convert '{}' to {} number: {}"
+                 .format(prop, "a signed" if signed else "an unsigned", e))
 
         if actual != expected:
             fail("expected {} to have the {} numeric value {:#x}, had the "
                  "value {:#x}".format(prop, "signed" if signed else "unsigned",
                                       expected, actual))
 
-    def verify_to_num_error(prop, size, msg):
-        prefix = "expected {} converted from {} bytes to generate the error " \
-                 "'{}', generated".format(prop, size, msg)
+    def verify_to_num_error(prop, msg):
+        prefix = "expected fetching '{}' as a number to generate the error " \
+                 "'{}', generated".format(prop, msg)
         try:
-            dt.root.props[prop].to_num(size)
+            dt.root.props[prop].to_num()
             fail(prefix + " no error")
         except dtlib.DTError as e:
             if str(e) != msg:
@@ -1402,23 +1496,36 @@ r"b'\xff\x00' is not valid UTF-8 (for property 'a' on /aliases)")
         except Exception as e:
             fail("{} the non-DTError '{}'".format(prefix, e))
 
-    def verify_to_nums(prop, size, signed, expected):
+    verify_to_num("u", False, 1)
+    verify_to_num("u", True, 1)
+    verify_to_num("s", False, 0xFFFFFFFF)
+    verify_to_num("s", True, -1)
+
+    verify_to_num_error("two_u", "expected property 'two_u' on / in .tmp.dts to be assigned with 'two_u = < (number) >;', not 'two_u = < 0x1 0x2 >;'")
+    verify_to_num_error("u8", "expected property 'u8' on / in .tmp.dts to be assigned with 'u8 = < (number) >;', not 'u8 = [ 01 ];'")
+    verify_to_num_error("u16", "expected property 'u16' on / in .tmp.dts to be assigned with 'u16 = < (number) >;', not 'u16 = /bits/ 16 < 0x1 0x2 >;'")
+    verify_to_num_error("u64", "expected property 'u64' on / in .tmp.dts to be assigned with 'u64 = < (number) >;', not 'u64 = /bits/ 64 < 0x1 >;'")
+    verify_to_num_error("string", "expected property 'string' on / in .tmp.dts to be assigned with 'string = < (number) >;', not 'string = \"foo\\tbar baz\";'")
+
+    # Test Property.to_nums()
+
+    def verify_to_nums(prop, signed, expected):
         try:
-            actual = dt.root.props[prop].to_nums(size, signed)
+            actual = dt.root.props[prop].to_nums(signed)
         except dtlib.DTError as e:
-            fail("failed to convert {} to {} numbers with {} bytes each: {}"
-                 .format(prop, "signed" if signed else "unsigned", size, e))
+            fail("failed to convert '{}' to {} numbers: {}"
+                 .format(prop, "signed" if signed else "unsigned", e))
 
         if actual != expected:
-            fail("expected {} to give the {} numbers {} for size {}, gave {}"
+            fail("expected {} to give the {} numbers {}, gave {}"
                  .format(prop, "signed" if signed else "unsigned", expected,
-                         size, actual))
+                         actual))
 
-    def verify_to_nums_error(prop, size, msg):
-        prefix = "expected {} converted to numbers with {} bytes each to " \
-                 "generate the error '{}', generated".format(prop, size, msg)
+    def verify_to_nums_error(prop, msg):
+        prefix = "expected converting '{}' to numbers to generate the error " \
+                 "'{}', generated".format(prop, msg)
         try:
-            dt.root.props[prop].to_nums(size)
+            dt.root.props[prop].to_nums()
             fail(prefix + " no error")
         except dtlib.DTError as e:
             if str(e) != msg:
@@ -1426,30 +1533,62 @@ r"b'\xff\x00' is not valid UTF-8 (for property 'a' on /aliases)")
         except Exception as e:
             fail("{} the non-DTError '{}'".format(prefix, e))
 
-    def verify_raw_to_num_error(fn, data, size, msg):
-        prefix = "expected {}() called with data='{}', size='{}' to generate " \
-                 "the error '{}', generated".format(fn.__name__, data, size, msg)
+    verify_to_nums("zero", False, [])
+    verify_to_nums("u", False, [1])
+    verify_to_nums("two_u", False, [1, 2])
+    verify_to_nums("two_u", True, [1, 2])
+    verify_to_nums("two_s", False, [0xFFFFFFFF, 0xFFFFFFFE])
+    verify_to_nums("two_s", True, [-1, -2])
+    verify_to_nums("three_u", False, [1, 2, 3])
+    verify_to_nums("three_u_split", False, [1, 2, 3])
+
+    verify_to_nums_error("empty", "expected property 'empty' on / in .tmp.dts to be assigned with 'empty = < (number) (number) ... >', not 'empty;'")
+    verify_to_nums_error("string", "expected property 'string' on / in .tmp.dts to be assigned with 'string = < (number) (number) ... >', not 'string = \"foo\\tbar baz\";'")
+
+    # Test Property.to_bytes()
+
+    def verify_to_bytes(prop, expected):
         try:
-            dtlib.to_num(data, size)
+            actual = dt.root.props[prop].to_bytes()
+        except dtlib.DTError as e:
+            fail("failed to convert '{}' to bytes: {}".format(prop, e))
+
+        if actual != expected:
+            fail("expected {} to give the bytes {}, gave {}"
+                 .format(prop, expected, actual))
+
+    def verify_to_bytes_error(prop, msg):
+        prefix = "expected converting '{}' to bytes to generate the error " \
+                 "'{}', generated".format(prop, msg)
+        try:
+            dt.root.props[prop].to_bytes()
             fail(prefix + " no error")
         except dtlib.DTError as e:
             if str(e) != msg:
                 fail("{} the error '{}'".format(prefix, e))
         except Exception as e:
             fail("{} the non-DTError '{}'".format(prefix, e))
+
+    verify_to_bytes("u8", b"\x01")
+    verify_to_bytes("bytes", b"\x01\x02\x03")
+
+    verify_to_bytes_error("u16", "expected property 'u16' on / in .tmp.dts to be assigned with 'u16 = [ (byte) (byte) ... ]', not 'u16 = /bits/ 16 < 0x1 0x2 >;'")
+    verify_to_bytes_error("empty", "expected property 'empty' on / in .tmp.dts to be assigned with 'empty = [ (byte) (byte) ... ]', not 'empty;'")
+
+    # Test Property.to_string()
 
     def verify_to_string(prop, expected):
         try:
             actual = dt.root.props[prop].to_string()
         except dtlib.DTError as e:
-            fail("failed to convert {} to string: {}".format(prop, e))
+            fail("failed to convert '{}' to string: {}".format(prop, e))
 
         if actual != expected:
             fail("expected {} to have the value '{}', had the value '{}'"
                  .format(prop, expected, actual))
 
     def verify_to_string_error(prop, msg):
-        prefix = "expected converting {} to string to generate the error " \
+        prefix = "expected converting '{}' to string to generate the error " \
                  "'{}', generated".format(prop, msg)
         try:
             dt.root.props[prop].to_string()
@@ -1460,33 +1599,30 @@ r"b'\xff\x00' is not valid UTF-8 (for property 'a' on /aliases)")
         except Exception as e:
             fail("{} the non-DTError '{}'".format(prefix, e))
 
-    def verify_raw_to_string_error(data, msg):
-        prefix = "expected to_string() called with data='{}' to generate " \
-                 "the error '{}', generated".format(data, msg)
-        try:
-            dtlib.to_string(data)
-            fail(prefix + " no error")
-        except dtlib.DTError as e:
-            if str(e) != msg:
-                fail("{} the error '{}'".format(prefix, e))
-        except Exception as e:
-            fail("{} the non-DTError '{}'".format(prefix, e))
+    verify_to_string("empty_string", "")
+    verify_to_string("string", "foo\tbar baz")
+
+    verify_to_string_error("u", "expected property 'u' on / in .tmp.dts to be assigned with 'u = \"string\"', not 'u = < 0x1 >;'")
+    verify_to_string_error("strings", "expected property 'strings' on / in .tmp.dts to be assigned with 'strings = \"string\"', not 'strings = \"foo\", \"bar\", \"baz\";'")
+    verify_to_string_error("invalid_string", r"value of property 'invalid_string' (b'\xff\x00') on / in .tmp.dts is not valid UTF-8")
+
+    # Test Property.to_strings()
 
     def verify_to_strings(prop, expected):
         try:
             actual = dt.root.props[prop].to_strings()
         except dtlib.DTError as e:
-            fail("failed to convert {} to strings: {}".format(prop, e))
+            fail("failed to convert '{}' to strings: {}".format(prop, e))
 
         if actual != expected:
             fail("expected {} to have the value '{}', had the value '{}'"
                  .format(prop, expected, actual))
 
     def verify_to_strings_error(prop, msg):
-        prefix = "expected converting {} to strings to generate the error " \
+        prefix = "expected converting '{}' to strings to generate the error " \
                  "'{}', generated".format(prop, msg)
         try:
-            dt.root.props[prop].to_string()
+            dt.root.props[prop].to_strings()
             fail(prefix + " no error")
         except dtlib.DTError as e:
             if str(e) != msg:
@@ -1494,18 +1630,27 @@ r"b'\xff\x00' is not valid UTF-8 (for property 'a' on /aliases)")
         except Exception as e:
             fail("{} the non-DTError '{}'".format(prefix, e))
 
+    verify_to_strings("empty_string", [""])
+    verify_to_strings("string", ["foo\tbar baz"])
+    verify_to_strings("strings", ["foo", "bar", "baz"])
+
+    verify_to_strings_error("u", "expected property 'u' on / in .tmp.dts to be assigned with 'u = \"string\", \"string\", ...', not u = < 0x1 >;")
+    verify_to_strings_error("invalid_strings", r"value of property 'invalid_strings' (b'foo\x00\xff\x00bar\x00') on / in .tmp.dts is not valid UTF-8")
+
+    # Test Property.to_node()
+
     def verify_to_node(prop, path):
         try:
             actual = dt.root.props[prop].to_node().path
         except dtlib.DTError as e:
-            fail("failed to convert {} to node: {}".format(prop, e))
+            fail("failed to convert '{}' to node: {}".format(prop, e))
 
         if actual != path:
             fail("expected {} to point to {}, pointed to {}"
                  .format(prop, path, actual))
 
     def verify_to_node_error(prop, msg):
-        prefix = "expected converting {} to node to generate the error " \
+        prefix = "expected converting '{}' to a node to generate the error " \
                  "'{}', generated".format(prop, msg)
         try:
             dt.root.props[prop].to_node()
@@ -1516,140 +1661,82 @@ r"b'\xff\x00' is not valid UTF-8 (for property 'a' on /aliases)")
         except Exception as e:
             fail("{} the non-DTError '{}'".format(prefix, e))
 
-    dt = parse(r"""
-/dts-v1/;
+    verify_to_node("ref", "/target")
+    verify_to_node("manualref", "/target")
 
-/ {
-	empty;
-	u1 = /bits/ 8 < 0x01 >;
-	u2 = /bits/ 8 < 0x01 0x02 >;
-	u3 = /bits/ 8 < 0x01 0x02 0x03 >;
-	u4 = /bits/ 8 < 0x01 0x02 0x03 0x04 >;
-	s1 = /bits/ 8 < 0xFF >;
-	s2 = /bits/ 8 < 0xFF 0xFE >;
-	s3 = /bits/ 8 < 0xFF 0xFF 0xFD >;
-	s4 = /bits/ 8 < 0xFF 0xFF 0xFF 0xFC >;
-	empty_string = "";
-	string = "foo\tbar baz";
-	invalid_string = "\xff";
-	non_null_terminated_string = [ 41 ]; // A
-	strings = "foo", "bar", "baz";
-	invalid_strings = "foo", "\xff", "bar";
-	non_null_terminated_strings = "foo", "bar", [ 01 ];
-	ref = <&{/target}>;
-	missingref = < 123 >;
-	badref;
+    verify_to_node_error("string", "expected property 'string' on / in .tmp.dts to be assigned with either 'string = < &foo >' or 'string = < (valid phandle number) >', not string = \"foo\\tbar baz\";")
+    verify_to_node_error("missingref", "the phandle given in property 'missingref' (123) on / in .tmp.dts does not exist")
 
-	target {
-	};
-};
-""")
+    # Test Property.to_path()
 
-    # Test to_num()
+    def verify_to_path(prop, path):
+        try:
+            actual = dt.root.props[prop].to_path().path
+        except dtlib.DTError as e:
+            fail("failed to convert '{}' to path: {}".format(prop, e))
 
-    verify_to_num("u1", 1, False, 0x01)
-    verify_to_num("u2", 2, False, 0x0102)
-    verify_to_num("u3", 3, False, 0x010203)
-    verify_to_num("u4", 4, False, 0x01020304)
-    verify_to_num("s1", 1, False, 0xFF)
-    verify_to_num("s2", 2, False, 0xFFFE)
-    verify_to_num("s3", 3, False, 0xFFFFFD)
-    verify_to_num("s4", 4, False, 0xFFFFFFFC)
+        if actual != path:
+            fail("expected {} to contain the path {}, contained {}"
+                 .format(prop, path, actual))
 
-    verify_to_num("u1", 1, True, 0x01)
-    verify_to_num("u2", 2, True, 0x0102)
-    verify_to_num("u3", 3, True, 0x010203)
-    verify_to_num("u4", 4, True, 0x01020304)
-    verify_to_num("s1", 1, True, -1)
-    verify_to_num("s2", 2, True, -2)
-    verify_to_num("s3", 3, True, -3)
-    verify_to_num("s4", 4, True, -4)
+    def verify_to_path_error(prop, msg):
+        prefix = "expected converting '{}' to a path to generate the error " \
+                 "'{}', generated".format(prop, msg)
+        try:
+            dt.root.props[prop].to_path()
+            fail(prefix + " no error")
+        except dtlib.DTError as e:
+            if str(e) != msg:
+                fail("{} the error '{}'".format(prefix, e))
+        except Exception as e:
+            fail("{} the non-DTError '{}'".format(prefix, e))
 
-    verify_to_num("u1", None, False, 0x01)
-    verify_to_num("u2", None, False, 0x0102)
-    verify_to_num("u3", None, False, 0x010203)
-    verify_to_num("u4", None, False, 0x01020304)
-    verify_to_num("s1", None, False, 0xFF)
-    verify_to_num("s2", None, False, 0xFFFE)
-    verify_to_num("s3", None, False, 0xFFFFFD)
-    verify_to_num("s4", None, False, 0xFFFFFFFC)
+    verify_to_path("path", "/target")
+    verify_to_path("manualpath", "/target")
 
-    verify_to_num("u1", None, True, 0x01)
-    verify_to_num("u2", None, True, 0x0102)
-    verify_to_num("u3", None, True, 0x010203)
-    verify_to_num("u4", None, True, 0x01020304)
-    verify_to_num("s1", None, True, -1)
-    verify_to_num("s2", None, True, -2)
-    verify_to_num("s3", None, True, -3)
-    verify_to_num("s4", None, True, -4)
+    verify_to_path_error("u", "expected property 'u' on / in .tmp.dts to be assigned with either 'u = &foo' or 'u = \"/path/to/node\"', not 'u = < 0x1 >;'")
+    verify_to_path_error("missingpath", "property 'missingpath' on / in .tmp.dts points to the non-existent node \"/missing\"")
 
-    verify_to_num_error("u1", 0, "'size' must be greater than zero, was 0 (for property 'u1' on /)")
-    verify_to_num_error("u1", -1, "'size' must be greater than zero, was -1 (for property 'u1' on /)")
-    verify_to_num_error("u1", 2, r"b'\x01' is 1 bytes long, expected 2 (for property 'u1' on /)")
-    verify_to_num_error("u2", 1, r"b'\x01\x02' is 2 bytes long, expected 1 (for property 'u2' on /)")
+    # Test top-level to_num() and to_nums()
+
+    def verify_raw_to_num(fn, prop, length, signed, expected):
+        try:
+            actual = fn(dt.root.props[prop].value, length, signed)
+        except dtlib.DTError as e:
+            fail("failed to convert '{}' to {} number(s) with {}: {}"
+                 .format(prop, "signed" if signed else "unsigned",
+                         fn.__name__, e))
+
+        if actual != expected:
+            fail("expected {}(<{}>, {}, {}) to be {}, was {}"
+                 .format(fn.__name__, prop, length, signed, expected, actual))
+
+    def verify_raw_to_num_error(fn, data, length, msg):
+        prefix = "expected {}() called with data='{}', length='{}' to " \
+                 "generate the error '{}', generated" \
+                 .format(fn.__name__, data, length, msg)
+        try:
+            fn(data, length)
+            fail(prefix + " no error")
+        except dtlib.DTError as e:
+            if str(e) != msg:
+                fail("{} the error '{}'".format(prefix, e))
+        except Exception as e:
+            fail("{} the non-DTError '{}'".format(prefix, e))
+
+    verify_raw_to_num(dtlib.to_num, "u", None, False, 1)
+    verify_raw_to_num(dtlib.to_num, "u", 4, False, 1)
+    verify_raw_to_num(dtlib.to_num, "s", None, False, 0xFFFFFFFF)
+    verify_raw_to_num(dtlib.to_num, "s", None, True, -1)
+    verify_raw_to_num(dtlib.to_nums, "empty", 4, False, [])
+    verify_raw_to_num(dtlib.to_nums, "u16", 2, False, [1, 2])
+    verify_raw_to_num(dtlib.to_nums, "two_s", 4, False, [0xFFFFFFFF, 0xFFFFFFFE])
+    verify_raw_to_num(dtlib.to_nums, "two_s", 4, True, [-1, -2])
 
     verify_raw_to_num_error(dtlib.to_num, 0, 0, "'0' has type 'int', expected 'bytes'")
-    verify_raw_to_num_error(dtlib.to_num, b"", 0, "'size' must be greater than zero, was 0")
-
-    # Test to_nums()
-
-    verify_to_nums("empty", 1, False, [])
-    verify_to_nums("u1", 1, False, [1])
-    verify_to_nums("u2", 1, False, [1, 2])
-    verify_to_nums("u3", 1, False, [1, 2, 3])
-    verify_to_nums("u4", 1, False, [1, 2, 3, 4])
-    verify_to_nums("s1", 1, False, [0xFF])
-    verify_to_nums("s2", 1, False, [0xFF, 0xFE])
-    verify_to_nums("s3", 1, False, [0xFF, 0xFF, 0xFD])
-    verify_to_nums("s4", 1, False, [0xFF, 0xFF, 0xFF, 0xFC])
-
-    verify_to_nums("u2", 2, False, [0x0102])
-    verify_to_nums("u4", 2, False, [0x0102, 0x0304])
-
-    verify_to_nums("u1", 1, True, [1])
-    verify_to_nums("u2", 1, True, [1, 2])
-    verify_to_nums("u3", 1, True, [1, 2, 3])
-    verify_to_nums("u4", 1, True, [1, 2, 3, 4])
-    verify_to_nums("s1", 1, True, [-1])
-    verify_to_nums("s2", 1, True, [-1, -2])
-    verify_to_nums("s3", 1, True, [-1, -1, -3])
-    verify_to_nums("s4", 1, True, [-1, -1, -1, -4])
-
-    verify_to_nums("s2", 2, True, [-2])
-    verify_to_nums("s4", 2, True, [-1, -4])
-
-    verify_to_nums_error("u1", 0, "'size' must be greater than zero, was 0 (for property 'u1' on /)")
-    verify_to_nums_error("u1", 2, r"b'\x01' is 1 bytes long, expected a length that's a multiple of 2 (for property 'u1' on /)")
-    verify_to_nums_error("u2", 3, r"b'\x01\x02' is 2 bytes long, expected a length that's a multiple of 3 (for property 'u2' on /)")
-
+    verify_raw_to_num_error(dtlib.to_num, b"", 0, "'length' must be greater than zero, was 0")
     verify_raw_to_num_error(dtlib.to_nums, 0, 0, "'0' has type 'int', expected 'bytes'")
-    verify_raw_to_num_error(dtlib.to_nums, b"", 0, "'size' must be greater than zero, was 0")
-
-    # Test to_string()
-
-    verify_to_string("empty_string", "")
-    verify_to_string("string", "foo\tbar baz")
-
-    verify_to_string_error("invalid_string", r"b'\xff\x00' is not valid UTF-8 (for property 'invalid_string' on /)")
-    verify_to_string_error("non_null_terminated_string", "b'A' is not null-terminated (for property 'non_null_terminated_string' on /)")
-
-    verify_raw_to_string_error(0, "'0' has type 'int', expected 'bytes'")
-
-    # Test to_strings()
-
-    verify_to_strings("empty_string", [""])
-    verify_to_strings("string", ["foo\tbar baz"])
-    verify_to_strings("strings", ["foo", "bar", "baz"])
-
-    verify_to_strings_error("invalid_strings", r"b'foo\x00\xff\x00bar\x00' is not valid UTF-8 (for property 'invalid_strings' on /)")
-    verify_to_strings_error("non_null_terminated_strings", r"b'foo\x00bar\x00\x01' is not null-terminated (for property 'non_null_terminated_strings' on /)")
-
-    # Test to_node()
-
-    verify_to_node("ref", "/target")
-
-    verify_to_node_error("missingref", "non-existent phandle 123 (for property 'missingref' on /)")
-    verify_to_node_error("badref", "b'' is 0 bytes long, expected 4 (for property 'badref' on /)")
+    verify_raw_to_num_error(dtlib.to_nums, b"", 0, "'length' must be greater than zero, was 0")
 
     #
     # Test duplicate label error
@@ -1820,7 +1907,7 @@ r"b'\xff\x00' is not valid UTF-8 (for property 'a' on /aliases)")
 
 / {
 	label: foo {
-		x = "/foo", "/foo", < 0x1 >;
+		x = &{/foo}, &label, < &label >;
 		phandle = < 0x1 >;
 	};
 };
@@ -1907,7 +1994,7 @@ l1: l2: /memreserve/ 0x0000000000000002 0x0000000000000004;
 /dts-v1/;
 
 / {
-	aA0,._+*#?- = "/aA0,._+*#?@-", "/aA0,._+*#?@-";
+	aA0,._+*#?- = &_, &{/aA0,._+*#?@-};
 	+ = [ 00 ];
 	* = [ 02 ];
 	- = [ 01 ];

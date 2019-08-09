@@ -29,7 +29,7 @@ properties:
                    manual defines a shared FIFO size.
 
     phys:
-      type: array
+      type: phandle
       category: optional
       description: PHY provider specifier
 
