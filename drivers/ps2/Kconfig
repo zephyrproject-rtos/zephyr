@@ -13,6 +13,8 @@ menuconfig PS2
 
 if PS2
 
+source "drivers/ps2/Kconfig.xec"
+
 module = PS2
 module-str = ps2
 source "subsys/logging/Kconfig.template.log_config"
