@@ -386,6 +386,17 @@ void _Fault(z_arch_esf_t *esf, u32_t old_sp)
 
 	/* exception raised by kernel */
 	if (vector == ARC_EV_TRAP && parameter == _TRAP_S_CALL_RUNTIME_EXCEPT) {
+		/*
+		 * in user mode software-triggered system fatal exceptions only allow
+		 * K_ERR_KERNEL_OOPS and K_ERR_STACK_CHK_FAIL
+		 */
+#ifdef CONFIG_USERSPACE
+		if ((esf->status32 & _ARC_V2_STATUS32_U) &&
+			esf->r0 != K_ERR_STACK_CHK_FAIL) {
+			esf->r0 = K_ERR_KERNEL_OOPS;
+		}
+#endif
+
 		z_arc_fatal_error(esf->r0, esf);
 		return;
 	}
