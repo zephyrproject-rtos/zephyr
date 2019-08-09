@@ -12,11 +12,9 @@ properties:
     compatible:
       constraint: "holtek,ht16k33"
     "#address-cells":
-      type: int
       category: required
       const: 1
     "#size-cells":
-      type: int
       category: required
       const: 0
     label:
