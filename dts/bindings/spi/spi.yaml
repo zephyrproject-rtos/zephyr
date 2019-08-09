@@ -21,11 +21,9 @@ properties:
       category: optional
       description: Clock frequency the SPI peripheral is being driven at
     "#address-cells":
-      type: int
       category: required
       const: 1
     "#size-cells":
-      type: int
       category: required
       const: 0
     label:
