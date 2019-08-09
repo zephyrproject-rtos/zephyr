@@ -20,4 +20,4 @@ properties:
       category: required
 
     "#phy-cells":
-      description: should be 0
+      const: 0

@@ -25,5 +25,8 @@ properties:
   interrupts:
       category: required
 
+  "#interrupt-cells":
+      const: 1
+
 "#cells":
   - irq
