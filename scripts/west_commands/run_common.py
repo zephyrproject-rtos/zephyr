@@ -126,12 +126,7 @@ def add_parser_common(parser_adder, command):
 
     group.add_argument('--board-dir',
                        help='Zephyr board directory')
-    group.add_argument('--elf-file',
-                       help='Path to elf file to {0}'.format(command_verb))
-    group.add_argument('--hex-file',
-                       help='Path to hex file to {0}'.format(command_verb))
-    group.add_argument('--bin-file',
-                       help='Path to binary file to {0}'.format(command_verb))
+
     #TODO: Don't care about the file type. back-compatibility, eh?
     group.add_argument(
         '-f', '--file',
@@ -151,6 +146,16 @@ def add_parser_common(parser_adder, command):
     group.add_argument(
         '--openocd-search',
         help='Path to add to OpenOCD search path, if applicable')
+
+    deprecated_soon = parser.add_argument_group(
+        title='Old configuration overrides',
+        description='These arguments will be removed someday; use `-f`.')
+    deprecated_soon.add_argument('--elf-file',
+                       help='Path to elf file to {0}'.format(command_verb))
+    deprecated_soon.add_argument('--hex-file',
+                       help='Path to hex file to {0}'.format(command_verb))
+    deprecated_soon.add_argument('--bin-file',
+                       help='Path to binary file to {0}'.format(command_verb))
 
     return parser
 
