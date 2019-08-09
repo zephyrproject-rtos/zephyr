@@ -30,6 +30,9 @@ properties:
      category: optional
      description: Set the RDC permission for this peripheral
 
+    "#gpio-cells":
+      const: 2
+
 "#cells":
   - pin
   - flags

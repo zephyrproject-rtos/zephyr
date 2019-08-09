@@ -16,5 +16,8 @@ properties:
   compatible:
       constraint: "riscv,cpu-intc"
 
+  "#interrupt-cells":
+      const: 1
+
 "#cells":
   - irq
