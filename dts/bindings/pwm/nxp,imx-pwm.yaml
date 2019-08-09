@@ -10,7 +10,7 @@ description: >
     This binding gives a base representation of the NXP MCUX PWM
 
 inherits:
-    !include base.yaml
+    !include [pwm.yaml, base.yaml]
 
 properties:
     compatible:
