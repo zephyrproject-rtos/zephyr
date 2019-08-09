@@ -11,6 +11,7 @@
 #define TICKER_USER_ID_THREAD   MAYFLY_CALL_ID_PROGRAM
 
 #define EVENT_PIPELINE_MAX            5
+#define EVENT_DONE_MAX 3
 
 #define HDR_ULL(p)     ((void *)((u8_t *)(p) + sizeof(struct evt_hdr)))
 #define HDR_ULL2LLL(p) ((struct lll_hdr *)((u8_t *)(p) + \
