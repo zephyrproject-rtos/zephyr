@@ -10,7 +10,7 @@ description: >
     This binding describes the RISC-V Platform-Local Interrupt Controller
 
 inherits:
-    !include base.yaml
+    !include [interrupt-controller.yaml, base.yaml]
 
 properties:
   reg:

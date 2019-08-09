@@ -4,7 +4,7 @@ description: >
     This binding describes Xtensa Core Interrupt controller
 
 inherits:
-    !include base.yaml
+    !include [interrupt-controller.yaml, base.yaml]
 
 properties:
   compatible:

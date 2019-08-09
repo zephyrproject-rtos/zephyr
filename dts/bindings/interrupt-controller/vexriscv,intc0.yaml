@@ -10,7 +10,7 @@ description: >
     This binding describes LiteX VexRiscV Interrupt Controller
 
 inherits:
-    !include base.yaml
+    !include [interrupt-controller.yaml, base.yaml]
 
 properties:
   compatible:
