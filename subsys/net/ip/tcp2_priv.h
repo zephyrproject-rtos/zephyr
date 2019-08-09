@@ -31,6 +31,9 @@
 #define th_ack(_x) ntohl((_x)->th_ack)
 #define ip_get(_x) ((struct net_ipv4_hdr *) net_pkt_ip_data((_x)))
 
+/* TBD: IPv4 options may enlarge the IPv4 header, check the IPv4
+ * header length and not the size of the struct
+ */
 #define th_get(_pkt)						\
 ({								\
 	struct tcphdr *_th = NULL;				\
