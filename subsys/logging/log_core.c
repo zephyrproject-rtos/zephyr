@@ -95,7 +95,7 @@ static u32_t dummy_timestamp(void)
  */
 static u32_t count_s(const char *str, u32_t nargs)
 {
-	char curr;
+	unsigned char curr;
 	bool arm = false;
 	u32_t arg = 0;
 	u32_t mask = 0;
