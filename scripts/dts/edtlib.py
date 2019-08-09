@@ -550,6 +550,12 @@ class Device:
             _err("value {} for property {} is not in enumerated "
                  "list {} for node {}".format(val, name, enum, self.path))
 
+        const = options.get("const")
+        if const and val != const:
+            _err("value {} for property {} is not in equal to const "
+                 "value {} expected for node {}"
+                 .format(val, name, const, self.path))
+
         # Skip properties that start with '#', like '#size-cells', and mapping
         # properties like 'gpio-map'/'interrupt-map'
         if name[0] == "#" or name.endswith("-map"):
@@ -1229,7 +1235,8 @@ def _check_binding(binding, binding_path):
     if "properties" not in binding:
         return
 
-    ok_prop_keys = {"description", "type", "category", "constraint", "enum"}
+    ok_prop_keys = {"description", "type", "category", "constraint", "enum",
+                    "const"}
     ok_categories = {"required", "optional"}
 
     for prop_name, options in binding["properties"].items():
@@ -1254,6 +1261,10 @@ def _check_binding(binding, binding_path):
         if "enum" in options and not isinstance(options["enum"], list):
             _err("enum in {} for property '{}' is not a list"
                  .format(binding_path, prop_name))
+
+        if "const" in options and not isinstance(options["const"], (int, str)):
+           _err("const in {} for property ({}) is not a scalar"
+                .format(binding_path, prop_name))
 
 
 def _translate(addr, node):
