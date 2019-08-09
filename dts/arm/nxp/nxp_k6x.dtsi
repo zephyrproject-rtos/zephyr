@@ -50,7 +50,6 @@
 			compatible = "nxp,kinetis-mcg";
 			reg = <0x40064000 0xd>;
 			label = "MCG";
-			system-clock-frequency = <120000000>;
 			#clock-cells = <1>;
 		};
 

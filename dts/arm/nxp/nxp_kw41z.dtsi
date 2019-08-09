@@ -26,7 +26,6 @@
 		mcg: clock-controller@40064000 {
 			compatible = "nxp,kw41z-mcg";
 			reg = <0x40064000 0x13>;
-			system-clock-frequency = <48000000>;
 		};
 
 		clock-controller@40065000 {
