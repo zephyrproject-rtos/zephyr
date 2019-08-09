@@ -22,6 +22,9 @@ properties:
     interrupts:
       category: required
 
+    "#pwm-cells":
+      const: 2
+
 "#cells":
   - channel
 # period in terms of nanoseconds

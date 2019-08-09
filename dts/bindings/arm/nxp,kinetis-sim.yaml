@@ -35,7 +35,7 @@ properties:
     "#clock-cells":
       type: int
       category: optional
-      description: should be 3.
+      const: 3
 
 "#cells":
   - name

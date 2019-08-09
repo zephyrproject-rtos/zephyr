@@ -24,6 +24,9 @@ properties:
       description: maximum interrupt priority
       category: required
 
+  "#interrupt-cells":
+      const: 2
+
 "#cells":
   - irq
   - priority
