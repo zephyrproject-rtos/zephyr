@@ -1117,47 +1117,27 @@ void test_object_recycle(void)
 
 void test_oops_panic(void)
 {
-#if !defined(CONFIG_ARC)
 	test_oops(K_ERR_KERNEL_PANIC, K_ERR_KERNEL_OOPS);
-#else
-	ztest_test_skip(); /* FIXME: #17590 */
-#endif
 }
 
 void test_oops_oops(void)
 {
-#if !defined(CONFIG_ARC)
 	test_oops(K_ERR_KERNEL_OOPS, K_ERR_KERNEL_OOPS);
-#else
-	ztest_test_skip(); /* FIXME: #17590 */
-#endif
 }
 
 void test_oops_exception(void)
 {
-#if !defined(CONFIG_ARC)
 	test_oops(K_ERR_CPU_EXCEPTION, K_ERR_KERNEL_OOPS);
-#else
-	ztest_test_skip(); /* FIXME: #17590 */
-#endif
 }
 
 void test_oops_maxint(void)
 {
-#if !defined(CONFIG_ARC)
 	test_oops(INT_MAX, K_ERR_KERNEL_OOPS);
-#else
-	ztest_test_skip(); /* FIXME: #17590 */
-#endif
 }
 
 void test_oops_stackcheck(void)
 {
-#if !defined(CONFIG_ARC)
 	test_oops(K_ERR_STACK_CHK_FAIL, K_ERR_STACK_CHK_FAIL);
-#else
-	ztest_test_skip(); /* FIXME: #17590 */
-#endif
 }
 
 void test_main(void)
