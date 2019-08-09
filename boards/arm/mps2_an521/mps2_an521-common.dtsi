@@ -49,24 +49,32 @@ gpio0: gpio@100000 {
 	compatible = "arm,cmsdk-gpio";
 	reg = <0x100000 0x1000>;
 	interrupts = <68 3>;
+	gpio-controller;
+	#gpio-cells = <2>;
 };
 
 gpio1: gpio@101000 {
 	compatible = "arm,cmsdk-gpio";
 	reg = <0x101000 0x1000>;
 	interrupts = <69 3>;
+	gpio-controller;
+	#gpio-cells = <2>;
 };
 
 gpio2: gpio@102000 {
 	compatible = "arm,cmsdk-gpio";
 	reg = <0x102000 0x1000>;
 	interrupts = <70 3>;
+	gpio-controller;
+	#gpio-cells = <2>;
 };
 
 gpio3: gpio@103000 {
 	compatible = "arm,cmsdk-gpio";
 	reg = <0x103000 0x1000>;
 	interrupts = <71 3>;
+	gpio-controller;
+	#gpio-cells = <2>;
 };
 
 wdog0: wdog@81000 {

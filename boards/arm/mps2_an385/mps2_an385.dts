@@ -126,24 +126,32 @@
 			compatible = "arm,cmsdk-gpio";
 			reg = <0x40010000 0x1000>;
 			interrupts = <6 3>;
+			gpio-controller;
+			#gpio-cells = <2>;
 		};
 
 		gpio1: gpio@40011000 {
 			compatible = "arm,cmsdk-gpio";
 			reg = <0x40011000 0x1000>;
 			interrupts = <7 3>;
+			gpio-controller;
+			#gpio-cells = <2>;
 		};
 
 		gpio2: gpio@40012000 {
 			compatible = "arm,cmsdk-gpio";
 			reg = <0x40012000 0x1000>;
 			interrupts = <16 3>;
+			gpio-controller;
+			#gpio-cells = <2>;
 		};
 
 		gpio3: gpio@40013000 {
 			compatible = "arm,cmsdk-gpio";
 			reg = <0x40013000 0x1000>;
 			interrupts = <17 3>;
+			gpio-controller;
+			#gpio-cells = <2>;
 		};
 
 		eth0: eth@40200000 {
