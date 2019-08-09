@@ -426,35 +426,33 @@ static FUNC_NORETURN void switch_to_main_thread(void)
 }
 #endif /* CONFIG_MULTITHREADING */
 
-u32_t z_early_boot_rand32_get(void)
+static void z_early_boot_rand_get(u8_t *buf, size_t length)
 {
+	int n = sizeof(u32_t);
 #ifdef CONFIG_ENTROPY_HAS_DRIVER
 	struct device *entropy = device_get_binding(CONFIG_ENTROPY_NAME);
 	int rc;
-	u32_t retval;
 
 	if (entropy == NULL) {
-		goto sys_rand32_fallback;
+		goto sys_rand_fallback;
 	}
 
 	/* Try to see if driver provides an ISR-specific API */
-	rc = entropy_get_entropy_isr(entropy, (u8_t *)&retval,
-				     sizeof(retval), ENTROPY_BUSYWAIT);
+	rc = entropy_get_entropy_isr(entropy, buf, length, ENTROPY_BUSYWAIT);
 	if (rc == -ENOTSUP) {
 		/* Driver does not provide an ISR-specific API, assume it can
 		 * be called from ISR context
 		 */
-		rc = entropy_get_entropy(entropy, (u8_t *)&retval,
-					 sizeof(retval));
+		rc = entropy_get_entropy(entropy, buf, length);
 	}
 
 	if (rc >= 0) {
-		return retval;
+		return;
 	}
 
 	/* Fall through to fallback */
 
-sys_rand32_fallback:
+sys_rand_fallback:
 #endif
 
 	/* FIXME: this assumes sys_rand32_get() won't use any synchronization
@@ -463,7 +461,34 @@ sys_rand32_fallback:
 	 * devices are available should be built, this is only a fallback for
 	 * those devices without a HWRNG entropy driver.
 	 */
-	return sys_rand32_get();
+
+	while (length > 0) {
+		u32_t rndbits;
+		u8_t *p_rndbits = (u8_t *)&rndbits;
+
+		rndbits = sys_rand32_get();
+
+		if (length < sizeof(u32_t)) {
+			n = length;
+		}
+
+		for (int i = 0; i < n; i++) {
+			*buf = *p_rndbits;
+			buf++;
+			p_rndbits++;
+		}
+
+		length -= n;
+	}
+}
+
+u32_t z_early_boot_rand32_get(void)
+{
+	u32_t retval;
+
+	z_early_boot_rand_get((u8_t *)&retval, sizeof(retval));
+
+	return retval;
 }
 
 /**
@@ -478,6 +503,10 @@ sys_rand32_fallback:
  */
 FUNC_NORETURN void z_cstart(void)
 {
+#ifdef CONFIG_STACK_CANARIES
+	uintptr_t stack_guard;
+#endif	/* CONFIG_STACK_CANARIES */
+
 	/* gcov hook needed to get the coverage report.*/
 	gcov_static_init();
 
@@ -506,8 +535,10 @@ FUNC_NORETURN void z_cstart(void)
 	z_sys_device_do_config_level(_SYS_INIT_LEVEL_PRE_KERNEL_2);
 
 #ifdef CONFIG_STACK_CANARIES
-	__stack_chk_guard = z_early_boot_rand32_get();
-#endif
+	z_early_boot_rand_get((u8_t *)&stack_guard, sizeof(stack_guard));
+	__stack_chk_guard = stack_guard;
+	__stack_chk_guard <<= 8;
+#endif	/* CONFIG_STACK_CANARIES */
 
 #ifdef CONFIG_MULTITHREADING
 	prepare_multithreading(&dummy_thread);
