@@ -545,6 +545,11 @@ class Device:
             # 'category: optional' property that wasn't there
             return
 
+        enum = options.get("enum")
+        if enum and val not in enum:
+            _err("value {} for property {} is not in enumerated "
+                 "list {} for node {}".format(val, name, enum, self.path))
+
         # Skip properties that start with '#', like '#size-cells', and mapping
         # properties like 'gpio-map'/'interrupt-map'
         if name[0] == "#" or name.endswith("-map"):
@@ -557,15 +562,7 @@ class Device:
         if prop.description:
             prop.description = prop.description.rstrip()
         prop.val = val
-        enum = options.get("enum")
-        if enum is None:
-            prop.enum_index = None
-        else:
-            if val not in enum:
-                _err("value ({}) for property ({}) is not in enumerated "
-                     "list {} for node {}".format(val, name, enum, self.name))
-
-            prop.enum_index = enum.index(val)
+        prop.enum_index = None if enum is None else enum.index(val)
 
         self.props[name] = prop
 
