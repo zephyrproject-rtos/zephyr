@@ -34,6 +34,19 @@ extern "C" {
  */
 #define SETTINGS_EXTRA_LEN ((SETTINGS_MAX_DIR_DEPTH - 1) + 2)
 
+/**
+ * Function used to read the data from the settings storage in
+ * h_set handler implementations.
+ *
+ * @param[in] cb_arg  arguments for the read function. Appropriate cb_arg is
+ *                    transferred to h_set handler implementation by
+ *                    the backend.
+ * @param[out] data  the destination buffer
+ * @param[in] len    length of read
+ *
+ * @return positive: Number of bytes read, 0: key-value pair is deleted.
+ *                   On error returns -ERRNO code.
+ */
 typedef ssize_t (*settings_read_cb)(void *cb_arg, void *data, size_t len);
 
 /**
