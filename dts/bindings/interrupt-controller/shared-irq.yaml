@@ -4,7 +4,7 @@ description: >
     This binding describes Shared IRQ interrupt dispatcher
 
 inherits:
-    !include base.yaml
+    !include [interrupt-controller.yaml, base.yaml]
 
 properties:
   compatible:

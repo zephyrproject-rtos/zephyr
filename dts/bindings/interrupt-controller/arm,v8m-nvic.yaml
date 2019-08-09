@@ -4,7 +4,7 @@ description: >
     This binding describes the ARMv8-M Nested Vectored Interrupt Controller.
 
 inherits:
-    !include base.yaml
+    !include [interrupt-controller.yaml, base.yaml]
 
 properties:
     compatible:

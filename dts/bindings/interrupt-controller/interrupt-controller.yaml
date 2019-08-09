@@ -1,0 +1,20 @@
+#
+# Copyright (c) 2019, Linaro Limited
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+title: Interrupt Controller Base Structure
+
+description: >
+    This binding gives the base structure for all Interrupt Controller devices
+
+properties:
+    "interrupt-controller":
+      type: boolean
+      category: required
+      description: Convey's this node is an interrupt controller
+    "#interrupt-cells":
+      type: int
+      category: required
+      description: Number of items to expect in an interrupt specifier
