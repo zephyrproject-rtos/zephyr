@@ -128,18 +128,17 @@ static MFIFO_DEFINE(prep, sizeof(struct lll_event), EVENT_PIPELINE_MAX);
  * Queue of pointers to struct node_rx_event_done.
  * The actual backing behind these pointers is mem_done
  */
-static MFIFO_DEFINE(done, sizeof(struct node_rx_event_done *),
-							EVENT_PIPELINE_MAX);
+static MFIFO_DEFINE(done, sizeof(struct node_rx_event_done *), EVENT_DONE_MAX);
 
 /* Backing storage for elements in mfifo_done */
 static struct {
 	void *free;
-	u8_t pool[sizeof(struct node_rx_event_done) * EVENT_PIPELINE_MAX];
+	u8_t pool[sizeof(struct node_rx_event_done) * EVENT_DONE_MAX];
 } mem_done;
 
 static struct {
 	void *free;
-	u8_t pool[sizeof(memq_link_t) * EVENT_PIPELINE_MAX];
+	u8_t pool[sizeof(memq_link_t) * EVENT_DONE_MAX];
 } mem_link_done;
 
 #define PDU_RX_CNT    (CONFIG_BT_CTLR_RX_BUFFERS + 3)
@@ -1125,10 +1124,10 @@ static inline int init_reset(void)
 
 	/* Initialize done pool. */
 	mem_init(mem_done.pool, sizeof(struct node_rx_event_done),
-		 EVENT_PIPELINE_MAX, &mem_done.free);
+		 EVENT_DONE_MAX, &mem_done.free);
 
 	/* Initialize done link pool. */
-	mem_init(mem_link_done.pool, sizeof(memq_link_t), EVENT_PIPELINE_MAX,
+	mem_init(mem_link_done.pool, sizeof(memq_link_t), EVENT_DONE_MAX,
 		 &mem_link_done.free);
 
 	/* Allocate done buffers */
