@@ -4,6 +4,17 @@ description: >
     Binding for device
 
 properties:
+    status:
+        type: string
+        category: optional
+        description: indicates the operational status of a device
+        enum:
+           - "okay"
+           - "disabled"
+           - "reserved"
+           - "fail"
+           - "fail-sss"
+
     compatible:
         type: string-array
         category: required
@@ -24,10 +35,20 @@ properties:
         category: optional
         description: interrupts for device
 
+    interrupts-extended:
+        type: compound
+        category: optional
+        description: extended interrupt specifier for device
+
     interrupt-names:
         type: string-array
         category: optional
         description: name of each interrupt
+
+    interrupt-parent:
+        type: phandle
+        category: optional
+        description: phandle to interrupt controller node
 
     label:
         type: string
@@ -38,3 +59,13 @@ properties:
         type: compound
         category: optional
         description: Clock gate information
+
+    "#address-cells":
+        type: int
+        category: optional
+        description: number of address cells in reg property
+
+    "#size-cells":
+        type: int
+        category: optional
+        description: number of size cells in reg property
