@@ -1,0 +1,16 @@
+#
+# Copyright (c) 2019, Linaro Limited
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+title: Clock Controller Base Structure
+
+description: >
+    This binding gives the base structure for all Clock Controller devices
+
+properties:
+    "#clock-cells":
+      type: int
+      category: required
+      description: Number of items to expect in a Clock specifier

@@ -10,7 +10,7 @@ description: >
     This is a representation of the i.MX CCM IP node
 
 inherits:
-    !include base.yaml
+    !include [clock.yaml, base.yaml]
 
 properties:
     compatible:
@@ -23,8 +23,6 @@ properties:
       category: required
 
     "#clock-cells":
-      type: int
-      category: required
       description: should be 3.
 
 "#cells":

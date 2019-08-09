@@ -9,6 +9,9 @@ title: Generic fixed rate clock provider
 description: >
     This is a representation of a generic fixed rate clock provider.
 
+inherits:
+    !include clock.yaml
+
 properties:
     compatible:
       type: string
@@ -32,6 +35,4 @@ properties:
       description: input clock source
 
     "#clock-cells":
-      type: int
-      category: required
       description: should be 0.
