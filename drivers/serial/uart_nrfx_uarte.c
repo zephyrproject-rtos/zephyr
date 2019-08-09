@@ -674,6 +674,18 @@ static void endrx_isr(struct device *dev)
 
 	size_t rx_len = nrf_uarte_rx_amount_get(uarte)
 			- data->async->rx_offset;
+
+	data->async->rx_total_user_byte_cnt += rx_len;
+
+	if (!hw_rx_counting_enabled(data)) {
+		/* Prevent too low value of rx_cnt.cnt which may occur due to
+		 * latencies in handling of the RXRDY interrupt. Because whole
+		 * buffer was filled we can be sure that rx_total_user_byte_cnt
+		 * is current total number of received bytes.
+		 */
+		data->async->rx_cnt.cnt = data->async->rx_total_user_byte_cnt;
+	}
+
 	struct uart_event evt = {
 		.type = UART_RX_RDY,
 		.data.rx.buf = data->async->rx_buf,
@@ -690,7 +702,6 @@ static void endrx_isr(struct device *dev)
 		data->async->rx_buf = data->async->rx_next_buf;
 		data->async->rx_next_buf = NULL;
 
-		data->async->rx_total_user_byte_cnt += rx_len;
 		data->async->rx_offset = 0;
 	} else {
 		data->async->rx_buf = NULL;
