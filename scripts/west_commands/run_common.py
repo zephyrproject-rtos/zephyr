@@ -132,6 +132,18 @@ def add_parser_common(parser_adder, command):
                        help='Path to hex file to {0}'.format(command_verb))
     group.add_argument('--bin-file',
                        help='Path to binary file to {0}'.format(command_verb))
+    #TODO: Don't care about the file type. back-compatibility, eh?
+    group.add_argument(
+        '-f', '--file',
+        help='Path to elf/hex/bin file to {0}. '.format(command_verb)
+           + 'Infers type from extension if --file-type is not provided.',
+        dest='fname',
+        metavar='FILE')
+    group.add_argument(
+        '--file-type',
+        help='Override geussing of file type from extension. '
+             'Meaningless without -f.',
+        choices=['elf','hex','bin'])
     group.add_argument('--gdb',
                        help='Path to GDB, if applicable')
     group.add_argument('--openocd',
