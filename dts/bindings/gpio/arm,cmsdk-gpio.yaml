@@ -15,3 +15,7 @@ properties:
 
     interrupts:
       category: required
+
+"#cells":
+  - pin
+  - flags
