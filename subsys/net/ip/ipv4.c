@@ -97,20 +97,6 @@ int net_ipv4_finalize(struct net_pkt *pkt, u8_t next_header_proto)
 	return 0;
 }
 
-const struct in_addr *net_ipv4_unspecified_address(void)
-{
-	static const struct in_addr addr;
-
-	return &addr;
-}
-
-const struct in_addr *net_ipv4_broadcast_address(void)
-{
-	static const struct in_addr addr = { { { 255, 255, 255, 255 } } };
-
-	return &addr;
-}
-
 enum net_verdict net_ipv4_input(struct net_pkt *pkt)
 {
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ipv4_access, struct net_ipv4_hdr);

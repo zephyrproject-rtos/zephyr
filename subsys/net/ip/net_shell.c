@@ -224,7 +224,7 @@ static const char *iface2str(struct net_if *iface, const char **extra)
 	return "<unknown type>";
 }
 
-#if defined(CONFIG_NET_L2_ETHERNET)
+#if defined(CONFIG_NET_L2_ETHERNET) && defined(CONFIG_NET_NATIVE)
 struct ethernet_capabilities {
 	enum ethernet_hw_caps capability;
 	const char * const description;
@@ -265,6 +265,7 @@ static void print_supported_ethernet_capabilities(
 
 static void iface_cb(struct net_if *iface, void *user_data)
 {
+#if defined(CONFIG_NET_NATIVE)
 	struct net_shell_user_data *data = user_data;
 	const struct shell *shell = data->shell;
 
@@ -547,9 +548,15 @@ static void iface_cb(struct net_if *iface, void *user_data)
 	PR("DHCPv4 attempts   : %d\n",
 	   iface->config.dhcpv4.attempts);
 #endif /* CONFIG_NET_DHCPV4 */
+
+#else
+	ARG_UNUSED(iface);
+	ARG_UNUSED(user_data);
+
+#endif /* CONFIG_NET_NATIVE */
 }
 
-#if defined(CONFIG_NET_ROUTE)
+#if defined(CONFIG_NET_ROUTE) && defined(CONFIG_NET_NATIVE)
 static void route_cb(struct net_route_entry *entry, void *user_data)
 {
 	struct net_shell_user_data *data = user_data;
@@ -609,7 +616,7 @@ static void iface_per_route_cb(struct net_if *iface, void *user_data)
 }
 #endif /* CONFIG_NET_ROUTE */
 
-#if defined(CONFIG_NET_ROUTE_MCAST)
+#if defined(CONFIG_NET_ROUTE_MCAST) && defined(CONFIG_NET_NATIVE)
 static void route_mcast_cb(struct net_route_entry_mcast *entry,
 			   void *user_data)
 {
@@ -715,6 +722,10 @@ static void print_ppp_stats(struct net_if *iface, struct net_stats_ppp *data,
 }
 #endif /* CONFIG_NET_STATISTICS_PPP && CONFIG_NET_STATISTICS_USER_API */
 
+#if !defined(CONFIG_NET_NATIVE)
+#define GET_STAT(a, b) 0
+#endif
+
 static void print_tc_tx_stats(const struct shell *shell, struct net_if *iface)
 {
 #if NET_TC_TX_COUNT > 1
@@ -799,7 +810,7 @@ static void net_shell_print_statistics(struct net_if *iface, void *user_data)
 		PR("=================\n");
 	}
 
-#if defined(CONFIG_NET_STATISTICS_IPV6)
+#if defined(CONFIG_NET_STATISTICS_IPV6) && defined(CONFIG_NET_NATIVE_IPV6)
 	PR("IPv6 recv      %d\tsent\t%d\tdrop\t%d\tforwarded\t%d\n",
 	   GET_STAT(iface, ipv6.recv),
 	   GET_STAT(iface, ipv6.sent),
@@ -819,7 +830,7 @@ static void net_shell_print_statistics(struct net_if *iface, void *user_data)
 #endif /* CONFIG_NET_STATISTICS_MLD */
 #endif /* CONFIG_NET_STATISTICS_IPV6 */
 
-#if defined(CONFIG_NET_STATISTICS_IPV4)
+#if defined(CONFIG_NET_STATISTICS_IPV4) && defined(CONFIG_NET_NATIVE_IPV4)
 	PR("IPv4 recv      %d\tsent\t%d\tdrop\t%d\tforwarded\t%d\n",
 	   GET_STAT(iface, ipv4.recv),
 	   GET_STAT(iface, ipv4.sent),
@@ -836,7 +847,7 @@ static void net_shell_print_statistics(struct net_if *iface, void *user_data)
 	   GET_STAT(iface, ip_errors.chkerr),
 	   GET_STAT(iface, ip_errors.protoerr));
 
-#if defined(CONFIG_NET_STATISTICS_ICMP)
+#if defined(CONFIG_NET_STATISTICS_ICMP) && defined(CONFIG_NET_NATIVE_IPV4)
 	PR("ICMP recv      %d\tsent\t%d\tdrop\t%d\n",
 	   GET_STAT(iface, icmp.recv),
 	   GET_STAT(iface, icmp.sent),
@@ -846,7 +857,7 @@ static void net_shell_print_statistics(struct net_if *iface, void *user_data)
 	   GET_STAT(iface, icmp.chkerr));
 #endif
 
-#if defined(CONFIG_NET_STATISTICS_UDP)
+#if defined(CONFIG_NET_STATISTICS_UDP) && defined(CONFIG_NET_NATIVE_UDP)
 	PR("UDP recv       %d\tsent\t%d\tdrop\t%d\n",
 	   GET_STAT(iface, udp.recv),
 	   GET_STAT(iface, udp.sent),
@@ -855,7 +866,7 @@ static void net_shell_print_statistics(struct net_if *iface, void *user_data)
 	   GET_STAT(iface, udp.chkerr));
 #endif
 
-#if defined(CONFIG_NET_STATISTICS_TCP)
+#if defined(CONFIG_NET_STATISTICS_TCP) && defined(CONFIG_NET_NATIVE_TCP)
 	PR("TCP bytes recv %u\tsent\t%d\n",
 	   GET_STAT(iface, tcp.bytes.received),
 	   GET_STAT(iface, tcp.bytes.sent));
@@ -876,7 +887,7 @@ static void net_shell_print_statistics(struct net_if *iface, void *user_data)
 	   GET_STAT(iface, tcp.connrst));
 #endif
 
-#if defined(CONFIG_NET_CONTEXT_TIMESTAMP)
+#if defined(CONFIG_NET_CONTEXT_TIMESTAMP) && defined(CONFIG_NET_NATIVE)
 	if (GET_STAT(iface, tx_time.time_count) > 0) {
 		PR("Network pkt TX time %lu us\n",
 		   (u32_t)(GET_STAT(iface, tx_time.time_sum) /
@@ -921,6 +932,7 @@ static void net_shell_print_statistics(struct net_if *iface, void *user_data)
 }
 #endif /* CONFIG_NET_STATISTICS */
 
+#if defined(CONFIG_NET_OFFLOAD) || defined(CONFIG_NET_NATIVE)
 static void get_addresses(struct net_context *context,
 			  char addr_local[], int local_len,
 			  char addr_remote[], int remote_len)
@@ -994,6 +1006,7 @@ static void context_cb(struct net_context *context, void *user_data)
 
 	(*count)++;
 }
+#endif /* CONFIG_NET_OFFLOAD || CONFIG_NET_NATIVE */
 
 #if CONFIG_NET_CONN_LOG_LEVEL >= LOG_LEVEL_DBG
 static void conn_handler_cb(struct net_conn *conn, void *user_data)
@@ -1057,7 +1070,8 @@ static void conn_handler_cb(struct net_conn *conn, void *user_data)
 }
 #endif /* CONFIG_NET_CONN_LOG_LEVEL >= LOG_LEVEL_DBG */
 
-#if defined(CONFIG_NET_TCP)
+#if defined(CONFIG_NET_TCP) && \
+	(defined(CONFIG_NET_OFFLOAD) || defined(CONFIG_NET_NATIVE))
 static void tcp_cb(struct net_tcp *tcp, void *user_data)
 {
 	struct net_shell_user_data *data = user_data;
@@ -1262,7 +1276,7 @@ static int cmd_net_allocs(const struct shell *shell, size_t argc, char *argv[])
 	return 0;
 }
 
-#if defined(CONFIG_NET_ARP)
+#if defined(CONFIG_NET_ARP) && defined(CONFIG_NET_NATIVE)
 static void arp_cb(struct arp_entry *entry, void *user_data)
 {
 	struct net_shell_user_data *data = user_data;
@@ -1284,8 +1298,8 @@ static void arp_cb(struct arp_entry *entry, void *user_data)
 #if !defined(CONFIG_NET_ARP)
 static void print_arp_error(const struct shell *shell)
 {
-	PR_INFO("Enable CONFIG_NET_ARP, CONFIG_NET_IPV4 and "
-		"CONFIG_NET_L2_ETHERNET to see ARP information.\n");
+	PR_INFO("Enable CONFIG_NET_NATIVE, CONFIG_NET_ARP, CONFIG_NET_IPV4 and"
+		" CONFIG_NET_L2_ETHERNET to see ARP information.\n");
 }
 #endif
 
@@ -1335,11 +1349,12 @@ static int cmd_net_arp_flush(const struct shell *shell, size_t argc,
 
 static int cmd_net_conn(const struct shell *shell, size_t argc, char *argv[])
 {
-	struct net_shell_user_data user_data;
-	int count = 0;
-
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
+
+#if defined(CONFIG_NET_OFFLOAD) || defined(CONFIG_NET_NATIVE)
+	struct net_shell_user_data user_data;
+	int count = 0;
 
 	PR("     Context   \tIface         Flags Local           \tRemote\n");
 
@@ -1395,6 +1410,12 @@ static int cmd_net_conn(const struct shell *shell, size_t argc, char *argv[])
 
 	/* Do not print anything if no fragments are pending atm */
 #endif
+
+#else
+	PR("Enable CONFIG_NET_OFFLOAD or CONFIG_NET_NATIVE to see "
+	   "connection information.");
+
+#endif /* CONFIG_NET_OFFLOAD || CONFIG_NET_NATIVE */
 
 	return 0;
 }
@@ -2305,7 +2326,7 @@ static int cmd_net_iface_down(const struct shell *shell, size_t argc,
 	return 0;
 }
 
-#if defined(CONFIG_NET_IPV6)
+#if defined(CONFIG_NET_NATIVE_IPV6)
 static u32_t time_diff(u32_t time1, u32_t time2)
 {
 	return (u32_t)abs((s32_t)time1 - (s32_t)time2);
@@ -2374,11 +2395,11 @@ static void address_lifetime_cb(struct net_if *iface, void *user_data)
 		       prefix_len);
 	}
 }
-#endif /* CONFIG_NET_IPV6 */
+#endif /* CONFIG_NET_NATIVE_IPV6 */
 
 static int cmd_net_ipv6(const struct shell *shell, size_t argc, char *argv[])
 {
-#if defined(CONFIG_NET_IPV6)
+#if defined(CONFIG_NET_NATIVE_IPV6)
 	struct net_shell_user_data user_data;
 #endif
 
@@ -2389,7 +2410,7 @@ static int cmd_net_ipv6(const struct shell *shell, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-#if defined(CONFIG_NET_IPV6)
+#if defined(CONFIG_NET_NATIVE_IPV6)
 	PR("IPv6 fragmentation support                : %s\n",
 	   IS_ENABLED(CONFIG_NET_IPV6_FRAGMENT) ? "enabled" :
 	   "disabled");
@@ -2480,6 +2501,7 @@ struct ctx_info {
 	struct net_buf_pool *data_pools[CONFIG_NET_MAX_CONTEXTS];
 };
 
+#if defined(CONFIG_NET_OFFLOAD) || defined(CONFIG_NET_NATIVE)
 #if defined(CONFIG_NET_CONTEXT_NET_PKT_POOL)
 static bool slab_pool_found_already(struct ctx_info *info,
 				    struct k_mem_slab *slab,
@@ -2554,14 +2576,16 @@ static void context_info(struct net_context *context, void *user_data)
 	info->pos++;
 #endif /* CONFIG_NET_CONTEXT_NET_PKT_POOL */
 }
+#endif /* CONFIG_NET_OFFLOAD || CONFIG_NET_NATIVE */
 
 static int cmd_net_mem(const struct shell *shell, size_t argc, char *argv[])
 {
-	struct k_mem_slab *rx, *tx;
-	struct net_buf_pool *rx_data, *tx_data;
-
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
+
+#if defined(CONFIG_NET_OFFLOAD) || defined(CONFIG_NET_NATIVE)
+	struct k_mem_slab *rx, *tx;
+	struct net_buf_pool *rx_data, *tx_data;
 
 	net_pkt_get_info(&rx, &tx, &rx_data, &tx_data);
 
@@ -2610,6 +2634,10 @@ static int cmd_net_mem(const struct shell *shell, size_t argc, char *argv[])
 			PR("No external memory pools found.\n");
 		}
 	}
+#else
+	PR("Enable CONFIG_NET_OFFLOAD or CONFIG_NET_NATIVE to see "
+	   "memory usage.");
+#endif /* CONFIG_NET_OFFLOAD || CONFIG_NET_NATIVE */
 
 	return 0;
 }
@@ -2744,7 +2772,7 @@ static int cmd_net_nbr(const struct shell *shell, size_t argc, char *argv[])
 K_SEM_DEFINE(ping_timeout, 0, 1);
 static const struct shell *shell_for_ping;
 
-#if defined(CONFIG_NET_IPV6)
+#if defined(CONFIG_NET_NATIVE_IPV6)
 
 static enum net_verdict handle_ipv6_echo_reply(struct net_pkt *pkt,
 						struct net_ipv6_hdr *ip_hdr,
@@ -2871,7 +2899,7 @@ static int ping_ipv6(const struct shell *shell,
 #define remove_ipv6_ping_handler()
 #endif /* CONFIG_NET_IPV6 */
 
-#if defined(CONFIG_NET_IPV4)
+#if defined(CONFIG_NET_NATIVE_IPV4)
 
 static enum net_verdict handle_ipv4_echo_reply(struct net_pkt *pkt,
 					       struct net_ipv4_hdr *ip_hdr,
@@ -3193,12 +3221,13 @@ static int cmd_net_ppp_status(const struct shell *shell, size_t argc,
 
 static int cmd_net_route(const struct shell *shell, size_t argc, char *argv[])
 {
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
+#if defined(CONFIG_NET_NATIVE)
 #if defined(CONFIG_NET_ROUTE) || defined(CONFIG_NET_ROUTE_MCAST)
 	struct net_shell_user_data user_data;
 #endif
-
-	ARG_UNUSED(argc);
-	ARG_UNUSED(argv);
 
 #if defined(CONFIG_NET_ROUTE) || defined(CONFIG_NET_ROUTE_MCAST)
 	user_data.shell = shell;
@@ -3214,7 +3243,7 @@ static int cmd_net_route(const struct shell *shell, size_t argc, char *argv[])
 #if defined(CONFIG_NET_ROUTE_MCAST)
 	net_if_foreach(iface_per_mcast_route_cb, &user_data);
 #endif
-
+#endif
 	return 0;
 }
 
@@ -3391,7 +3420,7 @@ static int cmd_net_stats(const struct shell *shell, size_t argc, char *argv[])
 	return 0;
 }
 
-#if defined(CONFIG_NET_TCP)
+#if defined(CONFIG_NET_NATIVE_TCP)
 static struct net_context *tcp_ctx;
 static const struct shell *tcp_shell;
 
@@ -3431,7 +3460,7 @@ static void get_my_ipv6_addr(struct net_if *iface,
 static void get_my_ipv4_addr(struct net_if *iface,
 			     struct sockaddr *myaddr)
 {
-#if defined(CONFIG_NET_IPV4)
+#if defined(CONFIG_NET_NATIVE_IPV4)
 	/* Just take the first IPv4 address of an interface. */
 	memcpy(&net_sin(myaddr)->sin_addr,
 	       &iface->config.ip.ipv4->unicast[0].address.in_addr,
@@ -3594,16 +3623,14 @@ static void tcp_sent_cb(struct net_context *context,
 static int cmd_net_tcp_connect(const struct shell *shell, size_t argc,
 			       char *argv[])
 {
-#if defined(CONFIG_NET_TCP)
+#if defined(CONFIG_NET_NATIVE_TCP)
 	int arg = 0;
 
 	/* tcp connect <ip> port */
 	char *endptr;
 	char *ip;
 	u16_t port;
-#endif
 
-#if defined(CONFIG_NET_TCP)
 	/* tcp connect <ip> port */
 	if (tcp_ctx && net_context_is_used(tcp_ctx)) {
 		PR("Already connected\n");
@@ -3630,8 +3657,9 @@ static int cmd_net_tcp_connect(const struct shell *shell, size_t argc,
 
 	tcp_connect(shell, ip, port, &tcp_ctx);
 #else
-	PR_INFO("TCP not enabled. Set CONFIG_NET_TCP to enable it.\n");
-#endif /* CONFIG_NET_TCP */
+	PR_INFO("Native TCP not enabled. Set CONFIG_NET_TCP and "
+		"CONFIG_NET_NATIVE to enable TCP support.\n");
+#endif /* CONFIG_NET_NATIVE_TCP */
 
 	return 0;
 }
@@ -3639,7 +3667,7 @@ static int cmd_net_tcp_connect(const struct shell *shell, size_t argc,
 static int cmd_net_tcp_send(const struct shell *shell, size_t argc,
 			    char *argv[])
 {
-#if defined(CONFIG_NET_TCP)
+#if defined(CONFIG_NET_NATIVE_TCP)
 	int arg = 0;
 	int ret;
 	struct net_shell_user_data user_data;
@@ -3666,8 +3694,9 @@ static int cmd_net_tcp_send(const struct shell *shell, size_t argc,
 	}
 
 #else
-	PR_INFO("TCP not enabled. Set CONFIG_NET_TCP to enable it.\n");
-#endif /* CONFIG_NET_TCP */
+	PR_INFO("Native TCP not enabled. Set CONFIG_NET_TCP and "
+		"CONFIG_NET_NATIVE to enable TCP support.\n");
+#endif /* CONFIG_NET_NATIVE_TCP */
 
 	return 0;
 }
@@ -3675,11 +3704,9 @@ static int cmd_net_tcp_send(const struct shell *shell, size_t argc,
 static int cmd_net_tcp_close(const struct shell *shell, size_t argc,
 			     char *argv[])
 {
-#if defined(CONFIG_NET_TCP)
+#if defined(CONFIG_NET_NATIVE_TCP)
 	int ret;
-#endif
 
-#if defined(CONFIG_NET_TCP)
 	/* tcp close */
 	if (!tcp_ctx || !net_context_is_used(tcp_ctx)) {
 		PR_WARNING("Not connected\n");
@@ -3695,7 +3722,8 @@ static int cmd_net_tcp_close(const struct shell *shell, size_t argc,
 	PR("Connection closed.\n");
 	tcp_ctx = NULL;
 #else
-	PR_INFO("TCP not enabled. Set CONFIG_NET_TCP to enable it.\n");
+	PR_INFO("Native TCP not enabled. Set CONFIG_NET_TCP and "
+		"CONFIG_NET_NATIVE to enable TCP support.\n");
 #endif /* CONFIG_NET_TCP */
 
 	return 0;

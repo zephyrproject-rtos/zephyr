@@ -7,6 +7,7 @@
 menuconfig NET_PPP
 	bool "Point-to-point (PPP) UART based driver"
 	depends on NET_L2_PPP
+	depends on NET_NATIVE
 	select UART_PIPE
 	select UART_INTERRUPT_DRIVEN
 
@@ -73,6 +74,7 @@ endif # NET_PPP
 menuconfig SLIP
 	bool "SLIP driver"
 	depends on (!QEMU_TARGET || NET_QEMU_SLIP)
+	depends on NET_NATIVE
 	select UART_PIPE
 	select UART_INTERRUPT_DRIVEN
 

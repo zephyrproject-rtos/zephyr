@@ -881,3 +881,26 @@ const char *net_family2str(sa_family_t family)
 
 	return NULL;
 }
+
+const struct in_addr *net_ipv4_unspecified_address(void)
+{
+	static const struct in_addr addr;
+
+	return &addr;
+}
+
+const struct in_addr *net_ipv4_broadcast_address(void)
+{
+	static const struct in_addr addr = { { { 255, 255, 255, 255 } } };
+
+	return &addr;
+}
+
+/* IPv6 wildcard and loopback address defined by RFC2553 */
+const struct in6_addr in6addr_any = IN6ADDR_ANY_INIT;
+const struct in6_addr in6addr_loopback = IN6ADDR_LOOPBACK_INIT;
+
+const struct in6_addr *net_ipv6_unspecified_address(void)
+{
+	return &in6addr_any;
+}

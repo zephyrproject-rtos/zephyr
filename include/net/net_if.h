@@ -30,10 +30,10 @@
 #include <net/net_stats.h>
 #include <net/net_timeout.h>
 
-#if defined(CONFIG_NET_DHCPV4)
+#if defined(CONFIG_NET_DHCPV4) && defined(CONFIG_NET_NATIVE_IPV4)
 #include <net/dhcpv4.h>
 #endif
-#if defined(CONFIG_NET_IPV4_AUTO)
+#if defined(CONFIG_NET_IPV4_AUTO) && defined(CONFIG_NET_NATIVE_IPV4)
 #include <net/ipv4_autoconf.h>
 #endif
 
@@ -50,11 +50,11 @@ struct net_if_addr {
 	/** IP address */
 	struct net_addr address;
 
-#if defined(CONFIG_NET_IPV6)
+#if defined(CONFIG_NET_NATIVE_IPV6)
 	struct net_timeout lifetime;
 #endif
 
-#if defined(CONFIG_NET_IPV6_DAD)
+#if defined(CONFIG_NET_IPV6_DAD) && defined(CONFIG_NET_NATIVE_IPV6)
 	/** Duplicate address detection (DAD) timer */
 	sys_snode_t dad_node;
 	u32_t dad_start;
@@ -65,7 +65,7 @@ struct net_if_addr {
 	/** What is the current state of the address */
 	enum net_addr_state addr_state;
 
-#if defined(CONFIG_NET_IPV6_DAD)
+#if defined(CONFIG_NET_IPV6_DAD) && defined(CONFIG_NET_NATIVE_IPV6)
 	/** How many times we have done DAD */
 	u8_t dad_count;
 #endif
@@ -205,7 +205,7 @@ struct net_offload;
 #endif /* CONFIG_NET_OFFLOAD */
 
 /** @cond INTERNAL_HIDDEN */
-#if defined(CONFIG_NET_IPV6)
+#if defined(CONFIG_NET_NATIVE_IPV6)
 #define NET_IF_MAX_IPV6_ADDR CONFIG_NET_IF_UNICAST_IPV6_ADDR_COUNT
 #define NET_IF_MAX_IPV6_MADDR CONFIG_NET_IF_MCAST_IPV6_ADDR_COUNT
 #define NET_IF_MAX_IPV6_PREFIX CONFIG_NET_IF_IPV6_PREFIX_COUNT
@@ -234,7 +234,7 @@ struct net_if_ipv6 {
 
 	/** Retransmit timer (RFC 4861, page 52) */
 	u32_t retrans_timer;
-#if defined(CONFIG_NET_IPV6_ND)
+#if defined(CONFIG_NET_IPV6_ND) && defined(CONFIG_NET_NATIVE_IPV6)
 	/** Router solicitation timer node */
 	sys_snode_t rs_node;
 
@@ -250,7 +250,7 @@ struct net_if_ipv6 {
 };
 
 /** @cond INTERNAL_HIDDEN */
-#if defined(CONFIG_NET_IPV4)
+#if defined(CONFIG_NET_NATIVE_IPV4)
 #define NET_IF_MAX_IPV4_ADDR CONFIG_NET_IF_UNICAST_IPV4_ADDR_COUNT
 #define NET_IF_MAX_IPV4_MADDR CONFIG_NET_IF_MCAST_IPV4_ADDR_COUNT
 #else
@@ -276,7 +276,7 @@ struct net_if_ipv4 {
 	u8_t ttl;
 };
 
-#if defined(CONFIG_NET_DHCPV4)
+#if defined(CONFIG_NET_DHCPV4) && defined(CONFIG_NET_NATIVE_IPV4)
 struct net_if_dhcpv4 {
 	/** Used for timer lists */
 	sys_snode_t node;
@@ -315,7 +315,7 @@ struct net_if_dhcpv4 {
 };
 #endif /* CONFIG_NET_DHCPV4 */
 
-#if defined(CONFIG_NET_IPV4_AUTO)
+#if defined(CONFIG_NET_IPV4_AUTO) && defined(CONFIG_NET_NATIVE_IPV4)
 struct net_if_ipv4_autoconf {
 	/** Used for timer lists */
 	sys_snode_t node;
@@ -359,11 +359,11 @@ struct net_if_ipv4_autoconf {
  * @brief Network interface IP address configuration.
  */
 struct net_if_ip {
-#if defined(CONFIG_NET_IPV6)
+#if defined(CONFIG_NET_NATIVE_IPV6)
 	struct net_if_ipv6 *ipv6;
 #endif /* CONFIG_NET_IPV6 */
 
-#if defined(CONFIG_NET_IPV4)
+#if defined(CONFIG_NET_NATIVE_IPV4)
 	struct net_if_ipv4 *ipv4;
 #endif /* CONFIG_NET_IPV4 */
 };
@@ -375,11 +375,11 @@ struct net_if_config {
 	/** IP address configuration setting */
 	struct net_if_ip ip;
 
-#if defined(CONFIG_NET_DHCPV4)
+#if defined(CONFIG_NET_DHCPV4) && defined(CONFIG_NET_NATIVE_IPV4)
 	struct net_if_dhcpv4 dhcpv4;
 #endif /* CONFIG_NET_DHCPV4 */
 
-#if defined(CONFIG_NET_IPV4_AUTO)
+#if defined(CONFIG_NET_IPV4_AUTO) && defined(CONFIG_NET_NATIVE_IPV4)
 	struct net_if_ipv4_autoconf ipv4auto;
 #endif /* CONFIG_NET_IPV4_AUTO */
 };
@@ -653,7 +653,7 @@ static inline struct net_if_config *net_if_get_config(struct net_if *iface)
  *
  * @param iface Pointer to a network interface structure
  */
-#if defined(CONFIG_NET_IPV6_DAD)
+#if defined(CONFIG_NET_IPV6_DAD) && defined(CONFIG_NET_NATIVE_IPV6)
 void net_if_start_dad(struct net_if *iface);
 #else
 static inline void net_if_start_dad(struct net_if *iface)
@@ -675,7 +675,7 @@ void net_if_start_rs(struct net_if *iface);
  *
  * @param iface Pointer to a network interface structure
  */
-#if defined(CONFIG_NET_IPV6_ND)
+#if defined(CONFIG_NET_IPV6_ND) && defined(CONFIG_NET_NATIVE_IPV6)
 void net_if_stop_rs(struct net_if *iface);
 #else
 static inline void net_if_stop_rs(struct net_if *iface)
@@ -1166,7 +1166,7 @@ bool net_if_ipv6_addr_onlink(struct net_if **iface, struct in6_addr *addr);
  *
  * @return pointer to the IPv6 address, or NULL if none
  */
-#if defined(CONFIG_NET_IPV6)
+#if defined(CONFIG_NET_NATIVE_IPV6)
 static inline struct in6_addr *net_if_router_ipv6(struct net_if_router *router)
 {
 	return &router->address.in6_addr;
@@ -1247,7 +1247,7 @@ bool net_if_ipv6_router_rm(struct net_if_router *router);
  */
 static inline u8_t net_if_ipv6_get_hop_limit(struct net_if *iface)
 {
-#if defined(CONFIG_NET_IPV6)
+#if defined(CONFIG_NET_NATIVE_IPV6)
 	if (!iface->config.ip.ipv6) {
 		return 0;
 	}
@@ -1267,7 +1267,7 @@ static inline u8_t net_if_ipv6_get_hop_limit(struct net_if *iface)
 static inline void net_ipv6_set_hop_limit(struct net_if *iface,
 					  u8_t hop_limit)
 {
-#if defined(CONFIG_NET_IPV6)
+#if defined(CONFIG_NET_NATIVE_IPV6)
 	if (!iface->config.ip.ipv6) {
 		return;
 	}
@@ -1285,7 +1285,7 @@ static inline void net_ipv6_set_hop_limit(struct net_if *iface,
 static inline void net_if_ipv6_set_base_reachable_time(struct net_if *iface,
 						       u32_t reachable_time)
 {
-#if defined(CONFIG_NET_IPV6)
+#if defined(CONFIG_NET_NATIVE_IPV6)
 	if (!iface->config.ip.ipv6) {
 		return;
 	}
@@ -1303,7 +1303,7 @@ static inline void net_if_ipv6_set_base_reachable_time(struct net_if *iface,
  */
 static inline u32_t net_if_ipv6_get_reachable_time(struct net_if *iface)
 {
-#if defined(CONFIG_NET_IPV6)
+#if defined(CONFIG_NET_NATIVE_IPV6)
 	if (!iface->config.ip.ipv6) {
 		return 0;
 	}
@@ -1331,7 +1331,7 @@ u32_t net_if_ipv6_calc_reachable_time(struct net_if_ipv6 *ipv6);
  */
 static inline void net_if_ipv6_set_reachable_time(struct net_if_ipv6 *ipv6)
 {
-#if defined(CONFIG_NET_IPV6)
+#if defined(CONFIG_NET_NATIVE_IPV6)
 	ipv6->reachable_time = net_if_ipv6_calc_reachable_time(ipv6);
 #endif
 }
@@ -1345,7 +1345,7 @@ static inline void net_if_ipv6_set_reachable_time(struct net_if_ipv6 *ipv6)
 static inline void net_if_ipv6_set_retrans_timer(struct net_if *iface,
 						 u32_t retrans_timer)
 {
-#if defined(CONFIG_NET_IPV6)
+#if defined(CONFIG_NET_NATIVE_IPV6)
 	if (!iface->config.ip.ipv6) {
 		return;
 	}
@@ -1363,7 +1363,7 @@ static inline void net_if_ipv6_set_retrans_timer(struct net_if *iface,
  */
 static inline u32_t net_if_ipv6_get_retrans_timer(struct net_if *iface)
 {
-#if defined(CONFIG_NET_IPV6)
+#if defined(CONFIG_NET_NATIVE_IPV6)
 	if (!iface->config.ip.ipv6) {
 		return 0;
 	}
@@ -1385,8 +1385,19 @@ static inline u32_t net_if_ipv6_get_retrans_timer(struct net_if *iface)
  * @return Pointer to IPv6 address to use, NULL if no IPv6 address
  * could be found.
  */
+#if defined(CONFIG_NET_NATIVE_IPV6)
 const struct in6_addr *net_if_ipv6_select_src_addr(struct net_if *iface,
 						   const struct in6_addr *dst);
+#else
+static inline const struct in6_addr *net_if_ipv6_select_src_addr(
+	struct net_if *iface, const struct in6_addr *dst)
+{
+	ARG_UNUSED(iface);
+	ARG_UNUSED(dst);
+
+	return NULL;
+}
+#endif
 
 /**
  * @brief Get a network interface that should be used when sending
@@ -1397,7 +1408,17 @@ const struct in6_addr *net_if_ipv6_select_src_addr(struct net_if *iface,
  * @return Pointer to network interface to use, NULL if no suitable interface
  * could be found.
  */
+#if defined(CONFIG_NET_NATIVE_IPV6)
 struct net_if *net_if_ipv6_select_src_iface(const struct in6_addr *dst);
+#else
+static inline struct net_if *net_if_ipv6_select_src_iface(
+	const struct in6_addr *dst)
+{
+	ARG_UNUSED(dst);
+
+	return NULL;
+}
+#endif
 
 /**
  * @brief Get a IPv6 link local address in a given state.
@@ -1477,7 +1498,7 @@ int net_if_config_ipv4_put(struct net_if *iface);
  */
 static inline u8_t net_if_ipv4_get_ttl(struct net_if *iface)
 {
-#if defined(CONFIG_NET_IPV4)
+#if defined(CONFIG_NET_NATIVE_IPV4)
 	if (!iface->config.ip.ipv4) {
 		return 0;
 	}
@@ -1600,7 +1621,7 @@ struct net_if_mcast_addr *net_if_ipv4_maddr_lookup(const struct in_addr *addr,
  *
  * @return pointer to the IPv4 address, or NULL if none
  */
-#if defined(CONFIG_NET_IPV4)
+#if defined(CONFIG_NET_NATIVE_IPV4)
 static inline struct in_addr *net_if_router_ipv4(struct net_if_router *router)
 {
 	return &router->address.in_addr;
@@ -1694,7 +1715,17 @@ bool net_if_ipv4_is_addr_bcast(struct net_if *iface,
  * @return Pointer to network interface to use, NULL if no suitable interface
  * could be found.
  */
+#if defined(CONFIG_NET_NATIVE_IPV4)
 struct net_if *net_if_ipv4_select_src_iface(const struct in_addr *dst);
+#else
+static inline struct net_if *net_if_ipv4_select_src_iface(
+	const struct in_addr *dst)
+{
+	ARG_UNUSED(dst);
+
+	return NULL;
+}
+#endif
 
 /**
  * @brief Get a IPv4 source address that should be used when sending
@@ -1707,8 +1738,19 @@ struct net_if *net_if_ipv4_select_src_iface(const struct in_addr *dst);
  * @return Pointer to IPv4 address to use, NULL if no IPv4 address
  * could be found.
  */
+#if defined(CONFIG_NET_NATIVE_IPV4)
 const struct in_addr *net_if_ipv4_select_src_addr(struct net_if *iface,
 						  const struct in_addr *dst);
+#else
+static inline const struct in_addr *net_if_ipv4_select_src_addr(
+	struct net_if *iface, const struct in_addr *dst)
+{
+	ARG_UNUSED(iface);
+	ARG_UNUSED(dst);
+
+	return NULL;
+}
+#endif
 
 /**
  * @brief Get a IPv4 link local address in a given state.
@@ -1931,7 +1973,7 @@ static inline bool net_if_is_up(struct net_if *iface)
  */
 int net_if_down(struct net_if *iface);
 
-#if defined(CONFIG_NET_PKT_TIMESTAMP)
+#if defined(CONFIG_NET_PKT_TIMESTAMP) && defined(CONFIG_NET_NATIVE)
 /**
  * @typedef net_if_timestamp_callback_t
  * @brief Define callback that is called after a network packet
@@ -2037,7 +2079,7 @@ struct net_if_api {
 	void (*init)(struct net_if *iface);
 };
 
-#if defined(CONFIG_NET_DHCPV4)
+#if defined(CONFIG_NET_DHCPV4) && defined(CONFIG_NET_NATIVE_IPV4)
 #define NET_IF_DHCPV4_INIT .dhcpv4.state = NET_DHCPV4_DISABLED,
 #else
 #define NET_IF_DHCPV4_INIT

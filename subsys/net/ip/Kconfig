@@ -8,6 +8,50 @@
 
 menu "IP stack"
 
+config NET_NATIVE
+	bool "Enable native IP stack"
+	default y
+	help
+	  Enables Zephyr native IP stack. If you disable this, then
+	  you need to enable the offloading support if you want to
+	  have IP connectivity.
+
+# Hidden options for enabling native IPv6/IPv4. Using these options
+# avoids having "defined(CONFIG_NET_IPV6) && defined(CONFIG_NET_NATIVE)"
+# in the code as we can have "defined(CONFIG_NET_NATIVE_IPV6)" instead.
+config NET_NATIVE_IPV6
+	bool
+	depends on NET_NATIVE
+	default y if NET_IPV6
+
+config NET_NATIVE_IPV4
+	bool
+	depends on NET_NATIVE
+	default y if NET_IPV4
+
+config NET_NATIVE_TCP
+	bool
+	depends on NET_NATIVE
+	default y if NET_TCP
+
+config NET_NATIVE_UDP
+	bool
+	depends on NET_NATIVE
+	default y if NET_UDP
+
+config NET_OFFLOAD
+	bool "Offload IP stack [EXPERIMENTAL]"
+	help
+	  Enables TCP/IP stack to be offload to a co-processor.
+
+if NET_OFFLOAD
+module = NET_OFFLOAD
+module-dep = NET_LOG
+module-str = Log level for offload layer
+module-help = Enables offload layer to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+endif # NET_OFFLOAD
+
 # Hidden option
 config NET_RAW_MODE
 	bool
@@ -399,6 +443,7 @@ config NET_TEST
 config NET_SLIP_TAP
 	bool "TAP SLIP driver"
 	depends on NET_QEMU_SLIP
+	depends on NET_NATIVE
 	select SLIP
 	select UART_PIPE
 	select UART_INTERRUPT_DRIVEN
@@ -614,19 +659,6 @@ source "subsys/net/ip/Kconfig.stack"
 source "subsys/net/ip/Kconfig.mgmt"
 
 source "subsys/net/ip/Kconfig.stats"
-
-config NET_OFFLOAD
-	bool "Offload IP stack [EXPERIMENTAL]"
-	help
-	  Enables TCP/IP stack to be offload to a co-processor.
-
-if NET_OFFLOAD
-module = NET_OFFLOAD
-module-dep = NET_LOG
-module-str = Log level for offload layer
-module-help = Enables offload layer to output debug messages.
-source "subsys/net/Kconfig.template.log_config.net"
-endif # NET_OFFLOAD
 
 source "subsys/net/ip/Kconfig.debug"
 

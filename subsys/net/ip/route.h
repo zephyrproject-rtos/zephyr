@@ -70,8 +70,19 @@ struct net_route_entry {
  * @return Return route entry related to a given destination address, NULL
  * if not found.
  */
+#if defined(CONFIG_NET_NATIVE)
 struct net_route_entry *net_route_lookup(struct net_if *iface,
 					 struct in6_addr *dst);
+#else
+static inline struct net_route_entry *net_route_lookup(struct net_if *iface,
+						       struct in6_addr *dst)
+{
+	ARG_UNUSED(iface);
+	ARG_UNUSED(dst);
+
+	return NULL;
+}
+#endif
 
 /**
  * @brief Add a route to routing table.
@@ -251,7 +262,7 @@ bool net_route_get_info(struct net_if *iface,
  */
 int net_route_packet(struct net_pkt *pkt, struct in6_addr *nexthop);
 
-#if defined(CONFIG_NET_ROUTE)
+#if defined(CONFIG_NET_ROUTE) && defined(CONFIG_NET_NATIVE)
 void net_route_init(void);
 #else
 #define net_route_init(...)

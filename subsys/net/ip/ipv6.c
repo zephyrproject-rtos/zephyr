@@ -47,15 +47,6 @@ LOG_MODULE_REGISTER(net_ipv6, CONFIG_NET_IPV6_LOG_LEVEL);
  */
 #define MAX_REACHABLE_TIME 3600000
 
-/* IPv6 wildcard and loopback address defined by RFC2553 */
-const struct in6_addr in6addr_any = IN6ADDR_ANY_INIT;
-const struct in6_addr in6addr_loopback = IN6ADDR_LOOPBACK_INIT;
-
-const struct in6_addr *net_ipv6_unspecified_address(void)
-{
-	return &in6addr_any;
-}
-
 int net_ipv6_create(struct net_pkt *pkt,
 		    const struct in6_addr *src,
 		    const struct in6_addr *dst)
