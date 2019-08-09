@@ -65,9 +65,9 @@ _exc_entry:
 	 * and exception is raised, then here it's guaranteed that
 	 * exception handling has necessary stack to use
 	 */
-	mov_s ilink, sp
+	mov ilink, sp
 	_get_curr_cpu_irq_stack sp
-	add sp, sp, EXCEPTION_STACK_SIZE
+	sub sp, sp, (CONFIG_ISR_STACK_SIZE - EXCEPTION_STACK_SIZE)
 
 	/*
 	 * save caller saved registers
