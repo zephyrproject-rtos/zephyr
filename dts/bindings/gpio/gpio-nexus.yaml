@@ -1,0 +1,28 @@
+#
+# Copyright (c) 2019, Linaro Limited
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+title: GPIO Nexus Base Structure
+
+description: >
+    This binding gives the base structure for all GPIO nexus nodes
+
+properties:
+    gpio-map:
+      type: compound
+      category: required
+
+    gpio-map-mask:
+      type: compound
+      category: optional
+
+    gpio-map-pass-thru:
+      type: compound
+      category: optional
+
+    "#gpio-cells":
+      type: int
+      category: required
+      description: Number of items to expect in a GPIO specifier
