@@ -10,6 +10,16 @@ properties:
       category: required
       description: compatible strings
 
+    "#address-cells":
+        type: int
+        category: optional
+        description: number of address cells in reg property
+
+    "#size-cells":
+        type: int
+        category: optional
+        description: number of size cells in reg property
+
 sub-node:
     properties:
        label:
