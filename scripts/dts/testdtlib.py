@@ -1511,8 +1511,6 @@ r"value of property 'a' (b'\xff\x00') on /aliases in .tmp.dts is not valid UTF-8
 	strings = "foo", "bar", "baz";
 	invalid_strings = "foo", "\xff", "bar";
 	ref = <&{/target}>;
-	manualref = < 100 >;
-	missingref = < 123 >;
 	path = &{/target};
 	manualpath = "/target";
 	missingpath = "/missing";
@@ -1595,8 +1593,8 @@ r"value of property 'a' (b'\xff\x00') on /aliases in .tmp.dts is not valid UTF-8
     verify_to_nums("three_u", False, [1, 2, 3])
     verify_to_nums("three_u_split", False, [1, 2, 3])
 
-    verify_to_nums_error("empty", "expected property 'empty' on / in .tmp.dts to be assigned with 'empty = < (number) (number) ... >', not 'empty;'")
-    verify_to_nums_error("string", "expected property 'string' on / in .tmp.dts to be assigned with 'string = < (number) (number) ... >', not 'string = \"foo\\tbar baz\";'")
+    verify_to_nums_error("empty", "expected property 'empty' on / in .tmp.dts to be assigned with 'empty = < (number) (number) ... >;', not 'empty;'")
+    verify_to_nums_error("string", "expected property 'string' on / in .tmp.dts to be assigned with 'string = < (number) (number) ... >;', not 'string = \"foo\\tbar baz\";'")
 
     # Test Property.to_bytes()
 
@@ -1625,8 +1623,8 @@ r"value of property 'a' (b'\xff\x00') on /aliases in .tmp.dts is not valid UTF-8
     verify_to_bytes("u8", b"\x01")
     verify_to_bytes("bytes", b"\x01\x02\x03")
 
-    verify_to_bytes_error("u16", "expected property 'u16' on / in .tmp.dts to be assigned with 'u16 = [ (byte) (byte) ... ]', not 'u16 = /bits/ 16 < 0x1 0x2 >;'")
-    verify_to_bytes_error("empty", "expected property 'empty' on / in .tmp.dts to be assigned with 'empty = [ (byte) (byte) ... ]', not 'empty;'")
+    verify_to_bytes_error("u16", "expected property 'u16' on / in .tmp.dts to be assigned with 'u16 = [ (byte) (byte) ... ];', not 'u16 = /bits/ 16 < 0x1 0x2 >;'")
+    verify_to_bytes_error("empty", "expected property 'empty' on / in .tmp.dts to be assigned with 'empty = [ (byte) (byte) ... ];', not 'empty;'")
 
     # Test Property.to_string()
 
@@ -1655,8 +1653,8 @@ r"value of property 'a' (b'\xff\x00') on /aliases in .tmp.dts is not valid UTF-8
     verify_to_string("empty_string", "")
     verify_to_string("string", "foo\tbar baz")
 
-    verify_to_string_error("u", "expected property 'u' on / in .tmp.dts to be assigned with 'u = \"string\"', not 'u = < 0x1 >;'")
-    verify_to_string_error("strings", "expected property 'strings' on / in .tmp.dts to be assigned with 'strings = \"string\"', not 'strings = \"foo\", \"bar\", \"baz\";'")
+    verify_to_string_error("u", "expected property 'u' on / in .tmp.dts to be assigned with 'u = \"string\";', not 'u = < 0x1 >;'")
+    verify_to_string_error("strings", "expected property 'strings' on / in .tmp.dts to be assigned with 'strings = \"string\";', not 'strings = \"foo\", \"bar\", \"baz\";'")
     verify_to_string_error("invalid_string", r"value of property 'invalid_string' (b'\xff\x00') on / in .tmp.dts is not valid UTF-8")
 
     # Test Property.to_strings()
@@ -1687,7 +1685,7 @@ r"value of property 'a' (b'\xff\x00') on /aliases in .tmp.dts is not valid UTF-8
     verify_to_strings("string", ["foo\tbar baz"])
     verify_to_strings("strings", ["foo", "bar", "baz"])
 
-    verify_to_strings_error("u", "expected property 'u' on / in .tmp.dts to be assigned with 'u = \"string\", \"string\", ...', not u = < 0x1 >;")
+    verify_to_strings_error("u", "expected property 'u' on / in .tmp.dts to be assigned with 'u = \"string\", \"string\", ... ;', not 'u = < 0x1 >;'")
     verify_to_strings_error("invalid_strings", r"value of property 'invalid_strings' (b'foo\x00\xff\x00bar\x00') on / in .tmp.dts is not valid UTF-8")
 
     # Test Property.to_node()
@@ -1715,10 +1713,9 @@ r"value of property 'a' (b'\xff\x00') on /aliases in .tmp.dts is not valid UTF-8
             fail("{} the non-DTError '{}'".format(prefix, e))
 
     verify_to_node("ref", "/target")
-    verify_to_node("manualref", "/target")
 
-    verify_to_node_error("string", "expected property 'string' on / in .tmp.dts to be assigned with either 'string = < &foo >' or 'string = < (valid phandle number) >', not string = \"foo\\tbar baz\";")
-    verify_to_node_error("missingref", "the phandle given in property 'missingref' (123) on / in .tmp.dts does not exist")
+    verify_to_node_error("u", "expected property 'u' on / in .tmp.dts to be assigned with 'u = < &foo >;', not 'u = < 0x1 >;'")
+    verify_to_node_error("string", "expected property 'string' on / in .tmp.dts to be assigned with 'string = < &foo >;', not 'string = \"foo\\tbar baz\";'")
 
     # Test Property.to_path()
 
