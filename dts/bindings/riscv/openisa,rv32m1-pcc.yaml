@@ -10,7 +10,7 @@ description: >
     This is a representation of the RV32M1 PCC IP node
 
 inherits:
-    !include base.yaml
+    !include [clock.yaml, base.yaml]
 
 properties:
     compatible:
