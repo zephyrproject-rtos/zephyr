@@ -29,7 +29,7 @@ import sys
 
 import yaml
 
-from dtlib import DT, DTError, to_num, to_nums
+from dtlib import DT, DTError, to_num, to_nums, TYPE_EMPTY
 
 # NOTE: testedtlib.py is the test suite for this library. It can be run
 # directly.
@@ -137,12 +137,8 @@ class EDT:
         if name not in chosen.props:
             return None
 
-        path = chosen.props[name].to_string()
-        try:
-            return self._node2dev[self._dt.get_node(path)]
-        except DTError:
-            _err("{} in /chosen points to {}, which does not exist"
-                 .format(name, path))
+        # to_path() checks that the node exists
+        return self._node2dev[chosen.props[name].to_path()]
 
     def _init_compat2binding(self, bindings_dirs):
         # Creates self._compat2binding. This is a dictionary that maps
@@ -224,15 +220,29 @@ class EDT:
         self.devices = []
 
         for node in self._dt.node_iter():
-            # Warning: Device.__init__() relies on parent Devices being created
-            # before their children. This is guaranteed by node_iter().
-            dev = Device(self, node)
+            # Warning: We depend on parent Devices being created before their
+            # children. This is guaranteed by node_iter().
+            dev = Device()
+            dev.edt = self
+            dev._node = node
+            dev._init_binding()
+            dev._init_regs()
+            dev._set_instance_no()
+
             self.devices.append(dev)
             self._node2dev[node] = dev
 
         for dev in self.devices:
-            # These depend on all Device objects having been created, so we do
-            # them separately
+            # Device._init_props() depends on all Device objects having been
+            # created, due to 'type: phandle', so we run it separately.
+            # Property.val is set to the pointed-to Device instance for
+            # phandles, which must exist.
+            dev._init_props()
+
+        for dev in self.devices:
+            # These also depend on all Device objects having been created, and
+            # might also depend on all Device.props having been initialized
+            # (_init_clocks() does as of writing).
             dev._init_interrupts()
             dev._init_gpios()
             dev._init_pwms()
@@ -440,21 +450,6 @@ class Device:
             "binding " + self.binding_path if self.binding_path
                 else "no binding")
 
-    def __init__(self, edt, node):
-        "Private constructor. Not meant to be called by clients."
-
-        # Interrupts, GPIOs, PWMs, io-channels, and clocks are
-        # initialized separately, because they depend on all Devices
-        # existing
-
-        self.edt = edt
-        self._node = node
-
-        self._init_binding()
-        self._init_props()
-        self._init_regs()
-        self._set_instance_no()
-
     def _init_binding(self):
         # Initializes Device.matching_compat, Device._binding, and
         # Device.binding_path.
@@ -578,12 +573,17 @@ class Device:
         # _init_prop() helper for getting the property's value
 
         node = self._node
+        prop = node.props.get(name)
 
         if prop_type == "boolean":
-            # True/False
-            return name in node.props
+            if not prop:
+                return False
+            if prop.type is not TYPE_EMPTY:
+                _err("'{0}' in {1!r} is defined with 'type: boolean' in {2}, "
+                     "but is assigned a value ('{3}') instead of being empty "
+                     "('{0};')".format(name, node, self.binding_path, prop))
+            return True
 
-        prop = node.props.get(name)
         if not prop:
             if not optional and self.enabled:
                 _err("'{}' is marked as required in 'properties:' in {}, but "
@@ -599,13 +599,16 @@ class Device:
             return prop.to_nums()
 
         if prop_type == "uint8-array":
-            return prop.value  # Plain 'bytes'
+            return prop.to_bytes()
 
         if prop_type == "string":
             return prop.to_string()
 
         if prop_type == "string-array":
             return prop.to_strings()
+
+        if prop_type == "phandle":
+            return self.edt._node2dev[prop.to_node()]
 
         _err("'{}' in 'properties:' in {} has unknown type '{}'"
              .format(name, self.binding_path, prop_type))
@@ -1013,8 +1016,9 @@ class Property:
       if missing. Trailing whitespace (including newlines) is removed.
 
     val:
-      The value of the property, with the format determined by the 'type:'
-      key from the binding
+      The value of the property, with the format determined by the 'type:' key
+      from the binding. For 'type: phandle' properties, this is the pointed-to
+      Device instance.
 
     enum_index:
       The index of the property's value in the 'enum:' list in the binding, or

@@ -290,14 +290,19 @@
 
 	props {
 		compatible = "props";
+		existent-boolean;
 		int = <1>;
 		array = <1 2 3>;
 		uint8-array = [ 12 34 ];
 		string = "foo";
 		string-array = "foo", "bar", "baz";
+		phandle-ref = < &{/props/node} >;
 		// Does not appear in the binding, so won't create an entry in
 		// Device.props
 		not-speced = <0>;
+
+		node {
+		};
 	};
 
 	//
