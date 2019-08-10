@@ -58,6 +58,11 @@ sub-node:
 #     category: <required | optional>
 #     type: <string | int | boolean | array | uint8-array | string-array | compound>
 #     description: <description of the property>
+#     enum:
+#       - <item1>
+#       - <item2>
+#       ...
+#       - <itemN>
 #
 # 'uint8-array' is our name for what the device tree specification calls
 # 'bytestring'. Properties of type 'uint8-array' should be set like this:
@@ -83,6 +88,18 @@ properties:
         type: string-array
         category: optional
         description: Keys for bar-device
+
+    # Describes an optional property like 'maximum-speed = "full-speed";
+    # the enum specifies known values that the string property may take
+    maximum-speed:
+      type: string
+      category: optional
+      description: Configures USB controllers to work up to a specific speed.
+      enum:
+         - "low-speed"
+         - "full-speed"
+         - "high-speed"
+         - "super-speed"
 
 # If the binding describes an interrupt controller, GPIO controller, pinmux
 # device, or any other device referenced via a phandle plus a specifier (some
