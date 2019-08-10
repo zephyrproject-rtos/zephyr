@@ -145,6 +145,7 @@ class EDT:
         # Do this indirection with None in case sys.stderr is deliberately
         # overridden
         self._warn_file = sys.stderr if warn_file is None else warn_file
+        self._warnings = []
 
         self.dts_path = dts
         self.bindings_dirs = bindings_dirs
@@ -667,7 +668,9 @@ class EDT:
                      .format(binding_path, prop_name))
 
     def _warn(self, msg):
-        print("warning: " + msg, file=self._warn_file)
+        if msg not in self._warnings:
+            self._warnings.append(msg)
+            print("warning: " + msg, file=self._warn_file)
 
 
 class Node:
