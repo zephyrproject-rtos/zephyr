@@ -56,6 +56,6 @@ time_t timeutil_timegm(struct tm *tm)
 	s64_t ndays = time_days_from_civil(y, m, d);
 
 	return (time_t)tm->tm_sec
-	       + 60 * (tm->tm_min + 60 * tm->tm_hour)
+	       + (time_t)60 * ((time_t)tm->tm_min + 60 * (time_t)tm->tm_hour)
 	       + 86400 * ndays;
 }
