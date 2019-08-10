@@ -47,16 +47,19 @@ BUILD_ASSERT_MSG(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC == 32768,
 #define CYCLES_PER_TICK \
 	(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 
+/* Mask off bits[31:28] of 32-bit count */
+#define TIMER_MAX	0x0FFFFFFFUL
 
-#define CPT1000 ((CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC * 1000UL) \
-		/ CONFIG_SYS_CLOCK_TICKS_PER_SEC)
+#define TIMER_COUNT_MASK	0x0FFFFFFFUL
 
-#define CPT_FRACT (CPT1000 - (CYCLES_PER_TICK * 1000UL))
+#define TIMER_STOPPED	0xF0000000UL
 
+/* Adjust cycle count programmed into timer for HW restart latency */
+#define TIMER_ADJUST_LIMIT	2
+#define TIMER_ADJUST_CYCLES	1
 
 /* max number of ticks we can load into the timer in one shot */
-
-#define MAX_TICKS (0x7FFFFFFFU / CYCLES_PER_TICK)
+#define MAX_TICKS (TIMER_MAX / CYCLES_PER_TICK)
 
 /*
  * The spinlock protects all access to the RTMR registers, as well as
@@ -68,25 +71,43 @@ BUILD_ASSERT_MSG(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC == 32768,
  */
 
 static struct k_spinlock lock;
-static u64_t total_cycles;
+static u32_t total_cycles;
 static u32_t cached_icr = CYCLES_PER_TICK;
 
-/*
- * Restart XEC RTOS timer with new count down value.
- * This timer requires its control register to be cleared, the new
- * preload value written twice, and timer started.
- */
-static INLINE void timer_restart(u32_t val)
+static void timer_restart(u32_t countdown)
 {
-	RTMR_REGS->CTRL = 0;
-	RTMR_REGS->PRLD = val;
-	RTMR_REGS->PRLD = val;
+	RTMR_REGS->CTRL = 0U;
+	RTMR_REGS->CTRL = MCHP_RTMR_CTRL_BLK_EN;
+	RTMR_REGS->PRLD = countdown;
 	RTMR_REGS->CTRL = TIMER_START_VAL;
+}
+
+/*
+ * Read the RTOS timer counter handling the case where the timer
+ * has been reloaded within 1 32KHz clock of reading its count register.
+ * The RTOS timer hardware must synchronize the write to its control register
+ * on the AHB clock domain with the 32KHz clock domain of its internal logic.
+ * This synchronization can take from nearly 0 time up to 1 32KHz clock as it
+ * depends upon which 48MHz AHB clock with a 32KHz period the register write
+ * was on. We detect the timer is in the load state by checking the read-only
+ * count register and the START bit in the control register. If count register
+ * is 0 and the START bit is set then the timer has been started and is in the
+ * process of moving the preload register value into the count register.
+ */
+static INLINE u32_t timer_count(void)
+{
+	u32_t ccr = RTMR_REGS->CNT;
+
+	if ((ccr == 0) && (RTMR_REGS->CTRL & MCHP_RTMR_CTRL_START)) {
+		ccr = cached_icr;
+	}
+
+	return ccr;
 }
 
 #ifdef CONFIG_TICKLESS_KERNEL
 
-static u64_t last_announcement;	/* last time we called z_clock_announce() */
+static u32_t last_announcement;	/* last time we called z_clock_announce() */
 
 /*
  * Request a timeout n Zephyr ticks in the future from now.
@@ -109,6 +130,16 @@ void z_clock_set_timeout(s32_t n, bool idle)
 	u32_t full_cycles;	/* full_ticks represented as cycles */
 	u32_t partial_cycles;	/* number of cycles to first tick boundary */
 
+	if (idle && (n == K_FOREVER)) {
+		/*
+		 * We are not in a locked section. Are writes to two
+		 * global objects safe from pre-emption?
+		 */
+		RTMR_REGS->CTRL = 0U; /* stop timer */
+		cached_icr = TIMER_STOPPED;
+		return;
+	}
+
 	if (n < 1) {
 		full_ticks = 0;
 	} else if ((n == K_FOREVER) || (n > MAX_TICKS)) {
@@ -117,53 +148,61 @@ void z_clock_set_timeout(s32_t n, bool idle)
 		full_ticks = n - 1;
 	}
 
-	/*
-	 * RTMR frequency is fixed at 32KHz resulting in truncation errors.
-	 * Tune the denominator taking into account delay in the caller and
-	 * this routine.
-	 */
-	full_cycles = (full_ticks * CYCLES_PER_TICK)
-		      + ((full_ticks * CPT_FRACT) / 1000UL);
-
-	/*
-	 * There's a wee race condition here. The timer may expire while
-	 * we're busy reprogramming it; an interrupt will be queued at the
-	 * NVIC and the ISR will be called too early, roughly right
-	 * after we unlock, and not because the count we just programmed has
-	 * counted down. We can detect this situation only by using one-shot
-	 * mode. The counter will be 0 for a "real" interrupt and non-zero
-	 * if we have restarted the timer here.
-	 */
+	full_cycles = full_ticks * CYCLES_PER_TICK;
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
-	ccr = RTMR_REGS->CNT;
-	total_cycles += (cached_icr - ccr);
+	ccr = timer_count();
+
+	/* turn off to clear any pending interrupt status */
+	RTMR_REGS->CTRL = 0U;
+	GIRQ23_REGS->SRC = MCHP_RTMR_GIRQ_VAL;
+	NVIC_ClearPendingIRQ(RTMR_IRQn);
+
+	temp = total_cycles;
+	temp += (cached_icr - ccr);
+	temp &= TIMER_COUNT_MASK;
+	total_cycles = temp;
+
 	partial_cycles = CYCLES_PER_TICK - (total_cycles % CYCLES_PER_TICK);
-	temp = full_cycles + partial_cycles;
+	cached_icr = full_cycles + partial_cycles;
+	/* adjust for up to one 32KHz cycle startup time */
+	temp = cached_icr;
+	if (temp > TIMER_ADJUST_LIMIT) {
+		temp -= TIMER_ADJUST_CYCLES;
+	}
 
 	timer_restart(temp);
-	cached_icr = temp;
 
 	k_spin_unlock(&lock, key);
 }
 
 /*
  * Return the number of Zephyr ticks elapsed from last call to
- * z_clock_announce in the ISR.
+ * z_clock_announce in the ISR. The caller casts u32_t to s32_t.
+ * We must make sure bit[31] is 0 in the return value.
  */
 u32_t z_clock_elapsed(void)
 {
 	u32_t ccr;
 	u32_t ticks;
+	s32_t elapsed;
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
-	ccr = RTMR_REGS->CNT;
-	ticks = total_cycles - last_announcement;
+	ccr = timer_count();
+
+	/* It may not look efficient but the compiler does a good job */
+	elapsed = (s32_t)total_cycles - (s32_t)last_announcement;
+	if (elapsed < 0) {
+		elapsed = -1 * elapsed;
+	}
+	ticks = (u32_t)elapsed;
 	ticks += cached_icr - ccr;
-	k_spin_unlock(&lock, key);
 	ticks /= CYCLES_PER_TICK;
+	ticks &= TIMER_COUNT_MASK;
+
+	k_spin_unlock(&lock, key);
 
 	return ticks;
 }
@@ -172,36 +211,28 @@ static void xec_rtos_timer_isr(void *arg)
 {
 	ARG_UNUSED(arg);
 
-	u32_t cycles, preload;
+	u32_t cycles;
 	s32_t ticks;
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
-	/*
-	 * Clear RTOS timer interrupt RW/1C status in GIRQ23 source register.
-	 * NVIC will clear its pending bit on ISR exit.
-	 */
 	GIRQ23_REGS->SRC = MCHP_RTMR_GIRQ_VAL;
-
-	/*
-	 * If we get here and the RTMR count registers isn't zero, then
-	 * this interrupt is stale: it was queued while z_clock_set_timeout()
-	 * was setting a new counter. Just ignore it. See above for more info.
-	 */
-	if (RTMR_REGS->CNT != 0) {
-		k_spin_unlock(&lock, key);
-		return;
-	}
-
-	/* restart the timer */
-	preload = MAX_TICKS * CYCLES_PER_TICK;
-	timer_restart(preload);
+	/* Restart the timer as early as possible to minimize drift... */
+	timer_restart(MAX_TICKS * CYCLES_PER_TICK);
 
 	cycles = cached_icr;
-	cached_icr = preload;
+	cached_icr = MAX_TICKS * CYCLES_PER_TICK;
+
 	total_cycles += cycles;
-	ticks = (total_cycles - last_announcement) / CYCLES_PER_TICK;
+	total_cycles &= TIMER_COUNT_MASK;
+
+	/* handle wrap by using (power of 2) - 1 mask */
+	ticks = total_cycles - last_announcement;
+	ticks &= TIMER_COUNT_MASK;
+	ticks /= CYCLES_PER_TICK;
+
 	last_announcement = total_cycles;
+
 	k_spin_unlock(&lock, key);
 	z_clock_announce(ticks);
 }
@@ -216,14 +247,13 @@ static void xec_rtos_timer_isr(void *arg)
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
-	/*
-	 * Clear RTOS timer interrupt status RW/1C status in GIRQ23 register.
-	 * NVIC will clear its pending bit on ISR exit.
-	 */
 	GIRQ23_REGS->SRC = MCHP_RTMR_GIRQ_VAL;
-
-	total_cycles += CYCLES_PER_TICK;
+	/* Restart the timer as early as possible to minimize drift... */
 	timer_restart(cached_icr);
+
+	u32_t temp = total_cycles + CYCLES_PER_TICK;
+
+	total_cycles = temp & TIMER_COUNT_MASK;
 	k_spin_unlock(&lock, key);
 
 	z_clock_announce(1);
@@ -237,11 +267,14 @@ u32_t z_clock_elapsed(void)
 #endif /* CONFIG_TICKLESS_KERNEL */
 
 /*
- * Return an increasing hardware cycle count.
- * Implementation: We return current total number of cycles elapsed
- * from first start of the timer. The return value is 32-bits
- * resulting in only the lower 32-bits of the total count
- * being returned.
+ * Warning RTOS timer resolution is 30.5 us.
+ * This is called by two code paths:
+ * 1. Kernel call to k_cycle_get_32() -> z_arch_k_cycle_get_32() -> here.
+ *    The kernel is casting return to (int) and using it uncasted in math
+ *    expressions with int types. Expression result is stored in an int.
+ * 2. If CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT is not defined then
+ *    z_impl_k_busy_wait calls here. This code path uses the value as u32_t.
+ *
  */
 u32_t z_timer_cycle_get_32(void)
 {
@@ -250,11 +283,25 @@ u32_t z_timer_cycle_get_32(void)
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
-	ccr = RTMR_REGS->CNT;
-	ret = total_cycles + (cached_icr - ccr);
+	ccr = timer_count();
+	ret = (total_cycles + (cached_icr - ccr)) & TIMER_COUNT_MASK;
+
 	k_spin_unlock(&lock, key);
 
 	return ret;
+}
+
+void z_clock_idle_exit(void)
+{
+	if (cached_icr == TIMER_STOPPED) {
+		cached_icr = CYCLES_PER_TICK;
+		timer_restart(cached_icr);
+	}
+}
+
+void sys_clock_disable(void)
+{
+	RTMR_REGS->CTRL = 0U;
 }
 
 int z_clock_driver_init(struct device *device)
@@ -263,17 +310,69 @@ int z_clock_driver_init(struct device *device)
 
 	mchp_pcr_periph_slp_ctrl(PCR_RTMR, MCHP_PCR_SLEEP_DIS);
 
+#ifdef CONFIG_TICKLESS_KERNEL
+	cached_icr = MAX_TICKS;
+#endif
+
 	RTMR_REGS->CTRL = 0U;
 	GIRQ23_REGS->SRC = MCHP_RTMR_GIRQ_VAL;
 	NVIC_ClearPendingIRQ(RTMR_IRQn);
 
-	timer_restart(cached_icr);
+	IRQ_CONNECT(RTMR_IRQn,
+		    DT_INST_0_MICROCHIP_XEC_RTOS_TIMER_IRQ_0_PRIORITY,
+		    xec_rtos_timer_isr, 0, 0);
 
-	IRQ_CONNECT(RTMR_IRQn, 1, xec_rtos_timer_isr, 0, 0);
 	GIRQ23_REGS->EN_SET = MCHP_RTMR_GIRQ_VAL;
-
-	RTMR_REGS->CTRL = TIMER_START_VAL;
 	irq_enable(RTMR_IRQn);
+
+#ifdef CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT
+	u32_t btmr_ctrl = B32TMR0_REGS->CTRL = (MCHP_BTMR_CTRL_ENABLE
+			  | MCHP_BTMR_CTRL_AUTO_RESTART
+			  | MCHP_BTMR_CTRL_COUNT_UP
+			  | (47UL << MCHP_BTMR_CTRL_PRESCALE_POS));
+	B32TMR0_REGS->CTRL = MCHP_BTMR_CTRL_SOFT_RESET;
+	B32TMR0_REGS->CTRL = btmr_ctrl;
+	B32TMR0_REGS->PRLD = 0xFFFFFFFFUL;
+	btmr_ctrl |= MCHP_BTMR_CTRL_START;
+
+	timer_restart(cached_icr);
+	/* wait for Hibernation timer to load count register from preload */
+	while (RTMR_REGS->CNT == 0)
+		;
+	B32TMR0_REGS->CTRL = btmr_ctrl;
+#else
+	timer_restart(cached_icr);
+#endif
 
 	return 0;
 }
+
+#ifdef CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT
+
+/*
+ * We implement custom busy wait using a MEC1501 basic timer running on
+ * the 48MHz clock domain. This code is here for future power management
+ * save/restore of the timer context.
+ */
+
+/*
+ * 32-bit basic timer 0 configured for 1MHz count up, auto-reload,
+ * and no interrupt generation.
+ */
+void z_arch_busy_wait(u32_t usec_to_wait)
+{
+	if (usec_to_wait == 0) {
+		return;
+	}
+
+	u32_t start = B32TMR0_REGS->CNT;
+
+	for (;;) {
+		u32_t curr = B32TMR0_REGS->CNT;
+
+		if ((curr - start) >= usec_to_wait) {
+			break;
+		}
+	}
+}
+#endif
