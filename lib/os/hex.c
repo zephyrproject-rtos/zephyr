@@ -28,7 +28,7 @@ int hex2char(uint8_t x, char *c)
 {
 	if (x <= 9) {
 		*c = x + '0';
-	} else  if (x >= 10 && x <= 15) {
+	} else  if (x <= 15) {
 		*c = x - 10 + 'a';
 	} else {
 		return -EINVAL;
