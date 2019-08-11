@@ -31,7 +31,9 @@ struct sdhc_spi_data {
 
 	u32_t sector_count;
 	u8_t status;
+#if LOG_LEVEL >= LOG_LEVEL_DBG
 	int trace_dir;
+#endif
 };
 
 DEVICE_DECLARE(sdhc_spi_0);
