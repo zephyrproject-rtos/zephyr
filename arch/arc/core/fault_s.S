@@ -302,9 +302,10 @@ exc_nest_handle:
 	st _CAUSE_RIRQ, [r2, _thread_offset_to_relinquish_cause]
 	/* note: Ok to use _CAUSE_RIRQ since everything is saved */
 
-	ld_s r2, [r1, _kernel_offset_to_ready_q_cache]
+	mov r2, r0
+#ifndef CONFIG_SMP
 	st_s r2, [r1, _kernel_offset_to_current]
-
+#endif
 	/* clear AE bit to forget this was an exception */
 	lr r3, [_ARC_V2_STATUS32]
 	and r3,r3,(~_ARC_V2_STATUS32_AE)
