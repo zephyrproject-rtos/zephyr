@@ -20,10 +20,6 @@
 #ifndef __ZTEST_H__
 #define __ZTEST_H__
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /**
  * @defgroup ztest Zephyr testing suite
  */
@@ -44,18 +40,21 @@ extern "C" {
 /* FIXME: Properly integrate with Zephyr's arch specific code */
 #define CONFIG_X86 1
 #define CONFIG_PRINTK 1
-#endif
+#endif /* KERNEL */
 
 #include <misc/printk.h>
 #define PRINT printk
 
 #include <zephyr.h>
 
-
 #include <ztest_assert.h>
 #include <ztest_mock.h>
 #include <ztest_test.h>
 #include <tc_util.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 void test_main(void);
 
