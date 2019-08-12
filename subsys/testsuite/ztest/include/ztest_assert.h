@@ -19,6 +19,10 @@
 #include <stdio.h>
 #include <string.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void ztest_test_fail(void);
 #if CONFIG_ZTEST_ASSERT_VERBOSE == 0
 
@@ -185,5 +189,9 @@ static inline void zassert_mem_equal(void *buf, void *exp, size_t size,
 /**
  * @}
  */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __ZTEST_ASSERT_H__ */
