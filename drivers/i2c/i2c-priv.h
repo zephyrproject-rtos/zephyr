@@ -7,13 +7,13 @@
 #ifndef ZEPHYR_DRIVERS_I2C_I2C_PRIV_H_
 #define ZEPHYR_DRIVERS_I2C_I2C_PRIV_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <drivers/i2c.h>
 #include <dt-bindings/i2c/i2c.h>
 #include <logging/log.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 static inline u32_t i2c_map_dt_bitrate(u32_t bitrate)
 {
