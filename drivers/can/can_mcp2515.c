@@ -226,18 +226,6 @@ static int mcp2515_configure(struct device *dev, enum can_mode mode,
 	const u8_t rx0_ctrl = BIT(6) | BIT(5) | BIT(2);
 	const u8_t rx1_ctrl = BIT(6) | BIT(5);
 
-	__ASSERT((dev_cfg->tq_sjw >= 1) && (dev_cfg->tq_sjw <= 4),
-		 "1 <= SJW <= 4");
-	__ASSERT((dev_cfg->tq_prop >= 1) && (dev_cfg->tq_prop <= 8),
-		 "1 <= PROP <= 8");
-	__ASSERT((dev_cfg->tq_bs1 >= 1) && (dev_cfg->tq_bs1 <= 8),
-		 "1 <= BS1 <= 8");
-	__ASSERT((dev_cfg->tq_bs2 >= 2) && (dev_cfg->tq_bs2 <= 8),
-		 "2 <= BS2 <= 8");
-	__ASSERT(dev_cfg->tq_prop + dev_cfg->tq_bs1 >= dev_cfg->tq_bs2,
-		 "PROP + BS1 >= BS2");
-	__ASSERT(dev_cfg->tq_bs2 > dev_cfg->tq_sjw, "BS2 > SJW");
-
 	if (CONFIG_CAN_MCP2515_OSC_FREQ % (bit_length * bitrate * 2)) {
 		LOG_ERR("Prescaler is not a natural number! "
 			"prescaler = osc_rate / ((PROP + SEG1 + SEG2 + 1) "
@@ -605,6 +593,25 @@ static struct mcp2515_data mcp2515_data_1 = {
 	.tx_busy_map = 0U,
 	.filter_usage = 0U,
 };
+
+BUILD_ASSERT_MSG((DT_INST_0_MICROCHIP_MCP2515_SJW >= 1) &&
+	(DT_INST_0_MICROCHIP_MCP2515_SJW <= 4),
+	"1 <= SJW <= 4");
+BUILD_ASSERT_MSG((DT_INST_0_MICROCHIP_MCP2515_PROP_SEG >= 1) &&
+	(DT_INST_0_MICROCHIP_MCP2515_PROP_SEG <= 8),
+	"1 <= PROP <= 8");
+BUILD_ASSERT_MSG((DT_INST_0_MICROCHIP_MCP2515_PHASE_SEG1 >= 1) &&
+	(DT_INST_0_MICROCHIP_MCP2515_PHASE_SEG1 <= 8),
+	"1 <= BS1 <= 8");
+BUILD_ASSERT_MSG((DT_INST_0_MICROCHIP_MCP2515_PHASE_SEG2 >= 2) &&
+	(DT_INST_0_MICROCHIP_MCP2515_PHASE_SEG2 <= 8),
+	"2 <= BS2 <= 8");
+BUILD_ASSERT_MSG((DT_INST_0_MICROCHIP_MCP2515_PROP_SEG +
+	DT_INST_0_MICROCHIP_MCP2515_PHASE_SEG1) >=
+	DT_INST_0_MICROCHIP_MCP2515_PHASE_SEG2,
+	"PROP + BS1 >= BS2");
+BUILD_ASSERT_MSG(DT_INST_0_MICROCHIP_MCP2515_PHASE_SEG2 >
+	DT_INST_0_MICROCHIP_MCP2515_SJW, "BS2 > SJW");
 
 static const struct mcp2515_config mcp2515_config_1 = {
 	.spi_port = DT_INST_0_MICROCHIP_MCP2515_BUS_NAME,
