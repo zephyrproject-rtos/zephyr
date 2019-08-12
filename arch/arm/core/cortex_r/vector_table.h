@@ -43,9 +43,17 @@ GTEXT(__reserved)
 GTEXT(_PrepC)
 GTEXT(_isr_wrapper)
 
-#else
+#else /* _ASMLANGUAGE */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 extern void *_vector_table[];
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _ASMLANGUAGE */
 

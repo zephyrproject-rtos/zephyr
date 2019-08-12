@@ -14,10 +14,6 @@
 #ifndef ZEPHYR_ARCH_ARM_INCLUDE_CORTEX_M_TZ_H_
 #define ZEPHYR_ARCH_ARM_INCLUDE_CORTEX_M_TZ_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #ifdef _ASMLANGUAGE
 
 /* nothing */
@@ -26,6 +22,10 @@ extern "C" {
 
 #include <arm_cmse.h>
 #include <zephyr/types.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  *
@@ -334,10 +334,10 @@ typedef void __attribute__((cmse_nonsecure_call)) (*tz_ns_func_ptr_t) (void);
 #define TZ_NONSECURE_FUNC_PTR_IS_NS(fptr) \
 	cmse_is_nsfptr(fptr)
 
-#endif /* _ASMLANGUAGE */
-
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* _ASMLANGUAGE */
 
 #endif /* ZEPHYR_ARCH_ARM_INCLUDE_CORTEX_M_TZ_H_ */

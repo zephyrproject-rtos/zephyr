@@ -240,6 +240,7 @@ extern "C" {
 #define Z_ARCH_THREAD_STACK_BUFFER(sym) \
 		((char *)(sym) + MPU_GUARD_ALIGN_AND_SIZE)
 
+/* Legacy case: retain containing extern "C" with C++ */
 #ifdef CONFIG_ARM_MPU
 #ifdef CONFIG_CPU_HAS_ARM_MPU
 #include <arch/arm/cortex_m/mpu/arm_mpu.h>

@@ -20,29 +20,10 @@
 #ifndef ZEPHYR_ARCH_ARM_INCLUDE_KERNEL_ARCH_DATA_H_
 #define ZEPHYR_ARCH_ARM_INCLUDE_KERNEL_ARCH_DATA_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <toolchain.h>
 #include <linker/sections.h>
 #include <arch/cpu.h>
 #include <kernel_arch_thread.h>
-
-#ifndef _ASMLANGUAGE
-#include <kernel.h>
-#include <kernel_internal.h>
-#include <zephyr/types.h>
-#include <sys/dlist.h>
-#include <sys/atomic.h>
-#endif
-
-#ifndef _ASMLANGUAGE
-
-typedef struct __esf _esf_t;
-typedef struct __basic_sf _basic_sf_t;
-
-#endif /* _ASMLANGUAGE */
 
 /* stacks */
 
@@ -58,11 +39,23 @@ typedef struct __basic_sf _basic_sf_t;
 #endif
 
 #ifndef _ASMLANGUAGE
+#include <kernel.h>
+#include <kernel_internal.h>
+#include <zephyr/types.h>
+#include <sys/dlist.h>
+#include <sys/atomic.h>
 
-#endif /* _ASMLANGUAGE */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+typedef struct __esf _esf_t;
+typedef struct __basic_sf _basic_sf_t;
 
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* _ASMLANGUAGE */
 
 #endif /* ZEPHYR_ARCH_ARM_INCLUDE_KERNEL_ARCH_DATA_H_ */
