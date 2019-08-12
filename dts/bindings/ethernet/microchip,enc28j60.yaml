@@ -9,7 +9,7 @@ title: 10Base-T Ethernet Controller with SPI Interface
 description: >
     This binding gives a base representation of the standalone ENC28J60 chip
 inherits:
-  !include [ethernet.yaml, spi-device.yaml]
+  !include [spi-device.yaml, ethernet.yaml]
 
 properties:
     compatible:
