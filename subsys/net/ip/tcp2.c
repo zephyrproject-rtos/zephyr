@@ -973,6 +973,8 @@ bool tp_input(struct net_pkt *pkt)
 			tcp_in(conn, NULL);
 		}
 		if (is("CLOSE", tp->op)) {
+			_tcp_conn_delete = true;
+			tp_trace = false;
 			tcp_conn_delete(tcp_conn_search(pkt));
 			tp_mem_stat();
 			tp_nbuf_stat();
