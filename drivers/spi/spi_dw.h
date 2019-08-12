@@ -9,7 +9,10 @@
 #ifndef ZEPHYR_DRIVERS_SPI_SPI_DW_H_
 #define ZEPHYR_DRIVERS_SPI_SPI_DW_H_
 
+#include <string.h>
 #include <drivers/spi.h>
+
+#include "spi_context.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -28,8 +31,6 @@ struct spi_dw_config {
 	spi_dw_config_t config_func;
 	u8_t op_modes;
 };
-
-#include "spi_context.h"
 
 struct spi_dw_data {
 #ifdef CONFIG_CLOCK_CONTROL
@@ -194,6 +195,10 @@ struct spi_dw_data {
 /*
  * Including the right register definition file
  * SoC SPECIFIC!
+ *
+ * The file included next uses the DEFINE_MM_REG macros above to
+ * declare functions.  In this situation we'll leave the containing
+ * extern "C" active in C++ compilations.
  */
 #include "spi_dw_regs.h"
 
@@ -214,8 +219,6 @@ DEFINE_TEST_BIT_OP(ssienr, DW_SPI_REG_SSIENR, DW_SPI_SSIENR_SSIEN_BIT)
 DEFINE_TEST_BIT_OP(sr_busy, DW_SPI_REG_SR, DW_SPI_SR_BUSY_BIT)
 
 #ifdef CONFIG_CLOCK_CONTROL
-
-#include <string.h>
 
 static inline int clock_config(struct device *dev)
 {
@@ -260,7 +263,8 @@ static inline void clock_off(struct device *dev)
 
 	extra_clock_off(dev);
 }
-#else
+
+#else /* CONFIG_CLOCK_CONTROL */
 #define clock_config(...)
 #define clock_on(...)
 #define clock_off(...)
@@ -269,4 +273,5 @@ static inline void clock_off(struct device *dev)
 #ifdef __cplusplus
 }
 #endif
+
 #endif /* ZEPHYR_DRIVERS_SPI_SPI_DW_H_ */
