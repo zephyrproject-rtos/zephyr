@@ -12,6 +12,8 @@
 
 #ifndef _ASMLANGUAGE
 
+#include <stddef.h> /* For size_t */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -91,8 +93,6 @@ static inline struct x86_mmu_pdpt *z_x86_pdpt_get(struct k_thread *thread)
 
 /* ASM code to fiddle with registers to enable the MMU with PAE paging */
 void z_x86_enable_paging(void);
-
-#include <stddef.h> /* For size_t */
 
 #ifdef __cplusplus
 }
