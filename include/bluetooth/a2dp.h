@@ -10,11 +10,11 @@
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_A2DP_H_
 #define ZEPHYR_INCLUDE_BLUETOOTH_A2DP_H_
 
+#include <bluetooth/avdtp.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <bluetooth/avdtp.h>
 
 /** @brief Stream Structure */
 struct bt_a2dp_stream {

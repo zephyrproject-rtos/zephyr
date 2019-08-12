@@ -17,16 +17,16 @@
  * @{
  */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <stddef.h>
 #include <sys/types.h>
 #include <sys/util.h>
 #include <bluetooth/conn.h>
 #include <bluetooth/uuid.h>
 #include <bluetooth/att.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* GATT attribute permission bit field values */
 enum {
