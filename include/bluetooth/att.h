@@ -10,11 +10,11 @@
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_ATT_H_
 #define ZEPHYR_INCLUDE_BLUETOOTH_ATT_H_
 
+#include <sys/slist.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <sys/slist.h>
 
 /* Error codes for Error response PDU */
 #define BT_ATT_ERR_INVALID_HANDLE		0x01

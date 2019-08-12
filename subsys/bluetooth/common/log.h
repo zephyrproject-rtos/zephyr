@@ -14,6 +14,7 @@
 #include <linker/sections.h>
 #include <offsets.h>
 #include <zephyr.h>
+#include <logging/log.h>
 
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/hci.h>
@@ -31,8 +32,6 @@ extern "C" {
 #else
 #define LOG_LEVEL CONFIG_BT_LOG_LEVEL
 #endif
-
-#include <logging/log.h>
 
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
@@ -62,4 +61,3 @@ const char *bt_addr_le_str_real(const bt_addr_le_t *addr);
 #endif
 
 #endif /* __BT_LOG_H */
-
