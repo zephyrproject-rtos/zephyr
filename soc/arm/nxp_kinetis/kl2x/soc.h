@@ -9,10 +9,6 @@
 
 #include <sys/util.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #define UART0_CLK_SRC kCLOCK_CoreSysClk
 
 #ifndef _ASMLANGUAGE
@@ -23,9 +19,5 @@ extern "C" {
 #include <random/rand32.h>
 
 #endif /* !_ASMLANGUAGE */
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* _SOC__H_ */
