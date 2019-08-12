@@ -6,10 +6,11 @@
 #ifndef SAMPLE_MODULE_H
 #define SAMPLE_MODULE_H
 
+#include <logging/log.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-#include <logging/log.h>
 
 #define MODULE_NAME sample_module
 
