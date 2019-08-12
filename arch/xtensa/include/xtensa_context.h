@@ -19,15 +19,18 @@
 #ifndef ZEPHYR_ARCH_XTENSA_INCLUDE_XTENSA_CONTEXT_H_
 #define ZEPHYR_ARCH_XTENSA_INCLUDE_XTENSA_CONTEXT_H_
 
-#ifdef __ASSEMBLER__
-#include    <xtensa/coreasm.h>
-#endif
-
 #include    <xtensa/config/tie.h>
 #include    <xtensa/corebits.h>
 #include    <xtensa/config/system.h>
 #include    <xtensa/xtruntime-frames.h>
 
+#ifdef __ASSEMBLER__
+#include    <xtensa/coreasm.h>
+#else /* __ASSEMBLER__ */
+#ifdef __cplusplus
+extern "C" {
+#endif
+#endif /* __ASSEMBLER__ */
 
 /* Align a value up to nearest n-byte boundary, where n is a power of 2. */
 #define ALIGNUP(n, val) (((val) + (n)-1) & -(n))
@@ -310,8 +313,11 @@ ret
 #define RET(sz)       retw
 #define RET0          retw
 #endif /* __XTENSA_CALL0_ABI__ */
+#else /* __ASSEMBLER__ */
+#ifdef __cplusplus
+}
+#endif
 #endif /* __ASSEMBLER__ */
 
 
 #endif /* ZEPHYR_ARCH_XTENSA_INCLUDE_XTENSA_CONTEXT_H_ */
-

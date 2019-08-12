@@ -6,10 +6,6 @@
 #ifndef ZEPHYR_ARCH_XTENSA_INCLUDE_XTENSA_CONFIG_H_
 #define ZEPHYR_ARCH_XTENSA_INCLUDE_XTENSA_CONFIG_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <xtensa/hal.h>
 #include <xtensa/config/core.h>
 #include <xtensa/config/system.h>	/* required for XSHAL_CLIB */
@@ -133,9 +129,4 @@ extern "C" {
 #define XT_STACK_EXTRA_CLIB         (XT_XTRA_SIZE + XT_CLIB_CONTEXT_AREA_SIZE)
 
 
-#ifdef __cplusplus
-}
-#endif
-
 #endif /* ZEPHYR_ARCH_XTENSA_INCLUDE_XTENSA_CONFIG_H_ */
-
