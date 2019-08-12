@@ -555,14 +555,14 @@ static inline double sensor_value_to_double(struct sensor_value *val)
 	return (double)val->val1 + (double)val->val2 / 1000000;
 }
 
-#include <syscalls/sensor.h>
+/**
+ * @}
+ */
 
 #ifdef __cplusplus
 }
 #endif
 
-/**
- * @}
- */
+#include <syscalls/sensor.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_SENSOR_H_ */

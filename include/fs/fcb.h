@@ -7,10 +7,6 @@
 #ifndef ZEPHYR_INCLUDE_FS_FCB_H_
 #define ZEPHYR_INCLUDE_FS_FCB_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /*
  * Flash circular buffer.
  */
@@ -20,6 +16,10 @@ extern "C" {
 #include <storage/flash_map.h>
 
 #include <kernel.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * @defgroup fcb Flash Circular Buffer (FCB)

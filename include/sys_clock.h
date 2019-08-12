@@ -19,12 +19,12 @@
 #include <sys/util.h>
 #include <sys/dlist.h>
 
+#include <toolchain.h>
+#include <zephyr/types.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <toolchain.h>
-#include <zephyr/types.h>
 
 #ifdef CONFIG_TICKLESS_KERNEL
 extern int _sys_clock_always_on;
