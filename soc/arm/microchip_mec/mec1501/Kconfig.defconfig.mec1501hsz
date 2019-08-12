@@ -49,4 +49,11 @@ config COUNTER_XEC
 
 endif # COUNTER
 
+if PS2
+
+config PS2_XEC
+	default y
+
+endif # PS2
+
 endif # SOC_MEC1501_HSZ
