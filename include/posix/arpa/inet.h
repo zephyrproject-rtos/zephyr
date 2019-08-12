@@ -6,11 +6,11 @@
 #ifndef ZEPHYR_INCLUDE_POSIX_ARPA_INET_H_
 #define ZEPHYR_INCLUDE_POSIX_ARPA_INET_H_
 
+#include <net/socket.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <net/socket.h>
 
 static inline char *inet_ntop(sa_family_t family, const void *src, char *dst,
 			      size_t size)

@@ -7,15 +7,15 @@
 #ifndef ZEPHYR_INCLUDE_POSIX_SYS_TYPES_H_
 #define ZEPHYR_INCLUDE_POSIX_SYS_TYPES_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #ifndef CONFIG_ARCH_POSIX
 #include <sys/types.h>
 #endif
 
 #include <kernel.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef unsigned long useconds_t;
 
