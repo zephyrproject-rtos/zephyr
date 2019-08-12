@@ -87,7 +87,7 @@ manifest:
       revision: 31ae89e4b768612722620cb6cb173a0de4a19cc9
     - name: littlefs
       path: modules/fs/littlefs
-      revision: 52b038794b1ba34bd9aaf4df3e37e65558046342
+      revision: fe9572dd5a9fcf93a249daa4233012692bd2881d
 
   self:
     path: zephyr
