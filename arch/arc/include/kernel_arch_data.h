@@ -20,10 +20,6 @@
 #ifndef ZEPHYR_ARCH_ARC_INCLUDE_KERNEL_ARCH_DATA_H_
 #define ZEPHYR_ARCH_ARC_INCLUDE_KERNEL_ARCH_DATA_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <toolchain.h>
 #include <linker/sections.h>
 #include <arch/cpu.h>
@@ -36,9 +32,11 @@ extern "C" {
 #include <zephyr/types.h>
 #include <sys/util.h>
 #include <sys/dlist.h>
+
+#ifdef __cplusplus
+extern "C" {
 #endif
 
-#ifndef _ASMLANGUAGE
 #ifdef CONFIG_ARC_HAS_SECURE
 struct _irq_stack_frame {
 	u32_t lp_end;
@@ -170,6 +168,10 @@ struct _callee_saved_stack {
 
 typedef struct _callee_saved_stack _callee_saved_stack_t;
 
+#ifdef __cplusplus
+}
+#endif
+
 #endif /* _ASMLANGUAGE */
 
 /* stacks */
@@ -179,8 +181,5 @@ typedef struct _callee_saved_stack _callee_saved_stack_t;
 #define STACK_ROUND_UP(x) ROUND_UP(x, STACK_ALIGN_SIZE)
 #define STACK_ROUND_DOWN(x) ROUND_DOWN(x, STACK_ALIGN_SIZE)
 
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* ZEPHYR_ARCH_ARC_INCLUDE_KERNEL_ARCH_DATA_H_ */
