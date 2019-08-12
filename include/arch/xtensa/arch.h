@@ -15,10 +15,6 @@
 
 #include <irq.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <generated_dts_board.h>
 #if !defined(_ASMLANGUAGE) && !defined(__ASSEMBLER__)
 #include <arch/common/sys_io.h>
@@ -35,6 +31,10 @@ extern "C" {
 #define sys_define_gpr_with_alias(name1, name2) union { u32_t name1, name2; }
 
 #include <arch/xtensa/exc.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* internal routine documented in C file, needed by IRQ_CONNECT() macro */
 extern void z_irq_priority_set(u32_t irq, u32_t prio, u32_t flags);
@@ -95,9 +95,10 @@ static ALWAYS_INLINE void arch_nop(void)
 	__asm__ volatile("nop");
 }
 
-#endif /* !defined(_ASMLANGUAGE) && !defined(__ASSEMBLER__)  */
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* !defined(_ASMLANGUAGE) && !defined(__ASSEMBLER__)  */
 
 #endif /* ZEPHYR_INCLUDE_ARCH_XTENSA_ARCH_H_ */
