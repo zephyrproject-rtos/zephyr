@@ -7,7 +7,7 @@ sphinxcontrib-svg2pdfconverter
 junit2html
 PyYAML>=3.13
 ply==3.10
-hub==2.0
+git-spindle==2.0
 gitlint
 pyelftools==0.24
 pyocd==0.21.0
