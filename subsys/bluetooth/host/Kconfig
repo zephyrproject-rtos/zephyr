@@ -305,6 +305,13 @@ config BT_BONDABLE
 	  Bonding flag in AuthReq of SMP Pairing Request/Response will be set
 	  indicating the support for this mode.
 
+config BT_STORE_DEBUG_KEYS
+	bool "Store Debug Mode bonds"
+	help
+	  This option enables support for storing bonds where either of devices
+	  has the Security Manager in Debug mode. This option should
+	  only be enabled for debugging and should never be used in production.
+
 config BT_SMP_ENFORCE_MITM
 	bool "Enforce MITM protection"
 	default y

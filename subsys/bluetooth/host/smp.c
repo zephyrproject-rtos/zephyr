@@ -1540,7 +1540,8 @@ static void smp_pairing_complete(struct bt_smp *smp, u8_t status)
 		 * TODO should we allow this if BR/EDR is already connected?
 		 */
 		if (atomic_test_bit(smp->flags, SMP_FLAG_DERIVE_LK) &&
-		    !atomic_test_bit(smp->flags, SMP_FLAG_SC_DEBUG_KEY)) {
+		    (!atomic_test_bit(smp->flags, SMP_FLAG_SC_DEBUG_KEY) ||
+		     IS_ENABLED(CONFIG_BT_STORE_DEBUG_KEYS))) {
 			sc_derive_link_key(smp);
 		}
 #endif /* CONFIG_BT_BREDR */
@@ -3795,7 +3796,8 @@ static void bt_smp_disconnected(struct bt_l2cap_chan *chan)
 		 * If debug keys were used for pairing remove them.
 		 * No keys indicate no bonding so free keys storage.
 		 */
-		if (!keys->keys || (keys->flags & BT_KEYS_DEBUG)) {
+		if (!keys->keys || (!IS_ENABLED(CONFIG_BT_STORE_DEBUG_KEYS) &&
+		    (keys->flags & BT_KEYS_DEBUG))) {
 			bt_keys_clear(keys);
 		}
 	}
