@@ -92,10 +92,10 @@ typedef enum IRQn
 #define __NVIC_PRIO_BITS          3         /* Number of Bits used for Priority Levels */
 #define __Vendor_SysTickConfig    0         /* Set to 1 if different SysTick Config is used */
 
-#include <core_cm3.h>                         /* Processor and core peripherals                  */
-
 #ifdef __cplusplus
 }
 #endif
+
+#include <core_cm3.h>                         /* Processor and core peripherals                  */
 
 #endif  /* CMSDK_BEETLE_H */
