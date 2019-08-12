@@ -490,12 +490,26 @@ def write_pwms(dev):
     # Writes PWM controller and specifier info for the PWMs in dev's 'pwms'
     # property
 
-    for pwm in dev.pwms:
-        if pwm.controller.label is not None:
-            out_dev_s(dev, "PWMS_CONTROLLER", pwm.controller.label)
+    for pwm_i, pwm in enumerate(dev.pwms):
+        write_pwm(dev, pwm, pwm_i if len(dev.pwms) > 1 else None)
 
-        for spec, val in pwm.specifier.items():
-            out_dev(dev, "PWMS_" + str2ident(spec), val)
+
+def write_pwm(dev, pwm, index=None):
+    # Writes PWM controller & data for the PWM object 'pwm'. If 'index' is
+    # not None, it is added as a suffix to identifiers.
+
+    if pwm.controller.label is not None:
+        ctrl_ident = "PWMS_CONTROLLER"
+        if index is not None:
+            ctrl_ident += "_{}".format(index)
+        out_dev_s(dev, ctrl_ident, pwm.controller.label)
+
+    for cell, val in pwm.specifier.items():
+        cell_ident = "PWMS_" + str2ident(cell)
+        if index is not None:
+            cell_ident += "_{}".format(index)
+
+        out_dev(dev, cell_ident, val)
 
 
 def write_iochannels(dev):
