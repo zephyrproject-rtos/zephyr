@@ -1,0 +1,7 @@
+sample:
+  description: TF-M PSA certified level 1 sample application
+  name: TF-M PSA level 1
+tests:
+  sample.tfm_integration:
+    tags: introduction
+    platform_whitelist: mps2_an521_nonsecure
