@@ -930,6 +930,7 @@ bool tp_input(struct net_pkt *pkt)
 	struct tp *tp;
 	struct tp_new *tp_new;
 	enum tp_type type;
+	bool responded = false;
 	static char buf[512];
 
 	if (ip->proto != IPPROTO_UDP || 4242 != ntohs(uh->dst_port)) {
@@ -965,6 +966,8 @@ bool tp_input(struct net_pkt *pkt)
 			u8_t data_to_send[128];
 			size_t len = tp_str_to_hex(data_to_send,
 						sizeof(data_to_send), tp->data);
+			tp_output(pkt->iface, buf, 1);
+			responded = true;
 			conn = tcp_conn_new(pkt);
 			conn->seq = tp->seq;
 			if (len > 0) {
@@ -991,6 +994,8 @@ bool tp_input(struct net_pkt *pkt)
 		}
 		if (is("SEND", tp->op)) {
 			ssize_t len = tp_str_to_hex(buf, sizeof(buf), tp->data);
+			tp_output(pkt->iface, buf, 1);
+			responded = true;
 			tcp_dbg("tcp_send(\"%s\")", tp->data);
 			_tcp_send(0, buf, len, 0);
 		}
@@ -1022,6 +1027,9 @@ bool tp_input(struct net_pkt *pkt)
 
 	if (json_len) {
 		tp_output(pkt->iface, buf, json_len);
+	} else if ((TP_CONFIG_REQUEST == type || TP_COMMAND == type)
+			&& responded == false) {
+		tp_output(pkt->iface, buf, 1);
 	}
 
 	return true;
