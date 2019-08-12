@@ -1118,7 +1118,7 @@ sub top_of_kernel_tree {
 	my ($root) = @_;
 
 	my @tree_check = (
-		"LICENSE", "CODEOWNERS", "Kconfig", "README.rst",
+		"LICENSE", "Kconfig", "README.rst",
 		"doc", "arch", "include", "drivers", "boards",
 		"kernel", "lib", "scripts",
 	);
