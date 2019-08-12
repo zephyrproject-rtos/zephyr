@@ -52,3 +52,11 @@
 &timer3 {
 	status = "okay";
 };
+
+&ps2_0 {
+	status = "okay";
+};
+
+&ps2_1 {
+	status = "okay";
+};
