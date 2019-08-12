@@ -25,13 +25,12 @@
 #include <misc/util.h>
 
 #ifndef _ASMLANGUAGE
+#include <stddef.h>	/* for size_t */
+
 #include <arch/common/addr_types.h>
 #include <arch/x86/ia32/segmentation.h>
-#endif
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#endif /* _ASMLANGUAGE */
 
 /* GDT layout */
 #define CODE_SEG	0x08
@@ -53,8 +52,12 @@ extern "C" {
 
 #ifndef _ASMLANGUAGE
 
-/* interrupt/exception/error related definitions */
+#ifdef __cplusplus
+extern "C" {
+#endif
 
+
+/* interrupt/exception/error related definitions */
 
 /*
  * The TCS must be aligned to the same boundary as that used by the floating
@@ -315,10 +318,6 @@ struct _x86_syscall_stack_frame {
 	u32_t ss;
 };
 
-#endif /* !_ASMLANGUAGE */
-
-#ifndef _ASMLANGUAGE
-
 /**
  *
  * @internal
@@ -560,8 +559,6 @@ extern void k_float_enable(struct k_thread *thread, unsigned int options);
 /**
  * @}
  */
-
-#include <stddef.h>	/* for size_t */
 
 extern void	k_cpu_idle(void);
 
@@ -809,10 +806,10 @@ int z_x86_mmu_validate(struct x86_mmu_pdpt *pdpt, void *addr, size_t size,
 		       int write);
 #endif /* CONFIG_X86_MMU */
 
-#endif /* !_ASMLANGUAGE */
-
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* !_ASMLANGUAGE */
 
 #endif /* ZEPHYR_INCLUDE_ARCH_X86_IA32_ARCH_H_ */
