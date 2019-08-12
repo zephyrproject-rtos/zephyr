@@ -412,8 +412,6 @@ static inline u16_t adc_ref_internal(struct device *dev)
 	return api->ref_internal;
 }
 
-#include <syscalls/adc.h>
-
 /**
  * @}
  */
@@ -421,5 +419,7 @@ static inline u16_t adc_ref_internal(struct device *dev)
 #ifdef __cplusplus
 }
 #endif
+
+#include <syscalls/adc.h>
 
 #endif  /* ZEPHYR_INCLUDE_DRIVERS_ADC_H_ */
