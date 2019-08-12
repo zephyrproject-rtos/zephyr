@@ -38,7 +38,7 @@ void cfg_display(void)
 {
 	printk("Magic:   0x%X\n", cfg.magic);
 	printk("Version: %d\n", cfg.version);
-        printk("Scratch: %d bytes\n", sizeof(cfg.scratch));
+	printk("Scratch: %d bytes\n", sizeof(cfg.scratch));
 }
 
 void main(void)
@@ -53,7 +53,7 @@ void main(void)
 
 	/* Try to load config data from secure storage. */
 	status = cfg_load_data(&cfg);
-        cfg_display();
+	cfg_display();
 
 	while (1) {
 		/* Process queued logger message if present. */
