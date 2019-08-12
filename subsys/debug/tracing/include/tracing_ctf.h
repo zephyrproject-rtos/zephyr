@@ -7,13 +7,13 @@
 #ifndef _TRACE_CTF_H
 #define _TRACE_CTF_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <kernel.h>
 #include <kernel_structs.h>
 #include <init.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 void sys_trace_thread_switched_out(void);
 void sys_trace_thread_switched_in(void);
