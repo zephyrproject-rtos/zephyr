@@ -21,10 +21,6 @@
 #ifndef ZEPHYR_ARCH_ARC_INCLUDE_VECTOR_TABLE_H_
 #define ZEPHYR_ARCH_ARC_INCLUDE_VECTOR_TABLE_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #define EXC_EV_TRAP	0x9
 
 #ifdef _ASMLANGUAGE
@@ -55,6 +51,10 @@ GTEXT(_isr_wrapper)
 
 #else
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern void __reset(void);
 extern void __memory_error(void);
 extern void __instruction_error(void);
@@ -70,10 +70,10 @@ extern void __ev_div_zero(void);
 extern void __ev_dc_error(void);
 extern void __ev_maligned(void);
 
-#endif /* _ASMLANGUAGE */
-
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* _ASMLANGUAGE */
 
 #endif /* ZEPHYR_ARCH_ARC_INCLUDE_VECTOR_TABLE_H_ */

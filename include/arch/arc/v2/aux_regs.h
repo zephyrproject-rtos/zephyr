@@ -15,10 +15,6 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_ARC_V2_AUX_REGS_H_
 #define ZEPHYR_INCLUDE_ARCH_ARC_V2_AUX_REGS_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #define _ARC_V2_LP_START 0x002
 #define _ARC_V2_LP_END 0x003
 #define _ARC_V2_IDENTITY 0x004
@@ -200,9 +196,5 @@ extern "C" {
 				     : "i"(_ARC_V2_IDENTITY));        \
 		__ret;                                   \
 	})
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* ZEPHYR_INCLUDE_ARCH_ARC_V2_AUX_REGS_H_ */

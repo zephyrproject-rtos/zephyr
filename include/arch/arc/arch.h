@@ -160,6 +160,8 @@ extern "C" {
 
 #ifdef CONFIG_ARC_MPU
 #ifndef _ASMLANGUAGE
+
+/* Legacy case: retain containing extern "C" with C++ */
 #include <arch/arc/v2/mpu/arc_mpu.h>
 
 #define K_MEM_PARTITION_P_NA_U_NA	AUX_MPU_ATTR_N

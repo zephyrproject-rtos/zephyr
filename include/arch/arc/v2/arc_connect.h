@@ -14,13 +14,12 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_ARC_V2_ARC_CONNECT_H_
 #define ZEPHYR_INCLUDE_ARCH_ARC_V2_ARC_CONNECT_H_
 
+#ifndef _ASMLANGUAGE
+#include <zephyr/types.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#ifndef _ASMLANGUAGE
-#include <zephyr/types.h>
 
 #define _ARC_V2_CONNECT_BCR 0x0d0
 #define _ARC_V2_CONNECT_IDU_BCR 0x0d5
@@ -227,9 +226,10 @@ extern void z_arc_connect_idu_set_mask(u32_t irq_num, u32_t mask);
 extern u32_t z_arc_connect_idu_read_mask(u32_t irq_num);
 extern u32_t z_arc_connect_idu_check_first(u32_t irq_num);
 
-#endif
-
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* _ASMLANGUAGE */
+
 #endif /* ZEPHYR_INCLUDE_ARCH_ARC_V2_ARC_CONNECT_H_ */

@@ -20,15 +20,15 @@
 #ifndef ZEPHYR_ARCH_ARC_INCLUDE_KERNEL_ARCH_FUNC_H_
 #define ZEPHYR_ARCH_ARC_INCLUDE_KERNEL_ARCH_FUNC_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #if !defined(_ASMLANGUAGE)
 
 #ifdef CONFIG_CPU_ARCV2
 #include <v2/cache.h>
 #include <v2/irq.h>
+#endif
+
+#ifdef __cplusplus
+extern "C" {
 #endif
 
 static ALWAYS_INLINE _cpu_t *z_arch_curr_cpu(void)
@@ -80,10 +80,10 @@ extern void z_arc_fatal_error(unsigned int reason, const z_arch_esf_t *esf);
 
 extern void z_arch_sched_ipi(void);
 
-#endif /* _ASMLANGUAGE */
-
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* _ASMLANGUAGE */
 
 #endif /* ZEPHYR_ARCH_ARC_INCLUDE_KERNEL_ARCH_FUNC_H_ */
