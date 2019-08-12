@@ -22,10 +22,6 @@
 #include <arch/common/sys_io.h>
 #include <arch/common/ffs.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #define STACK_ALIGN  4
 
 #ifndef _ASMLANGUAGE
@@ -33,6 +29,9 @@ extern "C" {
 #include <irq.h>
 #include <sw_isr_table.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * Configure a static interrupt.
@@ -210,10 +209,10 @@ static ALWAYS_INLINE void arch_nop(void)
 	__asm__ volatile("nop");
 }
 
-#endif /* _ASMLANGUAGE */
-
 #ifdef __cplusplus
 }
 #endif
 
-#endif
+#endif /* _ASMLANGUAGE */
+
+#endif /* ZEPHYR_INCLUDE_ARCH_NIOS2_ARCH_H_ */
