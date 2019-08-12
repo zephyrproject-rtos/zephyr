@@ -212,7 +212,7 @@ class EDT:
 
     def _init_devices(self):
         # Creates a list of devices (Device objects) from the DT nodes, in
-        # self.devices. 'dt' is the dtlib.DT instance for the device tree.
+        # self.devices
 
         # Maps dtlib.Node's to their corresponding Devices
         self._node2dev = {}
