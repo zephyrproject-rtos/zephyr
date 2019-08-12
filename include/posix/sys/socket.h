@@ -6,12 +6,12 @@
 #ifndef ZEPHYR_INCLUDE_POSIX_SYS_SOCKET_H_
 #define ZEPHYR_INCLUDE_POSIX_SYS_SOCKET_H_
 
+#include <sys/types.h>
+#include <net/socket.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <sys/types.h>
-#include <net/socket.h>
 
 static inline int socket(int family, int type, int proto)
 {
