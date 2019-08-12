@@ -294,4 +294,22 @@ config PLATFORM_SPECIFIC_INIT
 
 endmenu
 
+config ARM_SCB
+	bool "SCB"
+	default y
+	help
+	  Include ARM system block control interface.
+
+config ARM_IRQ_INIT
+	bool "IRQ INIT"
+	default y
+	help
+	  Include ARM interrupt initialization.
+
+config ARM_VECTOR_TABLE
+	bool "VECTOR TABLE"
+	default y
+	help
+	  Include ARM vector table handling.
+
 endif # CPU_CORTEX_M

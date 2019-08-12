@@ -119,6 +119,18 @@ config FAULT_DUMP
 
 	  0: Off.
 
+config ARM_NMI
+	bool "NMI handler infrastructure"
+	default y
+	help
+	  Include ARM specific NMI handling infrastructure.
+
+config ARM_EXC_EXIT
+	bool "Excception exit API"
+	default y
+	help
+	  Include ARM specific exception/interrupt exit API.
+
 config BUILTIN_STACK_GUARD
 	bool "Thread Stack Guards based on built-in ARM stack limit checking"
 	depends on CPU_CORTEX_M_HAS_SPLIM

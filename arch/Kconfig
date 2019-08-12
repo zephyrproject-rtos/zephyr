@@ -71,6 +71,49 @@ module = MPU
 module-str = mpu
 source "subsys/logging/Kconfig.template.log_config"
 
+config THREAD
+	bool "Thread"
+	default y
+	help
+	  Include arch speficic thread handling.
+
+config CPU_IDLE
+	bool "CPU Idle support"
+	default y
+	help
+	  Include arch specific CPU idle functionality.
+
+config FATAL
+	bool "Fatal"
+	default y
+	help
+	  Include arch specific handlers for fatal errors/faults.
+
+config PREP_C
+	bool "Prep c"
+	default y
+	help
+	  Include arch specific C runtime preparation.
+
+config RESET
+	bool "Reset"
+	default y
+	help
+	  Include arch specific reset handling.
+
+config IRQ_MANAGE
+	bool "IRQ Manage"
+	default y
+	help
+	  Include arch specific IRQ management.
+
+config SWAP
+	bool "Swap"
+	default y
+	help
+	  Include arch specific functionality for swapping/switching  between
+	  threads.
+
 config BIG_ENDIAN
        bool
        help
