@@ -24,10 +24,6 @@
 #include <soc.h>
 #include <generated_dts_board.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* stacks, for RISCV architecture stack should be 16byte-aligned */
 #define STACK_ALIGN  16
 
@@ -45,6 +41,10 @@ extern "C" {
 
 #ifndef _ASMLANGUAGE
 #include <sys/util.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define STACK_ROUND_UP(x) ROUND_UP(x, STACK_ALIGN)
 #define STACK_ROUND_DOWN(x) ROUND_DOWN(x, STACK_ALIGN)
@@ -157,14 +157,15 @@ static ALWAYS_INLINE void arch_nop(void)
 extern u32_t z_timer_cycle_get_32(void);
 #define z_arch_k_cycle_get_32()	z_timer_cycle_get_32()
 
+#ifdef __cplusplus
+}
+#endif
+
 #endif /*_ASMLANGUAGE */
 
 #if defined(CONFIG_SOC_FAMILY_RISCV_PRIVILEGE)
 #include <arch/riscv/riscv-privilege/asm_inline.h>
 #endif
 
-#ifdef __cplusplus
-}
-#endif
 
 #endif
