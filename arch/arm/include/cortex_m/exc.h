@@ -16,10 +16,6 @@
 
 #include <arch/cpu.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #ifdef _ASMLANGUAGE
 
 /* nothing */
@@ -29,6 +25,10 @@ extern "C" {
 #include <arch/arm/cortex_m/cmsis.h>
 #include <arch/arm/exc.h>
 #include <irq_offload.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #ifdef CONFIG_IRQ_OFFLOAD
 extern volatile irq_offload_routine_t offload_routine;
@@ -153,11 +153,10 @@ static ALWAYS_INLINE void z_clearfaults(void)
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
 }
 
-#endif /* _ASMLANGUAGE */
-
 #ifdef __cplusplus
 }
 #endif
 
+#endif /* _ASMLANGUAGE */
 
 #endif /* ZEPHYR_ARCH_ARM_INCLUDE_CORTEX_M_EXC_H_ */

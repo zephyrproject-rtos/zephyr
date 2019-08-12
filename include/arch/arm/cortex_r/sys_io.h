@@ -12,14 +12,14 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_R_SYS_IO_H_
 #define ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_R_SYS_IO_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #ifndef _ASMLANGUAGE
 
 #include <zephyr/types.h>
 #include <sys/sys_io.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* Memory mapped registers I/O functions */
 
@@ -153,10 +153,10 @@ static ALWAYS_INLINE
 	return ret;
 }
 
-#endif
-
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* _ASMLANGUAGE */
 
 #endif /* ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_R_SYS_IO_H_ */
