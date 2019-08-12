@@ -12,6 +12,7 @@
 #ifndef _ASMLANGUAGE
 #include <string.h>
 #include <stdbool.h>
+#include <stddef.h> /* For size_t */
 
 #ifdef __cplusplus
 extern "C" {
@@ -118,8 +119,6 @@ z_set_thread_return_value(struct k_thread *thread, unsigned int value)
 #endif
 
 extern void k_cpu_atomic_idle(unsigned int key);
-
-#include <stddef.h> /* For size_t */
 
 #ifdef __cplusplus
 }
