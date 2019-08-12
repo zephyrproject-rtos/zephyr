@@ -25,7 +25,7 @@ LOG_MODULE_DECLARE(app, CONFIG_LOG_DEFAULT_LEVEL);
 void crypto_test(void)
 {
 	psa_status_t status;
-	uint8_t outbuf[256] = { 0 };
+	u8_t outbuf[256] = { 0 };
 
 	status = al_psa_status(psa_generate_random(outbuf, 256), __func__);
 	for (int i = 0; i < 256; i++) {
@@ -38,7 +38,7 @@ void cfg_display(void)
 {
 	printk("Magic:   0x%X\n", cfg.magic);
 	printk("Version: %d\n", cfg.version);
-	printk("Scratch: %d bytes\n", sizeof(cfg.scratch));
+        printk("Scratch: %d bytes\n", sizeof(cfg.scratch));
 }
 
 void main(void)
@@ -49,11 +49,11 @@ void main(void)
 	log_init();
 
 	/* Call a crypto function using the PSA FF APIs. */
-	// crypto_test();
+	/* crypto_test(); */
 
 	/* Try to load config data from secure storage. */
 	status = cfg_load_data(&cfg);
-	cfg_display();
+        cfg_display();
 
 	while (1) {
 		/* Process queued logger message if present. */

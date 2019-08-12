@@ -18,7 +18,7 @@ application images are then merged and signed using the public/private key pair
 stored in the secure bootloader, so that they will be accepted during the
 image validation process at startup.
 
-All TF-M dependencies will be automatically cloned in the `/ext` folder, and
+All TF-M dependencies will be automatically cloned in the /ext folder, and
 built if appropriate build artefacts are not detected.
 
 .. _PSA Certified Level 1:
@@ -113,9 +113,9 @@ with a private key before execution can be handed off by the bootloader. The
 firmware image is validated by the bootloader at startup using the public key,
 which is built into the secure bootloader.
 
-By default, `tfm/bl2/ext/mcuboot/root-rsa-3072.pem` is used to sign images.
-`merge.sh` signs the TF-M + Zephyr binary using the .pem private key,
-calling `imgtool.py` to perform the actual signing operation.
+By default, tfm/bl2/ext/mcuboot/root-rsa-3072.pem is used to sign images.
+merge.sh signs the TF-M + Zephyr binary using the .pem private key,
+calling imgtool.py` to perform the actual signing operation.
 
 In order to satisfy PSA Level 1 certification requirements, **You MUST replace
 the default .pem file with a new key pair!**
@@ -129,7 +129,7 @@ the sample folder:
   $ ../../../ext/tfm/tfm/bl2/ext/mcuboot/scripts/imgtool.py keygen -k root-rsa-3072.pem -t rsa-3072
   $ cp root-
 
-You can then replace the .pem file in `/ext/tfm/tfm/bl2/ext/mcuboot/` with
+You can then replace the .pem file in /ext/tfm/tfm/bl2/ext/mcuboot/ with
 the newly generated .pem file, and rebuild the bootloader so that it uses the
 public key extracted from this new key file when validating firmware images.
 

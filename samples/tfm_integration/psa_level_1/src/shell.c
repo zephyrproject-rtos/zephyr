@@ -28,10 +28,10 @@ psa_shell_cmd_version(const struct shell *shell, size_t argc, char **argv)
 
 /* Subcommand array for "psa" (level 1). */
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_psa,
-       /* 'version' command handler. */
-       SHELL_CMD(version, NULL, "app version", psa_shell_cmd_version),
-       /* Array terminator. */
-       SHELL_SUBCMD_SET_END
+	/* 'version' command handler. */
+	SHELL_CMD(version, NULL, "app version", psa_shell_cmd_version),
+	/* Array terminator. */
+	SHELL_SUBCMD_SET_END
 );
 
 /* Root command "psa" (level 0). */

@@ -19,7 +19,7 @@ endmenu
 config PSA_SHELL
 	bool "Enable the 'psa' shell command"
 	default n
-    depends on SHELL
+	depends on SHELL
 	help
 	  Enabling this option will make the 'psa' shell command available.
 

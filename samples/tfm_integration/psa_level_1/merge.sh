@@ -1,6 +1,7 @@
 #!/bin/bash
 #-----------------------------------------------------------------------------
 # Copyright 2019 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
 #
 # Merges a secure TF-M library that enables IPC communications with a
 # non-secure Zephyr application.
@@ -31,11 +32,17 @@ fi
 
 # Merge tf-m and zephyr binary images
 echo "Merging TF-M secure and Zephyr non-secure binaries into tfm_full.hex."
-python3 ${TFMROOT}/bl2/ext/mcuboot/scripts/assemble.py -l ../../../../build/image_macros_preprocessed.c -s ${TFMROOT}/build/install/outputs/AN521/tfm_s.bin -n build/zephyr/zephyr.bin -o build/tfm_full.bin
+python3 ${TFMROOT}/bl2/ext/mcuboot/scripts/assemble.py -l \
+../../../../build/image_macros_preprocessed.c \
+-s ${TFMROOT}/build/install/outputs/AN521/tfm_s.bin \
+-n build/zephyr/zephyr.bin -o build/tfm_full.bin
 
 # Sign the merged binary
 echo "Signing merged binary into tfm_sign.hex"
-python3 ${TFMROOT}/bl2/ext/mcuboot/scripts/imgtool.py sign --layout ../../../../platform/ext/target/mps2/an521/partition/flash_layout.h -k ${TFMROOT}/bl2/ext/mcuboot/root-rsa-3072.pem --align 1 -v 0.0.0+0 -H 0x400 build/tfm_full.bin build/tfm_sign.bin
+python3 ${TFMROOT}/bl2/ext/mcuboot/scripts/imgtool.py sign \
+--layout ../../../../platform/ext/target/mps2/an521/partition/flash_layout.h \
+-k ${TFMROOT}/bl2/ext/mcuboot/root-rsa-3072.pem --align 1 -v 0.0.0+0 \
+-H 0x400 build/tfm_full.bin build/tfm_sign.bin
 
 # Copy mcuboot.bin to build
 echo "Copying mcuboot.bin"
