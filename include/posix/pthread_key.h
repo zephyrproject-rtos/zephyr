@@ -7,13 +7,13 @@
 #ifndef ZEPHYR_INCLUDE_POSIX_PTHREAD_KEY_H_
 #define ZEPHYR_INCLUDE_POSIX_PTHREAD_KEY_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #ifdef CONFIG_PTHREAD_IPC
 #include <sys/slist.h>
 #include <zephyr/types.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef u32_t pthread_once_t;
 

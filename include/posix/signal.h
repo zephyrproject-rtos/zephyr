@@ -6,11 +6,11 @@
 #ifndef ZEPHYR_INCLUDE_POSIX_SIGNAL_H_
 #define ZEPHYR_INCLUDE_POSIX_SIGNAL_H_
 
+#include "posix_types.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include "posix_types.h"
 
 #ifndef SIGEV_NONE
 #define SIGEV_NONE 1
