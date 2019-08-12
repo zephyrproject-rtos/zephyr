@@ -92,10 +92,10 @@ static inline int ptp_clock_rate_adjust(struct device *dev, float rate)
 	return api->rate_adjust(dev, rate);
 }
 
-#include <syscalls/ptp_clock.h>
-
 #ifdef __cplusplus
 }
 #endif
+
+#include <syscalls/ptp_clock.h>
 
 #endif /* ZEPHYR_INCLUDE_PTP_CLOCK_H_ */

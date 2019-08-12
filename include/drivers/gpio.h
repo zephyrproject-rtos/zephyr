@@ -465,10 +465,10 @@ struct gpio_pin_config {
  * @}
  */
 
-#include <syscalls/gpio.h>
-
 #ifdef __cplusplus
 }
 #endif
+
+#include <syscalls/gpio.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_GPIO_H_ */

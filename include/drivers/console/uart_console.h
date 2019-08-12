@@ -9,11 +9,11 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_CONSOLE_UART_CONSOLE_H_
 #define ZEPHYR_INCLUDE_DRIVERS_CONSOLE_UART_CONSOLE_H_
 
+#include <kernel.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <kernel.h>
 
 /** @brief Register uart input processing
  *
