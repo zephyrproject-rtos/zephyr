@@ -21,10 +21,6 @@
 #ifndef ZEPHYR_ARCH_ARM_CORE_CORTEX_M_VECTOR_TABLE_H_
 #define ZEPHYR_ARCH_ARM_CORE_CORTEX_M_VECTOR_TABLE_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #ifdef _ASMLANGUAGE
 
 #include <toolchain.h>
@@ -57,14 +53,18 @@ GTEXT(__reserved)
 GTEXT(_PrepC)
 GTEXT(_isr_wrapper)
 
-#else
+#else /* _ASMLANGUAGE */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 extern void *_vector_table[];
-
-#endif /* _ASMLANGUAGE */
 
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* _ASMLANGUAGE */
 
 #endif /* ZEPHYR_ARCH_ARM_CORE_CORTEX_M_VECTOR_TABLE_H_ */

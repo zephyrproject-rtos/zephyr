@@ -14,10 +14,6 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_M_EXC_H_
 #define ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_M_EXC_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* for assembler, only works with constants */
 #define Z_EXC_PRIO(pri) (((pri) << (8 - DT_NUM_IRQ_PRIO_BITS)) & 0xff)
 
@@ -44,6 +40,10 @@ GTEXT(z_ExcExit);
 #else
 #include <zephyr/types.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct __esf {
 	struct __basic_sf {
 		sys_define_gpr_with_alias(a1, r0);
@@ -66,10 +66,10 @@ typedef struct __esf z_arch_esf_t;
 
 extern void z_ExcExit(void);
 
-#endif /* _ASMLANGUAGE */
-
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* _ASMLANGUAGE */
 
 #endif /* ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_M_EXC_H_ */

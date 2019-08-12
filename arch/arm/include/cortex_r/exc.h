@@ -16,10 +16,6 @@
 
 #include <arch/cpu.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #ifdef _ASMLANGUAGE
 
 /* nothing */
@@ -27,6 +23,10 @@ extern "C" {
 #else
 
 #include <irq_offload.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #ifdef CONFIG_IRQ_OFFLOAD
 extern volatile irq_offload_routine_t offload_routine;
@@ -76,11 +76,10 @@ static ALWAYS_INLINE void z_clearfaults(void)
 
 extern void cortex_r_svc(void);
 
-#endif /* _ASMLANGUAGE */
-
 #ifdef __cplusplus
 }
 #endif
 
+#endif /* _ASMLANGUAGE */
 
 #endif /* _ARM_CORTEXRM_ISR__H_ */

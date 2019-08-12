@@ -11,10 +11,6 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_M_ASM_INLINE_GCC_H_
 #define ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_M_ASM_INLINE_GCC_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /*
  * The file must not be included directly
  * Include arch/cpu.h instead
@@ -25,6 +21,10 @@ extern "C" {
 #include <zephyr/types.h>
 #include <arch/arm/exc.h>
 #include <irq.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  *
@@ -158,10 +158,10 @@ static ALWAYS_INLINE bool z_arch_irq_unlocked(unsigned int key)
 	return key == 0;
 }
 
-#endif /* _ASMLANGUAGE */
-
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* _ASMLANGUAGE */
 
 #endif /* ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_M_ASM_INLINE_GCC_H_ */
