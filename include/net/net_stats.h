@@ -16,6 +16,7 @@
 
 #include <zephyr/types.h>
 #include <net/net_core.h>
+#include <net/net_mgmt.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -392,8 +393,6 @@ struct net_stats_ppp {
 
 #if defined(CONFIG_NET_STATISTICS_USER_API)
 /* Management part definitions */
-
-#include <net/net_mgmt.h>
 
 #define _NET_STATS_LAYER	NET_MGMT_LAYER_L3
 #define _NET_STATS_CODE		0x101
