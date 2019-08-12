@@ -103,8 +103,6 @@
 #define I2S2_CAVS_IRQ				I2S_CAVS_IRQ(2)
 #define I2S3_CAVS_IRQ				I2S_CAVS_IRQ(3)
 
-#define SSP_SIZE				0x0000200
-#define SSP_BASE(x)				(0x00008000 + (x) * SSP_SIZE)
 #define SSP_MN_DIV_SIZE				(8)
 #define SSP_MN_DIV_BASE(x)			\
 	(0x00078D00 + ((x) * SSP_MN_DIV_SIZE))
@@ -221,101 +219,5 @@ extern void z_soc_irq_enable(u32_t irq);
 extern void z_soc_irq_disable(u32_t irq);
 
 extern u32_t soc_get_ref_clk_freq(void);
-
-static inline uint32_t ipc_read(uint32_t reg)
-{
-	return sys_read32(IPC_HOST_BASE + reg);
-}
-
-static inline void ipc_write(uint32_t reg, uint32_t val)
-{
-	sys_write32(val, (IPC_HOST_BASE + reg));
-}
-
-/* SRAM window 0 FW "registers" */
-#define SRAM_REG_ROM_STATUS                     0x0
-#define SRAM_REG_FW_STATUS                      0x4
-#define SRAM_REG_FW_TRACEP                      0x8
-#define SRAM_REG_FW_IPC_RECEIVED_COUNT          0xc
-#define SRAM_REG_FW_IPC_PROCESSED_COUNT         0x10
-#define SRAM_REG_FW_END                         0x14
-
-static inline int memcpy_s(uint8_t *dest, size_t dest_size,
-			   const uint8_t *src, size_t src_size)
-{
-	if (!dest || !src)
-		return -EINVAL;
-
-	if ((dest >= src && dest < (src + src_size)) ||
-	    (src >= dest && src < (dest + dest_size)))
-		return -EINVAL;
-
-	if (src_size > dest_size)
-		return -EINVAL;
-
-        memcpy(dest, src, src_size);
-
-        return 0;
-}
-
-static inline void mailbox_sw_reg_write(size_t offset, uint32_t src)
-{
-	*((volatile uint32_t*)(MAILBOX_SW_REG_BASE + offset)) = src;
-	SOC_DCACHE_FLUSH((void *)(MAILBOX_SW_REG_BASE + offset), sizeof(src));
-}
-
-static inline int mailbox_dspbox_read(void *dest, size_t dest_size,
-				      size_t offset, size_t bytes)
-{
-	int ret;
-
-        SOC_DCACHE_INVALIDATE((void *)(MAILBOX_DSPBOX_BASE + offset), bytes);
-        ret = memcpy_s(dest, dest_size,
-		       (void *)(MAILBOX_DSPBOX_BASE + offset),
-		       bytes);
-
-	return ret;
-}
-
-static inline int mailbox_dspbox_write(size_t offset, const void *src,
-				       size_t bytes)
-{
-	int ret;
-
-	ret = memcpy_s((void *)(MAILBOX_DSPBOX_BASE + offset),
-		       MAILBOX_DSPBOX_SIZE - offset, src, bytes);
-	if (ret == 0) {
-		SOC_DCACHE_FLUSH((void *)(MAILBOX_DSPBOX_BASE + offset),
-				 bytes);
-	}
-
-	return ret;
-}
-
-/* Clock control */
-#define SHIM_CLKCTL			0x78
-
-/* Power control and status */
-#define SHIM_PWRCTL			0x90
-#define SHIM_PWRSTS			0x92
-#define SHIM_LPSCTL			0x94
-
-#define SHIM_CLKCTL_HDCS_PLL		0
-#define SHIM_CLKCTL_LDCS_PLL		0
-#define SHIM_CLKCTL_DPCS_DIV1(x)	(0x0 << (8 + x * 2))
-#define SHIM_CLKCTL_HPMPCS_DIV2		0
-#define SHIM_CLKCTL_LPMPCS_DIV4		BIT(1)
-#define SHIM_CLKCTL_TCPAPLLS_DIS	0
-#define SHIM_CLKCTL_TCPLCG_DIS(x)	0
-
-static inline uint32_t shim_read(uint32_t reg)
-{
-	return sys_read32(SHIM_BASE + reg);
-}
-
-static inline void shim_write(uint32_t reg, uint32_t val)
-{
-	sys_write32(val, (SHIM_BASE + reg));
-}
 
 #endif /* __INC_SOC_H */
