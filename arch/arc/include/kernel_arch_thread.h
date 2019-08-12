@@ -31,6 +31,10 @@
 #ifndef _ASMLANGUAGE
 #include <zephyr/types.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct _callee_saved {
 	u32_t sp; /* r28 */
 };
@@ -60,6 +64,11 @@ struct _thread_arch {
 
 typedef struct _thread_arch _thread_arch_t;
 
+#ifdef __cplusplus
+}
+#endif
+
 #endif /* _ASMLANGUAGE */
+
 
 #endif /* ZEPHYR_ARCH_ARC_INCLUDE_KERNEL_ARCH_THREAD_H_ */

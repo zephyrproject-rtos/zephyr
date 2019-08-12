@@ -8,11 +8,11 @@
 #ifndef _ARC_IOT_SYSCONF_H_
 #define _ARC_IOT_SYSCONF_H_
 
+#include <stdint.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <stdint.h>
 
 typedef struct sysconf_reg {
 	volatile uint32_t reserved1;	/* 0x0 */

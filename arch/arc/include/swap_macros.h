@@ -14,10 +14,6 @@
 #include <toolchain.h>
 #include <arch/cpu.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #ifdef _ASMLANGUAGE
 
 /* entering this macro, current is in r2 */
@@ -337,9 +333,5 @@ extern "C" {
 .endm
 
 #endif /* _ASMLANGUAGE */
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /*  ZEPHYR_ARCH_ARC_INCLUDE_SWAP_MACROS_H_ */
