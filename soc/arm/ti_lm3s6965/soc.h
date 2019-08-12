@@ -17,10 +17,6 @@
 
 #include <sys/util.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* default system clock */
 
 #define SYSCLK_DEFAULT_IOSC_HZ MHZ(12)
@@ -76,9 +72,5 @@ extern "C" {
 #include <random/rand32.h>
 
 #endif /* !_ASMLANGUAGE */
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* _BOARD__H_ */
