@@ -10,10 +10,6 @@
 
 #include <sys/util.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #if defined(CONFIG_SOC_MKW40Z4) || defined(CONFIG_SOC_MKW41Z4)
 
 #define LPUART0_CLK_SRC kCLOCK_CoreSysClk
@@ -34,9 +30,5 @@ extern "C" {
 #include <random/rand32.h>
 
 #endif /* !_ASMLANGUAGE */
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* _SOC__H_ */
