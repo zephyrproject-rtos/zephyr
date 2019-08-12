@@ -131,11 +131,10 @@ typedef enum IRQn {
 #define __FPU_PRESENT             0U        /* no FPU present */
 #define __DSP_PRESENT             0U        /* no DSP extension present */
 
-
-#include <core_cm33.h>                           /*!< ARM Cortex-M33 processor and core peripherals */
-
 #ifdef __cplusplus
 }
 #endif
+
+#include <core_cm33.h>                           /*!< ARM Cortex-M33 processor and core peripherals */
 
 #endif  /* SYSTEM_CMSDK_MUSCA_H */
