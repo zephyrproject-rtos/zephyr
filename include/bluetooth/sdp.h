@@ -17,12 +17,12 @@
  * @{
  */
 
+#include <bluetooth/uuid.h>
+#include <bluetooth/conn.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <bluetooth/uuid.h>
-#include <bluetooth/conn.h>
 
 /*
  * All definitions are based on Bluetooth Assigned Numbers
@@ -601,6 +601,7 @@ int bt_sdp_get_profile_version(const struct net_buf *buf, u16_t profile,
  *  @return 0 on success if feature found and valid, negative in case any error
  */
 int bt_sdp_get_features(const struct net_buf *buf, u16_t *features);
+
 #ifdef __cplusplus
 }
 #endif
