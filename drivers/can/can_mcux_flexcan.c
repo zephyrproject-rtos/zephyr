@@ -216,6 +216,8 @@ static int mcux_flexcan_send(struct device *dev, const struct zcan_frame *msg,
 	}
 
 	mcux_flexcan_copy_zframe_to_frame(msg, &data->tx_cbs[alloc].frame);
+	data->tx_cbs[alloc].function = callback_isr;
+	data->tx_cbs[alloc].arg = callback_arg;
 	xfer.frame = &data->tx_cbs[alloc].frame;
 	xfer.mbIdx = ALLOC_IDX_TO_TXMB_IDX(alloc);
 	FLEXCAN_SetTxMbConfig(config->base, xfer.mbIdx, true);
@@ -280,6 +282,7 @@ static int mcux_flexcan_attach_isr(struct device *dev, can_rx_callback_t isr,
 	if (status != kStatus_Success) {
 		LOG_ERR("Failed to start rx for filter id %d (err = %d)",
 			alloc, status);
+		alloc = CAN_NO_FREE_FILTER;
 	}
 
 	k_mutex_unlock(&data->rx_mutex);
