@@ -48,6 +48,8 @@ config RISCV
 config XTENSA
 	bool "Xtensa architecture"
 	select HAS_DTS
+	select USE_SWITCH
+	select USE_SWITCH_SUPPORTED
 
 config ARCH_POSIX
 	bool "POSIX (native) architecture"

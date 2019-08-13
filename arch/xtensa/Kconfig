@@ -31,17 +31,6 @@ config XTENSA_OMIT_HIGH_INTERRUPTS
 	  code.  Default is "n" for legacy compatibility. Consider
 	  changing to "y" in the future.
 
-config XTENSA_ASM2
-	bool "New-style Xtensa context switch & interrupt layer"
-	select USE_SWITCH
-	select USE_SWITCH_SUPPORTED
-	help
-	  This selects a new implementation of context switching and
-	  interrupt handling.  Advantages are a much lower interrupt
-	  overhead and smaller code size, and this scheme is required
-	  for SMP.  Assumes/requires hardware that implements the
-	  register window extension, however.
-
 endmenu
 
 config ARCH

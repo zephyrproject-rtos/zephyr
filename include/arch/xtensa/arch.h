@@ -78,11 +78,7 @@ extern void z_irq_priority_set(u32_t irq, u32_t prio, u32_t flags);
 /* Spurious interrupt handler. Throws an error if called */
 extern void z_irq_spurious(void *unused);
 
-#ifdef CONFIG_XTENSA_ASM2
-#define XTENSA_ERR_NORET /**/
-#else
-#define XTENSA_ERR_NORET FUNC_NORETURN
-#endif
+#define XTENSA_ERR_NORET
 
 extern u32_t z_timer_cycle_get_32(void);
 #define z_arch_k_cycle_get_32()	z_timer_cycle_get_32()
