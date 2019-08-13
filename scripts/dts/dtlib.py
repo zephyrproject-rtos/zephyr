@@ -443,12 +443,6 @@ class DT:
             elif tok.val == "[":
                 self._parse_bytes(prop)
 
-            elif tok.id is _T_CHAR_LITERAL:
-                val = self._unescape(tok.val.encode("utf-8"))
-                if len(val) != 1:
-                    self._parse_error("character literals must be length 1")
-                prop.value += val
-
             elif tok.id is _T_STRING:
                 prop._add_marker(_TYPE_STRING)
                 prop.value += self._unescape(tok.val.encode("utf-8")) + b"\0"
@@ -767,7 +761,13 @@ class DT:
             match = _token_re.match(self._file_contents, self._tok_end_i)
             if match:
                 tok_id = match.lastindex
-                tok_val = match.group(tok_id)
+                if tok_id is _T_CHAR_LITERAL:
+                    val = self._unescape(match.group(tok_id).encode("utf-8"))
+                    if len(val) != 1:
+                        self._parse_error("character literals must be length 1")
+                    tok_val = ord(val)
+                else:
+                    tok_val = match.group(tok_id)
 
             elif self._lexer_state is _DEFAULT:
                 match = _num_re.match(self._file_contents, self._tok_end_i)
@@ -1146,24 +1146,27 @@ class DT:
 
         def sub(match):
             esc = match.group(1)
-            if esc == b"\\": return b"\\"
-            if esc == b'"':  return b'"'
-            if esc == b"a":  return b"\a"
-            if esc == b"b":  return b"\b"
-            if esc == b"t":  return b"\t"
-            if esc == b"n":  return b"\n"
-            if esc == b"v":  return b"\v"
-            if esc == b"f":  return b"\f"
-            if esc == b"r":  return b"\r"
+            if esc == b"a": return b"\a"
+            if esc == b"b": return b"\b"
+            if esc == b"t": return b"\t"
+            if esc == b"n": return b"\n"
+            if esc == b"v": return b"\v"
+            if esc == b"f": return b"\f"
+            if esc == b"r": return b"\r"
 
-            if esc.startswith(b"x"):
+            if esc[0] in b"01234567":
+                # Octal escape
+                try:
+                    return int(esc, 8).to_bytes(1, "big")
+                except OverflowError:
+                    self._parse_error("octal escape out of range (> 255)")
+
+            if esc[0] == ord("x") and len(esc) > 1:
+                # Hex escape
                 return int(esc[1:], 16).to_bytes(1, "big")
 
-            # Octal escape
-            try:
-                return int(esc, 8).to_bytes(1, "big")
-            except OverflowError:
-                self._parse_error("octal escape out of range (> 255)")
+            # Return <char> as-is for other \<char>
+            return esc[0].to_bytes(1, "big")
 
         return _unescape_re.sub(sub, b)
 
@@ -1846,10 +1849,9 @@ _misc_re = re.compile(
 
 _byte_re = re.compile(r"[0-9a-fA-F]{2}")
 
-# Matches a backslash escape within a 'bytes' array. Captures the 'x' part of
-# '\x'.
-_unescape_re = \
-    re.compile(br'\\(\\|"|a|b|t|n|v|f|r|[0-7]{1,3}|x[0-9A-Fa-f]{1,2})')
+# Matches a backslash escape within a 'bytes' array. Captures the 'c' part of
+# '\c', where c might be a single character or an octal/hex escape.
+_unescape_re = re.compile(br'\\([0-7]{1,3}|x[0-9A-Fa-f]{1,2}|.)')
 
 # #line directive (this is the regex the C tools use)
 _line_re = re.compile(
