@@ -67,7 +67,8 @@ SECTION_FUNC(TEXT, _rirq_enter)
 #endif
 	clri
 
-	_check_nest_int_by_irq_act r0, r1
+	/* check whether irq stack is used */
+	_check_and_inc_int_nest_counter r0, r1
 
 	bne.d rirq_nest
 	mov r0, sp
@@ -91,6 +92,8 @@ SECTION_FUNC(TEXT, _rirq_exit)
 	clri
 
 	pop sp
+
+	_dec_int_nest_counter r0, r1
 
 	_check_nest_int_by_irq_act r0, r1
 

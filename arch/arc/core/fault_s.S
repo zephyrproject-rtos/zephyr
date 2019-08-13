@@ -246,9 +246,9 @@ _do_non_syscall_trap:
 	st_s r0, [sp, ___isf_t_pc_OFFSET] /* eret into pc */
 
 
-	lr r0, [_ARC_V2_AUX_IRQ_ACT]
-	and r0, r0, 0xffff
-	cmp r0, 0
+	/* check whether irq stack is used */
+	_check_and_inc_int_nest_counter r0, r1
+
 	bne.d exc_nest_handle
 	mov r0, sp
 
@@ -259,6 +259,8 @@ exc_nest_handle:
 	jl z_irq_do_offload
 
 	pop sp
+
+	_dec_int_nest_counter r0, r1
 
 	lr  r0, [_ARC_V2_AUX_IRQ_ACT]
 	and r0, r0, 0xffff

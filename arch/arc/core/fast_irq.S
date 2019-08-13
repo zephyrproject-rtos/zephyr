@@ -76,7 +76,8 @@ SECTION_FUNC(TEXT, _firq_enter)
 	lr r25, [_ARC_V2_LP_END]
 #endif
 
-	_check_nest_int_by_irq_act r0, r1
+	/* check whether irq stack is used */
+	_check_and_inc_int_nest_counter r0, r1
 
 	bne.d firq_nest
 	mov r0, sp
@@ -138,6 +139,7 @@ SECTION_FUNC(TEXT, _firq_exit)
 	sr r24, [_ARC_V2_LP_START]
 	sr r25, [_ARC_V2_LP_END]
 #endif
+	_dec_int_nest_counter r0, r1
 
 	_check_nest_int_by_irq_act r0, r1
 
