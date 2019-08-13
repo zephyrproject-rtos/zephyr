@@ -217,6 +217,7 @@ arch/arm/include/cortex_m/cmse.h          @ioannisg
 /lib/gui/                                 @vanwinkeljan
 /lib/os/                                  @andrewboie @andyross
 /lib/posix/                               @pfalcon
+/lib/libc/                                @nashif @andrewboie
 /kernel/device.c                          @andrewboie @andyross @nashif
 /kernel/idle.c                            @andrewboie @andyross @nashif
 /samples/basic/servo_motor/*microbit*     @jhe
