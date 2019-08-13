@@ -369,6 +369,7 @@
 /subsys/testsuite/                        @nashif
 /subsys/usb/                              @jfischer-phytec-iot @finikorg
 /tests/                                   @nashif
+/tests/application_development/libcxx/    @pabigot
 /tests/arch/arm/                          @ioannisg
 /tests/boards/native_posix/               @aescolar
 /tests/boards/intel_s1000_crb/            @dcpleung @sathishkuttan
