@@ -296,17 +296,23 @@ static void mcux_flexcan_detach(struct device *dev, int filter_id)
 	struct mcux_flexcan_data *data = dev->driver_data;
 
 	if (filter_id >= MCUX_FLEXCAN_MAX_RX) {
+		LOG_ERR("Detach: Filter id >= MAX_RX (%d >= %d)", filter_id,
+			MCUX_FLEXCAN_MAX_RX);
 		return;
 	}
 
 	k_mutex_lock(&data->rx_mutex, K_FOREVER);
 
 	if (atomic_test_and_clear_bit(data->rx_allocs, filter_id)) {
+		FLEXCAN_TransferAbortReceive(config->base, &data->handle,
+					     ALLOC_IDX_TO_RXMB_IDX(filter_id));
 		FLEXCAN_SetRxMbConfig(config->base,
 				      ALLOC_IDX_TO_RXMB_IDX(filter_id), NULL,
 				      false);
 		data->rx_cbs[filter_id].function = NULL;
 		data->rx_cbs[filter_id].arg = NULL;
+	} else {
+		LOG_WRN("Filter ID %d already detached", filter_id);
 	}
 
 	k_mutex_unlock(&data->rx_mutex);
