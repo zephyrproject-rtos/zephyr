@@ -53,11 +53,6 @@ void *xtensa_init_stack(int *stack_top,
 	return &bsa[-9];
 }
 
-/* This is a kernel hook, just a wrapper around other APIs.  Build
- * only if we're using asm2 as the core OS interface and not just as
- * utilities/testables.
- */
-#ifdef CONFIG_XTENSA_ASM2
 void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack, size_t sz,
 		 k_thread_entry_t entry, void *p1, void *p2, void *p3,
 		 int prio, unsigned int opts)
@@ -73,9 +68,7 @@ void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack, size_t sz,
 	thread->switch_handle = xtensa_init_stack((void *)top, entry,
 						  p1, p2, p3);
 }
-#endif
 
-#ifdef CONFIG_XTENSA_ASM2
 void z_irq_spurious(void *arg)
 {
 	int irqs, ie;
@@ -88,7 +81,6 @@ void z_irq_spurious(void *arg)
 		      (void *)irqs, (void *)ie);
 	z_xtensa_fatal_error(K_ERR_SPURIOUS_IRQ, NULL);
 }
-#endif
 
 void z_xtensa_dump_stack(const z_arch_esf_t *stack)
 {

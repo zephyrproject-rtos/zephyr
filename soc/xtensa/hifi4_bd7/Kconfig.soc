@@ -1,5 +1,0 @@
-# Copyright (c) 2017 Intel Corporation
-# SPDX-License-Identifier: Apache-2.0
-
-config SOC_HIFI4_BD7
-	bool "hifi4_bd7 core"
