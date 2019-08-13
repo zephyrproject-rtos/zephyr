@@ -76,9 +76,14 @@ static inline bool is_condition_met(struct k_poll_event *event, u32_t *state)
 		break;
 	case K_POLL_TYPE_IGNORE:
 		break;
+	/* LCOV_EXCL_START
+	 * If we set an invalid type event, the assert will fail and can't
+         * finish the whole testcase.
+	 */
 	default:
 		__ASSERT(false, "invalid event type (0x%x)\n", event->type);
 		break;
+	/* LCOV_EXCL_STOP */
 	}
 
 	return false;
@@ -128,9 +133,14 @@ static inline int register_event(struct k_poll_event *event,
 	case K_POLL_TYPE_IGNORE:
 		/* nothing to do */
 		break;
+	/* LCOV_EXCL_START
+	 * If we set an invalid type event, the assert will fail and can't
+         * finish the whole testcase.
+	 */
 	default:
 		__ASSERT(false, "invalid event type\n");
 		break;
+	/* LCOV_EXCL_STOP */
 	}
 
 	event->poller = poller;
@@ -161,9 +171,14 @@ static inline void clear_event_registration(struct k_poll_event *event)
 	case K_POLL_TYPE_IGNORE:
 		/* nothing to do */
 		break;
+	/* LCOV_EXCL_START
+	 * If we set an invalid type event, the assert will fail and can't
+         * finish the whole testcase.
+	 */
 	default:
 		__ASSERT(false, "invalid event type\n");
 		break;
+	/* LCOV_EXCL_STOP */
 	}
 	if (remove && sys_dnode_is_linked(&event->_node)) {
 		sys_dlist_remove(&event->_node);
@@ -212,7 +227,7 @@ int z_impl_k_poll(struct k_poll_event *events, int num_events, s32_t timeout)
 			if (rc == 0) {
 				++last_registered;
 			} else {
-				__ASSERT(false, "unexpected return code\n");
+				__ASSERT(false, "unexpected return code\n");/* LCOV_EXCL_LINE */
 			}
 		}
 		k_spin_unlock(&lock, key);
