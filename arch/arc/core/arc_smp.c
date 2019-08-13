@@ -77,18 +77,16 @@ volatile struct {
  */
 volatile u32_t arc_cpu_wake_flag;
 /*
- * _curr_irq_stack is used to record the irq stack pointer
- * of per_cpu. _kernel.cpus[CONFIG_MP_NUM_CPUS].irq_stack also
- * has a copy of irq stack pointer, but not efficient to use in assembly
+ * _curr_cpu is used to record the struct of _cpu_t of each cpu.
+ * for efficient usage in assembly
  */
-volatile u32_t _curr_irq_stack[CONFIG_MP_NUM_CPUS];
+volatile _cpu_t *_curr_cpu[CONFIG_MP_NUM_CPUS];
 
 /* Called from Zephyr initialization */
 void z_arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 		     void (*fn)(int, void *), void *arg)
 {
-
-	_curr_irq_stack[cpu_num] = (u32_t)(sz + (char *)stack);
+	_curr_cpu[cpu_num] = &(_kernel.cpus[cpu_num]);
 	arc_cpu_init[cpu_num].fn = fn;
 	arc_cpu_init[cpu_num].arg = arg;
 
@@ -139,7 +137,7 @@ static int arc_smp_init(struct device *dev)
 	_kernel.cpus[0].id = 0;
 	_kernel.cpus[0].irq_stack = Z_THREAD_STACK_BUFFER(_interrupt_stack)
 		+ CONFIG_ISR_STACK_SIZE;
-	_curr_irq_stack[0] = (u32_t)(_kernel.cpus[0].irq_stack);
+	_curr_cpu[0] = &(_kernel.cpus[0]);
 
 	bcr.val = z_arc_v2_aux_reg_read(_ARC_V2_CONNECT_BCR);
 
