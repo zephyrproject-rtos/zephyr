@@ -38,11 +38,6 @@
 	st r26, [sp, ___callee_saved_stack_t_r26_OFFSET]
 	st fp,  [sp, ___callee_saved_stack_t_fp_OFFSET]
 
-#ifdef CONFIG_ARC_SECURE_FIRMWARE
-	lr r13, [_ARC_V2_SEC_STAT]
-	st_s r13, [sp, ___callee_saved_stack_t_sec_stat_OFFSET]
-#endif
-
 #ifdef CONFIG_USERSPACE
 #ifdef CONFIG_ARC_HAS_SECURE
 #ifdef CONFIG_ARC_SECURE_FIRMWARE
@@ -144,12 +139,6 @@
 	ld r13, [sp, ___callee_saved_stack_t_user_sp_OFFSET]
 	sr r13, [_ARC_V2_USER_SP]
 #endif
-#endif
-
-#ifdef CONFIG_ARC_SECURE_FIRMWARE
-	ld r13, [sp, ___callee_saved_stack_t_sec_stat_OFFSET]
-
-	sflag r13
 #endif
 
 	ld_s r13, [sp, ___callee_saved_stack_t_r13_OFFSET]

@@ -295,6 +295,9 @@ exc_nest_handle:
 	bset.nz r3, r3, _ARC_V2_SEC_STAT_IRM_BIT
 	bclr.z r3, r3, _ARC_V2_SEC_STAT_IRM_BIT
 	sflag r3
+	/* save  _ARC_V2_SEC_STAT */
+	and r3, r3, 0xff
+	push r3
 #endif
 
 	_save_callee_saved_regs
