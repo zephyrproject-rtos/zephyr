@@ -42,16 +42,35 @@ static k_thread_stack_t *overflow_stack =
 static struct k_thread alt_thread;
 volatile int rv;
 
-static volatile int crash_reason;
+static ZTEST_DMEM volatile int expected_reason = -1;
 
 void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
 {
 	TC_PRINT("Caught system error -- reason %d\n", reason);
-	crash_reason = reason;
+
+	if (expected_reason == -1) {
+		printk("Was not expecting a crash\n");
+		k_fatal_halt(reason);
+	}
+
+	if (k_current_get() != &alt_thread) {
+		printk("Wrong thread crashed\n");
+		k_fatal_halt(reason);
+	}
+
+	if (reason != expected_reason) {
+		printk("Wrong crash type got %d expected %d\n", reason,
+		       expected_reason);
+		k_fatal_halt(reason);
+	}
+
+	expected_reason = -1;
 }
 
 void alt_thread1(void)
 {
+	expected_reason = K_ERR_CPU_EXCEPTION;
+
 #if defined(CONFIG_X86) || defined(CONFIG_X86_64)
 	__asm__ volatile ("ud2");
 #elif defined(CONFIG_NIOS2)
@@ -75,6 +94,8 @@ void alt_thread2(void)
 {
 	unsigned int key;
 
+	expected_reason = K_ERR_KERNEL_OOPS;
+
 	key = irq_lock();
 	k_oops();
 	TC_ERROR("SHOULD NEVER SEE THIS\n");
@@ -86,6 +107,8 @@ void alt_thread3(void)
 {
 	unsigned int key;
 
+	expected_reason = K_ERR_KERNEL_PANIC;
+
 	key = irq_lock();
 	k_panic();
 	TC_ERROR("SHOULD NEVER SEE THIS\n");
@@ -95,6 +118,8 @@ void alt_thread3(void)
 
 void alt_thread4(void)
 {
+	expected_reason = K_ERR_KERNEL_PANIC;
+
 	__ASSERT(0, "intentionally failed assertion");
 	rv = TC_FAIL;
 }
@@ -105,6 +130,7 @@ void blow_up_stack(void)
 {
 	char buf[OVERFLOW_STACKSIZE];
 
+	expected_reason = K_ERR_STACK_CHK_FAIL;
 	TC_PRINT("posting %zu bytes of junk to stack...\n", sizeof(buf));
 	(void)memset(buf, 0xbb, sizeof(buf));
 }
@@ -118,6 +144,8 @@ int stack_smasher(int val)
 
 void blow_up_stack(void)
 {
+	expected_reason = K_ERR_STACK_CHK_FAIL;
+
 	stack_smasher(37);
 }
 
@@ -183,7 +211,6 @@ void user_priv_stack_hw_overflow(void)
 
 void check_stack_overflow(void *handler, u32_t flags)
 {
-	crash_reason = -1;
 #ifdef CONFIG_STACK_SENTINEL
 	/* When testing stack sentinel feature, the overflow stack is a
 	 * smaller section of alt_stack near the end.
@@ -199,9 +226,6 @@ void check_stack_overflow(void *handler, u32_t flags)
 			NULL, NULL, NULL, K_PRIO_PREEMPT(PRIORITY), flags,
 			K_NO_WAIT);
 
-	zassert_equal(crash_reason, K_ERR_STACK_CHK_FAIL,
-		      "bad reason code got %d expected %d\n",
-		      crash_reason, K_ERR_STACK_CHK_FAIL);
 	zassert_not_equal(rv, TC_FAIL, "thread was not aborted");
 }
 #endif /* !CONFIG_ARCH_POSIX */
@@ -249,9 +273,6 @@ void test_fatal(void)
 			NULL, NULL, NULL, K_PRIO_COOP(PRIORITY), 0,
 			K_NO_WAIT);
 	k_thread_abort(&alt_thread);
-	zassert_equal(crash_reason, K_ERR_KERNEL_OOPS,
-		      "bad reason code got %d expected %d\n",
-		      crash_reason, K_ERR_KERNEL_OOPS);
 	zassert_not_equal(rv, TC_FAIL, "thread was not aborted");
 
 	TC_PRINT("test alt thread 3: initiate kernel panic\n");
@@ -261,9 +282,6 @@ void test_fatal(void)
 			NULL, NULL, NULL, K_PRIO_COOP(PRIORITY), 0,
 			K_NO_WAIT);
 	k_thread_abort(&alt_thread);
-	zassert_equal(crash_reason, K_ERR_KERNEL_PANIC,
-		      "bad reason code got %d expected %d\n",
-		      crash_reason, K_ERR_KERNEL_PANIC);
 	zassert_not_equal(rv, TC_FAIL, "thread was not aborted");
 
 	TC_PRINT("test alt thread 4: fail assertion\n");
@@ -273,11 +291,8 @@ void test_fatal(void)
 			NULL, NULL, NULL, K_PRIO_COOP(PRIORITY), 0,
 			K_NO_WAIT);
 	k_thread_abort(&alt_thread);
-	/* Default assert_post_action() induces a kernel panic */
-	zassert_equal(crash_reason, K_ERR_KERNEL_PANIC,
-		      "bad reason code got %d expected %d\n",
-		      crash_reason, K_ERR_KERNEL_PANIC);
 	zassert_not_equal(rv, TC_FAIL, "thread was not aborted");
+
 
 #ifndef CONFIG_ARCH_POSIX
 
