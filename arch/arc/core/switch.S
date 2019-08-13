@@ -140,9 +140,6 @@ _switch_to_target_thread:
 .balign 4
 _switch_return_from_coop:
 
-	lr ilink, [_ARC_V2_STATUS32]
-	bbit1 ilink, _ARC_V2_STATUS32_AE_BIT, _return_from_exc
-
 	pop_s blink /* pc into blink */
 #ifdef CONFIG_ARC_HAS_SECURE
 	pop_s r3    /* pop SEC_STAT */
@@ -169,15 +166,15 @@ _switch_return_from_firq:
 	pop r3
 	sflag r3
 #endif
-	lr r3, [_ARC_V2_STATUS32]
-	bbit1 r3, _ARC_V2_STATUS32_AE_BIT, _return_from_exc_irq
 
-	/* pretend interrupt happened to use rtie instruction */
 	lr r3, [_ARC_V2_AUX_IRQ_ACT]
-	brne r3, 0, _switch_already_in_irq
-
 	/* use lowest interrupt priority */
-	or r3, r3, (1 << (CONFIG_NUM_IRQ_PRIO_LEVELS-1))
+#ifdef CONFIG_ARC_SECURE_FIRMWARE
+	or r3, r3, (1 << (ARC_N_IRQ_START_LEVEL - 1))
+#else
+	or r3, r3, (1 << (CONFIG_NUM_IRQ_PRIO_LEVELS - 1))
+#endif
+
 #ifdef CONFIG_ARC_NORMAL_FIRMWARE
 	mov r0, _ARC_V2_AUX_IRQ_ACT
 	mov r1, r3
@@ -186,30 +183,7 @@ _switch_return_from_firq:
 #else
 	sr r3, [_ARC_V2_AUX_IRQ_ACT]
 #endif
-
-_switch_already_in_irq:
 	rtie
-
-.balign 4
-_return_from_exc_irq:
-	_pop_irq_stack_frame
-	sub_s sp, sp, ___isf_t_status32_OFFSET - ___isf_t_pc_OFFSET + 4
-
-_return_from_exc:
-
-	/* put the return address to eret */
-	ld ilink, [sp] /* pc into ilink */
-	sr ilink, [_ARC_V2_ERET]
-
-	/* SEC_STAT is bypassed when CONFIG_ARC_HAS_SECURE */
-
-	/* put status32 into estatus */
-	ld ilink, [sp, ___isf_t_status32_OFFSET - ___isf_t_pc_OFFSET]
-	sr ilink, [_ARC_V2_ERSTATUS]
-	add_s sp, sp, ___isf_t_status32_OFFSET - ___isf_t_pc_OFFSET + 4
-
-	rtie
-
 
 #ifdef CONFIG_EXECUTION_BENCHMARKING
 	.balign 4
