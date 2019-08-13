@@ -1252,7 +1252,7 @@ if(CONFIG_OUTPUT_PRINT_MEMORY_USAGE)
     )
 endif()
 
-if(CONFIG_BUILD_OUTPUT_HEX)
+if(CONFIG_BUILD_OUTPUT_HEX OR BOARD_FLASH_RUNNER STREQUAL openocd)
   set(out_hex_cmd    "")
   set(out_hex_byprod "")
   set(out_hex_sections_remove
