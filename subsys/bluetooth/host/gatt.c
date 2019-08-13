@@ -1459,6 +1459,10 @@ static int gatt_indicate(struct bt_conn *conn, u16_t handle,
 	net_buf_add(buf, params->len);
 	memcpy(ind->value, params->data, params->len);
 
+	if (!params->func) {
+		return gatt_send(conn, buf, NULL, NULL, NULL);
+	}
+
 	return gatt_send(conn, buf, gatt_indicate_rsp, params, NULL);
 }
 
@@ -1634,18 +1638,37 @@ int bt_gatt_indicate(struct bt_conn *conn,
 		     struct bt_gatt_indicate_params *params)
 {
 	struct notify_data data;
+	const struct bt_gatt_attr *attr;
 	u16_t handle;
 
 	__ASSERT(params, "invalid parameters\n");
 	__ASSERT(params->attr, "invalid parameters\n");
 
-	handle = params->attr->handle ? : find_static_attr(params->attr);
+	attr = params->attr;
+
+	handle = attr->handle ? : find_static_attr(attr);
 	if (!handle) {
 		return -ENOENT;
 	}
 
+	/* Lookup UUID if it was given */
+	if (params->uuid) {
+		attr = NULL;
+
+		bt_gatt_foreach_attr_type(handle, 0xffff, params->uuid,
+					  NULL, 1, match_uuid, &attr);
+		if (!attr) {
+			return -ENOENT;
+		}
+
+		handle = attr->handle ? : find_static_attr(attr);
+		if (!handle) {
+			return -ENOENT;
+		}
+	}
+
 	/* Check if attribute is a characteristic then adjust the handle */
-	if (!bt_uuid_cmp(params->attr->uuid, BT_UUID_GATT_CHRC)) {
+	if (!bt_uuid_cmp(attr->uuid, BT_UUID_GATT_CHRC)) {
 		struct bt_gatt_chrc *chrc = params->attr->user_data;
 
 		if (!(chrc->properties & BT_GATT_CHRC_INDICATE)) {

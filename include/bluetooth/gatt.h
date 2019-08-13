@@ -866,6 +866,8 @@ typedef void (*bt_gatt_indicate_func_t)(struct bt_conn *conn,
 /** @brief GATT Indicate Value parameters */
 struct bt_gatt_indicate_params {
 	struct bt_att_req _req;
+	/** Notification Attribute UUID type */
+	const struct bt_uuid *uuid;
 	/** Indicate Attribute object*/
 	const struct bt_gatt_attr *attr;
 	/** Indicate Value callback */
@@ -878,9 +880,21 @@ struct bt_gatt_indicate_params {
 
 /** @brief Indicate attribute value change.
  *
- *  Send an indication of attribute value change.
- *  Note: This function should only be called if CCC is declared with
- *  BT_GATT_CCC otherwise it cannot find a valid peer configuration.
+ *  Send an indication of attribute value change. if connection is NULL
+ *  indicate all peer that have notification enabled via CCC otherwise do a
+ *  direct indication only the given connection.
+ *
+ *  The attribute object on the parameters can be the so called Characteristic
+ *  Declaration, which is usually declared with BT_GATT_CHARACTERISTIC followed
+ *  by BT_GATT_CCC, or the Characteristic Value Declaration which is
+ *  automatically created after the Characteristic Declaration when using
+ *  BT_GATT_CHARACTERISTIC.
+ *
+ *  The callback is run from System Workqueue context.
+ *
+ *  Alternatively it is possible to indicate by UUID by setting it on the
+ *  parameters, when using this method the attribute given is used as the
+ *  start range when looking up for possible matches.
  *
  *  Note: This procedure is asynchronous therefore the parameters need to
  *  remains valid while it is active.
