@@ -208,15 +208,17 @@ struct modem_socket *modem_socket_from_newid(struct modem_socket_config *cfg)
 
 void modem_socket_put(struct modem_socket_config *cfg, int sock_fd)
 {
-	if (sock_fd < 0 || sock_fd >= cfg->sockets_len) {
+	struct modem_socket *sock = modem_socket_from_fd(cfg, sock_fd);
+
+	if (!sock) {
 		return;
 	}
 
-	z_free_fd(sock_fd);
-	cfg->sockets[sock_fd].id = cfg->base_socket_num - 1;
-	cfg->sockets[sock_fd].sock_fd = -1;
-	(void)memset(&cfg->sockets[sock_fd].src, 0, sizeof(struct sockaddr));
-	(void)memset(&cfg->sockets[sock_fd].dst, 0, sizeof(struct sockaddr));
+	z_free_fd(sock->sock_fd);
+	sock->id = cfg->base_socket_num - 1;
+	sock->sock_fd = -1;
+	(void)memset(&sock->src, 0, sizeof(struct sockaddr));
+	(void)memset(&sock->dst, 0, sizeof(struct sockaddr));
 }
 
 /*
