@@ -427,6 +427,14 @@ struct bt_conn_cb {
  */
 void bt_conn_cb_register(struct bt_conn_cb *cb);
 
+/** @brief Unregister connection callbacks.
+ *
+ *  Unregister callbacks from monitoring the state of connections.
+ *
+ *  @param ucb Callback struct to unregister.
+ */
+void bt_conn_cb_unregister(struct bt_conn_cb *ucb);
+
 /** Enable/disable bonding.
  *
  *  Set/clear the Bonding flag in the Authentication Requirements of

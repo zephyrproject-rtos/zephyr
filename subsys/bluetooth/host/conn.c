@@ -1062,6 +1062,24 @@ void bt_conn_cb_register(struct bt_conn_cb *cb)
 	callback_list = cb;
 }
 
+void bt_conn_cb_unregister(struct bt_conn_cb *ucb)
+{
+	struct bt_conn_cb *cb, *prev_cb;
+
+	for (cb = callback_list, prev_cb = NULL; cb; cb = cb->_next) {
+		if (cb == ucb) {
+			/* Remove cb from the list */
+			if (prev_cb) {
+				prev_cb->_next = cb->_next;
+			} else {
+				callback_list = cb->_next;
+			}
+			break;
+		}
+		prev_cb = cb;
+	}
+}
+
 static void bt_conn_reset_rx_state(struct bt_conn *conn)
 {
 	if (!conn->rx_len) {
