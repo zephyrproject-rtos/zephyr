@@ -307,7 +307,8 @@ int z_impl_zsock_bind(int sock, const struct sockaddr *addr, socklen_t addrlen)
 }
 
 #ifdef CONFIG_USERSPACE
-static inline int z_vrfy_zsock_bind(int sock, const struct sockaddr *addr, socklen_t addrlen)
+static inline int z_vrfy_zsock_bind(int sock, const struct sockaddr *addr,
+				    socklen_t addrlen)
 {
 	struct sockaddr_storage dest_addr_copy;
 
@@ -441,7 +442,8 @@ int z_impl_zsock_accept(int sock, struct sockaddr *addr, socklen_t *addrlen)
 }
 
 #ifdef CONFIG_USERSPACE
-static inline int z_vrfy_zsock_accept(int sock, struct sockaddr *addr, socklen_t *addrlen)
+static inline int z_vrfy_zsock_accept(int sock, struct sockaddr *addr,
+				      socklen_t *addrlen)
 {
 	socklen_t addrlen_copy;
 	int ret;
@@ -557,7 +559,9 @@ ssize_t z_impl_zsock_sendmsg(int sock, const struct msghdr *msg, int flags)
 }
 
 #ifdef CONFIG_USERSPACE
-static inline ssize_t z_vrfy_zsock_sendmsg(int sock, const struct msghdr *msg, int flags)
+static inline ssize_t z_vrfy_zsock_sendmsg(int sock,
+					   const struct msghdr *msg,
+					   int flags)
 {
 	/* TODO: Create a copy of msg_buf and copy the data there */
 
@@ -1090,7 +1094,8 @@ int z_impl_zsock_poll(struct zsock_pollfd *fds, int nfds, int timeout)
 }
 
 #ifdef CONFIG_USERSPACE
-static inline int z_vrfy_zsock_poll(struct zsock_pollfd *fds, int nfds, int timeout)
+static inline int z_vrfy_zsock_poll(struct zsock_pollfd *fds,
+				    int nfds, int timeout)
 {
 	struct zsock_pollfd *fds_copy;
 	size_t fds_size;
@@ -1129,7 +1134,8 @@ int z_impl_zsock_inet_pton(sa_family_t family, const char *src, void *dst)
 }
 
 #ifdef CONFIG_USERSPACE
-static inline int z_vrfy_zsock_inet_pton(sa_family_t family, const char *src, void *dst)
+static inline int z_vrfy_zsock_inet_pton(sa_family_t family,
+					 const char *src, void *dst)
 {
 	int dst_size;
 	char src_copy[NET_IPV6_ADDR_LEN];

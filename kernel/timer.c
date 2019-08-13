@@ -122,7 +122,8 @@ void z_impl_k_timer_start(struct k_timer *timer, s32_t duration, s32_t period)
 }
 
 #ifdef CONFIG_USERSPACE
-static inline void z_vrfy_k_timer_start(struct k_timer *timer, s32_t duration, s32_t period)
+static inline void z_vrfy_k_timer_start(struct k_timer *timer,
+					s32_t duration, s32_t period)
 {
 	Z_OOPS(Z_SYSCALL_VERIFY(duration >= 0 && period >= 0 &&
 				(duration != 0 || period != 0)));
@@ -231,7 +232,8 @@ static inline void *z_vrfy_k_timer_user_data_get(struct k_timer *timer)
 }
 #include <syscalls/k_timer_user_data_get_mrsh.c>
 
-static inline void z_vrfy_k_timer_user_data_set(struct k_timer *timer, void *user_data)
+static inline void z_vrfy_k_timer_user_data_set(struct k_timer *timer,
+						void *user_data)
 {
 	Z_OOPS(Z_SYSCALL_OBJ(timer, K_OBJ_TIMER));
 	z_impl_k_timer_user_data_set(timer, user_data);

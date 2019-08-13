@@ -8,13 +8,15 @@
 #include <syscall_handler.h>
 
 #define UART_SIMPLE(op_) \
-	static inline int z_vrfy_uart_##op_(struct device *dev) {	\
+	static inline int z_vrfy_uart_##op_(struct device *dev) \
+	{							\
 		Z_OOPS(Z_SYSCALL_DRIVER_UART(dev, op_)); \
 		return z_impl_uart_ ## op_(dev); \
 	}
 
 #define UART_SIMPLE_VOID(op_) \
-	static inline void z_vrfy_uart_##op_(struct device *dev) {	\
+	static inline void z_vrfy_uart_##op_(struct device *dev) \
+	{							 \
 		Z_OOPS(Z_SYSCALL_DRIVER_UART(dev, op_)); \
 		z_impl_uart_ ## op_(dev); \
 	}

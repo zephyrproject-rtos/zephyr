@@ -1148,7 +1148,8 @@ int z_impl_net_if_ipv6_addr_lookup_by_index(const struct in6_addr *addr)
 }
 
 #ifdef CONFIG_USERSPACE
-static inline int z_vrfy_net_if_ipv6_addr_lookup_by_index(const struct in6_addr *addr)
+static inline int z_vrfy_net_if_ipv6_addr_lookup_by_index(
+					  const struct in6_addr *addr)
 {
 	struct in6_addr addr_v6;
 
@@ -2801,7 +2802,8 @@ int z_impl_net_if_ipv4_addr_lookup_by_index(const struct in_addr *addr)
 }
 
 #ifdef CONFIG_USERSPACE
-static inline int z_vrfy_net_if_ipv4_addr_lookup_by_index(const struct in_addr *addr)
+static inline int z_vrfy_net_if_ipv4_addr_lookup_by_index(
+					  const struct in_addr *addr)
 {
 	struct in_addr addr_v4;
 

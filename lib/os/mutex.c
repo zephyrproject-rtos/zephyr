@@ -41,7 +41,8 @@ int z_impl_z_sys_mutex_kernel_lock(struct sys_mutex *mutex, s32_t timeout)
 	return k_mutex_lock(kernel_mutex, timeout);
 }
 
-static inline int z_vrfy_z_sys_mutex_kernel_lock(struct sys_mutex *mutex, s32_t timeout)
+static inline int z_vrfy_z_sys_mutex_kernel_lock(struct sys_mutex *mutex,
+						 s32_t timeout)
 {
 	if (check_sys_mutex_addr((u32_t) mutex)) {
 		return -EACCES;

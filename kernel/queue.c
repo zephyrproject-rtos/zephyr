@@ -205,7 +205,8 @@ s32_t z_impl_k_queue_alloc_append(struct k_queue *queue, void *data)
 }
 
 #ifdef CONFIG_USERSPACE
-static inline s32_t z_vrfy_k_queue_alloc_append(struct k_queue *queue, void *data)
+static inline s32_t z_vrfy_k_queue_alloc_append(struct k_queue *queue,
+						void *data)
 {
 	Z_OOPS(Z_SYSCALL_OBJ(queue, K_OBJ_QUEUE));
 	return z_impl_k_queue_alloc_append(queue, data);
@@ -219,7 +220,8 @@ s32_t z_impl_k_queue_alloc_prepend(struct k_queue *queue, void *data)
 }
 
 #ifdef CONFIG_USERSPACE
-static inline s32_t z_vrfy_k_queue_alloc_prepend(struct k_queue *queue, void *data)
+static inline s32_t z_vrfy_k_queue_alloc_prepend(struct k_queue *queue,
+						 void *data)
 {
 	Z_OOPS(Z_SYSCALL_OBJ(queue, K_OBJ_QUEUE));
 	return z_impl_k_queue_alloc_prepend(queue, data);
