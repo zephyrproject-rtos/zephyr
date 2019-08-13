@@ -44,25 +44,25 @@ config STD_CPP2A
 
 endchoice
 
+if ! MINIMAL_LIBC
+
 config LIB_CPLUSPLUS
 	bool "Link with STD C++ library"
 	help
 	  Link with STD C++ Library.
 
+if LIB_CPLUSPLUS
+
 config EXCEPTIONS
 	bool "Enable C++ exceptions support"
-	select LIB_CPLUSPLUS
-	depends on !MINIMAL_LIBC
 	help
 	  This option enables support of C++ exceptions.
 
 config RTTI
 	bool "Enable C++ RTTI support"
-	select LIB_CPLUSPLUS
 	help
 	  This option enables support of C++ RTTI.
 
-if LIB_CPLUSPLUS
 
 config ZEPHYR_CPLUSPLUS
 	bool "Use Zephyr C++ Implementation"
@@ -71,5 +71,7 @@ config ZEPHYR_CPLUSPLUS
 	  functions and vtables.
 
 endif # LIB_CPLUSPLUS
+
+endif # ! MINIMAL_LIBC
 
 endif # CPLUSPLUS
