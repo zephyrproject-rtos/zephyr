@@ -53,7 +53,7 @@ static void trace(const u8_t *data, size_t length)
 		ring_buf_get_finish(&ringbuf, BUF_SIZE);
 	}
 
-	ring_buf_put_claim(&ringbuf, &t, BUF_SIZE);
+	ring_buf_put_claim(&ringbuf, (u8_t **)&t, BUF_SIZE);
 
 	/* Add magic number at the beginning of the slot */
 	*(u16_t *)t = magic;
@@ -67,7 +67,7 @@ static void trace(const u8_t *data, size_t length)
 		*t++ = data[i];
 	}
 
-	dcache_writeback_region(t, i);
+	dcache_writeback_region((void *)t, i);
 
 	ring_buf_put_finish(&ringbuf, BUF_SIZE);
 }
