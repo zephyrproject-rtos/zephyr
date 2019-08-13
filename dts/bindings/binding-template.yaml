@@ -56,7 +56,8 @@ sub-node:
 #
 #   <property name>:
 #     category: <required | optional>
-#     type: <string | int | boolean | array | uint8-array | string-array | phandle | compound>
+#     type: <string | int | boolean | array | uint8-array | string-array |
+#            phandle | phandles | phandle-array | compound>
 #     description: <description of the property>
 #     enum:
 #       - <item1>
@@ -72,13 +73,32 @@ sub-node:
 #
 # Each value is a byte in hex.
 #
-# 'phandle' is for properties that are assigned a single phandle, like this:
+# 'type: phandle' is for properties that are assigned a single phandle, like
+# this:
 #
 #   foo = <&label>;
 #
-# 'compound' is a catch-all for more complex types, e.g.
+# 'type: phandles' is for properties that are assigned a list of (just)
+# phandles, like this:
 #
-#   foo = <&label1 1 2 &label2 7>;
+#   foo = <&label1 &label2 ...>;
+#
+# 'type: phandle-array' is for properties that are assigned a list of phandles
+# and (possibly) 32-bit numbers, like this:
+#
+#   foo = <&label1 1 2 &label2 3 4 ...>;
+#
+# 'type: compound' is a catch-all for more complex types, e.g.
+#
+#   foo = <&label1>, [01 02];
+#
+# 'type: array' and the other array types also allow splitting the value into
+# several <> blocks, e.g. like this:
+#
+#   foo = <1 2>, <3 4>;                         // Okay for 'type: array'
+#   foo = <&label1 &label2>, <&label3 &label4>; // Okay for 'type: phandles'
+#   foo = <&label1 1 2>, <&label2 3 4>;         // Okay for 'type: phandle-array'
+#   etc.
 properties:
     # An entry for 'compatible' must appear, as it's used to map nodes to
     # bindings
