@@ -116,4 +116,18 @@ config K6X_FLASH_CLOCK_DIVIDER
 	  This option specifies the divide value for the K6X flash clock from the
 	  system clock.
 
+config K6X_PLLFLL_SELECT
+	int "Freescale K64 PLL/FLL select"
+	default 1
+	help
+	  This option specifies the PLL/FLL selection bit for the clock system.
+	  MCGFLLCLK = 0, MCGPLLCLK = 1, IRC48MHZ = 3
+
+config K6X_ER32K_SELECT
+	int "Freescale K64 ER32K select"
+	default 2
+	help
+	  This option specifies the ER32K clock selection bit for the clock system.
+	  OSC32KCLK = 0, RTC = 2, LPO1KHZ = 3
+
 endif # SOC_SERIES_KINETIS_K6X

@@ -23,14 +23,6 @@
 #include <arch/cpu.h>
 #include <arch/arm/aarch32/cortex_m/cmsis.h>
 
-#define PLLFLLSEL_MCGFLLCLK	(0)
-#define PLLFLLSEL_MCGPLLCLK	(1)
-#define PLLFLLSEL_IRC48MHZ	(3)
-
-#define ER32KSEL_OSC32KCLK	(0)
-#define ER32KSEL_RTC		(2)
-#define ER32KSEL_LPO1KHZ	(3)
-
 #define TIMESRC_OSCERCLK        (2)
 
 static const osc_config_t oscConfig = {
@@ -63,8 +55,8 @@ static const mcg_pll_config_t pll0Config = {
 };
 
 static const sim_clock_config_t simConfig = {
-	.pllFllSel = PLLFLLSEL_MCGPLLCLK, /* PLLFLLSEL select PLL. */
-	.er32kSrc = ER32KSEL_RTC,         /* ERCLK32K selection, use RTC. */
+	.pllFllSel = CONFIG_K6X_PLLFLL_SELECT,
+	.er32kSrc = CONFIG_K6X_ER32K_SELECT,
 	.clkdiv1 = SIM_CLKDIV1_OUTDIV1(CONFIG_K6X_CORE_CLOCK_DIVIDER - 1) |
 		   SIM_CLKDIV1_OUTDIV2(CONFIG_K6X_BUS_CLOCK_DIVIDER - 1) |
 		   SIM_CLKDIV1_OUTDIV3(CONFIG_K6X_FLEXBUS_CLOCK_DIVIDER - 1) |
