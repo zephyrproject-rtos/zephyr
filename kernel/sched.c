@@ -894,7 +894,7 @@ void z_impl_k_thread_deadline_set(k_tid_t tid, int deadline)
 }
 
 #ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER(k_thread_deadline_set, thread_p, deadline)
+static inline void z_vrfy_k_thread_deadline_set(k_tid_t tid, int deadline)
 {
 	struct k_thread *thread = (struct k_thread *)thread_p;
 
@@ -904,8 +904,8 @@ Z_SYSCALL_HANDLER(k_thread_deadline_set, thread_p, deadline)
 				    (int)deadline));
 
 	z_impl_k_thread_deadline_set((k_tid_t)thread, deadline);
-	return 0;
 }
+#include <syscalls/k_thread_deadline_set_mrsh.c>
 #endif
 #endif
 

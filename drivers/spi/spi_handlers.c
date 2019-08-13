@@ -13,7 +13,7 @@
  */
 static void copy_and_check(struct spi_buf_set *bufs,
 			   struct spi_buf *buf_copy,
-			   int writable, void *ssf)
+			   int writable)
 {
 	size_t i;
 
@@ -53,22 +53,23 @@ static void copy_and_check(struct spi_buf_set *bufs,
 static u32_t copy_bufs_and_transceive(struct device *dev,
 				      const struct spi_config *config,
 				      struct spi_buf_set *tx_bufs,
-				      struct spi_buf_set *rx_bufs,
-				      void *ssf)
+				      struct spi_buf_set *rx_bufs)
 {
 	struct spi_buf tx_buf_copy[tx_bufs->count ? tx_bufs->count : 1];
 	struct spi_buf rx_buf_copy[rx_bufs->count ? rx_bufs->count : 1];
 
-	copy_and_check(tx_bufs, tx_buf_copy, 0, ssf);
-	copy_and_check(rx_bufs, rx_buf_copy, 1, ssf);
+	copy_and_check(tx_bufs, tx_buf_copy, 0);
+	copy_and_check(rx_bufs, rx_buf_copy, 1);
 
 	return z_impl_spi_transceive((struct device *)dev, config,
 				    tx_bufs, rx_bufs);
 }
 
-Z_SYSCALL_HANDLER(spi_transceive, dev, config_p, tx_bufs, rx_bufs)
+static inline int z_vrfy_spi_transceive(struct device *dev,
+				       const struct spi_config *config,
+				       const struct spi_buf_set *tx_bufs,
+				       const struct spi_buf_set *rx_bufs)
 {
-	const struct spi_config *config = (const struct spi_config *)config_p;
 	struct spi_buf_set tx_bufs_copy;
 	struct spi_buf_set rx_bufs_copy;
 	struct spi_config config_copy;
@@ -110,21 +111,18 @@ Z_SYSCALL_HANDLER(spi_transceive, dev, config_p, tx_bufs, rx_bufs)
 		}
 	}
 
-	/* ssf is implicit system call stack frame parameter, used by
-	 * _SYSCALL_* APIs when something goes wrong.
-	 */
 	return copy_bufs_and_transceive((struct device *)dev,
 					&config_copy,
 					&tx_bufs_copy,
-					&rx_bufs_copy,
-					ssf);
+					&rx_bufs_copy);
 }
+#include <syscalls/spi_transceive_mrsh.c>
 
-Z_SYSCALL_HANDLER(spi_release, dev, config_p)
+static inline int z_vrfy_spi_release(struct device *dev,
+				    const struct spi_config *config)
 {
-	const struct spi_config *config = (const struct spi_config *)config_p;
-
 	Z_OOPS(Z_SYSCALL_MEMORY_READ(config, sizeof(*config)));
 	Z_OOPS(Z_SYSCALL_DRIVER_SPI(dev, release));
 	return z_impl_spi_release((struct device *)dev, config);
 }
+#include <syscalls/spi_release_mrsh.c>
