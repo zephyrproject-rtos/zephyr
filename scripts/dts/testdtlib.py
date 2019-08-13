@@ -88,6 +88,7 @@ def run():
 	i = /bits/ 16 < 0x10 0x20 (-1) >;
 	j = /bits/ 32 < 0x10 0x20 (-1) >;
 	k = /bits/ 64 < 0x10 0x20 (-1) >;
+	l = < 'a' 'b' 'c' >;
 };
 """,
 """
@@ -105,6 +106,7 @@ def run():
 	i = /bits/ 16 < 0x10 0x20 0xffff >;
 	j = < 0x10 0x20 0xffffffff >;
 	k = /bits/ 64 < 0x10 0x20 0xffffffffffffffff >;
+	l = < 0x61 0x62 0x63 >;
 };
 """)
 
@@ -198,6 +200,55 @@ r"""
 };
 """,
 ".tmp.dts:4 (column 6): parse error: octal escape out of range (> 255)")
+
+    #
+    # Test character literal parsing
+    #
+
+    verify_parse(r"""
+/dts-v1/;
+
+/ {
+	a = < '\'' >;
+	b = < '\x12' >;
+};
+""",
+"""
+/dts-v1/;
+
+/ {
+	a = < 0x27 >;
+	b = < 0x12 >;
+};
+""")
+
+    verify_error("""
+/dts-v1/;
+
+/ {
+	// Character literals are not allowed at the top level
+	a = 'x';
+};
+""",
+".tmp.dts:5 (column 6): parse error: malformed value")
+
+    verify_error("""
+/dts-v1/;
+
+/ {
+	a = < '' >;
+};
+""",
+".tmp.dts:4 (column 7): parse error: character literals must be length 1")
+
+    verify_error("""
+/dts-v1/;
+
+/ {
+	a = < '12' >;
+};
+""",
+".tmp.dts:4 (column 7): parse error: character literals must be length 1")
 
     #
     # Test /incbin/
@@ -1115,6 +1166,7 @@ y /include/ "via-include-path-1"
 	not2        = < (!1) >;
 	not3        = < (!2) >;
 	nest        = < (((--3) + (-2)) * (--(-2))) >;
+	char_lits   = < ('a' + 'b') >;
 };
 """,
 """
@@ -1166,6 +1218,7 @@ y /include/ "via-include-path-1"
 	not2 = < 0x0 >;
 	not3 = < 0x0 >;
 	nest = < 0xfffffffe >;
+	char_lits = < 0xc3 >;
 };
 """)
 
@@ -1980,13 +2033,19 @@ l1: l2: /memreserve/ 0x0000000000000002 0x0000000000000004;
 	// A leading \ is accepted but ignored in node/propert names
 	\aA0,._+*#?- = &_, &{/aA0,._+*#?@-};
 
-	// Names that overlap with operators
+	// Names that overlap with operators and integer literals
+
 	+ = [ 00 ];
 	* = [ 02 ];
 	- = [ 01 ];
 	? = [ 03 ];
+	0 = [ 04 ];
+	0x123 = [ 05 ];
 
 	_: \aA0,._+*#?@- {
+	};
+
+	0 {
 	};
 };
 """,
@@ -1999,7 +2058,11 @@ l1: l2: /memreserve/ 0x0000000000000002 0x0000000000000004;
 	* = [ 02 ];
 	- = [ 01 ];
 	? = [ 03 ];
+	0 = [ 04 ];
+	0x123 = [ 05 ];
 	_: aA0,._+*#?@- {
+	};
+	0 {
 	};
 };
 """)
