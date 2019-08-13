@@ -1506,3 +1506,52 @@ void bt_mesh_rpl_clear(void)
 	BT_DBG("");
 	(void)memset(bt_mesh.rpl, 0, sizeof(bt_mesh.rpl));
 }
+
+void bt_mesh_heartbeat_send(void)
+{
+	struct bt_mesh_cfg_srv *cfg = bt_mesh_cfg_get();
+	u16_t feat = 0U;
+	struct __packed {
+		u8_t  init_ttl;
+		u16_t feat;
+	} hb;
+	struct bt_mesh_msg_ctx ctx = {
+		.net_idx = cfg->hb_pub.net_idx,
+		.app_idx = BT_MESH_KEY_UNUSED,
+		.addr = cfg->hb_pub.dst,
+		.send_ttl = cfg->hb_pub.ttl,
+	};
+	struct bt_mesh_net_tx tx = {
+		.sub = bt_mesh_subnet_get(cfg->hb_pub.net_idx),
+		.ctx = &ctx,
+		.src = bt_mesh_model_elem(cfg->model)->addr,
+		.xmit = bt_mesh_net_transmit_get(),
+	};
+
+	hb.init_ttl = cfg->hb_pub.ttl;
+
+	if (bt_mesh_relay_get() == BT_MESH_RELAY_ENABLED) {
+		feat |= BT_MESH_FEAT_RELAY;
+	}
+
+	if (bt_mesh_gatt_proxy_get() == BT_MESH_GATT_PROXY_ENABLED) {
+		feat |= BT_MESH_FEAT_PROXY;
+	}
+
+	if (bt_mesh_friend_get() == BT_MESH_FRIEND_ENABLED) {
+		feat |= BT_MESH_FEAT_FRIEND;
+	}
+
+#if defined(CONFIG_BT_MESH_LOW_POWER)
+	if (bt_mesh.lpn.state != BT_MESH_LPN_DISABLED) {
+		feat |= BT_MESH_FEAT_LOW_POWER;
+	}
+#endif
+
+	hb.feat = sys_cpu_to_be16(feat);
+
+	BT_DBG("InitTTL %u feat 0x%04x", cfg->hb_pub.ttl, feat);
+
+	bt_mesh_ctl_send(&tx, TRANS_CTL_OP_HEARTBEAT, &hb, sizeof(hb),
+			 NULL, NULL, NULL);
+}
