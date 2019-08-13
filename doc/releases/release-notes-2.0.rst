@@ -9,7 +9,7 @@ We are pleased to announce the release of Zephyr kernel version 2.0.0.
 
 Major enhancements with this release include:
 
-* TBD
+* The kernel now supports both 32- and 64-bit architectures.
 * We added support for SOCKS5 proxy. SOCKS5 is an Internet protocol that
   exchanges network packets between a client and server through a proxy server.
 * Introduced support for 6LoCAN, a 6Lo adaption layer for Controller Area
@@ -30,17 +30,18 @@ Kernel
 Architectures
 *************
 
-* TBD
+* POSIX: Fix race condition with terminated threads which had never been
+  scheduled by kernel. On very loaded systems it could cause swap errors.
 
 Boards & SoC Support
 ********************
 
-* TBD
+* Add native_posix_64: A 64 bit variant of native_posix
 
 Drivers and Sensors
 *******************
 
-* TBD
+* native_posix timer driver rewrite with tickless support
 
 Networking
 **********
