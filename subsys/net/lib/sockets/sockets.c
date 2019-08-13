@@ -222,10 +222,11 @@ int z_impl_zsock_shutdown(int sock, int how)
 }
 
 #ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER(zsock_shutdown, sock, how)
+static inline int z_vrfy_zsock_shutdown(int sock, int how)
 {
 	return z_impl_zsock_shutdown(sock, how);
 }
+#include <syscalls/zsock_shutdown_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 static void zsock_accepted_cb(struct net_context *new_ctx,
@@ -908,10 +909,11 @@ int z_impl_zsock_fcntl(int sock, int cmd, int flags)
 }
 
 #ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER(zsock_fcntl, sock, cmd, flags)
+static inline int z_vrfy_zsock_fcntl(int sock, int cmd, int flags)
 {
 	return z_impl_zsock_fcntl(sock, cmd, flags);
 }
+#include <syscalls/zsock_fcntl_mrsh.c>
 #endif
 
 static int zsock_poll_prepare_ctx(struct net_context *ctx,
@@ -1409,7 +1411,8 @@ int z_impl_zsock_getsockname(int sock, struct sockaddr *addr,
 }
 
 #ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER(zsock_getsockname, sock, addr, addrlen)
+static inline int z_vrfy_zsock_getsockname(int sock, struct sockaddr *addr,
+					   socklen_t *addrlen)
 {
 	socklen_t addrlen_copy;
 	int ret;
@@ -1434,6 +1437,7 @@ Z_SYSCALL_HANDLER(zsock_getsockname, sock, addr, addrlen)
 
 	return ret;
 }
+#include <syscalls/zsock_getsockname_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 static ssize_t sock_read_vmeth(void *obj, void *buffer, size_t count)

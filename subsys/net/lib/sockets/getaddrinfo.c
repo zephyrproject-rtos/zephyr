@@ -276,7 +276,10 @@ int z_impl_z_zsock_getaddrinfo_internal(const char *host, const char *service,
 }
 
 #ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER(z_zsock_getaddrinfo_internal, host, service, hints, res)
+static inline int z_vrfy_z_zsock_getaddrinfo_internal(const char *host,
+					const char *service,
+				       const struct zsock_addrinfo *hints,
+				       struct zsock_addrinfo *res)
 {
 	struct zsock_addrinfo hints_copy;
 	char *host_copy = NULL, *service_copy = NULL;
@@ -314,6 +317,7 @@ out:
 
 	return ret;
 }
+#include <syscalls/z_zsock_getaddrinfo_internal_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 int zsock_getaddrinfo(const char *host, const char *service,

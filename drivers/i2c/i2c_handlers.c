@@ -8,17 +8,17 @@
 #include <string.h>
 #include <syscall_handler.h>
 
-Z_SYSCALL_HANDLER(i2c_configure, dev, dev_config)
+static inline int z_vrfy_i2c_configure(struct device *dev, u32_t dev_config)
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_I2C(dev, configure));
 	return z_impl_i2c_configure((struct device *)dev, dev_config);
 }
+#include <syscalls/i2c_configure_mrsh.c>
 
 static u32_t copy_msgs_and_transfer(struct device *dev,
 				    const struct i2c_msg *msgs,
 				    u8_t num_msgs,
-				    u16_t addr,
-				    void *ssf)
+				    u16_t addr)
 {
 	struct i2c_msg copy[num_msgs];
 	u8_t i;
@@ -37,7 +37,9 @@ static u32_t copy_msgs_and_transfer(struct device *dev,
 	return z_impl_i2c_transfer(dev, copy, num_msgs, addr);
 }
 
-Z_SYSCALL_HANDLER(i2c_transfer, dev, msgs, num_msgs, addr)
+static inline int z_vrfy_i2c_transfer(struct device *dev,
+				     struct i2c_msg *msgs, u8_t num_msgs,
+				     u16_t addr)
 {
 	Z_OOPS(Z_SYSCALL_OBJ(dev, K_OBJ_DRIVER_I2C));
 
@@ -54,12 +56,20 @@ Z_SYSCALL_HANDLER(i2c_transfer, dev, msgs, num_msgs, addr)
 
 	return copy_msgs_and_transfer((struct device *)dev,
 				      (struct i2c_msg *)msgs,
-				      (u8_t)num_msgs, (u16_t)addr,
-				      ssf);
+				      (u8_t)num_msgs, (u16_t)addr);
 }
+#include <syscalls/i2c_transfer_mrsh.c>
 
-Z_SYSCALL_HANDLER1_SIMPLE(i2c_slave_driver_register, K_OBJ_DRIVER_I2C,
-			  struct device *);
+static inline int z_vrfy_i2c_slave_driver_register(struct device *dev)
+{
+	Z_OOPS(Z_SYSCALL_OBJ(dev, K_OBJ_DRIVER_I2C));
+	return z_impl_i2c_slave_driver_register(dev);
+}
+#include <syscalls/i2c_slave_driver_register_mrsh.c>
 
-Z_SYSCALL_HANDLER1_SIMPLE(i2c_slave_driver_unregister, K_OBJ_DRIVER_I2C,
-			  struct device *);
+static inline int z_vrfy_i2c_slave_driver_unregister(struct device *dev)
+{
+	Z_OOPS(Z_SYSCALL_OBJ(dev, K_OBJ_DRIVER_I2C));
+	return z_vrfy_i2c_slave_driver_unregister(dev);
+}
+#include <syscalls/i2c_slave_driver_unregister_mrsh.c>
