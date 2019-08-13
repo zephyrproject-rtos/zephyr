@@ -731,6 +731,7 @@ int bt_mesh_net_resend(struct bt_mesh_subnet *sub, struct net_buf *buf,
 {
 	const u8_t *enc, *priv;
 	u32_t seq;
+	u16_t dst;
 	int err;
 
 	BT_DBG("net_idx 0x%04x new_key %u len %u", sub->net_idx, new_key,
@@ -757,6 +758,9 @@ int bt_mesh_net_resend(struct bt_mesh_subnet *sub, struct net_buf *buf,
 	buf->data[3] = seq >> 8;
 	buf->data[4] = seq;
 
+	/* Get destination, in case it's a proxy client */
+	dst = DST(buf->data);
+
 	err = bt_mesh_net_encrypt(enc, &buf->b, BT_MESH_NET_IVI_TX, false);
 	if (err) {
 		BT_ERR("encrypt failed (err %d)", err);
@@ -769,7 +773,12 @@ int bt_mesh_net_resend(struct bt_mesh_subnet *sub, struct net_buf *buf,
 		return err;
 	}
 
-	bt_mesh_adv_send(buf, cb, cb_data);
+	if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY) &&
+	    bt_mesh_proxy_relay(&buf->b, dst)) {
+		net_buf_unref(buf);
+	} else {
+		bt_mesh_adv_send(buf, cb, cb_data);
+	}
 
 	if (!atomic_test_bit(bt_mesh.flags, BT_MESH_IVU_IN_PROGRESS) &&
 	    bt_mesh.seq > IV_UPDATE_SEQ_LIMIT) {
