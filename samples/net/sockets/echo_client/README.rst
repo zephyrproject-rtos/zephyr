@@ -90,6 +90,44 @@ The certificate and private key used by the sample can be found in the sample's
 :ref:`sockets-echo-server-sample` enable establishing a secure connection
 between the samples.
 
+SOCKS5 proxy support
+====================
+
+It is also possible to connect to the echo-server through a SOCKS5 proxy.
+To enable it, use ``-DOVERLAY_CONFIG=overlay-socks5.conf`` when running ``west
+build`` or  ``cmake``.
+
+By default, to make the testing easier, the proxy is expected to run on the
+same host as the echo-server in Linux host.
+
+To start a proxy server, for example a builtin SOCKS server support in ssh
+can be used (-D option). Use the following command to run it on your host
+with the default port:
+
+For IPv4 proxy server:
+
+.. code-block: console
+
+        $ ssh -N -D 0.0.0.0:1080 localhost
+
+For IPv6 proxy server:
+
+.. code-block: console
+
+        $ ssh -N -D [::]:1080 localhost
+
+Run both commands if you are testing IPv4 and IPv6.
+
+To connect to a proxy server that is not running under the same IP as the
+echo-server or uses a different port number, modify the following values
+in echo_client/src/tcp.c.
+
+.. code-block:: c
+
+        #define SOCKS5_PROXY_V4_ADDR IPV4_ADDR
+        #define SOCKS5_PROXY_V6_ADDR IPV6_ADDR
+        #define SOCKS5_PROXY_PORT    1080
+
 Running echo-server in Linux Host
 =================================
 
