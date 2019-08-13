@@ -294,6 +294,45 @@
 #endif /* CONFIG_ARC_SECURE_FIRMWARE */
 .endm
 
+/* check and increase the interrupt nest counter
+ * after increase, check whether nest counter == 1
+ * the result will be EQ bit of status32
+ */
+.macro _check_and_inc_int_nest_counter reg1 reg2
+#ifdef CONFIG_SMP
+	_get_cpu_id \reg1
+	ld.as \reg1, [@_curr_cpu, \reg1]
+	ld \reg2, [\reg1, ___cpu_t_nested_OFFSET]
+#else
+	mov \reg1, _kernel
+	ld \reg2, [\reg1, ___kernel_t_nested_OFFSET]
+#endif
+	add \reg2, \reg2, 1
+#ifdef CONFIG_SMP
+	st \reg2, [\reg1, ___cpu_t_nested_OFFSET]
+#else
+	st \reg2, [\reg1, ___kernel_t_nested_OFFSET]
+#endif
+	cmp \reg2, 1
+.endm
+
+/* decrease interrupt nest counter */
+.macro _dec_int_nest_counter reg1 reg2
+#ifdef CONFIG_SMP
+	_get_cpu_id \reg1
+	ld.as \reg1, [@_curr_cpu, \reg1]
+	ld \reg2, [\reg1, ___cpu_t_nested_OFFSET]
+#else
+	mov \reg1, _kernel
+	ld \reg2, [\reg1, ___kernel_t_nested_OFFSET]
+#endif
+	sub \reg2, \reg2, 1
+#ifdef CONFIG_SMP
+	st \reg2, [\reg1, ___cpu_t_nested_OFFSET]
+#else
+	st \reg2, [\reg1, ___kernel_t_nested_OFFSET]
+#endif
+.endm
 
 /* If multi bits in IRQ_ACT are set, i.e. last bit != fist bit, it's
  * in nest interrupt. The result will be EQ bit of status32
