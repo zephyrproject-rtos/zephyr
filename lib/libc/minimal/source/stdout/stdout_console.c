@@ -83,13 +83,16 @@ done:
 }
 
 #ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER(zephyr_fwrite, ptr, size, nitems, stream)
+static inline size_t z_vrfy_zephyr_fwrite(const void *_MLIBC_RESTRICT ptr,
+					  size_t size, size_t nitems,
+					  FILE *_MLIBC_RESTRICT stream)
 {
 
 	Z_OOPS(Z_SYSCALL_MEMORY_ARRAY_READ(ptr, nitems, size));
 	return z_impl_zephyr_fwrite((const void *_MLIBC_RESTRICT)ptr, size,
 				    nitems, (FILE *_MLIBC_RESTRICT)stream);
 }
+#include <syscalls/zephyr_fwrite_mrsh.c>
 #endif
 
 size_t fwrite(const void *_MLIBC_RESTRICT ptr, size_t size, size_t nitems,
