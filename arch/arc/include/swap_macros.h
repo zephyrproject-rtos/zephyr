@@ -314,7 +314,8 @@
 .macro _get_curr_cpu_irq_stack irq_sp
 #ifdef CONFIG_SMP
 	_get_cpu_id \irq_sp
-	ld.as \irq_sp, [@_curr_irq_stack, \irq_sp]
+	ld.as \irq_sp, [@_curr_cpu, \irq_sp]
+	ld \irq_sp, [\irq_sp, ___cpu_t_irq_stack_OFFSET]
 #else
 	mov \irq_sp, _kernel
 	ld \irq_sp, [\irq_sp, _kernel_offset_to_irq_stack]
