@@ -1451,13 +1451,17 @@ r"value of property 'a' (b'\xff\x00') on /aliases in .tmp.dts is not valid UTF-8
 	nums4 = < 1 2 >, < 3 >, < 4 >;
 	string = "foo";
 	strings = "foo", "bar";
-	phandle1 = < &node >;
-	phandle2 = < &{/node} >;
 	path1 = &node;
 	path2 = &{/node};
+	phandle1 = < &node >;
+	phandle2 = < &{/node} >;
+	phandles1 = < &node &node >;
+	phandles2 = < &node >, < &node >;
+	phandle-and-nums-1 = < &node 1 >;
+	phandle-and-nums-2 = < &node 1 2 &node 3 4 >;
+	phandle-and-nums-3 = < &node 1 2 >, < &node 3 4 >;
 	compound1 = < 1 >, [ 02 ];
 	compound2 = "foo", < >;
-	compound3 = < 1 &{/node} 2>;
 
 	node: node {
 	};
@@ -1479,11 +1483,15 @@ r"value of property 'a' (b'\xff\x00') on /aliases in .tmp.dts is not valid UTF-8
     verify_type("strings", dtlib.TYPE_STRINGS)
     verify_type("phandle1", dtlib.TYPE_PHANDLE)
     verify_type("phandle2", dtlib.TYPE_PHANDLE)
+    verify_type("phandles1", dtlib.TYPE_PHANDLES)
+    verify_type("phandles2", dtlib.TYPE_PHANDLES)
+    verify_type("phandle-and-nums-1", dtlib.TYPE_PHANDLES_AND_NUMS)
+    verify_type("phandle-and-nums-2", dtlib.TYPE_PHANDLES_AND_NUMS)
+    verify_type("phandle-and-nums-3", dtlib.TYPE_PHANDLES_AND_NUMS)
     verify_type("path1", dtlib.TYPE_PATH)
     verify_type("path2", dtlib.TYPE_PATH)
     verify_type("compound1", dtlib.TYPE_COMPOUND)
     verify_type("compound2", dtlib.TYPE_COMPOUND)
-    verify_type("compound3", dtlib.TYPE_COMPOUND)
 
     #
     # Test Property.to_{num,nums,string,strings,node}()
@@ -1511,12 +1519,17 @@ r"value of property 'a' (b'\xff\x00') on /aliases in .tmp.dts is not valid UTF-8
 	strings = "foo", "bar", "baz";
 	invalid_strings = "foo", "\xff", "bar";
 	ref = <&{/target}>;
+	refs = <&{/target} &{/target2}>;
+	refs2 = <&{/target}>, <&{/target2}>;
 	path = &{/target};
 	manualpath = "/target";
 	missingpath = "/missing";
 
 	target {
 		phandle = < 100 >;
+	};
+
+	target2 {
 	};
 };
 """)
@@ -1716,6 +1729,38 @@ r"value of property 'a' (b'\xff\x00') on /aliases in .tmp.dts is not valid UTF-8
 
     verify_to_node_error("u", "expected property 'u' on / in .tmp.dts to be assigned with 'u = < &foo >;', not 'u = < 0x1 >;'")
     verify_to_node_error("string", "expected property 'string' on / in .tmp.dts to be assigned with 'string = < &foo >;', not 'string = \"foo\\tbar baz\";'")
+
+    # Test Property.to_nodes()
+
+    def verify_to_nodes(prop, paths):
+        try:
+            actual = [node.path for node in dt.root.props[prop].to_nodes()]
+        except dtlib.DTError as e:
+            fail("failed to convert '{}' to nodes: {}".format(prop, e))
+
+        if actual != paths:
+            fail("expected {} to point to the paths {}, pointed to {}"
+                 .format(prop, paths, actual))
+
+    def verify_to_nodes_error(prop, msg):
+        prefix = "expected converting '{}' to a nodes to generate the error " \
+                 "'{}', generated".format(prop, msg)
+        try:
+            dt.root.props[prop].to_nodes()
+            fail(prefix + " no error")
+        except dtlib.DTError as e:
+            if str(e) != msg:
+                fail("{} the error '{}'".format(prefix, e))
+        except Exception as e:
+            fail("{} the non-DTError '{}'".format(prefix, e))
+
+    verify_to_nodes("zero", [])
+    verify_to_nodes("ref", ["/target"])
+    verify_to_nodes("refs", ["/target", "/target2"])
+    verify_to_nodes("refs2", ["/target", "/target2"])
+
+    verify_to_nodes_error("u", "expected property 'u' on / in .tmp.dts to be assigned with 'u = < &foo &bar ... >;', not 'u = < 0x1 >;'")
+    verify_to_nodes_error("string", "expected property 'string' on / in .tmp.dts to be assigned with 'string = < &foo &bar ... >;', not 'string = \"foo\\tbar baz\";'")
 
     # Test Property.to_path()
 

@@ -29,7 +29,8 @@ import sys
 
 import yaml
 
-from dtlib import DT, DTError, to_num, to_nums, TYPE_EMPTY
+from dtlib import DT, DTError, to_num, to_nums, TYPE_EMPTY, TYPE_PHANDLE, \
+                  TYPE_PHANDLES_AND_NUMS
 
 # NOTE: testedtlib.py is the test suite for this library. It can be run
 # directly.
@@ -532,17 +533,11 @@ class Device:
         if not prop_type:
             _err("'{}' in {} lacks 'type'".format(name, self.binding_path))
 
-        # "Dummy" type for properties like '...-gpios', so that we can require
-        # all entries in 'properties:' to have a 'type: ...'. It might make
-        # sense to have gpios in 'properties:' for other reasons, e.g. to set
-        # 'category: required'.
-        if prop_type == "compound":
-            return
-
         val = self._prop_val(name, prop_type,
                              options.get("category") == "optional")
         if val is None:
-            # 'category: optional' property that wasn't there
+            # 'category: optional' property that wasn't there, or a property
+            # type for which we store no data.
             return
 
         enum = options.get("enum")
@@ -615,6 +610,25 @@ class Device:
 
         if prop_type == "phandle":
             return self.edt._node2dev[prop.to_node()]
+
+        if prop_type == "phandles":
+            return [self.edt._node2dev[node] for node in prop.to_nodes()]
+
+        if prop_type == "phandle-array":
+            # This property type only does a type check. No Property object is
+            # created for it.
+            if prop.type not in (TYPE_PHANDLE, TYPE_PHANDLES_AND_NUMS):
+                _err("expected property '{0}' in {1} in {2} to be assigned "
+                     "with '{0} = < &foo 1 2 ... &bar 3 4 ... >' (a mix of "
+                     "phandles and numbers), not '{3}'"
+                     .format(name, node.path, node.dt.filename, prop))
+            return None
+
+        if prop_type == "compound":
+            # Dummy type for properties like that don't fit any of the patterns
+            # above, so that we can require all entries in 'properties:' to
+            # have a 'type: ...'. No Property object is created for it.
+            return None
 
         _err("'{}' in 'properties:' in {} has unknown type '{}'"
              .format(name, self.binding_path, prop_type))
@@ -1007,7 +1021,9 @@ class Property:
     Represents a property on a Device, as set in its DT node and with
     additional info from the 'properties:' section of the binding.
 
-    Only properties mentioned in 'properties:' get created.
+    Only properties mentioned in 'properties:' get created. Properties with
+    type 'phandle-array' or type 'compound' do not get Property instance. These
+    types only exist for type checking.
 
     These attributes are available on Property objects:
 
@@ -1023,8 +1039,12 @@ class Property:
 
     val:
       The value of the property, with the format determined by the 'type:' key
-      from the binding. For 'type: phandle' properties, this is the pointed-to
-      Device instance.
+      from the binding.
+
+      For 'type: phandle' properties, this is the pointed-to Device instance.
+
+      For 'type: phandles' properties, this is a list of the pointed-to Device
+      instances.
 
     enum_index:
       The index of the property's value in the 'enum:' list in the binding, or

@@ -1355,24 +1355,28 @@ class Property:
       assignment. This is one of the following constants (with example
       assignments):
 
-        Assignment         | Property.type
-        -------------------+------------------------
-        foo;               | dtlib.TYPE_EMPTY
-        foo = []           | dtlib.TYPE_BYTES
-        foo = [01 02]      | dtlib.TYPE_BYTES
-        foo = /bits/ 8 <1> | dtlib.TYPE_BYTES
-        foo = <1>          | dtlib.TYPE_NUM
-        foo = <>           | dtlib.TYPE_NUMS
-        foo = <1 2 3>      | dtlib.TYPE_NUMS
-        foo = <1 2>, <3>   | dtlib.TYPE_NUMS
-        foo = "foo"        | dtlib.TYPE_STRING
-        foo = "foo", "bar" | dtlib.TYPE_STRINGS
-        foo = <&label>     | dtlib.TYPE_PHANDLE
-        foo = &label       | dtlib.TYPE_PATH
-        *Anything else*    | dtlib.TYPE_COMPOUND
+        Assignment                  | Property.type
+        ----------------------------+------------------------
+        foo;                        | dtlib.TYPE_EMPTY
+        foo = [];                   | dtlib.TYPE_BYTES
+        foo = [01 02];              | dtlib.TYPE_BYTES
+        foo = /bits/ 8 <1>;         | dtlib.TYPE_BYTES
+        foo = <1>;                  | dtlib.TYPE_NUM
+        foo = <>;                   | dtlib.TYPE_NUMS
+        foo = <1 2 3>;              | dtlib.TYPE_NUMS
+        foo = <1 2>, <3>;           | dtlib.TYPE_NUMS
+        foo = "foo";                | dtlib.TYPE_STRING
+        foo = "foo", "bar";         | dtlib.TYPE_STRINGS
+        foo = <&l>;                 | dtlib.TYPE_PHANDLE
+        foo = <&l1 &l2 &l3>;        | dtlib.TYPE_PHANDLES
+        foo = <&l1 &l2>, <&l3>;     | dtlib.TYPE_PHANDLES
+        foo = <&l1 1 2 &l2 3 4>;    | dtlib.TYPE_PHANDLES_AND_NUMS
+        foo = <&l1 1 2>, <&l2 3 4>; | dtlib.TYPE_PHANDLES_AND_NUMS
+        foo = &l;                   | dtlib.TYPE_PATH
+        *Anything else*             | dtlib.TYPE_COMPOUND
 
-      *Anything else* includes properties mixing (<&label>) and node path
-      (&label) references with other data.
+      *Anything else* includes properties mixing phandle (<&label>) and node
+      path (&label) references with other data.
 
       Data labels in the property value do not influence the type.
 
@@ -1546,6 +1550,34 @@ class Property:
 
         return self.node.dt.phandle2node[int.from_bytes(self.value, "big")]
 
+    def to_nodes(self):
+        """
+        Returns a list with the Nodes the phandles in the property point to.
+
+        Raises DTError if the property value contains anything other than
+        phandles. All of the following are accepted:
+
+            foo = < >
+            foo = < &bar >;
+            foo = < &bar &baz ... >;
+            foo = < &bar ... >, < &baz ... >;
+        """
+        def type_ok():
+            if self.type in (TYPE_PHANDLE, TYPE_PHANDLES):
+                return True
+            # Also accept 'foo = < >;'
+            return self.type is TYPE_NUMS and not self.value
+
+        if not type_ok():
+            raise DTError("expected property '{0}' on {1} in {2} to be "
+                          "assigned with '{0} = < &foo &bar ... >;', not '{3}'"
+                          .format(self.name, self.node.path,
+                                  self.node.dt.filename, self))
+
+        return [self.node.dt.phandle2node[int.from_bytes(self.value[i:i + 4],
+                                                         "big")]
+                for i in range(0, len(self.value), 4)]
+
     def to_path(self):
         """
         Returns the Node referenced by the path stored in the property.
@@ -1612,6 +1644,13 @@ class Property:
 
         if types == [_TYPE_UINT32, _REF_PHANDLE] and len(self.value) == 4:
             return TYPE_PHANDLE
+
+        if set(types) == {_TYPE_UINT32, _REF_PHANDLE}:
+            if len(self.value) == 4*types.count(_REF_PHANDLE):
+                # Array with just phandles in it
+                return TYPE_PHANDLES
+            # Array with both phandles and numbers
+            return TYPE_PHANDLES_AND_NUMS
 
         return TYPE_COMPOUND
 
@@ -1761,7 +1800,9 @@ TYPE_STRING = 4
 TYPE_STRINGS = 5
 TYPE_PATH = 6
 TYPE_PHANDLE = 7
-TYPE_COMPOUND = 8
+TYPE_PHANDLES = 8
+TYPE_PHANDLES_AND_NUMS = 9
+TYPE_COMPOUND = 10
 
 
 def _check_is_bytes(data):
