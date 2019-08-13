@@ -259,7 +259,8 @@ int z_impl_k_poll(struct k_poll_event *events, int num_events, s32_t timeout)
 }
 
 #ifdef CONFIG_USERSPACE
-static inline int z_vrfy_k_poll(struct k_poll_event *events, int num_events, s32_t timeout)
+static inline int z_vrfy_k_poll(struct k_poll_event *events,
+				int num_events, s32_t timeout)
 {
 	int ret;
 	k_spinlock_key_t key;
@@ -438,7 +439,8 @@ int z_impl_k_poll_signal_raise(struct k_poll_signal *signal, int result)
 }
 
 #ifdef CONFIG_USERSPACE
-static inline int z_vrfy_k_poll_signal_raise(struct k_poll_signal *signal, int result)
+static inline int z_vrfy_k_poll_signal_raise(struct k_poll_signal *signal,
+					     int result)
 {
 	Z_OOPS(Z_SYSCALL_OBJ(signal, K_OBJ_POLL_SIGNAL));
 	return z_impl_k_poll_signal_raise(signal, result);

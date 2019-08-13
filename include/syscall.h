@@ -131,17 +131,17 @@ static inline bool z_arch_is_user_context(void);
  */
 static ALWAYS_INLINE bool z_syscall_trap(void)
 {
-        bool ret = false;
+	bool ret = false;
 #ifdef CONFIG_USERSPACE
 #if defined(__ZEPHYR_SUPERVISOR__)
-        ret = false;
+	ret = false;
 #elif defined(__ZEPHYR_USER__)
-        ret = true;
+	ret = true;
 #else
-        ret = z_arch_is_user_context();
+	ret = z_arch_is_user_context();
 #endif
 #endif
-        return ret;
+	return ret;
 }
 
 /**

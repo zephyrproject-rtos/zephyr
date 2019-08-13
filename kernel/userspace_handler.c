@@ -36,7 +36,8 @@ static struct _k_object *validate_any_object(void *obj)
  * To avoid double z_object_find() lookups, we don't call the implementation
  * function, but call a level deeper.
  */
-static inline void z_vrfy_k_object_access_grant(void *object, struct k_thread *thread)
+static inline void z_vrfy_k_object_access_grant(void *object,
+						struct k_thread *thread)
 {
 	struct _k_object *ko;
 

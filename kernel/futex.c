@@ -89,7 +89,8 @@ int z_impl_k_futex_wait(struct k_futex *futex, int expected, s32_t timeout)
 	return ret;
 }
 
-static inline int z_vrfy_k_futex_wait(struct k_futex *futex, int expected, s32_t timeout)
+static inline int z_vrfy_k_futex_wait(struct k_futex *futex, int expected,
+				      s32_t timeout)
 {
 	if (Z_SYSCALL_MEMORY_WRITE(futex, sizeof(struct k_futex)) != 0) {
 		return -EACCES;
