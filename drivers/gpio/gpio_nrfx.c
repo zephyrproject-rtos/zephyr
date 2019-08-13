@@ -400,7 +400,25 @@ static u32_t check_level_trigger_pins(struct device *port)
 
 static inline void fire_callbacks(struct device *port, u32_t pins)
 {
-	gpio_fire_callbacks(&get_port_data(port)->callbacks, port, pins);
+	struct gpio_nrfx_data *data = get_port_data(port);
+	sys_slist_t *list = &data->callbacks;
+	struct gpio_callback *cb, *tmp;
+
+	/* Instead of calling the common gpio_fire_callbacks() function,
+	 * iterate the list of callbacks locally, to be able to perform
+	 * additional masking of the pins and to call handlers only for
+	 * the currently enabled callbacks.
+	 */
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(list, cb, tmp, node) {
+		/* Check currently enabled callbacks (data->int_en) in each
+		 * iteration, as some callbacks may get disabled also in any
+		 * of the handlers called here.
+		 */
+		if ((cb->pin_mask & pins) & data->int_en) {
+			__ASSERT(cb->handler, "No callback handler!");
+			cb->handler(port, cb, pins);
+		}
+	}
 }
 
 #ifdef CONFIG_GPIO_NRF_P0
