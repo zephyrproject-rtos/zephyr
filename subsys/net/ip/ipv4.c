@@ -122,6 +122,12 @@ enum net_verdict net_ipv4_input(struct net_pkt *pkt)
 		goto drop;
 	}
 
+#if IS_ENABLED(CONFIG_NET_TCP2)
+	if (hdr->proto == IPPROTO_TCP) {
+		tcp_input(pkt);
+		goto drop;
+	}
+#endif
 	if (tp_input(pkt)) {
 		goto drop;
 	}
