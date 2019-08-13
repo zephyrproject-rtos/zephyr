@@ -853,7 +853,7 @@ void test_v6_sendmsg_with_txtime(void)
 	struct iovec io_vector[1];
 	union {
 		struct cmsghdr hdr;
-		unsigned char  buf[CMSG_SPACE(sizeof(int))];
+		unsigned char  buf[CMSG_SPACE(sizeof(u64_t))];
 	} cmsgbuf;
 
 	prepare_sock_udp_v6(MY_IPV6_ADDR, ANY_PORT, &client_sock,
