@@ -50,6 +50,11 @@ SECTION_FUNC(TEXT,__start)
 	 */
 	mov r0, 0
 	kflag r0
+
+#ifdef CONFIG_ARC_SECURE_FIRMWARE
+	sflag r0
+#endif
+
 #if defined(CONFIG_BOOT_TIME_MEASUREMENT) && defined(CONFIG_ARCV2_TIMER)
 	/*
 	 * ARCV2 timer (timer0) is a free run timer, let it start to count
@@ -67,8 +72,6 @@ SECTION_FUNC(TEXT,__start)
 	sr r0, [_ARC_V2_AUX_IRQ_CTRL]
 #endif
 	sr r0, [_ARC_V2_AUX_IRQ_HINT]
-
-	/* \todo: MPU init, gp for small data? */
 
 	/* set the vector table base early,
 	 * so that exception vectors can be handled.
