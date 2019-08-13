@@ -164,6 +164,11 @@ return_loc:
 _switch_return_from_rirq:
 _switch_return_from_firq:
 
+#ifdef CONFIG_ARC_SECURE_FIRMWARE
+	/* here need to recover SEC_STAT.IRM bit */
+	pop r3
+	sflag r3
+#endif
 	lr r3, [_ARC_V2_STATUS32]
 	bbit1 r3, _ARC_V2_STATUS32_AE_BIT, _return_from_exc_irq
 

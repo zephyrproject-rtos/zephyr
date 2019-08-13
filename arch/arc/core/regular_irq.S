@@ -94,7 +94,7 @@ SECTION_FUNC(TEXT, _rirq_exit)
 
 	_check_nest_int_by_irq_act r0, r1
 
-	jne _rirq_return_from_rirq
+	jne _rirq_no_reschedule
 
 #ifdef CONFIG_STACK_SENTINEL
 	bl z_check_stack_sentinel
@@ -137,6 +137,11 @@ SECTION_FUNC(TEXT, _rirq_exit)
 .balign 4
 _rirq_reschedule:
 
+#ifdef CONFIG_ARC_SECURE_FIRMWARE
+	/* here need to remember SEC_STAT.IRM bit */
+	lr r3, [_ARC_V2_SEC_STAT]
+	push r3
+#endif
 	/* _save_callee_saved_regs expects outgoing thread in r2 */
 	_save_callee_saved_regs
 
@@ -219,19 +224,20 @@ _rirq_return_from_coop:
 	 */
 	st_s r13, [sp, ___isf_t_r13_OFFSET]
 
-	/* stack now has the IRQ stack frame layout, pointing to r0 */
-
-	/* fall through to rtie instruction */
-
+	/* stack now has the IRQ stack frame layout, pointing to sp */
 	/* rtie will pop the rest from the stack */
-
-	/* fall through to rtie instruction */
+	rtie
 
 #endif /* CONFIG_PREEMPT_ENABLED */
 
 .balign 4
 _rirq_return_from_firq:
 _rirq_return_from_rirq:
+#ifdef CONFIG_ARC_SECURE_FIRMWARE
+	/* here need to recover SEC_STAT.IRM bit */
+	pop r3
+	sflag r3
+#endif
 _rirq_no_reschedule:
 
 	rtie
