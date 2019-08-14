@@ -45,3 +45,7 @@
 &spi0 {
 	status = "okay";
 };
+
+&prbs0 {
+	status = "okay";
+};
