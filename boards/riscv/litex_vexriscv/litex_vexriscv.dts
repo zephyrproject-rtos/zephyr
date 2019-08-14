@@ -54,3 +54,7 @@
 	status = "okay";
 	label = "I2C_0";
 };
+
+&pwm0 {
+	status = "okay";
+};
