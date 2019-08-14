@@ -29,8 +29,8 @@ import sys
 
 import yaml
 
-from dtlib import DT, DTError, to_num, to_nums, TYPE_EMPTY, TYPE_PHANDLE, \
-                  TYPE_PHANDLES_AND_NUMS
+from dtlib import DT, DTError, to_num, to_nums, TYPE_EMPTY, TYPE_NUMS, \
+                  TYPE_PHANDLE, TYPE_PHANDLES_AND_NUMS
 
 # NOTE: testedtlib.py is the test suite for this library. It can be run
 # directly.
@@ -1757,6 +1757,13 @@ def _check_dt(dt):
                      "of {} (see the devicetree specification)"
                      .format(status_val, node.path, node.dt.filename,
                              ", ".join(ok_status)))
+
+        ranges_prop = node.props.get("ranges")
+        if ranges_prop:
+            if ranges_prop.type not in (TYPE_EMPTY, TYPE_NUMS):
+                _err("expected 'ranges = < ... >;' in {} in {}, not '{}' "
+                     "(see the devicetree specification)"
+                     .format(node.path, node.dt.filename, ranges_prop))
 
 
 def _err(msg):
