@@ -507,7 +507,7 @@ BT_GATT_SERVICE_DEFINE(_1_gatt_svc,
 	 */
 	BT_GATT_CHARACTERISTIC(BT_UUID_GATT_SC, BT_GATT_CHRC_INDICATE,
 			       BT_GATT_PERM_NONE, NULL, NULL, NULL),
-	BT_GATT_CCC(sc_ccc_cfg, sc_ccc_cfg_changed),
+	BT_GATT_CCC(sc_ccc_cfg_changed),
 #if defined(CONFIG_BT_GATT_CACHING)
 	BT_GATT_CHARACTERISTIC(BT_UUID_GATT_CLIENT_FEATURES,
 			       BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE,
@@ -1182,9 +1182,9 @@ static void clear_ccc_cfg(struct bt_gatt_ccc_cfg *cfg)
 }
 
 static struct bt_gatt_ccc_cfg *find_ccc_cfg(const struct bt_conn *conn,
-					    const struct _bt_gatt_ccc *ccc)
+					    struct _bt_gatt_ccc *ccc)
 {
-	for (size_t i = 0; i < ccc->cfg_len; i++) {
+	for (size_t i = 0; i < ARRAY_SIZE(ccc->cfg); i++) {
 		if (conn) {
 			if (conn->id == ccc->cfg[i].id &&
 			    !bt_conn_addr_le_cmp(conn, &ccc->cfg[i].peer)) {
@@ -1203,7 +1203,7 @@ ssize_t bt_gatt_attr_read_ccc(struct bt_conn *conn,
 			      u16_t len, u16_t offset)
 {
 	struct _bt_gatt_ccc *ccc = attr->user_data;
-	struct bt_gatt_ccc_cfg *cfg;
+	const struct bt_gatt_ccc_cfg *cfg;
 	u16_t value;
 
 	cfg = find_ccc_cfg(conn, ccc);
@@ -1224,7 +1224,7 @@ static void gatt_ccc_changed(const struct bt_gatt_attr *attr,
 	int i;
 	u16_t value = 0x0000;
 
-	for (i = 0; i < ccc->cfg_len; i++) {
+	for (i = 0; i < ARRAY_SIZE(ccc->cfg); i++) {
 		if (ccc->cfg[i].value > value) {
 			value = ccc->cfg[i].value;
 		}
@@ -1515,7 +1515,7 @@ static u8_t notify_cb(const struct bt_gatt_attr *attr, void *user_data)
 	ccc = attr->user_data;
 
 	/* Notify all peers configured */
-	for (i = 0; i < ccc->cfg_len; i++) {
+	for (i = 0; i < ARRAY_SIZE(ccc->cfg); i++) {
 		struct bt_gatt_ccc_cfg *cfg = &ccc->cfg[i];
 		struct bt_conn *conn;
 		int err;
@@ -1729,7 +1729,7 @@ static u8_t connected_cb(const struct bt_gatt_attr *attr, void *user_data)
 
 	ccc = attr->user_data;
 
-	for (i = 0; i < ccc->cfg_len; i++) {
+	for (i = 0; i < ARRAY_SIZE(ccc->cfg); i++) {
 		/* Ignore configuration for different peer */
 		if (bt_conn_addr_le_cmp(conn, &ccc->cfg[i].peer)) {
 			continue;
@@ -1771,7 +1771,7 @@ static u8_t disconnected_cb(const struct bt_gatt_attr *attr, void *user_data)
 	/* Checking if all values are disabled */
 	value_used = false;
 
-	for (i = 0; i < ccc->cfg_len; i++) {
+	for (i = 0; i < ARRAY_SIZE(ccc->cfg); i++) {
 		struct bt_gatt_ccc_cfg *cfg = &ccc->cfg[i];
 
 		/* Ignore configurations with disabled value */
@@ -3359,11 +3359,11 @@ void bt_gatt_disconnected(struct bt_conn *conn)
 
 #define CCC_STORE_MAX 48
 
-static struct bt_gatt_ccc_cfg *ccc_find_cfg(const struct _bt_gatt_ccc *ccc,
+static struct bt_gatt_ccc_cfg *ccc_find_cfg(struct _bt_gatt_ccc *ccc,
 					    const bt_addr_le_t *addr,
 					    u8_t id)
 {
-	for (size_t i = 0; i < ccc->cfg_len; i++) {
+	for (size_t i = 0; i < ARRAY_SIZE(ccc->cfg); i++) {
 		if (id == ccc->cfg[i].id &&
 		    !bt_addr_le_cmp(&ccc->cfg[i].peer, addr)) {
 			return &ccc->cfg[i];

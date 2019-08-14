@@ -96,7 +96,6 @@ struct temperature_sensor {
 		s16_t ref_val; /* Reference temperature */
 	};
 
-	struct bt_gatt_ccc_cfg  ccc_cfg[BT_GATT_CCC_MAX];
 	struct es_measurement meas;
 };
 
@@ -299,7 +298,7 @@ BT_GATT_SERVICE_DEFINE(ess_svc,
 	BT_GATT_DESCRIPTOR(BT_UUID_ES_TRIGGER_SETTING,
 			   BT_GATT_PERM_READ, read_temp_trigger_setting,
 			   NULL, &sensor_1),
-	BT_GATT_CCC(sensor_1.ccc_cfg, temp_ccc_cfg_changed),
+	BT_GATT_CCC(temp_ccc_cfg_changed),
 
 	/* Temperature Sensor 2 */
 	BT_GATT_CHARACTERISTIC(BT_UUID_TEMPERATURE,
@@ -314,7 +313,7 @@ BT_GATT_SERVICE_DEFINE(ess_svc,
 	BT_GATT_DESCRIPTOR(BT_UUID_ES_TRIGGER_SETTING,
 			   BT_GATT_PERM_READ, read_temp_trigger_setting,
 			   NULL, &sensor_2),
-	BT_GATT_CCC(sensor_2.ccc_cfg, temp_ccc_cfg_changed),
+	BT_GATT_CCC(temp_ccc_cfg_changed),
 
 	/* Humidity Sensor */
 	BT_GATT_CHARACTERISTIC(BT_UUID_HUMIDITY, BT_GATT_CHRC_READ,

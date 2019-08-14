@@ -524,7 +524,6 @@ static struct db_stats {
 	u16_t attr_count;
 	u16_t chrc_count;
 	u16_t ccc_count;
-	size_t ccc_cfg;
 } stats;
 
 static u8_t print_attr(const struct bt_gatt_attr *attr, void *user_data)
@@ -544,10 +543,7 @@ static u8_t print_attr(const struct bt_gatt_attr *attr, void *user_data)
 
 	if (!bt_uuid_cmp(attr->uuid, BT_UUID_GATT_CCC) &&
 	    attr->write == bt_gatt_attr_write_ccc) {
-		struct _bt_gatt_ccc *cfg = attr->user_data;
-
 		stats.ccc_count++;
-		stats.ccc_cfg += cfg->cfg_len;
 	}
 
 	shell_print(shell, "attr %p handle 0x%04x uuid %s perm 0x%02x",
@@ -590,7 +586,6 @@ static int cmd_show_db(const struct shell *shell, size_t argc, char *argv[])
 	total_len += stats.chrc_count * sizeof(struct bt_gatt_chrc);
 	total_len += stats.attr_count * sizeof(struct bt_gatt_attr);
 	total_len += stats.ccc_count * sizeof(struct _bt_gatt_ccc);
-	total_len += stats.ccc_cfg * sizeof(struct bt_gatt_ccc_cfg);
 
 	shell_print(shell, "=================================================");
 	shell_print(shell, "Total: %u services %u attributes (%u bytes)",
@@ -624,7 +619,6 @@ static const struct bt_uuid_128 vnd1_echo_uuid = BT_UUID_INIT_128(
 	0xf5, 0xde, 0xbc, 0x9a, 0x78, 0x56, 0x34, 0x12,
 	0x78, 0x56, 0x34, 0x12, 0x78, 0x56, 0x34, 0x12);
 
-static struct bt_gatt_ccc_cfg vnd1_ccc_cfg[BT_GATT_CCC_MAX] = {};
 static u8_t echo_enabled;
 
 static void vnd1_ccc_cfg_changed(const struct bt_gatt_attr *attr, u16_t value)
@@ -737,7 +731,7 @@ static struct bt_gatt_attr vnd1_attrs[] = {
 			       BT_GATT_CHRC_WRITE_WITHOUT_RESP |
 			       BT_GATT_CHRC_NOTIFY,
 			       BT_GATT_PERM_WRITE, NULL, write_vnd1, NULL),
-	BT_GATT_CCC(vnd1_ccc_cfg, vnd1_ccc_cfg_changed),
+	BT_GATT_CCC(vnd1_ccc_cfg_changed),
 };
 
 static struct bt_gatt_service vnd1_svc = BT_GATT_SERVICE(vnd1_attrs);

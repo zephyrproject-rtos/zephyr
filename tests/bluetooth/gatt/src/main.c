@@ -32,7 +32,6 @@ static const struct bt_uuid_128 test1_nfy_uuid = BT_UUID_INIT_128(
 	0xf5, 0xde, 0xbc, 0x9a, 0x78, 0x56, 0x34, 0x12,
 	0x78, 0x56, 0x34, 0x12, 0x78, 0x56, 0x34, 0x12);
 
-static struct bt_gatt_ccc_cfg test1_ccc_cfg[BT_GATT_CCC_MAX] = {};
 static u8_t nfy_enabled;
 
 static void test1_ccc_cfg_changed(const struct bt_gatt_attr *attr, u16_t value)
@@ -84,7 +83,7 @@ static struct bt_gatt_attr test1_attrs[] = {
 	BT_GATT_CHARACTERISTIC(&test1_nfy_uuid.uuid,
 			       BT_GATT_CHRC_NOTIFY, BT_GATT_PERM_NONE,
 			       NULL, NULL, &nfy_enabled),
-	BT_GATT_CCC(test1_ccc_cfg, test1_ccc_cfg_changed),
+	BT_GATT_CCC(test1_ccc_cfg_changed),
 };
 
 static struct bt_gatt_service test1_svc = BT_GATT_SERVICE(test1_attrs);

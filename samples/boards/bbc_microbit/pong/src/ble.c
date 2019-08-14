@@ -496,8 +496,6 @@ static void ble_timeout(struct k_work *work)
 	}
 }
 
-static struct bt_gatt_ccc_cfg pong_ccc_cfg[BT_GATT_CCC_MAX];
-
 static void pong_ccc_cfg_changed(const struct bt_gatt_attr *attr, u16_t val)
 {
 	printk("val %u\n", val);
@@ -514,7 +512,7 @@ BT_GATT_SERVICE_DEFINE(pong_svc,
 	BT_GATT_PRIMARY_SERVICE(&pong_svc_uuid.uuid),
 	BT_GATT_CHARACTERISTIC(&pong_chr_uuid.uuid, BT_GATT_CHRC_NOTIFY,
 			       BT_GATT_PERM_NONE, NULL, NULL, NULL),
-	BT_GATT_CCC(pong_ccc_cfg, pong_ccc_cfg_changed),
+	BT_GATT_CCC(pong_ccc_cfg_changed),
 );
 
 void ble_init(void)

@@ -25,7 +25,6 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(hrs);
 
-static struct bt_gatt_ccc_cfg hrmc_ccc_cfg[BT_GATT_CCC_MAX] = {};
 static u8_t hrs_blsc;
 
 static void hrmc_ccc_cfg_changed(const struct bt_gatt_attr *attr, u16_t value)
@@ -49,7 +48,7 @@ BT_GATT_SERVICE_DEFINE(hrs_svc,
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_HRS),
 	BT_GATT_CHARACTERISTIC(BT_UUID_HRS_MEASUREMENT, BT_GATT_CHRC_NOTIFY,
 			       BT_GATT_PERM_NONE, NULL, NULL, NULL),
-	BT_GATT_CCC(hrmc_ccc_cfg, hrmc_ccc_cfg_changed),
+	BT_GATT_CCC(hrmc_ccc_cfg_changed),
 	BT_GATT_CHARACTERISTIC(BT_UUID_HRS_BODY_SENSOR, BT_GATT_CHRC_READ,
 			       BT_GATT_PERM_READ, read_blsc, NULL, NULL),
 	BT_GATT_CHARACTERISTIC(BT_UUID_HRS_CONTROL_POINT, BT_GATT_CHRC_WRITE,
