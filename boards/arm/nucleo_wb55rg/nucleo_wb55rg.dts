@@ -97,6 +97,10 @@ arduino_serial: &lpuart1 {
 	status = "okay";
 };
 
+&iwdg {
+	status = "okay";
+};
+
 &flash0 {
 	/*
 	 * For more information, see:
