@@ -230,6 +230,21 @@ static inline u32_t sys_get_be32(const u8_t src[4])
 }
 
 /**
+ *  @brief Get a 64-bit integer stored in big-endian format.
+ *
+ *  Get a 64-bit integer, stored in big-endian format in a potentially
+ *  unaligned memory location, and convert it to the host endianness.
+ *
+ *  @param src Location of the big-endian 64-bit integer to get.
+ *
+ *  @return 64-bit integer in host endianness.
+ */
+static inline u64_t sys_get_be64(const u8_t src[8])
+{
+	return ((u64_t)sys_get_be32(&src[0]) << 32) | sys_get_be32(&src[4]);
+}
+
+/**
  *  @brief Get a 16-bit integer stored in little-endian format.
  *
  *  Get a 16-bit integer, stored in little-endian format in a potentially
