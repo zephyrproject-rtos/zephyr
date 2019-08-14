@@ -383,7 +383,7 @@ _oops:
 
 #if CONFIG_USERSPACE
     /*
-     * System call will setup a jump to the _do_arm_syscall function
+     * System call will setup a jump to the z_arm_do_syscall() function
      * when the SVC returns via the bx lr.
      *
      * There is some trickery involved here because we have to preserve
@@ -408,14 +408,16 @@ _do_syscall:
     ldr r1, =z_arm_do_syscall
     str r1, [r0, #24]   /* overwrite the PC to point to z_arm_do_syscall */
 
-    /* validate syscall limit, only set priv mode if valid */
+    /* validate syscall limit */
     ldr ip, =K_SYSCALL_LIMIT
     cmp r6, ip
     blt valid_syscall_id
 
-    /* bad syscall id.  Set arg0 to bad id and set call_id to SYSCALL_BAD */
+    /* bad syscall id.  Set arg1 to bad id and set call_id to SYSCALL_BAD */
     str r6, [r0, #0]
     ldr r6, =K_SYSCALL_BAD
+
+    /* Bad syscalls treated as valid syscalls with ID K_SYSCALL_BAD. */
 
 valid_syscall_id:
     push {r0, r1}
