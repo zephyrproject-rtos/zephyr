@@ -871,6 +871,17 @@ ssize_t _tcp_send(int fd, const void *buf, size_t len, int flags)
 	return len;
 }
 
+int tcp_close(int fd)
+{
+	struct tcp *conn = (void *) sys_slist_peek_head(&tcp_conns);
+
+	conn->state = TCP_CLOSE_WAIT;
+
+	tcp_in(conn, NULL);
+
+	return 0;
+}
+
 /* API into the TCP stack as seen by the IP stack in net_context.c */
 int net_tcp_get(struct net_context *context)
 {
