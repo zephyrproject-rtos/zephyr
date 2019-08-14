@@ -4230,6 +4230,24 @@ static int le_init(void)
 
 #if defined(CONFIG_BT_SMP)
 	if (BT_FEAT_LE_PRIVACY(bt_dev.le.features)) {
+#if defined(CONFIG_BT_PRIVACY)
+		struct bt_hci_cp_le_set_rpa_timeout *cp;
+
+		buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_RPA_TIMEOUT,
+					sizeof(*cp));
+		if (!buf) {
+			return -ENOBUFS;
+		}
+
+		cp = net_buf_add(buf, sizeof(*cp));
+		cp->rpa_timeout = sys_cpu_to_le16(CONFIG_BT_RPA_TIMEOUT);
+		err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_RPA_TIMEOUT, buf,
+					   NULL);
+		if (err) {
+			return err;
+		}
+#endif /* defined(CONFIG_BT_PRIVACY) */
+
 		err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_READ_RL_SIZE, NULL,
 					   &rsp);
 		if (err) {
