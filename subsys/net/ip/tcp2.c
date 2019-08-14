@@ -1099,6 +1099,9 @@ bool tp_input(struct net_pkt *pkt)
 			tp_pkt_stat();
 			tp_seq_stat();
 		}
+		if (is("CLOSE2", tp->op)) {
+			tcp_close(0);
+		}
 		if (is("RECV", tp->op)) {
 			ssize_t len = tcp_recv(0, buf, sizeof(buf), 0);
 			tp_init(conn, tp);
