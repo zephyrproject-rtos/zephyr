@@ -329,6 +329,27 @@ static int stm32_flash_init(struct device *dev)
 	LL_AHB3_GRP1_EnableClock(LL_AHB3_GRP1_PERIPH_HSEM);
 #endif /* CONFIG_SOC_SERIES_STM32WBX */
 
+#if defined(CONFIG_SOC_SERIES_STM32F4X)
+	// make sure that user options are disabled
+	// they affecting if flash read/write operations
+	// are allowed on the flash for spezific sectors
+	struct stm32f4x_flash *regs = FLASH_STM32_REGS(dev);
+
+	// check if we are not in the typical rest config
+	if (regs->optcr!=0x0FFFFFED) {
+		// clear OPTLOCK
+		regs->optkeyr=0x08192A3B;
+		regs->optkeyr=0x4C5D6E7F;
+		if (regs->optkeyr & 1) {
+			// still locked
+			// we failed
+			return -EIO;
+		}
+		// now write rest config
+		regs->optcr=0x0FFFFFED;
+	}
+#endif
+
 	k_sem_init(&p->sem, 1, 1);
 
 	return flash_stm32_write_protection(dev, false);
