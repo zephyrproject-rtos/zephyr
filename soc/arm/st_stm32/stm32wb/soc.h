@@ -55,7 +55,7 @@
 #endif /* CONFIG_FLASH */
 #ifdef CONFIG_I2C
 #include <stm32wbxx_ll_i2c.h>
-#endif
+#endif /* CONFIG_I2C */
 
 #ifdef CONFIG_SPI_STM32
 #include <stm32wbxx_ll_spi.h>
@@ -63,7 +63,11 @@
 
 #ifdef CONFIG_ADC_STM32
 #include <stm32wbxx_ll_adc.h>
-#endif
+#endif /* CONFIG_ADC_STM32 */
+
+#ifdef CONFIG_IWDG_STM32
+#include <stm32wbxx_ll_iwdg.h>
+#endif /* CONFIG_IWDG_STM32 */
 
 #ifdef CONFIG_WWDG_STM32
 #include <stm32wbxx_ll_wwdg.h>
