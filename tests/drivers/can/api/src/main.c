@@ -54,6 +54,7 @@
 CAN_DEFINE_MSGQ(can_msgq, 5);
 struct k_sem rx_isr_sem;
 struct k_sem rx_cb_sem;
+struct k_sem tx_cb_sem;
 struct device *can_dev;
 
 struct zcan_frame test_std_msg = {
@@ -160,12 +161,16 @@ static void tx_std_isr(u32_t error_flags, void *arg)
 {
 	struct zcan_frame *msg = (struct zcan_frame *)arg;
 
+	k_sem_give(&tx_cb_sem);
+
 	zassert_equal(msg->std_id, TEST_CAN_STD_ID, "Arg does not match");
 }
 
 static void tx_std_masked_isr(u32_t error_flags, void *arg)
 {
 	struct zcan_frame *msg = (struct zcan_frame *)arg;
+
+	k_sem_give(&tx_cb_sem);
 
 	zassert_equal(msg->std_id, TEST_CAN_STD_MASK_ID, "Arg does not match");
 }
@@ -174,12 +179,16 @@ static void tx_ext_isr(u32_t error_flags, void *arg)
 {
 	struct zcan_frame *msg = (struct zcan_frame *)arg;
 
+	k_sem_give(&tx_cb_sem);
+
 	zassert_equal(msg->ext_id, TEST_CAN_EXT_ID, "Arg does not match");
 }
 
 static void tx_ext_masked_isr(u32_t error_flags, void *arg)
 {
 	struct zcan_frame *msg = (struct zcan_frame *)arg;
+
+	k_sem_give(&tx_cb_sem);
 
 	zassert_equal(msg->ext_id, TEST_CAN_EXT_MASK_ID, "Arg does not match");
 }
@@ -382,10 +391,13 @@ static void send_receive(const struct zcan_filter *filter, struct zcan_frame *ms
 	check_msg(&msg_buffer, msg, mask);
 	can_detach(can_dev, filter_id);
 
+	k_sem_reset(&tx_cb_sem);
 	filter_id = attach_isr(can_dev, filter);
 	send_test_msg_nowait(can_dev, msg);
 	ret = k_sem_take(&rx_isr_sem, TEST_RECEIVE_TIMEOUT);
 	zassert_equal(ret, 0, "Receiving timeout");
+	ret = k_sem_take(&tx_cb_sem, TEST_SEND_TIMEOUT);
+	zassert_equal(ret, 0, "Missing TX callback");
 	can_detach(can_dev, filter_id);
 
 	filter_id = attach_workq(can_dev, filter);
@@ -466,6 +478,21 @@ static void test_receive_timeout(void)
 	zassert_equal(ret, -EAGAIN, "Got a message without sending it");
 
 	can_detach(can_dev, filter_id);
+}
+
+/*
+ * Test if the callback function is called
+ */
+static void test_send_callback(void)
+{
+	int ret;
+
+	k_sem_reset(&tx_cb_sem);
+
+	send_test_msg_nowait(can_dev, &test_std_msg);
+
+	ret = k_sem_take(&tx_cb_sem, TEST_SEND_TIMEOUT);
+	zassert_equal(ret, 0, "Missing TX callback");
 }
 
 /*
@@ -570,6 +597,7 @@ void test_main(void)
 {
 	k_sem_init(&rx_isr_sem, 0, 1);
 	k_sem_init(&rx_cb_sem, 0, INT_MAX);
+	k_sem_init(&tx_cb_sem, 0, 1);
 	can_dev = device_get_binding(CAN_DEVICE_NAME);
 	zassert_not_null(can_dev, "Device not found");
 
@@ -578,6 +606,7 @@ void test_main(void)
 			 ztest_unit_test(test_send_and_forget),
 			 ztest_unit_test(test_filter_attach),
 			 ztest_unit_test(test_receive_timeout),
+			 ztest_unit_test(test_send_callback),
 			 ztest_unit_test(test_send_receive_std),
 			 ztest_unit_test(test_send_receive_ext),
 			 ztest_unit_test(test_send_receive_std_masked),
