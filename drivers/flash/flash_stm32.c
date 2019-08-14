@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2017 Linaro Limited
  * Copyright (c) 2017 BayLibre, SAS.
+ * Copyright (c) 2019 Centaur Analytics, Inc
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,20 +17,25 @@
 
 /* STM32F0: maximum erase time of 40ms for a 2K sector */
 #if defined(CONFIG_SOC_SERIES_STM32F0X)
-#define STM32_FLASH_TIMEOUT	(K_MSEC(40))
+#define STM32_FLASH_MAX_ERASE_TIME	(K_MSEC(40))
 /* STM32F3: maximum erase time of 40ms for a 2K sector */
 #elif defined(CONFIG_SOC_SERIES_STM32F3X)
-#define STM32_FLASH_TIMEOUT	(K_MSEC(40))
+#define STM32_FLASH_MAX_ERASE_TIME	(K_MSEC(40))
 /* STM32F4: maximum erase time of 4s for a 128K sector */
 #elif defined(CONFIG_SOC_SERIES_STM32F4X)
-#define STM32_FLASH_TIMEOUT	(K_MSEC(4000))
+#define STM32_FLASH_MAX_ERASE_TIME	(K_MSEC(4000))
 /* STM32F7: maximum erase time of 4s for a 256K sector */
 #elif defined(CONFIG_SOC_SERIES_STM32F7X)
-#define STM32_FLASH_TIMEOUT	(K_MSEC(4000))
+#define STM32_FLASH_MAX_ERASE_TIME	(K_MSEC(4000))
 /* STM32L4: maximum erase time of 24.47ms for a 2K sector */
 #elif defined(CONFIG_SOC_SERIES_STM32L4X)
-#define STM32_FLASH_TIMEOUT	(K_MSEC(25))
+#define STM32_FLASH_MAX_ERASE_TIME	(K_MSEC(25))
 #endif
+
+/* Let's wait for double the max erase time to be sure that the operation is
+ * completed.
+ */
+#define STM32_FLASH_TIMEOUT	(2 * STM32_FLASH_MAX_ERASE_TIME)
 
 /*
  * This is named flash_stm32_sem_take instead of flash_stm32_lock (and
