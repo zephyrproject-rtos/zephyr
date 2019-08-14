@@ -102,5 +102,13 @@
 			#size-cells = <0>;
 			status = "disabled";
 		};
+		pwm0: pwm@e0007000 {
+			compatible = "litex,pwm";
+			reg = <0xe0007000 0x4 0xe0007004 0x10 0xe0007014 0x10>;
+			reg-names = "enable", "width", "period";
+			label = "pwm0";
+			status = "disabled";
+			#pwm-cells = <2>;
+		};
 	};
 };
