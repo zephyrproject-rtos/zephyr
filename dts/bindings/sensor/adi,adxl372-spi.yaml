@@ -19,5 +19,5 @@ properties:
       constraint: "adi,adxl372"
 
     int1-gpios:
-      type: compound
+      type: phandle-array
       category: optional

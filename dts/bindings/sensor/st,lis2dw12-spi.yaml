@@ -18,5 +18,5 @@ properties:
         constraint: "st,lis2dw12"
 
     irq-gpios:
-      type: compound
+      type: phandle-array
       category: required

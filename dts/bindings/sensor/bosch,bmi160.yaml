@@ -17,5 +17,5 @@ properties:
       constraint: "bosch,bmi160"
 
     int-gpios:
-      type: compound
+      type: phandle-array
       category: optional
