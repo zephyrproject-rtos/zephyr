@@ -95,7 +95,7 @@ static void conn_mgr_act_on_changes(void)
 			}
 
 			if (IS_ENABLED(CONFIG_NET_IPV4)) {
-				state |= conn_mgr_ipv4_status(idx);
+				ip_state |= conn_mgr_ipv4_status(idx);
 			}
 
 			state &= ip_state;
