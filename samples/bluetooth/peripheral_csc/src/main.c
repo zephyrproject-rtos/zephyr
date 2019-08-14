@@ -76,8 +76,6 @@
 
 /* Cycling Speed and Cadence Service declaration */
 
-static struct bt_gatt_ccc_cfg csc_meas_ccc_cfg[BT_GATT_CCC_MAX];
-static struct bt_gatt_ccc_cfg ctrl_point_ccc_cfg[BT_GATT_CCC_MAX];
 static u32_t cwr; /* Cumulative Wheel Revolutions */
 static u8_t supported_locations[] = CSC_SUPPORTED_LOCATIONS;
 static u8_t sensor_location; /* Current Sensor Location */
@@ -204,7 +202,7 @@ BT_GATT_SERVICE_DEFINE(csc_svc,
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_CSC),
 	BT_GATT_CHARACTERISTIC(BT_UUID_CSC_MEASUREMENT, BT_GATT_CHRC_NOTIFY,
 			       0x00, NULL, NULL, NULL),
-	BT_GATT_CCC(csc_meas_ccc_cfg, csc_meas_ccc_cfg_changed),
+	BT_GATT_CCC(csc_meas_ccc_cfg_changed),
 	BT_GATT_CHARACTERISTIC(BT_UUID_SENSOR_LOCATION, BT_GATT_CHRC_READ,
 			       BT_GATT_PERM_READ, read_location, NULL,
 			       &sensor_location),
@@ -214,7 +212,7 @@ BT_GATT_SERVICE_DEFINE(csc_svc,
 			       BT_GATT_CHRC_WRITE | BT_GATT_CHRC_INDICATE,
 			       BT_GATT_PERM_WRITE, NULL, write_ctrl_point,
 			       &sensor_location),
-	BT_GATT_CCC(ctrl_point_ccc_cfg, ctrl_point_ccc_cfg_changed),
+	BT_GATT_CCC(ctrl_point_ccc_cfg_changed),
 );
 
 struct sc_ctrl_point_ind {

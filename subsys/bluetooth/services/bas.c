@@ -25,8 +25,6 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(bas);
 
-static struct bt_gatt_ccc_cfg  blvl_ccc_cfg[BT_GATT_CCC_MAX] = {};
-
 static u8_t battery_level = 100U;
 
 static void blvl_ccc_cfg_changed(const struct bt_gatt_attr *attr,
@@ -55,7 +53,7 @@ BT_GATT_SERVICE_DEFINE(bas,
 			       BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY,
 			       BT_GATT_PERM_READ, read_blvl, NULL,
 			       &battery_level),
-	BT_GATT_CCC(blvl_ccc_cfg, blvl_ccc_cfg_changed),
+	BT_GATT_CCC(blvl_ccc_cfg_changed),
 );
 
 static int bas_init(struct device *dev)

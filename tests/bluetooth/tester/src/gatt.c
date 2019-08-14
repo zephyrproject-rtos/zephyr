@@ -463,7 +463,6 @@ fail:
 
 static bool ccc_added;
 
-static struct bt_gatt_ccc_cfg ccc_cfg[BT_GATT_CCC_MAX] = {};
 static u8_t ccc_value;
 
 static void ccc_cfg_changed(const struct bt_gatt_attr *attr, u16_t value)
@@ -471,7 +470,7 @@ static void ccc_cfg_changed(const struct bt_gatt_attr *attr, u16_t value)
 	ccc_value = value;
 }
 
-static struct bt_gatt_attr ccc = BT_GATT_CCC(ccc_cfg, ccc_cfg_changed);
+static struct bt_gatt_attr ccc = BT_GATT_CCC(ccc_cfg_changed);
 
 static struct bt_gatt_attr *add_ccc(const struct bt_gatt_attr *attr)
 {
