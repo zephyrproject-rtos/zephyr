@@ -763,7 +763,6 @@ static void gatt_proxy_set(struct bt_mesh_model *model,
 			   struct net_buf_simple *buf)
 {
 	struct bt_mesh_cfg_srv *cfg = model->user_data;
-	struct bt_mesh_subnet *sub;
 
 	BT_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
 	       ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
@@ -820,8 +819,7 @@ static void gatt_proxy_set(struct bt_mesh_model *model,
 
 	bt_mesh_adv_update();
 
-	sub = bt_mesh_subnet_get(cfg->hb_pub.net_idx);
-	if ((cfg->hb_pub.feat & BT_MESH_FEAT_PROXY) && sub) {
+	if (cfg->hb_pub.feat & BT_MESH_FEAT_PROXY) {
 		bt_mesh_heartbeat_send();
 	}
 
@@ -917,7 +915,6 @@ static void relay_set(struct bt_mesh_model *model,
 	if (!cfg) {
 		BT_WARN("No Configuration Server context available");
 	} else if (buf->data[0] == 0x00 || buf->data[0] == 0x01) {
-		struct bt_mesh_subnet *sub;
 		bool change;
 
 		if (cfg->relay == BT_MESH_RELAY_NOT_SUPPORTED) {
@@ -938,8 +935,7 @@ static void relay_set(struct bt_mesh_model *model,
 		       BT_MESH_TRANSMIT_COUNT(cfg->relay_retransmit),
 		       BT_MESH_TRANSMIT_INT(cfg->relay_retransmit));
 
-		sub = bt_mesh_subnet_get(cfg->hb_pub.net_idx);
-		if ((cfg->hb_pub.feat & BT_MESH_FEAT_RELAY) && sub && change) {
+		if ((cfg->hb_pub.feat & BT_MESH_FEAT_RELAY) && change) {
 			bt_mesh_heartbeat_send();
 		}
 	} else {
@@ -2660,7 +2656,6 @@ static void friend_set(struct bt_mesh_model *model,
 		       struct net_buf_simple *buf)
 {
 	struct bt_mesh_cfg_srv *cfg = model->user_data;
-	struct bt_mesh_subnet *sub;
 
 	BT_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
 	       ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
@@ -2694,8 +2689,7 @@ static void friend_set(struct bt_mesh_model *model,
 		}
 	}
 
-	sub = bt_mesh_subnet_get(cfg->hb_pub.net_idx);
-	if ((cfg->hb_pub.feat & BT_MESH_FEAT_FRIEND) && sub) {
+	if (cfg->hb_pub.feat & BT_MESH_FEAT_FRIEND) {
 		bt_mesh_heartbeat_send();
 	}
 
