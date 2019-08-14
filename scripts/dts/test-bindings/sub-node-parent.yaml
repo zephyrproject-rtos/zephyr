@@ -11,9 +11,9 @@ properties:
 sub-node:
     properties:
         foo:
-            required: true
+            category: required
             type: int
 
         bar:
-            required: True
+            category: required
             type: int

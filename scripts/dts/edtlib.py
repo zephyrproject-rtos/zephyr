@@ -1233,7 +1233,18 @@ def _check_binding(binding, binding_path):
                 _err("malformed '{}: bus:' value in {}, expected string"
                      .format(pc, binding_path))
 
-    # Check properties
+    _check_binding_properties(binding, binding_path)
+
+    if "sub-node" in binding:
+        if binding["sub-node"].keys() != {"properties"}:
+            _err("expected (just) 'properties:' in 'sub-node:' in {}"
+                 .format(binding_path))
+
+        _check_binding_properties(binding["sub-node"], binding_path)
+
+
+def _check_binding_properties(binding, binding_path):
+    # _check_binding() helper for checking the contents of 'properties:'
 
     if "properties" not in binding:
         return
