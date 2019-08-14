@@ -155,7 +155,7 @@ def write_props(dev):
             continue
 
         # Skip phandles
-        if isinstance(prop.val, edtlib.Device):
+        if prop.type in {"phandle", "phandles"}:
             continue
 
         # Skip properties that we handle elsewhere
@@ -170,17 +170,19 @@ def write_props(dev):
 
         ident = str2ident(prop.name)
 
-        if isinstance(prop.val, bool):
+        if prop.type == "boolean":
             out_dev(dev, ident, 1 if prop.val else 0)
-        elif isinstance(prop.val, str):
+        elif prop.type == "string":
             out_dev_s(dev, ident, prop.val)
-        elif isinstance(prop.val, int):
+        elif prop.type == "int":
             out_dev(dev, ident, prop.val)
-        elif isinstance(prop.val, list):
-            for i, elm in enumerate(prop.val):
-                out_fn = out_dev_s if isinstance(elm, str) else out_dev
-                out_fn(dev, "{}_{}".format(ident, i), elm)
-        elif isinstance(prop.val, bytes):
+        elif prop.type == "array":
+            for i, val in enumerate(prop.val):
+                out_dev(dev, "{}_{}".format(ident, i), val)
+        elif prop.type == "string-array":
+            for i, val in enumerate(prop.val):
+                out_dev_s(dev, "{}_{}".format(ident, i), val)
+        elif prop.type == "uint8-array":
             out_dev(dev, ident,
                     "{ " + ", ".join("0x{:02x}".format(b) for b in prop.val) + " }")
 
