@@ -16,5 +16,5 @@ properties:
     compatible:
       constraint: "microchip,mcp2515"
     int-gpios:
-      type: compound
+      type: phandle-array
       category: required

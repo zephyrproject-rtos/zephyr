@@ -82,13 +82,13 @@ properties:
       description: Last column address is mapped to first segment
 
     reset-gpios:
-      type: compound
+      type: phandle-array
       category: required
 
     dc-gpios:
-      type: compound
+      type: phandle-array
       category: required
 
     busy-gpios:
-      type: compound
+      type: phandle-array
       category: required

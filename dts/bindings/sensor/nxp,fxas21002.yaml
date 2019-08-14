@@ -17,9 +17,9 @@ properties:
       constraint: "nxp,fxas21002"
 
     int1-gpios:
-      type: compound
+      type: phandle-array
       category: optional
 
     int2-gpios:
-      type: compound
+      type: phandle-array
       category: optional

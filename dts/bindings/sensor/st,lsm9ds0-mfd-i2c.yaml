@@ -17,5 +17,5 @@ properties:
         constraint: "st,lsm9ds0-mfd"
 
     irq-gpios:
-      type: compound
+      type: phandle-array
       category: required

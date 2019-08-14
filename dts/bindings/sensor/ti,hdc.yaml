@@ -17,5 +17,5 @@ properties:
       constraint: "ti,hdc"
 
     drdy-gpios:
-      type: compound
+      type: phandle-array
       category: optional
