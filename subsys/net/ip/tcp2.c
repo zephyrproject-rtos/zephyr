@@ -802,6 +802,7 @@ next_state:
 		break;
 	case TCP_LAST_ACK:
 		if (FL(&fl, ==, ACK, th_seq(th) == conn->ack)) {
+			tcp_send_timer_cancel(conn);
 			next = TCP_CLOSED;
 		}
 		break;
