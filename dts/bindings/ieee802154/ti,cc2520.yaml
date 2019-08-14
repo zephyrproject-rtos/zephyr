@@ -17,25 +17,25 @@ properties:
       constraint: "ti,cc2520"
 
     vreg-en-gpios:
-      type: compound
+      type: phandle-array
       category: optional
 
     reset-gpios:
-      type: compound
+      type: phandle-array
       category: optional
 
     fifo-gpios:
-      type: compound
+      type: phandle-array
       category: optional
 
     cca-gpios:
-      type: compound
+      type: phandle-array
       category: optional
 
     sfd-gpios:
-      type: compound
+      type: phandle-array
       category: optional
 
     fifop-gpios:
-      type: compound
+      type: phandle-array
       category: optional

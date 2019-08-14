@@ -21,5 +21,5 @@ properties:
       constraint: "zephyr,bt-hci-spi-slave"
 
     irq-gpios:
-      type: compound
+      type: phandle-array
       category: required

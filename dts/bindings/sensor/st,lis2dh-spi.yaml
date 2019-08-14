@@ -18,5 +18,5 @@ properties:
         constraint: "st,lis2dh"
 
     irq-gpios:
-      type: compound
+      type: phandle-array
       category: optional

@@ -18,9 +18,9 @@ properties:
       constraint: "zephyr,bt-hci-spi"
 
     irq-gpios:
-      type: compound
+      type: phandle-array
       category: required
 
     reset-gpios:
-      type: compound
+      type: phandle-array
       category: required
