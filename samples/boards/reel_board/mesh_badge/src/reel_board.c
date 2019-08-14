@@ -23,9 +23,9 @@
 #include "board.h"
 
 enum font_size {
-	FONT_BIG = 0,
+	FONT_SMALL = 0,
 	FONT_MEDIUM = 1,
-	FONT_SMALL = 2,
+	FONT_BIG = 2,
 };
 
 enum screen_ids {
