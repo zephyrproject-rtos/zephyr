@@ -17,11 +17,11 @@ properties:
       constraint: "sitronix,st7789v"
 
     reset-gpios:
-      type: compound
+      type: phandle-array
       category: required
 
     cmd-data-gpios:
-      type: compound
+      type: phandle-array
       category: required
 
     height:

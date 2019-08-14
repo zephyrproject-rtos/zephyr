@@ -20,6 +20,6 @@ properties:
     label:
       category: required
     irq-gpios:
-      type: compound
+      type: phandle-array
       category: optional
       description: IRQ pin

@@ -32,14 +32,14 @@ properties:
     description: flash capacity in bits
 
   wp-gpios:
-    type: compound
+    type: phandle-array
     category: optional
     description: WPn pin
   hold-gpios:
-    type: compound
+    type: phandle-array
     category: optional
     description: HOLDn pin
   reset-gpios:
-    type: compound
+    type: phandle-array
     category: optional
     description: RESETn pin

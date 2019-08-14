@@ -20,13 +20,13 @@ properties:
       category: required
 
     mdm-power-gpios:
-      type: compound
+      type: phandle-array
       category: required
 
     mdm-reset-gpios:
-      type: compound
+      type: phandle-array
       category: required
 
     mdm-vint-gpios:
-      type: compound
+      type: phandle-array
       category: optional
