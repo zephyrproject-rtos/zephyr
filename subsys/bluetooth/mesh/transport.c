@@ -1547,11 +1547,9 @@ void bt_mesh_heartbeat_send(void)
 		feat |= BT_MESH_FEAT_FRIEND;
 	}
 
-#if defined(CONFIG_BT_MESH_LOW_POWER)
-	if (bt_mesh.lpn.state != BT_MESH_LPN_DISABLED) {
+	if (bt_mesh_lpn_established()) {
 		feat |= BT_MESH_FEAT_LOW_POWER;
 	}
-#endif
 
 	hb.feat = sys_cpu_to_be16(feat);
 
