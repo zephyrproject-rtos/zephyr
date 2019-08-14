@@ -566,6 +566,7 @@ class Device:
         if prop.description:
             prop.description = prop.description.rstrip()
         prop.val = val
+        prop.type = prop_type
         prop.enum_index = None if enum is None else enum.index(val)
 
         self.props[name] = prop
@@ -1037,6 +1038,9 @@ class Property:
       The description string from the property as given in the binding, or None
       if missing. Trailing whitespace (including newlines) is removed.
 
+    type:
+      A string with the type of the property, as given in the binding.
+
     val:
       The value of the property, with the format determined by the 'type:' key
       from the binding.
@@ -1053,6 +1057,7 @@ class Property:
     def __repr__(self):
         fields = ["name: " + self.name,
                   # repr() to deal with lists
+                  "type: " + self.type,
                   "value: " + repr(self.val)]
 
         if self.enum_index is not None:
