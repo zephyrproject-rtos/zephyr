@@ -1951,6 +1951,7 @@ int bt_conn_disconnect(struct bt_conn *conn, u8_t reason)
 static void bt_conn_set_param_le(struct bt_conn *conn,
 				 const struct bt_le_conn_param *param)
 {
+	conn->le.interval_min = param->interval_min;
 	conn->le.interval_max = param->interval_max;
 	conn->le.latency = param->latency;
 	conn->le.timeout = param->timeout;
