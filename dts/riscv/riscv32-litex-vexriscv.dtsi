@@ -86,5 +86,12 @@
 			label = "dna0";
 			status = "disabled";
 		};
+		prbs0: prbs@e0006800 {
+			compatible = "litex,prbs";
+			reg = <0xe0006800 0x4>;
+			reg-names = "status";
+			label = "prbs0";
+			status = "disabled";
+		};
 	};
 };
