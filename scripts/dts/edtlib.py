@@ -547,14 +547,17 @@ class Device:
 
         enum = options.get("enum")
         if enum and val not in enum:
-            _err("value {} for property {} is not in enumerated "
-                 "list {} for node {}".format(val, name, enum, self.path))
+            _err("value of property '{}' on {} in {} ({!r}) is not in 'enum' "
+                 "list in {} ({!r})"
+                 .format(name, self.path, self.edt.dts_path, val,
+                         self.binding_path, enum))
 
         const = options.get("const")
-        if const and val != const:
-            _err("value {} for property {} is not in equal to const "
-                 "value {} expected for node {}"
-                 .format(val, name, const, self.path))
+        if const is not None and val != const:
+            _err("value of property '{}' on {} in {} ({!r}) is different from "
+                 "the 'const' value specified in {} ({!r})"
+                 .format(name, self.path, self.edt.dts_path, val,
+                         self.binding_path, const))
 
         # Skip properties that start with '#', like '#size-cells', and mapping
         # properties like 'gpio-map'/'interrupt-map'
