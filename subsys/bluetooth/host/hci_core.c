@@ -874,8 +874,7 @@ static void hci_disconn_complete(struct net_buf *buf)
 advertise:
 	if (atomic_test_bit(bt_dev.flags, BT_DEV_KEEP_ADVERTISING) &&
 	    !atomic_test_bit(bt_dev.flags, BT_DEV_ADVERTISING)) {
-		if (IS_ENABLED(CONFIG_BT_PRIVACY) &&
-		    !BT_FEAT_LE_PRIVACY(bt_dev.le.features)) {
+		if (IS_ENABLED(CONFIG_BT_PRIVACY)) {
 			le_set_private_addr(bt_dev.adv_id);
 		}
 
