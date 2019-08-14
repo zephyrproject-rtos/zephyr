@@ -12,11 +12,16 @@ The Zephyr device model provides a consistent device model for configuring the
 drivers that are part of a system. The device model is responsible
 for initializing all the drivers configured into the system.
 
-Each type of driver (UART, SPI, I2C) is supported by a generic type API.
+Each type of driver (e.g. UART, SPI, I2C) is supported by a generic type API.
 
 In this model the driver fills in the pointer to the structure containing the
 function pointers to its API functions during driver initialization. These
 structures are placed into the RAM section in initialization level order.
+
+.. image:: device_driver_model.svg
+   :width: 40%
+   :align: center
+   :alt: Device Driver Model
 
 Standard Drivers
 ****************
@@ -38,8 +43,8 @@ are listed below.
 
   .. important::
 
-    Certain implementations of this device driver do not generate sequences of
-    values that are truly random.
+    Certain implementations of the random number generator device driver
+    do not generate sequences of values that are truly random.
 
 Synchronous Calls
 *****************
@@ -48,9 +53,9 @@ Zephyr provides a set of device drivers for multiple boards. Each driver
 should support an interrupt-based implementation, rather than polling, unless
 the specific hardware does not provide any interrupt.
 
-High-level calls accessed through device-specific APIs, such as i2c.h
-or spi.h, are usually intended as synchronous. Thus, these calls should be
-blocking.
+High-level calls accessed through device-specific APIs, such as
+:file:`i2c.h` or :file:`spi.h`, are usually intended as synchronous. Thus,
+these calls should be blocking.
 
 Driver APIs
 ***********
@@ -379,7 +384,7 @@ pathological/unrecoverable failures, etc., should be handled by
 assertions.
 
 When it is appropriate to return error conditions for the caller to
-check, 0 should be returned on success and a POSIX errno.h code
+check, 0 should be returned on success and a POSIX :file:`errno.h` code
 returned on failure.  See
 https://github.com/zephyrproject-rtos/zephyr/wiki/Naming-Conventions#return-codes
 for details about this.
