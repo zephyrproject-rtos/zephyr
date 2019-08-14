@@ -17,5 +17,5 @@ properties:
       constraint: "st,lis2mdl-magn"
 
     irq-gpios:
-      type: compound
+      type: phandle-array
       category: required

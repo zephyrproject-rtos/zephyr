@@ -17,9 +17,9 @@ properties:
       constraint: "nxp,mcr20a"
 
     irqb-gpios:
-      type: compound
+      type: phandle-array
       category: required
 
     reset-gpios:
-      type: compound
+      type: phandle-array
       category: required

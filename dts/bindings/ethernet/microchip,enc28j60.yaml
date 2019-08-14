@@ -15,5 +15,5 @@ properties:
     compatible:
       constraint: "microchip,enc28j60"
     int-gpios:
-      type: compound
+      type: phandle-array
       category: required

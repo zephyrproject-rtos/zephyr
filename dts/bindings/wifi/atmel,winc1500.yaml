@@ -17,13 +17,13 @@ properties:
       constraint: "atmel,winc1500"
 
     irq-gpios:
-      type: compound
+      type: phandle-array
       category: required
 
     reset-gpios:
-      type: compound
+      type: phandle-array
       category: required
 
     enable-gpios:
-      type: compound
+      type: phandle-array
       category: required

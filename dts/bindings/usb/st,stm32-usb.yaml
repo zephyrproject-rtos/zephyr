@@ -29,7 +29,7 @@ properties:
                    manual defines USB packet SRAM size.
 
     disconnect-gpios:
-      type: compound
+      type: phandle-array
       category: optional
       description: Some boards use a USB DISCONNECT pin to enable
                    the pull-up resistor on USB Data Positive signal.

@@ -17,5 +17,5 @@ properties:
       constraint: "adi,adt7420"
 
     int-gpios:
-      type: compound
+      type: phandle-array
       category: optional

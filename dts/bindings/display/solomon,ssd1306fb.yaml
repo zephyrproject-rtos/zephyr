@@ -57,5 +57,5 @@ properties:
       description: Duration of the pre-charge period
 
     reset-gpios:
-      type: compound
+      type: phandle-array
       category: optional
