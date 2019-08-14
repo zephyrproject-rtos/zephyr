@@ -18,6 +18,6 @@ properties:
       constraint: "st,hts221"
 
     drdy-gpios:
-      type: compound
+      type: phandle-array
       category: optional
       description: DRDY pin

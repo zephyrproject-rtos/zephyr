@@ -18,13 +18,13 @@ properties:
       constraint: "nxp,fxos8700"
 
     reset-gpios:
-      type: compound
+      type: phandle-array
       category: optional
 
     int1-gpios:
-      type: compound
+      type: phandle-array
       category: optional
 
     int2-gpios:
-      type: compound
+      type: phandle-array
       category: optional
