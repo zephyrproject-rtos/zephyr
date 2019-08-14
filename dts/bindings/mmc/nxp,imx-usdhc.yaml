@@ -20,12 +20,12 @@ properties:
       category: required
 
     pwr-gpios:
-      type: compound
+      type: phandle-array
       category: optional
       description: Power pin
 
     cd-gpios:
-      type: compound
+      type: phandle-array
       category: optional
       description: Detect pin
 

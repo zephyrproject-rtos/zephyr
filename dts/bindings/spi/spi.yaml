@@ -29,5 +29,5 @@ properties:
     label:
       category: required
     cs-gpios:
-      type: compound
+      type: phandle-array
       category: optional
