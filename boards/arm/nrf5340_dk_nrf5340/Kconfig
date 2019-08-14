@@ -9,4 +9,9 @@ endif # BOARD_NRF5340_DK_NRF5340_CPUAPP || BOARD_NRF5340_DK_NRF5340_CPUAPPNS
 
 if BOARD_NRF5340_DK_NRF5340_CPUNET
 
+# BT_CTLR depends on BT. When BT is enabled we should default to also
+# enabling the controller.
+config BT_CTLR
+	default y if BT
+
 endif # BOARD_NRF5340_DK_NRF5340_CPUNET
