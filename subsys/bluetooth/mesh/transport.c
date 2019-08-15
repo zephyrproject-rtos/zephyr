@@ -426,15 +426,7 @@ static int send_seg(struct bt_mesh_net_tx *net_tx, struct net_buf_simple *sdu,
 		 * there's no other way to track this (at least currently)
 		 * with the Friend Queue.
 		 */
-		if (cb) {
-			if (cb->start) {
-				cb->start(0, 0, cb_data);
-			}
-
-			if (cb->end) {
-				cb->end(0, cb_data);
-			}
-		}
+		send_cb_finalize(cb, cb_data);
 	}
 
 	if (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER) &&
