@@ -383,6 +383,11 @@ enum net_verdict net_ipv6_input(struct net_pkt *pkt, bool is_loopback)
 		log_strdup(net_sprint_ipv6_addr(&hdr->src)),
 		log_strdup(net_sprint_ipv6_addr(&hdr->dst)));
 
+	if (net_ipv6_is_addr_unspecified(&hdr->src)) {
+		NET_DBG("DROP: src addr is %s", "unspecified");
+		goto drop;
+	}
+
 	if (net_ipv6_is_addr_mcast(&hdr->src) ||
 	    net_ipv6_is_addr_mcast_scope(&hdr->dst, 0)) {
 		NET_DBG("DROP: multicast packet");
