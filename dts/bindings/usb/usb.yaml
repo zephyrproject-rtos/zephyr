@@ -4,10 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-title: USB Base Structure
-
-description: >
-    This binding gives the base structures for all USB devices
+# Common fields for USB devices
 
 inherits:
     !include base.yaml

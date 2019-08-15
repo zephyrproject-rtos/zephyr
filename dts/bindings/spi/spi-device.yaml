@@ -4,10 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-title: SPI Device Base Structure
-
-description: >
-    This binding gives the base structures for all spi devices
+# Common fields for SPI devices
 
 inherits:
     !include base.yaml

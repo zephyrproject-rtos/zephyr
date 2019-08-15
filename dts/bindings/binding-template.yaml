@@ -4,13 +4,13 @@ description: >
     Longer free-form description of the node.
     Can go over multiple lines.
 
-# Bindings are often based on other bindings, which are given in 'inherits'.
-# The resulting binding is the union of the inherited bindings and this binding
-# (internally, it's a recursive dictionary merge).
+# Many bindings have common fields. These are stored in files given in
+# 'inherits', which are merged into the binding (with a recursive dictionary
+# merge).
 #
-# If a field appears both in this binding and in a binding it inherits, then
-# the value in this binding takes precedence. This can be used to change a
-# 'category: optional' from an inherited binding to a 'category: required' (see
+# If a field appears both in the binding and in a file it inherits, then the
+# value in the binding takes precedence. This can be used e.g. to change a
+# 'category: optional' from an inherited file to a 'category: required' (see
 # the 'properties' description below).
 inherits:
     !include other.yaml # or [other1.yaml, other2.yaml]
@@ -38,8 +38,8 @@ child:
 sub-node:
     properties:
         pwms:
-          type: compound
-          category: required
+            type: compound
+            category: required
 
 # 'properties' describes properties on the node, e.g.
 #
@@ -121,21 +121,21 @@ properties:
     # Describes an optional property like 'maximum-speed = "full-speed";
     # the enum specifies known values that the string property may take
     maximum-speed:
-      type: string
-      category: optional
-      description: Configures USB controllers to work up to a specific speed.
-      enum:
-         - "low-speed"
-         - "full-speed"
-         - "high-speed"
-         - "super-speed"
+        type: string
+        category: optional
+        description: Configures USB controllers to work up to a specific speed.
+        enum:
+           - "low-speed"
+           - "full-speed"
+           - "high-speed"
+           - "super-speed"
 
     # Describes a required property '#address-cells = <1>';  the const
     # specifies that the value for the property is expected to be the value 1
     "#address-cells":
-      type: int
-      category: required
-      const: 1
+        type: int
+        category: required
+        const: 1
 
 # If the binding describes an interrupt controller, GPIO controller, pinmux
 # device, or any other device referenced via a phandle plus a specifier (some
@@ -151,7 +151,7 @@ properties:
 # at by &gpio1 is expected to have '#gpio-cells = <2>', and its binding should
 # have two elements in '#cells', corresponding to the 1 and 2 values above.
 "#cells":
-  - cell0    # name of first cell
-  - cell1    # name of second cell
-  - cell2    # name of third cell
-  - and so on and so forth
+    - cell0    # name of first cell
+    - cell1    # name of second cell
+    - cell2    # name of third cell
+    - and so on and so forth
