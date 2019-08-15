@@ -973,33 +973,9 @@ static int start_security(struct bt_conn *conn)
 #if defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_SMP)
 	case BT_HCI_ROLE_MASTER:
 	{
-		if (!conn->le.keys) {
-			conn->le.keys = bt_keys_find(BT_KEYS_LTK_P256,
-						     conn->id, &conn->le.dst);
-			if (!conn->le.keys) {
-				conn->le.keys = bt_keys_find(BT_KEYS_LTK,
-							     conn->id,
-							     &conn->le.dst);
-			}
-		}
-
-		if (!conn->le.keys ||
-		    !(conn->le.keys->keys & (BT_KEYS_LTK | BT_KEYS_LTK_P256))) {
+		if (!bt_smp_keys_check(conn)) {
 			return bt_smp_send_pairing_req(conn);
 		}
-
-		if (conn->required_sec_level > BT_SECURITY_MEDIUM &&
-		    !(conn->le.keys->flags & BT_KEYS_AUTHENTICATED)) {
-			return bt_smp_send_pairing_req(conn);
-		}
-
-		if (conn->required_sec_level > BT_SECURITY_HIGH &&
-		    !(conn->le.keys->flags & BT_KEYS_AUTHENTICATED) &&
-		    !(conn->le.keys->keys & BT_KEYS_LTK_P256) &&
-		    !(conn->le.keys->enc_size == BT_SMP_MAX_ENC_KEY_SIZE)) {
-			return bt_smp_send_pairing_req(conn);
-		}
-
 		/* LE SC LTK and legacy master LTK are stored in same place */
 		return bt_conn_le_start_encryption(conn,
 						   conn->le.keys->ltk.rand,
@@ -1911,6 +1887,7 @@ int bt_conn_disconnect(struct bt_conn *conn, u8_t reason)
 static void bt_conn_set_param_le(struct bt_conn *conn,
 				 const struct bt_le_conn_param *param)
 {
+	conn->le.interval_min = param->interval_min;
 	conn->le.interval_max = param->interval_max;
 	conn->le.latency = param->latency;
 	conn->le.timeout = param->timeout;
@@ -1920,6 +1897,7 @@ struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer,
 				  const struct bt_le_conn_param *param)
 {
 	struct bt_conn *conn;
+	bt_addr_le_t dst;
 
 	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
 		return NULL;
@@ -1948,16 +1926,21 @@ struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer,
 		}
 	}
 
-	conn = bt_conn_add_le(peer);
+	if (peer->type == BT_ADDR_LE_PUBLIC_ID ||
+	    peer->type == BT_ADDR_LE_RANDOM_ID) {
+		bt_addr_le_copy(&dst, peer);
+		dst.type -= BT_ADDR_LE_PUBLIC_ID;
+	} else {
+		bt_addr_le_copy(&dst, bt_lookup_id_addr(BT_ID_DEFAULT, peer));
+	}
+
+	conn = bt_conn_add_le(&dst);
 	if (!conn) {
 		return NULL;
 	}
 
 	/* Only default identity supported for now */
 	conn->id = BT_ID_DEFAULT;
-
-	/* Set initial address - will be updated later if necessary. */
-	bt_addr_le_copy(&conn->le.resp_addr, peer);
 
 	bt_conn_set_param_le(conn, param);
 

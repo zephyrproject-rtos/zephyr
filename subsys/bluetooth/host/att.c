@@ -95,6 +95,7 @@ struct bt_att {
 };
 
 static struct bt_att bt_req_pool[CONFIG_BT_MAX_CONN];
+static struct bt_att_req cancel;
 
 static void att_req_destroy(struct bt_att_req *req)
 {
@@ -313,6 +314,12 @@ static u8_t att_handle_rsp(struct bt_att *att, void *pdu, u16_t len, u8_t err)
 
 	if (!att->req) {
 		BT_WARN("No pending ATT request");
+		goto process;
+	}
+
+	/* Check if request has been cancelled */
+	if (att->req == &cancel) {
+		att->req = NULL;
 		goto process;
 	}
 
@@ -1601,7 +1608,8 @@ static u8_t att_error_rsp(struct bt_att *att, struct net_buf *buf)
 	BT_DBG("request 0x%02x handle 0x%04x error 0x%02x", rsp->request,
 	       sys_le16_to_cpu(rsp->handle), rsp->error);
 
-	if (!att->req) {
+	/* Don't retry if there is no req pending or it has been cancelled */
+	if (!att->req || att->req == &cancel) {
 		err = BT_ATT_ERR_UNLIKELY;
 		goto done;
 	}
@@ -2285,7 +2293,7 @@ void bt_att_req_cancel(struct bt_conn *conn, struct bt_att_req *req)
 
 	/* Check if request is outstanding */
 	if (att->req == req) {
-		att->req = NULL;
+		att->req = &cancel;
 	} else {
 		/* Remove request from the list */
 		sys_slist_find_and_remove(&att->reqs, &req->node);

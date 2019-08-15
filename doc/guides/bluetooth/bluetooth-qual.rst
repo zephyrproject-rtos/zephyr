@@ -40,10 +40,10 @@ Controller qualifications
      - Nordic
      - nRF52x
 
-PICS Features
+ICS Features
 *************
 
-The PICS features for each supported protocol & profile can be found in
+The ICS features for each supported protocol & profile can be found in
 the following documents:
 
 .. toctree::
@@ -54,5 +54,5 @@ the following documents:
    l2cap-pics.rst
    sm-pics.rst
    rfcomm-pics.rst
-
+   mesh-pics.rst
 

@@ -405,6 +405,15 @@ static void db_hash_gen(void)
 		return;
 	}
 
+	/**
+	 * Core 5.1 does not state the endianess of the hash.
+	 * However Vol 3, Part F, 3.3.1 says that multi-octet Characteristic
+	 * Values shall be LE unless otherwise defined. PTS expects hash to be
+	 * in little endianess as well. bt_smp_aes_cmac calculates the hash in
+	 * big endianess so we have to swap.
+	 */
+	sys_mem_swap(db_hash, sizeof(db_hash));
+
 	BT_HEXDUMP_DBG(db_hash, sizeof(db_hash), "Hash: ");
 }
 
@@ -492,20 +501,64 @@ static struct bt_gatt_attr gatt_attrs[] = {
 
 static struct bt_gatt_service gatt_svc = BT_GATT_SERVICE(gatt_attrs);
 
+static void gatt_insert(struct bt_gatt_service *svc, u16_t last_handle)
+{
+	struct bt_gatt_service *tmp, *prev = NULL;
+
+	if (last_handle == 0 || svc->attrs[0].handle > last_handle) {
+		sys_slist_append(&db, &svc->node);
+		return;
+	}
+
+	/* DB shall always have its service in ascending order */
+	SYS_SLIST_FOR_EACH_CONTAINER(&db, tmp, node) {
+		if (tmp->attrs[0].handle > svc->attrs[0].handle) {
+			if (prev) {
+				sys_slist_insert(&db, &prev->node, &svc->node);
+			} else {
+				sys_slist_prepend(&db, &svc->node);
+			}
+			return;
+		}
+
+		prev = tmp;
+	}
+}
+
+static u8_t found_attr(const struct bt_gatt_attr *attr, void *user_data)
+{
+	const struct bt_gatt_attr **found = user_data;
+
+	*found = attr;
+
+	return BT_GATT_ITER_STOP;
+}
+
+static const struct bt_gatt_attr *find_attr(uint16_t handle)
+{
+	const struct bt_gatt_attr *attr = NULL;
+
+	bt_gatt_foreach_attr(handle, handle, found_attr, &attr);
+
+	return attr;
+}
+
 static int gatt_register(struct bt_gatt_service *svc)
 {
 	struct bt_gatt_service *last;
-	u16_t handle;
+	u16_t handle, last_handle;
 	struct bt_gatt_attr *attrs = svc->attrs;
 	u16_t count = svc->attr_count;
 
 	if (sys_slist_is_empty(&db)) {
 		handle = 0U;
+		last_handle = 0U;
 		goto populate;
 	}
 
 	last = SYS_SLIST_PEEK_TAIL_CONTAINER(&db, last, node);
 	handle = last->attrs[last->attr_count - 1].handle;
+	last_handle = handle;
 
 populate:
 	/* Populate the handles and append them to the list */
@@ -516,7 +569,7 @@ populate:
 		} else if (attrs->handle > handle) {
 			/* Use existing handle if valid */
 			handle = attrs->handle;
-		} else {
+		} else if (find_attr(attrs->handle)) {
 			/* Service has conflicting handles */
 			BT_ERR("Unable to register handle 0x%04x",
 			       attrs->handle);
@@ -528,7 +581,7 @@ populate:
 		       attrs->perm);
 	}
 
-	sys_slist_append(&db, &svc->node);
+	gatt_insert(svc, last_handle);
 
 	return 0;
 }
@@ -1217,11 +1270,11 @@ static int gatt_send(struct bt_conn *conn, struct net_buf *buf,
 }
 
 static int gatt_indicate(struct bt_conn *conn,
+			 u16_t value_handle,
 			 struct bt_gatt_indicate_params *params)
 {
 	struct net_buf *buf;
 	struct bt_att_indicate *ind;
-	u16_t value_handle = params->attr->handle;
 
 #if defined(CONFIG_BT_GATT_ENFORCE_CHANGE_UNAWARE)
 	/* BLUETOOTH CORE SPECIFICATION Version 5.1 | Vol 3, Part G page 2350:
@@ -1234,18 +1287,6 @@ static int gatt_indicate(struct bt_conn *conn,
 		return -EAGAIN;
 	}
 #endif
-
-
-	/* Check if attribute is a characteristic then adjust the handle */
-	if (!bt_uuid_cmp(params->attr->uuid, BT_UUID_GATT_CHRC)) {
-		struct bt_gatt_chrc *chrc = params->attr->user_data;
-
-		if (!(chrc->properties & BT_GATT_CHRC_INDICATE)) {
-			return -EINVAL;
-		}
-
-		value_handle += 1U;
-	}
 
 	buf = bt_att_create_pdu(conn, BT_ATT_OP_INDICATE,
 				sizeof(*ind) + params->len);
@@ -1351,7 +1392,8 @@ static u8_t notify_cb(const struct bt_gatt_attr *attr, void *user_data)
 		}
 
 		if (data->type == BT_GATT_CCC_INDICATE) {
-			err = gatt_indicate(conn, data->params);
+			err = gatt_indicate(conn, data->attr->handle,
+					    data->params);
 		} else {
 			err = gatt_notify(conn, data->attr->handle,
 					  data->data, data->len,
@@ -1411,19 +1453,33 @@ int bt_gatt_indicate(struct bt_conn *conn,
 		     struct bt_gatt_indicate_params *params)
 {
 	struct notify_data nfy;
+	u16_t handle;
 
 	__ASSERT(params, "invalid parameters\n");
 	__ASSERT(params->attr && params->attr->handle, "invalid parameters\n");
 
+	handle = params->attr->handle;
+
+	/* Check if attribute is a characteristic then adjust the handle */
+	if (!bt_uuid_cmp(params->attr->uuid, BT_UUID_GATT_CHRC)) {
+		struct bt_gatt_chrc *chrc = params->attr->user_data;
+
+		if (!(chrc->properties & BT_GATT_CHRC_INDICATE)) {
+			return -EINVAL;
+		}
+
+		handle++;
+	}
+
 	if (conn) {
-		return gatt_indicate(conn, params);
+		return gatt_indicate(conn, handle, params);
 	}
 
 	nfy.err = -ENOTCONN;
 	nfy.type = BT_GATT_CCC_INDICATE;
 	nfy.params = params;
 
-	bt_gatt_foreach_attr(params->attr->handle, 0xffff, notify_cb, &nfy);
+	bt_gatt_foreach_attr(handle, 0xffff, notify_cb, &nfy);
 
 	return nfy.err;
 }
@@ -1603,7 +1659,8 @@ static void remove_subscriptions(struct bt_conn *conn)
 		}
 
 		if (!bt_addr_le_is_bonded(conn->id, &conn->le.dst) ||
-		    (params->flags & BT_GATT_SUBSCRIBE_FLAG_VOLATILE)) {
+		    (atomic_test_bit(params->flags,
+				     BT_GATT_SUBSCRIBE_FLAG_VOLATILE))) {
 			/* Remove subscription */
 			params->value = 0U;
 			gatt_subscription_remove(conn, prev, params);
@@ -2362,10 +2419,11 @@ int bt_gatt_discover(struct bt_conn *conn,
 		return gatt_read_type(conn, params);
 	case BT_GATT_DISCOVER_DESCRIPTOR:
 		/* Only descriptors can be filtered */
-		if (!bt_uuid_cmp(params->uuid, BT_UUID_GATT_PRIMARY) ||
-		    !bt_uuid_cmp(params->uuid, BT_UUID_GATT_SECONDARY) ||
-		    !bt_uuid_cmp(params->uuid, BT_UUID_GATT_INCLUDE) ||
-		    !bt_uuid_cmp(params->uuid, BT_UUID_GATT_CHRC)) {
+		if (params->uuid &&
+		    (!bt_uuid_cmp(params->uuid, BT_UUID_GATT_PRIMARY) ||
+		     !bt_uuid_cmp(params->uuid, BT_UUID_GATT_SECONDARY) ||
+		     !bt_uuid_cmp(params->uuid, BT_UUID_GATT_INCLUDE) ||
+		     !bt_uuid_cmp(params->uuid, BT_UUID_GATT_CHRC))) {
 			return -EINVAL;
 		}
 	 /* Fallthrough. */
@@ -2783,6 +2841,8 @@ static void gatt_write_ccc_rsp(struct bt_conn *conn, u8_t err,
 
 	BT_DBG("err 0x%02x", err);
 
+	atomic_clear_bit(params->flags, BT_GATT_SUBSCRIBE_FLAG_WRITE_PENDING);
+
 	/* if write to CCC failed we remove subscription and notify app */
 	if (err) {
 		sys_snode_t *node, *tmp, *prev = NULL;
@@ -2819,6 +2879,8 @@ static int gatt_write_ccc(struct bt_conn *conn, u16_t handle, u16_t value,
 	net_buf_add_le16(buf, value);
 
 	BT_DBG("handle 0x%04x value 0x%04x", handle, value);
+
+	atomic_set_bit(params->flags, BT_GATT_SUBSCRIBE_FLAG_WRITE_PENDING);
 
 	return gatt_send(conn, buf, func, params, NULL);
 }
@@ -2893,6 +2955,11 @@ int bt_gatt_unsubscribe(struct bt_conn *conn,
 		if (params == tmp) {
 			found = true;
 			sys_slist_remove(&subscriptions, prev, &tmp->node);
+			/* Attempt to cancel if write is pending */
+			if (atomic_test_bit(params->flags,
+			    BT_GATT_SUBSCRIBE_FLAG_WRITE_PENDING)) {
+				bt_gatt_cancel(conn, params);
+			}
 			continue;
 		} else {
 			prev = &tmp->node;

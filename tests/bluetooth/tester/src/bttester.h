@@ -228,6 +228,16 @@ struct gap_passkey_confirm_cmd {
 	u8_t match;
 } __packed;
 
+#define GAP_CONN_PARAM_UPDATE		0x16
+struct gap_conn_param_update_cmd {
+	u8_t address_type;
+	u8_t address[6];
+	u16_t interval_min;
+	u16_t interval_max;
+	u16_t latency;
+	u16_t timeout;
+} __packed;
+
 /* events */
 #define GAP_EV_NEW_SETTINGS		0x80
 struct gap_new_settings_ev {
@@ -252,6 +262,9 @@ struct gap_device_found_ev {
 struct gap_device_connected_ev {
 	u8_t address_type;
 	u8_t address[6];
+	u16_t interval;
+	u16_t latency;
+	u16_t timeout;
 } __packed;
 
 #define GAP_EV_DEVICE_DISCONNECTED	0x83
@@ -286,6 +299,15 @@ struct gap_identity_resolved_ev {
 	u8_t address[6];
 	u8_t identity_address_type;
 	u8_t identity_address[6];
+} __packed;
+
+#define GAP_EV_CONN_PARAM_UPDATE	0x88
+struct gap_conn_param_update_ev {
+	u8_t address_type;
+	u8_t address[6];
+	u16_t interval;
+	u16_t latency;
+	u16_t timeout;
 } __packed;
 
 /* GATT Service */
@@ -387,6 +409,12 @@ struct gatt_descriptor {
 
 #define GATT_EXCHANGE_MTU		0x0a
 
+#define GATT_DISC_ALL_PRIM		0x0b
+struct gatt_disc_all_prim_cmd {
+	u8_t address_type;
+	u8_t address[6];
+} __packed;
+
 #define GATT_DISC_PRIM_UUID		0x0c
 struct gatt_disc_prim_uuid_cmd {
 	u8_t address_type;
@@ -394,7 +422,7 @@ struct gatt_disc_prim_uuid_cmd {
 	u8_t uuid_length;
 	u8_t uuid[0];
 } __packed;
-struct gatt_disc_prim_uuid_rp {
+struct gatt_disc_prim_rp {
 	u8_t services_count;
 	struct gatt_service services[0];
 } __packed;
