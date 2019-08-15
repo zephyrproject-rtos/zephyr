@@ -22,8 +22,6 @@ source "subsys/net/Kconfig.template.log_config.net"
 
 config LWM2M_DTLS_SUPPORT
 	bool "Enable DTLS support in the LwM2M client"
-	select MBEDTLS
-	select MBEDTLS_ENABLE_HEAP
 	select TLS_CREDENTIALS
 	select NET_SOCKETS_SOCKOPT_TLS
 	select NET_SOCKETS_ENABLE_DTLS
