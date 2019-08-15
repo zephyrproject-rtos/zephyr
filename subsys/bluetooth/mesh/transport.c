@@ -147,6 +147,7 @@ static int send_unseg(struct bt_mesh_net_tx *tx, struct net_buf_simple *sdu,
 			 * out through the Friend Queue.
 			 */
 			net_buf_unref(buf);
+			send_cb_finalize(cb, cb_data);
 			return 0;
 		}
 	}
