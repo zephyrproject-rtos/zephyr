@@ -1739,10 +1739,6 @@ class Property:
         if marker_type is _REF_PHANDLE:
             self.value += b"\0\0\0\0"
 
-    def _err_with_context(self, e):
-        raise DTError("{} (for property '{}' on {})"
-                      .format(e, self.name, self.node.path))
-
 
 #
 # Public functions
