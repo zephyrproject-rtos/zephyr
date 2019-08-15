@@ -386,7 +386,7 @@ l3: &l1 {
 &{foo} {
 };
 """,
-".tmp.dts:6 (column 1): parse error: node path does not start with '/'")
+".tmp.dts:6 (column 1): parse error: node path 'foo' does not start with '/'")
 
     verify_error("""
 /dts-v1/;
@@ -397,7 +397,7 @@ l3: &l1 {
 &{/foo} {
 };
 """,
-".tmp.dts:6 (column 1): parse error: component 1 ('foo') in path '/foo' does not exist")
+".tmp.dts:6 (column 1): parse error: component 'foo' in path '/foo' does not exist")
 
     #
     # Test property labels
@@ -586,7 +586,7 @@ l3: &l1 {
 	};
 };
 """,
-"/sub: component 2 ('missing') in path '/sub/missing' does not exist")
+"/sub: component 'missing' in path '/sub/missing' does not exist")
 
     #
     # Test phandles
@@ -901,6 +901,13 @@ l3: &l1 {
 """,
 ".tmp.dts:6 (column 15): parse error: undefined node label 'missing'")
 
+    verify_error("""
+/dts-v1/;
+
+/delete-node/ {
+""",
+".tmp.dts:3 (column 15): parse error: expected label (&foo) or path (&{/foo/bar}) reference")
+
     #
     # Test /include/ (which is handled in the lexer)
     #
@@ -1113,6 +1120,13 @@ y /include/ "via-include-path-1"
 """,
 ".tmp.dts:6 (column 18): parse error: undefined node label 'missing'")
 
+    verify_error("""
+/dts-v1/;
+
+/omit-if-no-ref/ {
+""",
+".tmp.dts:3 (column 18): parse error: expected label (&foo) or path (&{/foo/bar}) reference")
+
     #
     # Test expressions
     #
@@ -1321,8 +1335,8 @@ foo
 
     verify_path_error("", "no alias '' found -- did you forget the leading '/' in the node path?")
     verify_path_error("missing", "no alias 'missing' found -- did you forget the leading '/' in the node path?")
-    verify_path_error("/missing", "component 1 ('missing') in path '/missing' does not exist")
-    verify_path_error("/foo/missing", "component 2 ('missing') in path '/foo/missing' does not exist")
+    verify_path_error("/missing", "component 'missing' in path '/missing' does not exist")
+    verify_path_error("/foo/missing", "component 'missing' in path '/foo/missing' does not exist")
 
     verify_path_exists("/")
     verify_path_exists("/foo")
@@ -1378,7 +1392,7 @@ foo
     verify_path_is("alias4/node5", "node5")
 
     verify_path_error("alias4/node5/node6",
-                      "component 3 ('node6') in path 'alias4/node5/node6' does not exist")
+                      "component 'node6' in path 'alias4/node5/node6' does not exist")
 
     verify_error("""
 /dts-v1/;
