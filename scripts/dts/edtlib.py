@@ -157,6 +157,22 @@ class EDT:
         # Only bindings for 'compatible' strings that appear in the device tree
         # are loaded.
 
+        def _binding2compat(self, binding, binding_path):
+            binding = _load_binding(binding_path)
+            binding_compat = binding['properties']['compatible']
+            if 'enum' in binding_compat:
+                _check_binding(binding, binding_path)
+                for compat in binding_compat['enum']:
+                    self._compat2binding[compat, _binding_bus(binding)] = \
+                        (binding, binding_path)
+            elif 'constraint' in binding_compat:
+                _check_binding(binding, binding_path)
+                compat = binding_compat['constraint']
+                self._compat2binding[compat, _binding_bus(binding)] = \
+                    (binding, binding_path)
+            else:
+                print("ERROR")
+
         dt_compats = _dt_compats(self._dt)
         self._binding_paths = _binding_paths(bindings_dirs)
 
@@ -171,11 +187,13 @@ class EDT:
 
         self._compat2binding = {}
         for binding_path in self._binding_paths:
-            compat = _binding_compat(binding_path)
-            if compat in dt_compats:
-                binding = _load_binding(binding_path)
-                self._compat2binding[compat, _binding_bus(binding)] = \
-                    (binding, binding_path)
+            compat = None
+            with open(binding_path, encoding="utf-8") as binding:
+                for line in binding:
+                    match = any(compat in line for compat in dt_compats)
+                    if match:
+                        _binding2compat(self, binding, binding_path)
+                        break
 
     def _binding_include(self, loader, node):
         # Implements !include. Returns a list with the YAML structures for the
@@ -540,8 +558,9 @@ class Device:
             # type for which we store no data.
             return
 
+        # TODO: Handle 'enum' for string-array
         enum = options.get("enum")
-        if enum and val not in enum:
+        if enum and val not in enum and prop_type in ["string", "int"]:
             _err("value of property '{}' on {} in {} ({!r}) is not in 'enum' "
                  "list in {} ({!r})"
                  .format(name, self.path, self.edt.dts_path, val,
@@ -567,7 +586,11 @@ class Device:
             prop.description = prop.description.rstrip()
         prop.val = val
         prop.type = prop_type
-        prop.enum_index = None if enum is None else enum.index(val)
+        # TODO: Figure out what to do with enum_index here
+        if prop_type in ["string", "int"]:
+            prop.enum_index = None if enum is None else enum.index(val)
+        else:
+            prop.enum_index = None
 
         self.props[name] = prop
 
@@ -1125,20 +1148,6 @@ def _binding_paths(bindings_dirs):
     return binding_paths
 
 
-def _binding_compat(binding_path):
-    # Returns the compatible string specified in the binding at 'binding_path'.
-    # Uses a regex to avoid having to parse the bindings, which is slow when
-    # done for all bindings.
-
-    with open(binding_path, encoding="utf-8") as binding:
-        for line in binding:
-            match = re.match(r'\s+constraint:\s*"([^"]*)"', line)
-            if match:
-                return match.group(1)
-
-    return None
-
-
 def _binding_bus(binding):
     # Returns the bus specified in 'binding' (the bus the device described by
     # 'binding' is on), e.g. "i2c", or None if 'binding' is None or doesn't
@@ -1163,7 +1172,6 @@ def _load_binding(path):
     with open(path, encoding="utf-8") as f:
         binding = _merge_included_bindings(yaml.load(f, Loader=yaml.Loader),
                                            path)
-    _check_binding(binding, path)
     return binding
 
 
