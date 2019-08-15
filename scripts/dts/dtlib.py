@@ -99,8 +99,6 @@ class DT:
 
         self._lineno = 1
 
-        self._is_parsing = True
-
         self._parse_dt()
 
         self._register_phandles()
@@ -108,8 +106,6 @@ class DT:
         self._register_aliases()
         self._remove_unreferenced()
         self._register_labels()
-
-        self._is_parsing = False
 
     def get_node(self, path):
         """
@@ -138,37 +134,15 @@ class DT:
         dt.get_node("bar-alias/baz") returns the 'baz' node.
         """
         if path.startswith("/"):
-            cur = self.root
-            component_i = 0
-            rest = path
-        else:
-            # Strip the first component from 'path' and store it in 'alias'.
-            # Use a separate 'rest' variable rather than directly modifying
-            # 'path' so that all of 'path' still shows up in error messages.
-            alias, _, rest = path.partition("/")
-            if alias not in self.alias2node:
-                raise DTError("node path does not start with '/'"
-                              if self._is_parsing else
-                              "no alias '{}' found -- did you forget the "
-                              "leading '/' in the node path?".format(alias))
-            cur = self.alias2node[alias]
-            component_i = 1
+            return _root_and_path_to_node(self.root, path, path)
 
-        for component in rest.split("/"):
-            # Collapse multiple / in a row, and allow a / at the end
-            if not component:
-                continue
+        # Path does not start with '/'. First component must be an alias.
+        alias, _, rest = path.partition("/")
+        if alias not in self.alias2node:
+            raise DTError("no alias '{}' found -- did you forget the "
+                          "leading '/' in the node path?".format(alias))
 
-            component_i += 1
-
-            if component not in cur.nodes:
-                raise DTError("component {} ({}) in path {} does not exist"
-                              .format(component_i, repr(component),
-                                      repr(path)))
-
-            cur = cur.nodes[component]
-
-        return cur
+        return _root_and_path_to_node(self.alias2node[alias], rest, path)
 
     def has_node(self, path):
         """
@@ -262,17 +236,11 @@ class DT:
                     _append_no_dup(node.labels, label)
 
             elif tok.id is _T_DEL_NODE:
-                try:
-                    self._del_node(self._next_ref2node())
-                except DTError as e:
-                    self._parse_error(e)
+                self._del_node(self._next_ref2node())
                 self._expect_token(";")
 
             elif tok.id is _T_OMIT_IF_NO_REF:
-                try:
-                    self._next_ref2node()._omit_if_no_ref = True
-                except DTError as e:
-                    self._parse_error(e)
+                self._next_ref2node()._omit_if_no_ref = True
                 self._expect_token(";")
 
             elif tok.id is _T_EOF:
@@ -920,21 +888,33 @@ class DT:
 
     def _next_ref2node(self):
         # Checks that the next token is a label/path reference and returns the
-        # Node it points to
+        # Node it points to. Only used during parsing, so uses _parse_error()
+        # on errors to save some code in callers.
 
         label = self._next_token()
         if label.id is not _T_REF:
-            self._parse_error("expected label reference (&foo) or path")
-        return self._ref2node(label.val)
+            self._parse_error(
+                "expected label (&foo) or path (&{/foo/bar}) reference")
+        try:
+            return self._ref2node(label.val)
+        except DTError as e:
+            self._parse_error(e)
 
     def _ref2node(self, s):
         # Returns the Node the label/path reference 's' points to
 
         if s[0] == "{":
+            # Path reference (&{/foo/bar})
+            path = s[1:-1]
+            if not path.startswith("/"):
+                raise DTError("node path '{}' does not start with '/'"
+                              .format(path))
             # Will raise DTError if the path doesn't exist
-            return self.get_node(s[1:-1])
+            return _root_and_path_to_node(self.root, path, path)
 
-        # node2label hasn't been filled in yet, and using it would get messy
+        # Label reference (&foo).
+
+        # label2node hasn't been filled in yet, and using it would get messy
         # when nodes are deleted
         for node in self.node_iter():
             if s in node.labels:
@@ -1832,6 +1812,26 @@ def _decode_and_escape(b):
             .translate(_escape_table) \
             .encode("utf-8", "surrogateescape") \
             .decode("utf-8", "backslashreplace")
+
+
+def _root_and_path_to_node(cur, path, fullpath):
+    # Returns the node pointed at by 'path', relative to the Node 'cur'. For
+    # example, if 'cur' has path /foo/bar, and 'path' is "baz/qaz", then the
+    # node with path /foo/bar/baz/qaz is returned. 'fullpath' is the path as
+    # given in the .dts file, for error messages.
+
+    for component in path.split("/"):
+        # Collapse multiple / in a row, and allow a / at the end
+        if not component:
+            continue
+
+        if component not in cur.nodes:
+            raise DTError("component '{}' in path '{}' does not exist"
+                          .format(component, fullpath))
+
+        cur = cur.nodes[component]
+
+    return cur
 
 
 _escape_table = str.maketrans({
