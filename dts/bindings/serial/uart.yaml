@@ -1,7 +1,4 @@
-title: Uart Base Structure
-
-description: >
-    This binding gives the base structures for all UART devices
+# Common fields for UART controllers
 
 inherits:
     !include base.yaml

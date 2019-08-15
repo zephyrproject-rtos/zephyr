@@ -4,10 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-title: CPU Base Structure
-
-description: >
-    This binding gives the base structures for all CPUs
+# Common fields for CPUs
 
 inherits:
     !include base.yaml

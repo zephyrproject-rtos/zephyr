@@ -4,10 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-title: PHY Base Structure
-
-description: >
-    This binding gives the base structures for all PHY providers
+# Common fields for PHY providers
 
 inherits:
     !include base.yaml

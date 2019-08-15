@@ -1,8 +1,5 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
-title: Child binding
-description: Child binding
-
 inherits:
     !include grandchild.yaml
 

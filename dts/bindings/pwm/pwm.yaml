@@ -4,10 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-title: PWM Base Structure
-
-description: >
-    This binding gives the base structures for all PWM devices
+# Common fields for PWM devices
 
 properties:
     label:
