@@ -1,6 +1,5 @@
 add_subdirectory(atmel)
 add_subdirectory(cmsis)
-add_subdirectory(nordic)
 add_subdirectory(nxp)
 add_subdirectory(openisa)
 add_subdirectory(ti)
