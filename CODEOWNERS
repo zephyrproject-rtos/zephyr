@@ -207,7 +207,6 @@
 /dts/bindings/sensor/st*                  @avisconti
 /ext/hal/cmsis/                           @MaureenHelm @galak
 /ext/hal/microchip/                       @franciscomunoz @albertofloyd @scottwcpg
-/ext/hal/nordic/                          @carlescufi @anangl
 /ext/hal/nxp/                             @MaureenHelm
 /ext/lib/crypto/tinycrypt/                @ceolin
 /include/                                 @nashif @carlescufi @galak @MaureenHelm

@@ -49,6 +49,9 @@ manifest:
     - name: hal_cypress
       revision: a12d92816a53a521d79cefcf5c38b9dc8a4fed6e
       path: modules/hal/cypress
+    - name: hal_nordic
+      revision: 7bf2d404d0bf7f36d77d5090b5207f8b4676776c
+      path: modules/hal/nordic
     - name: hal_silabs
       revision: 9151e614c23997074acd1096a3e8a9e5c255d5b9
       path: modules/hal/silabs
