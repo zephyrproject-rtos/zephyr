@@ -269,7 +269,7 @@ enum {
 	 */
 	BT_LE_ADV_OPT_USE_IDENTITY = BIT(2),
 
-	/* Advertise using GAP device name */
+	/** Advertise using GAP device name */
 	BT_LE_ADV_OPT_USE_NAME = BIT(3),
 
 	/** Use low duty directed advertising mode, otherwise high duty mode
@@ -289,11 +289,12 @@ enum {
 	 */
 	BT_LE_ADV_OPT_DIR_ADDR_RPA = BIT(5),
 
-	/* Use whitelist to filter devices that can request scan response data.
+	/** Use whitelist to filter devices that can request scan response
+	 *  data.
 	 */
 	BT_LE_ADV_OPT_FILTER_SCAN_REQ = BIT(6),
 
-	/* Use whitelist to filter devices that can connect. */
+	/** Use whitelist to filter devices that can connect. */
 	BT_LE_ADV_OPT_FILTER_CONN = BIT(7),
 };
 
