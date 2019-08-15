@@ -359,12 +359,19 @@ static int nvs_prev_ate(struct nvs_fs *fs, u32_t *addr, struct nvs_ate *ate)
 	}
 
 	if (!nvs_ate_crc8_check(&close_ate)) {
-		(*addr) &= ADDR_SECT_MASK;
-		/* update the address so it points to the last added ate */
-		(*addr) += close_ate.offset;
-		return 0;
+		/* update the address so it points to the last added ate.
+		 * do a check on close_ate.offset so that it does not point
+		 * outside a sector and is aligned to ate size.
+		 */
+		if (close_ate.offset < (fs->sector_size - ate_size) &&
+		    !(close_ate.offset % ate_size)) {
+			(*addr) &= ADDR_SECT_MASK;
+			(*addr) += close_ate.offset;
+			return 0;
+		}
 	}
-	/* The close_ate had an invalid CRC8, lets find out the last valid ate
+	/* The close_ate had an invalid CRC8 or the last added ate offset was
+	 * recognized as incorrect, `lets find out the last valid ate
 	 * and point the address to this found ate.
 	 */
 	*addr -= ate_size;
