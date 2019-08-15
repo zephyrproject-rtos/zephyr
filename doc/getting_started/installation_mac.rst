@@ -50,3 +50,18 @@ Now install these host dependencies with the ``brew`` command:
    brew install cmake ninja gperf ccache dfu-util qemu dtc python3
 
 .. _Homebrew site: https://brew.sh/
+
+Additional notes for MacPorts users
+***********************************
+
+MacPorts is not officially supported yet while it is possible for MacPorts users to follow this guide.
+
+To avoid a possible error in the Pip dependency setup, you may need rust and cargo:
+
+.. code-block:: console
+
+   port install rust cargo
+
+.. 
+
+
