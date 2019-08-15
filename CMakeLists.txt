@@ -634,7 +634,9 @@ add_custom_command(
   COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/gen_offset_header.py
   -i $<TARGET_OBJECTS:${OFFSETS_LIB}>
   -o ${OFFSETS_H_PATH}
-  DEPENDS ${OFFSETS_LIB}
+  DEPENDS
+  ${OFFSETS_LIB}
+  $<TARGET_OBJECTS:${OFFSETS_LIB}>
 )
 add_custom_target(${OFFSETS_H_TARGET} DEPENDS ${OFFSETS_H_PATH})
 
