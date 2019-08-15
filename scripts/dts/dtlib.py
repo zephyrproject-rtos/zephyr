@@ -139,8 +139,8 @@ class DT:
         # Path does not start with '/'. First component must be an alias.
         alias, _, rest = path.partition("/")
         if alias not in self.alias2node:
-            raise DTError("no alias '{}' found -- did you forget the "
-                          "leading '/' in the node path?".format(alias))
+            _err("no alias '{}' found -- did you forget the leading '/' in "
+                 "the node path?".format(alias))
 
         return _root_and_path_to_node(self.alias2node[alias], rest, path)
 
@@ -841,7 +841,7 @@ class DT:
         return tok.val
 
     def _parse_error(self, s):
-        raise DTError("{}:{} (column {}): parse error: {}".format(
+        _err("{}:{} (column {}): parse error: {}".format(
             self.filename, self._lineno,
             # This works out for the first line of the file too, where rfind()
             # returns -1
@@ -907,8 +907,7 @@ class DT:
             # Path reference (&{/foo/bar})
             path = s[1:-1]
             if not path.startswith("/"):
-                raise DTError("node path '{}' does not start with '/'"
-                              .format(path))
+                _err("node path '{}' does not start with '/'".format(path))
             # Will raise DTError if the path doesn't exist
             return _root_and_path_to_node(self.root, path, path)
 
@@ -920,7 +919,7 @@ class DT:
             if s in node.labels:
                 return node
 
-        raise DTError("undefined node label '{}'".format(s))
+        _err("undefined node label '{}'".format(s))
 
     #
     # Post-processing
@@ -937,9 +936,8 @@ class DT:
             phandle = node.props.get("phandle")
             if phandle:
                 if len(phandle.value) != 4:
-                    raise DTError(
-                        "{}: bad phandle length ({}), expected 4 bytes"
-                        .format(node.path, len(phandle.value)))
+                    _err("{}: bad phandle length ({}), expected 4 bytes"
+                         .format(node.path, len(phandle.value)))
 
                 is_self_referential = False
                 for marker in phandle._markers:
@@ -954,8 +952,8 @@ class DT:
                             is_self_referential = True
                             break
 
-                        raise DTError("{}: {} refers to another node"
-                                      .format(node.path, phandle.name))
+                        _err("{}: {} refers to another node"
+                             .format(node.path, phandle.name))
 
                 # Could put on else on the 'for' above too, but keep it
                 # somewhat readable
@@ -963,15 +961,14 @@ class DT:
                     phandle_val = int.from_bytes(phandle.value, "big")
 
                     if phandle_val in {0, 0xFFFFFFFF}:
-                        raise DTError("{}: bad value {:#010x} for {}"
-                                      .format(node.path, phandle_val,
-                                              phandle.name))
+                        _err("{}: bad value {:#010x} for {}"
+                             .format(node.path, phandle_val, phandle.name))
 
                     if phandle_val in self.phandle2node:
-                        raise DTError(
-                            "{}: duplicated phandle {:#x} (seen before at {})"
-                            .format(node.path, phandle_val,
-                                    self.phandle2node[phandle_val].path))
+                        _err("{}: duplicated phandle {:#x} (seen before at {})"
+                             .format(node.path, phandle_val,
+                                     self.phandle2node[phandle_val].path))
+
                     self.phandle2node[phandle_val] = node
 
     def _fixup_props(self):
@@ -1013,7 +1010,7 @@ class DT:
                         try:
                             ref_node = self._ref2node(ref)
                         except DTError as e:
-                            raise DTError("{}: {}".format(prop.node.path, e))
+                            _err("{}: {}".format(prop.node.path, e))
 
                         # For /omit-if-no-ref/
                         ref_node._is_referenced = True
@@ -1045,9 +1042,8 @@ class DT:
         if aliases:
             for prop in aliases.props.values():
                 if not alias_re.match(prop.name):
-                    raise DTError("/aliases: alias property name '{}' should "
-                                  "include only characters from [0-9a-z-]"
-                                  .format(prop.name))
+                    _err("/aliases: alias property name '{}' should include "
+                         "only characters from [0-9a-z-]".format(prop.name))
 
                 # Property.to_path() already checks that the node exists
                 alias2node[prop.name] = prop.to_path()
@@ -1111,8 +1107,8 @@ class DT:
                 # Give consistent error messages to help with testing
                 strings.sort()
 
-                raise DTError("Label '{}' appears ".format(label) +
-                              " and ".join(strings))
+                _err("Label '{}' appears ".format(label) +
+                     " and ".join(strings))
 
 
     #
@@ -1414,10 +1410,10 @@ class Property:
           unsigned.
         """
         if self.type is not TYPE_NUM:
-            raise DTError("expected property '{0}' on {1} in {2} to be "
-                          "assigned with '{0} = < (number) >;', not '{3}'"
-                          .format(self.name, self.node.path,
-                                  self.node.dt.filename, self))
+            _err("expected property '{0}' on {1} in {2} to be assigned with "
+                 "'{0} = < (number) >;', not '{3}'"
+                 .format(self.name, self.node.path, self.node.dt.filename,
+                         self))
 
         return int.from_bytes(self.value, "big", signed=signed)
 
@@ -1435,11 +1431,10 @@ class Property:
           unsigned.
         """
         if self.type not in (TYPE_NUM, TYPE_NUMS):
-            raise DTError("expected property '{0}' on {1} in {2} to be "
-                          "assigned with '{0} = < (number) (number) ... >;', "
-                          "not '{3}'"
-                          .format(self.name, self.node.path,
-                                  self.node.dt.filename, self))
+            _err("expected property '{0}' on {1} in {2} to be assigned with "
+                 "'{0} = < (number) (number) ... >;', not '{3}'"
+                 .format(self.name, self.node.path, self.node.dt.filename,
+                         self))
 
         return [int.from_bytes(self.value[i:i + 4], "big", signed=signed)
                 for i in range(0, len(self.value), 4)]
@@ -1455,10 +1450,10 @@ class Property:
             foo = [ 01 ... ];
         """
         if self.type is not TYPE_BYTES:
-            raise DTError("expected property '{0}' on {1} in {2} to be "
-                          "assigned with '{0} = [ (byte) (byte) ... ];', "
-                          "not '{3}'".format(self.name, self.node.path,
-                                             self.node.dt.filename, self))
+            _err("expected property '{0}' on {1} in {2} to be assigned with "
+                 "'{0} = [ (byte) (byte) ... ];', not '{3}'"
+                 .format(self.name, self.node.path, self.node.dt.filename,
+                         self))
 
         return self.value
 
@@ -1475,18 +1470,17 @@ class Property:
         not valid UTF-8.
         """
         if self.type is not TYPE_STRING:
-            raise DTError("expected property '{0}' on {1} in {2} to be "
-                          "assigned with '{0} = \"string\";', not '{3}'"
-                          .format(self.name, self.node.path,
-                                  self.node.dt.filename, self))
+            _err("expected property '{0}' on {1} in {2} to be assigned with "
+                 "'{0} = \"string\";', not '{3}'"
+                 .format(self.name, self.node.path, self.node.dt.filename,
+                         self))
 
         try:
             return self.value.decode("utf-8")[:-1]  # Strip null
         except UnicodeDecodeError:
-            raise DTError("value of property '{}' ({}) on {} in {} is not "
-                          "valid UTF-8"
-                          .format(self.name, self.value, self.node.path,
-                                  self.node.dt.filename))
+            _err("value of property '{}' ({}) on {} in {} is not valid UTF-8"
+                 .format(self.name, self.value, self.node.path,
+                         self.node.dt.filename))
 
     def to_strings(self):
         """
@@ -1500,18 +1494,17 @@ class Property:
         Also raises DTError if any of the strings are not valid UTF-8.
         """
         if self.type not in (TYPE_STRING, TYPE_STRINGS):
-            raise DTError("expected property '{0}' on {1} in {2} to be "
-                          "assigned with '{0} = \"string\", \"string\", ... ;'"
-                          ", not '{3}'".format(self.name, self.node.path,
-                                               self.node.dt.filename, self))
+            _err("expected property '{0}' on {1} in {2} to be assigned with "
+                 "'{0} = \"string\", \"string\", ... ;', not '{3}'"
+                 .format(self.name, self.node.path, self.node.dt.filename,
+                         self))
 
         try:
             return self.value.decode("utf-8").split("\0")[:-1]
         except UnicodeDecodeError:
-            raise DTError("value of property '{}' ({}) on {} in {} is not "
-                          "valid UTF-8"
-                          .format(self.name, self.value, self.node.path,
-                                  self.node.dt.filename))
+            _err("value of property '{}' ({}) on {} in {} is not valid UTF-8"
+                 .format(self.name, self.value, self.node.path,
+                         self.node.dt.filename))
 
     def to_node(self):
         """
@@ -1523,10 +1516,10 @@ class Property:
             foo = < &bar >;
         """
         if self.type is not TYPE_PHANDLE:
-            raise DTError("expected property '{0}' on {1} in {2} to be "
-                          "assigned with '{0} = < &foo >;', not '{3}'"
-                          .format(self.name, self.node.path,
-                                  self.node.dt.filename, self))
+            _err("expected property '{0}' on {1} in {2} to be assigned with "
+                 "'{0} = < &foo >;', not '{3}'"
+                 .format(self.name, self.node.path, self.node.dt.filename,
+                         self))
 
         return self.node.dt.phandle2node[int.from_bytes(self.value, "big")]
 
@@ -1549,10 +1542,10 @@ class Property:
             return self.type is TYPE_NUMS and not self.value
 
         if not type_ok():
-            raise DTError("expected property '{0}' on {1} in {2} to be "
-                          "assigned with '{0} = < &foo &bar ... >;', not '{3}'"
-                          .format(self.name, self.node.path,
-                                  self.node.dt.filename, self))
+            _err("expected property '{0}' on {1} in {2} to be assigned with "
+                 "'{0} = < &foo &bar ... >;', not '{3}'"
+                 .format(self.name, self.node.path,
+                         self.node.dt.filename, self))
 
         return [self.node.dt.phandle2node[int.from_bytes(self.value[i:i + 4],
                                                          "big")]
@@ -1571,27 +1564,24 @@ class Property:
         For the second case, DTError is raised if the path does not exist.
         """
         if self.type not in (TYPE_PATH, TYPE_STRING):
-            raise DTError("expected property '{0}' on {1} in {2} to be "
-                          "assigned with either '{0} = &foo' or "
-                          "'{0} = \"/path/to/node\"', not '{3}'"
-                          .format(self.name, self.node.path,
-                                  self.node.dt.filename, self))
+            _err("expected property '{0}' on {1} in {2} to be assigned with "
+                 "either '{0} = &foo' or '{0} = \"/path/to/node\"', not '{3}'"
+                 .format(self.name, self.node.path, self.node.dt.filename,
+                         self))
 
         try:
             path = self.value.decode("utf-8")[:-1]
         except UnicodeDecodeError:
-            raise DTError("value of property '{}' ({}) on {} in {} is not "
-                          "valid UTF-8"
-                          .format(self.name, self.value, self.node.path,
-                                  self.node.dt.filename))
+            _err("value of property '{}' ({}) on {} in {} is not valid UTF-8"
+                 .format(self.name, self.value, self.node.path,
+                         self.node.dt.filename))
 
         try:
             return self.node.dt.get_node(path)
         except DTError:
-            raise DTError("property '{}' on {} in {} points to the "
-                          'non-existent node "{}"'
-                          .format(self.name, self.node.path,
-                                  self.node.dt.filename, path))
+            _err("property '{}' on {} in {} points to the non-existent node "
+                 "\"{}\"".format(self.name, self.node.path,
+                                 self.node.dt.filename, path))
 
     @property
     def type(self):
@@ -1741,8 +1731,8 @@ def to_num(data, length=None, signed=False):
     if length is not None:
         _check_length_positive(length)
         if len(data) != length:
-            raise DTError("{} is {} bytes long, expected {}"
-                          .format(data, len(data), length))
+            _err("{} is {} bytes long, expected {}"
+                 .format(data, len(data), length))
 
     return int.from_bytes(data, "big", signed=signed)
 
@@ -1755,9 +1745,9 @@ def to_nums(data, length=4, signed=False):
     _check_is_bytes(data)
     _check_length_positive(length)
 
-    if len(data) % length != 0:
-        raise DTError("{} is {} bytes long, expected a length that's a "
-                      "multiple of {}".format(data, len(data), length))
+    if len(data) % length:
+        _err("{} is {} bytes long, expected a length that's a a multiple of {}"
+             .format(data, len(data), length))
 
     return [int.from_bytes(data[i:i + length], "big", signed=signed)
             for i in range(0, len(data), length)]
@@ -1783,13 +1773,13 @@ TYPE_COMPOUND = 10
 
 def _check_is_bytes(data):
     if not isinstance(data, bytes):
-        raise DTError("'{}' has type '{}', expected 'bytes'"
-                      .format(data, type(data).__name__))
+        _err("'{}' has type '{}', expected 'bytes'"
+             .format(data, type(data).__name__))
 
 
 def _check_length_positive(length):
     if length < 1:
-        raise DTError("'length' must be greater than zero, was " + str(length))
+        _err("'length' must be greater than zero, was " + str(length))
 
 
 def _append_no_dup(lst, elm):
@@ -1826,12 +1816,16 @@ def _root_and_path_to_node(cur, path, fullpath):
             continue
 
         if component not in cur.nodes:
-            raise DTError("component '{}' in path '{}' does not exist"
-                          .format(component, fullpath))
+            _err("component '{}' in path '{}' does not exist"
+                 .format(component, fullpath))
 
         cur = cur.nodes[component]
 
     return cur
+
+
+def _err(msg):
+    raise DTError(msg)
 
 
 _escape_table = str.maketrans({
