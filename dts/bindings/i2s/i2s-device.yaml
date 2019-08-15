@@ -4,10 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-title: I2S Device Base Structure
-
-description: >
-    This binding gives the base structures for all i2s devices
+# Common fields for I2S devices
 
 inherits:
     !include base.yaml

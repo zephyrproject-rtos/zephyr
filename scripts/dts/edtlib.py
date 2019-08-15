@@ -1023,8 +1023,8 @@ class Property:
     additional info from the 'properties:' section of the binding.
 
     Only properties mentioned in 'properties:' get created. Properties with
-    type 'phandle-array' or type 'compound' do not get Property instance. These
-    types only exist for type checking.
+    type 'phandle-array' or type 'compound' do not get Property instances.
+    These types only exist for type checking.
 
     These attributes are available on Property objects:
 
@@ -1161,7 +1161,10 @@ def _load_binding(path):
     # lists/dictionaries/strings/etc. representing the file).
 
     with open(path, encoding="utf-8") as f:
-        return _merge_included_bindings(yaml.load(f, Loader=yaml.Loader), path)
+        binding = _merge_included_bindings(yaml.load(f, Loader=yaml.Loader),
+                                           path)
+    _check_binding(binding, path)
+    return binding
 
 
 def _merge_included_bindings(binding, binding_path):
@@ -1171,10 +1174,6 @@ def _merge_included_bindings(binding, binding_path):
     #
     # Properties in 'binding' take precedence over properties from included
     # bindings.
-
-    # Currently, we require that each !include'd file is a well-formed
-    # binding in itself
-    _check_binding(binding, binding_path)
 
     if "inherits" in binding:
         for inherited in binding.pop("inherits"):

@@ -4,13 +4,11 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-title: Ethernet Base Structure
-
-description: >
-    This binding gives a base structures for all Ethernet devices
+# Common fields for Ethernet devices
 
 inherits:
     !include base.yaml
+
 properties:
     local-mac-address:
       type: uint8-array

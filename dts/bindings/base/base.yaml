@@ -1,7 +1,4 @@
-title: base device binding
-
-description: >
-    Binding for device
+# Common fields for all devices
 
 properties:
     status:
