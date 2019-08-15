@@ -87,6 +87,8 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
         return snrs[value - 1]
 
     def do_run(self, command, **kwargs):
+        self.require('nrfjprog')
+
         commands = []
         if self.snr is None:
             board_snr = self.get_board_snr_from_user()

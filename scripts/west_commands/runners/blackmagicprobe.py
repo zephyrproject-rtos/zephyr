@@ -35,8 +35,6 @@ class BlackMagicProbeRunner(ZephyrBinaryRunner):
                             help='GDB serial port')
 
     def bmp_flash(self, command, **kwargs):
-        if self.gdb is None:
-            raise ValueError('Cannot flash; gdb is missing')
         if self.elf_file is None:
             raise ValueError('Cannot debug; elf file is missing')
         command = (self.gdb +
@@ -51,8 +49,6 @@ class BlackMagicProbeRunner(ZephyrBinaryRunner):
         self.check_call(command)
 
     def bmp_attach(self, command, **kwargs):
-        if self.gdb is None:
-            raise ValueError('Cannot attach; gdb is missing')
         if self.elf_file is None:
             command = (self.gdb +
                        ['-ex', "set confirm off",
@@ -71,8 +67,6 @@ class BlackMagicProbeRunner(ZephyrBinaryRunner):
         self.check_call(command)
 
     def bmp_debug(self, command, **kwargs):
-        if self.gdb is None:
-            raise ValueError('Cannot debug; gdb is missing')
         if self.elf_file is None:
             raise ValueError('Cannot debug; elf file is missing')
         command = (self.gdb +
@@ -85,6 +79,9 @@ class BlackMagicProbeRunner(ZephyrBinaryRunner):
         self.check_call(command)
 
     def do_run(self, command, **kwargs):
+        if self.gdb is None:
+            raise ValueError('Cannot execute; gdb not specified')
+        self.require(self.gdb[0])
 
         if command == 'flash':
             self.bmp_flash(command, **kwargs)
