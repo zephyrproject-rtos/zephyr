@@ -80,7 +80,7 @@ config CODE_DATA_RELOCATION
 	  When selected this will relocate .text, data and .bss sections from
 	  the specified files and places it in the required memory region. The
 	  files should be specified in the CMakeList.txt file with
-	  a cmake API zephyr_code_relocation().
+	  a cmake API zephyr_code_relocate().
 
 config HAS_FLASH_LOAD_OFFSET
 	bool
