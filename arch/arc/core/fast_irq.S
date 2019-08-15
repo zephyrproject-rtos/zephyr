@@ -178,7 +178,6 @@ _firq_no_reschedule:
 #if CONFIG_RGF_NUM_BANKS == 1
 	_pop_irq_stack_frame
 #endif
-	lr ilink, [_ARC_V2_ERET]
 	rtie
 
 #ifdef CONFIG_PREEMPT_ENABLED
@@ -219,7 +218,6 @@ _firq_reschedule:
 	lr r0, [_ARC_V2_STATUS32_P0]
 	st_s r0, [sp, ___isf_t_status32_OFFSET]
 
-	lr ilink, [_ARC_V2_ERET]
 	st ilink, [sp, ___isf_t_pc_OFFSET] /* ilink into pc */
 #ifdef CONFIG_SMP
 /*
