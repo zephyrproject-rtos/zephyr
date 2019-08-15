@@ -21,7 +21,7 @@ static u32_t ref_clk_freq;
 
 void z_soc_irq_enable(u32_t irq)
 {
-	struct device *dev_cavs, *dev_ictl;
+	struct device *dev_cavs;
 
 	switch (XTENSA_IRQ_NUMBER(irq)) {
 	case DT_CAVS_ICTL_0_IRQ:
@@ -47,37 +47,19 @@ void z_soc_irq_enable(u32_t irq)
 		return;
 	}
 
-	/* If the control comes here it means the specified interrupt
-	 * is in either CAVS interrupt logic or DW interrupt controller
+	/*
+	 * The specified interrupt is in CAVS interrupt controller.
+	 * So enable core interrupt first.
 	 */
 	z_xtensa_irq_enable(XTENSA_IRQ_NUMBER(irq));
 
-	switch (CAVS_IRQ_NUMBER(irq)) {
-	default:
-		/* The source of the interrupt is in CAVS interrupt logic */
-		irq_enable_next_level(dev_cavs, CAVS_IRQ_NUMBER(irq));
-		return;
-	}
-
-	if (!dev_ictl) {
-		LOG_DBG("board: DW intr_control device binding failed");
-		return;
-	}
-
-	/* If the control comes here it means the specified interrupt
-	 * is in DW interrupt controller
-	 */
+	/* Then enable the interrupt in CAVS interrupt controller */
 	irq_enable_next_level(dev_cavs, CAVS_IRQ_NUMBER(irq));
-
-	/* Manipulate the relevant bit in the interrupt controller
-	 * register as needed
-	 */
-	irq_enable_next_level(dev_ictl, INTR_CNTL_IRQ_NUM(irq));
 }
 
 void z_soc_irq_disable(u32_t irq)
 {
-	struct device *dev_cavs, *dev_ictl;
+	struct device *dev_cavs;
 
 	switch (XTENSA_IRQ_NUMBER(irq)) {
 	case DT_CAVS_ICTL_0_IRQ:
@@ -103,41 +85,15 @@ void z_soc_irq_disable(u32_t irq)
 		return;
 	}
 
-	/* If the control comes here it means the specified interrupt
-	 * is in either CAVS interrupt logic or DW interrupt controller
+	/*
+	 * The specified interrupt is in CAVS interrupt controller.
+	 * So disable the interrupt in CAVS interrupt controller.
 	 */
+	irq_disable_next_level(dev_cavs, CAVS_IRQ_NUMBER(irq));
 
-	switch (CAVS_IRQ_NUMBER(irq)) {
-	default:
-		/* The source of the interrupt is in CAVS interrupt logic */
-		irq_disable_next_level(dev_cavs, CAVS_IRQ_NUMBER(irq));
-
-		/* Disable the parent IRQ if all children are disabled */
-		if (!irq_is_enabled_next_level(dev_cavs)) {
-			z_xtensa_irq_disable(XTENSA_IRQ_NUMBER(irq));
-		}
-		return;
-	}
-
-	if (!dev_ictl) {
-		LOG_DBG("board: DW intr_control device binding failed");
-		return;
-	}
-
-	/* If the control comes here it means the specified interrupt
-	 * is in DW interrupt controller.
-	 * Manipulate the relevant bit in the interrupt controller
-	 * register as needed
-	 */
-	irq_disable_next_level(dev_ictl, INTR_CNTL_IRQ_NUM(irq));
-
-	/* Disable the parent IRQ if all children are disabled */
-	if (!irq_is_enabled_next_level(dev_ictl)) {
-		irq_disable_next_level(dev_cavs, CAVS_IRQ_NUMBER(irq));
-
-		if (!irq_is_enabled_next_level(dev_cavs)) {
-			z_xtensa_irq_disable(XTENSA_IRQ_NUMBER(irq));
-		}
+	/* Then disable the parent IRQ if all children are disabled */
+	if (!irq_is_enabled_next_level(dev_cavs)) {
+		z_xtensa_irq_disable(XTENSA_IRQ_NUMBER(irq));
 	}
 }
 
