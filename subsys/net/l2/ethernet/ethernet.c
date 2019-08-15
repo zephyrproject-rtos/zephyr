@@ -54,7 +54,7 @@ void net_eth_ipv6_mcast_to_mac_addr(const struct in6_addr *ipv6_addr,
 	 * last four octets are the last four octets of DST."
 	 */
 	mac_addr->addr[0] = mac_addr->addr[1] = 0x33;
-	memcpy(mac_addr->addr + 2, &ipv6_addr->s6_addr[12], 4);
+	(void)memcpy(mac_addr->addr + 2, &ipv6_addr->s6_addr[12], 4);
 }
 
 #define print_ll_addrs(pkt, type, len, src, dst)			   \
@@ -377,11 +377,11 @@ static bool ethernet_fill_in_dst_on_ipv6_mcast(struct net_pkt *pkt,
 {
 	if (net_pkt_family(pkt) == AF_INET6 &&
 	    net_ipv6_is_addr_mcast(&NET_IPV6_HDR(pkt)->dst)) {
-		memcpy(dst, (u8_t *)multicast_eth_addr.addr,
-		       sizeof(struct net_eth_addr) - 4);
-		memcpy((u8_t *)dst + 2,
-		       (u8_t *)(&NET_IPV6_HDR(pkt)->dst) + 12,
-		       sizeof(struct net_eth_addr) - 2);
+		(void)memcpy(dst, (u8_t *)multicast_eth_addr.addr,
+				sizeof(struct net_eth_addr) - 4);
+		(void)memcpy((u8_t *)dst + 2,
+				(u8_t *)(&NET_IPV6_HDR(pkt)->dst) + 12,
+				sizeof(struct net_eth_addr) - 2);
 
 		return true;
 	}
@@ -484,12 +484,13 @@ static struct net_buf *ethernet_fill_header(struct ethernet_context *ctx,
 
 		if (!ethernet_fill_in_dst_on_ipv4_mcast(pkt, &hdr_vlan->dst) &&
 		    !ethernet_fill_in_dst_on_ipv6_mcast(pkt, &hdr_vlan->dst)) {
-			memcpy(&hdr_vlan->dst, net_pkt_lladdr_dst(pkt)->addr,
-			       sizeof(struct net_eth_addr));
+			(void)memcpy(&hdr_vlan->dst,
+					net_pkt_lladdr_dst(pkt)->addr,
+					sizeof(struct net_eth_addr));
 		}
 
-		memcpy(&hdr_vlan->src, net_pkt_lladdr_src(pkt)->addr,
-		       sizeof(struct net_eth_addr));
+		(void)memcpy(&hdr_vlan->src, net_pkt_lladdr_src(pkt)->addr,
+				sizeof(struct net_eth_addr));
 
 		hdr_vlan->type = ptype;
 		hdr_vlan->vlan.tpid = htons(NET_ETH_PTYPE_VLAN);
@@ -505,12 +506,13 @@ static struct net_buf *ethernet_fill_header(struct ethernet_context *ctx,
 
 		if (!ethernet_fill_in_dst_on_ipv4_mcast(pkt, &hdr->dst) &&
 		    !ethernet_fill_in_dst_on_ipv6_mcast(pkt, &hdr->dst)) {
-			memcpy(&hdr->dst, net_pkt_lladdr_dst(pkt)->addr,
-			       sizeof(struct net_eth_addr));
+			(void)memcpy(&hdr->dst,
+					net_pkt_lladdr_dst(pkt)->addr,
+					sizeof(struct net_eth_addr));
 		}
 
-		memcpy(&hdr->src, net_pkt_lladdr_src(pkt)->addr,
-		       sizeof(struct net_eth_addr));
+		(void)memcpy(&hdr->src, net_pkt_lladdr_src(pkt)->addr,
+				sizeof(struct net_eth_addr));
 
 		hdr->type = ptype;
 		net_buf_add(hdr_frag, sizeof(struct net_eth_hdr));

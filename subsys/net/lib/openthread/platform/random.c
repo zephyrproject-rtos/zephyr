@@ -27,11 +27,11 @@ otError otPlatRandomGetTrue(u8_t *aOutput, u16_t aOutputLength)
 
 	for (i = 0; i < (aOutputLength & 0xFFFC); i += 4) {
 		random = sys_rand32_get();
-		memcpy(&aOutput[i], &random, sizeof(random));
+		(void)memcpy(&aOutput[i], &random, sizeof(random));
 	}
 
 	random = sys_rand32_get();
-	memcpy(&aOutput[i], &random, aOutputLength & 0x0003);
+	(void)memcpy(&aOutput[i], &random, aOutputLength & 0x0003);
 
 	return OT_ERROR_NONE;
 }

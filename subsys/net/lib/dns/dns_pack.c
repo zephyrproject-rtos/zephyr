@@ -270,7 +270,7 @@ int dns_msg_pack_query(u8_t *buf, u16_t *len, u16_t size,
 	}
 
 	offset = DNS_MSG_HEADER_SIZE;
-	memcpy(buf + offset, qname, qname_len);
+	(void)memcpy(buf + offset, qname, qname_len);
 
 	offset += qname_len;
 
@@ -387,7 +387,8 @@ int dns_copy_qname(u8_t *buf, u16_t *len, u16_t size,
 		}
 
 		/* copy the lb_size value and label elements */
-		memcpy(buf + *len, msg + pos, DNS_LABEL_LEN_SIZE + lb_size);
+		(void)memcpy(buf + *len, msg + pos,
+			      DNS_LABEL_LEN_SIZE + lb_size);
 		/* update destination buffer len */
 		*len += DNS_LABEL_LEN_SIZE + lb_size;
 		/* update msg ptr position */

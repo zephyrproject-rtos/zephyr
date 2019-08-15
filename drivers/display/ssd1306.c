@@ -332,7 +332,7 @@ int ssd1306_set_contrast(const struct device *dev, const u8_t contrast)
 static void ssd1306_get_capabilities(const struct device *dev,
 				     struct display_capabilities *caps)
 {
-	memset(caps, 0, sizeof(struct display_capabilities));
+	(void)memset(caps, 0, sizeof(struct display_capabilities));
 	caps->x_resolution = DT_INST_0_SOLOMON_SSD1306FB_WIDTH;
 	caps->y_resolution = DT_INST_0_SOLOMON_SSD1306FB_HEIGHT;
 	caps->supported_pixel_formats = PIXEL_FORMAT_MONO10;

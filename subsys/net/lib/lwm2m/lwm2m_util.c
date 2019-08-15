@@ -22,7 +22,7 @@ int lwm2m_f32_to_b32(float32_value_t *f32, u8_t *b32, size_t len)
 
 	/* handle zero value special case */
 	if (f32->val1 == 0 && f32->val2 == 0) {
-		memset(b32, 0, len);
+		(void)memset(b32, 0, len);
 		return 0;
 	}
 
@@ -73,7 +73,7 @@ int lwm2m_f32_to_b32(float32_value_t *f32, u8_t *b32, size_t len)
 	/* adjust exponent for bias */
 	e += 127;
 
-	memset(b32, 0, len);
+	(void)memset(b32, 0, len);
 
 	/* sign: bit 31 */
 	b32[0] = f32->val1 < 0 ? 0x80 : 0;
@@ -104,7 +104,7 @@ int lwm2m_f64_to_b64(float64_value_t *f64, u8_t *b64, size_t len)
 
 	/* handle zero value special case */
 	if (f64->val1 == 0LL && f64->val2 == 0LL) {
-		memset(b64, 0, len);
+		(void)memset(b64, 0, len);
 		return 0;
 	}
 
@@ -155,7 +155,7 @@ int lwm2m_f64_to_b64(float64_value_t *f64, u8_t *b64, size_t len)
 	/* adjust exponent for bias */
 	e += 1023;
 
-	memset(b64, 0, len);
+	(void)memset(b64, 0, len);
 
 	/* sign: bit 63 */
 	b64[0] = f64->val1 < 0 ? 0x80 : 0;

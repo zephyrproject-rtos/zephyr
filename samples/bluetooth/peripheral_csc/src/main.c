@@ -237,7 +237,7 @@ static void ctrl_point_ind(struct bt_conn *conn, u8_t req_op, u8_t status,
 
 	/* Send data (supported locations) if present */
 	if (data && data_len) {
-		memcpy(ind->data, data, data_len);
+		(void)memcpy(ind->data, data, data_len);
 	}
 
 	bt_gatt_notify(conn, &csc_svc.attrs[8], buf, sizeof(buf));
@@ -278,7 +278,7 @@ static void measurement_nfy(struct bt_conn *conn, u32_t cwr, u16_t lwet,
 		data.cwr = sys_cpu_to_le32(cwr);
 		data.lwet = sys_cpu_to_le16(lwet);
 
-		memcpy(nfy->data, &data, sizeof(data));
+		(void)memcpy(nfy->data, &data, sizeof(data));
 		len += sizeof(data);
 	}
 
@@ -290,7 +290,7 @@ static void measurement_nfy(struct bt_conn *conn, u32_t cwr, u16_t lwet,
 		data.ccr = sys_cpu_to_le16(ccr);
 		data.lcet = sys_cpu_to_le16(lcet);
 
-		memcpy(nfy->data + len, &data, sizeof(data));
+		(void)memcpy(nfy->data + len, &data, sizeof(data));
 	}
 
 	bt_gatt_notify(NULL, &csc_svc.attrs[1], buf, sizeof(buf));

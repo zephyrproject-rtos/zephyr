@@ -55,17 +55,17 @@ static struct net_buf *ipv6cp_config_info_add(struct ppp_fsm *fsm)
 
 	linkaddr = net_if_get_link_addr(ctx->iface);
 	if (linkaddr->len == 8) {
-		memcpy(iid, linkaddr->addr, sizeof(iid));
+		(void)memcpy(iid, linkaddr->addr, sizeof(iid));
 	} else {
-		memcpy(iid, linkaddr->addr, 3);
+		(void)memcpy(iid, linkaddr->addr, 3);
 		iid[3] = 0xff;
 		iid[4] = 0xfe;
-		memcpy(iid + 5, linkaddr->addr + 3, 3);
+		(void)memcpy(iid + 5, linkaddr->addr + 3, 3);
 	}
 
 	option[0] = IPV6CP_OPTION_INTERFACE_IDENTIFIER;
 	option[1] = INTERFACE_IDENTIFIER_OPTION_LEN;
-	memcpy(&option[2], iid, sizeof(iid));
+	(void)memcpy(&option[2], iid, sizeof(iid));
 
 	buf = ppp_get_net_buf(NULL, sizeof(option));
 	if (!buf) {
@@ -100,8 +100,8 @@ static int ipv6cp_config_info_req(struct ppp_fsm *fsm,
 	enum net_verdict verdict;
 	int i;
 
-	memset(options, 0, sizeof(options));
-	memset(nack_options, 0, sizeof(nack_options));
+	(void)memset(options, 0, sizeof(options));
+	(void)memset(nack_options, 0, sizeof(nack_options));
 
 	verdict = ppp_parse_options(fsm, pkt, length, options,
 				    ARRAY_SIZE(options));
@@ -133,9 +133,9 @@ static int ipv6cp_config_info_req(struct ppp_fsm *fsm,
 			nack_options[nack_idx].len = options[i].len;
 
 			if (options[i].len > 2) {
-				memcpy(&nack_options[nack_idx].value,
-				       &options[i].value,
-				       sizeof(nack_options[nack_idx].value));
+				(void)memcpy(&nack_options[nack_idx].value,
+					  &options[i].value,
+					  sizeof(nack_options[nack_idx].value));
 			}
 
 			nack_idx++;
@@ -221,8 +221,8 @@ static int ipv6cp_config_info_req(struct ppp_fsm *fsm,
 			return -EMSGSIZE;
 		}
 
-		memcpy(ctx->ipv6cp.peer_options.iid, iface_id,
-		       sizeof(iface_id));
+		(void)memcpy(ctx->ipv6cp.peer_options.iid, iface_id,
+				sizeof(iface_id));
 
 		if (CONFIG_NET_L2_PPP_LOG_LEVEL >= LOG_LEVEL_DBG) {
 			u8_t iid_str[sizeof("xx:xx:xx:xx:xx:xx:xx:xx")];
@@ -284,7 +284,7 @@ static int config_info_ack_rej(struct ppp_context *ctx,
 	int i, ret, iface_id_option_idx = -1;
 	enum net_verdict verdict;
 
-	memset(nack_options, 0, sizeof(nack_options));
+	(void)memset(nack_options, 0, sizeof(nack_options));
 
 	verdict = ppp_parse_options(fsm, pkt, length, nack_options,
 				    ARRAY_SIZE(nack_options));
@@ -327,7 +327,8 @@ static int config_info_ack_rej(struct ppp_context *ctx,
 		return -EMSGSIZE;
 	}
 
-	memcpy(ctx->ipv6cp.peer_accepted.iid, iface_id, sizeof(iface_id));
+	(void)memcpy(ctx->ipv6cp.peer_accepted.iid,
+		      iface_id, sizeof(iface_id));
 
 	if (CONFIG_NET_L2_PPP_LOG_LEVEL >= LOG_LEVEL_DBG) {
 		u8_t iid_str[sizeof("xx:xx:xx:xx:xx:xx:xx:xx")];
@@ -389,7 +390,7 @@ static void setup_iid_address(u8_t *iid, struct in6_addr *addr)
 	addr->s6_addr[1] = 0x80;
 	UNALIGNED_PUT(0, &addr->s6_addr16[1]);
 	UNALIGNED_PUT(0, &addr->s6_addr32[1]);
-	memcpy(&addr->s6_addr[8], iid, PPP_INTERFACE_IDENTIFIER_LEN);
+	(void)memcpy(&addr->s6_addr[8], iid, PPP_INTERFACE_IDENTIFIER_LEN);
 
 	/* TODO: should we toggle local/global bit */
 	/* addr->s6_addr[8] ^= 0x02; */
@@ -547,7 +548,7 @@ static void ipv6cp_init(struct ppp_context *ctx)
 	NET_DBG("proto %s (0x%04x) fsm %p", ppp_proto2str(PPP_IPV6CP),
 		PPP_IPV6CP, &ctx->ipv6cp.fsm);
 
-	memset(&ctx->ipv6cp.fsm, 0, sizeof(ctx->ipv6cp.fsm));
+	(void)memset(&ctx->ipv6cp.fsm, 0, sizeof(ctx->ipv6cp.fsm));
 
 	ppp_fsm_init(&ctx->ipv6cp.fsm, PPP_IPV6CP);
 

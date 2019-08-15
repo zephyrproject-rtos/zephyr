@@ -27,13 +27,15 @@ static void socks5_method_rsp_cb(struct net_context *ctx,
 			(struct socks5_method_response *)user_data;
 
 	if (!pkt || status) {
-		memset(method_rsp, 0, sizeof(struct socks5_method_response));
+		(void)memset(method_rsp, 0,
+			      sizeof(struct socks5_method_response));
 		goto end;
 	}
 
 	if (net_pkt_read(pkt, (u8_t *)method_rsp,
 			 sizeof(struct socks5_method_response))) {
-		memset(method_rsp, 0, sizeof(struct socks5_method_response));
+		(void)memset(method_rsp, 0,
+			      sizeof(struct socks5_method_response));
 	}
 
 end:
@@ -52,16 +54,16 @@ static void socks5_cmd_rsp_cb(struct net_context *ctx,
 	int size;
 
 	if (!pkt || status) {
-		memset(cmd_rsp, 0,
-		       sizeof(struct socks5_command_request_common));
+		(void)memset(cmd_rsp, 0,
+				sizeof(struct socks5_command_request_common));
 		goto end;
 	}
 
 	size = sizeof(struct socks5_command_request_common);
 
 	if (net_pkt_read(pkt, (u8_t *)cmd_rsp, size)) {
-		memset(cmd_rsp, 0,
-		       sizeof(struct socks5_command_request_common));
+		(void)memset(cmd_rsp, 0,
+				sizeof(struct socks5_command_request_common));
 	}
 
 end:
@@ -128,9 +130,9 @@ static int socks5_tcp_connect(struct net_context *ctx,
 
 		cmd_req.r.atyp = SOCKS5_ATYP_IPV4;
 
-		memcpy(&cmd_req.ipv4_addr.addr,
-		       (u8_t *)&d4->sin_addr,
-		       sizeof(cmd_req.ipv4_addr.addr));
+		(void)memcpy(&cmd_req.ipv4_addr.addr,
+				(u8_t *)&d4->sin_addr,
+				sizeof(cmd_req.ipv4_addr.addr));
 
 		cmd_req.ipv4_addr.port = d4->sin_port;
 
@@ -142,9 +144,9 @@ static int socks5_tcp_connect(struct net_context *ctx,
 
 		cmd_req.r.atyp = SOCKS5_ATYP_IPV6;
 
-		memcpy(&cmd_req.ipv6_addr.addr,
-		       (u8_t *)&d6->sin6_addr,
-		       sizeof(cmd_req.ipv6_addr.addr));
+		(void)memcpy(&cmd_req.ipv6_addr.addr,
+				(u8_t *)&d6->sin6_addr,
+				sizeof(cmd_req.ipv6_addr.addr));
 
 		cmd_req.ipv6_addr.port = d6->sin6_port;
 

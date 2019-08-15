@@ -46,7 +46,7 @@ static ssize_t write_name(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	}
 
-	memcpy(name, buf, len);
+	(void)memcpy(name, buf, len);
 	name[len] = '\0';
 
 	err = bt_set_name(name);

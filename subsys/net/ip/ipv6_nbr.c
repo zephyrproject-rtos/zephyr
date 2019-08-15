@@ -1062,7 +1062,7 @@ int net_ipv6_send_na(struct net_if *iface, const struct in6_addr *src,
 	}
 
 	/* Let's make sure reserved part is full of 0 */
-	memset(na_hdr, 0, sizeof(struct net_icmpv6_na_hdr));
+	(void)memset(na_hdr, 0, sizeof(struct net_icmpv6_na_hdr));
 
 	na_hdr->flags = flags;
 	net_ipaddr_copy(&na_hdr->tgt, tgt);
@@ -2126,7 +2126,7 @@ static inline void handle_prefix_autonomous(struct net_pkt *pkt,
 	 */
 	net_ipv6_addr_create_iid(&addr,
 				 net_if_get_link_addr(net_pkt_iface(pkt)));
-	memcpy(&addr, &prefix_info->prefix, sizeof(struct in6_addr) / 2);
+	(void)memcpy(&addr, &prefix_info->prefix, sizeof(struct in6_addr) / 2);
 
 	ifaddr = net_if_ipv6_addr_lookup(&addr, NULL);
 	if (ifaddr && ifaddr->addr_type == NET_ADDR_AUTOCONF) {

@@ -615,8 +615,8 @@ u8_t *generate_addressing_fields(struct ieee802154_context *ctx,
 		src_addr->short_addr = sys_cpu_to_le16(params->short_addr);
 		p_buf += IEEE802154_SHORT_ADDR_LENGTH;
 	} else {
-		memcpy(src_addr->ext_addr, ctx->ext_addr,
-		       IEEE802154_EXT_ADDR_LENGTH);
+		(void)memcpy(src_addr->ext_addr, ctx->ext_addr,
+				IEEE802154_EXT_ADDR_LENGTH);
 		p_buf += IEEE802154_EXT_ADDR_LENGTH;
 	}
 

@@ -206,7 +206,7 @@ static int flash_sam0_write(struct device *dev, off_t offset,
 		if (base != ctx->offset) {
 			/* Started a new row.  Flush any pending ones. */
 			flash_sam0_commit(dev);
-			memcpy(ctx->buf, (void *)base, sizeof(ctx->buf));
+			(void)memcpy(ctx->buf, (void *)base, sizeof(ctx->buf));
 			ctx->offset = base;
 		}
 
@@ -270,7 +270,7 @@ static int flash_sam0_read(struct device *dev, off_t offset, void *data,
 		return err;
 	}
 
-	memcpy(data, (u8_t *)CONFIG_FLASH_BASE_ADDRESS + offset, len);
+	(void)memcpy(data, (u8_t *)CONFIG_FLASH_BASE_ADDRESS + offset, len);
 
 	return 0;
 }

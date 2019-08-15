@@ -37,7 +37,7 @@ static int entropy_native_posix_get_entropy(struct device *dev, u8_t *buffer,
 
 		size_t to_copy = MIN(length, sizeof(long int));
 
-		memcpy(buffer, &value, to_copy);
+		(void)memcpy(buffer, &value, to_copy);
 		buffer += to_copy;
 		length -= to_copy;
 	}

@@ -861,7 +861,7 @@ static u32_t isr_rx_adv_sr_report(struct pdu_adv *pdu_adv_rx, u8_t rssi_ready)
 	 */
 	pdu_adv = (void *)node_rx->pdu_data;
 	pdu_len = offsetof(struct pdu_adv, payload) + pdu_adv_rx->len;
-	memcpy(pdu_adv, pdu_adv_rx, pdu_len);
+	(void)memcpy(pdu_adv, pdu_adv_rx, pdu_len);
 	((u8_t *)pdu_adv)[pdu_len] =
 		(rssi_ready) ? (radio_rssi_get() & 0x7f) : 0x7f;
 
@@ -1854,10 +1854,10 @@ static inline u32_t isr_rx_conn_pkt_ack(struct pdu_data *pdu_data_tx,
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 	case PDU_DATA_LLCTRL_TYPE_ENC_REQ:
 		/* things from master stored for session key calculation */
-		memcpy(&_radio.conn_curr->llcp.encryption.skd[0],
-		       &pdu_data_tx->llctrl.enc_req.skdm[0], 8);
-		memcpy(&_radio.conn_curr->ccm_rx.iv[0],
-		       &pdu_data_tx->llctrl.enc_req.ivm[0], 4);
+		(void)memcpy(&_radio.conn_curr->llcp.encryption.skd[0],
+				&pdu_data_tx->llctrl.enc_req.skdm[0], 8);
+		(void)memcpy(&_radio.conn_curr->ccm_rx.iv[0],
+				&pdu_data_tx->llctrl.enc_req.ivm[0], 4);
 
 		/* pause data packet tx */
 		_radio.conn_curr->pause_tx = 1U;
@@ -2675,10 +2675,10 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx,
 #endif /* CONFIG_BT_CTLR_FAST_ENC */
 
 		/* things from master stored for session key calculation */
-		memcpy(&_radio.conn_curr->llcp.encryption.skd[0],
-		       &pdu_data_rx->llctrl.enc_req.skdm[0], 8);
-		memcpy(&_radio.conn_curr->ccm_rx.iv[0],
-		       &pdu_data_rx->llctrl.enc_req.ivm[0], 4);
+		(void)memcpy(&_radio.conn_curr->llcp.encryption.skd[0],
+				&pdu_data_rx->llctrl.enc_req.skdm[0], 8);
+		(void)memcpy(&_radio.conn_curr->ccm_rx.iv[0],
+				&pdu_data_rx->llctrl.enc_req.ivm[0], 4);
 
 		/* pause rx data packets */
 		_radio.conn_curr->pause_rx = 1U;
@@ -2701,10 +2701,10 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx,
 		}
 
 		/* things sent by slave stored for session key calculation */
-		memcpy(&_radio.conn_curr->llcp.encryption.skd[8],
-		       &pdu_data_rx->llctrl.enc_rsp.skds[0], 8);
-		memcpy(&_radio.conn_curr->ccm_rx.iv[4],
-		       &pdu_data_rx->llctrl.enc_rsp.ivs[0], 4);
+		(void)memcpy(&_radio.conn_curr->llcp.encryption.skd[8],
+				&pdu_data_rx->llctrl.enc_rsp.skds[0], 8);
+		(void)memcpy(&_radio.conn_curr->ccm_rx.iv[4],
+				&pdu_data_rx->llctrl.enc_rsp.ivs[0], 4);
 
 		/* pause rx data packets */
 		_radio.conn_curr->pause_rx = 1U;
@@ -3471,9 +3471,9 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx,
 				break;
 			}
 
-			memcpy(&conn->llcp.chan_map.chm[0],
-			       &_radio.data_chan_map[0],
-			       sizeof(conn->llcp.chan_map.chm));
+			(void)memcpy(&conn->llcp.chan_map.chm[0],
+					&_radio.data_chan_map[0],
+					sizeof(conn->llcp.chan_map.chm));
 			/* conn->llcp.chan_map.instant     = 0; */
 			conn->llcp.chan_map.initiate = 1U;
 
@@ -3644,11 +3644,11 @@ isr_rx_conn_pkt(struct radio_pdu_node_rx *node_rx,
 					if (pdu_len_cmp(
 					     scratch_pkt->llctrl.opcode,
 					     scratch_pkt->len)) {
-						memcpy(pdu_data_rx,
-						       scratch_pkt,
-						       scratch_pkt->len +
-						       offsetof(struct pdu_data,
-							llctrl));
+						(void)memcpy(pdu_data_rx,
+						   scratch_pkt,
+						   scratch_pkt->len +
+						   offsetof(struct pdu_data,
+							    llctrl));
 						mic_failure = false;
 					}
 				} else {
@@ -5625,8 +5625,8 @@ static void mayfly_sched_win_offset_use(void *params)
 				&conn->llcp.conn_upd.win_offset_us);
 
 	win_offset = conn->llcp.conn_upd.win_offset_us / 1250;
-	memcpy(conn->llcp.conn_upd.pdu_win_offset, &win_offset,
-	       sizeof(u16_t));
+	(void)memcpy(conn->llcp.conn_upd.pdu_win_offset, &win_offset,
+			sizeof(u16_t));
 }
 
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
@@ -5786,9 +5786,10 @@ static void sched_free_win_offset_calc(struct connection *conn_curr,
 						break;
 					}
 
-					memcpy(win_offset +
-					       (sizeof(u16_t) * offset_index),
-					       &_win_offset, sizeof(u16_t));
+					(void)memcpy(win_offset +
+						(sizeof(u16_t) * offset_index),
+						&_win_offset,
+						sizeof(u16_t));
 					offset_index++;
 
 					ticks_to_expire_prev +=
@@ -5824,8 +5825,9 @@ static void sched_free_win_offset_calc(struct connection *conn_curr,
 				break;
 			}
 
-			memcpy(win_offset + (sizeof(u16_t) * offset_index),
-			       &_win_offset, sizeof(u16_t));
+			(void)memcpy(win_offset + (sizeof(u16_t) *
+						    offset_index),
+					&_win_offset, sizeof(u16_t));
 			offset_index++;
 
 			ticks_to_expire_prev += HAL_TICKER_US_TO_TICKS(1250);
@@ -5882,9 +5884,10 @@ static void mayfly_sched_win_offset_select(void *params)
 	while (offset_index_s < OFFSET_S_MAX) {
 		u8_t offset_index_m = 0U;
 
-		memcpy((u8_t *)&win_offset_s,
-		       ((u8_t *)&conn->llcp_conn_param.offset0 +
-			(sizeof(u16_t) * offset_index_s)), sizeof(u16_t));
+		(void)memcpy((u8_t *)&win_offset_s,
+				((u8_t *)&conn->llcp_conn_param.offset0 +
+				 (sizeof(u16_t) * offset_index_s)),
+				sizeof(u16_t));
 
 		while (offset_index_m < offset_m_max) {
 			if (win_offset_s != 0xffff) {
@@ -5909,13 +5912,13 @@ static void mayfly_sched_win_offset_select(void *params)
 	if (offset_index_s < OFFSET_S_MAX) {
 		conn->llcp.conn_upd.win_offset_us =
 			win_offset_s * 1250;
-		memcpy(conn->llcp.conn_upd.pdu_win_offset,
-		       &win_offset_s, sizeof(u16_t));
+		(void)memcpy(conn->llcp.conn_upd.pdu_win_offset,
+				&win_offset_s, sizeof(u16_t));
 	} else if (!has_offset_s) {
 		conn->llcp.conn_upd.win_offset_us =
 			win_offset_m[0] * 1250;
-		memcpy(conn->llcp.conn_upd.pdu_win_offset,
-		       &win_offset_m[0], sizeof(u16_t));
+		(void)memcpy(conn->llcp.conn_upd.pdu_win_offset,
+				&win_offset_m[0], sizeof(u16_t));
 	} else {
 		struct pdu_data *pdu_ctrl_tx;
 
@@ -6578,8 +6581,8 @@ static void adv_setup(void)
 		/* Copy the address from the adv packet we will send into the
 		 * scan response.
 		 */
-		memcpy(&scan_pdu->scan_rsp.addr[0],
-		       &pdu->adv_ind.addr[0], BDADDR_SIZE);
+		(void)memcpy(&scan_pdu->scan_rsp.addr[0],
+				&pdu->adv_ind.addr[0], BDADDR_SIZE);
 	}
 #else
 	ARG_UNUSED(upd);
@@ -7517,9 +7520,9 @@ static inline void event_ch_map_prep(struct connection *conn,
 				sizeof(struct pdu_data_llctrl_chan_map_ind);
 			pdu_ctrl_tx->llctrl.opcode =
 				PDU_DATA_LLCTRL_TYPE_CHAN_MAP_IND;
-			memcpy(&pdu_ctrl_tx->llctrl.chan_map_ind.chm[0],
-			       &conn->llcp.chan_map.chm[0],
-			       sizeof(pdu_ctrl_tx->llctrl.chan_map_ind.chm));
+			(void)memcpy(&pdu_ctrl_tx->llctrl.chan_map_ind.chm[0],
+				  &conn->llcp.chan_map.chm[0],
+				  sizeof(pdu_ctrl_tx->llctrl.chan_map_ind.chm));
 			pdu_ctrl_tx->llctrl.chan_map_ind.instant =
 				conn->llcp.chan_map.instant;
 
@@ -7531,9 +7534,9 @@ static inline void event_ch_map_prep(struct connection *conn,
 		conn->llcp_ack = conn->llcp_req;
 
 		/* copy to active channel map */
-		memcpy(&conn->data_chan_map[0],
-		       &conn->llcp.chan_map.chm[0],
-		       sizeof(conn->data_chan_map));
+		(void)memcpy(&conn->data_chan_map[0],
+				&conn->llcp.chan_map.chm[0],
+				sizeof(conn->data_chan_map));
 		conn->data_chan_count =
 			util_ones_count_get(&conn->data_chan_map[0],
 					    sizeof(conn->data_chan_map));
@@ -10198,9 +10201,9 @@ static u8_t chan_map_update(struct connection *conn,
 	}
 
 
-	memcpy(&conn->llcp.chan_map.chm[0],
-	       &pdu_data_rx->llctrl.chan_map_ind.chm[0],
-	       sizeof(conn->llcp.chan_map.chm));
+	(void)memcpy(&conn->llcp.chan_map.chm[0],
+			&pdu_data_rx->llctrl.chan_map_ind.chm[0],
+			sizeof(conn->llcp.chan_map.chm));
 	conn->llcp.chan_map.instant =
 		pdu_data_rx->llctrl.chan_map_ind.instant;
 	conn->llcp.chan_map.initiate = 0U;
@@ -10304,9 +10307,9 @@ static void enc_req_reused_send(struct connection *conn,
 	pdu_ctrl_tx->len = offsetof(struct pdu_data_llctrl, enc_req) +
 			   sizeof(struct pdu_data_llctrl_enc_req);
 	pdu_ctrl_tx->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_ENC_REQ;
-	memcpy(&pdu_ctrl_tx->llctrl.enc_req.rand[0],
-	       &conn->llcp_enc.rand[0],
-	       sizeof(pdu_ctrl_tx->llctrl.enc_req.rand));
+	(void)memcpy(&pdu_ctrl_tx->llctrl.enc_req.rand[0],
+			&conn->llcp_enc.rand[0],
+			sizeof(pdu_ctrl_tx->llctrl.enc_req.rand));
 	pdu_ctrl_tx->llctrl.enc_req.ediv[0] =
 		conn->llcp_enc.ediv[0];
 	pdu_ctrl_tx->llctrl.enc_req.ediv[1] =
@@ -10361,10 +10364,10 @@ static u8_t enc_rsp_send(struct connection *conn)
 				sizeof(pdu_ctrl_tx->llctrl.enc_rsp.ivs), 0);
 
 	/* things from slave stored for session key calculation */
-	memcpy(&conn->llcp.encryption.skd[8],
-	       &pdu_ctrl_tx->llctrl.enc_rsp.skds[0], 8);
-	memcpy(&conn->ccm_rx.iv[4],
-	       &pdu_ctrl_tx->llctrl.enc_rsp.ivs[0], 4);
+	(void)memcpy(&conn->llcp.encryption.skd[8],
+			&pdu_ctrl_tx->llctrl.enc_rsp.skds[0], 8);
+	(void)memcpy(&conn->ccm_rx.iv[4],
+			&pdu_ctrl_tx->llctrl.enc_rsp.ivs[0], 4);
 
 	ctrl_tx_enqueue(conn, node_tx);
 
@@ -11463,7 +11466,7 @@ u32_t radio_scan_enable(u8_t type, u8_t init_addr_type, u8_t *init_addr,
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 
 	_radio.scanner.init_addr_type = init_addr_type;
-	memcpy(&_radio.scanner.init_addr[0], init_addr, BDADDR_SIZE);
+	(void)memcpy(&_radio.scanner.init_addr[0], init_addr, BDADDR_SIZE);
 	_radio.scanner.ticks_window = HAL_TICKER_US_TO_TICKS((u64_t)window *
 							     625);
 	_radio.scanner.filter_policy = filter_policy;
@@ -11614,7 +11617,7 @@ u32_t radio_connect_enable(u8_t adv_addr_type, u8_t *adv_addr, u16_t interval,
 	}
 
 	_radio.scanner.adv_addr_type = adv_addr_type;
-	memcpy(&_radio.scanner.adv_addr[0], adv_addr, BDADDR_SIZE);
+	(void)memcpy(&_radio.scanner.adv_addr[0], adv_addr, BDADDR_SIZE);
 	_radio.scanner.conn_interval = interval;
 	_radio.scanner.conn_latency = latency;
 	_radio.scanner.conn_timeout = timeout;
@@ -11625,10 +11628,11 @@ u32_t radio_connect_enable(u8_t adv_addr_type, u8_t *adv_addr, u16_t interval,
 	conn->handle = 0xFFFF;
 	conn->llcp_features = LL_FEAT;
 	access_addr = access_addr_get();
-	memcpy(&conn->access_addr[0], &access_addr, sizeof(conn->access_addr));
+	(void)memcpy(&conn->access_addr[0], &access_addr,
+		      sizeof(conn->access_addr));
 	bt_rand(&conn->crc_init[0], 3);
-	memcpy(&conn->data_chan_map[0], &_radio.data_chan_map[0],
-	       sizeof(conn->data_chan_map));
+	(void)memcpy(&conn->data_chan_map[0], &_radio.data_chan_map[0],
+			sizeof(conn->data_chan_map));
 	conn->data_chan_count = _radio.data_chan_count;
 	conn->data_chan_sel = 0U;
 	conn->data_chan_hop = 6U;
@@ -11868,8 +11872,8 @@ u8_t ll_chm_update(u8_t *chm)
 {
 	u8_t instance;
 
-	memcpy(&_radio.data_chan_map[0], chm,
-	       sizeof(_radio.data_chan_map));
+	(void)memcpy(&_radio.data_chan_map[0], chm,
+			sizeof(_radio.data_chan_map));
 	_radio.data_chan_count =
 		util_ones_count_get(&_radio.data_chan_map[0],
 				    sizeof(_radio.data_chan_map));
@@ -11887,8 +11891,8 @@ u8_t ll_chm_update(u8_t *chm)
 			return BT_HCI_ERR_CMD_DISALLOWED;
 		}
 
-		memcpy(&conn->llcp.chan_map.chm[0], chm,
-		       sizeof(conn->llcp.chan_map.chm));
+		(void)memcpy(&conn->llcp.chan_map.chm[0], chm,
+				sizeof(conn->llcp.chan_map.chm));
 		/* conn->llcp.chan_map.instant     = 0; */
 		conn->llcp.chan_map.initiate = 1U;
 
@@ -11913,7 +11917,8 @@ u8_t ll_chm_get(u16_t handle, u8_t *chm)
 	 */
 	do {
 		conn->chm_update = 0U;
-		memcpy(chm, conn->data_chan_map, sizeof(conn->data_chan_map));
+		(void)memcpy(chm, conn->data_chan_map,
+			      sizeof(conn->data_chan_map));
 	} while (conn->chm_update);
 
 	return 0;
@@ -11940,7 +11945,8 @@ u8_t ll_enc_req_send(u16_t handle, u8_t *rand, u8_t *ediv, u8_t *ltk)
 
 		pdu_data_tx = (void *)node_tx->pdu_data;
 
-		memcpy(&conn->llcp_enc.ltk[0], ltk, sizeof(conn->llcp_enc.ltk));
+		(void)memcpy(&conn->llcp_enc.ltk[0], ltk,
+			      sizeof(conn->llcp_enc.ltk));
 
 		if ((conn->enc_rx == 0) && (conn->enc_tx == 0)) {
 			struct pdu_data_llctrl_enc_req *enc_req;
@@ -11953,14 +11959,15 @@ u8_t ll_enc_req_send(u16_t handle, u8_t *rand, u8_t *ediv, u8_t *ltk)
 				PDU_DATA_LLCTRL_TYPE_ENC_REQ;
 			enc_req = (void *)
 				&pdu_data_tx->llctrl.enc_req;
-			memcpy(enc_req->rand, rand, sizeof(enc_req->rand));
+			(void)memcpy(enc_req->rand, rand,
+				      sizeof(enc_req->rand));
 			enc_req->ediv[0] = ediv[0];
 			enc_req->ediv[1] = ediv[1];
 			bt_rand(enc_req->skdm, sizeof(enc_req->skdm));
 			bt_rand(enc_req->ivm, sizeof(enc_req->ivm));
 		} else if ((conn->enc_rx != 0) && (conn->enc_tx != 0)) {
-			memcpy(&conn->llcp_enc.rand[0], rand,
-			       sizeof(conn->llcp_enc.rand));
+			(void)memcpy(&conn->llcp_enc.rand[0], rand,
+					sizeof(conn->llcp_enc.rand));
 
 			conn->llcp_enc.ediv[0] = ediv[0];
 			conn->llcp_enc.ediv[1] = ediv[1];
@@ -12026,8 +12033,8 @@ u8_t ll_start_enc_req_send(u16_t handle, u8_t error_code,
 			return BT_HCI_ERR_CMD_DISALLOWED;
 		}
 
-		memcpy(&conn->llcp_enc.ltk[0], ltk,
-		       sizeof(conn->llcp_enc.ltk));
+		(void)memcpy(&conn->llcp_enc.ltk[0], ltk,
+				sizeof(conn->llcp_enc.ltk));
 
 		conn->llcp.encryption.error_code = 0U;
 		conn->llcp.encryption.initiate = 0U;

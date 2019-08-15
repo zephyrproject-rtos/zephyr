@@ -297,7 +297,7 @@ static int boot_write_trailer_byte(const struct flash_area *fa, u32_t off,
 	align = flash_area_align(fa);
 	assert(align <= BOOT_MAX_ALIGN);
 	erased_val = flash_area_erased_val(fa);
-	memset(buf, erased_val, BOOT_MAX_ALIGN);
+	(void)memset(buf, erased_val, BOOT_MAX_ALIGN);
 	buf[0] = val;
 
 	rc = flash_area_write(fa, off, buf, align);

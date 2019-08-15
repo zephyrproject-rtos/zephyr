@@ -260,9 +260,9 @@ static int bt_ipm_send(struct net_buf *buf)
 		       buf->len);
 		k_sem_take(&acl_data_ack, K_FOREVER);
 		net_buf_push_u8(buf, HCI_ACL);
-		memcpy((void *)
+		(void)memcpy((void *)
 		       &((TL_AclDataPacket_t *)HciAclDataBuffer)->AclDataSerial,
-		       buf->data, buf->len);
+				buf->data, buf->len);
 		TL_BLE_SendAclData(NULL, 0);
 		break;
 	case BT_BUF_CMD:
@@ -270,8 +270,8 @@ static int bt_ipm_send(struct net_buf *buf)
 		       buf->len);
 		ble_cmd_buff->cmdserial.type = HCI_CMD;
 		ble_cmd_buff->cmdserial.cmd.plen = buf->len;
-		memcpy((void *)&ble_cmd_buff->cmdserial.cmd, buf->data,
-		       buf->len);
+		(void)memcpy((void *)&ble_cmd_buff->cmdserial.cmd, buf->data,
+				buf->len);
 		TL_BLE_SendCmd(NULL, 0);
 		break;
 	default:

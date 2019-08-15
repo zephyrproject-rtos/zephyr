@@ -269,8 +269,8 @@ static int do_registration_reply_cb(const struct coap_packet *response,
 			return -EINVAL;
 		}
 
-		memcpy(client.server_ep, options[1].value,
-		       options[1].len);
+		(void)memcpy(client.server_ep, options[1].value,
+				options[1].len);
 		client.server_ep[options[1].len] = '\0';
 		set_sm_state(ENGINE_REGISTRATION_DONE);
 		LOG_INF("Registration Done (EP='%s')",

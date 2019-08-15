@@ -53,12 +53,14 @@ void ecb_encrypt_be(u8_t const *const key_be, u8_t const *const clear_text_be,
 {
 	struct ecb_param ecb;
 
-	memcpy(&ecb.key[0], key_be, sizeof(ecb.key));
-	memcpy(&ecb.clear_text[0], clear_text_be, sizeof(ecb.clear_text));
+	(void)memcpy(&ecb.key[0], key_be, sizeof(ecb.key));
+	(void)memcpy(&ecb.clear_text[0], clear_text_be,
+		      sizeof(ecb.clear_text));
 
 	do_ecb(&ecb);
 
-	memcpy(cipher_text_be, &ecb.cipher_text[0], sizeof(ecb.cipher_text));
+	(void)memcpy(cipher_text_be, &ecb.cipher_text[0],
+		      sizeof(ecb.cipher_text));
 }
 
 void ecb_encrypt(u8_t const *const key_le, u8_t const *const clear_text_le,
@@ -77,8 +79,8 @@ void ecb_encrypt(u8_t const *const key_le, u8_t const *const clear_text_le,
 	}
 
 	if (cipher_text_be) {
-		memcpy(cipher_text_be, &ecb.cipher_text[0],
-			 sizeof(ecb.cipher_text));
+		(void)memcpy(cipher_text_be, &ecb.cipher_text[0],
+				sizeof(ecb.cipher_text));
 	}
 }
 

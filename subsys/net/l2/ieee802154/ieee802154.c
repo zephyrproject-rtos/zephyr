@@ -262,8 +262,8 @@ static int ieee802154_send(struct net_if *iface, struct net_pkt *pkt)
 			ieee802154_fragment(&f_ctx, &frame_buf, true);
 			buf = f_ctx.buf;
 		} else {
-			memcpy(frame_buf.data + frame_buf.len,
-			       buf->data, buf->len);
+			(void)memcpy(frame_buf.data + frame_buf.len,
+					buf->data, buf->len);
 			net_buf_add(&frame_buf, buf->len);
 			buf = buf->frags;
 		}
@@ -345,7 +345,7 @@ void ieee802154_init(struct net_if *iface)
 #endif
 
 	sys_memcpy_swap(long_addr, mac, 8);
-	memcpy(ctx->ext_addr, long_addr, 8);
+	(void)memcpy(ctx->ext_addr, long_addr, 8);
 	ieee802154_filter_ieee_addr(iface, ctx->ext_addr);
 
 	if (!ieee802154_set_tx_power(iface, tx_power)) {

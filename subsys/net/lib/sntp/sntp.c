@@ -148,7 +148,7 @@ int sntp_init(struct sntp_ctx *ctx, struct sockaddr *addr, socklen_t addr_len)
 		return -EFAULT;
 	}
 
-	memset(ctx, 0, sizeof(struct sntp_ctx));
+	(void)memset(ctx, 0, sizeof(struct sntp_ctx));
 
 	ctx->sock.fd = socket(addr->sa_family, SOCK_DGRAM, IPPROTO_UDP);
 	if (ctx->sock.fd < 0) {

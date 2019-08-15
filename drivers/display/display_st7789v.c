@@ -310,7 +310,7 @@ void st7789v_get_capabilities(const struct device *dev,
 {
 	struct st7789v_data *data = (struct st7789v_data *)dev->driver_data;
 
-	memset(capabilities, 0, sizeof(struct display_capabilities));
+	(void)memset(capabilities, 0, sizeof(struct display_capabilities));
 	capabilities->x_resolution = data->width;
 	capabilities->y_resolution = data->height;
 

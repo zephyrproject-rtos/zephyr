@@ -332,8 +332,8 @@ struct net_pkt *gptp_prepare_pdelay_req(int port)
 	hdr->reserved1 = 0U;
 	hdr->reserved2 = 0U;
 
-	memcpy(hdr->port_id.clk_id,
-	       port_ds->port_id.clk_id, GPTP_CLOCK_ID_LEN);
+	(void)memcpy(hdr->port_id.clk_id,
+			port_ds->port_id.clk_id, GPTP_CLOCK_ID_LEN);
 
 	/* PTP configuration. */
 	(void)memset(&req->reserved1, 0, sizeof(req->reserved1));
@@ -392,16 +392,16 @@ struct net_pkt *gptp_prepare_pdelay_resp(int port,
 	hdr->reserved1 = 0U;
 	hdr->reserved2 = 0U;
 
-	memcpy(hdr->port_id.clk_id, port_ds->port_id.clk_id,
-	       GPTP_CLOCK_ID_LEN);
+	(void)memcpy(hdr->port_id.clk_id, port_ds->port_id.clk_id,
+			GPTP_CLOCK_ID_LEN);
 
 	/* PTP configuration. */
 	pdelay_resp->req_receipt_ts_secs_high = 0U;
 	pdelay_resp->req_receipt_ts_secs_low = 0U;
 	pdelay_resp->req_receipt_ts_nsecs = 0U;
 
-	memcpy(&pdelay_resp->requesting_port_id,
-	       &query->port_id, sizeof(struct gptp_port_identity));
+	(void)memcpy(&pdelay_resp->requesting_port_id,
+			&query->port_id, sizeof(struct gptp_port_identity));
 
 	return pkt;
 }
@@ -454,17 +454,17 @@ struct net_pkt *gptp_prepare_pdelay_follow_up(int port,
 	hdr->reserved1 = 0U;
 	hdr->reserved2 = 0U;
 
-	memcpy(hdr->port_id.clk_id, port_ds->port_id.clk_id,
-	       GPTP_CLOCK_ID_LEN);
+	(void)memcpy(hdr->port_id.clk_id, port_ds->port_id.clk_id,
+			GPTP_CLOCK_ID_LEN);
 
 	/* PTP configuration. */
 	follow_up->resp_orig_ts_secs_high = 0U;
 	follow_up->resp_orig_ts_secs_low = 0U;
 	follow_up->resp_orig_ts_nsecs = 0U;
 
-	memcpy(&follow_up->requesting_port_id,
-	       &pdelay_resp->requesting_port_id,
-	       sizeof(struct gptp_port_identity));
+	(void)memcpy(&follow_up->requesting_port_id,
+			&pdelay_resp->requesting_port_id,
+			sizeof(struct gptp_port_identity));
 
 	return pkt;
 }
@@ -512,8 +512,8 @@ struct net_pkt *gptp_prepare_announce(int port)
 	hdr->flags.octets[1] =
 		global_ds->global_flags.octets[1] | GPTP_FLAG_PTP_TIMESCALE;
 
-	memcpy(hdr->port_id.clk_id, GPTP_DEFAULT_DS()->clk_id,
-	       GPTP_CLOCK_ID_LEN);
+	(void)memcpy(hdr->port_id.clk_id, GPTP_DEFAULT_DS()->clk_id,
+			GPTP_CLOCK_ID_LEN);
 
 	hdr->port_id.port_number = htons(port);
 	hdr->control = GPTP_OTHER_CONTROL_VALUE;
@@ -532,19 +532,19 @@ struct net_pkt *gptp_prepare_announce(int port)
 		ann->root_system_id.grand_master_prio1 = default_ds->priority1;
 		ann->root_system_id.grand_master_prio2 = default_ds->priority2;
 
-		memcpy(&ann->root_system_id.clk_quality,
-		       &default_ds->clk_quality,
-		       sizeof(struct gptp_clock_quality));
+		(void)memcpy(&ann->root_system_id.clk_quality,
+				&default_ds->clk_quality,
+				sizeof(struct gptp_clock_quality));
 
-		memcpy(&ann->root_system_id.grand_master_id,
-		       default_ds->clk_id,
-		       GPTP_CLOCK_ID_LEN);
+		(void)memcpy(&ann->root_system_id.grand_master_id,
+				default_ds->clk_id,
+				GPTP_CLOCK_ID_LEN);
 		break;
 	case GPTP_INFO_IS_RECEIVED:
-		memcpy(&ann->root_system_id,
-		       &GPTP_PORT_BMCA_DATA(port)->
+		(void)memcpy(&ann->root_system_id,
+				&GPTP_PORT_BMCA_DATA(port)->
 				master_priority.root_system_id,
-		       sizeof(struct gptp_root_system_identity));
+				sizeof(struct gptp_root_system_identity));
 		break;
 	default:
 		goto fail;

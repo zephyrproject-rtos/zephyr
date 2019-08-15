@@ -620,13 +620,13 @@ static int rndis_query_handle(u8_t *data, u32_t len)
 		/* IEEE 802.3 */
 	case RNDIS_OBJECT_ID_802_3_PERMANENT_ADDRESS:
 		LOG_DBG("RNDIS_OBJECT_ID_802_3_PERMANENT_ADDRESS");
-		memcpy(net_buf_add(buf, sizeof(rndis.mac)), rndis.mac,
-		       sizeof(rndis.mac));
+		(void)memcpy(net_buf_add(buf, sizeof(rndis.mac)), rndis.mac,
+				sizeof(rndis.mac));
 		break;
 	case RNDIS_OBJECT_ID_802_3_CURR_ADDRESS:
 		LOG_DBG("RNDIS_OBJECT_ID_802_3_CURR_ADDRESS");
-		memcpy(net_buf_add(buf, sizeof(rndis.mac)), rndis.mac,
-		       sizeof(rndis.mac));
+		(void)memcpy(net_buf_add(buf, sizeof(rndis.mac)), rndis.mac,
+				sizeof(rndis.mac));
 		break;
 	case RNDIS_OBJECT_ID_802_3_MCAST_LIST:
 		LOG_DBG("RNDIS_OBJECT_ID_802_3_MCAST_LIST");
@@ -644,8 +644,9 @@ static int rndis_query_handle(u8_t *data, u32_t len)
 		break;
 	case RNDIS_OBJECT_ID_GEN_VENDOR_DESC:
 		LOG_DBG("RNDIS_OBJECT_ID_GEN_VENDOR_DESC");
-		memcpy(net_buf_add(buf, sizeof(manufacturer) - 1), manufacturer,
-		       sizeof(manufacturer) - 1);
+		(void)memcpy(net_buf_add(buf, sizeof(manufacturer) - 1),
+				manufacturer,
+				sizeof(manufacturer) - 1);
 		break;
 	case RNDIS_OBJECT_ID_GEN_VENDOR_DRV_VER:
 		LOG_DBG("RNDIS_OBJECT_ID_GEN_VENDOR_DRV_VER");
@@ -818,7 +819,7 @@ static int queue_encapsulated_cmd(u8_t *data, u32_t len)
 		return -ENOMEM;
 	}
 
-	memcpy(net_buf_add(buf, len), data, len);
+	(void)memcpy(net_buf_add(buf, len), data, len);
 
 	net_buf_put(&rndis_cmd_queue, buf);
 
@@ -882,7 +883,7 @@ static int handle_encapsulated_rsp(u8_t **data, u32_t *len)
 		net_hexdump("RSP <", buf->data, buf->len);
 	}
 
-	memcpy(*data, buf->data, buf->len);
+	(void)memcpy(*data, buf->data, buf->len);
 	*len = buf->len;
 
 	net_buf_unref(buf);

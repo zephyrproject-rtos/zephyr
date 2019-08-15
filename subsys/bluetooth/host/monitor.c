@@ -175,7 +175,7 @@ void bt_monitor_new_index(u8_t type, u8_t bus, bt_addr_t *addr,
 
 	pkt.type = type;
 	pkt.bus = bus;
-	memcpy(pkt.bdaddr, addr, 6);
+	(void)memcpy(pkt.bdaddr, addr, 6);
 	strncpy(pkt.name, name, sizeof(pkt.name) - 1);
 	pkt.name[sizeof(pkt.name) - 1] = '\0';
 

@@ -73,7 +73,7 @@ static void dummy_display_get_capabilities(const struct device *dev,
 	struct dummy_display_data *disp_data =
 		(struct dummy_display_data *)dev->driver_data;
 
-	memset(capabilities, 0, sizeof(struct display_capabilities));
+	(void)memset(capabilities, 0, sizeof(struct display_capabilities));
 	capabilities->x_resolution = CONFIG_DUMMY_DISPLAY_X_RES;
 	capabilities->y_resolution = CONFIG_DUMMY_DISPLAY_Y_RES;
 	capabilities->supported_pixel_formats = PIXEL_FORMAT_ARGB_8888 |

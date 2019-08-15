@@ -74,12 +74,12 @@ static void dns_resolve_cb(enum dns_resolve_status status,
 	}
 
 	ai = &state->ai_arr[state->idx];
-	memcpy(&ai->_ai_addr, &info->ai_addr, info->ai_addrlen);
+	(void)memcpy(&ai->_ai_addr, &info->ai_addr, info->ai_addrlen);
 	net_sin(&ai->_ai_addr)->sin_port = state->port;
 	ai->ai_addr = &ai->_ai_addr;
 	ai->ai_addrlen = info->ai_addrlen;
-	memcpy(&ai->_ai_canonname, &info->ai_canonname,
-	       sizeof(ai->_ai_canonname));
+	(void)memcpy(&ai->_ai_canonname, &info->ai_canonname,
+			sizeof(ai->_ai_canonname));
 	ai->ai_canonname = ai->_ai_canonname;
 	ai->ai_family = info->ai_family;
 

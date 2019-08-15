@@ -87,8 +87,8 @@ void gptp_clk_src_time_invoke(struct gptp_clk_src_time_invoke_params *arg)
 
 	state = &GPTP_STATE()->clk_master_sync_receive;
 
-	memcpy(&state->rcvd_clk_src_req, arg,
-	       sizeof(struct gptp_clk_src_time_invoke_params));
+	(void)memcpy(&state->rcvd_clk_src_req, arg,
+			sizeof(struct gptp_clk_src_time_invoke_params));
 
 	state->rcvd_clock_source_req = true;
 }

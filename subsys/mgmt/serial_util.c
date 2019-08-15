@@ -36,7 +36,7 @@ static int mcumgr_serial_parse_op(const u8_t *buf, int len)
 		return -EINVAL;
 	}
 
-	memcpy(&op, buf, sizeof(op));
+	(void)memcpy(&op, buf, sizeof(op));
 	op = sys_be16_to_cpu(op);
 
 	if (op != MCUMGR_SERIAL_HDR_PKT && op != MCUMGR_SERIAL_HDR_FRAG) {
@@ -219,7 +219,7 @@ int mcumgr_serial_tx_frame(const u8_t *data, bool first, int len,
 	/* Only the first fragment contains the packet length. */
 	if (first) {
 		u16 = sys_cpu_to_be16(len);
-		memcpy(raw, &u16, sizeof(u16));
+		(void)memcpy(raw, &u16, sizeof(u16));
 		raw[2] = data[0];
 
 		rc = mcumgr_serial_tx_small(raw, 3, cb, arg);
@@ -284,7 +284,7 @@ int mcumgr_serial_tx_frame(const u8_t *data, bool first, int len,
 		}
 
 		/* Otherwise, just encode payload data. */
-		memcpy(raw, data + src_off, 3);
+		(void)memcpy(raw, data + src_off, 3);
 		rc = mcumgr_serial_tx_small(raw, 3, cb, arg);
 		if (rc != 0) {
 			return rc;

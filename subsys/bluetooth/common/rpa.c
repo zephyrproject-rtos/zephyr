@@ -36,7 +36,7 @@ static int ah(const u8_t irk[16], const u8_t r[3], u8_t out[3])
 	BT_DBG("irk %s, r %s", bt_hex(irk, 16), bt_hex(r, 3));
 
 	/* r' = padding || r */
-	memcpy(res, r, 3);
+	(void)memcpy(res, r, 3);
 	(void)memset(res + 3, 0, 13);
 
 	err = bt_encrypt_le(irk, res, res);
@@ -50,7 +50,7 @@ static int ah(const u8_t irk[16], const u8_t r[3], u8_t out[3])
 	 * by taking the least significant 24 bits of the output of e as the
 	 * result of ah.
 	 */
-	memcpy(out, res, 3);
+	(void)memcpy(out, res, 3);
 
 	return 0;
 }

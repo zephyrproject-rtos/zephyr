@@ -411,10 +411,10 @@ static int kw41z_set_ieee_addr(struct device *dev, const u8_t *ieee_addr)
 {
 	u32_t val;
 
-	memcpy(&val, ieee_addr, sizeof(val));
+	(void)memcpy(&val, ieee_addr, sizeof(val));
 	ZLL->MACLONGADDRS0_LSB = val;
 
-	memcpy(&val, ieee_addr + sizeof(val), sizeof(val));
+	(void)memcpy(&val, ieee_addr + sizeof(val), sizeof(val));
 	ZLL->MACLONGADDRS0_MSB = val;
 
 	return 0;
@@ -601,12 +601,12 @@ static int kw41z_tx(struct device *dev, struct net_pkt *pkt,
 
 #if CONFIG_SOC_MKW41Z4
 	((u8_t *)ZLL->PKT_BUFFER_TX)[0] = payload_len + KW41Z_FCS_LENGTH;
-	memcpy(((u8_t *)ZLL->PKT_BUFFER_TX) + 1,
-		(void *)frag->data, payload_len);
+	(void)memcpy(((u8_t *)ZLL->PKT_BUFFER_TX) + 1,
+			(void *)frag->data, payload_len);
 #else /* CONFIG_SOC_MKW40Z4 */
 	((u8_t *)ZLL->PKT_BUFFER)[0] = payload_len + KW41Z_FCS_LENGTH;
-	memcpy(((u8_t *)ZLL->PKT_BUFFER) + 1,
-		(void *)frag->data, payload_len);
+	(void)memcpy(((u8_t *)ZLL->PKT_BUFFER) + 1,
+			(void *)frag->data, payload_len);
 #endif
 
 	/* Set CCA mode */

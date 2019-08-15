@@ -78,7 +78,7 @@ bool shell_history_get(struct shell_history *history, bool up,
 	h_item = CONTAINER_OF(l_item, struct shell_history_item, dnode);
 
 	if (l_item) {
-		memcpy(dst, h_item->data, h_item->len);
+		(void)memcpy(dst, h_item->data, h_item->len);
 		*len = h_item->len;
 		dst[*len] = '\0';
 		return true;
@@ -94,7 +94,7 @@ static void add_to_head(struct shell_history *history,
 {
 	item->len = len;
 	item->padding = padding;
-	memcpy(item->data, src, len);
+	(void)memcpy(item->data, src, len);
 	sys_dlist_prepend(&history->list, &item->dnode);
 }
 

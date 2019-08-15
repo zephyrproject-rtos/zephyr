@@ -387,7 +387,7 @@ static int ssd16xx_set_contrast(const struct device *dev, u8_t contrast)
 static void ssd16xx_get_capabilities(const struct device *dev,
 				     struct display_capabilities *caps)
 {
-	memset(caps, 0, sizeof(struct display_capabilities));
+	(void)memset(caps, 0, sizeof(struct display_capabilities));
 	caps->x_resolution = EPD_PANEL_WIDTH;
 	caps->y_resolution = EPD_PANEL_HEIGHT;
 	caps->supported_pixel_formats = PIXEL_FORMAT_MONO10;
@@ -459,7 +459,7 @@ static int ssd16xx_clear_and_write_buffer(struct device *dev)
 
 	gpio_pin_write(driver->dc, SSD16XX_DC_PIN, 1);
 
-	memset(clear_page, 0xff, sizeof(clear_page));
+	(void)memset(clear_page, 0xff, sizeof(clear_page));
 	sbuf.buf = clear_page;
 	sbuf.len = sizeof(clear_page);
 	for (page = 0U; page <= (SSD16XX_PANEL_LAST_PAGE + 1); ++page) {

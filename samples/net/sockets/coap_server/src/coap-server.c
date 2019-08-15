@@ -112,7 +112,7 @@ static int start_coap_server(void)
 	struct sockaddr_in6 addr6;
 	int r;
 
-	memset(&addr6, 0, sizeof(addr6));
+	(void)memset(&addr6, 0, sizeof(addr6));
 	addr6.sin6_family = AF_INET6;
 	addr6.sin6_port = htons(MY_COAP_PORT);
 
@@ -138,7 +138,7 @@ static int start_coap_server(void)
 	struct sockaddr_in addr;
 	int r;
 
-	memset(&addr, 0, sizeof(addr));
+	(void)memset(&addr, 0, sizeof(addr));
 	addr.sin_family = AF_INET;
 	addr.sin_port = htons(MY_COAP_PORT);
 
@@ -487,7 +487,7 @@ static int query_get(struct coap_resource *resource,
 			break;
 		}
 
-		memcpy(str, options[i].value, options[i].len);
+		(void)memcpy(str, options[i].value, options[i].len);
 		str[options[i].len] = '\0';
 
 		LOG_INF("query[%d]: %s", i + 1, str);
@@ -759,7 +759,7 @@ static int large_get(struct coap_resource *resource,
 	size = MIN(coap_block_size_to_bytes(ctx.block_size),
 		   ctx.total_size - ctx.current);
 
-	memset(payload, 'A', MIN(size, sizeof(payload)));
+	(void)memset(payload, 'A', MIN(size, sizeof(payload)));
 
 	r = coap_packet_append_payload(&response, (u8_t *)payload, size);
 	if (r < 0) {
@@ -769,7 +769,7 @@ static int large_get(struct coap_resource *resource,
 	r = coap_next_block(&response, &ctx);
 	if (!r) {
 		/* Will return 0 when it's the last block. */
-		memset(&ctx, 0, sizeof(ctx));
+		(void)memset(&ctx, 0, sizeof(ctx));
 	}
 
 	r = send_coap_reply(&response, addr, addr_len);

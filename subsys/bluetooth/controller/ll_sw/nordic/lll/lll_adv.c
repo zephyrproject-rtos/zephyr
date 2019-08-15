@@ -582,8 +582,8 @@ static void chan_prepare(struct lll_adv *lll)
 		/* Copy the address from the adv packet we will send into the
 		 * scan response.
 		 */
-		memcpy(&scan_pdu->scan_rsp.addr[0],
-		       &pdu->adv_ind.addr[0], BDADDR_SIZE);
+		(void)memcpy(&scan_pdu->scan_rsp.addr[0],
+				&pdu->adv_ind.addr[0], BDADDR_SIZE);
 	}
 #else
 	ARG_UNUSED(scan_pdu);
@@ -713,8 +713,9 @@ static inline int isr_rx_pdu(struct lll_adv *lll,
 		rx->hdr.type = NODE_RX_TYPE_CONNECTION;
 		rx->hdr.handle = 0xffff;
 
-		memcpy(rx->pdu, pdu_rx, (offsetof(struct pdu_adv, connect_ind) +
-					 sizeof(struct pdu_adv_connect_ind)));
+		(void)memcpy(rx->pdu, pdu_rx,
+			      (offsetof(struct pdu_adv, connect_ind) +
+			      sizeof(struct pdu_adv_connect_ind)));
 
 		ftr = &(rx->hdr.rx_ftr);
 		ftr->param = lll;
@@ -789,7 +790,7 @@ static inline int isr_rx_sr_report(struct pdu_adv *pdu_adv_rx,
 	 */
 	pdu_adv = (void *)node_rx->pdu;
 	pdu_len = offsetof(struct pdu_adv, payload) + pdu_adv_rx->len;
-	memcpy(pdu_adv, pdu_adv_rx, pdu_len);
+	(void)memcpy(pdu_adv, pdu_adv_rx, pdu_len);
 
 	node_rx->hdr.rx_ftr.rssi = (rssi_ready) ? (radio_rssi_get() & 0x7f) :
 						  0x7f;

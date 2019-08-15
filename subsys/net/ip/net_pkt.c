@@ -773,7 +773,8 @@ bool net_pkt_compact(struct net_pkt *pkt)
 				copy_len = net_buf_tailroom(frag);
 			}
 
-			memcpy(net_buf_tail(frag), frag->frags->data, copy_len);
+			(void)memcpy(net_buf_tail(frag),
+				      frag->frags->data, copy_len);
 			net_buf_add(frag, copy_len);
 
 			memmove(frag->frags->data,
@@ -1178,7 +1179,7 @@ static struct net_pkt *pkt_alloc(struct k_mem_slab *slab, s32_t timeout)
 		return NULL;
 	}
 
-	memset(pkt, 0, sizeof(struct net_pkt));
+	(void)memset(pkt, 0, sizeof(struct net_pkt));
 
 	pkt->atomic_ref = ATOMIC_INIT(1);
 	pkt->slab = slab;
@@ -1523,11 +1524,11 @@ static int net_pkt_cursor_operate(struct net_pkt *pkt,
 		}
 
 		if (copy) {
-			memcpy(write ? c_op->pos : data,
-			       write ? data : c_op->pos,
-			       len);
+			(void)memcpy(write ? c_op->pos : data,
+					write ? data : c_op->pos,
+					len);
 		} else if (data) {
-			memset(c_op->pos, *(int *)data, len);
+			(void)memset(c_op->pos, *(int *)data, len);
 		}
 
 		if (write && !net_pkt_is_being_overwritten(pkt)) {
@@ -1652,7 +1653,7 @@ int net_pkt_copy(struct net_pkt *pkt_dst,
 			break;
 		}
 
-		memcpy(c_dst->pos, c_src->pos, len);
+		(void)memcpy(c_dst->pos, c_src->pos, len);
 
 		if (!net_pkt_is_being_overwritten(pkt_dst)) {
 			net_buf_add(c_dst->buf, len);
@@ -1721,10 +1722,10 @@ struct net_pkt *net_pkt_clone(struct net_pkt *pkt, s32_t timeout)
 		 * a buffer that we copied because those pointers point
 		 * to start of the fragment which we do not have right now.
 		 */
-		memcpy(&clone_pkt->lladdr_src, &pkt->lladdr_src,
-		       sizeof(clone_pkt->lladdr_src));
-		memcpy(&clone_pkt->lladdr_dst, &pkt->lladdr_dst,
-		       sizeof(clone_pkt->lladdr_dst));
+		(void)memcpy(&clone_pkt->lladdr_src, &pkt->lladdr_src,
+				sizeof(clone_pkt->lladdr_src));
+		(void)memcpy(&clone_pkt->lladdr_dst, &pkt->lladdr_dst,
+				sizeof(clone_pkt->lladdr_dst));
 	}
 
 	clone_pkt_attributes(pkt, clone_pkt);
@@ -1760,10 +1761,10 @@ struct net_pkt *net_pkt_shallow_clone(struct net_pkt *pkt, s32_t timeout)
 		 * a buffer that we copied because those pointers point
 		 * to start of the fragment which we do not have right now.
 		 */
-		memcpy(&clone_pkt->lladdr_src, &pkt->lladdr_src,
-		       sizeof(clone_pkt->lladdr_src));
-		memcpy(&clone_pkt->lladdr_dst, &pkt->lladdr_dst,
-		       sizeof(clone_pkt->lladdr_dst));
+		(void)memcpy(&clone_pkt->lladdr_src, &pkt->lladdr_src,
+				sizeof(clone_pkt->lladdr_src));
+		(void)memcpy(&clone_pkt->lladdr_dst, &pkt->lladdr_dst,
+				sizeof(clone_pkt->lladdr_dst));
 	}
 
 	clone_pkt_attributes(pkt, clone_pkt);

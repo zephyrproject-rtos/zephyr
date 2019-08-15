@@ -327,7 +327,7 @@ static void vnd_hello(struct bt_mesh_model *model,
 	}
 
 	len = MIN(buf->len, HELLO_MAX);
-	memcpy(str, buf->data, len);
+	(void)memcpy(str, buf->data, len);
 	str[len] = '\0';
 
 	board_add_hello(ctx->addr, str);
@@ -353,7 +353,7 @@ static void vnd_baduser(struct bt_mesh_model *model,
 	}
 
 	len = MIN(buf->len, HELLO_MAX);
-	memcpy(str, buf->data, len);
+	(void)memcpy(str, buf->data, len);
 	str[len] = '\0';
 
 	strcat(str, " is misbehaving!");

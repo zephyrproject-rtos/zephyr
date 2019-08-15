@@ -247,7 +247,7 @@ static int ili9340_set_orientation(const struct device *dev,
 static void ili9340_get_capabilities(const struct device *dev,
 				     struct display_capabilities *capabilities)
 {
-	memset(capabilities, 0, sizeof(struct display_capabilities));
+	(void)memset(capabilities, 0, sizeof(struct display_capabilities));
 	capabilities->x_resolution = 320U;
 	capabilities->y_resolution = 240U;
 #ifdef CONFIG_ILI9340_RGB565

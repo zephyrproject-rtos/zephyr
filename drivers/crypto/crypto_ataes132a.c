@@ -273,7 +273,7 @@ int ataes132a_aes_ccm_decrypt(struct device *dev,
 		param_buffer[1] = 0x0;
 		param_buffer[2] = 0x0;
 		param_buffer[3] = 0x0;
-		memcpy(param_buffer + 4,  nonce_buf, 12);
+		(void)memcpy(param_buffer + 4,  nonce_buf, 12);
 
 		return_code = ataes132a_send_command(dev, ATAES_NONCE_OP,
 						     0x0, param_buffer, 16,
@@ -345,9 +345,9 @@ int ataes132a_aes_ccm_decrypt(struct device *dev,
 	param_buffer[1] = key_id;
 	param_buffer[3] = expected_out_len;
 	if (aead_op->tag) {
-		memcpy(param_buffer + 4,  aead_op->tag, 16);
+		(void)memcpy(param_buffer + 4,  aead_op->tag, 16);
 	}
-	memcpy(param_buffer + 20, aead_op->pkt->in_buf, in_buf_len);
+	(void)memcpy(param_buffer + 20, aead_op->pkt->in_buf, in_buf_len);
 
 	return_code = ataes132a_send_command(dev, ATAES_DECRYPT_OP,
 					     command_mode, param_buffer,
@@ -382,7 +382,7 @@ int ataes132a_aes_ccm_decrypt(struct device *dev,
 		return -EINVAL;
 	}
 
-	memcpy(aead_op->pkt->out_buf, param_buffer + 1, out_len - 1);
+	(void)memcpy(aead_op->pkt->out_buf, param_buffer + 1, out_len - 1);
 
 	k_sem_give(&data->device_sem);
 
@@ -464,7 +464,7 @@ int ataes132a_aes_ccm_encrypt(struct device *dev,
 		param_buffer[1] = 0x0;
 		param_buffer[2] = 0x0;
 		param_buffer[3] = 0x0;
-		memcpy(param_buffer + 4,  nonce_buf, 12);
+		(void)memcpy(param_buffer + 4,  nonce_buf, 12);
 
 		return_code = ataes132a_send_command(dev, ATAES_NONCE_OP,
 						     0x0, param_buffer, 16,
@@ -519,7 +519,7 @@ int ataes132a_aes_ccm_encrypt(struct device *dev,
 
 	param_buffer[0] = key_id;
 	param_buffer[1] = buf_len;
-	memcpy(param_buffer + 2, aead_op->pkt->in_buf, buf_len);
+	(void)memcpy(param_buffer + 2, aead_op->pkt->in_buf, buf_len);
 
 	return_code = ataes132a_send_command(dev, ATAES_ENCRYPT_OP,
 					     command_mode, param_buffer,
@@ -547,9 +547,9 @@ int ataes132a_aes_ccm_encrypt(struct device *dev,
 	}
 
 	if (aead_op->tag) {
-		memcpy(aead_op->tag, param_buffer + 1, 16);
+		(void)memcpy(aead_op->tag, param_buffer + 1, 16);
 	}
-	memcpy(aead_op->pkt->out_buf, param_buffer + 17, out_len - 17U);
+	(void)memcpy(aead_op->pkt->out_buf, param_buffer + 17, out_len - 17U);
 
 	if (mac_mode) {
 		if (mac_mode->include_counter) {
@@ -632,7 +632,7 @@ int ataes132a_aes_ecb_block(struct device *dev,
 	param_buffer[0] = 0x0;
 	param_buffer[1] = key_id;
 	param_buffer[2] = 0x0;
-	memcpy(param_buffer + 3, pkt->in_buf, buf_len);
+	(void)memcpy(param_buffer + 3, pkt->in_buf, buf_len);
 	(void)memset(param_buffer + 3 + buf_len, 0x0, 16 - buf_len);
 
 	return_code = ataes132a_send_command(dev, ATAES_LEGACY_OP, 0x00,
@@ -658,7 +658,7 @@ int ataes132a_aes_ecb_block(struct device *dev,
 		return -EIO;
 	}
 
-	memcpy(pkt->out_buf, param_buffer + 1, 16);
+	(void)memcpy(pkt->out_buf, param_buffer + 1, 16);
 
 	k_sem_give(&data->device_sem);
 

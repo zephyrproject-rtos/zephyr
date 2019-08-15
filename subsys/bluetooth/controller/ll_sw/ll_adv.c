@@ -330,8 +330,9 @@ u8_t ll_adv_data_set(u8_t len, u8_t const *const data)
 
 	pdu->tx_addr = prev->tx_addr;
 	pdu->rx_addr = prev->rx_addr;
-	memcpy(&pdu->adv_ind.addr[0], &prev->adv_ind.addr[0], BDADDR_SIZE);
-	memcpy(&pdu->adv_ind.data[0], data, len);
+	(void)memcpy(&pdu->adv_ind.addr[0],
+		      &prev->adv_ind.addr[0], BDADDR_SIZE);
+	(void)memcpy(&pdu->adv_ind.data[0], data, len);
 	pdu->len = BDADDR_SIZE + len;
 
 	/* commit the update so controller picks it. */
@@ -435,8 +436,9 @@ u8_t ll_adv_enable(u8_t enable)
 
 		/* AdvA, fill here at enable */
 		if (h->adv_addr) {
-			memcpy(ptr, ll_addr_get(pdu_adv->tx_addr, NULL),
-			       BDADDR_SIZE);
+			(void)memcpy(ptr,
+					ll_addr_get(pdu_adv->tx_addr, NULL),
+					BDADDR_SIZE);
 		}
 
 		/* TODO: TargetA, fill here at enable */
@@ -464,12 +466,12 @@ u8_t ll_adv_enable(u8_t enable)
 		}
 #endif /* !CONFIG_BT_CTLR_PRIVACY */
 		if (!priv) {
-			memcpy(&pdu_adv->adv_ind.addr[0],
-			       ll_addr_get(pdu_adv->tx_addr, NULL),
-			       BDADDR_SIZE);
-			memcpy(&pdu_scan->scan_rsp.addr[0],
-			       ll_addr_get(pdu_adv->tx_addr, NULL),
-			       BDADDR_SIZE);
+			(void)memcpy(&pdu_adv->adv_ind.addr[0],
+					ll_addr_get(pdu_adv->tx_addr, NULL),
+					BDADDR_SIZE);
+			(void)memcpy(&pdu_scan->scan_rsp.addr[0],
+					ll_addr_get(pdu_adv->tx_addr, NULL),
+					BDADDR_SIZE);
 		}
 	}
 

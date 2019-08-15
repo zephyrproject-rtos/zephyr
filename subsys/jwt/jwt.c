@@ -104,7 +104,7 @@ static void base64_flush(struct jwt_builder *st)
 	}
 
 	st->pending = 0;
-	memset(st->wip, 0, 3);
+	(void)memset(st->wip, 0, 3);
 }
 
 static void base64_addbyte(struct jwt_builder *st, uint8_t byte)
@@ -253,7 +253,7 @@ static int setup_prng(void)
 	for (int i = 0; i < sizeof(entropy); i += sizeof(u32_t)) {
 		u32_t rv = sys_rand32_get();
 
-		memcpy(entropy + i, &rv, sizeof(uint32_t));
+		(void)memcpy(entropy + i, &rv, sizeof(uint32_t));
 	}
 
 	int res = tc_ctr_prng_init(&prng_state,

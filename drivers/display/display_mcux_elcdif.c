@@ -59,15 +59,15 @@ static int mcux_elcdif_write(const struct device *dev, const u16_t x,
 
 	k_sem_take(&data->sem, K_FOREVER);
 
-	memcpy(data->fb[write_idx].data, data->fb[read_idx].data,
-	       data->fb_bytes);
+	(void)memcpy(data->fb[write_idx].data, data->fb[read_idx].data,
+			data->fb_bytes);
 
 	src = buf;
 	dst = data->fb[data->write_idx].data;
 	dst += data->pixel_bytes * (y * config->rgb_mode.panelWidth + x);
 
 	for (h_idx = 0; h_idx < desc->height; h_idx++) {
-		memcpy(dst, src, data->pixel_bytes * desc->width);
+		(void)memcpy(dst, src, data->pixel_bytes * desc->width);
 		src += data->pixel_bytes * desc->pitch;
 		dst += data->pixel_bytes * config->rgb_mode.panelWidth;
 	}
@@ -154,7 +154,7 @@ static void mcux_elcdif_get_capabilities(const struct device *dev,
 {
 	const struct mcux_elcdif_config *config = dev->config->config_info;
 
-	memset(capabilities, 0, sizeof(struct display_capabilities));
+	(void)memset(capabilities, 0, sizeof(struct display_capabilities));
 	capabilities->x_resolution = config->rgb_mode.panelWidth;
 	capabilities->y_resolution = config->rgb_mode.panelHeight;
 	capabilities->supported_pixel_formats = config->pixel_format;
@@ -194,7 +194,7 @@ static int mcux_elcdif_init(struct device *dev)
 			LOG_ERR("Could not allocate frame buffer %d", i);
 			return -ENOMEM;
 		}
-		memset(data->fb[i].data, 0, data->fb_bytes);
+		(void)memset(data->fb[i].data, 0, data->fb_bytes);
 	}
 	rgb_mode.bufferAddr = (uint32_t) data->fb[0].data;
 

@@ -457,7 +457,7 @@ static int prepare_segment(struct net_tcp *tcp,
 		}
 	}
 
-	memset(tcp_hdr, 0, NET_TCPH_LEN);
+	(void)memset(tcp_hdr, 0, NET_TCPH_LEN);
 
 	tcp_hdr->src_port = src_port;
 	tcp_hdr->dst_port = dst_port;
@@ -1602,8 +1602,8 @@ static int tcp_backlog_ack(struct net_pkt *pkt,
 		return -EINVAL;
 	}
 
-	memcpy(&context->remote, &tcp_backlog[r].remote,
-		sizeof(struct sockaddr));
+	(void)memcpy(&context->remote, &tcp_backlog[r].remote,
+			sizeof(struct sockaddr));
 	context->tcp->send_seq = tcp_backlog[r].send_seq + 1;
 	context->tcp->send_ack = tcp_backlog[r].send_ack;
 	context->tcp->send_mss = tcp_backlog[r].send_mss;
@@ -2397,8 +2397,8 @@ NET_CONN_CB(tcp_syn_rcvd)
 
 		new_context->flags |= NET_CONTEXT_REMOTE_ADDR_SET;
 
-		memcpy(&new_context->remote, &remote_addr,
-		       sizeof(remote_addr));
+		(void)memcpy(&new_context->remote, &remote_addr,
+				sizeof(remote_addr));
 
 		ret = net_tcp_register(net_pkt_family(pkt),
 			       &new_context->remote,

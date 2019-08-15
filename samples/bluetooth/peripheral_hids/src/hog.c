@@ -135,7 +135,7 @@ static ssize_t write_ctrl_point(struct bt_conn *conn,
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
 	}
 
-	memcpy(value + offset, buf, len);
+	(void)memcpy(value + offset, buf, len);
 
 	return len;
 }

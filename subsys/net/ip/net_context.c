@@ -402,8 +402,9 @@ static int bind_default(struct net_context *context)
 		}
 
 		addr6.sin6_family = AF_INET6;
-		memcpy(&addr6.sin6_addr, net_ipv6_unspecified_address(),
-		       sizeof(addr6.sin6_addr));
+		(void)memcpy(&addr6.sin6_addr,
+				net_ipv6_unspecified_address(),
+				sizeof(addr6.sin6_addr));
 		addr6.sin6_port =
 			find_available_port(context,
 					    (struct sockaddr *)&addr6);
@@ -917,8 +918,8 @@ int net_context_connect(struct net_context *context,
 			goto unlock;
 		}
 
-		memcpy(&addr6->sin6_addr, &net_sin6(addr)->sin6_addr,
-		       sizeof(struct in6_addr));
+		(void)memcpy(&addr6->sin6_addr, &net_sin6(addr)->sin6_addr,
+				sizeof(struct in6_addr));
 
 		addr6->sin6_port = net_sin6(addr)->sin6_port;
 		addr6->sin6_family = AF_INET6;
@@ -967,8 +968,8 @@ int net_context_connect(struct net_context *context,
 
 		addr4 = (struct sockaddr_in *)&context->remote;
 
-		memcpy(&addr4->sin_addr, &net_sin(addr)->sin_addr,
-		       sizeof(struct in_addr));
+		(void)memcpy(&addr4->sin_addr, &net_sin(addr)->sin_addr,
+				sizeof(struct in_addr));
 
 		addr4->sin_port = net_sin(addr)->sin_port;
 		addr4->sin_family = AF_INET;
@@ -1131,7 +1132,7 @@ static int get_context_proxy(struct net_context *context,
 
 	*len = MIN(context->options.proxy.addrlen, *len);
 
-	memcpy(addr, &context->options.proxy.addr, *len);
+	(void)memcpy(addr, &context->options.proxy.addr, *len);
 
 	return 0;
 #else
@@ -1148,7 +1149,8 @@ int net_context_get_timestamp(struct net_context *context,
 
 	get_context_timepstamp(context, &is_timestamped, NULL);
 	if (is_timestamped) {
-		memcpy(timestamp, net_pkt_timestamp(pkt), sizeof(*timestamp));
+		(void)memcpy(timestamp, net_pkt_timestamp(pkt),
+			      sizeof(*timestamp));
 		return 0;
 	}
 
@@ -2031,7 +2033,7 @@ static int set_context_proxy(struct net_context *context,
 	}
 
 	context->options.proxy.addrlen = len;
-	memcpy(&context->options.proxy.addr, addr, len);
+	(void)memcpy(&context->options.proxy.addr, addr, len);
 
 	return 0;
 #else

@@ -86,7 +86,7 @@ static int mcux_mailbox_ipm_send(struct device *d, int wait, u32_t id,
 	flags = irq_lock();
 
 	/* Actual message is passing using 32 bits registers */
-	memcpy(data32, data, size);
+	(void)memcpy(data32, data, size);
 
 	for (i = 0; i < ARRAY_SIZE(data32); ++i) {
 		MAILBOX_SetValueBits(base, MAILBOX_ID_OTHER_CPU, data32[i]);

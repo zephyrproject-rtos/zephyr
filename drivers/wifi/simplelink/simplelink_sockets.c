@@ -321,9 +321,9 @@ static SlSockAddr_t *translate_z_to_sl_addrs(const struct sockaddr *addr,
 		*sl_addrlen = sizeof(SlSockAddrIn6_t);
 		sl_addr_in6->sin6_family = SL_AF_INET6;
 		sl_addr_in6->sin6_port = z_sockaddr_in6->sin6_port;
-		memcpy(sl_addr_in6->sin6_addr._S6_un._S6_u32,
-		       z_sockaddr_in6->sin6_addr.s6_addr,
-		       sizeof(sl_addr_in6->sin6_addr._S6_un._S6_u32));
+		(void)memcpy(sl_addr_in6->sin6_addr._S6_un._S6_u32,
+				z_sockaddr_in6->sin6_addr.s6_addr,
+				sizeof(sl_addr_in6->sin6_addr._S6_un._S6_u32));
 
 		sl_addr = (SlSockAddr_t *)sl_addr_in6;
 	}
@@ -363,9 +363,9 @@ static void translate_sl_to_z_addr(SlSockAddr_t *sl_addr,
 			z_sockaddr_in6->sin6_port = sl_addr_in6->sin6_port;
 			z_sockaddr_in6->sin6_scope_id =
 				(u8_t)sl_addr_in6->sin6_scope_id;
-			memcpy(z_sockaddr_in6->sin6_addr.s6_addr,
-			       sl_addr_in6->sin6_addr._S6_un._S6_u32,
-			       sizeof(z_sockaddr_in6->sin6_addr.s6_addr));
+			(void)memcpy(z_sockaddr_in6->sin6_addr.s6_addr,
+				    sl_addr_in6->sin6_addr._S6_un._S6_u32,
+				    sizeof(z_sockaddr_in6->sin6_addr.s6_addr));
 			*addrlen = sizeof(struct sockaddr_in6);
 		} else {
 			*addrlen = sl_addrlen;

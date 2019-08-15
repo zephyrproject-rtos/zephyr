@@ -735,28 +735,28 @@ static void eps_ctx_uninit(void)
 		ep_ctx = in_endpoint_ctx(i);
 		__ASSERT_NO_MSG(ep_ctx);
 		k_mem_pool_free(&ep_ctx->buf.block);
-		memset(ep_ctx, 0, sizeof(*ep_ctx));
+		(void)memset(ep_ctx, 0, sizeof(*ep_ctx));
 	}
 
 	for (i = 0U; i < CFG_EPOUT_CNT; i++) {
 		ep_ctx = out_endpoint_ctx(i);
 		__ASSERT_NO_MSG(ep_ctx);
 		k_mem_pool_free(&ep_ctx->buf.block);
-		memset(ep_ctx, 0, sizeof(*ep_ctx));
+		(void)memset(ep_ctx, 0, sizeof(*ep_ctx));
 	}
 
 	if (CFG_EP_ISOIN_CNT) {
 		ep_ctx = in_endpoint_ctx(NRF_USBD_EPIN(8));
 		__ASSERT_NO_MSG(ep_ctx);
 		k_mem_pool_free(&ep_ctx->buf.block);
-		memset(ep_ctx, 0, sizeof(*ep_ctx));
+		(void)memset(ep_ctx, 0, sizeof(*ep_ctx));
 	}
 
 	if (CFG_EP_ISOOUT_CNT) {
 		ep_ctx = out_endpoint_ctx(NRF_USBD_EPOUT(8));
 		__ASSERT_NO_MSG(ep_ctx);
 		k_mem_pool_free(&ep_ctx->buf.block);
-		memset(ep_ctx, 0, sizeof(*ep_ctx));
+		(void)memset(ep_ctx, 0, sizeof(*ep_ctx));
 	}
 }
 
@@ -836,7 +836,7 @@ static inline void usbd_work_process_setup(struct nrf_usbd_ep_ctx *ep_ctx)
 	 * SETUP packet must be reassembled.
 	 */
 	usbd_setup = (struct usb_setup_packet *)ep_ctx->buf.data;
-	memset(usbd_setup, 0, sizeof(struct usb_setup_packet));
+	(void)memset(usbd_setup, 0, sizeof(struct usb_setup_packet));
 	usbd_setup->bmRequestType = nrf_usbd_setup_bmrequesttype_get();
 	usbd_setup->bRequest = nrf_usbd_setup_brequest_get();
 	usbd_setup->wValue = nrf_usbd_setup_wvalue_get();
@@ -1690,7 +1690,7 @@ int usb_dc_ep_write(const u8_t ep, const u8_t *const data,
 		bytes_to_copy = data_len;
 		ep_ctx->write_fragmented = false;
 	}
-	memcpy(ep_ctx->buf.data, data, bytes_to_copy);
+	(void)memcpy(ep_ctx->buf.data, data, bytes_to_copy);
 	ep_ctx->buf.len = bytes_to_copy;
 
 	if (ret_bytes) {
@@ -1763,7 +1763,7 @@ int usb_dc_ep_read_wait(u8_t ep, u8_t *data, u32_t max_data_len,
 		return 0;
 	}
 
-	memcpy(data, ep_ctx->buf.curr, bytes_to_copy);
+	(void)memcpy(data, ep_ctx->buf.curr, bytes_to_copy);
 
 	ep_ctx->buf.curr += bytes_to_copy;
 	ep_ctx->buf.len -= bytes_to_copy;

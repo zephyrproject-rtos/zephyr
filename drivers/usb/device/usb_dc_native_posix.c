@@ -142,7 +142,7 @@ int usb_dc_reset(void)
 	LOG_DBG("");
 
 	/* Clear private data */
-	memset(&usbip_ctrl, 0, sizeof(usbip_ctrl));
+	(void)memset(&usbip_ctrl, 0, sizeof(usbip_ctrl));
 
 	return 0;
 }
@@ -357,7 +357,7 @@ int usb_dc_ep_write(const u8_t ep, const u8_t *const data,
 		u8_t ep_idx = USBIP_EP_ADDR2IDX(ep);
 		struct usb_ep_ctrl_prv *ctrl = &usbip_ctrl.in_ep_ctrl[ep_idx];
 
-		memcpy(ctrl->buf, data, data_len);
+		(void)memcpy(ctrl->buf, data, data_len);
 		ctrl->buf_len = data_len;
 	}
 

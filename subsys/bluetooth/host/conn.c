@@ -411,7 +411,7 @@ struct bt_conn *bt_conn_create_br(const bt_addr_t *peer,
 
 	(void)memset(cp, 0, sizeof(*cp));
 
-	memcpy(&cp->bdaddr, peer, sizeof(cp->bdaddr));
+	(void)memcpy(&cp->bdaddr, peer, sizeof(cp->bdaddr));
 	cp->packet_type = sys_cpu_to_le16(0xcc18); /* DM1 DH1 DM3 DH5 DM5 DH5 */
 	cp->pscan_rep_mode = 0x02; /* R2 */
 	cp->allow_role_switch = param->allow_role_switch ? 0x01 : 0x00;
@@ -843,7 +843,7 @@ static int bt_hci_connect_br_cancel(struct bt_conn *conn)
 	}
 
 	cp = net_buf_add(buf, sizeof(*cp));
-	memcpy(&cp->bdaddr, &conn->br.dst, sizeof(cp->bdaddr));
+	(void)memcpy(&cp->bdaddr, &conn->br.dst, sizeof(cp->bdaddr));
 
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_CONNECT_CANCEL, buf, &rsp);
 	if (err) {
@@ -912,10 +912,10 @@ int bt_conn_le_start_encryption(struct bt_conn *conn, u8_t rand[8],
 
 	cp = net_buf_add(buf, sizeof(*cp));
 	cp->handle = sys_cpu_to_le16(conn->handle);
-	memcpy(&cp->rand, rand, sizeof(cp->rand));
-	memcpy(&cp->ediv, ediv, sizeof(cp->ediv));
+	(void)memcpy(&cp->rand, rand, sizeof(cp->rand));
+	(void)memcpy(&cp->ediv, ediv, sizeof(cp->ediv));
 
-	memcpy(cp->ltk, ltk, len);
+	(void)memcpy(cp->ltk, ltk, len);
 	if (len < sizeof(cp->ltk)) {
 		(void)memset(cp->ltk + len, 0, sizeof(cp->ltk) - len);
 	}
@@ -2223,7 +2223,7 @@ struct bt_conn *bt_conn_create_slave_le(const bt_addr_le_t *peer,
 	struct bt_conn *conn;
 	struct bt_le_adv_param param_int;
 
-	memcpy(&param_int, param, sizeof(param_int));
+	(void)memcpy(&param_int, param, sizeof(param_int));
 	param_int.options |= (BT_LE_ADV_OPT_CONNECTABLE |
 			      BT_LE_ADV_OPT_ONE_TIME);
 

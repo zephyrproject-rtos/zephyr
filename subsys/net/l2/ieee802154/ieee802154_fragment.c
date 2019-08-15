@@ -134,7 +134,7 @@ static inline u8_t copy_data(struct ieee802154_fragment_ctx *ctx,
 
 	move = MIN(move, max);
 
-	memcpy(frame_buf->data + frame_buf->len, ctx->pos, move);
+	(void)memcpy(frame_buf->data + frame_buf->len, ctx->pos, move);
 
 	net_buf_add(frame_buf, move);
 

@@ -166,7 +166,7 @@ static int flash_stm32_read(struct device *dev, off_t offset, void *data,
 		return 0;
 	}
 
-	memcpy(data, (u8_t *) CONFIG_FLASH_BASE_ADDRESS + offset, len);
+	(void)memcpy(data, (u8_t *) CONFIG_FLASH_BASE_ADDRESS + offset, len);
 
 	return 0;
 }

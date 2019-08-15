@@ -320,7 +320,7 @@ static void usb_fix_ascii_sn_string_descriptor(struct usb_sn_descriptor *sn)
 		return;
 	}
 
-	memcpy(sn->bString, runtime_sn, runtime_sn_len);
+	(void)memcpy(sn->bString, runtime_sn, runtime_sn_len);
 }
 
 /*

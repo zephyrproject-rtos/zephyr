@@ -214,7 +214,7 @@ void ll_rl_id_addr_get(u8_t rl_idx, u8_t *id_addr_type, u8_t *id_addr)
 	LL_ASSERT(rl[rl_idx].taken);
 
 	*id_addr_type = rl[rl_idx].id_addr_type;
-	memcpy(id_addr, rl[rl_idx].id_addr.val, BDADDR_SIZE);
+	(void)memcpy(id_addr, rl[rl_idx].id_addr.val, BDADDR_SIZE);
 }
 
 u8_t ll_rl_size_get(void)
@@ -265,10 +265,10 @@ u8_t ll_rl_add(bt_addr_le_t *id_addr, const u8_t pirk[16], const u8_t lirk[16])
 		sys_memcpy_swap(peer_irks[peer_irk_count++], pirk, 16);
 	}
 	if (rl[i].lirk) {
-		memcpy(rl[i].local_irk, lirk, 16);
+		(void)memcpy(rl[i].local_irk, lirk, 16);
 		rl[i].local_rpa = NULL;
 	}
-	memset(rl[i].curr_rpa.val, 0x00, sizeof(rl[i].curr_rpa));
+	(void)memset(rl[i].curr_rpa.val, 0x00, sizeof(rl[i].curr_rpa));
 	rl[i].rpas_ready = 0U;
 	/* Default to Network Privacy */
 	rl[i].dev = 0U;
@@ -303,7 +303,7 @@ u8_t ll_rl_remove(bt_addr_le_t *id_addr)
 			u8_t pi = rl[i].pirk_idx, pj = peer_irk_count - 1;
 
 			if (pj && pi != pj) {
-				memcpy(peer_irks[pi], peer_irks[pj], 16);
+				(void)memcpy(peer_irks[pi], peer_irks[pj], 16);
 				for (k = 0U;
 				     k < CONFIG_BT_CTLR_RL_SIZE;
 				     k++) {
@@ -341,8 +341,8 @@ void ll_rl_crpa_set(u8_t id_addr_type, u8_t *id_addr, u8_t rl_idx, u8_t *crpa)
 		}
 
 		if (rl_idx < ARRAY_SIZE(rl) && rl[rl_idx].taken) {
-			memcpy(rl[rl_idx].curr_rpa.val, crpa,
-			       sizeof(bt_addr_t));
+			(void)memcpy(rl[rl_idx].curr_rpa.val, crpa,
+					sizeof(bt_addr_t));
 		}
 	}
 }
@@ -551,7 +551,7 @@ void ull_filter_adv_pdu_update(struct ll_adv_set *adv, u8_t idx,
 	if (idx < ARRAY_SIZE(rl) && rl[idx].lirk) {
 		LL_ASSERT(rl[idx].rpas_ready);
 		pdu->tx_addr = 1;
-		memcpy(adva, rl[idx].local_rpa->val, BDADDR_SIZE);
+		(void)memcpy(adva, rl[idx].local_rpa->val, BDADDR_SIZE);
 	} else {
 		pdu->tx_addr = adv->own_addr_type & 0x1;
 		ll_addr_get(adv->own_addr_type & 0x1, adva);
@@ -561,12 +561,12 @@ void ull_filter_adv_pdu_update(struct ll_adv_set *adv, u8_t idx,
 	if (pdu->type == PDU_ADV_TYPE_DIRECT_IND) {
 		if (idx < ARRAY_SIZE(rl) && rl[idx].pirk) {
 			pdu->rx_addr = 1;
-			memcpy(&pdu->direct_ind.tgt_addr[0],
-			       rl[idx].peer_rpa.val, BDADDR_SIZE);
+			(void)memcpy(&pdu->direct_ind.tgt_addr[0],
+					rl[idx].peer_rpa.val, BDADDR_SIZE);
 		} else {
 			pdu->rx_addr = adv->id_addr_type;
-			memcpy(&pdu->direct_ind.tgt_addr[0],
-			       adv->id_addr, BDADDR_SIZE);
+			(void)memcpy(&pdu->direct_ind.tgt_addr[0],
+					adv->id_addr, BDADDR_SIZE);
 		}
 	}
 }
@@ -890,8 +890,8 @@ static void rpa_adv_refresh(struct ll_adv_set *adv)
 
 	ull_filter_adv_pdu_update(adv, idx, pdu);
 
-	memcpy(&pdu->adv_ind.data[0], &prev->adv_ind.data[0],
-	       prev->len - BDADDR_SIZE);
+	(void)memcpy(&pdu->adv_ind.data[0], &prev->adv_ind.data[0],
+			prev->len - BDADDR_SIZE);
 	pdu->len = prev->len;
 
 	lll_adv_data_enqueue(&adv->lll, idx);
@@ -988,7 +988,7 @@ static void filter_insert(struct lll_filter *filter, int index, u8_t addr_type,
 {
 	filter->enable_bitmask |= BIT(index);
 	filter->addr_type_bitmask |= ((addr_type & 0x01) << index);
-	memcpy(&filter->bdaddr[index][0], bdaddr, BDADDR_SIZE);
+	(void)memcpy(&filter->bdaddr[index][0], bdaddr, BDADDR_SIZE);
 }
 
 static void filter_clear(struct lll_filter *filter)

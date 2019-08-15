@@ -60,7 +60,7 @@ static int entropy_sam_get_entropy(struct device *dev, u8_t *buffer,
 		value = trng->TRNG_ODATA;
 		to_copy = MIN(length, sizeof(value));
 
-		memcpy(buffer, &value, to_copy);
+		(void)memcpy(buffer, &value, to_copy);
 		buffer += to_copy;
 		length -= to_copy;
 	}

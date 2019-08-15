@@ -856,7 +856,7 @@ static void le_encrypt(struct net_buf *buf, struct net_buf **evt)
 	rp = hci_cmd_complete(evt, sizeof(*rp));
 
 	rp->status = 0x00;
-	memcpy(rp->enc_data, enc_data, 16);
+	(void)memcpy(rp->enc_data, enc_data, 16);
 }
 
 static void le_rand(struct net_buf *buf, struct net_buf **evt)
@@ -1891,7 +1891,7 @@ static void vs_read_build_info(struct net_buf *buf, struct net_buf **evt)
 
 	rp = hci_cmd_complete(evt, sizeof(*rp) + sizeof(build_info));
 	rp->status = 0x00;
-	memcpy(rp->info, build_info, sizeof(build_info));
+	(void)memcpy(rp->info, build_info, sizeof(build_info));
 }
 
 static void vs_read_static_addrs(struct net_buf *buf, struct net_buf **evt)
@@ -2039,7 +2039,8 @@ static void mesh_set_scan_filter(struct net_buf *buf, struct net_buf **evt)
 			goto exit;
 		}
 		f->lengths[i] = cmd->patterns[i].pattern_len;
-		memcpy(f->patterns[i], cmd->patterns[i].pattern, f->lengths[i]);
+		(void)memcpy(f->patterns[i],
+			      cmd->patterns[i].pattern, f->lengths[i]);
 	}
 
 	f->count = cmd->num_patterns;
@@ -2323,7 +2324,7 @@ int hci_acl_handle(struct net_buf *buf, struct net_buf **evt)
 		pdu_data->ll_id = PDU_DATA_LLID_DATA_CONTINUE;
 	}
 	pdu_data->len = len;
-	memcpy(&pdu_data->lldata[0], buf->data, len);
+	(void)memcpy(&pdu_data->lldata[0], buf->data, len);
 
 	if (ll_tx_mem_enqueue(handle, node_tx)) {
 		BT_ERR("Invalid Tx Enqueue");
@@ -2359,8 +2360,8 @@ static inline bool dup_found(struct pdu_adv *adv)
 		}
 
 		/* insert into the duplicate filter */
-		memcpy(&dup_filter[dup_curr].addr.a.val[0],
-		       &adv->adv_ind.addr[0], sizeof(bt_addr_t));
+		(void)memcpy(&dup_filter[dup_curr].addr.a.val[0],
+				&adv->adv_ind.addr[0], sizeof(bt_addr_t));
 		dup_filter[dup_curr].addr.type = adv->tx_addr;
 		dup_filter[dup_curr].mask = BIT(adv->type);
 
@@ -2421,13 +2422,14 @@ static inline void le_dir_adv_report(struct pdu_adv *adv, struct net_buf *buf,
 	if (1) {
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 		dir_info->addr.type = adv->tx_addr;
-		memcpy(&dir_info->addr.a.val[0], &adv->direct_ind.adv_addr[0],
-		       sizeof(bt_addr_t));
+		(void)memcpy(&dir_info->addr.a.val[0],
+				&adv->direct_ind.adv_addr[0],
+				sizeof(bt_addr_t));
 	}
 
 	dir_info->dir_addr.type = 0x1;
-	memcpy(&dir_info->dir_addr.a.val[0],
-	       &adv->direct_ind.tgt_addr[0], sizeof(bt_addr_t));
+	(void)memcpy(&dir_info->dir_addr.a.val[0],
+			&adv->direct_ind.tgt_addr[0], sizeof(bt_addr_t));
 
 	dir_info->rssi = rssi;
 }
@@ -2492,13 +2494,14 @@ static inline void le_mesh_scan_report(struct pdu_adv *adv,
 	mep->num_reports = 1U;
 	sr = (void *)(((u8_t *)mep) + sizeof(*mep));
 	sr->addr.type = adv->tx_addr;
-	memcpy(&sr->addr.a.val[0], &adv->adv_ind.addr[0], sizeof(bt_addr_t));
+	(void)memcpy(&sr->addr.a.val[0],
+		      &adv->adv_ind.addr[0], sizeof(bt_addr_t));
 	sr->chan = chan;
 	sr->rssi = rssi;
 	sys_put_le32(instant, (u8_t *)&sr->instant);
 
 	sr->data_len = data_len;
-	memcpy(&sr->data[0], &adv->adv_ind.data[0], data_len);
+	(void)memcpy(&sr->data[0], &adv->adv_ind.data[0], data_len);
 }
 #endif /* CONFIG_BT_HCI_MESH_EXT */
 
@@ -2613,12 +2616,12 @@ static void le_advertising_report(struct pdu_data *pdu_data,
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 
 		adv_info->addr.type = adv->tx_addr;
-		memcpy(&adv_info->addr.a.val[0], &adv->adv_ind.addr[0],
-		       sizeof(bt_addr_t));
+		(void)memcpy(&adv_info->addr.a.val[0], &adv->adv_ind.addr[0],
+				sizeof(bt_addr_t));
 	}
 
 	adv_info->length = data_len;
-	memcpy(&adv_info->data[0], &adv->adv_ind.data[0], data_len);
+	(void)memcpy(&adv_info->data[0], &adv->adv_ind.data[0], data_len);
 	/* RSSI */
 	prssi = &adv_info->data[0] + data_len;
 	*prssi = rssi;
@@ -2666,7 +2669,7 @@ static void le_adv_ext_report(struct pdu_data *pdu_data,
 			bt_addr_le_t addr;
 
 			addr.type = adv->tx_addr;
-			memcpy(&addr.a.val[0], ptr, sizeof(bt_addr_t));
+			(void)memcpy(&addr.a.val[0], ptr, sizeof(bt_addr_t));
 			ptr += BDADDR_SIZE;
 
 			BT_DBG("AdvA: %s", bt_addr_le_str(&addr));
@@ -2725,8 +2728,8 @@ static void le_scan_req_received(struct pdu_data *pdu_data,
 
 		handle = 0U;
 		addr.type = adv->tx_addr;
-		memcpy(&addr.a.val[0], &adv->scan_req.scan_addr[0],
-		       sizeof(bt_addr_t));
+		(void)memcpy(&addr.a.val[0], &adv->scan_req.scan_addr[0],
+				sizeof(bt_addr_t));
 
 #if defined(CONFIG_BT_LL_SW_SPLIT)
 		/* The Link Layer currently returns RSSI as an absolute value */
@@ -2745,8 +2748,8 @@ static void le_scan_req_received(struct pdu_data *pdu_data,
 	sep = meta_evt(buf, BT_HCI_EVT_LE_SCAN_REQ_RECEIVED, sizeof(*sep));
 	sep->handle = 0U;
 	sep->addr.type = adv->tx_addr;
-	memcpy(&sep->addr.a.val[0], &adv->scan_req.scan_addr[0],
-	       sizeof(bt_addr_t));
+	(void)memcpy(&sep->addr.a.val[0], &adv->scan_req.scan_addr[0],
+			sizeof(bt_addr_t));
 }
 #endif /* CONFIG_BT_CTLR_SCAN_REQ_NOTIFY */
 
@@ -2799,8 +2802,9 @@ static void le_conn_complete(struct pdu_data *pdu_data, u16_t handle,
 		leecc->role = node_rx->role;
 
 		leecc->peer_addr.type = node_rx->peer_addr_type;
-		memcpy(&leecc->peer_addr.a.val[0], &node_rx->peer_addr[0],
-		       BDADDR_SIZE);
+		(void)memcpy(&leecc->peer_addr.a.val[0],
+				&node_rx->peer_addr[0],
+				BDADDR_SIZE);
 
 		/* Note: this could be an RPA set as the random address by
 		 * the Host instead of generated by the controller. That said,
@@ -2808,15 +2812,16 @@ static void le_conn_complete(struct pdu_data *pdu_data, u16_t handle,
 		 */
 		if ((node_rx->own_addr_type) &&
 		    ((node_rx->own_addr[5] & 0xc0) == 0x40)) {
-			memcpy(&leecc->local_rpa.val[0], &node_rx->own_addr[0],
-			       BDADDR_SIZE);
+			(void)memcpy(&leecc->local_rpa.val[0],
+					&node_rx->own_addr[0],
+					BDADDR_SIZE);
 		} else {
 			(void)memset(&leecc->local_rpa.val[0], 0x0,
 				     BDADDR_SIZE);
 		}
 
-		memcpy(&leecc->peer_rpa.val[0], &node_rx->peer_rpa[0],
-		       BDADDR_SIZE);
+		(void)memcpy(&leecc->peer_rpa.val[0], &node_rx->peer_rpa[0],
+				BDADDR_SIZE);
 
 		leecc->interval = sys_cpu_to_le16(node_rx->interval);
 		leecc->latency = sys_cpu_to_le16(node_rx->latency);
@@ -2838,7 +2843,8 @@ static void le_conn_complete(struct pdu_data *pdu_data, u16_t handle,
 	lecc->handle = sys_cpu_to_le16(handle);
 	lecc->role = node_rx->role;
 	lecc->peer_addr.type = node_rx->peer_addr_type;
-	memcpy(&lecc->peer_addr.a.val[0], &node_rx->peer_addr[0], BDADDR_SIZE);
+	(void)memcpy(&lecc->peer_addr.a.val[0],
+		      &node_rx->peer_addr[0], BDADDR_SIZE);
 	lecc->interval = sys_cpu_to_le16(node_rx->interval);
 	lecc->latency = sys_cpu_to_le16(node_rx->latency);
 	lecc->supv_timeout = sys_cpu_to_le16(node_rx->timeout);
@@ -3133,8 +3139,8 @@ static void le_ltk_request(struct pdu_data *pdu_data, u16_t handle,
 	sep = meta_evt(buf, BT_HCI_EVT_LE_LTK_REQUEST, sizeof(*sep));
 
 	sep->handle = sys_cpu_to_le16(handle);
-	memcpy(&sep->rand, pdu_data->llctrl.enc_req.rand, sizeof(u64_t));
-	memcpy(&sep->ediv, pdu_data->llctrl.enc_req.ediv, sizeof(u16_t));
+	(void)memcpy(&sep->rand, pdu_data->llctrl.enc_req.rand, sizeof(u64_t));
+	(void)memcpy(&sep->ediv, pdu_data->llctrl.enc_req.ediv, sizeof(u16_t));
 }
 
 static void encrypt_change(u8_t err, u16_t handle,
@@ -3170,9 +3176,9 @@ static void le_remote_feat_complete(u8_t status, struct pdu_data *pdu_data,
 	sep->status = status;
 	sep->handle = sys_cpu_to_le16(handle);
 	if (!status) {
-		memcpy(&sep->features[0],
-		       &pdu_data->llctrl.feature_rsp.features[0],
-		       sizeof(sep->features));
+		(void)memcpy(&sep->features[0],
+				&pdu_data->llctrl.feature_rsp.features[0],
+				sizeof(sep->features));
 	} else {
 		(void)memset(&sep->features[0], 0x00, sizeof(sep->features));
 	}
@@ -3345,7 +3351,7 @@ void hci_acl_encode(struct node_rx_pdu *node_rx, struct net_buf *buf)
 		acl->handle = sys_cpu_to_le16(handle_flags);
 		acl->len = sys_cpu_to_le16(pdu_data->len);
 		data = (void *)net_buf_add(buf, pdu_data->len);
-		memcpy(data, pdu_data->lldata, pdu_data->len);
+		(void)memcpy(data, pdu_data->lldata, pdu_data->len);
 #if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
 		if (hci_hbuf_total > 0) {
 			LL_ASSERT((hci_hbuf_sent - hci_hbuf_acked) <

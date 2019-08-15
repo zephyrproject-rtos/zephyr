@@ -232,8 +232,9 @@ int dns_resolve_init(struct dns_resolve_context *ctx, const char *servers[],
 
 	if (servers_sa) {
 		for (i = 0; idx < SERVER_COUNT && servers_sa[i]; i++) {
-			memcpy(&ctx->servers[idx].dns_server, servers_sa[i],
-			       sizeof(ctx->servers[idx].dns_server));
+			(void)memcpy(&ctx->servers[idx].dns_server,
+					servers_sa[i],
+					sizeof(ctx->servers[idx].dns_server));
 			dns_postprocess_server(ctx, idx);
 			idx++;
 		}
@@ -448,7 +449,7 @@ static int dns_read(struct dns_resolve_context *ctx,
 
 			src = dns_msg.msg + dns_msg.response_position;
 
-			memcpy(addr, src, address_size);
+			(void)memcpy(addr, src, address_size);
 
 			ctx->queries[query_idx].cb(DNS_EAI_INPROGRESS, &info,
 					ctx->queries[query_idx].user_data);
@@ -756,15 +757,16 @@ int dns_resolve_name(struct dns_resolve_context *ctx,
 		struct dns_addrinfo info = { 0 };
 
 		if (type == DNS_QUERY_TYPE_A) {
-			memcpy(net_sin(&info.ai_addr), net_sin(&addr),
-			       sizeof(struct sockaddr_in));
+			(void)memcpy(net_sin(&info.ai_addr), net_sin(&addr),
+					sizeof(struct sockaddr_in));
 			info.ai_family = AF_INET;
 			info.ai_addr.sa_family = AF_INET;
 			info.ai_addrlen = sizeof(struct sockaddr_in);
 		} else if (type == DNS_QUERY_TYPE_AAAA) {
 #if defined(CONFIG_NET_IPV6)
-			memcpy(net_sin6(&info.ai_addr), net_sin6(&addr),
-			       sizeof(struct sockaddr_in6));
+			(void)memcpy(net_sin6(&info.ai_addr),
+					net_sin6(&addr),
+					sizeof(struct sockaddr_in6));
 			info.ai_family = AF_INET6;
 			info.ai_addr.sa_family = AF_INET6;
 			info.ai_addrlen = sizeof(struct sockaddr_in6);

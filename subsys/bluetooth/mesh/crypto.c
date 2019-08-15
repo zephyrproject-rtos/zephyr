@@ -118,7 +118,7 @@ int bt_mesh_k2(const u8_t n[16], const u8_t *p, size_t p_len,
 		return err;
 	}
 
-	memcpy(enc_key, out, 16);
+	(void)memcpy(enc_key, out, 16);
 
 	pad = 0x03;
 
@@ -127,7 +127,7 @@ int bt_mesh_k2(const u8_t n[16], const u8_t *p, size_t p_len,
 		return err;
 	}
 
-	memcpy(priv_key, out, 16);
+	(void)memcpy(priv_key, out, 16);
 
 	BT_DBG("NID 0x%02x enc_key %s", net_id[0], bt_hex(enc_key, 16));
 	BT_DBG("priv_key %s", bt_hex(priv_key, 16));
@@ -157,7 +157,7 @@ int bt_mesh_k3(const u8_t n[16], u8_t out[8])
 		return err;
 	}
 
-	memcpy(out, tmp + 8, 8);
+	(void)memcpy(out, tmp + 8, 8);
 
 	return 0;
 }
@@ -219,7 +219,7 @@ static int bt_mesh_ccm_decrypt(const u8_t key[16], u8_t nonce[13],
 
 	/* C_mic = e(AppKey, 0x01 || nonce || 0x0000) */
 	pmsg[0] = 0x01;
-	memcpy(pmsg + 1, nonce, 13);
+	(void)memcpy(pmsg + 1, nonce, 13);
 	sys_put_be16(0x0000, pmsg + 14);
 
 	err = bt_encrypt_be(key, pmsg, cmic);
@@ -234,7 +234,7 @@ static int bt_mesh_ccm_decrypt(const u8_t key[16], u8_t nonce[13],
 		pmsg[0] = 0x09 | (aad_len ? 0x40 : 0x00);
 	}
 
-	memcpy(pmsg + 1, nonce, 13);
+	(void)memcpy(pmsg + 1, nonce, 13);
 	sys_put_be16(msg_len, pmsg + 14);
 
 	err = bt_encrypt_be(key, pmsg, Xn);
@@ -291,7 +291,7 @@ static int bt_mesh_ccm_decrypt(const u8_t key[16], u8_t nonce[13],
 		if (j + 1 == blk_cnt) {
 			/* C_1 = e(AppKey, 0x01 || nonce || 0x0001) */
 			pmsg[0] = 0x01;
-			memcpy(pmsg + 1, nonce, 13);
+			(void)memcpy(pmsg + 1, nonce, 13);
 			sys_put_be16(j + 1, pmsg + 14);
 
 			err = bt_encrypt_be(key, pmsg, cmsg);
@@ -304,7 +304,7 @@ static int bt_mesh_ccm_decrypt(const u8_t key[16], u8_t nonce[13],
 				msg[i] = enc_msg[(j * 16) + i] ^ cmsg[i];
 			}
 
-			memcpy(out_msg + (j * 16), msg, last_blk);
+			(void)memcpy(out_msg + (j * 16), msg, last_blk);
 
 			/* X_1 = e(AppKey, X_0 ^ Payload[0-15]) */
 			for (i = 0; i < last_blk; i++) {
@@ -327,7 +327,7 @@ static int bt_mesh_ccm_decrypt(const u8_t key[16], u8_t nonce[13],
 		} else {
 			/* C_1 = e(AppKey, 0x01 || nonce || 0x0001) */
 			pmsg[0] = 0x01;
-			memcpy(pmsg + 1, nonce, 13);
+			(void)memcpy(pmsg + 1, nonce, 13);
 			sys_put_be16(j + 1, pmsg + 14);
 
 			err = bt_encrypt_be(key, pmsg, cmsg);
@@ -340,7 +340,7 @@ static int bt_mesh_ccm_decrypt(const u8_t key[16], u8_t nonce[13],
 				msg[i] = enc_msg[(j * 16) + i] ^ cmsg[i];
 			}
 
-			memcpy(out_msg + (j * 16), msg, 16);
+			(void)memcpy(out_msg + (j * 16), msg, 16);
 
 			/* X_1 = e(AppKey, X_0 ^ Payload[0-15]) */
 			for (i = 0; i < 16; i++) {
@@ -383,7 +383,7 @@ static int bt_mesh_ccm_encrypt(const u8_t key[16], u8_t nonce[13],
 
 	/* C_mic = e(AppKey, 0x01 || nonce || 0x0000) */
 	pmsg[0] = 0x01;
-	memcpy(pmsg + 1, nonce, 13);
+	(void)memcpy(pmsg + 1, nonce, 13);
 	sys_put_be16(0x0000, pmsg + 14);
 
 	err = bt_encrypt_be(key, pmsg, cmic);
@@ -398,7 +398,7 @@ static int bt_mesh_ccm_encrypt(const u8_t key[16], u8_t nonce[13],
 		pmsg[0] = 0x09 | (aad_len ? 0x40 : 0x00);
 	}
 
-	memcpy(pmsg + 1, nonce, 13);
+	(void)memcpy(pmsg + 1, nonce, 13);
 	sys_put_be16(msg_len, pmsg + 14);
 
 	err = bt_encrypt_be(key, pmsg, Xn);
@@ -473,7 +473,7 @@ static int bt_mesh_ccm_encrypt(const u8_t key[16], u8_t nonce[13],
 
 			/* C_1 = e(AppKey, 0x01 || nonce || 0x0001) */
 			pmsg[0] = 0x01;
-			memcpy(pmsg + 1, nonce, 13);
+			(void)memcpy(pmsg + 1, nonce, 13);
 			sys_put_be16(j + 1, pmsg + 14);
 
 			err = bt_encrypt_be(key, pmsg, cmsg);
@@ -499,7 +499,7 @@ static int bt_mesh_ccm_encrypt(const u8_t key[16], u8_t nonce[13],
 
 			/* C_1 = e(AppKey, 0x01 || nonce || 0x0001) */
 			pmsg[0] = 0x01;
-			memcpy(pmsg + 1, nonce, 13);
+			(void)memcpy(pmsg + 1, nonce, 13);
 			sys_put_be16(j + 1, pmsg + 14);
 
 			err = bt_encrypt_be(key, pmsg, cmsg);
@@ -516,7 +516,7 @@ static int bt_mesh_ccm_encrypt(const u8_t key[16], u8_t nonce[13],
 		}
 	}
 
-	memcpy(out_msg + msg_len, mic, mic_size);
+	(void)memcpy(out_msg + msg_len, mic, mic_size);
 
 	return 0;
 }
@@ -585,7 +585,7 @@ int bt_mesh_net_obfuscate(u8_t *pdu, u32_t iv_index,
 	BT_DBG("IVIndex %u, PrivacyKey %s", iv_index, bt_hex(privacy_key, 16));
 
 	sys_put_be32(iv_index, &priv_rand[5]);
-	memcpy(&priv_rand[9], &pdu[7], 7);
+	(void)memcpy(&priv_rand[9], &pdu[7], 7);
 
 	BT_DBG("PrivacyRandom %s", bt_hex(priv_rand, 16));
 
@@ -862,14 +862,14 @@ int bt_mesh_beacon_auth(const u8_t beacon_key[16], u8_t flags,
 	BT_DBG("IV Index 0x%08x", iv_index);
 
 	msg[0] = flags;
-	memcpy(&msg[1], net_id, 8);
+	(void)memcpy(&msg[1], net_id, 8);
 	sys_put_be32(iv_index, &msg[9]);
 
 	BT_DBG("BeaconMsg %s", bt_hex(msg, sizeof(msg)));
 
 	err = bt_mesh_aes_cmac_one(beacon_key, msg, sizeof(msg), tmp);
 	if (!err) {
-		memcpy(auth, tmp, 8);
+		(void)memcpy(auth, tmp, 8);
 	}
 
 	return err;

@@ -233,7 +233,7 @@ ssize_t zcan_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
 	}
 
 	if (dest_addr == NULL) {
-		memset(&can_addr, 0, sizeof(can_addr));
+		(void)memset(&can_addr, 0, sizeof(can_addr));
 
 		can_addr.can_ifindex = -1;
 		can_addr.can_family = AF_CAN;

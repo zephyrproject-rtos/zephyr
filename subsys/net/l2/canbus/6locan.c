@@ -919,16 +919,16 @@ static inline int canbus_send_ff(struct net_pkt *pkt, size_t len, bool mcast,
 
 	if (!mcast && canbus_dest_is_translator(pkt)) {
 		lladdr_inline = net_pkt_lladdr_dst(pkt);
-		memcpy(&frame.data[index], lladdr_inline->addr,
-		       lladdr_inline->len);
+		(void)memcpy(&frame.data[index], lladdr_inline->addr,
+				lladdr_inline->len);
 		index += lladdr_inline->len;
 	}
 
 	if (IS_ENABLED(CONFIG_NET_L2_CANBUS_ETH_TRANSLATOR) &&
 	    net_pkt_lladdr_src(pkt)->type == NET_LINK_ETHERNET) {
 		lladdr_inline = net_pkt_lladdr_src(pkt);
-		memcpy(&frame.data[index], lladdr_inline->addr,
-		       lladdr_inline->len);
+		(void)memcpy(&frame.data[index], lladdr_inline->addr,
+				lladdr_inline->len);
 		index += lladdr_inline->len;
 	}
 
@@ -965,7 +965,8 @@ static inline int canbus_send_single_frame(struct net_pkt *pkt, size_t len,
 
 	if (!mcast && canbus_dest_is_translator(pkt)) {
 		lladdr_dest = net_pkt_lladdr_dst(pkt);
-		memcpy(&frame.data[index], lladdr_dest->addr, lladdr_dest->len);
+		(void)memcpy(&frame.data[index],
+			      lladdr_dest->addr, lladdr_dest->len);
 		index += lladdr_dest->len;
 	}
 
@@ -1326,8 +1327,8 @@ static void extend_llao(struct net_pkt *pkt, struct net_linkaddr *mac_addr)
 		goto done;
 	}
 
-	memcpy(llao_backup, llao, sizeof(struct net_canbus_lladdr));
-	memcpy(llao, mac_addr->addr, mac_addr->len);
+	(void)memcpy(llao_backup, llao, sizeof(struct net_canbus_lladdr));
+	(void)memcpy(llao, mac_addr->addr, mac_addr->len);
 
 	llao[4] = (llao[4] & 0xC0) | llao_backup[0];
 	llao[5] = llao_backup[1];
@@ -1387,8 +1388,8 @@ static void can_to_eth_lladdr(struct net_pkt *pkt, struct net_if *eth_iface,
 
 	lladdr_src->addr = net_pkt_lladdr_src(pkt)->addr -
 			   (sizeof(struct net_eth_addr) - lladdr_src->len);
-	memcpy(lladdr_src->addr, net_if_get_link_addr(eth_iface)->addr,
-	       sizeof(struct net_eth_addr));
+	(void)memcpy(lladdr_src->addr, net_if_get_link_addr(eth_iface)->addr,
+			sizeof(struct net_eth_addr));
 	lladdr_src->addr[4] = (lladdr_src->addr[4] & 0xC0) | (src_can_addr >> 8U);
 	lladdr_src->addr[5] = src_can_addr & 0xFF;
 	lladdr_src->len = sizeof(struct net_eth_addr);

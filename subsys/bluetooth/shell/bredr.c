@@ -131,9 +131,9 @@ static void br_device_found(const bt_addr_t *addr, s8_t rssi,
 		case BT_DATA_NAME_SHORTENED:
 		case BT_DATA_NAME_COMPLETE:
 			if (eir[0] > sizeof(name) - 1) {
-				memcpy(name, &eir[2], sizeof(name) - 1);
+				(void)memcpy(name, &eir[2], sizeof(name) - 1);
 			} else {
-				memcpy(name, &eir[2], eir[0] - 1);
+				(void)memcpy(name, &eir[2], eir[0] - 1);
 			}
 			break;
 		default:

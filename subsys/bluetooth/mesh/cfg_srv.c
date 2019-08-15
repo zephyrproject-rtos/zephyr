@@ -421,7 +421,7 @@ static u8_t app_key_set(u16_t net_idx, u16_t app_idx, const u8_t val[16],
 
 	key->net_idx = net_idx;
 	key->app_idx = app_idx;
-	memcpy(keys->val, val, 16);
+	(void)memcpy(keys->val, val, 16);
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
 		BT_DBG("Storing AppKey persistently");
@@ -981,9 +981,9 @@ static void send_mod_pub_status(struct bt_mesh_model *cfg_mod,
 	}
 
 	if (vnd) {
-		memcpy(net_buf_simple_add(&msg, 4), mod_id, 4);
+		(void)memcpy(net_buf_simple_add(&msg, 4), mod_id, 4);
 	} else {
-		memcpy(net_buf_simple_add(&msg, 2), mod_id, 2);
+		(void)memcpy(net_buf_simple_add(&msg, 2), mod_id, 2);
 	}
 
 	if (bt_mesh_model_send(cfg_mod, ctx, &msg, NULL, NULL)) {
@@ -1129,7 +1129,7 @@ static u8_t va_add(u8_t *label_uuid, u16_t *addr)
 
 	free_slot->ref = 1U;
 	free_slot->addr = *addr;
-	memcpy(free_slot->uuid, label_uuid, 16);
+	(void)memcpy(free_slot->uuid, label_uuid, 16);
 
 	return STATUS_SUCCESS;
 }
@@ -1337,9 +1337,9 @@ static void send_mod_sub_status(struct bt_mesh_model *model,
 	net_buf_simple_add_le16(&msg, sub_addr);
 
 	if (vnd) {
-		memcpy(net_buf_simple_add(&msg, 4), mod_id, 4);
+		(void)memcpy(net_buf_simple_add(&msg, 4), mod_id, 4);
 	} else {
-		memcpy(net_buf_simple_add(&msg, 2), mod_id, 2);
+		(void)memcpy(net_buf_simple_add(&msg, 2), mod_id, 2);
 	}
 
 	if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
@@ -2418,9 +2418,9 @@ static void create_mod_app_status(struct net_buf_simple *msg,
 	net_buf_simple_add_le16(msg, app_idx);
 
 	if (vnd) {
-		memcpy(net_buf_simple_add(msg, 4), mod_id, 4);
+		(void)memcpy(net_buf_simple_add(msg, 4), mod_id, 4);
 	} else {
-		memcpy(net_buf_simple_add(msg, 2), mod_id, 2);
+		(void)memcpy(net_buf_simple_add(msg, 2), mod_id, 2);
 	}
 }
 
@@ -2896,8 +2896,9 @@ static void hb_pub_send_status(struct bt_mesh_model *model,
 	net_buf_simple_add_u8(&msg, status);
 
 	if (orig_msg) {
-		memcpy(net_buf_simple_add(&msg, sizeof(*orig_msg)), orig_msg,
-		       sizeof(*orig_msg));
+		(void)memcpy(net_buf_simple_add(&msg, sizeof(*orig_msg)),
+				orig_msg,
+				sizeof(*orig_msg));
 		goto send;
 	}
 

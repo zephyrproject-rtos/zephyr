@@ -316,8 +316,8 @@ u8_t ll_chm_get(u16_t handle, u8_t *chm)
 	 */
 	do {
 		conn->chm_updated = 0U;
-		memcpy(chm, conn->lll.data_chan_map,
-		       sizeof(conn->lll.data_chan_map));
+		(void)memcpy(chm, conn->lll.data_chan_map,
+				sizeof(conn->lll.data_chan_map));
 	} while (conn->chm_updated);
 
 	return 0;
@@ -594,14 +594,14 @@ int ull_conn_reset(void)
 
 u8_t ull_conn_chan_map_cpy(u8_t *chan_map)
 {
-	memcpy(chan_map, data_chan_map, sizeof(data_chan_map));
+	(void)memcpy(chan_map, data_chan_map, sizeof(data_chan_map));
 
 	return data_chan_count;
 }
 
 void ull_conn_chan_map_set(u8_t *chan_map)
 {
-	memcpy(data_chan_map, chan_map, sizeof(data_chan_map));
+	(void)memcpy(data_chan_map, chan_map, sizeof(data_chan_map));
 	data_chan_count = util_ones_count_get(data_chan_map,
 					      sizeof(data_chan_map));
 }
@@ -2075,9 +2075,9 @@ static inline void event_ch_map_prep(struct ll_conn *conn,
 				sizeof(struct pdu_data_llctrl_chan_map_ind);
 			pdu_ctrl_tx->llctrl.opcode =
 				PDU_DATA_LLCTRL_TYPE_CHAN_MAP_IND;
-			memcpy(&pdu_ctrl_tx->llctrl.chan_map_ind.chm[0],
-			       &conn->llcp.chan_map.chm[0],
-			       sizeof(pdu_ctrl_tx->llctrl.chan_map_ind.chm));
+			(void)memcpy(&pdu_ctrl_tx->llctrl.chan_map_ind.chm[0],
+				  &conn->llcp.chan_map.chm[0],
+				  sizeof(pdu_ctrl_tx->llctrl.chan_map_ind.chm));
 			pdu_ctrl_tx->llctrl.chan_map_ind.instant =
 				sys_cpu_to_le16(conn->llcp.chan_map.instant);
 
@@ -2091,9 +2091,9 @@ static inline void event_ch_map_prep(struct ll_conn *conn,
 		conn->llcp_ack = conn->llcp_req;
 
 		/* copy to active channel map */
-		memcpy(&lll->data_chan_map[0],
-		       &conn->llcp.chan_map.chm[0],
-		       sizeof(lll->data_chan_map));
+		(void)memcpy(&lll->data_chan_map[0],
+				&conn->llcp.chan_map.chm[0],
+				sizeof(lll->data_chan_map));
 		lll->data_chan_count =
 			util_ones_count_get(&lll->data_chan_map[0],
 					    sizeof(lll->data_chan_map));
@@ -3171,8 +3171,9 @@ static u8_t chan_map_upd_recv(struct ll_conn *conn, struct node_rx_pdu *rx,
 	}
 
 
-	memcpy(&conn->llcp.chan_map.chm[0], &pdu->llctrl.chan_map_ind.chm[0],
-	       sizeof(conn->llcp.chan_map.chm));
+	(void)memcpy(&conn->llcp.chan_map.chm[0],
+			&pdu->llctrl.chan_map_ind.chm[0],
+			sizeof(conn->llcp.chan_map.chm));
 	conn->llcp.chan_map.instant = instant;
 	conn->llcp.chan_map.initiate = 0U;
 
@@ -3227,8 +3228,9 @@ static void enc_req_reused_send(struct ll_conn *conn, struct node_tx **tx)
 	pdu_ctrl_tx->len = offsetof(struct pdu_data_llctrl, enc_req) +
 			   sizeof(struct pdu_data_llctrl_enc_req);
 	pdu_ctrl_tx->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_ENC_REQ;
-	memcpy(&pdu_ctrl_tx->llctrl.enc_req.rand[0], &conn->llcp_enc.rand[0],
-	       sizeof(pdu_ctrl_tx->llctrl.enc_req.rand));
+	(void)memcpy(&pdu_ctrl_tx->llctrl.enc_req.rand[0],
+			&conn->llcp_enc.rand[0],
+			sizeof(pdu_ctrl_tx->llctrl.enc_req.rand));
 	pdu_ctrl_tx->llctrl.enc_req.ediv[0] = conn->llcp_enc.ediv[0];
 	pdu_ctrl_tx->llctrl.enc_req.ediv[1] = conn->llcp_enc.ediv[1];
 
@@ -3284,10 +3286,10 @@ static int enc_rsp_send(struct ll_conn *conn)
 				sizeof(pdu_ctrl_tx->llctrl.enc_rsp.ivs), 0);
 
 	/* things from slave stored for session key calculation */
-	memcpy(&conn->llcp.encryption.skd[8],
-	       &pdu_ctrl_tx->llctrl.enc_rsp.skds[0], 8);
-	memcpy(&conn->lll.ccm_rx.iv[4],
-	       &pdu_ctrl_tx->llctrl.enc_rsp.ivs[0], 4);
+	(void)memcpy(&conn->llcp.encryption.skd[8],
+			&pdu_ctrl_tx->llctrl.enc_rsp.skds[0], 8);
+	(void)memcpy(&conn->lll.ccm_rx.iv[4],
+			&pdu_ctrl_tx->llctrl.enc_rsp.ivs[0], 4);
 
 	ctrl_tx_enqueue(conn, tx);
 
@@ -4251,10 +4253,10 @@ static inline void ctrl_tx_ack(struct ll_conn *conn, struct node_tx **tx,
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 	case PDU_DATA_LLCTRL_TYPE_ENC_REQ:
 		/* things from master stored for session key calculation */
-		memcpy(&conn->llcp.encryption.skd[0],
-		       &pdu_tx->llctrl.enc_req.skdm[0], 8);
-		memcpy(&conn->lll.ccm_rx.iv[0],
-		       &pdu_tx->llctrl.enc_req.ivm[0], 4);
+		(void)memcpy(&conn->llcp.encryption.skd[0],
+				&pdu_tx->llctrl.enc_req.skdm[0], 8);
+		(void)memcpy(&conn->lll.ccm_rx.iv[0],
+				&pdu_tx->llctrl.enc_req.ivm[0], 4);
 
 		/* pause data packet tx */
 		conn->llcp_enc.pause_tx = 1U;
@@ -4520,10 +4522,10 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 #endif /* CONFIG_BT_CTLR_FAST_ENC */
 
 		/* things from master stored for session key calculation */
-		memcpy(&conn->llcp.encryption.skd[0],
-		       &pdu_rx->llctrl.enc_req.skdm[0], 8);
-		memcpy(&conn->lll.ccm_rx.iv[0],
-		       &pdu_rx->llctrl.enc_req.ivm[0], 4);
+		(void)memcpy(&conn->llcp.encryption.skd[0],
+				&pdu_rx->llctrl.enc_req.skdm[0], 8);
+		(void)memcpy(&conn->lll.ccm_rx.iv[0],
+				&pdu_rx->llctrl.enc_req.ivm[0], 4);
 
 		/* pause rx data packets */
 		conn->llcp_enc.pause_rx = 1U;
@@ -4542,10 +4544,10 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 		}
 
 		/* things sent by slave stored for session key calculation */
-		memcpy(&conn->llcp.encryption.skd[8],
-		       &pdu_rx->llctrl.enc_rsp.skds[0], 8);
-		memcpy(&conn->lll.ccm_rx.iv[4],
-		       &pdu_rx->llctrl.enc_rsp.ivs[0], 4);
+		(void)memcpy(&conn->llcp.encryption.skd[8],
+				&pdu_rx->llctrl.enc_rsp.skds[0], 8);
+		(void)memcpy(&conn->lll.ccm_rx.iv[4],
+				&pdu_rx->llctrl.enc_rsp.ivs[0], 4);
 
 		/* pause rx data packets */
 		conn->llcp_enc.pause_rx = 1U;
@@ -5379,8 +5381,9 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 				break;
 			}
 
-			memcpy(&conn->llcp.chan_map.chm[0], data_chan_map,
-			       sizeof(conn->llcp.chan_map.chm));
+			(void)memcpy(&conn->llcp.chan_map.chm[0],
+					data_chan_map,
+					sizeof(conn->llcp.chan_map.chm));
 			/* conn->llcp.chan_map.instant     = 0; */
 			conn->llcp.chan_map.initiate = 1U;
 

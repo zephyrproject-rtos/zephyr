@@ -227,8 +227,8 @@ int cdc_acm_class_handle_req(struct usb_setup_packet *pSetup,
 
 	switch (pSetup->bRequest) {
 	case SET_LINE_CODING:
-		memcpy(&dev_data->line_coding,
-		       *data, sizeof(dev_data->line_coding));
+		(void)memcpy(&dev_data->line_coding,
+				*data, sizeof(dev_data->line_coding));
 		LOG_DBG("CDC_SET_LINE_CODING %d %d %d %d",
 			sys_le32_to_cpu(dev_data->line_coding.dwDTERate),
 			dev_data->line_coding.bCharFormat,
@@ -375,7 +375,7 @@ static void cdc_acm_reset_port(struct cdc_acm_dev_data_t *dev_data)
 				CDC_ACM_DEFAULT_BAUDRATE;
 	dev_data->serial_state = 0;
 	dev_data->line_state = 0;
-	memset(&dev_data->rx_buf, 0, CDC_ACM_BUFFER_SIZE);
+	(void)memset(&dev_data->rx_buf, 0, CDC_ACM_BUFFER_SIZE);
 }
 
 static void cdc_acm_do_cb(struct cdc_acm_dev_data_t *dev_data,

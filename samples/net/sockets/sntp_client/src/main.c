@@ -25,7 +25,7 @@ void main(void)
 	int rv;
 
 	/* ipv4 */
-	memset(&addr, 0, sizeof(addr));
+	(void)memset(&addr, 0, sizeof(addr));
 	addr.sin_family = AF_INET;
 	addr.sin_port = htons(SNTP_PORT);
 	inet_pton(AF_INET, SERVER_ADDR, &addr.sin_addr);
@@ -52,7 +52,7 @@ void main(void)
 	sntp_close(&ctx);
 
 	/* ipv6 */
-	memset(&addr6, 0, sizeof(addr6));
+	(void)memset(&addr6, 0, sizeof(addr6));
 	addr6.sin6_family = AF_INET6;
 	addr6.sin6_port = htons(SNTP_PORT);
 	inet_pton(AF_INET6, SERVER_ADDR6, &addr6.sin6_addr);

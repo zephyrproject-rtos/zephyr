@@ -66,7 +66,7 @@ static int cursor_position_get(const struct shell *shell, u16_t *x, u16_t *y)
 	*x = 0U;
 	*y = 0U;
 
-	memset(shell->ctx->temp_buff, 0, sizeof(shell->ctx->temp_buff));
+	(void)memset(shell->ctx->temp_buff, 0, sizeof(shell->ctx->temp_buff));
 
 	/* escape code asking terminal about its size */
 	static char const cmd_get_terminal_size[] = "\033[6n";

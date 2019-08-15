@@ -246,7 +246,7 @@ static void data_insert(const struct shell *shell, const char *data, u16_t len)
 	}
 
 	memmove(curr_pos + len, curr_pos, after);
-	memcpy(curr_pos, data, len);
+	(void)memcpy(curr_pos, data, len);
 	shell->ctx->cmd_buff_len += len;
 	shell->ctx->cmd_buff[shell->ctx->cmd_buff_len] = '\0';
 

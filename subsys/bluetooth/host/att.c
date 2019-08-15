@@ -497,8 +497,9 @@ static u8_t find_info_cb(const struct bt_gatt_attr *attr, void *user_data)
 		/* Fast forward to next item position */
 		data->info128 = net_buf_add(data->buf, sizeof(*data->info128));
 		data->info128->handle = sys_cpu_to_le16(attr->handle);
-		memcpy(data->info128->uuid, BT_UUID_128(attr->uuid)->val,
-		       sizeof(data->info128->uuid));
+		(void)memcpy(data->info128->uuid,
+				BT_UUID_128(attr->uuid)->val,
+				sizeof(data->info128->uuid));
 
 		if (att->chan.tx.mtu - data->buf->len >
 		    sizeof(*data->info128)) {
@@ -1450,7 +1451,7 @@ static u8_t att_prep_write_rsp(struct bt_att *att, u16_t handle, u16_t offset,
 	rsp->handle = sys_cpu_to_le16(handle);
 	rsp->offset = sys_cpu_to_le16(offset);
 	net_buf_add(data.buf, len);
-	memcpy(rsp->value, value, len);
+	(void)memcpy(rsp->value, value, len);
 
 	bt_l2cap_send_cb(conn, BT_L2CAP_CID_ATT, data.buf, att_rsp_sent, NULL);
 

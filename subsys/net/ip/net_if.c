@@ -600,8 +600,8 @@ static struct net_if_router *iface_router_add(struct net_if *iface,
 		}
 
 		if (IS_ENABLED(CONFIG_NET_IPV6) && family == AF_INET6) {
-			memcpy(net_if_router_ipv6(&routers[i]), addr,
-			       sizeof(struct in6_addr));
+			(void)memcpy(net_if_router_ipv6(&routers[i]), addr,
+					sizeof(struct in6_addr));
 			net_mgmt_event_notify_with_info(
 					NET_EVENT_IPV6_ROUTER_ADD, iface,
 					&routers[i].address.in6_addr,
@@ -613,8 +613,8 @@ static struct net_if_router *iface_router_add(struct net_if *iface,
 						   (struct in6_addr *)addr)),
 				lifetime, routers[i].is_default);
 		} else if (IS_ENABLED(CONFIG_NET_IPV4) && family == AF_INET) {
-			memcpy(net_if_router_ipv4(&routers[i]), addr,
-			       sizeof(struct in_addr));
+			(void)memcpy(net_if_router_ipv4(&routers[i]), addr,
+					sizeof(struct in_addr));
 			routers[i].is_default = is_default;
 
 			net_mgmt_event_notify_with_info(
@@ -1563,7 +1563,7 @@ struct net_if_mcast_addr *net_if_ipv6_maddr_add(struct net_if *iface,
 
 		ipv6->mcast[i].is_used = true;
 		ipv6->mcast[i].address.family = AF_INET6;
-		memcpy(&ipv6->mcast[i].address.in6_addr, addr, 16);
+		(void)memcpy(&ipv6->mcast[i].address.in6_addr, addr, 16);
 
 		NET_DBG("[%d] interface %p address %s added", i, iface,
 			log_strdup(net_sprint_ipv6_addr(addr)));

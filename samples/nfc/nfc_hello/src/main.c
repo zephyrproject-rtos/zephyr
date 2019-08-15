@@ -60,7 +60,7 @@ void main(void)
 	UNALIGNED_PUT(sys_cpu_to_be32(sizeof(nci_reset)), size);
 
 	/* NFC Controller Interface reset cmd */
-	memcpy(tx_buf + sizeof(u32_t), nci_reset, sizeof(nci_reset));
+	(void)memcpy(tx_buf + sizeof(u32_t), nci_reset, sizeof(nci_reset));
 
 	/*
 	 * Peer will receive: 0x00 0x00 0x00 0x04 0x20 0x00 0x01 0x00

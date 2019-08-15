@@ -92,7 +92,7 @@ static ssize_t write_name(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	}
 
-	memcpy(value, buf, len);
+	(void)memcpy(value, buf, len);
 
 	bt_set_name(value);
 
@@ -235,7 +235,7 @@ static ssize_t cf_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 
 	cfg = find_cf_cfg(conn);
 	if (cfg) {
-		memcpy(data, cfg->data, sizeof(data));
+		(void)memcpy(data, cfg->data, sizeof(data));
 	}
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, data,
@@ -468,7 +468,7 @@ static ssize_t db_hash_read(struct bt_conn *conn,
 static void clear_cf_cfg(struct gatt_cf_cfg *cfg)
 {
 	bt_addr_le_copy(&cfg->peer, BT_ADDR_LE_ANY);
-	memset(cfg->data, 0, sizeof(cfg->data));
+	(void)memset(cfg->data, 0, sizeof(cfg->data));
 	atomic_set(cfg->flags, 0);
 }
 
@@ -894,7 +894,7 @@ ssize_t bt_gatt_attr_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	BT_DBG("handle 0x%04x offset %u length %u", attr->handle, offset,
 	       len);
 
-	memcpy(buf, (u8_t *)value + offset, len);
+	(void)memcpy(buf, (u8_t *)value + offset, len);
 
 	return len;
 }
@@ -1034,7 +1034,7 @@ ssize_t bt_gatt_attr_read_chrc(struct bt_conn *conn,
 		pdu.uuid16 = sys_cpu_to_le16(BT_UUID_16(chrc->uuid)->val);
 		value_len += 2U;
 	} else {
-		memcpy(pdu.uuid, BT_UUID_128(chrc->uuid)->val, 16);
+		(void)memcpy(pdu.uuid, BT_UUID_128(chrc->uuid)->val, 16);
 		value_len += 16U;
 	}
 
@@ -1105,8 +1105,8 @@ void bt_gatt_foreach_attr_type(u16_t start_handle, u16_t end_handle,
 			for (i = 0; i < static_svc->attr_count; i++, handle++) {
 				struct bt_gatt_attr attr;
 
-				memcpy(&attr, &static_svc->attrs[i],
-				       sizeof(attr));
+				(void)memcpy(&attr, &static_svc->attrs[i],
+						sizeof(attr));
 
 				attr.handle = handle;
 
@@ -1169,7 +1169,7 @@ static void clear_ccc_cfg(struct bt_gatt_ccc_cfg *cfg)
 	bt_addr_le_copy(&cfg->peer, BT_ADDR_LE_ANY);
 	cfg->id = 0U;
 	cfg->value = 0U;
-	memset(cfg->data, 0, sizeof(cfg->data));
+	(void)memset(cfg->data, 0, sizeof(cfg->data));
 }
 
 static struct bt_gatt_ccc_cfg *find_ccc_cfg(const struct bt_conn *conn,
@@ -1378,7 +1378,7 @@ static int gatt_notify(struct bt_conn *conn, u16_t handle,
 	nfy->handle = sys_cpu_to_le16(handle);
 
 	net_buf_add(buf, params->len);
-	memcpy(nfy->value, params->data, params->len);
+	(void)memcpy(nfy->value, params->data, params->len);
 
 	return bt_att_send(conn, buf, params->func, params->user_data);
 }
@@ -1448,7 +1448,7 @@ static int gatt_indicate(struct bt_conn *conn, u16_t handle,
 	ind->handle = sys_cpu_to_le16(handle);
 
 	net_buf_add(buf, params->len);
-	memcpy(ind->value, params->data, params->len);
+	(void)memcpy(ind->value, params->data, params->len);
 
 	return gatt_send(conn, buf, gatt_indicate_rsp, params, NULL);
 }
@@ -1465,7 +1465,7 @@ static void sc_save(struct bt_gatt_ccc_cfg *cfg,
 	struct sc_data data;
 	struct sc_data *stored;
 
-	memcpy(&data, params->data, params->len);
+	(void)memcpy(&data, params->data, params->len);
 
 	data.start = sys_le16_to_cpu(data.start);
 	data.end = sys_le16_to_cpu(data.end);
@@ -2039,7 +2039,7 @@ static void read_included_uuid_cb(struct bt_conn *conn, u8_t err,
 	value.end_handle = params->_included.end_handle;
 	value.uuid = &u.uuid;
 	u.uuid.type = BT_UUID_TYPE_128;
-	memcpy(u.u128.val, pdu, length);
+	(void)memcpy(u.u128.val, pdu, length);
 
 	BT_DBG("handle 0x%04x uuid %s start_handle 0x%04x "
 	       "end_handle 0x%04x\n", params->_included.attr_handle,
@@ -2225,7 +2225,8 @@ static u16_t parse_characteristic(struct bt_conn *conn, const void *pdu,
 			u.u16.val = sys_le16_to_cpu(chrc->uuid16);
 			break;
 		case BT_UUID_TYPE_128:
-			memcpy(u.u128.val, chrc->uuid, sizeof(chrc->uuid));
+			(void)memcpy(u.u128.val,
+				      chrc->uuid, sizeof(chrc->uuid));
 			break;
 		}
 
@@ -2355,11 +2356,13 @@ static u16_t parse_service(struct bt_conn *conn, const void *pdu,
 
 		switch (u.uuid.type) {
 		case BT_UUID_TYPE_16:
-			memcpy(&u.u16.val, data->value, sizeof(u.u16.val));
+			(void)memcpy(&u.u16.val, data->value,
+				      sizeof(u.u16.val));
 			u.u16.val = sys_le16_to_cpu(u.u16.val);
 			break;
 		case BT_UUID_TYPE_128:
-			memcpy(u.u128.val, data->value, sizeof(u.u128.val));
+			(void)memcpy(u.u128.val, data->value,
+				      sizeof(u.u128.val));
 			break;
 		}
 
@@ -2501,7 +2504,7 @@ static void gatt_find_info_rsp(struct bt_conn *conn, u8_t err,
 			u.u16.val = sys_le16_to_cpu(info.i16->uuid);
 			break;
 		case BT_UUID_TYPE_128:
-			memcpy(u.u128.val, info.i128->uuid, 16);
+			(void)memcpy(u.u128.val, info.i128->uuid, 16);
 			break;
 		}
 
@@ -2887,7 +2890,7 @@ int bt_gatt_write_without_response_cb(struct bt_conn *conn, u16_t handle,
 
 	cmd = net_buf_add(buf, sizeof(*cmd));
 	cmd->handle = sys_cpu_to_le16(handle);
-	memcpy(cmd->value, data, length);
+	(void)memcpy(cmd->value, data, length);
 	net_buf_add(buf, length);
 
 	BT_DBG("handle 0x%04x length %u", handle, length);
@@ -2957,7 +2960,7 @@ static int gatt_prepare_write(struct bt_conn *conn,
 	req = net_buf_add(buf, sizeof(*req));
 	req->handle = sys_cpu_to_le16(params->handle);
 	req->offset = sys_cpu_to_le16(params->offset);
-	memcpy(req->value, params->data, len);
+	(void)memcpy(req->value, params->data, len);
 	net_buf_add(buf, len);
 
 	/* Update params */
@@ -2998,7 +3001,7 @@ int bt_gatt_write(struct bt_conn *conn, struct bt_gatt_write_params *params)
 
 	req = net_buf_add(buf, sizeof(*req));
 	req->handle = sys_cpu_to_le16(params->handle);
-	memcpy(req->value, params->data, params->length);
+	(void)memcpy(req->value, params->data, params->length);
 	net_buf_add(buf, params->length);
 
 	BT_DBG("handle 0x%04x length %u", params->handle, params->length);
@@ -3449,7 +3452,7 @@ static u8_t remove_peer_from_attr(const struct bt_gatt_attr *attr,
 	/* Check if there is a cfg for the peer */
 	cfg = ccc_find_cfg(ccc, addr_with_id->addr, addr_with_id->id);
 	if (cfg) {
-		memset(cfg, 0, sizeof(*cfg));
+		(void)memset(cfg, 0, sizeof(*cfg));
 	}
 
 	return BT_GATT_ITER_CONTINUE;

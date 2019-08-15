@@ -295,8 +295,8 @@ static inline struct net_pkt *arp_prepare(struct net_if *iface,
 
 	net_ipaddr_copy(&hdr->dst_ipaddr, next_addr);
 
-	memcpy(hdr->src_hwaddr.addr, net_pkt_lladdr_src(pkt)->addr,
-	       sizeof(struct net_eth_addr));
+	(void)memcpy(hdr->src_hwaddr.addr, net_pkt_lladdr_src(pkt)->addr,
+			sizeof(struct net_eth_addr));
 
 	if (!entry || net_pkt_ipv4_auto(pkt)) {
 		my_addr = current_ip;
@@ -412,7 +412,7 @@ static void arp_gratuitous(struct net_if *iface,
 					   (const u8_t *)hwaddr,
 					   sizeof(struct net_eth_addr))));
 
-		memcpy(&entry->eth, hwaddr, sizeof(struct net_eth_addr));
+		(void)memcpy(&entry->eth, hwaddr, sizeof(struct net_eth_addr));
 	}
 }
 
@@ -439,8 +439,8 @@ static void arp_update(struct net_if *iface,
 
 			entry = arp_entry_find(&arp_table, iface, src, &prev);
 			if (entry) {
-				memcpy(&entry->eth, hwaddr,
-				       sizeof(struct net_eth_addr));
+				(void)memcpy(&entry->eth, hwaddr,
+						sizeof(struct net_eth_addr));
 			} else {
 				/* Add new entry as it was not found and force
 				 * was set.
@@ -455,7 +455,8 @@ static void arp_update(struct net_if *iface,
 					entry->req_start = k_uptime_get_32();
 					entry->iface = iface;
 					net_ipaddr_copy(&entry->ip, src);
-					memcpy(&entry->eth, hwaddr, sizeof(entry->eth));
+					(void)memcpy(&entry->eth, hwaddr,
+						      sizeof(entry->eth));
 					sys_slist_prepend(&arp_table, &entry->node);
 				}
 			}
@@ -476,7 +477,7 @@ static void arp_update(struct net_if *iface,
 	pkt = entry->pending;
 	entry->pending = NULL;
 
-	memcpy(&entry->eth, hwaddr, sizeof(struct net_eth_addr));
+	(void)memcpy(&entry->eth, hwaddr, sizeof(struct net_eth_addr));
 
 	/* Inserting entry into the table */
 	sys_slist_prepend(&arp_table, &entry->node);
@@ -511,10 +512,11 @@ static inline struct net_pkt *arp_prepare_reply(struct net_if *iface,
 	hdr->protolen = sizeof(struct in_addr);
 	hdr->opcode = htons(NET_ARP_REPLY);
 
-	memcpy(&hdr->dst_hwaddr.addr, &dst_addr->addr,
-	       sizeof(struct net_eth_addr));
-	memcpy(&hdr->src_hwaddr.addr, net_if_get_link_addr(iface)->addr,
-	       sizeof(struct net_eth_addr));
+	(void)memcpy(&hdr->dst_hwaddr.addr, &dst_addr->addr,
+			sizeof(struct net_eth_addr));
+	(void)memcpy(&hdr->src_hwaddr.addr,
+			net_if_get_link_addr(iface)->addr,
+			sizeof(struct net_eth_addr));
 
 	net_ipaddr_copy(&hdr->dst_ipaddr, &query->src_ipaddr);
 	net_ipaddr_copy(&hdr->src_ipaddr, &query->dst_ipaddr);

@@ -187,8 +187,8 @@ void zperf_tcp_receiver_init(const struct shell *shell, int port)
 					      "Unable to get IPv4 by default\n");
 				return;
 			}
-			memcpy(&in4_addr_my->sin_addr, in4_addr,
-				sizeof(struct in_addr));
+			(void)memcpy(&in4_addr_my->sin_addr, in4_addr,
+					sizeof(struct in_addr));
 		}
 
 		shell_fprintf(shell, SHELL_NORMAL, "Binding to %s\n",
@@ -224,8 +224,8 @@ void zperf_tcp_receiver_init(const struct shell *shell, int port)
 					      "Unable to get IPv4 by default\n");
 				return;
 			}
-			memcpy(&in6_addr_my->sin6_addr, in6_addr,
-				sizeof(struct in6_addr));
+			(void)memcpy(&in6_addr_my->sin6_addr, in6_addr,
+					sizeof(struct in6_addr));
 		}
 
 		shell_fprintf(shell, SHELL_NORMAL, "Binding to %s\n",

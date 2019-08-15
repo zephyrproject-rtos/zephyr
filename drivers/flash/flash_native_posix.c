@@ -60,7 +60,7 @@ static int flash_native_posix_read(struct device *dev, off_t offset, void *data,
 		return -EINVAL;
 	}
 
-	memcpy(data, dev_data->flash + offset, size);
+	(void)memcpy(data, dev_data->flash + offset, size);
 
 	return 0;
 }
@@ -81,7 +81,7 @@ static int flash_native_posix_write(struct device *dev, off_t offset,
 		return -EINVAL;
 	}
 
-	memcpy(dev_data->flash + offset, data, size);
+	(void)memcpy(dev_data->flash + offset, data, size);
 
 	return 0;
 }
@@ -102,7 +102,7 @@ static int flash_native_posix_erase(struct device *dev, off_t offset,
 		return -EINVAL;
 	}
 
-	memset(dev_data->flash + offset, 0xff, size);
+	(void)memset(dev_data->flash + offset, 0xff, size);
 
 	return 0;
 }

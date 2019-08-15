@@ -24,7 +24,7 @@ static u32_t copy_msgs_and_transfer(struct device *dev,
 	u8_t i;
 
 	/* Use a local copy to avoid switcheroo attacks. */
-	memcpy(copy, msgs, num_msgs * sizeof(*msgs));
+	(void)memcpy(copy, msgs, num_msgs * sizeof(*msgs));
 
 	/* Validate the buffers in each message struct. Read options require
 	 * that the target buffer be writable

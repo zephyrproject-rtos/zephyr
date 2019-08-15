@@ -1037,7 +1037,7 @@ static int node_id_adv(struct bt_mesh_subnet *sub)
 	}
 
 	(void)memset(tmp, 0, 6);
-	memcpy(tmp + 6, proxy_svc_data + 11, 8);
+	(void)memcpy(tmp + 6, proxy_svc_data + 11, 8);
 	sys_put_be16(bt_mesh_primary_addr(), tmp + 14);
 
 	err = bt_encrypt_be(sub->keys[sub->kr_flag].identity, tmp, tmp);
@@ -1045,7 +1045,7 @@ static int node_id_adv(struct bt_mesh_subnet *sub)
 		return err;
 	}
 
-	memcpy(proxy_svc_data + 3, tmp + 8, 8);
+	(void)memcpy(proxy_svc_data + 3, tmp + 8, 8);
 
 	err = bt_le_adv_start(&fast_adv_param, node_id_ad,
 			      ARRAY_SIZE(node_id_ad), NULL, 0);
@@ -1070,7 +1070,7 @@ static int net_id_adv(struct bt_mesh_subnet *sub)
 	BT_DBG("Advertising with NetId %s",
 	       bt_hex(sub->keys[sub->kr_flag].net_id, 8));
 
-	memcpy(proxy_svc_data + 3, sub->keys[sub->kr_flag].net_id, 8);
+	(void)memcpy(proxy_svc_data + 3, sub->keys[sub->kr_flag].net_id, 8);
 
 	err = bt_le_adv_start(&slow_adv_param, net_id_ad,
 			      ARRAY_SIZE(net_id_ad), NULL, 0);
@@ -1198,7 +1198,7 @@ static size_t gatt_prov_adv_create(struct bt_data prov_sd[2])
 	size_t prov_sd_len = 0;
 	size_t sd_space = 31;
 
-	memcpy(prov_svc_data + 2, prov->uuid, 16);
+	(void)memcpy(prov_svc_data + 2, prov->uuid, 16);
 	sys_put_be16(prov->oob_info, prov_svc_data + 18);
 
 	if (prov->uri) {

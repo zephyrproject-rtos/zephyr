@@ -394,7 +394,7 @@ int zsock_accept_ctx(struct net_context *parent, struct sockaddr *addr,
 	if (addr != NULL && addrlen != NULL) {
 		int len = MIN(*addrlen, sizeof(ctx->remote));
 
-		memcpy(addr, &ctx->remote, len);
+		(void)memcpy(addr, &ctx->remote, len);
 		/* addrlen is a value-result argument, set to actual
 		 * size of source address
 		 */
@@ -1344,22 +1344,24 @@ int zsock_getsockname_ctx(struct net_context *ctx, struct sockaddr *addr,
 
 		addr4.sin_family = AF_INET;
 		addr4.sin_port = net_sin_ptr(&ctx->local)->sin_port;
-		memcpy(&addr4.sin_addr, net_sin_ptr(&ctx->local)->sin_addr,
-		       sizeof(struct in_addr));
+		(void)memcpy(&addr4.sin_addr,
+				net_sin_ptr(&ctx->local)->sin_addr,
+				sizeof(struct in_addr));
 		newlen = sizeof(struct sockaddr_in);
 
-		memcpy(addr, &addr4, MIN(*addrlen, newlen));
+		(void)memcpy(addr, &addr4, MIN(*addrlen, newlen));
 	} else if (IS_ENABLED(CONFIG_NET_IPV6) &&
 		   ctx->local.family == AF_INET6) {
 		struct sockaddr_in6 addr6 = { 0 };
 
 		addr6.sin6_family = AF_INET6;
 		addr6.sin6_port = net_sin6_ptr(&ctx->local)->sin6_port;
-		memcpy(&addr6.sin6_addr, net_sin6_ptr(&ctx->local)->sin6_addr,
-		       sizeof(struct in6_addr));
+		(void)memcpy(&addr6.sin6_addr,
+				net_sin6_ptr(&ctx->local)->sin6_addr,
+				sizeof(struct in6_addr));
 		newlen = sizeof(struct sockaddr_in6);
 
-		memcpy(addr, &addr6, MIN(*addrlen, newlen));
+		(void)memcpy(addr, &addr6, MIN(*addrlen, newlen));
 	} else {
 		SET_ERRNO(EINVAL);
 	}

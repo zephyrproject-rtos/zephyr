@@ -226,7 +226,7 @@ static void i2s_prepare_audio(struct device *dev)
 				buffer, frame_counter);
 
 		/* fill the buffer with zeros (silence) */
-		memset(buffer, 0, AUDIO_FRAME_BUF_BYTES);
+		(void)memset(buffer, 0, AUDIO_FRAME_BUF_BYTES);
 
 		ret = i2s_write(dev, buffer, AUDIO_FRAME_BUF_BYTES);
 		if (ret) {
@@ -259,7 +259,7 @@ static void i2s_play_audio(void)
 			return;
 		}
 
-		memcpy(copy_buf, in_buf, AUDIO_FRAME_BUF_BYTES);
+		(void)memcpy(copy_buf, in_buf, AUDIO_FRAME_BUF_BYTES);
 
 		/* loop the audio back to the host */
 		ret = i2s_write(host_i2s_dev, copy_buf, AUDIO_FRAME_BUF_BYTES);

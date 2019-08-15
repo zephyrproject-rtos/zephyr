@@ -492,11 +492,11 @@ static int smp_f6(const u8_t *w, const u8_t *n1, const u8_t *n2,
 	sys_memcpy_swap(m + 48, iocap, 3);
 
 	m[51] = a1->type;
-	memcpy(m + 52, a1->a.val, 6);
+	(void)memcpy(m + 52, a1->a.val, 6);
 	sys_memcpy_swap(m + 52, a1->a.val, 6);
 
 	m[58] = a2->type;
-	memcpy(m + 59, a2->a.val, 6);
+	(void)memcpy(m + 59, a2->a.val, 6);
 	sys_memcpy_swap(m + 59, a2->a.val, 6);
 
 	sys_memcpy_swap(ws, w, 16);
@@ -536,7 +536,7 @@ static int smp_g2(const u8_t u[32], const u8_t v[32],
 	}
 	BT_DBG("res %s", bt_hex(xs, 16));
 
-	memcpy(passkey, xs + 12, 4);
+	(void)memcpy(passkey, xs + 12, 4);
 	*passkey = sys_be32_to_cpu(*passkey) % 1000000;
 
 	BT_DBG("passkey %u", *passkey);
@@ -938,7 +938,7 @@ static void smp_br_distribute_keys(struct bt_smp_br *smp)
 		}
 
 		id_info = net_buf_add(buf, sizeof(*id_info));
-		memcpy(id_info->irk, bt_dev.irk[conn->id], 16);
+		(void)memcpy(id_info->irk, bt_dev.irk[conn->id], 16);
 
 		smp_br_send(smp, buf, NULL);
 
@@ -976,7 +976,7 @@ static void smp_br_distribute_keys(struct bt_smp_br *smp)
 
 		if (atomic_test_bit(smp->flags, SMP_FLAG_BOND)) {
 			bt_keys_add_type(keys, BT_KEYS_LOCAL_CSRK);
-			memcpy(keys->local_csrk.val, info->csrk, 16);
+			(void)memcpy(keys->local_csrk.val, info->csrk, 16);
 			keys->local_csrk.cnt = 0U;
 		}
 
@@ -1176,7 +1176,7 @@ static u8_t smp_br_ident_info(struct bt_smp_br *smp, struct net_buf *buf)
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
-	memcpy(keys->irk.val, req->irk, sizeof(keys->irk.val));
+	(void)memcpy(keys->irk.val, req->irk, sizeof(keys->irk.val));
 
 	atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_IDENT_ADDR_INFO);
 
@@ -1246,7 +1246,8 @@ static u8_t smp_br_signing_info(struct bt_smp_br *smp, struct net_buf *buf)
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
-	memcpy(keys->remote_csrk.val, req->csrk, sizeof(keys->remote_csrk.val));
+	(void)memcpy(keys->remote_csrk.val, req->csrk,
+		      sizeof(keys->remote_csrk.val));
 
 	smp->remote_dist &= ~BT_SMP_DIST_SIGN;
 
@@ -1623,7 +1624,7 @@ static u8_t smp_send_pairing_random(struct bt_smp *smp)
 	}
 
 	req = net_buf_add(rsp_buf, sizeof(*req));
-	memcpy(req->val, smp->prnd, sizeof(req->val));
+	(void)memcpy(req->val, smp->prnd, sizeof(req->val));
 
 	smp_send(smp, rsp_buf, NULL, NULL);
 
@@ -1655,8 +1656,8 @@ static int smp_c1(const u8_t k[16], const u8_t r[16],
 	/* pres, preq, rat and iat are concatenated to generate p1 */
 	p1[0] = ia->type;
 	p1[1] = ra->type;
-	memcpy(p1 + 2, preq, 7);
-	memcpy(p1 + 9, pres, 7);
+	(void)memcpy(p1 + 2, preq, 7);
+	(void)memcpy(p1 + 9, pres, 7);
 
 	BT_DBG("p1 %s", bt_hex(p1, 16));
 
@@ -1671,8 +1672,8 @@ static int smp_c1(const u8_t k[16], const u8_t r[16],
 	}
 
 	/* ra is concatenated with ia and padding to generate p2 */
-	memcpy(p2, ra->a.val, 6);
-	memcpy(p2 + 6, ia->a.val, 6);
+	(void)memcpy(p2, ra->a.val, 6);
+	(void)memcpy(p2 + 6, ia->a.val, 6);
 	(void)memset(p2 + 12, 0, 4);
 
 	BT_DBG("p2 %s", bt_hex(p2, 16));
@@ -1763,7 +1764,7 @@ static void legacy_distribute_keys(struct bt_smp *smp)
 		info = net_buf_add(buf, sizeof(*info));
 
 		/* distributed only enc_size bytes of key */
-		memcpy(info->ltk, key, keys->enc_size);
+		(void)memcpy(info->ltk, key, keys->enc_size);
 		if (keys->enc_size < sizeof(info->ltk)) {
 			(void)memset(info->ltk + keys->enc_size, 0,
 				     sizeof(info->ltk) - keys->enc_size);
@@ -1779,19 +1780,19 @@ static void legacy_distribute_keys(struct bt_smp *smp)
 		}
 
 		ident = net_buf_add(buf, sizeof(*ident));
-		memcpy(ident->rand, rand, sizeof(ident->rand));
-		memcpy(ident->ediv, ediv, sizeof(ident->ediv));
+		(void)memcpy(ident->rand, rand, sizeof(ident->rand));
+		(void)memcpy(ident->ediv, ediv, sizeof(ident->ediv));
 
 		smp_send(smp, buf, ident_sent, NULL);
 
 		if (atomic_test_bit(smp->flags, SMP_FLAG_BOND)) {
 			bt_keys_add_type(keys, BT_KEYS_SLAVE_LTK);
 
-			memcpy(keys->slave_ltk.val, key,
-			       sizeof(keys->slave_ltk.val));
-			memcpy(keys->slave_ltk.rand, rand, sizeof(rand));
-			memcpy(keys->slave_ltk.ediv, ediv,
-			       sizeof(keys->slave_ltk.ediv));
+			(void)memcpy(keys->slave_ltk.val, key,
+					sizeof(keys->slave_ltk.val));
+			(void)memcpy(keys->slave_ltk.rand, rand, sizeof(rand));
+			(void)memcpy(keys->slave_ltk.ediv, ediv,
+					sizeof(keys->slave_ltk.ediv));
 		}
 	}
 }
@@ -1828,7 +1829,7 @@ static void bt_smp_distribute_keys(struct bt_smp *smp)
 		}
 
 		id_info = net_buf_add(buf, sizeof(*id_info));
-		memcpy(id_info->irk, bt_dev.irk[conn->id], 16);
+		(void)memcpy(id_info->irk, bt_dev.irk[conn->id], 16);
 
 		smp_send(smp, buf, NULL, NULL);
 
@@ -1864,7 +1865,7 @@ static void bt_smp_distribute_keys(struct bt_smp *smp)
 
 		if (atomic_test_bit(smp->flags, SMP_FLAG_BOND)) {
 			bt_keys_add_type(keys, BT_KEYS_LOCAL_CSRK);
-			memcpy(keys->local_csrk.val, info->csrk, 16);
+			(void)memcpy(keys->local_csrk.val, info->csrk, 16);
 			keys->local_csrk.cnt = 0U;
 		}
 
@@ -1886,7 +1887,7 @@ static u8_t send_pairing_rsp(struct bt_smp *smp)
 	}
 
 	rsp = net_buf_add(rsp_buf, sizeof(*rsp));
-	memcpy(rsp, smp->prsp + 1, sizeof(*rsp));
+	(void)memcpy(rsp, smp->prsp + 1, sizeof(*rsp));
 
 	smp_send(smp, rsp_buf, NULL, NULL);
 
@@ -1906,8 +1907,8 @@ static int smp_s1(const u8_t k[16], const u8_t r1[16],
 	 *
 	 *    r' = r1' || r2'
 	 */
-	memcpy(out, r2, 8);
-	memcpy(out + 8, r1, 8);
+	(void)memcpy(out, r2, 8);
+	(void)memcpy(out + 8, r1, 8);
 
 	/* s1(k, r1 , r2) = e(k, r') */
 	return bt_encrypt_le(k, out, out);
@@ -2105,7 +2106,7 @@ static u8_t legacy_pairing_random(struct bt_smp *smp)
 			return BT_SMP_ERR_UNSPECIFIED;
 		}
 
-		memcpy(smp->tk, tmp, sizeof(smp->tk));
+		(void)memcpy(smp->tk, tmp, sizeof(smp->tk));
 		BT_DBG("generated STK %s", bt_hex(smp->tk, 16));
 
 		atomic_set_bit(smp->flags, SMP_FLAG_ENC_PENDING);
@@ -2142,7 +2143,7 @@ static u8_t legacy_pairing_confirm(struct bt_smp *smp)
 static void legacy_passkey_entry(struct bt_smp *smp, unsigned int passkey)
 {
 	passkey = sys_cpu_to_le32(passkey);
-	memcpy(smp->tk, &passkey, sizeof(passkey));
+	(void)memcpy(smp->tk, &passkey, sizeof(passkey));
 
 	if (!atomic_test_and_clear_bit(smp->flags, SMP_FLAG_CFM_DELAYED)) {
 		return;
@@ -2181,7 +2182,7 @@ static u8_t smp_encrypt_info(struct bt_smp *smp, struct net_buf *buf)
 			return BT_SMP_ERR_UNSPECIFIED;
 		}
 
-		memcpy(keys->ltk.val, req->ltk, 16);
+		(void)memcpy(keys->ltk.val, req->ltk, 16);
 	}
 
 	atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_MASTER_IDENT);
@@ -2206,8 +2207,9 @@ static u8_t smp_master_ident(struct bt_smp *smp, struct net_buf *buf)
 			return BT_SMP_ERR_UNSPECIFIED;
 		}
 
-		memcpy(keys->ltk.ediv, req->ediv, sizeof(keys->ltk.ediv));
-		memcpy(keys->ltk.rand, req->rand, sizeof(req->rand));
+		(void)memcpy(keys->ltk.ediv, req->ediv,
+			      sizeof(keys->ltk.ediv));
+		(void)memcpy(keys->ltk.rand, req->rand, sizeof(req->rand));
 
 		smp->remote_dist &= ~BT_SMP_DIST_ENC_KEY;
 	}
@@ -2439,7 +2441,7 @@ static u8_t smp_pairing_req(struct bt_smp *smp, struct net_buf *buf)
 
 	/* Store req for later use */
 	smp->preq[0] = BT_SMP_CMD_PAIRING_REQ;
-	memcpy(smp->preq + 1, req, sizeof(*req));
+	(void)memcpy(smp->preq + 1, req, sizeof(*req));
 
 	/* create rsp, it will be used later on */
 	smp->prsp[0] = BT_SMP_CMD_PAIRING_RSP;
@@ -2529,8 +2531,8 @@ static u8_t sc_send_public_key(struct bt_smp *smp)
 
 	req = net_buf_add(req_buf, sizeof(*req));
 
-	memcpy(req->x, sc_public_key, sizeof(req->x));
-	memcpy(req->y, &sc_public_key[32], sizeof(req->y));
+	(void)memcpy(req->x, sc_public_key, sizeof(req->x));
+	(void)memcpy(req->y, &sc_public_key[32], sizeof(req->y));
 
 	smp_send(smp, req_buf, NULL, NULL);
 
@@ -2594,7 +2596,7 @@ int bt_smp_send_pairing_req(struct bt_conn *conn)
 
 	/* Store req for later use */
 	smp->preq[0] = BT_SMP_CMD_PAIRING_REQ;
-	memcpy(smp->preq + 1, req, sizeof(*req));
+	(void)memcpy(smp->preq + 1, req, sizeof(*req));
 
 	smp_send(smp, req_buf, NULL, NULL);
 
@@ -2622,7 +2624,7 @@ static u8_t smp_pairing_rsp(struct bt_smp *smp, struct net_buf *buf)
 
 	/* Store rsp for later use */
 	smp->prsp[0] = BT_SMP_CMD_PAIRING_RSP;
-	memcpy(smp->prsp + 1, rsp, sizeof(*rsp));
+	(void)memcpy(smp->prsp + 1, rsp, sizeof(*rsp));
 
 	if ((rsp->auth_req & BT_SMP_AUTH_SC) &&
 	    (req->auth_req & BT_SMP_AUTH_SC)) {
@@ -2695,7 +2697,7 @@ static u8_t smp_pairing_confirm(struct bt_smp *smp, struct net_buf *buf)
 
 	atomic_clear_bit(smp->flags, SMP_FLAG_DISPLAY);
 
-	memcpy(smp->pcnf, req->val, sizeof(smp->pcnf));
+	(void)memcpy(smp->pcnf, req->val, sizeof(smp->pcnf));
 
 	if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
 	    smp->chan.chan.conn->role == BT_HCI_ROLE_MASTER) {
@@ -2746,7 +2748,7 @@ static u8_t sc_smp_send_dhkey_check(struct bt_smp *smp, const u8_t *e)
 	}
 
 	req = net_buf_add(buf, sizeof(*req));
-	memcpy(req->e, e, sizeof(req->e));
+	(void)memcpy(req->e, e, sizeof(req->e));
 
 	smp_send(smp, buf, NULL, NULL);
 
@@ -2766,11 +2768,11 @@ static u8_t compute_and_send_master_dhcheck(struct bt_smp *smp)
 		break;
 	case PASSKEY_DISPLAY:
 	case PASSKEY_INPUT:
-		memcpy(r, &smp->passkey, sizeof(smp->passkey));
+		(void)memcpy(r, &smp->passkey, sizeof(smp->passkey));
 		break;
 	case LE_SC_OOB:
 		if (smp->oobd_remote) {
-			memcpy(r, smp->oobd_remote->r, sizeof(r));
+			(void)memcpy(r, smp->oobd_remote->r, sizeof(r));
 		}
 		break;
 	default:
@@ -2810,11 +2812,11 @@ static u8_t compute_and_check_and_send_slave_dhcheck(struct bt_smp *smp)
 		break;
 	case PASSKEY_DISPLAY:
 	case PASSKEY_INPUT:
-		memcpy(r, &smp->passkey, sizeof(smp->passkey));
+		(void)memcpy(r, &smp->passkey, sizeof(smp->passkey));
 		break;
 	case LE_SC_OOB:
 		if (smp->oobd_remote) {
-			memcpy(r, smp->oobd_remote->r, sizeof(r));
+			(void)memcpy(r, smp->oobd_remote->r, sizeof(r));
 		}
 		break;
 	default:
@@ -2838,9 +2840,9 @@ static u8_t compute_and_check_and_send_slave_dhcheck(struct bt_smp *smp)
 
 	if (smp->method == LE_SC_OOB) {
 		if (smp->oobd_local) {
-			memcpy(r, smp->oobd_local->r, sizeof(r));
+			(void)memcpy(r, smp->oobd_local->r, sizeof(r));
 		} else {
-			memset(r, 0, sizeof(r));
+			(void)memset(r, 0, sizeof(r));
 		}
 	}
 
@@ -2888,7 +2890,7 @@ static void bt_smp_dhkey_ready(const u8_t *dhkey)
 		return;
 	}
 
-	memcpy(smp->dhkey, dhkey, 32);
+	(void)memcpy(smp->dhkey, dhkey, 32);
 
 	/* wait for user passkey confirmation */
 	if (atomic_test_bit(smp->flags, SMP_FLAG_USER)) {
@@ -3019,7 +3021,7 @@ static u8_t smp_pairing_random(struct bt_smp *smp, struct net_buf *buf)
 
 	BT_DBG("");
 
-	memcpy(smp->rrnd, req->val, sizeof(smp->rrnd));
+	(void)memcpy(smp->rrnd, req->val, sizeof(smp->rrnd));
 
 #if !defined(CONFIG_BT_SMP_SC_PAIR_ONLY)
 	if (!atomic_test_bit(smp->flags, SMP_FLAG_SC)) {
@@ -3196,7 +3198,7 @@ static u8_t smp_ident_info(struct bt_smp *smp, struct net_buf *buf)
 			return BT_SMP_ERR_UNSPECIFIED;
 		}
 
-		memcpy(keys->irk.val, req->irk, 16);
+		(void)memcpy(keys->irk.val, req->irk, 16);
 	}
 
 	atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_IDENT_ADDR_INFO);
@@ -3299,8 +3301,8 @@ static u8_t smp_signing_info(struct bt_smp *smp, struct net_buf *buf)
 			return BT_SMP_ERR_UNSPECIFIED;
 		}
 
-		memcpy(keys->remote_csrk.val, req->csrk,
-		       sizeof(keys->remote_csrk.val));
+		(void)memcpy(keys->remote_csrk.val, req->csrk,
+				sizeof(keys->remote_csrk.val));
 	}
 
 	smp->remote_dist &= ~BT_SMP_DIST_SIGN;
@@ -3490,8 +3492,8 @@ static u8_t smp_public_key(struct bt_smp *smp, struct net_buf *buf)
 
 	BT_DBG("");
 
-	memcpy(smp->pkey, req->x, 32);
-	memcpy(&smp->pkey[32], req->y, 32);
+	(void)memcpy(smp->pkey, req->x, 32);
+	(void)memcpy(&smp->pkey[32], req->y, 32);
 
 	/* mark key as debug if remote is using it */
 	if (memcmp(smp->pkey, sc_debug_public_key, 64) == 0) {
@@ -3591,11 +3593,11 @@ static u8_t smp_dhkey_check(struct bt_smp *smp, struct net_buf *buf)
 			break;
 		case PASSKEY_DISPLAY:
 		case PASSKEY_INPUT:
-			memcpy(r, &smp->passkey, sizeof(smp->passkey));
+			(void)memcpy(r, &smp->passkey, sizeof(smp->passkey));
 			break;
 		case LE_SC_OOB:
 			if (smp->oobd_local) {
-				memcpy(r, smp->oobd_local->r, sizeof(r));
+				(void)memcpy(r, smp->oobd_local->r, sizeof(r));
 			}
 			break;
 		default:
@@ -3630,7 +3632,7 @@ static u8_t smp_dhkey_check(struct bt_smp *smp, struct net_buf *buf)
 #if defined(CONFIG_BT_PERIPHERAL)
 	if (smp->chan.chan.conn->role == BT_HCI_ROLE_SLAVE) {
 		atomic_clear_bit(smp->flags, SMP_FLAG_DHCHECK_WAIT);
-		memcpy(smp->e, req->e, sizeof(smp->e));
+		(void)memcpy(smp->e, req->e, sizeof(smp->e));
 
 		/* wait for DHKey being generated */
 		if (atomic_test_bit(smp->flags, SMP_FLAG_DHKEY_PENDING)) {
@@ -3900,12 +3902,12 @@ static int smp_sign_buf(const u8_t *key, u8_t *msg, u16_t len)
 	}
 
 	sys_mem_swap(tmp, sizeof(tmp));
-	memcpy(tmp + 4, &cnt, sizeof(cnt));
+	(void)memcpy(tmp + 4, &cnt, sizeof(cnt));
 
 	/* Swap original message back */
 	sys_mem_swap(m, len + sizeof(cnt));
 
-	memcpy(sig, tmp + 4, 12);
+	(void)memcpy(sig, tmp + 4, 12);
 
 	BT_DBG("sig %s", bt_hex(sig, 12));
 
@@ -3922,7 +3924,7 @@ int bt_smp_sign_verify(struct bt_conn *conn, struct net_buf *buf)
 	int err;
 
 	/* Store signature incl. count */
-	memcpy(sig, net_buf_tail(buf) - sizeof(sig), sizeof(sig));
+	(void)memcpy(sig, net_buf_tail(buf) - sizeof(sig), sizeof(sig));
 
 	keys = bt_keys_find(BT_KEYS_REMOTE_CSRK, conn->id, &conn->le.dst);
 	if (!keys) {
@@ -3933,7 +3935,7 @@ int bt_smp_sign_verify(struct bt_conn *conn, struct net_buf *buf)
 
 	/* Copy signing count */
 	cnt = sys_cpu_to_le32(keys->remote_csrk.cnt);
-	memcpy(net_buf_tail(buf) - sizeof(sig), &cnt, sizeof(cnt));
+	(void)memcpy(net_buf_tail(buf) - sizeof(sig), &cnt, sizeof(cnt));
 
 	BT_DBG("Sign data len %zu key %s count %u", buf->len - sizeof(sig),
 	       bt_hex(keys->remote_csrk.val, 16), keys->remote_csrk.cnt);
@@ -3975,7 +3977,7 @@ int bt_smp_sign(struct bt_conn *conn, struct net_buf *buf)
 
 	/* Copy signing count */
 	cnt = sys_cpu_to_le32(keys->local_csrk.cnt);
-	memcpy(net_buf_tail(buf) - 12, &cnt, sizeof(cnt));
+	(void)memcpy(net_buf_tail(buf) - 12, &cnt, sizeof(cnt));
 
 	BT_DBG("Sign data len %u key %s count %u", buf->len,
 	       bt_hex(keys->local_csrk.val, 16), keys->local_csrk.cnt);
@@ -4096,10 +4098,10 @@ static int sign_test(const char *prefix, const u8_t *key, const u8_t *m,
 	BT_DBG("%s: Sign message with len %u", prefix, len);
 
 	(void)memset(msg, 0, sizeof(msg));
-	memcpy(msg, m, len);
+	(void)memcpy(msg, m, len);
 	(void)memset(msg + len, 0, sizeof(u32_t));
 
-	memcpy(orig, msg, sizeof(msg));
+	(void)memcpy(orig, msg, sizeof(msg));
 
 	err = smp_sign_buf(key, msg, len);
 	if (err) {
@@ -4518,7 +4520,7 @@ int bt_smp_le_oob_generate_sc_data(struct bt_le_oob_sc_data *le_sc_oob)
 			0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
 		};
 
-		memcpy(le_sc_oob->r, rand_num, sizeof(le_sc_oob->r));
+		(void)memcpy(le_sc_oob->r, rand_num, sizeof(le_sc_oob->r));
 	} else {
 		err = bt_rand(le_sc_oob->r, 16);
 		if (err) {
@@ -4805,8 +4807,8 @@ void bt_smp_update_keys(struct bt_conn *conn)
 
 		if (atomic_test_bit(smp->flags, SMP_FLAG_BOND)) {
 			bt_keys_add_type(conn->le.keys, BT_KEYS_LTK_P256);
-			memcpy(conn->le.keys->ltk.val, smp->tk,
-			       sizeof(conn->le.keys->ltk.val));
+			(void)memcpy(conn->le.keys->ltk.val, smp->tk,
+					sizeof(conn->le.keys->ltk.val));
 			(void)memset(conn->le.keys->ltk.rand, 0,
 				     sizeof(conn->le.keys->ltk.rand));
 			(void)memset(conn->le.keys->ltk.ediv, 0,
@@ -4841,7 +4843,7 @@ bool bt_smp_get_tk(struct bt_conn *conn, u8_t *tk)
 	 * We keep both legacy STK and LE SC LTK in TK.
 	 * Also use only enc_size bytes of key for encryption.
 	 */
-	memcpy(tk, smp->tk, enc_size);
+	(void)memcpy(tk, smp->tk, enc_size);
 	if (enc_size < sizeof(smp->tk)) {
 		(void)memset(tk + enc_size, 0, sizeof(smp->tk) - enc_size);
 	}

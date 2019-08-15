@@ -86,7 +86,7 @@ static inline bool append(struct coap_packet *cpkt, const u8_t *data, u16_t len)
 		return false;
 	}
 
-	memcpy(cpkt->data + cpkt->offset, data, len);
+	(void)memcpy(cpkt->data + cpkt->offset, data, len);
 	cpkt->offset += len;
 
 	return true;
@@ -103,7 +103,7 @@ int coap_packet_init(struct coap_packet *cpkt, u8_t *data,
 		return -EINVAL;
 	}
 
-	memset(cpkt, 0, sizeof(*cpkt));
+	(void)memset(cpkt, 0, sizeof(*cpkt));
 
 	cpkt->data = data;
 	cpkt->offset = 0U;
@@ -379,7 +379,7 @@ static int read(u8_t *data, u16_t offset, u16_t *pos,
 		return -EINVAL;
 	}
 
-	memcpy(value, data + offset, len);
+	(void)memcpy(value, data + offset, len);
 	offset += len;
 	*pos = offset;
 
@@ -540,7 +540,7 @@ int coap_packet_parse(struct coap_packet *cpkt, u8_t *data, u16_t len,
 	}
 
 	if (options) {
-		memset(options, 0, opt_num * sizeof(struct coap_option));
+		(void)memset(options, 0, opt_num * sizeof(struct coap_option));
 	}
 
 	cpkt->data = data;
@@ -662,7 +662,7 @@ u8_t coap_header_get_token(const struct coap_packet *cpkt, u8_t *token)
 
 	tkl = cpkt->data[0] & 0x0f;
 	if (tkl) {
-		memcpy(token, cpkt->data + BASIC_HEADER_SIZE, tkl);
+		(void)memcpy(token, cpkt->data + BASIC_HEADER_SIZE, tkl);
 	}
 
 	return tkl;
@@ -1052,11 +1052,11 @@ int coap_pending_init(struct coap_pending *pending,
 		      const struct coap_packet *request,
 		      const struct sockaddr *addr)
 {
-	memset(pending, 0, sizeof(*pending));
+	(void)memset(pending, 0, sizeof(*pending));
 
 	pending->id = coap_header_get_id(request);
 
-	memcpy(&pending->addr, addr, sizeof(*addr));
+	(void)memcpy(&pending->addr, addr, sizeof(*addr));
 
 	pending->data = request->data;
 	pending->len = request->offset;
@@ -1275,7 +1275,7 @@ void coap_reply_init(struct coap_reply *reply,
 	tkl = coap_header_get_token(request, (u8_t *)&token);
 
 	if (tkl > 0) {
-		memcpy(reply->token, token, tkl);
+		(void)memcpy(reply->token, token, tkl);
 	}
 
 	reply->tkl = tkl;

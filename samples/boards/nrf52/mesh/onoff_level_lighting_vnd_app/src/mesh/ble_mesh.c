@@ -72,7 +72,7 @@ void bt_ready(void)
 	if (bt_le_oob_get_local(BT_ID_DEFAULT, &oob)) {
 		printk("Identity Address unavailable\n");
 	} else {
-		memcpy(dev_uuid, oob.addr.a.val, 6);
+		(void)memcpy(dev_uuid, oob.addr.a.val, 6);
 	}
 
 	bt_mesh_prov_enable(BT_MESH_PROV_GATT | BT_MESH_PROV_ADV);

@@ -148,7 +148,7 @@ u32_t ring_buf_put(struct ring_buf *buf, const u8_t *data, u32_t size)
 
 	do {
 		partial_size = ring_buf_put_claim(buf, &dst, size);
-		memcpy(dst, data, partial_size);
+		(void)memcpy(dst, data, partial_size);
 		total_size += partial_size;
 		size -= partial_size;
 		data += partial_size;
@@ -206,7 +206,7 @@ u32_t ring_buf_get(struct ring_buf *buf, u8_t *data, u32_t size)
 
 	do {
 		partial_size = ring_buf_get_claim(buf, &src, size);
-		memcpy(data, src, partial_size);
+		(void)memcpy(data, src, partial_size);
 		total_size += partial_size;
 		size -= partial_size;
 		data += partial_size;

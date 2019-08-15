@@ -879,7 +879,7 @@ static int append_bytes_to_buf(const char *bytes, size_t len, void *data)
 		return -ENOMEM;
 	}
 
-	memcpy(appender->buffer + appender->used, bytes, len);
+	(void)memcpy(appender->buffer + appender->used, bytes, len);
 	appender->used += len;
 	appender->buffer[appender->used] = '\0';
 

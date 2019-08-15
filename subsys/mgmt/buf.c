@@ -51,7 +51,7 @@ cbor_nb_reader_get16(struct cbor_decoder_reader *d, int offset)
 		return UINT16_MAX;
 	}
 
-	memcpy(&val, cnr->nb->data + offset, sizeof(val));
+	(void)memcpy(&val, cnr->nb->data + offset, sizeof(val));
 	return cbor_ntohs(val);
 }
 
@@ -67,7 +67,7 @@ cbor_nb_reader_get32(struct cbor_decoder_reader *d, int offset)
 		return UINT32_MAX;
 	}
 
-	memcpy(&val, cnr->nb->data + offset, sizeof(val));
+	(void)memcpy(&val, cnr->nb->data + offset, sizeof(val));
 	return cbor_ntohl(val);
 }
 
@@ -83,7 +83,7 @@ cbor_nb_reader_get64(struct cbor_decoder_reader *d, int offset)
 		return UINT64_MAX;
 	}
 
-	memcpy(&val, cnr->nb->data + offset, sizeof(val));
+	(void)memcpy(&val, cnr->nb->data + offset, sizeof(val));
 	return cbor_ntohll(val);
 }
 

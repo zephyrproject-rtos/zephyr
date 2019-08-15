@@ -173,7 +173,7 @@ static void add_answer(struct net_buf *query, enum dns_rr_type qtype,
 	UNALIGNED_PUT(htons(addr_len), query->data + offset);
 
 	offset += DNS_RDLENGTH_LEN;
-	memcpy(query->data + offset, addr, addr_len);
+	(void)memcpy(query->data + offset, addr, addr_len);
 }
 
 static int create_answer(struct net_context *ctx,

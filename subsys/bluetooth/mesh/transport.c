@@ -1346,7 +1346,8 @@ found_rx:
 	}
 
 	/* Location in buffer can be calculated based on seg_o & rx->ctl */
-	memcpy(rx->buf.data + (seg_o * seg_len(rx->ctl)), buf->data, buf->len);
+	(void)memcpy(rx->buf.data + (seg_o * seg_len(rx->ctl)),
+		      buf->data, buf->len);
 
 	BT_DBG("Received %u/%u", seg_o, seg_n);
 

@@ -32,8 +32,8 @@ void mem_init(void *mem_pool, u16_t mem_size, u16_t mem_count,
 
 		next = (u32_t)((u8_t *) mem_pool +
 			       (mem_size * (mem_count + 1)));
-		memcpy(((u8_t *)mem_pool + (mem_size * mem_count)),
-		       (void *)&next, sizeof(next));
+		(void)memcpy(((u8_t *)mem_pool + (mem_size * mem_count)),
+				(void *)&next, sizeof(next));
 	}
 }
 
@@ -50,7 +50,7 @@ void *mem_acquire(void **mem_head)
 		free_count--;
 
 		mem = *mem_head;
-		memcpy(&head, mem, sizeof(head));
+		(void)memcpy(&head, mem, sizeof(head));
 
 		/* Store free mem_count after the list's next pointer */
 		if (head) {
@@ -76,7 +76,7 @@ void mem_release(void *mem, void **mem_head)
 	}
 	free_count++;
 
-	memcpy(mem, mem_head, sizeof(mem));
+	(void)memcpy(mem, mem_head, sizeof(mem));
 
 	/* Store free mem_count after the list's next pointer */
 	*((u16_t *)MROUND((u8_t *)mem + sizeof(mem))) = free_count;

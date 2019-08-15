@@ -213,7 +213,7 @@ again:
 	if (info) {
 		ret = info_len + sizeof(hdr);
 		ret = MIN(max_len, ret);
-		memcpy(&copy_to[sizeof(hdr)], info, ret);
+		(void)memcpy(&copy_to[sizeof(hdr)], info, ret);
 	} else {
 		ret = 0;
 	}
@@ -221,7 +221,7 @@ again:
 	hdr.nm_msg_version = NET_MGMT_SOCKET_VERSION_1;
 	hdr.nm_msg_len = ret;
 
-	memcpy(copy_to, &hdr, sizeof(hdr));
+	(void)memcpy(copy_to, &hdr, sizeof(hdr));
 
 	return ret;
 }

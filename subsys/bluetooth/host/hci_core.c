@@ -1301,8 +1301,8 @@ static void le_remote_feat_complete(struct net_buf *buf)
 	}
 
 	if (!evt->status) {
-		memcpy(conn->le.features, evt->features,
-		       sizeof(conn->le.features));
+		(void)memcpy(conn->le.features, evt->features,
+				sizeof(conn->le.features));
 	}
 
 	if (IS_ENABLED(CONFIG_BT_AUTO_PHY_UPDATE) &&
@@ -1960,7 +1960,7 @@ static void link_key_notify(struct net_buf *buf)
 					      BT_CONN_BR_LEGACY_SECURE)) {
 			conn->br.link_key->flags |= BT_LINK_KEY_AUTHENTICATED;
 		}
-		memcpy(conn->br.link_key->val, evt->link_key, 16);
+		(void)memcpy(conn->br.link_key->val, evt->link_key, 16);
 		break;
 	case BT_LK_AUTH_COMBINATION_P192:
 		conn->br.link_key->flags |= BT_LINK_KEY_AUTHENTICATED;
@@ -1971,7 +1971,7 @@ static void link_key_notify(struct net_buf *buf)
 			atomic_set_bit(conn->flags, BT_CONN_BR_NOBOND);
 		}
 
-		memcpy(conn->br.link_key->val, evt->link_key, 16);
+		(void)memcpy(conn->br.link_key->val, evt->link_key, 16);
 		break;
 	case BT_LK_AUTH_COMBINATION_P256:
 		conn->br.link_key->flags |= BT_LINK_KEY_AUTHENTICATED;
@@ -1984,7 +1984,7 @@ static void link_key_notify(struct net_buf *buf)
 			atomic_set_bit(conn->flags, BT_CONN_BR_NOBOND);
 		}
 
-		memcpy(conn->br.link_key->val, evt->link_key, 16);
+		(void)memcpy(conn->br.link_key->val, evt->link_key, 16);
 		break;
 	default:
 		BT_WARN("Unsupported Link Key type %u", evt->key_type);
@@ -2029,7 +2029,7 @@ static void link_key_reply(const bt_addr_t *bdaddr, const u8_t *lk)
 
 	cp = net_buf_add(buf, sizeof(*cp));
 	bt_addr_copy(&cp->bdaddr, bdaddr);
-	memcpy(cp->link_key, lk, 16);
+	(void)memcpy(cp->link_key, lk, 16);
 	bt_hci_cmd_send_sync(BT_HCI_OP_LINK_KEY_REPLY, buf, NULL);
 }
 
@@ -2436,7 +2436,7 @@ static void inquiry_result_with_rssi(struct net_buf *buf)
 		priv->pscan_rep_mode = evt->pscan_rep_mode;
 		priv->clock_offset = evt->clock_offset;
 
-		memcpy(result->cod, evt->cod, 3);
+		(void)memcpy(result->cod, evt->cod, 3);
 		result->rssi = evt->rssi;
 
 		/* we could reuse slot so make sure EIR is cleared */
@@ -2466,8 +2466,8 @@ static void extended_inquiry_result(struct net_buf *buf)
 	priv->clock_offset = evt->clock_offset;
 
 	result->rssi = evt->rssi;
-	memcpy(result->cod, evt->cod, 3);
-	memcpy(result->eir, evt->eir, sizeof(result->eir));
+	(void)memcpy(result->cod, evt->cod, 3);
+	(void)memcpy(result->eir, evt->eir, sizeof(result->eir));
 }
 
 static void remote_name_request_complete(struct net_buf *buf)
@@ -2515,7 +2515,7 @@ static void remote_name_request_complete(struct net_buf *buf)
 				eir[1] = EIR_SHORT_NAME;
 			}
 
-			memcpy(&eir[2], evt->name, eir[0] - 1);
+			(void)memcpy(&eir[2], evt->name, eir[0] - 1);
 
 			break;
 		}
@@ -2622,7 +2622,8 @@ static void read_remote_features_complete(struct net_buf *buf)
 		goto done;
 	}
 
-	memcpy(conn->br.features[0], evt->features, sizeof(evt->features));
+	(void)memcpy(conn->br.features[0],
+		      evt->features, sizeof(evt->features));
 
 	if (!BT_FEAT_EXT_FEATURES(conn->br.features)) {
 		goto done;
@@ -2660,8 +2661,8 @@ static void read_remote_ext_features_complete(struct net_buf *buf)
 	}
 
 	if (!evt->status && evt->page == 0x01) {
-		memcpy(conn->br.features[1], evt->features,
-		       sizeof(conn->br.features[1]));
+		(void)memcpy(conn->br.features[1], evt->features,
+				sizeof(conn->br.features[1]));
 	}
 
 	bt_conn_unref(conn);
@@ -2759,10 +2760,10 @@ static int hci_id_add(const bt_addr_le_t *addr, u8_t val[16])
 
 	cp = net_buf_add(buf, sizeof(*cp));
 	bt_addr_le_copy(&cp->peer_id_addr, addr);
-	memcpy(cp->peer_irk, val, 16);
+	(void)memcpy(cp->peer_irk, val, 16);
 
 #if defined(CONFIG_BT_PRIVACY)
-	memcpy(cp->local_irk, bt_dev.irk, 16);
+	(void)memcpy(cp->local_irk, bt_dev.irk, 16);
 #else
 	(void)memset(cp->local_irk, 0, 16);
 #endif
@@ -3158,7 +3159,7 @@ static void le_ltk_request(struct net_buf *buf)
 
 		cp = net_buf_add(buf, sizeof(*cp));
 		cp->handle = evt->handle;
-		memcpy(cp->ltk, tk, sizeof(cp->ltk));
+		(void)memcpy(cp->ltk, tk, sizeof(cp->ltk));
 
 		bt_hci_cmd_send(BT_HCI_OP_LE_LTK_REQ_REPLY, buf);
 		goto done;
@@ -3186,8 +3187,8 @@ static void le_ltk_request(struct net_buf *buf)
 		cp->handle = evt->handle;
 
 		/* use only enc_size bytes of key for encryption */
-		memcpy(cp->ltk, conn->le.keys->ltk.val,
-		       conn->le.keys->enc_size);
+		(void)memcpy(cp->ltk, conn->le.keys->ltk.val,
+				conn->le.keys->enc_size);
 		if (conn->le.keys->enc_size < sizeof(cp->ltk)) {
 			(void)memset(cp->ltk + conn->le.keys->enc_size, 0,
 				     sizeof(cp->ltk) - conn->le.keys->enc_size);
@@ -3212,8 +3213,8 @@ static void le_ltk_request(struct net_buf *buf)
 		cp->handle = evt->handle;
 
 		/* use only enc_size bytes of key for encryption */
-		memcpy(cp->ltk, conn->le.keys->slave_ltk.val,
-		       conn->le.keys->enc_size);
+		(void)memcpy(cp->ltk, conn->le.keys->slave_ltk.val,
+				conn->le.keys->enc_size);
 		if (conn->le.keys->enc_size < sizeof(cp->ltk)) {
 			(void)memset(cp->ltk + conn->le.keys->enc_size, 0,
 				     sizeof(cp->ltk) - conn->le.keys->enc_size);
@@ -3242,7 +3243,7 @@ static void le_pkey_complete(struct net_buf *buf)
 	atomic_clear_bit(bt_dev.flags, BT_DEV_PUB_KEY_BUSY);
 
 	if (!evt->status) {
-		memcpy(pub_key, evt->key, 64);
+		(void)memcpy(pub_key, evt->key, 64);
 		atomic_set_bit(bt_dev.flags, BT_DEV_HAS_PUB_KEY);
 	}
 
@@ -3884,7 +3885,8 @@ static void read_le_features_complete(struct net_buf *buf)
 
 	BT_DBG("status 0x%02x", rp->status);
 
-	memcpy(bt_dev.le.features, rp->features, sizeof(bt_dev.le.features));
+	(void)memcpy(bt_dev.le.features, rp->features,
+		      sizeof(bt_dev.le.features));
 }
 
 #if defined(CONFIG_BT_BREDR)
@@ -3952,8 +3954,8 @@ static void read_supported_commands_complete(struct net_buf *buf)
 
 	BT_DBG("status 0x%02x", rp->status);
 
-	memcpy(bt_dev.supported_commands, rp->commands,
-	       sizeof(bt_dev.supported_commands));
+	(void)memcpy(bt_dev.supported_commands, rp->commands,
+			sizeof(bt_dev.supported_commands));
 
 	/*
 	 * Report "LE Read Local P-256 Public Key" and "LE Generate DH Key" as
@@ -3971,7 +3973,8 @@ static void read_local_features_complete(struct net_buf *buf)
 
 	BT_DBG("status 0x%02x", rp->status);
 
-	memcpy(bt_dev.features[0], rp->features, sizeof(bt_dev.features[0]));
+	(void)memcpy(bt_dev.features[0], rp->features,
+		      sizeof(bt_dev.features[0]));
 }
 
 static void le_read_supp_states_complete(struct net_buf *buf)
@@ -4310,8 +4313,8 @@ static int read_ext_features(void)
 
 		rp = (void *)rsp->data;
 
-		memcpy(&bt_dev.features[i], rp->ext_features,
-		       sizeof(bt_dev.features[i]));
+		(void)memcpy(&bt_dev.features[i], rp->ext_features,
+				sizeof(bt_dev.features[i]));
 
 		if (rp->max_page <= i) {
 			net_buf_unref(rsp);
@@ -4726,7 +4729,8 @@ static void hci_vs_init(void)
 	}
 
 	rp.cmds = (void *)rsp->data;
-	memcpy(bt_dev.vs_commands, rp.cmds->commands, BT_DEV_VS_CMDS_MAX);
+	(void)memcpy(bt_dev.vs_commands, rp.cmds->commands,
+		      BT_DEV_VS_CMDS_MAX);
 	net_buf_unref(rsp);
 
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_VS_READ_SUPPORTED_FEATURES,
@@ -4737,7 +4741,8 @@ static void hci_vs_init(void)
 	}
 
 	rp.feat = (void *)rsp->data;
-	memcpy(bt_dev.vs_features, rp.feat->features, BT_DEV_VS_FEAT_MAX);
+	(void)memcpy(bt_dev.vs_features, rp.feat->features,
+		      BT_DEV_VS_FEAT_MAX);
 	net_buf_unref(rsp);
 }
 #endif /* CONFIG_BT_HCI_VS_EXT */
@@ -5100,8 +5105,9 @@ static int set_ad(u16_t hci_op, const struct bt_ad *ad, size_t ad_len)
 			set_data->data[set_data->len++] = len + 1;
 			set_data->data[set_data->len++] = type;
 
-			memcpy(&set_data->data[set_data->len], data[i].data,
-			       len);
+			(void)memcpy(&set_data->data[set_data->len],
+					data[i].data,
+					len);
 			set_data->len += len;
 		}
 	}
@@ -5180,7 +5186,7 @@ void bt_id_get(bt_addr_le_t *addrs, size_t *count)
 {
 	size_t to_copy = MIN(*count, bt_dev.id_count);
 
-	memcpy(addrs, bt_dev.id_addr, to_copy * sizeof(bt_addr_le_t));
+	(void)memcpy(addrs, bt_dev.id_addr, to_copy * sizeof(bt_addr_le_t));
 	*count = to_copy;
 }
 
@@ -5221,11 +5227,11 @@ static void id_create(u8_t id, bt_addr_le_t *addr, u8_t *irk)
 		u8_t zero_irk[16] = { 0 };
 
 		if (irk && memcmp(irk, zero_irk, 16)) {
-			memcpy(&bt_dev.irk[id], irk, 16);
+			(void)memcpy(&bt_dev.irk[id], irk, 16);
 		} else {
 			bt_rand(&bt_dev.irk[id], 16);
 			if (irk) {
-				memcpy(irk, &bt_dev.irk[id], 16);
+				(void)memcpy(irk, &bt_dev.irk[id], 16);
 			}
 		}
 	}
@@ -5872,7 +5878,7 @@ int bt_le_set_chan_map(u8_t chan_map[5])
 
 	cp = net_buf_add(buf, sizeof(*cp));
 
-	memcpy(&cp->ch_map[0], &chan_map[0], 4);
+	(void)memcpy(&cp->ch_map[0], &chan_map[0], 4);
 	cp->ch_map[4] = chan_map[4] & BIT_MASK(5);
 
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_HOST_CHAN_CLASSIF,
@@ -5983,7 +5989,7 @@ static int br_start_inquiry(const struct bt_br_discovery_param *param)
 	cp->length = param->length;
 	cp->num_rsp = 0xff; /* we limit discovery only by time */
 
-	memcpy(cp->lap, iac, 3);
+	(void)memcpy(cp->lap, iac, 3);
 	if (param->limited) {
 		cp->lap[0] = 0x00;
 	}
@@ -6222,7 +6228,7 @@ int bt_dh_key_gen(const u8_t remote_pk[64], bt_dh_key_cb_t cb)
 	}
 
 	cp = net_buf_add(buf, sizeof(*cp));
-	memcpy(cp->key, remote_pk, sizeof(cp->key));
+	(void)memcpy(cp->key, remote_pk, sizeof(cp->key));
 
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_GENERATE_DHKEY, buf, NULL);
 	if (err) {

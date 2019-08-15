@@ -64,7 +64,7 @@ static inline void mgmt_push_event(u32_t mgmt_event, struct net_if *iface,
 #ifdef CONFIG_NET_MGMT_EVENT_INFO
 	if (info && length) {
 		if (length <= NET_EVENT_INFO_MAX_SIZE) {
-			memcpy(events[i_idx].info, info, length);
+			(void)memcpy(events[i_idx].info, info, length);
 			events[i_idx].info_length = length;
 		} else {
 			NET_ERR("Event info length %zu > max size %zu",

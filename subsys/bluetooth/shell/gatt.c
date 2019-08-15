@@ -561,7 +561,7 @@ static int cmd_show_db(const struct shell *shell, size_t argc, char *argv[])
 	struct bt_uuid_16 uuid;
 	size_t total_len;
 
-	memset(&stats, 0, sizeof(stats));
+	(void)memset(&stats, 0, sizeof(stats));
 
 	if (argc > 1) {
 		u16_t num_matches = 0;
@@ -663,7 +663,7 @@ static ssize_t write_vnd(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
 	}
 
-	memcpy(value + offset, buf, len);
+	(void)memcpy(value + offset, buf, len);
 
 	return len;
 }
@@ -697,7 +697,7 @@ static ssize_t write_long_vnd(struct bt_conn *conn,
 	}
 
 	/* Copy to buffer */
-	memcpy(value + offset, buf, len);
+	(void)memcpy(value + offset, buf, len);
 
 	return len;
 }
@@ -783,7 +783,7 @@ static int cmd_notify(const struct shell *shell, size_t argc, char *argv[])
 		data = strtoul(argv[1], NULL, 16);
 	}
 
-	memset(&params, 0, sizeof(params));
+	(void)memset(&params, 0, sizeof(params));
 
 	params.uuid = &vnd1_echo_uuid.uuid;
 	params.attr = vnd1_attrs;
@@ -836,7 +836,7 @@ static ssize_t write_met(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
 	}
 
-	memcpy(value + offset, buf, len);
+	(void)memcpy(value + offset, buf, len);
 
 	delta = k_cycle_get_32() - cycle_stamp;
 	delta = SYS_CLOCK_HW_CYCLES_TO_NS(delta);

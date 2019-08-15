@@ -122,9 +122,9 @@ static void fill_device(struct devlist_device *dev, const u8_t *desc)
 	struct usb_cfg_descriptor *cfg =
 		(void *)(desc + sizeof(struct usb_device_descriptor));
 
-	memset(dev->path, 0, 256);
+	(void)memset(dev->path, 0, 256);
 	strcpy(dev->path, "/sys/devices/pci0000:00/0000:00:01.2/usb1/1-1");
-	memset(dev->busid, 0, 32);
+	(void)memset(dev->busid, 0, 32);
 	strcpy(dev->busid, "1-1");
 
 	dev->busnum = htonl(1);
@@ -294,7 +294,7 @@ void usbip_start(void)
 		LOG_WRN("setsockopt() failed: %s", strerror(errno));
 	}
 
-	memset(&srv, 0, sizeof(srv));
+	(void)memset(&srv, 0, sizeof(srv));
 	srv.sin_family = AF_INET;
 	srv.sin_addr.s_addr = htonl(INADDR_ANY);
 	srv.sin_port = htons(USBIP_PORT);

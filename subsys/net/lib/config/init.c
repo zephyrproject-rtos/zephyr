@@ -193,9 +193,9 @@ static void ipv6_event_handler(struct net_mgmt_event_callback *cb,
 		/* save the last added IP address for this interface */
 		for (i = NET_IF_MAX_IPV6_ADDR - 1; i >= 0; i--) {
 			if (ipv6->unicast[i].is_used) {
-				memcpy(&laddr,
-				       &ipv6->unicast[i].address.in6_addr,
-				       sizeof(laddr));
+				(void)memcpy(&laddr,
+					    &ipv6->unicast[i].address.in6_addr,
+					    sizeof(laddr));
 			}
 		}
 	}

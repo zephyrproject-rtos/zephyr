@@ -69,7 +69,7 @@ static int flash_mcux_read(struct device *dev, off_t offset,
 	 */
 	addr = offset + priv->pflash_block_base;
 
-	memcpy(data, (void *) addr, len);
+	(void)memcpy(data, (void *) addr, len);
 
 	return 0;
 }

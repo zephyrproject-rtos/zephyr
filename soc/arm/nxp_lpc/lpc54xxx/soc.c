@@ -131,7 +131,7 @@ int _slave_init(struct device *arg)
 	SYSCON->AHBCLKCTRLSET[0] = SYSCON_AHBCLKCTRL_SRAM2_MASK;
 
 	/* Copy second core image to SRAM */
-	memcpy(CORE_M0_BOOT_ADDRESS, (void *)core_m0, sizeof(core_m0));
+	(void)memcpy(CORE_M0_BOOT_ADDRESS, (void *)core_m0, sizeof(core_m0));
 
 	/* Setup the reset handler pointer (PC) and stack pointer value.
 	 * This is used once the second core runs its startup code.

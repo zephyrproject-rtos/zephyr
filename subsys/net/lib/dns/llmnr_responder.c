@@ -202,7 +202,8 @@ static int add_answer(struct net_buf *query, u32_t ttl,
 	const u16_t q_len = query->len + 1 + DNS_QTYPE_LEN + DNS_QCLASS_LEN;
 	u16_t offset = DNS_MSG_HEADER_SIZE + q_len;
 
-	memcpy(query->data + offset, query->data + DNS_MSG_HEADER_SIZE, q_len);
+	(void)memcpy(query->data + offset,
+		      query->data + DNS_MSG_HEADER_SIZE, q_len);
 	offset += q_len;
 
 	UNALIGNED_PUT(htonl(ttl), query->data + offset);
@@ -211,7 +212,7 @@ static int add_answer(struct net_buf *query, u32_t ttl,
 	UNALIGNED_PUT(htons(addr_len), query->data + offset);
 	offset += DNS_RDLENGTH_LEN;
 
-	memcpy(query->data + offset, addr, addr_len);
+	(void)memcpy(query->data + offset, addr, addr_len);
 
 	return offset + addr_len;
 }

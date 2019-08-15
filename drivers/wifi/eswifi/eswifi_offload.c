@@ -594,7 +594,7 @@ static int eswifi_off_put(struct net_context *context)
 	__stop_socket(eswifi, socket);
 
 	if (--socket->usage <= 0) {
-		memset(socket, 0, sizeof(*socket));
+		(void)memset(socket, 0, sizeof(*socket));
 	}
 
 	eswifi_unlock(eswifi);
@@ -725,7 +725,7 @@ void eswifi_offload_async_msg(struct eswifi_dev *eswifi, char *msg, size_t len)
 		}
 
 		sin_addr = &net_sin(&socket->peer_addr)->sin_addr;
-		memcpy(&sin_addr->s4_addr, ip, 4);
+		(void)memcpy(&sin_addr->s4_addr, ip, 4);
 		socket->state = ESWIFI_SOCKET_STATE_CONNECTED;
 		socket->usage++;
 

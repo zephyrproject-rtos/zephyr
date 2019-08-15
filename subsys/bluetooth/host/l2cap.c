@@ -1210,8 +1210,8 @@ static int l2cap_chan_le_send_sdu(struct bt_l2cap_le_chan *ch,
 		if (ret < 0) {
 			if (ret == -EAGAIN) {
 				/* Store sent data into user_data */
-				memcpy(net_buf_user_data(frag), &sent,
-				       sizeof(sent));
+				(void)memcpy(net_buf_user_data(frag), &sent,
+						sizeof(sent));
 			}
 			*buf = frag;
 			return ret;
@@ -1230,8 +1230,8 @@ static int l2cap_chan_le_send_sdu(struct bt_l2cap_le_chan *ch,
 		if (ret < 0) {
 			if (ret == -EAGAIN) {
 				/* Store sent data into user_data */
-				memcpy(net_buf_user_data(frag), &sent,
-				       sizeof(sent));
+				(void)memcpy(net_buf_user_data(frag), &sent,
+						sizeof(sent));
 			}
 			*buf = frag;
 			return ret;
@@ -1468,7 +1468,7 @@ int bt_l2cap_chan_recv_complete(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	BT_DBG("chan %p buf %p", chan, buf);
 
 	/* Restore credits used by packet */
-	memcpy(&credits, net_buf_user_data(buf), sizeof(credits));
+	(void)memcpy(&credits, net_buf_user_data(buf), sizeof(credits));
 
 	l2cap_chan_send_credits(ch, buf, credits);
 
@@ -1522,7 +1522,7 @@ static void l2cap_chan_le_recv_seg(struct bt_l2cap_le_chan *chan,
 
 	len = net_buf_frags_len(chan->_sdu);
 	if (len) {
-		memcpy(&seg, net_buf_user_data(chan->_sdu), sizeof(seg));
+		(void)memcpy(&seg, net_buf_user_data(chan->_sdu), sizeof(seg));
 	}
 
 	if (len + buf->len > chan->_sdu_len) {
@@ -1533,7 +1533,7 @@ static void l2cap_chan_le_recv_seg(struct bt_l2cap_le_chan *chan,
 
 	seg++;
 	/* Store received segments in user_data */
-	memcpy(net_buf_user_data(chan->_sdu), &seg, sizeof(seg));
+	(void)memcpy(net_buf_user_data(chan->_sdu), &seg, sizeof(seg));
 
 	BT_DBG("chan %p seg %d len %zu", chan, seg, net_buf_frags_len(buf));
 

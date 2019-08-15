@@ -137,9 +137,9 @@ void add_ipv6_addr_to_ot(struct openthread_context *context)
 	/* save the last added IP address for this interface */
 	for (i = NET_IF_MAX_IPV6_ADDR - 1; i >= 0; i--) {
 		if (ipv6->unicast[i].is_used) {
-			memcpy(&addr.mAddress,
-			       &ipv6->unicast[i].address.in6_addr,
-			       sizeof(addr.mAddress));
+			(void)memcpy(&addr.mAddress,
+					&ipv6->unicast[i].address.in6_addr,
+					sizeof(addr.mAddress));
 			break;
 		}
 	}
@@ -177,9 +177,9 @@ void add_ipv6_maddr_to_ot(struct openthread_context *context)
 	/* save the last added IP address for this interface */
 	for (i = NET_IF_MAX_IPV6_MADDR - 1; i >= 0; i--) {
 		if (ipv6->mcast[i].is_used) {
-			memcpy(&addr,
-			       &ipv6->mcast[i].address.in6_addr,
-			       sizeof(addr));
+			(void)memcpy(&addr,
+					&ipv6->mcast[i].address.in6_addr,
+					sizeof(addr));
 			break;
 		}
 	}

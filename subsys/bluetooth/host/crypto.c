@@ -44,7 +44,7 @@ static int prng_reseed(struct tc_hmac_prng_struct *h)
 		}
 
 		rp = (void *)rsp->data;
-		memcpy(&seed[i * 8], rp->rand, 8);
+		(void)memcpy(&seed[i * 8], rp->rand, 8);
 
 		net_buf_unref(rsp);
 	}

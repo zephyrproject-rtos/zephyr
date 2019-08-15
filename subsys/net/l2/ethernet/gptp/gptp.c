@@ -399,9 +399,9 @@ static void gptp_init_clock_ds(void)
 	/* Initialize parent data set. */
 
 	/* parent clock id is initialized to default_ds clock id. */
-	memcpy(parent_ds->port_id.clk_id, default_ds->clk_id,
-	       GPTP_CLOCK_ID_LEN);
-	memcpy(parent_ds->gm_id, default_ds->clk_id, GPTP_CLOCK_ID_LEN);
+	(void)memcpy(parent_ds->port_id.clk_id, default_ds->clk_id,
+			GPTP_CLOCK_ID_LEN);
+	(void)memcpy(parent_ds->gm_id, default_ds->clk_id, GPTP_CLOCK_ID_LEN);
 	parent_ds->port_id.port_number = 0U;
 
 	/* TODO: Check correct value for below field. */
@@ -450,7 +450,8 @@ static void gptp_init_port_ds(int port)
 	port_ds = GPTP_PORT_DS(port);
 
 	/* Initialize port data set. */
-	memcpy(port_ds->port_id.clk_id, default_ds->clk_id, GPTP_CLOCK_ID_LEN);
+	(void)memcpy(port_ds->port_id.clk_id,
+		      default_ds->clk_id, GPTP_CLOCK_ID_LEN);
 	port_ds->port_id.port_number = port;
 
 	port_ds->ptt_port_enabled = true;

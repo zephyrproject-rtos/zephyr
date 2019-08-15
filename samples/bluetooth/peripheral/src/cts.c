@@ -50,7 +50,7 @@ static ssize_t write_ct(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
 	}
 
-	memcpy(value + offset, buf, len);
+	(void)memcpy(value + offset, buf, len);
 	ct_update = 1U;
 
 	return len;
@@ -76,7 +76,7 @@ static void generate_current_time(u8_t *buf)
 	 */
 
 	year = sys_cpu_to_le16(2015);
-	memcpy(buf,  &year, 2); /* year */
+	(void)memcpy(buf,  &year, 2); /* year */
 	buf[2] = 5U; /* months starting from 1 */
 	buf[3] = 30U; /* day */
 	buf[4] = 12U; /* hours */

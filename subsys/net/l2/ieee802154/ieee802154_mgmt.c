@@ -283,8 +283,8 @@ static int ieee802154_associate(u32_t mgmt_request, struct net_if *iface,
 		if (ctx->coord_addr_len == IEEE802154_SHORT_ADDR_LENGTH) {
 			ctx->coord.short_addr = req->short_addr;
 		} else {
-			memcpy(ctx->coord.ext_addr,
-			       req->addr, IEEE802154_EXT_ADDR_LENGTH);
+			(void)memcpy(ctx->coord.ext_addr,
+					req->addr, IEEE802154_EXT_ADDR_LENGTH);
 		}
 	} else {
 		ret = -EACCES;
@@ -410,7 +410,8 @@ static int ieee802154_set_parameters(u32_t mgmt_request,
 		}
 
 		if (memcmp(ctx->ext_addr, data, IEEE802154_EXT_ADDR_LENGTH)) {
-			memcpy(ctx->ext_addr, data, IEEE802154_EXT_ADDR_LENGTH);
+			(void)memcpy(ctx->ext_addr, data,
+				      IEEE802154_EXT_ADDR_LENGTH);
 			ieee802154_filter_ieee_addr(iface, ctx->ext_addr);
 		}
 	} else if (mgmt_request == NET_REQUEST_IEEE802154_SET_SHORT_ADDR) {
@@ -468,7 +469,7 @@ static int ieee802154_get_parameters(u32_t mgmt_request,
 			return -EINVAL;
 		}
 
-		memcpy(data, ctx->ext_addr, IEEE802154_EXT_ADDR_LENGTH);
+		(void)memcpy(data, ctx->ext_addr, IEEE802154_EXT_ADDR_LENGTH);
 	} else if (mgmt_request == NET_REQUEST_IEEE802154_GET_SHORT_ADDR) {
 		*value = ctx->short_addr;
 	} else if (mgmt_request == NET_REQUEST_IEEE802154_GET_TX_POWER) {
@@ -542,7 +543,7 @@ static int ieee802154_get_security_settings(u32_t mgmt_request,
 
 	params = (struct ieee802154_security_params *)data;
 
-	memcpy(params->key, ctx->sec_ctx.key, ctx->sec_ctx.key_len);
+	(void)memcpy(params->key, ctx->sec_ctx.key, ctx->sec_ctx.key_len);
 	params->key_len = ctx->sec_ctx.key_len;
 	params->key_mode = ctx->sec_ctx.key_mode;
 	params->level = ctx->sec_ctx.level;

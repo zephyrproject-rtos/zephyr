@@ -54,7 +54,7 @@ static enum shell_wildcard_status command_add(char *buff, u16_t *buff_len,
 
 	/* make place for new command: + 1 for space + 1 for EOS */
 	memmove(completion_addr + cmd_len + 1, completion_addr, shift + 1);
-	memcpy(completion_addr, cmd, cmd_len);
+	(void)memcpy(completion_addr, cmd, cmd_len);
 	/* adding space to not brake next command in the buffer */
 	completion_addr[cmd_len] = ' ';
 
@@ -168,8 +168,8 @@ void shell_wildcard_prepare(const struct shell *shell)
 	 *    including expanded commands, are passed as arguments.
 	 */
 
-	memset(shell->ctx->temp_buff, 0, sizeof(shell->ctx->temp_buff));
-	memcpy(shell->ctx->temp_buff,
+	(void)memset(shell->ctx->temp_buff, 0, sizeof(shell->ctx->temp_buff));
+	(void)memcpy(shell->ctx->temp_buff,
 			shell->ctx->cmd_buff,
 			shell->ctx->cmd_buff_len);
 
@@ -212,8 +212,8 @@ enum shell_wildcard_status shell_wildcard_process(const struct shell *shell,
 
 void shell_wildcard_finalize(const struct shell *shell)
 {
-	memcpy(shell->ctx->cmd_buff,
-	       shell->ctx->temp_buff,
-	       shell->ctx->cmd_tmp_buff_len);
+	(void)memcpy(shell->ctx->cmd_buff,
+			shell->ctx->temp_buff,
+			shell->ctx->cmd_tmp_buff_len);
 	shell->ctx->cmd_buff_len = shell->ctx->cmd_tmp_buff_len;
 }

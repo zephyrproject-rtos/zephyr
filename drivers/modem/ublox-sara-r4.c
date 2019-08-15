@@ -971,7 +971,7 @@ static int offload_bind(int sock_fd, const struct sockaddr *addr,
 	}
 
 	/* save bind address information */
-	memcpy(&sock->src, addr, sizeof(*addr));
+	(void)memcpy(&sock->src, addr, sizeof(*addr));
 
 	/* make sure we've created the socket */
 	if (sock->id == mdata.socket_config.sockets_len + 1) {
@@ -1013,7 +1013,7 @@ static int offload_connect(int sock_fd, const struct sockaddr *addr,
 		}
 	}
 
-	memcpy(&sock->dst, addr, sizeof(*addr));
+	(void)memcpy(&sock->dst, addr, sizeof(*addr));
 	if (addr->sa_family == AF_INET6) {
 		dst_port = ntohs(net_sin6(addr)->sin6_port);
 	} else if (addr->sa_family == AF_INET) {
@@ -1107,7 +1107,7 @@ static ssize_t offload_recvfrom(int sock_fd, void *buf, short int len,
 	/* HACK: use dst address as from */
 	if (from && fromlen) {
 		*fromlen = sizeof(sock->dst);
-		memcpy(from, &sock->dst, *fromlen);
+		(void)memcpy(from, &sock->dst, *fromlen);
 	}
 
 	/* return length of received data */

@@ -204,11 +204,11 @@ static struct net_pkt *dhcpv4_create_message(struct net_if *iface, u8_t type,
 		 * asked to send a ciaddr then fill it in now
 		 * otherwise leave it as all zeros.
 		 */
-		memcpy(msg->ciaddr, ciaddr, 4);
+		(void)memcpy(msg->ciaddr, ciaddr, 4);
 	}
 
-	memcpy(msg->chaddr, net_if_get_link_addr(iface)->addr,
-	       net_if_get_link_addr(iface)->len);
+	(void)memcpy(msg->chaddr, net_if_get_link_addr(iface)->addr,
+			net_if_get_link_addr(iface)->len);
 
 	if (net_pkt_set_data(pkt, &dhcp_access)) {
 		goto fail;
@@ -955,8 +955,8 @@ static enum net_verdict net_dhcpv4_input(struct net_conn *conn,
 		return NET_DROP;
 	}
 
-	memcpy(iface->config.dhcpv4.requested_ip.s4_addr,
-	       msg->yiaddr, sizeof(msg->yiaddr));
+	(void)memcpy(iface->config.dhcpv4.requested_ip.s4_addr,
+			msg->yiaddr, sizeof(msg->yiaddr));
 
 	net_pkt_acknowledge_data(pkt, &dhcp_access);
 

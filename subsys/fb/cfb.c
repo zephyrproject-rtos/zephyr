@@ -173,7 +173,7 @@ int cfb_framebuffer_clear(struct device *dev, bool clear_display)
 	desc.width = fb->x_res;
 	desc.height = fb->y_res;
 	desc.pitch = fb->x_res;
-	memset(fb->buf, 0, fb->size);
+	(void)memset(fb->buf, 0, fb->size);
 
 	return 0;
 }
@@ -316,7 +316,7 @@ int cfb_framebuffer_init(struct device *dev)
 		return -1;
 	}
 
-	memset(fb->buf, 0, fb->size);
+	(void)memset(fb->buf, 0, fb->size);
 
 	return 0;
 }

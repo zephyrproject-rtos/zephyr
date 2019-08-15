@@ -372,7 +372,7 @@ static u32_t search_uuid(struct bt_sdp_data_elem *elem, struct bt_uuid *uuid,
 			}
 		} else if (seq_size == 16U) {
 			u.uuid.type = BT_UUID_TYPE_128;
-			memcpy(u.u128.val, cur_elem, seq_size);
+			(void)memcpy(u.u128.val, cur_elem, seq_size);
 			if (!bt_uuid_cmp(&u.uuid, uuid)) {
 				*found = true;
 			}
@@ -1813,8 +1813,8 @@ static int sdp_client_receive(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		 */
 		if (cstate->length) {
 			/* Cache original Continuation State in context */
-			memcpy(&session->cstate, cstate,
-			       sizeof(struct bt_sdp_pdu_cstate));
+			(void)memcpy(&session->cstate, cstate,
+					sizeof(struct bt_sdp_pdu_cstate));
 
 			net_buf_pull(buf, cstate->length +
 				     sizeof(cstate->length));
@@ -2341,9 +2341,9 @@ static int sdp_get_uuid_data(const struct bt_sdp_attr_item *attr,
 		/* check DTD and get stacked UUID value */
 		switch (p[0]) {
 		case BT_SDP_UUID16:
-			memcpy(&pd->uuid16,
-			       BT_UUID_DECLARE_16(sys_get_be16(++p)),
-			       sizeof(struct bt_uuid_16));
+			(void)memcpy(&pd->uuid16,
+					BT_UUID_DECLARE_16(sys_get_be16(++p)),
+					sizeof(struct bt_uuid_16));
 			p += sizeof(u16_t);
 			left -= sizeof(u16_t);
 			break;
@@ -2353,9 +2353,9 @@ static int sdp_get_uuid_data(const struct bt_sdp_attr_item *attr,
 				return -EMSGSIZE;
 			}
 
-			memcpy(&pd->uuid32,
-			       BT_UUID_DECLARE_32(sys_get_be32(++p)),
-			       sizeof(struct bt_uuid_32));
+			(void)memcpy(&pd->uuid32,
+					BT_UUID_DECLARE_32(sys_get_be32(++p)),
+					sizeof(struct bt_uuid_32));
 			p += sizeof(u32_t);
 			left -= sizeof(u32_t);
 			break;

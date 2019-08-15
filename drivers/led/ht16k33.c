@@ -331,7 +331,7 @@ static int ht16k33_init(struct device *dev)
 		return -EINVAL;
 	}
 
-	memset(&data->buffer, 0, sizeof(data->buffer));
+	(void)memset(&data->buffer, 0, sizeof(data->buffer));
 
 	/* Hardware specific limits */
 	dev_data->min_period = 0U;
@@ -349,7 +349,7 @@ static int ht16k33_init(struct device *dev)
 	}
 
 	/* Clear display RAM */
-	memset(cmd, 0, sizeof(cmd));
+	(void)memset(cmd, 0, sizeof(cmd));
 	cmd[0] = HT16K33_CMD_DISP_DATA_ADDR;
 	err = i2c_write(data->i2c, cmd, sizeof(cmd), config->i2c_addr);
 	if (err) {
@@ -374,7 +374,7 @@ static int ht16k33_init(struct device *dev)
 	}
 
 #ifdef CONFIG_HT16K33_KEYSCAN
-	memset(&data->children, 0, sizeof(data->children));
+	(void)memset(&data->children, 0, sizeof(data->children));
 	k_mutex_init(&data->lock);
 	k_sem_init(&data->irq_sem, 0, 1);
 

@@ -19,7 +19,7 @@ int z_impl_i2s_buf_read(struct device *dev, void *buf, size_t *size)
 		struct i2s_config *rx_cfg =
 			i2s_config_get((struct device *)dev, I2S_DIR_RX);
 
-		memcpy(buf, mem_block, *size);
+		(void)memcpy(buf, mem_block, *size);
 		k_mem_slab_free(rx_cfg->mem_slab, &mem_block);
 	}
 
@@ -46,7 +46,7 @@ int z_impl_i2s_buf_write(struct device *dev, void *buf, size_t size)
 		return -ENOMEM;
 	}
 
-	memcpy(mem_block, (void *)buf, size);
+	(void)memcpy(mem_block, (void *)buf, size);
 
 	ret = i2s_write((struct device *)dev, mem_block, size);
 	if (ret != 0) {

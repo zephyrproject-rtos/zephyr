@@ -585,7 +585,7 @@ static int i2s_sam_configure(struct device *dev, enum i2s_dir dir,
 		return -EINVAL;
 	}
 
-	memcpy(&stream->cfg, i2s_cfg, sizeof(struct i2s_config));
+	(void)memcpy(&stream->cfg, i2s_cfg, sizeof(struct i2s_config));
 
 	bit_clk_freq = i2s_cfg->frame_clk_freq * word_size_bits * num_words;
 	ret = bit_clock_set(ssc, bit_clk_freq);

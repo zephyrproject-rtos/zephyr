@@ -105,7 +105,7 @@ static int transmitv(struct net_context *conn, int iovcnt,
 	int i, pos;
 
 	for (i = 0, pos = 0; i < iovcnt; pos += iov[i].len, i++) {
-		memcpy(&buf[pos], iov[i].base, iov[i].len);
+		(void)memcpy(&buf[pos], iov[i].base, iov[i].len);
 	}
 
 	return net_context_send(conn, buf, pos, NULL, K_NO_WAIT, NULL);
@@ -243,7 +243,8 @@ static int copy_pkt_to_buf(struct net_buf *src, u16_t offset,
 	for (copied = 0U; src && n_bytes > 0; offset = 0U) {
 		to_copy = MIN(n_bytes, src->len - offset);
 
-		memcpy(dst + copied, (char *)src->data + offset, to_copy);
+		(void)memcpy(dst + copied,
+			      (char *)src->data + offset, to_copy);
 		copied += to_copy;
 
 		n_bytes -= to_copy;

@@ -29,7 +29,7 @@ VL53L0X_Error VL53L0X_WriteMulti(VL53L0X_DEV Dev, uint8_t index, uint8_t *pdata,
 	uint8_t I2CBuffer[count+1];
 
 	I2CBuffer[0] = index;
-	memcpy(&I2CBuffer[1], pdata, count);
+	(void)memcpy(&I2CBuffer[1], pdata, count);
 
 	status_int = i2c_write(Dev->i2c, I2CBuffer, count+1, Dev->I2cDevAddr);
 

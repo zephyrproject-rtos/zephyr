@@ -465,7 +465,7 @@ void net_ppp_init(struct net_if *iface)
 	NET_DBG("Initializing PPP L2 %p for iface %p", ctx, iface);
 
 	if (!ctx->is_init) {
-		memset(ctx, 0, sizeof(*ctx));
+		(void)memset(ctx, 0, sizeof(*ctx));
 	}
 
 	ctx->ppp_l2_flags = NET_L2_MULTICAST | NET_L2_POINT_TO_POINT;

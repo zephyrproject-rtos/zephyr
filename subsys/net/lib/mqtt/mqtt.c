@@ -30,7 +30,7 @@ static void client_reset(struct mqtt_client *client)
 /** @brief Initialize tx buffer. */
 static void tx_buf_init(struct mqtt_client *client, struct buf_ctx *buf)
 {
-	memset(client->tx_buf, 0, client->tx_buf_size);
+	(void)memset(client->tx_buf, 0, client->tx_buf_size);
 	buf->cur = client->tx_buf;
 	buf->end = client->tx_buf + client->tx_buf_size;
 }
@@ -161,7 +161,7 @@ void mqtt_client_init(struct mqtt_client *client)
 {
 	NULL_PARAM_CHECK_VOID(client);
 
-	memset(client, 0, sizeof(*client));
+	(void)memset(client, 0, sizeof(*client));
 
 	MQTT_STATE_INIT(client);
 	mqtt_mutex_init(client);
@@ -182,7 +182,8 @@ int mqtt_client_set_proxy(struct mqtt_client *client,
 		}
 
 		client->transport.proxy.addrlen = addrlen;
-		memcpy(&client->transport.proxy.addr, proxy_addr, addrlen);
+		(void)memcpy(&client->transport.proxy.addr,
+			      proxy_addr, addrlen);
 
 		return 0;
 	}

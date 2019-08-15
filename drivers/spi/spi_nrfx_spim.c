@@ -168,7 +168,7 @@ static void transfer_next_chunk(struct device *dev)
 				chunk_len = sizeof(dev_data->buffer);
 			}
 
-			memcpy(dev_data->buffer, tx_buf, chunk_len);
+			(void)memcpy(dev_data->buffer, tx_buf, chunk_len);
 			tx_buf = dev_data->buffer;
 		}
 #endif

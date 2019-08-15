@@ -229,7 +229,7 @@ static bool tab_prepare(const struct shell *shell,
 	}
 
 	/* Copy command from its beginning to cursor position. */
-	memcpy(shell->ctx->temp_buff, shell->ctx->cmd_buff,
+	(void)memcpy(shell->ctx->temp_buff, shell->ctx->cmd_buff,
 			shell->ctx->cmd_buff_pos);
 	shell->ctx->temp_buff[shell->ctx->cmd_buff_pos] = '\0';
 
@@ -551,7 +551,8 @@ static int execute(const struct shell *shell)
 		cursor_next_line_move(shell);
 	}
 
-	memset(&shell->ctx->active_cmd, 0, sizeof(shell->ctx->active_cmd));
+	(void)memset(&shell->ctx->active_cmd, 0,
+		      sizeof(shell->ctx->active_cmd));
 
 	shell_cmd_trim(shell);
 
@@ -1077,7 +1078,7 @@ static int instance_init(const struct shell *shell, const void *p_config,
 		return err;
 	}
 
-	memset(shell->ctx, 0, sizeof(*shell->ctx));
+	(void)memset(shell->ctx, 0, sizeof(*shell->ctx));
 	shell->ctx->prompt = shell->default_prompt;
 
 	history_init(shell);

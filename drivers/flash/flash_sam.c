@@ -213,7 +213,7 @@ static int flash_sam_read(struct device *dev, off_t offset, void *data,
 		return -EINVAL;
 	}
 
-	memcpy(data, (u8_t *)CONFIG_FLASH_BASE_ADDRESS + offset, len);
+	(void)memcpy(data, (u8_t *)CONFIG_FLASH_BASE_ADDRESS + offset, len);
 
 	return 0;
 }

@@ -791,11 +791,11 @@ static int isr_rx_pdu(struct lll_conn *lll, struct pdu_data *pdu_data_rx,
 
 					if (ctrl_pdu_len_check(
 						scratch_pkt->len)) {
-						memcpy(pdu_data_rx,
+						(void)memcpy(pdu_data_rx,
 						       scratch_pkt,
 						       scratch_pkt->len +
 						       offsetof(struct pdu_data,
-							llctrl));
+								llctrl));
 						mic_failure = false;
 						lll->ccm_rx.counter--;
 					}

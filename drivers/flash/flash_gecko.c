@@ -40,7 +40,7 @@ static int flash_gecko_read(struct device *dev, off_t offset, void *data,
 		return 0;
 	}
 
-	memcpy(data, (u8_t *)CONFIG_FLASH_BASE_ADDRESS + offset, size);
+	(void)memcpy(data, (u8_t *)CONFIG_FLASH_BASE_ADDRESS + offset, size);
 
 	return 0;
 }

@@ -84,8 +84,8 @@ static int lcp_config_info_req(struct ppp_fsm *fsm,
 	int i, nack_idx = 0;
 	int count_rej = 0, count_nack = 0;
 
-	memset(options, 0, sizeof(options));
-	memset(nack_options, 0, sizeof(nack_options));
+	(void)memset(options, 0, sizeof(options));
+	(void)memset(nack_options, 0, sizeof(nack_options));
 
 	verdict = ppp_parse_options(fsm, pkt, length, options,
 				    ARRAY_SIZE(options));
@@ -140,9 +140,9 @@ static int lcp_config_info_req(struct ppp_fsm *fsm,
 			nack_options[nack_idx].len = options[i].len;
 
 			if (options[i].len > 2) {
-				memcpy(&nack_options[nack_idx].value,
-				       &options[i].value,
-				       sizeof(nack_options[nack_idx].value));
+				(void)memcpy(&nack_options[nack_idx].value,
+					  &options[i].value,
+					  sizeof(nack_options[nack_idx].value));
 			}
 
 			nack_idx++;
@@ -285,7 +285,7 @@ static void lcp_init(struct ppp_context *ctx)
 	NET_DBG("proto %s (0x%04x) fsm %p", ppp_proto2str(PPP_LCP), PPP_LCP,
 		&ctx->lcp.fsm);
 
-	memset(&ctx->lcp.fsm, 0, sizeof(ctx->lcp.fsm));
+	(void)memset(&ctx->lcp.fsm, 0, sizeof(ctx->lcp.fsm));
 
 	ppp_fsm_init(&ctx->lcp.fsm, PPP_LCP);
 

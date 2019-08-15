@@ -222,7 +222,7 @@ u32_t ll_test_tx(u8_t chan, u8_t len, u8_t type, u8_t phy)
 
 	switch (type) {
 	case 0x00:
-		memcpy(payload, prbs9, len);
+		(void)memcpy(payload, prbs9, len);
 		break;
 
 	case 0x01:
@@ -234,7 +234,7 @@ u32_t ll_test_tx(u8_t chan, u8_t len, u8_t type, u8_t phy)
 		break;
 
 	case 0x03:
-		memcpy(payload, prbs15, len);
+		(void)memcpy(payload, prbs15, len);
 		break;
 
 	case 0x04:

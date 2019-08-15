@@ -93,7 +93,7 @@ static void listener(void)
 		exit(1);
 	}
 
-	memset(&sockaddr, 0, sizeof(sockaddr));
+	(void)memset(&sockaddr, 0, sizeof(sockaddr));
 
 	sockaddr.nm_family = AF_NET_MGMT;
 	sockaddr.nm_ifindex = 0; /* Any network interface */
@@ -111,7 +111,7 @@ static void listener(void)
 	while (1) {
 		struct net_mgmt_msghdr *hdr;
 
-		memset(buf, 0, sizeof(buf));
+		(void)memset(buf, 0, sizeof(buf));
 		event_addr_len = sizeof(event_addr);
 
 		ret = recvfrom(fd, buf, sizeof(buf), 0,

@@ -17,7 +17,7 @@ bool updatehub_get_device_identity(char *id, int id_max_len)
 		return false;
 	}
 
-	memset(id, 0, id_max_len);
+	(void)memset(id, 0, id_max_len);
 
 	for (i = 0; i < length; i++) {
 		snprintk(buf, sizeof(buf), "%02x", hwinfo_id[i]);

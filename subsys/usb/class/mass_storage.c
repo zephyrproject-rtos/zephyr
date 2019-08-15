@@ -490,7 +490,7 @@ static void CBWDecode(u8_t *buf, u16_t size)
 		return;
 	}
 
-	memcpy((u8_t *)&cbw, buf, size);
+	(void)memcpy((u8_t *)&cbw, buf, size);
 	if (cbw.Signature != CBW_Signature) {
 		LOG_ERR("CBW Signature Mismatch");
 		return;

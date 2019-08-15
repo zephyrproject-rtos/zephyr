@@ -384,13 +384,13 @@ static volatile bool data_arrived;
 static void flush_buffer_mouse(void)
 {
 	chr_ptr_mouse = 0U;
-	memset(data_buf_mouse, 0, sizeof(data_buf_mouse));
+	(void)memset(data_buf_mouse, 0, sizeof(data_buf_mouse));
 }
 
 static void flush_buffer_kbd(void)
 {
 	chr_ptr_kbd = 0U;
-	memset(data_buf_kbd, 0, sizeof(data_buf_kbd));
+	(void)memset(data_buf_kbd, 0, sizeof(data_buf_kbd));
 }
 
 static void write_data(struct device *dev, const char *buf, int len)

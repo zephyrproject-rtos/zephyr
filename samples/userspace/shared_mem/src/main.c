@@ -186,7 +186,7 @@ void enc(void)
 		if (fBUFIN == 1) { /* 1 is process text */
 			printk("ENC Thread Received Data\n");
 			/* copy message form shared mem and clear flag */
-			memcpy(&enc_pt, BUFIN, SAMP_BLOCKSIZE);
+			(void)memcpy(&enc_pt, BUFIN, SAMP_BLOCKSIZE);
 			printk("ENC PT MSG: %s\n", (char *)&enc_pt);
 			fBUFIN = 0;
 			/* reset wheel: probably better as a flag option  */
@@ -194,7 +194,8 @@ void enc(void)
 			IW2 = 2;
 			IW3 = 3;
 			/* encode */
-			memset(&enc_ct, 0, SAMP_BLOCKSIZE); /* clear memory */
+			/* clear memory */
+			(void)memset(&enc_ct, 0, SAMP_BLOCKSIZE);
 			for (index = 0, index_out = 0; index < SAMP_BLOCKSIZE; index++) {
 				if (enc_pt[index] == '\0') {
 					enc_ct[index_out] = '\0';
@@ -210,7 +211,7 @@ void enc(void)
 				k_sleep(100);
 			}
 			/* ct thread has cleared the buffer */
-			memcpy(&BUFOUT, &enc_ct, SAMP_BLOCKSIZE);
+			(void)memcpy(&BUFOUT, &enc_ct, SAMP_BLOCKSIZE);
 			fBUFOUT = 1;
 
 		}
@@ -231,8 +232,8 @@ void pt(void)
 		k_sem_take(&allforone, K_FOREVER);
 		if (fBUFIN == 0) { /* send message to encode */
 			printk("\nPT Sending Message 1\n");
-			memset(&BUFIN, 0, SAMP_BLOCKSIZE);
-			memcpy(&BUFIN, &ptMSG, sizeof(ptMSG));
+			(void)memset(&BUFIN, 0, SAMP_BLOCKSIZE);
+			(void)memcpy(&BUFIN, &ptMSG, sizeof(ptMSG));
 /* strlen should not be used if user provided data, needs a max length set  */
 			fBUFIN = 1;
 		}
@@ -240,8 +241,8 @@ void pt(void)
 		k_sem_take(&allforone, K_FOREVER);
 		if (fBUFIN == 0) { /* send message to decode  */
 			printk("\nPT Sending Message 1'\n");
-			memset(&BUFIN, 0, SAMP_BLOCKSIZE);
-			memcpy(&BUFIN, &ptMSG2, sizeof(ptMSG2));
+			(void)memset(&BUFIN, 0, SAMP_BLOCKSIZE);
+			(void)memcpy(&BUFIN, &ptMSG2, sizeof(ptMSG2));
 			fBUFIN = 1;
 		}
 		k_sem_give(&allforone);
@@ -262,8 +263,8 @@ void ct(void)
 		k_sem_take(&allforone, K_FOREVER);
 		if (fBUFOUT == 1) {
 			printk("CT Thread Receivedd Message\n");
-			memset(&tbuf, 0, sizeof(tbuf));
-			memcpy(&tbuf, BUFOUT, SAMP_BLOCKSIZE);
+			(void)memset(&tbuf, 0, sizeof(tbuf));
+			(void)memcpy(&tbuf, BUFOUT, SAMP_BLOCKSIZE);
 			fBUFOUT = 0;
 			printk("CT MSG: %s\n", (char *)&tbuf);
 		}

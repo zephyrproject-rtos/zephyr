@@ -132,7 +132,7 @@ static void gptp_phase_dis_cb(u8_t *gm_identity,
 	static u8_t id[8];
 
 	if (memcmp(id, gm_identity, sizeof(id))) {
-		memcpy(id, gm_identity, sizeof(id));
+		(void)memcpy(id, gm_identity, sizeof(id));
 
 		LOG_DBG("GM %s last phase %d.%lld",
 			log_strdup(gptp_sprint_clock_id(gm_identity, output,

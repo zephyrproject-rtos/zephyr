@@ -147,7 +147,7 @@ static void process_cmd(struct modem_cmd *cmd, size_t match_len,
 	u16_t argc = 0U;
 
 	/* reset params */
-	memset(argv, 0, sizeof(argv[0]) * ARRAY_SIZE(argv));
+	(void)memset(argv, 0, sizeof(argv[0]) * ARRAY_SIZE(argv));
 
 	/* do we need to parse arguments? */
 	if (cmd->arg_count > 0U) {

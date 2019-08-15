@@ -55,7 +55,7 @@ static u8_t discover_func(struct bt_conn *conn,
 	printk("[ATTRIBUTE] handle %u\n", attr->handle);
 
 	if (!bt_uuid_cmp(discover_params.uuid, BT_UUID_HRS)) {
-		memcpy(&uuid, BT_UUID_HRS_MEASUREMENT, sizeof(uuid));
+		(void)memcpy(&uuid, BT_UUID_HRS_MEASUREMENT, sizeof(uuid));
 		discover_params.uuid = &uuid.uuid;
 		discover_params.start_handle = attr->handle + 1;
 		discover_params.type = BT_GATT_DISCOVER_CHARACTERISTIC;
@@ -66,7 +66,7 @@ static u8_t discover_func(struct bt_conn *conn,
 		}
 	} else if (!bt_uuid_cmp(discover_params.uuid,
 				BT_UUID_HRS_MEASUREMENT)) {
-		memcpy(&uuid, BT_UUID_GATT_CCC, sizeof(uuid));
+		(void)memcpy(&uuid, BT_UUID_GATT_CCC, sizeof(uuid));
 		discover_params.uuid = &uuid.uuid;
 		discover_params.start_handle = attr->handle + 2;
 		discover_params.type = BT_GATT_DISCOVER_DESCRIPTOR;
@@ -109,7 +109,7 @@ static void connected(struct bt_conn *conn, u8_t conn_err)
 	printk("Connected: %s\n", addr);
 
 	if (conn == default_conn) {
-		memcpy(&uuid, BT_UUID_HRS, sizeof(uuid));
+		(void)memcpy(&uuid, BT_UUID_HRS, sizeof(uuid));
 		discover_params.uuid = &uuid.uuid;
 		discover_params.func = discover_func;
 		discover_params.start_handle = 0x0001;
@@ -144,7 +144,7 @@ static bool eir_found(struct bt_data *data, void *user_data)
 			u16_t u16;
 			int err;
 
-			memcpy(&u16, &data->data[i], sizeof(u16));
+			(void)memcpy(&u16, &data->data[i], sizeof(u16));
 			uuid = BT_UUID_DECLARE_16(sys_le16_to_cpu(u16));
 			if (bt_uuid_cmp(uuid, BT_UUID_HRS)) {
 				continue;

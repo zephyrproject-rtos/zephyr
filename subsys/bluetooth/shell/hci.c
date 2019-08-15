@@ -43,7 +43,7 @@ int cmd_mesh_adv(const struct shell *shell, size_t argc, char *argv[])
 		cp = net_buf_add(buf, sizeof(*cp));
 		cp->adv_slot = 0U;
 		cp->own_addr_type = 0x01;
-		memset(&cp->random_addr, 0, sizeof(bt_addr_t));
+		(void)memset(&cp->random_addr, 0, sizeof(bt_addr_t));
 		cp->ch_map = 0x07;
 		cp->tx_power = 0;
 		cp->min_tx_delay = 0U;
@@ -54,7 +54,7 @@ int cmd_mesh_adv(const struct shell *shell, size_t argc, char *argv[])
 		cp->scan_duration = sys_cpu_to_le16(0x0064);
 		cp->scan_filter = 0x00;
 		cp->data_len = 0U;
-		memset(cp->data, 0, sizeof(cp->data));
+		(void)memset(cp->data, 0, sizeof(cp->data));
 	} else if (!strcmp(argv[1], "off")) {
 		struct bt_hci_cp_mesh_advertise_cancel *cp;
 

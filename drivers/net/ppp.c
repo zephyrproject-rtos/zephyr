@@ -376,7 +376,7 @@ void ppp_driver_feed_data(u8_t *data, int data_len)
 	/* We are expecting that the tests are feeding data in large
 	 * chunks so we can reset the uart buffer here.
 	 */
-	memset(ppp->buf, 0, UART_BUF_LEN);
+	(void)memset(ppp->buf, 0, UART_BUF_LEN);
 
 	ppp_change_state(ppp, STATE_HDLC_FRAME_START);
 
@@ -386,7 +386,7 @@ void ppp_driver_feed_data(u8_t *data, int data_len)
 
 		LOG_DBG("Feeding %d bytes", data_to_copy);
 
-		memcpy(ppp->buf, data, data_to_copy);
+		(void)memcpy(ppp->buf, data, data_to_copy);
 
 		recv_off = data_to_copy;
 
@@ -626,7 +626,7 @@ use_random_mac:
 	net_if_set_link_addr(iface, ll_addr->addr, ll_addr->len,
 			     NET_LINK_ETHERNET);
 
-	memset(ppp->buf, 0, sizeof(ppp->buf));
+	(void)memset(ppp->buf, 0, sizeof(ppp->buf));
 
 	/* We do not use uart_pipe for unit tests as the unit test has its
 	 * own handling of UART. See tests/net/ppp/driver for details.

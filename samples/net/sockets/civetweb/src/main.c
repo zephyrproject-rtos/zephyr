@@ -151,7 +151,7 @@ void *main_pthread(void *arg)
 
 	(void)arg;
 
-	memset(&callbacks, 0, sizeof(callbacks));
+	(void)memset(&callbacks, 0, sizeof(callbacks));
 	ctx = mg_start(&callbacks, 0, (const char **)options);
 
 	if (ctx == NULL) {

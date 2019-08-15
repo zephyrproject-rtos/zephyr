@@ -86,7 +86,7 @@ static size_t print_line(enum font_size font_size, int row, const char *text,
 	cfb_framebuffer_set_font(epd_dev, font_size);
 
 	len = MIN(len, fonts[font_size].columns);
-	memcpy(line, text, len);
+	(void)memcpy(line, text, len);
 	line[len] = '\0';
 
 	if (center) {

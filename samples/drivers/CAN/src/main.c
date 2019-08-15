@@ -64,7 +64,7 @@ void send_string(char *string, struct device *can_dev)
 	for (str_len = strlen(string); str_len; ) {
 		msg.dlc = str_len >= 8 ? 8 : str_len;
 		str_len -= msg.dlc;
-		memcpy(msg.data, string, msg.dlc);
+		(void)memcpy(msg.data, string, msg.dlc);
 		string += msg.dlc;
 		can_send(can_dev, &msg, 10, tx_irq_callback, "send_string");
 	}

@@ -85,7 +85,7 @@ static void sdl_display_write_argb8888(void *disp_buf,
 	__ASSERT((desc->pitch * 4U * desc->height) <= desc->buf_size,
 			"Input buffer to small");
 
-	memcpy(disp_buf, buf, desc->pitch * 4U * desc->height);
+	(void)memcpy(disp_buf, buf, desc->pitch * 4U * desc->height);
 }
 
 static void sdl_display_write_rgb888(u8_t *disp_buf,
@@ -277,7 +277,7 @@ static void sdl_display_get_capabilities(
 	struct sdl_display_data *disp_data =
 	    (struct sdl_display_data *)dev->driver_data;
 
-	memset(capabilities, 0, sizeof(struct display_capabilities));
+	(void)memset(capabilities, 0, sizeof(struct display_capabilities));
 	capabilities->x_resolution = CONFIG_SDL_DISPLAY_X_RES;
 	capabilities->y_resolution = CONFIG_SDL_DISPLAY_Y_RES;
 	capabilities->supported_pixel_formats = PIXEL_FORMAT_ARGB_8888 |

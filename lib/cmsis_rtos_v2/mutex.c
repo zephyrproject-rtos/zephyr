@@ -39,7 +39,7 @@ osMutexId_t osMutexNew(const osMutexAttr_t *attr)
 		 "Zephyr does not support osMutexRobust.\n");
 
 	if (k_mem_slab_alloc(&cv2_mutex_slab, (void **)&mutex, 100) == 0) {
-		memset(mutex, 0, sizeof(struct cv2_mutex));
+		(void)memset(mutex, 0, sizeof(struct cv2_mutex));
 	} else {
 		return NULL;
 	}

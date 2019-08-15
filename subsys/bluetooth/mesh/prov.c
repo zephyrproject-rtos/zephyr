@@ -567,7 +567,7 @@ static void prov_invite(const u8_t *data)
 	/* Input OOB Action */
 	net_buf_simple_add_be16(&buf, prov->input_actions);
 
-	memcpy(&link.conf_inputs[1], &buf.data[1], 11);
+	(void)memcpy(&link.conf_inputs[1], &buf.data[1], 11);
 
 	if (prov_send(&buf)) {
 		BT_ERR("Failed to send capabilities");
@@ -651,8 +651,8 @@ static int prov_auth(u8_t method, u8_t action, u8_t size)
 			return -EINVAL;
 		}
 
-		memcpy(link.auth + 16 - prov->static_val_len,
-		       prov->static_val, prov->static_val_len);
+		(void)memcpy(link.auth + 16 - prov->static_val_len,
+				prov->static_val, prov->static_val_len);
 		(void)memset(link.auth, 0,
 			     sizeof(link.auth) - prov->static_val_len);
 		return 0;
@@ -688,7 +688,7 @@ static int prov_auth(u8_t method, u8_t action, u8_t size)
 			}
 			str[size] = '\0';
 
-			memcpy(link.auth, str, size);
+			(void)memcpy(link.auth, str, size);
 			(void)memset(link.auth + size, 0,
 				     sizeof(link.auth) - size);
 
@@ -754,7 +754,7 @@ static void prov_start(const u8_t *data)
 		return;
 	}
 
-	memcpy(&link.conf_inputs[12], data, 5);
+	(void)memcpy(&link.conf_inputs[12], data, 5);
 
 	link.expect = PROV_PUB_KEY;
 
@@ -895,7 +895,7 @@ static void send_pub_key(const u8_t dhkey[32])
 	sys_memcpy_swap(net_buf_simple_add(&buf, 32), key, 32);
 	sys_memcpy_swap(net_buf_simple_add(&buf, 32), &key[32], 32);
 
-	memcpy(&link.conf_inputs[81], &buf.data[1], 64);
+	(void)memcpy(&link.conf_inputs[81], &buf.data[1], 64);
 
 	if (prov_send(&buf)) {
 		BT_ERR("Failed to send Public Key");
@@ -928,7 +928,7 @@ static void prov_pub_key(const u8_t *data)
 {
 	BT_DBG("Remote Public Key: %s", bt_hex(data, 64));
 
-	memcpy(&link.conf_inputs[17], data, 64);
+	(void)memcpy(&link.conf_inputs[17], data, 64);
 
 	if (!bt_pub_key_get()) {
 		/* Clear retransmit timer */
@@ -966,7 +966,7 @@ static void prov_confirm(const u8_t *data)
 {
 	BT_DBG("Remote Confirm: %s", bt_hex(data, 16));
 
-	memcpy(link.conf, data, 16);
+	(void)memcpy(link.conf, data, 16);
 
 	if (atomic_test_bit(link.flags, WAIT_NUMBER) ||
 	    atomic_test_bit(link.flags, WAIT_STRING)) {
@@ -1355,7 +1355,7 @@ static void gen_prov_cont(struct prov_rx *rx, struct net_buf_simple *buf)
 		return;
 	}
 
-	memcpy(XACT_SEG_DATA(seg), buf->data, buf->len);
+	(void)memcpy(XACT_SEG_DATA(seg), buf->data, buf->len);
 	XACT_SEG_RECV(seg);
 
 	if (!link.rx.seg) {
@@ -1417,7 +1417,7 @@ static void gen_prov_start(struct prov_rx *rx, struct net_buf_simple *buf)
 
 	link.rx.seg = (1 << (START_LAST_SEG(rx->gpc) + 1)) - 1;
 	link.rx.last_seg = START_LAST_SEG(rx->gpc);
-	memcpy(link.rx.buf->data, buf->data, buf->len);
+	(void)memcpy(link.rx.buf->data, buf->data, buf->len);
 	XACT_SEG_RECV(0);
 
 	if (!link.rx.seg) {

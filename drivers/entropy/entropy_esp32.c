@@ -31,12 +31,12 @@ static int entropy_esp32_get_entropy(struct device *device, u8_t *buf, u16_t len
 		u32_t v = entropy_esp32_get_u32();
 
 		if (len >= sizeof(v)) {
-			memcpy(buf, &v, sizeof(v));
+			(void)memcpy(buf, &v, sizeof(v));
 
 			buf += sizeof(v);
 			len -= sizeof(v);
 		} else {
-			memcpy(buf, &v, len);
+			(void)memcpy(buf, &v, len);
 			break;
 		}
 	}

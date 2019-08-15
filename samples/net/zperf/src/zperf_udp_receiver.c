@@ -58,7 +58,7 @@ static inline void build_reply(struct zperf_udp_datagram *hdr,
 	int pos = 0;
 	struct zperf_server_hdr *stat_hdr;
 
-	memcpy(&buf[pos], hdr, sizeof(struct zperf_udp_datagram));
+	(void)memcpy(&buf[pos], hdr, sizeof(struct zperf_udp_datagram));
 	pos += sizeof(struct zperf_udp_datagram);
 
 	stat_hdr = (struct zperf_server_hdr *)&buf[pos];
@@ -328,8 +328,8 @@ void zperf_udp_receiver_init(const struct shell *shell, int port)
 					      "Unable to get IPv4 by default\n");
 				return;
 			}
-			memcpy(&in4_addr_my->sin_addr, in4_addr,
-				sizeof(struct in_addr));
+			(void)memcpy(&in4_addr_my->sin_addr, in4_addr,
+					sizeof(struct in_addr));
 		}
 
 		shell_fprintf(shell, SHELL_NORMAL, "Binding to %s\n",
@@ -378,8 +378,8 @@ void zperf_udp_receiver_init(const struct shell *shell, int port)
 					      "Unable to get IPv4 by default\n");
 				return;
 			}
-			memcpy(&in6_addr_my->sin6_addr, in6_addr,
-				sizeof(struct in6_addr));
+			(void)memcpy(&in6_addr_my->sin6_addr, in6_addr,
+					sizeof(struct in6_addr));
 		}
 
 		shell_fprintf(shell, SHELL_NORMAL, "Binding to %s\n",

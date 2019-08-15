@@ -47,7 +47,7 @@ int eeprom_slave_program(struct device *dev, u8_t *eeprom_data,
 		return -EINVAL;
 	}
 
-	memcpy(data->buffer, eeprom_data, length);
+	(void)memcpy(data->buffer, eeprom_data, length);
 
 	return 0;
 }

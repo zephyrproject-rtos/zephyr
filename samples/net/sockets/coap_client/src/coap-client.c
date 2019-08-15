@@ -378,7 +378,7 @@ static int get_large_coap_msgs(void)
 
 		/* Received last block */
 		if (r == 1) {
-			memset(&blk_ctx, 0, sizeof(blk_ctx));
+			(void)memset(&blk_ctx, 0, sizeof(blk_ctx));
 			return 0;
 		}
 	}

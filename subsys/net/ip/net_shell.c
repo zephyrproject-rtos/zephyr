@@ -3422,7 +3422,8 @@ static void get_my_ipv6_addr(struct net_if *iface,
 	my6addr = net_if_ipv6_select_src_addr(iface,
 					      &net_sin6(myaddr)->sin6_addr);
 
-	memcpy(&net_sin6(myaddr)->sin6_addr, my6addr, sizeof(struct in6_addr));
+	(void)memcpy(&net_sin6(myaddr)->sin6_addr,
+		      my6addr, sizeof(struct in6_addr));
 
 	net_sin6(myaddr)->sin6_port = 0U; /* let the IP stack to select */
 #endif
@@ -3433,9 +3434,9 @@ static void get_my_ipv4_addr(struct net_if *iface,
 {
 #if defined(CONFIG_NET_IPV4)
 	/* Just take the first IPv4 address of an interface. */
-	memcpy(&net_sin(myaddr)->sin_addr,
-	       &iface->config.ip.ipv4->unicast[0].address.in_addr,
-	       sizeof(struct in_addr));
+	(void)memcpy(&net_sin(myaddr)->sin_addr,
+			&iface->config.ip.ipv4->unicast[0].address.in_addr,
+			sizeof(struct in_addr));
 
 	net_sin(myaddr)->sin_port = 0U; /* let the IP stack to select */
 #endif
@@ -4096,7 +4097,8 @@ static void nbr_populate_addresses(void)
 static char *set_nbr_address(size_t idx)
 {
 	if (idx == 0) {
-		memset(nbr_address_buffer, 0, sizeof(nbr_address_buffer));
+		(void)memset(nbr_address_buffer, 0,
+			      sizeof(nbr_address_buffer));
 		nbr_populate_addresses();
 	}
 

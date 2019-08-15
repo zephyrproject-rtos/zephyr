@@ -357,8 +357,8 @@ static struct tls_context *tls_clone(struct tls_context *source_tls)
 
 	target_tls->tls_version = source_tls->tls_version;
 
-	memcpy(&target_tls->options, &source_tls->options,
-	       sizeof(target_tls->options));
+	(void)memcpy(&target_tls->options, &source_tls->options,
+			sizeof(target_tls->options));
 
 #if defined(MBEDTLS_X509_CRT_PARSE_C)
 	if (target_tls->options.is_hostname_set) {
@@ -441,7 +441,8 @@ static void dtls_peer_address_set(struct net_context *context,
 				  socklen_t addrlen)
 {
 	if (addrlen <= sizeof(context->tls->dtls_peer_addr)) {
-		memcpy(&context->tls->dtls_peer_addr, peer_addr, addrlen);
+		(void)memcpy(&context->tls->dtls_peer_addr,
+			      peer_addr, addrlen);
 		context->tls->dtls_peer_addrlen = addrlen;
 	}
 }
@@ -452,7 +453,7 @@ static void dtls_peer_address_get(struct net_context *context,
 {
 	socklen_t len = MIN(context->tls->dtls_peer_addrlen, *addrlen);
 
-	memcpy(peer_addr, &context->tls->dtls_peer_addr, len);
+	(void)memcpy(peer_addr, &context->tls->dtls_peer_addr, len);
 	*addrlen = len;
 }
 
@@ -931,7 +932,8 @@ static int tls_opt_sec_tag_list_set(struct net_context *context,
 		return -EINVAL;
 	}
 
-	memcpy(context->tls->options.sec_tag_list.sec_tags, optval, optlen);
+	(void)memcpy(context->tls->options.sec_tag_list.sec_tags,
+		      optval, optlen);
 	context->tls->options.sec_tag_list.sec_tag_count = sec_tag_cnt;
 
 	return 0;
@@ -949,7 +951,7 @@ static int tls_opt_sec_tag_list_get(struct net_context *context,
 	len = MIN(context->tls->options.sec_tag_list.sec_tag_count *
 		  sizeof(sec_tag_t), *optlen);
 
-	memcpy(optval, context->tls->options.sec_tag_list.sec_tags, len);
+	(void)memcpy(optval, context->tls->options.sec_tag_list.sec_tags, len);
 	*optlen = len;
 
 	return 0;
@@ -993,7 +995,7 @@ static int tls_opt_ciphersuite_list_set(struct net_context *context,
 		return -EINVAL;
 	}
 
-	memcpy(context->tls->options.ciphersuites, optval, optlen);
+	(void)memcpy(context->tls->options.ciphersuites, optval, optlen);
 	context->tls->options.ciphersuites[cipher_cnt] = 0;
 
 	return 0;
@@ -1276,7 +1278,7 @@ int ztls_accept_ctx(struct net_context *parent, struct sockaddr *addr,
 	if (addr != NULL && addrlen != NULL) {
 		int len = MIN(*addrlen, sizeof(child->remote));
 
-		memcpy(addr, &child->remote, len);
+		(void)memcpy(addr, &child->remote, len);
 		/* addrlen is a value-result argument, set to actual
 		 * size of source address
 		 */

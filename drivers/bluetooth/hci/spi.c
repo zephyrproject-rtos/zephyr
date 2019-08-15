@@ -365,7 +365,8 @@ static void bt_spi_rx_thread(void)
 				break;
 			case HCI_ACL:
 				buf = bt_buf_get_rx(BT_BUF_ACL_IN, K_FOREVER);
-				memcpy(&acl_hdr, &rxmsg[1], sizeof(acl_hdr));
+				(void)memcpy(&acl_hdr, &rxmsg[1],
+					      sizeof(acl_hdr));
 				net_buf_add_mem(buf, &acl_hdr, sizeof(acl_hdr));
 				net_buf_add_mem(buf, &rxmsg[5],
 						sys_le16_to_cpu(acl_hdr.len));

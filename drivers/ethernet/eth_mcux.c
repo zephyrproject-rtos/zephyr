@@ -467,8 +467,8 @@ static bool eth_get_ptp_data(struct net_if *iface, struct net_pkt *pkt,
 		}
 
 		ptpTsData->version = hdr->ptp_version;
-		memcpy(ptpTsData->sourcePortId, &hdr->port_id,
-		       kENET_PtpSrcPortIdLen);
+		(void)memcpy(ptpTsData->sourcePortId, &hdr->port_id,
+				kENET_PtpSrcPortIdLen);
 		ptpTsData->messageType = hdr->message_type;
 		ptpTsData->sequenceId = ntohs(hdr->sequence_id);
 

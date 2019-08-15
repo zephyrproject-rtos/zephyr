@@ -688,7 +688,7 @@ static void handle_scan_result(void *pvMsg)
 		goto out;
 	}
 
-	memcpy(result.ssid, pstrScanResult->au8SSID, WIFI_SSID_MAX_LEN);
+	(void)memcpy(result.ssid, pstrScanResult->au8SSID, WIFI_SSID_MAX_LEN);
 	result.ssid_length = strlen(result.ssid);
 
 	result.channel = pstrScanResult->u8ch;
@@ -883,7 +883,7 @@ static void handle_socket_msg_accept(struct socket_data *sd, void *pvMsg)
 
 		a_sd = &w1500_data.socket_data[accept_msg->sock];
 
-		memcpy(a_sd, sd, sizeof(struct socket_data));
+		(void)memcpy(a_sd, sd, sizeof(struct socket_data));
 
 		ret = net_context_get(AF_INET, SOCK_STREAM,
 				      IPPROTO_TCP, &a_sd->context);
@@ -983,11 +983,11 @@ static int winc1500_mgmt_connect(struct device *dev,
 	u16_t channel;
 	void *auth;
 
-	memcpy(ssid, params->ssid, params->ssid_length);
+	(void)memcpy(ssid, params->ssid, params->ssid_length);
 	ssid[params->ssid_length] = '\0';
 
 	if (params->security == WIFI_SECURITY_TYPE_PSK) {
-		memcpy(psk.au8PSK, params->psk, params->psk_length);
+		(void)memcpy(psk.au8PSK, params->psk, params->psk_length);
 		psk.au8PSK[params->psk_length] = '\0';
 		auth = &psk;
 

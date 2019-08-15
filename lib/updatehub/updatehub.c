@@ -99,7 +99,7 @@ static int metadata_hash_get(char *metadata)
 		return -1;
 	}
 
-	memset(update_info.package_uid, 0, TC_SHA256_BLOCK_SIZE + 1);
+	(void)memset(update_info.package_uid, 0, TC_SHA256_BLOCK_SIZE + 1);
 	for (int i = 0; i < TC_SHA256_DIGEST_SIZE; i++) {
 		snprintk(buffer, sizeof(buffer), "%02x",
 			 hash[i]);
@@ -197,7 +197,7 @@ static void cleanup_connection(void)
 		LOG_ERR("Could not close the socket");
 	}
 
-	memset(&ctx.fds[1], 0, sizeof(ctx.fds[1]));
+	(void)memset(&ctx.fds[1], 0, sizeof(ctx.fds[1]));
 	ctx.nfds = 0;
 	ctx.sock = 0;
 }
@@ -384,7 +384,8 @@ static void install_update_cb(void)
 			goto cleanup;
 		}
 
-		memset(&sha256_image_dowloaded, 0, TC_SHA256_BLOCK_SIZE + 1);
+		(void)memset(&sha256_image_dowloaded, 0,
+			      TC_SHA256_BLOCK_SIZE + 1);
 		for (i = 0; i < TC_SHA256_DIGEST_SIZE; i++) {
 			snprintk(buffer, sizeof(buffer), "%02x", image_hash[i]);
 			buffer_len = buffer_len + strlen(buffer);
@@ -495,7 +496,7 @@ static int report(enum updatehub_state state)
 		goto error;
 	}
 
-	memset(&report, 0, sizeof(report));
+	(void)memset(&report, 0, sizeof(report));
 	report.product_uid = CONFIG_UPDATEHUB_PRODUCT_UID;
 	report.device_identity.id = device_id;
 	report.version = firmware_version;
@@ -527,7 +528,7 @@ static int report(enum updatehub_state state)
 		report.error_message = "";
 	}
 
-	memset(&ctx.payload, 0, MAX_PAYLOAD_SIZE);
+	(void)memset(&ctx.payload, 0, MAX_PAYLOAD_SIZE);
 	ret = json_obj_encode_buf(send_report_descr,
 				  ARRAY_SIZE(send_report_descr),
 				  &report, ctx.payload,
@@ -586,10 +587,11 @@ static void probe_cb(char *metadata)
 		return;
 	}
 
-	memset(&tmp, 0, MAX_PAYLOAD_SIZE);
-	memcpy(tmp, reply.data + reply.offset, reply.max_len - reply.offset);
-	memset(metadata, 0, MAX_PAYLOAD_SIZE);
-	memcpy(metadata, tmp, strlen(tmp));
+	(void)memset(&tmp, 0, MAX_PAYLOAD_SIZE);
+	(void)memcpy(tmp, reply.data + reply.offset,
+		      reply.max_len - reply.offset);
+	(void)memset(metadata, 0, MAX_PAYLOAD_SIZE);
+	(void)memcpy(metadata, tmp, strlen(tmp));
 
 	ctx.code_status = UPDATEHUB_OK;
 
@@ -632,13 +634,13 @@ enum updatehub_response updatehub_probe(void)
 		goto error;
 	}
 
-	memset(&request, 0, sizeof(request));
+	(void)memset(&request, 0, sizeof(request));
 	request.product_uid = CONFIG_UPDATEHUB_PRODUCT_UID;
 	request.device_identity.id = device_id;
 	request.version = firmware_version;
 	request.hardware = CONFIG_BOARD;
 
-	memset(&ctx.payload, 0, MAX_PAYLOAD_SIZE);
+	(void)memset(&ctx.payload, 0, MAX_PAYLOAD_SIZE);
 	if (json_obj_encode_buf(send_probe_descr,
 				ARRAY_SIZE(send_probe_descr),
 				&request, ctx.payload,
@@ -658,21 +660,21 @@ enum updatehub_response updatehub_probe(void)
 		goto cleanup;
 	}
 
-	memset(metadata, 0, MAX_PAYLOAD_SIZE);
+	(void)memset(metadata, 0, MAX_PAYLOAD_SIZE);
 	probe_cb(metadata);
 
 	if (ctx.code_status != UPDATEHUB_OK) {
 		goto cleanup;
 	}
 
-	memset(&update_info, 0, sizeof(update_info));
+	(void)memset(&update_info, 0, sizeof(update_info));
 	if (metadata_hash_get(metadata) < 0) {
 		LOG_ERR("Could not get metadata hash");
 		ctx.code_status = UPDATEHUB_METADATA_ERROR;
 		goto cleanup;
 	}
 
-	memcpy(metadata_copy, metadata, strlen(metadata));
+	(void)memcpy(metadata_copy, metadata, strlen(metadata));
 	if (json_obj_parse(metadata, strlen(metadata),
 			   recv_probe_sh_array_descr,
 			   ARRAY_SIZE(recv_probe_sh_array_descr),
@@ -687,9 +689,10 @@ enum updatehub_response updatehub_probe(void)
 			goto cleanup;
 		}
 
-		memcpy(update_info.sha256sum_image,
-		       metadata_any_boards.objects[1].objects.sha256sum,
-		       strlen(metadata_any_boards.objects[1].objects.sha256sum));
+		(void)memcpy(update_info.sha256sum_image,
+			metadata_any_boards.objects[1].objects.sha256sum,
+			strlen(
+			   metadata_any_boards.objects[1].objects.sha256sum));
 		update_info.image_size = metadata_any_boards.objects[1].objects.size;
 	} else {
 		if (!is_compatible_hardware(&metadata_some_boards)) {
@@ -698,10 +701,10 @@ enum updatehub_response updatehub_probe(void)
 				UPDATEHUB_INCOMPATIBLE_HARDWARE;
 			goto cleanup;
 		}
-		memcpy(update_info.sha256sum_image,
-		       metadata_some_boards.objects[1].objects.sha256sum,
-		       strlen(metadata_some_boards.objects[1]
-			      .objects.sha256sum));
+		(void)memcpy(update_info.sha256sum_image,
+			      metadata_some_boards.objects[1].objects.sha256sum,
+			      strlen(metadata_some_boards.objects[1]
+				    .objects.sha256sum));
 		update_info.image_size =
 			metadata_some_boards.objects[1].objects.size;
 	}

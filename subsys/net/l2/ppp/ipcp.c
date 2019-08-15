@@ -59,7 +59,7 @@ static struct net_buf *ipcp_config_info_add(struct ppp_fsm *fsm)
 
 	option[0] = IPCP_OPTION_IP_ADDRESS;
 	option[1] = IP_ADDRESS_OPTION_LEN;
-	memcpy(&option[2], &my_addr->s_addr, sizeof(my_addr->s_addr));
+	(void)memcpy(&option[2], &my_addr->s_addr, sizeof(my_addr->s_addr));
 
 	buf = ppp_get_net_buf(NULL, 0);
 	if (!buf) {
@@ -94,8 +94,8 @@ static int ipcp_config_info_req(struct ppp_fsm *fsm,
 	enum net_verdict verdict;
 	int i;
 
-	memset(options, 0, sizeof(options));
-	memset(nack_options, 0, sizeof(nack_options));
+	(void)memset(options, 0, sizeof(options));
+	(void)memset(nack_options, 0, sizeof(nack_options));
 
 	verdict = ppp_parse_options(fsm, pkt, length, options,
 				    ARRAY_SIZE(options));
@@ -135,9 +135,9 @@ static int ipcp_config_info_req(struct ppp_fsm *fsm,
 			nack_options[nack_idx].len = options[i].len;
 
 			if (options[i].len > 2) {
-				memcpy(&nack_options[nack_idx].value,
-				       &options[i].value,
-				       sizeof(nack_options[nack_idx].value));
+				(void)memcpy(&nack_options[nack_idx].value,
+					  &options[i].value,
+					  sizeof(nack_options[nack_idx].value));
 			}
 
 			nack_idx++;
@@ -221,7 +221,8 @@ static int ipcp_config_info_req(struct ppp_fsm *fsm,
 			return -EMSGSIZE;
 		}
 
-		memcpy(&ctx->ipcp.peer_options.address, &addr, sizeof(addr));
+		(void)memcpy(&ctx->ipcp.peer_options.address,
+			      &addr, sizeof(addr));
 
 		if (CONFIG_NET_L2_PPP_LOG_LEVEL >= LOG_LEVEL_DBG) {
 			char dst[INET_ADDRSTRLEN];
@@ -293,7 +294,7 @@ static int ipcp_config_info_rej(struct ppp_fsm *fsm,
 	int i, ret, address_option_idx = -1;
 	struct in_addr addr;
 
-	memset(nack_options, 0, sizeof(nack_options));
+	(void)memset(nack_options, 0, sizeof(nack_options));
 
 	verdict = ppp_parse_options(fsm, pkt, length, nack_options,
 				    ARRAY_SIZE(nack_options));
@@ -432,7 +433,7 @@ static void ipcp_init(struct ppp_context *ctx)
 	NET_DBG("proto %s (0x%04x) fsm %p", ppp_proto2str(PPP_IPCP), PPP_IPCP,
 		&ctx->ipcp.fsm);
 
-	memset(&ctx->ipcp.fsm, 0, sizeof(ctx->ipcp.fsm));
+	(void)memset(&ctx->ipcp.fsm, 0, sizeof(ctx->ipcp.fsm));
 
 	ppp_fsm_init(&ctx->ipcp.fsm, PPP_IPCP);
 

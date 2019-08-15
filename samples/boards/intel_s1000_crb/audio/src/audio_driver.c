@@ -149,8 +149,8 @@ static int audio_driver_send_zeros_frame(void)
 	}
 
 	/* fill buffer with zeros */
-	memset(spk_out_buf, 0, SPK_FRAME_BYTES);
-	memset(host_out_buf, 0, HOST_FRAME_BYTES);
+	(void)memset(spk_out_buf, 0, SPK_FRAME_BYTES);
+	(void)memset(host_out_buf, 0, HOST_FRAME_BYTES);
 
 	ret = i2s_write(i2s_spk_out_dev, spk_out_buf, SPK_FRAME_BYTES);
 	if (ret) {

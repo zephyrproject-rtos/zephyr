@@ -340,7 +340,8 @@ static void gptp_mi_pss_rcv_compute(int port)
 
 	pss->local_port_number = port;
 
-	memcpy(&pss->sync_info, sync_rcv, sizeof(struct gptp_md_sync_info));
+	(void)memcpy(&pss->sync_info, sync_rcv,
+		      sizeof(struct gptp_md_sync_info));
 
 	pss->sync_receipt_timeout_time = gptp_get_current_time_nanosecond(port);
 	pss->sync_receipt_timeout_time +=
@@ -417,10 +418,12 @@ static void gptp_mi_pss_store_last_pss(int port)
 
 	state->last_rcvd_port_num = pss_ptr->local_port_number;
 
-	memcpy(&state->last_precise_orig_ts, &sync_info->precise_orig_ts,
-	       sizeof(struct net_ptp_time));
-	memcpy(&state->last_gm_phase_change, &sync_info->last_gm_phase_change,
-	       sizeof(struct gptp_scaled_ns));
+	(void)memcpy(&state->last_precise_orig_ts,
+			&sync_info->precise_orig_ts,
+			sizeof(struct net_ptp_time));
+	(void)memcpy(&state->last_gm_phase_change,
+			&sync_info->last_gm_phase_change,
+			sizeof(struct gptp_scaled_ns));
 
 	state->last_follow_up_correction_field =
 		sync_info->follow_up_correction_field;
@@ -442,8 +445,8 @@ static void gptp_mi_pss_send_md_sync_send(int port)
 	pss_ptr = state->pss_sync_ptr;
 	sync_send = &GPTP_PORT_STATE(port)->sync_send;
 
-	memcpy(&state->sync_send, &pss_ptr->sync_info,
-	       sizeof(struct gptp_md_sync_info));
+	(void)memcpy(&state->sync_send, &pss_ptr->sync_info,
+			sizeof(struct gptp_md_sync_info));
 
 	sync_send->sync_send_ptr = &state->sync_send;
 	sync_send->rcvd_md_sync = true;
@@ -564,8 +567,8 @@ static void gptp_mi_site_ss_prepare_pss_send(void)
 
 	state = &GPTP_STATE()->site_ss;
 
-	memcpy(&state->pss_send, state->pss_rcv_ptr,
-	       sizeof(struct gptp_mi_port_sync_sync));
+	(void)memcpy(&state->pss_send, state->pss_rcv_ptr,
+			sizeof(struct gptp_mi_port_sync_sync));
 }
 
 static void gptp_mi_site_ss_send_to_pss(void)
@@ -818,14 +821,14 @@ static void gptp_mi_clk_master_sync_offset_state_machine(void)
 
 		if (global_ds->selected_role[0] == GPTP_PORT_PASSIVE) {
 			/* TODO Calculate real values for proper BC support */
-			memset(&global_ds->clk_src_phase_offset, 0x0,
-			       sizeof(struct gptp_scaled_ns));
+			(void)memset(&global_ds->clk_src_phase_offset, 0x0,
+					sizeof(struct gptp_scaled_ns));
 			global_ds->clk_src_freq_offset = 0;
 		} else if (global_ds->clk_src_time_base_indicator_prev
 			   != global_ds->clk_src_time_base_indicator) {
-			memcpy(&global_ds->clk_src_phase_offset,
-			       &global_ds->last_gm_phase_change,
-			       sizeof(struct gptp_scaled_ns));
+			(void)memcpy(&global_ds->clk_src_phase_offset,
+					&global_ds->last_gm_phase_change,
+					sizeof(struct gptp_scaled_ns));
 
 			global_ds->clk_src_freq_offset =
 				global_ds->last_gm_freq_change;
@@ -887,9 +890,9 @@ static void gptp_mi_set_ps_sync_cmss(void)
 	sync_info->follow_up_correction_field = 0;
 	sync_info->rate_ratio = 0;
 
-	memcpy(&sync_info->src_port_id.clk_id,
-	       GPTP_DEFAULT_DS()->clk_id,
-	       GPTP_CLOCK_ID_LEN);
+	(void)memcpy(&sync_info->src_port_id.clk_id,
+			GPTP_DEFAULT_DS()->clk_id,
+			GPTP_CLOCK_ID_LEN);
 
 	sync_info->src_port_id.port_number = 0U;
 	sync_info->log_msg_interval = CONFIG_NET_GPTP_INIT_LOG_SYNC_ITV;
@@ -900,9 +903,9 @@ static void gptp_mi_set_ps_sync_cmss(void)
 	sync_info->gm_time_base_indicator =
 		global_ds->clk_src_time_base_indicator;
 
-	memcpy(&sync_info->last_gm_phase_change,
-	       &global_ds->clk_src_phase_offset,
-	       sizeof(struct gptp_scaled_ns));
+	(void)memcpy(&sync_info->last_gm_phase_change,
+			&global_ds->clk_src_phase_offset,
+			sizeof(struct gptp_scaled_ns));
 
 	sync_info->last_gm_freq_change = global_ds->clk_src_freq_offset;
 }
@@ -974,19 +977,19 @@ static void gptp_compute_gm_rate_ratio(void)
 	global_ds = GPTP_GLOBAL_DS();
 
 	/* Get current local and source time */
-	memcpy(&src_time_n, &state->rcvd_clk_src_req.src_time,
-	       sizeof(struct net_ptp_extended_time));
+	(void)memcpy(&src_time_n, &state->rcvd_clk_src_req.src_time,
+			sizeof(struct net_ptp_extended_time));
 
-	memcpy(&local_time_n, &global_ds->local_time,
-	       sizeof(struct gptp_uscaled_ns));
+	(void)memcpy(&local_time_n, &global_ds->local_time,
+			sizeof(struct gptp_uscaled_ns));
 
 	if ((src_time_0.second == 0U && src_time_0.fract_nsecond == 0U)
 	    || (local_time_0.high == 0U && local_time_0.low == 0U)) {
-		memcpy(&src_time_0, &src_time_n,
-		       sizeof(struct net_ptp_extended_time));
+		(void)memcpy(&src_time_0, &src_time_n,
+				sizeof(struct net_ptp_extended_time));
 
-		memcpy(&local_time_0, &local_time_n,
-		       sizeof(struct gptp_uscaled_ns));
+		(void)memcpy(&local_time_0, &local_time_n,
+				sizeof(struct gptp_uscaled_ns));
 
 		global_ds->gm_rate_ratio = 1.0;
 
@@ -1000,12 +1003,12 @@ static void gptp_compute_gm_rate_ratio(void)
 	    || (src_time_n.second == src_time_0.second
 		&& src_time_n.fract_nsecond < src_time_0.fract_nsecond)) {
 		/* Change result sign and swap src_time_n and src_time_0 */
-		memcpy(&src_time_t, &src_time_n,
-		       sizeof(struct net_ptp_extended_time));
-		memcpy(&src_time_n, &src_time_0,
-		       sizeof(struct net_ptp_extended_time));
-		memcpy(&src_time_0, &src_time_t,
-		       sizeof(struct net_ptp_extended_time));
+		(void)memcpy(&src_time_t, &src_time_n,
+				sizeof(struct net_ptp_extended_time));
+		(void)memcpy(&src_time_n, &src_time_0,
+				sizeof(struct net_ptp_extended_time));
+		(void)memcpy(&src_time_0, &src_time_t,
+				sizeof(struct net_ptp_extended_time));
 
 		new_gm_rate *= -1;
 	}
@@ -1014,12 +1017,12 @@ static void gptp_compute_gm_rate_ratio(void)
 	    || (local_time_n.high == local_time_0.high
 		&& local_time_n.low < local_time_0.low)) {
 		/* Change result sign and swap local_time_n and local_time_0 */
-		memcpy(&local_time_t, &local_time_n,
-		       sizeof(struct gptp_uscaled_ns));
-		memcpy(&local_time_n, &local_time_0,
-		       sizeof(struct gptp_uscaled_ns));
-		memcpy(&local_time_0, &local_time_t,
-		       sizeof(struct gptp_uscaled_ns));
+		(void)memcpy(&local_time_t, &local_time_n,
+				sizeof(struct gptp_uscaled_ns));
+		(void)memcpy(&local_time_n, &local_time_0,
+				sizeof(struct gptp_uscaled_ns));
+		(void)memcpy(&local_time_0, &local_time_t,
+				sizeof(struct gptp_uscaled_ns));
 
 		new_gm_rate *= -1;
 	}
@@ -1068,8 +1071,8 @@ static void gptp_mi_clk_master_sync_rcv_state_machine(void)
 
 	invoke_args.src_time.fract_nsecond = cur * GPTP_POW2_16;
 
-	memset(&invoke_args.last_gm_phase_change, 0x0,
-	       sizeof(struct gptp_scaled_ns));
+	(void)memset(&invoke_args.last_gm_phase_change, 0x0,
+			sizeof(struct gptp_scaled_ns));
 	invoke_args.last_gm_freq_change = 0;
 
 	gptp_clk_src_time_invoke(&invoke_args);
@@ -1104,9 +1107,9 @@ static void gptp_mi_clk_master_sync_rcv_state_machine(void)
 			global_ds->clk_src_time_base_indicator =
 				s->rcvd_clk_src_req.time_base_indicator;
 
-			memcpy(&global_ds->clk_src_last_gm_phase_change,
-			       &s->rcvd_clk_src_req.last_gm_phase_change,
-			       sizeof(struct gptp_scaled_ns));
+			(void)memcpy(&global_ds->clk_src_last_gm_phase_change,
+				&s->rcvd_clk_src_req.last_gm_phase_change,
+				sizeof(struct gptp_scaled_ns));
 
 			global_ds->clk_src_last_gm_freq_change =
 				s->rcvd_clk_src_req.last_gm_freq_change;
@@ -1138,12 +1141,13 @@ static void copy_path_trace(struct gptp_announce *announce)
 
 	sys_path_trace->len = htons(len + GPTP_CLOCK_ID_LEN);
 
-	memcpy(sys_path_trace->path_sequence, announce->tlv.path_sequence,
-	       len);
+	(void)memcpy(sys_path_trace->path_sequence,
+			announce->tlv.path_sequence,
+			len);
 
 	/* Append local clockIdentity. */
-	memcpy((u8_t *)sys_path_trace->path_sequence + len,
-	       GPTP_DEFAULT_DS()->clk_id, GPTP_CLOCK_ID_LEN);
+	(void)memcpy((u8_t *)sys_path_trace->path_sequence + len,
+			GPTP_DEFAULT_DS()->clk_id, GPTP_CLOCK_ID_LEN);
 }
 
 static bool gptp_mi_qualify_announce(int port, struct net_pkt *announce_msg)
@@ -1332,11 +1336,12 @@ static void copy_priority_vector(struct gptp_priority_vector *vector,
 	hdr = GPTP_HDR(pkt);
 	announce = GPTP_ANNOUNCE(pkt);
 
-	memcpy(&vector->root_system_id, &announce->root_system_id,
-	       sizeof(struct gptp_root_system_identity) + sizeof(u16_t));
+	(void)memcpy(&vector->root_system_id, &announce->root_system_id,
+		      sizeof(struct gptp_root_system_identity) +
+		      sizeof(u16_t));
 
-	memcpy(&vector->src_port_id, &hdr->port_id,
-	       sizeof(struct gptp_port_identity));
+	(void)memcpy(&vector->src_port_id, &hdr->port_id,
+			sizeof(struct gptp_port_identity));
 
 	vector->port_number = htons(port);
 }
@@ -1391,9 +1396,9 @@ static void gptp_mi_port_announce_information_state_machine(int port)
 
 	case GPTP_PA_INFO_UPDATE:
 		if (IS_SELECTED(global_ds, port) && bmca_data->updt_info) {
-			memcpy(&bmca_data->port_priority,
-			       &bmca_data->master_priority,
-			       sizeof(struct gptp_priority_vector));
+			(void)memcpy(&bmca_data->port_priority,
+					&bmca_data->master_priority,
+					sizeof(struct gptp_priority_vector));
 
 			bmca_data->port_steps_removed =
 				global_ds->master_steps_removed;
@@ -1507,8 +1512,9 @@ static void gptp_updt_role_disabled_tree(void)
 
 	/* Set pathTrace array to contain the single element thisClock. */
 	global_ds->path_trace.len = htons(GPTP_CLOCK_ID_LEN);
-	memcpy(global_ds->path_trace.path_sequence, GPTP_DEFAULT_DS()->clk_id,
-	       GPTP_CLOCK_ID_LEN);
+	(void)memcpy(global_ds->path_trace.path_sequence,
+			GPTP_DEFAULT_DS()->clk_id,
+			GPTP_CLOCK_ID_LEN);
 }
 
 static void gptp_clear_reselect_tree(void)
@@ -1543,10 +1549,11 @@ static int compute_best_vector(void)
 	gm_prio->root_system_id.clk_quality.offset_scaled_log_var =
 		htons(default_ds->clk_quality.offset_scaled_log_var);
 
-	memcpy(gm_prio->src_port_id.clk_id, default_ds->clk_id,
-	       GPTP_CLOCK_ID_LEN);
-	memcpy(gm_prio->root_system_id.grand_master_id, default_ds->clk_id,
-	       GPTP_CLOCK_ID_LEN);
+	(void)memcpy(gm_prio->src_port_id.clk_id, default_ds->clk_id,
+			GPTP_CLOCK_ID_LEN);
+	(void)memcpy(gm_prio->root_system_id.grand_master_id,
+			default_ds->clk_id,
+			GPTP_CLOCK_ID_LEN);
 
 	best_vector = gm_prio;
 
@@ -1616,16 +1623,16 @@ static int compute_best_vector(void)
 	}
 
 	if (best_port != 0) {
-		memcpy(&global_ds->gm_priority.root_system_id,
-		       &best_vector->root_system_id,
-		       sizeof(struct gptp_root_system_identity));
+		(void)memcpy(&global_ds->gm_priority.root_system_id,
+				&best_vector->root_system_id,
+				sizeof(struct gptp_root_system_identity));
 
 		global_ds->gm_priority.steps_removed =
 			htons(ntohs(best_vector->steps_removed) + 1);
 
-		memcpy(&global_ds->gm_priority.src_port_id,
-		       &best_vector->src_port_id,
-		       sizeof(struct gptp_port_identity));
+		(void)memcpy(&global_ds->gm_priority.src_port_id,
+				&best_vector->src_port_id,
+				sizeof(struct gptp_port_identity));
 
 		global_ds->gm_priority.port_number = best_vector->port_number;
 	}
@@ -1643,18 +1650,18 @@ static void update_bmca(int port,
 
 	/* Update masterPriorityVector for the port. */
 	if (best_port == 0) {
-		memcpy(&bmca_data->master_priority, gm_prio,
-		       sizeof(struct gptp_priority_vector));
+		(void)memcpy(&bmca_data->master_priority, gm_prio,
+				sizeof(struct gptp_priority_vector));
 
 		bmca_data->master_priority.port_number = htons(port);
 		bmca_data->master_priority.src_port_id.port_number =
 			htons(port);
 	} else {
-		memcpy(&bmca_data->master_priority.root_system_id,
-		       &gm_prio->root_system_id,
-		       sizeof(struct gptp_root_system_identity));
-		memcpy(bmca_data->master_priority.src_port_id.clk_id,
-		       default_ds->clk_id, GPTP_CLOCK_ID_LEN);
+		(void)memcpy(&bmca_data->master_priority.root_system_id,
+				&gm_prio->root_system_id,
+				sizeof(struct gptp_root_system_identity));
+		(void)memcpy(bmca_data->master_priority.src_port_id.clk_id,
+				default_ds->clk_id, GPTP_CLOCK_ID_LEN);
 		bmca_data->master_priority.port_number = htons(port);
 		bmca_data->master_priority.src_port_id.port_number =
 			htons(port);
@@ -1734,7 +1741,8 @@ static void gptp_updt_roles_tree(void)
 	last_gm_prio = &global_ds->last_gm_priority;
 
 	/* Save gmPriority. */
-	memcpy(last_gm_prio, gm_prio, sizeof(struct gptp_priority_vector));
+	(void)memcpy(last_gm_prio, gm_prio,
+		      sizeof(struct gptp_priority_vector));
 
 	best_port = compute_best_vector();
 
@@ -1789,8 +1797,8 @@ static void gptp_updt_roles_tree(void)
 	if (memcmp(default_ds->clk_id, gm_prio->root_system_id.grand_master_id,
 		   GPTP_CLOCK_ID_LEN) == 0) {
 		global_ds->path_trace.len = htons(GPTP_CLOCK_ID_LEN);
-		memcpy(global_ds->path_trace.path_sequence,
-		       default_ds->clk_id, GPTP_CLOCK_ID_LEN);
+		(void)memcpy(global_ds->path_trace.path_sequence,
+				default_ds->clk_id, GPTP_CLOCK_ID_LEN);
 	}
 }
 

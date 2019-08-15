@@ -437,7 +437,7 @@ static char *mntpt_prepare(char *mntpt)
 	cpy_mntpt = k_malloc(strlen(mntpt) + 1);
 	if (cpy_mntpt) {
 		((u8_t *)mntpt)[strlen(mntpt)] = '\0';
-		memcpy(cpy_mntpt, mntpt, strlen(mntpt));
+		(void)memcpy(cpy_mntpt, mntpt, strlen(mntpt));
 	}
 	return cpy_mntpt;
 }

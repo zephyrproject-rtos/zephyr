@@ -41,7 +41,7 @@ void relocate_vector_table(void)
 
 	size_t vector_size = (size_t)_vector_end - (size_t)_vector_start;
 
-	memcpy(_ram_vector_start, _vector_start, vector_size);
+	(void)memcpy(_ram_vector_start, _vector_start, vector_size);
 	LL_SYSCFG_SetRemapMemory(LL_SYSCFG_REMAP_SRAM);
 #endif
 }

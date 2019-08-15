@@ -64,7 +64,8 @@ int net_hostname_set_postfix(const u8_t *hostname_postfix,
 
 void net_hostname_init(void)
 {
-	memcpy(hostname, CONFIG_NET_HOSTNAME, sizeof(CONFIG_NET_HOSTNAME) - 1);
+	(void)memcpy(hostname, CONFIG_NET_HOSTNAME,
+		      sizeof(CONFIG_NET_HOSTNAME) - 1);
 
 	NET_DBG("Hostname set to %s", hostname);
 }

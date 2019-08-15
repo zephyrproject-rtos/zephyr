@@ -88,15 +88,15 @@ u8_t ll_create_connection(u16_t scan_interval, u16_t scan_window,
 	ull_scan_params_set(lll, 0, scan_interval, scan_window, filter_policy);
 
 	lll->adv_addr_type = peer_addr_type;
-	memcpy(lll->adv_addr, peer_addr, BDADDR_SIZE);
+	(void)memcpy(lll->adv_addr, peer_addr, BDADDR_SIZE);
 	lll->conn_timeout = timeout;
 	lll->conn_ticks_slot = 0; /* TODO: */
 
 	conn_lll = &conn->lll;
 
 	access_addr_get(access_addr);
-	memcpy(conn_lll->access_addr, &access_addr,
-	       sizeof(conn_lll->access_addr));
+	(void)memcpy(conn_lll->access_addr, &access_addr,
+			sizeof(conn_lll->access_addr));
 	bt_rand(&conn_lll->crc_init[0], 3);
 
 	conn_lll->handle = 0xFFFF;
@@ -318,8 +318,8 @@ u8_t ll_chm_update(u8_t *chm)
 			return ret;
 		}
 
-		memcpy(conn->llcp.chan_map.chm, chm,
-		       sizeof(conn->llcp.chan_map.chm));
+		(void)memcpy(conn->llcp.chan_map.chm, chm,
+				sizeof(conn->llcp.chan_map.chm));
 		/* conn->llcp.chan_map.instant     = 0; */
 		conn->llcp.chan_map.initiate = 1U;
 
@@ -351,7 +351,8 @@ u8_t ll_enc_req_send(u16_t handle, u8_t *rand, u8_t *ediv, u8_t *ltk)
 
 		pdu_data_tx = (void *)tx->pdu;
 
-		memcpy(&conn->llcp_enc.ltk[0], ltk, sizeof(conn->llcp_enc.ltk));
+		(void)memcpy(&conn->llcp_enc.ltk[0], ltk,
+			      sizeof(conn->llcp_enc.ltk));
 
 		if ((conn->lll.enc_rx == 0) && (conn->lll.enc_tx == 0)) {
 			struct pdu_data_llctrl_enc_req *enc_req;
@@ -364,14 +365,15 @@ u8_t ll_enc_req_send(u16_t handle, u8_t *rand, u8_t *ediv, u8_t *ltk)
 				PDU_DATA_LLCTRL_TYPE_ENC_REQ;
 			enc_req = (void *)
 				&pdu_data_tx->llctrl.enc_req;
-			memcpy(enc_req->rand, rand, sizeof(enc_req->rand));
+			(void)memcpy(enc_req->rand, rand,
+				      sizeof(enc_req->rand));
 			enc_req->ediv[0] = ediv[0];
 			enc_req->ediv[1] = ediv[1];
 			bt_rand(enc_req->skdm, sizeof(enc_req->skdm));
 			bt_rand(enc_req->ivm, sizeof(enc_req->ivm));
 		} else if ((conn->lll.enc_rx != 0) && (conn->lll.enc_tx != 0)) {
-			memcpy(&conn->llcp_enc.rand[0], rand,
-			       sizeof(conn->llcp_enc.rand));
+			(void)memcpy(&conn->llcp_enc.rand[0], rand,
+					sizeof(conn->llcp_enc.rand));
 
 			conn->llcp_enc.ediv[0] = ediv[0];
 			conn->llcp_enc.ediv[1] = ediv[1];

@@ -263,8 +263,8 @@ int net_conn_register(u16_t proto, u8_t family,
 	if (remote_addr) {
 		if (IS_ENABLED(CONFIG_NET_IPV6) &&
 		    remote_addr->sa_family == AF_INET6) {
-			memcpy(&conn->remote_addr, remote_addr,
-			       sizeof(struct sockaddr_in6));
+			(void)memcpy(&conn->remote_addr, remote_addr,
+					sizeof(struct sockaddr_in6));
 
 			if (!net_ipv6_is_addr_unspecified(
 				    &net_sin6(remote_addr)->
@@ -273,8 +273,8 @@ int net_conn_register(u16_t proto, u8_t family,
 			}
 		} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
 			   remote_addr->sa_family == AF_INET) {
-			memcpy(&conn->remote_addr, remote_addr,
-			       sizeof(struct sockaddr_in));
+			(void)memcpy(&conn->remote_addr, remote_addr,
+					sizeof(struct sockaddr_in));
 
 			if (net_sin(remote_addr)->sin_addr.s_addr) {
 				flags |= NET_CONN_REMOTE_ADDR_SPEC;
@@ -290,8 +290,8 @@ int net_conn_register(u16_t proto, u8_t family,
 	if (local_addr) {
 		if (IS_ENABLED(CONFIG_NET_IPV6) &&
 		    local_addr->sa_family == AF_INET6) {
-			memcpy(&conn->local_addr, local_addr,
-			       sizeof(struct sockaddr_in6));
+			(void)memcpy(&conn->local_addr, local_addr,
+					sizeof(struct sockaddr_in6));
 
 			if (!net_ipv6_is_addr_unspecified(
 				    &net_sin6(local_addr)->
@@ -300,16 +300,16 @@ int net_conn_register(u16_t proto, u8_t family,
 			}
 		} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
 			   local_addr->sa_family == AF_INET) {
-			memcpy(&conn->local_addr, local_addr,
-			       sizeof(struct sockaddr_in));
+			(void)memcpy(&conn->local_addr, local_addr,
+					sizeof(struct sockaddr_in));
 
 			if (net_sin(local_addr)->sin_addr.s_addr) {
 				flags |= NET_CONN_LOCAL_ADDR_SPEC;
 			}
 		} else if (IS_ENABLED(CONFIG_NET_SOCKETS_CAN) &&
 			   local_addr->sa_family == AF_CAN) {
-			memcpy(&conn->local_addr, local_addr,
-			       sizeof(struct sockaddr_can));
+			(void)memcpy(&conn->local_addr, local_addr,
+					sizeof(struct sockaddr_can));
 		} else {
 			NET_ERR("Local address family not set");
 			goto error;

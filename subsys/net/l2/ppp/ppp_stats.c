@@ -43,7 +43,7 @@ static int ppp_stats_get(u32_t mgmt_request, struct net_if *iface,
 		return -EINVAL;
 	}
 
-	memcpy(data, src, len);
+	(void)memcpy(data, src, len);
 
 	return 0;
 }

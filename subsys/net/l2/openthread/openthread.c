@@ -84,7 +84,7 @@ void otPlatRadioGetIeeeEui64(otInstance *instance, uint8_t *ieee_eui64)
 {
 	ARG_UNUSED(instance);
 
-	memcpy(ieee_eui64, ll_addr->addr, ll_addr->len);
+	(void)memcpy(ieee_eui64, ll_addr->addr, ll_addr->len);
 }
 
 void otTaskletsSignalPending(otInstance *instance)

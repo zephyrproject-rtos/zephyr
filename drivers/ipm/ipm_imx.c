@@ -103,7 +103,7 @@ static int imx_mu_ipm_send(struct device *dev, int wait, u32_t id,
 	}
 
 	/* Actual message is passing using 32 bits registers */
-	memcpy(data32, data, size);
+	(void)memcpy(data32, data, size);
 
 	for (i = 0; i < IMX_IPM_DATA_REGS; i++) {
 		status = MU_TrySendMsg(base, id * IMX_IPM_DATA_REGS + i,

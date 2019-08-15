@@ -455,7 +455,8 @@ static int dfu_class_handle_req(struct usb_setup_packet *pSetup,
 			dfu_data.state = dfuDNBUSY;
 			dfu_data_worker.worker_state = dfuIDLE;
 			dfu_data_worker.worker_len  = pSetup->wLength;
-			memcpy(dfu_data_worker.buf, *data, pSetup->wLength);
+			(void)memcpy(dfu_data_worker.buf, *data,
+				      pSetup->wLength);
 			k_work_submit(&dfu_work);
 			break;
 		case dfuDNLOAD_IDLE:
@@ -467,7 +468,8 @@ static int dfu_class_handle_req(struct usb_setup_packet *pSetup,
 				k_poll_signal_raise(&dfu_signal, 0);
 			}
 
-			memcpy(dfu_data_worker.buf, *data, pSetup->wLength);
+			(void)memcpy(dfu_data_worker.buf, *data,
+				      pSetup->wLength);
 			k_work_submit(&dfu_work);
 			break;
 		default:

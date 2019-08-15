@@ -46,7 +46,7 @@ static void uuid_to_uuid128(const struct bt_uuid *src, struct bt_uuid_128 *dst)
 			     &dst->val[UUID_16_BASE_OFFSET]);
 		return;
 	case BT_UUID_TYPE_128:
-		memcpy(dst, src, sizeof(*dst));
+		(void)memcpy(dst, src, sizeof(*dst));
 		return;
 	}
 }
@@ -90,7 +90,7 @@ bool bt_uuid_create_le(struct bt_uuid *uuid, const u8_t *data, u8_t data_len)
 		break;
 	case 16:
 		uuid->type = BT_UUID_TYPE_128;
-		memcpy(&BT_UUID_128(uuid)->val, data, 16);
+		(void)memcpy(&BT_UUID_128(uuid)->val, data, 16);
 		break;
 	default:
 		return false;
@@ -119,7 +119,7 @@ bool bt_uuid_create(struct bt_uuid *uuid, u8_t *data, u8_t data_len)
 		break;
 	case 16:
 		uuid->type = BT_UUID_TYPE_128;
-		memcpy(&BT_UUID_128(uuid)->val, v.u128, 16);
+		(void)memcpy(&BT_UUID_128(uuid)->val, v.u128, 16);
 		break;
 	default:
 		return false;
@@ -141,12 +141,12 @@ void bt_uuid_to_str(const struct bt_uuid *uuid, char *str, size_t len)
 		snprintk(str, len, "%04x", BT_UUID_32(uuid)->val);
 		break;
 	case BT_UUID_TYPE_128:
-		memcpy(&tmp0, &BT_UUID_128(uuid)->val[0], sizeof(tmp0));
-		memcpy(&tmp1, &BT_UUID_128(uuid)->val[2], sizeof(tmp1));
-		memcpy(&tmp2, &BT_UUID_128(uuid)->val[6], sizeof(tmp2));
-		memcpy(&tmp3, &BT_UUID_128(uuid)->val[8], sizeof(tmp3));
-		memcpy(&tmp4, &BT_UUID_128(uuid)->val[10], sizeof(tmp4));
-		memcpy(&tmp5, &BT_UUID_128(uuid)->val[12], sizeof(tmp5));
+		(void)memcpy(&tmp0, &BT_UUID_128(uuid)->val[0], sizeof(tmp0));
+		(void)memcpy(&tmp1, &BT_UUID_128(uuid)->val[2], sizeof(tmp1));
+		(void)memcpy(&tmp2, &BT_UUID_128(uuid)->val[6], sizeof(tmp2));
+		(void)memcpy(&tmp3, &BT_UUID_128(uuid)->val[8], sizeof(tmp3));
+		(void)memcpy(&tmp4, &BT_UUID_128(uuid)->val[10], sizeof(tmp4));
+		(void)memcpy(&tmp5, &BT_UUID_128(uuid)->val[12], sizeof(tmp5));
 
 		snprintk(str, len, "%08x-%04x-%04x-%04x-%08x%04x",
 			 tmp5, tmp4, tmp3, tmp2, tmp1, tmp0);

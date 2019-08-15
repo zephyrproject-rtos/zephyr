@@ -464,7 +464,7 @@ static void bt_uart_isr(struct device *unused)
 				continue;
 			}
 
-			memcpy(&hdr[sizeof(hdr) - remaining], &byte, 1);
+			(void)memcpy(&hdr[sizeof(hdr) - remaining], &byte, 1);
 			remaining--;
 
 			if (remaining) {
@@ -585,7 +585,7 @@ static int h5_queue(struct net_buf *buf)
 		return -1;
 	}
 
-	memcpy(net_buf_push(buf, sizeof(type)), &type, sizeof(type));
+	(void)memcpy(net_buf_push(buf, sizeof(type)), &type, sizeof(type));
 
 	net_buf_put(&h5.tx_queue, buf);
 

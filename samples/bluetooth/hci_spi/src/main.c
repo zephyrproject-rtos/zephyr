@@ -216,7 +216,7 @@ static void bt_tx_thread(void *p1, void *p2, void *p3)
 
 		switch (rxmsg[PACKET_TYPE]) {
 		case HCI_CMD:
-			memcpy(&cmd_hdr, &rxmsg[1], sizeof(cmd_hdr));
+			(void)memcpy(&cmd_hdr, &rxmsg[1], sizeof(cmd_hdr));
 
 			buf = net_buf_alloc(&cmd_tx_pool, K_NO_WAIT);
 			if (buf) {
@@ -231,7 +231,7 @@ static void bt_tx_thread(void *p1, void *p2, void *p3)
 			}
 			break;
 		case HCI_ACL:
-			memcpy(&acl_hdr, &rxmsg[1], sizeof(acl_hdr));
+			(void)memcpy(&acl_hdr, &rxmsg[1], sizeof(acl_hdr));
 
 			buf = net_buf_alloc(&acl_tx_pool, K_NO_WAIT);
 			if (buf) {

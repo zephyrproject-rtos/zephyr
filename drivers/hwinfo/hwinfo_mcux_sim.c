@@ -47,7 +47,7 @@ ssize_t z_impl_hwinfo_get_device_id(u8_t *buffer, size_t length)
 		length = sizeof(dev_id.id);
 	}
 
-	memcpy(buffer, dev_id.id, length);
+	(void)memcpy(buffer, dev_id.id, length);
 
 	return length;
 }

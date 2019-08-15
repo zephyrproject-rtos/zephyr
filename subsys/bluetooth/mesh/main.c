@@ -74,7 +74,7 @@ int bt_mesh_provision(const u8_t net_key[16], u16_t net_idx,
 
 	bt_mesh_comp_provision(addr);
 
-	memcpy(bt_mesh.dev_key, dev_key, 16);
+	(void)memcpy(bt_mesh.dev_key, dev_key, 16);
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
 		BT_DBG("Storing network information persistently");
@@ -97,7 +97,7 @@ void bt_mesh_reset(void)
 	bt_mesh.iv_index = 0U;
 	bt_mesh.seq = 0U;
 
-	memset(bt_mesh.flags, 0, sizeof(bt_mesh.flags));
+	(void)memset(bt_mesh.flags, 0, sizeof(bt_mesh.flags));
 
 	k_delayed_work_cancel(&bt_mesh.ivu_timer);
 
@@ -149,7 +149,7 @@ int bt_mesh_prov_enable(bt_mesh_prov_bearer_t bearers)
 		const struct bt_mesh_prov *prov = bt_mesh_prov_get();
 		struct bt_uuid_128 uuid = { .uuid.type = BT_UUID_TYPE_128 };
 
-		memcpy(uuid.val, prov->uuid, 16);
+		(void)memcpy(uuid.val, prov->uuid, 16);
 		BT_INFO("Device UUID: %s", bt_uuid_str(&uuid.uuid));
 	}
 

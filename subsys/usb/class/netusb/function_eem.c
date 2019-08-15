@@ -125,7 +125,7 @@ static int eem_send(struct net_pkt *pkt)
 	b_idx += len - sizeof(sentinel);
 
 	/* Add crc-sentinel */
-	memcpy(&tx_buf[b_idx], sentinel, sizeof(sentinel));
+	(void)memcpy(&tx_buf[b_idx], sentinel, sizeof(sentinel));
 	b_idx += sizeof(sentinel);
 
 	/* transfer data to host */

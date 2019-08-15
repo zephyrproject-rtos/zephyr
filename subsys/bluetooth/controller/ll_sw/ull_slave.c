@@ -417,7 +417,8 @@ u8_t ll_start_enc_req_send(u16_t handle, u8_t error_code,
 			return ret;
 		}
 
-		memcpy(&conn->llcp_enc.ltk[0], ltk, sizeof(conn->llcp_enc.ltk));
+		(void)memcpy(&conn->llcp_enc.ltk[0],
+			      ltk, sizeof(conn->llcp_enc.ltk));
 
 		conn->llcp.encryption.error_code = 0U;
 		conn->llcp.encryption.initiate = 0U;

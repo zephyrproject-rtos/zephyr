@@ -1170,7 +1170,7 @@ static inline void generate_nonce(u8_t *ccm_nonce, u8_t *nonce,
 {
 	nonce[0] = 0 | (apkt->ad_len ? 0x40 : 0) | (m << 3) | 1;
 
-	memcpy(&nonce[1], ccm_nonce, 13);
+	(void)memcpy(&nonce[1], ccm_nonce, 13);
 
 	nonce[14] = (u8_t)(apkt->pkt->in_len >> 8);
 	nonce[15] = (u8_t)(apkt->pkt->in_len);
@@ -1227,9 +1227,9 @@ static int insert_crypto_parameters(struct cipher_ctx *ctx,
 	} else {
 		in_buf = data;
 
-		memcpy(in_buf, apkt->ad, apkt->ad_len);
-		memcpy(in_buf + apkt->ad_len,
-		       apkt->pkt->in_buf, apkt->pkt->in_len);
+		(void)memcpy(in_buf, apkt->ad, apkt->ad_len);
+		(void)memcpy(in_buf + apkt->ad_len,
+				apkt->pkt->in_buf, apkt->pkt->in_len);
 		in_len = apkt->ad_len + apkt->pkt->in_len;
 
 		*auth_crypt = !apkt->tag ? apkt->pkt->in_len :
@@ -1308,8 +1308,9 @@ static int cc2520_crypto_ccm(struct cipher_ctx *ctx,
 	}
 
 	if (apkt->tag) {
-		memcpy(apkt->tag, apkt->pkt->out_buf + apkt->pkt->in_len,
-					ctx->mode_params.ccm_info.tag_len);
+		(void)memcpy(apkt->tag,
+				apkt->pkt->out_buf + apkt->pkt->in_len,
+				ctx->mode_params.ccm_info.tag_len);
 	}
 
 	return 0;

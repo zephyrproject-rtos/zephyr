@@ -125,8 +125,8 @@ static void settings_tmpfile(char *dst, const char *src, char *pfx)
 	if (len + pfx_len >= SETTINGS_FILE_NAME_MAX) {
 		len = SETTINGS_FILE_NAME_MAX - pfx_len - 1;
 	}
-	memcpy(dst, src, len);
-	memcpy(dst + len, pfx, pfx_len);
+	(void)memcpy(dst, src, len);
+	(void)memcpy(dst + len, pfx, pfx_len);
 	dst[len + pfx_len] = '\0';
 }
 

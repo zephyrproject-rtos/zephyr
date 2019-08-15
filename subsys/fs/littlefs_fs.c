@@ -195,7 +195,7 @@ static int littlefs_open(struct fs_file_t *fp, const char *path)
 
 	struct lfs_file_data *fdp = fp->filep;
 
-	memset(fdp, 0, sizeof(*fdp));
+	(void)memset(fdp, 0, sizeof(*fdp));
 
 	ret = k_mem_pool_alloc(&file_cache_pool, &fdp->cache_block,
 			       lfs->cfg->cache_size, K_NO_WAIT);
@@ -368,7 +368,7 @@ static int littlefs_opendir(struct fs_dir_t *dp, const char *path)
 		return -ENOMEM;
 	}
 
-	memset(dp->dirp, 0, sizeof(struct lfs_dir));
+	(void)memset(dp->dirp, 0, sizeof(struct lfs_dir));
 
 	path = fs_impl_strip_prefix(path, dp->mp);
 

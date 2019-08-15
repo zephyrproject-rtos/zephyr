@@ -119,7 +119,7 @@ static u64_t msg_hash(struct bt_mesh_net_rx *rx, struct net_buf_simple *pdu)
 	hash1 = (BT_MESH_NET_IVI_RX(rx) << 8) | pdu->data[2];
 
 	/* Two last bytes of SEQ + SRC */
-	memcpy(&hash2, &pdu->data[3], 4);
+	(void)memcpy(&hash2, &pdu->data[3], 4);
 
 	return (u64_t)hash1 << 32 | (u64_t)hash2;
 }
@@ -174,7 +174,7 @@ int bt_mesh_net_keys_create(struct bt_mesh_subnet_keys *keys,
 		return err;
 	}
 
-	memcpy(keys->net, key, 16);
+	(void)memcpy(keys->net, key, 16);
 
 	keys->nid = nid;
 
@@ -264,8 +264,8 @@ void friend_cred_refresh(u16_t net_idx)
 
 		if (cred->addr != BT_MESH_ADDR_UNASSIGNED &&
 		    cred->net_idx == net_idx) {
-			memcpy(&cred->cred[0], &cred->cred[1],
-			       sizeof(cred->cred[0]));
+			(void)memcpy(&cred->cred[0], &cred->cred[1],
+					sizeof(cred->cred[0]));
 		}
 	}
 }
@@ -499,7 +499,7 @@ void bt_mesh_net_revoke_keys(struct bt_mesh_subnet *sub)
 
 	BT_DBG("idx 0x%04x", sub->net_idx);
 
-	memcpy(&sub->keys[0], &sub->keys[1], sizeof(sub->keys[0]));
+	(void)memcpy(&sub->keys[0], &sub->keys[1], sizeof(sub->keys[0]));
 
 	for (i = 0; i < ARRAY_SIZE(bt_mesh.app_keys); i++) {
 		struct bt_mesh_app_key *key = &bt_mesh.app_keys[i];
@@ -508,7 +508,8 @@ void bt_mesh_net_revoke_keys(struct bt_mesh_subnet *sub)
 			continue;
 		}
 
-		memcpy(&key->keys[0], &key->keys[1], sizeof(key->keys[0]));
+		(void)memcpy(&key->keys[0], &key->keys[1],
+			      sizeof(key->keys[0]));
 		key->updated = false;
 	}
 }
@@ -994,7 +995,7 @@ static int net_decrypt(struct bt_mesh_subnet *sub, const u8_t *enc,
 	rx->old_iv = (IVI(data) != (bt_mesh.iv_index & 0x01));
 
 	net_buf_simple_reset(buf);
-	memcpy(net_buf_simple_add(buf, data_len), data, data_len);
+	(void)memcpy(net_buf_simple_add(buf, data_len), data, data_len);
 
 	if (bt_mesh_net_obfuscate(buf->data, BT_MESH_NET_IVI_RX(rx), priv)) {
 		return -ENOENT;

@@ -165,7 +165,7 @@ static int net_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 		return err;
 	}
 
-	memcpy(bt_mesh.dev_key, net.dev_key, sizeof(bt_mesh.dev_key));
+	(void)memcpy(bt_mesh.dev_key, net.dev_key, sizeof(bt_mesh.dev_key));
 	bt_mesh_comp_provision(net.primary_addr);
 
 	BT_DBG("Provisioned with primary address 0x%04x", net.primary_addr);
@@ -357,8 +357,8 @@ static int net_key_set(const char *name, size_t len_rd,
 
 		sub->kr_flag = key.kr_flag;
 		sub->kr_phase = key.kr_phase;
-		memcpy(sub->keys[0].net, &key.val[0], 16);
-		memcpy(sub->keys[1].net, &key.val[1], 16);
+		(void)memcpy(sub->keys[0].net, &key.val[0], 16);
+		(void)memcpy(sub->keys[1].net, &key.val[1], 16);
 
 		return 0;
 	}
@@ -378,8 +378,8 @@ static int net_key_set(const char *name, size_t len_rd,
 	sub->net_idx = net_idx;
 	sub->kr_flag = key.kr_flag;
 	sub->kr_phase = key.kr_phase;
-	memcpy(sub->keys[0].net, &key.val[0], 16);
-	memcpy(sub->keys[1].net, &key.val[1], 16);
+	(void)memcpy(sub->keys[0].net, &key.val[0], 16);
+	(void)memcpy(sub->keys[1].net, &key.val[1], 16);
 
 	BT_DBG("NetKeyIndex 0x%03x recovered from storage", net_idx);
 
@@ -432,8 +432,8 @@ static int app_key_set(const char *name, size_t len_rd,
 	app->net_idx = key.net_idx;
 	app->app_idx = app_idx;
 	app->updated = key.updated;
-	memcpy(app->keys[0].val, key.val[0], 16);
-	memcpy(app->keys[1].val, key.val[1], 16);
+	(void)memcpy(app->keys[0].val, key.val[0], 16);
+	(void)memcpy(app->keys[1].val, key.val[1], 16);
 
 	bt_mesh_app_id(app->keys[0].val, &app->keys[0].id);
 	bt_mesh_app_id(app->keys[1].val, &app->keys[1].id);
@@ -898,7 +898,7 @@ static void store_pending_net(void)
 	       bt_hex(bt_mesh.dev_key, 16));
 
 	net.primary_addr = bt_mesh_primary_addr();
-	memcpy(net.dev_key, bt_mesh.dev_key, 16);
+	(void)memcpy(net.dev_key, bt_mesh.dev_key, 16);
 
 	err = settings_save_one("bt/mesh/Net", &net, sizeof(net));
 	if (err) {
@@ -1139,8 +1139,8 @@ static void store_net_key(struct bt_mesh_subnet *sub)
 	BT_DBG("NetKeyIndex 0x%03x NetKey %s", sub->net_idx,
 	       bt_hex(sub->keys[0].net, 16));
 
-	memcpy(&key.val[0], sub->keys[0].net, 16);
-	memcpy(&key.val[1], sub->keys[1].net, 16);
+	(void)memcpy(&key.val[0], sub->keys[0].net, 16);
+	(void)memcpy(&key.val[1], sub->keys[1].net, 16);
 	key.kr_flag = sub->kr_flag;
 	key.kr_phase = sub->kr_phase;
 
@@ -1162,8 +1162,8 @@ static void store_app_key(struct bt_mesh_app_key *app)
 
 	key.net_idx = app->net_idx;
 	key.updated = app->updated;
-	memcpy(key.val[0], app->keys[0].val, 16);
-	memcpy(key.val[1], app->keys[1].val, 16);
+	(void)memcpy(key.val[0], app->keys[0].val, 16);
+	(void)memcpy(key.val[1], app->keys[1].val, 16);
 
 	snprintk(path, sizeof(path), "bt/mesh/AppKey/%x", app->app_idx);
 

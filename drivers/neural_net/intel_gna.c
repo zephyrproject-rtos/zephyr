@@ -84,7 +84,7 @@ static void intel_gna_interrupt_handler(struct device *dev)
 		SOC_DCACHE_INVALIDATE(pending_req.model->output,
 				pending_req.output_len);
 		/* copy output from the model buffer to applciation buffer */
-		memcpy(pending_req.output, pending_req.model->output,
+		(void)memcpy(pending_req.output, pending_req.model->output,
 				pending_req.output_len);
 		pending_resp.response.output = pending_req.output;
 		pending_resp.response.output_len = pending_req.output_len;
@@ -459,7 +459,7 @@ static int intel_gna_infer(struct device *dev, struct gna_inference_req *req,
 	}
 
 	/* copy input */
-	memcpy(handle->input, req->input, input_size);
+	(void)memcpy(handle->input, req->input, input_size);
 	SOC_DCACHE_FLUSH(handle->input, input_size);
 
 	/* assign layer descriptor base address to configuration descriptor */

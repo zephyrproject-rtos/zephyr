@@ -114,7 +114,7 @@ struct net_udp_hdr *net_udp_set_hdr(struct net_pkt *pkt,
 		goto out;
 	}
 
-	memcpy(udp_hdr, hdr, sizeof(struct net_udp_hdr));
+	(void)memcpy(udp_hdr, hdr, sizeof(struct net_udp_hdr));
 
 	net_pkt_set_data(pkt, &udp_access);
 out:

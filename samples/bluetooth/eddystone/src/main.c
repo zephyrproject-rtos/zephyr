@@ -203,7 +203,7 @@ static ssize_t write_slot(struct bt_conn *conn,
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
 	}
 
-	memcpy(&value, buf, len);
+	(void)memcpy(&value, buf, len);
 
 	if (value + 1 > NUMBER_OF_SLOTS) {
 		return BT_GATT_ERR(BT_ATT_ERR_WRITE_NOT_PERMITTED);
@@ -243,7 +243,7 @@ static ssize_t write_tx_power(struct bt_conn *conn,
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
 	}
 
-	memcpy(&slot->tx_power, buf, len);
+	(void)memcpy(&slot->tx_power, buf, len);
 
 	return len;
 }
@@ -278,7 +278,7 @@ static ssize_t write_adv_tx_power(struct bt_conn *conn,
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
 	}
 
-	memcpy(&slot->adv_tx_power, buf, len);
+	(void)memcpy(&slot->adv_tx_power, buf, len);
 
 	return len;
 }
@@ -330,7 +330,7 @@ static ssize_t write_lock(struct bt_conn *conn,
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	}
 
-	memcpy(&value, buf, sizeof(value));
+	(void)memcpy(&value, buf, sizeof(value));
 
 	if (value > EDS_UNLOCKED_NO_RELOCKING) {
 		return BT_GATT_ERR(BT_ATT_ERR_WRITE_NOT_PERMITTED);
@@ -478,7 +478,7 @@ static ssize_t write_adv_data(struct bt_conn *conn,
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	}
 
-	memcpy(&type, buf, sizeof(type));
+	(void)memcpy(&type, buf, sizeof(type));
 
 	switch (type) {
 	case EDS_TYPE_URL:
@@ -489,8 +489,8 @@ static ssize_t write_adv_data(struct bt_conn *conn,
 		 */
 		slot->ad[2].data_len = MIN(slot->ad[2].data_len,
 					   len + EDS_URL_WRITE_OFFSET);
-		memcpy(&slot->ad[2].data + EDS_URL_WRITE_OFFSET, buf,
-		       slot->ad[2].data_len - EDS_URL_WRITE_OFFSET);
+		(void)memcpy(&slot->ad[2].data + EDS_URL_WRITE_OFFSET, buf,
+				slot->ad[2].data_len - EDS_URL_WRITE_OFFSET);
 
 		/* Restart slot */
 		if (eds_slot_restart(slot, type) < 0) {
@@ -551,7 +551,7 @@ static ssize_t write_connectable(struct bt_conn *conn,
 	/* If any non-zero value is written, the beacon shall remain in its
 	 * connectable state until any other value is written.
 	 */
-	memcpy(&slot->connectable, buf, len);
+	(void)memcpy(&slot->connectable, buf, len);
 
 	return len;
 }

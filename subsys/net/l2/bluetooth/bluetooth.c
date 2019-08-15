@@ -413,7 +413,7 @@ static bool eir_found(u8_t type, const u8_t *data, u8_t data_len,
 		struct bt_uuid *uuid;
 		u16_t u16;
 
-		memcpy(&u16, &data[i], sizeof(u16));
+		(void)memcpy(&u16, &data[i], sizeof(u16));
 		uuid = BT_UUID_DECLARE_16(sys_le16_to_cpu(u16));
 		if (bt_uuid_cmp(uuid, BT_UUID_IPSS)) {
 			continue;

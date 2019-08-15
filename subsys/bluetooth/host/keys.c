@@ -342,7 +342,7 @@ static int keys_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 		bt_keys_clear(keys);
 		return -EINVAL;
 	} else {
-		memcpy(keys->storage_start, val, len);
+		(void)memcpy(keys->storage_start, val, len);
 	}
 
 	BT_DBG("Successfully restored keys for %s", bt_addr_le_str(&addr));

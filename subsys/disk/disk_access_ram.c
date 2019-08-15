@@ -48,7 +48,8 @@ static int disk_ram_access_init(struct disk_info *disk)
 static int disk_ram_access_read(struct disk_info *disk, u8_t *buff,
 				u32_t sector, u32_t count)
 {
-	memcpy(buff, lba_to_address(sector), count * RAMDISK_SECTOR_SIZE);
+	(void)memcpy(buff, lba_to_address(sector),
+		      count * RAMDISK_SECTOR_SIZE);
 
 	return 0;
 }
@@ -56,7 +57,8 @@ static int disk_ram_access_read(struct disk_info *disk, u8_t *buff,
 static int disk_ram_access_write(struct disk_info *disk, const u8_t *buff,
 				 u32_t sector, u32_t count)
 {
-	memcpy(lba_to_address(sector), buff, count * RAMDISK_SECTOR_SIZE);
+	(void)memcpy(lba_to_address(sector), buff,
+		      count * RAMDISK_SECTOR_SIZE);
 
 	return 0;
 }

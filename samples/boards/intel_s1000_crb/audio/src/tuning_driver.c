@@ -109,7 +109,8 @@ static void tun_drv_process_command(u8_t *data, u32_t len)
 
 	if (len) {
 		/* copy the received data into the tuning packet buffer */
-		memcpy(&command_buffer.buffer[command_buffer.index], data, len);
+		(void)memcpy(&command_buffer.buffer[command_buffer.index],
+			      data, len);
 		command_buffer.index += len;
 	}
 

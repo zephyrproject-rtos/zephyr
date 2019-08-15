@@ -20,8 +20,8 @@ static void gptp_md_sync_prepare(struct net_pkt *pkt,
 
 	hdr = GPTP_HDR(pkt);
 
-	memcpy(&hdr->port_id.clk_id, &sync_send->src_port_id.clk_id,
-	       GPTP_CLOCK_ID_LEN);
+	(void)memcpy(&hdr->port_id.clk_id, &sync_send->src_port_id.clk_id,
+			GPTP_CLOCK_ID_LEN);
 
 	hdr->port_id.port_number = htons(port_number);
 
@@ -53,8 +53,8 @@ static void gptp_md_follow_up_prepare(struct net_pkt *pkt,
 	hdr->correction_field += sync_send->follow_up_correction_field;
 	hdr->correction_field <<= 16;
 
-	memcpy(&hdr->port_id.clk_id, &sync_send->src_port_id.clk_id,
-	       GPTP_CLOCK_ID_LEN);
+	(void)memcpy(&hdr->port_id.clk_id, &sync_send->src_port_id.clk_id,
+			GPTP_CLOCK_ID_LEN);
 
 	hdr->port_id.port_number = htons(port_number);
 
@@ -116,8 +116,8 @@ static int gptp_set_md_sync_receive(int port,
 
 	sync_rcv->follow_up_correction_field =
 		ntohll(fup_hdr->correction_field);
-	memcpy(&sync_rcv->src_port_id, &sync_hdr->port_id,
-	       sizeof(struct gptp_port_identity));
+	(void)memcpy(&sync_rcv->src_port_id, &sync_hdr->port_id,
+			sizeof(struct gptp_port_identity));
 	sync_rcv->log_msg_interval = fup_hdr->log_msg_interval;
 	sync_rcv->precise_orig_ts._sec.high =
 		ntohs(fup->prec_orig_ts_secs_high);

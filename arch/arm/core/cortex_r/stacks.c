@@ -17,10 +17,10 @@ K_THREAD_STACK_DEFINE(_sys_stack,   CONFIG_ARMV7_SYS_STACK_SIZE);
 #if defined(CONFIG_INIT_STACKS)
 void init_stacks(void)
 {
-	memset(_fiq_stack, 0xAA, CONFIG_ARMV7_FIQ_STACK_SIZE);
-	memset(_svc_stack, 0xAA, CONFIG_ARMV7_SVC_STACK_SIZE);
-	memset(_abort_stack, 0xAA, CONFIG_ARMV7_EXCEPTION_STACK_SIZE);
-	memset(_undef_stack, 0xAA, CONFIG_ARMV7_EXCEPTION_STACK_SIZE);
-	memset(&_interrupt_stack, 0xAA, CONFIG_ISR_STACK_SIZE);
+	(void)memset(_fiq_stack, 0xAA, CONFIG_ARMV7_FIQ_STACK_SIZE);
+	(void)memset(_svc_stack, 0xAA, CONFIG_ARMV7_SVC_STACK_SIZE);
+	(void)memset(_abort_stack, 0xAA, CONFIG_ARMV7_EXCEPTION_STACK_SIZE);
+	(void)memset(_undef_stack, 0xAA, CONFIG_ARMV7_EXCEPTION_STACK_SIZE);
+	(void)memset(&_interrupt_stack, 0xAA, CONFIG_ISR_STACK_SIZE);
 }
 #endif

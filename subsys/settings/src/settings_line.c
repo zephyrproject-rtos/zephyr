@@ -53,7 +53,7 @@ int settings_line_write(const char *name, const char *value, size_t val_len,
 
 #ifdef CONFIG_SETTINGS_ENCODE_LEN
 	len_field = settings_line_len_calc(name, val_len);
-	memcpy(w_buf, &len_field, sizeof(len_field));
+	(void)memcpy(w_buf, &len_field, sizeof(len_field));
 	w_size = 0;
 
 
@@ -64,7 +64,7 @@ int settings_line_write(const char *name, const char *value, size_t val_len,
 			w_size = rem;
 		}
 
-		memcpy(w_buf + sizeof(len_field), name, w_size);
+		(void)memcpy(w_buf + sizeof(len_field), name, w_size);
 		name += w_size;
 		rem -= w_size;
 	}
@@ -88,7 +88,7 @@ int settings_line_write(const char *name, const char *value, size_t val_len,
 	w_size = rem;
 
 	if (rem) {
-		memcpy(w_buf, name, rem);
+		(void)memcpy(w_buf, name, rem);
 	}
 
 	w_buf[rem] = '=';
@@ -102,7 +102,7 @@ int settings_line_write(const char *name, const char *value, size_t val_len,
 #ifdef CONFIG_SETTINGS_USE_BASE64
 			if (enc_len) {
 				add = MIN(enc_len, sizeof(w_buf) - w_size);
-				memcpy(&w_buf[w_size], p_enc, add);
+				(void)memcpy(&w_buf[w_size], p_enc, add);
 				enc_len -= add;
 				w_size += add;
 				p_enc += add;
@@ -120,7 +120,8 @@ int settings_line_write(const char *name, const char *value, size_t val_len,
 					p_enc = enc_buf;
 #else
 					add = MIN(rem, sizeof(w_buf) - w_size);
-					memcpy(&w_buf[w_size], value, add);
+					(void)memcpy(&w_buf[w_size],
+						      value, add);
 					value += add;
 					rem -= add;
 					w_size += add;
@@ -129,8 +130,9 @@ int settings_line_write(const char *name, const char *value, size_t val_len,
 					add = (w_size) % wbs;
 					if (add) {
 						add = wbs - add;
-						memset(&w_buf[w_size], '\0',
-						       add);
+						(void)memset(&w_buf[w_size],
+								'\0',
+								add);
 						w_size += add;
 					}
 					done = true;
@@ -254,7 +256,7 @@ static int settings_line_raw_read_until(off_t seek, char *out, size_t len_req,
 			}
 		}
 
-		memcpy(out, &temp_buf[off], len);
+		(void)memcpy(out, &temp_buf[off], len);
 
 		rem_size -= len;
 
@@ -327,7 +329,7 @@ int settings_line_val_read(off_t val_off, off_t off, char *out, size_t len_req,
 
 		clen = MIN(olen + off_begin - off, rem_size);
 
-		memcpy(out, &dec_buf[off - off_begin], clen);
+		(void)memcpy(out, &dec_buf[off - off_begin], clen);
 		rem_size -= clen;
 
 		if (exp_size > read_size || olen < read_size/4*3) {

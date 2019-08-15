@@ -1645,8 +1645,8 @@ static inline void usdhc_op_ctx_init(struct usdhc_priv *priv,
 
 	priv->op_context.cmd_only = cmd_only;
 
-	memset((char *)cmd, 0, sizeof(struct usdhc_cmd));
-	memset((char *)data, 0, sizeof(struct usdhc_data));
+	(void)memset((char *)cmd, 0, sizeof(struct usdhc_cmd));
+	(void)memset((char *)data, 0, sizeof(struct usdhc_data));
 
 	cmd->index = cmd_idx;
 	cmd->argument = arg;
@@ -2019,8 +2019,8 @@ static int usdhc_select_bus_timing(struct usdhc_priv *priv)
 		/* execute tuning */
 		priv->op_context.cmd_only = 0;
 
-		memset((char *)cmd, 0, sizeof(struct usdhc_cmd));
-		memset((char *)data, 0, sizeof(struct usdhc_data));
+		(void)memset((char *)cmd, 0, sizeof(struct usdhc_cmd));
+		(void)memset((char *)data, 0, sizeof(struct usdhc_data));
 
 		cmd->index = SDHC_SEND_TUNING_BLOCK;
 		cmd->rsp_type = SDHC_RSP_TYPE_R1;
@@ -2051,8 +2051,8 @@ static int usdhc_write_sector(void *bus_data, const u8_t *buf, u32_t sector,
 	struct usdhc_cmd *cmd = &priv->op_context.cmd;
 	struct usdhc_data *data = &priv->op_context.data;
 
-	memset((char *)cmd, 0, sizeof(struct usdhc_cmd));
-	memset((char *)data, 0, sizeof(struct usdhc_data));
+	(void)memset((char *)cmd, 0, sizeof(struct usdhc_cmd));
+	(void)memset((char *)data, 0, sizeof(struct usdhc_data));
 
 	priv->op_context.cmd_only = 0;
 	cmd->index = SDHC_WRITE_MULTIPLE_BLOCK;
@@ -2080,8 +2080,8 @@ static int usdhc_read_sector(void *bus_data, u8_t *buf, u32_t sector,
 	struct usdhc_cmd *cmd = &priv->op_context.cmd;
 	struct usdhc_data *data = &priv->op_context.data;
 
-	memset((char *)cmd, 0, sizeof(struct usdhc_cmd));
-	memset((char *)data, 0, sizeof(struct usdhc_data));
+	(void)memset((char *)cmd, 0, sizeof(struct usdhc_cmd));
+	(void)memset((char *)data, 0, sizeof(struct usdhc_data));
 
 	priv->op_context.cmd_only = 0;
 	cmd->index = SDHC_READ_MULTIPLE_BLOCK;
@@ -2414,8 +2414,8 @@ APP_SEND_OP_COND_AGAIN:
 
 	ret = usdhc_xfer(priv);
 	if (!ret) {
-		memcpy(priv->card_info.raw_cid, cmd->response,
-			sizeof(priv->card_info.raw_cid));
+		(void)memcpy(priv->card_info.raw_cid, cmd->response,
+				sizeof(priv->card_info.raw_cid));
 		sdhc_decode_cid(&priv->card_info.cid,
 			priv->card_info.raw_cid);
 	} else {
@@ -2439,8 +2439,8 @@ APP_SEND_OP_COND_AGAIN:
 
 	ret = usdhc_xfer(priv);
 	if (!ret) {
-		memcpy(priv->card_info.raw_csd, cmd->response,
-			sizeof(priv->card_info.raw_csd));
+		(void)memcpy(priv->card_info.raw_csd, cmd->response,
+				sizeof(priv->card_info.raw_csd));
 		sdhc_decode_csd(&priv->card_info.csd, priv->card_info.raw_csd,
 			&priv->card_info.sd_block_count,
 			&priv->card_info.sd_block_size);
@@ -2704,7 +2704,7 @@ static int usdhc_access_init(const struct device *dev)
 
 	(void)k_mutex_lock(&z_usdhc_init_lock, K_FOREVER);
 
-	memset((char *)priv, 0, sizeof(struct usdhc_priv));
+	(void)memset((char *)priv, 0, sizeof(struct usdhc_priv));
 #ifdef DT_INST_0_NXP_IMX_USDHC_LABEL
 	if (!strcmp(dev->config->name, DT_INST_0_NXP_IMX_USDHC_LABEL)) {
 		priv->host_config.base =

@@ -60,7 +60,7 @@ void blink(const char *port, u32_t sleep_ms, u32_t led, u32_t id)
 		char *mem_ptr = k_malloc(size);
 		__ASSERT_NO_MSG(mem_ptr != 0);
 
-		memcpy(mem_ptr, &tx_data, size);
+		(void)memcpy(mem_ptr, &tx_data, size);
 
 		k_fifo_put(&printk_fifo, mem_ptr);
 

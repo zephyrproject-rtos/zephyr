@@ -62,7 +62,7 @@ static struct bt_mesh_subnet *cache_check(u8_t data[21])
 
 static void cache_add(u8_t data[21], struct bt_mesh_subnet *sub)
 {
-	memcpy(sub->beacon_cache, data, 21);
+	(void)memcpy(sub->beacon_cache, data, 21);
 }
 
 static void beacon_complete(int err, void *user_data)

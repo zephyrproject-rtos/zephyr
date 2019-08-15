@@ -64,7 +64,8 @@ static bool data_cb(struct bt_data *data, void *user_data)
 	switch (data->type) {
 	case BT_DATA_NAME_SHORTENED:
 	case BT_DATA_NAME_COMPLETE:
-		memcpy(name, data->data, MIN(data->data_len, NAME_LEN - 1));
+		(void)memcpy(name, data->data,
+			      MIN(data->data_len, NAME_LEN - 1));
 		return false;
 	default:
 		return true;
@@ -1002,7 +1003,7 @@ static int cmd_oob_remote(const struct shell *shell, size_t argc,
 
 static int cmd_oob_clear(const struct shell *shell, size_t argc, char *argv[])
 {
-	memset(&oob_remote, 0, sizeof(oob_remote));
+	(void)memset(&oob_remote, 0, sizeof(oob_remote));
 	bt_set_oob_data_flag(false);
 
 	return 0;

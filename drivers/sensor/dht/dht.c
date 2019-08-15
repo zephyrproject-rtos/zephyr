@@ -148,7 +148,7 @@ static int dht_sample_fetch(struct device *dev, enum sensor_channel chan)
 		LOG_DBG("Invalid checksum in fetched sample");
 		ret = -EIO;
 	} else {
-		memcpy(drv_data->sample, buf, 4);
+		(void)memcpy(drv_data->sample, buf, 4);
 	}
 
 cleanup:

@@ -118,7 +118,7 @@ static int pack_utf8_str(const struct mqtt_utf8 *str, struct buf_ctx *buf)
 	/* Pack length followed by string. */
 	(void)pack_uint16(str->size, buf);
 
-	memcpy(buf->cur, str->utf8, str->size);
+	(void)memcpy(buf->cur, str->utf8, str->size);
 	buf->cur += str->size;
 
 	return 0;
@@ -486,7 +486,7 @@ int disconnect_encode(struct buf_ctx *buf)
 		return -ENOMEM;
 	}
 
-	memcpy(buf->cur, disc_packet, sizeof(disc_packet));
+	(void)memcpy(buf->cur, disc_packet, sizeof(disc_packet));
 	buf->end = buf->cur + sizeof(disc_packet);
 
 	return 0;
@@ -562,7 +562,7 @@ int ping_request_encode(struct buf_ctx *buf)
 		return -ENOMEM;
 	}
 
-	memcpy(buf->cur, ping_packet, sizeof(ping_packet));
+	(void)memcpy(buf->cur, ping_packet, sizeof(ping_packet));
 	buf->end = buf->cur + sizeof(ping_packet);
 
 	return 0;

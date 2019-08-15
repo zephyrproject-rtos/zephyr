@@ -72,8 +72,8 @@ void main(void)
 	time = 0;
 	while (1) {
 		for (i = 0; i < STRIP_NUM_LEDS; i++) {
-			memcpy(&strip_colors[i], color_at(time, i),
-			       sizeof(strip_colors[i]));
+			(void)memcpy(&strip_colors[i], color_at(time, i),
+					sizeof(strip_colors[i]));
 		}
 		led_strip_update_rgb(strip, strip_colors, STRIP_NUM_LEDS);
 		k_sleep(DELAY_TIME);

@@ -657,10 +657,10 @@ static bool parse_ipv6(const char *str, size_t str_len,
 		}
 
 		end = MIN(len, ptr - (str + 1));
-		memcpy(ipaddr, str + 1, end);
+		(void)memcpy(ipaddr, str + 1, end);
 	} else {
 		end = len;
-		memcpy(ipaddr, str, end);
+		(void)memcpy(ipaddr, str, end);
 	}
 
 	ipaddr[end] = '\0';
@@ -682,7 +682,7 @@ static bool parse_ipv6(const char *str, size_t str_len,
 		len = str_len - end;
 
 		/* Re-use the ipaddr buf for port conversion */
-		memcpy(ipaddr, ptr + 2, len);
+		(void)memcpy(ipaddr, ptr + 2, len);
 		ipaddr[len] = '\0';
 
 		ret = convert_port(ipaddr, &port);
@@ -743,7 +743,7 @@ static bool parse_ipv4(const char *str, size_t str_len,
 		end = len;
 	}
 
-	memcpy(ipaddr, str, end);
+	(void)memcpy(ipaddr, str, end);
 	ipaddr[end] = '\0';
 
 	addr4 = &net_sin(addr)->sin_addr;
@@ -759,7 +759,7 @@ static bool parse_ipv4(const char *str, size_t str_len,
 		return true;
 	}
 
-	memcpy(ipaddr, ptr + 1, str_len - end);
+	(void)memcpy(ipaddr, ptr + 1, str_len - end);
 	ipaddr[str_len - end] = '\0';
 
 	ret = convert_port(ipaddr, &port);

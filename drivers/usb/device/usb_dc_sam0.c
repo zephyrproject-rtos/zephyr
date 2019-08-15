@@ -513,7 +513,7 @@ int usb_dc_ep_write(u8_t ep, const u8_t *buf, u32_t len, u32_t *ret_bytes)
 	 * multi-packet and automatic zero-length packet features as
 	 * the upper layers in Zephyr implement these in code.
 	 */
-	memcpy((void *)addr, buf, len);
+	(void)memcpy((void *)addr, buf, len);
 	desc->DeviceDescBank[1].PCKSIZE.bit.MULTI_PACKET_SIZE = 0;
 	desc->DeviceDescBank[1].PCKSIZE.bit.BYTE_COUNT = len;
 	endpoint->EPINTFLAG.reg =
@@ -566,7 +566,7 @@ int usb_dc_ep_read_ex(u8_t ep, u8_t *buf, u32_t max_data_len,
 
 	remain = bytes - data->out_at;
 	take = MIN(max_data_len, remain);
-	memcpy(buf, (u8_t *)addr + data->out_at, take);
+	(void)memcpy(buf, (u8_t *)addr + data->out_at, take);
 
 	if (read_bytes != NULL) {
 		*read_bytes = take;

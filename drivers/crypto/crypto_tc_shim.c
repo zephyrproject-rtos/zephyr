@@ -83,7 +83,7 @@ static int do_ctr_op(struct cipher_ctx *ctx, struct cipher_pkt *op,
 	/* Tinycrypt takes the last 4 bytes of the counter parameter as the
 	 * true counter start. IV forms the first 12 bytes of the split counter.
 	 */
-	memcpy(ctr, iv, ivlen);
+	(void)memcpy(ctr, iv, ivlen);
 
 	if (tc_ctr_mode(op->out_buf, op->out_buf_max, op->in_buf,
 			op->in_len, ctr,
@@ -126,7 +126,7 @@ static int do_ccm_encrypt_mac(struct cipher_ctx *ctx,
 	 * both encrypted output and hash
 	 */
 	if (aead_op->tag) {
-		memcpy(aead_op->tag, op->out_buf + op->in_len, ccm.mlen);
+		(void)memcpy(aead_op->tag, op->out_buf + op->in_len, ccm.mlen);
 	}
 
 	/* Before returning TC_CRYPTO_SUCCESS, tc_ccm_generation_encryption()

@@ -125,7 +125,7 @@ void *realloc(void *ptr, size_t requested_size)
 		return NULL;
 	}
 
-	memcpy(new_ptr, ptr, block_size - struct_blk_size);
+	(void)memcpy(new_ptr, ptr, block_size - struct_blk_size);
 	free(ptr);
 
 	return new_ptr;

@@ -164,8 +164,8 @@ int flash_img_buffered_write(struct flash_img_context *ctx, u8_t *data,
 
 	while ((len - processed) >=
 	       (buf_empty_bytes = CONFIG_IMG_BLOCK_BUF_SIZE - ctx->buf_bytes)) {
-		memcpy(ctx->buf + ctx->buf_bytes, data + processed,
-		       buf_empty_bytes);
+		(void)memcpy(ctx->buf + ctx->buf_bytes, data + processed,
+				buf_empty_bytes);
 
 		ctx->buf_bytes = CONFIG_IMG_BLOCK_BUF_SIZE;
 		rc = flash_sync(ctx);
@@ -179,8 +179,8 @@ int flash_img_buffered_write(struct flash_img_context *ctx, u8_t *data,
 
 	/* place rest of the data into ctx->buf */
 	if (processed < len) {
-		memcpy(ctx->buf + ctx->buf_bytes,
-		       data + processed, len - processed);
+		(void)memcpy(ctx->buf + ctx->buf_bytes,
+				data + processed, len - processed);
 		ctx->buf_bytes += len - processed;
 	}
 

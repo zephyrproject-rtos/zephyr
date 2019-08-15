@@ -44,7 +44,7 @@ int ieee802154_security_setup_session(struct ieee802154_security_ctx *sec_ctx,
 	sec_ctx->level = level;
 
 	if (level > IEEE802154_SECURITY_LEVEL_NONE) {
-		memcpy(sec_ctx->key, key, key_len);
+		(void)memcpy(sec_ctx->key, key, key_len);
 		sec_ctx->key_len = key_len;
 		sec_ctx->key_mode = key_mode;
 
@@ -99,7 +99,7 @@ bool ieee802154_decrypt_auth(struct ieee802154_security_ctx *sec_ctx,
 	}
 
 	/* See Section 7.3.2 */
-	memcpy(nonce, src_ext_addr, IEEE802154_EXT_ADDR_LENGTH);
+	(void)memcpy(nonce, src_ext_addr, IEEE802154_EXT_ADDR_LENGTH);
 	nonce[8] = (u8_t)(frame_counter >> 24);
 	nonce[9] = (u8_t)(frame_counter >> 16);
 	nonce[10] = (u8_t)(frame_counter >> 8);
@@ -144,7 +144,7 @@ bool ieee802154_encrypt_auth(struct ieee802154_security_ctx *sec_ctx,
 	}
 
 	/* See Section 7.3.2 */
-	memcpy(nonce, src_ext_addr, IEEE802154_EXT_ADDR_LENGTH);
+	(void)memcpy(nonce, src_ext_addr, IEEE802154_EXT_ADDR_LENGTH);
 	sys_put_be32(sec_ctx->frame_counter, &nonce[8]);
 	nonce[12] = sec_ctx->level;
 

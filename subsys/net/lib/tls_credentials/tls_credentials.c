@@ -135,7 +135,7 @@ int tls_credential_get(sec_tag_t tag, enum tls_credential_type type,
 	}
 
 	*credlen = credential->len;
-	memcpy(cred, credential->buf, credential->len);
+	(void)memcpy(cred, credential->buf, credential->len);
 
 exit:
 	credentials_unlock();

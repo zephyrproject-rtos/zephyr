@@ -60,7 +60,7 @@ static ssize_t write_vnd(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
 	}
 
-	memcpy(value + offset, buf, len);
+	(void)memcpy(value + offset, buf, len);
 
 	return len;
 }
@@ -116,7 +116,7 @@ static ssize_t write_long_vnd(struct bt_conn *conn,
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
 	}
 
-	memcpy(value + offset, buf, len);
+	(void)memcpy(value + offset, buf, len);
 
 	return len;
 }
@@ -150,7 +150,7 @@ static ssize_t write_signed(struct bt_conn *conn, const struct bt_gatt_attr *att
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
 	}
 
-	memcpy(value + offset, buf, len);
+	(void)memcpy(value + offset, buf, len);
 
 	return len;
 }
@@ -181,7 +181,7 @@ static ssize_t write_without_rsp_vnd(struct bt_conn *conn,
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
 	}
 
-	memcpy(value + offset, buf, len);
+	(void)memcpy(value + offset, buf, len);
 
 	return len;
 }

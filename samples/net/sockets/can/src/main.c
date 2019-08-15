@@ -113,7 +113,7 @@ static void rx(int *can_fd, int *do_close_period,
 	while (1) {
 		u8_t *data;
 
-		memset(&frame, 0, sizeof(frame));
+		(void)memset(&frame, 0, sizeof(frame));
 		addr_len = sizeof(can_addr);
 
 		ret = recvfrom(fd, &frame, sizeof(struct can_frame),

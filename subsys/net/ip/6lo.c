@@ -1401,8 +1401,8 @@ static bool uncompress_IPHC_header(struct net_pkt *pkt)
 
 		if ((iphc & NET_6LO_IPHC_SAM_MASK) == NET_6LO_IPHC_SAM_00) {
 			NET_DBG("SAM_00 unspecified address");
-			memset(&ipv6->src.s6_addr[0], 0,
-				sizeof(ipv6->src.s6_addr));
+			(void)memset(&ipv6->src.s6_addr[0], 0,
+					sizeof(ipv6->src.s6_addr));
 		} else if (IS_ENABLED(CONFIG_NET_6LO_CONTEXT)) {
 #if defined(CONFIG_NET_6LO_CONTEXT)
 			if (!src) {

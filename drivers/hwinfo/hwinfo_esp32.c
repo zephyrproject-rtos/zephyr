@@ -20,7 +20,7 @@ ssize_t _impl_hwinfo_get_device_id(u8_t *buffer, size_t length)
 		length = sizeof(fuse_rdata);
 	}
 
-	memcpy(buffer, fuse_rdata, length);
+	(void)memcpy(buffer, fuse_rdata, length);
 
 	return length;
 }

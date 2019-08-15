@@ -65,7 +65,7 @@ static int nvs_flash_al_wrt(struct nvs_fs *fs, u32_t addr, const void *data,
 		data8 += blen;
 	}
 	if (len) {
-		memcpy(buf, data8, len);
+		(void)memcpy(buf, data8, len);
 		(void)memset(buf + len, 0xff, fs->write_block_size - len);
 		rc = flash_write(fs->flash_device, offset, buf,
 				 fs->write_block_size);

@@ -82,7 +82,7 @@ static s32_t configure_simplelink(void)
 	struct in_addr addr4;
 	SlNetCfgIpV4Args_t ipV4;
 
-	memset(&ipV4, 0, sizeof(ipV4));
+	(void)memset(&ipV4, 0, sizeof(ipV4));
 #endif
 
 	/* Turn on NWP */
@@ -266,10 +266,10 @@ void SimpleLinkWlanEventHandler(SlWlanEvent_t *wlan_event)
 		SET_STATUS_BIT(nwp.status, STATUS_BIT_CONNECTION);
 
 		/* Store new connection SSID and BSSID: */
-		memcpy(sl_conn.ssid, wlan_event->Data.Connect.SsidName,
-		       wlan_event->Data.Connect.SsidLen);
-		memcpy(sl_conn.bssid, wlan_event->Data.Connect.Bssid,
-		       BSSID_LEN_MAX);
+		(void)memcpy(sl_conn.ssid, wlan_event->Data.Connect.SsidName,
+				wlan_event->Data.Connect.SsidLen);
+		(void)memcpy(sl_conn.bssid, wlan_event->Data.Connect.Bssid,
+				BSSID_LEN_MAX);
 
 		LOG_INF("[WLAN EVENT] STA Connected to the AP: %s, "
 			"BSSID: %x:%x:%x:%x:%x:%x",
@@ -325,8 +325,8 @@ void SimpleLinkWlanEventHandler(SlWlanEvent_t *wlan_event)
 		break;
 
 	case SL_WLAN_EVENT_STA_ADDED:
-		memcpy(&(sl_conn.bssid), wlan_event->Data.STAAdded.Mac,
-		       SL_WLAN_BSSID_LENGTH);
+		(void)memcpy(&(sl_conn.bssid), wlan_event->Data.STAAdded.Mac,
+				SL_WLAN_BSSID_LENGTH);
 		LOG_INF("[WLAN EVENT] STA was added to AP: "
 			"BSSID: %x:%x:%x:%x:%x:%x",
 			sl_conn.bssid[0], sl_conn.bssid[1],
@@ -334,8 +334,8 @@ void SimpleLinkWlanEventHandler(SlWlanEvent_t *wlan_event)
 			sl_conn.bssid[4], sl_conn.bssid[5]);
 		break;
 	case SL_WLAN_EVENT_STA_REMOVED:
-		memcpy(&(sl_conn.bssid), wlan_event->Data.STAAdded.Mac,
-		       SL_WLAN_BSSID_LENGTH);
+		(void)memcpy(&(sl_conn.bssid), wlan_event->Data.STAAdded.Mac,
+				SL_WLAN_BSSID_LENGTH);
 		LOG_INF("[WLAN EVENT] STA was removed from AP: "
 			"BSSID: %x:%x:%x:%x:%x:%x",
 			sl_conn.bssid[0], sl_conn.bssid[1],
@@ -553,7 +553,7 @@ void z_simplelink_get_scan_result(int index,
 	(void)memset(scan_result, 0x0, sizeof(struct wifi_scan_result));
 
 	__ASSERT_NO_MSG(net_entry->SsidLen <= WIFI_SSID_MAX_LEN);
-	memcpy(scan_result->ssid, net_entry->Ssid, net_entry->SsidLen);
+	(void)memcpy(scan_result->ssid, net_entry->Ssid, net_entry->SsidLen);
 	scan_result->ssid_length = net_entry->SsidLen;
 	scan_result->channel = net_entry->Channel;
 

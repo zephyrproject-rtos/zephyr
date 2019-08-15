@@ -62,7 +62,7 @@ static inline bool append(struct coap_packet *cpkt, const u8_t *data, u16_t len)
 		return false;
 	}
 
-	memcpy(cpkt->data + cpkt->offset, data, len);
+	(void)memcpy(cpkt->data + cpkt->offset, data, len);
 	cpkt->offset += len;
 
 	return true;

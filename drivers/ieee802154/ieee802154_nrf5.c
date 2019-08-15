@@ -57,7 +57,7 @@ static struct nrf5_802154_data nrf5_data;
 
 static void nrf5_get_eui64(u8_t *mac)
 {
-	memcpy(mac, (const u32_t *)&NRF_FICR->DEVICEID, 8);
+	(void)memcpy(mac, (const u32_t *)&NRF_FICR->DEVICEID, 8);
 }
 
 static void nrf5_rx_thread(void *arg1, void *arg2, void *arg3)
@@ -267,7 +267,7 @@ static int nrf5_tx(struct device *dev,
 	LOG_DBG("%p (%u)", payload, payload_len);
 
 	nrf5_radio->tx_psdu[0] = payload_len + NRF5_FCS_LENGTH;
-	memcpy(nrf5_radio->tx_psdu + 1, payload, payload_len);
+	(void)memcpy(nrf5_radio->tx_psdu + 1, payload, payload_len);
 
 	/* Reset semaphore in case ACK was received after timeout */
 	k_sem_reset(&nrf5_radio->tx_wait);

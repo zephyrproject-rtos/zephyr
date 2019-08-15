@@ -781,7 +781,7 @@ int do_write_op_json(struct lwm2m_message *msg)
 	engine_set_in_user_data(&msg->in, &fd);
 
 	/* store a copy of the original path */
-	memcpy(&orig_path, &msg->path, sizeof(msg->path));
+	(void)memcpy(&orig_path, &msg->path, sizeof(msg->path));
 
 	/* PARSE base name "bn" */
 	json_next_token(&msg->in, &fd);

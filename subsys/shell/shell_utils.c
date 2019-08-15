@@ -384,7 +384,7 @@ int shell_command_add(char *buff, u16_t *buff_len,
 
 	/* make place for new command: + 1 for space + 1 for EOS */
 	memmove(cmd_source_addr + cmd_len + 1, cmd_source_addr, shift + 1);
-	memcpy(cmd_source_addr, new_cmd, cmd_len);
+	(void)memcpy(cmd_source_addr, new_cmd, cmd_len);
 	cmd_source_addr[cmd_len] = ' ';
 
 	*buff_len += cmd_len + 1; /* + 1 for space */

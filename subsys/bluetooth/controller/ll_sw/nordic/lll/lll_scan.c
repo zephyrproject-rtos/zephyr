@@ -714,22 +714,23 @@ static inline u32_t isr_rx_pdu(struct lll_scan *lll, u8_t devmatch_ok,
 		lrpa = ull_filter_lll_lrpa_get(rl_idx);
 		if (lll->rpa_gen && lrpa) {
 			pdu_tx->tx_addr = 1;
-			memcpy(&pdu_tx->connect_ind.init_addr[0], lrpa->val,
-			       BDADDR_SIZE);
+			(void)memcpy(&pdu_tx->connect_ind.init_addr[0],
+				      lrpa->val,
+				      BDADDR_SIZE);
 		} else {
 #else
 		if (1) {
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 			pdu_tx->tx_addr = lll->init_addr_type;
-			memcpy(&pdu_tx->connect_ind.init_addr[0],
-			       &lll->init_addr[0], BDADDR_SIZE);
+			(void)memcpy(&pdu_tx->connect_ind.init_addr[0],
+					&lll->init_addr[0], BDADDR_SIZE);
 		}
-		memcpy(&pdu_tx->connect_ind.adv_addr[0],
-		       &pdu_adv_rx->adv_ind.addr[0], BDADDR_SIZE);
-		memcpy(&pdu_tx->connect_ind.access_addr[0],
-		       &lll_conn->access_addr[0], 4);
-		memcpy(&pdu_tx->connect_ind.crc_init[0],
-		       &lll_conn->crc_init[0], 3);
+		(void)memcpy(&pdu_tx->connect_ind.adv_addr[0],
+				&pdu_adv_rx->adv_ind.addr[0], BDADDR_SIZE);
+		(void)memcpy(&pdu_tx->connect_ind.access_addr[0],
+				&lll_conn->access_addr[0], 4);
+		(void)memcpy(&pdu_tx->connect_ind.crc_init[0],
+				&lll_conn->crc_init[0], 3);
 		pdu_tx->connect_ind.win_size = 1;
 
 		conn_interval_us = (u32_t)lll_conn->interval * 1250U;
@@ -757,9 +758,9 @@ static inline u32_t isr_rx_pdu(struct lll_scan *lll, u8_t devmatch_ok,
 			sys_cpu_to_le16(lll_conn->latency);
 		pdu_tx->connect_ind.timeout =
 			sys_cpu_to_le16(lll->conn_timeout);
-		memcpy(&pdu_tx->connect_ind.chan_map[0],
-		       &lll_conn->data_chan_map[0],
-		       sizeof(pdu_tx->connect_ind.chan_map));
+		(void)memcpy(&pdu_tx->connect_ind.chan_map[0],
+				&lll_conn->data_chan_map[0],
+				sizeof(pdu_tx->connect_ind.chan_map));
 		pdu_tx->connect_ind.hop = lll_conn->data_chan_hop;
 		pdu_tx->connect_ind.sca = lll_conn_sca_local_get();
 
@@ -805,8 +806,9 @@ static inline u32_t isr_rx_pdu(struct lll_scan *lll, u8_t devmatch_ok,
 		rx->hdr.handle = 0xffff;
 
 		u8_t pdu_adv_rx_chan_sel = pdu_adv_rx->chan_sel;
-		memcpy(rx->pdu, pdu_tx, (offsetof(struct pdu_adv, connect_ind) +
-					  sizeof(struct pdu_adv_connect_ind)));
+		(void)memcpy(rx->pdu, pdu_tx,
+			      (offsetof(struct pdu_adv, connect_ind) +
+					sizeof(struct pdu_adv_connect_ind)));
 
 		/* Overwrite the sent chan sel with received chan sel, when
 		 * giving this PDU to the higher layer. */
@@ -868,18 +870,19 @@ static inline u32_t isr_rx_pdu(struct lll_scan *lll, u8_t devmatch_ok,
 		lrpa = ull_filter_lll_lrpa_get(rl_idx);
 		if (lll->rpa_gen && lrpa) {
 			pdu_tx->tx_addr = 1;
-			memcpy(&pdu_tx->scan_req.scan_addr[0], lrpa->val,
-			       BDADDR_SIZE);
+			(void)memcpy(&pdu_tx->scan_req.scan_addr[0],
+				      lrpa->val,
+				      BDADDR_SIZE);
 		} else {
 #else
 		if (1) {
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 			pdu_tx->tx_addr = lll->init_addr_type;
-			memcpy(&pdu_tx->scan_req.scan_addr[0],
-			       &lll->init_addr[0], BDADDR_SIZE);
+			(void)memcpy(&pdu_tx->scan_req.scan_addr[0],
+					&lll->init_addr[0], BDADDR_SIZE);
 		}
-		memcpy(&pdu_tx->scan_req.adv_addr[0],
-		       &pdu_adv_rx->adv_ind.addr[0], BDADDR_SIZE);
+		(void)memcpy(&pdu_tx->scan_req.adv_addr[0],
+				&pdu_adv_rx->adv_ind.addr[0], BDADDR_SIZE);
 
 		/* switch scanner state to active */
 		lll->state = 1U;

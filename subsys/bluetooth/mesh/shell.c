@@ -398,7 +398,7 @@ static int cmd_uuid(const struct shell *shell, size_t argc, char *argv[])
 		return -EINVAL;
 	}
 
-	memcpy(dev_uuid, uuid, len);
+	(void)memcpy(dev_uuid, uuid, len);
 	(void)memset(dev_uuid + len, 0, sizeof(dev_uuid) - len);
 
 	shell_print(shell, "Device UUID set");
@@ -916,7 +916,7 @@ static int cmd_net_key_add(const struct shell *shell, size_t argc, char *argv[])
 			      key_val, sizeof(key_val));
 		(void)memset(key_val, 0, sizeof(key_val) - len);
 	} else {
-		memcpy(key_val, default_key, sizeof(key_val));
+		(void)memcpy(key_val, default_key, sizeof(key_val));
 	}
 
 	err = bt_mesh_cfg_net_key_add(net.net_idx, net.dst, key_net_idx,
@@ -958,7 +958,7 @@ static int cmd_app_key_add(const struct shell *shell, size_t argc, char *argv[])
 			      key_val, sizeof(key_val));
 		(void)memset(key_val, 0, sizeof(key_val) - len);
 	} else {
-		memcpy(key_val, default_key, sizeof(key_val));
+		(void)memcpy(key_val, default_key, sizeof(key_val));
 	}
 
 	err = bt_mesh_cfg_app_key_add(net.net_idx, net.dst, key_net_idx,

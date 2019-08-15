@@ -780,8 +780,8 @@ int usb_dc_ep_read_wait(u8_t ep, u8_t *data, u32_t max_data_len,
 	 */
 	if (data) {
 		read_count = MIN(read_count, max_data_len);
-		memcpy(data, usb_dc_stm32_state.ep_buf[EP_IDX(ep)] +
-		       ep_state->read_offset, read_count);
+		(void)memcpy(data, usb_dc_stm32_state.ep_buf[EP_IDX(ep)] +
+				ep_state->read_offset, read_count);
 		ep_state->read_count -= read_count;
 		ep_state->read_offset += read_count;
 	} else if (max_data_len) {
@@ -944,8 +944,8 @@ void HAL_PCD_SetupStageCallback(PCD_HandleTypeDef *hpcd)
 
 	ep_state->read_count = SETUP_SIZE;
 	ep_state->read_offset = 0U;
-	memcpy(&usb_dc_stm32_state.ep_buf[EP0_IDX],
-	       usb_dc_stm32_state.pcd.Setup, ep_state->read_count);
+	(void)memcpy(&usb_dc_stm32_state.ep_buf[EP0_IDX],
+			usb_dc_stm32_state.pcd.Setup, ep_state->read_count);
 
 	if (ep_state->cb) {
 		ep_state->cb(EP0_OUT, USB_DC_EP_SETUP);

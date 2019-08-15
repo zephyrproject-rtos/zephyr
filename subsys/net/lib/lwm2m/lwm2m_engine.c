@@ -277,7 +277,7 @@ init_block_ctx(const u8_t *token, u8_t tkl, struct block_context **ctx)
 	}
 
 	(*ctx)->tkl = tkl;
-	memcpy((*ctx)->token, token, tkl);
+	(void)memcpy((*ctx)->token, token, tkl);
 	coap_block_transfer_init(&(*ctx)->ctx, lwm2m_default_block_size(), 0);
 	(*ctx)->timestamp = timestamp;
 
@@ -436,7 +436,7 @@ static int engine_add_observer(struct lwm2m_message *msg,
 		if (obs->ctx == msg->ctx &&
 		    memcmp(&obs->path, &msg->path, sizeof(msg->path)) == 0) {
 			/* quietly update the token information */
-			memcpy(obs->token, token, tkl);
+			(void)memcpy(obs->token, token, tkl);
 			obs->tkl = tkl;
 
 			LOG_DBG("OBSERVER DUPLICATE %u/%u/%u(%u) [%s]",
@@ -527,8 +527,9 @@ static int engine_add_observer(struct lwm2m_message *msg,
 
 	/* copy the values and add it to the list */
 	observe_node_data[i].ctx = msg->ctx;
-	memcpy(&observe_node_data[i].path, &msg->path, sizeof(msg->path));
-	memcpy(observe_node_data[i].token, token, tkl);
+	(void)memcpy(&observe_node_data[i].path, &msg->path,
+		      sizeof(msg->path));
+	(void)memcpy(observe_node_data[i].token, token, tkl);
 	observe_node_data[i].tkl = tkl;
 	observe_node_data[i].last_timestamp = k_uptime_get();
 	observe_node_data[i].event_timestamp =
@@ -1060,7 +1061,7 @@ u16_t lwm2m_get_rd_data(u8_t *client_data, u16_t size)
 	int len;
 
 	/* Add resource-type/content-type to the registration message */
-	memcpy(client_data, REG_PREFACE, sizeof(REG_PREFACE) - 1);
+	(void)memcpy(client_data, REG_PREFACE, sizeof(REG_PREFACE) - 1);
 	pos += sizeof(REG_PREFACE) - 1;
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&engine_obj_list, obj, node) {
@@ -1078,7 +1079,7 @@ u16_t lwm2m_get_rd_data(u8_t *client_data, u16_t size)
 				break;
 			}
 
-			memcpy(&client_data[pos], temp, len);
+			(void)memcpy(&client_data[pos], temp, len);
 			pos += len;
 			continue;
 		}
@@ -1100,7 +1101,7 @@ u16_t lwm2m_get_rd_data(u8_t *client_data, u16_t size)
 					break;
 				}
 
-				memcpy(&client_data[pos], temp, len);
+				(void)memcpy(&client_data[pos], temp, len);
 				pos += len;
 			}
 		}
@@ -1452,11 +1453,11 @@ static int lwm2m_engine_set(char *pathstr, void *value, u16_t len)
 	switch (obj_field->data_type) {
 
 	case LWM2M_RES_TYPE_OPAQUE:
-		memcpy((u8_t *)data_ptr, value, len);
+		(void)memcpy((u8_t *)data_ptr, value, len);
 		break;
 
 	case LWM2M_RES_TYPE_STRING:
-		memcpy((u8_t *)data_ptr, value, len);
+		(void)memcpy((u8_t *)data_ptr, value, len);
 		((u8_t *)data_ptr)[len] = '\0';
 		break;
 
@@ -1691,7 +1692,7 @@ static int lwm2m_engine_get(char *pathstr, void *buf, u16_t buflen)
 				return -ENOMEM;
 			}
 
-			memcpy(buf, data_ptr, data_len);
+			(void)memcpy(buf, data_ptr, data_len);
 			break;
 
 		case LWM2M_RES_TYPE_STRING:
@@ -2517,7 +2518,7 @@ static int lwm2m_write_attr_handler(struct lwm2m_engine_obj *obj,
 		}
 
 		vlen = options[i].len - plen - 1;
-		memcpy(opt_buf, options[i].value + plen + 1, vlen);
+		(void)memcpy(opt_buf, options[i].value + plen + 1, vlen);
 		opt_buf[vlen] = '\0';
 
 		/* convert value to integer or float */
@@ -2550,7 +2551,8 @@ static int lwm2m_write_attr_handler(struct lwm2m_engine_obj *obj,
 		if (type <= LWM2M_ATTR_PMAX) {
 			*(s32_t *)nattr_ptrs[type] = val.val1;
 		} else {
-			memcpy(nattr_ptrs[type], &val, sizeof(float32_value_t));
+			(void)memcpy(nattr_ptrs[type], &val,
+				      sizeof(float32_value_t));
 		}
 
 		nattrs.flags |= BIT(type);
@@ -2617,8 +2619,8 @@ static int lwm2m_write_attr_handler(struct lwm2m_engine_obj *obj,
 				continue;
 			}
 
-			memcpy(&attr->float_val, nattr_ptrs[type],
-			       sizeof(float32_value_t));
+			(void)memcpy(&attr->float_val, nattr_ptrs[type],
+					sizeof(float32_value_t));
 		}
 
 		LOG_DBG("Update %s to %d.%06d",
@@ -2651,8 +2653,8 @@ static int lwm2m_write_attr_handler(struct lwm2m_engine_obj *obj,
 			attr->int_val = *(s32_t *)nattr_ptrs[type];
 			update_observe_node = true;
 		} else {
-			memcpy(&attr->float_val, nattr_ptrs[type],
-			       sizeof(float32_value_t));
+			(void)memcpy(&attr->float_val, nattr_ptrs[type],
+					sizeof(float32_value_t));
 		}
 
 		nattrs.flags &= ~BIT(type);
@@ -2846,7 +2848,7 @@ int lwm2m_perform_read_op(struct lwm2m_message *msg, u16_t content_format)
 	}
 
 	/* store original path values so we can change them during processing */
-	memcpy(&temp_path, &msg->path, sizeof(temp_path));
+	(void)memcpy(&temp_path, &msg->path, sizeof(temp_path));
 	engine_put_begin(&msg->out, &msg->path);
 
 	while (obj_inst) {
@@ -2932,7 +2934,7 @@ move_forward:
 	engine_put_end(&msg->out, &msg->path);
 
 	/* restore original path values */
-	memcpy(&msg->path, &temp_path, sizeof(temp_path));
+	(void)memcpy(&msg->path, &temp_path, sizeof(temp_path));
 
 	/* did not read anything even if we should have - on single item */
 	if (ret == 0 && num_read == 0U && msg->path.level == 3U) {
@@ -3781,7 +3783,7 @@ static int generate_notify_message(struct observe_node *obs,
 	}
 
 	/* copy path */
-	memcpy(&msg->path, &obs->path, sizeof(struct lwm2m_obj_path));
+	(void)memcpy(&msg->path, &obs->path, sizeof(struct lwm2m_obj_path));
 	msg->operation = LWM2M_OP_READ;
 
 	LOG_DBG("[%s] NOTIFY MSG START: %u/%u/%u(%u) token:'%s' [%s] %lld",
@@ -4273,7 +4275,7 @@ int lwm2m_parse_peerinfo(char *url, struct sockaddr *addr, bool *use_dtls)
 			goto cleanup;
 		}
 
-		memcpy(addr, res->ai_addr, sizeof(*addr));
+		(void)memcpy(addr, res->ai_addr, sizeof(*addr));
 		addr->sa_family = res->ai_family;
 		free(res);
 #else

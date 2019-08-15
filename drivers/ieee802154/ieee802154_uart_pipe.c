@@ -141,7 +141,7 @@ static u8_t *upipe_rx(u8_t *buf, size_t *off)
 
 		net_pkt_frag_insert(pkt, frag);
 
-		memcpy(frag->data, upipe->rx_buf, upipe->rx_len);
+		(void)memcpy(frag->data, upipe->rx_buf, upipe->rx_len);
 		net_buf_add(frag, upipe->rx_len);
 
 #if defined(CONFIG_IEEE802154_UPIPE_HW_FILTER)
@@ -209,7 +209,7 @@ static int upipe_set_pan_id(struct device *dev, u16_t pan_id)
 	ARG_UNUSED(dev);
 
 	sys_put_le16(pan_id, pan_id_le);
-	memcpy(dev_pan_id, pan_id_le, PAN_ID_SIZE);
+	(void)memcpy(dev_pan_id, pan_id_le, PAN_ID_SIZE);
 
 	return 0;
 }
@@ -221,7 +221,7 @@ static int upipe_set_short_addr(struct device *dev, u16_t short_addr)
 	ARG_UNUSED(dev);
 
 	sys_put_le16(short_addr, short_addr_le);
-	memcpy(dev_short_addr, short_addr_le, SHORT_ADDRESS_SIZE);
+	(void)memcpy(dev_short_addr, short_addr_le, SHORT_ADDRESS_SIZE);
 
 	return 0;
 }
@@ -230,7 +230,7 @@ static int upipe_set_ieee_addr(struct device *dev, const u8_t *ieee_addr)
 {
 	ARG_UNUSED(dev);
 
-	memcpy(dev_ext_addr, ieee_addr, EXTENDED_ADDRESS_SIZE);
+	(void)memcpy(dev_ext_addr, ieee_addr, EXTENDED_ADDRESS_SIZE);
 
 	return 0;
 }

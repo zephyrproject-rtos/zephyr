@@ -189,8 +189,8 @@ static void e1000_init(struct net_if *iface)
 	ral = ior32(dev, RAL);
 	rah = ior32(dev, RAH);
 
-	memcpy(dev->mac, &ral, 4);
-	memcpy(dev->mac + 4, &rah, 2);
+	(void)memcpy(dev->mac, &ral, 4);
+	(void)memcpy(dev->mac + 4, &rah, 2);
 
 	ethernet_init(iface);
 

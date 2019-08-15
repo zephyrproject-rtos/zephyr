@@ -335,7 +335,7 @@ static int init(const struct shell_transport *transport,
 		return err;
 	}
 
-	memset(sh_telnet, 0, sizeof(struct shell_telnet));
+	(void)memset(sh_telnet, 0, sizeof(struct shell_telnet));
 
 	sh_telnet->shell_handler = evt_handler;
 	sh_telnet->shell_context = context;
@@ -397,7 +397,7 @@ static int write(const struct shell_transport *transport,
 			copy_len = length - *cnt;
 		}
 
-		memcpy(lb->buf + lb->len, (u8_t *)data + *cnt, copy_len);
+		(void)memcpy(lb->buf + lb->len, (u8_t *)data + *cnt, copy_len);
 		lb->len += copy_len;
 
 		/* Send the data immediately if the buffer is full or line feed

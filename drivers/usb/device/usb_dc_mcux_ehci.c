@@ -161,7 +161,7 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data *const cfg)
 	}
 
 	if (k_mem_pool_alloc(&ep_buf_pool, block, cfg->ep_mps, 10) == 0) {
-		memset(block->data, 0, cfg->ep_mps);
+		(void)memset(block->data, 0, cfg->ep_mps);
 	} else {
 		LOG_ERR("Memory allocation time-out");
 		return -ENOMEM;

@@ -362,7 +362,7 @@ static int i2s_cavs_configure(struct device *dev, enum i2s_dir dir,
 		return -ENOTSUP;
 	}
 
-	memcpy(&dev_data->cfg, i2s_cfg, sizeof(struct i2s_config));
+	(void)memcpy(&dev_data->cfg, i2s_cfg, sizeof(struct i2s_config));
 
 	/* reset SSP settings */
 	/* sscr0 dynamic settings are DSS, EDSS, SCR, FRDC, ECS */

@@ -40,14 +40,14 @@ u8_t *ll_addr_get(u8_t addr_type, u8_t *bdaddr)
 
 	if (addr_type) {
 		if (bdaddr) {
-			memcpy(bdaddr, rnd_addr, BDADDR_SIZE);
+			(void)memcpy(bdaddr, rnd_addr, BDADDR_SIZE);
 		}
 
 		return rnd_addr;
 	}
 
 	if (bdaddr) {
-		memcpy(bdaddr, pub_addr, BDADDR_SIZE);
+		(void)memcpy(bdaddr, pub_addr, BDADDR_SIZE);
 	}
 
 	return pub_addr;
@@ -66,9 +66,9 @@ u32_t ll_addr_set(u8_t addr_type, u8_t const *const bdaddr)
 	}
 
 	if (addr_type) {
-		memcpy(rnd_addr, bdaddr, BDADDR_SIZE);
+		(void)memcpy(rnd_addr, bdaddr, BDADDR_SIZE);
 	} else {
-		memcpy(pub_addr, bdaddr, BDADDR_SIZE);
+		(void)memcpy(pub_addr, bdaddr, BDADDR_SIZE);
 	}
 
 	return 0;

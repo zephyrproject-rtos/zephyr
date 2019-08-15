@@ -112,8 +112,8 @@ static int ethernet_set_config(u32_t mgmt_request,
 			(void)net_if_ipv6_addr_rm(iface, &iid);
 		}
 
-		memcpy(&config.mac_address, &params->mac_address,
-		       sizeof(struct net_eth_addr));
+		(void)memcpy(&config.mac_address, &params->mac_address,
+				sizeof(struct net_eth_addr));
 		type = ETHERNET_CONFIG_TYPE_MAC_ADDRESS;
 	} else if (mgmt_request == NET_REQUEST_ETHERNET_SET_QAV_PARAM) {
 		if (!is_hw_caps_supported(dev, ETHERNET_QAV)) {
@@ -136,8 +136,8 @@ static int ethernet_set_config(u32_t mgmt_request,
 			break;
 		}
 
-		memcpy(&config.qav_param, &params->qav_param,
-		       sizeof(struct ethernet_qav_param));
+		(void)memcpy(&config.qav_param, &params->qav_param,
+				sizeof(struct ethernet_qav_param));
 		type = ETHERNET_CONFIG_TYPE_QAV_PARAM;
 	} else if (mgmt_request == NET_REQUEST_ETHERNET_SET_PROMISC_MODE) {
 		if (!is_hw_caps_supported(dev, ETHERNET_PROMISC_MODE)) {

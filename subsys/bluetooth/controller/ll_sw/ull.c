@@ -1056,7 +1056,8 @@ int ull_prepare_enqueue(lll_is_abort_cb_t is_abort_cb,
 		return -ENOBUFS;
 	}
 
-	memcpy(&e->prepare_param, prepare_param, sizeof(e->prepare_param));
+	(void)memcpy(&e->prepare_param, prepare_param,
+		      sizeof(e->prepare_param));
 	e->prepare_cb = prepare_cb;
 	e->is_abort_cb = is_abort_cb;
 	e->abort_cb = abort_cb;

@@ -11,7 +11,7 @@
 
 static ssize_t settings_runtime_read_cb(void *cb_arg, void *data, size_t len)
 {
-	memcpy(data, cb_arg, len);
+	(void)memcpy(data, cb_arg, len);
 	return len;
 }
 

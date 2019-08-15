@@ -150,7 +150,7 @@ static int flash_sim_read(struct device *dev, const off_t offset, void *data,
 
 	STATS_INC(flash_sim_stats, flash_read_calls);
 
-	memcpy(data, FLASH(offset), len);
+	(void)memcpy(data, FLASH(offset), len);
 	STATS_INCN(flash_sim_stats, bytes_read, len);
 
 #ifdef CONFIG_FLASH_SIMULATOR_SIMULATE_TIMING
@@ -187,7 +187,7 @@ static int flash_sim_write(struct device *dev, const off_t offset,
 
 		u8_t buf[FLASH_SIMULATOR_PROG_UNIT];
 
-		memset(buf, 0xFF, sizeof(buf));
+		(void)memset(buf, 0xFF, sizeof(buf));
 		if (memcmp(buf, FLASH(offset + i), sizeof(buf))) {
 			STATS_INC(flash_sim_stats, double_writes);
 #if !CONFIG_FLASH_SIMULATOR_DOUBLE_WRITES
@@ -244,8 +244,8 @@ static void unit_erase(const u32_t unit)
 	u8_t byte_pattern = 0xFF;
 
 	/* erase the memory unit by pulling all bits to one */
-	memset(FLASH(unit_addr), byte_pattern,
-	       FLASH_SIMULATOR_ERASE_UNIT);
+	(void)memset(FLASH(unit_addr), byte_pattern,
+			FLASH_SIMULATOR_ERASE_UNIT);
 }
 
 static int flash_sim_erase(struct device *dev, const off_t offset,
@@ -327,7 +327,7 @@ static int flash_init(struct device *dev)
 	STATS_INIT_AND_REG(flash_sim_stats, STATS_SIZE_32, "flash_sim_stats");
 	STATS_INIT_AND_REG(flash_sim_thresholds, STATS_SIZE_32,
 			   "flash_sim_thresholds");
-	memset(mock_flash, 0xFF, ARRAY_SIZE(mock_flash));
+	(void)memset(mock_flash, 0xFF, ARRAY_SIZE(mock_flash));
 
 	return 0;
 }

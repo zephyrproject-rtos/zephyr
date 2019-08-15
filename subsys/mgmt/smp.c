@@ -49,9 +49,9 @@ zephyr_smp_alloc_rsp(const void *req, void *arg)
 		zst->zst_ud_copy(rsp_nb, req_nb);
 	} else {
 		pool = net_buf_pool_get(req_nb->pool_id);
-		memcpy(net_buf_user_data(rsp_nb),
-		       net_buf_user_data((void *)req_nb),
-		       sizeof(req_nb->user_data));
+		(void)memcpy(net_buf_user_data(rsp_nb),
+				net_buf_user_data((void *)req_nb),
+				sizeof(req_nb->user_data));
 	}
 
 	return rsp_nb;
@@ -152,7 +152,7 @@ zephyr_smp_write_at(struct cbor_encoder_writer *writer, size_t offset,
 		return MGMT_ERR_EINVAL;
 	}
 
-	memcpy(nb->data + offset, data, len);
+	(void)memcpy(nb->data + offset, data, len);
 	if (nb->len < offset + len) {
 		nb->len = offset + len;
 		writer->bytes_written = nb->len;

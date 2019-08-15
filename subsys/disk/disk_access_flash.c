@@ -129,7 +129,7 @@ static int read_copy_flash_block(off_t start_addr, u32_t size,
 	}
 
 	/* overwrite with user data */
-	memcpy(dest_buff + offset, src_buff, size);
+	(void)memcpy(dest_buff + offset, src_buff, size);
 
 	return 0;
 }
