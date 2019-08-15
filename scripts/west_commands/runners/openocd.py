@@ -97,9 +97,9 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
 
     def do_flash(self, **kwargs):
         if not path.isfile(self.hex_name):
-            raise ValueError('Cannot flash; hex file is missing. '
-                             'Possibly need to enable CONFIG_BUILD_OUTPUT_HEX '
-                             'in the build')
+            raise ValueError('Cannot flash; hex file ({}) does not exist. '.
+                             format(self.hex_name) +
+                             'Try enabling CONFIG_BUILD_OUTPUT_HEX.')
         if self.load_cmd is None:
             raise ValueError('Cannot flash; load command is missing')
         if self.verify_cmd is None:
@@ -113,6 +113,7 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
         if self.post_cmd is not None:
             post_cmd = ['-c', self.post_cmd]
 
+        self.logger.info('Flashing file: {}'.format(self.hex_name))
         cmd = (self.openocd_cmd +
                ['-f', self.openocd_config,
                 '-c', 'init',

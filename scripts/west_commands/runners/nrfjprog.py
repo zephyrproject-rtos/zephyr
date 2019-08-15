@@ -5,6 +5,7 @@
 
 '''Runner for flashing with nrfjprog.'''
 
+import os
 import sys
 
 from runners.core import ZephyrBinaryRunner, RunnerCaps
@@ -95,9 +96,14 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
             raise ValueError("self.snr must not be None")
         else:
             board_snr = self.snr.lstrip("0")
+
+        if not os.path.isfile(self.hex_):
+            raise ValueError('Cannot flash; hex file ({}) does not exist. '.
+                             format(self.hex_) +
+                             'Try enabling CONFIG_BUILD_OUTPUT_HEX.')
+
         program_cmd = ['nrfjprog', '--program', self.hex_, '-f', self.family,
                        '--snr', board_snr]
-
         self.logger.info('Flashing file: {}'.format(self.hex_))
         if self.erase:
             commands.extend([
