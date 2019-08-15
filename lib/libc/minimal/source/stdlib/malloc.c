@@ -107,6 +107,7 @@ void *realloc(void *ptr, size_t requested_size)
 	}
 
 	if (requested_size == 0) {
+		free(ptr);
 		return NULL;
 	}
 
