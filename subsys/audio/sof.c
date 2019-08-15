@@ -14,6 +14,7 @@
 LOG_MODULE_REGISTER(sof, CONFIG_SOF_LOG_LEVEL);
 
 #include <platform/shim.h>
+#include <sof/clk.h>
 #include <sof/mailbox.h>
 #include <sof/notifier.h>
 #include <sof/timer.h>
@@ -330,6 +331,9 @@ static int sof_init(struct device *unused)
 
 	/* init static modules */
 	sys_module_init();
+
+	/* init clocks in SOF */
+	clock_init();
 
 	/* init IPC */
 	ret = ipc_init(&sof);
