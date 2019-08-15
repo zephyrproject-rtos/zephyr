@@ -4,10 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-title: Clock Controller Base Structure
-
-description: >
-    This binding gives the base structure for all Clock Controller devices
+# Common fields for clock controllers
 
 properties:
     "#clock-cells":

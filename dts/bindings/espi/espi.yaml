@@ -2,10 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-title: ESPI Base Structure
-
-description: >
-    This binding gives the base structures for all ESPI devices
+# Common fields for ESPI devices
 
 inherits:
     !include base.yaml

@@ -4,10 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-title: I2C Base Structure
-
-description: >
-    This binding gives the base structures for all I2C devices
+# Common fields for I2C controllers
 
 inherits:
     !include base.yaml

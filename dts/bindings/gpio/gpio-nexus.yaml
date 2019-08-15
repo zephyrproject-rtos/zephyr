@@ -4,10 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-title: GPIO Nexus Base Structure
-
-description: >
-    This binding gives the base structure for all GPIO nexus nodes
+# Common fields for GPIO nexus nodes
 
 properties:
     gpio-map:

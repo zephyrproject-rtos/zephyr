@@ -1,7 +1,4 @@
-title: CAN Base Structure
-
-description: >
-    This binding gives the base structures for all CAN devices
+# Common fields for CAN devices
 
 inherits:
     !include base.yaml
