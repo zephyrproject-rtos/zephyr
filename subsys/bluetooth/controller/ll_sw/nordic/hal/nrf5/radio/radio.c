@@ -19,8 +19,6 @@
 #include <nrfx/hal/nrf_radio.h>
 #include <nrfx/hal/nrf_rtc.h>
 #include <nrfx/hal/nrf_ccm.h>
-#include <nrfx/hal/nrf_timer.h>
-#include <nrfx/hal/nrf_ppi.h>
 
 #if defined(CONFIG_SOC_SERIES_NRF51X)
 #define RADIO_PDU_LEN_MAX (BIT(5) - 1)
