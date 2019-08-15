@@ -781,6 +781,11 @@ void ll_rx_mem_release(void **node_rx)
 		case NODE_RX_TYPE_USER_START ... NODE_RX_TYPE_USER_END:
 #endif /* CONFIG_BT_CTLR_USER_EXT */
 
+		/* Ensure that at least one 'case' statement is present for this
+		 * code block.
+		 */
+		case NODE_RX_TYPE_NONE:
+			LL_ASSERT(rx_free->type != NODE_RX_TYPE_NONE);
 			mem_release(rx_free, &mem_pdu_rx.free);
 			break;
 
@@ -803,7 +808,6 @@ void ll_rx_mem_release(void **node_rx)
 		break;
 #endif /* CONFIG_BT_CONN */
 
-		case NODE_RX_TYPE_NONE:
 		case NODE_RX_TYPE_EVENT_DONE:
 		default:
 			LL_ASSERT(0);
