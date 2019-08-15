@@ -4,10 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-title: USB Endpoints' properties
-
-description: >
-    This binding gives number of endpoints that the USB hardware supports
+# Common fields that give the number of endpoints supported by the USB hardware
 
 inherits:
     !include usb.yaml

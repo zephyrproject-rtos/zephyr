@@ -1,7 +1,4 @@
-title: flash controller Base Structure
-
-description: >
-    This binding gives the base structures for all flash controller devices
+# Common fields for flash controllers
 
 inherits:
     !include base.yaml
