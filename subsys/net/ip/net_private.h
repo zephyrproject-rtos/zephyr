@@ -109,6 +109,13 @@ static inline u16_t net_calc_chksum_icmpv4(struct net_pkt *pkt)
 
 static inline u16_t net_calc_chksum_udp(struct net_pkt *pkt)
 {
+	u16_t chksum = net_calc_chksum(pkt, IPPROTO_UDP);
+
+	return chksum == 0U ? 0xffff : chksum;
+}
+
+static inline u16_t net_calc_verify_chksum_udp(struct net_pkt *pkt)
+{
 	return net_calc_chksum(pkt, IPPROTO_UDP);
 }
 
