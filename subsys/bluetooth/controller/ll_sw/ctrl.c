@@ -719,9 +719,9 @@ static inline void isr_radio_state_tx(void)
 		 */
 		radio_tmr_end_capture();
 
-#if defined(CONFIG_BT_CTLR_SCAN_REQ_RSSI)
+#if defined(CONFIG_BT_CTLR_SCAN_REQ_RSSI) || defined(CONFIG_BT_CTLR_CONN_RSSI)
 		radio_rssi_measure();
-#endif /* CONFIG_BT_CTLR_SCAN_REQ_RSSI */
+#endif /* CONFIG_BT_CTLR_SCAN_REQ_RSSI || CONFIG_BT_CTLR_CONN_RSSI */
 
 #if defined(CONFIG_BT_CTLR_GPIO_LNA_PIN)
 		radio_gpio_pa_lna_enable(radio_tmr_tifs_base_get() +
@@ -1073,6 +1073,11 @@ static inline u32_t isr_rx_adv(u8_t devmatch_ok, u8_t devmatch_id,
 				     (conn->apto_reload - (conn->latency + 6)) :
 				     conn->apto_reload;
 #endif /* CONFIG_BT_CTLR_LE_PING */
+
+#if defined(CONFIG_BT_CTLR_CONN_RSSI)
+		conn->rssi_latest = (rssi_ready) ? (radio_rssi_get() & 0x7f) :
+						   0x7f;
+#endif /* CONFIG_BT_CTLR_CONN_RSSI */
 
 		/* Prepare the rx packet structure */
 		node_rx->hdr.handle = conn->handle;
@@ -1468,6 +1473,11 @@ static inline u32_t isr_rx_scan(u8_t devmatch_ok, u8_t devmatch_id,
 		/* acquire the master context from scanner */
 		conn = _radio.scanner.conn;
 		_radio.scanner.conn = NULL;
+
+#if defined(CONFIG_BT_CTLR_CONN_RSSI)
+		conn->rssi_latest = (rssi_ready) ? (radio_rssi_get() & 0x7f) :
+						   0x7f;
+#endif /* CONFIG_BT_CTLR_CONN_RSSI */
 
 		/* Tx the connect request packet */
 		pdu_adv_tx = (void *)radio_pkt_scratch_get();
