@@ -4,10 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-title: RISC-V PLIC
-
-description: >
-    This binding describes the RISC-V Platform-Local Interrupt Controller
+# Common fields for the RISC-V platform-local interrupt controller
 
 inherits:
     !include [interrupt-controller.yaml, base.yaml]

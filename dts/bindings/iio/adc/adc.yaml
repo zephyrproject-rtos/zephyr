@@ -4,10 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-title: ADC Base Structure
-
-description: >
-    This binding gives the base structures for all ADC devices
+# Common fields for ADC devices
 
 inherits:
     !include base.yaml

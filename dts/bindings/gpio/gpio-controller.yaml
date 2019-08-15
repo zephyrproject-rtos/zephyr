@@ -4,10 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-title: GPIO Controller Base Structure
-
-description: >
-    This binding gives the base structure for all GPIO Controller devices
+# Common fields for GPIO controllers
 
 properties:
     "gpio-controller":
