@@ -954,6 +954,13 @@ static size_t pkt_buffer_length(struct net_pkt *pkt,
 
 	/* Family vs iface MTU */
 	if (IS_ENABLED(CONFIG_NET_IPV6) && family == AF_INET6) {
+		if (IS_ENABLED(CONFIG_NET_IPV6_FRAGMENT) && (size > max_len)) {
+			/* We support larger packets if IPv6 fragmentation is
+			 * enabled.
+			 */
+			max_len = size;
+		}
+
 		max_len = MAX(max_len, NET_IPV6_MTU);
 	} else if (IS_ENABLED(CONFIG_NET_IPV4) && family == AF_INET) {
 		max_len = MAX(max_len, NET_IPV4_MTU);
@@ -1774,7 +1781,7 @@ int net_pkt_pull(struct net_pkt *pkt, size_t length)
 		c_op->buf->len -= rem;
 		left -= rem;
 		if (left) {
-			memmove(c_op->pos, c_op->pos+rem, rem);
+			memmove(c_op->pos, c_op->pos+rem, left);
 		}
 
 		/* For now, empty buffer are not freed, and there is no
