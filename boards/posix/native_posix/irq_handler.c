@@ -263,6 +263,30 @@ void z_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
 	hw_irq_ctrl_prio_set(irq, prio);
 }
 
+#ifdef CONFIG_DYNAMIC_INTERRUPTS
+/**
+ * Configure a dynamic interrupt.
+ *
+ * Use this instead of IRQ_CONNECT() if arguments cannot be known at build time.
+ *
+ * @param irq IRQ line number
+ * @param priority Interrupt priority
+ * @param routine Interrupt service routine
+ * @param parameter ISR parameter
+ * @param flags Arch-specific IRQ configuration flags
+ *
+ * @return The vector assigned to this interrupt
+ */
+int z_arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
+			     void (*routine)(void *parameter), void *parameter,
+			     u32_t flags)
+{
+	z_isr_declare(irq, (int)flags, routine, parameter);
+	z_irq_priority_set(irq, priority, flags);
+	return irq;
+}
+#endif /* CONFIG_DYNAMIC_INTERRUPTS */
+
 /**
  * Similar to ARM's NVIC_SetPendingIRQ
  * set a pending IRQ from SW
