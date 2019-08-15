@@ -980,9 +980,10 @@ int net_tcp_put(struct net_context *context)
 
 int net_tcp_listen(struct net_context *context)
 {
-	ARG_UNUSED(context);
+	/* when created, tcp connections are in state TCP_LISTEN */
+	net_context_set_state(context, NET_CONTEXT_LISTENING);
 
-	return -EPROTONOSUPPORT;
+	return 0;
 }
 
 int net_tcp_update_recv_wnd(struct net_context *context, s32_t delta)
