@@ -362,3 +362,19 @@ struct friend_cred *friend_cred_create(struct bt_mesh_subnet *sub, u16_t addr,
 				       u16_t lpn_counter, u16_t frnd_counter);
 void friend_cred_clear(struct friend_cred *cred);
 int friend_cred_del(u16_t net_idx, u16_t addr);
+
+static inline void send_cb_finalize(const struct bt_mesh_send_cb *cb,
+				    void *cb_data)
+{
+	if (!cb) {
+		return;
+	}
+
+	if (cb->start) {
+		cb->start(0, 0, cb_data);
+	}
+
+	if (cb->end) {
+		cb->end(0, cb_data);
+	}
+}
