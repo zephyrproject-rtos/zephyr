@@ -344,7 +344,6 @@ config BT_CTLR_ADV_EXT
 	bool "LE Advertising Extensions"
 	select BT_CTLR_SCAN_REQ_NOTIFY
 	select BT_CTLR_CHAN_SEL_2
-	default y
 	help
 	  Enable support for Bluetooth 5.0 LE Advertising Extensions in the
 	  Controller.
