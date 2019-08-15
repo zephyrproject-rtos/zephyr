@@ -14,4 +14,12 @@ inherits:
 
 properties:
     compatible:
-      constraint: "arm,cortex-m0"
+      enum:
+        - "arm,cortex-m0"
+        - "arm,cortex-m0+"
+        - "arm,cortex-m3"
+        - "arm,cortex-m4"
+        - "arm,cortex-m4f"
+        - "arm,cortex-m7"
+        - "arm,cortex-m23"
+        - "arm,cortex-m33"
