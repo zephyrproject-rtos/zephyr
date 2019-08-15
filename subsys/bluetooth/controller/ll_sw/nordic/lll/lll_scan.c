@@ -803,6 +803,12 @@ static inline u32_t isr_rx_pdu(struct lll_scan *lll, u8_t devmatch_ok,
 					 CONFIG_BT_CTLR_GPIO_PA_OFFSET);
 #endif /* CONFIG_BT_CTLR_GPIO_PA_PIN */
 
+#if defined(CONFIG_BT_CTLR_CONN_RSSI)
+		if (rssi_ready) {
+			lll_conn->rssi_latest =  radio_rssi_get();
+		}
+#endif /* CONFIG_BT_CTLR_CONN_RSSI */
+
 		/* block CPU so that there is no CRC error on pdu tx,
 		 * this is only needed if we want the CPU to sleep.
 		 * while(!radio_has_disabled())
