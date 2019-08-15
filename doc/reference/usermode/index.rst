@@ -182,9 +182,8 @@ for execution after the kernel starts:
 .. toctree::
     :maxdepth: 2
 
+    memory_domain.rst
     kernelobjects.rst
     syscalls.rst
-    memory_domain.rst
     mpu_stack_objects.rst
     mpu_userspace.rst
-    usermode_sharedmem.rst
