@@ -880,17 +880,6 @@ static ssize_t _tcp_send(int fd, const void *buf, size_t len, int flags)
 	return len;
 }
 
-int tcp_close(int fd)
-{
-	struct tcp *conn = (void *) sys_slist_peek_head(&tcp_conns);
-
-	conn->state = TCP_CLOSE_WAIT;
-
-	tcp_in(conn, NULL);
-
-	return 0;
-}
-
 /* API into the TCP stack as seen by the IP stack in net_context.c */
 
 /* Set up a new TCP state struct if one is available */
@@ -908,11 +897,21 @@ int net_tcp_unref(struct net_context *context)
 	return -EPROTONOSUPPORT;
 }
 
+/* close() has been called on the socket */
 int net_tcp_put(struct net_context *context)
 {
-	ARG_UNUSED(context);
+	struct tcp *conn = context->tcp;
 
-	return -EPROTONOSUPPORT;
+	NET_DBG("%s", conn ? tcp_conn_state(conn, NULL) : "");
+
+	if (conn) {
+		conn->state = TCP_CLOSE_WAIT;
+		tcp_in(conn, NULL);
+	}
+
+	net_context_unref(context);
+
+	return 0;
 }
 
 int net_tcp_listen(struct net_context *context)
