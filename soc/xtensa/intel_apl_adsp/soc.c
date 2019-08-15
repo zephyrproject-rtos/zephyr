@@ -157,23 +157,6 @@ static inline void soc_set_dmic_power(void)
 #endif
 }
 
-static inline void soc_set_gna_power(void)
-{
-#if (CONFIG_INTEL_GNA)
-	volatile struct soc_global_regs *regs =
-		(volatile struct soc_global_regs *)SOC_S1000_GLB_CTRL_BASE;
-
-	/* power on GNA block */
-	regs->gna_power_control |= SOC_GNA_POWER_CONTROL_SPA;
-	while ((regs->gna_power_control & SOC_GNA_POWER_CONTROL_CPA) == 0U) {
-		/* wait for power status */
-	}
-
-	/* enable clock for GNA block */
-	regs->gna_power_control |= SOC_GNA_POWER_CONTROL_CLK_EN;
-#endif
-}
-
 static inline void soc_set_power_and_clock(void)
 {
 	volatile struct soc_dsp_shim_regs *dsp_shim_regs =
@@ -185,32 +168,7 @@ static inline void soc_set_power_and_clock(void)
 		SOC_PWRCTL_DISABLE_PWR_GATING_DSP0;
 
 	soc_set_dmic_power();
-	soc_set_gna_power();
 	soc_set_audio_mclk();
-}
-
-static inline void soc_read_bootstraps(void)
-{
-	volatile struct soc_global_regs *regs =
-		(volatile struct soc_global_regs *)SOC_S1000_GLB_CTRL_BASE;
-	u32_t bootstrap;
-
-	bootstrap = regs->straps;
-
-	bootstrap &= SOC_S1000_STRAP_REF_CLK;
-
-	switch (bootstrap) {
-	case SOC_S1000_STRAP_REF_CLK_19P2:
-		ref_clk_freq = 19200000U;
-		break;
-	case SOC_S1000_STRAP_REF_CLK_24P576:
-		ref_clk_freq = 24576000U;
-		break;
-	case SOC_S1000_STRAP_REF_CLK_38P4:
-	default:
-		ref_clk_freq = 38400000U;
-		break;
-	}
 }
 
 static int soc_init(struct device *dev)

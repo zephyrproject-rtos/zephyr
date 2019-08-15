@@ -174,25 +174,6 @@ struct soc_dsp_shim_regs {
 	u32_t	reserved3[22];
 };
 
-/* Global Control registers */
-#define SOC_S1000_GLB_CTRL_BASE			(0x00081C00)
-
-#define SOC_GNA_POWER_CONTROL_SPA		(BIT(0))
-#define SOC_GNA_POWER_CONTROL_CPA		(BIT(8))
-#define SOC_GNA_POWER_CONTROL_CLK_EN		(BIT(16))
-
-#define SOC_S1000_STRAP_REF_CLK			(BIT_MASK(2) << 3)
-#define SOC_S1000_STRAP_REF_CLK_38P4		(0 << 3)
-#define SOC_S1000_STRAP_REF_CLK_19P2		(1 << 3)
-#define SOC_S1000_STRAP_REF_CLK_24P576		(2 << 3)
-
-struct soc_global_regs {
-	u32_t	reserved1[8];
-	u32_t	gna_power_control;
-	u32_t	reserved2[7];
-	u32_t	straps;
-};
-
 /* macros for data cache operations */
 #define SOC_DCACHE_FLUSH(addr, size)		\
 	xthal_dcache_region_writeback((addr), (size))
