@@ -42,10 +42,13 @@ First, install the ``west`` binary and bootstrapper:
 .. code-block:: console
 
    # Linux
-   pip3 install --user west
+   pip3 install --user west~=0.5.8
 
    # macOS and Windows
    pip3 install west
+
+(Later versions of west than v0.5.x may also work with Zephyr v1.14, but that
+was the version in use at the time of release.)
 
 .. note::
    See :ref:`gs_python_deps` for additional clarfication on using the
@@ -71,7 +74,7 @@ Next, clone the Zephyr source code repositories from GitHub using the
 
 .. code-block:: console
 
-   west init zephyrproject
+   west init zephyrproject --mr v1.14.1
    cd zephyrproject
    west update
 
