@@ -32,8 +32,10 @@
 
 /* Macro that aggregates the bi-level interrupt into an IRQ number */
 #define SOC_AGGREGATE_IRQ(cavs_irq, core_irq)		\
-	(((core_irq & XTENSA_IRQ_NUM_MASK) << XTENSA_IRQ_NUM_SHIFT) |	\
-	(((cavs_irq) & CAVS_IRQ_NUM_MASK) << CAVS_IRQ_NUM_SHIFT))
+	( \
+	 ((core_irq & XTENSA_IRQ_NUM_MASK) << XTENSA_IRQ_NUM_SHIFT) | \
+	 (((cavs_irq + 1) & CAVS_IRQ_NUM_MASK) << CAVS_IRQ_NUM_SHIFT) \
+	)
 
 #define CAVS_L2_AGG_INT_LEVEL2			DT_CAVS_ICTL_0_IRQ
 #define CAVS_L2_AGG_INT_LEVEL3			DT_CAVS_ICTL_1_IRQ
@@ -83,7 +85,7 @@
 
 /* I2S */
 #define I2S_CAVS_IRQ(i2s_num)			\
-	SOC_AGGREGATE_IRQ(0, (i2s_num) + 1, CAVS_L2_AGG_INT_LEVEL5)
+	SOC_AGGREGATE_IRQ(0, (i2s_num), CAVS_L2_AGG_INT_LEVEL5)
 
 #define I2S0_CAVS_IRQ				I2S_CAVS_IRQ(0)
 #define I2S1_CAVS_IRQ				I2S_CAVS_IRQ(1)
