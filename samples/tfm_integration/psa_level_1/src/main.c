@@ -14,6 +14,10 @@
 #include "config.h"
 #include "applog.h"
 
+#include "crypto_tests_common.h"
+#include "test_framework_integ_test_helper.h"
+#include "test/suites/crypto/non_secure/crypto_ns_tests.h"
+
 static struct cfg_data cfg;
 
 /** Declare a reference to the application logging interface. */
@@ -41,6 +45,19 @@ void cfg_display(void)
 	printk("Scratch: %d bytes\n", sizeof(cfg.scratch));
 }
 
+static struct test_suite_t test_suites[] = {
+	/* Non-secure Crypto test cases */
+	{&register_testsuite_ns_crypto_interface, 0, 0, 0},
+
+	/* End of test suites */
+	{0, 0, 0, 0}
+};
+
+static void start_integ_test(void)
+{
+	integ_test("Non-secure", test_suites);
+}
+
 void main(void)
 {
 	psa_status_t status;
@@ -54,6 +71,9 @@ void main(void)
 	/* Try to load config data from secure storage. */
 	status = cfg_load_data(&cfg);
 	cfg_display();
+
+	/* Executes test suites */
+	start_integ_test();
 
 	while (1) {
 		/* Process queued logger message if present. */

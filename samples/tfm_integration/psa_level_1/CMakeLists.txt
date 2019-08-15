@@ -96,8 +96,11 @@ endif()
 
 target_include_directories(app PRIVATE ${TFM_PSA_API_DIR}/inc)
 target_include_directories(app PRIVATE ${TFM_REMOTE_DIR}/tfm)
+target_include_directories(app PRIVATE ${TFM_REMOTE_DIR}/tfm/test/suites/crypto/)
+target_include_directories(app PRIVATE ${TFM_REMOTE_DIR}/tfm/test/framework/)
 
 target_compile_definitions(app PRIVATE -DTFM_PSA_API)
+target_compile_definitions(app PRIVATE -DDOMAIN_NS=1)
 
 # target_sources(app PRIVATE ${TFM_PSA_API_DIR}/src/tfm_audit_api.c)
 target_sources(app PRIVATE ${TFM_PSA_API_DIR}/src/tfm_crypto_api.c)
@@ -107,6 +110,11 @@ target_sources(app PRIVATE ${TFM_PSA_API_DIR}/src/tfm_nspm_svc_handler.c)
 # target_sources(app PRIVATE ${TFM_PSA_API_DIR}/src/tfm_platform_api.c)
 target_sources(app PRIVATE ${TFM_PSA_API_DIR}/src/tfm_psa_ns_api.c)
 target_sources(app PRIVATE ${TFM_PSA_API_DIR}/src/tfm_sst_api.c)
+target_sources(app PRIVATE ${TFM_REMOTE_DIR}/tfm/test/framework/test_framework.c)
+target_sources(app PRIVATE ${TFM_REMOTE_DIR}/tfm/test/framework/test_framework_helpers.c)
+target_sources(app PRIVATE ${TFM_REMOTE_DIR}/tfm/test/framework/test_framework_integ_test_helper.c)
+target_sources(app PRIVATE ${TFM_REMOTE_DIR}/tfm/test/suites/crypto/crypto_tests_common.c)
+target_sources(app PRIVATE ${TFM_REMOTE_DIR}/tfm/test/suites/crypto/non_secure/crypto_ns_interface_testsuite.c)
 
 FILE(GLOB app_sources ${APPLICATION_SOURCE_DIR}/src/*.c)
 target_sources(app PRIVATE ${app_sources})
