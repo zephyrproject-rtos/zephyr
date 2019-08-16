@@ -29,12 +29,8 @@ config MAX_IRQ_PER_AGGREGATOR
 	default 32
 config NUM_2ND_LEVEL_AGGREGATORS
 	default 4
-config NUM_3RD_LEVEL_AGGREGATORS
-	default 1
 config 2ND_LVL_ISR_TBL_OFFSET
 	default 21
-config 3RD_LVL_ISR_TBL_OFFSET
-	default 149
 
 config CAVS_ISR_TBL_OFFSET
 	default 2ND_LVL_ISR_TBL_OFFSET
