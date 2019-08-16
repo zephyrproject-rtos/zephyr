@@ -518,6 +518,10 @@ static size_t tcp_data_get(struct tcp *conn, struct net_pkt *pkt)
 		}
 
 		tcp_free(buf);
+
+		net_context_packet_received((struct net_conn *)conn->context->conn_handler,
+					    pkt, NULL, NULL,
+					    conn->recv_user_data);
 	}
 
 	return len;
@@ -937,6 +941,8 @@ int net_tcp_get(struct net_context *context)
 	tcp_context[i].snd = tcp_win_new("SND");
 
 	tcp_context[i].state = TCP_LISTEN;
+
+	tcp_context[i].context = context;
 	context->tcp = &tcp_context[i];
 
 	sys_slist_init(&tcp_context[i].send_queue);
@@ -1164,11 +1170,10 @@ int net_tcp_accept(struct net_context *context, net_tcp_accept_cb_t cb,
 int net_tcp_recv(struct net_context *context, net_context_recv_cb_t cb,
 		 void *user_data)
 {
-	ARG_UNUSED(context);
-	ARG_UNUSED(cb);
-	ARG_UNUSED(user_data);
+	context->recv_cb = cb;
+	context->tcp->recv_user_data = user_data;
 
-	return -EPROTOTYPE;
+	return 0;
 }
 
 void net_tcp_init(void)
