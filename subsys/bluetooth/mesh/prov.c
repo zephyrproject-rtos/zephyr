@@ -108,7 +108,6 @@
 enum {
 	REMOTE_PUB_KEY,        /* Remote key has been received */
 	LINK_ACTIVE,           /* Link has been opened */
-	SEND_CONFIRM,          /* Waiting to send Confirm value */
 	WAIT_NUMBER,           /* Waiting for number input from user */
 	WAIT_STRING,           /* Waiting for string input from user */
 	LINK_INVALID,          /* Error occurred during provisioning */
@@ -823,6 +822,7 @@ static void send_input_complete(void)
 	if (prov_send(&buf)) {
 		BT_ERR("Failed to send Provisioning Input Complete");
 	}
+	link.expect = PROV_CONFIRM;
 }
 
 int bt_mesh_input_number(u32_t num)
@@ -836,10 +836,6 @@ int bt_mesh_input_number(u32_t num)
 	sys_put_be32(num, &link.auth[12]);
 
 	send_input_complete();
-
-	if (atomic_test_and_clear_bit(link.flags, SEND_CONFIRM)) {
-		send_confirm();
-	}
 
 	return 0;
 }
@@ -855,10 +851,6 @@ int bt_mesh_input_string(const char *str)
 	strncpy(link.auth, str, prov->input_size);
 
 	send_input_complete();
-
-	if (atomic_test_and_clear_bit(link.flags, SEND_CONFIRM)) {
-		send_confirm();
-	}
 
 	return 0;
 }
@@ -902,8 +894,11 @@ static void send_pub_key(const u8_t dhkey[32])
 		return;
 	}
 
-	atomic_set_bit(link.flags, SEND_CONFIRM);
-	link.expect = PROV_CONFIRM;
+	if (atomic_test_bit(link.flags, WAIT_NUMBER) || atomic_test_bit(link.flags, WAIT_STRING)) {
+		link.expect = 0xff; /* Don't expect any packets until after input */
+	} else {
+		link.expect = PROV_CONFIRM;
+	}
 }
 
 static void prov_dh_key_gen(void)
@@ -968,18 +963,7 @@ static void prov_confirm(const u8_t *data)
 
 	memcpy(link.conf, data, 16);
 
-	if (atomic_test_bit(link.flags, WAIT_NUMBER) ||
-	    atomic_test_bit(link.flags, WAIT_STRING)) {
-		/* Clear retransmit timer */
-#if defined(CONFIG_BT_MESH_PB_ADV)
-		prov_clear_tx();
-#endif
-		return;
-	}
-
-	if (atomic_test_and_clear_bit(link.flags, SEND_CONFIRM)) {
-		send_confirm();
-	}
+	send_confirm();
 }
 
 static void prov_random(const u8_t *data)
