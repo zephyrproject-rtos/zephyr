@@ -10,7 +10,7 @@ description: >
     This is a representation of the Nordic nRF SPI node
 
 inherits:
-    !include spi.yaml
+    !include spi-controller.yaml
 
 properties:
     compatible:

@@ -11,7 +11,7 @@ description: >
     embedded Rx and Tx FIFOs
 
 inherits:
-    !include spi.yaml
+    !include spi-controller.yaml
 
 properties:
     compatible:
