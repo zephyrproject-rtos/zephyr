@@ -10,7 +10,7 @@ description: >
     This binding gives a base representation of the STM32 I2S controller
 
 inherits:
-    !include i2s.yaml
+    !include i2s-controller.yaml
 
 properties:
     compatible:
