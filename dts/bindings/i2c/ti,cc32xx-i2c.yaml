@@ -4,7 +4,7 @@ description: >
     This binding gives a base representation of the TI CC32XX I2C controller
 
 inherits:
-    !include i2c.yaml
+    !include i2c-controller.yaml
 
 properties:
     compatible:

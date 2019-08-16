@@ -10,7 +10,7 @@ description: >
     This binding gives a base representation of the NXP i.MX LPI2C controller
 
 inherits:
-    !include i2c.yaml
+    !include i2c-controller.yaml
 
 properties:
     compatible:
