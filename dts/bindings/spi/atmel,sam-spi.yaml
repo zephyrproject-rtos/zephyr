@@ -10,7 +10,7 @@ description: >
     This binding gives a base representation of the Atmel SAM SPI controller
 
 inherits:
-    !include spi.yaml
+    !include spi-controller.yaml
 
 properties:
     compatible:
