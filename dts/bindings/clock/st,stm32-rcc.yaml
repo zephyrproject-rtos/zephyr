@@ -4,7 +4,7 @@ description: >
     This binding gives a base representation of the STM32 Clock control
 
 inherits:
-    !include [clock.yaml, base.yaml]
+    !include [clock-controller.yaml, base.yaml]
 
 properties:
     compatible:
