@@ -151,7 +151,8 @@ static int frdm_k64f_pinmux_init(struct device *dev)
 #if CONFIG_CAN_0
 	/* FlexCAN0 RX, TX */
 	pinmux_pin_set(portb, 18, PORT_PCR_MUX(kPORT_MuxAlt2));
-	pinmux_pin_set(portb, 19, PORT_PCR_MUX(kPORT_MuxAlt2));
+	pinmux_pin_set(portb, 19, PORT_PCR_MUX(kPORT_MuxAlt2) |
+		       PORT_PCR_PE_MASK | PORT_PCR_PS_MASK);
 #endif
 
 	return 0;
