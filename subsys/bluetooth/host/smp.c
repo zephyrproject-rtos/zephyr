@@ -2422,6 +2422,13 @@ int bt_smp_send_security_req(struct bt_conn *conn)
 		return -EINVAL;
 	}
 
+	if (!conn->le.keys) {
+		conn->le.keys = bt_keys_get_addr(conn->id, &conn->le.dst);
+		if (!conn->le.keys) {
+			return -ENOMEM;
+		}
+	}
+
 	if (smp_init(smp) != 0) {
 		return -ENOBUFS;
 	}
@@ -2455,6 +2462,13 @@ static u8_t smp_pairing_req(struct bt_smp *smp, struct net_buf *buf)
 	if ((req->max_key_size > BT_SMP_MAX_ENC_KEY_SIZE) ||
 	    (req->max_key_size < BT_SMP_MIN_ENC_KEY_SIZE)) {
 		return BT_SMP_ERR_ENC_KEY_SIZE;
+	}
+
+	if (!conn->le.keys) {
+		conn->le.keys = bt_keys_get_addr(conn->id, &conn->le.dst);
+		if (!conn->le.keys) {
+			return BT_SMP_ERR_UNSPECIFIED;
+		}
 	}
 
 	/* If we already sent a security request then the SMP context
@@ -2599,6 +2613,13 @@ int bt_smp_send_pairing_req(struct bt_conn *conn)
 	/* early verify if required sec level if reachable */
 	if (!sec_level_reachable(conn)) {
 		return -EINVAL;
+	}
+
+	if (!conn->le.keys) {
+		conn->le.keys = bt_keys_get_addr(conn->id, &conn->le.dst);
+		if (!conn->le.keys) {
+			return -ENOMEM;
+		}
 	}
 
 	if (smp_init(smp)) {
