@@ -157,9 +157,6 @@ class EDT:
         # Only bindings for 'compatible' strings that appear in the device tree
         # are loaded.
 
-        dt_compats = _dt_compats(self._dt)
-        self._binding_paths = _binding_paths(bindings_dirs)
-
         # Add '!include foo.yaml' handling.
         #
         # Do yaml.Loader.add_constructor() instead of yaml.add_constructor() to be
@@ -169,13 +166,50 @@ class EDT:
         # if multiple EDT objects are created?
         yaml.Loader.add_constructor("!include", self._binding_include)
 
+        dt_compats = _dt_compats(self._dt)
+        # Searches for any 'compatible' string mentioned in the devicetree
+        # files, with a regex
+        dt_compats_search = re.compile(
+            "|".join(re.escape(compat) for compat in dt_compats)
+        ).search
+
+        self._binding_paths = _binding_paths(bindings_dirs)
+
         self._compat2binding = {}
         for binding_path in self._binding_paths:
-            compat = _binding_compat(binding_path)
-            if compat in dt_compats:
-                binding = _load_binding(binding_path)
-                self._compat2binding[compat, _binding_bus(binding)] = \
-                    (binding, binding_path)
+            with open(binding_path, encoding="utf-8") as f:
+                contents = f.read()
+
+            # As an optimization, skip parsing files that don't contain any of
+            # the .dts 'compatible' strings, which should be reasonably safe.
+            # This optimization shaves 5+ seconds off 'cmake' configuration
+            # time on my system. Using yaml.CParser would probably help too.
+            if not dt_compats_search(contents):
+                continue
+
+            # Load the binding and check that it actually matches one of the
+            # compatibles. Might get false positives above due to comments and
+            # stuff.
+
+            # Parsed PyYAML output (Python lists/dictionaries/strings/etc.,
+            # representing the file)
+            binding = yaml.load(contents, Loader=yaml.Loader)
+
+            try:
+                compat = binding["properties"]["compatible"]["constraint"]
+            except Exception:
+                continue
+
+            if compat not in dt_compats:
+                continue
+
+            # It's a match. Merge in the !included bindings, do sanity checks,
+            # and register the binding.
+
+            binding = _merge_included_bindings(binding, binding_path)
+            _check_binding(binding, binding_path)
+            self._compat2binding[compat, _binding_bus(binding)] = \
+                (binding, binding_path)
 
     def _binding_include(self, loader, node):
         # Implements !include. Returns a list with the YAML structures for the
@@ -1125,20 +1159,6 @@ def _binding_paths(bindings_dirs):
     return binding_paths
 
 
-def _binding_compat(binding_path):
-    # Returns the compatible string specified in the binding at 'binding_path'.
-    # Uses a regex to avoid having to parse the bindings, which is slow when
-    # done for all bindings.
-
-    with open(binding_path, encoding="utf-8") as binding:
-        for line in binding:
-            match = re.match(r'\s+constraint:\s*"([^"]*)"', line)
-            if match:
-                return match.group(1)
-
-    return None
-
-
 def _binding_bus(binding):
     # Returns the bus specified in 'binding' (the bus the device described by
     # 'binding' is on), e.g. "i2c", or None if 'binding' is None or doesn't
@@ -1153,18 +1173,6 @@ def _binding_inc_error(msg):
     # Helper for reporting errors in the !include implementation
 
     raise yaml.constructor.ConstructorError(None, None, "error: " + msg)
-
-
-def _load_binding(path):
-    # Loads a top-level binding .yaml file from 'path', also handling any
-    # !include'd files. Returns the parsed PyYAML output (Python
-    # lists/dictionaries/strings/etc. representing the file).
-
-    with open(path, encoding="utf-8") as f:
-        binding = _merge_included_bindings(yaml.load(f, Loader=yaml.Loader),
-                                           path)
-    _check_binding(binding, path)
-    return binding
 
 
 def _merge_included_bindings(binding, binding_path):
