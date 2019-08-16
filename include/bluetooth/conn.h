@@ -303,7 +303,7 @@ typedef enum __packed {
  *
  *  This function may return error if required level of security is not possible
  *  to achieve due to local or remote device limitation (e.g., input output
- *  capabilities).
+ *  capabilities), or if the maximum number of paired devices has been reached.
  *
  *  @param conn Connection object.
  *  @param sec Requested security level.
