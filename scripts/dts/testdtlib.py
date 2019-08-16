@@ -460,13 +460,13 @@ l3: &l1 {
 /dts-v1/;
 
 / {
-    a = l01: l02: < l03: &node l04: l05: 2 l06: >,
-        l07: l08: [ l09: 03 l10: l11: 04 l12: l13: ] l14:, "A";
+	a = l01: l02: < l03: &node l04: l05: 2 l06: >,
+            l07: l08: [ l09: 03 l10: l11: 04 l12: l13: ] l14:, "A";
 
-    b = < 0 > l23: l24:;
+	b = < 0 > l23: l24:;
 
-    node: node {
-    };
+	node: node {
+	};
 };
 """,
 """
@@ -2051,6 +2051,14 @@ l1: l2: /memreserve/ 0x0000000000000002 0x0000000000000004;
     if dt.memreserves != expected:
         fail("expected {} for dt.memreserve, got {}"
              .format(expected, dt.memreserves))
+
+    verify_error("""
+/dts-v1/;
+
+foo: / {
+};
+""",
+".tmp.dts:3 (column 6): parse error: expected /memreserve/ after labels at beginning of file")
 
     #
     # Test __repr__() functions
