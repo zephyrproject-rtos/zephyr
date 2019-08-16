@@ -10,7 +10,7 @@ description: >
     This is a representation of the NXP Kinetis PCC IP node
 
 inherits:
-    !include [clock.yaml, base.yaml]
+    !include [clock-controller.yaml, base.yaml]
 
 properties:
     compatible:
