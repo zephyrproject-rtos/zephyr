@@ -17,6 +17,8 @@ void tcp_input(struct net_pkt *pkt);
 
 ssize_t tcp_recv(int fd, void *buf, size_t len, int flags);
 ssize_t _tcp_send(int fd, const void *buf, size_t len, int flags);
+int net_tcp_queue(struct tcp *conn, const void *buf, size_t len,
+		  const struct msghdr *msghdr);
 
 #ifdef __cplusplus
 }
