@@ -16,23 +16,40 @@
 #define RETRIES		10
 
 /*
+ * We need to know how many ticks will elapse when we ask for the
+ * shortest possible tick timeout.  That's generally 1, but in some
+ * cases it may be more.  On Nordic paths that take 5 or 6 ticks may
+ * be observed depending on clock stability and alignment. The base
+ * rate assumes 3 ticks for non-timeout effects so increase the
+ * maximum effect of timeout to 3 ticks on this platform.
+ */
+
+#if defined(CONFIG_NRF_RTC_TIMER) && (CONFIG_SYS_CLOCK_TICKS_PER_SEC > 16384)
+#define MAXIMUM_SHORTEST_TICKS 3
+#else
+#define MAXIMUM_SHORTEST_TICKS 1
+#endif
+
+/*
  * Theory of operation: we can't use absolute units (e.g., "sleep for
  * 10us") in testing k_usleep() because the granularity of sleeps is
  * highly dependent on the hardware's capabilities and kernel
  * configuration. Instead, we test that k_usleep() actually sleeps for
- * the minimum possible duration.  So, we loop k_usleep()ing for as
- * many iterations as should comprise a second, and check to see that
- * a total of one second has elapsed.
+ * the minimum possible duration, which is nominally two ticks.  So,
+ * we loop k_usleep()ing for as many iterations as should comprise a
+ * second, and check to see that a total of one second has elapsed.
  */
 
 #define LOOPS (CONFIG_SYS_CLOCK_TICKS_PER_SEC / 2)
 
-/* It should never iterate faster than the tick rate.  It might be as
- * much as 4x slower on drivers with fast tick rates (each of the app,
- * sleep, timeout and cycle layers may need to align).
+/* It should never iterate faster than the tick rate.  However the
+ * app, sleep, and timeout layers may each add a tick alignment with
+ * fast tick rates, and cycle layer may inject another to guarantee
+ * the timeout deadline is met.
  */
 #define LOWER_BOUND_MS	((1000 * LOOPS) / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
-#define UPPER_BOUND_MS	((4 * 1000 * LOOPS) / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
+#define UPPER_BOUND_MS	(((3 + MAXIMUM_SHORTEST_TICKS) * 1000 * LOOPS)	\
+			 / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 
 void test_usleep(void)
 {
