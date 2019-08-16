@@ -283,11 +283,10 @@ class DT:
                 self.memreserves.append(
                     (labels, self._eval_prim(), self._eval_prim()))
                 self._expect_token(";")
+            elif labels:
+                self._parse_error("expected /memreserve/ after labels at "
+                                  "beginning of file")
             else:
-                if labels:
-                    self._parse_error("expected /memreserve/ after labels at "
-                                      "beginning of file")
-
                 return
 
     def _parse_node(self, node):
