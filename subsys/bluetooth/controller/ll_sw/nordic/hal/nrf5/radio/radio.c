@@ -220,7 +220,7 @@ void radio_pkt_configure(u8_t bits_len, u8_t max_len, u8_t flags)
 		extra |= (RADIO_PCNF0_S1INCL_Include <<
 			  RADIO_PCNF0_S1INCL_Pos) & RADIO_PCNF0_S1INCL_Msk;
 	}
-#endif /* CONFIG_SOC_SERIES_NRF52X */
+#endif /* CONFIG_SOC_COMPATIBLE_NRF52X */
 
 	NRF_RADIO->PCNF0 = (((1UL) << RADIO_PCNF0_S0LEN_Pos) &
 			    RADIO_PCNF0_S0LEN_Msk) |
@@ -1072,7 +1072,7 @@ void *radio_ccm_rx_pkt_set(struct ccm *ccm, u8_t phy, void *pkt)
 #endif /* CONFIG_SOC_NRF52840 */
 #endif /* CONFIG_BT_CTLR_PHY_CODED */
 	}
-#endif /* CONFIG_SOC_SERIES_NRF52X */
+#endif /* CONFIG_SOC_COMPATIBLE_NRF52X */
 
 	NRF_CCM->MODE = mode;
 	NRF_CCM->CNFPTR = (u32_t)ccm;
