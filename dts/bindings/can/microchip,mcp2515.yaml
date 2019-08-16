@@ -10,7 +10,7 @@ description: >
     This binding gives a base representation of the MCP2515 SPI CAN controller
 
 inherits:
-    !include [spi-device.yaml, can.yaml]
+    !include [spi-device.yaml, can-controller.yaml]
 
 properties:
     compatible:

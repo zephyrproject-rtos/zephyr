@@ -10,7 +10,7 @@ description: >
     This binding gives a base representation of the NXP FlexCAN controller
 
 inherits:
-    !include can.yaml
+    !include can-controller.yaml
 
 properties:
     compatible:
