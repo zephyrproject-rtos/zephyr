@@ -4,7 +4,7 @@ description: >
     This binding gives a base representation of the LPSCI UART
 
 inherits:
-    !include uart.yaml
+    !include uart-controller.yaml
 
 properties:
     compatible:
