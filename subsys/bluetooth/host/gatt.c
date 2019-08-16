@@ -824,9 +824,18 @@ static void db_changed(void)
 			continue;
 		}
 
-		if (CF_ROBUST_CACHING(cfg) &&
-		    atomic_test_and_clear_bit(cfg->flags, CF_CHANGE_AWARE)) {
-			BT_DBG("%s change-unaware", bt_addr_le_str(&cfg->peer));
+		if (CF_ROBUST_CACHING(cfg)) {
+			/* Core Spec 5.1 | Vol 3, Part G, 2.5.2.1 Robust Caching
+			 *... the database changes again before the client
+			 * becomes change-aware in which case the error response
+			 * shall be sent again.
+			 */
+			atomic_clear_bit(cfg->flags, CF_OUT_OF_SYNC);
+			if (atomic_test_and_clear_bit(cfg->flags,
+						      CF_CHANGE_AWARE)) {
+				BT_DBG("%s change-unaware",
+				       bt_addr_le_str(&cfg->peer));
+			}
 		}
 	}
 #endif
