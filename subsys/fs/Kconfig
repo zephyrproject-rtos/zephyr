@@ -128,9 +128,10 @@ config NFFS_FILESYSTEM_MAX_BLOCK_SIZE
 
 endmenu
 
+source "subsys/fs/Kconfig.littlefs"
+
 endif # FILE_SYSTEM
 
-source "subsys/fs/Kconfig.littlefs"
 source "subsys/fs/fcb/Kconfig"
 source "subsys/fs/nvs/Kconfig"
 
