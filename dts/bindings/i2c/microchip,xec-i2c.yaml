@@ -10,7 +10,7 @@ description: >
     This binding gives a base representation for I2C/SMB controller for Microchip
 
 inherits:
-    !include i2c.yaml
+    !include i2c-controller.yaml
 
 properties:
     compatible:
