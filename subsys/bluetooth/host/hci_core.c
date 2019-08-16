@@ -763,6 +763,7 @@ static int hci_le_create_conn(const struct bt_conn *conn)
 	struct net_buf *buf;
 	struct bt_hci_cp_le_create_conn *cp;
 	u8_t own_addr_type;
+	const bt_addr_le_t *peer_addr;
 	int err;
 
 	if (IS_ENABLED(CONFIG_BT_PRIVACY)) {
@@ -802,7 +803,14 @@ static int hci_le_create_conn(const struct bt_conn *conn)
 	cp->scan_interval = sys_cpu_to_le16(BT_GAP_SCAN_FAST_INTERVAL);
 	cp->scan_window = cp->scan_interval;
 
-	bt_addr_le_copy(&cp->peer_addr, &conn->le.dst);
+	peer_addr = &conn->le.dst;
+#if defined(CONFIG_BT_SMP)
+	if (!bt_dev.le.rl_size || bt_dev.le.rl_entries > bt_dev.le.rl_size) {
+		/* Host resolving is used, use the RPA directly. */
+		peer_addr = &conn->le.resp_addr;
+	}
+#endif
+	bt_addr_le_copy(&cp->peer_addr, peer_addr);
 	cp->own_addr_type = own_addr_type;
 	cp->conn_interval_min = sys_cpu_to_le16(conn->le.interval_min);
 	cp->conn_interval_max = sys_cpu_to_le16(conn->le.interval_max);
@@ -1545,6 +1553,7 @@ static void check_pending_conn(const bt_addr_le_t *id_addr,
 		goto failed;
 	}
 
+	bt_addr_le_copy(&conn->le.resp_addr, addr);
 	if (hci_le_create_conn(conn)) {
 		goto failed;
 	}
