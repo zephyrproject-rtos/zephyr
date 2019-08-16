@@ -1,5 +1,4 @@
-# Copyright (c) 2019 Nordic Semiconductor ASA.
-# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2019 innblue
 
 if(CONFIG_BOARD_NRF52840_GPIO_RESET)
   zephyr_library()

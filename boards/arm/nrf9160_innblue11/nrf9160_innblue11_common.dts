@@ -1,7 +1,6 @@
 /*
  * Copyright (c) 2018 innblue
  *
- * SPDX-License-Identifier: Apache-2.0
  *
  * i2c: hts221   0x5f int 3
  *      lps22hb  0x5c int 2

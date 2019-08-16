@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: Apache-2.0
+# innblue feather board v1.1
 
 CONFIG_ARM=y
 CONFIG_SOC_FAMILY_NRF=y

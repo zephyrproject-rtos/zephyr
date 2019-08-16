@@ -1,8 +1,6 @@
-# Kconfig - nRF91 PCA10090 board configuration
+# Kconfig - nRF91 innblue v1.1 board configuration
 #
-# Copyright (c) 2018 Nordic Semiconductor ASA
-#
-# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2018 innblue
 
 if BOARD_NRF9160_INNBLUE11 || BOARD_NRF9160_INNBLUE11NS
 
