@@ -1,0 +1,224 @@
+/*
+ * Copyright (c) 2018 innblue
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * i2c: hts221   0x5f int 3
+ *      lps22hb  0x5c int 2
+ *      ccs811   0x5a int 8
+ *      lis2dh   0x19 int 0,1
+ *
+ */
+
+/ {
+	model = "Nordic innblue v20 Dev Kit";
+	compatible = "innblue,innblue20-dk", "nordic,nrf9160-sica",
+		     "nordic,nrf9160";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,uart-mcumgr = &uart0;
+	};
+
+	
+	leds {
+		compatible = "gpio-leds";
+		led0: led_0 {
+			gpios = <&gpio0 5 GPIO_INT_ACTIVE_LOW>;
+			label = "Blue LED 1";
+		};
+		led1: led_1 {
+			gpios = <&gpio0 6 GPIO_INT_ACTIVE_LOW>;
+			label = "Green LED 2";
+		};
+		led2: led_2 {
+			gpios = <&gpio0 7 GPIO_INT_ACTIVE_LOW>;
+			label = "Red LED 3";
+		};
+		/*
+		led0: led_0 {
+			gpios = <&gpio0 4 GPIO_INT_ACTIVE_HIGH>;
+			label = "Mode Red LED 0";
+		};
+		led1: led_1 {
+			gpios = <&gpio0 5 GPIO_INT_ACTIVE_LOW>;
+			label = "Blue LED 1";
+		};
+		led2: led_2 {
+			gpios = <&gpio0 6 GPIO_INT_ACTIVE_LOW>;
+			label = "Green LED 2";
+		};
+		led3: led_3 {
+			gpios = <&gpio0 7 GPIO_INT_ACTIVE_LOW>;
+			label = "Red LED 3";
+		};
+		*/
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		button0: button_0 {
+			gpios = <&gpio0 31 GPIO_PUD_PULL_UP>;
+			label = "Switch 0";
+		};
+	};
+
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		led0 = &led0;
+		led1 = &led1;
+		led2 = &led2;
+		//led3 = &led3;
+		sw0  = &button0;
+	};
+};
+
+&adc {
+	status = "okay";
+};
+
+&gpiote {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	tx-pin = <29>;
+	rx-pin = <30>;
+
+};
+
+&uart1 {
+	status = "okay";
+	current-speed = <115200>;
+	tx-pin = <14>;
+	rx-pin = <15>;
+
+};
+
+&i2c2 {
+	status = "okay";
+	sda-pin = <25>;
+	scl-pin = <26>;
+	
+	clock-frequency = <I2C_BITRATE_FAST>;
+	
+	lis2dh12-accel@19 {
+		compatible = "st,lis2dh";
+		reg = <0x19>;
+		irq-gpios = <&gpio0 0 0>, <&gpio0 1 0>;
+		label = "LIS2DH12-ACCEL";
+	};	
+	
+	
+	hts221@5f {
+		compatible = "st,hts221";
+		reg = <0x5f>;
+		/* irq-gpios = <&gpio0 3 0>; */
+		drdy-gpios = <&gpio0 3 GPIO_INT_ACTIVE_HIGH>;
+		label = "HTS221";
+	};
+
+	lps22hb-press@5c {
+		compatible = "st,lps22hb-press";
+		reg = <0x5c>;
+		irq-gpios = <&gpio0 2 0>;
+		label = "LPS22HB";
+	};
+	
+	ccs811: ccs811@5a {
+		compatible = "ams,ccs811";
+		reg = <0x5a>;
+		drdy-gpios = <&gpio0 8 GPIO_INT_ACTIVE_HIGH>;
+		/*irq-gpios = <&gpio0 8 0>;*/
+		label = "CCS811";
+	};
+};
+
+&pwm0 {
+	status = "okay";
+	ch0-pin = <4>;
+	ch0-inverted;
+};
+
+
+
+
+&spi3 {
+	status = "okay";
+	sck-pin = <24>;
+	mosi-pin = <23>;
+	miso-pin = <22>;
+};
+
+&timer0 {
+	status = "okay";
+};
+
+&timer1 {
+	status = "okay";
+};
+
+&timer2 {
+	status = "okay";
+};
+
+&flash0 {
+	/*
+	 * For more information, see:
+	 * http://docs.zephyrproject.org/latest/guides/dts/index.html#flash-partitions
+	 */
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0x10000>;
+		};
+		slot0_partition: partition@10000 {
+			label = "image-0";
+		};
+		slot0_ns_partition: partition@40000 {
+			label = "image-0-nonsecure";
+		};
+		slot1_partition: partition@80000 {
+			label = "image-1";
+		};
+		slot1_ns_partition: partition@b0000 {
+			label = "image-1-nonsecure";
+		};
+		scratch_partition: partition@f0000 {
+			label = "image-scratch";
+			reg = <0x000f0000 0xa000>;
+		};
+		storage_partition: partition@fa000 {
+			label = "storage";
+			reg = <0x000fa000 0x00006000>;
+		};
+	};
+};
+
+/ {
+	/* SRAM allocated and used by the BSD library */
+	sram0_bsd: memory@20010000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+	};
+
+	/* SRAM allocated to the Non-Secure image */
+	sram0_ns: memory@20020000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+	};
+};
+
+/* Include partition configuration file */
+#include "nrf9160_innblue20_partition_conf.dts"
