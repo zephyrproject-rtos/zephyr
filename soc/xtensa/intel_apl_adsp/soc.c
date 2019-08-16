@@ -13,6 +13,10 @@
 
 #include "soc.h"
 
+#ifdef CONFIG_DYNAMIC_INTERRUPTS
+#include <sw_isr_table.h>
+#endif
+
 #define LOG_LEVEL CONFIG_SOC_LOG_LEVEL
 #include <logging/log.h>
 LOG_MODULE_REGISTER(soc);
@@ -96,6 +100,60 @@ void z_soc_irq_disable(u32_t irq)
 		z_xtensa_irq_disable(XTENSA_IRQ_NUMBER(irq));
 	}
 }
+
+#ifdef CONFIG_DYNAMIC_INTERRUPTS
+int z_soc_irq_connect_dynamic(unsigned int irq, unsigned int priority,
+			      void (*routine)(void *parameter),
+			      void *parameter, u32_t flags)
+{
+	uint32_t table_idx;
+	uint32_t cavs_irq;
+	int ret;
+
+        ARG_UNUSED(flags);
+        ARG_UNUSED(priority);
+
+	/* extract 2nd level interrupt number */
+	cavs_irq = CAVS_IRQ_NUMBER(irq);
+	ret = irq;
+
+	if (cavs_irq == 0) {
+		/* Not affecting 2nd level interrupts */
+		z_isr_install(irq, routine, parameter);
+		goto irq_connect_out;
+	}
+
+	/* Figure out the base index. */
+	switch (XTENSA_IRQ_NUMBER(irq)) {
+	case DT_CAVS_ICTL_0_IRQ:
+		table_idx = CONFIG_CAVS_ISR_TBL_OFFSET;
+		break;
+	case DT_CAVS_ICTL_1_IRQ:
+		table_idx = CONFIG_CAVS_ISR_TBL_OFFSET +
+			    CONFIG_MAX_IRQ_PER_AGGREGATOR;
+		break;
+	case DT_CAVS_ICTL_2_IRQ:
+		table_idx = CONFIG_CAVS_ISR_TBL_OFFSET +
+			    CONFIG_MAX_IRQ_PER_AGGREGATOR * 2;
+		break;
+	case DT_CAVS_ICTL_3_IRQ:
+		table_idx = CONFIG_CAVS_ISR_TBL_OFFSET +
+			    CONFIG_MAX_IRQ_PER_AGGREGATOR * 3;
+		break;
+	default:
+		ret = -EINVAL;
+		goto irq_connect_out;
+	}
+
+	table_idx += cavs_irq;
+
+	_sw_isr_table[table_idx].arg = parameter;
+        _sw_isr_table[table_idx].isr = routine;
+
+irq_connect_out:
+	return ret;
+}
+#endif
 
 static inline void soc_set_resource_ownership(void)
 {

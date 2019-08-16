@@ -34,6 +34,9 @@ config MULTI_LEVEL_INTERRUPTS
 config 2ND_LEVEL_INTERRUPTS
 	default y
 
+config DYNAMIC_INTERRUPTS
+	default y
+
 endif
 
 endif
