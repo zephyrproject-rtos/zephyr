@@ -11,7 +11,7 @@ description: >
     with USB IP
 
 inherits:
-    !include phy.yaml
+    !include phy-controller.yaml
 
 properties:
     compatible:
