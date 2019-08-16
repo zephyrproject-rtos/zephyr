@@ -4,6 +4,8 @@
 
 import argparse
 import os
+import shutil
+import subprocess
 
 from west import log
 from west import cmake
