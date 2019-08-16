@@ -1,4 +1,4 @@
-# Common fields for CAN devices
+# Common fields for CAN controllers
 
 inherits:
     !include base.yaml
