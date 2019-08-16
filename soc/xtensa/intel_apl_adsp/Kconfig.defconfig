@@ -26,4 +26,14 @@ config KERNEL_ENTRY
 config USE_SOF_BOOT_LDR
 	default y
 
+if SOF
+
+config MULTI_LEVEL_INTERRUPTS
+	default y
+
+config 2ND_LEVEL_INTERRUPTS
+	default y
+
+endif
+
 endif
