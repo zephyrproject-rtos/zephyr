@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-# Common fields for ADC devices
+# Common fields for ADC controllers
 
 inherits:
     !include base.yaml
