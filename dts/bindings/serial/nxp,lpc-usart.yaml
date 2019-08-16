@@ -10,7 +10,7 @@ description: >
     This binding gives a base representation of the LPC USART
 
 inherits:
-    !include uart.yaml
+    !include uart-controller.yaml
 
 properties:
     compatible:
