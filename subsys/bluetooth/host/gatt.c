@@ -3419,7 +3419,8 @@ int bt_gatt_store_ccc(u8_t id, const bt_addr_le_t *addr)
 		return err;
 	}
 
-	BT_DBG("Stored CCCs for %s (%s)", bt_addr_le_str(addr), key);
+	BT_DBG("Stored CCCs for %s (%s)", bt_addr_le_str(addr),
+	       log_strdup(key));
 	if (len) {
 		for (int i = 0; i < save.count; i++) {
 			BT_DBG("  CCC: handle 0x%04x value 0x%04x",
