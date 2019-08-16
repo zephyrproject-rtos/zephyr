@@ -1,0 +1,17 @@
+# Kconfig - nRF9160 PCA10090 board configuration
+#
+# Copyright (c) 2018 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_NRF9160_SICA
+
+config BOARD_NRF9160_INNBLUE11
+	bool "nRF9160 innblue v11"
+	depends on !TRUSTED_EXECUTION_NONSECURE
+
+config BOARD_NRF9160_INNBLUE11NS
+	bool "nRF9160 innblue v11 non-secure"
+	depends on TRUSTED_EXECUTION_NONSECURE
+
+endif # SOC_NRF9160_SICA
