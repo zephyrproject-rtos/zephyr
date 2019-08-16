@@ -523,9 +523,6 @@ void z_thread_priority_set(struct k_thread *thread, int prio)
 static inline int resched(u32_t key)
 {
 #ifdef CONFIG_SMP
-	if (!_current_cpu->swap_ok) {
-		return 0;
-	}
 	_current_cpu->swap_ok = 0;
 #endif
 
@@ -919,9 +916,9 @@ void z_impl_k_yield(void)
 			    z_is_thread_queued(_current)) {
 				_priq_run_remove(&_kernel.ready_q.runq,
 						 _current);
-				_priq_run_add(&_kernel.ready_q.runq,
-					      _current);
 			}
+			_priq_run_add(&_kernel.ready_q.runq, _current);
+			z_mark_thread_as_queued(_current);
 			update_cache(1);
 		}
 	}
