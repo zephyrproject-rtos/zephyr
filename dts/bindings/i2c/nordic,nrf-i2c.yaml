@@ -11,7 +11,7 @@ description: >
     This is a representation of the Nordic nRF I2C node
 
 inherits:
-    !include i2c.yaml
+    !include i2c-controller.yaml
 
 properties:
     compatible:

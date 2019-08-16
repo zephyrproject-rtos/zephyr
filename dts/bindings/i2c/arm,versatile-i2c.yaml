@@ -10,7 +10,7 @@ description: >
     This is a representation of the ARM SBCon two-wire serial bus interface
 
 inherits:
-    !include i2c.yaml
+    !include i2c-controller.yaml
 
 properties:
     compatible:
