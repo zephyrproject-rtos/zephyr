@@ -120,6 +120,7 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 					       &lll->data_chan_map[0],
 					       lll->data_chan_count);
 #else /* !CONFIG_BT_CTLR_CHAN_SEL_2 */
+		data_chan_use = 0;
 		LL_ASSERT(0);
 #endif /* !CONFIG_BT_CTLR_CHAN_SEL_2 */
 	} else {
