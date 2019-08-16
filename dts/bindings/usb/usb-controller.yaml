@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-# Common fields for USB devices
+# Common fields for USB controllers
 
 inherits:
     !include base.yaml
