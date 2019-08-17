@@ -282,6 +282,17 @@ static int lwm2m_setup(void)
 				(void *)client_psk, sizeof(client_psk));
 #endif /* CONFIG_LWM2M_DTLS_SUPPORT */
 
+#if defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP)
+	/* Mark 1st instance of security object as a bootstrap server */
+	lwm2m_engine_set_u8("0/0/1", 1);
+
+	/* Create 2nd instance of server and security objects needed for
+	 * bootstrap process
+	 */
+	lwm2m_engine_create_obj_inst("0/1");
+	lwm2m_engine_create_obj_inst("1/1");
+#endif
+
 	/* setup SERVER object */
 
 	/* setup DEVICE object */
