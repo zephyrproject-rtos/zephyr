@@ -246,6 +246,7 @@ void log_generic(struct log_msg_ids src_level, const char *fmt, va_list ap)
 		u32_t args[LOG_MAX_NARGS];
 		u32_t nargs = count_args(fmt);
 
+		__ASSERT_NO_MSG(nargs < LOG_MAX_NARGS);
 		for (int i = 0; i < nargs; i++) {
 			args[i] = va_arg(ap, u32_t);
 		}
