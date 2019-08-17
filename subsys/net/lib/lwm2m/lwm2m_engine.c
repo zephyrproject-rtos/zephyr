@@ -3312,6 +3312,13 @@ static int handle_request(struct coap_packet *request,
 		}
 
 		well_known = true;
+#if defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP)
+	/* check for bootstrap-finish */
+	} else if ((code & COAP_REQUEST_MASK) == COAP_METHOD_POST && r == 1 && \
+		   strncmp(options[0].value, "bs", options[0].len) == 0) {
+		engine_bootstrap_finish();
+		return 0;
+#endif
 	} else {
 		r = coap_options_to_path(options, r, &msg->path);
 		if (r < 0) {
