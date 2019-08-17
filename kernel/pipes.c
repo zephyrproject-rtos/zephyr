@@ -767,6 +767,9 @@ void k_pipe_block_put(struct k_pipe *pipe, struct k_mem_block *block,
 	async_desc->desc.copy_block = *block;
 	async_desc->desc.sem = sem;
 	async_desc->thread.prio = k_thread_priority_get(_current);
+#ifdef CONFIG_SMP
+	async_desc->thread.is_idle = 0;
+#endif
 
 	(void) z_pipe_put_internal(pipe, async_desc, block->data,
 				    bytes_to_write, &dummy_bytes_written,
