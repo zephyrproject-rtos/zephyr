@@ -262,7 +262,7 @@ Initialization Levels
 Drivers may depend on other drivers being initialized first, or
 require the use of kernel services. The DEVICE_INIT() APIs allow the user to
 specify at what time during the boot sequence the init function will be
-executed. Any driver will specify one of five initialization levels:
+executed. Any driver will specify one of four initialization levels:
 
 ``PRE_KERNEL_1``
         Used for devices that have no dependencies, such as those that rely
