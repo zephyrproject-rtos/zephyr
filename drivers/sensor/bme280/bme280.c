@@ -173,6 +173,53 @@ static int bme280_sample_fetch(struct device *dev, enum sensor_channel chan)
 	if (data->chip_id == BME280_CHIP_ID) {
 		size = 8;
 	}
+
+#if defined CONFIG_BME280_FORCED_MODE_ON
+
+	/*
+	 * According to datasheet, mode bits (in force mode) must be set
+	 * before measurement starts.
+	 */
+
+	ret = bm280_reg_read(data, BME280_REG_CTRL_MEAS, buf, 1);
+	if (ret < 0) {
+		return ret;
+	}
+
+	buf[0] &= ~BME280_MODE_MASK;
+	buf[0] |= BME280_MODE_FORCED;
+
+	ret = bm280_reg_write(data, BME280_REG_CTRL_MEAS, buf[0]);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/*
+	 * In forced mode sensor readings may not be available right away.
+	 * Maximum time sensor can spend measuring can be calculated by formula from
+	 * section "9.1 Measurement time":
+	 *
+	 * 1.25 + [2.3 * 16] + [2.3 * 16 + 0.575] + [2.3 * 16 + 0.575] = 112.8 ms
+	 *
+	 * Hence a value below.
+	 */
+	int max_tries = 128;
+
+	do {
+		ret = bm280_reg_read(data, BME280_REG_STATUS, &buf[0], 1);
+		if (ret < 0) {
+			return ret;
+		}
+		if (!(buf[0] & BME280_STATUS_MEASURING)) {
+			break;
+		}
+		if (!max_tries--) {
+			return -ETIMEDOUT;
+		}
+		k_sleep(1);
+	} while (1);
+
+#endif
 	ret = bm280_reg_read(data, BME280_REG_PRESS_MSB, buf, size);
 	if (ret < 0) {
 		return ret;

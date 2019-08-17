@@ -19,13 +19,18 @@
 #define BME280_REG_CONFIG               0xF5
 #define BME280_REG_CTRL_MEAS            0xF4
 #define BME280_REG_CTRL_HUM             0xF2
+#define BME280_REG_STATUS               0xF3
 
 #define BMP280_CHIP_ID_SAMPLE_1         0x56
 #define BMP280_CHIP_ID_SAMPLE_2         0x57
 #define BMP280_CHIP_ID_MP               0x58
 #define BME280_CHIP_ID                  0x60
+#define BME280_MODE_SLEEP               0x00
+#define BME280_MODE_FORCED              0x01
 #define BME280_MODE_NORMAL              0x03
+#define BME280_MODE_MASK                0x03
 #define BME280_SPI_3W_DISABLE           0x00
+#define BME280_STATUS_MEASURING         0x08
 
 #if defined CONFIG_BME280_TEMP_OVER_1X
 #define BME280_TEMP_OVER                (1 << 5)
@@ -93,9 +98,19 @@
 #define BME280_FILTER                   (4 << 2)
 #endif
 
+#if defined CONFIG_BME280_FORCED_MODE_OFF
+#define BME280_MODE                     BME280_MODE_NORMAL
+#elif defined CONFIG_BME280_FORCED_MODE_ON
+/*
+ * During configuration stage and prior to actual reading the sensor
+ * can be placed into sleep mode.
+ */
+#define BME280_MODE                     BME280_MODE_SLEEP
+#endif
+
 #define BME280_CTRL_MEAS_VAL            (BME280_PRESS_OVER | \
 					 BME280_TEMP_OVER |  \
-					 BME280_MODE_NORMAL)
+					 BME280_MODE)
 #define BME280_CONFIG_VAL               (BME280_STANDBY | \
 					 BME280_FILTER |  \
 					 BME280_SPI_3W_DISABLE)

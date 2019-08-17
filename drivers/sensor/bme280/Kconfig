@@ -112,6 +112,19 @@ config BME280_FILTER_16
 	bool "16"
 endchoice
 
+choice
+	prompt "BME280 forced mode"
+	default BME280_FORCED_MODE_OFF
+	help
+	  Select whether measurements must be triggered upon request. In forced mode,
+	  after the measurement is finished, the sensor returns to sleep mode. Turning this
+	  on leads to less power consumption and less self-heating.
+config BME280_FORCED_MODE_OFF
+	bool "forced mode off"
+config BME280_FORCED_MODE_ON
+	bool "forced mode on"
+endchoice
+
 endmenu
 
 endif # BME280
