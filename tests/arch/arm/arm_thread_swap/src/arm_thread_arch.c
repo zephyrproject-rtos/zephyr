@@ -176,11 +176,14 @@ static void verify_fp_callee_saved(const struct _preempt_float *src,
 
 static void alt_thread_entry(void)
 {
+	int init_flag, post_flag;
+
 	/* Lock interrupts to make sure we get preempted only when
 	 * it is required by the test */
 	(void)irq_lock();
 
-	zassert_true(switch_flag == false,
+	init_flag = switch_flag;
+	zassert_true(init_flag == false,
 		"Alternative thread: switch flag not false on thread entry\n");
 
 	/* Set switch flag */
@@ -276,12 +279,15 @@ static void alt_thread_entry(void)
 	 * the status of the switch flag; the main test thread will clear
 	 * it when it is swapped-back in.
 	 */
-	zassert_true(switch_flag == false,
+	post_flag = switch_flag;
+	zassert_true(post_flag == false,
 		"Alternative thread: switch flag not false on thread exit\n");
 }
 
 void test_arm_thread_swap(void)
 {
+	int test_flag;
+
 	/* Main test thread (ztest)
 	 *
 	 * Simulating initial conditions:
@@ -307,7 +313,8 @@ void test_arm_thread_swap(void)
 	p_ztest_thread = _current;
 
 	/* Confirm initial conditions before starting the test. */
-	zassert_true(switch_flag == false,
+	test_flag = switch_flag;
+	zassert_true(test_flag == false,
 		"Switch flag not initialized properly\n");
 	zassert_true(_current->arch.basepri == 0,
 		"Thread BASEPRI flag not clear at thread start\n");
@@ -358,7 +365,8 @@ void test_arm_thread_swap(void)
 		K_NO_WAIT);
 
 	/* Verify context-switch has not occurred. */
-	zassert_true(switch_flag == false,
+	test_flag = switch_flag;
+	zassert_true(test_flag == false,
 		"Switch flag incremented when it should not have\n");
 
 	/* Prepare to force a context switch to the alternative thread,
@@ -378,7 +386,8 @@ void test_arm_thread_swap(void)
 	memcpy(&_current->callee_saved, 0, sizeof(_callee_saved_t));
 
 	/* Verify context-switch has not occurred yet. */
-	zassert_true(switch_flag == false,
+	test_flag = switch_flag;
+	zassert_true(test_flag == false,
 		"Switch flag incremented by unexpected context-switch.\n");
 
 	/* Store the callee-saved registers to some global memory
@@ -431,7 +440,8 @@ void test_arm_thread_swap(void)
 		&_current->callee_saved);
 
 	/* Verify context-switch did occur. */
-	zassert_true(switch_flag == true,
+	test_flag = switch_flag;
+	zassert_true(test_flag == true,
 		"Switch flag not incremented as expected %u\n",
 		switch_flag);
 	/* Clear the switch flag to signal that the main test thread
