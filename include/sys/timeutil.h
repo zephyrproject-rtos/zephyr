@@ -32,7 +32,7 @@ extern "C" {
  *
  * @see http://man7.org/linux/man-pages/man3/timegm.3.html
  */
-time_t timeutil_timegm(struct tm *tm);
+time_t timeutil_timegm(const struct tm *tm);
 
 #ifdef __cplusplus
 }
