@@ -6,6 +6,7 @@
 
 /* Tests where time_t requires a 64-bit value */
 
+#include <errno.h>
 #include <ztest.h>
 #include "timeutil_test.h"
 
@@ -210,10 +211,125 @@ static const struct timeutil_test_data tests[] = {
 	  } },
 };
 
+static void test_time32_errno_clear(void)
+{
+	const struct timeutil_test_data *tp = &(const struct timeutil_test_data){
+		.unix = 0,
+		.civil = "1970-01-01 00:00:00 Thu 001",
+		.tm = {
+			.tm_sec = 0,
+			.tm_min = 0,
+			.tm_hour = 0,
+			.tm_mday = 1,
+			.tm_mon = 0,
+			.tm_year = 70,
+			.tm_wday = 4,
+			.tm_yday = 0,
+		},
+	};
+
+	errno = EINVAL;
+
+	time_t unix = timeutil_timegm(&tp->tm);
+
+	zassert_equal(unix, tp->unix,
+		      "conversion incorrect");
+	zassert_equal(errno, 0,
+		      "errno was not cleared");
+}
+
+static void test_time32_epochm1(void)
+{
+	const struct timeutil_test_data *tp = &(const struct timeutil_test_data){
+		.unix = -1,
+		.civil = "1969-12-31 23:59:59 Wed 365",
+		.tm = {
+			.tm_sec = 59,
+			.tm_min = 59,
+			.tm_hour = 23,
+			.tm_mday = 31,
+			.tm_mon = 11,
+			.tm_year = 69,
+			.tm_wday = 3,
+			.tm_yday = 364,
+		},
+	};
+
+	errno = EINVAL;
+
+	time_t unix = timeutil_timegm(&tp->tm);
+
+	zassert_equal(unix, tp->unix,
+		      "conversion incorrect");
+	zassert_equal(errno, 0,
+		      "final errno state bad");
+}
+
+static void test_time32_underflow(void)
+{
+	const s64_t unix64 = -2147483649;
+	const struct timeutil_test_data *tp = &(const struct timeutil_test_data){
+		.civil = "1901-12-13 20:45:51 Fri 347",
+		.tm = {
+			.tm_sec = 51,
+			.tm_min = 45,
+			.tm_hour = 20,
+			.tm_mday = 13,
+			.tm_mon = 11,
+			.tm_year = 1,
+			.tm_wday = 5,
+			.tm_yday = 346,
+		},
+	};
+
+	zassert_equal(timeutil_timegm64(&tp->tm), unix64,
+		      "fullscale failed");
+	errno = 0;
+
+	time_t unix = timeutil_timegm(&tp->tm);
+
+	zassert_equal(unix, -1,
+		      "underflow undetected");
+	zassert_equal(errno, ERANGE,
+		      "final errno state bad");
+}
+
+static void test_time32_overflow(void)
+{
+	const s64_t unix64 = 2147483648;
+	const struct timeutil_test_data *tp = &(const struct timeutil_test_data){
+		.civil = "2038-01-19 03:14:08 Tue 019",
+		.tm = {
+			.tm_sec = 8,
+			.tm_min = 14,
+			.tm_hour = 3,
+			.tm_mday = 19,
+			.tm_mon = 0,
+			.tm_year = 138,
+			.tm_wday = 2,
+			.tm_yday = 18,
+		},
+	};
+
+	zassert_equal(timeutil_timegm64(&tp->tm), unix64,
+		      "fullscale failed");
+	errno = 0;
+
+	time_t unix = timeutil_timegm(&tp->tm);
+
+	zassert_equal(unix, -1,
+		      "overflow undetected");
+	zassert_equal(errno, ERANGE,
+		      "final errno state bad");
+}
+
 void test_s64(void)
 {
 	if (sizeof(time_t) < 8U) {
-		ztest_test_skip();
+		test_time32_errno_clear();
+		test_time32_epochm1();
+		test_time32_underflow();
+		test_time32_overflow();
 		return;
 	}
 	timeutil_check(tests, sizeof(tests) / sizeof(*tests));
