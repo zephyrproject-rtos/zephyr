@@ -13,6 +13,11 @@
 #endif
 #include LV_MEM_CUSTOM_INCLUDE
 
+#if defined(CONFIG_ARCH_POSIX) && defined(CONFIG_LVGL_MEM_POOL_HEAP_LIB_C)
+#include <soc.h>
+#include <src/lv_misc/lv_gc.h>
+#endif
+
 #define LOG_LEVEL CONFIG_LVGL_LOG_LEVEL
 #include <logging/log.h>
 LOG_MODULE_REGISTER(lvgl);
@@ -186,5 +191,47 @@ static int lvgl_init(struct device *dev)
 
 	return 0;
 }
+
+#if defined(CONFIG_ARCH_POSIX) && defined(CONFIG_LVGL_MEM_POOL_HEAP_LIB_C)
+static void lvgl_cleanup(void)
+{
+	lv_disp_t *disp;
+	lv_obj_t *screen;
+	lv_img_decoder_t *decoder;
+	lv_task_t *task;
+
+#ifdef CONFIG_LVGL_BUFFER_ALLOC_DYNAMIC
+	lv_disp_buf_t *disp_buf;
+#endif
+
+	while ((disp = lv_disp_get_next(NULL)) != NULL) {
+		while ((screen = lv_ll_get_head(&disp->scr_ll)) != NULL) {
+			lv_obj_del(screen);
+		}
+
+#ifdef CONFIG_LVGL_BUFFER_ALLOC_DYNAMIC
+		disp_buf = lv_disp_get_buf(disp);
+		LV_MEM_CUSTOM_FREE(disp_buf->buf1);
+		LV_MEM_CUSTOM_FREE(disp_buf->buf2);
+		LV_MEM_CUSTOM_FREE(disp_buf);
+#endif
+
+		lv_disp_remove(disp);
+	}
+
+	lv_img_cache_invalidate_src(NULL);
+	lv_img_cache_set_size(0);
+
+	while ((decoder = lv_ll_get_head(&_lv_img_defoder_ll)) != NULL) {
+		lv_img_decoder_delete(decoder);
+	}
+
+	while ((task = lv_ll_get_head(&_lv_task_ll)) != NULL) {
+		lv_task_del(task);
+	}
+}
+
+NATIVE_TASK(lvgl_cleanup, ON_EXIT, 1);
+#endif
 
 SYS_INIT(lvgl_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
