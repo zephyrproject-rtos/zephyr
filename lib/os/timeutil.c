@@ -48,7 +48,7 @@ static s64_t time_days_from_civil(s64_t y,
  * @return the signed number of seconds between 1970-01-01T00:00:00
  * and the specified time ignoring leap seconds and DST offsets.
  */
-time_t timeutil_timegm(struct tm *tm)
+time_t timeutil_timegm(const struct tm *tm)
 {
 	s64_t y = 1900 + (s64_t)tm->tm_year;
 	unsigned int m = tm->tm_mon + 1;
