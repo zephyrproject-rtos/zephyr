@@ -231,7 +231,7 @@ static void alt_thread_entry(void)
 	 * later, that it is populated properly.
 	 */
 	memset(&ztest_thread_fp_callee_saved_regs,
-		0, sizeof(_callee_saved_t));
+		0, sizeof(ztest_thread_fp_callee_saved_regs));
 
 #endif /* CONFIG_FLOAT && CONFIG_FP_SHARING */
 
