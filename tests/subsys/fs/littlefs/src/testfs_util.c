@@ -61,7 +61,7 @@ const char *testfs_path_init(struct testfs_path *pp,
 		if ((len + 1) >= sizeof(pp->path)) {
 			len = sizeof(pp->path) - 1;
 		}
-		strncpy(pp->path, mp->mnt_point, sizeof(pp->path));
+		strncpy(pp->path, mp->mnt_point, len);
 		pp->eos = pp->path + len;
 	}
 	*pp->eos = '\0';
