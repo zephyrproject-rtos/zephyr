@@ -692,7 +692,7 @@ static u32_t FaultHandle(z_arch_esf_t *esf, int fault, bool *recoverable)
 		break;
 	}
 
-	if (!recoverable) {
+	if ((*recoverable) == false) {
 		/* Dump generic information about the fault. */
 		FaultShow(esf, fault);
 	}
