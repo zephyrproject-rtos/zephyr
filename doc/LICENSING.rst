@@ -62,10 +62,3 @@ licensing in this document.
 .. _ext/hal/nordic source:
    https://github.com/zephyrproject-rtos/zephyr/blob/master/ext/hal/nordic/nrfx/nrfx.h
 
-*ext/hal/nxp/mcux/*
-  *Origin:* http://mcux.nxp.com
-
-  *Licensing*: 3-clause BSD (see `ext/hal/nxp/mcux source`_)
-
-.. _ext/hal/nxp/mcux source:
-   https://github.com/zephyrproject-rtos/zephyr/blob/master/ext/hal/nxp/mcux/drivers/kinetis/fsl_rtc.h
