@@ -234,20 +234,14 @@ static inline int dns_unpack_query_qclass(const u8_t *question)
 
 static inline int dns_answer_type(u16_t dname_size, u8_t *answer)
 {
-	/** Future versions must consider byte 0
-	 * 4.1.3. Resource record format
-	 * *(answer + dname_size + 0);
-	 */
-	return *(answer + dname_size + 1);
+	/* 4.1.3. Resource record format */
+	return ntohs(UNALIGNED_GET((u16_t *)(answer + dname_size + 0)));
 }
 
 static inline int dns_answer_class(u16_t dname_size, u8_t *answer)
 {
-	/** Future versions must consider byte 2
-	 * 4.1.3. Resource record format
-	 * *(answer + dname_size + 2);
-	 */
-	return *(answer + dname_size + 3);
+	/* 4.1.3. Resource record format */
+	return ntohs(UNALIGNED_GET((u16_t *)(answer + dname_size + 2)));
 }
 
 static inline int dns_answer_ttl(u16_t dname_size, u8_t *answer)
