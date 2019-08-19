@@ -218,7 +218,7 @@ void bt_conn_identity_resolved(struct bt_conn *conn);
 
 #if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR)
 /* Notify higher layers that connection security changed */
-void bt_conn_security_changed(struct bt_conn *conn);
+void bt_conn_security_changed(struct bt_conn *conn, enum bt_security_err err);
 #endif /* CONFIG_BT_SMP || CONFIG_BT_BREDR */
 
 /* Prepare a PDU to be sent over a connection */
