@@ -115,7 +115,7 @@ static int erase_page(struct device *dev, unsigned int page)
 {
 	struct stm32l4x_flash *regs = FLASH_STM32_REGS(dev);
 	u32_t tmp;
-	u16_t pages_per_bank;
+	u16_t pages_per_bank = 0U;
 	int rc;
 
 #if !defined(FLASH_OPTR_DUALBANK) && !defined(FLASH_OPTR_DBANK)
