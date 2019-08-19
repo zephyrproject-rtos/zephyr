@@ -119,7 +119,7 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 	u32_t cyc, dt, t = counter();
-	bool flagged = false;
+	bool zli_fixup = IS_ENABLED(CONFIG_ZERO_LATENCY_IRQS);
 
 	/* Round up to next tick boundary */
 	cyc = ticks * CYC_PER_TICK + 1 + counter_sub(t, last_count);
@@ -162,7 +162,7 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 			/* Missed it! */
 			NVIC_SetPendingIRQ(RTC1_IRQn);
 			if (IS_ENABLED(CONFIG_ZERO_LATENCY_IRQS)) {
-				flagged = true;
+				zli_fixup = false;
 			}
 		} else if (dt == 1) {
 			/* Too soon, interrupt won't arrive. */
@@ -173,16 +173,18 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 
 #ifdef CONFIG_ZERO_LATENCY_IRQS
 	/* Failsafe.  ZLIs can preempt us even though interrupts are
-	 * masked, blowing up the sensitive timing above.  If enabled,
-	 * we need a final check (in a loop!  because this too can be
-	 * interrupted) to see that the comparator is still in the
-	 * future.  Don't bother being fancy with cycle counting here,
-	 * just set an interrupt "soon" that we know will get the
-	 * timer back to a known state.  This handles (via some hairy
-	 * modular expressions) the wraparound cases where we are
-	 * preempted for as much as half the counter space.
+	 * masked, blowing up the sensitive timing above.  If the
+	 * feature is enabled and we haven't recorded the presence of
+	 * a pending interrupt then we need a final check (in a loop!
+	 * because this too can be interrupted) to confirm that the
+	 * comparator is still in the future.  Don't bother being
+	 * fancy with cycle counting here, just set an interrupt
+	 * "soon" that we know will get the timer back to a known
+	 * state.  This handles (via some hairy modular expressions)
+	 * the wraparound cases where we are preempted for as much as
+	 * half the counter space.
 	 */
-	if (!flagged && counter_sub(cyc, counter()) <= 0x7fffff) {
+	if (zli_fixup && counter_sub(cyc, counter()) <= 0x7fffff) {
 		while (counter_sub(cyc, counter() + 2) > 0x7fffff) {
 			cyc = counter() + 3;
 			set_comparator(cyc);
