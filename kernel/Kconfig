@@ -479,6 +479,15 @@ config NUM_PIPE_ASYNC_MSGS
 	  Setting this option to 0 disables support for asynchronous
 	  pipe messages.
 
+config MEMPOOL
+	bool "Memory pools"
+	default y
+	help
+	  If the mempool is not used, this can be disabled to save space. The
+	  mempool is used by a number of internal modules, so keep this in mind
+	  if disabling.
+
+if MEMPOOL
 config HEAP_MEM_POOL_SIZE
 	int "Heap memory pool size (in bytes)"
 	default 0 if !POSIX_MQUEUE
@@ -497,6 +506,7 @@ config HEAP_MEM_POOL_MIN_SIZE
 	  This option specifies the size of the smallest block in the pool.
 	  Option must be a power of 2 and lower than or equal to the size
 	  of the entire pool.
+endif
 endmenu
 
 config ARCH_HAS_CUSTOM_SWAP_TO_MAIN
