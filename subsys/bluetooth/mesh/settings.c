@@ -660,6 +660,10 @@ static int mod_set(bool vnd, const char *name, size_t len_rd,
 		return mod_set_pub(mod, len_rd, read_cb, cb_arg);
 	}
 
+	if (!strncmp(next, "data", len) && mod->cb && mod->cb->settings_set) {
+		return mod->cb->settings_set(mod, len_rd, read_cb, cb_arg);
+	}
+
 	BT_WARN("Unknown module key %s", next);
 	return -ENOENT;
 }
@@ -758,6 +762,10 @@ static void commit_mod(struct bt_mesh_model *mod, struct bt_mesh_elem *elem,
 			BT_DBG("Starting publish timer (period %u ms)", ms);
 			k_delayed_work_submit(&mod->pub->timer, ms);
 		}
+	}
+
+	if (mod->cb && mod->cb->settings_commit)  {
+		mod->cb->settings_commit(mod);
 	}
 }
 
@@ -1572,6 +1580,28 @@ void bt_mesh_store_mod_pub(struct bt_mesh_model *mod)
 {
 	mod->flags |= BT_MESH_MOD_PUB_PENDING;
 	schedule_store(BT_MESH_MOD_PENDING);
+}
+
+int bt_mesh_model_data_store(struct bt_mesh_model *mod, bool vnd,
+			     const void *data, size_t data_len)
+{
+	char path[20];
+	int err;
+
+	encode_mod_path(mod, vnd, "data", path, sizeof(path));
+
+	if (data_len) {
+		err = settings_save_one(path, data, data_len);
+	} else {
+		err = settings_delete(path);
+	}
+
+	if (err) {
+		BT_ERR("Failed to store %s value", log_strdup(path));
+	} else {
+		BT_DBG("Stored %s value", log_strdup(path));
+	}
+	return err;
 }
 
 void bt_mesh_settings_init(void)

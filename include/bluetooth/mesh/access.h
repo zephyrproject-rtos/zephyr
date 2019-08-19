@@ -10,6 +10,8 @@
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_MESH_ACCESS_H_
 #define ZEPHYR_INCLUDE_BLUETOOTH_MESH_ACCESS_H_
 
+#include <settings/settings.h>
+
 /**
  * @brief Bluetooth Mesh Access Layer
  * @defgroup bt_mesh_access Bluetooth Mesh Access Layer
@@ -382,6 +384,35 @@ struct bt_mesh_model_pub {
 
 /** Model callback functions. */
 struct bt_mesh_model_cb {
+	/** @brief Set value handler of user data tied to the model.
+	 *
+	 * @sa settings_handler::h_set
+	 *
+	 * @param model Model to set the persistent data of.
+	 * @param len_rd The size of the data found in the backend.
+	 * @param read_cb Function provided to read the data from the backend.
+	 * @param cb_arg Arguments for the read function provided by the
+	 * backend.
+	 *
+	 * @return 0 on success, error otherwise.
+	 */
+	int (*const settings_set)(struct bt_mesh_model *model,
+				  size_t len_rd, settings_read_cb read_cb,
+				  void *cb_arg);
+
+	/** @brief Callback called when all settings have been loaded.
+	 *
+	 * This handler gets called after the settings have been loaded in
+	 * full.
+	 *
+	 * @sa settings_handler::h_commit
+	 *
+	 * @param model Model this callback belongs to.
+	 *
+	 * @return 0 on success, error otherwise.
+	 */
+	int (*const settings_commit)(struct bt_mesh_model *model);
+
 	/** @brief Model init callback.
 	 *
 	 * Called on every model instance during mesh initialization.
@@ -514,6 +545,18 @@ static inline bool bt_mesh_model_in_primary(const struct bt_mesh_model *mod)
 {
 	return (mod->elem_idx == 0);
 }
+
+/** @brief Immediately store the model's user data in persistent storage.
+ *
+ * @param mod Mesh model.
+ * @param vnd This is a vendor model.
+ * @param data Model data to store, or NULL to delete any model data.
+ * @param data_len Length of the model data.
+ *
+ * @return 0 on success, or (negative) error code on failure.
+ */
+int bt_mesh_model_data_store(struct bt_mesh_model *mod, bool vnd,
+			     const void *data, size_t data_len);
 
 /** Node Composition */
 struct bt_mesh_comp {
