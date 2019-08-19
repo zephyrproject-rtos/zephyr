@@ -102,6 +102,7 @@ void test_icmpv6(void)
 
 	pkt = net_pkt_alloc_with_buffer(NULL, ICMPV6_MSG_SIZE,
 					AF_UNSPEC, 0, K_SECONDS(1));
+	zassert_not_null(pkt, "Allocation failed");
 
 	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
 
