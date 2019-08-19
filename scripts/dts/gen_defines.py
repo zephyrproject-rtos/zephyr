@@ -520,12 +520,26 @@ def write_iochannels(dev):
     # Writes IO channel controller and specifier info for the IO
     # channels in dev's 'io-channels' property
 
-    for iochannel in dev.iochannels:
-        if iochannel.controller.label is not None:
-            out_dev_s(dev, "IO_CHANNELS_CONTROLLER", iochannel.controller.label)
+    for io_ch_i, io_ch in enumerate(dev.iochannels):
+        write_iochannel(dev, io_ch, io_ch_i if len(dev.iochannels) > 1 else None)
 
-        for spec, val in iochannel.specifier.items():
-            out_dev(dev, "IO_CHANNELS_" + str2ident(spec), val)
+
+def write_iochannel(dev, iochannel, index=None):
+    # Writes IO channel controller & data for the IO channel object 'iochannel'
+    # If 'index' is not None, it is added as a suffix to identifiers.
+
+    if iochannel.controller.label is not None:
+        ctrl_ident = "IO_CHANNELS_CONTROLLER"
+        if index is not None:
+            ctrl_ident += "_{}".format(index)
+        out_dev_s(dev, ctrl_ident, iochannel.controller.label)
+
+    for cell, val in iochannel.specifier.items():
+        cell_ident = "IO_CHANNELS_" + str2ident(cell)
+        if index is not None:
+            cell_ident += "_{}".format(index)
+
+        out_dev(dev, cell_ident, val)
 
 
 def write_clocks(dev):
