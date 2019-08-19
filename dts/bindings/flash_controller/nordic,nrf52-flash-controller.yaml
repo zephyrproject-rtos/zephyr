@@ -3,8 +3,6 @@ title: Nordic NVMC
 description: >
     This binding gives a base representation of the Nordic NVMC
 
-include: flash-controller.yaml
+compatible: "nordic,nrf52-flash-controller"
 
-properties:
-    compatible:
-      constraint: "nordic,nrf52-flash-controller"
+include: flash-controller.yaml

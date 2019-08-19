@@ -9,11 +9,10 @@ title: ARC ICCM
 description: >
     This binding gives a base representation of the ARC ICCM
 
+compatible: "arc,iccm"
+
 include: base.yaml
 
 properties:
-    compatible:
-      constraint: "arc,iccm"
-
     reg:
       required: true

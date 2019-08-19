@@ -9,12 +9,11 @@ title: STM32 OTGFS
 description: >
     This binding gives a base representation of the STM32 OTGFS controller
 
+compatible: "st,stm32-otgfs"
+
 include: usb-ep.yaml
 
 properties:
-    compatible:
-      constraint: "st,stm32-otgfs"
-
     reg:
       required: true
 

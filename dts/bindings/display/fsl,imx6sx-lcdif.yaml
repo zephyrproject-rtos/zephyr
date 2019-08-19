@@ -9,12 +9,11 @@ title: NXP Enhanced LCD Interface (eLCDIF) controller
 description: >
     This binding gives a base representation of the NXP i.MX eLCDIF controller
 
+compatible: "fsl,imx6sx-lcdif"
+
 include: base.yaml
 
 properties:
-    compatible:
-      constraint: "fsl,imx6sx-lcdif"
-
     reg:
       required: true
 

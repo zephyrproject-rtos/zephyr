@@ -4,11 +4,10 @@ title: DTCM
 description: >
   This binding gives a base representation of the Cortex M7 DTCM (Data Tightly Coupled Memory)
 
+compatible: "arm,dtcm"
+
 include: base.yaml
 
 properties:
-    compatible:
-      constraint: "arm,dtcm"
-
     reg:
       required: true

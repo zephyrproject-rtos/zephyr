@@ -9,8 +9,6 @@ title: ARM Cortex-M23 CPU
 description: >
     This binding gives a base representation for ARM Cortex-M23 CPU.
 
-include: cpu.yaml
+compatible: "arm,cortex-m23"
 
-properties:
-    compatible:
-      constraint: "arm,cortex-m23"
+include: cpu.yaml

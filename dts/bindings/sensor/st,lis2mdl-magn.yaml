@@ -9,12 +9,11 @@ title: STMicroelectronics MEMS sensors LIS2MDL
 description: >
     This binding gives a base representation of LIS2MDL magnetometer
 
+compatible: "st,lis2mdl-magn"
+
 include: i2c-device.yaml
 
 properties:
-    compatible:
-      constraint: "st,lis2mdl-magn"
-
     irq-gpios:
       type: phandle-array
       required: true

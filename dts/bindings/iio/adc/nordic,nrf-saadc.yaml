@@ -9,12 +9,11 @@ title: Nordic Semiconductor nRF Family SAADC
 description: >
     This is a representation of the nRF SAADC node
 
+compatible: "nordic,nrf-saadc"
+
 include: adc-controller.yaml
 
 properties:
-    compatible:
-      constraint: "nordic,nrf-saadc"
-
     reg:
       required: true
 

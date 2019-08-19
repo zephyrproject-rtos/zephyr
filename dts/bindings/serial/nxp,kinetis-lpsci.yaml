@@ -3,12 +3,11 @@ title: Kinetis LPSCI UART
 description: >
     This binding gives a base representation of the LPSCI UART
 
+compatible: "nxp,kinetis-lpsci"
+
 include: uart-controller.yaml
 
 properties:
-    compatible:
-      constraint: "nxp,kinetis-lpsci"
-
     reg:
       required: true
 

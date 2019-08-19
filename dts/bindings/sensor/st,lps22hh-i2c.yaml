@@ -10,12 +10,11 @@ description: >
     This binding gives a base representation of LPS22HH pressure and
     temperature sensor connected to I2C bus
 
+compatible: "st,lps22hh"
+
 include: i2c-device.yaml
 
 properties:
-    compatible:
-      constraint: "st,lps22hh"
-
     drdy-gpios:
       type: phandle-array
       required: false

@@ -103,7 +103,7 @@ def run():
                  "Parent binding")
 
     verify_streq(edt.get_dev("/binding-include").props,
-                 "{'compatible': <Property, name: compatible, type: string-array, value: ['binding-include-test']>, 'foo': <Property, name: foo, type: int, value: 0>, 'bar': <Property, name: bar, type: int, value: 1>, 'baz': <Property, name: baz, type: int, value: 2>, 'qaz': <Property, name: qaz, type: int, value: 3>}")
+                 "{'foo': <Property, name: foo, type: int, value: 0>, 'bar': <Property, name: bar, type: int, value: 1>, 'baz': <Property, name: baz, type: int, value: 2>, 'qaz': <Property, name: qaz, type: int, value: 3>}")
 
     #
     # Test 'sub-node:' in binding
@@ -120,7 +120,7 @@ def run():
     #
 
     verify_streq(edt.get_dev("/props").props,
-                 r"{'compatible': <Property, name: compatible, type: string-array, value: ['props']>, 'nonexistent-boolean': <Property, name: nonexistent-boolean, type: boolean, value: False>, 'existent-boolean': <Property, name: existent-boolean, type: boolean, value: True>, 'int': <Property, name: int, type: int, value: 1>, 'array': <Property, name: array, type: array, value: [1, 2, 3]>, 'uint8-array': <Property, name: uint8-array, type: uint8-array, value: b'\x124'>, 'string': <Property, name: string, type: string, value: 'foo'>, 'string-array': <Property, name: string-array, type: string-array, value: ['foo', 'bar', 'baz']>, 'phandle-ref': <Property, name: phandle-ref, type: phandle, value: <Device /props/node in 'test.dts', no binding>>, 'phandle-refs': <Property, name: phandle-refs, type: phandles, value: [<Device /props/node in 'test.dts', no binding>, <Device /props/node2 in 'test.dts', no binding>]>}")
+                 r"{'nonexistent-boolean': <Property, name: nonexistent-boolean, type: boolean, value: False>, 'existent-boolean': <Property, name: existent-boolean, type: boolean, value: True>, 'int': <Property, name: int, type: int, value: 1>, 'array': <Property, name: array, type: array, value: [1, 2, 3]>, 'uint8-array': <Property, name: uint8-array, type: uint8-array, value: b'\x124'>, 'string': <Property, name: string, type: string, value: 'foo'>, 'string-array': <Property, name: string-array, type: string-array, value: ['foo', 'bar', 'baz']>, 'phandle-ref': <Property, name: phandle-ref, type: phandle, value: <Device /props/node in 'test.dts', no binding>>, 'phandle-refs': <Property, name: phandle-refs, type: phandles, value: [<Device /props/node in 'test.dts', no binding>, <Device /props/node2 in 'test.dts', no binding>]>}")
 
     #
     # Test having multiple directories with bindings, with a different .dts file

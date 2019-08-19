@@ -4,12 +4,11 @@ description: >
     This binding describes the Intel I/O Advanced Programmable Interrupt
     controller
 
+compatible: "intel,ioapic"
+
 include: [interrupt-controller.yaml, base.yaml]
 
 properties:
-  compatible:
-      constraint: "intel,ioapic"
-
   reg:
       required: true
 

@@ -9,12 +9,11 @@ title: TI SimpleLink CC13xx / CC26xx UART
 description: >
     This is a representation of the TI SimpleLink CC13xx / CC26xx UART node
 
+compatible: "ti,cc13xx-cc26xx-uart"
+
 include: uart-controller.yaml
 
 properties:
-    compatible:
-      constraint: "ti,cc13xx-cc26xx-uart"
-
     reg:
       required: true
 

@@ -8,8 +8,6 @@ title: MMC/SD/SDIO slot connected via SPI
 
 description: MMC/SD/SDIO slot connected via SPI
 
-include: spi-device.yaml
+compatible: "zephyr,mmc-spi-slot"
 
-properties:
-    compatible:
-      constraint: "zephyr,mmc-spi-slot"
+include: spi-device.yaml

@@ -9,12 +9,11 @@ title: LiteX Ethernet
 description: >
     This binding gives a base representation of LiteX Ethernet
 
+compatible: "litex,eth0"
+
 include: ethernet.yaml
 
 properties:
-    compatible:
-        constraint: "litex,eth0"
-
     reg:
         required: true
 

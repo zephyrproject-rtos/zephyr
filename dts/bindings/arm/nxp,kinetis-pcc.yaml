@@ -9,12 +9,11 @@ title: NXP Kinetis PCC (Peripheral Clock Controller)
 description: >
     This is a representation of the NXP Kinetis PCC IP node
 
+compatible: "nxp,kinetis-pcc"
+
 include: [clock-controller.yaml, base.yaml]
 
 properties:
-    compatible:
-      constraint: "nxp,kinetis-pcc"
-
     reg:
       required: true
 

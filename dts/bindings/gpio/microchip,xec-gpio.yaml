@@ -4,18 +4,16 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-
 title: MICROCHIP GPIO
 
 description: >
     This is a representation of the CEC/MEC GPIO nodes for Microchip
 
+compatible: "microchip,xec-gpio"
+
 include: [gpio-controller.yaml, base.yaml]
 
 properties:
-    compatible:
-      constraint: "microchip,xec-gpio"
-
     reg:
       required: true
 

@@ -9,12 +9,11 @@ title: Atmel SAM Family I2C (TWIHS) node
 description: >
     This is a representation of the Atmel SAM Family I2C (TWIHS) node
 
+compatible: "atmel,sam-i2c-twihs"
+
 include: i2c-controller.yaml
 
 properties:
-    compatible:
-      constraint: "atmel,sam-i2c-twihs"
-
     reg:
       required: true
 

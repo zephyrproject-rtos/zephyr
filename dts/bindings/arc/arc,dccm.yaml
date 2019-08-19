@@ -9,11 +9,10 @@ title: ARC DCCM
 description: >
     This binding gives a base representation of the ARC DCCM
 
+compatible: "arc,dccm"
+
 include: base.yaml
 
 properties:
-    compatible:
-      constraint: "arc,dccm"
-
     reg:
       required: true

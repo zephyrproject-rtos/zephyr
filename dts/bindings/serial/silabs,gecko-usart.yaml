@@ -3,12 +3,11 @@ title: GECKO USART
 description: >
     This binding gives a base representation of the Gecko USART
 
+compatible: "silabs,gecko-usart"
+
 include: uart-controller.yaml
 
 properties:
-    compatible:
-      constraint: "silabs,gecko-usart"
-
     reg:
       required: true
 

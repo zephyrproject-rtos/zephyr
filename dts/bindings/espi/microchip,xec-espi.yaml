@@ -7,12 +7,11 @@ title: MICROCHIP ESPI
 description: >
     This binding gives a base representation of ESPI controller for Microchip
 
+compatible: "microchip,xec-espi"
+
 include: espi-controller.yaml
 
 properties:
-    compatible:
-      constraint: "microchip,xec-espi"
-
     reg:
       description: mmio register space
       required: true

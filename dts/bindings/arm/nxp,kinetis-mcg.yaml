@@ -9,12 +9,11 @@ title: NXP Kinetis Multipurpose Clock Generator (MCG)
 description: >
     This is a representation of the NXP Kinetis MCG IP node
 
+compatible: "nxp,kinetis-mcg"
+
 include: [clock-controller.yaml, base.yaml]
 
 properties:
-    compatible:
-      constraint: "nxp,kinetis-mcg"
-
     reg:
       required: true
 

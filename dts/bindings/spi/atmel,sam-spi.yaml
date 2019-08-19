@@ -9,12 +9,11 @@ title: Atmel SAM SPI driver
 description: >
     This binding gives a base representation of the Atmel SAM SPI controller
 
+compatible: "atmel,sam-spi"
+
 include: spi-controller.yaml
 
 properties:
-    compatible:
-      constraint: "atmel,sam-spi"
-
     reg:
       required: true
 

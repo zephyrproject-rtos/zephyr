@@ -5,11 +5,10 @@ title: simulated flash
 description: >
     This binding gives a base representation of a simulated flash memory
 
+compatible: "zephyr,sim-flash"
+
 include: base.yaml
 
 properties:
-    compatible:
-      constraint: "zephyr,sim-flash"
-
     label:
       required: true

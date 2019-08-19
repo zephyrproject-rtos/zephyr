@@ -3,12 +3,11 @@ title: STM32 CAN
 description: >
     This binding gives a base representation of the STM32 CAN controller
 
+compatible: "st,stm32-can"
+
 include: can-controller.yaml
 
 properties:
-    compatible:
-      constraint: "st,stm32-can"
-
     reg:
       required: true
 

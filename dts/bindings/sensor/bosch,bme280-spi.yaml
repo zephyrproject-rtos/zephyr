@@ -9,8 +9,6 @@ title: BME280 Integrated environmental sensor
 description: >
     This is a representation of the BME280 Integrated environmental sensor
 
-include: spi-device.yaml
+compatible: "bosch,bme280"
 
-properties:
-    compatible:
-      constraint: "bosch,bme280"
+include: spi-device.yaml

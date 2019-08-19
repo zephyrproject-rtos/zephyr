@@ -9,11 +9,10 @@ title: NIOS2 i2c
 description: >
     This binding gives a base representation of the NIOS2 i2c
 
+compatible: "nios2,i2c"
+
 include: i2c-controller.yaml
 
 properties:
-    compatible:
-      constraint: "nios2,i2c"
-
     reg:
       required: true

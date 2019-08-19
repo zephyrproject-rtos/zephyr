@@ -9,12 +9,11 @@ title: IMX MESSAGING UNIT
 description: >
     This binding gives a base representation of the i.MX Messaging Unit
 
+compatible: "nxp,imx-mu"
+
 include: base.yaml
 
 properties:
-  compatible:
-      constraint: "nxp,imx-mu"
-
   reg:
       required: true
 

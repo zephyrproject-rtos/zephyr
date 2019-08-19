@@ -3,12 +3,11 @@ title: EFR32XG1 GPIO
 description: >
     This is a representation of the EFR32XG1 GPIO Port nodes
 
+compatible: "silabs,efr32xg1-gpio-port"
+
 include: [gpio-controller.yaml, base.yaml]
 
 properties:
-    compatible:
-      constraint: "silabs,efr32xg1-gpio-port"
-
     reg:
       required: true
 

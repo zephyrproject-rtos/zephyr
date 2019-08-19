@@ -9,8 +9,6 @@ title: ARM Cortex-M0+ CPU
 description: >
     This binding gives a base representation for ARM Cortex-M0+ CPU.
 
-include: cpu.yaml
+compatible: "arm,cortex-m0+"
 
-properties:
-    compatible:
-      constraint: "arm,cortex-m0+"
+include: cpu.yaml

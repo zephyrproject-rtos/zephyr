@@ -9,11 +9,10 @@ title: Sifive SPI driver
 description: >
     This binding gives a base representation of the Sifive SPI controller
 
+compatible: "sifive,spi0"
+
 include: spi-controller.yaml
 
 properties:
-    compatible:
-      constraint: "sifive,spi0"
-
     reg:
       required: true

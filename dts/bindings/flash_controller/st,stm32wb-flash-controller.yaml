@@ -3,12 +3,11 @@ title: STM32 WB Flash Controller
 description: >
     This binding gives a base representation of the STM32 wb Flash Controller
 
+compatible: "st,stm32wb-flash-controller"
+
 include: flash-controller.yaml
 
 properties:
-    compatible:
-      constraint: "st,stm32wb-flash-controller"
-
     single-bank:
       type: boolean
       description: dual-bank mode not enabled (page erase 4096k)

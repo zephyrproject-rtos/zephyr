@@ -8,8 +8,6 @@ title: Worldsemi WS2812 SPI LED strip
 
 description: Worldsemi WS2812 SPI LED strip binding
 
-include: spi-device.yaml
+compatible: "worldsemi,ws2812"
 
-properties:
-    compatible:
-      constraint: "worldsemi,ws2812"
+include: spi-device.yaml

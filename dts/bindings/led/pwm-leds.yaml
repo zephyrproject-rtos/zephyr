@@ -9,12 +9,7 @@ title: PWM LED
 description: >
     This is a representation of the PWM GPIO nodes
 
-properties:
-    compatible:
-      constraint: "pwm-leds"
-      type: string-array
-      required: true
-      description: compatible strings
+compatible: "pwm-leds"
 
 sub-node:
     properties:

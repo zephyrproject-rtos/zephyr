@@ -3,12 +3,11 @@ title: Kinetis GPIO
 description: >
     This is a representation of the Kinetis GPIO nodes
 
+compatible: "nxp,kinetis-gpio"
+
 include: [gpio-controller.yaml, base.yaml]
 
 properties:
-    compatible:
-      constraint: "nxp,kinetis-gpio"
-
     reg:
       required: true
 

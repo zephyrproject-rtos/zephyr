@@ -9,12 +9,11 @@ title: Synopsys Designware SPI Controller
 description: >
      This is a representation of the Synopsys DesignWare spi node
 
+compatible: "snps,designware-spi"
+
 include: spi-controller.yaml
 
 properties:
-    compatible:
-      constraint: "snps,designware-spi"
-
     reg:
       required: true
 

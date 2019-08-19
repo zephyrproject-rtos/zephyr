@@ -10,12 +10,11 @@ title: ST STM32 family ADC
 description: >
     This binding gives a base representation of the ST STM32 ADC
 
+compatible: "st,stm32-adc"
+
 include: adc-controller.yaml
 
 properties:
-    compatible:
-      constraint: "st,stm32-adc"
-
     reg:
       required: true
 

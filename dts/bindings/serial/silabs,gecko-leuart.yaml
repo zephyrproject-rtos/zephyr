@@ -3,12 +3,11 @@ title: GECKO LEUART
 description: >
     This binding gives a base representation of the Gecko LEUART
 
+compatible: "silabs,gecko-leuart"
+
 include: uart-controller.yaml
 
 properties:
-    compatible:
-      constraint: "silabs,gecko-leuart"
-
     reg:
       required: true
 

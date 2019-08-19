@@ -9,12 +9,11 @@ title: CYPRESS UART
 description: >
     This binding gives a base representation of the Cypress UART
 
+compatible: "cypress,psoc6-uart"
+
 include: uart-controller.yaml
 
 properties:
-    compatible:
-      constraint: "cypress,psoc6-uart"
-
     reg:
       required: true
 

@@ -9,12 +9,11 @@ title: TI SimpleLink CC13xx / CC26xx True Random Number Generator (TRNG)
 description: >
     This is a representation of the TI SimpleLink CC13xx / CC26xx TRNG node
 
+compatible: "ti,cc13xx-cc26xx-trng"
+
 include: base.yaml
 
 properties:
-    compatible:
-      constraint: "ti,cc13xx-cc26xx-trng"
-
     reg:
       required: true
 

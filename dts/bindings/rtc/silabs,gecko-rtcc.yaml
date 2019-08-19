@@ -9,11 +9,10 @@ title: Silabs Gecko Real Time Counter
 description: >
     This is a representation of the Silabs Gecko RTCC node
 
+compatible: "silabs,gecko-rtcc"
+
 include: rtc.yaml
 
 properties:
-    compatible:
-      constraint: "silabs,gecko-rtcc"
-
     reg:
       required: true

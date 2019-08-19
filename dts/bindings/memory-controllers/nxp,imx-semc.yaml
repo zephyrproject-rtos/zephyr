@@ -10,12 +10,11 @@ description: >
     This binding gives a base representation of the NXP smart external memory
     controller (SEMC)
 
+compatible: "nxp,imx-semc"
+
 include: base.yaml
 
 properties:
-    compatible:
-      constraint: "nxp,imx-semc"
-
     reg:
       required: true
 

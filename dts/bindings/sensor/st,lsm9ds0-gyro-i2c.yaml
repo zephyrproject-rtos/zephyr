@@ -9,12 +9,11 @@ title: STMicroelectronics MEMS sensors LSM9DS0-GYRO
 description: >
     This binding gives a base representation of LSM9DS0 3-axis gyro
 
+compatible: "st,lsm9ds0-gyro"
+
 include: i2c-device.yaml
 
 properties:
-    compatible:
-        constraint: "st,lsm9ds0-gyro"
-
     irq-gpios:
       type: phandle-array
       required: true

@@ -9,12 +9,11 @@ title: APDS9960 Digital Proximity, Ambient Light, RGB and Gesture Sensor
 description: >
     This is a representation of the APDS9960 sensor
 
+compatible: "avago,apds9960"
+
 include: i2c-device.yaml
 
 properties:
-    compatible:
-      constraint: "avago,apds9960"
-
     int-gpios:
       type: phandle-array
       required: true

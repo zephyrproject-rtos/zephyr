@@ -9,11 +9,11 @@ title: Virtual I2C slave eeprom
 description: >
     This binding gives a base representation of a generic I2C slave EEPROM
 
+compatible: "atmel,at24"
+
 include: i2c-device.yaml
 
 properties:
-    compatible:
-      constraint: "atmel,at24"
     size:
       type: int
       required: true

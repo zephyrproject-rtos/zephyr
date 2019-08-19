@@ -9,12 +9,11 @@ description: >
      This is a representation of the formerly SMSC, now Microchip, LAN9220
      Ethernet controller.
 
+compatible: "smsc,lan9220"
+
 include: base.yaml
 
 properties:
-    compatible:
-      constraint: "smsc,lan9220"
-
     reg:
       required: true
 

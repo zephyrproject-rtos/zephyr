@@ -10,8 +10,6 @@ description: >
     This binding gives a base representation of CCS811 digital air quality
     sensor
 
-include: i2c-device.yaml
+compatible: "ams,ccs811"
 
-properties:
-    compatible:
-      constraint: "ams,ccs811"
+include: i2c-device.yaml

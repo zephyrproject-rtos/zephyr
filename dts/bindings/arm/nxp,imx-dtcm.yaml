@@ -9,11 +9,10 @@ title: i.MX DTCM (Data Tightly Coupled Memory)
 description: >
   This binding gives a base representation of the i.MX DTCM
 
+compatible: "nxp,imx-dtcm"
+
 include: base.yaml
 
 properties:
-    compatible:
-      constraint: "nxp,imx-dtcm"
-
     reg:
       required: true

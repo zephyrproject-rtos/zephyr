@@ -10,8 +10,6 @@ description: >
     This binding gives a base representation of the Rocktech LCD module with
     LED backlight and capacitive touch panel.
 
-include: base.yaml
+compatible: "rocktech,rk043fn02h-ct"
 
-properties:
-    compatible:
-      constraint: "rocktech,rk043fn02h-ct"
+include: base.yaml

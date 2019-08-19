@@ -3,12 +3,11 @@ title: EFR32MG GPIO
 description: >
     This is a representation of the EFR32MG GPIO nodes
 
+compatible: "silabs,efr32mg-gpio"
+
 include: base.yaml
 
 properties:
-    compatible:
-      constraint: "silabs,efr32mg-gpio"
-
     reg:
       required: true
 

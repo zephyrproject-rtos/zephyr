@@ -9,12 +9,11 @@ title: Atmel SAM Flash Controller
 description: >
     This binding gives a base representation of the Atmel SAM Enhanced Embedded Flash Controller
 
+compatible: "atmel,sam-flash-controller"
+
 include: flash-controller.yaml
 
 properties:
-    compatible:
-      constraint: "atmel,sam-flash-controller"
-
     peripheral-id:
       type: int
       description: peripheral ID

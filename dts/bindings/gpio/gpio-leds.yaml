@@ -9,12 +9,7 @@ title: GPIO LED
 description: >
     This is a representation of the LED GPIO nodes
 
-properties:
-    compatible:
-      constraint: "gpio-leds"
-      type: string-array
-      required: true
-      description: compatible strings
+compatible: "gpio-leds"
 
 sub-node:
     properties:

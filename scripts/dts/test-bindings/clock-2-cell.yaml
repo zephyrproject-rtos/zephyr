@@ -3,10 +3,7 @@
 title: Clock source with two cells
 description: Clock source with two cells
 
-properties:
-    compatible:
-        constraint: "clock-two-cell"
-        type: string-array
+compatible: "clock-two-cell"
 
 "#cells":
   - one

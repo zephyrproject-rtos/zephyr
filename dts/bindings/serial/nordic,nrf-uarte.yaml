@@ -3,12 +3,11 @@ title: Nordic UARTE
 description: >
     This binding gives a base representation of the Nordic UARTE
 
+compatible: "nordic,nrf-uarte"
+
 include: uart-controller.yaml
 
 properties:
-    compatible:
-      constraint: "nordic,nrf-uarte"
-
     reg:
       required: true
 

@@ -9,12 +9,11 @@ title: FXAS21002 3-axis gyroscope
 description: >
     This is a representation of the FXAS21002 3-axis gyroscope sensor
 
+compatible: "nxp,fxas21002"
+
 include: i2c-device.yaml
 
 properties:
-    compatible:
-      constraint: "nxp,fxas21002"
-
     int1-gpios:
       type: phandle-array
       required: false

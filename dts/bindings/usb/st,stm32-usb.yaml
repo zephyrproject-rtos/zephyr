@@ -9,12 +9,11 @@ title: STM32 USB
 description: >
     This binding gives a base representation of the STM32 USB controller
 
+compatible: "st,stm32-usb"
+
 include: usb-ep.yaml
 
 properties:
-    compatible:
-      constraint: "st,stm32-usb"
-
     reg:
       required: true
 

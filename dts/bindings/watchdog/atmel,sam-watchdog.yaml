@@ -9,12 +9,11 @@ title: Atmel SAM watchdog driver
 description: >
     This is a representation of the SAM0 watchdog
 
+compatible: "atmel,sam-watchdog"
+
 include: base.yaml
 
 properties:
-    compatible:
-      constraint: "atmel,sam-watchdog"
-
     reg:
       required: true
 

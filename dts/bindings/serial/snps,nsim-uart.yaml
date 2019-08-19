@@ -9,11 +9,10 @@ title: Synopsys ARC nSIM UART
 description: >
     This binding gives a base representation of the Synopsys ARC nSIM UART
 
+compatible: "snps,nsim-uart"
+
 include: uart-controller.yaml
 
 properties:
-    compatible:
-      constraint: "snps,nsim-uart"
-
     reg:
       required: true
