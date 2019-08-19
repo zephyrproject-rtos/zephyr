@@ -2492,8 +2492,15 @@ static void gatt_find_info_rsp(struct bt_conn *conn, u8_t err,
 		goto done;
 	}
 
+	length--;
+
+	/* Check if there is a least one descriptor in the response */
+	if (length < len) {
+		goto done;
+	}
+
 	/* Parse descriptors found */
-	for (i = (length - 1) / len, pdu = rsp->info; i != 0;
+	for (i = length / len, pdu = rsp->info; i != 0;
 	     i--, pdu = (const u8_t *)pdu + len) {
 		struct bt_gatt_attr *attr;
 
@@ -2547,11 +2554,6 @@ static void gatt_find_info_rsp(struct bt_conn *conn, u8_t err,
 		if (params->func(conn, attr, params) == BT_GATT_ITER_STOP) {
 			return;
 		}
-	}
-
-	/* Stop if could not parse the whole PDU */
-	if (i) {
-		goto done;
 	}
 
 	gatt_discover_next(conn, handle, params);
