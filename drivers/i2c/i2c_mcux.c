@@ -232,3 +232,11 @@ static const struct i2c_driver_api i2c_mcux_driver_api = {
 #ifdef CONFIG_I2C_1
 	I2C_DEVICE_INIT_MCUX(1)
 #endif
+
+#ifdef CONFIG_I2C_2
+	I2C_DEVICE_INIT_MCUX(2)
+#endif
+
+#ifdef CONFIG_I2C_3
+	I2C_DEVICE_INIT_MCUX(3)
+#endif
