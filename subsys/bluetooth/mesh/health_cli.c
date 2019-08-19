@@ -510,11 +510,11 @@ int bt_mesh_health_cli_set(struct bt_mesh_model *model)
 	return 0;
 }
 
-int bt_mesh_health_cli_init(struct bt_mesh_model *model, bool primary)
+static int health_cli_init(struct bt_mesh_model *model)
 {
 	struct bt_mesh_health_cli *cli = model->user_data;
 
-	BT_DBG("primary %u", primary);
+	BT_DBG("primary %u", bt_mesh_model_in_primary(model));
 
 	if (!cli) {
 		BT_ERR("No Health Client context provided");
@@ -533,3 +533,7 @@ int bt_mesh_health_cli_init(struct bt_mesh_model *model, bool primary)
 
 	return 0;
 }
+
+const struct bt_mesh_model_cb bt_mesh_health_cli_cb = {
+	.init = health_cli_init,
+};

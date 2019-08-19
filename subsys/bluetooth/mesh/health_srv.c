@@ -384,12 +384,12 @@ static void attention_off(struct k_work *work)
 	}
 }
 
-int bt_mesh_health_srv_init(struct bt_mesh_model *model, bool primary)
+static int health_srv_init(struct bt_mesh_model *model)
 {
 	struct bt_mesh_health_srv *srv = model->user_data;
 
 	if (!srv) {
-		if (!primary) {
+		if (!bt_mesh_model_in_primary(model)) {
 			return 0;
 		}
 
@@ -408,12 +408,16 @@ int bt_mesh_health_srv_init(struct bt_mesh_model *model, bool primary)
 
 	srv->model = model;
 
-	if (primary) {
+	if (bt_mesh_model_in_primary(model)) {
 		health_srv = srv;
 	}
 
 	return 0;
 }
+
+const struct bt_mesh_model_cb bt_mesh_health_srv_cb = {
+	.init = health_srv_init,
+};
 
 void bt_mesh_attention(struct bt_mesh_model *model, u8_t time)
 {
