@@ -38,6 +38,66 @@ Boards & SoC Support
 
 * Add native_posix_64: A 64 bit variant of native_posix
 
+* Added support for the following ARC boards:
+
+  * emdsp
+  * hsdk
+
+* Added support for the following ARM boards:
+
+  * atsamr21_xpro
+  * cc1352r1_launchxl
+  * cc26x2r1_launchxl
+  * holyiot_yj16019
+  * lpcxpresso55s69
+  * mec15xxevb_assy6853
+  * mikroe_mini_m4_for_stm32
+  * mimxrt1015_evk
+  * mps2_an521
+  * nrf51_pca10031
+  * nrf52811_pca10056
+  * nucleo_g071rb
+  * nucleo_wb55rg
+  * qemu_cortex_r5
+  * stm32h747i_disco
+  * stm32mp157c_dk2
+  * twr_ke18f
+  * v2m_musca_b1
+  * 96b_avenger96
+  * 96b_meerkat96
+  * 96b_wistrio
+
+* Added support for the following RISC-V boards:
+
+  * hifive1_revb
+  * litex_vexriscv
+  * qemu_riscv64
+
+* Added support for the following x86 boards:
+
+  * gpmrb
+
+* Added support for the following shield boards:
+
+  * frdm_cr20a
+  * link_board_can
+  * sparkfun_sara_r4
+  * wnc_m14a2a
+  * x_nucleo_iks01a3
+
+* Removed support for the following boards:
+
+  * arduino_101
+  * arduino_101_sss
+  * curie_ble
+  * galileo
+  * quark_d2000_crb
+  * quark_se_c1000_devboard
+  * quark_se_c1000_ss_devboard
+  * quark_se_c1000_ble
+  * tinytile
+  * x86_jailhouse
+
 Drivers and Sensors
 *******************
 
