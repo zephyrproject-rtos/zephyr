@@ -487,6 +487,33 @@ const struct bt_mesh_model_op bt_mesh_cfg_cli_op[] = {
 	BT_MESH_MODEL_OP_END,
 };
 
+static int cfg_cli_init(struct bt_mesh_model *model)
+{
+	if (!bt_mesh_model_in_primary(model)) {
+		BT_ERR("Configuration Client only allowed in primary element");
+		return -EINVAL;
+	}
+
+	if (!model->user_data) {
+		BT_ERR("No Configuration Client context provided");
+		return -EINVAL;
+	}
+
+	cli = model->user_data;
+	cli->model = model;
+
+	/* Configuration Model security is device-key based */
+	model->keys[0] = BT_MESH_KEY_DEV;
+
+	k_sem_init(&cli->op_sync, 0, 1);
+
+	return 0;
+}
+
+const struct bt_mesh_model_cb bt_mesh_cfg_cli_cb = {
+	.init = cfg_cli_init,
+};
+
 static int cli_prepare(void *param, u32_t op)
 {
 	if (!cli) {
@@ -1416,29 +1443,4 @@ s32_t bt_mesh_cfg_cli_timeout_get(void)
 void bt_mesh_cfg_cli_timeout_set(s32_t timeout)
 {
 	msg_timeout = timeout;
-}
-
-int bt_mesh_cfg_cli_init(struct bt_mesh_model *model, bool primary)
-{
-	BT_DBG("primary %u", primary);
-
-	if (!primary) {
-		BT_ERR("Configuration Client only allowed in primary element");
-		return -EINVAL;
-	}
-
-	if (!model->user_data) {
-		BT_ERR("No Configuration Client context provided");
-		return -EINVAL;
-	}
-
-	cli = model->user_data;
-	cli->model = model;
-
-	/* Configuration Model security is device-key based */
-	model->keys[0] = BT_MESH_KEY_DEV;
-
-	k_sem_init(&cli->op_sync, 0, 1);
-
-	return 0;
 }

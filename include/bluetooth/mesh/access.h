@@ -174,7 +174,18 @@ struct bt_mesh_model_op {
 /** Helper to define an empty model array */
 #define BT_MESH_MODEL_NONE ((struct bt_mesh_model []){})
 
-#define BT_MESH_MODEL(_id, _op, _pub, _user_data)                            \
+
+/** @def BT_MESH_MODEL_CB
+ *
+ * @brief Composition data SIG model entry with callback functions.
+ *
+ * @param _id Model ID.
+ * @param _op Array of model opcode handlers.
+ * @param _pub Model publish parameters.
+ * @param _user_data User data for the model.
+ * @param _cb Callback structure, or NULL to keep no callbacks.
+ */
+#define BT_MESH_MODEL_CB(_id, _op, _pub, _user_data, _cb)                    \
 {                                                                            \
 	.id = (_id),                                                         \
 	.op = _op,                                                           \
@@ -184,9 +195,21 @@ struct bt_mesh_model_op {
 	.groups = { [0 ... (CONFIG_BT_MESH_MODEL_GROUP_COUNT - 1)] =         \
 			BT_MESH_ADDR_UNASSIGNED },                           \
 	.user_data = _user_data,                                             \
+	.cb = _cb,                                                           \
 }
 
-#define BT_MESH_MODEL_VND(_company, _id, _op, _pub, _user_data)              \
+/** @def BT_MESH_MODEL_VND_CB
+ *
+ * @brief Composition data vendor model entry with callback functions.
+ *
+ * @param _company Company ID.
+ * @param _id Model ID.
+ * @param _op Array of model opcode handlers.
+ * @param _pub Model publish parameters.
+ * @param _user_data User data for the model.
+ * @param _cb Callback structure, or NULL to keep no callbacks.
+ */
+#define BT_MESH_MODEL_VND_CB(_company, _id, _op, _pub, _user_data, _cb)      \
 {                                                                            \
 	.vnd.company = (_company),                                           \
 	.vnd.id = (_id),                                                     \
@@ -197,7 +220,34 @@ struct bt_mesh_model_op {
 	.groups = { [0 ... (CONFIG_BT_MESH_MODEL_GROUP_COUNT - 1)] =         \
 			BT_MESH_ADDR_UNASSIGNED },                           \
 	.user_data = _user_data,                                             \
+	.cb = _cb,                                                           \
 }
+
+
+/** @def BT_MESH_MODEL
+ *
+ * @brief Composition data SIG model entry.
+ *
+ * @param _id Model ID.
+ * @param _op Array of model opcode handlers.
+ * @param _pub Model publish parameters.
+ * @param _user_data User data for the model.
+ */
+#define BT_MESH_MODEL(_id, _op, _pub, _user_data)                              \
+	BT_MESH_MODEL_CB(_id, _op, _pub, _user_data, NULL)
+
+/** @def BT_MESH_MODEL_VND
+ *
+ * @brief Composition data vendor model entry.
+ *
+ * @param _company Company ID.
+ * @param _id Model ID.
+ * @param _op Array of model opcode handlers.
+ * @param _pub Model publish parameters.
+ * @param _user_data User data for the model.
+ */
+#define BT_MESH_MODEL_VND(_company, _id, _op, _pub, _user_data)                \
+	BT_MESH_MODEL_VND_CB(_company, _id, _op, _pub, _user_data, NULL)
 
 /** @def BT_MESH_TRANSMIT
  *
@@ -330,6 +380,19 @@ struct bt_mesh_model_pub {
 		.msg = &bt_mesh_pub_msg_##_name, \
 	}
 
+/** Model callback functions. */
+struct bt_mesh_model_cb {
+	/** @brief Model init callback.
+	 *
+	 * Called on every model instance during mesh initialization.
+	 *
+	 * @param model Model to be initialized.
+	 *
+	 * @return 0 on success, error otherwise.
+	 */
+	int (*const init)(struct bt_mesh_model *model);
+};
+
 /** Abstraction that describes a Mesh Model instance */
 struct bt_mesh_model {
 	union {
@@ -355,6 +418,9 @@ struct bt_mesh_model {
 	u16_t groups[CONFIG_BT_MESH_MODEL_GROUP_COUNT];
 
 	const struct bt_mesh_model_op * const op;
+
+	/* Model callback structure. */
+	const struct bt_mesh_model_cb * const cb;
 
 	/* Model-specific user data */
 	void *user_data;
@@ -437,6 +503,17 @@ struct bt_mesh_model *bt_mesh_model_find(const struct bt_mesh_elem *elem,
  */
 struct bt_mesh_model *bt_mesh_model_find_vnd(const struct bt_mesh_elem *elem,
 					     u16_t company, u16_t id);
+
+/** @brief Get whether the model is in the primary element of the device.
+ *
+ * @param mod Mesh model.
+ *
+ * @return true if the model is on the primary element, false otherwise.
+ */
+static inline bool bt_mesh_model_in_primary(const struct bt_mesh_model *mod)
+{
+	return (mod->elem_idx == 0);
+}
 
 /** Node Composition */
 struct bt_mesh_comp {

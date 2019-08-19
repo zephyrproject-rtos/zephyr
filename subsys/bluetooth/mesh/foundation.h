@@ -112,12 +112,6 @@
 #define STATUS_UNSPECIFIED                 0x10
 #define STATUS_INVALID_BINDING             0x11
 
-int bt_mesh_cfg_srv_init(struct bt_mesh_model *model, bool primary);
-int bt_mesh_health_srv_init(struct bt_mesh_model *model, bool primary);
-
-int bt_mesh_cfg_cli_init(struct bt_mesh_model *model, bool primary);
-int bt_mesh_health_cli_init(struct bt_mesh_model *model, bool primary);
-
 void bt_mesh_cfg_reset(void);
 
 void bt_mesh_heartbeat(u16_t src, u16_t dst, u8_t hops, u16_t feat);

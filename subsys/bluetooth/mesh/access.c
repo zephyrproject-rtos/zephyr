@@ -30,20 +30,6 @@
 static const struct bt_mesh_comp *dev_comp;
 static u16_t dev_primary_addr;
 
-static const struct {
-	const u16_t id;
-	int (*const init)(struct bt_mesh_model *model, bool primary);
-} model_init[] = {
-	{ BT_MESH_MODEL_ID_CFG_SRV, bt_mesh_cfg_srv_init },
-	{ BT_MESH_MODEL_ID_HEALTH_SRV, bt_mesh_health_srv_init },
-#if defined(CONFIG_BT_MESH_CFG_CLI)
-	{ BT_MESH_MODEL_ID_CFG_CLI, bt_mesh_cfg_cli_init },
-#endif
-#if defined(CONFIG_BT_MESH_HEALTH_CLI)
-	{ BT_MESH_MODEL_ID_HEALTH_CLI, bt_mesh_health_cli_init },
-#endif
-};
-
 void bt_mesh_model_foreach(void (*func)(struct bt_mesh_model *mod,
 					struct bt_mesh_elem *elem,
 					bool vnd, bool primary,
@@ -302,14 +288,8 @@ static void mod_init(struct bt_mesh_model *mod, struct bt_mesh_elem *elem,
 		mod->mod_idx = mod - elem->models;
 	}
 
-	if (vnd) {
-		return;
-	}
-
-	for (i = 0; i < ARRAY_SIZE(model_init); i++) {
-		if (model_init[i].id == mod->id) {
-			model_init[i].init(mod, primary);
-		}
+	if (mod->cb && mod->cb->init) {
+		mod->cb->init(mod);
 	}
 }
 
