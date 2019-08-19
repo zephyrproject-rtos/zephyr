@@ -1,0 +1,108 @@
+# Kconfig - FRDM-K82F board
+#
+# Copyright (c) 2019 SEAL AG
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if BOARD_FRDM_K82F
+
+config BOARD
+	default "frdm_k82f"
+
+config OSC_XTAL0_FREQ
+	default 12000000
+
+config MCG_PRDIV0
+	default 0x0
+
+config MCG_VDIV0
+	default 0x4
+
+config MCG_FCRDIV
+	default 1
+
+if FLASH
+
+config SPI
+	default y
+
+config SPI_NOR
+	default y
+
+endif # FXOS8700
+
+if FXOS8700
+
+config FXOS8700_DRDY_INT1
+	default y
+
+endif # FXOS8700
+
+if GPIO_MCUX
+
+config GPIO_MCUX_PORTA
+	default y
+
+config GPIO_MCUX_PORTB
+	default y
+
+config GPIO_MCUX_PORTC
+	default y
+
+config GPIO_MCUX_PORTD
+	default y
+
+config GPIO_MCUX_PORTE
+	default y
+
+endif # GPIO_MCUX
+
+if I2C
+
+config I2C_3
+	default y
+
+endif # I2C
+
+if PINMUX_MCUX
+
+config PINMUX_MCUX_PORTA
+	default y
+
+config PINMUX_MCUX_PORTB
+	default y
+
+config PINMUX_MCUX_PORTC
+	default y
+
+config PINMUX_MCUX_PORTD
+	default y
+
+config PINMUX_MCUX_PORTE
+	default y
+
+endif # PINMUX_MCUX
+
+if PWM_MCUX_FTM
+
+config PWM_3
+	default y
+
+endif # PWM_MCUX_FTM
+
+if SPI
+
+config SPI_1
+	default y
+
+endif # SPI
+
+if UART_MCUX_LPUART
+
+config UART_MCUX_LPUART_4
+	default y if UART_CONSOLE
+
+endif # UART_MCUX_LPUART
+
+endif # BOARD_FRDM_K82F
