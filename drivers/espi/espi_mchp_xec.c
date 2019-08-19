@@ -438,7 +438,7 @@ static void setup_espi_io_config(u16_t host_address)
 
 static void espi_pc_isr(struct device *dev)
 {
-	u8_t status = ESPI_PC_REGS->PC_STATUS;
+	u32_t status = ESPI_PC_REGS->PC_STATUS;
 
 	if (status & MCHP_ESPI_PC_STS_EN_CHG) {
 		if (status & MCHP_ESPI_PC_STS_EN) {
