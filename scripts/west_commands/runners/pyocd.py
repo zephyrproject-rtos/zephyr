@@ -34,7 +34,7 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
 
         board_args = []
         if board_id is not None:
-            board_args = ['-b', board_id]
+            board_args = ['-u', board_id]
         self.board_args = board_args
 
         daparg_args = []

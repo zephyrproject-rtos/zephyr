@@ -65,7 +65,7 @@ FLASH_ALL_EXPECTED_CALL = ([TEST_PYOCD,
                             'flash',
                             '-e', 'sector',
                             '-a', hex(TEST_ADDR), '-da', TEST_DAPARG,
-                            '-t', TEST_TARGET, '-b', TEST_BOARD_ID,
+                            '-t', TEST_TARGET, '-u', TEST_BOARD_ID,
                             '-f', TEST_FREQUENCY] +
                            TEST_FLASH_OPTS +
                            [RC_KERNEL_HEX])
@@ -78,7 +78,7 @@ DEBUG_ALL_EXPECTED_SERVER = [TEST_PYOCD,
                              '-da', TEST_DAPARG,
                              '-p', str(TEST_PORT),
                              '-t', TEST_TARGET,
-                             '-b', TEST_BOARD_ID,
+                             '-u', TEST_BOARD_ID,
                              '-f', TEST_FREQUENCY]
 DEBUG_ALL_EXPECTED_CLIENT = [RC_GDB, RC_KERNEL_ELF,
                              '-ex', 'target remote :{}'.format(TEST_PORT),
@@ -101,7 +101,7 @@ DEBUGSERVER_ALL_EXPECTED_CALL = [TEST_PYOCD,
                                  '-da', TEST_DAPARG,
                                  '-p', str(TEST_PORT),
                                  '-t', TEST_TARGET,
-                                 '-b', TEST_BOARD_ID,
+                                 '-u', TEST_BOARD_ID,
                                  '-f', TEST_FREQUENCY]
 DEBUGSERVER_DEF_EXPECTED_CALL = ['pyocd',
                                  'gdbserver',
