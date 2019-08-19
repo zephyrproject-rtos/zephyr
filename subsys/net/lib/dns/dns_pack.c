@@ -72,45 +72,50 @@ static inline void set_dns_msg_response(struct dns_msg_t *dns_msg, int type,
 	dns_msg->response_length = len;
 }
 
+/*
+ * Skip encoded FQDN in DNS message.
+ * Returns size in bytes of encoded FQDN, or negative error code.
+ */
+static int skip_fqdn(u8_t *answer, int buf_sz)
+{
+	int i = 0;
+
+	while (1) {
+		if (i >= buf_sz) {
+			return -EINVAL;
+		}
+
+		if (answer[i] == 0) {
+			i += 1;
+			break;
+		} else if (answer[i] >= 0xc0) {
+			i += 2;
+			if (i > buf_sz) {
+				return -EINVAL;
+			}
+			break;
+		} else if (answer[i] < DNS_LABEL_MAX_SIZE) {
+			i += answer[i] + 1;
+		} else {
+			return -EINVAL;
+		}
+	}
+
+	return i;
+}
+
 int dns_unpack_answer(struct dns_msg_t *dns_msg, int dname_ptr, u32_t *ttl)
 {
-	int dname_len = DNS_COMMON_UINT_SIZE;
-	int i = 0;
-	u16_t buf_size;
+	int dname_len;
+	u16_t rem_size;
 	u16_t pos;
 	u16_t len;
 	u8_t *answer;
-	int ptr;
 
 	answer = dns_msg->msg + dns_msg->answer_offset;
-
-	if (answer[i] == 0xc0 && answer[i + 1] == 0x0c) {
-	check_pointer:
-		if (answer[i] < DNS_LABEL_MAX_SIZE) {
-			return -ENOMEM;
-		}
-
-		/* Recovery of the pointer value */
-		ptr = ((answer[i] & DNS_LABEL_MAX_SIZE) << 8) + answer[i + 1];
-		if (ptr != dname_ptr) {
-			return -ENOMEM;
-		}
-	} else {
-		dname_len = answer[i++] + 1;
-		while (answer[i]) {
-			if (answer[i] == 0xc0 && answer[i + 1] == 0x0c) {
-				dname_len += DNS_COMMON_UINT_SIZE;
-				goto check_pointer;
-			}
-
-			if (answer[i] < DNS_LABEL_MAX_SIZE) {
-				dname_len += answer[i] + 1;
-			}
-
-			i++;
-		}
-
-		dname_len++;
+	dname_len = skip_fqdn(answer, dns_msg->msg_size - dns_msg->answer_offset);
+	if (dname_len < 0) {
+		return dname_len;
 	}
 
 	/*
@@ -124,13 +129,12 @@ int dns_unpack_answer(struct dns_msg_t *dns_msg, int dname_ptr, u32_t *ttl)
 	 *
 	 * See RFC-1035 4.1.3. Resource record format
 	 */
-	buf_size = dns_msg->msg_size - dns_msg->answer_offset;
-	if (buf_size < DNS_ANSWER_MIN_SIZE) {
-		return -ENOMEM;
+	rem_size = dns_msg->msg_size - dname_len;
+	if (rem_size < 2 + 2 + 4 + 2) {
+		return -EINVAL;
 	}
 
 	/* Only DNS_CLASS_IN answers
-	 * Here we use 2 as an offset because a ptr uses only 2 bytes.
 	 */
 	if (dns_answer_class(dname_len, answer) != DNS_CLASS_IN) {
 		return -EINVAL;
