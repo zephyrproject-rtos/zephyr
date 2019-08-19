@@ -304,7 +304,7 @@ static struct tcp *tcp_conn_new(struct net_pkt *pkt)
 
 	sys_slist_init(&conn->send_queue);
 	k_timer_init(&conn->send_timer, tcp_send_process, NULL);
-	k_timer_user_data_set(&conn->send_timer, conn);
+	k_timer_user_data_set(&conn->send_timer, conn->context);
 
 	sys_slist_append(&tcp_conns, (sys_snode_t *) conn);
 	conn->state = TCP_LISTEN;
