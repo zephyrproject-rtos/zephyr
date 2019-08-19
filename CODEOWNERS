@@ -206,7 +206,6 @@
 /dts/bindings/sensor/*bme680*             @BoschSensortec
 /dts/bindings/sensor/st*                  @avisconti
 /ext/hal/cmsis/                           @MaureenHelm @galak
-/ext/hal/microchip/                       @franciscomunoz @albertofloyd @scottwcpg
 /ext/hal/nxp/                             @MaureenHelm
 /ext/lib/crypto/tinycrypt/                @ceolin
 /include/                                 @nashif @carlescufi @galak @MaureenHelm
