@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Nordic Semiconductor ASA
+ * Copyright (c) 2018 - 2019 Nordic Semiconductor ASA
  * Copyright (c) 2018 Ioannis Glaropoulos
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -8,6 +8,21 @@
 #if defined(CONFIG_SOC_SERIES_NRF51X) || defined(CONFIG_SOC_COMPATIBLE_NRF52X)
 
 #include <nrfx/hal/nrf_ppi.h>
+
+static inline void hal_radio_nrf_ppi_channels_enable(u32_t mask)
+{
+	nrf_ppi_channels_enable(mask);
+}
+
+static inline void hal_radio_nrf_ppi_channels_disable(u32_t mask)
+{
+	nrf_ppi_channels_disable(mask);
+}
+
+static inline void hal_radio_nrf_ppi_group_disable(u32_t group)
+{
+	nrf_ppi_group_disable(group);
+}
 
 /*******************************************************************************
  * Enable Radio on Event Timer tick:
@@ -383,6 +398,29 @@ static inline void hal_sw_switch_timer_clear_ppi_config(void)
 #define HAL_SW_SWITCH_RADIO_ENABLE_PPI_TASK_RX \
 	((u32_t)&(NRF_RADIO->TASKS_RXEN))
 
+static inline void hal_radio_sw_switch_setup(
+		u8_t compare_reg,
+		u8_t radio_enable_ppi,
+		u8_t ppi_group_index)
+{
+	/* Set up software switch mechanism for next Radio switch. */
+
+	/* Wire RADIO END event to PPI Group[<index>] enable task,
+	 * over PPI[<HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI>]
+	 */
+	nrf_ppi_channel_endpoint_setup(HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI,
+		HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI_EVT,
+		HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI_TASK(ppi_group_index));
+
+	/* Wire SW Switch timer event <compare_reg> to the
+	 * PPI[<radio_enable_ppi>] for enabling Radio. Do
+	 * not wire the task; it is done by the caller of
+	 * the function depending on the desired direction
+	 * (TX/RX).
+	 */
+	nrf_ppi_event_endpoint_setup(radio_enable_ppi,
+		HAL_SW_SWITCH_RADIO_ENABLE_PPI_EVT(compare_reg));
+}
 
 static inline void hal_radio_txen_on_sw_switch(u8_t ppi)
 {
@@ -394,6 +432,16 @@ static inline void hal_radio_rxen_on_sw_switch(u8_t ppi)
 {
 	nrf_ppi_task_endpoint_setup(ppi,
 		HAL_SW_SWITCH_RADIO_ENABLE_PPI_TASK_RX);
+}
+
+static inline void hal_radio_sw_switch_disable(void)
+{
+	/* Disable the following PPI channels that implement SW Switch:
+	 * - Clearing SW SWITCH TIMER on RADIO END event
+	 * - Enabling SW SWITCH PPI Group on RADIO END event
+	 */
+	nrf_ppi_channels_disable(BIT(HAL_SW_SWITCH_TIMER_CLEAR_PPI) |
+		 BIT(HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI));
 }
 
 #if defined(CONFIG_SOC_NRF52840)
@@ -432,7 +480,41 @@ static inline void hal_radio_rxen_on_sw_switch(u8_t ppi)
 #define HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI_TASK(index) \
 	((u32_t)&(SW_SWITCH_TIMER->TASKS_CAPTURE[index]))
 
+#else
+
+static inline void hal_radio_group_task_disable_ppi_setup(void)
+{
+	/* Wire SW SWITCH TIMER EVENTS COMPARE event <cc index-0> to
+	 * PPI Group TASK [<index-0>] DISABLE task, over PPI<index-0>.
+	 */
+	nrf_ppi_channel_endpoint_setup(
+		HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI(0),
+		HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_EVT(
+			SW_SWITCH_TIMER_EVTS_COMP(0)),
+		HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_TASK(0));
+
+	/* Wire SW SWITCH TIMER event <compare index-1> to
+	 * PPI Group[<index-1>] Disable Task, over PPI<index-1>.
+	 */
+	nrf_ppi_channel_endpoint_setup(
+		HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI(1),
+		HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_EVT(
+			SW_SWITCH_TIMER_EVTS_COMP(1)),
+		HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_TASK(1));
+}
 #endif /* CONFIG_SOC_NRF52840 */
+
+static inline void hal_radio_sw_switch_ppi_group_setup(void)
+{
+	/* Include the appropriate PPI channels in the two PPI Groups. */
+	NRF_PPI->CHG[SW_SWITCH_TIMER_TASK_GROUP(0)] =
+		HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_0_INCLUDE |
+			HAL_SW_SWITCH_RADIO_ENABLE_PPI_0_INCLUDE;
+	NRF_PPI->CHG[SW_SWITCH_TIMER_TASK_GROUP(1)] =
+		HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_1_INCLUDE |
+			HAL_SW_SWITCH_RADIO_ENABLE_PPI_1_INCLUDE;
+}
+
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 
 /******************************************************************************/
