@@ -1584,9 +1584,16 @@ static void smp_pairing_complete(struct bt_smp *smp, u8_t status)
 			bt_auth->pairing_complete(smp->chan.chan.conn,
 						  bond_flag);
 		}
-	} else if (bt_auth && bt_auth->pairing_failed) {
-		bt_auth->pairing_failed(smp->chan.chan.conn,
-					auth_err_get(status));
+	} else {
+		u8_t auth_err = auth_err_get(status);
+
+		if (!atomic_test_bit(smp->flags, SMP_FLAG_KEYS_DISTR)) {
+			bt_conn_security_changed(smp->chan.chan.conn, auth_err);
+		}
+
+		if (bt_auth && bt_auth->pairing_failed) {
+			bt_auth->pairing_failed(smp->chan.chan.conn, auth_err);
+		}
 	}
 
 	smp_reset(smp);
