@@ -234,10 +234,8 @@ void test_gatt_read(void)
 				  &test_chrc_uuid.uuid, NULL, 0, find_attr,
 				  &attr);
 	zassert_not_null(attr, "Attribute don't match");
-	if (attr) {
-		zassert_equal(attr->uuid, &test_chrc_uuid.uuid,
+	zassert_equal(attr->uuid, &test_chrc_uuid.uuid,
 			      "Attribute UUID don't match");
-	}
 
 	ret = attr->read(NULL, attr, (void *)buf, sizeof(buf), 0);
 	zassert_equal(ret, strlen(test_value),
