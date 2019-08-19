@@ -1,0 +1,10 @@
+# Kconfig - FRDM-K82F board configuration
+#
+# Copyright (c) 2019 SEAL AG
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_FRDM_K82F
+	bool "NXP FRDM-K82F"
+	depends on SOC_SERIES_KINETIS_K8X
+	select SOC_PART_NUMBER_MK82FN256VLL15
