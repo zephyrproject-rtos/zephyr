@@ -9,12 +9,11 @@ title: STM32 SPI
 description: >
     This binding gives a base representation of the STM32 SPI controller
 
+compatible: "st,stm32-spi"
+
 include: spi-controller.yaml
 
 properties:
-    compatible:
-      constraint: "st,stm32-spi"
-
     reg:
       required: true
 

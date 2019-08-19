@@ -4,10 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-title: CAN Device Base Structure
-
-description: >
-    This binding gives the base structures for all can devices
+# Common fields for CAN devices
 
 include: base.yaml
 

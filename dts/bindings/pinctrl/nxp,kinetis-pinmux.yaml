@@ -3,12 +3,11 @@ title: Kinetis Pinmux
 description: >
     This is a representation of the Kinetis Pinmux node
 
+compatible: "nxp,kinetis-pinmux"
+
 include: base.yaml
 
 properties:
-    compatible:
-      constraint: "nxp,kinetis-pinmux"
-
     reg:
       required: true
 

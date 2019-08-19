@@ -9,12 +9,11 @@ title: SSD16XX 250x150 EPD Display Controller
 description: >
     This is a representation of the SSD16XX 250x150 EPD Display Controller
 
+compatible: "solomon,ssd16xxfb"
+
 include: spi-device.yaml
 
 properties:
-    compatible:
-      constraint: "solomon,ssd16xxfb"
-
     height:
       type: int
       required: true

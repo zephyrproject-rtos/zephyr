@@ -9,12 +9,11 @@ title: Nordic Semiconductor nRF Family ADC
 description: >
     This is a representation of the nRF ADC node
 
+compatible: "nordic,nrf-adc"
+
 include: adc-controller.yaml
 
 properties:
-    compatible:
-      constraint: "nordic,nrf-adc"
-
     reg:
       required: true
 

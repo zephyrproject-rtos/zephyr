@@ -9,12 +9,11 @@ title: Nordic Control Interface for ARM TrustZone CryptoCell 310
 description: >
     This is a representation of the Nordic Control Interface for ARM TrustZone CryptoCell 310
 
+compatible: "nordic,nrf-cc310"
+
 include: base.yaml
 
 properties:
-    compatible:
-      constraint: "nordic,nrf-cc310"
-
     reg:
       required: true
 

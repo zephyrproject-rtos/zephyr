@@ -9,12 +9,11 @@ title: Texas Instruments TLV320DAC Audio DAC
 description: >
     This binding gives a base representation of TLV320DAC310x Audio DAC
 
+compatible: "ti,tlv320dac"
+
 include: i2c-device.yaml
 
 properties:
-    compatible:
-      constraint: "ti,tlv320dac"
-
     reset-gpios:
       type: phandle-array
       required: true

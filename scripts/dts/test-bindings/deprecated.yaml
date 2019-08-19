@@ -8,6 +8,7 @@ inherits:
     !include deprecated-include.yaml
 
 properties:
+    # Deprecated way of specifying the 'compatible' string
     compatible:
         constraint: "deprecated"
         type: string-array

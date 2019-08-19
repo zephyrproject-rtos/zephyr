@@ -9,12 +9,11 @@ title: iMX Uart
 description: >
     This binding gives a base representation of the iMX UART
 
+compatible: "nxp,imx-uart"
+
 include: uart-controller.yaml
 
 properties:
-    compatible:
-      constraint: "nxp,imx-uart"
-
     reg:
       required: true
 

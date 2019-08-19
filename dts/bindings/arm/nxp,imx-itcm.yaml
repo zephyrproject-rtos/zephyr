@@ -9,11 +9,10 @@ title: i.MX ITCM (Instruction Tightly Coupled Memory)
 description: >
   This binding gives a base representation of the i.MX ITCM
 
+compatible: "nxp,imx-itcm"
+
 include: base.yaml
 
 properties:
-    compatible:
-      constraint: "nxp,imx-itcm"
-
     reg:
       required: true

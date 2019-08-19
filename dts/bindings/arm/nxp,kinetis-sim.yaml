@@ -9,12 +9,11 @@ title: Kinetis System Integration Module (SIM)
 description: >
     This is a representation of the Kinetis SIM IP node
 
+compatible: "nxp,kinetis-sim"
+
 include: base.yaml
 
 properties:
-    compatible:
-      constraint: "nxp,kinetis-sim"
-
     reg:
       required: true
 

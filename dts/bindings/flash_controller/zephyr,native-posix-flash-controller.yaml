@@ -4,8 +4,6 @@ description: >
     This binding gives a base representation of the Native POSIX flash
     controller
 
-include: flash-controller.yaml
+compatible: "zephyr,native-posix-flash-controller"
 
-properties:
-    compatible:
-      constraint: "zephyr,native-posix-flash-controller"
+include: flash-controller.yaml

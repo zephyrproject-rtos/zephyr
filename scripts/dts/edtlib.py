@@ -191,12 +191,9 @@ class EDT:
             # representing the file)
             binding = yaml.load(contents, Loader=yaml.Loader)
 
-            try:
-                compat = binding["properties"]["compatible"]["constraint"]
-            except Exception:
-                continue
-
-            if compat not in dt_compats:
+            binding_compat = _binding_compat(binding, binding_path)
+            if binding_compat is None:
+                # Not a binding. Might be a fragment or spurious file.
                 continue
 
             # It's a match. Merge in the included bindings, do sanity checks,
@@ -204,7 +201,8 @@ class EDT:
 
             binding = self._merge_included_bindings(binding, binding_path)
             _check_binding(binding, binding_path)
-            self._compat2binding[compat, _binding_bus(binding)] = \
+
+            self._compat2binding[binding_compat, _binding_bus(binding)] = \
                 (binding, binding_path)
 
     def _merge_included_bindings(self, binding, binding_path):
@@ -1185,6 +1183,57 @@ def _binding_paths(bindings_dirs):
     return binding_paths
 
 
+def _binding_compat(binding, binding_path):
+    # Returns the string listed in 'compatible:' in 'binding', or None if no
+    # compatible is found.
+    #
+    # Also searches for legacy compatibles on the form
+    #
+    #   properties:
+    #       compatible:
+    #           constraint: <string>
+
+    def new_style_compat():
+        # New-style 'compatible: "foo"' compatible
+
+        if binding is None or "compatible" not in binding:
+            # Empty file, binding fragment, spurious file, or old-style compat
+            return None
+
+        compatible = binding["compatible"]
+        if not isinstance(compatible, str):
+            _err("malformed 'compatible:' field in {} - should be a string"
+                 .format(binding_path))
+
+        return compatible
+
+    def old_style_compat():
+        # Old-style 'constraint: "foo"' compatible
+
+        try:
+            return binding["properties"]["compatible"]["constraint"]
+        except Exception:
+            return None
+
+    new_compat = new_style_compat()
+    old_compat = old_style_compat()
+    if old_compat:
+        _warn("The 'properties: compatible: constraint: ...' way of "
+              "specifying the compatible in {} is deprecated. Put "
+              "'compatible: \"{}\"' at the top level of the binding instead."
+              .format(binding_path, old_compat))
+
+        if new_compat:
+            _err("compatibles for {} should be specified with either "
+                 "'compatible:' at the top level or with the legacy "
+                 "'properties: compatible: constraint: ...' field, not both"
+                 .format(binding_path))
+
+        return old_compat
+
+    return new_compat
+
+
 def _binding_bus(binding):
     # Returns the bus specified in 'binding' (the bus the device described by
     # 'binding' is on), e.g. "i2c", or None if 'binding' is None or doesn't
@@ -1271,8 +1320,8 @@ def _check_binding(binding, binding_path):
             _err("missing, malformed, or empty '{}' in {}"
                  .format(prop, binding_path))
 
-    ok_top = {"title", "description", "inherits", "properties", "#cells",
-              "parent", "child", "sub-node"}
+    ok_top = {"title", "description", "compatible", "inherits", "properties",
+              "#cells", "parent", "child", "sub-node"}
 
     for prop in binding:
         if prop not in ok_top:

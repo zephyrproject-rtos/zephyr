@@ -9,12 +9,11 @@ title: MICROCHIP I2C
 description: >
     This binding gives a base representation for I2C/SMB controller for Microchip
 
+compatible: "microchip,xec-i2c"
+
 include: i2c-controller.yaml
 
 properties:
-    compatible:
-      constraint: "microchip,xec-i2c"
-
     reg:
       required: true
 

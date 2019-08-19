@@ -3,12 +3,11 @@ title: STM32 PWM
 description: >
     This binding gives a base representation of the STM32 PWM
 
+compatible: "st,stm32-pwm"
+
 include: [pwm-controller.yaml, base.yaml]
 
 properties:
-    compatible:
-      constraint: "st,stm32-pwm"
-
     label:
       required: true
 

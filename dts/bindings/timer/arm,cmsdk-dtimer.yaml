@@ -3,12 +3,11 @@ title: ARM CMSDK DUALTIMER
 description: >
     This binding gives a base representation of the ARM CMSDK DUALTIMER
 
+compatible: "arm,cmsdk-dtimer"
+
 include: base.yaml
 
 properties:
-    compatible:
-      constraint: "arm,cmsdk-dtimer"
-
     reg:
       required: true
 

@@ -9,12 +9,11 @@ title: LiteX VexRiscV Interrupt Controller
 description: >
     This binding describes LiteX VexRiscV Interrupt Controller
 
+compatible: "vexriscv,intc0"
+
 include: [interrupt-controller.yaml, base.yaml]
 
 properties:
-  compatible:
-      constraint: "vexriscv,intc0"
-
   reg:
       required: true
 

@@ -3,12 +3,11 @@ title: Atmel SAM0 USB device
 description: >
     Atmel SAM0 USB in device mode
 
+compatible: "atmel,sam0-usb"
+
 include: usb-ep.yaml
 
 properties:
-    compatible:
-      constraint: "atmel,sam0-usb"
-
     reg:
       required: true
 

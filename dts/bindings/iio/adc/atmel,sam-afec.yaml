@@ -3,12 +3,11 @@ title: Atmel SAM Family AFEC
 description: >
     This binding gives a base representation of the Atmel SAM AFEC
 
+compatible: "atmel,sam-afec"
+
 include: adc-controller.yaml
 
 properties:
-    compatible:
-      constraint: "atmel,sam-afec"
-
     reg:
       required: true
 

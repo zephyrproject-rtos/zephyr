@@ -3,12 +3,11 @@ title: ns16550
 description: >
     This binding gives a base representation of the ns16550 UART
 
+compatible: "ns16550"
+
 include: uart-controller.yaml
 
 properties:
-    compatible:
-      constraint: "ns16550"
-
     reg:
       required: true
 

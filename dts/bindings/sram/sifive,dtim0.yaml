@@ -9,11 +9,10 @@ title: Data Tightly-Integrated Memory
 description: >
     This bindings describes the SiFive Data Tightly-Integrated Memory
 
+compatible: "sifive,dtim0"
+
 include: base.yaml
 
 properties:
-    compatible:
-      constraint: "sifive,dtim0"
-
     reg:
       required: true

@@ -9,12 +9,11 @@ title: Synopys DesignWare I2C controller
 description: >
     This is a representation of the Synopsys DesignWare i2c node
 
+compatible: "snps,designware-i2c"
+
 include: i2c-controller.yaml
 
 properties:
-    compatible:
-      constraint: "snps,designware-i2c"
-
     reg:
       required: true
 

@@ -9,12 +9,11 @@ title: LiteX timer
 description: >
     This binding gives a base representation of the LiteX timer
 
+compatible: "litex,timer0"
+
 include: base.yaml
 
 properties:
-    compatible:
-      constraint: "litex,timer0"
-
     reg:
       required: true
 

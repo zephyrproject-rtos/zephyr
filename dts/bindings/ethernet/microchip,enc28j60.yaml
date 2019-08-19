@@ -8,11 +8,12 @@ title: 10Base-T Ethernet Controller with SPI Interface
 
 description: >
     This binding gives a base representation of the standalone ENC28J60 chip
+
+compatible: "microchip,enc28j60"
+
 include: [spi-device.yaml, ethernet.yaml]
 
 properties:
-    compatible:
-      constraint: "microchip,enc28j60"
     int-gpios:
       type: phandle-array
       required: true

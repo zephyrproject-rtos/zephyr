@@ -9,12 +9,11 @@ title: NXP i.MXRT USDHC module
 description: >
     This binding specifies the NXP i.MXRT USDHC module.
 
+compatible: "nxp,imx-usdhc"
+
 include: mmc.yaml
 
 properties:
-    compatible:
-      constraint: "nxp,imx-usdhc"
-
     clocks:
       required: true
 

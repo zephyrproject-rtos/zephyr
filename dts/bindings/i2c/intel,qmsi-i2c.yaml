@@ -9,12 +9,11 @@ title: Intel QMSI i2c
 description: >
     This binding gives a base representation of the Intel QMSI i2c
 
+compatible: "intel,qmsi-i2c"
+
 include: i2c-controller.yaml
 
 properties:
-    compatible:
-      constraint: "intel,qmsi-i2c"
-
     reg:
       required: true
 

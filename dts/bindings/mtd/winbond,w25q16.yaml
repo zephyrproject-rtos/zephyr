@@ -9,8 +9,6 @@ title: SPI NOR FLASH
 description: >
     This binding gives a base representation of SPI slave NOR FLASH
 
-include: spi-device.yaml
+compatible: "winbond,w25q16"
 
-properties:
-    compatible:
-      constraint: "winbond,w25q16"
+include: spi-device.yaml

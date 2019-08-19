@@ -9,12 +9,11 @@ title: NXP MCUX General Purpose Timer
 description: >
     This is a representation of the NXP MCUX General Purpose Timer (GPT)
 
+compatible: "nxp,imx-gpt"
+
 include: base.yaml
 
 properties:
-    compatible:
-      constraint: "nxp,imx-gpt"
-
     reg:
       required: true
 

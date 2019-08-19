@@ -10,12 +10,11 @@ description: >
     This is a representation of the FXOS8700 6-axis accelerometer/magnetometer
     sensor
 
+compatible: "nxp,fxos8700"
+
 include: i2c-device.yaml
 
 properties:
-    compatible:
-      constraint: "nxp,fxos8700"
-
     reset-gpios:
       type: phandle-array
       required: false

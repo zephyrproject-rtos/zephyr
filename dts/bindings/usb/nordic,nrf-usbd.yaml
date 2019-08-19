@@ -9,12 +9,11 @@ title: Nordic nRF52 USBD
 description: >
     This binding gives a base representation of the Nordic nRF52 USB device controller
 
+compatible: "nordic,nrf-usbd"
+
 include: usb-ep.yaml
 
 properties:
-    compatible:
-      constraint: "nordic,nrf-usbd"
-
     reg:
       required: true
 

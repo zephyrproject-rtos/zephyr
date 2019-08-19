@@ -9,8 +9,6 @@ title: STMicroelectronics MEMS sensors LSM303DLHC
 description: >
     This binding gives a base representation of LSM303DLHC acceleration sensor
 
-include: i2c-device.yaml
+compatible: "st,lsm303dlhc-accel"
 
-properties:
-    compatible:
-      constraint: "st,lsm303dlhc-accel"
+include: i2c-device.yaml

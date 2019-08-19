@@ -9,12 +9,11 @@ title: Nordic nRF Family QDEC node
 description: >
     This is a representation of the Nordic nRF QDEC node
 
+compatible: "nordic,nrf-qdec"
+
 include: base.yaml
 
 properties:
-    compatible:
-      constraint: "nordic,nrf-qdec"
-
     reg:
       required: true
 

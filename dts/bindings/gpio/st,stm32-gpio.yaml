@@ -9,12 +9,11 @@ title: STM32 GPIO
 description: >
     This is a representation of the STM32 GPIO nodes
 
+compatible: "st,stm32-gpio"
+
 include: [gpio-controller.yaml, base.yaml]
 
 properties:
-    compatible:
-      constraint: "st,stm32-gpio"
-
     reg:
       required: true
 

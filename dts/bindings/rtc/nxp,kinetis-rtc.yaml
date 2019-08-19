@@ -9,11 +9,10 @@ title: Kinetis RTC
 description: >
     This binding gives a base representation of the Kinetis RTC
 
+compatible: "nxp,kinetis-rtc"
+
 include: rtc.yaml
 
 properties:
-    compatible:
-      constraint: "nxp,kinetis-rtc"
-
     reg:
       required: true

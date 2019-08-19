@@ -9,11 +9,10 @@ title: STM32 RTC
 description: >
     This binding gives a base representation of the STM32 RTC
 
+compatible: "st,stm32-rtc"
+
 include: rtc.yaml
 
 properties:
-    compatible:
-      constraint: "st,stm32-rtc"
-
     reg:
       required: true

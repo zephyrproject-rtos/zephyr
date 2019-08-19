@@ -9,12 +9,11 @@ title: OpenISA LPI2C
 description: >
     This binding gives a base representation of the OpenISA LPI2C controller
 
+compatible: "openisa,rv32m1-lpi2c"
+
 include: i2c-controller.yaml
 
 properties:
-    compatible:
-      constraint: "openisa,rv32m1-lpi2c"
-
     reg:
       required: true
 

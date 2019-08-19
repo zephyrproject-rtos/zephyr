@@ -10,12 +10,11 @@ description: >
     This binding gives a base representation of STTS751
     temperature sensor connected to I2C bus
 
+compatible: "st,stts751"
+
 include: i2c-device.yaml
 
 properties:
-    compatible:
-      constraint: "st,stts751"
-
     drdy-gpios:
       type: phandle-array
       required: false

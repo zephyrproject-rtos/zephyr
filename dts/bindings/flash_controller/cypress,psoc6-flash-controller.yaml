@@ -9,8 +9,6 @@ title: Cypress Flash Controller
 description: >
     This binding gives a base representation of the Cypress Flash Controller
 
-include: flash-controller.yaml
+compatible: "cypress,psoc6-flash-controller"
 
-properties:
-    compatible:
-      constraint: "cypress,psoc6-flash-controller"
+include: flash-controller.yaml

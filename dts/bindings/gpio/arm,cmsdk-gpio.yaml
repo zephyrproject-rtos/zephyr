@@ -3,12 +3,11 @@ title: ARM CMSDK GPIO
 description: >
     This binding gives a base representation of the ARM CMSDK GPIO
 
+compatible: "arm,cmsdk-gpio"
+
 include: [gpio-controller.yaml, base.yaml]
 
 properties:
-    compatible:
-      constraint: "arm,cmsdk-gpio"
-
     reg:
       required: true
 

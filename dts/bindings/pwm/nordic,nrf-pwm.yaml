@@ -3,12 +3,11 @@ title: nRF PWM
 description: >
     This binding gives a base representation of the nRF PWM
 
+compatible: "nordic,nrf-pwm"
+
 include: base.yaml
 
 properties:
-    compatible:
-      constraint: "nordic,nrf-pwm"
-
     reg:
       required: true
 

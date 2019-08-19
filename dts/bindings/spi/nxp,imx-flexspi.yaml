@@ -9,12 +9,11 @@ title: NXP FlexSPI
 description: >
     This binding gives a base representation of the NXP FlexSPI controller
 
+compatible: "nxp,imx-flexspi"
+
 include: spi-controller.yaml
 
 properties:
-    compatible:
-      constraint: "nxp,imx-flexspi"
-
     reg:
       required: true
 

@@ -8,12 +8,11 @@ title: Intel E1000 Ethernet controller
 description: >
      This is a representation of the Intel E1000 Ethernet controller
 
+compatible: "intel,e1000"
+
 include: base.yaml
 
 properties:
-    compatible:
-      constraint: "intel,e1000"
-
     reg:
       required: true
 

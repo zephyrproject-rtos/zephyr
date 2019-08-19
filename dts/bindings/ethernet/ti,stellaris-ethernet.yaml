@@ -8,11 +8,11 @@ title: TI Stellaris Ethernet
 description: >
     This binding gives a base representation of the TI Stellaris Ethernet
 
+compatible: "ti,stellaris-ethernet"
+
 include: ethernet.yaml
 
 properties:
-    compatible:
-      constraint: "ti,stellaris-ethernet"
     reg:
       required: true
     interrupts:

@@ -9,8 +9,6 @@ title: ARM Cortex-M33 CPU
 description: >
     This binding gives a base representation for ARM Cortex-M33 CPU.
 
-include: cpu.yaml
+compatible: "arm,cortex-m33"
 
-properties:
-    compatible:
-      constraint: "arm,cortex-m33"
+include: cpu.yaml

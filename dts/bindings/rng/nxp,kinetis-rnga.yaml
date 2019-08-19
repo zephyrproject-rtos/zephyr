@@ -9,12 +9,11 @@ title: Kinetis RNGA (Random Number Generator Accelerator)
 description: >
     This binding gives a base representation of the Kinetis RNGA
 
+compatible: "nxp,kinetis-rnga"
+
 include: base.yaml
 
 properties:
-    compatible:
-      constraint: "nxp,kinetis-rnga"
-
     reg:
       required: true
 

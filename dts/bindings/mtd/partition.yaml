@@ -3,13 +3,9 @@ title: Flash Partitions
 description: >
     This binding gives a base FLASH partition description
 
-properties:
-    compatible:
-      constraint: "fixed-partitions"
-      type: string-array
-      required: true
-      description: compatible strings
+compatible: "fixed-partitions"
 
+properties:
     "#address-cells":
         type: int
         required: false

@@ -3,12 +3,11 @@ title: Kinetis UART
 description: >
     This binding gives a base representation of the Kinetis UART
 
+compatible: "nxp,kinetis-uart"
+
 include: uart-controller.yaml
 
 properties:
-    compatible:
-      constraint: "nxp,kinetis-uart"
-
     reg:
       required: true
 

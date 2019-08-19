@@ -9,12 +9,11 @@ title: STM32 I2C V1
 description: >
     This binding gives a base representation of the STM32 I2C V1 controller
 
+compatible: "st,stm32-i2c-v1"
+
 include: i2c-controller.yaml
 
 properties:
-    compatible:
-      constraint: "st,stm32-i2c-v1"
-
     reg:
       required: true
 

@@ -9,12 +9,11 @@ title: Microchip XEC RTOS timer
 description: >
     This is a representation of the Microchip XEC RTOS timer node
 
+compatible: "microchip,xec-rtos-timer"
+
 include: base.yaml
 
 properties:
-    compatible:
-      constraint: "microchip,xec-rtos-timer"
-
     reg:
       required: true
 
@@ -23,4 +22,3 @@ properties:
 
     label:
       required: true
-...

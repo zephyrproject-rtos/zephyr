@@ -9,12 +9,11 @@ title: NXP DSPI
 description: >
     This binding gives a base representation of the NXP Kinetis DSPI controller
 
+compatible: "nxp,kinetis-dspi"
+
 include: spi-controller.yaml
 
 properties:
-    compatible:
-      constraint: "nxp,kinetis-dspi"
-
     reg:
       required: true
 

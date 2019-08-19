@@ -9,8 +9,6 @@ title: STMicroelectronics MEMS sensors LPS25HB
 description: >
     This binding gives a base representation of LPS25HB pressure sensor
 
-include: i2c-device.yaml
+compatible: "st,lps25hb-press"
 
-properties:
-    compatible:
-      constraint: "st,lps25hb-press"
+include: i2c-device.yaml

@@ -3,12 +3,11 @@ title: SAM Family UART
 description: >
     This binding gives a base representation of the SAM UART
 
+compatible: "atmel,sam-uart"
+
 include: uart-controller.yaml
 
 properties:
-    compatible:
-      constraint: "atmel,sam-uart"
-
     reg:
       required: true
 

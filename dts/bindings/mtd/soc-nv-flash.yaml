@@ -3,12 +3,11 @@ title: Flash base node description
 description: >
     This binding gives a base FLASH description
 
+compatible: "soc-nv-flash"
+
 include: base.yaml
 
 properties:
-    compatible:
-      constraint: "soc-nv-flash"
-
     label:
       required: false
 
