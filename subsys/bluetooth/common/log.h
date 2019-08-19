@@ -40,10 +40,27 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define BT_WARN(fmt, ...) LOG_WRN(fmt, ##__VA_ARGS__)
 #define BT_INFO(fmt, ...) LOG_INF(fmt, ##__VA_ARGS__)
 
+#if defined(CONFIG_BT_ASSERT_VERBOSE)
+#define BT_ASSERT_PRINT(fmt, ...) printk(fmt, ##__VA_ARGS__)
+#else
+#define BT_ASSERT_PRINT(fmt, ...)
+#endif /* CONFIG_BT_ASSERT_VERBOSE */
+
+#if defined(CONFIG_BT_ASSERT_PANIC)
+#define BT_ASSERT_DIE k_panic
+#else
+#define BT_ASSERT_DIE k_oops
+#endif /* CONFIG_BT_ASSERT_PANIC */
+
+#if defined(CONFIG_BT_ASSERT)
 #define BT_ASSERT(cond) if (!(cond)) { \
-				BT_ERR("assert: '" #cond "' failed"); \
-				k_oops(); \
+				BT_ASSERT_PRINT("assert: '" #cond \
+						"' failed\n"); \
+				BT_ASSERT_DIE(); \
 			}
+#else
+#define BT_ASSERT(cond) __ASSERT_NO_MSG(cond)
+#endif/* CONFIG_BT_ASSERT*/
 
 #define BT_HEXDUMP_DBG(_data, _length, _str) \
 		LOG_HEXDUMP_DBG((const u8_t *)_data, _length, _str)
