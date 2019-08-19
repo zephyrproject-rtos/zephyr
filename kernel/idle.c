@@ -19,6 +19,10 @@
 #define IDLE_THRESH 1
 #endif
 
+/* Fallback idle spin loop for SMP platforms without a working IPI */
+#define SMP_FALLBACK \
+	(defined(CONFIG_SMP) && !defined(CONFIG_SCHED_IPI_SUPPORTED))
+
 #ifdef CONFIG_SYS_POWER_MANAGEMENT
 /*
  * Used to allow _sys_suspend() implementation to control notification
@@ -56,7 +60,7 @@ void __attribute__((weak)) _sys_resume_from_deep_sleep(void)
  *
  * @return N/A
  */
-#ifndef CONFIG_SMP
+#if !SMP_FALLBACK
 static void set_kernel_idle_time_in_ticks(s32_t ticks)
 {
 #ifdef CONFIG_SYS_POWER_MANAGEMENT
@@ -145,18 +149,12 @@ void idle(void *unused1, void *unused2, void *unused3)
 	__idle_time_stamp = k_cycle_get_32();
 #endif
 
-#ifdef CONFIG_SMP
-	/* Simplified idle for SMP CPUs pending driver support.  The
-	 * busy waiting is needed to prevent lock contention.  Long
-	 * term we need to wake up idle CPUs with an IPI.
-	 */
 	while (true) {
+#if SMP_FALLBACK
 		k_busy_wait(100);
 		k_yield();
-	}
 #else
-	for (;;) {
-		(void)irq_lock();
+		(void)z_arch_irq_lock();
 		sys_power_save_idle();
 
 		IDLE_YIELD_IF_COOP();
