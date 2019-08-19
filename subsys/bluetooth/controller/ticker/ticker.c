@@ -370,9 +370,7 @@ static u8_t ticker_enqueue(struct ticker_instance *instance, u8_t id)
 	node = &instance->nodes[0];
 	ticker_new = &node[id];
 	ticks_to_expire = ticker_new->ticks_to_expire;
-
 	current = instance->ticker_id_head;
-	previous = current;
 
 	/* Find insertion point for new ticker node and adjust ticks_to_expire
 	 * relative to insertion point
