@@ -9,12 +9,11 @@ title: Silabs Gecko I2C Controller
 description: >
     This is a representation of the Silabs Gecko I2C nodes
 
+compatible: "silabs,gecko-i2c"
+
 include: i2c-controller.yaml
 
 properties:
-    compatible:
-      constraint: "silabs,gecko-i2c"
-
     reg:
       required: true
 

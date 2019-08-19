@@ -3,12 +3,11 @@ title: ARMv8-M Memory Protection Unit
 description: >
     This binding describes the ARMv8-M Memory Protection Unit (MPU).
 
+compatible: "arm,armv8m-mpu"
+
 include: base.yaml
 
 properties:
-    compatible:
-      constraint: "arm,armv8m-mpu"
-
     reg:
       required: true
 

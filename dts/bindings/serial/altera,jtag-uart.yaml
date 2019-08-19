@@ -3,11 +3,10 @@ title: Altera JTAG UART
 description: >
     This binding gives a base representation of the Altera Jtag UART
 
+compatible: "altera,jtag-uart"
+
 include: uart-controller.yaml
 
 properties:
-    compatible:
-      constraint: "altera,jtag-uart"
-
     reg:
       required: true

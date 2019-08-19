@@ -9,12 +9,11 @@ title: Nordic nRF power control
 description: >
     This is a representation of the Nordic nRF power control node
 
+compatible: "nordic,nrf-power"
+
 include: base.yaml
 
 properties:
-    compatible:
-      constraint: "nordic,nrf-power"
-
     reg:
       required: true
 

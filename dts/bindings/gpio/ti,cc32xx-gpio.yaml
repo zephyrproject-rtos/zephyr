@@ -4,12 +4,11 @@ title: TI CC32XX GPIO
 description: >
     This is a representation of the TI CC32XX GPIO node
 
+compatible: "ti,cc32xx-gpio"
+
 include: [gpio-controller.yaml, base.yaml]
 
 properties:
-    compatible:
-      constraint: "ti,cc32xx-gpio"
-
     reg:
       required: true
 

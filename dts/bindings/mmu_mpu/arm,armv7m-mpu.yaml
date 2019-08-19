@@ -3,12 +3,11 @@ title: ARMv7-M Memory Protection Unit
 description: >
     This binding describes the ARMv7-M Memory Protection Unit (MPU).
 
+compatible: "arm,armv7m-mpu"
+
 include: base.yaml
 
 properties:
-    compatible:
-      constraint: "arm,armv7m-mpu"
-
     reg:
       required: true
 

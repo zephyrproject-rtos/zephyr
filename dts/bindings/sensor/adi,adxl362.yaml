@@ -9,12 +9,11 @@ title: ADXL362 Three Axis SPI accelerometer
 description: >
     This is a representation of the ADXL362 Three Axis SPI accelerometer
 
+compatible: "adi,adxl362"
+
 include: spi-device.yaml
 
 properties:
-    compatible:
-      constraint: "adi,adxl362"
-
     int1-gpios:
       type: phandle-array
       required: false

@@ -9,12 +9,11 @@ title: STM32 USB HS PHY
 description: >
     This binding gives a base representation of the STM32 USB HS PHY controller
 
+compatible: "st,stm32-usbphyc"
+
 include: phy-controller.yaml
 
 properties:
-    compatible:
-      constraint: "st,stm32-usbphyc"
-
     reg:
       required: true
 

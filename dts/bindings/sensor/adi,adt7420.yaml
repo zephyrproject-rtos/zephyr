@@ -9,12 +9,11 @@ title: ADT7420 16-Bit Digital I2C Temperature Sensor
 description: >
     This is a representation of the ADT7420 16-Bit Digital I2C Temperature Sensor
 
+compatible: "adi,adt7420"
+
 include: i2c-device.yaml
 
 properties:
-    compatible:
-      constraint: "adi,adt7420"
-
     int-gpios:
       type: phandle-array
       required: false

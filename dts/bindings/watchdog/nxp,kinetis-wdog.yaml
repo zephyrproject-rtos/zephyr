@@ -9,12 +9,11 @@ title: NXP Kinetis watchdog driver
 description: >
     This is a representation of the Kinetis watchdog
 
+compatible: "nxp,kinetis-wdog"
+
 include: base.yaml
 
 properties:
-    compatible:
-      constraint: "nxp,kinetis-wdog"
-
     reg:
       required: true
 

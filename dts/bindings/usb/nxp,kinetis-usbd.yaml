@@ -9,12 +9,11 @@ title: NXP Kinetis USBD
 description: >
     NPX Kinetis USBFSOTG Controller in device mode
 
+compatible: "nxp,kinetis-usbd"
+
 include: usb-ep.yaml
 
 properties:
-    compatible:
-      constraint: "nxp,kinetis-usbd"
-
     reg:
       required: true
 

@@ -9,12 +9,11 @@ title: i.MX Clock Controller Module (CCM)
 description: >
     This is a representation of the i.MX CCM IP node
 
+compatible: "nxp,imx-ccm"
+
 include: [clock-controller.yaml, base.yaml]
 
 properties:
-    compatible:
-      constraint: "nxp,imx-ccm"
-
     reg:
       required: true
 

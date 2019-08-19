@@ -9,12 +9,11 @@ title: STMicroelectronics MEMS sensors LIS2DH
 description: >
     This binding gives a base representation of LIS2DH 3-axis accelerometer
 
+compatible: "st,lis2dh"
+
 include: i2c-device.yaml
 
 properties:
-    compatible:
-        constraint: "st,lis2dh"
-
     irq-gpios:
       type: phandle-array
       required: false

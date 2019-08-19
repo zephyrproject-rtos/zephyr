@@ -9,12 +9,11 @@ title: TI SimpleLink CC13xx / CC26xx Pinmux
 description: >
     This is a representation of the TI SimpleLink CC13xx / CC26xx pinmux node
 
+compatible: "ti,cc13xx-cc26xx-pinmux"
+
 include: base.yaml
 
 properties:
-    compatible:
-      constraint: "ti,cc13xx-cc26xx-pinmux"
-
     reg:
       required: true
 

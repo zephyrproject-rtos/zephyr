@@ -10,8 +10,6 @@ description: >
     This binding gives a base representation of iAQ-core indoor air quality
     sensor
 
-include: i2c-device.yaml
+compatible: "ams,iaqcore"
 
-properties:
-    compatible:
-      constraint: "ams,iaqcore"
+include: i2c-device.yaml

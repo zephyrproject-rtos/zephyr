@@ -10,11 +10,11 @@ description: >
     This binding allows control of the output selectors of the SKY13351
     SPDT switch.
 
+compatible: "skyworks,sky13351"
+
 include: base.yaml
 
 properties:
-    compatible:
-        constraint: "skyworks,sky13351"
     vctl1-gpios:
         type: phandle-array
         required: true

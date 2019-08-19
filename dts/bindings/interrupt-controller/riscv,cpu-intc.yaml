@@ -9,12 +9,11 @@ title: RISC-V CPU INTC
 description: >
     This binding describes the RISC-V CPU Interrupt Controller
 
+compatible: "riscv,cpu-intc"
+
 include: [interrupt-controller.yaml, base.yaml]
 
 properties:
-  compatible:
-      constraint: "riscv,cpu-intc"
-
   "#interrupt-cells":
       const: 1
 

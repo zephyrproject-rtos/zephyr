@@ -9,12 +9,11 @@ title: SiFive GPIO
 description: >
     This is a representation of the SiFive GPIO nodes
 
+compatible: "sifive,gpio0"
+
 include: [gpio-controller.yaml, base.yaml]
 
 properties:
-    compatible:
-      constraint: "sifive,gpio0"
-
     reg:
       required: true
 

@@ -9,12 +9,11 @@ title: NXP MCR20A 802.15.4 Wireless Transceiver
 description: >
     This is a representation of the NXP MCR20A wireless transceiver.
 
+compatible: "nxp,mcr20a"
+
 include: spi-device.yaml
 
 properties:
-    compatible:
-      constraint: "nxp,mcr20a"
-
     irqb-gpios:
       type: phandle-array
       required: true

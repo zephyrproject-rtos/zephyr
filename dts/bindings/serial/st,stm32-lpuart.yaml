@@ -3,12 +3,11 @@ title: STM32 LPUART
 description: >
     This binding gives a base representation of the STM32 LPUART
 
+compatible: "st,stm32-lpuart"
+
 include: uart-controller.yaml
 
 properties:
-    compatible:
-      constraint: "st,stm32-lpuart"
-
     reg:
       required: true
 

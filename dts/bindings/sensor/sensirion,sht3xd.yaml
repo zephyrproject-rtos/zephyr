@@ -10,11 +10,11 @@ description: >
     This binding gives a base representation of SHT3x-DIS humidity and temperature
     sensor
 
+compatible: "sensirion,sht3xd"
+
 include: i2c-device.yaml
 
 properties:
-    compatible:
-      constraint: "sensirion,sht3xd"
     alert-gpios:
       type: phandle-array
       required: false

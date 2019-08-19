@@ -11,12 +11,11 @@ description: >
     This is a representation of the ADXL372 Three Axis High-g accelerometer,
     accessed through SPI bus
 
+compatible: "adi,adxl372"
+
 include: spi-device.yaml
 
 properties:
-    compatible:
-      constraint: "adi,adxl372"
-
     int1-gpios:
       type: phandle-array
       required: false

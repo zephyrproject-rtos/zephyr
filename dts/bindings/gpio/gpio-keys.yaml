@@ -9,12 +9,7 @@ title: GPIO KEYS
 description: >
     This is a representation of the GPIO KEYS nodes
 
-properties:
-    compatible:
-      constraint: "gpio-keys"
-      type: string-array
-      required: true
-      description: compatible strings
+compatible: "gpio-keys"
 
 sub-node:
     properties:

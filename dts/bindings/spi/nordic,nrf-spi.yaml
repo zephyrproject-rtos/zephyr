@@ -9,12 +9,11 @@ title: Nordic nRF Family SPI Master node
 description: >
     This is a representation of the Nordic nRF SPI node
 
+compatible: "nordic,nrf-spi"
+
 include: spi-controller.yaml
 
 properties:
-    compatible:
-      constraint: "nordic,nrf-spi"
-
     reg:
       required: true
 

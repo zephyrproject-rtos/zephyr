@@ -122,8 +122,12 @@ def generate_node_defines(node_path):
 
     generate_bus_defines(node_path)
 
+    props = get_binding(node_path).get('properties')
+    if not props:
+        return
+
     # Generate per-property ('foo = <1 2 3>', etc.) #defines
-    for yaml_prop, yaml_val in get_binding(node_path)['properties'].items():
+    for yaml_prop, yaml_val in props.items():
         if yaml_prop.startswith("#") or yaml_prop.endswith("-map"):
             continue
 
@@ -325,35 +329,34 @@ def load_bindings(root, binding_dirs):
     # Add '!include foo.yaml' handling
     yaml.Loader.add_constructor('!include', yaml_include)
 
-    loaded_yamls = set()
+    # Code below is adapated from edtlib.py
+
+    # Searches for any 'compatible' string mentioned in the devicetree
+    # files, with a regex
+    dt_compats_search = re.compile(
+        "|".join(re.escape(compat) for compat in dts_compats)
+    ).search
 
     for file in binding_files:
-        # Extract compat from 'constraint:' line
-        for line in open(file, 'r', encoding='utf-8'):
-            match = re.match(r'\s+constraint:\s*"([^"]*)"', line)
-            if match:
-                break
-        else:
-            # No 'constraint:' line found. Move on to next yaml file.
+        with open(file, encoding="utf-8") as f:
+            contents = f.read()
+
+        if not dt_compats_search(contents):
             continue
 
-        compat = match.group(1)
-        if compat not in dts_compats or file in loaded_yamls:
-            # The compat does not appear in the device tree, or the yaml
-            # file has already been loaded
+        binding = yaml.load(contents, Loader=yaml.Loader)
+
+        binding_compats = _binding_compats(binding)
+        if not binding_compats:
             continue
-
-        # Found a binding (.yaml file) for a 'compatible' value that
-        # appears in DTS. Load it.
-
-        loaded_yamls.add(file)
-
-        if compat not in compats:
-            compats.append(compat)
 
         with open(file, 'r', encoding='utf-8') as yf:
             binding = merge_included_bindings(file,
                                               yaml.load(yf, Loader=yaml.Loader))
+
+        for compat in binding_compats:
+            if compat not in compats:
+                compats.append(compat)
 
             if 'parent' in binding:
                 bus_to_binding[binding['parent']['bus']][compat] = binding
@@ -366,6 +369,32 @@ def load_bindings(root, binding_dirs):
     extract.globals.bindings = compat_to_binding
     extract.globals.bus_bindings = bus_to_binding
     extract.globals.binding_compats = compats
+
+
+def _binding_compats(binding):
+    # Adapated from edtlib.py
+
+    def new_style_compats():
+        if binding is None or "compatible" not in binding:
+            return []
+
+        val = binding["compatible"]
+
+        if isinstance(val, str):
+            return [val]
+        return val
+
+    def old_style_compat():
+        try:
+            return binding["properties"]["compatible"]["constraint"]
+        except Exception:
+            return None
+
+    new_compats = new_style_compats()
+    old_compat = old_style_compat()
+    if old_compat:
+        return [old_compat]
+    return new_compats
 
 
 def find_binding_files(binding_dirs):

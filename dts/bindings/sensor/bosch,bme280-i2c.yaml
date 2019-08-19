@@ -9,8 +9,6 @@ title: BME280 Integrated environmental sensor
 description: >
     This is a representation of the BME280 Integrated environmental sensor
 
-include: i2c-device.yaml
+compatible: "bosch,bme280"
 
-properties:
-    compatible:
-      constraint: "bosch,bme280"
+include: i2c-device.yaml

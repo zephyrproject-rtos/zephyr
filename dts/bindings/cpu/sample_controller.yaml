@@ -9,8 +9,6 @@ title: Sample Controller CPU
 description: >
     This binding gives a base representation for Sample Controller CPU.
 
-include: cpu.yaml
+compatible: "sample_controller"
 
-properties:
-    compatible:
-      constraint: "sample_controller"
+include: cpu.yaml

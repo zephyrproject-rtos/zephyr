@@ -10,12 +10,11 @@ description: >
     This binding gives a base representation of the STM32 SPI controller with
     embedded Rx and Tx FIFOs
 
+compatible: "st,stm32-spi-fifo"
+
 include: spi-controller.yaml
 
 properties:
-    compatible:
-      constraint: "st,stm32-spi-fifo"
-
     reg:
       required: true
 

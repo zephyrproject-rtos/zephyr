@@ -4,11 +4,10 @@ title: STM32 CCM
 description: >
   This binding gives a base representation of the STM32 CCM (Core Coupled Memory)
 
+compatible: "st,stm32-ccm"
+
 include: base.yaml
 
 properties:
-    compatible:
-      constraint: "st,stm32-ccm"
-
     reg:
       required: true

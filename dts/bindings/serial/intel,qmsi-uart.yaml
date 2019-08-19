@@ -9,12 +9,11 @@ title: Intel QMSI Uart
 description: >
     This binding gives a base representation of the INTEL QMSI UART
 
+compatible: "intel,qmsi-uart"
+
 include: uart-controller.yaml
 
 properties:
-    compatible:
-      constraint: "intel,qmsi-uart"
-
     reg:
       required: true
 

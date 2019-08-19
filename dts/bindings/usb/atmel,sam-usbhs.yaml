@@ -9,12 +9,11 @@ title: Atmel SAM USBHS
 description: >
     Atmel SAM Family USB (USBHS) in device mode
 
+compatible: "atmel,sam-usbhs"
+
 include: usb-ep.yaml
 
 properties:
-    compatible:
-      constraint: "atmel,sam-usbhs"
-
     reg:
       required: true
 

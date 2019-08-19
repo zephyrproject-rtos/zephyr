@@ -11,11 +11,9 @@ description: >
     SMP configurations for dynamic IRQ routing, load balancing of
     common/external IRQs towards core intc
 
-include: [interrupt-controller.yaml, base.yaml]
+compatible: "snps,archs-idu-intc"
 
-properties:
-    compatible:
-      constraint: "snps,archs-idu-intc"
+include: [interrupt-controller.yaml, base.yaml]
 
 "#cells":
   - irq

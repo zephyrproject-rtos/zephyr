@@ -9,12 +9,11 @@ title: LPC USART
 description: >
     This binding gives a base representation of the LPC USART
 
+compatible: "nxp,lpc-usart"
+
 include: uart-controller.yaml
 
 properties:
-    compatible:
-      constraint: "nxp,lpc-usart"
-
     reg:
       required: true
 

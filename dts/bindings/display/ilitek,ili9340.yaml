@@ -9,12 +9,11 @@ title: ILI9340 320x240 Display Controller
 description: >
     This is a representation of the ILI9340 320x240 Display Controller
 
+compatible: "ilitek,ili9340"
+
 include: spi-device.yaml
 
 properties:
-    compatible:
-      constraint: "ilitek,ili9340"
-
     reset-gpios:
       type: phandle-array
       required: false

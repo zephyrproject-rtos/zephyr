@@ -9,11 +9,10 @@ title: SIFIVE UART
 description: >
     This binding gives a base representation of the SIFIVE UART
 
+compatible: "microsemi,coreuart"
+
 include: uart-controller.yaml
 
 properties:
-    compatible:
-      constraint: "microsemi,coreuart"
-
     reg:
       required: true

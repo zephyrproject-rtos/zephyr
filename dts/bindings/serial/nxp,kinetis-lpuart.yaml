@@ -3,12 +3,11 @@ title: Kinetis LPUART
 description: >
     This binding gives a base representation of the Kinetis LPUART
 
+compatible: "nxp,kinetis-lpuart"
+
 include: uart-controller.yaml
 
 properties:
-    compatible:
-      constraint: "nxp,kinetis-lpuart"
-
     reg:
       required: true
 

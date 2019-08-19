@@ -9,12 +9,11 @@ title: Inventek eS-WiFi WiFi module
 description: >
     This binding gives the base representation of es-WiFi module
 
+compatible: "inventek,eswifi"
+
 include: spi-device.yaml
 
 properties:
-    compatible:
-      constraint: "inventek,eswifi"
-
     resetn-gpios:
       type: phandle-array
       required: true

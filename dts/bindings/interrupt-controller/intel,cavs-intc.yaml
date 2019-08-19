@@ -3,12 +3,11 @@ title: CAVS Interrupt Controller
 description: >
     This binding describes CAVS Interrupt controller
 
+compatible: "intel,cavs-intc"
+
 include: base.yaml
 
 properties:
-  compatible:
-      constraint: "intel,cavs-intc"
-
   reg:
       required: true
 

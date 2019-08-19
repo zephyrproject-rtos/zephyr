@@ -9,12 +9,11 @@ title: NXP LPSPI
 description: >
     This binding gives a base representation of the NXP i.MX LPSPI controller
 
+compatible: "nxp,imx-lpspi"
+
 include: spi-controller.yaml
 
 properties:
-    compatible:
-      constraint: "nxp,imx-lpspi"
-
     reg:
       required: true
 

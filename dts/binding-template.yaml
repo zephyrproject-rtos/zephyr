@@ -4,6 +4,29 @@ description: >
     Longer free-form description of the node.
     Can go over multiple lines.
 
+# Used to map nodes to bindings
+compatible: "manufacturer,device"
+
+# The 'compatible' above would match this node:
+#
+#     device {
+#         compatible = "manufacturer,device";
+#         ...
+#     };
+#
+# Assuming no binding has 'compatible: "manufacturer,device-v2"', it would also
+# match this node:
+#
+#     device {
+#         compatible = "manufacturer,device-v2", "manufacturer,device";
+#         ...
+#     };
+#
+# Strings in 'compatible' properties on nodes are tried from left to right, and
+# the first binding found is used.
+#
+# If more than one binding for a compatible is found, an error is raised.
+
 # Many bindings have common fields. These are stored in files given in
 # 'include', which are merged into the binding (with a recursive dictionary
 # merge).
@@ -99,11 +122,6 @@ sub-node:
 #   foo = <&label1 1 2>, <&label2 3 4>;         // Okay for 'type: phandle-array'
 #   etc.
 properties:
-    # An entry for 'compatible' must appear, as it's used to map nodes to
-    # bindings
-    compatible:
-        constraint: "foo-company,bar-device"
-
     # Describes a property like 'current-speed = <115200>;'. We pretend that
     # it's obligatory for the example node and set 'required: true'.
     current-speed:
@@ -137,20 +155,29 @@ properties:
         const: 1
 
 # If the binding describes an interrupt controller, GPIO controller, pinmux
-# device, or any other device referenced via a phandle plus a specifier (some
-# additional data besides the phandle), then the cells in the specifier must be
-# listed in '#cells', like below.
+# device, or any other node referenced by other nodes, then #cells should be
+# given.
 #
-# If the specifier is empty (e.g. '#clock-cells = <0>'), then '#cells' can
-# either be omitted (recommended) or set to an empty array. Note that an empty
-# array is specified as '"#cells": []' in YAML.
+# To understand the purpose of #cells, assume that some node has
 #
-# For example, say that some node has 'foo-gpios = <&gpio1 1 2>'. The <1 2>
-# part of the property value is the specifier, with two cells. The node pointed
-# at by &gpio1 is expected to have '#gpio-cells = <2>', and its binding should
-# have two elements in '#cells', corresponding to the 1 and 2 values above.
+#     foo-gpios = <&gpio-ctrl 1 2>;
+#
+# , where &gpio-ctrl refers to a node whose binding is this file.
+#
+# The <1 2> part of the property value is called a *specifier* (this
+# terminology is from the devicetree specification), and contains additional
+# data associated with the GPIO. Here, the specifier has two cells, and the
+# node pointed at by &gpio-ctrl is expected to have '#gpio-cells = <2>'.
+#
+# #cells gives a name to each cell in the specifier. These names are used
+# when generating identifiers.
+#
+# In this example, assume that 1 refers to a pin and that 2 is a flag value.
+# This gives a #cells assignment like below.
 "#cells":
-    - cell0    # name of first cell
-    - cell1    # name of second cell
-    - cell2    # name of third cell
-    - and so on and so forth
+    - pin  # name of first cell
+    - flag # name of second cell
+
+# If the specifier is empty (e.g. '#clock-cells = <0>'), then #cells can either
+# be omitted (recommended) or set to an empty array. Note that an empty array
+# is specified as '"#cells": []' in YAML.

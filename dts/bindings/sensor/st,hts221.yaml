@@ -10,12 +10,11 @@ description: >
     This binding gives a base representation of HTS221 humidity and temperature
     sensor
 
+compatible: "st,hts221"
+
 include: i2c-device.yaml
 
 properties:
-    compatible:
-      constraint: "st,hts221"
-
     drdy-gpios:
       type: phandle-array
       required: false

@@ -9,12 +9,11 @@ title: Generic on-chip SRAM
 description: >
     This binding gives a generic on-chip SRAM description
 
+compatible: "mmio-sram"
+
 include: base.yaml
 
 properties:
-    compatible:
-      constraint: "mmio-sram"
-
     reg:
       required: true
 

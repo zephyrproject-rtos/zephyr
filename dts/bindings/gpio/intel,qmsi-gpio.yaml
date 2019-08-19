@@ -9,12 +9,11 @@ title: Intel QMSI GPIO
 description: >
     This is a representation of the Intel QMSI GPIO nodes
 
+compatible: "intel,qmsi-gpio"
+
 include: [gpio-controller.yaml, base.yaml]
 
 properties:
-    compatible:
-      constraint: "intel,qmsi-gpio"
-
     reg:
       required: true
 

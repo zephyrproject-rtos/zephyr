@@ -9,12 +9,11 @@ title: Synopsys Designware GPIO controller
 description: >
     This is a representation of the Synopsys DesignWare gpio node
 
+compatible: "snps,designware-gpio"
+
 include: [gpio-controller.yaml, base.yaml]
 
 properties:
-    compatible:
-      constraint: "snps,designware-gpio"
-
     reg:
       required: true
 

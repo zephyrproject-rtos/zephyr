@@ -9,12 +9,11 @@ title: Nordic nRF Family TEMP node
 description: >
     This is a representation of the Nordic nRF TEMP node
 
+compatible: "nordic,nrf-temp"
+
 include: base.yaml
 
 properties:
-    compatible:
-      constraint: "nordic,nrf-temp"
-
     reg:
       required: true
 

@@ -3,12 +3,11 @@ title: ARM CMSDK TIMER
 description: >
     This binding gives a base representation of the ARM CMSDK TIMER
 
+compatible: "arm,cmsdk-timer"
+
 include: base.yaml
 
 properties:
-    compatible:
-      constraint: "arm,cmsdk-timer"
-
     reg:
       required: true
 

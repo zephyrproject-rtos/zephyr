@@ -9,12 +9,11 @@ title: Nordic nRF Family SPIS (SPI Slave)
 description: >
     This is a representation of the Nordic nRF SPIS node
 
+compatible: "nordic,nrf-spis"
+
 include: spi-controller.yaml
 
 properties:
-    compatible:
-      constraint: "nordic,nrf-spis"
-
     reg:
       required: true
 

@@ -9,8 +9,6 @@ title: MAX30101 heart rate sensor
 description: >
     This is a representation of the MAX30101 heart rate sensor
 
-include: i2c-device.yaml
+compatible: "max,max30101"
 
-properties:
-    compatible:
-      constraint: "max,max30101"
+include: i2c-device.yaml

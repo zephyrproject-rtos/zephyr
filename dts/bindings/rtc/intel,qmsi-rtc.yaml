@@ -9,11 +9,10 @@ title: Intel QMSI RTC
 description: >
     This is a representation of the Intel QMSI RTC nodes
 
+compatible: "intel,qmsi-rtc"
+
 include: rtc.yaml
 
 properties:
-    compatible:
-      constraint: "intel,qmsi-rtc"
-
     reg:
       required: true

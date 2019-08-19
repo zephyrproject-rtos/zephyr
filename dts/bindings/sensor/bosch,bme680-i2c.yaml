@@ -10,8 +10,6 @@ description: >
     The BME680 is an integrated environmental sensor that measures
     temperature, pressure, humidity and air quality
 
-include: i2c-device.yaml
+compatible: "bosch,bme680"
 
-properties:
-    compatible:
-      constraint: "bosch,bme680"
+include: i2c-device.yaml

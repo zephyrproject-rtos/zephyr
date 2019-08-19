@@ -9,12 +9,11 @@ title: QMSI watchdog driver
 description: >
     This is a representation of the QMSI watchdog
 
+compatible: "intel,qmsi-watchdog"
+
 include: base.yaml
 
 properties:
-    compatible:
-      constraint: "intel,qmsi-watchdog"
-
     reg:
       required: true
 

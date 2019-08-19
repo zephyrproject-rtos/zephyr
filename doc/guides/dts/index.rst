@@ -416,6 +416,12 @@ This node would get mapped to a binding with this in it:
 
 .. code-block:: yaml
 
+   compatible: "foo-company,bar-device"
+
+You might also run across this legacy syntax, which works the same way:
+
+.. code-block:: yaml
+
    ...
 
    properties:

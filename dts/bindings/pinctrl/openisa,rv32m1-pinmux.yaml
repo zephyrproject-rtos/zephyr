@@ -3,12 +3,11 @@ title: RV32M1 Pinmux
 description: >
     This is a representation of the RV32M1 Pinmux node
 
+compatible: "openisa,rv32m1-pinmux"
+
 include: base.yaml
 
 properties:
-    compatible:
-      constraint: "openisa,rv32m1-pinmux"
-
     reg:
       required: true
 

@@ -9,12 +9,11 @@ title: SIFIVE UART
 description: >
     This binding gives a base representation of the SIFIVE UART
 
+compatible: "sifive,uart0"
+
 include: uart-controller.yaml
 
 properties:
-    compatible:
-      constraint: "sifive,uart0"
-
     reg:
       required: true
 

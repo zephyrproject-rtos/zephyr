@@ -9,12 +9,11 @@ title: LPC MAILBOX
 description: >
     This binding gives a base representation of the LPC MAILBOX
 
+compatible: "nxp,lpc-mailbox"
+
 include: base.yaml
 
 properties:
-  compatible:
-      constraint: "nxp,lpc-mailbox"
-
   reg:
       required: true
 

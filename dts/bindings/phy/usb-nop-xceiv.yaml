@@ -10,11 +10,10 @@ description: >
     This binding is to be used by all the usb transceivers which are built-in
     with USB IP
 
+compatible: "usb-nop-xceiv"
+
 include: phy-controller.yaml
 
 properties:
-    compatible:
-      constraint: "usb-nop-xceiv"
-
     "#phy-cells":
       const: 0

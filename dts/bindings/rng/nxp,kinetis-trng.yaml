@@ -9,12 +9,11 @@ title: Kinetis TRNG (True Random Number Generator)
 description: >
     This binding gives a base representation of the Kinetis RNGA
 
+compatible: "nxp,kinetis-trng"
+
 include: base.yaml
 
 properties:
-    compatible:
-      constraint: "nxp,kinetis-trng"
-
     reg:
       required: true
 

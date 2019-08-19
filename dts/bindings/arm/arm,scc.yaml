@@ -9,11 +9,10 @@ title: ARM Serial Configuration Control
 description: >
     This binding gives a base representation of the ARM SCC
 
+compatible: "arm,scc"
+
 include: base.yaml
 
 properties:
-    compatible:
-      constraint: "arm,scc"
-
     reg:
       required: true

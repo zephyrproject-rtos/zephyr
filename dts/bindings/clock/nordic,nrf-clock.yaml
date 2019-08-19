@@ -9,12 +9,11 @@ title: Nordic nRF clock control
 description: >
     This is a representation of the Nordic nRF clock control node
 
+compatible: "nordic,nrf-clock"
+
 include: base.yaml
 
 properties:
-    compatible:
-      constraint: "nordic,nrf-clock"
-
     label:
       required: true
 

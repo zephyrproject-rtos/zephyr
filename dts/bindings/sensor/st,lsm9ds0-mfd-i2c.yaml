@@ -9,12 +9,11 @@ title: STMicroelectronics MEMS sensors LSM9DS0-MFD
 description: >
     This binding gives a base representation of LSM9DS0 3-axis accelerometer + magnetometer
 
+compatible: "st,lsm9ds0-mfd"
+
 include: i2c-device.yaml
 
 properties:
-    compatible:
-        constraint: "st,lsm9ds0-mfd"
-
     irq-gpios:
       type: phandle-array
       required: true

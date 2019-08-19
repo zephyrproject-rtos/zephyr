@@ -9,8 +9,6 @@ title: STMicroelectronics MEMS sensors LPS22HB
 description: >
     This binding gives a base representation of LPS22HB pressure sensor
 
-include: i2c-device.yaml
+compatible: "st,lps22hb-press"
 
-properties:
-    compatible:
-      constraint: "st,lps22hb-press"
+include: i2c-device.yaml

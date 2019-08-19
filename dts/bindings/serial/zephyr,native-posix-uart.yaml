@@ -9,8 +9,6 @@ title: Native POSIX UART
 description: >
     This binding gives a base representation of the Native POSIX UART
 
-include: uart-controller.yaml
+compatible: "zephyr,native-posix-uart"
 
-properties:
-    compatible:
-      constraint: "zephyr,native-posix-uart"
+include: uart-controller.yaml

@@ -8,11 +8,12 @@ title: NXP Kinetis Ethernet
 
 description: >
     This binding gives a base representation of the NXP Kinetis Ethernet
+
+compatible: "nxp,kinetis-ethernet"
+
 include: ethernet.yaml
 
 properties:
-    compatible:
-      constraint: "nxp,kinetis-ethernet"
     reg:
       required: true
     interrupts:

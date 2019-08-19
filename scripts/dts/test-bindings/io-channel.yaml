@@ -5,10 +5,7 @@
 title: IO channel with one cell
 description: IO channel with one cell
 
-properties:
-    compatible:
-        constraint: "io-channel"
-        type: string-array
+compatible: "io-channel"
 
 "#cells":
   - one

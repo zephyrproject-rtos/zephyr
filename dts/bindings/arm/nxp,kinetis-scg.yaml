@@ -9,12 +9,11 @@ title: NXP Kinetis SCG (System Clock Generator)
 description: >
     This is a representation of the NXP Kinetis SCG IP node
 
+compatible: "nxp,kinetis-scg"
+
 include: [clock-controller.yaml, base.yaml]
 
 properties:
-    compatible:
-      constraint: "nxp,kinetis-scg"
-
     reg:
       required: true
 

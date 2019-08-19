@@ -9,12 +9,11 @@ title: Kinetis ADC16
 description: >
     This binding gives a base representation of the Kinetis ADC16
 
+compatible: "nxp,kinetis-adc16"
+
 include: adc-controller.yaml
 
 properties:
-    compatible:
-      constraint: "nxp,kinetis-adc16"
-
     reg:
       required: true
 

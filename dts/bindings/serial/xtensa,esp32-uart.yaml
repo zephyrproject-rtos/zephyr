@@ -3,12 +3,11 @@ title: ESP32 Uart
 description: >
     This binding gives a base representation of the ESP32 UART
 
+compatible: "xtensa,esp32-uart"
+
 include: uart-controller.yaml
 
 properties:
-    compatible:
-      constraint: "xtensa,esp32-uart"
-
     reg:
       required: true
 

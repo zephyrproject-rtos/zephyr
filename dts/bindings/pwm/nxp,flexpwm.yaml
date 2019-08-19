@@ -10,12 +10,11 @@ description: >
     This binding gives a base representation of the NXP eFLEX PWM module which
     is supposed to contain mcux-pwm submodules.
 
+compatible: "nxp,flexpwm"
+
 include: base.yaml
 
 properties:
-    compatible:
-      constraint: "nxp,flexpwm"
-
     reg:
       required: true
 

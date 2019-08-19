@@ -9,12 +9,11 @@ title: ARM TrustZone CryptoCell 310
 description: >
     This is a representation of the ARM TrustZone CryptoCell 310
 
+compatible: "arm,cryptocell-310"
+
 include: base.yaml
 
 properties:
-    compatible:
-      constraint: "arm,cryptocell-310"
-
     reg:
       required: true
 

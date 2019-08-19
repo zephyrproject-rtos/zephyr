@@ -10,11 +10,10 @@ description: >
     Binding for the Nordic DPPIC
     Distributed Programmable Peripheral Interconnect Controller
 
+compatible: "nordic,nrf-dppic"
+
 include: base.yaml
 
 properties:
-    compatible:
-      constraint: "nordic,nrf-dppic"
-
     reg:
       required: true

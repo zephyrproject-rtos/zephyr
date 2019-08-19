@@ -9,15 +9,11 @@ title: Generic fixed rate clock provider
 description: >
     This is a representation of a generic fixed rate clock provider.
 
+compatible: "fixed-clock"
+
 include: clock-controller.yaml
 
 properties:
-    compatible:
-      type: string
-      required: true
-      description: compatible strings
-      constraint: "fixed-clock"
-
     label:
       type: string
       required: false

@@ -3,12 +3,11 @@ title: Atmel SAM0 SERCOM UART driver
 description: >
     This binding gives a base representation of the Atmel SAM0 SERCOM UART driver
 
+compatible: "atmel,sam0-uart"
+
 include: uart-controller.yaml
 
 properties:
-    compatible:
-      constraint: "atmel,sam0-uart"
-
     reg:
       required: true
 

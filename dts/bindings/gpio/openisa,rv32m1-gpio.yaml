@@ -3,12 +3,11 @@ title: OpenISA GPIO
 description: >
     This is a representation of the OpenISA GPIO nodes
 
+compatible: "openisa,rv32m1-gpio"
+
 include: [gpio-controller.yaml, base.yaml]
 
 properties:
-    compatible:
-      constraint: "openisa,rv32m1-gpio"
-
     reg:
       required: true
 
