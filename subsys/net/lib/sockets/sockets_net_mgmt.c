@@ -229,8 +229,6 @@ again:
 static int znet_mgmt_getsockopt(struct net_mgmt_socket *mgmt, int level,
 				int optname, void *optval, socklen_t *optlen)
 {
-	int ret;
-
 	if (level != SOL_NET_MGMT_RAW || !optval || !optlen) {
 		errno = EINVAL;
 		return -1;
@@ -241,24 +239,24 @@ static int znet_mgmt_getsockopt(struct net_mgmt_socket *mgmt, int level,
 		return -1;
 	}
 
-#if defined(CONFIG_NET_L2_ETHERNET_MGMT)
-	if (optname == NET_REQUEST_ETHERNET_GET_QAV_PARAM) {
-		ret = net_mgmt(NET_REQUEST_ETHERNET_GET_QAV_PARAM,
-			       mgmt->iface, (void *)optval, *optlen);
-		if (ret < 0) {
-			errno = -ret;
+	if (IS_ENABLED(CONFIG_NET_L2_ETHERNET_MGMT)) {
+		if (optname == NET_REQUEST_ETHERNET_GET_QAV_PARAM) {
+			int ret;
+
+			ret = net_mgmt(NET_REQUEST_ETHERNET_GET_QAV_PARAM,
+				       mgmt->iface, (void *)optval, *optlen);
+			if (ret < 0) {
+				errno = -ret;
+				return -1;
+			}
+
+			return 0;
+
+		} else {
+			errno = EINVAL;
 			return -1;
 		}
-
-		return 0;
-
-	} else {
-		errno = EINVAL;
-		return -1;
 	}
-#else
-	ARG_UNUSED(ret);
-#endif /* CONFIG_NET_L2_ETHERNET_MGMT */
 
 	errno = ENOTSUP;
 	return -1;
