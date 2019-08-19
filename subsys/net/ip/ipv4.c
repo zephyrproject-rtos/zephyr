@@ -128,10 +128,12 @@ enum net_verdict net_ipv4_input(struct net_pkt *pkt)
 		goto drop;
 	}
 #endif
-	if (tp_input(pkt)) {
+#if IS_ENABLED(CONFIG_NET_TP)
+	if (hdr->proto == IPPROTO_UDP) {
+		tp_input(pkt);
 		goto drop;
 	}
-
+#endif
 	hdr_len = (hdr->vhl & NET_IPV4_IHL_MASK) * 4U;
 	if (hdr_len < sizeof(struct net_ipv4_hdr)) {
 		NET_DBG("DROP: Invalid hdr length");
