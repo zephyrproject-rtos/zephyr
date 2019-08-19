@@ -9,7 +9,7 @@
 struct k_thread user_thread;
 K_SEM_DEFINE(user_sem, 0, 1);
 
-ZTEST_BMEM volatile bool thread_was_preempt;
+ZTEST_BMEM volatile int thread_was_preempt;
 
 K_THREAD_STACK_DEFINE(ustack, STACK_SIZE);
 
@@ -47,13 +47,27 @@ static void preempt_test_thread(void *p1, void *p2, void *p3)
 
 void test_user_k_is_preempt(void)
 {
+	/* thread_was_preempt is volatile, and static analysis doesn't
+	 * like to see it being tested inside zassert_true, because
+	 * the read is treated as a "side effect" of an assertion
+	 * (e.g. a read is significant for things like volatile MMIO
+	 * addresses, and assertions may or may not be compiled, even
+	 * though here in a test they always will be and in any case
+	 * the value is a static variable above marked volatile for
+	 * threadsafety).  Read it into a local variable first to
+	 * evade the warning.
+	 */
+	int twp;
+
 	k_thread_create(&user_thread, ustack, STACK_SIZE, preempt_test_thread,
 			NULL, NULL, NULL,
 			k_thread_priority_get(k_current_get()),
 			K_USER | K_INHERIT_PERMS, 0);
 
 	k_sem_take(&user_sem, K_FOREVER);
-	zassert_false(thread_was_preempt, "unexpected return value");
+
+	twp = thread_was_preempt;
+	zassert_false(twp, "unexpected return value");
 
 	k_thread_create(&user_thread, ustack, STACK_SIZE, preempt_test_thread,
 			NULL, NULL, NULL,
@@ -61,7 +75,8 @@ void test_user_k_is_preempt(void)
 			K_USER | K_INHERIT_PERMS, 0);
 
 	k_sem_take(&user_sem, K_FOREVER);
-	zassert_true(thread_was_preempt, "unexpected return value");
 
+	twp = thread_was_preempt;
+	zassert_true(twp, "unexpected return value");
 }
 
