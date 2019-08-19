@@ -44,10 +44,16 @@ Although the BSP is based on `intel_s1000_crb` compiler and tools described for
 the board does not produce working code. Instead use xtools described in the
 chapter [Build SDK for the board](#build-sdk-for-the-board).
 
-Build `hello_world` modified sample and we can use built zephyr.elf.
+Build `samples/audio/sof` sample and we can use built zephyr.elf later.
 
+Build for qemu with:
 ```bash
-$ west build -b up_squared_adsp samples/hello_world/
+$ west build -p -b up_squared_adsp zephyr/samples/audio/sof -DOVERLAY_CONFIG=overlay-qemu.conf
+```
+
+Build for `up_squared` ADSP with:
+```bash
+$ west build -p -b up_squared_adsp zephyr/samples/audio/sof -DOVERLAY_CONFIG=overlay-up_squared.conf
 ```
 
 We would be using zephyr/zephyr.elf later on.
