@@ -3,10 +3,7 @@
 title: GPIO controller with one cell
 description: GPIO controller with one cell
 
-properties:
-    compatible:
-        constraint: "gpio-one-cell"
-        type: string-array
+compatible: "gpio-one-cell"
 
 "#cells":
   - one

@@ -3,10 +3,7 @@
 title: PWM source with one cell
 description: PWM source with one cell
 
-properties:
-    compatible:
-        constraint: "pwm-one-cell"
-        type: string-array
+compatible: "pwm-one-cell"
 
 "#cells":
   - one

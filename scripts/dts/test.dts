@@ -322,4 +322,17 @@
 			not-speced = <0>;
 		};
 	};
+
+	//
+	// Two nodes with the same binding via different 'compatible' strings
+	//
+
+	multicompat {
+		node-1 {
+			compatible = "multicompat-1";
+		};
+		node-2 {
+			compatible = "multicompat-2";
+		};
+	};
 };

@@ -3,14 +3,12 @@
 title: Parent binding
 description: Parent binding
 
+compatible: "binding-include-test"
+
 inherits:
     !include child.yaml
 
 properties:
-    compatible:
-        constraint: "binding-include-test"
-        type: string-array
-
     foo:
         # Changed from "optional" in grandchild.yaml
         category: required

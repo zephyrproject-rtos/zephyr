@@ -195,21 +195,21 @@ class EDT:
             # representing the file)
             binding = yaml.load(contents, Loader=yaml.Loader)
 
-            try:
-                compat = binding["properties"]["compatible"]["constraint"]
-            except Exception:
+            binding_compats = _binding_compats(binding, binding_path)
+            if not binding_compats:
+                # Not a binding. Might be a fragment or spurious file.
                 continue
 
-            if compat not in dt_compats:
-                continue
-
-            # It's a match. Merge in the !included bindings, do sanity checks,
-            # and register the binding.
+            # Merge in the !included bindings, do sanity checks, and register
+            # the binding for all compatibles.
 
             binding = _merge_included_bindings(binding, binding_path)
             _check_binding(binding, binding_path)
-            self._compat2binding[compat, _binding_bus(binding)] = \
-                (binding, binding_path)
+
+            bus = _binding_bus(binding)
+
+            for compat in binding_compats:
+                self._compat2binding[compat, bus] = (binding, binding_path)
 
     def _binding_include(self, loader, node):
         # Implements !include. Returns a list with the YAML structures for the
@@ -1159,6 +1159,56 @@ def _binding_paths(bindings_dirs):
     return binding_paths
 
 
+def _binding_compats(binding, binding_path):
+    # Returns the strings listed in 'compatible:' in the binding.
+    #
+    # Also searches for legacy compatibles on the form
+    #
+    #   properties:
+    #       compatible:
+    #           constraint: <string>
+
+    def new_style_compats():
+        if binding is None or "compatible" not in binding:
+            # Empty file, binding fragment, spurious file, or old-style compat
+            return []
+
+        val = binding["compatible"]
+
+        if isinstance(val, str):
+            return [val]
+
+        if isinstance(val, list):
+            for elm in val:
+                if not isinstance(elm, str):
+                    _err("malformed 'compatible:' field in {} - list elements "
+                         "should be strings".format(binding_path))
+
+            return val
+
+        _err("malformed 'compatible:' field in {} - expected string or list "
+             "of strings".format(binding_path))
+
+    def old_style_compat():
+        try:
+            return binding["properties"]["compatible"]["constraint"]
+        except Exception:
+            return None
+
+    new_compats = new_style_compats()
+    old_compat = old_style_compat()
+    if old_compat:
+        if new_compats:
+            _err("compatibles for {} should be specified with either "
+                 "'compatible:' at the top level or with the legacy "
+                 "'properties: compatible: constraint: ...' field, not both"
+                 .format(binding_path))
+
+        return [old_compat]
+
+    return new_compats
+
+
 def _binding_bus(binding):
     # Returns the bus specified in 'binding' (the bus the device described by
     # 'binding' is on), e.g. "i2c", or None if 'binding' is None or doesn't
@@ -1246,8 +1296,8 @@ def _check_binding(binding, binding_path):
             _err("missing, malformed, or empty '{}' in {}"
                  .format(prop, binding_path))
 
-    ok_top = {"title", "description", "inherits", "properties", "#cells",
-              "parent", "child", "sub-node"}
+    ok_top = {"title", "description", "compatible", "inherits", "properties",
+              "#cells", "parent", "child", "sub-node"}
 
     for prop in binding:
         if prop not in ok_top:

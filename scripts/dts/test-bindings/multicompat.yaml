@@ -1,0 +1,6 @@
+# SPDX-License-Identifier: BSD-3-Clause
+
+title: Binding that matches several 'compatible' strings
+description: Binding that matches several 'compatible' strings
+
+compatible: ["multicompat-1", "multicompat-2"]

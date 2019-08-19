@@ -3,11 +3,9 @@
 title: Device.props test
 description: Device.props test
 
-properties:
-    compatible:
-        constraint: "props"
-        type: string-array
+compatible: "props"
 
+properties:
     nonexistent-boolean:
         type: boolean
 

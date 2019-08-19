@@ -3,10 +3,8 @@
 title: Fixed clock
 description: Fixed clock
 
-properties:
-    compatible:
-        constraint: "fixed-clock"
-        type: string-array
+compatible: "fixed-clock"
 
+properties:
     clock-frequency:
         type: int
