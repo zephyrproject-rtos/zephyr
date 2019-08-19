@@ -29,6 +29,9 @@ int main(void)
 	struct sockaddr_in bind_addr;
 	static int counter;
 
+#if IS_ENABLED(CONFIG_NET_TP)
+	exit(1);
+#endif
 	serv = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 
 	if (serv < 0) {
