@@ -77,6 +77,8 @@
 #define PROV_COMPLETE          0x08
 #define PROV_FAILED            0x09
 
+#define PROV_NO_PDU            0xff
+
 #define PROV_ALG_P256          0x00
 
 #define GPCF(gpc)              (gpc & 0x03)
@@ -895,7 +897,7 @@ static void send_pub_key(const u8_t dhkey[32])
 	}
 
 	if (atomic_test_bit(link.flags, WAIT_NUMBER) || atomic_test_bit(link.flags, WAIT_STRING)) {
-		link.expect = 0xff; /* Don't expect any packets until after input */
+		link.expect = PROV_NO_PDU; /* Wait for input */
 	} else {
 		link.expect = PROV_CONFIRM;
 	}
@@ -1081,7 +1083,7 @@ static void prov_data(const u8_t *data)
 	}
 
 	/* Ignore any further PDUs on this link */
-	link.expect = 0U;
+	link.expect = PROV_NO_PDU;
 
 	/* Store info, since bt_mesh_provision() will end up clearing it */
 	if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY)) {
