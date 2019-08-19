@@ -10,8 +10,6 @@
 
 menu "HALs"
 
-source "ext/hal/atmel/asf/Kconfig"
-
 source "ext/hal/altera/Kconfig"
 
 source "ext/hal/cmsis/Kconfig"

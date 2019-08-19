@@ -203,8 +203,6 @@
 /dts/bindings/*/litex*                    @mateusz-holenko @kgugala @pgielda
 /dts/bindings/*/vexriscv*                 @mateusz-holenko @kgugala @pgielda
 /dts/posix/                               @aescolar @vanwinkeljan
-/ext/hal/atmel/asf/sam/include/same70*/   @aurel32
-/ext/hal/atmel/asf/sam0/include/samr21/   @benpicco
 /dts/bindings/sensor/*bme680*             @BoschSensortec
 /dts/bindings/sensor/st*                  @avisconti
 /ext/hal/cmsis/                           @MaureenHelm @galak

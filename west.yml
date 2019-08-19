@@ -27,6 +27,9 @@ manifest:
   #
   # Please add items below based on alphabetical order
   projects:
+    - name: hal_atmel
+      revision: 04ff67a0826a51041e51034faf8fc4d3eeacd846
+      path: modules/hal/atmel
     - name: ci-tools
       revision: d56f2dd3510e20fa8cf4aad442495c08a658113f
       path: tools/ci-tools
