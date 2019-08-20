@@ -11,9 +11,12 @@
 #include <drivers/clock_control.h>
 #include <drivers/clock_control/nrf_clock_control.h>
 
+#include <soc.h>
+
 #include "hal/ccm.h"
 #include "hal/radio.h"
 #include "hal/ticker.h"
+#include "hal/irq_vendor_hal.h"
 
 #include "util/mem.h"
 #include "util/memq.h"
@@ -27,7 +30,7 @@
 
 #define LOG_MODULE_NAME bt_ctlr_llsw_nordic_lll
 #include "common/log.h"
-#include <soc.h>
+
 #include "hal/debug.h"
 
 static struct {
@@ -90,7 +93,7 @@ static void rtc0_nrf5_isr(void *arg)
 	DEBUG_TICKER_ISR(0);
 }
 
-static void swi4_nrf5_isr(void *arg)
+static void lll_nrf5_isr(void *arg)
 {
 	DEBUG_RADIO_ISR(1);
 
@@ -99,7 +102,7 @@ static void swi4_nrf5_isr(void *arg)
 	DEBUG_RADIO_ISR(0);
 }
 
-static void swi5_nrf5_isr(void *arg)
+static void ull_low_nrf5_isr(void *arg)
 {
 	DEBUG_TICKER_JOB(1);
 
@@ -142,21 +145,28 @@ int lll_init(void)
 		return err;
 	}
 
+	/* Initialize SW IRQ structure */
+	hal_nrf5_irq_init();
+
 	/* Connect ISRs */
 	IRQ_DIRECT_CONNECT(NRF5_IRQ_RADIO_IRQn, CONFIG_BT_CTLR_LLL_PRIO,
 			   radio_nrf5_isr, 0);
-	IRQ_CONNECT(NRF5_IRQ_SWI4_IRQn, CONFIG_BT_CTLR_LLL_PRIO,
-		    swi4_nrf5_isr, NULL, 0);
 	IRQ_CONNECT(NRF5_IRQ_RTC0_IRQn, CONFIG_BT_CTLR_ULL_HIGH_PRIO,
 		    rtc0_nrf5_isr, NULL, 0);
-	IRQ_CONNECT(NRF5_IRQ_SWI5_IRQn, CONFIG_BT_CTLR_ULL_LOW_PRIO,
-		    swi5_nrf5_isr, NULL, 0);
+#if HAL_RADIO_LLL_IRQ != HAL_RADIO_ULL_LOW_IRQ
+	IRQ_CONNECT(HAL_RADIO_LLL_IRQ, CONFIG_BT_CTLR_LLL_PRIO,
+		    lll_nrf5_isr, NULL, 0);
+	IRQ_CONNECT(HAL_RADIO_ULL_LOW_IRQ, CONFIG_BT_CTLR_ULL_LOW_PRIO,
+		    ull_low_nrf5_isr, NULL, 0);
+#endif
 
 	/* Enable IRQs */
 	irq_enable(NRF5_IRQ_RADIO_IRQn);
-	irq_enable(NRF5_IRQ_SWI4_IRQn);
 	irq_enable(NRF5_IRQ_RTC0_IRQn);
-	irq_enable(NRF5_IRQ_SWI5_IRQn);
+#if HAL_RADIO_LLL_IRQ != HAL_RADIO_ULL_LOW_IRQ
+	irq_enable(HAL_RADIO_LLL_IRQ);
+	irq_enable(HAL_RADIO_ULL_LOW_IRQ);
+#endif
 
 	return 0;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 Nordic Semiconductor ASA
+ * Copyright (c) 2016-2019 Nordic Semiconductor ASA
  * Copyright (c) 2016 Vinayak Kariappa Chettimada
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -14,6 +14,7 @@
 #define LOG_MODULE_NAME bt_ctlr_nrf5_mayfly
 #include "common/log.h"
 #include "hal/debug.h"
+#include "hal/nrf5/nrf5_sw_irqs.h"
 
 #if defined(CONFIG_BT_LL_SW_LEGACY)
 #define MAYFLY_CALL_ID_WORKER MAYFLY_CALL_ID_0
@@ -34,9 +35,9 @@ void mayfly_enable_cb(u8_t caller_id, u8_t callee_id, u8_t enable)
 	LL_ASSERT(callee_id == MAYFLY_CALL_ID_JOB);
 
 	if (enable) {
-		irq_enable(SWI5_IRQn);
+		irq_enable(HAL_RADIO_SW_IRQ);
 	} else {
-		irq_disable(SWI5_IRQn);
+		irq_disable(HAL_RADIO_SW_IRQ);
 	}
 }
 
@@ -47,14 +48,14 @@ u32_t mayfly_is_enabled(u8_t caller_id, u8_t callee_id)
 	switch (callee_id) {
 #if defined(CONFIG_BT_LL_SW_SPLIT)
 	case MAYFLY_CALL_ID_LLL:
-		return irq_is_enabled(SWI4_IRQn);
+		return irq_is_enabled(HAL_RADIO_LLL_IRQ);
 #endif /* CONFIG_BT_LL_SW_SPLIT */
 
 	case MAYFLY_CALL_ID_WORKER:
 		return irq_is_enabled(RTC0_IRQn);
 
 	case MAYFLY_CALL_ID_JOB:
-		return irq_is_enabled(SWI5_IRQn);
+		return irq_is_enabled(HAL_RADIO_SW_IRQ);
 
 	default:
 		LL_ASSERT(0);
@@ -104,7 +105,7 @@ void mayfly_pend(u8_t caller_id, u8_t callee_id)
 	switch (callee_id) {
 #if defined(CONFIG_BT_LL_SW_SPLIT)
 	case MAYFLY_CALL_ID_LLL:
-		NVIC_SetPendingIRQ(SWI4_IRQn);
+		hal_nrf5_pend_lll_irq();
 		break;
 #endif /* CONFIG_BT_LL_SW_SPLIT */
 
@@ -113,7 +114,7 @@ void mayfly_pend(u8_t caller_id, u8_t callee_id)
 		break;
 
 	case MAYFLY_CALL_ID_JOB:
-		NVIC_SetPendingIRQ(SWI5_IRQn);
+		hal_nrf5_pend_job_irq();
 		break;
 
 	default:
