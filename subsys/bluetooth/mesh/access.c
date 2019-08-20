@@ -715,7 +715,7 @@ int bt_mesh_model_publish(struct bt_mesh_model *model)
 	return 0;
 }
 
-struct bt_mesh_model *bt_mesh_model_find_vnd(struct bt_mesh_elem *elem,
+struct bt_mesh_model *bt_mesh_model_find_vnd(const struct bt_mesh_elem *elem,
 					     u16_t company, u16_t id)
 {
 	u8_t i;
@@ -730,7 +730,7 @@ struct bt_mesh_model *bt_mesh_model_find_vnd(struct bt_mesh_elem *elem,
 	return NULL;
 }
 
-struct bt_mesh_model *bt_mesh_model_find(struct bt_mesh_elem *elem,
+struct bt_mesh_model *bt_mesh_model_find(const struct bt_mesh_elem *elem,
 					 u16_t id)
 {
 	u8_t i;

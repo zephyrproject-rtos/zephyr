@@ -415,6 +415,29 @@ int bt_mesh_model_publish(struct bt_mesh_model *model);
  */
 struct bt_mesh_elem *bt_mesh_model_elem(struct bt_mesh_model *mod);
 
+/** @brief Find a SIG model.
+ *
+ * @param elem Element to search for the model in.
+ * @param id Model ID of the model.
+ *
+ * @return A pointer to the Mesh model matching the given parameters, or NULL
+ * if no SIG model with the given ID exists in the given element.
+ */
+struct bt_mesh_model *bt_mesh_model_find(const struct bt_mesh_elem *elem,
+					 u16_t id);
+
+/** @brief Find a vendor model.
+ *
+ * @param elem Element to search for the model in.
+ * @param company Company ID of the model.
+ * @param id Model ID of the model.
+ *
+ * @return A pointer to the Mesh model matching the given parameters, or NULL
+ * if no vendor model with the given ID exists in the given element.
+ */
+struct bt_mesh_model *bt_mesh_model_find_vnd(const struct bt_mesh_elem *elem,
+					     u16_t company, u16_t id);
+
 /** Node Composition */
 struct bt_mesh_comp {
 	u16_t cid;
