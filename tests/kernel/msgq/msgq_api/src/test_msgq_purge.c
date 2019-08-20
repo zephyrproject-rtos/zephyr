@@ -41,6 +41,8 @@ static void purge_when_put(struct k_msgq *q)
 		ret = k_msgq_put(q, (void *)&data[i], K_NO_WAIT);
 		zassert_equal(ret, 0, NULL);
 	}
+
+	k_thread_abort(&tdata);
 }
 
 /**

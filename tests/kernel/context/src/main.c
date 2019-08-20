@@ -917,19 +917,20 @@ void test_kernel_thread(void)
 /*test case main entry*/
 void test_main(void)
 {
+	(void)test_k_sleep;
 
 	kernel_init_objects();
 
 	ztest_test_suite(context,
 			 ztest_unit_test(test_kernel_interrupts),
-			 ztest_unit_test(test_kernel_timer_interrupts),
+			 ztest_1cpu_unit_test(test_kernel_timer_interrupts),
 			 ztest_unit_test(test_kernel_ctx_thread),
-			 ztest_unit_test(test_busy_wait),
-			 ztest_unit_test(test_k_sleep),
+			 ztest_1cpu_unit_test(test_busy_wait),
+			 ztest_1cpu_unit_test(test_k_sleep),
 			 ztest_unit_test(test_kernel_cpu_idle_atomic),
 			 ztest_unit_test(test_kernel_cpu_idle),
-			 ztest_unit_test(test_k_yield),
-			 ztest_unit_test(test_kernel_thread)
+			 ztest_1cpu_unit_test(test_k_yield),
+			 ztest_1cpu_unit_test(test_kernel_thread)
 			 );
 	ztest_run_test_suite(context);
 }

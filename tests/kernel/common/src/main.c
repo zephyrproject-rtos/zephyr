@@ -127,7 +127,7 @@ void test_main(void)
 			 ztest_unit_test(test_dlist),
 			 ztest_unit_test(test_intmath),
 			 ztest_unit_test(test_timeout_order),
-			 ztest_user_unit_test(test_clock_uptime),
+			 ztest_1cpu_user_unit_test(test_clock_uptime),
 			 ztest_unit_test(test_clock_cycle),
 			 ztest_unit_test(test_version),
 			 ztest_unit_test(test_multilib),

@@ -281,6 +281,6 @@ K_THREAD_DEFINE(HELPER, STACKSIZE, helper_thread, NULL, NULL, NULL,
 void test_main(void)
 {
 	ztest_test_suite(memory_slab,
-			 ztest_unit_test(test_mslab));
+			 ztest_1cpu_unit_test(test_mslab));
 	ztest_run_test_suite(memory_slab);
 }

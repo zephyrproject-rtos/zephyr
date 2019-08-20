@@ -298,7 +298,7 @@ static void test_cmd_select(void)
 void test_main(void)
 {
 	ztest_test_suite(shell_test_suite,
-			ztest_unit_test(test_cmd_help),
+			ztest_1cpu_unit_test(test_cmd_help),
 			ztest_unit_test(test_cmd_clear),
 			ztest_unit_test(test_cmd_shell),
 			ztest_unit_test(test_cmd_history),

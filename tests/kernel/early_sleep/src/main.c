@@ -137,6 +137,6 @@ static void test_early_sleep(void)
 void test_main(void)
 {
 	ztest_test_suite(test_earlysleep,
-			ztest_unit_test(test_early_sleep));
+			ztest_1cpu_unit_test(test_early_sleep));
 	ztest_run_test_suite(test_earlysleep);
 }

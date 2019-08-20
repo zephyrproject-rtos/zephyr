@@ -438,7 +438,7 @@ void test_pending(void)
 void test_main(void)
 {
 	ztest_test_suite(pend,
-			ztest_unit_test(test_pending));
+			ztest_1cpu_unit_test(test_pending));
 	ztest_run_test_suite(pend);
 }
 

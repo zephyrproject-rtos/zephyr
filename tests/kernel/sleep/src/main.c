@@ -239,7 +239,7 @@ extern void test_usleep(void);
 void test_main(void)
 {
 	ztest_test_suite(sleep,
-			 ztest_unit_test(test_sleep),
-			 ztest_user_unit_test(test_usleep));
+			 ztest_1cpu_unit_test(test_sleep),
+			 ztest_1cpu_user_unit_test(test_usleep));
 	ztest_run_test_suite(sleep);
 }

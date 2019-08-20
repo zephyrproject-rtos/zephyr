@@ -12,7 +12,7 @@
 #define VERBOSE		0
 
 void *last_sp = (void *)0xFFFFFFFF;
-unsigned int changed;
+volatile unsigned int changed;
 
 void alternate_thread(void)
 {
@@ -60,6 +60,7 @@ void test_stack_pt_randomization(void)
 				K_NO_WAIT);
 	}
 
+
 	printk("stack pointer changed %d times out of %d tests\n",
 	       changed, THREAD_COUNT);
 
@@ -72,6 +73,6 @@ void test_stack_pt_randomization(void)
 void test_main(void)
 {
 	ztest_test_suite(stack_pointer_randomness,
-			ztest_unit_test(test_stack_pt_randomization));
+			ztest_1cpu_unit_test(test_stack_pt_randomization));
 	ztest_run_test_suite(stack_pointer_randomness);
 }
