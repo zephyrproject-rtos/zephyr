@@ -35,36 +35,3 @@ config I2C_SDA_RX_HOLD
 	  while i2c acts as receiver. The unit is i2c module base clock.
 
 endif # I2C_QMSI
-
-
-menuconfig I2C_QMSI_SS
-	bool "QMSI I2C driver for the Sensor Subsystem"
-	depends on QMSI
-	select HAS_DTS_I2C
-	help
-	  This option enable the Sensor QMSI I2C driver.
-
-	  This driver is simply a shim driver based on the I2C driver
-	  provided by the QMSI BSP.
-
-if I2C_QMSI_SS
-
-config I2C_SS_0
-	bool "Enable I2C_SS_0"
-
-config I2C_SS_1
-	bool "Enable I2C SS Port 1"
-
-config I2C_SS_SDA_HOLD
-	int
-	help
-	  The hold time on the data signal after a negative edge of i2c clock.
-	  The unit is i2c module base clock.
-
-config I2C_SS_SDA_SETUP
-	int
-	help
-	  The delay time of clock rising edge relative to i2c data signal
-	  change. The unit is i2c module base clock.
-
-endif # I2C_QMSI_SS
