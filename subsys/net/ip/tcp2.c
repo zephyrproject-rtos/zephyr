@@ -77,6 +77,14 @@ static union tcp_endpoint *tcp_endpoint_new(struct net_pkt *pkt, int src)
 }
 #endif
 
+static void tcp_endpoint_set(union tcp_endpoint *ep, const char *addr,
+				u16_t port)
+{
+	ep->sa.sa_family = AF_INET;
+	ep->sin.sin_port = htons(port);
+	net_addr_pton(AF_INET, addr, &ep->sin.sin_addr);
+}
+
 static const char *tcp_flags(u8_t fl)
 {
 #define BUF_SIZE 80
@@ -919,6 +927,11 @@ int net_tcp_get(struct net_context *context)
 
 	tcp_context[i].src = tcp_calloc(1, sizeof(struct sockaddr));
 	tcp_context[i].dst = tcp_calloc(1, sizeof(struct sockaddr));
+
+	if (IS_ENABLED(CONFIG_NET_TP)) {
+		tcp_endpoint_set(tcp_context[i].src, "192.0.2.1", 4242);
+		tcp_endpoint_set(tcp_context[i].dst, "192.0.2.2", 4242);
+	}
 
 	tcp_context[i].rcv = tcp_win_new("RCV");
 	tcp_context[i].snd = tcp_win_new("SND");
