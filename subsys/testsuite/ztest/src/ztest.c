@@ -55,6 +55,75 @@ static int cleanup_test(struct unit_test *test)
 	return ret;
 }
 
+#ifdef CONFIG_SMP
+#define NUM_CPUHOLD (CONFIG_MP_NUM_CPUS - 1)
+#else
+#define NUM_CPUHOLD 0
+#endif
+#define CPUHOLD_STACK_SZ (512 + CONFIG_TEST_EXTRA_STACKSIZE)
+
+static struct k_thread cpuhold_threads[NUM_CPUHOLD];
+K_THREAD_STACK_ARRAY_DEFINE(cpuhold_stacks, NUM_CPUHOLD, CPUHOLD_STACK_SZ);
+static struct k_sem cpuhold_sem;
+volatile int cpuhold_active;
+
+/* "Holds" a CPU for use with the "1cpu" test cases.  Note that we
+ * can't use tools like the cpumask feature because we have tests that
+ * may need to control that configuration themselves.  We do this at
+ * the lowest level, but locking interrupts directly and spinning.
+ */
+static void cpu_hold(void *arg1, void *arg2, void *arg3)
+{
+	ARG_UNUSED(arg1);
+	ARG_UNUSED(arg2);
+	ARG_UNUSED(arg3);
+	unsigned int key = z_arch_irq_lock();
+	u32_t dt, start_ms = k_uptime_get_32();
+
+	k_sem_give(&cpuhold_sem);
+
+	while (cpuhold_active) {
+		k_busy_wait(1000);
+	}
+
+	/* Holding the CPU via spinning is expensive, and abusing this
+	 * for long-running test cases tends to overload the CI system
+	 * (qemu runs separate CPUs in different threads, but the CI
+	 * logic views it as one "job") and cause other test failures.
+	 */
+	dt = k_uptime_get_32() - start_ms;
+	zassert_true(dt < 3000,
+		     "1cpu test took too long (%d ms)", dt);
+	z_arch_irq_unlock(key);
+}
+
+void z_test_1cpu_start(void)
+{
+	cpuhold_active = 1;
+
+	k_sem_init(&cpuhold_sem, 0, 999);
+
+	/* Spawn N-1 threads to "hold" the other CPUs, waiting for
+	 * each to signal us that it's locked and spinning.
+	 */
+	for (int i = 0; i < NUM_CPUHOLD; i++)  {
+		k_thread_create(&cpuhold_threads[i],
+				cpuhold_stacks[i], CPUHOLD_STACK_SZ,
+				(k_thread_entry_t) cpu_hold, NULL, NULL, NULL,
+				K_HIGHEST_THREAD_PRIO, 0, K_NO_WAIT);
+		k_sem_take(&cpuhold_sem, K_FOREVER);
+	}
+}
+
+void z_test_1cpu_stop(void)
+{
+	cpuhold_active = 0;
+
+	for (int i = 0; i < NUM_CPUHOLD; i++)  {
+		k_thread_abort(&cpuhold_threads[i]);
+	}
+}
+
 static void run_test_functions(struct unit_test *test)
 {
 	phase = TEST_PHASE_SETUP;
