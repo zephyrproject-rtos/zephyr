@@ -946,6 +946,7 @@ int net_tcp_get(struct net_context *context)
 
 	tcp_context[i].context = context;
 	context->tcp = &tcp_context[i];
+	tcp_context[i].context = context;
 
 	sys_slist_init(&tcp_context[i].send_queue);
 	k_timer_init(&tcp_context[i].send_timer, tcp_send_process, NULL);
