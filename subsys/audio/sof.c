@@ -283,6 +283,8 @@ static void prepare_host_windows()
 
 static void sys_module_init(void)
 {
+	LOG_INF("");
+
 	Z_STRUCT_SECTION_FOREACH(_sof_module, mod) {
 		mod->init();
 		LOG_INF("module %p init", mod);
@@ -317,6 +319,7 @@ static int sof_boot_complete()
 	return 0;
 }
 
+/* This is analog of platform_init() */
 static int sof_init(struct device *unused)
 {
 	int ret;
@@ -343,6 +346,13 @@ static int sof_init(struct device *unused)
 	}
 
 	LOG_INF("IPC initialized");
+
+	/* init DAIs */
+	ret = dai_init();
+	if (ret < 0) {
+		LOG_ERR("DAI initialization failed");
+		return ret;
+	}
 
 	/* init scheduler */
 	ret = scheduler_init();
