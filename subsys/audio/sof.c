@@ -226,6 +226,11 @@ void dai_put(struct dai *dai)
 {
 }
 
+int dai_init(void)
+{
+	return 0;
+}
+
 struct dma dma;
 
 struct dma *dma_get(uint32_t dir, uint32_t caps, uint32_t dev, uint32_t flags)
