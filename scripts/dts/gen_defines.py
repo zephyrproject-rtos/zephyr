@@ -61,9 +61,10 @@ def main():
 
             write_regs(dev)
             write_irqs(dev)
-            write_gpios(dev)
-            write_pwms(dev)
-            write_iochannels(dev)
+            for gpios in dev.gpios.values():
+                write_phandle_val_list(dev, gpios, "GPIO")
+            write_phandle_val_list(dev, dev.pwms, "PWM")
+            write_phandle_val_list(dev, dev.iochannels, "IO_CHANNEL")
             write_clocks(dev)
             write_spi_dev(dev)
             write_props(dev)
@@ -456,93 +457,66 @@ def write_irqs(dev):
                     name_alias=irq_name_alias(irq, cell_name))
 
 
-def write_gpios(dev):
-    # Writes GPIO controller data for the gpios in dev's 'gpios' property
-
-    for gpios in dev.gpios.values():
-        for gpio_i, gpio in enumerate(gpios):
-            write_gpio(dev, gpio, gpio_i if len(gpios) > 1 else None)
-
-
-def write_gpio(dev, gpio, index=None):
-    # Writes GPIO controller & data for the GPIO object 'gpio'. If 'index' is
-    # not None, it is added as a suffix to identifiers.
-
-    ctrl_ident = "GPIOS_CONTROLLER"
-    if gpio.name:
-        ctrl_ident = str2ident(gpio.name) + "_" + ctrl_ident
-    if index is not None:
-        ctrl_ident += "_{}".format(index)
-
-    out_dev_s(dev, ctrl_ident, gpio.controller.label)
-
-    for cell, val in gpio.specifier.items():
-        cell_ident = "GPIOS_" + str2ident(cell)
-        if gpio.name:
-            cell_ident = str2ident(gpio.name) + "_" + cell_ident
-        if index is not None:
-            cell_ident += "_{}".format(index)
-
-        out_dev(dev, cell_ident, val)
-
-
 def write_spi_dev(dev):
     # Writes SPI device GPIO chip select data if there is any
 
     cs_gpio = edtlib.spi_dev_cs_gpio(dev)
     if cs_gpio is not None:
-        write_gpio(dev, cs_gpio)
+        write_phandle_val_list_entry(dev, cs_gpio, None, "GPIO")
 
 
-def write_pwms(dev):
-    # Writes PWM controller and specifier info for the PWMs in dev's 'pwms'
-    # property
+def write_phandle_val_list(dev, entries, ident):
+    # Writes output for a phandle/value list, e.g.
+    #
+    #    pwms = <&pwm-ctrl-1 10 20
+    #            &pwm-ctrl-2 30 40>;
+    #
+    # dev:
+    #   Device used to generate device prefixes (see 'ident' below)
+    #
+    # entries:
+    #   List of entries (two for 'pwms' above). This might be a list of
+    #   edtlib.PWM instances, for example.
+    #
+    # ident:
+    #   Base identifier. For example, "PWM" generates output like this:
+    #
+    #     #define <device prefix>_PWMS_CONTROLLER_0 "PWM_0"  (name taken from 'label = ...')
+    #     #define <device prefix>_PWMS_CHANNEL_0 123         (name taken from #cells in binding)
+    #     #define <device prefix>_PWMS_CONTROLLER_1 "PWM_1"
+    #     #define <device prefix>_PWMS_CHANNEL_1 456
+    #     ...
+    #
+    #   Note: Do not add an "S" to 'ident'. It's added automatically, which
+    #   forces consistency.
 
-    for pwm_i, pwm in enumerate(dev.pwms):
-        write_pwm(dev, pwm, pwm_i if len(dev.pwms) > 1 else None)
-
-
-def write_pwm(dev, pwm, index=None):
-    # Writes PWM controller & data for the PWM object 'pwm'. If 'index' is
-    # not None, it is added as a suffix to identifiers.
-
-    if pwm.controller.label is not None:
-        ctrl_ident = "PWMS_CONTROLLER"
-        if index is not None:
-            ctrl_ident += "_{}".format(index)
-        out_dev_s(dev, ctrl_ident, pwm.controller.label)
-
-    for cell, val in pwm.specifier.items():
-        cell_ident = "PWMS_" + str2ident(cell)
-        if index is not None:
-            cell_ident += "_{}".format(index)
-
-        out_dev(dev, cell_ident, val)
-
-
-def write_iochannels(dev):
-    # Writes IO channel controller and specifier info for the IO
-    # channels in dev's 'io-channels' property
-
-    for io_ch_i, io_ch in enumerate(dev.iochannels):
-        write_iochannel(dev, io_ch, io_ch_i if len(dev.iochannels) > 1 else None)
+    for i, entry in enumerate(entries):
+        write_phandle_val_list_entry(
+            dev, entry, i if len(entries) > 1 else None, ident)
 
 
-def write_iochannel(dev, iochannel, index=None):
-    # Writes IO channel controller & data for the IO channel object 'iochannel'
-    # If 'index' is not None, it is added as a suffix to identifiers.
+def write_phandle_val_list_entry(dev, entry, i, ident):
+    # write_phandle_val_list() helper. We could get rid of it if it wasn't for
+    # write_spi_dev(). Adds 'i' as an index to identifiers unless it's None.
 
-    if iochannel.controller.label is not None:
-        ctrl_ident = "IO_CHANNELS_CONTROLLER"
-        if index is not None:
-            ctrl_ident += "_{}".format(index)
-        out_dev_s(dev, ctrl_ident, iochannel.controller.label)
+    if entry.controller.label is not None:
+        ctrl_ident = ident + "S_CONTROLLER"  # e.g. PWMS_CONTROLLER
+        if entry.name:
+            ctrl_ident = str2ident(entry.name) + "_" + ctrl_ident
+        # Ugly backwards compatibility hack. Only add the index if there's
+        # more than one entry.
+        if i is not None:
+            ctrl_ident += "_{}".format(i)
+        out_dev_s(dev, ctrl_ident, entry.controller.label)
 
-    for cell, val in iochannel.specifier.items():
-        cell_ident = "IO_CHANNELS_" + str2ident(cell)
-        if index is not None:
-            cell_ident += "_{}".format(index)
-
+    for cell, val in entry.specifier.items():
+        cell_ident = ident + "S_" + str2ident(cell)  # e.g. PWMS_CHANNEL
+        if entry.name:
+            # From e.g. 'pwm-names = ...'
+            cell_ident = str2ident(entry.name) + "_" + cell_ident
+        # Backwards compatibility (see above)
+        if i is not None:
+            cell_ident += "_{}".format(i)
         out_dev(dev, cell_ident, val)
 
 
