@@ -285,6 +285,19 @@
 	};
 
 	//
+	// Parent with 'sub-node:' in binding
+	//
+
+	parent-with-sub-node {
+		compatible = "parent-with-sub-node";
+		node {
+			foo = <1>;
+			bar = <2>;
+			not-speced = <0>;
+		};
+	};
+
+	//
 	// For testing Device.props (derived from 'properties:' in the binding)
 	//
 
@@ -311,15 +324,23 @@
 	};
 
 	//
-	// Parent with 'sub-node:' in binding
+	// Binding priority
 	//
 
-	parent-with-sub-node {
-		compatible = "parent-with-sub-node";
-		node {
-			foo = <1>;
-			bar = <2>;
-			not-speced = <0>;
+	binding-priority {
+		first-exists {
+			compatible = "existing-1", "nonexisting";
+		};
+		second-exists {
+			compatible = "nonexisting", "existing-1";
+		};
+		both-exist {
+			// Will use the binding for 'existing-1', because bindings are
+			// tried from left to right
+			compatible = "existing-1", "existing-2";
+		};
+		none-exist {
+			compatible = "nonexisting-1", "nonexisting-2";
 		};
 	};
 

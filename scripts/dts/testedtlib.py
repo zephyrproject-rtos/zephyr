@@ -23,12 +23,14 @@ def run():
     def fail(msg):
         raise Exception("test failed: " + msg)
 
-    def verify_streq(actual, expected):
-        actual = str(actual)
+    def verify_eq(actual, expected):
         if actual != expected:
             # Put values on separate lines to make it easy to spot differences
             fail("not equal (expected value last):\n'{}'\n'{}'"
                  .format(actual, expected))
+
+    def verify_streq(actual, expected):
+        verify_eq(str(actual), expected)
 
     edt = edtlib.EDT("test.dts", ["test-bindings"])
 
@@ -116,11 +118,26 @@ def run():
                              "{'foo': <Property, name: foo, type: int, value: 1>, 'bar': <Property, name: bar, type: int, value: 2>}")
 
     #
-    # Test Device.property (derived from DT and 'properties:' in the binding)
+    # Test Device.props (derived from DT and 'properties:' in the binding)
     #
 
     verify_streq(edt.get_dev("/props").props,
                  r"{'nonexistent-boolean': <Property, name: nonexistent-boolean, type: boolean, value: False>, 'existent-boolean': <Property, name: existent-boolean, type: boolean, value: True>, 'int': <Property, name: int, type: int, value: 1>, 'array': <Property, name: array, type: array, value: [1, 2, 3]>, 'uint8-array': <Property, name: uint8-array, type: uint8-array, value: b'\x124'>, 'string': <Property, name: string, type: string, value: 'foo'>, 'string-array': <Property, name: string-array, type: string-array, value: ['foo', 'bar', 'baz']>, 'phandle-ref': <Property, name: phandle-ref, type: phandle, value: <Device /props/node in 'test.dts', no binding>>, 'phandle-refs': <Property, name: phandle-refs, type: phandles, value: [<Device /props/node in 'test.dts', no binding>, <Device /props/node2 in 'test.dts', no binding>]>}")
+
+    #
+    # Test binding priority when 'compatible' contains many strings
+    #
+
+    verify_streq(edt.get_dev("/binding-priority/first-exists").binding_path,
+                 "test-bindings/existing-1.yaml")
+
+    verify_streq(edt.get_dev("/binding-priority/second-exists").binding_path,
+                 "test-bindings/existing-1.yaml")
+
+    verify_streq(edt.get_dev("/binding-priority/both-exist").binding_path,
+                 "test-bindings/existing-1.yaml")
+
+    verify_eq(edt.get_dev("/binding-priority/none-exist").binding_path, None)
 
     #
     # Test using the same binding file for multiple 'compatible' strings

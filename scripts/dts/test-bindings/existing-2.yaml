@@ -1,0 +1,6 @@
+# SPDX-License-Identifier: BSD-3-Clause
+
+title: For testing binding priority
+description: For testing binding priority
+
+compatible: "existing-2"
