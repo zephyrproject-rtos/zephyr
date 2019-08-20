@@ -863,6 +863,7 @@ void tcp_input(struct net_pkt *pkt)
 		}
 
 		if (conn) {
+			conn->iface = pkt->iface;
 			tcp_in(conn, pkt);
 		}
 	}
