@@ -291,24 +291,24 @@ void test_main(void)
 			 ztest_user_unit_test(test_threads_spawn_delay),
 			 ztest_unit_test(test_threads_spawn_forever),
 			 ztest_unit_test(test_thread_start),
-			 ztest_unit_test(test_threads_suspend_resume_cooperative),
+			 ztest_1cpu_unit_test(test_threads_suspend_resume_cooperative),
 			 ztest_user_unit_test(test_threads_suspend_resume_preemptible),
 			 ztest_unit_test(test_threads_priority_set),
 			 ztest_user_unit_test(test_threads_abort_self),
 			 ztest_user_unit_test(test_threads_abort_others),
-			 ztest_unit_test(test_threads_abort_repeat),
+			 ztest_1cpu_unit_test(test_threads_abort_repeat),
 			 ztest_unit_test(test_abort_handler),
-			 ztest_unit_test(test_delayed_thread_abort),
+			 ztest_1cpu_unit_test(test_delayed_thread_abort),
 			 ztest_unit_test(test_essential_thread_operation),
 			 ztest_unit_test(test_systhreads_main),
 			 ztest_unit_test(test_systhreads_idle),
-			 ztest_unit_test(test_customdata_get_set_coop),
-			 ztest_user_unit_test(test_customdata_get_set_preempt),
-			 ztest_unit_test(test_k_thread_foreach),
+			 ztest_1cpu_unit_test(test_customdata_get_set_coop),
+			 ztest_1cpu_user_unit_test(test_customdata_get_set_preempt),
+			 ztest_1cpu_unit_test(test_k_thread_foreach),
 			 ztest_unit_test(test_thread_name_get_set),
 			 ztest_user_unit_test(test_thread_name_user_get_set),
 			 ztest_unit_test(test_user_mode),
-			 ztest_unit_test(test_threads_cpu_mask)
+			 ztest_1cpu_unit_test(test_threads_cpu_mask)
 			 );
 
 	ztest_run_test_suite(threads_lifecycle);

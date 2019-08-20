@@ -520,11 +520,11 @@ void test_main(void)
 	test_timeout_setup();
 
 	ztest_test_suite(test_fifo_timeout,
-		ztest_unit_test(test_timeout_empty_fifo),
+		ztest_1cpu_unit_test(test_timeout_empty_fifo),
 		ztest_unit_test(test_timeout_non_empty_fifo),
-		ztest_unit_test(test_timeout_fifo_thread),
-		ztest_unit_test(test_timeout_threads_pend_on_fifo),
-		ztest_unit_test(test_timeout_threads_pend_on_dual_fifos),
-		ztest_unit_test(test_timeout_threads_pend_fail_on_fifo));
+		ztest_1cpu_unit_test(test_timeout_fifo_thread),
+		ztest_1cpu_unit_test(test_timeout_threads_pend_on_fifo),
+		ztest_1cpu_unit_test(test_timeout_threads_pend_on_dual_fifos),
+		ztest_1cpu_unit_test(test_timeout_threads_pend_fail_on_fifo));
 	ztest_run_test_suite(test_fifo_timeout);
 }

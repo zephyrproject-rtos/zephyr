@@ -528,20 +528,20 @@ void test_main(void)
 			 ztest_user_unit_test(test_user_workq_granted_access),
 			 /* End order-important tests */
 
-			 ztest_unit_test(test_work_submit_to_multipleq),
+			 ztest_1cpu_unit_test(test_work_submit_to_multipleq),
 			 ztest_unit_test(test_work_resubmit_to_queue),
-			 ztest_unit_test(test_work_submit_to_queue_thread),
-			 ztest_unit_test(test_work_submit_to_queue_isr),
-			 ztest_unit_test(test_work_submit_thread),
-			 ztest_unit_test(test_work_submit_isr),
-			 ztest_user_unit_test(test_user_work_submit_to_queue_thread),
-			 ztest_unit_test(test_delayed_work_submit_to_queue_thread),
-			 ztest_unit_test(test_delayed_work_submit_to_queue_isr),
-			 ztest_unit_test(test_delayed_work_submit_thread),
-			 ztest_unit_test(test_delayed_work_submit_isr),
-			 ztest_unit_test(test_delayed_work_cancel_from_queue_thread),
-			 ztest_unit_test(test_delayed_work_cancel_from_queue_isr),
-			 ztest_unit_test(test_delayed_work_cancel_thread),
-			 ztest_unit_test(test_delayed_work_cancel_isr));
+			 ztest_1cpu_unit_test(test_work_submit_to_queue_thread),
+			 ztest_1cpu_unit_test(test_work_submit_to_queue_isr),
+			 ztest_1cpu_unit_test(test_work_submit_thread),
+			 ztest_1cpu_unit_test(test_work_submit_isr),
+			 ztest_1cpu_user_unit_test(test_user_work_submit_to_queue_thread),
+			 ztest_1cpu_unit_test(test_delayed_work_submit_to_queue_thread),
+			 ztest_1cpu_unit_test(test_delayed_work_submit_to_queue_isr),
+			 ztest_1cpu_unit_test(test_delayed_work_submit_thread),
+			 ztest_1cpu_unit_test(test_delayed_work_submit_isr),
+			 ztest_1cpu_unit_test(test_delayed_work_cancel_from_queue_thread),
+			 ztest_1cpu_unit_test(test_delayed_work_cancel_from_queue_isr),
+			 ztest_1cpu_unit_test(test_delayed_work_cancel_thread),
+			 ztest_1cpu_unit_test(test_delayed_work_cancel_isr));
 	ztest_run_test_suite(workqueue_api);
 }

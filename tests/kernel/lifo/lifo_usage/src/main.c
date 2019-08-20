@@ -464,10 +464,10 @@ void test_main(void)
 
 	ztest_test_suite(test_lifo_usage,
 			 ztest_unit_test(test_lifo_nowait),
-			 ztest_unit_test(test_lifo_wait),
-			 ztest_unit_test(test_timeout_empty_lifo),
+			 ztest_1cpu_unit_test(test_lifo_wait),
+			 ztest_1cpu_unit_test(test_timeout_empty_lifo),
 			 ztest_unit_test(test_timeout_non_empty_lifo),
-			 ztest_unit_test(test_timeout_lifo_thread),
-			 ztest_unit_test(test_timeout_threads_pend_on_lifo));
+			 ztest_1cpu_unit_test(test_timeout_lifo_thread),
+			 ztest_1cpu_unit_test(test_timeout_threads_pend_on_lifo));
 	ztest_run_test_suite(test_lifo_usage);
 }

@@ -425,12 +425,12 @@ void test_main(void)
 {
 	k_thread_priority_set(k_current_get(), 0);
 	ztest_test_suite(workqueue,
-			 ztest_unit_test(test_sequence),
-			 ztest_unit_test(test_resubmit),
-			 ztest_unit_test(test_delayed),
-			 ztest_unit_test(test_delayed_resubmit),
-			 ztest_unit_test(test_delayed_resubmit_thread),
-			 ztest_unit_test(test_delayed_cancel)
+			 ztest_1cpu_unit_test(test_sequence),
+			 ztest_1cpu_unit_test(test_resubmit),
+			 ztest_1cpu_unit_test(test_delayed),
+			 ztest_1cpu_unit_test(test_delayed_resubmit),
+			 ztest_1cpu_unit_test(test_delayed_resubmit_thread),
+			 ztest_1cpu_unit_test(test_delayed_cancel)
 			 );
 	ztest_run_test_suite(workqueue);
 }

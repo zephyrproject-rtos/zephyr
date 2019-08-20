@@ -346,7 +346,7 @@ void test_main(void)
 {
 	ztest_test_suite(mempool,
 			 ztest_unit_test(test_pool_block_get),
-			 ztest_unit_test(test_pool_block_get_timeout),
+			 ztest_1cpu_unit_test(test_pool_block_get_timeout),
 			 ztest_unit_test(test_pool_block_get_wait),
 			 ztest_unit_test(test_pool_malloc)
 			 );

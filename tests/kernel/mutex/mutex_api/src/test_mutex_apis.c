@@ -145,11 +145,11 @@ void test_main(void)
 			      &mutex);
 
 	ztest_test_suite(mutex_api,
-			 ztest_user_unit_test(test_mutex_lock_unlock),
-			 ztest_user_unit_test(test_mutex_reent_lock_forever),
+			 ztest_1cpu_user_unit_test(test_mutex_lock_unlock),
+			 ztest_1cpu_user_unit_test(test_mutex_reent_lock_forever),
 			 ztest_user_unit_test(test_mutex_reent_lock_no_wait),
 			 ztest_user_unit_test(test_mutex_reent_lock_timeout_fail),
-			 ztest_user_unit_test(test_mutex_reent_lock_timeout_pass)
+			 ztest_1cpu_user_unit_test(test_mutex_reent_lock_timeout_pass)
 			 );
 	ztest_run_test_suite(mutex_api);
 }

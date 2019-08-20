@@ -223,7 +223,7 @@ void test_critical(void)
 void test_main(void)
 {
 	ztest_test_suite(kernel_critical,
-			 ztest_unit_test(test_critical)
+			 ztest_1cpu_unit_test(test_critical)
 			 );
 	ztest_run_test_suite(kernel_critical);
 }

@@ -579,32 +579,32 @@ void test_main(void)
 	ztest_test_suite(test_sys_sem,
 			ztest_unit_test(test_basic_sem_test),
 			ztest_unit_test(test_simple_sem_from_isr),
-			ztest_unit_test(test_sem_take_timeout_isr),
+			ztest_1cpu_unit_test(test_sem_take_timeout_isr),
 			ztest_unit_test(test_sem_give_take_from_isr),
 			ztest_user_unit_test(test_simple_sem_from_task),
 			ztest_user_unit_test(test_sem_take_no_wait),
 			ztest_user_unit_test(test_sem_take_no_wait_fails),
-			ztest_user_unit_test(test_sem_take_timeout_fails),
+			ztest_1cpu_user_unit_test(test_sem_take_timeout_fails),
 			ztest_user_unit_test(test_sem_take_timeout),
-			ztest_user_unit_test(test_sem_take_timeout_forever),
-			ztest_user_unit_test(test_sem_take_multiple),
+			ztest_1cpu_user_unit_test(test_sem_take_timeout_forever),
+			ztest_1cpu_user_unit_test(test_sem_take_multiple),
 			ztest_user_unit_test(test_sem_give_limit),
-			ztest_user_unit_test(test_sem_multiple_threads_wait));
+			ztest_1cpu_user_unit_test(test_sem_multiple_threads_wait));
 	ztest_run_test_suite(test_sys_sem);
 #else
 	ztest_test_suite(test_sys_sem,
 			ztest_unit_test(test_simple_sem_from_isr),
-			ztest_unit_test(test_sem_take_timeout_isr),
+			ztest_1cpu_unit_test(test_sem_take_timeout_isr),
 			ztest_unit_test(test_sem_give_take_from_isr),
 			ztest_unit_test(test_simple_sem_from_task),
 			ztest_unit_test(test_sem_take_no_wait),
 			ztest_unit_test(test_sem_take_no_wait_fails),
-			ztest_unit_test(test_sem_take_timeout_fails),
+			ztest_1cpu_unit_test(test_sem_take_timeout_fails),
 			ztest_unit_test(test_sem_take_timeout),
-			ztest_unit_test(test_sem_take_timeout_forever),
-			ztest_unit_test(test_sem_take_multiple),
+			ztest_1cpu_unit_test(test_sem_take_timeout_forever),
+			ztest_1cpu_unit_test(test_sem_take_multiple),
 			ztest_unit_test(test_sem_give_limit),
-			ztest_unit_test(test_sem_multiple_threads_wait));
+			ztest_1cpu_unit_test(test_sem_multiple_threads_wait));
 	ztest_run_test_suite(test_sys_sem);
 #endif
 }

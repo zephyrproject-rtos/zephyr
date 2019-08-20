@@ -243,8 +243,8 @@ static void test_isr_fifo_play(void)
 void test_main(void)
 {
 	ztest_test_suite(test_fifo_usage,
-			 ztest_unit_test(test_single_fifo_play),
-			 ztest_unit_test(test_dual_fifo_play),
-			 ztest_unit_test(test_isr_fifo_play));
+			 ztest_1cpu_unit_test(test_single_fifo_play),
+			 ztest_1cpu_unit_test(test_dual_fifo_play),
+			 ztest_1cpu_unit_test(test_isr_fifo_play));
 	ztest_run_test_suite(test_fifo_usage);
 }

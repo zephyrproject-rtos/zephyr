@@ -246,7 +246,7 @@ void test_main(void)
 
 	ztest_test_suite(test_stack_usage,
 			 ztest_user_unit_test(test_single_stack_play),
-			 ztest_user_unit_test(test_dual_stack_play),
-			 ztest_unit_test(test_isr_stack_play));
+			 ztest_1cpu_user_unit_test(test_dual_stack_play),
+			 ztest_1cpu_unit_test(test_isr_stack_play));
 	ztest_run_test_suite(test_stack_usage);
 }
