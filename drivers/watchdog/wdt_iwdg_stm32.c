@@ -46,7 +46,7 @@ static void iwdg_stm32_convert_timeout(u32_t timeout,
 	u8_t shift = 0U;
 
 	/* Convert timeout to seconds. */
-	float m_timeout = (float)timeout / 1000000 * LSI_VALUE;
+	u32_t m_timeout = (u64_t)timeout * LSI_VALUE / 1000000;
 
 	do {
 		divider = 4 << shift;
