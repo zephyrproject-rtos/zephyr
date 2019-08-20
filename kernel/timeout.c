@@ -168,8 +168,12 @@ void z_set_timeout_expiry(s32_t ticks, bool idle)
 		 * one is about to expire: drivers have internal logic
 		 * that will bump the timeout to the "next" tick if
 		 * it's not considered to be settable as directed.
+		 * SMP can't use this optimization though: we don't
+		 * know when context switches happen until interrupt
+		 * exit and so can't get the timeslicing clamp folded
+		 * in.
 		 */
-		if (sooner && !imminent) {
+		if (!imminent && (sooner || IS_ENABLED(CONFIG_SMP))) {
 			z_clock_set_timeout(ticks, idle);
 		}
 	}
