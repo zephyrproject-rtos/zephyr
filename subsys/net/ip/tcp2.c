@@ -960,6 +960,10 @@ int net_tcp_unref(struct net_context *context)
 
 	tp_out(context->tcp->iface, "TP_TRACE", "event", "CONN_DELETE");
 
+	if (_tcp_conn_delete == false) {
+		goto out;
+	}
+
 	tcp_send_queue_flush(context->tcp);
 
 	tcp_win_free(context->tcp->snd);
@@ -976,7 +980,7 @@ int net_tcp_unref(struct net_context *context)
 	context->flags |= NET_TCP_IN_USE;
 
 	irq_unlock(key);
-
+out:
 	return 0;
 }
 
