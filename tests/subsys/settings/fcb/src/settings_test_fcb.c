@@ -101,6 +101,9 @@ int c1_handle_set(const char *name, size_t len, settings_read_cb read_cb,
 	if (settings_name_steq(name, "mybar", &next) && !next) {
 		rc = read_cb(cb_arg, &val8, sizeof(val8));
 		zassert_true(rc >= 0, "SETTINGS_VALUE_SET callback");
+		if (rc == 0) {
+			val8 = VAL8_DELETED;
+		}
 		return 0;
 	}
 
@@ -365,6 +368,7 @@ void test_config_commit(void);
 
 void test_config_empty_fcb(void);
 void test_config_save_1_fcb(void);
+void test_config_delete_fcb(void);
 void test_config_insert2(void);
 void test_config_save_2_fcb(void);
 void test_config_insert3(void);
@@ -396,6 +400,7 @@ void test_main(void)
 			 ztest_unit_test(test_config_save_fcb_unaligned),
 			 ztest_unit_test(test_config_empty_fcb),
 			 ztest_unit_test(test_config_save_1_fcb),
+			 ztest_unit_test(test_config_delete_fcb),
 			 ztest_unit_test(test_config_insert2),
 			 ztest_unit_test(test_config_save_2_fcb),
 			 ztest_unit_test(test_config_insert3),
