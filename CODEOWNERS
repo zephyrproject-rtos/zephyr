@@ -211,7 +211,6 @@
 /ext/hal/microchip/                       @franciscomunoz @albertofloyd @scottwcpg
 /ext/hal/nordic/                          @carlescufi @anangl
 /ext/hal/nxp/                             @MaureenHelm
-/ext/hal/ti/simplelink/                   @vanti
 /ext/lib/crypto/tinycrypt/                @ceolin
 /include/                                 @nashif @carlescufi @galak @MaureenHelm
 /include/drivers/adc.h                    @anangl
