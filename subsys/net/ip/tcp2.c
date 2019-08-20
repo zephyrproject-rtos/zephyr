@@ -289,30 +289,6 @@ out:
 }
 
 #if IS_ENABLED(CONFIG_NET_TP)
-static struct tcp *tcp_conn_new(struct net_pkt *pkt)
-{
-	struct tcp *conn = tcp_calloc(1, sizeof(struct tcp));
-
-	conn->win = tcp_window;
-
-	conn->src = tcp_endpoint_new(pkt, DST);
-	conn->dst = tcp_endpoint_new(pkt, SRC);
-
-	conn->iface = pkt->iface;
-
-	conn->rcv = tcp_win_new("RCV");
-	conn->snd = tcp_win_new("SND");
-
-	sys_slist_init(&conn->send_queue);
-	k_timer_init(&conn->send_timer, tcp_send_process, NULL);
-	k_timer_user_data_set(&conn->send_timer, conn->context);
-
-	sys_slist_append(&tcp_conns, (sys_snode_t *) conn);
-	conn->state = TCP_LISTEN;
-
-	return conn;
-}
-
 static bool tcp_endpoint_cmp(union tcp_endpoint *ep, struct net_pkt *pkt,
 				int which)
 {
@@ -1249,7 +1225,7 @@ static void tcp_step(void)
 		struct tcp *conn = tcp_conn_search(pkt);
 
 		if (conn == NULL) {
-			conn = tcp_conn_new(pkt);
+			/* conn = tcp_conn_new(pkt); */
 		}
 
 		tcp_in(conn, pkt);
