@@ -42,6 +42,7 @@ NET_BUF_POOL_DEFINE(tcp_nbufs, 64/*count*/, 128/*size*/, 0, NULL);
 
 static void tcp_in(struct tcp *conn, struct net_pkt *pkt);
 static void *tcp_conn_delete(struct tcp *conn);
+int net_tcp_get(struct net_context *context);
 
 #if IS_ENABLED(CONFIG_NET_TP)
 static size_t tcp_endpoint_len(sa_family_t af)
@@ -829,7 +830,7 @@ next_state:
 		break;
 	case TCP_CLOSED:
 		fl = 0;
-		tcp_conn_delete(conn);
+		net_tcp_unref(conn->context);
 		break;
 	case TCP_TIME_WAIT:
 	case TCP_CLOSING:
@@ -859,7 +860,10 @@ void tcp_input(struct net_pkt *pkt)
 		struct tcp *conn = tcp_conn_search(pkt);
 
 		if (conn == NULL && SYN == th->th_flags) {
-			conn = tcp_conn_new(pkt);
+			struct net_context *context =
+				tcp_calloc(1, sizeof(struct net_context));
+			net_tcp_get(context);
+			conn = context->tcp;
 		}
 
 		if (conn) {
@@ -1325,7 +1329,14 @@ bool tp_input(struct net_pkt *pkt)
 						sizeof(data_to_send), tp->data);
 			tp_output(pkt->iface, buf, 1);
 			responded = true;
-			conn = tcp_conn_new(pkt);
+
+			{
+				struct net_context *context = tcp_calloc(1,
+						sizeof(struct net_context));
+				net_tcp_get(context);
+				conn = context->tcp;
+				conn->iface = pkt->iface;
+			}
 			conn->seq = tp->seq;
 			if (len > 0) {
 				tcp_win_append(conn->snd, data_to_send, len);
@@ -1335,7 +1346,13 @@ bool tp_input(struct net_pkt *pkt)
 		if (is("CLOSE", tp->op)) {
 			_tcp_conn_delete = true;
 			tp_trace = false;
-			tcp_conn_delete(tcp_conn_search(pkt));
+			{
+				struct net_context *context;
+				conn = (void *) sys_slist_peek_head(&tcp_conns);
+				context = conn->context;
+				net_tcp_unref(context);
+				tcp_free(context);
+			}
 			tp_mem_stat();
 			tp_nbuf_stat();
 			tp_pkt_stat();
