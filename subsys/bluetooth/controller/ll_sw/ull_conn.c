@@ -3856,7 +3856,6 @@ static inline int length_req_rsp_recv(struct ll_conn *conn, memq_link_t *link,
 	u16_t eff_rx_time;
 	u16_t eff_tx_time;
 #endif /* CONFIG_BT_CTLR_PHY */
-	u8_t nack = 0U;
 
 	/* Check for free ctrl tx PDU */
 	if (pdu_rx->llctrl.opcode == PDU_DATA_LLCTRL_TYPE_LENGTH_REQ) {
@@ -4033,21 +4032,20 @@ static inline int length_req_rsp_recv(struct ll_conn *conn, memq_link_t *link,
 
 send_length_resp:
 	if (tx) {
-		if (nack) {
-			mem_release(tx, &mem_conn_tx_ctrl.free);
-		} else {
+		/* FIXME: if nack-ing is implemented then release tx instead
+		 *        of sending resp.
+		 */
 #if !defined(CONFIG_BT_CTLR_PHY)
-			length_resp_send(conn, tx, eff_rx_octets,
-					 eff_tx_octets);
+		length_resp_send(conn, tx, eff_rx_octets,
+				 eff_tx_octets);
 #else /* CONFIG_BT_CTLR_PHY */
-			length_resp_send(conn, tx, eff_rx_octets,
-					 eff_rx_time, eff_tx_octets,
-					 eff_tx_time);
+		length_resp_send(conn, tx, eff_rx_octets,
+				 eff_rx_time, eff_tx_octets,
+				 eff_tx_time);
 #endif /* CONFIG_BT_CTLR_PHY */
-		}
 	}
 
-	return nack;
+	return 0;
 }
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
