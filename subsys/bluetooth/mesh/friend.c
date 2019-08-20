@@ -1226,6 +1226,10 @@ static bool friend_queue_has_space(struct bt_mesh_friend *frnd, u16_t addr,
 	u32_t total = 0;
 	int i;
 
+	if (seg_count > CONFIG_BT_MESH_FRIEND_QUEUE_SIZE) {
+		return false;
+	}
+
 	for (i = 0; i < ARRAY_SIZE(frnd->seg); i++) {
 		struct bt_mesh_friend_seg *seg = &frnd->seg[i];
 
@@ -1258,10 +1262,6 @@ bool bt_mesh_friend_queue_has_space(u16_t net_idx, u16_t src, u16_t dst,
 {
 	bool someone_has_space = false, friend_match = false;
 	int i;
-
-	if (seg_count > CONFIG_BT_MESH_FRIEND_QUEUE_SIZE) {
-		return false;
-	}
 
 	for (i = 0; i < ARRAY_SIZE(bt_mesh.frnd); i++) {
 		struct bt_mesh_friend *frnd = &bt_mesh.frnd[i];
