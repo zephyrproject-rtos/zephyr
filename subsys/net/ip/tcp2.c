@@ -949,6 +949,8 @@ int net_tcp_get(struct net_context *context)
 	k_timer_init(&tcp_context[i].send_timer, tcp_send_process, NULL);
 	k_timer_user_data_set(&tcp_context[i].send_timer, context);
 
+	sys_slist_append(&tcp_conns, (sys_snode_t *) &tcp_context[i]);
+
 	return 0;
 }
 
@@ -968,6 +970,7 @@ int net_tcp_unref(struct net_context *context)
 
 	key = irq_lock();
 
+	sys_slist_find_and_remove(&tcp_conns, (sys_snode_t *) context->tcp);
 	memset(context->tcp, 0, sizeof(*context->tcp));
 	context->tcp = NULL;
 
