@@ -973,6 +973,7 @@ int net_tcp_unref(struct net_context *context)
 	sys_slist_find_and_remove(&tcp_conns, (sys_snode_t *) context->tcp);
 	memset(context->tcp, 0, sizeof(*context->tcp));
 	context->tcp = NULL;
+	context->flags |= NET_TCP_IN_USE;
 
 	irq_unlock(key);
 
