@@ -1376,6 +1376,7 @@ bool tp_input(struct net_pkt *pkt)
 		break;
 	case TP_INTROSPECT_REQUEST:
 		json_len = sizeof(buf);
+		conn = (void *) sys_slist_peek_head(&tcp_conns);
 		tcp_to_json(conn, buf, &json_len);
 		break;
 	case TP_DEBUG_STOP: case TP_DEBUG_CONTINUE:
