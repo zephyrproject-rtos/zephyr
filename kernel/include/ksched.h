@@ -51,6 +51,7 @@ struct k_thread *z_unpend_first_thread(_wait_q_t *wait_q);
 void z_unpend_thread(struct k_thread *thread);
 int z_unpend_all(_wait_q_t *wait_q);
 void z_thread_priority_set(struct k_thread *thread, int prio);
+bool z_set_prio(struct k_thread *thread, int prio);
 void *z_get_next_switch_handle(void *interrupted);
 struct k_thread *z_find_first_thread_to_unpend(_wait_q_t *wait_q,
 					      struct k_thread *from);
