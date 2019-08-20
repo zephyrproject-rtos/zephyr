@@ -36,7 +36,7 @@
 #endif
 
 static struct k_thread ecc_thread_data;
-static K_THREAD_STACK_DEFINE(ecc_thread_stack, 1100);
+static K_THREAD_STACK_DEFINE(ecc_thread_stack, CONFIG_BT_HCI_ECC_STACK_SIZE);
 
 /* based on Core Specification 4.2 Vol 3. Part H 2.3.5.6.1 */
 static const u32_t debug_private_key[8] = {

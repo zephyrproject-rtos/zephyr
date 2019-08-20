@@ -63,9 +63,9 @@ config BT_DISCARDABLE_BUF_COUNT
 	  block and may even eliminate deadlocks in some cases.
 
 config BT_HCI_TX_STACK_SIZE
-	# NOTE: This value is derived from other symbols and should not be
-	# user-configurable. Do not give it a prompt.
-	int
+	# NOTE: This value is derived from other symbols and should only be
+	# changed if required by architecture
+	int "HCI Tx thread stack size"
 	default 512 if BT_H4
 	default 512 if BT_H5
 	default 416 if BT_SPI
@@ -79,7 +79,18 @@ config BT_HCI_TX_STACK_SIZE
 	# the worst-case stack size if an out-of-tree controller is used.
 	default 1024
 	help
-	  Stack size needed for executing bt_send with specified driver
+	  Stack size needed for executing bt_send with specified driver.
+	  NOTE: This is an advanced setting and should not be changed unless
+	  absolutely necessary
+
+config BT_HCI_ECC_STACK_SIZE
+	# NOTE: This value is derived from other symbols and should only be
+	# changed if required by architecture
+	int "HCI ECC thread stack size"
+	default 1100
+	help
+	  NOTE: This is an advanced setting and should not be changed unless
+	  absolutely necessary
 
 config BT_HCI_TX_PRIO
 	# Hidden option for Co-Operative Tx thread priority
