@@ -1147,25 +1147,26 @@ void ull_conn_done(struct node_rx_event_done *done)
 void ull_conn_tx_demux(u8_t count)
 {
 	do {
-		struct ll_conn *conn;
 		struct lll_tx *lll_tx;
+		struct ll_conn *conn;
+		struct node_tx *tx;
 
 		lll_tx = MFIFO_DEQUEUE_GET(conn_tx);
 		if (!lll_tx) {
 			break;
 		}
 
+		tx = lll_tx->node;
+		tx->next = NULL;
+
 		conn = ll_connected_get(lll_tx->handle);
 		if (conn) {
-			struct node_tx *tx = lll_tx->node;
-
 #if defined(CONFIG_BT_CTLR_LLID_DATA_START_EMPTY)
 			if (empty_data_start_release(conn, tx)) {
 				goto ull_conn_tx_demux_release;
 			}
 #endif /* CONFIG_BT_CTLR_LLID_DATA_START_EMPTY */
 
-			tx->next = NULL;
 			if (!conn->tx_data) {
 				conn->tx_data = tx;
 				if (!conn->tx_head) {
@@ -1180,7 +1181,6 @@ void ull_conn_tx_demux(u8_t count)
 
 			conn->tx_data_last = tx;
 		} else {
-			struct node_tx *tx = lll_tx->node;
 			struct pdu_data *p = (void *)tx->pdu;
 
 			p->ll_id = PDU_DATA_LLID_RESV;
