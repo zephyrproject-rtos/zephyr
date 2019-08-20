@@ -519,9 +519,11 @@ static size_t tcp_data_get(struct tcp *conn, struct net_pkt *pkt)
 
 		tcp_free(buf);
 
-		net_context_packet_received((struct net_conn *)conn->context->conn_handler,
-					    pkt, NULL, NULL,
-					    conn->recv_user_data);
+		if (!IS_ENABLED(CONFIG_NET_TP)) {
+			net_context_packet_received(
+				(struct net_conn *)conn->context->conn_handler,
+				pkt, NULL, NULL, conn->recv_user_data);
+		}
 	}
 
 	return len;
