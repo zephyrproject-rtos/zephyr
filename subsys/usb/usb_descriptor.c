@@ -377,6 +377,12 @@ static int usb_fix_descriptor(struct usb_desc_header *head)
 			numof_ifaces++;
 			break;
 		case USB_ENDPOINT_DESC:
+			if (!cfg_data) {
+				LOG_ERR("Uninitialized usb_cfg_data pointer, "
+					"corrupted device descriptor?");
+				return -1;
+			}
+
 			LOG_DBG("Endpoint descriptor %p", head);
 			ep_descr = (struct usb_ep_descriptor *)head;
 			if (usb_validate_ep_cfg_data(ep_descr,
