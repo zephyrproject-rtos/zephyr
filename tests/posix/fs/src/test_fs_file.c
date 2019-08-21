@@ -184,3 +184,14 @@ void test_fs_unlink(void)
 {
 	zassert_true(test_file_delete() == TC_PASS, NULL);
 }
+
+void test_fs_fd_leak(void)
+{
+	const int reps =
+	    MAX(CONFIG_POSIX_MAX_OPEN_FILES, CONFIG_POSIX_MAX_FDS) + 5;
+
+	for (int i = 0; i < reps; i++) {
+		test_fs_open();
+		test_fs_close();
+	}
+}
