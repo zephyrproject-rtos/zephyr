@@ -3,8 +3,7 @@ title: Atmel SAM0 GPIO PORT driver
 description: >
     This is a representation of the SAM0 GPIO PORT nodes
 
-inherits:
-    !include [gpio-controller.yaml, base.yaml]
+include: [gpio-controller.yaml, base.yaml]
 
 properties:
     compatible:

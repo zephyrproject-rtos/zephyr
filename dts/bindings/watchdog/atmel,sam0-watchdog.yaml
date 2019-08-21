@@ -3,8 +3,7 @@ title: Atmel SAM0 watchdog driver
 description: >
     This is a representation of the SAM0 watchdog
 
-inherits:
-    !include base.yaml
+include: base.yaml
 
 properties:
     compatible:

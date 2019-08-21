@@ -9,8 +9,7 @@ title: Kinetis System Integration Module (SIM)
 description: >
     This is a representation of the Kinetis SIM IP node
 
-inherits:
-    !include base.yaml
+include: base.yaml
 
 properties:
     compatible:

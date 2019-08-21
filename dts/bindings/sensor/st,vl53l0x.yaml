@@ -9,8 +9,7 @@ title: STMicroelectronics MEMS sensors VL53L0X
 description: >
     This binding gives a base representation of VL53L0X Time Of Flight sensor
 
-inherits:
-    !include i2c-device.yaml
+include: i2c-device.yaml
 
 properties:
     compatible:

@@ -3,8 +3,7 @@ title: nRF SW PWM
 description: >
     This binding gives a base representation of the nRFx S/W PWM
 
-inherits:
-    !include base.yaml
+include: base.yaml
 
 properties:
     compatible:

@@ -1,7 +1,6 @@
 # Common fields for CAN controllers
 
-inherits:
-    !include base.yaml
+include: base.yaml
 
 child:
     bus: can

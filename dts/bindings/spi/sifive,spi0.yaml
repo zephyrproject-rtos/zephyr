@@ -9,8 +9,7 @@ title: Sifive SPI driver
 description: >
     This binding gives a base representation of the Sifive SPI controller
 
-inherits:
-    !include spi-controller.yaml
+include: spi-controller.yaml
 
 properties:
     compatible:

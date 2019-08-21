@@ -2,8 +2,7 @@ title: APA102 SPI LED strip
 
 description: APA102 SPI LED strip binding
 
-inherits:
-    !include spi-device.yaml
+include: spi-device.yaml
 
 properties:
     compatible:

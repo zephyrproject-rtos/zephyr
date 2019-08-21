@@ -9,8 +9,7 @@ title: ADXL372 Three Axis High-g I2C/SPI accelerometer
 description: >
     This is a representation of the ADXL372 Three Axis High-g I2C/SPI accelerometer
 
-inherits:
-    !include i2c-device.yaml
+include: i2c-device.yaml
 
 properties:
     compatible:

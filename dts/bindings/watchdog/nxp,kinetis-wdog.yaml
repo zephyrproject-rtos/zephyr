@@ -9,8 +9,7 @@ title: NXP Kinetis watchdog driver
 description: >
     This is a representation of the Kinetis watchdog
 
-inherits:
-    !include base.yaml
+include: base.yaml
 
 properties:
     compatible:

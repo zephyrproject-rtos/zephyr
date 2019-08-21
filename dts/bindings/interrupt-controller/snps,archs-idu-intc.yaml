@@ -11,8 +11,7 @@ description: >
     SMP configurations for dynamic IRQ routing, load balancing of
     common/external IRQs towards core intc
 
-inherits:
-    !include [interrupt-controller.yaml, base.yaml]
+include: [interrupt-controller.yaml, base.yaml]
 
 properties:
     compatible:

@@ -1,7 +1,6 @@
 # Common fields for flash controllers
 
-inherits:
-    !include base.yaml
+include: base.yaml
 
 properties:
     label:

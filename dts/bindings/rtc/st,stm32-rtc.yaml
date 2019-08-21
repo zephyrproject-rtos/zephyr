@@ -9,8 +9,7 @@ title: STM32 RTC
 description: >
     This binding gives a base representation of the STM32 RTC
 
-inherits:
-    !include rtc.yaml
+include: rtc.yaml
 
 properties:
     compatible:

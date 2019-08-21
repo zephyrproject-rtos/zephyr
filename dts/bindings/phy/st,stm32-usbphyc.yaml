@@ -9,8 +9,7 @@ title: STM32 USB HS PHY
 description: >
     This binding gives a base representation of the STM32 USB HS PHY controller
 
-inherits:
-    !include phy-controller.yaml
+include: phy-controller.yaml
 
 properties:
     compatible:

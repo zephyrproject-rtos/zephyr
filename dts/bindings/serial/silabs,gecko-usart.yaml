@@ -3,8 +3,7 @@ title: GECKO USART
 description: >
     This binding gives a base representation of the Gecko USART
 
-inherits:
-    !include uart-controller.yaml
+include: uart-controller.yaml
 
 properties:
     compatible:

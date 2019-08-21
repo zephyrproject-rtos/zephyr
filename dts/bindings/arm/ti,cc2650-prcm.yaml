@@ -5,8 +5,7 @@ description: >
     This binding gives a base representation of the TI CC2650
     Power, Reset, and Clock control Module.
 
-inherits:
-    !include base.yaml
+include: base.yaml
 
 properties:
     compatible:

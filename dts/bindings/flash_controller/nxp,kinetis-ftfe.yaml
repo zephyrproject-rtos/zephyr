@@ -3,8 +3,7 @@ title: NXP Kinetis Flash Memory Module (FTFE)
 description: >
     This binding gives for the NXP Kinetis Flash Memory Module E (FTFE)
 
-inherits:
-    !include flash-controller.yaml
+include: flash-controller.yaml
 
 properties:
     compatible:

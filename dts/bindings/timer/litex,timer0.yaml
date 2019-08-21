@@ -9,8 +9,7 @@ title: LiteX timer
 description: >
     This binding gives a base representation of the LiteX timer
 
-inherits:
-    !include base.yaml
+include: base.yaml
 
 properties:
     compatible:

@@ -9,8 +9,7 @@ title: ARDUINO GPIO HEADER
 description: >
     This is a representation of GPIO pin nodes exposed as headers on Arduino R3
 
-inherits:
-    !include [gpio-nexus.yaml, base.yaml]
+include: [gpio-nexus.yaml, base.yaml]
 
 properties:
     compatible:

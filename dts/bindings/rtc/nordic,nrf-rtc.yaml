@@ -9,8 +9,7 @@ title: Nordic nRF Real Time Counter
 description: >
     This is a representation of the Nordic nRF RTC node
 
-inherits:
-    !include rtc.yaml
+include: rtc.yaml
 
 properties:
     compatible:

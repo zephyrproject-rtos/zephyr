@@ -9,8 +9,7 @@ title: SSD16XX 250x150 EPD Display Controller
 description: >
     This is a representation of the SSD16XX 250x150 EPD Display Controller
 
-inherits:
-    !include spi-device.yaml
+include: spi-device.yaml
 
 properties:
     compatible:

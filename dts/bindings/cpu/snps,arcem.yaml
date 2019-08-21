@@ -9,8 +9,7 @@ title: Synopsys ARC EM CPU
 description: >
     This binding gives a base representation for Synopsys ARC EM CPU.
 
-inherits:
-    !include cpu.yaml
+include: cpu.yaml
 
 properties:
     compatible:

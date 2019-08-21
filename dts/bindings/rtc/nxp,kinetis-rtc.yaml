@@ -9,8 +9,7 @@ title: Kinetis RTC
 description: >
     This binding gives a base representation of the Kinetis RTC
 
-inherits:
-    !include rtc.yaml
+include: rtc.yaml
 
 properties:
     compatible:

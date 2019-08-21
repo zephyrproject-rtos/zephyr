@@ -4,8 +4,7 @@ title: STM32 CCM
 description: >
   This binding gives a base representation of the STM32 CCM (Core Coupled Memory)
 
-inherits:
-  !include base.yaml
+include: base.yaml
 
 properties:
     compatible:

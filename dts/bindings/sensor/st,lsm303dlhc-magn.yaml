@@ -9,8 +9,7 @@ title: STMicroelectronics MEMS sensors LSM303DLHC
 description: >
     This binding gives a base representation of LSM303DLHC magnetometer sensor
 
-inherits:
-    !include i2c-device.yaml
+include: i2c-device.yaml
 
 properties:
     compatible:

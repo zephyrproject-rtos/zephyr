@@ -9,8 +9,7 @@ title: Cadence Tensilica Xtensa LX6 CPU
 description: >
     This binding gives a base representation for Cadence Tensilica Xtensa LX6 CPU.
 
-inherits:
-    !include cpu.yaml
+include: cpu.yaml
 
 properties:
     compatible:

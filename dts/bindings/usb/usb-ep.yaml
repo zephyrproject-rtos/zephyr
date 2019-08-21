@@ -6,8 +6,7 @@
 
 # Common fields that give the number of endpoints supported by the USB hardware
 
-inherits:
-    !include usb-controller.yaml
+include: usb-controller.yaml
 
 properties:
     num-bidir-endpoints:

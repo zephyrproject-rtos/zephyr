@@ -4,8 +4,7 @@
 
 # Common fields for ESPI devices
 
-inherits:
-    !include base.yaml
+include: base.yaml
 
 child:
     bus: espi

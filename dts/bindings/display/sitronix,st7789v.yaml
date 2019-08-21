@@ -9,8 +9,7 @@ title: ST7789V 320x240 Display Controller
 description: >
     This is a representation of the ST7789V 320x240 Display Controller
 
-inherits:
-    !include spi-device.yaml
+include: spi-device.yaml
 
 properties:
     compatible:

@@ -10,8 +10,7 @@ description: >
     This binding gives a base representation of LIS2DH 3-axis accelerometer
     accessed through SPI bus
 
-inherits:
-    !include spi-device.yaml
+include: spi-device.yaml
 
 properties:
     compatible:

@@ -9,8 +9,7 @@ title: Synopsys Designware GPIO controller
 description: >
     This is a representation of the Synopsys DesignWare gpio node
 
-inherits:
-    !include [gpio-controller.yaml, base.yaml]
+include: [gpio-controller.yaml, base.yaml]
 
 properties:
     compatible:

@@ -8,8 +8,7 @@ title: MMC/SD/SDIO slot connected via SPI
 
 description: MMC/SD/SDIO slot connected via SPI
 
-inherits:
-    !include spi-device.yaml
+include: spi-device.yaml
 
 properties:
     compatible:

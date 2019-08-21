@@ -9,8 +9,7 @@ title: Native POSIX UART
 description: >
     This binding gives a base representation of the Native POSIX UART
 
-inherits:
-    !include uart-controller.yaml
+include: uart-controller.yaml
 
 properties:
     compatible:

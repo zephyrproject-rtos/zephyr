@@ -9,8 +9,7 @@ title: NXP Kinetis USBD
 description: >
     NPX Kinetis USBFSOTG Controller in device mode
 
-inherits:
-    !include usb-ep.yaml
+include: usb-ep.yaml
 
 properties:
     compatible:

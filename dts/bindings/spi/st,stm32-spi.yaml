@@ -9,8 +9,7 @@ title: STM32 SPI
 description: >
     This binding gives a base representation of the STM32 SPI controller
 
-inherits:
-    !include spi-controller.yaml
+include: spi-controller.yaml
 
 properties:
     compatible:

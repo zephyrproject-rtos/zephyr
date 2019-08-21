@@ -8,8 +8,7 @@ title: NXP Kinetis Ethernet
 
 description: >
     This binding gives a base representation of the NXP Kinetis Ethernet
-inherits:
-  !include ethernet.yaml
+include: ethernet.yaml
 
 properties:
     compatible:

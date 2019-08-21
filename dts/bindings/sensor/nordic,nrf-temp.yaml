@@ -9,8 +9,7 @@ title: Nordic nRF Family TEMP node
 description: >
     This is a representation of the Nordic nRF TEMP node
 
-inherits:
-    !include base.yaml
+include: base.yaml
 
 properties:
     compatible:

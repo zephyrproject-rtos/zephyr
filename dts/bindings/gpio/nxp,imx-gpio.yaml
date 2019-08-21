@@ -9,8 +9,7 @@ title: i.MX GPIO
 description: >
     This is a representation of the i.MX GPIO nodes
 
-inherits:
-    !include [gpio-controller.yaml, base.yaml]
+include: [gpio-controller.yaml, base.yaml]
 
 properties:
     compatible:

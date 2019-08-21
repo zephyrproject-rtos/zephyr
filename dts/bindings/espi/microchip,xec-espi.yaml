@@ -7,8 +7,7 @@ title: MICROCHIP ESPI
 description: >
     This binding gives a base representation of ESPI controller for Microchip
 
-inherits:
-    !include espi-controller.yaml
+include: espi-controller.yaml
 
 properties:
     compatible:

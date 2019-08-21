@@ -9,8 +9,7 @@ title: Si7006 Temperature and Humidity sensor
 description: >
     This is a representation of Si7006 Temperature and Humidity sensor
 
-inherits:
-    !include i2c-device.yaml
+include: i2c-device.yaml
 
 properties:
     compatible:

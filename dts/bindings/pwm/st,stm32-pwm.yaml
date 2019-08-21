@@ -3,8 +3,7 @@ title: STM32 PWM
 description: >
     This binding gives a base representation of the STM32 PWM
 
-inherits:
-    !include [pwm-controller.yaml, base.yaml]
+include: [pwm-controller.yaml, base.yaml]
 
 properties:
     compatible:

@@ -3,8 +3,7 @@ title: STM32 TIMERS
 description: >
     This binding gives a base representation of the STM32 TIMERS
 
-inherits:
-    !include base.yaml
+include: base.yaml
 
 properties:
     compatible:

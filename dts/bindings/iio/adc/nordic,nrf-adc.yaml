@@ -9,8 +9,7 @@ title: Nordic Semiconductor nRF Family ADC
 description: >
     This is a representation of the nRF ADC node
 
-inherits:
-    !include adc-controller.yaml
+include: adc-controller.yaml
 
 properties:
     compatible:

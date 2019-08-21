@@ -3,8 +3,7 @@ title: RV32M1 Pinmux
 description: >
     This is a representation of the RV32M1 Pinmux node
 
-inherits:
-    !include base.yaml
+include: base.yaml
 
 properties:
     compatible:

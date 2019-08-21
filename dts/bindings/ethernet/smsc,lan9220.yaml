@@ -9,8 +9,7 @@ description: >
      This is a representation of the formerly SMSC, now Microchip, LAN9220
      Ethernet controller.
 
-inherits:
-     !include base.yaml
+include: base.yaml
 
 properties:
     compatible:

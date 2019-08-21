@@ -3,8 +3,7 @@ title: ARM CMSDK TIMER
 description: >
     This binding gives a base representation of the ARM CMSDK TIMER
 
-inherits:
-    !include base.yaml
+include: base.yaml
 
 properties:
     compatible:

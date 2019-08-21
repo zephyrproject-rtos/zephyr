@@ -9,8 +9,7 @@ title: Generic fixed rate clock provider
 description: >
     This is a representation of a generic fixed rate clock provider.
 
-inherits:
-    !include clock-controller.yaml
+include: clock-controller.yaml
 
 properties:
     compatible:

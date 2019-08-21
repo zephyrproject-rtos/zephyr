@@ -9,8 +9,7 @@ title: WNC-M14A2A LTE-M Modem
 description: >
     This is a representation of the WNC-M14A2A LTE-M modem.
 
-inherits:
-    !include uart-device.yaml
+include: uart-device.yaml
 
 properties:
     compatible:

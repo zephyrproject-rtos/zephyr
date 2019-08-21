@@ -9,8 +9,7 @@ title: Intel Apollo Lake GPIO controller
 description: >
     This is a representation of the Intel Apollo Lake GPIO node
 
-inherits:
-    !include [gpio-controller.yaml, base.yaml]
+include: [gpio-controller.yaml, base.yaml]
 
 properties:
     compatible:

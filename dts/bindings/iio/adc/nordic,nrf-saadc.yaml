@@ -9,8 +9,7 @@ title: Nordic Semiconductor nRF Family SAADC
 description: >
     This is a representation of the nRF SAADC node
 
-inherits:
-    !include adc-controller.yaml
+include: adc-controller.yaml
 
 properties:
     compatible:

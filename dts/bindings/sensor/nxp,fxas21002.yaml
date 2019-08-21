@@ -9,8 +9,7 @@ title: FXAS21002 3-axis gyroscope
 description: >
     This is a representation of the FXAS21002 3-axis gyroscope sensor
 
-inherits:
-    !include i2c-device.yaml
+include: i2c-device.yaml
 
 properties:
     compatible:

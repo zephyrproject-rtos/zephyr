@@ -9,8 +9,7 @@ title: Nordic nRF clock control
 description: >
     This is a representation of the Nordic nRF clock control node
 
-inherits:
-    !include base.yaml
+include: base.yaml
 
 properties:
     compatible:

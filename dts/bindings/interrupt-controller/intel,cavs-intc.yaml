@@ -3,8 +3,7 @@ title: CAVS Interrupt Controller
 description: >
     This binding describes CAVS Interrupt controller
 
-inherits:
-    !include base.yaml
+include: base.yaml
 
 properties:
   compatible:

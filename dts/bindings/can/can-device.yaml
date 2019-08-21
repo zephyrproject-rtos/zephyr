@@ -9,8 +9,7 @@ title: CAN Device Base Structure
 description: >
     This binding gives the base structures for all can devices
 
-inherits:
-    !include base.yaml
+include: base.yaml
 
 parent:
     bus: can

@@ -3,8 +3,7 @@ title: EFR32XG1 GPIO
 description: >
     This is a representation of the EFR32XG1 GPIO nodes
 
-inherits:
-    !include base.yaml
+include: base.yaml
 
 properties:
     compatible:

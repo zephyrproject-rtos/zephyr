@@ -9,8 +9,7 @@ title: SSD1306 128x64 Dot Matrix Display Controller
 description: >
     This is a representation of the SSD1306 128x64 Dot Matrix Display Controller
 
-inherits:
-    !include i2c-device.yaml
+include: i2c-device.yaml
 
 properties:
     compatible:

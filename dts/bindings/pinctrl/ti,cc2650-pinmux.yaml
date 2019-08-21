@@ -4,8 +4,7 @@ title: TI CC2650 Pinmux
 description: >
     This is a representation of the TI CC2650 pinmux node
 
-inherits:
-    !include base.yaml
+include: base.yaml
 
 properties:
     compatible:

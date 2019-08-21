@@ -10,8 +10,7 @@ description: >
     Binding for the Nordic DPPIC
     Distributed Programmable Peripheral Interconnect Controller
 
-inherits:
-    !include base.yaml
+include: base.yaml
 
 properties:
     compatible:

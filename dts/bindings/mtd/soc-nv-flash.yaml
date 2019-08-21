@@ -3,8 +3,7 @@ title: Flash base node description
 description: >
     This binding gives a base FLASH description
 
-inherits:
-    !include base.yaml
+include: base.yaml
 
 properties:
     compatible:

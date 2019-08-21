@@ -2,8 +2,7 @@ title: TI LP3943 LED Driver
 
 description: TI LP3943 LED binding
 
-inherits:
-    !include i2c-device.yaml
+include: i2c-device.yaml
 
 properties:
     compatible:

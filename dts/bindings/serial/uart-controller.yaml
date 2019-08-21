@@ -1,7 +1,6 @@
 # Common fields for UART controllers
 
-inherits:
-    !include base.yaml
+include: base.yaml
 
 child:
     bus: uart

@@ -9,8 +9,7 @@ title: Data Tightly-Integrated Memory
 description: >
     This bindings describes the SiFive Data Tightly-Integrated Memory
 
-inherits:
-    !include base.yaml
+include: base.yaml
 
 properties:
     compatible:

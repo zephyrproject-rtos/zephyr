@@ -3,8 +3,7 @@ title: Nordic SPU (System Protection Unit)
 description: >
     Binding for the Nordic SPU (System Protection Unit)
 
-inherits:
-    !include base.yaml
+include: base.yaml
 
 properties:
     compatible:

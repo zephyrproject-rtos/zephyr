@@ -9,8 +9,7 @@ title: Kinetis TRNG (True Random Number Generator)
 description: >
     This binding gives a base representation of the Kinetis RNGA
 
-inherits:
-    !include base.yaml
+include: base.yaml
 
 properties:
     compatible:

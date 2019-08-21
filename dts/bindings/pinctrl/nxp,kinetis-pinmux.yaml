@@ -3,8 +3,7 @@ title: Kinetis Pinmux
 description: >
     This is a representation of the Kinetis Pinmux node
 
-inherits:
-    !include base.yaml
+include: base.yaml
 
 properties:
     compatible:

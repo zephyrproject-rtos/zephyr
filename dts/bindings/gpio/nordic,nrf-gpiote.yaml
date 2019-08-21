@@ -9,8 +9,7 @@ title: NRF5 GPIOTE
 description: >
     This is a representation of the NRF GPIOTE node
 
-inherits:
-    !include base.yaml
+include: base.yaml
 
 properties:
     compatible:

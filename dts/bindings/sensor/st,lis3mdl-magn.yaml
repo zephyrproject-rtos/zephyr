@@ -9,8 +9,7 @@ title: STMicroelectronics MEMS sensors LIS3MDL
 description: >
     This binding gives a base representation of LIS3MDL magnetometer
 
-inherits:
-    !include i2c-device.yaml
+include: i2c-device.yaml
 
 properties:
     compatible:

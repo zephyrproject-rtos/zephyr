@@ -10,8 +10,7 @@ description: >
     This binding gives a base representation of ens210 Relative Humidity and
     Temperature Sensor
 
-inherits:
-    !include i2c-device.yaml
+include: i2c-device.yaml
 
 properties:
     compatible:

@@ -9,8 +9,7 @@ title: Atmel SAM0 Family ADC
 description: >
     This binding gives a base representation of the Atmel SAM0 ADC
 
-inherits:
-    !include adc-controller.yaml
+include: adc-controller.yaml
 
 properties:
     compatible:

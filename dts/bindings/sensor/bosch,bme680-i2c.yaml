@@ -10,8 +10,7 @@ description: >
     The BME680 is an integrated environmental sensor that measures
     temperature, pressure, humidity and air quality
 
-inherits:
-    !include i2c-device.yaml
+include: i2c-device.yaml
 
 properties:
     compatible:

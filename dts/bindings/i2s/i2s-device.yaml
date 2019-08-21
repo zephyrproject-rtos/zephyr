@@ -6,8 +6,7 @@
 
 # Common fields for I2S devices
 
-inherits:
-    !include base.yaml
+include: base.yaml
 
 parent:
     bus: i2s

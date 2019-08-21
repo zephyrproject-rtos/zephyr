@@ -6,8 +6,7 @@
 
 # Common fields for I2C controllers
 
-inherits:
-    !include base.yaml
+include: base.yaml
 
 child:
     bus: i2c

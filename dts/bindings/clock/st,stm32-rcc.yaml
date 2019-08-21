@@ -3,8 +3,7 @@ title: STM32 RCC
 description: >
     This binding gives a base representation of the STM32 Clock control
 
-inherits:
-    !include [clock-controller.yaml, base.yaml]
+include: [clock-controller.yaml, base.yaml]
 
 properties:
     compatible:

@@ -3,8 +3,7 @@ title: Atmel DMAC binding
 description: >
     Binding for the Atmel SAM0 DMA controller.
 
-inherits:
-    !include base.yaml
+include: base.yaml
 
 properties:
     compatible:

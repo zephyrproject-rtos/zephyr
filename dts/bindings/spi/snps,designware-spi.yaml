@@ -9,8 +9,7 @@ title: Synopsys Designware SPI Controller
 description: >
      This is a representation of the Synopsys DesignWare spi node
 
-inherits:
-    !include spi-controller.yaml
+include: spi-controller.yaml
 
 properties:
     compatible:

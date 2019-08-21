@@ -3,8 +3,7 @@ title: STM32 WB Flash Controller
 description: >
     This binding gives a base representation of the STM32 wb Flash Controller
 
-inherits:
-    !include flash-controller.yaml
+include: flash-controller.yaml
 
 properties:
     compatible:

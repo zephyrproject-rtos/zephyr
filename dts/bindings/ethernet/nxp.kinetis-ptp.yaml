@@ -9,8 +9,7 @@ title: NXP Kinetis Ethernet PTP
 description: >
     This binding gives a base representation of the NXP Kinetis Ethernet PTP
 
-inherits:
-    !include base.yaml
+include: base.yaml
 
 properties:
     compatible:

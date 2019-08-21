@@ -9,8 +9,7 @@ title: i.MX I2C Controller
 description: >
     This is a representation of the i.MX I2C nodes
 
-inherits:
-    !include i2c-controller.yaml
+include: i2c-controller.yaml
 
 properties:
     compatible:

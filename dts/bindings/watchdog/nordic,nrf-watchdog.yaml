@@ -9,8 +9,7 @@ title: Nordic Semiconductor NRF watchdog driver
 description: >
     This is a representation of the NRF watchdog
 
-inherits:
-    !include base.yaml
+include: base.yaml
 
 properties:
     compatible:

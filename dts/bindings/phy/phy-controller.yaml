@@ -6,8 +6,7 @@
 
 # Common fields for PHY providers
 
-inherits:
-    !include base.yaml
+include: base.yaml
 
 properties:
     "#phy-cells":

@@ -6,8 +6,7 @@
 
 # Common fields for UART devices
 
-inherits:
-    !include base.yaml
+include: base.yaml
 
 parent:
     bus: uart

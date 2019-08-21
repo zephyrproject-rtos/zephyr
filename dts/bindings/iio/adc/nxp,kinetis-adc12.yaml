@@ -9,8 +9,7 @@ title: NXP Kinetis ADC12
 description: >
     This binding gives a base representation of the NXP Kinetis ADC12
 
-inherits:
-    !include adc-controller.yaml
+include: adc-controller.yaml
 
 properties:
     compatible:
