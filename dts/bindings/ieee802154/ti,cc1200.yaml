@@ -9,8 +9,7 @@ title: CC1200 802.15.4 Wireless Transceiver
 description: >
     This is a representation of the CC1200 wireless transceiver.
 
-inherits:
-    !include spi-device.yaml
+include: spi-device.yaml
 
 properties:
     compatible:

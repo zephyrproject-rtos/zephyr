@@ -9,8 +9,7 @@ title: NXP Enhanced LCD Interface (eLCDIF) controller
 description: >
     This binding gives a base representation of the NXP i.MX eLCDIF controller
 
-inherits:
-    !include base.yaml
+include: base.yaml
 
 properties:
     compatible:

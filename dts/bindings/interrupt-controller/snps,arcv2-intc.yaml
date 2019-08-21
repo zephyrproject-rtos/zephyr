@@ -9,8 +9,7 @@ title: ARCV2 Interrupt Controller
 description: >
     This binding describes the ARCV2 IRQ controller
 
-inherits:
-    !include [interrupt-controller.yaml, base.yaml]
+include: [interrupt-controller.yaml, base.yaml]
 
 properties:
     compatible:

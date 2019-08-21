@@ -9,8 +9,7 @@ title: NXP FlexSPI
 description: >
     This binding gives a base representation of the NXP FlexSPI controller
 
-inherits:
-    !include spi-controller.yaml
+include: spi-controller.yaml
 
 properties:
     compatible:

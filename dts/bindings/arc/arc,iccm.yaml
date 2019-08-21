@@ -9,8 +9,7 @@ title: ARC ICCM
 description: >
     This binding gives a base representation of the ARC ICCM
 
-inherits:
-    !include base.yaml
+include: base.yaml
 
 properties:
     compatible:

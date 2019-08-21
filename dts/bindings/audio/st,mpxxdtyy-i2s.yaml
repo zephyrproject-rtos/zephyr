@@ -9,8 +9,7 @@ title: ST Microelectronics MPXXDTYY digital pdm microphone family
 description: >
     This binding gives a base representation of MPXXDTYY digital microphone family
 
-inherits:
-    !include i2s-device.yaml
+include: i2s-device.yaml
 
 properties:
     compatible:

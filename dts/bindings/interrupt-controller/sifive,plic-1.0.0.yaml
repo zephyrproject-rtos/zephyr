@@ -5,8 +5,7 @@
 title: SiFive PLIC
 description: SiFive RISCV-V platform-local interrupt controller
 
-inherits:
-    !include riscv,plic0.yaml
+include: riscv,plic0.yaml
 
 properties:
     compatible:

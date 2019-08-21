@@ -9,8 +9,7 @@ title: SPI NOR FLASH
 description: >
     This binding gives a base representation of SPI slave NOR FLASH
 
-inherits:
-    !include spi-device.yaml
+include: spi-device.yaml
 
 properties:
     compatible:

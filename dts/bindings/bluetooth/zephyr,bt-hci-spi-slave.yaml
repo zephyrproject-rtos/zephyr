@@ -10,8 +10,7 @@ description: >
     This binding gives the base representation of a bluetooth controller node
     that provides HCI over SPI.
 
-inherits:
-    !include base.yaml
+include: base.yaml
 
 parent:
     bus: spi

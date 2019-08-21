@@ -3,8 +3,7 @@ title: Atmel Device ID (Serial Number) binding
 description: >
     Binding for locating the Device ID (serial number) on Atmel SAM0 devices.
 
-inherits:
-    !include base.yaml
+include: base.yaml
 
 properties:
     compatible:

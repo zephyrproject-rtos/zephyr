@@ -2,8 +2,7 @@ title: Holtek HT16K33 LED Driver
 
 description: Holtek HT16K33 LEDs binding
 
-inherits:
-    !include i2c-device.yaml
+include: i2c-device.yaml
 
 child:
     bus: ht16k33

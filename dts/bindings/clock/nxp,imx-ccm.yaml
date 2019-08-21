@@ -9,8 +9,7 @@ title: i.MX Clock Controller Module (CCM)
 description: >
     This is a representation of the i.MX CCM IP node
 
-inherits:
-    !include [clock-controller.yaml, base.yaml]
+include: [clock-controller.yaml, base.yaml]
 
 properties:
     compatible:

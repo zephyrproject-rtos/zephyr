@@ -9,8 +9,7 @@ title: Intel SPI Controller
 description: >
      This is a representation of the Intel SPI controller found on quark x1000.
 
-inherits:
-    !include spi-controller.yaml
+include: spi-controller.yaml
 
 properties:
     compatible:

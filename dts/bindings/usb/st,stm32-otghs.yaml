@@ -9,8 +9,7 @@ title: STM32 OTGHS
 description: >
     This binding gives a base representation of the STM32 OTG HS controller
 
-inherits:
-    !include usb-ep.yaml
+include: usb-ep.yaml
 
 properties:
     compatible:

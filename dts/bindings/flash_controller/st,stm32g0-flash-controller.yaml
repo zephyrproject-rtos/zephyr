@@ -3,8 +3,7 @@ title: STM32 G0 Flash Controller
 description: >
     This binding gives a base representation of the STM32 G0 Flash Controller
 
-inherits:
-    !include flash-controller.yaml
+include: flash-controller.yaml
 
 properties:
     compatible:

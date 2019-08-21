@@ -9,8 +9,7 @@ title: TI SimpleLink CC13xx / CC26xx UART
 description: >
     This is a representation of the TI SimpleLink CC13xx / CC26xx UART node
 
-inherits:
-    !include uart-controller.yaml
+include: uart-controller.yaml
 
 properties:
     compatible:

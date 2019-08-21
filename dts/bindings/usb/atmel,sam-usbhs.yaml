@@ -9,8 +9,7 @@ title: Atmel SAM USBHS
 description: >
     Atmel SAM Family USB (USBHS) in device mode
 
-inherits:
-    !include usb-ep.yaml
+include: usb-ep.yaml
 
 properties:
     compatible:

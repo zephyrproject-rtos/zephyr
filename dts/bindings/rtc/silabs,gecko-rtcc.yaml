@@ -9,8 +9,7 @@ title: Silabs Gecko Real Time Counter
 description: >
     This is a representation of the Silabs Gecko RTCC node
 
-inherits:
-    !include rtc.yaml
+include: rtc.yaml
 
 properties:
     compatible:

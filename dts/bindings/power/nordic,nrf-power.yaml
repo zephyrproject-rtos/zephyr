@@ -9,8 +9,7 @@ title: Nordic nRF power control
 description: >
     This is a representation of the Nordic nRF power control node
 
-inherits:
-    !include base.yaml
+include: base.yaml
 
 properties:
     compatible:

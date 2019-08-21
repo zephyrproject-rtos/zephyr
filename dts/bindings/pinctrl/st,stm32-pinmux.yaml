@@ -3,8 +3,7 @@ title: STM32 PINMUX
 description: >
     This binding gives a base representation of the STM32 PINMUX
 
-inherits:
-    !include base.yaml
+include: base.yaml
 
 properties:
     compatible:

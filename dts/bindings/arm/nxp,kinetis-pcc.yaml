@@ -9,8 +9,7 @@ title: NXP Kinetis PCC (Peripheral Clock Controller)
 description: >
     This is a representation of the NXP Kinetis PCC IP node
 
-inherits:
-    !include [clock-controller.yaml, base.yaml]
+include: [clock-controller.yaml, base.yaml]
 
 properties:
     compatible:

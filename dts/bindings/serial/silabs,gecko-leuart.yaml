@@ -3,8 +3,7 @@ title: GECKO LEUART
 description: >
     This binding gives a base representation of the Gecko LEUART
 
-inherits:
-    !include uart-controller.yaml
+include: uart-controller.yaml
 
 properties:
     compatible:

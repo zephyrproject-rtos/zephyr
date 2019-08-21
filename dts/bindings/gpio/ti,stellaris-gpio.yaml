@@ -4,8 +4,7 @@ title: TI Stellaris GPIO
 description: >
     This is a representation of the TI Stellaris GPIO node
 
-inherits:
-    !include [gpio-controller.yaml, base.yaml]
+include: [gpio-controller.yaml, base.yaml]
 
 properties:
     compatible:

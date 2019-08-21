@@ -9,8 +9,7 @@ title: BME280 Integrated environmental sensor
 description: >
     This is a representation of the BME280 Integrated environmental sensor
 
-inherits:
-    !include spi-device.yaml
+include: spi-device.yaml
 
 properties:
     compatible:

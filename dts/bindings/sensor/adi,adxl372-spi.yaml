@@ -11,8 +11,7 @@ description: >
     This is a representation of the ADXL372 Three Axis High-g accelerometer,
     accessed through SPI bus
 
-inherits:
-    !include spi-device.yaml
+include: spi-device.yaml
 
 properties:
     compatible:

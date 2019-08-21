@@ -3,8 +3,7 @@ title: Atmel SAM0 External Interrupt Controller
 description: >
     This binding describes the Atmel SAM0 series External Interrupt Controller
 
-inherits:
-    !include base.yaml
+include: base.yaml
 
 properties:
   compatible:

@@ -4,8 +4,7 @@ title: Xilinx ZynqMP PS TTC TIMERS
 description: >
     This binding gives a base representation of the Xilinx ZynqMP PS TTC TIMERS
 
-inherits:
-    !include base.yaml
+include: base.yaml
 
 properties:
     compatible:

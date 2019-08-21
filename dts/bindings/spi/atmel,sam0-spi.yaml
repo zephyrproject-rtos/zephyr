@@ -9,8 +9,7 @@ title: Atmel SAM0 SERCOM SPI driver
 description: >
     This binding gives a base representation of the Atmel SAM0 SERCOM SPI controller
 
-inherits:
-    !include spi-controller.yaml
+include: spi-controller.yaml
 
 properties:
     compatible:
