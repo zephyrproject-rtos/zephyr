@@ -404,7 +404,7 @@ void test_sflist(void)
 		sys_sfnode_flags_set(node, 3 - ii);
 		sys_sflist_append(&test_list, node);
 	}
-	for (ii = 3; ii <= 0; ii--) {
+	for (ii = 3; ii >= 0; ii--) {
 		node = sys_sflist_get(&test_list);
 		zassert_equal(sys_sfnode_flags_get(node), ii,
 			      "wrong flags value");
