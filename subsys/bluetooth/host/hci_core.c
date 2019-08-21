@@ -4692,7 +4692,7 @@ static const char *vs_hw_platform(u16_t platform)
 static const char *vs_hw_variant(u16_t platform, u16_t variant)
 {
 	static const char * const nordic_str[] = {
-		"reserved", "nRF51x", "nRF52x"
+		"reserved", "nRF51x", "nRF52x", "nRF53x"
 	};
 
 	if (platform != BT_HCI_VS_HW_PLAT_NORDIC) {
