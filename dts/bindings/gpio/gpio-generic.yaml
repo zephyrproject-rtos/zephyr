@@ -1,0 +1,20 @@
+title: GPIO GENERIC
+
+description: >
+    This is a representation of the GPIO GENERIC nodes
+
+inherits:
+    !include [base.yaml]
+
+properties:
+    compatible:
+        constraint: "gpio-generic"
+
+sub-node:
+    properties:
+        gpios:
+            type: compound
+            category: required
+        label:
+            type: string
+            category: required
