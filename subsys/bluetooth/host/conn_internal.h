@@ -29,6 +29,7 @@ enum {
 	BT_CONN_SLAVE_PARAM_UPDATE,	/* If slave param update timer fired */
 	BT_CONN_SLAVE_PARAM_SET,	/* If slave param were set from app */
 	BT_CONN_SLAVE_PARAM_L2CAP,	/* If should force L2CAP for CPUP */
+	BT_CONN_FORCE_PAIR,             /* Pairing even with existing keys. */
 
 	/* Total number of flags - must be at the end of the enum */
 	BT_CONN_NUM_FLAGS,

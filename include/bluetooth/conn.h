@@ -288,6 +288,10 @@ typedef enum __packed {
 	BT_SECURITY_HIGH,
 	/** Authenticated Secure Connections */
 	BT_SECURITY_FIPS,
+	/** Bit to force new pairing procedure, bit-wise OR with requested
+	 *  security level.
+	 */
+	BT_SECURITY_FORCE_PAIR = BIT(7),
 } bt_security_t;
 
 /** @brief Set security level for a connection.

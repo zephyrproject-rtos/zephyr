@@ -1058,7 +1058,9 @@ int bt_conn_security(struct bt_conn *conn, bt_security_t sec)
 		return 0;
 	}
 
-	conn->required_sec_level = sec;
+	atomic_set_bit_to(conn->flags, BT_CONN_FORCE_PAIR,
+			  sec & BT_SECURITY_FORCE_PAIR);
+	conn->required_sec_level = sec & ~BT_SECURITY_FORCE_PAIR;
 
 	err = start_security(conn);
 
