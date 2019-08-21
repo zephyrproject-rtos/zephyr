@@ -157,13 +157,9 @@ class EDT:
         # Only bindings for 'compatible' strings that appear in the device tree
         # are loaded.
 
-        # Add '!include foo.yaml' handling.
-        #
-        # Do yaml.Loader.add_constructor() instead of yaml.add_constructor() to be
+        # Add legacy '!include foo.yaml' handling. Do
+        # yaml.Loader.add_constructor() instead of yaml.add_constructor() to be
         # compatible with both version 3.13 and version 5.1 of PyYAML.
-        #
-        # TODO: Is there some 3.13/5.1-compatible way to only do this once, even
-        # if multiple EDT objects are created?
         yaml.Loader.add_constructor("!include", self._binding_include)
 
         dt_compats = _dt_compats(self._dt)
@@ -203,47 +199,89 @@ class EDT:
             if compat not in dt_compats:
                 continue
 
-            # It's a match. Merge in the !included bindings, do sanity checks,
+            # It's a match. Merge in the included bindings, do sanity checks,
             # and register the binding.
 
-            binding = _merge_included_bindings(binding, binding_path)
+            binding = self._merge_included_bindings(binding, binding_path)
             _check_binding(binding, binding_path)
             self._compat2binding[compat, _binding_bus(binding)] = \
                 (binding, binding_path)
 
-    def _binding_include(self, loader, node):
-        # Implements !include. Returns a list with the YAML structures for the
-        # included files (a single-element list if the !include is for a single
-        # file).
+    def _merge_included_bindings(self, binding, binding_path):
+        # Merges any bindings listed in the 'include:' section of the binding
+        # into the top level of 'binding'. Also supports the legacy
+        # 'inherits: !include ...' syntax for including bindings.
+        #
+        # Properties in 'binding' take precedence over properties from included
+        # bindings.
 
-        if isinstance(node, yaml.ScalarNode):
-            # !include foo.yaml
-            return [self._binding_include_file(loader.construct_scalar(node))]
+        fnames = []
 
-        if isinstance(node, yaml.SequenceNode):
-            # !include [foo.yaml, bar.yaml]
-            return [self._binding_include_file(filename)
-                    for filename in loader.construct_sequence(node)]
+        if "include" in binding:
+            include = binding.pop("include")
+            if isinstance(include, str):
+                fnames.append(include)
+            elif isinstance(include, list):
+                if not all(isinstance(elm, str) for elm in include):
+                    _err("all elements in 'include:' in {} should be strings"
+                         .format(binding_path))
+                fnames += include
+            else:
+                _err("'include:' in {} should be a string or a list of strings"
+                     .format(binding_path))
 
-        _binding_inc_error("unrecognised node type in !include statement")
+        # Legacy syntax
+        if "inherits" in binding:
+            _warn("the 'inherits:' syntax in {} is deprecated and will be "
+                  "removed - please use 'include: foo.yaml' or "
+                  "'include: [foo.yaml, bar.yaml]' instead"
+                  .format(binding_path))
 
-    def _binding_include_file(self, filename):
-        # _binding_include() helper for loading an !include'd file. !include
-        # takes just the basename of the file, so we need to make sure there
-        # aren't multiple candidates.
+            inherits = binding.pop("inherits")
+            if not isinstance(inherits, list) or \
+               not all(isinstance(elm, str) for elm in inherits):
+               _err("malformed 'inherits:' in " + binding_path)
+            fnames += inherits
+
+        for fname in fnames:
+            included = self._file_yaml(fname)
+            _merge_props(
+                binding, self._merge_included_bindings(included, binding_path),
+                None, binding_path)
+
+        return binding
+
+    def _file_yaml(self, filename):
+        # _merge_included_bindings() helper for loading an included file.
+        # 'include:' lists just the basenames of the files, so we check that
+        # there aren't multiple candidates.
 
         paths = [path for path in self._binding_paths
                  if os.path.basename(path) == filename]
 
         if not paths:
-            _binding_inc_error("'{}' not found".format(filename))
+            _err("'{}' not found".format(filename))
 
         if len(paths) > 1:
-            _binding_inc_error("multiple candidates for '{}' in !include: {}"
-                               .format(filename, ", ".join(paths)))
+            _err("multiple candidates for included file '{}': {}"
+                 .format(filename, ", ".join(paths)))
 
         with open(paths[0], encoding="utf-8") as f:
             return yaml.load(f, Loader=yaml.Loader)
+
+    def _binding_include(self, loader, node):
+        # Implements !include, for backwards compatibility.
+        # '!include [foo, bar]' just becomes [foo, bar].
+
+        if isinstance(node, yaml.ScalarNode):
+            # !include foo.yaml
+            return [loader.construct_scalar(node)]
+
+        if isinstance(node, yaml.SequenceNode):
+            # !include [foo.yaml, bar.yaml]
+            return loader.construct_sequence(node)
+
+        _binding_inc_error("unrecognised node type in !include statement")
 
     def _init_devices(self):
         # Creates a list of devices (Device objects) from the DT nodes, in
@@ -1174,26 +1212,9 @@ def _binding_inc_error(msg):
     raise yaml.constructor.ConstructorError(None, None, "error: " + msg)
 
 
-def _merge_included_bindings(binding, binding_path):
-    # Merges any bindings in the 'inherits:' section of 'binding' into the top
-    # level of 'binding'. !includes have already been processed at this point,
-    # and leave the data for the included binding(s) in 'inherits:'.
-    #
-    # Properties in 'binding' take precedence over properties from included
-    # bindings.
-
-    if "inherits" in binding:
-        for inherited in binding.pop("inherits"):
-            _merge_props(
-                binding, _merge_included_bindings(inherited, binding_path),
-                None, binding_path)
-
-    return binding
-
-
 def _merge_props(to_dict, from_dict, parent, binding_path):
-    # Recursively merges 'from_dict' into 'to_dict', to implement !include. If
-    # a key exists in both 'from_dict' and 'to_dict', then the value in
+    # Recursively merges 'from_dict' into 'to_dict', to implement 'include:'.
+    # If a key exists in both 'from_dict' and 'to_dict', then the value in
     # 'to_dict' takes precedence.
     #
     # 'parent' is the name of the parent key containing 'to_dict' and
@@ -1207,7 +1228,7 @@ def _merge_props(to_dict, from_dict, parent, binding_path):
         elif prop not in to_dict:
             to_dict[prop] = from_dict[prop]
         elif _bad_overwrite(to_dict, from_dict, prop):
-            _err("{} (in '{}'): '{}' from !included file overwritten "
+            _err("{} (in '{}'): '{}' from included file overwritten "
                  "('{}' replaced with '{}')".format(
                      binding_path, parent, prop, from_dict[prop],
                      to_dict[prop]))

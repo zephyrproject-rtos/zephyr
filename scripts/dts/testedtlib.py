@@ -96,14 +96,14 @@ def run():
                  "[<Register, addr: 0x30000000200000001, size: 0x1>]")
 
     #
-    # Test !include in bindings
+    # Test 'include:' and the legacy 'inherits: !include ...'
     #
 
     verify_streq(edt.get_dev("/binding-include").description,
                  "Parent binding")
 
     verify_streq(edt.get_dev("/binding-include").props,
-                 "{'compatible': <Property, name: compatible, type: string-array, value: ['binding-include-test']>, 'foo': <Property, name: foo, type: int, value: 0>, 'bar': <Property, name: bar, type: int, value: 1>, 'baz': <Property, name: baz, type: int, value: 2>}")
+                 "{'compatible': <Property, name: compatible, type: string-array, value: ['binding-include-test']>, 'foo': <Property, name: foo, type: int, value: 0>, 'bar': <Property, name: bar, type: int, value: 1>, 'baz': <Property, name: baz, type: int, value: 2>, 'qaz': <Property, name: qaz, type: int, value: 3>}")
 
     #
     # Test 'sub-node:' in binding

@@ -1,7 +1,10 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
+include: [grandchild-1.yaml, grandchild-2.yaml]
+
+# Legacy include
 inherits:
-    !include grandchild.yaml
+    !include grandchild-3.yaml
 
 properties:
     bar:

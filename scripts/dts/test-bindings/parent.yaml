@@ -3,8 +3,7 @@
 title: Parent binding
 description: Parent binding
 
-inherits:
-    !include child.yaml
+include: child.yaml
 
 properties:
     compatible:
@@ -12,6 +11,6 @@ properties:
         type: string-array
 
     foo:
-        # Changed from not being required in grandchild.yaml
+        # Changed from not being required in grandchild-1.yaml
         required: true
         # Type set in grandchild

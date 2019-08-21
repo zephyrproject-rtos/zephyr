@@ -274,7 +274,7 @@
 	};
 
 	//
-	// !include in bindings
+	// For testing 'include:' and the legacy 'inherits: !include ...'
 	//
 
 	binding-include {
@@ -282,6 +282,7 @@
 		foo = <0>;
 		bar = <1>;
 		baz = <2>;
+		qaz = <3>;
 	};
 
 	//
