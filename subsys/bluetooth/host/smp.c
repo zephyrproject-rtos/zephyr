@@ -4911,6 +4911,10 @@ bool bt_smp_get_tk(struct bt_conn *conn, u8_t *tk)
 
 bool bt_smp_keys_check(struct bt_conn *conn)
 {
+	if (atomic_test_bit(conn->flags, BT_CONN_FORCE_PAIR)) {
+		return false;
+	}
+
 	if (!conn->le.keys) {
 		conn->le.keys = bt_keys_find(BT_KEYS_LTK_P256,
 						     conn->id, &conn->le.dst);
