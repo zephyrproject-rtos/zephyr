@@ -454,6 +454,7 @@ x-powers	X-Powers
 xes	Extreme Engineering Solutions (X-ES)
 xillybus	Xillybus Ltd.
 xlnx	Xilinx
+xtensa The Tensilica Xtensa processor architecture
 xunlong	Shenzhen Xunlong Software CO.,Limited
 ysoft	Y Soft Corporation a.s.
 zarlink	Zarlink Semiconductor

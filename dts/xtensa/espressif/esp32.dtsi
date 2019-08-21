@@ -31,11 +31,27 @@
 	};
 
 	soc {
-		uart0: uart@40008fd0 {
-			compatible = "espressif,esp32-uart";
-			reg = <0x40008fd0 0x400>;
-			label = "ROMUART";
+		uart0: uart@3ff40000 {
+			compatible = "xtensa,esp32-uart";
+			reg = <0x3ff40000 0x400>;
+			/* interrupts = <12>; - FIXME: Enable interrupts when interrupt-controller got supported in device tree */
+			label = "UART_0";
+			status = "disabled";
+		};
 
+		uart1: uart@3ff50000 {
+			compatible = "xtensa,esp32-uart";
+			reg = <0x3ff50000 0x400>;
+			/* interrupts = <17>; - FIXME: Enable interrupts when interrupt-controller got supported in device tree */
+			label = "UART_1";
+			status = "disabled";
+		};
+
+		uart2: uart@3ff6e000 {
+			compatible = "xtensa,esp32-uart";
+			reg = <0x3ff6E000 0x400>;
+			/* interrupts = <18>; - FIXME: Enable interrupts when interrupt-controller got supported in device tree */
+			label = "UART_2";
 			status = "disabled";
 		};
 

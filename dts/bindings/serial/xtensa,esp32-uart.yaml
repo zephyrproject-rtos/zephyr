@@ -12,7 +12,27 @@ properties:
       required: true
 
     interrupts:
-      required: true
+      category: optional
 
     clocks:
-      required: true
+      category: required
+
+    tx-pin:
+      type: int
+      description: TX pin
+      category: required
+
+    rx-pin:
+      type: int
+      description: RX pin
+      category: required
+
+    rts-pin:
+      type: int
+      description: RTS pin
+      category: optional
+
+    cts-pin:
+      type: int
+      description: CTS pin
+      category: optional
