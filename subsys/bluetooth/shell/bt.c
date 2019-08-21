@@ -1087,6 +1087,15 @@ static int cmd_security(const struct shell *shell, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
+	if (argc > 2) {
+		if (!strcmp(argv[2], "force-pair")) {
+			sec |= BT_SECURITY_FORCE_PAIR;
+		} else {
+			shell_help(shell);
+			return -ENOEXEC;
+		}
+	}
+
 	err = bt_conn_security(default_conn, sec);
 	if (err) {
 		shell_error(shell, "Setting security failed (err %d)", err);
@@ -1625,8 +1634,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 	SHELL_CMD_ARG(clear, NULL, "<remote: addr, all>", cmd_clear, 2, 1),
 #if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR)
 	SHELL_CMD_ARG(security, NULL, "<security level BR/EDR: 0 - 3, "
-				      "LE: 1 - 4>",
-		      cmd_security, 2, 0),
+				      "LE: 1 - 4> [force-pair]",
+		      cmd_security, 2, 1),
 	SHELL_CMD_ARG(bondable, NULL, "<bondable: on, off>", cmd_bondable,
 		      2, 0),
 	SHELL_CMD_ARG(auth, NULL,
