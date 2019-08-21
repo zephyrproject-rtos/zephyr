@@ -68,4 +68,11 @@ config I2C_3
 
 endif # I2C
 
+if SPI
+
+config SPI_1
+	default y
+
+endif # SPI
+
 endif # BOARD_RV32M1_VEGA
