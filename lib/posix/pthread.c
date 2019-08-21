@@ -164,8 +164,12 @@ int pthread_create(pthread_t *newthread, const pthread_attr_t *attr,
 	prio = posix_to_zephyr_priority(attr->priority, attr->schedpolicy);
 
 	thread = &posix_thread_pool[pthread_num];
-	pthread_mutex_init(&thread->state_lock, NULL);
-	pthread_mutex_init(&thread->cancel_lock, NULL);
+	/*
+	 * Ignore return value, as we know that Zephyr implementation
+	 * cannot fail.
+	 */
+	(void)pthread_mutex_init(&thread->state_lock, NULL);
+	(void)pthread_mutex_init(&thread->cancel_lock, NULL);
 
 	pthread_mutex_lock(&thread->cancel_lock);
 	thread->cancel_state = (1 << _PTHREAD_CANCEL_POS) & attr->flags;
