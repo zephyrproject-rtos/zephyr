@@ -16,17 +16,10 @@ static int test_file_open(void)
 {
 	int res;
 
-	TC_PRINT("\nOpen tests:\n");
-
 	res = open(TEST_FILE, O_RDWR);
-	if (res < 0) {
-		TC_PRINT("Failed opening file [%d]\n", res);
-		return res;
-	}
+	zassert_true(res >= 0, "Failed opening file: %d, errno=%d\n", res, errno);
 
 	file = res;
-
-	TC_PRINT("Opened file %s\n", TEST_FILE);
 
 	return 0;
 }
@@ -36,16 +29,12 @@ int test_file_write(void)
 	ssize_t brw;
 	off_t res;
 
-	TC_PRINT("\nWrite tests:\n");
-
 	res = lseek(file, 0, SEEK_SET);
 	if (res != 0) {
 		TC_PRINT("lseek failed [%d]\n", (int)res);
 		close(file);
 		return TC_FAIL;
 	}
-
-	TC_PRINT("Data written:\"%s\"\n\n", test_str);
 
 	brw = write(file, (char *)test_str, strlen(test_str));
 	if (brw < 0) {
@@ -61,8 +50,6 @@ int test_file_write(void)
 		return TC_FAIL;
 	}
 
-	TC_PRINT("Data successfully written!\n");
-
 	return res;
 }
 
@@ -72,8 +59,6 @@ static int test_file_read(void)
 	off_t res;
 	char read_buff[80];
 	size_t sz = strlen(test_str);
-
-	TC_PRINT("\nRead tests:\n");
 
 	res = lseek(file, 0, SEEK_SET);
 	if (res != 0) {
@@ -90,8 +75,6 @@ static int test_file_read(void)
 	}
 
 	read_buff[brw] = 0;
-
-	TC_PRINT("Data read:\"%s\"\n", read_buff);
 
 	if (strcmp(test_str, read_buff)) {
 		TC_PRINT("Error - Data read does not match data written\n");
@@ -120,15 +103,11 @@ static int test_file_read(void)
 
 	read_buff[brw] = 0;
 
-	TC_PRINT("Data read:\"%s\"\n", read_buff);
-
 	if (strcmp(test_str + 2, read_buff)) {
 		TC_PRINT("Error - Data read does not match data written\n");
 		TC_PRINT("Data read:\"%s\"\n\n", read_buff);
 		return TC_FAIL;
 	}
-
-	TC_PRINT("\nData read matches data written\n");
 
 	return res;
 }
@@ -137,15 +116,8 @@ static int test_file_close(void)
 {
 	int res;
 
-	TC_PRINT("\nClose tests:\n");
-
 	res = close(file);
-	if (res) {
-		TC_PRINT("Error closing file [%d]\n", res);
-		return res;
-	}
-
-	TC_PRINT("Closed file %s\n", TEST_FILE);
+	zassert_true(res == 0, "Failed closing file: %d, errno=%d\n", res, errno);
 
 	return res;
 }
@@ -154,15 +126,11 @@ static int test_file_delete(void)
 {
 	int res;
 
-	TC_PRINT("\nDelete tests:\n");
-
 	res = unlink(TEST_FILE);
 	if (res) {
 		TC_PRINT("Error deleting file [%d]\n", res);
 		return res;
 	}
-
-	TC_PRINT("File (%s) deleted successfully!\n", TEST_FILE);
 
 	return res;
 }
