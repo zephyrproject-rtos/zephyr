@@ -418,6 +418,8 @@ K_THREAD_DEFINE(THREAD_11, STACKSIZE, thread_11, NULL, NULL, NULL,
 /*test case main entry*/
 void test_main(void)
 {
+	int rv;
+
 #ifdef CONFIG_USERSPACE
 	k_thread_access_grant(k_current_get(),
 			      &thread_12_thread_data, &thread_12_stack_area);
@@ -429,7 +431,10 @@ void test_main(void)
 	k_mem_domain_add_thread(&ztest_mem_domain, THREAD_09);
 	k_mem_domain_add_thread(&ztest_mem_domain, THREAD_11);
 #endif
-	sys_mutex_lock(&not_my_mutex, K_NO_WAIT);
+	rv = sys_mutex_lock(&not_my_mutex, K_NO_WAIT);
+	if (rv != 0) {
+		TC_ERROR("Failed to take mutex %p\n", &not_my_mutex);
+	}
 
 	/* We deliberately disable userspace, even on platforms that
 	 * support it, so that the alternate implementation of sys_mutex
