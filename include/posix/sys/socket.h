@@ -22,6 +22,9 @@ static inline int socket(int family, int type, int proto)
 #define SHUT_WR ZSOCK_SHUT_WR
 #define SHUT_RDWR ZSOCK_SHUT_RDWR
 
+#define MSG_PEEK ZSOCK_MSG_PEEK
+#define MSG_DONTWAIT ZSOCK_MSG_DONTWAIT
+
 static inline int shutdown(int sock, int how)
 {
 	return zsock_shutdown(sock, how);
