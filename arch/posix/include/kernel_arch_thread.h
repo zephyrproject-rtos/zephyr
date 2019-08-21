@@ -41,6 +41,7 @@ struct _callee_saved {
 
 struct _thread_arch {
 	/* nothing for now */
+	int dummy;
 };
 
 typedef struct _thread_arch _thread_arch_t;
