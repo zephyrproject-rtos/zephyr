@@ -186,7 +186,11 @@ import serial
 import concurrent
 import concurrent.futures
 import xml.etree.ElementTree as ET
-import resource
+
+# XXX: Workaround for #17239
+if os.name != 'nt':
+  import resource
+
 from xml.sax.saxutils import escape
 from collections import OrderedDict
 from itertools import islice
@@ -3305,7 +3309,9 @@ def main():
     global run_individual_tests
 
     # XXX: Workaround for #17239
-    resource.setrlimit(resource.RLIMIT_NOFILE, (4096, 4096))
+    if os.name != 'nt':
+        resource.setrlimit(resource.RLIMIT_NOFILE, (4096, 4096))
+
     options = parse_arguments()
 
     if options.west_runner and not options.west_flash:
