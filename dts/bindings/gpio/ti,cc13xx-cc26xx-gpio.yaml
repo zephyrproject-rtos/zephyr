@@ -9,8 +9,7 @@ title: TI SimpleLink CC13xx / CC26xx GPIO
 description: >
     This is a representation of the TI SimpleLink CC13xx / CC26xx GPIO node
 
-inherits:
-    !include [gpio-controller.yaml, base.yaml]
+include: [gpio-controller.yaml, base.yaml]
 
 properties:
     compatible:

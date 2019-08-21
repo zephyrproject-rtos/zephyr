@@ -9,8 +9,7 @@ title: Inventek eS-WiFi WiFi module
 description: >
     This binding gives the base representation of es-WiFi module
 
-inherits:
-    !include spi-device.yaml
+include: spi-device.yaml
 
 properties:
     compatible:

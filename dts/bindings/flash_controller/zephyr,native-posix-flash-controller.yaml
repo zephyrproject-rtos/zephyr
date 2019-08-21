@@ -4,8 +4,7 @@ description: >
     This binding gives a base representation of the Native POSIX flash
     controller
 
-inherits:
-    !include flash-controller.yaml
+include: flash-controller.yaml
 
 properties:
     compatible:

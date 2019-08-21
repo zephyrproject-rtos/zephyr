@@ -9,8 +9,7 @@ title: Atmel WINC1500 Wifi module
 description: >
     This binding gives the base representation of the Atmel WINC1500 Wifi module
 
-inherits:
-    !include spi-device.yaml
+include: spi-device.yaml
 
 properties:
     compatible:

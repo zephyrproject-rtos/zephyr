@@ -10,8 +10,7 @@ description: >
     This binding gives a base representation of the MS5837 digital pressure
     sensor
 
-inherits:
-    !include i2c-device.yaml
+include: i2c-device.yaml
 
 properties:
     compatible:

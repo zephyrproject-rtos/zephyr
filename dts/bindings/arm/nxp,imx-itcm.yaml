@@ -9,8 +9,7 @@ title: i.MX ITCM (Instruction Tightly Coupled Memory)
 description: >
   This binding gives a base representation of the i.MX ITCM
 
-inherits:
-  !include base.yaml
+include: base.yaml
 
 properties:
     compatible:

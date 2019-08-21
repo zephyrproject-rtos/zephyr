@@ -3,8 +3,7 @@ title: ARM CMSDK WATCHDOG
 description: >
     This binding gives a base representation of the ARM CMSDK WATCHDOG
 
-inherits:
-    !include base.yaml
+include: base.yaml
 
 properties:
     compatible:

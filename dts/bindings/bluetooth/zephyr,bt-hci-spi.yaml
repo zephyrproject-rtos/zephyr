@@ -10,8 +10,7 @@ description: >
     This binding gives the base representation of a bluetooth module which use
     Zephyr's bluetooth Host Controller Interface SPI driver (e.g. nRF51822).
 
-inherits:
-    !include spi-device.yaml
+include: spi-device.yaml
 
 properties:
     compatible:

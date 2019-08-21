@@ -9,8 +9,7 @@ title: Nordic nRF Family QDEC node
 description: >
     This is a representation of the Nordic nRF QDEC node
 
-inherits:
-    !include base.yaml
+include: base.yaml
 
 properties:
     compatible:

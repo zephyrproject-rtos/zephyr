@@ -9,8 +9,7 @@ title: Virtual I2C slave eeprom
 description: >
     This binding gives a base representation of a generic I2C slave EEPROM
 
-inherits:
-    !include i2c-device.yaml
+include: i2c-device.yaml
 
 properties:
     compatible:

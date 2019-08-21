@@ -9,8 +9,7 @@ title: Intel QMSI RTC
 description: >
     This is a representation of the Intel QMSI RTC nodes
 
-inherits:
-    !include rtc.yaml
+include: rtc.yaml
 
 properties:
     compatible:

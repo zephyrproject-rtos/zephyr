@@ -9,8 +9,7 @@ title: ARM MHU
 description: >
     This binding gives a base representation of the ARM MHU
 
-inherits:
-    !include base.yaml
+include: base.yaml
 
 properties:
     compatible:

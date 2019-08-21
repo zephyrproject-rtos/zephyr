@@ -9,8 +9,7 @@ title: ARM Cortex-M4 CPU
 description: >
     This binding gives a base representation for ARM Cortex-M4 CPU.
 
-inherits:
-    !include cpu.yaml
+include: cpu.yaml
 
 properties:
     compatible:

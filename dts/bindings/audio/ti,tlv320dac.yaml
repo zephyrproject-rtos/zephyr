@@ -9,8 +9,7 @@ title: Texas Instruments TLV320DAC Audio DAC
 description: >
     This binding gives a base representation of TLV320DAC310x Audio DAC
 
-inherits:
-    !include i2c-device.yaml
+include: i2c-device.yaml
 
 properties:
     compatible:

@@ -9,8 +9,7 @@ title: Silicon Labs Gecko Flash Controller
 description: >
     This binding gives a base representation of the Silicon Labs Gecko Flash Controller
 
-inherits:
-    !include flash-controller.yaml
+include: flash-controller.yaml
 
 properties:
     compatible:

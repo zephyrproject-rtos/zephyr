@@ -3,8 +3,7 @@ title: Kinetis UART
 description: >
     This binding gives a base representation of the Kinetis UART
 
-inherits:
-    !include uart-controller.yaml
+include: uart-controller.yaml
 
 properties:
     compatible:

@@ -3,8 +3,7 @@ title: EFR32MG GPIO
 description: >
     This is a representation of the EFR32MG GPIO nodes
 
-inherits:
-    !include base.yaml
+include: base.yaml
 
 properties:
     compatible:

@@ -9,8 +9,7 @@ title: Kinetis ADC16
 description: >
     This binding gives a base representation of the Kinetis ADC16
 
-inherits:
-    !include adc-controller.yaml
+include: adc-controller.yaml
 
 properties:
     compatible:

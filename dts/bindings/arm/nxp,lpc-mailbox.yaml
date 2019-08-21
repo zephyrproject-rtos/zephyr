@@ -9,8 +9,7 @@ title: LPC MAILBOX
 description: >
     This binding gives a base representation of the LPC MAILBOX
 
-inherits:
-    !include base.yaml
+include: base.yaml
 
 properties:
   compatible:

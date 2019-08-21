@@ -9,8 +9,7 @@ title: SPI NOR flash devices (JEDEC CFI interface)
 description: >
   Any SPI NOR flash that supports the JEDEC CFI interface.
 
-inherits:
-  !include spi-device.yaml
+include: spi-device.yaml
 
 properties:
   compatible:

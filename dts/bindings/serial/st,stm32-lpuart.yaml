@@ -3,8 +3,7 @@ title: STM32 LPUART
 description: >
     This binding gives a base representation of the STM32 LPUART
 
-inherits:
-    !include uart-controller.yaml
+include: uart-controller.yaml
 
 properties:
     compatible:

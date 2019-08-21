@@ -9,8 +9,7 @@ title: NXP Kinetis watchdog (WDOG32) driver
 description: >
     This is a representation of the Kinetis watchdog (WDOG32)
 
-inherits:
-    !include base.yaml
+include: base.yaml
 
 properties:
     compatible:

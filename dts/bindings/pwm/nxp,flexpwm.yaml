@@ -10,8 +10,7 @@ description: >
     This binding gives a base representation of the NXP eFLEX PWM module which
     is supposed to contain mcux-pwm submodules.
 
-inherits:
-    !include base.yaml
+include: base.yaml
 
 properties:
     compatible:

@@ -9,8 +9,7 @@ title: Microchip XEC RTOS timer
 description: >
     This is a representation of the Microchip XEC RTOS timer node
 
-inherits:
-    !include base.yaml
+include: base.yaml
 
 properties:
     compatible:

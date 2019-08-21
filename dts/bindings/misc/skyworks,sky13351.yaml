@@ -10,8 +10,7 @@ description: >
     This binding allows control of the output selectors of the SKY13351
     SPDT switch.
 
-inherits:
-    !include base.yaml
+include: base.yaml
 
 properties:
     compatible:

@@ -3,8 +3,7 @@ title: STM32 CAN
 description: >
     This binding gives a base representation of the STM32 CAN controller
 
-inherits:
-    !include can-controller.yaml
+include: can-controller.yaml
 
 properties:
     compatible:
