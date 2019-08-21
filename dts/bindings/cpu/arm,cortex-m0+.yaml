@@ -9,8 +9,7 @@ title: ARM Cortex-M0+ CPU
 description: >
     This binding gives a base representation for ARM Cortex-M0+ CPU.
 
-inherits:
-    !include cpu.yaml
+include: cpu.yaml
 
 properties:
     compatible:

@@ -5,8 +5,7 @@ title: simulated flash
 description: >
     This binding gives a base representation of a simulated flash memory
 
-inherits:
-    !include base.yaml
+include: base.yaml
 
 properties:
     compatible:

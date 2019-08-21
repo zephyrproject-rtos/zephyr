@@ -9,8 +9,7 @@ title: ARM Cortex-M3 CPU
 description: >
     This binding gives a base representation for ARM Cortex-M3 CPU.
 
-inherits:
-    !include cpu.yaml
+include: cpu.yaml
 
 properties:
     compatible:

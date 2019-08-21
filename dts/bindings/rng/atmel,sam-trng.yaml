@@ -9,8 +9,7 @@ title: Atmel SAM TRNG (True Random Number Generator)
 description: >
     This binding gives a base representation of the Atmel SAM RNG
 
-inherits:
-    !include base.yaml
+include: base.yaml
 
 properties:
     compatible:

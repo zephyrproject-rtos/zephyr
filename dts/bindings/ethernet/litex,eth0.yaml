@@ -9,8 +9,7 @@ title: LiteX Ethernet
 description: >
     This binding gives a base representation of LiteX Ethernet
 
-inherits:
-    !include ethernet.yaml
+include: ethernet.yaml
 
 properties:
     compatible:

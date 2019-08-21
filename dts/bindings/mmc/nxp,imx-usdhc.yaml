@@ -9,8 +9,7 @@ title: NXP i.MXRT USDHC module
 description: >
     This binding specifies the NXP i.MXRT USDHC module.
 
-inherits:
-    !include mmc.yaml
+include: mmc.yaml
 
 properties:
     compatible:

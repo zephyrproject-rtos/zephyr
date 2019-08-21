@@ -4,8 +4,7 @@ description: >
     This binding describes the Intel I/O Advanced Programmable Interrupt
     controller
 
-inherits:
-    !include [interrupt-controller.yaml, base.yaml]
+include: [interrupt-controller.yaml, base.yaml]
 
 properties:
   compatible:

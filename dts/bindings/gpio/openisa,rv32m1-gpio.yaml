@@ -3,8 +3,7 @@ title: OpenISA GPIO
 description: >
     This is a representation of the OpenISA GPIO nodes
 
-inherits:
-    !include [gpio-controller.yaml, base.yaml]
+include: [gpio-controller.yaml, base.yaml]
 
 properties:
     compatible:

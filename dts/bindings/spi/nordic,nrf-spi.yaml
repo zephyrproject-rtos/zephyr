@@ -9,8 +9,7 @@ title: Nordic nRF Family SPI Master node
 description: >
     This is a representation of the Nordic nRF SPI node
 
-inherits:
-    !include spi-controller.yaml
+include: spi-controller.yaml
 
 properties:
     compatible:

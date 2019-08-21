@@ -9,8 +9,7 @@ title: ARC DCCM
 description: >
     This binding gives a base representation of the ARC DCCM
 
-inherits:
-    !include base.yaml
+include: base.yaml
 
 properties:
     compatible:

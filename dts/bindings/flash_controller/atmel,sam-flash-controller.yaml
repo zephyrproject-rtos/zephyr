@@ -9,8 +9,7 @@ title: Atmel SAM Flash Controller
 description: >
     This binding gives a base representation of the Atmel SAM Enhanced Embedded Flash Controller
 
-inherits:
-    !include flash-controller.yaml
+include: flash-controller.yaml
 
 properties:
     compatible:

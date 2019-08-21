@@ -3,8 +3,7 @@ title: ARMv8-M Memory Protection Unit
 description: >
     This binding describes the ARMv8-M Memory Protection Unit (MPU).
 
-inherits:
-    !include base.yaml
+include: base.yaml
 
 properties:
     compatible:

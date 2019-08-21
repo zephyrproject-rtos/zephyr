@@ -6,5 +6,4 @@
 
 # Specifies the MMC/SDHC module
 
-inherits:
-    !include base.yaml
+include: base.yaml

@@ -9,8 +9,7 @@ title: i.MX DTCM (Data Tightly Coupled Memory)
 description: >
   This binding gives a base representation of the i.MX DTCM
 
-inherits:
-  !include base.yaml
+include: base.yaml
 
 properties:
     compatible:

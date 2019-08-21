@@ -9,8 +9,7 @@ title: u-blox SARA-R4 modem
 description: >
     This is a representation of the u-blox SARA-R4 modem.
 
-inherits:
-    !include uart-device.yaml
+include: uart-device.yaml
 
 properties:
     compatible:

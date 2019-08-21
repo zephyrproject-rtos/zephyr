@@ -8,8 +8,7 @@ title: TI Stellaris Ethernet
 description: >
     This binding gives a base representation of the TI Stellaris Ethernet
 
-inherits:
-  !include ethernet.yaml
+include: ethernet.yaml
 
 properties:
     compatible:

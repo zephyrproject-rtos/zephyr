@@ -9,8 +9,7 @@ title: STMicroelectronics MEMS sensors LSM9DS0-GYRO
 description: >
     This binding gives a base representation of LSM9DS0 3-axis gyro
 
-inherits:
-    !include i2c-device.yaml
+include: i2c-device.yaml
 
 properties:
     compatible:

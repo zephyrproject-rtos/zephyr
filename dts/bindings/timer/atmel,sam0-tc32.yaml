@@ -10,8 +10,7 @@ description: >
     This binding gives a base representation of the Atmel SAM0 timer
     counter (TC) operating in 32-bit wide mode.
 
-inherits:
-    !include base.yaml
+include: base.yaml
 
 properties:
   compatible:

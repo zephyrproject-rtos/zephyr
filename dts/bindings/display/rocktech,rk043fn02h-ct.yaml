@@ -10,8 +10,7 @@ description: >
     This binding gives a base representation of the Rocktech LCD module with
     LED backlight and capacitive touch panel.
 
-inherits:
-    !include base.yaml
+include: base.yaml
 
 properties:
     compatible:

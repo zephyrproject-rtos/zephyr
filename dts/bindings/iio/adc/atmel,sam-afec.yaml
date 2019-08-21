@@ -3,8 +3,7 @@ title: Atmel SAM Family AFEC
 description: >
     This binding gives a base representation of the Atmel SAM AFEC
 
-inherits:
-    !include adc-controller.yaml
+include: adc-controller.yaml
 
 properties:
     compatible:

@@ -3,8 +3,7 @@ title: ARMv7-M NVIC Interrupt Controller
 description: >
     This binding describes the ARMv7-M Nested Vectored Interrupt Controller.
 
-inherits:
-    !include [interrupt-controller.yaml, base.yaml]
+include: [interrupt-controller.yaml, base.yaml]
 
 properties:
     compatible:
