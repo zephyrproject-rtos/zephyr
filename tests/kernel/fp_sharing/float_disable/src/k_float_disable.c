@@ -139,7 +139,10 @@ void test_k_float_disable_syscall(void)
 		"usr_fp_thread FP options not clear (0x%0x)",
 		usr_fp_thread.base.user_options);
 
-	zassert_true(ret == TC_PASS, "");
+	/* ret is volatile, static analysis says we can't use in assert */
+	bool ok = ret == TC_PASS;
+
+	zassert_true(ok, "");
 #else
 	/* Check skipped for x86 without support for Lazy FP Sharing */
 #endif
@@ -237,7 +240,10 @@ void test_k_float_disable_irq(void)
 	/* Yield will swap-in sup_fp_thread */
 	k_yield();
 
-	zassert_true(ret == TC_PASS, "");
+	/* ret is volatile, static analysis says we can't use in assert */
+	bool ok = ret == TC_PASS;
+
+	zassert_true(ok, "");
 }
 #else
 void test_k_float_disable_irq(void)
