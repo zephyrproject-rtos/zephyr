@@ -82,6 +82,8 @@ static ALWAYS_INLINE bool z_arch_irq_unlocked(unsigned int key)
 	return (key & 0xf) == 0; /* INTLEVEL field */
 }
 
+extern int z_arch_irq_is_enabled(unsigned int irq);
+
 #include <irq.h>
 
 #endif /* ZEPHYR_INCLUDE_ARCH_XTENSA_XTENSA_IRQ_H_ */

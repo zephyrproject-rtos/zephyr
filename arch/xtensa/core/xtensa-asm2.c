@@ -209,3 +209,11 @@ void *xtensa_excint1_c(int *interrupted_stack)
 	return z_get_next_switch_handle(interrupted_stack);
 }
 
+int z_arch_irq_is_enabled(unsigned int irq)
+{
+	u32_t ie;
+
+	__asm__ volatile("rsr.intenable %0" : "=r"(ie));
+
+	return (ie & (1 << irq)) != 0;
+}
