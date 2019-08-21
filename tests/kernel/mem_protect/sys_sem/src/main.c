@@ -116,8 +116,12 @@ void sem_take_multiple_high_prio_helper(void *p1, void *p2, void *p3)
 
 void sem_multiple_threads_wait_helper(void *p1, void *p2, void *p3)
 {
+	int ret_value;
+
 	/* get blocked until the test thread gives the semaphore */
-	sys_sem_take(&multiple_thread_sem, K_FOREVER);
+	ret_value = sys_sem_take(&multiple_thread_sem, K_FOREVER);
+	zassert_true(ret_value == 0,
+		     "sys_sem_take failed when its shouldn't have\n");
 
 	/* Inform the test thread that this thread has got multiple_thread_sem*/
 	sys_sem_give(&simple_sem);
