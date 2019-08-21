@@ -90,7 +90,7 @@ void z_irq_spurious(void *arg)
 }
 #endif
 
-static void dump_stack(int *stack)
+void z_xtensa_dump_stack(const z_arch_esf_t *stack)
 {
 	int *bsa = *(int **)stack;
 
@@ -126,6 +126,15 @@ static void dump_stack(int *stack)
 #endif
 
 	z_fatal_print(" ** SAR %p", (void *)bsa[BSA_SAR_OFF/4]);
+}
+
+static inline unsigned int get_bits(int offset, int num_bits, unsigned int val)
+{
+	int mask;
+
+	mask = BIT(num_bits) - 1;
+	val = val >> offset;
+	return val & mask;
 }
 
 /* The wrapper code lives here instead of in the python script that
@@ -175,7 +184,7 @@ void *xtensa_excint1_c(int *interrupted_stack)
 		/* Just report it to the console for now */
 		z_fatal_print(" ** SYSCALL PS %p PC %p",
 		       (void *)bsa[BSA_PS_OFF/4], (void *)bsa[BSA_PC_OFF/4]);
-		dump_stack(interrupted_stack);
+		z_xtensa_dump_stack(interrupted_stack);
 
 		/* Xtensa exceptions don't automatically advance PC,
 		 * have to skip the SYSCALL instruction manually or
@@ -184,26 +193,30 @@ void *xtensa_excint1_c(int *interrupted_stack)
 		bsa[BSA_PC_OFF/4] += 3;
 
 	} else {
+		u32_t ps = bsa[BSA_PS_OFF/4];
+
 		__asm__ volatile("rsr.excvaddr %0" : "=r"(vaddr));
 
-		/* Wouldn't hurt to translate EXCCAUSE to a string for
-		 * the user...
-		 */
 		z_fatal_print(" ** FATAL EXCEPTION");
-		z_fatal_print(" ** CPU %d EXCCAUSE %d PS %p PC %p VADDR %p",
-		       z_arch_curr_cpu()->id, cause, (void *)bsa[BSA_PS_OFF/4],
-		       (void *)bsa[BSA_PC_OFF/4], (void *)vaddr);
-
-		dump_stack(interrupted_stack);
+		z_fatal_print(" ** CPU %d EXCCAUSE %d (%s)",
+			      z_arch_curr_cpu()->id, cause,
+			      z_xtensa_exccause(cause));
+		z_fatal_print(" **  PC %p VADDR %p",
+			      (void *)bsa[BSA_PC_OFF/4], (void *)vaddr);
+		z_fatal_print(" **  PS %p", (void *)bsa[BSA_PS_OFF/4]);
+		z_fatal_print(" **    (INTLEVEL:%d EXCM: %d UM:%d RING:%d WOE:%d OWB:%d CALLINC:%d)",
+			      get_bits(0, 4, ps), get_bits(4, 1, ps),
+			      get_bits(5, 1, ps), get_bits(6, 2, ps),
+			      get_bits(18, 1, ps),
+			      get_bits(8, 4, ps), get_bits(16, 2, ps));
 
 		/* FIXME: legacy xtensa port reported "HW" exception
 		 * for all unhandled exceptions, which seems incorrect
 		 * as these are software errors.  Should clean this
 		 * up.
-		 *
-		 * FIXME: interrupted_stack and z_arch_esf_t ought to be the same
 		 */
-		z_xtensa_fatal_error(K_ERR_CPU_EXCEPTION, NULL);
+		z_xtensa_fatal_error(K_ERR_CPU_EXCEPTION,
+				     (void *)interrupted_stack);
 	}
 
 	return z_get_next_switch_handle(interrupted_stack);

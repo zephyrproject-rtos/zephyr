@@ -32,7 +32,15 @@ struct __esf {
 	u32_t pc;
 };
 
-typedef struct __esf z_arch_esf_t;
+/* Xtensa uses a variable length stack frame depending on how many
+ * register windows are in use.  This isn't a struct type, it just
+ * matches the register/stack-unit width.
+ */
+typedef int z_arch_esf_t;
+
+void z_xtensa_dump_stack(const z_arch_esf_t *stack);
+char *z_xtensa_exccause(unsigned int cause_code);
+
 #endif
 
 #ifdef __cplusplus
