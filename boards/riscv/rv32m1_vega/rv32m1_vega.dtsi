@@ -108,3 +108,17 @@ arduino_i2c: &i2c0 {
 		int2-gpios = <&gpioe 22 0>;
 	};
 };
+
+&spi1 {
+	status = "okay";
+	cs-gpios = <&gpiob 22 0>;
+	mx25r32: mx25r3235f@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <80000000>;
+		label = "MX25R32";
+		jedec-id = [c2 28 16];
+		size = <33554432>;
+		has-be32k;
+	};
+};
