@@ -211,13 +211,26 @@ def merge_included_bindings(fname, node):
     # section of the binding. 'fname' is the path to the top-level binding
     # file, and 'node' the current top-level YAML node being processed.
 
+    res = node
+
+    if "include" in node:
+        fnames = node.pop("include")
+        if isinstance(fnames, str):
+            fnames = [fnames]
+
+        for fname in fnames:
+            binding = load_binding_file(fname)
+            inherited = merge_included_bindings(fname, binding)
+            merge_properties(None, fname, inherited, res)
+            res = inherited
+
     if 'inherits' in node:
         for inherited in node.pop('inherits'):
             inherited = merge_included_bindings(fname, inherited)
-            merge_properties(None, fname, inherited, node)
-            node = inherited
+            merge_properties(None, fname, inherited, res)
+            res = inherited
 
-    return node
+    return res
 
 
 def define_str(name, value, value_tabs, is_deprecated=False):
