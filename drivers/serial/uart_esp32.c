@@ -211,14 +211,18 @@ static int uart_esp32_configure_pins(struct device *dev)
 				 cfg->signals.rx_in,
 				 false);
 
-	esp32_rom_gpio_matrix_out(cfg->pins.cts,
-				  cfg->signals.cts_in,
-				  false,
-				  false);
+	if (cfg->pins.cts) {
+		esp32_rom_gpio_matrix_out(cfg->pins.cts,
+					  cfg->signals.cts_in,
+					  false,
+					  false);
+	}
 
-	esp32_rom_gpio_matrix_in(cfg->pins.rts,
-				 cfg->signals.rts_out,
-				 false);
+	if (cfg->pins.rts) {
+		esp32_rom_gpio_matrix_in(cfg->pins.rts,
+					 cfg->signals.rts_out,
+					 false);
+	}
 
 	return 0;
 }
@@ -472,59 +476,66 @@ static const struct uart_driver_api uart_esp32_api = {
 
 #endif
 
-#define ESP32_UART_INIT(idx)								\
-ESP32_UART_IRQ_HANDLER_DECL(idx);						\
-static const struct uart_esp32_config uart_esp32_cfg_port_##idx = {		\
-	.dev_conf = {								\
-		.base = (u8_t *)DT_INST_##idx##_ESPRESSIF_ESP32_UART_BASE_ADDRESS,	\
+#define ESP32_UART_INIT(idx)								      \
+ESP32_UART_IRQ_HANDLER_DECL(idx);							      \
+static const struct uart_esp32_config uart_esp32_cfg_port_##idx = {			      \
+	.dev_conf = {									      \
+		.base = (u8_t *)DT_INST_##idx##_ESPRESSIF_ESP32_UART_BASE_ADDRESS,	      \
 		.sys_clk_freq = DT_INST_0_CADENCE_TENSILICA_XTENSA_LX6_CLOCK_FREQUENCY,	      \
-		ESP32_UART_IRQ_HANDLER_FUNC(idx)				\
-	},									\
-										\
-	.peripheral = {								\
-		.clk = DPORT_UART##idx##_CLK_EN,				\
-		.rst = DPORT_UART##idx##_RST,					\
-	},									\
-										\
-	.signals = {								\
-		.tx_out = U##idx##TXD_OUT_IDX,					\
-		.rx_in = U##idx##RXD_IN_IDX,					\
-		.rts_out = U##idx##RTS_OUT_IDX,					\
-		.cts_in = U##idx##CTS_IN_IDX,					\
-	},									\
-										\
-	.pins = {								\
-		.tx = DT_INST_##idx##_ESPRESSIF_ESP32_UART_TX_PIN,		\
-		.rx = DT_INST_##idx##_ESPRESSIF_ESP32_UART_RX_PIN,		\
-		.rts = DT_INST_##idx##_ESPRESSIF_ESP32_UART_RTS_PIN,		\
-		.cts = DT_INST_##idx##_ESPRESSIF_ESP32_UART_CTS_PIN,		\
-	},									\
-										\
-	.irq = {								\
-		.source = ETS_UART##idx##_INTR_SOURCE,				\
-		.line = DT_UART_ESP32_PORT_##idx##_IRQ_0,			\
-	}									\
-};										\
-										\
-static struct uart_esp32_data uart_esp32_data_##idx = {				\
-	.uart_config = {							\
-		.baudrate = DT_INST_##idx##_ESPRESSIF_ESP32_UART_CURRENT_SPEED,	\
-		.parity = UART_CFG_PARITY_NONE,					\
-		.stop_bits = UART_CFG_STOP_BITS_1,				\
-		.data_bits = UART_CFG_DATA_BITS_8,				\
-		.flow_ctrl = UART_CFG_FLOW_CTRL_NONE				\
-	}									\
-};										\
-										\
-DEVICE_AND_API_INIT(uart_esp32_##idx,						\
-		    DT_INST_##idx##_ESPRESSIF_ESP32_UART_LABEL,			\
-		    uart_esp32_init,						\
-		    &uart_esp32_data_##idx,					\
-		    &uart_esp32_cfg_port_##idx,					\
-		    PRE_KERNEL_1,						\
-		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,				\
-		    &uart_esp32_api);						\
-										\
+		ESP32_UART_IRQ_HANDLER_FUNC(idx)					      \
+	},										      \
+											      \
+	.peripheral = {									      \
+		.clk = DPORT_UART##idx##_CLK_EN,					      \
+		.rst = DPORT_UART##idx##_RST,						      \
+	},										      \
+											      \
+	.signals = {									      \
+		.tx_out = U##idx##TXD_OUT_IDX,						      \
+		.rx_in = U##idx##RXD_IN_IDX,						      \
+		.rts_out = U##idx##RTS_OUT_IDX,						      \
+		.cts_in = U##idx##CTS_IN_IDX,						      \
+	},										      \
+											      \
+	.pins = {									      \
+		.tx = DT_INST_##idx##_ESPRESSIF_ESP32_UART_TX_PIN,			      \
+		.rx = DT_INST_##idx##_ESPRESSIF_ESP32_UART_RX_PIN,			      \
+		COND_CODE_1(IS_ENABLED(DT_INST_##idx##_ESPRESSIF_ESP32_UART_HW_FLOW_CONTROL), \
+			    (.rts = DT_INST_##idx##_ESPRESSIF_ESP32_UART_RTS_PIN,	      \
+			     .cts = DT_INST_##idx##_ESPRESSIF_ESP32_UART_CTS_PIN,	      \
+			    ),								      \
+			    (.rts = 0,							      \
+			     .cts = 0							      \
+			    ))								      \
+	},										      \
+											      \
+	.irq = {									      \
+		.source = ETS_UART##idx##_INTR_SOURCE,					      \
+		.line = DT_UART_ESP32_PORT_##idx##_IRQ_0,				      \
+	}										      \
+};											      \
+											      \
+static struct uart_esp32_data uart_esp32_data_##idx = {					      \
+	.uart_config = {								      \
+		.baudrate = DT_INST_##idx##_ESPRESSIF_ESP32_UART_CURRENT_SPEED,		      \
+		.parity = UART_CFG_PARITY_NONE,						      \
+		.stop_bits = UART_CFG_STOP_BITS_1,					      \
+		.data_bits = UART_CFG_DATA_BITS_8,					      \
+		COND_CODE_1(IS_ENABLED(DT_INST_##idx##_ESPRESSIF_ESP32_UART_HW_FLOW_CONTROL), \
+			    (.flow_ctrl = UART_CFG_FLOW_CTRL_RTS_CTS),			      \
+			    (.flow_ctrl = UART_CFG_FLOW_CTRL_NONE))			      \
+	}										      \
+};											      \
+											      \
+DEVICE_AND_API_INIT(uart_esp32_##idx,							      \
+		    DT_INST_##idx##_ESPRESSIF_ESP32_UART_LABEL,				      \
+		    uart_esp32_init,							      \
+		    &uart_esp32_data_##idx,						      \
+		    &uart_esp32_cfg_port_##idx,						      \
+		    PRE_KERNEL_1,							      \
+		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,					      \
+		    &uart_esp32_api);							      \
+											      \
 ESP32_UART_IRQ_HANDLER(idx)
 
 #ifdef DT_INST_0_ESPRESSIF_ESP32_UART
