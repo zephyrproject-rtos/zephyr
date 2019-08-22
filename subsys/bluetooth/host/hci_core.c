@@ -3248,6 +3248,7 @@ static void le_ltk_request(struct net_buf *buf)
 #endif /* !CONFIG_BT_SMP_SC_PAIR_ONLY */
 
 	le_ltk_neg_reply(evt->handle);
+	bt_smp_keys_reject(conn);
 
 done:
 	bt_conn_unref(conn);

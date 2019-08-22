@@ -128,6 +128,7 @@ int bt_smp_send_security_req(struct bt_conn *conn);
 void bt_smp_update_keys(struct bt_conn *conn);
 bool bt_smp_get_tk(struct bt_conn *conn, u8_t *tk);
 bool bt_smp_keys_check(struct bt_conn *conn);
+void bt_smp_keys_reject(struct bt_conn *conn);
 
 int bt_smp_br_send_pairing_req(struct bt_conn *conn);
 
