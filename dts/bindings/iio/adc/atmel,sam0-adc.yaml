@@ -31,3 +31,9 @@ properties:
       type: int
       category: required
       description: clock prescaler divisor applied to the generic clock
+
+    "#io-channel-cells":
+      const: 1
+
+"#cells":
+    - input
