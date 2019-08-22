@@ -3,7 +3,7 @@ title: ESP32 Uart
 description: >
     This binding gives a base representation of the ESP32 UART
 
-compatible: "xtensa,esp32-uart"
+compatible: "espressif,esp32-uart"
 
 include: uart-controller.yaml
 
@@ -12,27 +12,24 @@ properties:
       required: true
 
     interrupts:
-      category: optional
-
-    clocks:
-      category: required
+      required: false
 
     tx-pin:
       type: int
       description: TX pin
-      category: required
+      required: true
 
     rx-pin:
       type: int
       description: RX pin
-      category: required
+      required: true
 
     rts-pin:
       type: int
       description: RTS pin
-      category: optional
+      required: false
 
     cts-pin:
       type: int
       description: CTS pin
-      category: optional
+      required: false
