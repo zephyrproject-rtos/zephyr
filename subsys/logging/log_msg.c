@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <kernel.h>
+#include <logging/log.h>
 #include <logging/log_msg.h>
 #include <logging/log_ctrl.h>
 #include <logging/log_core.h>
@@ -84,6 +85,17 @@ static void msg_free(struct log_msg *msg)
 			if (log_is_strdup(buf)) {
 				log_free(buf);
 			}
+		}
+	} else if (IS_ENABLED(CONFIG_USERSPACE) &&
+		   (log_msg_level_get(msg) != LOG_LEVEL_INTERNAL_RAW_STRING)) {
+		/*
+		 * When userspace support is enabled, the hex message metadata
+		 * might be located in log_strdup() memory pool.
+		 */
+		const char *str = log_msg_str_get(msg);
+
+		if (log_is_strdup(str)) {
+			log_free((void *)(str));
 		}
 	}
 

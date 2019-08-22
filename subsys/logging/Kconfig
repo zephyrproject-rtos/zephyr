@@ -6,6 +6,7 @@
 
 menuconfig LOG
 	bool "Logging"
+	select PRINTK if USERSPACE
 	help
 	  Global switch for the logger, when turned off log calls will not be
 	  compiled in.
@@ -94,7 +95,7 @@ config LOG_PRINTK
 config LOG_PRINTK_MAX_STRING_LENGTH
 	int "Maximum string length supported by LOG_PRINTK"
 	depends on LOG_PRINTK
-	depends on !LOG_IMMEDIATE
+	depends on (!LOG_IMMEDIATE || USERSPACE)
 	default 128
 	help
 	  Array is allocated on the stack.
