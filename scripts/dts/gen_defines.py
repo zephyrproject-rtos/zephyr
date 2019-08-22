@@ -597,18 +597,16 @@ def out_dev(dev, ident, val, name_alias=None):
 
 
 def out_dev_s(dev, ident, s):
-    # Like out_dev(), but puts quotes around 's' and escapes any double quotes
-    # and backslashes within it
+    # Like out_dev(), but emits 's' as a string literal
 
-    # \ must be escaped before " to avoid double escaping
-    out_dev(dev, ident, '"{}"'.format(escape(s)))
+    out_dev(dev, ident, quote_str(s))
 
 
 def out_s(ident, val):
-    # Like out(), but puts quotes around 's' and escapes any double quotes and
-    # backslashes within it
+    # Like out(), but puts quotes around 'val' and escapes any double
+    # quotes and backslashes within it
 
-    out(ident, '"{}"'.format(escape(val)))
+    out(ident, quote_str(val))
 
 
 def out(ident, val, aliases=()):
@@ -650,6 +648,13 @@ def escape(s):
 
     # \ must be escaped before " to avoid double escaping
     return s.replace("\\", "\\\\").replace('"', '\\"')
+
+
+def quote_str(s):
+    # Puts quotes around 's' and escapes any double quotes and
+    # backslashes within it
+
+    return '"{}"'.format(escape(s))
 
 
 def err(s):
