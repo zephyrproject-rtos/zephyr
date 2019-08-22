@@ -15,11 +15,12 @@
 #include <sys/atomic.h>
 #include <ctype.h>
 #include <logging/log_frontend.h>
+#include <syscall_handler.h>
 
 LOG_MODULE_REGISTER(log);
 
 #ifndef CONFIG_LOG_PRINTK_MAX_STRING_LENGTH
-#define CONFIG_LOG_PRINTK_MAX_STRING_LENGTH 1
+#define CONFIG_LOG_PRINTK_MAX_STRING_LENGTH 0
 #endif
 
 #ifndef CONFIG_LOG_PROCESS_THREAD_SLEEP_MS
@@ -324,27 +325,37 @@ int log_printk(const char *fmt, va_list ap)
 	int length = 0;
 
 	if (IS_ENABLED(CONFIG_LOG_PRINTK)) {
-		struct log_msg_ids src_level = {
-			.level = LOG_LEVEL_INTERNAL_RAW_STRING
+		union {
+			struct log_msg_ids structure;
+			u32_t value;
+		} src_level_union = {
+			{
+				.level = LOG_LEVEL_INTERNAL_RAW_STRING
+			}
 		};
 
-		if (IS_ENABLED(CONFIG_LOG_IMMEDIATE)) {
-			log_generic(src_level, fmt, ap);
+		if (_is_user_context()) {
+			u8_t str[CONFIG_LOG_PRINTK_MAX_STRING_LENGTH + 1];
+
+			length = vsnprintk(str, sizeof(str), fmt, ap);
+			length = MIN(length, sizeof(str));
+
+			z_log_string_from_user(src_level_union.value, str);
+		} else if (IS_ENABLED(CONFIG_LOG_IMMEDIATE)) {
+			log_generic(src_level_union.structure, fmt, ap);
 		} else {
-			u8_t formatted_str[CONFIG_LOG_PRINTK_MAX_STRING_LENGTH];
+			u8_t str[CONFIG_LOG_PRINTK_MAX_STRING_LENGTH + 1];
 			struct log_msg *msg;
 
-			length = vsnprintk(formatted_str,
-					   sizeof(formatted_str), fmt, ap);
-			length = MIN(length, sizeof(formatted_str));
+			length = vsnprintk(str, sizeof(str), fmt, ap);
+			length = MIN(length, sizeof(str));
 
-			msg = log_msg_hexdump_create(NULL, formatted_str,
-						     length);
+			msg = log_msg_hexdump_create(NULL, str, length);
 			if (msg == NULL) {
 				return 0;
 			}
 
-			msg_finalize(msg, src_level);
+			msg_finalize(msg, src_level_union.structure);
 		}
 	}
 
@@ -375,7 +386,9 @@ static u32_t count_args(const char *fmt)
 
 void log_generic(struct log_msg_ids src_level, const char *fmt, va_list ap)
 {
-	if (IS_ENABLED(CONFIG_LOG_IMMEDIATE) &&
+	if (_is_user_context()) {
+		log_generic_from_user(src_level, fmt, ap);
+	} else  if (IS_ENABLED(CONFIG_LOG_IMMEDIATE) &&
 	    (!IS_ENABLED(CONFIG_LOG_FRONTEND))) {
 		struct log_backend const *backend;
 		u32_t timestamp = timestamp_func();
@@ -550,7 +563,7 @@ int log_set_timestamp_func(timestamp_get_t timestamp_getter, u32_t freq)
 	return 0;
 }
 
-void log_panic(void)
+void z_impl_log_panic(void)
 {
 	struct log_backend const *backend;
 
@@ -579,6 +592,10 @@ void log_panic(void)
 
 	panic_mode = true;
 }
+
+#ifdef CONFIG_USERSPACE
+Z_SYSCALL_HANDLER0_SIMPLE_VOID(log_panic);
+#endif
 
 static bool msg_filter_check(struct log_backend const *backend,
 			     struct log_msg *msg)
@@ -635,7 +652,7 @@ void dropped_notify(void)
 	}
 }
 
-bool log_process(bool bypass)
+bool z_impl_log_process(bool bypass)
 {
 	struct log_msg *msg;
 
@@ -659,10 +676,21 @@ bool log_process(bool bypass)
 	return (log_list_head_peek(&list) != NULL);
 }
 
-u32_t log_buffered_cnt(void)
+#ifdef CONFIG_USERSPACE
+Z_SYSCALL_HANDLER(log_process, bypass)
+{
+	return (u32_t)log_process((bool)(bypass));
+}
+#endif
+
+u32_t z_impl_log_buffered_cnt(void)
 {
 	return buffered_cnt;
 }
+
+#ifdef CONFIG_USERSPACE
+Z_SYSCALL_HANDLER0_SIMPLE(log_buffered_cnt);
+#endif
 
 void log_dropped(void)
 {
@@ -696,10 +724,10 @@ static u32_t max_filter_get(u32_t filters)
 	return max_filter;
 }
 
-u32_t log_filter_set(struct log_backend const *const backend,
-		     u32_t domain_id,
-		     u32_t src_id,
-		     u32_t level)
+u32_t z_impl_log_filter_set(struct log_backend const *const backend,
+			    u32_t domain_id,
+			    u32_t src_id,
+			    u32_t level)
 {
 	assert(src_id < log_sources_count());
 
@@ -745,16 +773,29 @@ u32_t log_filter_set(struct log_backend const *const backend,
 	return level;
 }
 
+#ifdef CONFIG_USERSPACE
+Z_SYSCALL_HANDLER(log_filter_set, backend, domain_id, src_id, level)
+{
+	Z_OOPS(Z_SYSCALL_VERIFY_MSG(backend == 0,
+		"Setting per-backend filters from user mode is not supported"));
+	Z_OOPS(Z_SYSCALL_VERIFY_MSG(domain_id == CONFIG_LOG_DOMAIN_ID,
+		"Invalid log domain_id"));
+	Z_OOPS(Z_SYSCALL_VERIFY_MSG(src_id < log_sources_count(),
+		"Invalid log source id"));
+	Z_OOPS(Z_SYSCALL_VERIFY_MSG(
+		(level <= LOG_LEVEL_DBG) && (level >= LOG_LEVEL_NONE),
+		"Invalid log level"));
+
+	return z_impl_log_filter_set(NULL, domain_id, src_id, level);
+}
+#endif
+
 static void backend_filter_set(struct log_backend const *const backend,
 			       u32_t level)
 {
 	if (IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)) {
 		for (int i = 0; i < log_sources_count(); i++) {
-			log_filter_set(backend,
-				       CONFIG_LOG_DOMAIN_ID,
-				       i,
-				       level);
-
+			log_filter_set(backend, CONFIG_LOG_DOMAIN_ID, i, level);
 		}
 	}
 }
@@ -802,7 +843,8 @@ char *log_strdup(const char *str)
 	struct log_strdup_buf *dup;
 	int err;
 
-	if (IS_ENABLED(CONFIG_LOG_IMMEDIATE) || is_rodata(str)) {
+	if (IS_ENABLED(CONFIG_LOG_IMMEDIATE) ||
+	    is_rodata(str) || _is_user_context()) {
 		return (char *)str;
 	}
 
@@ -864,6 +906,237 @@ void log_free(void *str)
 		}
 	}
 }
+
+#if defined(CONFIG_USERSPACE)
+void z_impl_z_log_string_from_user(u32_t src_level_val, const char *str)
+{
+	ARG_UNUSED(src_level_val);
+	ARG_UNUSED(str);
+
+	__ASSERT(false, "This function can be called from user mode only.");
+}
+
+Z_SYSCALL_HANDLER(z_log_string_from_user, src_level_val, user_string_ptr)
+{
+	const char *str = (const char *)(user_string_ptr);
+	u8_t level, domain_id, source_id;
+	union {
+		struct log_msg_ids structure;
+		u32_t value;
+	} src_level_union;
+	size_t len;
+	int err;
+
+	src_level_union.value = src_level_val;
+	level = src_level_union.structure.level;
+	domain_id = src_level_union.structure.domain_id;
+	source_id = src_level_union.structure.source_id;
+
+	Z_OOPS(Z_SYSCALL_VERIFY_MSG(
+		(IS_ENABLED(CONFIG_LOG_PRINTK) || (level >= LOG_LEVEL_ERR)) &&
+		(level <= LOG_LEVEL_DBG),
+		"Invalid log level"));
+	Z_OOPS(Z_SYSCALL_VERIFY_MSG(domain_id == CONFIG_LOG_DOMAIN_ID,
+		"Invalid log domain_id"));
+	Z_OOPS(Z_SYSCALL_VERIFY_MSG(source_id < log_sources_count(),
+		"Invalid log source id"));
+
+	if (IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) &&
+	    (level != LOG_LEVEL_INTERNAL_RAW_STRING) &&
+	    (level > LOG_FILTER_SLOT_GET(log_dynamic_filters_get(source_id),
+					LOG_FILTER_AGGR_SLOT_IDX))) {
+		/* Skip filtered out messages. */
+		return 0;
+	}
+
+	/*
+	 * Validate and make a copy of the source string. Because we need
+	 * the log subsystem to eventually free it, we're going to use
+	 * log_strdup().
+	 */
+	len = z_user_string_nlen(str, (level == LOG_LEVEL_INTERNAL_RAW_STRING) ?
+				 CONFIG_LOG_PRINTK_MAX_STRING_LENGTH :
+				 CONFIG_LOG_STRDUP_MAX_STRING, &err);
+
+	Z_OOPS(Z_SYSCALL_VERIFY_MSG(err == 0, "invalid string passed in"));
+	Z_OOPS(Z_SYSCALL_MEMORY_READ(str, len));
+
+	if (IS_ENABLED(CONFIG_LOG_IMMEDIATE)) {
+		log_string_sync(src_level_union.structure, "%s", str);
+	} else if (IS_ENABLED(CONFIG_LOG_PRINTK) &&
+		   (level == LOG_LEVEL_INTERNAL_RAW_STRING)) {
+		struct log_msg *msg;
+
+		msg = log_msg_hexdump_create(NULL, str, len);
+		if (msg != NULL) {
+			msg_finalize(msg, src_level_union.structure);
+		}
+	} else {
+		str = log_strdup(str);
+		log_1("%s", (log_arg_t)str, src_level_union.structure);
+	}
+
+	return 0;
+}
+
+void log_generic_from_user(struct log_msg_ids src_level,
+			   const char *fmt, va_list ap)
+{
+	char buffer[CONFIG_LOG_STRDUP_MAX_STRING + 1];
+	union {
+		struct log_msg_ids structure;
+		u32_t value;
+	} src_level_union;
+
+	vsnprintk(buffer, sizeof(buffer), fmt, ap);
+
+	__ASSERT_NO_MSG(sizeof(src_level) <= sizeof(u32_t));
+	src_level_union.structure = src_level;
+	z_log_string_from_user(src_level_union.value, buffer);
+}
+
+void log_from_user(struct log_msg_ids src_level, const char *fmt, ...)
+{
+	va_list ap;
+
+	va_start(ap, fmt);
+	log_generic_from_user(src_level, fmt, ap);
+	va_end(ap);
+}
+
+void z_impl_z_log_hexdump_from_user(u32_t src_level_val, const char *metadata,
+				    const u8_t *data, u32_t len)
+{
+	ARG_UNUSED(src_level_val);
+	ARG_UNUSED(metadata);
+	ARG_UNUSED(data);
+	ARG_UNUSED(len);
+
+	__ASSERT(false, "This function can be called from user mode only.");
+}
+
+Z_SYSCALL_HANDLER(z_log_hexdump_from_user, src_level_val,
+		  user_metadata_ptr, user_data_ptr, len)
+{
+	const char *metadata = (const char *)(user_metadata_ptr);
+	const void *data = (const void *)(user_data_ptr);
+	union {
+		struct log_msg_ids structure;
+		u32_t value;
+	} src_level_union;
+	size_t mlen;
+	int err;
+
+	src_level_union.value = src_level_val;
+
+	Z_OOPS(Z_SYSCALL_VERIFY_MSG(
+		(src_level_union.structure.level <= LOG_LEVEL_DBG) &&
+		(src_level_union.structure.level >= LOG_LEVEL_ERR),
+		"Invalid log level"));
+	Z_OOPS(Z_SYSCALL_VERIFY_MSG(
+		src_level_union.structure.domain_id == CONFIG_LOG_DOMAIN_ID,
+		"Invalid log domain_id"));
+	Z_OOPS(Z_SYSCALL_VERIFY_MSG(
+		src_level_union.structure.source_id < log_sources_count(),
+		"Invalid log source id"));
+
+	if (IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) &&
+	    (src_level_union.structure.level > LOG_FILTER_SLOT_GET(
+	     log_dynamic_filters_get(src_level_union.structure.source_id),
+	     LOG_FILTER_AGGR_SLOT_IDX))) {
+		/* Skip filtered out messages. */
+		return 0;
+	}
+
+	/*
+	 * Validate and make a copy of the metadata string. Because we
+	 * need the log subsystem to eventually free it, we're going
+	 * to use log_strdup().
+	 */
+	mlen = z_user_string_nlen(metadata, CONFIG_LOG_STRDUP_MAX_STRING, &err);
+	Z_OOPS(Z_SYSCALL_VERIFY_MSG(err == 0, "invalid string passed in"));
+	Z_OOPS(Z_SYSCALL_MEMORY_READ(metadata, mlen));
+	Z_OOPS(Z_SYSCALL_MEMORY_READ(data, len));
+
+	if (IS_ENABLED(CONFIG_LOG_IMMEDIATE)) {
+		log_hexdump_sync(src_level_union.structure,
+				 metadata, data, len);
+	} else {
+		metadata = log_strdup(metadata);
+		log_hexdump(metadata, data, len, src_level_union.structure);
+	}
+
+	return 0;
+}
+
+void log_hexdump_from_user(struct log_msg_ids src_level, const char *metadata,
+			   const u8_t *data, u32_t len)
+{
+	union {
+		struct log_msg_ids structure;
+		u32_t value;
+	} src_level_union;
+
+	__ASSERT_NO_MSG(sizeof(src_level) <= sizeof(u32_t));
+	src_level_union.structure = src_level;
+	z_log_hexdump_from_user(src_level_union.value, metadata, data, len);
+}
+#elif defined(CONFIG_NO_OPTIMIZATIONS)
+/*
+ * With the optimizations disabled, the dead code is not removed and
+ * references to functions used only by the usermode remains in the
+ * object files, causing linker error. To avoid this error, here we
+ * are providing stubs for affected API.
+ */
+
+void z_impl_z_log_string_from_user(u32_t src_level_val, const char *str)
+{
+	ARG_UNUSED(src_level_val);
+	ARG_UNUSED(str);
+
+	__ASSERT_NO_MSG(false);
+}
+
+void z_impl_z_log_hexdump_from_user(u32_t src_level_val, const char *metadata,
+				    const u8_t *data, u32_t len)
+{
+	ARG_UNUSED(src_level_val);
+	ARG_UNUSED(metadata);
+	ARG_UNUSED(data);
+	ARG_UNUSED(len);
+
+	__ASSERT_NO_MSG(false);
+}
+
+void log_from_user(struct log_msg_ids src_level, const char *fmt, ...)
+{
+	ARG_UNUSED(src_level);
+	ARG_UNUSED(fmt);
+
+	__ASSERT_NO_MSG(false);
+}
+
+void log_generic_from_user(struct log_msg_ids src_level,
+			   const char *fmt, va_list ap)
+{
+	ARG_UNUSED(src_level);
+	ARG_UNUSED(fmt);
+	ARG_UNUSED(ap);
+
+	__ASSERT_NO_MSG(false);
+}
+
+void log_hexdump_from_user(struct log_msg_ids src_level, const char *metadata,
+			   const u8_t *data, u32_t len)
+{
+	ARG_UNUSED(src_level);
+	ARG_UNUSED(metadata);
+	ARG_UNUSED(data);
+	ARG_UNUSED(len);
+
+	__ASSERT_NO_MSG(false);
+}
+#endif /* defined(CONFIG_NO_OPTIMIZATIONS) */
 
 static void log_process_thread_func(void *dummy1, void *dummy2, void *dummy3)
 {
