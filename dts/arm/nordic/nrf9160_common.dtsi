@@ -27,6 +27,7 @@ adc: adc@e000 {
 	interrupts = <14 1>;
 	status = "disabled";
 	label = "ADC_0";
+	#io-channel-cells = <1>;
 };
 
 dppic: dppic@17000 {

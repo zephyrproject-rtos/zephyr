@@ -239,6 +239,7 @@
 			interrupts = <15 0>;
 			label = "ADC_0";
 			status = "disabled";
+			#io-channel-cells = <1>;
 		};
 
 		trng: random@40029000 {

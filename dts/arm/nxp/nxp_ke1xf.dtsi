@@ -313,6 +313,7 @@
 			clk-source = <0>;
 			clk-divider = <1>;
 			status = "disabled";
+			#io-channel-cells = <1>;
 		};
 
 		adc1: adc@40027000 {
@@ -324,6 +325,7 @@
 			clk-source = <0>;
 			clk-divider = <1>;
 			status = "disabled";
+			#io-channel-cells = <1>;
 		};
 
 		adc2: adc@4003c000 {
@@ -335,6 +337,7 @@
 			clk-source = <0>;
 			clk-divider = <1>;
 			status = "disabled";
+			#io-channel-cells = <1>;
 		};
 
 		ftm0: pwm@40038000 {
