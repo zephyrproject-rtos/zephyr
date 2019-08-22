@@ -3,6 +3,16 @@ sample:
      Designware ARC SecureShiled.
   name: Designware ARC Secure monitor
 tests:
-  test:
+  sample.arc_secure_services:
     platform_whitelist: nsim_sem em_starterkit_em7d_secure
     tags: secure
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        -  "I am the main thread in secure world: 0"
+        -  "Go to normal application"
+        -  "I am the main thread in secure world: 1"
+        -  "I am the main thread in secure world: 2"
+        -  "I am the main thread in secure world: 3"
