@@ -40,7 +40,7 @@ static inline void dcache_writeback_region(void *addr, size_t size)
 
 static void trace(const u8_t *data, size_t length)
 {
-	volatile u8_t *t;
+	volatile u8_t *t, *region;
 	int space;
 	int i;
 
@@ -54,6 +54,7 @@ static void trace(const u8_t *data, size_t length)
 	}
 
 	ring_buf_put_claim(&ringbuf, (u8_t **)&t, BUF_SIZE);
+	region = t;
 
 	/* Add magic number at the beginning of the slot */
 	*(u16_t *)t = magic;
@@ -63,11 +64,11 @@ static void trace(const u8_t *data, size_t length)
 	*(u16_t *)t = log_id++;
 	t += 2;
 
-	for (i = 0; i < length; i++) {
+	for (i = 0; i < MIN(length, BUF_SIZE - 4); i++) {
 		*t++ = data[i];
 	}
 
-	dcache_writeback_region((void *)t, i);
+	dcache_writeback_region((void *)region, BUF_SIZE);
 
 	ring_buf_put_finish(&ringbuf, BUF_SIZE);
 }
