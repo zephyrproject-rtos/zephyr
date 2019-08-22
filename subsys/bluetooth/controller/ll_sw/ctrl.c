@@ -2254,6 +2254,7 @@ isr_rx_conn_pkt_ctrl_rej(struct radio_pdu_node_rx *node_rx, u8_t *rx_enqueue)
 			_radio.conn_curr->pause_tx = 0U;
 
 			/* Procedure complete */
+			_radio.conn_curr->llcp_ack = _radio.conn_curr->llcp_req;
 			_radio.conn_curr->procedure_expire = 0U;
 
 			/* enqueue as if it were a reject ind */
@@ -2863,6 +2864,7 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx,
 		_radio.conn_curr->pause_tx = 0U;
 
 		/* Procedure complete */
+		_radio.conn_curr->llcp_ack = _radio.conn_curr->llcp_req;
 		_radio.conn_curr->procedure_expire = 0U;
 
 		/* enqueue the reject ind */
