@@ -20,7 +20,7 @@
 #include <sys/ring_buffer.h>
 
 #include <logging/log.h>
-LOG_MODULE_REGISTER(cdc_acm_echo, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(cdc_acm_echo, LOG_LEVEL_INF);
 
 #define RING_BUF_SIZE 1024
 u8_t ring_buffer[RING_BUF_SIZE];
@@ -83,16 +83,19 @@ void main(void)
 
 	ring_buf_init(&ringbuf, sizeof(ring_buffer), ring_buffer);
 
-	LOG_DBG("Wait for DTR");
+	LOG_INF("Wait for DTR");
 
 	while (true) {
 		uart_line_ctrl_get(dev, LINE_CTRL_DTR, &dtr);
 		if (dtr) {
 			break;
+		} else {
+			/* Give CPU resources to low priority threads. */
+			k_sleep(100);
 		}
 	}
 
-	LOG_DBG("DTR set");
+	LOG_INF("DTR set");
 
 	/* They are optional, we use them to test the interrupt endpoint */
 	ret = uart_line_ctrl_set(dev, LINE_CTRL_DCD, 1);
