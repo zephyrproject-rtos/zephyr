@@ -1155,8 +1155,17 @@ static void disabled_cb(void *param)
 
 static inline void conn_release(struct ll_adv_set *adv)
 {
-	ll_conn_release(adv->lll.conn->hdr.parent);
+	struct lll_conn *lll = adv->lll.conn;
+	memq_link_t *link;
+
+	LL_ASSERT(!lll->link_tx_free);
+	link = memq_deinit(&lll->memq_tx.head, &lll->memq_tx.tail);
+	LL_ASSERT(link);
+	lll->link_tx_free = link;
+
+	ll_conn_release(lll->hdr.parent);
 	adv->lll.conn = NULL;
+
 	ll_rx_release(adv->node_rx_cc_free);
 	adv->node_rx_cc_free = NULL;
 	ll_rx_link_release(adv->link_cc_free);
