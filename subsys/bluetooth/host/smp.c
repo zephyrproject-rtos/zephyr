@@ -5000,6 +5000,23 @@ bool bt_smp_keys_check(struct bt_conn *conn)
 	return true;
 }
 
+void bt_smp_keys_reject(struct bt_conn *conn)
+{
+	struct bt_smp *smp;
+
+	smp = smp_chan_get(conn);
+	if (!smp) {
+		return;
+	}
+
+	if (atomic_test_bit(smp->flags, SMP_FLAG_SEC_REQ)) {
+		bt_conn_security_changed(smp->chan.chan.conn,
+					 BT_SECURITY_ERR_PIN_OR_KEY_MISSING);
+	}
+
+	smp_reset(smp);
+}
+
 static int bt_smp_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 {
 	int i;
