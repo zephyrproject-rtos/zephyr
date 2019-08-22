@@ -92,7 +92,7 @@ static int ipv6cp_config_info_req(struct ppp_fsm *fsm,
 				u16_t length,
 				struct net_buf **ret_buf)
 {
-	int nack_idx = 0, count_rej = 0, iface_id_option_idx = -1;
+	int nack_idx = 0, iface_id_option_idx = -1;
 	struct net_buf *buf = NULL;
 	struct ppp_option_pkt options[MAX_IPV6CP_OPTIONS];
 	struct ppp_option_pkt nack_options[MAX_IPV6CP_OPTIONS];
@@ -146,11 +146,9 @@ static int ipv6cp_config_info_req(struct ppp_fsm *fsm,
 	if (nack_idx > 0) {
 		struct net_buf *nack_buf;
 
-		if (count_rej > 0) {
-			code = PPP_CONFIGURE_REJ;
-		} else {
-			code = PPP_CONFIGURE_NACK;
-		}
+		/* Once rejected count logic is in, it will be possible
+		 * to set this code to PPP_CONFIGURE_REJ. */
+		code = PPP_CONFIGURE_NACK;
 
 		/* Create net_buf containing options that are not accepted */
 		for (i = 0; i < MIN(nack_idx, ARRAY_SIZE(nack_options)); i++) {
