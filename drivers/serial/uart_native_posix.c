@@ -45,6 +45,11 @@ static bool auto_attach;
 static const char default_cmd[] = CONFIG_NATIVE_UART_AUTOATTACH_DEFAULT_CMD;
 static char *auto_attach_cmd;
 
+struct native_uart_status {
+	int out_fd; /* File descriptor used for output */
+	int in_fd; /* File descriptor used for input */
+};
+
 static struct native_uart_status native_uart_status_0;
 
 static struct uart_driver_api np_uart_driver_api_0 = {
@@ -60,11 +65,6 @@ static struct uart_driver_api np_uart_driver_api_1 = {
 	.poll_in = np_uart_tty_poll_in,
 };
 #endif /* CONFIG_UART_NATIVE_POSIX_PORT_1_ENABLE */
-
-struct native_uart_status {
-	int out_fd; /* File descriptor used for output */
-	int in_fd; /* File descriptor used for input */
-};
 
 #define ERROR posix_print_error_and_exit
 #define WARN posix_print_warning
