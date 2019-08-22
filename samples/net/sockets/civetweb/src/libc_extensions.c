@@ -150,12 +150,6 @@ double atof(const char *str)
 	return (double)atoi(str);
 }
 
-long long int strtoll(const char *str, char **endptr, int base)
-{
-	/* XXX good enough for civetweb uses */
-	return (long long int)strtol(str, endptr, base);
-}
-
 time_t time(time_t *t)
 {
 	return 0;
