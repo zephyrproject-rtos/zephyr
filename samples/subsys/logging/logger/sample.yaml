@@ -21,4 +21,13 @@ tests:
     tags: logging
     filter: CONFIG_HAS_SEGGER_RTT
     harness: keyboard
-    extra_args: CONF_FILE="prj_rtt.conf"
+    extra_configs:
+      - CONFIG_LOG_BACKEND_RTT=y
+      - CONFIG_USE_SEGGER_RTT=y
+
+  samples.logger.usermode:
+    tags: logging usermode
+    filter: CONFIG_ARCH_HAS_USERSPACE
+    harness: keyboard
+    extra_configs:
+      - CONFIG_USERSPACE=y
