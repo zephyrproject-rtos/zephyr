@@ -24,9 +24,7 @@ if (CONFIG_COVERAGE)
 endif ()
 
 if (CONFIG_ASAN)
-	zephyr_compile_options(-fsanitize=address)
-	zephyr_link_libraries(-lasan)
-	zephyr_ld_options(-fsanitize=address)
+  toolchain_cc_asan()
 endif ()
 
 zephyr_compile_definitions(_POSIX_C_SOURCE=200809 _XOPEN_SOURCE=600 _XOPEN_SOURCE_EXTENDED)
