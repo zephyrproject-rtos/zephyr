@@ -86,10 +86,13 @@ void z_fatal_print(const char *fmt, ...)
 }
 #endif /* CONFIG_LOG || CONFIG_PRINTK */
 
+/* LCOV_EXCL_START */
 FUNC_NORETURN void k_fatal_halt(unsigned int reason)
 {
 	z_arch_system_halt(reason);
 }
+/* LCOV_EXCL_STOP */
+
 
 void z_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
 {
