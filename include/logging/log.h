@@ -9,6 +9,7 @@
 
 #include <logging/log_instance.h>
 #include <logging/log_core.h>
+#include <toolchain.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -309,7 +310,8 @@ static inline char *log_strdup(const char *str)
 	IF_ENABLED(LOG_IN_CPLUSPLUS, (extern))				     \
 	const struct log_source_const_data LOG_ITEM_CONST_DATA(_name)	     \
 	__attribute__ ((section("." STRINGIFY(LOG_ITEM_CONST_DATA(_name))))) \
-	__attribute__((used)) = {					     \
+	__attribute__((used))						     \
+	__no_sanitize_address = {					     \
 		.name = STRINGIFY(_name),				     \
 		.level = _level						     \
 	}
@@ -319,7 +321,8 @@ static inline char *log_strdup(const char *str)
 	__attribute__ ((section("." STRINGIFY(				\
 				     LOG_ITEM_DYNAMIC_DATA(_name))))	\
 				     )					\
-	__attribute__((used))
+	__attribute__((used))						\
+	__no_sanitize_address
 
 #define _LOG_MODULE_DYNAMIC_DATA_COND_CREATE(_name)		\
 	IF_ENABLED(CONFIG_LOG_RUNTIME_FILTERING,		\

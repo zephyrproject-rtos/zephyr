@@ -39,6 +39,7 @@
 #include <drivers/usb/usb_dc.h>
 #include <usb/usbstruct.h>
 #include <logging/log.h>
+#include <toolchain.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -49,24 +50,30 @@ extern "C" {
  * in predetermined order in the RAM.
  */
 #define USBD_DEVICE_DESCR_DEFINE(p) \
-	static __in_section(usb, descriptor_##p, 0) __used __aligned(1)
+	static __in_section(usb, descriptor_##p, 0) __used __aligned(1) \
+	__no_sanitize_address
 #define USBD_CLASS_DESCR_DEFINE(p, instance) \
-	static __in_section(usb, descriptor_##p.1, instance) __used __aligned(1)
+	static __in_section(usb, descriptor_##p.1, instance) __used \
+	__aligned(1) __no_sanitize_address
 #define USBD_MISC_DESCR_DEFINE(p) \
-	static __in_section(usb, descriptor_##p, 2) __used __aligned(1)
+	static __in_section(usb, descriptor_##p, 2) __used __aligned(1) \
+	__no_sanitize_address
 #define USBD_USER_DESCR_DEFINE(p) \
-	static __in_section(usb, descriptor_##p, 3) __used __aligned(1)
+	static __in_section(usb, descriptor_##p, 3) __used __aligned(1) \
+	__no_sanitize_address
 #define USBD_STRING_DESCR_DEFINE(p) \
-	static __in_section(usb, descriptor_##p, 4) __used __aligned(1)
+	static __in_section(usb, descriptor_##p, 4) __used __aligned(1) \
+	__no_sanitize_address
 #define USBD_TERM_DESCR_DEFINE(p) \
-	static __in_section(usb, descriptor_##p, 5) __used __aligned(1)
+	static __in_section(usb, descriptor_##p, 5) __used __aligned(1) \
+	__no_sanitize_address
 
 /*
  * This macro should be used to place the struct usb_cfg_data
  * inside usb data section in the RAM.
  */
 #define USBD_CFG_DATA_DEFINE(p, name) \
-	static __in_section(usb, data_##p, name) __used
+	static __in_section(usb, data_##p, name) __used __no_sanitize_address
 
 /*************************************************************************
  *  USB configuration

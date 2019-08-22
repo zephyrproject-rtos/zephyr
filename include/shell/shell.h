@@ -15,6 +15,7 @@
 #include <logging/log_instance.h>
 #include <logging/log.h>
 #include <sys/util.h>
+#include <toolchain.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -172,7 +173,8 @@ struct shell_static_entry {
 	static const struct shell_cmd_entry UTIL_CAT(shell_cmd_, syntax)   \
 	__attribute__ ((section("."					   \
 			STRINGIFY(UTIL_CAT(shell_root_cmd_, syntax)))))	   \
-	__attribute__((used)) = {					   \
+	__attribute__((used))						   \
+	__no_sanitize_address = {					   \
 		.is_dynamic = false,					   \
 		.u = {.entry = &UTIL_CAT(_shell_, syntax)}		   \
 	}

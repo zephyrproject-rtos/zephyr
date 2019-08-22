@@ -7,11 +7,15 @@
 #ifndef ZEPHYR_INCLUDE_USB_BOS_H_
 #define ZEPHYR_INCLUDE_USB_BOS_H_
 
+#include <toolchain.h>
+
 #if defined(CONFIG_USB_DEVICE_BOS)
 #define USB_DEVICE_BOS_DESC_DEFINE_HDR \
-	static __in_section(usb, bos_desc_area, 0) __aligned(1) __used
+	static __in_section(usb, bos_desc_area, 0) __aligned(1) __used \
+	__no_sanitize_address
 #define USB_DEVICE_BOS_DESC_DEFINE_CAP \
-	static __in_section(usb, bos_desc_area, 1) __aligned(1) __used
+	static __in_section(usb, bos_desc_area, 1) __aligned(1) __used \
+	__no_sanitize_address
 
 /* BOS descriptor type */
 #define DESCRIPTOR_TYPE_BOS		0x0F

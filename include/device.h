@@ -7,6 +7,8 @@
 #ifndef ZEPHYR_INCLUDE_DEVICE_H_
 #define ZEPHYR_INCLUDE_DEVICE_H_
 
+#include <toolchain.h>
+
 /**
  * @brief Device Driver APIs
  * @defgroup io_interfaces Device Driver APIs
@@ -127,7 +129,8 @@ extern "C" {
 	Z_DEVICE_DEFINE_PM(dev_name)					\
 	static Z_DECL_ALIGN(struct device)				\
 		DEVICE_NAME_GET(dev_name) __used			\
-	__attribute__((__section__(".device_" #level STRINGIFY(prio)))) = { \
+	__attribute__((__section__(".device_" #level STRINGIFY(prio)))) \
+	__no_sanitize_address = {                                       \
 		.name = drv_name,					\
 		.config_info = (cfg_info),				\
 		.driver_api = (api),					\

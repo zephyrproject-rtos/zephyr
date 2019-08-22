@@ -13,6 +13,7 @@
 #define ZEPHYR_INCLUDE_NET_NET_L2_H_
 
 #include <net/buf.h>
+#include <toolchain.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -127,7 +128,8 @@ NET_L2_DECLARE_PUBLIC(CANBUS_L2);
 
 #define NET_L2_INIT(_name, _recv_fn, _send_fn, _enable_fn, _get_flags_fn) \
 	const struct net_l2 (NET_L2_GET_NAME(_name)) __used		\
-	__attribute__((__section__(".net_l2.init"))) = {		\
+	__attribute__((__section__(".net_l2.init")))			\
+	__no_sanitize_address = {					\
 		.recv = (_recv_fn),					\
 		.send = (_send_fn),					\
 		.enable = (_enable_fn),					\
@@ -138,6 +140,7 @@ NET_L2_DECLARE_PUBLIC(CANBUS_L2);
 
 #define NET_L2_DATA_INIT(name, sfx, ctx_type)				\
 	static ctx_type NET_L2_GET_DATA(name, sfx) __used		\
+	__no_sanitize_address						\
 	__attribute__((__section__(".net_l2.data")));
 
 /** @endcond */

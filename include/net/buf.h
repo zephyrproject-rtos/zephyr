@@ -14,6 +14,7 @@
 #include <zephyr/types.h>
 #include <sys/util.h>
 #include <zephyr.h>
+#include <toolchain.h>
 
 #ifndef CONFIG_NET_BUF_USER_DATA_SIZE
 #define CONFIG_NET_BUF_USER_DATA_SIZE 0
@@ -893,6 +894,7 @@ extern const struct net_buf_data_alloc net_buf_heap_alloc;
 #define NET_BUF_POOL_HEAP_DEFINE(_name, _count, _destroy)                     \
 	static struct net_buf net_buf_##_name[_count] __noinit;               \
 	static struct net_buf_pool _name __net_buf_align                      \
+			__no_sanitize_address				      \
 			__in_section(_net_buf_pool, static, _name) =          \
 		NET_BUF_POOL_INITIALIZER(_name, &net_buf_heap_alloc,          \
 					 net_buf_##_name, _count, _destroy)
@@ -945,6 +947,7 @@ extern const struct net_buf_data_cb net_buf_fixed_cb;
 		.alloc_data = (void *)&net_buf_fixed_##_name,                 \
 	};                                                                    \
 	static struct net_buf_pool _name __net_buf_align                      \
+			__no_sanitize_address				      \
 			__in_section(_net_buf_pool, static, _name) =          \
 		NET_BUF_POOL_INITIALIZER(_name, &net_buf_fixed_alloc_##_name, \
 					 net_buf_##_name, _count, _destroy)
@@ -984,6 +987,7 @@ extern const struct net_buf_data_cb net_buf_var_cb;
 		.alloc_data = &net_buf_mem_pool_##_name,                      \
 	};                                                                    \
 	static struct net_buf_pool _name __net_buf_align                      \
+			__no_sanitize_address				      \
 			__in_section(_net_buf_pool, static, _name) =          \
 		NET_BUF_POOL_INITIALIZER(_name, &net_buf_data_alloc_##_name,  \
 					 _net_buf_##_name, _count, _destroy)

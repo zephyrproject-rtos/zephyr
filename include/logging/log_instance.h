@@ -7,6 +7,7 @@
 #define ZEPHYR_INCLUDE_LOGGING_LOG_INSTANCE_H_
 
 #include <zephyr/types.h>
+#include <toolchain.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -46,7 +47,8 @@ struct log_source_dynamic_data {
 #define Z_LOG_CONST_ITEM_REGISTER(_name, _str_name, _level)		     \
 	const struct log_source_const_data LOG_ITEM_CONST_DATA(_name)	     \
 	__attribute__ ((section("." STRINGIFY(LOG_ITEM_CONST_DATA(_name))))) \
-	__attribute__((used)) = {					     \
+	__attribute__((used))						     \
+	__no_sanitize_address = {					     \
 		.name = _str_name,					     \
 		.level  = (_level),					     \
 	}
@@ -86,7 +88,8 @@ struct log_source_dynamic_data {
 				LOG_INSTANCE_DYNAMIC_DATA(_module_name,	   \
 						       _inst_name)	   \
 				)					   \
-		))) __attribute__((used))
+		))) __attribute__((used))				   \
+		__no_sanitize_address
 
 #define LOG_INSTANCE_PTR_INIT(_name, _module_name, _inst_name)	   \
 	._name = &LOG_ITEM_DYNAMIC_DATA(			   \

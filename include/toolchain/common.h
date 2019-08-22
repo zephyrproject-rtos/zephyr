@@ -192,7 +192,8 @@
  */
 #define Z_STRUCT_SECTION_ITERABLE(struct_type, name) \
 	Z_DECL_ALIGN(struct struct_type) name \
-	__in_section(_##struct_type, static, name) __used
+	__in_section(_##struct_type, static, name) __used \
+	__no_sanitize_address
 
 /* Special variant of Z_STRUCT_SECTION_ITERABLE, for placing alternate
  * data types within the iterable section of a specific data type. The

@@ -21,6 +21,7 @@
 
 #include <device.h>
 #include <sys/slist.h>
+#include <toolchain.h>
 
 #include <net/net_core.h>
 #include <net/hostname.h>
@@ -2187,7 +2188,8 @@ struct net_if_api {
 
 #define NET_IF_INIT(dev_name, sfx, _l2, _mtu, _num_configs)		\
 	static struct net_if_dev (NET_IF_DEV_GET_NAME(dev_name, sfx))	\
-	__used __attribute__((__section__(".net_if_dev.data"))) = {	\
+	__used __attribute__((__section__(".net_if_dev.data")))		\
+	__no_sanitize_address = {					\
 		.dev = &(DEVICE_NAME_GET(dev_name)),			\
 		.l2 = &(NET_L2_GET_NAME(_l2)),				\
 		.l2_data = &(NET_L2_GET_DATA(dev_name, sfx)),		\
@@ -2195,7 +2197,8 @@ struct net_if_api {
 	};								\
 	static struct net_if						\
 	(NET_IF_GET_NAME(dev_name, sfx))[_num_configs] __used		\
-	__attribute__((__section__(".net_if.data"))) = {		\
+	__attribute__((__section__(".net_if.data")))			\
+	__no_sanitize_address = {					\
 		[0 ... (_num_configs - 1)] = {				\
 			.if_dev = &(NET_IF_DEV_GET_NAME(dev_name, sfx)), \
 			NET_IF_CONFIG_INIT				\
@@ -2204,13 +2207,15 @@ struct net_if_api {
 
 #define NET_IF_OFFLOAD_INIT(dev_name, sfx, _mtu)			\
 	static struct net_if_dev (NET_IF_DEV_GET_NAME(dev_name, sfx)) __used \
-	__attribute__((__section__(".net_if_dev.data"))) = {		\
+	__attribute__((__section__(".net_if_dev.data")))		\
+	__no_sanitize_address = {					\
 		.dev = &(__device_##dev_name),				\
 		.mtu = _mtu,						\
 	};								\
 	static struct net_if						\
 	(NET_IF_GET_NAME(dev_name, sfx))[NET_IF_MAX_CONFIGS] __used	\
-	__attribute__((__section__(".net_if.data"))) = {		\
+	__attribute__((__section__(".net_if.data")))			\
+	__no_sanitize_address = {					\
 		[0 ... (NET_IF_MAX_CONFIGS - 1)] = {			\
 			.if_dev = &(NET_IF_DEV_GET_NAME(dev_name, sfx)), \
 			NET_IF_CONFIG_INIT				\
