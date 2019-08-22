@@ -45,6 +45,7 @@
 	rx-pin = <9>;
 	rts-pin = <11>;
 	cts-pin = <6>;
+	hw-flow-control;
 };
 
 &uart2 {
@@ -53,4 +54,5 @@
 	rx-pin = <16>;
 	rts-pin = <7>;
 	cts-pin = <8>;
+	hw-flow-control;
 };
