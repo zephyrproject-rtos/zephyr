@@ -147,7 +147,24 @@ static void publish_sent(int err, void *user_data)
 	}
 }
 
+static void publish_start(u16_t duration, int err, void *user_data)
+{
+	struct bt_mesh_model *mod = user_data;
+	struct bt_mesh_model_pub *pub = mod->pub;
+
+	if (err) {
+		BT_ERR("Failed to publish: err %d", err);
+		return;
+	}
+
+	/* Initialize the timestamp for the beginning of a new period */
+	if (pub->count == BT_MESH_PUB_TRANSMIT_COUNT(pub->retransmit)) {
+		pub->period_start = k_uptime_get_32();
+	}
+}
+
 static const struct bt_mesh_send_cb pub_sent_cb = {
+	.start = publish_start,
 	.end = publish_sent,
 };
 
@@ -218,8 +235,6 @@ static void mod_publish(struct k_work *work)
 	}
 
 	__ASSERT_NO_MSG(pub->update != NULL);
-
-	pub->period_start = k_uptime_get_32();
 
 	err = pub->update(pub->mod);
 	if (err) {
