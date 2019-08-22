@@ -3804,6 +3804,7 @@ static void reject_ext_ind_recv(struct ll_conn *conn, struct node_rx_pdu *rx,
 			conn->llcp_enc.pause_tx = 0U;
 
 			/* Procedure complete */
+			conn->llcp_ack = conn->llcp_req;
 			conn->procedure_expire = 0U;
 
 			/* enqueue as if it were a reject ind */
@@ -4705,8 +4706,8 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 		conn->llcp_enc.pause_tx = 0U;
 
 		/* Procedure complete */
+		conn->llcp_ack = conn->llcp_req;
 		conn->procedure_expire = 0U;
-
 		break;
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
