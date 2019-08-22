@@ -746,7 +746,10 @@ static int isr_rx_pdu(struct lll_conn *lll, struct pdu_data *pdu_data_rx,
 				memq_dequeue(lll->memq_tx.tail,
 					     &lll->memq_tx.head, NULL);
 
-				link->next = tx->next;
+				/* TX node UPSTREAM, i.e. Tx node ack path */
+				link->next = tx->next; /* Indicates ctrl or data
+							* pool.
+							*/
 				tx->next = link;
 
 				*tx_release = tx;
