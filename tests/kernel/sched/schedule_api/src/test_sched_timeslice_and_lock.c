@@ -356,11 +356,15 @@ void test_unlock_preemptible(void)
 	k_busy_wait(100000);
 
 	k_sched_unlock();
-	/* checkpoint: higher threads get executed */
+
+	/* ensure threads of equal priority can run */
+	k_yield();
+
+	/* checkpoint: higher and equal threads get executed */
 	zassert_true(tdata[0].executed == 1, NULL);
-	for (int i = 1; i < THREADS_NUM; i++) {
-		zassert_true(tdata[i].executed == 0, NULL);
-	}
+	zassert_true(tdata[1].executed == 1, NULL);
+	zassert_true(tdata[2].executed == 0, NULL);
+
 	/* restore environment */
 	teardown_threads();
 }
@@ -404,11 +408,13 @@ void test_unlock_nested_sched_lock(void)
 	/* unlock another; this let the higher thread to run */
 	k_sched_unlock();
 
+	/* Ensure threads of equal priority run */
+	k_yield();
+
 	/* checkpoint: higher threads NOT get executed */
 	zassert_true(tdata[0].executed == 1, NULL);
-	for (int i = 1; i < THREADS_NUM; i++) {
-		zassert_true(tdata[i].executed == 0, NULL);
-	}
+	zassert_true(tdata[1].executed == 1, NULL);
+	zassert_true(tdata[2].executed == 0, NULL);
 
 	/* restore environment */
 	teardown_threads();
