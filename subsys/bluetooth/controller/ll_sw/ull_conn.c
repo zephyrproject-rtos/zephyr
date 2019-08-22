@@ -1147,8 +1147,8 @@ void ull_conn_done(struct node_rx_event_done *done)
 void ull_conn_tx_demux(u8_t count)
 {
 	do {
-		struct ll_conn *conn;
 		struct lll_tx *lll_tx;
+		struct ll_conn *conn;
 
 		lll_tx = MFIFO_DEQUEUE_GET(conn_tx);
 		if (!lll_tx) {
@@ -1234,6 +1234,9 @@ void ull_conn_tx_lll_enqueue(struct ll_conn *conn, u8_t count)
 				conn->tx_data = conn->tx_data->next;
 			}
 			conn->tx_head = conn->tx_head->next;
+
+			/* point to NULL to indicate a Data PDU mem alloc */
+			tx_lll->next = NULL;
 		}
 
 		link = mem_acquire(&mem_link_tx.free);
@@ -1324,8 +1327,10 @@ void ull_conn_lll_tx_flush(void *param)
 
 		lll_tx->handle = 0xFFFF;
 		lll_tx->node = tx;
-		link->next = tx->next;
-		tx->link = link;
+
+		/* TX node UPSTREAM, i.e. Tx node ack path */
+		link->next = tx->next; /* Indicates ctrl pool or data pool */
+		tx->next = link;
 
 		MFIFO_ENQUEUE(conn_ack, idx);
 
@@ -1352,11 +1357,15 @@ struct ll_conn *ull_conn_tx_ack(u16_t handle, memq_link_t *link,
 
 		/* release mem if points to itself */
 		if (link->next == (void *)tx) {
-			mem_release(tx, &mem_conn_tx_ctrl.free);
 
+			LL_ASSERT(link->next);
+
+			mem_release(tx, &mem_conn_tx_ctrl.free);
 			return conn;
 		} else if (!tx) {
 			return conn;
+		} else {
+			LL_ASSERT(!link->next);
 		}
 	} else if (handle != 0xFFFF) {
 		conn = ll_conn_get(handle);

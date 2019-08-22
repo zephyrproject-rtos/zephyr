@@ -1227,11 +1227,11 @@ static inline void *done_release(memq_link_t *link,
 {
 	u8_t idx;
 
-	done->hdr.link = link;
-
 	if (!MFIFO_ENQUEUE_IDX_GET(done, &idx)) {
 		return NULL;
 	}
+
+	done->hdr.link = link;
 
 	MFIFO_BY_IDX_ENQUEUE(done, idx, done);
 
