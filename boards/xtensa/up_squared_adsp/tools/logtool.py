@@ -5,8 +5,8 @@ FILE = "/sys/kernel/debug/sof/etrace"
 #OFFSET = 0x8000
 OFFSET = 0x0
 MAGIC = 0x55aa
-SLOT_NUM = 32
-SLOT_LEN = 256
+SLOT_LEN = 64
+SLOT_NUM = int(8192 / SLOT_LEN)
 
 def read_id(f):
     buf = f.read(2)

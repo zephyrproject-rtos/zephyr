@@ -26,7 +26,7 @@ char *sof_etrace_path = "/sys/kernel/debug/sof/etrace";
 char *qemu_etrace_path = "/dev/shm/qemu-bridge-etrace-mem";
 
 unsigned long int default_trace_size = 0x2000;
-unsigned long int default_buf_size = 256;
+unsigned long int default_buf_size = 64;
 
 void usage(char *prog_name)
 {
