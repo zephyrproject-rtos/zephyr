@@ -17,7 +17,3 @@ properties:
     clocks:
       required: true
 
-    hw-flow-control:
-      type: boolean
-      required: false
-      description: Set to enable RTS/CTS flow control at boot time
