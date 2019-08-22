@@ -1615,7 +1615,7 @@ static int compute_best_vector(void)
 		}
 	}
 
-	if (best_port != 0) {
+	if ((best_port != 0) && (best_vector != gm_prio)) {
 		memcpy(&global_ds->gm_priority.root_system_id,
 		       &best_vector->root_system_id,
 		       sizeof(struct gptp_root_system_identity));
