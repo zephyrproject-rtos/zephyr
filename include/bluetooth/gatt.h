@@ -802,7 +802,7 @@ struct bt_gatt_notify_params {
  *  The callback is run from System Workqueue context.
  *
  *  Alternatively it is possible to notify by UUID by setting it on the
- *  parameters, when using this method the attribute given when be used as the
+ *  parameters, when using this method the attribute given is used as the
  *  start range when looking up for possible matches.
  *
  *  @param conn Connection object.
