@@ -492,29 +492,43 @@ def write_phandle_val_list(dev, entries, ident):
     #
     # entries:
     #   List of entries (two for 'pwms' above). This might be a list of
-    #   edtlib.PWM instances, for example.
+    #   edtlib.PWM instances, for example.  If only one entry is given it
+    #   does not have a suffix '_0', and the '_COUNT' and group initializer
+    #   are not emitted.
     #
     # ident:
     #   Base identifier. For example, "PWM" generates output like this:
     #
     #     #define <device prefix>_PWMS_CONTROLLER_0 "PWM_0"  (name taken from 'label = ...')
     #     #define <device prefix>_PWMS_CHANNEL_0 123         (name taken from #cells in binding)
+    #     #define <device prefix>_PWMS_0 {"PWM_0", 123}
     #     #define <device prefix>_PWMS_CONTROLLER_1 "PWM_1"
     #     #define <device prefix>_PWMS_CHANNEL_1 456
+    #     #define <device prefix>_PWMS_1 {"PWM_1", 456}
+    #     #define <device prefix>_PWMS_COUNT 2
+    #     #define <device prefix>_PWMS {<device prefix>_PWMS_0, <device prefix>_PWMS_1}
     #     ...
     #
     #   Note: Do not add an "S" to 'ident'. It's added automatically, which
     #   forces consistency.
 
+    initializer_vals = []
     for i, entry in enumerate(entries):
-        write_phandle_val_list_entry(
-            dev, entry, i if len(entries) > 1 else None, ident)
+        initializer_vals.append(write_phandle_val_list_entry(
+            dev, entry, i if len(entries) > 1 else None, ident))
+    if len(entries) > 1:
+        out_dev(dev, ident + "S_COUNT", len(initializer_vals))
+        out_dev(dev, ident + "S", "{" + ", ".join(initializer_vals) + "}")
 
 
 def write_phandle_val_list_entry(dev, entry, i, ident):
     # write_phandle_val_list() helper. We could get rid of it if it wasn't for
     # write_spi_dev(). Adds 'i' as an index to identifiers unless it's None.
+    #
+    # Returns the identifier for the macro that provides the
+    # initializer for the entire entry.
 
+    initializer_vals = []
     if entry.controller.label is not None:
         ctrl_ident = ident + "S_CONTROLLER"  # e.g. PWMS_CONTROLLER
         if entry.name:
@@ -523,6 +537,7 @@ def write_phandle_val_list_entry(dev, entry, i, ident):
         # more than one entry.
         if i is not None:
             ctrl_ident += "_{}".format(i)
+        initializer_vals.append(quote_str(entry.controller.label))
         out_dev_s(dev, ctrl_ident, entry.controller.label)
 
     for cell, val in entry.specifier.items():
@@ -534,6 +549,16 @@ def write_phandle_val_list_entry(dev, entry, i, ident):
         if i is not None:
             cell_ident += "_{}".format(i)
         out_dev(dev, cell_ident, val)
+
+    initializer_vals += entry.specifier.values()
+
+    initializer_ident = ident + "S"
+    if entry.name:
+        initializer_ident += "_" + str2ident(entry.name)
+    if i is not None:
+        initializer_ident += "_{}".format(i)
+    return out_dev(dev, initializer_ident,
+                   "{" + ", ".join(map(str, initializer_vals)) + "}")
 
 
 def write_clocks(dev):
