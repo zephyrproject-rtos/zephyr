@@ -1,22 +1,22 @@
-wheel==0.30.0
-breathe==4.9.1
-sphinx==1.7.5
-docutils==0.14
-sphinx_rtd_theme
-sphinxcontrib-svg2pdfconverter
-junit2html
+Pillow
 PyYAML>=3.13
-ply==3.10
+breathe==4.9.1
+colorama
+docutils==0.14
+gcovr
 git-spindle==2.0
 gitlint
+intelhex
+junit2html
+ply==3.10
 pyelftools==0.24
+pykwalify
 pyocd==0.21.0
 pyserial
-pykwalify
+pytest
+sphinx==1.7.5
+sphinx_rtd_theme
+sphinxcontrib-svg2pdfconverter
+wheel==0.30.0
 # "win32" is used for 64-bit Windows as well
 windows-curses; sys_platform == "win32"
-colorama
-Pillow
-intelhex
-pytest
-gcovr
