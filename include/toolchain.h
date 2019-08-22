@@ -37,8 +37,6 @@
 #include <toolchain/xcc.h>
 #elif defined(__GNUC__) || (defined(_LINKER) && defined(__GCC_LINKER_CMD__))
 #include <toolchain/gcc.h>
-#else
-#include <toolchain/other.h>
 #endif
 
 /*
