@@ -585,6 +585,9 @@ def out_dev(dev, ident, val, name_alias=None):
     #   <device alias>_<name alias> (for each device alias)
     #
     # 'name_alias' is used for reg-names and the like.
+    #
+    # Returns the identifier used for the macro that provides the value
+    # for 'ident' within 'dev', e.g. DT_MFG_MODEL_CTL_GPIOS_PIN.
 
     dev_prefix = dev_ident(dev)
 
@@ -593,20 +596,24 @@ def out_dev(dev, ident, val, name_alias=None):
         aliases.append(dev_prefix + "_" + name_alias)
         aliases += [alias + "_" + name_alias for alias in dev_aliases(dev)]
 
-    out(dev_prefix + "_" + ident, val, aliases)
+    return out(dev_prefix + "_" + ident, val, aliases)
 
 
 def out_dev_s(dev, ident, s):
     # Like out_dev(), but emits 's' as a string literal
+    #
+    # Returns the generated macro name for 'ident'.
 
-    out_dev(dev, ident, quote_str(s))
+    return out_dev(dev, ident, quote_str(s))
 
 
 def out_s(ident, val):
     # Like out(), but puts quotes around 'val' and escapes any double
     # quotes and backslashes within it
+    #
+    # Returns the generated macro name for 'ident'.
 
-    out(ident, quote_str(val))
+    return out(ident, quote_str(val))
 
 
 def out(ident, val, aliases=()):
@@ -616,9 +623,12 @@ def out(ident, val, aliases=()):
     # Also writes any aliases listed in 'aliases' (an iterable). For the
     # header, these look like '#define <alias> <ident>'. For the configuration
     # file, the value is just repeated as '<alias>=<val>' for each alias.
+    #
+    # Returns the generated macro name for 'ident'.
 
     print("#define DT_{:40} {}".format(ident, val), file=header_file)
-    print("DT_{}={}".format(ident, val), file=conf_file)
+    primary_ident = "DT_{}".format(ident)
+    print("{}={}".format(primary_ident, val), file=conf_file)
 
     for alias in aliases:
         if alias != ident:
@@ -627,6 +637,8 @@ def out(ident, val, aliases=()):
             # For the configuration file, the value is just repeated for all
             # the aliases
             print("DT_{}={}".format(alias, val), file=conf_file)
+
+    return primary_ident
 
 
 def out_comment(s, blank_before=True):
