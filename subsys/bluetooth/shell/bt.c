@@ -1377,8 +1377,8 @@ static struct bt_conn_auth_cb auth_cb_oob = {
 	.oob_data_request = auth_pairing_oob_data_request,
 	.cancel = auth_cancel,
 	.pairing_confirm = NULL,
-	.pairing_failed = NULL,
-	.pairing_complete = NULL,
+	.pairing_failed = auth_pairing_failed,
+	.pairing_complete = auth_pairing_complete,
 };
 
 
