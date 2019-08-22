@@ -259,6 +259,7 @@
 			interrupts = <18 0>;
 			status = "disabled";
 			label = "ADC_1";
+			#io-channel-cells = <1>;
 		};
 	};
 };
