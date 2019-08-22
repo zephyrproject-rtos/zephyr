@@ -12,7 +12,7 @@
 #include <device.h>
 #include <assert.h>
 
-#define BUF_SIZE 256
+#define BUF_SIZE 64
 
 static struct ring_buf ringbuf;
 
