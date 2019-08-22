@@ -178,6 +178,7 @@
 			 */
 			gclk = <3>;
 			prescaler = <4>;
+			#io-channel-cells = <1>;
 		};
 	};
 };
