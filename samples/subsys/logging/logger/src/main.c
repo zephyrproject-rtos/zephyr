@@ -7,15 +7,27 @@
 #include <zephyr.h>
 #include <string.h>
 #include <sys/printk.h>
-#include <logging/log_ctrl.h>
 #include "sample_instance.h"
 #include "sample_module.h"
 #include "ext_log_system.h"
 #include "ext_log_system_adapter.h"
+#include <logging/log_ctrl.h>
+#include <app_memory/app_memdomain.h>
 
 #include <logging/log.h>
-
 LOG_MODULE_REGISTER(main);
+
+#ifdef CONFIG_USERSPACE
+K_APPMEM_PARTITION_DEFINE(app_part);
+static struct k_mem_domain app_domain;
+static struct k_mem_partition *app_parts[] = {
+#ifdef Z_LIBC_PARTITION_EXISTS
+		/* C library globals, stack canary storage, etc */
+		&z_libc_partition,
+#endif
+		&app_part
+};
+#endif /* CONFIG_USERSPACE */
 
 /* size of stack area used by each thread */
 #define STACKSIZE 1024
@@ -23,10 +35,10 @@ LOG_MODULE_REGISTER(main);
 extern void sample_module_func(void);
 
 #define INST1_NAME STRINGIFY(SAMPLE_INSTANCE_NAME.inst1)
-SAMPLE_INSTANCE_DEFINE(inst1);
+SAMPLE_INSTANCE_DEFINE(app_part, inst1);
 
 #define INST2_NAME STRINGIFY(SAMPLE_INSTANCE_NAME.inst2)
-SAMPLE_INSTANCE_DEFINE(inst2);
+SAMPLE_INSTANCE_DEFINE(app_part, inst2);
 
 #if !defined(NRF_RTC1) && defined(CONFIG_SOC_FAMILY_NRF)
 #include <soc.h>
@@ -235,11 +247,14 @@ static void wait_on_log_flushed(void)
 	}
 }
 
-void log_demo_thread(void *dummy1, void *dummy2, void *dummy3)
+static void log_demo_thread(void *p1, void *p2, void *p3)
 {
+	bool usermode = _is_user_context();
+
 	k_sleep(100);
 
-	(void)log_set_timestamp_func(timestamp_get, timestamp_freq());
+	printk("\n\t---=< RUNNING LOGGER DEMO FROM %s THREAD >=---\n\n",
+		(usermode) ? "USER" : "KERNEL");
 
 	module_logging_showcase();
 
@@ -268,15 +283,34 @@ void log_demo_thread(void *dummy1, void *dummy2, void *dummy3)
 
 	wait_on_log_flushed();
 
-	performance_showcase();
+	if (!usermode) {
+		/*
+		 * Logger performance in user mode cannot be demonstrated
+		 * as precise timing API is accessible only from the kernel.
+		 */
+		performance_showcase();
+		wait_on_log_flushed();
 
-	wait_on_log_flushed();
+	}
 
 	external_log_system_showcase();
-
 	wait_on_log_flushed();
 }
 
-K_THREAD_DEFINE(log_demo_thread_id, STACKSIZE, log_demo_thread,
+static void log_demo_supervisor(void *p1, void *p2, void *p3)
+{
+	/* Timestamp function could be set only from kernel thread. */
+	(void)log_set_timestamp_func(timestamp_get, timestamp_freq());
+
+	log_demo_thread(p1, p2, p3);
+
+#ifdef CONFIG_USERSPACE
+	k_mem_domain_init(&app_domain, ARRAY_SIZE(app_parts), app_parts);
+	k_mem_domain_add_thread(&app_domain, k_current_get());
+	k_thread_user_mode_enter(log_demo_thread, p1, p2, p3);
+#endif
+}
+
+K_THREAD_DEFINE(log_demo_thread_id, STACKSIZE, log_demo_supervisor,
 		NULL, NULL, NULL,
 		K_LOWEST_APPLICATION_THREAD_PRIO, 0, 1);
