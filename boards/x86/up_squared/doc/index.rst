@@ -34,14 +34,6 @@ along with the following devices:
    boards containing Intel |reg| Pentium |trade| SoC,
    Intel |reg| Celeron |trade| SoC, or Intel |reg| Atom |trade| SoC.
 
-.. note::
-   This board configuration works only with the default BIOS settings.
-   Enabling/disabling LPSS devices in BIOS (under Advanced -> HAT Configurations)
-   will change the MMIO addresses of these devices, and will prevent
-   the drivers from communicating with these devices. For drivers that support
-   PCI enumeration, :option:`CONFIG_PCI` and :option:`CONFIG_PCI_ENUMERATION`
-   will allow these drivers to probe for the correct MMIO addresses.
-
 Hardware
 ********
 

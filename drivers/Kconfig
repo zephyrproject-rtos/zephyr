@@ -27,8 +27,6 @@ source "drivers/timer/Kconfig"
 
 source "drivers/entropy/Kconfig"
 
-source "drivers/pci/Kconfig"
-
 source "drivers/pcie/Kconfig"
 
 source "drivers/gpio/Kconfig"
