@@ -101,6 +101,43 @@ void z_soc_irq_disable(u32_t irq)
 	}
 }
 
+int z_soc_irq_is_enabled(unsigned int irq)
+{
+	struct device *dev_cavs;
+	int ret = 0;
+
+	switch (XTENSA_IRQ_NUMBER(irq)) {
+	case DT_CAVS_ICTL_0_IRQ:
+		dev_cavs = device_get_binding(CONFIG_CAVS_ICTL_0_NAME);
+		break;
+	case DT_CAVS_ICTL_1_IRQ:
+		dev_cavs = device_get_binding(CONFIG_CAVS_ICTL_1_NAME);
+		break;
+	case DT_CAVS_ICTL_2_IRQ:
+		dev_cavs = device_get_binding(CONFIG_CAVS_ICTL_2_NAME);
+		break;
+	case DT_CAVS_ICTL_3_IRQ:
+		dev_cavs = device_get_binding(CONFIG_CAVS_ICTL_3_NAME);
+		break;
+	default:
+		/* regular interrupt */
+		ret = z_xtensa_irq_is_enabled(XTENSA_IRQ_NUMBER(irq));
+		goto out;
+	}
+
+	if (!dev_cavs) {
+		LOG_DBG("board: CAVS device binding failed");
+		ret = -ENODEV;
+		goto out;
+	}
+
+	/* Then enable the interrupt in CAVS interrupt controller */
+	ret = irq_line_is_enabled_next_level(dev_cavs, CAVS_IRQ_NUMBER(irq));
+
+out:
+	return ret;
+}
+
 #ifdef CONFIG_DYNAMIC_INTERRUPTS
 int z_soc_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 			      void (*routine)(void *parameter),
