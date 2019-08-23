@@ -358,7 +358,53 @@ Networking
 Bluetooth
 *********
 
-* TBD
+* Host:
+
+  * GATT: Added support for database hashes
+  * GATT: Added support for Ready Using Characteristic UUID
+  * GATT: Added support for static services
+  * GATT: Added support for disabling the dynamic database
+  * GATT: Added support for notifying and indicating by UUID
+  * GATT: Simplified the bt_gatt_notify_cb() API
+  * GATT: Added additional attributes to the Device Information Service
+  * GATT: Several protocol and database fixes
+  * Settings: Transitioned to new, optimized settings model
+  * Settings: Support for custom backends
+  * Completed support for directed advertising
+  * Completed support for Out-Of-Band (OOB) pairing
+  * Added support for fine-grained control of security establishment, including
+    forcing a pairing procedure in case of key loss
+  * Switched to separate, dedicated pools for discardable events and number of
+    completed packets events
+  * Extended and improved the Bluetooth shell with several commands
+  * BLE qualification up to the 5.1 specification
+  * BLE Mesh: Several fixes and improvements
+
+* BLE split software Controller:
+
+  * The split software Controller is now the default
+  * Added support for the Data Length Update procedure
+  * Improved the ticker packet scheduler for improved conflict resolution
+  * Added documentation for the ticker packet scheduler
+  * Added support for out-of-tree user-defined commands and events
+  * Added support for Zephyr Vendor Specific Commands
+  * Added support for user-defined protocols
+  * Converted several control procedures to be queuable
+  * Nordic: Added support for Controller-based privacy
+  * Nordic: Decorrelated address generation from resolution
+  * Nordic: Added support for fast encryption setup
+  * Nordic: Added support for RSSI
+  * Nordic: Added support for low-latency ULL processing of messages
+  * Nordic: Added support for the nRF52811 IC BLE radio
+  * Nordic: Added support for PA/LNA on Port 1 GPIO pins
+  * Nordic: Added support for radio event abort
+  * BLE qualification up to the 5.1 specification
+  * Several bug fixes
+
+* BLE legacy software Controller:
+
+  * BLE qualification up to the 5.1 specification
+  * Multiple control procedures fixes and improvements
 
 Build and Infrastructure
 ************************
