@@ -13,6 +13,8 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(sof, CONFIG_SOF_LOG_LEVEL);
 
+#include <platform/dai.h>
+#include <platform/dma.h>
 #include <platform/shim.h>
 #include <sof/clk.h>
 #include <sof/mailbox.h>
@@ -342,6 +344,12 @@ static int sof_init(struct device *unused)
 
 	/* init clocks in SOF */
 	clock_init();
+
+	/* init DMAC */
+	ret = dmac_init();
+	if (ret < 0) {
+		return ret;
+	}
 
 	/* init IPC */
 	ret = ipc_init(&sof);
