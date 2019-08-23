@@ -91,6 +91,7 @@ static inline unsigned int irq_is_enabled_next_level(struct device *dev)
 }
 
 /**
+<<<<<<< HEAD
  * @brief Set IRQ priority.
  *
  * This routine indicates if any interrupts are enabled in the interrupt
@@ -113,6 +114,8 @@ static inline void irq_set_priority_next_level(struct device *dev, u32_t irq,
 }
 
 /**
+=======
+>>>>>>> irq_nextlevel: add API to query if an IRQ line is enabled
  * @brief Get IRQ line enable state.
  *
  * Query if a particular IRQ line is enabled.
