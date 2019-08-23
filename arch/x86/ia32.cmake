@@ -9,23 +9,11 @@ else()
   zephyr_compile_definitions(PERF_OPT)
 endif()
 
-if(CONFIG_X86_IAMCU)
-  set_property(GLOBAL APPEND PROPERTY PROPERTY_LINKER_SCRIPT_DEFINES -D__IAMCU)
-  set_property(GLOBAL        PROPERTY PROPERTY_OUTPUT_FORMAT         "elf32-iamcu")
-  set_property(GLOBAL        PROPERTY PROPERTY_OUTPUT_ARCH           "iamcu:intel")
-else()
-  set_property(GLOBAL PROPERTY PROPERTY_OUTPUT_ARCH "i386")
-  set_property(GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT "elf32-i386")
-endif()
-
-
+set_property(GLOBAL PROPERTY PROPERTY_OUTPUT_ARCH "i386")
+set_property(GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT "elf32-i386")
 
 if(CMAKE_C_COMPILER_ID STREQUAL "Clang")
-  if(CONFIG_X86_IAMCU)
-    zephyr_compile_options(-miamcu)
-  else()
-    zephyr_compile_options(-Qunused-arguments)
-  endif()
+  zephyr_compile_options(-Qunused-arguments)
 
   zephyr_cc_option(
     -m32

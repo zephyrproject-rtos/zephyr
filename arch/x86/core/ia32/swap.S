@@ -98,13 +98,6 @@ SECTION_FUNC(TEXT, __swap)
 	pop %edx
 	pop %eax
 #endif
-#ifdef CONFIG_X86_IAMCU
-	/* save EFLAGS on stack right before return address, just as SYSV would
-	 * have done
-	 */
-	pushl	0(%esp)
-	movl	%eax, 4(%esp)
-#endif
 	/*
 	 * Push all non-volatile registers onto the stack; do not copy
 	 * any of these registers into the k_thread.  Only the 'esp' register
@@ -150,17 +143,10 @@ SECTION_FUNC(TEXT, __swap)
 	 */
 #if defined(CONFIG_X86_USERSPACE) && !defined(CONFIG_X86_KPTI)
 
-#ifdef CONFIG_X86_IAMCU
 	push	%eax
-#else
-	push	%eax
-#endif
 	call	z_x86_swap_update_page_tables
-#ifdef CONFIG_X86_IAMCU
 	pop	%eax
-#else
-	pop	%eax
-#endif
+
 	/* Page tables updated. All memory access after this point needs to be
 	 * to memory that has the same mappings and access attributes wrt
 	 * supervisor mode!
@@ -379,14 +365,6 @@ CROHandlingDone:
 
 	pushl	4(%esp)
 	popfl
-#if CONFIG_X86_IAMCU
-	/* Remember that eflags we stuck into the stack before the return
-	 * address? need to get it out of there since the calling convention
-	 * will not do that for us.
-	 */
-	popl	%edx
-	movl	%edx, (%esp)
-#endif
 
 #ifdef CONFIG_EXECUTION_BENCHMARKING
 	/* Save the eax and edx registers before reading the time stamp
@@ -409,16 +387,12 @@ time_read_not_needed:
  *
  * This function adjusts the initial stack frame created by z_new_thread() such
  * that the GDB stack frame unwinders recognize it as the outermost frame in
- * the thread's stack.  For targets that use the IAMCU calling convention, the
- * first three arguments are popped into eax, edx, and ecx. The function then
- * jumps to z_thread_entry().
+ * the thread's stack.
  *
  * GDB normally stops unwinding a stack when it detects that it has
  * reached a function called main().  Kernel threads, however, do not have
  * a main() function, and there does not appear to be a simple way of stopping
  * the unwinding of the stack.
- *
- * SYS V Systems:
  *
  * Given the initial thread created by z_new_thread(), GDB expects to find a
  * return address on the stack immediately above the thread entry routine
@@ -436,15 +410,6 @@ time_read_not_needed:
  * first time that the new thread is swapped in, and it jumps to
  * z_thread_entry after it has done its work.
  *
- * IAMCU Systems:
- *
- * There is no EFLAGS on the stack when we get here. z_thread_entry() takes
- * four arguments, and we need to pop off the first three into the
- * appropriate registers. Instead of using the 'call' instruction, we push
- * a NULL return address onto the stack and jump into z_thread_entry,
- * ensuring the stack won't be unwound further. Placing some kind of return
- * address on the stack is mandatory so this isn't conditionally compiled.
- *
  *       __________________
  *      |      param3      |   <------ Top of the stack
  *      |__________________|
@@ -452,10 +417,10 @@ time_read_not_needed:
  *      |__________________|                  |
  *      |      param1      |                  V
  *      |__________________|
- *      |      pEntry      |  <----   ESP when invoked by z_swap() on IAMCU
+ *      |      pEntry      |
  *      |__________________|
- *      | initial EFLAGS   |  <----   ESP when invoked by z_swap() on Sys V
- *      |__________________|             (Zeroed by this routine on Sys V)
+ *      | initial EFLAGS   |  <----   ESP when invoked by z_swap()
+ *      |__________________|             (Zeroed by this routine)
  *
  * The address of the thread entry function needs to be in %edi when this is
  * invoked. It will either be z_thread_entry, or if userspace is enabled,
@@ -465,15 +430,6 @@ time_read_not_needed:
  */
 
 SECTION_FUNC(TEXT, z_x86_thread_entry_wrapper)
-#ifdef CONFIG_X86_IAMCU
-	/* IAMCU calling convention has first 3 arguments supplied in
-	 * registers not the stack
-	 */
-	pop	%eax
-	pop	%edx
-	pop	%ecx
-	push	$0	 /* Null return address */
-#endif
 	movl	$0, (%esp)
 	INDIRECT_JMP(%edi)
 #endif /* _THREAD_WRAPPER_REQUIRED */

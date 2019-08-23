@@ -105,12 +105,8 @@ static void unwind_stack(u32_t base_ptr, u16_t cs)
 		if (frame->ret_addr == 0U) {
 			break;
 		}
-#ifdef CONFIG_X86_IAMCU
-		z_fatal_print("     0x%08x", frame->ret_addr);
-#else
 		z_fatal_print("     0x%08x (0x%x)", frame->ret_addr,
 			      frame->args);
-#endif
 		base_ptr = frame->next;
 	}
 }
