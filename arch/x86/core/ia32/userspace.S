@@ -218,11 +218,9 @@ _id_ok:
 	push	%ebp		/* arg6 */
 	push	%edi		/* arg5 */
 	push	%ebx		/* arg4 */
-#ifndef CONFIG_X86_IAMCU
 	push	%ecx		/* arg3 */
 	push	%edx		/* arg2	*/
 	push	%eax		/* arg1 */
-#endif
 
 	/* from the call ID in ESI, load EBX with the actual function pointer
 	 * to call by looking it up in the system call dispatch table
@@ -236,20 +234,13 @@ _id_ok:
 	/* EAX now contains return value. Pop or xor everything else to prevent
 	 * information leak from kernel mode.
 	 */
-#ifndef CONFIG_X86_IAMCU
 	pop	%edx		/* old arg1 value, discard it */
 	pop	%edx
 	pop	%ecx
-#endif
 	pop	%ebx
 	pop	%edi
-#ifndef CONFIG_X86_IAMCU
 	/* Discard ssf and arg6 */
 	add	$8, %esp
-#else
-	pop	%ecx		/* Clean ECX and get arg6 off the stack */
-	pop	%edx		/* Clean EDX and get ssf off the stack */
-#endif
 	KPTI_IRET_USER
 
 _bad_syscall:
@@ -314,11 +305,9 @@ SECTION_FUNC(TEXT, z_x86_userspace_enter)
 	pop	%esi	/* Discard return address on stack */
 
 	/* Fetch parameters on the stack */
-#ifndef CONFIG_X86_IAMCU
 	pop	%eax	/* user_entry */
 	pop	%edx	/* p1 */
 	pop	%ecx	/* p2 */
-#endif
 	pop	%esi	/* p3 */
 	pop	%ebx	/* stack_end (high address) */
 	pop	%edi	/* stack_start (low address) */
@@ -377,11 +366,9 @@ SECTION_FUNC(TEXT, z_x86_userspace_enter)
 
 	/* Push arguments to z_thread_entry() */
 	push	%esi	/* p3 */
-#ifndef CONFIG_X86_IAMCU
 	push	%ecx	/* p2 */
 	push	%edx	/* p1 */
 	push	%eax	/* user_entry */
-#endif
 	/* NULL return address */
 	push	$0
 

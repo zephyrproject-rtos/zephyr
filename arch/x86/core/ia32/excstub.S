@@ -161,16 +161,9 @@ SECTION_FUNC(TEXT, _exception_enter)
 	sti
 
 allDone:
-#if CONFIG_X86_IAMCU
-	movl	%esp, %eax		/* z_arch_esf_t * parameter */
-#else
 	pushl	%esp			/* push z_arch_esf_t * parameter */
-#endif
 	INDIRECT_CALL(%ecx)		/* call exception handler */
-
-#ifndef CONFIG_X86_IAMCU
 	addl	$0x4, %esp
-#endif
 
 #if defined(CONFIG_LAZY_FP_SHARING)
 

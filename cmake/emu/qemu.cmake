@@ -233,15 +233,6 @@ elseif(QEMU_NET_STACK)
   endif()
 endif(QEMU_PIPE_STACK)
 
-if(CONFIG_X86_IAMCU)
-  list(APPEND PRE_QEMU_COMMANDS
-    COMMAND
-    ${PYTHON_EXECUTABLE}
-    ${ZEPHYR_BASE}/scripts/qemu-machine-hack.py
-    $<TARGET_FILE:${logical_target_for_zephyr_elf}>
-    )
-endif()
-
 if(CONFIG_X86_64)
   set(QEMU_KERNEL_FILE "${CMAKE_BINARY_DIR}/zephyr-qemu.elf")
 endif()

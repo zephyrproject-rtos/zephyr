@@ -169,8 +169,6 @@ following target architectures:
 
 * :abbr:`X86 (Intel Architecture 32 bits)`
 
-* :abbr:`X86 IAMCU ABI (Intel Architecture 32 bits IAMCU ABI)`
-
 * :abbr:`Arm (Advanced RISC Machine)`
 
 * :abbr:`ARC (Argonaut RISC Core)`

@@ -7,5 +7,5 @@
 config BOARD_ACRN
 	bool "ACRN User OS"
 	depends on SOC_IA32
-	select CPU_HAS_FPU if !X86_IAMCU
+	select CPU_HAS_FPU
 	select SET_GDT

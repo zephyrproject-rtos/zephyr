@@ -43,13 +43,6 @@ if (CONFIG_X86)
     OUTPUT_STRIP_TRAILING_WHITESPACE
     )
   assert_exists(LIBGCC_FILE_NAME)
-
-# While most x86_64 Linux distributions implement "multilib" and have
-# 32 bits libraries off the shelf, things like
-# "/usr/lib/gcc/x86_64-linux-gnu/7/IAMCU/libgcc.a" are unheard of.
-# So this fails CONFIG_X86_IAMCU=y with a "cannot find -lgcc" error which
-# is clearer than "undefined reference to __udivdi3, etc."
-  LIST(APPEND TOOLCHAIN_LIBS gcc)
 endif()
 
 set(NOSTDINC "")
