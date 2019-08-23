@@ -16,6 +16,7 @@ LOG_MODULE_REGISTER(sof, CONFIG_SOF_LOG_LEVEL);
 #include <platform/dai.h>
 #include <platform/dma.h>
 #include <platform/shim.h>
+#include <platform/timer.h>
 #include <sof/clk.h>
 #include <sof/mailbox.h>
 #include <sof/notifier.h>
@@ -341,6 +342,9 @@ static int sof_init(struct device *unused)
 
 	/* init static modules */
 	sys_module_init();
+
+	/* start DSP wall clock */
+	platform_timer_start(platform_timer);
 
 	/* init clocks in SOF */
 	clock_init();
