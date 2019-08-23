@@ -35,7 +35,17 @@ string(REGEX REPLACE "-.*" "" SDK_VERSION_PRE2 ${SDK_VERSION_PRE1})
 # Strip any trailing spaces/newlines from the version string
 string(STRIP ${SDK_VERSION_PRE2} SDK_VERSION)
 string(REGEX MATCH "([0-9]*).([0-9]*)" SDK_MAJOR_MINOR ${SDK_VERSION})
-if(${REQUIRED_SDK_VER} VERSION_GREATER ${SDK_VERSION})
+
+string(REGEX MATCH "([0-9]+)\.([0-9]+)\.([0-9]+)" SDK_MAJOR_MINOR_MICRO ${SDK_VERSION})
+
+#at least 0.0.0
+if(NOT SDK_MAJOR_MINOR_MICRO)
+  message(FATAL_ERROR "sdk version: ${SDK_MAJOR_MINOR_MICRO} improper format.
+  Expected format: x.y.z
+  Check whether the Zephyr SDK was installed correctly.
+")
+
+elseif(${REQUIRED_SDK_VER} VERSION_GREATER ${SDK_VERSION})
   message(FATAL_ERROR "The SDK version you are using is too old, please update your SDK.
 You need at least SDK version ${REQUIRED_SDK_VER}.
 You have version ${SDK_VERSION} (${ZEPHYR_SDK_INSTALL_DIR}).
