@@ -35,7 +35,7 @@
  *
  * Due to the first byte in a stream of bytes being more costly on
  * some platforms a "water system" inspired algorithm is used to
- * ammortize the cost of the first byte.
+ * amortize the cost of the first byte.
  *
  * The algorithm will delay generation of entropy until the amount of
  * bytes goes below THRESHOLD, at which point it will generate entropy
@@ -46,7 +46,7 @@
  *
  * The algorithm and HW together has these characteristics:
  *
- * Setting a low threshold will highly ammortize the extra 120us cost
+ * Setting a low threshold will highly amortize the extra 120us cost
  * of the first byte on nRF52.
  *
  * Setting a high threshold will minimize the time spent waiting for
