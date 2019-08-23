@@ -68,6 +68,94 @@ config LIS2DW12_INT_PIN_2
 	bool "int2"
 endchoice
 
+menuconfig LIS2DW12_PULSE
+	bool "Pulse detection"
+	help
+	  Enable pulse (single/double tap) detection
+
+if LIS2DW12_PULSE
+
+choice
+	prompt "Pulse interrupt source"
+	default LIS2DW12_ONLY_SINGLE
+
+config LIS2DW12_ONLY_SINGLE
+	bool "single"
+
+config LIS2DW12_SINGLE_DOUBLE
+	bool "single/double"
+
+endchoice
+
+config LIS2DW12_PULSE_THSX
+	hex "Pulse X-axis threshold"
+	range 0 0x1F
+	default 0x0E
+	help
+	  Threshold to start the pulse-event detection procedure on the X-axis.
+	  Threshold values for each axis are unsigned 5-bit corresponding
+	  to an 2g acceleration full-scale range.
+
+config LIS2DW12_PULSE_THSY
+	hex "Pulse Y-axis threshold"
+	range 0 0x1F
+	default 0x0E
+	help
+	  Threshold to start the pulse-event detection procedure on the Y-axis.
+	  Threshold values for each axis are unsigned 5-bit corresponding
+	  to an 2g acceleration full-scale range.
+
+config LIS2DW12_PULSE_THSZ
+	hex "Pulse Z-axis threshold"
+	range 0 0x1F
+	default 0x0E
+	help
+	  Threshold to start the pulse-event detection procedure on the Z-axis.
+	  Threshold values for each axis are unsigned 5-bit corresponding
+	  to an 2g acceleration full-scale range.
+
+config LIS2DW12_PULSE_X
+	bool "Enable X axis for pulse"
+	default y
+
+config LIS2DW12_PULSE_Y
+	bool "Enable Y axis for pulse"
+	default y
+
+config LIS2DW12_PULSE_Z
+	bool "Enable Z axis for pulse"
+	default y
+
+config LIS2DW12_PULSE_SHOCK
+	hex "Shock value"
+	range 0 0x03
+	default 0x00
+	help
+	  Maximum duration of over-threshold event: this register represents
+	  the maximum time of an over-threshold signal detection to be
+	  recognized as a tap event. Where 0 equals 4*1/ODR and 1LSB = 8*1/ODR.
+
+config LIS2DW12_PULSE_LTNCY
+	hex "Latency value"
+	range 0 0x0F
+	default 0x05
+	help
+	  When double-tap recognition is enabled, this register expresses
+	  the maximum time between two successive detected taps to
+	  determine a double-tap event. Where 0 equals 16*1/ODR and
+	  1LSB = 32*1/ODR.
+
+config LIS2DW12_PULSE_QUIET
+	hex "Quiet value"
+	range 0 0x03
+	default 0x00
+	help
+	  Expected quiet time after a tap detection: this register represents
+	  the time after the first detected tap in which there must not be
+	  any overthreshold event. Where 0 equals 2*1/ODR and 1LSB = 4*1/ODR.
+
+endif # LIS2DW12_PULSE
+
 endif # LIS2DW12_TRIGGER
 
 choice

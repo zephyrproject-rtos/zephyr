@@ -88,6 +88,13 @@ struct lis2dw12_device_config {
 	const char *int_gpio_port;
 	u8_t int_gpio_pin;
 	u8_t int_pin;
+#ifdef CONFIG_LIS2DW12_PULSE
+	u8_t pulse_trigger;
+	u8_t pulse_ths[3];
+	u8_t pulse_shock;
+	u8_t pulse_ltncy;
+	u8_t pulse_quiet;
+#endif /* CONFIG_LIS2DW12_PULSE */
 #endif /* CONFIG_LIS2DW12_TRIGGER */
 };
 
@@ -106,8 +113,11 @@ struct lis2dw12_data {
 #ifdef CONFIG_LIS2DW12_TRIGGER
 	struct device *gpio;
 	struct gpio_callback gpio_cb;
-	sensor_trigger_handler_t handler_drdy;
-
+	sensor_trigger_handler_t drdy_handler;
+#ifdef CONFIG_LIS2DW12_PULSE
+	sensor_trigger_handler_t tap_handler;
+	sensor_trigger_handler_t double_tap_handler;
+#endif /* CONFIG_LIS2DW12_PULSE */
 #if defined(CONFIG_LIS2DW12_TRIGGER_OWN_THREAD)
 	K_THREAD_STACK_MEMBER(thread_stack, CONFIG_LIS2DW12_THREAD_STACK_SIZE);
 	struct k_thread thread;

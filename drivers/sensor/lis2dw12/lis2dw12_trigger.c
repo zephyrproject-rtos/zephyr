@@ -21,26 +21,54 @@ LOG_MODULE_DECLARE(LIS2DW12);
 /**
  * lis2dw12_enable_int - enable selected int pin to generate interrupt
  */
-static int lis2dw12_enable_int(struct device *dev, int enable)
+static int lis2dw12_enable_int(struct device *dev,
+			       enum sensor_trigger_type type, int enable)
 {
 	const struct lis2dw12_device_config *cfg = dev->config->config_info;
 	struct lis2dw12_data *lis2dw12 = dev->driver_data;
 	lis2dw12_reg_t int_route;
 
-	/* set interrupt */
 	if (cfg->int_pin == 1U) {
+		/* set interrupt for pin INT1 */
 		lis2dw12_pin_int1_route_get(lis2dw12->ctx,
-					    &int_route.ctrl4_int1_pad_ctrl);
-		int_route.ctrl4_int1_pad_ctrl.int1_drdy = enable;
-		return lis2dw12_pin_int1_route_set(lis2dw12->ctx,
-					    &int_route.ctrl4_int1_pad_ctrl);
-	}
+				&int_route.ctrl4_int1_pad_ctrl);
 
-	lis2dw12_pin_int2_route_get(lis2dw12->ctx,
-				    &int_route.ctrl5_int2_pad_ctrl);
-	int_route.ctrl5_int2_pad_ctrl.int2_drdy = enable;
-	return lis2dw12_pin_int2_route_set(lis2dw12->ctx,
-				    &int_route.ctrl5_int2_pad_ctrl);
+		switch (type) {
+		case SENSOR_TRIG_DATA_READY:
+			int_route.ctrl4_int1_pad_ctrl.int1_drdy = enable;
+			break;
+#ifdef CONFIG_LIS2DW12_PULSE
+		case SENSOR_TRIG_TAP:
+			int_route.ctrl4_int1_pad_ctrl.int1_single_tap = enable;
+			break;
+		case SENSOR_TRIG_DOUBLE_TAP:
+			int_route.ctrl4_int1_pad_ctrl.int1_tap = enable;
+			break;
+#endif /* CONFIG_LIS2DW12_PULSE */
+		default:
+			LOG_ERR("Unsupported trigger interrupt route");
+			return -ENOTSUP;
+		}
+
+		return lis2dw12_pin_int1_route_set(lis2dw12->ctx,
+				&int_route.ctrl4_int1_pad_ctrl);
+	} else {
+		/* set interrupt for pin INT2 */
+		lis2dw12_pin_int2_route_get(lis2dw12->ctx,
+					    &int_route.ctrl5_int2_pad_ctrl);
+
+		switch (type) {
+		case SENSOR_TRIG_DATA_READY:
+			int_route.ctrl5_int2_pad_ctrl.int2_drdy = enable;
+			break;
+		default:
+			LOG_ERR("Unsupported trigger interrupt route");
+			return -ENOTSUP;
+		}
+
+		return lis2dw12_pin_int2_route_set(lis2dw12->ctx,
+				&int_route.ctrl5_int2_pad_ctrl);
+	}
 }
 
 /**
@@ -52,20 +80,84 @@ int lis2dw12_trigger_set(struct device *dev,
 {
 	struct lis2dw12_data *lis2dw12 = dev->driver_data;
 	axis3bit16_t raw;
+	int state = (handler != NULL) ? PROPERTY_ENABLE : PROPERTY_DISABLE;
 
-	if (trig->chan == SENSOR_CHAN_ACCEL_XYZ) {
-		lis2dw12->handler_drdy = handler;
-		if (handler) {
+	switch (trig->type) {
+	case SENSOR_TRIG_DATA_READY:
+		lis2dw12->drdy_handler = handler;
+		if (state) {
 			/* dummy read: re-trigger interrupt */
 			lis2dw12_acceleration_raw_get(lis2dw12->ctx, raw.u8bit);
-			return lis2dw12_enable_int(dev, PROPERTY_ENABLE);
-		} else {
-			return lis2dw12_enable_int(dev, PROPERTY_DISABLE);
 		}
+		return lis2dw12_enable_int(dev, SENSOR_TRIG_DATA_READY, state);
+		break;
+#ifdef CONFIG_LIS2DW12_PULSE
+	case SENSOR_TRIG_TAP:
+		lis2dw12->tap_handler = handler;
+		return lis2dw12_enable_int(dev, SENSOR_TRIG_TAP, state);
+		break;
+	case SENSOR_TRIG_DOUBLE_TAP:
+		lis2dw12->double_tap_handler = handler;
+		return lis2dw12_enable_int(dev, SENSOR_TRIG_DOUBLE_TAP, state);
+		break;
+#endif /* CONFIG_LIS2DW12_PULSE */
+	default:
+		LOG_ERR("Unsupported sensor trigger");
+		return -ENOTSUP;
+	}
+}
+
+static int lis2dw12_handle_drdy_int(struct device *dev)
+{
+	struct lis2dw12_data *data = dev->driver_data;
+
+	struct sensor_trigger drdy_trig = {
+		.type = SENSOR_TRIG_DATA_READY,
+		.chan = SENSOR_CHAN_ALL,
+	};
+
+	if (data->drdy_handler) {
+		data->drdy_handler(dev, &drdy_trig);
 	}
 
-	return -ENOTSUP;
+	return 0;
 }
+
+#ifdef CONFIG_LIS2DW12_PULSE
+static int lis2dw12_handle_single_tap_int(struct device *dev)
+{
+	struct lis2dw12_data *data = dev->driver_data;
+	sensor_trigger_handler_t handler = data->tap_handler;;
+
+	struct sensor_trigger pulse_trig = {
+		.type = SENSOR_TRIG_TAP,
+		.chan = SENSOR_CHAN_ALL,
+	};
+
+	if (handler) {
+		handler(dev, &pulse_trig);
+	}
+
+	return 0;
+}
+
+static int lis2dw12_handle_double_tap_int(struct device *dev)
+{
+	struct lis2dw12_data *data = dev->driver_data;
+	sensor_trigger_handler_t handler = data->double_tap_handler;;
+
+	struct sensor_trigger pulse_trig = {
+		.type = SENSOR_TRIG_DOUBLE_TAP,
+		.chan = SENSOR_CHAN_ALL,
+	};
+
+	if (handler) {
+		handler(dev, &pulse_trig);
+	}
+
+	return 0;
+}
+#endif /* CONFIG_LIS2DW12_PULSE */
 
 /**
  * lis2dw12_handle_interrupt - handle the drdy event
@@ -73,16 +165,24 @@ int lis2dw12_trigger_set(struct device *dev,
  */
 static void lis2dw12_handle_interrupt(void *arg)
 {
-	struct device *dev = arg;
+	struct device *dev = (struct device *)arg;
 	struct lis2dw12_data *lis2dw12 = dev->driver_data;
-	struct sensor_trigger drdy_trigger = {
-		.type = SENSOR_TRIG_DATA_READY,
-	};
 	const struct lis2dw12_device_config *cfg = dev->config->config_info;
+	lis2dw12_all_sources_t sources;
 
-	if (lis2dw12->handler_drdy != NULL) {
-		lis2dw12->handler_drdy(dev, &drdy_trigger);
+	lis2dw12_all_sources_get(lis2dw12->ctx, &sources);
+
+	if (sources.status_dup.drdy) {
+		lis2dw12_handle_drdy_int(dev);
 	}
+#ifdef CONFIG_LIS2DW12_PULSE
+	if (sources.status_dup.single_tap) {
+		lis2dw12_handle_single_tap_int(dev);
+	}
+	if (sources.status_dup.double_tap) {
+		lis2dw12_handle_double_tap_int(dev);
+	}
+#endif /* CONFIG_LIS2DW12_PULSE */
 
 	gpio_pin_enable_callback(lis2dw12->gpio, cfg->int_gpio_pin);
 }
