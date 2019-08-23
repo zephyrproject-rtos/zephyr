@@ -16,6 +16,7 @@ pyserial
 pytest
 sphinx==1.7.5
 sphinx_rtd_theme
+sphinx-tabs
 sphinxcontrib-svg2pdfconverter
 west>=0.6.0
 wheel==0.30.0
