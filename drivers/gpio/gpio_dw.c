@@ -399,41 +399,11 @@ static const struct gpio_driver_api api_funcs = {
 	.disable_callback = gpio_dw_disable_callback,
 };
 
-#ifdef CONFIG_PCI
-static inline int gpio_dw_setup(struct device *dev)
-{
-	struct gpio_dw_runtime *context = dev->driver_data;
-
-	pci_bus_scan_init();
-
-	if (!pci_bus_scan(&context->pci_dev)) {
-		return 0;
-	}
-
-#ifdef CONFIG_PCI_ENUMERATION
-	context->base_addr = context->pci_dev.addr;
-#endif
-	pci_enable_regs(&context->pci_dev);
-
-	pci_show(&context->pci_dev);
-
-	return 1;
-}
-#else
-#define gpio_dw_setup(_unused_) (1)
-#endif /* CONFIG_PCI */
-
-
 static int gpio_dw_initialize(struct device *port)
 {
 	struct gpio_dw_runtime *context = port->driver_data;
 	const struct gpio_dw_config *config = port->config->config_info;
 	u32_t base_addr;
-
-	if (!gpio_dw_setup(port)) {
-		port->driver_api = NULL;
-		return -EPERM;
-	}
 
 	if (dw_interrupt_support(config)) {
 
@@ -477,15 +447,6 @@ static const struct gpio_dw_config gpio_config_0 = {
 
 static struct gpio_dw_runtime gpio_0_runtime = {
 	.base_addr = DT_GPIO_DW_0_BASE_ADDR,
-#if CONFIG_PCI
-	.pci_dev.class_type = GPIO_DW_PCI_CLASS,
-	.pci_dev.bus = GPIO_DW_0_PCI_BUS,
-	.pci_dev.dev = GPIO_DW_0_PCI_DEV,
-	.pci_dev.vendor_id = GPIO_DW_PCI_VENDOR_ID,
-	.pci_dev.device_id = GPIO_DW_PCI_DEVICE_ID,
-	.pci_dev.function = GPIO_DW_0_PCI_FUNCTION,
-	.pci_dev.bar = GPIO_DW_0_PCI_BAR,
-#endif
 };
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
@@ -546,15 +507,6 @@ static const struct gpio_dw_config gpio_dw_config_1 = {
 
 static struct gpio_dw_runtime gpio_1_runtime = {
 	.base_addr = DT_GPIO_DW_1_BASE_ADDR,
-#if CONFIG_PCI
-	.pci_dev.class_type = GPIO_DW_PCI_CLASS,
-	.pci_dev.bus = GPIO_DW_1_PCI_BUS,
-	.pci_dev.dev = GPIO_DW_1_PCI_DEV,
-	.pci_dev.vendor_id = GPIO_DW_PCI_VENDOR_ID,
-	.pci_dev.device_id = GPIO_DW_PCI_DEVICE_ID,
-	.pci_dev.function = GPIO_DW_1_PCI_FUNCTION,
-	.pci_dev.bar = GPIO_DW_1_PCI_BAR,
-#endif
 };
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
@@ -613,15 +565,6 @@ static const struct gpio_dw_config gpio_dw_config_2 = {
 
 static struct gpio_dw_runtime gpio_2_runtime = {
 	.base_addr = DT_GPIO_DW_2_BASE_ADDR,
-#if CONFIG_PCI
-	.pci_dev.class_type = GPIO_DW_PCI_CLASS,
-	.pci_dev.bus = GPIO_DW_2_PCI_BUS,
-	.pci_dev.dev = GPIO_DW_2_PCI_DEV,
-	.pci_dev.vendor_id = GPIO_DW_PCI_VENDOR_ID,
-	.pci_dev.device_id = GPIO_DW_PCI_DEVICE_ID,
-	.pci_dev.function = GPIO_DW_2_PCI_FUNCTION,
-	.pci_dev.bar = GPIO_DW_2_PCI_BAR,
-#endif
 };
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
@@ -680,15 +623,6 @@ static const struct gpio_dw_config gpio_dw_config_3 = {
 
 static struct gpio_dw_runtime gpio_3_runtime = {
 	.base_addr = DT_GPIO_DW_3_BASE_ADDR,
-#if CONFIG_PCI
-	.pci_dev.class_type = GPIO_DW_PCI_CLASS,
-	.pci_dev.bus = GPIO_DW_3_PCI_BUS,
-	.pci_dev.dev = GPIO_DW_3_PCI_DEV,
-	.pci_dev.vendor_id = GPIO_DW_PCI_VENDOR_ID,
-	.pci_dev.device_id = GPIO_DW_PCI_DEVICE_ID,
-	.pci_dev.function = GPIO_DW_3_PCI_FUNCTION,
-	.pci_dev.bar = GPIO_DW_3_PCI_BAR,
-#endif
 };
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
