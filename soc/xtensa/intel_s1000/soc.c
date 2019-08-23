@@ -190,7 +190,11 @@ int z_soc_irq_is_enabled(unsigned int irq)
 
 	if (!dev_ictl) {
 		LOG_DBG("board: DW intr_control device binding failed");
+<<<<<<< HEAD
 		ret = -ENODEV;
+=======
+		ret = -NODEV;
+>>>>>>> intel_s1000: implement z_soc_irq_is_enabled()
 		goto out;
 	}
 
