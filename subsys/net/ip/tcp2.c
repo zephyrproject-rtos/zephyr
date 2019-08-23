@@ -41,7 +41,6 @@ static struct tcp tcp_context[NET_MAX_TCP_CONTEXT];
 NET_BUF_POOL_DEFINE(tcp_nbufs, 64/*count*/, 128/*size*/, 0, NULL);
 
 static void tcp_in(struct tcp *conn, struct net_pkt *pkt);
-static void *tcp_conn_delete(struct tcp *conn);
 int net_tcp_get(struct net_context *context);
 
 #if IS_ENABLED(CONFIG_NET_TP)
@@ -534,30 +533,6 @@ static void tcp_send_queue_flush(struct tcp *conn)
 				struct net_pkt, next))) {
 		tcp_pkt_unref(pkt);
 	}
-}
-
-static void *tcp_conn_delete(struct tcp *conn)
-{
-	tcp_dbg("");
-
-	tp_out(conn->iface, "TP_TRACE", "event", "CONN_DELETE");
-
-	if (_tcp_conn_delete == false) {
-		goto out;
-	}
-
-	tcp_send_queue_flush(conn);
-
-	tcp_win_free(conn->snd);
-	tcp_win_free(conn->rcv);
-
-	tcp_free(conn->src);
-	tcp_free(conn->dst);
-
-	sys_slist_find_and_remove(&tcp_conns, (sys_snode_t *) conn);
-	tcp_free(conn);
-out:
-	return NULL;
 }
 
 static struct net_pkt *tcp_pkt_make(struct tcp *conn, u8_t flags)
