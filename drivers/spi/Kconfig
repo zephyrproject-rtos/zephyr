@@ -180,14 +180,6 @@ config SPI_6_OP_MODES
 
 endif # SPI_6
 
-config SPI_INTEL
-	bool "Intel SPI controller driver"
-	depends on CPU_MINUTEIA
-	help
-	  Enable support for Intel's SPI controllers. Such controller
-	  was formerly found on XScale chips. It can be found nowadays
-	  on CEXXXX Intel media controller and Quark CPU (2 of them).
-
 source "drivers/spi/Kconfig.stm32"
 
 source "drivers/spi/Kconfig.dw"
