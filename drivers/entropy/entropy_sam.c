@@ -18,7 +18,7 @@ struct trng_sam_dev_cfg {
 #define DEV_CFG(dev) \
 	((const struct trng_sam_dev_cfg *const)(dev)->config->config_info)
 
-static int entropy_sam_wait_ready(Trng *const trng)
+static int entropy_sam_wait_ready(Trng * const trng, u32_t flags)
 {
 	/* According to the reference manual, the generator provides
 	 * one 32-bit random value every 84 peripheral clock cycles.
@@ -36,14 +36,23 @@ static int entropy_sam_wait_ready(Trng *const trng)
 			return -ETIMEDOUT;
 		}
 
-		k_yield();
+		if ((flags & ENTROPY_BUSYWAIT) == 0U) {
+			/* This internal function is used by both get_entropy,
+			 * and get_entropy_isr APIs. The later may call this
+			 * function with the ENTROPY_BUSYWAIT flag set. In
+			 * that case make no assumption that the kernel is
+			 * initialized when the function is called; so, just
+			 * do busy-wait for the random data to be ready.
+			 */
+			k_yield();
+		}
 	}
 
 	return 0;
 }
 
-static int entropy_sam_get_entropy(struct device *dev, u8_t *buffer,
-				   u16_t length)
+static int entropy_sam_get_entropy_internal(struct device *dev, u8_t *buffer,
+				   u16_t length, u32_t flags)
 {
 	Trng *const trng = DEV_CFG(dev)->regs;
 
@@ -52,7 +61,7 @@ static int entropy_sam_get_entropy(struct device *dev, u8_t *buffer,
 		u32_t value;
 		int res;
 
-		res = entropy_sam_wait_ready(trng);
+		res = entropy_sam_wait_ready(trng, flags);
 		if (res < 0) {
 			return res;
 		}
@@ -66,6 +75,60 @@ static int entropy_sam_get_entropy(struct device *dev, u8_t *buffer,
 	}
 
 	return 0;
+}
+
+static int entropy_sam_get_entropy(struct device *dev, u8_t *buffer,
+				   u16_t length)
+{
+	return entropy_sam_get_entropy_internal(dev, buffer, length, 0);
+}
+
+static int entropy_sam_get_entropy_isr(struct device *dev, u8_t *buffer,
+				   u16_t length, u32_t flags)
+{
+	u16_t cnt = length;
+
+
+	if ((flags & ENTROPY_BUSYWAIT) == 0U) {
+
+		/* No busy wait; return whatever data is available. */
+
+		Trng * const trng = DEV_CFG(dev)->regs;
+
+		do {
+			size_t to_copy;
+			u32_t value;
+
+			if (!(trng->TRNG_ISR & TRNG_ISR_DATRDY)) {
+
+				/* Data not ready */
+				break;
+			}
+
+			value = trng->TRNG_ODATA;
+			to_copy = MIN(length, sizeof(value));
+
+			memcpy(buffer, &value, to_copy);
+			buffer += to_copy;
+			length -= to_copy;
+
+		} while (length > 0);
+
+		return cnt - length;
+
+	} else {
+		/* Allowed to busy-wait */
+		int ret =
+			entropy_sam_get_entropy_internal(dev,
+				buffer, length, flags);
+
+		if (ret == 0) {
+			/* Data retrieved successfully. */
+			return cnt;
+		}
+
+		return ret;
+	}
 }
 
 static int entropy_sam_init(struct device *dev)
@@ -82,7 +145,8 @@ static int entropy_sam_init(struct device *dev)
 }
 
 static const struct entropy_driver_api entropy_sam_api = {
-	.get_entropy = entropy_sam_get_entropy
+	.get_entropy = entropy_sam_get_entropy,
+	.get_entropy_isr = entropy_sam_get_entropy_isr
 };
 
 static const struct trng_sam_dev_cfg trng_sam_cfg = {
