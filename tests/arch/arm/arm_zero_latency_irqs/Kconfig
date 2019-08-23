@@ -1,0 +1,15 @@
+# SPDX-License-Identifier: Apache-2.0
+
+config TEST_IRQ_NUM_SPECIFIED
+	bool
+	default y if SOC_SERIES_CC32XX
+
+config TEST_IRQ_NUM
+	int
+	depends on TEST_IRQ_NUM_SPECIFIED
+	default 163 if SOC_SERIES_CC32XX # Pick the Camera IRQ
+	help
+	  Allow for a board/SoC specific IRQ to be selected if the logic
+	  in the code to auto determine and IRQ doesn't work
+
+source "Kconfig.zephyr"

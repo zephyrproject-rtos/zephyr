@@ -27,6 +27,9 @@ void test_arm_zero_latency_irqs(void)
 
 	zassert_false(init_flag, "Test flag not initialized to zero\n");
 
+#ifdef CONFIG_TEST_IRQ_NUM_SPECIFIED
+	i = CONFIG_TEST_IRQ_NUM;
+#else
 	for (i = CONFIG_NUM_IRQS - 1; i >= 0; i--) {
 		if (NVIC_GetEnableIRQ(i) == 0) {
 			/*
@@ -38,6 +41,7 @@ void test_arm_zero_latency_irqs(void)
 			break;
 		}
 	}
+#endif
 
 	zassert_true(i >= 0,
 		"No available IRQ line to configure as zero-latency\n");
