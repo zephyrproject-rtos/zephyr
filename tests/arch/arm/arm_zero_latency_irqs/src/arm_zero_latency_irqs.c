@@ -33,9 +33,19 @@ void test_arm_zero_latency_irqs(void)
 			 * Interrupts configured statically with IRQ_CONNECT(.)
 			 * are automatically enabled. NVIC_GetEnableIRQ()
 			 * returning false, here, implies that the IRQ line is
-			 * not enabled, thus, currently not in use by Zephyr.
+			 * either not implemented or it is not enabled, thus,
+			 * currently not in use by Zephyr.
 			 */
-			break;
+
+			/* Set the NVIC line to pending. */
+			NVIC_SetPendingIRQ(i);
+
+			if (NVIC_GetPendingIRQ(i)) {
+				/* If the NVIC line is pending, it is
+				 * guaranteed that it is implemented.
+				 */
+				break;
+			}
 		}
 	}
 
