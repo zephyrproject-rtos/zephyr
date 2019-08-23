@@ -1,7 +1,7 @@
 .. _installation_linux:
 
-Install Linux Host Dependencies
-###############################
+Install the required tools on Linux
+###################################
 
 .. important::
 
@@ -114,6 +114,9 @@ Arch Linux:
 
    sudo pacman -S git cmake ninja gperf ccache dfu-util dtc wget \
        python-pip python-setuptools python-wheel tk xz file make
+
+Make sure ``~/.local/bin`` is on your :envvar:`PATH` for Python programs to be
+available. See :ref:`python-pip` for more information.
 
 **CMake version 3.13.1 or higher is required**. Check what version you have by
 using ``cmake --version``. If you have an older version, there are several ways

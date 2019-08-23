@@ -1,7 +1,7 @@
-.. _installing_zephyr_mac:
+.. _installation_mac:
 
-Install macOS Host Dependencies
-###############################
+Install the required tools on macOS
+###################################
 
 .. important::
 

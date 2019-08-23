@@ -12,49 +12,21 @@ environment, then build and run a sample application.
 
 .. _host_setup:
 
-Install Host Dependencies
-*************************
-
-.. _python-pip:
-
-Python and pip
-==============
-
-Python 3 and its package manager, pip\ [#pip]_, are used extensively by Zephyr
-to install and run scripts that are required to compile and run Zephyr
-applications.
-
-Depending on your operating system, you may or may not need to provide the
-``--user`` flag to the ``pip3`` command when installing new packages. This is
-documented throughout the instructions.
-See `Installing Packages`_ in the Python Packaging User Guide for more
-information about pip\ [#pip]_, including this `information on -\\-user`_.
-
-- On Linux, make sure ``~/.local/bin`` is on your :envvar:`PATH`
-  :ref:`environment variable <env_vars>`, or programs installed with ``--user``
-  won't be found\ [#linux_user]_.
-
-- On macOS, `Homebrew disables -\\-user`_.
-
-- On Windows, see the Installing Packages information on ``--user`` if you
-  require using this option.
-
-On all operating systems, the ``-U`` flag installs or updates the package if the
-package is already installed locally but a more recent version is available. It
-is good practice to use this flag if the latest version of a package is
-required.
-
 Install the required tools
-===========================
+**************************
 
 Follow an operating system specific guide, then come back to this page.
 
 .. toctree::
-   :maxdepth: 1
+   :hidden:
 
-   Linux <installation_linux.rst>
-   macOS <installation_mac.rst>
-   Windows <installation_win.rst>
+   installation_linux.rst
+   installation_mac.rst
+   installation_win.rst
+
+* **Linux**: :ref:`installation_linux`
+* **macOS**: :ref:`installation_mac`
+* **Windows**: :ref:`installation_win`
 
 .. _get_the_code:
 
@@ -310,6 +282,35 @@ options.
 
 This executable can be instrumented using standard tools, such as gdb or
 valgrind.
+
+.. _python-pip:
+
+A note about Python and pip
+***************************
+
+Python 3 and its package manager, pip\ [#pip]_, are used extensively by Zephyr
+to install and run scripts that are required to compile and run Zephyr
+applications.
+
+Depending on your operating system, you may or may not need to provide the
+``--user`` flag to the ``pip3`` command when installing new packages. This is
+documented throughout the instructions.
+See `Installing Packages`_ in the Python Packaging User Guide for more
+information about pip\ [#pip]_, including this `information on -\\-user`_.
+
+- On Linux, make sure ``~/.local/bin`` is on your :envvar:`PATH`
+  :ref:`environment variable <env_vars>`, or programs installed with ``--user``
+  won't be found\ [#linux_user]_.
+
+- On macOS, `Homebrew disables -\\-user`_.
+
+- On Windows, see the Installing Packages information on ``--user`` if you
+  require using this option.
+
+On all operating systems, the ``-U`` flag installs or updates the package if the
+package is already installed locally but a more recent version is available. It
+is good practice to use this flag if the latest version of a package is
+required.
 
 .. rubric:: Footnotes
 

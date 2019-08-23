@@ -49,10 +49,9 @@ System build requirements
 The Zephyr device tree feature requires a device tree compiler (DTC) and Python
 YAML packages.  Refer to the installation guide for your specific host OS:
 
-* :ref:`installing_zephyr_win`
 * :ref:`installation_linux`
-* :ref:`installing_zephyr_mac`
-
+* :ref:`installation_mac`
+* :ref:`installation_win`
 
 Zephyr and Device Tree
 **********************

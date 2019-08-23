@@ -1,7 +1,7 @@
-.. _installing_zephyr_win:
+.. _installation_win:
 
-Install Windows Host Dependencies
-#################################
+Install the required tools on Windows
+#####################################
 
 .. important::
 
