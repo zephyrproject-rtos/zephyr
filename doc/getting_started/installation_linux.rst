@@ -62,6 +62,9 @@ Install Requirements and Dependencies
    introduction of LaTeX->PDF support for the docs, as the texlive footprint is
    massive and not needed by users not building PDF documentation.)
 
+Common tools
+============
+
 Note that both Ninja and Make are installed with these instructions; you only
 need one.
 
@@ -115,8 +118,15 @@ Arch Linux:
    sudo pacman -S git cmake ninja gperf ccache dfu-util dtc wget \
        python-pip python-setuptools python-wheel tk xz file make
 
-Make sure ``~/.local/bin`` is on your :envvar:`PATH` for Python programs to be
-available. See :ref:`python-pip` for more information.
+Python and paths
+================
+
+Make sure the ``~/.local/bin`` folder is on your :envvar:`PATH` environment
+variable for Python programs to be available. See :ref:`python-pip` for more
+information.
+
+CMake
+=====
 
 **CMake version 3.13.1 or higher is required**. Check what version you have by
 using ``cmake --version``. If you have an older version, there are several ways
@@ -170,9 +180,9 @@ build Zephyr on all supported architectures. Additionally, it includes host
 tools such as custom QEMU binaries and a host compiler. The SDK supports the
 following target architectures:
 
-* :abbr:`X86 (Intel Architecture 32 bits)`
+* :abbr:`x86 (Intel Architecture 32 bits)`
 
-* :abbr:`X86 IAMCU ABI (Intel Architecture 32 bits IAMCU ABI)`
+* :abbr:`x86_64 (Intel Architecture 64 bits)`
 
 * :abbr:`Arm (Advanced RISC Machine)`
 
@@ -182,7 +192,9 @@ following target architectures:
 
 * :abbr:`Xtensa`
 
-* :abbr:`RISC-V`
+* :abbr:`RISC-V 32-bit`
+
+* :abbr:`RISC-V 64-bit`
 
 Follow these steps to install the Zephyr SDK:
 
