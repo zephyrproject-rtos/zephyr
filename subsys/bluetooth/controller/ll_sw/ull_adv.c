@@ -1188,6 +1188,22 @@ static inline u8_t disable(u16_t handle)
 	mark = ull_disable_mark(adv);
 	LL_ASSERT(mark == adv);
 
+#if defined(CONFIG_BT_PERIPHERAL)
+	if (adv->lll.is_hdcd) {
+		ret = ticker_stop(TICKER_INSTANCE_ID_CTLR,
+				  TICKER_USER_ID_THREAD, TICKER_ID_ADV_STOP,
+				  ull_ticker_status_give, (void *)&ret_cb);
+		ret = ull_ticker_status_take(ret, &ret_cb);
+		if (ret) {
+			mark = ull_disable_mark(adv);
+			LL_ASSERT(mark == adv);
+
+			return BT_HCI_ERR_CMD_DISALLOWED;
+		}
+		ret_cb = TICKER_STATUS_BUSY;
+	}
+#endif
+
 	ret = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_THREAD,
 			  TICKER_ID_ADV_BASE + handle,
 			  ull_ticker_status_give, (void *)&ret_cb);
