@@ -19,9 +19,6 @@
  * @{
  */
 
-#define PWM_ACCESS_BY_PIN	0
-#define PWM_ACCESS_ALL		1
-
 #include <errno.h>
 #include <zephyr/types.h>
 #include <stddef.h>
