@@ -142,12 +142,6 @@ static int loopback_vendor_handler(struct usb_setup_packet *setup,
 
 	if ((REQTYPE_GET_DIR(setup->bmRequestType) == REQTYPE_DIR_TO_HOST) &&
 	    (setup->bRequest == 0x5c)) {
-		if (setup->wLength > sizeof(loopback_buf)) {
-			return -ENOTSUP;
-		}
-
-		*data = loopback_buf;
-		*len = setup->wLength;
 		LOG_DBG("Device-to-Host, wLength %d, data %p",
 			setup->wLength, *data);
 		return 0;
