@@ -19,19 +19,38 @@ Major enhancements with this release include:
   connection between two nodes.
 * We added support for UpdateHub which is an end-to-end solution for large scale
   over-the-air update of devices.
+* We added support for ARM Cortex-R Architecture (EXPERIMENTAL).
 
 The following sections provide detailed lists of changes by component.
 
 Kernel
 ******
 
-* TBD
+* New kernel API for per-thread disabling of Floating Point Services for
+  ARC, ARM Cortex-M, and x86 architectures.
 
 Architectures
 *************
 
-* POSIX: Fix race condition with terminated threads which had never been
-  scheduled by kernel. On very loaded systems it could cause swap errors.
+* ARM:
+
+  * Added initial support for ARM Cortex-R architecture (EXPERIMENTAL)
+  * We enhanced the support for Floating Point Services in Cortex-M
+    architecture, implementing and enabling lazy-stacking for FPU
+    capable threads and fixing stack overflow detection for FPU
+    capable supervisor threads
+  * Added Qemu support for ARMv8-M Mainline architecture
+  * Optimized the IRQ locking time in thread context switch
+  * Fixed several critical bugs in User Mode implementation
+  * Added test coverage for ARM-specific kernel features
+  * Improved support for linking TrustZone Secure Entry functions into
+    Non-Secure firmware
+
+
+* POSIX:
+
+  * Fix race condition with terminated threads which had never been
+    scheduled by kernel. On very loaded systems it could cause swap errors.
 
 Boards & SoC Support
 ********************
