@@ -19,8 +19,8 @@ K_SEM_DEFINE(sync_sem, 0, 1);
 K_SEM_DEFINE(multiple_send_sem, 0, 1);
 
 
-ZTEST_BMEM u8_t tx_buffer[PIPE_SIZE];
-ZTEST_BMEM u8_t rx_buffer[PIPE_SIZE];
+ZTEST_BMEM u8_t tx_buffer[PIPE_SIZE + 1];
+ZTEST_BMEM u8_t rx_buffer[PIPE_SIZE + 1];
 
 #define TOTAL_ELEMENTS (sizeof(single_elements) / sizeof(struct pipe_sequence))
 #define TOTAL_WAIT_ELEMENTS (sizeof(wait_elements) / \
