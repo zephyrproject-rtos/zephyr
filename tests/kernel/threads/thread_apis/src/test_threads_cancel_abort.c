@@ -6,10 +6,8 @@
 
 #include <ztest.h>
 
-#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
+#include "tests_thread_apis.h"
 
-K_THREAD_STACK_EXTERN(tstack);
-extern struct k_thread tdata;
 static ZTEST_BMEM int execute_flag;
 
 K_SEM_DEFINE(sync_sema, 0, 1);

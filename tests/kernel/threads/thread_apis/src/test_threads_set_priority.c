@@ -6,10 +6,8 @@
 
 #include <ztest.h>
 
-#define STACK_SIZE (640 + CONFIG_TEST_EXTRA_STACKSIZE)
+#include "tests_thread_apis.h"
 
-K_THREAD_STACK_EXTERN(tstack);
-extern struct k_thread tdata;
 static int thread2_data;
 
 K_SEM_DEFINE(sem_thread2, 0, 1);

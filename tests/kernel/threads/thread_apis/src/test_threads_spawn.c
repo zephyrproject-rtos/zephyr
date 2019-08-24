@@ -7,9 +7,7 @@
 
 #include <ztest.h>
 
-#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
-K_THREAD_STACK_EXTERN(tstack);
-extern struct k_thread tdata;
+#include "tests_thread_apis.h"
 
 static ZTEST_BMEM char tp1[8];
 static ZTEST_DMEM int tp2 = 100;
