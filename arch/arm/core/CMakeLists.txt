@@ -2,11 +2,9 @@
 
 zephyr_library()
 
-zephyr_compile_options_ifdef(CONFIG_COVERAGE_GCOV
-  -ftest-coverage
-  -fprofile-arcs
-  -fno-inline
-  )
+if (CONFIG_COVERAGE)
+  toolchain_cc_coverage()
+endif ()
 
 zephyr_library_sources(
   exc_exit.S
