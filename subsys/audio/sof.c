@@ -216,49 +216,6 @@ void debug_print(char *message)
 	LOG_DBG("%s", message);
 }
 
-/* FIXME: The following definitions are to satisfy linker errors */
-struct dai dai;
-
-/* Make use of dai_install to register DAI drivers, there maybe common code
- * from i2s_cavs.c and codec.h */
-struct dai *dai_get(uint32_t type, uint32_t index, uint32_t flags)
-{
-	return &dai;
-}
-
-void dai_put(struct dai *dai)
-{
-}
-
-int dai_init(void)
-{
-	return 0;
-}
-
-struct dma dma;
-
-struct dma *dma_get(uint32_t dir, uint32_t caps, uint32_t dev, uint32_t flags)
-{
-	return &dma;
-}
-
-void dma_put(struct dma *dma)
-{
-}
-
-int dma_sg_alloc(struct dma_sg_elem_array *elem_array,
-		 int zone,
-		 uint32_t direction,
-		 uint32_t buffer_count, uint32_t buffer_bytes,
-		 uintptr_t dma_buffer_addr, uintptr_t external_addr)
-{
-	return 0;
-}
-
-void dma_sg_free(struct dma_sg_elem_array *elem_array)
-{
-}
-
 static void prepare_host_windows()
 {
 	/* window0, for fw status & outbox/uplink mbox */
