@@ -10,8 +10,6 @@ else ()
 endif ()
 
 zephyr_compile_options(
-  -MMD
-  -MP
   ${ARCH_FLAG}
   -include ${ZEPHYR_BASE}/arch/posix/include/posix_cheats.h
   )
