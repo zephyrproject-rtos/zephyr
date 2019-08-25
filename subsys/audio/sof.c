@@ -309,6 +309,15 @@ static int sof_init(struct device *unused)
 	/* init clocks in SOF */
 	clock_init();
 
+	/* init scheduler */
+	ret = scheduler_init();
+	if (ret < 0) {
+		LOG_ERR("scheduler init: %d", ret);
+		return ret;
+	}
+
+	LOG_INF("scheduler initialized");
+
 	/* init DMAC */
 	ret = dmac_init();
 	if (ret < 0) {
@@ -330,15 +339,6 @@ static int sof_init(struct device *unused)
 		LOG_ERR("DAI initialization failed");
 		return ret;
 	}
-
-	/* init scheduler */
-	ret = scheduler_init();
-	if (ret < 0) {
-		LOG_ERR("scheduler init: %d", ret);
-		return ret;
-	}
-
-	LOG_INF("scheduler initialized");
 
 #if defined(CONFIG_SOF_STATIC_PIPELINE)
 	/* init static pipeline */
