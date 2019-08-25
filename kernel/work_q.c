@@ -73,9 +73,9 @@ static int work_cancel(struct k_delayed_work *work)
 	return 0;
 }
 
-int k_delayed_work_submit_to_queue(struct k_work_q *work_q,
-				   struct k_delayed_work *work,
-				   s32_t delay)
+int k_delayed_work_submit_to_queue_us(struct k_work_q *work_q,
+				      struct k_delayed_work *work,
+				      s32_t delay)
 {
 	k_spinlock_key_t key = k_spin_lock(&lock);
 	int err = 0;
@@ -108,7 +108,7 @@ int k_delayed_work_submit_to_queue(struct k_work_q *work_q,
 
 	/* Add timeout */
 	z_add_timeout(&work->timeout, work_timeout,
-		     _TICK_ALIGN + z_ms_to_ticks(delay));
+		     _TICK_ALIGN + z_us_to_ticks(delay));
 
 done:
 	k_spin_unlock(&lock, key);
