@@ -8,6 +8,7 @@ git-spindle==2.0
 gitlint
 intelhex
 junit2html
+packaging
 ply==3.10
 pyelftools==0.24
 pykwalify
