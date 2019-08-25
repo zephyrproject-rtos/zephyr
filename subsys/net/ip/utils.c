@@ -679,10 +679,22 @@ static bool parse_ipv6(const char *str, size_t str_len,
 	}
 
 	if ((ptr + 1) < (str + str_len) && *(ptr + 1) == ':') {
-		len = str_len - end;
+		/* -1 as end does not contain first [
+		 * -2 as pointer is advanced by 2, skipping ]:
+		 */
+		len = str_len - end - 1 - 2;
+
+		ptr += 2;
+
+		for (i = 0; i < len; i++) {
+			if (!ptr[i]) {
+				len = i;
+				break;
+			}
+		}
 
 		/* Re-use the ipaddr buf for port conversion */
-		memcpy(ipaddr, ptr + 2, len);
+		memcpy(ipaddr, ptr, len);
 		ipaddr[len] = '\0';
 
 		ret = convert_port(ipaddr, &port);
