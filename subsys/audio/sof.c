@@ -351,8 +351,6 @@ static int sof_init(struct device *unused)
 	LOG_INF("pipeline initialized");
 #endif /* CONFIG_SOF_STATIC_PIPELINE */
 
-	mailbox_sw_reg_write(SRAM_REG_ROM_STATUS, 0xabbac0fe);
-
 	sof_boot_complete();
 
 	LOG_INF("FW Boot Completed");
