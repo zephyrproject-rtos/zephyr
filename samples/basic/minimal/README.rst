@@ -31,7 +31,6 @@ following combinations are suggested:
 
     .. zephyr-app-commands::
        :zephyr-app: samples/basic/minimal
-       :tool: west
        :host-os: unix
        :board: reel_board
        :build-dir: reel_board/mt/
@@ -45,7 +44,6 @@ following combinations are suggested:
 
     .. zephyr-app-commands::
        :zephyr-app: samples/basic/minimal
-       :tool: west
        :host-os: unix
        :board: reel_board
        :build-dir: reel_board/mt-no-preempt/
@@ -59,7 +57,6 @@ following combinations are suggested:
 
     .. zephyr-app-commands::
        :zephyr-app: samples/basic/minimal
-       :tool: west
        :host-os: unix
        :board: reel_board
        :build-dir: reel_board/mt-no-preempt-no-timers/
@@ -73,7 +70,6 @@ following combinations are suggested:
 
     .. zephyr-app-commands::
        :zephyr-app: samples/basic/minimal
-       :tool: west
        :host-os: unix
        :board: reel_board
        :build-dir: reel_board/no-mt/
@@ -87,7 +83,6 @@ following combinations are suggested:
 
     .. zephyr-app-commands::
        :zephyr-app: samples/basic/minimal
-       :tool: west
        :host-os: unix
        :board: reel_board
        :build-dir: reel_board/no-mt-no-timers/

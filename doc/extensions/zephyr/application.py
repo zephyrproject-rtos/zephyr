@@ -30,7 +30,7 @@ class ZephyrAppCommandsDirective(Directive):
 
     \:tool:
       which tool to use. Valid options are currently 'cmake', 'west' and 'all'.
-      The default is 'all'.
+      The default is 'west'.
 
     \:app:
       path to the application to build.
@@ -123,7 +123,7 @@ class ZephyrAppCommandsDirective(Directive):
 
         # Parse directive options.  Don't use os.path.sep or os.path.join here!
         # That would break if building the docs on Windows.
-        tool = self.options.get('tool', 'all').lower()
+        tool = self.options.get('tool', 'west').lower()
         app = self.options.get('app', None)
         zephyr_app = self.options.get('zephyr-app', None)
         cd_into = 'cd-into' in self.options

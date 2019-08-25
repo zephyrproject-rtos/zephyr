@@ -287,8 +287,8 @@ should know about.
 
 .. _build_an_application:
 
-Build an Application
-********************
+Building an Application
+***********************
 
 The Zephyr build system compiles and links all components of an application
 into a single application image that can be run on simulated hardware or real
@@ -303,15 +303,45 @@ The second stage runs the native build tool to actually build the
 source files and generate an image. To learn more about these concepts refer to
 the `CMake introduction`_ in the official CMake documentation.
 
-As described in :ref:`getting_started_cmake`, you can choose to invoke ``cmake``
-directly or to use :ref:`west <west>`, Zephyr's meta-tool, which itself invokes
-``cmake`` and the build tool behind the scenes.
-On Linux and macOS you can choose between the ``make`` and ``ninja``
+Although the default build tool in Zephyr is :std:ref:`west <west>`, Zephyr's
+meta-tool, which invokes ``cmake`` and the underlying build tool (``ninja`` or
+``make``) behind the scenes, you can also choose to invoke ``cmake`` directly if
+you prefer.  On Linux and macOS you can choose between the ``make`` and
+``ninja``
 generators (i.e. build tools), whereas on Windows you need to use ``ninja``,
 since ``make`` is not supported on this platform.
 For simplicity we will use ``ninja`` throughout this guide, and if you
 choose to use ``west build`` to build your application know that it will
 default to ``ninja`` under the hood.
+
+As an example, let's build the Hello World sample for the ``reel_board``:
+
+.. zephyr-app-commands::
+   :tool: all
+   :app: samples/hello_world
+   :board: reel_board
+   :goals: build
+
+On Linux and macOS, you can also build with ``make`` instead of ``ninja``:
+
+Using west:
+
+- to use ``make`` just once, add ``-- -G"Unix Makefiles"`` to the west build
+  command line; see the :ref:`west build <west-building-generator>`
+  documentation for an example.
+- to use ``make`` by default from now on, run ``west config build.generator
+  "Unix Makefiles"``.
+
+Using CMake directly:
+
+.. zephyr-app-commands::
+   :tool: cmake
+   :app: samples/hello_world
+   :generator: make
+   :host-os: unix
+   :board: reel_board
+   :goals: build
+
 
 Basics
 ======

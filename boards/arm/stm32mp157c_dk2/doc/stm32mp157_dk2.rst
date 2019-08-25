@@ -270,7 +270,6 @@ install `stm32mp1 developer package`_.
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :tool: all
       :board: stm32mp157_dk2
       :goals: debug
 

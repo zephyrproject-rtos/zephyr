@@ -157,23 +157,8 @@ Build and Run an Application
 Next, build a sample Zephyr application. You can then flash and run it on real
 hardware using any supported host system. Depending on your operating system,
 you can also run it in emulation with QEMU or as a native POSIX application.
-
-You can build applications by either running ``cmake`` directly or using the
-:ref:`west build <west-building>` convenience wrapper.
-
-.. _getting_started_cmake:
-
-A Brief Note on the Zephyr Build System
-=======================================
-
-The Zephyr build system uses `CMake`_. CMake creates build systems in different
-formats, called `generators`_. Zephyr supports the following generators:
-
- * ``Unix Makefiles``: Supported on UNIX-like platforms (Linux, macOS).
- * ``Ninja``: Supported on all platforms.
-
-You can use any supported generator when running ``cmake`` directly or using
-``west build``.
+Additional information about building applications can be found in the
+:ref:`build_an_application` section.
 
 Build Hello World
 =================
@@ -205,47 +190,24 @@ inside the ``zephyrproject`` directory for a list of supported boards.
 #. Build the Hello World sample for the ``reel_board``:
 
    .. zephyr-app-commands::
-      :tool: all
       :app: samples/hello_world
       :board: reel_board
       :goals: build
 
-   On Linux and macOS, you can also build with ``make`` instead of ``ninja``.
-
-   Using west:
-
-   - to use ``make`` just once, add ``-- -G"Unix Makefiles"`` to the west build
-     command line; see the :ref:`west build <west-building-generator>`
-     documentation for an example.
-   - to use ``make`` by default from now on, run ``west config build.generator
-     "Unix Makefiles"``.
-
-   Using CMake directly:
-
-   .. zephyr-app-commands::
-      :tool: cmake
-      :app: samples/hello_world
-      :generator: make
-      :host-os: unix
-      :board: reel_board
-      :goals: build
-
-Either way, the main build products will be in :file:`build/zephyr`;
+The main build products will be in :file:`build/zephyr`;
 :file:`build/zephyr/zephyr.elf` is the Hello World application binary in ELF
 format. Other binary formats, disassembly, and map files may be present
 depending on your board.
 
 The other sample applications in :zephyr_file:`samples` are documented in
 :ref:`samples-and-demos`. If you want to re-use an existing build directory for
-another board or application, you need to run the ``pristine`` build system
-target or pass ``-p=auto`` to ``west build``.
+another board or application, you need to pass ``-p=auto`` to ``west build``.
 
 Run the Application by Flashing to a Board
 ==========================================
 
 Most "real hardware" boards supported by Zephyr can be flashed by running
-``west flash``, or by running ``ninja flash`` from the build
-directory. However, this may require board-specific tool installation and
+``west flash``. However, this may require board-specific tool installation and
 configuration to work properly.
 
 See :ref:`application_run` in the Application Development Primer and your
@@ -261,7 +223,6 @@ To build and run Hello World using the x86 emulation board configuration
 (``qemu_x86``), type:
 
 .. zephyr-app-commands::
-   :tool: all
    :zephyr-app: samples/hello_world
    :host-os: unix
    :board: qemu_x86
@@ -284,7 +245,6 @@ need to install a 32 bit C library; see :ref:`native_posix_deps` for details.
 First, build Hello World for ``native_posix``.
 
 .. zephyr-app-commands::
-   :tool: all
    :zephyr-app: samples/hello_world
    :host-os: unix
    :board: native_posix
@@ -294,12 +254,7 @@ Next, run the application.
 
 .. code-block:: console
 
-   # With west:
    west build -t run
-
-   # With ninja:
-   ninja -Cbuild run
-
    # or just run zephyr.exe directly:
    ./build/zephyr/zephyr.exe
 
