@@ -240,7 +240,8 @@ static void usb_data_to_host(u16_t len)
 		u32_t chunk = usb_dev.data_buf_residue;
 
 		/*Always EP0 for control*/
-		usb_write(USB_CONTROL_IN_EP0, usb_dev.data_buf, chunk, &chunk);
+		usb_write(USB_CONTROL_IN_EP0, usb_dev.data_buf,
+			  usb_dev.data_buf_residue, &chunk);
 		usb_dev.data_buf += chunk;
 		usb_dev.data_buf_residue -= chunk;
 
@@ -249,10 +250,16 @@ static void usb_data_to_host(u16_t len)
 		 * last chunk is wMaxPacketSize long, to indicate the last
 		 * packet.
 		 */
-		if (!usb_dev.data_buf_residue && chunk == USB_MAX_CTRL_MPS
-		    && len > chunk) {
-			usb_dev.zlp_flag = true;
+		if (!usb_dev.data_buf_residue && len > usb_dev.data_buf_len) {
+			/* Send less data as requested during the Setup stage */
+			if (!(usb_dev.data_buf_len % USB_MAX_CTRL_MPS)) {
+				/* Transfers a zero-length packet */
+				LOG_DBG("ZLP, requested %u , length %u ",
+					len, usb_dev.data_buf_len);
+				usb_dev.zlp_flag = true;
+			}
 		}
+
 	} else {
 		usb_dev.zlp_flag = false;
 		usb_dc_ep_write(USB_CONTROL_IN_EP0, NULL, 0, NULL);
