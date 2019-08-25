@@ -146,7 +146,6 @@ device. Make sure ``nrfutil`` is installed before proceeding.
       :app: zephyr/samples/basic/blinky
       :board: nrf52840_pca10059
       :goals: build
-      :tool: west
 
 #. Package the application for the bootloader using ``nrfutil``:
 
@@ -193,7 +192,6 @@ to the zephyr repository on your computer.
       :app: mcuboot/boot/zephyr
       :board: nrf52840_pca10059
       :build-dir: mcuboot
-      :tool: west
       :goals: build
 
 #. Package the application for the bootloader using ``nrfutil``:
@@ -236,7 +234,6 @@ over Bluetooth).
       :app: zephyr/samples/subsys/mgmt/mcumgr/smp_svr
       :board: nrf52840_pca10059
       :build-dir: smp_svr
-      :tool: west
       :goals: build
 
 #. Sign ``smp_svr`` for chain-loading by MCUboot.
@@ -275,7 +272,6 @@ name.
       :board: nrf52840_pca10059
       :build-dir: blinky
       :goals: build
-      :tool: west
       :gen-args: -DCONFIG_BOOTLOADER_MCUBOOT=y
 
    You can then sign and flash it using the steps above.

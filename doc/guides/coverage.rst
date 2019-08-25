@@ -51,7 +51,6 @@ These steps will produce an HTML coverage report for a single application.
    enable the configuration manually:
 
    .. zephyr-app-commands::
-      :tool: all
       :board: mps2_an385
       :gen-args: -DCONFIG_COVERAGE=y
       :goals: build
@@ -110,7 +109,6 @@ You may postprocess these with your preferred tools. For example:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :tool: cmake
    :gen-args: -DCONFIG_COVERAGE=y
    :host-os: unix
    :board: native_posix
