@@ -615,8 +615,7 @@ static u8_t find_type_cb(const struct bt_gatt_attr *attr, void *user_data)
 		struct bt_uuid_128 ref_uuid;
 		struct bt_uuid_128 recvd_uuid;
 
-		if (!bt_uuid_create_le(&recvd_uuid.uuid, data->value,
-				       data->value_len)) {
+		if (!bt_uuid_create(&recvd_uuid.uuid, data->value, data->value_len)) {
 			BT_WARN("Unable to create UUID: size %u", data->value_len);
 			goto skip;
 		}
@@ -904,7 +903,7 @@ static u8_t att_read_type_req(struct bt_att *att, struct net_buf *buf)
 
 	start_handle = sys_le16_to_cpu(req->start_handle);
 	end_handle = sys_le16_to_cpu(req->end_handle);
-	if (!bt_uuid_create_le(&u.uuid, req->uuid, uuid_len)) {
+	if (!bt_uuid_create(&u.uuid, req->uuid, uuid_len)) {
 		return BT_ATT_ERR_UNLIKELY;
 	}
 
@@ -1211,7 +1210,7 @@ static u8_t att_read_group_req(struct bt_att *att, struct net_buf *buf)
 	start_handle = sys_le16_to_cpu(req->start_handle);
 	end_handle = sys_le16_to_cpu(req->end_handle);
 
-	if (!bt_uuid_create_le(&u.uuid, req->uuid, uuid_len)) {
+	if (!bt_uuid_create(&u.uuid, req->uuid, uuid_len)) {
 		return BT_ATT_ERR_UNLIKELY;
 	}
 

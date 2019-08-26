@@ -465,37 +465,23 @@ struct bt_uuid_128 {
  */
 int bt_uuid_cmp(const struct bt_uuid *u1, const struct bt_uuid *u2);
 
-/** @brief Copy UUID from packet data (LE) to internal bt_uuid.
- *
- *  Copy UUID from packet data in little endian format to internal bt_uuid
- *  format. The data_len parameter is used to determine whether the received
- *  UUID is of 16 or 128 bit format (length 2 or 16). 32 bit format is not
- *  allowed over the air.
- *
- *  @param uuid Pointer to where to write the Bluetooth UUID
- *  @param data pointer to location of the UUID in the packet
- *  @param data_len length of the UUID in the packet
- *
- *  @return true if the data was valid and the UUID was successfully created.
- */
-bool bt_uuid_create_le(struct bt_uuid *uuid, const u8_t *data, u8_t data_len);
-
 /** @brief Copy UUID from internal variable to internal bt_uuid.
  *
- *  Copy UUID from internal variable pointer to internal bt_uuid format.
- *  The data parameter points to a variable (originally stored in bt_uuid_128,
- *  bt_uuid_32 or bt_uuid_16 format) and therefore take into account of
- *  alignment of the val member.
+ *  Copy little endian format UUID from packet data or internal variable
+ *  pointer to internal bt_uuid format.The data parameter points to a variable
+ *  (originally stored in bt_uuid_128, bt_uuid_32 or bt_uuid_16 format)
+ *  and therefore take into account of alignment of the val member.
  *  The data_len parameter is used to determine whether to copy the UUID from
  *  16, 32 or 128 bit format (length 2, 4 or 16).
+ *  32 bit format is not allowed over the air.
  *
  *  @param uuid Pointer to where to write the Bluetooth UUID
- *  @param data pointer to location of the UUID variable
- *  @param data_len length of the UUID in the packet
+ *  @param data pointer to location of the UUID variable/in the packet
+ *  @param data_len length of the UUID variable/in the packet
  *
  *  @return true if the data was valid and the UUID was successfully created.
  */
-bool bt_uuid_create(struct bt_uuid *uuid, u8_t *data, u8_t data_len);
+bool bt_uuid_create(struct bt_uuid *uuid, const u8_t *data, u8_t data_len);
 
 #if defined(CONFIG_BT_DEBUG)
 /** @brief Convert Bluetooth UUID to string.
