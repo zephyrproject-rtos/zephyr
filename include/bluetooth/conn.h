@@ -321,7 +321,13 @@ typedef enum __packed {
  *
  *  @return 0 on success or negative error
  */
-int bt_conn_security(struct bt_conn *conn, bt_security_t sec);
+int bt_conn_set_security(struct bt_conn *conn, bt_security_t sec);
+
+static inline int __deprecated bt_conn_security(struct bt_conn *conn,
+						bt_security_t sec)
+{
+	return bt_conn_set_security(conn, sec);
+}
 
 /** @brief Get encryption key size.
  *

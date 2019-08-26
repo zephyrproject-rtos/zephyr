@@ -967,7 +967,8 @@ static int l2cap_change_security(struct bt_l2cap_le_chan *chan, u16_t err)
 		return -EINVAL;
 	}
 
-	return bt_conn_security(chan->chan.conn, chan->chan.required_sec_level);
+	return bt_conn_set_security(chan->chan.conn,
+				    chan->chan.required_sec_level);
 }
 
 static void le_conn_rsp(struct bt_l2cap *l2cap, u8_t ident,

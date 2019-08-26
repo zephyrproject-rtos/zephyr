@@ -555,7 +555,7 @@ enum l2cap_br_conn_security_result {
  * - channel connection process is on hold since there were valid security
  *   conditions triggering authentication indirectly in subcall.
  * Returns L2CAP_CONN_SECURITY_REJECT if:
- * - bt_conn_security API returns < 0.
+ * - bt_conn_set_security API returns < 0.
  */
 
 static enum l2cap_br_conn_security_result
@@ -595,13 +595,13 @@ l2cap_br_conn_security(struct bt_l2cap_chan *chan, const u16_t psm)
 		break;
 	}
 
-	check = bt_conn_security(chan->conn, chan->required_sec_level);
+	check = bt_conn_set_security(chan->conn, chan->required_sec_level);
 
 	/*
 	 * Check case when on existing connection security level already covers
 	 * channel (service) security requirements against link security and
-	 * bt_conn_security API returns 0 what implies also there was no need to
-	 * trigger authentication.
+	 * bt_conn_set_security API returns 0 what implies also there was no
+	 * need to trigger authentication.
 	 */
 	if (check == 0 &&
 	    chan->conn->sec_level >= chan->required_sec_level) {
