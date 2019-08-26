@@ -1728,7 +1728,7 @@ void bt_rfcomm_init(void)
 	static struct bt_l2cap_server server = {
 		.psm       = BT_L2CAP_PSM_RFCOMM,
 		.accept    = rfcomm_accept,
-		.sec_level = BT_SECURITY_LOW,
+		.sec_level = BT_SECURITY_L1,
 	};
 
 	bt_l2cap_br_server_register(&server);

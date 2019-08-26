@@ -645,11 +645,11 @@ int bt_l2cap_server_register(struct bt_l2cap_server *server)
 		server->psm = psm;
 	}
 
-	if (server->sec_level > BT_SECURITY_FIPS) {
+	if (server->sec_level > BT_SECURITY_L4) {
 		return -EINVAL;
-	} else if (server->sec_level < BT_SECURITY_LOW) {
+	} else if (server->sec_level < BT_SECURITY_L1) {
 		/* Level 0 is only applicable for BR/EDR */
-		server->sec_level = BT_SECURITY_LOW;
+		server->sec_level = BT_SECURITY_L1;
 	}
 
 	BT_DBG("PSM 0x%04x", server->psm);
@@ -947,18 +947,18 @@ static int l2cap_change_security(struct bt_l2cap_le_chan *chan, u16_t err)
 {
 	switch (err) {
 	case BT_L2CAP_LE_ERR_ENCRYPTION:
-		if (chan->chan.required_sec_level >= BT_SECURITY_MEDIUM) {
+		if (chan->chan.required_sec_level >= BT_SECURITY_L2) {
 			return -EALREADY;
 		}
-		chan->chan.required_sec_level = BT_SECURITY_MEDIUM;
+		chan->chan.required_sec_level = BT_SECURITY_L2;
 		break;
 	case BT_L2CAP_LE_ERR_AUTHENTICATION:
-		if (chan->chan.required_sec_level < BT_SECURITY_MEDIUM) {
-			chan->chan.required_sec_level = BT_SECURITY_MEDIUM;
-		} else if (chan->chan.required_sec_level < BT_SECURITY_HIGH) {
-			chan->chan.required_sec_level = BT_SECURITY_HIGH;
-		} else if (chan->chan.required_sec_level < BT_SECURITY_FIPS) {
-			chan->chan.required_sec_level = BT_SECURITY_FIPS;
+		if (chan->chan.required_sec_level < BT_SECURITY_L2) {
+			chan->chan.required_sec_level = BT_SECURITY_L2;
+		} else if (chan->chan.required_sec_level < BT_SECURITY_L3) {
+			chan->chan.required_sec_level = BT_SECURITY_L3;
+		} else if (chan->chan.required_sec_level < BT_SECURITY_L4) {
+			chan->chan.required_sec_level = BT_SECURITY_L4;
 		} else {
 			return -EALREADY;
 		}
@@ -1783,10 +1783,10 @@ int bt_l2cap_chan_connect(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 		return bt_l2cap_br_chan_connect(conn, chan, psm);
 	}
 
-	if (chan->required_sec_level > BT_SECURITY_FIPS) {
+	if (chan->required_sec_level > BT_SECURITY_L4) {
 		return -EINVAL;
-	} else if (chan->required_sec_level == BT_SECURITY_NONE) {
-		chan->required_sec_level = BT_SECURITY_LOW;
+	} else if (chan->required_sec_level == BT_SECURITY_L0) {
+		chan->required_sec_level = BT_SECURITY_L1;
 	}
 
 	return l2cap_le_connect(conn, BT_L2CAP_LE_CHAN(chan), psm);

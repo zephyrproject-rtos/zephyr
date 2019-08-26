@@ -37,7 +37,7 @@ static void connected(struct bt_conn *conn, u8_t err)
 
 	printk("Connected %s\n", addr);
 
-	if (bt_conn_security(conn, BT_SECURITY_FIPS)) {
+	if (bt_conn_security(conn, BT_SECURITY_L4)) {
 		printk("Failed to set security\n");
 	}
 }

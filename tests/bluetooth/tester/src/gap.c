@@ -596,7 +596,7 @@ static void pair(const u8_t *data, u16_t len)
 		goto rsp;
 	}
 
-	if (bt_conn_security(conn, BT_SECURITY_MEDIUM)) {
+	if (bt_conn_security(conn, BT_SECURITY_L2)) {
 		status = BTP_STATUS_FAILED;
 		bt_conn_unref(conn);
 		goto rsp;

@@ -739,7 +739,7 @@ static u8_t check_perm(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	mask &= attr->perm;
 	if (mask & BT_GATT_PERM_AUTHEN_MASK) {
 #if defined(CONFIG_BT_SMP)
-		if (conn->sec_level < BT_SECURITY_HIGH) {
+		if (conn->sec_level < BT_SECURITY_L3) {
 			return BT_ATT_ERR_AUTHENTICATION;
 		}
 #else
@@ -1588,12 +1588,12 @@ static int att_change_security(struct bt_conn *conn, u8_t err)
 
 	switch (err) {
 	case BT_ATT_ERR_INSUFFICIENT_ENCRYPTION:
-		if (conn->sec_level >= BT_SECURITY_MEDIUM)
+		if (conn->sec_level >= BT_SECURITY_L2)
 			return -EALREADY;
-		sec = BT_SECURITY_MEDIUM;
+		sec = BT_SECURITY_L2;
 		break;
 	case BT_ATT_ERR_AUTHENTICATION:
-		if (conn->sec_level < BT_SECURITY_MEDIUM) {
+		if (conn->sec_level < BT_SECURITY_L2) {
 			/* BLUETOOTH SPECIFICATION Version 4.2 [Vol 3, Part C]
 			 * page 375:
 			 *
@@ -1604,8 +1604,8 @@ static int att_change_security(struct bt_conn *conn, u8_t err)
 			 * "Insufficient Authentication" does not indicate that
 			 * MITM protection is required.
 			 */
-			sec = BT_SECURITY_MEDIUM;
-		} else if (conn->sec_level < BT_SECURITY_HIGH) {
+			sec = BT_SECURITY_L2;
+		} else if (conn->sec_level < BT_SECURITY_L3) {
 			/* BLUETOOTH SPECIFICATION Version 4.2 [Vol 3, Part C]
 			 * page 375:
 			 *
@@ -1619,8 +1619,8 @@ static int att_change_security(struct bt_conn *conn, u8_t err)
 			 * 'Insufficient Authentication' indicates that MITM
 			 * protection is required.
 			 */
-			sec = BT_SECURITY_HIGH;
-		} else if (conn->sec_level < BT_SECURITY_FIPS) {
+			sec = BT_SECURITY_L3;
+		} else if (conn->sec_level < BT_SECURITY_L4) {
 			/* BLUETOOTH SPECIFICATION Version 4.2 [Vol 3, Part C]
 			 * page 375:
 			 *
@@ -1630,7 +1630,7 @@ static int att_change_security(struct bt_conn *conn, u8_t err)
 			 * shall be rejected with the error code ''Insufficient
 			 * Authentication'.
 			 */
-			sec = BT_SECURITY_FIPS;
+			sec = BT_SECURITY_L4;
 		} else {
 			return -EALREADY;
 		}
@@ -2175,7 +2175,7 @@ static void bt_att_encrypt_change(struct bt_l2cap_chan *chan,
 		return;
 	}
 
-	if (conn->sec_level == BT_SECURITY_LOW) {
+	if (conn->sec_level == BT_SECURITY_L1) {
 		return;
 	}
 

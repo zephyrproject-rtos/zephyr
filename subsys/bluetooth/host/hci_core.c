@@ -1875,7 +1875,7 @@ static bool br_sufficient_key_size(struct bt_conn *conn)
 
 	BT_DBG("Encryption key size is %u", key_size);
 
-	if (conn->sec_level == BT_SECURITY_FIPS) {
+	if (conn->sec_level == BT_SECURITY_L4) {
 		return key_size == BT_HCI_ENCRYPTION_KEY_SIZE_MAX;
 	}
 
@@ -1885,23 +1885,23 @@ static bool br_sufficient_key_size(struct bt_conn *conn)
 static bool update_sec_level_br(struct bt_conn *conn)
 {
 	if (!conn->encrypt) {
-		conn->sec_level = BT_SECURITY_LOW;
+		conn->sec_level = BT_SECURITY_L1;
 		return true;
 	}
 
 	if (conn->br.link_key) {
 		if (conn->br.link_key->flags & BT_LINK_KEY_AUTHENTICATED) {
 			if (conn->encrypt == 0x02) {
-				conn->sec_level = BT_SECURITY_FIPS;
+				conn->sec_level = BT_SECURITY_L4;
 			} else {
-				conn->sec_level = BT_SECURITY_HIGH;
+				conn->sec_level = BT_SECURITY_L3;
 			}
 		} else {
-			conn->sec_level = BT_SECURITY_MEDIUM;
+			conn->sec_level = BT_SECURITY_L2;
 		}
 	} else {
 		BT_WARN("No BR/EDR link key found");
-		conn->sec_level = BT_SECURITY_MEDIUM;
+		conn->sec_level = BT_SECURITY_L2;
 	}
 
 	if (!br_sufficient_key_size(conn)) {
@@ -2146,7 +2146,7 @@ static void link_key_req(struct net_buf *buf)
 	 * in database not covers requested security level.
 	 */
 	if (!(conn->br.link_key->flags & BT_LINK_KEY_AUTHENTICATED) &&
-	    conn->required_sec_level > BT_SECURITY_MEDIUM) {
+	    conn->required_sec_level > BT_SECURITY_L2) {
 		link_key_neg_reply(&evt->bdaddr);
 		bt_conn_unref(conn);
 		return;
@@ -3049,19 +3049,19 @@ done:
 static void update_sec_level(struct bt_conn *conn)
 {
 	if (!conn->encrypt) {
-		conn->sec_level = BT_SECURITY_LOW;
+		conn->sec_level = BT_SECURITY_L1;
 		return;
 	}
 
 	if (conn->le.keys && (conn->le.keys->flags & BT_KEYS_AUTHENTICATED)) {
 		if (conn->le.keys->flags & BT_KEYS_SC &&
 		    conn->le.keys->enc_size == BT_SMP_MAX_ENC_KEY_SIZE) {
-			conn->sec_level = BT_SECURITY_FIPS;
+			conn->sec_level = BT_SECURITY_L4;
 		} else {
-			conn->sec_level = BT_SECURITY_HIGH;
+			conn->sec_level = BT_SECURITY_L3;
 		}
 	} else {
-		conn->sec_level = BT_SECURITY_MEDIUM;
+		conn->sec_level = BT_SECURITY_L2;
 	}
 
 	if (conn->required_sec_level > conn->sec_level) {
