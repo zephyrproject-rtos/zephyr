@@ -81,6 +81,8 @@ struct uarte_async_cb {
 
 	bool rx_enabled;
 	bool hw_rx_counting;
+	/* Flag to ensure that RX timeout won't be executed during ENDRX ISR */
+	volatile bool is_in_irq;
 };
 #endif
 
@@ -588,6 +590,16 @@ static void rx_timeout(struct k_timer *timer)
 	const struct uarte_nrfx_config *cfg = get_dev_config(dev);
 	u32_t read;
 
+	if (data->async->is_in_irq) {
+		return;
+	}
+
+	/* Disable ENDRX ISR, in case ENDRX event is generated, it will be
+	 * handled after rx_timeout routine is complete.
+	 */
+	nrf_uarte_int_disable(get_uarte_instance(dev),
+			      NRF_UARTE_INT_ENDRX_MASK);
+
 	if (hw_rx_counting_enabled(data)) {
 		read = nrfx_timer_capture(&cfg->timer, 0);
 	} else {
@@ -623,6 +635,9 @@ static void rx_timeout(struct k_timer *timer)
 				data->async->rx_timeout_slab;
 		}
 	}
+
+	nrf_uarte_int_enable(get_uarte_instance(dev),
+			     NRF_UARTE_INT_ENDRX_MASK);
 }
 
 #define UARTE_ERROR_FROM_MASK(mask)					\
@@ -667,6 +682,9 @@ static void endrx_isr(struct device *dev)
 	if (!data->async->rx_enabled) {
 		return;
 	}
+
+	data->async->is_in_irq = true;
+
 	if (data->async->rx_next_buf) {
 		nrf_uarte_task_trigger(uarte, NRF_UARTE_TASK_STARTRX);
 	}
@@ -708,6 +726,8 @@ static void endrx_isr(struct device *dev)
 		evt.type = UART_RX_DISABLED;
 		user_callback(dev, &evt);
 	}
+
+	data->async->is_in_irq = false;
 }
 
 /* This handler is called when the reception is interrupted, in contrary to
