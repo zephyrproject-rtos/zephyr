@@ -37,6 +37,11 @@ config 2ND_LEVEL_INTERRUPTS
 config DYNAMIC_INTERRUPTS
 	default y
 
+# Work queues in SOF needs microsecond delays.
+# 100000 = 10us per tick
+config SYS_CLOCK_TICKS_PER_SEC
+	default 100000
+
 endif
 
 endif
