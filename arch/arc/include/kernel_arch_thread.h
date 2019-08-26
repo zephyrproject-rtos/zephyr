@@ -20,8 +20,7 @@
 #define ZEPHYR_ARCH_ARC_INCLUDE_KERNEL_ARCH_THREAD_H_
 
 /*
- * Reason a thread has relinquished control: threads can only be in the NONE
- * or COOP state, threads can be one in the four.
+ * Reason a thread has relinquished control.
  */
 #define _CAUSE_NONE 0
 #define _CAUSE_COOP 1
