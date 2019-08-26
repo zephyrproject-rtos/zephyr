@@ -38,6 +38,20 @@ static void hpet_isr(void *arg)
 	ARG_UNUSED(arg);
 	k_spinlock_key_t key = k_spin_lock(&lock);
 	u32_t now = MAIN_COUNTER_REG;
+
+	if (IS_ENABLED(CONFIG_SMP) &&
+	    IS_ENABLED(CONFIG_QEMU_TARGET)) {
+		/* Qemu in SMP mode has observed the clock going
+		 * "backwards" relative to interrupts already received
+		 * on the other CPU, despite the HPET being
+		 * theoretically a global device.
+		 */
+		s32_t diff = (s32_t)(now - last_count);
+
+		if (last_count && diff < 0) {
+			now = last_count;
+		}
+	}
 	u32_t dticks = (now - last_count) / cyc_per_tick;
 
 	last_count += dticks * cyc_per_tick;
