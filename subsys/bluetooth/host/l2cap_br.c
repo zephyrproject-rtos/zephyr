@@ -759,8 +759,7 @@ static void l2cap_br_conn_req(struct bt_l2cap_br *l2cap, u8_t ident,
 	if (result != BT_L2CAP_BR_SUCCESS) {
 		/* Disconnect link when security rules were violated */
 		if (result == BT_L2CAP_BR_ERR_SEC_BLOCK) {
-			bt_conn_disconnect(conn,
-					   BT_HCI_ERR_AUTHENTICATION_FAIL);
+			bt_conn_disconnect(conn, BT_HCI_ERR_AUTH_FAIL);
 		}
 
 		return;
