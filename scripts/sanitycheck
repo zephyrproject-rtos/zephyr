@@ -2258,11 +2258,12 @@ class TestSuite:
             print(str(e))
             sys.exit(2)
 
+        total_tests = 0
         with open(LAST_SANITY, "r") as fp:
             cr = csv.DictReader(fp)
             instance_list = []
             for row in cr:
-
+                total_tests += 1
                 if row["passed"] == "True":
                     continue
                 test = row["test"]
@@ -2272,8 +2273,8 @@ class TestSuite:
                 instance_list.append(instance)
             self.add_instances(instance_list)
 
-        print(len(self.instances))
-
+        tests_to_run = len(self.instances)
+        info("%d tests passed already, retyring %d tests" %(total_tests - tests_to_run, tests_to_run))
 
     def load_from_file(self, file):
         try:
@@ -2296,7 +2297,6 @@ class TestSuite:
             self.add_instances(instance_list)
 
     def apply_filters(self):
-
 
         toolchain = self.get_toolchain()
 
@@ -2889,6 +2889,10 @@ Artificially long but functional example:
         action="store_true",
         help="Run only those tests that failed the previous sanity check "
         "invocation.")
+
+    parser.add_argument(
+        "--retry-failed", type=int,
+        help="Retry tests that failed number of times specified.")
     parser.add_argument(
         "-c", "--config", action="append",
         help="Specify platform configuration values filtering. This can be "
