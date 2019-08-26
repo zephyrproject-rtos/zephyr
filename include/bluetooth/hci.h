@@ -108,7 +108,7 @@ static inline bool bt_addr_le_is_identity(const bt_addr_le_t *addr)
 #define BT_HCI_ERR_UNKNOWN_CONN_ID              0x02
 #define BT_HCI_ERR_HW_FAILURE                   0x03
 #define BT_HCI_ERR_PAGE_TIMEOUT                 0x04
-#define BT_HCI_ERR_AUTHENTICATION_FAIL          0x05
+#define BT_HCI_ERR_AUTH_FAIL                    0x05
 #define BT_HCI_ERR_PIN_OR_KEY_MISSING           0x06
 #define BT_HCI_ERR_MEM_CAPACITY_EXCEEDED        0x07
 #define BT_HCI_ERR_CONN_TIMEOUT                 0x08
@@ -140,6 +140,8 @@ static inline bool bt_addr_le_is_identity(const bt_addr_le_t *addr)
 #define BT_HCI_ERR_ADV_TIMEOUT                  0x3c
 #define BT_HCI_ERR_TERM_DUE_TO_MIC_FAIL         0x3d
 #define BT_HCI_ERR_CONN_FAIL_TO_ESTAB           0x3e
+
+#define BT_HCI_ERR_AUTHENTICATION_FAIL __DEPRECATED_MACRO BT_HCI_ERR_AUTH_FAIL
 
 /* EIR/AD data type definitions */
 #define BT_DATA_FLAGS                   0x01 /* AD flags */

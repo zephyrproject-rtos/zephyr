@@ -2457,7 +2457,7 @@ int bt_conn_auth_cancel(struct bt_conn *conn)
 			return ssp_passkey_neg_reply(conn);
 		case PASSKEY_DISPLAY:
 			return bt_conn_disconnect(conn,
-						  BT_HCI_ERR_AUTHENTICATION_FAIL);
+						  BT_HCI_ERR_AUTH_FAIL);
 		case LEGACY:
 			return pin_code_neg_reply(&conn->br.dst);
 		default:

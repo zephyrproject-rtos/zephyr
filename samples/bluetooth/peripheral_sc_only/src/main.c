@@ -110,7 +110,7 @@ static void pairing_complete(struct bt_conn *conn, bool bonded)
 static void pairing_failed(struct bt_conn *conn, enum bt_security_err reason)
 {
 	printk("Pairing Failed (%d). Disconnecting.\n", reason);
-	bt_conn_disconnect(conn, BT_HCI_ERR_AUTHENTICATION_FAIL);
+	bt_conn_disconnect(conn, BT_HCI_ERR_AUTH_FAIL);
 }
 
 static struct bt_conn_auth_cb auth_cb_display = {

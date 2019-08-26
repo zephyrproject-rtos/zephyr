@@ -345,7 +345,7 @@ enum bt_security_err {
 	BT_SECURITY_ERR_SUCCESS,
 
 	/** Authentication failed. */
-	BT_SECURITY_ERR_AUTHENTICATION_FAIL,
+	BT_SECURITY_ERR_AUTH_FAIL,
 
 	/** PIN or encryption key is missing. */
 	BT_SECURITY_ERR_PIN_OR_KEY_MISSING,
@@ -354,7 +354,7 @@ enum bt_security_err {
 	BT_SECURITY_ERR_OOB_NOT_AVAILABLE,
 
 	/** The requested security level could not be reached. */
-	BT_SECURITY_ERR_AUTHENTICATION_REQUIREMENT,
+	BT_SECURITY_ERR_AUTH_REQUIREMENT,
 
 	/** Pairing is not supported */
 	BT_SECURITY_ERR_PAIR_NOT_SUPPORTED,

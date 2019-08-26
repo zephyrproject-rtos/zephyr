@@ -1685,8 +1685,8 @@ static enum bt_security_err security_err_get(u8_t hci_err)
 	switch (hci_err) {
 	case BT_HCI_ERR_SUCCESS:
 		return BT_SECURITY_ERR_SUCCESS;
-	case BT_HCI_ERR_AUTHENTICATION_FAIL:
-		return BT_SECURITY_ERR_AUTHENTICATION_FAIL;
+	case BT_HCI_ERR_AUTH_FAIL:
+		return BT_SECURITY_ERR_AUTH_FAIL;
 	case BT_HCI_ERR_PIN_OR_KEY_MISSING:
 		return BT_SECURITY_ERR_PIN_OR_KEY_MISSING;
 	case BT_HCI_ERR_PAIRING_NOT_SUPPORTED:
@@ -1906,13 +1906,13 @@ static bool update_sec_level_br(struct bt_conn *conn)
 
 	if (!br_sufficient_key_size(conn)) {
 		BT_ERR("Encryption key size is not sufficient");
-		bt_conn_disconnect(conn, BT_HCI_ERR_AUTHENTICATION_FAIL);
+		bt_conn_disconnect(conn, BT_HCI_ERR_AUTH_FAIL);
 		return false;
 	}
 
 	if (conn->required_sec_level > conn->sec_level) {
 		BT_ERR("Failed to set required security level");
-		bt_conn_disconnect(conn, BT_HCI_ERR_AUTHENTICATION_FAIL);
+		bt_conn_disconnect(conn, BT_HCI_ERR_AUTH_FAIL);
 		return false;
 	}
 
@@ -2272,7 +2272,7 @@ static void ssp_complete(struct net_buf *buf)
 
 	bt_conn_ssp_auth_complete(conn, security_err_get(evt->status));
 	if (evt->status) {
-		bt_conn_disconnect(conn, BT_HCI_ERR_AUTHENTICATION_FAIL);
+		bt_conn_disconnect(conn, BT_HCI_ERR_AUTH_FAIL);
 	}
 
 	bt_conn_unref(conn);
@@ -3066,7 +3066,7 @@ static void update_sec_level(struct bt_conn *conn)
 
 	if (conn->required_sec_level > conn->sec_level) {
 		BT_ERR("Failed to set required security level");
-		bt_conn_disconnect(conn, BT_HCI_ERR_AUTHENTICATION_FAIL);
+		bt_conn_disconnect(conn, BT_HCI_ERR_AUTH_FAIL);
 	}
 }
 #endif /* CONFIG_BT_SMP */
