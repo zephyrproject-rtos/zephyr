@@ -1,0 +1,54 @@
+diff --git a/cmake/emu/qemu.cmake b/cmake/emu/qemu.cmake
+index 441f7f334c..763ec49355 100644
+--- a/cmake/emu/qemu.cmake
++++ b/cmake/emu/qemu.cmake
+@@ -291,4 +291,16 @@ foreach(target ${qemu_targets})
+   if(DEFINED QEMU_KERNEL_FILE)
+     add_dependencies(${target} qemu_kernel_target)
+   endif()
++
++  # Write out the qemu command to a file for later tools.  Note this
++  # doesn't bother with QEMU_KERNEL_OPTION or PRE_QEMU_COMMANDS, which
++  # are $<> variables that expand only in the generated makefiles,
++  # sigh.  That's OK, I know what's what.  There are a few other
++  # unexpanded variables (AFAICT cmake does that automatically,
++  # leaving the ${} in place if it doesn't find the variable and then
++  # translating the logic to makish or ninjese later) in there too,
++  # but we'll just deal...
++  string(REPLACE ";" " " qemu_cmd
++    "${QEMU} ${QEMU_FLAGS_${ARCH}} ${QEMU_FLAGS} ${QEMU_EXTRA_FLAGS} ${QEMU_SMP_FLAGS} ${MORE_FLAGS_FOR_${target}}")
++  file(WRITE ${CMAKE_BINARY_DIR}/qemu-cmd-${target} ${qemu_cmd})
+ endforeach()
+diff --git a/scripts/sanitycheck b/scripts/sanitycheck
+index c4c2ae7456..418a24e0fc 100755
+--- a/scripts/sanitycheck
++++ b/scripts/sanitycheck
+@@ -1351,6 +1351,11 @@ class MakeGenerator:
+         do_run = not do_build_only and not options.cmake_only
+         skip_slow = ti.test.slow and not options.enable_slow
+ 
++        if ti.platform.qemu_support:
++            global qemu_dirs
++            qemu_dirs.write(ti.outdir + "\n");
++            qemu_dirs.flush()
++
+         # FIXME: Need refactoring and cleanup
+         type = None
+         if ti.platform.qemu_support and do_run:
+@@ -3304,6 +3309,7 @@ def main():
+     global VERBOSE, INLINE_LOGS, JOBS, log_file
+     global options
+     global run_individual_tests
++    global qemu_dirs
+ 
+     # XXX: Workaround for #17239
+     resource.setrlimit(resource.RLIMIT_NOFILE, (4096, 4096))
+@@ -3363,6 +3369,8 @@ def main():
+         info("Cleaning output directory " + options.outdir)
+         shutil.rmtree(options.outdir)
+ 
++    qemu_dirs = open("qemu_dirs.txt", "w")
++        
+     if not options.testcase_root:
+         options.testcase_root = [os.path.join(ZEPHYR_BASE, "tests"),
+                               os.path.join(ZEPHYR_BASE, "samples")]
