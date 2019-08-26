@@ -43,4 +43,6 @@ void test_gpio_callback_add_remove(void);
 void test_gpio_callback_self_remove(void);
 void test_gpio_callback_enable_disable(void);
 
+void test_gpio_port(void);
+
 #endif /* __TEST_GPIO_H__ */
