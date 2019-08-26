@@ -116,11 +116,6 @@ SECTION_FUNC(TEXT, _rirq_exit)
 	ld_s r2, [r1, _kernel_offset_to_current]
 
 	/*
-	 * Lock interrupts to ensure kernel queues do not change from this
-	 * point on until return from interrupt.
-	 */
-
-	/*
 	 * Both (a)reschedule and (b)non-reschedule cases need to load the
 	 * current thread's stack, but don't have to use it until the decision
 	 * is taken: load the delay slots with the 'load stack pointer'
