@@ -38,6 +38,34 @@ extern "C" {
  * @{
  */
 
+/*
+ * Assigned pin values in hexadecimal form, to assist in decoding flag
+ * values:
+ *
+ *   FieldMask  Bit(s)      Role
+ * 0x 0000 0001   0      ACTIVE_HIGH
+ * 0x 0000 0002   1      SINGLE_ENDED
+ * 0x 0000 0004   2      OPEN_DRAIN
+ * 0x 0000 0008   3      unused
+ * 0x 0000 0010   4      PULL_UP
+ * 0x 0000 0020   5      PULL_DOWN
+ * 0x 0000 0040   6      unused
+ * 0x 0000 0080   7      unused
+ * 0x 0000 0100   8      INPUT
+ * 0x 0000 0200   9      OUTPUT
+ * 0x 0000 0400  10      OUTPUT_INIT_LOW
+ * 0x 0000 0800  11      OUTPUT_INIT_HIGH
+ * 0x 0000 1000  12      INT_ENABLE
+ * 0x 0000 2000  13      INT_LEVELS_LOGICAL
+ * 0x 0000 4000  14      INT_EDGE
+ * 0x 0000 8000  15      INT_LOW_0
+ * 0x 0001 0000  16      INT_HIGH_1
+ * 0x 0002 0000  17      INT_DEBOUNCE
+ * 0x 000C 0000  18..19  DS_LOW
+ * 0x 0030 0000  20..21  DS_LOW
+ * 0x FFC0 0000  22..31  unused
+ */
+
 /** Enables pin as input. */
 #define GPIO_INPUT              (1U << 8)
 
