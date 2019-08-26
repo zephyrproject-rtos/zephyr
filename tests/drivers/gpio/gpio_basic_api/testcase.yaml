@@ -3,4 +3,6 @@ tests:
     tags: drivers gpio
     depends_on: gpio
     harness: loopback # see documentation
-    filter: DT_ALIAS_GPIO_0_LABEL or DT_ALIAS_GPIO_1_LABEL
+    min_flash: 34
+    filter: DT_INST_0_TEST_GPIO_BASIC_API
+      or DT_ALIAS_GPIO_0_LABEL or DT_ALIAS_GPIO_1_LABEL
