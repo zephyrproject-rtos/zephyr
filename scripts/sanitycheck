@@ -1617,10 +1617,10 @@ class CMake():
         if p.returncode == 0:
             msg = "Finished building %s for %s" %(self.source_dir, self.platform.name)
 
-            results = {'msg': msg, "returncode": p.returncode, "instance": self.instance}
 
             self.instance.status = "passed"
             self.instance.reason = ""
+            results = {'msg': msg, "returncode": p.returncode, "instance": self.instance}
 
             if out:
                 log_msg = out.decode(sys.getdefaultencoding())
@@ -1682,6 +1682,8 @@ class CMake():
             results = {'msg': msg, 'filter': filter_results}
 
         else:
+            self.instance.status = "failed"
+            self.instance.reason = "Build failure"
             results = {"returncode": p.returncode}
 
 
@@ -1864,6 +1866,14 @@ class ProjectBuilder(CMake):
                         COLOR_NORMAL,
                         instance.reason), False)
 
+                # FIXME
+                h_log = "{}/handler.log".format(instance.build_dir)
+                b_log = "{}/build.log".format(instance.build_dir)
+                if os.path.exists(h_log):
+                    log_info("{}".format(h_log))
+                else:
+                    log_info("{}".format(b_log))
+
         else:
             status = COLOR_GREEN + "PASSED" + COLOR_NORMAL
 
@@ -1915,7 +1925,6 @@ class ProjectBuilder(CMake):
                                      "sanitycheck", "testcase_extra.conf")))
 
         results = self.run_cmake(args)
-
         return results
 
     def build(self):
