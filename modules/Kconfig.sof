@@ -85,4 +85,10 @@ config SOF_STATIC_PIPELINE
 	help
 	  Enable static pipeline
 
+config SOF_USE_DMIC
+	bool "Enable DMIC"
+	default n
+	help
+	  Enable DMIC
+
 endif #SOF
