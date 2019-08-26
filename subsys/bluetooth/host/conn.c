@@ -628,7 +628,7 @@ int bt_conn_auth_pincode_entry(struct bt_conn *conn, const char *pin)
 		return -EINVAL;
 	}
 
-	if (conn->required_sec_level == BT_SECURITY_HIGH && len < 16) {
+	if (conn->required_sec_level == BT_SECURITY_L3 && len < 16) {
 		BT_WARN("PIN code for %s is not 16 bytes wide",
 			bt_addr_str(&conn->br.dst));
 		return -EPERM;
@@ -651,7 +651,7 @@ void bt_conn_pin_code_req(struct bt_conn *conn)
 	if (bt_auth && bt_auth->pincode_entry) {
 		bool secure = false;
 
-		if (conn->required_sec_level == BT_SECURITY_HIGH) {
+		if (conn->required_sec_level == BT_SECURITY_L3) {
 			secure = true;
 		}
 
@@ -767,7 +767,7 @@ void bt_conn_ssp_auth(struct bt_conn *conn, u32_t passkey)
 	 * If local required security is HIGH then MITM is mandatory.
 	 * MITM protection is no achievable when SSP 'justworks' is applied.
 	 */
-	if (conn->required_sec_level > BT_SECURITY_MEDIUM &&
+	if (conn->required_sec_level > BT_SECURITY_L2 &&
 	    conn->br.pairing_method == JUST_WORKS) {
 		BT_DBG("MITM protection infeasible for required security");
 		ssp_confirm_neg_reply(conn);
@@ -1003,12 +1003,12 @@ static int start_security(struct bt_conn *conn)
 			return -EBUSY;
 		}
 
-		if (conn->required_sec_level > BT_SECURITY_HIGH) {
+		if (conn->required_sec_level > BT_SECURITY_L3) {
 			return -ENOTSUP;
 		}
 
 		if (bt_conn_get_io_capa() == BT_IO_NO_INPUT_OUTPUT &&
-		    conn->required_sec_level > BT_SECURITY_MEDIUM) {
+		    conn->required_sec_level > BT_SECURITY_L2) {
 			return -EINVAL;
 		}
 
@@ -1049,7 +1049,7 @@ int bt_conn_security(struct bt_conn *conn, bt_security_t sec)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_SMP_SC_ONLY) &&
-	    sec < BT_SECURITY_FIPS) {
+	    sec < BT_SECURITY_L4) {
 		return -EOPNOTSUPP;
 	}
 
@@ -1513,8 +1513,8 @@ struct bt_conn *bt_conn_add_le(const bt_addr_le_t *peer)
 
 	bt_addr_le_copy(&conn->le.dst, peer);
 #if defined(CONFIG_BT_SMP)
-	conn->sec_level = BT_SECURITY_LOW;
-	conn->required_sec_level = BT_SECURITY_LOW;
+	conn->sec_level = BT_SECURITY_L1;
+	conn->required_sec_level = BT_SECURITY_L1;
 #endif /* CONFIG_BT_SMP */
 	conn->type = BT_CONN_TYPE_LE;
 	conn->le.interval_min = BT_GAP_INIT_CONN_INT_MIN;

@@ -278,16 +278,23 @@ struct bt_conn *bt_conn_create_slave_le(const bt_addr_le_t *peer,
 
 /** Security level. */
 typedef enum __packed {
-	/** Only for BR/EDR special cases, like SDP */
-	BT_SECURITY_NONE,
-	/** No encryption and no authentication. */
-	BT_SECURITY_LOW,
-	/** Encryption and no authentication (no MITM). */
-	BT_SECURITY_MEDIUM,
-	/** Encryption and authentication (MITM). */
-	BT_SECURITY_HIGH,
-	/** Authenticated Secure Connections */
-	BT_SECURITY_FIPS,
+	/** Level 0: Only for BR/EDR special cases, like SDP */
+	BT_SECURITY_L0,
+	/** Level 1: No encryption and no authentication. */
+	BT_SECURITY_L1,
+	/** Level 2: Encryption and no authentication (no MITM). */
+	BT_SECURITY_L2,
+	/** Level 3: Encryption and authentication (MITM). */
+	BT_SECURITY_L3,
+	/** Level 4: Authenticated Secure Connections and 128-bit key. */
+	BT_SECURITY_L4,
+
+	BT_SECURITY_NONE   __deprecated = BT_SECURITY_L0,
+	BT_SECURITY_LOW    __deprecated = BT_SECURITY_L1,
+	BT_SECURITY_MEDIUM __deprecated = BT_SECURITY_L2,
+	BT_SECURITY_HIGH   __deprecated = BT_SECURITY_L3,
+	BT_SECURITY_FIPS   __deprecated = BT_SECURITY_L4,
+
 	/** Bit to force new pairing procedure, bit-wise OR with requested
 	 *  security level.
 	 */
