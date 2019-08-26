@@ -2786,14 +2786,19 @@ static inline void event_len_prep(struct ll_conn *conn)
 		pdu_ctrl_tx->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_LENGTH_REQ;
 
 		lr = &pdu_ctrl_tx->llctrl.length_req;
-		lr->max_rx_octets = LL_LENGTH_OCTETS_RX_MAX;
-		lr->max_tx_octets = conn->default_tx_octets;
+		lr->max_rx_octets = sys_cpu_to_le16(LL_LENGTH_OCTETS_RX_MAX);
+		lr->max_tx_octets = sys_cpu_to_le16(conn->default_tx_octets);
 #if !defined(CONFIG_BT_CTLR_PHY)
-		lr->max_rx_time = PKT_US(LL_LENGTH_OCTETS_RX_MAX, 0);
-		lr->max_tx_time = PKT_US(conn->default_tx_octets, 0);
+		lr->max_rx_time =
+			sys_cpu_to_le16(PKT_US(LL_LENGTH_OCTETS_RX_MAX, 0));
+		lr->max_tx_time =
+			sys_cpu_to_le16(PKT_US(conn->default_tx_octets, 0));
 #else /* CONFIG_BT_CTLR_PHY */
-		lr->max_rx_time = PKT_US(LL_LENGTH_OCTETS_RX_MAX, BIT(2));
-		lr->max_tx_time = conn->default_tx_time;
+		lr->max_rx_time =
+			sys_cpu_to_le16(PKT_US(LL_LENGTH_OCTETS_RX_MAX,
+					       BIT(2)));
+		lr->max_tx_time =
+			sys_cpu_to_le16(conn->default_tx_time);
 #endif /* CONFIG_BT_CTLR_PHY */
 
 		ctrl_tx_enqueue(conn, tx);
@@ -2844,14 +2849,16 @@ static inline void event_len_prep(struct ll_conn *conn)
 		pdu_ctrl_rx->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_LENGTH_RSP;
 
 		lr = &pdu_ctrl_rx->llctrl.length_rsp;
-		lr->max_rx_octets = lll->max_rx_octets;
-		lr->max_tx_octets = lll->max_tx_octets;
+		lr->max_rx_octets = sys_cpu_to_le16(lll->max_rx_octets);
+		lr->max_tx_octets = sys_cpu_to_le16(lll->max_tx_octets);
 #if !defined(CONFIG_BT_CTLR_PHY)
-		lr->max_rx_time = PKT_US(lll->max_rx_octets, 0);
-		lr->max_tx_time = PKT_US(lll->max_tx_octets, 0);
+		lr->max_rx_time =
+			sys_cpu_to_le16(PKT_US(lll->max_rx_octets, 0));
+		lr->max_tx_time =
+			sys_cpu_to_le16(PKT_US(lll->max_tx_octets, 0));
 #else /* CONFIG_BT_CTLR_PHY */
-		lr->max_rx_time = lll->max_rx_time;
-		lr->max_tx_time = lll->max_tx_time;
+		lr->max_rx_time = sys_cpu_to_le16(lll->max_rx_time);
+		lr->max_tx_time = sys_cpu_to_le16(lll->max_tx_time);
 #endif /* CONFIG_BT_CTLR_PHY */
 
 		/* enqueue rx node towards Thread */
@@ -3717,14 +3724,16 @@ static inline void reject_ind_dle_recv(struct ll_conn *conn,
 		pdu_rx->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_LENGTH_RSP;
 
 		lr = (void *)&pdu_rx->llctrl.length_req;
-		lr->max_rx_octets = conn->lll.max_rx_octets;
-		lr->max_tx_octets = conn->lll.max_tx_octets;
+		lr->max_rx_octets = sys_cpu_to_le16(conn->lll.max_rx_octets);
+		lr->max_tx_octets = sys_cpu_to_le16(conn->lll.max_tx_octets);
 #if !defined(CONFIG_BT_CTLR_PHY)
-		lr->max_rx_time = PKT_US(conn->lll.max_rx_octets, 0);
-		lr->max_tx_time = PKT_US(conn->lll.max_tx_octets, 0);
+		lr->max_rx_time =
+			sys_cpu_to_le16(PKT_US(conn->lll.max_rx_octets, 0));
+		lr->max_tx_time =
+			sys_cpu_to_le16(PKT_US(conn->lll.max_tx_octets, 0));
 #else /* CONFIG_BT_CTLR_PHY */
-		lr->max_rx_time = conn->lll.max_rx_time;
-		lr->max_tx_time = conn->lll.max_tx_time;
+		lr->max_rx_time = sys_cpu_to_le16(conn->lll.max_rx_time);
+		lr->max_tx_time = sys_cpu_to_le16(conn->lll.max_tx_time);
 #endif /* CONFIG_BT_CTLR_PHY */
 
 		return;
@@ -3854,15 +3863,19 @@ static void length_resp_send(struct ll_conn *conn, struct node_tx *tx,
 	pdu_tx->len = offsetof(struct pdu_data_llctrl, length_rsp) +
 		sizeof(struct pdu_data_llctrl_length_rsp);
 	pdu_tx->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_LENGTH_RSP;
-	pdu_tx->llctrl.length_rsp.max_rx_octets = eff_rx_octets;
-	pdu_tx->llctrl.length_rsp.max_tx_octets = eff_tx_octets;
+	pdu_tx->llctrl.length_rsp.max_rx_octets =
+		sys_cpu_to_le16(eff_rx_octets);
+	pdu_tx->llctrl.length_rsp.max_tx_octets =
+		sys_cpu_to_le16(eff_tx_octets);
 
 #if !defined(CONFIG_BT_CTLR_PHY)
-	pdu_tx->llctrl.length_rsp.max_rx_time = PKT_US(eff_rx_octets, 0);
-	pdu_tx->llctrl.length_rsp.max_tx_time = PKT_US(eff_tx_octets, 0);
+	pdu_tx->llctrl.length_rsp.max_rx_time =
+		sys_cpu_to_le16(PKT_US(eff_rx_octets, 0));
+	pdu_tx->llctrl.length_rsp.max_tx_time =
+		sys_cpu_to_le16(PKT_US(eff_tx_octets, 0));
 #else /* CONFIG_BT_CTLR_PHY */
-	pdu_tx->llctrl.length_rsp.max_rx_time = eff_rx_time;
-	pdu_tx->llctrl.length_rsp.max_tx_time = eff_tx_time;
+	pdu_tx->llctrl.length_rsp.max_rx_time = sys_cpu_to_le16(eff_rx_time);
+	pdu_tx->llctrl.length_rsp.max_tx_time = sys_cpu_to_le16(eff_tx_time);
 #endif /* CONFIG_BT_CTLR_PHY */
 
 	ctrl_tx_enqueue(conn, tx);
@@ -3920,22 +3933,28 @@ static inline int length_req_rsp_recv(struct ll_conn *conn, memq_link_t *link,
 		(pdu_rx->llctrl.opcode ==
 		 PDU_DATA_LLCTRL_TYPE_LENGTH_REQ)))))) {
 		struct pdu_data_llctrl_length_req *lr;
+		u16_t max_rx_octets;
+		u16_t max_tx_octets;
+		u16_t max_rx_time;
+		u16_t max_tx_time;
 
 		lr = &pdu_rx->llctrl.length_req;
 
 		/* use the minimal of our default_tx_octets and
 		 * peer max_rx_octets
 		 */
-		if (lr->max_rx_octets >= PDU_DC_PAYLOAD_SIZE_MIN) {
-			eff_tx_octets = MIN(lr->max_rx_octets,
+		max_rx_octets = sys_le16_to_cpu(lr->max_rx_octets);
+		if (max_rx_octets >= PDU_DC_PAYLOAD_SIZE_MIN) {
+			eff_tx_octets = MIN(max_rx_octets,
 					    conn->default_tx_octets);
 		}
 
 		/* use the minimal of our max supported and
 		 * peer max_tx_octets
 		 */
-		if (lr->max_tx_octets >= PDU_DC_PAYLOAD_SIZE_MIN) {
-			eff_rx_octets = MIN(lr->max_tx_octets,
+		max_tx_octets = sys_le16_to_cpu(lr->max_tx_octets);
+		if (max_tx_octets >= PDU_DC_PAYLOAD_SIZE_MIN) {
+			eff_rx_octets = MIN(max_tx_octets,
 					    LL_LENGTH_OCTETS_RX_MAX);
 		}
 
@@ -3943,8 +3962,9 @@ static inline int length_req_rsp_recv(struct ll_conn *conn, memq_link_t *link,
 		/* use the minimal of our default_tx_time and
 		 * peer max_rx_time
 		 */
-		if (lr->max_rx_time >= PKT_US(PDU_DC_PAYLOAD_SIZE_MIN, 0)) {
-			eff_tx_time = MIN(lr->max_rx_time,
+		max_rx_time = sys_le16_to_cpu(lr->max_rx_time);
+		if (max_rx_time >= PKT_US(PDU_DC_PAYLOAD_SIZE_MIN, 0)) {
+			eff_tx_time = MIN(max_rx_time,
 					  conn->default_tx_time);
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
 			eff_tx_time = MAX(eff_tx_time,
@@ -3956,16 +3976,17 @@ static inline int length_req_rsp_recv(struct ll_conn *conn, memq_link_t *link,
 		/* use the minimal of our max supported and
 		 * peer max_tx_time
 		 */
-		if (lr->max_tx_time >= PKT_US(PDU_DC_PAYLOAD_SIZE_MIN, 0)) {
+		max_tx_time = sys_le16_to_cpu(lr->max_tx_time);
+		if (max_tx_time >= PKT_US(PDU_DC_PAYLOAD_SIZE_MIN, 0)) {
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
-			eff_rx_time = MIN(lr->max_tx_time,
+			eff_rx_time = MIN(max_tx_time,
 					  PKT_US(LL_LENGTH_OCTETS_RX_MAX,
 						 BIT(2)));
 			eff_rx_time = MAX(eff_rx_time,
 					  PKT_US(PDU_DC_PAYLOAD_SIZE_MIN,
 						 conn->lll.phy_rx));
 #else /* !CONFIG_BT_CTLR_PHY_CODED */
-			eff_rx_time = MIN(lr->max_tx_time,
+			eff_rx_time = MIN(max_tx_time,
 					  PKT_US(LL_LENGTH_OCTETS_RX_MAX, 0));
 #endif /* !CONFIG_BT_CTLR_PHY_CODED */
 		}
@@ -4036,15 +4057,17 @@ static inline int length_req_rsp_recv(struct ll_conn *conn, memq_link_t *link,
 #endif /* CONFIG_BT_CTLR_PHY */
 
 			/* prepare event params */
-			lr->max_rx_octets = eff_rx_octets;
-			lr->max_tx_octets = eff_tx_octets;
+			lr->max_rx_octets = sys_cpu_to_le16(eff_rx_octets);
+			lr->max_tx_octets = sys_cpu_to_le16(eff_tx_octets);
 
 #if !defined(CONFIG_BT_CTLR_PHY)
-			lr->max_rx_time = PKT_US(eff_rx_octets, 0);
-			lr->max_tx_time = PKT_US(eff_tx_octets, 0);
+			lr->max_rx_time =
+				sys_cpu_to_le16(PKT_US(eff_rx_octets, 0));
+			lr->max_tx_time =
+				sys_cpu_to_le16(PKT_US(eff_tx_octets, 0));
 #else /* CONFIG_BT_CTLR_PHY */
-			lr->max_rx_time = eff_rx_time;
-			lr->max_tx_time = eff_tx_time;
+			lr->max_rx_time = sys_cpu_to_le16(eff_rx_time);
+			lr->max_tx_time = sys_cpu_to_le16(eff_tx_time);
 #endif /* CONFIG_BT_CTLR_PHY */
 		}
 	} else {
