@@ -20,7 +20,7 @@
 #include <sys/ring_buffer.h>
 
 #include <logging/log.h>
-LOG_MODULE_REGISTER(cdc_acm_composite, CONFIG_LOG_DEFAULT_LEVEL);
+LOG_MODULE_REGISTER(cdc_acm_composite, LOG_LEVEL_INF);
 
 #define RING_BUF_SIZE	(64 * 2)
 
@@ -128,7 +128,7 @@ void main(void)
 		return;
 	}
 
-	LOG_DBG("Wait for DTR");
+	LOG_INF("Wait for DTR");
 
 	while (1) {
 		uart_line_ctrl_get(dev0, LINE_CTRL_DTR, &dtr);
@@ -148,7 +148,7 @@ void main(void)
 		k_sleep(100);
 	}
 
-	LOG_DBG("DTR set, start test");
+	LOG_INF("DTR set, start test");
 
 	uart_line_set(dev0);
 	uart_line_set(dev1);
