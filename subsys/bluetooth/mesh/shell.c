@@ -215,6 +215,11 @@ static void prov_complete(u16_t net_idx, u16_t addr)
 	net.dst = addr;
 }
 
+static void prov_input_complete(void)
+{
+	shell_print(ctx_shell, "Input complete");
+}
+
 static void prov_reset(void)
 {
 	shell_print(ctx_shell, "The local node has been reset and needs "
@@ -357,6 +362,7 @@ static struct bt_mesh_prov prov = {
 	.input_size = 6,
 	.input_actions = (BT_MESH_ENTER_NUMBER | BT_MESH_ENTER_STRING),
 	.input = input,
+	.input_complete = prov_input_complete,
 };
 
 static int cmd_static_oob(const struct shell *shell, size_t argc, char *argv[])
