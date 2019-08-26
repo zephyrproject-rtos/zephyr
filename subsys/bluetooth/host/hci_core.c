@@ -3271,7 +3271,7 @@ static void le_pkey_complete(struct net_buf *buf)
 	}
 
 	for (cb = pub_key_cb; cb; cb = cb->_next) {
-		cb->func(evt->status ? NULL : evt->key);
+		cb->func(evt->status ? NULL : pub_key);
 	}
 
 	pub_key_cb = NULL;
