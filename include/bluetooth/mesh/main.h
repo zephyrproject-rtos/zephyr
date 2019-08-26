@@ -128,6 +128,14 @@ struct bt_mesh_prov {
 	 */
 	int         (*input)(bt_mesh_input_action_t act, u8_t size);
 
+	/** @brief The other device finished their OOB input.
+	 *
+	 * This callback notifies the application that it should stop
+	 * displaying its output OOB value, as the other party finished their
+	 * OOB input.
+	 */
+	void 	    (*input_complete)(void);
+
 	/** @brief Provisioning link has been opened.
 	 *
 	 *  This callback notifies the application that a provisioning

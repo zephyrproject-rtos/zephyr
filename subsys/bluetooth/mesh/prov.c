@@ -112,6 +112,7 @@ enum {
 	LINK_ACTIVE,           /* Link has been opened */
 	WAIT_NUMBER,           /* Waiting for number input from user */
 	WAIT_STRING,           /* Waiting for string input from user */
+	NOTIFY_INPUT_COMPLETE, /* Notify that input has been completed. */
 	LINK_INVALID,          /* Error occurred during provisioning */
 
 	NUM_FLAGS,
@@ -672,6 +673,8 @@ static int prov_auth(u8_t method, u8_t action, u8_t size)
 			return -EINVAL;
 		}
 
+		atomic_set_bit(link.flags, NOTIFY_INPUT_COMPLETE);
+
 		if (output == BT_MESH_DISPLAY_STRING) {
 			unsigned char str[9];
 			u8_t i;
@@ -954,9 +957,18 @@ static void pub_key_ready(const u8_t *pkey)
 	}
 }
 
+static void notify_input_complete(void)
+{
+	if (atomic_test_and_clear_bit(link.flags, NOTIFY_INPUT_COMPLETE) &&
+	    prov->input_complete) {
+		prov->input_complete();
+	}
+}
+
 static void prov_input_complete(const u8_t *data)
 {
 	BT_DBG("");
+	notify_input_complete();
 }
 
 static void prov_confirm(const u8_t *data)
@@ -965,6 +977,7 @@ static void prov_confirm(const u8_t *data)
 
 	memcpy(link.conf, data, 16);
 
+	notify_input_complete();
 	send_confirm();
 }
 
