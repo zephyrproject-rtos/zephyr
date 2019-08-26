@@ -90,6 +90,8 @@ static inline void event_phy_upd_ind_prep(struct ll_conn *conn,
 					  u16_t event_counter);
 #endif /* CONFIG_BT_CTLR_PHY */
 
+static inline void ctrl_tx_pre_ack(struct ll_conn *conn,
+				   struct pdu_data *pdu_tx);
 static inline void ctrl_tx_ack(struct ll_conn *conn, struct node_tx **tx,
 			       struct pdu_data *pdu_tx);
 static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
@@ -1213,6 +1215,7 @@ void ull_conn_tx_lll_enqueue(struct ll_conn *conn, u8_t count)
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 		 1) ||
 		(!pause_tx && (conn->tx_head == conn->tx_ctrl))) && count--) {
+		struct pdu_data *pdu_tx;
 		struct node_tx *tx_lll;
 		memq_link_t *link;
 
@@ -1237,6 +1240,11 @@ void ull_conn_tx_lll_enqueue(struct ll_conn *conn, u8_t count)
 
 			/* point to NULL to indicate a Data PDU mem alloc */
 			tx_lll->next = NULL;
+		}
+
+		pdu_tx = (void *)tx_lll->pdu;
+		if (pdu_tx->ll_id == PDU_DATA_LLID_CTRL) {
+			ctrl_tx_pre_ack(conn, pdu_tx);
 		}
 
 		link = mem_acquire(&mem_link_tx.free);
@@ -2193,6 +2201,8 @@ static inline void event_enc_prep(struct ll_conn *conn)
 
 		/* send enc start resp */
 		start_enc_rsp_send(conn, pdu_ctrl_tx);
+
+		ctrl_tx_enqueue(conn, tx);
 	}
 
 	/* slave send reject ind or start enc req at control priority */
@@ -2206,6 +2216,8 @@ static inline void event_enc_prep(struct ll_conn *conn)
 		/* place the reject ind packet as next in tx queue */
 		if (conn->llcp.encryption.error_code) {
 			event_enc_reject_prep(conn, pdu_ctrl_tx);
+
+			ctrl_tx_enqueue(conn, tx);
 		}
 		/* place the start enc req packet as next in tx queue */
 		else {
@@ -2262,20 +2274,21 @@ static inline void event_enc_prep(struct ll_conn *conn)
 				sizeof(struct pdu_data_llctrl_start_enc_req);
 			pdu_ctrl_tx->llctrl.opcode =
 				PDU_DATA_LLCTRL_TYPE_START_ENC_REQ;
+
+			ctrl_tx_enqueue(conn, tx);
 		}
 
 #if !defined(CONFIG_BT_CTLR_FAST_ENC)
 	} else {
 		start_enc_rsp_send(conn, pdu_ctrl_tx);
 
+		ctrl_tx_enqueue(conn, tx);
+
 		/* resume data packet rx and tx */
 		conn->llcp_enc.pause_rx = 0U;
 		conn->llcp_enc.pause_tx = 0U;
 #endif /* !CONFIG_BT_CTLR_FAST_ENC */
-
 	}
-
-	ctrl_tx_enqueue(conn, tx);
 
 	/* procedure request acked */
 	conn->llcp_ack = conn->llcp_req;
@@ -4239,6 +4252,42 @@ static inline u8_t phy_upd_ind_recv(struct ll_conn *conn, memq_link_t *link,
 	return 0;
 }
 #endif /* CONFIG_BT_CTLR_PHY */
+
+static inline void ctrl_tx_pre_ack(struct ll_conn *conn,
+				   struct pdu_data *pdu_tx)
+{
+	switch (pdu_tx->llctrl.opcode) {
+#if defined(CONFIG_BT_CTLR_LE_ENC)
+	case PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_RSP:
+		if (!conn->lll.role) {
+			break;
+		}
+		/* Pass Through */
+
+	case PDU_DATA_LLCTRL_TYPE_ENC_REQ:
+	case PDU_DATA_LLCTRL_TYPE_ENC_RSP:
+	case PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_REQ:
+		/* pause data packet tx */
+		conn->llcp_enc.pause_tx = 1U;
+		break;
+
+#endif /* CONFIG_BT_CTLR_LE_ENC */
+
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
+	case PDU_DATA_LLCTRL_TYPE_LENGTH_REQ:
+		if ((conn->llcp_length.req != conn->llcp_length.ack) &&
+		    (conn->llcp_length.state == LLCP_LENGTH_STATE_ACK_WAIT)) {
+			/* pause data packet tx */
+			conn->llcp_length.pause_tx = 1U;
+		}
+		break;
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+
+	default:
+		/* Do nothing for other ctrl packet ack */
+		break;
+	}
+}
 
 static inline void ctrl_tx_ack(struct ll_conn *conn, struct node_tx **tx,
 			       struct pdu_data *pdu_tx)
