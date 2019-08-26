@@ -92,12 +92,21 @@ config TEST_ENABLE_USERSPACE
 	  case itself indicates that it exercises user mode via
 	  CONFIG_TEST_USERSPACE.
 
+config TEST_USERSPACE_WITHOUT_HW_STACK_PROTECTION
+	bool "Run User Mode tests without additionally enabling stack protection"
+	depends on TEST_ENABLE_USERSPACE
+	help
+	  A HW platform might not have sufficient MPU/MMU capabilities to support
+	  running all test cases with User Mode and HW Stack Protection features
+	  simultaneously enabled. For this platforms we execute the User Mode-
+	  related tests without enabling HW stack protection.
+
 config TEST_HW_STACK_PROTECTION
 	bool "Enable hardware-based stack overflow detection if available"
 	depends on ARCH_HAS_STACK_PROTECTION
 	depends on TEST
 	select HW_STACK_PROTECTION
-	default y
+	default y if !TEST_USERSPACE_WITHOUT_HW_STACK_PROTECTION
 	help
 	  This option will enable hardware-based stack protection by default
 	  for all test cases if the hardware supports it.
