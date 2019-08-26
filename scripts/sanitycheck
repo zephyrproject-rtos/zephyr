@@ -610,10 +610,12 @@ class BinaryHandler(Handler):
             #When a process is killed, the default handler returns 128 + SIGTERM
             #so in that case the return code itself is not meaningful
             self.set_state("error", {})
+            self.instance.reason = "Handler error"
         elif harness.state:
             self.set_state(harness.state, {})
         else:
             self.set_state("timeout", {})
+            self.instance.reason = "Handler timeout"
 
 class DeviceHandler(Handler):
 
@@ -1843,7 +1845,15 @@ class ProjectBuilder(CMake):
             verbose("run test: %s" %self.instance.name)
             self.run()
             self.instance.status, self.instance.metrics = self.instance.handler.get_state()
-            pipeline.put({"op": "report", "test": self.instance, "state": "executed", "status": self.instance.status, "reason": None})
+            # FIXME
+            self.instance.reason = self.instance.status
+            pipeline.put({
+                "op": "report",
+                "test": self.instance,
+                "state": "executed",
+                "status": self.instance.status,
+                "reason": self.instance.status}
+                )
         # Report results and output progress to screen
         elif op == "report":
             self.report_out(self.suite)
