@@ -24,6 +24,9 @@ SANITYCHECK_OPTIONS=" --inline-logs -N"
 SANITYCHECK_OPTIONS_RETRY="${SANITYCHECK_OPTIONS} --only-failed --outdir=out-2nd-pass"
 SANITYCHECK_OPTIONS_RETRY_2="${SANITYCHECK_OPTIONS} --only-failed --outdir=out-3nd-pass"
 export BSIM_OUT_PATH="${BSIM_OUT_PATH:-/opt/bsim/}"
+if [ ! -d "${BSIM_OUT_PATH}" ]; then
+        unset BSIM_OUT_PATH
+fi
 export BSIM_COMPONENTS_PATH="${BSIM_OUT_PATH}/components/"
 BSIM_BT_TEST_RESULTS_FILE="./bsim_bt_out/bsim_results.xml"
 WEST_COMMANDS_RESULTS_FILE="./pytest_out/west_commands.xml"
