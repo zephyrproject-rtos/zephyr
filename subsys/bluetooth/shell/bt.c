@@ -1096,7 +1096,7 @@ static int cmd_security(const struct shell *shell, size_t argc, char *argv[])
 		}
 	}
 
-	err = bt_conn_security(default_conn, sec);
+	err = bt_conn_set_security(default_conn, sec);
 	if (err) {
 		shell_error(shell, "Setting security failed (err %d)", err);
 	}

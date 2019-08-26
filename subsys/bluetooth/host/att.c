@@ -1639,7 +1639,7 @@ static int att_change_security(struct bt_conn *conn, u8_t err)
 		return -EINVAL;
 	}
 
-	return bt_conn_security(conn, sec);
+	return bt_conn_set_security(conn, sec);
 }
 #endif /* CONFIG_BT_SMP */
 

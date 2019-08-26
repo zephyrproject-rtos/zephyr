@@ -785,7 +785,7 @@ static enum security_result rfcomm_dlc_security(struct bt_rfcomm_dlc *dlc)
 		return RFCOMM_SECURITY_PASSED;
 	}
 
-	if (!bt_conn_security(conn, dlc->required_sec_level)) {
+	if (!bt_conn_set_security(conn, dlc->required_sec_level)) {
 		/* If Security elevation is initiated or in progress */
 		return RFCOMM_SECURITY_PENDING;
 	}

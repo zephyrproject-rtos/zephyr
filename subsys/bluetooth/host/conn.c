@@ -1040,7 +1040,7 @@ static int start_security(struct bt_conn *conn)
 	}
 }
 
-int bt_conn_security(struct bt_conn *conn, bt_security_t sec)
+int bt_conn_set_security(struct bt_conn *conn, bt_security_t sec)
 {
 	int err;
 
