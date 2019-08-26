@@ -218,6 +218,16 @@ static inline int ipv6_handle_ext_hdr_options(struct net_pkt *pkt,
 
 			break;
 		default:
+			/* Make sure that the option length is not too large.
+			 * The former 1 + 1 is the length of extension type +
+			 * length fields.
+			 * The latter 1 + 1 is the length of the sub-option
+			 * type and length fields.
+			 */
+			if (opt_len > (exthdr_len - (1 + 1 + 1 + 1))) {
+				return -EINVAL;
+			}
+
 			if (ipv6_drop_on_unknown_option(pkt, hdr,
 							opt_type, length)) {
 				return -ENOTSUP;
