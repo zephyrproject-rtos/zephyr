@@ -17,9 +17,9 @@ properties:
       constraint: "atmel,sam0-rtc"
 
     reg:
-      category: required
+      required: true
 
     clock-generator:
       type: int
       description: clock generator index
-      category: required
+      required: true

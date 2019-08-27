@@ -17,7 +17,7 @@ properties:
       constraint: "st,stm32-watchdog"
 
     reg:
-      category: required
+      required: true
 
     label:
-      category: required
+      required: true

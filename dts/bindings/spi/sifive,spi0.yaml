@@ -17,4 +17,4 @@ properties:
       constraint: "sifive,spi0"
 
     reg:
-      category: required
+      required: true

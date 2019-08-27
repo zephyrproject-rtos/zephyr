@@ -11,24 +11,24 @@ properties:
       constraint: "ns16550"
 
     reg:
-      category: required
+      required: true
 
     reg-shift:
       type: int
-      category: optional
+      required: false
       description: quantity to shift the register offsets by
 
     pcp:
       type: int
-      category: optional
+      required: false
       description: custom clock (PRV_CLOCK_PARAMS, if supported)
 
     dlf:
       type: int
-      category: optional
+      required: false
       description: divisor latch fraction (DLF, if supported)
 
     pcie:
       type: boolean
-      category: optional
+      required: false
       description: attached via PCI(e) bus

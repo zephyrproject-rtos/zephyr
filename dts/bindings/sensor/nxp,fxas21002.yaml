@@ -18,8 +18,8 @@ properties:
 
     int1-gpios:
       type: phandle-array
-      category: optional
+      required: false
 
     int2-gpios:
       type: phandle-array
-      category: optional
+      required: false

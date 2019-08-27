@@ -12,6 +12,6 @@ properties:
         type: string-array
 
     foo:
-        # Changed from "optional" in grandchild.yaml
-        category: required
+        # Changed from not being required in grandchild.yaml
+        required: true
         # Type set in grandchild

@@ -19,4 +19,4 @@ properties:
 
     irq-gpios:
       type: phandle-array
-      category: required
+      required: true

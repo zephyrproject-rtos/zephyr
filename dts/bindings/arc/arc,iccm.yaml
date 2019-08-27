@@ -17,4 +17,4 @@ properties:
       constraint: "arc,iccm"
 
     reg:
-      category: required
+      required: true

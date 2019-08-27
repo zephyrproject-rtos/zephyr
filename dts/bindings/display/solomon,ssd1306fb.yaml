@@ -18,44 +18,44 @@ properties:
 
     height:
       type: int
-      category: required
+      required: true
       description: Height in pixel of the panel driven by the controller
 
     width:
       type: int
-      category: required
+      required: true
       description: Width in pixel of the panel driven by the controller
 
     segment-offset:
       type: int
-      category: required
+      required: true
       description: 8-bit column start address for Page Addressing Mode
 
     page-offset:
       type: int
-      category: required
+      required: true
       description: Start address for Page Addressing Mode
 
     display-offset:
       type: int
-      category: required
+      required: true
       description: mapping of the display start line to one of COM0 .. COM63
 
     segment-remap:
       type: boolean
-      category: optional
+      required: false
       description: Last column address is mapped to first segment
 
     com-invdir:
       type: boolean
-      category: optional
+      required: false
       description: Scan direction is from last COM output to first COM output
 
     prechargep:
       type: int
-      category: required
+      required: true
       description: Duration of the pre-charge period
 
     reset-gpios:
       type: phandle-array
-      category: optional
+      required: false

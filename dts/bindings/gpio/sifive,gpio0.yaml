@@ -17,13 +17,13 @@ properties:
       constraint: "sifive,gpio0"
 
     reg:
-      category: required
+      required: true
 
     label:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true
 
     "#gpio-cells":
       const: 2

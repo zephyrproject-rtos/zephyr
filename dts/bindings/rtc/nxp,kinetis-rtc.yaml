@@ -17,4 +17,4 @@ properties:
       constraint: "nxp,kinetis-rtc"
 
     reg:
-      category: required
+      required: true

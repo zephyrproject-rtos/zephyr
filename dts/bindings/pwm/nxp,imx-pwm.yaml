@@ -19,13 +19,13 @@ properties:
     index:
       type: int
       description: flexpwm submodule index
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true
 
     label:
-      category: required
+      required: true
 
     "#pwm-cells":
       const: 1

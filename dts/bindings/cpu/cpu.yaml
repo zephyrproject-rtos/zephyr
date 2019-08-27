@@ -12,5 +12,5 @@ inherits:
 properties:
     clock-frequency:
       type: int
-      category: optional
+      required: false
       description: Clock frequency in Hz

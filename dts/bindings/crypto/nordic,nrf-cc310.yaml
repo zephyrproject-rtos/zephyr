@@ -17,7 +17,7 @@ properties:
       constraint: "nordic,nrf-cc310"
 
     reg:
-      category: required
+      required: true
 
     label:
-      category: required
+      required: true

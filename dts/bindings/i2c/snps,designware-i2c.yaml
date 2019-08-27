@@ -17,12 +17,12 @@ properties:
       constraint: "snps,designware-i2c"
 
     reg:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true
 
     pcie:
       type: boolean
-      category: optional
+      required: false
       description: attached via PCI(e) bus

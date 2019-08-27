@@ -18,16 +18,16 @@ properties:
 
     resetn-gpios:
       type: phandle-array
-      category: required
+      required: true
 
     data-gpios:
       type: phandle-array
-      category: required
+      required: true
 
     wakeup-gpios:
       type: phandle-array
-      category: optional
+      required: false
 
     boot0-gpios:
       type: phandle-array
-      category: optional
+      required: false

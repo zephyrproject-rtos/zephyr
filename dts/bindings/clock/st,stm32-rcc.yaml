@@ -11,7 +11,7 @@ properties:
       constraint: "st,stm32-rcc"
 
     reg:
-      category: required
+      required: true
 
     "#clock-cells":
       const: 2

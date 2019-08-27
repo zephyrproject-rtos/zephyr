@@ -11,10 +11,10 @@ properties:
       constraint: "nxp,kinetis-pinmux"
 
     reg:
-      category: required
+      required: true
 
     clocks:
-      category: required
+      required: true
 
 "#cells":
   - pin

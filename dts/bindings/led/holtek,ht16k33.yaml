@@ -12,14 +12,14 @@ properties:
     compatible:
       constraint: "holtek,ht16k33"
     "#address-cells":
-      category: required
+      required: true
       const: 1
     "#size-cells":
-      category: required
+      required: true
       const: 0
     label:
-      category: required
+      required: true
     irq-gpios:
       type: phandle-array
-      category: optional
+      required: false
       description: IRQ pin

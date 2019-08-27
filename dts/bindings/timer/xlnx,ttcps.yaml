@@ -12,13 +12,13 @@ properties:
       constraint: "cdns,ttc"
 
     label:
-      category: required
+      required: true
 
     reg:
-      category: required
+      required: true
 
     clock-frequency:
       type: int
-      category: optional
+      required: false
       description: Clock frequency information for Timer operation
 ...
