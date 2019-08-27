@@ -17,6 +17,7 @@ LOG_MODULE_REGISTER(sof, CONFIG_SOF_LOG_LEVEL);
 #include <platform/dma.h>
 #include <platform/shim.h>
 #include <platform/timer.h>
+#include <sof/alloc.h>
 #include <sof/clk.h>
 #include <sof/interrupt.h>
 #include <sof/mailbox.h>
@@ -289,6 +290,8 @@ static int sof_boot_complete()
 static int sof_init(struct device *unused)
 {
 	int ret;
+
+	malloc_init();
 
 	platform_interrupt_init();
 
