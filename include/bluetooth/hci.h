@@ -708,6 +708,9 @@ struct bt_hci_rp_read_rssi {
 	s8_t  rssi;
 } __packed;
 
+#define BT_HCI_ENCRYPTION_KEY_SIZE_MIN          7
+#define BT_HCI_ENCRYPTION_KEY_SIZE_MAX          16
+
 #define BT_HCI_OP_READ_ENCRYPTION_KEY_SIZE      BT_OP(BT_OGF_STATUS, 0x0008)
 struct bt_hci_cp_read_encryption_key_size {
 	u16_t handle;
