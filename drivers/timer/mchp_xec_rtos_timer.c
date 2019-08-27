@@ -265,15 +265,17 @@ int z_clock_driver_init(struct device *device)
 
 	RTMR_REGS->CTRL = 0U;
 	GIRQ23_REGS->SRC = MCHP_RTMR_GIRQ_VAL;
-	NVIC_ClearPendingIRQ(RTMR_IRQn);
+	NVIC_ClearPendingIRQ(DT_INST_0_MICROCHIP_XEC_RTOS_TIMER_IRQ_0);
 
 	timer_restart(cached_icr);
 
-	IRQ_CONNECT(RTMR_IRQn, 1, xec_rtos_timer_isr, 0, 0);
+	IRQ_CONNECT(DT_INST_0_MICROCHIP_XEC_RTOS_TIMER_IRQ_0,
+		    DT_INST_0_MICROCHIP_XEC_RTOS_TIMER_IRQ_0_PRIORITY,
+		    xec_rtos_timer_isr, NULL, 0);
 	GIRQ23_REGS->EN_SET = MCHP_RTMR_GIRQ_VAL;
 
 	RTMR_REGS->CTRL = TIMER_START_VAL;
-	irq_enable(RTMR_IRQn);
+	irq_enable(DT_INST_0_MICROCHIP_XEC_RTOS_TIMER_IRQ_0);
 
 	return 0;
 }
