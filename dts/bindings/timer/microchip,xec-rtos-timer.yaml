@@ -22,6 +22,4 @@ properties:
     interrupts:
       category: required
 
-    label:
-      category: required
 ...

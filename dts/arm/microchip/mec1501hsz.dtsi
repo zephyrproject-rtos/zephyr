@@ -34,7 +34,6 @@
 			compatible = "microchip,xec-rtos-timer";
 			reg = <0x40007400 0x10>;
 			interrupts = <111 1>;
-			label = "RTIMER";
 		};
 		uart0: uart@400f2400 {
 			compatible = "ns16550";
