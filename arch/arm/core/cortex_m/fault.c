@@ -609,6 +609,30 @@ static u32_t HardFault(z_arch_esf_t *esf, bool *recoverable)
 	PR_FAULT_INFO("***** HARD FAULT *****");
 
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+	/* Workaround for #18712:
+	 * HardFault may be due to escalation, as a result of
+	 * an SVC instruction that could not be executed; this
+	 * can occur if Z_ARCH_EXCEPT() is called by an ISR,
+	 * which executes at priority equal to the SVC handler
+	 * priority. We handle the case of Kernel OOPS and Stack
+	 * Fail here.
+	 */
+	u16_t *ret_addr = (u16_t *)esf->basic.pc;
+	/* SVC is a 16-bit instruction. On a synchronous SVC
+	 * escalated to Hard Fault, the return address is the
+	 * next instruction, i.e. after the SVC.
+	 */
+#define _SVC_OPCODE 0xDF00
+
+	u16_t fault_insn = *(ret_addr - 1);
+	if (((fault_insn & 0xff00) == _SVC_OPCODE) &&
+		((fault_insn & 0x00ff) == _SVC_CALL_RUNTIME_EXCEPT)) {
+
+		PR_EXC("Z_ARCH_EXCEPT with reason %x\n", esf->basic.r0);
+		reason = esf->basic.r0;
+	}
+#undef _SVC_OPCODE
+
 	*recoverable = memory_fault_recoverable(esf);
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 	*recoverable = false;
