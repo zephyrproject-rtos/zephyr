@@ -17,7 +17,7 @@ properties:
       constraint: "openisa,rv32m1-lpi2c"
 
     reg:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true

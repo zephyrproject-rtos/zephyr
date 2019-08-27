@@ -17,10 +17,10 @@ properties:
       constraint: "openisa,rv32m1-pcc"
 
     reg:
-      category: required
+      required: true
 
     label:
-      category: required
+      required: true
 
     "#clock-cells":
       const: 1

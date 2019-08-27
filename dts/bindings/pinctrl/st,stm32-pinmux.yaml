@@ -11,7 +11,7 @@ properties:
       constraint: "st,stm32-pinmux"
 
     reg:
-      category: required
+      required: true
 
 "#cells":
   - pin

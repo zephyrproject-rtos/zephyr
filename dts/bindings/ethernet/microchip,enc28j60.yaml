@@ -16,4 +16,4 @@ properties:
       constraint: "microchip,enc28j60"
     int-gpios:
       type: phandle-array
-      category: required
+      required: true

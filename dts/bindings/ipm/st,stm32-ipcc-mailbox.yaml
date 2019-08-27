@@ -17,4 +17,4 @@ properties:
       constraint: "st,stm32-ipcc-mailbox"
 
   clocks:
-    category: required
+    required: true

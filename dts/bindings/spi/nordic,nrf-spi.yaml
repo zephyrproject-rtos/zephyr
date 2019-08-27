@@ -17,22 +17,22 @@ properties:
       constraint: "nordic,nrf-spi"
 
     reg:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true
 
     sck-pin:
       type: int
-      category: required
+      required: true
       description: SCK pin
 
     mosi-pin:
       type: int
-      category: required
+      required: true
       description: MOSI pin
 
     miso-pin:
       type: int
-      category: required
+      required: true
       description: MISO pin

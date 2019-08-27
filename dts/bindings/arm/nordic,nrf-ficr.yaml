@@ -11,4 +11,4 @@ properties:
       constraint: "nordic,nrf-ficr"
 
     reg:
-      category: required
+      required: true

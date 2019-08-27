@@ -14,14 +14,14 @@ child:
 
 properties:
     "#address-cells":
-      category: required
+      required: true
       const: 1
     "#size-cells":
-      category: required
+      required: true
       const: 0
     clock-frequency :
       type: int
-      category: optional
+      required: false
       description: Initial clock frequency in Hz
     label:
-      category: required
+      required: true

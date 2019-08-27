@@ -15,6 +15,6 @@ properties:
     compatible:
       constraint: "ti,stellaris-ethernet"
     reg:
-      category: required
+      required: true
     interrupts:
-      category: required
+      required: true

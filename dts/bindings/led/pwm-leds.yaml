@@ -13,16 +13,16 @@ properties:
     compatible:
       constraint: "pwm-leds"
       type: string-array
-      category: required
+      required: true
       description: compatible strings
 
 sub-node:
     properties:
         pwms:
           type: phandle-array
-          category: required
+          required: true
 
         label:
-          category: optional
+          required: false
           type: string
           description: Human readable string describing the device (used by Zephyr for API name)

@@ -12,4 +12,4 @@ properties:
       constraint: "arm,dtcm"
 
     reg:
-      category: required
+      required: true

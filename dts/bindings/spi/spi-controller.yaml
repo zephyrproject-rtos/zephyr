@@ -15,16 +15,16 @@ child:
 properties:
     clock-frequency:
       type: int
-      category: optional
+      required: false
       description: Clock frequency the SPI peripheral is being driven at
     "#address-cells":
-      category: required
+      required: true
       const: 1
     "#size-cells":
-      category: required
+      required: true
       const: 0
     label:
-      category: required
+      required: true
     cs-gpios:
       type: phandle-array
-      category: optional
+      required: false

@@ -17,15 +17,15 @@ properties:
       constraint: "atmel,sam-trng"
 
     reg:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true
 
     peripheral-id:
       type: int
       description: peripheral ID
-      category: required
+      required: true
 
     label:
-      category: required
+      required: true

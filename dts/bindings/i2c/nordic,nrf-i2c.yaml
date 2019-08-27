@@ -18,17 +18,17 @@ properties:
       constraint: "nordic,nrf-i2c"
 
     reg:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true
 
     sda-pin:
       type: int
       description: SDA pin
-      category: required
+      required: true
 
     scl-pin:
       type: int
       description: SCL pin
-      category: required
+      required: true

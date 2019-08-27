@@ -17,7 +17,7 @@ properties:
       constraint: "nordic,nrf-rtc"
 
     reg:
-      category: required
+      required: true
 
     #If enabled, overflow different than full range (24 bits) is handled
     #through PPI channel which ensures precise timing. If disabled then
@@ -26,4 +26,4 @@ properties:
     ppi-wrap:
       type: boolean
       description: Enable wrapping with PPI
-      category: required
+      required: true

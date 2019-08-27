@@ -15,4 +15,4 @@ properties:
     riscv,ndev:
         type: int
         description: Number of external interrupts supported
-        category: required
+        required: true

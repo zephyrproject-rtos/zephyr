@@ -17,4 +17,4 @@ properties:
       constraint: "snps,nsim-uart"
 
     reg:
-      category: required
+      required: true

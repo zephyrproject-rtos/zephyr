@@ -18,7 +18,7 @@ properties:
       constraint: "st,stm32-spi-fifo"
 
     reg:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true

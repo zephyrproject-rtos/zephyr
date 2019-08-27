@@ -17,15 +17,15 @@ properties:
       constraint: "nordic,nrf-timer"
 
     reg:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true
 
     label:
-      category: required
+      required: true
 
     prescaler:
       type: int
-      category: required
+      required: true
       description: Prescaler value determines frequency (16MHz/2^prescaler)

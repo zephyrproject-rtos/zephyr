@@ -18,10 +18,10 @@ properties:
     constraint: "atmel,sam0-tc32"
 
   reg:
-    category: required
+    required: true
 
   interrupts:
-    category: required
+    required: true
 
   label:
-    category: required
+    required: true

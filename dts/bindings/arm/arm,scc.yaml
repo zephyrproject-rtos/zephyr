@@ -17,4 +17,4 @@ properties:
       constraint: "arm,scc"
 
     reg:
-      category: required
+      required: true

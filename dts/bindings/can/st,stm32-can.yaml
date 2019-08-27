@@ -11,10 +11,10 @@ properties:
       constraint: "st,stm32-can"
 
     reg:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true
 
     clocks:
-      category: required
+      required: true

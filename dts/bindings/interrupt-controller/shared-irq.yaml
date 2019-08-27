@@ -11,7 +11,7 @@ properties:
       constraint: "shared-irq"
 
   interrupts:
-      category: required
+      required: true
 
   label:
-      category: required
+      required: true

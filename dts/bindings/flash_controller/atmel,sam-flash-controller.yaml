@@ -19,4 +19,4 @@ properties:
     peripheral-id:
       type: int
       description: peripheral ID
-      category: required
+      required: true
