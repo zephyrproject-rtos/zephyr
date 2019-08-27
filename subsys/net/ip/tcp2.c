@@ -794,8 +794,15 @@ next_state:
 				tcp_state_to_str(conn->state, true));
 	}
 
-	tcp_assert(fl == 0, "Unconsumed flags: %s (%s)", tcp_flags(fl),
-			tcp_th(pkt));
+	if (fl) {
+		th = NULL;
+		tcp_warn("Unconsumed flags: %s (%s)", tcp_flags(fl),
+				tcp_th(pkt));
+		conn_state(conn, TCP_CLOSED);
+		next = 0;
+		goto next_state;
+	}
+
 	if (next) {
 		th = NULL;
 		conn_state(conn, next);
