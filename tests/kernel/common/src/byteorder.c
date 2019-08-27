@@ -87,5 +87,25 @@ void test_sys_get_be64(void)
 }
 
 /**
+ * @brief Test sys_put_be64() functionality
+ *
+ * @details Test if sys_put_be64() correctly handles endianness.
+ *
+ * @see sys_put_be64()
+ */
+void test_sys_put_be64(void)
+{
+	u64_t val = 0xf0e1d2c3b4a59687;
+	u8_t buf[] = {
+		0xf0, 0xe1, 0xd2, 0xc3, 0xb4, 0xa5, 0x96, 0x87
+	};
+	u8_t tmp[sizeof(u64_t)];
+
+	sys_put_be64(val, tmp);
+
+	zassert_mem_equal(tmp, buf, sizeof(u64_t), "sys_put_be64() failed");
+}
+
+/**
  * @}
  */
