@@ -223,7 +223,11 @@ void bt_conn_security_changed(struct bt_conn *conn, enum bt_security_err err);
 #endif /* CONFIG_BT_SMP || CONFIG_BT_BREDR */
 
 /* Prepare a PDU to be sent over a connection */
-struct net_buf *bt_conn_create_pdu(struct net_buf_pool *pool, size_t reserve);
+struct net_buf *bt_conn_create_pdu_timeout(struct net_buf_pool *pool,
+					   size_t reserve, s32_t timeout);
+
+#define bt_conn_create_pdu(_pool, _reserve) \
+	bt_conn_create_pdu_timeout(_pool, _reserve, K_FOREVER)
 
 /* Initialize connection management */
 int bt_conn_init(void);

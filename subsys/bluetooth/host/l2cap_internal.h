@@ -260,7 +260,11 @@ void bt_l2cap_chan_set_state(struct bt_l2cap_chan *chan,
 void bt_l2cap_encrypt_change(struct bt_conn *conn, u8_t hci_status);
 
 /* Prepare an L2CAP PDU to be sent over a connection */
-struct net_buf *bt_l2cap_create_pdu(struct net_buf_pool *pool, size_t reserve);
+struct net_buf *bt_l2cap_create_pdu_timeout(struct net_buf_pool *pool,
+					    size_t reserve, s32_t timeout);
+
+#define bt_l2cap_create_pdu(_pool, _reserve) \
+	bt_l2cap_create_pdu_timeout(_pool, _reserve, K_FOREVER)
 
 /* Prepare a L2CAP Response PDU to be sent over a connection */
 struct net_buf *bt_l2cap_create_rsp(struct net_buf *buf, size_t reserve);

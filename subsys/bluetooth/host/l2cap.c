@@ -467,9 +467,12 @@ void bt_l2cap_encrypt_change(struct bt_conn *conn, u8_t hci_status)
 	}
 }
 
-struct net_buf *bt_l2cap_create_pdu(struct net_buf_pool *pool, size_t reserve)
+struct net_buf *bt_l2cap_create_pdu_timeout(struct net_buf_pool *pool,
+					    size_t reserve, s32_t timeout)
 {
-	return bt_conn_create_pdu(pool, sizeof(struct bt_l2cap_hdr) + reserve);
+	return bt_conn_create_pdu_timeout(pool,
+					  sizeof(struct bt_l2cap_hdr) + reserve,
+					  timeout);
 }
 
 void bt_l2cap_send_cb(struct bt_conn *conn, u16_t cid, struct net_buf *buf,
