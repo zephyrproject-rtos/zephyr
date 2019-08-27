@@ -34,12 +34,16 @@
 #define z_arch_irq_enable(irq)	z_soc_irq_enable(irq)
 #define z_arch_irq_disable(irq)	z_soc_irq_disable(irq)
 
+#define z_arch_irq_is_enabled(irq)	z_soc_irq_is_enabled(irq)
+
 #else
 
 #define CONFIG_NUM_IRQS XCHAL_NUM_INTERRUPTS
 
 #define z_arch_irq_enable(irq)	z_xtensa_irq_enable(irq)
 #define z_arch_irq_disable(irq)	z_xtensa_irq_disable(irq)
+
+#define z_arch_irq_is_enabled(irq)	z_xtensa_irq_is_enabled(irq)
 
 #endif
 
@@ -92,7 +96,7 @@ static ALWAYS_INLINE bool z_arch_irq_unlocked(unsigned int key)
 	return (key & 0xf) == 0; /* INTLEVEL field */
 }
 
-extern int z_arch_irq_is_enabled(unsigned int irq);
+extern int z_xtensa_irq_is_enabled(unsigned int irq);
 
 #include <irq.h>
 

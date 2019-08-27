@@ -222,7 +222,7 @@ void *xtensa_excint1_c(int *interrupted_stack)
 	return z_get_next_switch_handle(interrupted_stack);
 }
 
-int z_arch_irq_is_enabled(unsigned int irq)
+int z_xtensa_irq_is_enabled(unsigned int irq)
 {
 	u32_t ie;
 
