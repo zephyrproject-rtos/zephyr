@@ -14,6 +14,8 @@ extern void test_byteorder_memcpy_swap(void);
 extern void test_byteorder_mem_swap(void);
 extern void test_sys_get_be64(void);
 extern void test_sys_put_be64(void);
+extern void test_sys_get_be32(void);
+extern void test_sys_put_be32(void);
 extern void test_atomic(void);
 extern void test_intmath(void);
 extern void test_printk(void);
@@ -99,6 +101,8 @@ void test_main(void)
 			 ztest_unit_test(test_byteorder_mem_swap),
 			 ztest_unit_test(test_sys_get_be64),
 			 ztest_unit_test(test_sys_put_be64),
+			 ztest_unit_test(test_sys_get_be32),
+			 ztest_unit_test(test_sys_put_be32),
 			 ztest_user_unit_test(test_atomic),
 			 ztest_unit_test(test_bitfield),
 			 ztest_unit_test(test_printk),
