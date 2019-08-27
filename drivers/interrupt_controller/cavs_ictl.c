@@ -75,10 +75,25 @@ static inline unsigned int cavs_ictl_irq_get_state(struct device *dev)
 	return 1;
 }
 
+static int cavs_ictl_irq_get_line_state(struct device *dev, unsigned int irq)
+{
+	struct cavs_ictl_runtime *context = dev->driver_data;
+
+	volatile struct cavs_registers * const regs =
+			(struct cavs_registers *)context->base_addr;
+
+	if ((regs->disable_state_il & BIT(irq)) == 0) {
+		return 1;
+	}
+
+	return 0;
+}
+
 static const struct irq_next_level_api cavs_apis = {
 	.intr_enable = cavs_ictl_irq_enable,
 	.intr_disable = cavs_ictl_irq_disable,
 	.intr_get_state = cavs_ictl_irq_get_state,
+	.intr_get_line_state = cavs_ictl_irq_get_line_state,
 };
 
 static int cavs_ictl_0_initialize(struct device *port)
