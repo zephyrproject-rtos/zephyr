@@ -113,6 +113,28 @@ static inline unsigned int dw_ictl_intr_get_state(struct device *dev)
 	return 0;
 }
 
+static int dw_ictl_intr_get_line_state(struct device *dev, unsigned int irq)
+{
+	struct dw_ictl_runtime *context = dev->driver_data;
+
+	const struct dw_ictl_config *config = dev->config->config_info;
+
+	volatile struct dw_ictl_registers * const regs =
+		(struct dw_ictl_registers *)context->base_addr;
+
+	if (config->numirqs > 32) {
+		if ((regs->irq_inten_h & BIT(irq - 32)) != 0) {
+			return 1;
+		}
+	} else {
+		if ((regs->irq_inten_l & BIT(irq)) != 0) {
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
 static void dw_ictl_config_irq(struct device *port);
 
 static const struct dw_ictl_config dw_config = {
@@ -130,6 +152,7 @@ static const struct irq_next_level_api dw_ictl_apis = {
 	.intr_enable = dw_ictl_intr_enable,
 	.intr_disable = dw_ictl_intr_disable,
 	.intr_get_state = dw_ictl_intr_get_state,
+	.intr_get_line_state = dw_ictl_intr_get_line_state,
 };
 
 DEVICE_AND_API_INIT(dw_ictl, CONFIG_DW_ICTL_NAME, dw_ictl_initialize,
