@@ -18,7 +18,7 @@ properties:
       constraint: "nxp,flexpwm"
 
     reg:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true

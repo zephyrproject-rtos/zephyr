@@ -17,10 +17,10 @@ properties:
       constraint: "nxp,imx-ccm"
 
     reg:
-      category: required
+      required: true
 
     label:
-      category: required
+      required: true
 
     "#clock-cells":
       const: 3

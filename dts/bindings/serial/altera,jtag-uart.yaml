@@ -11,4 +11,4 @@ properties:
       constraint: "altera,jtag-uart"
 
     reg:
-      category: required
+      required: true

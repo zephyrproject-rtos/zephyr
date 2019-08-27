@@ -17,4 +17,4 @@ properties:
       constraint: "nios2,i2c"
 
     reg:
-      category: required
+      required: true

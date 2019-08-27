@@ -18,9 +18,9 @@ properties:
         constraint: "skyworks,sky13351"
     vctl1-gpios:
         type: phandle-array
-        category: required
+        required: true
         description: VCTL1 pin
     vctl2-gpios:
         type: phandle-array
-        category: required
+        required: true
         description: VCTL2 pin

@@ -567,11 +567,10 @@ class Device:
         if not prop_type:
             _err("'{}' in {} lacks 'type'".format(name, self.binding_path))
 
-        val = self._prop_val(name, prop_type,
-                             options.get("category") == "optional")
+        val = self._prop_val(name, prop_type, options.get("required"))
         if val is None:
-            # 'category: optional' property that wasn't there, or a property
-            # type for which we store no data.
+            # 'required: false' property that wasn't there, or a property type
+            # for which we store no data.
             return
 
         enum = options.get("enum")
@@ -605,7 +604,7 @@ class Device:
 
         self.props[name] = prop
 
-    def _prop_val(self, name, prop_type, optional):
+    def _prop_val(self, name, prop_type, required):
         # _init_prop() helper for getting the property's value
 
         node = self._node
@@ -621,7 +620,7 @@ class Device:
             return True
 
         if not prop:
-            if not optional and self.enabled:
+            if required and self.enabled:
                 _err("'{}' is marked as required in 'properties:' in {}, but "
                      "does not appear in {!r}".format(
                          name, self.binding_path, node))
@@ -1225,10 +1224,14 @@ def _bad_overwrite(to_dict, from_dict, prop):
     if to_dict[prop] == from_dict[prop]:
         return False
 
+    # Don't error out for the removed 'category' setting here. We will give a
+    # better error message in _check_binding().
+    if prop == "category":
+        return False
+
     # Allow a property to be made required when it previously was optional
     # without a warning
-    if prop == "category" and to_dict["category"] == "required" and \
-                              from_dict["category"] == "optional":
+    if prop == "required" and to_dict[prop] and not from_dict[prop]:
         return False
 
     return True
@@ -1281,23 +1284,28 @@ def _check_binding_properties(binding, binding_path):
     if "properties" not in binding:
         return
 
-    ok_prop_keys = {"description", "type", "category", "constraint", "enum",
+    ok_prop_keys = {"description", "type", "required", "constraint", "enum",
                     "const"}
-    ok_categories = {"required", "optional"}
 
     for prop_name, options in binding["properties"].items():
         for key in options:
+            if key == "category":
+                _err("please put 'required: {}' instead of 'category: {}' in "
+                     "'properties: {}: ...' in {} - 'category' has been "
+                     "removed".format(
+                         "true" if options["category"] == "required" else "false",
+                         options["category"], prop_name, binding_path))
+
             if key not in ok_prop_keys:
                 _err("unknown setting '{}' in 'properties: {}: ...' in {}, "
                      "expected one of {}".format(
                          key, prop_name, binding_path,
                          ", ".join(ok_prop_keys)))
 
-        if "category" in options and options["category"] not in ok_categories:
-            _err("unrecognized category '{}' for '{}' in 'properties' in {}, "
-                 "expected one of {}".format(
-                     options["category"], prop_name, binding_path,
-                     ", ".join(ok_categories)))
+        if "required" in options and not isinstance(options["required"], bool):
+            _err("malformed 'required:' setting '{}' for '{}' in 'properties' "
+                 "in {}, expected true/false"
+                 .format(options["required"], prop_name, binding_path))
 
         if "description" in options and \
            not isinstance(options["description"], str):

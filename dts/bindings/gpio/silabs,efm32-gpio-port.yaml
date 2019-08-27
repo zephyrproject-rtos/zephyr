@@ -11,10 +11,10 @@ properties:
       constraint: "silabs,efm32-gpio-port"
 
     reg:
-      category: required
+      required: true
 
     label:
-      category: required
+      required: true
 
     "#gpio-cells":
       const: 2

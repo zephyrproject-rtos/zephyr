@@ -11,10 +11,10 @@ properties:
       constraint: "silabs,efr32xg1-gpio-port"
 
     reg:
-      category: required
+      required: true
 
     label:
-      category: required
+      required: true
 
     "#gpio-cells":
       const: 2

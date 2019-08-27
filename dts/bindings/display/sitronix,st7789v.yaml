@@ -18,28 +18,28 @@ properties:
 
     reset-gpios:
       type: phandle-array
-      category: required
+      required: true
 
     cmd-data-gpios:
       type: phandle-array
-      category: required
+      required: true
 
     height:
       type: int
-      category: required
+      required: true
       description: Height in pixels of the panel driven by the controller
 
     width:
       type: int
-      category: required
+      required: true
       description: Width in pixels of the panel driven by the controller
 
     x-offset:
       type: int
-      category: optional
+      required: false
       description: The column offset in pixels of the LCD to the controller memory
 
     y-offset:
       type: int
-      category: optional
+      required: false
       description: The row offset in pixels of the LCD to the controller memory

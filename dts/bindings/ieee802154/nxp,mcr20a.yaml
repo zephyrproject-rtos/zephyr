@@ -18,8 +18,8 @@ properties:
 
     irqb-gpios:
       type: phandle-array
-      category: required
+      required: true
 
     reset-gpios:
       type: phandle-array
-      category: required
+      required: true

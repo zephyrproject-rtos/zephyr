@@ -11,10 +11,10 @@ properties:
       constraint: "st,stm32-timers"
 
     label:
-      category: required
+      required: true
 
     reg:
-      category: required
+      required: true
 
     clocks:
-      category: required
+      required: true

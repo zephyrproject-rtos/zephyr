@@ -18,8 +18,8 @@ properties:
 
     reset-gpios:
       type: phandle-array
-      category: optional
+      required: false
 
     cmd-data-gpios:
       type: phandle-array
-      category: required
+      required: true

@@ -10,8 +10,8 @@ description: >
 #
 # If a field appears both in the binding and in a file it inherits, then the
 # value in the binding takes precedence. This can be used e.g. to change a
-# 'category: optional' from an inherited file to a 'category: required' (see
-# the 'properties' description below).
+# 'required: false' from an inherited file to a 'required: true' (see the
+# 'properties' description below).
 inherits:
     !include other.yaml # or [other1.yaml, other2.yaml]
 
@@ -39,7 +39,7 @@ sub-node:
     properties:
         pwms:
             type: compound
-            category: required
+            required: true
 
 # 'properties' describes properties on the node, e.g.
 #
@@ -55,7 +55,7 @@ sub-node:
 # A typical property entry looks like this:
 #
 #   <property name>:
-#     category: <required | optional>
+#     required: <true | false>
 #     type: <string | int | boolean | array | uint8-array | string-array |
 #            phandle | phandles | phandle-array | compound>
 #     description: <description of the property>
@@ -106,23 +106,23 @@ properties:
         constraint: "foo-company,bar-device"
 
     # Describes a property like 'current-speed = <115200>;'. We pretend that
-    # it's obligatory for the example node and set 'category: required'.
+    # it's obligatory for the example node and set 'required: true'.
     current-speed:
         type: int
-        category: required
+        required: true
         description: Initial baud rate for bar-device
 
     # Describes an optional property like 'keys = "foo", "bar";'
     keys:
         type: string-array
-        category: optional
+        required: false
         description: Keys for bar-device
 
     # Describes an optional property like 'maximum-speed = "full-speed";
     # the enum specifies known values that the string property may take
     maximum-speed:
         type: string
-        category: optional
+        required: false
         description: Configures USB controllers to work up to a specific speed.
         enum:
            - "low-speed"
@@ -134,7 +134,7 @@ properties:
     # specifies that the value for the property is expected to be the value 1
     "#address-cells":
         type: int
-        category: required
+        required: true
         const: 1
 
 # If the binding describes an interrupt controller, GPIO controller, pinmux

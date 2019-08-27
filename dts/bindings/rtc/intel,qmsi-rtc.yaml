@@ -17,4 +17,4 @@ properties:
       constraint: "intel,qmsi-rtc"
 
     reg:
-      category: required
+      required: true

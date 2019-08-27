@@ -17,17 +17,17 @@ properties:
       constraint: "nxp,imx-usdhc"
 
     clocks:
-      category: required
+      required: true
 
     pwr-gpios:
       type: phandle-array
-      category: optional
+      required: false
       description: Power pin
 
     cd-gpios:
       type: phandle-array
-      category: optional
+      required: false
       description: Detect pin
 
     label:
-      category: required
+      required: true

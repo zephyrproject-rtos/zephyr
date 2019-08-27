@@ -18,4 +18,4 @@ properties:
 
     reset-gpios:
       type: phandle-array
-      category: required
+      required: true

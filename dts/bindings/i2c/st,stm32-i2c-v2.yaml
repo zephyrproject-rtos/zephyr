@@ -17,7 +17,7 @@ properties:
       constraint: "st,stm32-i2c-v2"
 
     reg:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true

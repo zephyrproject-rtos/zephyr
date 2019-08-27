@@ -18,7 +18,7 @@ properties:
       constraint: "openisa,rv32m1-event-unit"
 
   reg:
-      category: required
+      required: true
 
   "#interrupt-cells":
       const: 1

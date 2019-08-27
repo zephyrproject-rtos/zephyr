@@ -17,7 +17,7 @@ properties:
       constraint: "nxp,imx-lpi2c"
 
     reg:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true

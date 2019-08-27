@@ -18,8 +18,8 @@ properties:
 
     input-frequency:
       type: int
-      category: optional
+      required: false
       description: Frequency of the peripheral input clock.
 
     reg:
-      category: required
+      required: true

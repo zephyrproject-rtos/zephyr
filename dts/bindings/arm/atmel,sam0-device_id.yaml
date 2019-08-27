@@ -11,4 +11,4 @@ properties:
       constraint: "atmel,sam0-id"
 
     reg:
-      category: required
+      required: true
