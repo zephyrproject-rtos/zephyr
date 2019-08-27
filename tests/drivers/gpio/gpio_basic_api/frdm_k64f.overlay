@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2019 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	scope-pins {
+		compatible = "test,scope-pins";
+		gpios =
+			<&gpioc 16 0>, <&gpioc 17 0>,
+			<&gpioc 2 0>, <&gpioc 3 0>,
+			<&gpioc 1 0>, <&gpioc 8 0>,
+			<&gpioc 9 0>, <&gpioc 0 0>,
+			<&gpioc 7 0>, <&gpioc 5 0>;
+			
+	};
+};

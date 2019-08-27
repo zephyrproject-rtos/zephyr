@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2019 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	scope-pins {
+		compatible = "test,scope-pins";
+		/* Use pins on P3 (Arduino D0) header. */
+		gpios =
+			<&gpio1 1 0>, <&gpio1 2 0>,
+			<&gpio1 3 0>, <&gpio1 4 0>,
+			<&gpio1 5 0>, <&gpio1 6 0>,
+			<&gpio1 7 0>, <&gpio1 8 0>;
+	};
+};

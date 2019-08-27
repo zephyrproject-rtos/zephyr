@@ -1,0 +1,29 @@
+#
+# Copyright (c) 2019 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+title: GPIO pin definitions for tests
+
+description: >
+    Identify accessible board pins that can be used for GPIO signals.
+
+    Most development boards expose several GPIO pins on a header.  These
+    may be used as signals to a logic analyzer, or to simulate an
+    external device.  This binding provides a board-independent
+    description of pins that can be made available for this purpose.
+
+compatible: "test,scope-pins"
+
+properties:
+    gpios:
+        type: compound
+        required: true
+        description: >
+          Accessible pins used for GPIO-based instrumentation and
+          testing.
+
+          Any number of pins may be provided, on multiple GPIO devices.
+          However at least two entries must be present, and the first
+          two must be on the same GPIO device.
