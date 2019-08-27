@@ -718,6 +718,9 @@ next_state:
 		if (FL(&fl, &, ACK, th_seq(th) == conn->ack)) {
 			tcp_send_timer_cancel(conn);
 			next = TCP_ESTABLISHED;
+			if (FL(&fl, &, PSH)) {
+				tcp_data_get(conn, pkt);
+			}
 			if (FL(&fl, &, SYN)) {
 				conn_ack(conn, th_seq(th) + 1);
 				tcp_out(conn, ACK);
