@@ -1838,7 +1838,51 @@ static void conn_req(struct net_buf *buf)
 	bt_conn_unref(conn);
 }
 
-static void update_sec_level_br(struct bt_conn *conn)
+static bool br_sufficient_key_size(struct bt_conn *conn)
+{
+	struct bt_hci_cp_read_encryption_key_size *cp;
+	struct bt_hci_rp_read_encryption_key_size *rp;
+	struct net_buf *buf, *rsp;
+	u8_t key_size;
+	int err;
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_READ_ENCRYPTION_KEY_SIZE,
+				sizeof(*cp));
+	if (!buf) {
+		BT_ERR("Failed to allocate command buffer");
+		return false;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	cp->handle = sys_cpu_to_le16(conn->handle);
+
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_ENCRYPTION_KEY_SIZE,
+				   buf, &rsp);
+	if (err) {
+		BT_ERR("Failed to read encryption key size (err %d)", err);
+		return false;
+	}
+
+	if (rsp->len < sizeof(*rp)) {
+		BT_ERR("Too small command complete for encryption key size");
+		net_buf_unref(rsp);
+		return false;
+	}
+
+	rp = (void *)rsp->data;
+	key_size = rp->key_size;
+	net_buf_unref(rsp);
+
+	BT_DBG("Encryption key size is %u", key_size);
+
+	if (conn->sec_level == BT_SECURITY_FIPS) {
+		return key_size == BT_HCI_ENCRYPTION_KEY_SIZE_MAX;
+	}
+
+	return key_size >= BT_HCI_ENCRYPTION_KEY_SIZE_MIN;
+}
+
+static bool update_sec_level_br(struct bt_conn *conn)
 {
 	if (!conn->encrypt) {
 		conn->sec_level = BT_SECURITY_LOW;
@@ -1858,6 +1902,12 @@ static void update_sec_level_br(struct bt_conn *conn)
 	} else {
 		BT_WARN("No BR/EDR link key found");
 		conn->sec_level = BT_SECURITY_MEDIUM;
+	}
+
+	if (!br_sufficient_key_size(conn)) {
+		BT_ERR("Encryption key size is not sufficient");
+		bt_conn_disconnect(conn, BT_HCI_ERR_AUTHENTICATION_FAIL);
+		return false;
 	}
 
 	if (conn->required_sec_level > conn->sec_level) {
