@@ -18,77 +18,77 @@ properties:
 
     height:
       type: int
-      category: required
+      required: true
       description: Height in pixel of the panel driven by the controller
 
     width:
       type: int
-      category: required
+      required: true
       description: Width in pixel of the panel driven by the controller
 
     pp-height-bits:
       type: int
-      category: required
+      required: true
       description: Number of bits used for the height parameters
 
     pp-width-bits:
       type: int
-      category: required
+      required: true
       description: Number of bits used for the width parameters
 
     gdv-a:
       type: int
-      category: required
+      required: true
       description: Gate driving voltage (A value)
 
     gdv-b:
       type: int
-      category: optional
+      required: false
       description: Gate driving voltage (B value)
 
     sdv:
       type: int
-      category: required
+      required: true
       description: Source driving voltage
 
     vcom:
       type: int
-      category: required
+      required: true
       description: VCOM voltage
 
     border-waveform:
       type: int
-      category: required
+      required: true
       description: Border waveform
 
     softstart-1:
       type: int
-      category: optional
+      required: false
       description: Booster soft start phase 1
 
     softstart-2:
       type: int
-      category: optional
+      required: false
       description: Booster soft start phase 2
 
     softstart-3:
       type: int
-      category: optional
+      required: false
       description: Booster soft start phase 3
 
     orientation-flipped:
       type: boolean
-      category: optional
+      required: false
       description: Last column address is mapped to first segment
 
     reset-gpios:
       type: phandle-array
-      category: required
+      required: true
 
     dc-gpios:
       type: phandle-array
-      category: required
+      required: true
 
     busy-gpios:
       type: phandle-array
-      category: required
+      required: true

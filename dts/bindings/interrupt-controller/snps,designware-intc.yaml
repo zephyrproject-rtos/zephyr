@@ -11,10 +11,10 @@ properties:
       constraint: "snps,designware-intc"
 
   reg:
-      category: required
+      required: true
 
   interrupts:
-      category: required
+      required: true
 
   "#interrupt-cells":
       const: 3

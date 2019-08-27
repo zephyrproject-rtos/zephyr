@@ -17,21 +17,21 @@ properties:
       constraint: "st,stm32-otghs"
 
     reg:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true
 
     ram-size:
       type: int
-      category: required
+      required: true
       description: Size of USB dedicated RAM. STM32 SOC's reference
                    manual defines a shared FIFO size.
 
     phys:
       type: phandle
-      category: optional
+      required: false
       description: PHY provider specifier
 
     clocks:
-      category: required
+      required: true

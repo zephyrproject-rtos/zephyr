@@ -17,10 +17,10 @@ properties:
       constraint: "nxp,kinetis-mcg"
 
     reg:
-      category: required
+      required: true
 
     label:
-      category: required
+      required: true
 
     "#clock-cells":
       const: 1

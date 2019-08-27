@@ -17,16 +17,16 @@ properties:
       constraint: "ublox,sara-r4"
 
     label:
-      category: required
+      required: true
 
     mdm-power-gpios:
       type: phandle-array
-      category: required
+      required: true
 
     mdm-reset-gpios:
       type: phandle-array
-      category: required
+      required: true
 
     mdm-vint-gpios:
       type: phandle-array
-      category: optional
+      required: false

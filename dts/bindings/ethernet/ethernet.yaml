@@ -12,7 +12,7 @@ inherits:
 properties:
     local-mac-address:
       type: uint8-array
-      category: optional
+      required: false
       description: mac address
     label:
-      category: required
+      required: true

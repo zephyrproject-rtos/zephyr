@@ -17,18 +17,18 @@ properties:
       constraint: "snps,designware-gpio"
 
     reg:
-      category: required
+      required: true
 
     bits:
       type: int
       description: gpio bits
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true
 
     label:
-      category: required
+      required: true
 
     "#gpio-cells":
       const: 2

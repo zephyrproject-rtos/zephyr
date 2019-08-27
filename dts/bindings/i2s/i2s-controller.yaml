@@ -14,10 +14,10 @@ child:
 
 properties:
     "#address-cells":
-      category: required
+      required: true
       const: 1
     "#size-cells":
-      category: required
+      required: true
       const: 0
     label:
-      category: required
+      required: true

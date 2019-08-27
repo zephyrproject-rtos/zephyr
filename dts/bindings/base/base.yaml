@@ -3,7 +3,7 @@
 properties:
     status:
         type: string
-        category: optional
+        required: false
         description: indicates the operational status of a device
         enum:
            - "okay"
@@ -14,55 +14,55 @@ properties:
 
     compatible:
         type: string-array
-        category: required
+        required: true
         description: compatible strings
 
     reg:
         type: array
         description: register space
-        category: optional
+        required: false
 
     reg-names:
         type: string-array
         description: name of each register space
-        category: optional
+        required: false
 
     interrupts:
         type: array
-        category: optional
+        required: false
         description: interrupts for device
 
     interrupts-extended:
         type: phandle-array
-        category: optional
+        required: false
         description: extended interrupt specifier for device
 
     interrupt-names:
         type: string-array
-        category: optional
+        required: false
         description: name of each interrupt
 
     interrupt-parent:
         type: phandle
-        category: optional
+        required: false
         description: phandle to interrupt controller node
 
     label:
         type: string
-        category: optional
+        required: false
         description: Human readable string describing the device (used by Zephyr for API name)
 
     clocks:
         type: phandle-array
-        category: optional
+        required: false
         description: Clock gate information
 
     "#address-cells":
         type: int
-        category: optional
+        required: false
         description: number of address cells in reg property
 
     "#size-cells":
         type: int
-        category: optional
+        required: false
         description: number of size cells in reg property

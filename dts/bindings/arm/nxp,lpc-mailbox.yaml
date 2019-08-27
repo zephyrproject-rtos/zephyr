@@ -17,10 +17,10 @@ properties:
       constraint: "nxp,lpc-mailbox"
 
   reg:
-      category: required
+      required: true
 
   interrupts:
-      category: required
+      required: true
 
   label:
-      category: required
+      required: true

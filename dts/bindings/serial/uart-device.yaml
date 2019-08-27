@@ -14,4 +14,4 @@ parent:
 
 properties:
     label:
-      category: required
+      required: true

@@ -17,4 +17,4 @@ properties:
       constraint: "arm,versatile-i2c"
 
     reg:
-      category: required
+      required: true

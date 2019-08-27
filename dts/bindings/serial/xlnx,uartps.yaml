@@ -12,5 +12,5 @@ properties:
       constraint: "xlnx,xuartps"
 
     reg:
-      category: required
+      required: true
 ...

@@ -17,10 +17,10 @@ properties:
       constraint: "arm,gic"
 
     reg:
-      category: required
+      required: true
 
     label:
-      category: required
+      required: true
 
 "#cells":
   - irq

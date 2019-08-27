@@ -17,12 +17,12 @@ properties:
       constraint: "atmel,sam-i2c-twihs"
 
     reg:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true
 
     peripheral-id:
       type: int
       description: peripheral ID
-      category: required
+      required: true

@@ -13,9 +13,9 @@ properties:
     single-bank:
       type: boolean
       description: dual-bank mode not enabled (page erase 4096k)
-      category: optional
+      required: false
 
     dual-bank:
       type: boolean
       description: dual-bank mode enabled (page erase 2048k)
-      category: optional
+      required: false

@@ -17,7 +17,7 @@ properties:
       constraint: "mmio-sram"
 
     reg:
-      category: required
+      required: true
 
     label:
-      category: optional
+      required: false

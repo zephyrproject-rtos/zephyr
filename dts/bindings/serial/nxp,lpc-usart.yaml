@@ -17,7 +17,7 @@ properties:
       constraint: "nxp,lpc-usart"
 
     reg:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true

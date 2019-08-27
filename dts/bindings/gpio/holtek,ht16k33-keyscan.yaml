@@ -12,9 +12,9 @@ properties:
     compatible:
       constraint: "holtek,ht16k33-keyscan"
     reg:
-      category: required
+      required: true
     label:
-      category: required
+      required: true
 
 "#cells":
   - pin

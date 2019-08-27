@@ -17,4 +17,4 @@ properties:
       constraint: "microsemi,coreuart"
 
     reg:
-      category: required
+      required: true

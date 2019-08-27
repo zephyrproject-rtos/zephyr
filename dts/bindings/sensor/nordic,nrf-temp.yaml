@@ -17,7 +17,7 @@ properties:
       constraint: "nordic,nrf-temp"
 
     reg:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true

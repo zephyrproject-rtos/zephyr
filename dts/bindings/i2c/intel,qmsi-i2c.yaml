@@ -17,7 +17,7 @@ properties:
       constraint: "intel,qmsi-i2c"
 
     reg:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true

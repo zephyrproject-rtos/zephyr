@@ -2,9 +2,9 @@
 
 properties:
     foo:
-        category: optional
+        required: false
         type: int
 
     baz:
-        category: required
+        required: true
         type: int

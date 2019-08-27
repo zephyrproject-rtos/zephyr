@@ -11,15 +11,15 @@ properties:
       constraint: "silabs,efm32-gpio"
 
     reg:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true
 
     label:
-      category: required
+      required: true
 
     location-swo:
       type: int
-      category: optional
+      required: false
       description: Serial Wire Output (SWO) PIN location

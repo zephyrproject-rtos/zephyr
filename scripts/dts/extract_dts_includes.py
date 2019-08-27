@@ -205,20 +205,6 @@ def merge_properties(parent, fname, to_dict, from_dict):
         else:
             to_dict[k] = from_dict[k]
 
-            # Warn when overriding a property and changing its value...
-            if (k in to_dict and to_dict[k] != from_dict[k] and
-                # ...unless it's the 'title', 'description', or 'version'
-                # property. These are overridden deliberately.
-                not k in {'title', 'version', 'description'} and
-                # Also allow the category to be changed from 'optional' to
-                # 'required' without a warning
-                not (k == "category" and to_dict[k] == "optional" and
-                     from_dict[k] == "required")):
-
-                print("extract_dts_includes.py: {}('{}') merge of property "
-                      "'{}': '{}' overwrites '{}'"
-                      .format(fname, parent, k, from_dict[k], to_dict[k]))
-
 
 def merge_included_bindings(fname, node):
     # Recursively merges properties from files !include'd from the 'inherits'

@@ -16,4 +16,4 @@ properties:
     compatible:
       constraint: "nxp,kinetis-ptp"
     interrupts:
-      category: required
+      required: true

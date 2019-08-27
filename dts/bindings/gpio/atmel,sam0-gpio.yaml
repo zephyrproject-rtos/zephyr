@@ -11,10 +11,10 @@ properties:
       constraint: "atmel,sam0-gpio"
 
     reg:
-      category: required
+      required: true
 
     label:
-      category: required
+      required: true
 
     "#gpio-cells":
       const: 2

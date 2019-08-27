@@ -17,5 +17,5 @@ properties:
       constraint: "atmel,at24"
     size:
       type: int
-      category: required
+      required: true
       description: I2C Slave EEPROM Size in KiB

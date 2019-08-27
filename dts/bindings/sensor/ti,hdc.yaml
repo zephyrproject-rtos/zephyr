@@ -18,4 +18,4 @@ properties:
 
     drdy-gpios:
       type: phandle-array
-      category: optional
+      required: false
