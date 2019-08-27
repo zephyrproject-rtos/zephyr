@@ -17,12 +17,12 @@ properties:
       constraint: "atmel,sam0-i2c"
 
     reg:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true
 
     dma:
       type: int
-      category: optional
+      required: false
       description: DMA channel

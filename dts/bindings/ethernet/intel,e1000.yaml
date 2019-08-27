@@ -16,7 +16,7 @@ properties:
       constraint: "intel,e1000"
 
     reg:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true

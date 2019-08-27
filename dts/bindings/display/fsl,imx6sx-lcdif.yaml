@@ -17,10 +17,10 @@ properties:
       constraint: "fsl,imx6sx-lcdif"
 
     reg:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true
 
     label:
-      category: required
+      required: true

@@ -17,7 +17,7 @@ properties:
       constraint: "intel,qmsi-uart"
 
     reg:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true

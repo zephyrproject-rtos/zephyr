@@ -11,7 +11,7 @@ properties:
       constraint: "xtensa,core-intc"
 
   reg:
-      category: required
+      required: true
 
   "#interrupt-cells":
       const: 3

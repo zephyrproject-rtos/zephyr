@@ -17,7 +17,7 @@ properties:
       constraint: "st,stm32-usbphyc"
 
     reg:
-      category: required
+      required: true
 
     "#phy-cells":
       const: 0

@@ -17,11 +17,11 @@ properties:
       constraint: "microchip,xec-rtos-timer"
 
     reg:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true
 
     label:
-      category: required
+      required: true
 ...

@@ -17,6 +17,6 @@ parent:
 
 properties:
     reg:
-      category: required
+      required: true
     label:
-      category: required
+      required: true

@@ -17,7 +17,7 @@ properties:
       constraint: "ti,cc13xx-cc26xx-pinmux"
 
     reg:
-      category: required
+      required: true
 
     label:
-      category: required
+      required: true

@@ -17,20 +17,20 @@ properties:
       constraint: "nxp,imx-epit"
 
   reg:
-      category: required
+      required: true
 
   interrupts:
-      category: required
+      required: true
 
   label:
-      category: required
+      required: true
 
   prescaler:
      type: int
-     category: required
+     required: true
      description: Set the EPIT prescaler between 0 and 4095
 
   rdc:
      type: int
-     category: required
+     required: true
      description: Set the RDC permission for this peripheral

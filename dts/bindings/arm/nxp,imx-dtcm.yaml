@@ -17,4 +17,4 @@ properties:
       constraint: "nxp,imx-dtcm"
 
     reg:
-      category: required
+      required: true

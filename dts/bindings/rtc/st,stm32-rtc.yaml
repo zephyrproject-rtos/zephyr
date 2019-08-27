@@ -17,4 +17,4 @@ properties:
       constraint: "st,stm32-rtc"
 
     reg:
-      category: required
+      required: true

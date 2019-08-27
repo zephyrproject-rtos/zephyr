@@ -5,7 +5,7 @@ inherits:
 
 properties:
     label:
-      category: required
+      required: true
 
     reg:
-      category: required
+      required: true

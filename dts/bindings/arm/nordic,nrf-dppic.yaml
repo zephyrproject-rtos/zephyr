@@ -18,4 +18,4 @@ properties:
       constraint: "nordic,nrf-dppic"
 
     reg:
-      category: required
+      required: true

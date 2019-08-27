@@ -11,4 +11,4 @@ properties:
       constraint: "nordic,nrf-uicr"
 
     reg:
-      category: required
+      required: true

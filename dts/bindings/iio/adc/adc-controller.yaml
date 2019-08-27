@@ -11,8 +11,8 @@ inherits:
 
 properties:
     label:
-      category: required
+      required: true
 
     "#io-channel-cells":
       type: int
-      category: required
+      required: true

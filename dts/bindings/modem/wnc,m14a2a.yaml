@@ -17,29 +17,29 @@ properties:
       constraint: "wnc,m14a2a"
 
     label:
-      category: required
+      required: true
 
     mdm-boot-mode-sel-gpios:
       type: phandle-array
-      category: required
+      required: true
 
     mdm-power-gpios:
       type: phandle-array
-      category: required
+      required: true
 
     mdm-keep-awake-gpios:
       type: phandle-array
-      category: required
+      required: true
 
     mdm-reset-gpios:
       type: phandle-array
-      category: required
+      required: true
 
     mdm-shld-trans-ena-gpios:
       type: phandle-array
-      category: required
+      required: true
 
     mdm-send-ok-gpios:
       type: phandle-array
-      category: optional
+      required: false
       description: UART RTS pin if no HW flow control (set to always enabled)

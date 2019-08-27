@@ -11,7 +11,7 @@ properties:
       constraint: "arm,cmsdk-watchdog"
 
     reg:
-      category: required
+      required: true
 
     clocks:
-      category: required
+      required: true

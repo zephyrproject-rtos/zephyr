@@ -17,5 +17,5 @@ properties:
         constraint: "st,lis3dh"
 
     irq-gpios:
-      category: optional
+      required: false
       type: phandle-array

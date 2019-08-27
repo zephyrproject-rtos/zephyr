@@ -11,29 +11,29 @@ properties:
       constraint: "nordic,nrf-sw-pwm"
 
     label:
-      category: required
+      required: true
 
     timer-instance:
       type: int
       description: Timer instance to use for generating the PWM output signals
-      category: required
+      required: true
 
     channel-count:
       type: int
       description: Number of PWM channels. Limited by timer instance compare registers minus 1.
-      category: required
+      required: true
 
     clock-prescaler:
       type: int
       description: Clock prescaler for timer used for generating the PWM output signals with frequency = 16 MHz / 2^prescaler
-      category: required
+      required: true
 
     ppi-base:
       type: int
       description: PPI base used for PPI index calculation used for PWM output generation
-      category: required
+      required: true
 
     gpiote-base:
       type: int
       description: GPIOTE base used for GPIOTE index calculation used for PWM output generation
-      category: required
+      required: true

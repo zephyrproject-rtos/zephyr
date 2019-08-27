@@ -11,14 +11,14 @@ properties:
       constraint: "soc-nv-flash"
 
     label:
-      category: optional
+      required: false
 
     erase-block-size:
      type: int
      description: address alignment required by flash erase operations
-     category: optional
+     required: false
 
     write-block-size:
      type: int
      description: address alignment required by flash write operations
-     category: optional
+     required: false
