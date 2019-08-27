@@ -66,6 +66,26 @@ void test_byteorder_mem_swap(void)
 	zassert_true((memcmp(buf_orig_2, buf_chk_2, 11) == 0),
 		     "Swapping buffer failed");
 }
+
+/**
+ * @brief Test sys_get_be64() functionality
+ *
+ * @details Test if sys_get_be64() correctly handles endianness.
+ *
+ * @see sys_get_be64()
+ */
+void test_sys_get_be64(void)
+{
+	u64_t val = 0xf0e1d2c3b4a59687, tmp;
+	u8_t buf[] = {
+		0xf0, 0xe1, 0xd2, 0xc3, 0xb4, 0xa5, 0x96, 0x87
+	};
+
+	tmp = sys_get_be64(buf);
+
+	zassert_equal(tmp, val, "sys_get_be64() failed");
+}
+
 /**
  * @}
  */
