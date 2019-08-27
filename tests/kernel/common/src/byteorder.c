@@ -263,5 +263,44 @@ void test_sys_put_le32(void)
 }
 
 /**
+ * @brief Test sys_get_le64() functionality
+ *
+ * @details Test if sys_get_le64() correctly handles endianness.
+ *
+ * @see sys_get_le64()
+ */
+void test_sys_get_le64(void)
+{
+	u64_t val = 0xf0e1d2c3b4a59687, tmp;
+	u8_t buf[] = {
+		0x87, 0x96, 0xa5, 0xb4, 0xc3, 0xd2, 0xe1, 0xf0
+	};
+
+	tmp = sys_get_le64(buf);
+
+	zassert_equal(tmp, val, "sys_get_le64() failed");
+}
+
+/**
+ * @brief Test sys_put_le64() functionality
+ *
+ * @details Test if sys_put_le64() correctly handles endianness.
+ *
+ * @see sys_put_le64()
+ */
+void test_sys_put_le64(void)
+{
+	u64_t val = 0xf0e1d2c3b4a59687;
+	u8_t buf[] = {
+		0x87, 0x96, 0xa5, 0xb4, 0xc3, 0xd2, 0xe1, 0xf0
+	};
+	u8_t tmp[sizeof(u64_t)];
+
+	sys_put_le64(val, tmp);
+
+	zassert_mem_equal(tmp, buf, sizeof(u64_t), "sys_put_le64() failed");
+}
+
+/**
  * @}
  */
