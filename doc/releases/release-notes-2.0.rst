@@ -414,6 +414,10 @@ Build and Infrastructure
 Libraries / Subsystems
 ***********************
 
+* File Systems
+
+  * Added support for littlefs
+
 * TBD
 
 HALs
