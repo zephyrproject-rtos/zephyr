@@ -2071,8 +2071,18 @@ struct net_buf *bt_att_create_pdu(struct bt_conn *conn, u8_t op, size_t len)
 		return NULL;
 	}
 
-	buf = bt_l2cap_create_pdu(NULL, 0);
+	switch (att_op_get_type(op)) {
+	case ATT_RESPONSE:
+	case ATT_CONFIRMATION:
+		/* Use a timeout only when responding/confirming */
+		buf = bt_l2cap_create_pdu_timeout(NULL, 0, ATT_TIMEOUT);
+		break;
+	default:
+		buf = bt_l2cap_create_pdu(NULL, 0);
+	}
+
 	if (!buf) {
+		BT_ERR("Unable to allocate buffer for op 0x%02x", op);
 		return NULL;
 	}
 
