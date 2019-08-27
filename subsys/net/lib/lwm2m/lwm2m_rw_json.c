@@ -497,7 +497,7 @@ static size_t put_float32fix(struct lwm2m_output_context *out,
 	size_t len;
 
 	len = put_json_prefix(out, path, "\"v\"");
-	len += plain_text_put_format(out, "%d.%d", value->val1, value->val2);
+	len += plain_text_put_float32fix(out, path, value);
 	len += put_json_postfix(out);
 	return len;
 }
@@ -509,8 +509,7 @@ static size_t put_float64fix(struct lwm2m_output_context *out,
 	size_t len;
 
 	len = put_json_prefix(out, path, "\"v\"");
-	len += plain_text_put_format(out, "%lld.%lld",
-				     value->val1, value->val2);
+	len += plain_text_put_float64fix(out, path, value);
 	len += put_json_postfix(out);
 	return len;
 }
