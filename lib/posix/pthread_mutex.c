@@ -9,6 +9,8 @@
 #include <wait_q.h>
 #include <posix/pthread.h>
 
+s64_t timespec_to_timeoutms(const struct timespec *abstime);
+
 #define MUTEX_MAX_REC_LOCK 32767
 
 /*
@@ -73,9 +75,10 @@ int pthread_mutex_trylock(pthread_mutex_t *m)
  * See IEEE 1003.1
  */
 int pthread_mutex_timedlock(pthread_mutex_t *m,
-			    const struct timespec *to)
+			    const struct timespec *abstime)
 {
-	return acquire_mutex(m, _ts_to_ms(to));
+	s32_t timeout = (s32_t)timespec_to_timeoutms(abstime);
+	return acquire_mutex(m, timeout);
 }
 
 /**
