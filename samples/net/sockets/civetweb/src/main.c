@@ -171,11 +171,12 @@ int main(void)
 	pthread_attr_t civetweb_attr;
 	pthread_t civetweb_thread;
 
-	pthread_attr_init(&civetweb_attr);
-	pthread_attr_setstack(&civetweb_attr, &civetweb_stack,
-			      CIVETWEB_MAIN_THREAD_STACK_SIZE);
+	(void)pthread_attr_init(&civetweb_attr);
+	(void)pthread_attr_setstack(&civetweb_attr, &civetweb_stack,
+				    CIVETWEB_MAIN_THREAD_STACK_SIZE);
 
-	pthread_create(&civetweb_thread, &civetweb_attr, &main_pthread, 0);
+	(void)pthread_create(&civetweb_thread, &civetweb_attr,
+			     &main_pthread, 0);
 
 	return 0;
 }
