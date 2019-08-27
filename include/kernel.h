@@ -2682,6 +2682,14 @@ __syscall int k_stack_pop(struct k_stack *stack, stack_data_t *data, s32_t timeo
 
 struct k_work;
 
+/* private, used by k_poll */
+typedef int (*_poller_cb_t)(struct k_poll_event *event, u32_t state);
+struct _poller {
+	volatile bool is_polling;
+	struct k_thread *thread;
+	_poller_cb_t cb;
+};
+
 /**
  * @addtogroup thread_apis
  * @{
@@ -4312,12 +4320,6 @@ extern void *k_calloc(size_t nmemb, size_t size);
 #else
 #define _INIT_OBJ_POLL_EVENT(obj) do { } while (false)
 #endif
-
-/* private - implementation data created as needed, per-type */
-struct _poller {
-	struct k_thread *thread;
-	volatile bool is_polling;
-};
 
 /* private - types bit positions */
 enum _poll_types_bits {
