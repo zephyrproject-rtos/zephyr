@@ -155,6 +155,21 @@ static inline void sys_put_be32(u32_t val, u8_t dst[4])
 }
 
 /**
+ *  @brief Put a 64-bit integer as big-endian to arbitrary location.
+ *
+ *  Put a 64-bit integer, originally in host endianness, to a
+ *  potentially unaligned memory location in big-endian format.
+ *
+ *  @param val 64-bit integer in host endianness.
+ *  @param dst Destination memory address to store the result.
+ */
+static inline void sys_put_be64(u64_t val, u8_t dst[8])
+{
+	sys_put_be32(val >> 32, dst);
+	sys_put_be32(val, &dst[4]);
+}
+
+/**
  *  @brief Put a 16-bit integer as little-endian to arbitrary location.
  *
  *  Put a 16-bit integer, originally in host endianness, to a
