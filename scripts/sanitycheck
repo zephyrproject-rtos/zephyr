@@ -1503,6 +1503,14 @@ class TestInstance:
         else:
             runnable = False
 
+        if self.platform.simulation == "nsim":
+            if not find_executable("nsimdrv"):
+                runnable = False
+
+        if self.platform.simulation == "renode":
+            if not find_executable("renode"):
+                runnable = False
+
         # console harness allows us to run the test and capture data.
         if self.testcase.harness == 'console':
 
