@@ -336,6 +336,15 @@ def analyze_die_array(die):
     type_env[die.offset] = ArrayType(die.offset, elements, type_offset)
 
 
+def analyze_typedef(die):
+    type_offset = die_get_type_offset(die)
+
+    if type_offset not in type_env.keys():
+        return
+
+    type_env[die.offset] = type_env[type_offset]
+
+
 def addr_deref(elf, addr):
     for section in elf.iter_sections():
         start = section['sh_addr']
@@ -404,6 +413,8 @@ class ElfHelper:
                     analyze_die_const(die)
                 elif die.tag == "DW_TAG_array_type":
                     analyze_die_array(die)
+                elif die.tag == "DW_TAG_typedef":
+                    analyze_typedef(die)
                 elif die.tag == "DW_TAG_variable":
                     variables.append(die)
 
