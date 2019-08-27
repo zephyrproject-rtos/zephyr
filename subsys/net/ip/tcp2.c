@@ -715,19 +715,13 @@ next_state:
 		next = TCP_SYN_SENT;
 		break;
 	case TCP_SYN_SENT:
-		/* passive open */
-		if (FL(&fl, ==, ACK, th_seq(th) == conn->ack)) {
+		if (FL(&fl, &, ACK, th_seq(th) == conn->ack)) {
 			tcp_send_timer_cancel(conn);
 			next = TCP_ESTABLISHED;
-			break;
-		}
-		/* active open */
-		if (FL(&fl, ==, (SYN | ACK), th_seq(th) == conn->ack)) {
-			tcp_send_timer_cancel(conn);
-			conn_ack(conn, th_seq(th) + 1);
-			tcp_out(conn, ACK);
-			next = TCP_ESTABLISHED;
-			break;
+			if (FL(&fl, &, SYN)) {
+				conn_ack(conn, th_seq(th) + 1);
+				tcp_out(conn, ACK);
+			}
 		}
 		break;
 	case TCP_ESTABLISHED:
