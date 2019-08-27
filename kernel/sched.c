@@ -336,7 +336,7 @@ void z_add_thread_to_ready_q(struct k_thread *thread)
 		_priq_run_add(&_kernel.ready_q.runq, thread);
 		z_mark_thread_as_queued(thread);
 		update_cache(0);
-#ifdef CONFIG_SCHED_IPI_SUPPORTED
+#if defined(CONFIG_SMP) &&  defined(CONFIG_SCHED_IPI_SUPPORTED)
 		z_arch_sched_ipi();
 #endif
 	}
