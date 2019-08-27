@@ -331,9 +331,14 @@ def analyze_die_array(die):
         elements.append(ub.value + 1)
 
     if not elements:
-        return
-
-    type_env[die.offset] = ArrayType(die.offset, elements, type_offset)
+        if type_offset in type_env.keys():
+            mt = type_env[type_offset]
+            if mt.has_kobject():
+                if isinstance(mt, KobjectType) and mt.name == STACK_TYPE:
+                    elements.append(1)
+                    type_env[die.offset] = ArrayType(die.offset, elements, type_offset)
+    else:
+        type_env[die.offset] = ArrayType(die.offset, elements, type_offset)
 
 
 def analyze_typedef(die):
