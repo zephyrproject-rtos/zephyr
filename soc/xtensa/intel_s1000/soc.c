@@ -147,6 +147,59 @@ void z_soc_irq_disable(u32_t irq)
 	}
 }
 
+int z_soc_irq_is_enabled(unsigned int irq)
+{
+	struct device *dev_cavs, *dev_ictl;
+	int ret = -EINVAL;
+
+	switch (XTENSA_IRQ_NUMBER(irq)) {
+	case DT_CAVS_ICTL_0_IRQ:
+		dev_cavs = device_get_binding(CONFIG_CAVS_ICTL_0_NAME);
+		break;
+	case DT_CAVS_ICTL_1_IRQ:
+		dev_cavs = device_get_binding(CONFIG_CAVS_ICTL_1_NAME);
+		break;
+	case DT_CAVS_ICTL_2_IRQ:
+		dev_cavs = device_get_binding(CONFIG_CAVS_ICTL_2_NAME);
+		break;
+	case DT_CAVS_ICTL_3_IRQ:
+		dev_cavs = device_get_binding(CONFIG_CAVS_ICTL_3_NAME);
+		break;
+	default:
+		/* regular interrupt */
+		ret = z_xtensa_irq_is_enabled(XTENSA_IRQ_NUMBER(irq));
+		goto out;
+	}
+
+	if (!dev_cavs) {
+		LOG_DBG("board: CAVS device binding failed");
+		ret = -ENODEV;
+		goto out;
+	}
+
+	switch (CAVS_IRQ_NUMBER(irq)) {
+	case DW_ICTL_IRQ_CAVS_OFFSET:
+		dev_ictl = device_get_binding(CONFIG_DW_ICTL_NAME);
+		break;
+	default:
+		/* The source of the interrupt is in CAVS interrupt logic */
+		ret = irq_line_is_enabled_next_level(dev_cavs,
+						     CAVS_IRQ_NUMBER(irq));
+		goto out;
+	}
+
+	if (!dev_ictl) {
+		LOG_DBG("board: DW intr_control device binding failed");
+		ret = -ENODEV;
+		goto out;
+	}
+
+	ret = irq_line_is_enabled_next_level(dev_ictl, INTR_CNTL_IRQ_NUM(irq));
+
+out:
+	return ret;
+}
+
 static inline void soc_set_resource_ownership(void)
 {
 	volatile struct soc_resource_alloc_regs *regs =
