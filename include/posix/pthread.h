@@ -224,7 +224,7 @@ int pthread_mutex_unlock(pthread_mutex_t *m);
  */
 
 int pthread_mutex_timedlock(pthread_mutex_t *m,
-			    const struct timespec *to);
+			    const struct timespec *abstime);
 
 /**
  * @brief POSIX threading compatibility API
