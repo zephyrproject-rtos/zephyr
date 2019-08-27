@@ -125,16 +125,50 @@ static size_t put_float32fix(struct lwm2m_output_context *out,
 			     struct lwm2m_obj_path *path,
 			     float32_value_t *value)
 {
-	return plain_text_put_format(out, "%d.%d",
-				     value->val1, value->val2);
+	size_t len;
+	char buf[sizeof("000000")];
+
+	/* value of 123 -> "000123" -- ignore sign */
+	len = snprintf(buf, sizeof(buf), "%06d", abs(value->val2));
+	if (len != 6U) {
+		strcpy(buf, "0");
+	} else {
+		/* clear ending zeroes, but leave 1 if needed */
+		while (len > 1U && buf[len - 1] == '0') {
+			buf[--len] = '\0';
+		}
+	}
+
+	return plain_text_put_format(out, "%s%d.%s",
+				     /* handle negative val2 when val1 is 0 */
+				     (value->val1 == 0 && value->val2 < 0) ?
+						"-" : "",
+				     value->val1, buf);
 }
 
 static size_t put_float64fix(struct lwm2m_output_context *out,
 			     struct lwm2m_obj_path *path,
 			     float64_value_t *value)
 {
-	return plain_text_put_format(out, "%lld.%lld",
-				     value->val1, value->val2);
+	size_t len;
+	char buf[sizeof("000000000")];
+
+	/* value of 123 -> "000000123" -- ignore sign */
+	len = snprintf(buf, sizeof(buf), "%09lld", abs(value->val2));
+	if (len != 9U) {
+		strcpy(buf, "0");
+	} else {
+		/* clear ending zeroes, but leave 1 if needed */
+		while (len > 1U && buf[len - 1] == '0') {
+			buf[--len] = '\0';
+		}
+	}
+
+	return plain_text_put_format(out, "%s%lld.%s",
+				     /* handle negative val2 when val1 is 0 */
+				     (value->val1 == 0 && value->val2 < 0) ?
+						"-" : "",
+				     value->val1, buf);
 }
 
 static size_t put_string(struct lwm2m_output_context *out,
