@@ -146,5 +146,44 @@ void test_sys_put_be32(void)
 }
 
 /**
+ * @brief Test sys_get_be16() functionality
+ *
+ * @details Test if sys_get_be16() correctly handles endianness.
+ *
+ * @see sys_get_be16()
+ */
+void test_sys_get_be16(void)
+{
+	u32_t val = 0xf0e1, tmp;
+	u8_t buf[] = {
+		0xf0, 0xe1
+	};
+
+	tmp = sys_get_be16(buf);
+
+	zassert_equal(tmp, val, "sys_get_be16() failed");
+}
+
+/**
+ * @brief Test sys_put_be16() functionality
+ *
+ * @details Test if sys_put_be16() correctly handles endianness.
+ *
+ * @see sys_put_be16()
+ */
+void test_sys_put_be16(void)
+{
+	u64_t val = 0xf0e1;
+	u8_t buf[] = {
+		0xf0, 0xe1
+	};
+	u8_t tmp[sizeof(u16_t)];
+
+	sys_put_be16(val, tmp);
+
+	zassert_mem_equal(tmp, buf, sizeof(u16_t), "sys_put_be16() failed");
+}
+
+/**
  * @}
  */
