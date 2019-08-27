@@ -1615,17 +1615,23 @@ static int compute_best_vector(void)
 		}
 	}
 
-	if ((best_port != 0) && (best_vector != gm_prio)) {
-		memcpy(&global_ds->gm_priority.root_system_id,
-		       &best_vector->root_system_id,
-		       sizeof(struct gptp_root_system_identity));
+	if (best_port != 0) {
+		if (&global_ds->gm_priority.root_system_id !=
+		    &best_vector->root_system_id) {
+			memcpy(&global_ds->gm_priority.root_system_id,
+			       &best_vector->root_system_id,
+			       sizeof(struct gptp_root_system_identity));
+		}
 
 		global_ds->gm_priority.steps_removed =
 			htons(ntohs(best_vector->steps_removed) + 1);
 
-		memcpy(&global_ds->gm_priority.src_port_id,
-		       &best_vector->src_port_id,
-		       sizeof(struct gptp_port_identity));
+		if (&global_ds->gm_priority.src_port_id !=
+		    &best_vector->src_port_id) {
+			memcpy(&global_ds->gm_priority.src_port_id,
+			       &best_vector->src_port_id,
+			       sizeof(struct gptp_port_identity));
+		}
 
 		global_ds->gm_priority.port_number = best_vector->port_number;
 	}
