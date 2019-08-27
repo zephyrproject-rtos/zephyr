@@ -1176,8 +1176,14 @@ static int uarte_instance_init(struct device *dev,
 static void uarte_nrfx_set_power_state(struct device *dev, u32_t new_state)
 {
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
+	u32_t tx_pin = nrf_uarte_tx_pin_get(uarte);
+	u32_t rx_pin = nrf_uarte_rx_pin_get(uarte);
 
 	if (new_state == DEVICE_PM_ACTIVE_STATE) {
+		nrf_gpio_pin_write(tx_pin, 1);
+		nrf_gpio_cfg_output(tx_pin);
+		nrf_gpio_cfg_input(rx_pin, NRF_GPIO_PIN_NOPULL);
+
 		nrf_uarte_enable(uarte);
 #ifdef CONFIG_UART_ASYNC_API
 		if (get_dev_data(dev)->async) {
@@ -1189,7 +1195,26 @@ static void uarte_nrfx_set_power_state(struct device *dev, u32_t new_state)
 		assert(new_state == DEVICE_PM_LOW_POWER_STATE ||
 		       new_state == DEVICE_PM_SUSPEND_STATE ||
 		       new_state == DEVICE_PM_OFF_STATE);
+
+		/* Disabling UART requires stopping RX, but stop RX event is
+		 * only sent after each RX if async UART API is used.
+		 */
+#ifdef CONFIG_UART_ASYNC_API
+		if (get_dev_data(dev)->async) {
+			nrf_uarte_disable(uarte);
+			nrf_gpio_cfg_default(tx_pin);
+			nrf_gpio_cfg_default(rx_pin);
+			return;
+		}
+#endif
+		nrf_uarte_task_trigger(uarte, NRF_UARTE_TASK_STOPRX);
+		while (!nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_RXTO)) {
+			/* Busy wait for event to register */
+		}
+		nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_RXTO);
 		nrf_uarte_disable(uarte);
+		nrf_gpio_cfg_default(tx_pin);
+		nrf_gpio_cfg_default(rx_pin);
 	}
 }
 
