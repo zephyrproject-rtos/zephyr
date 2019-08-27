@@ -124,7 +124,7 @@ int pthread_cond_wait(pthread_cond_t *cv, pthread_mutex_t *mut);
  * See IEEE 1003.1
  */
 int pthread_cond_timedwait(pthread_cond_t *cv, pthread_mutex_t *mut,
-			   const struct timespec *to);
+			   const struct timespec *abstime);
 
 /**
  * @brief POSIX threading compatibility API
