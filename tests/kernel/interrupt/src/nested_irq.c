@@ -24,12 +24,14 @@ struct k_timer timer;
  * to be in priority 0.
  */
 #if defined(CONFIG_ARM)
-	#define ISR0_PRIO 2
-	#define ISR1_PRIO 1
+u32_t irq_line_0;
+u32_t irq_line_1;
+#define ISR0_PRIO 2
+#define ISR1_PRIO 1
 #else
-	#define ISR0_PRIO 1
-	#define ISR1_PRIO 0
-#endif
+#define ISR0_PRIO 1
+#define ISR1_PRIO 0
+#endif /* CONFIG_ARM */
 
 #define MS_TO_US(ms)  (K_MSEC(ms) * USEC_PER_MSEC)
 volatile u32_t new_val;
@@ -53,15 +55,20 @@ void isr1(void *param)
 static void handler(struct k_timer *timer)
 {
 	ARG_UNUSED(timer);
+#if defined(CONFIG_ARM)
+	irq_enable(irq_line_1);
+	trigger_irq(irq_line_1);
+#else
 	irq_enable(IRQ_LINE(ISR1_OFFSET));
 	trigger_irq(IRQ_LINE(ISR1_OFFSET));
+#endif /* CONFIG_ARM */
 }
 #else
 void handler(void)
 {
 	ztest_test_skip();
 }
-#endif
+#endif /* NO_TRIGGER_FROM_SW */
 
 void isr0(void *param)
 {
@@ -82,13 +89,26 @@ void isr0(void *param)
 #ifndef NO_TRIGGER_FROM_SW
 void test_nested_isr(void)
 {
+#if defined(CONFIG_ARM)
+	irq_line_0 = get_available_nvic_line(CONFIG_NUM_IRQS);
+	irq_line_1 = get_available_nvic_line(irq_line_0);
+	z_arch_irq_connect_dynamic(irq_line_0, ISR0_PRIO, isr0, NULL, 0);
+	z_arch_irq_connect_dynamic(irq_line_1, ISR1_PRIO, isr1, NULL, 0);
+#else
 	IRQ_CONNECT(IRQ_LINE(ISR0_OFFSET), ISR0_PRIO, isr0, NULL, 0);
 	IRQ_CONNECT(IRQ_LINE(ISR1_OFFSET), ISR1_PRIO, isr1, NULL, 0);
+#endif /* CONFIG_ARM */
 
 	k_timer_init(&timer, handler, NULL);
 	k_timer_start(&timer, DURATION, 0);
+
+#if defined(CONFIG_ARM)
+	irq_enable(irq_line_0);
+	trigger_irq(irq_line_0);
+#else
 	irq_enable(IRQ_LINE(ISR0_OFFSET));
 	trigger_irq(IRQ_LINE(ISR0_OFFSET));
+#endif /* CONFIG_ARM */
 
 }
 #else
@@ -96,7 +116,7 @@ void test_nested_isr(void)
 {
 	ztest_test_skip();
 }
-#endif
+#endif /* NO_TRIGGER_FROM_SW */
 
 static void timer_handler(struct k_timer *timer)
 {
