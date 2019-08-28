@@ -81,6 +81,9 @@ config MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA_ENABLED
 config MBEDTLS_KEY_EXCHANGE_ECDH_ECDSA_ENABLED
 	bool "Enable the ECDH-ECDSA based ciphersuite modes"
 
+config MBEDTLS_ECDSA_DETERMINISTIC
+	bool "Enable deterministic ECDSA (RFC 6979)"
+
 config MBEDTLS_KEY_EXCHANGE_ECDH_RSA_ENABLED
 	bool "Enable the ECDH-RSA based ciphersuite modes"
 
