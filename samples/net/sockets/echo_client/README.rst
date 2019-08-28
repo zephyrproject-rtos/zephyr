@@ -154,6 +154,7 @@ Run echo-client application in QEMU:
 
 Note that echo-server must be running in the Linux host terminal window
 before you start the echo-client application in QEMU.
+Exit QEMU by pressing :kbd:`CTRL+A` :kbd:`x`.
 
 You can verify TLS communication with a Linux host as well. See
 https://github.com/zephyrproject-rtos/net-tools documentation for information

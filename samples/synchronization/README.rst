@@ -42,3 +42,5 @@ Sample Output
    threadB: Hello World!
 
    <repeats endlessly>
+
+Exit QEMU by pressing :kbd:`CTRL+A` :kbd:`x`.

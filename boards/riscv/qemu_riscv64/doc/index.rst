@@ -62,6 +62,8 @@ QEMU, and display the following console output:
         threadA: Hello World from riscv64!
         threadB: Hello World from riscv64!
 
+Exit QEMU by pressing :kbd:`CTRL+A` :kbd:`x`.
+
 Debugging
 =========
 

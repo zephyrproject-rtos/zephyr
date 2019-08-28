@@ -107,6 +107,8 @@ QEMU, and display the following console output:
         threadA: Hello World from arm!
         threadB: Hello World from arm!
 
+Exit QEMU by pressing :kbd:`CTRL+A` :kbd:`x`.
+
 Debugging
 =========
 
