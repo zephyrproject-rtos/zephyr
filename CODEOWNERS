@@ -275,6 +275,7 @@ arch/arm/include/cortex_m/cmse.h          @ioannisg
 /subsys/settings/                         @nvlsianpu
 /subsys/shell/                            @jarz-nordic @nordic-krch
 /subsys/storage/                          @nvlsianpu
+/subsys/testsuite/                        @nashif
 /subsys/usb/                              @jfischer-phytec-iot @finikorg
 /tests/boards/native_posix/               @aescolar
 /tests/boards/intel_s1000_crb/            @rgundi @dcpleung @sathishkuttan
