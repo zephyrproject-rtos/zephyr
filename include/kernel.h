@@ -255,7 +255,7 @@ static inline void k_object_access_all_grant(void *object)
 #endif /* !CONFIG_USERSPACE */
 
 /**
- * grant a thread access to a kernel object
+ * Grant a thread access to a kernel object
  *
  * The thread will be granted access to the object if the caller is from
  * supervisor mode, or the caller is from user mode AND has permissions
@@ -267,7 +267,7 @@ static inline void k_object_access_all_grant(void *object)
 __syscall void k_object_access_grant(void *object, struct k_thread *thread);
 
 /**
- * grant a thread access to a kernel object
+ * Revoke a thread's access to a kernel object
  *
  * The thread will lose access to the object if the caller is from
  * supervisor mode, or the caller is from user mode AND has permissions
@@ -282,7 +282,7 @@ void k_object_access_revoke(void *object, struct k_thread *thread);
 __syscall void k_object_release(void *object);
 
 /**
- * grant all present and future threads access to an object
+ * Grant all present and future threads access to an object
  *
  * If the caller is from supervisor mode, or the caller is from user mode and
  * have sufficient permissions on the object, then that object will have
