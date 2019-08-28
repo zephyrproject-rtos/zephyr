@@ -109,11 +109,10 @@ static ALWAYS_INLINE s32_t z_ms_to_ticks(s32_t ms)
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 
 #ifdef _NEED_PRECISE_TICK_MS_CONVERSION
-	int cyc = sys_clock_hw_cycles_per_sec();
-
 	/* use 64-bit math to keep precision */
-	return (s32_t)ceiling_fraction((s64_t)ms * cyc,
-		((s64_t)MSEC_PER_SEC * cyc) / CONFIG_SYS_CLOCK_TICKS_PER_SEC);
+	return (s32_t)ceiling_fraction(
+		(s64_t)ms * sys_clock_hw_cycles_per_sec(),
+		(s64_t)MSEC_PER_SEC * sys_clock_hw_cycles_per_tick());
 #else
 	/* simple division keeps precision */
 	s32_t ms_per_tick = MSEC_PER_SEC / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
@@ -130,8 +129,8 @@ static ALWAYS_INLINE s32_t z_ms_to_ticks(s32_t ms)
 static inline u64_t __ticks_to_ms(s64_t ticks)
 {
 #ifdef CONFIG_SYS_CLOCK_EXISTS
-	return (u64_t)ticks * MSEC_PER_SEC /
-	       (u64_t)CONFIG_SYS_CLOCK_TICKS_PER_SEC;
+	return (u64_t)ticks * sys_clock_hw_cycles_per_tick() * MSEC_PER_SEC /
+	       (u64_t)sys_clock_hw_cycles_per_sec();
 #else
 	__ASSERT(ticks == 0, "ticks not zero");
 	return 0ULL;
@@ -148,10 +147,9 @@ static inline u64_t __ticks_to_ms(s64_t ticks)
 static inline s32_t z_us_to_ticks(s32_t us)
 {
 #ifdef CONFIG_SYS_CLOCK_EXISTS
-	return (s32_t) ceiling_fraction(
+	return (s32_t)ceiling_fraction(
 		(s64_t)us * sys_clock_hw_cycles_per_sec(),
-		((s64_t)USEC_PER_SEC * sys_clock_hw_cycles_per_sec()) /
-		CONFIG_SYS_CLOCK_TICKS_PER_SEC);
+		(s64_t)USEC_PER_SEC * sys_clock_hw_cycles_per_tick());
 #else
 	__ASSERT(us == 0, "us not zero");
 	return 0;
@@ -161,8 +159,8 @@ static inline s32_t z_us_to_ticks(s32_t us)
 static inline s32_t __ticks_to_us(s32_t ticks)
 {
 #ifdef CONFIG_SYS_CLOCK_EXISTS
-	return (s32_t) ((s64_t)ticks * USEC_PER_SEC /
-	       (s64_t)CONFIG_SYS_CLOCK_TICKS_PER_SEC);
+	return (u64_t)ticks * sys_clock_hw_cycles_per_tick() * USEC_PER_SEC /
+	       (u64_t)sys_clock_hw_cycles_per_sec();
 #else
 	__ASSERT(ticks == 0, "ticks not zero");
 	return 0;
