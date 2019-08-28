@@ -857,7 +857,7 @@ static struct net_buf *pkt_alloc_buffer(struct net_buf_pool *pool,
 					size_t size, s32_t timeout)
 #endif
 {
-	u32_t alloc_start = k_uptime_get_32();
+	u32_t alloc_start = (u32_t)k_uptime_get();
 	struct net_buf *first = NULL;
 	struct net_buf *current = NULL;
 
@@ -883,7 +883,7 @@ static struct net_buf *pkt_alloc_buffer(struct net_buf_pool *pool,
 		size -= current->size;
 
 		if (timeout != K_NO_WAIT && timeout != K_FOREVER) {
-			u32_t diff = k_uptime_get_32() - alloc_start;
+			u32_t diff = (u32_t)k_uptime_get() - alloc_start;
 
 			timeout -= MIN(timeout, diff);
 		}
@@ -1098,7 +1098,7 @@ int net_pkt_alloc_buffer(struct net_pkt *pkt,
 			 s32_t timeout)
 #endif
 {
-	u32_t alloc_start = k_uptime_get_32();
+	u32_t alloc_start = (u32_t)k_uptime_get();
 	struct net_buf_pool *pool = NULL;
 	size_t alloc_len = 0;
 	size_t hdr_len = 0;
@@ -1138,7 +1138,7 @@ int net_pkt_alloc_buffer(struct net_pkt *pkt,
 	}
 
 	if (timeout != K_NO_WAIT && timeout != K_FOREVER) {
-		u32_t diff = k_uptime_get_32() - alloc_start;
+		u32_t diff = (u32_t)k_uptime_get() - alloc_start;
 
 		timeout -= MIN(timeout, diff);
 	}
@@ -1324,7 +1324,7 @@ pkt_alloc_with_buffer(struct k_mem_slab *slab,
 		      s32_t timeout)
 #endif
 {
-	u32_t alloc_start = k_uptime_get_32();
+	u32_t alloc_start = (u32_t)k_uptime_get();
 	struct net_pkt *pkt;
 	int ret;
 
@@ -1343,7 +1343,7 @@ pkt_alloc_with_buffer(struct k_mem_slab *slab,
 	net_pkt_set_family(pkt, family);
 
 	if (timeout != K_NO_WAIT && timeout != K_FOREVER) {
-		u32_t diff = k_uptime_get_32() - alloc_start;
+		u32_t diff = (u32_t)k_uptime_get() - alloc_start;
 
 		timeout -= MIN(timeout, diff);
 	}

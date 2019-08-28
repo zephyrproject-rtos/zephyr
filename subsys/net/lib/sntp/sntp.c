@@ -135,7 +135,7 @@ static u32_t get_uptime_in_sec(void)
 {
 	u64_t time;
 
-	time = k_uptime_get_32();
+	time = (u32_t)k_uptime_get();
 
 	return time / MSEC_PER_SEC;
 }

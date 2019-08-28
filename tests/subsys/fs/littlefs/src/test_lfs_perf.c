@@ -83,7 +83,7 @@ static int write_read(const char *tag,
 		goto out_buf;
 	}
 
-	t0 = k_uptime_get_32();
+	t0 = (u32_t)k_uptime_get();
 	for (size_t i = 0; i < nbuf; ++i) {
 		rc = fs_write(&file, buf, buf_size);
 		if (buf_size != rc) {
@@ -91,7 +91,7 @@ static int write_read(const char *tag,
 			goto out_file;
 		}
 	}
-	t1 = k_uptime_get_32();
+	t1 = (u32_t)k_uptime_get();
 
 	(void)fs_close(&file);
 
@@ -118,7 +118,7 @@ static int write_read(const char *tag,
 		goto out_buf;
 	}
 
-	t0 = k_uptime_get_32();
+	t0 = (u32_t)k_uptime_get();
 	for (size_t i = 0; i < nbuf; ++i) {
 		rc = fs_read(&file, buf, buf_size);
 		if (buf_size != rc) {
@@ -126,7 +126,7 @@ static int write_read(const char *tag,
 			goto out_file;
 		}
 	}
-	t1 = k_uptime_get_32();
+	t1 = (u32_t)k_uptime_get();
 
 	TC_PRINT("%s read %zu * %zu = %zu bytes in %u ms: "
 		 "%u By/s, %u KiBy/s\n",

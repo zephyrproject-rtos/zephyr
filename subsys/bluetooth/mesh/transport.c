@@ -1071,7 +1071,7 @@ static void seg_ack(struct k_work *work)
 
 	BT_DBG("rx %p", rx);
 
-	if (k_uptime_get_32() - rx->last > K_SECONDS(60)) {
+	if ((u32_t)k_uptime_get() - rx->last > K_SECONDS(60)) {
 		BT_WARN("Incomplete timer expired");
 		seg_rx_reset(rx, false);
 
@@ -1365,7 +1365,7 @@ found_rx:
 	}
 
 	/* Reset the Incomplete Timer */
-	rx->last = k_uptime_get_32();
+	rx->last = (u32_t)k_uptime_get();
 
 	if (!k_delayed_work_remaining_get(&rx->ack) &&
 	    !bt_mesh_lpn_established()) {

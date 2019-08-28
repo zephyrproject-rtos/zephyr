@@ -31,15 +31,15 @@ static struct k_thread tdata[NUM_THREAD];
 #if defined(CONFIG_ARCH_POSIX)
 #define ALIGN_MS_BOUNDARY()		       \
 	do {				       \
-		u32_t t = k_uptime_get_32();   \
-		while (t == k_uptime_get_32()) \
+		u32_t t = (u32_t)k_uptime_get();   \
+		while (t == (u32_t)k_uptime_get()) \
 			k_busy_wait(50);       \
 	} while (0)
 #else
 #define ALIGN_MS_BOUNDARY()		       \
 	do {				       \
-		u32_t t = k_uptime_get_32();   \
-		while (t == k_uptime_get_32()) \
+		u32_t t = (u32_t)k_uptime_get();   \
+		while (t == (u32_t)k_uptime_get()) \
 			;		       \
 	} while (0)
 #endif
@@ -78,17 +78,17 @@ void test_tickless_sysclock(void)
 	volatile u32_t t0, t1;
 
 	ALIGN_MS_BOUNDARY();
-	t0 = k_uptime_get_32();
+	t0 = (u32_t)k_uptime_get();
 	k_sleep(SLEEP_TICKLESS);
-	t1 = k_uptime_get_32();
+	t1 = (u32_t)k_uptime_get();
 	TC_PRINT("time %d, %d\n", t0, t1);
 	/**TESTPOINT: verify system clock recovery after exiting tickless idle*/
 	zassert_true((t1 - t0) >= SLEEP_TICKLESS, NULL);
 
 	ALIGN_MS_BOUNDARY();
-	t0 = k_uptime_get_32();
+	t0 = (u32_t)k_uptime_get();
 	k_sem_take(&sema, SLEEP_TICKFUL);
-	t1 = k_uptime_get_32();
+	t1 = (u32_t)k_uptime_get();
 	TC_PRINT("time %d, %d\n", t0, t1);
 	/**TESTPOINT: verify system clock recovery after exiting tickful idle*/
 	zassert_true((t1 - t0) >= SLEEP_TICKFUL, NULL);

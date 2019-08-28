@@ -343,7 +343,7 @@ static void uart_sam0_rx_timeout(struct k_work *work)
 		return;
 	}
 
-	u32_t now = k_uptime_get_32();
+	u32_t now = (u32_t)k_uptime_get();
 	u32_t elapsed = now - dev_data->rx_timeout_start;
 
 	if (elapsed >= dev_data->rx_timeout_time) {
@@ -546,7 +546,7 @@ static void uart_sam0_isr(void *arg)
 		 */
 		if (dev_data->rx_timeout_time != K_FOREVER) {
 			dev_data->rx_timeout_from_isr = true;
-			dev_data->rx_timeout_start = k_uptime_get_32();
+			dev_data->rx_timeout_start = (u32_t)k_uptime_get();
 			k_delayed_work_submit(&dev_data->rx_timeout_work,
 					      dev_data->rx_timeout_chunk);
 		}

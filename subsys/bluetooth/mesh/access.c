@@ -115,7 +115,7 @@ static s32_t next_period(struct bt_mesh_model *mod)
 		return 0;
 	}
 
-	elapsed = k_uptime_get_32() - pub->period_start;
+	elapsed = (u32_t)k_uptime_get() - pub->period_start;
 
 	BT_DBG("Publishing took %ums", elapsed);
 
@@ -159,7 +159,7 @@ static void publish_start(u16_t duration, int err, void *user_data)
 
 	/* Initialize the timestamp for the beginning of a new period */
 	if (pub->count == BT_MESH_PUB_TRANSMIT_COUNT(pub->retransmit)) {
-		pub->period_start = k_uptime_get_32();
+		pub->period_start = (u32_t)k_uptime_get();
 	}
 }
 

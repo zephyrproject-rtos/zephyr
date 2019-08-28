@@ -194,7 +194,7 @@ static void timer_tests(void)
 {
 	k_sem_take(&start_test_sem, K_FOREVER);
 
-	timer_start_tick = k_uptime_get_32();
+	timer_start_tick = (u32_t)k_uptime_get();
 
 	k_timer_start(&timer, NUM_SECONDS(1), 0);
 
@@ -202,7 +202,7 @@ static void timer_tests(void)
 		timer_data = timer.user_data;
 	}
 
-	timer_end_tick = k_uptime_get_32();
+	timer_end_tick = (u32_t)k_uptime_get();
 
 	k_sem_take(&end_test_sem, K_FOREVER);
 }

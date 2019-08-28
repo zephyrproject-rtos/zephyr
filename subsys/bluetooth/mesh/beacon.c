@@ -71,7 +71,7 @@ static void beacon_complete(int err, void *user_data)
 
 	BT_DBG("err %d", err);
 
-	sub->beacon_sent = k_uptime_get_32();
+	sub->beacon_sent = (u32_t)k_uptime_get();
 }
 
 void bt_mesh_beacon_create(struct bt_mesh_subnet *sub,
@@ -113,7 +113,7 @@ static int secure_beacon_send(void)
 	static const struct bt_mesh_send_cb send_cb = {
 		.end = beacon_complete,
 	};
-	u32_t now = k_uptime_get_32();
+	u32_t now = (u32_t)k_uptime_get();
 	int i;
 
 	BT_DBG("");

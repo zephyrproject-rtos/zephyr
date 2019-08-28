@@ -69,8 +69,8 @@ static void align_to_tick_boundary(void)
 {
 	u32_t tick;
 
-	tick = k_uptime_get_32();
-	while (k_uptime_get_32() == tick) {
+	tick = (u32_t)k_uptime_get();
+	while ((u32_t)k_uptime_get() == tick) {
 		/* Busy wait to align to tick boundary */
 #if defined(CONFIG_ARCH_POSIX)
 		k_busy_wait(50);
@@ -101,9 +101,9 @@ static void test_thread(int arg1, int arg2)
 	TC_PRINT("Testing normal expiration of k_sleep()\n");
 	align_to_tick_boundary();
 
-	start_tick = k_uptime_get_32();
+	start_tick = (u32_t)k_uptime_get();
 	k_sleep(ONE_SECOND);
-	end_tick = k_uptime_get_32();
+	end_tick = (u32_t)k_uptime_get();
 
 	if (!sleep_time_valid(start_tick, end_tick, ONE_SECOND_ALIGNED)) {
 		TC_ERROR(" *** k_sleep() slept for %d ticks not %d.",
@@ -116,9 +116,9 @@ static void test_thread(int arg1, int arg2)
 	k_sem_give(&helper_thread_sem);   /* Activate helper thread */
 	align_to_tick_boundary();
 
-	start_tick = k_uptime_get_32();
+	start_tick = (u32_t)k_uptime_get();
 	k_sleep(ONE_SECOND);
-	end_tick = k_uptime_get_32();
+	end_tick = (u32_t)k_uptime_get();
 
 	if (end_tick - start_tick > 1) {
 		TC_ERROR(" *** k_wakeup() took too long (%d ticks)\n",
@@ -130,9 +130,9 @@ static void test_thread(int arg1, int arg2)
 	k_sem_give(&helper_thread_sem);   /* Activate helper thread */
 	align_to_tick_boundary();
 
-	start_tick = k_uptime_get_32();
+	start_tick = (u32_t)k_uptime_get();
 	k_sleep(ONE_SECOND);
-	end_tick = k_uptime_get_32();
+	end_tick = (u32_t)k_uptime_get();
 
 	if (end_tick - start_tick > 1) {
 		TC_ERROR(" *** k_wakeup() took too long (%d ticks)\n",
@@ -144,9 +144,9 @@ static void test_thread(int arg1, int arg2)
 	k_sem_give(&task_sem);    /* Activate task */
 	align_to_tick_boundary();
 
-	start_tick = k_uptime_get_32();
+	start_tick = (u32_t)k_uptime_get();
 	k_sleep(ONE_SECOND);	/* Task will execute */
-	end_tick = k_uptime_get_32();
+	end_tick = (u32_t)k_uptime_get();
 
 	if (end_tick - start_tick > 1) {
 		TC_ERROR(" *** k_wakeup() took too long (%d ticks) at LAST\n",
@@ -178,7 +178,7 @@ static void helper_thread(int arg1, int arg2)
  *
  * @ingroup kernel_sleep_tests
  *
- * @see k_sleep(), k_wakeup(), k_uptime_get_32()
+ * @see k_sleep(), k_wakeup(), (u32_t)k_uptime_get()
  */
 void test_sleep(void)
 {
@@ -223,9 +223,9 @@ void test_sleep(void)
 
 	TC_PRINT("Testing kernel k_sleep()\n");
 	align_to_tick_boundary();
-	start_tick = k_uptime_get_32();
+	start_tick = (u32_t)k_uptime_get();
 	k_sleep(ONE_SECOND);
-	end_tick = k_uptime_get_32();
+	end_tick = (u32_t)k_uptime_get();
 	zassert_true(sleep_time_valid(start_tick, end_tick, ONE_SECOND_ALIGNED),
 		     "k_sleep() slept for %d ticks, not %d\n",
 		     end_tick - start_tick, ONE_SECOND_ALIGNED);

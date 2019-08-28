@@ -126,10 +126,10 @@ static void prio_recv_thread(void *p1, void *p2, void *p3)
 		BT_DBG("sem taken");
 
 #if defined(CONFIG_INIT_STACKS)
-		if (k_uptime_get_32() - prio_ts > K_SECONDS(5)) {
+		if ((u32_t)k_uptime_get() - prio_ts > K_SECONDS(5)) {
 			STACK_ANALYZE("prio recv thread stack",
 				      prio_recv_thread_stack);
-			prio_ts = k_uptime_get_32();
+			prio_ts = (u32_t)k_uptime_get();
 		}
 #endif
 	}
@@ -370,9 +370,9 @@ static void recv_thread(void *p1, void *p2, void *p3)
 		k_yield();
 
 #if defined(CONFIG_INIT_STACKS)
-		if (k_uptime_get_32() - rx_ts > K_SECONDS(5)) {
+		if ((u32_t)k_uptime_get() - rx_ts > K_SECONDS(5)) {
 			STACK_ANALYZE("recv thread stack", recv_thread_stack);
-			rx_ts = k_uptime_get_32();
+			rx_ts = (u32_t)k_uptime_get();
 		}
 #endif
 	}

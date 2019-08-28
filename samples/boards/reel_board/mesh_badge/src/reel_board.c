@@ -480,7 +480,7 @@ static void button_interrupt(struct device *dev, struct gpio_callback *cb,
 		return;
 	case SCREEN_MAIN:
 		if (pins & BIT(DT_ALIAS_SW0_GPIOS_PIN)) {
-			u32_t uptime = k_uptime_get_32();
+			u32_t uptime = (u32_t)k_uptime_get();
 			static u32_t bad_count, press_ts;
 
 			if (uptime - press_ts < 500) {

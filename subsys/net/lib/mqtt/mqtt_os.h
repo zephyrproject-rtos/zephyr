@@ -74,7 +74,7 @@ static inline void mqtt_mutex_unlock(struct mqtt_client *client)
  */
 static inline u32_t mqtt_sys_tick_in_ms_get(void)
 {
-	return k_uptime_get_32();
+	return (u32_t)k_uptime_get();
 }
 
 /**@brief Method to get elapsed time in milliseconds since the last activity.
@@ -85,7 +85,7 @@ static inline u32_t mqtt_sys_tick_in_ms_get(void)
  */
 static inline u32_t mqtt_elapsed_time_in_ms_get(u32_t last_activity)
 {
-	s32_t diff = k_uptime_get_32() - last_activity;
+	s32_t diff = (u32_t)k_uptime_get() - last_activity;
 
 	if (diff < 0) {
 		return 0;

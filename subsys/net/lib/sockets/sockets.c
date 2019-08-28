@@ -949,7 +949,7 @@ static int zsock_poll_update_ctx(struct net_context *ctx,
 
 static inline int time_left(u32_t start, u32_t timeout)
 {
-	u32_t elapsed = k_uptime_get_32() - start;
+	u32_t elapsed = (u32_t)k_uptime_get() - start;
 
 	return timeout - elapsed;
 }
@@ -964,7 +964,7 @@ int z_impl_zsock_poll(struct zsock_pollfd *fds, int nfds, int timeout)
 	struct k_poll_event *pev;
 	struct k_poll_event *pev_end = poll_events + ARRAY_SIZE(poll_events);
 	const struct fd_op_vtable *vtable;
-	u32_t entry_time = k_uptime_get_32();
+	u32_t entry_time = (u32_t)k_uptime_get();
 
 	if (timeout < 0) {
 		timeout = K_FOREVER;

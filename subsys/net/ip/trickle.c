@@ -59,7 +59,7 @@ static void double_interval_timeout(struct k_work *work)
 
 	trickle->c = 0U;
 
-	NET_DBG("now %u (was at %u)", k_uptime_get_32(), last_end);
+	NET_DBG("now %u (was at %u)", (u32_t)k_uptime_get(), last_end);
 
 	/* Check if we need to double the interval */
 	if (trickle->I <= (trickle->Imax_abs >> 1)) {
@@ -78,7 +78,7 @@ static void double_interval_timeout(struct k_work *work)
 
 	NET_DBG("doubling time %u", rand_time);
 
-	trickle->Istart = k_uptime_get_32() + rand_time;
+	trickle->Istart = (u32_t)k_uptime_get() + rand_time;
 	k_delayed_work_init(&trickle->timer, trickle_timeout);
 	k_delayed_work_submit(&trickle->timer, rand_time);
 
@@ -88,7 +88,7 @@ static void double_interval_timeout(struct k_work *work)
 
 static inline void reschedule(struct net_trickle *trickle)
 {
-	u32_t now = k_uptime_get_32();
+	u32_t now = (u32_t)k_uptime_get();
 	u32_t diff = get_end(trickle) - now;
 
 	NET_DBG("now %d end in %d", now, diff);
@@ -109,7 +109,7 @@ static void trickle_timeout(struct k_work *work)
 						   struct net_trickle,
 						   timer);
 
-	NET_DBG("Trickle timeout at %d", k_uptime_get_32());
+	NET_DBG("Trickle timeout at %d", (u32_t)k_uptime_get());
 
 	if (trickle->cb) {
 		NET_DBG("TX ok %d c(%u) < k(%u)",
@@ -132,7 +132,7 @@ static void setup_new_interval(struct net_trickle *trickle)
 
 	t = get_t(trickle->I);
 
-	trickle->Istart = k_uptime_get_32();
+	trickle->Istart = (u32_t)k_uptime_get();
 
 	k_delayed_work_submit(&trickle->timer, t);
 

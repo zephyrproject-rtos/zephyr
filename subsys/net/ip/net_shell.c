@@ -2346,7 +2346,7 @@ static void address_lifetime_cb(struct net_if *iface, void *user_data)
 		remaining = (u64_t)ipv6->unicast[i].lifetime.timer_timeout +
 			(u64_t)ipv6->unicast[i].lifetime.wrap_counter *
 			(u64_t)NET_TIMEOUT_MAX_VALUE -
-			(u64_t)time_diff(k_uptime_get_32(),
+			(u64_t)time_diff((u32_t)k_uptime_get(),
 				ipv6->unicast[i].lifetime.timer_start);
 
 		prefix = net_if_ipv6_prefix_get(iface,

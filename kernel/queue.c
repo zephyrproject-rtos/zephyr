@@ -287,7 +287,7 @@ static void *k_queue_poll(struct k_queue *queue, s32_t timeout)
 			  K_POLL_MODE_NOTIFY_ONLY, queue);
 
 	if (timeout != K_FOREVER) {
-		start = k_uptime_get_32();
+		start = (u32_t)k_uptime_get();
 	}
 
 	do {
@@ -304,7 +304,7 @@ static void *k_queue_poll(struct k_queue *queue, s32_t timeout)
 		k_spin_unlock(&queue->lock, key);
 
 		if ((val == NULL) && (timeout != K_FOREVER)) {
-			elapsed = k_uptime_get_32() - start;
+			elapsed = (u32_t)k_uptime_get() - start;
 			done = elapsed > timeout;
 		}
 	} while (!val && !done);

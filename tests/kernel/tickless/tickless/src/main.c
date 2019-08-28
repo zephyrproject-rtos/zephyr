@@ -121,14 +121,14 @@ void ticklessTestThread(void)
 		 * as we can.
 		 */
 		k_sleep(TICKS_TO_MS);
-		start_time = k_uptime_get_32();
+		start_time = (u32_t)k_uptime_get();
 		start_tsc = _TIMESTAMP_READ();
 		/* FIXME: one tick less to account for
 		 * one  extra tick for _TICK_ALIGN in k_sleep
 		 */
 		k_sleep((SLEEP_TICKS - 1) * TICKS_TO_MS);
 		end_tsc = _TIMESTAMP_READ();
-		end_time = k_uptime_get_32();
+		end_time = (u32_t)k_uptime_get();
 		cal_tsc += end_tsc - start_tsc;
 	}
 	cal_tsc /= CAL_REPS;
@@ -156,14 +156,14 @@ void ticklessTestThread(void)
 		 * as we can.
 		 */
 		k_sleep(TICKS_TO_MS);
-		start_time = k_uptime_get_32();
+		start_time = (u32_t)k_uptime_get();
 		start_tsc = _TIMESTAMP_READ();
 		/* FIXME: one tick less to account for
 		 * one  extra tick for _TICK_ALIGN in k_sleep
 		 */
 		k_sleep((SLEEP_TICKS - 1) * TICKS_TO_MS);
 		end_tsc = _TIMESTAMP_READ();
-		end_time = k_uptime_get_32();
+		end_time = (u32_t)k_uptime_get();
 		diff_tsc += end_tsc - start_tsc;
 	}
 

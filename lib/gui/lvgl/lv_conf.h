@@ -175,7 +175,7 @@ typedef void *lv_img_decoder_user_data_t;
 
 #define LV_TICK_CUSTOM			1
 #define LV_TICK_CUSTOM_INCLUDE		"kernel.h"
-#define LV_TICK_CUSTOM_SYS_TIME_EXPR	(k_uptime_get_32())
+#define LV_TICK_CUSTOM_SYS_TIME_EXPR	((u32_t)k_uptime_get())
 
 typedef void *lv_disp_drv_user_data_t;
 typedef void *lv_indev_drv_user_data_t;

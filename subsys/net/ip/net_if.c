@@ -543,7 +543,7 @@ static void iface_router_run_timer(u32_t current_time)
 
 static void iface_router_expired(struct k_work *work)
 {
-	u32_t current_time = k_uptime_get_32();
+	u32_t current_time = (u32_t)k_uptime_get();
 	struct net_if_router *router, *next;
 
 	ARG_UNUSED(work);
@@ -587,7 +587,7 @@ static struct net_if_router *iface_router_add(struct net_if *iface,
 			routers[i].is_default = true;
 			routers[i].is_infinite = false;
 			routers[i].lifetime = lifetime;
-			routers[i].life_start = k_uptime_get_32();
+			routers[i].life_start = (u32_t)k_uptime_get();
 
 			sys_slist_append(&active_router_timers,
 					 &routers[i].node);
@@ -645,7 +645,7 @@ static bool iface_router_rm(struct net_if_router *router)
 
 	/* We recompute the timer if only the router was time limited */
 	if (sys_slist_find_and_remove(&active_router_timers, &router->node)) {
-		iface_router_run_timer(k_uptime_get_32());
+		iface_router_run_timer((u32_t)k_uptime_get());
 	}
 
 	router->is_used = false;
@@ -818,7 +818,7 @@ static void join_mcast_nodes(struct net_if *iface, struct in6_addr *addr)
 
 static void dad_timeout(struct k_work *work)
 {
-	u32_t current_time = k_uptime_get_32();
+	u32_t current_time = (u32_t)k_uptime_get();
 	struct net_if_addr *ifaddr, *next;
 
 	ARG_UNUSED(work);
@@ -887,7 +887,7 @@ static void net_if_ipv6_start_dad(struct net_if *iface,
 		ifaddr->dad_count = 1U;
 
 		if (!net_ipv6_start_dad(iface, ifaddr)) {
-			ifaddr->dad_start = k_uptime_get_32();
+			ifaddr->dad_start = (u32_t)k_uptime_get();
 			sys_slist_append(&active_dad_timers, &ifaddr->dad_node);
 
 			if (!k_delayed_work_remaining_get(&dad_timer)) {
@@ -984,7 +984,7 @@ static inline void net_if_ipv6_start_dad(struct net_if *iface,
 
 static void rs_timeout(struct k_work *work)
 {
-	u32_t current_time = k_uptime_get_32();
+	u32_t current_time = (u32_t)k_uptime_get();
 	struct net_if_ipv6 *ipv6, *next;
 
 	ARG_UNUSED(work);
@@ -1040,7 +1040,7 @@ void net_if_start_rs(struct net_if *iface)
 	NET_DBG("Starting ND/RS for iface %p", iface);
 
 	if (!net_ipv6_start_rs(iface)) {
-		ipv6->rs_start = k_uptime_get_32();
+		ipv6->rs_start = (u32_t)k_uptime_get();
 		sys_slist_append(&active_rs_timers, &ipv6->rs_node);
 
 		if (!k_delayed_work_remaining_get(&rs_timer)) {
@@ -1200,7 +1200,7 @@ static bool address_manage_timeout(struct net_if_addr *ifaddr,
 	}
 
 	if (current_time == NET_TIMEOUT_MAX_VALUE) {
-		ifaddr->lifetime.timer_start = k_uptime_get_32();
+		ifaddr->lifetime.timer_start = (u32_t)k_uptime_get();
 		ifaddr->lifetime.wrap_counter--;
 	}
 
@@ -1216,7 +1216,7 @@ static bool address_manage_timeout(struct net_if_addr *ifaddr,
 static void address_lifetime_timeout(struct k_work *work)
 {
 	u64_t timeout_update = UINT64_MAX;
-	u32_t current_time = k_uptime_get_32();
+	u32_t current_time = (u32_t)k_uptime_get();
 	bool found = false;
 	struct net_if_addr *current, *next;
 
@@ -1291,7 +1291,7 @@ static void address_start_timer(struct net_if_addr *ifaddr, u32_t vlifetime)
 	sys_slist_append(&active_address_lifetime_timers,
 			 &ifaddr->lifetime.node);
 
-	ifaddr->lifetime.timer_start = k_uptime_get_32();
+	ifaddr->lifetime.timer_start = (u32_t)k_uptime_get();
 	ifaddr->lifetime.wrap_counter = expire_timeout /
 		(u64_t)NET_TIMEOUT_MAX_VALUE;
 	ifaddr->lifetime.timer_timeout = expire_timeout -
@@ -1771,7 +1771,7 @@ static bool prefix_manage_timeout(struct net_if_ipv6_prefix *ifprefix,
 static void prefix_lifetime_timeout(struct k_work *work)
 {
 	u64_t timeout_update = UINT64_MAX;
-	u32_t current_time = k_uptime_get_32();
+	u32_t current_time = (u32_t)k_uptime_get();
 	bool found = false;
 	struct net_if_ipv6_prefix *current, *next;
 
@@ -1840,7 +1840,7 @@ static void prefix_start_timer(struct net_if_ipv6_prefix *ifprefix,
 	sys_slist_append(&active_prefix_lifetime_timers,
 			 &ifprefix->lifetime.node);
 
-	ifprefix->lifetime.timer_start = k_uptime_get_32();
+	ifprefix->lifetime.timer_start = (u32_t)k_uptime_get();
 	ifprefix->lifetime.wrap_counter = expire_timeout /
 		(u64_t)NET_TIMEOUT_MAX_VALUE;
 	ifprefix->lifetime.timer_timeout = expire_timeout -
@@ -2106,7 +2106,7 @@ void net_if_ipv6_router_update_lifetime(struct net_if_router *router,
 		log_strdup(net_sprint_ipv6_addr(&router->address.in6_addr)),
 		lifetime);
 
-	router->life_start = k_uptime_get_32();
+	router->life_start = (u32_t)k_uptime_get();
 	router->lifetime = lifetime;
 
 	iface_router_run_timer(router->life_start);

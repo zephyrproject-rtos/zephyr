@@ -370,7 +370,7 @@ void bt_mesh_proxy_beacon_send(struct bt_mesh_subnet *sub)
 void bt_mesh_proxy_identity_start(struct bt_mesh_subnet *sub)
 {
 	sub->node_id = BT_MESH_NODE_IDENTITY_RUNNING;
-	sub->node_id_start = k_uptime_get_32();
+	sub->node_id_start = (u32_t)k_uptime_get();
 
 	/* Prioritize the recently enabled subnet */
 	next_idx = sub - bt_mesh.sub;
@@ -1138,7 +1138,7 @@ static s32_t gatt_proxy_advertise(struct bt_mesh_subnet *sub)
 	}
 
 	if (sub->node_id == BT_MESH_NODE_IDENTITY_RUNNING) {
-		u32_t active = k_uptime_get_32() - sub->node_id_start;
+		u32_t active = (u32_t)k_uptime_get() - sub->node_id_start;
 
 		if (active < NODE_ID_TIMEOUT) {
 			remaining = NODE_ID_TIMEOUT - active;

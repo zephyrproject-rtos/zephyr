@@ -361,8 +361,8 @@ static void coop_delayed_work_resubmit(void)
 		k_busy_wait(1000);
 #else
 		volatile u32_t uptime;
-		uptime = k_uptime_get_32();
-		while (k_uptime_get_32() == uptime) {
+		uptime = (u32_t)k_uptime_get();
+		while ((u32_t)k_uptime_get() == uptime) {
 		}
 #endif
 	}

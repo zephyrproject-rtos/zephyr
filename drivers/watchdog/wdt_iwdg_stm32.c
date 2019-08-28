@@ -112,11 +112,11 @@ static int iwdg_stm32_install_timeout(struct device *dev,
 		return -EINVAL;
 	}
 
-	tickstart = k_uptime_get_32();
+	tickstart = (u32_t)k_uptime_get();
 
 	while (LL_IWDG_IsReady(iwdg) == 0) {
 		/* Wait until WVU, RVU, PVU are reset before updating  */
-		if ((k_uptime_get_32() - tickstart) > IWDG_DEFAULT_TIMEOUT) {
+		if (((u32_t)k_uptime_get() - tickstart) > IWDG_DEFAULT_TIMEOUT) {
 			return -ENODEV;
 		}
 	}

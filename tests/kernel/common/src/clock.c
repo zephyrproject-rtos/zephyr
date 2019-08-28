@@ -9,15 +9,15 @@
 #if defined(CONFIG_ARCH_POSIX)
 #define ALIGN_MS_BOUNDARY		       \
 	do {				       \
-		u32_t t = k_uptime_get_32();   \
-		while (t == k_uptime_get_32()) \
+		u32_t t = (u32_t)k_uptime_get();   \
+		while (t == (u32_t)k_uptime_get()) \
 			k_busy_wait(50);       \
 	} while (0)
 #else
 #define ALIGN_MS_BOUNDARY		       \
 	do {				       \
-		u32_t t = k_uptime_get_32();   \
-		while (t == k_uptime_get_32()) \
+		u32_t t = (u32_t)k_uptime_get();   \
+		while (t == (u32_t)k_uptime_get()) \
 			;		       \
 	} while (0)
 #endif
@@ -30,7 +30,7 @@
 /**
  * @brief Test clock uptime APIs functionality
  *
- * @see k_uptime_get(), k_uptime_get_32(), k_uptime_delta()
+ * @see k_uptime_get(), (u32_t)k_uptime_get(), k_uptime_delta()
  * k_uptime_delta_32()
  */
 void test_clock_uptime(void)
@@ -47,17 +47,17 @@ void test_clock_uptime(void)
 	}
 
 	/**TESTPOINT: uptime elapse lower 32-bit*/
-	t32 = k_uptime_get_32();
-	while (k_uptime_get_32() < (t32 + 5)) {
+	t32 = (u32_t)k_uptime_get();
+	while ((u32_t)k_uptime_get() < (t32 + 5)) {
 #if defined(CONFIG_ARCH_POSIX)
 		k_busy_wait(50);
 #endif
 	}
 
 	/**TESTPOINT: uptime straddled ms boundary*/
-	t32 = k_uptime_get_32();
+	t32 = (u32_t)k_uptime_get();
 	ALIGN_MS_BOUNDARY;
-	zassert_true(k_uptime_get_32() > t32, NULL);
+	zassert_true((u32_t)k_uptime_get() > t32, NULL);
 
 	/**TESTPOINT: uptime delta*/
 	d64 = k_uptime_delta(&d64);
@@ -84,7 +84,7 @@ void test_clock_uptime(void)
 /**
  * @brief Test clock cycle functionality
  *
- * @see k_cycle_get_32(), k_uptime_get_32()
+ * @see k_cycle_get_32(), (u32_t)k_uptime_get()
  */
 void test_clock_cycle(void)
 {
@@ -104,14 +104,14 @@ void test_clock_cycle(void)
 	/**TESTPOINT: cycle/uptime cross check*/
 	c0 = k_cycle_get_32();
 	ALIGN_MS_BOUNDARY;
-	t32 = k_uptime_get_32();
-	while (t32 == k_uptime_get_32()) {
+	t32 = (u32_t)k_uptime_get();
+	while (t32 == (u32_t)k_uptime_get()) {
 #if defined(CONFIG_ARCH_POSIX)
 		k_busy_wait(50);
 #endif
 	}
 
-	c1 = k_uptime_get_32();
+	c1 = (u32_t)k_uptime_get();
 	/*avoid cycle counter wrap around*/
 	if (c1 > c0) {
 		/* delta cycle should be greater than 1 milli-second*/

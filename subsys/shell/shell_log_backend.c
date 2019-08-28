@@ -63,7 +63,7 @@ static void flush_expired_messages(const struct shell *shell)
 	struct shell_log_backend_msg msg;
 	struct k_msgq *msgq = shell->log_backend->msgq;
 	u32_t timeout = shell->log_backend->timeout;
-	u32_t now = k_uptime_get_32();
+	u32_t now = (u32_t)k_uptime_get();
 
 	while (1) {
 		err = k_msgq_peek(msgq, &msg);
@@ -87,7 +87,7 @@ static void msg_to_fifo(const struct shell *shell,
 	int err;
 	struct shell_log_backend_msg t_msg = {
 		.msg = msg,
-		.timestamp = k_uptime_get_32()
+		.timestamp = (u32_t)k_uptime_get()
 	};
 
 	err = k_msgq_put(shell->log_backend->msgq, &t_msg,

@@ -40,7 +40,7 @@ void platformAlarmInit(void)
 
 uint32_t otPlatAlarmMilliGetNow(void)
 {
-	return k_uptime_get_32();
+	return (u32_t)k_uptime_get();
 }
 
 void otPlatAlarmMilliStartAt(otInstance *aInstance, uint32_t t0, uint32_t dt)

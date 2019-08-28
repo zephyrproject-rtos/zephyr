@@ -2108,7 +2108,7 @@ static inline u32_t remaining_lifetime(struct net_if_addr *ifaddr)
 	remaining = (u64_t)ifaddr->lifetime.timer_timeout +
 		(u64_t)ifaddr->lifetime.wrap_counter *
 		(u64_t)NET_TIMEOUT_MAX_VALUE -
-		(u64_t)time_diff(k_uptime_get_32(),
+		(u64_t)time_diff((u32_t)k_uptime_get(),
 				 ifaddr->lifetime.timer_start);
 
 	return (u32_t)(remaining / K_MSEC(1000));

@@ -99,7 +99,7 @@ static void thread_time_slice(void *p1, void *p2, void *p3)
  * Ensure that each thread is given the time slice period to execute.
  *
  * @see k_sched_time_slice_set(), k_sem_reset(), k_cycle_get_32(),
- *      k_uptime_get_32()
+ *      (u32_t)k_uptime_get()
  *
  * @ingroup kernel_sched_tests
  */
@@ -130,8 +130,8 @@ void test_slice_reset(void)
 		k_sched_time_slice_set(SLICE_SIZE, K_PRIO_PREEMPT(0));
 
 		/*synchronize to tick boundary*/
-		t32 = k_uptime_get_32();
-		while (k_uptime_get_32() == t32) {
+		t32 = (u32_t)k_uptime_get();
+		while ((u32_t)k_uptime_get() == t32) {
 #if defined(CONFIG_ARCH_POSIX)
 			k_busy_wait(50);
 #endif

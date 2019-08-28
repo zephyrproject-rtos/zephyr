@@ -551,7 +551,7 @@ static inline int sdhc_map_data_status(int status)
 static inline void sdhc_retry_init(struct sdhc_retry *retry, u32_t timeout,
 			    u16_t sleep)
 {
-	retry->end = k_uptime_get_32() + timeout;
+	retry->end = (u32_t)k_uptime_get() + timeout;
 	retry->tries = 0;
 	retry->sleep = sleep;
 }
@@ -561,7 +561,7 @@ static inline void sdhc_retry_init(struct sdhc_retry *retry, u32_t timeout,
  */
 static inline bool sdhc_retry_ok(struct sdhc_retry *retry)
 {
-	s32_t remain = retry->end - k_uptime_get_32();
+	s32_t remain = retry->end - (u32_t)k_uptime_get();
 
 	if (retry->tries < SDHC_MIN_TRIES) {
 		retry->tries++;

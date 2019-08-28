@@ -234,7 +234,7 @@ struct net_buf *net_buf_alloc_len(struct net_buf_pool *pool, size_t size,
 				  s32_t timeout)
 #endif
 {
-	u32_t alloc_start = k_uptime_get_32();
+	u32_t alloc_start = (u32_t)k_uptime_get();
 	struct net_buf *buf;
 	unsigned int key;
 
@@ -277,7 +277,7 @@ struct net_buf *net_buf_alloc_len(struct net_buf_pool *pool, size_t size,
 
 #if defined(CONFIG_NET_BUF_LOG) && (CONFIG_NET_BUF_LOG_LEVEL >= LOG_LEVEL_WRN)
 	if (timeout == K_FOREVER) {
-		u32_t ref = k_uptime_get_32();
+		u32_t ref = (u32_t)k_uptime_get();
 		buf = k_lifo_get(&pool->free, K_NO_WAIT);
 		while (!buf) {
 #if defined(CONFIG_NET_BUF_POOL_USAGE)
@@ -291,11 +291,11 @@ struct net_buf *net_buf_alloc_len(struct net_buf_pool *pool, size_t size,
 #if defined(CONFIG_NET_BUF_POOL_USAGE)
 			NET_BUF_WARN("%s():%d: Pool %s blocked for %u secs",
 				     func, line, pool->name,
-				     (k_uptime_get_32() - ref) / MSEC_PER_SEC);
+				     ((u32_t)k_uptime_get() - ref) / MSEC_PER_SEC);
 #else
 			NET_BUF_WARN("%s():%d: Pool %p blocked for %u secs",
 				     func, line, pool,
-				     (k_uptime_get_32() - ref) / MSEC_PER_SEC);
+				     ((u32_t)k_uptime_get() - ref) / MSEC_PER_SEC);
 #endif
 		}
 	} else {
@@ -314,7 +314,7 @@ success:
 
 	if (size) {
 		if (timeout != K_NO_WAIT && timeout != K_FOREVER) {
-			u32_t diff = k_uptime_get_32() - alloc_start;
+			u32_t diff = (u32_t)k_uptime_get() - alloc_start;
 
 			timeout -= MIN(timeout, diff);
 		}
@@ -563,7 +563,7 @@ struct net_buf *net_buf_ref(struct net_buf *buf)
 
 struct net_buf *net_buf_clone(struct net_buf *buf, s32_t timeout)
 {
-	u32_t alloc_start = k_uptime_get_32();
+	u32_t alloc_start = (u32_t)k_uptime_get();
 	struct net_buf_pool *pool;
 	struct net_buf *clone;
 
@@ -588,7 +588,7 @@ struct net_buf *net_buf_clone(struct net_buf *buf, s32_t timeout)
 		size_t size = buf->size;
 
 		if (timeout != K_NO_WAIT && timeout != K_FOREVER) {
-			u32_t diff = k_uptime_get_32() - alloc_start;
+			u32_t diff = (u32_t)k_uptime_get() - alloc_start;
 
 			timeout -= MIN(timeout, diff);
 		}

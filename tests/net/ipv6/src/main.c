@@ -247,11 +247,11 @@ static int tester_send(struct device *dev, struct net_pkt *pkt)
 
 	if (icmp->type == NET_ICMPV6_NS) {
 		if (dad_time[0] == 0U) {
-			dad_time[0] = k_uptime_get_32();
+			dad_time[0] = (u32_t)k_uptime_get();
 		} else if (dad_time[1] == 0U) {
-			dad_time[1] = k_uptime_get_32();
+			dad_time[1] = (u32_t)k_uptime_get();
 		} else if (dad_time[2] == 0U) {
-			dad_time[2] = k_uptime_get_32();
+			dad_time[2] = (u32_t)k_uptime_get();
 		}
 
 		goto out;
@@ -967,7 +967,7 @@ static void test_address_lifetime(void)
 		      "Wrap counter wrong (%d)", ifaddr->lifetime.wrap_counter);
 
 	ifaddr->lifetime.timer_timeout = K_MSEC(10);
-	ifaddr->lifetime.timer_start = k_uptime_get_32() - K_MSEC(10);
+	ifaddr->lifetime.timer_start = (u32_t)k_uptime_get() - K_MSEC(10);
 	ifaddr->lifetime.wrap_counter = 0;
 
 	net_address_lifetime_timeout();

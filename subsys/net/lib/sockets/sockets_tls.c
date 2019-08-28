@@ -214,7 +214,7 @@ static void dtls_timing_set_delay(void *data, uint32_t int_ms, uint32_t fin_ms)
 	ctx->fin_ms = fin_ms;
 
 	if (fin_ms != 0U) {
-		ctx->snapshot = k_uptime_get_32();
+		ctx->snapshot = (u32_t)k_uptime_get();
 	}
 }
 
@@ -236,7 +236,7 @@ static int dtls_timing_get_delay(void *data)
 		return -1;
 	}
 
-	elapsed_ms = k_uptime_get_32() - timing->snapshot;
+	elapsed_ms = (u32_t)k_uptime_get() - timing->snapshot;
 
 	if (elapsed_ms >= timing->fin_ms) {
 		return 2;
@@ -401,7 +401,7 @@ static int tls_release(struct tls_context *tls)
 
 static inline int time_left(u32_t start, u32_t timeout)
 {
-	u32_t elapsed = k_uptime_get_32() - start;
+	u32_t elapsed = (u32_t)k_uptime_get() - start;
 
 	return timeout - elapsed;
 }
@@ -481,7 +481,7 @@ static int dtls_rx(void *ctx, unsigned char *buf, size_t len, uint32_t timeout)
 	bool is_block = !((net_ctx->tls->flags & ZSOCK_MSG_DONTWAIT) ||
 			  sock_is_nonblock(net_ctx));
 	int remaining_time = (timeout == 0U) ? K_FOREVER : timeout;
-	u32_t entry_time = k_uptime_get_32();
+	u32_t entry_time = (u32_t)k_uptime_get();
 	socklen_t addrlen = sizeof(struct sockaddr);
 	struct sockaddr addr;
 	int err;

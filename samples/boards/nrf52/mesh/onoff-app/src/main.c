@@ -437,7 +437,7 @@ static void button_pressed(struct device *dev, struct gpio_callback *cb,
 	 * More than one button press sends an off message
 	 */
 
-	time = k_uptime_get_32();
+	time = (u32_t)k_uptime_get();
 
 	/* debounce the switch */
 	if (time < last_time + BUTTON_DEBOUNCE_DELAY_MS) {
@@ -604,7 +604,7 @@ void main(void)
 	printk("Initializing...\n");
 
 	/* Initialize the button debouncer */
-	last_time = k_uptime_get_32();
+	last_time = (u32_t)k_uptime_get();
 
 	/* Initialize button worker task*/
 	k_work_init(&sw.button_work, button_pressed_worker);

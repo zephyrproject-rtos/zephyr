@@ -26,9 +26,9 @@ void spin_for_ms(int ms)
 	 */
 	k_busy_wait(ms * 1000);
 #else
-	u32_t t32 = k_uptime_get_32();
+	u32_t t32 = (u32_t)k_uptime_get();
 
-	while (k_uptime_get_32() - t32 < ms) {
+	while ((u32_t)k_uptime_get() - t32 < ms) {
 		/* In the posix arch, a busy loop takes no time, so
 		 * let's make it take some
 		 */

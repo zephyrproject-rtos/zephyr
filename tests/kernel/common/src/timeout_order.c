@@ -63,10 +63,10 @@ void test_timeout_order(void)
 	}
 
 
-	u32_t uptime = k_uptime_get_32();
+	u32_t uptime = (u32_t)k_uptime_get();
 
 	/* sync on tick */
-	while (uptime == k_uptime_get_32()) {
+	while (uptime == (u32_t)k_uptime_get()) {
 #if defined(CONFIG_ARCH_POSIX)
 		k_busy_wait(50);
 #endif

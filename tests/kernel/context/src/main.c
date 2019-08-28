@@ -243,14 +243,14 @@ static void _test_kernel_cpu_idle(int atomic)
 	int i;                  /* loop variable */
 
 	/* Align to a "ms boundary". */
-	tms = k_uptime_get_32();
-	while (tms == k_uptime_get_32()) {
+	tms = (u32_t)k_uptime_get();
+	while (tms == (u32_t)k_uptime_get()) {
 #if defined(CONFIG_ARCH_POSIX)
 		k_busy_wait(50);
 #endif
 	}
 
-	tms = k_uptime_get_32();
+	tms = (u32_t)k_uptime_get();
 	for (i = 0; i < 5; i++) {       /* Repeat the test five times */
 		if (atomic) {
 			unsigned int key = irq_lock();
@@ -261,7 +261,7 @@ static void _test_kernel_cpu_idle(int atomic)
 		}
 		/* calculating milliseconds per tick*/
 		tms += __ticks_to_ms(1);
-		tms2 = k_uptime_get_32();
+		tms2 = (u32_t)k_uptime_get();
 		zassert_false(tms2 < tms, "Bad ms per tick value computed,"
 			      "got %d which is less than %d\n",
 			      tms2, tms);

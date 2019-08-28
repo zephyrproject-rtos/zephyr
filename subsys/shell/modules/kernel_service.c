@@ -36,7 +36,7 @@ static int cmd_kernel_uptime(const struct shell *shell,
 	ARG_UNUSED(argv);
 
 	shell_fprintf(shell, SHELL_NORMAL, "Uptime: %u ms\n",
-			k_uptime_get_32());
+			(u32_t)k_uptime_get());
 	return 0;
 }
 

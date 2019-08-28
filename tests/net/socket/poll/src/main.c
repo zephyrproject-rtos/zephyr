@@ -56,9 +56,9 @@ void test_poll(void)
 	pollfds[1].events = POLLIN;
 
 	/* Poll non-ready fd's with timeout of 0 */
-	tstamp = k_uptime_get_32();
+	tstamp = (u32_t)k_uptime_get();
 	res = poll(pollfds, ARRAY_SIZE(pollfds), 0);
-	zassert_true(k_uptime_get_32() - tstamp <= FUZZ, "");
+	zassert_true((u32_t)k_uptime_get() - tstamp <= FUZZ, "");
 	zassert_equal(res, 0, "");
 
 	zassert_equal(pollfds[0].fd, c_sock, "");
@@ -70,9 +70,9 @@ void test_poll(void)
 
 
 	/* Poll non-ready fd's with timeout of 30 */
-	tstamp = k_uptime_get_32();
+	tstamp = (u32_t)k_uptime_get();
 	res = poll(pollfds, ARRAY_SIZE(pollfds), 30);
-	tstamp = k_uptime_get_32() - tstamp;
+	tstamp = (u32_t)k_uptime_get() - tstamp;
 	zassert_true(tstamp >= 30U && tstamp <= 30 + FUZZ, "");
 	zassert_equal(res, 0, "");
 
@@ -81,9 +81,9 @@ void test_poll(void)
 	len = send(c_sock, BUF_AND_SIZE(TEST_STR_SMALL), 0);
 	zassert_equal(len, STRLEN(TEST_STR_SMALL), "invalid send len");
 
-	tstamp = k_uptime_get_32();
+	tstamp = (u32_t)k_uptime_get();
 	res = poll(pollfds, ARRAY_SIZE(pollfds), 30);
-	tstamp = k_uptime_get_32() - tstamp;
+	tstamp = (u32_t)k_uptime_get() - tstamp;
 	zassert_true(tstamp <= FUZZ, "");
 	zassert_equal(res, 1, "");
 
@@ -99,9 +99,9 @@ void test_poll(void)
 	len = recv(s_sock, BUF_AND_SIZE(buf), 0);
 	zassert_equal(len, STRLEN(TEST_STR_SMALL), "invalid recv len");
 
-	tstamp = k_uptime_get_32();
+	tstamp = (u32_t)k_uptime_get();
 	res = poll(pollfds, ARRAY_SIZE(pollfds), 0);
-	zassert_true(k_uptime_get_32() - tstamp <= FUZZ, "");
+	zassert_true((u32_t)k_uptime_get() - tstamp <= FUZZ, "");
 	zassert_equal(res, 0, "");
 	zassert_equal(pollfds[1].revents, 0, "");
 
@@ -110,9 +110,9 @@ void test_poll(void)
 	res = close(c_sock);
 	zassert_equal(res, 0, "close failed");
 
-	tstamp = k_uptime_get_32();
+	tstamp = (u32_t)k_uptime_get();
 	res = poll(pollfds, ARRAY_SIZE(pollfds), 0);
-	zassert_true(k_uptime_get_32() - tstamp <= FUZZ, "");
+	zassert_true((u32_t)k_uptime_get() - tstamp <= FUZZ, "");
 	zassert_equal(res, 1, "");
 	zassert_equal(pollfds[0].revents, POLLNVAL, "");
 	zassert_equal(pollfds[1].revents, 0, "");

@@ -22,7 +22,7 @@
  */
 uint32_t HAL_GetTick(void)
 {
-	return k_uptime_get_32();
+	return (u32_t)k_uptime_get();
 }
 
 /**
