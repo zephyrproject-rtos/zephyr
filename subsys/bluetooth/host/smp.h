@@ -147,6 +147,11 @@ int bt_smp_le_oob_get_sc_data(struct bt_conn *conn,
 			      const struct bt_le_oob_sc_data **oobd_local,
 			      const struct bt_le_oob_sc_data **oobd_remote);
 
+
+void smp_ident_sent(struct bt_conn *conn, void *user_data);
+void smp_id_sent(struct bt_conn *conn, void *user_data);
+void smp_sign_info_sent(struct bt_conn *conn, void *user_data);
+
 /** brief Verify signed message
  *
  *  @param conn Bluetooth connection

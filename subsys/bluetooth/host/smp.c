@@ -695,14 +695,14 @@ static void smp_check_complete(struct bt_conn *conn, u8_t dist_complete)
 #endif
 
 #if defined(CONFIG_BT_PRIVACY)
-static void id_sent(struct bt_conn *conn, void *user_data)
+void smp_id_sent(struct bt_conn *conn, void *user_data)
 {
 	smp_check_complete(conn, BT_SMP_DIST_ID_KEY);
 }
 #endif /* CONFIG_BT_PRIVACY */
 
 #if defined(CONFIG_BT_SIGNING)
-static void sign_info_sent(struct bt_conn *conn, void *user_data)
+void smp_sign_info_sent(struct bt_conn *conn, void *user_data)
 {
 	smp_check_complete(conn, BT_SMP_DIST_SIGN);
 }
@@ -1072,7 +1072,7 @@ static void smp_br_distribute_keys(struct bt_smp_br *smp)
 		id_addr_info = net_buf_add(buf, sizeof(*id_addr_info));
 		bt_addr_le_copy(&id_addr_info->addr, &bt_dev.id_addr[conn->id]);
 
-		smp_br_send(smp, buf, id_sent);
+		smp_br_send(smp, buf, smp_id_sent);
 	}
 #endif /* CONFIG_BT_PRIVACY */
 
@@ -1856,7 +1856,7 @@ static u8_t smp_send_pairing_confirm(struct bt_smp *smp)
 }
 
 #if !defined(CONFIG_BT_SMP_SC_PAIR_ONLY)
-static void ident_sent(struct bt_conn *conn, void *user_data)
+void smp_ident_sent(struct bt_conn *conn, void *user_data)
 {
 	smp_check_complete(conn, BT_SMP_DIST_ENC_KEY);
 }
@@ -1907,7 +1907,7 @@ static void legacy_distribute_keys(struct bt_smp *smp)
 		memcpy(ident->rand, rand, sizeof(ident->rand));
 		memcpy(ident->ediv, ediv, sizeof(ident->ediv));
 
-		smp_send(smp, buf, ident_sent, NULL);
+		smp_send(smp, buf, smp_ident_sent, NULL);
 
 		if (atomic_test_bit(smp->flags, SMP_FLAG_BOND)) {
 			bt_keys_add_type(keys, BT_KEYS_SLAVE_LTK);
@@ -1967,7 +1967,7 @@ static u8_t bt_smp_distribute_keys(struct bt_smp *smp)
 		id_addr_info = net_buf_add(buf, sizeof(*id_addr_info));
 		bt_addr_le_copy(&id_addr_info->addr, &bt_dev.id_addr[conn->id]);
 
-		smp_send(smp, buf, id_sent, NULL);
+		smp_send(smp, buf, smp_id_sent, NULL);
 	}
 #endif /* CONFIG_BT_PRIVACY */
 
@@ -1993,7 +1993,7 @@ static u8_t bt_smp_distribute_keys(struct bt_smp *smp)
 			keys->local_csrk.cnt = 0U;
 		}
 
-		smp_send(smp, buf, sign_info_sent, NULL);
+		smp_send(smp, buf, smp_sign_info_sent, NULL);
 	}
 #endif /* CONFIG_BT_SIGNING */
 

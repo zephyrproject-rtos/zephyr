@@ -1198,6 +1198,17 @@ int bt_conn_send_cb(struct bt_conn *conn, struct net_buf *buf,
 static bool conn_tx_internal(bt_conn_tx_cb_t cb)
 {
 	if (cb == att_pdu_sent || cb == att_cfm_sent || cb == att_rsp_sent ||
+#if defined(CONFIG_BT_SMP)
+#if defined(CONFIG_BT_PRIVACY)
+	    cb == smp_id_sent ||
+#endif /* CONFIG_BT_PRIVACY */
+#if defined(CONFIG_BT_SIGNING)
+	    cb == smp_sign_info_sent ||
+#endif /* CONFIG_BT_SIGNING */
+#if !defined(CONFIG_BT_SMP_SC_PAIR_ONLY)
+	    cb == smp_ident_sent ||
+#endif /* CONFIG_BT_SMP_SC_PAIR_ONLY */
+#endif /* CONFIG_BT_SMP */
 #if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
 	    cb == l2cap_chan_sdu_sent ||
 #endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
