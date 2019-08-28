@@ -336,7 +336,9 @@ do_firmware_transfer_reply_cb(const struct coap_packet *response,
 				}
 
 				ret = write_cb(0, 0, 0,
-					       write_buf, len, last_block,
+					       write_buf, len,
+					       last_block &&
+							(payload_len == 0U),
 					       firmware_block_ctx.total_size);
 				if (ret < 0) {
 					goto error;
