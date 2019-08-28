@@ -21,6 +21,11 @@ devices (like Wi-Fi and Bluetooth Low Energy), and complex multi-threading,
 can also be developed using the Zephyr kernel. Examples of such systems
 include: fitness wearables, smart watches, and IoT wireless gateways.
 
+Scheduling, Interrupts, and Synchronization
+*******************************************
+
+These pages cover basic kernel services related to thread scheduling and
+synchronization.
 
 .. toctree::
    :maxdepth: 2
@@ -28,22 +33,59 @@ include: fitness wearables, smart watches, and IoT wireless gateways.
    threads/index.rst
    scheduling/index.rst
    other/interrupts.rst
+   other/polling.rst
    synchronization/semaphores.rst
    synchronization/mutexes.rst
+
+Data Passing
+************
+
+These pages cover kernel services which can be used to pass data between
+threads and ISRs.
+
+.. toctree::
+   :maxdepth: 2
+
    data_passing/fifos.rst
    data_passing/lifos.rst
    data_passing/stacks.rst
    data_passing/message_queues.rst
    data_passing/mailboxes.rst
    data_passing/pipes.rst
-   timing/clocks.rst
-   other/cpu_idle.rst
-   timing/timers.rst
+
+Memory Management
+*****************
+
+These pages cover memory allocation and management services.
+
+.. toctree::
+   :maxdepth: 2
+
    memory/slabs.rst
    memory/pools.rst
    memory/heap.rst
+
+Timing
+******
+
+These pages cover timing related services.
+
+.. toctree::
+   :maxdepth: 2
+
+   timing/clocks.rst
+   timing/timers.rst
+
+Other
+*****
+
+These pages cover other kernel services.
+
+.. toctree::
+   :maxdepth: 2
+
+   other/cpu_idle.rst
    other/atomic.rst
-   other/polling.rst
    other/float.rst
    other/ring_buffers.rst
    other/cxx_support.rst
