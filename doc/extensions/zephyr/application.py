@@ -251,27 +251,38 @@ class ZephyrAppCommandsDirective(Directive):
         if cd_into and app:
             content.append('cd {}'.format(app))
 
-        if 'build' in goals:
-            build_args = ' -b {}{}{}{}'.format(board, dst, src, cmake_args)
-            content.append('west build{}'.format(build_args))
+        # We always have to run west build.
+        #
+        # FIXME: doing this unconditionally essentially ignores the
+        # maybe-skip-config option if set.
+        #
+        # This whole script and its users from within the
+        # documentation needs to be overhauled now that we're
+        # defaulting to west.
+        #
+        # For now, this keeps the resulting commands working.
+        content.append('west build -b {}{}{}{}'.
+                       format(board, dst, src, cmake_args))
 
-        goal_args = '{}'.format(dst)
+        # If we're signing, we want to do that next, so that flashing
+        # etc. commands can use the signed file which must be created
+        # in this step.
         if 'sign' in goals:
-            content.append('west sign{}'.format(goal_args))
+            content.append('west sign{}'.format(dst))
 
         for goal in goals:
             if goal == 'build' or goal == 'sign':
                 continue
             elif goal == 'flash':
-                content.append('west flash{}'.format(goal_args))
+                content.append('west flash{}'.format(dst))
             elif goal == 'debug':
-                content.append('west debug{}'.format(goal_args))
+                content.append('west debug{}'.format(dst))
             elif goal == 'debugserver':
-                content.append('west debugserver{}'.format(goal_args))
+                content.append('west debugserver{}'.format(dst))
             elif goal == 'attach':
-                content.append('west attach{}'.format(goal_args))
+                content.append('west attach{}'.format(dst))
             else:
-                content.append('west build -t {}{}'.format(goal, goal_args))
+                content.append('west build -t {}{}'.format(goal, dst))
 
         return content
 
