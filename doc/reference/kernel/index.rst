@@ -40,8 +40,33 @@ synchronization.
 Data Passing
 ************
 
-These pages cover kernel services which can be used to pass data between
+These pages cover kernel objects which can be used to pass data between
 threads and ISRs.
+
+The following table summarizes their high-level features.
+
+===============   ==============      ===================    ==============      ==============   =================  ==============  ===============================
+Object            Bidirectional?      Data structure         Data item size      Data Alignment   ISRs can receive?  ISRs can send?  Overrun handling
+===============   ==============      ===================    ==============      ==============   =================  ==============  ===============================
+FIFO              No                  Queue                  Arbitrary [1]              4 B [2]   Yes [3]            Yes             N/A
+LIFO              No                  Queue                  Arbitrary [1]              4 B [2]   Yes [3]            Yes             N/A
+Stack             No                  Array                  Word                          Word   Yes [3]            Yes             Undefined behavior
+Message queue     No                  Ring buffer            Power of two          Power of two   Yes [3]            Yes             Pend thread or return -errno
+Mailbox           Yes                 Queue                  Arbitrary [1]            Arbitrary   No                 No              N/A
+Pipe              No                  Ring buffer [4]        Arbitrary                Arbitrary   No                 No              Pend thread or return -errno
+===============   ==============      ===================    ==============      ==============   =================  ==============  ===============================
+
+[1] Callers allocate space for queue overhead in the data
+elements themselves.
+
+[2] Objects added with k_fifo_alloc_put() and k_lifo_alloc_put()
+do not have alignment constraints, but use temporary memory from the
+calling thread's resource pool.
+
+[3] ISRs can receive only when passing K_NO_WAIT as the timeout
+argument.
+
+[4] Optional.
 
 .. toctree::
    :maxdepth: 2
