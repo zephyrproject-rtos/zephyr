@@ -26,6 +26,7 @@ a .dts file to parse and the path of a directory containing bindings.
 import os
 import re
 import sys
+from collections import defaultdict
 
 import yaml
 
@@ -140,6 +141,17 @@ class EDT:
 
         # to_path() checks that the node exists
         return self._node2dev[chosen.props[name].to_path()]
+
+    def compat_devs(self, compat):
+        """
+        Returns list of Devices that match 'compat' with the compatible property
+        or None if there is not matching 'compat'
+        """
+
+        if compat not in self._compat2dev:
+            return []
+
+        return self._compat2dev[compat]
 
     def _init_compat2binding(self, bindings_dirs):
         # Creates self._compat2binding. This is a dictionary that maps
@@ -274,6 +286,9 @@ class EDT:
         # Maps dtlib.Node's to their corresponding Devices
         self._node2dev = {}
 
+        # Maps compatiable to Device
+        self._compat2dev = defaultdict(list)
+
         self.devices = []
 
         for node in self._dt.node_iter():
@@ -288,6 +303,9 @@ class EDT:
 
             self.devices.append(dev)
             self._node2dev[node] = dev
+
+            for compat in dev.compats:
+                self._compat2dev[compat].append(dev)
 
         for dev in self.devices:
             # Device._init_props() depends on all Device objects having been
