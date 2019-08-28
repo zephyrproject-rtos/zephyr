@@ -9,7 +9,7 @@ config HAS_FLASH_LOAD_OFFSET
 	default y
 
 config FLASH_BASE_ADDRESS
-	default $(dt_hex_val,DT_FLASH_BASE_ADDRESS)
+	default $(dt_node_reg_addr,/soc/spi@10014000,1)
 
 config FLASH_LOAD_OFFSET
 	default 0x0
