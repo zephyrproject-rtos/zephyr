@@ -234,18 +234,6 @@ u32_t z_tick_get_32(void)
 #endif
 }
 
-u32_t z_impl_k_uptime_get_32(void)
-{
-	return __ticks_to_ms(z_tick_get_32());
-}
-
-#ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER(k_uptime_get_32)
-{
-	return z_impl_k_uptime_get_32();
-}
-#endif
-
 s64_t z_impl_k_uptime_get(void)
 {
 	return __ticks_to_ms(z_tick_get());
