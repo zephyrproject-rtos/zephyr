@@ -83,18 +83,6 @@ def main():
     write_addr_size(edt, "zephyr,ccm", "CCM")
     write_addr_size(edt, "zephyr,dtcm", "DTCM")
 
-    # NOTE: These defines aren't used by the code and just used by
-    # the kconfig build system, we can remove them in the future
-    # if we provide a function in kconfigfunctions.py to get
-    # the same info
-    write_required_label("UART_CONSOLE_ON_DEV_NAME", edt.chosen_dev("zephyr,console"))
-    write_required_label("UART_SHELL_ON_DEV_NAME",   edt.chosen_dev("zephyr,shell-uart"))
-    write_required_label("BT_UART_ON_DEV_NAME",      edt.chosen_dev("zephyr,bt-uart"))
-    write_required_label("UART_PIPE_ON_DEV_NAME",    edt.chosen_dev("zephyr,uart-pipe"))
-    write_required_label("BT_MONITOR_ON_DEV_NAME",   edt.chosen_dev("zephyr,bt-mon-uart"))
-    write_required_label("UART_MCUMGR_ON_DEV_NAME",  edt.chosen_dev("zephyr,uart-mcumgr"))
-    write_required_label("BT_C2H_UART_ON_DEV_NAME",  edt.chosen_dev("zephyr,bt-c2h-uart"))
-
     write_flash(edt.chosen_dev("zephyr,flash"))
     write_code_partition(edt.chosen_dev("zephyr,code-partition"))
 
@@ -416,22 +404,6 @@ def write_flash_partition_prefix(prefix, partition_dev, index):
     controller = partition_dev.flash_controller
     if controller.label is not None:
         out_s("{}_DEV".format(prefix), controller.label)
-
-
-def write_required_label(ident, dev):
-    # Helper function. Writes '#define <ident> "<label>"', where <label>
-    # is the value of the 'label' property from 'dev'. Does nothing if
-    # 'dev' is None.
-    #
-    # Errors out if 'dev' exists but has no label.
-
-    if not dev:
-        return
-
-    if dev.label is None:
-        err("missing 'label' property on {!r}".format(dev))
-
-    out_s(ident, dev.label)
 
 
 def write_irqs(dev):

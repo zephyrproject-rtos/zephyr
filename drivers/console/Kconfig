@@ -8,9 +8,13 @@
 #
 
 # Setting shared by different subsystems
+
+# Workaround for not being able to have commas in macro arguments
+DT_CHOSEN_Z_CONSOLE := zephyr,console
+
 config UART_CONSOLE_ON_DEV_NAME
 	string "Device Name of UART Device for UART Console"
-	default "$(dt_str_val,DT_UART_CONSOLE_ON_DEV_NAME)" if HAS_DTS
+	default "$(dt_chosen_label,$(DT_CHOSEN_Z_CONSOLE))" if HAS_DTS
 	default "UART_0"
 	depends on (UART_CONSOLE || CONSOLE_SUBSYS)
 	help
@@ -193,9 +197,12 @@ config	UART_PIPE
 	  data (as contrary to console UART driver) and all aspects of received
 	  protocol data are handled by application provided callback.
 
+# Workaround for not being able to have commas in macro arguments
+DT_CHOSEN_Z_UART_PIPE := zephyr,uart-pipe
+
 config UART_PIPE_ON_DEV_NAME
 	string "Device Name of UART Device for pipe UART"
-	default "$(dt_str_val,DT_UART_PIPE_ON_DEV_NAME)" if HAS_DTS
+	default "$(dt_chosen_label,$(DT_CHOSEN_Z_UART_PIPE))" if HAS_DTS
 	default "UART_0"
 	depends on UART_PIPE
 	help
@@ -214,9 +221,12 @@ config UART_MCUMGR
 
 if UART_MCUMGR
 
+# Workaround for not being able to have commas in macro arguments
+DT_CHOSEN_Z_UART_PIPE := zephyr,uart-mcumgr
+
 config UART_MCUMGR_ON_DEV_NAME
 	string "Device Name of UART Device for mcumgr UART"
-	default "$(dt_str_val,DT_UART_MCUMGR_ON_DEV_NAME)" if HAS_DTS
+	default "$(dt_chosen_label,$(DT_CHOSEN_Z_UART_PIPE))" if HAS_DTS
 	default "UART_0"
 	help
 	  This option specifies the name of UART device to be used

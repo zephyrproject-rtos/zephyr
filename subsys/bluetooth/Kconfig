@@ -128,9 +128,12 @@ config BT_HCI_ACL_FLOW_CONTROL
 	  not run out of incoming ACL buffers.
 endif # BT_CONN
 
+# Workaround for not being able to have commas in macro arguments
+DT_CHOSEN_Z_BT_C2H_UART := zephyr,bt-c2h-uart
+
 config BT_CTLR_TO_HOST_UART_DEV_NAME
 	string "Device Name of UART Device to an external Bluetooth Host"
-	default "$(dt_str_val,DT_BT_C2H_UART_ON_DEV_NAME)" if HAS_DTS
+	default "$(dt_chosen_label,$(DT_CHOSEN_Z_BT_C2H_UART))" if HAS_DTS
 	default "UART_0"
 	depends on BT_HCI_RAW
 	help

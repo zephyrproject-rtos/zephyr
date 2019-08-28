@@ -94,9 +94,12 @@ config USE_CODE_PARTITION
 	help
 	  When selected application will be linked into chosen code-partition.
 
+# Workaround for not being able to have commas in macro arguments
+DT_CHOSEN_Z_CODE_PARTITION := zephyr,code-partition
+
 config FLASH_LOAD_OFFSET
 	hex "Kernel load offset"
-	default $(dt_hex_val,DT_CODE_PARTITION_OFFSET) if USE_CODE_PARTITION
+	default $(dt_chosen_reg_addr,$(DT_CHOSEN_Z_CODE_PARTITION)) if USE_CODE_PARTITION
 	default 0
 	depends on HAS_FLASH_LOAD_OFFSET
 	help
@@ -109,7 +112,7 @@ config FLASH_LOAD_OFFSET
 
 config FLASH_LOAD_SIZE
 	hex "Kernel load size"
-	default $(dt_hex_val,DT_CODE_PARTITION_SIZE) if USE_CODE_PARTITION
+	default $(dt_chosen_reg_size,$(DT_CHOSEN_Z_CODE_PARTITION)) if USE_CODE_PARTITION
 	default 0
 	depends on HAS_FLASH_LOAD_OFFSET
 	help
