@@ -202,6 +202,18 @@ From RIRQ:
  */
 
 SECTION_FUNC(TEXT, _isr_wrapper)
+#ifdef CONFIG_EXECUTION_BENCHMARKING
+	push_s r0
+	push_s r1
+	push_s blink
+
+	bl read_timer_start_of_isr
+
+	pop_s blink
+	pop_s r1
+	pop_s r0
+#endif /* CONFIG_EXECUTION_BENCHMARKING */
+
 #if defined(CONFIG_ARC_FIRQ)
 #if CONFIG_RGF_NUM_BANKS == 1
 /* free r0 here, use r0 to check whether irq is firq.
@@ -297,9 +309,6 @@ SECTION_FUNC(TEXT, _isr_demux)
 	push r59
 #endif
 
-#ifdef CONFIG_EXECUTION_BENCHMARKING
-	bl read_timer_start_of_isr
-#endif
 	/* cannot be done before this point because we must be able to run C */
 	/* r0 is available to be stomped here, and exit_tickless_idle uses it */
 	exit_tickless_idle
