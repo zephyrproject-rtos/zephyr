@@ -1,10 +1,18 @@
 sample:
   description: BSD Sockets API dumb HTTP server example
   name: socket_dumb_http_server
+common:
+  filter: TOOLCHAIN_HAS_NEWLIB == 1
+  harness: net
+  min_ram: 32
+  min_flash: 96
+  tags: net socket
 tests:
   sample.net.sockets.dumb_http_server:
-    filter: TOOLCHAIN_HAS_NEWLIB == 1
-    harness: net
-    min_ram: 32
-    min_flash: 96
-    tags: net socket
+    extra_configs:
+      - CONFIG_NET_SOCKETS_POSIX_NAMES=y
+  sample.net.sockets.dumb_http_server.posix:
+    filter: and not CONFIG_NET_SOCKETS_OFFLOAD
+    extra_configs:
+      - CONFIG_NET_SOCKETS_POSIX_NAMES=n
+      - CONFIG_POSIX_API=y
