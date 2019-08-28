@@ -14,6 +14,7 @@ file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/include/generated)
 # See ~/zephyr/doc/dts
 set(GENERATED_DTS_BOARD_UNFIXED_H ${PROJECT_BINARY_DIR}/include/generated/generated_dts_board_unfixed.h)
 set(GENERATED_DTS_BOARD_CONF      ${PROJECT_BINARY_DIR}/include/generated/generated_dts_board.conf)
+set(DTS_POST_CPP                  ${PROJECT_BINARY_DIR}/${BOARD}.dts.pre.tmp)
 
 set_ifndef(DTS_SOURCE ${BOARD_DIR}/${BOARD}.dts)
 set_ifndef(DTS_COMMON_OVERLAYS ${ZEPHYR_BASE}/dts/common/common.dts)
