@@ -41,14 +41,14 @@ provided.
 
    .. automethod:: __init__
 
-   .. versionadded:: 0.6
+   .. versionadded:: 0.6.0
       The *requires_installation* parameter.
 
    Methods:
 
    .. automethod:: run
 
-   .. versionchanged:: 0.6
+   .. versionchanged:: 0.6.0
       The *topdir* argument was added.
 
    .. automethod:: add_parser
@@ -86,6 +86,16 @@ provided.
 
       The argument parser created by calling ``WestCommand.add_parser()``.
 
+   Instance properties:
+
+   .. py:attribute:: manifest
+
+      A read-only property which returns the :py:class:`west.manifest.Manifest`
+      instance for the current manifest file or aborts the program if one was
+      not provided. This is only safe to use from the ``do_run()`` method.
+
+   .. versionadded:: 0.6.1
+
 .. autoclass:: west.commands.CommandError
    :show-inheritance:
 
@@ -119,7 +129,7 @@ west.configuration
 
 .. autofunction:: west.configuration.read_config
 
-.. versionchanged:: 0.6
+.. versionchanged:: 0.6.0
    Errors due to an inability to find a local configuration file are ignored.
 
 .. autofunction:: west.configuration.update_config
@@ -136,7 +146,7 @@ west.log
 ********
 
 .. automodule:: west.log
-   :members: set_verbosity, VERBOSE_NONE, VERBOSE_NORMAL, VERBOSE_VERY, VERBOSE_EXTREME, dbg, inf, wrn, err, die
+   :members: set_verbosity, VERBOSE_NONE, VERBOSE_NORMAL, VERBOSE_VERY, VERBOSE_EXTREME, dbg, inf, wrn, err, die, banner, small_banner
 
 .. _west-apis-manifest:
 
@@ -163,6 +173,10 @@ west.manifest
 
    .. automethod:: get_remote
 
+   .. automethod:: get_projects
+
+   .. versionadded:: 0.6.1
+
    .. automethod:: as_frozen_dict
 
 .. autoclass:: west.manifest.Defaults
@@ -174,14 +188,35 @@ west.manifest
    :member-order: groupwise
 
 .. autoclass:: west.manifest.Project
-   :members:
-   :member-order: groupwise
+
+   .. automethod:: __init__
+
+   .. automethod:: as_dict
+
+   .. automethod:: format
+
+   .. automethod:: git
+
+   .. versionchanged:: 0.6.1
+      The ``capture_stderr`` kwarg.
+
+   .. automethod:: sha
+
+   .. automethod:: is_ancestor_of
+
+   .. automethod:: is_cloned
+
+   .. versionadded:: 0.6.1
+
+   .. automethod:: is_up_to_date_with
+
+   .. automethod:: is_up_to_date
 
 .. autoclass:: west.manifest.ManifestProject
    :members:
    :member-order: groupwise
 
-.. versionadded:: 0.6
+.. versionadded:: 0.6.0
 
 .. autoclass:: west.manifest.MalformedManifest
    :show-inheritance:
