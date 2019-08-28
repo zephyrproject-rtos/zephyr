@@ -246,6 +246,11 @@ int dns_resolve_init(struct dns_resolve_context *ctx, const char *servers[],
 #if defined(CONFIG_NET_IPV6)
 			local_addr = (struct sockaddr *)&local_addr6;
 			addr_len = sizeof(struct sockaddr_in6);
+
+			if (IS_ENABLED(CONFIG_MDNS_RESOLVER) &&
+			    ctx->servers[i].is_mdns) {
+				local_addr6.sin6_port = htons(5353);
+			}
 #else
 			continue;
 #endif
@@ -255,6 +260,11 @@ int dns_resolve_init(struct dns_resolve_context *ctx, const char *servers[],
 #if defined(CONFIG_NET_IPV4)
 			local_addr = (struct sockaddr *)&local_addr4;
 			addr_len = sizeof(struct sockaddr_in);
+
+			if (IS_ENABLED(CONFIG_MDNS_RESOLVER) &&
+			    ctx->servers[i].is_mdns) {
+				local_addr4.sin_port = htons(5353);
+			}
 #else
 			continue;
 #endif
@@ -290,6 +300,14 @@ int dns_resolve_init(struct dns_resolve_context *ctx, const char *servers[],
 		} else {
 			net_mgmt_event_notify(NET_EVENT_DNS_SERVER_ADD, iface);
 		}
+
+#if defined(CONFIG_NET_IPV6)
+		local_addr6.sin6_port = 0;
+#endif
+
+#if defined(CONFIG_NET_IPV4)
+		local_addr4.sin_port = 0;
+#endif
 
 		count++;
 	}
