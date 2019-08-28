@@ -28,7 +28,7 @@ These pages cover basic kernel services related to thread scheduling and
 synchronization.
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    threads/index.rst
    scheduling/index.rst
@@ -69,7 +69,7 @@ argument.
 [4] Optional.
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    data_passing/fifos.rst
    data_passing/lifos.rst
@@ -84,7 +84,7 @@ Memory Management
 These pages cover memory allocation and management services.
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    memory/slabs.rst
    memory/pools.rst
@@ -96,7 +96,7 @@ Timing
 These pages cover timing related services.
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    timing/clocks.rst
    timing/timers.rst
@@ -107,7 +107,7 @@ Other
 These pages cover other kernel services.
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    other/cpu_idle.rst
    other/atomic.rst
