@@ -244,17 +244,22 @@ Miscellaneous Commands
 ======================
 
 West has a few more commands for managing the multi-repo, which are briefly
-discussed here.
+discussed here. Run ``west <command> -h`` for detailed help.
 
-- ``west list``: Lists project information from the manifest (URL, revision,
-  path, etc.), along with other manifest-related information.
+- ``west list [-f FORMAT] [PROJECT ...]``: Lists project information from the
+  manifest file, such as URL, revision, path, etc. The printed information can
+  be controlled using the ``-f`` option.
 
 - ``west manifest --freeze [-o outfile]``: Save a "frozen" representation of
   the current manifest; all ``revision`` fields are converted to SHAs based on
   the current ``manifest-rev`` branches.
 
+- ``west manifest --validate``: Ensure the current manifest file is
+  well-formed. Print information about what's wrong and fail the process in
+  case of error.
+
 - ``west diff [PROJECT ...]``: Runs a multi-repo ``git diff``
-  for the specified projects (default: all cloned projects).
+  for the specified projects.
 
 - ``west status [PROJECT ...]``: Like ``west diff``, for
   running ``git status``.
@@ -267,6 +272,8 @@ discussed here.
   To run an arbitrary Git command in each project, use something like ``west
   forall -c 'git <command> --options'``. Note that ``west forall`` can be used
   to run any command, though, not just Git commands.
+
+- ``west help <command>``: this is equivalent to ``west <command> -h``.
 
 .. _PyPI:
    https://pypi.org/project/west/
