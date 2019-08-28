@@ -126,10 +126,13 @@ endchoice
 
 if BT_DEBUG
 
+# Workaround for not being able to have commas in macro arguments
+DT_CHOSEN_Z_BT_MON_UART := zephyr,bt-mon-uart
+
 config BT_MONITOR_ON_DEV_NAME
 	string "Device Name of Bluetooth monitor logging UART"
 	depends on BT_DEBUG_MONITOR
-	default "$(dt_str_val,DT_BT_MONITOR_ON_DEV_NAME)" if HAS_DTS
+	default "$(dt_chosen_label,$(DT_CHOSEN_Z_BT_MON_UART))" if HAS_DTS
 	default "UART_0"
 	help
 	 This option specifies the name of UART device to be used
