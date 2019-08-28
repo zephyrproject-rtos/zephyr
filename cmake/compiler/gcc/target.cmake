@@ -126,7 +126,13 @@ endforeach()
 #
 # Appending onto any existing values lets users specify
 # toolchain-specific flags at generation time.
-list(APPEND CMAKE_REQUIRED_FLAGS -nostartfiles -nostdlib ${isystem_include_flags} -Wl,--unresolved-symbols=ignore-in-object-files)
+list(APPEND CMAKE_REQUIRED_FLAGS
+  -nostartfiles
+  -nostdlib
+  ${isystem_include_flags}
+  -Wl,--unresolved-symbols=ignore-in-object-files
+  -Wl,--entry=0 # Set an entry point to avoid a warning
+  )
 string(REPLACE ";" " " CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS}")
 
 # Load toolchain_cc-family macros
