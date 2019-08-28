@@ -1,7 +1,7 @@
 .. _frdm_kw41z_shield:
 
-NXP FRDM-KW41Z
-##############
+NXP FRDM-KW41Z Shield
+#####################
 
 Overview
 ********
