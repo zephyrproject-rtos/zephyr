@@ -115,23 +115,6 @@ typedef u32_t (*_k_syscall_handler_t)(u32_t arg1, u32_t arg2, u32_t arg3,
 				      void *ssf);
 #ifdef CONFIG_USERSPACE
 
-/**
- * Indicate whether we are currently running in user mode
- *
- * @return true if the CPU is currently running with user permissions
- */
-static inline bool z_arch_is_user_context(void);
-
-/**
- * Indicate whether the CPU is currently in user mode
- *
- * @return true if the CPU is currently running with user permissions
- */
-static inline bool _is_user_context(void)
-{
-	return z_arch_is_user_context();
-}
-
 /*
  * Helper data structures for system calls with large argument lists
  */
@@ -271,7 +254,28 @@ static inline u64_t z_syscall_ret64_invoke2(u32_t arg1, u32_t arg2,
 	return ret;
 }
 
+/**
+ * Indicate whether we are currently running in user mode
+ *
+ * @return true if the CPU is currently running with user permissions
+ */
+static inline bool z_arch_is_user_context(void);
+
 #endif /* CONFIG_USERSPACE */
+
+/**
+ * Indicate whether the CPU is currently in user mode
+ *
+ * @return true if the CPU is currently running with user permissions
+ */
+static inline bool _is_user_context(void)
+{
+#ifdef CONFIG_USERSPACE
+	return z_arch_is_user_context();
+#else
+	return false;
+#endif
+}
 
 #ifdef __cplusplus
 }
