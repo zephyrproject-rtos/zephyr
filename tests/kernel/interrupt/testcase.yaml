@@ -1,9 +1,7 @@
 tests:
   arch.interrupt:
-    arch_exclude: nios2 riscv32 arc qemu_x86 qemu_x86_coverage qemu_x86_64
-    platform_exclude: hexiwear_kw40z frdm_kw41z frdm_kl25z nucleo_f103rb
-        nucleo_f091rc olimexino_stm32 usb_kw24d512 stm32_min_dev_blue
-        stm32_min_dev_black v2m_beetle
+    arch_exclude: nios2 riscv32 arc
+    platform_exclude: qemu_x86 qemu_x86_coverage qemu_x86_64
     tags: interrupt
 
   # Platforms without relevant (gen isr) dynamic interrupt support:
