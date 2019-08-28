@@ -87,11 +87,15 @@ static int write_read(const char *tag,
 	for (size_t i = 0; i < nbuf; ++i) {
 		rc = fs_write(&file, buf, buf_size);
 		if (buf_size != rc) {
-			TC_PRINT("Failed to write buf %u: %d\n", i, rc);
+			TC_PRINT("Failed to write buf %zu: %d\n", i, rc);
 			goto out_file;
 		}
 	}
 	t1 = k_uptime_get_32();
+
+	if (t1 == t0) {
+		t1++;
+	}
 
 	(void)fs_close(&file);
 
@@ -122,11 +126,15 @@ static int write_read(const char *tag,
 	for (size_t i = 0; i < nbuf; ++i) {
 		rc = fs_read(&file, buf, buf_size);
 		if (buf_size != rc) {
-			TC_PRINT("Failed to read buf %u: %d\n", i, rc);
+			TC_PRINT("Failed to read buf %zu: %d\n", i, rc);
 			goto out_file;
 		}
 	}
 	t1 = k_uptime_get_32();
+
+	if (t1 == t0) {
+		t1++;
+	}
 
 	TC_PRINT("%s read %zu * %zu = %zu bytes in %u ms: "
 		 "%u By/s, %u KiBy/s\n",

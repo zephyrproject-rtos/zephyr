@@ -384,7 +384,7 @@ int testfs_bcmd_verify_layout(struct testfs_path *pp,
 			       && ((strcmp(stat.name, ".") == 0)
 				   || (strcmp(stat.name, "..") == 0)));
 
-		TC_PRINT("%s %s%s%s %u\n", pp->path,
+		TC_PRINT("%s %s%s%s %zu\n", pp->path,
 			 stat.name,
 			 (stat.type == FS_DIR_ENTRY_FILE) ? "" : "/",
 			 dotdir ? " SYNTHESIZED"
