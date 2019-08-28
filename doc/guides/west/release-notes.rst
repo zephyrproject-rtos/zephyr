@@ -1,7 +1,48 @@
 West Release Notes
 ##################
 
-v0.6.x
+v0.6.1
+******
+
+The user-visible features in this point release are:
+
+- The `west update <west-multi-repo-cmds>` command has a new ``--fetch``
+  command line flag and ``update.fetch`` :ref:`configuration option
+  <west-config>`. The default value, "smart", skips fetching SHAs and tags
+  which are available locally.
+- Better and more consistent error-handling in the ``west diff``, ``west
+  status``, ``west forall``, and ``west update`` commands. Each of these
+  commands can operate on multiple projects; if a subprocess related to one
+  project fails, these commands now continue to operate on the rest of the
+  projects. All of them also now report a nonzero error code from the west
+  process if any of these subprocesses fails (this was previously not true of
+  ``west forall`` in particular).
+- The :ref:`west manifest <west-multi-repo-misc>` command also handles errors
+  better.
+- The :ref:`west list <west-multi-repo-misc>` command now works even when the
+  projects are not cloned, as long as its format string only requires
+  information which can be read from the manifest file. It still fails if the
+  format string requires data stored in the project repository, e.g. if it
+  includes the ``{sha}`` format string key.
+- Commands and options which operate on git revisions now accept abbreviated
+  SHAs. For example, ``west init --mr SHA_PREFIX`` now works. Previously, the
+  ``--mr`` argument needed to be the entire 40 character SHA if it wasn't a
+  branch or a tag.
+
+The developer-visible changes to the :ref:`west-apis` are:
+
+- west.log.banner(): new
+- west.log.small_banner(): new
+- west.manifest.Manifest.get_projects(): new
+- west.manifest.Project.is_cloned(): new
+- west.commands.WestCommand instances can now access the parsed
+  Manifest object via a new self.manifest property during the
+  do_run() call. If read, it returns the Manifest object or
+  aborts the command if it could not be parsed.
+- west.manifest.Project.git() now has a capture_stderr kwarg
+
+
+v0.6.0
 ******
 
 - No separate bootstrapper
