@@ -224,8 +224,12 @@ int dns_resolve_init(struct dns_resolve_context *ctx, const char *servers[],
 
 			dns_postprocess_server(ctx, idx);
 
-			NET_DBG("[%d] %s", i, log_strdup(servers[i]));
-
+			NET_DBG("[%d] %s%s%s", i, log_strdup(servers[i]),
+				IS_ENABLED(CONFIG_MDNS_RESOLVER) ?
+				(ctx->servers[i].is_mdns ? " mDNS" : "") : "",
+				IS_ENABLED(CONFIG_LLMNR_RESOLVER) ?
+				(ctx->servers[i].is_llmnr ?
+							 " LLMNR" : "") : "");
 			idx++;
 		}
 	}
