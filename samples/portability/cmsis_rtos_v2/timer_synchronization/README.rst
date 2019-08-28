@@ -63,3 +63,5 @@ Sample Output
     Read from message queue: 15
 
     Sample execution successful
+
+Exit QEMU by pressing :kbd:`CTRL+A` :kbd:`x`.

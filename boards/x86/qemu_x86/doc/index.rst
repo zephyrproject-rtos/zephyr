@@ -111,6 +111,8 @@ QEMU, and display the following console output:
         threadA: Hello World from x86!
         threadB: Hello World from x86!
 
+Exit QEMU by pressing :kbd:`CTRL+A` :kbd:`x`.
+
 Debugging
 =========
 

@@ -54,3 +54,5 @@ Sample Output
     CMSIS RTOS V1 APIs. This particular implementation demonstrates the
     usage of multiple preemptible threads of differing
     priorities, as well as semaphores and thread sleeping.
+
+Exit QEMU by pressing :kbd:`CTRL+A` :kbd:`x`.

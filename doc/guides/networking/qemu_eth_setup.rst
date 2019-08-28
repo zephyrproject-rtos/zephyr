@@ -81,3 +81,5 @@ In terminal #2, type:
    :gen-args: -DOVERLAY_CONFIG=overlay-e1000.conf
    :goals: run
    :compact:
+
+Exit QEMU by pressing :kbd:`CTRL+A` :kbd:`x`.

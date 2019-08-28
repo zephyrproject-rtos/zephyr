@@ -38,6 +38,8 @@ message is the output of the first message, and the resulting
 output is the first message without spaces.  The two messages are
 marked as 1 and 1' respectively.
 
+Exit QEMU by pressing :kbd:`CTRL+A` :kbd:`x`.
+
 Two definitions can be inserted to change the wheel settings and print
 the state information.  To enable the definitions uncomment the last
 two lines in CMakelists.txt.
