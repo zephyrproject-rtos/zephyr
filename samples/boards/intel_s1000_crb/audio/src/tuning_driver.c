@@ -66,6 +66,8 @@ static int tun_drv_io_thread(void)
 		/* notify audio core on tuning command reception */
 		audio_core_notify_tuning_cmd();
 	}
+
+	return 0;
 }
 
 int tun_drv_packet_handler(void)
