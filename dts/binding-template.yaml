@@ -87,6 +87,7 @@ sub-node:
 #       ...
 #       - <itemN>
 #     const: <string | int>
+#     default: <default>
 #
 # 'type: uint8-array' is for what the device tree specification calls
 # 'bytestring'. Properties of type 'uint8-array' should be set like this:
@@ -121,6 +122,18 @@ sub-node:
 #   foo = <&label1 &label2>, <&label3 &label4>; // Okay for 'type: phandles'
 #   foo = <&label1 1 2>, <&label2 3 4>;         // Okay for 'type: phandle-array'
 #   etc.
+#
+# The optional 'default:' setting gives a value that will be used if the
+# property is missing from the device tree node. If 'default: <default>' is
+# given for a property <prop> and <prop> is missing, then the output will be as
+# if '<prop> = <default>' had appeared (except YAML data types are used for the
+# default value).
+#
+# Note that it only makes sense to combine 'default:' with 'required: false'.
+# Combining it with 'required: true' will raise an error.
+#
+# See below for examples of 'default:'. Putting 'default:' on any property type
+# besides those used in the examples will raise an error.
 properties:
     # Describes a property like 'current-speed = <115200>;'. We pretend that
     # it's obligatory for the example node and set 'required: true'.
@@ -153,6 +166,31 @@ properties:
         type: int
         required: true
         const: 1
+
+    int-with-default:
+        type: int
+        required: false
+        default: 123
+
+    array-with-default:
+        type: array
+        required: false
+        default: [1, 2, 3] # Same as 'array-with-default = <1 2 3>'
+
+    string-with-default:
+        type: string
+        required: false
+        default: "foo"
+
+    string-array-with-default:
+        type: string-array
+        required: false
+        default: ["foo", "bar"] # Same as 'string-array-with-default = "foo", "bar"'
+
+    uint8-array-with-default:
+        type: uint8-array
+        required: false
+        default: [0x12, 0x34] # Same as 'uint8-array-with-default = [12 34]'
 
 # If the binding describes an interrupt controller, GPIO controller, pinmux
 # device, or any other node referenced by other nodes, then #cells should be
