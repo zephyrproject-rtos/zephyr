@@ -409,6 +409,10 @@ Bluetooth
 Build and Infrastructure
 ************************
 
+* ARM Embedded Toolchain
+
+  * Changed ARM Embedded toolchain to default to nano variant of newlib
+
 * TBD
 
 Libraries / Subsystems
