@@ -5,7 +5,7 @@
  */
 
 &spi1 {
-	status = "ok";
+	status = "okay";
 	cs-gpios = <&gpio1 3 0>;
 	sck-pin = <36>;
 	mosi-pin = <37>;
