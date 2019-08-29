@@ -113,7 +113,9 @@ int dns_unpack_answer(struct dns_msg_t *dns_msg, int dname_ptr, u32_t *ttl)
 	u8_t *answer;
 
 	answer = dns_msg->msg + dns_msg->answer_offset;
-	dname_len = skip_fqdn(answer, dns_msg->msg_size - dns_msg->answer_offset);
+
+	dname_len = skip_fqdn(answer,
+			      dns_msg->msg_size - dns_msg->answer_offset);
 	if (dname_len < 0) {
 		return dname_len;
 	}
@@ -134,9 +136,12 @@ int dns_unpack_answer(struct dns_msg_t *dns_msg, int dname_ptr, u32_t *ttl)
 		return -EINVAL;
 	}
 
-	/* Only DNS_CLASS_IN answers
+	/* Only DNS_CLASS_IN answers. If mDNS is enabled, strip away the
+	 * Cache-Flush bit (highest one).
 	 */
-	if (dns_answer_class(dname_len, answer) != DNS_CLASS_IN) {
+	if ((dns_answer_class(dname_len, answer) &
+	     (IS_ENABLED(CONFIG_MDNS_RESOLVER) ? 0x7fff : 0xffff))
+							!= DNS_CLASS_IN) {
 		return -EINVAL;
 	}
 
@@ -210,7 +215,11 @@ int dns_unpack_response_header(struct dns_msg_t *msg, int src_id)
 
 	qdcount = dns_unpack_header_qdcount(dns_header);
 	ancount = dns_unpack_header_ancount(dns_header);
-	if (qdcount < 1 || ancount < 1) {
+
+	/* For mDNS (when src_id == 0) the query count is 0 so accept
+	 * the packet in that case.
+	 */
+	if ((qdcount < 1 && src_id > 0) || ancount < 1) {
 		return -EINVAL;
 	}
 

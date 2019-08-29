@@ -413,14 +413,25 @@ static int dns_read(struct dns_resolve_context *ctx,
 	}
 
 	if (dns_header_qdcount(dns_msg.msg) != 1) {
-		ret = DNS_EAI_FAIL;
-		goto quit;
+		/* For mDNS (when dns_id == 0) the query count is 0 */
+		if (*dns_id > 0) {
+			ret = DNS_EAI_FAIL;
+			goto quit;
+		}
 	}
 
 	ret = dns_unpack_response_query(&dns_msg);
 	if (ret < 0) {
-		ret = DNS_EAI_FAIL;
-		goto quit;
+		/* Check mDNS like above */
+		if (*dns_id > 0) {
+			ret = DNS_EAI_FAIL;
+			goto quit;
+		}
+
+		/* mDNS responses to do not have the query part so the
+		 * answer starts immediately after the header.
+		 */
+		dns_msg.answer_offset = dns_msg.query_offset;
 	}
 
 	if (ctx->queries[query_idx].query_type == DNS_QUERY_TYPE_A) {
@@ -839,19 +850,9 @@ try_resolve:
 
 	ctx->queries[i].id = sys_rand32_get();
 
-	/* Do this immediately after calculating the Id so that the unit
-	 * test will work properly.
-	 */
-	if (dns_id) {
-		*dns_id = ctx->queries[i].id;
-
-		NET_DBG("DNS id will be %u", *dns_id);
-	}
-
-	mdns_query = false;
-
 	/* If mDNS is enabled, then send .local queries only to multicast
-	 * address.
+	 * address. For mDNS the id should be set to 0, see RFC 6762 ch. 18.1
+	 * for details.
 	 */
 	if (IS_ENABLED(CONFIG_MDNS_RESOLVER)) {
 		const char *ptr = strrchr(query, '.');
@@ -859,7 +860,18 @@ try_resolve:
 		/* Note that we memcmp() the \0 here too */
 		if (ptr && !memcmp(ptr, (const void *){ ".local" }, 7)) {
 			mdns_query = true;
+
+			ctx->queries[i].id = 0;
 		}
+	}
+
+	/* Do this immediately after calculating the Id so that the unit
+	 * test will work properly.
+	 */
+	if (dns_id) {
+		*dns_id = ctx->queries[i].id;
+
+		NET_DBG("DNS id will be %u", *dns_id);
 	}
 
 	for (j = 0; j < SERVER_COUNT; j++) {
