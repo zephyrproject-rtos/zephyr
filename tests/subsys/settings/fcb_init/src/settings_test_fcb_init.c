@@ -106,7 +106,8 @@ void test_prepare_storage(void)
 		err = flash_write_protection_set(dev, false);
 		zassert_true(err == 0, "can't unprotect flash");
 
-		(void)memset(new_val, ~ERASED_VAL, DT_FLASH_WRITE_BLOCK_SIZE);
+		(void)memset(new_val, (~ERASED_VAL) & 0xFF,
+			     DT_FLASH_WRITE_BLOCK_SIZE);
 		err = flash_write(dev, (off_t)&prepared_mark, &new_val,
 				  sizeof(new_val));
 		zassert_true(err == 0, "can't write prepared_mark");
