@@ -389,7 +389,7 @@ Bluetooth
   * Added support for out-of-tree user-defined commands and events
   * Added support for Zephyr Vendor Specific Commands
   * Added support for user-defined protocols
-  * Converted several control procedures to be queuable
+  * Converted several control procedures to be queueable
   * Nordic: Added support for Controller-based privacy
   * Nordic: Decorrelated address generation from resolution
   * Nordic: Added support for fast encryption setup
@@ -432,7 +432,10 @@ HALs
 Documentation
 *************
 
-* TBD
+* We've made many updates to component, subsystem, and process
+  documentation bringing our documentation up-to-date with code changes,
+  additions, and improvements, as well as new supported boards and
+  samples.
 
 Tests and Samples
 *****************
