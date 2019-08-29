@@ -19,10 +19,9 @@ config POSIX_API
 	  Enable mostly-standards-compliant implementations of
 	  various POSIX (IEEE 1003.1) APIs.
 
-if POSIX_API
-
 config PTHREAD_IPC
 	bool "POSIX pthread IPC API"
+	default y if POSIX_API
 	help
 	  This enables a mostly-standards-compliant implementation of
 	  the pthread mutex, condition variable and barrier IPC
@@ -45,6 +44,13 @@ config SEM_VALUE_MAX
 
 endif # PTHREAD_IPC
 
+config POSIX_CLOCK
+	bool "POSIX clock, timer, and sleep APIs"
+	default y if POSIX_API
+	help
+	  This enables POSIX clock\_\*(), timer\_\*(), and \*sleep()
+	  functions.
+
 config MAX_TIMER_COUNT
 	int "Maximum timer count in POSIX application"
 	default 5
@@ -54,6 +60,7 @@ config MAX_TIMER_COUNT
 
 config POSIX_MQUEUE
 	bool "Enable POSIX message queue"
+	default y if POSIX_API
 	help
 	  This enabled POSIX message queue related APIs.
 
@@ -83,6 +90,7 @@ endif
 if FILE_SYSTEM
 config POSIX_FS
 	bool "Enable POSIX file system API support"
+	default y if POSIX_API
 	help
 	  This enables POSIX style file system related APIs.
 
@@ -95,6 +103,8 @@ config	POSIX_MAX_OPEN_FILES
 	  is additionally bounded by CONFIG_POSIX_MAX_FDS.
 endif
 endif # FILE_SYSTEM
+
+if POSIX_API
 
 # The name of this option is mandated by zephyr_interface_library_named
 # cmake directive.
