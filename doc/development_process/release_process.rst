@@ -187,7 +187,7 @@ Milestones
 The following graphic shows the timeline of phases and milestones associated
 with each release:
 
-.. figure:: milestones.png
+.. figure:: milestones.jpg
     :align: center
     :alt: Release Milestones
     :figclass: align-center
@@ -199,7 +199,7 @@ This shows how the phases and milestones of one release overlap with those of
 the next release:
 
 
-.. figure:: milestones2.png
+.. figure:: milestones2.jpg
     :align: center
     :alt: Release Milestones
     :figclass: align-center
