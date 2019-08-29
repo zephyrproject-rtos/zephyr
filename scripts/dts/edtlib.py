@@ -591,7 +591,8 @@ class Device:
 
         val = self._prop_val(
             name, prop_type,
-            options.get("required") or options.get("category") == "required")
+            options.get("required") or options.get("category") == "required",
+            options.get("default"))
 
         if val is None:
             # 'required: false' property that wasn't there, or a property type
@@ -629,8 +630,21 @@ class Device:
 
         self.props[name] = prop
 
-    def _prop_val(self, name, prop_type, required):
+    def _prop_val(self, name, prop_type, required, default):
         # _init_prop() helper for getting the property's value
+        #
+        # name:
+        #   Property name from binding
+        #
+        # prop_type:
+        #   Property type from binding (a string like "int")
+        #
+        # optional:
+        #   True if the property isn't required to exist
+        #
+        # default:
+        #   Default value to use when the property doesn't exist, or None if
+        #   the binding doesn't give a default value
 
         node = self._node
         prop = node.props.get(name)
@@ -649,6 +663,15 @@ class Device:
                 _err("'{}' is marked as required in 'properties:' in {}, but "
                      "does not appear in {!r}".format(
                          name, self.binding_path, node))
+
+            if default is not None:
+                # YAML doesn't have a native format for byte arrays. We need to
+                # convert those from an array like [0x12, 0x34, ...]. The
+                # format has already been checked in
+                # _check_prop_type_and_default().
+                if prop_type == "uint8-array":
+                    return bytes(default)
+                return default
 
             return None
 
@@ -683,14 +706,13 @@ class Device:
                      .format(name, node.path, node.dt.filename, prop))
             return None
 
-        if prop_type == "compound":
-            # Dummy type for properties like that don't fit any of the patterns
-            # above, so that we can require all entries in 'properties:' to
-            # have a 'type: ...'. No Property object is created for it.
-            return None
-
-        _err("'{}' in 'properties:' in {} has unknown type '{}'"
-             .format(name, self.binding_path, prop_type))
+        # prop_type == "compound". We have already checked that the 'type:'
+        # value is valid, in _check_binding().
+        #
+        # 'compound' is a dummy type for properties that don't fit any of the
+        # patterns above, so that we can require all entries in 'properties:'
+        # to have a 'type: ...'. No Property object is created for it.
+        return None
 
     def _init_regs(self):
         # Initializes self.regs
@@ -1315,7 +1337,6 @@ def _check_binding(binding, binding_path):
         if prop not in binding:
             _err("missing '{}' property in {}".format(prop, binding_path))
 
-    for prop in "title", "description":
         if not isinstance(binding[prop], str) or not binding[prop]:
             _err("missing, malformed, or empty '{}' in {}"
                  .format(prop, binding_path))
@@ -1356,7 +1377,7 @@ def _check_binding_properties(binding, binding_path):
         return
 
     ok_prop_keys = {"description", "type", "required", "category",
-                    "constraint", "enum", "const"}
+                    "constraint", "enum", "const", "default"}
 
     for prop_name, options in binding["properties"].items():
         for key in options:
@@ -1372,6 +1393,11 @@ def _check_binding_properties(binding, binding_path):
                      "expected one of {}".format(
                          key, prop_name, binding_path,
                          ", ".join(ok_prop_keys)))
+
+        _check_prop_type_and_default(
+            prop_name, options.get("type"),
+            options.get("required") or options.get("category") == "required",
+            options.get("default"), binding_path)
 
         if "required" in options and not isinstance(options["required"], bool):
             _err("malformed 'required:' setting '{}' for '{}' in 'properties' "
@@ -1390,6 +1416,67 @@ def _check_binding_properties(binding, binding_path):
         if "const" in options and not isinstance(options["const"], (int, str)):
             _err("const in {} for property '{}' is not a scalar"
                  .format(binding_path, prop_name))
+
+
+def _check_prop_type_and_default(prop_name, prop_type, required, default,
+                                 binding_path):
+    # _check_binding() helper. Checks 'type:' and 'default:' for the property
+    # named 'prop_name'
+
+    if prop_type is None:
+        _err("missing 'type:' for '{}' in 'properties' in {}"
+             .format(prop_name, binding_path))
+
+    ok_types = {"boolean", "int", "array", "uint8-array", "string",
+                "string-array", "phandle", "phandles", "phandle-array",
+                "compound"}
+
+    if prop_type not in ok_types:
+        _err("'{}' in 'properties:' in {} has unknown type '{}', expected one "
+             "of {}".format(prop_name, binding_path, prop_type,
+                            ", ".join(ok_types)))
+
+    # Check default
+
+    if default is None:
+        return
+
+    if required:
+        _err("'default:' for '{}' in 'properties:' in {} is meaningless in "
+             "combination with 'required: true'"
+             .format(prop_name, binding_path))
+
+    if prop_type in {"boolean", "compound", "phandle", "phandles",
+                     "phandle-array"}:
+        _err("'default:' can't be combined with 'type: {}' for '{}' in "
+             "'properties:' in {}".format(prop_type, prop_name, binding_path))
+
+    def ok_default():
+        # Returns True if 'default' is an okay default for the property's type
+
+        if prop_type == "int" and isinstance(default, int) or \
+           prop_type == "string" and isinstance(default, str):
+            return True
+
+        # array, uint8-array, or string-array
+
+        if not isinstance(default, list):
+            return False
+
+        if prop_type == "array" and \
+           all(isinstance(val, int) for val in default):
+            return True
+
+        if prop_type == "uint8-array" and \
+           all(isinstance(val, int) and 0 <= val <= 255 for val in default):
+            return True
+
+        # string-array
+        return all(isinstance(val, str) for val in default)
+
+    if not ok_default():
+        _err("'default: {}' is invalid for '{}' in 'properties:' in {}, which "
+             "has type {}".format(default, prop_name, binding_path, prop_type))
 
 
 def _translate(addr, node):
