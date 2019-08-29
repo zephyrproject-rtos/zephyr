@@ -1,8 +1,5 @@
-#
 # Copyright (c) 2018, I-SENSE group of ICCS
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 title: Bluetooth module based on Zephyr's Bluetooth HCI SPI driver
 
