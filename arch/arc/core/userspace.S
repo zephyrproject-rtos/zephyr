@@ -14,35 +14,35 @@
 #include <v2/irq.h>
 
 .macro clear_scratch_regs
-	mov r1, 0
-	mov r2, 0
-	mov r3, 0
-	mov r4, 0
-	mov r5, 0
-	mov r6, 0
-	mov r7, 0
-	mov r8, 0
-	mov r9, 0
-	mov r10, 0
-	mov r11, 0
-	mov r12, 0
+	mov_s r1, 0
+	mov_s r2, 0
+	mov_s r3, 0
+	mov_s r4, 0
+	mov_s r5, 0
+	mov_s r6, 0
+	mov_s r7, 0
+	mov_s r8, 0
+	mov_s r9, 0
+	mov_s r10, 0
+	mov_s r11, 0
+	mov_s r12, 0
 .endm
 
 .macro clear_callee_regs
-	mov r25, 0
-	mov r24, 0
-	mov r23, 0
-	mov r22, 0
-	mov r21, 0
-	mov r20, 0
-	mov r19, 0
-	mov r18, 0
-	mov r17, 0
-	mov r16, 0
+	mov_s r25, 0
+	mov_s r24, 0
+	mov_s r23, 0
+	mov_s r22, 0
+	mov_s r21, 0
+	mov_s r20, 0
+	mov_s r19, 0
+	mov_s r18, 0
+	mov_s r17, 0
+	mov_s r16, 0
 
-	mov r15, 0
-	mov r14, 0
-	mov r13, 0
+	mov_s r15, 0
+	mov_s r14, 0
+	mov_s r13, 0
 .endm
 
 GTEXT(z_arc_userspace_enter)
@@ -67,7 +67,7 @@ SECTION_FUNC(TEXT, z_user_thread_entry_wrapper)
 /* the start of user sp is in r5 */
 	pop r5
 /* start of privilege stack in blink */
-	mov blink, sp
+	mov_s blink, sp
 
 	st.aw r0, [r5, -4]
 	st.aw r1, [r5, -4]
@@ -109,7 +109,7 @@ SECTION_FUNC(TEXT, z_arc_userspace_enter)
 	add r5, r4, r5
 	/* start of privilege stack */
 	add blink, r5, CONFIG_PRIVILEGED_STACK_SIZE+STACK_GUARD_SIZE
-	mov sp, r5
+	mov_s sp, r5
 
 	push_s r0
 	push_s r1
@@ -119,9 +119,9 @@ SECTION_FUNC(TEXT, z_arc_userspace_enter)
 	mov r5, sp /* skip r0, r1, r2, r3 */
 
 #ifdef CONFIG_INIT_STACKS
-	mov r0, 0xaaaaaaaa
+	mov_s r0, 0xaaaaaaaa
 #else
-	mov r0, 0x0
+	mov_s r0, 0x0
 #endif
 _clear_user_stack:
 	st.ab r0, [r4, 4]
@@ -129,7 +129,7 @@ _clear_user_stack:
 	jlt _clear_user_stack
 
 #ifdef CONFIG_ARC_STACK_CHECKING
-	mov r1, _kernel
+	mov_s r1, _kernel
 	ld_s r2, [r1, _kernel_offset_to_current]
 
 	_load_stack_check_regs
@@ -149,7 +149,7 @@ _arc_go_to_user_space:
 	lr r0, [_ARC_V2_STATUS32]
 	bset r0, r0, _ARC_V2_STATUS32_U_BIT
 
-	mov r1, z_thread_entry_wrapper1
+	mov_s r1, z_thread_entry_wrapper1
 
 	sr r0, [_ARC_V2_ERSTATUS]
 	sr r1, [_ARC_V2_ERET]
@@ -171,18 +171,18 @@ _arc_go_to_user_space:
 #else
 	sr r5, [_ARC_V2_USER_SP]
 #endif
-	mov sp, blink
+	mov_s sp, blink
 
-	mov r0, 0
+	mov_s r0, 0
 
 	clear_callee_regs
 
 	clear_scratch_regs
 
-	mov fp, 0
-	mov r29, 0
-	mov r30, 0
-	mov blink, 0
+	mov_s fp, 0
+	mov_s r29, 0
+	mov_s r30, 0
+	mov_s blink, 0
 
 #ifdef CONFIG_EXECUTION_BENCHMARKING
 	b _capture_value_for_benchmarking_userspace
@@ -206,7 +206,7 @@ SECTION_FUNC(TEXT, _arc_do_syscall)
 	/* the call id is already checked in trap_s handler */
 	push_s blink
 
-	mov blink, _k_syscall_table
+	mov_s blink, _k_syscall_table
 	ld.as r6, [blink, r6]
 
 	jl [r6]
@@ -217,8 +217,8 @@ SECTION_FUNC(TEXT, _arc_do_syscall)
 	 */
 	clear_scratch_regs
 
-	mov r29, 0
-	mov r30, 0
+	mov_s r29, 0
+	mov_s r30, 0
 
 	pop_s blink
 
@@ -237,7 +237,7 @@ SECTION_FUNC(TEXT, _arc_do_syscall)
 	sr r6, [_ARC_V2_ERSEC_STAT]
 #endif
 
-	mov r6, 0
+	mov_s r6, 0
 
 	rtie
 

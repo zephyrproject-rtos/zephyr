@@ -89,7 +89,7 @@ SECTION_FUNC(TEXT, z_arch_switch)
 #ifdef CONFIG_ARC_SECURE_FIRMWARE
 	lr r3, [_ARC_V2_SEC_STAT]
 #else
-	mov r3, 0
+	mov_s r3, 0
 #endif
 	push_s r3
 #endif
@@ -113,7 +113,7 @@ SECTION_FUNC(TEXT, z_arch_switch)
 
 _switch_to_target_thread:
 
-	mov r2, r0
+	mov_s r2, r0
 
 	/* entering here, r2 contains the new current thread */
 #ifdef CONFIG_ARC_STACK_CHECKING
@@ -131,9 +131,9 @@ _switch_to_target_thread:
 	ld r3, [r2, _thread_offset_to_relinquish_cause]
 
 	breq r3, _CAUSE_RIRQ, _switch_return_from_rirq
-	nop
+	nop_s
 	breq r3, _CAUSE_FIRQ, _switch_return_from_firq
-	nop
+	nop_s
 
 	/* fall through to _switch_return_from_coop */
 
@@ -163,7 +163,7 @@ _switch_return_from_firq:
 
 #ifdef CONFIG_ARC_SECURE_FIRMWARE
 	/* here need to recover SEC_STAT.IRM bit */
-	pop r3
+	pop_s r3
 	sflag r3
 #endif
 
@@ -176,9 +176,9 @@ _switch_return_from_firq:
 #endif
 
 #ifdef CONFIG_ARC_NORMAL_FIRMWARE
-	mov r0, _ARC_V2_AUX_IRQ_ACT
-	mov r1, r3
-	mov r6, ARC_S_CALL_AUX_WRITE
+	mov_s r0, _ARC_V2_AUX_IRQ_ACT
+	mov_s r1, r3
+	mov_s r6, ARC_S_CALL_AUX_WRITE
 	sjli SJLI_CALL_ARC_SECURE
 #else
 	sr r3, [_ARC_V2_AUX_IRQ_ACT]
