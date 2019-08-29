@@ -130,7 +130,7 @@ static void set_sm_state(u8_t sm_state)
 	} else if ((sm_state == ENGINE_INIT ||
 		    sm_state == ENGINE_DEREGISTERED) &&
 		   (client.engine_state >= ENGINE_DO_REGISTRATION &&
-		    client.engine_state < ENGINE_DEREGISTER)) {
+		    client.engine_state <= ENGINE_DEREGISTER_SENT)) {
 		event = LWM2M_RD_CLIENT_EVENT_DISCONNECT;
 	}
 
@@ -354,7 +354,8 @@ static int do_deregister_reply_cb(const struct coap_packet *response,
 		COAP_RESPONSE_CODE_DETAIL(code));
 
 	if (code == COAP_RESPONSE_CODE_DELETED) {
-		LOG_DBG("Deregistration success");
+		LOG_INF("Deregistration success");
+		lwm2m_engine_context_close(client.ctx);
 		set_sm_state(ENGINE_DEREGISTERED);
 	} else {
 		LOG_ERR("failed with code %u.%u",
@@ -768,6 +769,10 @@ static int sm_do_deregister(void)
 
 	/* TODO: handle return error */
 	coap_packet_append_option(&msg->cpkt, COAP_OPTION_URI_PATH,
+				  LWM2M_RD_CLIENT_URI,
+				  strlen(LWM2M_RD_CLIENT_URI));
+	/* include server endpoint in URI PATH */
+	coap_packet_append_option(&msg->cpkt, COAP_OPTION_URI_PATH,
 				  client.server_ep,
 				  strlen(client.server_ep));
 
@@ -861,7 +866,17 @@ void lwm2m_rd_client_start(struct lwm2m_ctx *client_ctx, const char *ep_name,
 
 	set_sm_state(ENGINE_INIT);
 	strncpy(client.ep_name, ep_name, CLIENT_EP_LEN - 1);
-	LOG_INF("LWM2M Client: %s", log_strdup(client.ep_name));
+	LOG_INF("Start LWM2M Client: %s", log_strdup(client.ep_name));
+}
+
+void lwm2m_rd_client_stop(struct lwm2m_ctx *client_ctx,
+			   lwm2m_ctx_event_cb_t event_cb)
+{
+	client.ctx = client_ctx;
+	client.event_cb = event_cb;
+
+	set_sm_state(ENGINE_DEREGISTER);
+	LOG_INF("Stop LWM2M Client: %s", log_strdup(client.ep_name));
 }
 
 static int lwm2m_rd_client_init(struct device *dev)
