@@ -31,6 +31,7 @@ void test_main(void)
 {
 	board_setup();
 	ztest_test_suite(gpio_basic_test,
+			 ztest_unit_test(test_gpio_perf),
 			 ztest_unit_test(test_gpio_port),
 			 ztest_unit_test(test_gpio_pin_read_write),
 			 ztest_unit_test(test_gpio_callback_add_remove),
