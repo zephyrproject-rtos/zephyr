@@ -48,7 +48,7 @@ SECTION_FUNC(TEXT,__start)
 	/* lock interrupts: will get unlocked when switch to main task
 	 * also make sure the processor in the correct status
 	 */
-	mov r0, 0
+	mov_s r0, 0
 	kflag r0
 
 #ifdef CONFIG_ARC_SECURE_FIRMWARE
@@ -60,9 +60,9 @@ SECTION_FUNC(TEXT,__start)
 	 * ARCV2 timer (timer0) is a free run timer, let it start to count
 	 * here.
 	 */
-	mov r0, 0xffffffff
+	mov_s r0, 0xffffffff
 	sr r0, [_ARC_V2_TMR0_LIMIT]
-	mov r0, 0
+	mov_s r0, 0
 	sr r0, [_ARC_V2_TMR0_COUNT]
 #endif
 	/* interrupt related init */
@@ -76,7 +76,7 @@ SECTION_FUNC(TEXT,__start)
 	/* set the vector table base early,
 	 * so that exception vectors can be handled.
 	 */
-	mov r0, _VectorTable
+	mov_s r0, _VectorTable
 #ifdef CONFIG_ARC_SECURE_FIRMWARE
 	sr r0, [_ARC_V2_IRQ_VECT_BASE_S]
 #else
@@ -95,7 +95,7 @@ SECTION_FUNC(TEXT,__start)
 	kflag r0
 #endif
 
-	mov r1, 1
+	mov_s r1, 1
 
 invalidate_and_disable_icache:
 
@@ -106,9 +106,9 @@ invalidate_and_disable_icache:
 	mov_s r2, 0
 	sr r2, [_ARC_V2_IC_IVIC]
 	/* writing to IC_IVIC needs 3 NOPs */
-	nop
-	nop
-	nop
+	nop_s
+	nop_s
+	nop_s
 	sr r1, [_ARC_V2_IC_CTRL]
 
 invalidate_dcache:
@@ -154,7 +154,7 @@ _master_core_startup:
 	 * FIRQ stack when CONFIG_INIT_STACKS is enabled before switching to
 	 * one of them for the rest of the early boot
 	 */
-	mov sp, _main_stack
+	mov_s sp, _main_stack
 	add sp, sp, CONFIG_MAIN_STACK_SIZE
 
 	mov_s r0, _interrupt_stack
@@ -164,7 +164,7 @@ _master_core_startup:
 
 #endif /* CONFIG_INIT_STACKS */
 
-	mov sp, INIT_STACK
+	mov_s sp, INIT_STACK
 	add sp, sp, INIT_STACK_SIZE
 
 	j @_PrepC

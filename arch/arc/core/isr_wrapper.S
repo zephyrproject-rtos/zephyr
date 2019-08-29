@@ -209,27 +209,27 @@ SECTION_FUNC(TEXT, _isr_wrapper)
  * in fact is an action like nop.
  * for firq,  r0 will be restored later
  */
-  st r0, [sp]
+	st_s r0, [sp]
 #endif
 	lr r0, [_ARC_V2_AUX_IRQ_ACT]
 	ffs r0, r0
 	cmp r0, 0
 #if CONFIG_RGF_NUM_BANKS == 1
 	bnz rirq_path
-  ld r0, [sp]
+	ld_s r0, [sp]
 	/* 1-register bank FIRQ handling must save registers on stack */
 	_create_irq_stack_frame
 	lr r0, [_ARC_V2_STATUS32_P0]
 	st_s r0, [sp, ___isf_t_status32_OFFSET]
-  lr r0, [_ARC_V2_ERET]
+	lr r0, [_ARC_V2_ERET]
 	st_s r0, [sp, ___isf_t_pc_OFFSET]
 
-	mov r3, _firq_exit
-	mov r2, _firq_enter
+	mov_s r3, _firq_exit
+	mov_s r2, _firq_enter
 	j_s [r2]
 rirq_path:
-	mov r3, _rirq_exit
-	mov r2, _rirq_enter
+	mov_s r3, _rirq_exit
+	mov_s r2, _rirq_enter
 	j_s [r2]
 #else
 	mov.z r3, _firq_exit
@@ -239,8 +239,8 @@ rirq_path:
 	j_s [r2]
 #endif
 #else
-	mov r3, _rirq_exit
-	mov r2, _rirq_enter
+	mov_s r3, _rirq_exit
+	mov_s r2, _rirq_enter
 	j_s [r2]
 #endif
 
@@ -314,7 +314,7 @@ irq_hint_handled:
 
 	sub r0, r0, 16
 
-	mov r1, _sw_isr_table
+	mov_s r1, _sw_isr_table
 	add3 r0, r1, r0   /* table entries are 8-bytes wide */
 
 	ld_s r1, [r0, 4] /* ISR into r1 */
@@ -339,4 +339,4 @@ irq_hint_handled:
 	/* back from ISR, jump to exit stub */
 	pop_s r3
 	j_s [r3]
-	nop
+	nop_s
