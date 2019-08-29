@@ -46,6 +46,13 @@ Architectures
   * Improved support for linking TrustZone Secure Entry functions into
     Non-Secure firmware
 
+* ARC:
+
+  * Added support for ARC HS architecture
+  * Added SMP support for ARC HS architecture
+  * Added support for ARC SecureShield based TEE (EXPERIMENTAL)
+  * Fixed several critical bugs in interrupt and exception handling
+  * Enhance the support for Floating Point Services
 
 * POSIX:
 
@@ -59,8 +66,9 @@ Boards & SoC Support
 
 * Added support for the following ARC boards:
 
-  * emdsp
+  * emsdp
   * hsdk
+  * nsim for hs
 
 * Added support for the following ARM boards:
 
