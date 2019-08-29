@@ -55,5 +55,6 @@ add_subdirectory_ifdef(CONFIG_TH02		    th02)
 add_subdirectory_ifdef(CONFIG_TMP007		tmp007)
 add_subdirectory_ifdef(CONFIG_TMP112		tmp112)
 add_subdirectory_ifdef(CONFIG_VL53L0X		vl53l0x)
+add_subdirectory_ifdef(CONFIG_VL53L1X		vl53l1x)
 
 zephyr_sources_ifdef(CONFIG_USERSPACE sensor_handlers.c)

@@ -1,0 +1,38 @@
+#
+# Copyright (c) 2019, Makaio GmbH
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+title: STMicroelectronics MEMS sensors VL53L1X
+version: 0.1
+
+description: >
+    This binding gives a base representation of VL53L1X Time Of Flight sensor
+
+inherits:
+    !include i2c-device.yaml
+
+properties:
+    compatible:
+      constraint: "st,vl53l1x"
+
+    irq-gpios:
+      type: compound
+      category: optional
+      generation: define, use-prop-name
+
+    xshut-gpios:
+      type: compound
+      category: optional
+      generation: define, use-prop-name
+
+    measurement-timing-budget:
+      type: int
+      category: optional
+      description: Timing budget for measurements in ms
+
+    inter-measurement-period:
+      type: int
+      category: optional
+      description: Interval between measurements in ms

@@ -1,0 +1,57 @@
+# Kconfig - VL53L1X time of flight sensor configuration options
+
+#
+# Copyright (c) 2019 Makaio GmbH
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig VL53L1X
+	bool "VL53L1X time of flight sensor"
+	depends on I2C && HAS_DTS_I2C
+	select HAS_STLIB
+	help
+	  Enable driver for VL53L1X I2C-based time of flight sensor.
+
+if VL53L1X
+
+config VL53L1X_XSHUT_CONTROL_ENABLE
+	bool "Enable XSHUT pin control"
+	help
+	    Enable it if XSHUT pin is controlled by host.
+
+config VL53L1X_XSHUT_GPIO_DEV_NAME
+	string "GPIO device"
+	depends on VL53L1X_XSHUT_CONTROL_ENABLE
+	help
+	  The device name of the GPIO device to which the VL53L1X xshut pin
+	  is connected.
+
+config VL53L1X_XSHUT_GPIO_PIN_NUM
+	int "Interrupt GPIO pin number"
+	depends on VL53L1X_XSHUT_CONTROL_ENABLE
+	help
+	  The number of the GPIO on which the xshut signal from the VL53L1X
+	  is connected.
+
+config VL53L1X_PROXIMITY_THRESHOLD
+	int "Proximity threshold in millimeters"
+	default 100
+	help
+	  Threshold used for proximity detection when sensor is used with SENSOR_CHAN_PROX.
+
+config VL53L1X_MEAS_TIMING_BUDGET
+	int "Default measurement timing budget"
+	default 50
+	help
+		Timing budget for measurements in ms.
+		Can be overridden in dts with measurement-timing-budget.
+
+config VL53L1X_INTERMEASUREMENT_PERIOD
+	int "Inter measurement period in ms"
+	default 500
+	help
+		Time between measurements in ms. Must be > timing budget + 4ms.
+		Can be overridden in dts with inter-measurement-period.
+
+endif # VL53L1X
