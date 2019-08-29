@@ -1612,7 +1612,14 @@ class SanityConfigParser:
 
             if k in d:
                 if isinstance(d[k], str):
-                    d[k] += " " + v
+                    # By default, we just concatenate string values of keys
+                    # which appear both in "common" and per-test sections,
+                    # but some keys are handled in adhoc way based on their
+                    # semantics.
+                    if k == "filter":
+                        d[k] = "(%s) and (%s)" % (d[k], v)
+                    else:
+                        d[k] += " " + v
             else:
                 d[k] = v
 
