@@ -36,6 +36,9 @@ instead R6 and R7.
 Some boards might not support IRQ pin on Arduino pin A0, in this case resistor
 R1 must be removed and please connect instead R8.
 
+Known boards that need this IRQ pin modification are :
+ - stm32mp157c_dk2
+
 Hardware
 ********
 
