@@ -467,7 +467,6 @@ if(EXISTS ${CMAKE_BINARY_DIR}/zephyr_modules.txt)
     # lazy regexes (it supports greedy only).
     string(REGEX REPLACE "\"(.*)\":\".*\"" "\\1" module_name ${module})
     string(REGEX REPLACE "\".*\":\"(.*)\"" "\\1" module_path ${module})
-    message("Including module: ${module_name} in path: ${module_path}")
     # Note the second, binary_dir parameter requires the added
     # subdirectory to have its own, local cmake target(s). If not then
     # this binary_dir is created but stays empty. Object files land in
