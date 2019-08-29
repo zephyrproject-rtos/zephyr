@@ -1729,13 +1729,17 @@ __deprecated static inline void k_disable_sys_clock_always_on(void)
 /**
  * @brief Get system uptime (32-bit version).
  *
- * This routine returns the lower 32-bits of the elapsed time since the system
- * booted, in milliseconds.
+ * This routine returns a value obtained by converting the lower
+ * 32-bits of the system clock into milliseconds.
  *
- * This routine can be more efficient than k_uptime_get(), as it reduces the
- * need for interrupt locking and 64-bit math. However, the 32-bit result
- * cannot hold a system uptime time larger than approximately 50 days, so the
- * caller must handle possible rollovers.
+ * This value is computed more efficiently than k_uptime_get(), as it
+ * reduces the need for interrupt locking and 64-bit math.  However
+ * after the system clock advances to a value slightly below 2^32 the
+ * returned value is no longer equal to the low 32-bits of the elapsed
+ * time in milliseconds since the system booted.  There is also a
+ * potential discontinuity in durations calculated by subtracting
+ * values produced from system clock measurements that differ above
+ * the low 32 bits.
  *
  * @note
  *    @rst
@@ -1744,7 +1748,8 @@ __deprecated static inline void k_disable_sys_clock_always_on(void)
  *    :option:`CONFIG_SYS_CLOCK_TICKS_PER_SEC` config option
  *    @endrst
  *
- * @return Current uptime in milliseconds.
+ * @return Current uptime in milliseconds if system clock is well
+ * below 2^32.
  */
 __syscall u32_t k_uptime_get_32(void);
 
