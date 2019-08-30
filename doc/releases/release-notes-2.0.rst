@@ -59,6 +59,13 @@ Architectures
   * Fix race condition with terminated threads which had never been
     scheduled by kernel. On very loaded systems it could cause swap errors.
 
+* x86:
+
+  * Support for the Quark microcontroller family has been dropped.
+  * A new lightweight PCI implementation has been introduced which supports
+    MSI and other features required for PCIe devices. The previous PCI
+    implementation has been deprecated and will be removed in 2.1.
+
 Boards & SoC Support
 ********************
 
