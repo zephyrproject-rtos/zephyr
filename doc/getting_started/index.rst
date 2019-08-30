@@ -44,6 +44,8 @@ package is already installed locally but a more recent version is available. It
 is good practice to use this flag if the latest version of a package is
 required.
 
+.. _install-required-tools:
+
 Install the required tools
 ===========================
 

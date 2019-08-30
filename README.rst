@@ -72,7 +72,7 @@ Here's a quick summary of resources to help you find your way around:
 * **Zephyr Project Website**: https://zephyrproject.org
 
 .. _Slack Invite: https://tinyurl.com/y5glwylp
-.. _supported boards: http://docs.zephyrproject.org/latest/boards
+.. _supported boards: http://docs.zephyrproject.org/latest/boards/index.html
 .. _Zephyr Documentation: http://docs.zephyrproject.org
 .. _Introduction to Zephyr: http://docs.zephyrproject.org/latest/introduction/index.html
 .. _Getting Started Guide: http://docs.zephyrproject.org/latest/getting_started/index.html
