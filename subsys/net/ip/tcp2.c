@@ -38,6 +38,12 @@ static struct tcp tcp_context[CONFIG_NET_MAX_CONTEXTS];
 NET_BUF_POOL_DEFINE(tcp_nbufs, 64/*count*/, 128/*size*/, 0, NULL);
 
 static void tcp_in(struct tcp *conn, struct net_pkt *pkt);
+int net_tcp_get(struct net_context *context);
+enum net_verdict tcp_pkt_received(struct net_conn *conn,
+				  struct net_pkt *pkt,
+				  union net_ip_header *ip_hdr,
+				  union net_proto_header *proto_hdr,
+				  void *user_data);
 
 static size_t tcp_endpoint_len(sa_family_t af)
 {
@@ -315,6 +321,110 @@ static void tcp_send_timer_cancel(struct tcp *conn)
 		conn->send_retries = tcp_retries;
 		k_timer_start(&conn->send_timer, K_MSEC(tcp_rto), 0);
 	}
+}
+
+/* Create a new connection between the two TCP endpoints as the local socket
+ * has been listening on perhaps a wildcard address and is supposed to stay
+ * listening for more incoming connections */
+static struct tcp *create_new_tcp_connection(struct tcp *conn,
+					     struct net_pkt *pkt_in)
+{
+	int family, ret, protocol;
+	struct net_context *new_context = NULL;
+	struct net_tcp_hdr *tcp_hdr = NULL;
+	struct sockaddr local_addr;
+	struct sockaddr remote_addr;
+	u16_t local_port = 0;
+	u16_t remote_port = 0;
+
+	if (conn->state != TCP_LISTEN) {
+		tcp_dbg("listening tcp connection %p in wrong state %d",
+			conn, conn->state);
+		goto err;
+	}
+
+	family = net_pkt_family(pkt_in);
+	ret = net_context_get(family, SOCK_STREAM, IPPROTO_TCP, &new_context);
+	if (ret < 0) {
+		tcp_dbg("could not get new context for listening connection "
+			"%p, %d", conn, ret);
+		goto err;
+	}
+
+	conn->iface = pkt_in->iface;
+
+	remote_addr.sa_family = family;
+	local_addr.sa_family = family;
+
+	if (IS_ENABLED(CONFIG_NET_IPV4) && family == AF_INET) {
+		struct sockaddr_in *addr4;
+		struct net_ipv4_hdr *ip_hdr = NET_IPV4_HDR(pkt_in);
+
+		tcp_hdr = (struct net_tcp_hdr *)(ip_hdr + 1);
+		protocol = PF_INET;
+
+		addr4 = (struct sockaddr_in *)&local_addr;
+		net_ipaddr_copy(&addr4->sin_addr, &ip_hdr->dst);
+		addr4->sin_port = tcp_hdr->dst_port;
+		local_port = addr4->sin_port;
+
+		addr4 = (struct sockaddr_in *)&remote_addr;
+		net_ipaddr_copy(&addr4->sin_addr, &ip_hdr->src);
+		addr4->sin_port = tcp_hdr->src_port;
+		remote_port = addr4->sin_port;
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV6) && family == AF_INET6) {
+		struct sockaddr_in6 *addr6;
+		struct net_ipv6_hdr *ip_hdr = NET_IPV6_HDR(pkt_in);
+
+		protocol = PF_INET6;
+		tcp_hdr = (struct net_tcp_hdr *)(ip_hdr + 1);
+
+		addr6 = (struct sockaddr_in6 *)&local_addr;
+		net_ipaddr_copy(&addr6->sin6_addr, &ip_hdr->dst);
+		addr6->sin6_port = tcp_hdr->dst_port;
+		local_port = addr6->sin6_port;
+
+		addr6 = (struct sockaddr_in6 *)&remote_addr;
+		net_ipaddr_copy(&addr6->sin6_addr, &ip_hdr->src);
+		addr6->sin6_port = tcp_hdr->src_port;
+		remote_port = addr6->sin6_port;
+	}
+
+	memcpy(&new_context->remote, &remote_addr, sizeof(remote_addr));
+
+	if (net_ipv4_addr_cmp(&NET_IPV4_HDR(pkt_in)->dst,
+			      net_ipv4_unspecified_address())) {
+		printk("dst address missing\n");
+	}
+
+	ret = net_conn_register(IPPROTO_TCP, family,
+				&remote_addr, &local_addr,
+				ntohs(remote_port), ntohs(local_port),
+				tcp_pkt_received, new_context,
+				&new_context->conn_handler);
+	if (ret < 0) {
+		tcp_dbg("Could not register new connection for context %p %d",
+			new_context, ret);
+
+		net_context_unref(new_context);
+		goto err;
+	}
+
+	memcpy(new_context->tcp->src, &local_addr, sizeof(local_addr));
+	memcpy(new_context->tcp->dst, &remote_addr, sizeof(remote_addr));
+
+	new_context->iface = conn->context->iface;
+	new_context->tcp->iface = conn->iface;
+	new_context->tcp->flags = conn->flags;
+	new_context->tcp->seq = conn->seq;
+	new_context->tcp->ack = conn->ack;
+
+	return new_context->tcp;
+
+ err:
+	return NULL;
 }
 
 static struct tcp_win *tcp_win_new(const char *name)
@@ -707,7 +817,12 @@ static void tcp_in(struct tcp *conn, struct net_pkt *pkt)
 next_state:
 	switch (conn->state) {
 	case TCP_LISTEN:
-		if (FL(&fl, &, SYN)) {
+		if (FL(&fl, ==, SYN)) {
+			/* establish a new TCP connection for the endpoints */
+			conn = create_new_tcp_connection(conn, pkt);
+			if (conn == NULL) {
+				break;
+			}
 			conn_ack(conn, th_seq(th) + 1); /* capture peer's isn */
 			tcp_out(conn, SYN | ACK);
 			conn_seq(conn, + 1);
@@ -881,6 +996,7 @@ static void tcp_endpoints_set(struct tcp *conn, struct net_pkt *pkt)
 int net_tcp_get(struct net_context *context)
 {
 	int i, key;
+	struct sockaddr_in *addr4;
 
 	tcp_dbg("");
 
@@ -900,6 +1016,18 @@ int net_tcp_get(struct net_context *context)
 	tcp_context[i].flags |= NET_TCP_IN_USE;
 
 	tcp_context[i].win = tcp_window;
+
+	/* A TCP connection set up between two devices will have an interface
+	 * assigned, but a socket listening on any address will not have one */
+	tcp_context[i].iface = net_context_get_iface(context);
+
+	tcp_context[i].src = tcp_calloc(1, sizeof(struct sockaddr));
+	tcp_context[i].dst = tcp_calloc(1, sizeof(struct sockaddr));
+
+	addr4 = (struct sockaddr_in *)&context->local;
+
+	memcpy(tcp_context[i].dst, &context->remote, sizeof(*tcp_context[i].dst));
+	memcpy(tcp_context[i].src, &addr4->sin_addr, sizeof(*tcp_context[i].src));
 
 	tcp_context[i].rcv = tcp_win_new("RCV");
 	tcp_context[i].snd = tcp_win_new("SND");
