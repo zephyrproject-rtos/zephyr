@@ -465,19 +465,15 @@ struct bt_uuid_128 {
  */
 int bt_uuid_cmp(const struct bt_uuid *u1, const struct bt_uuid *u2);
 
-/** @brief Copy UUID from internal variable to internal bt_uuid.
+/** @brief Create a bt_uuid from a little-endian data buffer.
  *
- *  Copy little endian format UUID from packet data or internal variable
- *  pointer to internal bt_uuid format.The data parameter points to a variable
- *  (originally stored in bt_uuid_128, bt_uuid_32 or bt_uuid_16 format)
- *  and therefore take into account of alignment of the val member.
- *  The data_len parameter is used to determine whether to copy the UUID from
- *  16, 32 or 128 bit format (length 2, 4 or 16).
- *  32 bit format is not allowed over the air.
+ *  Create a bt_uuid from a little-endian data buffer. The data_len parameter
+ *  is used to determine whether the UUID is in 16, 32 or 128 bit format
+ *  (length 2, 4 or 16). Note: 32 bit format is not allowed over the air.
  *
- *  @param uuid Pointer to where to write the Bluetooth UUID
- *  @param data pointer to location of the UUID variable/in the packet
- *  @param data_len length of the UUID variable/in the packet
+ *  @param uuid Pointer to the bt_uuid variable
+ *  @param data pointer to UUID stored in little-endian data buffer
+ *  @param data_len length of the UUID in the data buffer
  *
  *  @return true if the data was valid and the UUID was successfully created.
  */
