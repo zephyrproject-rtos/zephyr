@@ -16,6 +16,8 @@ MAGIC = 0x55aa
 SLOT_LEN = 64
 SLOT_NUM = int(8192 / SLOT_LEN)
 
+loglist = []
+
 def read_id(f):
     """Get id"""
 
@@ -37,7 +39,7 @@ def read_log_slot(f):
         id = read_id(f)
         slot = f.read(SLOT_LEN - 4)
         logstr = slot.decode(errors='replace').split('\r', 1)[0]
-        print("id %d %s" % (id, logstr))
+        loglist.append((id, logstr))
 
 def read_logs(etrace, offset):
     """Read logs"""
@@ -47,6 +49,12 @@ def read_logs(etrace, offset):
     for x in range(0, SLOT_NUM):
         f.seek(offset + x * SLOT_LEN)
         read_log_slot(f)
+
+def loglist_print():
+    """Print sorted loglist"""
+
+    for pair in sorted(loglist):
+        print('{} : {}'.format(*pair))
 
 def parse_args():
     """Parsing command line arguments"""
@@ -75,6 +83,8 @@ def main():
         offset = QEMU_OFFSET
 
     read_logs(etrace, offset)
+
+    loglist_print()
 
 if __name__ == "__main__":
 
