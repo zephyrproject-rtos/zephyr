@@ -21,4 +21,3 @@ zephyr_library_sources_ifdef(
 )
 
 zephyr_library_link_libraries(CMSIS)
-target_link_libraries(CMSIS INTERFACE zephyr_interface)
