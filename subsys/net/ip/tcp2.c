@@ -722,9 +722,15 @@ next_state:
 	case TCP_SYN_RECEIVED:
 		tcp_out(conn, SYN | ACK);
 		conn_seq(conn, + 1);
+		/* should we wait here for an ACK and then go to ESTABLISHED
+		   state? I don't see and arrow from SYN RECEIVED to SYN
+		   SENT in Figure 6 of RFC 793 */
 		next = TCP_SYN_SENT;
 		break;
 	case TCP_SYN_SENT:
+		/* if we are in SYN SENT and receive only a SYN without an
+		   ACK , shouldn't we go to SYN RECEIVED state? See Figure
+		   6 of RFC 793 */
 		if (FL(&fl, &, ACK, th_seq(th) == conn->ack)) {
 			tcp_send_timer_cancel(conn);
 			next = TCP_ESTABLISHED;
