@@ -24,4 +24,3 @@ zephyr_library_sources_ifdef(CONFIG_POSIX_MQUEUE mqueue.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_FS fs.c)
 
 zephyr_library_link_libraries(posix_subsys)
-target_link_libraries(posix_subsys INTERFACE zephyr_interface)
