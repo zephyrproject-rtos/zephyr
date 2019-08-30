@@ -88,4 +88,26 @@ config SPI_XEC_QMSPI
 
 endif # SPI
 
+if SOC_POWER_MANAGEMENT
+
+config SYS_POWER_MANAGEMENT
+	default y
+
+config SYS_POWER_SLEEP_STATES
+	default y
+
+config HAS_SYS_POWER_STATE_SLEEP_1
+	default y
+
+config SYS_POWER_DEEP_SLEEP_STATES
+	default y
+
+config HAS_SYS_POWER_STATE_DEEP_SLEEP_1
+	default y
+
+config DEVICE_POWER_MANAGEMENT
+	default n
+
+endif # SOC_POWER_MANAGEMENT
+
 endif # SOC_MEC1501_HSZ
