@@ -779,6 +779,7 @@ next_state:
 		}
 		break;
 	case TCP_ESTABLISHED:
+		net_context_set_state(conn->context, NET_CONTEXT_CONNECTED);
 		if (!th && conn->snd->len) { /* TODO: Out of the loop */
 			ssize_t data_len;
 
