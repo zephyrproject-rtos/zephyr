@@ -572,15 +572,20 @@ class Device:
         return None
 
     def _init_props(self):
-        # Creates self.props. See the class docstring.
+        # Creates self.props. See the class docstring. Also checks that all
+        # properties on the node are declared in its binding.
 
         self.props = {}
 
-        if not self._binding or "properties" not in self._binding:
+        if not self._binding:
             return
 
-        for name, options in self._binding["properties"].items():
-            self._init_prop(name, options)
+        # Initialize self.props
+        if "properties" in self._binding:
+            for name, options in self._binding["properties"].items():
+                self._init_prop(name, options)
+
+        self._check_undeclared_props()
 
     def _init_prop(self, name, options):
         # _init_props() helper for initializing a single property
@@ -713,6 +718,31 @@ class Device:
         # patterns above, so that we can require all entries in 'properties:'
         # to have a 'type: ...'. No Property object is created for it.
         return None
+
+
+    def _check_undeclared_props(self):
+        # Checks that all properties are declared in the binding
+
+        if "properties" in self._binding:
+            declared_props = self._binding["properties"].keys()
+        else:
+            declared_props = set()
+
+        for prop_name in self._node.props:
+            # Allow a few special properties to not be declared in the binding
+            if prop_name.endswith("-controller") or \
+               prop_name.startswith("#") or \
+               prop_name.startswith("pinctrl-") or \
+               prop_name in {
+                   "compatible", "status", "ranges", "phandle",
+                   "interrupt-parent", "interrupts-extended", "device_type"}:
+                continue
+
+            if prop_name not in declared_props:
+                _err("'{}' appears in {} in {}, but is not declared in "
+                     "'properties:' in {}"
+                     .format(prop_name, self._node.path, self.edt.dts_path,
+                             self.binding_path))
 
     def _init_regs(self):
         # Initializes self.regs
