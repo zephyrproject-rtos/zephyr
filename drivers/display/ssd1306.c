@@ -238,13 +238,13 @@ int ssd1306_write(const struct device *dev, const u16_t x, const u16_t y,
 		return -1;
 	}
 
-	if (x != 0U && y != 0U) {
+#if defined(CONFIG_SSD1306_DEFAULT)
+	struct ssd1306_data *driver = dev->driver_data;
+
+	if ((y & 0x7) != 0U) {
 		LOG_ERR("Unsupported origin");
 		return -1;
 	}
-
-#if defined(CONFIG_SSD1306_DEFAULT)
-	struct ssd1306_data *driver = dev->driver_data;
 
 	u8_t cmd_buf[] = {
 		SSD1306_CONTROL_BYTE_CMD,
@@ -254,15 +254,15 @@ int ssd1306_write(const struct device *dev, const u16_t x, const u16_t y,
 		SSD1306_CONTROL_BYTE_CMD,
 		SSD1306_SET_COLUMN_ADDRESS,
 		SSD1306_CONTROL_BYTE_CMD,
-		0,
+		x,
 		SSD1306_CONTROL_BYTE_CMD,
-		(SSD1306_PANEL_NUMOF_COLUMS - 1),
+		(x + desc->width - 1),
 		SSD1306_CONTROL_BYTE_CMD,
 		SSD1306_SET_PAGE_ADDRESS,
 		SSD1306_CONTROL_BYTE_CMD,
-		0,
+		y/8,
 		SSD1306_CONTROL_LAST_BYTE_CMD,
-		(SSD1306_PANEL_NUMOF_PAGES - 1)
+		((y + desc->height)/8 - 1)
 	};
 
 	if (i2c_write(driver->i2c, cmd_buf, sizeof(cmd_buf),
@@ -276,6 +276,11 @@ int ssd1306_write(const struct device *dev, const u16_t x, const u16_t y,
 			       (u8_t *)buf, desc->buf_size);
 
 #elif defined(CONFIG_SSD1306_SH1106_COMPATIBLE)
+	if (x != 0U && y != 0U) {
+		LOG_ERR("Unsupported origin");
+		return -1;
+	}
+
 	if (desc->buf_size !=
 	    (SSD1306_PANEL_NUMOF_PAGES * DT_INST_0_SOLOMON_SSD1306FB_WIDTH)) {
 		return -1;
