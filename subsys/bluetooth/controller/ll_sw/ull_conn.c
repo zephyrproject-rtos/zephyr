@@ -667,8 +667,13 @@ int ull_conn_rx(memq_link_t *link, struct node_rx_pdu **rx)
 	struct pdu_data *pdu_rx;
 	struct ll_conn *conn;
 
-	conn = ll_conn_get((*rx)->hdr.handle);
-	LL_ASSERT(conn);
+	conn = ll_connected_get((*rx)->hdr.handle);
+	if (!conn) {
+		/* Mark for buffer for release */
+		(*rx)->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+
+		return 0;
+	}
 
 	pdu_rx = (void *)(*rx)->pdu;
 
