@@ -753,6 +753,7 @@ ssize_t nvs_write(struct nvs_fs *fs, u16_t id, const void *data, size_t len)
 	struct nvs_ate wlk_ate;
 	u32_t wlk_addr, rd_addr;
 	u16_t required_space = 0U; /* no space, appropriate for delete ate */
+	bool prev_found = false;
 
 	if (!fs->ready) {
 		LOG_ERR("NVS not initialized");
@@ -782,6 +783,7 @@ ssize_t nvs_write(struct nvs_fs *fs, u16_t id, const void *data, size_t len)
 			return rc;
 		}
 		if ((wlk_ate.id == id) && (!nvs_ate_crc8_check(&wlk_ate))) {
+			prev_found = true;
 			break;
 		}
 		if (wlk_addr == fs->ate_wra) {
@@ -789,7 +791,7 @@ ssize_t nvs_write(struct nvs_fs *fs, u16_t id, const void *data, size_t len)
 		}
 	}
 
-	if (wlk_addr != fs->ate_wra) {
+	if (prev_found) {
 		/* previous entry found */
 		rd_addr &= ADDR_SECT_MASK;
 		rd_addr += wlk_ate.offset;

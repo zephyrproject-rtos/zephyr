@@ -503,7 +503,6 @@ void test_nvs_full_sector(void)
 		len = nvs_write(&fs, filling_id, &filling_id,
 				sizeof(filling_id));
 		if (len == -ENOSPC) {
-			filling_id--;
 			break;
 		}
 		zassert_true(len == sizeof(filling_id), "nvs_write failed: %d",
