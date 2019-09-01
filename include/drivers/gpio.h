@@ -1012,7 +1012,7 @@ static inline int gpio_pin_toggle(struct device *port, unsigned int pin)
 static inline int gpio_pin_write(struct device *port, u32_t pin,
 				 u32_t value)
 {
-	return gpio_write(port, GPIO_ACCESS_BY_PIN, pin, value);
+	return gpio_pin_set_raw(port, pin, value);
 }
 
 /**
@@ -1030,7 +1030,13 @@ static inline int gpio_pin_write(struct device *port, u32_t pin,
 static inline int gpio_pin_read(struct device *port, u32_t pin,
 				u32_t *value)
 {
-	return gpio_read(port, GPIO_ACCESS_BY_PIN, pin, value);
+	int rc = gpio_pin_get_raw(port, pin);
+
+	if (rc >= 0) {
+		*value = rc;
+		rc = 0;
+	}
+	return rc;
 }
 
 /**
