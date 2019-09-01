@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2019 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c0 {
+	sx1509b: sx1509b@3e {
+		compatible = "semtech,sx1509b";
+		reg = <0x3e>;
+		label = "IOX0";
+		#gpio-cells = <2>;
+		gpio-controller;
+	};
+};
+
+/ {
+	scope-pins {
+		compatible = "test,scope-pins";
+		gpios =
+			<&sx1509b 0 0>, <&sx1509b 1 0>;
+	};
+};
