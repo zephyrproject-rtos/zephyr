@@ -134,6 +134,7 @@
 /drivers/gpio/                            @mnkp @pabigot
 /drivers/gpio/*ht16k33*                   @henrikbrixandersen
 /drivers/gpio/*stm32*                     @rsalveti @idlethread
+/drivers/gpio/*sx1509b*                   @pabigot
 /drivers/hwinfo/                          @alexanderwachter
 /drivers/i2s/i2s_ll_stm32*                @avisconti
 /drivers/ieee802154/                      @jukkar @tbursztyka
