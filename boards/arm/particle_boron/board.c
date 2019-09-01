@@ -24,12 +24,12 @@ static inline void external_antenna(bool on)
 	}
 
 	gpio_pin_configure(ant_sel_gpio_dev, ANT_SEL_GPIO_PIN,
-			   GPIO_DIR_OUT | ANT_SEL_GPIO_FLAGS);
+			   GPIO_OUTPUT | ANT_SEL_GPIO_FLAGS);
 
 	if (on) {
-		gpio_pin_write(ant_sel_gpio_dev, ANT_SEL_GPIO_PIN, 1);
+		gpio_pin_set(ant_sel_gpio_dev, ANT_SEL_GPIO_PIN, 1);
 	} else {
-		gpio_pin_write(ant_sel_gpio_dev, ANT_SEL_GPIO_PIN, 0);
+		gpio_pin_set(ant_sel_gpio_dev, ANT_SEL_GPIO_PIN, 0);
 	}
 }
 

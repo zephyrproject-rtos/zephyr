@@ -24,16 +24,16 @@ static inline void external_antenna(bool on)
 	}
 
 	gpio_pin_configure(ufl_gpio_dev, SKY_UFLn_GPIO_PIN,
-			   GPIO_DIR_OUT | SKY_UFLn_GPIO_FLAGS);
+			   GPIO_OUTPUT | SKY_UFLn_GPIO_FLAGS);
 	gpio_pin_configure(pcb_gpio_dev, SKY_PCBn_GPIO_PIN,
-			   GPIO_DIR_OUT | SKY_PCBn_GPIO_FLAGS);
+			   GPIO_OUTPUT | SKY_PCBn_GPIO_FLAGS);
 
 	if (on) {
-		gpio_pin_write(ufl_gpio_dev, SKY_UFLn_GPIO_PIN, 1);
-		gpio_pin_write(pcb_gpio_dev, SKY_PCBn_GPIO_PIN, 0);
+		gpio_pin_set(ufl_gpio_dev, SKY_UFLn_GPIO_PIN, 1);
+		gpio_pin_set(pcb_gpio_dev, SKY_PCBn_GPIO_PIN, 0);
 	} else {
-		gpio_pin_write(ufl_gpio_dev, SKY_UFLn_GPIO_PIN, 0);
-		gpio_pin_write(pcb_gpio_dev, SKY_PCBn_GPIO_PIN, 1);
+		gpio_pin_set(ufl_gpio_dev, SKY_UFLn_GPIO_PIN, 0);
+		gpio_pin_set(pcb_gpio_dev, SKY_PCBn_GPIO_PIN, 1);
 	}
 }
 
