@@ -1,7 +1,7 @@
 title: Uart Base Structure
 
 description: >
-    This binding gives the base structures for all UART devices
+    This binding gives the base structures for all UART controllers
 
 inherits:
     !include base.yaml

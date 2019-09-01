@@ -7,7 +7,7 @@
 title: SPI Base Structure
 
 description: >
-    This binding gives the base structures for all SPI devices
+    This binding gives the base structures for all SPI controllers
 
 inherits:
     !include base.yaml

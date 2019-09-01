@@ -7,7 +7,7 @@
 title: USB Base Structure
 
 description: >
-    This binding gives the base structures for all USB devices
+    This binding gives the base structures for all USB controllers
 
 inherits:
     !include base.yaml

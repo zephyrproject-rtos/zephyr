@@ -7,7 +7,7 @@
 title: I2S Base Structure
 
 description: >
-    This binding gives the base structures for all I2S devices
+    This binding gives the base structures for all I2S controllers
 
 inherits:
     !include base.yaml

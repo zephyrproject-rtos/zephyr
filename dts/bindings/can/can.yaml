@@ -1,7 +1,7 @@
 title: CAN Base Structure
 
 description: >
-    This binding gives the base structures for all CAN devices
+    This binding gives the base structures for all CAN controllers
 
 inherits:
     !include base.yaml
