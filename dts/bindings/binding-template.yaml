@@ -16,17 +16,17 @@ inherits:
     !include other.yaml # or [other1.yaml, other2.yaml]
 
 # If the node describes a bus, then the bus type should be given, like below
-parent:
+child:
     bus: <string describing bus type, e.g. "i2c">
 
 # If the node appears on a bus, then the bus type should be given, like below.
 #
 # When looking for a binding for a node, the code checks if the binding for the
-# parent node contains 'parent: bus: <bus type>'. If it does, then only
-# bindings with a matching 'child: bus: <bus type>' are considered. This allows
-# the same type of device to have different bindings depending on what bus it
+# parent node contains 'child: bus: <bus type>'. If it does, then only bindings
+# with a matching 'parent: bus: <bus type>' are considered. This allows the
+# same type of device to have different bindings depending on what bus it
 # appears on.
-child:
+parent:
     bus: <string describing bus type, e.g. "i2c">
 
 # 'sub-node' is used to simplify cases where a node has children that can all
