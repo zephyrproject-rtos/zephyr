@@ -2,10 +2,12 @@ tests:
   libraries.libc.minimal:
     extra_args: CONF_FILE=prj.conf
     arch_exclude: posix
+    platform_exclude: twr_ke18f
     tags: clib minimal_libc userspace
   libraries.libc.newlib:
     extra_args: CONF_FILE=prj_newlib.conf
     arch_exclude: posix
+    platform_exclude: twr_ke18f
     filter: TOOLCHAIN_HAS_NEWLIB == 1
     tags: clib newlib userspace
   libraries.libc.newlibnano:
