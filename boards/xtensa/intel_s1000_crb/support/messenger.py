@@ -128,9 +128,8 @@ class Message:
         bitstruct.pack_into('u32', self.tx_data, self.tx_index * 8,
                 len(tuple))
         self.tx_index += 4
-        for index in range(len(tuple)):
-            bitstruct.pack_into('u32', self.tx_data, self.tx_index * 8,
-                    tuple[index])
+        for elm in tuple:
+            bitstruct.pack_into('u32', self.tx_data, self.tx_index * 8, elm)
             self.tx_index += 4
         return self.tx_data
 
@@ -152,9 +151,8 @@ class Message:
         bitstruct.pack_into('u32', self.tx_data, self.tx_index * 8,
                 len(tuple))
         self.tx_index += 4
-        for index in range(len(tuple)):
-            bitstruct.pack_into('u32', self.tx_data, self.tx_index * 8,
-                    tuple[index])
+        for elm in tuple:
+            bitstruct.pack_into('u32', self.tx_data, self.tx_index * 8, elm)
             self.tx_index += 4
         return self.tx_data
 
