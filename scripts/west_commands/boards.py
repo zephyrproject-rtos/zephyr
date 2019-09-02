@@ -49,7 +49,7 @@ class Boards(WestCommand):
         # flags
         parser.add_argument('-f', '--format', default=default_fmt,
                             help='''Format string to use to list each board;
-                                    see FORMAT STRINGS below.'''),
+                                    see FORMAT STRINGS below.''')
 
         return parser
 
