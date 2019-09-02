@@ -646,6 +646,26 @@ bool update_keys_check(struct bt_smp *smp)
 	return true;
 }
 
+static bool update_debug_keys_check(struct bt_smp *smp)
+{
+	struct bt_conn *conn = smp->chan.chan.conn;
+
+	if (!conn->le.keys) {
+		conn->le.keys = bt_keys_get_addr(conn->id, &conn->le.dst);
+	}
+
+	if (!conn->le.keys ||
+	    !(conn->le.keys->keys & (BT_KEYS_LTK_P256 | BT_KEYS_LTK))) {
+		return true;
+	}
+
+	if (conn->le.keys->flags & BT_KEYS_DEBUG) {
+		return false;
+	}
+
+	return true;
+}
+
 #if defined(CONFIG_BT_PRIVACY) || defined(CONFIG_BT_SIGNING) || \
 	!defined(CONFIG_BT_SMP_SC_PAIR_ONLY)
 /* For TX callbacks */
@@ -3667,8 +3687,7 @@ static u8_t smp_public_key(struct bt_smp *smp, struct net_buf *buf)
 		/* Don't allow a bond established without debug key to be
 		 * updated using LTK generated from debug key.
 		 */
-		if (smp->chan.chan.conn->le.keys &&
-		    !(smp->chan.chan.conn->le.keys->flags & BT_KEYS_DEBUG)) {
+		if (!update_debug_keys_check(smp)) {
 			return BT_SMP_ERR_AUTH_REQUIREMENTS;
 		}
 	}
