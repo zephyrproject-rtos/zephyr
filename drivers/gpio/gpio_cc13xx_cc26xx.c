@@ -15,6 +15,11 @@
 #include <driverlib/ioc.h>
 #include <driverlib/prcm.h>
 
+#include <inc/hw_aon_event.h>
+
+#include <ti/drivers/Power.h>
+#include <ti/drivers/power/PowerCC26XX.h>
+
 #include "gpio_utils.h"
 
 /* bits 16-18 in iocfg registers correspond to interrupt settings */
@@ -230,6 +235,10 @@ static int gpio_cc13xx_cc26xx_init(struct device *dev)
 {
 	struct gpio_cc13xx_cc26xx_data *data = dev->driver_data;
 
+#ifdef CONFIG_SYS_POWER_MANAGEMENT
+	/* Set dependency on gpio resource to turn on power domains */
+	Power_setDependency(PowerCC26XX_PERIPH_GPIO);
+#else
 	/* Enable peripheral power domain */
 	PRCMPowerDomainOn(PRCM_DOMAIN_PERIPH);
 
@@ -241,6 +250,13 @@ static int gpio_cc13xx_cc26xx_init(struct device *dev)
 	while (!PRCMLoadGet()) {
 		continue;
 	}
+#endif
+
+	/* Enable edge detection on any pad as a wakeup source */
+	HWREG(AON_EVENT_BASE + AON_EVENT_O_MCUWUSEL) =
+		(HWREG(AON_EVENT_BASE + AON_EVENT_O_MCUWUSEL) &
+		(~AON_EVENT_MCUWUSEL_WU1_EV_M)) |
+		AON_EVENT_MCUWUSEL_WU1_EV_PAD;
 
 	/* Enable IRQ */
 	IRQ_CONNECT(DT_INST_0_TI_CC13XX_CC26XX_GPIO_IRQ_0,
