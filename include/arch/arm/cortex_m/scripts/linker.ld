@@ -198,6 +198,14 @@ SECTIONS
 #include <linker/priv_stacks-text.ld>
 #include <linker/kobject-text.ld>
 
+	/* TI CC13x2 ROM RO Data Region */
+    _rom_rodata_start = 0x2000;
+    _rom_rodata_size = 0x330;
+    . = _rom_rodata_start;
+    /* .rom_rodata_reserve (_rom_rodata_start): { */
+    . += _rom_rodata_size;
+    /* } GROUP_LINK_IN(ROMABLE_REGION) */
+
 	*(.text)
 	*(".text.*")
 	*(.gnu.linkonce.t.*)
@@ -320,6 +328,13 @@ SECTIONS
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
 #endif
 
+	/* TI CC13x2 ROM RW Data Region */
+    _rom_data_start = 0x20000100;
+    _rom_data_size = 0x108;
+    .rom_data_reserve (_rom_data_start): {
+        . += _rom_data_size;
+    } GROUP_DATA_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
+
 /* Located in generated directory. This file is populated by the
  * zephyr_linker_sources() Cmake function.
  */
@@ -380,6 +395,74 @@ SECTIONS
 #endif
 
         } GROUP_LINK_IN(RAMABLE_REGION)
+
+    /*
+     * UDMACC26XX_CONFIG_BASE below must match UDMACC26XX_CONFIG_BASE defined
+     * by ti/drivers/dma/UDMACC26XX.h
+     * The user is allowed to change UDMACC26XX_CONFIG_BASE to move it away from
+     * the default address 0x2000_1800, but remember it must be 1024 bytes aligned.
+     */
+    UDMACC26XX_CONFIG_BASE = 0x20001800;
+
+    /*
+     * Define absolute addresses for the DMA channels.
+     * DMA channels must always be allocated at a fixed offset from the DMA base address.
+     * --------- DO NOT MODIFY -----------
+     */
+    DMA_SPI0_RX_CONTROL_TABLE_ENTRY_ADDRESS   = (UDMACC26XX_CONFIG_BASE + 0x30);
+    DMA_SPI0_TX_CONTROL_TABLE_ENTRY_ADDRESS   = (UDMACC26XX_CONFIG_BASE + 0x40);
+    DMA_ADC_PRI_CONTROL_TABLE_ENTRY_ADDRESS   = (UDMACC26XX_CONFIG_BASE + 0x70);
+    DMA_GPT0A_PRI_CONTROL_TABLE_ENTRY_ADDRESS = (UDMACC26XX_CONFIG_BASE + 0x90);
+    DMA_SPI1_RX_CONTROL_TABLE_ENTRY_ADDRESS   = (UDMACC26XX_CONFIG_BASE + 0x100);
+    DMA_SPI1_TX_CONTROL_TABLE_ENTRY_ADDRESS   = (UDMACC26XX_CONFIG_BASE + 0x110);
+
+    DMA_SPI0_RX_ALT_CONTROL_TABLE_ENTRY_ADDRESS = (UDMACC26XX_CONFIG_BASE + 0x230);
+    DMA_SPI0_TX_ALT_CONTROL_TABLE_ENTRY_ADDRESS = (UDMACC26XX_CONFIG_BASE + 0x240);
+    DMA_ADC_ALT_CONTROL_TABLE_ENTRY_ADDRESS     = (UDMACC26XX_CONFIG_BASE + 0x270);
+    DMA_GPT0A_ALT_CONTROL_TABLE_ENTRY_ADDRESS   = (UDMACC26XX_CONFIG_BASE + 0x290);
+    DMA_SPI1_RX_ALT_CONTROL_TABLE_ENTRY_ADDRESS = (UDMACC26XX_CONFIG_BASE + 0x300);
+    DMA_SPI1_TX_ALT_CONTROL_TABLE_ENTRY_ADDRESS = (UDMACC26XX_CONFIG_BASE + 0x310);
+
+    /*
+     * Allocate SPI0, SPI1, ADC, and GPTimer0 DMA descriptors at absolute addresses.
+     * --------- DO NOT MODIFY -----------
+     */
+    UDMACC26XX_dmaSpi0RxControlTableEntry_is_placed = 0;
+    .dmaSpi0RxControlTableEntry DMA_SPI0_RX_CONTROL_TABLE_ENTRY_ADDRESS (NOLOAD) : AT (DMA_SPI0_RX_CONTROL_TABLE_ENTRY_ADDRESS) {*(.dmaSpi0RxControlTableEntry)} GROUP_LINK_IN(RAMABLE_REGION)
+
+    UDMACC26XX_dmaSpi0TxControlTableEntry_is_placed = 0;
+    .dmaSpi0TxControlTableEntry DMA_SPI0_TX_CONTROL_TABLE_ENTRY_ADDRESS (NOLOAD) : AT (DMA_SPI0_TX_CONTROL_TABLE_ENTRY_ADDRESS) {*(.dmaSpi0TxControlTableEntry)} GROUP_LINK_IN(RAMABLE_REGION)
+
+    UDMACC26XX_dmaADCPriControlTableEntry_is_placed = 0;
+    .dmaADCPriControlTableEntry DMA_ADC_PRI_CONTROL_TABLE_ENTRY_ADDRESS (NOLOAD) : AT (DMA_ADC_PRI_CONTROL_TABLE_ENTRY_ADDRESS) {*(.dmaADCPriControlTableEntry)} GROUP_LINK_IN(RAMABLE_REGION)
+
+    UDMACC26XX_dmaGPT0APriControlTableEntry_is_placed = 0;
+    .dmaGPT0APriControlTableEntry DMA_GPT0A_PRI_CONTROL_TABLE_ENTRY_ADDRESS (NOLOAD) : AT (DMA_GPT0A_PRI_CONTROL_TABLE_ENTRY_ADDRESS) {*(.dmaGPT0APriControlTableEntry)} GROUP_LINK_IN(RAMABLE_REGION)
+
+    UDMACC26XX_dmaSpi1RxControlTableEntry_is_placed = 0;
+    .dmaSpi1RxControlTableEntry DMA_SPI1_RX_CONTROL_TABLE_ENTRY_ADDRESS (NOLOAD) : AT (DMA_SPI1_RX_CONTROL_TABLE_ENTRY_ADDRESS) {*(.dmaSpi1RxControlTableEntry)} GROUP_LINK_IN(RAMABLE_REGION)
+
+    UDMACC26XX_dmaSpi1TxControlTableEntry_is_placed = 0;
+    .dmaSpi1TxControlTableEntry DMA_SPI1_TX_CONTROL_TABLE_ENTRY_ADDRESS (NOLOAD) : AT (DMA_SPI1_TX_CONTROL_TABLE_ENTRY_ADDRESS) {*(.dmaSpi1TxControlTableEntry)} GROUP_LINK_IN(RAMABLE_REGION)
+
+    UDMACC26XX_dmaSpi0RxAltControlTableEntry_is_placed = 0;
+    .dmaSpi0RxAltControlTableEntry DMA_SPI0_RX_ALT_CONTROL_TABLE_ENTRY_ADDRESS (NOLOAD) : AT (DMA_SPI0_RX_ALT_CONTROL_TABLE_ENTRY_ADDRESS) {*(.dmaSpi0RxAltControlTableEntry)} GROUP_LINK_IN(RAMABLE_REGION)
+
+    UDMACC26XX_dmaSpi0TxAltControlTableEntry_is_placed = 0;
+    .dmaSpi0TxAltControlTableEntry DMA_SPI0_TX_ALT_CONTROL_TABLE_ENTRY_ADDRESS (NOLOAD) : AT (DMA_SPI0_TX_ALT_CONTROL_TABLE_ENTRY_ADDRESS) {*(.dmaSpi0TxAltControlTableEntry)} GROUP_LINK_IN(RAMABLE_REGION)
+
+    UDMACC26XX_dmaADCAltControlTableEntry_is_placed = 0;
+    .dmaADCAltControlTableEntry DMA_ADC_ALT_CONTROL_TABLE_ENTRY_ADDRESS (NOLOAD) : AT (DMA_ADC_ALT_CONTROL_TABLE_ENTRY_ADDRESS) {*(.dmaADCAltControlTableEntry)} GROUP_LINK_IN(RAMABLE_REGION)
+
+    UDMACC26XX_dmaGPT0AAltControlTableEntry_is_placed = 0;
+    .dmaGPT0AAltControlTableEntry DMA_GPT0A_ALT_CONTROL_TABLE_ENTRY_ADDRESS (NOLOAD) : AT (DMA_GPT0A_ALT_CONTROL_TABLE_ENTRY_ADDRESS) {*(.dmaGPT0AAltControlTableEntry)} GROUP_LINK_IN(RAMABLE_REGION)
+
+    UDMACC26XX_dmaSpi1RxAltControlTableEntry_is_placed = 0;
+    .dmaSpi1RxAltControlTableEntry DMA_SPI1_RX_ALT_CONTROL_TABLE_ENTRY_ADDRESS (NOLOAD) : AT (DMA_SPI1_RX_ALT_CONTROL_TABLE_ENTRY_ADDRESS) {*(.dmaSpi1RxAltControlTableEntry)} GROUP_LINK_IN(RAMABLE_REGION)
+
+    UDMACC26XX_dmaSpi1TxAltControlTableEntry_is_placed = 0;
+    .dmaSpi1TxAltControlTableEntry DMA_SPI1_TX_ALT_CONTROL_TABLE_ENTRY_ADDRESS (NOLOAD) : AT (DMA_SPI1_TX_ALT_CONTROL_TABLE_ENTRY_ADDRESS) {*(.dmaSpi1TxAltControlTableEntry)} GROUP_LINK_IN(RAMABLE_REGION)
+
 
     SECTION_DATA_PROLOGUE(_DATA_SECTION_NAME,,)
 	{
