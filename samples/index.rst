@@ -25,6 +25,7 @@ Samples and Demos
    posix/*
    gui/*
    video/*
+   smp/*
 
 .. comment
    To add a new sample document, please use the template available under
