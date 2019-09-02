@@ -2,4 +2,5 @@ tests:
   kernel.memory_protection:
     min_ram: 32
     filter: CONFIG_ARCH_HAS_USERSPACE
+    platform_exclude: twr_ke18f
     tags: kernel security userspace ignore_faults
