@@ -14,7 +14,6 @@
 
 import sys
 import os
-from subprocess import CalledProcessError, check_output, DEVNULL
 
 if "ZEPHYR_BASE" not in os.environ:
     sys.exit("$ZEPHYR_BASE environment variable undefined.")
