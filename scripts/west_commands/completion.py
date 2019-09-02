@@ -46,5 +46,4 @@ class Completion(WestCommand):
             with open(cf, 'r') as f:
                 print(f.read())
         except FileNotFoundError as e:
-                log.die('Unable to find completion file: {}'.format(e))
-
+            log.die('Unable to find completion file: {}'.format(e))
