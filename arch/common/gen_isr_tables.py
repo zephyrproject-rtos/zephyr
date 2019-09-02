@@ -164,7 +164,7 @@ def write_source_file(fp, vt, swt, intlist, syms):
 
     for i in range(nv):
         param, func = swt[i]
-        if type(func) is int:
+        if isinstance(func, int):
             func_as_string = "{0:#x}".format(func)
         else:
             func_as_string = func
