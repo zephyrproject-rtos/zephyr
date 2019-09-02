@@ -198,7 +198,7 @@ class Build(Forceable):
             # passed on to CMake
             if remainder[0] == _ARG_SEPARATOR:
                 remainder = remainder[1:]
-            if len(remainder):
+            if remainder:
                 self.args.cmake_opts = remainder
         except IndexError:
             return
