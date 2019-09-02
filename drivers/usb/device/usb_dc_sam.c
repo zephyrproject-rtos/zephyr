@@ -568,6 +568,10 @@ int usb_dc_ep_is_stalled(u8_t ep, u8_t *stalled)
 		return -EINVAL;
 	}
 
+	if (!stalled) {
+		return -EINVAL;
+	}
+
 	*stalled = (USBHS->USBHS_DEVEPTIMR[ep_idx] &
 		    USBHS_DEVEPTIMR_STALLRQ) != 0;
 
