@@ -32,7 +32,8 @@ class DTReg(DTDirective):
         binding = get_binding(node_path)
 
         reg = reduced[node_path]['props']['reg']
-        if type(reg) is not list: reg = [ reg, ]
+        if not isinstance(reg, list):
+            reg = [reg]
 
         (nr_address_cells, nr_size_cells) = get_addr_size_cells(node_path)
 
@@ -93,7 +94,7 @@ class DTReg(DTDirective):
             if nr_size_cells:
                 prop_def[l_size_fqn] = int(size / div)
                 add_compat_alias(node_path, '_'.join(l_size + l_idx), l_size_fqn, prop_alias)
-            if len(name):
+            if name:
                 if nr_address_cells:
                     prop_alias['_'.join(l_base + name + l_addr)] = l_addr_fqn
                     add_compat_alias(node_path, '_'.join(name + l_addr), l_addr_fqn, prop_alias)
