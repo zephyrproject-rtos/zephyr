@@ -4,10 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <errno.h>
 #include <string.h>
 #include <device.h>
-#include <sys/util.h>
 #include <sys/atomic.h>
 #include <syscall_handler.h>
 
