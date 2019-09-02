@@ -17,14 +17,16 @@ from extract.directive import DTDirective
 # @brief Manage directives in a default way.
 #
 class DTDefault(DTDirective):
-    def _extract_enum(self, node_path, prop, prop_values, label):
+
+    @staticmethod
+    def _extract_enum(node_path, prop, prop_values, label):
         cell_yaml = get_binding(node_path)['properties'][prop]
         if 'enum' in cell_yaml:
             if prop_values in cell_yaml['enum']:
                 if isinstance(cell_yaml['enum'], list):
-                   value = cell_yaml['enum'].index(prop_values)
+                    value = cell_yaml['enum'].index(prop_values)
                 if isinstance(cell_yaml['enum'], dict):
-                   value = cell_yaml['enum'][prop_values]
+                    value = cell_yaml['enum'][prop_values]
                 label = label + "_ENUM"
                 return {label:value}
             else:
@@ -52,8 +54,9 @@ class DTDefault(DTDirective):
         else:
             prop_values = reduced[node_path]['props'][prop]
 
-        if prop_type == "string-array" or prop_type == "array" or prop_type == "uint8-array":
-            if type(prop_values) is not list: prop_values = [ prop_values, ]
+        if prop_type in {"string-array", "array", "uint8-array"}:
+            if not isinstance(prop_values, list):
+                prop_values = [prop_values]
 
         if prop_type == "uint8-array":
             prop_name = str_to_label(prop)

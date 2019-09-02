@@ -78,7 +78,7 @@ def generate_prop_defines(node_path, prop):
 
     if prop == 'reg':
         reg.extract(node_path, names, def_label, 1)
-    elif prop == 'interrupts' or prop == 'interrupts-extended':
+    elif prop in {'interrupts', 'interrupts-extended'}:
         interrupts.extract(node_path, prop, names, def_label)
     elif prop == 'compatible':
         compatible.extract(node_path, prop, def_label)
