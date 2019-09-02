@@ -152,7 +152,7 @@ def create_reduced(node, path):
     # Assign an instance ID for each compat
     compat = node['props'].get('compatible')
     if compat:
-        if type(compat) is not list:
+        if not isinstance(compat, list):
             compat = [compat]
 
         reduced[path]['instance_id'] = {}
