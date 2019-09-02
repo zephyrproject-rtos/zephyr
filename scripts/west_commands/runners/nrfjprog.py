@@ -58,10 +58,11 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
         snrs = self.check_output(['nrfjprog', '--ids'])
         snrs = snrs.decode(sys.getdefaultencoding()).strip().splitlines()
 
-        if len(snrs) == 0:
+        if not snrs:
             raise RuntimeError('"nrfjprog --ids" did not find a board; '
                                'is the board connected?')
-        elif len(snrs) == 1:
+
+        if len(snrs) == 1:
             board_snr = snrs[0]
             if board_snr == '0':
                 raise RuntimeError('"nrfjprog --ids" returned 0; '
