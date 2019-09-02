@@ -28,6 +28,13 @@ Kernel
 
 * New kernel API for per-thread disabling of Floating Point Services for
   ARC, ARM Cortex-M, and x86 architectures.
+* New system call to set the clock frequency at runtime.
+* Additional support for compatibility with 64-bit architectures.
+* Userspace mutexes are now supported through the new k_futex primitive.
+* Improvements to the slab allocator.
+* Fixed the implementation of k_thread_name_set() with userspace enabled.
+* Boost the default tick rate for tickless kernels in order to improve the
+  precision of timeouts.
 
 Architectures
 *************
