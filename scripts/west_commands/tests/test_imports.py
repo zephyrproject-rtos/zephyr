@@ -15,5 +15,5 @@ def test_runner_imports():
     expected = set(('arc-nsim', 'bossac', 'dfu-util', 'em-starterkit', 'esp32',
                     'hifive1', 'jlink', 'nios2', 'nrfjprog', 'openocd', 'pyocd',
                     'qemu', 'xtensa', 'intel_s1000', 'blackmagicprobe',
-                    'dediprog'))
+                    'dediprog', 'stm32flash'))
     assert runner_names == expected
