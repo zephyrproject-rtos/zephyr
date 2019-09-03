@@ -728,7 +728,10 @@ int bt_le_auto_conn(const struct bt_le_conn_param *conn_param)
 		 * NRPA used for active scan could be used for connection.
 		 */
 		if (addr->type == BT_ADDR_LE_RANDOM) {
-			set_random_address(&addr->a);
+			err = set_random_address(&addr->a);
+			if (err) {
+				return err;
+			}
 		}
 
 		own_addr_type = addr->type;
@@ -785,7 +788,10 @@ static int hci_le_create_conn(const struct bt_conn *conn)
 		const bt_addr_le_t *own_addr = &bt_dev.id_addr[conn->id];
 
 		if (own_addr->type == BT_ADDR_LE_RANDOM) {
-			set_random_address(&own_addr->a);
+			err = set_random_address(&own_addr->a);
+			if (err) {
+				return err;
+			}
 		}
 
 		own_addr_type = own_addr->type;
@@ -3496,7 +3502,10 @@ static int start_le_scan(u8_t scan_type, u16_t interval, u16_t window)
 
 			set_param.addr_type = BT_ADDR_LE_RANDOM;
 		} else if (set_param.addr_type == BT_ADDR_LE_RANDOM) {
-			set_random_address(&bt_dev.id_addr[0].a);
+			err = set_random_address(&bt_dev.id_addr[0].a);
+			if (err) {
+				return err;
+			}
 		}
 	}
 
@@ -5726,7 +5735,10 @@ int bt_le_adv_start_internal(const struct bt_le_adv_param *param,
 			 * could be used for advertising.
 			 */
 			if (id_addr->type == BT_ADDR_LE_RANDOM) {
-				set_random_address(&id_addr->a);
+				err = set_random_address(&id_addr->a);
+				if (err) {
+					return err;
+				}
 			}
 
 			set_param.own_addr_type = id_addr->type;
