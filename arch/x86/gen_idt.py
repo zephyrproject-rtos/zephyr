@@ -127,7 +127,7 @@ def update_irq_vec_map(irq_vec_map, irq, vector, max_irq):
     # This table will never have values less than 32 since those are for
     # exceptions; 0 means unconfigured
     if irq_vec_map[irq] != 0:
-        error("multiple vector assignments for interrupt line %d", irq)
+        error("multiple vector assignments for interrupt line %d" % irq)
 
     debug("assign IRQ %d to vector %d" % (irq, vector))
     irq_vec_map[irq] = vector
