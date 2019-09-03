@@ -305,7 +305,7 @@ def write_kobj_size_output(fp):
         dep, _ = obj_info
         # device handled by default case. Stacks are not currently handled,
         # if they eventually are it will be a special case.
-        if kobj == "device" or kobj == "_k_thread_stack_element":
+        if kobj in {"device", "_k_thread_stack_element"}:
             continue
 
         if dep:
