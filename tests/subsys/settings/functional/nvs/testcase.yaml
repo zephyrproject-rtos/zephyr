@@ -1,0 +1,4 @@
+tests:
+  system.settings.nvs:
+    platform_whitelist: qemu_x86
+    tags: settings_nvs
