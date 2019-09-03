@@ -10,9 +10,6 @@ from runners.core import ZephyrBinaryRunner, RunnerCaps
 class QemuBinaryRunner(ZephyrBinaryRunner):
     '''Place-holder for QEMU runner customizations.'''
 
-    def __init__(self, cfg):
-        super(QemuBinaryRunner, self).__init__(cfg)
-
     @classmethod
     def name(cls):
         return 'qemu'

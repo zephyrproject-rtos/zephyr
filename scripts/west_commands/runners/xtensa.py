@@ -12,9 +12,6 @@ from runners.core import ZephyrBinaryRunner, RunnerCaps
 class XtensaBinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end for xt-gdb.'''
 
-    def __init__(self, cfg):
-        super(XtensaBinaryRunner, self).__init__(cfg)
-
     @classmethod
     def name(cls):
         return 'xtensa'
