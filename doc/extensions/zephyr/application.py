@@ -271,7 +271,7 @@ class ZephyrAppCommandsDirective(Directive):
             content.append('west sign{}'.format(dst))
 
         for goal in goals:
-            if goal == 'build' or goal == 'sign':
+            if goal in {'build', 'sign'}:
                 continue
             elif goal == 'flash':
                 content.append('west flash{}'.format(dst))
