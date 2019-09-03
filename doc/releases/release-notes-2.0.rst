@@ -2,8 +2,8 @@
 
 .. _zephyr_2.0:
 
-Zephyr Kernel 2.0.0 (Working Draft)
-####################################
+Zephyr Kernel 2.0.0
+###################
 
 We are pleased to announce the release of Zephyr kernel version 2.0.0.
 
@@ -17,9 +17,9 @@ Major enhancements with this release include:
 * We added support for :ref:`Point-to-Point Protocol (PPP) <ppp>`. PPP is a
   data link layer (layer 2) communications protocol used to establish a direct
   connection between two nodes.
-* We added support for UpdateHub which is an end-to-end solution for large scale
-  over-the-air update of devices.
-* We added support for ARM Cortex-R Architecture (EXPERIMENTAL).
+* We added support for UpdateHub, an end-to-end solution for large scale
+  over-the-air device updates.
+* We added support for ARM Cortex-R Architecture (Experimental).
 
 The following sections provide detailed lists of changes by component.
 
@@ -46,7 +46,7 @@ Kernel
 * Userspace mutexes are now supported through the new k_futex primitive.
 * Improvements to the slab allocator.
 * Fixed the implementation of k_thread_name_set() with userspace enabled.
-* Boost the default tick rate for tickless kernels in order to improve the
+* Boosted the default tick rate for tickless kernels to improve the
   precision of timeouts.
 
 Architectures
@@ -54,7 +54,7 @@ Architectures
 
 * ARM:
 
-  * Added initial support for ARM Cortex-R architecture (EXPERIMENTAL)
+  * Added initial support for ARM Cortex-R architecture (Experimental)
   * We enhanced the support for Floating Point Services in Cortex-M
     architecture, implementing and enabling lazy-stacking for FPU
     capable threads and fixing stack overflow detection for FPU
@@ -70,18 +70,18 @@ Architectures
 
   * Added support for ARC HS architecture
   * Added SMP support for ARC HS architecture
-  * Added support for ARC SecureShield based TEE (EXPERIMENTAL)
+  * Added support for ARC SecureShield based TEE (Experimental)
   * Fixed several critical bugs in interrupt and exception handling
   * Enhance the support for Floating Point Services
 
 * POSIX:
 
-  * Fix race condition with terminated threads which had never been
+  * Fixed race condition with terminated threads which had never been
     scheduled by kernel. On very loaded systems it could cause swap errors.
 
 * x86:
 
-  * Support for the Quark microcontroller family has been dropped.
+  * Dropped support for the Intel Quark microcontroller family.
   * A new lightweight PCI implementation has been introduced which supports
     MSI and other features required for PCIe devices. The previous PCI
     implementation has been deprecated and will be removed in 2.1.
@@ -89,68 +89,80 @@ Architectures
 Boards & SoC Support
 ********************
 
-* Add native_posix_64: A 64 bit variant of native_posix
+* Added native_posix_64: A 64 bit variant of native_posix
+* Added support for these ARC boards:
 
-* Added support for the following ARC boards:
+  .. hlist::
+     :columns: 3
 
-  * emsdp
-  * hsdk
-  * nsim for hs
+     * emsdp
+     * hsdk
+     * nsim for hs
 
-* Added support for the following ARM boards:
+* Added support for these ARM boards:
 
-  * atsamr21_xpro
-  * cc1352r1_launchxl
-  * cc26x2r1_launchxl
-  * holyiot_yj16019
-  * lpcxpresso55s69
-  * mec15xxevb_assy6853
-  * mikroe_mini_m4_for_stm32
-  * mimxrt1015_evk
-  * mps2_an521
-  * nrf51_pca10031
-  * nrf52811_pca10056
-  * nucleo_g071rb
-  * nucleo_wb55rg
-  * qemu_cortex_r5
-  * stm32h747i_disco
-  * stm32mp157c_dk2
-  * twr_ke18f
-  * v2m_musca_b1
-  * 96b_avenger96
-  * 96b_meerkat96
-  * 96b_wistrio
+  .. hlist::
+     :columns: 3
 
-* Added support for the following RISC-V boards:
+     * atsamr21_xpro
+     * cc1352r1_launchxl
+     * cc26x2r1_launchxl
+     * holyiot_yj16019
+     * lpcxpresso55s69
+     * mec15xxevb_assy6853
+     * mikroe_mini_m4_for_stm32
+     * mimxrt1015_evk
+     * mps2_an521
+     * nrf51_pca10031
+     * nrf52811_pca10056
+     * nucleo_g071rb
+     * nucleo_wb55rg
+     * qemu_cortex_r5
+     * stm32h747i_disco
+     * stm32mp157c_dk2
+     * twr_ke18f
+     * v2m_musca_b1
+     * 96b_avenger96
+     * 96b_meerkat96
+     * 96b_wistrio
 
-  * hifive1_revb
-  * litex_vexriscv
-  * qemu_riscv64
+* Added support for these RISC-V boards:
 
-* Added support for the following x86 boards:
+  .. hlist::
+     :columns: 3
 
-  * gpmrb
+     * hifive1_revb
+     * litex_vexriscv
+     * qemu_riscv64
 
-* Added support for the following shield boards:
+* Added support for the gpmrb x86 board
 
-  * frdm_cr20a
-  * link_board_can
-  * sparkfun_sara_r4
-  * wnc_m14a2a
-  * x_nucleo_iks01a3
+* Added support for these following shields:
 
-* Removed support for the following boards:
+  .. hlist::
+     :columns: 3
 
-  * arduino_101
-  * arduino_101_sss
-  * curie_ble
-  * galileo
-  * quark_d2000_crb
-  * quark_se_c1000_devboard
-  * quark_se_c1000_ss_devboard
-  * quark_se_c1000_ble
-  * tinytile
-  * x86_jailhouse
+     * frdm_cr20a
+     * link_board_can
+     * sparkfun_sara_r4
+     * wnc_m14a2a
+     * x_nucleo_iks01a3
+
+* Removed support for these boards:
+
+  .. hlist::
+     :columns: 3
+
+     * arduino_101
+     * arduino_101_sss
+     * curie_ble
+     * galileo
+     * quark_d2000_crb
+     * quark_se_c1000_devboard
+     * quark_se_c1000_ss_devboard
+     * quark_se_c1000_ble
+     * tinytile
+     * x86_jailhouse
 
 Drivers and Sensors
 *******************
@@ -165,7 +177,7 @@ Drivers and Sensors
 
 * Audio
 
-  * Added support for 2 microphones (stereo) in mpxxdtyy driver
+  * Added support for two microphones (stereo) in the mpxxdtyy driver
 
 * CAN
 
@@ -177,8 +189,8 @@ Drivers and Sensors
 * Clock Control
 
   * Added NXP Kinetis MCG, SCG, and PCC drivers
-  * Removed Quark SE driver
   * Added STM32H7, STM32L1X, and STM32WB support
+  * Removed Quark SE driver
 
 * Counter
 
@@ -325,36 +337,36 @@ Drivers and Sensors
 Networking
 **********
 
-* Add support for `SOCKS5 proxy <https://en.wikipedia.org/wiki/SOCKS>`__.
+* Added support for `SOCKS5 proxy <https://en.wikipedia.org/wiki/SOCKS>`__.
   See also `RFC1928 <https://tools.ietf.org/html/rfc1928>`__ for details.
-* Add support for 6LoCAN, a 6Lo adaption layer for Controller Area Networks.
-* Add support for :ref:`Point-to-Point Protocol (PPP) <ppp>`.
-* Add support for UpdateHub which is an end-to-end solution for large scale
+* Added support for 6LoCAN, a 6Lo adaption layer for Controller Area Networks.
+* Added support for :ref:`Point-to-Point Protocol (PPP) <ppp>`.
+* Added support for UpdateHub, an end-to-end solution for large scale
   over-the-air update of devices.
   See `UpdateHub.io <https://updatehub.io/>`__ for details.
-* Add support to automatically register network socket family.
-* Add support for ``getsockname()`` function.
-* Add SO_PRIORITY support to ``setsockopt()``
-* Add support for VLAN tag stripping.
-* Add IEEE 802.15.4 API for ACK configuration.
-* Add dispatching support to SocketCAN sockets.
-* Add user mode support to PTP clock API.
-* Add user mode support to network interface address functions.
-* Add AF_NET_MGMT socket address family support. This is for receiving network
+* Added support to automatically register network socket family.
+* Added support for ``getsockname()`` function.
+* Added SO_PRIORITY support to ``setsockopt()``
+* Added support for VLAN tag stripping.
+* Added IEEE 802.15.4 API for ACK configuration.
+* Added dispatching support to SocketCAN sockets.
+* Added user mode support to PTP clock API.
+* Added user mode support to network interface address functions.
+* Added AF_NET_MGMT socket address family support. This is for receiving network
   event information in user mode application.
-* Add user mode support to ``net_addr_ntop()`` and ``net_addr_pton()``
-* Add support for sending network management events when DNS server is added
+* Added user mode support to ``net_addr_ntop()`` and ``net_addr_pton()``
+* Added support for sending network management events when DNS server is added
   or deleted.
-* Add LiteEth Ethernet driver.
-* Add support for ``sendmsg()`` API.
-* Add `civetweb <https://civetweb.github.io/civetweb/>`__ HTTP API support.
-* Add LWM2M IPSO Accelerometer, Push Button, On/Off Switch and Buzzer object
+* Added LiteEth Ethernet driver.
+* Added support for ``sendmsg()`` API.
+* Added `civetweb <https://civetweb.github.io/civetweb/>`__ HTTP API support.
+* Added LWM2M IPSO Accelerometer, Push Button, On/Off Switch and Buzzer object
   support.
-* Add LWM2M Location and Connection Monitoring object support.
-* Add network management L4 layer. The L4 management events are used
+* Added LWM2M Location and Connection Monitoring object support.
+* Added network management L4 layer. The L4 management events are used
   when monitoring network connectivity.
 * Allow net-mgmt API to pass information length to application.
-* Remove network management L1 layer as it was never used.
+* Removed network management L1 layer as it was never used.
 * By default a network interface is set to UP when the device starts.
   If this is not desired, then it is possible to disable automatic start.
 * Allow collecting network packet TX throughput times in the network stack.
@@ -369,44 +381,39 @@ Networking
 * SNTP client updates.
 * Trickle timer re-init fixes.
 * ``getaddrinfo()`` fixes.
-* DHCPv4 fixes.
-* LWM2M fixes.
-* gPTP fixes.
-* MQTT fixes.
+* Fixes in DHCPv4, LWM2M, gPTP, and MQTT
 * DNS fixes for non-compressed answers.
-* mDNS resolver fixes.
-* LLMNR resolver fixes.
+* mDNS and LLMNR resolver fixes.
 * Ethernet ARP fixes.
 * OpenThread updates and fixes.
-* Network device driver enhancements:
+* Network device driver fixes for:
 
-  - Ethernet e1000 fixes.
-  - Ethernet enc28j60 fixes.
-  - Ethernet mcux fixes.
-  - Ethernet stellaris fixes.
-  - Ethernet gmac fixes.
-  - Ethernet stm32 fixes.
-  - WiFi eswifi fixes.
-  - IEEE 802.15.4 kw41z fixes.
-  - IEEE 802.15.4 nrf5 fixes.
+  .. hlist::
+     :columns: 3
+
+     - Ethernet e1000
+     - Ethernet enc28j60
+     - Ethernet mcux
+     - Ethernet stellaris
+     - Ethernet gmac
+     - Ethernet stm32
+     - WiFi eswifi
+     - IEEE 802.15.4 kw41z
+     - IEEE 802.15.4 nrf5
 
 Bluetooth
 *********
 
 * Host:
 
-  * GATT: Added support for database hashes
-  * GATT: Added support for Ready Using Characteristic UUID
-  * GATT: Added support for static services
-  * GATT: Added support for disabling the dynamic database
-  * GATT: Added support for notifying and indicating by UUID
+  * GATT: Added support for database hashes, Read Using Characteristic
+    UUID, static services, disabling the dynamic database, and notifying
+    and indicating by UUID
   * GATT: Simplified the bt_gatt_notify_cb() API
   * GATT: Added additional attributes to the Device Information Service
   * GATT: Several protocol and database fixes
-  * Settings: Transitioned to new, optimized settings model
-  * Settings: Support for custom backends
-  * Completed support for directed advertising
-  * Completed support for Out-Of-Band (OOB) pairing
+  * Settings: Transitioned to new optimized settings model and support for custom backends
+  * Completed support for directed advertising and Out-Of-Band (OOB) pairing
   * Added support for fine-grained control of security establishment, including
     forcing a pairing procedure in case of key loss
   * Switched to separate, dedicated pools for discardable events and number of
@@ -419,22 +426,15 @@ Bluetooth
 
   * The split software Controller is now the default
   * Added support for the Data Length Update procedure
-  * Improved the ticker packet scheduler for improved conflict resolution
-  * Added documentation for the ticker packet scheduler
-  * Added support for out-of-tree user-defined commands and events
-  * Added support for Zephyr Vendor Specific Commands
-  * Added support for user-defined protocols
+  * Improved and documented the ticker packet scheduler for improved conflict resolution
+  * Added support for out-of-tree user-defined commands and events,
+    Zephyr Vendor Specific Commands, and user-defined protocols
   * Converted several control procedures to be queueable
-  * Nordic: Added support for Controller-based privacy
   * Nordic: Decorrelated address generation from resolution
-  * Nordic: Added support for fast encryption setup
-  * Nordic: Added support for RSSI
-  * Nordic: Added support for low-latency ULL processing of messages
-  * Nordic: Added support for the nRF52811 IC BLE radio
-  * Nordic: Added support for PA/LNA on Port 1 GPIO pins
-  * Nordic: Added support for radio event abort
+  * Nordic: Added support for Controller-based privacy, fast encryption
+    setup, RSSI, low-latency ULL processing of messages, nRF52811 IC BLE
+    radio, PA/LNA on Port 1 GPIO pins, and radio event abort
   * BLE qualification up to the 5.1 specification
-  * Several bug fixes
 
 * BLE legacy software Controller:
 
@@ -444,20 +444,13 @@ Bluetooth
 Build and Infrastructure
 ************************
 
-* ARM Embedded Toolchain
+* Changed ARM Embedded toolchain to default to nano variant of newlib
 
-  * Changed ARM Embedded toolchain to default to nano variant of newlib
-
-* TBD
 
 Libraries / Subsystems
 ***********************
 
-* File Systems
-
-  * Added support for littlefs
-
-* TBD
+* File Systems: Added support for littlefs
 
 HALs
 ****

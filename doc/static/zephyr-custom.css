@@ -64,6 +64,12 @@ div > p + ul, div > p + ol {
    margin-top: -20px;
 }
 
+/* squish space before an hlist in a list */
+li table.hlist {
+   margin-top: -10px;
+   margin-bottom: 5px;
+}
+
 /* add some space before the figure caption */
 p.caption  {
 #    border-top: 1px solid;
@@ -105,6 +111,7 @@ table {
 /*  make .. hlist:: tables fill the page */
 table.hlist {
     width: 95% !important;
+    table-layout: fixed;
 }
 
 /*  override rtd theme white-space no-wrap in table heading and content  */
