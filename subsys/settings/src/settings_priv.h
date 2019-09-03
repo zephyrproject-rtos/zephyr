@@ -9,6 +9,7 @@
 #define __SETTINGS_PRIV_H_
 
 #include <sys/types.h>
+#include <sys/slist.h>
 #include <errno.h>
 
 #ifdef __cplusplus
