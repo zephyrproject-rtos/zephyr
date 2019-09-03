@@ -209,7 +209,7 @@ for filename in args.FILENAMEs:
                                  filename, offset, b, offset, b - offset)
                     report_error(mm.read(b - offset))
                     mm.seek(b)
-                if warning == True:		# A warning, print it
+                if warning:			# A warning, print it
                     mm.seek(b)
                     logging.info("%s: warning range (%d, %d), from %d %dB",
                                  filename, b, e, offset, e - b)
