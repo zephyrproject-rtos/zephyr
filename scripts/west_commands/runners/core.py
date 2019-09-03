@@ -511,10 +511,7 @@ class ZephyrBinaryRunner(abc.ABC):
         self._log_cmd(cmd)
         if _DRY_RUN:
             return
-        try:
-            subprocess.check_call(cmd)
-        except subprocess.CalledProcessError:
-            raise
+        subprocess.check_call(cmd)
 
     def check_output(self, cmd):
         '''Subclass subprocess.check_output() wrapper.
@@ -526,10 +523,7 @@ class ZephyrBinaryRunner(abc.ABC):
         self._log_cmd(cmd)
         if _DRY_RUN:
             return b''
-        try:
-            return subprocess.check_output(cmd)
-        except subprocess.CalledProcessError:
-            raise
+        return subprocess.check_output(cmd)
 
     def popen_ignore_int(self, cmd):
         '''Spawn a child command, ensuring it ignores SIGINT.
