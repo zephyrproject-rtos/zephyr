@@ -93,7 +93,7 @@ static int read_handle(void *ctx, off_t off, char *buf, size_t *len)
 
 char read_buf[128+10];
 
-void test_raw_read_iteration(u8_t rbs, size_t off, size_t len)
+static void test_raw_read_iteration(u8_t rbs, size_t off, size_t len)
 {
 	test_rwbs = rbs;
 	size_t len_read;
@@ -145,9 +145,10 @@ void test_setting_raw_read(void)
 
 
 
-void test_val_read_iteration(char const *src, size_t src_len,
-			     char const *pattern, size_t pattern_len,
-			     size_t len, u8_t rbs, size_t off, size_t val_off)
+static void test_val_read_iteration(char const *src, size_t src_len,
+				    char const *pattern, size_t pattern_len,
+				    size_t len, u8_t rbs, size_t off,
+				    size_t val_off)
 {
 	size_t len_read;
 	int rc;
