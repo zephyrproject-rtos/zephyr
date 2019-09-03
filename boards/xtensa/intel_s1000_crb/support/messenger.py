@@ -78,7 +78,7 @@ class Message:
             print('RSP <<< NULL.')
         else:
             print('RSP <<< %s.' % self.cmd_rsp[rsp])
-            if verbose == True:
+            if verbose:
                 count = bitstruct.unpack_from('u32', msg, 4 * 8)[0]
                 count &= 0x1ff
                 for index in range(0, 8 + (count * 4), 4):
