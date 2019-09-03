@@ -16,7 +16,7 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(settings_basic_test);
 
-#ifdef CONFIG_SETTINGS_FCB
+#if defined(CONFIG_SETTINGS_FCB) || defined(CONFIG_SETTINGS_NVS)
 #include <storage/flash_map.h>
 #endif
 
