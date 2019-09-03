@@ -1,0 +1,120 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+
+
+        {
+            "name": "Python: Current File",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Python: Saniycheck fast",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceRoot}/scripts/sanitycheck",
+            "console": "integratedTerminal",
+            "env": {
+                "ZEPHYR_BASE": "${workspaceRoot}",
+                "ZEPHYR_TOOLCHAIN_VARIANT": "gnuarmemb",
+                "ZEPHYR_SDK_INSTALL_DIRX": "/home/nashif/Work/SDK/0.10.1",
+                "GNUARMEMB_TOOLCHAIN_PATH": "/Users/anashif/zephyr/SDK/gcc-arm-none-eabi-7-2018-q2-update"
+            },
+            "args": [
+                "-p",
+                "mps2_an385",
+                "-p",
+                "frdm_k64f",
+                "-T",
+                "samples/synchronization",
+                "-vv",
+                //"--report-dir",
+                //"my_sanity",
+                //"--report-name",
+                //"overhaul"
+            ]
+        },
+        {
+            "name": "Python: Saniycheck: device testing",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceRoot}/scripts/sanitycheck",
+            "console": "integratedTerminal",
+            "env": {
+                "ZEPHYR_BASE": "${workspaceRoot}",
+                "ZEPHYR_TOOLCHAIN_VARIANT": "gnuarmemb",
+                "ZEPHYR_SDK_INSTALL_DIRX": "/home/nashif/Work/SDK/0.10.1",
+                "GNUARMEMB_TOOLCHAIN_PATH": "/Users/anashif/zephyr/SDK/gcc-arm-none-eabi-7-2018-q2-update"
+            },
+            "args": [
+                "-p",
+                "reel_board",
+                "--device-testing",
+                "-T",
+                "samples/synchronization/",
+                "-v"
+            ]
+        },
+        {
+            "name": "Python: Saniycheck: kernel",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceRoot}/scripts/sanitycheck",
+            "console": "integratedTerminal",
+            "env": {
+                "ZEPHYR_BASE": "${workspaceRoot}",
+                "ZEPHYR_TOOLCHAIN_VARIANT": "gnuarmemb",
+                "ZEPHYR_SDK_INSTALL_DIRX": "/home/nashif/Work/SDK/0.10.1",
+                "GNUARMEMB_TOOLCHAIN_PATH": "/Users/anashif/zephyr/SDK/gcc-arm-none-eabi-7-2018-q2-update"
+            },
+            "args": [
+                //"-p",
+                //"qemu_x86",
+                //"-p",
+                //"frdm_k64f",
+                "-T",
+                "tests/kernel",
+                "-v"
+            ]
+        },
+        {
+            "name": "Python: Saniycheck: Default",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceRoot}/scripts/sanitycheck",
+            "console": "integratedTerminal",
+            "env": {
+                "ZEPHYR_BASE": "${workspaceRoot}",
+                "ZEPHYR_TOOLCHAIN_VARIANT": "zephyr",
+                "ZEPHYR_SDK_INSTALL_DIR": "/home/nashif/Work/SDK/0.10.1"
+            },
+            "args": [
+                "-v",
+            ]
+        },
+        {
+            "name": "Python: Saniycheck native_posix",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceRoot}/scripts/sanitycheck",
+            "console": "integratedTerminal",
+            "env": {
+                "ZEPHYR_BASE": "${workspaceRoot}",
+                "ZEPHYR_TOOLCHAIN_VARIANT": "zephyr",
+                "ZEPHYR_SDK_INSTALL_DIR": "/home/nashif/Work/SDK/0.10.1"
+            },
+            "args": [
+                "-p",
+                "native_posix",
+                "-T",
+                "tests/kernel",
+                "-vv"
+            ]
+        }
+    ]
+}
