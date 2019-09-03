@@ -82,10 +82,10 @@ class Device:
         max_wait = 0.1 	 # 100 ms
         time.sleep(min_wait)
         ready = self.irq_pin.read()
-        if ready == False:
+        if not ready:
             time.sleep(max_wait)
             ready = self.irq_pin.read()
-            if ready == False:
+            if not ready:
                 print('Error: Device not ready', file=sys.stderr)
         return ready
 
@@ -107,7 +107,7 @@ class Device:
         before return.
         """
         rx_data = self.spi.transfer(data)
-        if wait == True:
+        if wait:
             self.check_device_ready()
         return rx_data
 
