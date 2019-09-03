@@ -60,7 +60,7 @@
 };
 
 arduino_spi: &spi1 {
-      status = "okay";
+	status = "okay";
 };
 
 &spi2 {
