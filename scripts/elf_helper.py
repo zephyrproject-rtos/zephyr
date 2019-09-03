@@ -355,7 +355,7 @@ def addr_deref(elf, addr):
         start = section['sh_addr']
         end = start + section['sh_size']
 
-        if addr >= start and addr < end:
+        if start <= addr < end:
             data = section.data()
             offset = addr - start
             return struct.unpack("<I" if elf.little_endian else ">I",
@@ -513,9 +513,7 @@ class ElfHelper:
                 continue
 
             _, user_ram_allowed = kobjects[ko.type_obj.name]
-            if (not user_ram_allowed and
-                    (addr >= app_smem_start and addr < app_smem_end)):
-
+            if not user_ram_allowed and app_smem_start <= addr < app_smem_end:
                 self.debug_die(die,
                                "object '%s' found in invalid location %s"
                                % (name, hex(addr)))
