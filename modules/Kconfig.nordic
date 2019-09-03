@@ -13,6 +13,26 @@ config HAS_NRFX
 config NRFX_PRS
 	bool
 
+config NRFX_PRS_BOX_0
+	bool
+	select NRFX_PRS
+
+config NRFX_PRS_BOX_1
+	bool
+	select NRFX_PRS
+
+config NRFX_PRS_BOX_2
+	bool
+	select NRFX_PRS
+
+config NRFX_PRS_BOX_3
+	bool
+	select NRFX_PRS
+
+config NRFX_PRS_BOX_4
+	bool
+	select NRFX_PRS
+
 config NRFX_ADC
 	bool
 
@@ -38,13 +58,23 @@ config NRFX_PPI
 config NRFX_PWM
 	bool
 
+config NRFX_PWM0
+	bool
+	select NRFX_PWM
+
+config NRFX_PWM1
+	bool
+	select NRFX_PWM
+
+config NRFX_PWM2
+	bool
+	select NRFX_PWM
+
+config NRFX_PWM3
+	bool
+	select NRFX_PWM
+
 config NRFX_QDEC
-	bool
-
-config NRFX_RTC
-	bool
-
-config NRFX_SAADC
 	bool
 
 config NRFX_RTC
@@ -52,21 +82,71 @@ config NRFX_RTC
 
 config NRFX_RTC0
 	bool
+	select NRFX_RTC
 
 config NRFX_RTC1
 	bool
+	select NRFX_RTC
 
 config NRFX_RTC2
+	bool
+	select NRFX_RTC
+
+config NRFX_SAADC
 	bool
 
 config NRFX_SPI
 	bool
 
+config NRFX_SPI0
+	bool
+	select NRFX_SPI
+
+config NRFX_SPI1
+	bool
+	select NRFX_SPI
+
+config NRFX_SPI2
+	bool
+	select NRFX_SPI
+
 config NRFX_SPIM
 	bool
 
+config NRFX_SPIM0
+	bool
+	select NRFX_SPIM
+
+config NRFX_SPIM1
+	bool
+	select NRFX_SPIM
+
+config NRFX_SPIM2
+	bool
+	select NRFX_SPIM
+
+config NRFX_SPIM3
+	bool
+	select NRFX_SPIM
+
 config NRFX_SPIS
 	bool
+
+config NRFX_SPIS0
+	bool
+	select NRFX_SPIS
+
+config NRFX_SPIS1
+	bool
+	select NRFX_SPIS
+
+config NRFX_SPIS2
+	bool
+	select NRFX_SPIS
+
+config NRFX_SPIS3
+	bool
+	select NRFX_SPIS
 
 config NRFX_SYSTICK
 	bool
@@ -97,11 +177,39 @@ config NRFX_TIMER4
 config NRFX_TWI
 	bool
 
+config NRFX_TWI0
+	bool
+	select NRFX_TWI
+
+config NRFX_TWI1
+	bool
+	select NRFX_TWI
+
 config NRFX_TWIM
 	bool
 
+config NRFX_TWIM0
+	bool
+	select NRFX_TWIM
+
+config NRFX_TWIM1
+	bool
+	select NRFX_TWIM
+
+config NRFX_TWIM2
+	bool
+	select NRFX_TWIM
+
+config NRFX_TWIM3
+	bool
+	select NRFX_TWIM
+
 config NRFX_UART
 	bool
+
+config NRFX_UART0
+	bool
+	select NRFX_UART
 
 config NRFX_UARTE
 	bool

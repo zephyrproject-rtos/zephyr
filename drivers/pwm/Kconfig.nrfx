@@ -8,6 +8,9 @@ menuconfig PWM_NRFX
 	default y
 	depends on HAS_HW_NRF_PWM0 || HAS_HW_NRF_PWM1 || \
 		   HAS_HW_NRF_PWM2 || HAS_HW_NRF_PWM3
-	select NRFX_PWM
+	select NRFX_PWM0 if PWM_0
+	select NRFX_PWM1 if PWM_1
+	select NRFX_PWM2 if PWM_2
+	select NRFX_PWM3 if PWM_3
 	help
 	  Enable support for nrfx Hardware PWM driver for nRF52 MCU series.
