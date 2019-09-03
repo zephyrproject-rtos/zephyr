@@ -18,6 +18,10 @@ config NRFX_CLOCK
 	bool "Enable CLOCK driver"
 	depends on HAS_HW_NRF_CLOCK
 
+config NRFX_COMP
+	bool "Enable COMP driver"
+	depends on HAS_HW_NRF_COMP
+
 config NRFX_DPPI
 	bool "Enable DPPI allocator"
 	depends on HAS_HW_NRF_DPPIC
@@ -26,6 +30,14 @@ config NRFX_GPIOTE
 	bool "Enable GPIOTE driver"
 	depends on HAS_HW_NRF_GPIOTE
 
+config NRFX_I2S
+	bool "Enable I2S driver"
+	depends on HAS_HW_NRF_I2S
+
+config NRFX_LPCOMP
+	bool "Enable LPCOMP driver"
+	depends on HAS_HW_NRF_LPCOMP
+
 config NRFX_NFCT
 	bool "Enable NFCT driver"
 	depends on HAS_HW_NRF_NFCT
@@ -33,6 +45,14 @@ config NRFX_NFCT
 
 config NRFX_NVMC
 	bool "Enable NVMC driver"
+
+config NRFX_PDM
+	bool "Enable PDM driver"
+	depends on HAS_HW_NRF_PDM
+
+config NRFX_POWER
+	bool "Enable POWER driver"
+	depends on HAS_HW_NRF_POWER
 
 config NRFX_PPI
 	bool "Enable PPI allocator"
@@ -66,6 +86,14 @@ config NRFX_PWM3
 config NRFX_QDEC
 	bool "Enable QDEC driver"
 	depends on HAS_HW_NRF_QDEC
+
+config NRFX_QSPI
+	bool "Enable QSPI driver"
+	depends on HAS_HW_NRF_QSPI
+
+config NRFX_RNG
+	bool "Enable RNG driver"
+	depends on HAS_HW_NRF_RNG
 
 config NRFX_RTC
 	bool "Enable RTC driver"
@@ -159,9 +187,20 @@ config NRFX_SPIS3
 	depends on HAS_HW_NRF_SPIS3
 	select NRFX_SPIS
 
+config NRFX_SWI
+	bool "Enable SWI/EGU allocator"
+	depends on HAS_HW_NRF_EGU0 || HAS_HW_NRF_EGU1 || HAS_HW_NRF_EGU2 || \
+		   HAS_HW_NRF_EGU3 || HAS_HW_NRF_EGU4 || HAS_HW_NRF_EGU5 || \
+		   HAS_HW_NRF_SWI0 || HAS_HW_NRF_SWI1 || HAS_HW_NRF_SWI2 || \
+		   HAS_HW_NRF_SWI3 || HAS_HW_NRF_SWI4 || HAS_HW_NRF_SWI5
+
 config NRFX_SYSTICK
 	bool "Enable SYSTICK driver"
 	depends on CPU_CORTEX_M_HAS_SYSTICK
+
+config NRFX_TEMP
+	bool "Enable TEMP driver"
+	depends on HAS_HW_NRF_TEMP
 
 config NRFX_TIMER
 	bool "Enable TIMER driver"
@@ -232,6 +271,31 @@ config NRFX_TWIM3
 	bool "Enable TWIM3 instance"
 	depends on HAS_HW_NRF_TWIM3
 	select NRFX_TWIM
+
+config NRFX_TWIS
+	bool "Enable TWIS driver"
+	depends on HAS_HW_NRF_TWIS0 || HAS_HW_NRF_TWIS1 || \
+		   HAS_HW_NRF_TWIS2 || HAS_HW_NRF_TWIS3
+
+config NRFX_TWIS0
+	bool "Enable TWIS0 instance"
+	depends on HAS_HW_NRF_TWIS0
+	select NRFX_TWIS
+
+config NRFX_TWIS1
+	bool "Enable TWIS1 instance"
+	depends on HAS_HW_NRF_TWIS1
+	select NRFX_TWIS
+
+config NRFX_TWIS2
+	bool "Enable TWIS2 instance"
+	depends on HAS_HW_NRF_TWIS2
+	select NRFX_TWIS
+
+config NRFX_TWIS3
+	bool "Enable TWIS3 instance"
+	depends on HAS_HW_NRF_TWIS3
+	select NRFX_TWIS
 
 config NRFX_UART
 	bool "Enable UART driver"
