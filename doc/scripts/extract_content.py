@@ -61,6 +61,7 @@ def src_deps(zephyr_base, src_file, dest, src_root):
         with open(src_file, encoding="utf-8") as f:
             content = [x.strip() for x in f.readlines()]
     except UnicodeDecodeError as e:
+        # pylint: disable=unsubscriptable-object
         sys.stderr.write(
             "Malformed {} in {}\n"
             "  Context: {}\n"
