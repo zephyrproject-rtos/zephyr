@@ -305,8 +305,6 @@ lll_conn_isr_rx_exit:
 	}
 
 	if (is_rx_enqueue) {
-		LL_ASSERT(lll->handle != 0xFFFF);
-
 		ull_pdu_rx_alloc();
 
 		node_rx->hdr.type = NODE_RX_TYPE_DC_PDU;
