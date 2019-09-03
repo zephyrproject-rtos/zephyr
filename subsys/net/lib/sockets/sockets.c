@@ -978,6 +978,8 @@ static int zsock_poll_prepare_ctx(struct net_context *ctx,
 				  struct k_poll_event **pev,
 				  struct k_poll_event *pev_end)
 {
+	int ret = 0;
+
 	if (pfd->events & ZSOCK_POLLIN) {
 		if (*pev == pev_end) {
 			errno = ENOMEM;
@@ -991,6 +993,11 @@ static int zsock_poll_prepare_ctx(struct net_context *ctx,
 		(*pev)++;
 	}
 
+	if (pfd->events & ZSOCK_POLLOUT) {
+		errno = EALREADY;
+		ret = -1;
+	}
+
 	/* If socket is already in EOF, it can be reported
 	 * immediately, so we tell poll() to short-circuit wait.
 	 */
@@ -999,7 +1006,7 @@ static int zsock_poll_prepare_ctx(struct net_context *ctx,
 		return -1;
 	}
 
-	return 0;
+	return ret;
 }
 
 static int zsock_poll_update_ctx(struct net_context *ctx,
