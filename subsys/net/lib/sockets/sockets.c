@@ -824,6 +824,10 @@ ssize_t zsock_recvfrom_ctx(struct net_context *ctx, void *buf, size_t max_len,
 {
 	enum net_sock_type sock_type = net_context_get_type(ctx);
 
+	if (max_len == 0) {
+		return 0;
+	}
+
 	if (sock_type == SOCK_DGRAM) {
 		return zsock_recv_dgram(ctx, buf, max_len, flags, src_addr, addrlen);
 	} else if (sock_type == SOCK_STREAM) {
