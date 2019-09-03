@@ -52,7 +52,9 @@ def main():
     if not args.commits:
         exit(1)
 
-    commit = sh.git("diff","--name-only", args.commits, **sh_special_args)
+    # pylint does not like the 'sh' library
+    # pylint: disable=too-many-function-args,unexpected-keyword-arg
+    commit = sh.git("diff", "--name-only", args.commits, **sh_special_args)
     files = commit.split("\n")
     tests = set()
     for f in files:
