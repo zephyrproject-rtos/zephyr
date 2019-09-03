@@ -279,7 +279,7 @@ def create_irq_vectors_allocated(vectors, spur_code, spur_nocode, filename):
     vbits = [0 for i in range(num_chars)]
     for i in range(len(vectors)):
         handler, _, _ = vectors[i]
-        if handler != spur_code and handler != spur_nocode:
+        if handler not in (spur_code, spur_nocode):
             continue
 
         vbit_index = i // 8
