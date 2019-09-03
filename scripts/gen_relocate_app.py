@@ -225,7 +225,7 @@ def string_create_helper(region, memory_type,
         # Create a complete list of funcs/ variables that goes in for this
         # memory type
         tmp = print_linker_sections(full_list_of_sections[region])
-        if memory_type == 'SRAM' and (region == 'data' or region == 'bss'):
+        if memory_type == 'SRAM' and region in {'data', 'bss'}:
             linker_string += tmp
         else:
             if memory_type != 'SRAM' and region == 'rodata':
