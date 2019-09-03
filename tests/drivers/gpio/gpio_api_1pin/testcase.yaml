@@ -1,0 +1,6 @@
+tests:
+  peripheral.gpio:
+    tags: drivers gpio
+    depends_on: gpio
+    min_flash: 48
+    filter: DT_ALIAS_LED0_GPIOS_CONTROLLER
