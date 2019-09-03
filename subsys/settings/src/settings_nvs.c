@@ -66,7 +66,7 @@ static int settings_nvs_load(struct settings_store *cs, const char *subtree)
 {
 	struct settings_nvs *cf = (struct settings_nvs *)cs;
 	struct settings_nvs_read_fn_arg read_fn_arg;
-	struct settings_handler *ch;
+	struct settings_handler_static *ch;
 	char name[SETTINGS_MAX_NAME_LEN + SETTINGS_EXTRA_LEN + 1];
 	char buf;
 	const char *name_argv;
