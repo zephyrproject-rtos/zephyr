@@ -56,7 +56,7 @@ extensions = [
 ]
 
 # Only use SVG converter when it is really needed, e.g. LaTeX.
-if tags.has("svgconvert"):
+if tags.has("svgconvert"):  # pylint: disable=undefined-variable
     extensions.append('sphinxcontrib.rsvgconverter')
 
 # Add any paths that contain templates here, relative to this directory.
@@ -182,7 +182,7 @@ html_theme_options = {
     'prev_next_buttons_location': None
 }
 
-if tags.has('release'):
+if tags.has('release'):  # pylint: disable=undefined-variable
     is_release = True
     docs_title = 'Docs / %s' %(version)
 else:

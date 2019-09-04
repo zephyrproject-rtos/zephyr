@@ -1272,7 +1272,7 @@ foo
                 fail("expected {} to lead to {}, lead to {}"
                      .format(path, node_name, node.name))
         except dtlib.DTError:
-            fail("no node found for path " + alias)
+            fail("no node found for path " + path)
 
     def verify_path_error(path, msg):
         prefix = "expected looking up '{}' to generate the error '{}', " \
