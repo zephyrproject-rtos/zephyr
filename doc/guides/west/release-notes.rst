@@ -1,8 +1,20 @@
 West Release Notes
 ##################
 
+v0.6.2
+******
+
+This point release fixes an error in the behavior of ``west
+update --fetch=smart``, introduced in v0.6.1.
+
+All v0.6.1 users must upgrade.
+
 v0.6.1
 ******
+
+.. warning::
+
+   Do not use this point release. Make sure to use v0.6.2 instead.
 
 The user-visible features in this point release are:
 
