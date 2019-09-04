@@ -189,6 +189,7 @@ import queue
 import time
 import datetime
 import csv
+import yaml
 import glob
 import serial
 import concurrent
@@ -203,6 +204,9 @@ from pathlib import Path
 from distutils.spawn import find_executable
 
 import logging
+
+
+hw_map_local = threading.Lock()
 
 
 log_format = "%(levelname)s %(name)s::%(module)s.%(funcName)s():%(lineno)d: %(message)s"
@@ -477,6 +481,7 @@ class Handler:
 
         """
         self.lock = threading.Lock()
+
         self.state = "waiting"
         self.run = False
         self.metrics = {}
@@ -623,6 +628,8 @@ class DeviceHandler(Handler):
         """
         super().__init__(instance, type_str)
 
+        self.suite = None
+
     def monitor_serial(self, ser, halt_fileno, harness):
         log_out_fp = open(self.log, "wt")
 
@@ -664,11 +671,36 @@ class DeviceHandler(Handler):
 
         log_out_fp.close()
 
+    def device_is_available(self, device):
+        for i in self.suite.connected_hardware:
+            if i['platform'] == device and i['available']:
+                #info("Device is available: %s", device)
+                return True
+
+        return False
+
+    def get_available_device(self, device):
+        for i in self.suite.connected_hardware:
+            if i['platform'] == device and i['available']:
+                i['available'] = False
+                i['counter'] += 1
+                return i
+
+        return None
+
+    def make_device_available(self, serial):
+        with hw_map_local:
+            for i in self.suite.connected_hardware:
+                if i['serial'] == serial:
+                    i['available'] = True
+                    #info("made %s available" %serial)
+
+
     def handle(self):
         out_state = "failed"
 
         if options.west_flash:
-            command = ["west", "flash", "--skip-rebuild", "-d", self.outdir]
+            command = ["west", "flash", "--skip-rebuild", "-d", self.build_dir]
             if options.west_runner:
                 command.append("--runner")
                 command.append(options.west_runner)
@@ -683,9 +715,34 @@ class DeviceHandler(Handler):
         else:
             command = [get_generator()[0], "-C", self.build_dir, "flash"]
 
-        device = options.device_serial
+
+        while not self.device_is_available(self.instance.platform.name):
+            #print("waiting for devices to become available...")
+            time.sleep(1)
+
+        hardware = self.get_available_device(self.instance.platform.name)
+
+        runner = hardware.get('runner', None)
+        if runner:
+            board_id = hardware.get("id", None)
+            command = ["west", "flash", "--skip-rebuild", "-d", self.build_dir]
+            command.append("--runner")
+            command.append(hardware.get('runner', None))
+            if runner == "pyocd":
+                command.append("--board-id")
+                command.append(board_id)
+                #command.append('--')
+                #command.append('-q')
+            elif runner == "nrfjprog":
+                command.append('--')
+                command.append("--snr")
+                command.append(board_id)
+                command.append('-q')
+
+        serial_device = hardware['serial']
+
         ser = serial.Serial(
-                device,
+                serial_device,
                 baudrate=115200,
                 parity=serial.PARITY_NONE,
                 stopbits=serial.STOPBITS_ONE,
@@ -702,12 +759,12 @@ class DeviceHandler(Handler):
         read_pipe, write_pipe = os.pipe()
 
         t = threading.Thread(target=self.monitor_serial, daemon=True,
-                             args=(ser, read_pipe, harness))
+                            args=(ser, read_pipe, harness))
         t.start()
 
         logging.debug('Flash command: %s', command)
         try:
-            if VERBOSE:
+            if VERBOSE and not runner:
                 subprocess.check_call(command)
             else:
                 subprocess.check_output(command, stderr=subprocess.PIPE)
@@ -731,6 +788,9 @@ class DeviceHandler(Handler):
             self.set_state(harness.state, {})
         else:
             self.set_state(out_state, {})
+
+        self.make_device_available(serial_device)
+
 
 
 class QEMUHandler(Handler):
@@ -1987,7 +2047,11 @@ class ProjectBuilder(CMake):
     def run(self):
         instance = self.instance
 
+        if instance.handler.type_str == "device":
+            instance.handler.suite = self.suite
+
         instance.handler.handle()
+
         if instance.handler.type_str == "qemu":
             verbose("Running %s (%s)" %(instance.name, instance.handler.type_str))
 
@@ -2064,6 +2128,11 @@ class TestSuite:
         self.start_time = 0
         self.duration = 0
         self.warnings = 0
+        self.cv = threading.Condition()
+
+        # hardcoded for now
+        self.connected_hardware = []
+
 
         if options.jobs:
             self.jobs = options.jobs
@@ -2181,13 +2250,25 @@ class TestSuite:
             self.xunit_report(filename + ".xml", self.duration)
             self.csv_report(filename + ".csv")
             self.target_report(filename + "_executed.xml")
-            self.discard_report(filename + "_discard.csv")
+            if self.discards:
+                self.discard_report(filename + "_discard.csv")
 
         if options.release:
             self.csv_report(RELEASE_DATA)
 
         if log_file:
             log_file.close()
+
+
+    def load_hardware_map(self, map_file):
+        with open(map_file, 'r') as stream:
+            try:
+                self.connected_hardware = yaml.safe_load(stream)
+            except yaml.YAMLError as exc:
+                print(exc)
+        #print(self.connected_hardware)
+        for i in self.connected_hardware:
+            i['counter'] = 0
 
     def add_configurations(self):
 
@@ -3253,6 +3334,17 @@ Artificially long but functional example:
                         "This option may be used multiple times. "
                         "Default to what was selected with --platform.")
 
+    parser.add_argument("--generate-hardware-map",
+                        help="""Probe serial devices connected to this platform
+                        and create a hardware map file to be used with
+                        --device-testing
+                        """)
+
+    parser.add_argument("--hardware-map",
+                        help="""Load hardware map from a file. This will be used
+                        for testing on hardware that is listed in the file.
+                        """)
+
     return parser.parse_args()
 
 
@@ -3460,6 +3552,30 @@ def main():
 
     options = parse_arguments()
 
+
+    if options.generate_hardware_map:
+        from serial.tools import list_ports
+        serial_devices = list_ports.comports()
+        filtered = []
+        for d in serial_devices:
+            if d.manufacturer in ['ARM', 'SEGGER', 'MBED']:
+                s_dev = {}
+                s_dev['platform'] = "unknown"
+                s_dev['id'] = d.serial_number
+                s_dev['serial'] = d.device
+                s_dev['product'] = d.product
+                if s_dev['product'] in ['DAPLink CMSIS-DAP', 'MBED CMSIS-DAP']:
+                    s_dev['runner'] = "pyocd"
+                else:
+                    s_dev['runner'] = "unknown"
+                s_dev['available'] = True
+                filtered.append(s_dev)
+
+        with open(options.generate_hardware_map, 'w') as yaml_file:
+            yaml.dump(filtered, yaml_file, default_flow_style=False)
+        return
+
+
     if options.west_runner and not options.west_flash:
         error("west-runner requires west-flash to be enabled")
         sys.exit(1)
@@ -3479,9 +3595,9 @@ def main():
             size_report(SizeCalculator(fn, []))
         sys.exit(0)
 
-    if options.device_testing:
-        if options.device_serial is None or len(options.platform) != 1:
-            sys.exit(1)
+    #if options.device_testing:
+    #    if options.device_serial is None or len(options.platform) != 1:
+    #        sys.exit(1)
 
     VERBOSE += options.verbose
 
@@ -3509,6 +3625,8 @@ def main():
     suite = TestSuite(options.board_root, options.testcase_root, options.outdir)
     suite.add_testcases()
     suite.add_configurations()
+    if options.device_testing and options.hardware_map:
+        suite.load_hardware_map(options.hardware_map)
 
     if suite.load_errors:
         sys.exit(1)
@@ -3671,7 +3789,9 @@ def main():
     suite.duration = time.time() - start_time
     suite.summary(options.disable_unrecognized_section_test)
 
-
+    if options.device_testing:
+        for p in suite.connected_hardware:
+            print("%s (%s): %d" %(p['platform'], p['id'], p['counter']))
 
     if suite.total_failed or (suite.warnings and options.warnings_as_errors):
         sys.exit(1)
