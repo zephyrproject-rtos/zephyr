@@ -1,0 +1,18 @@
+# Kconfig - Actinius Icarus board configuration
+#
+# Copyright (c) 2019 Actinius
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_ACTINIUS_ICARUS || BOARD_ACTINIUS_ICARUS_NS
+
+config BOARD_SELECT_SIM_EXTERNAL
+	bool "Use external SIM"
+	help
+	  Use the external SIM for communication, instead of the eSIM
+
+module = BOARD_ICARUS
+module-str = Board Control
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # BOARD_ACTINIUS_ICARUS || BOARD_ACTINIUS_ICARUS_NS
