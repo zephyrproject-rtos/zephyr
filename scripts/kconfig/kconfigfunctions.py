@@ -38,6 +38,11 @@ if not doc_mode:
                     define, val = line.split('=', 1)
                     dt_defines[define] = val.strip()
 
+
+def _warn(kconf, msg):
+    print("{}:{}: WARNING: {}".format(kconf.filename, kconf.linenr, msg))
+
+
 def _dt_units_to_scale(unit):
     if not unit:
         return 0
@@ -62,6 +67,8 @@ def dt_int_val(kconf, _, name, unit=None):
     if doc_mode or name not in dt_defines:
         return "0"
 
+    _warn(kconf, "dt_int_val is deprecated.")
+
     d = dt_defines[name]
     if d.startswith(('0x', '0X')):
         d = int(d, 16)
@@ -85,6 +92,8 @@ def dt_hex_val(kconf, _, name, unit=None):
     if doc_mode or name not in dt_defines:
         return "0x0"
 
+    _warn(kconf, "dt_hex_val is deprecated.")
+
     d = dt_defines[name]
     if d.startswith(('0x', '0X')):
         d = int(d, 16)
@@ -103,6 +112,8 @@ def dt_str_val(kconf, _, name):
     """
     if doc_mode or name not in dt_defines:
         return ""
+
+    _warn(kconf, "dt_str_val is deprecated.")
 
     return dt_defines[name].strip('"')
 
