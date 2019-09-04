@@ -48,6 +48,10 @@
 #include <stm32g4xx_ll_lpuart.h>
 #endif /* CONFIG_SERIAL_HAS_DRIVER */
 
+#ifdef CONFIG_SPI_STM32
+#include <stm32g4xx_ll_spi.h>
+#endif
+
 #ifdef CONFIG_I2C
 #include <stm32g4xx_ll_i2c.h>
 #endif /* CONFIG_I2C */
