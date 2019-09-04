@@ -27,6 +27,13 @@
 /* Add include for DTS generated information */
 #include <generated_dts_board.h>
 
+#ifdef CONFIG_CLOCK_CONTROL_STM32_CUBE
+#include <stm32g4xx_ll_utils.h>
+#include <stm32g4xx_ll_bus.h>
+#include <stm32g4xx_ll_rcc.h>
+#include <stm32g4xx_ll_system.h>
+#include <stm32g4xx_ll_pwr.h>
+#endif /* CONFIG_CLOCK_CONTROL_STM32_CUBE */
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _STM32G4_SOC_H_ */
