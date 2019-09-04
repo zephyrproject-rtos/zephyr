@@ -371,8 +371,8 @@ def _dump_context(command, args, runner_args, cached_runner_var):
             colorize=True)
 
     if cache is None:
-        log.warn('Missing or invalid CMake cache {}; there is no context.',
-                 'Use --build-dir to specify the build directory.')
+        log.wrn('Missing or invalid CMake cache; there is no context.',
+                'Use --build-dir to specify the build directory.')
         return
 
     log.inf('Build directory:', colorize=True)
