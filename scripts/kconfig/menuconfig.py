@@ -3181,7 +3181,7 @@ def _safe_addstr(win, *args):
         if len(args) == 2:
             attr = args[1]
     else:
-        y, x, s = args[:3]
+        y, x, s = args[:3]  # pylint: disable=unbalanced-tuple-unpacking
         if len(args) == 4:
             attr = args[3]
 
