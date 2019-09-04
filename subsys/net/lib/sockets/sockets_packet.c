@@ -52,6 +52,12 @@ int zpacket_socket(int family, int type, int proto)
 		return -1;
 	}
 
+	if (proto == 0) {
+		if (type == SOCK_RAW) {
+			proto = IPPROTO_RAW;
+		}
+	}
+
 	ret = net_context_get(family, type, proto, &ctx);
 	if (ret < 0) {
 		z_free_fd(fd);
