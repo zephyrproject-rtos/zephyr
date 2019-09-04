@@ -29,8 +29,8 @@ More information about the board can be found at the `MPS2 FPGA Website`_.
 .. note::
    This board configuration makes no claims about its suitability for use
    with actual MPS2 hardware systems using AN521, or any other hardware
-   system. It has been tested on actual hardware, but it's primary purpose is
-   for use with qemu and unit tests.
+   system. It has been tested on actual hardware, but its primary purpose is
+   for use with QEMU and unit tests.
 
 Hardware
 ********
