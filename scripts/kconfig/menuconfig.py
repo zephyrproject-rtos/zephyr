@@ -1829,7 +1829,7 @@ def _try_load(filename):
     try:
         _kconf.load_config(filename)
         return True
-    except OSError as e:
+    except EnvironmentError as e:
         _error("Error loading '{}'\n\n{} (errno: {})"
                .format(filename, e.strerror, errno.errorcode[e.errno]))
         return False
@@ -1881,7 +1881,7 @@ def _try_save(save_fn, filename, description):
     try:
         # save_fn() returns a message to print
         return save_fn(filename)
-    except OSError as e:
+    except EnvironmentError as e:
         _error("Error saving {} to '{}'\n\n{} (errno: {})"
                .format(description, e.filename, e.strerror,
                        errno.errorcode[e.errno]))
@@ -2639,7 +2639,10 @@ def _defaults_info(sc):
     if not sc.defaults:
         return ""
 
-    s = "Defaults:\n"
+    s = "Default"
+    if len(sc.defaults) > 1:
+        s += "s"
+    s += ":\n"
 
     for val, cond in sc.orig_defaults:
         s += "  - "
