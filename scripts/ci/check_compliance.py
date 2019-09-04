@@ -41,6 +41,10 @@ def git(*args):
     # Hack: Setting _cwd to the working dir seems pointless as of writing (it
     # should be the default), but keep it around in case it's working around
     # some issue
+
+    # pylint doesn't like how the sh library works.
+    #
+    # pylint: disable=unexpected-keyword-arg
     return sh.git(*args, _tty_out=False, _cwd=os.getcwd())
 
 
@@ -102,7 +106,6 @@ class ComplianceTest:
         Run testcase
         :return:
         """
-        pass
 
     def error(self, msg):
         """
