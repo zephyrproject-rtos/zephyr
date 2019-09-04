@@ -2212,6 +2212,8 @@ static void bt_att_encrypt_change(struct bt_l2cap_chan *chan,
 		return;
 	}
 
+	bt_gatt_encrypt_change(conn);
+
 	if (conn->sec_level == BT_SECURITY_L1) {
 		return;
 	}

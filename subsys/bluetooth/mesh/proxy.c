@@ -651,7 +651,8 @@ static struct bt_gatt_attr prov_attrs[] = {
 	BT_GATT_CHARACTERISTIC(BT_UUID_MESH_PROV_DATA_OUT,
 			       BT_GATT_CHRC_NOTIFY, BT_GATT_PERM_NONE,
 			       NULL, NULL, NULL),
-	BT_GATT_CCC_MANAGED(&prov_ccc),
+	BT_GATT_CCC_MANAGED(&prov_ccc,
+			    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE),
 };
 
 static struct bt_gatt_service prov_svc = BT_GATT_SERVICE(prov_attrs);
@@ -770,7 +771,8 @@ static struct bt_gatt_attr proxy_attrs[] = {
 			       BT_GATT_CHRC_NOTIFY,
 			       BT_GATT_PERM_NONE,
 			       NULL, NULL, NULL),
-	BT_GATT_CCC_MANAGED(&proxy_ccc),
+	BT_GATT_CCC_MANAGED(&proxy_ccc,
+			    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE),
 };
 
 static struct bt_gatt_service proxy_svc = BT_GATT_SERVICE(proxy_attrs);

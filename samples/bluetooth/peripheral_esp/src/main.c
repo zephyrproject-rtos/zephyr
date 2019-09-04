@@ -298,7 +298,8 @@ BT_GATT_SERVICE_DEFINE(ess_svc,
 	BT_GATT_DESCRIPTOR(BT_UUID_ES_TRIGGER_SETTING,
 			   BT_GATT_PERM_READ, read_temp_trigger_setting,
 			   NULL, &sensor_1),
-	BT_GATT_CCC(temp_ccc_cfg_changed),
+	BT_GATT_CCC(temp_ccc_cfg_changed,
+		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE),
 
 	/* Temperature Sensor 2 */
 	BT_GATT_CHARACTERISTIC(BT_UUID_TEMPERATURE,
@@ -313,7 +314,8 @@ BT_GATT_SERVICE_DEFINE(ess_svc,
 	BT_GATT_DESCRIPTOR(BT_UUID_ES_TRIGGER_SETTING,
 			   BT_GATT_PERM_READ, read_temp_trigger_setting,
 			   NULL, &sensor_2),
-	BT_GATT_CCC(temp_ccc_cfg_changed),
+	BT_GATT_CCC(temp_ccc_cfg_changed,
+		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE),
 
 	/* Humidity Sensor */
 	BT_GATT_CHARACTERISTIC(BT_UUID_HUMIDITY, BT_GATT_CHRC_READ,
