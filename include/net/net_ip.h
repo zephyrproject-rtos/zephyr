@@ -62,6 +62,7 @@ enum net_ip_protocol {
 	IPPROTO_UDP = 17,          /**< UDP protocol    */
 	IPPROTO_IPV6 = 41,         /**< IPv6 protocol   */
 	IPPROTO_ICMPV6 = 58,       /**< ICMPv6 protocol */
+	IPPROTO_RAW = 255,         /**< RAW IP packets  */
 };
 
 /** Protocol numbers for TLS protocols */
