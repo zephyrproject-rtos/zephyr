@@ -61,7 +61,7 @@ static void tx_lll_flush(void *param);
 static int empty_data_start_release(struct ll_conn *conn, struct node_tx *tx);
 #endif /* CONFIG_BT_CTLR_LLID_DATA_START_EMPTY */
 
-static void ctrl_tx_enqueue(struct ll_conn *conn, struct node_tx *tx);
+static inline void ctrl_tx_enqueue(struct ll_conn *conn, struct node_tx *tx);
 static inline void event_fex_prep(struct ll_conn *conn);
 static inline void event_vex_prep(struct ll_conn *conn);
 static inline int event_conn_upd_prep(struct ll_conn *conn, u16_t lazy,
@@ -1239,6 +1239,17 @@ ull_conn_tx_demux_release:
 static struct node_tx *tx_ull_dequeue(struct ll_conn *conn,
 					  struct node_tx *tx)
 {
+	if (!conn->tx_ctrl && (conn->tx_head != conn->tx_data)) {
+		struct pdu_data *pdu_data_tx;
+
+		pdu_data_tx = (void *)conn->tx_head->pdu;
+		if ((pdu_data_tx->ll_id != PDU_DATA_LLID_CTRL) ||
+		    (pdu_data_tx->llctrl.opcode !=
+		     PDU_DATA_LLCTRL_TYPE_ENC_REQ)) {
+			conn->tx_ctrl = conn->tx_ctrl_last = conn->tx_head;
+		}
+	}
+
 	if (conn->tx_head == conn->tx_ctrl) {
 		conn->tx_head = conn->tx_head->next;
 		if (conn->tx_ctrl == conn->tx_ctrl_last) {
@@ -1745,7 +1756,8 @@ static void ctrl_tx_last_enqueue(struct ll_conn *conn,
 	conn->tx_ctrl_last = tx;
 }
 
-static void ctrl_tx_enqueue(struct ll_conn *conn, struct node_tx *tx)
+static inline void ctrl_tx_pause_enqueue(struct ll_conn *conn,
+					 struct node_tx *tx, bool pause)
 {
 	/* check if a packet was tx-ed and not acked by peer */
 	if (
@@ -1776,9 +1788,27 @@ static void ctrl_tx_enqueue(struct ll_conn *conn, struct node_tx *tx)
 		if (!conn->tx_ctrl) {
 			tx->next = conn->tx_head->next;
 			conn->tx_head->next = tx;
-			conn->tx_ctrl = tx;
-			conn->tx_ctrl_last = tx;
+
+			/* If in Encryption Procedure, other control PDUs,
+			 * Feature Rsp and Version Ind, are placed before data
+			 * marker and after control last marker. Hence, if no
+			 * control marker i.e. this is the first control PDU and
+			 * to be paused, do not set the control marker. A valid
+			 * control PDU in Encryption Procedure that is not
+			 * implicitly paused, will set the control and control
+			 * last marker.
+			 */
+			if (!pause) {
+				conn->tx_ctrl = tx;
+				conn->tx_ctrl_last = tx;
+			}
 		} else {
+			/* ENC_REQ PDU is always allocated from data pool, hence
+			 * the head can not have the control marker, and pause
+			 * be true.
+			 */
+			LL_ASSERT(!pause);
+
 			ctrl_tx_last_enqueue(conn, tx);
 		}
 	} else {
@@ -1790,9 +1820,13 @@ static void ctrl_tx_enqueue(struct ll_conn *conn, struct node_tx *tx)
 		if (!conn->tx_ctrl) {
 			tx->next = conn->tx_head;
 			conn->tx_head = tx;
-			conn->tx_ctrl = tx;
-			conn->tx_ctrl_last = tx;
+			if (!pause) {
+				conn->tx_ctrl = tx;
+				conn->tx_ctrl_last = tx;
+			}
 		} else {
+			LL_ASSERT(!pause);
+
 			ctrl_tx_last_enqueue(conn, tx);
 		}
 	}
@@ -1803,14 +1837,32 @@ static void ctrl_tx_enqueue(struct ll_conn *conn, struct node_tx *tx)
 	}
 }
 
+static inline void ctrl_tx_enqueue(struct ll_conn *conn, struct node_tx *tx)
+{
+	ctrl_tx_pause_enqueue(conn, tx, false);
+}
+
 static void ctrl_tx_sec_enqueue(struct ll_conn *conn, struct node_tx *tx)
 {
+	bool pause = false;
+
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 	if (conn->llcp_enc.pause_tx) {
 		if (!conn->tx_ctrl) {
+			/* As data PDU tx is paused and no control PDU in queue,
+			 * its safe to add new control PDU at head.
+			 * Note, here the PDUs are stacked, not queued. Last In
+			 * First Out.
+			 */
 			tx->next = conn->tx_head;
 			conn->tx_head = tx;
 		} else {
+			/* As data PDU tx is paused and there are control PDUs
+			 * in the queue, add it after control PDUs last marker
+			 * and before the data start marker.
+			 * Note, here the PDUs are stacked, not queued. Last In
+			 * First Out.
+			 */
 			tx->next = conn->tx_ctrl_last->next;
 			conn->tx_ctrl_last->next = tx;
 		}
@@ -1819,11 +1871,28 @@ static void ctrl_tx_sec_enqueue(struct ll_conn *conn, struct node_tx *tx)
 		if (!tx->next) {
 			conn->tx_data_last = tx;
 		}
-	} else
-#endif /* CONFIG_BT_CTLR_LE_ENC */
+	} else {
 
+		/* check if Encryption Request is at head, enqueue this control
+		 * PDU after control last marker and before data marker.
+		 * This way it is paused until Encryption Setup completes.
+		 */
+		if (conn->tx_head) {
+			struct pdu_data *pdu_data_tx;
+
+			pdu_data_tx = (void *)conn->tx_head->pdu;
+			if ((pdu_data_tx->ll_id == PDU_DATA_LLID_CTRL) &&
+			    (pdu_data_tx->llctrl.opcode ==
+			     PDU_DATA_LLCTRL_TYPE_ENC_REQ)) {
+				pause = true;
+			}
+		}
+
+#else /* !CONFIG_BT_CTLR_LE_ENC */
 	{
-		ctrl_tx_enqueue(conn, tx);
+#endif /* !CONFIG_BT_CTLR_LE_ENC */
+
+		ctrl_tx_pause_enqueue(conn, tx, pause);
 	}
 }
 
