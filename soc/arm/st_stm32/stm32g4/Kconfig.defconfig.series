@@ -35,5 +35,12 @@ config I2C_STM32_V2
 
 endif # I2C_STM32
 
+if ENTROPY_GENERATOR
+
+config ENTROPY_STM32_RNG
+	default y
+
+endif # ENTROPY_GENERATOR
+
 endif # GPIO_STM32
 endif # SOC_SERIES_STM32G4X
