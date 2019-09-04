@@ -34,6 +34,10 @@
 #include <stm32g4xx_ll_system.h>
 #include <stm32g4xx_ll_pwr.h>
 #endif /* CONFIG_CLOCK_CONTROL_STM32_CUBE */
+
+#ifdef CONFIG_GPIO_STM32
+#include <stm32g4xx_ll_gpio.h>
+#endif
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _STM32G4_SOC_H_ */
