@@ -264,7 +264,8 @@ class ImgtoolSigner(Signer):
             log.dbg(quote_sh_list(sign_hex))
             subprocess.check_call(sign_hex)
 
-    def get_cfg(self, command, bcfg, item):
+    @staticmethod
+    def get_cfg(command, bcfg, item):
         try:
             return bcfg[item]
         except KeyError:

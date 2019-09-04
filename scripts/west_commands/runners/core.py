@@ -94,18 +94,21 @@ class NetworkPortHelper:
         cmd = ['netstat', '-a', '-n', '-p', 'tcp']
         return self._parser_darwin(cmd)
 
-    def _parser_windows(self, cmd):
+    @staticmethod
+    def _parser_windows(cmd):
         out = subprocess.check_output(cmd).split(b'\r\n')
         used_bytes = [x.split()[1].rsplit(b':', 1)[1] for x in out
                       if x.startswith(b'  TCP')]
         return {int(b) for b in used_bytes}
 
-    def _parser_linux(self, cmd):
+    @staticmethod
+    def _parser_linux(cmd):
         out = subprocess.check_output(cmd).splitlines()[1:]
         used_bytes = [s.split()[3].rsplit(b':', 1)[1] for s in out]
         return {int(b) for b in used_bytes}
 
-    def _parser_darwin(self, cmd):
+    @staticmethod
+    def _parser_darwin(cmd):
         out = subprocess.check_output(cmd).split(b'\n')
         used_bytes = [x.split()[3].rsplit(b':', 1)[1] for x in out
                       if x.startswith(b'tcp')]
@@ -152,7 +155,8 @@ class BuildConfiguration:
                 option, value = line.split('=', 1)
                 self.options[option] = self._parse_value(value)
 
-    def _parse_value(self, value):
+    @staticmethod
+    def _parse_value(value):
         if value.startswith('"') or value.startswith("'"):
             return value.split()
         try:
@@ -448,7 +452,8 @@ class ZephyrBinaryRunner(abc.ABC):
 
         In case of an unsupported command, raise a ValueError.'''
 
-    def require(self, program):
+    @staticmethod
+    def require(program):
         '''Require that a program is installed before proceeding.
 
         :param program: name of the program that is required,
