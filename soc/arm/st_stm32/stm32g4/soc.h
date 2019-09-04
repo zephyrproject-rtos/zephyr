@@ -42,6 +42,12 @@
 #ifdef CONFIG_GPIO_STM32
 #include <stm32g4xx_ll_gpio.h>
 #endif
+
+#ifdef CONFIG_SERIAL_HAS_DRIVER
+#include <stm32g4xx_ll_usart.h>
+#include <stm32g4xx_ll_lpuart.h>
+#endif /* CONFIG_SERIAL_HAS_DRIVER */
+
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _STM32G4_SOC_H_ */
