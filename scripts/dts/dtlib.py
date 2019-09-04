@@ -240,7 +240,7 @@ class DT:
                     _append_no_dup(node.labels, label)
 
             elif tok.id is _T_DEL_NODE:
-                self._del_node(self._next_ref2node())
+                self._next_ref2node()._del()
                 self._expect_token(";")
 
             elif tok.id is _T_OMIT_IF_NO_REF:
@@ -330,7 +330,7 @@ class DT:
                         self._parse_error(
                             "/omit-if-no-ref/ can only be used on nodes")
 
-                    prop = self._node_prop(node, tok.val)
+                    prop = node._get_prop(tok.val)
 
                     if self._check_token("="):
                         self._parse_assignment(prop)
@@ -346,7 +346,7 @@ class DT:
                 if tok2.id is not _T_PROPNODENAME:
                     self._parse_error("expected node name")
                 if tok2.val in node.nodes:
-                    self._del_node(node.nodes[tok2.val])
+                    node.nodes[tok2.val]._del()
                 self._expect_token(";")
 
             elif tok.id is _T_DEL_PROP:
@@ -541,16 +541,6 @@ class DT:
             prop._add_marker(_REF_LABEL, tok.val)
             self._next_token()
 
-    def _node_prop(self, node, name):
-        # Returns the property named 'name' on the Node 'node', creating it if
-        # it doesn't already exist
-
-        prop = node.props.get(name)
-        if not prop:
-            prop = Property(node, name)
-            node.props[name] = prop
-        return prop
-
     def _node_phandle(self, node):
         # Returns the phandle for Node 'node', creating a new phandle if the
         # node has no phandle, and fixing up the value for existing
@@ -575,11 +565,6 @@ class DT:
             node.props["phandle"] = phandle_prop
 
         return phandle_prop.value
-
-    def _del_node(self, node):
-        # Removes the Node 'node' from the tree
-
-        node.parent.nodes.pop(node.name)
 
     # Expression evaluation
 
@@ -1061,7 +1046,7 @@ class DT:
         # iteration' errors
         for node in tuple(self.node_iter()):
             if node._omit_if_no_ref and not node._is_referenced:
-                self._del_node(node)
+                node._del()
 
     def _register_labels(self):
         # Checks for duplicate labels and registers labels in label2node,
@@ -1283,6 +1268,21 @@ class Node:
         yield self
         for node in self.nodes.values():
             yield from node.node_iter()
+
+    def _get_prop(self, name):
+        # Returns the property named 'name' on the node, creating it if it
+        # doesn't already exist
+
+        prop = self.props.get(name)
+        if not prop:
+            prop = Property(self, name)
+            self.props[name] = prop
+        return prop
+
+    def _del(self):
+        # Removes the node from the tree
+
+        self.parent.nodes.pop(self.name)
 
     def __str__(self):
         """
