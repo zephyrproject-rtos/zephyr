@@ -285,7 +285,8 @@ class ZephyrAppCommandsDirective(Directive):
 
         return content
 
-    def _mkdir(self, mkdir, build_dir, host_os, skip_config):
+    @staticmethod
+    def _mkdir(mkdir, build_dir, host_os, skip_config):
         content = []
         if skip_config:
             content.append("# If you already made a build directory ({}) and ran cmake, just 'cd {}' instead.".format(build_dir, build_dir))  # noqa: E501
@@ -298,7 +299,8 @@ class ZephyrAppCommandsDirective(Directive):
             content.append('mkdir {} & cd {}'.format(build_dir, build_dir))
         return content
 
-    def _cmake_args(self, **kwargs):
+    @staticmethod
+    def _cmake_args(**kwargs):
         board = kwargs['board']
         shield = kwargs['shield']
         conf = kwargs['conf']
