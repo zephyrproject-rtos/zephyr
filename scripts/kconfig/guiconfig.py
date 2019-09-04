@@ -1702,7 +1702,7 @@ def _try_save(save_fn, filename, description):
         _set_status(msg)
         print(msg)
         return True
-    except (OSError, IOError) as e:
+    except EnvironmentError as e:
         messagebox.showerror(
             "Error saving " + description,
             "Error saving {} to '{}': {} (errno: {})"
@@ -1723,7 +1723,7 @@ def _try_load(filename):
         _set_status(msg)
         print(msg)
         return True
-    except (OSError, IOError) as e:
+    except EnvironmentError as e:
         messagebox.showerror(
             "Error loading configuration",
             "Error loading '{}': {} (errno: {})"
@@ -2125,7 +2125,10 @@ def _defaults_info(sc):
     if not sc.defaults:
         return ""
 
-    s = "Defaults:\n"
+    s = "Default"
+    if len(sc.defaults) > 1:
+        s += "s"
+    s += ":\n"
 
     for val, cond in sc.orig_defaults:
         s += "  - "
