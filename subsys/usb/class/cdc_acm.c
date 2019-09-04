@@ -467,23 +467,6 @@ static void cdc_interface_config(struct usb_desc_header *head,
 }
 
 /**
- * @brief Set the baud rate
- *
- * This routine set the given baud rate for the UART.
- *
- * @param dev             CDC ACM device struct.
- * @param baudrate        Baud rate.
- *
- * @return N/A.
- */
-static void cdc_acm_baudrate_set(struct device *dev, u32_t baudrate)
-{
-	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(dev);
-
-	dev_data->line_coding.dwDTERate = sys_cpu_to_le32(baudrate);
-}
-
-/**
  * @brief Call the IRQ function callback.
  *
  * This routine is called from the system work queue to signal an UART
@@ -745,6 +728,23 @@ static void cdc_acm_irq_callback_set(struct device *dev,
 }
 
 #ifdef CONFIG_UART_LINE_CTRL
+
+/**
+ * @brief Set the baud rate
+ *
+ * This routine set the given baud rate for the UART.
+ *
+ * @param dev             CDC ACM device struct.
+ * @param baudrate        Baud rate.
+ *
+ * @return N/A.
+ */
+static void cdc_acm_baudrate_set(struct device *dev, u32_t baudrate)
+{
+	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(dev);
+
+	dev_data->line_coding.dwDTERate = sys_cpu_to_le32(baudrate);
+}
 
 /**
  * @brief Send serial line state notification to the Host
