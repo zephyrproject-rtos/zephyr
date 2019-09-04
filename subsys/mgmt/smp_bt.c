@@ -78,7 +78,7 @@ static struct bt_gatt_attr smp_bt_attrs[] = {
 			       BT_GATT_CHRC_NOTIFY,
 			       BT_GATT_PERM_WRITE,
 			       NULL, smp_bt_chr_write, NULL),
-	BT_GATT_CCC(smp_bt_ccc_changed),
+	BT_GATT_CCC(smp_bt_ccc_changed, BT_GATT_PERM_READ | BT_GATT_PERM_WRITE),
 };
 
 static struct bt_gatt_service smp_bt_svc = BT_GATT_SERVICE(smp_bt_attrs);

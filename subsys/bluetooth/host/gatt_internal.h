@@ -13,6 +13,7 @@
 
 void bt_gatt_init(void);
 void bt_gatt_connected(struct bt_conn *conn);
+void bt_gatt_encrypt_change(struct bt_conn *conn);
 void bt_gatt_disconnected(struct bt_conn *conn);
 
 bool bt_gatt_change_aware(struct bt_conn *conn, bool req);

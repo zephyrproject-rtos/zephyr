@@ -53,7 +53,8 @@ BT_GATT_SERVICE_DEFINE(bas,
 			       BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY,
 			       BT_GATT_PERM_READ, read_blvl, NULL,
 			       &battery_level),
-	BT_GATT_CCC(blvl_ccc_cfg_changed),
+	BT_GATT_CCC(blvl_ccc_cfg_changed,
+		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE),
 );
 
 static int bas_init(struct device *dev)

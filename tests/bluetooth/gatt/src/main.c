@@ -83,7 +83,8 @@ static struct bt_gatt_attr test1_attrs[] = {
 	BT_GATT_CHARACTERISTIC(&test1_nfy_uuid.uuid,
 			       BT_GATT_CHRC_NOTIFY, BT_GATT_PERM_NONE,
 			       NULL, NULL, &nfy_enabled),
-	BT_GATT_CCC(test1_ccc_cfg_changed),
+	BT_GATT_CCC(test1_ccc_cfg_changed,
+		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE),
 };
 
 static struct bt_gatt_service test1_svc = BT_GATT_SERVICE(test1_attrs);

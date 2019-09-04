@@ -641,10 +641,10 @@ ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn,
  *  Helper macro to declare a Managed CCC attribute.
  *
  *  @param _ccc CCC attribute user data, shall point to a _bt_gatt_ccc.
+ *  @param _perm CCC access permissions.
  */
-#define BT_GATT_CCC_MANAGED(_ccc)                                       \
-	BT_GATT_ATTRIBUTE(BT_UUID_GATT_CCC,                             \
-			BT_GATT_PERM_READ | BT_GATT_PERM_WRITE,         \
+#define BT_GATT_CCC_MANAGED(_ccc, _perm)				\
+	BT_GATT_ATTRIBUTE(BT_UUID_GATT_CCC, _perm,			\
 			bt_gatt_attr_read_ccc, bt_gatt_attr_write_ccc,  \
 			_ccc)
 
@@ -653,11 +653,12 @@ ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn,
  *
  *  Helper macro to declare a CCC attribute.
  *
- *  @param _cfg_changed Configuration changed callback.
+ *  @param _changed Configuration changed callback.
+ *  @param _perm CCC access permissions.
  */
-#define BT_GATT_CCC(_cfg_changed)                                      \
-	BT_GATT_CCC_MANAGED((&(struct _bt_gatt_ccc)                    \
-		BT_GATT_CCC_INITIALIZER(_cfg_changed, NULL, NULL)))
+#define BT_GATT_CCC(_changed, _perm)				\
+	BT_GATT_CCC_MANAGED((&(struct _bt_gatt_ccc)			\
+		BT_GATT_CCC_INITIALIZER(_changed, NULL, NULL)), _perm)
 
 /** @brief Read Characteristic Extended Properties Attribute helper
  *
