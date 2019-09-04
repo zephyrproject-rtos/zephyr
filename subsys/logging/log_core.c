@@ -45,7 +45,7 @@ LOG_MODULE_REGISTER(log);
 
 struct log_strdup_buf {
 	atomic_t refcount;
-	char buf[CONFIG_LOG_STRDUP_MAX_STRING + 1]; /* for termination */
+	char buf[CONFIG_LOG_STRDUP_MAX_STRING + 2]; /* for ~\0 terminator string */
 };
 
 #define LOG_STRDUP_POOL_BUFFER_SIZE \
