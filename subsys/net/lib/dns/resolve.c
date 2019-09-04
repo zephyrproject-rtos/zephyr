@@ -435,12 +435,22 @@ static int dns_read(struct dns_resolve_context *ctx,
 	}
 
 	if (ctx->queries[query_idx].query_type == DNS_QUERY_TYPE_A) {
+		if (net_sin(&info.ai_addr)->sin_family == AF_INET6) {
+			ret = DNS_EAI_ADDRFAMILY;
+			goto quit;
+		}
+
 		address_size = DNS_IPV4_LEN;
 		addr = (u8_t *)&net_sin(&info.ai_addr)->sin_addr;
 		info.ai_family = AF_INET;
 		info.ai_addr.sa_family = AF_INET;
 		info.ai_addrlen = sizeof(struct sockaddr_in);
 	} else if (ctx->queries[query_idx].query_type == DNS_QUERY_TYPE_AAAA) {
+		if (net_sin6(&info.ai_addr)->sin6_family == AF_INET) {
+			ret = DNS_EAI_ADDRFAMILY;
+			goto quit;
+		}
+
 		/* We cannot resolve IPv6 address if IPv6 is disabled. The reason
 		 * being that "struct sockaddr" does not have enough space for
 		 * IPv6 address in that case.
@@ -789,12 +799,28 @@ int dns_resolve_name(struct dns_resolve_context *ctx,
 		struct dns_addrinfo info = { 0 };
 
 		if (type == DNS_QUERY_TYPE_A) {
+			if (net_sin(&addr)->sin_family == AF_INET6) {
+				ret = -EPFNOSUPPORT;
+				goto quit;
+			}
+
 			memcpy(net_sin(&info.ai_addr), net_sin(&addr),
 			       sizeof(struct sockaddr_in));
 			info.ai_family = AF_INET;
 			info.ai_addr.sa_family = AF_INET;
 			info.ai_addrlen = sizeof(struct sockaddr_in);
 		} else if (type == DNS_QUERY_TYPE_AAAA) {
+			/* We do not support AI_V4MAPPED atm, so if the user
+			 * asks an IPv6 address but it is an IPv4 one, then
+			 * return an error. Note that getaddrinfo() will swap
+			 * the error to EINVAL, the EPFNOSUPPORT is returned
+			 * here so that we can find it easily.
+			 */
+			if (net_sin(&addr)->sin_family == AF_INET) {
+				ret = -EPFNOSUPPORT;
+				goto quit;
+			}
+
 #if defined(CONFIG_NET_IPV6)
 			memcpy(net_sin6(&info.ai_addr), net_sin6(&addr),
 			       sizeof(struct sockaddr_in6));
