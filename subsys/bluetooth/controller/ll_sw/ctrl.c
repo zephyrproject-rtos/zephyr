@@ -9948,8 +9948,15 @@ static void prepare_pdu_data_tx(struct connection *conn,
 
 		if (!conn->pkt_tx_ctrl &&
 		    (conn->pkt_tx_head != conn->pkt_tx_data)) {
-			conn->pkt_tx_ctrl = conn->pkt_tx_ctrl_last =
-				conn->pkt_tx_head;
+			struct pdu_data *pdu_data_tx;
+
+			pdu_data_tx = (void *)conn->pkt_tx_head->pdu_data;
+			if ((pdu_data_tx->ll_id != PDU_DATA_LLID_CTRL) ||
+			    (pdu_data_tx->llctrl.opcode !=
+			     PDU_DATA_LLCTRL_TYPE_ENC_REQ)) {
+				conn->pkt_tx_ctrl = conn->pkt_tx_ctrl_last =
+					conn->pkt_tx_head;
+			}
 		}
 	}
 
@@ -9970,8 +9977,9 @@ static void ctrl_tx_last_enqueue(struct connection *conn,
 	conn->pkt_tx_ctrl_last = node_tx;
 }
 
-static void ctrl_tx_enqueue(struct connection *conn,
-			    struct radio_pdu_node_tx *node_tx)
+static inline void ctrl_tx_pause_enqueue(struct connection *conn,
+					 struct radio_pdu_node_tx *node_tx,
+					 bool pause)
 {
 	/* check if a packet was tx-ed and not acked by peer */
 	if (
@@ -9999,9 +10007,27 @@ static void ctrl_tx_enqueue(struct connection *conn,
 		if (!conn->pkt_tx_ctrl) {
 			node_tx->next = conn->pkt_tx_head->next;
 			conn->pkt_tx_head->next = node_tx;
-			conn->pkt_tx_ctrl = node_tx;
-			conn->pkt_tx_ctrl_last = node_tx;
+
+			/* If in Encryption Procedure, other control PDUs,
+			 * Feature Rsp and Version Ind, are placed before data
+			 * marker and after control last marker. Hence, if no
+			 * control marker i.e. this is the first control PDU and
+			 * to be paused, do not set the control marker. A valid
+			 * control PDU in Encryption Procedure that is not
+			 * implicitly paused, will set the control and control
+			 * last marker.
+			 */
+			if (!pause) {
+				conn->pkt_tx_ctrl = node_tx;
+				conn->pkt_tx_ctrl_last = node_tx;
+			}
 		} else {
+			/* ENC_REQ PDU is always allocated from data pool, hence
+			 * the head can not have the control marker, and pause
+			 * be true.
+			 */
+			LL_ASSERT(!pause);
+
 			ctrl_tx_last_enqueue(conn, node_tx);
 		}
 	} else {
@@ -10013,9 +10039,13 @@ static void ctrl_tx_enqueue(struct connection *conn,
 		if (!conn->pkt_tx_ctrl) {
 			node_tx->next = conn->pkt_tx_head;
 			conn->pkt_tx_head = node_tx;
-			conn->pkt_tx_ctrl = node_tx;
-			conn->pkt_tx_ctrl_last = node_tx;
+			if (!pause) {
+				conn->pkt_tx_ctrl = node_tx;
+				conn->pkt_tx_ctrl_last = node_tx;
+			}
 		} else {
+			LL_ASSERT(!pause);
+
 			ctrl_tx_last_enqueue(conn, node_tx);
 		}
 	}
@@ -10026,19 +10056,54 @@ static void ctrl_tx_enqueue(struct connection *conn,
 	}
 }
 
+static void ctrl_tx_enqueue(struct connection *conn,
+			    struct radio_pdu_node_tx *node_tx)
+{
+	ctrl_tx_pause_enqueue(conn, node_tx, false);
+}
+
 static void ctrl_tx_sec_enqueue(struct connection *conn,
 				  struct radio_pdu_node_tx *node_tx)
 {
 	if (conn->pause_tx) {
 		if (!conn->pkt_tx_ctrl) {
+			/* As data PDU tx is paused and no control PDU in queue,
+			 * its safe to add new control PDU at head.
+			 * Note, here the PDUs are stacked, not queued. Last In
+			 * First Out.
+			 */
 			node_tx->next = conn->pkt_tx_head;
 			conn->pkt_tx_head = node_tx;
 		} else {
+			/* As data PDU tx is paused and there are control PDUs
+			 * in the queue, add it after control PDUs last marker
+			 * and before the data start marker.
+			 * Note, here the PDUs are stacked, not queued. Last In
+			 * First Out.
+			 */
 			node_tx->next = conn->pkt_tx_ctrl_last->next;
 			conn->pkt_tx_ctrl_last->next = node_tx;
 		}
 	} else {
-		ctrl_tx_enqueue(conn, node_tx);
+		bool pause = false;
+
+		/* check if Encryption Request is at head, it may have been
+		 * transmitted and not ack-ed. Hence, enqueue this control PDU
+		 * after control last marker and before data marker.
+		 * This way it is paused until Encryption Setup completes.
+		 */
+		if (conn->pkt_tx_head) {
+			struct pdu_data *pdu_data_tx;
+
+			pdu_data_tx = (void *)conn->pkt_tx_head->pdu_data;
+			if ((pdu_data_tx->ll_id == PDU_DATA_LLID_CTRL) &&
+			    (pdu_data_tx->llctrl.opcode ==
+			     PDU_DATA_LLCTRL_TYPE_ENC_REQ)) {
+				pause = true;
+			}
+		}
+
+		ctrl_tx_pause_enqueue(conn, node_tx, pause);
 	}
 }
 
