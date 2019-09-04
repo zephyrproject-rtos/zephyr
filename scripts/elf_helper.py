@@ -90,7 +90,8 @@ class KobjectType:
     def __repr__(self):
         return "<kobject %s>" % self.name
 
-    def has_kobject(self):
+    @staticmethod
+    def has_kobject():
         return True
 
     def get_kobjects(self, addr):
@@ -566,8 +567,9 @@ class ElfHelper:
             return
         sys.stdout.write(scr + ": " + text + "\n")
 
-    def error(self, text):
-        sys.exit("%s ERROR: %s\n" % (scr, text))
+    @staticmethod
+    def error(text):
+        sys.exit("%s ERROR: %s" % (scr, text))
 
     def debug_die(self, die, text):
         fn, ln = get_filename_lineno(die)
@@ -576,11 +578,14 @@ class ElfHelper:
         self.debug("File '%s', line %d:" % (fn, ln))
         self.debug("    %s" % text)
 
-    def get_thread_counter(self):
+    @staticmethod
+    def get_thread_counter():
         return thread_counter
 
-    def get_sys_mutex_counter(self):
+    @staticmethod
+    def get_sys_mutex_counter():
         return sys_mutex_counter
 
-    def get_futex_counter(self):
+    @staticmethod
+    def get_futex_counter():
         return futex_counter
