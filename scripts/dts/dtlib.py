@@ -3,6 +3,10 @@
 
 # Tip: You can view just the documentation with 'pydoc3 dtlib'
 
+# _init_tokens() builds names dynamically.
+#
+# pylint: disable=undefined-variable
+
 """
 A library for extracting information from .dts (Device Tree) files. See the
 documentation for the DT and Node classes for more information.
