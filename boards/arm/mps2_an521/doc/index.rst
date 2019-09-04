@@ -21,7 +21,16 @@ CPU and the following devices:
      :height: 546px
      :alt: ARM MPS2+ AN521
 
+In addition to enabling actual hardware usage, this board configuration can
+also use QEMU to emulate the AN521 platform running on the MPS2+.
+
 More information about the board can be found at the `MPS2 FPGA Website`_.
+
+.. note::
+   This board configuration makes no claims about its suitability for use
+   with actual MPS2 hardware systems using AN521, or any other hardware
+   system. It has been tested on actual hardware, but it's primary purpose is
+   for use with qemu and unit tests.
 
 Hardware
 ********
