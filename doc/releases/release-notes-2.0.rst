@@ -462,7 +462,8 @@ Documentation
 Tests and Samples
 *****************
 
-* TBD
+* We have implemented additional tests and significantly expanded the
+  amount of test cases in existing tests to increase code coverage.
 
 Issue Related Items
 *******************
