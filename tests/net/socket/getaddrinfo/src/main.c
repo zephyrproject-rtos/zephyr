@@ -309,6 +309,32 @@ void test_getaddrinfo_flags_numerichost(void)
 	zsock_freeaddrinfo(res);
 }
 
+static void test_getaddrinfo_ipv4_hints_ipv6(void)
+{
+	struct zsock_addrinfo *res = NULL;
+	struct zsock_addrinfo hints = {
+		.ai_family = AF_INET6,
+	};
+	int ret;
+
+	ret = zsock_getaddrinfo("192.0.2.1", NULL, &hints, &res);
+	zassert_equal(ret, DNS_EAI_ADDRFAMILY, "Invalid result (%d)", ret);
+	zassert_is_null(res, "");
+}
+
+static void test_getaddrinfo_ipv6_hints_ipv4(void)
+{
+	struct zsock_addrinfo *res = NULL;
+	struct zsock_addrinfo hints = {
+		.ai_family = AF_INET,
+	};
+	int ret;
+
+	ret = zsock_getaddrinfo("2001:db8::1", NULL, &hints, &res);
+	zassert_equal(ret, DNS_EAI_ADDRFAMILY, "Invalid result (%d)", ret);
+	zassert_is_null(res, "");
+}
+
 void test_main(void)
 {
 	k_thread_system_pool_assign(k_current_get());
@@ -319,7 +345,9 @@ void test_main(void)
 			 ztest_unit_test(test_getaddrinfo_cancelled),
 			 ztest_unit_test(test_getaddrinfo_no_host),
 			 ztest_unit_test(test_getaddrinfo_num_ipv4),
-			 ztest_unit_test(test_getaddrinfo_flags_numerichost));
+			 ztest_unit_test(test_getaddrinfo_flags_numerichost),
+			 ztest_unit_test(test_getaddrinfo_ipv4_hints_ipv6),
+			 ztest_unit_test(test_getaddrinfo_ipv6_hints_ipv4));
 
 	ztest_run_test_suite(socket_getaddrinfo);
 }
