@@ -91,6 +91,16 @@ int zsock_socket_internal(int family, int type, int proto)
 		return -1;
 	}
 
+	if (proto == 0) {
+		if (family == AF_INET || family == AF_INET6) {
+			if (type == SOCK_DGRAM) {
+				proto = IPPROTO_UDP;
+			} else if (type == SOCK_STREAM) {
+				proto = IPPROTO_TCP;
+			}
+		}
+	}
+
 	res = net_context_get(family, type, proto, &ctx);
 	if (res < 0) {
 		z_free_fd(fd);
