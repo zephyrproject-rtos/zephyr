@@ -35,6 +35,10 @@
 #include <stm32g4xx_ll_pwr.h>
 #endif /* CONFIG_CLOCK_CONTROL_STM32_CUBE */
 
+#ifdef CONFIG_EXTI_STM32
+#include <stm32g4xx_ll_exti.h>
+#endif
+
 #ifdef CONFIG_GPIO_STM32
 #include <stm32g4xx_ll_gpio.h>
 #endif
