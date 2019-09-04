@@ -75,7 +75,7 @@ LOG_MODULE_REGISTER(usb_dc_stm32);
 
 /*
  * USB and USB_OTG_FS are defined in STM32Cube HAL and allows to distinguish
- * between two kind of USB DC. STM32 F0, F3, and L0 series support USB device
+ * between two kind of USB DC. STM32 F0, F3, L0 and G4 series support USB device
  * controller. STM32 F4 and F7 series support USB_OTG_FS device controller.
  * STM32 F1 and L4 series support either USB or USB_OTG_FS device controller.
  *
