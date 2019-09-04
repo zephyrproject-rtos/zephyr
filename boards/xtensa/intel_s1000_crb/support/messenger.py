@@ -47,7 +47,8 @@ class Message:
             self.tx_data[index] = 0
         self.tx_index = 0
 
-    def endian_swap(self, dst, dst_offset, src):
+    @staticmethod
+    def endian_swap(dst, dst_offset, src):
         """
         Performs a byte swap of a 32-bit word to change it's endianness
         """
