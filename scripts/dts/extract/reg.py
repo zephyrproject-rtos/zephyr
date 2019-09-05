@@ -44,7 +44,7 @@ class DTReg(DTDirective):
 
                 try:
                     cs_gpios = deepcopy(find_parent_prop(node_path, 'cs-gpios'))
-                except:
+                except Exception:
                     pass
 
                 if cs_gpios:
@@ -75,7 +75,7 @@ class DTReg(DTDirective):
 
             try:
                 name = [names.pop(0).upper()]
-            except:
+            except Exception:
                 name = []
 
             for x in range(nr_address_cells):

@@ -186,7 +186,7 @@ def node_label(node_path):
             unit_addr += translate_addr(unit_addr, node_path,
                          nr_addr_cells, nr_size_cells)
             unit_addr = "%x" % unit_addr
-        except:
+        except Exception:
             unit_addr = node_path.split('@')[-1]
         def_label += '_' + str_to_label(unit_addr)
     else:
@@ -500,7 +500,7 @@ def extract_cells(node_path, prop, prop_values, names, index,
 
         try:
             name = names.pop(0).upper()
-        except:
+        except Exception:
             name = ''
 
         # Get number of cells per element of current property
