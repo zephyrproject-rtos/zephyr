@@ -42,7 +42,6 @@ NET_BUF_POOL_DEFINE(tcp_nbufs, 64/*count*/, 128/*size*/, 0, NULL);
 
 static void tcp_in(struct tcp *conn, struct net_pkt *pkt);
 
-#if IS_ENABLED(CONFIG_NET_TP)
 static size_t tcp_endpoint_len(sa_family_t af)
 {
 	return (af == AF_INET) ? sizeof(struct sockaddr_in) :
@@ -73,7 +72,6 @@ static union tcp_endpoint *tcp_endpoint_new(struct net_pkt *pkt, int src)
 
 	return ep;
 }
-#endif
 
 static void tcp_endpoint_set(union tcp_endpoint *ep, const char *addr,
 				u16_t port)
@@ -858,6 +856,17 @@ static inline bool net_tcp_is_used(struct tcp *tcp)
 	return tcp->flags & NET_TCP_IN_USE;
 }
 
+static void tcp_endpoints_set(struct tcp *conn, struct net_pkt *pkt)
+{
+	tcp_assert(NULL == conn->iface, "");
+	tcp_assert(NULL == conn->src, "");
+	tcp_assert(NULL == conn->dst, "");
+
+	conn->iface = pkt->iface;
+	conn->dst = tcp_endpoint_new(pkt, SRC);
+	conn->src = tcp_endpoint_new(pkt, DST);
+}
+
 /* Set up a new TCP state struct if one is available */
 int net_tcp_get(struct net_context *context)
 {
@@ -1005,21 +1014,29 @@ int net_tcp_send_data(struct net_context *context, net_context_send_cb_t cb,
 	return 0;
 }
 
-enum net_verdict tcp_pkt_received(struct net_conn *conn,
+enum net_verdict tcp_pkt_received(struct net_conn *net_conn,
 				  struct net_pkt *pkt,
 				  union net_ip_header *ip_hdr,
 				  union net_proto_header *proto_hdr,
 				  void *user_data)
 {
-	ARG_UNUSED(conn);
+	ARG_UNUSED(net_conn);
 	ARG_UNUSED(ip_hdr);
 	ARG_UNUSED(proto_hdr);
 
-	struct net_context *context = (struct net_context *)user_data;
+	struct tcp *conn = ((struct net_context *)user_data)->tcp;
 
-	tcp_in(context->tcp, pkt);
+	tcp_dbg("conn: %p, %s", conn, tcp_th(pkt));
 
-	return NET_OK;
+	if (conn) {
+		if (TCP_LISTEN == conn->state) {
+			tcp_endpoints_set(conn, pkt);
+		}
+
+		tcp_in(conn, pkt);
+	}
+
+	return NET_DROP;
 }
 
 /* When connect() is called on a TCP socket, register the socket for incoming
@@ -1117,9 +1134,6 @@ int net_tcp_accept(struct net_context *context, net_tcp_accept_cb_t cb,
 	}
 
 	context->user_data = user_data;
-
-	context->tcp->src->sa = local_addr;
-	context->tcp->dst->sa = context->remote;
 
 	return net_conn_register(net_context_get_ip_proto(context),
 				 local_addr.sa_family,
