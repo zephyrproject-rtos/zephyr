@@ -882,14 +882,6 @@ int net_tcp_get(struct net_context *context)
 
 	tcp_context[i].win = tcp_window;
 
-	tcp_context[i].src = tcp_calloc(1, sizeof(struct sockaddr));
-	tcp_context[i].dst = tcp_calloc(1, sizeof(struct sockaddr));
-
-	if (IS_ENABLED(CONFIG_NET_TP)) {
-		tcp_endpoint_set(tcp_context[i].src, "192.0.2.1", 4242);
-		tcp_endpoint_set(tcp_context[i].dst, "192.0.2.2", 4242);
-	}
-
 	tcp_context[i].rcv = tcp_win_new("RCV");
 	tcp_context[i].snd = tcp_win_new("SND");
 
@@ -904,6 +896,16 @@ int net_tcp_get(struct net_context *context)
 	k_timer_user_data_set(&tcp_context[i].send_timer, context);
 
 	sys_slist_append(&tcp_conns, (sys_snode_t *) &tcp_context[i]);
+
+	if (IS_ENABLED(CONFIG_NET_TP)) {
+		tcp_context[i].src = tcp_calloc(1, sizeof(struct sockaddr));
+		tcp_context[i].dst = tcp_calloc(1, sizeof(struct sockaddr));
+
+		tcp_endpoint_set(tcp_context[i].src,
+					CONFIG_NET_CONFIG_MY_IPV4_ADDR, 4242);
+		tcp_endpoint_set(tcp_context[i].dst,
+					CONFIG_NET_CONFIG_PEER_IPV4_ADDR, 4242);
+	}
 
 	return 0;
 }
