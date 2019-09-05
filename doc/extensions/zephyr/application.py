@@ -161,7 +161,6 @@ class ZephyrAppCommandsDirective(Directive):
         in_tree = self.IN_TREE_STR if zephyr_app else None
         # Allow build directories which are nested.
         build_dir = ('build' + '/' + build_dir_append).rstrip('/')
-        num_slashes = build_dir.count('/')
 
         # Create host_os array
         host_os = [host_os] if host_os != "all" else [v for v in self.HOST_OS
@@ -300,7 +299,6 @@ class ZephyrAppCommandsDirective(Directive):
         return content
 
     def _cmake_args(self, **kwargs):
-        generator = kwargs['generator']
         board = kwargs['board']
         shield = kwargs['shield']
         conf = kwargs['conf']
@@ -351,11 +349,9 @@ class ZephyrAppCommandsDirective(Directive):
 
     def _generate_cmake(self, **kwargs):
         generator = kwargs['generator']
-        host_os = kwargs['host_os']
         cd_into = kwargs['cd_into']
         app = kwargs['app']
         in_tree = kwargs['in_tree']
-        host_os = kwargs['host_os']
         build_dir = kwargs['build_dir']
         build_args = kwargs['build_args']
         skip_config = kwargs['skip_config']
