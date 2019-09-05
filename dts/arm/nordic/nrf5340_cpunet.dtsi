@@ -37,6 +37,7 @@
 		gpio-1 = &gpio1;
 		gpiote-0 = &gpiote;
 		i2c-0 = &i2c0;
+		ipc-0 = &ipc;
 		spi-0 = &spi0;
 		wdt-0 = &wdt;
 		timer-0 = &timer0;
