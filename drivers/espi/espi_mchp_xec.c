@@ -14,6 +14,11 @@
 /* Minimum delay before acknowledging a virtual wire */
 #define ESPI_XEC_VWIRE_ACK_DELAY    10ul
 
+/* Maximum timeout to transmit a virtual wire packet.
+ * 10 ms expresed in multiples of 100us
+ */
+#define ESPI_XEC_VWIRE_SEND_TIMEOUT 100
+
 /* OOB maximum address configuration */
 #define ESPI_XEC_OOB_ADDR_MSW       0x1FFFul
 #define ESPI_XEC_OOB_ADDR_LSW       0xFFFFul
@@ -277,6 +282,15 @@ static int espi_xec_send_vwire(struct device *dev,
 		u8_t *p8 = (u8_t *)&reg->SRC;
 
 		*(p8 + (uintptr_t) src_id) = level;
+
+		/* Ensure eSPI virtual wire packet is transmitted
+		 * There is no interrupt, so need to poll register
+		 */
+		u8_t rd_cnt = ESPI_XEC_VWIRE_SEND_TIMEOUT;
+
+		while (reg->SRC_CHG && rd_cnt--) {
+			k_busy_wait(100);
+		}
 	}
 
 	return 0;
@@ -380,11 +394,27 @@ static void espi_rst_isr(struct device *dev)
  * then make its BAR valid.
  * Refer to microchip eSPI I/O base addresses for default values
  */
-static void config_sub_devices(void)
+static void config_sub_devices(struct device *dev)
 {
 #ifdef CONFIG_ESPI_PERIPHERAL_UART
-	ESPI_EIO_BAR_REGS->EC_BAR_UART_1 = ESPI_XEC_UART0_BAR_ADDRESS |
+	/* eSPI logical UART is tied to corresponding physical UART
+	 * Not all boards use same UART port for debug, hence needs to set
+	 * eSPI host logical UART0 bar address based on configuration.
+	 */
+	switch (CONFIG_ESPI_PERIPHERAL_UART_SOC_MAPPING) {
+	case 0:
+		ESPI_EIO_BAR_REGS->EC_BAR_UART_0 = ESPI_XEC_UART0_BAR_ADDRESS |
 		MCHP_ESPI_IO_BAR_HOST_VALID;
+		break;
+	case 1:
+		ESPI_EIO_BAR_REGS->EC_BAR_UART_1 = ESPI_XEC_UART0_BAR_ADDRESS |
+		MCHP_ESPI_IO_BAR_HOST_VALID;
+		break;
+	case 2:
+		ESPI_EIO_BAR_REGS->EC_BAR_UART_2 = ESPI_XEC_UART0_BAR_ADDRESS |
+		MCHP_ESPI_IO_BAR_HOST_VALID;
+		break;
+	}
 #endif
 #ifdef CONFIG_ESPI_PERIPHERAL_8042_KEYBOARD
 	KBC_REGS->KBC_CTRL |= MCHP_KBC_CTRL_AUXH;
@@ -396,10 +426,6 @@ static void config_sub_devices(void)
 	ESPI_EIO_BAR_REGS->EC_BAR_ACPI_EC_0 |= MCHP_ESPI_IO_BAR_HOST_VALID;
 	ESPI_EIO_BAR_REGS->EC_BAR_MBOX = ESPI_XEC_MBOX_BAR_ADDRESS |
 		MCHP_ESPI_IO_BAR_HOST_VALID;
-#endif
-#ifdef CONFIG_ESPI_PERIPHERAL_PORT_92
-	KBC_REGS->KBC_PORT92_EN |= MCHP_KBC_PORT92_EN;
-	ESPI_EIO_BAR_REGS->EC_BAR_PORT92 |= MCHP_ESPI_IO_BAR_HOST_VALID;
 #endif
 #ifdef CONFIG_ESPI_PERIPHERAL_DEBUG_PORT_80
 	ESPI_EIO_BAR_REGS->EC_BAR_P80CAP_0 = ESPI_XEC_PORT80_BAR_ADDRESS |
@@ -422,12 +448,12 @@ static void configure_sirq(void)
 #endif
 }
 
-static void setup_espi_io_config(u16_t host_address)
+static void setup_espi_io_config(struct device *dev, u16_t host_address)
 {
 	ESPI_EIO_BAR_REGS->EC_BAR_IOC = (host_address << 16) |
 		MCHP_ESPI_IO_BAR_HOST_VALID;
 
-	config_sub_devices();
+	config_sub_devices(dev);
 	configure_sirq();
 
 	ESPI_PC_REGS->PC_STATUS |= (MCHP_ESPI_PC_STS_EN_CHG |
@@ -442,7 +468,7 @@ static void espi_pc_isr(struct device *dev)
 
 	if (status & MCHP_ESPI_PC_STS_EN_CHG) {
 		if (status & MCHP_ESPI_PC_STS_EN) {
-			setup_espi_io_config(MCHP_ESPI_IOBAR_INIT_DFLT);
+			setup_espi_io_config(dev, MCHP_ESPI_IOBAR_INIT_DFLT);
 		}
 
 		ESPI_PC_REGS->PC_STATUS = MCHP_ESPI_PC_STS_EN_CHG;
@@ -520,7 +546,7 @@ static void vw_pltrst_isr(struct device *dev)
 
 	espi_xec_receive_vwire(dev, ESPI_VWIRE_SIGNAL_PLTRST, &status);
 	if (status) {
-		setup_espi_io_config(MCHP_ESPI_IOBAR_INIT_DFLT);
+		setup_espi_io_config(dev, MCHP_ESPI_IOBAR_INIT_DFLT);
 	}
 
 	/* PLT_RST will be received several times */
@@ -721,7 +747,7 @@ static const struct espi_xec_config espi_xec_config = {
 	.base_addr = DT_INST_0_MICROCHIP_XEC_ESPI_BASE_ADDRESS,
 	.bus_girq_id = DT_INST_0_MICROCHIP_XEC_ESPI_IO_GIRQ,
 	.vw_girq_id = DT_INST_0_MICROCHIP_XEC_ESPI_VW_GIRQ,
-	.pc_girq_id = DT_INST_0_MICROCHIP_XEC_ESPI_PC_GIRQ
+	.pc_girq_id = DT_INST_0_MICROCHIP_XEC_ESPI_PC_GIRQ,
 };
 
 DEVICE_AND_API_INIT(espi_xec_0, DT_INST_0_MICROCHIP_XEC_ESPI_LABEL,
@@ -823,23 +849,23 @@ static int espi_xec_init(struct device *dev)
 #endif
 	/* Enable aggregated interrupt block for eSPI bus events */
 	MCHP_GIRQ_BLK_SETEN(config->bus_girq_id);
-	IRQ_CONNECT(DT_INST_0_MICROCHIP_XEC_ESPI_AGG_IO_IRQ,
+	IRQ_CONNECT(DT_INST_0_MICROCHIP_XEC_ESPI_IRQ_0,
 		    CONFIG_ESPI_INIT_PRIORITY, espi_xec_bus_isr,
 		    DEVICE_GET(espi_xec_0), 0);
-	irq_enable(DT_INST_0_MICROCHIP_XEC_ESPI_AGG_IO_IRQ);
+	irq_enable(DT_INST_0_MICROCHIP_XEC_ESPI_IRQ_0);
 
 	/* Enable aggregated interrupt block for eSPI VWire events */
 	MCHP_GIRQ_BLK_SETEN(config->vw_girq_id);
-	IRQ_CONNECT(DT_INST_0_MICROCHIP_XEC_ESPI_AGG_VW_IRQ,
+	IRQ_CONNECT(DT_INST_0_MICROCHIP_XEC_ESPI_IRQ_1,
 		    CONFIG_ESPI_INIT_PRIORITY, espi_xec_vw_isr,
 		    DEVICE_GET(espi_xec_0), 0);
-	irq_enable(DT_INST_0_MICROCHIP_XEC_ESPI_AGG_VW_IRQ);
+	irq_enable(DT_INST_0_MICROCHIP_XEC_ESPI_IRQ_1);
 
 	/* Enable aggregated interrupt block for eSPI peripheral channel */
 	MCHP_GIRQ_BLK_SETEN(config->pc_girq_id);
-	IRQ_CONNECT(DT_INST_0_MICROCHIP_XEC_ESPI_AGG_PC_IRQ,
+	IRQ_CONNECT(DT_INST_0_MICROCHIP_XEC_ESPI_IRQ_2,
 		    CONFIG_ESPI_INIT_PRIORITY, espi_xec_periph_isr,
 		    DEVICE_GET(espi_xec_0), 0);
-	irq_enable(DT_INST_0_MICROCHIP_XEC_ESPI_AGG_PC_IRQ);
+	irq_enable(DT_INST_0_MICROCHIP_XEC_ESPI_IRQ_2);
 	return 0;
 }
