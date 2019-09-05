@@ -121,6 +121,7 @@
 /drivers/display/display_framebuf.c       @gnuless
 /drivers/dma/*sam0*                       @Sizurka
 /drivers/espi/                            @albertofloyd @franciscomunoz @scottwcpg
+/drivers/ps2/                             @albertofloyd @franciscomunoz @scottwcpg
 /drivers/ethernet/                        @jukkar @tbursztyka @pfalcon
 /drivers/flash/                           @nashif
 /drivers/flash/*native_posix*             @vanwinkeljan @aescolar
