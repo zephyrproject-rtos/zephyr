@@ -172,7 +172,7 @@ def _build_dir(args, die_if_none=True):
         return args.build_dir
 
     guess = config.get('build', 'guess-dir', fallback='never')
-    guess = True if guess == 'runners' else False
+    guess = guess == 'runners'
     dir = find_build_dir(None, guess)
 
     if dir and is_zephyr_build(dir):
