@@ -1,0 +1,54 @@
+# Kconfig - Kinetis K2X MCU line
+#
+# Copyright (c) 2018 Prevas A/S
+# Copyright (c) 2019 bytes at work AG
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+choice
+prompt "Kinetis K2x MCU Selection"
+depends on SOC_SERIES_KINETIS_K2X
+
+config SOC_MK22FA12
+	bool "SOC_MK22FA12"
+	select HAS_MCUX
+	select HAS_MCUX_ADC16
+	select HAS_MCUX_CCM
+	select HAS_MCUX_FLEXCAN
+	select HAS_MCUX_FTFX
+	select HAS_MCUX_FTM
+	select HAS_MCUX_RNGA
+	select HAS_MCUX_RTC
+	select HAS_MCUX_SCG
+	select HAS_MCUX_SIM
+	select HAS_MCUX_USB_EHCI
+	select HAS_MCUX_PWM
+	select HAS_OSC
+	select HAS_MCG
+	select CPU_HAS_FPU
+
+endchoice
+
+if SOC_SERIES_KINETIS_K2X
+
+config SOC_PART_NUMBER_MK22FX512AVLK12
+	bool
+
+config SOC_PART_NUMBER_KINETIS_K2X
+	string
+	default "MK22FX512AVLK12" if SOC_PART_NUMBER_MK22FX512AVLK12
+	help
+	  This string holds the full part number of the SoC. It is a hidden option
+	  that you should not set directly. The part number selection choice defines
+	  the default value for this string.
+
+config WDOG_INIT
+	def_bool y
+	# omit prompt to signify a "hidden" option
+	help
+	  This processor enables the watchdog timer with a short timeout
+	  upon reset. Therefore, this requires that the watchdog be configured
+	  during reset handling.
+
+endif # SOC_SERIES_KINETIS_K2X
