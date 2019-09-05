@@ -81,10 +81,6 @@ endif # ESPI
 
 if RTOS_TIMER
 
-config MCHP_XEC_RTOS_TIMER
-	bool
-	default y
-
 # XEC RTOS timer HW frequency is fixed at 32768
 # The driver requires tickless mode and ticks per
 # second to be 32768 for accurate operation.
@@ -95,15 +91,14 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 config SYS_CLOCK_TICKS_PER_SEC
 	default 32768
 
-config ARCH_HAS_CUSTOM_BUSY_WAIT
-	default y
-
 endif # RTOS_TIMER
 
 if !RTOS_TIMER
 
-config CORTEX_M_SYSTICK
-	default y
+# If RTOS timer is not enabled we use ARM Cortex-M
+# SYSTICK. SYSTICK frequency is 48MHz divided by
+# SOC_MEC1501_PROC_CLK_DIV.
+#
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 48000000
