@@ -46,6 +46,7 @@
 		gpiote-0 = &gpiote;
 		i2c-0 = &i2c0;
 		i2c-1 = &i2c1;
+		ipc-0 = &ipc;
 		pdm-0 = &pdm0;
 		spi-0 = &spi0;
 		spi-1 = &spi1;
