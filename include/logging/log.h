@@ -276,6 +276,23 @@ int log_printk(const char *fmt, va_list ap);
  */
 char *log_strdup(const char *str);
 
+/** @brief Use as format specifier for float in a formatted string.
+ *
+ * Use this macro in a formatted string instead of the %f specifier together with
+ * @ref LOGF_ARG macro.
+ * Example: LOG_INF("My float number" LOGF "\r\n", LOGF_ARG(f)))
+ */
+#define LOGF "%s%d.%04d"
+
+/** @brief Dissect a float number into two numbers (integer and residuum).
+ *
+ * See @ref LOGF for more details.
+ */
+#define LOGF_ARG(f) \
+	(((f) < 0 && (f) > -1.0) ? "-" : ""), \
+	(s32_t)(f), \
+	(s32_t)((((f) > 0) ? (f) - (s32_t)(f) : (s32_t)(f) - (f))*10000)
+
 #ifdef __cplusplus
 }
 #define LOG_IN_CPLUSPLUS 1
