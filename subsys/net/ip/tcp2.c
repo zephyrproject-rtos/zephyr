@@ -863,6 +863,8 @@ int net_tcp_get(struct net_context *context)
 {
 	int i, key;
 
+	tcp_dbg("");
+
 	key = irq_lock();
 	for (i = 0; i < NET_MAX_TCP_CONTEXT; i++) {
 		if (!net_tcp_is_used(&tcp_context[i])) {
