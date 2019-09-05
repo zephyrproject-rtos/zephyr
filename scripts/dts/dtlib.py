@@ -1881,6 +1881,10 @@ _line_re = re.compile(
 
 
 def _init_tokens():
+    # Builds a (<token 1>)|(<token 2>)|... regex and assigns the index of each
+    # capturing group to a corresponding _T_<TOKEN> variable. This makes the
+    # token type appear in match.lastindex after a match.
+
     global _token_re
     global _T_NUM
     global _T_PROPNODENAME
@@ -1888,6 +1892,9 @@ def _init_tokens():
     global _T_BYTE
     global _T_BAD
 
+    # Each pattern must have exactly one capturing group, which can capture any
+    # part of the pattern. This makes match.lastindex match the token type.
+    # _Token.val is based on the captured string.
     token_spec = (("_T_INCLUDE",        r'(/include/\s*"(?:[^\\"]|\\.)*")'),
                   ("_T_LINE",  # #line directive
                    r'^#(?:line)?[ \t]+([0-9]+[ \t]+"(?:[^\\"]|\\.)*")(?:[ \t]+[0-9]+)?'),
@@ -1918,6 +1925,7 @@ def _init_tokens():
     for i, spec in enumerate(token_spec, 1):
         globals()[spec[0]] = i
 
+    # pylint: disable=undefined-loop-variable
     _T_NUM = i + 1
     _T_PROPNODENAME = i + 2
     _T_MISC = i + 3
