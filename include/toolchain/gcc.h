@@ -14,6 +14,41 @@
  * Macros to abstract compiler capabilities for GCC toolchain.
  */
 
+/*
+ * Older versions of GCC do not define __BYTE_ORDER__, so it must be manually
+ * detected and defined using arch-specific definitions.
+ */
+
+#ifndef _LINKER
+
+#ifndef __ORDER_BIG_ENDIAN__
+#define __ORDER_BIG_ENDIAN__            (1)
+#endif
+
+#ifndef __ORDER_LITTLE_ENDIAN__
+#define __ORDER_LITTLE_ENDIAN__         (2)
+#endif
+
+#ifndef __BYTE_ORDER__
+#if defined(__BIG_ENDIAN__) || defined(__ARMEB__) || \
+    defined(__THUMBEB__) || defined(__AARCH64EB__) || \
+    defined(__MIPSEB__) || defined(__TC32EB__)
+
+#define __BYTE_ORDER__                  __ORDER_BIG_ENDIAN__
+
+#elif defined(__LITTLE_ENDIAN__) || defined(__ARMEL__) || \
+      defined(__THUMBEL__) || defined(__AARCH64EL__) || \
+      defined(__MIPSEL__) || defined(__TC32EL__)
+
+#define __BYTE_ORDER__                  __ORDER_LITTLE_ENDIAN__
+
+#else
+#error "__BYTE_ORDER__ is not defined and cannot be automatically resolved"
+#endif
+#endif
+
+#endif /* !_LINKER */
+
 /* C++11 has static_assert built in */
 #ifdef __cplusplus
 #define BUILD_ASSERT(EXPR) static_assert(EXPR, "")
