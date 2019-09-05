@@ -59,7 +59,7 @@ Architectures
     architecture, implementing and enabling lazy-stacking for FPU
     capable threads and fixing stack overflow detection for FPU
     capable supervisor threads
-  * Added Qemu support for ARMv8-M Mainline architecture
+  * Added QEMU support for ARMv8-M Mainline architecture
   * Optimized the IRQ locking time in thread context switch
   * Fixed several critical bugs in User Mode implementation
   * Added test coverage for ARM-specific kernel features
@@ -85,6 +85,16 @@ Architectures
   * A new lightweight PCI implementation has been introduced which supports
     MSI and other features required for PCIe devices. The previous PCI
     implementation has been deprecated and will be removed in 2.1.
+
+* RISC-V:
+
+  * Added support for the SiFive HiFive1 Rev B development board.
+  * Added support for LiteX VexRiscv soft core.
+  * Added support for 64-bit RISC-V, renaming the architecture from "riscv32"
+    to "riscv".
+  * Added 64-bit QEMU support.
+  * Added DeviceTree bindings for RISC-V memory devices, CPU interrupt
+    controllers, and platform-local interrupt controllers.
 
 Boards & SoC Support
 ********************
