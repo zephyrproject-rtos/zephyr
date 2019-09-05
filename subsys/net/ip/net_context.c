@@ -230,8 +230,11 @@ int net_context_get(sa_family_t family,
 		}
 
 		memset(&contexts[i], 0, sizeof(contexts[i]));
-
-		if (ip_proto == IPPROTO_TCP) {
+	/* FIXME - Figure out a way to get the correct network interface
+	 * as it is not known at this point yet.
+	 */
+		if (!net_if_is_ip_offloaded(net_if_get_default())
+			&& ip_proto == IPPROTO_TCP) {
 			if (net_tcp_get(&contexts[i]) < 0) {
 				break;
 			}
@@ -1960,6 +1963,11 @@ int net_context_update_recv_wnd(struct net_context *context,
 				s32_t delta)
 {
 	int ret;
+
+	if (IS_ENABLED(CONFIG_NET_OFFLOAD) &&
+		net_if_is_ip_offloaded(net_context_get_iface(context))) {
+		return 0;
+	}
 
 	k_mutex_lock(&context->lock, K_FOREVER);
 
