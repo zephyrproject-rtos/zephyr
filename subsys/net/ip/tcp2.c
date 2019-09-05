@@ -41,7 +41,6 @@ static struct tcp tcp_context[NET_MAX_TCP_CONTEXT];
 NET_BUF_POOL_DEFINE(tcp_nbufs, 64/*count*/, 128/*size*/, 0, NULL);
 
 static void tcp_in(struct tcp *conn, struct net_pkt *pkt);
-int net_tcp_get(struct net_context *context);
 
 #if IS_ENABLED(CONFIG_NET_TP)
 static size_t tcp_endpoint_len(sa_family_t af)
@@ -814,29 +813,6 @@ next_state:
 	}
 }
 
-#if IS_ENABLED(CONFIG_NET_TP)
-void tcp_input(struct net_pkt *pkt)
-{
-	struct tcphdr *th = tp_tap_input(pkt) ? NULL : th_get(pkt);
-
-	if (th) {
-		struct tcp *conn = tcp_conn_search(pkt);
-
-		if (conn == NULL && SYN == th->th_flags) {
-			struct net_context *context =
-				tcp_calloc(1, sizeof(struct net_context));
-			net_tcp_get(context);
-			conn = context->tcp;
-		}
-
-		if (conn) {
-			conn->iface = pkt->iface;
-			tcp_in(conn, pkt);
-		}
-	}
-}
-#endif
-
 ssize_t tcp_recv(int fd, void *buf, size_t len, int flags)
 {
 	struct tcp *conn = (void *) sys_slist_peek_head(&tcp_conns);
@@ -1206,8 +1182,29 @@ drop:
 	return NULL;
 }
 
-#if IS_ENABLED(CONFIG_NET_TP)
+#if defined(CONFIG_NET_TP)
 static sys_slist_t tp_q = SYS_SLIST_STATIC_INIT(&tp_q);
+
+void tcp_input(struct net_pkt *pkt)
+{
+	struct tcphdr *th = tp_tap_input(pkt) ? NULL : th_get(pkt);
+
+	if (th) {
+		struct tcp *conn = tcp_conn_search(pkt);
+
+		if (conn == NULL && SYN == th->th_flags) {
+			struct net_context *context =
+				tcp_calloc(1, sizeof(struct net_context));
+			net_tcp_get(context);
+			conn = context->tcp;
+		}
+
+		if (conn) {
+			conn->iface = pkt->iface;
+			tcp_in(conn, pkt);
+		}
+	}
+}
 
 static void tcp_step(void)
 {
