@@ -117,12 +117,14 @@ static struct net_pkt *tcp_pkt_alloc(size_t len)
 #define conn_ack(_conn, _req) (_conn)->ack += (_req)
 #endif
 
-#define conn_state(_conn, _s) do {				\
-	tcp_dbg("%s->%s",					\
-		tcp_state_to_str((_conn)->state, false),	\
-		tcp_state_to_str((_s), false));			\
-	(_conn)->state = _s;					\
-} while (0)
+#define conn_state(_conn, _s)						\
+({									\
+	conn_cb((_conn), (_s));						\
+	tcp_dbg("%s->%s",						\
+		tcp_state_to_str((_conn)->state, false),		\
+		tcp_state_to_str((_s), false));				\
+	(_conn)->state = _s;						\
+})
 
 #define TCPOPT_PAD	0
 #define TCPOPT_NOP	1
@@ -207,6 +209,7 @@ struct tcp { /* TCP connection */
 	bool in_retransmission;
 	size_t send_retries;
 	struct net_if *iface;
+	net_tcp_accept_cb_t accept_cb;
 };
 
 #define _flags(_fl, _op, _mask, _cond)					\

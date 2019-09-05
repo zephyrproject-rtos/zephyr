@@ -677,6 +677,19 @@ static void tcp_out(struct tcp *conn, u8_t flags, ...)
 	tcp_send_process(&conn->send_timer);
 }
 
+static void conn_cb(struct tcp *conn, u8_t state)
+{
+	struct net_context *context = conn->context;
+
+	tcp_dbg("%s", tcp_state_to_str(state, false));
+
+	if (TCP_SYN_RECEIVED == state && conn->accept_cb) {
+		memcpy(&context->remote, conn->dst, sizeof(struct sockaddr));
+		conn->accept_cb(context, &context->remote,
+				sizeof(struct sockaddr), 0, context->user_data);
+	}
+}
+
 /* TCP state machine, everything happens here */
 static void tcp_in(struct tcp *conn, struct net_pkt *pkt)
 {
@@ -1092,6 +1105,10 @@ int net_tcp_accept(struct net_context *context, net_tcp_accept_cb_t cb,
 {
 	struct sockaddr local_addr = { };
 	u16_t local_port, remote_port;
+
+	tcp_dbg("context: %p, tcp: %p, cb: %p", context, context->tcp, cb);
+
+	context->tcp->accept_cb = cb;
 
 	if (!context->tcp || context->tcp->state != TCP_LISTEN) {
 		return -EINVAL;
