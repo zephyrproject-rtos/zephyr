@@ -1049,12 +1049,13 @@ int usb_disable(void)
 
 int usb_write(u8_t ep, const u8_t *data, u32_t data_len, u32_t *bytes_ret)
 {
-	int tries = 10;
+	int tries = CONFIG_USB_NUMOF_EP_WRITE_RETRIES;
 	int ret;
 
 	do {
 		ret = usb_dc_ep_write(ep, data, data_len, bytes_ret);
 		if (ret == -EAGAIN) {
+			LOG_WRN("Failed to write endpoint buffer 0x%02x", ep);
 			k_yield();
 		}
 
