@@ -205,9 +205,9 @@ def ast_expr(ast, env):
     elif ast[0] == "in":
         return ast_sym(ast[1], env) in ast[2]
     elif ast[0] == "exists":
-        return True if ast_sym(ast[1], env) else False
+        return bool(ast_sym(ast[1], env))
     elif ast[0] == ":":
-        return True if re.compile(ast[2]).match(ast_sym(ast[1], env)) else False
+        return bool(re.match(ast[2], ast_sym(ast[1], env)))
 
 mutex = threading.Lock()
 

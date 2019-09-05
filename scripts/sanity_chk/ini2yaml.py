@@ -22,7 +22,7 @@ for section in config.sections():
     for opt in config.options(section):
         value = config.get(section, opt)
         if value in ['false', 'true']:
-            tc[opt] = True if value == 'true' else False
+            tc[opt] = value == 'true'
         else:
             tc[opt] = value
 
