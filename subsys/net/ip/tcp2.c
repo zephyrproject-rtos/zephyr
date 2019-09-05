@@ -768,7 +768,7 @@ next_state:
 				break;
 			}
 		}
-		if (FL(&fl, ==, ACK, th_seq(th) == conn->ack)) {
+		if (FL(&fl, ==, ACK, th_ack(th) == conn->seq)) {
 			tcp_win_free(conn->snd);
 			conn->snd = tcp_win_new("SND");
 		}
