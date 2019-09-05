@@ -799,8 +799,8 @@ next_state:
 
 	if (fl) {
 		th = NULL;
-		tcp_warn("Unconsumed flags: %s (%s)", tcp_flags(fl),
-				tcp_th(pkt));
+		tcp_warn("Unconsumed flags: %s (%s) %s", tcp_flags(fl),
+				tcp_th(pkt), tcp_conn_state(conn, NULL));
 		conn_state(conn, TCP_CLOSED);
 		next = 0;
 		goto next_state;
