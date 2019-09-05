@@ -462,7 +462,8 @@ Libraries / Subsystems
 HALs
 ****
 
-* TBD
+* HALs are now moved out of the main tree as external modules and reside
+  in their own standalone repositories.
 
 Documentation
 *************
