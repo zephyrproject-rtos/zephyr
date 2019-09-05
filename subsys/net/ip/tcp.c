@@ -1400,6 +1400,11 @@ int net_tcp_put(struct net_context *context)
 			return 0;
 		}
 
+		if (context->tcp &&
+		    net_tcp_get_state(context->tcp) == NET_TCP_SYN_SENT) {
+			net_context_unref(context);
+		}
+
 		return -ENOTCONN;
 	}
 
