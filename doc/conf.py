@@ -97,7 +97,7 @@ try:
             extraversion = val
         if version_major and version_minor and patchlevel and extraversion:
             break
-except:
+except Exception:
     pass
 finally:
     if version_major and version_minor and patchlevel and extraversion is not None:
