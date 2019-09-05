@@ -1,0 +1,72 @@
+# ST Microelectronics IIS3DHHC accelerometer sensor
+#
+# Copyright (c) 2019 STMicroelectronics
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig IIS3DHHC
+	bool "IIS3DHHC accelerometer sensor"
+	depends on SPI
+	select HAS_STMEMSC
+	select USE_STDC_IIS3DHHC
+	help
+	  Enable driver for IIS3DHHC SPI-based accelerometer sensor.
+
+if IIS3DHHC
+
+choice IIS3DHHC_TRIGGER_MODE
+	prompt "Trigger mode"
+	default IIS3DHHC_TRIGGER_GLOBAL_THREAD
+	help
+	  Specify the type of triggering to be used by the driver.
+
+config IIS3DHHC_TRIGGER_NONE
+	bool "No trigger"
+
+config IIS3DHHC_TRIGGER_GLOBAL_THREAD
+	bool "Use global thread"
+	depends on GPIO
+	select IIS3DHHC_TRIGGER
+
+config IIS3DHHC_TRIGGER_OWN_THREAD
+	bool "Use own thread"
+	depends on GPIO
+	select IIS3DHHC_TRIGGER
+
+endchoice # IIS3DHHC_TRIGGER_MODE
+
+config IIS3DHHC_TRIGGER
+	bool
+
+config IIS3DHHC_THREAD_PRIORITY
+	int "Thread priority"
+	depends on IIS3DHHC_TRIGGER_OWN_THREAD
+	default 10
+	help
+	  Priority of thread used by the driver to handle interrupts.
+
+config IIS3DHHC_THREAD_STACK_SIZE
+	int "Thread stack size"
+	depends on IIS3DHHC_TRIGGER_OWN_THREAD
+	default 1024
+	help
+	  Stack size of thread used by the driver to handle interrupts.
+
+menu "Attributes"
+
+config IIS3DHHC_NORM_MODE
+	bool "Enable Sensor at 1KHz"
+	default y
+
+config IIS3DHHC_DRDY_INT1
+	bool "Data ready interrupt to INT1 pin"
+	depends on IIS3DHHC_TRIGGER
+	default y
+	help
+	  Say Y to route data ready interrupt to INT1 pin. Say N to route to
+	  INT2 pin.
+
+endmenu
+
+endif # IIS3DHHC
