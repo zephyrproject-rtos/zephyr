@@ -160,7 +160,7 @@ class EDT:
         # Add legacy '!include foo.yaml' handling. Do
         # yaml.Loader.add_constructor() instead of yaml.add_constructor() to be
         # compatible with both version 3.13 and version 5.1 of PyYAML.
-        yaml.Loader.add_constructor("!include", self._binding_include)
+        yaml.Loader.add_constructor("!include", _binding_include)
 
         dt_compats = _dt_compats(self._dt)
         # Searches for any 'compatible' string mentioned in the devicetree
@@ -268,20 +268,6 @@ class EDT:
 
         with open(paths[0], encoding="utf-8") as f:
             return yaml.load(f, Loader=yaml.Loader)
-
-    def _binding_include(self, loader, node):
-        # Implements !include, for backwards compatibility.
-        # '!include [foo, bar]' just becomes [foo, bar].
-
-        if isinstance(node, yaml.ScalarNode):
-            # !include foo.yaml
-            return [loader.construct_scalar(node)]
-
-        if isinstance(node, yaml.SequenceNode):
-            # !include [foo.yaml, bar.yaml]
-            return loader.construct_sequence(node)
-
-        _binding_inc_error("unrecognised node type in !include statement")
 
     def _init_devices(self):
         # Creates a list of devices (Device objects) from the DT nodes, in
@@ -1256,6 +1242,21 @@ def _bad_overwrite(to_dict, from_dict, prop):
         return False
 
     return True
+
+
+def _binding_include(loader, node):
+    # Implements !include, for backwards compatibility. '!include [foo, bar]'
+    # just becomes [foo, bar].
+
+    if isinstance(node, yaml.ScalarNode):
+        # !include foo.yaml
+        return [loader.construct_scalar(node)]
+
+    if isinstance(node, yaml.SequenceNode):
+        # !include [foo.yaml, bar.yaml]
+        return loader.construct_sequence(node)
+
+    _binding_inc_error("unrecognised node type in !include statement")
 
 
 def _check_binding(binding, binding_path):
