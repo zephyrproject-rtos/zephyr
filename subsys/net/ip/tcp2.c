@@ -801,6 +801,7 @@ next_state:
 		th = NULL;
 		tcp_warn("Unconsumed flags: %s (%s) %s", tcp_flags(fl),
 				tcp_th(pkt), tcp_conn_state(conn, NULL));
+		tcp_out(conn, RST);
 		conn_state(conn, TCP_CLOSED);
 		next = 0;
 		goto next_state;
