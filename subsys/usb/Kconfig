@@ -65,6 +65,12 @@ config USB_REQUEST_BUFFER_SIZE
 	default 1024 if USB_DEVICE_LOOPBACK
 	default 128
 
+config USB_NUMOF_EP_WRITE_RETRIES
+	int "Number of endpoint write retries"
+	default 3
+	help
+	  Number of endpoint write retries.
+
 config USB_DEVICE_SOF
 	bool "Enable Start of Frame processing in events"
 
