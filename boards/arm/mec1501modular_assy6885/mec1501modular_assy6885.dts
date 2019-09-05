@@ -42,9 +42,6 @@
 
 &espi0 {
 	status = "okay";
-	agg_io_irq = <11>;
-	agg_vw_irq = <15>;
-	agg_pc_irq = <7>;
 	io_girq = <19>;
 	vw_girq = <24>;
 	pc_girq = <15>;
