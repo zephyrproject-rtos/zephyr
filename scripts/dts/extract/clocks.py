@@ -22,7 +22,6 @@ from extract.directive import DTDirective
 #
 class DTClocks(DTDirective):
     def _extract_consumer(self, node_path, clocks, def_label):
-        clock_consumer_bindings = get_binding(node_path)
         clock_consumer_label = 'DT_' + node_label(node_path)
 
         clock_index = 0
