@@ -1904,19 +1904,22 @@ static bool is_enc_req_pause_tx(struct ll_conn *conn)
 	pdu_data_tx = (void *)conn->tx_head->pdu;
 	if ((pdu_data_tx->ll_id == PDU_DATA_LLID_CTRL) &&
 	    (pdu_data_tx->llctrl.opcode == PDU_DATA_LLCTRL_TYPE_ENC_REQ)) {
-		if ((conn->llcp_req != conn->llcp_ack) ||
-		    (conn->llcp_feature.ack != conn->llcp_feature.req) ||
-		    (conn->llcp_version.ack != conn->llcp_version.req) ||
+		if (((conn->llcp_req != conn->llcp_ack) &&
+		     (conn->llcp_type != LLCP_ENCRYPTION)) ||
+		    ((conn->llcp_req == conn->llcp_ack) &&
+		     ((conn->llcp_feature.ack != conn->llcp_feature.req) ||
+		      (conn->llcp_version.ack != conn->llcp_version.req) ||
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
-		    (conn->llcp_conn_param.ack != conn->llcp_conn_param.req) ||
+		      (conn->llcp_conn_param.ack !=
+		       conn->llcp_conn_param.req) ||
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
-		    (conn->llcp_length.ack != conn->llcp_length.req) ||
+		      (conn->llcp_length.ack != conn->llcp_length.req) ||
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 #if defined(CONFIG_BT_CTLR_PHY)
-		    (conn->llcp_phy.ack != conn->llcp_phy.req) ||
+		      (conn->llcp_phy.ack != conn->llcp_phy.req) ||
 #endif /* CONFIG_BT_CTLR_PHY */
-		    0) {
+		      0))) {
 			struct node_tx *tx;
 
 			/* if we have control packets enqueued after this PDU
@@ -1946,10 +1949,14 @@ static bool is_enc_req_pause_tx(struct ll_conn *conn)
 			return true;
 		}
 
-		conn->llcp.encryption.initiate = 1U;
+		if (conn->llcp_req == conn->llcp_ack) {
+			conn->llcp.encryption.initiate = 1U;
 
-		conn->llcp_type = LLCP_ENCRYPTION;
-		conn->llcp_ack -= 2U;
+			conn->llcp_type = LLCP_ENCRYPTION;
+			conn->llcp_ack -= 2U;
+		} else {
+			LL_ASSERT(conn->llcp_type == LLCP_ENCRYPTION);
+		}
 	}
 
 	/* Head contains a permitted data or control packet. */
