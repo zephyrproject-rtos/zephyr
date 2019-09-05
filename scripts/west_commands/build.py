@@ -224,7 +224,7 @@ class Build(Forceable):
         # If we created the build directory, we must run CMake.
         log.dbg('setting up build directory', level=log.VERBOSE_EXTREME)
         # The CMake Cache has not been loaded yet, so this is safe
-        board, origin = self._find_board()
+        board, _ = self._find_board()
         source_dir = self._find_source_dir()
         app = os.path.split(source_dir)[1]
         build_dir = find_build_dir(self.args.build_dir, board=board,
