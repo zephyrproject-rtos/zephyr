@@ -24,3 +24,11 @@ config ESPI_PERIPHERAL_DEBUG_PORT_80
 
 config ESPI_PERIPHERAL_UART
 	def_bool y
+
+config ESPI_PERIPHERAL_UART_SOC_MAPPING
+	int "SoC port exposed as logcial eSPI UART"
+	default 2
+	depends on ESPI_PERIPHERAL_UART
+	help
+	  This tells the driver to which SoC UART to direct the UART traffic
+	  send over eSPI from host
