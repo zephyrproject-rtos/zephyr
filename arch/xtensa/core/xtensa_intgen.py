@@ -74,7 +74,7 @@ for match in re.finditer(r'__xtensa_int_level_magic__\s+(\d+)\s+(\d+)', blob):
     irq = int(match.group(1))
     lvl = int(match.group(2))
 
-    if not lvl in ints_by_lvl:
+    if lvl not in ints_by_lvl:
         ints_by_lvl[lvl] = []
 
     ints_by_lvl[lvl].append(irq)
