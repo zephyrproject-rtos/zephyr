@@ -431,7 +431,7 @@ static enum net_l2_flags l2_flags_get(struct net_if *iface)
 {
 	enum net_l2_flags flags = 0;
 
-	if (net_if_l2(iface)->get_flags) {
+	if (net_if_l2(iface) && net_if_l2(iface)->get_flags) {
 		flags = net_if_l2(iface)->get_flags(iface);
 	}
 
@@ -794,10 +794,7 @@ static void join_mcast_nodes(struct net_if *iface, struct in6_addr *addr)
 {
 	enum net_l2_flags flags = 0;
 
-	if (net_if_l2(iface)->get_flags) {
-		flags = net_if_l2(iface)->get_flags(iface);
-	}
-
+	flags = l2_flags_get(iface);
 	if (flags & NET_L2_MULTICAST) {
 		join_mcast_allnodes(iface);
 
@@ -3345,7 +3342,7 @@ int net_if_up(struct net_if *iface)
 	}
 
 	/* If the L2 does not support enable just set the flag */
-	if (!net_if_l2(iface)->enable) {
+	if (!net_if_l2(iface) || !net_if_l2(iface)->enable) {
 		goto done;
 	}
 
@@ -3402,7 +3399,7 @@ int net_if_down(struct net_if *iface)
 	}
 
 	/* If the L2 does not support enable just clear the flag */
-	if (!net_if_l2(iface)->enable) {
+	if (!net_if_l2(iface) || !net_if_l2(iface)->enable) {
 		goto done;
 	}
 
@@ -3426,10 +3423,7 @@ static int promisc_mode_set(struct net_if *iface, bool enable)
 
 	NET_ASSERT(iface);
 
-	if (net_if_l2(iface)->get_flags) {
-		l2_flags = net_if_l2(iface)->get_flags(iface);
-	}
-
+	l2_flags = l2_flags_get(iface);
 	if (!(l2_flags & NET_L2_PROMISC_MODE)) {
 		return -ENOTSUP;
 	}
