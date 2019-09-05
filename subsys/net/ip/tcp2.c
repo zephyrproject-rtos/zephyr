@@ -767,7 +767,6 @@ next_state:
 				next = TCP_CLOSED;
 				break;
 			}
-			break;
 		}
 		if (FL(&fl, ==, ACK, th_seq(th) == conn->ack)) {
 			tcp_win_free(conn->snd);
