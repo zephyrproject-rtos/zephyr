@@ -240,7 +240,7 @@ class EDT:
             inherits = binding.pop("inherits")
             if not isinstance(inherits, list) or \
                not all(isinstance(elm, str) for elm in inherits):
-               _err("malformed 'inherits:' in " + binding_path)
+                _err("malformed 'inherits:' in " + binding_path)
             fnames += inherits
 
         for fname in fnames:
@@ -1339,8 +1339,8 @@ def _check_binding_properties(binding, binding_path):
                  .format(binding_path, prop_name))
 
         if "const" in options and not isinstance(options["const"], (int, str)):
-           _err("const in {} for property ({}) is not a scalar"
-                .format(binding_path, prop_name))
+            _err("const in {} for property '{}' is not a scalar"
+                 .format(binding_path, prop_name))
 
 
 def _translate(addr, node):
