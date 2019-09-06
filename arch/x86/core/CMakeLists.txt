@@ -10,6 +10,7 @@ endif ()
 zephyr_library_sources(cpuhalt.c)
 zephyr_library_sources_if_kconfig(pcie.c)
 zephyr_library_sources_if_kconfig(reboot_rst_cnt.c)
+zephyr_library_sources_ifdef(CONFIG_X86_ACPI acpi.c)
 zephyr_library_sources_ifdef(CONFIG_X86_MULTIBOOT multiboot.c)
 zephyr_library_sources_ifdef(CONFIG_X86_VERY_EARLY_CONSOLE early_serial.c)
 

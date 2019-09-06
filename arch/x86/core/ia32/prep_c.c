@@ -5,6 +5,7 @@
  */
 
 #include <kernel_structs.h>
+#include <arch/x86/acpi.h>
 
 FUNC_NORETURN void z_x86_prep_c(void)
 {
@@ -14,6 +15,9 @@ FUNC_NORETURN void z_x86_prep_c(void)
 
 #ifdef CONFIG_X86_VERY_EARLY_CONSOLE
 	z_x86_early_serial_init();
+#endif
+#ifdef CONFIG_X86_ACPI
+	z_x86_acpi_init();
 #endif
 #ifdef CONFIG_X86_MMU
 	z_x86_paging_init();
