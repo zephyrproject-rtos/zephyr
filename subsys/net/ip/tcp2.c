@@ -36,8 +36,7 @@ static sys_slist_t tcp_conns = SYS_SLIST_STATIC_INIT(&tcp_conns);
 /** TCP context flag; is this TCP context/socket used or not */
 #define NET_TCP_IN_USE BIT(0)
 
-#define NET_MAX_TCP_CONTEXT CONFIG_NET_MAX_CONTEXTS
-static struct tcp tcp_context[NET_MAX_TCP_CONTEXT];
+static struct tcp tcp_context[CONFIG_NET_MAX_CONTEXTS];
 
 NET_BUF_POOL_DEFINE(tcp_nbufs, 64/*count*/, 128/*size*/, 0, NULL);
 
@@ -889,14 +888,14 @@ int net_tcp_get(struct net_context *context)
 	tcp_dbg("");
 
 	key = irq_lock();
-	for (i = 0; i < NET_MAX_TCP_CONTEXT; i++) {
+	for (i = 0; i < CONFIG_NET_MAX_CONTEXTS; i++) {
 		if (!net_tcp_is_used(&tcp_context[i])) {
 			break;
 		}
 	}
 	irq_unlock(key);
 
-	if (i >= NET_MAX_TCP_CONTEXT) {
+	if (i >= CONFIG_NET_MAX_CONTEXTS) {
 		return -EPROTONOSUPPORT;
 	}
 
