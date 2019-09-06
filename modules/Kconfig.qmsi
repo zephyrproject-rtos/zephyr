@@ -1,12 +1,7 @@
 # Kconfig - QMSI drivers configuration options
 
-#
 # Copyright (c) 2015 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
-
-menu "QMSI"
 
 config HAS_QMSI
 	bool
@@ -16,5 +11,3 @@ config QMSI
 	depends on HAS_QMSI
 	help
 	  Enable QMSI driver support.
-
-endmenu

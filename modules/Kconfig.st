@@ -126,4 +126,4 @@ config USE_STDC_LSM9DS1
 config USE_STDC_STTS751
 	bool
 
-endif #HAS_STMEMSC
+endif # HAS_STMEMSC

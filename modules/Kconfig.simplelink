@@ -13,16 +13,16 @@ config SIMPLELINK_HOST_DRIVER
 	depends on MULTITHREADING
 	select NEWLIB_LIBC
 	select ERRNO
-        select POSIX_API
-        select PTHREAD_IPC
+	select POSIX_API
+	select PTHREAD_IPC
 	help
 	  Build the SimpleLink host driver
 
 # Kconfig - MSP432 SDK HAL configuration
 
 config HAS_MSP432P4XXSDK
-        bool
-        select HAS_CMSIS
+	bool
+	select HAS_CMSIS
 
 # Kconfig - CC13X2 / CC26X2 SDK HAL configuration
 
