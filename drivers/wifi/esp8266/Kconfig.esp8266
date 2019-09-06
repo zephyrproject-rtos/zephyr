@@ -10,7 +10,6 @@ menuconfig WIFI_ESP8266
 	default n
 	depends on WIFI
 	select NET_SOCKETS
-	select NEWLIB_LIBC
 	select WIFI_OFFLOAD
 	select NET_L2_WIFI_MGMT
 	select MODEM

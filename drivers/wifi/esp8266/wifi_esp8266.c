@@ -3,11 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
-#define LOG_MODULE_NAME wifi_esp8266
-#define LOG_LEVEL CONFIG_WIFI_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(LOG_MODULE_NAME);
+LOG_MODULE_REGISTER(wifi_esp8266, CONFIG_WIFI_LOG_LEVEL);
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -33,30 +30,29 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include "../../modem/modem_receiver.h"
 
-
-#define ESP8266_MAX_CONNECTIONS	5
+#define ESP8266_MAX_CONNECTIONS 5
 #define BUF_ALLOC_TIMEOUT K_SECONDS(1)
-#define MDM_MAX_DATA_LENGTH	1600
+#define MDM_MAX_DATA_LENGTH     1600
 
 struct cmd_handler {
 	const char *cmd;
 	u16_t cmd_len;
 	void (*func)(struct net_buf **buf, u16_t len);
-	int skip;
+	bool skip;
 };
 
-#define CMD_HANDLER_NO_SKIP(cmd_, cb_) { \
-	.cmd = cmd_, \
-	.cmd_len = (u16_t)sizeof(cmd_)-1, \
-	.func = on_cmd_ ## cb_, \
-	.skip = 0 \
+#define CMD_HANDLER_NO_SKIP(cmd_, cb_) {	    \
+		.cmd = cmd_,			    \
+		.cmd_len = (u16_t)sizeof(cmd_) - 1, \
+		.func = on_cmd_ ## cb_,		    \
+		.skip = false			    \
 }
 
-#define CMD_HANDLER(cmd_, cb_) { \
-	.cmd = cmd_, \
-	.cmd_len = (u16_t)sizeof(cmd_)-1, \
-	.func = on_cmd_ ## cb_, \
-	.skip = 1 \
+#define CMD_HANDLER(cmd_, cb_) {		    \
+		.cmd = cmd_,			    \
+		.cmd_len = (u16_t)sizeof(cmd_) - 1, \
+		.func = on_cmd_ ## cb_,		    \
+		.skip = true			    \
 }
 
 static u8_t mdm_recv_buf[MDM_MAX_DATA_LENGTH];
@@ -77,22 +73,22 @@ K_SEM_DEFINE(sock_sem, 1, 1);
 K_MUTEX_DEFINE(dev_mutex);
 
 struct socket_data {
-	struct net_context	*context;
+	struct net_context      *context;
 	sa_family_t family;
 	enum net_sock_type type;
 	enum net_ip_protocol ip_proto;
-	net_context_send_cb_t		send_cb;
-	net_context_recv_cb_t		recv_cb;
+	net_context_send_cb_t send_cb;
+	net_context_recv_cb_t recv_cb;
 
 
 	struct k_work recv_cb_work;
 	void *recv_user_data;
 
-	struct sockaddr		src;
-	struct sockaddr		dst;
-	struct net_pkt		*rx_pkt;
-	int			ret;
-	int			conn_id;
+	struct sockaddr src;
+	struct sockaddr dst;
+	struct net_pkt          *rx_pkt;
+	int ret;
+	int conn_id;
 	/** semaphore */
 	int connected;
 	int read_error;
@@ -154,7 +150,7 @@ static struct socket_data *allocate_socket_data(void)
 
 	k_sem_take(&sock_sem, K_FOREVER);
 	for (i = 0; i < ESP8266_MAX_CONNECTIONS &&
-		foo_data.sock_map & BIT(i); i++) {
+	     foo_data.sock_map & BIT(i); i++) {
 		;
 	}
 	if (i >= ESP8266_MAX_CONNECTIONS) {
@@ -187,7 +183,7 @@ static int allocate_conn_id(void)
 
 	k_sem_take(&sock_sem, K_FOREVER);
 	for (i = 0; i < ESP8266_MAX_CONNECTIONS &&
-		foo_data.conn_map & BIT(i); i++) {
+	     foo_data.conn_map & BIT(i); i++) {
 		;
 	}
 	if (i >= ESP8266_MAX_CONNECTIONS) {
@@ -233,17 +229,17 @@ static inline struct socket_data *get_socket_from_conn_id(unsigned int id)
 }
 
 static inline void link_conn_id_to_socket_data(int id,
-						struct socket_data *sock)
+					       struct socket_data *sock)
 {
 	foo_data.conn_data[id].sock = sock;
 	sock->conn_id = id;
 }
 
-#define MDM_CMD_TIMEOUT		K_SECONDS(5)
+#define MDM_CMD_TIMEOUT         K_SECONDS(5)
 
 /* Send an AT command with a series of response handlers */
 static int send_at_cmd(struct socket_data *sock,
-			const u8_t *data, int timeout)
+		       const u8_t *data, int timeout)
 {
 	int ret;
 
@@ -272,7 +268,7 @@ static int send_at_cmd(struct socket_data *sock,
 }
 
 static int net_buf_find_next_delimiter(struct net_buf *buf, const u8_t d,
-	size_t index)
+				       size_t index)
 {
 	struct net_buf *frag = buf;
 	u16_t offset = 0;
@@ -357,15 +353,15 @@ static void esp8266_ip_addr_work(struct k_work *work)
 	/* update interface addresses */
 	net_if_ipv4_set_gw(foo_data.iface, &foo_data.gw);
 	net_if_ipv4_set_netmask(foo_data.iface,
-			&foo_data.netmask);
+				&foo_data.netmask);
 	net_if_ipv4_addr_add(foo_data.iface, &foo_data.ip, NET_ADDR_DHCP,
-		0);
+			     0);
 }
 
 static void on_cmd_ip_addr_get(struct net_buf **buf, u16_t len)
 {
 	k_delayed_work_submit_to_queue(&esp8266_workq,
-			&foo_data.ip_addr_work, K_SECONDS(1));
+				       &foo_data.ip_addr_work, K_SECONDS(1));
 }
 
 static void on_cmd_conn_open(struct net_buf **buf, u16_t len)
@@ -374,9 +370,7 @@ static void on_cmd_conn_open(struct net_buf **buf, u16_t len)
 	u8_t msg[30];
 	struct socket_data *sock;
 
-	net_buf_linearize(msg, 1, *buf, 0, 1);
-	msg[1] = '\0';
-	id = atoi(msg);
+	id = *((*buf)->data) - '0';
 
 	sock = get_socket_from_conn_id(id);
 
@@ -384,15 +378,15 @@ static void on_cmd_conn_open(struct net_buf **buf, u16_t len)
 		struct net_context *context = NULL;
 
 		ret = net_context_get(AF_INET, SOCK_STREAM,
-				IPPROTO_TCP, &context);
+				      IPPROTO_TCP, &context);
 
 		if (ret < 0) {
 			LOG_ERR("Cannot get new net context for ACCEPT");
 
-			len = sprintf(msg, "AT+CIPCLOSE=%d", id);
-			msg[len] = '\0';
+			len = snprintk(msg, 30, "AT+CIPCLOSE=%d", id);
+
 			if (send_at_cmd(&foo_data.socket_data[id], msg,
-				MDM_CMD_TIMEOUT)) {
+					MDM_CMD_TIMEOUT)) {
 				LOG_ERR("failed to close\n");
 			}
 		} else {
@@ -401,9 +395,10 @@ static void on_cmd_conn_open(struct net_buf **buf, u16_t len)
 			 * we use gate address as dst address.
 			 */
 			net_context_bind(context,
-			&foo_data.server_sock.src, sizeof(struct sockaddr));
+					 &foo_data.server_sock.src,
+					 sizeof(struct sockaddr));
 			net_ipaddr_copy(&net_sin(&context->remote)->sin_addr,
-				&foo_data.gw);
+					&foo_data.gw);
 			context->remote.sa_family = AF_INET;
 			net_sin(&context->remote)->sin_port = 1000 + id;
 			context->flags |= NET_CONTEXT_REMOTE_ADDR_SET;
@@ -415,8 +410,9 @@ static void on_cmd_conn_open(struct net_buf **buf, u16_t len)
 
 		if (foo_data.accept_cb) {
 			foo_data.accept_cb(context,
-			&foo_data.server_sock.src, sizeof(struct sockaddr),
-			ret, foo_data.accept_data);
+					   &foo_data.server_sock.src,
+					   sizeof(struct sockaddr),
+					   ret, foo_data.accept_data);
 		}
 	} else {
 		sock->connected = 1;
@@ -426,12 +422,9 @@ static void on_cmd_conn_open(struct net_buf **buf, u16_t len)
 static void on_cmd_conn_closed(struct net_buf **buf, u16_t len)
 {
 	int id;
-	u8_t msg[2];
 	struct socket_data *sock = NULL;
 
-	net_buf_linearize(msg, 1, *buf, 0, 1);
-	msg[1] = '\0';
-	id = atoi(msg);
+	id = '0' - *((*buf)->data);
 
 	sock = get_socket_from_conn_id(id);
 	if (sock) {
@@ -446,7 +439,7 @@ static void on_cmd_sent_bytes(struct net_buf **buf, u16_t len)
 	char temp[32];
 	char *tok;
 
-	net_buf_linearize(temp, 32, *buf, 0, len);
+	net_buf_linearize(temp, sizeof(temp), *buf, 0, len);
 	temp[len] = '\0';
 
 	tok = strtok(temp, " ");
@@ -466,12 +459,13 @@ static void on_cmd_wifi_scan_resp(struct net_buf **buf, u16_t len)
 	/* ecn, ssid, rssi, mac, channel, freq */
 
 	delimiters[0] = 1;
-	for (i = 1; i < 6; i++) {
+	for (i = 1; i < sizeof(delimiters); i++) {
 		delimiters[i] = net_buf_find_next_delimiter(*buf, ',',
-					delimiters[i-1] + 1);
+						delimiters[i - 1] + 1);
 		if (delimiters[i] == -1) {
 			return;
 		}
+
 		delimiters[i]++;
 	}
 
@@ -486,19 +480,19 @@ static void on_cmd_wifi_scan_resp(struct net_buf **buf, u16_t len)
 
 	/* ssid */
 	slen = delimiters[2] - delimiters[1] - 3;
-	net_buf_linearize(result.ssid, 32, *buf, delimiters[1] + 1,
+	net_buf_linearize(result.ssid, sizeof(temp), *buf, delimiters[1] + 1,
 			  slen);
 	result.ssid_length = slen;
 
 	/* rssi */
 	slen = delimiters[3] - delimiters[2];
-	net_buf_linearize(temp, 32, *buf, delimiters[2], slen);
+	net_buf_linearize(temp, sizeof(temp), *buf, delimiters[2], slen);
 	temp[slen] = '\0';
 	result.rssi = strtol(temp, NULL, 10);
 
 	/* channel */
 	slen = delimiters[5] - delimiters[4];
-	net_buf_linearize(temp, 32, *buf, delimiters[4], slen);
+	net_buf_linearize(temp, sizeof(temp), *buf, delimiters[4], slen);
 	temp[slen] = '\0';
 	result.channel = strtol(temp, NULL, 10);
 
@@ -514,7 +508,7 @@ static const char ip_label[] = "ip";
 
 static void on_cmd_ip_addr_resp(struct net_buf **buf, u16_t len)
 {
-	char ip_addr[] = "xxx.xxx.xxx.xxx";
+	char ip_addr[sizeof("xxx.xxx.xxx.xxx")];
 	int d[3];
 	int slen;
 
@@ -541,13 +535,13 @@ static void on_cmd_ip_addr_resp(struct net_buf **buf, u16_t len)
 static void on_cmd_mac_addr_resp(struct net_buf **buf, u16_t len)
 {
 	int i;
-	char octet[] = "xx";
+	char octet[sizeof("xx")];
 
 	for (i = 0; i < 6; i++) {
 		net_buf_pull_u8(*buf);
 		octet[0] = net_buf_pull_u8(*buf);
 		octet[1] = net_buf_pull_u8(*buf);
-		foo_data.mac[i] = strtoul(octet, NULL, 16);
+		hex2bin(octet, 2, &foo_data.mac[i], 1);
 	}
 }
 
@@ -587,17 +581,18 @@ static void on_cmd_wifi_disconnected_resp(struct net_buf **buf, u16_t len)
 }
 
 static int esp8266_get(sa_family_t family,
-			enum net_sock_type type,
-			enum net_ip_protocol ip_proto,
-			struct net_context **context)
+		       enum net_sock_type type,
+		       enum net_ip_protocol ip_proto,
+		       struct net_context **context)
 {
-	struct net_context *c = *context;
+	struct net_context *c;
 	struct socket_data *sock;
 
 	if (family != AF_INET) {
 		return -1;
 	}
 
+	c = *context;
 	sock = allocate_socket_data();
 	c->offload_context = (void *)sock;
 	sock->context = c;
@@ -614,11 +609,11 @@ static const char type_tcp[] = "TCP";
 static const char type_udp[] = "UDP";
 
 static int esp8266_connect(struct net_context *context,
-			const struct sockaddr *addr,
-			socklen_t addrlen,
-			net_context_connect_cb_t cb,
-			s32_t timeout,
-			void *user_data)
+			   const struct sockaddr *addr,
+			   socklen_t addrlen,
+			   net_context_connect_cb_t cb,
+			   s32_t timeout,
+			   void *user_data)
 {
 	char connect_msg[100];
 	int len;
@@ -638,21 +633,18 @@ static int esp8266_connect(struct net_context *context,
 		return -EINVAL;
 	}
 
-#if defined(CONFIG_NET_IPV4)
-	if (addr->sa_family == AF_INET) {
+	if (IS_ENABLED(CONFIG_NET_IPV4) && addr->sa_family == AF_INET) {
 		net_ipaddr_copy(&net_sin(&sock->dst)->sin_addr,
 				&net_sin(addr)->sin_addr);
 		net_sin(&sock->dst)->sin_port = net_sin(addr)->sin_port;
 		sock->dst.sa_family = AF_INET;
-	} else
-#endif
-	{
+	} else {
 		return -EPFNOSUPPORT;
 	}
 
 	if (net_sin(&sock->dst)->sin_port < 0) {
 		LOG_ERR("invalid port: %d\n",
-			    net_sin(&sock->dst)->sin_port);
+			net_sin(&sock->dst)->sin_port);
 		return -EINVAL;
 	}
 
@@ -670,11 +662,12 @@ static int esp8266_connect(struct net_context *context,
 
 	if (type == type_tcp) {
 		net_addr_ntop(sock->dst.sa_family,
-			&net_sin(&sock->dst)->sin_addr,
-			addr_str, sizeof(addr_str));
-	len = sprintf(connect_msg, "AT+CIPSTART=%d,\"%s\",\"%s\",%d,7200",
-			conn_id, type, addr_str,
-			ntohs(net_sin(&sock->dst)->sin_port));
+			      &net_sin(&sock->dst)->sin_addr,
+			      addr_str, sizeof(addr_str));
+		len = snprintk(connect_msg, 100,
+			       "AT+CIPSTART=%d,\"%s\",\"%s\",%d,7200",
+			       conn_id, type, addr_str,
+			       ntohs(net_sin(&sock->dst)->sin_port));
 	} else {
 		int src_port = ntohs(net_sin(&sock->src)->sin_port);
 
@@ -682,12 +675,13 @@ static int esp8266_connect(struct net_context *context,
 			src_port = ntohs(net_sin(&sock->dst)->sin_port);
 		}
 		net_addr_ntop(sock->dst.sa_family,
-			&net_sin(&sock->dst)->sin_addr,
-			addr_str, sizeof(addr_str));
-	len = sprintf(connect_msg, "AT+CIPSTART=%d,\"%s\",\"%s\",%d,%d,2",
-			conn_id, type, addr_str,
-			ntohs(net_sin(&sock->dst)->sin_port),
-			src_port);
+			      &net_sin(&sock->dst)->sin_addr,
+			      addr_str, sizeof(addr_str));
+		len = snprintk(connect_msg, 100,
+			       "AT+CIPSTART=%d,\"%s\",\"%s\",%d,%d,2",
+			       conn_id, type, addr_str,
+			       ntohs(net_sin(&sock->dst)->sin_port),
+			       src_port);
 	}
 
 	link_conn_id_to_socket_data(conn_id, sock);
@@ -722,20 +716,19 @@ static int esp8266_bind(struct net_context *context,
 	}
 
 	sock->src.sa_family = addr->sa_family;
-#if defined(CONFIG_NET_IPV4)
-	if (addr->sa_family == AF_INET) {
+
+	if (IS_ENABLED(CONFIG_NET_IPV4) && addr->sa_family == AF_INET) {
 		net_ipaddr_copy(&net_sin(&sock->src)->sin_addr,
 				&net_sin(addr)->sin_addr);
 		net_sin(&sock->src)->sin_port = net_sin(addr)->sin_port;
 		net_sin_ptr(&context->local)->sin_addr = &foo_data.ip;
 		net_sin_ptr(&context->local)->sin_port =
-				net_sin(addr)->sin_port;
+			net_sin(addr)->sin_port;
 		context->local.family = AF_INET;
-	} else
-#endif
-	{
+	} else {
 		return -EPFNOSUPPORT;
 	}
+
 	return 0;
 }
 
@@ -766,16 +759,17 @@ static int esp8266_listen(struct net_context *context, int backlog)
 		backlog = ESP8266_MAX_CONNECTIONS;
 	}
 
-#if defined (CONFIG_NET_IPV4)
-	if (sock->src.sa_family == AF_INET &&
-		net_context_get_type(context) == SOCK_STREAM) {
 
-		len = sprintf(listen_msg, "AT+CIPSERVERMAXCONN=%d", backlog);
+	if (IS_ENABLED(CONFIG_NET_IPV4) && sock->src.sa_family == AF_INET &&
+	    net_context_get_type(context) == SOCK_STREAM) {
+
+		len = snprintk(listen_msg, 50,
+			       "AT+CIPSERVERMAXCONN=%d", backlog);
 
 		send_at_cmd(sock, listen_msg, MDM_CMD_TIMEOUT);
 
-		len = sprintf(listen_msg, "AT+CIPSERVER=1,%d",
-			ntohs(net_sin(&sock->src)->sin_port));
+		len = snprintk(listen_msg, 50, "AT+CIPSERVER=1,%d",
+			       ntohs(net_sin(&sock->src)->sin_port));
 
 		ret = send_at_cmd(sock, listen_msg, MDM_CMD_TIMEOUT);
 
@@ -785,22 +779,22 @@ static int esp8266_listen(struct net_context *context, int backlog)
 		}
 
 		/* use server sock to trace and free the allocated sock */
-		memcpy(&foo_data.server_sock, sock, sizeof(struct socket_data));
+		memcpy(&foo_data.server_sock, sock,
+		       sizeof(struct socket_data));
 		memset(sock, 0, sizeof(struct socket_data));
 		context->offload_context = &foo_data.server_sock;
 		foo_data.sock_map &= ~(1 << (sock - foo_data.socket_data));
 
 		return 0;
 	}
-#endif
 
 	return -EPFNOSUPPORT;
 }
 
 static int esp8266_accept(struct net_context *context,
-			net_tcp_accept_cb_t cb,
-			s32_t timeout,
-			void *user_data)
+			  net_tcp_accept_cb_t cb,
+			  s32_t timeout,
+			  void *user_data)
 {
 	struct socket_data *sock = NULL;
 
@@ -815,23 +809,21 @@ static int esp8266_accept(struct net_context *context,
 		return -EINVAL;
 	}
 
-#if defined (CONFIG_NET_IPV4)
-
-	foo_data.accept_cb = cb;
-	foo_data.accept_data = user_data;
-
-	return 0;
-#endif
-
-	return -EPFNOSUPPORT;
+	if (IS_ENABLED(CONFIG_NET_IPV4)) {
+		foo_data.accept_cb = cb;
+		foo_data.accept_data = user_data;
+		return 0;
+	} else {
+		return -EPFNOSUPPORT;
+	}
 }
 
 static int esp8266_sendto(struct net_pkt *pkt,
-		const struct sockaddr *dst_addr,
-		socklen_t addrlen,
-		net_context_send_cb_t cb,
-		s32_t timeout,
-		void *user_data)
+			  const struct sockaddr *dst_addr,
+			  socklen_t addrlen,
+			  net_context_send_cb_t cb,
+			  s32_t timeout,
+			  void *user_data)
 {
 	u8_t send_msg[80];
 	struct net_context *context = net_pkt_context(pkt);
@@ -851,10 +843,10 @@ static int esp8266_sendto(struct net_pkt *pkt,
 
 	if (!data->connected) {
 		ret = esp8266_connect(data->context,
-			dst_addr,
-			addrlen,
-			NULL,
-			0, NULL);
+				      dst_addr,
+				      addrlen,
+				      NULL,
+				      0, NULL);
 
 		if (ret < 0) {
 			return ret;
@@ -867,15 +859,15 @@ static int esp8266_sendto(struct net_pkt *pkt,
 	send_len = net_buf_frags_len(frag);
 	foo_data.sending_data = 1;
 	if (net_context_get_type(context) == SOCK_STREAM) {
-		len = sprintf(send_msg, "AT+CIPSEND=%d,%d", id,
-			      net_buf_frags_len(frag));
+		len = snprintk(send_msg, 80, "AT+CIPSEND=%d,%d", id,
+			       net_buf_frags_len(frag));
 	} else {
 		net_addr_ntop(data->dst.sa_family,
-			&net_sin(&data->dst)->sin_addr,
-			addr_str, sizeof(addr_str));
-		len = sprintf(send_msg, "AT+CIPSEND=%d,%d,\"%s\",%d",
-			id, net_buf_frags_len(frag), addr_str,
-				ntohs(net_sin(&data->dst)->sin_port));
+			      &net_sin(&data->dst)->sin_addr,
+			      addr_str, sizeof(addr_str));
+		len = snprintk(send_msg, 80, "AT+CIPSEND=%d,%d,\"%s\",%d",
+			       id, net_buf_frags_len(frag), addr_str,
+			       ntohs(net_sin(&data->dst)->sin_port));
 	}
 
 	ret = send_at_cmd(NULL, send_msg, MDM_CMD_TIMEOUT * 2);
@@ -932,7 +924,7 @@ static int esp8266_put(struct net_context *context)
 
 	/* close server sock */
 	if (data == &foo_data.server_sock) {
-		len = sprintf(msg, "AT+CIPSERVER=0");
+		len = snprintk(msg, 30, "AT+CIPSERVER=0");
 		msg[len] = '\0';
 
 		if (send_at_cmd(&foo_data.server_sock, msg,
@@ -942,13 +934,13 @@ static int esp8266_put(struct net_context *context)
 		foo_data.accept_data = NULL;
 		foo_data.accept_cb = NULL;
 		memset(&foo_data.server_sock, 0,
-			sizeof(struct socket_data));
+		       sizeof(struct socket_data));
 		esp8266_context_put(context);
 		return 0;
 	}
 
 	if (data->connected) {
-		len = sprintf(msg, "AT+CIPCLOSE=%d", data->conn_id);
+		len = snprintk(msg, 30, "AT+CIPCLOSE=%d", data->conn_id);
 		msg[len] = '\0';
 
 		if (send_at_cmd(data, msg,
@@ -964,9 +956,9 @@ static int esp8266_put(struct net_context *context)
 }
 
 static int esp8266_send(struct net_pkt *pkt,
-		net_context_send_cb_t cb,
-		s32_t timeout,
-		void *user_data)
+			net_context_send_cb_t cb,
+			s32_t timeout,
+			void *user_data)
 {
 	struct net_context *context = net_pkt_context(pkt);
 	socklen_t addrlen;
@@ -980,14 +972,14 @@ static int esp8266_send(struct net_pkt *pkt,
 	}
 
 	ret = esp8266_sendto(pkt, &context->remote, addrlen, cb,
-			      timeout, user_data);
+			     timeout, user_data);
 	return ret;
 }
 
 static int esp8266_recv(struct net_context *context,
-		net_context_recv_cb_t cb,
-		s32_t timeout,
-		void *user_data)
+			net_context_recv_cb_t cb,
+			s32_t timeout,
+			void *user_data)
 {
 	struct socket_data *data;
 
@@ -1004,13 +996,13 @@ static int esp8266_recv(struct net_context *context,
 	if (!data->connected && net_context_get_type(context) == SOCK_DGRAM) {
 		struct sockaddr dst_addr;
 		net_addr_pton(AF_INET, "0.0.0.0",
-			&(net_sin(&dst_addr)->sin_addr));
+			      &(net_sin(&dst_addr)->sin_addr));
 		net_sin(&dst_addr)->sin_port = net_sin(&data->src)->sin_port;
 		esp8266_connect(data->context,
-			&dst_addr,
-			sizeof(struct sockaddr),
-			NULL,
-			0, NULL);
+				&dst_addr,
+				sizeof(struct sockaddr),
+				NULL,
+				0, NULL);
 	}
 
 	return 0;
@@ -1018,14 +1010,14 @@ static int esp8266_recv(struct net_context *context,
 
 static struct net_offload esp8266_offload = {
 	.get            = esp8266_get,
-	.bind		= esp8266_bind,
-	.listen		= esp8266_listen,
-	.connect	= esp8266_connect,
-	.accept		= esp8266_accept,
-	.send		= esp8266_send,
-	.sendto		= esp8266_sendto,
-	.recv		= esp8266_recv,
-	.put		= esp8266_put,
+	.bind           = esp8266_bind,
+	.listen         = esp8266_listen,
+	.connect        = esp8266_connect,
+	.accept         = esp8266_accept,
+	.send           = esp8266_send,
+	.sendto         = esp8266_sendto,
+	.recv           = esp8266_recv,
+	.put            = esp8266_put,
 };
 
 static int esp8266_mgmt_scan(struct device *dev, scan_result_cb_t cb)
@@ -1044,31 +1036,30 @@ static int esp8266_mgmt_scan(struct device *dev, scan_result_cb_t cb)
 	return 0;
 };
 
-static u8_t connect_msg[100];
-
 static int esp8266_mgmt_connect(struct device *dev,
-				   struct wifi_connect_req_params *params)
+				struct wifi_connect_req_params *params)
 {
+	char connect_msg[100];
 	int len;
 	int ret;
 
 	if (params->security == WIFI_SECURITY_TYPE_PSK) {
-		len = sprintf(connect_msg, "AT+CWJAP_CUR=\"");
+		len = snprintk(connect_msg, 100, "AT+CWJAP_CUR=\"");
 		memcpy(&connect_msg[len], params->ssid,
 		       params->ssid_length);
 		len += params->ssid_length;
-		len += sprintf(&connect_msg[len], "\",\"");
+		len += snprintk(&connect_msg[len], 100 - len, "\",\"");
 		memcpy(&connect_msg[len], params->psk,
 		       params->psk_length);
 		len += params->psk_length;
-		len += sprintf(&connect_msg[len], "\"");
+		len += snprintk(&connect_msg[len], 100 - len, "\"");
 		connect_msg[len] = '\0';
 	} else {
-		len = sprintf(connect_msg, "AT+CWJAP_CUR=\"");
+		len = snprintk(connect_msg, 100, "AT+CWJAP_CUR=\"");
 		memcpy(&connect_msg[len], params->ssid,
 		       params->ssid_length);
 		len += params->ssid_length;
-		len += sprintf(&connect_msg[len], "\"");
+		len += snprintk(&connect_msg[len], 100 - len, "\"");
 		connect_msg[len] = '\0';
 	}
 
@@ -1110,9 +1101,9 @@ static void esp8266_iface_init(struct net_if *iface)
 
 static const struct net_wifi_mgmt_offload esp8266_api = {
 	.iface_api.init = esp8266_iface_init,
-	.scan		= esp8266_mgmt_scan,
-	.connect	= esp8266_mgmt_connect,
-	.disconnect	= esp8266_mgmt_disconnect,
+	.scan           = esp8266_mgmt_scan,
+	.connect        = esp8266_mgmt_connect,
+	.disconnect     = esp8266_mgmt_disconnect,
 };
 
 static inline struct net_buf *read_rx_allocator(s32_t timeout, void *user_data)
@@ -1144,10 +1135,10 @@ static void esp8266_read_rx(struct net_buf **buf)
 		/* make sure we have storage */
 		if (!*buf) {
 			*buf = net_buf_alloc(&esp8266_recv_pool,
-				BUF_ALLOC_TIMEOUT);
+					     BUF_ALLOC_TIMEOUT);
 			if (!*buf) {
 				LOG_ERR("Can't allocate RX data! "
-					    "Skipping data!");
+					"Skipping data!");
 				break;
 			}
 		}
@@ -1158,7 +1149,7 @@ static void esp8266_read_rx(struct net_buf **buf)
 					      &esp8266_recv_pool);
 		if (rx_len < bytes_read) {
 			LOG_ERR("Data was lost! read %u of %u!",
-				    rx_len, bytes_read);
+				rx_len, bytes_read);
 		}
 	}
 }
@@ -1229,17 +1220,15 @@ static int net_pkt_setup_ip_data(struct net_pkt *pkt, struct socket_data *sock)
 		hdr_len = sizeof(struct net_ipv4_hdr);
 	}
 
-#if defined(CONFIG_NET_UDP)
-	if (sock->ip_proto == IPPROTO_UDP) {
+
+	if (IS_ENABLED(CONFIG_NET_UDP) && sock->ip_proto == IPPROTO_UDP) {
 		if (net_udp_create(pkt, src_port, dst_port)) {
 			return -1;
 		}
 
 		hdr_len += NET_UDPH_LEN;
-	}
-#endif
-#if defined(CONFIG_NET_TCP)
-	if (sock->ip_proto == IPPROTO_TCP) {
+	} else if (IS_ENABLED(CONFIG_NET_TCP) &&
+		   sock->ip_proto == IPPROTO_TCP) {
 		NET_PKT_DATA_ACCESS_DEFINE(tcp_access, struct net_tcp_hdr);
 		struct net_tcp_hdr *tcp;
 
@@ -1261,7 +1250,6 @@ static int net_pkt_setup_ip_data(struct net_pkt *pkt, struct socket_data *sock)
 
 		hdr_len += NET_TCPH_LEN;
 	}
-#endif /* CONFIG_NET_TCP */
 
 	return hdr_len;
 }
@@ -1281,9 +1269,9 @@ static void esp8266_read_data(struct net_buf **buf)
 
 	sock->read_error = 0;
 	sock->rx_pkt =  net_pkt_rx_alloc_with_buffer(
-			net_context_get_iface(sock->context),
-			bytes_left, sock->family, sock->ip_proto,
-			BUF_ALLOC_TIMEOUT);
+		net_context_get_iface(sock->context),
+		bytes_left, sock->family, sock->ip_proto,
+		BUF_ALLOC_TIMEOUT);
 
 	if (!sock->rx_pkt) {
 		sock->read_error = -ENOMEM;
@@ -1303,7 +1291,7 @@ static void esp8266_read_data(struct net_buf **buf)
 	while (inc && bytes_left) {
 		if (inc->len > bytes_left) {
 			if (net_pkt_write(sock->rx_pkt, inc->data,
-				bytes_left) < 0) {
+					  bytes_left) < 0) {
 				sock->read_error = -ENOMEM;
 				break;
 			}
@@ -1311,7 +1299,7 @@ static void esp8266_read_data(struct net_buf **buf)
 			bytes_left = 0;
 		} else {
 			if (net_pkt_write(sock->rx_pkt, inc->data,
-				inc->len) < 0) {
+					  inc->len) < 0) {
 				sock->read_error = -ENOMEM;
 				break;
 			}
@@ -1397,11 +1385,12 @@ static int esp8266_process_setup_read(struct net_buf **buf)
 		}
 	}
 
-	if (found < 0)
+	if (found < 0) {
 		return found;
+	}
 
-	temp[found+1] = '\0';
-	hdr_len = found+1;
+	temp[found + 1] = '\0';
+	hdr_len = found + 1;
 	colon = strtok(temp, ":");
 
 	comma = strtok(colon, ",");
@@ -1431,11 +1420,12 @@ static void sockreadrecv_cb_work(struct k_work *work)
 				net_pkt_unref(pkt);
 			}
 			sock->recv_cb(sock->context, NULL, NULL, NULL,
-				sock->read_error, sock->recv_user_data);
+				      sock->read_error, sock->recv_user_data);
 		} else {
 			sock->recv_cb(sock->context, pkt, NULL, NULL, 0,
-				sock->recv_user_data);
+				      sock->recv_user_data);
 		}
+
 	} else {
 		net_pkt_unref(pkt);
 	}
@@ -1497,7 +1487,7 @@ static void esp8266_rx(void)
 
 			if (foo_data.data_len) {
 				if (net_buf_frags_len(rx_buf) >=
-					foo_data.data_len) {
+				    foo_data.data_len) {
 					esp8266_read_data(&rx_buf);
 
 					if (!rx_buf) {
@@ -1545,12 +1535,12 @@ static void esp8266_rx(void)
 
 					/* found a matching handler */
 					LOG_INF("MATCH %s (len:%u)\n",
-						    handlers[i].cmd, len);
+						handlers[i].cmd, len);
 
 					/* skip cmd_len */
 					if (handlers[i].skip) {
 						rx_buf = net_buf_skip(rx_buf,
-								handlers[i].cmd_len);
+						handlers[i].cmd_len);
 					}
 
 					/* locate next cr/lf */
@@ -1603,7 +1593,7 @@ static void esp8266_gpio_reset(void)
 
 	if (!gpio_dev) {
 		LOG_ERR("gpio device is not found: %s",
-			    CONFIG_WIFI_ESP8266_GPIO_DEVICE);
+			CONFIG_WIFI_ESP8266_GPIO_DEVICE);
 	}
 
 	gpio_pin_configure(gpio_dev, CONFIG_WIFI_ESP8266_GPIO_ENABLE_PIN,
@@ -1611,12 +1601,12 @@ static void esp8266_gpio_reset(void)
 
 	/* disable device until we want to configure it*/
 	gpio_pin_write(drv_data->gpio_dev, CONFIG_WIFI_ESP8266_GPIO_ENABLE_PIN,
-			0);
+		       0);
 
 	/* enable device and check for ready */
 	k_sleep(100);
 	gpio_pin_write(drv_data->gpio_dev, CONFIG_WIFI_ESP8266_GPIO_ENABLE_PIN,
-			1);
+		       1);
 }
 #endif
 
@@ -1667,7 +1657,6 @@ static void esp8266_reset_work(void)
 		return;
 	}
 
-
 	ret = send_at_cmd(NULL, "AT+CWMODE_CUR=3", MDM_CMD_TIMEOUT);
 	if (ret < 0) {
 		LOG_ERR("failed to set current Wi-Fi mode to 3\n");
@@ -1681,8 +1670,8 @@ static int esp8266_init(struct device *dev)
 	memset(&foo_data, 0, sizeof(foo_data));
 
 	if (mdm_receiver_register(&foo_data.mdm_ctx,
-		CONFIG_WIFI_ESP8266_UART_DEVICE,
-		mdm_recv_buf, sizeof(mdm_recv_buf)) < 0) {
+				  CONFIG_WIFI_ESP8266_UART_DEVICE,
+				  mdm_recv_buf, sizeof(mdm_recv_buf)) < 0) {
 		LOG_ERR("Error registering modem receiver");
 		return -EINVAL;
 	}
