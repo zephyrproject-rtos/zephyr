@@ -100,7 +100,7 @@ class Device:
         self.reset_pin.write(True)
         self.check_device_ready()
 
-    def send_receive(self, data, wait = True):
+    def send_receive(self, data, wait=True):
         """
         Transmit and receive full duplex data over SPI
         If requested to wait, wait for device to become ready

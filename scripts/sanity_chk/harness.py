@@ -31,7 +31,7 @@ class Harness:
 
         if config:
             self.type = config.get('type', None)
-            self.regex = config.get('regex', [] )
+            self.regex = config.get('regex', [])
             self.repeat = config.get('repeat', 1)
             self.ordered = config.get('ordered', True)
 
