@@ -1898,6 +1898,9 @@ static inline u32_t isr_rx_conn_pkt_ack(struct pdu_data *pdu_data_tx,
 		 */
 		_radio.conn_curr->procedure_expire =
 			_radio.conn_curr->procedure_reload;
+
+		/* Reset enc req queued state */
+		_radio.conn_curr->llcp_enc.ack = _radio.conn_curr->llcp_enc.req;
 		break;
 
 	case PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_RSP:
@@ -9759,7 +9762,10 @@ static bool is_enc_req_pause_tx(struct connection *conn)
 
 	pdu_data_tx = (void *)conn->pkt_tx_head->pdu_data;
 	if ((pdu_data_tx->ll_id == PDU_DATA_LLID_CTRL) &&
-	    (pdu_data_tx->llctrl.opcode == PDU_DATA_LLCTRL_TYPE_ENC_REQ)) {
+	    ((pdu_data_tx->llctrl.opcode ==
+	      PDU_DATA_LLCTRL_TYPE_ENC_REQ) ||
+	     (pdu_data_tx->llctrl.opcode ==
+	      PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_REQ))) {
 		if (((conn->llcp_req != conn->llcp_ack) &&
 		     (conn->llcp_type != LLCP_ENCRYPTION)) ||
 		    ((conn->llcp_req == conn->llcp_ack) &&
@@ -9936,8 +9942,10 @@ static void prepare_pdu_data_tx(struct connection *conn,
 
 			pdu_data_tx = (void *)conn->pkt_tx_head->pdu_data;
 			if ((pdu_data_tx->ll_id != PDU_DATA_LLID_CTRL) ||
-			    (pdu_data_tx->llctrl.opcode !=
-			     PDU_DATA_LLCTRL_TYPE_ENC_REQ)) {
+			    ((pdu_data_tx->llctrl.opcode !=
+			      PDU_DATA_LLCTRL_TYPE_ENC_REQ) &&
+			     (pdu_data_tx->llctrl.opcode !=
+			      PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_REQ))) {
 				conn->pkt_tx_ctrl = conn->pkt_tx_ctrl_last =
 					conn->pkt_tx_head;
 			}
