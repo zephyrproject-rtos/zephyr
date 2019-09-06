@@ -33,7 +33,8 @@ static bool _tcp_conn_delete = true;
 
 static sys_slist_t tcp_conns = SYS_SLIST_STATIC_INIT(&tcp_conns);
 
-int net_tcp_unref(struct net_context *context);
+/** TCP context flag; is this TCP context/socket used or not */
+#define NET_TCP_IN_USE BIT(0)
 
 #define NET_MAX_TCP_CONTEXT CONFIG_NET_MAX_CONTEXTS
 static struct tcp tcp_context[NET_MAX_TCP_CONTEXT];
@@ -196,6 +197,70 @@ static void tcp_send(struct net_pkt *pkt)
 	tcp_pkt_unref(pkt);
 }
 
+static void tcp_send_queue_flush(struct tcp *conn)
+{
+	struct net_pkt *pkt;
+
+	if (is_timer_subscribed(&conn->send_timer)) {
+		k_timer_stop(&conn->send_timer);
+	}
+
+	while ((pkt = tcp_slist(&conn->send_queue, get,
+				struct net_pkt, next))) {
+		tcp_pkt_unref(pkt);
+	}
+}
+
+static void tcp_win_free(struct tcp_win *w)
+{
+	struct net_buf *buf;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&w->bufs, buf, next) {
+		tcp_dbg("%s %p len=%d", w->name, buf, buf->len);
+		tcp_nbuf_unref(buf);
+	}
+
+	tcp_free(w->name);
+	tcp_free(w);
+}
+
+static inline bool net_tcp_is_used(struct tcp *tcp)
+{
+	NET_ASSERT(tcp);
+
+	return tcp->flags & NET_TCP_IN_USE;
+}
+
+int net_tcp_unref(struct net_context *context)
+{
+	int key;
+
+	tp_out(context->tcp->iface, "TP_TRACE", "event", "CONN_DELETE");
+
+	if (_tcp_conn_delete == false) {
+		goto out;
+	}
+
+	tcp_send_queue_flush(context->tcp);
+
+	tcp_win_free(context->tcp->snd);
+	tcp_win_free(context->tcp->rcv);
+
+	tcp_free(context->tcp->src);
+	tcp_free(context->tcp->dst);
+
+	key = irq_lock();
+
+	sys_slist_find_and_remove(&tcp_conns, (sys_snode_t *) context->tcp);
+	memset(context->tcp, 0, sizeof(*context->tcp));
+	context->tcp = NULL;
+	context->flags |= NET_TCP_IN_USE;
+
+	irq_unlock(key);
+out:
+	return 0;
+}
+
 static void tcp_send_process(struct k_timer *timer)
 {
 	struct net_context *context = k_timer_user_data_get(timer);
@@ -290,19 +355,6 @@ static const char *tcp_state_to_str(enum tcp_state state, bool prefix)
 	tcp_assert(s, "Invalid TCP state: %u", state);
 out:
 	return prefix ? s : (s + 4);
-}
-
-static void tcp_win_free(struct tcp_win *w)
-{
-	struct net_buf *buf;
-
-	SYS_SLIST_FOR_EACH_CONTAINER(&w->bufs, buf, next) {
-		tcp_dbg("%s %p len=%d", w->name, buf, buf->len);
-		tcp_nbuf_unref(buf);
-	}
-
-	tcp_free(w->name);
-	tcp_free(w);
 }
 
 static void tcp_win_append(struct tcp_win *w, const void *data, size_t len)
@@ -479,20 +531,6 @@ void tcp_adj(struct net_pkt *pkt, int req_len)
 	u16_t len = ntohs(ip->len) + req_len;
 
 	ip->len = htons(len);
-}
-
-static void tcp_send_queue_flush(struct tcp *conn)
-{
-	struct net_pkt *pkt;
-
-	if (is_timer_subscribed(&conn->send_timer)) {
-		k_timer_stop(&conn->send_timer);
-	}
-
-	while ((pkt = tcp_slist(&conn->send_queue, get,
-				struct net_pkt, next))) {
-		tcp_pkt_unref(pkt);
-	}
 }
 
 static struct net_pkt *tcp_pkt_make(struct tcp *conn, u8_t flags)
@@ -832,16 +870,6 @@ int tcp_close(struct tcp *conn)
 
 /* API into the TCP stack as seen by the IP stack in net_context.c */
 
-/** TCP context flag; is this TCP context/socket used or not */
-#define NET_TCP_IN_USE BIT(0)
-
-static inline bool net_tcp_is_used(struct tcp *tcp)
-{
-	NET_ASSERT(tcp);
-
-	return tcp->flags & NET_TCP_IN_USE;
-}
-
 static void tcp_endpoints_set(struct tcp *conn, struct net_pkt *pkt)
 {
 	tcp_assert(NULL == conn->iface, "");
@@ -902,36 +930,6 @@ int net_tcp_get(struct net_context *context)
 					CONFIG_NET_CONFIG_PEER_IPV4_ADDR, 4242);
 	}
 
-	return 0;
-}
-
-int net_tcp_unref(struct net_context *context)
-{
-	int key;
-
-	tp_out(context->tcp->iface, "TP_TRACE", "event", "CONN_DELETE");
-
-	if (_tcp_conn_delete == false) {
-		goto out;
-	}
-
-	tcp_send_queue_flush(context->tcp);
-
-	tcp_win_free(context->tcp->snd);
-	tcp_win_free(context->tcp->rcv);
-
-	tcp_free(context->tcp->src);
-	tcp_free(context->tcp->dst);
-
-	key = irq_lock();
-
-	sys_slist_find_and_remove(&tcp_conns, (sys_snode_t *) context->tcp);
-	memset(context->tcp, 0, sizeof(*context->tcp));
-	context->tcp = NULL;
-	context->flags |= NET_TCP_IN_USE;
-
-	irq_unlock(key);
-out:
 	return 0;
 }
 
