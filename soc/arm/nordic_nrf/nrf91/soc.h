@@ -19,7 +19,7 @@
 #include <generated_dts_board.h>
 
 /* Add include for peripheral base address mappings */
-#include <nrfx_config_nrf9160.h>
+#include <nrfx_config.h>
 
 #endif /* !_ASMLANGUAGE */
 
