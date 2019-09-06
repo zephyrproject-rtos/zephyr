@@ -33,9 +33,6 @@ static bool _tcp_conn_delete = true;
 
 static sys_slist_t tcp_conns = SYS_SLIST_STATIC_INIT(&tcp_conns);
 
-/** TCP context flag; is this TCP context/socket used or not */
-#define NET_TCP_IN_USE BIT(0)
-
 static struct tcp tcp_context[CONFIG_NET_MAX_CONTEXTS];
 
 NET_BUF_POOL_DEFINE(tcp_nbufs, 64/*count*/, 128/*size*/, 0, NULL);
