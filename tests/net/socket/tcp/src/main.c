@@ -352,15 +352,68 @@ void test_v6_sendto_recvfrom_null_dest(void)
 	k_sleep(TCP_TEARDOWN_TIMEOUT);
 }
 
+static void calc_net_context(struct net_context *context, void *user_data)
+{
+	int *count = user_data;
+
+	(*count)++;
+}
+
+void test_open_close_immediately(void)
+{
+	/* Test if socket closing works if done immediately after
+	 * receiving SYN.
+	 */
+	int count_before = 0, count_after = 0;
+	struct sockaddr_in c_saddr;
+	struct sockaddr_in s_saddr;
+	int c_sock;
+	int s_sock;
+
+	prepare_sock_tcp_v4(CONFIG_NET_CONFIG_MY_IPV4_ADDR, ANY_PORT,
+			    &c_sock, &c_saddr);
+	prepare_sock_tcp_v4(CONFIG_NET_CONFIG_MY_IPV4_ADDR, SERVER_PORT,
+			    &s_sock, &s_saddr);
+
+	test_bind(s_sock, (struct sockaddr *)&s_saddr, sizeof(s_saddr));
+	test_listen(s_sock);
+
+	/* We should have two contexts open now */
+	net_context_foreach(calc_net_context, &count_before);
+
+	/* Try to connect to a port that is not accepting connections.
+	 * The end result should be that we do not leak net_context.
+	 */
+	s_saddr.sin_port = htons(SERVER_PORT + 1);
+
+	zassert_not_equal(connect(c_sock, (struct sockaddr *)&s_saddr,
+				  sizeof(s_saddr)),
+			  0, "connect succeed");
+	test_close(c_sock);
+
+	/* After the client socket closing, the context count should be 1 */
+	net_context_foreach(calc_net_context, &count_after);
+
+	test_close(s_sock);
+
+	zassert_equal(count_before - 1, count_after,
+		      "net_context still in use (before %d vs after %d)",
+		      count_before - 1, count_after);
+
+	k_sleep(TCP_TEARDOWN_TIMEOUT);
+}
+
 void test_main(void)
 {
-	ztest_test_suite(socket_tcp,
-			 ztest_user_unit_test(test_v4_send_recv),
-			 ztest_user_unit_test(test_v6_send_recv),
-			 ztest_user_unit_test(test_v4_sendto_recvfrom),
-			 ztest_user_unit_test(test_v6_sendto_recvfrom),
-			 ztest_user_unit_test(test_v4_sendto_recvfrom_null_dest),
-			 ztest_user_unit_test(test_v6_sendto_recvfrom_null_dest));
+	ztest_test_suite(
+		socket_tcp,
+		ztest_user_unit_test(test_v4_send_recv),
+		ztest_user_unit_test(test_v6_send_recv),
+		ztest_user_unit_test(test_v4_sendto_recvfrom),
+		ztest_user_unit_test(test_v6_sendto_recvfrom),
+		ztest_user_unit_test(test_v4_sendto_recvfrom_null_dest),
+		ztest_user_unit_test(test_v6_sendto_recvfrom_null_dest),
+		ztest_unit_test(test_open_close_immediately));
 
 	ztest_run_test_suite(socket_tcp);
 }
