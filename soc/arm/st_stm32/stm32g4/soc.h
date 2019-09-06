@@ -60,6 +60,14 @@
 #include <stm32g4xx_ll_adc.h>
 #endif
 
+#ifdef CONFIG_IWDG_STM32
+#include <stm32g4xx_ll_iwdg.h>
+#endif
+
+#ifdef CONFIG_WWDG_STM32
+#include <stm32l4xx_ll_wwdg.h>
+#endif
+
 #ifdef CONFIG_ENTROPY_STM32_RNG
 #include <stm32g4xx_ll_rng.h>
 #endif
