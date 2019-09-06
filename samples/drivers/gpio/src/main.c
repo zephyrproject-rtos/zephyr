@@ -8,8 +8,8 @@
  * @file
  * @brief GPIO driver sample
  *
- * This sample toggles LED1 and wait interrupt on BUTTON1.
- * Note that an internet pull-up is set on BUTTON1 as the button
+ * This sample toggles LED1 and waits for an interrupt on BUTTON1.
+ * Note that an internal pull-up is set on BUTTON1 as the button
  * only drives low when pressed.
  */
 #include <zephyr.h>
