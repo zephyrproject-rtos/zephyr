@@ -10076,6 +10076,11 @@ static void ctrl_tx_sec_enqueue(struct connection *conn,
 			node_tx->next = conn->pkt_tx_ctrl_last->next;
 			conn->pkt_tx_ctrl_last->next = node_tx;
 		}
+
+		/* Update last pointer if ctrl added at end of tx list */
+		if (!node_tx->next) {
+			conn->pkt_tx_last = node_tx;
+		}
 	} else {
 		bool pause = false;
 
