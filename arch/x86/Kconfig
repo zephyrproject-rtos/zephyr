@@ -82,6 +82,12 @@ choice
 		  Reboot via the RST_CNT register, going back to BIOS.
 endchoice
 
+config X86_ACPI
+	bool "ACPI (Advanced Configuration and Power Interface) support"
+	default n
+	help
+	  Allow retrieval of platform configuration at runtime.
+
 config X86_MULTIBOOT
 	bool "Generate multiboot header"
 	default y
