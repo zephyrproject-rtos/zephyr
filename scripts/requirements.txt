@@ -18,7 +18,7 @@ sphinx==1.7.5
 sphinx_rtd_theme
 sphinx-tabs
 sphinxcontrib-svg2pdfconverter
-west>=0.6.0
+west>=0.6.2
 wheel==0.30.0
 # "win32" is used for 64-bit Windows as well
 windows-curses; sys_platform == "win32"
