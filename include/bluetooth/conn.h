@@ -327,6 +327,9 @@ typedef enum __packed {
  *  to achieve due to local or remote device limitation (e.g., input output
  *  capabilities), or if the maximum number of paired devices has been reached.
  *
+ *  This function may return error if the pairing procedure has already been
+ *  initiated by the local device or the peer device.
+ *
  *  @param conn Connection object.
  *  @param sec Requested security level.
  *

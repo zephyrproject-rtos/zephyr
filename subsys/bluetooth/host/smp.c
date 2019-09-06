@@ -2585,6 +2585,7 @@ bool bt_smp_request_ltk(struct bt_conn *conn, u64_t rand, u16_t ediv, u8_t *ltk)
 				     BT_SMP_MAX_ENC_KEY_SIZE - enc_size);
 		}
 
+		atomic_set_bit(smp->flags, SMP_FLAG_ENC_PENDING);
 		return true;
 	}
 
@@ -2622,6 +2623,7 @@ bool bt_smp_request_ltk(struct bt_conn *conn, u64_t rand, u16_t ediv, u8_t *ltk)
 				     BT_SMP_MAX_ENC_KEY_SIZE - enc_size);
 		}
 
+		atomic_set_bit(smp->flags, SMP_FLAG_ENC_PENDING);
 		return true;
 	}
 #endif /* !CONFIG_BT_SMP_SC_PAIR_ONLY */
@@ -2659,6 +2661,10 @@ static int smp_send_security_req(struct bt_conn *conn)
 
 	/* pairing is in progress */
 	if (atomic_test_bit(smp->flags, SMP_FLAG_PAIRING)) {
+		return -EBUSY;
+	}
+
+	if (atomic_test_bit(smp->flags, SMP_FLAG_ENC_PENDING)) {
 		return -EBUSY;
 	}
 
@@ -2858,6 +2864,11 @@ static int smp_send_pairing_req(struct bt_conn *conn)
 		return -EBUSY;
 	}
 
+	/* Encryption is in progress */
+	if (atomic_test_bit(smp->flags, SMP_FLAG_ENC_PENDING)) {
+		return -EBUSY;
+	}
+
 	/* early verify if required sec level if reachable */
 	if (!sec_level_reachable(conn)) {
 		return -EINVAL;
@@ -2899,6 +2910,7 @@ static int smp_send_pairing_req(struct bt_conn *conn)
 	smp_send(smp, req_buf, NULL, NULL);
 
 	atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_RSP);
+	atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_SECURITY_REQUEST);
 	atomic_set_bit(smp->flags, SMP_FLAG_PAIRING);
 
 	return 0;
@@ -2982,6 +2994,8 @@ static u8_t smp_pairing_rsp(struct bt_smp *smp, struct net_buf *buf)
 	}
 
 	atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PUBLIC_KEY);
+	atomic_clear_bit(&smp->allowed_cmds, BT_SMP_CMD_SECURITY_REQUEST);
+
 	return sc_send_public_key(smp);
 }
 #else
@@ -3650,6 +3664,16 @@ static u8_t smp_security_request(struct bt_smp *smp, struct net_buf *buf)
 
 	BT_DBG("");
 
+	if (atomic_test_bit(smp->flags, SMP_FLAG_PAIRING)) {
+		/* We have already started pairing process */
+		return 0;
+	}
+
+	if (atomic_test_bit(smp->flags, SMP_FLAG_ENC_PENDING)) {
+		/* We have already started encryption procedure */
+		return 0;
+	}
+
 	if (sc_supported) {
 		auth = req->auth_req & BT_SMP_AUTH_MASK_SC;
 	} else {
@@ -4137,6 +4161,8 @@ static void bt_smp_encrypt_change(struct bt_l2cap_chan *chan,
 	BT_DBG("chan %p conn %p handle %u encrypt 0x%02x hci status 0x%02x",
 	       chan, conn, conn->handle, conn->encrypt, hci_status);
 
+	atomic_clear_bit(smp->flags, SMP_FLAG_ENC_PENDING);
+
 	if (hci_status) {
 		return;
 	}
@@ -4153,8 +4179,6 @@ static void bt_smp_encrypt_change(struct bt_l2cap_chan *chan,
 		smp_reset(smp);
 		return;
 	}
-
-	atomic_clear_bit(smp->flags, SMP_FLAG_ENC_PENDING);
 
 	/* derive BR/EDR LinkKey if supported by both sides */
 	if (atomic_test_bit(smp->flags, SMP_FLAG_SC)) {
@@ -5074,16 +5098,41 @@ int bt_smp_start_security(struct bt_conn *conn)
 #if defined(CONFIG_BT_CENTRAL)
 	case BT_HCI_ROLE_MASTER:
 	{
+		int err;
+		struct bt_smp *smp;
+
+		smp = smp_chan_get(conn);
+		if (!smp) {
+			return -ENOTCONN;
+		}
+
 		if (!smp_keys_check(conn)) {
 			return smp_send_pairing_req(conn);
 		}
 
+		/* pairing is in progress */
+		if (atomic_test_bit(smp->flags, SMP_FLAG_PAIRING)) {
+			return -EBUSY;
+		}
+
+		/* Encryption is in progress */
+		if (atomic_test_bit(smp->flags, SMP_FLAG_ENC_PENDING)) {
+			return -EBUSY;
+		}
+
 		/* LE SC LTK and legacy master LTK are stored in same place */
-		return bt_conn_le_start_encryption(conn,
-						   conn->le.keys->ltk.rand,
-						   conn->le.keys->ltk.ediv,
-						   conn->le.keys->ltk.val,
-						   conn->le.keys->enc_size);
+		err = bt_conn_le_start_encryption(conn,
+						  conn->le.keys->ltk.rand,
+						  conn->le.keys->ltk.ediv,
+						  conn->le.keys->ltk.val,
+						  conn->le.keys->enc_size);
+		if (err) {
+			return err;
+		}
+
+		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_SECURITY_REQUEST);
+		atomic_set_bit(smp->flags, SMP_FLAG_ENC_PENDING);
+		return 0;
 	}
 #endif /* CONFIG_BT_CENTRAL && CONFIG_BT_SMP */
 #if defined(CONFIG_BT_PERIPHERAL)
