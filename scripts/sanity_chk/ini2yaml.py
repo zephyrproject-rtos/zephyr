@@ -26,12 +26,12 @@ for section in config.sections():
         else:
             tc[opt] = value
 
-    test = { section : tc}
+    test = {section : tc}
     tests.append(test)
 
 y['tests'] = tests
 if sample:
-    y['sample'] = { 'name': "TBD", 'description': "TBD" }
+    y['sample'] = {'name': "TBD", 'description': "TBD"}
 
 with open(out_file, "w") as f:
-    yaml.dump(y, f, width=50, indent=4,  default_flow_style=False)
+    yaml.dump(y, f, width=50, indent=4, default_flow_style=False)

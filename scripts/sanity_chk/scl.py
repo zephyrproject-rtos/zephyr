@@ -46,8 +46,8 @@ try:
     def _yaml_validate(data, schema):
         if not schema:
             return
-        c = pykwalify.core.Core(source_data = data, schema_data = schema)
-        c.validate(raise_exception = True)
+        c = pykwalify.core.Core(source_data=data, schema_data=schema)
+        c.validate(raise_exception=True)
 
 except ImportError as e:
     log.warning("can't import pykwalify; won't validate YAML (%s)", e)

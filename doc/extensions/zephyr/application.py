@@ -207,7 +207,7 @@ class ZephyrAppCommandsDirective(Directive):
             if tool_comment:
                 paragraph = nodes.paragraph()
                 paragraph += nodes.Text(tool_comment.format(
-                                    'CMake and {}'.format( generator)))
+                    'CMake and {}'.format(generator)))
                 content.append(paragraph)
                 content.append(self._lit_block(c))
             else:
@@ -295,7 +295,7 @@ class ZephyrAppCommandsDirective(Directive):
         if host_os == "unix":
             content.append('{} {} && cd {}'.format(mkdir, build_dir, build_dir))
         elif host_os == "win":
-            build_dir = build_dir.replace('/','\\')
+            build_dir = build_dir.replace('/', '\\')
             content.append('mkdir {} & cd {}'.format(build_dir, build_dir))
         return content
 

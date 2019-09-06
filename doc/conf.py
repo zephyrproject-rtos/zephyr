@@ -524,7 +524,7 @@ html_context = {
     'is_release': is_release,
     'theme_logo_only': False,
     'current_version': version,
-    'versions': ( ("latest", "/"),
+    'versions': (("latest", "/"),
                  ("2.0.0", "/2.0.0/"),
                  ("1.14.0", "/1.14.0/"),
                  ("1.13.0", "/1.13.0/"),

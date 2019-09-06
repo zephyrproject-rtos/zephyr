@@ -66,7 +66,7 @@ class Message:
             word = bitstruct.unpack_from('u32', self.tx_data, offset)
             print('Index: %2d Content: 0x%08x' %(index, word[0]))
 
-    def print_response(self, msg, verbose = False):
+    def print_response(self, msg, verbose=False):
         """
         Parses and prints the contents of the response message
         """

@@ -73,7 +73,7 @@ from collections import OrderedDict
 # Regular dictionaries are ordered only with Python 3.6 and
 # above. Good summary and pointers to official documents at:
 # https://stackoverflow.com/questions/39980323/are-dictionaries-ordered-in-python-3-6
-kobjects = OrderedDict ([
+kobjects = OrderedDict([
     ("k_mem_slab", (None, False)),
     ("k_msgq", (None, False)),
     ("k_mutex", (None, False)),

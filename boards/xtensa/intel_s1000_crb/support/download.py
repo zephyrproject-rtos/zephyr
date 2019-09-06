@@ -65,7 +65,7 @@ def setup_device():
     Configure SPI master device
     Reset target and send initialization commands
     """
-    sue_creek.configure_device(spi_mode = 3, order = 'msb', bits = 8)
+    sue_creek.configure_device(spi_mode=3, order='msb', bits=8)
     sue_creek.reset_device()
 
     command = msg.create_memwrite_cmd((0x71d14, 0, 0x71d24, 0,
@@ -112,7 +112,7 @@ def execute_firmware():
     msg.print_response(response)
 
     command = msg.create_execfw_cmd()
-    response = sue_creek.send_receive(command, wait = False)
+    response = sue_creek.send_receive(command, wait=False)
     msg.print_response(response)
 
 def main():
