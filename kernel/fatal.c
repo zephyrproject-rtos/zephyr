@@ -26,7 +26,7 @@ FUNC_NORETURN __weak void z_arch_system_halt(unsigned int reason)
 
 	(void)z_arch_irq_lock();
 	for (;;) {
-		k_cpu_idle();
+		/* Spin endlessly */
 	}
 }
 /* LCOV_EXCL_STOP */
