@@ -292,43 +292,6 @@ out:
 	return prefix ? s : (s + 4);
 }
 
-#if IS_ENABLED(CONFIG_NET_TP)
-static bool tcp_endpoint_cmp(union tcp_endpoint *ep, struct net_pkt *pkt,
-				int which)
-{
-	union tcp_endpoint *ep_new = tcp_endpoint_new(pkt, which);
-	bool is_equal = memcmp(ep, ep_new, tcp_endpoint_len(ep->sa.sa_family)) ?
-		false : true;
-
-	tcp_free(ep_new);
-
-	return is_equal;
-}
-
-static bool tcp_conn_cmp(struct tcp *conn, struct net_pkt *pkt)
-{
-	return tcp_endpoint_cmp(conn->src, pkt, DST) &&
-		tcp_endpoint_cmp(conn->dst, pkt, SRC);
-}
-
-static struct tcp *tcp_conn_search(struct net_pkt *pkt)
-{
-	bool found = false;
-	struct tcp *conn;
-
-	SYS_SLIST_FOR_EACH_CONTAINER(&tcp_conns, conn, next) {
-
-		found = tcp_conn_cmp(conn, pkt);
-
-		if (found) {
-			break;
-		}
-	}
-
-	return found ? conn : NULL;
-}
-#endif
-
 static void tcp_win_free(struct tcp_win *w)
 {
 	struct net_buf *buf;
@@ -1229,6 +1192,41 @@ drop:
 
 #if defined(CONFIG_NET_TP)
 static sys_slist_t tp_q = SYS_SLIST_STATIC_INIT(&tp_q);
+
+static bool tcp_endpoint_cmp(union tcp_endpoint *ep, struct net_pkt *pkt,
+				int which)
+{
+	union tcp_endpoint *ep_new = tcp_endpoint_new(pkt, which);
+	bool is_equal = memcmp(ep, ep_new, tcp_endpoint_len(ep->sa.sa_family)) ?
+		false : true;
+
+	tcp_free(ep_new);
+
+	return is_equal;
+}
+
+static bool tcp_conn_cmp(struct tcp *conn, struct net_pkt *pkt)
+{
+	return tcp_endpoint_cmp(conn->src, pkt, DST) &&
+		tcp_endpoint_cmp(conn->dst, pkt, SRC);
+}
+
+static struct tcp *tcp_conn_search(struct net_pkt *pkt)
+{
+	bool found = false;
+	struct tcp *conn;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&tcp_conns, conn, next) {
+
+		found = tcp_conn_cmp(conn, pkt);
+
+		if (found) {
+			break;
+		}
+	}
+
+	return found ? conn : NULL;
+}
 
 void tcp_input(struct net_pkt *pkt)
 {
