@@ -64,6 +64,8 @@ def _resolve_build_dir(fmt, guess, cwd, **kwargs):
         except KeyError:
             # Missing key, check sub-folders and match if a single one exists
             while True:
+                if not curr.exists():
+                    return None
                 dirs = [f for f in curr.iterdir() if f.is_dir()]
                 if len(dirs) != 1:
                     return None
