@@ -385,6 +385,10 @@ int zsock_accept_ctx(struct net_context *parent, struct sockaddr *addr,
 		return -1;
 	}
 
+	if (net_context_get_ip_proto(parent) == IPPROTO_TCP) {
+		net_context_set_state(parent, NET_CONTEXT_LISTENING);
+	}
+
 	struct net_context *ctx = k_fifo_get(&parent->accept_q, K_FOREVER);
 
 #ifdef CONFIG_USERSPACE
