@@ -38,3 +38,8 @@ tests:
       - CONFIG_SHELL_HISTORY=n
     tags: usb net zperf
     depends_on: usb_device
+  sample.net.zperf.shield:
+    platform_whitelist: reel_board
+    extra_args: SHIELD=link_board_eth
+    tags: shield net zperf
+    depends_on: arduino_spi arduino_gpio
