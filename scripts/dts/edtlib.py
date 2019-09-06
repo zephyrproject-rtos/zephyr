@@ -605,7 +605,10 @@ class Device:
         if not prop_type:
             _err("'{}' in {} lacks 'type'".format(name, self.binding_path))
 
-        val = self._prop_val(name, prop_type, options.get("required"))
+        val = self._prop_val(
+            name, prop_type,
+            options.get("required") or options.get("category") == "required")
+
         if val is None:
             # 'required: false' property that wasn't there, or a property type
             # for which we store no data.
@@ -1245,14 +1248,11 @@ def _bad_overwrite(to_dict, from_dict, prop):
     if to_dict[prop] == from_dict[prop]:
         return False
 
-    # Don't error out for the removed 'category' setting here. We will give a
-    # better error message in _check_binding().
-    if prop == "category":
-        return False
-
     # Allow a property to be made required when it previously was optional
     # without a warning
-    if prop == "required" and to_dict[prop] and not from_dict[prop]:
+    if (prop == "required" and to_dict[prop] and not from_dict[prop]) or \
+       (prop == "category" and to_dict[prop] == "required" and
+        from_dict[prop] == "optional"):
         return False
 
     return True
@@ -1305,15 +1305,15 @@ def _check_binding_properties(binding, binding_path):
     if "properties" not in binding:
         return
 
-    ok_prop_keys = {"description", "type", "required", "constraint", "enum",
-                    "const"}
+    ok_prop_keys = {"description", "type", "required", "category",
+                    "constraint", "enum", "const"}
 
     for prop_name, options in binding["properties"].items():
         for key in options:
             if key == "category":
-                _err("please put 'required: {}' instead of 'category: {}' in "
-                     "'properties: {}: ...' in {} - 'category' has been "
-                     "removed".format(
+                _warn("please put 'required: {}' instead of 'category: {}' in "
+                      "'properties: {}: ...' in {} - 'category' will be "
+                      "removed".format(
                          "true" if options["category"] == "required" else "false",
                          options["category"], prop_name, binding_path))
 

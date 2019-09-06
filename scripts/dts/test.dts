@@ -274,7 +274,7 @@
 	};
 
 	//
-	// For testing 'include:' and the legacy 'inherits: !include ...'
+	// For testing 'include:'
 	//
 
 	binding-include {
@@ -322,5 +322,15 @@
 			bar = <2>;
 			not-speced = <0>;
 		};
+	};
+
+	//
+	// For testing deprecated features
+	//
+
+	deprecated {
+		compatible = "deprecated";
+		required = <1>;
+		required-2 = <2>;
 	};
 };
