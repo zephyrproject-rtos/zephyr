@@ -12116,7 +12116,9 @@ u8_t ll_enc_req_send(u16_t handle, u8_t *rand, u8_t *ediv, u8_t *ltk)
 		return BT_HCI_ERR_UNKNOWN_CONN_ID;
 	}
 
-	if (conn->llcp_enc.req != conn->llcp_enc.ack) {
+	if ((conn->llcp_enc.req != conn->llcp_enc.ack) ||
+	    ((conn->llcp_req != conn->llcp_ack) &&
+	     (conn->llcp_type == LLCP_ENCRYPTION))) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
@@ -12128,7 +12130,7 @@ u8_t ll_enc_req_send(u16_t handle, u8_t *rand, u8_t *ediv, u8_t *ltk)
 
 		memcpy(&conn->llcp_enc.ltk[0], ltk, sizeof(conn->llcp_enc.ltk));
 
-		if ((conn->enc_rx == 0) && (conn->enc_tx == 0)) {
+		if (!conn->enc_rx && !conn->enc_tx) {
 			struct pdu_data_llctrl_enc_req *enc_req;
 
 			pdu_data_tx->ll_id = PDU_DATA_LLID_CTRL;
@@ -12144,7 +12146,7 @@ u8_t ll_enc_req_send(u16_t handle, u8_t *rand, u8_t *ediv, u8_t *ltk)
 			enc_req->ediv[1] = ediv[1];
 			bt_rand(enc_req->skdm, sizeof(enc_req->skdm));
 			bt_rand(enc_req->ivm, sizeof(enc_req->ivm));
-		} else if ((conn->enc_rx != 0) && (conn->enc_tx != 0)) {
+		} else if (conn->enc_rx && conn->enc_tx) {
 			memcpy(&conn->llcp_enc.rand[0], rand,
 			       sizeof(conn->llcp_enc.rand));
 
