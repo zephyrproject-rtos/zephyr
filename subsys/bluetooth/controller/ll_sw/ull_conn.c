@@ -1244,8 +1244,10 @@ static struct node_tx *tx_ull_dequeue(struct ll_conn *conn,
 
 		pdu_data_tx = (void *)conn->tx_head->pdu;
 		if ((pdu_data_tx->ll_id != PDU_DATA_LLID_CTRL) ||
-		    (pdu_data_tx->llctrl.opcode !=
-		     PDU_DATA_LLCTRL_TYPE_ENC_REQ)) {
+		    ((pdu_data_tx->llctrl.opcode !=
+		      PDU_DATA_LLCTRL_TYPE_ENC_REQ) &&
+		     (pdu_data_tx->llctrl.opcode !=
+		      PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_REQ))) {
 			conn->tx_ctrl = conn->tx_ctrl_last = conn->tx_head;
 		}
 	}
@@ -1903,7 +1905,10 @@ static bool is_enc_req_pause_tx(struct ll_conn *conn)
 
 	pdu_data_tx = (void *)conn->tx_head->pdu;
 	if ((pdu_data_tx->ll_id == PDU_DATA_LLID_CTRL) &&
-	    (pdu_data_tx->llctrl.opcode == PDU_DATA_LLCTRL_TYPE_ENC_REQ)) {
+	    ((pdu_data_tx->llctrl.opcode ==
+	      PDU_DATA_LLCTRL_TYPE_ENC_REQ) ||
+	     (pdu_data_tx->llctrl.opcode ==
+	      PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_REQ))) {
 		if (((conn->llcp_req != conn->llcp_ack) &&
 		     (conn->llcp_type != LLCP_ENCRYPTION)) ||
 		    ((conn->llcp_req == conn->llcp_ack) &&
@@ -4790,6 +4795,9 @@ static inline void ctrl_tx_ack(struct ll_conn *conn, struct node_tx **tx,
 		 * going out, hence safe by design).
 		 */
 		conn->procedure_expire = conn->procedure_reload;
+
+		/* Reset enc req queued state */
+		conn->llcp_enc.ack = conn->llcp_enc.req;
 		break;
 
 	case PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_RSP:
