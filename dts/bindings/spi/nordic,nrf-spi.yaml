@@ -1,7 +1,7 @@
 #
 # Copyright (c) 2018 Nordic Semiconductor ASA
 #
-# SPDX-License-Identifier: BSD-5-Clause-Nordic
+# SPDX-License-Identifier: Apache-2.0
 #
 
 title: Nordic nRF Family SPI Master node
