@@ -2,10 +2,10 @@
 
 .. _zephyr_2.0:
 
-Zephyr Kernel 2.0.0
+Zephyr RTOS 2.0.0
 ###################
 
-We are pleased to announce the release of Zephyr kernel version 2.0.0.
+We are pleased to announce the release of Zephyr RTOS version 2.0.0.
 
 Major enhancements with this release include:
 
