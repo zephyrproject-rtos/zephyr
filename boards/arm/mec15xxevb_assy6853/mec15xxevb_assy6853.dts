@@ -60,3 +60,7 @@
 &ps2_1 {
 	status = "okay";
 };
+
+&pwm0 {
+	status = "okay";
+};
