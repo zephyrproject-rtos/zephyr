@@ -710,8 +710,10 @@ static void tcp_in(struct tcp *conn, struct net_pkt *pkt)
 next_state:
 	switch (conn->state) {
 	case TCP_LISTEN:
-		if (FL(&fl, ==, SYN)) {
+		if (FL(&fl, &, SYN)) {
 			conn_ack(conn, th_seq(th) + 1); /* capture peer's isn */
+			tcp_out(conn, SYN | ACK);
+			conn_seq(conn, + 1);
 			next = TCP_SYN_RECEIVED;
 		} else {
 			tcp_out(conn, SYN);
@@ -720,12 +722,13 @@ next_state:
 		}
 		break;
 	case TCP_SYN_RECEIVED:
-		tcp_out(conn, SYN | ACK);
-		conn_seq(conn, + 1);
-		/* should we wait here for an ACK and then go to ESTABLISHED
-		   state? I don't see and arrow from SYN RECEIVED to SYN
-		   SENT in Figure 6 of RFC 793 */
-		next = TCP_SYN_SENT;
+		if (FL(&fl, &, ACK, th_ack(th) == conn->seq)) {
+			tcp_send_timer_cancel(conn);
+			next = TCP_ESTABLISHED;
+			if (FL(&fl, &, PSH)) {
+				tcp_data_get(conn, pkt);
+			}
+		}
 		break;
 	case TCP_SYN_SENT:
 		/* if we are in SYN SENT and receive only a SYN without an
