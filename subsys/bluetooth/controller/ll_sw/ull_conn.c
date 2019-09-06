@@ -1814,6 +1814,11 @@ static void ctrl_tx_sec_enqueue(struct ll_conn *conn, struct node_tx *tx)
 			tx->next = conn->tx_ctrl_last->next;
 			conn->tx_ctrl_last->next = tx;
 		}
+
+		/* Update last pointer if ctrl added at end of tx list */
+		if (!tx->next) {
+			conn->tx_data_last = tx;
+		}
 	} else
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
