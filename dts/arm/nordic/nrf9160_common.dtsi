@@ -37,6 +37,85 @@ dppic: dppic@17000 {
 	label = "DPPIC";
 };
 
+egu0: egu@1b000 {
+	compatible = "nordic,nrf-egu";
+	reg = <0x1b000 0x1000>;
+	interrupts = <27 1>;
+	status = "okay";
+};
+
+egu1: egu@1c000 {
+	compatible = "nordic,nrf-egu";
+	reg = <0x1c000 0x1000>;
+	interrupts = <28 1>;
+	status = "okay";
+};
+
+egu2: egu@1d000 {
+	compatible = "nordic,nrf-egu";
+	reg = <0x1d000 0x1000>;
+	interrupts = <29 1>;
+	status = "okay";
+};
+
+egu3: egu@1e000 {
+	compatible = "nordic,nrf-egu";
+	reg = <0x1e000 0x1000>;
+	interrupts = <30 1>;
+	status = "okay";
+};
+
+egu4: egu@1f000 {
+	compatible = "nordic,nrf-egu";
+	reg = <0x1f000 0x1000>;
+	interrupts = <31 1>;
+	status = "okay";
+};
+
+egu5: egu@20000 {
+	compatible = "nordic,nrf-egu";
+	reg = <0x20000 0x1000>;
+	interrupts = <32 1>;
+	status = "okay";
+};
+
+i2s0: i2s@28000 {
+	compatible = "nordic,nrf-i2s";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	reg = <0x28000 0x1000>;
+	interrupts = <40 1>;
+	status = "disabled";
+	label = "I2S_0";
+};
+
+kmu: kmu@39000 {
+	compatible = "nordic,nrf-kmu";
+	reg = <0x39000 0x1000>;
+	interrupts = <57 1>;
+	status = "okay";
+};
+
+pdm0: pdm@26000 {
+	compatible = "nordic,nrf-pdm";
+	reg = <0x26000 0x1000>;
+	interrupts = <38 1>;
+	status = "disabled";
+	label = "PDM_0";
+};
+
+regulators: regulator@4000 {
+	compatible = "nordic,nrf-regulators";
+	reg = <0x4000 0x1000>;
+	status = "okay";
+};
+
+vmc: vmc@3a000 {
+	compatible = "nordic,nrf-vmc";
+	reg = <0x3a000 0x1000>;
+	status = "okay";
+};
+
 uart0: uart@8000 {
 	compatible = "nordic,nrf-uarte";
 	reg = <0x8000 0x1000>;
