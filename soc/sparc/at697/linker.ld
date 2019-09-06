@@ -36,6 +36,8 @@ ENTRY(CONFIG_KERNEL_ENTRY)
 
 SECTIONS
 {
+	#include <linker/rel-sections.ld>
+
 	SECTION_PROLOGUE(vector,,)
 	{
 		_vector_start = .;
@@ -70,6 +72,20 @@ SECTIONS
 		. = ALIGN(4);
 		_image_rodata_end = .;
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+
+       /*
+	* .plt and .iplt are here according to
+     	* 'sparc-zephyr-elf-ld --verbose', before text section.
+	*/
+	SECTION_PROLOGUE(.plt,,)
+        {
+        *(.plt)
+        }
+
+	SECTION_PROLOGUE(.iplt,,)
+	{
+	*(.iplt)
+	}
 
 	SECTION_DATA_PROLOGUE(_DATA_SECTION_NAME,,)
 	{
@@ -111,4 +127,11 @@ SECTIONS
 #ifdef CONFIG_GEN_ISR_TABLES
 #include <linker/intlist.ld>
 #endif
+
+#include <linker/debug-sections.ld>
+
+	SECTION_PROLOGUE(.sparc.attributes, 0,)
+	{
+		KEEP(*(.gnu.attributes))
+	}
 }
