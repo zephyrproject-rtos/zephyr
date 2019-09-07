@@ -28,14 +28,6 @@ cmake_policy(SET CMP0002 NEW)
 # CMP0079: "target_link_libraries() allows use with targets in other directories"
 cmake_policy(SET CMP0079 OLD)
 
-# Error-out if 'project' has been invoked to avoid obscure user
-# errors.
-if(DEFINED CMAKE_PROJECT_NAME)
-  message(FATAL_ERROR
-    "'project()' was called before boilerplate.cmake was included, this is not supported."
-    )
-endif()
-
 define_property(GLOBAL PROPERTY ZEPHYR_LIBS
     BRIEF_DOCS "Global list of all Zephyr CMake libs that should be linked in"
     FULL_DOCS  "Global list of all Zephyr CMake libs that should be linked in.
