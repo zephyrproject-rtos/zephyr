@@ -10,6 +10,7 @@
 #ifdef CONFIG_USERSPACE
 #include <sys/libc-hooks.h>
 #endif
+#include <power/reboot.h>
 
 #ifdef KERNEL
 static struct k_thread ztest_thread;
@@ -323,5 +324,27 @@ void main(void)
 	z_init_mock();
 	test_main();
 	end_report();
+	if (IS_ENABLED(CONFIG_ZTEST_RETEST_IF_PASSED)) {
+		static __noinit struct {
+			u32_t magic;
+			u32_t boots;
+		} state;
+		const u32_t magic = 0x152ac523;
+
+		if (state.magic != magic) {
+			state.magic = magic;
+			state.boots = 0;
+		}
+		state.boots += 1;
+		if (test_status == 0) {
+			PRINT("Reset board #%u to test again\n",
+				state.boots);
+			k_sleep(K_MSEC(10));
+			sys_reboot(SYS_REBOOT_COLD);
+		} else {
+			PRINT("Failed after %u attempts\n", state.boots);
+			state.boots = 0;
+		}
+	}
 }
 #endif

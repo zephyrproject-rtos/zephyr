@@ -49,6 +49,14 @@ config ZTEST_TC_UTIL_USER_OVERRIDE
 	  The override header may now #define the various macros and strings in tc_util.h which are
 	  surrounded by #ifndef ... #endif blocks.
 
+config ZTEST_RETEST_IF_PASSED
+	bool "Reset the board to test again if the test passed"
+	select REBOOT
+	help
+	  If the test passed reset the board so it is run again.  This
+	  may be used as an alternative to manual resets when
+	  attempting to reproduce an intermittent failure.
+
 endif # ZTEST
 
 config ZTEST_MOCKING
