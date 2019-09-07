@@ -259,16 +259,6 @@ Port P1
 | P1.15 | expansion connector pin 50 | None                      |
 +-------+----------------------------+---------------------------+
 
-Expansion Connector
--------------------
-
-.. figure:: img/reel_board_excon.png
-     :width: 442px
-     :align: center
-     :alt: reel board Expansion Connector
-
-     reel board Expansion Connector (Credit: PHYTEC)
-
 Solder Jumper and Testpoints
 ============================
 
@@ -387,6 +377,102 @@ Adapter LEDs
 +-------+-----------------------+--------------------------------+
 | D15   | yellow                | reserved                       |
 +-------+-----------------------+--------------------------------+
+
+Expansion Connector
+************************
+
+The expansion connector has the same dimensions and similar pinout
+as the BBC MicroBit edge connector. The expansion components that are
+designed especially for the reel board are called link boards.
+
+.. figure:: img/reel_board_excon.png
+     :width: 442px
+     :align: center
+     :alt: reel board Expansion Connector
+
+     reel board Expansion Connector (Credit: PHYTEC)
+
+link board BASE
+===============
+
+link board BASE is a passive expansion board and allows other link boards or
+third party shields in Arduino UNO R3 format to be connected to the reel board.
+In addition, it includes a NOTM.2 connector and more powerful DCDC converter
+then reel board.
+
+.. figure:: img/rb_lb_shield.png
+     :width: 442px
+     :align: center
+     :alt: reel board and link board BASE
+
+     reel board and link board BASE (Credit: PHYTEC)
+
+link board BASE can be used in combination with other link boards or
+third party shields in two ways:
+
+    As an adapter
+        reel board is plugged into the link board BASE. Both peripherals on
+        reel board and shields can be used as long as there is no conflict
+        between I2C devices. Care should be taken to provide enough power
+        to the complete circuit.
+
+    Stand-alone
+        NOTM.2 adapter is removed from the reel board and
+        connected to NOTM.2 connector on the link board BASE.
+        The wiring to the shield connector is identical to the
+        configuraiton above and no software modifications for the shield
+        are necessary.
+        Stand-alone configuration is more suitable for applications where
+        peripherals on the reel board are not used or in conflict,
+        power provided by the reel board is not enough,
+        or for prototypes in the field.
+
+.. figure:: img/link_board_base.png
+     :width: 442px
+     :align: center
+     :alt: link board BASE
+
+     link board BASE (Credit: PHYTEC)
+
+Components on the link board BASE:
+
+    reel board Connector:
+        2x40 position edge connector.
+
+    Micro USB Connector:
+        USB can be used as power source. USB data lines are wired
+        to NOTM.2 connector.
+
+    NOTM.2 Connector:
+        Connector for NOTM.2 adapter. If the connector is used then
+        reel board should be removed from reel board connector.
+
+    SWD Connector X11:
+        Wired to NOTM.2 connector. A debug probe can
+        be connected to program or debug MCU in Stand-alone configuration.
+
+    Alternative Power Source X5 or X9:
+        Positive pin is closer to the + character. Nominal voltage is
+        3.3V, there is no protection against reverse polarity or overvoltage.
+        Use it with care.
+
+    Shield Connector:
+        Connector for link boards and third party shields in Arduino UNO R3
+        format. Only shields designed for 3.3V supply voltage are supported.
+
+Meaning of the Power Source Switch positions:
+
+    EXT
+        link board BASE is powered from Alternative Power Source Connector
+        X9 or X5.
+
+    USB
+        link board BASE is powered from from USB connector
+        (via DCDC converter).
+
+    RB
+        link board BASE is powered from reel board. The available power is
+        below 0.3W and depends on which source is used to power the reel board.
 
 Programming and Debugging
 *************************
