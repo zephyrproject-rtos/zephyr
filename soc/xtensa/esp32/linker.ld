@@ -183,7 +183,7 @@ SECTIONS
     *(.rodata1)
     __XT_EXCEPTION_TABLE__ = ABSOLUTE(.);
     KEEP (*(.xt_except_table))
-    KEEP (*(.gcc_except_table))
+    KEEP (*(.gcc_except_table .gcc_except_table.*))
     *(.gnu.linkonce.e.*)
     *(.gnu.version_r)
     KEEP (*(.eh_frame))
