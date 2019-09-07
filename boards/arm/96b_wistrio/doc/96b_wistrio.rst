@@ -65,6 +65,8 @@ features:
 +-----------+------------+-------------------------------------+
 | I2C       | on-chip    | i2c                                 |
 +-----------+------------+-------------------------------------+
+| SPI       | on-chip    | spi                                 |
++-----------+------------+-------------------------------------+
 
 The default board configuration can be found in the defconfig file:
 
@@ -102,6 +104,17 @@ The default I2C mapping is:
 
 I2C1 also goes to the J22 connector and can be used to attach external
 sensors.
+
+SPI
+---
+
+96Boards WisTrio board has 1 SPI connected to on-chip LoRa Radio.
+The default SPI mapping is:
+
+- SPI1_SCLK  : PA5
+- SPI1_MISO  : PA6
+- SPI1_MOSI  : PA7
+- SPI1_NSS   : PB0
 
 Programming and Debugging
 *************************

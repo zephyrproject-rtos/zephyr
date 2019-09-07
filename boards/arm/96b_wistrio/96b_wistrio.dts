@@ -58,3 +58,7 @@
 		label = "LIS3DH";
 	};
 };
+
+&spi1 {
+	status = "okay";
+};
