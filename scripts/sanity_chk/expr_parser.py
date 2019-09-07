@@ -14,10 +14,9 @@ try:
     import ply.lex as lex
     import ply.yacc as yacc
 except ImportError:
-    print("PLY library for Python 3 not installed.")
-    print("Please install the ply package using your workstation's")
-    print("package manager or the 'pip' tool.")
-    sys.exit(1)
+    sys.exit("PLY library for Python 3 not installed.\n"
+             "Please install the ply package using your workstation's\n"
+             "package manager or the 'pip' tool.")
 
 reserved = {
     'and' : 'AND',

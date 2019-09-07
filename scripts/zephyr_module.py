@@ -68,24 +68,21 @@ def process_module(module, cmake_out=None, kconfig_out=None):
             pykwalify.core.Core(source_data=meta, schema_data=schema)\
                 .validate()
         except pykwalify.errors.SchemaError as e:
-            print('ERROR: Malformed "build" section in file: {}\n{}'
-                  .format(module_yml, e), file=sys.stderr)
-            sys.exit(1)
+            sys.exit('ERROR: Malformed "build" section in file: {}\n{}'
+                     .format(module_yml, e))
 
         section = meta.get('build', dict())
         cmake_setting = section.get('cmake', None)
         if not validate_setting(cmake_setting, module, 'CMakeLists.txt'):
-            print('ERROR: "cmake" key in {} has folder value "{}" which '
-                  'does not contain a CMakeLists.txt file.'
-                  .format(module_yml, cmake_setting), file=sys.stderr)
-            sys.exit(1)
+            sys.exit('ERROR: "cmake" key in {} has folder value "{}" which '
+                     'does not contain a CMakeLists.txt file.'
+                     .format(module_yml, cmake_setting))
 
         kconfig_setting = section.get('kconfig', None)
         if not validate_setting(kconfig_setting, module):
-            print('ERROR: "kconfig" key in {} has value "{}" which does not '
-                  'point to a valid Kconfig file.'
-                  .format(module_yml, kconfig_setting), file=sys.stderr)
-            sys.exit(1)
+            sys.exit('ERROR: "kconfig" key in {} has value "{}" which does '
+                     'not point to a valid Kconfig file.'
+                     .format(module.yml, kconfig_setting))
 
     cmake_path = os.path.join(module, cmake_setting or 'zephyr')
     cmake_file = os.path.join(cmake_path, 'CMakeLists.txt')
