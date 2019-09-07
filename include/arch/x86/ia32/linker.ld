@@ -160,6 +160,8 @@ SECTIONS
 #include <linker/kobject-rom.ld>
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
+#include <linker/cplusplus-rom.ld>
+
 	MMU_PAGE_ALIGN
 	/* ROM ends here, position counter will now be in RAM areas */
 	_image_rom_end = .;
@@ -348,6 +350,7 @@ SECTIONS
 #include <linker/common-ram.ld>
 
 #include <linker/kobject.ld>
+#include <linker/cplusplus-ram.ld>
 
 	MMU_PAGE_ALIGN
 	__data_ram_end = .;

@@ -54,9 +54,12 @@ SECTIONS
 	#include <custom-rodata.ld>
 	#endif /* CONFIG_CUSTOM_RODATA_LD */
 
+	} GROUP_LINK_IN(ROMABLE_REGION)
+
+#include <linker/cplusplus-rom.ld>
+
 	_image_rodata_end = .;
 	_image_rodata_size = _image_rodata_end - _image_rodata_start;
-	} GROUP_LINK_IN(ROMABLE_REGION)
 
 	SECTION_PROLOGUE(_DATA_SECTION_NAME,,ALIGN(16))
 	{
@@ -70,6 +73,7 @@ SECTIONS
 
 #include <snippets-ram-sections.ld>
 #include <linker/common-ram.ld>
+#include <linker/cplusplus-ram.ld>
 
 	SECTION_PROLOGUE(_BSS_SECTION_NAME, (NOLOAD), ALIGN(16))
 	{
