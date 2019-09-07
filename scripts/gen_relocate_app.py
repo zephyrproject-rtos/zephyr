@@ -133,8 +133,7 @@ def find_sections(filename, full_list_of_sections):
     with open(filename, 'rb') as obj_file_desc:
         full_lib = ELFFile(obj_file_desc)
         if not full_lib:
-            print("Error parsing file: ", filename)
-            sys.exit(1)
+            sys.exit("Error parsing file: " + filename)
 
         sections = [x for x in full_lib.iter_sections()]
 
@@ -380,8 +379,7 @@ def create_dict_wrt_mem():
 #need to support wild card *
     rel_dict = dict()
     if args.input_rel_dict == '':
-        print("Disable CONFIG_CODE_DATA_RELOCATION if no file needs relocation")
-        sys.exit(1)
+        sys.exit("Disable CONFIG_CODE_DATA_RELOCATION if no file needs relocation")
     for line in args.input_rel_dict.split(';'):
         mem_region, file_name = line.split(':')
 
