@@ -39,10 +39,10 @@ The RGB-LED is controlled by the nRF52840 via GPIO pins.
 Display is controlled by the nRF52840 via SPI and 3 GPIOs.
 
 On the back side of the board are all other components such as nRF52840,
-circuit for the Debug Adapter, On/Off and power source switch, battery holder,
-buttons and MMA8652FC (accelerometer) sensor.
+a circuit for the Debug Adapter, On/Off and power source switch, battery holder,
+buttons and the MMA8652FC (accelerometer) sensor.
 
-ADPS9960 is Digital Proximity, Ambient Light, RGB and Gesture sensor.
+ADPS9960 is a Digital Proximity, Ambient Light, RGB and Gesture sensor.
 HDC1010 is a digital humidity and temperature sensor.
 MMA8652FC is a 12-bit Digital Accelerometer.
 All sensors are connected to the I2C bus and one GPIO pin each,
@@ -61,6 +61,10 @@ which can be used as an interrupt source.
      :alt: reel board back
 
      reel board back (Credit: PHYTEC)
+
+Since PCB version 1507.2, the nRF52840 SoC is not soldered directly to
+the board but integrated as a module on a NOTM.2 adapter.
+The wiring is identical for versions 1507.1 and 1507.2.
 
 .. _reel_board_display:
 
@@ -95,7 +99,7 @@ power source configurations, battery and micro USB connector.
 
 The On/Off switch can choose which power source is used.
 
-reel board uses TPS610981 boost converter to generate supply voltage
+reel board uses a TPS610981 boost converter to generate supply voltage
 for nRF52840 and peripherals (sensors and EPD).
 The boost converter has two modes:
 
@@ -148,122 +152,122 @@ Connections and IOs
 Port P0
 -------
 
-+-------+-----------------------+---------------------------+
-| Name  | Function              | Usage                     |
-+=======+=======================+===========================+
-| P0.00 | XL1                   | 32.768 kHz oscillator     |
-+-------+-----------------------+---------------------------+
-| P0.01 | XL2                   | 32.768 kHz oscillator     |
-+-------+-----------------------+---------------------------+
-| P0.02 | edge connector pin 30 | None                      |
-+-------+-----------------------+---------------------------+
-| P0.03 | edge connector pin 31 | None                      |
-+-------+-----------------------+---------------------------+
-| P0.04 | edge connector pin 19 | None                      |
-+-------+-----------------------+---------------------------+
-| P0.05 | edge connector pin 11 | None                      |
-+-------+-----------------------+---------------------------+
-| P0.06 | UART0_TX              | UART Console over USB     |
-+-------+-----------------------+---------------------------+
-| P0.07 | Button                | user button (S5)          |
-+-------+-----------------------+---------------------------+
-| P0.08 | UART0_RX              | UART Console over USB     |
-+-------+-----------------------+---------------------------+
-| P0.09 | edge connector pin 27 | None                      |
-+-------+-----------------------+---------------------------+
-| P0.10 | edge connector pin 29 | None                      |
-+-------+-----------------------+---------------------------+
-| P0.11 | RGB LED (red)         | GPIO                      |
-+-------+-----------------------+---------------------------+
-| P0.12 | RGB LED (green)       | GPIO                      |
-+-------+-----------------------+---------------------------+
-| P0.13 | LED1 (yellow)         | GPIO                      |
-+-------+-----------------------+---------------------------+
-| P0.14 | EPD Busy output       | GPIO                      |
-+-------+-----------------------+---------------------------+
-| P0.15 | EPD Reset input       | GPIO                      |
-+-------+-----------------------+---------------------------+
-| P0.16 | EPD DC input          | GPIO                      |
-+-------+-----------------------+---------------------------+
-| P0.17 | EPD SPI3_CS           | SPI                       |
-+-------+-----------------------+---------------------------+
-| P0.18 | CPU Reset             | Reset (S4)                |
-+-------+-----------------------+---------------------------+
-| P0.19 | EPD SPI3_CLK          | SPI                       |
-+-------+-----------------------+---------------------------+
-| P0.20 | EPD SPI3_MOSI         | SPI                       |
-+-------+-----------------------+---------------------------+
-| P0.21 | SPI3_MISO             | SPI (not connected)       |
-+-------+-----------------------+---------------------------+
-| P0.22 | HDC1010 DRDYn         | GPIO                      |
-+-------+-----------------------+---------------------------+
-| P0.23 | APDS9960 INT          | GPIO                      |
-+-------+-----------------------+---------------------------+
-| P0.24 | MMA8652FC INT1        | GPIO                      |
-+-------+-----------------------+---------------------------+
-| P0.25 | MMA8652FC INT2        | GPIO                      |
-+-------+-----------------------+---------------------------+
-| P0.26 | I2C_0                 | I2C                       |
-+-------+-----------------------+---------------------------+
-| P0.27 | I2C_0                 | I2C                       |
-+-------+-----------------------+---------------------------+
-| P0.28 | edge connector pin 3  | None                      |
-+-------+-----------------------+---------------------------+
-| P0.29 | edge connector pin 52 | None                      |
-+-------+-----------------------+---------------------------+
-| P0.30 | edge connector pin 1  | None                      |
-+-------+-----------------------+---------------------------+
-| P0.31 | edge connector pin 37 | None                      |
-+-------+-----------------------+---------------------------+
++-------+----------------------------+---------------------------+
+| Name  | Function                   | Usage                     |
++=======+============================+===========================+
+| P0.00 | XL1                        | 32.768 kHz oscillator     |
++-------+----------------------------+---------------------------+
+| P0.01 | XL2                        | 32.768 kHz oscillator     |
++-------+----------------------------+---------------------------+
+| P0.02 | expansion connector pin 30 | None                      |
++-------+----------------------------+---------------------------+
+| P0.03 | expansion connector pin 31 | None                      |
++-------+----------------------------+---------------------------+
+| P0.04 | expansion connector pin 19 | None                      |
++-------+----------------------------+---------------------------+
+| P0.05 | expansion connector pin 11 | None                      |
++-------+----------------------------+---------------------------+
+| P0.06 | UART0_TX                   | UART Console over USB     |
++-------+----------------------------+---------------------------+
+| P0.07 | Button                     | user button (S5)          |
++-------+----------------------------+---------------------------+
+| P0.08 | UART0_RX                   | UART Console over USB     |
++-------+----------------------------+---------------------------+
+| P0.09 | expansion connector pin 27 | None                      |
++-------+----------------------------+---------------------------+
+| P0.10 | expansion connector pin 29 | None                      |
++-------+----------------------------+---------------------------+
+| P0.11 | RGB LED (red)              | GPIO                      |
++-------+----------------------------+---------------------------+
+| P0.12 | RGB LED (green)            | GPIO                      |
++-------+----------------------------+---------------------------+
+| P0.13 | LED1 (yellow)              | GPIO                      |
++-------+----------------------------+---------------------------+
+| P0.14 | EPD Busy output            | GPIO                      |
++-------+----------------------------+---------------------------+
+| P0.15 | EPD Reset input            | GPIO                      |
++-------+----------------------------+---------------------------+
+| P0.16 | EPD DC input               | GPIO                      |
++-------+----------------------------+---------------------------+
+| P0.17 | EPD SPI3_CS                | SPI                       |
++-------+----------------------------+---------------------------+
+| P0.18 | CPU Reset                  | Reset (S4)                |
++-------+----------------------------+---------------------------+
+| P0.19 | EPD SPI3_CLK               | SPI                       |
++-------+----------------------------+---------------------------+
+| P0.20 | EPD SPI3_MOSI              | SPI                       |
++-------+----------------------------+---------------------------+
+| P0.21 | SPI3_MISO                  | SPI (not connected)       |
++-------+----------------------------+---------------------------+
+| P0.22 | HDC1010 DRDYn              | GPIO                      |
++-------+----------------------------+---------------------------+
+| P0.23 | APDS9960 INT               | GPIO                      |
++-------+----------------------------+---------------------------+
+| P0.24 | MMA8652FC INT1             | GPIO                      |
++-------+----------------------------+---------------------------+
+| P0.25 | MMA8652FC INT2             | GPIO                      |
++-------+----------------------------+---------------------------+
+| P0.26 | I2C_0                      | I2C                       |
++-------+----------------------------+---------------------------+
+| P0.27 | I2C_0                      | I2C                       |
++-------+----------------------------+---------------------------+
+| P0.28 | expansion connector pin 3  | None                      |
++-------+----------------------------+---------------------------+
+| P0.29 | expansion connector pin 52 | None                      |
++-------+----------------------------+---------------------------+
+| P0.30 | expansion connector pin 1  | None                      |
++-------+----------------------------+---------------------------+
+| P0.31 | expansion connector pin 37 | None                      |
++-------+----------------------------+---------------------------+
 
 Port P1
 -------
 
-+-------+-----------------------+---------------------------+
-| Name  | Function              | Usage                     |
-+=======+=======================+===========================+
-| P1.00 | peripheral power on   | GPIO                      |
-+-------+-----------------------+---------------------------+
-| P1.01 | edge connector pin 32 | None                      |
-+-------+-----------------------+---------------------------+
-| P1.02 | edge connector pin 34 | None                      |
-+-------+-----------------------+---------------------------+
-| P1.03 | edge connector pin 17 | None                      |
-+-------+-----------------------+---------------------------+
-| P1.04 | edge connector pin 15 | None                      |
-+-------+-----------------------+---------------------------+
-| P1.05 | edge connector pin 13 | None                      |
-+-------+-----------------------+---------------------------+
-| P1.06 | edge connector pin 33 | None                      |
-+-------+-----------------------+---------------------------+
-| P1.07 | edge connector pin 35 | None                      |
-+-------+-----------------------+---------------------------+
-| P1.08 | edge connector pin 45 | None                      |
-+-------+-----------------------+---------------------------+
-| P1.09 | RGB LED (blue)        | GPIO                      |
-+-------+-----------------------+---------------------------+
-| P1.10 | edge connector pin 47 | None                      |
-+-------+-----------------------+---------------------------+
-| P1.11 | edge connector pin 49 | None                      |
-+-------+-----------------------+---------------------------+
-| P1.12 | edge connector pin 51 | None                      |
-+-------+-----------------------+---------------------------+
-| P1.13 | edge connector pin 36 | None                      |
-+-------+-----------------------+---------------------------+
-| P1.14 | edge connector pin 48 | None                      |
-+-------+-----------------------+---------------------------+
-| P1.15 | edge connector pin 50 | None                      |
-+-------+-----------------------+---------------------------+
++-------+----------------------------+---------------------------+
+| Name  | Function                   | Usage                     |
++=======+============================+===========================+
+| P1.00 | peripheral power on        | GPIO                      |
++-------+----------------------------+---------------------------+
+| P1.01 | expansion connector pin 32 | None                      |
++-------+----------------------------+---------------------------+
+| P1.02 | expansion connector pin 34 | None                      |
++-------+----------------------------+---------------------------+
+| P1.03 | expansion connector pin 17 | None                      |
++-------+----------------------------+---------------------------+
+| P1.04 | expansion connector pin 15 | None                      |
++-------+----------------------------+---------------------------+
+| P1.05 | expansion connector pin 13 | None                      |
++-------+----------------------------+---------------------------+
+| P1.06 | expansion connector pin 33 | None                      |
++-------+----------------------------+---------------------------+
+| P1.07 | expansion connector pin 35 | None                      |
++-------+----------------------------+---------------------------+
+| P1.08 | expansion connector pin 45 | None                      |
++-------+----------------------------+---------------------------+
+| P1.09 | RGB LED (blue)             | GPIO                      |
++-------+----------------------------+---------------------------+
+| P1.10 | expansion connector pin 47 | None                      |
++-------+----------------------------+---------------------------+
+| P1.11 | expansion connector pin 49 | None                      |
++-------+----------------------------+---------------------------+
+| P1.12 | expansion connector pin 51 | None                      |
++-------+----------------------------+---------------------------+
+| P1.13 | expansion connector pin 36 | None                      |
++-------+----------------------------+---------------------------+
+| P1.14 | expansion connector pin 48 | None                      |
++-------+----------------------------+---------------------------+
+| P1.15 | expansion connector pin 50 | None                      |
++-------+----------------------------+---------------------------+
 
-Edge Connector
---------------
+Expansion Connector
+-------------------
 
 .. figure:: img/reel_board_excon.png
      :width: 442px
      :align: center
-     :alt: reel board edge connector
+     :alt: reel board Expansion Connector
 
-     reel board edge connector (Credit: PHYTEC)
+     reel board Expansion Connector (Credit: PHYTEC)
 
 Solder Jumper and Testpoints
 ============================
@@ -335,8 +339,8 @@ Power supply testpoint
 Build-in Debug Adapter
 ======================
 
-Debug Adapter is based on the DAPLink interface firmware and
-NXP MK20DX128VFM5 SoC. The adapter is powered via micro USB connector and
+The debug adapter is based on the DAPLink interface firmware and
+NXP MK20DX128VFM5 SoC. The adapter is powered via a micro USB connector and
 is always on when the board is connected to the USB host.
 reel board can be flashed and debugged, powered either from battery or USB.
 If the Adapter is powered via USB, the Adapter circuit heats the board
@@ -364,17 +368,9 @@ Debug Adapter Jumper
 +-------+-----------------------+----------------------------------------------+
 | Name  | Type                  | Usage                                        |
 +=======+=======================+==============================================+
-| J1    | closed solder jumper  | open to use adapter for external target      |
-+-------+-----------------------+----------------------------------------------+
-| J2    | closed solder jumper  | open to use adapter for external target      |
-+-------+-----------------------+----------------------------------------------+
 | J3    | open solder jumper    | close to pass UART TX to external adapter    |
 +-------+-----------------------+----------------------------------------------+
 | J4    | open solder jumper    | close to pass UART RX to external adapter    |
-+-------+-----------------------+----------------------------------------------+
-| J5    | closed solder jumper  | open to connect external adapter to nRF52840 |
-+-------+-----------------------+----------------------------------------------+
-| J6    | closed solder jumper  | open to connect external adapter to nRF52840 |
 +-------+-----------------------+----------------------------------------------+
 | J22   | open solder jumper    | close to start adapter in bootloader mode    |
 +-------+-----------------------+----------------------------------------------+
