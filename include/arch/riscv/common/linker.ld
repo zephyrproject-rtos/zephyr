@@ -120,6 +120,8 @@ SECTIONS
 
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
+#include <linker/cplusplus-rom.ld>
+
     _image_rom_end = .;
     __data_rom_start = .;
 
@@ -195,6 +197,8 @@ SECTIONS
 #endif
 
 	} GROUP_LINK_IN(RAMABLE_REGION)
+
+#include <linker/cplusplus-ram.ld>
 
      _image_ram_end = .;
      _end = .; /* end of image */

@@ -163,6 +163,8 @@ SECTIONS
         . = ALIGN(4);
         } GROUP_LINK_IN(ROMABLE_REGION)
 
+#include <linker/cplusplus-rom.ld>
+
     _image_rom_end = .;
     __data_rom_start = ALIGN(4);    /* XIP imaged DATA ROM start addr */
 
@@ -279,6 +281,8 @@ SECTIONS
 #include <snippets-noinit.ld>
 
         } GROUP_LINK_IN(RAMABLE_REGION)
+
+#include <linker/cplusplus-ram.ld>
 
     /* Define linker symbols */
     _image_ram_end = .;
