@@ -333,6 +333,11 @@ def build_cell_array(prop_array):
     index = 0
     ret_array = []
 
+    if isinstance(prop_array, int):
+        # Work around old code generating an integer for e.g.
+        # 'pwms = <&foo>'
+        prop_array = [prop_array]
+
     while index < len(prop_array):
         handle = prop_array[index]
 
