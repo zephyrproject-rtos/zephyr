@@ -1965,6 +1965,10 @@ static att_type_t att_op_get_type(u8_t op)
 		return ATT_INDICATION;
 	}
 
+	if (op & ATT_CMD_MASK) {
+		return ATT_COMMAND;
+	}
+
 	return ATT_UNKNOWN;
 }
 
