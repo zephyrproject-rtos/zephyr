@@ -1,0 +1,6 @@
+sample:
+  description: Tool to illustrate the use of some x86-specific kernel
+    interfaces, and also to provide information about x86-based platforms
+    (memory map, CPU information, timer frequencies) useful when bringing
+    up new boards.
+  name: x86 platform information tool
