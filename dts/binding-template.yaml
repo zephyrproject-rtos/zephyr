@@ -89,6 +89,12 @@ sub-node:
 #     const: <string | int>
 #     default: <default>
 #
+# 'type: boolean' is for properties used as flags that don't take a value, e.g.
+# 'hw-flow-control;'. The macro generated for the property gets set to 1 if the
+# property exists on the node, and to 0 otherwise. When combined with
+# 'required: true', this type just forces the flag to appear on the node,
+# though the output will always be the same in that case (1).
+#
 # 'type: uint8-array' is for what the device tree specification calls
 # 'bytestring'. Properties of type 'uint8-array' should be set like this:
 #
