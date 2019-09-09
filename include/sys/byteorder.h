@@ -14,6 +14,7 @@
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <sys/__assert.h>
+#include <toolchain.h>
 
 /* Internal helpers only used by the sys_* APIs further below */
 #define __bswap_16(x) ((u16_t) ((((x) >> 8) & 0xff) | (((x) & 0xff) << 8)))
