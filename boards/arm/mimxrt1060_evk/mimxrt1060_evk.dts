@@ -21,6 +21,7 @@
 		uart-1 = &uart1;
 		led0 = &green_led;
 		sw0 = &user_button;
+		eth = &eth;
 	};
 
 	chosen {
@@ -91,4 +92,11 @@ arduino_serial: &uart3 {};
 &uart1 {
 	status = "okay";
 	current-speed = <115200>;
+};
+
+&eth {
+	status = "okay";
+	ptp {
+		status = "okay";
+	};
 };
