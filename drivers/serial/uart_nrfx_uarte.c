@@ -274,8 +274,19 @@ static int uarte_nrfx_configure(struct device *dev,
 {
 	nrf_uarte_parity_t parity;
 	nrf_uarte_hwfc_t hwfc;
+#ifdef UARTE_CONFIG_STOP_Two
+	bool two_stop_bits = false;
+#endif
 
-	if (cfg->stop_bits != UART_CFG_STOP_BITS_1) {
+	switch (cfg->stop_bits) {
+	case UART_CFG_STOP_BITS_1:
+		break;
+#ifdef UARTE_CONFIG_STOP_Two
+	case UART_CFG_STOP_BITS_2:
+		two_stop_bits = true;
+		break;
+#endif
+	default:
 		return -ENOTSUP;
 	}
 
@@ -315,6 +326,13 @@ static int uarte_nrfx_configure(struct device *dev,
 
 	nrf_uarte_configure(get_uarte_instance(dev), parity, hwfc);
 
+#ifdef UARTE_CONFIG_STOP_Two
+	if (two_stop_bits) {
+		/* TODO Change this to nrfx HAL function when available */
+		get_uarte_instance(dev)->CONFIG |=
+			UARTE_CONFIG_STOP_Two << UARTE_CONFIG_STOP_Pos;
+	}
+#endif
 	get_dev_data(dev)->uart_config = *cfg;
 
 	return 0;
