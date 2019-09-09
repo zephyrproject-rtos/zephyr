@@ -18,4 +18,5 @@ supported:
   - display
   - hwinfo
   - i2c
+  - netif:eth
   - counter
