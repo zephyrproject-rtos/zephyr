@@ -448,6 +448,13 @@ class Device:
         return self._node.path
 
     @property
+    def description(self):
+        "See the class docstring"
+        if not self._binding:
+            return None
+        return self._binding["description"].rstrip()
+
+    @property
     def label(self):
         "See the class docstring"
         if "label" in self._node.props:
@@ -530,10 +537,6 @@ class Device:
                     self._binding, self.binding_path = \
                         self.edt._compat2binding[compat, bus]
 
-                    self.description = self._binding.get("description")
-                    if self.description:
-                        self.description = self.description.rstrip()
-
                     return
         else:
             # No 'compatible' property. See if the parent has a 'sub-node:' key
@@ -545,19 +548,20 @@ class Device:
                 "sub-node" in self.parent._binding:
 
                 # Binding found
-                self._binding = self.parent._binding["sub-node"]
+
                 self.binding_path = self.parent.binding_path
-
-                self.description = self.parent._binding.get("description")
-                if self.description:
-                    self.description = self.description.rstrip()
-
                 self.matching_compat = self.parent.matching_compat
+
+                pbinding = self.parent._binding
+                self._binding = {
+                    "description": pbinding["description"],
+                    "properties": pbinding["sub-node"]["properties"]
+                }
+
                 return
 
         # No binding found
-        self.matching_compat = self._binding = self.binding_path = \
-            self.description = None
+        self.matching_compat = self._binding = self.binding_path = None
 
     def _bus_from_parent_binding(self):
         # _init_binding() helper. Returns the bus specified by
