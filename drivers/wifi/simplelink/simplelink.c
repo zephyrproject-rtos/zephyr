@@ -42,8 +42,6 @@ static K_SEM_DEFINE(ip_acquired, 0, 1);
 /* Handle connection events from the SimpleLink Event Handlers: */
 static void simplelink_wifi_cb(u32_t event, struct sl_connect_state *conn)
 {
-	struct in_addr addr;
-	struct in_addr gwaddr;
 	int status;
 
 	/*
@@ -66,12 +64,6 @@ static void simplelink_wifi_cb(u32_t event, struct sl_connect_state *conn)
 		break;
 
 	case SIMPLELINK_WIFI_CB_IPACQUIRED:
-		addr.s_addr = htonl(conn->ip_addr);
-		gwaddr.s_addr = htonl(conn->gateway_ip);
-		net_if_ipv4_set_gw(simplelink_data.iface, &gwaddr);
-		net_if_ipv4_addr_add(simplelink_data.iface, &addr,
-				     NET_ADDR_DHCP, 0);
-
 		if (!simplelink_data.initialized) {
 			simplelink_data.initialized = true;
 			k_sem_give(&ip_acquired);
