@@ -26,7 +26,7 @@ config IEEE802154_NRF5
 
 endif # IEEE802154
 
-if I2C_NRFX
+if I2C
 
 config I2C_0
 	default y
@@ -34,7 +34,7 @@ config I2C_0
 config I2C_1
 	default y
 
-endif # I2C_NRFX
+endif # I2C
 
 if I2C_0
 
@@ -54,12 +54,12 @@ endchoice
 
 endif # I2C_1
 
-if ADC_NRFX_SAADC
+if ADC
 
 config ADC_0
 	default y
 
-endif # ADC_NRFX_SAADC
+endif # ADC
 
 if DISK_ACCESS_FLASH
 
