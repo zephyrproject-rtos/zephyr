@@ -265,23 +265,6 @@ __csSet:
 #endif
 	lidt	z_x86_idt		/* load 32-bit operand size IDT */
 
-#if defined(CONFIG_X86_MULTIBOOT_INFO)
-	/*
-	 * If EBX isn't 0, then it points to a valid boot information
-	 * struct. Copy it to x86_multiboot_info before it's overwritten.
-	 */
-
-	testl	%ebx, %ebx
-	jz	1f
-	movl	$__X86_MULTIBOOT_INFO_SIZEOF, %ecx
-	movl	%ebx, %esi
-	movl	$x86_multiboot_info, %edi
-	cld	/* to be safe. should still be 0 from BSS clear, though */
-	rep
-	movsb
-1:
-#endif
-
 #if defined(CONFIG_PIC_DISABLE)
 	/*
 	 * "Disable" legacy i8259 interrupt controllers. Note that we
@@ -293,8 +276,8 @@ __csSet:
 	outb %al, $0xA1		/* set i8259 slave mask (IRQs 8-15) */
 #endif
 
-	/* call C portion of kernel initialization and never return */
-	call	z_x86_prep_c
+	pushl	%ebx		/* pointer to multiboot info, or NULL */
+	call	z_x86_prep_c	/* enter kernel; never returns */
 
 _x86_bss_zero:
 	/* ECX = size, EDI = starting address */
