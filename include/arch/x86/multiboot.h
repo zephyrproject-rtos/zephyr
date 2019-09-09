@@ -26,9 +26,12 @@ struct x86_multiboot_info {
 	u32_t fb_height;
 	u8_t  fb_bpp;
 	u8_t  fb_type;
+	u8_t  fb_color_info[6];
 };
 
 extern struct x86_multiboot_info x86_multiboot_info;
+
+extern void z_x86_multiboot_init(struct x86_multiboot_info *);
 
 #endif /* _ASMLANGUAGE */
 

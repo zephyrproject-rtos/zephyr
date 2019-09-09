@@ -5,11 +5,26 @@
  */
 
 #include <kernel.h>
+#include <string.h>
 #include <arch/x86/multiboot.h>
 
 #ifdef CONFIG_X86_MULTIBOOT_INFO
 
 struct x86_multiboot_info x86_multiboot_info;
+
+/*
+ * called very early in the boot process to fetch data out of the multiboot
+ * info struct. we need to grab the relevant data before any dynamic memory
+ * allocation takes place, lest the struct itself or any data it points to
+ * be overwritten before we read it.
+ */
+
+void z_x86_multiboot_init(struct x86_multiboot_info *info)
+{
+	if (info != NULL) {
+		memcpy(&x86_multiboot_info, info, sizeof(*info));
+	}
+}
 
 #ifdef CONFIG_X86_MULTIBOOT_FRAMEBUF
 
