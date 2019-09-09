@@ -13,7 +13,7 @@ tests:
       - CONFIG_NET_SOCKETS_POSIX_NAMES=y
     # Forcibly defines CONFIG_POSIX_API, which is incompatible with
     # CONFIG_NET_SOCKETS_POSIX_NAMES.
-    platform_exclude: cc3220sf_launchxl
+    platform_exclude: cc3220sf_launchxl cc3235sf_launchxl
   sample.net.sockets.http_get.posix:
     filter: and not CONFIG_NET_SOCKETS_OFFLOAD
     extra_configs:
