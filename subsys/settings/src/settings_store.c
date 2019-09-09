@@ -60,11 +60,32 @@ int settings_load_subtree(const char *subtree)
 	 */
 	k_mutex_lock(&settings_lock, K_FOREVER);
 	SYS_SLIST_FOR_EACH_CONTAINER(&settings_load_srcs, cs, cs_next) {
-		cs->cs_itf->csi_load(cs, subtree);
+		cs->cs_itf->csi_load(cs, subtree, NULL, NULL);
 	}
 	rc = settings_commit_subtree(subtree);
 	k_mutex_unlock(&settings_lock);
 	return rc;
+}
+
+int settings_load_subtree_direct(
+	const char             *subtree,
+	settings_load_direct_cb cb,
+	void                   *param)
+{
+	struct settings_store *cs;
+
+	/*
+	 * for every config store
+	 *    load config
+	 *    apply config
+	 *    commit all
+	 */
+	k_mutex_lock(&settings_lock, K_FOREVER);
+	SYS_SLIST_FOR_EACH_CONTAINER(&settings_load_srcs, cs, cs_next) {
+		cs->cs_itf->csi_load(cs, subtree, cb, param);
+	}
+	k_mutex_unlock(&settings_lock);
+	return 0;
 }
 
 /*

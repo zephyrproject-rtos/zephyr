@@ -14,7 +14,8 @@
 #include "settings/settings_file.h"
 #include "settings_priv.h"
 
-static int settings_file_load(struct settings_store *cs, const char *subtree);
+static int settings_file_load(struct settings_store *cs, const char *subtree,
+			      settings_load_direct_cb cb, void *param);
 static int settings_file_save(struct settings_store *cs, const char *name,
 			      const char *value, size_t val_len);
 
@@ -109,10 +110,15 @@ static int settings_file_load_priv(struct settings_store *cs, line_load_cb cb,
 /*
  * Called to load configuration items.
  */
-static int settings_file_load(struct settings_store *cs, const char *subtree)
+static int settings_file_load(struct settings_store *cs, const char *subtree,
+			      settings_load_direct_cb cb, void *param)
 {
-	return settings_file_load_priv(cs, settings_line_load_cb,
-				       (void *)subtree);
+	struct settings_line_load_arg arg = {
+		.subtree   = subtree,
+		.direct_cb = cb,
+		.param     = param
+	};
+	return settings_file_load_priv(cs, settings_line_load_cb, &arg);
 }
 
 static void settings_tmpfile(char *dst, const char *src, char *pfx)

@@ -322,12 +322,129 @@ static void test_register_and_loading(void)
 	zassert_true(rc, "deregistering val1_settings failed");
 }
 
+int val123_set(const char *key, size_t len,
+	       settings_read_cb read_cb, void *cb_arg)
+{
+	int rc;
+	u8_t val;
+
+	zassert_equal(1, len, "Unexpected size");
+
+	rc = read_cb(cb_arg, &val, sizeof(val));
+	zassert_equal(sizeof(val), rc, "read_cb failed");
+
+	if (!strcmp("1", key)) {
+		data.val1 = val;
+		data.en1 = true;
+		return 0;
+	}
+	if (!strcmp("2", key)) {
+		data.val2 = val;
+		data.en2 = true;
+		return 0;
+	}
+	if (!strcmp("3", key)) {
+		data.val3 = val;
+		data.en3 = true;
+		return 0;
+	}
+
+	zassert_unreachable("Unexpected key value: %s", key);
+
+	return 0;
+}
+
+static struct settings_handler val123_settings = {
+	.name = "val",
+	.h_set = val123_set,
+};
+
+unsigned int direct_load_cnt;
+u8_t val_directly_loaded;
+
+int direct_loader(
+	const char *key,
+	size_t len,
+	settings_read_cb read_cb,
+	void *cb_arg,
+	void *param)
+{
+	int rc;
+	u8_t val;
+
+	zassert_equal(0x1234, (size_t)param, NULL);
+
+	zassert_equal(1, len, NULL);
+	zassert_is_null(key, "Unexpected key: %s", key);
+
+
+	zassert_not_null(cb_arg, NULL);
+	rc = read_cb(cb_arg, &val, sizeof(val));
+	zassert_equal(sizeof(val), rc, NULL);
+
+	val_directly_loaded = val;
+	direct_load_cnt += 1;
+	return 0;
+}
+
+
+static void test_direct_loading(void)
+{
+	int rc;
+	u8_t val;
+
+	val = 11;
+	settings_save_one("val/1", &val, sizeof(u8_t));
+	val = 23;
+	settings_save_one("val/2", &val, sizeof(u8_t));
+	val = 35;
+	settings_save_one("val/3", &val, sizeof(u8_t));
+
+	rc = settings_register(&val123_settings);
+	zassert_true(rc == 0, NULL);
+	memset(&data, 0, sizeof(data));
+
+	rc = settings_load();
+	zassert_true(rc == 0, NULL);
+
+	zassert_equal(11, data.val1, NULL);
+	zassert_equal(23, data.val2, NULL);
+	zassert_equal(35, data.val3, NULL);
+
+	/* Load subtree */
+	memset(&data, 0, sizeof(data));
+
+	rc = settings_load_subtree("val/2");
+	zassert_true(rc == 0, NULL);
+
+	zassert_equal(0,  data.val1, NULL);
+	zassert_equal(23, data.val2, NULL);
+	zassert_equal(0,  data.val3, NULL);
+
+	/* Direct loading now */
+	memset(&data, 0, sizeof(data));
+	val_directly_loaded = 0;
+	direct_load_cnt = 0;
+	rc = settings_load_subtree_direct(
+		"val/2",
+		direct_loader,
+		(void *)0x1234);
+	zassert_true(rc == 0, NULL);
+	zassert_equal(0, data.val1, NULL);
+	zassert_equal(0, data.val2, NULL);
+	zassert_equal(0, data.val3, NULL);
+
+	zassert_equal(1, direct_load_cnt, NULL);
+	zassert_equal(23, val_directly_loaded, NULL);
+}
+
 void test_main(void)
 {
 	ztest_test_suite(settings_test_suite,
 			 ztest_unit_test(test_clear_settings),
 			 ztest_unit_test(test_support_rtn),
-			 ztest_unit_test(test_register_and_loading)
+			 ztest_unit_test(test_register_and_loading),
+			 ztest_unit_test(test_direct_loading)
 			);
 
 	ztest_run_test_suite(settings_test_suite);
