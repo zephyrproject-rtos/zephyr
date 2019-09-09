@@ -16,8 +16,8 @@ the binding for the device.
 
 Bindings are files that describe device tree nodes. Device tree nodes are
 usually mapped to bindings via their 'compatible = "..."' property, but binding
-data can also come from a 'sub-node:' key in the binding for the parent device
-tree node.
+data can also come from a 'child-properties:' key in the binding for the parent
+device tree node.
 
 The top-level entry point of the library is the EDT class. EDT.__init__() takes
 a .dts file to parse and the path of a directory containing bindings.
@@ -539,29 +539,45 @@ class Device:
 
                     return
         else:
-            # No 'compatible' property. See if the parent has a 'sub-node:' key
-            # that gives the binding.
+            # No 'compatible' property. See if the parent binding has a
+            # 'child-properties:' key that gives the properties (or a legacy
+            # 'sub-node:' key).
 
             self.compats = []
 
-            if self.parent and self.parent._binding and \
-                "sub-node" in self.parent._binding:
-
-                # Binding found
-
+            binding_from_parent = self._binding_from_parent()
+            if binding_from_parent:
+                self._binding = binding_from_parent
                 self.binding_path = self.parent.binding_path
                 self.matching_compat = self.parent.matching_compat
-
-                pbinding = self.parent._binding
-                self._binding = {
-                    "description": pbinding["description"],
-                    "properties": pbinding["sub-node"]["properties"]
-                }
 
                 return
 
         # No binding found
         self.matching_compat = self._binding = self.binding_path = None
+
+    def _binding_from_parent(self):
+        # Returns a binding constructed from the parent node's
+        # 'child-properties:' key (or the legacy 'sub-node:' key), or None if
+        # missing
+
+        if not self.parent:
+            return None
+
+        pbinding = self.parent._binding
+        if not pbinding:
+            return None
+
+        if "child-properties" in pbinding:
+            return {"description": pbinding["description"],
+                    "properties": pbinding["child-properties"]}
+
+        # Backwards compatibility
+        if "sub-node" in pbinding:
+            return {"description": pbinding["description"],
+                    "properties": pbinding["sub-node"]["properties"]}
+
+        return None
 
     def _bus_from_parent_binding(self):
         # _init_binding() helper. Returns the bus specified by
@@ -1346,7 +1362,7 @@ def _check_binding(binding, binding_path):
                  .format(prop, binding_path))
 
     ok_top = {"title", "description", "compatible", "inherits", "properties",
-              "#cells", "parent", "child", "sub-node"}
+              "#cells", "parent", "child", "child-properties", "sub-node"}
 
     for prop in binding:
         if prop not in ok_top:
@@ -1364,26 +1380,33 @@ def _check_binding(binding, binding_path):
                 _err("malformed '{}: bus:' value in {}, expected string"
                      .format(pc, binding_path))
 
-    _check_binding_properties(binding, binding_path)
+    if "properties" in binding:
+        _check_binding_properties(binding["properties"], binding_path)
+
+    if "child-properties" in binding:
+        _check_binding_properties(binding["child-properties"], binding_path)
 
     if "sub-node" in binding:
+        _warn("'sub-node: properties: ...' in {} is deprecated and will be "
+              "removed - please use a top-level 'child-properties:' key "
+              "instead (see binding-template.yaml)".format(binding_path))
+
         if binding["sub-node"].keys() != {"properties"}:
             _err("expected (just) 'properties:' in 'sub-node:' in {}"
                  .format(binding_path))
 
-        _check_binding_properties(binding["sub-node"], binding_path)
+        _check_binding_properties(binding["sub-node"]["properties"],
+                                  binding_path)
 
 
-def _check_binding_properties(binding, binding_path):
-    # _check_binding() helper for checking the contents of 'properties:'
-
-    if "properties" not in binding:
-        return
+def _check_binding_properties(properties, binding_path):
+    # _check_binding() helper for checking the contents of 'properties:' and
+    # 'child-properties:'
 
     ok_prop_keys = {"description", "type", "required", "category",
                     "constraint", "enum", "const", "default"}
 
-    for prop_name, options in binding["properties"].items():
+    for prop_name, options in properties.items():
         for key in options:
             if key == "category":
                 _warn("please put 'required: {}' instead of 'category: {}' in "

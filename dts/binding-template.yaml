@@ -51,18 +51,6 @@ child:
 parent:
     bus: <string describing bus type, e.g. "i2c">
 
-# 'sub-node' is used to simplify cases where a node has children that can all
-# use the same binding. The contents of 'sub-node' becomes the binding for each
-# child node.
-#
-# The example below is for a binding for pwm-leds where the child nodes are
-# required to have a 'pwms' property.
-sub-node:
-    properties:
-        pwms:
-            type: compound
-            required: true
-
 # 'properties' describes properties on the node, e.g.
 #
 #   reg = <1 2>;
@@ -197,6 +185,17 @@ properties:
         type: uint8-array
         required: false
         default: [0x12, 0x34] # Same as 'uint8-array-with-default = [12 34]'
+
+# 'child-properties' is used to simplify cases where a node has children that
+# all have the same properties. The contents of 'child-properties' lists the
+# properties for each child node, like in 'properties'.
+#
+# The example below is for a binding for PWM leds where the child nodes are
+# required to have a 'pwms' property.
+child-properties:
+    pwms:
+        type: compound
+        required: true
 
 # If the binding describes an interrupt controller, GPIO controller, pinmux
 # device, or any other node referenced by other nodes, then #cells should be

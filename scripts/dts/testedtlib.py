@@ -106,13 +106,13 @@ def run():
                  "{'foo': <Property, name: foo, type: int, value: 0>, 'bar': <Property, name: bar, type: int, value: 1>, 'baz': <Property, name: baz, type: int, value: 2>, 'qaz': <Property, name: qaz, type: int, value: 3>}")
 
     #
-    # Test 'sub-node:' in binding
+    # Test 'child-properties:' in binding
     #
 
-    verify_streq(edt.get_dev("/parent-with-sub-node/node").description,
+    verify_streq(edt.get_dev("/child-properties/node").description,
                  "Sub-node test")
 
-    verify_streq(edt.get_dev("/parent-with-sub-node/node").props,
+    verify_streq(edt.get_dev("/child-properties/node").props,
                              "{'foo': <Property, name: foo, type: int, value: 1>, 'bar': <Property, name: bar, type: int, value: 2>}")
 
     #
@@ -128,6 +128,13 @@ def run():
 
     verify_streq(edt.get_dev("/defaults").props,
                  r"{'int': <Property, name: int, type: int, value: 123>, 'array': <Property, name: array, type: array, value: [1, 2, 3]>, 'uint8-array': <Property, name: uint8-array, type: uint8-array, value: b'\x89\xab\xcd'>, 'string': <Property, name: string, type: string, value: 'hello'>, 'string-array': <Property, name: string-array, type: string-array, value: ['hello', 'there']>, 'default-not-used': <Property, name: default-not-used, type: int, value: 234>}")
+
+    #
+    # Test deprecated 'sub-node:' key (replaced with 'child-properties:')
+    #
+
+    verify_streq(edt.get_dev("/deprecated/sub-node").props,
+                 "{'foo': <Property, name: foo, type: int, value: 3>}")
 
     #
     # Test having multiple directories with bindings, with a different .dts file

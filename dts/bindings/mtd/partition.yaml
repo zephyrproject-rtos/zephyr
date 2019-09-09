@@ -16,18 +16,18 @@ properties:
         required: false
         description: number of size cells in reg property
 
-sub-node:
-    properties:
-       label:
-          required: true
-          type: string
-          required: false
-          description: Human readable string describing the device (used by Zephyr for API name)
-       read-only:
-          type: boolean
-          required: false
-          description: if the partition is read-only or not
-       reg:
-          type: array
-          description: register space
-          required: true
+child-properties:
+    label:
+        type: string
+        required: false
+        description: Human readable string describing the device (used by Zephyr for API name)
+
+    read-only:
+        type: boolean
+        required: false
+        description: if the partition is read-only or not
+
+    reg:
+        type: array
+        required: true
+        description: register space

@@ -8,12 +8,12 @@ description: >
 
 compatible: "gpio-leds"
 
-sub-node:
-    properties:
-       gpios:
-          type: phandle-array
-          required: true
-       label:
-          required: true
-          type: string
-          description: Human readable string describing the device (used by Zephyr for API name)
+child-properties:
+    gpios:
+        type: phandle-array
+        required: true
+
+    label:
+        type: string
+        required: true
+        description: Human readable string describing the device (used by Zephyr for API name)

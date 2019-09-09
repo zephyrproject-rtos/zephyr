@@ -1,0 +1,15 @@
+# SPDX-License-Identifier: BSD-3-Clause
+
+title: Sub-node test
+description: Sub-node test
+
+compatible: "child-properties"
+
+child-properties:
+    foo:
+        type: int
+        required: true
+
+    bar:
+        type: int
+        required: true

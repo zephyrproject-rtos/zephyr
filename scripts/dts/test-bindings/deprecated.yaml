@@ -22,3 +22,10 @@ properties:
     optional:
         type: int
         category: optional
+
+# Deprecated older 'child-properties:' syntax
+sub-node:
+    properties:
+        foo:
+            type: int
+            required: true

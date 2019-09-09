@@ -312,9 +312,15 @@ def get_binding(node_path):
 
     if parent_compat in bindings:
         parent_binding = bindings[parent_compat]
-        # see if we're a sub-node
-        if compat is None and 'sub-node' in parent_binding:
-            return parent_binding['sub-node']
+        if compat is None:
+            # see if we're a sub-node
+
+            if 'child-properties' in parent_binding:
+                return {'properties': parent_binding['child-properties']}
+
+            # Legacy syntax
+            if 'sub-node' in parent_binding:
+                return parent_binding['sub-node']
 
         # look for a bus-specific binding
         if 'child' in parent_binding and 'bus' in parent_binding['child']:

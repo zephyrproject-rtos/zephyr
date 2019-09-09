@@ -322,11 +322,11 @@
 	};
 
 	//
-	// Parent with 'sub-node:' in binding
+	// Parent with 'child-properties:' in binding
 	//
 
-	parent-with-sub-node {
-		compatible = "parent-with-sub-node";
+	child-properties {
+		compatible = "child-properties";
 		node {
 			foo = <1>;
 			bar = <2>;
@@ -342,5 +342,8 @@
 		compatible = "deprecated";
 		required = <1>;
 		required-2 = <2>;
+		sub-node {
+			foo = <3>;
+		};
 	};
 };
