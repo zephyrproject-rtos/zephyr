@@ -480,6 +480,59 @@ static inline void hal_radio_sw_switch_disable(void)
 #define HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI_TASK(index) \
 	((u32_t)&(SW_SWITCH_TIMER->TASKS_CAPTURE[index]))
 
+static inline void hal_radio_sw_switch_coded_tx_config_set(u8_t ppi_en,
+	u8_t ppi_dis, u8_t cc_s2, u8_t group_index)
+{
+	HAL_SW_SWITCH_RADIO_ENABLE_PPI_REGISTER_EVT(ppi_en) =
+		HAL_SW_SWITCH_RADIO_ENABLE_PPI_EVT(cc_s2);
+
+	HAL_SW_SWITCH_RADIO_ENABLE_PPI_REGISTER_TASK(ppi_en) =
+		HAL_SW_SWITCH_RADIO_ENABLE_PPI_TASK_TX;
+
+	/* Wire the Group task disable
+	 * to the S2 EVENTS_COMPARE.
+	 */
+	HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_REGISTER_EVT(
+	    ppi_dis)	=
+	    HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_EVT(cc_s2);
+
+	HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_REGISTER_TASK(
+	    ppi_dis) =
+	    HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_TASK(
+	    group_index);
+
+	/* Capture CC to cancel the timer that has assumed
+	 * S8 reception, if packet will be received in S2.
+	 */
+	HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI_REGISTER_EVT =
+		HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI_EVT;
+	HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI_REGISTER_TASK =
+		HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI_TASK(
+			group_index);
+
+	nrf_ppi_channels_enable(
+		BIT(HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI));
+}
+
+static inline void hal_radio_sw_switch_coded_config_clear(u8_t ppi_en,
+	u8_t ppi_dis, u8_t cc_reg, u8_t group_index)
+{
+	/* Invalidate PPI used when RXing on LE Coded PHY. */
+	HAL_SW_SWITCH_RADIO_ENABLE_PPI_REGISTER_EVT(
+		ppi_en) = 0;
+	HAL_SW_SWITCH_RADIO_ENABLE_PPI_REGISTER_TASK(
+		ppi_en) = 0;
+
+	/* Wire the Group task disable to the default EVENTS_COMPARE. */
+	HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_REGISTER_EVT(
+		ppi_dis) =
+		HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_EVT(cc_reg);
+	HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_REGISTER_TASK(
+		ppi_dis) =
+		HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_TASK(
+			group_index);
+}
+
 #else
 
 static inline void hal_radio_group_task_disable_ppi_setup(void)
@@ -507,12 +560,23 @@ static inline void hal_radio_group_task_disable_ppi_setup(void)
 static inline void hal_radio_sw_switch_ppi_group_setup(void)
 {
 	/* Include the appropriate PPI channels in the two PPI Groups. */
+#if !defined(CONFIG_BT_CTLR_PHY_CODED) || !defined(CONFIG_SOC_NRF52840)
 	NRF_PPI->CHG[SW_SWITCH_TIMER_TASK_GROUP(0)] =
 		HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_0_INCLUDE |
 			HAL_SW_SWITCH_RADIO_ENABLE_PPI_0_INCLUDE;
 	NRF_PPI->CHG[SW_SWITCH_TIMER_TASK_GROUP(1)] =
 		HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_1_INCLUDE |
 			HAL_SW_SWITCH_RADIO_ENABLE_PPI_1_INCLUDE;
+#else
+	NRF_PPI->CHG[SW_SWITCH_TIMER_TASK_GROUP(0)] =
+		HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_0_INCLUDE |
+		HAL_SW_SWITCH_RADIO_ENABLE_PPI_0_INCLUDE |
+		HAL_SW_SWITCH_RADIO_ENABLE_S2_PPI_0_INCLUDE;
+	NRF_PPI->CHG[SW_SWITCH_TIMER_TASK_GROUP(1)] =
+		HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_1_INCLUDE |
+		HAL_SW_SWITCH_RADIO_ENABLE_PPI_1_INCLUDE |
+		HAL_SW_SWITCH_RADIO_ENABLE_S2_PPI_1_INCLUDE;
+#endif /* CONFIG_BT_CTLR_PHY_CODED && CONFIG_SOC_NRF52840 */
 }
 
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
