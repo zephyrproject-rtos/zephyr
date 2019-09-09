@@ -497,7 +497,7 @@ static int settings_line_cmp(char const *val, size_t val_len,
 	return rc;
 }
 
-void settings_line_dup_check_cb(const char *name, void *val_read_cb_ctx,
+int settings_line_dup_check_cb(const char *name, void *val_read_cb_ctx,
 				off_t off, void *cb_arg)
 {
 	struct settings_line_dup_check_arg *cdca;
@@ -505,7 +505,7 @@ void settings_line_dup_check_cb(const char *name, void *val_read_cb_ctx,
 
 	cdca = (struct settings_line_dup_check_arg *)cb_arg;
 	if (strcmp(name, cdca->name)) {
-		return;
+		return 0;
 	}
 
 	len_read = settings_line_val_get_len(off, val_read_cb_ctx);
@@ -521,6 +521,7 @@ void settings_line_dup_check_cb(const char *name, void *val_read_cb_ctx,
 			cdca->is_dup = 0;
 		}
 	}
+	return 0;
 }
 
 static ssize_t settings_line_read_cb(void *cb_arg, void *data, size_t len)
@@ -540,38 +541,44 @@ static ssize_t settings_line_read_cb(void *cb_arg, void *data, size_t len)
 	return -1;
 }
 
-void settings_line_load_cb(const char *name, void *val_read_cb_ctx, off_t off,
+int settings_line_load_cb(const char *name, void *val_read_cb_ctx, off_t off,
 			   void *cb_arg)
 {
 	const char *name_key;
 	struct settings_handler_static *ch;
 	struct settings_line_read_value_cb_ctx value_ctx;
+	struct settings_line_load_arg *arg = cb_arg;
 	int rc;
 	size_t len;
 
-	if (cb_arg && !settings_name_steq(name, cb_arg, NULL)) {
-		return;
-	}
-
-	ch = settings_parse_and_lookup(name, &name_key);
-	if (!ch) {
-		return;
+	if (arg && arg->subtree &&
+	    !settings_name_steq(name, arg->subtree, &name_key)) {
+		return 0;
 	}
 
 	value_ctx.read_cb_ctx = val_read_cb_ctx;
 	value_ctx.off = off;
-
 	len = settings_line_val_get_len(off, val_read_cb_ctx);
 
-	rc = ch->h_set(name_key, len, settings_line_read_cb,
-		       (void *)&value_ctx);
-
-	if (rc != 0) {
-		LOG_ERR("set-value failure. key: %s error(%d)",
-			log_strdup(name), rc);
+	if (arg && arg->direct_cb) {
+		rc = arg->direct_cb(name_key, len, settings_line_read_cb,
+				    (void *)&value_ctx, arg->param);
 	} else {
-		LOG_DBG("set-value OK. key: %s",
-			log_strdup(name));
+		ch = settings_parse_and_lookup(name, &name_key);
+		if (!ch) {
+			return 0;
+		}
+
+		rc = ch->h_set(name_key, len, settings_line_read_cb,
+			       (void *)&value_ctx);
+
+		if (rc != 0) {
+			LOG_ERR("set-value failure. key: %s error(%d)",
+				log_strdup(name), rc);
+		} else {
+			LOG_DBG("set-value OK. key: %s",
+				log_strdup(name));
+		}
 	}
-	(void)rc;
+	return rc;
 }

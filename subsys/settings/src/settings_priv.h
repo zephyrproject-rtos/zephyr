@@ -11,6 +11,7 @@
 #include <sys/types.h>
 #include <sys/slist.h>
 #include <errno.h>
+#include <settings/settings.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -36,14 +37,20 @@ int settings_line_write(const char *name, const char *value, size_t val_len,
 /* Get len of record without alignment to write-block-size */
 int settings_line_len_calc(const char *name, size_t val_len);
 
-void settings_line_dup_check_cb(const char *name, void *val_read_cb_ctx,
+int settings_line_dup_check_cb(const char *name, void *val_read_cb_ctx,
 				off_t off, void *cb_arg);
 
-void settings_line_load_cb(const char *name, void *val_read_cb_ctx,
+int settings_line_load_cb(const char *name, void *val_read_cb_ctx,
 			   off_t off, void *cb_arg);
 
-typedef void (*line_load_cb)(const char *name, void *val_read_cb_ctx,
+typedef int (*line_load_cb)(const char *name, void *val_read_cb_ctx,
 			     off_t off, void *cb_arg);
+
+struct settings_line_load_arg {
+	const char             *subtree;
+	settings_load_direct_cb direct_cb;
+	void                   *param;
+};
 
 struct settings_line_read_value_cb_ctx {
 	void *read_cb_ctx;
