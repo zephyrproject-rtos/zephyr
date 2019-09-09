@@ -71,12 +71,15 @@
 		};
 
 		pmc: pmc@4007d000 {
-			compatible = "fixed-clock";
 			reg = <0x4007d000 0x1000>;
 			label = "PMC";
+
+			lpo: lpo128k {
 			/* LPO clock */
-			clock-frequency = <125000>;
-			#clock-cells = <0>;
+				compatible = "fixed-clock";
+				clock-frequency = <125000>;
+				#clock-cells = <0>;
+			};
 		};
 
 		pcc: pcc@40065000 {
@@ -100,7 +103,7 @@
 			compatible = "nxp,kinetis-wdog32";
 			reg = <0x40052000 0x1000>;
 			interrupts = <22 0>;
-			clocks = <&pmc>;
+			clocks = <&lpo>;
 			clk-source = <1>;
 			clk-divider = <256>;
 			label = "WDT_0";
