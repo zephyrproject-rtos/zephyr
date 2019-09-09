@@ -18,7 +18,12 @@
 
 struct x86_multiboot_info {
 	u32_t flags;
-	u32_t unused0[21];
+	u32_t mem_lower;
+	u32_t mem_upper;
+	u32_t unused0[8];
+	u32_t mmap_length;
+	u32_t mmap_addr;
+	u32_t unused1[9];
 	u32_t fb_addr_lo;
 	u32_t fb_addr_hi;
 	u32_t fb_pitch;
@@ -51,15 +56,21 @@ extern void z_x86_multiboot_init(struct x86_multiboot_info *);
  * is when we want the loader to configure the framebuffer for us.
  */
 
+#define X86_MULTIBOOT_HEADER_FLAG_MEM	(1 << 1)  /* want mem_/mmap_* info */
+#define X86_MULTIBOOT_HEADER_FLAG_FB	(1 << 2)  /* want fb_* info */
+
 #ifdef CONFIG_X86_MULTIBOOT_FRAMEBUF
-#define X86_MULTIBOOT_HEADER_FLAGS	4
+#define X86_MULTIBOOT_HEADER_FLAGS \
+	(X86_MULTIBOOT_HEADER_FLAG_FB | X86_MULTIBOOT_HEADER_FLAG_MEM)
 #else
-#define X86_MULTIBOOT_HEADER_FLAGS	0
+#define X86_MULTIBOOT_HEADER_FLAGS	X86_MULTIBOOT_HEADER_FLAG_MEM
 #endif
 
-/* The fb_* fields are valid if X86_MULTIBOOT_INFO_FLAGS_FB is set. */
+/* The flags in the boot info structure tell us which fields are valid. */
 
-#define X86_MULTIBOOT_INFO_FLAGS_FB	(1 << 12)
+#define X86_MULTIBOOT_INFO_FLAGS_MEM	(1 << 0)	/* mem_* valid */
+#define X86_MULTIBOOT_INFO_FLAGS_MMAP	(1 << 6)	/* mmap_* valid */
+#define X86_MULTIBOOT_INFO_FLAGS_FB	(1 << 12)	/* fb_* valid */
 
 /* The only fb_type we support is RGB. No text modes and no color palettes. */
 
