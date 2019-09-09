@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: BSD-3-Clause
+
+title: Device on foo bus
+description: Device on foo bus
+
+compatible: "on-bus"
+
+parent-bus: "foo"

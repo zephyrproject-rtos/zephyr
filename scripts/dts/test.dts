@@ -335,6 +335,27 @@
 	};
 
 	//
+	// For testing 'parent-bus:' and 'child-bus:'
+	//
+
+	buses {
+		// The nodes below will map to different bindings due to
+		// appearing on different buses
+		foo-bus {
+			compatible = "foo-bus";
+			node {
+				compatible = "on-bus";
+			};
+		};
+		bar-bus {
+			compatible = "bar-bus";
+			node {
+				compatible = "on-bus";
+			};
+		};
+	};
+
+	//
 	// For testing deprecated features
 	//
 

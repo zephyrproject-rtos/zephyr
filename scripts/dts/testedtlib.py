@@ -137,6 +137,16 @@ def run():
                  "{'foo': <Property, name: foo, type: int, value: 3>}")
 
     #
+    # Test 'child/parent-bus:'
+    #
+
+    verify_streq(edt.get_dev("/buses/foo-bus/node").binding_path,
+                 "test-bindings/device-on-foo-bus.yaml")
+
+    verify_streq(edt.get_dev("/buses/bar-bus/node").binding_path,
+                 "test-bindings/device-on-bar-bus.yaml")
+
+    #
     # Test having multiple directories with bindings, with a different .dts file
     #
 

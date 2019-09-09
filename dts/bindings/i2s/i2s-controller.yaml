@@ -5,8 +5,7 @@
 
 include: base.yaml
 
-child:
-    bus: i2s
+child-bus: i2s
 
 properties:
     "#address-cells":

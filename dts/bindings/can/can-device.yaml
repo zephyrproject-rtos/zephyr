@@ -5,8 +5,7 @@
 
 include: base.yaml
 
-parent:
-    bus: can
+parent-bus: can
 
 properties:
     reg:
