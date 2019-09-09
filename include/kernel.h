@@ -17,6 +17,7 @@
 #include <kernel_includes.h>
 #include <errno.h>
 #include <stdbool.h>
+#include <toolchain.h>
 
 #ifdef __cplusplus
 extern "C" {
