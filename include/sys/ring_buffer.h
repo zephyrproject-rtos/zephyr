@@ -156,13 +156,6 @@ static inline void ring_buf_init(struct ring_buf *buf, u32_t size, void *data)
 	}
 }
 
-/** @deprecated Renamed to ring_buf_init. */
-__deprecated static inline void sys_ring_buf_init(struct ring_buf *buf,
-						  u32_t size, u32_t *data)
-{
-	ring_buf_init(buf, size, data);
-}
-
 /** @brief Determine free space based on ring buffer parameters.
  *
  * @note Function for internal use.
@@ -208,12 +201,6 @@ static inline void ring_buf_reset(struct ring_buf *buf)
 	memset(&buf->misc, 0, sizeof(buf->misc));
 }
 
-/** @deprecated Renamed to ring_buf_is_empty. */
-__deprecated static inline int sys_ring_buf_is_empty(struct ring_buf *buf)
-{
-	return ring_buf_is_empty(buf);
-}
-
 /**
  * @brief Determine free space in a ring buffer.
  *
@@ -239,12 +226,6 @@ static inline u32_t ring_buf_capacity_get(struct ring_buf *buf)
 	return buf->size - 1;
 }
 
-/** @deprecated Renamed to ring_buf_space_get. */
-__deprecated static inline int sys_ring_buf_space_get(struct ring_buf *buf)
-{
-	return ring_buf_space_get(buf);
-}
-
 /**
  * @brief Write a data item to a ring buffer.
  *
@@ -268,15 +249,6 @@ __deprecated static inline int sys_ring_buf_space_get(struct ring_buf *buf)
  */
 int ring_buf_item_put(struct ring_buf *buf, u16_t type, u8_t value,
 		      u32_t *data, u8_t size32);
-
-
-/** @deprecated Renamed to ring_buf_item_put. */
-__deprecated static inline int sys_ring_buf_put(struct ring_buf *buf,
-						u16_t type, u8_t value,
-						u32_t *data, u8_t size32)
-{
-	return ring_buf_item_put(buf, type, value, data, size32);
-}
 
 /**
  * @brief Read a data item from a ring buffer.
@@ -304,14 +276,6 @@ __deprecated static inline int sys_ring_buf_put(struct ring_buf *buf,
  */
 int ring_buf_item_get(struct ring_buf *buf, u16_t *type, u8_t *value,
 		      u32_t *data, u8_t *size32);
-
-/** @deprecated Renamed to ring_buf_item_get. */
-__deprecated static inline int sys_ring_buf_get(struct ring_buf *buf,
-						u16_t *type, u8_t *value,
-						u32_t *data, u8_t *size32)
-{
-	return ring_buf_item_get(buf, type, value, data, size32);
-}
 
 /**
  * @brief Allocate buffer for writing data to a ring buffer.
