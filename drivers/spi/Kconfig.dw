@@ -35,6 +35,15 @@ config SPI_DW_FIFO_DEPTH
 	  SSI_RX_FIFO_DEPTH of the DesignWare Synchronous
 	  Serial Interface. Depth ranges from 2-256.
 
+config SPI_DW_ACCESS_WORD_ONLY
+	bool "DesignWare SPI only allows word access"
+	default n
+	depends on SPI_DW
+	help
+	  In some case, e.g. ARC HS Development kit, the peripheral space of
+	  DesignWare SPI only allows word access, byte access will raise
+	  exception.
+
 if SPI_0
 
 config SPI_DW_PORT_0_INTERRUPT_SINGLE_LINE
