@@ -38,8 +38,6 @@ source "drivers/gpio/Kconfig.mcux_lpc"
 
 source "drivers/gpio/Kconfig.mmio32"
 
-source "drivers/gpio/Kconfig.atmel_sam3"
-
 source "drivers/gpio/Kconfig.stm32"
 
 source "drivers/gpio/Kconfig.nrfx"
