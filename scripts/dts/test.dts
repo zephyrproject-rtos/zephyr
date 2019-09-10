@@ -331,6 +331,23 @@
 	};
 
 	//
+	// For testing that neither 'include: [foo.yaml, bar.yaml]' nor
+	// 'include: [bar.yaml, foo.yaml]' causes errors when one of the files
+	// has 'required: true' and the other 'required: false'
+	//
+
+	include-order {
+		node-1 {
+			compatible = "order-1";
+			foo = <1>;
+		};
+		node-2 {
+			compatible = "order-2";
+			foo = <2>;
+		};
+	};
+
+	//
 	// For testing deprecated features
 	//
 

@@ -206,7 +206,7 @@ class EDT:
                 (binding, binding_path)
 
     def _merge_included_bindings(self, binding, binding_path):
-        # Merges any bindings listed in the 'include:' section of the binding
+        # Merges any bindings listed in the 'include:' section of 'binding'
         # into the top level of 'binding'. Also supports the legacy
         # 'inherits: !include ...' syntax for including bindings.
         #
@@ -241,31 +241,51 @@ class EDT:
                 _err("malformed 'inherits:' in " + binding_path)
             fnames += inherits
 
-        for fname in fnames:
-            included = self._file_yaml(fname)
-            _merge_props(
-                binding, self._merge_included_bindings(included, binding_path),
-                None, binding_path)
+        if not fnames:
+            return binding
+
+        # Got a list of included files in 'fnames'. Now we need to merge them
+        # together and then merge them into 'binding'.
+
+        # First, merge the included files together. If more than one included
+        # file has a 'required:' for a particular property, OR the values
+        # together, so that 'required: true' wins.
+
+        merged_included = self._load_binding(fnames[0])
+        for fname in fnames[1:]:
+            included = self._load_binding(fname)
+            _merge_props(merged_included, included, None, binding_path,
+                         check_required=False)
+
+        # Next, merge the merged included files into 'binding'. Error out if
+        # 'binding' has 'required: false' while the merged included files have
+        # 'required: true'.
+
+        _merge_props(binding, merged_included, None, binding_path,
+                     check_required=True)
 
         return binding
 
-    def _file_yaml(self, filename):
-        # _merge_included_bindings() helper for loading an included file.
-        # 'include:' lists just the basenames of the files, so we check that
-        # there aren't multiple candidates.
+    def _load_binding(self, fname):
+        # Returns the contents of the binding given by 'fname' after merging
+        # any bindings it lists in 'include:' into it. 'fname' is just the
+        # basename of the file, so we check that there aren't multiple
+        # candidates.
 
         paths = [path for path in self._binding_paths
-                 if os.path.basename(path) == filename]
+                 if os.path.basename(path) == fname]
 
         if not paths:
-            _err("'{}' not found".format(filename))
+            _err("'{}' not found".format(fname))
 
         if len(paths) > 1:
             _err("multiple candidates for included file '{}': {}"
-                 .format(filename, ", ".join(paths)))
+                 .format(fname, ", ".join(paths)))
 
         with open(paths[0], encoding="utf-8") as f:
-            return yaml.load(f, Loader=yaml.Loader)
+            return self._merge_included_bindings(
+                yaml.load(f, Loader=yaml.Loader),
+                paths[0])
 
     def _init_devices(self):
         # Creates a list of devices (Device objects) from the DT nodes, in
@@ -1302,10 +1322,20 @@ def _binding_inc_error(msg):
     raise yaml.constructor.ConstructorError(None, None, "error: " + msg)
 
 
-def _merge_props(to_dict, from_dict, parent, binding_path):
+def _merge_props(to_dict, from_dict, parent, binding_path, check_required):
     # Recursively merges 'from_dict' into 'to_dict', to implement 'include:'.
-    # If a key exists in both 'from_dict' and 'to_dict', then the value in
-    # 'to_dict' takes precedence.
+    #
+    # If 'from_dict' and 'to_dict' contain a 'required:' key for the same
+    # property, then the values are ORed together.
+    #
+    # If 'check_required' is True, then an error is raised if 'from_dict' has
+    # 'required: true' while 'to_dict' has 'required: false'. This prevents
+    # bindings from "downgrading" requirements from bindings they include,
+    # which might help keep bindings well-organized.
+    #
+    # It's an error for most other keys to appear in both 'from_dict' and
+    # 'to_dict'. When it's not an error, the value in 'to_dict' takes
+    # precedence.
     #
     # 'parent' is the name of the parent key containing 'to_dict' and
     # 'from_dict', and 'binding_path' is the path to the top-level binding.
@@ -1314,33 +1344,52 @@ def _merge_props(to_dict, from_dict, parent, binding_path):
     for prop in from_dict:
         if isinstance(to_dict.get(prop), dict) and \
            isinstance(from_dict[prop], dict):
-            _merge_props(to_dict[prop], from_dict[prop], prop, binding_path)
+            _merge_props(to_dict[prop], from_dict[prop], prop, binding_path,
+                         check_required)
         elif prop not in to_dict:
             to_dict[prop] = from_dict[prop]
-        elif _bad_overwrite(to_dict, from_dict, prop):
+        elif _bad_overwrite(to_dict, from_dict, prop, check_required):
             _err("{} (in '{}'): '{}' from included file overwritten "
                  "('{}' replaced with '{}')".format(
                      binding_path, parent, prop, from_dict[prop],
                      to_dict[prop]))
+        elif prop == "required":
+            # Need a separate check here, because this code runs before
+            # _check_binding()
+            if not (isinstance(from_dict["required"], bool) and
+                    isinstance(to_dict["required"], bool)):
+                _err("malformed 'required:' setting for '{}' in 'properties' "
+                     "in {}, expected true/false".format(parent, binding_path))
+
+            # 'required: true' takes precedence
+            to_dict["required"] = to_dict["required"] or from_dict["required"]
+        elif prop == "category":
+            # Legacy property key. 'category: required' takes precedence.
+            if "required" in (to_dict["category"], from_dict["category"]):
+                to_dict["category"] = "required"
 
 
-def _bad_overwrite(to_dict, from_dict, prop):
+def _bad_overwrite(to_dict, from_dict, prop, check_required):
     # _merge_props() helper. Returns True in cases where it's bad that
     # to_dict[prop] takes precedence over from_dict[prop].
-
-    # These are overridden deliberately
-    if prop in {"title", "description"}:
-        return False
 
     if to_dict[prop] == from_dict[prop]:
         return False
 
-    # Allow a property to be made required when it previously was optional
-    # without a warning
-    if (prop == "required" and to_dict[prop] and not from_dict[prop]) or \
-       (prop == "category" and to_dict[prop] == "required" and
-        from_dict[prop] == "optional"):
+    # These are overridden deliberately
+    if prop in {"title", "description", "compatible"}:
         return False
+
+    if prop == "required":
+        if not check_required:
+            return False
+        return from_dict[prop] and not to_dict[prop]
+
+    # Legacy property key
+    if prop == "category":
+        if not check_required:
+            return False
+        return from_dict[prop] == "required" and to_dict[prop] == "optional"
 
     return True
 
@@ -1371,8 +1420,8 @@ def _check_binding(binding, binding_path):
             _err("missing, malformed, or empty '{}' in {}"
                  .format(prop, binding_path))
 
-    ok_top = {"title", "description", "compatible", "inherits", "properties",
-              "#cells", "parent", "child", "sub-node"}
+    ok_top = {"title", "description", "compatible", "properties", "#cells",
+              "parent", "child", "sub-node"}
 
     for prop in binding:
         if prop not in ok_top:
