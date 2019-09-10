@@ -139,6 +139,7 @@
 /drivers/modem/                           @mike-scott
 /drivers/pcie/                            @gnuless
 /drivers/pinmux/stm32/                    @rsalveti @idlethread
+/drivers/pinmux/*hsdk*                    @iriszzw
 /drivers/sensor/                          @MaureenHelm
 /drivers/sensor/ams_iAQcore/              @alexanderwachter
 /drivers/sensor/ens210/                   @alexanderwachter
