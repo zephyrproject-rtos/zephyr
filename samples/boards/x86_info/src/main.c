@@ -21,6 +21,7 @@ void main(void)
 	printk("\n\nx86_info: the Zephyr x86 platform information tool\n\n");
 
 	multiboot();
+	memmap();
 	acpi();
 	timer();
 
