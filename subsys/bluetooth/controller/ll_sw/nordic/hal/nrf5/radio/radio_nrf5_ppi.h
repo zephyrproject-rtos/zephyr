@@ -1055,6 +1055,13 @@ static inline void hal_sw_switch_timer_clear_ppi_config(void)
 #define SW_SWITCH_TIMER_EVTS_COMP(index) \
 	(SW_SWITCH_TIMER_EVTS_COMP_BASE + index)
 
+/* The 2 adjacent TIMER EVENTS_COMPARE event offsets used for implementing
+ * SW_SWITCH_TIMER-based auto-switch for TIFS, when receiving on LE Coded
+ * PHY. 'index' must be 0 or 1.
+ */
+#define SW_SWITCH_TIMER_S2_EVTS_COMP(index) \
+	(SW_SWITCH_TIMER_EVTS_COMP_S2_BASE + index)
+
 /* Wire a SW SWITCH TIMER EVENTS_COMPARE[<cc_offset>] event
  * to a PPI GROUP TASK DISABLE task (PPI group with index <index>).
  * 2 adjacent PPIs (8 & 9) and 2 adjacent PPI groups are used for this wiring;
@@ -1120,9 +1127,15 @@ static inline void hal_sw_switch_timer_clear_ppi_config(void)
  * Note:
  * We use the same PPI as for disabling the SW Switch PPI groups,
  * since we need to listen for the same event (SW Switch event).
+ *
+ * We use the same PPI for the alternative SW Switch Timer compare
+ * event.
  */
 #define HAL_SW_SWITCH_RADIO_ENABLE_PPI_BASE 8
 #define HAL_SW_SWITCH_RADIO_ENABLE_PPI(index) \
+	(HAL_SW_SWITCH_RADIO_ENABLE_PPI_BASE + index)
+
+#define HAL_SW_SWITCH_RADIO_ENABLE_S2_PPI(index) \
 	(HAL_SW_SWITCH_RADIO_ENABLE_PPI_BASE + index)
 
 #define HAL_SW_SWITCH_RADIO_ENABLE_PPI_0_INCLUDE \
@@ -1156,6 +1169,32 @@ static inline void hal_sw_switch_timer_clear_ppi_config(void)
 		&	RADIO_SUBSCRIBE_RXEN_CHIDX_Msk) | \
 	((RADIO_SUBSCRIBE_RXEN_EN_Enabled << RADIO_SUBSCRIBE_RXEN_EN_Pos) \
 		&	RADIO_SUBSCRIBE_RXEN_EN_Msk))
+
+/* Cancel the SW switch timer running considering S8 timing:
+ * wire the RADIO EVENTS_RATEBOOST event to SW_SWITCH_TIMER TASKS_CAPTURE task.
+ *
+ * Note: We already have a PPI where we publish the RATEBOOST event.
+ */
+#define HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI HAL_TRIGGER_RATEOVERRIDE_PPI
+#define HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI_REGISTER_EVT \
+	NRF_RADIO->PUBLISH_RATEBOOST
+#define HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI_EVT \
+	(((HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI << \
+		RADIO_PUBLISH_RATEBOOST_CHIDX_Pos) \
+	& RADIO_PUBLISH_RATEBOOST_CHIDX_Msk) | \
+	((RADIO_PUBLISH_RATEBOOST_EN_Enabled << \
+		RADIO_PUBLISH_RATEBOOST_EN_Pos) \
+	& RADIO_PUBLISH_RATEBOOST_EN_Msk))
+#define HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI_REGISTER_TASK(cc_reg) \
+	SW_SWITCH_TIMER->SUBSCRIBE_CAPTURE[cc_reg]
+#define HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI_TASK \
+	(((HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI << \
+		TIMER_SUBSCRIBE_CAPTURE_CHIDX_Pos) \
+		& TIMER_SUBSCRIBE_CAPTURE_CHIDX_Msk) | \
+	((TIMER_SUBSCRIBE_CAPTURE_EN_Enabled << \
+		TIMER_SUBSCRIBE_CAPTURE_EN_Pos) \
+		& TIMER_SUBSCRIBE_CAPTURE_EN_Msk))
+
 
 static inline void hal_radio_sw_switch_setup(
 		u8_t compare_reg,
@@ -1238,6 +1277,63 @@ static inline void hal_radio_sw_switch_disable(void)
 	HAL_SW_SWITCH_TIMER_CLEAR_PPI_REGISTER_TASK = 0;
 	HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI_REGISTER_TASK(0) = 0;
 	HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI_REGISTER_TASK(1) = 0;
+}
+
+
+static inline void hal_radio_sw_switch_coded_tx_config_set(u8_t ppi_en,
+	u8_t ppi_dis, u8_t cc_s2, u8_t group_index)
+{
+	/* Publish the SW Switch Timer Compare event for S2 timing
+	 * to the PPI that will be used to trigger Radio enable.
+	 */
+	HAL_SW_SWITCH_RADIO_ENABLE_PPI_REGISTER_EVT(cc_s2) =
+		HAL_SW_SWITCH_RADIO_ENABLE_PPI_EVT(ppi_en);
+
+	/* The Radio Enable Task is already subscribed to the channel. */
+
+	/* Wire the Group task disable to the S2 EVENTS_COMPARE. */
+	HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_REGISTER_EVT(cc_s2) =
+		HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_EVT(ppi_dis);
+
+	HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_REGISTER_TASK(group_index) =
+		HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_TASK(ppi_dis);
+
+	/* Capture CC to cancel the timer that has assumed
+	 * S8 reception, if packet will be received in S2.
+	 */
+	HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI_REGISTER_EVT =
+		HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI_EVT;
+	HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI_REGISTER_TASK(
+		SW_SWITCH_TIMER_EVTS_COMP(group_index)) =
+		HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI_TASK;
+
+	nrf_dppi_channels_enable(NRF_DPPIC,
+		BIT(HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI));
+}
+
+static inline void hal_radio_sw_switch_coded_config_clear(u8_t ppi_en,
+	u8_t ppi_dis, u8_t cc_reg, u8_t group_index)
+{
+	/* Invalidate subscription of S2 timer Compare used when
+	 * RXing on LE Coded PHY.
+	 *
+	 * Note: we do not un-subscribe the Radio enable task because
+	 * we use the same PPI for both SW Switch Timer compare events.
+	 */
+	HAL_SW_SWITCH_RADIO_ENABLE_PPI_REGISTER_EVT(
+		SW_SWITCH_TIMER_S2_EVTS_COMP(group_index)) = 0;
+
+	/* Wire the Group[group_index] task disable to the default
+	 * SW Switch Timer EVENTS_COMPARE.
+	 */
+	HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_REGISTER_EVT(
+		cc_reg) =
+		HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_EVT(
+			ppi_dis);
+	HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_REGISTER_TASK(
+		group_index) =
+		HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_TASK(
+			ppi_dis);
 }
 
 static inline void hal_radio_sw_switch_ppi_group_setup(void)
