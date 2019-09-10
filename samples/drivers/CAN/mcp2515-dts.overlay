@@ -6,7 +6,7 @@
 
 &spi1 {
 	status = "okay";
-	cs-gpios = <&gpioa 4 GPIO_DIR_OUT>;
+	cs-gpios = <&gpioa 4 0>;
 	mcp2515@0 {
 		compatible = "microchip,mcp2515";
 		spi-port-name = "SPI_1";
