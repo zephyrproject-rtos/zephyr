@@ -6,24 +6,13 @@
 
 #include <autoconf.h>
 #include <generated_dts_board.h>
-/* physical address where the kernel is loaded */
-#define PHYS_LOAD_ADDR DT_PHYS_LOAD_ADDR
 
-/* physical address of RAM */
-#ifdef CONFIG_XIP
-  #define PHYS_RAM_ADDR    DT_PHYS_RAM_ADDR
-#else  /* !CONFIG_XIP */
-  #define PHYS_RAM_ADDR    PHYS_LOAD_ADDR
-#endif /* CONFIG_XIP */
+#define PHYS_LOAD_ADDR	DT_PHYS_RAM_ADDR
+#define PHYS_RAM_ADDR	DT_PHYS_RAM_ADDR
 
 MEMORY
     {
-#ifdef CONFIG_XIP
-    ROM (rx)        : ORIGIN = PHYS_LOAD_ADDR, LENGTH = DT_ROM_SIZE*1K
-    RAM (wx)        : ORIGIN = PHYS_RAM_ADDR, LENGTH = DT_RAM_SIZE*1K
-#else  /* !CONFIG_XIP */
-    RAM (wx)	    : ORIGIN = PHYS_LOAD_ADDR, LENGTH = DT_RAM_SIZE*1K
-#endif /* CONFIG_XIP */
+    RAM (wx)	    : ORIGIN = DT_PHYS_RAM_ADDR, LENGTH = DT_RAM_SIZE*1K
 
     /*
      * It doesn't matter where this region goes as it is stripped from the
