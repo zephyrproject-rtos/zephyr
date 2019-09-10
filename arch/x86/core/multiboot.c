@@ -7,6 +7,7 @@
 #include <kernel.h>
 #include <string.h>
 #include <arch/x86/multiboot.h>
+#include <arch/x86/memmap.h>
 
 #ifdef CONFIG_X86_MULTIBOOT_INFO
 
@@ -19,11 +20,84 @@ struct x86_multiboot_info x86_multiboot_info;
  * be overwritten before we read it.
  */
 
+static inline void clear_memmap(int index)
+{
+	while (index < CONFIG_X86_MEMMAP_ENTRIES) {
+		x86_memmap[index].type = X86_MEMMAP_ENTRY_UNUSED;
+		++index;
+	}
+}
+
 void z_x86_multiboot_init(struct x86_multiboot_info *info)
 {
 	if (info != NULL) {
 		memcpy(&x86_multiboot_info, info, sizeof(*info));
 	}
+
+#ifdef CONFIG_X86_MULTIBOOT_MEMMAP
+	/*
+	 * If the extended map (basically, the equivalent of
+	 * the BIOS E820 map) is available, then use that.
+	 */
+
+	if ((info->flags & X86_MULTIBOOT_INFO_FLAGS_MMAP) &&
+	    (x86_memmap_source < X86_MEMMAP_SOURCE_MULTIBOOT_MMAP)) {
+		u32_t address = info->mmap_addr;
+		struct x86_multiboot_mmap *mmap;
+		int index = 0;
+		u32_t type;
+
+		while ((address < (info->mmap_addr + info->mmap_length)) &&
+		       (index < CONFIG_X86_MEMMAP_ENTRIES)) {
+			mmap = UINT_TO_POINTER(address);
+
+			x86_memmap[index].base = mmap->base;
+			x86_memmap[index].length = mmap->length;
+
+			switch (mmap->type) {
+			case X86_MULTIBOOT_MMAP_RAM:
+				type = X86_MEMMAP_ENTRY_RAM;
+				break;
+			case X86_MULTIBOOT_MMAP_ACPI:
+				type = X86_MEMMAP_ENTRY_ACPI;
+				break;
+			case X86_MULTIBOOT_MMAP_NVS:
+				type = X86_MEMMAP_ENTRY_NVS;
+				break;
+			case X86_MULTIBOOT_MMAP_DEFECTIVE:
+				type = X86_MEMMAP_ENTRY_DEFECTIVE;
+				break;
+			default:
+				type = X86_MEMMAP_ENTRY_UNKNOWN;
+			}
+
+			x86_memmap[index].type = type;
+			++index;
+			address += mmap->size + sizeof(mmap->size);
+		}
+
+		x86_memmap_source = X86_MEMMAP_SOURCE_MULTIBOOT_MMAP;
+		clear_memmap(index);
+	}
+
+	/* If no extended map is available, fall back to the basic map. */
+
+	if ((info->flags & X86_MULTIBOOT_INFO_FLAGS_MEM) &&
+	    (x86_memmap_source < X86_MEMMAP_SOURCE_MULTIBOOT_MEM)) {
+		x86_memmap[0].base = 0;
+		x86_memmap[0].length = info->mem_lower * 1024ULL;
+		x86_memmap[0].type = X86_MEMMAP_ENTRY_RAM;
+
+		if (CONFIG_X86_MEMMAP_ENTRIES > 1) {
+			x86_memmap[1].base = 1048576U; /* 1MB */
+			x86_memmap[1].length = info->mem_upper * 1024ULL;
+			x86_memmap[1].type = X86_MEMMAP_ENTRY_RAM;
+			clear_memmap(2);
+		}
+
+		x86_memmap_source = X86_MEMMAP_SOURCE_MULTIBOOT_MEM;
+	}
+#endif /* CONFIG_X86_MULTIBOOT_MEMMAP */
 }
 
 #ifdef CONFIG_X86_MULTIBOOT_FRAMEBUF

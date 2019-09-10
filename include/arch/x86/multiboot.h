@@ -38,7 +38,28 @@ extern struct x86_multiboot_info x86_multiboot_info;
 
 extern void z_x86_multiboot_init(struct x86_multiboot_info *);
 
+/*
+ * the mmap_addr field points to a series of entries of the following form.
+ */
+
+struct x86_multiboot_mmap {
+	u32_t size;
+	u64_t base;
+	u64_t length;
+	u32_t type;
+} __packed;
+
 #endif /* _ASMLANGUAGE */
+
+/*
+ * Possible values for x86_multiboot_mmap.type field.
+ * Other values should be assumed to be unusable ranges.
+ */
+
+#define X86_MULTIBOOT_MMAP_RAM		1	/* available RAM */
+#define X86_MULTIBOOT_MMAP_ACPI		3	/* reserved for ACPI */
+#define X86_MULTIBOOT_MMAP_NVS		4	/* ACPI non-volatile */
+#define X86_MULTIBOOT_MMAP_DEFECTIVE	5	/* defective RAM module */
 
 /*
  * Magic numbers: the kernel multiboot header (see crt0.S) begins with
