@@ -13,4 +13,4 @@ include: i2c-device.yaml
 properties:
     irq-gpios:
       type: phandle-array
-      required: true
+      required: false
