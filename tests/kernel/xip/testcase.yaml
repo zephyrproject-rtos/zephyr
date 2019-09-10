@@ -1,5 +1,4 @@
 tests:
   arch.common.xip:
-    arch_exclude: xtensa
-    platform_exclude: cc3220sf_launchxl minnowboard
+    filter: CONFIG_XIP
     tags: xip
