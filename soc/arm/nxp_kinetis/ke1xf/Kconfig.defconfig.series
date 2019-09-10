@@ -42,13 +42,6 @@ config WDT_MCUX_WDOG32
 
 endif # WATCHDOG
 
-if RTC
-
-config RTC_MCUX
-	default y
-
-endif # RTC
-
 if COUNTER
 
 config COUNTER_MCUX_RTC

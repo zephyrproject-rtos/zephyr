@@ -15,6 +15,5 @@ supported:
   - spi
   - gpio
   - pwm
-  - rtc
   - counter
   - usb_device

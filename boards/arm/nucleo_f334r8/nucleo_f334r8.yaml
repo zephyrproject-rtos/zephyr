@@ -18,7 +18,6 @@ supported:
   - i2c
   - spi
   - pwm
-  - rtc
   - watchdog
   - counter
   - nvs

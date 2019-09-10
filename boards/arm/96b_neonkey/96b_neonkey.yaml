@@ -12,5 +12,4 @@ supported:
   - gpio
   - i2c
   - spi
-  - rtc
   - counter

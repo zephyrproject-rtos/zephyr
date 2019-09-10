@@ -18,7 +18,6 @@ supported:
   - pwm
   - spi
   - watchdog
-  - rtc
   - counter
   - can
   - adc
