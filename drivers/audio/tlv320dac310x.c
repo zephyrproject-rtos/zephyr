@@ -110,7 +110,7 @@ static int codec_configure(struct device *dev,
 
 	/* configure reset GPIO */
 	gpio_pin_configure(dev_cfg->gpio_device, dev_cfg->gpio_pin,
-				     dev_cfg->gpio_flags);
+				     dev_cfg->gpio_flags | GPIO_DIR_OUT);
 	/* de-assert reset */
 	gpio_pin_write(dev_cfg->gpio_device, dev_cfg->gpio_pin,
 				 CODEC_RESET_PIN_DEASSERT);
