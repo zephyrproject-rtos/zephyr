@@ -12,4 +12,3 @@ config BOARD_QEMU_X86
 	select HAS_DTS_ETHERNET
 	select CPU_HAS_FPU
 	select HAS_COVERAGE_SUPPORT
-	select XIP
