@@ -36,6 +36,11 @@ properties:
       required: true
       description: mapping of the display start line to one of COM0 .. COM63
 
+    multiplex-ratio:
+      type: int
+      required: true
+      description: Multiplex Ratio
+
     segment-remap:
       type: boolean
       required: false
@@ -45,6 +50,11 @@ properties:
       type: boolean
       required: false
       description: Scan direction is from last COM output to first COM output
+
+    com-sequential:
+      type: boolean
+      required: false
+      description: Sequential COM pin configuration
 
     prechargep:
       type: int
