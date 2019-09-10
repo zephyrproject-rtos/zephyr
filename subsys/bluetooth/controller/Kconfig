@@ -767,7 +767,7 @@ config BT_CTLR_ASSERT_HANDLER
 	help
 	  This option enables an application-defined sink for the
 	  controller assertion mechanism. This must be defined in
-	  application code as void \"bt_controller_assert_handle(char \*, int)\"
+	  application code as void \"bt_ctlr_assert_handle(char \*, int)\"
 	  and will be invoked whenever the controller code encounters
 	  an unrecoverable error.
 
