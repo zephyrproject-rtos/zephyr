@@ -27,3 +27,23 @@
 	status = "okay";
 	current-speed = <115200>;
 };
+
+&gpio0 {
+	status = "okay";
+	interrupts = <56 1>;
+};
+
+&spi0 {
+	status = "okay";
+	clock-frequency = <33333333>;
+};
+
+&spi1 {
+	status = "okay";
+	clock-frequency = <33333333>;
+};
+
+&spi2 {
+	status = "okay";
+	clock-frequency = <33333333>;
+};
