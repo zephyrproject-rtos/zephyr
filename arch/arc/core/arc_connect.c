@@ -349,7 +349,7 @@ u32_t z_arc_connect_idu_read_mode(u32_t irq_num)
 void z_arc_connect_idu_set_dest(u32_t irq_num, u32_t core_mask)
 {
 	LOCKED(&arc_connect_spinlock) {
-		z_arc_connect_cmd_data(ARC_CONNECT_CMD_IDU_SET_MODE,
+		z_arc_connect_cmd_data(ARC_CONNECT_CMD_IDU_SET_DEST,
 			irq_num, core_mask);
 	}
 }
