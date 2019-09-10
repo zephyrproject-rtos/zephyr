@@ -698,6 +698,9 @@ static void tcp_endpoints_set(struct tcp *conn, struct net_pkt *pkt)
 	conn->src = tcp_endpoint_new(pkt, DST);
 }
 
+static struct tcp *create_new_tcp_connection(struct tcp *conn,
+						struct net_pkt *pkt_in);
+
 enum net_verdict tcp_pkt_received(struct net_conn *net_conn,
 				  struct net_pkt *pkt,
 				  union net_ip_header *ip_hdr,
@@ -712,13 +715,11 @@ enum net_verdict tcp_pkt_received(struct net_conn *net_conn,
 
 	tcp_dbg("conn: %p, %s", conn, tcp_th(pkt));
 
-	if (conn) {
-		if (TCP_LISTEN == conn->state) {
-			tcp_endpoints_set(conn, pkt);
-		}
-
-		tcp_in(conn, pkt);
+	if (conn && TCP_LISTEN == conn->state) {
+		conn = create_new_tcp_connection(conn, pkt);
 	}
+
+	tcp_in(conn, pkt);
 
 	return NET_DROP;
 }
@@ -736,6 +737,8 @@ static struct tcp *create_new_tcp_connection(struct tcp *conn,
 	struct sockaddr remote_addr;
 	u16_t local_port = 0;
 	u16_t remote_port = 0;
+
+	tcp_dbg("");
 
 	if (conn->state != TCP_LISTEN) {
 		tcp_dbg("listening tcp connection %p in wrong state %d",
@@ -848,11 +851,6 @@ next_state:
 	switch (conn->state) {
 	case TCP_LISTEN:
 		if (FL(&fl, ==, SYN)) {
-			/* establish a new TCP connection for the endpoints */
-			conn = create_new_tcp_connection(conn, pkt);
-			if (conn == NULL) {
-				break;
-			}
 			conn_ack(conn, th_seq(th) + 1); /* capture peer's isn */
 			tcp_out(conn, SYN | ACK);
 			conn_seq(conn, + 1);
@@ -1039,15 +1037,6 @@ int net_tcp_get(struct net_context *context)
 	/* A TCP connection set up between two devices will have an interface
 	 * assigned, but a socket listening on any address will not have one */
 	tcp_context[i].iface = net_context_get_iface(context);
-
-	tcp_context[i].src = tcp_calloc(1, sizeof(struct sockaddr));
-	tcp_context[i].dst = tcp_calloc(1, sizeof(struct sockaddr));
-
-	addr4 = (struct sockaddr_in *)&context->local;
-
-	memcpy(tcp_context[i].dst, &context->remote, sizeof(*tcp_context[i].dst));
-	memcpy(tcp_context[i].src, &addr4->sin_addr, sizeof(*tcp_context[i].src));
-
 	tcp_context[i].rcv = tcp_win_new("RCV");
 	tcp_context[i].snd = tcp_win_new("SND");
 
@@ -1063,14 +1052,20 @@ int net_tcp_get(struct net_context *context)
 
 	sys_slist_append(&tcp_conns, (sys_snode_t *) &tcp_context[i]);
 
-	if (IS_ENABLED(CONFIG_NET_TP)) {
-		tcp_context[i].src = tcp_calloc(1, sizeof(struct sockaddr));
-		tcp_context[i].dst = tcp_calloc(1, sizeof(struct sockaddr));
+	tcp_context[i].src = tcp_calloc(1, sizeof(struct sockaddr));
+	tcp_context[i].dst = tcp_calloc(1, sizeof(struct sockaddr));
 
+	if (IS_ENABLED(CONFIG_NET_TP)) {
 		tcp_endpoint_set(tcp_context[i].src,
 					CONFIG_NET_CONFIG_MY_IPV4_ADDR, 4242);
 		tcp_endpoint_set(tcp_context[i].dst,
 					CONFIG_NET_CONFIG_PEER_IPV4_ADDR, 4242);
+	} else {
+		addr4 = (struct sockaddr_in *)&context->local;
+		memcpy(tcp_context[i].dst, &context->remote,
+			sizeof(*tcp_context[i].dst));
+		memcpy(tcp_context[i].src, &addr4->sin_addr,
+			sizeof(*tcp_context[i].src));
 	}
 
 	return 0;
