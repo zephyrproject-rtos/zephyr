@@ -1,9 +1,4 @@
 # SPDX-License-Identifier: Apache-2.0
-#
-# The QEMU targets themselves are not XIP, everything is actually RAM, but we
-# pretend the first 4 megabytes are a memory-mapped flash region. This is done
-# to ensure that the XIP data copying infrastructure doesn't bit-rot on
-# x86.
 
 config BOARD_QEMU_X86
 	bool "QEMU x86"
@@ -12,4 +7,3 @@ config BOARD_QEMU_X86
 	select HAS_DTS_ETHERNET
 	select CPU_HAS_FPU
 	select HAS_COVERAGE_SUPPORT
-	select XIP
