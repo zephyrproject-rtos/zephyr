@@ -11,7 +11,6 @@
 #
 menuconfig SPI
 	bool "SPI hardware bus support"
-	select HAS_DTS_SPI
 	help
 	  Enable support for the SPI hardware bus.
 
