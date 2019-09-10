@@ -218,12 +218,12 @@ def merge_included_bindings(fname, node):
     res = node
 
     if "include" in node:
-        fnames = node.pop("include")
-        if isinstance(fnames, str):
-            fnames = [fnames]
+        included = node.pop("include")
+        if isinstance(included, str):
+            included = [included]
 
-        for fname in fnames:
-            binding = load_binding_file(fname)
+        for included_fname in included:
+            binding = load_binding_file(included_fname)
             inherited = merge_included_bindings(fname, binding)
             merge_properties(None, fname, inherited, res)
             res = inherited
