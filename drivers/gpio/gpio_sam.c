@@ -78,21 +78,23 @@ static int gpio_sam_config_pin(Pio * const pio, u32_t mask, int flags)
 		pio->PIO_PUDR = mask;
 	}
 
+#if defined(CONFIG_SOC_SERIES_SAM4S) || defined(CONFIG_SOC_SERIES_SAME70)
 	/* Setup Pull-down resistor. */
 	if ((flags & GPIO_PUD_MASK) == GPIO_PUD_PULL_DOWN) {
 		pio->PIO_PPDER = mask;
 	} else {
 		pio->PIO_PPDDR = mask;
 	}
+#endif
 
-#if defined(SOC_SERIES_SAM3X)
+#if defined(CONFIG_SOC_SERIES_SAM3X)
 	/* Setup debounce. */
 	if (flags & GPIO_INT_DEBOUNCE) {
 		pio->PIO_DIFSR = mask;
 	} else {
 		pio->PIO_SCIFSR = mask;
 	}
-#elif defined(SOC_SERIES_SAM4S) || defined(SOC_SERIES_SAME70)
+#elif defined(CONFIG_SOC_SERIES_SAM4S) || defined(CONFIG_SOC_SERIES_SAME70)
 	/* Setup debounce. */
 	if (flags & GPIO_INT_DEBOUNCE) {
 		pio->PIO_IFSCER = mask;
