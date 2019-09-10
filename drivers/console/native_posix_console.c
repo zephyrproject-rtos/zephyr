@@ -254,19 +254,6 @@ static void native_stdio_runner(void *p1, void *p2, void *p3)
 		k_sleep(wait_time);
 	}
 }
-
-void native_stdin_register_input(struct k_fifo *avail, struct k_fifo *lines,
-			 u8_t (*completion)(char *str, u8_t len))
-{
-	avail_queue = avail;
-	lines_queue = lines;
-	completion_cb = completion;
-
-	k_thread_create(&native_stdio_thread, stack,
-			CONFIG_ARCH_POSIX_RECOMMENDED_STACK_SIZE,
-			native_stdio_runner, NULL, NULL, NULL,
-			CONFIG_NATIVE_STDIN_PRIO, 0, K_NO_WAIT);
-}
 #endif /* CONFIG_NATIVE_POSIX_STDIN_CONSOLE */
 
 static int native_posix_console_init(struct device *arg)
