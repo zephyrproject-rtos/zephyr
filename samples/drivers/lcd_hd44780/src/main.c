@@ -72,7 +72,7 @@
 
 
 #if defined(CONFIG_SOC_PART_NUMBER_SAM3X8E)
-#define GPIO_DRV_NAME CONFIG_GPIO_ATMEL_SAM3_PORTC_DEV_NAME
+#define GPIO_DRV_NAME DT_GPIO_SAM_PORTC_LABEL
 #else
 #error "Unsupported GPIO driver"
 #endif
