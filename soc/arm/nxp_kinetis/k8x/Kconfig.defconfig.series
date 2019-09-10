@@ -84,13 +84,6 @@ config PWM_MCUX_FTM
 
 endif # PWM
 
-if RTC
-
-config RTC_MCUX
-	default y
-
-endif # RTC
-
 if SERIAL
 
 config UART_MCUX_LPUART

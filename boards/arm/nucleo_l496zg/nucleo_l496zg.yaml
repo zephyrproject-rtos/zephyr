@@ -12,7 +12,6 @@ supported:
   - i2c
   - spi
   - pwm
-  - rtc
   - counter
   - watchdog
 testing:

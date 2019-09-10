@@ -10,6 +10,5 @@ ram: 128
 flash: 1024
 supported:
   - pwm
-  - rtc
   - counter
   - usb

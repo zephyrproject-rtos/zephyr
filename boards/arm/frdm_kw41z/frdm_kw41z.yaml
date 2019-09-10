@@ -14,4 +14,3 @@ supported:
   - i2c
   - spi
   - gpio
-  - rtc
