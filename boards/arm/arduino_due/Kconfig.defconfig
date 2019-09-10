@@ -11,23 +11,8 @@ config BOARD
 
 if GPIO
 
-config GPIO_ATMEL_SAM3
-	default y
-
-config GPIO_ATMEL_SAM3_PORTA
-	default y
-
-config GPIO_ATMEL_SAM3_PORTB
-	default y
-
-config GPIO_ATMEL_SAM3_PORTC
-	default y
-
-config GPIO_ATMEL_SAM3_PORTD
-	default y
-
 config GPIO_SAM
-	default n
+	default y
 
 endif # GPIO
 
