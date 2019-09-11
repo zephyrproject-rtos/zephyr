@@ -63,5 +63,17 @@
 			label = "eth0";
 			status = "disabled";
 		};
+		dna0: dna@e0003800 {
+			compatible = "litex,dna0";
+			/* DNA data is 57-bits long,
+			so it requires 8 bytes.
+			In LiteX each 32-bit register holds
+			only a single byte of meaningful data,
+			hence 8 registers. */
+			reg = <0xe0003800 0x20>;
+			reg-names = "mem";
+			label = "dna0";
+			status = "disabled";
+		};
 	};
 };
