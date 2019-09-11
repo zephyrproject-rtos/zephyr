@@ -29,28 +29,6 @@
 #define RUNM_VLPR		(2)
 #define RUNM_HSRUN		(3)
 
-/*
- * K8x flash configuration fields
- * These 16 bytes, which must be loaded into flash memory at offset 0x400,
- * include default protection and security settings.
- * They are loaded at reset to various Flash Memory module (FTFA) registers.
- */
-u8_t __kinetis_flash_config_section __kinetis_flash_config[] = {
-	/* Backdoor Comparison Key (unused) */
-	0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-	/* Program flash protection */
-	0xFF, 0xFF, 0xFF, 0xFF,
-	/*
-	 * Flash security: Backdoor key disabled, Mass erase enabled,
-	 *                 Factory access enabled, MCU is unsecure
-	 */
-	0xFE,
-	/* Flash nonvolatile option: NMI enabled, EzPort enabled, Normal boot */
-	0x3F,
-	/* Reserved for FlexNVM feature (unsupported by this MCU) */
-	0xFF, 0xFF
-};
-
 static const osc_config_t osc_config = {
 	.freq = CONFIG_OSC_XTAL0_FREQ,
 	.capLoad = 0,

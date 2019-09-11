@@ -122,6 +122,39 @@ config KINETIS_FLASH_CONFIG_OFFSET
 	hex "Kinetis flash configuration field offset"
 	default 0x400
 
+config KINETIS_FLASH_CONFIG_FSEC
+	hex "Flash security byte (FSEC)"
+	range 0 0xff
+	default 0xfe
+	help
+	  Configures the reset value of the FSEC register, which includes
+	  backdoor key access, mass erase, factory access, and flash security
+	  options.
+
+config KINETIS_FLASH_CONFIG_FOPT
+	hex "Flash nonvolatile option byte (FOPT)"
+	range 0 0xff
+	default 0xff
+	help
+	  Configures the reset value of the FOPT register, which includes boot,
+	  NMI, and EzPort options.
+
+config KINETIS_FLASH_CONFIG_FEPROT
+	hex "EEPROM protection byte (FEPROT)"
+	range 0 0xff
+	default 0xff
+	help
+	  Configures the reset value of the FEPROT register for FlexNVM
+	  devices. For program flash only devices, this byte is reserved.
+
+config KINETIS_FLASH_CONFIG_FDPROT
+	hex "Data flash protection byte (FDPROT)"
+	range 0 0xff
+	default 0xff
+	help
+	  Configures the reset value of the FDPROT register for FlexNVM
+	  devices. For program flash only devices, this byte is reserved.
+
 endif # KINETIS_FLASH_CONFIG
 
 endif # SOC_FAMILY_KINETIS
