@@ -30,6 +30,7 @@ config PINMUX_XEC_GPIO140_176
 	default y
 
 config PINMUX_XEC_GPIO200_236
+	default y if ADC_XEC
 	default n
 
 config PINMUX_XEC_GPIO240_276
