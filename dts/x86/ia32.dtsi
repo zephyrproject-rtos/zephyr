@@ -39,7 +39,6 @@
 		compatible = "simple-bus";
 		ranges;
 
-
 		uart0: uart@3f8 {
 			compatible = "ns16550";
 			reg = <0x000003f8 0x100>;
@@ -57,6 +56,16 @@
 			label = "UART_1";
 			clock-frequency = <1843200>;
 			interrupts = <3 IRQ_TYPE_EDGE_RISING 3>;
+			interrupt-parent = <&intc>;
+
+			status = "disabled";
+		};
+
+		hpet: hpet@fed00000 {
+			label = "HPET";
+			compatible = "intel,hpet";
+			reg = <0xfed00000 0x400>;
+			interrupts = <2 IRQ_TYPE_EDGE_RISING 4>;
 			interrupt-parent = <&intc>;
 
 			status = "disabled";

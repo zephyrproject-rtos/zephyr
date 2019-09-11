@@ -73,6 +73,10 @@
 	current-speed = <115200>;
 };
 
+&hpet {
+	status = "okay";
+};
+
 &flash_sim0 {
 	/*
 	 * For more information, see:

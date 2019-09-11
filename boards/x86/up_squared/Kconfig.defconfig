@@ -31,13 +31,6 @@ endif # I2C
 config APIC_TIMER
 	default y if !HPET_TIMER
 
-if HPET_TIMER
-
-config HPET_TIMER_IRQ
-	default 2
-
-endif # HPET_TIMER
-
 if APIC_TIMER
 
 config APIC_TIMER_IRQ

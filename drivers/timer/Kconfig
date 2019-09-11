@@ -69,27 +69,6 @@ menuconfig HPET_TIMER
 	  This option selects High Precision Event Timer (HPET) as a
 	  system timer.
 
-if HPET_TIMER
-config HPET_TIMER_BASE_ADDRESS
-	hex "HPET Base Address"
-	default 0xFED00000
-	help
-	  This options specifies the base address of the HPET timer device.
-
-config HPET_TIMER_IRQ
-	int "HPET Timer IRQ"
-	default 2
-	help
-	  This option specifies the IRQ used by the HPET timer.
-
-config HPET_TIMER_IRQ_PRIORITY
-	int "HPET Timer IRQ Priority"
-	default 4
-	help
-	  This option specifies the IRQ priority used by the HPET timer.
-
-endif #HPET_TIMER
-
 menuconfig LOAPIC_TIMER
 	bool "LOAPIC timer"
 	depends on LOAPIC && X86
