@@ -15,36 +15,6 @@
 #include <fsl_cache.h>
 #include <cortex_m/exc.h>
 
-/*
- * KE1xF flash configuration fields
- * These 16 bytes, which must be loaded to address 0x400, include default
- * protection, boot options and security settings.
- * They are loaded at reset to various Flash Memory module (FTFE) registers.
- */
-u8_t __kinetis_flash_config_section __kinetis_flash_config[] = {
-	/* Backdoor Comparison Key (unused) */
-	0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-	/* Program flash protection */
-	0xFF, 0xFF, 0xFF, 0xFF,
-	/*
-	 * Flash security: Backdoor key disabled, Mass erase enabled,
-	 *                 Factory access enabled, MCU is unsecure
-	 */
-	0xFE,
-	/*
-	 * Flash nonvolatile option: Boot from ROM with BOOTCFG0/NMI
-	 *                           pin low, boot from flash with
-	 *                           BOOTCFG0/NMI pin high, RESET_b
-	 *                           pin dedicated, NMI enabled,
-	 *                           normal boot
-	 */
-	0x7d,
-	/* EEPROM protection */
-	0xFF,
-	/* Data flash protection */
-	0xFF,
-};
-
 #define ASSERT_WITHIN_RANGE(val, min, max, str) \
 	BUILD_ASSERT_MSG(val >= min && val <= max, str)
 

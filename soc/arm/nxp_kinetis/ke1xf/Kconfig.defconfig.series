@@ -15,6 +15,13 @@ config NUM_IRQS
 	# must be >= the highest interrupt number used
 	default 91
 
+if KINETIS_FLASH_CONFIG
+
+config KINETIS_FLASH_CONFIG_FOPT
+	default 0x7d
+
+endif # KINETIS_FLASH_CONFIG
+
 if CLOCK_CONTROL
 
 config CLOCK_CONTROL_MCUX_SCG
