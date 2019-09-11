@@ -70,12 +70,21 @@ static union tcp_endpoint *tcp_endpoint_new(struct net_pkt *pkt, int src)
 	return ep;
 }
 
-static void tcp_endpoint_set(union tcp_endpoint *ep, const char *addr,
-				u16_t port)
+static char *tcp_endpoint_to_string(union tcp_endpoint *ep)
 {
-	ep->sa.sa_family = AF_INET;
-	ep->sin.sin_port = htons(port);
-	net_addr_pton(AF_INET, addr, &ep->sin.sin_addr);
+#define NBUFS 2
+#define BUF_SIZE 80
+	static char buf[NBUFS][BUF_SIZE];
+	char addr[INET6_ADDRSTRLEN];
+	static int i;
+	char *s = buf[++i % NBUFS];
+
+	net_addr_ntop(AF_INET, &ep->sin.sin_addr, addr, sizeof(addr));
+
+	snprintf(s, BUF_SIZE, "%s:%hu", addr, ntohs(ep->sin.sin_port));
+#undef BUF_SIZE
+#undef NBUFS
+	return s;
 }
 
 static const char *tcp_flags(u8_t fl)
@@ -679,19 +688,7 @@ static void conn_cb(struct tcp *conn, u8_t state)
 	}
 }
 
-static void tcp_endpoints_set(struct tcp *conn, struct net_pkt *pkt)
-{
-	tcp_assert(NULL == conn->iface, "");
-	tcp_assert(NULL == conn->src, "");
-	tcp_assert(NULL == conn->dst, "");
-
-	conn->iface = pkt->iface;
-	conn->dst = tcp_endpoint_new(pkt, SRC);
-	conn->src = tcp_endpoint_new(pkt, DST);
-}
-
-static struct tcp *create_new_tcp_connection(struct tcp *conn,
-						struct net_pkt *pkt_in);
+static struct tcp *tcp_conn_new(struct net_pkt *pkt);
 
 enum net_verdict tcp_pkt_received(struct net_conn *net_conn,
 				  struct net_pkt *pkt,
@@ -708,7 +705,7 @@ enum net_verdict tcp_pkt_received(struct net_conn *net_conn,
 	tcp_dbg("conn: %p, %s", conn, tcp_th(pkt));
 
 	if (conn && TCP_LISTEN == conn->state) {
-		conn = create_new_tcp_connection(conn, pkt);
+		conn = tcp_conn_new(pkt);
 	}
 
 	tcp_in(conn, pkt);
@@ -716,110 +713,52 @@ enum net_verdict tcp_pkt_received(struct net_conn *net_conn,
 	return NET_DROP;
 }
 
-/* Create a new connection between the two TCP endpoints as the local socket
- * has been listening on perhaps a wildcard address and is supposed to stay
- * listening for more incoming connections */
-static struct tcp *create_new_tcp_connection(struct tcp *conn,
-					     struct net_pkt *pkt_in)
+/* Create a new tcp connection, as a part of it, create and register
+ * net_context */
+static struct tcp *tcp_conn_new(struct net_pkt *pkt)
 {
-	int family, ret, protocol;
-	struct net_context *new_context = NULL;
-	struct net_tcp_hdr *tcp_hdr = NULL;
-	struct sockaddr local_addr;
-	struct sockaddr remote_addr;
-	u16_t local_port = 0;
-	u16_t remote_port = 0;
+	struct tcp *conn = NULL;
+	struct net_context *context = NULL;
+	sa_family_t af = net_pkt_family(pkt);
+	int ret;
 
-	tcp_dbg("");
-
-	if (conn->state != TCP_LISTEN) {
-		tcp_dbg("listening tcp connection %p in wrong state %d",
-			conn, conn->state);
-		goto err;
-	}
-
-	family = net_pkt_family(pkt_in);
-	ret = net_context_get(family, SOCK_STREAM, IPPROTO_TCP, &new_context);
+	ret = net_context_get(af, SOCK_STREAM, IPPROTO_TCP, &context);
 	if (ret < 0) {
-		tcp_dbg("could not get new context for listening connection "
-			"%p, %d", conn, ret);
+		tcp_err("net_context_get(): %d", ret);
 		goto err;
 	}
 
-	conn->iface = pkt_in->iface;
+	conn = context->tcp;
+	conn->iface = pkt->iface;
 
-	remote_addr.sa_family = family;
-	local_addr.sa_family = family;
+	conn->dst = tcp_endpoint_new(pkt, SRC);
+	conn->src = tcp_endpoint_new(pkt, DST);
 
-	if (IS_ENABLED(CONFIG_NET_IPV4) && family == AF_INET) {
-		struct sockaddr_in *addr4;
-		struct net_ipv4_hdr *ip_hdr = NET_IPV4_HDR(pkt_in);
+	tcp_dbg("conn: src: %s, dst: %s", tcp_endpoint_to_string(conn->src),
+		tcp_endpoint_to_string(conn->dst));
 
-		tcp_hdr = (struct net_tcp_hdr *)(ip_hdr + 1);
-		protocol = PF_INET;
+	memcpy(&context->remote, conn->dst, sizeof(context->remote));
 
-		addr4 = (struct sockaddr_in *)&local_addr;
-		net_ipaddr_copy(&addr4->sin_addr, &ip_hdr->dst);
-		addr4->sin_port = tcp_hdr->dst_port;
-		local_port = addr4->sin_port;
+	((struct sockaddr_in *)&context->local)->sin_family = af;
 
-		addr4 = (struct sockaddr_in *)&remote_addr;
-		net_ipaddr_copy(&addr4->sin_addr, &ip_hdr->src);
-		addr4->sin_port = tcp_hdr->src_port;
-		remote_port = addr4->sin_port;
-	}
+	tcp_dbg("context: local: %s, remote: %s",
+		tcp_endpoint_to_string((void *)&context->local),
+		tcp_endpoint_to_string((void *)&context->remote));
 
-	if (IS_ENABLED(CONFIG_NET_IPV6) && family == AF_INET6) {
-		struct sockaddr_in6 *addr6;
-		struct net_ipv6_hdr *ip_hdr = NET_IPV6_HDR(pkt_in);
-
-		protocol = PF_INET6;
-		tcp_hdr = (struct net_tcp_hdr *)(ip_hdr + 1);
-
-		addr6 = (struct sockaddr_in6 *)&local_addr;
-		net_ipaddr_copy(&addr6->sin6_addr, &ip_hdr->dst);
-		addr6->sin6_port = tcp_hdr->dst_port;
-		local_port = addr6->sin6_port;
-
-		addr6 = (struct sockaddr_in6 *)&remote_addr;
-		net_ipaddr_copy(&addr6->sin6_addr, &ip_hdr->src);
-		addr6->sin6_port = tcp_hdr->src_port;
-		remote_port = addr6->sin6_port;
-	}
-
-	memcpy(&new_context->remote, &remote_addr, sizeof(remote_addr));
-
-	if (net_ipv4_addr_cmp(&NET_IPV4_HDR(pkt_in)->dst,
-			      net_ipv4_unspecified_address())) {
-		printk("dst address missing\n");
-	}
-
-	ret = net_conn_register(IPPROTO_TCP, family,
-				&remote_addr, &local_addr,
-				ntohs(remote_port), ntohs(local_port),
-				tcp_pkt_received, new_context,
-				&new_context->conn_handler);
-	if (ret < 0 ){
-		tcp_dbg("Could not register new connection for context %p %d",
-			new_context, ret);
-
-		net_context_unref(new_context);
+	ret = net_conn_register(IPPROTO_TCP, af,
+				&context->remote, (void *)&context->local,
+				ntohs(conn->dst->sin.sin_port),/* local port */
+				ntohs(conn->src->sin.sin_port),/* remote port */
+				tcp_pkt_received, context,
+				&context->conn_handler);
+	if (ret < 0) {
+		tcp_err("net_conn_register(): %d", ret);
+		net_context_unref(context);
+		conn = NULL;
 		goto err;
 	}
-
-	memcpy(new_context->tcp->src, &local_addr, sizeof(local_addr));
-	memcpy(new_context->tcp->dst, &remote_addr, sizeof(remote_addr));
-
-	new_context->iface = conn->context->iface;
-	new_context->tcp->iface = conn->iface;
-	new_context->tcp->flags = conn->flags;
-	new_context->tcp->seq = conn->seq;
-	new_context->tcp->ack = conn->ack;
-
-	return new_context->tcp;
-
- err:
-	return NULL;
+err:
+	return conn;
 }
 
 /* TCP state machine, everything happens here */
@@ -1054,20 +993,9 @@ int net_tcp_get(struct net_context *context)
 
 	conn->iface = net_context_get_iface(context);
 
-	conn->src = tcp_calloc(1, sizeof(struct sockaddr));
-	conn->dst = tcp_calloc(1, sizeof(struct sockaddr));
-
-	if (IS_ENABLED(CONFIG_NET_TP)) {
-		tcp_endpoint_set(conn->src,
-					CONFIG_NET_CONFIG_MY_IPV4_ADDR, 4242);
-		tcp_endpoint_set(conn->dst,
-					CONFIG_NET_CONFIG_PEER_IPV4_ADDR, 4242);
-	} else {
-		struct sockaddr_in *addr4 =
-			(struct sockaddr_in *)&context->local;
-		memcpy(conn->dst, &context->remote, sizeof(*conn->dst));
-		memcpy(conn->src, &addr4->sin_addr, sizeof(*conn->src));
-	}
+	tcp_dbg("context: local: %s, remote: %s",
+		tcp_endpoint_to_string((void *)&context->local),
+		tcp_endpoint_to_string((void *)&context->remote));
 out:
 	tcp_dbg("conn: %p %s", conn, conn ? tcp_conn_state(conn, NULL) : "");
 
@@ -1354,6 +1282,8 @@ void tcp_input(struct net_pkt *pkt)
 				tcp_calloc(1, sizeof(struct net_context));
 			net_tcp_get(context);
 			conn = context->tcp;
+			conn->dst = tcp_endpoint_new(pkt, SRC);
+			conn->src = tcp_endpoint_new(pkt, DST);
 		}
 
 		if (conn) {
@@ -1457,6 +1387,8 @@ bool tp_input(struct net_pkt *pkt)
 						sizeof(struct net_context));
 				net_tcp_get(context);
 				conn = context->tcp;
+				conn->dst = tcp_endpoint_new(pkt, SRC);
+				conn->src = tcp_endpoint_new(pkt, DST);
 				conn->iface = pkt->iface;
 			}
 			conn->seq = tp->seq;
