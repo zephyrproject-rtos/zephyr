@@ -107,4 +107,21 @@ config MCG_FRDIV
 	  kHz.
 
 endif # HAS_MCG
+
+config KINETIS_FLASH_CONFIG
+	bool "Kinetis flash configuration field"
+	default y if XIP && !BOOTLOADER_MCUBOOT
+	help
+	  Include the 16-byte flash configuration field that stores default
+	  protection settings (loaded on reset) and security information that
+	  allows the MCU to restrict access to the FTFx module.
+
+if KINETIS_FLASH_CONFIG
+
+config KINETIS_FLASH_CONFIG_OFFSET
+	hex "Kinetis flash configuration field offset"
+	default 0x400
+
+endif # KINETIS_FLASH_CONFIG
+
 endif # SOC_FAMILY_KINETIS

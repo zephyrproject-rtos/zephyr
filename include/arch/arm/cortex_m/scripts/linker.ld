@@ -36,10 +36,6 @@
   #define _DATA_IN_ROM
 #endif
 
-#if !defined(SKIP_TO_KINETIS_FLASH_CONFIG)
-  #define SKIP_TO_KINETIS_FLASH_CONFIG
-#endif
-
 #if !defined(CONFIG_XIP) && (CONFIG_FLASH_SIZE == 0)
 #define ROM_ADDR RAM_ADDR
 #else
@@ -177,10 +173,11 @@ SECTIONS
 	KEEP(*(.openocd_dbg))
 	KEEP(*(".openocd_dbg.*"))
 
-	/* Kinetis has to write 16 bytes at 0x400 */
-	SKIP_TO_KINETIS_FLASH_CONFIG
+#ifdef CONFIG_KINETIS_FLASH_CONFIG
+	. = CONFIG_KINETIS_FLASH_CONFIG_OFFSET;
 	KEEP(*(.kinetis_flash_config))
 	KEEP(*(".kinetis_flash_config.*"))
+#endif
 
 	_vector_end = .;
 	} GROUP_LINK_IN(ROMABLE_REGION)
