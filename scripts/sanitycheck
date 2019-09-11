@@ -1283,8 +1283,6 @@ class MakeGenerator:
             handler = BinaryHandler(instance, "native")
             # defined by __build_dir in cmake/boilerplate.cmake
             handler.binary = os.path.join(outdir, "zephyr", "zephyr.exe")
-            if options.enable_coverage:
-                args += ["EXTRA_LDFLAGS=--coverage"]
         elif type == "nsim":
             handler = BinaryHandler(instance, "nsim")
             handler.call_make_run = True
