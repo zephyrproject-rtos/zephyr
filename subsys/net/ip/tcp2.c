@@ -1068,9 +1068,9 @@ int net_tcp_get(struct net_context *context)
 		memcpy(conn->dst, &context->remote, sizeof(*conn->dst));
 		memcpy(conn->src, &addr4->sin_addr, sizeof(*conn->src));
 	}
-
-	tcp_dbg("conn: %p %s", conn, tcp_conn_state(conn, NULL));
 out:
+	tcp_dbg("conn: %p %s", conn, conn ? tcp_conn_state(conn, NULL) : "");
+
 	return ret;
 }
 
