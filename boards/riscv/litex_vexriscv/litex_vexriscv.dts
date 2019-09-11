@@ -37,3 +37,7 @@
 &eth0 {
 	status = "okay";
 };
+
+&dna0 {
+	status = "okay";
+};
