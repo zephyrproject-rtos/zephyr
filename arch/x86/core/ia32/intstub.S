@@ -204,10 +204,12 @@ alreadyOnIntStack:
 	cli			/* disable interrupts again */
 #endif
 
-#if defined(CONFIG_X2APIC)
-	call	z_x2apic_eoi
-#else /* xAPIC EOI */
 	xorl	%eax, %eax
+#if defined(CONFIG_X2APIC)
+	xorl	%edx, %edx
+	movl	$(X86_X2APIC_BASE_MSR + (LOAPIC_EOI >> 4)), %ecx
+	wrmsr
+#else /* xAPIC */
 	movl	%eax, (CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_EOI)
 #endif
 
