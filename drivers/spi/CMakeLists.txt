@@ -13,5 +13,6 @@ zephyr_library_sources_ifdef(CONFIG_SPI_SIFIVE		spi_sifive.c)
 zephyr_library_sources_ifdef(CONFIG_NRFX_SPI		spi_nrfx_spi.c)
 zephyr_library_sources_ifdef(CONFIG_NRFX_SPIM		spi_nrfx_spim.c)
 zephyr_library_sources_ifdef(CONFIG_NRFX_SPIS		spi_nrfx_spis.c)
+zephyr_library_sources_ifdef(CONFIG_SPI_LITESPI		spi_litespi.c)
 
 zephyr_library_sources_ifdef(CONFIG_USERSPACE		spi_handlers.c)
