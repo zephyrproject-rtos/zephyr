@@ -26,17 +26,9 @@ void z_irq_controller_irq_config(unsigned int vector, unsigned int irq,
 
 int z_irq_controller_isr_vector_get(void);
 
-#ifdef CONFIG_X2APIC
-void z_x2apic_eoi(void);
-#endif
-
 static inline void z_irq_controller_eoi(void)
 {
-#if defined(CONFIG_X2APIC)
-	z_x2apic_eoi();
-#else /* xAPIC */
-	*(volatile int *)(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_EOI) = 0;
-#endif
+	x86_write_loapic(LOAPIC_EOI, 0);
 }
 
 #endif /* _ASMLANGUAGE */

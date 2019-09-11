@@ -12,10 +12,6 @@
 #include <arch/cpu.h>
 #include <arch/x86/msr.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* Local APIC Register Offset */
 
 #define LOAPIC_ID 0x020		  /* Local APIC ID Reg */
@@ -48,6 +44,10 @@ extern "C" {
 #define LOAPIC_LVT_MASKED 0x00010000   /* mask */
 
 #ifndef _ASMLANGUAGE
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 extern void z_loapic_int_vec_set(unsigned int irq, unsigned int vector);
 extern void z_loapic_irq_enable(unsigned int irq);
@@ -136,10 +136,10 @@ static inline void x86_write_loapic(unsigned int reg, u32_t val)
 #endif
 }
 
-#endif /* _ASMLANGUAGE */
-
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* _ASMLANGUAGE */
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_LOAPIC_H_ */
