@@ -2,6 +2,32 @@
 
 .. _zephyr_1.14:
 
+Zephyr Kernel 1.14.1
+####################
+
+This is an LTS maintenance release with fixes.
+
+Kernel
+######
+
+Architectures
+#############
+
+Boards
+######
+
+Drivers and Sensors
+###################
+
+Bluetooth
+#########
+
+ * Qualification ready host (including Mesh)
+ * Qualification ready controller
+
+Networking
+##########
+
 Zephyr Kernel 1.14.0
 ####################
 
