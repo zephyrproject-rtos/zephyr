@@ -24,6 +24,10 @@
 	current-speed = <115200>;
 };
 
+&adc0 {
+	status = "okay";
+};
+
 &i2c0 {
 	status = "okay";
 	port_sel = <0>;
