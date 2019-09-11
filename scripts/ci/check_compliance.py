@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
-#
+
 # Copyright (c) 2018 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
 
 import collections
@@ -18,19 +17,22 @@ from github import Github
 from shutil import copyfile
 import json
 import tempfile
-from colorama import Fore, Style
+import traceback
 from pathlib import Path
 
+# Included as part of the message on GitHub when all checks pass (after some
+# failure), some checks fail, and there are internal errors, respectively. '**'
+# is to make it bold.
+PASS_MSG = "**All checks are passing now.**"
+FAIL_MSG = "**Some checks failed. Please fix and resubmit.**"
+ERR_MSG = "**Internal CI Error.**"
+
+# '*' makes it italic
+EDIT_TIP = "\n\n*Tip: The bot edits this comment instead of posting a new " \
+           "one, so you can check the comment's history to see earlier " \
+           "messages.*"
+
 logger = None
-
-
-def info(what):
-    sys.stdout.write(what + "\n")
-    sys.stdout.flush()
-
-
-def error(what):
-    sys.stderr.write(Fore.RED + what + Style.RESET_ALL + "\n")
 
 
 def git(*args):
@@ -130,7 +132,7 @@ class ComplianceTest:
         Signals that the test should be skipped, with message 'msg'.
 
         Raises an exception internally, so you do not need to put a 'return'
-        after error().
+        after skip().
 
         Any failures generated prior to the skip() are included automatically
         in the message. Usually, any failures would indicate problems with the
@@ -151,10 +153,10 @@ class ComplianceTest:
         if not self.case.result:
             # First reported failure
             self.case.result = Failure(self._name + " issues", "failure")
-            self.case.result._elem.text = ""
-
-        # If there are multiple Failures, concatenate their messages
-        self.case.result._elem.text += msg + "\n\n"
+            self.case.result._elem.text = msg.rstrip()
+        else:
+            # If there are multiple Failures, concatenate their messages
+            self.case.result._elem.text += "\n\n" + msg.rstrip()
 
 
 class EndTest(Exception):
@@ -869,12 +871,7 @@ class Identity(ComplianceTest):
 
 
 def init_logs(cli_arg):
-
-    """
-    Initialize Logging
-
-    :return:
-    """
+    # Initializes logging
 
     # TODO: there may be a shorter version thanks to:
     # logging.basicConfig(...)
@@ -884,8 +881,7 @@ def init_logs(cli_arg):
     level = os.environ.get('LOG_LEVEL', "WARN")
 
     console = logging.StreamHandler()
-    format = logging.Formatter('%(levelname)-8s: %(message)s')
-    console.setFormatter(format)
+    console.setFormatter(logging.Formatter('%(levelname)-8s: %(message)s'))
 
     logger = logging.getLogger('')
     logger.addHandler(console)
@@ -895,210 +891,224 @@ def init_logs(cli_arg):
                  logging.getLevelName(logger.getEffectiveLevel()))
 
 
+def set_pending():
+    # Sets 'pending' status for all tests for the commit given by --sha
 
-def set_status(repo, sha):
-    """
-    Set status on Github
-    :param repo:  repoistory name
-    :param sha:  pull request HEAD SHA
-    :return:
-    """
-
-    if 'GH_TOKEN' not in os.environ:
-        return
-    github_token = os.environ['GH_TOKEN']
-    github_conn = Github(github_token)
-
-    repo = github_conn.get_repo(repo)
-    commit = repo.get_commit(sha)
     for testcase in ComplianceTest.__subclasses__():
-        test = testcase(None, "")
-        print("Creating status for %s" % (test._name))
-        commit.create_status('pending',
-                             '%s' % test._doc,
-                             'Checks in progress',
-                             '{}'.format(test._name))
+        print("Creating pending status for " + testcase._name)
+        github_commit.create_status(
+            'pending', testcase._doc, 'Checks in progress', testcase._name)
 
 
-def report_to_github(repo, pull_request, sha, suite, docs):
-    """
-    Report test results to Github
+def report_test_results_to_github(suite):
+    # Reports test results to Github.
+    #
+    #   suite: Test suite
 
-    :param repo: repo name
-    :param pull_request:  pull request number
-    :param sha:  pull request SHA
-    :param suite:  Test suite
-    :param docs:  documentation of statuses
-    :return: nothing
-    """
+    fail_msg = FAIL_MSG + "\n\n"
+    n_failures = 0
 
-    if 'GH_TOKEN' not in os.environ:
-        return
+    print("reporting results to GitHub")
 
-    username = os.environ.get('GH_USERNAME', 'zephyrbot')
+    name2doc = {testcase._name: testcase._doc
+                for testcase in ComplianceTest.__subclasses__()}
 
-    github_token = os.environ['GH_TOKEN']
-    github_conn = Github(github_token)
-
-    repo = github_conn.get_repo(repo)
-    gh_pr = repo.get_pull(pull_request)
-    commit = repo.get_commit(sha)
-
-    comment = "Found the following issues, please fix and resubmit:\n\n"
-    comment_count = 0
-
-    print("Processing results...")
+    def set_commit_status(status, msg):
+        # 'case' gets set in the loop.
+        # pylint: disable=undefined-loop-variable
+        github_commit.create_status(status, name2doc[case.name], msg,
+                                    case.name)
 
     for case in suite:
         if not case.result:
-            print("reporting success on %s" %case.name)
-            commit.create_status('success',
-                                 docs[case.name],
-                                 'Checks passed',
-                                 '{}'.format(case.name))
-        elif case.result.type in ['skipped']:
-            print("reporting skipped on %s" %case.name)
-            commit.create_status('success',
-                                 docs[case.name],
-                                 'Checks skipped',
-                                 '{}'.format(case.name))
-        elif case.result.type in ['failure']:
-            print("reporting failure on %s" %case.name)
-            comment_count += 1
-            comment += ("## {}\n".format(case.result.message))
-            comment += "\n"
-            if case.name not in ['Gitlint', 'Identity/Emails', 'License']:
-                comment += "```\n"
-            comment += ("{}\n".format(case.result._elem.text))
-            if case.name not in ['Gitlint', 'Identity/Emails', 'License']:
-                comment += "```\n"
-
-            commit.create_status('failure',
-                                 docs[case.name],
-                                 'Checks failed',
-                                 '{}'.format(case.name))
-        elif case.result.type in ['error']:
-            print("reporting error on %s" %case.name)
-            commit.create_status('error',
-                                 docs[case.name],
-                                 'Error during verification, please report!',
-                                 '{}'.format(case.name))
+            print("reporting success on " + case.name)
+            set_commit_status('success', 'Checks passed')
+        elif case.result.type == 'skipped':
+            print("reporting skipped on " + case.name)
+            set_commit_status('success', 'Checks skipped')
+        elif case.result.type == 'failure':
+            print("reporting failure on " + case.name)
+            n_failures += 1
+            fail_msg += "## {}\n\n".format(case.result.message)
+            msg = case.result._elem.text
+            if case.name in {"Gitlint", "Identity/Emails", "License",
+                             "pylint"}:
+                msg = "```\n" + msg + "\n```"
+            fail_msg += msg + "\n\n"
+            set_commit_status('failure', 'Checks failed')
+        elif case.result.type == 'error':
+            print("reporting error on " + case.name)
+            n_failures += 1
+            fail_msg += "## {} (internal test error)\n\n```\n{}\n```\n\n" \
+                        .format(case.name, case.result.message)
+            set_commit_status(
+                'error', 'Error during verification, please report!')
         else:
             print("Unhandled status")
 
+    if n_failures > 0:
+        github_comment(fail_msg + EDIT_TIP)
+    elif get_bot_comment():
+        # Only post a success message if a message was posted by the bot
+        # previously (probably with a failure message). We edit the old
+        # message.
+        github_comment(PASS_MSG + EDIT_TIP)
 
-    if not repo and not pull_request:
-        return comment_count
+    return n_failures
 
-    if comment_count > 0:
-        comments = gh_pr.get_issue_comments()
-        commented = False
-        for cmnt in comments:
-            if ('Found the following issues, please fix and resubmit' in cmnt.body or
-                '**All checks are passing now.**' in cmnt.body) and cmnt.user.login == username:
-                if cmnt.body != comment:
-                    cmnt.edit(comment)
-                commented = True
-                break
 
-        if not commented:
-            gh_pr.create_issue_comment(comment)
+def github_comment(msg):
+    # Posts 'msg' to GitHub, or edits the previous message posted by the bot if
+    # it has already posted a message
+
+    if not github_pr:
+        # No pull request to post the message in
+        return
+
+    bot_comment = get_bot_comment()
+    if bot_comment:
+        if bot_comment.body != msg:
+            bot_comment.edit(msg)
     else:
-        comments = gh_pr.get_issue_comments()
-        for cmnt in comments:
-            if 'Found the following issues, please fix and resubmit' in cmnt.body and cmnt.user.login == username:
-                cmnt.edit("**All checks are passing now.**\n\nReview history of this comment for details about previous failed status.\n"
-                          "Note that some checks might have not completed yet.")
-                break
+        github_pr.create_issue_comment(msg)
 
-    return comment_count
+
+def get_bot_comment():
+    # Returns any previous comment posted by the bot in 'github_pr', or None if
+    # the bot hasn't posted any comment (or there's no pull request)
+
+    global cached_bot_comment
+
+    def get_comment():
+        if not github_pr:
+            return None
+
+        for comment in github_pr.get_issue_comments():
+            if comment.user.login != os.getenv('GH_USERNAME', 'zephyrbot'):
+                continue
+
+            for msg in PASS_MSG, FAIL_MSG, ERR_MSG:
+                if msg in comment.body:
+                    return comment
+
+        return None
+
+    if cached_bot_comment == 0:
+        cached_bot_comment = get_comment()
+    return cached_bot_comment
+
+
+# Cache used by get_bot_comment(). Use 0 instead of None for "no cached value"
+# so that None (no comment) can be cached.
+cached_bot_comment = 0
 
 
 def parse_args():
-    """
-    Parse arguments
-    :return:
-    """
     parser = argparse.ArgumentParser(
         description="Check for coding style and documentation warnings.")
     parser.add_argument('-c', '--commits', default="HEAD~1..",
                         help='''Commit range in the form: a..[b], default is
                         HEAD~1..HEAD''')
     parser.add_argument('-g', '--github', action="store_true",
-                        help="Send results to github as a comment.")
+                        help="Post results as comments in the PR on GitHub")
 
     parser.add_argument('-r', '--repo', default=None,
-                        help="Github repository")
+                        help="GitHub repository")
     parser.add_argument('-p', '--pull-request', default=0, type=int,
                         help="Pull request number")
 
     parser.add_argument('-s', '--status', action="store_true",
-                        help="Set status to pending")
+                        help="Set status on GitHub to pending and exit")
     parser.add_argument('-S', '--sha', default=None, help="Commit SHA")
     parser.add_argument('-o', '--output', default="compliance.xml",
                         help='''Name of outfile in JUnit format,
                         default is ./compliance.xml''')
 
     parser.add_argument('-l', '--list', action="store_true",
-                        help="List all test modules.")
+                        help="List all checks and exit")
 
     parser.add_argument("-v", "--loglevel", help="python logging level")
 
     parser.add_argument('-m', '--module', action="append", default=[],
-                        help="Test modules to run, by default run everything.")
+                        help="Checks to run. All checks by default.")
 
     parser.add_argument('-e', '--exclude-module', action="append", default=[],
-                        help="Do not run the specified modules")
+                        help="Do not run the specified checks")
 
     parser.add_argument('-j', '--previous-run', default=None,
                         help='''Pre-load JUnit results in XML format
                         from a previous run and combine with new results.''')
 
-
     return parser.parse_args()
 
 
-def main():
-    """
-    Main function
+def init_github(args):
+    # Initializes a GitHub connection, if needed
 
-    :return:
-    """
+    global commit_sha
+    global github_repo
+    global github_pr
+    global github_commit
 
-    args = parse_args()
+    if not (args.github or args.status):
+        # No GitHub-related stuff to do
+        return
+
+    if args.repo is None:
+        err("--repo <name> must be passed when connecting to GitHub")
+
+    if args.sha is None:
+        err("--sha <SHA> must be passed when connecting to GitHub")
+
+    commit_sha = args.sha
+
+    if 'GH_TOKEN' not in os.environ:
+        err("the GH_TOKEN environment variable must be set when connecting "
+            "to GitHub")
+
+    github_repo = Github(os.environ['GH_TOKEN']).get_repo(args.repo)
+    github_commit = github_repo.get_commit(commit_sha)
+    if args.pull_request:
+        github_pr = github_repo.get_pull(args.pull_request)
+    else:
+        github_pr = None
+
+
+def _main(args):
+    # The "real" main(), which is wrapped to catch exceptions and report them
+    # to GitHub. Returns the number of test failures.
 
     init_logs(args.loglevel)
 
     if args.list:
         for testcase in ComplianceTest.__subclasses__():
-            test = testcase(None, "")
-            print("{}".format(test._name))
-        sys.exit(0)
+            print(testcase._name)
+        return 0
 
-    if args.status and args.sha is not None and args.repo:
-        set_status(args.repo, args.sha)
-        sys.exit(0)
+    if args.status:
+        set_pending()
+        return 0
 
     if not args.commits:
-        print("No commit range given.")
-        sys.exit(1)
+        err("No commit range given")
 
+    if args.previous_run:
+        if not os.path.exists(args.previous_run):
+            # This probably means that an earlier pass had an internal error
+            # (the script is currently run multiple times by the ci-pipelines
+            # repo). Since that earlier pass might've posted an error to
+            # GitHub, avoid generating a GitHub comment here, by avoiding
+            # sys.exit() (which gets caught in main()).
+            print("error: '{}' not found".format(args.previous_run),
+                  file=sys.stderr)
+            return 1
 
-    if args.previous_run and os.path.exists(args.previous_run) and args.module:
-        junit_xml = JUnitXml.fromfile(args.previous_run)
-        logging.info("Loaded previous results from %s", args.previous_run)
-        for loaded_suite in junit_xml:
+        logging.info("Loading previous results from " + args.previous_run)
+        for loaded_suite in JUnitXml.fromfile(args.previous_run):
             suite = loaded_suite
             break
-
     else:
         suite = TestSuite("Compliance")
-
-    docs = {}
-    for testcase in ComplianceTest.__subclasses__():
-        test = testcase(None, "")
-        docs[test._name] = test._doc
-
 
     for testcase in ComplianceTest.__subclasses__():
         test = testcase(suite, args.commits)
@@ -1113,6 +1123,7 @@ def main():
             test.run()
         except EndTest:
             pass
+
         suite.add_testcase(test.case)
 
     xml = JUnitXml()
@@ -1126,8 +1137,8 @@ def main():
     # file to draw a better line between developer code versus
     # infrastructure-specific code, in other words keep this file
     # 100% testable and maintainable by non-admins developers.
-    if args.github and 'GH_TOKEN' in os.environ:
-        errors = report_to_github(args.repo, args.pull_request, args.sha, suite, docs)
+    if args.github:
+        n_fails = report_test_results_to_github(suite)
     else:
         for case in suite:
             if case.result:
@@ -1139,19 +1150,46 @@ def main():
                 # Some checks like codeowners can produce no .result
                 logging.info("No JUnit result for %s", case.name)
 
-        errors = len(failed_cases)
+        n_fails = len(failed_cases)
 
-    if errors:
-        print("{} checks failed".format(errors))
+    if n_fails:
+        print("{} checks failed".format(n_fails))
         for case in failed_cases:
             # not clear why junitxml doesn't clearly expose the most
             # important part of its underlying etree.Element
             errmsg = case.result._elem.text
-            errmsg = errmsg.strip() if errmsg else case.result.message
-            logging.error("Test %s failed: %s", case.name, errmsg)
+            logging.error("Test %s failed: %s", case.name,
+                          errmsg.strip() if errmsg else case.result.message)
 
-    print("\nComplete results in %s" % args.output)
-    sys.exit(errors)
+    print("\nComplete results in " + args.output)
+    return n_fails
+
+
+def main():
+    args = parse_args()
+
+    # Initialize the GitHub connection early so that any errors from the script
+    # itself can be reported
+    init_github(args)
+
+    try:
+        n_fails = _main(args)
+    except BaseException:
+        # Catch BaseException instead of Exception to include stuff like
+        # SystemExit (raised by sys.exit())
+
+        if args.github:
+            github_comment(
+                "{}\n\nPython exception in `{}`:\n\n```\n{}\n```{}"
+                .format(ERR_MSG, __file__, traceback.format_exc(), EDIT_TIP))
+
+        raise
+
+    sys.exit(n_fails)
+
+
+def err(msg):
+    sys.exit("error: " + msg)
 
 
 if __name__ == "__main__":
