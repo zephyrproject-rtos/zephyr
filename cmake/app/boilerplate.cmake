@@ -320,6 +320,15 @@ foreach(root ${BOARD_ROOT})
           )
         endif()
 
+        # search for shield/boards/shield/board.overlay file
+        if(EXISTS ${shield_dir}/${s_dir}/boards/${s}/${BOARD}.overlay)
+          # add shield/board overlay to the shield overlays list
+          list(APPEND
+            shield_dts_files
+            ${shield_dir}/${s_dir}/boards/${s}/${BOARD}.overlay
+          )
+        endif()
+
         # search for shield/shield.conf file
         if(EXISTS ${shield_dir}/${s_dir}/${s}.conf)
           # add shield.conf to the shield config list
@@ -335,6 +344,15 @@ foreach(root ${BOARD_ROOT})
           list(APPEND
             shield_conf_files
             ${shield_dir}/${s_dir}/boards/${BOARD}.conf
+          )
+        endif()
+
+        # search for shield/boards/shield/board.conf file
+        if(EXISTS ${shield_dir}/${s_dir}/boards/${s}/${BOARD}.conf)
+          # add HW specific board.conf to the shield config list
+          list(APPEND
+            shield_conf_files
+            ${shield_dir}/${s_dir}/boards/${s}/${BOARD}.conf
           )
         endif()
       else()
