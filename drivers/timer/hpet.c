@@ -8,7 +8,7 @@
 #include <spinlock.h>
 
 #define HPET_REG32(off) (*(volatile u32_t *)(long)			\
-		       (CONFIG_HPET_TIMER_BASE_ADDRESS + (off)))
+		       (DT_INST_0_INTEL_HPET_BASE_ADDRESS + (off)))
 
 #define CLK_PERIOD_REG        HPET_REG32(0x04) /* High dword of caps reg */
 #define GENERAL_CONF_REG      HPET_REG32(0x10)
@@ -69,10 +69,11 @@ int z_clock_driver_init(struct device *device)
 	extern int z_clock_hw_cycles_per_sec;
 	u32_t hz;
 
-	IRQ_CONNECT(CONFIG_HPET_TIMER_IRQ, CONFIG_HPET_TIMER_IRQ_PRIORITY,
+	IRQ_CONNECT(DT_INST_0_INTEL_HPET_IRQ_0,
+		    DT_INST_0_INTEL_HPET_IRQ_0_PRIORITY,
 		    hpet_isr, 0, 0);
-	set_timer0_irq(CONFIG_HPET_TIMER_IRQ);
-	irq_enable(CONFIG_HPET_TIMER_IRQ);
+	set_timer0_irq(DT_INST_0_INTEL_HPET_IRQ_0);
+	irq_enable(DT_INST_0_INTEL_HPET_IRQ_0);
 
 	/* CLK_PERIOD_REG is in femtoseconds (1e-15 sec) */
 	hz = (u32_t)(1000000000000000ull / CLK_PERIOD_REG);

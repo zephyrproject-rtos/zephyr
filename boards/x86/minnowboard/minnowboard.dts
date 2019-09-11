@@ -39,3 +39,6 @@
 	current-speed = <115200>;
 };
 
+&hpet {
+	status = "okay";
+};
