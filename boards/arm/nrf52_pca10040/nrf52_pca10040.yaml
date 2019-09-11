@@ -10,6 +10,8 @@ ram: 64
 flash: 512
 supported:
   - adc
+  - arduino_gpio
+  - arduino_i2c
   - counter
   - nvs
   - i2c

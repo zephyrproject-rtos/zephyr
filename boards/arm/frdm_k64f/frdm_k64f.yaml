@@ -7,6 +7,8 @@ toolchain:
   - gnuarmemb
   - xtools
 supported:
+  - arduino_gpio
+  - arduino_i2c
   - netif:eth
   - adc
   - i2c
