@@ -10,5 +10,5 @@ zephyr_sources_ifdef(CONFIG_HWINFO_ESP32      hwinfo_esp32.c)
 zephyr_sources_ifdef(CONFIG_HWINFO_IMXRT      hwinfo_imxrt.c)
 zephyr_sources_ifdef(CONFIG_HWINFO_SAM        hwinfo_sam.c)
 zephyr_sources_ifdef(CONFIG_HWINFO_SAM0       hwinfo_sam0.c)
-
+zephyr_sources_ifdef(CONFIG_HWINFO_LITEX      hwinfo_litex.c)
 zephyr_sources_ifdef(CONFIG_HWINFO_SHELL hwinfo_shell.c)
