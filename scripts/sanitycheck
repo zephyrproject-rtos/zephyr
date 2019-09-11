@@ -583,7 +583,14 @@ class BinaryHandler(Handler):
 
         start_time = time.time()
 
-        with subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=self.build_dir) as proc:
+        if options.enable_asan:
+            env = os.environ.copy()
+            env["ASAN_OPTIONS"] = "log_path=stdout:" + \
+                    env.get("ASAN_OPTIONS", "")
+            if not options.enable_lsan:
+                env["ASAN_OPTIONS"] += "detect_leaks=0"
+        with subprocess.Popen(command, stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE, cwd=self.build_dir, env=env) as proc:
             verbose("Spawning BinaryHandler Thread for %s" % self.name)
             t = threading.Thread(target=self._output_reader, args=(proc, harness, ), daemon=True)
             t.start()
@@ -1672,8 +1679,12 @@ class TestInstance:
                 content = "\n".join(self.testcase.extra_configs)
 
             if options.enable_coverage:
-                if platform in options.coverage_platform:
+                if platform.name in options.coverage_platform:
                     content = content + "\nCONFIG_COVERAGE=y"
+
+            if options.enable_asan:
+                if platform.type == "native":
+                    content = content + "\nCONFIG_ASAN=y"
 
             f.write(content)
 
@@ -2080,7 +2091,8 @@ class ProjectBuilder(FilterBuilder):
                 del args[idx]
                 idx += 1
 
-        if self.testcase.extra_configs or options.coverage:
+        if (self.testcase.extra_configs or options.coverage or
+                options.enable_asan):
             args.append("OVERLAY_CONFIG=\"%s %s\"" %(overlays,
                         os.path.join(instance.build_dir,
                                      "sanitycheck", "testcase_extra.conf")))
@@ -2494,7 +2506,7 @@ class TestSuite:
                 test = row["test"]
                 platform = self.get_platform(row["platform"])
                 instance = TestInstance(self.testcases[test], platform, self.outdir)
-                instance.create_overlay(platform.name)
+                instance.create_overlay(platform)
                 instance_list.append(instance)
             self.add_instances(instance_list)
 
@@ -2519,7 +2531,7 @@ class TestSuite:
                 test = row["test"]
                 platform = self.get_platform(row["platform"])
                 instance = TestInstance(self.testcases[test], platform, self.outdir)
-                instance.create_overlay(platform.name)
+                instance.create_overlay(platform)
                 instance_list.append(instance)
             self.add_instances(instance_list)
 
@@ -2681,7 +2693,7 @@ class TestSuite:
                 self.add_instances(instance_list)
 
         for _, case in self.instances.items():
-            case.create_overlay(case.platform.name)
+            case.create_overlay(case.platform)
 
         self.discards = discards
 
@@ -3321,12 +3333,31 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
         NOTE: west-flash must be enabled to use this option.
         """
     )
-    parser.add_argument(
+
+    valgrind_asan_group = parser.add_mutually_exclusive_group()
+
+    valgrind_asan_group.add_argument(
         "--enable-valgrind", action="store_true",
         help="""Run binary through valgrind and check for several memory access
-        errors." Valgrind needs to be installed on the host. This option only
+        errors. Valgrind needs to be installed on the host. This option only
         works with host binaries such as those generated for the native_posix
-        configuration.
+        configuration and is mutual exclusive with --enable-asan.
+        """)
+
+    valgrind_asan_group.add_argument(
+        "--enable-asan", action="store_true",
+        help="""Enable address sanitizer to check for several memory access
+        errors. Libasan needs to be installed on the host. This option only
+        works with host binaries such as those generated for the native_posix
+        configuration and is mutual exclusive with --enable-valgrind.
+        """)
+
+    parser.add_argument(
+        "--enable-lsan", action="store_true",
+        help="""Enable leak sanitizer to check for heap memory leaks.
+        Libasan needs to be installed on the host. This option only
+        works with host binaries such as those generated for the native_posix
+        configuration and when --enable-asan is given.
         """)
 
     parser.add_argument("--enable-coverage", action="store_true",
