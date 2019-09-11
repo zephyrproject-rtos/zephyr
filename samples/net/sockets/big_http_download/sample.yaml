@@ -12,7 +12,7 @@ tests:
     extra_configs:
       - CONFIG_NET_SOCKETS_POSIX_NAMES=y
   sample.net.sockets.big_http_download.posix:
-    filter: and not CONFIG_NET_SOCKETS_OFFLOAD
+    filter: not CONFIG_NET_SOCKETS_OFFLOAD
     extra_configs:
       - CONFIG_NET_SOCKETS_POSIX_NAMES=n
       - CONFIG_POSIX_API=y
