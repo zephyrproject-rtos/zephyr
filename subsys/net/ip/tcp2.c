@@ -33,7 +33,7 @@ static bool _tcp_conn_delete = true;
 
 static sys_slist_t tp_conns = SYS_SLIST_STATIC_INIT(&tp_conns);
 
-static struct tcp tcp_context[CONFIG_NET_MAX_CONTEXTS];
+static struct tcp tcp_conns[CONFIG_NET_MAX_CONTEXTS];
 
 NET_BUF_POOL_DEFINE(tcp_nbufs, 64/*count*/, 128/*size*/, 0, NULL);
 
@@ -1007,68 +1007,79 @@ int tcp_close(struct tcp *conn)
 	return 0;
 }
 
-/* API into the TCP stack as seen by the IP stack in net_context.c */
-
-/* Set up a new TCP state struct if one is available */
-int net_tcp_get(struct net_context *context)
+static struct tcp *tcp_conn_calloc(void)
 {
+	struct tcp *conn = NULL;
 	int i, key;
-	struct sockaddr_in *addr4;
-
-	tcp_dbg("");
 
 	key = irq_lock();
-	for (i = 0; i < CONFIG_NET_MAX_CONTEXTS; i++) {
-		if (!net_tcp_is_used(&tcp_context[i])) {
+
+	for (i = 0; i < ARRAY_SIZE(tcp_conns); i++) {
+		if (false == (tcp_conns[i].flags & NET_TCP_IN_USE)) {
+			conn = &tcp_conns[i];
+			memset(conn, 0, sizeof(*conn));
+			conn->flags |= NET_TCP_IN_USE;
 			break;
 		}
 	}
+
 	irq_unlock(key);
 
-	if (i >= CONFIG_NET_MAX_CONTEXTS) {
-		return -EPROTONOSUPPORT;
+	return conn;
+}
+
+static void tcp_conn_init(struct tcp *conn)
+{
+	conn->state = TCP_LISTEN;
+
+	conn->win = tcp_window;
+
+	conn->rcv = tcp_win_new("RCV");
+	conn->snd = tcp_win_new("SND");
+
+	sys_slist_init(&conn->send_queue);
+
+	k_timer_init(&conn->send_timer, tcp_send_process, NULL);
+	k_timer_user_data_set(&conn->send_timer, conn->context);
+
+	sys_slist_append(&tp_conns, (sys_snode_t *)conn);
+}
+
+int net_tcp_get(struct net_context *context)
+{
+	int ret = 0;
+	struct tcp *conn = tcp_conn_calloc();
+
+	if (NULL == conn) {
+		ret = -EPROTONOSUPPORT;
+		goto out;
 	}
 
-	memset(&tcp_context[i], 0, sizeof(tcp_context[i]));
-	tcp_context[i].flags |= NET_TCP_IN_USE;
+	conn->context = context;
+	context->tcp = conn;
 
-	tcp_context[i].win = tcp_window;
+	tcp_conn_init(conn);
 
-	/* A TCP connection set up between two devices will have an interface
-	 * assigned, but a socket listening on any address will not have one */
-	tcp_context[i].iface = net_context_get_iface(context);
-	tcp_context[i].rcv = tcp_win_new("RCV");
-	tcp_context[i].snd = tcp_win_new("SND");
+	conn->iface = net_context_get_iface(context);
 
-	tcp_context[i].state = TCP_LISTEN;
-
-	tcp_context[i].context = context;
-	context->tcp = &tcp_context[i];
-	tcp_context[i].context = context;
-
-	sys_slist_init(&tcp_context[i].send_queue);
-	k_timer_init(&tcp_context[i].send_timer, tcp_send_process, NULL);
-	k_timer_user_data_set(&tcp_context[i].send_timer, context);
-
-	sys_slist_append(&tp_conns, (sys_snode_t *) &tcp_context[i]);
-
-	tcp_context[i].src = tcp_calloc(1, sizeof(struct sockaddr));
-	tcp_context[i].dst = tcp_calloc(1, sizeof(struct sockaddr));
+	conn->src = tcp_calloc(1, sizeof(struct sockaddr));
+	conn->dst = tcp_calloc(1, sizeof(struct sockaddr));
 
 	if (IS_ENABLED(CONFIG_NET_TP)) {
-		tcp_endpoint_set(tcp_context[i].src,
+		tcp_endpoint_set(conn->src,
 					CONFIG_NET_CONFIG_MY_IPV4_ADDR, 4242);
-		tcp_endpoint_set(tcp_context[i].dst,
+		tcp_endpoint_set(conn->dst,
 					CONFIG_NET_CONFIG_PEER_IPV4_ADDR, 4242);
 	} else {
-		addr4 = (struct sockaddr_in *)&context->local;
-		memcpy(tcp_context[i].dst, &context->remote,
-			sizeof(*tcp_context[i].dst));
-		memcpy(tcp_context[i].src, &addr4->sin_addr,
-			sizeof(*tcp_context[i].src));
+		struct sockaddr_in *addr4 =
+			(struct sockaddr_in *)&context->local;
+		memcpy(conn->dst, &context->remote, sizeof(*conn->dst));
+		memcpy(conn->src, &addr4->sin_addr, sizeof(*conn->src));
 	}
 
-	return 0;
+	tcp_dbg("conn: %p %s", conn, tcp_conn_state(conn, NULL));
+out:
+	return ret;
 }
 
 /* close() has been called on the socket */
