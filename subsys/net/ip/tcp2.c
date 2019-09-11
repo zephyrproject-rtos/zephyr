@@ -252,8 +252,7 @@ out:
 
 static void tcp_send_process(struct k_timer *timer)
 {
-	struct net_context *context = k_timer_user_data_get(timer);
-	struct tcp *conn = context->tcp;
+	struct tcp *conn = k_timer_user_data_get(timer);
 	struct net_pkt *pkt = tcp_slist(&conn->send_queue, peek_head,
 					struct net_pkt, next);
 
@@ -265,7 +264,7 @@ static void tcp_send_process(struct k_timer *timer)
 			tcp_send(tcp_pkt_clone(pkt));
 			conn->send_retries--;
 		} else {
-			net_tcp_unref(context);
+			net_tcp_unref(conn->context);
 			conn = NULL;
 		}
 	} else {
@@ -1033,7 +1032,7 @@ static void tcp_conn_init(struct tcp *conn)
 	sys_slist_init(&conn->send_queue);
 
 	k_timer_init(&conn->send_timer, tcp_send_process, NULL);
-	k_timer_user_data_set(&conn->send_timer, conn->context);
+	k_timer_user_data_set(&conn->send_timer, conn);
 
 	sys_slist_append(&tp_conns, (sys_snode_t *)conn);
 }
@@ -1048,10 +1047,10 @@ int net_tcp_get(struct net_context *context)
 		goto out;
 	}
 
+	tcp_conn_init(conn);
+
 	conn->context = context;
 	context->tcp = conn;
-
-	tcp_conn_init(conn);
 
 	conn->iface = net_context_get_iface(context);
 
