@@ -215,7 +215,7 @@ void main(void)
 	struct device *hts221 = device_get_binding(DT_INST_0_ST_HTS221_LABEL);
 	struct device *lps22hh = device_get_binding(DT_INST_0_ST_LPS22HH_LABEL);
 	struct device *stts751 = device_get_binding(DT_INST_0_ST_STTS751_LABEL);
-	struct device *lis2mdl = device_get_binding(DT_INST_0_ST_LIS2MDL_MAGN_LABEL);
+	struct device *lis2mdl = device_get_binding(DT_INST_0_ST_LIS2MDL_LABEL);
 	struct device *lis2dw12 = device_get_binding(DT_INST_0_ST_LIS2DW12_LABEL);
 	struct device *lsm6dso = device_get_binding(DT_INST_0_ST_LSM6DSO_LABEL);
 	int cnt = 1;

@@ -27,7 +27,7 @@
 	};
 
 	lis2mdl@1e {
-		compatible = "st,lis2mdl-magn";
+		compatible = "st,lis2mdl";
 		reg = <0x1e>;
 		label = "LIS2MDL";
 	};

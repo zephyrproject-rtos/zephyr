@@ -310,12 +310,12 @@ static int lis2mdl_init_interface(struct device *dev)
 }
 
 static const struct lis2mdl_device_config lis2mdl_dev_config = {
-	.master_dev_name = DT_INST_0_ST_LIS2MDL_MAGN_BUS_NAME,
+	.master_dev_name = DT_INST_0_ST_LIS2MDL_BUS_NAME,
 #ifdef CONFIG_LIS2MDL_TRIGGER
-	.gpio_name = DT_INST_0_ST_LIS2MDL_MAGN_IRQ_GPIOS_CONTROLLER,
-	.gpio_pin = DT_INST_0_ST_LIS2MDL_MAGN_IRQ_GPIOS_PIN,
+	.gpio_name = DT_INST_0_ST_LIS2MDL_IRQ_GPIOS_CONTROLLER,
+	.gpio_pin = DT_INST_0_ST_LIS2MDL_IRQ_GPIOS_PIN,
 #endif  /* CONFIG_LIS2MDL_TRIGGER */
-	.i2c_addr_config = DT_INST_0_ST_LIS2MDL_MAGN_BASE_ADDRESS,
+	.i2c_addr_config = DT_INST_0_ST_LIS2MDL_BASE_ADDRESS,
 };
 
 static int lis2mdl_init(struct device *dev)
@@ -374,6 +374,6 @@ static int lis2mdl_init(struct device *dev)
 	return 0;
 }
 
-DEVICE_AND_API_INIT(lis2mdl, DT_INST_0_ST_LIS2MDL_MAGN_LABEL, lis2mdl_init,
+DEVICE_AND_API_INIT(lis2mdl, DT_INST_0_ST_LIS2MDL_LABEL, lis2mdl_init,
 		     &lis2mdl_device_data, &lis2mdl_dev_config, POST_KERNEL,
 		     CONFIG_SENSOR_INIT_PRIORITY, &lis2mdl_driver_api);
