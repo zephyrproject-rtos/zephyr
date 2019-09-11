@@ -220,13 +220,6 @@ static void tcp_win_free(struct tcp_win *w)
 	tcp_free(w);
 }
 
-static inline bool net_tcp_is_used(struct tcp *tcp)
-{
-	NET_ASSERT(tcp);
-
-	return tcp->flags & NET_TCP_IN_USE;
-}
-
 int net_tcp_unref(struct net_context *context)
 {
 	int key;
