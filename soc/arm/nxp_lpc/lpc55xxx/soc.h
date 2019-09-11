@@ -29,6 +29,7 @@
 #define IOCON_PIO_FUNC1 0x01u         /*!<@brief Selects pin function 1 */
 #define IOCON_PIO_FUNC5 0x05u         /*!<@brief Selects pin function 5 */
 #define IOCON_PIO_FUNC6 0x06u         /*!<@brief Selects pin function 6 */
+#define IOCON_PIO_FUNC7 0x07u         /*!<@brief Selects pin function 7 */
 #define IOCON_PIO_FUNC9 0x09u         /*!<@brief Selects pin function 9 */
 #define IOCON_PIO_FUNC10 0x0Au        /*!<@brief Selects pin function 10 */
 #define IOCON_PIO_INV_DI 0x00u        /*!<@brief Input function not inverted */

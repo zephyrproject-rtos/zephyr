@@ -115,6 +115,16 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 		};
+
+		usbd:usbd@40084000 {
+			compatible = "nxp,lpc-usbd";
+			reg = <0x40084000 0x1000>;
+			interrupts = <28 3>;
+			interrupt-names = "usb_otg";
+			num-bidir-endpoints = <10>;
+			status = "disabled";
+			label = "USBD";
+		};
 	};
 };
 

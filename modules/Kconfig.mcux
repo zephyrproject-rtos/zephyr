@@ -162,4 +162,9 @@ config HAS_MCUX_CSI
 	help
 	  Set if the CMOS Sensor Interface module is present in the SoC.
 
+config HAS_MCUX_USB_IP3511FS
+	bool
+	help
+	  Set if the USB controller IP3511 full speed module is present in the SoC.
+
 endif # HAS_MCUX

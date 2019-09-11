@@ -69,6 +69,21 @@ static ALWAYS_INLINE void clock_init(void)
 	RESET_PeripheralReset(kHSLSPI_RST_SHIFT_RSTn);
 #endif /* CONFIG_SPI_8 */
 
+#if CONFIG_USB_DC_NXP_IP3511FS
+	POWER_DisablePD(kPDRUNCFG_PD_USB0_PHY); /*< Turn on USB Phy */
+	CLOCK_SetClkDiv(kCLOCK_DivUsb0Clk, 1, false);
+	CLOCK_AttachClk(kFRO_HF_to_USB0_CLK);
+	/* enable usb0 host clock */
+	CLOCK_EnableClock(kCLOCK_Usbhsl0);
+	/*According to reference manual,
+	 * device mode setting has to be set by access usb host register
+	 */
+	*((uint32_t *)(USBFSH_BASE + 0x5C)) |= USBFSH_PORTMODE_DEV_ENABLE_MASK;
+	/* disable usb0 host clock */
+	CLOCK_DisableClock(kCLOCK_Usbhsl0);
+	CLOCK_EnableUsbfs0DeviceClock(kCLOCK_UsbfsSrcFro, CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
+#endif
+
 #endif /* CONFIG_SOC_LPC55S69_CPU0 */
 }
 

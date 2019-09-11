@@ -32,4 +32,11 @@ config UART_MCUX_FLEXCOMM
 
 endif # SERIAL
 
+if USB
+
+config USB_DC_NXP_IP3511FS
+	default n
+
+endif # USB
+
 endif # SOC_LPC55S69_CPU1
