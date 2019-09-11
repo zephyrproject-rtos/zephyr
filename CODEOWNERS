@@ -13,6 +13,7 @@
 # Do not use wildcard on all source yet
 # *                                        @galak @nashif
 
+/foo.py                                   @ulfalizer
 /.known-issues/                           @inakypg @nashif
 /arch/arc/                                @vonhust @ruuddw
 /arch/arm/                                @MaureenHelm @galak @ioannisg
