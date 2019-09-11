@@ -162,16 +162,7 @@ SECTIONS
 
 	MMU_PAGE_ALIGN
 	/* ROM ends here, position counter will now be in RAM areas */
-#ifdef CONFIG_XIP
-	/* For XIP systems, the kernel object tables are kept at the end
-	 * of ROM and are unpredictable in size; the true size of the ROM
-	 * region isn't know when the MMU tables are generated.
-	 * Just set the rom region to extend to the end of flash.
-	 */
-	_image_rom_end = _image_rom_start + KB(DT_ROM_SIZE);
-#else
 	_image_rom_end = .;
-#endif
 	_image_rom_size = _image_rom_end - _image_rom_start;
 	_image_rodata_end = _image_rom_end;
 	_image_rodata_size = _image_rodata_end - _image_rodata_start;
