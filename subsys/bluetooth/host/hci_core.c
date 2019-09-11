@@ -1124,7 +1124,7 @@ static void enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 
 		/* for slave we may need to add new connection */
 		if (!conn) {
-			conn = bt_conn_add_le(&id_addr);
+			conn = bt_conn_add_le(bt_dev.adv_id, &id_addr);
 		}
 	}
 
@@ -1133,7 +1133,7 @@ static void enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 	    evt->role == BT_HCI_ROLE_MASTER) {
 		/* for whitelist initiator me may need to add new connection. */
 		if (!conn) {
-			conn = bt_conn_add_le(&id_addr);
+			conn = bt_conn_add_le(BT_ID_DEFAULT, &id_addr);
 		}
 	}
 
@@ -1157,7 +1157,6 @@ static void enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 	 */
 	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) &&
 	    conn->role == BT_HCI_ROLE_SLAVE) {
-		conn->id = bt_dev.adv_id;
 		bt_addr_le_copy(&conn->le.init_addr, &peer_addr);
 
 		if (IS_ENABLED(CONFIG_BT_PRIVACY)) {

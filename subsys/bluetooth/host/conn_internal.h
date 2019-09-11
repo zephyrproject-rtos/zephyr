@@ -153,7 +153,7 @@ static inline int bt_conn_send(struct bt_conn *conn, struct net_buf *buf)
 }
 
 /* Add a new LE connection */
-struct bt_conn *bt_conn_add_le(const bt_addr_le_t *peer);
+struct bt_conn *bt_conn_add_le(u8_t id, const bt_addr_le_t *peer);
 
 /* Add a new BR/EDR connection */
 struct bt_conn *bt_conn_add_br(const bt_addr_t *peer);
