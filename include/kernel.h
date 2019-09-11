@@ -1839,8 +1839,11 @@ struct k_queue {
 #define _K_QUEUE_INITIALIZER(obj) \
 	{ \
 	.data_q = SYS_SLIST_STATIC_INIT(&obj.data_q), \
-	.wait_q = Z_WAIT_Q_INIT(&obj.wait_q), \
-	_POLL_EVENT_OBJ_INIT(obj) \
+	.lock = { }, \
+	{ \
+		.wait_q = Z_WAIT_Q_INIT(&obj.wait_q), \
+		_POLL_EVENT_OBJ_INIT(obj) \
+	}, \
 	_OBJECT_TRACING_INIT \
 	}
 
