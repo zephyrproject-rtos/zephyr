@@ -21,8 +21,6 @@ manifest:
   remotes:
     - name: upstream
       url-base: https://github.com/zephyrproject-rtos
-    - name: civetweb
-      url-base: https://github.com/civetweb
 
   #
   # Please add items below based on alphabetical order
@@ -34,7 +32,6 @@ manifest:
       revision: d56f2dd3510e20fa8cf4aad442495c08a658113f
       path: tools/ci-tools
     - name: civetweb
-      remote: civetweb
       revision: 99129c5efc907ea613c4b73ccff07581feb58a7a
       path: modules/lib/civetweb
     - name: esp-idf
