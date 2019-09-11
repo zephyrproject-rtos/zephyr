@@ -4,9 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_LEVEL CONFIG_DISPLAY_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(ssd1306);
+LOG_MODULE_REGISTER(ssd1306, CONFIG_DISPLAY_LOG_LEVEL);
 
 #include <string.h>
 #include <device.h>
@@ -61,21 +60,24 @@ struct ssd1306_data {
 static inline int ssd1306_reg_read(struct ssd1306_data *driver,
 				   u8_t reg, u8_t * const val)
 {
-	return i2c_reg_read_byte(driver->i2c, DT_INST_0_SOLOMON_SSD1306FB_BASE_ADDRESS,
+	return i2c_reg_read_byte(driver->i2c,
+				 DT_INST_0_SOLOMON_SSD1306FB_BASE_ADDRESS,
 				 reg, val);
 }
 
 static inline int ssd1306_reg_write(struct ssd1306_data *driver,
 				    u8_t reg, u8_t val)
 {
-	return i2c_reg_write_byte(driver->i2c, DT_INST_0_SOLOMON_SSD1306FB_BASE_ADDRESS,
+	return i2c_reg_write_byte(driver->i2c,
+				  DT_INST_0_SOLOMON_SSD1306FB_BASE_ADDRESS,
 				  reg, val);
 }
 
 static inline int ssd1306_reg_update(struct ssd1306_data *driver, u8_t reg,
 				     u8_t mask, u8_t val)
 {
-	return i2c_reg_update_byte(driver->i2c, DT_INST_0_SOLOMON_SSD1306FB_BASE_ADDRESS,
+	return i2c_reg_update_byte(driver->i2c,
+				   DT_INST_0_SOLOMON_SSD1306FB_BASE_ADDRESS,
 				   reg, mask, val);
 }
 
@@ -219,7 +221,8 @@ int ssd1306_write_page(const struct device *dev, u8_t page, void const *data,
 		return -1;
 	}
 
-	return i2c_burst_write(driver->i2c, DT_INST_0_SOLOMON_SSD1306FB_BASE_ADDRESS,
+	return i2c_burst_write(driver->i2c,
+			       DT_INST_0_SOLOMON_SSD1306FB_BASE_ADDRESS,
 			       SSD1306_CONTROL_LAST_BYTE_DATA,
 			       data, length);
 }
@@ -276,7 +279,8 @@ int ssd1306_write(const struct device *dev, const u16_t x, const u16_t y,
 		return -1;
 	}
 
-	return i2c_burst_write(driver->i2c, DT_INST_0_SOLOMON_SSD1306FB_BASE_ADDRESS,
+	return i2c_burst_write(driver->i2c,
+			       DT_INST_0_SOLOMON_SSD1306FB_BASE_ADDRESS,
 			       SSD1306_CONTROL_LAST_BYTE_DATA,
 			       (u8_t *)buf, desc->buf_size);
 
@@ -380,11 +384,14 @@ static int ssd1306_init_device(struct device *dev)
 	};
 
 #ifdef DT_INST_0_SOLOMON_SSD1306FB_RESET_GPIOS_CONTROLLER
-	gpio_pin_write(driver->reset, DT_INST_0_SOLOMON_SSD1306FB_RESET_GPIOS_PIN, 1);
+	gpio_pin_write(driver->reset,
+		       DT_INST_0_SOLOMON_SSD1306FB_RESET_GPIOS_PIN, 1);
 	k_sleep(SSD1306_RESET_DELAY);
-	gpio_pin_write(driver->reset, DT_INST_0_SOLOMON_SSD1306FB_RESET_GPIOS_PIN, 0);
+	gpio_pin_write(driver->reset,
+		       DT_INST_0_SOLOMON_SSD1306FB_RESET_GPIOS_PIN, 0);
 	k_sleep(SSD1306_RESET_DELAY);
-	gpio_pin_write(driver->reset, DT_INST_0_SOLOMON_SSD1306FB_RESET_GPIOS_PIN, 1);
+	gpio_pin_write(driver->reset,
+		       DT_INST_0_SOLOMON_SSD1306FB_RESET_GPIOS_PIN, 1);
 #endif
 
 	/* Turn display off */
@@ -437,14 +444,16 @@ static int ssd1306_init(struct device *dev)
 	}
 
 #ifdef DT_INST_0_SOLOMON_SSD1306FB_RESET_GPIOS_CONTROLLER
-	driver->reset = device_get_binding(DT_INST_0_SOLOMON_SSD1306FB_RESET_GPIOS_CONTROLLER);
+	driver->reset = device_get_binding(
+			DT_INST_0_SOLOMON_SSD1306FB_RESET_GPIOS_CONTROLLER);
 	if (driver->reset == NULL) {
 		LOG_ERR("Failed to get pointer to %s device!",
 			    DT_INST_0_SOLOMON_SSD1306FB_RESET_GPIOS_CONTROLLER);
 		return -EINVAL;
 	}
 
-	gpio_pin_configure(driver->reset, DT_INST_0_SOLOMON_SSD1306FB_RESET_GPIOS_PIN,
+	gpio_pin_configure(driver->reset,
+			   DT_INST_0_SOLOMON_SSD1306FB_RESET_GPIOS_PIN,
 			   GPIO_DIR_OUT);
 #endif
 
