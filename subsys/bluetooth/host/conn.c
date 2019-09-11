@@ -1525,7 +1525,7 @@ void bt_conn_process_tx(struct bt_conn *conn)
 	}
 }
 
-struct bt_conn *bt_conn_add_le(const bt_addr_le_t *peer)
+struct bt_conn *bt_conn_add_le(u8_t id, const bt_addr_le_t *peer)
 {
 	struct bt_conn *conn = conn_new();
 
@@ -1533,6 +1533,7 @@ struct bt_conn *bt_conn_add_le(const bt_addr_le_t *peer)
 		return NULL;
 	}
 
+	conn->id = id;
 	bt_addr_le_copy(&conn->le.dst, peer);
 #if defined(CONFIG_BT_SMP)
 	conn->sec_level = BT_SECURITY_L1;
@@ -2204,13 +2205,11 @@ struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer,
 		bt_addr_le_copy(&dst, bt_lookup_id_addr(BT_ID_DEFAULT, peer));
 	}
 
-	conn = bt_conn_add_le(&dst);
+	/* Only default identity supported for now */
+	conn = bt_conn_add_le(BT_ID_DEFAULT, &dst);
 	if (!conn) {
 		return NULL;
 	}
-
-	/* Only default identity supported for now */
-	conn->id = BT_ID_DEFAULT;
 
 start_scan:
 	bt_conn_set_param_le(conn, param);
@@ -2232,18 +2231,16 @@ int bt_le_set_auto_conn(const bt_addr_le_t *addr,
 		return -EINVAL;
 	}
 
+	/* Only default identity is supported */
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, addr);
 	if (!conn) {
-		conn = bt_conn_add_le(addr);
+		conn = bt_conn_add_le(BT_ID_DEFAULT, addr);
 		if (!conn) {
 			return -ENOMEM;
 		}
 	}
 
 	if (param) {
-		/* Only default identity is supported */
-		conn->id = BT_ID_DEFAULT;
-
 		bt_conn_set_param_le(conn, param);
 
 		if (!atomic_test_and_set_bit(conn->flags,
@@ -2315,12 +2312,10 @@ struct bt_conn *bt_conn_create_slave_le(const bt_addr_le_t *peer,
 		}
 	}
 
-	conn = bt_conn_add_le(peer);
+	conn = bt_conn_add_le(param->id, peer);
 	if (!conn) {
 		return NULL;
 	}
-
-	conn->id = param->id;
 
 start_adv:
 	bt_conn_set_state(conn, BT_CONN_CONNECT_DIR_ADV);
