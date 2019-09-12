@@ -1,0 +1,101 @@
+# Kconfig - FSL FRDM K22F platform configuration options
+#
+# Copyright (c) 2018 Prevas A/S
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_MK22F51212
+
+config SOC
+	string
+	default "mk22f51212"
+
+if ADC
+
+config ADC_MCUX_ADC16
+	default y
+
+endif # ADC
+
+if CLOCK_CONTROL
+
+config CLOCK_CONTROL_MCUX_SIM
+	default y
+
+endif # CLOCK_CONTROL
+
+if PINMUX
+
+config PINMUX_MCUX
+	default y
+
+endif # PINMUX
+
+config GPIO
+	default y
+
+if GPIO
+
+config GPIO_MCUX
+	default y
+
+endif # GPIO
+
+if I2C
+
+config I2C_MCUX
+	default y
+
+endif # I2C
+
+if PWM
+
+config PWM_MCUX_FTM
+	default y
+
+endif # PWM
+
+if SPI
+
+config SPI_MCUX_DSPI
+	default y
+
+endif # SPI
+
+if ENTROPY_GENERATOR
+
+config ENTROPY_MCUX_RNGA
+	default y
+
+endif # ENTROPY_GENERATOR
+
+if FLASH
+
+config SOC_FLASH_MCUX
+	default y
+
+endif # FLASH
+
+if SERIAL
+
+config UART_MCUX
+	default y
+
+endif # SERIAL
+
+if USB
+
+config USB_KINETIS
+	default y
+
+endif # USB
+
+if WATCHDOG
+
+config WDT_MCUX_WDOG
+	default y
+
+endif # WATCHDOG
+
+endif # SOC_MK22F12

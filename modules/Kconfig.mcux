@@ -147,4 +147,9 @@ config HAS_MCUX_PWM
 	help
 	  Set if the PWM  module is present in the SoC.
 
+config HAS_MCUX_SMC
+	bool
+	help
+	  Set if the SMC  module is present in the SoC.
+
 endif # HAS_MCUX
