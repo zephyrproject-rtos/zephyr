@@ -53,7 +53,7 @@ manifest:
       revision: be5c01f86c96500def5079bcc58d2baefdffb6c8
       path: modules/hal/openisa
     - name: hal_microchip
-      revision: a92582bc65504fb1e8c9d2c86ec2c249d9203942
+      revision: 85302959c0c659311cf90ac51d133e5ce19c9288
       path: modules/hal/microchip
     - name: hal_silabs
       revision: 9151e614c23997074acd1096a3e8a9e5c255d5b9
