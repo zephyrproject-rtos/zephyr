@@ -199,6 +199,13 @@ from itertools import islice
 from pathlib import Path
 from distutils.spawn import find_executable
 
+ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
+if not ZEPHYR_BASE:
+    sys.exit("$ZEPHYR_BASE environment variable undefined")
+
+sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts", "dts"))
+import edtlib
+
 import logging
 
 
@@ -208,11 +215,6 @@ report_lock = threading.Lock()
 
 log_format = "%(levelname)s %(name)s::%(module)s.%(funcName)s():%(lineno)d: %(message)s"
 logging.basicConfig(format=log_format, level=30)
-
-ZEPHYR_BASE = os.environ.get("ZEPHYR_BASE")
-if not ZEPHYR_BASE:
-    sys.stderr.write("$ZEPHYR_BASE environment variable undefined.\n")
-    exit(1)
 
 # Use this for internal comparisons; that's what canonicalization is
 # for. Don't use it when invoking other components of the build system
@@ -1902,7 +1904,10 @@ class FilterBuilder(CMake):
 
         if self.testcase and self.testcase.tc_filter:
             try:
-                res = expr_parser.parse(self.testcase.tc_filter, filter_data)
+                dts_path = os.path.join(self.build_dir, "zephyr", self.platform.name + ".dts.pre.tmp")
+                edt = edtlib.EDT(dts_path, [os.path.join(ZEPHYR_BASE, "dts", "bindings")])
+                res = expr_parser.parse(self.testcase.tc_filter, filter_data, edt)
+
             except (ValueError, SyntaxError) as se:
                 sys.stderr.write(
                     "Failed processing %s\n" % self.testcase.yamlfile)
