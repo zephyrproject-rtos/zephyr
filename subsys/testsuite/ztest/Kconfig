@@ -42,6 +42,16 @@ config ZTEST_MOCKING
 	  Enable mocking support for Ztest. This allows the test to set
 	  return values and expected parameters to functions.
 
+config ZTEST_TC_UTIL_USER_OVERRIDE
+	bool "Override tc_util.h"
+	depends on ZTEST
+	help
+	  Enable overriding defines in tc_util.h.
+	  If True the user should provide tc_util_user_override.h in Zephyr's include path,
+	  e.g. by adding zephyr_include_directories(project PRIVATE my_folder) to a project's CMakeLists.txt.
+	  The override header may now #define the various macros and strings in tc_util.h which are
+	  surrounded by #ifndef ... #endif blocks.
+
 config ZTEST_PARAMETER_COUNT
 	int "Count of parameters or return values reserved"
 	depends on ZTEST_MOCKING
