@@ -1,0 +1,16 @@
+identifier: frdm_k22f
+name: NXP FRDM-K22F
+type: mcu
+arch: arm
+ram: 64
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - adc
+  - i2c
+  - nvs
+  - spi
+  - gpio
+  - usb_device
+  - watchdog
