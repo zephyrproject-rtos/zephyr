@@ -31,6 +31,16 @@ SECTION_FUNC(reset, __reset)
  * the C domain
  */
 SECTION_FUNC(TEXT, __initialize)
+	/*
+	 * This will boot master core, just halt other cores.
+	 * Note: need to be updated for complete SMP support
+	 */
+	csrr a0, mhartid
+	beqz a0, boot_master_core
+	wfi
+
+boot_master_core:
+
 #ifdef CONFIG_INIT_STACKS
 	/* Pre-populate all bytes in _interrupt_stack with 0xAA */
 	la t0, _interrupt_stack
