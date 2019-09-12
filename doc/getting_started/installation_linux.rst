@@ -3,10 +3,6 @@
 Install Linux Host Dependencies
 ###############################
 
-.. important::
-
-   Go back to the main :ref:`getting_started` when you're done here.
-
 Documentation is available for these Linux distributions:
 
 * Ubuntu
@@ -19,35 +15,44 @@ requirements and dependencies may not be met by your package manager. In that
 case please follow the additional instructions that are provided to find
 software from sources other than the package manager.
 
+.. note:: If you're working behind a corporate firewall, you'll likely
+   need to configure a proxy for accessing the internet, if you haven't
+   done so already.  While some tools use the environment variables
+   ``http_proxy`` and ``https_proxy`` to get their proxy settings, some
+   use their own configuration files, most notably ``apt`` and
+   ``git``.
+
 Update Your Operating System
 ****************************
 
 Ensure your host system is up to date.
 
-Ubuntu:
+.. tabs::
 
-.. code-block:: console
+   .. group-tab:: Ubuntu
 
-   sudo apt-get update
-   sudo apt-get upgrade
+      .. code-block:: console
 
-Fedora:
+         sudo apt-get update
+         sudo apt-get upgrade
 
-.. code-block:: console
+   .. group-tab:: Fedora
 
-   sudo dnf upgrade
+      .. code-block:: console
 
-Clear Linux:
+         sudo dnf upgrade
 
-.. code-block:: console
+   .. group-tab:: Clear Linux
 
-   sudo swupd update
+      .. code-block:: console
 
-Arch Linux:
+         sudo swupd update
 
-.. code-block:: console
+   .. group-tab:: Arch Linux
 
-   sudo pacman -Syu
+      .. code-block:: console
+
+         sudo pacman -Syu
 
 .. _linux_requirements:
 
@@ -65,65 +70,81 @@ Install Requirements and Dependencies
 Note that both Ninja and Make are installed with these instructions; you only
 need one.
 
-Ubuntu:
+.. tabs::
 
-.. code-block:: console
+   .. group-tab:: Ubuntu
 
-   sudo apt-get install --no-install-recommends git cmake ninja-build gperf \
-     ccache dfu-util device-tree-compiler wget \
-     python3-pip python3-setuptools python3-tk python3-wheel xz-utils file \
-     make gcc gcc-multilib
+      .. code-block:: console
 
-Fedora:
+         sudo apt-get install --no-install-recommends git cmake ninja-build gperf \
+           ccache dfu-util device-tree-compiler wget \
+           python3-pip python3-setuptools python3-tk python3-wheel xz-utils file \
+           make gcc gcc-multilib
 
-.. code-block:: console
+   .. group-tab:: Fedora
 
+      .. code-block:: console
 
-   sudo dnf group install "Development Tools" "C Development Tools and Libraries"
-   dnf install git cmake ninja-build gperf ccache dfu-util dtc wget \
-     python3-pip python3-tkinter xz file glibc-devel.i686 libstdc++-devel.i686
+         sudo dnf group install "Development Tools" "C Development Tools and Libraries"
+         dnf install git cmake ninja-build gperf ccache dfu-util dtc wget \
+           python3-pip python3-tkinter xz file glibc-devel.i686 libstdc++-devel.i686
 
-Clear Linux:
+   .. group-tab:: Clear Linux
 
-.. code-block:: console
+      .. code-block:: console
 
-   sudo swupd bundle-add c-basic dev-utils dfu-util dtc \
-     os-core-dev python-basic python3-basic python3-tcl
+         sudo swupd bundle-add c-basic dev-utils dfu-util dtc \
+           os-core-dev python-basic python3-basic python3-tcl
 
-The Clear Linux focus is on *native* performance and security and not
-cross-compilation. For that reason it uniquely exports by default to the
-:ref:`environment <env_vars>` of all users a list of compiler and linker
-flags. Zephyr's CMake build system will either warn or fail because of
-these. To clear the C/C++ flags among these and fix the Zephyr build, run
-the following command as root then log out and back in:
+      The Clear Linux focus is on *native* performance and security and not
+      cross-compilation. For that reason it uniquely exports by default to the
+      :ref:`environment <env_vars>` of all users a list of compiler and linker
+      flags. Zephyr's CMake build system will either warn or fail because of
+      these. To clear the C/C++ flags among these and fix the Zephyr build, run
+      the following command as root then log out and back in:
 
-.. code-block:: console
+      .. code-block:: console
 
-   # echo 'unset CFLAGS CXXFLAGS' >> /etc/profile.d/unset_cflags.sh
+         echo 'unset CFLAGS CXXFLAGS' >> /etc/profile.d/unset_cflags.sh
 
-Note this command unsets the C/C++ flags for *all users on the
-system*. Each Linux distribution has a unique, relatively complex and
-potentially evolving sequence of bash initialization files sourcing each
-other and Clear Linux is no exception. If you need a more flexible
-solution, start by looking at the logic in
-``/usr/share/defaults/etc/profile``.
+      Note this command unsets the C/C++ flags for *all users on the
+      system*. Each Linux distribution has a unique, relatively complex and
+      potentially evolving sequence of bash initialization files sourcing each
+      other and Clear Linux is no exception. If you need a more flexible
+      solution, start by looking at the logic in
+      ``/usr/share/defaults/etc/profile``.
 
-Arch Linux:
+   .. group-tab:: Arch Linux
 
-.. code-block:: console
+      .. code-block:: console
 
-   sudo pacman -S git cmake ninja gperf ccache dfu-util dtc wget \
-       python-pip python-setuptools python-wheel tk xz file make
+         sudo pacman -S git cmake ninja gperf ccache dfu-util dtc wget \
+             python-pip python-setuptools python-wheel tk xz file make
 
-**CMake version 3.13.1 or higher is required**. Check what version you have by
+CMake
+=====
+
+CMake version 3.13.1 or higher is required. Check what version you have by
 using ``cmake --version``. If you have an older version, there are several ways
 of obtaining a more recent one:
 
-* Use ``pip3`` (see :ref:`python-pip` for more details):
+* On Ubuntu, you can follow the instructions for adding the
+  `kitware third-party apt repository <https://apt.kitware.com/>`_
+  to get an updated version of cmake using apt.
+
+* Download and install a packaged cmake from the CMake project site.
+  (Note this won't uninstall the previous version of cmake.)
 
   .. code-block:: console
 
-     pip3 install --user cmake
+     cd ~
+     wget https://github.com/Kitware/CMake/releases/download/v3.15.3/cmake-3.15.3-Linux-x86_64.sh
+     chmod +x cmake-3.15.3-Linux-x86_64.sh
+     sudo ./cmake-3.15.3-Linux-x86_64.sh --skip-license --prefix=/usr/local
+     hash -r
+
+  The ``hash -r`` command may be necessary if the installation script
+  put cmake into a new location on your PATH.
 
 * Download and install from the pre-built binaries provided by the CMake
   project itself in the `CMake Downloads`_ page.
@@ -136,6 +157,17 @@ of obtaining a more recent one:
      yes | sh cmake-3.13.1-Linux-x86_64.sh | cat
      echo "export PATH=$PWD/cmake-3.13.1-Linux-x86_64/bin:\$PATH" >> $HOME/.zephyrrc
 
+* Use ``pip3``:
+
+  .. code-block:: console
+
+     pip3 install --user cmake
+
+  Note this won't uninstall the previous version of cmake and will
+  install the new cmake into your ~/.local/bin folder so
+  you'll need to add ~/.local/bin to your PATH.  (See :ref:`python-pip`
+  for details.)
+
 * Check your distribution's beta or unstable release package library for an
   update.
 
@@ -145,10 +177,16 @@ of obtaining a more recent one:
 
      sudo snap install cmake
 
+After updating cmake, verify that the newly installed cmake is found
+using ``cmake --version``.
 You might also want to uninstall the CMake provided by your package manager to
-avoid conflicts.
+avoid conflicts.  (Use ``whereis cmake`` to find other installed
+versions.)
 
-**A recent DTC version (1.4.6 or higher) is required**. Check what version you
+DTC (Device Tree Compiler)
+==========================
+
+A recent DTC version (1.4.6 or higher) is required. Check what version you
 have by using ``dtc --version``. If you have an older version, either install a
 more recent one by building from source, or use the one that is bundled in
 the :ref:`Zephyr SDK <zephyr_sdk>` by installing it and setting the
