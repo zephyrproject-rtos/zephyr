@@ -250,9 +250,6 @@ if [ -n "$MAIN_CI" ]; then
 		git rebase $REMOTE/${BRANCH};
 	fi
 	$short_git_log
-fi
-
-if [ -n "$MAIN_CI" ]; then
 
 	if [ -n "${BSIM_OUT_PATH}" -a -d "${BSIM_OUT_PATH}" ]; then
 		echo "Build BT simulator tests"
