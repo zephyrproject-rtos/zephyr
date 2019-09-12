@@ -1089,14 +1089,7 @@ void log_hexdump_from_user(struct log_msg_ids src_level, const char *metadata,
 	src_level_union.structure = src_level;
 	z_log_hexdump_from_user(src_level_union.value, metadata, data, len);
 }
-#elif defined(CONFIG_NO_OPTIMIZATIONS)
-/*
- * With the optimizations disabled, the dead code is not removed and
- * references to functions used only by the usermode remains in the
- * object files, causing linker error. To avoid this error, here we
- * are providing stubs for affected API.
- */
-
+#else
 void z_impl_z_log_string_from_user(u32_t src_level_val, const char *str)
 {
 	ARG_UNUSED(src_level_val);
@@ -1144,7 +1137,7 @@ void log_hexdump_from_user(struct log_msg_ids src_level, const char *metadata,
 
 	__ASSERT_NO_MSG(false);
 }
-#endif /* defined(CONFIG_NO_OPTIMIZATIONS) */
+#endif /* !defined(CONFIG_USERSPACE) */
 
 static void log_process_thread_func(void *dummy1, void *dummy2, void *dummy3)
 {
