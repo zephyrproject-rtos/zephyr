@@ -385,6 +385,8 @@ Z_SYSCALL_HANDLER(zsock_listen, sock, backlog)
 int zsock_accept_ctx(struct net_context *parent, struct sockaddr *addr,
 		     socklen_t *addrlen)
 {
+	s32_t timeout = K_FOREVER;
+	struct net_context *ctx;
 	int fd;
 
 	fd = z_reserve_fd();
@@ -396,7 +398,15 @@ int zsock_accept_ctx(struct net_context *parent, struct sockaddr *addr,
 		net_context_set_state(parent, NET_CONTEXT_LISTENING);
 	}
 
-	struct net_context *ctx = k_fifo_get(&parent->accept_q, K_FOREVER);
+	if (sock_is_nonblock(parent)) {
+		timeout = K_NO_WAIT;
+	}
+
+	ctx = k_fifo_get(&parent->accept_q, timeout);
+	if (ctx == NULL) {
+		errno = EAGAIN;
+		return -1;
+	}
 
 #ifdef CONFIG_USERSPACE
 	z_object_recycle(ctx);
