@@ -22,6 +22,7 @@ Samples and Demos
    display/*
    shields/*
    portability/*
+   posix/*
    gui/*
    video/*
 
