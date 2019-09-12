@@ -7,6 +7,8 @@ zephyr_library()
 
 zephyr_library_sources(soc.c)
 
+zephyr_sources_ifdef(CONFIG_ARM_MPU arm_mpu_regions.c)
+
 if (CONFIG_SLAVE_CORE_MCUX)
   set(gen_dir ${ZEPHYR_BINARY_DIR}/include/generated/)
   string(CONFIGURE ${CONFIG_SLAVE_IMAGE_MCUX} core_m0_image)

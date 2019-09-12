@@ -16,9 +16,14 @@
 #define _SOC__H_
 
 #ifndef _ASMLANGUAGE
-#include <device.h>
 #include <sys/util.h>
 #include <fsl_common.h>
+
+/* ARM CMSIS definitions must be included before kernel_includes.h.
+ * Therefore, it is essential to include kernel_includes.h after including
+ * core SOC-specific headers.
+ */
+#include <kernel_includes.h>
 #endif /* !_ASMLANGUAGE */
 
 #define IOCON_PIO_DIGITAL_EN	0x80u
