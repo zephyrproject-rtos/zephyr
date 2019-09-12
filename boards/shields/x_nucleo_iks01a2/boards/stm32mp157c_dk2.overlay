@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2019 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * On stm32mp157c_dk2 pin A3 is not mapped on a GPIO pin.
+ * Delete this optional property for shield/board compatibility
+ */
+
+&arduino_i2c {
+	lsm303agr-magn@1e {
+		/delete-property/ irq-gpios;	/* A3 */
+	};
+
+	lsm303agr-accel@19 {
+		/delete-property/ irq-gpios;	/* A3 */
+	};
+};
