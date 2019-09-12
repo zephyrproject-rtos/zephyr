@@ -195,3 +195,37 @@ config NET_CONFIG_BT_NODE
 endif # NET_L2_BT
 
 endif # NET_CONFIG_SETTINGS
+
+config NET_CONFIG_CLOCK_SNTP_INIT
+	bool "Initialize system clock using SNTP on application startup"
+	depends on SNTP && POSIX_CLOCK
+	help
+	  Perform an SNTP request over networking to get and absolute
+	  wall clock time, and initialize system time from it, so
+	  functions like time(), gettimeofday(), etc. returned the
+	  correct absolute time (no just time since system startup).
+	  Requires networking.
+
+if NET_CONFIG_CLOCK_SNTP_INIT
+
+config NET_CONFIG_SNTP_INIT_PRIO
+	int "Startup priority to init clock using SNTP"
+	default 97
+	help
+	  Should be higher than CONFIG_NET_CONFIG_INIT_PRIO.
+
+config NET_CONFIG_SNTP_INIT_SERVER
+	string "SNTP server to use for system clock init"
+	default ""
+	help
+	  Zephyr does not provide default setting for this option. Each
+	  application and vendor should choose a suitable setting based
+	  on their locality, needs, and server's terms of service. See
+	  e.g. server information at
+	  https://support.ntp.org/bin/view/Servers/NTPPoolServers
+
+config NET_CONFIG_SNTP_INIT_TIMEOUT
+	int "SNTP timeout to init system clock (ms)"
+	default 3000
+
+endif # NET_CONFIG_CLOCK_SNTP_INIT
