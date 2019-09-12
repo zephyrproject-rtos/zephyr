@@ -134,6 +134,20 @@ def p_expr_single(p):
     """expr : SYMBOL"""
     p[0] = ("exists", p[1])
 
+def p_func(p):
+    """expr : SYMBOL OPAREN arg_intr CPAREN"""
+    p[0] = [p[1]]
+    p[0].append(p[3])
+
+def p_arg_intr_single(p):
+    """arg_intr : const"""
+    p[0] = [p[1]]
+
+def p_arg_intr_mult(p):
+    """arg_intr : arg_intr COMMA const"""
+    p[0] = copy.copy(p[1])
+    p[0].append(p[3])
+
 def p_list(p):
     """list : OBRACKET list_intr CBRACKET"""
     p[0] = p[2]
