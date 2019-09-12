@@ -3592,14 +3592,14 @@ def main():
 
     if options.coverage:
         if options.gcov_tool == None:
-            using_posix = False
+            use_system_gcov = False
 
             for plat in options.coverage_platform:
                 ts_plat = ts.get_platform(plat)
-                if ts_plat and ts_plat.type == "native":
-                    using_posix = True
+                if ts_plat and (ts_plat.type in {"native", "unit"}):
+                    use_system_gcov = True
 
-            if using_posix or "ZEPHYR_SDK_INSTALL_DIR" not in os.environ:
+            if use_system_gcov or "ZEPHYR_SDK_INSTALL_DIR" not in os.environ:
                 options.gcov_tool = "gcov"
             else:
                 options.gcov_tool = os.path.join(os.environ["ZEPHYR_SDK_INSTALL_DIR"],
