@@ -121,6 +121,19 @@ static int lpcxpresso_55s69_pinmux_init(struct device *dev)
 				  IOCON_PIO_OPENDRAIN_DI);
 #endif /* CONFIG_SPI_8 */
 
+#ifdef CONFIG_USB_DC_NXP_IP3511FS
+	const u32_t port0_pin22_config = (
+			IOCON_PIO_FUNC7 |
+			IOCON_PIO_MODE_INACT |
+			IOCON_PIO_SLEW_STANDARD |
+			IOCON_PIO_INV_DI |
+			IOCON_PIO_DIGITAL_EN |
+			IOCON_PIO_OPENDRAIN_DI
+			);
+
+	pinmux_pin_set(port0, 22, port0_pin22_config);
+#endif
+
 	return 0;
 }
 

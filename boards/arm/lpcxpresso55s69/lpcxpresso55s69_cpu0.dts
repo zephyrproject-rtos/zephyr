@@ -71,3 +71,7 @@
 &spi8 {
 	status = "okay";
 };
+
+&usbd {
+	status = "okay";
+};

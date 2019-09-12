@@ -66,6 +66,8 @@ features:
 +-----------+------------+-------------------------------------+
 | USART     | on-chip    | serial port-polling                 |
 +-----------+------------+-------------------------------------+
+| USB       | on-chip    | USB device                          |
++-----------+------------+-------------------------------------+
 
 The default configuration file
 ``boards/arm/lpcxpresso55s69/lpcxpresso55s69_cpu0_defconfig``
@@ -100,6 +102,8 @@ functionality of a pin.
 +---------+-----------------+----------------------------+
 | PIO1_7  | GPIO            | GREEN LED                  |
 +---------+-----------------+----------------------------+
+| PIO0_22 | USB             | USB0 VBUS                  |
++---------+-----------------+----------------------------+
 
 System Clock
 ============
@@ -113,6 +117,13 @@ Serial Port
 
 The LPC55S69 SoC has 8 FLEXCOMM interfaces for serial communication.  One is
 configured as USART for the console and the remaining are not used.
+
+USB
+===
+
+The LPC55S69 SoC has two USB device controllers that support
+device functions and two USB host controllers that support host functions.
+Only USB device function is supported in Zephyr.
 
 Programming and Debugging
 *************************
