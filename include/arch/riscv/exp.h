@@ -66,6 +66,32 @@ struct __esf {
 	ulong_t mepc;		/* machine exception program counter */
 	ulong_t mstatus;	/* machine status register */
 
+#if defined(CONFIG_FLOAT) && defined(CONFIG_FP_SHARING)
+
+	ulong_t ft0;		/* Caller-saved temporary floating register */
+	ulong_t ft1;		/* Caller-saved temporary floating register */
+	ulong_t ft2;		/* Caller-saved temporary floating register */
+	ulong_t ft3;		/* Caller-saved temporary floating register */
+	ulong_t ft4;		/* Caller-saved temporary floating register */
+	ulong_t ft5;		/* Caller-saved temporary floating register */
+	ulong_t ft6;		/* Caller-saved temporary floating register */
+	ulong_t ft7;		/* Caller-saved temporary floating register */
+	ulong_t ft8;		/* Caller-saved temporary floating register */
+	ulong_t ft9;		/* Caller-saved temporary floating register */
+	ulong_t ft10;		/* Caller-saved temporary floating register */
+	ulong_t ft11;		/* Caller-saved temporary floating register */
+
+	ulong_t fa0;		/* function argument/return value */
+	ulong_t fa1;		/* function argument/return value */
+	ulong_t fa2;		/* function argument */
+	ulong_t fa3;		/* function argument */
+	ulong_t fa4;		/* function argument */
+	ulong_t fa5;		/* function argument */
+	ulong_t fa6;		/* function argument */
+	ulong_t fa7;		/* function argument */
+
+#endif
+
 #ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE
 	struct soc_esf soc_context;
 #endif

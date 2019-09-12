@@ -93,6 +93,29 @@ SECTION_FUNC(exception.entry, __irq_wrapper)
 	RV_OP_STOREREG a6, __z_arch_esf_t_a6_OFFSET(sp)
 	RV_OP_STOREREG a7, __z_arch_esf_t_a7_OFFSET(sp)
 
+#if defined(CONFIG_FLOAT) && defined(CONFIG_FP_SHARING)
+	RV_OP_STOREFPREG ft0, __z_arch_esf_t_ft0_OFFSET(sp)
+	RV_OP_STOREFPREG ft1, __z_arch_esf_t_ft1_OFFSET(sp)
+	RV_OP_STOREFPREG ft2, __z_arch_esf_t_ft2_OFFSET(sp)
+	RV_OP_STOREFPREG ft3, __z_arch_esf_t_ft3_OFFSET(sp)
+	RV_OP_STOREFPREG ft4, __z_arch_esf_t_ft4_OFFSET(sp)
+	RV_OP_STOREFPREG ft5, __z_arch_esf_t_ft5_OFFSET(sp)
+	RV_OP_STOREFPREG ft6, __z_arch_esf_t_ft6_OFFSET(sp)
+	RV_OP_STOREFPREG ft7, __z_arch_esf_t_ft7_OFFSET(sp)
+	RV_OP_STOREFPREG ft8, __z_arch_esf_t_ft8_OFFSET(sp)
+	RV_OP_STOREFPREG ft9, __z_arch_esf_t_ft9_OFFSET(sp)
+	RV_OP_STOREFPREG ft10, __z_arch_esf_t_ft10_OFFSET(sp)
+	RV_OP_STOREFPREG ft11, __z_arch_esf_t_ft11_OFFSET(sp)
+	RV_OP_STOREFPREG fa0, __z_arch_esf_t_fa0_OFFSET(sp)
+	RV_OP_STOREFPREG fa1, __z_arch_esf_t_fa1_OFFSET(sp)
+	RV_OP_STOREFPREG fa2, __z_arch_esf_t_fa2_OFFSET(sp)
+	RV_OP_STOREFPREG fa3, __z_arch_esf_t_fa3_OFFSET(sp)
+	RV_OP_STOREFPREG fa4, __z_arch_esf_t_fa4_OFFSET(sp)
+	RV_OP_STOREFPREG fa5, __z_arch_esf_t_fa5_OFFSET(sp)
+	RV_OP_STOREFPREG fa6, __z_arch_esf_t_fa6_OFFSET(sp)
+	RV_OP_STOREFPREG fa7, __z_arch_esf_t_fa7_OFFSET(sp)
+#endif
+
 	/* Save MEPC register */
 	csrr t0, mepc
 	RV_OP_STOREREG t0, __z_arch_esf_t_mepc_OFFSET(sp)
@@ -330,6 +353,22 @@ reschedule:
 	RV_OP_STOREREG s10, _thread_offset_to_s10(t1)
 	RV_OP_STOREREG s11, _thread_offset_to_s11(t1)
 
+#if defined(CONFIG_FLOAT) && defined(CONFIG_FP_SHARING)
+	RV_OP_STOREFPREG fs0, _thread_offset_to_fs0(t1)
+	RV_OP_STOREFPREG fs1, _thread_offset_to_fs1(t1)
+	RV_OP_STOREFPREG fs2, _thread_offset_to_fs2(t1)
+	RV_OP_STOREFPREG fs3, _thread_offset_to_fs3(t1)
+	RV_OP_STOREFPREG fs4, _thread_offset_to_fs4(t1)
+	RV_OP_STOREFPREG fs5, _thread_offset_to_fs5(t1)
+	RV_OP_STOREFPREG fs6, _thread_offset_to_fs6(t1)
+	RV_OP_STOREFPREG fs7, _thread_offset_to_fs7(t1)
+	RV_OP_STOREFPREG fs8, _thread_offset_to_fs8(t1)
+	RV_OP_STOREFPREG fs9, _thread_offset_to_fs9(t1)
+	RV_OP_STOREFPREG fs10, _thread_offset_to_fs10(t1)
+	RV_OP_STOREFPREG fs11, _thread_offset_to_fs11(t1)
+#endif
+
+
 	/*
 	 * Save stack pointer of current thread and set the default return value
 	 * of z_swap to _k_neg_eagain for the thread.
@@ -364,6 +403,21 @@ reschedule:
 	RV_OP_LOADREG s10, _thread_offset_to_s10(t1)
 	RV_OP_LOADREG s11, _thread_offset_to_s11(t1)
 
+#if defined(CONFIG_FLOAT) && defined(CONFIG_FP_SHARING)
+	RV_OP_LOADFPREG fs0, _thread_offset_to_fs0(t1)
+	RV_OP_LOADFPREG fs1, _thread_offset_to_fs1(t1)
+	RV_OP_LOADFPREG fs2, _thread_offset_to_fs2(t1)
+	RV_OP_LOADFPREG fs3, _thread_offset_to_fs3(t1)
+	RV_OP_LOADFPREG fs4, _thread_offset_to_fs4(t1)
+	RV_OP_LOADFPREG fs5, _thread_offset_to_fs5(t1)
+	RV_OP_LOADFPREG fs6, _thread_offset_to_fs6(t1)
+	RV_OP_LOADFPREG fs7, _thread_offset_to_fs7(t1)
+	RV_OP_LOADFPREG fs8, _thread_offset_to_fs8(t1)
+	RV_OP_LOADFPREG fs9, _thread_offset_to_fs9(t1)
+	RV_OP_LOADFPREG fs10, _thread_offset_to_fs10(t1)
+	RV_OP_LOADFPREG fs11, _thread_offset_to_fs11(t1)
+#endif
+
 #ifdef CONFIG_EXECUTION_BENCHMARKING
 	addi sp, sp, -__z_arch_esf_t_SIZEOF
 
@@ -386,6 +440,29 @@ reschedule:
 	RV_OP_STOREREG a6, __z_arch_esf_t_a6_OFFSET(sp)
 	RV_OP_STOREREG a7, __z_arch_esf_t_a7_OFFSET(sp)
 
+#if defined(CONFIG_FLOAT) && defined(CONFIG_FP_SHARING)
+	RV_OP_STOREFPREG ft0, __z_arch_esf_t_ft0_OFFSET(sp)
+	RV_OP_STOREFPREG ft1, __z_arch_esf_t_ft1_OFFSET(sp)
+	RV_OP_STOREFPREG ft2, __z_arch_esf_t_ft2_OFFSET(sp)
+	RV_OP_STOREFPREG ft3, __z_arch_esf_t_ft3_OFFSET(sp)
+	RV_OP_STOREFPREG ft4, __z_arch_esf_t_ft4_OFFSET(sp)
+	RV_OP_STOREFPREG ft5, __z_arch_esf_t_ft5_OFFSET(sp)
+	RV_OP_STOREFPREG ft6, __z_arch_esf_t_ft6_OFFSET(sp)
+	RV_OP_STOREFPREG ft7, __z_arch_esf_t_ft7_OFFSET(sp)
+	RV_OP_STOREFPREG ft8, __z_arch_esf_t_ft8_OFFSET(sp)
+	RV_OP_STOREFPREG ft9, __z_arch_esf_t_ft9_OFFSET(sp)
+	RV_OP_STOREFPREG ft10, __z_arch_esf_t_ft10_OFFSET(sp)
+	RV_OP_STOREFPREG ft11, __z_arch_esf_t_ft11_OFFSET(sp)
+	RV_OP_STOREFPREG fa0, __z_arch_esf_t_fa0_OFFSET(sp)
+	RV_OP_STOREFPREG fa1, __z_arch_esf_t_fa1_OFFSET(sp)
+	RV_OP_STOREFPREG fa2, __z_arch_esf_t_fa2_OFFSET(sp)
+	RV_OP_STOREFPREG fa3, __z_arch_esf_t_fa3_OFFSET(sp)
+	RV_OP_STOREFPREG fa4, __z_arch_esf_t_fa4_OFFSET(sp)
+	RV_OP_STOREFPREG fa5, __z_arch_esf_t_fa5_OFFSET(sp)
+	RV_OP_STOREFPREG fa6, __z_arch_esf_t_fa6_OFFSET(sp)
+	RV_OP_STOREFPREG fa7, __z_arch_esf_t_fa7_OFFSET(sp)
+#endif
+
 	call read_timer_end_of_swap
 
 	RV_OP_LOADREG ra, __z_arch_esf_t_ra_OFFSET(sp)
@@ -406,6 +483,29 @@ reschedule:
 	RV_OP_LOADREG a5, __z_arch_esf_t_a5_OFFSET(sp)
 	RV_OP_LOADREG a6, __z_arch_esf_t_a6_OFFSET(sp)
 	RV_OP_LOADREG a7, __z_arch_esf_t_a7_OFFSET(sp)
+
+#if defined(CONFIG_FLOAT) && defined(CONFIG_FP_SHARING)
+	RV_OP_LOADFPREG ft0, __z_arch_esf_t_ft0_OFFSET(sp)
+	RV_OP_LOADFPREG ft1, __z_arch_esf_t_ft1_OFFSET(sp)
+	RV_OP_LOADFPREG ft2, __z_arch_esf_t_ft2_OFFSET(sp)
+	RV_OP_LOADFPREG ft3, __z_arch_esf_t_ft3_OFFSET(sp)
+	RV_OP_LOADFPREG ft4, __z_arch_esf_t_ft4_OFFSET(sp)
+	RV_OP_LOADFPREG ft5, __z_arch_esf_t_ft5_OFFSET(sp)
+	RV_OP_LOADFPREG ft6, __z_arch_esf_t_ft6_OFFSET(sp)
+	RV_OP_LOADFPREG ft7, __z_arch_esf_t_ft7_OFFSET(sp)
+	RV_OP_LOADFPREG ft8, __z_arch_esf_t_ft8_OFFSET(sp)
+	RV_OP_LOADFPREG ft9, __z_arch_esf_t_ft9_OFFSET(sp)
+	RV_OP_LOADFPREG ft10, __z_arch_esf_t_ft10_OFFSET(sp)
+	RV_OP_LOADFPREG ft11, __z_arch_esf_t_ft11_OFFSET(sp)
+	RV_OP_LOADFPREG fa0, __z_arch_esf_t_fa0_OFFSET(sp)
+	RV_OP_LOADFPREG fa1, __z_arch_esf_t_fa1_OFFSET(sp)
+	RV_OP_LOADFPREG fa2, __z_arch_esf_t_fa2_OFFSET(sp)
+	RV_OP_LOADFPREG fa3, __z_arch_esf_t_fa3_OFFSET(sp)
+	RV_OP_LOADFPREG fa4, __z_arch_esf_t_fa4_OFFSET(sp)
+	RV_OP_LOADFPREG fa5, __z_arch_esf_t_fa5_OFFSET(sp)
+	RV_OP_LOADFPREG fa6, __z_arch_esf_t_fa6_OFFSET(sp)
+	RV_OP_LOADFPREG fa7, __z_arch_esf_t_fa7_OFFSET(sp)
+#endif
 
 	/* Release stack space */
 	addi sp, sp, __z_arch_esf_t_SIZEOF
@@ -445,6 +545,29 @@ no_reschedule:
 	RV_OP_LOADREG a5, __z_arch_esf_t_a5_OFFSET(sp)
 	RV_OP_LOADREG a6, __z_arch_esf_t_a6_OFFSET(sp)
 	RV_OP_LOADREG a7, __z_arch_esf_t_a7_OFFSET(sp)
+
+#if defined(CONFIG_FLOAT) && defined(CONFIG_FP_SHARING)
+	RV_OP_LOADFPREG ft0, __z_arch_esf_t_ft0_OFFSET(sp)
+	RV_OP_LOADFPREG ft1, __z_arch_esf_t_ft1_OFFSET(sp)
+	RV_OP_LOADFPREG ft2, __z_arch_esf_t_ft2_OFFSET(sp)
+	RV_OP_LOADFPREG ft3, __z_arch_esf_t_ft3_OFFSET(sp)
+	RV_OP_LOADFPREG ft4, __z_arch_esf_t_ft4_OFFSET(sp)
+	RV_OP_LOADFPREG ft5, __z_arch_esf_t_ft5_OFFSET(sp)
+	RV_OP_LOADFPREG ft6, __z_arch_esf_t_ft6_OFFSET(sp)
+	RV_OP_LOADFPREG ft7, __z_arch_esf_t_ft7_OFFSET(sp)
+	RV_OP_LOADFPREG ft8, __z_arch_esf_t_ft8_OFFSET(sp)
+	RV_OP_LOADFPREG ft9, __z_arch_esf_t_ft9_OFFSET(sp)
+	RV_OP_LOADFPREG ft10, __z_arch_esf_t_ft10_OFFSET(sp)
+	RV_OP_LOADFPREG ft11, __z_arch_esf_t_ft11_OFFSET(sp)
+	RV_OP_LOADFPREG fa0, __z_arch_esf_t_fa0_OFFSET(sp)
+	RV_OP_LOADFPREG fa1, __z_arch_esf_t_fa1_OFFSET(sp)
+	RV_OP_LOADFPREG fa2, __z_arch_esf_t_fa2_OFFSET(sp)
+	RV_OP_LOADFPREG fa3, __z_arch_esf_t_fa3_OFFSET(sp)
+	RV_OP_LOADFPREG fa4, __z_arch_esf_t_fa4_OFFSET(sp)
+	RV_OP_LOADFPREG fa5, __z_arch_esf_t_fa5_OFFSET(sp)
+	RV_OP_LOADFPREG fa6, __z_arch_esf_t_fa6_OFFSET(sp)
+	RV_OP_LOADFPREG fa7, __z_arch_esf_t_fa7_OFFSET(sp)
+#endif
 
 	/* Release stack space */
 	addi sp, sp, __z_arch_esf_t_SIZEOF

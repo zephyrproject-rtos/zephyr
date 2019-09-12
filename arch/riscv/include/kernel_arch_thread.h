@@ -41,6 +41,21 @@ struct _callee_saved {
 	ulong_t s9;	/* saved register */
 	ulong_t s10;	/* saved register */
 	ulong_t s11;	/* saved register */
+
+#if defined(CONFIG_FLOAT) && defined(CONFIG_FP_SHARING)
+	ulong_t fs0;	/* saved floating register */
+	ulong_t fs1;	/* saved floating register */
+	ulong_t fs2;	/* saved floating register */
+	ulong_t fs3;	/* saved floating register */
+	ulong_t fs4;	/* saved floating register */
+	ulong_t fs5;	/* saved floating register */
+	ulong_t fs6;	/* saved floating register */
+	ulong_t fs7;	/* saved floating register */
+	ulong_t fs8;	/* saved floating register */
+	ulong_t fs9;	/* saved floating register */
+	ulong_t fs10;	/* saved floating register */
+	ulong_t fs11;	/* saved floating register */
+#endif
 };
 typedef struct _callee_saved _callee_saved_t;
 

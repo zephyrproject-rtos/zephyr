@@ -30,11 +30,15 @@
 #ifdef CONFIG_64BIT
 #define RV_OP_LOADREG ld
 #define RV_OP_STOREREG sd
+#define RV_OP_LOADFPREG fld
+#define RV_OP_STOREFPREG fsd
 #define RV_REGSIZE 8
 #define RV_REGSHIFT 3
 #else
 #define RV_OP_LOADREG lw
 #define RV_OP_STOREREG sw
+#define RV_OP_LOADFPREG flw
+#define RV_OP_STOREFPREG fsw
 #define RV_REGSIZE 4
 #define RV_REGSHIFT 2
 #endif
