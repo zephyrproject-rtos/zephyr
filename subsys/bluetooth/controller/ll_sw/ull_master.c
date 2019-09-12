@@ -541,10 +541,10 @@ void ull_master_setup(memq_link_t *link, struct node_rx_hdr *rx,
 	conn_offset_us -= EVENT_OVERHEAD_START_US;
 	conn_offset_us -= ftr->us_radio_rdy;
 
+#if (CONFIG_BT_CTLR_ULL_HIGH_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO)
 	/* disable ticker job, in order to chain stop and start to avoid RTC
 	 * being stopped if no tickers active.
 	 */
-#if (CONFIG_BT_CTLR_ULL_HIGH_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO)
 	mayfly_was_enabled = mayfly_is_enabled(TICKER_USER_ID_ULL_HIGH,
 					       TICKER_USER_ID_ULL_LOW);
 	mayfly_enable(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_ULL_LOW, 0);
