@@ -1,0 +1,98 @@
+# Kconfig - FRDM-K22F board
+#
+# Copyright (c) 2018 Prevas A/S
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if BOARD_FRDM_K22F
+
+config BOARD
+	default "frdm_k22f"
+
+config OSC_XTAL0_FREQ
+	default 8000000
+
+config MCG_PRDIV0
+	default 0x3
+
+config MCG_VDIV0
+	default 0xc
+
+config MCG_FCRDIV
+	default 0
+
+if UART_MCUX
+
+config UART_MCUX_1
+	default y if UART_CONSOLE
+
+endif # UART_MCUX
+
+if PINMUX_MCUX
+
+config PINMUX_MCUX_PORTA
+	default y
+
+config PINMUX_MCUX_PORTB
+	default y
+
+config PINMUX_MCUX_PORTC
+	default y
+
+config PINMUX_MCUX_PORTD
+	default y
+
+config PINMUX_MCUX_PORTE
+	default y if UART_MCUX_1
+
+endif # PINMUX_MCUX
+
+if GPIO_MCUX
+
+config GPIO_MCUX_PORTA
+	default y
+
+config GPIO_MCUX_PORTB
+	default y
+
+config GPIO_MCUX_PORTC
+	default y
+
+config GPIO_MCUX_PORTD
+	default y
+
+config GPIO_MCUX_PORTE
+	default y
+
+endif # GPIO_MCUX
+
+if I2C
+
+config I2C_0
+	default y
+
+endif # I2C
+
+if ADC
+
+config ADC_0
+	default y
+
+endif # ADC
+
+if PWM_MCUX_FTM
+
+config PWM_3
+	default y
+
+endif # PWM_MCUX_FTM
+
+if SPI
+
+config SPI_0
+	default y
+
+endif # SPI
+
+endif # BOARD_FRDM_K22F
