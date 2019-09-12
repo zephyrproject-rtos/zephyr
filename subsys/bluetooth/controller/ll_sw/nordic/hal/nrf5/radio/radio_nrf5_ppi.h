@@ -444,7 +444,7 @@ static inline void hal_radio_sw_switch_disable(void)
 		 BIT(HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI));
 }
 
-#if defined(CONFIG_SOC_NRF52840)
+#if defined(CONFIG_BT_CTLR_PHY_CODED) && defined(CONFIG_SOC_NRF52840)
 /* The 2 adjacent TIMER EVENTS_COMPARE event offsets used for implementing
  * SW_SWITCH_TIMER-based auto-switch for TIFS, when receiving in LE Coded PHY.
  *  'index' must be 0 or 1.
