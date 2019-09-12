@@ -166,6 +166,18 @@ function get_tests_to_run() {
 }
 
 
+function west_setup() {
+	# West handling
+	GIT_DIR=$(basename $PWD)
+	pushd ..
+	if [ ! -d .west ]; then
+		west init -l ${GIT_DIR}
+		west update
+	fi
+	popd
+}
+
+
 while getopts ":p:m:b:r:M:cfslR:" opt; do
 	case $opt in
 		c)
@@ -217,14 +229,7 @@ done
 
 if [ -n "$MAIN_CI" ]; then
 
-	# West handling
-	GIT_DIR=$(basename $PWD)
-        pushd ..
-	if [ ! -d .west ]; then
-		west init -l ${GIT_DIR}
-		west update
-	fi
-        popd
+	west_setup
 
 	if [ -z "$BRANCH" ]; then
 		echo "No base branch given"
