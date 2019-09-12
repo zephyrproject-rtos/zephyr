@@ -86,9 +86,10 @@ done
 if [ -n "$MAIN_CI" ]; then
 
 	# West handling
+	GIT_DIR=$(basename $PWD)
         pushd ..
 	if [ ! -d .west ]; then
-		west init -l zephyr
+		west init -l ${GIT_DIR}
 		west update
 	fi
         popd
