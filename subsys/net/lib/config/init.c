@@ -29,6 +29,7 @@ LOG_MODULE_REGISTER(net_config, CONFIG_NET_CONFIG_LOG_LEVEL);
 #include "bt_settings.h"
 
 extern const struct log_backend *log_backend_net_get(void);
+extern int net_init_clock_via_sntp(void);
 
 static K_SEM_DEFINE(waiter, 0, 1);
 static struct k_sem counter;
@@ -378,6 +379,10 @@ static int init_app(struct device *device)
 			      K_SECONDS(CONFIG_NET_CONFIG_INIT_TIMEOUT));
 	if (ret < 0) {
 		NET_ERR("Network initialization failed (%d)", ret);
+	}
+
+	if (IS_ENABLED(CONFIG_NET_CONFIG_CLOCK_SNTP_INIT)) {
+		net_init_clock_via_sntp();
 	}
 
 	/* This is activated late as it requires the network stack to be up
