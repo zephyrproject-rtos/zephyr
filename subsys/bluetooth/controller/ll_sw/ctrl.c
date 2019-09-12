@@ -1198,6 +1198,17 @@ static inline u32_t isr_rx_adv(u8_t devmatch_ok, u8_t devmatch_id,
 		conn_offset_us -= RADIO_TICKER_JITTER_US << 1;
 		conn_offset_us -= RADIO_TICKER_JITTER_US;
 
+#if (RADIO_TICKER_USER_ID_WORKER_PRIO == RADIO_TICKER_USER_ID_JOB_PRIO)
+		/* disable ticker job, in order to chain stop and start
+		 * to avoid RTC being stopped if no tickers active.
+		 */
+		u32_t mayfly_was_enabled =
+			mayfly_is_enabled(RADIO_TICKER_USER_ID_WORKER,
+					  RADIO_TICKER_USER_ID_JOB);
+		mayfly_enable(RADIO_TICKER_USER_ID_WORKER,
+			      RADIO_TICKER_USER_ID_JOB, 0);
+#endif
+
 		/* Stop Advertiser */
 		ticker_status = ticker_stop(RADIO_TICKER_INSTANCE_ID_RADIO,
 					    RADIO_TICKER_USER_ID_WORKER,
@@ -1230,6 +1241,14 @@ static inline u32_t isr_rx_adv(u8_t devmatch_ok, u8_t devmatch_id,
 		     (void *)__LINE__);
 		LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
 			  (ticker_status == TICKER_STATUS_BUSY));
+
+#if (RADIO_TICKER_USER_ID_WORKER_PRIO == RADIO_TICKER_USER_ID_JOB_PRIO)
+		/* enable ticker job, if disabled in this function */
+		if (mayfly_was_enabled) {
+			mayfly_enable(RADIO_TICKER_USER_ID_WORKER,
+				      RADIO_TICKER_USER_ID_JOB, 1);
+		}
+#endif
 
 		return 0;
 #endif /* CONFIG_BT_PERIPHERAL */
@@ -1666,6 +1685,17 @@ static inline u32_t isr_rx_scan(u8_t devmatch_ok, u8_t devmatch_id,
 		ticks_slot_offset = MAX(conn->hdr.ticks_active_to_start,
 					conn->hdr.ticks_xtal_to_start);
 
+#if (RADIO_TICKER_USER_ID_WORKER_PRIO == RADIO_TICKER_USER_ID_JOB_PRIO)
+		/* disable ticker job, in order to chain stop and start
+		 * to avoid RTC being stopped if no tickers active.
+		 */
+		u32_t mayfly_was_enabled =
+			mayfly_is_enabled(RADIO_TICKER_USER_ID_WORKER,
+					  RADIO_TICKER_USER_ID_JOB);
+		mayfly_enable(RADIO_TICKER_USER_ID_WORKER,
+			      RADIO_TICKER_USER_ID_JOB, 0);
+#endif
+
 		/* Stop Scanner */
 		ticker_status = ticker_stop(RADIO_TICKER_INSTANCE_ID_RADIO,
 					    RADIO_TICKER_USER_ID_WORKER,
@@ -1698,6 +1728,14 @@ static inline u32_t isr_rx_scan(u8_t devmatch_ok, u8_t devmatch_id,
 				     ticker_success_assert, (void *)__LINE__);
 		LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
 			  (ticker_status == TICKER_STATUS_BUSY));
+
+#if (RADIO_TICKER_USER_ID_WORKER_PRIO == RADIO_TICKER_USER_ID_JOB_PRIO)
+		/* enable ticker job, if disabled in this function */
+		if (mayfly_was_enabled) {
+			mayfly_enable(RADIO_TICKER_USER_ID_WORKER,
+				      RADIO_TICKER_USER_ID_JOB, 1);
+		}
+#endif
 
 		return 0;
 #endif /* CONFIG_BT_CENTRAL */
@@ -4853,7 +4891,10 @@ static inline void isr_radio_state_close(void)
 		DEBUG_RADIO_XTAL(0);
 	}
 
+#if defined(CONFIG_BT_TICKER_COMPATIBILITY_MODE) && \
+	(RADIO_TICKER_USER_ID_WORKER_PRIO == RADIO_TICKER_USER_ID_JOB_PRIO)
 	mayfly_enable(RADIO_TICKER_USER_ID_WORKER, RADIO_TICKER_USER_ID_JOB, 1);
+#endif
 
 	DEBUG_RADIO_CLOSE(0);
 }
@@ -4934,7 +4975,8 @@ static void isr(void *param)
 	DEBUG_RADIO_ISR(0);
 }
 
-#if (RADIO_TICKER_USER_ID_WORKER_PRIO == RADIO_TICKER_USER_ID_JOB_PRIO)
+#if defined(CONFIG_BT_TICKER_COMPATIBILITY_MODE) && \
+	(RADIO_TICKER_USER_ID_WORKER_PRIO == RADIO_TICKER_USER_ID_JOB_PRIO)
 static void ticker_job_disable(u32_t status, void *op_context)
 {
 	ARG_UNUSED(status);
@@ -6729,9 +6771,10 @@ static void event_adv(u32_t ticks_at_expire, u32_t remainder,
 	} else
 #endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
 
-	{
+#if defined(CONFIG_BT_TICKER_COMPATIBILITY_MODE) && \
+	(RADIO_TICKER_USER_ID_WORKER_PRIO == RADIO_TICKER_USER_ID_JOB_PRIO)
 	/* Ticker Job Silence */
-#if (RADIO_TICKER_USER_ID_WORKER_PRIO == RADIO_TICKER_USER_ID_JOB_PRIO)
+	{
 		u32_t ticker_status;
 
 		ticker_status =
@@ -6740,8 +6783,8 @@ static void event_adv(u32_t ticks_at_expire, u32_t remainder,
 					ticker_job_disable, NULL);
 		LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
 			  (ticker_status == TICKER_STATUS_BUSY));
-#endif
 	}
+#endif
 
 	DEBUG_RADIO_START_A(0);
 }
@@ -6793,8 +6836,11 @@ static inline void ticker_stop_adv_stop_active(void)
 			  ticker_if_done, (void *)&ret_cb_evt);
 
 	if (ret == TICKER_STATUS_BUSY) {
+#if defined(CONFIG_BT_TICKER_COMPATIBILITY_MODE) && \
+	(RADIO_TICKER_USER_ID_WORKER_PRIO == RADIO_TICKER_USER_ID_JOB_PRIO)
 		mayfly_enable(RADIO_TICKER_USER_ID_JOB,
 			      RADIO_TICKER_USER_ID_JOB, 1);
+#endif
 
 		while (ret_cb_evt == TICKER_STATUS_BUSY) {
 			ticker_job_sched(RADIO_TICKER_INSTANCE_ID_RADIO,
@@ -6821,8 +6867,11 @@ static inline void ticker_stop_adv_stop_active(void)
 				  ticker_if_done, (void *)&ret_cb_m0);
 
 		if (ret == TICKER_STATUS_BUSY) {
+#if defined(CONFIG_BT_TICKER_COMPATIBILITY_MODE) && \
+	(RADIO_TICKER_USER_ID_WORKER_PRIO == RADIO_TICKER_USER_ID_JOB_PRIO)
 			mayfly_enable(RADIO_TICKER_USER_ID_JOB,
 				      RADIO_TICKER_USER_ID_JOB, 1);
+#endif
 
 			while (ret_cb_m0 == TICKER_STATUS_BUSY) {
 				ticker_job_sched(RADIO_TICKER_INSTANCE_ID_RADIO,
@@ -7158,8 +7207,9 @@ static void event_scan(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 		LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
 			  (ret == TICKER_STATUS_BUSY));
 
+#if defined(CONFIG_BT_TICKER_COMPATIBILITY_MODE) && \
+	(RADIO_TICKER_USER_ID_WORKER_PRIO == RADIO_TICKER_USER_ID_JOB_PRIO)
 		/* Ticker Job Silence */
-#if (RADIO_TICKER_USER_ID_WORKER_PRIO == RADIO_TICKER_USER_ID_JOB_PRIO)
 		ret = ticker_job_idle_get(RADIO_TICKER_INSTANCE_ID_RADIO,
 					  RADIO_TICKER_USER_ID_WORKER,
 					  ticker_job_disable, NULL);
@@ -7308,7 +7358,6 @@ static inline u32_t event_conn_upd_prep(struct connection *conn,
 	} else if (instant_latency <= 0x7FFF) {
 		struct radio_le_conn_update_cmplt *radio_le_conn_update_cmplt;
 		struct radio_pdu_node_rx *node_rx;
-		u32_t mayfly_was_enabled;
 		u16_t conn_interval_old;
 		u16_t conn_interval_new;
 		u32_t ticks_slot_offset;
@@ -7474,14 +7523,16 @@ static inline u32_t event_conn_upd_prep(struct connection *conn,
 			conn->supervision_expire = 0U;
 		}
 
+#if (RADIO_TICKER_USER_ID_WORKER_PRIO == RADIO_TICKER_USER_ID_JOB_PRIO)
 		/* disable ticker job, in order to chain stop and start
 		 * to avoid RTC being stopped if no tickers active.
 		 */
-		mayfly_was_enabled =
+		u32_t mayfly_was_enabled =
 			mayfly_is_enabled(RADIO_TICKER_USER_ID_WORKER,
 					  RADIO_TICKER_USER_ID_JOB);
 		mayfly_enable(RADIO_TICKER_USER_ID_WORKER,
 			      RADIO_TICKER_USER_ID_JOB, 0);
+#endif
 
 		/* start slave/master with new timings */
 		ticker_id = RADIO_TICKER_ID_FIRST_CONNECTION + conn->handle;
@@ -7513,11 +7564,13 @@ static inline u32_t event_conn_upd_prep(struct connection *conn,
 		LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
 			  (ticker_status == TICKER_STATUS_BUSY));
 
+#if (RADIO_TICKER_USER_ID_WORKER_PRIO == RADIO_TICKER_USER_ID_JOB_PRIO)
 		/* enable ticker job, if disabled in this function */
 		if (mayfly_was_enabled) {
 			mayfly_enable(RADIO_TICKER_USER_ID_WORKER,
 				      RADIO_TICKER_USER_ID_JOB, 1);
 		}
+#endif
 
 		return 0;
 	}
@@ -9146,9 +9199,10 @@ static void event_slave(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 	} else
 #endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
 
-	{
+#if defined(CONFIG_BT_TICKER_COMPATIBILITY_MODE) && \
+	(RADIO_TICKER_USER_ID_WORKER_PRIO == RADIO_TICKER_USER_ID_JOB_PRIO)
 	/* Ticker Job Silence */
-#if (RADIO_TICKER_USER_ID_WORKER_PRIO == RADIO_TICKER_USER_ID_JOB_PRIO)
+	{
 		u32_t ticker_status;
 
 		ticker_status =
@@ -9157,8 +9211,8 @@ static void event_slave(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 					    ticker_job_disable, NULL);
 		LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
 			  (ticker_status == TICKER_STATUS_BUSY));
-#endif
 	}
+#endif
 
 	/* Route the tx packet to respective connections */
 	packet_tx_enqueue(2);
@@ -9357,9 +9411,10 @@ static void event_master(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 	} else
 #endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
 
-	{
+#if defined(CONFIG_BT_TICKER_COMPATIBILITY_MODE) && \
+	(RADIO_TICKER_USER_ID_WORKER_PRIO == RADIO_TICKER_USER_ID_JOB_PRIO)
 	/* Ticker Job Silence */
-#if (RADIO_TICKER_USER_ID_WORKER_PRIO == RADIO_TICKER_USER_ID_JOB_PRIO)
+	{
 		u32_t ticker_status;
 
 		ticker_status =
@@ -9368,8 +9423,8 @@ static void event_master(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 					    ticker_job_disable, NULL);
 		LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
 			  (ticker_status == TICKER_STATUS_BUSY));
-#endif
 	}
+#endif
 
 	DEBUG_RADIO_START_M(0);
 }
@@ -10108,10 +10163,13 @@ static void connection_release(struct connection *conn)
 {
 	u32_t ticker_status;
 
+#if defined(CONFIG_BT_TICKER_COMPATIBILITY_MODE) && \
+	(RADIO_TICKER_USER_ID_WORKER_PRIO == RADIO_TICKER_USER_ID_JOB_PRIO)
 	/* Enable Ticker Job, we are in a radio event which disabled it if
 	 * worker0 and job0 priority where same.
 	 */
 	mayfly_enable(RADIO_TICKER_USER_ID_WORKER, RADIO_TICKER_USER_ID_JOB, 1);
+#endif
 
 	/** @todo correctly stop tickers ensuring crystal and radio active are
 	 * placed in right states
@@ -10923,8 +10981,11 @@ static inline void role_active_disable(u8_t ticker_id_stop,
 			  ticker_if_done, (void *)&ret_cb_evt);
 
 	if (ret == TICKER_STATUS_BUSY) {
+#if defined(CONFIG_BT_TICKER_COMPATIBILITY_MODE) && \
+	(RADIO_TICKER_USER_ID_WORKER_PRIO == RADIO_TICKER_USER_ID_JOB_PRIO)
 		mayfly_enable(RADIO_TICKER_USER_ID_APP,
 			      RADIO_TICKER_USER_ID_JOB, 1);
+#endif
 
 		LL_ASSERT(ret_cb_evt != TICKER_STATUS_BUSY);
 	}
@@ -10948,8 +11009,11 @@ static inline void role_active_disable(u8_t ticker_id_stop,
 				  ticker_if_done, (void *)&ret_cb_m0);
 
 		if (ret == TICKER_STATUS_BUSY) {
+#if defined(CONFIG_BT_TICKER_COMPATIBILITY_MODE) && \
+	(RADIO_TICKER_USER_ID_WORKER_PRIO == RADIO_TICKER_USER_ID_JOB_PRIO)
 			mayfly_enable(RADIO_TICKER_USER_ID_APP,
 				      RADIO_TICKER_USER_ID_JOB, 1);
+#endif
 
 			LL_ASSERT(ret_cb_m0 != TICKER_STATUS_BUSY);
 		}
@@ -11042,8 +11106,11 @@ static inline void role_active_disable(u8_t ticker_id_stop,
 					  (void *)&ret_cb_stop);
 
 			if (ret == TICKER_STATUS_BUSY) {
+#if defined(CONFIG_BT_TICKER_COMPATIBILITY_MODE) && \
+	(RADIO_TICKER_USER_ID_WORKER_PRIO == RADIO_TICKER_USER_ID_JOB_PRIO)
 				mayfly_enable(RADIO_TICKER_USER_ID_APP,
 					      RADIO_TICKER_USER_ID_JOB, 1);
+#endif
 
 				LL_ASSERT(ret_cb_stop != TICKER_STATUS_BUSY);
 			}
@@ -11161,11 +11228,14 @@ static u8_t role_disable(u8_t ticker_id_primary, u8_t ticker_id_stop)
 			  ticker_if_done, (void *)&ret_cb);
 
 	if (ret == TICKER_STATUS_BUSY) {
+#if defined(CONFIG_BT_TICKER_COMPATIBILITY_MODE) && \
+	(RADIO_TICKER_USER_ID_WORKER_PRIO == RADIO_TICKER_USER_ID_JOB_PRIO)
 		/* if inside our event, enable Job. */
 		if (_radio.ticker_id_event == ticker_id_primary) {
 			mayfly_enable(RADIO_TICKER_USER_ID_APP,
 				      RADIO_TICKER_USER_ID_JOB, 1);
 		}
+#endif
 
 		/* wait for ticker to be stopped */
 		while (ret_cb == TICKER_STATUS_BUSY) {
