@@ -1535,11 +1535,6 @@ static void conn_cleanup(struct ll_conn *conn, u8_t reason)
 	/* flush demux-ed Tx buffer still in ULL context */
 	tx_ull_flush(conn);
 
-	/* Enable Ticker Job, we are in a radio event which disabled it if
-	 * worker0 and job0 priority where same.
-	 */
-	mayfly_enable(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_ULL_LOW, 1);
-
 	/* Stop Master or Slave role ticker */
 	ticker_status = ticker_stop(TICKER_INSTANCE_ID_CTLR,
 				    TICKER_USER_ID_ULL_HIGH,
@@ -2097,6 +2092,7 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, u16_t lazy,
 			conn->supervision_expire = 0U;
 		}
 
+#if (CONFIG_BT_CTLR_ULL_HIGH_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO)
 		/* disable ticker job, in order to chain stop and start
 		 * to avoid RTC being stopped if no tickers active.
 		 */
@@ -2104,6 +2100,7 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, u16_t lazy,
 						       TICKER_USER_ID_ULL_LOW);
 		mayfly_enable(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_ULL_LOW,
 			      0);
+#endif
 
 		/* start slave/master with new timings */
 		ticker_id_conn = TICKER_ID_CONN_BASE + ll_conn_handle_get(conn);
@@ -2140,11 +2137,13 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, u16_t lazy,
 		LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
 			  (ticker_status == TICKER_STATUS_BUSY));
 
+#if (CONFIG_BT_CTLR_ULL_HIGH_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO)
 		/* enable ticker job, if disabled in this function */
 		if (mayfly_was_enabled) {
 			mayfly_enable(TICKER_USER_ID_ULL_HIGH,
 				      TICKER_USER_ID_ULL_LOW, 1);
 		}
+#endif
 
 		return 0;
 	}
