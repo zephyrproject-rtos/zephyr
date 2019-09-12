@@ -265,6 +265,7 @@ int lll_done(void *param)
 		}
 
 		if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT) &&
+		    IS_ENABLED(CONFIG_BT_TICKER_COMPATIBILITY_MODE) &&
 		    (CONFIG_BT_CTLR_LLL_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO)) {
 			mayfly_enable(TICKER_USER_ID_LLL,
 				      TICKER_USER_ID_ULL_LOW,
@@ -606,7 +607,8 @@ static void preempt(void *param)
 }
 #else /* CONFIG_BT_CTLR_LOW_LAT */
 
-#if (CONFIG_BT_CTLR_LLL_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO)
+#if defined(CONFIG_BT_TICKER_COMPATIBILITY_MODE) && \
+	(CONFIG_BT_CTLR_LLL_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO)
 static void ticker_op_job_disable(u32_t status, void *op_context)
 {
 	ARG_UNUSED(status);
