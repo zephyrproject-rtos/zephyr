@@ -675,19 +675,6 @@ static void tcp_out(struct tcp *conn, u8_t flags, ...)
 	tcp_send_process(&conn->send_timer);
 }
 
-static void conn_cb(struct tcp *conn, u8_t state)
-{
-	struct net_context *context = conn->context;
-
-	tcp_dbg("%s", tcp_state_to_str(state, false));
-
-	if (TCP_SYN_RECEIVED == state && conn->accept_cb) {
-		memcpy(&context->remote, conn->dst, sizeof(struct sockaddr));
-		conn->accept_cb(context, &context->remote,
-				sizeof(struct sockaddr), 0, context->user_data);
-	}
-}
-
 static struct tcp *tcp_conn_new(struct net_pkt *pkt);
 
 enum net_verdict tcp_pkt_received(struct net_conn *net_conn,
@@ -696,19 +683,33 @@ enum net_verdict tcp_pkt_received(struct net_conn *net_conn,
 				  union net_proto_header *proto_hdr,
 				  void *user_data)
 {
+	struct tcp *conn = ((struct net_context *)user_data)->tcp;
+
 	ARG_UNUSED(net_conn);
 	ARG_UNUSED(ip_hdr);
 	ARG_UNUSED(proto_hdr);
 
-	struct tcp *conn = ((struct net_context *)user_data)->tcp;
-
 	tcp_dbg("conn: %p, %s", conn, tcp_th(pkt));
 
 	if (conn && TCP_LISTEN == conn->state) {
+		struct tcp *conn_old = conn;
+
 		conn = tcp_conn_new(pkt);
+
+		conn->context->iface = conn_old->context->iface;
+		conn->context->user_data = conn_old->context->user_data;
+
+		conn_old->context->remote = conn->dst->sa;
+
+		conn_old->accept_cb(conn_old->context,
+					&conn_old->context->remote,
+					sizeof(struct sockaddr), 0,
+					conn_old->context->user_data);
 	}
 
-	tcp_in(conn, pkt);
+	if (conn) {
+		tcp_in(conn, pkt);
+	}
 
 	return NET_DROP;
 }
@@ -1180,6 +1181,8 @@ int net_tcp_accept(struct net_context *context, net_tcp_accept_cb_t cb,
 int net_tcp_recv(struct net_context *context, net_context_recv_cb_t cb,
 		 void *user_data)
 {
+	tcp_dbg("");
+
 	context->recv_cb = cb;
 	context->tcp->recv_user_data = user_data;
 

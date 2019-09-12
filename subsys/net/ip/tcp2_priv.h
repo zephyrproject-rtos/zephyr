@@ -119,7 +119,6 @@ static struct net_pkt *tcp_pkt_alloc(size_t len)
 
 #define conn_state(_conn, _s)						\
 ({									\
-	conn_cb((_conn), (_s));						\
 	tcp_dbg("%s->%s",						\
 		tcp_state_to_str((_conn)->state, false),		\
 		tcp_state_to_str((_s), false));				\
