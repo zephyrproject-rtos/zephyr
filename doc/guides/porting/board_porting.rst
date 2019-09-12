@@ -121,6 +121,8 @@ A board implements an SoC with all its features, together with peripherals
 available on the board that differentiates the board with additional interfaces
 and features not available in the SoC.
 
+.. _default_board_configuration:
+
 Default board configuration
 ***************************
 
