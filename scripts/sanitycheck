@@ -199,6 +199,11 @@ from functools import cmp_to_key
 from pathlib import Path
 from distutils.spawn import find_executable
 
+ZEPHYR_BASE = os.environ.get("ZEPHYR_BASE")
+sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/dts"))
+
+import edtlib
+
 import logging
 from sanity_chk import scl
 from sanity_chk import expr_parser
@@ -2146,6 +2151,7 @@ class TestSuite:
         mg = MakeGenerator(self.outdir)
         defconfig_list = {}
         dt_list = {}
+        dts_list = {}
         cmake_list = {}
         tc_file_list = {}
         for tc_name, tc in self.testcases.items():
@@ -2226,8 +2232,10 @@ class TestSuite:
                         cmake_cache_path = os.path.join(o, "CMakeCache.txt")
                         generated_dt_confg = "include/generated/generated_dts_board.conf"
                         dt_config_path = os.path.join(o, "zephyr", generated_dt_confg)
+                        dts_path = os.path.join(o, "zephyr", plat.name + ".dts.pre.tmp")
                         defconfig_path = os.path.join(o, "zephyr", ".config")
                         dt_list[tc, plat, tc.name.split("/")[-1]] = dt_config_path
+                        dts_list[tc, plat, tc.name.split("/")[-1]] = dts_path
                         cmake_list[tc, plat, tc.name.split("/")[-1]] = cmake_cache_path
                         defconfig_list[tc, plat, tc.name.split("/")[-1]] = defconfig_path
                         goal = "_".join([plat.name, "_".join(tc.name.split("/")), "config-sanitycheck"])
@@ -2405,7 +2413,9 @@ class TestSuite:
 
                     if tc.tc_filter:
                         try:
-                            res = expr_parser.parse(tc.tc_filter, defconfig)
+                            dts_path = dts_list[tc, plat, tc.name.split("/")[-1]]
+                            edt = edtlib.EDT(dts_path, [os.path.join(ZEPHYR_BASE, "dts/bindings")])
+                            res = expr_parser.parse(tc.tc_filter, defconfig, edt)
                         except (ValueError, SyntaxError) as se:
                             sys.stderr.write(
                                 "Failed processing %s\n" % tc.yamlfile)

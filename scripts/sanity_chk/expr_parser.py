@@ -10,6 +10,11 @@ import copy
 import threading
 import re
 
+ZEPHYR_BASE = os.environ.get("ZEPHYR_BASE")
+sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/dts"))
+
+import edtlib
+
 try:
     import ply.lex as lex
     import ply.yacc as yacc
@@ -196,13 +201,13 @@ def ast_sym_int(ast, env):
             return int(v, 10)
     return 0
 
-def ast_expr(ast, env):
+def ast_expr(ast, env, edt):
     if ast[0] == "not":
-        return not ast_expr(ast[1], env)
+        return not ast_expr(ast[1], env, edt)
     elif ast[0] == "or":
-        return ast_expr(ast[1], env) or ast_expr(ast[2], env)
+        return ast_expr(ast[1], env, edt) or ast_expr(ast[2], env, edt)
     elif ast[0] == "and":
-        return ast_expr(ast[1], env) and ast_expr(ast[2], env)
+        return ast_expr(ast[1], env, edt) and ast_expr(ast[2], env, edt)
     elif ast[0] == "==":
         return ast_sym(ast[1], env) == ast[2]
     elif ast[0] == "!=":
@@ -221,10 +226,17 @@ def ast_expr(ast, env):
         return bool(ast_sym(ast[1], env))
     elif ast[0] == ":":
         return bool(re.match(ast[2], ast_sym(ast[1], env)))
+    elif ast[0] == "dt_compat_enabled":
+        compat = ast[1][0]
+        print("DT_COMPAT_ENABLED: %s" % compat)
+        for dev in edt.devices:
+            if compat in dev.compats and dev.enabled:
+                return True
+        return False
 
 mutex = threading.Lock()
 
-def parse(expr_text, env):
+def parse(expr_text, env, edt):
     """Given a text representation of an expression in our language,
     use the provided environment to determine whether the expression
     is true or false"""
@@ -236,7 +248,7 @@ def parse(expr_text, env):
     finally:
         mutex.release()
 
-    return ast_expr(ast, env)
+    return ast_expr(ast, env, edt)
 
 # Just some test code
 if __name__ == "__main__":
