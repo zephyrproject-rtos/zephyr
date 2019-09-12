@@ -653,15 +653,23 @@ def out(ident, val, aliases=()):
 
     print("#define DT_{:40} {}".format(ident, val), file=header_file)
     primary_ident = "DT_{}".format(ident)
-    print("{}={}".format(primary_ident, val), file=conf_file)
+
+    # Exclude things that aren't single token values from .conf.  At
+    # the moment the only such items are unquoted string
+    # representations of initializer lists, which begin with a curly
+    # brace.
+    output_to_conf = not (isinstance(val, str) and val.startswith("{"))
+    if output_to_conf:
+        print("{}={}".format(primary_ident, val), file=conf_file)
 
     for alias in aliases:
         if alias != ident:
             print("#define DT_{:40} DT_{}".format(alias, ident),
                   file=header_file)
-            # For the configuration file, the value is just repeated for all
-            # the aliases
-            print("DT_{}={}".format(alias, val), file=conf_file)
+            if output_to_conf:
+                # For the configuration file, the value is just repeated for all
+                # the aliases
+                print("DT_{}={}".format(alias, val), file=conf_file)
 
     return primary_ident
 
