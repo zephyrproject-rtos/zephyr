@@ -16,6 +16,6 @@ config CAN_MAX_FILTER
 	int "Maximum number of concurrent active RX filters"
 	depends on CAN_MCUX_FLEXCAN
 	default 5
-	range 1 15 if SOC_SERIES_KINETIS_KE1XF
+	range 1 15 if SOC_SERIES_KINETIS_KE1XF || SOC_SERIES_KINETIS_K6X
 	help
 	  Defines maximum number of concurrent active RX filters
