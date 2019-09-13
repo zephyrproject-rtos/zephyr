@@ -2703,8 +2703,12 @@ class TestSuite:
 
     def add_tasks_to_queue(self):
         for instance in self.instances.values():
-            if instance.status != 'passed':
-                pipeline.put({"op": "cmake", "test": instance})
+            if options.test_only:
+                if instance.run:
+                    pipeline.put({"op": "run", "test": instance, "status": "built"})
+            else:
+                if instance.status != 'passed':
+                    pipeline.put({"op": "cmake", "test": instance})
 
         return "DONE FEEDING"
 
@@ -3603,7 +3607,7 @@ def main():
             return
 
     # Cleanup
-    if os.path.exists(options.outdir) and not options.no_clean and not options.only_failed:
+    if os.path.exists(options.outdir) and not options.no_clean and not options.only_failed and not options.test_only:
         info("Cleaning output directory " + options.outdir)
         shutil.move(options.outdir, "%s.old" %(options.outdir))
         shutil.rmtree("%s.old" %options.outdir)
@@ -3673,6 +3677,9 @@ def main():
         suite.get_last_failed()
     elif options.load_tests:
         suite.load_from_file(options.load_tests)
+    elif options.test_only:
+        last_run = os.path.join(options.outdir, "sanitycheck.csv")
+        suite.load_from_file(last_run)
     else:
         discards = suite.apply_filters()
 
