@@ -12,8 +12,11 @@ and a counter at the bottom which increments every second.
 Requirements
 ************
 
-- `nRF52840 Preview development kit`_
-- `Adafruit 2.2 inch TFT Display`_
+Display shield and a board which provides a configuration
+for Arduino connectors, for example:
+
+- :ref:`adafruit_2_8_tft_touch_v2` and :ref:`nrf52840_pca10056`
+- :ref:`ssd1306_128x64_shield` and :ref:`frdm_k64f`
 
 or a simulated display environment in a native Posix application:
 
@@ -30,49 +33,23 @@ or
 - :ref:`mimxrt1060_evk`
 - `RK043FN02H-CT`_
 
-Wiring
-******
-
-The nrf52840 Preview development kit should be connected as follows to the
-Adafruit TFT display.
-
-+-------------+----------------+
-| | nrf52840  | | Adafruit TFT |
-| | Pin       | | Pin          |
-+=============+================+
-| P1.15       | SCK            |
-+-------------+----------------+
-| P0.31       | D/C            |
-+-------------+----------------+
-| P0.30       | RST            |
-+-------------+----------------+
-| P1.13       | MOSI           |
-+-------------+----------------+
-| P1.14       | MISO           |
-+-------------+----------------+
-| P0.4        | CS             |
-+-------------+----------------+
-
 Building and Running
 ********************
 
-Build this sample using the following commands:
+Example building for :ref:`nrf52840_pca10056`:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/gui/lvgl
    :board: nrf52840_pca10056
-   :goals: build
-   :compact:
+   :shield: adafruit_2_8_tft_touch_v2
+   :goals: build flash
 
-See :ref:`nrf52840_pca10056` on how to flash the build.
-
-or
+Example building for :ref:`native_posix`:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/gui/lvgl
    :board: native_posix
-   :goals: build
-   :compact:
+   :goals: build flash
 
 References
 **********
@@ -80,7 +57,5 @@ References
 .. target-notes::
 
 .. _LittlevGL Web Page: https://littlevgl.com/
-.. _Adafruit 2.2 inch TFT Display: https://www.adafruit.com/product/1480
-.. _nRF52840 Preview development kit: http://www.nordicsemi.com/eng/Products/nRF52840-Preview-DK
 .. _SDL2: https://www.libsdl.org
 .. _RK043FN02H-CT: https://www.nxp.com/products/processors-and-microcontrollers/arm-based-processors-and-mcus/i.mx-applications-processors/i.mx-rt-series/4.3-lcd-panel:RK043FN02H-CT
