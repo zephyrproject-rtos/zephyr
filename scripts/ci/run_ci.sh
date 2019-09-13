@@ -20,7 +20,7 @@
 
 set -xe
 
-SANITYCHECK_OPTIONS=" --inline-logs -N"
+SANITYCHECK_OPTIONS=" --inline-logs -N -j12 -b"
 SANITYCHECK_OPTIONS_RETRY="${SANITYCHECK_OPTIONS} --only-failed --outdir=out-2nd-pass"
 SANITYCHECK_OPTIONS_RETRY_2="${SANITYCHECK_OPTIONS} --only-failed --outdir=out-3nd-pass"
 export BSIM_OUT_PATH="${BSIM_OUT_PATH:-/opt/bsim/}"
