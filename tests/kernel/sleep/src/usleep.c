@@ -26,6 +26,14 @@
 
 #if defined(CONFIG_NRF_RTC_TIMER) && (CONFIG_SYS_CLOCK_TICKS_PER_SEC > 16384)
 #define MAXIMUM_SHORTEST_TICKS 3
+/*
+ * Similar situation for TI CC13X2/CC26X2 RTC due to the limitation
+ * that a value too close to the current time cannot be loaded to
+ * its comparator.
+ */
+#elif defined(CONFIG_CC13X2_CC26X2_RTC_TIMER) && \
+	(CONFIG_SYS_CLOCK_TICKS_PER_SEC > 16384)
+#define MAXIMUM_SHORTEST_TICKS 3
 #else
 #define MAXIMUM_SHORTEST_TICKS 1
 #endif
