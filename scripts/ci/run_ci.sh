@@ -20,9 +20,7 @@
 
 set -xe
 
-SANITYCHECK_OPTIONS=" --inline-logs -N"
-SANITYCHECK_OPTIONS_RETRY="${SANITYCHECK_OPTIONS} --only-failed --outdir=out-2nd-pass"
-SANITYCHECK_OPTIONS_RETRY_2="${SANITYCHECK_OPTIONS} --only-failed --outdir=out-3nd-pass"
+SANITYCHECK_OPTIONS=" --inline-logs -N --timestamps"
 export BSIM_OUT_PATH="${BSIM_OUT_PATH:-/opt/bsim/}"
 if [ ! -d "${BSIM_OUT_PATH}" ]; then
         unset BSIM_OUT_PATH
@@ -94,14 +92,9 @@ function on_complete() {
 	mkdir -p shippable/testresults
 	mkdir -p shippable/codecoverage
 
-	if [ -e compliance.xml ]; then
-		echo "Copy compliance.xml"
-		cp compliance.xml shippable/testresults/;
-	fi;
-
-	if [ -e ./scripts/sanity_chk/last_sanity.xml ]; then
-		echo "Copy ./scripts/sanity_chk/last_sanity.xml"
-		cp ./scripts/sanity_chk/last_sanity.xml shippable/testresults/;
+	if [ -e ./sanity-out/sanitycheck.xml ]; then
+		echo "Copy ./sanity-out/sanitycheck.xml"
+		cp ./sanity-out/sanitycheck.xml shippable/testresults/;
 	fi;
 
 	if [ -e ${BSIM_BT_TEST_RESULTS_FILE} ]; then
@@ -156,11 +149,13 @@ function get_tests_to_run() {
 	./scripts/ci/get_modified_tests.py --commits ${COMMIT_RANGE} > modified_tests.args;
 	./scripts/ci/get_modified_boards.py --commits ${COMMIT_RANGE} > modified_boards.args;
 
+	rm -f test_file.txt
+	touch test_file_1.txt test_file_2.txt
 	if [ -s modified_boards.args ]; then
-		${SANITYCHECK} ${SANITYCHECK_OPTIONS} +modified_boards.args --save-tests test_file.txt || exit 1;
+		${SANITYCHECK} ${SANITYCHECK_OPTIONS} +modified_boards.args --save-tests test_file_1.txt || exit 1;
 	fi
 	if [ -s modified_tests.args ]; then
-		${SANITYCHECK} ${SANITYCHECK_OPTIONS} +modified_tests.args --save-tests test_file.txt || exit 1;
+		${SANITYCHECK} ${SANITYCHECK_OPTIONS} +modified_tests.args --save-tests test_file_2.txt || exit 1;
 	fi
 	rm -f modified_tests.args modified_boards.args;
 }
@@ -289,17 +284,15 @@ if [ -n "$MAIN_CI" ]; then
 	fi
 
 	# Save list of tests to be run
-	${SANITYCHECK} ${SANITYCHECK_OPTIONS} --save-tests test_file.txt || exit 1
+	${SANITYCHECK} ${SANITYCHECK_OPTIONS} --save-tests test_file_3.txt || exit 1
+	cat test_file_1.txt test_file_2.txt test_file_3.txt > test_file.txt
 
 	# Run a subset of tests based on matrix size
 	${SANITYCHECK} ${SANITYCHECK_OPTIONS} --load-tests test_file.txt \
-		--subset ${MATRIX}/${MATRIX_BUILDS} || \
-		( sleep 30; ${SANITYCHECK} ${SANITYCHECK_OPTIONS_RETRY} ) || \
-		( sleep 90; ${SANITYCHECK} ${SANITYCHECK_OPTIONS_RETRY_2}; )
-		# sleep 10 to let the host settle down
+		--subset ${MATRIX}/${MATRIX_BUILDS} --retry-failed 3
 
 	# cleanup
-	rm -f test_file.txt
+	rm -f test_file*
 
 elif [ -n "$FAILURE" ]; then
 	on_complete failure
