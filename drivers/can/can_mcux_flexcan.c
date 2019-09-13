@@ -88,6 +88,39 @@ struct mcux_flexcan_data {
 	struct mcux_flexcan_tx_callback tx_cbs[MCUX_FLEXCAN_MAX_TX];
 };
 
+#if (!defined(FSL_FEATURE_FLEXCAN_HAS_ERRATA_9595) || \
+	!FSL_FEATURE_FLEXCAN_HAS_ERRATA_9595)
+static void mcux_flexcan_freeze(struct device *dev)
+{
+	const struct mcux_flexcan_config *config = dev->config->config_info;
+
+	/*
+	 * Simple freeze implementation without support for
+	 * FSL_FEATURE_FLEXCAN_HAS_ERRATA_9595.
+	 *
+	 * This can be removed once the MCUX FlexCAN driver supports
+	 * setting the MCR->LOM and CTRL1->SRXDIS bits or exposes its
+	 * internal freeze/unfreeze functions through the API.
+	 */
+	config->base->MCR |= CAN_MCR_FRZ_MASK;
+	config->base->MCR |= CAN_MCR_HALT_MASK;
+
+	while ((config->base->MCR & CAN_MCR_FRZACK_MASK) == 0U)	{
+	}
+}
+
+static void mcux_flexcan_thaw(struct device *dev)
+{
+	const struct mcux_flexcan_config *config = dev->config->config_info;
+
+	config->base->MCR &= ~CAN_MCR_HALT_MASK;
+	config->base->MCR &= ~CAN_MCR_FRZ_MASK;
+
+	while ((config->base->MCR & CAN_MCR_FRZACK_MASK) != 0U)	{
+	}
+}
+#endif
+
 static int mcux_flexcan_configure(struct device *dev, enum can_mode mode,
 				  u32_t bitrate)
 {
@@ -96,10 +129,12 @@ static int mcux_flexcan_configure(struct device *dev, enum can_mode mode,
 	struct device *clock_dev;
 	u32_t clock_freq;
 
-	/* TODO: support silent mode */
+#if (defined(FSL_FEATURE_FLEXCAN_HAS_ERRATA_9595) && \
+	FSL_FEATURE_FLEXCAN_HAS_ERRATA_9595)
 	if (mode == CAN_SILENT_MODE || mode == CAN_SILENT_LOOPBACK_MODE) {
 		return -ENOTSUP;
 	}
+#endif
 
 	clock_dev = device_get_binding(config->clock_name);
 	if (clock_dev == NULL) {
@@ -123,6 +158,17 @@ static int mcux_flexcan_configure(struct device *dev, enum can_mode mode,
 	flexcan_config.timingConfig.phaseSeg2 = config->phase_seg2;
 
 	FLEXCAN_Init(config->base, &flexcan_config, clock_freq);
+
+#if (!defined(FSL_FEATURE_FLEXCAN_HAS_ERRATA_9595) || \
+	!FSL_FEATURE_FLEXCAN_HAS_ERRATA_9595)
+	mcux_flexcan_freeze(dev);
+	if (mode == CAN_SILENT_MODE || mode == CAN_SILENT_LOOPBACK_MODE) {
+		config->base->CTRL1 |= CAN_CTRL1_LOM(1);
+	}
+	/* Disable self reception */
+	config->base->MCR |= CAN_MCR_SRXDIS(1);
+	mcux_flexcan_thaw(dev);
+#endif
 
 	return 0;
 }
