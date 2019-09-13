@@ -149,8 +149,7 @@ def wrapper_defs(func_name, func_type, args):
     mrsh_args = [] # List of rvalue expressions for the marshalled invocation
     split_args = []
     nsplit = 0
-    for i, argrec in enumerate(args):
-        (argtype, argname) = argrec
+    for argtype, argname in args:
         if need_split(argtype):
             split_args.append((argtype, argname))
             mrsh_args.append("parm%d.split.lo" % nsplit)
@@ -192,7 +191,7 @@ def wrapper_defs(func_name, func_type, args):
         wrap += "\t\t" + "return (%s)ret64;\n" % func_type
     elif func_type == "void":
         wrap += "\t\t" + "%s;\n" % invoke
-        wrap += "\t\t" + "return;\n";
+        wrap += "\t\t" + "return;\n"
     else:
         wrap += "\t\t" + "return (%s) %s;\n" % (func_type, invoke)
 
@@ -227,8 +226,7 @@ def marshall_defs(func_name, func_type, args):
     nmrsh = 0        # number of marshalled u32_t parameter
     vrfy_parms = []  # list of (arg_num, mrsh_or_parm_num, bool_is_split)
     split_parms = [] # list of a (arg_num, mrsh_num) for each split
-    for i, argrec in enumerate(args):
-        (argtype, argname) = argrec
+    for i, (argtype, _) in enumerate(args):
         if need_split(argtype):
             vrfy_parms.append((i, len(split_parms), True))
             split_parms.append((i, nmrsh))
@@ -246,11 +244,11 @@ def marshall_defs(func_name, func_type, args):
 
     mrsh += "u32_t %s(u32_t arg0, u32_t arg1, u32_t arg2,\n" % mrsh_name
     if nmrsh <= 6:
-        mrsh += "\t\t" + "u32_t arg3, u32_t arg4, u32_t arg5, void *ssf)\n";
+        mrsh += "\t\t" + "u32_t arg3, u32_t arg4, u32_t arg5, void *ssf)\n"
     else:
-        mrsh += "\t\t" + "u32_t arg3, u32_t arg4, void *more, void *ssf)\n";
+        mrsh += "\t\t" + "u32_t arg3, u32_t arg4, void *more, void *ssf)\n"
     mrsh += "{\n"
-    mrsh += "\t" + "_current_cpu->syscall_frame = ssf;\n";
+    mrsh += "\t" + "_current_cpu->syscall_frame = ssf;\n"
 
     for unused_arg in range(nmrsh, 6):
         mrsh += "\t(void) arg%d;\t/* unused */\n" % unused_arg
@@ -261,8 +259,8 @@ def marshall_defs(func_name, func_type, args):
 
     for i, split_rec in enumerate(split_parms):
         arg_num, mrsh_num = split_rec
-        arg_type = args[arg_num][0];
-        mrsh += "\t%s parm%d;\n" % (union_decl(arg_type), i);
+        arg_type = args[arg_num][0]
+        mrsh += "\t%s parm%d;\n" % (union_decl(arg_type), i)
         mrsh += "\t" + "parm%d.split.lo = %s;\n" % (i, mrsh_rval(mrsh_num,
                                                                  nmrsh))
         mrsh += "\t" + "parm%d.split.hi = %s;\n" % (i, mrsh_rval(mrsh_num + 1,
@@ -341,7 +339,7 @@ def parse_args():
 def main():
     parse_args()
 
-    if args.split_type != None:
+    if args.split_type is not None:
         for t in args.split_type:
             types64.append(t)
 
