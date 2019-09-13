@@ -67,10 +67,10 @@ struct __esf {
 	ulong_t mstatus;	/* machine status register */
 
 #if defined(CONFIG_FLOAT) && defined(CONFIG_FP_SHARING)
-	/* 
-	 * Only riscv need the width of fp registers at now, 
+	/*
+	 * Only riscv need the width of fp registers at now,
 	 * and these appears only once, so we don't need a new
-	 * datatype like ulong_t. 
+	 * datatype like ulong_t.
 	 */
 #if defined(CONFIG_FLOAT_64BIT)
 	u64_t ft0;		/* Caller-saved temporary floating register */
