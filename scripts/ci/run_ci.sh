@@ -21,8 +21,6 @@
 set -xe
 
 SANITYCHECK_OPTIONS=" --inline-logs -N"
-SANITYCHECK_OPTIONS_RETRY="${SANITYCHECK_OPTIONS} --only-failed --outdir=out-2nd-pass"
-SANITYCHECK_OPTIONS_RETRY_2="${SANITYCHECK_OPTIONS} --only-failed --outdir=out-3nd-pass"
 export BSIM_OUT_PATH="${BSIM_OUT_PATH:-/opt/bsim/}"
 if [ ! -d "${BSIM_OUT_PATH}" ]; then
         unset BSIM_OUT_PATH
@@ -181,14 +179,9 @@ function on_complete() {
 	mkdir -p shippable/testresults
 	mkdir -p shippable/codecoverage
 
-	if [ -e compliance.xml ]; then
-		echo "Copy compliance.xml"
-		cp compliance.xml shippable/testresults/;
-	fi;
-
-	if [ -e ./scripts/sanity_chk/last_sanity.xml ]; then
-		echo "Copy ./scripts/sanity_chk/last_sanity.xml"
-		cp ./scripts/sanity_chk/last_sanity.xml shippable/testresults/;
+	if [ -e ./sanity-out/sanitycheck.xml ]; then
+		echo "Copy ./sanity-out/sanitycheck.xml"
+		cp ./sanity-out/sanitycheck.xml shippable/testresults/;
 	fi;
 
 	if [ -e ${BSIM_BT_TEST_RESULTS_FILE} ]; then
@@ -291,10 +284,7 @@ if [ -n "$MAIN_CI" ]; then
 
 	# Run a subset of tests based on matrix size
 	${SANITYCHECK} ${SANITYCHECK_OPTIONS} --load-tests test_file.txt \
-		--subset ${MATRIX}/${MATRIX_BUILDS} || \
-		( sleep 30; ${SANITYCHECK} ${SANITYCHECK_OPTIONS_RETRY} ) || \
-		( sleep 90; ${SANITYCHECK} ${SANITYCHECK_OPTIONS_RETRY_2}; )
-		# sleep 10 to let the host settle down
+		--subset ${MATRIX}/${MATRIX_BUILDS} --retry-failed 3
 
 	# cleanup
 	rm -f test_file.txt
