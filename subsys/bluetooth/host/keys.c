@@ -216,7 +216,7 @@ void bt_keys_clear(struct bt_keys *keys)
 		if (keys->id) {
 			char id[4];
 
-			snprintk(id, sizeof(id), "%u", keys->id);
+			u8_to_dec(id, sizeof(id), keys->id);
 			bt_settings_encode_key(key, sizeof(key), "keys",
 					       &keys->addr, id);
 		} else {
@@ -258,7 +258,7 @@ int bt_keys_store(struct bt_keys *keys)
 	if (keys->id) {
 		char id[4];
 
-		snprintk(id, sizeof(id), "%u", keys->id);
+		u8_to_dec(id, sizeof(id), keys->id);
 		bt_settings_encode_key(key, sizeof(key), "keys", &keys->addr,
 				       id);
 	} else {

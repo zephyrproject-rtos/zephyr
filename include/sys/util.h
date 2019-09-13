@@ -170,6 +170,21 @@ size_t bin2hex(const u8_t *buf, size_t buflen, char *hex, size_t hexlen);
  */
 size_t hex2bin(const char *hex, size_t hexlen, u8_t *buf, size_t buflen);
 
+/**
+ * @brief      Convert a u8_t into decimal string representation.
+ *
+ * Convert a u8_t value into ASCII decimal string representation.
+ * The string is terminated if there is enough space in buf.
+ *
+ * @param[out] buf     Address of where to store the string representation.
+ * @param[in]  buflen  Size of the storage area for string representation.
+ * @param[in]  value   The value to convert to decimal string
+ *
+ * @return     The length of the converted string (excluding terminator if
+ *             any), or 0 if an error occurred.
+ */
+u8_t u8_to_dec(char *buf, u8_t buflen, u8_t value);
+
 #endif /* !_ASMLANGUAGE */
 
 /* KB, MB, GB */
