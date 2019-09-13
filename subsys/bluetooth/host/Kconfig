@@ -160,7 +160,7 @@ config BT_HOST_CRYPTO
 
 config BT_SETTINGS
 	bool "Store Bluetooth state and configuration persistently"
-	depends on SETTINGS && PRINTK
+	depends on SETTINGS
 	select MPU_ALLOW_FLASH_WRITE if ARM_MPU
 	help
 	  When selected, the Bluetooth stack will take care of storing
@@ -186,6 +186,17 @@ config BT_SETTINGS_CCC_STORE_ON_WRITE
 	  Choosing this option is safer for battery-powered devices or devices
 	  that expect to be reset suddenly. However, it requires additional
 	  workqueue stack space.
+
+config BT_SETTINGS_USE_PRINTK
+	bool "Use snprintk to encode Bluetooth settings key strings"
+	depends on SETTINGS && PRINTK
+	default y
+	help
+	  When selected, Bluetooth settings will use snprintk to encode
+	  key strings.
+	  When not selected, Bluetooth settings will use a faster builtin
+	  function to encode the key string. The drawback is that if
+	  printk is enabled then the program memory footprint will be larger.
 endif # BT_SETTINGS
 
 config BT_WHITELIST

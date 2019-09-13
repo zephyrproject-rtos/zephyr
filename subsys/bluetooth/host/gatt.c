@@ -3412,7 +3412,7 @@ static int bt_gatt_store_cf(struct bt_conn *conn)
 		if (conn->id) {
 			char id_str[4];
 
-			snprintk(id_str, sizeof(id_str), "%u", conn->id);
+			u8_to_dec(id_str, sizeof(id_str), conn->id);
 			bt_settings_encode_key(key, sizeof(key), "cf",
 					       &conn->le.dst, id_str);
 		}
@@ -3538,7 +3538,7 @@ int bt_gatt_store_ccc(u8_t id, const bt_addr_le_t *addr)
 	if (id) {
 		char id_str[4];
 
-		snprintk(id_str, sizeof(id_str), "%u", id);
+		u8_to_dec(id_str, sizeof(id_str), id);
 		bt_settings_encode_key(key, sizeof(key), "ccc",
 				       (bt_addr_le_t *)addr, id_str);
 	} else {
@@ -3609,7 +3609,7 @@ static int bt_gatt_clear_ccc(u8_t id, const bt_addr_le_t *addr)
 	if (id) {
 		char id_str[4];
 
-		snprintk(id_str, sizeof(id_str), "%u", id);
+		u8_to_dec(id_str, sizeof(id_str), id);
 		bt_settings_encode_key(key, sizeof(key), "ccc",
 				       (bt_addr_le_t *)addr, id_str);
 	} else {
@@ -3647,7 +3647,7 @@ static int bt_gatt_clear_cf(u8_t id, const bt_addr_le_t *addr)
 	if (id) {
 		char id_str[4];
 
-		snprintk(id_str, sizeof(id_str), "%u", id);
+		u8_to_dec(id_str, sizeof(id_str), id);
 		bt_settings_encode_key(key, sizeof(key), "cf",
 				       (bt_addr_le_t *)addr, id_str);
 	} else {
