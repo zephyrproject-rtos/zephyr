@@ -295,9 +295,12 @@ def analyze_die_struct(die):
         for child in die.iter_children():
             if child.tag != "DW_TAG_member":
                 continue
+            data_member_location = child.attributes.get("DW_AT_data_member_location")
+            if not data_member_location:
+                continue
+
             child_type = die_get_type_offset(child)
-            member_offset = \
-                child.attributes["DW_AT_data_member_location"].value
+            member_offset = data_member_location.value
             cname = die_get_name(child) or "<anon>"
             m = AggregateTypeMember(child.offset, cname, child_type,
                                     member_offset)
