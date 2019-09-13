@@ -105,6 +105,9 @@ if [ -n "$MAIN_CI" ]; then
 	if [ -n "$RANGE" ]; then
 		COMMIT_RANGE=$RANGE
 	fi
+
+	ccache -s
+
 	source zephyr-env.sh
 	SANITYCHECK="${ZEPHYR_BASE}/scripts/sanitycheck"
 
@@ -176,6 +179,8 @@ function on_complete() {
 	if [ "$1" == "failure" ]; then
 		handle_compiler_cache
 	fi
+
+	ccache -s
 
 	rm -rf ccache $HOME/.cache/zephyr
 	mkdir -p shippable/testresults
