@@ -487,6 +487,13 @@
 			#size-cells = <0>;
 		};
 
+		generic_fsk: generic_fsk@41033000 {
+			compatible = "openisa,rv32m1-genfsk";
+			reg = <0x41033000 0x90>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
 		flash-controller@40023000 {
 			compatible = "openisa,rv32m1-ftfe";
 			label = "FLASH_CTRL";
