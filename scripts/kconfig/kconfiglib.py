@@ -7028,3 +7028,6 @@ _name_special_search = _re_search(r'[^A-Za-z0-9_$/.-]|\$\(|$')
 # A valid right-hand side for an assignment to a string symbol in a .config
 # file, including escaped characters. Extracts the contents.
 _conf_string_match = _re_match(r'"((?:[^\\"]|\\.)*)"')
+
+def unused():
+    foo = 3
