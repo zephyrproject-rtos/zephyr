@@ -37,7 +37,10 @@ SECTION_FUNC(TEXT, __initialize)
 	 */
 	csrr a0, mhartid
 	beqz a0, boot_master_core
+
+loop_slave_core:
 	wfi
+	j loop_slave_core
 
 boot_master_core:
 
