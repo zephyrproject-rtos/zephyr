@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Phytec Messtechnik GmbH
+ * Copyright (c) 2017-2019 Phytec Messtechnik GmbH
  * Copyright (c) 2017 Benedict Ohl (Benedict-Ohl@web.de)
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -25,6 +25,7 @@ int amg88xx_attr_set(struct device *dev,
 		     const struct sensor_value *val)
 {
 	struct amg88xx_data *drv_data = dev->driver_data;
+	const struct amg88xx_config *config = dev->config->config_info;
 	s16_t int_level = (val->val1 * 1000000 + val->val2) /
 			  AMG88XX_TREG_LSB_SCALING;
 	u8_t intl_reg;
@@ -46,12 +47,14 @@ int amg88xx_attr_set(struct device *dev,
 		return -ENOTSUP;
 	}
 
-	if (amg88xx_reg_write(drv_data, intl_reg, (u8_t)int_level)) {
+	if (i2c_reg_write_byte(drv_data->i2c, config->i2c_address,
+			       intl_reg, (u8_t)int_level)) {
 		LOG_DBG("Failed to set INTxL attribute!");
 		return -EIO;
 	}
 
-	if (amg88xx_reg_write(drv_data, inth_reg, (u8_t)(int_level >> 8))) {
+	if (i2c_reg_write_byte(drv_data->i2c, config->i2c_address,
+			       inth_reg, (u8_t)(int_level >> 8))) {
 		LOG_DBG("Failed to set INTxH attribute!");
 		return -EIO;
 	}
@@ -64,8 +67,9 @@ static void amg88xx_gpio_callback(struct device *dev,
 {
 	struct amg88xx_data *drv_data =
 		CONTAINER_OF(cb, struct amg88xx_data, gpio_cb);
+	const struct amg88xx_config *config = dev->config->config_info;
 
-	gpio_pin_disable_callback(dev, CONFIG_AMG88XX_GPIO_PIN_NUM);
+	gpio_pin_disable_callback(dev, config->gpio_pin);
 
 #if defined(CONFIG_AMG88XX_TRIGGER_OWN_THREAD)
 	k_sem_give(&drv_data->gpio_sem);
@@ -78,9 +82,11 @@ static void amg88xx_thread_cb(void *arg)
 {
 	struct device *dev = arg;
 	struct amg88xx_data *drv_data = dev->driver_data;
+	const struct amg88xx_config *config = dev->config->config_info;
 	u8_t status;
 
-	if (amg88xx_reg_read(drv_data, AMG88XX_STAT, &status) < 0) {
+	if (i2c_reg_read_byte(drv_data->i2c, config->i2c_address,
+			      AMG88XX_STAT, &status) < 0) {
 		return;
 	}
 
@@ -92,7 +98,7 @@ static void amg88xx_thread_cb(void *arg)
 		drv_data->th_handler(dev, &drv_data->th_trigger);
 	}
 
-	gpio_pin_enable_callback(drv_data->gpio, CONFIG_AMG88XX_GPIO_PIN_NUM);
+	gpio_pin_enable_callback(drv_data->gpio, config->gpio_pin);
 }
 
 #ifdef CONFIG_AMG88XX_TRIGGER_OWN_THREAD
@@ -124,10 +130,11 @@ int amg88xx_trigger_set(struct device *dev,
 			sensor_trigger_handler_t handler)
 {
 	struct amg88xx_data *drv_data = dev->driver_data;
+	const struct amg88xx_config *config = dev->config->config_info;
 
-	amg88xx_reg_write(drv_data, AMG88XX_INTC,
-			  AMG88XX_INTC_DISABLED);
-	gpio_pin_disable_callback(drv_data->gpio, CONFIG_AMG88XX_GPIO_PIN_NUM);
+	i2c_reg_write_byte(drv_data->i2c, config->i2c_address,
+			   AMG88XX_INTC, AMG88XX_INTC_DISABLED);
+	gpio_pin_disable_callback(drv_data->gpio, config->gpio_pin);
 
 	if (trig->type == SENSOR_TRIG_THRESHOLD) {
 		drv_data->th_handler = handler;
@@ -137,31 +144,32 @@ int amg88xx_trigger_set(struct device *dev,
 		return -ENOTSUP;
 	}
 
-	gpio_pin_enable_callback(drv_data->gpio, CONFIG_AMG88XX_GPIO_PIN_NUM);
-	amg88xx_reg_write(drv_data, AMG88XX_INTC,
-			  AMG88XX_INTC_ABS_MODE);
+	gpio_pin_enable_callback(drv_data->gpio, config->gpio_pin);
+	i2c_reg_write_byte(drv_data->i2c, config->i2c_address,
+			   AMG88XX_INTC, AMG88XX_INTC_ABS_MODE);
 	return 0;
 }
 
 int amg88xx_init_interrupt(struct device *dev)
 {
 	struct amg88xx_data *drv_data = dev->driver_data;
+	const struct amg88xx_config *config = dev->config->config_info;
 
 	/* setup gpio interrupt */
-	drv_data->gpio = device_get_binding(CONFIG_AMG88XX_GPIO_DEV_NAME);
+	drv_data->gpio = device_get_binding(config->gpio_name);
 	if (drv_data->gpio == NULL) {
 		LOG_DBG("Failed to get pointer to %s device!",
-		    CONFIG_AMG88XX_GPIO_DEV_NAME);
+			config->gpio_name);
 		return -EINVAL;
 	}
 
-	gpio_pin_configure(drv_data->gpio, CONFIG_AMG88XX_GPIO_PIN_NUM,
+	gpio_pin_configure(drv_data->gpio, config->gpio_pin,
 			   GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
 			   GPIO_INT_ACTIVE_LOW | GPIO_INT_DEBOUNCE);
 
 	gpio_init_callback(&drv_data->gpio_cb,
 			   amg88xx_gpio_callback,
-			   BIT(CONFIG_AMG88XX_GPIO_PIN_NUM));
+			   BIT(config->gpio_pin));
 
 	if (gpio_add_callback(drv_data->gpio, &drv_data->gpio_cb) < 0) {
 		LOG_DBG("Failed to set gpio callback!");

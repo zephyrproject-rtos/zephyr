@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Phytec Messtechnik GmbH
+ * Copyright (c) 2017-2019 Phytec Messtechnik GmbH
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,8 +10,6 @@
 #include <device.h>
 #include <drivers/gpio.h>
 #include <sys/util.h>
-
-#define AMG88XX_I2C_ADDRESS	CONFIG_AMG88XX_I2C_ADDR
 
 #define AMG88XX_PCLT		0x00 /* Setting Power control register */
 #define AMG88XX_RST		0x01 /* Reset register */
@@ -68,6 +66,15 @@
 #define AMG88XX_WAIT_MODE_CHANGE_US	50000
 #define AMG88XX_WAIT_INITIAL_RESET_US	2000
 
+struct amg88xx_config {
+	char *i2c_name;
+#ifdef CONFIG_AMG88XX_TRIGGER
+	char *gpio_name;
+	u8_t gpio_pin;
+#endif
+	u8_t i2c_address;
+};
+
 struct amg88xx_data {
 	struct device *i2c;
 	s16_t sample[64];
@@ -94,36 +101,7 @@ struct amg88xx_data {
 #endif /* CONFIG_AMG88XX_TRIGGER */
 };
 
-static inline int amg88xx_reg_read(struct amg88xx_data *drv_data,
-				   u8_t reg, u8_t *val)
-{
-	return i2c_reg_read_byte(drv_data->i2c, CONFIG_AMG88XX_I2C_ADDR,
-				 reg, val);
-}
-
-static inline int amg88xx_reg_write(struct amg88xx_data *drv_data,
-				    u8_t reg, u8_t val)
-{
-	return i2c_reg_write_byte(drv_data->i2c, CONFIG_AMG88XX_I2C_ADDR,
-				  reg, val);
-}
-
-static inline int amg88xx_reg_update(struct amg88xx_data *drv_data, u8_t reg,
-				     u8_t mask, u8_t val)
-{
-	return i2c_reg_update_byte(drv_data->i2c, CONFIG_AMG88XX_I2C_ADDR,
-				   reg, mask, val);
-}
-
-
 #ifdef CONFIG_AMG88XX_TRIGGER
-int amg88xx_reg_read(struct amg88xx_data *drv_data, u8_t reg, u8_t *val);
-
-int amg88xx_reg_write(struct amg88xx_data *drv_data, u8_t reg, u8_t val);
-
-int amg88xx_reg_update(struct amg88xx_data *drv_data, u8_t reg,
-		       u8_t mask, u8_t val);
-
 int amg88xx_attr_set(struct device *dev,
 		     enum sensor_channel chan,
 		     enum sensor_attribute attr,
