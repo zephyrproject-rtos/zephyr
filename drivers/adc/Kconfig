@@ -64,4 +64,6 @@ source "drivers/adc/Kconfig.sam0"
 
 source "drivers/adc/Kconfig.stm32"
 
+source "drivers/adc/Kconfig.xec"
+
 endif # ADC

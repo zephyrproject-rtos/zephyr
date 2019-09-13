@@ -28,6 +28,13 @@ endif # PINMUX
 config GPIO
 	default y
 
+if ADC
+
+config ADC_XEC
+	default y
+
+endif # ADC
+
 if GPIO
 
 config GPIO_XEC
