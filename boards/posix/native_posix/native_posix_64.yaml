@@ -8,5 +8,3 @@ toolchain:
 supported:
   - netif:eth
   - usb_device
-testing:
-  default: true
