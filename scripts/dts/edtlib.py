@@ -5,7 +5,7 @@
 # Tip: You can view just the documentation with 'pydoc3 edtlib'
 
 """
-Library for working with .dts files and bindings at a higher level compared to
+ Library for working with .dts files and bindings at a higher level compared to
 dtlib. Deals with things at the level of devices, registers, interrupts,
 compatibles, bindings, etc., as opposed to dtlib, which is just a low-level
 device tree parser.

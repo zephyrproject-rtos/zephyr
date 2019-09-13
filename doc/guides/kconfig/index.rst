@@ -876,6 +876,6 @@ the above to look like:
 Other resources
 ***************
 
-The *Intro to symbol values* section in the `Kconfiglib docstring
+T h e *Intro to symbol values* section in the `Kconfiglib docstring
 <https://github.com/ulfalizer/Kconfiglib/blob/master/kconfiglib.py>`_ goes over
 how symbols values are calculated in more detail.

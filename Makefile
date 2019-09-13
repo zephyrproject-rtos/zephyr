@@ -8,7 +8,7 @@ endif
 
 BUILDDIR ?= doc/_build
 DOC_TAG ?= development
-SPHINXOPTS ?= -q
+SPHINXOPTS ?= "-q -jauto"
 
 # Documentation targets
 # ---------------------------------------------------------------------------
