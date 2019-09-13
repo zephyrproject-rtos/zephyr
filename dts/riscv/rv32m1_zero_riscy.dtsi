@@ -189,3 +189,8 @@
 	interrupt-parent = <&event1>;
 	interrupts = <19>;
 };
+
+&generic_fsk {
+	interrupt-parent = <&intmux1_ch0>;
+	interrupts = <17>;
+};
