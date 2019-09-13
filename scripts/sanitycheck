@@ -2429,15 +2429,16 @@ class TestSuite:
             sys.exit(2)
 
         with open(file, "r") as fp:
-            cr = csv.reader(fp)
+            cr = csv.DictReader(fp)
             instance_list = []
             for row in cr:
-                name = os.path.join(row[0], row[1])
-                platform = self.get_platform(row[2])
-                instance = TestInstance(self.testcases[name], platform, self.outdir)
+                test = row["test"]
+                platform = self.get_platform(row["platform"])
+                instance = TestInstance(self.testcases[test], platform, self.outdir)
                 instance.create_overlay(platform.name)
                 instance_list.append(instance)
             self.add_instances(instance_list)
+
 
     def apply_filters(self):
 
@@ -2772,20 +2773,6 @@ class TestSuite:
                 instance.metrics["unrecognized"] = []
 
 
-
-    def save_tests(self, filename):
-        with open(filename, "at") as csvfile:
-            fieldnames = ['path', 'test', 'platform', 'arch']
-            cw = csv.DictWriter(csvfile, fieldnames, lineterminator=os.linesep)
-            for instance in self.instances.values():
-                rowdict = {
-                    "path": os.path.dirname(instance.testcase.name),
-                    "test": os.path.basename(instance.testcase.name),
-                    "platform": instance.platform.name,
-                    "arch": instance.platform.arch
-                }
-                cw.writerow(rowdict)
-
     def discard_report(self, filename):
 
         try:
@@ -2983,8 +2970,10 @@ class TestSuite:
                     rowdict["passed"] = True
                     if instance.handler:
                         rowdict["handler_time"] = instance.metrics["handler_time"]
-                    rowdict["ram_size"] = instance.metrics["ram_size"]
-                    rowdict["rom_size"] = instance.metrics["rom_size"]
+                    ram_size = instance.metrics.get("ram_size", 0)
+                    rom_size = instance.metrics.get("rom_size", 0)
+                    rowdict["ram_size"] = ram_size
+                    rowdict["rom_size"] = rom_size
                 cw.writerow(rowdict)
 
 
@@ -3720,7 +3709,7 @@ def main():
         return
 
     if options.save_tests:
-        suite.save_tests(options.save_tests)
+        suite.csv_report(options.save_tests)
         return
 
     if options.subset:
