@@ -470,6 +470,12 @@ config FP_SHARING
 	  This option allows multiple threads to use the floating point
 	  registers.
 
+config FLOAT_64BIT
+	bool "Double precision floating point"
+	depends on RISCV
+	help
+	  This option means that floating point registers is 64bit width.
+
 endif # FLOAT
 
 #
