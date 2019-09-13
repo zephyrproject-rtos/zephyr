@@ -262,6 +262,7 @@ class KconfigCheck(ComplianceTest):
         os.environ["ARCH"] = "*"
         os.environ["CMAKE_BINARY_DIR"] = tempfile.gettempdir()
         os.environ['GENERATED_DTS_BOARD_CONF'] = "dummy"
+        os.environ['DTS_POST_CPP'] = 'dummy'
 
         # For multi repo support
         self.get_modules(os.path.join(tempfile.gettempdir(), "Kconfig.modules"))
