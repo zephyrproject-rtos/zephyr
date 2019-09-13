@@ -1894,7 +1894,6 @@ class ProjectBuilder(CMake):
             # FIXME: Needs simplification
             if instance.platform.simulation == "qemu":
                 instance.handler = QEMUHandler(instance, "qemu")
-                args.append("QEMU_PIPE=%s" % instance.handler.get_fifo())
                 instance.handler.call_make_run = True
             elif instance.testcase.type == "unit":
                 instance.handler = BinaryHandler(instance, "unit")
@@ -2055,9 +2054,11 @@ class ProjectBuilder(CMake):
         if instance.handler.type_str == "qemu":
             verbose("Running %s (%s)" %(instance.name, instance.handler.type_str))
 
+            qemu_pipe = "QEMU_PIPE=" + instance.handler.get_fifo()
+
             start_time = time.time()
             command = [get_generator()[0]]
-            command += ["-C", self.build_dir, "run"]
+            command += ["-C", self.build_dir, qemu_pipe, "run"]
 
             with subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=self.build_dir) as proc:
                 verbose("Spawning QEMUHandler Thread for %s" % instance.name)
