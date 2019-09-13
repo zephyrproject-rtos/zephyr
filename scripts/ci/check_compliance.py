@@ -909,8 +909,9 @@ def set_pending():
     for testcase in ComplianceTest.__subclasses__():
         print("Creating pending status for " + testcase._name)
         github_commit.create_status(
-            'pending', testcase._doc, 'Checks in progress', testcase._name)
-
+            'pending', testcase._doc,
+            'Run in progress (build no. {})'.format(build_number),
+            testcase._name)
 
 def report_test_results_to_github(suite):
     # Reports test results to Github.
@@ -928,8 +929,10 @@ def report_test_results_to_github(suite):
     def set_commit_status(status, msg):
         # 'case' gets set in the loop.
         # pylint: disable=undefined-loop-variable
-        github_commit.create_status(status, name2doc[case.name], msg,
-                                    case.name)
+        github_commit.create_status(
+            status, name2doc[case.name],
+            "{} (build no. {})".format(msg, build_number),
+            case.name)
 
     for case in suite:
         if not case.result:
@@ -1061,6 +1064,7 @@ def init_github(args):
     global github_repo
     global github_pr
     global github_commit
+    global build_number
 
     if not (args.github or args.status):
         # No GitHub-related stuff to do
@@ -1084,6 +1088,12 @@ def init_github(args):
         github_pr = github_repo.get_pull(args.pull_request)
     else:
         github_pr = None
+
+    # Get the shippable build number, useful to find logs
+    build_number = os.environ.get("BUILD_NUMBER")
+    if build_number is None:
+        err("the BUILD_NUMBER environment variable must be set when "
+            "connecting to GitHub")
 
 
 def _main(args):
