@@ -50,6 +50,10 @@ const int gpio_stm32_flags_to_conf(int flags, int *pincfg)
 
 	if (direction == GPIO_DIR_OUT) {
 		*pincfg = STM32_PINCFG_MODE_OUTPUT;
+		if (flags & GPIO_DS_DISCONNECT_HIGH) {
+			/* open drain */
+			*pincfg |= STM32_PINCFG_TYPE_OPEN_DRAIN;
+		}
 	} else {
 		/* pull-{up,down} maybe? */
 		*pincfg = STM32_PINCFG_MODE_INPUT;
