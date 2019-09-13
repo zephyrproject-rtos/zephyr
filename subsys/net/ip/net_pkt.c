@@ -1700,6 +1700,7 @@ static void clone_pkt_attributes(struct net_pkt *pkt, struct net_pkt *clone_pkt)
 
 struct net_pkt *net_pkt_clone(struct net_pkt *pkt, s32_t timeout)
 {
+	size_t cursor_offset = net_pkt_get_current_offset(pkt);
 	struct net_pkt *clone_pkt;
 
 	clone_pkt = net_pkt_alloc_with_buffer(net_pkt_iface(pkt),
@@ -1730,6 +1731,11 @@ struct net_pkt *net_pkt_clone(struct net_pkt *pkt, s32_t timeout)
 	clone_pkt_attributes(pkt, clone_pkt);
 
 	net_pkt_cursor_init(clone_pkt);
+
+	if (cursor_offset) {
+		net_pkt_set_overwrite(clone_pkt, true);
+		net_pkt_skip(clone_pkt, cursor_offset);
+	}
 
 	NET_DBG("Cloned %p to %p", pkt, clone_pkt);
 
