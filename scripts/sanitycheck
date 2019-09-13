@@ -2077,7 +2077,7 @@ class BoundedExecutor(concurrent.futures.ThreadPoolExecutor):
     :param max_workers: Integer - the size of the thread pool
     """
     def __init__(self, bound, max_workers, **kwargs):
-        super().__init__(max_workers, kwargs)
+        super().__init__(max_workers)
         #self.executor = ThreadPoolExecutor(max_workers=max_workers)
         self.semaphore = BoundedSemaphore(bound + max_workers)
 
