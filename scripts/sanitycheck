@@ -193,10 +193,7 @@ import yaml
 import glob
 import serial
 import concurrent
-import concurrent.futures
 import xml.etree.ElementTree as ET
-import resource
-from xml.sax.saxutils import escape
 from collections import OrderedDict
 from itertools import islice
 from functools import cmp_to_key
@@ -326,7 +323,7 @@ class CMakeCacheEntry:
             except ValueError as exc:
                 args = exc.args + ('on line {}: {}'.format(line_no, line),)
                 raise ValueError(args) from exc
-        elif type_ == 'STRING' or type_ == 'INTERNAL':
+        elif type_ in ['STRING','INTERNAL']:
             # If the value is a CMake list (i.e. is a string which
             # contains a ';'), convert to a Python list.
             if ';' in value:
@@ -529,7 +526,7 @@ class BinaryHandler(Handler):
         self.terminated = False
 
     def try_kill_process_by_pid(self):
-        if self.pid_fn != None:
+        if self.pid_fn:
             pid = int(open(self.pid_fn).read())
             os.unlink(self.pid_fn)
             self.pid_fn = None  # clear so we don't try to kill the binary twice
@@ -598,7 +595,7 @@ class BinaryHandler(Handler):
         self.metrics["handler_time"] = time.time() - start_time
 
         if options.enable_coverage:
-            returncode = subprocess.call(["GCOV_PREFIX=" + self.build_dir,
+            subprocess.call(["GCOV_PREFIX=" + self.build_dir,
                 "gcov", self.sourcedir, "-b", "-s", self.build_dir], shell=True)
 
         self.try_kill_process_by_pid()
@@ -1034,7 +1031,7 @@ class SizeCalculator:
             magic = f.read(4)
 
         try:
-            if (magic != b'\x7fELF'):
+            if magic != b'\x7fELF':
                 raise SanityRuntimeError("%s is not an ELF binary" % filename)
         except Exception as e:
             print(str(e))
@@ -1099,15 +1096,15 @@ class SizeCalculator:
         for line in objdump_output:
             words = line.split()
 
-            if (len(words) == 0):               # Skip lines that are too short
+            if not len:               # Skip lines that are too short
                 continue
 
             index = words[0]
-            if (not index[0].isdigit()):        # Skip lines that do not start
+            if not index[0].isdigit():        # Skip lines that do not start
                 continue                        # with a digit
 
             name = words[1]                     # Skip lines with section names
-            if (name[0] == '.'):                # starting with '.'
+            if name[0] == '.':                # starting with '.'
                 continue
 
             # TODO this doesn't actually reflect the size in flash or RAM as
@@ -1309,7 +1306,7 @@ class SanityConfigParser:
             else:
                 try:
                     d[k] = self._cast_value(d[k], kinfo["type"])
-                except ValueError as ve:
+                except ValueError:
                     raise ConfigurationError(
                         self.filename, "bad %s value '%s' for key '%s' in name '%s'" %
                         (kinfo["type"], d[k], k, name))
@@ -1375,7 +1372,7 @@ class Platform:
         self.env = data.get("env", [])
         self.env_satisfied = True
         for env in self.env:
-            if os.environ.get(env, None) == None:
+            if not os.environ.get(env, None):
                 self.env_satisfied = False
 
 
@@ -1439,7 +1436,8 @@ class TestCase(object):
         self.extra_sections = None
 
 
-    def get_unique(self, testcase_root, workdir, name):
+    @staticmethod
+    def get_unique(testcase_root, workdir, name):
 
         canonical_testcase_root = os.path.realpath(testcase_root)
         if Path(canonical_zephyr_base) in Path(canonical_testcase_root).parents:
@@ -1659,7 +1657,7 @@ class TestInstance:
         fns = glob.glob(os.path.join(self.build_dir, "zephyr", "*.elf"))
         fns.extend(glob.glob(os.path.join(self.build_dir, "zephyr", "*.exe")))
         fns = [x for x in fns if not x.endswith('_prebuilt.elf')]
-        if (len(fns) != 1):
+        if len(fns) != 1:
             raise BuildError("Missing/multiple output ELF binary")
 
         return SizeCalculator(fns[0], self.testcase.extra_sections)
@@ -1797,7 +1795,7 @@ class CMake():
                 log_msg = out.decode(sys.getdefaultencoding())
                 log.write(log_msg)
 
-        return(results)
+        return results
 
 
 class FilterBuilder(CMake):
@@ -2005,12 +2003,12 @@ class ProjectBuilder(CMake):
                 self.suite.total_done, total_tests_width, self.suite.total_tests, instance.platform.name,
                 instance.testcase.name, status, handler_type))
         else:
-                sys.stdout.write(
-                    "\rtotal complete: %s%4d/%4d%s  %2d%%  failed: %s%4d%s" %
-                    (COLOR_GREEN, self.suite.total_done, self.suite.total_tests, COLOR_NORMAL,
-                     int((float(self.suite.total_done) / self.suite.total_tests) * 100),
-                     COLOR_RED if self.suite.total_failed > 0 else COLOR_NORMAL, self.suite.total_failed,
-                     COLOR_NORMAL))
+            sys.stdout.write(
+                "\rtotal complete: %s%4d/%4d%s  %2d%%  failed: %s%4d%s" %
+                (COLOR_GREEN, self.suite.total_done, self.suite.total_tests, COLOR_NORMAL,
+                    int((float(self.suite.total_done) / self.suite.total_tests) * 100),
+                    COLOR_RED if self.suite.total_failed > 0 else COLOR_NORMAL, self.suite.total_failed,
+                    COLOR_NORMAL))
         sys.stdout.flush()
 
     def cmake(self):
@@ -2690,7 +2688,7 @@ class TestSuite:
             else:
                 self.add_instances(instance_list)
 
-            for name, case in self.instances.items():
+            for _, case in self.instances.items():
                 case.create_overlay(case.platform.name)
 
         self.discards = discards
@@ -2735,7 +2733,7 @@ class TestSuite:
 
             while future_to_test:
                 # check for status of the futures which are currently working
-                done, not_done = concurrent.futures.wait(
+                done, _ = concurrent.futures.wait(
                         future_to_test, timeout=0.25,
                         return_when=concurrent.futures.FIRST_COMPLETED)
 
@@ -2810,7 +2808,7 @@ class TestSuite:
         duration = 0
         skips = 0
 
-        for identifier, instance in self.instances.items():
+        for _, instance in self.instances.items():
             for k in instance.results.keys():
                 if instance.results[k] == 'PASS':
                     passes += 1
@@ -3507,7 +3505,7 @@ def export_tests(filename, tests):
 def get_unique_tests(suite):
     unq = []
     run_individual_tests = []
-    for n, tc in suite.testcases.items():
+    for _, tc in suite.testcases.items():
         for c in tc.cases:
             if options.sub_test and c in options.sub_test:
                 if tc.name not in run_individual_tests:
@@ -3627,7 +3625,7 @@ def main():
 
     if options.list_tags:
         tags = set()
-        for n, tc in suite.testcases.items():
+        for _, tc in suite.testcases.items():
             tags = tags.union(tc.tags)
 
         for t in tags:
@@ -3709,7 +3707,7 @@ def main():
         for i,p in suite.instances.items():
             to_be_run.update(p.testcase.cases)
 
-        if (all_tests - to_be_run):
+        if all_tests - to_be_run:
             print("Tests that never build or run:")
             for not_run in (all_tests - to_be_run):
                 print("- {}".format(not_run))
