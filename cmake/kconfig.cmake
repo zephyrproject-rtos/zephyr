@@ -40,7 +40,7 @@ set(ENV{CMAKE_BINARY_DIR} ${CMAKE_BINARY_DIR})
 set(ENV{ARCH_DIR}   ${ARCH_DIR})
 set(ENV{GENERATED_DTS_BOARD_CONF} ${GENERATED_DTS_BOARD_CONF})
 set(ENV{DTS_POST_CPP} ${DTS_POST_CPP})
-set(ENV{DTS_ROOT_BINDINGS} ${DTS_ROOT_BINDINGS})
+set(ENV{DTS_ROOT_BINDINGS} "${DTS_ROOT_BINDINGS}")
 
 # Allow out-of-tree users to add their own Kconfig python frontend
 # targets by appending targets to the CMake list
