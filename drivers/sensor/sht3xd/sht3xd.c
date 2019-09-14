@@ -16,6 +16,12 @@
 #define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
 LOG_MODULE_REGISTER(SHT3XD);
 
+#ifdef CONFIG_SHT3XD_SINGLE_SHOT_MODE
+static const u16_t measure_cmd[3] = {
+	0x2400, 0x240B, 0x2416
+};
+#endif
+#ifdef CONFIG_SHT3XD_PERIODIC_MODE
 static const u16_t measure_cmd[5][3] = {
 	{ 0x202F, 0x2024, 0x2032 },
 	{ 0x212D, 0x2126, 0x2130 },
@@ -23,6 +29,7 @@ static const u16_t measure_cmd[5][3] = {
 	{ 0x2329, 0x2322, 0x2334 },
 	{ 0x272A, 0x2721, 0x2737 }
 };
+#endif
 
 static const int measure_wait[3] = {
 	4000, 6000, 15000
@@ -85,6 +92,22 @@ static int sht3xd_sample_fetch(struct device *dev, enum sensor_channel chan)
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 
+#ifdef CONFIG_SHT3XD_SINGLE_SHOT_MODE
+	/* start single shot measurement */
+	if (sht3xd_write_command(dev,
+				 measure_cmd[SHT3XD_REPEATABILITY_IDX])
+	    < 0) {
+		LOG_DBG("Failed to set single shot measurement mode!");
+		return -EIO;
+	}
+	k_sleep(K_MSEC(measure_wait[SHT3XD_REPEATABILITY_IDX] / USEC_PER_MSEC));
+
+	if (i2c_read(i2c, rx_buf, sizeof(rx_buf), address) < 0) {
+		LOG_DBG("Failed to read data sample!");
+		return -EIO;
+	}
+#endif
+#ifdef CONFIG_SHT3XD_PERIODIC_MODE
 	u8_t tx_buf[2] = {
 		SHT3XD_CMD_FETCH >> 8,
 		SHT3XD_CMD_FETCH & 0xFF
@@ -95,6 +118,7 @@ static int sht3xd_sample_fetch(struct device *dev, enum sensor_channel chan)
 		LOG_DBG("Failed to read data sample!");
 		return -EIO;
 	}
+#endif
 
 	t_sample = (rx_buf[0] << 8) | rx_buf[1];
 	if (sht3xd_compute_crc(t_sample) != rx_buf[2]) {
@@ -179,6 +203,7 @@ static int sht3xd_init(struct device *dev)
 
 	k_busy_wait(SHT3XD_CLEAR_STATUS_WAIT_USEC);
 
+#ifdef CONFIG_SHT3XD_PERIODIC_MODE
 	/* set periodic measurement mode */
 	if (sht3xd_write_command(dev,
 				 measure_cmd[SHT3XD_MPS_IDX][SHT3XD_REPEATABILITY_IDX])
@@ -188,7 +213,7 @@ static int sht3xd_init(struct device *dev)
 	}
 
 	k_busy_wait(measure_wait[SHT3XD_REPEATABILITY_IDX]);
-
+#endif
 #ifdef CONFIG_SHT3XD_TRIGGER
 	if (sht3xd_init_interrupt(dev) < 0) {
 		LOG_DBG("Failed to initialize interrupt");
