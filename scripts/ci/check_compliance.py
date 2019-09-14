@@ -20,13 +20,6 @@ import tempfile
 import traceback
 from pathlib import Path
 
-# Included as part of the message on GitHub when all checks pass (after some
-# failure), some checks fail, and there are internal errors, respectively. '**'
-# is to make it bold.
-PASS_MSG = "**All checks are passing now.**"
-FAIL_MSG = "**Some checks failed. Please fix and resubmit.**"
-ERR_MSG = "**Internal CI Error.**"
-
 # '*' makes it italic
 EDIT_TIP = "\n\n*Tip: The bot edits this comment instead of posting a new " \
            "one, so you can check the comment's history to see earlier " \
@@ -918,7 +911,7 @@ def report_test_results_to_github(suite):
     #
     #   suite: Test suite
 
-    fail_msg = FAIL_MSG + "\n\n"
+    fail_msg = "**Some checks failed. Please fix and resubmit.**\n\n"
     n_failures = 0
 
     print("reporting results to GitHub")
@@ -967,7 +960,7 @@ def report_test_results_to_github(suite):
         # Only post a success message if a message was posted by the bot
         # previously (probably with a failure message). We edit the old
         # message.
-        github_comment(PASS_MSG + EDIT_TIP)
+        github_comment("**All checks are passing now.**" + EDIT_TIP)
 
     return n_failures
 
@@ -1002,9 +995,8 @@ def get_bot_comment():
             if comment.user.login != os.getenv('GH_USERNAME', 'zephyrbot'):
                 continue
 
-            for msg in PASS_MSG, FAIL_MSG, ERR_MSG:
-                if msg in comment.body:
-                    return comment
+            if EDIT_TIP in comment.body:
+                return comment
 
         return None
 
@@ -1199,8 +1191,9 @@ def main():
 
         if args.github:
             github_comment(
-                "{}\n\nPython exception in `{}`:\n\n```\n{}\n```{}"
-                .format(ERR_MSG, __file__, traceback.format_exc(), EDIT_TIP))
+                "**Internal CI Error.**\n\nPython exception in `{}`:\n\n"
+                "```\n{}\n```{}"
+                .format(__file__, traceback.format_exc(), EDIT_TIP))
 
         raise
 
