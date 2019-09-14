@@ -1058,17 +1058,13 @@ def parse_args():
 
 
 def init_github(args):
-    # Initializes a GitHub connection, if needed
+    # Initializes a GitHub connection
 
     global commit_sha
     global github_repo
     global github_pr
     global github_commit
     global build_number
-
-    if not (args.github or args.status):
-        # No GitHub-related stuff to do
-        return
 
     if args.repo is None:
         err("--repo <name> must be passed when connecting to GitHub")
@@ -1192,7 +1188,8 @@ def main():
 
     # Initialize the GitHub connection early so that any errors from the script
     # itself can be reported
-    init_github(args)
+    if args.github or args.status:
+        init_github(args)
 
     try:
         n_fails = _main(args)
