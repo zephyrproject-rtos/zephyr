@@ -20,10 +20,12 @@ only in a SMD design. Here are two sources for easily working with this sensor:
 - `AMG88xx Evaluation Kit`_
 - `Adafruit AMG8833 8x8 Thermal Camera Sensor`_
 
-We used the Evaluation Kit mounted on FRDM-K64F board.
-On the Evaluation Kit, all jumpers except the J11 must be removed.
+On the Evaluation Kit, all jumpers except the J11 and J14 must be removed.
 
-This sample uses the sensor APIs and the provided driver for the AMG88xx sensor.
+This sample requires a board which provides a configuration for Arduino
+connectors and defines node aliases for the I2C and GPIO interfaces.
+For more info about node structure and interrupt pin wiring see
+:zephyr_file:`samples/sensor/amg88xx/app.overlay`
 
 Building and Running
 ********************
@@ -31,15 +33,14 @@ Building and Running
 This sample reads from the sensor and outputs sensor data to the console every
 second. If you want to test the sensor's trigger mode, specify the trigger
 configuration in the prj.conf file and connect the interrupt output from the
-sensor to your board. For the FRDM-K64F we tested, pin PTC2 must be muxed as
-GPIO. You can change the upper threshold values by editing the sample.
-The default upper threshold value is 27 |deg| Celsius (80.6 |deg| Fahrenheit).
+sensor to your board. You can change the upper threshold values by editing
+the sample. The default upper threshold value is 27 |deg| Celsius
+(80.6 |deg| Fahrenheit).
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensors/amg88xx
-   :board: frdm_k64f
-   :goals: build
-   :compact:
+   :board: reel_board
+   :goals: build flash
 
 Sample Output
 =============
@@ -64,8 +65,7 @@ The sensor array data is output every second.
 References
 ***********
 
-- https://industrial.panasonic.com/cdbs/www-data/pdf/ADI8000/ADI8000C53.pdf
-- https://na.industrial.panasonic.com/sites/default/pidsa/files/downloads/files/grid-eye-high-performance-specifications.pdf
+- https://eu.industrial.panasonic.com/products/sensors-optical-devices/sensors-automotive-and-industrial-applications/infrared-array
 
 .. _`AMG88xx Evaluation Kit`: https://eu.industrial.panasonic.com/grideye-evalkit
 .. _`Adafruit AMG8833 8x8 Thermal Camera Sensor`: https://learn.adafruit.com/adafruit-amg8833-8x8-thermal-camera-sensor/overview
