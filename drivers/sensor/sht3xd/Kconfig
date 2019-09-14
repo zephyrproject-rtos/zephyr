@@ -71,6 +71,20 @@ config SHT3XD_REPEATABILITY_HIGH
 endchoice
 
 choice
+	prompt "Measurement mode"
+	default SHT3XD_PERIODIC_MODE
+
+config SHT3XD_SINGLE_SHOT_MODE
+	bool "single shot"
+
+config SHT3XD_PERIODIC_MODE
+	bool "periodic data acquisition"
+
+endchoice
+
+if SHT3XD_PERIODIC_MODE
+
+choice
 	prompt "Measurements per second"
 	default SHT3XD_MPS_1
 	help
@@ -92,5 +106,7 @@ config SHT3XD_MPS_10
 	bool "10"
 
 endchoice
+
+endif # SHT3XD_PERIODIC_MODE
 
 endif # SHT3XD
