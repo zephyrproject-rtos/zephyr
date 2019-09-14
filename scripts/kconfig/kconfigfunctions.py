@@ -20,11 +20,11 @@ doc_mode = os.environ.get('KCONFIG_DOC_MODE') == "1"
 dt_defines = {}
 if not doc_mode:
     DTS_POST_CPP = os.environ["DTS_POST_CPP"]
-    BINDINGS_DIR = os.environ.get("DTS_ROOT_BINDINGS")
+    BINDINGS_DIRS = os.environ.get("DTS_ROOT_BINDINGS")
 
     # if a board port doesn't use DTS than these might not be set
-    if os.path.isfile(DTS_POST_CPP) and BINDINGS_DIR is not None:
-        edt = edtlib.EDT(DTS_POST_CPP, [BINDINGS_DIR])
+    if os.path.isfile(DTS_POST_CPP) and BINDINGS_DIRS is not None:
+        edt = edtlib.EDT(DTS_POST_CPP, BINDINGS_DIRS.split(";"))
     else:
         edt = None
 
