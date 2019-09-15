@@ -115,3 +115,4 @@ These pages cover other kernel services.
    other/ring_buffers.rst
    other/cxx_support.rst
    other/version.rst
+   other/fatal.rst
