@@ -128,35 +128,6 @@ if(SUPPORTS_DTS)
     message(FATAL_ERROR "command failed with return code: ${ret}")
   endif()
 
-  # Run the DTC on *.dts.pre.tmp to create the intermediary file *.dts_compiled
-
-  set(DTC_WARN_UNIT_ADDR_IF_ENABLED "")
-  check_dtc_flag("-Wunique_unit_address_if_enabled" check)
-  if (check)
-    set(DTC_WARN_UNIT_ADDR_IF_ENABLED "-Wunique_unit_address_if_enabled")
-  endif()
-  set(DTC_NO_WARN_UNIT_ADDR "")
-  check_dtc_flag("-Wno-unique_unit_address" check)
-  if (check)
-    set(DTC_NO_WARN_UNIT_ADDR "-Wno-unique_unit_address")
-  endif()
-  execute_process(
-    COMMAND ${DTC}
-    -O dts
-    -o ${BOARD}.dts_compiled
-    -b 0
-    -E unit_address_vs_reg
-    ${DTC_NO_WARN_UNIT_ADDR}
-    ${DTC_WARN_UNIT_ADDR_IF_ENABLED}
-    ${EXTRA_DTC_FLAGS} # User settable
-    ${BOARD}.dts.pre.tmp
-    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-    RESULT_VARIABLE ret
-    )
-  if(NOT "${ret}" STREQUAL "0")
-    message(FATAL_ERROR "command failed with return code: ${ret}")
-  endif()
-
   #
   # Run gen_defines.py to create a .conf file and a header file
   #
@@ -175,28 +146,6 @@ if(SUPPORTS_DTS)
     )
   if(NOT "${ret}" STREQUAL "0")
     message(FATAL_ERROR "new extractor failed with return code: ${ret}")
-  endif()
-
-  #
-  # Run extract_dts_includes.py (the older DT/binding parser) to generate some
-  # legacy identifiers (via --deprecated-only). This will go away later.
-  #
-
-  set(CMD_EXTRACT_DTS_INCLUDES ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/dts/extract_dts_includes.py
-    --deprecated-only
-    --dts ${BOARD}.dts_compiled
-    --yaml ${DTS_ROOT_BINDINGS}
-    --include ${GENERATED_DTS_BOARD_UNFIXED_H}.deprecated
-    --old-alias-names
-    )
-
-  execute_process(
-    COMMAND ${CMD_EXTRACT_DTS_INCLUDES}
-    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-    RESULT_VARIABLE ret
-    )
-  if(NOT "${ret}" STREQUAL "0")
-    message(FATAL_ERROR "command failed with return code: ${ret}")
   endif()
 
   import_kconfig(DT_     ${GENERATED_DTS_BOARD_CONF})
