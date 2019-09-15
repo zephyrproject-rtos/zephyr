@@ -4,11 +4,21 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/** @file
+ *  @brief Fatal error functions
+ */
+
 #ifndef ZEPHYR_INCLUDE_FATAL_H
 #define ZEPHYR_INCLUDE_FATAL_H
 
 #include <arch/cpu.h>
 #include <toolchain.h>
+
+/**
+ * @defgroup fatal_apis Fatal error APIs
+ * @ingroup kernel_apis
+ * @{
+ */
 
 enum k_fatal_error_reason {
 	/** Generic CPU exception, not covered by other codes */
@@ -87,5 +97,7 @@ void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *esf);
  *            state when the error occurred. May in some cases be NULL.
  */
 void z_fatal_error(unsigned int reason, const z_arch_esf_t *esf);
+
+/** @} */
 
 #endif /* ZEPHYR_INCLUDE_FATAL_H */
