@@ -18,6 +18,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <stdint.h>
 #include <init.h>
 
+#include <drivers/gpio.h>
+
 #include "lwm2m_object.h"
 #include "lwm2m_engine.h"
 
@@ -35,6 +37,18 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
  * start with BUTTON_MAX_ID
  */
 #define RESOURCE_INSTANCE_COUNT        (BUTTON_MAX_ID)
+
+struct sw {
+	struct gpio_callback button_cb;
+	struct k_timer button_timer;
+	struct k_work button_work;
+	struct device *gpio;
+	u8_t sw_num;
+	u8_t pin;
+};
+
+static struct sw sw;
+static u32_t time, last_time;
 
 /* resource state */
 struct ipso_button_data {
@@ -148,6 +162,174 @@ static struct lwm2m_engine_obj_inst *button_create(u16_t obj_inst_id)
 	return &inst[avail];
 }
 
+#define BUTTON_DEBOUNCE_DELAY_MS 250
+
+static uint8_t pin_pos_to_pin(uint32_t pin_pos)
+{
+	switch (pin_pos) {
+	case BIT(DT_ALIAS_SW0_GPIOS_PIN):
+		return DT_ALIAS_SW0_GPIOS_PIN;
+	case BIT(DT_ALIAS_SW1_GPIOS_PIN):
+		return DT_ALIAS_SW1_GPIOS_PIN;
+	case BIT(DT_ALIAS_SW2_GPIOS_PIN):
+		return DT_ALIAS_SW2_GPIOS_PIN;
+	case BIT(DT_ALIAS_SW3_GPIOS_PIN):
+		return DT_ALIAS_SW3_GPIOS_PIN;
+	}
+
+	LOG_ERR("No match for GPIO pin 0x%08x\n", pin_pos);
+
+	return 0;
+}
+
+static uint8_t pin_pos_to_sw_num(uint32_t pin_pos)
+{
+	switch (pin_pos) {
+	case BIT(DT_ALIAS_SW0_GPIOS_PIN): return 0;
+	case BIT(DT_ALIAS_SW1_GPIOS_PIN): return 1;
+	case BIT(DT_ALIAS_SW2_GPIOS_PIN): return 2;
+	case BIT(DT_ALIAS_SW3_GPIOS_PIN): return 3;
+	}
+
+	LOG_ERR("No match for GPIO pin 0x%08x\n", pin_pos);
+
+	return 0;
+}
+
+static void button_off_timer(struct k_timer *work)
+{
+	struct sw *sw = CONTAINER_OF(work, struct sw, button_timer);
+	char pathstr[15];
+	u32_t val = 0U;
+
+	gpio_pin_read(sw->gpio, sw->pin, &val);
+	LOG_DBG("%s: switch=%d, val=%d", __func__, sw->sw_num, val);
+
+	if (val == 0) {
+		k_timer_start(&sw->button_timer, K_SECONDS(1), 0);
+		return;
+	}
+
+	snprintk(pathstr, sizeof(pathstr), "/%u/%u/%u",
+			IPSO_OBJECT_PUSH_BUTTON_ID, sw->sw_num,
+			BUTTON_DIGITAL_STATE_ID);
+	lwm2m_engine_set_bool(pathstr, !val);
+}
+
+static void button_pressed_worker(struct k_work *work)
+{
+	struct sw *sw = CONTAINER_OF(work, struct sw, button_work);
+	char pathstr[15];
+	u32_t val = 0U;
+
+	LOG_DBG("%s: switch=%d", __func__, sw->sw_num);
+
+	gpio_pin_read(sw->gpio, sw->pin, &val);
+
+	snprintk(pathstr, sizeof(pathstr), "/%u/%u/%u",
+			IPSO_OBJECT_PUSH_BUTTON_ID, sw->sw_num,
+			BUTTON_DIGITAL_STATE_ID);
+	lwm2m_engine_set_bool(pathstr, !val);
+
+	k_timer_stop(&sw->button_timer);
+	k_timer_start(&sw->button_timer, K_MSEC(500), 0);
+}
+
+static void button_pressed(struct device *dev, struct gpio_callback *cb,
+		u32_t pin_pos)
+{
+	struct sw *sw = CONTAINER_OF(cb, struct sw, button_cb);
+	int i;
+
+	time = k_uptime_get_32();
+
+	/* debounce the switch */
+	if (time < last_time + BUTTON_DEBOUNCE_DELAY_MS) {
+		last_time = time;
+		return;
+	}
+
+	LOG_DBG("%s: pin_pos=0x%08X", __func__, pin_pos);
+
+	/* If any button is already pressed, just return */
+	for (i = 0; i < ARRAY_SIZE(inst); i++) {
+		if (button_data[i].state) {
+			LOG_ERR("%s: button %d is still pressed", __func__, i);
+			return;
+		}
+	}
+
+	sw->pin = pin_pos_to_pin(pin_pos);
+	sw->sw_num = pin_pos_to_sw_num(pin_pos);
+
+	k_work_submit(&sw->button_work);
+
+	last_time = time;
+}
+
+static void configure_buttons(void)
+{
+	/* Initialize the button debouncer */
+	last_time = k_uptime_get_32();
+
+	/* Initialize button worker task */
+	k_work_init(&sw.button_work, button_pressed_worker);
+
+	/* Initialize button off timer */
+	k_timer_init(&sw.button_timer, button_off_timer, NULL);
+
+	sw.gpio = device_get_binding(DT_ALIAS_SW0_GPIOS_CONTROLLER);
+	if (!sw.gpio) {
+		LOG_ERR("Can't get gpio device");
+		return;
+	}
+
+	gpio_pin_configure(sw.gpio, DT_ALIAS_SW0_GPIOS_PIN,
+			(GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
+			 GPIO_INT_ACTIVE_LOW | GPIO_PUD_PULL_UP));
+#ifdef DT_ALIAS_SW1_GPIOS_PIN
+	gpio_pin_configure(sw.gpio, DT_ALIAS_SW1_GPIOS_PIN,
+			(GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
+			 GPIO_INT_ACTIVE_LOW | GPIO_PUD_PULL_UP));
+#endif
+#ifdef DT_ALIAS_SW2_GPIOS_PIN
+	gpio_pin_configure(sw.gpio, DT_ALIAS_SW2_GPIOS_PIN,
+			(GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
+			 GPIO_INT_ACTIVE_LOW | GPIO_PUD_PULL_UP));
+#endif
+#ifdef DT_ALIAS_SW3_GPIOS_PIN
+	gpio_pin_configure(sw.gpio, DT_ALIAS_SW3_GPIOS_PIN,
+			(GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
+			 GPIO_INT_ACTIVE_LOW | GPIO_PUD_PULL_UP));
+#endif
+
+	gpio_init_callback(&sw.button_cb, button_pressed,
+			BIT(DT_ALIAS_SW0_GPIOS_PIN)
+#ifdef DT_ALIAS_SW1_GPIOS_PIN
+			| BIT(DT_ALIAS_SW1_GPIOS_PIN)
+#endif
+#ifdef DT_ALIAS_SW2_GPIOS_PIN
+			| BIT(DT_ALIAS_SW2_GPIOS_PIN)
+#endif
+#ifdef DT_ALIAS_SW3_GPIOS_PIN
+			| BIT(DT_ALIAS_SW3_GPIOS_PIN)
+#endif
+			);
+
+	gpio_add_callback(sw.gpio, &sw.button_cb);
+
+	gpio_pin_enable_callback(sw.gpio, DT_ALIAS_SW0_GPIOS_PIN);
+#ifdef DT_ALIAS_SW1_GPIOS_PIN
+	gpio_pin_enable_callback(sw.gpio, DT_ALIAS_SW1_GPIOS_PIN);
+#endif
+#ifdef DT_ALIAS_SW2_GPIOS_PIN
+	gpio_pin_enable_callback(sw.gpio, DT_ALIAS_SW2_GPIOS_PIN);
+#endif
+#ifdef DT_ALIAS_SW3_GPIOS_PIN
+	gpio_pin_enable_callback(sw.gpio, DT_ALIAS_SW3_GPIOS_PIN);
+#endif
+}
+
 static int ipso_button_init(struct device *dev)
 {
 	onoff_switch.obj_id = IPSO_OBJECT_PUSH_BUTTON_ID;
@@ -156,6 +338,8 @@ static int ipso_button_init(struct device *dev)
 	onoff_switch.max_instance_count = ARRAY_SIZE(inst);
 	onoff_switch.create_cb = button_create;
 	lwm2m_register_obj(&onoff_switch);
+
+	configure_buttons();
 
 	return 0;
 }
