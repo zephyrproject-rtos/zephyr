@@ -88,4 +88,12 @@ config ETH_STM32_HAL_MII
 	help
 	  Use the MII physical interface instead of RMII.
 
+config ETH_STM32_CARRIER_CHECK_RX_IDLE_TIMEOUT_MS
+	int "Carrier check timeout period (ms)"
+ 	default 500
+ 	range 100 30000
+ 	help
+ 	  Set the RX idle timeout period in milliseconds after which the
+	  PHY's carrier status is re-evaluated.
+
 endif # ETH_STM32_HAL

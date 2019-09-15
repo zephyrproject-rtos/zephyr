@@ -230,6 +230,7 @@ static void rx_thread(void *arg1, void *unused1, void *unused2)
 	struct eth_stm32_hal_dev_data *dev_data;
 	struct net_pkt *pkt;
 	int res;
+	u32_t status;
 
 	__ASSERT_NO_MSG(arg1 != NULL);
 	ARG_UNUSED(unused1);
@@ -241,16 +242,39 @@ static void rx_thread(void *arg1, void *unused1, void *unused2)
 	__ASSERT_NO_MSG(dev_data != NULL);
 
 	while (1) {
-		k_sem_take(&dev_data->rx_int_sem, K_FOREVER);
-
-		while ((pkt = eth_rx(dev)) != NULL) {
-			net_pkt_print_frags(pkt);
-			res = net_recv_data(dev_data->iface, pkt);
-			if (res < 0) {
-				eth_stats_update_errors_rx(dev_data->iface);
-				LOG_ERR("Failed to enqueue frame "
-					"into RX queue: %d", res);
-				net_pkt_unref(pkt);
+		res = k_sem_take(&dev_data->rx_int_sem,
+			K_MSEC(CONFIG_ETH_STM32_CARRIER_CHECK_RX_IDLE_TIMEOUT_MS));
+		if (res == 0) {
+			/* semaphore taken, update link status and receive packets */
+			if (dev_data->link_up != true) {
+				dev_data->link_up = true;
+				net_eth_carrier_on(dev_data->iface);
+			}
+			while ((pkt = eth_rx(dev)) != NULL) {
+				net_pkt_print_frags(pkt);
+				res = net_recv_data(dev_data->iface, pkt);
+				if (res < 0) {
+					eth_stats_update_errors_rx(dev_data->iface);
+					LOG_ERR("Failed to enqueue frame "
+						"into RX queue: %d", res);
+					net_pkt_unref(pkt);
+				}
+			}
+		} else if (res == -EAGAIN) {
+			/* semaphore timeout period expired, check link status */
+			if (HAL_ETH_ReadPHYRegister(&dev_data->heth, PHY_BSR,
+				(uint32_t *) &status) == HAL_OK) {
+				if ((status & PHY_LINKED_STATUS) == PHY_LINKED_STATUS) {
+					if (dev_data->link_up != true) {
+						dev_data->link_up = true;
+						net_eth_carrier_on(dev_data->iface);
+					}
+				} else {
+					if (dev_data->link_up != false) {
+						dev_data->link_up = false;
+						net_eth_carrier_off(dev_data->iface);
+					}
+				}
 			}
 		}
 	}
@@ -382,6 +406,8 @@ static void eth_iface_init(struct net_if *iface)
 		return;
 	}
 
+	dev_data->link_up = false;
+
 	/* Initialize semaphores */
 	k_mutex_init(&dev_data->tx_mutex);
 	k_sem_init(&dev_data->rx_int_sem, 0, UINT_MAX);
@@ -417,6 +443,7 @@ static void eth_iface_init(struct net_if *iface)
 			     NET_LINK_ETHERNET);
 
 	ethernet_init(iface);
+	net_if_flag_set(iface, NET_IF_NO_AUTO_START);
 }
 
 static enum ethernet_hw_caps eth_stm32_hal_get_capabilities(struct device *dev)
