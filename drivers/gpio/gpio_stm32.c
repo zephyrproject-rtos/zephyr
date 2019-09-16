@@ -288,11 +288,8 @@ static int gpio_stm32_config(struct device *dev, int access_op,
 		return -EIO;
 	}
 
-	if (!IS_ENABLED(CONFIG_EXTI_STM32)) {
-		goto release_lock;
-	}
+	if (IS_ENABLED(CONFIG_EXTI_STM32) && (flags & GPIO_INT) != 0) {
 
-	if (flags & GPIO_INT) {
 		if (stm32_exti_set_callback(pin, cfg->port,
 					    gpio_stm32_isr, dev) != 0) {
 			return -EBUSY;
@@ -321,12 +318,9 @@ static int gpio_stm32_config(struct device *dev, int access_op,
 		if (stm32_exti_enable(pin) != 0) {
 			return -ENOSYS;
 		}
-	} else {
-		stm32_exti_disable(pin);
-		stm32_exti_unset_callback(pin);
+
 	}
 
-release_lock:
 #if defined(CONFIG_STM32H7_DUAL_CORE)
 	LL_HSEM_ReleaseLock(HSEM, LL_HSEM_ID_1, 0);
 #endif /* CONFIG_STM32H7_DUAL_CORE */
