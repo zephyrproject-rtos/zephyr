@@ -46,7 +46,9 @@ Bluetooth
 Build and Infrastructure
 ************************
 
-* TBD
+* Deprecated kconfig functions dt_int_val, dt_hex_val, and dt_str_val.
+  Use new functions that utilize eDTS info such as dt_node_reg_addr.
+  See :zephyr_file:`scripts/kconfig/kconfigfunctions.py` for details.
 
 Libraries / Subsystems
 ***********************
