@@ -140,9 +140,9 @@ void idle(void *unused1, void *unused2, void *unused3)
 #ifdef CONFIG_BOOT_TIME_MEASUREMENT
 	/* record timestamp when idling begins */
 
-	extern u64_t __idle_time_stamp;
+	extern u32_t __idle_time_stamp;
 
-	__idle_time_stamp = (u64_t)k_cycle_get_32();
+	__idle_time_stamp = k_cycle_get_32();
 #endif
 
 #ifdef CONFIG_SMP

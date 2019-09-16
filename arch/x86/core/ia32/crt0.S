@@ -37,10 +37,6 @@
 	GDATA(_sse_mxcsr_default_value)
 #endif
 
-#if defined(CONFIG_BOOT_TIME_MEASUREMENT)
-	GDATA(__start_time_stamp)
-#endif
-
 #ifdef CONFIG_SYS_POWER_DEEP_SLEEP_STATES
 	GTEXT(_sys_resume_from_deep_sleep)
 #endif
@@ -71,15 +67,12 @@ SECTION_FUNC(TEXT_START, __start)
 
 #ifdef CONFIG_BOOT_TIME_MEASUREMENT
 	/*
-	 * Record BootTime from start of Kernel.
-	 * Store value temporarily in Register edi & esi and
-         * write to memory once memory access is allowed.
-         * That is, once the data segment register has been setup to access
-         * the .data/.rodata/.bss section of the linked image.
+	 * Reset the TSC to 0, since that's the datum for boot metrics.
 	 */
-        rdtsc
-        mov  %eax, %esi			/* low  value */
-        mov  %edx, %edi			/* high value */
+	xorl	%eax, %eax
+	xorl	%edx, %edx
+	movl	$X86_TIME_STAMP_COUNTER_MSR, %ecx
+	wrmsr
 #endif
 
 	/* Enable write-back caching by clearing the NW and CD bits */
@@ -121,14 +114,6 @@ SECTION_FUNC(TEXT_START, __start)
 __csSet:
 #endif /* CONFIG_SET_GDT */
 
-
-#ifdef CONFIG_BOOT_TIME_MEASUREMENT
-	/*
-	 * Store rdtsc result from temporary regiter ESI & EDI into memory.
-	 */
-        mov  %esi, __start_time_stamp  	/* low  value */
-        mov  %edi, __start_time_stamp+4    	/* high value */
-#endif
 
 #if !defined(CONFIG_FLOAT)
 	/*

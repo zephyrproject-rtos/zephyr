@@ -31,7 +31,15 @@ __start:
 1:
 #endif
 
+	/* FIXME: ...resetting TSC here is common to IA32 and Intel64... */
 	/* FIXME: ...disabling the PICs is common to IA32 and Intel64... */
+
+#ifdef CONFIG_BOOT_TIME_MEASUREMENT
+	xorl %eax, %eax
+	xorl %edx, %edx
+	movl $X86_TIME_STAMP_COUNTER_MSR, %ecx
+	wrmsr
+#endif
 
 #ifdef CONFIG_PIC_DISABLE
 	movb $0xff, %al
