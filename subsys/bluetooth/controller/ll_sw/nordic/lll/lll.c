@@ -13,10 +13,10 @@
 
 #include <soc.h>
 
+#include "hal/swi.h"
 #include "hal/ccm.h"
 #include "hal/radio.h"
 #include "hal/ticker.h"
-#include "hal/irq_vendor_hal.h"
 
 #include "util/mem.h"
 #include "util/memq.h"
@@ -90,10 +90,14 @@ static void rtc0_nrf5_isr(void *arg)
 
 	mayfly_run(TICKER_USER_ID_ULL_HIGH);
 
+#if (CONFIG_BT_CTLR_ULL_HIGH_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO)
+	mayfly_run(TICKER_USER_ID_ULL_LOW);
+#endif
+
 	DEBUG_TICKER_ISR(0);
 }
 
-static void lll_nrf5_isr(void *arg)
+static void swi_lll_nrf5_isr(void *arg)
 {
 	DEBUG_RADIO_ISR(1);
 
@@ -102,7 +106,8 @@ static void lll_nrf5_isr(void *arg)
 	DEBUG_RADIO_ISR(0);
 }
 
-static void ull_low_nrf5_isr(void *arg)
+#if (CONFIG_BT_CTLR_ULL_HIGH_PRIO != CONFIG_BT_CTLR_ULL_LOW_PRIO)
+static void swi_ull_low_nrf5_isr(void *arg)
 {
 	DEBUG_TICKER_JOB(1);
 
@@ -110,6 +115,7 @@ static void ull_low_nrf5_isr(void *arg)
 
 	DEBUG_TICKER_JOB(0);
 }
+#endif
 
 int lll_init(void)
 {
@@ -146,26 +152,26 @@ int lll_init(void)
 	}
 
 	/* Initialize SW IRQ structure */
-	hal_nrf5_irq_init();
+	hal_swi_init();
 
 	/* Connect ISRs */
 	IRQ_DIRECT_CONNECT(NRF5_IRQ_RADIO_IRQn, CONFIG_BT_CTLR_LLL_PRIO,
 			   radio_nrf5_isr, 0);
 	IRQ_CONNECT(NRF5_IRQ_RTC0_IRQn, CONFIG_BT_CTLR_ULL_HIGH_PRIO,
 		    rtc0_nrf5_isr, NULL, 0);
-#if HAL_RADIO_LLL_IRQ != HAL_RADIO_ULL_LOW_IRQ
-	IRQ_CONNECT(HAL_RADIO_LLL_IRQ, CONFIG_BT_CTLR_LLL_PRIO,
-		    lll_nrf5_isr, NULL, 0);
-	IRQ_CONNECT(HAL_RADIO_ULL_LOW_IRQ, CONFIG_BT_CTLR_ULL_LOW_PRIO,
-		    ull_low_nrf5_isr, NULL, 0);
+	IRQ_CONNECT(HAL_SWI_RADIO_IRQ, CONFIG_BT_CTLR_LLL_PRIO,
+		    swi_lll_nrf5_isr, NULL, 0);
+#if (CONFIG_BT_CTLR_ULL_HIGH_PRIO != CONFIG_BT_CTLR_ULL_LOW_PRIO)
+	IRQ_CONNECT(HAL_SWI_JOB_IRQ, CONFIG_BT_CTLR_ULL_LOW_PRIO,
+		    swi_ull_low_nrf5_isr, NULL, 0);
 #endif
 
 	/* Enable IRQs */
 	irq_enable(NRF5_IRQ_RADIO_IRQn);
 	irq_enable(NRF5_IRQ_RTC0_IRQn);
-#if HAL_RADIO_LLL_IRQ != HAL_RADIO_ULL_LOW_IRQ
-	irq_enable(HAL_RADIO_LLL_IRQ);
-	irq_enable(HAL_RADIO_ULL_LOW_IRQ);
+	irq_enable(HAL_SWI_RADIO_IRQ);
+#if (CONFIG_BT_CTLR_ULL_HIGH_PRIO != CONFIG_BT_CTLR_ULL_LOW_PRIO)
+	irq_enable(HAL_SWI_JOB_IRQ);
 #endif
 
 	return 0;
