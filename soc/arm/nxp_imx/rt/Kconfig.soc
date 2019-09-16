@@ -346,6 +346,9 @@ config DATA_SEMC
 	bool "Link data into external SEMC-controlled memory"
 	select DEVICE_CONFIGURATION_DATA if NXP_IMX_RT_BOOT_HEADER
 
+config DATA_OCRAM
+	bool "Link data into On-Chip RAM memory"
+
 endchoice
 
 endif # SOC_SERIES_IMX_RT
