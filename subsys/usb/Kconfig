@@ -6,6 +6,7 @@
 menuconfig USB_DEVICE_STACK
 	bool "USB device stack"
 	depends on USB_DEVICE_DRIVER || ARCH_POSIX
+	select HWINFO
 	help
 	  Enable USB device stack.
 
@@ -42,11 +43,12 @@ config USB_DEVICE_PRODUCT
 	  USB device Product string. MUST be configured by vendor.
 
 config USB_DEVICE_SN
-	string "USB serial number"
-	default "ABCDEF012345" if USB_MASS_STORAGE
-	default "0.01"
+	string "USB device Serial Number String"
+	default "0123456789ABCDEF"
 	help
-	  USB device SerialNumber string. MUST be configured by vendor.
+	  Placeholder for USB device Serial Number String.
+	  Serial Number String will be derived from
+	  Hardware Information Driver (HWINFO).
 
 config USB_COMPOSITE_DEVICE
 	bool "Enable composite device driver"
