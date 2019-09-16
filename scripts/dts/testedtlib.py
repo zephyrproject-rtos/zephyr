@@ -106,6 +106,16 @@ def run():
                  "{'foo': <Property, name: foo, type: int, value: 0>, 'bar': <Property, name: bar, type: int, value: 1>, 'baz': <Property, name: baz, type: int, value: 2>, 'qaz': <Property, name: qaz, type: int, value: 3>}")
 
     #
+    # Test 'child/parent-bus:'
+    #
+
+    verify_streq(edt.get_dev("/buses/foo-bus/node").binding_path,
+                 "test-bindings/device-on-foo-bus.yaml")
+
+    verify_streq(edt.get_dev("/buses/bar-bus/node").binding_path,
+                 "test-bindings/device-on-bar-bus.yaml")
+
+    #
     # Test 'sub-node:' in binding
     #
 

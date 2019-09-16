@@ -580,15 +580,25 @@ class Device:
             self.description = None
 
     def _bus_from_parent_binding(self):
-        # _init_binding() helper. Returns the bus specified by
-        # 'child: bus: ...' in the parent binding, or None if missing.
+        # _init_binding() helper. Returns the bus specified by 'child-bus: ...'
+        # in the parent binding (or the legacy 'child: bus: ...'), or None if
+        # missing.
 
         if not self.parent:
             return None
 
         binding = self.parent._binding
-        if binding and "child" in binding:
-            return binding["child"].get("bus")
+        if not binding:
+            return None
+
+        if "child-bus" in binding:
+            return binding["child-bus"]
+
+        # Legacy key
+        if "child" in binding:
+            # _check_binding() has checked that the "bus" key exists
+            return binding["child"]["bus"]
+
         return None
 
     def _init_props(self):
@@ -1307,12 +1317,20 @@ def _binding_compat(binding, binding_path):
 
 
 def _binding_bus(binding):
-    # Returns the bus specified in 'binding' (the bus the device described by
-    # 'binding' is on), e.g. "i2c", or None if 'binding' is None or doesn't
-    # specify a bus
+    # Returns the bus specified by 'parent-bus: ...' in the binding (or the
+    # legacy 'parent: bus: ...'), or None if missing
 
-    if binding and "parent" in binding:
-        return binding["parent"].get("bus")
+    if not binding:
+        return None
+
+    if "parent-bus" in binding:
+        return binding["parent-bus"]
+
+    # Legacy key
+    if "parent" in binding:
+        # _check_binding() has checked that the "bus" key exists
+        return binding["parent"]["bus"]
+
     return None
 
 
@@ -1421,7 +1439,7 @@ def _check_binding(binding, binding_path):
                  .format(prop, binding_path))
 
     ok_top = {"title", "description", "compatible", "properties", "#cells",
-              "parent", "child", "sub-node"}
+              "parent-bus", "child-bus", "parent", "child", "sub-node"}
 
     for prop in binding:
         if prop not in ok_top:
@@ -1429,8 +1447,20 @@ def _check_binding(binding, binding_path):
                  .format(prop, binding_path, ", ".join(ok_top)))
 
     for pc in "parent", "child":
+        # 'parent/child-bus:'
+        bus_key = pc + "-bus"
+        if bus_key in binding and \
+           not isinstance(binding[bus_key], str):
+            _warn("malformed '{}:' value in {}, expected string"
+                  .format(bus_key, binding_path))
+
+        # Legacy 'child/parent: bus: ...' keys
         if pc in binding:
-            # Just 'bus:' is expected at the moment
+            _warn("'{0}: bus: ...' in {1} is deprecated and will be removed - "
+                  "please use a top-level '{0}-bus:' key instead (see "
+                  "binding-template.yaml)".format(pc, binding_path))
+
+            # Just 'bus:' is expected
             if binding[pc].keys() != {"bus"}:
                 _err("expected (just) 'bus:' in '{}:' in {}"
                      .format(pc, binding_path))

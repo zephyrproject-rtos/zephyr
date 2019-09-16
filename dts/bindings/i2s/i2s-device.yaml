@@ -5,8 +5,7 @@
 
 include: base.yaml
 
-parent:
-    bus: i2s
+parent-bus: i2s
 
 properties:
     reg:

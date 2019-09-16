@@ -319,6 +319,27 @@
 	};
 
 	//
+	// For testing 'child-bus:' and 'parent-bus:'
+	//
+
+	buses {
+		// The nodes below will map to different bindings since they
+		// appear on different buses
+		foo-bus {
+			compatible = "foo-bus";
+			node {
+				compatible = "on-bus";
+			};
+		};
+		bar-bus {
+			compatible = "bar-bus";
+			node {
+				compatible = "on-bus";
+			};
+		};
+	};
+
+	//
 	// Parent with 'sub-node:' in binding
 	//
 
