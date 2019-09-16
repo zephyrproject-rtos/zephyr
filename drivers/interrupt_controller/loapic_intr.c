@@ -65,20 +65,6 @@ u32_t loapic_suspend_buf[LOPIC_SUSPEND_BITS_REQD / 32] = {0};
 static u32_t loapic_device_power_state = DEVICE_PM_ACTIVE_STATE;
 #endif
 
-/*
- * this should not be a function at all, really, it should be
- * hand-coded in include/drivers/sysapic.h. but for now it remains
- * a function, just moved here from drivers/timer/loapic_timer.c
- * where it REALLY didn't belong.
- */
-
-#ifdef CONFIG_X2APIC
-void z_x2apic_eoi(void)
-{
-	x86_write_x2apic(LOAPIC_EOI, 0);
-}
-#endif
-
 /**
  *
  * @brief Initialize the Local APIC or xAPIC
