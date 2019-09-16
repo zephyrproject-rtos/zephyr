@@ -8,13 +8,14 @@
 #include <zephyr/types.h>
 #include <soc.h>
 
+#include "hal/nrf5/swi.h"
+
 #include "util/memq.h"
 #include "util/mayfly.h"
 
 #define LOG_MODULE_NAME bt_ctlr_nrf5_mayfly
 #include "common/log.h"
 #include "hal/debug.h"
-#include "hal/nrf5/nrf5_sw_irqs.h"
 
 #if defined(CONFIG_BT_LL_SW_LEGACY)
 #define MAYFLY_CALL_ID_WORKER MAYFLY_CALL_ID_0
@@ -35,9 +36,9 @@ void mayfly_enable_cb(u8_t caller_id, u8_t callee_id, u8_t enable)
 	LL_ASSERT(callee_id == MAYFLY_CALL_ID_JOB);
 
 	if (enable) {
-		irq_enable(HAL_RADIO_SW_IRQ);
+		irq_enable(HAL_SWI_JOB_IRQ);
 	} else {
-		irq_disable(HAL_RADIO_SW_IRQ);
+		irq_disable(HAL_SWI_JOB_IRQ);
 	}
 }
 
@@ -48,14 +49,14 @@ u32_t mayfly_is_enabled(u8_t caller_id, u8_t callee_id)
 	switch (callee_id) {
 #if defined(CONFIG_BT_LL_SW_SPLIT)
 	case MAYFLY_CALL_ID_LLL:
-		return irq_is_enabled(HAL_RADIO_LLL_IRQ);
+		return irq_is_enabled(HAL_SWI_RADIO_IRQ);
 #endif /* CONFIG_BT_LL_SW_SPLIT */
 
 	case MAYFLY_CALL_ID_WORKER:
-		return irq_is_enabled(RTC0_IRQn);
+		return irq_is_enabled(HAL_SWI_WORKER_IRQ);
 
 	case MAYFLY_CALL_ID_JOB:
-		return irq_is_enabled(HAL_RADIO_SW_IRQ);
+		return irq_is_enabled(HAL_SWI_JOB_IRQ);
 
 	default:
 		LL_ASSERT(0);
@@ -105,16 +106,16 @@ void mayfly_pend(u8_t caller_id, u8_t callee_id)
 	switch (callee_id) {
 #if defined(CONFIG_BT_LL_SW_SPLIT)
 	case MAYFLY_CALL_ID_LLL:
-		hal_nrf5_pend_lll_irq();
+		hal_swi_lll_pend();
 		break;
 #endif /* CONFIG_BT_LL_SW_SPLIT */
 
 	case MAYFLY_CALL_ID_WORKER:
-		NVIC_SetPendingIRQ(RTC0_IRQn);
+		hal_swi_worker_pend();
 		break;
 
 	case MAYFLY_CALL_ID_JOB:
-		hal_nrf5_pend_job_irq();
+		hal_swi_job_pend();
 		break;
 
 	default:
