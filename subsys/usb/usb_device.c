@@ -332,6 +332,11 @@ static void usb_handle_control_transfer(u8_t ep,
 
 		/* Send smallest of requested and offered length */
 		usb_dev.data_buf_residue = MIN(usb_dev.data_buf_len, length);
+		if (usb_dev.data_buf_len > CONFIG_USB_REQUEST_BUFFER_SIZE) {
+			LOG_ERR("REQUEST_BUFFER too small");
+			k_oops();
+		}
+
 		/* Send first part (possibly a zero-length status message) */
 		usb_data_to_host(length);
 	} else if (ep == USB_CONTROL_OUT_EP0) {
