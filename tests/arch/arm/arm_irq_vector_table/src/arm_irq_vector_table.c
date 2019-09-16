@@ -178,6 +178,17 @@ vth __irq_vector_table _irq_vector_table[RTC1_IRQn + 1] = {
 	rtc1_nrf_isr
 };
 #endif
+#elif defined(CONFIG_SOC_SERIES_CC13X2_CC26X2)
+/* TI CC13x2/CC26x2 based platforms also employ a Hardware RTC peripheral
+ * to implement the Kernel system timer, instead of the ARM Cortex-M
+ * SysTick. Therefore, a pointer to the timer ISR needs to be added in
+ * the custom vector table to handle the timer "tick" interrupts.
+ */
+extern void rtc_isr(void);
+vth __irq_vector_table _irq_vector_table[CONFIG_NUM_IRQS + 2] = {
+	isr0, isr1, isr2, 0,
+	rtc_isr
+};
 #else
 vth __irq_vector_table _irq_vector_table[CONFIG_NUM_IRQS] = {
 	isr0, isr1, isr2
