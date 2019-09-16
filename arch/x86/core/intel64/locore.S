@@ -507,10 +507,12 @@ irq_dispatch:
 	movq x86_irq_args(,%rcx,8), %rdi
 	call *%rbx
 
-#ifdef CONFIG_X2APIC
-	call z_x2apic_eoi
-#else
 	xorl %eax, %eax
+#ifdef CONFIG_X2APIC
+	xorl %edx, %edx
+	movl $(X86_X2APIC_BASE_MSR + (LOAPIC_EOI >> 4)), %ecx
+	wrmsr
+#else /* xAPIC */
 	movl %eax, (CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_EOI)
 #endif
 
