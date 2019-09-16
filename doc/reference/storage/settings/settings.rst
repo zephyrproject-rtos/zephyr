@@ -69,9 +69,10 @@ backend.
 Zephyr Storage Backends
 ***********************
 
-Zephyr has two existing backend storages which can be a Flash Circular Buffer
-(:option:`CONFIG_SETTINGS_FCB`) or a file in the filesystem
-(:option:`CONFIG_SETTINGS_FS`).
+Zephyr has three storage backends: a Flash Circular Buffer
+(:option:`CONFIG_SETTINGS_FCB`), a file in the filesystem
+(:option:`CONFIG_SETTINGS_FS`), or non-volatile storage
+(:option:`CONFIG_SETTINGS_NVS`).
 
 You can declare multiple sources for settings; settings from
 all of these are restored when ``settings_load()`` is called.
@@ -84,6 +85,9 @@ using ``settings_fcb_dst()``. As a side-effect,  ``settings_fcb_src()``
 initializes the FCB area, so it must be called before calling
 ``settings_fcb_dst()``. File read target is registered using
 ``settings_file_src()``, and write target by using ``settings_file_dst()``.
+Non-volatile storage read target is registered using
+``settings_nvs_src()``, and write target by using
+``settings_nvs_dst()``.
 
 Loading data from persisted storage
 ***********************************
