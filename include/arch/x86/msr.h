@@ -10,6 +10,8 @@
  * Model specific registers (MSR).  Access with z_x86_msr_read/write().
  */
 
+#define X86_TIME_STAMP_COUNTER_MSR	0x00000010
+
 #define X86_SPEC_CTRL_MSR		0x00000048
 #define X86_SPEC_CTRL_MSR_IBRS		BIT(0)
 #define X86_SPEC_CTRL_MSR_SSBD		BIT(2)
