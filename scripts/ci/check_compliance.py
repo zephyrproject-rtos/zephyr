@@ -9,7 +9,6 @@ import subprocess
 import re
 import os
 from email.utils import parseaddr
-import sh
 import logging
 import argparse
 from junitparser import TestCase, TestSuite, JUnitXml, Skipped, Error, Failure, Attr
@@ -19,6 +18,7 @@ import json
 import tempfile
 import traceback
 import magic
+import shlex
 from pathlib import Path
 
 # '*' makes it italic
@@ -30,25 +30,36 @@ logger = None
 
 
 def git(*args):
-    # Runs a git command using the 'sh' library (https://amoffat.github.io/sh/)
+    # Helper for running a Git command. Returns the rstrip()ed stdout output.
+    # Called like git("diff"). Exits with SystemError (raised by sys.exit()) on
+    # errors.
 
-    # Do not create a TTY for stdout, so that Git doesn't start a pager.
-    #
-    # Hack: Setting _cwd to the working dir seems pointless as of writing (it
-    # should be the default), but keep it around in case it's working around
-    # some issue
+    git_cmd = ("git",) + args
+    git_cmd_s = " ".join(shlex.quote(word) for word in git_cmd)  # For errors
 
-    # pylint doesn't like how the sh library works.
-    #
-    # pylint: disable=unexpected-keyword-arg
-    return sh.git(*args, _tty_out=False, _cwd=os.getcwd())
+    try:
+        git_process = subprocess.Popen(
+            git_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    except FileNotFoundError:
+        sys.exit("git executable not found (when running '{}'). Check that "
+                 "it's in listed in the PATH environment variable"
+                 .format(git_cmd_s))
+    except OSError as e:
+        sys.exit("failed to run '{}': {}".format(git_cmd_s, e))
+
+    stdout, stderr = git_process.communicate()
+    if git_process.returncode or stderr:
+        sys.exit("failed to run '{}': {}".format(
+            git_cmd_s, stdout.decode("utf-8") + stderr.decode("utf-8")))
+
+    return stdout.decode("utf-8").rstrip()
 
 
 # This ends up as None when we're not running in a Zephyr tree
 ZEPHYR_BASE = os.environ.get('ZEPHYR_BASE')
 
 # The absolute path of the top-level git directory
-GIT_TOP = git("rev-parse", "--show-toplevel").strip()
+GIT_TOP = git("rev-parse", "--show-toplevel")
 
 
 def get_shas(refspec):

@@ -6,29 +6,41 @@
 
 # A script to set labels on pull-rquests based on files being changed
 
+import sys
 import re, os
-import sh
+import subprocess
 import argparse
+import shlex
 from github import Github
 
 if "ZEPHYR_BASE" not in os.environ:
     exit(1)
 
-repository_path = os.environ['ZEPHYR_BASE']
-sh_special_args = {
-    '_tty_out': False,
-    '_cwd': repository_path
-}
 
 def git(*args):
-    # Runs a git command using the 'sh' library (https://amoffat.github.io/sh/)
+    # Helper for running a Git command. Returns the rstrip()ed stdout output.
+    # Called like git("diff"). Exits with SystemError (raised by sys.exit()) on
+    # errors.
 
-    # Do not create a TTY for stdout, so that Git doesn't start a pager.
-    #
-    # Hack: Setting _cwd to the working dir seems pointless as of writing (it
-    # should be the default), but keep it around in case it's working around
-    # some issue
-    return sh.git(*args, _tty_out=False, _cwd=os.getcwd())
+    git_cmd = ("git",) + args
+    git_cmd_s = " ".join(shlex.quote(word) for word in git_cmd)  # For errors
+
+    try:
+        git_process = subprocess.Popen(
+            git_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    except FileNotFoundError:
+        sys.exit("git executable not found (when running '{}'). Check that "
+                 "it's in listed in the PATH environment variable"
+                 .format(git_cmd_s))
+    except OSError as e:
+        sys.exit("failed to run '{}': {}".format(git_cmd_s, e))
+
+    stdout, stderr = git_process.communicate()
+    if git_process.returncode or stderr:
+        sys.exit("failed to run '{}': {}".format(
+            git_cmd_s, stdout.decode("utf-8") + stderr.decode("utf-8")))
+
+    return stdout.decode("utf-8").rstrip()
 
 
 def parse_args():
