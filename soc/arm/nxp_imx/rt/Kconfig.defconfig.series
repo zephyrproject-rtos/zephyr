@@ -141,6 +141,16 @@ config SRAM_BASE_ADDRESS
 
 endif # DATA_SEMC
 
+if DATA_OCRAM
+
+config SRAM_SIZE
+	default $(dt_node_reg_size,/memory@20200000,0,K)
+
+config SRAM_BASE_ADDRESS
+	default $(dt_node_reg_addr,/memory@20200000)
+
+endif # DATA_OCRAM
+
 if USB
 
 config USB_DC_NXP_EHCI
