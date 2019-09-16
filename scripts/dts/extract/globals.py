@@ -317,6 +317,11 @@ def get_binding(node_path):
             return parent_binding['sub-node']
 
         # look for a bus-specific binding
+
+        if 'child-bus' in parent_binding:
+            bus = parent_binding['child-bus']
+            return bus_bindings[bus][compat]
+
         if 'child' in parent_binding and 'bus' in parent_binding['child']:
             bus = parent_binding['child']['bus']
             return bus_bindings[bus][compat]

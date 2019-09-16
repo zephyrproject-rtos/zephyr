@@ -2,8 +2,7 @@
 
 include: base.yaml
 
-child:
-    bus: can
+child-bus: can
 
 properties:
     "#address-cells":

@@ -6,8 +6,7 @@ compatible: "holtek,ht16k33-keyscan"
 
 include: base.yaml
 
-parent:
-    bus: ht16k33
+parent-bus: ht16k33
 
 properties:
     reg:

@@ -5,8 +5,7 @@
 
 include: base.yaml
 
-parent:
-    bus: uart
+parent-bus: uart
 
 properties:
     label:

@@ -65,7 +65,8 @@ def generate_prop_defines(node_path, prop):
     # named 'prop' on the device tree node at 'node_path'
 
     binding = get_binding(node_path)
-    if 'parent' in binding and 'bus' in binding['parent']:
+    if 'parent-bus' in binding or \
+       'parent' in binding and 'bus' in binding['parent']:
         # If the binding specifies a parent for the node, then include the
         # parent in the #define's generated for the properties
         parent_path = get_parent_path(node_path)
@@ -154,7 +155,8 @@ def generate_bus_defines(node_path):
     #   bus: ...
 
     binding = get_binding(node_path)
-    if not ('parent' in binding and 'bus' in binding['parent']):
+    if not ('parent-bus' in binding or
+            'parent' in binding and 'bus' in binding['parent']):
         return
 
     parent_path = get_parent_path(node_path)
@@ -162,17 +164,24 @@ def generate_bus_defines(node_path):
     # Check that parent has matching child bus value
     try:
         parent_binding = get_binding(parent_path)
-        parent_bus = parent_binding['child']['bus']
+        if 'child-bus' in parent_binding:
+            parent_bus = parent_binding['child-bus']
+        else:
+            parent_bus = parent_binding['child']['bus']
     except (KeyError, TypeError):
         raise Exception("{0} defines parent {1} as bus master, but {1} is not "
                         "configured as bus master in binding"
                         .format(node_path, parent_path))
 
-    if parent_bus != binding['parent']['bus']:
+    if 'parent-bus' in binding:
+        bus = binding['parent-bus']
+    else:
+        bus = binding['parent']['bus']
+
+    if parent_bus != bus:
         raise Exception("{0} defines parent {1} as {2} bus master, but {1} is "
                         "configured as {3} bus master"
-                        .format(node_path, parent_path,
-                                binding['parent']['bus'], parent_bus))
+                        .format(node_path, parent_path, bus, parent_bus))
 
     # Generate *_BUS_NAME #define
     extract_bus_name(
@@ -357,6 +366,9 @@ def load_bindings(root, binding_dirs):
         for compat in binding_compats:
             if compat not in compats:
                 compats.append(compat)
+
+            if 'parent-bus' in binding:
+                bus_to_binding[binding['parent-bus']][compat] = binding
 
             if 'parent' in binding:
                 bus_to_binding[binding['parent']['bus']][compat] = binding

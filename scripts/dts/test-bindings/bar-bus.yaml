@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: BSD-3-Clause
+
+title: Bar bus controller
+description: Bar bus controller
+
+compatible: "bar-bus"
+
+child-bus: "bar"

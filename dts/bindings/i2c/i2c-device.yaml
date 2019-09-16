@@ -5,8 +5,7 @@
 
 include: base.yaml
 
-parent:
-    bus: i2c
+parent-bus: i2c
 
 properties:
     reg:
