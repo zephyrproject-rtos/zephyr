@@ -6,9 +6,7 @@
 
 # A script to set labels on pull-rquests based on files being changed
 
-import sys
 import re, os
-from email.utils import parseaddr
 import sh
 import argparse
 from github import Github
@@ -46,21 +44,12 @@ def parse_args():
     return parser.parse_args()
 
 def main():
-    boards = set()
-
     args = parse_args()
     if not args.commits:
         exit(1)
 
     commit = git("diff","--name-only", args.commits)
     files = commit.split("\n")
-
-    docs = 0
-    images = 0
-    kernel = 0
-    code = 0
-    net = 0
-    bt = 0
 
     matches = [
             {
@@ -249,7 +238,6 @@ def main():
                 "counter": 0,
                 "labels": ["area: Bluetooth Mesh"]
                 },
- 
             {
                 "area": "API",
                 "regex" : ["^include/"],
@@ -282,7 +270,7 @@ def main():
                 },
             {
                 "area": "Documentation",
-                "regex" : ["^doc/", "\.rst$", "\.txt$"],
+                "regex" : ["^doc/", r"\.rst$", r"\.txt$"],
                 "counter": 0,
                 "labels": ["area: Documentation"]
                 },
@@ -330,8 +318,6 @@ def main():
         exit(0)
 
     if args.pull_request and args.repo:
-        username = os.environ.get('GH_USERNAME', 'zephyrbot')
-
         github_token = os.environ['GH_TOKEN']
         github_conn = Github(github_token)
 
