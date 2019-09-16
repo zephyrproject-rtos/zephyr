@@ -660,8 +660,12 @@ static int mod_set(bool vnd, const char *name, size_t len_rd,
 		return mod_set_pub(mod, len_rd, read_cb, cb_arg);
 	}
 
-	if (!strncmp(next, "data", len) && mod->cb && mod->cb->settings_set) {
-		return mod->cb->settings_set(mod, len_rd, read_cb, cb_arg);
+	if (!strncmp(next, "data", len)) {
+		mod->flags |= BT_MESH_MOD_DATA_PRESENT;
+
+		if (mod->cb && mod->cb->settings_set) {
+			return mod->cb->settings_set(mod, len_rd, read_cb, cb_arg);
+		}
 	}
 
 	BT_WARN("Unknown module key %s", next);
@@ -1591,9 +1595,14 @@ int bt_mesh_model_data_store(struct bt_mesh_model *mod, bool vnd,
 	encode_mod_path(mod, vnd, "data", path, sizeof(path));
 
 	if (data_len) {
+		mod->flags |= BT_MESH_MOD_DATA_PRESENT;
 		err = settings_save_one(path, data, data_len);
-	} else {
+	} else if (mod->flags & BT_MESH_MOD_DATA_PRESENT) {
+		mod->flags &= ~BT_MESH_MOD_DATA_PRESENT;
 		err = settings_delete(path);
+	} else {
+		/* Nothing to delete */
+		err = 0;
 	}
 
 	if (err) {

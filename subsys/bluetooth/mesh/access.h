@@ -11,6 +11,7 @@ enum {
 	BT_MESH_MOD_BIND_PENDING = BIT(0),
 	BT_MESH_MOD_SUB_PENDING = BIT(1),
 	BT_MESH_MOD_PUB_PENDING = BIT(2),
+	BT_MESH_MOD_DATA_PRESENT = BIT(3),
 };
 
 void bt_mesh_elem_register(struct bt_mesh_elem *elem, u8_t count);

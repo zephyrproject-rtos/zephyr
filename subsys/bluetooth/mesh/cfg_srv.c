@@ -3289,14 +3289,22 @@ static void mod_reset(struct bt_mesh_model *mod, struct bt_mesh_elem *elem,
 
 	/* Clear model state that isn't otherwise cleared. E.g. AppKey
 	 * binding and model publication is cleared as a consequence
-	 * of removing all app keys, however model subscription clearing
-	 * must be taken care of here.
+	 * of removing all app keys, however model subscription and user data
+	 * clearing must be taken care of here.
 	 */
 
 	clear_count = mod_sub_list_clear(mod);
 
-	if (IS_ENABLED(CONFIG_BT_SETTINGS) && clear_count) {
-		bt_mesh_store_mod_sub(mod);
+	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		if (clear_count) {
+			bt_mesh_store_mod_sub(mod);
+		}
+
+		bt_mesh_model_data_store(mod, vnd, NULL, 0);
+	}
+
+	if (mod->cb && mod->cb->reset) {
+		mod->cb->reset(mod);
 	}
 }
 
