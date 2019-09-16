@@ -283,6 +283,13 @@ int tz_sau_region_configure(tz_sau_conf_t *p_sau_conf);
  */
 typedef void __attribute__((cmse_nonsecure_call)) (*tz_ns_func_ptr_t) (void);
 
+/* Required for C99 compilation (required for GCC-8.x version,
+ * where typeof is used instead of __typeof__)
+ */
+#ifndef typeof
+#define typeof  __typeof__
+#endif
+
 #if defined(CONFIG_ARM_FIRMWARE_HAS_SECURE_ENTRY_FUNCS)
 /**
  * @brief Non-Secure entry function attribute.
