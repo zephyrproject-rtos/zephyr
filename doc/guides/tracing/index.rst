@@ -10,9 +10,12 @@ The tracing feature provides hooks that permits you to collect data from
 your application and allows enabled backends to visualize the inner-working of
 the kernel and various subsystems.
 
-Applications and supported tools can define empty macros declared in
-:zephyr_file:`include/tracing.h` that are called across the kernel in key spots.
+Applications and tracing tools can create a backend that redefines the
+macros declared in :zephyr_file:`include/debug/tracing.h` that are called
+across the kernel in key spots.
 
+.. doxygengroup:: tracing_apis
+   :project: Zephyr
 
 SEGGER SystemView Support
 *************************
@@ -23,7 +26,7 @@ any application for platforms that have the required hardware support.
 To enable tracing support with `SEGGER SystemView`_ add the configuration option
 :option:`CONFIG_SEGGER_SYSTEMVIEW` to your project configuration file and set
 it to *y*. For example, this can be added to the
-:ref:`synchronization_sample` to visualize fast switching between threads:
+:ref:`synchronization_sample` to visualize fast switching between threads::
 
     CONFIG_STDOUT_CONSOLE=y
     # enable to use thread names
