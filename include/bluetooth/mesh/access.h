@@ -422,6 +422,15 @@ struct bt_mesh_model_cb {
 	 * @return 0 on success, error otherwise.
 	 */
 	int (*const init)(struct bt_mesh_model *model);
+
+	/** @brief Model reset callback.
+	 *
+	 * Called when the mesh node is reset. All model data is deleted on
+	 * reset, and the model should clear its state.
+	 *
+	 * @param model Model this callback belongs to.
+	 */
+	void (*const reset)(struct bt_mesh_model *model);
 };
 
 /** Abstraction that describes a Mesh Model instance */
