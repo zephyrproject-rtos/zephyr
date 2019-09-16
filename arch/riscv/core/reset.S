@@ -31,6 +31,14 @@ SECTION_FUNC(reset, __reset)
  * the C domain
  */
 SECTION_FUNC(TEXT, __initialize)
+#ifdef CONFIG_FLOAT
+	/* 
+	 * Floating-point rounding mode set to
+	 * IEEE-754 default, and clear all exception flags.
+	 */
+	fscsr x0, x0
+#endif
+
 #ifdef CONFIG_INIT_STACKS
 	/* Pre-populate all bytes in _interrupt_stack with 0xAA */
 	la t0, _interrupt_stack
