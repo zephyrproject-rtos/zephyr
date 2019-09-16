@@ -577,6 +577,8 @@ struct gatt_attr {
 
 #define GATT_GET_ATTRIBUTE_VALUE	0x1d
 struct gatt_get_attribute_value_cmd {
+	u8_t address_type;
+	u8_t address[6];
 	u16_t handle;
 } __packed;
 struct gatt_get_attribute_value_rp {
