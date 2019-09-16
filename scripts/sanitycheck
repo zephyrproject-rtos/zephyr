@@ -1801,6 +1801,9 @@ class FilterBuilder(CMake):
 
     def parse_generated(self):
 
+        if self.platform.name == "unit_testing":
+            return {}
+
         _generated_dt_confg = "include/generated/generated_dts_board.conf"
 
         cmake_cache_path = os.path.join(self.build_dir, "CMakeCache.txt")
@@ -1851,7 +1854,7 @@ class FilterBuilder(CMake):
         filter_data.update(self.cmake_cache)
         filter_data.update(self.devicetree)
 
-        if self.testcase:
+        if self.testcase and self.testcase.tc_filter:
             try:
                 res = expr_parser.parse(self.testcase.tc_filter, filter_data)
             except (ValueError, SyntaxError) as se:
@@ -1868,7 +1871,7 @@ class FilterBuilder(CMake):
             return filter_data
 
 
-class ProjectBuilder(CMake):
+class ProjectBuilder(FilterBuilder):
 
     def __init__(self, suite, instance):
         super().__init__(instance.testcase, instance.platform, instance.testcase.source_dir, instance.build_dir)
@@ -1922,7 +1925,12 @@ class ProjectBuilder(CMake):
             elif options.cmake_only:
                 pipeline.put({"op": "report", "test": self.instance, "status": "cmake"})
             else:
-                pipeline.put({"op": "build", "test": self.instance, "status": "cmake"})
+                if self.instance.name in results['filter'] and results['filter'][self.instance.name]:
+                    verbose("filtering %s" % self.instance.name)
+                    self.instance.status = "skipped"
+                    pipeline.put({"op": "report", "test": self.instance, "status": "skipped"})
+                else:
+                    pipeline.put({"op": "build", "test": self.instance, "status": "cmake"})
 
 
         elif op == "build":
@@ -1980,12 +1988,17 @@ class ProjectBuilder(CMake):
                 else:
                     log_info("{}".format(b_log))
 
+        elif instance.status == "skipped":
+            status = COLOR_YELLOW + "SKIPPED" + COLOR_NORMAL
+
         else:
             status = COLOR_GREEN + "PASSED" + COLOR_NORMAL
 
         if VERBOSE or not TERMINAL:
             if options.cmake_only:
                 handler_type = "cmake"
+            elif instance.status == "skipped":
+                handler_type = "None"
             else:
                 if instance.handler:
                     handler_type = instance.handler.type_str
@@ -2445,8 +2458,6 @@ class TestSuite:
         arch_filter = options.arch
         tag_filter = options.tag
         exclude_tag = options.exclude_tag
-        extra_args = options.extra_args
-        all_plats = options.all
 
         verbose("platform filter: " + str(platform_filter))
         verbose("    arch_filter: " + str(arch_filter))
@@ -2455,7 +2466,7 @@ class TestSuite:
 
         default_platforms = False
 
-        if all_plats:
+        if options.all:
             info("Selecting all possible platforms per test case")
             # When --all used, any --platform arguments ignored
             platform_filter = []
@@ -2463,100 +2474,7 @@ class TestSuite:
             info("Selecting default platforms per test case")
             default_platforms = True
 
-        jobs = []
-        for tc_name, tc in self.testcases.items():
-            for plat in self.platforms:
-                if (plat.arch == "unit") != (tc.type == "unit"):
-                    continue
-
-                if tc.build_on_all and not platform_filter:
-                    platform_filter = []
-
-                if tc.skip:
-                    continue
-
-                if tag_filter and not tc.tags.intersection(tag_filter):
-                    continue
-
-                if exclude_tag and tc.tags.intersection(exclude_tag):
-                    continue
-
-                if testcase_filter and tc_name not in testcase_filter:
-                    continue
-
-                if arch_filter and plat.arch not in arch_filter:
-                    continue
-
-                if tc.arch_whitelist and plat.arch not in tc.arch_whitelist:
-                    continue
-
-                if tc.arch_exclude and plat.arch in tc.arch_exclude:
-                    continue
-
-                if tc.platform_exclude and plat.name in tc.platform_exclude:
-                    continue
-
-                if tc.toolchain_exclude and toolchain in tc.toolchain_exclude:
-                    continue
-
-                if platform_filter and plat.name not in platform_filter:
-                    continue
-
-                if plat.ram < tc.min_ram:
-                    continue
-
-                if set(plat.ignore_tags) & tc.tags:
-                    continue
-
-                if tc.depends_on:
-                    dep_intersection = tc.depends_on.intersection(
-                        set(plat.supported))
-                    if dep_intersection != set(tc.depends_on):
-                        continue
-
-                if plat.flash < tc.min_flash:
-                    continue
-
-                if tc.platform_whitelist and plat.name not in tc.platform_whitelist:
-                    continue
-
-                if tc.toolchain_whitelist and toolchain not in tc.toolchain_whitelist:
-                    continue
-
-                if (plat.env_satisfied and tc.tc_filter
-                        and (plat.default or all_plats or platform_filter)
-                        and (toolchain in plat.supported_toolchains or options.force_toolchain)):
-                    args = tc.extra_args[:]
-                    args.extend(extra_args)
-
-                    build_dir = os.path.join(self.outdir, plat.name, tc.name)
-                    source_dir = os.path.join(ZEPHYR_BASE, tc.source_dir)
-
-                    jobs.append({
-                        'build_dir': build_dir,
-                        'source_dir': source_dir,
-                        'generator': get_generator()[1],
-                        'platform': plat,
-                        'testcase': tc
-                    })
-
-
-        info("Building testcase defconfigs...")
-        filter_results = dict()
-
-        with concurrent.futures.ThreadPoolExecutor(max_workers=self.jobs) as executor:
-            futures = []
-            for job in jobs:
-                fb = FilterBuilder(job['testcase'], job['platform'], job['source_dir'], job['build_dir'])
-                futures.append(executor.submit(fb.run_cmake))
-
-            for future in concurrent.futures.as_completed(futures):
-                result = future.result()
-                if result:
-                    filter_results.update(result.get('filter', ""))
-                    verbose("%s" %(result.get('msg', "")))
-
-        info("Filtering test cases...")
+        info("Building initial testcase list")
 
         for tc_name, tc in self.testcases.items():
             instance_list = []
@@ -2644,12 +2562,6 @@ class TestSuite:
 
                 if set(plat.ignore_tags) & tc.tags:
                     discards[instance] = "Excluded tags per platform"
-                    continue
-
-
-
-                if instance.name in filter_results and filter_results[instance.name]:
-                    discards[instance] = "Filter not satisfied: '%s'" %tc.tc_filter
                     continue
 
                 instance_list.append(instance)
