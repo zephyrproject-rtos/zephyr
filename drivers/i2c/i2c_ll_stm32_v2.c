@@ -286,7 +286,12 @@ static void stm32_i2c_event(struct device *dev)
 	if (LL_I2C_IsActiveFlag_NACK(i2c)) {
 		LL_I2C_ClearFlag_NACK(i2c);
 		data->current.is_nack = 1U;
-		goto end;
+		/*
+		 * AutoEndMode is always disabled in master mode,
+		 * so send a stop condition manually
+		 */
+		LL_I2C_GenerateStopCondition(i2c);
+		return;
 	}
 
 	/* STOP received */
