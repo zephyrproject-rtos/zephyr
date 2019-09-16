@@ -25,6 +25,11 @@
 
 #ifdef __cplusplus
 extern "C" {
+
+/* Workaround for bug in the cmse_nsfptr_create macro in GCC version 8 */
+#if (__GNUC__ > 7) && (__GNUC__ < 9)
+#undef cmse_nsfptr_create
+#define cmse_nsfptr_create(p) ((__typeof__ ((p))) ((__INTPTR_TYPE__) (p) & ~1))
 #endif
 
 /**
