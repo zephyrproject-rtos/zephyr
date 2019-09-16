@@ -23,7 +23,20 @@ any application for platforms that have the required hardware support.
 To enable tracing support with `SEGGER SystemView`_ add the configuration option
 :option:`CONFIG_SEGGER_SYSTEMVIEW` to your project configuration file and set
 it to *y*. For example, this can be added to the
-:ref:`dining-philosophers-sample` to visualize fast switching between threads.
+:ref:`synchronization_sample` to visualize fast switching between threads:
+
+    CONFIG_STDOUT_CONSOLE=y
+    # enable to use thread names
+    CONFIG_THREAD_NAME=y
+    CONFIG_SEGGER_SYSTEMVIEW=y
+    CONFIG_USE_SEGGER_RTT=y
+
+
+.. figure:: segger_systemview.png
+    :align: center
+    :alt: SEGGER SystemView
+    :figclass: align-center
+    :width: 80%
 
 .. _SEGGER SystemView: https://www.segger.com/products/development-tools/systemview/
 
