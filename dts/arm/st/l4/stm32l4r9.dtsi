@@ -1,0 +1,9 @@
+/*
+ * Copyright (c) 2019 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <st/l4/stm32l4r5.dtsi>
+
