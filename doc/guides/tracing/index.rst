@@ -71,7 +71,7 @@ infrastructure for #5 and #6.  This leaves #3 serialization code and #4
 I/O mechanics up to a custom implementation.
 
 This CTF debug module aims at providing a common #1 and #2 for Zephyr
-("middle"), while providing a lean & generic interface for I/O ("bottom").
+("top"), while providing a lean & generic interface for I/O ("bottom").
 Currently, only one CTF bottom-layer exists, POSIX ``fwrite``, but many others
 are possible:
 
@@ -82,7 +82,7 @@ are possible:
 
 In fact, I/O varies greatly from system to system.  Therefore, it is
 instructive to create a taxonomy for I/O types when we must ensure the
-interface between CTF-middle and CTF-bottom is generic and efficient
+interface between CTF-top and CTF-bottom is generic and efficient
 enough to model these. See the *I/O taxonomy* section below.
 
 
@@ -105,17 +105,17 @@ The bottom-layer then needs to implement the following macros:
 - ``CTF_BOTTOM_FIELDS``: Var-args of fields. May process each field with ``MAP``
 - ``CTF_BOTTOM_TIMESTAMPED_INTERNALLY``: Tells where timestamping is done
 
-These macros along with inline functions of the middle-layer can yield a
+These macros along with inline functions of the top-layer can yield a
 very low-overhead tracing infrastructure.
 
 
-CTF Middle-Layer Example
+CTF Top-Layer Example
 =========================
 
 The CTF_EVENT macro will serialize each argument to a field::
 
   /* Example for illustration */
-  static inline void ctf_middle_foo(u32_t thread_id, ctf_bounded_string_t name)
+  static inline void ctf_top_foo(u32_t thread_id, ctf_bounded_string_t name)
   {
     CTF_EVENT(
       CTF_LITERAL(u8_t, 42),
@@ -170,11 +170,11 @@ See also the presentation by Ericsson,
 Future LTTng Inspiration
 ========================
 
-Currently, the middle-layer provided here is quite simple and bare-bones,
+Currently, the top-layer provided here is quite simple and bare-bones,
 and needlessly copied from Zephyr's Segger SystemView debug module.
 
 For an OS like Zephyr, it would make sense to draw inspiration from
-Linux's LTTng and change the middle-layer to serialize to the same format.
+Linux's LTTng and change the top-layer to serialize to the same format.
 Doing this would enable direct reuse of TraceCompass' canned analyses
 for Linux.  Alternatively, LTTng-analyses in TraceCompass could be
 customized to Zephyr.  It is ongoing work to enable TraceCompass
