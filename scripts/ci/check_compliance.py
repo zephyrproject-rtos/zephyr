@@ -952,8 +952,7 @@ def report_test_results_to_github(suite):
             n_failures += 1
             fail_msg += "## {}\n\n".format(case.result.message)
             msg = case.result._elem.text
-            if case.name in {"Gitlint", "Identity/Emails", "License",
-                             "pylint"}:
+            if case.name not in {"Gitlint", "Identity/Emails", "License"}:
                 msg = "```\n" + msg + "\n```"
             fail_msg += msg + "\n\n"
             set_commit_status('failure', 'Checks failed')
