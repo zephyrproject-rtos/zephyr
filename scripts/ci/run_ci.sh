@@ -20,7 +20,7 @@
 
 set -xe
 
-SANITYCHECK_OPTIONS=" --inline-logs -N"
+SANITYCHECK_OPTIONS=" --inline-logs -N --timestamps"
 export BSIM_OUT_PATH="${BSIM_OUT_PATH:-/opt/bsim/}"
 if [ ! -d "${BSIM_OUT_PATH}" ]; then
         unset BSIM_OUT_PATH
@@ -236,6 +236,7 @@ function get_tests_to_run() {
 	./scripts/ci/get_modified_tests.py --commits ${COMMIT_RANGE} > modified_tests.args;
 	./scripts/ci/get_modified_boards.py --commits ${COMMIT_RANGE} > modified_boards.args;
 
+	rm -f test_file.txt
 	if [ -s modified_boards.args ]; then
 		${SANITYCHECK} ${SANITYCHECK_OPTIONS} +modified_boards.args --save-tests test_file.txt || exit 1;
 	fi
