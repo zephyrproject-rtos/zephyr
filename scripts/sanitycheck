@@ -1409,6 +1409,7 @@ class TestCase(object):
 
         self.id = ""
         self.source_dir = ""
+        self.yamlfile = ""
         self.cases = []
         self.name = ""
 
@@ -2345,6 +2346,7 @@ class TestSuite:
                 tc_dict = parsed_data.get_test(name, testcase_valid_keys)
 
                 tc.source_dir = tc_path
+                tc.yamlfile = tc_data_file
 
                 tc.id = name
                 tc.type = tc_dict["type"]
