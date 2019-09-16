@@ -448,6 +448,27 @@ Bluetooth
 Build and Infrastructure
 ************************
 
+* The devicetree Python scripts have been rewritten to be more robust and
+  easier to understand and change. The new scripts are these three files:
+
+  - :zephyr_file:`scripts/dts/dtlib.py` -- a low-level :file:`.dts` parsing
+    library
+
+  - :zephyr_file:`scripts/dts/edtlib.py` -- a higher-level library that adds
+    information from bindings
+
+  - :zephyr_file:`scripts/dts/gen_defines.py` -- generates a C header from the
+    devicetree files for the board
+
+  The new scripts verify ``category: optional/required`` and ``type:`` settings
+  given in bindings for nodes, and add some new types, like ``phandle-array``.
+  Error messages and other output is now more helpful.
+
+  See the updated documentation in :zephyr_file:`dts/binding-template.yaml`.
+
+  The old scripts are kept around to generate a few deprecated ``#define``\ s.
+  They will be removed in the Zephyr 2.2 release.
+
 * Changed ARM Embedded toolchain to default to nano variant of newlib
 
 
