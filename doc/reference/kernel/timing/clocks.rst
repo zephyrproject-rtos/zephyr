@@ -1,161 +1,245 @@
-.. _clocks_v2:
+.. _kernel_timing:
 
-Kernel Clocks
+Kernel Timing
 #############
 
-The kernel's clocks are the foundation for all of its time-based services.
+Zephyr provides a robust and scalable timing framework to enable
+reporting and tracking of timed events from hardware timing sources of
+arbitrary precision.
 
-.. contents::
-    :local:
-    :depth: 2
+Time Units
+==========
 
-Concepts
-********
+Kernel time is tracked in several units which are used for different
+purposes.
 
-The kernel supports two distinct clocks.
+Real time values, typically specified in milliseconds on microseconds,
+are the default presentation of time to application code.  They have
+the advantages of being universally portable and pervasively
+understood, though they may not match the precision of the underlying
+hardware perfectly.
 
-* The 32-bit **hardware clock** is a high precision counter that tracks time
-  in unspecified units called **cycles**. The duration of a cycle is determined
-  by the board hardware used by the kernel, and is typically measured
-  in nanoseconds.
+The kernel presents a "cycle" count via the ``k_cycle_get_32()`` API.
+The intent is that this counter represents the fastest cycle counter
+that the operating system is able to present to the user (for example,
+a CPU cycle counter) and that the read operation is very fast.  The
+expectation is that very sensitive application code might use this in
+a polling manner to achieve maximal precision.  The frequency of this
+counter is required to be steady over time, and is available from
+``sys_clock_hw_cycles_per_sec()`` (which on almost all platforms is a
+runtime constant that evaluates to
+CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC).
 
-* The 64-bit **system clock** is a counter that tracks the number of
-  **ticks** that have elapsed since the kernel was initialized. The duration
-  of a tick is configurable, and typically ranges from 1 millisecond to
-  100 milliseconds.
+For asynchronous timekeeping, the kernel defines a "ticks" concept.  A
+"tick" is the internal count in which the kernel does all its internal
+uptime and timeout bookeeping.  Interrupts are expected to be
+delivered on tick boundaries to the extent practical, and no
+fractional ticks are tracked.  The choice of tick rate is configurable
+via ``CONFIG_SYS_CLOCK_TICKS_PER_SEC``.  Defaults on most hardware
+platforms (ones that support setting arbitrary interrupt timeouts) are
+expected to be in the range of 10 kHz, with software emulation
+platforms and legacy drivers using a more traditional 100 Hz value.
 
-The kernel also provides a number of variables that can be used
-to convert the time units used by the clocks into standard time units
-(e.g. seconds, milliseconds, nanoseconds, etc), and to convert between
-the two types of clock time units.
+Conversion
+----------
 
-The system clock is used by most of the kernel's time-based services, including
-kernel timer objects and the timeouts supported by other kernel object types.
-For convenience, the kernel's APIs allow time durations to be specified
-in milliseconds, and automatically converts them to the corresponding
-number of ticks.
+Zephyr provides an extensively enumerated conversion library with
+rounding control for all time units.  Any unit of "ms" (milliseconds),
+"us" (microseconds), "tick", or "cyc" can be converted to any other.
+Control of rounding is provided, and each conversion is available in
+"floor" (round down to nearest output unit), "ceil" (round up) and
+"near" (round to nearest).  Finally the output precision can be
+specified as either 32 or 64 bits.
 
-The hardware clock can be used to measure time with higher precision than
-that provided by kernel services based on the system clock.
+For example: ``k_ms_to_ticks_ceil32()`` will convert a millisecond
+input value to the next higher number of ticks, returning a result
+truncated to 32 bits of precision; and ``k_cyc_to_us_floor64()`` will
+convert a measured cycle count to an elapsed number of microseconds in
+a full 64 bits of precision.  See the reference documentation for the
+full enumeration of conversion routines.
 
-.. _clock_limitations:
+On most platforms, where the various counter rates are integral
+multiples of each other and where the output fits within a single
+word, these conversions expand to a 2-4 operation sequence, requiring
+full precision only where actually required and requested.
 
-Clock Limitations
-=================
+Uptime
+======
 
-The system clock's tick count is derived from the hardware clock's cycle
-count. The kernel determines how many clock cycles correspond to the desired
-tick frequency, then programs the hardware clock to generate an interrupt
-after that many cycles; each interrupt corresponds to a single tick.
+The kernel tracks a system uptime count on behalf of the application.
+This is available at all times via ``k_uptime_get()``, which provides
+an uptime value in milliseconds since system boot.  This is expected
+to be the utility used by most portable application code.
 
-.. note::
-    Configuring a smaller tick duration permits finer-grained timing,
-    but also increases the amount of work the kernel has to do to process
-    tick interrupts since they occur more frequently. Setting the tick
-    duration to zero disables *both* kernel clocks, as well as their
-    associated services.
+The internal tracking, however, is as a 64 bit integer count of ticks.
+Apps with precise timing requirements (that are willing to do their
+own conversions to portable real time units) may access this with
+``k_uptime_ticks()``.
 
-Any millisecond-based time interval specified using a kernel API
-represents the **minimum** delay that will occur,
-and may actually take longer than the amount of time requested.
+Timeouts
+========
 
-For example, specifying a timeout delay of 100 ms when attempting to take
-a semaphore means that the kernel will never terminate the operation
-and report failure before at least 100 ms have elapsed. However,
-it is possible that the operation may take longer than 100 ms to complete,
-and may either complete successfully during the additional time
-or fail at the end of the added time.
+The Zephyr kernel provides many APIs with a "timeout" parameter.
+Conceptually, this indicates the time at which an event will occur.
+For example:
 
-The amount of added time that occurs during a kernel object operation
-depends on the following factors.
+* Kernel blocking operations like ``k_sem_take()`` or
+  ``k_queue_get()`` may provide a timeout after which the routine will
+  return with an error code if no data is available.
 
-* The added time introduced by rounding up the specified time interval
-  when converting from milliseconds to ticks. For example, if a tick duration
-  of 10 ms is being used, a specified delay of 25 ms will be rounded up
-  to 30 ms.
+* Kernel ``struct k_timer`` objects must specify delays for their
+  duration and period.
 
-* The added time introduced by having to wait for the next tick interrupt
-  before a delay can be properly tracked. For example, if a tick duration
-  of 10 ms is being used, a specified delay of 20 ms requires the kernel
-  to wait for 3 ticks to occur (rather than only 2), since the first tick
-  can occur at any time from the next fraction of a millisecond to just
-  slightly less than 10 ms; only after the first tick has occurred does
-  the kernel know the next 2 ticks will take 20 ms.
+* The kernel ``k_delayed_work`` API provides a timeout parameter
+  indicating when a work queue item will be added to the system queue.
 
-Implementation
-**************
+All these values are specified using a ``k_timeout_t`` value.  This is
+an opaque struct type that must be initialized using one of a family
+of ``K_TIMEOUT`` macros.  The most common, ``K_TIMEOUT_MS()``, defines
+a time in milliseconds after the current time (strictly: the time at
+which the kernel receives the timeout value).
 
-Measuring Time with Normal Precision
-====================================
+Other options for timeout initialization follow the unit conventions
+described above: ``K_TIMEOUT_US()``, ``K_TIMEOUT_TICKS()`` and
+``K_TIMEOUT_CYC()`` specify timeout values that will expire after
+specified numbers of microseconds, ticks and cycles, respectively.
 
-This code uses the system clock to determine how much time has elapsed
-between two points in time.
+Precision of ``k_timeout_t`` values is configurable, with the default
+being 32 bits.  Large uptime counts in non-tick units will experience
+complicated rollover semantics, so it is expected that
+timing-sensitive applications with long uptimes will be configured to
+use a 64 bit timeout type.
 
-.. code-block:: c
+Finally, it is possible to specify timeouts as absolute times since
+system boot.  A timeout initialized with ``K_TIMEOUT_UPTIME_MS()``
+indicates a timeout that will expire after the system uptime reaches
+the specified value.  There are likewise microsecond, cycles and ticks
+variants of this API.
 
-    s64_t time_stamp;
-    s64_t milliseconds_spent;
+Timing Internals
+================
 
-    /* capture initial time stamp */
-    time_stamp = k_uptime_get();
+Timeout Queue
+-------------
 
-    /* do work for some (extended) period of time */
-    ...
+All Zephyr ``k_timeout_t`` events specified using the API above are
+managed in a single, global queue of events.  Each event is stored in
+a double-linked list, with an attendant delta count in ticks from the
+previous event.  The action to take on an event is specified as a
+callback function pointer provided by the subsystem requesting the
+event, along with a ``struct _timeout`` tracking struct that is
+expected to be embedded within subsystem-defined data structures (for
+example: a ``struct wait_q``, or a ``k_tid_t`` thread struct).
 
-    /* compute how long the work took (also updates the time stamp) */
-    milliseconds_spent = k_uptime_delta(&time_stamp);
+Note that all variant units passed via a ``k_timeout_t`` are converted
+to ticks once on insertion into the list.  There no
+multiple-conversion steps internal to the kernel, so precision is
+guaranteed at the tick level no matter how many events exist or how
+long a timeout might be.
 
-Measuring Time with High Precision
-==================================
+Note that the list structure means that the CPU work involved in
+managing large numbers of timeouts is quadratic in the number of
+active timeouts.  The API design of the timeout queue was intended to
+permit a more scalable backend data structure, but no such
+implementation exists currently.
 
-This code uses the hardware clock to determine how much time has elapsed
-between two points in time.
+Timer Drivers
+-------------
 
-.. code-block:: c
+Kernel timing at the tick level is driven by a timer driver with a
+comparatively simple API.
 
-    u32_t start_time;
-    u32_t stop_time;
-    u32_t cycles_spent;
-    u32_t nanoseconds_spent;
+* The driver is expected to be able to "announce" new ticks to the
+  kernel via the ``z_clock_nanounce()`` call, which passes an integer
+  number of ticks that have elapsed since the last announce call (or
+  system boot).  These calls can occur at any time, but the driver is
+  expected to attempt to ensure (to the extent practical given
+  interrupt latency interactions) that they occur near tick boundaries
+  (i.e. not "halfway through" a tick), and most importantly that they
+  be correct over time and subject to minimal skew vs. other counters
+  and real world time.
 
-    /* capture initial time stamp */
-    start_time = k_cycle_get_32();
+* The driver is expected to provide a ``z_clock_set_timeout()`` call
+  to the kernel which indicates how many ticks may elapse before the
+  kernel must receive an announce call to trigger registered timeouts.
+  It is legal to announce new ticks before that moment (though they
+  must be correct) but delay after that will cause events to be
+  missed.  Note that the timeout value passed here is in a delta from
+  current time, but that does not absolve the driver of the
+  requirement to provide ticks at a steady rate over time.  Naive
+  implementations of this function are subject to bugs where the
+  fractional tick gets "reset" incorrectly and causes clock skew.
 
-    /* do work for some (short) period of time */
-    ...
+* The driver is expected to provide a ``z_clock_elapsed()`` call which
+  provides a current indication of how many ticks have elapsed (as
+  compared to a real world clock) since the last call to
+  ``z_clock_announce()``, which the kernel needs to test newly
+  arriving timeouts for expiration.
 
-    /* capture final time stamp */
-    stop_time = k_cycle_get_32();
+Note that a natural implementation of this API results in a "tickless"
+kernel, which receives and processes timer interrupts only for
+registered events, relying on programmable hardware counters to
+provide irregular interrupts.  But a traditional, "ticked" or "dumb"
+counter driver can be trivially implemented also:
 
-    /* compute how long the work took (assumes no counter rollover) */
-    cycles_spent = stop_time - start_time;
-    nanoseconds_spent = SYS_CLOCK_HW_CYCLES_TO_NS(cycles_spent);
+* The driver can receive interrupts at a regular rate corresponding to
+  the OS tick rate, calling z_clock_anounce() with an argument of one
+  each time.
 
-Suggested Uses
-**************
+* The driver can ignore calls to ``z_clock_set_timeout()``, as every
+  tick will be announced regardless of timeout status.
 
-Use services based on the system clock for time-based processing
-that does not require high precision,
-such as :ref:`timer objects <timers_v2>` or :ref:`thread_sleeping`.
+* The driver can return zero for every call to ``z_clock_elapsed()``
+  as no more than one tick can be detected as having elapsed (because
+  otherwise an interrupt would have been received).
 
-Use services based on the hardware clock for time-based processing
-that requires higher precision than the system clock can provide,
-such as :ref:`busy_waiting` or fine-grained time measurements.
+SMP Details
+-----------
 
-.. note::
-    The high frequency of the hardware clock, combined with its 32-bit size,
-    means that counter rollover must be taken into account when taking
-    high-precision measurements over an extended period of time.
+In general, the timer API described above does not change when run in
+a multiprocessor context.  The kernel will internally synchronize all
+access appropriately, and ensure that all critical sections are small
+and minimal.  But some notes are important to detail:
 
-Configuration
-*************
+* Zephyr is agnostic about which CPU services timer interrupts.  It is
+  not illegal (though probably undesirable in some circumstances) to
+  have every timer interrupt handled on a single processor.  Existing
+  SMP architectures implement symmetric timer drivers.
 
-Related configuration options:
+* The ``z_clock_announce()`` call is expected to be be globally
+  synchronized at the driver level.  The kernel does not do any
+  per-CPU tracking, and expects that if two timer interrupts fire near
+  simultaneously, that only one will provide the current tick count to
+  the timing subsystem.  The other may legally provide a tick count of
+  zero if no ticks have elapsed.  It should not "skip" the announce
+  call because of timeslicing requirements (see below).
 
-* :option:`CONFIG_SYS_CLOCK_TICKS_PER_SEC`
+* Some SMP hardware uses a single, global timer device, others use a
+  per-CPU counter.  The complexity here (for example: ensuring counter
+  synchronization between CPUs) is expected to be managed by the
+  driver, not the kernel.
 
-API Reference
-*************
+* The next timeout value passed back to the driver via
+  ``z_clock_set_timeout()`` is done identically for every CPU.  So by
+  default, every CPU will see simultaneous timer interrupts for every
+  event, even though by definition only one of them.  This is probably
+  a correct default for timing sensitive applications (because it
+  minimizes the chance that an errant ISR or interrupt lock will delay
+  a timeout), but may be a performance problem in some cases.  The
+  current design expects that any such optimization is the
+  responsibility of the timer driver.
+  
+Time Slicing
+------------
 
-.. doxygengroup:: clock_apis
-   :project: Zephyr
+An auxilliary job of the timing subsystem is to provide tick counters
+to the scheduler that allow implementation of time slicing of threads.
+A thread time-slice cannot be a timeout value, as it does not reflect
+a global expiration but instead a per-CPU value that needs to be
+tracked independently on each CPU in an SMP context.
+
+Because there may be no other hardware available to drive timeslicing,
+Zephyr multiplexes the existing timer driver.  This means that the
+value passed to ``z_clock_set_timeout()`` may be clamped to a smaller
+value than the current next timeout when a time sliced thread is
+currently scheduled.
