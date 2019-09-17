@@ -107,7 +107,6 @@
 /doc/reference/bluetooth/                 @joerchan @jhedberg @Vudentz
 /drivers/*/*cc13xx_cc26xx*                @bwitherspoon
 /drivers/*/*mcux*                         @MaureenHelm
-/drivers/*/*qmsi*                         @nashif
 /drivers/*/*stm32*                        @erwango
 /drivers/*/*native_posix*                 @aescolar
 /drivers/adc/                             @anangl
