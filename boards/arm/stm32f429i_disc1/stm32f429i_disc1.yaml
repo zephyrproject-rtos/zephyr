@@ -11,3 +11,4 @@ flash: 2048
 supported:
   - counter
   - i2c
+  - spi
