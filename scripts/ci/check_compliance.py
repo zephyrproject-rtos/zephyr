@@ -18,6 +18,7 @@ from shutil import copyfile
 import json
 import tempfile
 import traceback
+import magic
 from pathlib import Path
 
 # '*' makes it italic
@@ -692,21 +693,23 @@ class PyLint(ComplianceTest):
         # Path to pylint configuration file
         pylintrc = os.path.join(os.path.dirname(__file__), "pylintrc")
 
-        # List of .py files added/modified by the commit(s).
-        #
-        # Skip create_board_img.py to work around a crash in pylint 2.2.2:
-        # https://github.com/PyCQA/pylint/issues/2906
-        py_files = git(
-            "diff", "--name-only", "--diff-filter=d", self.commit_range,
-            "--", "*.py",
+        # List of files added/modified by the commit(s).
+        files = git(
+            "diff", "--name-only", "--diff-filter=d", self.commit_range, "--",
+            # Currently being overhauled. Will be checked later.
+            ":!scripts/sanitycheck",
+            # Skip to work around crash in pylint 2.2.2:
+            # https://github.com/PyCQA/pylint/issues/2906
             ":!boards/xtensa/intel_s1000_crb/support/create_board_img.py") \
             .splitlines()
 
+        # Filter out everything but Python files
+        py_files = filter_py(files)
         if not py_files:
             return
 
         try:
-            # Run pylint on added/modified .py files
+            # Run pylint on added/modified Python files
             process = subprocess.Popen(
                 ["pylint", "--rcfile=" + pylintrc] + py_files,
                 stdout=subprocess.PIPE,
@@ -722,6 +725,16 @@ class PyLint(ComplianceTest):
         if process.returncode or stderr:
             # Issues found, or a problem with pylint itself
             self.add_failure(stdout.decode("utf-8") + stderr.decode("utf-8"))
+
+
+def filter_py(fnames):
+    # PyLint check helper. Returns all Python script filenames among the
+    # filenames in 'fnames'. Uses the python-magic library, so that we can
+    # detect Python files that don't end in .py. python-magic is a frontend to
+    # libmagic, which is also used by 'file'.
+
+    return [fname for fname in fnames if
+            magic.from_file(fname, mime=True) == "text/x-python"]
 
 
 class License(ComplianceTest):
