@@ -265,7 +265,7 @@ static int gpio_intel_apl_config(struct device *dev, int access_op,
 	/* setup interrupt if desired */
 	if (flags & GPIO_INT) {
 		/* invert signal for interrupt controller */
-		if ((flags & GPIO_INT_ACTIVE_HIGH) == GPIO_INT_ACTIVE_LOW) {
+		if ((flags & GPIO_INT_ACTIVE_HIGH) == 0) {
 			cfg0 |= PAD_CFG0_RXINV;
 		}
 
