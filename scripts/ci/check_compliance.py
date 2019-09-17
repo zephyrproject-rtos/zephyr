@@ -740,11 +740,12 @@ class PyLint(ComplianceTest):
 def filter_py(fnames):
     # PyLint check helper. Returns all Python script filenames among the
     # filenames in 'fnames'. Uses the python-magic library, so that we can
-    # detect Python files that don't end in .py. python-magic is a frontend to
-    # libmagic, which is also used by 'file'.
+    # detect Python files that don't end in .py as well. python-magic is a
+    # frontend to libmagic, which is also used by 'file'.
 
-    return [fname for fname in fnames if
-            magic.from_file(fname, mime=True) == "text/x-python"]
+    return [fname for fname in fnames
+            if fname.endswith(".py") or
+               magic.from_file(fname, mime=True) == "text/x-python"]
 
 
 class License(ComplianceTest):
