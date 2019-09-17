@@ -554,6 +554,8 @@ static inline int z_impl_gpio_disable_callback(struct device *port,
  * @retval 0 If successful.
  * @retval -ENOTSUP if any of the configuration options is not supported.
  * @retval -EINVAL Invalid argument.
+ * @retval -EIO I/O error when accessing an external GPIO chip.
+ * @retval -EWOULDBLOCK if operation would block.
  */
 static inline int gpio_pin_configure(struct device *port, u32_t pin,
 				     unsigned int flags)
@@ -584,6 +586,7 @@ static inline int gpio_pin_configure(struct device *port, u32_t pin,
  *
  * @retval 0 If successful.
  * @retval -EIO I/O error when accessing an external GPIO chip.
+ * @retval -EWOULDBLOCK if operation would block.
  */
 __syscall int gpio_port_get_raw(struct device *port, gpio_port_value_t *value);
 
@@ -612,6 +615,7 @@ static inline int z_impl_gpio_port_get_raw(struct device *port,
  *
  * @retval 0 If successful.
  * @retval -EIO I/O error when accessing an external GPIO chip.
+ * @retval -EWOULDBLOCK if operation would block.
  */
 static inline int gpio_port_get(struct device *port, gpio_port_value_t *value)
 {
@@ -642,6 +646,7 @@ static inline int gpio_port_get(struct device *port, gpio_port_value_t *value)
  *
  * @retval 0 If successful.
  * @retval -EIO I/O error when accessing an external GPIO chip.
+ * @retval -EWOULDBLOCK if operation would block.
  */
 __syscall int gpio_port_set_masked_raw(struct device *port,
 		gpio_port_pins_t mask, gpio_port_value_t value);
@@ -673,6 +678,7 @@ static inline int z_impl_gpio_port_set_masked_raw(struct device *port,
  *
  * @retval 0 If successful.
  * @retval -EIO I/O error when accessing an external GPIO chip.
+ * @retval -EWOULDBLOCK if operation would block.
  */
 static inline int gpio_port_set_masked(struct device *port,
 		gpio_port_pins_t mask, gpio_port_value_t value)
@@ -693,6 +699,7 @@ static inline int gpio_port_set_masked(struct device *port,
  *
  * @retval 0 If successful.
  * @retval -EIO I/O error when accessing an external GPIO chip.
+ * @retval -EWOULDBLOCK if operation would block.
  */
 __syscall int gpio_port_set_bits_raw(struct device *port,
 				     gpio_port_pins_t pins);
@@ -714,6 +721,7 @@ static inline int z_impl_gpio_port_set_bits_raw(struct device *port,
  *
  * @retval 0 If successful.
  * @retval -EIO I/O error when accessing an external GPIO chip.
+ * @retval -EWOULDBLOCK if operation would block.
  */
 static inline int gpio_port_set_bits(struct device *port, gpio_port_pins_t pins)
 {
@@ -728,6 +736,7 @@ static inline int gpio_port_set_bits(struct device *port, gpio_port_pins_t pins)
  *
  * @retval 0 If successful.
  * @retval -EIO I/O error when accessing an external GPIO chip.
+ * @retval -EWOULDBLOCK if operation would block.
  */
 __syscall int gpio_port_clear_bits_raw(struct device *port,
 				       gpio_port_pins_t pins);
@@ -749,6 +758,7 @@ static inline int z_impl_gpio_port_clear_bits_raw(struct device *port,
  *
  * @retval 0 If successful.
  * @retval -EIO I/O error when accessing an external GPIO chip.
+ * @retval -EWOULDBLOCK if operation would block.
  */
 static inline int gpio_port_clear_bits(struct device *port,
 				       gpio_port_pins_t pins)
@@ -764,6 +774,7 @@ static inline int gpio_port_clear_bits(struct device *port,
  *
  * @retval 0 If successful.
  * @retval -EIO I/O error when accessing an external GPIO chip.
+ * @retval -EWOULDBLOCK if operation would block.
  */
 __syscall int gpio_port_toggle_bits(struct device *port, gpio_port_pins_t pins);
 
@@ -785,6 +796,7 @@ static inline int z_impl_gpio_port_toggle_bits(struct device *port,
  *
  * @retval 0 If successful.
  * @retval -EIO I/O error when accessing an external GPIO chip.
+ * @retval -EWOULDBLOCK if operation would block.
  */
 static inline int gpio_port_set_clr_bits_raw(struct device *port,
 		gpio_port_pins_t set_pins, gpio_port_pins_t clear_pins)
@@ -803,6 +815,7 @@ static inline int gpio_port_set_clr_bits_raw(struct device *port,
  *
  * @retval 0 If successful.
  * @retval -EIO I/O error when accessing an external GPIO chip.
+ * @retval -EWOULDBLOCK if operation would block.
  */
 static inline int gpio_port_set_clr_bits(struct device *port,
 		gpio_port_pins_t set_pins, gpio_port_pins_t clear_pins)
@@ -825,6 +838,7 @@ static inline int gpio_port_set_clr_bits(struct device *port,
  * @retval 1 If pin physical level is high.
  * @retval 0 If pin physical level is low.
  * @retval -EIO I/O error when accessing an external GPIO chip.
+ * @retval -EWOULDBLOCK if operation would block.
  */
 static inline int gpio_pin_get_raw(struct device *port, unsigned int pin)
 {
@@ -858,6 +872,7 @@ static inline int gpio_pin_get_raw(struct device *port, unsigned int pin)
  * @retval 1 If pin logical value is 1 / active.
  * @retval 0 If pin logical value is 0 / inactive.
  * @retval -EIO I/O error when accessing an external GPIO chip.
+ * @retval -EWOULDBLOCK if operation would block.
  */
 static inline int gpio_pin_get(struct device *port, unsigned int pin)
 {
@@ -887,6 +902,7 @@ static inline int gpio_pin_get(struct device *port, unsigned int pin)
  *
  * @retval 0 If successful.
  * @retval -EIO I/O error when accessing an external GPIO chip.
+ * @retval -EWOULDBLOCK if operation would block.
  */
 static inline int gpio_pin_set_raw(struct device *port, unsigned int pin,
 				   int value)
@@ -923,6 +939,7 @@ static inline int gpio_pin_set_raw(struct device *port, unsigned int pin,
  *
  * @retval 0 If successful.
  * @retval -EIO I/O error when accessing an external GPIO chip.
+ * @retval -EWOULDBLOCK if operation would block.
  */
 static inline int gpio_pin_set(struct device *port, unsigned int pin, int value)
 {
@@ -946,6 +963,7 @@ static inline int gpio_pin_set(struct device *port, unsigned int pin, int value)
  *
  * @retval 0 If successful.
  * @retval -EIO I/O error when accessing an external GPIO chip.
+ * @retval -EWOULDBLOCK if operation would block.
  */
 static inline int gpio_pin_toggle(struct device *port, unsigned int pin)
 {
@@ -1003,6 +1021,8 @@ static inline int gpio_pin_read(struct device *port, u32_t pin,
  * @retval -EINVAL  Invalid argument.
  * @retval -EBUSY   Interrupt line required to configure pin interrupt is
  *                  already in use.
+ * @retval -EIO I/O error when accessing an external GPIO chip.
+ * @retval -EWOULDBLOCK if operation would block.
  */
 __syscall int gpio_pin_interrupt_configure(struct device *port,
 		unsigned int pin, unsigned int flags);
