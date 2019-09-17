@@ -34,8 +34,6 @@ config PWM_4
 
 source "drivers/pwm/Kconfig.pca9685"
 
-source "drivers/pwm/Kconfig.qmsi"
-
 source "drivers/pwm/Kconfig.dw"
 
 source "drivers/pwm/Kconfig.stm32"
