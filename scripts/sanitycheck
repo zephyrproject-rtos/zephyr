@@ -1787,7 +1787,7 @@ class CMake():
 
         else:
             self.instance.status = "failed"
-            self.instance.reason = "Build failure"
+            self.instance.reason = "Cmake build failure"
             results = {"returncode": p.returncode}
 
 
@@ -1924,7 +1924,9 @@ class ProjectBuilder(CMake):
         # The build process, call cmake and build with configured generator
         if op == "cmake":
             results = self.cmake()
-            if options.cmake_only:
+            if self.instance.status == "failed":
+                pipeline.put({"op": "report", "test": self.instance, "status": "failure"})
+            elif options.cmake_only:
                 pipeline.put({"op": "report", "test": self.instance, "status": "cmake"})
             else:
                 pipeline.put({"op": "build", "test": self.instance, "status": "cmake"})
