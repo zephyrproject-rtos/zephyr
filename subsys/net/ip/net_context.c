@@ -229,6 +229,8 @@ int net_context_get(sa_family_t family,
 			continue;
 		}
 
+		memset(&contexts[i], 0, sizeof(contexts[i]));
+
 		if (ip_proto == IPPROTO_TCP) {
 			if (net_tcp_get(&contexts[i]) < 0) {
 				break;
