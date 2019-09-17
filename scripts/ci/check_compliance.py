@@ -613,9 +613,8 @@ class Codeowners(ComplianceTest):
         # The way git finds Renames and Copies is not "exact science",
         # however if one is missed then it will always be reported as an
         # Addition instead.
-        new_names = git("diff", "--name-only", "--diff-filter=ARC",
-                     self.commit_range)
-        new_files = new_names.splitlines()
+        new_files = git("diff", "--name-only", "--diff-filter=ARC",
+                        self.commit_range).splitlines()
         logging.debug("New files %s", new_files)
 
         # Convert to pathlib.Path string representation (e.g.,
@@ -767,7 +766,7 @@ class License(ComplianceTest):
         os.makedirs("scancode-files", exist_ok=True)
         # git diff's output doesn't depend on the current (sub)directory
         new_files = git("diff", "--name-only", "--diff-filter=A",
-                        self.commit_range)
+                        self.commit_range).splitlines()
 
         if not new_files:
             return
