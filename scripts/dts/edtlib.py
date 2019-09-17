@@ -145,7 +145,8 @@ class EDT:
         # Creates self._compat2binding. This is a dictionary that maps
         # (<compatible>, <bus>) tuples (both strings) to (<binding>, <path>)
         # tuples. <binding> is the binding in parsed PyYAML format, and <path>
-        # the path to the binding (nice for binding-related error messages).
+        # the relative path to the binding (nice for binding-related
+        # error messages).
         #
         # For example, self._compat2binding["company,dev", "can"] contains the
         # binding/path for the 'company,dev' device, when it appears on the CAN
@@ -169,7 +170,15 @@ class EDT:
             "|".join(re.escape(compat) for compat in dt_compats)
         ).search
 
-        self._binding_paths = _binding_paths(bindings_dirs)
+        self._binding_paths = []
+        # Relative not to leak private and non-deterministic paths
+        relpaths = {}
+
+        for bdir in bindings_dirs:
+            for relp in _binding_rel_yamls(bdir):
+                abs_yaml_path = os.path.join(bdir, relp)
+                self._binding_paths.append(abs_yaml_path)
+                relpaths[abs_yaml_path] = relp
 
         self._compat2binding = {}
         for binding_path in self._binding_paths:
@@ -212,7 +221,7 @@ class EDT:
             _check_binding(binding, binding_path)
 
             self._compat2binding[binding_compat, _binding_bus(binding)] = \
-                (binding, binding_path)
+                (binding, relpaths[binding_path])
 
     def _merge_included_bindings(self, binding, binding_path):
         # Merges any bindings listed in the 'include:' section of 'binding'
@@ -1292,17 +1301,17 @@ def _dt_compats(dt):
                     for compat in node.props["compatible"].to_strings()}
 
 
-def _binding_paths(bindings_dirs):
-    # Returns a list with the paths to all bindings (.yaml files) in
-    # 'bindings_dirs'
+def _binding_rel_yamls(bindings_dir):
+    # Returns a list of all the relative paths to all .yaml files in one
+    # 'bindings_dir'
 
     binding_paths = []
 
-    for bindings_dir in bindings_dirs:
-        for root, _, filenames in os.walk(bindings_dir):
-            for filename in filenames:
-                if filename.endswith(".yaml"):
-                    binding_paths.append(os.path.join(root, filename))
+    for subdir, _, filenames in os.walk(bindings_dir):
+        for filename in filenames:
+            if filename.endswith(".yaml"):
+                reldir = os.path.relpath(subdir, bindings_dir)
+                binding_paths.append(os.path.join(reldir, filename))
 
     return binding_paths
 

@@ -68,7 +68,7 @@ def main():
                 continue
 
             out_comment("Device tree node: " + dev.path)
-            out_comment("Binding (compatible = {}): {}".format(
+            out_comment("DTS Binding (compatible = {}): {}".format(
                             dev.matching_compat, dev.binding_path),
                         blank_before=False)
             out_comment("Binding description: " + dev.description,

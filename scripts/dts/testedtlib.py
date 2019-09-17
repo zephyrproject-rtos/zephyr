@@ -41,47 +41,47 @@ def run():
     #
 
     verify_streq(edt.get_dev("/interrupt-parent-test/node").interrupts,
-                 "[<Interrupt, name: foo, target: <Device /interrupt-parent-test/controller in 'test.dts', binding test-bindings/interrupt-3-cell.yaml>, specifier: {'one': 1, 'two': 2, 'three': 3}>, <Interrupt, name: bar, target: <Device /interrupt-parent-test/controller in 'test.dts', binding test-bindings/interrupt-3-cell.yaml>, specifier: {'one': 4, 'two': 5, 'three': 6}>]")
+                 "[<Interrupt, name: foo, target: <Device /interrupt-parent-test/controller in 'test.dts', binding ./interrupt-3-cell.yaml>, specifier: {'one': 1, 'two': 2, 'three': 3}>, <Interrupt, name: bar, target: <Device /interrupt-parent-test/controller in 'test.dts', binding ./interrupt-3-cell.yaml>, specifier: {'one': 4, 'two': 5, 'three': 6}>]")
 
     verify_streq(edt.get_dev("/interrupts-extended-test/node").interrupts,
-                 "[<Interrupt, target: <Device /interrupts-extended-test/controller-0 in 'test.dts', binding test-bindings/interrupt-1-cell.yaml>, specifier: {'one': 1}>, <Interrupt, target: <Device /interrupts-extended-test/controller-1 in 'test.dts', binding test-bindings/interrupt-2-cell.yaml>, specifier: {'one': 2, 'two': 3}>, <Interrupt, target: <Device /interrupts-extended-test/controller-2 in 'test.dts', binding test-bindings/interrupt-3-cell.yaml>, specifier: {'one': 4, 'two': 5, 'three': 6}>]")
+                 "[<Interrupt, target: <Device /interrupts-extended-test/controller-0 in 'test.dts', binding ./interrupt-1-cell.yaml>, specifier: {'one': 1}>, <Interrupt, target: <Device /interrupts-extended-test/controller-1 in 'test.dts', binding ./interrupt-2-cell.yaml>, specifier: {'one': 2, 'two': 3}>, <Interrupt, target: <Device /interrupts-extended-test/controller-2 in 'test.dts', binding ./interrupt-3-cell.yaml>, specifier: {'one': 4, 'two': 5, 'three': 6}>]")
 
     verify_streq(edt.get_dev("/interrupt-map-test/node@0").interrupts,
-                 "[<Interrupt, target: <Device /interrupt-map-test/controller-0 in 'test.dts', binding test-bindings/interrupt-1-cell.yaml>, specifier: {'one': 0}>, <Interrupt, target: <Device /interrupt-map-test/controller-1 in 'test.dts', binding test-bindings/interrupt-2-cell.yaml>, specifier: {'one': 0, 'two': 1}>, <Interrupt, target: <Device /interrupt-map-test/controller-2 in 'test.dts', binding test-bindings/interrupt-3-cell.yaml>, specifier: {'one': 0, 'two': 0, 'three': 2}>]")
+                 "[<Interrupt, target: <Device /interrupt-map-test/controller-0 in 'test.dts', binding ./interrupt-1-cell.yaml>, specifier: {'one': 0}>, <Interrupt, target: <Device /interrupt-map-test/controller-1 in 'test.dts', binding ./interrupt-2-cell.yaml>, specifier: {'one': 0, 'two': 1}>, <Interrupt, target: <Device /interrupt-map-test/controller-2 in 'test.dts', binding ./interrupt-3-cell.yaml>, specifier: {'one': 0, 'two': 0, 'three': 2}>]")
 
     verify_streq(edt.get_dev("/interrupt-map-test/node@1").interrupts,
-                 "[<Interrupt, target: <Device /interrupt-map-test/controller-0 in 'test.dts', binding test-bindings/interrupt-1-cell.yaml>, specifier: {'one': 3}>, <Interrupt, target: <Device /interrupt-map-test/controller-1 in 'test.dts', binding test-bindings/interrupt-2-cell.yaml>, specifier: {'one': 0, 'two': 4}>, <Interrupt, target: <Device /interrupt-map-test/controller-2 in 'test.dts', binding test-bindings/interrupt-3-cell.yaml>, specifier: {'one': 0, 'two': 0, 'three': 5}>]")
+                 "[<Interrupt, target: <Device /interrupt-map-test/controller-0 in 'test.dts', binding ./interrupt-1-cell.yaml>, specifier: {'one': 3}>, <Interrupt, target: <Device /interrupt-map-test/controller-1 in 'test.dts', binding ./interrupt-2-cell.yaml>, specifier: {'one': 0, 'two': 4}>, <Interrupt, target: <Device /interrupt-map-test/controller-2 in 'test.dts', binding ./interrupt-3-cell.yaml>, specifier: {'one': 0, 'two': 0, 'three': 5}>]")
 
     verify_streq(edt.get_dev("/interrupt-map-bitops-test/node@70000000E").interrupts,
-                 "[<Interrupt, target: <Device /interrupt-map-bitops-test/controller in 'test.dts', binding test-bindings/interrupt-2-cell.yaml>, specifier: {'one': 3, 'two': 2}>]")
+                 "[<Interrupt, target: <Device /interrupt-map-bitops-test/controller in 'test.dts', binding ./interrupt-2-cell.yaml>, specifier: {'one': 3, 'two': 2}>]")
 
     #
     # Test GPIOs
     #
 
     verify_streq(edt.get_dev("/gpio-test/node").gpios,
-                 "{'': [<GPIO, name: , target: <Device /gpio-test/controller-0 in 'test.dts', binding test-bindings/gpio-1-cell.yaml>, specifier: {'one': 1}>, <GPIO, name: , target: <Device /gpio-test/controller-1 in 'test.dts', binding test-bindings/gpio-2-cell.yaml>, specifier: {'one': 2, 'two': 3}>], 'foo': [<GPIO, name: foo, target: <Device /gpio-test/controller-1 in 'test.dts', binding test-bindings/gpio-2-cell.yaml>, specifier: {'one': 4, 'two': 5}>], 'bar': [<GPIO, name: bar, target: <Device /gpio-test/controller-1 in 'test.dts', binding test-bindings/gpio-2-cell.yaml>, specifier: {'one': 6, 'two': 7}>]}")
+                 "{'': [<GPIO, name: , target: <Device /gpio-test/controller-0 in 'test.dts', binding ./gpio-1-cell.yaml>, specifier: {'one': 1}>, <GPIO, name: , target: <Device /gpio-test/controller-1 in 'test.dts', binding ./gpio-2-cell.yaml>, specifier: {'one': 2, 'two': 3}>], 'foo': [<GPIO, name: foo, target: <Device /gpio-test/controller-1 in 'test.dts', binding ./gpio-2-cell.yaml>, specifier: {'one': 4, 'two': 5}>], 'bar': [<GPIO, name: bar, target: <Device /gpio-test/controller-1 in 'test.dts', binding ./gpio-2-cell.yaml>, specifier: {'one': 6, 'two': 7}>]}")
 
     #
     # Test clocks
     #
 
     verify_streq(edt.get_dev("/clock-test/node").clocks,
-                 "[<Clock, name: fixed, frequency: 123, target: <Device /clock-test/fixed-clock in 'test.dts', binding test-bindings/fixed-clock.yaml>, specifier: {}>, <Clock, name: one-cell, target: <Device /clock-test/clock-1 in 'test.dts', binding test-bindings/clock-1-cell.yaml>, specifier: {'one': 1}>, <Clock, name: two-cell, target: <Device /clock-test/clock-2 in 'test.dts', binding test-bindings/clock-2-cell.yaml>, specifier: {'one': 1, 'two': 2}>]")
+                 "[<Clock, name: fixed, frequency: 123, target: <Device /clock-test/fixed-clock in 'test.dts', binding ./fixed-clock.yaml>, specifier: {}>, <Clock, name: one-cell, target: <Device /clock-test/clock-1 in 'test.dts', binding ./clock-1-cell.yaml>, specifier: {'one': 1}>, <Clock, name: two-cell, target: <Device /clock-test/clock-2 in 'test.dts', binding ./clock-2-cell.yaml>, specifier: {'one': 1, 'two': 2}>]")
 
     #
     # Test PWMs
     #
 
     verify_streq(edt.get_dev("/pwm-test/node").pwms,
-                 "[<PWM, name: zero-cell, target: <Device /pwm-test/pwm-0 in 'test.dts', binding test-bindings/pwm-0-cell.yaml>, specifier: {}>, <PWM, name: one-cell, target: <Device /pwm-test/pwm-1 in 'test.dts', binding test-bindings/pwm-1-cell.yaml>, specifier: {'one': 1}>]")
+                 "[<PWM, name: zero-cell, target: <Device /pwm-test/pwm-0 in 'test.dts', binding ./pwm-0-cell.yaml>, specifier: {}>, <PWM, name: one-cell, target: <Device /pwm-test/pwm-1 in 'test.dts', binding ./pwm-1-cell.yaml>, specifier: {'one': 1}>]")
 
     #
     # Test IO channels
     #
 
     verify_streq(edt.get_dev("/io-channel-test/node").iochannels,
-                 "[<IOChannel, name: io-channel, target: <Device /io-channel-test/io-channel in 'test.dts', binding test-bindings/io-channel.yaml>, specifier: {'one': 1}>]")
+                 "[<IOChannel, name: io-channel, target: <Device /io-channel-test/io-channel in 'test.dts', binding ./io-channel.yaml>, specifier: {'one': 1}>]")
 
     #
     # Test 'reg'
@@ -131,10 +131,10 @@ def run():
     #
 
     verify_streq(edt.get_dev("/buses/foo-bus/node").binding_path,
-                 "test-bindings/device-on-foo-bus.yaml")
+                 "./device-on-foo-bus.yaml")
 
     verify_streq(edt.get_dev("/buses/bar-bus/node").binding_path,
-                 "test-bindings/device-on-bar-bus.yaml")
+                 "./device-on-bar-bus.yaml")
 
     #
     # Test 'child-binding:'
@@ -144,15 +144,15 @@ def run():
     child2 = edt.get_dev("/child-binding/child-2")
     grandchild = edt.get_dev("/child-binding/child-1/grandchild")
 
-    verify_streq(child1.binding_path, "test-bindings/child-binding.yaml")
+    verify_streq(child1.binding_path, "./child-binding.yaml")
     verify_streq(child1.description, "child node")
     verify_streq(child1.props, "{'child-prop': <Property, name: child-prop, type: int, value: 1>}")
 
-    verify_streq(child2.binding_path, "test-bindings/child-binding.yaml")
+    verify_streq(child2.binding_path, "./child-binding.yaml")
     verify_streq(child2.description, "child node")
     verify_streq(child2.props, "{'child-prop': <Property, name: child-prop, type: int, value: 3>}")
 
-    verify_streq(grandchild.binding_path, "test-bindings/child-binding.yaml")
+    verify_streq(grandchild.binding_path, "./child-binding.yaml")
     verify_streq(grandchild.description, "grandchild node")
     verify_streq(grandchild.props, "{'grandchild-prop': <Property, name: grandchild-prop, type: int, value: 2>}")
 
@@ -184,10 +184,10 @@ def run():
     edt = edtlib.EDT("test-multidir.dts", ["test-bindings", "test-bindings-2"])
 
     verify_streq(edt.get_dev("/in-dir-1").binding_path,
-                 "test-bindings/multidir.yaml")
+                 "./multidir.yaml")
 
     verify_streq(edt.get_dev("/in-dir-2").binding_path,
-                 "test-bindings-2/multidir.yaml")
+                 "./multidir.yaml")
 
 
     print("all tests passed")
