@@ -23,6 +23,7 @@
 typedef void (*gpio_config_func_t)(struct device *port);
 
 struct gpio_cmsdk_ahb_cfg {
+	struct gpio_driver_data common;
 	volatile struct gpio_cmsdk_ahb *port;
 	gpio_config_func_t gpio_config_func;
 	/* GPIO Clock control in Active State */
@@ -40,9 +41,67 @@ struct gpio_cmsdk_ahb_dev_data {
 	sys_slist_t gpio_cb;
 };
 
+static int gpio_cmsdk_ahb_port_get_raw(struct device *dev, u32_t *value)
+{
+	const struct gpio_cmsdk_ahb_cfg * const cfg = dev->config->config_info;
+
+	*value = cfg->port->data;
+
+	return 0;
+}
+
+static int gpio_cmsdk_ahb_port_set_masked_raw(struct device *dev, u32_t mask,
+					 u32_t value)
+{
+	const struct gpio_cmsdk_ahb_cfg * const cfg = dev->config->config_info;
+
+	cfg->port->dataout = (cfg->port->dataout & ~mask) | (mask & value);
+
+	return 0;
+}
+
+static int gpio_cmsdk_ahb_port_set_bits_raw(struct device *dev, u32_t mask)
+{
+	const struct gpio_cmsdk_ahb_cfg * const cfg = dev->config->config_info;
+
+	cfg->port->dataout |= mask;
+
+	return 0;
+}
+
+static int gpio_cmsdk_ahb_port_clear_bits_raw(struct device *dev, u32_t mask)
+{
+	const struct gpio_cmsdk_ahb_cfg * const cfg = dev->config->config_info;
+
+	cfg->port->dataout &= ~mask;
+
+	return 0;
+}
+
+static int gpio_cmsdk_ahb_port_toggle_bits(struct device *dev, u32_t mask)
+{
+	const struct gpio_cmsdk_ahb_cfg * const cfg = dev->config->config_info;
+
+	cfg->port->dataout ^= mask;
+
+	return 0;
+}
+
 static int cmsdk_ahb_gpio_config(struct device *dev, u32_t mask, int flags)
 {
 	const struct gpio_cmsdk_ahb_cfg * const cfg = dev->config->config_info;
+
+	if (((flags & GPIO_INPUT) == 0) && ((flags & GPIO_OUTPUT) == 0)) {
+		return -ENOTSUP;
+	}
+
+	if ((flags & (GPIO_PULL_UP | GPIO_PULL_DOWN)) != 0) {
+		return -ENOTSUP;
+	}
+
+	if ((flags & GPIO_SINGLE_ENDED) != 0) {
+		return -ENOTSUP;
+	}
 
 	/*
 	 * Setup the pin direction
@@ -50,38 +109,15 @@ static int cmsdk_ahb_gpio_config(struct device *dev, u32_t mask, int flags)
 	 * 0 - Input
 	 * 1 - Output
 	 */
-	if ((flags & GPIO_DIR_MASK) == GPIO_DIR_OUT) {
+	if ((flags & GPIO_OUTPUT) != 0) {
+		if ((flags & GPIO_OUTPUT_INIT_HIGH) != 0) {
+			gpio_cmsdk_ahb_port_set_bits_raw(dev, mask);
+		} else if ((flags & GPIO_OUTPUT_INIT_LOW) != 0) {
+			gpio_cmsdk_ahb_port_clear_bits_raw(dev, mask);
+		}
 		cfg->port->outenableset = mask;
 	} else {
 		cfg->port->outenableclr = mask;
-	}
-
-	/* Setup interrupt config */
-	if (flags & GPIO_INT) {
-		if (flags & GPIO_INT_DOUBLE_EDGE) {
-			return -ENOTSUP;
-		} else {
-			/*
-			 * Interrupt type:
-			 * 0 - LOW or HIGH level
-			 * 1 - For falling or rising
-			 */
-			if (flags & GPIO_INT_EDGE) {
-				cfg->port->inttypeclr = mask;
-			} else {
-				cfg->port->inttypeset = mask;
-			}
-			/*
-			 * Interrupt polarity:
-			 * 0 - Low level or falling edge
-			 * 1 - High level or rising edge
-			 */
-			if (flags & GPIO_INT_ACTIVE_HIGH) {
-				cfg->port->intpolset = mask;
-			} else {
-				cfg->port->intpolclr = mask;
-			}
-		}
 	}
 
 	cfg->port->altfuncclr = mask;
@@ -202,6 +238,46 @@ static int gpio_cmsdk_ahb_read(struct device *dev, int access_op,
 	return 0;
 }
 
+static int gpio_cmsdk_ahb_pin_interrupt_configure(struct device *dev,
+		unsigned int pin, enum gpio_int_mode mode,
+		enum gpio_int_trig trig)
+{
+	const struct gpio_cmsdk_ahb_cfg * const cfg = dev->config->config_info;
+
+	if (trig == GPIO_INT_TRIG_BOTH) {
+		return -ENOTSUP;
+	}
+
+	/* For now treat level interrupts as not supported, as we seem to only
+	 * get a single 'edge' still interrupt rather than continuous
+	 * interrupts until the cause is cleared */
+	if (mode == GPIO_INT_MODE_LEVEL) {
+		return -ENOTSUP;
+	}
+
+	if (mode == GPIO_INT_MODE_DISABLED) {
+		cfg->port->intenclr = BIT(pin);
+	} else {
+		if (mode == GPIO_INT_MODE_EDGE) {
+			cfg->port->inttypeset = BIT(pin);
+		} else {
+			/* LEVEL */
+			cfg->port->inttypeclr = BIT(pin);
+		}
+
+		/* Level High or Edge Risising */
+		if (trig == GPIO_INT_TRIG_HIGH) {
+			cfg->port->intpolset = BIT(pin);
+		} else {
+			cfg->port->intpolclr = BIT(pin);
+		}
+		cfg->port->intclear = BIT(pin);
+		cfg->port->intenset = BIT(pin);
+	}
+
+	return 0;
+}
+
 static void gpio_cmsdk_ahb_isr(void *arg)
 {
 	struct device *dev = (struct device *)arg;
@@ -211,10 +287,11 @@ static void gpio_cmsdk_ahb_isr(void *arg)
 
 	int_stat = cfg->port->intstatus;
 
+	/* clear the port interrupts */
+	cfg->port->intclear = int_stat;
+
 	gpio_fire_callbacks(&data->gpio_cb, dev, int_stat);
 
-	/* clear the port interrupts */
-	cfg->port->intclear = 0xFFFFFFFF;
 }
 
 static int gpio_cmsdk_ahb_manage_callback(struct device *dev,
@@ -274,6 +351,12 @@ static const struct gpio_driver_api gpio_cmsdk_ahb_drv_api_funcs = {
 	.config = gpio_cmsdk_ahb_config,
 	.write = gpio_cmsdk_ahb_write,
 	.read = gpio_cmsdk_ahb_read,
+	.port_get_raw = gpio_cmsdk_ahb_port_get_raw,
+	.port_set_masked_raw = gpio_cmsdk_ahb_port_set_masked_raw,
+	.port_set_bits_raw = gpio_cmsdk_ahb_port_set_bits_raw,
+	.port_clear_bits_raw = gpio_cmsdk_ahb_port_clear_bits_raw,
+	.port_toggle_bits = gpio_cmsdk_ahb_port_toggle_bits,
+	.pin_interrupt_configure = gpio_cmsdk_ahb_pin_interrupt_configure,
 	.manage_callback = gpio_cmsdk_ahb_manage_callback,
 	.enable_callback = gpio_cmsdk_ahb_enable_callback,
 	.disable_callback = gpio_cmsdk_ahb_disable_callback,
