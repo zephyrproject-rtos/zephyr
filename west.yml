@@ -40,9 +40,6 @@ manifest:
     - name: fatfs
       revision: df96914dd989907f3a5de4cb95b116c2f305820d
       path: modules/fs/fatfs
-    - name: hal_qmsi
-      revision: 9195fe6f97e4f7f25a3fc9e5a515f1b7af13762c
-      path: modules/hal/qmsi
     - name: hal_cypress
       revision: a12d92816a53a521d79cefcf5c38b9dc8a4fed6e
       path: modules/hal/cypress
