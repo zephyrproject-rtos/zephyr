@@ -60,18 +60,6 @@ child-bus: <string describing bus type, e.g. "i2c">
 # on.
 parent-bus: <string describing bus type, e.g. "i2c">
 
-# 'sub-node' is used to simplify cases where a node has children that can all
-# use the same binding. The contents of 'sub-node' becomes the binding for each
-# child node.
-#
-# The example below is for a binding for pwm-leds where the child nodes are
-# required to have a 'pwms' property.
-sub-node:
-    properties:
-        pwms:
-            type: compound
-            required: true
-
 # 'properties' describes properties on the node, e.g.
 #
 #   reg = <1 2>;
@@ -206,6 +194,66 @@ properties:
         type: uint8-array
         required: false
         default: [0x12, 0x34] # Same as 'uint8-array-with-default = [12 34]'
+
+# 'child-binding' can be used when a node has children that all share the same
+# properties. Each child gets the contents of 'child-binding' as its binding
+# (though an explicit 'compatible = ...' on the child node takes precedence, if
+# a binding is found for it).
+#
+# The example below is for a binding for PWM LEDs, where the child nodes are
+# required to have a 'pwms' property. It corresponds to this .dts structure
+# (assuming the binding has 'compatible: "pwm-leds"'):
+#
+# pwmleds {
+#         compatible = "pwm-leds";
+#
+#         red_pwm_led {
+#                 pwms = <&pwm3 4 15625000>;
+#         };
+#         green_pwm_led {
+#                 pwms = <&pwm3 0 15625000>;
+#         };
+#         ...
+# };
+child-binding:
+    title: PWM LED
+    description: LED that uses PWM
+
+    properties:
+        pwms:
+            type: phandle-array
+            required: true
+
+# 'child-binding' also works recursively. For example, the binding below would
+# provide a binding for the 'grandchild' node in this .dts (assuming
+# 'compatible: "foo"'):
+#
+# parent {
+#         compatible = "foo";
+#         child {
+#                 grandchild {
+#                         prop = <123>;
+#                 };
+#         };
+# }
+#
+# WARNING: Due to implementation issues with legacy code, only up to two levels
+# of 'child-binding:' nesting (like below) is supported. This restriction will
+# go away in Zephyr 2.2.
+child-binding:
+    title: ...
+    description: ...
+
+    ...
+
+    child-binding:
+        title: ...
+        description: ...
+
+        properties:
+            prop:
+                type: int
+                required: true
 
 # If the binding describes an interrupt controller, GPIO controller, pinmux
 # device, or any other node referenced by other nodes, then #cells should be
