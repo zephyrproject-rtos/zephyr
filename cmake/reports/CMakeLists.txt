@@ -7,7 +7,7 @@ foreach(report ram_report rom_report)
   add_custom_target(
     ${report}
     ${PYTHON_EXECUTABLE}
-    ${ZEPHYR_BASE}/scripts/footprint/size_report
+    ${ZEPHYR_BASE}/scripts/footprint/size_report.py
     ${flag_for_${report}}
     --objdump ${CMAKE_OBJDUMP}
     --objcopy ${CMAKE_OBJCOPY}
