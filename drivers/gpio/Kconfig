@@ -28,8 +28,6 @@ source "drivers/gpio/Kconfig.pcal9535a"
 
 source "drivers/gpio/Kconfig.qmsi"
 
-source "drivers/gpio/Kconfig.sch"
-
 source "drivers/gpio/Kconfig.mcux"
 
 source "drivers/gpio/Kconfig.mcux_igpio"

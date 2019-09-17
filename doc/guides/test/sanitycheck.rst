@@ -319,7 +319,7 @@ related to the sample and what is being demonstrated:
           singlethread:
             build_only: true
             extra_args: CONF_FILE=prj_single.conf
-            filter: not CONFIG_BT and not CONFIG_GPIO_SCH
+            filter: not CONFIG_BT
             tags: tests
             min_ram: 16
 
