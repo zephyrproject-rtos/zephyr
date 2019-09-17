@@ -359,10 +359,11 @@ static void generate_mac(u8_t *mac_addr)
 
 	entropy = sys_rand32_get();
 
-	mac_addr[3] = entropy >> 8;
-	mac_addr[4] = entropy >> 16;
-	/* Locally administered, unicast */
-	mac_addr[5] = ((entropy >> 0) & 0xfc) | 0x02;
+	mac_addr[0] |= 0x02; /* force LAA bit */
+
+	mac_addr[3] = entropy >> 16;
+	mac_addr[4] = entropy >> 8;
+	mac_addr[5] = entropy >> 0;
 }
 #endif
 
@@ -497,10 +498,9 @@ static struct eth_stm32_hal_dev_data eth0_data = {
 		},
 	},
 	.mac_addr = {
-		/* ST's OUI */
-		0x00,
-		0x80,
-		0xE1,
+		ST_OUI_B0,
+		ST_OUI_B1,
+		ST_OUI_B2,
 #if !defined(CONFIG_ETH_STM32_HAL_RANDOM_MAC)
 		CONFIG_ETH_STM32_HAL_MAC3,
 		CONFIG_ETH_STM32_HAL_MAC4,
