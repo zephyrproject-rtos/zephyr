@@ -53,8 +53,6 @@ module = DMA
 module-str = dma
 source "subsys/logging/Kconfig.template.log_config"
 
-source "drivers/dma/Kconfig.qmsi"
-
 source "drivers/dma/Kconfig.stm32f4x"
 
 source "drivers/dma/Kconfig.sam_xdmac"
