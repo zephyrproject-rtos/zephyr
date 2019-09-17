@@ -605,7 +605,7 @@ class BinaryHandler(Handler):
 
         subprocess.call(["stty", "sane"])
         self.instance.results = harness.tests
-        if self.terminated==False and self.returncode != 0:
+        if not self.terminated and self.returncode != 0:
             #When a process is killed, the default handler returns 128 + SIGTERM
             #so in that case the return code itself is not meaningful
             self.set_state("error", {})
@@ -1453,7 +1453,8 @@ class TestCase(object):
         unique = os.path.normpath(os.path.join(relative_tc_root, workdir, name))
         return unique
 
-    def scan_file(self, inf_name):
+    @staticmethod
+    def scan_file(inf_name):
         suite_regex = re.compile(
             # do not match until end-of-line, otherwise we won't allow
             # stc_regex below to catch the ones that are declared in the same
@@ -1586,16 +1587,10 @@ class TestInstance:
         if skip_slow:
             return True
 
-        runnable = False
-
-        if  self.testcase.type == "unit" or \
+        runnable =bool(self.testcase.type == "unit" or \
             self.platform.type == "native" or \
             self.platform.simulation in ["nsim", "renode", "qemu"] or \
-            options.device_testing:
-
-            runnable = True
-        else:
-            runnable = False
+            options.device_testing)
 
         if self.platform.simulation == "nsim":
             if not find_executable("nsimdrv"):
@@ -1638,7 +1633,7 @@ class TestInstance:
         with open(file, "w") as f:
             content = ""
 
-            if len(self.testcase.extra_configs) > 0:
+            if self.testcase.extra_configs:
                 content = "\n".join(self.testcase.extra_configs)
 
             if options.enable_coverage:
@@ -1687,12 +1682,10 @@ class CMake():
         self.source_dir = source_dir
         self.build_dir = build_dir
         self.log = "build.log"
-        return
-
 
     def parse_generated(self):
+        self.defconfig = {}
         return {}
-
 
     def run_build(self, args=[]):
 
@@ -2032,7 +2025,7 @@ class ProjectBuilder(CMake):
                 del args[idx]
                 idx += 1
 
-        if len(self.testcase.extra_configs) > 0 or options.coverage:
+        if self.testcase.extra_configs or options.coverage:
             args.append("OVERLAY_CONFIG=\"%s %s\"" %(overlays,
                         os.path.join(instance.build_dir,
                                      "sanitycheck", "testcase_extra.conf")))
@@ -2068,6 +2061,8 @@ class ProjectBuilder(CMake):
 
             instance.metrics["handler_time"] = time.time() - start_time
 
+        sys.stdout.flush()
+
 
 pipeline = queue.LifoQueue()
 
@@ -2083,7 +2078,6 @@ class BoundedExecutor(concurrent.futures.ThreadPoolExecutor):
         #self.executor = ThreadPoolExecutor(max_workers=max_workers)
         self.semaphore = BoundedSemaphore(bound + max_workers)
 
-    """See concurrent.futures.Executor#submit"""
     def submit(self, fn, *args, **kwargs):
         self.semaphore.acquire()
         try:
@@ -2095,7 +2089,6 @@ class BoundedExecutor(concurrent.futures.ThreadPoolExecutor):
             future.add_done_callback(lambda x: self.semaphore.release())
             return future
 
-    """See concurrent.futures.Executor#shutdown"""
     def shutdown(self, wait=True):
         super().shutdown(wait)
 
@@ -2292,9 +2285,8 @@ class TestSuite:
                     error("E: %s: can't load: %s" % (file, e))
                     self.load_errors += 1
 
-        toolchain = self.get_toolchain()
-
-    def get_toolchain(self):
+    @staticmethod
+    def get_toolchain():
         toolchain = os.environ.get("ZEPHYR_TOOLCHAIN_VARIANT", None) or \
                     os.environ.get("ZEPHYR_GCC_VARIANT", None)
 
@@ -2655,23 +2647,10 @@ class TestSuite:
                     continue
 
 
-                if 1:
-                    # Data from kconfig, device-tree and cmake cache files used for filtering.
-                    if instance.name in filter_results and filter_results[instance.name]:
-                        discards[instance] = "Filter not satisfied: '%s'" %tc.tc_filter
-                        continue
-                else:
-                    if tc.tc_filter:
-                        try:
-                            res = expr_parser.parse(tc.tc_filter, plat.filter_data)
-                        except (ValueError, SyntaxError) as se:
-                            sys.stderr.write(
-                                "Failed processing %s\n" % self.testcase.yamlfile)
-                            raise se
 
-                        if not res:
-                            discards[instance] = "Filter not satisfied: '%s'" %tc.tc_filter
-                            continue
+                if instance.name in filter_results and filter_results[instance.name]:
+                    discards[instance] = "Filter not satisfied: '%s'" %tc.tc_filter
+                    continue
 
                 instance_list.append(instance)
 
@@ -2831,7 +2810,7 @@ class TestSuite:
         handler_time = "0"
 
         # print out test results
-        for identifier, instance in self.instances.items():
+        for _, instance in self.instances.items():
             for k in instance.results.keys():
 
                 eleTestcase = ET.SubElement(
@@ -3408,7 +3387,7 @@ def create_gcda_files(extracted_coverage_info):
             filename = (filename[:-4]) +"gcno"
             try:
                 os.remove(filename)
-            except:
+            except Exception:
                 pass
             continue
 
@@ -3629,7 +3608,7 @@ def main():
     if options.export_tests:
         cnt = 0
         unq = []
-        for n,tc in suite.testcases.items():
+        for _, tc in suite.testcases.items():
             for c in tc.cases:
                 unq.append(c)
 
@@ -3702,7 +3681,7 @@ def main():
 
         if all_tests - to_be_run:
             print("Tests that never build or run:")
-            for not_run in (all_tests - to_be_run):
+            for not_run in all_tests - to_be_run:
                 print("- {}".format(not_run))
 
         return
@@ -3757,11 +3736,11 @@ def main():
 
 
     if options.coverage:
-        if options.gcov_tool == None:
+        if options.gcov_tool is None:
             use_system_gcov = False
 
             for plat in options.coverage_platform:
-                ts_plat = ts.get_platform(plat)
+                ts_plat = suite.get_platform(plat)
                 if ts_plat and (ts_plat.type in {"native", "unit"}):
                     use_system_gcov = True
 
