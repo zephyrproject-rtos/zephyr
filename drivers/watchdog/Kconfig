@@ -41,8 +41,6 @@ config WDT_MULTISTAGE
 	help
 	  Enable multistage operation of watchdog timeouts.
 
-source "drivers/watchdog/Kconfig.qmsi"
-
 source "drivers/watchdog/Kconfig.stm32"
 
 source "drivers/watchdog/Kconfig.cmsdk_apb"
