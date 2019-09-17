@@ -91,8 +91,6 @@ source "drivers/serial/Kconfig.usart_sam"
 
 source "drivers/serial/Kconfig.uart_sam"
 
-source "drivers/serial/Kconfig.qmsi"
-
 source "drivers/serial/Kconfig.stm32"
 
 source "drivers/serial/Kconfig.nrfx"
