@@ -805,8 +805,10 @@ FUNC_NORETURN void k_thread_user_mode_enter(k_thread_entry_t entry,
 #ifdef SPIN_VALIDATE
 bool z_spin_lock_valid(struct k_spinlock *l)
 {
-	if (l->thread_cpu) {
-		if ((l->thread_cpu & 3) == _current_cpu->id) {
+	uintptr_t thread_cpu = l->thread_cpu;
+
+	if (thread_cpu) {
+		if ((thread_cpu & 3) == _current_cpu->id) {
 			return false;
 		}
 	}
