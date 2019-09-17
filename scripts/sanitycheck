@@ -2453,7 +2453,6 @@ class TestSuite:
         arch_filter = options.arch
         tag_filter = options.tag
         exclude_tag = options.exclude_tag
-        config_filter = options.config
         extra_args = options.extra_args
         all_plats = options.all
 
@@ -2461,7 +2460,6 @@ class TestSuite:
         verbose("    arch_filter: " + str(arch_filter))
         verbose("     tag_filter: " + str(tag_filter))
         verbose("    exclude_tag: " + str(exclude_tag))
-        verbose("  config_filter: " + str(config_filter))
 
         default_platforms = False
 
@@ -3037,15 +3035,6 @@ Artificially long but functional example:
     parser.add_argument(
         "--retry-failed", type=int, default=0,
         help="Retry tests that failed number of times specified.")
-    parser.add_argument(
-        "-c", "--config", action="append",
-        help="Specify platform configuration values filtering. This can be "
-        "specified two ways: <config>=<value> or just <config>. The "
-        "defconfig for all platforms will be "
-        "checked. For the <config>=<value> case, only match defconfig "
-        "that have that value defined. For the <config> case, match "
-        "defconfig that have that value assigned to any value. "
-        "Prepend a '!' to invert the match.")
 
     test_xor_subtest = case_select.add_mutually_exclusive_group()
 
