@@ -233,6 +233,8 @@ int net_tcp_unref(struct net_context *context)
 {
 	int key;
 
+	tcp_dbg("context: %p", context);
+
 	tp_out(context->tcp->iface, "TP_TRACE", "event", "CONN_DELETE");
 
 	if (_tcp_conn_delete == false) {
