@@ -203,7 +203,7 @@ static int unprovisioned_beacon_send(void)
 		net_buf_unref(buf);
 	}
 
-#endif /* CONFIG_BT_MESH_PB_ADV */
+#endif  /* CONFIG_BT_MESH_PB_ADV */
 	return 0;
 }
 
@@ -303,13 +303,6 @@ static void secure_beacon_recv(struct net_buf_simple *buf)
 
 	cache_add(data, sub);
 
-	/* If we have NetKey0 accept initiation only from it */
-	if (bt_mesh_subnet_get(BT_MESH_KEY_PRIMARY) &&
-	    sub->net_idx != BT_MESH_KEY_PRIMARY) {
-		BT_WARN("Ignoring secure beacon on non-primary subnet");
-		goto update_stats;
-	}
-
 	BT_DBG("net_idx 0x%04x iv_index 0x%08x, current iv_index 0x%08x",
 	       sub->net_idx, iv_index, bt_mesh.iv_index);
 
@@ -333,6 +326,17 @@ static void secure_beacon_recv(struct net_buf_simple *buf)
 		/* Key Refresh without IV Update only impacts one subnet */
 		bt_mesh_net_sec_update(sub);
 	}
+
+	/* If we have NetKey0 accept initiation only from it */
+	if (atomic_test_bit(bt_mesh.flags, BT_MESH_IVU_INITIATOR) &&
+	    (atomic_test_bit(bt_mesh.flags, BT_MESH_IVU_IN_PROGRESS) ==
+	     BT_MESH_IV_UPDATE(flags))) {
+		bt_mesh_beacon_ivu_initiator(false);
+	} else if (iv_change || kr_change) {
+		/* Forward beacon information to other nodes */
+		bt_mesh_beacon_ivu_initiator(true);
+	}
+
 
 update_stats:
 	if (bt_mesh_beacon_get() == BT_MESH_BEACON_ENABLED &&
