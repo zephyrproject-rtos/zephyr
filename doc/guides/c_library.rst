@@ -28,8 +28,7 @@ functions needed by Zephyr.
 The following functions are implemented in the minimal C
 library included with Zephyr:
 
-.. hlist::
-   :columns: 3
+.. rst-class:: rst-columns
 
    - abs()
    - atoi()
