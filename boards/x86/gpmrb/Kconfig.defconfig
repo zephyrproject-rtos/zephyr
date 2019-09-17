@@ -4,6 +4,9 @@
 
 if BOARD_GPMRB
 
+config X86_MULTIBOOT
+	default n
+
 config BOARD
 	default "gpmrb"
 
