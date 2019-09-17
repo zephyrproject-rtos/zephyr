@@ -171,7 +171,7 @@ void stack_sentinel_timer(void)
 	 * k_timer and spin until we die.  Spinning alone won't work
 	 * on a tickless kernel.
 	 */
-	struct k_timer timer;
+	static struct k_timer timer;
 
 	blow_up_stack();
 	k_timer_init(&timer, NULL, NULL);
