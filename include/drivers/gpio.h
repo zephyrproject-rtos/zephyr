@@ -960,6 +960,8 @@ static inline int gpio_pin_toggle(struct device *port, unsigned int pin)
  * @param pin Pin number where the data is written.
  * @param value Value set on the pin.
  * @return 0 if successful, negative errno code on failure.
+ *
+ * @deprecated Replace with gpio_pin_set_raw().
  */
 static inline int gpio_pin_write(struct device *port, u32_t pin,
 				 u32_t value)
@@ -976,6 +978,8 @@ static inline int gpio_pin_write(struct device *port, u32_t pin,
  * @param pin Pin number where data is read.
  * @param value Integer pointer to receive the data values from the pin.
  * @return 0 if successful, negative errno code on failure.
+ *
+ * @deprecated Replace with gpio_pin_get_raw().
  */
 static inline int gpio_pin_read(struct device *port, u32_t pin,
 				u32_t *value)
@@ -1098,6 +1102,9 @@ static inline int gpio_remove_callback(struct device *port,
  * Note: Depending on the driver implementation, this function will enable
  *       the pin to trigger an interruption. So as a semantic detail, if no
  *       callback is registered, of course none will be called.
+ *
+ * @deprecated Replace with ``gpio_pin_interrupt_configure()`` with
+ * ``GPIO_INT_ENABLE``.
  */
 static inline int gpio_pin_enable_callback(struct device *port, u32_t pin)
 {
@@ -1109,6 +1116,9 @@ static inline int gpio_pin_enable_callback(struct device *port, u32_t pin)
  * @param port Pointer to the device structure for the driver instance.
  * @param pin Pin number where the callback function is disabled.
  * @return 0 if successful, negative errno code on failure.
+ *
+ * @deprecated Replace with ``gpio_pin_interrupt_configure()`` with
+ * ``GPIO_INT_DISABLE``.
  */
 static inline int gpio_pin_disable_callback(struct device *port, u32_t pin)
 {
