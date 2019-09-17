@@ -340,14 +340,20 @@
 	};
 
 	//
-	// Parent with 'sub-node:' in binding
+	// Node with 'child-binding:' in binding (along with a recursive
+	// 'child-binding:')
 	//
 
-	parent-with-sub-node {
-		compatible = "parent-with-sub-node";
-		node {
-			foo = <1>;
-			bar = <2>;
+	child-binding {
+		compatible = "child-binding";
+		child-1 {
+			child-prop = <1>;
+			grandchild {
+				grandchild-prop = <2>;
+			};
+		};
+		child-2 {
+			child-prop = <3>;
 		};
 	};
 
@@ -376,5 +382,8 @@
 		compatible = "deprecated";
 		required = <1>;
 		required-2 = <2>;
+		sub-node {
+			child-prop = <3>;
+		};
 	};
 };

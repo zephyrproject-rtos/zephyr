@@ -1,0 +1,22 @@
+# SPDX-License-Identifier: BSD-3-Clause
+
+title: child-binding test
+description: child-binding test
+
+compatible: "child-binding"
+
+child-binding:
+    title: child node
+    description: child node
+    properties:
+        child-prop:
+            type: int
+            required: true
+
+    child-binding:
+        title: grandchild node
+        description: grandchild node
+        properties:
+            grandchild-prop:
+                type: int
+                required: true

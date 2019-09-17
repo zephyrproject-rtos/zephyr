@@ -1,7 +1,6 @@
-title: Flash Partitions
+title: Flash partitions parent
 
-description: >
-    This binding gives a base FLASH partition description
+description: Flash partitions parent node
 
 compatible: "fixed-partitions"
 
@@ -16,7 +15,9 @@ properties:
         required: false
         description: number of size cells in reg property
 
-sub-node:
+child-binding:
+    title: Flash partition
+    description: Flash partition child node
     properties:
        label:
           required: true

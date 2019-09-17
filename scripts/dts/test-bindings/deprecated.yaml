@@ -22,3 +22,10 @@ properties:
     optional:
         type: int
         category: optional
+
+# Deprecated older 'child-binding'-alike
+sub-node:
+    properties:
+        child-prop:
+            type: int
+            required: true

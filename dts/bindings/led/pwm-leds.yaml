@@ -1,14 +1,15 @@
 # Copyright (c) 2018, Linaro Limited
 # SPDX-License-Identifier: Apache-2.0
 
-title: PWM LED
+title: PWM LEDs
 
-description: >
-    This is a representation of the PWM GPIO nodes
+description: PWM LEDs parent node
 
 compatible: "pwm-leds"
 
-sub-node:
+child-binding:
+    title: PWM LED node
+    description: PWM LED child node
     properties:
         pwms:
           type: phandle-array

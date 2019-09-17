@@ -116,14 +116,31 @@ def run():
                  "test-bindings/device-on-bar-bus.yaml")
 
     #
-    # Test 'sub-node:' in binding
+    # Test 'child-binding:'
     #
 
-    verify_streq(edt.get_dev("/parent-with-sub-node/node").description,
-                 "Sub-node test")
+    child1 = edt.get_dev("/child-binding/child-1")
+    child2 = edt.get_dev("/child-binding/child-2")
+    grandchild = edt.get_dev("/child-binding/child-1/grandchild")
 
-    verify_streq(edt.get_dev("/parent-with-sub-node/node").props,
-                             "{'foo': <Property, name: foo, type: int, value: 1>, 'bar': <Property, name: bar, type: int, value: 2>}")
+    verify_streq(child1.binding_path, "test-bindings/child-binding.yaml")
+    verify_streq(child1.description, "child node")
+    verify_streq(child1.props, "{'child-prop': <Property, name: child-prop, type: int, value: 1>}")
+
+    verify_streq(child2.binding_path, "test-bindings/child-binding.yaml")
+    verify_streq(child2.description, "child node")
+    verify_streq(child2.props, "{'child-prop': <Property, name: child-prop, type: int, value: 3>}")
+
+    verify_streq(grandchild.binding_path, "test-bindings/child-binding.yaml")
+    verify_streq(grandchild.description, "grandchild node")
+    verify_streq(grandchild.props, "{'grandchild-prop': <Property, name: grandchild-prop, type: int, value: 2>}")
+
+    #
+    # Test deprecated 'sub-node:' key (replaced with 'child-binding:')
+    #
+
+    verify_streq(edt.get_dev("/deprecated/sub-node").props,
+                 "{'child-prop': <Property, name: child-prop, type: int, value: 3>}")
 
     #
     # Test Device.property (derived from DT and 'properties:' in the binding)
