@@ -1695,6 +1695,43 @@ u16_t bt_gatt_get_mtu(struct bt_conn *conn)
 	return bt_att_get_mtu(conn);
 }
 
+u8_t bt_gatt_check_perm(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+			u8_t mask)
+{
+	if ((mask & BT_GATT_PERM_READ) &&
+	    (!(attr->perm & BT_GATT_PERM_READ_MASK) || !attr->read)) {
+		return BT_ATT_ERR_READ_NOT_PERMITTED;
+	}
+
+	if ((mask & BT_GATT_PERM_WRITE) &&
+	    (!(attr->perm & BT_GATT_PERM_WRITE_MASK) || !attr->write)) {
+		return BT_ATT_ERR_WRITE_NOT_PERMITTED;
+	}
+
+	mask &= attr->perm;
+	if (mask & BT_GATT_PERM_AUTHEN_MASK) {
+#if defined(CONFIG_BT_SMP)
+		if (conn->sec_level < BT_SECURITY_L3) {
+			return BT_ATT_ERR_AUTHENTICATION;
+		}
+#else
+		return BT_ATT_ERR_AUTHENTICATION;
+#endif /* CONFIG_BT_SMP */
+	}
+
+	if ((mask & BT_GATT_PERM_ENCRYPT_MASK)) {
+#if defined(CONFIG_BT_SMP)
+		if (!conn->encrypt) {
+			return BT_ATT_ERR_INSUFFICIENT_ENCRYPTION;
+		}
+#else
+		return BT_ATT_ERR_INSUFFICIENT_ENCRYPTION;
+#endif /* CONFIG_BT_SMP */
+	}
+
+	return 0;
+}
+
 #if defined(CONFIG_BT_GATT_DYNAMIC_DB)
 static void sc_restore(struct bt_gatt_ccc_cfg *cfg)
 {
@@ -1725,6 +1762,7 @@ static u8_t update_ccc(const struct bt_gatt_attr *attr, void *user_data)
 	struct bt_conn *conn = data->conn;
 	struct _bt_gatt_ccc *ccc;
 	size_t i;
+	u8_t err;
 
 	/* Check attribute user_data must be of type struct _bt_gatt_ccc */
 	if (attr->write != bt_gatt_attr_write_ccc) {
@@ -1739,25 +1777,31 @@ static u8_t update_ccc(const struct bt_gatt_attr *attr, void *user_data)
 			continue;
 		}
 
-#if defined(CONFIG_BT_SMP)
 		/* Check if attribute requires encryption/authentication */
-		if (attr->perm &
-		    (BT_GATT_PERM_WRITE_ENCRYPT | BT_GATT_PERM_WRITE_AUTHEN)) {
-			bt_security_t sec = BT_SECURITY_L2;
+		err = bt_gatt_check_perm(conn, attr, BT_GATT_PERM_WRITE_MASK);
+		if (err) {
+			bt_security_t sec;
 
-			if (attr->perm & BT_GATT_PERM_WRITE_AUTHEN) {
+			if (err == BT_ATT_ERR_WRITE_NOT_PERMITTED) {
+				BT_WARN("CCC %p not writable", attr);
+				continue;
+			}
+
+			sec = BT_SECURITY_L2;
+
+			if (err == BT_ATT_ERR_AUTHENTICATION) {
 				sec = BT_SECURITY_L3;
 			}
 
 			/* Check if current security is enough */
-			if (conn->sec_level < sec) {
+			if (IS_ENABLED(CONFIG_BT_SMP) &&
+			    bt_conn_get_security(conn) < sec) {
 				if (data->sec < sec) {
 					data->sec = sec;
 				}
 				continue;
 			}
 		}
-#endif
 
 		if (ccc->cfg[i].value) {
 			gatt_ccc_changed(attr, ccc);
@@ -3264,7 +3308,6 @@ void bt_gatt_connected(struct bt_conn *conn)
 
 	bt_gatt_foreach_attr(0x0001, 0xffff, update_ccc, &data);
 
-#if defined(CONFIG_BT_SMP)
 	/* BLUETOOTH CORE SPECIFICATION Version 5.1 | Vol 3, Part C page 2192:
 	 *
 	 * 10.3.1.1 Handling of GATT indications and notifications
@@ -3281,10 +3324,10 @@ void bt_gatt_connected(struct bt_conn *conn)
 	 * does not have an LTK indicating that the client has lost the bond,
 	 * enabling encryption will fail.
 	 */
-	if (conn->sec_level < data.sec) {
+	if (IS_ENABLED(CONFIG_BT_SMP) &&
+	    bt_conn_get_security(conn) < data.sec) {
 		bt_conn_set_security(conn, data.sec);
 	}
-#endif /* CONFIG_BT_SMP */
 
 #if defined(CONFIG_BT_GATT_CLIENT)
 	add_subscriptions(conn);
