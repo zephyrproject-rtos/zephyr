@@ -14,6 +14,7 @@
 #include "hal/ticker.h"
 
 #include "util/util.h"
+#include "util/mem.h"
 #include "util/memq.h"
 #include "util/mayfly.h"
 
@@ -443,11 +444,15 @@ u8_t ll_adv_enable(u8_t enable)
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
-	/* remember addr to use and also update the addr in
-	 * both adv and scan response PDUs.
-	 */
 	lll = &adv->lll;
+
 	pdu_adv = lll_adv_data_peek(lll);
+	if (pdu_adv->tx_addr) {
+		if (!mem_nz(ll_addr_get(1, NULL), BDADDR_SIZE)) {
+			return BT_HCI_ERR_INVALID_PARAM;
+		}
+	}
+
 	pdu_scan = lll_adv_scan_rsp_peek(lll);
 
 	if (0) {
