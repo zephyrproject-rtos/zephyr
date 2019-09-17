@@ -33,7 +33,7 @@
 	leds {
 		compatible = "gpio-leds";
 		green_led: led-1 {
-			gpios = <&gpio1 9 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpio1 9 GPIO_ACTIVE_LOW>;
 			label = "User LD1";
 		};
 	};
@@ -50,7 +50,7 @@
 		compatible = "gpio-keys";
 		user_button: button-1 {
 			label = "User SW8";
-			gpios = <&gpio5 0 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpio5 0 GPIO_ACTIVE_LOW>;
 		};
 	};
 
