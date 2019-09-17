@@ -148,8 +148,7 @@ All GPIO controller pins are exposed via the following sequence of pin numbers:
 
 Mapping from the ARM MPS2 Board pins to GPIO controllers:
 
-.. hlist::
-   :columns: 3
+.. rst-class:: rst-columns
 
    - D0 : EXT_0
    - D1 : EXT_4
@@ -206,8 +205,7 @@ Mapping from the ARM MPS2 Board pins to GPIO controllers:
 
 Peripheral Mapping:
 
-.. hlist::
-   :columns: 3
+.. rst-class:: rst-columns
 
    - UART_3_RX : D0
    - UART_3_TX : D1

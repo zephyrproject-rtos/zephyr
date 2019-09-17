@@ -102,8 +102,7 @@ Boards & SoC Support
 * Added native_posix_64: A 64 bit variant of native_posix
 * Added support for these ARC boards:
 
-  .. hlist::
-     :columns: 3
+  .. rst-class:: rst-columns
 
      * emsdp
      * hsdk
@@ -111,8 +110,7 @@ Boards & SoC Support
 
 * Added support for these ARM boards:
 
-  .. hlist::
-     :columns: 3
+  .. rst-class:: rst-columns
 
      * atsamr21_xpro
      * cc1352r1_launchxl
@@ -138,8 +136,7 @@ Boards & SoC Support
 
 * Added support for these RISC-V boards:
 
-  .. hlist::
-     :columns: 3
+  .. rst-class:: rst-columns
 
      * hifive1_revb
      * litex_vexriscv
@@ -149,8 +146,7 @@ Boards & SoC Support
 
 * Added support for these following shields:
 
-  .. hlist::
-     :columns: 3
+  .. rst-class:: rst-columns
 
      * frdm_cr20a
      * link_board_can
@@ -160,8 +156,7 @@ Boards & SoC Support
 
 * Removed support for these boards:
 
-  .. hlist::
-     :columns: 3
+  .. rst-class:: rst-columns
 
      * arduino_101
      * arduino_101_sss
@@ -398,8 +393,7 @@ Networking
 * OpenThread updates and fixes.
 * Network device driver fixes for:
 
-  .. hlist::
-     :columns: 3
+  .. rst-class:: rst-columns
 
      - Ethernet e1000
      - Ethernet enc28j60

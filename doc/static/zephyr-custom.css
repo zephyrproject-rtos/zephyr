@@ -248,3 +248,12 @@ kbd
    font-size: 4rem;
    color: mediumslateblue;
 }
+
+/* add a class for multi-column support
+ * in docs to replace use of .hlist with
+ * a .. rst-class:: rst-columns
+ */
+
+.rst-columns {
+   column-width: 18em;
+}
