@@ -15,15 +15,15 @@
 static inline void sock_set_flag(struct net_context *ctx, uintptr_t mask,
 				 uintptr_t flag)
 {
-	uintptr_t val = POINTER_TO_UINT(ctx->user_data);
+	uintptr_t val = POINTER_TO_UINT(ctx->socket_data);
 
 	val = (val & ~mask) | flag;
-	(ctx)->user_data = UINT_TO_POINTER(val);
+	(ctx)->socket_data = UINT_TO_POINTER(val);
 }
 
 static inline uintptr_t sock_get_flag(struct net_context *ctx, uintptr_t mask)
 {
-	return POINTER_TO_UINT(ctx->user_data) & mask;
+	return POINTER_TO_UINT(ctx->socket_data) & mask;
 }
 
 #define sock_is_eof(ctx) sock_get_flag(ctx, SOCK_EOF)
