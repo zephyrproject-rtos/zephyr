@@ -165,9 +165,11 @@
 		espi0: espi@400f3400 {
 			compatible = "microchip,xec-espi";
 			reg = <0x400f3400 0x400>;
+			interrupts = <11 0>, <15 0>, <7 0>;
 			label = "ESPI_0";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			status = "disabled";
 		};
 		timer0: timer@40000c00 {
 			compatible = "microchip,xec-timer";
