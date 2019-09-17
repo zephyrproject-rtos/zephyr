@@ -3691,17 +3691,34 @@ def main():
         return
 
     if options.subset:
-        subset, sets = options.subset.split("/")
-        total = len(suite.instances)
-        per_set = round(total / int(sets))
-        start = (int(subset) - 1) * per_set
-        if subset == sets:
-            end = total
-        else:
-            end = start + per_set
+        def slice_instances(instances):
+            subset, sets = options.subset.split("/")
+            total = len(instances)
+            per_set = round(total / int(sets))
+            start = (int(subset) - 1) * per_set
+            if int(subset) == int(sets):
+                end = total
+            else:
+                end = start + per_set
+            sliced_instances = islice(instances.items(), start, end)
+            return OrderedDict(sliced_instances)
 
-        sliced_instances = islice(suite.instances.items(), start, end)
-        suite.instances = OrderedDict(sliced_instances)
+        tc_filter_instances = OrderedDict()
+        sim_instances = OrderedDict()
+        remainder_instances = OrderedDict()
+        for n, instance in suite.instances.items():
+            if instance.testcase.tc_filter:
+                tc_filter_instances[n] = instance
+            elif instance.platform.simulation != "na":
+                sim_instances[n] = instance
+            else:
+                remainder_instances[n] = instance
+
+        sliced_instances = slice_instances(tc_filter_instances)
+        sliced_instances.update(slice_instances(sim_instances))
+        sliced_instances.update(slice_instances(remainder_instances))
+
+        suite.instances = sliced_instances
 
     info("%d tests selected, %d tests discarded due to filters" %
         (len(suite.instances), len(discards)))
