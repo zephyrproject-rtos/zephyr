@@ -754,10 +754,11 @@ static void generate_mac(u8_t *mac_addr)
 
 	entropy = sys_rand32_get();
 
+	mac_addr[0] |= 0x02; /* force LAA bit */
+
 	mac_addr[3] = entropy >> 8;
 	mac_addr[4] = entropy >> 16;
-	/* Locally administered, unicast */
-	mac_addr[5] = ((entropy >> 0) & 0xfc) | 0x02;
+	mac_addr[5] = entropy >> 0;
 }
 #elif defined(CONFIG_ETH_MCUX_0_UNIQUE_MAC)
 static void generate_mac(u8_t *mac_addr)
@@ -770,10 +771,11 @@ static void generate_mac(u8_t *mac_addr)
 	u32_t id = SIM->UIDH ^ SIM->UIDMH ^ SIM->UIDML ^ SIM->UIDL;
 #endif
 
+	mac_addr[0] |= 0x02; /* force LAA bit */
+
 	mac_addr[3] = id >> 8;
 	mac_addr[4] = id >> 16;
-	/* Locally administered, unicast */
-	mac_addr[5] = ((id >> 0) & 0xfc) | 0x02;
+	mac_addr[5] = id >> 0;
 }
 #endif
 
