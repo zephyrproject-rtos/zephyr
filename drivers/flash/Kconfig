@@ -57,8 +57,6 @@ source "drivers/flash/Kconfig.native_posix"
 
 source "drivers/flash/Kconfig.nor"
 
-source "drivers/flash/Kconfig.qmsi"
-
 source "drivers/flash/Kconfig.stm32"
 
 source "drivers/flash/Kconfig.sam0"
