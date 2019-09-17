@@ -19,8 +19,6 @@ source "subsys/logging/Kconfig.template.log_config"
 
 source "drivers/counter/Kconfig.gecko"
 
-source "drivers/counter/Kconfig.qmsi"
-
 source "drivers/counter/Kconfig.tmr_cmsdk_apb"
 
 source "drivers/counter/Kconfig.dtmr_cmsdk_apb"
