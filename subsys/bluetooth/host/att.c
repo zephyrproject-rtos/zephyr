@@ -34,16 +34,6 @@
 #define ATT_CHAN(_ch) CONTAINER_OF(_ch, struct bt_att, chan.chan)
 #define ATT_REQ(_node) CONTAINER_OF(_node, struct bt_att_req, node)
 
-#define BT_GATT_PERM_READ_MASK			(BT_GATT_PERM_READ | \
-						BT_GATT_PERM_READ_ENCRYPT | \
-						BT_GATT_PERM_READ_AUTHEN)
-#define BT_GATT_PERM_WRITE_MASK			(BT_GATT_PERM_WRITE | \
-						BT_GATT_PERM_WRITE_ENCRYPT | \
-						BT_GATT_PERM_WRITE_AUTHEN)
-#define BT_GATT_PERM_ENCRYPT_MASK		(BT_GATT_PERM_READ_ENCRYPT | \
-						BT_GATT_PERM_WRITE_ENCRYPT)
-#define BT_GATT_PERM_AUTHEN_MASK		(BT_GATT_PERM_READ_AUTHEN | \
-						BT_GATT_PERM_WRITE_AUTHEN)
 #define ATT_CMD_MASK				0x40
 
 #define ATT_TIMEOUT				K_SECONDS(30)
@@ -722,43 +712,6 @@ static u8_t att_find_type_req(struct bt_att *att, struct net_buf *buf)
 				 buf->len);
 }
 
-static u8_t check_perm(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-		       u8_t mask)
-{
-	if ((mask & BT_GATT_PERM_READ) &&
-	    (!(attr->perm & BT_GATT_PERM_READ_MASK) || !attr->read)) {
-		return BT_ATT_ERR_READ_NOT_PERMITTED;
-	}
-
-	if ((mask & BT_GATT_PERM_WRITE) &&
-	    (!(attr->perm & BT_GATT_PERM_WRITE_MASK) || !attr->write)) {
-		return BT_ATT_ERR_WRITE_NOT_PERMITTED;
-	}
-
-	mask &= attr->perm;
-	if (mask & BT_GATT_PERM_AUTHEN_MASK) {
-#if defined(CONFIG_BT_SMP)
-		if (conn->sec_level < BT_SECURITY_L3) {
-			return BT_ATT_ERR_AUTHENTICATION;
-		}
-#else
-		return BT_ATT_ERR_AUTHENTICATION;
-#endif /* CONFIG_BT_SMP */
-	}
-
-	if ((mask & BT_GATT_PERM_ENCRYPT_MASK)) {
-#if defined(CONFIG_BT_SMP)
-		if (!conn->encrypt) {
-			return BT_ATT_ERR_INSUFFICIENT_ENCRYPTION;
-		}
-#else
-		return BT_ATT_ERR_INSUFFICIENT_ENCRYPTION;
-#endif /* CONFIG_BT_SMP */
-	}
-
-	return 0;
-}
-
 static u8_t err_to_att(int err)
 {
 	BT_DBG("%d", err);
@@ -803,7 +756,7 @@ static u8_t read_type_cb(const struct bt_gatt_attr *attr, void *user_data)
 	 * cause an Error Response then no other attributes in the requested
 	 * attributes can be considered.
 	 */
-	data->err = check_perm(conn, attr, BT_GATT_PERM_READ_MASK);
+	data->err = bt_gatt_check_perm(conn, attr, BT_GATT_PERM_READ_MASK);
 	if (data->err) {
 		if (data->rsp->len) {
 			data->err = 0x00;
@@ -945,7 +898,7 @@ static u8_t read_cb(const struct bt_gatt_attr *attr, void *user_data)
 	data->err = 0x00;
 
 	/* Check attribute permissions */
-	data->err = check_perm(conn, attr, BT_GATT_PERM_READ_MASK);
+	data->err = bt_gatt_check_perm(conn, attr, BT_GATT_PERM_READ_MASK);
 	if (data->err) {
 		return BT_GATT_ITER_STOP;
 	}
@@ -1259,7 +1212,8 @@ static u8_t write_cb(const struct bt_gatt_attr *attr, void *user_data)
 	BT_DBG("handle 0x%04x offset %u", attr->handle, data->offset);
 
 	/* Check attribute permissions */
-	data->err = check_perm(data->conn, attr, BT_GATT_PERM_WRITE_MASK);
+	data->err = bt_gatt_check_perm(data->conn, attr,
+				       BT_GATT_PERM_WRITE_MASK);
 	if (data->err) {
 		return BT_GATT_ITER_STOP;
 	}
@@ -1365,7 +1319,8 @@ static u8_t prep_write_cb(const struct bt_gatt_attr *attr, void *user_data)
 	BT_DBG("handle 0x%04x offset %u", attr->handle, data->offset);
 
 	/* Check attribute permissions */
-	data->err = check_perm(data->conn, attr, BT_GATT_PERM_WRITE_MASK);
+	data->err = bt_gatt_check_perm(data->conn, attr,
+				       BT_GATT_PERM_WRITE_MASK);
 	if (data->err) {
 		return BT_GATT_ITER_STOP;
 	}

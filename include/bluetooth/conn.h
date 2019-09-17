@@ -334,6 +334,12 @@ typedef enum __packed {
  */
 int bt_conn_set_security(struct bt_conn *conn, bt_security_t sec);
 
+/** @brief Get security level for a connection.
+ *
+ *  @return Connection security level
+ */
+bt_security_t bt_conn_get_security(struct bt_conn *conn);
+
 static inline int __deprecated bt_conn_security(struct bt_conn *conn,
 						bt_security_t sec)
 {
