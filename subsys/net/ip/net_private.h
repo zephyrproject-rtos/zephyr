@@ -90,6 +90,22 @@ int net_context_get_timestamp(struct net_context *context,
 			      struct net_ptp_time *timestamp);
 #endif
 
+#if defined(CONFIG_COAP)
+/**
+ * @brief CoAP init function declaration. It belongs here because we don't want
+ * to expose it as a public API -- it should only be called once, and only by
+ * net_core.
+ */
+extern void net_coap_init(void);
+#else
+static inline void net_coap_init(void)
+{
+	return;
+}
+#endif
+
+
+
 #if defined(CONFIG_NET_GPTP)
 /**
  * @brief Initialize Precision Time Protocol Layer.
