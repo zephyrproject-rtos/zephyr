@@ -12,6 +12,7 @@
 #include "hal/ticker.h"
 
 #include "util/util.h"
+#include "util/mem.h"
 #include "util/memq.h"
 #include "util/mayfly.h"
 
@@ -77,6 +78,12 @@ u8_t ll_scan_enable(u8_t enable)
 	scan = ull_scan_is_disabled_get(0);
 	if (!scan) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	if (scan->own_addr_type & 0x1) {
+		if (!mem_nz(ll_addr_get(1, NULL), BDADDR_SIZE)) {
+			return BT_HCI_ERR_INVALID_PARAM;
+		}
 	}
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
