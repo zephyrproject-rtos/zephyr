@@ -677,6 +677,133 @@ static void tcp_out(struct tcp *conn, u8_t flags, ...)
 	tcp_send_process(&conn->send_timer);
 }
 
+static struct tcp *tcp_conn_calloc(void)
+{
+	struct tcp *conn = NULL;
+	int i, key;
+
+	key = irq_lock();
+
+	for (i = 0; i < ARRAY_SIZE(tcp_conns); i++) {
+		if (false == (tcp_conns[i].flags & NET_TCP_IN_USE)) {
+			conn = &tcp_conns[i];
+			memset(conn, 0, sizeof(*conn));
+			conn->flags |= NET_TCP_IN_USE;
+			break;
+		}
+	}
+
+	irq_unlock(key);
+
+	return conn;
+}
+
+static void tcp_conn_init(struct tcp *conn)
+{
+	conn->state = TCP_LISTEN;
+
+	conn->win = tcp_window;
+
+	conn->rcv = tcp_win_new("RCV");
+	conn->snd = tcp_win_new("SND");
+
+	sys_slist_init(&conn->send_queue);
+
+	k_timer_init(&conn->send_timer, tcp_send_process, NULL);
+	k_timer_user_data_set(&conn->send_timer, conn);
+
+	sys_slist_append(&tp_conns, (sys_snode_t *)conn);
+}
+
+int net_tcp_get(struct net_context *context)
+{
+	int ret = 0;
+	struct tcp *conn = tcp_conn_calloc();
+
+	if (NULL == conn) {
+		ret = -EPROTONOSUPPORT;
+		goto out;
+	}
+
+	tcp_conn_init(conn);
+
+	conn->context = context;
+	context->tcp = conn;
+
+	conn->iface = net_context_get_iface(context);
+
+	tcp_dbg("context: local: %s, remote: %s",
+		tcp_endpoint_to_string((void *)&context->local),
+		tcp_endpoint_to_string((void *)&context->remote));
+out:
+	tcp_dbg("context: %p conn: %p %s", context,
+		conn, conn ? tcp_conn_state(conn, NULL) : "");
+
+	return ret;
+}
+
+static bool tcp_endpoint_cmp(union tcp_endpoint *ep, struct net_pkt *pkt,
+				int which)
+{
+	union tcp_endpoint *ep_new = tcp_endpoint_new(pkt, which);
+	bool is_equal = memcmp(ep, ep_new, tcp_endpoint_len(ep->sa.sa_family)) ?
+		false : true;
+
+	tcp_free(ep_new);
+
+	return is_equal;
+}
+
+static bool tcp_conn_cmp(struct tcp *conn, struct net_pkt *pkt)
+{
+	return tcp_endpoint_cmp(conn->src, pkt, DST) &&
+		tcp_endpoint_cmp(conn->dst, pkt, SRC);
+}
+
+static struct tcp *tcp_conn_search(struct net_pkt *pkt)
+{
+	bool found = false;
+	struct tcp *conn;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&tp_conns, conn, next) {
+
+		if (NULL == conn->src || NULL == conn->dst) {
+			continue;
+		}
+
+		found = tcp_conn_cmp(conn, pkt);
+
+		if (found) {
+			break;
+		}
+	}
+
+	return found ? conn : NULL;
+}
+
+void tcp_input(struct net_pkt *pkt)
+{
+	struct tcphdr *th = /*tp_tap_input(pkt) ? NULL :*/ th_get(pkt);
+
+	if (th) {
+		struct tcp *conn = tcp_conn_search(pkt);
+
+		if (conn == NULL && SYN == th->th_flags) {
+			struct net_context *context =
+				tcp_calloc(1, sizeof(struct net_context));
+			net_tcp_get(context);
+			conn = context->tcp;
+			conn->dst = tcp_endpoint_new(pkt, SRC);
+			conn->src = tcp_endpoint_new(pkt, DST);
+		}
+
+		if (conn) {
+			conn->iface = pkt->iface;
+			tcp_in(conn, pkt);
+		}
+	}
+}
+
 static struct tcp *tcp_conn_new(struct net_pkt *pkt);
 
 enum net_verdict tcp_pkt_received(struct net_conn *net_conn,
@@ -941,70 +1068,6 @@ int tcp_close(struct tcp *conn)
 	return 0;
 }
 
-static struct tcp *tcp_conn_calloc(void)
-{
-	struct tcp *conn = NULL;
-	int i, key;
-
-	key = irq_lock();
-
-	for (i = 0; i < ARRAY_SIZE(tcp_conns); i++) {
-		if (false == (tcp_conns[i].flags & NET_TCP_IN_USE)) {
-			conn = &tcp_conns[i];
-			memset(conn, 0, sizeof(*conn));
-			conn->flags |= NET_TCP_IN_USE;
-			break;
-		}
-	}
-
-	irq_unlock(key);
-
-	return conn;
-}
-
-static void tcp_conn_init(struct tcp *conn)
-{
-	conn->state = TCP_LISTEN;
-
-	conn->win = tcp_window;
-
-	conn->rcv = tcp_win_new("RCV");
-	conn->snd = tcp_win_new("SND");
-
-	sys_slist_init(&conn->send_queue);
-
-	k_timer_init(&conn->send_timer, tcp_send_process, NULL);
-	k_timer_user_data_set(&conn->send_timer, conn);
-
-	sys_slist_append(&tp_conns, (sys_snode_t *)conn);
-}
-
-int net_tcp_get(struct net_context *context)
-{
-	int ret = 0;
-	struct tcp *conn = tcp_conn_calloc();
-
-	if (NULL == conn) {
-		ret = -EPROTONOSUPPORT;
-		goto out;
-	}
-
-	tcp_conn_init(conn);
-
-	conn->context = context;
-	context->tcp = conn;
-
-	conn->iface = net_context_get_iface(context);
-
-	tcp_dbg("context: local: %s, remote: %s",
-		tcp_endpoint_to_string((void *)&context->local),
-		tcp_endpoint_to_string((void *)&context->remote));
-out:
-	tcp_dbg("conn: %p %s", conn, conn ? tcp_conn_state(conn, NULL) : "");
-
-	return ret;
-}
-
 /* close() has been called on the socket */
 int net_tcp_put(struct net_context *context)
 {
@@ -1239,64 +1302,6 @@ drop:
 
 #if defined(CONFIG_NET_TP)
 static sys_slist_t tp_q = SYS_SLIST_STATIC_INIT(&tp_q);
-
-static bool tcp_endpoint_cmp(union tcp_endpoint *ep, struct net_pkt *pkt,
-				int which)
-{
-	union tcp_endpoint *ep_new = tcp_endpoint_new(pkt, which);
-	bool is_equal = memcmp(ep, ep_new, tcp_endpoint_len(ep->sa.sa_family)) ?
-		false : true;
-
-	tcp_free(ep_new);
-
-	return is_equal;
-}
-
-static bool tcp_conn_cmp(struct tcp *conn, struct net_pkt *pkt)
-{
-	return tcp_endpoint_cmp(conn->src, pkt, DST) &&
-		tcp_endpoint_cmp(conn->dst, pkt, SRC);
-}
-
-static struct tcp *tcp_conn_search(struct net_pkt *pkt)
-{
-	bool found = false;
-	struct tcp *conn;
-
-	SYS_SLIST_FOR_EACH_CONTAINER(&tp_conns, conn, next) {
-
-		found = tcp_conn_cmp(conn, pkt);
-
-		if (found) {
-			break;
-		}
-	}
-
-	return found ? conn : NULL;
-}
-
-void tcp_input(struct net_pkt *pkt)
-{
-	struct tcphdr *th = tp_tap_input(pkt) ? NULL : th_get(pkt);
-
-	if (th) {
-		struct tcp *conn = tcp_conn_search(pkt);
-
-		if (conn == NULL && SYN == th->th_flags) {
-			struct net_context *context =
-				tcp_calloc(1, sizeof(struct net_context));
-			net_tcp_get(context);
-			conn = context->tcp;
-			conn->dst = tcp_endpoint_new(pkt, SRC);
-			conn->src = tcp_endpoint_new(pkt, DST);
-		}
-
-		if (conn) {
-			conn->iface = pkt->iface;
-			tcp_in(conn, pkt);
-		}
-	}
-}
 
 static void tcp_step(void)
 {
