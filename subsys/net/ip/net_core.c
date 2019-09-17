@@ -451,6 +451,8 @@ static inline int services_init(void)
 
 	dns_init_resolver();
 
+	net_coap_init();
+
 	net_shell_init();
 
 	return status;
