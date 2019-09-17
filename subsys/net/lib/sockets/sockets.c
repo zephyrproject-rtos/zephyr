@@ -111,6 +111,9 @@ int zsock_socket_internal(int family, int type, int proto)
 	/* Initialize user_data, all other calls will preserve it */
 	ctx->user_data = NULL;
 
+	/* The socket flags are stored here */
+	ctx->socket_data = NULL;
+
 	/* recv_q and accept_q are in union */
 	k_fifo_init(&ctx->recv_q);
 

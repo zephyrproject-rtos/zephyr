@@ -257,6 +257,9 @@ struct net_context {
 #endif /* CONFIG_NET_CONTEXT_SYNC_RECV */
 
 #if defined(CONFIG_NET_SOCKETS)
+	/** BSD socket private data */
+	void *socket_data;
+
 	/** Per-socket packet or connection queues */
 	union {
 		struct k_fifo recv_q;
