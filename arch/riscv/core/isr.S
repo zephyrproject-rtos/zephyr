@@ -354,6 +354,9 @@ reschedule:
 	RV_OP_STOREREG s11, _thread_offset_to_s11(t1)
 
 #if defined(CONFIG_FLOAT) && defined(CONFIG_FP_SHARING)
+	/* fcsr is 32bit width, use 32bit load/store here. */
+	frcsr t2
+	sw t2, _thread_offset_to_fcsr(t1)
 	RV_OP_STOREFPREG fs0, _thread_offset_to_fs0(t1)
 	RV_OP_STOREFPREG fs1, _thread_offset_to_fs1(t1)
 	RV_OP_STOREFPREG fs2, _thread_offset_to_fs2(t1)
@@ -404,6 +407,9 @@ reschedule:
 	RV_OP_LOADREG s11, _thread_offset_to_s11(t1)
 
 #if defined(CONFIG_FLOAT) && defined(CONFIG_FP_SHARING)
+	/* fcsr is 32bit width, use 32bit load/store here. */
+	lw t2, _thread_offset_to_fcsr(t1)
+	fscsr x0, t2
 	RV_OP_LOADFPREG fs0, _thread_offset_to_fs0(t1)
 	RV_OP_LOADFPREG fs1, _thread_offset_to_fs1(t1)
 	RV_OP_LOADFPREG fs2, _thread_offset_to_fs2(t1)

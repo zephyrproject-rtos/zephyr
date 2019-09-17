@@ -61,6 +61,9 @@
 
 #if defined(CONFIG_FLOAT) && defined(CONFIG_FP_SHARING)
 
+#define _thread_offset_to_fcsr \
+	(___thread_t_callee_saved_OFFSET + ___callee_saved_t_fcsr_OFFSET)
+
 #define _thread_offset_to_fs0 \
 	(___thread_t_callee_saved_OFFSET + ___callee_saved_t_fs0_OFFSET)
 

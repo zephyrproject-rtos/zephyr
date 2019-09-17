@@ -197,26 +197,14 @@ itself as an FPU user or SSE user by calling :cpp:func:`k_float_enable()`.
 RISCV architecture
 ------------------
 
-On the RISCV architecture, the kernel treats each thread as a non-user
-or FPU user and the thread must be tagged by one of the
-following techniques.
+On the RISCV architecture, the kernel simply treats all thread as an FPU user
+if CONFIG_FP and CONFIG_FP_SHARING selected. This may lead to performance 
+problems need to be optimized, that only if a thread is tagged as an FPU user,
+the kernel should to save or restore its FP context during thread context switching.
+An extra 132 bytes (4 x 32 single precesion + fscr)
+or 260 bytes (8 x 32 double precesion + fscr) of stack space is required to load
+and store floating point registers.
 
-* A statically-created RISCV thread can be tagged by passing the
-  :c:macro:`K_FP_REGS` option to :c:macro:`K_THREAD_DEFINE`.
-
-* A dynamically-created RISCV thread can be tagged by passing the
-  :c:macro:`K_FP_REGS` to :cpp:func:`k_thread_create()`.
-
-During thread context switching the RISCV kernel saves the *callee-saved*
-floating point registers, if the switched-out thread has been using them.
-Additionally, the *caller-saved* floating point registers are saved on
-the thread's stack. If the switched-in thread has been using the floating
-point registers, the kernel restores the *callee-saved* FP registers of
-the switched-in thread and the *caller-saved* FP context is restored from
-the thread's stack. Thus, the kernel does not save or restore the FP
-context of threads that are not using the FP registers. An extra 128 bytes
-(single floating point hardware) or 256 bytes (double floating point hardware)
-of stack space is required to load and store floating point registers.
 
 Implementation
 **************

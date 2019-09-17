@@ -32,7 +32,7 @@ SECTION_FUNC(reset, __reset)
  */
 SECTION_FUNC(TEXT, __initialize)
 #ifdef CONFIG_FLOAT
-	/* 
+	/*
 	 * Floating-point rounding mode set to
 	 * IEEE-754 default, and clear all exception flags.
 	 */

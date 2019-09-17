@@ -44,6 +44,7 @@ struct _callee_saved {
 
 #if defined(CONFIG_FLOAT) && defined(CONFIG_FP_SHARING)
 
+	u32_t fcsr;	/* always 32bit width */
 #if defined(CONFIG_FLOAT_64BIT)
 	u64_t fs0;	/* saved floating register */
 	u64_t fs1;	/* saved floating register */
