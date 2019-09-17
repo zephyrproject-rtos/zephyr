@@ -333,7 +333,7 @@ static void secure_beacon_recv(struct net_buf_simple *buf)
              BT_MESH_IV_UPDATE(flags))) {
                 bt_mesh_beacon_ivu_initiator(false);
         } else if (iv_change || kr_change) {
-		/* Forwared changed secure beacon to other nodes(not in single hop)*/
+		/* Forward changed secure beacon to other nodes(not in single hop)*/
 		bt_mesh_beacon_ivu_initiator(true);
 	}
 
