@@ -198,7 +198,7 @@ RISCV architecture
 ------------------
 
 On the RISCV architecture, the kernel simply treats all thread as an FPU user
-if CONFIG_FP and CONFIG_FP_SHARING selected. This may lead to performance 
+if CONFIG_FLOAT and CONFIG_FP_SHARING selected. This may lead to performance 
 problems need to be optimized, that only if a thread is tagged as an FPU user,
 the kernel should to save or restore its FP context during thread context switching.
 An extra 132 bytes (4 x 32 single precesion + fscr)
