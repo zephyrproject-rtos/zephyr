@@ -80,8 +80,18 @@
 #endif
 
 #if __ASSERT_ON
+
 #include <sys/printk.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void assert_post_action(const char *file, unsigned int line);
+
+#ifdef __cplusplus
+}
+#endif
 
 #define __ASSERT_LOC(test)                               \
 	printk("ASSERTION FAIL [%s] @ %s:%d\n",    \
