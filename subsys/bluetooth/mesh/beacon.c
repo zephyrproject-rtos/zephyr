@@ -1,4 +1,4 @@
-/*  Bluetooth Mesh */
+
 
 /*
  * Copyright (c) 2017 Intel Corporation
@@ -313,12 +313,6 @@ static void secure_beacon_recv(struct net_buf_simple *buf)
 	BT_DBG("net_idx 0x%04x iv_index 0x%08x, current iv_index 0x%08x",
 	       sub->net_idx, iv_index, bt_mesh.iv_index);
 
-	if (atomic_test_bit(bt_mesh.flags, BT_MESH_IVU_INITIATOR) &&
-	    (atomic_test_bit(bt_mesh.flags, BT_MESH_IVU_IN_PROGRESS) ==
-	     BT_MESH_IV_UPDATE(flags))) {
-		bt_mesh_beacon_ivu_initiator(false);
-	}
-
 	iv_change = bt_mesh_net_iv_update(iv_index, BT_MESH_IV_UPDATE(flags));
 
 	kr_change = bt_mesh_kr_update(sub, BT_MESH_KEY_REFRESH(flags), new_key);
@@ -333,6 +327,16 @@ static void secure_beacon_recv(struct net_buf_simple *buf)
 		/* Key Refresh without IV Update only impacts one subnet */
 		bt_mesh_net_sec_update(sub);
 	}
+
+	if (atomic_test_bit(bt_mesh.flags, BT_MESH_IVU_INITIATOR) &&
+            (atomic_test_bit(bt_mesh.flags, BT_MESH_IVU_IN_PROGRESS) ==
+             BT_MESH_IV_UPDATE(flags))) {
+                bt_mesh_beacon_ivu_initiator(false);
+        } else if (iv_change || kr_change) {
+		/* Forwared changed secure beacon to other nodes(not in single hop)*/
+		bt_mesh_beacon_ivu_initiator(true);
+	}
+
 
 update_stats:
 	if (bt_mesh_beacon_get() == BT_MESH_BEACON_ENABLED &&
