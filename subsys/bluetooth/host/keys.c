@@ -17,6 +17,8 @@
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/conn.h>
 #include <bluetooth/hci.h>
+#include <bluetooth/keys.h>
+#include <bluetooth/settings.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_KEYS)
 #define LOG_MODULE_NAME bt_keys
@@ -26,8 +28,8 @@
 #include "gatt_internal.h"
 #include "hci_core.h"
 #include "smp.h"
-#include "settings.h"
-#include "keys.h"
+#include "settings_internal.h"
+#include "keys_internal.h"
 
 static struct bt_keys key_pool[CONFIG_BT_MAX_PAIRED];
 

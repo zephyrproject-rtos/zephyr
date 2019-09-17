@@ -27,13 +27,15 @@
 #include <bluetooth/hci.h>
 #include <bluetooth/hci_vs.h>
 #include <bluetooth/hci_driver.h>
+#include <bluetooth/keys.h>
+#include <bluetooth/settings.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_CORE)
 #define LOG_MODULE_NAME bt_hci_core
 #include "common/log.h"
 
 #include "common/rpa.h"
-#include "keys.h"
+#include "keys_internal.h"
 #include "monitor.h"
 #include "hci_core.h"
 #include "hci_ecc.h"
@@ -44,7 +46,7 @@
 #include "gatt_internal.h"
 #include "smp.h"
 #include "crypto.h"
-#include "settings.h"
+#include "settings_internal.h"
 
 /* Peripheral timeout to initialize Connection Parameter Update procedure */
 #define CONN_UPDATE_TIMEOUT  K_SECONDS(5)

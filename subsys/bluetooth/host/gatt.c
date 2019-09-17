@@ -31,6 +31,8 @@
 #include <bluetooth/uuid.h>
 #include <bluetooth/gatt.h>
 #include <bluetooth/hci_driver.h>
+#include <bluetooth/keys.h>
+#include <bluetooth/settings.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_GATT)
 #define LOG_MODULE_NAME bt_gatt
@@ -38,11 +40,11 @@
 
 #include "hci_core.h"
 #include "conn_internal.h"
-#include "keys.h"
+#include "keys_internal.h"
 #include "l2cap_internal.h"
 #include "att_internal.h"
 #include "smp.h"
-#include "settings.h"
+#include "settings_internal.h"
 #include "gatt_internal.h"
 
 #define SC_TIMEOUT	K_MSEC(10)
@@ -51,12 +53,6 @@
 #define DB_HASH_TIMEOUT	K_MSEC(10)
 
 static u16_t last_static_handle;
-
-/* Persistent storage format for GATT CCC */
-struct ccc_store {
-	u16_t handle;
-	u16_t value;
-};
 
 #if defined(CONFIG_BT_GATT_CLIENT)
 static sys_slist_t subscriptions;

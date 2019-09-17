@@ -14,13 +14,14 @@
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/conn.h>
 #include <bluetooth/hci.h>
+#include <bluetooth/keys.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_KEYS)
 #define LOG_MODULE_NAME bt_keys_br
 #include "common/log.h"
 
 #include "hci_core.h"
-#include "keys.h"
+#include "keys_internal.h"
 
 static struct bt_keys_link_key key_pool[CONFIG_BT_MAX_PAIRED];
 

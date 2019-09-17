@@ -22,6 +22,7 @@
 #include <bluetooth/conn.h>
 #include <bluetooth/hci_driver.h>
 #include <bluetooth/att.h>
+#include <bluetooth/keys.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_CONN)
 #define LOG_MODULE_NAME bt_conn
@@ -30,7 +31,7 @@
 #include "hci_core.h"
 #include "conn_internal.h"
 #include "l2cap_internal.h"
-#include "keys.h"
+#include "keys_internal.h"
 #include "smp.h"
 #include "att_internal.h"
 #include "gatt_internal.h"

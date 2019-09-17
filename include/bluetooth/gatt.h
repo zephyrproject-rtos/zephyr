@@ -28,6 +28,12 @@
 extern "C" {
 #endif
 
+/* Persistent storage format for GATT CCC */
+struct ccc_store {
+	u16_t handle;
+	u16_t value;
+};
+
 /* GATT attribute permission bit field values */
 enum {
 	/** No operations supported, e.g. for notify-only */

@@ -24,6 +24,7 @@
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/conn.h>
 #include <bluetooth/buf.h>
+#include <bluetooth/keys.h>
 
 #include <tinycrypt/constants.h>
 #include <tinycrypt/aes.h>
@@ -36,7 +37,7 @@
 
 #include "hci_core.h"
 #include "ecc.h"
-#include "keys.h"
+#include "keys_internal.h"
 #include "conn_internal.h"
 #include "l2cap_internal.h"
 #include "smp.h"

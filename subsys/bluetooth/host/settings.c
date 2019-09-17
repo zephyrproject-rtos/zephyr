@@ -11,13 +11,14 @@
 
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/conn.h>
+#include <bluetooth/settings.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_SETTINGS)
 #define LOG_MODULE_NAME bt_settings
 #include "common/log.h"
 
 #include "hci_core.h"
-#include "settings.h"
+#include "settings_internal.h"
 
 void bt_settings_encode_key(char *path, size_t path_size, const char *subsys,
 			    bt_addr_le_t *addr, const char *key)
