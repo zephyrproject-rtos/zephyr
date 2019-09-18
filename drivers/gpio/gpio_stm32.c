@@ -185,6 +185,46 @@ int gpio_stm32_configure(u32_t *base_addr, int pin, int conf, int altf)
 	return 0;
 }
 
+static inline uint32_t gpio_stm32_pin_to_exti_line(int pin)
+{
+#if defined(CONFIG_SOC_SERIES_STM32L0X) || \
+	defined(CONFIG_SOC_SERIES_STM32F0X)
+	return ((pin % 4 * 4) << 16) | (pin / 4);
+#elif defined(CONFIG_SOC_SERIES_STM32MP1X)
+	return (((pin * 8) % 32) << 16) | (pin / 4);
+#elif defined(CONFIG_SOC_SERIES_STM32G0X)
+	return ((pin & 0x3) << (16 + 3)) | (pin >> 2);
+#else
+	return (0xF << ((pin % 4 * 4) + 16)) | (pin / 4);
+#endif
+}
+
+static void gpio_stm32_set_exti_source(int port, int pin)
+{
+	uint32_t line = gpio_stm32_pin_to_exti_line(pin);
+
+#if defined(CONFIG_SOC_SERIES_STM32L0X) && defined(LL_SYSCFG_EXTI_PORTH)
+	/*
+	 * Ports F and G are not present on some STM32L0 parts, so
+	 * for these parts port H external interrupt should be enabled
+	 * by writing value 0x5 instead of 0x7.
+	 */
+	if (port == STM32_PORTH) {
+		port = LL_SYSCFG_EXTI_PORTH;
+	}
+#endif
+
+#ifdef CONFIG_SOC_SERIES_STM32F1X
+	LL_GPIO_AF_SetEXTISource(port, line);
+#elif CONFIG_SOC_SERIES_STM32MP1X
+	LL_EXTI_SetEXTISource(port, line);
+#elif defined(CONFIG_SOC_SERIES_STM32G0X)
+	LL_EXTI_SetEXTISource(port, line);
+#else
+	LL_SYSCFG_SetEXTISource(port, line);
+#endif
+}
+
 /**
  * @brief Enable EXTI of the specific line
  */
@@ -212,43 +252,11 @@ static int gpio_stm32_enable_int(int port, int pin)
 	clock_control_on(clk, (clock_control_subsys_t *) &pclken);
 #endif
 
-	uint32_t line;
-
 	if (pin > 15) {
 		return -EINVAL;
 	}
 
-#if defined(CONFIG_SOC_SERIES_STM32L0X) || \
-	defined(CONFIG_SOC_SERIES_STM32F0X)
-	line = ((pin % 4 * 4) << 16) | (pin / 4);
-#elif defined(CONFIG_SOC_SERIES_STM32MP1X)
-	line = (((pin * 8) % 32) << 16) | (pin / 4);
-#elif defined(CONFIG_SOC_SERIES_STM32G0X)
-	line = ((pin & 0x3) << (16 + 3)) | (pin >> 2);
-#else
-	line = (0xF << ((pin % 4 * 4) + 16)) | (pin / 4);
-#endif
-
-#if defined(CONFIG_SOC_SERIES_STM32L0X) && defined(LL_SYSCFG_EXTI_PORTH)
-	/*
-	 * Ports F and G are not present on some STM32L0 parts, so
-	 * for these parts port H external interrupt should be enabled
-	 * by writing value 0x5 instead of 0x7.
-	 */
-	if (port == STM32_PORTH) {
-		port = LL_SYSCFG_EXTI_PORTH;
-	}
-#endif
-
-#ifdef CONFIG_SOC_SERIES_STM32F1X
-	LL_GPIO_AF_SetEXTISource(port, line);
-#elif CONFIG_SOC_SERIES_STM32MP1X
-	LL_EXTI_SetEXTISource(port, line);
-#elif defined(CONFIG_SOC_SERIES_STM32G0X)
-	LL_EXTI_SetEXTISource(port, line);
-#else
-	LL_SYSCFG_SetEXTISource(port, line);
-#endif
+	gpio_stm32_set_exti_source(port, pin);
 
 	return 0;
 }
