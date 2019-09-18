@@ -1,0 +1,4 @@
+tests:
+  gpio:
+    timeout: 1
+    type: unit
