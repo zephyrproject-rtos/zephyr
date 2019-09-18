@@ -8,8 +8,7 @@ description: >
 
 include: base.yaml
 
-child:
-    bus: ps2
+child-bus: ps2
 
 properties:
     "#address-cells":
