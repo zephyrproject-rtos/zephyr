@@ -112,6 +112,7 @@ struct lis2dw12_data {
 	lis2dw12_ctx_t *ctx;
 #ifdef CONFIG_LIS2DW12_TRIGGER
 	struct device *gpio;
+	u8_t gpio_pin;
 	struct gpio_callback gpio_cb;
 	sensor_trigger_handler_t drdy_handler;
 #ifdef CONFIG_LIS2DW12_PULSE
