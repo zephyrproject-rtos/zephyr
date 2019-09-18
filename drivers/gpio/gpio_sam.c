@@ -22,7 +22,8 @@ struct gpio_sam_config {
 };
 
 struct gpio_sam_runtime {
-	struct gpio_driver_data general;
+	/* gpio_driver_data needs to be first */
+	struct gpio_driver_data common;
 	sys_slist_t cb;
 };
 
@@ -33,13 +34,9 @@ struct gpio_sam_runtime {
 
 #define GPIO_SAM_ALL_PINS    0xFFFFFFFF
 
-static int gpio_sam_port_interrupt_configure(struct device *dev, u32_t mask,
-					     unsigned int flags);
-
 static int gpio_sam_port_configure(struct device *dev, u32_t mask, int flags)
 {
 	const struct gpio_sam_config * const cfg = DEV_CFG(dev);
-	struct gpio_sam_runtime * const dev_data = DEV_DATA(dev);
 	Pio * const pio = cfg->regs;
 
 	if (flags & GPIO_SINGLE_ENDED) {
@@ -87,12 +84,6 @@ static int gpio_sam_port_configure(struct device *dev, u32_t mask, int flags)
 
 	/* Note: Input is always enabled. */
 
-	if (flags & GPIO_ACTIVE_LOW) {
-		dev_data->general.invert |= mask;
-	} else {
-		dev_data->general.invert &= ~mask;
-	}
-
 	/* Setup Pull-up resistor. */
 	if (flags & GPIO_PULL_UP) {
 		/* Enable pull-up. */
@@ -133,9 +124,7 @@ static int gpio_sam_port_configure(struct device *dev, u32_t mask, int flags)
 	/* Enable the PIO to control the pin (instead of a peripheral). */
 	pio->PIO_PER = mask;
 
-	int ret = gpio_sam_port_interrupt_configure(dev, mask, flags);
-
-	return ret;
+	return 0;
 }
 
 static int gpio_sam_config(struct device *dev, int access_op, u32_t pin,
@@ -260,10 +249,10 @@ static int gpio_sam_port_toggle_bits(struct device *dev, u32_t mask)
 }
 
 static int gpio_sam_port_interrupt_configure(struct device *dev, u32_t mask,
-					     unsigned int flags)
+					     enum gpio_int_mode mode,
+					     enum gpio_int_trig trig)
 {
 	const struct gpio_sam_config * const cfg = DEV_CFG(dev);
-	struct gpio_sam_runtime * const dev_data = DEV_DATA(dev);
 	Pio * const pio = cfg->regs;
 
 	/* Disable the interrupt. */
@@ -271,13 +260,13 @@ static int gpio_sam_port_interrupt_configure(struct device *dev, u32_t mask,
 	/* Disable additional interrupt modes. */
 	pio->PIO_AIMDR = mask;
 
-	if (!((flags & GPIO_INT_LOW_0) && (flags & GPIO_INT_HIGH_1))) {
+	if (trig != GPIO_INT_TRIG_BOTH) {
 		/* Enable additional interrupt modes to support single
 		 * edge/level detection.
 		 */
 		pio->PIO_AIMER = mask;
 
-		if (flags & GPIO_INT_EDGE) {
+		if (mode == GPIO_INT_MODE_EDGE) {
 			pio->PIO_ESR = mask;
 		} else {
 			pio->PIO_LSR = mask;
@@ -285,14 +274,10 @@ static int gpio_sam_port_interrupt_configure(struct device *dev, u32_t mask,
 
 		u32_t rising_edge;
 
-		if (flags & GPIO_INT_HIGH_1) {
+		if (trig == GPIO_INT_TRIG_HIGH) {
 			rising_edge = mask;
 		} else {
 			rising_edge = ~mask;
-		}
-
-		if (flags & GPIO_INT_LEVELS_LOGICAL) {
-			rising_edge ^= dev_data->general.invert & mask;
 		}
 
 		/* Set to high-level or rising edge. */
@@ -301,7 +286,7 @@ static int gpio_sam_port_interrupt_configure(struct device *dev, u32_t mask,
 		pio->PIO_FELLSR = ~rising_edge & mask;
 	}
 
-	if (flags & GPIO_INT_ENABLE) {
+	if (mode != GPIO_INT_MODE_DISABLED) {
 		/* Clear any pending interrupts */
 		(void)pio->PIO_ISR;
 		/* Enable the interrupt. */
@@ -312,9 +297,10 @@ static int gpio_sam_port_interrupt_configure(struct device *dev, u32_t mask,
 }
 
 static int gpio_sam_pin_interrupt_configure(struct device *dev,
-		unsigned int pin, unsigned int flags)
+		unsigned int pin, enum gpio_int_mode mode,
+		enum gpio_int_trig trig)
 {
-	return gpio_sam_port_interrupt_configure(dev, BIT(pin), flags);
+	return gpio_sam_port_interrupt_configure(dev, BIT(pin), mode, trig);
 }
 
 static void gpio_sam_isr(void *arg)
