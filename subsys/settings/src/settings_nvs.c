@@ -20,8 +20,8 @@ struct settings_nvs_read_fn_arg {
 	u16_t id;
 };
 
-static int settings_nvs_load(struct settings_store *cs, const char *subtree,
-			     settings_load_direct_cb cb, void *param);
+static int settings_nvs_load(struct settings_store *cs,
+			     const struct settings_load_arg *arg);
 static int settings_nvs_save(struct settings_store *cs, const char *name,
 			     const char *value, size_t val_len);
 
@@ -63,15 +63,14 @@ int settings_nvs_dst(struct settings_nvs *cf)
 	return 0;
 }
 
-static int settings_nvs_load(struct settings_store *cs, const char *subtree,
-			     settings_load_direct_cb cb, void *param)
+static int settings_nvs_load(struct settings_store *cs,
+			     const struct settings_load_arg *arg)
 {
+	int ret = 0;
 	struct settings_nvs *cf = (struct settings_nvs *)cs;
 	struct settings_nvs_read_fn_arg read_fn_arg;
-	struct settings_handler_static *ch;
 	char name[SETTINGS_MAX_NAME_LEN + SETTINGS_EXTRA_LEN + 1];
 	char buf;
-	const char *name_argv;
 	ssize_t rc1, rc2;
 	u16_t name_id = NVS_NAMECNT_ID;
 
@@ -114,31 +113,18 @@ static int settings_nvs_load(struct settings_store *cs, const char *subtree,
 
 		/* Found a name, this might not include a trailing \0 */
 		name[rc1] = '\0';
-
-		if (subtree && !settings_name_steq(name, subtree, &name_argv)) {
-			continue;
-		}
-
 		read_fn_arg.fs = &cf->cf_nvs;
 		read_fn_arg.id = name_id + NVS_NAME_ID_OFFSET;
-		if (cb) {
-			int ret;
 
-			ret = cb(name_argv, rc2, settings_nvs_read_fn,
-				 (void *) &read_fn_arg, param);
-			if (ret)
-				return ret;
-		} else {
-			ch = settings_parse_and_lookup(name, &name_argv);
-			if (!ch) {
-				continue;
-			}
-
-			ch->h_set(name_argv, rc2, settings_nvs_read_fn,
-				  (void *) &read_fn_arg);
+		ret = settings_call_set_handler(
+			name, rc2,
+			settings_nvs_read_fn, &read_fn_arg,
+			(void *)arg);
+		if (ret) {
+			break;
 		}
 	}
-	return 0;
+	return ret;
 }
 
 static int settings_nvs_save(struct settings_store *cs, const char *name,
