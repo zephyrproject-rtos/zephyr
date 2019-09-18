@@ -11,6 +11,7 @@
 #ifndef ZEPHYR_DRIVERS_GPIO_GPIO_UTILS_H_
 #define ZEPHYR_DRIVERS_GPIO_GPIO_UTILS_H_
 
+#include <drivers/gpio.h>
 
 /**
  * @brief Generic function to insert or remove a callback from a callback list
@@ -62,6 +63,53 @@ static inline void gpio_fire_callbacks(sys_slist_t *list,
 			cb->handler(port, cb, pins);
 		}
 	}
+}
+
+static inline bool gpio_flags_int_enabled(int flags)
+{
+	return (flags & GPIO_INT_ENABLE) == GPIO_INT_ENABLE;
+}
+
+static inline bool gpio_flags_int_disabled(int flags)
+{
+	return (flags & GPIO_INT_ENABLE) == 0;
+}
+
+static inline bool gpio_flags_int_edge(int flags)
+{
+	return (flags & GPIO_INT_EDGE) == GPIO_INT_EDGE;
+}
+
+static inline bool gpio_flags_int_edge_both(int flags)
+{
+	return (flags & GPIO_INT_EDGE_BOTH) == GPIO_INT_EDGE_BOTH;
+}
+
+static inline bool gpio_flags_int_edge_rising(int flags)
+{
+	return (flags & GPIO_INT_EDGE_BOTH) == GPIO_INT_EDGE_RISING;
+}
+
+static inline bool gpio_flags_int_edge_falling(int flags)
+{
+	return (flags & GPIO_INT_EDGE_BOTH) == GPIO_INT_EDGE_FALLING;
+}
+
+static inline bool gpio_flags_int_level(int flags)
+{
+	return (flags & GPIO_INT_EDGE) == 0;
+}
+
+static inline bool gpio_flags_int_level_low(int flags)
+{
+	return (flags & (GPIO_INT_LEVEL_LOW|GPIO_INT_LEVEL_HIGH))
+		== GPIO_INT_LEVEL_LOW;
+}
+
+static inline bool gpio_flags_int_level_high(int flags)
+{
+	return (flags & (GPIO_INT_LEVEL_LOW|GPIO_INT_LEVEL_HIGH))
+		== GPIO_INT_LEVEL_HIGH;
 }
 
 #endif /* ZEPHYR_DRIVERS_GPIO_GPIO_UTILS_H_ */
