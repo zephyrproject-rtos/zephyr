@@ -243,12 +243,19 @@ struct ll_conn {
 			LLCP_CPR_STATE_OFFS_RDY,
 		} state:4 __packed;
 		uint8_t  cmd:1;
+		uint8_t  remote:1;
 		uint8_t  disabled:1;
 		uint8_t  status;
 		uint16_t interval_min;
 		uint16_t interval_max;
 		uint16_t latency;
 		uint16_t timeout;
+		struct {
+			uint16_t interval_min;
+			uint16_t interval_max;
+			uint16_t latency;
+			uint16_t timeout;
+		} cache;
 		uint8_t  preferred_periodicity;
 		uint16_t reference_conn_event_count;
 		uint16_t offset0;

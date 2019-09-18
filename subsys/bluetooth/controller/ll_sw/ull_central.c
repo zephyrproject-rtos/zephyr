@@ -343,6 +343,7 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 	conn->llcp_conn_param.req = 0U;
 	conn->llcp_conn_param.ack = 0U;
+	conn->llcp_conn_param.cache.timeout = 0U;
 	conn->llcp_conn_param.disabled = 0U;
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
