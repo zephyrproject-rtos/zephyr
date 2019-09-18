@@ -112,6 +112,12 @@ extern "C" {
  */
 #define GPIO_INT_LEVELS_LOGICAL        (1U << 16)
 
+/** @cond INTERNAL_HIDDEN */
+#define GPIO_INT_ALL_MASK (GPIO_INT_LOW_0 | GPIO_INT_HIGH_1 | \
+			   GPIO_INT_EDGE  | GPIO_INT_ENABLE | \
+			   GPIO_INT_LEVELS_LOGICAL)
+/** @endcond */
+
 
 /** @endcond */
 
@@ -451,6 +457,21 @@ struct gpio_callback {
  *
  * For internal use only, skip these in public documentation.
  */
+
+#define GPIO_INT_MODE_LOW_0	(1U << 0)
+#define GPIO_INT_MODE_HIGH_1	(1U << 1)
+#define GPIO_INT_MODE_EDGE	(1U << 2)
+
+enum gpio_int_trigger_mode {
+	GPIO_INT_MODE_DISABLED = 0,
+	GPIO_INT_MODE_LEVEL_LOW = GPIO_INT_MODE_LOW_0, /* 1 */
+	GPIO_INT_MODE_LEVEL_HIGH = GPIO_INT_MODE_HIGH_1, /* 2 */
+	GPIO_INT_MODE_EDGE_FALLING = GPIO_INT_MODE_LOW_0 | GPIO_INT_MODE_EDGE, /* 5 */
+	GPIO_INT_MODE_EDGE_RISING = GPIO_INT_MODE_HIGH_1 | GPIO_INT_MODE_EDGE, /* 6 */
+	GPIO_INT_MODE_EDGE_BOTH = GPIO_INT_MODE_LOW_0 | GPIO_INT_MODE_HIGH_1 |
+				  GPIO_INT_MODE_EDGE	/* 7 */
+};
+
 struct gpio_driver_api {
 	int (*config)(struct device *port, int access_op, u32_t pin, int flags);
 	int (*write)(struct device *port, int access_op, u32_t pin,
@@ -464,7 +485,7 @@ struct gpio_driver_api {
 	int (*port_clear_bits_raw)(struct device *port, gpio_port_pins_t pins);
 	int (*port_toggle_bits)(struct device *port, gpio_port_pins_t pins);
 	int (*pin_interrupt_configure)(struct device *port, unsigned int pin,
-				       unsigned int flags);
+				       enum gpio_int_trigger_mode);
 	int (*manage_callback)(struct device *port, struct gpio_callback *cb,
 			       bool set);
 	int (*enable_callback)(struct device *port, int access_op, u32_t pin);
@@ -1009,6 +1030,8 @@ static inline int z_impl_gpio_pin_interrupt_configure(struct device *port,
 {
 	const struct gpio_driver_api *api =
 		(const struct gpio_driver_api *)port->driver_api;
+	struct gpio_driver_data *const data =
+			(struct gpio_driver_data *const)port->driver_data;
 
 	__ASSERT(pin < GPIO_MAX_PINS_PER_PORT, "Invalid pin number");
 
@@ -1016,7 +1039,29 @@ static inline int z_impl_gpio_pin_interrupt_configure(struct device *port,
 		 ((flags & (GPIO_INT_LOW_0 | GPIO_INT_HIGH_1)) != 0),
 		 "At least one of GPIO_INT_LOW_0, GPIO_INT_HIGH_1 has to be "
 		 "enabled.");
-	return api->pin_interrupt_configure(port, pin, flags);
+
+
+	flags = flags & GPIO_INT_ALL_MASK;
+	if ((flags & GPIO_INT_LEVELS_LOGICAL) && (data->invert & BIT(pin))) {
+		/* Invert signal bits */
+		flags = ~(flags & (GPIO_INT_LOW_0 | GPIO_INT_HIGH_1)) |
+			(flags & ~(GPIO_INT_LOW_0 | GPIO_INT_HIGH_1));
+	}
+
+	/* Clear GPIO_INT_LEVELS_LOGICAL */
+	flags &= ~GPIO_INT_LEVELS_LOGICAL;
+
+	flags = flags >> 12;
+	if ((flags == GPIO_INT_MODE_DISABLED) ||
+	    (flags == GPIO_INT_LEVEL_LOW) ||
+	    (flags == GPIO_INT_MODE_LEVEL_HIGH) ||
+	    (flags == GPIO_INT_MODE_EDGE_FALLING) ||
+	    (flags == GPIO_INT_MODE_EDGE_RISING) ||
+	    (flags == GPIO_INT_MODE_EDGE_BOTH)) {
+		return api->pin_interrupt_configure(port, pin, flags);
+	}
+
+	return -EINVAL;
 }
 
 /**
