@@ -12,4 +12,7 @@
 #include <ia32/offsets_short_arch.h>
 #endif
 
+#define _thread_offset_to_flags \
+	(___thread_t_arch_OFFSET + ___thread_arch_t_flags_OFFSET)
+
 #endif /* ZEPHYR_ARCH_X86_INCLUDE_OFFSETS_SHORT_ARCH_H_ */

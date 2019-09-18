@@ -50,18 +50,6 @@
 
 #define STACK_ALIGN_SIZE 4
 
-/* x86 Bitmask definitions for struct k_thread.thread_state */
-
-/* executing context is interrupt handler */
-#define _INT_ACTIVE (1 << 7)
-
-/* executing context is exception handler */
-#define _EXC_ACTIVE (1 << 6)
-
-#define _INT_OR_EXC_MASK (_INT_ACTIVE | _EXC_ACTIVE)
-
-/* end - states */
-
 #if defined(CONFIG_LAZY_FP_SHARING) && defined(CONFIG_SSE)
 #define _FP_USER_MASK (K_FP_REGS | K_SSE_REGS)
 #elif defined(CONFIG_LAZY_FP_SHARING)
