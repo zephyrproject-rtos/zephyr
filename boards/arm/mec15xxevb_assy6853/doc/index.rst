@@ -221,14 +221,30 @@ in reference section below.
 Programming and Debugging
 *************************
 
+Setup
+=====
+
+#. Clone the `SPI Image Gen`_ repository or download the files within
+   that directory.
+
+#. Make the image generation available for Zephyr, by making the tool
+   searchable by path, or by setting an environment variable
+   ``EVERGLADES_SPI_GEN``, for example:
+
+   .. code-block:: console
+
+      export EVERGLADES_SPI_GEN=<path to tool>/everglades_spi_gen_lin64
+
+   Note that the tools for Linux and Windows have different file names.
+
 Building
-==========
+========
 
 #. Build :ref:`hello_world` application as you would normally do.
 
-#. Once you have ``zephyr.bin``, proceed to use the `SPI Image Gen`_ microchip tool
-   in order to create the the final binary. You need the output from  this tool
-   to flash in the SHD SPI memory.
+#. The file :file:`spi_image.bin` will be created if the build system
+   can find the image generation tool. This binary image can be used
+   to flash the SPI chip.
 
 Flashing
 ========
