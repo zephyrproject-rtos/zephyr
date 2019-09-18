@@ -240,7 +240,6 @@ void lll_conn_isr_rx(void *param)
 #endif /* CONFIG_BT_PERIPHERAL */
 		}
 	} else {
-		radio_isr_set(lll_conn_isr_tx, param);
 		radio_tmr_tifs_set(EVENT_IFS_US);
 
 #if defined(CONFIG_BT_CTLR_PHY)
@@ -248,6 +247,8 @@ void lll_conn_isr_rx(void *param)
 #else /* !CONFIG_BT_CTLR_PHY */
 		radio_switch_complete_and_rx(0);
 #endif /* !CONFIG_BT_CTLR_PHY */
+
+		radio_isr_set(lll_conn_isr_tx, param);
 
 		/* capture end of Tx-ed PDU, used to calculate HCTO. */
 		radio_tmr_end_capture();
@@ -358,7 +359,7 @@ void lll_conn_isr_tx(void *param)
 #endif /* CONFIG_BT_CTLR_GPIO_PA_PIN || CONFIG_BT_CTLR_GPIO_LNA_PIN */
 	/* TODO: MOVE ^^ */
 
-	radio_isr_set(lll_conn_isr_rx, param);
+	/* setup tIFS switching */
 	radio_tmr_tifs_set(EVENT_IFS_US);
 #if defined(CONFIG_BT_CTLR_PHY)
 	radio_switch_complete_and_tx(lll->phy_rx, 0,
@@ -412,6 +413,8 @@ void lll_conn_isr_tx(void *param)
 				 CONFIG_BT_CTLR_GPIO_LNA_OFFSET);
 #endif /* !CONFIG_BT_CTLR_PHY */
 #endif /* CONFIG_BT_CTLR_GPIO_LNA_PIN */
+
+	radio_isr_set(lll_conn_isr_rx, param);
 }
 
 void lll_conn_isr_abort(void *param)
