@@ -208,7 +208,7 @@ void k_float_enable(struct k_thread *thread, unsigned int options)
 
 	fp_owner = _kernel.current_fp;
 	if (fp_owner != NULL) {
-		if ((fp_owner->base.thread_state & _INT_OR_EXC_MASK) != 0) {
+		if ((fp_owner->arch.flags & X86_THREAD_FLAG_ALL) != 0) {
 			FpCtxSave(fp_owner);
 		}
 	}

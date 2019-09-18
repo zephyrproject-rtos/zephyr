@@ -33,6 +33,14 @@
 #define FP_REG_SET_ALIGN  4
 #endif
 
+/*
+ * Bits for _thread_arch.flags, see their use in intstub.S et al.
+ */
+
+#define X86_THREAD_FLAG_INT 0x01
+#define X86_THREAD_FLAG_EXC 0x02
+#define X86_THREAD_FLAG_ALL (X86_THREAD_FLAG_INT | X86_THREAD_FLAG_EXC)
+
 #ifndef _ASMLANGUAGE
 #include <stdint.h>
 #include <ia32/mmustructs.h>
@@ -198,6 +206,7 @@ typedef struct s_preempFloatReg {
  */
 
 struct _thread_arch {
+	u8_t flags;
 
 #if defined(CONFIG_LAZY_FP_SHARING)
 	/*

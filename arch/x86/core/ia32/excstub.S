@@ -133,14 +133,14 @@ SECTION_FUNC(TEXT, _exception_enter)
 	incl	_thread_offset_to_excNestCount(%edx)
 
 	/*
-	 * Set the _EXC_ACTIVE state bit of the current thread.
-	 * This enables z_swap() to preserve the thread's FP registers
-	 * (where needed) if the exception handler causes a context switch.
-	 * It also indicates to debug tools that an exception is being
-	 * handled in the event of a context switch.
+	 * Set X86_THREAD_FLAG_EXC in the current thread. This enables
+	 * z_swap() to preserve the thread's FP registers (where needed)
+	 * if the exception handler causes a context switch. It also
+	 * indicates to debug tools that an exception is being handled
+	 * in the event of a context switch.
 	 */
 
-	orb	$_EXC_ACTIVE, _thread_offset_to_thread_state(%edx)
+	orb	$X86_THREAD_FLAG_EXC, _thread_offset_to_flags(%edx)
 
 #endif /* CONFIG_LAZY_FP_SHARING */
 
@@ -187,12 +187,12 @@ allDone:
 	jne	nestedException
 
 	/*
-	 * Clear the _EXC_ACTIVE bit in the k_thread of the current execution
+	 * Clear X86_THREAD_FLAG_EXC in the k_thread of the current execution
 	 * context if we are not in a nested exception (ie, when we exit the
 	 * outermost exception).
 	 */
 
-	andb	$~_EXC_ACTIVE, _thread_offset_to_thread_state(%ecx)
+	andb	$~X86_THREAD_FLAG_EXC, _thread_offset_to_flags(%ecx)
 
 nestedException:
 #endif /* CONFIG_LAZY_FP_SHARING */

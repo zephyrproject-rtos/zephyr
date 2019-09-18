@@ -41,7 +41,7 @@
  * the non-volatile integer registers need to be saved in the TCS of the
  * outgoing thread.  The restoration of the integer registers of the incoming
  * thread depends on whether that thread was preemptively context switched out.
- * The _INT_ACTIVE and _EXC_ACTIVE bits in the k_thread->thread_state field
+ * The X86_THREAD_FLAG_INT and _EXC bits in the k_thread->arch.flags field
  * will signify that the thread was preemptively context switched out, and thus
  * both the volatile and non-volatile integer registers need to be restored.
  *
@@ -196,7 +196,7 @@ SECTION_FUNC(TEXT, __swap)
 
 
 	/*
-	 * Determine whether the incoming thread utilizes floating point registers
+	 * Determine whether the incoming thread utilizes floating point regs
 	 * _and_ whether the thread was context switched out preemptively.
 	 */
 
@@ -236,7 +236,7 @@ SECTION_FUNC(TEXT, __swap)
 	 * was preemptively context switched.
 	 */
 
-	testb	$_INT_OR_EXC_MASK, _thread_offset_to_thread_state(%ebx)
+	testb	$X86_THREAD_FLAG_ALL, _thread_offset_to_flags(%ebx)
 	je	restoreContext_NoFloatSave
 
 
@@ -276,7 +276,7 @@ restoreContext_NoFloatSave:
 	 * was previously preemptively context switched out.
 	 */
 
-	testb   $_INT_OR_EXC_MASK, _thread_offset_to_thread_state(%eax)
+	testb   $X86_THREAD_FLAG_ALL, _thread_offset_to_flags(%eax)
 	je 	restoreContext_NoFloatRestore
 
 #ifdef CONFIG_SSE

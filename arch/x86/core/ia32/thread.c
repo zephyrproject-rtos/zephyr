@@ -263,4 +263,6 @@ void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 #if defined(CONFIG_LAZY_FP_SHARING)
 	thread->arch.excNestCount = 0;
 #endif /* CONFIG_LAZY_FP_SHARING */
+
+	thread->arch.flags = 0;
 }
