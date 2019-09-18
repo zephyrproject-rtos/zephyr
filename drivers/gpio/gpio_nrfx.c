@@ -11,7 +11,8 @@
 #include "gpio_utils.h"
 
 struct gpio_nrfx_data {
-	struct gpio_driver_data general;
+	/* gpio_driver_data needs to be first */
+	struct gpio_driver_data common;
 	sys_slist_t callbacks;
 
 	/* Mask holding information about which pins have been configured to
@@ -33,9 +34,6 @@ struct gpio_nrfx_cfg {
 	NRF_GPIO_Type *port;
 	u8_t port_num;
 };
-
-static int gpio_nrfx_pin_interrupt_configure(struct device *port, u32_t pin,
-					     unsigned int flags);
 
 static inline struct gpio_nrfx_data *get_port_data(struct device *port)
 {
@@ -131,7 +129,6 @@ static int gpio_nrfx_config(struct device *port, int access_op,
 			    u32_t pin, int flags)
 {
 	NRF_GPIO_Type *reg = get_port_cfg(port)->port;
-	struct gpio_nrfx_data *data = get_port_data(port);
 	nrf_gpio_pin_pull_t pull;
 	nrf_gpio_pin_drive_t drive;
 	nrf_gpio_pin_dir_t dir;
@@ -197,8 +194,6 @@ static int gpio_nrfx_config(struct device *port, int access_op,
 	}
 
 	for (u8_t curr_pin = from_pin; curr_pin <= to_pin; ++curr_pin) {
-		int res;
-
 		if ((flags & GPIO_OUTPUT) != 0) {
 			if ((flags & GPIO_OUTPUT_INIT_HIGH) != 0) {
 				nrf_gpio_port_out_set(reg, BIT(curr_pin));
@@ -210,14 +205,6 @@ static int gpio_nrfx_config(struct device *port, int access_op,
 		nrf_gpio_cfg(NRF_GPIO_PIN_MAP(get_port_cfg(port)->port_num,
 					      curr_pin),
 			     dir, input, pull, drive, NRF_GPIO_PIN_NOSENSE);
-
-		WRITE_BIT(data->general.invert, curr_pin,
-			  flags & GPIO_ACTIVE_LOW);
-
-		res = gpio_nrfx_pin_interrupt_configure(port, curr_pin, flags);
-		if (res != 0) {
-			return res;
-		}
 	}
 
 	return 0;
@@ -230,9 +217,9 @@ static int gpio_nrfx_write(struct device *port, int access_op,
 	struct gpio_nrfx_data *data = get_port_data(port);
 
 	if (access_op == GPIO_ACCESS_BY_PORT) {
-		nrf_gpio_port_out_write(reg, value ^ data->general.invert);
+		nrf_gpio_port_out_write(reg, value ^ data->common.invert);
 	} else {
-		if ((value > 0) ^ ((BIT(pin) & data->general.invert) != 0)) {
+		if ((value > 0) ^ ((BIT(pin) & data->common.invert) != 0)) {
 			nrf_gpio_port_out_set(reg, BIT(pin));
 		} else {
 			nrf_gpio_port_out_clear(reg, BIT(pin));
@@ -251,7 +238,7 @@ static int gpio_nrfx_read(struct device *port, int access_op,
 	u32_t dir = nrf_gpio_port_dir_read(reg);
 	u32_t port_in = nrf_gpio_port_in_read(reg) & ~dir;
 	u32_t port_out = nrf_gpio_port_out_read(reg) & dir;
-	u32_t port_val = (port_in | port_out) ^ data->general.invert;
+	u32_t port_val = (port_in | port_out) ^ data->common.invert;
 
 	if (access_op == GPIO_ACCESS_BY_PORT) {
 		*value = port_val;
@@ -313,13 +300,13 @@ static int gpio_nrfx_port_toggle_bits(struct device *port, u32_t mask)
 }
 
 static int gpio_nrfx_pin_interrupt_configure(struct device *port,
-		unsigned int pin, unsigned int flags)
+		unsigned int pin, enum gpio_int_mode mode,
+		enum gpio_int_trig trig)
 {
 	struct gpio_nrfx_data *data = get_port_data(port);
 	u32_t abs_pin = NRF_GPIO_PIN_MAP(get_port_cfg(port)->port_num, pin);
 
-	if (((flags & GPIO_INT_ENABLE) != 0) &&
-	    ((flags & GPIO_INT_EDGE) != 0) &&
+	if ((mode == GPIO_INT_MODE_EDGE) &&
 	    (nrf_gpio_pin_dir_get(abs_pin) == NRF_GPIO_PIN_DIR_OUTPUT)) {
 		/*
 		 * The pin's output value as specified in the GPIO will be
@@ -330,19 +317,11 @@ static int gpio_nrfx_pin_interrupt_configure(struct device *port,
 		return -ENOTSUP;
 	}
 
-	WRITE_BIT(data->pin_int_en, pin, flags & GPIO_INT_ENABLE);
-	WRITE_BIT(data->int_en, pin, true);
-	WRITE_BIT(data->trig_edge, pin, flags & GPIO_INT_EDGE);
-	WRITE_BIT(data->double_edge, pin, (flags & GPIO_INT_LOW_0) &&
-					  (flags & GPIO_INT_HIGH_1));
-
-	bool active_high = ((flags & GPIO_INT_HIGH_1) != 0);
-
-	if (((flags & GPIO_INT_LEVELS_LOGICAL) != 0) &&
-	    ((data->general.invert & BIT(pin)) != 0)) {
-		active_high = !active_high;
-	}
-	WRITE_BIT(data->int_active_level, pin, active_high);
+	WRITE_BIT(data->pin_int_en, pin, mode != GPIO_INT_MODE_DISABLED);
+	WRITE_BIT(data->int_en, pin, mode != GPIO_INT_MODE_DISABLED);
+	WRITE_BIT(data->trig_edge, pin, mode == GPIO_INT_MODE_EDGE);
+	WRITE_BIT(data->double_edge, pin, trig == GPIO_INT_TRIG_BOTH);
+	WRITE_BIT(data->int_active_level, pin, trig == GPIO_INT_TRIG_HIGH);
 
 	return gpiote_pin_int_cfg(port, pin);
 }
