@@ -222,6 +222,9 @@ class CheckPatch(ComplianceTest):
             output = ex.output.decode("utf-8")
             if re.search("[1-9][0-9]* errors,", output):
                 self.add_failure(output)
+            else:
+                # No errors found, but warnings. Show them.
+                self.add_info(output)
 
 
 class KconfigCheck(ComplianceTest):
