@@ -394,6 +394,10 @@ typedef u32_t gpio_port_value_t;
  */
 #define GPIO_MAX_PINS_PER_PORT (sizeof(gpio_port_pins_t) * __CHAR_BIT__)
 
+/**
+ * This structure is common to all GPIO drivers and is expected to be the first
+ * element in the driver's struct driver_data decleration.
+ */
 struct gpio_driver_data {
 	gpio_port_pins_t invert;
 };
@@ -450,6 +454,28 @@ struct gpio_callback {
  *
  * For internal use only, skip these in public documentation.
  */
+
+/* Used by driver api function pin_interrupt_configure, these are defined
+ * in terms of the public int flags so we can just mask and pass them
+ * through to the driver api
+ */
+enum gpio_int_mode {
+	GPIO_INT_MODE_DISABLED = GPIO_INT_DISABLE,
+	GPIO_INT_MODE_LEVEL = GPIO_INT_ENABLE,
+	GPIO_INT_MODE_EDGE = GPIO_INT_ENABLE | GPIO_INT_EDGE,
+};
+
+enum gpio_int_trig {
+	/* Trigger detection when input state is (or transitions to)
+	 * physical low. (Edge Failing or Active Low) */
+	GPIO_INT_TRIG_LOW = GPIO_INT_LOW_0,
+	/* Trigger detection when input state is (or transitions to)
+	 * physical high. (Edge Rising or Active High) */
+	GPIO_INT_TRIG_HIGH = GPIO_INT_HIGH_1,
+	/* Trigger detection on pin rising or falling edge. */
+	GPIO_INT_TRIG_BOTH = GPIO_INT_LOW_0 | GPIO_INT_HIGH_1,
+};
+
 struct gpio_driver_api {
 	int (*config)(struct device *port, int access_op, u32_t pin, int flags);
 	int (*write)(struct device *port, int access_op, u32_t pin,
@@ -463,7 +489,7 @@ struct gpio_driver_api {
 	int (*port_clear_bits_raw)(struct device *port, gpio_port_pins_t pins);
 	int (*port_toggle_bits)(struct device *port, gpio_port_pins_t pins);
 	int (*pin_interrupt_configure)(struct device *port, unsigned int pin,
-				       unsigned int flags);
+				       enum gpio_int_mode, enum gpio_int_trig);
 	int (*manage_callback)(struct device *port, struct gpio_callback *cb,
 			       bool set);
 	int (*enable_callback)(struct device *port, int access_op, u32_t pin);
@@ -567,6 +593,10 @@ static inline int z_impl_gpio_pin_interrupt_configure(struct device *port,
 {
 	const struct gpio_driver_api *api =
 		(const struct gpio_driver_api *)port->driver_api;
+	struct gpio_driver_data *const data =
+		(struct gpio_driver_data *const)port->driver_data;
+	enum gpio_int_trig trig;
+	enum gpio_int_mode mode;
 
 	__ASSERT(pin < GPIO_MAX_PINS_PER_PORT, "Invalid pin number");
 
@@ -574,7 +604,17 @@ static inline int z_impl_gpio_pin_interrupt_configure(struct device *port,
 		 ((flags & (GPIO_INT_LOW_0 | GPIO_INT_HIGH_1)) != 0),
 		 "At least one of GPIO_INT_LOW_0, GPIO_INT_HIGH_1 has to be "
 		 "enabled.");
-	return api->pin_interrupt_configure(port, pin, flags);
+
+	if (((flags & GPIO_INT_LEVELS_LOGICAL) != 0) &&
+	    ((data->invert & BIT(pin)) != 0)) {
+		/* Invert signal bits */
+		flags ^= (GPIO_INT_LOW_0 | GPIO_INT_HIGH_1);
+	}
+
+	trig = (enum gpio_int_trig)(flags & (GPIO_INT_LOW_0 | GPIO_INT_HIGH_1));
+	mode = (enum gpio_int_mode)(flags & (GPIO_INT_EDGE | GPIO_INT_ENABLE));
+
+	return api->pin_interrupt_configure(port, pin, mode, trig);
 }
 
 /**
@@ -593,6 +633,12 @@ static inline int z_impl_gpio_pin_interrupt_configure(struct device *port,
 static inline int gpio_pin_configure(struct device *port, u32_t pin,
 				     unsigned int flags)
 {
+	const struct gpio_driver_api *api =
+		(const struct gpio_driver_api *)port->driver_api;
+	struct gpio_driver_data *data =
+		(struct gpio_driver_data *)port->driver_data;
+	int ret;
+
 	__ASSERT((flags & (GPIO_PULL_UP | GPIO_PULL_DOWN)) !=
 		 (GPIO_PULL_UP | GPIO_PULL_DOWN),
 		 "Pull Up and Pull Down should not be enabled simultaneously");
@@ -601,7 +647,21 @@ static inline int gpio_pin_configure(struct device *port, u32_t pin,
 		 || (flags & GPIO_OUTPUT) != 0,
 		 "Output needs to be enabled to be initialized low or high");
 
-	return gpio_config(port, GPIO_ACCESS_BY_PIN, pin, flags);
+	ret = gpio_config(port, GPIO_ACCESS_BY_PIN, pin, flags);
+	if (ret != 0) {
+		return ret;
+	}
+
+	if ((flags & GPIO_ACTIVE_LOW) != 0) {
+		data->invert |= BIT(pin);
+	} else {
+		data->invert &= ~BIT(pin);
+	}
+	if (api->pin_interrupt_configure) {
+		ret = z_impl_gpio_pin_interrupt_configure(port, pin, flags);
+	}
+
+	return ret;
 }
 
 /**
