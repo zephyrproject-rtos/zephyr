@@ -102,8 +102,8 @@ __start:
 
 #ifdef CONFIG_INIT_STACKS
 	movq $0xAAAAAAAAAAAAAAAA, %rax
-	movq $ist, %rdi
-	movq $((CONFIG_ISR_DEPTH*CONFIG_ISR_STACK_SIZE)>>3), %rcx
+	movq $_interrupt_stack, %rdi
+	movq $(CONFIG_ISR_STACK_SIZE >> 3), %rcx
 	rep stosq
 #endif
 
@@ -199,13 +199,13 @@ __swap:
 	movq %r14, _thread_offset_to_r14(%rsi)
 	movq %r15, _thread_offset_to_r15(%rsi)
 
-	movq $(ist + CONFIG_ISR_STACK_SIZE), %rsp
+	movq $(_interrupt_stack + CONFIG_ISR_STACK_SIZE), %rsp
 
 	/* fall through to __resume */
 
 /*
  * Entry:
- *   RSP = top of ist
+ *   RSP = top of _interrupt_stack
  */
 
 __resume:
@@ -280,7 +280,7 @@ rsp0:	.long 0, 0
 	.long 0, 0
 	.long 0, 0
 	.long 0, 0
-ist1:	.long (ist + CONFIG_ISR_STACK_SIZE), 0
+ist1:	.long (_interrupt_stack + CONFIG_ISR_STACK_SIZE), 0
 	.long 0, 0
 	.long 0, 0
 	.long 0, 0
@@ -439,7 +439,7 @@ irq:
 	 */
 
 	incl _kernel_offset_to_nested(%rsi)
-	addq $CONFIG_ISR_STACK_SIZE, ist1
+	subq $CONFIG_ISR_SUBSTACK_SIZE, ist1
 	cmpl $CONFIG_ISR_DEPTH, _kernel_offset_to_nested(%rsi)
 	jz 1f
 	sti
@@ -518,7 +518,7 @@ irq_dispatch:
 
 	movq $_kernel, %rsi
 	cli
-	subq $CONFIG_ISR_STACK_SIZE, ist1
+	addq $CONFIG_ISR_SUBSTACK_SIZE, ist1
 	decl _kernel_offset_to_nested(%rsi)
 	/* not nested, exit via __resume (might change threads) */
 #ifdef CONFIG_STACK_SENTINEL

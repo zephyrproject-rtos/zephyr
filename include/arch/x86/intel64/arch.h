@@ -11,6 +11,14 @@
 #define STACK_ALIGN 16
 #define STACK_SIZE_ALIGN 16
 
+#if CONFIG_ISR_STACK_SIZE != (CONFIG_ISR_SUBSTACK_SIZE * CONFIG_ISR_DEPTH)
+#error "Check ISR stack configuration (CONFIG_ISR_*)"
+#endif
+
+#if CONFIG_ISR_SUBSTACK_SIZE % STACK_ALIGN
+#error "CONFIG_ISR_SUBSTACK_SIZE must be a multiple of 16"
+#endif
+
 #ifndef _ASMLANGUAGE
 
 #define Z_ARCH_THREAD_STACK_LEN(size) (ROUND_UP((size), STACK_SIZE_ALIGN))
