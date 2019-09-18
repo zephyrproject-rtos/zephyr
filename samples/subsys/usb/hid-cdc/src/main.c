@@ -630,6 +630,9 @@ void main(void)
 		uart_line_ctrl_get(cdc0_dev, LINE_CTRL_DTR, &dtr);
 		if (dtr) {
 			break;
+		} else {
+			/* Give CPU resources to low priority threads. */
+			k_sleep(100);
 		}
 	}
 	LOG_INF("DTR on CDC ACM 0 set");
@@ -639,6 +642,9 @@ void main(void)
 		uart_line_ctrl_get(cdc1_dev, LINE_CTRL_DTR, &dtr);
 		if (dtr) {
 			break;
+		} else {
+			/* Give CPU resources to low priority threads. */
+			k_sleep(100);
 		}
 	}
 	LOG_INF("DTR on CDC ACM 1 set");
