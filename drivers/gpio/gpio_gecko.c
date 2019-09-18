@@ -272,9 +272,9 @@ static int gpio_gecko_pin_interrupt_configure(struct device *dev,
 	bool rising_edge;
 	bool falling_edge;
 
-	if ((flags & GPIO_INT_ENABLE) != 0) {
+	if (gpio_flags_int_enabled(flags)) {
 		/* Interrupt on static level is not supported by the hardware */
-		if ((flags & GPIO_INT_EDGE) == 0) {
+		if (gpio_flags_int_edge(flags)) {
 			return -ENOTSUP;
 		}
 
