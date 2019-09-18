@@ -35,7 +35,7 @@ LL/CON/CEN/BV-21-C
 LL/CON/CEN/BV-23-C
 LL/CON/CEN/BV-24-C
 LL/CON/CEN/BV-25-C
-LL/CON/CEN/BV-26-C
+#LL/CON/CEN/BV-26-C # This test case is not valid, and will fail with CPR cache
 LL/CON/CEN/BV-27-C
 LL/CON/CEN/BV-29-C
 LL/CON/CEN/BV-30-C
