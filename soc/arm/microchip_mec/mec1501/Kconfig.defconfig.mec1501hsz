@@ -56,4 +56,11 @@ config PS2_XEC
 
 endif # PS2
 
+if PWM
+
+config PWM_XEC
+	def_bool y
+
+endif # PWM
+
 endif # SOC_MEC1501_HSZ
