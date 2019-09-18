@@ -5,7 +5,7 @@ set(flag_for_rom_report -F)
 
 foreach(report ram_report rom_report)
   add_custom_target(
-    ${report}
+    ${IMAGE}${report}
     ${PYTHON_EXECUTABLE}
     ${ZEPHYR_BASE}/scripts/footprint/size_report
     ${flag_for_${report}}

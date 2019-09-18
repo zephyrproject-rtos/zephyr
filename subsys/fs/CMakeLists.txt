@@ -15,7 +15,7 @@ if(CONFIG_FILE_SYSTEM)
 
   target_link_libraries_ifdef(CONFIG_FAT_FILESYSTEM_ELM   FS INTERFACE ELMFAT)
   target_link_libraries_ifdef(CONFIG_FILE_SYSTEM_LITTLEFS FS INTERFACE LITTLEFS)
-  target_link_libraries_ifdef(CONFIG_FILE_SYSTEM_NFFS     FS INTERFACE NFFS)
+  target_link_libraries_ifdef(CONFIG_FILE_SYSTEM_NFFS     FS INTERFACE ${IMAGE}NFFS)
 endif()
 
 add_subdirectory_ifdef(CONFIG_FCB  ./fcb)

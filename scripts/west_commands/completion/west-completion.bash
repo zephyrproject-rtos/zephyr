@@ -694,6 +694,7 @@ __comp_west_runner_cmd()
 	local runner_args_opts="
 	--build-dir -d
 	--cmake-cache -c
+	--image -i
 	--runner -r
 	--board-dir
 	--elf-file

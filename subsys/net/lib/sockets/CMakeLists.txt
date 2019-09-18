@@ -21,4 +21,4 @@ if(CONFIG_NET_SOCKETS_NET_MGMT)
   zephyr_include_directories(${ZEPHYR_BASE}/subsys/net/ip)
 endif()
 
-zephyr_link_libraries_ifdef(CONFIG_MBEDTLS mbedTLS)
+zephyr_link_libraries_ifdef(CONFIG_MBEDTLS ${IMAGE}mbedTLS)

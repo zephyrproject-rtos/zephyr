@@ -45,26 +45,32 @@ assert(toolchain_is_ok "The toolchain is unable to build a dummy C file. See CMa
 # is the last station. See "logical_target_for_zephyr_elf" below for
 # details.
 set(CMAKE_EXECUTABLE_SUFFIX .elf)
-set(ZEPHYR_PREBUILT_EXECUTABLE zephyr_prebuilt)
-set(ZEPHYR_FINAL_EXECUTABLE    zephyr_final)
+set(FLASH_DEPS)
+set(ZEPHYR_PREBUILT_EXECUTABLE ${IMAGE}zephyr_prebuilt)
+set(ZEPHYR_FINAL_EXECUTABLE    ${IMAGE}zephyr_final)
 
 # Set some phony targets to collect dependencies
-set(OFFSETS_H_TARGET           offsets_h)
-set(SYSCALL_MACROS_H_TARGET    syscall_macros_h_target)
-set(SYSCALL_LIST_H_TARGET      syscall_list_h_target)
-set(DRIVER_VALIDATION_H_TARGET driver_validation_h_target)
-set(KOBJ_TYPES_H_TARGET        kobj_types_h_target)
-set(LINKER_SCRIPT_TARGET       linker_script_target)
+set(OFFSETS_H_TARGET           ${IMAGE}offsets_h)
+set(SYSCALL_MACROS_H_TARGET    ${IMAGE}syscall_macros_h_target)
+set(SYSCALL_LIST_H_TARGET      ${IMAGE}syscall_list_h_target)
+set(DRIVER_VALIDATION_H_TARGET ${IMAGE}driver_validation_h_target)
+set(KOBJ_TYPES_H_TARGET        ${IMAGE}kobj_types_h_target)
+set(LINKER_SCRIPT_TARGET       ${IMAGE}linker_script_target)
+
+set(OFFSETS_LIB                ${IMAGE}offsets)
+set(KERNEL_LIBRARY             ${IMAGE}kernel)
+
+set(PRIV_STACKS_PREBUILT       ${IMAGE}priv_stacks_prebuilt)
 
 define_property(TARGET                 PROPERTY   PROPERTY_OUTPUT_FORMAT BRIEF_DOCS " " FULL_DOCS " ")
 set_target_properties(${ZEPHYR_TARGET} PROPERTIES PROPERTY_OUTPUT_FORMAT elf32-little${ARCH}) # BFD format
 
-# "zephyr_interface" is a source-less library that encapsulates all the global
+# ${IMAGE}zephyr_interface is a source-less library that encapsulates all the global
 # compiler options needed by all source files. All zephyr libraries,
 # including the library named "zephyr" link with this library to
 # obtain these flags.
 # https://cmake.org/cmake/help/latest/manual/cmake-buildsystem.7.html#interface-libraries
-add_library(zephyr_interface INTERFACE)
+add_library(${IMAGE}zephyr_interface INTERFACE)
 
 # "zephyr" is a catch-all CMake library for source files that can be
 # built purely with the include paths, defines, and other compiler
@@ -371,7 +377,7 @@ if(CONFIG_USERSPACE)
   set(APP_SMEM_ALIGNED_DEP app_smem_aligned_linker)
   set(APP_SMEM_UNALIGNED_DEP app_smem_unaligned_linker)
   if(CONFIG_ARM)
-    set(PRIV_STACK_DEP priv_stacks_prebuilt)
+    set(PRIV_STACK_DEP ${PRIV_STACKS_PREBUILT})
   endif()
 endif()
 
@@ -387,7 +393,7 @@ if(CONFIG_HAVE_CUSTOM_LINKER_SCRIPT)
   endif()
 else()
   # Try a board specific linker file
-  set(LINKER_SCRIPT ${BOARD_DIR}/linker.ld)
+  set(LINKER_SCRIPT ${${IMAGE}BOARD_DIR}/linker.ld)
   if(NOT EXISTS ${LINKER_SCRIPT})
     # If not available, try an SoC specific linker file
     set(LINKER_SCRIPT ${SOC_DIR}/${ARCH}/${SOC_PATH}/linker.ld)
@@ -410,7 +416,7 @@ configure_file(version.h.in ${PROJECT_BINARY_DIR}/include/generated/version.h)
 # Error-out when the deprecated naming convention is found (until
 # after 1.14.0 has been released)
 foreach(path
-    ${BOARD_DIR}/dts.fixup
+    ${${IMAGE}BOARD_DIR}/dts.fixup
     ${PROJECT_SOURCE_DIR}/soc/${ARCH}/${SOC_PATH}/dts.fixup
     ${APPLICATION_SOURCE_DIR}/dts.fixup
     )
@@ -423,24 +429,24 @@ foreach(path
   endif()
 endforeach()
 
-set_ifndef(  DTS_BOARD_FIXUP_FILE                                   ${BOARD_DIR}/dts_fixup.h)
-set_ifndef(    DTS_SOC_FIXUP_FILE                 ${SOC_DIR}/${ARCH}/${SOC_PATH}/dts_fixup.h)
-set(           DTS_APP_FIXUP_FILE                      ${APPLICATION_SOURCE_DIR}/dts_fixup.h)
+set_ifndef(${IMAGE}DTS_BOARD_FIXUP_FILE ${${IMAGE}BOARD_DIR}/dts_fixup.h)
+set_ifndef(${IMAGE}DTS_SOC_FIXUP_FILE   ${SOC_DIR}/${ARCH}/${SOC_PATH}/dts_fixup.h)
+set(               DTS_APP_FIXUP_FILE   ${APPLICATION_SOURCE_DIR}/dts_fixup.h)
 
-set_ifndef(DTS_CAT_OF_FIXUP_FILES ${ZEPHYR_BINARY_DIR}/include/generated/generated_dts_board_fixups.h)
+set_ifndef(${IMAGE}DTS_CAT_OF_FIXUP_FILES ${ZEPHYR_BINARY_DIR}/include/generated/generated_dts_board_fixups.h)
 
 # Concatenate the fixups into a single header file for easy
 # #include'ing
-file(WRITE ${DTS_CAT_OF_FIXUP_FILES} "/* May only be included by generated_dts_board.h */\n\n")
+file(WRITE ${${IMAGE}DTS_CAT_OF_FIXUP_FILES} "/* May only be included by generated_dts_board.h */\n\n")
 foreach(fixup_file
-    ${DTS_BOARD_FIXUP_FILE}
-    ${DTS_SOC_FIXUP_FILE}
+    ${${IMAGE}DTS_BOARD_FIXUP_FILE}
+    ${${IMAGE}DTS_SOC_FIXUP_FILE}
     ${DTS_APP_FIXUP_FILE}
     ${shield_dts_fixups}
     )
   if(EXISTS ${fixup_file})
     file(READ ${fixup_file} contents)
-    file(APPEND ${DTS_CAT_OF_FIXUP_FILES} "${contents}")
+    file(APPEND ${${IMAGE}DTS_CAT_OF_FIXUP_FILES} "${contents}")
   endif()
 endforeach()
 
@@ -450,7 +456,7 @@ endforeach()
 # build are not exported to external build systems #5605"; when we
 # integrate with an external build system we read out all compiler
 # flags when the external project is created. So an external project
-# defined in subsys or ext will not get global flags added by drivers/
+# defined in subsys or ext will not get image-global flags added by drivers/
 # or tests/ as the subdirectories are ordered now.
 #
 # Another example of when the order matters is the reading and writing
@@ -493,7 +499,7 @@ if(EXISTS ${CMAKE_BINARY_DIR}/zephyr_modules.txt)
     # this binary_dir is created but stays empty. Object files land in
     # the main binary dir instead.
     # https://cmake.org/pipermail/cmake/2019-June/069547.html
-    add_subdirectory(${module_path} ${CMAKE_BINARY_DIR}/modules/${module_name})
+    add_subdirectory(${module_path} ${CMAKE_CURRENT_BINARY_DIR}/${module_name})
   endforeach()
 endif()
 
@@ -635,13 +641,10 @@ gen_kobj(KOBJ_INCLUDE_PATH)
 # Generate offsets.c.obj from offsets.c
 # Generate offsets.h     from offsets.c.obj
 
-set(OFFSETS_LIB offsets)
-
 set(OFFSETS_C_PATH ${ARCH_DIR}/${ARCH}/core/offsets/offsets.c)
 set(OFFSETS_H_PATH ${PROJECT_BINARY_DIR}/include/generated/offsets.h)
-
 add_library(          ${OFFSETS_LIB} OBJECT ${OFFSETS_C_PATH})
-target_link_libraries(${OFFSETS_LIB} zephyr_interface)
+target_link_libraries(${OFFSETS_LIB} ${IMAGE}zephyr_interface)
 add_dependencies(     ${OFFSETS_LIB}
   ${SYSCALL_LIST_H_TARGET}
   ${SYSCALL_MACROS_H_TARGET}
@@ -670,14 +673,14 @@ add_subdirectory(kernel)
 get_target_property(ZEPHYR_LIBS_PROPERTY ${ZEPHYR_TARGET} ZEPHYR_LIBS)
 
 foreach(zephyr_lib ${ZEPHYR_LIBS_PROPERTY})
-  # TODO: Could this become an INTERFACE property of zephyr_interface?
+  # TODO: Could this become an INTERFACE property of ${IMAGE}zephyr_interface?
   add_dependencies(${zephyr_lib} ${OFFSETS_H_TARGET})
 endforeach()
 
 get_target_property(OUTPUT_FORMAT ${ZEPHYR_TARGET} PROPERTY_OUTPUT_FORMAT)
 
 if (CONFIG_CODE_DATA_RELOCATION)
-  set(CODE_RELOCATION_DEP code_relocation_source_lib)
+  set(CODE_RELOCATION_DEP ${IMAGE}code_relocation_source_lib)
 endif() # CONFIG_CODE_DATA_RELOCATION
 
 configure_linker_script(
@@ -755,13 +758,13 @@ if(CONFIG_USERSPACE)
   string(REPLACE "-fprofile-arcs" "" NO_COVERAGE_FLAGS "${NO_COVERAGE_FLAGS}")
   string(REPLACE "-fno-inline" "" NO_COVERAGE_FLAGS "${NO_COVERAGE_FLAGS}")
 
-  get_property(include_dir_in_interface TARGET zephyr_interface
+  get_property(include_dir_in_interface TARGET ${IMAGE}zephyr_interface
     PROPERTY INTERFACE_INCLUDE_DIRECTORIES)
 
-  get_property(sys_include_dir_in_interface TARGET zephyr_interface
+  get_property(sys_include_dir_in_interface TARGET ${IMAGE}zephyr_interface
     PROPERTY INTERFACE_SYSTEM_INCLUDE_DIRECTORIES)
 
-  get_property(compile_definitions_interface TARGET zephyr_interface
+  get_property(compile_definitions_interface TARGET ${IMAGE}zephyr_interface
     PROPERTY INTERFACE_COMPILE_DEFINITIONS)
 endif()
 
@@ -778,6 +781,14 @@ if(CONFIG_ARM AND CONFIG_USERSPACE)
   set(PRIV_STACKS_OUTPUT_OBJ         priv_stacks_hash.c.obj)
   set(PRIV_STACKS_OUTPUT_OBJ_RENAMED priv_stacks_hash_renamed.o)
 
+  set(PRIV_STACKS_T                      ${IMAGE}priv_stacks)
+  set(PRIV_STACKS_OUTPUT_SRC_PRE_T       ${IMAGE}priv_stacks_output_src_pre)
+  set(PRIV_STACKS_OUTPUT_SRC_T           ${IMAGE}priv_stacks_output_src)
+  set(PRIV_STACKS_OUTPUT_LIB             ${IMAGE}priv_stacks_output_lib)
+  set(PRIV_STACKS_OUTPUT_LIB_INTERFACE   ${IMAGE}priv_stacks_output_lib_interface)
+  set(PRIV_STACKS_OUTPUT_OBJ_RENAMED_T   ${IMAGE}priv_stacks_output_obj_renamed)
+  set(PRIV_STACKS_OUTPUT_OBJ_RENAMED_LIB ${IMAGE}priv_stacks_output_obj_renamed_lib)
+
   # Essentially what we are doing here is extracting some information
   # out of the nearly finished elf file, generating the source code
   # for a hash table based on that information, and then compiling and
@@ -792,13 +803,13 @@ if(CONFIG_ARM AND CONFIG_USERSPACE)
     COMMAND
     ${PYTHON_EXECUTABLE}
     ${GEN_PRIV_STACKS}
-    --kernel $<TARGET_FILE:priv_stacks_prebuilt>
+    --kernel $<TARGET_FILE:${PRIV_STACKS_PREBUILT}>
     --output ${PRIV_STACKS}
     $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
-    DEPENDS priv_stacks_prebuilt
+    DEPENDS ${PRIV_STACKS_PREBUILT}
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     )
-  add_custom_target(priv_stacks DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${PRIV_STACKS})
+  add_custom_target(${PRIV_STACKS_T} DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${PRIV_STACKS})
 
   # Use gperf to generate C code (PRIV_STACKS_OUTPUT_SRC_PRE) which implements a
   # perfect hashtable based on PRIV_STACKS
@@ -808,10 +819,11 @@ if(CONFIG_ARM AND CONFIG_USERSPACE)
     ${GPERF} -C
     --output-file ${PRIV_STACKS_OUTPUT_SRC_PRE}
     ${PRIV_STACKS}
-    DEPENDS priv_stacks ${PRIV_STACKS}
+    DEPENDS ${PRIV_STACKS_T} ${PRIV_STACKS}
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     )
-  add_custom_target(priv_stacks_output_src_pre DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${PRIV_STACKS_OUTPUT_SRC_PRE})
+  add_custom_target(${PRIV_STACKS_OUTPUT_SRC_PRE_T}
+    DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${PRIV_STACKS_OUTPUT_SRC_PRE})
 
   # For our purposes the code/data generated by gperf is not optimal.
   #
@@ -827,10 +839,11 @@ if(CONFIG_ARM AND CONFIG_USERSPACE)
     -o ${PRIV_STACKS_OUTPUT_SRC}
     -p "struct _k_priv_stack_map"
     $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
-    DEPENDS priv_stacks_output_src_pre ${PRIV_STACKS_OUTPUT_SRC_PRE}
+    DEPENDS ${PRIV_STACKS_OUTPUT_SRC_PRE_T} ${PRIV_STACKS_OUTPUT_SRC_PRE}
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     )
-  add_custom_target(priv_stacks_output_src DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${PRIV_STACKS_OUTPUT_SRC})
+  add_custom_target(${PRIV_STACKS_OUTPUT_SRC_T}
+    DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${PRIV_STACKS_OUTPUT_SRC})
 
   set_source_files_properties(${CMAKE_CURRENT_BINARY_DIR}/${PRIV_STACKS_OUTPUT_SRC}
     PROPERTIES COMPILE_DEFINITIONS "${compile_definitions_interface}")
@@ -842,25 +855,29 @@ if(CONFIG_ARM AND CONFIG_USERSPACE)
   # We need precise control of where generated text/data ends up in the final
   # kernel image. Disable function/data sections and use objcopy to move
   # generated data into special section names
-  add_library(priv_stacks_output_lib STATIC
+  add_library(${PRIV_STACKS_OUTPUT_LIB} STATIC
     ${CMAKE_CURRENT_BINARY_DIR}/${PRIV_STACKS_OUTPUT_SRC}
     )
 
   # Turn off -ffunction-sections, etc.
-  # NB: Using a library instead of target_compile_options(priv_stacks_output_lib
+  # NB: Using a library instead of
+  # target_compile_options(${PRIV_STACKS_OUTPUT_LIB}
   # [...]) because a library's options have precedence
-  add_library(priv_stacks_output_lib_interface INTERFACE)
+  add_library(${PRIV_STACKS_OUTPUT_LIB_INTERFACE} INTERFACE)
   foreach(incl ${include_dir_in_interface})
-    target_include_directories(priv_stacks_output_lib_interface INTERFACE ${incl})
+    target_include_directories(${PRIV_STACKS_OUTPUT_LIB_INTERFACE} INTERFACE ${incl})
   endforeach()
 
   foreach(incl ${sys_include_dir_in_interface})
-    target_include_directories(priv_stacks_output_lib_interface SYSTEM INTERFACE ${incl})
+    target_include_directories(${PRIV_STACKS_OUTPUT_LIB_INTERFACE} SYSTEM INTERFACE ${incl})
   endforeach()
 
-  target_link_libraries(priv_stacks_output_lib priv_stacks_output_lib_interface)
+  target_link_libraries(${PRIV_STACKS_OUTPUT_LIB}
+    ${PRIV_STACKS_OUTPUT_LIB_INTERFACE})
 
-  set(PRIV_STACKS_OUTPUT_OBJ_PATH ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/priv_stacks_output_lib.dir/${PRIV_STACKS_OUTPUT_OBJ})
+
+  set(PRIV_STACKS_OUTPUT_OBJ_PATH
+    ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/${PRIV_STACKS_OUTPUT_LIB}.dir/${PRIV_STACKS_OUTPUT_OBJ})
 
   set(obj_copy_cmd "")
   set(obj_copy_sections_rename
@@ -878,23 +895,25 @@ if(CONFIG_ARM AND CONFIG_USERSPACE)
   add_custom_command(
     OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${PRIV_STACKS_OUTPUT_OBJ_RENAMED}
     ${obj_copy_cmd}
-    DEPENDS priv_stacks_output_lib
+    DEPENDS ${PRIV_STACKS_OUTPUT_LIB}
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     )
-  add_custom_target(priv_stacks_output_obj_renamed DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${PRIV_STACKS_OUTPUT_OBJ_RENAMED})
+  add_custom_target(${PRIV_STACKS_OUTPUT_OBJ_RENAMED_T}
+    DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${PRIV_STACKS_OUTPUT_OBJ_RENAMED})
 
-  add_library(priv_stacks_output_obj_renamed_lib STATIC IMPORTED GLOBAL)
+  add_library(${PRIV_STACKS_OUTPUT_OBJ_RENAMED_LIB} STATIC IMPORTED GLOBAL)
   set_property(
-    TARGET priv_stacks_output_obj_renamed_lib
+    TARGET ${PRIV_STACKS_OUTPUT_OBJ_RENAMED_LIB}
     PROPERTY
     IMPORTED_LOCATION ${CMAKE_CURRENT_BINARY_DIR}/${PRIV_STACKS_OUTPUT_OBJ_RENAMED}
     )
   add_dependencies(
-    priv_stacks_output_obj_renamed_lib
-    priv_stacks_output_obj_renamed
+    ${PRIV_STACKS_OUTPUT_OBJ_RENAMED_LIB}
+    ${PRIV_STACKS_OUTPUT_OBJ_RENAMED_T}
     )
 
-  set_property(TARGET ${ZEPHYR_TARGET} APPEND PROPERTY GENERATED_KERNEL_OBJECT_FILES priv_stacks_output_obj_renamed_lib)
+  set_property(TARGET ${ZEPHYR_TARGET} APPEND PROPERTY GENERATED_KERNEL_OBJECT_FILES
+    ${PRIV_STACKS_OUTPUT_OBJ_RENAMED_LIB})
 endif()
 
 # Warning: most of this gperf code is duplicated above for
@@ -909,6 +928,13 @@ if(CONFIG_USERSPACE)
   set(OUTPUT_OBJ         kobject_hash.c.obj)
   set(OUTPUT_OBJ_RENAMED kobject_hash_renamed.o)
 
+  set(OUTPUT_SRC_PRE_T       ${IMAGE}output_src_pre)
+  set(OBJ_LIST_T             ${IMAGE}obj_list)
+  set(OUTPUT_SRC_T           ${IMAGE}output_src)
+  set(OUTPUT_LIB             ${IMAGE}output_lib)
+  set(OUTPUT_LIB_INTERFACE   ${IMAGE}output_lib_interface)
+  set(OUTPUT_OBJ_RENAMED_T   ${IMAGE}output_obj_renamed)
+  set(OUTPUT_OBJ_RENAMED_LIB ${IMAGE}output_obj_renamed_lib)
   # Essentially what we are doing here is extracting some information
   # out of the nearly finished elf file, generating the source code
   # for a hash table based on that information, and then compiling and
@@ -929,7 +955,7 @@ if(CONFIG_USERSPACE)
     DEPENDS ${ZEPHYR_PREBUILT_EXECUTABLE}
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     )
-  add_custom_target(obj_list DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${OBJ_LIST})
+  add_custom_target(${OBJ_LIST_T} DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${OBJ_LIST})
 
   # Use gperf to generate C code (OUTPUT_SRC_PRE) which implements a
   # perfect hashtable based on OBJ_LIST
@@ -939,10 +965,10 @@ if(CONFIG_USERSPACE)
     ${GPERF}
     --output-file ${OUTPUT_SRC_PRE}
     ${OBJ_LIST}
-    DEPENDS obj_list ${OBJ_LIST}
+    DEPENDS ${OBJ_LIST_T} ${OBJ_LIST}
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     )
-  add_custom_target(output_src_pre DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${OUTPUT_SRC_PRE})
+  add_custom_target(${OUTPUT_SRC_PRE_T} DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${OUTPUT_SRC_PRE})
 
   # For our purposes the code/data generated by gperf is not optimal.
   #
@@ -958,15 +984,15 @@ if(CONFIG_USERSPACE)
     -o ${OUTPUT_SRC}
     -p "struct _k_object"
     $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
-    DEPENDS output_src_pre ${OUTPUT_SRC_PRE}
+    DEPENDS ${OUTPUT_SRC_PRE_T} ${OUTPUT_SRC_PRE}
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     )
-  add_custom_target(output_src DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${OUTPUT_SRC})
+  add_custom_target(${OUTPUT_SRC_T} DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${OUTPUT_SRC})
 
   # We need precise control of where generated text/data ends up in the final
   # kernel image. Disable function/data sections and use objcopy to move
   # generated data into special section names
-  add_library(output_lib STATIC
+  add_library(${OUTPUT_LIB} STATIC
     ${CMAKE_CURRENT_BINARY_DIR}/${OUTPUT_SRC}
     )
 
@@ -977,21 +1003,21 @@ if(CONFIG_USERSPACE)
     PROPERTIES COMPILE_DEFINITIONS "${compile_definitions_interface}")
 
   # Turn off -ffunction-sections, etc.
-  # NB: Using a library instead of target_compile_options(output_lib
+  # NB: Using a library instead of target_compile_options(${OUTPUT_LIB}
   # [...]) because a library's options have precedence
-  add_library(output_lib_interface INTERFACE)
+  add_library(${OUTPUT_LIB_INTERFACE} INTERFACE)
 
-  target_link_libraries(output_lib output_lib_interface)
+  target_link_libraries(${OUTPUT_LIB} ${OUTPUT_LIB_INTERFACE})
 
   foreach(incl ${include_dir_in_interface})
-    target_include_directories(output_lib_interface INTERFACE ${incl})
+    target_include_directories(${OUTPUT_LIB_INTERFACE} INTERFACE ${incl})
   endforeach()
 
   foreach(incl ${sys_include_dir_in_interface})
-    target_include_directories(output_lib_interface SYSTEM INTERFACE ${incl})
+    target_include_directories(${OUTPUT_LIB_INTERFACE} SYSTEM INTERFACE ${incl})
   endforeach()
 
-  set(OUTPUT_OBJ_PATH ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/output_lib.dir/${OUTPUT_OBJ})
+  set(OUTPUT_OBJ_PATH ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/${OUTPUT_LIB}.dir/${OUTPUT_OBJ})
 
   set(obj_copy_cmd "")
   set(obj_copy_sections_rename
@@ -1008,23 +1034,24 @@ if(CONFIG_USERSPACE)
   add_custom_command(
     OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${OUTPUT_OBJ_RENAMED}
     ${obj_copy_cmd}
-    DEPENDS output_lib
+    DEPENDS ${OUTPUT_LIB}
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     )
-  add_custom_target(output_obj_renamed DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${OUTPUT_OBJ_RENAMED})
+  add_custom_target(${OUTPUT_OBJ_RENAMED_T} DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${OUTPUT_OBJ_RENAMED})
 
-  add_library(output_obj_renamed_lib STATIC IMPORTED GLOBAL)
+  add_library(${OUTPUT_OBJ_RENAMED_LIB} STATIC IMPORTED GLOBAL)
   set_property(
-    TARGET output_obj_renamed_lib
+    TARGET ${OUTPUT_OBJ_RENAMED_LIB}
     PROPERTY
     IMPORTED_LOCATION ${CMAKE_CURRENT_BINARY_DIR}/${OUTPUT_OBJ_RENAMED}
     )
   add_dependencies(
-    output_obj_renamed_lib
-    output_obj_renamed
+    ${OUTPUT_OBJ_RENAMED_LIB}
+    ${OUTPUT_OBJ_RENAMED_T}
     )
 
-  set_property(TARGET ${ZEPHYR_TARGET} APPEND PROPERTY GENERATED_KERNEL_OBJECT_FILES output_obj_renamed_lib)
+  set_property(TARGET ${ZEPHYR_TARGET} APPEND PROPERTY GENERATED_KERNEL_OBJECT_FILES
+    ${OUTPUT_OBJ_RENAMED_LIB})
 endif()
 
 # Read global variables into local variables
@@ -1077,7 +1104,7 @@ if(CONFIG_USERSPACE)
     ${NEWLIB_PART} ${MBEDTLS_PART}
     $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
     DEPENDS
-    kernel
+    ${KERNEL_LIBRARY}
     ${ZEPHYR_LIBS_PROPERTY}
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/
     COMMENT "Generating app_smem_unaligned linker section"
@@ -1126,7 +1153,7 @@ if(CONFIG_USERSPACE)
     ${NEWLIB_PART} ${MBEDTLS_PART}
     $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
     DEPENDS
-    kernel
+    ${KERNEL_LIBRARY}
     ${ZEPHYR_LIBS_PROPERTY}
     app_smem_unaligned_prebuilt
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/
@@ -1145,29 +1172,29 @@ if(CONFIG_USERSPACE AND CONFIG_ARM)
     )
 
   add_custom_target(
-    linker_priv_stacks_script
+    ${IMAGE}linker_priv_stacks_script
     DEPENDS
     linker_priv_stacks.cmd
     )
 
   set_property(TARGET
-    linker_priv_stacks_script
+    ${IMAGE}linker_priv_stacks_script
     PROPERTY INCLUDE_DIRECTORIES
     ${ZEPHYR_INCLUDE_DIRS}
     )
 
-  set(PRIV_STACK_LIB priv_stacks_output_obj_renamed_lib)
-  add_executable(       priv_stacks_prebuilt misc/empty_file.c)
+  set(PRIV_STACK_LIB ${IMAGE}priv_stacks_output_obj_renamed_lib)
+  add_executable(       ${PRIV_STACKS_PREBUILT} misc/empty_file.c)
   toolchain_ld_link_elf(
-    TARGET_ELF            priv_stacks_prebuilt
+    TARGET_ELF            ${PRIV_STACKS_PREBUILT}
     OUTPUT_MAP            ${PROJECT_BINARY_DIR}/priv_stacks_prebuilt.map
     LIBRARIES_PRE_SCRIPT  ""
     LINKER_SCRIPT         ${PROJECT_BINARY_DIR}/linker_priv_stacks.cmd
     LIBRARIES_POST_SCRIPT ""
     DEPENDENCIES          ${CODE_RELOCATION_DEP}
   )
-  set_property(TARGET   priv_stacks_prebuilt PROPERTY LINK_DEPENDS ${PROJECT_BINARY_DIR}/linker_priv_stacks.cmd)
-  add_dependencies(     priv_stacks_prebuilt linker_priv_stacks_script ${OFFSETS_LIB})
+  set_property(TARGET   ${PRIV_STACKS_PREBUILT} PROPERTY LINK_DEPENDS ${PROJECT_BINARY_DIR}/linker_priv_stacks.cmd)
+  add_dependencies(     ${PRIV_STACKS_PREBUILT} ${IMAGE}linker_priv_stacks_script ${OFFSETS_LIB})
 endif()
 
 # FIXME: Is there any way to get rid of empty_file.c?
@@ -1202,7 +1229,7 @@ else()
     ${OFFSETS_H_TARGET}
     )
 
-  set(LINKER_PASS_FINAL_SCRIPT_TARGET linker_pass_final_script_target)
+  set(LINKER_PASS_FINAL_SCRIPT_TARGET ${IMAGE}linker_pass_final_script_target)
   add_custom_target(
     ${LINKER_PASS_FINAL_SCRIPT_TARGET}
     DEPENDS
@@ -1447,14 +1474,15 @@ add_custom_command(
   ${post_build_commands}
   BYPRODUCTS
   ${post_build_byproducts}
-  COMMENT "Generating files from ${KERNEL_ELF_NAME} for board: ${BOARD}"
+  COMMENT "Generating files from ${KERNEL_ELF_NAME} for board: ${${IMAGE}BOARD}"
+  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   # NB: COMMENT only works for some CMake-Generators
   )
 
-# To populate with hex files to merge, do the following:
-#  set_property(GLOBAL APPEND PROPERTY HEX_FILES_TO_MERGE ${my_local_list})
-# Note that the zephyr.hex file will not be included automatically.
-get_property(HEX_FILES_TO_MERGE GLOBAL PROPERTY HEX_FILES_TO_MERGE)
+
+# Note that the zephyr.hex file is not automatically added to
+# HEX_FILES_TO_MERGE.
+get_target_property(HEX_FILES_TO_MERGE ${ZEPHYR_TARGET} HEX_FILES_TO_MERGE)
 if(HEX_FILES_TO_MERGE)
   # Merge in out-of-tree hex files.
   set(MERGED_HEX_NAME merged.hex)
@@ -1469,14 +1497,15 @@ if(HEX_FILES_TO_MERGE)
     DEPENDS ${HEX_FILES_TO_MERGE} ${logical_target_for_zephyr_elf}
     )
 
-  add_custom_target(mergehex ALL DEPENDS ${MERGED_HEX_NAME})
-  list(APPEND FLASH_DEPS mergehex)
+  set(mergehex_target ${IMAGE}mergehex)
+  add_custom_target(${mergehex_target} ALL DEPENDS ${MERGED_HEX_NAME})
+  list(APPEND FLASH_DEPS ${mergehex_target})
 endif()
 
 if(EMU_PLATFORM)
   include(${ZEPHYR_BASE}/cmake/emu/${EMU_PLATFORM}.cmake)
 else()
-  add_custom_target(run
+  add_custom_target(${IMAGE}run
     COMMAND
     ${CMAKE_COMMAND} -E echo
     "==================================================="
@@ -1486,7 +1515,6 @@ else()
 endif()
 
 add_subdirectory(cmake/flash)
-add_subdirectory(cmake/usage)
 add_subdirectory(cmake/reports)
 
 if(NOT CONFIG_TEST)
@@ -1502,7 +1530,7 @@ endif()
 
 if(CONFIG_BOARD_DEPRECATED)
   message(WARNING "
-      WARNING:  The board '${BOARD}' is deprecated and will be
+      WARNING:  The board '${${IMAGE}BOARD}' is deprecated and will be
       removed in version ${CONFIG_BOARD_DEPRECATED}"
   )
 endif()

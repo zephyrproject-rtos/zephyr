@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 
-add_library(CMSIS INTERFACE)
+add_library(${IMAGE}CMSIS INTERFACE)
 
-target_include_directories(CMSIS INTERFACE ${PROJECT_SOURCE_DIR}/include/cmsis_rtos_v1)
+target_include_directories(${IMAGE}CMSIS INTERFACE ${ZEPHYR_BASE}/include/cmsis_rtos_v1)
 
 zephyr_library()
 zephyr_library_sources_ifdef(
@@ -20,4 +20,4 @@ zephyr_library_sources_ifdef(
   cmsis_signal.c
 )
 
-zephyr_library_link_libraries(CMSIS)
+zephyr_library_link_libraries(${IMAGE}CMSIS)

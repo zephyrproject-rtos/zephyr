@@ -172,4 +172,4 @@ zephyr_library_compile_options_ifdef(
   ${OPTIMIZE_FOR_SPEED_FLAG}
   )
 
-zephyr_library_link_libraries(subsys__bluetooth)
+zephyr_library_link_libraries(${IMAGE}subsys__bluetooth)

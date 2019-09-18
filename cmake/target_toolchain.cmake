@@ -38,9 +38,12 @@ endif()
 
 # The 'generic' compiler and the 'target' compiler might be different,
 # so we unset the 'generic' one and thereby force the 'target' to
-# re-set it.
-unset(CMAKE_C_COMPILER)
-unset(CMAKE_C_COMPILER CACHE)
+# re-set it. This is only needed for the first boilerplate execution as
+# the remaining boilerplate executions will use the same C compiler.
+if (FIRST_BOILERPLATE_EXECUTION)
+  unset(CMAKE_C_COMPILER)
+  unset(CMAKE_C_COMPILER CACHE)
+endif()
 
 # A toolchain consist of a compiler and a linker.
 # In Zephyr, toolchains require a port under cmake/toolchain/.

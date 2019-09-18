@@ -2,7 +2,7 @@
 
 # kernel is a normal CMake library and not a zephyr_library because it
 # should not be --whole-archive'd
-add_library(kernel
+add_library(${KERNEL_LIBRARY}
   device.c
   errno.c
   fatal.c
@@ -29,16 +29,16 @@ add_library(kernel
 # Kernel files has the macro __ZEPHYR_SUPERVISOR__ set so that it
 # optimizes the code when userspace is enabled.
 set_target_properties(
-  kernel
+  ${KERNEL_LIBRARY}
   PROPERTIES
   COMPILE_DEFINITIONS
   __ZEPHYR_SUPERVISOR__
   )
 
-target_sources_ifdef(CONFIG_STACK_CANARIES        kernel PRIVATE compiler_stack_protect.c)
-target_sources_ifdef(CONFIG_SYS_CLOCK_EXISTS      kernel PRIVATE timeout.c timer.c)
-target_sources_ifdef(CONFIG_ATOMIC_OPERATIONS_C   kernel PRIVATE atomic_c.c)
-target_sources_if_kconfig(                        kernel PRIVATE poll.c)
+target_sources_ifdef(CONFIG_STACK_CANARIES        ${KERNEL_LIBRARY} PRIVATE compiler_stack_protect.c)
+target_sources_ifdef(CONFIG_SYS_CLOCK_EXISTS      ${KERNEL_LIBRARY} PRIVATE timeout.c timer.c)
+target_sources_ifdef(CONFIG_ATOMIC_OPERATIONS_C   ${KERNEL_LIBRARY} PRIVATE atomic_c.c)
+target_sources_if_kconfig(                        ${KERNEL_LIBRARY} PRIVATE poll.c)
 
 # The last 2 files inside the target_sources_ifdef should be
 # userspace_handler.c and userspace.c. If not the linker would complain.
@@ -46,7 +46,7 @@ target_sources_if_kconfig(                        kernel PRIVATE poll.c)
 # above these 2 files.
 target_sources_ifdef(
   CONFIG_USERSPACE
-  kernel PRIVATE
+  ${KERNEL_LIBRARY} PRIVATE
   futex.c
   mem_domain.c
   userspace_handler.c
@@ -54,6 +54,6 @@ target_sources_ifdef(
   )
 
 
-add_dependencies(kernel ${OFFSETS_H_TARGET})
+add_dependencies(${KERNEL_LIBRARY} ${OFFSETS_H_TARGET})
 
-target_link_libraries(kernel zephyr_interface)
+target_link_libraries(${KERNEL_LIBRARY} ${IMAGE}zephyr_interface)

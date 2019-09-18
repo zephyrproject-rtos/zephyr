@@ -17,39 +17,41 @@ endif()
 # Everything is marked with FORCE so that re-running CMake updates the
 # configuration if the board files change.
 if(RUNNERS)
-  set(ZEPHYR_RUNNERS ${RUNNERS} CACHE INTERNAL "Available runners")
+  set(${IMAGE}ZEPHYR_RUNNERS ${RUNNERS} CACHE INTERNAL "Runners available for image")
 
   # Runner configuration. This is provided to all runners, and is
   # distinct from the free-form arguments provided by e.g.
   # board_runner_args().
   #
   # Always applicable:
-  set(ZEPHYR_RUNNER_CONFIG_BOARD_DIR "${BOARD_DIR}"
+  set(${IMAGE}ZEPHYR_RUNNER_CONFIG_BOARD_DIR "${${IMAGE}BOARD_DIR}"
     CACHE STRING "Board definition directory" FORCE)
-  set(ZEPHYR_RUNNER_CONFIG_KERNEL_ELF "${PROJECT_BINARY_DIR}/${KERNEL_ELF_NAME}"
+  set(${IMAGE}ZEPHYR_RUNNER_CONFIG_KERNEL_ELF "${PROJECT_BINARY_DIR}/${KERNEL_ELF_NAME}"
     CACHE STRING "Path to kernel image in ELF format" FORCE)
-  get_property(HEX_FILES_TO_MERGE GLOBAL PROPERTY HEX_FILES_TO_MERGE)
+
+  get_target_property(HEX_FILES_TO_MERGE ${ZEPHYR_TARGET} HEX_FILES_TO_MERGE)
   if(HEX_FILES_TO_MERGE)
-    set(ZEPHYR_RUNNER_CONFIG_KERNEL_HEX "${PROJECT_BINARY_DIR}/${MERGED_HEX_NAME}"
+    set(${IMAGE}ZEPHYR_RUNNER_CONFIG_KERNEL_HEX "${PROJECT_BINARY_DIR}/${MERGED_HEX_NAME}"
       CACHE STRING "Path to merged image in Intel Hex format" FORCE)
   else()
-    set(ZEPHYR_RUNNER_CONFIG_KERNEL_HEX "${PROJECT_BINARY_DIR}/${KERNEL_HEX_NAME}"
-      CACHE STRING "Path to kernel image in Intel Hex format" FORCE)
+    set(${IMAGE}ZEPHYR_RUNNER_CONFIG_KERNEL_HEX "${PROJECT_BINARY_DIR}/${KERNEL_HEX_NAME}"
+      CACHE STRING "Path to merged image in Intel Hex format" FORCE)
   endif()
-  set(ZEPHYR_RUNNER_CONFIG_KERNEL_BIN "${PROJECT_BINARY_DIR}/${KERNEL_BIN_NAME}"
+
+  set(${IMAGE}ZEPHYR_RUNNER_CONFIG_KERNEL_BIN "${PROJECT_BINARY_DIR}/${KERNEL_BIN_NAME}"
     CACHE STRING "Path to kernel image as raw binary" FORCE)
   # Not always applicable, but so often needed that they're provided
   # by default: (TODO: clean this up)
   if(DEFINED CMAKE_GDB)
-    set(ZEPHYR_RUNNER_CONFIG_GDB "${CMAKE_GDB}"
+    set(${IMAGE}ZEPHYR_RUNNER_CONFIG_GDB "${CMAKE_GDB}"
       CACHE STRING "Path to GDB binary, if applicable" FORCE)
   endif()
-  if(DEFINED OPENOCD)
-    set(ZEPHYR_RUNNER_CONFIG_OPENOCD "${OPENOCD}"
+  if(DEFINED ${IMAGE}OPENOCD)
+    set(${IMAGE}ZEPHYR_RUNNER_CONFIG_OPENOCD "${OPENOCD}"
       CACHE STRING "Path to openocd binary, if applicable" FORCE)
   endif()
-  if(DEFINED OPENOCD_DEFAULT_PATH)
-    set(ZEPHYR_RUNNER_CONFIG_OPENOCD_SEARCH "${OPENOCD_DEFAULT_PATH}"
+  if(DEFINED ${IMAGE}OPENOCD_DEFAULT_PATH)
+    set(${IMAGE}ZEPHYR_RUNNER_CONFIG_OPENOCD_SEARCH "${OPENOCD_DEFAULT_PATH}"
       CACHE STRING "Path to add to openocd search path, if applicable" FORCE)
   endif()
 
@@ -59,16 +61,16 @@ if(RUNNERS)
     string(MAKE_C_IDENTIFIER ${runner} runner_id)
     # E.g. args = BOARD_RUNNER_ARGS_openocd, BOARD_RUNNER_ARGS_dfu_util, etc.
     get_target_property(runner_args ${ZEPHYR_TARGET} "BOARD_RUNNER_ARGS_${runner_id}")
-    set(ZEPHYR_RUNNER_ARGS_${runner_id} ${runner_args} CACHE STRING
+    set(${IMAGE}ZEPHYR_RUNNER_ARGS_${runner_id} ${runner_args} CACHE STRING
       "Runner-specific arguments for ${runner}" FORCE)
   endforeach()
 endif()
-if(BOARD_FLASH_RUNNER)
-  set(ZEPHYR_BOARD_FLASH_RUNNER ${BOARD_FLASH_RUNNER} CACHE STRING
+if(${IMAGE}BOARD_FLASH_RUNNER)
+  set(${IMAGE}ZEPHYR_BOARD_FLASH_RUNNER ${${IMAGE}BOARD_FLASH_RUNNER} CACHE STRING
     "Default runner for flashing binaries" FORCE)
 endif()
-if(BOARD_DEBUG_RUNNER)
-  set(ZEPHYR_BOARD_DEBUG_RUNNER ${BOARD_DEBUG_RUNNER} CACHE STRING
+if(${IMAGE}BOARD_DEBUG_RUNNER)
+  set(${IMAGE}ZEPHYR_BOARD_DEBUG_RUNNER ${${IMAGE}BOARD_DEBUG_RUNNER} CACHE STRING
     "Default runner for debugging" FORCE)
 endif()
 
@@ -95,21 +97,25 @@ endif(WEST)
 
 foreach(target flash debug debugserver attach)
   if(target STREQUAL flash)
-    set(comment "Flashing ${BOARD}")
+    set(comment "Flashing ${${IMAGE}BOARD}")
   elseif(target STREQUAL debug)
-    set(comment "Debugging ${BOARD}")
+    set(comment "Debugging ${${IMAGE}BOARD}")
   elseif(target STREQUAL debugserver)
-    set(comment "Debugging ${BOARD}")
+    set(comment "Debugging ${${IMAGE}BOARD}")
     if(EMU_PLATFORM)
       # cmake/qemu/CMakeLists.txt will add a debugserver target for
       # emulation platforms, so we don't add one here
       continue()
     endif()
   elseif(target STREQUAL attach)
-    set(comment "Debugging ${BOARD}")
+    set(comment "Debugging ${${IMAGE}BOARD}")
   endif()
 
   list(APPEND FLASH_DEPS ${logical_target_for_zephyr_elf})
+
+  if(DEFINED IMAGE)
+    set(FLASH_IMAGE_ARG --image ${IMAGE})
+  endif()
 
   # We pass --skip-rebuild here because the DEPENDS value ensures the
   # build is already up to date before west is run.
@@ -120,11 +126,12 @@ foreach(target flash debug debugserver attach)
       ${RUNNER_VERBOSE}
       ${target}
       --skip-rebuild
+      ${FLASH_IMAGE_ARG}
       DEPENDS ${FLASH_DEPS}
-      WORKING_DIRECTORY ${APPLICATION_BINARY_DIR}
+      WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
       )
 
-    add_custom_target(${target}
+    add_custom_target(${IMAGE}${target}
       COMMAND
       ${cmd}
       COMMENT
@@ -132,14 +139,14 @@ foreach(target flash debug debugserver attach)
       USES_TERMINAL
       )
   elseif(WEST)
-    add_custom_target(${target}
+    add_custom_target(${IMAGE}${target}
       COMMAND ${CMAKE_COMMAND} -E echo \"West version found in path does not support
           '${CMAKE_MAKE_PROGRAM} ${target}', ensure west is installed and not only
           the bootstrapper. run 'west init' to fetch west.\"
       USES_TERMINAL
       )
   else()
-    add_custom_target(${target}
+    add_custom_target(${IMAGE}${target}
       COMMAND ${CMAKE_COMMAND} -E echo \"West was not found in path. To support
           '${CMAKE_MAKE_PROGRAM} ${target}', please install west bootstrapper with:
           'pip install west --user', and thereafter 'west init'.\"

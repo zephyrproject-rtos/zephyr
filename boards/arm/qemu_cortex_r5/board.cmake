@@ -14,7 +14,7 @@ set_property(TARGET   ${ZEPHYR_TARGET} PROPERTY   QEMU_FLAGS_${ARCH}
   )
 
 set(QEMU_KERNEL_OPTION
-  "-device;loader,file=$<TARGET_FILE:zephyr_final>,cpu-num=4"
+  "-device;loader,file=$<TARGET_FILE:${IMAGE}zephyr_final>,cpu-num=4"
   )
 
 board_set_debugger_ifnset(qemu)

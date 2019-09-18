@@ -18,5 +18,5 @@ if (CONFIG_SLAVE_CORE_MCUX)
   generate_inc_file_for_gen_target(${ZEPHYR_CURRENT_LIBRARY}
 				   ${core_m0_image}
 				   ${gen_dir}/core-m0.inc
-				   core_m0_inc_target)
+           ${IMAGE}core_m0_inc_target)
 endif()

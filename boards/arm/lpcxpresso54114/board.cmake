@@ -4,6 +4,8 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
+message(STATUS "============================ HELLO FOR ${BOARD}")
+
 set_ifndef(LPCLINK_FW jlink)
 
 if(LPCLINK_FW STREQUAL jlink)

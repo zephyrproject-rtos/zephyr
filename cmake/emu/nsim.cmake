@@ -17,7 +17,7 @@ add_custom_target(run
   COMMAND
   ${NSIM}
   -propsfile
-  ${BOARD_DIR}/support/${NSIM_PROPS}
+  ${${IMAGE}BOARD_DIR}/support/${NSIM_PROPS}
   ${APPLICATION_BINARY_DIR}/zephyr/${KERNEL_ELF_NAME}
   DEPENDS ${logical_target_for_zephyr_elf}
   WORKING_DIRECTORY ${APPLICATION_BINARY_DIR}
@@ -28,7 +28,7 @@ add_custom_target(debugserver
   COMMAND
   ${NSIM}
   -propsfile
-  ${BOARD_DIR}/support/${NSIM_PROPS}
+  ${${IMAGE}BOARD_DIR}/support/${NSIM_PROPS}
   -gdb -port=3333
   DEPENDS ${logical_target_for_zephyr_elf}
   WORKING_DIRECTORY ${APPLICATION_BINARY_DIR}

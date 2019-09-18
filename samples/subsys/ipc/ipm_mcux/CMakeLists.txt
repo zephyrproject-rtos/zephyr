@@ -24,4 +24,4 @@ ExternalProject_Add(
 project(ipm_mcux)
 
 target_sources(app PRIVATE src/main_master.c)
-add_dependencies(core_m0_inc_target ipm_mcux_remote)
+add_dependencies(${IMAGE}core_m0_inc_target ipm_mcux_remote)

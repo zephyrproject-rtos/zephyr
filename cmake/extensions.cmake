@@ -68,7 +68,7 @@ function(zephyr_sources)
     if(IS_DIRECTORY ${arg})
       message(FATAL_ERROR "zephyr_sources() was called on a directory")
     endif()
-    target_sources(zephyr PRIVATE ${arg})
+    target_sources(${IMAGE}zephyr PRIVATE ${arg})
   endforeach()
 endfunction()
 
@@ -80,7 +80,7 @@ function(zephyr_include_directories)
     else()
       set(path ${CMAKE_CURRENT_SOURCE_DIR}/${arg})
     endif()
-    target_include_directories(zephyr_interface INTERFACE ${path})
+    target_include_directories(${IMAGE}zephyr_interface INTERFACE ${path})
   endforeach()
 endfunction()
 
@@ -92,42 +92,95 @@ function(zephyr_system_include_directories)
     else()
       set(path ${CMAKE_CURRENT_SOURCE_DIR}/${arg})
     endif()
-    target_include_directories(zephyr_interface SYSTEM INTERFACE ${path})
+    target_include_directories(${IMAGE}zephyr_interface SYSTEM INTERFACE ${path})
   endforeach()
 endfunction()
 
 # https://cmake.org/cmake/help/latest/command/target_compile_definitions.html
 function(zephyr_compile_definitions)
-  target_compile_definitions(zephyr_interface INTERFACE ${ARGV})
+  target_compile_definitions(${IMAGE}zephyr_interface INTERFACE ${ARGV})
 endfunction()
 
 # https://cmake.org/cmake/help/latest/command/target_compile_options.html
 function(zephyr_compile_options)
-  target_compile_options(zephyr_interface INTERFACE ${ARGV})
+  target_compile_options(${IMAGE}zephyr_interface INTERFACE ${ARGV})
 endfunction()
 
 # https://cmake.org/cmake/help/latest/command/target_link_libraries.html
 function(zephyr_link_libraries)
-  target_link_libraries(zephyr_interface INTERFACE ${ARGV})
+  target_link_libraries(${IMAGE}zephyr_interface INTERFACE ${ARGV})
 endfunction()
 
 # See this file section 3.1. target_cc_option
 function(zephyr_cc_option)
   foreach(arg ${ARGV})
-    target_cc_option(zephyr_interface INTERFACE ${arg})
+    target_cc_option(${IMAGE}zephyr_interface INTERFACE ${arg})
   endforeach()
 endfunction()
 
+# Add a new image which is built with a new configuration. Examples of
+# use include asymmetric multi-processing, bootloaders, and
+# secure/non-secure partitions in a TrustZone environment. For more
+# documentation see "Building and Configuring multiple images" from
+# "Application Development".
+#
+# The argument 'name' is an input parameter and denotes the image name.
+#
+# The argument 'build_image' is an output parameter and is set to '1'
+# when the image should be built.
+function(zephyr_add_image name build_image)
+  set(${build_image} 0 PARENT_SCOPE)
+  string(TOUPPER ${name} UPNAME)
+
+  # Make sure we haven't already added this image, adding the same
+  # image twice is a mistake and is not supported.
+  get_property(
+    IMAGES
+    GLOBAL PROPERTY
+    IMAGES
+    )
+  list(FIND IMAGES ${name}_ out_var) # 'out_var' is '-1' if not found
+  if(NOT (${out_var} EQUAL -1))
+    message(FATAL_ERROR "zephyr_add_image() was invoked twice with the parameter 'name='${name}''")
+  endif()
+
+  # Maintain a global list of images as property, and a mirror in the cache.
+  set_property(GLOBAL APPEND PROPERTY IMAGES ${name}_)
+  get_property(IMAGES GLOBAL PROPERTY IMAGES)
+  list(APPEND IMAGE_LIST ${name})
+  set(ZEPHYR_IMAGES ${IMAGE_LIST} CACHE STRING "List of zephyr image names" FORCE)
+
+  if (CONFIG_${UPNAME}_BUILD_STRATEGY_SKIP_BUILD)
+    message("Skipping building of ${name}")
+    set(${name}_ZEPHYR_BUILD_STRATEGY SKIP_BUILD CACHE STRING
+      "Build strategy for image ${name}" FORCE)
+  else()
+    # Build normally.
+
+    # Set the active IMAGE
+    set_property(GLOBAL PROPERTY IMAGE ${name}_)
+
+    # Signal that the image should be built by setting build_image
+    set(${build_image} 1 PARENT_SCOPE)
+
+    # Cache the build strategy.
+    set(${name}_ZEPHYR_BUILD_STRATEGY DEFAULT CACHE STRING
+      "Build strategy for image ${name}" FORCE)
+  endif()
+
+endfunction()
+
+
 function(zephyr_cc_option_fallback option1 option2)
-    target_cc_option_fallback(zephyr_interface INTERFACE ${option1} ${option2})
+    target_cc_option_fallback(${IMAGE}zephyr_interface INTERFACE ${option1} ${option2})
 endfunction()
 
 function(zephyr_ld_options)
-    target_ld_options(zephyr_interface INTERFACE ${ARGV})
+    target_ld_options(${IMAGE}zephyr_interface INTERFACE ${ARGV})
 endfunction()
 
 # Getter functions for extracting build information from
-# zephyr_interface. Returning lists, and strings is supported, as is
+# ${IMAGE}zephyr_interface. Returning lists, and strings is supported, as is
 # requesting specific categories of build information (defines,
 # includes, options).
 #
@@ -195,7 +248,7 @@ function(zephyr_get_compile_options_for_lang_as_string lang i)
 endfunction()
 
 function(zephyr_get_include_directories_for_lang lang i)
-  get_property_and_add_prefix(flags zephyr_interface INTERFACE_INCLUDE_DIRECTORIES
+  get_property_and_add_prefix(flags ${IMAGE}zephyr_interface INTERFACE_INCLUDE_DIRECTORIES
     "-I"
     ${ARGN}
     )
@@ -206,7 +259,7 @@ function(zephyr_get_include_directories_for_lang lang i)
 endfunction()
 
 function(zephyr_get_system_include_directories_for_lang lang i)
-  get_property_and_add_prefix(flags zephyr_interface INTERFACE_SYSTEM_INCLUDE_DIRECTORIES
+  get_property_and_add_prefix(flags ${IMAGE}zephyr_interface INTERFACE_SYSTEM_INCLUDE_DIRECTORIES
     "-isystem"
     ${ARGN}
     )
@@ -217,7 +270,7 @@ function(zephyr_get_system_include_directories_for_lang lang i)
 endfunction()
 
 function(zephyr_get_compile_definitions_for_lang lang i)
-  get_property_and_add_prefix(flags zephyr_interface INTERFACE_COMPILE_DEFINITIONS
+  get_property_and_add_prefix(flags ${IMAGE}zephyr_interface INTERFACE_COMPILE_DEFINITIONS
     "-D"
     ${ARGN}
     )
@@ -228,7 +281,7 @@ function(zephyr_get_compile_definitions_for_lang lang i)
 endfunction()
 
 function(zephyr_get_compile_options_for_lang lang i)
-  get_property(flags TARGET zephyr_interface PROPERTY INTERFACE_COMPILE_OPTIONS)
+  get_property(flags TARGET ${IMAGE}zephyr_interface PROPERTY INTERFACE_COMPILE_OPTIONS)
 
   process_flags(${lang} flags output_list)
 
@@ -367,17 +420,17 @@ endmacro()
 macro(zephyr_library_named name)
   # This is a macro because we need add_library() to be executed
   # within the scope of the caller.
-  set(ZEPHYR_CURRENT_LIBRARY ${name})
-  add_library(${name} STATIC "")
+  set(ZEPHYR_CURRENT_LIBRARY ${IMAGE}${name})
+  add_library(${ZEPHYR_CURRENT_LIBRARY} STATIC "")
 
-  zephyr_append_cmake_library(${name})
+  zephyr_append_cmake_library(${ZEPHYR_CURRENT_LIBRARY})
 
-  target_link_libraries(${name} PUBLIC zephyr_interface)
+  target_link_libraries(${ZEPHYR_CURRENT_LIBRARY} PUBLIC ${IMAGE}zephyr_interface)
 endmacro()
 
 
 function(zephyr_link_interface interface)
-  target_link_libraries(${interface} INTERFACE zephyr_interface)
+  target_link_libraries(${interface} INTERFACE ${IMAGE}zephyr_interface)
 endfunction()
 
 #
@@ -407,8 +460,8 @@ function(zephyr_library_compile_options item)
   # library and link with it to obtain the flags.
   #
   # Linking with a dummy interface library will place flags later on
-  # the command line than the the flags from zephyr_interface because
-  # zephyr_interface will be the first interface library that flags
+  # the command line than the the flags from ${IMAGE}zephyr_interface because
+  # ${IMAGE}zephyr_interface will be the first interface library that flags
   # are taken from.
 
   string(MD5 uniqueness ${item})
@@ -481,8 +534,8 @@ endfunction()
 # This API has a constructor like the zephyr_library API has, but it
 # does not have wrappers over the other cmake target functions.
 macro(zephyr_interface_library_named name)
-  add_library(${name} INTERFACE)
-  set_property(TARGET ${ZEPHYR_TARGET} APPEND PROPERTY ZEPHYR_INTERFACE_LIBS ${name})
+  add_library(${IMAGE}${name} INTERFACE)
+  set_property(TARGET ${ZEPHYR_TARGET} APPEND PROPERTY ZEPHYR_INTERFACE_LIBS ${IMAGE}${name})
 endmacro()
 
 # 1.3 generate_inc_*
@@ -574,10 +627,10 @@ endfunction()
 # runner.
 function(board_set_runner type runner)
   _board_check_runner_type(${type})
-  if (DEFINED BOARD_${type}_RUNNER)
-    message(STATUS "overriding ${type} runner ${BOARD_${type}_RUNNER}; it's now ${runner}")
+  if (DEFINED ${IMAGE}BOARD_${type}_RUNNER)
+    message(STATUS "overriding ${type} runner ${${IMAGE}BOARD_${type}_RUNNER}; it's now ${runner}")
   endif()
-  set(BOARD_${type}_RUNNER ${runner} PARENT_SCOPE)
+  set(${IMAGE}BOARD_${type}_RUNNER ${runner} PARENT_SCOPE)
 endfunction()
 
 # This macro is like board_set_runner(), but will only make a change
@@ -589,7 +642,7 @@ macro(board_set_runner_ifnset type runner)
   # This is a macro because set_ifndef() works at parent scope.
   # If this were a function, that would be this function's scope,
   # which wouldn't work.
-  set_ifndef(BOARD_${type}_RUNNER ${runner})
+  set_ifndef(${IMAGE}BOARD_${type}_RUNNER ${runner})
 endmacro()
 
 # A convenience macro for board_set_runner(FLASH ${runner}).
@@ -905,7 +958,7 @@ endfunction()
 # Helper function for CONFIG_CODE_DATA_RELOCATION
 # Call this function with 2 arguments file and then memory location
 function(zephyr_code_relocate file location)
-  set_property(TARGET code_data_relocation_target
+  set_property(TARGET ${IMAGE}code_data_relocation_target
     APPEND PROPERTY COMPILE_DEFINITIONS
     "${location}:${CMAKE_CURRENT_SOURCE_DIR}/${file}")
 endfunction()
@@ -1173,7 +1226,7 @@ endfunction()
 
 function(zephyr_link_interface_ifdef feature_toggle interface)
   if(${${feature_toggle}})
-    target_link_libraries(${interface} INTERFACE zephyr_interface)
+    target_link_libraries(${interface} INTERFACE ${IMAGE}zephyr_interface)
   endif()
 endfunction()
 

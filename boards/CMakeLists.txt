@@ -3,12 +3,12 @@
 # To avoid a lot of empty CMakeLists.txt files we assume it is not an
 # error if it is missing
 
-if(EXISTS ${BOARD_DIR}/CMakeLists.txt)
+if(EXISTS ${${IMAGE}BOARD_DIR}/CMakeLists.txt)
   if(USING_OUT_OF_TREE_BOARD)
-	set(build_dir boards/${ARCH}/${BOARD})
+	set(build_dir boards/${ARCH}/${${IMAGE}BOARD})
   else()
 	unset(build_dir)
   endif()
 
-  add_subdirectory(${BOARD_DIR} ${build_dir})
+  add_subdirectory(${${IMAGE}BOARD_DIR} ${build_dir})
 endif()

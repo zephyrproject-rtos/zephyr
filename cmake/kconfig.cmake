@@ -5,21 +5,22 @@
 file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/kconfig/include/generated)
 file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/kconfig/include/config)
 
-if(KCONFIG_ROOT)
+if(${IMAGE}KCONFIG_ROOT)
   # KCONFIG_ROOT has either been specified as a CMake variable or is
   # already in the CMakeCache.txt. This has precedence.
+  set(KCONFIG_ROOT ${${IMAGE}KCONFIG_ROOT})
 elseif(EXISTS   ${APPLICATION_SOURCE_DIR}/Kconfig)
   set(KCONFIG_ROOT ${APPLICATION_SOURCE_DIR}/Kconfig)
 else()
   set(KCONFIG_ROOT ${ZEPHYR_BASE}/Kconfig)
 endif()
 
-set(BOARD_DEFCONFIG ${BOARD_DIR}/${BOARD}_defconfig)
+set(BOARD_DEFCONFIG ${${IMAGE}BOARD_DIR}/${${IMAGE}BOARD}_defconfig)
 set(DOTCONFIG                  ${PROJECT_BINARY_DIR}/.config)
 set(PARSED_KCONFIG_SOURCES_TXT ${PROJECT_BINARY_DIR}/kconfig/sources.txt)
 
-if(CONF_FILE)
-string(REPLACE " " ";" CONF_FILE_AS_LIST "${CONF_FILE}")
+if(${IMAGE}CONF_FILE)
+string(REPLACE " " ";" ${IMAGE}CONF_FILE_AS_LIST "${${IMAGE}CONF_FILE}")
 endif()
 
 if(OVERLAY_CONFIG)
@@ -40,7 +41,7 @@ set(ENV{PYTHON_EXECUTABLE} ${PYTHON_EXECUTABLE})
 # Set environment variables so that Kconfig can prune Kconfig source
 # files for other architectures
 set(ENV{ARCH}      ${ARCH})
-set(ENV{BOARD_DIR} ${BOARD_DIR})
+set(ENV{BOARD_DIR} ${${IMAGE}BOARD_DIR})
 set(ENV{SOC_DIR}   ${SOC_DIR})
 set(ENV{CMAKE_BINARY_DIR} ${CMAKE_BINARY_DIR})
 set(ENV{ARCH_DIR}   ${ARCH_DIR})
@@ -71,7 +72,7 @@ foreach(kconfig_target
     ${EXTRA_KCONFIG_TARGETS}
     )
   add_custom_target(
-    ${kconfig_target}
+    ${IMAGE}${kconfig_target}
     ${CMAKE_COMMAND} -E env
     PYTHON_EXECUTABLE=${PYTHON_EXECUTABLE}
     srctree=${ZEPHYR_BASE}
@@ -126,7 +127,7 @@ list(SORT config_files)
 set(
   merge_config_files
   ${BOARD_DEFCONFIG}
-  ${CONF_FILE_AS_LIST}
+  ${${IMAGE}CONF_FILE_AS_LIST}
   ${shield_conf_files}
   ${OVERLAY_CONFIG_AS_LIST}
   ${EXTRA_KCONFIG_OPTIONS_FILE}
@@ -203,7 +204,7 @@ execute_process(
   ${merge_fragments}
   WORKING_DIRECTORY ${APPLICATION_SOURCE_DIR}
   # The working directory is set to the app dir such that the user
-  # can use relative paths in CONF_FILE, e.g. CONF_FILE=nrf5.conf
+  # can use relative paths in ${IMAGE}CONF_FILE, e.g. CONF_FILE=nrf5.conf
   RESULT_VARIABLE ret
   )
 if(NOT "${ret}" STREQUAL "0")
@@ -222,7 +223,7 @@ foreach(kconfig_input
   set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${kconfig_input})
 endforeach()
 
-add_custom_target(config-sanitycheck DEPENDS ${DOTCONFIG})
+add_custom_target(${IMAGE}config-sanitycheck DEPENDS ${DOTCONFIG})
 
 # Remove the CLI Kconfig symbols from the namespace and
 # CMakeCache.txt. If the symbols end up in DOTCONFIG they will be

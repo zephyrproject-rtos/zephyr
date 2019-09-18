@@ -25,6 +25,6 @@ ExternalProject_Add(
   BUILD_BYPRODUCTS "${CMAKE_CURRENT_BINARY_DIR}/openamp_remote-prefix/src/openamp_remote-build/zephyr/zephyr.bin"
   # NB: Do we need to pass on more CMake variables?
 )
-add_dependencies(core_m0_inc_target openamp_remote)
+add_dependencies(${IMAGE}core_m0_inc_target openamp_remote)
 
 target_include_directories(app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})

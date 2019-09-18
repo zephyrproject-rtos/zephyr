@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
+add_library(${IMAGE}subsys__bluetooth INTERFACE)
 
-add_library(subsys__bluetooth INTERFACE)
 
-target_include_directories(subsys__bluetooth INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(${IMAGE}subsys__bluetooth INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 
 add_subdirectory(common)
 add_subdirectory_ifdef(CONFIG_BT_HCI host)

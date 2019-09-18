@@ -60,6 +60,10 @@ if(${ARCH} STREQUAL "posix")
   endif()
 endif()
 
+# Clear variables that should only be set by the toolchain and/or compiler
+unset(LIB_INCLUDE_DIR)
+unset(TOOLCHAIN_LIBS)
+
 # Configure the toolchain based on what SDK/toolchain is in use.
 include(${TOOLCHAIN_ROOT}/cmake/toolchain/${ZEPHYR_TOOLCHAIN_VARIANT}/generic.cmake)
 

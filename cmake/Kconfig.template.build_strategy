@@ -1,0 +1,19 @@
+#
+# Copyright (c) 2019 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+choice
+	prompt "build strategy"
+	default $(image)_BUILD_STRATEGY_FROM_SOURCE
+
+config $(image)_BUILD_STRATEGY_SKIP_BUILD
+	# Mandatory option when being built through 'zephyr_add_image'
+	bool "Skip building"
+
+config $(image)_BUILD_STRATEGY_FROM_SOURCE
+	# Mandatory option when being built through 'zephyr_add_image'
+	bool "Build from source"
+
+endchoice
