@@ -617,24 +617,36 @@ ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn,
 			       const struct bt_gatt_attr *attr, const void *buf,
 			       u16_t len, u16_t offset, u8_t flags);
 
-/** @def BT_GATT_CCC_MANAGED
- *  @brief Managed Client Characteristic Configuration Declaration Macro.
+
+/** @def BT_GATT_CCC_INITIALIZER
+ *  @brief Initialize Client Characteristic Configuration Declaration Macro.
  *
- *  Helper macro to declare a Managed CCC attribute.
+ *  Helper macro to initialize a Managed CCC attribute value.
  *
  *  @param _changed Configuration changed callback.
  *  @param _write Configuration write callback.
  *  @param _match Configuration match callback.
  */
-#define BT_GATT_CCC_MANAGED(_changed, _write, _match)			\
-	BT_GATT_ATTRIBUTE(BT_UUID_GATT_CCC,				\
-			BT_GATT_PERM_READ | BT_GATT_PERM_WRITE,		\
-			bt_gatt_attr_read_ccc, bt_gatt_attr_write_ccc,	\
-			(&(struct _bt_gatt_ccc) {			\
-				.cfg = {},				\
-				.cfg_changed = _changed,		\
-				.cfg_write = _write,			\
-				.cfg_match = _match }))
+#define BT_GATT_CCC_INITIALIZER(_changed, _write, _match) \
+	{                                            \
+		.cfg = {},                           \
+		.cfg_changed = _changed,             \
+		.cfg_write = _write,                 \
+		.cfg_match = _match,                 \
+	}
+
+/** @def BT_GATT_CCC_MANAGED
+ *  @brief Managed Client Characteristic Configuration Declaration Macro.
+ *
+ *  Helper macro to declare a Managed CCC attribute.
+ *
+ *  @param _ccc CCC attribute user data, shall point to a _bt_gatt_ccc.
+ */
+#define BT_GATT_CCC_MANAGED(_ccc)                                       \
+	BT_GATT_ATTRIBUTE(BT_UUID_GATT_CCC,                             \
+			BT_GATT_PERM_READ | BT_GATT_PERM_WRITE,         \
+			bt_gatt_attr_read_ccc, bt_gatt_attr_write_ccc,  \
+			_ccc)
 
 /** @def BT_GATT_CCC
  *  @brief Client Characteristic Configuration Declaration Macro.
@@ -643,8 +655,9 @@ ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn,
  *
  *  @param _cfg_changed Configuration changed callback.
  */
-#define BT_GATT_CCC(_cfg_changed)					\
-	BT_GATT_CCC_MANAGED(_cfg_changed, NULL, NULL)
+#define BT_GATT_CCC(_cfg_changed)                                      \
+	BT_GATT_CCC_MANAGED((&(struct _bt_gatt_ccc)                    \
+		BT_GATT_CCC_INITIALIZER(_cfg_changed, NULL, NULL)))
 
 /** @brief Read Characteristic Extended Properties Attribute helper
  *
