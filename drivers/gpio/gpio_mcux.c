@@ -21,7 +21,8 @@ struct gpio_mcux_config {
 };
 
 struct gpio_mcux_data {
-	struct gpio_driver_data general;
+	/* gpio_driver_data needs to be first */
+	struct gpio_driver_data common;
 	/* port ISR callback routine address */
 	sys_slist_t callbacks;
 	/* pin callback routine enable flags, by pin number */
@@ -29,40 +30,33 @@ struct gpio_mcux_data {
 };
 
 static u32_t get_port_pcr_irqc_value_from_flags(struct device *dev,
-		u32_t pin, unsigned int flags)
+		u32_t pin, enum gpio_int_mode mode,
+		enum gpio_int_trig trig)
 {
-	struct gpio_mcux_data *data = dev->driver_data;
 	port_interrupt_t port_interrupt = 0;
-	bool rising_edge;
-	bool falling_edge;
 
-	if ((flags & GPIO_INT_LEVELS_LOGICAL) &&
-	    (data->general.invert & BIT(pin))) {
-		rising_edge = flags & GPIO_INT_LOW_0;
-		falling_edge = flags & GPIO_INT_HIGH_1;
+	if (mode == GPIO_INT_MODE_DISABLED) {
+		port_interrupt = kPORT_InterruptOrDMADisabled;
 	} else {
-		rising_edge = flags & GPIO_INT_HIGH_1;
-		falling_edge = flags & GPIO_INT_LOW_0;
-	}
-
-	if (flags & GPIO_INT_ENABLE) {
-		if (flags & GPIO_INT_EDGE) {
-			if (rising_edge && falling_edge) {
-				port_interrupt = kPORT_InterruptEitherEdge;
-			} else if (rising_edge) {
-				port_interrupt = kPORT_InterruptRisingEdge;
-			} else {
-				port_interrupt = kPORT_InterruptFallingEdge;
-			}
-		} else { /* GPIO_INT_LEVEL */
-			if (rising_edge) {
-				port_interrupt = kPORT_InterruptLogicOne;
-			} else {
+		if (mode == GPIO_INT_MODE_LEVEL) {
+			if (trig == GPIO_INT_TRIG_LOW) {
 				port_interrupt = kPORT_InterruptLogicZero;
+			} else {
+				port_interrupt = kPORT_InterruptLogicOne;
+			}
+		} else {
+			switch (trig) {
+			case GPIO_INT_TRIG_LOW:
+				port_interrupt = kPORT_InterruptFallingEdge;
+				break;
+			case GPIO_INT_TRIG_HIGH:
+				port_interrupt = kPORT_InterruptRisingEdge;
+				break;
+			case GPIO_INT_TRIG_BOTH:
+				port_interrupt = kPORT_InterruptEitherEdge;
+				break;
 			}
 		}
-	} else {
-		port_interrupt = kPORT_InterruptOrDMADisabled;
 	}
 
 	return PORT_PCR_IRQC(port_interrupt);
@@ -101,12 +95,6 @@ static int gpio_mcux_configure(struct device *dev,
 	if ((flags & GPIO_INT_ENABLE) &&
 	    ((config->flags & GPIO_INT_ENABLE) == 0U)) {
 		return -ENOTSUP;
-	}
-
-	if ((flags & GPIO_ACTIVE_LOW) != 0) {
-		data->general.invert |= BIT(pin);
-	} else {
-		data->general.invert &= ~BIT(pin);
 	}
 
 	/* The flags contain options that require touching registers in the
@@ -155,7 +143,6 @@ static int gpio_mcux_configure(struct device *dev,
 	 * but don't write it to the PCR register yet.
 	 */
 	mask |= PORT_PCR_IRQC_MASK;
-	pcr |= get_port_pcr_irqc_value_from_flags(dev, pin, flags);
 
 	/* Now we can write the PORT PCR register(s). If accessing by pin, we
 	 * only need to write one PCR register. Otherwise, write all the PCR
@@ -276,7 +263,8 @@ static int gpio_mcux_port_toggle_bits(struct device *dev, u32_t mask)
 }
 
 static int gpio_mcux_pin_interrupt_configure(struct device *dev,
-		unsigned int pin, unsigned int flags)
+		unsigned int pin, enum gpio_int_mode mode,
+		enum gpio_int_trig trig)
 {
 	const struct gpio_mcux_config *config = dev->config->config_info;
 	PORT_Type *port_base = config->port_base;
@@ -288,16 +276,16 @@ static int gpio_mcux_pin_interrupt_configure(struct device *dev,
 	}
 
 	/* Check if GPIO port supports interrupts */
-	if ((flags & GPIO_INT_ENABLE) &&
+	if ((mode != GPIO_INT_MODE_DISABLED) &&
 	    ((config->flags & GPIO_INT_ENABLE) == 0U)) {
 		return -ENOTSUP;
 	}
 
-	u32_t pcr = get_port_pcr_irqc_value_from_flags(dev, pin, flags);
+	u32_t pcr = get_port_pcr_irqc_value_from_flags(dev, pin, mode, trig);
 
 	port_base->PCR[pin] = (port_base->PCR[pin] & ~PORT_PCR_IRQC_MASK) | pcr;
 
-	WRITE_BIT(data->pin_callback_enables, pin, flags & GPIO_INT_ENABLE);
+	WRITE_BIT(data->pin_callback_enables, pin, mode != GPIO_INT_DISABLE);
 
 	return 0;
 }
