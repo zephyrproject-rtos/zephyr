@@ -6,6 +6,8 @@
 #ifndef ZEPHYR_ARCH_X86_INCLUDE_INTEL64_KERNEL_ARCH_THREAD_H_
 #define ZEPHYR_ARCH_X86_INCLUDE_INTEL64_KERNEL_ARCH_THREAD_H_
 
+#define X86_THREAD_FLAG_ALL 0x01 /* _thread_arch.flags: entire state saved */
+
 #ifndef _ASMLANGUAGE
 
 #include <zephyr/types.h>
@@ -14,7 +16,7 @@
 /*
  * The _callee_saved registers are unconditionally saved/restored across
  * context switches; the _thread_arch registers are only preserved when
- * the thread is interrupted. _THREAD_SWAPPED tells __resume when it can
+ * the thread is interrupted. _arch_thread.flags tells __resume when to
  * cheat and only restore the first set. For more details see locore.S.
  */
 
@@ -34,6 +36,8 @@ struct _callee_saved {
 typedef struct _callee_saved _callee_saved_t;
 
 struct _thread_arch {
+	u8_t flags;
+
 	u64_t rcx;
 	u64_t rdx;
 	u64_t rsi;

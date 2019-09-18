@@ -175,7 +175,7 @@ __swap:
 	movq $_kernel, %rsi
 	movq _kernel_offset_to_current(%rsi), %rsi
 
-	orb $_THREAD_SWAPPED, _thread_offset_to_thread_state(%rsi)
+	andb $~X86_THREAD_FLAG_ALL, _thread_offset_to_flags(%rsi)
 
 	movl _k_neg_eagain, %eax
 	movl %eax, _thread_offset_to_rax(%rsi)
@@ -219,8 +219,8 @@ __resume:
 	movq _thread_offset_to_r15(%rsi), %r15
 	movq _thread_offset_to_rax(%rsi), %rax
 
-	testb $_THREAD_SWAPPED, _thread_offset_to_thread_state(%rsi)
-	jnz 1f
+	testb $X86_THREAD_FLAG_ALL, _thread_offset_to_flags(%rsi)
+	jz 1f
 
 	fxrstor _thread_offset_to_sse(%rsi)
 	movq _thread_offset_to_rcx(%rsi), %rcx
@@ -466,7 +466,7 @@ irq_enter_nested: /* Nested IRQ: dump register state to stack. */
 
 irq_enter_unnested: /* Not nested: dump state to thread struct for __resume */
 	movq _kernel_offset_to_current(%rsi), %rsi
-	andb $(~_THREAD_SWAPPED), _thread_offset_to_thread_state(%rsi)
+	orb $X86_THREAD_FLAG_ALL, _thread_offset_to_flags(%rsi)
 	fxsave _thread_offset_to_sse(%rsi)
 	movq %rbx, _thread_offset_to_rbx(%rsi)
 	movq %rbp, _thread_offset_to_rbp(%rsi)

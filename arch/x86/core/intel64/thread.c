@@ -30,4 +30,6 @@ void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	thread->arch.rcx = (long) parameter3;
 
 	x86_sse_init(thread);
+
+	thread->arch.flags = X86_THREAD_FLAG_ALL;
 }

@@ -15,14 +15,6 @@
 #define X86_MXCSR_SANE		0x1dc0	/* enable division-by-zero exception */
 
 /*
- * A flag for k_thread.thread_state to tell __resume that the thread
- * voluntarily switched itself out, so only a portion of the register
- * state needs to be restored. See kernel_arch_thread.h and locore.S.
- */
-
-#define _THREAD_SWAPPED BIT(7)
-
-/*
  * GDT selectors - these must agree with the GDT layout in locore.S.
  */
 
