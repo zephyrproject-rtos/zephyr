@@ -28,7 +28,7 @@ struct iis3dhhc_config {
 #endif
 #ifdef DT_ST_IIS3DHHC_BUS_SPI
 	struct spi_config spi_conf;
-#if defined(DT_INST_0_ST_IIS3DHHC_CS_GPIO_CONTROLLER)
+#if defined(DT_INST_0_ST_IIS3DHHC_CS_GPIOS_CONTROLLER)
 	const char *gpio_cs_port;
 	u8_t cs_gpio;
 #endif
@@ -62,7 +62,7 @@ struct iis3dhhc_data {
 #endif
 
 #endif /* CONFIG_IIS3DHHC_TRIGGER */
-#if defined(DT_INST_0_ST_IIS3DHHC_CS_GPIO_CONTROLLER)
+#if defined(DT_INST_0_ST_IIS3DHHC_CS_GPIOS_CONTROLLER)
 	struct spi_cs_control cs_ctrl;
 #endif
 };

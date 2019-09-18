@@ -239,7 +239,7 @@ static const struct iis3dhhc_config iis3dhhc_config = {
 			       SPI_MODE_CPHA | SPI_WORD_SET(8) |
 			       SPI_LINES_SINGLE),
 	.spi_conf.slave     = DT_INST_0_ST_IIS3DHHC_BASE_ADDRESS,
-#if defined(DT_INST_0_ST_IIS3DHHC_CS_GPIO_CONTROLLER)
+#if defined(DT_INST_0_ST_IIS3DHHC_CS_GPIOS_CONTROLLER)
 	.gpio_cs_port	    = DT_INST_0_ST_IIS3DHHC_CS_GPIOS_CONTROLLER,
 	.cs_gpio	    = DT_INST_0_ST_IIS3DHHC_CS_GPIOS_PIN,
 
