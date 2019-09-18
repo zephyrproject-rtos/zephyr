@@ -804,7 +804,8 @@ ssize_t nvs_write(struct nvs_fs *fs, u16_t id, const void *data, size_t len)
 				 */
 				return 0;
 			}
-		} else {
+		} else if (len == wlk_ate.len) {
+			/* do not try to compare if lengths are not equal */
 			/* compare the data and if equal return 0 */
 			rc = nvs_flash_block_cmp(fs, rd_addr, data, len);
 			if (rc <= 0) {
