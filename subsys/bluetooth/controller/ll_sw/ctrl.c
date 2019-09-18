@@ -12712,7 +12712,7 @@ void ll_rx_mem_release(void **node_rx)
 					break;
 				}
 			}
-			/* passthrough */
+			/* fall through */
 		case NODE_RX_TYPE_DC_PDU:
 #endif /* CONFIG_BT_CONN */
 
@@ -12761,6 +12761,13 @@ void ll_rx_mem_release(void **node_rx)
 		case NODE_RX_TYPE_MESH_REPORT:
 #endif /* CONFIG_BT_HCI_MESH_EXT */
 
+		/* fall through */
+
+		/* Ensure that at least one 'case' statement is present for this
+		 * code block.
+		 */
+		case NODE_RX_TYPE_NONE:
+			LL_ASSERT(_node_rx_free->hdr.type != NODE_RX_TYPE_NONE);
 			mem_release(_node_rx_free,
 				    &_radio.pkt_rx_data_free);
 			break;
