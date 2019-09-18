@@ -21,6 +21,7 @@ struct gpio_mcux_config {
 };
 
 struct gpio_mcux_data {
+	/* gpio_driver_data needs to be first */
 	struct gpio_driver_data general;
 	/* port ISR callback routine address */
 	sys_slist_t callbacks;
@@ -29,40 +30,29 @@ struct gpio_mcux_data {
 };
 
 static u32_t get_port_pcr_irqc_value_from_flags(struct device *dev,
-		u32_t pin, unsigned int flags)
+		u32_t pin, enum gpio_int_trigger_mode flags)
 {
-	struct gpio_mcux_data *data = dev->driver_data;
 	port_interrupt_t port_interrupt = 0;
-	bool rising_edge;
-	bool falling_edge;
 
-	if ((flags & GPIO_INT_LEVELS_LOGICAL) &&
-	    (data->general.invert & BIT(pin))) {
-		rising_edge = flags & GPIO_INT_LOW_0;
-		falling_edge = flags & GPIO_INT_HIGH_1;
-	} else {
-		rising_edge = flags & GPIO_INT_HIGH_1;
-		falling_edge = flags & GPIO_INT_LOW_0;
-	}
-
-	if (flags & GPIO_INT_ENABLE) {
-		if (flags & GPIO_INT_EDGE) {
-			if (rising_edge && falling_edge) {
-				port_interrupt = kPORT_InterruptEitherEdge;
-			} else if (rising_edge) {
-				port_interrupt = kPORT_InterruptRisingEdge;
-			} else {
-				port_interrupt = kPORT_InterruptFallingEdge;
-			}
-		} else { /* GPIO_INT_LEVEL */
-			if (rising_edge) {
-				port_interrupt = kPORT_InterruptLogicOne;
-			} else {
-				port_interrupt = kPORT_InterruptLogicZero;
-			}
-		}
-	} else {
+	switch(flags) {
+	case GPIO_INT_MODE_DISABLED:
 		port_interrupt = kPORT_InterruptOrDMADisabled;
+		break;
+	case GPIO_INT_MODE_LEVEL_LOW:
+		port_interrupt = kPORT_InterruptLogicZero;
+		break;
+	case GPIO_INT_MODE_LEVEL_HIGH:
+		port_interrupt = kPORT_InterruptLogicOne;
+		break;
+	case GPIO_INT_MODE_EDGE_FALLING:
+		port_interrupt = kPORT_InterruptFallingEdge;
+		break;
+	case GPIO_INT_MODE_EDGE_RISING:
+		port_interrupt = kPORT_InterruptRisingEdge;
+		break;
+	case GPIO_INT_MODE_EDGE_BOTH:
+		port_interrupt = kPORT_InterruptEitherEdge;
+		break;
 	}
 
 	return PORT_PCR_IRQC(port_interrupt);
@@ -276,7 +266,7 @@ static int gpio_mcux_port_toggle_bits(struct device *dev, u32_t mask)
 }
 
 static int gpio_mcux_pin_interrupt_configure(struct device *dev,
-		unsigned int pin, unsigned int flags)
+		unsigned int pin, enum gpio_int_trigger_mode flags)
 {
 	const struct gpio_mcux_config *config = dev->config->config_info;
 	PORT_Type *port_base = config->port_base;
@@ -288,7 +278,7 @@ static int gpio_mcux_pin_interrupt_configure(struct device *dev,
 	}
 
 	/* Check if GPIO port supports interrupts */
-	if ((flags & GPIO_INT_ENABLE) &&
+	if ((flags != GPIO_INT_MODE_DISABLED) &&
 	    ((config->flags & GPIO_INT_ENABLE) == 0U)) {
 		return -ENOTSUP;
 	}
