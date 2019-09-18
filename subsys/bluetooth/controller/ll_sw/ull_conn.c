@@ -264,7 +264,6 @@ u8_t ll_conn_update(u16_t handle, u8_t cmd, u8_t status, u16_t interval_min,
 		    u16_t interval_max, u16_t latency, u16_t timeout)
 {
 	struct ll_conn *conn;
-	u8_t ret;
 
 	conn = ll_connected_get(handle);
 	if (!conn) {
@@ -289,23 +288,19 @@ u8_t ll_conn_update(u16_t handle, u8_t cmd, u8_t status, u16_t interval_min,
 	}
 
 	if (!cmd) {
-
-		ret = ull_conn_llcp_req(conn);
-		if (ret) {
-			return ret;
+		if (conn->llcp_cu.req != conn->llcp_cu.ack) {
+			return BT_HCI_ERR_CMD_DISALLOWED;
 		}
 
-		conn->llcp.conn_upd.win_size = 1U;
-		conn->llcp.conn_upd.win_offset_us = 0U;
-		conn->llcp.conn_upd.interval = interval_max;
-		conn->llcp.conn_upd.latency = latency;
-		conn->llcp.conn_upd.timeout = timeout;
-		/* conn->llcp.conn_upd.instant     = 0; */
-		conn->llcp.conn_upd.state = LLCP_CUI_STATE_USE;
-		conn->llcp.conn_upd.is_internal = 0U;
+		conn->llcp_cu.win_size = 1U;
+		conn->llcp_cu.win_offset_us = 0U;
+		conn->llcp_cu.interval = interval_max;
+		conn->llcp_cu.latency = latency;
+		conn->llcp_cu.timeout = timeout;
+		conn->llcp_cu.state = LLCP_CUI_STATE_USE;
+		conn->llcp_cu.cmd = 1U;
 
-		conn->llcp_type = LLCP_CONN_UPD;
-		conn->llcp_req++;
+		conn->llcp_cu.req++;
 	} else {
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 		cmd--;
@@ -788,6 +783,12 @@ int ull_conn_llcp(struct ll_conn *conn, u32_t ticks_at_expire, u16_t lazy)
 		/* TODO: Optimize the checks below, maybe have common flag */
 
 		if (0) {
+
+		/* check if connection update procedure is requested */
+		} else if (conn->llcp_cu.ack != conn->llcp_cu.req) {
+			/* switch to LLCP_CONN_UPD state machine */
+			conn->llcp_type = LLCP_CONN_UPD;
+			conn->llcp_ack -= 2U;
 
 		/* check if feature exchange procedure is requested */
 		} else if (conn->llcp_feature.ack != conn->llcp_feature.req) {
@@ -2034,7 +2035,7 @@ static inline void event_conn_upd_init(struct ll_conn *conn,
 				       void (*fp_mfy_select_or_use)(void *))
 {
 	/* move to in progress */
-	conn->llcp.conn_upd.state = LLCP_CUI_STATE_INPROG;
+	conn->llcp_cu.state = LLCP_CUI_STATE_INPROG;
 
 	/* set instant */
 	conn->llcp.conn_upd.instant = event_counter + conn->lll.latency + 6;
@@ -2042,18 +2043,17 @@ static inline void event_conn_upd_init(struct ll_conn *conn,
 	/* place the conn update req packet as next in tx queue */
 	pdu_ctrl_tx->ll_id = PDU_DATA_LLID_CTRL;
 	pdu_ctrl_tx->len = offsetof(struct pdu_data_llctrl, conn_update_ind) +
-		sizeof(struct pdu_data_llctrl_conn_update_ind);
+			   sizeof(struct pdu_data_llctrl_conn_update_ind);
 	pdu_ctrl_tx->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_CONN_UPDATE_IND;
-	pdu_ctrl_tx->llctrl.conn_update_ind.win_size =
-		conn->llcp.conn_upd.win_size;
+	pdu_ctrl_tx->llctrl.conn_update_ind.win_size = conn->llcp_cu.win_size;
 	pdu_ctrl_tx->llctrl.conn_update_ind.win_offset =
-		sys_cpu_to_le16(conn->llcp.conn_upd.win_offset_us / 1250U);
+		sys_cpu_to_le16(conn->llcp_cu.win_offset_us / 1250U);
 	pdu_ctrl_tx->llctrl.conn_update_ind.interval =
-		sys_cpu_to_le16(conn->llcp.conn_upd.interval);
+		sys_cpu_to_le16(conn->llcp_cu.interval);
 	pdu_ctrl_tx->llctrl.conn_update_ind.latency =
-		sys_cpu_to_le16(conn->llcp.conn_upd.latency);
+		sys_cpu_to_le16(conn->llcp_cu.latency);
 	pdu_ctrl_tx->llctrl.conn_update_ind.timeout =
-		sys_cpu_to_le16(conn->llcp.conn_upd.timeout);
+		sys_cpu_to_le16(conn->llcp_cu.timeout);
 	pdu_ctrl_tx->llctrl.conn_update_ind.instant =
 		sys_cpu_to_le16(conn->llcp.conn_upd.instant);
 
@@ -2117,7 +2117,7 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, u16_t lazy,
 
 	instant_latency = (event_counter - conn->llcp.conn_upd.instant) &
 			  0xffff;
-	if (conn->llcp.conn_upd.state != LLCP_CUI_STATE_INPROG) {
+	if (conn->llcp_cu.state != LLCP_CUI_STATE_INPROG) {
 #if defined(CONFIG_BT_CTLR_SCHED_ADVANCED)
 		static memq_link_t s_link;
 		static struct mayfly s_mfy_sched_offset = {0, 0,
@@ -2146,7 +2146,7 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, u16_t lazy,
 		pdu_ctrl_tx = (void *)tx->pdu;
 
 #if defined(CONFIG_BT_CTLR_SCHED_ADVANCED)
-		switch (conn->llcp.conn_upd.state) {
+		switch (conn->llcp_cu.state) {
 		case LLCP_CUI_STATE_USE:
 			fp_mfy_select_or_use = ull_sched_mfy_win_offset_use;
 			break;
@@ -2185,6 +2185,7 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, u16_t lazy,
 		u16_t latency;
 
 		/* procedure request acked */
+		conn->llcp_cu.ack = conn->llcp_cu.req;
 		conn->llcp_ack = conn->llcp_req;
 
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
@@ -2210,9 +2211,9 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, u16_t lazy,
 		conn->llcp_rx = rx->hdr.link->mem;
 
 		/* Prepare the rx packet structure */
-		if ((conn->llcp.conn_upd.interval != lll->interval) ||
-		    (conn->llcp.conn_upd.latency != lll->latency) ||
-		    (RADIO_CONN_EVENTS(conn->llcp.conn_upd.timeout * 10000U,
+		if ((conn->llcp_cu.interval != lll->interval) ||
+		    (conn->llcp_cu.latency != lll->latency) ||
+		    (RADIO_CONN_EVENTS(conn->llcp_cu.timeout * 10000U,
 				       lll->interval * 1250) !=
 		     conn->supervision_reload)) {
 			struct node_rx_cu *cu;
@@ -2223,9 +2224,9 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, u16_t lazy,
 			/* prepare connection update complete structure */
 			cu = (void *)rx->pdu;
 			cu->status = 0x00;
-			cu->interval = conn->llcp.conn_upd.interval;
-			cu->latency = conn->llcp.conn_upd.latency;
-			cu->timeout = conn->llcp.conn_upd.timeout;
+			cu->interval = conn->llcp_cu.interval;
+			cu->latency = conn->llcp_cu.latency;
+			cu->timeout = conn->llcp_cu.timeout;
 		} else {
 			/* Mark for buffer for release */
 			rx->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
@@ -2250,10 +2251,8 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, u16_t lazy,
 
 		/* compensate for instant_latency due to laziness */
 		conn_interval_old = instant_latency * lll->interval;
-		latency = conn_interval_old /
-			conn->llcp.conn_upd.interval;
-		conn_interval_new = latency *
-			conn->llcp.conn_upd.interval;
+		latency = conn_interval_old / conn->llcp_cu.interval;
+		conn_interval_new = latency * conn->llcp_cu.interval;
 		if (conn_interval_new > conn_interval_old) {
 			ticks_at_expire += HAL_TICKER_US_TO_TICKS(
 				(conn_interval_new - conn_interval_old) * 1250U);
@@ -2275,7 +2274,7 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, u16_t lazy,
 		}
 
 		/* calculate the window widening and interval */
-		conn_interval_us = conn->llcp.conn_upd.interval * 1250U;
+		conn_interval_us = conn->llcp_cu.interval * 1250U;
 		periodic_us = conn_interval_us;
 
 		if (0) {
@@ -2292,7 +2291,7 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, u16_t lazy,
 			lll->slave.window_widening_max_us =
 				(conn_interval_us >> 1) - EVENT_IFS_US;
 			lll->slave.window_size_prepare_us =
-				conn->llcp.conn_upd.win_size * 1250U;
+				conn->llcp_cu.win_size * 1250U;
 			conn->slave.ticks_to_offset = 0U;
 
 			lll->slave.window_widening_prepare_us +=
@@ -2308,15 +2307,14 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, u16_t lazy,
 				lll->slave.window_widening_periodic_us *
 				latency);
 			ticks_win_offset = HAL_TICKER_US_TO_TICKS(
-				(conn->llcp.conn_upd.win_offset_us / 1250U) *
-				1250U);
+				(conn->llcp_cu.win_offset_us / 1250U) * 1250U);
 			periodic_us -= lll->slave.window_widening_periodic_us;
 #endif /* CONFIG_BT_PERIPHERAL */
 
 #if defined(CONFIG_BT_CENTRAL)
 		} else if (!lll->role) {
 			ticks_win_offset = HAL_TICKER_US_TO_TICKS(
-				conn->llcp.conn_upd.win_offset_us);
+				conn->llcp_cu.win_offset_us);
 
 			/* Workaround: Due to the missing remainder param in
 			 * ticker_start function for first interval; add a
@@ -2329,11 +2327,12 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, u16_t lazy,
 			LL_ASSERT(0);
 		}
 
-		lll->interval = conn->llcp.conn_upd.interval;
-		lll->latency = conn->llcp.conn_upd.latency;
+		lll->interval = conn->llcp_cu.interval;
+		lll->latency = conn->llcp_cu.latency;
+
 		conn->supervision_reload =
-			RADIO_CONN_EVENTS((conn->llcp.conn_upd.timeout
-					   * 10U * 1000U), conn_interval_us);
+			RADIO_CONN_EVENTS((conn->llcp_cu.timeout * 10U * 1000U),
+					  conn_interval_us);
 		conn->procedure_reload =
 			RADIO_CONN_EVENTS((40 * 1000 * 1000), conn_interval_us);
 
@@ -2350,7 +2349,7 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, u16_t lazy,
 				     conn->apto_reload;
 #endif /* CONFIG_BT_CTLR_LE_PING */
 
-		if (!conn->llcp.conn_upd.is_internal) {
+		if (conn->llcp_cu.cmd) {
 			conn->supervision_expire = 0U;
 		}
 
@@ -2956,7 +2955,7 @@ static inline void event_conn_param_rsp(struct ll_conn *conn)
 
 	/* master respond with connection update */
 	if (!conn->lll.role) {
-		if (((conn->llcp_req - conn->llcp_ack) & 0x03) == 0x02) {
+		if (conn->llcp_cu.req != conn->llcp_cu.ack) {
 			return;
 		}
 
@@ -2964,25 +2963,23 @@ static inline void event_conn_param_rsp(struct ll_conn *conn)
 		conn->llcp_conn_param.state = LLCP_CPR_STATE_UPD;
 
 		/* Initiate connection update procedure */
-		conn->llcp.conn_upd.win_size = 1U;
-		conn->llcp.conn_upd.win_offset_us = 0U;
+		conn->llcp_cu.win_size = 1U;
+		conn->llcp_cu.win_offset_us = 0U;
 		if (conn->llcp_conn_param.preferred_periodicity) {
-			conn->llcp.conn_upd.interval =
+			conn->llcp_cu.interval =
 				((conn->llcp_conn_param.interval_min /
 				  conn->llcp_conn_param.preferred_periodicity) +
 				 1) *
 				conn->llcp_conn_param.preferred_periodicity;
 		} else {
-			conn->llcp.conn_upd.interval =
+			conn->llcp_cu.interval =
 				conn->llcp_conn_param.interval_max;
 		}
-		conn->llcp.conn_upd.latency = conn->llcp_conn_param.latency;
-		conn->llcp.conn_upd.timeout = conn->llcp_conn_param.timeout;
-		/* conn->llcp.conn_upd.instant     = 0; */
-		conn->llcp.conn_upd.state = LLCP_CUI_STATE_SELECT;
-		conn->llcp.conn_upd.is_internal = !conn->llcp_conn_param.cmd;
-		conn->llcp_type = LLCP_CONN_UPD;
-		conn->llcp_ack -= 2U;
+		conn->llcp_cu.latency = conn->llcp_conn_param.latency;
+		conn->llcp_cu.timeout = conn->llcp_conn_param.timeout;
+		conn->llcp_cu.state = LLCP_CUI_STATE_SELECT;
+		conn->llcp_cu.cmd = conn->llcp_conn_param.cmd;
+		conn->llcp_cu.ack--;
 
 		return;
 	}
@@ -3711,26 +3708,24 @@ static u8_t conn_upd_recv(struct ll_conn *conn, memq_link_t *link,
 		conn_upd_curr = conn;
 	}
 
-	conn->llcp.conn_upd.win_size = pdu->llctrl.conn_update_ind.win_size;
-	conn->llcp.conn_upd.win_offset_us =
+	conn->llcp_cu.win_size = pdu->llctrl.conn_update_ind.win_size;
+	conn->llcp_cu.win_offset_us =
 		sys_le16_to_cpu(pdu->llctrl.conn_update_ind.win_offset) * 1250;
-	conn->llcp.conn_upd.interval =
+	conn->llcp_cu.interval =
 		sys_le16_to_cpu(pdu->llctrl.conn_update_ind.interval);
-	conn->llcp.conn_upd.latency =
+	conn->llcp_cu.latency =
 		sys_le16_to_cpu(pdu->llctrl.conn_update_ind.latency);
-	conn->llcp.conn_upd.timeout =
+	conn->llcp_cu.timeout =
 		sys_le16_to_cpu(pdu->llctrl.conn_update_ind.timeout);
 	conn->llcp.conn_upd.instant = instant;
-	conn->llcp.conn_upd.state = LLCP_CUI_STATE_INPROG;
-	conn->llcp.conn_upd.is_internal = 0U;
+	conn->llcp_cu.state = LLCP_CUI_STATE_INPROG;
+	conn->llcp_cu.cmd = 1U;
+	conn->llcp_cu.ack--;
 
 	link->mem = conn->llcp_rx;
 	(*rx)->hdr.link = link;
 	conn->llcp_rx = *rx;
 	*rx = NULL;
-
-	conn->llcp_type = LLCP_CONN_UPD;
-	conn->llcp_ack -= 2U;
 
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 	if ((conn->llcp_conn_param.req != conn->llcp_conn_param.ack) &&
@@ -4177,21 +4172,18 @@ static inline int reject_ind_conn_upd_recv(struct ll_conn *conn,
 	rej_ext_ind = (void *)&pdu_rx->llctrl.reject_ext_ind;
 	if (!lll->role && (rej_ext_ind->error_code ==
 			   BT_HCI_ERR_UNSUPP_REMOTE_FEATURE)) {
-		LL_ASSERT(conn->llcp_req == conn->llcp_ack);
+		LL_ASSERT(conn->llcp_cu.req == conn->llcp_cu.ack);
 
 		conn->llcp_conn_param.state = LLCP_CPR_STATE_UPD;
 
-		conn->llcp.conn_upd.win_size = 1U;
-		conn->llcp.conn_upd.win_offset_us = 0U;
-		conn->llcp.conn_upd.interval =
-			conn->llcp_conn_param.interval_max;
-		conn->llcp.conn_upd.latency = conn->llcp_conn_param.latency;
-		conn->llcp.conn_upd.timeout = conn->llcp_conn_param.timeout;
-		/* conn->llcp.conn_upd.instant     = 0; */
-		conn->llcp.conn_upd.state = LLCP_CUI_STATE_USE;
-		conn->llcp.conn_upd.is_internal = !conn->llcp_conn_param.cmd;
-		conn->llcp_type = LLCP_CONN_UPD;
-		conn->llcp_ack -= 2U;
+		conn->llcp_cu.win_size = 1U;
+		conn->llcp_cu.win_offset_us = 0U;
+		conn->llcp_cu.interval = conn->llcp_conn_param.interval_max;
+		conn->llcp_cu.latency = conn->llcp_conn_param.latency;
+		conn->llcp_cu.timeout = conn->llcp_conn_param.timeout;
+		conn->llcp_cu.state = LLCP_CUI_STATE_USE;
+		conn->llcp_cu.cmd = conn->llcp_conn_param.cmd;
+		conn->llcp_cu.ack--;
 
 		return -EINVAL;
 	}
@@ -5790,25 +5782,23 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 
 			/* TODO: check for unsupported remote feature reason */
 			if (!conn->lll.role) {
-				LL_ASSERT(conn->llcp_req == conn->llcp_ack);
+				LL_ASSERT(conn->llcp_cu.req ==
+					  conn->llcp_cu.ack);
 
 				conn->llcp_conn_param.state =
 					LLCP_CPR_STATE_UPD;
 
-				conn->llcp.conn_upd.win_size = 1U;
-				conn->llcp.conn_upd.win_offset_us = 0U;
-				conn->llcp.conn_upd.interval =
+				conn->llcp_cu.win_size = 1U;
+				conn->llcp_cu.win_offset_us = 0U;
+				conn->llcp_cu.interval =
 					conn->llcp_conn_param.interval_max;
-				conn->llcp.conn_upd.latency =
+				conn->llcp_cu.latency =
 					conn->llcp_conn_param.latency;
-				conn->llcp.conn_upd.timeout =
+				conn->llcp_cu.timeout =
 					conn->llcp_conn_param.timeout;
-				/* conn->llcp.conn_upd.instant     = 0; */
-				conn->llcp.conn_upd.state = LLCP_CUI_STATE_USE;
-				conn->llcp.conn_upd.is_internal =
-					!conn->llcp_conn_param.cmd;
-				conn->llcp_type = LLCP_CONN_UPD;
-				conn->llcp_ack -= 2U;
+				conn->llcp_cu.state = LLCP_CUI_STATE_USE;
+				conn->llcp_cu.cmd = conn->llcp_conn_param.cmd;
+				conn->llcp_cu.ack--;
 
 				/* Mark for buffer for release */
 				(*rx)->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;

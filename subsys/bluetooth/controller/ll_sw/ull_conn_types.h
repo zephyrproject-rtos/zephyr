@@ -85,24 +85,13 @@ struct ll_conn {
 
 	union {
 		struct {
-			enum {
-				LLCP_CUI_STATE_INPROG,
-				LLCP_CUI_STATE_USE,
-				LLCP_CUI_STATE_SELECT
-			} state:2 __packed;
-			u8_t  is_internal:1;
-			u16_t interval;
-			u16_t latency;
-			u16_t timeout;
 			u16_t instant;
-			u32_t win_offset_us;
-			u8_t  win_size;
 			u16_t *pdu_win_offset;
 			u32_t ticks_anchor;
 		} conn_upd;
 
 		struct {
-			u8_t  initiate;
+			u8_t  initiate:1;
 			u8_t  chm[5];
 			u16_t instant;
 		} chan_map;
@@ -131,6 +120,22 @@ struct ll_conn {
 	} llcp;
 
 	struct node_rx_pdu *llcp_rx;
+
+	struct {
+		u8_t  req;
+		u8_t  ack;
+		enum {
+			LLCP_CUI_STATE_INPROG,
+			LLCP_CUI_STATE_USE,
+			LLCP_CUI_STATE_SELECT
+		} state:2 __packed;
+		u8_t  cmd:1;
+		u16_t interval;
+		u16_t latency;
+		u16_t timeout;
+		u32_t win_offset_us;
+		u8_t  win_size;
+	} llcp_cu;
 
 	struct {
 		u8_t  req;
