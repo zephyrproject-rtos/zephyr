@@ -188,7 +188,7 @@ int gpio_stm32_configure(u32_t *base_addr, int pin, int conf, int altf)
 /**
  * @brief Enable EXTI of the specific line
  */
-const int gpio_stm32_enable_int(int port, int pin)
+static int gpio_stm32_enable_int(int port, int pin)
 {
 #if defined(CONFIG_SOC_SERIES_STM32F2X) ||     \
 	defined(CONFIG_SOC_SERIES_STM32F3X) || \
