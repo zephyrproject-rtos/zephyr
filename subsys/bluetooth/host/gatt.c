@@ -181,8 +181,6 @@ BT_GATT_SERVICE_DEFINE(_2_gap_svc,
 );
 
 #if defined(CONFIG_BT_GATT_DYNAMIC_DB)
-static struct bt_gatt_ccc_cfg sc_ccc_cfg[BT_GATT_CCC_MAX] = {};
-
 static void sc_ccc_cfg_changed(const struct bt_gatt_attr *attr,
 			       u16_t value)
 {
@@ -1530,7 +1528,7 @@ static u8_t notify_cb(const struct bt_gatt_attr *attr, void *user_data)
 		conn = bt_conn_lookup_addr_le(cfg->id, &cfg->peer);
 		if (!conn) {
 #if defined(CONFIG_BT_GATT_DYNAMIC_DB)
-			if (ccc->cfg == sc_ccc_cfg) {
+			if (ccc->cfg_changed == sc_ccc_cfg_changed) {
 				sc_save(cfg, data->ind_params);
 			}
 #endif /* CONFIG_BT_GATT_DYNAMIC_DB */
@@ -1738,7 +1736,7 @@ static u8_t connected_cb(const struct bt_gatt_attr *attr, void *user_data)
 		if (ccc->cfg[i].value) {
 			gatt_ccc_changed(attr, ccc);
 #if defined(CONFIG_BT_GATT_DYNAMIC_DB)
-			if (ccc->cfg == sc_ccc_cfg) {
+			if (ccc->cfg_changed == sc_ccc_cfg_changed) {
 				sc_restore(&ccc->cfg[i]);
 			}
 #endif /* CONFIG_BT_GATT_DYNAMIC_DB */
