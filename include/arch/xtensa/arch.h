@@ -17,6 +17,7 @@
 
 #include <generated_dts_board.h>
 #if !defined(_ASMLANGUAGE) && !defined(__ASSEMBLER__)
+#include <toolchain.h>
 #include <arch/common/sys_io.h>
 #include <arch/common/ffs.h>
 #include <zephyr/types.h>
