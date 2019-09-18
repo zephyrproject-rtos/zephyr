@@ -49,7 +49,7 @@
 	gpio_keys {
 		compatible = "gpio-keys";
 		user_button: button-1 {
-			label = "User SW8";
+			label = "User SW4";
 			gpios = <&gpio5 0 GPIO_ACTIVE_LOW>;
 		};
 	};
