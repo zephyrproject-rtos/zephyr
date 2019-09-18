@@ -192,11 +192,12 @@ static void lis2dw12_gpio_callback(struct device *dev,
 {
 	struct lis2dw12_data *lis2dw12 =
 		CONTAINER_OF(cb, struct lis2dw12_data, gpio_cb);
-	const struct lis2dw12_device_config *cfg = dev->config->config_info;
 
-	ARG_UNUSED(pins);
+	if ((pins & BIT(lis2dw12->gpio_pin)) == 0U) {
+		return;
+	}
 
-	gpio_pin_disable_callback(dev, cfg->int_gpio_pin);
+	gpio_pin_disable_callback(dev, lis2dw12->gpio_pin);
 
 #if defined(CONFIG_LIS2DW12_TRIGGER_OWN_THREAD)
 	k_sem_give(&lis2dw12->gpio_sem);
@@ -256,6 +257,8 @@ int lis2dw12_init_interrupt(struct device *dev)
 	lis2dw12->work.handler = lis2dw12_work_cb;
 	lis2dw12->dev = dev;
 #endif /* CONFIG_LIS2DW12_TRIGGER_OWN_THREAD */
+
+	lis2dw12->gpio_pin = cfg->int_gpio_pin;
 
 	ret = gpio_pin_configure(lis2dw12->gpio, cfg->int_gpio_pin,
 			   GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
