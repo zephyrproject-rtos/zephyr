@@ -76,11 +76,13 @@ def get_shas(refspec):
 
 class MyCase(TestCase):
     """
-    Implementation of TestCase specific to our tests.
-
+    Custom junitparser.TestCase for our tests that adds some extra <testcase>
+    XML attributes. These will be preserved when tests are saved and loaded.
     """
     classname = Attr()
-    doc = Attr()
+    # Remembers informational messages. These can appear on successful tests
+    # too, where TestCase.result isn't set.
+    info_msg = Attr()
 
 
 class ComplianceTest:
@@ -162,6 +164,24 @@ class ComplianceTest:
         else:
             # If there are multiple Failures, concatenate their messages
             self.case.result._elem.text += "\n\n" + msg.rstrip()
+
+    def add_info(self, msg):
+        """
+        Adds an informational message without failing the test. The message is
+        shown on GitHub, and is shown regardless of whether the test passes or
+        fails. If the test fails, then both the informational message and the
+        failure message are shown.
+
+        Can be called many times within the same test to add multiple messages.
+        """
+        # Hack to preserve newlines in the attribute when tests are saved to
+        # .xml and reloaded. junitparser doesn't seem to handle it correctly.
+        msg = msg.replace("\n", "[newline]")
+
+        if not self.case.info_msg:
+            self.case.info_msg = msg
+        else:
+            self.case.info_msg += "[newline][newline]" + msg
 
 
 class EndTest(Exception):
@@ -935,13 +955,13 @@ def report_test_results_to_github(suite):
     #
     #   suite: Test suite
 
-    fail_msg = "**Some checks failed. Please fix and resubmit.**\n\n"
-    n_failures = 0
-
     print("reporting results to GitHub")
 
     name2doc = {testcase._name: testcase._doc
                 for testcase in ComplianceTest.__subclasses__()}
+
+    n_failures = 0
+    comment = ""  # Comment posted to GitHub
 
     def set_commit_status(status, msg):
         # 'case' gets set in the loop.
@@ -952,6 +972,9 @@ def report_test_results_to_github(suite):
             case.name)
 
     for case in suite:
+        # This gives us access to the custom 'info_msg' attribute
+        case = MyCase.fromelem(case)
+
         if not case.result:
             print("reporting success on " + case.name)
             set_commit_status('success', 'Checks passed')
@@ -961,31 +984,56 @@ def report_test_results_to_github(suite):
         elif case.result.type == 'failure':
             print("reporting failure on " + case.name)
             n_failures += 1
-            fail_msg += "## {}\n\n".format(case.result.message)
-            msg = case.result._elem.text
-            if case.name not in {"Gitlint", "Identity/Emails", "License"}:
-                msg = "```\n" + msg + "\n```"
-            fail_msg += msg + "\n\n"
+            comment += "## {}\n\n".format(case.result.message)
+            if case.name in {"Gitlint", "Identity/Emails", "License"}:
+                comment += case.result._elem.text
+            else:
+                comment += "```\n" + case.result._elem.text + "\n```"
+            comment += "\n\n"
             set_commit_status('failure', 'Checks failed')
         elif case.result.type == 'error':
             print("reporting error on " + case.name)
             n_failures += 1
-            fail_msg += "## {} (internal test error)\n\n```\n{}\n```\n\n" \
-                        .format(case.name, case.result.message)
+            comment += "## {} (internal test error)\n\n```\n{}\n```\n\n" \
+                       .format(case.name, case.result.message)
             set_commit_status(
                 'error', 'Error during verification, please report!')
-        else:
-            print("Unhandled status")
+
+        # Always show informational messages. See ComplianceTest.add_info() for
+        # an explanation of the [newline] thing.
+        if case.info_msg:
+            comment += "## {} (informational only, not a failure)\n\n" \
+                       "```\n{}\n```\n\n".format(
+                           case.name, case.info_msg.replace("[newline]", "\n"))
 
     if n_failures > 0:
-        github_comment(fail_msg + EDIT_TIP)
-    elif get_bot_comment():
-        # Only post a success message if a message was posted by the bot
-        # previously (probably with a failure message). We edit the old
-        # message.
-        github_comment("**All checks are passing now.**" + EDIT_TIP)
+        github_comment(
+            "**Some checks failed. Please fix and resubmit.**\n\n" + comment)
+    elif comment or get_bot_comment():
+        # Post/edit a success comment if there's some message to show, or if
+        # there's a previous comment from the bot. Skip the success comment if
+        # everything passes right away and there's no message to show.
+        github_comment(bot_success_msg(comment) + comment)
 
     return n_failures
+
+
+def bot_success_msg(comment):
+    # report_test_results_to_github() helper. Returns the success message that
+    # makes the most sense given the previous status.
+    #
+    # It might help to know that github_comment() is a no-op if the new message
+    # is identical to the old one when untangling this.
+
+    all_passed_msg = "**All checks passed.**\n\n"
+
+    bot_comment = get_bot_comment()
+    if bot_comment and all_passed_msg not in bot_comment.body:
+        # Fail -> Success, or Fail -> Success -> Success
+        return "**All checks are passing now.**\n\n"
+
+    # Only successes
+    return all_passed_msg
 
 
 def github_comment(msg):
@@ -995,6 +1043,8 @@ def github_comment(msg):
     if not github_pr:
         # No pull request to post the message in
         return
+
+    msg += EDIT_TIP
 
     bot_comment = get_bot_comment()
     if bot_comment:
@@ -1125,6 +1175,7 @@ def _main(args):
     if not args.commits:
         err("No commit range given")
 
+    # Load saved test results from an earlier run, if requested
     if args.previous_run:
         if not os.path.exists(args.previous_run):
             # This probably means that an earlier pass had an internal error
@@ -1215,8 +1266,7 @@ def main():
         if args.github:
             github_comment(
                 "**Internal CI Error.**\n\nPython exception in `{}`:\n\n"
-                "```\n{}\n```{}"
-                .format(__file__, traceback.format_exc(), EDIT_TIP))
+                "```\n{}\n```".format(__file__, traceback.format_exc()))
 
         raise
 
