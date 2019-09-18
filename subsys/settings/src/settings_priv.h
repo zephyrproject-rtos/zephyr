@@ -46,12 +46,6 @@ int settings_line_load_cb(const char *name, void *val_read_cb_ctx,
 typedef int (*line_load_cb)(const char *name, void *val_read_cb_ctx,
 			     off_t off, void *cb_arg);
 
-struct settings_line_load_arg {
-	const char             *subtree;
-	settings_load_direct_cb direct_cb;
-	void                   *param;
-};
-
 struct settings_line_read_value_cb_ctx {
 	void *read_cb_ctx;
 	off_t off;
