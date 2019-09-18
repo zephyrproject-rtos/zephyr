@@ -197,13 +197,16 @@ itself as an FPU user or SSE user by calling :cpp:func:`k_float_enable()`.
 RISCV architecture
 ------------------
 
-On the RISCV architecture, the kernel simply treats all thread as an FPU user
-if CONFIG_FLOAT and CONFIG_FP_SHARING selected. This may lead to performance
-problems need to be optimized, that only if a thread is tagged as an FPU user,
-the kernel should to save or restore its FP context during thread context switching.
-An extra 132 bytes (4 x 32 single precesion + fscr)
-or 260 bytes (8 x 32 double precesion + fscr) of stack space is required to load
-and store floating point registers.
+On the RISCV architecture, the kernel treats all threads as an FPU user
+if :option:`CONFIG_FLOAT` and :option:`CONFIG_FP_SHARING` are
+selected. This may lead to performance problems because the FP
+registers will be saved and restored on every thread context switch.
+
+In an optimized implementation, the kernel should only save and restore
+FP registers on a thread context switch if the thread is tagged as an FPU
+user. An extra 132 bytes (4 x 32 single precision + fscr)
+or 260 bytes (8 x 32 double precision + fscr) of stack space is
+required to load and store floating point registers.
 
 
 Implementation
