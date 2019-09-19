@@ -10,7 +10,7 @@
 #if defined(CONFIG_USB) && defined(CONFIG_SOC_NRF52840)
 #include <device.h>
 #endif
-#include <nrf_clock.h>
+#include <hal/nrf_clock.h>
 
 /* TODO: move all these to clock_control.h ? */
 

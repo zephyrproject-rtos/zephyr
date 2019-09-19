@@ -13,7 +13,7 @@
 #define LOG_MODULE_NAME bt_ctlr_cntr
 #include "common/log.h"
 #include "hal/debug.h"
-#include "nrf_rtc.h"
+#include <nrfx/hal/nrf_rtc.h>
 
 #ifndef NRF_RTC
 #define NRF_RTC NRF_RTC0

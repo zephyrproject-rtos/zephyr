@@ -8,7 +8,7 @@
 #include <drivers/entropy.h>
 #include <sys/atomic.h>
 #include <soc.h>
-#include "nrf_rng.h"
+#include <hal/nrf_rng.h>
 
 /*
  * The nRF5 RNG HW has several characteristics that need to be taken

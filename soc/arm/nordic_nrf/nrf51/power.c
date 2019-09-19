@@ -5,7 +5,7 @@
  */
 #include <zephyr.h>
 #include <power/power.h>
-#include <nrf_power.h>
+#include <hal/nrf_power.h>
 
 #include <logging/log.h>
 LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);

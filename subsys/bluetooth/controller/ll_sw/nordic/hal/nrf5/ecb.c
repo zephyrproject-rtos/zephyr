@@ -17,7 +17,7 @@
 #include "common/log.h"
 #include "hal/debug.h"
 
-#include "nrf_ecb.h"
+#include <nrfx/hal/nrf_ecb.h>
 
 struct ecb_param {
 	u8_t key[16];

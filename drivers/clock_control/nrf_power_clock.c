@@ -11,9 +11,9 @@
 #include <device.h>
 #include <drivers/clock_control.h>
 #include <sys/__assert.h>
-#include <nrf_clock.h>
+#include <hal/nrf_clock.h>
 #if defined(CONFIG_USB) && defined(CONFIG_SOC_NRF52840)
-#include <nrf_power.h>
+#include <hal/nrf_power.h>
 #include <drivers/clock_control/nrf_clock_control.h>
 #endif
 
