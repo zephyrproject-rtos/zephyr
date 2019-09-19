@@ -20,7 +20,7 @@
  */
 void k_cpu_idle(void)
 {
-	z_sys_trace_idle();
+	sys_trace_idle();
 #if defined(CONFIG_BOOT_TIME_MEASUREMENT)
 	__idle_time_stamp = k_cycle_get_32();
 #endif
@@ -50,7 +50,7 @@ void k_cpu_idle(void)
 
 void k_cpu_atomic_idle(unsigned int key)
 {
-	z_sys_trace_idle();
+	sys_trace_idle();
 
 	__asm__ volatile (
 	    "sti\n\t"

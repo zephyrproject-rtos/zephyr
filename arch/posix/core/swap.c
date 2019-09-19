@@ -94,11 +94,11 @@ void z_arch_switch_to_main_thread(struct k_thread *main_thread,
 			(posix_thread_status_t *)
 			_kernel.ready_q.cache->callee_saved.thread_status;
 
-	z_sys_trace_thread_switched_out();
+	sys_trace_thread_switched_out();
 
 	_kernel.current = _kernel.ready_q.cache;
 
-	z_sys_trace_thread_switched_in();
+	sys_trace_thread_switched_in();
 
 	posix_main_thread_start(ready_thread_ptr->thread_idx);
 } /* LCOV_EXCL_LINE */

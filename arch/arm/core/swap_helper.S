@@ -46,7 +46,7 @@ SECTION_FUNC(TEXT, __pendsv)
 #ifdef CONFIG_TRACING
     /* Register the context switch */
     push {r0, lr}
-    bl z_sys_trace_thread_switched_out
+    bl sys_trace_thread_switched_out
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
     pop {r0, r1}
     mov lr, r1
@@ -319,7 +319,7 @@ _thread_irq_disabled:
 #ifdef CONFIG_TRACING
     /* Register the context switch */
     push {r0, lr}
-    bl z_sys_trace_thread_switched_in
+    bl sys_trace_thread_switched_in
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
     pop {r0, r1}
     mov lr, r1

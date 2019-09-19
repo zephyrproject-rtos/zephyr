@@ -137,7 +137,7 @@ SECTION_FUNC(TEXT, _interrupt_enter)
 	pushl	%eax
 	pushl	%edx
 
-	call	z_sys_trace_isr_enter
+	call	sys_trace_isr_enter
 
 	popl	%edx
 	popl	%eax

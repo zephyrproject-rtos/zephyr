@@ -255,7 +255,7 @@ void _arch_isr_direct_pm(void)
 
 void z_arch_isr_direct_header(void)
 {
-	z_sys_trace_isr_enter();
+	sys_trace_isr_enter();
 }
 
 #if defined(CONFIG_ARM_SECURE_FIRMWARE)

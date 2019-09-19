@@ -14,7 +14,7 @@
  */
 void k_cpu_idle(void)
 {
-	z_sys_trace_idle();
+	sys_trace_idle();
 	__asm__ volatile ("waiti 0");
 }
 /*
@@ -26,7 +26,7 @@ void k_cpu_idle(void)
  */
 void k_cpu_atomic_idle(unsigned int key)
 {
-	z_sys_trace_idle();
+	sys_trace_idle();
 	__asm__ volatile ("waiti 0\n\t"
 			  "wsr.ps %0\n\t"
 			  "rsync" :: "a"(key));

@@ -87,7 +87,7 @@ void _enter_irq(u32_t ipending)
 	while (ipending) {
 		struct _isr_table_entry *ite;
 
-		z_sys_trace_isr_enter();
+		sys_trace_isr_enter();
 
 		index = find_lsb_set(ipending) - 1;
 		ipending &= ~BIT(index);
