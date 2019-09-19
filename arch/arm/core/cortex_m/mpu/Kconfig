@@ -61,6 +61,25 @@ config MPU_ALLOW_FLASH_WRITE
 	help
 	  Enable this to allow MPU RWX access to flash memory
 
+config CUSTOM_SECTION_ALIGN
+	bool "Custom Section Align"
+	depends on ARM_MPU
+	help
+	  MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT(ARMv7-M) sometimes cause memory
+	  wasting in linker scripts defined memory sections. Use this symbol
+	  to guarantee user custom section align size to avoid more memory used
+	  for respect alignment. But that needs carefully configure MPU region
+	  and sub-regions(ARMv7-M) to cover this feature.
+
+config CUSTOM_SECTION_MIN_ALIGN_SIZE
+	int "Custom Section Align Size"
+	default 32
+	help
+	  Custom algin size of memory section in linker scripts. Usually
+	  it should consume less alignment memory. Alougth this alignment
+	  size is configured by users, it must also respect the power of
+	  two regulation if hardware requires.
+
 endif # ARM_MPU
 
 endif # CPU_HAS_MPU
