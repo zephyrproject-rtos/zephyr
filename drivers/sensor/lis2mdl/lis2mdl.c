@@ -310,6 +310,13 @@ static int lis2mdl_init(struct device *dev)
 
 	k_busy_wait(100);
 
+#if CONFIG_LIS2MDL_SPI_FULL_DUPLEX
+	/* After s/w reset set SPI 4wires again if the case */
+	if (lis2mdl_spi_mode_set(lis2mdl->ctx, LIS2MDL_SPI_4_WIRE) < 0) {
+		return -EIO;
+	}
+#endif
+
 	/* enable BDU */
 	if (lis2mdl_block_data_update_set(lis2mdl->ctx, PROPERTY_ENABLE) < 0) {
 		LOG_DBG("setting bdu failed\n");
