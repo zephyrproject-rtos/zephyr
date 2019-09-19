@@ -252,7 +252,7 @@ int lis2dw12_init_interrupt(struct device *dev)
 		       CONFIG_LIS2DW12_THREAD_STACK_SIZE,
 		       (k_thread_entry_t)lis2dw12_thread, dev,
 		       0, NULL, K_PRIO_COOP(CONFIG_LIS2DW12_THREAD_PRIORITY),
-		       0, 0);
+		       0, K_NO_WAIT);
 #elif defined(CONFIG_LIS2DW12_TRIGGER_GLOBAL_THREAD)
 	lis2dw12->work.handler = lis2dw12_work_cb;
 	lis2dw12->dev = dev;

@@ -140,7 +140,7 @@ int iis3dhhc_init_interrupt(struct device *dev)
 		       CONFIG_IIS3DHHC_THREAD_STACK_SIZE,
 		       (k_thread_entry_t)iis3dhhc_thread, dev,
 		       0, NULL, K_PRIO_COOP(CONFIG_IIS3DHHC_THREAD_PRIORITY),
-		       0, 0);
+		       0, K_NO_WAIT);
 #elif defined(CONFIG_IIS3DHHC_TRIGGER_GLOBAL_THREAD)
 	iis3dhhc->work.handler = iis3dhhc_work_cb;
 	iis3dhhc->dev = dev;

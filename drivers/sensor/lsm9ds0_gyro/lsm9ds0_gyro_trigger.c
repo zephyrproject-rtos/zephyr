@@ -104,7 +104,7 @@ int lsm9ds0_gyro_init_interrupt(struct device *dev)
 	k_thread_create(&data->thread, data->thread_stack,
 			CONFIG_LSM9DS0_GYRO_THREAD_STACK_SIZE,
 			lsm9ds0_gyro_thread_main, dev, NULL, NULL,
-			K_PRIO_COOP(10), 0, 0);
+			K_PRIO_COOP(10), 0, K_NO_WAIT);
 
 	data->gpio_drdy = device_get_binding(config->gpio_drdy_dev_name);
 	if (!data->gpio_drdy) {

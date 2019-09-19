@@ -368,7 +368,7 @@ static int nrf5_init(struct device *dev)
 	k_thread_create(&nrf5_radio->rx_thread, nrf5_radio->rx_stack,
 			CONFIG_IEEE802154_NRF5_RX_STACK_SIZE,
 			nrf5_rx_thread, dev, NULL, NULL,
-			K_PRIO_COOP(2), 0, 0);
+			K_PRIO_COOP(2), 0, K_NO_WAIT);
 
 	k_thread_name_set(&nrf5_radio->rx_thread, "802154 RX");
 

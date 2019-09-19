@@ -180,7 +180,7 @@ int sx9500_setup_interrupt(struct device *dev)
 	k_thread_create(&sx9500_thread, sx9500_thread_stack,
 			CONFIG_SX9500_THREAD_STACK_SIZE,
 			(k_thread_entry_t)sx9500_thread_main, dev, 0, NULL,
-			K_PRIO_COOP(CONFIG_SX9500_THREAD_PRIORITY), 0, 0);
+			K_PRIO_COOP(CONFIG_SX9500_THREAD_PRIORITY), 0, K_NO_WAIT);
 #endif
 
 	return 0;
