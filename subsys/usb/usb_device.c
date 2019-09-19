@@ -245,6 +245,7 @@ static void usb_data_to_host(u16_t len)
 		usb_dev.data_buf += chunk;
 		usb_dev.data_buf_residue -= chunk;
 
+#ifndef CONFIG_USB_DEVICE_DISABLE_ZLP_EPIN_HANDLING
 		/*
 		 * Set ZLP flag when host asks for a bigger length and the
 		 * last chunk is wMaxPacketSize long, to indicate the last
@@ -259,6 +260,7 @@ static void usb_data_to_host(u16_t len)
 				usb_dev.zlp_flag = true;
 			}
 		}
+#endif
 
 	} else {
 		usb_dev.zlp_flag = false;
