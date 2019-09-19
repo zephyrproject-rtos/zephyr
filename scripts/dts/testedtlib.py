@@ -3,6 +3,8 @@
 # Copyright (c) 2019 Nordic Semiconductor ASA
 # SPDX-License-Identifier: BSD-3-Clause
 
+import sys
+
 import edtlib
 
 # Test suite for edtlib.py. Mostly uses string comparisons via the various
@@ -21,7 +23,7 @@ def run():
     """
 
     def fail(msg):
-        raise Exception("test failed: " + msg)
+        sys.exit("test failed: " + msg)
 
     def verify_streq(actual, expected):
         actual = str(actual)
