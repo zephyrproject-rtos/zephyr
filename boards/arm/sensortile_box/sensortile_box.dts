@@ -121,7 +121,6 @@
 		compatible = "st,lis2mdl";
 		spi-max-frequency = <1000000>;
 		reg = <0>;
-		irq-gpios = <&gpiod 12 0>;
 		label = "LIS2MDL";
 	};
 };
