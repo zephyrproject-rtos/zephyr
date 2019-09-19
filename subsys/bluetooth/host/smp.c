@@ -1890,13 +1890,14 @@ static void legacy_distribute_keys(struct bt_smp *smp)
 		struct bt_smp_encrypt_info *info;
 		struct bt_smp_master_ident *ident;
 		struct net_buf *buf;
-		u8_t key[16];
-		u8_t rand[8];
-		u8_t ediv[2];
+		/* Use struct to get randomness in single call to bt_rand */
+		struct {
+			u8_t key[16];
+			u8_t rand[8];
+			u8_t ediv[2];
+		} rand;
 
-		bt_rand(key, sizeof(key));
-		bt_rand(&rand, sizeof(rand));
-		bt_rand(&ediv, sizeof(ediv));
+		bt_rand((void *)&rand, sizeof(rand));
 
 		buf = smp_create_pdu(smp, BT_SMP_CMD_ENCRYPT_INFO,
 				     sizeof(*info));
@@ -1908,7 +1909,7 @@ static void legacy_distribute_keys(struct bt_smp *smp)
 		info = net_buf_add(buf, sizeof(*info));
 
 		/* distributed only enc_size bytes of key */
-		memcpy(info->ltk, key, keys->enc_size);
+		memcpy(info->ltk, rand.key, keys->enc_size);
 		if (keys->enc_size < sizeof(info->ltk)) {
 			(void)memset(info->ltk + keys->enc_size, 0,
 				     sizeof(info->ltk) - keys->enc_size);
@@ -1924,18 +1925,19 @@ static void legacy_distribute_keys(struct bt_smp *smp)
 		}
 
 		ident = net_buf_add(buf, sizeof(*ident));
-		memcpy(ident->rand, rand, sizeof(ident->rand));
-		memcpy(ident->ediv, ediv, sizeof(ident->ediv));
+		memcpy(ident->rand, rand.rand, sizeof(ident->rand));
+		memcpy(ident->ediv, rand.ediv, sizeof(ident->ediv));
 
 		smp_send(smp, buf, smp_ident_sent, NULL);
 
 		if (atomic_test_bit(smp->flags, SMP_FLAG_BOND)) {
 			bt_keys_add_type(keys, BT_KEYS_SLAVE_LTK);
 
-			memcpy(keys->slave_ltk.val, key,
+			memcpy(keys->slave_ltk.val, rand.key,
 			       sizeof(keys->slave_ltk.val));
-			memcpy(keys->slave_ltk.rand, rand, sizeof(rand));
-			memcpy(keys->slave_ltk.ediv, ediv,
+			memcpy(keys->slave_ltk.rand, rand.rand,
+			       sizeof(keys->slave_ltk.rand));
+			memcpy(keys->slave_ltk.ediv, rand.ediv,
 			       sizeof(keys->slave_ltk.ediv));
 		}
 	}
