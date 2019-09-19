@@ -48,8 +48,14 @@ static struct bt_conn_cb conn_callbacks = {
 static int zephyr_settings_fw_load(struct settings_store *cs,
 				   const struct settings_load_arg *arg);
 
+static int zephyr_settings_fw_save(struct settings_store *cs,
+				   const char *name,
+				   const char *value,
+				   size_t val_len);
+
 static const struct settings_store_itf zephyr_settings_fw_itf = {
 	.csi_load = zephyr_settings_fw_load,
+	.csi_save = zephyr_settings_fw_save,
 };
 
 static struct settings_store zephyr_settings_fw_store = {
@@ -93,9 +99,19 @@ static int zephyr_settings_fw_load(struct settings_store *cs,
 	return 0;
 }
 
+static int zephyr_settings_fw_save(struct settings_store *cs,
+				   const char *name,
+				   const char *value,
+				   size_t val_len)
+{
+	/* DO NOTHING - just a stub */
+	return 0;
+}
+
 int settings_backend_init(void)
 {
 	settings_src_register(&zephyr_settings_fw_store);
+	settings_dst_register(&zephyr_settings_fw_store);
 	return 0;
 }
 
