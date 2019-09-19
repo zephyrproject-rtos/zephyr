@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <soc.h>
+#include <drivers/entropy.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bt_ctlr_crypto
@@ -12,25 +12,25 @@
 
 #include "hal/ecb.h"
 
+static struct device *entropy_driver;
+
 int bt_rand(void *buf, size_t len)
 {
-	u8_t *buf8 = buf;
+	struct device *dev = entropy_driver;
 
-	while (len) {
-		u32_t v = sys_rand32_get();
-
-		if (len >= sizeof(v)) {
-			memcpy(buf8, &v, sizeof(v));
-
-			buf8 += sizeof(v);
-			len -= sizeof(v);
-		} else {
-			memcpy(buf8, &v, len);
-			break;
-		}
+	if (unlikely(!dev)) {
+		/* Only one entropy device exists, so this is safe even
+		 * if the whole operation isn't atomic.
+		 */
+		dev = device_get_binding(CONFIG_ENTROPY_NAME);
+		__ASSERT((dev != NULL),
+			"Device driver for %s (CONFIG_ENTROPY_NAME) not found. "
+			"Check your build configuration!",
+			CONFIG_ENTROPY_NAME);
+		entropy_driver = dev;
 	}
 
-	return 0;
+	return entropy_get_entropy(dev, (u8_t *)buf, len);
 }
 
 int bt_encrypt_le(const u8_t key[16], const u8_t plaintext[16],
