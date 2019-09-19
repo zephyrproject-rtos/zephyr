@@ -13,13 +13,10 @@
 
 #ifndef _ASMLANGUAGE
 
-#include <nrf.h>
+#include <nrfx.h>
 
 /* Add include for DTS generated information */
 #include <generated_dts_board.h>
-
-/* Add include for peripheral base address mappings */
-#include <nrfx_config.h>
 
 #endif /* !_ASMLANGUAGE */
 

@@ -39,7 +39,6 @@
 #include <sys/printk.h>
 #include <settings/settings.h>
 #include <sys/byteorder.h>
-#include <nrf.h>
 #include <device.h>
 #include <drivers/gpio.h>
 #include <bluetooth/bluetooth.h>
