@@ -454,10 +454,38 @@ static enum ethernet_hw_caps eth_stm32_hal_get_capabilities(struct device *dev)
 	return ETHERNET_LINK_10BASE_T | ETHERNET_LINK_100BASE_T;
 }
 
+static int eth_stm32_hal_set_config(struct device *dev,
+				    enum ethernet_config_type type,
+				    const struct ethernet_config *config)
+{
+	struct eth_stm32_hal_dev_data *dev_data;
+	ETH_HandleTypeDef *heth;
+
+	switch (type) {
+	case ETHERNET_CONFIG_TYPE_MAC_ADDRESS:
+		dev_data = DEV_DATA(dev);
+		heth = &dev_data->heth;
+
+		memcpy(dev_data->mac_addr, config->mac_address.addr, 6);
+		heth->Instance->MACA0HR = (dev_data->mac_addr[5] << 8) |
+			dev_data->mac_addr[4];
+		heth->Instance->MACA0LR = (dev_data->mac_addr[3] << 24) |
+			(dev_data->mac_addr[2] << 16) |
+			(dev_data->mac_addr[1] << 8) |
+			dev_data->mac_addr[0];
+		return 0;
+	default:
+		break;
+	}
+
+	return -ENOTSUP;
+}
+
 static const struct ethernet_api eth_api = {
 	.iface_api.init = eth_iface_init,
 
 	.get_capabilities = eth_stm32_hal_get_capabilities,
+	.set_config = eth_stm32_hal_set_config,
 	.send = eth_tx,
 };
 
