@@ -205,7 +205,7 @@ void radio_pkt_configure(u8_t bits_len, u8_t max_len, u8_t flags)
 		break;
 
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
-#if defined(CONFIG_SOC_NRF52840)
+#if defined(CONFIG_HAS_HW_NRF_RADIO_BLE_CODED)
 	case BIT(2):
 		extra |= (RADIO_PCNF0_PLEN_LongRange << RADIO_PCNF0_PLEN_Pos) &
 			 RADIO_PCNF0_PLEN_Msk;
@@ -213,7 +213,7 @@ void radio_pkt_configure(u8_t bits_len, u8_t max_len, u8_t flags)
 		extra |= (3UL << RADIO_PCNF0_TERMLEN_Pos) &
 			 RADIO_PCNF0_TERMLEN_Msk;
 		break;
-#endif /* CONFIG_SOC_NRF52840 */
+#endif /* CONFIG_HAS_HW_NRF_RADIO_BLE_CODED */
 #endif /* CONFIG_BT_CTLR_PHY_CODED */
 	}
 
@@ -407,7 +407,7 @@ static void sw_switch(u8_t dir, u8_t phy_curr, u8_t flags_curr, u8_t phy_next,
 		hal_radio_txen_on_sw_switch(ppi);
 
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
-#if defined(CONFIG_SOC_NRF52840)
+#if defined(CONFIG_HAS_HW_NRF_RADIO_BLE_CODED)
 		u8_t ppi_en =
 		    HAL_SW_SWITCH_RADIO_ENABLE_S2_PPI(sw_tifs_toggle);
 		u8_t ppi_dis =
@@ -445,7 +445,7 @@ static void sw_switch(u8_t dir, u8_t phy_curr, u8_t flags_curr, u8_t phy_next,
 			hal_radio_sw_switch_coded_config_clear(ppi_en,
 				ppi_dis, cc, sw_tifs_toggle);
 		}
-#endif /* CONFIG_SOC_NRF52840 */
+#endif /* CONFIG_HAS_HW_NRF_RADIO_BLE_CODED */
 #endif /* CONFIG_BT_CTLR_PHY_CODED */
 	} else {
 		/* RX */
@@ -457,7 +457,7 @@ static void sw_switch(u8_t dir, u8_t phy_curr, u8_t flags_curr, u8_t phy_next,
 		hal_radio_rxen_on_sw_switch(ppi);
 
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
-#if defined(CONFIG_SOC_NRF52840)
+#if defined(CONFIG_HAS_HW_NRF_RADIO_BLE_CODED)
 		if (1) {
 			u8_t ppi_en =
 				HAL_SW_SWITCH_RADIO_ENABLE_S2_PPI(
@@ -469,7 +469,7 @@ static void sw_switch(u8_t dir, u8_t phy_curr, u8_t flags_curr, u8_t phy_next,
 			hal_radio_sw_switch_coded_config_clear(ppi_en,
 				ppi_dis, cc, sw_tifs_toggle);
 		}
-#endif /* CONFIG_SOC_NRF52840 */
+#endif /* CONFIG_HAS_HW_NRF_RADIO_BLE_CODED */
 #endif /* CONFIG_BT_CTLR_PHY_CODED */
 	}
 
@@ -621,12 +621,12 @@ void radio_tmr_status_reset(void)
 			BIT(HAL_RADIO_DISABLE_ON_HCTO_PPI) |
 			BIT(HAL_RADIO_END_TIME_CAPTURE_PPI) |
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
-#if defined(CONFIG_SOC_NRF52840)
+#if defined(CONFIG_HAS_HW_NRF_RADIO_BLE_CODED)
 			BIT(HAL_TRIGGER_RATEOVERRIDE_PPI) |
 #if !defined(CONFIG_BT_CTLR_TIFS_HW)
 			BIT(HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI) |
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
-#endif /* CONFIG_SOC_NRF52840 */
+#endif /* CONFIG_HAS_HW_NRF_RADIO_BLE_CODED */
 #endif /* CONFIG_BT_CTLR_PHY_CODED */
 			BIT(HAL_TRIGGER_CRYPT_PPI));
 }
@@ -679,15 +679,16 @@ u32_t radio_tmr_start(u8_t trx, u32_t ticks_start, u32_t remainder)
 
 	hal_sw_switch_timer_clear_ppi_config();
 
-#if !defined(CONFIG_BT_CTLR_PHY_CODED) || !defined(CONFIG_SOC_NRF52840)
+#if !defined(CONFIG_BT_CTLR_PHY_CODED) || \
+	!defined(CONFIG_HAS_HW_NRF_RADIO_BLE_CODED)
 
 	hal_radio_group_task_disable_ppi_setup();
 
-#else /* CONFIG_BT_CTLR_PHY_CODED && CONFIG_SOC_NRF52840 */
+#else /* CONFIG_BT_CTLR_PHY_CODED && CONFIG_HAS_HW_NRF_RADIO_BLE_CODED */
 	/* PPI setup needs to be configured at every sw_switch()
 	 * as they depend on the actual PHYs used in TX/RX mode.
 	 */
-#endif /* CONFIG_BT_CTLR_PHY_CODED && CONFIG_SOC_NRF52840 */
+#endif /* CONFIG_BT_CTLR_PHY_CODED && CONFIG_HAS_HW_NRF_RADIO_BLE_CODED */
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 
 	return remainder;
@@ -982,7 +983,7 @@ void *radio_ccm_rx_pkt_set(struct ccm *ccm, u8_t phy, void *pkt)
 		break;
 
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
-#if defined(CONFIG_SOC_NRF52840)
+#if defined(CONFIG_HAS_HW_NRF_RADIO_BLE_CODED)
 	case BIT(2):
 		mode |= (CCM_MODE_DATARATE_125Kbps <<
 			 CCM_MODE_DATARATE_Pos) &
@@ -997,7 +998,7 @@ void *radio_ccm_rx_pkt_set(struct ccm *ccm, u8_t phy, void *pkt)
 		hal_radio_nrf_ppi_channels_enable(
 			BIT(HAL_TRIGGER_RATEOVERRIDE_PPI));
 		break;
-#endif /* CONFIG_SOC_NRF52840 */
+#endif /* CONFIG_HAS_HW_NRF_RADIO_BLE_CODED */
 #endif /* CONFIG_BT_CTLR_PHY_CODED */
 	}
 #endif /* CONFIG_SOC_COMPATIBLE_NRF52X */

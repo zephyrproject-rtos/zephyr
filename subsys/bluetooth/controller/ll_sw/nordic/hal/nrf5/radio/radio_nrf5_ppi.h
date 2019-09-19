@@ -243,7 +243,7 @@ static inline void hal_trigger_aar_ppi_config(void)
 /*******************************************************************************
  * Trigger Radio Rate override upon Rateboost event.
  */
-#if defined(CONFIG_SOC_NRF52840)
+#if defined(CONFIG_HAS_HW_NRF_RADIO_BLE_CODED)
 
 #define HAL_TRIGGER_RATEOVERRIDE_PPI 13
 
@@ -255,7 +255,7 @@ static inline void hal_trigger_rateoverride_ppi_config(void)
 		(u32_t)&(NRF_CCM->TASKS_RATEOVERRIDE));
 }
 
-#endif /* CONFIG_SOC_NRF52840 */
+#endif /* CONFIG_HAS_HW_NRF_RADIO_BLE_CODED */
 
 /******************************************************************************/
 #if defined(CONFIG_BT_CTLR_GPIO_PA_PIN) || defined(CONFIG_BT_CTLR_GPIO_LNA_PIN)
@@ -444,7 +444,8 @@ static inline void hal_radio_sw_switch_disable(void)
 		 BIT(HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI));
 }
 
-#if defined(CONFIG_BT_CTLR_PHY_CODED) && defined(CONFIG_SOC_NRF52840)
+#if defined(CONFIG_BT_CTLR_PHY_CODED) && \
+	defined(CONFIG_HAS_HW_NRF_RADIO_BLE_CODED)
 /* The 2 adjacent TIMER EVENTS_COMPARE event offsets used for implementing
  * SW_SWITCH_TIMER-based auto-switch for TIFS, when receiving in LE Coded PHY.
  *  'index' must be 0 or 1.
@@ -555,12 +556,13 @@ static inline void hal_radio_group_task_disable_ppi_setup(void)
 			SW_SWITCH_TIMER_EVTS_COMP(1)),
 		HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_TASK(1));
 }
-#endif /* CONFIG_SOC_NRF52840 */
+#endif /* CONFIG_HAS_HW_NRF_RADIO_BLE_CODED */
 
 static inline void hal_radio_sw_switch_ppi_group_setup(void)
 {
 	/* Include the appropriate PPI channels in the two PPI Groups. */
-#if !defined(CONFIG_BT_CTLR_PHY_CODED) || !defined(CONFIG_SOC_NRF52840)
+#if !defined(CONFIG_BT_CTLR_PHY_CODED) || \
+	!defined(CONFIG_HAS_HW_NRF_RADIO_BLE_CODED)
 	NRF_PPI->CHG[SW_SWITCH_TIMER_TASK_GROUP(0)] =
 		HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_0_INCLUDE |
 			HAL_SW_SWITCH_RADIO_ENABLE_PPI_0_INCLUDE;
@@ -576,7 +578,7 @@ static inline void hal_radio_sw_switch_ppi_group_setup(void)
 		HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_1_INCLUDE |
 		HAL_SW_SWITCH_RADIO_ENABLE_PPI_1_INCLUDE |
 		HAL_SW_SWITCH_RADIO_ENABLE_S2_PPI_1_INCLUDE;
-#endif /* CONFIG_BT_CTLR_PHY_CODED && CONFIG_SOC_NRF52840 */
+#endif /* CONFIG_BT_CTLR_PHY_CODED && CONFIG_HAS_HW_NRF_RADIO_BLE_CODED */
 }
 
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
