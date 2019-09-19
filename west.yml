@@ -29,7 +29,7 @@ manifest:
       revision: 04ff67a0826a51041e51034faf8fc4d3eeacd846
       path: modules/hal/atmel
     - name: ci-tools
-      revision: 343b5c7543a6681e8625e7d56f27e58e1006dde4
+      revision: e01f3bce2a94847253369efb9a081f5c0e9ec882
       path: tools/ci-tools
     - name: civetweb
       revision: 99129c5efc907ea613c4b73ccff07581feb58a7a
