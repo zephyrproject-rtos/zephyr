@@ -624,7 +624,9 @@ __STATIC_INLINE void __NVIC_EnableIRQ(IRQn_Type IRQn)
 {
   if ((int32_t)(IRQn) >= 0)
   {
+    __COMPILER_BARRIER();
     NVIC->ISER[0U] = (uint32_t)(1UL << (((uint32_t)IRQn) & 0x1FUL));
+    __COMPILER_BARRIER();
   }
 }
 
@@ -831,6 +833,7 @@ __STATIC_INLINE void __NVIC_SetVector(IRQn_Type IRQn, uint32_t vector)
 {
   uint32_t vectors = 0x0U;
   (* (int *) (vectors + ((int32_t)IRQn + NVIC_USER_IRQ_OFFSET) * 4)) = vector;
+  /* ARM Application Note 321 states that the M0 does not require the architectural barrier */
 }
 
 

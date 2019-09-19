@@ -1,8 +1,8 @@
 /**************************************************************************//**
  * @file     cmsis_armclang_ltm.h
  * @brief    CMSIS compiler armclang (Arm Compiler 6) header file
- * @version  V1.0.1
- * @date     19. March 2019
+ * @version  V1.2.0
+ * @date     08. May 2019
  ******************************************************************************/
 /*
  * Copyright (c) 2018-2019 Arm Limited. All rights reserved.
@@ -109,6 +109,31 @@
 #endif
 #ifndef   __RESTRICT
   #define __RESTRICT                             __restrict
+#endif
+#ifndef   __COMPILER_BARRIER
+  #define __COMPILER_BARRIER()                   __ASM volatile("":::"memory")
+#endif
+
+/* #########################  Startup and Lowlevel Init  ######################## */
+
+#ifndef __PROGRAM_START
+#define __PROGRAM_START           __main
+#endif
+
+#ifndef __INITIAL_SP
+#define __INITIAL_SP              Image$$ARM_LIB_STACK$$ZI$$Limit
+#endif
+
+#ifndef __STACK_LIMIT
+#define __STACK_LIMIT             Image$$ARM_LIB_STACK$$ZI$$Base
+#endif
+
+#ifndef __VECTOR_TABLE
+#define __VECTOR_TABLE            __Vectors
+#endif
+
+#ifndef __VECTOR_TABLE_ATTRIBUTE
+#define __VECTOR_TABLE_ATTRIBUTE  __attribute((used, section("RESET")))
 #endif
 
 

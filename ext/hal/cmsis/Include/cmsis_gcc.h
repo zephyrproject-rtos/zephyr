@@ -1,11 +1,11 @@
 /**************************************************************************//**
  * @file     cmsis_gcc.h
  * @brief    CMSIS compiler GCC header file
- * @version  V5.1.0
- * @date     20. December 2018
+ * @version  V5.2.0
+ * @date     08. May 2019
  ******************************************************************************/
 /*
- * Copyright (c) 2009-2018 Arm Limited. All rights reserved.
+ * Copyright (c) 2009-2019 Arm Limited. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -113,7 +113,74 @@
 #ifndef   __RESTRICT
   #define __RESTRICT                             __restrict
 #endif
+#ifndef   __COMPILER_BARRIER
+  #define __COMPILER_BARRIER()                   __ASM volatile("":::"memory")
+#endif
 
+/* #########################  Startup and Lowlevel Init  ######################## */
+
+#ifndef __PROGRAM_START
+
+/**
+  \brief   Initializes data and bss sections
+  \details This default implementations initialized all data and additional bss
+           sections relying on .copy.table and .zero.table specified properly
+           in the used linker script.
+  
+ */
+__STATIC_FORCEINLINE __NO_RETURN void __cmsis_start(void)
+{
+  extern void _start(void) __NO_RETURN;
+  
+  typedef struct {
+    uint32_t const* src;
+    uint32_t* dest;
+    uint32_t  wlen;
+  } __copy_table_t;
+  
+  typedef struct {
+    uint32_t* dest;
+    uint32_t  wlen;
+  } __zero_table_t;
+  
+  extern const __copy_table_t __copy_table_start__;
+  extern const __copy_table_t __copy_table_end__;
+  extern const __zero_table_t __zero_table_start__;
+  extern const __zero_table_t __zero_table_end__;
+
+  for (__copy_table_t const* pTable = &__copy_table_start__; pTable < &__copy_table_end__; ++pTable) {
+    for(uint32_t i=0u; i<pTable->wlen; ++i) {
+      pTable->dest[i] = pTable->src[i];
+    }
+  }
+ 
+  for (__zero_table_t const* pTable = &__zero_table_start__; pTable < &__zero_table_end__; ++pTable) {
+    for(uint32_t i=0u; i<pTable->wlen; ++i) {
+      pTable->dest[i] = 0u;
+    }
+  }
+ 
+  _start();
+}
+  
+#define __PROGRAM_START           __cmsis_start
+#endif
+
+#ifndef __INITIAL_SP
+#define __INITIAL_SP              __StackTop
+#endif
+
+#ifndef __STACK_LIMIT
+#define __STACK_LIMIT             __StackLimit
+#endif
+
+#ifndef __VECTOR_TABLE
+#define __VECTOR_TABLE            __Vectors
+#endif
+
+#ifndef __VECTOR_TABLE_ATTRIBUTE
+#define __VECTOR_TABLE_ATTRIBUTE  __attribute((used, section(".vectors")))
+#endif
 
 /* ###########################  Core Function Access  ########################### */
 /** \ingroup  CMSIS_Core_FunctionInterface
