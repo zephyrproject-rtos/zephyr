@@ -91,7 +91,7 @@ static s32_t next_timeout(void)
 
 static bool is_absolute(k_ticks_t t)
 {
-#ifdef K_TIMEOUT_ABSOLUTE_TICKS
+#ifdef Z_TIMEOUT_ABSOLUTE_TICKS
 	return ((s64_t)t) < ((s64_t)K_FOREVER_TICKS);
 #else
 	return false;
@@ -128,7 +128,7 @@ void z_add_timeout(struct _timeout *to, _timeout_func_t fn,
 	LOCKED(&timeout_lock) {
 		struct _timeout *t;
 
-#ifdef K_TIMEOUT_ABSOLUTE_TICKS
+#ifdef Z_TIMEOUT_ABSOLUTE_TICKS
 		/* Handle absolute expirations */
 		if (is_absolute(ticks)) {
 			s64_t abs = K_FOREVER_TICKS - 1 - ticks;

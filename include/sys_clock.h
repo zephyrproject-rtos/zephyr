@@ -64,7 +64,7 @@ typedef u32_t k_ticks_t;
  * @param t Timeout in hardware cycles
  */
 
-/** \def K_TIMEOUT_ABSOLUTE_TICKS(t)
+/** \def Z_TIMEOUT_ABSOLUTE_TICKS(t)
  * @brief Initializes a k_timeout_t object with uptime in ticks
  *
  * Evaluates to a k_timeout_t object representing an API timeout that
@@ -73,7 +73,7 @@ typedef u32_t k_ticks_t;
  * @param t Timeout in ticks
  */
 
-/** \def K_TIMEOUT_ABSOLUTE_MS(t)
+/** \def Z_TIMEOUT_ABSOLUTE_MS(t)
  * @brief Initializes a k_timeout_t object with uptime in milliseconds
  *
  * Evaluates to a k_timeout_t object representing an API timeout that
@@ -82,7 +82,7 @@ typedef u32_t k_ticks_t;
  * @param t Timeout in milliseconds
  */
 
-/** \def K_TIMEOUT_ABSOLUTE_US(t)
+/** \def Z_TIMEOUT_ABSOLUTE_US(t)
  * @brief Initializes a k_timeout_t object with uptime in microseconds
  *
  * Evaluates to a k_timeout_t object representing an API timeout that
@@ -91,7 +91,7 @@ typedef u32_t k_ticks_t;
  * @param t Timeout in microseconds
  */
 
-/** \def K_TIMEOUT_ABSOLUTE_CYC(t)
+/** \def Z_TIMEOUT_ABSOLUTE_CYC(t)
  * @brief Initializes a k_timeout_t object with uptime in hardware cycles
  *
  * Evaluates to a k_timeout_t object representing an API timeout that
@@ -173,11 +173,11 @@ struct _timeout {
 #endif
 
 #if defined(CONFIG_SYS_TIMEOUT_64BIT) && !defined(CONFIG_SYS_TIMEOUT_LEGACY_API)
-#define K_TIMEOUT_ABSOLUTE_TICKS(t) \
+#define Z_TIMEOUT_ABSOLUTE_TICKS(t) \
 	K_TIMEOUT_TICKS((k_ticks_t)(K_FOREVER_TICKS - (t + 1)))
-#define K_TIMEOUT_ABSOLUTE_MS(t) K_TIMEOUT_ABSOLUTE_TICKS(k_ms_to_ticks_ceil64(t))
-#define K_TIMEOUT_ABSOLUTE_US(t) K_TIMEOUT_ABSOLUTE_TICKS(k_us_to_ticks_ceil64(t))
-#define K_TIMEOUT_ABSOLUTE_CYC(t) K_TIMEOUT_ABSOLUTE_TICKS(k_cyc_to_ticks_ceil64(t))
+#define Z_TIMEOUT_ABSOLUTE_MS(t) Z_TIMEOUT_ABSOLUTE_TICKS(k_ms_to_ticks_ceil64(t))
+#define Z_TIMEOUT_ABSOLUTE_US(t) Z_TIMEOUT_ABSOLUTE_TICKS(k_us_to_ticks_ceil64(t))
+#define Z_TIMEOUT_ABSOLUTE_CYC(t) Z_TIMEOUT_ABSOLUTE_TICKS(k_cyc_to_ticks_ceil64(t))
 #endif
 
 s64_t z_tick_get(void);

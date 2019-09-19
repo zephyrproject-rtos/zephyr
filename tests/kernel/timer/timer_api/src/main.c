@@ -147,13 +147,13 @@ void test_timer_duration_period(void)
 
 void test_timer_absolute(void)
 {
-#ifdef K_TIMEOUT_ABSOLUTE_TICKS
+#ifdef Z_TIMEOUT_ABSOLUTE_TICKS
 	u64_t start, end, now;
 	k_timeout_t timeout;
 
 	start = k_uptime_ticks();
 	end = start + DURATION;
-	timeout = K_TIMEOUT_ABSOLUTE_TICKS(end);
+	timeout = Z_TIMEOUT_ABSOLUTE_TICKS(end);
 
 	k_timer_start(&duration_timer, timeout, K_FOREVER);
 	k_timer_status_sync(&duration_timer);
