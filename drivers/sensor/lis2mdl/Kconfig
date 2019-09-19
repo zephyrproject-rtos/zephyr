@@ -72,4 +72,8 @@ config LIS2MDL_MAG_ODR_100
 
 endchoice
 
+config LIS2MDL_SPI_FULL_DUPLEX
+	bool "Enable SPI 4wire mode (separated MISO and MOSI lines)"
+	depends on SPI
+
 endif # LIS2MDL
