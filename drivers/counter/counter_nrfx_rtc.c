@@ -30,6 +30,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL);
 
 #define TOP_CH 0
 #define COUNTER_TOP_INT NRFX_RTC_INT_COMPARE0
+#define COUNTER_TOP_INT_MASK NRF_RTC_INT_COMPARE0_MASK
 
 struct counter_nrfx_data {
 	counter_top_callback_t top_cb;
@@ -141,6 +142,18 @@ static int counter_nrfx_cancel_alarm(struct device *dev, u8_t chan_id)
 	return 0;
 }
 
+/* Return true if counter must be cleared by the CPU. It is cleared
+ * automatically in case of max top value or PPI usage.
+ */
+static bool sw_wrap_required(struct device *dev)
+{
+	return (get_dev_data(dev)->top != COUNTER_MAX_TOP_VALUE)
+#if CONFIG_COUNTER_RTC_WITH_PPI_WRAP
+		    && !get_nrfx_config(dev)->use_ppi
+#endif
+		;
+}
+
 static int counter_nrfx_set_top_value(struct device *dev,
 				      const struct counter_top_cfg *cfg)
 {
@@ -174,8 +187,8 @@ static int counter_nrfx_set_top_value(struct device *dev,
 		}
 	}
 
-	if (cfg->callback) {
-		nrfx_rtc_int_enable(rtc, COUNTER_TOP_INT);
+	if (cfg->callback || sw_wrap_required(dev)) {
+		nrfx_rtc_int_enable(rtc, COUNTER_TOP_INT_MASK);
 	}
 
 	return err;
@@ -208,12 +221,8 @@ static void event_handler(nrfx_rtc_int_type_t int_type, void *p_context)
 	struct counter_nrfx_data *data = get_dev_data(dev);
 
 	if (int_type == COUNTER_TOP_INT) {
-		/* Manually reset counter if top value is different than max. */
-		if ((data->top != COUNTER_MAX_TOP_VALUE)
-#if CONFIG_COUNTER_RTC_WITH_PPI_WRAP
-		    && !get_nrfx_config(dev)->use_ppi
-#endif
-		    ) {
+		/* Manual reset counter if needed. */
+		if (sw_wrap_required(dev)) {
 			nrfx_rtc_counter_clear(&get_nrfx_config(dev)->rtc);
 		}
 
