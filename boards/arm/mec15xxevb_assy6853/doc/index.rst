@@ -254,7 +254,7 @@ Flashing
      :align: center
      :alt: SPI DONGLE ASSY 6791
 
-#. Connect the SPI Dongle ASSY 6791 to ``J36`` in the EVB. See the image above.
+#. Connect the SPI Dongle ASSY 6791 to ``J44`` in the EVB. See the image above.
 
 #. Then proceed to flash the SPI NOR ``U3`` at offset 0x0 using Dediprog SF100
    or a similar tool for flashing SPI chips.
