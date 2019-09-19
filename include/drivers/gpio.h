@@ -501,8 +501,28 @@ static inline int z_impl_gpio_config(struct device *port, int access_op,
 {
 	const struct gpio_driver_api *api =
 		(const struct gpio_driver_api *)port->driver_api;
+	struct gpio_driver_data *data =
+			(struct gpio_driver_data *)port->driver_data;
 
-	return api->config(port, access_op, pin, flags);
+	int ret = api->config(port, access_op, pin, flags);
+
+	if ((ret == 0) && (flags & GPIO_INT_LEVELS_LOGICAL)) {
+		if (access_op == GPIO_ACCESS_BY_PIN) {
+			if ((flags & GPIO_ACTIVE_LOW) != 0) {
+				data->invert |= BIT(pin);
+			} else {
+				data->invert &= ~BIT(pin);
+			}
+		} else {
+			if ((flags & GPIO_ACTIVE_LOW) != 0) {
+				data->invert &= ~pin;
+			} else {
+				data->invert &= ~pin;
+			}
+		}
+	}
+
+	return ret;
 }
 
 __syscall int gpio_write(struct device *port, int access_op, u32_t pin,
