@@ -6,118 +6,124 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-menuconfig GPIO_PCAL9535A
+menuconfig GPIO_PCAL95XX
 	bool "PCAL9535A I2C-based GPIO chip"
 	depends on I2C
 	help
 	  Enable driver for PCAL9535A I2C-based GPIO chip.
 
-if GPIO_PCAL9535A
+if GPIO_PCAL95XX
 
-config GPIO_PCAL9535A_INIT_PRIORITY
+config GPIO_PCAL95XX_INIT_PRIORITY
 	int "Init priority"
 	default 70
 	help
 	  Device driver initialization priority.
 
-config GPIO_PCAL9535A_0
+config GPIO_PCAL95XX_PUD
+	bool "GPIO chip pull-up/down support"
+	default y
+	help
+	  Compatible chips support for pull-up/down registers.
+
+config GPIO_PCAL95XX_0
 	bool "PCAL9535A GPIO chip #0"
 	help
 	  Enable config options for the PCAL9535A I2C-based GPIO chip #0.
 
-config GPIO_PCAL9535A_0_DEV_NAME
+config GPIO_PCAL95XX_0_DEV_NAME
 	string "PCAL9535A GPIO chip #0 Device Name"
-	depends on GPIO_PCAL9535A_0
+	depends on GPIO_PCAL95XX_0
 	default "GPIO_P0"
 	help
 	  Specify the device name for the PCAL9535A I2C-based GPIO chip #0.
 
-config GPIO_PCAL9535A_0_I2C_ADDR
+config GPIO_PCAL95XX_0_I2C_ADDR
 	hex "PCAL9535A GPIO chip #0 I2C slave address"
-	depends on GPIO_PCAL9535A_0
+	depends on GPIO_PCAL95XX_0
 	help
 	  Specify the I2C slave address for the PCAL9535A I2C-based GPIO chip #0.
 
-config GPIO_PCAL9535A_0_I2C_MASTER_DEV_NAME
+config GPIO_PCAL95XX_0_I2C_MASTER_DEV_NAME
 	string "I2C Master where PCAL9535A GPIO chip #0 is connected"
-	depends on GPIO_PCAL9535A_0
+	depends on GPIO_PCAL95XX_0
 	help
 	  Specify the device name of the I2C master device to which this
 	  PCAL9535A chip #0 is binded.
 
-config GPIO_PCAL9535A_1
+config GPIO_PCAL95XX_1
 	bool "PCAL9535A GPIO chip #1"
 	help
 	  Enable config options for the PCAL9535A I2C-based GPIO chip #1.
 
-config GPIO_PCAL9535A_1_DEV_NAME
+config GPIO_PCAL95XX_1_DEV_NAME
 	string "PCAL9535A GPIO chip #1 Device Name"
-	depends on GPIO_PCAL9535A_1
+	depends on GPIO_PCAL95XX_1
 	default "GPIO_P1"
 	help
 	  Specify the device name for the PCAL9535A I2C-based GPIO chip #1.
 
-config GPIO_PCAL9535A_1_I2C_ADDR
+config GPIO_PCAL95XX_1_I2C_ADDR
 	hex "PCAL9535A GPIO chip #1 I2C slave address"
-	depends on GPIO_PCAL9535A_1
+	depends on GPIO_PCAL95XX_1
 	help
 	  Specify the I2C slave address for the PCAL9535A I2C-based GPIO chip #1.
 
-config GPIO_PCAL9535A_1_I2C_MASTER_DEV_NAME
+config GPIO_PCAL95XX_1_I2C_MASTER_DEV_NAME
 	string "I2C Master where PCAL9535A GPIO chip #1 is connected"
-	depends on GPIO_PCAL9535A_1
+	depends on GPIO_PCAL95XX_1
 	help
 	  Specify the device name of the I2C master device to which this
 	  PCAL9535A chip #1 is binded.
 
-config GPIO_PCAL9535A_2
+config GPIO_PCAL95XX_2
 	bool "PCAL9535A GPIO chip #2"
 	help
 	  Enable config options for the PCAL9535A I2C-based GPIO chip #2.
 
-config GPIO_PCAL9535A_2_DEV_NAME
+config GPIO_PCAL95XX_2_DEV_NAME
 	string "PCAL9535A GPIO chip #2 Device Name"
-	depends on GPIO_PCAL9535A_2
+	depends on GPIO_PCAL95XX_2
 	default "GPIO_P2"
 	help
 	  Specify the device name for the PCAL9535A I2C-based GPIO chip #2.
 
-config GPIO_PCAL9535A_2_I2C_ADDR
+config GPIO_PCAL95XX_2_I2C_ADDR
 	hex "PCAL9535A GPIO chip #2 I2C slave address"
-	depends on GPIO_PCAL9535A_2
+	depends on GPIO_PCAL95XX_2
 	help
 	  Specify the I2C slave address for the PCAL9535A I2C-based GPIO chip #2.
 
-config GPIO_PCAL9535A_2_I2C_MASTER_DEV_NAME
+config GPIO_PCAL95XX_2_I2C_MASTER_DEV_NAME
 	string "I2C Master where PCAL9535A GPIO chip #2 is connected"
-	depends on GPIO_PCAL9535A_2
+	depends on GPIO_PCAL95XX_2
 	help
 	  Specify the device name of the I2C master device to which this
 	  PCAL9535A chip #2 is binded.
 
-config GPIO_PCAL9535A_3
+config GPIO_PCAL95XX_3
 	bool "PCAL9535A GPIO chip #3"
 	help
 	  Enable config options for the PCAL9535A I2C-based GPIO chip #3.
 
-config GPIO_PCAL9535A_3_DEV_NAME
+config GPIO_PCAL95XX_3_DEV_NAME
 	string "PCAL9535A GPIO chip #3 Device Name"
-	depends on GPIO_PCAL9535A_3
+	depends on GPIO_PCAL95XX_3
 	default "GPIO_P3"
 	help
 	  Specify the device name for the PCAL9535A I2C-based GPIO chip #3.
 
-config GPIO_PCAL9535A_3_I2C_ADDR
+config GPIO_PCAL95XX_3_I2C_ADDR
 	hex "PCAL9535A GPIO chip #3 I2C slave address"
-	depends on GPIO_PCAL9535A_3
+	depends on GPIO_PCAL95XX_3
 	help
 	  Specify the I2C slave address for the PCAL9535A I2C-based GPIO chip #3.
 
-config GPIO_PCAL9535A_3_I2C_MASTER_DEV_NAME
+config GPIO_PCAL95XX_3_I2C_MASTER_DEV_NAME
 	string "I2C Master where PCAL9535A GPIO chip #3 is connected"
-	depends on GPIO_PCAL9535A_3
+	depends on GPIO_PCAL95XX_3
 	help
 	  Specify the device name of the I2C master device to which this
 	  PCAL9535A chip #3 is binded.
 
-endif # GPIO_PCAL9535A
+endif # GPIO_PCAL95XX

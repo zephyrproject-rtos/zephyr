@@ -127,6 +127,7 @@
 /drivers/flash/*stm32*                    @superna9999
 /drivers/gpio/*ht16k33*                   @henrikbrixandersen
 /drivers/gpio/*stm32*                     @rsalveti @idlethread
+/drivers/gpio/*pcal95*                    @dcpleung @tbursztyka @albertofloyd
 /drivers/hwinfo/                          @alexanderwachter
 /drivers/i2s/i2s_ll_stm32*                @avisconti
 /drivers/ieee802154/                      @jukkar @tbursztyka

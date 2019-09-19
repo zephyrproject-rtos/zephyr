@@ -8,8 +8,8 @@
  * @file Header file for the PCAL9535A driver.
  */
 
-#ifndef ZEPHYR_DRIVERS_GPIO_GPIO_PCAL9535A_H_
-#define ZEPHYR_DRIVERS_GPIO_GPIO_PCAL9535A_H_
+#ifndef ZEPHYR_DRIVERS_GPIO_GPIO_PCAL95XX_H_
+#define ZEPHYR_DRIVERS_GPIO_GPIO_PCAL95XX_H_
 
 #include <kernel.h>
 
@@ -21,7 +21,7 @@ extern "C" {
 #endif
 
 /** Configuration data */
-struct gpio_pcal9535a_config {
+struct gpio_pcal95xx_config {
 	/** The master I2C device's name */
 	const char * const i2c_master_dev_name;
 
@@ -32,14 +32,14 @@ struct gpio_pcal9535a_config {
 };
 
 /** Store the port 0/1 data for each register pair. */
-union gpio_pcal9535a_port_data {
+union gpio_pcal95xx_port_data {
 	u16_t all;
 	u8_t port[2];
 	u8_t byte[2];
 };
 
 /** Runtime driver data */
-struct gpio_pcal9535a_drv_data {
+struct gpio_pcal95xx_drv_data {
 	/** Master I2C device */
 	struct device *i2c_master;
 
@@ -50,11 +50,11 @@ struct gpio_pcal9535a_drv_data {
 	u32_t out_pol_inv;
 
 	struct {
-		union gpio_pcal9535a_port_data output;
-		union gpio_pcal9535a_port_data pol_inv;
-		union gpio_pcal9535a_port_data dir;
-		union gpio_pcal9535a_port_data pud_en;
-		union gpio_pcal9535a_port_data pud_sel;
+		union gpio_pcal95xx_port_data output;
+		union gpio_pcal95xx_port_data pol_inv;
+		union gpio_pcal95xx_port_data dir;
+		union gpio_pcal95xx_port_data pud_en;
+		union gpio_pcal95xx_port_data pud_sel;
 	} reg_cache;
 
 	u8_t stride[2];
@@ -64,4 +64,4 @@ struct gpio_pcal9535a_drv_data {
 }
 #endif
 
-#endif /* ZEPHYR_DRIVERS_GPIO_GPIO_PCAL9535A_H_ */
+#endif /* ZEPHYR_DRIVERS_GPIO_GPIO_PCAL95XX_H_ */
