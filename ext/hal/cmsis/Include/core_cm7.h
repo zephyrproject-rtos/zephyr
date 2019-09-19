@@ -1,8 +1,8 @@
 /**************************************************************************//**
  * @file     core_cm7.h
  * @brief    CMSIS Cortex-M7 Core Peripheral Access Layer Header File
- * @version  V5.1.0
- * @date     13. March 2019
+ * @version  V5.1.1
+ * @date     28. March 2019
  ******************************************************************************/
 /*
  * Copyright (c) 2009-2019 Arm Limited. All rights reserved.
@@ -1903,7 +1903,9 @@ __STATIC_INLINE void __NVIC_EnableIRQ(IRQn_Type IRQn)
 {
   if ((int32_t)(IRQn) >= 0)
   {
+    __COMPILER_BARRIER();
     NVIC->ISER[(((uint32_t)IRQn) >> 5UL)] = (uint32_t)(1UL << (((uint32_t)IRQn) & 0x1FUL));
+    __COMPILER_BARRIER();
   }
 }
 
@@ -2128,6 +2130,7 @@ __STATIC_INLINE void __NVIC_SetVector(IRQn_Type IRQn, uint32_t vector)
 {
   uint32_t vectors = (uint32_t )SCB->VTOR;
   (* (int *) (vectors + ((int32_t)IRQn + NVIC_USER_IRQ_OFFSET) * 4)) = vector;
+  __DSB();
 }
 
 
@@ -2229,6 +2232,7 @@ __STATIC_INLINE uint32_t SCB_GetFPUType(void)
 #define CCSIDR_SETS(x)         (((x) & SCB_CCSIDR_NUMSETS_Msk      ) >> SCB_CCSIDR_NUMSETS_Pos      )
 
 #define __SCB_DCACHE_LINE_SIZE  32U /*!< Cortex-M7 cache line size is fixed to 32 bytes (8 words). See also register SCB_CCSIDR */
+#define __SCB_ICACHE_LINE_SIZE  32U /*!< Cortex-M7 cache line size is fixed to 32 bytes (8 words). See also register SCB_CCSIDR */
 
 /**
   \brief   Enable I-Cache
@@ -2280,6 +2284,36 @@ __STATIC_FORCEINLINE void SCB_InvalidateICache (void)
     SCB->ICIALLU = 0UL;
     __DSB();
     __ISB();
+  #endif
+}
+
+
+/**
+  \brief   I-Cache Invalidate by address
+  \details Invalidates I-Cache for the given address.
+           I-Cache is invalidated starting from a 32 byte aligned address in 32 byte granularity.
+           I-Cache memory blocks which are part of given address + given size are invalidated.
+  \param[in]   addr    address
+  \param[in]   isize   size of memory block (in number of bytes)
+*/
+__STATIC_FORCEINLINE void SCB_InvalidateICache_by_Addr (void *addr, int32_t isize)
+{
+  #if defined (__ICACHE_PRESENT) && (__ICACHE_PRESENT == 1U)
+    if ( isize > 0 ) {
+       int32_t op_size = isize + (((uint32_t)addr) & (__SCB_ICACHE_LINE_SIZE - 1U));
+      uint32_t op_addr = (uint32_t)addr /* & ~(__SCB_ICACHE_LINE_SIZE - 1U) */;
+
+      __DSB();
+
+      do {
+        SCB->ICIMVAU = op_addr;             /* register accepts only 32byte aligned values, only bits 31..5 are valid */
+        op_addr += __SCB_ICACHE_LINE_SIZE;
+        op_size -= __SCB_ICACHE_LINE_SIZE;
+      } while ( op_size > 0 );
+
+      __DSB();
+      __ISB();
+    }
   #endif
 }
 
