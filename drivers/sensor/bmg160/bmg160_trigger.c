@@ -235,7 +235,7 @@ int bmg160_trigger_init(struct device *dev)
 	k_sem_init(&bmg160->trig_sem, 0, UINT_MAX);
 	k_thread_create(&bmg160_thread, bmg160_thread_stack,
 			CONFIG_BMG160_THREAD_STACK_SIZE, bmg160_thread_main,
-			dev, NULL, NULL, K_PRIO_COOP(10), 0, 0);
+			dev, NULL, NULL, K_PRIO_COOP(10), 0, K_NO_WAIT);
 
 #elif defined(CONFIG_BMG160_TRIGGER_GLOBAL_THREAD)
 	bmg160->work.handler = bmg160_work_cb;

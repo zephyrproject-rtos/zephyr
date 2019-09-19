@@ -1040,7 +1040,7 @@ static int cc2520_init(struct device *dev)
 	k_thread_create(&cc2520->cc2520_rx_thread, cc2520->cc2520_rx_stack,
 			CONFIG_IEEE802154_CC2520_RX_STACK_SIZE,
 			(k_thread_entry_t)cc2520_rx,
-			dev, NULL, NULL, K_PRIO_COOP(2), 0, 0);
+			dev, NULL, NULL, K_PRIO_COOP(2), 0, K_NO_WAIT);
 
 	LOG_INF("CC2520 initialized");
 
