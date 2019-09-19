@@ -343,8 +343,9 @@ void test_multiple_alarms_instance(const char *dev_name)
 
 	k_busy_wait(1.2*counter_ticks_to_us(dev, ticks * 2U));
 	tmp_alarm_cnt = alarm_cnt; /* to avoid passing volatile to the macro */
-	zassert_equal(2, tmp_alarm_cnt, "%s: Counter set alarm failed",
-			dev_name);
+	zassert_equal(2, tmp_alarm_cnt,
+			"%s: Invalid number of callbacks %d (expected: %d)",
+			dev_name, tmp_alarm_cnt, 2);
 	zassert_equal(&alarm_cfg2, clbk_data[0],
 			"%s: Expected different order or callbacks",
 			dev_name);
