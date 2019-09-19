@@ -72,20 +72,21 @@ extern "C" {
  * @{
  */
 
-/** Disables GPIO pin interrupt. */
-#define GPIO_INT_DISABLE               (0U << 12)
-
-/** @cond INTERNAL_HIDDEN */
-
-/* Enables GPIO pin interrupt. */
-#define GPIO_INT_ENABLE                (1U << 12)
-
-/* GPIO interrupt is sensitive to logical levels.
+/* Trigger detection when input state is (or transitions to) physical low or
+ * logical 0 level.
  *
  * This is a component flag that should be combined with other
  * `GPIO_INT_*` flags to produce a meaningful configuration.
  */
-#define GPIO_INT_LEVELS_LOGICAL        (1U << 13)
+#define GPIO_INT_LOW_0                 (1U << 12)
+
+/* Trigger detection on input state is (or transitions to) physical high or
+ * logical 1 level.
+ *
+ * This is a component flag that should be combined with other
+ * `GPIO_INT_*` flags to produce a meaningful configuration.
+ */
+#define GPIO_INT_HIGH_1                (1U << 13)
 
 /* GPIO interrupt is edge sensitive.
  *
@@ -96,21 +97,21 @@ extern "C" {
  */
 #define GPIO_INT_EDGE                  (1U << 14)
 
-/* Trigger detection when input state is (or transitions to) physical low or
- * logical 0 level.
- *
- * This is a component flag that should be combined with other
- * `GPIO_INT_*` flags to produce a meaningful configuration.
- */
-#define GPIO_INT_LOW_0                 (1U << 15)
+/** Disables GPIO pin interrupt. */
+#define GPIO_INT_DISABLE               (0U << 15)
 
-/* Trigger detection on input state is (or transitions to) physical high or
- * logical 1 level.
+/** @cond INTERNAL_HIDDEN */
+
+/* Enables GPIO pin interrupt. */
+#define GPIO_INT_ENABLE                (1U << 15)
+
+/* GPIO interrupt is sensitive to logical levels.
  *
  * This is a component flag that should be combined with other
  * `GPIO_INT_*` flags to produce a meaningful configuration.
  */
-#define GPIO_INT_HIGH_1                (1U << 16)
+#define GPIO_INT_LEVELS_LOGICAL        (1U << 16)
+
 
 /** @endcond */
 
