@@ -13,8 +13,6 @@
 
 LOG_MODULE_REGISTER(temp_nrf5, CONFIG_SENSOR_LOG_LEVEL);
 
-#include "nrf.h"
-
 
 /* The nRF5 temperature device returns measurements in 0.25C
  * increments.  Scale to mDegrees C.
