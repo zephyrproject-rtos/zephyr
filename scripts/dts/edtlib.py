@@ -187,13 +187,22 @@ class EDT:
             # compatibles. Might get false positives above due to comments and
             # stuff.
 
-            # Parsed PyYAML output (Python lists/dictionaries/strings/etc.,
-            # representing the file)
-            binding = yaml.load(contents, Loader=yaml.Loader)
+            try:
+                # Parsed PyYAML output (Python lists/dictionaries/strings/etc.,
+                # representing the file)
+                binding = yaml.load(contents, Loader=yaml.Loader)
+            except yaml.YAMLError as e:
+                _warn("'{}' appears in binding directories but isn't valid "
+                      "YAML: {}".format(binding_path, e))
+                continue
 
             binding_compat = _binding_compat(binding, binding_path)
-            if binding_compat is None:
-                # Not a binding. Might be a fragment or spurious file.
+            if binding_compat not in dt_compats:
+                # Either not a binding (binding_compat is None -- might be a
+                # binding fragment or a spurious file), or a binding whose
+                # compatible does not appear in the devicetree (picked up via
+                # some unrelated text in the binding file that happened to
+                # match a compatible)
                 continue
 
             # It's a match. Merge in the included bindings, do sanity checks,
