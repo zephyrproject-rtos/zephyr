@@ -159,31 +159,6 @@ void sys_trace_idle(void)
 {
 }
 
-void z_sys_trace_idle(void)
-{
-	sys_trace_idle();
-}
-
-void z_sys_trace_isr_enter(void)
-{
-	sys_trace_isr_enter();
-}
-
-void z_sys_trace_isr_exit(void)
-{
-	sys_trace_isr_exit();
-}
-
-void z_sys_trace_thread_switched_in(void)
-{
-	sys_trace_thread_switched_in();
-}
-
-void z_sys_trace_thread_switched_out(void)
-{
-	sys_trace_thread_switched_out();
-}
-
 #ifdef CONFIG_TRACING_CPU_STATS_LOG
 static struct k_delayed_work cpu_stats_log;
 

@@ -65,7 +65,7 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 #endif
 
 #ifdef CONFIG_TRACING
-	bl z_sys_trace_isr_enter
+	bl sys_trace_isr_enter
 #endif
 
 #ifdef CONFIG_SYS_POWER_MANAGEMENT
@@ -152,7 +152,7 @@ _idle_state_cleared:
 	blx r3		/* call ISR */
 
 #ifdef CONFIG_TRACING
-	bl z_sys_trace_isr_exit
+	bl sys_trace_isr_exit
 #endif
 
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)

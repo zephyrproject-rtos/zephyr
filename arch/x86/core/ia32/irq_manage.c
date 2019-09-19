@@ -61,7 +61,7 @@ void z_arch_irq_direct_pm(void)
 
 void z_arch_isr_direct_header(void)
 {
-	z_sys_trace_isr_enter();
+	sys_trace_isr_enter();
 
 	/* We're not going to unlock IRQs, but we still need to increment this
 	 * so that z_is_in_isr() works

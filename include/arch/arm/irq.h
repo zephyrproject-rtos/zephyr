@@ -125,14 +125,14 @@ extern void z_arch_isr_direct_header(void);
 extern void _IntExit(void);
 
 #ifdef CONFIG_TRACING
-extern void z_sys_trace_isr_exit(void);
+extern void sys_trace_isr_exit(void);
 #endif
 
 static inline void z_arch_isr_direct_footer(int maybe_swap)
 {
 
 #ifdef CONFIG_TRACING
-	z_sys_trace_isr_exit();
+	sys_trace_isr_exit();
 #endif
 	if (maybe_swap) {
 		_IntExit();

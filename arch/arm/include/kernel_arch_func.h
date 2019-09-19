@@ -81,7 +81,7 @@ z_arch_switch_to_main_thread(struct k_thread *main_thread,
 
 	_current = main_thread;
 #ifdef CONFIG_TRACING
-	z_sys_trace_thread_switched_in();
+	sys_trace_thread_switched_in();
 #endif
 
 	/* the ready queue cache already contains the main thread */

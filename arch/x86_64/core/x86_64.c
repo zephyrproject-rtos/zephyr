@@ -45,7 +45,7 @@ void z_new_thread(struct k_thread *t, k_thread_stack_t *stack,
 
 void k_cpu_idle(void)
 {
-	z_sys_trace_idle();
+	sys_trace_idle();
 	__asm__ volatile("sti; hlt");
 }
 

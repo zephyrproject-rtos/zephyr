@@ -74,7 +74,7 @@ SECTION_FUNC(TEXT, z_CpuIdleInit)
 SECTION_FUNC(TEXT, k_cpu_idle)
 #ifdef CONFIG_TRACING
 	push {r0, lr}
-	bl    z_sys_trace_idle
+	bl    sys_trace_idle
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
 	pop {r0, r1}
         mov lr, r1
@@ -123,7 +123,7 @@ SECTION_FUNC(TEXT, k_cpu_idle)
 SECTION_FUNC(TEXT, k_cpu_atomic_idle)
 #ifdef CONFIG_TRACING
 	push {r0, lr}
-	bl    z_sys_trace_idle
+	bl    sys_trace_idle
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
         pop {r0, r1}
         mov lr, r1
