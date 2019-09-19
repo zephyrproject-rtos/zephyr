@@ -146,15 +146,21 @@ The following thread options are supported.
 
     By default, the thread is not considered to be an essential thread.
 
-:c:macro:`K_FP_REGS` and :c:macro:`K_SSE_REGS`
-    These x86-specific options indicate that the thread uses the CPU's
-    floating point registers and SSE registers, respectively. This instructs
-    the kernel to take additional steps to save and restore the contents
-    of these registers when scheduling the thread.
+:c:macro:`K_SSE_REGS`
+    This x86-specific option indicate that the thread uses the CPU's
+    SSE registers. Also see :c:macro:`K_FP_REGS`.
+
+    By default, the kernel does not attempt to save and restore the contents
+    of this register when scheduling the thread.
+
+:c:macro:`K_FP_REGS`
+    This option indicate that the thread uses the CPU's floating point
+    registers. This instructs the kernel to take additional steps to save
+    and restore the contents of these registers when scheduling the thread.
     (For more information see :ref:`float_v2`.)
 
     By default, the kernel does not attempt to save and restore the contents
-    of these registers when scheduling the thread.
+    of this register when scheduling the thread.
 
 :c:macro:`K_USER`
     If :option:`CONFIG_USERSPACE` is enabled, this thread will be created in
