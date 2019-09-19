@@ -47,7 +47,7 @@
 #include "settings.h"
 
 /* Peripheral timeout to initialize Connection Parameter Update procedure */
-#define CONN_UPDATE_TIMEOUT  K_SECONDS(5)
+#define CONN_UPDATE_TIMEOUT  K_MSEC(CONFIG_BT_CONN_PARAM_UPDATE_TIMEOUT)
 #define RPA_TIMEOUT          K_SECONDS(CONFIG_BT_RPA_TIMEOUT)
 
 #define HCI_CMD_TIMEOUT      K_SECONDS(10)

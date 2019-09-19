@@ -355,9 +355,20 @@ config BT_MAX_PAIRED
 	  default) number is 1.
 
 config BT_CREATE_CONN_TIMEOUT
-        int "Timeout for pending LE Create Connection command in seconds"
-        default 3
-        range 1 65535
+	int "Timeout for pending LE Create Connection command in seconds"
+	default 3
+	range 1 65535
+
+config BT_CONN_PARAM_UPDATE_TIMEOUT
+	int "Peripheral connection parameter update timeout in milliseconds"
+	default 5000
+	range 1 65535
+
+	help
+	  The value is a timeout used by peripheral device to wait until it
+	  starts the connection parameters update procedure to change default
+	  connection parameters. The default value is set to 5s, to comply
+	  with BT protocol specification: Core 4.2 Vol 3, Part C, 9.3.12.2
 
 endif # BT_CONN
 
