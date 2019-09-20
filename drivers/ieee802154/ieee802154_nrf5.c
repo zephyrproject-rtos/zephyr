@@ -347,9 +347,9 @@ static void nrf5_irq_config(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	IRQ_CONNECT(NRF5_IRQ_RADIO_IRQn, NRF_802154_IRQ_PRIORITY,
+	IRQ_CONNECT(RADIO_IRQn, NRF_802154_IRQ_PRIORITY,
 		    nrf5_radio_irq, NULL, 0);
-	irq_enable(NRF5_IRQ_RADIO_IRQn);
+	irq_enable(RADIO_IRQn);
 }
 
 static int nrf5_init(struct device *dev)

@@ -155,9 +155,9 @@ int lll_init(void)
 	hal_swi_init();
 
 	/* Connect ISRs */
-	IRQ_DIRECT_CONNECT(NRF5_IRQ_RADIO_IRQn, CONFIG_BT_CTLR_LLL_PRIO,
+	IRQ_DIRECT_CONNECT(RADIO_IRQn, CONFIG_BT_CTLR_LLL_PRIO,
 			   radio_nrf5_isr, 0);
-	IRQ_CONNECT(NRF5_IRQ_RTC0_IRQn, CONFIG_BT_CTLR_ULL_HIGH_PRIO,
+	IRQ_CONNECT(RTC0_IRQn, CONFIG_BT_CTLR_ULL_HIGH_PRIO,
 		    rtc0_nrf5_isr, NULL, 0);
 	IRQ_CONNECT(HAL_SWI_RADIO_IRQ, CONFIG_BT_CTLR_LLL_PRIO,
 		    swi_lll_nrf5_isr, NULL, 0);
@@ -167,8 +167,8 @@ int lll_init(void)
 #endif
 
 	/* Enable IRQs */
-	irq_enable(NRF5_IRQ_RADIO_IRQn);
-	irq_enable(NRF5_IRQ_RTC0_IRQn);
+	irq_enable(RADIO_IRQn);
+	irq_enable(RTC0_IRQn);
 	irq_enable(HAL_SWI_RADIO_IRQ);
 #if (CONFIG_BT_CTLR_ULL_HIGH_PRIO != CONFIG_BT_CTLR_ULL_LOW_PRIO)
 	irq_enable(HAL_SWI_JOB_IRQ);
