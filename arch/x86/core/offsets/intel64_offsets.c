@@ -27,3 +27,6 @@ GEN_OFFSET_SYM(_thread_arch_t, r9);
 GEN_OFFSET_SYM(_thread_arch_t, r10);
 GEN_OFFSET_SYM(_thread_arch_t, r11);
 GEN_OFFSET_SYM(_thread_arch_t, sse);
+
+GEN_OFFSET_SYM(x86_tss64_t, ist1);
+GEN_ABSOLUTE_SYM(__X86_TSS64_SIZEOF, sizeof(x86_tss64_t));
