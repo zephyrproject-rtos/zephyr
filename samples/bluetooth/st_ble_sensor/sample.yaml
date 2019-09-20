@@ -1,0 +1,8 @@
+sample:
+  description: TBD
+  name: TBD
+tests:
+  sample.bluetooth.st_ble_sensor:
+    harness: bluetooth
+    platform_whitelist: nucleo_wb55rg
+    tags: bluetooth
