@@ -2991,7 +2991,7 @@ extern int k_delayed_work_cancel(struct k_delayed_work *work);
  * which point a scheduled delayed work item will execute. If the
  * delayed_work is not scheduled, it returns the current time.
  *
- * @param delayed_work     Address of delayed work item
+ * @param dw  Address of delayed work item
  *
  * @return Uptime (in ticks).
  */
@@ -3011,7 +3011,7 @@ k_ticks_t z_impl_k_delayed_work_end_ticks(struct k_delayed_work *dw)
  * until execution is at least as long as the return value). If the
  * delayed_work is not running, it returns K_FOREVER_TICKS.
  *
- * @param delayed_work     Address of delayed work item.
+ * @param dw  Address of delayed work item.
  *
  * @return Remaining time (in ticks).
  */

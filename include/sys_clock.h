@@ -64,42 +64,6 @@ typedef u32_t k_ticks_t;
  * @param t Timeout in hardware cycles
  */
 
-/** \def Z_TIMEOUT_ABSOLUTE_TICKS(t)
- * @brief Initializes a k_timeout_t object with uptime in ticks
- *
- * Evaluates to a k_timeout_t object representing an API timeout that
- * will expire after the system uptime reaches @a t ticks
- *
- * @param t Timeout in ticks
- */
-
-/** \def Z_TIMEOUT_ABSOLUTE_MS(t)
- * @brief Initializes a k_timeout_t object with uptime in milliseconds
- *
- * Evaluates to a k_timeout_t object representing an API timeout that
- * will expire after the system uptime reaches @a t milliseconds
- *
- * @param t Timeout in milliseconds
- */
-
-/** \def Z_TIMEOUT_ABSOLUTE_US(t)
- * @brief Initializes a k_timeout_t object with uptime in microseconds
- *
- * Evaluates to a k_timeout_t object representing an API timeout that
- * will expire after the system uptime reaches @a t microseconds
- *
- * @param t Timeout in microseconds
- */
-
-/** \def Z_TIMEOUT_ABSOLUTE_CYC(t)
- * @brief Initializes a k_timeout_t object with uptime in hardware cycles
- *
- * Evaluates to a k_timeout_t object representing an API timeout that
- * will expire after the system uptime reaches @a t hardware cycles
- *
- * @param t Timeout in hardware cycles
- */
-
 /** \def K_TIMEOUT_GET(t)
  * @brief Returns the ticks expiration from a k_timeout_t
  *
@@ -173,10 +137,45 @@ struct _timeout {
 #endif
 
 #if defined(CONFIG_SYS_TIMEOUT_64BIT) && !defined(CONFIG_SYS_TIMEOUT_LEGACY_API)
+/** \def Z_TIMEOUT_ABSOLUTE_TICKS(t)
+ * @brief Initializes a k_timeout_t object with uptime in ticks
+ *
+ * Evaluates to a k_timeout_t object representing an API timeout that
+ * will expire after the system uptime reaches @a t ticks
+ *
+ * @param t Timeout in ticks
+ */
 #define Z_TIMEOUT_ABSOLUTE_TICKS(t) \
 	K_TIMEOUT_TICKS((k_ticks_t)(K_FOREVER_TICKS - (t + 1)))
+
+/** \def Z_TIMEOUT_ABSOLUTE_MS(t)
+ * @brief Initializes a k_timeout_t object with uptime in milliseconds
+ *
+ * Evaluates to a k_timeout_t object representing an API timeout that
+ * will expire after the system uptime reaches @a t milliseconds
+ *
+ * @param t Timeout in milliseconds
+ */
 #define Z_TIMEOUT_ABSOLUTE_MS(t) Z_TIMEOUT_ABSOLUTE_TICKS(k_ms_to_ticks_ceil64(t))
+
+/** \def Z_TIMEOUT_ABSOLUTE_US(t)
+ * @brief Initializes a k_timeout_t object with uptime in microseconds
+ *
+ * Evaluates to a k_timeout_t object representing an API timeout that
+ * will expire after the system uptime reaches @a t microseconds
+ *
+ * @param t Timeout in microseconds
+ */
 #define Z_TIMEOUT_ABSOLUTE_US(t) Z_TIMEOUT_ABSOLUTE_TICKS(k_us_to_ticks_ceil64(t))
+
+/** \def Z_TIMEOUT_ABSOLUTE_CYC(t)
+ * @brief Initializes a k_timeout_t object with uptime in hardware cycles
+ *
+ * Evaluates to a k_timeout_t object representing an API timeout that
+ * will expire after the system uptime reaches @a t hardware cycles
+ *
+ * @param t Timeout in hardware cycles
+ */
 #define Z_TIMEOUT_ABSOLUTE_CYC(t) Z_TIMEOUT_ABSOLUTE_TICKS(k_cyc_to_ticks_ceil64(t))
 #endif
 
