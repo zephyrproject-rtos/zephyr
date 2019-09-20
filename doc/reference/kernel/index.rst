@@ -32,6 +32,8 @@ synchronization.
 
    threads/index.rst
    scheduling/index.rst
+   threads/system_threads.rst
+   threads/workqueue.rst
    other/interrupts.rst
    other/polling.rst
    synchronization/semaphores.rst
