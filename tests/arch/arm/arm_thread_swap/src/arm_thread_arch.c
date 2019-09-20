@@ -32,6 +32,7 @@ bool volatile switch_flag;
 struct k_thread *p_ztest_thread;
 
 _callee_saved_t ztest_thread_callee_saved_regs_container;
+int ztest_swap_return_val;
 
 /* Arbitrary values for the callee-saved registers,
  * enforced in the beginning of the test.
@@ -430,6 +431,16 @@ void test_arm_thread_swap(void)
 		: "r" (&ztest_thread_callee_saved_regs_container)
 		: "memory"
 	);
+
+#if !defined(CONFIG_NO_OPTIMIZATIONS)
+	__asm__ volatile (
+		"stm %0, {%1};\n\t"
+		:
+		: "r" (&ztest_swap_return_val), "r" (swap_return_val)
+		: "memory"
+	);
+#endif
+
 
 	/* After swap-back, verify that the callee-saved registers loaded,
 	 * look exactly as what is located in the respective callee-saved
