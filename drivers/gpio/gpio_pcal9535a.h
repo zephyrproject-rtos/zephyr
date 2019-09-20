@@ -40,6 +40,9 @@ union gpio_pcal9535a_port_data {
 
 /** Runtime driver data */
 struct gpio_pcal9535a_drv_data {
+	/* gpio_driver_data needs to be first */
+	struct gpio_driver_data common;
+
 	/** Master I2C device */
 	struct device *i2c_master;
 
