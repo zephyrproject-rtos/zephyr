@@ -350,6 +350,7 @@
 /kernel/                                  @andrewboie @andyross
 /lib/fnmatch/                             @carlescufi
 /lib/gui/                                 @vanwinkeljan
+/lib/open-amp/                            @arnopo
 /lib/os/                                  @andrewboie @andyross
 /lib/posix/                               @pfalcon
 /lib/cmsis_rtos_v2/                       @nashif
