@@ -24,6 +24,8 @@ struct gpio_sam0_config {
 };
 
 struct gpio_sam0_data {
+	/* gpio_driver_data needs to be first */
+	struct gpio_driver_data common;
 #ifdef CONFIG_SAM0_EIC
 	sys_slist_t callbacks;
 #endif
