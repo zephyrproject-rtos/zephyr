@@ -21,6 +21,8 @@
 #include "gpio_utils.h"
 
 struct gpio_esp32_data {
+	/* gpio_driver_data needs to be first */
+	struct gpio_driver_data common;
 	struct device *pinmux;
 
 	struct {
