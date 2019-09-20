@@ -8732,8 +8732,8 @@ static inline void event_phy_upd_ind_prep(struct connection *conn,
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 		/* Update max tx and/or max rx if changed */
-		if ((eff_tx_time == conn->max_tx_time) &&
-		    (eff_rx_time == conn->max_rx_time)) {
+		if ((eff_tx_time <= conn->max_tx_time) &&
+		    (eff_rx_time <= conn->max_rx_time)) {
 			return;
 		}
 		conn->max_tx_time = eff_tx_time;
