@@ -14,13 +14,13 @@ static inline void hal_swi_init(void)
 /* SW IRQs required for the nRF5 BLE Controller. */
 #if defined(CONFIG_BT_LL_SW_SPLIT)
 /* Split architecture uses max. two SWI */
-#define HAL_SWI_RADIO_IRQ  NRF5_IRQ_SWI4_IRQn
-#define HAL_SWI_WORKER_IRQ NRF5_IRQ_RTC0_IRQn
+#define HAL_SWI_RADIO_IRQ  SWI4_IRQn
+#define HAL_SWI_WORKER_IRQ RTC0_IRQn
 
 #if (CONFIG_BT_CTLR_ULL_HIGH_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO)
 #define HAL_SWI_JOB_IRQ    HAL_SWI_WORKER_IRQ
 #else
-#define HAL_SWI_JOB_IRQ    NRF5_IRQ_SWI5_IRQn
+#define HAL_SWI_JOB_IRQ    SWI5_IRQn
 #endif
 
 static inline void hal_swi_lll_pend(void)
@@ -30,8 +30,8 @@ static inline void hal_swi_lll_pend(void)
 
 #elif defined(CONFIG_BT_LL_SW_LEGACY)
 /* Legacy controller uses max. one SWI */
-#define HAL_SWI_WORKER_IRQ NRF5_IRQ_RTC0_IRQn
-#define HAL_SWI_JOB_IRQ    NRF5_IRQ_SWI5_IRQn
+#define HAL_SWI_WORKER_IRQ RTC0_IRQn
+#define HAL_SWI_JOB_IRQ    SWI5_IRQn
 
 #else
 #error "CTRL architecture not defined"

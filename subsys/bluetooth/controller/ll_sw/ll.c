@@ -180,16 +180,16 @@ int ll_init(struct k_sem *sem_rx)
 		ll_filter_reset(true);
 	}
 
-	IRQ_DIRECT_CONNECT(NRF5_IRQ_RADIO_IRQn, CONFIG_BT_CTLR_WORKER_PRIO,
+	IRQ_DIRECT_CONNECT(RADIO_IRQn, CONFIG_BT_CTLR_WORKER_PRIO,
 			   radio_nrf5_isr, 0);
-	IRQ_CONNECT(NRF5_IRQ_RTC0_IRQn, CONFIG_BT_CTLR_WORKER_PRIO,
+	IRQ_CONNECT(RTC0_IRQn, CONFIG_BT_CTLR_WORKER_PRIO,
 		    rtc0_nrf5_isr, NULL, 0);
-	IRQ_CONNECT(NRF5_IRQ_SWI5_IRQn, CONFIG_BT_CTLR_JOB_PRIO, swi5_nrf5_isr,
-		    NULL, 0);
+	IRQ_CONNECT(SWI5_IRQn, CONFIG_BT_CTLR_JOB_PRIO,
+		    swi5_nrf5_isr, NULL, 0);
 
-	irq_enable(NRF5_IRQ_RADIO_IRQn);
-	irq_enable(NRF5_IRQ_RTC0_IRQn);
-	irq_enable(NRF5_IRQ_SWI5_IRQn);
+	irq_enable(RADIO_IRQn);
+	irq_enable(RTC0_IRQn);
+	irq_enable(SWI5_IRQn);
 
 	return 0;
 }

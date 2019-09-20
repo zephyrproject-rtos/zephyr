@@ -13,7 +13,6 @@
 
 #ifndef _ASMLANGUAGE
 
-#include <nrf_common.h>
 #include <nrfx.h>
 
 /* Add include for DTS generated information */
