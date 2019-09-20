@@ -22,6 +22,8 @@ static const u32_t valid_ctrl_masks[NUM_MCHP_GPIO_PORTS] = {
 };
 
 struct gpio_xec_data {
+	/* gpio_driver_data needs to be first */
+	struct gpio_driver_data common;
 	/* port ISR callback routine address */
 	sys_slist_t callbacks;
 	/* pin callback routine enable flags, by pin number */
