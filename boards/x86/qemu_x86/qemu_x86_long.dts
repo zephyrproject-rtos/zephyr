@@ -4,7 +4,3 @@
  */
 
 #include "qemu_x86.dts"
-
-&flash0 {
-	reg = <0x00100000 DT_FLASH_SIZE>;
-};
