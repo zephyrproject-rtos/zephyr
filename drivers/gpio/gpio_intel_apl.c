@@ -103,6 +103,8 @@ struct gpio_intel_apl_config {
 };
 
 struct gpio_intel_apl_data {
+	/* gpio_driver_data needs to be first */
+	struct gpio_driver_data common;
 	/* Pad base address */
 	u32_t		pad_base;
 
