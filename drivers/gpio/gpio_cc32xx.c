@@ -33,6 +33,8 @@ struct gpio_cc32xx_config {
 };
 
 struct gpio_cc32xx_data {
+	/* gpio_driver_data needs to be first */
+	struct gpio_driver_data common;
 	/* list of registered callbacks */
 	sys_slist_t callbacks;
 	/* callback enable pin bitmask */
