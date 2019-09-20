@@ -20,6 +20,8 @@ struct gpio_stellaris_config {
 };
 
 struct gpio_stellaris_runtime {
+	/* gpio_driver_data needs to be first */
+	struct gpio_driver_data common;
 	sys_slist_t cb;
 };
 
