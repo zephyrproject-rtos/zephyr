@@ -15,6 +15,8 @@
 
 
 struct gpio_cc2650_data {
+	/* gpio_driver_data needs to be first */
+	struct gpio_driver_data common;
 	u32_t pin_callback_enables;
 	sys_slist_t callbacks;
 };
