@@ -48,6 +48,8 @@ struct gpio_sifive_config {
 };
 
 struct gpio_sifive_data {
+	/* gpio_driver_data needs to be first */
+	struct gpio_driver_data common;
 	/* list of callbacks */
 	sys_slist_t cb;
 };
