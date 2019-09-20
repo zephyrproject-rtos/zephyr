@@ -27,6 +27,8 @@ struct gpio_sx1509b_pin_state {
 
 /** Runtime driver data */
 struct gpio_sx1509b_drv_data {
+	/* gpio_driver_data needs to be first */
+	struct gpio_driver_data common;
 	struct device *i2c_master;
 	struct gpio_sx1509b_pin_state pin_state;
 	struct k_sem lock;
