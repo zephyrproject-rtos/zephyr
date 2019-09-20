@@ -174,14 +174,17 @@ class ComplianceTest:
 
         Can be called many times within the same test to add multiple messages.
         """
-        # Hack to preserve newlines in the attribute when tests are saved to
-        # .xml and reloaded. junitparser doesn't seem to handle it correctly.
-        msg = msg.replace("\n", "[newline]")
+        def escape(s):
+            # Hack to preserve e.g. newlines and tabs in the attribute when
+            # tests are saved to .xml and reloaded. junitparser doesn't seem to
+            # handle it correctly, though it does escape stuff like quotes.
+            # unicode-escape replaces newlines with \n (two characters), etc.
+            return s.encode("unicode-escape").decode("utf-8")
 
         if not self.case.info_msg:
-            self.case.info_msg = msg
+            self.case.info_msg = escape(msg)
         else:
-            self.case.info_msg += "[newline][newline]" + msg
+            self.case.info_msg += r"\n\n" + escape(msg)
 
 
 class EndTest(Exception):
@@ -1002,12 +1005,14 @@ def report_test_results_to_github(suite):
             set_commit_status(
                 'error', 'Error during verification, please report!')
 
-        # Always show informational messages. See ComplianceTest.add_info() for
-        # an explanation of the [newline] thing.
+        # Always show informational messages. See ComplianceTest.add_info() re.
+        # the decoding thing. We undo it here.
         if case.info_msg:
             comment += "## {} (informational only, not a failure)\n\n" \
                        "```\n{}\n```\n\n".format(
-                           case.name, case.info_msg.replace("[newline]", "\n"))
+                           case.name,
+                           case.info_msg.encode("utf-8")
+                                        .decode("unicode-escape"))
 
     if n_failures > 0:
         github_comment(
