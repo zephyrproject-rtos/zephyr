@@ -27,6 +27,12 @@ struct gpio_nios2_config {
 	config_func_t config_func;
 };
 
+/* Driver data */
+struct gpio_nios2_data {
+	/* gpio_driver_data needs to be first */
+	struct gpio_driver_data common;
+};
+
 static int gpio_nios2_config_oput_port(struct device *dev, int access_op,
 				       u32_t pin, int flags)
 {
@@ -143,6 +149,8 @@ static const struct gpio_nios2_config gpio_nios2_oput_cfg = {
 	.config_func = gpio_nios2_config_oput_port,
 };
 
+static struct gpio_nios2_data gpio_nios2_oput_data;
+
 /**
  * @brief Initialization function of PIO
  *
@@ -155,7 +163,8 @@ static int gpio_nios2_oput_init(struct device *dev)
 }
 
 DEVICE_AND_API_INIT(gpio_nios2_oput, CONFIG_GPIO_ALTERA_NIOS2_OUTPUT_DEV_NAME,
-		    gpio_nios2_oput_init, NULL, &gpio_nios2_oput_cfg,
+		    gpio_nios2_oput_init, &gpio_nios2_oput_data,
+		    &gpio_nios2_oput_cfg,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &gpio_nios2_drv_api_funcs);
 
