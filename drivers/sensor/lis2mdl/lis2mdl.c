@@ -148,7 +148,7 @@ static void lis2mdl_channel_get_temp(struct device *dev,
 	struct lis2mdl_data *drv_data = dev->driver_data;
 
 	val->val1 = drv_data->temp_sample / 100;
-	val->val2 = drv_data->temp_sample % 100;
+	val->val2 = (drv_data->temp_sample % 100) * 10000;
 }
 
 static int lis2mdl_channel_get(struct device *dev, enum sensor_channel chan,
