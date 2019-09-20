@@ -17,70 +17,6 @@ or when execution of the current thread is supplanted by an ISR,
 the kernel first saves the current thread's CPU register values.
 These register values get restored when the thread later resumes execution.
 
-Thread States
-=============
-
-A thread that has no factors that prevent its execution is deemed
-to be **ready**, and is eligible to be selected as the current thread.
-
-A thread that has one or more factors that prevent its execution
-is deemed to be **unready**, and cannot be selected as the current thread.
-
-The following factors make a thread unready:
-
-* The thread has not been started.
-* The thread is waiting on for a kernel object to complete an operation.
-  (For example, the thread is taking a semaphore that is unavailable.)
-* The thread is waiting for a timeout to occur.
-* The thread has been suspended.
-* The thread has terminated or aborted.
-
-Thread Priorities
-=================
-
-A thread's priority is an integer value, and can be either negative or
-non-negative.
-Numerically lower priorities takes precedence over numerically higher values.
-For example, the scheduler gives thread A of priority 4 *higher* priority
-over thread B of priority 7; likewise thread C of priority -2 has higher
-priority than both thread A and thread B.
-
-The scheduler distinguishes between two classes of threads,
-based on each thread's priority.
-
-* A :dfn:`cooperative thread` has a negative priority value.
-  Once it becomes the current thread, a cooperative thread remains
-  the current thread until it performs an action that makes it unready.
-
-  .. image:: cooperative.svg
-     :align: center
-
-* A :dfn:`preemptible thread` has a non-negative priority value.
-  Once it becomes the current thread, a preemptible thread may be supplanted
-  at any time if a cooperative thread, or a preemptible thread of higher
-  or equal priority, becomes ready.
-
-  .. image:: preemptive.svg
-     :align: center
-
-A thread's initial priority value can be altered up or down after the thread
-has been started. Thus it possible for a preemptible thread to become
-a cooperative thread, and vice versa, by changing its priority.
-
-The kernel supports a virtually unlimited number of thread priority levels.
-The configuration options :option:`CONFIG_NUM_COOP_PRIORITIES` and
-:option:`CONFIG_NUM_PREEMPT_PRIORITIES` specify the number of priority
-levels for each class of thread, resulting the following usable priority
-ranges:
-
-* cooperative threads: (-:option:`CONFIG_NUM_COOP_PRIORITIES`) to -1
-* preemptive threads: 0 to (:option:`CONFIG_NUM_PREEMPT_PRIORITIES` - 1)
-
-.. image:: priorities.svg
-   :align: center
-
-For example, configuring 5 cooperative priorities and 10 preemptive priorities
-results in the ranges -5 to -1 and 0 to 9, respectively.
 
 Scheduling Algorithm
 ====================
@@ -103,6 +39,10 @@ the current thread until it performs an action that makes it unready.
 Consequently, if a cooperative thread performs lengthy computations,
 it may cause an unacceptable delay in the scheduling of other threads,
 including those of higher priority and equal priority.
+
+
+  .. image:: cooperative.svg
+     :align: center
 
 To overcome such problems, a cooperative thread can voluntarily relinquish
 the CPU from time to time to permit other threads to execute.
@@ -130,6 +70,10 @@ or until the thread performs an action that makes it unready.
 Consequently, if a preemptive thread performs lengthy computations,
 it may cause an unacceptable delay in the scheduling of other threads,
 including those of equal priority.
+
+
+  .. image:: preemptive.svg
+     :align: center
 
 To overcome such problems, a preemptive thread can perform cooperative
 time slicing (as described above), or the scheduler's time slicing capability
