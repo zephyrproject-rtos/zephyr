@@ -130,6 +130,18 @@ int lis2mdl_init_interrupt(struct device *dev)
 		return -EINVAL;
 	}
 
+#if defined(CONFIG_LIS2MDL_TRIGGER_OWN_THREAD)
+	k_sem_init(&lis2mdl->gpio_sem, 0, UINT_MAX);
+	k_thread_create(&lis2mdl->thread, lis2mdl->thread_stack,
+			CONFIG_LIS2MDL_THREAD_STACK_SIZE,
+			(k_thread_entry_t)lis2mdl_thread, dev,
+			0, NULL, K_PRIO_COOP(CONFIG_LIS2MDL_THREAD_PRIORITY),
+			0, 0);
+#elif defined(CONFIG_LIS2MDL_TRIGGER_GLOBAL_THREAD)
+	lis2mdl->work.handler = lis2mdl_work_cb;
+	lis2mdl->dev = dev;
+#endif
+
 	gpio_pin_configure(lis2mdl->gpio, config->gpio_pin,
 			   GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
 			   GPIO_INT_ACTIVE_HIGH | GPIO_INT_DEBOUNCE);
@@ -143,19 +155,5 @@ int lis2mdl_init_interrupt(struct device *dev)
 		return -EIO;
 	}
 
-#if defined(CONFIG_LIS2MDL_TRIGGER_OWN_THREAD)
-	k_sem_init(&lis2mdl->gpio_sem, 0, UINT_MAX);
-	k_thread_create(&lis2mdl->thread, lis2mdl->thread_stack,
-			CONFIG_LIS2MDL_THREAD_STACK_SIZE,
-			(k_thread_entry_t)lis2mdl_thread, dev,
-			0, NULL, K_PRIO_COOP(CONFIG_LIS2MDL_THREAD_PRIORITY),
-			0, 0);
-#elif defined(CONFIG_LIS2MDL_TRIGGER_GLOBAL_THREAD)
-	lis2mdl->work.handler = lis2mdl_work_cb;
-	lis2mdl->dev = dev;
-#endif
-
-	gpio_pin_enable_callback(lis2mdl->gpio, config->gpio_pin);
-
-	return 0;
+	return gpio_pin_enable_callback(lis2mdl->gpio, config->gpio_pin);
 }
