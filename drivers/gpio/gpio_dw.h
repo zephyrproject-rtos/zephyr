@@ -32,6 +32,8 @@ struct gpio_dw_config {
 };
 
 struct gpio_dw_runtime {
+	/* gpio_driver_data needs to be first */
+	struct gpio_driver_data common;
 	u32_t base_addr;
 #ifdef CONFIG_GPIO_DW_CLOCK_GATE
 	struct device *clock;
