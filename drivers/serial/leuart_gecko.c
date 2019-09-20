@@ -11,6 +11,11 @@
 #include <em_cmu.h>
 #include <soc.h>
 
+#define LEUART_PREFIX cmuClock_LEUART
+#define CLOCK_ID_PRFX2(prefix, suffix) prefix##suffix
+#define CLOCK_ID_PRFX(prefix, suffix) CLOCK_ID_PRFX2(prefix, suffix)
+#define CLOCK_LEUART(id) CLOCK_ID_PRFX(LEUART_PREFIX, id)
+
 #define DEV_CFG(dev) \
 	((const struct leuart_gecko_config * const)(dev)->config->config_info)
 #define DEV_DATA(dev) \
@@ -323,7 +328,7 @@ static void leuart_gecko_config_func_0(struct device *dev);
 
 static const struct leuart_gecko_config leuart_gecko_0_config = {
 	.base = (LEUART_TypeDef *)DT_INST_0_SILABS_GECKO_LEUART_BASE_ADDRESS,
-	.clock = cmuClock_LEUART0,
+	.clock = CLOCK_LEUART(DT_INST_0_SILABS_GECKO_LEUART_PERIPHERAL_ID),
 	.baud_rate = DT_INST_0_SILABS_GECKO_LEUART_CURRENT_SPEED,
 	.pin_rx = PIN_LEUART_0_RXD,
 	.pin_tx = PIN_LEUART_0_TXD,
@@ -376,7 +381,7 @@ static void leuart_gecko_config_func_1(struct device *dev);
 
 static const struct leuart_gecko_config leuart_gecko_1_config = {
 	.base = (LEUART_TypeDef *)DT_INST_1_SILABS_GECKO_LEUART_BASE_ADDRESS,
-	.clock = cmuClock_LEUART0,
+	.clock = CLOCK_LEUART(DT_INST_1_SILABS_GECKO_LEUART_PERIPHERAL_ID),
 	.baud_rate = DT_INST_1_SILABS_GECKO_LEUART_CURRENT_SPEED,
 	.pin_rx = PIN_LEUART_1_RXD,
 	.pin_tx = PIN_LEUART_1_TXD,

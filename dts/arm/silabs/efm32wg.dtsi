@@ -43,6 +43,7 @@
 			reg = <0x4000c000 0x400>;
 			interrupts = <3 0>, <4 0>;
 			interrupt-names = "rx", "tx";
+			peripheral-id = <0>;
 			status = "disabled";
 			label = "UART_0";
 		};
@@ -52,6 +53,7 @@
 			reg = <0x4000c400 0x400>;
 			interrupts = <15 0>, <16 0>;
 			interrupt-names = "rx", "tx";
+			peripheral-id = <1>;
 			status = "disabled";
 			label = "UART_1";
 		};
@@ -61,6 +63,7 @@
 			reg = <0x4000c800 0x400>;
 			interrupts = <18 0>, <19 0>;
 			interrupt-names = "rx", "tx";
+			peripheral-id = <2>;
 			status = "disabled";
 			label = "UART_2";
 		};
@@ -70,6 +73,7 @@
 			reg = <0x4000e000 0x400>;
 			interrupts = <20 0>, <21 0>;
 			interrupt-names = "rx", "tx";
+			peripheral-id = <0>;
 			status = "disabled";
 			label = "UART_3";
 		};
@@ -79,6 +83,7 @@
 			reg = <0x4000e400 0x400>;
 			interrupts = <22 0>, <23 0>;
 			interrupt-names = "rx", "tx";
+			peripheral-id = <1>;
 			status = "disabled";
 			label = "UART_4";
 		};
@@ -87,6 +92,7 @@
 			compatible = "silabs,gecko-leuart";
 			reg = <0x40084000 0x400>;
 			interrupts = <24 0>;
+			peripheral-id = <0>;
 			status = "disabled";
 			label = "LEUART_0";
 		};
@@ -95,6 +101,7 @@
 			compatible = "silabs,gecko-leuart";
 			reg = <0x40084400 0x400>;
 			interrupts = <25 0>;
+			peripheral-id = <1>;
 			status = "disabled";
 			label = "LEUART_1";
 		};
