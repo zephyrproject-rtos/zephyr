@@ -34,6 +34,8 @@ struct gpio_cmsdk_ahb_cfg {
 };
 
 struct gpio_cmsdk_ahb_dev_data {
+	/* gpio_driver_data needs to be first */
+	struct gpio_driver_data common;
 	/* list of callbacks */
 	sys_slist_t gpio_cb;
 };
