@@ -18,6 +18,8 @@
 #include "gpio_utils.h"
 
 struct gpio_cc13xx_cc26xx_data {
+	/* gpio_driver_data needs to be first */
+	struct gpio_driver_data common;
 	sys_slist_t callbacks;
 	u32_t pin_callback_enables;
 };
