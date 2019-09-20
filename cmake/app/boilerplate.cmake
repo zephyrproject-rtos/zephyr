@@ -408,6 +408,14 @@ the configuration settings specified in an alternate .conf file using this param
 These settings will override the settings in the application’s .config file or its default .conf file.\
 Multiple files may be listed, e.g. CONF_FILE=\"prj1.conf prj2.conf\"")
 
+if(ZEPHYR_EXTRA_MODULES)
+  # ZEPHYR_EXTRA_MODULES has either been specified on the cmake CLI or is
+  # already in the CMakeCache.txt. This has precedence over the environment
+  # variable ZEPHYR_EXTRA_MODULES
+elseif(DEFINED ENV{ZEPHYR_EXTRA_MODULES})
+  set(ZEPHYR_EXTRA_MODULES $ENV{ZEPHYR_EXTRA_MODULES})
+endif()
+
 if(DTC_OVERLAY_FILE)
   # DTC_OVERLAY_FILE has either been specified on the cmake CLI or is already
   # in the CMakeCache.txt. This has precedence over the environment
