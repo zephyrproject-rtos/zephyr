@@ -505,14 +505,14 @@ irq_dispatch:
 	movl %eax, (CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_EOI)
 #endif
 
+#ifdef CONFIG_STACK_SENTINEL
+	call z_check_stack_sentinel
+#endif
 	movq $_kernel, %rsi
 	cli
 	addq $CONFIG_ISR_SUBSTACK_SIZE, %gs:__x86_tss64_t_ist1_OFFSET
 	decl _kernel_offset_to_nested(%rsi)
-	/* not nested, exit via __resume (might change threads) */
-#ifdef CONFIG_STACK_SENTINEL
-	call z_check_stack_sentinel
-#endif
+	/* if not nested, exit via __resume (might change threads) */
 	jz __resume
 
 irq_exit_nested:
