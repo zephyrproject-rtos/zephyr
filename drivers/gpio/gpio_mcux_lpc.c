@@ -32,6 +32,8 @@ struct gpio_mcux_lpc_config {
 };
 
 struct gpio_mcux_lpc_data {
+	/* gpio_driver_data needs to be first */
+	struct gpio_driver_data common;
 	/* port ISR callback routine address */
 	sys_slist_t callbacks;
 	/* pin callback routine enable flags, by pin number */
