@@ -476,10 +476,12 @@ void test_arm_thread_swap(void)
 
 #if !defined(CONFIG_NO_OPTIMIZATIONS)
 	/* The thread is now swapped-back in. */
-	zassert_true(_current->arch.swap_return_value = SWAP_RETVAL,
-		"Swap value not set as expected\n");
-	zassert_true(_current->arch.swap_return_value = swap_return_val,
-			"Swap value not returned as expected\n");
+	zassert_equal(_current->arch.swap_return_value, SWAP_RETVAL,
+		"Swap value not set as expected: 0x%x (0x%x)\n",
+		_current->arch.swap_return_value, SWAP_RETVAL);
+	zassert_equal(_current->arch.swap_return_value, ztest_swap_return_val,
+		"Swap value not returned as expected 0x%x (0x%x)\n",
+		_current->arch.swap_return_value, ztest_swap_return_val);
 #endif
 
 #if defined(CONFIG_FLOAT) && defined(CONFIG_FP_SHARING)
