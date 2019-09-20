@@ -29,6 +29,8 @@ struct gpio_ht16k33_cfg {
 };
 
 struct gpio_ht16k33_data {
+	/* gpio_driver_data needs to be first */
+	struct gpio_driver_data common;
 	struct device *parent;
 	sys_slist_t callbacks;
 };
