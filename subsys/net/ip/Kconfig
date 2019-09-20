@@ -219,12 +219,16 @@ config NET_ROUTE
 	depends on NET_IPV6_NBR_CACHE
 	default y if NET_IPV6_NBR_CACHE
 
+# Temporarily hide the routing option as we do not have RPL in the system
+# that used to populate the routing table.
 config NET_ROUTING
-	bool "IP routing between interfaces"
+	bool
 	depends on NET_ROUTE
 	help
 	  Allow IPv6 routing between different network interfaces and
-	  technologies.
+	  technologies. Currently this has limited use as some entity
+	  would need to populate the routing table. RPL used to do that
+	  earlier but currently there is no RPL support in Zephyr.
 
 config	NET_MAX_ROUTES
 	int "Max number of routing entries stored."
