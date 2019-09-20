@@ -26,6 +26,7 @@ SECTIONS
 	{
 	*(.locore)
 	*(.locore.*)
+	*(.tss)
 	}
 
 	/*

@@ -5,6 +5,7 @@
 
 #include <gen_offset.h>
 #include <kernel_structs.h>
+#include <kernel_arch_data.h>
 #include <arch/x86/multiboot.h>
 
 #ifdef CONFIG_X86_LONGMODE

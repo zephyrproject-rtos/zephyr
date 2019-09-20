@@ -59,7 +59,7 @@ __start:
 	movw %ax, %fs
 	movw %ax, %gs
 
-	movl $(exception_stack + CONFIG_EXCEPTION_STACK_SIZE), %esp
+	movl $(_exception_stack + CONFIG_EXCEPTION_STACK_SIZE), %esp
 
 	/* transition to long mode. along the way, we enable SSE. */
 
@@ -89,10 +89,11 @@ __start:
 	movw %ax, %es
 	movw %ax, %ss
 	movw %ax, %fs
-	movw %ax, %gs
 
 	movl $X86_KERNEL_TSS, %eax
 	ltr %ax
+	movl $X86_KERNEL_GS_64, %eax
+	movw %ax, %gs
 
 	cld
 	xorl %eax, %eax
@@ -256,11 +257,20 @@ gdt:
 	.word 0, 0, 0x9800, 0x0020	/* 0x18: 64-bit kernel code */
 	.word 0, 0, 0x9200, 0x0000	/* 0x20: 64-bit kernel data */
 
-	.word 0x67			/* 0x28: 64-bit TSS */
-	.word tss
+	.word 0, 0, 0, 0		/* 0x28: unused */
+
+	.word 0				/* 0x30: 64-bit TSS data (for GS) */
+	.word tss0
+	.word 0x9200
+	.word 0
+
+	.word 0, 0, 0, 0		/* 0x38: unused */
+
+	.word __X86_TSS64_SIZEOF-1	/* 0x40: 64-bit TSS (16-byte entry) */
+	.word tss0
 	.word 0x8900
 	.word 0
-	.word 0				/* 0x30: TSS consumes two entries */
+	.word 0
 	.word 0
 	.word 0
 	.word 0
@@ -268,27 +278,6 @@ gdt:
 gdt48:
 	.word (gdt48 - gdt - 1)
 	.long gdt
-
-/*
- * TSS - no privilege transitions (yet) so only used for
- * interrupt (IST1) and exception stack (IST7) locations.
- */
-
-.align 8
-tss:	.long 0
-rsp0:	.long 0, 0
-	.long 0, 0
-	.long 0, 0
-	.long 0, 0
-ist1:	.long (_interrupt_stack + CONFIG_ISR_STACK_SIZE), 0
-	.long 0, 0
-	.long 0, 0
-	.long 0, 0
-	.long 0, 0
-	.long 0, 0
-ist7:	.long (exception_stack + CONFIG_EXCEPTION_STACK_SIZE), 0
-	.long 0, 0
-	.long 0
 
 /*
  * IDT.
@@ -439,7 +428,7 @@ irq:
 	 */
 
 	incl _kernel_offset_to_nested(%rsi)
-	subq $CONFIG_ISR_SUBSTACK_SIZE, ist1
+	subq $CONFIG_ISR_SUBSTACK_SIZE, %gs:__x86_tss64_t_ist1_OFFSET
 	cmpl $CONFIG_ISR_DEPTH, _kernel_offset_to_nested(%rsi)
 	jz 1f
 	sti
@@ -518,7 +507,7 @@ irq_dispatch:
 
 	movq $_kernel, %rsi
 	cli
-	addq $CONFIG_ISR_SUBSTACK_SIZE, ist1
+	addq $CONFIG_ISR_SUBSTACK_SIZE, %gs:__x86_tss64_t_ist1_OFFSET
 	decl _kernel_offset_to_nested(%rsi)
 	/* not nested, exit via __resume (might change threads) */
 #ifdef CONFIG_STACK_SENTINEL
@@ -597,7 +586,8 @@ pdp:	.long 0x00000183		/* 0x183 = G, 1GB, R/W, P */
  * The exception stack is used both for exceptions and early initialization.
  */
 
+.global _exception_stack
 .align 16
-exception_stack:
+_exception_stack:
 	.fill CONFIG_EXCEPTION_STACK_SIZE, 1, 0xAA
 
