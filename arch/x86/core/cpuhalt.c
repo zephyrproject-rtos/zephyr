@@ -21,10 +21,6 @@
 void z_arch_cpu_idle(void)
 {
 	sys_trace_idle();
-#if defined(CONFIG_BOOT_TIME_MEASUREMENT)
-	__idle_time_stamp = k_cycle_get_32();
-#endif
-
 	__asm__ volatile (
 	    "sti\n\t"
 	    "hlt\n\t");
