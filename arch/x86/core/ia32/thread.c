@@ -190,10 +190,10 @@ int z_arch_float_disable(struct k_thread *thread)
  * @param priority thread priority
  * @param options thread options: K_ESSENTIAL, K_FP_REGS, K_SSE_REGS
  */
-void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
-		 size_t stack_size, k_thread_entry_t entry,
-		 void *parameter1, void *parameter2, void *parameter3,
-		 int priority, unsigned int options)
+void z_arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
+		       size_t stack_size, k_thread_entry_t entry,
+		       void *parameter1, void *parameter2, void *parameter3,
+		       int priority, unsigned int options)
 {
 	char *stack_buf;
 	char *stack_high;

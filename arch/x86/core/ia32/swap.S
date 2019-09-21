@@ -382,19 +382,19 @@ time_read_not_needed:
  *
  * @brief Adjust stack/parameters before invoking thread entry function
  *
- * This function adjusts the initial stack frame created by z_new_thread() such
- * that the GDB stack frame unwinders recognize it as the outermost frame in
- * the thread's stack.
+ * This function adjusts the initial stack frame created by z_arch_new_thread()
+ * such that the GDB stack frame unwinders recognize it as the outermost frame
+ * in the thread's stack.
  *
  * GDB normally stops unwinding a stack when it detects that it has
  * reached a function called main().  Kernel threads, however, do not have
  * a main() function, and there does not appear to be a simple way of stopping
  * the unwinding of the stack.
  *
- * Given the initial thread created by z_new_thread(), GDB expects to find a
- * return address on the stack immediately above the thread entry routine
- * z_thread_entry, in the location occupied by the initial EFLAGS.
- * GDB attempts to examine the memory at this return address, which typically
+ * Given the initial thread created by z_arch_new_thread(), GDB expects to find
+ * a return address on the stack immediately above the thread entry routine
+ * z_thread_entry, in the location occupied by the initial EFLAGS.  GDB
+ * attempts to examine the memory at this return address, which typically
  * results in an invalid access to page 0 of memory.
  *
  * This function overwrites the initial EFLAGS with zero.  When GDB subsequently

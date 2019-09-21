@@ -361,10 +361,10 @@ static int ttable_get_empty_slot(void)
 }
 
 /**
- * Called from z_new_thread(),
+ * Called from z_arch_new_thread(),
  * Create a new POSIX thread for the new Zephyr thread.
- * z_new_thread() picks from the kernel structures what it is that we need to
- * call with what parameters
+ * z_arch_new_thread() picks from the kernel structures what it is that we need
+ * to call with what parameters
  */
 void posix_new_thread(posix_thread_status_t *ptr)
 {
