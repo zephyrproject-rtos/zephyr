@@ -41,7 +41,7 @@ static bool check_stack_bounds(u32_t addr, size_t size, u16_t cs)
 {
 	u32_t start, end;
 
-	if (z_is_in_isr()) {
+	if (z_arch_is_in_isr()) {
 		/* We were servicing an interrupt */
 		start = (u32_t)Z_ARCH_THREAD_STACK_BUFFER(_interrupt_stack);
 		end = start + CONFIG_ISR_STACK_SIZE;

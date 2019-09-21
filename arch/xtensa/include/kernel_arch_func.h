@@ -89,7 +89,7 @@ extern void k_cpu_atomic_idle(unsigned int key);
 }
 #endif
 
-#define z_is_in_isr() (z_arch_curr_cpu()->nested != 0U)
+#define z_arch_is_in_isr() (z_arch_curr_cpu()->nested != 0U)
 
 #endif /* _ASMLANGUAGE */
 

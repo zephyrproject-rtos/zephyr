@@ -190,7 +190,7 @@ static inline void set_event_ready(struct k_poll_event *event, u32_t state)
 
 int z_impl_k_poll(struct k_poll_event *events, int num_events, s32_t timeout)
 {
-	__ASSERT(!z_is_in_isr(), "");
+	__ASSERT(!z_arch_is_in_isr(), "");
 	__ASSERT(events != NULL, "NULL events\n");
 	__ASSERT(num_events > 0, "zero events\n");
 

@@ -64,7 +64,7 @@ void z_arch_isr_direct_header(void)
 	sys_trace_isr_enter();
 
 	/* We're not going to unlock IRQs, but we still need to increment this
-	 * so that z_is_in_isr() works
+	 * so that z_arch_is_in_isr() works
 	 */
 	++_kernel.nested;
 }

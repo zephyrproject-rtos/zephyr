@@ -143,7 +143,7 @@ z_set_thread_return_value(struct k_thread *thread, unsigned int value)
 
 extern void k_cpu_atomic_idle(unsigned int key);
 
-#define z_is_in_isr() z_IsInIsr()
+#define z_arch_is_in_isr() z_IsInIsr()
 
 extern FUNC_NORETURN void z_arm_userspace_enter(k_thread_entry_t user_entry,
 					       void *p1, void *p2, void *p3,

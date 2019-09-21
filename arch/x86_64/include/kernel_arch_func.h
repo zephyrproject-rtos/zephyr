@@ -78,7 +78,7 @@ static inline unsigned int z_arch_k_cycle_get_32(void)
 #endif
 }
 
-#define z_is_in_isr() (z_arch_curr_cpu()->nested != 0)
+#define z_arch_is_in_isr() (z_arch_curr_cpu()->nested != 0)
 
 static inline void z_arch_switch(void *switch_to, void **switched_from)
 {

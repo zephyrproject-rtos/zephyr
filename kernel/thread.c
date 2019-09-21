@@ -61,7 +61,7 @@ void k_thread_foreach(k_thread_user_cb_t user_cb, void *user_data)
 
 bool k_is_in_isr(void)
 {
-	return z_is_in_isr();
+	return z_arch_is_in_isr();
 }
 
 /*
@@ -531,7 +531,7 @@ k_tid_t z_impl_k_thread_create(struct k_thread *new_thread,
 			      void *p1, void *p2, void *p3,
 			      int prio, u32_t options, s32_t delay)
 {
-	__ASSERT(!z_is_in_isr(), "Threads may not be created in ISRs");
+	__ASSERT(!z_arch_is_in_isr(), "Threads may not be created in ISRs");
 
 	/* Special case, only for unit tests */
 #if defined(CONFIG_TEST) && defined(CONFIG_ARCH_HAS_USERSPACE) && !defined(CONFIG_USERSPACE)
