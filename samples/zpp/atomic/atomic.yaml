@@ -1,0 +1,3 @@
+sample:
+  description: zpp::atomic_var and zpp::atomic_bitset usage example
+  name: zpp::atomic
