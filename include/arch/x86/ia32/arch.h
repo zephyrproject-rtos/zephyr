@@ -399,8 +399,6 @@ extern void k_float_enable(struct k_thread *thread, unsigned int options);
  * @}
  */
 
-extern void	k_cpu_idle(void);
-
 #ifdef CONFIG_X86_ENABLE_TSS
 extern struct task_state_segment _main_tss;
 #endif

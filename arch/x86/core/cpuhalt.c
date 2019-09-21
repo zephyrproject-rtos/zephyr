@@ -18,7 +18,7 @@
  *
  * @return N/A
  */
-void k_cpu_idle(void)
+void z_arch_cpu_idle(void)
 {
 	sys_trace_idle();
 #if defined(CONFIG_BOOT_TIME_MEASUREMENT)
@@ -35,7 +35,7 @@ void k_cpu_idle(void)
  * @brief Atomically re-enable interrupts and enter low power mode
  *
  * INTERNAL
- * The requirements for k_cpu_atomic_idle() are as follows:
+ * The requirements for z_arch_cpu_atomic_idle() are as follows:
  * 1) The enablement of interrupts and entering a low-power mode needs to be
  *    atomic, i.e. there should be no period of time where interrupts are
  *    enabled before the processor enters a low-power mode.  See the comments
@@ -48,7 +48,7 @@ void k_cpu_idle(void)
  * @return N/A
  */
 
-void k_cpu_atomic_idle(unsigned int key)
+void z_arch_cpu_atomic_idle(unsigned int key)
 {
 	sys_trace_idle();
 
@@ -63,7 +63,7 @@ void k_cpu_atomic_idle(unsigned int key)
 	     *    external, maskable interrupts after the next instruction is
 	     *    executed."
 	     *
-	     * Thus the IA-32 implementation of k_cpu_atomic_idle() will
+	     * Thus the IA-32 implementation of z_arch_cpu_atomic_idle() will
 	     * atomically re-enable interrupts and enter a low-power mode.
 	     */
 	    "hlt\n\t");

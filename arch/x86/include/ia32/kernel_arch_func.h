@@ -67,7 +67,7 @@ z_set_thread_return_value(struct k_thread *thread, unsigned int value)
 	*(unsigned int *)(thread->callee_saved.esp) = value;
 }
 
-extern void k_cpu_atomic_idle(unsigned int key);
+extern void z_arch_cpu_atomic_idle(unsigned int key);
 
 #ifdef CONFIG_USERSPACE
 extern FUNC_NORETURN void z_x86_userspace_enter(k_thread_entry_t user_entry,
