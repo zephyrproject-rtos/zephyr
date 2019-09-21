@@ -274,6 +274,19 @@
 	};
 
 	//
+	// For testing Device.parent and Device.children
+	//
+
+	parent {
+		child-1 {
+		};
+		child-2 {
+			grandchild {
+			};
+		};
+	};
+
+	//
 	// For testing 'include:'
 	//
 

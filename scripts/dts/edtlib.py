@@ -333,8 +333,9 @@ class EDT:
 
 class Device:
     """
-    Represents a device. There's a one-to-one correspondence between device
-    tree nodes and Devices.
+    Represents a device, which is a devicetree node augmented with information
+    from bindings and some interpretation of devicetree properties. There's a
+    one-to-one correspondence between device tree nodes and Devices.
 
     These attributes are available on Device objects:
 
@@ -357,7 +358,12 @@ class Device:
       if the node has no 'label'
 
     parent:
-      The parent Device, or None if there is no parent
+      The Device instance for the devicetree parent of the Device, or None if
+      there is no parent
+
+    children:
+      A dictionary with the Device instances for the devicetree children of the
+      Device, indexed by name
 
     enabled:
       True unless the device's node has 'status = "disabled"'
@@ -478,6 +484,15 @@ class Device:
     def parent(self):
         "See the class docstring"
         return self.edt._node2dev.get(self._node.parent)
+
+    @property
+    def children(self):
+        "See the class docstring"
+        # Could be initialized statically too to preserve identity, but not
+        # sure if needed. Parent Devices being initialized before their
+        # children would need to be kept in mind.
+        return {name: self.edt._node2dev[node]
+                for name, node in self._node.nodes.items()}
 
     @property
     def enabled(self):
