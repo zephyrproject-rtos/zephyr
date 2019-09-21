@@ -60,7 +60,7 @@ static inline void kernel_arch_init(void)
  * @return N/A
  */
 static ALWAYS_INLINE void
-z_set_thread_return_value(struct k_thread *thread, unsigned int value)
+z_arch_thread_return_value_set(struct k_thread *thread, unsigned int value)
 {
 	/* write into 'eax' slot created in z_swap() entry */
 

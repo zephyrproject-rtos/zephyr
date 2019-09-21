@@ -30,7 +30,7 @@
  *
  *
  * @return -EAGAIN, or a return value set by a call to
- * z_set_thread_return_value()
+ * z_arch_thread_return_value_set()
  *
  */
 
@@ -48,7 +48,7 @@ int __swap(unsigned int key)
  */
 	_kernel.current->callee_saved.key = key;
 	_kernel.current->callee_saved.retval = -EAGAIN;
-	/* retval may be modified with a call to z_set_thread_return_value() */
+	/* retval may be modified with a call to z_arch_thread_return_value_set() */
 
 	posix_thread_status_t *ready_thread_ptr =
 		(posix_thread_status_t *)

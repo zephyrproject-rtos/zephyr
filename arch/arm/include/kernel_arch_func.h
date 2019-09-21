@@ -136,7 +136,7 @@ z_arch_switch_to_main_thread(struct k_thread *main_thread,
 }
 
 static ALWAYS_INLINE void
-z_set_thread_return_value(struct k_thread *thread, unsigned int value)
+z_arch_thread_return_value_set(struct k_thread *thread, unsigned int value)
 {
 	thread->arch.swap_return_value = value;
 }

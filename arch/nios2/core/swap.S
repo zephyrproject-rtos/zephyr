@@ -120,7 +120,7 @@ SECTION_FUNC(exception.other, __swap)
 
 	/*
 	 * Load return value into r2 (return value register). -EAGAIN unless
-	 * someone previously called z_set_thread_return_value(). Do this before
+	 * someone previously called z_arch_thread_return_value_set(). Do this before
 	 * we potentially unlock interrupts.
 	 */
 	ldw r2, _thread_offset_to_retval(r2)

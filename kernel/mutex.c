@@ -236,7 +236,7 @@ void z_impl_k_mutex_unlock(struct k_mutex *mutex)
 
 		k_spin_unlock(&lock, key);
 
-		z_set_thread_return_value(new_owner, 0);
+		z_arch_thread_return_value_set(new_owner, 0);
 
 		/*
 		 * new owner is already of higher or equal prio than first

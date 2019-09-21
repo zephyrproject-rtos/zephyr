@@ -106,7 +106,7 @@ void z_impl_k_stack_push(struct k_stack *stack, stack_data_t data)
 	if (first_pending_thread != NULL) {
 		z_ready_thread(first_pending_thread);
 
-		z_set_thread_return_value_with_data(first_pending_thread,
+		z_thread_return_value_set_with_data(first_pending_thread,
 						   0, (void *)data);
 		z_reschedule(&stack->lock, key);
 		return;
