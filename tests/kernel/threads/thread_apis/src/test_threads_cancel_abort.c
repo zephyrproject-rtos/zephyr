@@ -121,7 +121,7 @@ static void uthread_entry(void)
 	block = k_malloc(BLOCK_SIZE);
 	zassert_true(block != NULL, NULL);
 	printk("Child thread is running\n");
-	k_sleep(K_MSEC(2));
+	k_sleep(2);
 }
 
 /**
@@ -139,7 +139,7 @@ void test_abort_handler(void)
 
 	tdata.fn_abort = &abort_function;
 
-	k_sleep(K_MSEC(1));
+	k_sleep(1);
 
 	abort_called = false;
 

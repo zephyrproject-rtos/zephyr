@@ -321,7 +321,7 @@ static void trigger_events(void)
 
 		operation++;
 
-		k_sleep(K_MSEC(100));
+		k_sleep(100);
 	}
 }
 

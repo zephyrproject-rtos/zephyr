@@ -41,7 +41,7 @@ static void beep(struct k_work *work)
 	pwm_pin_set_usec(pwm, BUZZER_PIN, 0, 0);
 
 	/* Ensure there's a clear silent period between two tones */
-	k_sleep(K_MSEC(50));
+	k_sleep(50);
 	beep_active = false;
 }
 

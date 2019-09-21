@@ -155,7 +155,7 @@ static bool start_coap_client(void)
 		if (ret == 0) {
 			break;
 		}
-		k_sleep(K_SECONDS(1));
+		k_sleep(MSEC_PER_SEC);
 	}
 	if (ret < 0) {
 		LOG_ERR("Could not resolve dns");

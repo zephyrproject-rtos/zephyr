@@ -935,7 +935,7 @@ static void test_address_lifetime(void)
 	zassert_not_null(ifaddr, "Address with lifetime cannot be added");
 
 	/* Make sure DAD gets some time to run */
-	k_sleep(K_MSEC(200));
+	k_sleep(200);
 
 	/* Then check that the timeout values in net_if_addr are set correctly.
 	 * Start first with smaller timeout values.
@@ -1050,17 +1050,17 @@ static void test_dad_timeout(void)
 	ifaddr = net_if_ipv6_addr_add(iface, &addr1, NET_ADDR_AUTOCONF, 0xffff);
 	zassert_not_null(ifaddr, "Address 1 cannot be added");
 
-	k_sleep(K_MSEC(10));
+	k_sleep(10);
 
 	ifaddr = net_if_ipv6_addr_add(iface, &addr2, NET_ADDR_AUTOCONF, 0xffff);
 	zassert_not_null(ifaddr, "Address 2 cannot be added");
 
-	k_sleep(K_MSEC(10));
+	k_sleep(10);
 
 	ifaddr = net_if_ipv6_addr_add(iface, &addr3, NET_ADDR_AUTOCONF, 0xffff);
 	zassert_not_null(ifaddr, "Address 3 cannot be added");
 
-	k_sleep(K_MSEC(200));
+	k_sleep(200);
 
 	/* We should have received three DAD queries, make sure they are in
 	 * proper order.

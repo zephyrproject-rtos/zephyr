@@ -94,7 +94,7 @@ void main(void)
 
 		printk("\n<-- App going to sleep for %u Sec -->\n",
 							sleep_seconds);
-		k_sleep(K_SECONDS(sleep_seconds));
+		k_sleep(sleep_seconds * MSEC_PER_SEC);
 	}
 
 	/* Restore automatic power management. */
@@ -107,7 +107,7 @@ void main(void)
 	while (1) {
 		gpio_pin_read(gpio_port, BUTTON_1, &level);
 		if (level == LOW) {
-			k_sleep(K_SECONDS(DEEP_SLEEP_STATE_ENTER_TO));
+			k_sleep(DEEP_SLEEP_STATE_ENTER_TO * MSEC_PER_SEC);
 		}
 		k_busy_wait(1000);
 	}

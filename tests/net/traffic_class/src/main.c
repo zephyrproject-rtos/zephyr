@@ -506,7 +506,7 @@ static void traffic_class_send_priority(enum net_priority prio,
 		/* This sleep is needed here so that the sending side
 		 * can run properly.
 		 */
-		k_sleep(K_MSEC(1));
+		k_sleep(1);
 	}
 }
 
@@ -775,7 +775,7 @@ static void traffic_class_recv_packets_with_prio(enum net_priority prio,
 	zassert_true(ret > 0, "Send UDP pkt failed");
 
 	/* Let the receiver to receive the packets */
-	k_sleep(K_MSEC(1));
+	k_sleep(1);
 }
 
 static void traffic_class_recv_priority(enum net_priority prio,
@@ -801,7 +801,7 @@ static void traffic_class_recv_priority(enum net_priority prio,
 		/* This sleep is needed here so that the receiving side
 		 * can run properly.
 		 */
-		k_sleep(K_MSEC(1));
+		k_sleep(1);
 	}
 }
 

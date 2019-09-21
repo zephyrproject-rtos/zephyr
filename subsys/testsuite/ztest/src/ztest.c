@@ -339,7 +339,7 @@ void main(void)
 		if (test_status == 0) {
 			PRINT("Reset board #%u to test again\n",
 				state.boots);
-			k_sleep(K_MSEC(10));
+			k_sleep(10);
 			sys_reboot(SYS_REBOOT_COLD);
 		} else {
 			PRINT("Failed after %u attempts\n", state.boots);

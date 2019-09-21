@@ -954,7 +954,7 @@ static void winc1500_thread(void)
 		while (m2m_wifi_handle_events(NULL) != 0) {
 		}
 
-		k_sleep(K_MSEC(1));
+		k_sleep(1);
 	}
 }
 

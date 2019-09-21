@@ -383,7 +383,7 @@ static void eth_rx(struct eth_context *ctx)
 			}
 		}
 
-		k_sleep(K_MSEC(50));
+		k_sleep(50);
 	}
 }
 

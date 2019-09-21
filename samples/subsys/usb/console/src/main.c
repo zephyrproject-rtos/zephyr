@@ -22,6 +22,6 @@ void main(void)
 
 	while (1) {
 		printk("Hello World! %s\n", CONFIG_ARCH);
-		k_sleep(K_SECONDS(1));
+		k_sleep(MSEC_PER_SEC);
 	}
 }

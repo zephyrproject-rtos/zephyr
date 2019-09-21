@@ -220,7 +220,7 @@ static void eswifi_spi_poll_thread(void *p1)
 	struct eswifi_dev *eswifi = p1;
 
 	while (1) {
-		k_sleep(K_MSEC(1000));
+		k_sleep(1000);
 		eswifi_spi_read_msg(eswifi);
 	}
 }

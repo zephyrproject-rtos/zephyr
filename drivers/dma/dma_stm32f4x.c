@@ -275,7 +275,7 @@ static int dma_stm32_disable_stream(struct dma_stm32_device *ddata,
 				config &= ~DMA_STM32_SCR_EN);
 
 		/* After trying for 5 seconds, give up */
-		k_sleep(K_SECONDS(5));
+		k_sleep(5 * MSEC_PER_SEC);
 		if (count++ > (5 * 1000) / 50) {
 			LOG_ERR("DMA error: Stream in use\n");
 			return -EBUSY;

@@ -590,7 +590,7 @@ static void on_cmd_atcmdecho_nosock_imei(struct net_buf **buf, u16_t len)
 	if (len < MDM_IMEI_LENGTH) {
 		LOG_DBG("Waiting for data");
 		/* wait for more data */
-		k_sleep(K_MSEC(500));
+		k_sleep(500);
 		wncm14a2a_read_rx(buf);
 	}
 
@@ -1217,7 +1217,7 @@ static int modem_pin_init(void)
 	LOG_DBG("MDM_RESET_PIN -> ASSERTED");
 	gpio_pin_write(ictx.gpio_port_dev[MDM_RESET],
 		       pinconfig[MDM_RESET].pin, MDM_RESET_ASSERTED);
-	k_sleep(K_SECONDS(7));
+	k_sleep(7 * MSEC_PER_SEC);
 	LOG_DBG("MDM_RESET_PIN -> NOT_ASSERTED");
 	gpio_pin_write(ictx.gpio_port_dev[MDM_RESET],
 		       pinconfig[MDM_RESET].pin, MDM_RESET_NOT_ASSERTED);
@@ -1255,7 +1255,7 @@ static int modem_pin_init(void)
 #endif
 
 	/* wait for the WNC Module to perform its initial boot correctly */
-	k_sleep(K_SECONDS(1));
+	k_sleep(MSEC_PER_SEC);
 
 	/* Enable the level translator.
 	 * The input pins should now be the same as how the M14A module is
@@ -1278,15 +1278,15 @@ static void modem_wakeup_pin_fix(void)
 	 * UART characters.
 	 */
 	LOG_DBG("Toggling MDM_KEEP_AWAKE_PIN to avoid missed characters");
-	k_sleep(K_MSEC(20));
+	k_sleep(20);
 	LOG_DBG("MDM_KEEP_AWAKE_PIN -> DISABLED");
 	gpio_pin_write(ictx.gpio_port_dev[MDM_KEEP_AWAKE],
 		       pinconfig[MDM_KEEP_AWAKE].pin, MDM_KEEP_AWAKE_DISABLED);
-	k_sleep(K_SECONDS(2));
+	k_sleep(2 * MSEC_PER_SEC);
 	LOG_DBG("MDM_KEEP_AWAKE_PIN -> ENABLED");
 	gpio_pin_write(ictx.gpio_port_dev[MDM_KEEP_AWAKE],
 		       pinconfig[MDM_KEEP_AWAKE].pin, MDM_KEEP_AWAKE_ENABLED);
-	k_sleep(K_MSEC(20));
+	k_sleep(20);
 }
 
 static void wncm14a2a_rssi_query_work(struct k_work *work)
@@ -1325,7 +1325,7 @@ restart:
 	 */
 	ret = -1;
 	while (counter++ < 50 && ret < 0) {
-		k_sleep(K_SECONDS(2));
+		k_sleep(2 * MSEC_PER_SEC);
 		ret = send_at_cmd(NULL, "AT", MDM_CMD_TIMEOUT);
 		if (ret < 0 && ret != -ETIMEDOUT) {
 			break;
@@ -1372,7 +1372,7 @@ restart:
 
 	/* query modem RSSI */
 	wncm14a2a_rssi_query_work(NULL);
-	k_sleep(K_SECONDS(2));
+	k_sleep(2 * MSEC_PER_SEC);
 
 	counter = 0;
 	/* wait for RSSI > -1000 and != 0 */
@@ -1382,7 +1382,7 @@ restart:
 		/* stop RSSI delay work */
 		k_delayed_work_cancel(&ictx.rssi_query_work);
 		wncm14a2a_rssi_query_work(NULL);
-		k_sleep(K_SECONDS(2));
+		k_sleep(2 * MSEC_PER_SEC);
 	}
 
 	if (ictx.mdm_ctx.data_rssi <= -1000 || ictx.mdm_ctx.data_rssi == 0) {

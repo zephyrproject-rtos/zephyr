@@ -448,7 +448,7 @@ int modem_cmd_handler_setup_cmds(struct modem_iface *iface,
 
 	for (i = 0; i < cmds_len; i++) {
 		if (i) {
-			k_sleep(K_MSEC(50));
+			k_sleep(50);
 		}
 
 		if (cmds[i].handle_cmd.cmd && cmds[i].handle_cmd.func) {

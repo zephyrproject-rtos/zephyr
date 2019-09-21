@@ -756,7 +756,7 @@ static void rx_chksum_offload_disabled_test_v6(void)
 	}
 
 	/* Let the receiver to receive the packets */
-	k_sleep(K_MSEC(10));
+	k_sleep(10);
 }
 
 static void rx_chksum_offload_disabled_test_v4(void)
@@ -812,7 +812,7 @@ static void rx_chksum_offload_disabled_test_v4(void)
 	}
 
 	/* Let the receiver to receive the packets */
-	k_sleep(K_MSEC(10));
+	k_sleep(10);
 }
 
 static void rx_chksum_offload_enabled_test_v6(void)
@@ -866,7 +866,7 @@ static void rx_chksum_offload_enabled_test_v6(void)
 	}
 
 	/* Let the receiver to receive the packets */
-	k_sleep(K_MSEC(10));
+	k_sleep(10);
 }
 
 static void rx_chksum_offload_enabled_test_v4(void)
@@ -920,7 +920,7 @@ static void rx_chksum_offload_enabled_test_v4(void)
 	}
 
 	/* Let the receiver to receive the packets */
-	k_sleep(K_MSEC(10));
+	k_sleep(10);
 }
 
 void test_main(void)

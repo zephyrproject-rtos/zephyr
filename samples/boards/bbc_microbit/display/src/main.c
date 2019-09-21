@@ -73,7 +73,7 @@ void main(void)
 	/* Display countdown from '9' to '0' */
 	mb_display_print(disp, MB_DISPLAY_MODE_SINGLE,
 			 K_SECONDS(1), "9876543210");
-	k_sleep(K_SECONDS(11));
+	k_sleep(11 * MSEC_PER_SEC);
 
 	/* Iterate through all pixels one-by-one */
 	for (y = 0; y < 5; y++) {
@@ -82,24 +82,24 @@ void main(void)
 			pixel.row[y] = BIT(x);
 			mb_display_image(disp, MB_DISPLAY_MODE_SINGLE,
 					 K_MSEC(250), &pixel, 1);
-			k_sleep(K_MSEC(300));
+			k_sleep(300);
 		}
 	}
 
 	/* Show a smiley-face */
 	mb_display_image(disp, MB_DISPLAY_MODE_SINGLE, K_SECONDS(2),
 			 &smiley, 1);
-	k_sleep(K_SECONDS(2));
+	k_sleep(2 * MSEC_PER_SEC);
 
 	/* Show a short scrolling animation */
 	mb_display_image(disp, MB_DISPLAY_MODE_SCROLL, K_SECONDS(1),
 			 scroll, ARRAY_SIZE(scroll));
-	k_sleep(K_SECONDS(1) * (ARRAY_SIZE(scroll) + 2));
+	k_sleep(MSEC_PER_SEC * (ARRAY_SIZE(scroll) + 2));
 
 	/* Show a sequential animation */
 	mb_display_image(disp, MB_DISPLAY_MODE_DEFAULT | MB_DISPLAY_FLAG_LOOP,
 			 K_MSEC(150), animation, ARRAY_SIZE(animation));
-	k_sleep(K_MSEC(150) * ARRAY_SIZE(animation) * 5);
+	k_sleep(150 * ARRAY_SIZE(animation) * 5);
 
 	/* Show some scrolling text ("Hello Zephyr!") */
 	mb_display_print(disp, MB_DISPLAY_MODE_DEFAULT | MB_DISPLAY_FLAG_LOOP,

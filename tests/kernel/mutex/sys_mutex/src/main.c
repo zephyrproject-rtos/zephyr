@@ -79,7 +79,7 @@ void thread_05(void)
 {
 	int rv;
 
-	k_sleep(K_MSEC(3500));
+	k_sleep(3500);
 
 	/* Wait and boost owner priority to 5 */
 	rv = sys_mutex_lock(&mutex_4, K_SECONDS(1));
@@ -102,7 +102,7 @@ void thread_06(void)
 {
 	int rv;
 
-	k_sleep(K_MSEC(3750));
+	k_sleep(3750);
 
 	/*
 	 * Wait for the mutex.  There is a higher priority level thread waiting
@@ -134,7 +134,7 @@ void thread_07(void)
 {
 	int rv;
 
-	k_sleep(K_MSEC(2500));
+	k_sleep(2500);
 
 	/*
 	 * Wait and boost owner priority to 7.  While waiting, another thread of
@@ -164,7 +164,7 @@ void thread_08(void)
 {
 	int rv;
 
-	k_sleep(K_MSEC(1500));
+	k_sleep(1500);
 
 	/* Wait and boost owner priority to 8 */
 	rv = sys_mutex_lock(&mutex_2, K_FOREVER);
@@ -188,7 +188,7 @@ void thread_09(void)
 {
 	int rv;
 
-	k_sleep(K_MSEC(500));	/* Allow lower priority thread to run */
+	k_sleep(500);	/* Allow lower priority thread to run */
 
 	/*<mutex_1> is already locked. */
 	rv = sys_mutex_lock(&mutex_1, K_NO_WAIT);
@@ -221,7 +221,7 @@ void thread_11(void)
 {
 	int rv;
 
-	k_sleep(K_MSEC(3500));
+	k_sleep(3500);
 	rv = sys_mutex_lock(&mutex_3, K_FOREVER);
 	if (rv != 0) {
 		tc_rc = TC_FAIL;

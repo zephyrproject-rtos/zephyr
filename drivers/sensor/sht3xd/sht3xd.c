@@ -100,7 +100,7 @@ static int sht3xd_sample_fetch(struct device *dev, enum sensor_channel chan)
 		LOG_DBG("Failed to set single shot measurement mode!");
 		return -EIO;
 	}
-	k_sleep(K_MSEC(measure_wait[SHT3XD_REPEATABILITY_IDX] / USEC_PER_MSEC));
+	k_sleep(measure_wait[SHT3XD_REPEATABILITY_IDX] / USEC_PER_MSEC);
 
 	if (i2c_read(i2c, rx_buf, sizeof(rx_buf), address) < 0) {
 		LOG_DBG("Failed to read data sample!");

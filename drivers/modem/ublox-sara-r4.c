@@ -628,28 +628,28 @@ static int pin_init(void)
 
 	LOG_DBG("MDM_POWER_PIN -> ENABLE");
 	modem_pin_write(&mctx, MDM_POWER, MDM_POWER_ENABLE);
-	k_sleep(K_SECONDS(4));
+	k_sleep(4 * MSEC_PER_SEC);
 
 	LOG_DBG("MDM_POWER_PIN -> DISABLE");
 	modem_pin_write(&mctx, MDM_POWER, MDM_POWER_DISABLE);
 #if defined(CONFIG_MODEM_UBLOX_SARA_U2)
-	k_sleep(K_SECONDS(1));
+	k_sleep(MSEC_PER_SEC);
 #else
-	k_sleep(K_SECONDS(4));
+	k_sleep(4 * MSEC_PER_SEC);
 #endif
 	LOG_DBG("MDM_POWER_PIN -> ENABLE");
 	modem_pin_write(&mctx, MDM_POWER, MDM_POWER_ENABLE);
-	k_sleep(K_SECONDS(1));
+	k_sleep(MSEC_PER_SEC);
 
 	/* make sure module is powered off */
 #if defined(DT_UBLOX_SARA_R4_0_MDM_VINT_GPIOS_CONTROLLER)
 	LOG_DBG("Waiting for MDM_VINT_PIN = 0");
 
 	do {
-		k_sleep(K_MSEC(100));
+		k_sleep(100);
 	} while (modem_pin_read(&mctx, MDM_VINT) != MDM_VINT_DISABLE);
 #else
-	k_sleep(K_SECONDS(8));
+	k_sleep(8 * MSEC_PER_SEC);
 #endif
 
 	LOG_DBG("MDM_POWER_PIN -> DISABLE");
@@ -660,7 +660,7 @@ static int pin_init(void)
 #if defined(CONFIG_MODEM_UBLOX_SARA_U2)
 	k_usleep(50);		/* 50-80 microseconds */
 #else
-	k_sleep(K_SECONDS(1));
+	k_sleep(MSEC_PER_SEC);
 #endif
 	modem_pin_write(&mctx, MDM_POWER, MDM_POWER_ENABLE);
 
@@ -671,10 +671,10 @@ static int pin_init(void)
 #if defined(DT_UBLOX_SARA_R4_0_MDM_VINT_GPIOS_CONTROLLER)
 	LOG_DBG("Waiting for MDM_VINT_PIN = 1");
 	do {
-		k_sleep(K_MSEC(100));
+		k_sleep(100);
 	} while (modem_pin_read(&mctx, MDM_VINT) != MDM_VINT_ENABLE);
 #else
-	k_sleep(K_SECONDS(10));
+	k_sleep(10 * MSEC_PER_SEC);
 #endif
 
 	modem_pin_config(&mctx, MDM_POWER, GPIO_DIR_IN);
@@ -770,7 +770,7 @@ restart:
 	 */
 	ret = -1;
 	while (counter++ < 50 && ret < 0) {
-		k_sleep(K_SECONDS(2));
+		k_sleep(2 * MSEC_PER_SEC);
 		ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler,
 				     NULL, 0, "AT", &mdata.sem_response,
 				     MDM_CMD_TIMEOUT);
@@ -825,7 +825,7 @@ restart:
 	/* wait for +CREG: 1(normal) or 5(roaming) */
 	counter = 0;
 	while (counter++ < 20 && mdata.ev_creg != 1 && mdata.ev_creg != 5) {
-		k_sleep(K_SECONDS(1));
+		k_sleep(MSEC_PER_SEC);
 	}
 
 	/* query modem RSSI */

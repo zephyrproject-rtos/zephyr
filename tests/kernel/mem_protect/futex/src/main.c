@@ -189,7 +189,7 @@ void test_futex_wait_timeout(void)
 			K_NO_WAIT);
 
 	/* giving time for the futex_wait_task to execute */
-	k_sleep(K_MSEC(100));
+	k_sleep(100);
 
 	zassert_true(atomic_get(&simple_futex.val) == 0,
 			"wait timeout doesn't timeout");
@@ -209,7 +209,7 @@ void test_futex_wait_nowait(void)
 			K_NO_WAIT);
 
 	/* giving time for the futex_wait_task to execute */
-	k_sleep(K_MSEC(100));
+	k_sleep(100);
 
 	zassert_true(atomic_get(&simple_futex.val) == 0, "wait nowait fail");
 
@@ -298,7 +298,7 @@ void test_futex_wait_nowait_wake(void)
 			K_NO_WAIT);
 
 	/* giving time for the futex_wait_wake_task to execute */
-	k_sleep(K_MSEC(100));
+	k_sleep(100);
 
 	k_thread_create(&futex_wake_tid, futex_wake_stack, STACK_SIZE,
 			futex_wake_task, &woken, NULL, NULL,

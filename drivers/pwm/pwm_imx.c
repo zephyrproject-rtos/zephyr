@@ -86,7 +86,7 @@ static int imx_pwm_pin_set(struct device *dev, u32_t pwm,
 		if (fifoav == PWM_PWMSR_FIFOAV_4WORDS) {
 			period_ms = (get_pwm_clock_freq(base) >>
 					config->prescaler) * MSEC_PER_SEC;
-			k_sleep(K_MSEC(period_ms));
+			k_sleep(period_ms);
 
 			sr = PWM_PWMSR_REG(base);
 			if (fifoav == PWM_PWMSR_FIFOAV(sr)) {

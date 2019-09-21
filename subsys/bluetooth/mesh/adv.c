@@ -136,7 +136,7 @@ static inline void adv_send(struct net_buf *buf)
 
 	BT_DBG("Advertising started. Sleeping %u ms", duration);
 
-	k_sleep(K_MSEC(duration));
+	k_sleep(duration);
 
 	err = bt_le_adv_stop();
 	adv_send_end(err, cb, cb_data);

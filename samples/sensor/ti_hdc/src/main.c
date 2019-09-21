@@ -35,6 +35,6 @@ void main(void)
 		       temp.val1, temp.val2, humidity.val1, humidity.val2);
 
 		/* wait for the next sample */
-		k_sleep(K_SECONDS(10));
+		k_sleep(10 * MSEC_PER_SEC);
 	}
 }

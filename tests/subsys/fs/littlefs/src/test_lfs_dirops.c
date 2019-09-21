@@ -317,19 +317,19 @@ void test_lfs_dirops(void)
 	zassert_equal(check_mkdir(mp), TC_PASS,
 		      "check mkdir failed");
 
-	k_sleep(K_MSEC(100));   /* flush log messages */
+	k_sleep(100);   /* flush log messages */
 	zassert_equal(build_layout(mp, test_hierarchy), TC_PASS,
 		      "build test hierarchy failed");
 
-	k_sleep(K_MSEC(100));   /* flush log messages */
+	k_sleep(100);   /* flush log messages */
 	zassert_equal(check_layout(mp, test_hierarchy), TC_PASS,
 		      "check test hierarchy failed");
 
-	k_sleep(K_MSEC(100));   /* flush log messages */
+	k_sleep(100);   /* flush log messages */
 	zassert_equal(check_rename(mp), TC_PASS,
 		      "check rename failed");
 
-	k_sleep(K_MSEC(100));   /* flush log messages */
+	k_sleep(100);   /* flush log messages */
 	zassert_equal(fs_unmount(mp), 0,
 		      "unmount small failed");
 }

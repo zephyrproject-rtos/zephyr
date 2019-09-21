@@ -57,7 +57,7 @@ static void trigger_events(void)
 
 		operation++;
 
-		k_sleep(K_SECONDS(1));
+		k_sleep(MSEC_PER_SEC);
 	}
 }
 

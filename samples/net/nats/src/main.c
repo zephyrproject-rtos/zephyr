@@ -140,7 +140,7 @@ static void initialize_network(void)
 	/* TODO: add a timeout/retry */
 	LOG_INF("Waiting for DHCP ...");
 	do {
-		k_sleep(K_SECONDS(1));
+		k_sleep(MSEC_PER_SEC);
 	} while (net_ipv4_is_addr_unspecified(&iface->dhcpv4.requested_ip));
 
 	LOG_INF("Done!");
@@ -148,7 +148,7 @@ static void initialize_network(void)
 	/* TODO: add a timeout */
 	LOG_INF("Waiting for IP assginment ...");
 	do {
-		k_sleep(K_SECONDS(1));
+		k_sleep(MSEC_PER_SEC);
 	} while (!net_ipv4_is_my_addr(&iface->dhcpv4.requested_ip));
 
 	LOG_INF("Done!");

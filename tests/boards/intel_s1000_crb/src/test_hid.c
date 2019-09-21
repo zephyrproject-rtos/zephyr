@@ -116,7 +116,7 @@ void hid_thread(void)
 
 	while (true) {
 
-		k_sleep(K_SECONDS(1));
+		k_sleep(MSEC_PER_SEC);
 
 		report_1[1]++;
 

@@ -54,7 +54,7 @@ void main(void)
 	}
 
 	do {
-		k_sleep(K_MSEC(400));
+		k_sleep(400);
 
 		/* Start advertising */
 		err = bt_le_adv_start(BT_LE_ADV_NCONN, ad, ARRAY_SIZE(ad),
@@ -64,7 +64,7 @@ void main(void)
 			return;
 		}
 
-		k_sleep(K_MSEC(400));
+		k_sleep(400);
 
 		err = bt_le_adv_stop();
 		if (err) {

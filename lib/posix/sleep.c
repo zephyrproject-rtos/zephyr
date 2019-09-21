@@ -14,7 +14,7 @@
  */
 unsigned sleep(unsigned int seconds)
 {
-	k_sleep(K_SECONDS(seconds));
+	k_sleep(seconds * MSEC_PER_SEC);
 	return 0;
 }
 /**

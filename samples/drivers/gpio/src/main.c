@@ -104,6 +104,6 @@ void main(void)
 			toggle = 1;
 		}
 
-		k_sleep(K_SECONDS(2));
+		k_sleep(2 * MSEC_PER_SEC);
 	}
 }

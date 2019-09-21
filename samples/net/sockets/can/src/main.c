@@ -146,7 +146,7 @@ static void rx(int *can_fd, int *do_close_period,
 			if (close_period <= 0) {
 				(void)close(fd);
 
-				k_sleep(K_SECONDS(1));
+				k_sleep(MSEC_PER_SEC);
 
 				fd = create_socket(filter);
 				if (fd < 0) {
@@ -258,7 +258,7 @@ void main(void)
 	int fd;
 
 	/* Let the device start before doing anything */
-	k_sleep(K_SECONDS(2));
+	k_sleep(2 * MSEC_PER_SEC);
 
 	fd = setup_socket();
 	if (fd < 0) {

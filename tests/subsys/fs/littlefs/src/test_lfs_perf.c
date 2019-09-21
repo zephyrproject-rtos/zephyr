@@ -224,25 +224,25 @@ static int small_8_1K_cust(void)
 
 void test_lfs_perf(void)
 {
-	k_sleep(K_MSEC(100));   /* flush log messages */
+	k_sleep(100);   /* flush log messages */
 	zassert_equal(write_read("small 8x1K dflt",
 				 &testfs_small_mnt,
 				 1024, 8),
 		      TC_PASS,
 		      "failed");
 
-	k_sleep(K_MSEC(100));   /* flush log messages */
+	k_sleep(100);   /* flush log messages */
 	zassert_equal(small_8_1K_cust(), TC_PASS,
 		      "failed");
 
-	k_sleep(K_MSEC(100));   /* flush log messages */
+	k_sleep(100);   /* flush log messages */
 	zassert_equal(write_read("medium 32x2K dflt",
 				 &testfs_medium_mnt,
 				 2048, 32),
 		      TC_PASS,
 		      "failed");
 
-	k_sleep(K_MSEC(100));   /* flush log messages */
+	k_sleep(100);   /* flush log messages */
 	zassert_equal(write_read("large 64x4K dflt",
 				 &testfs_large_mnt,
 				 4096, 64),
