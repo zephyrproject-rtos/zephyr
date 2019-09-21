@@ -575,7 +575,7 @@ static int sdhc_spi_detect(struct sdhc_spi_data *data)
 	} else {
 		/* A 'SDSC' card: Set block length to 512 bytes. */
 		data->high_capacity = false;
-		err = sdhc_cmd_r1(data, SDHC_SET_BLOCK_SIZE, SDMMC_DEFAULT_BLOCK_SIZE);
+		err = sdhc_spi_cmd_r1(data, SDHC_SET_BLOCK_SIZE, SDMMC_DEFAULT_BLOCK_SIZE);
 		if (err != 0) {
 			return err;
 		}
