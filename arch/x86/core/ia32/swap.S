@@ -93,8 +93,8 @@ SECTION_FUNC(TEXT, __swap)
 	push %eax
 	push %edx
 	rdtsc
-	mov %eax,__start_swap_time
-	mov %edx,__start_swap_time+4
+	mov %eax,z_arch_timing_swap_start
+	mov %edx,z_arch_timing_swap_start+4
 	pop %edx
 	pop %eax
 #endif
@@ -367,15 +367,12 @@ CROHandlingDone:
 	popfl
 
 #ifdef CONFIG_EXECUTION_BENCHMARKING
-	/* Save the eax and edx registers before reading the time stamp
-	* once done pop the values.
-	*/
-	cmp $0x1,__read_swap_end_time_value
+	cmp $0x1,z_arch_timing_value_swap_end
 	jne time_read_not_needed
-	movw $0x2,__read_swap_end_time_value
-	read_tsc __common_var_swap_end_time
-	pushl __start_swap_time
-	popl __temp_start_swap_time
+	movw $0x2,z_arch_timing_value_swap_end
+	read_tsc z_arch_timing_value_swap_common
+	pushl z_arch_timing_swap_start
+	popl z_arch_timing_value_swap_temp
 time_read_not_needed:
 #endif
 	ret

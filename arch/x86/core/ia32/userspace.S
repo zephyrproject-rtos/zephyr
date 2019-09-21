@@ -394,8 +394,8 @@ SECTION_FUNC(TEXT, z_x86_userspace_enter)
 	push %eax
 	push %edx
 	rdtsc
-	mov %eax,__end_drop_to_usermode_time
-	mov %edx,__end_drop_to_usermode_time+4
+	mov %eax,z_arch_timing_enter_user_mode_end
+	mov %edx,z_arch_timing_enter_user_mode_end+4
 	pop %edx
 	pop %eax
 #endif
