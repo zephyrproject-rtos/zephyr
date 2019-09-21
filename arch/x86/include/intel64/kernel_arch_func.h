@@ -10,7 +10,7 @@
 
 extern void z_arch_switch(void *switch_to, void **switched_from);
 
-static inline void kernel_arch_init(void)
+static inline void z_arch_kernel_init(void)
 {
 	/* nothing */;
 }

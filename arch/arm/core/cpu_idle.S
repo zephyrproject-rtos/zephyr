@@ -37,7 +37,7 @@ GTEXT(z_arch_cpu_atomic_idle)
  *
  * @brief Initialization of CPU idle
  *
- * Only called by kernel_arch_init(). Sets SEVONPEND bit once for the system's
+ * Only called by z_arch_kernel_init(). Sets SEVONPEND bit once for the system's
  * duration.
  *
  * @return N/A

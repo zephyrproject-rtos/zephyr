@@ -493,7 +493,7 @@ FUNC_NORETURN void z_cstart(void)
 	}
 
 	/* perform any architecture-specific initialization */
-	kernel_arch_init();
+	z_arch_kernel_init();
 
 #ifdef CONFIG_MULTITHREADING
 	struct k_thread dummy_thread = {

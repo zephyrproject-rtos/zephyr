@@ -26,7 +26,7 @@ extern "C" {
 
 #ifndef _ASMLANGUAGE
 
-static ALWAYS_INLINE void kernel_arch_init(void)
+static ALWAYS_INLINE void z_arch_kernel_init(void)
 {
 	_kernel.irq_stack =
 		Z_THREAD_STACK_BUFFER(_interrupt_stack) + CONFIG_ISR_STACK_SIZE;

@@ -41,7 +41,7 @@ void z_x86_paging_init(void);
  *
  * @return N/A
  */
-static inline void kernel_arch_init(void)
+static inline void z_arch_kernel_init(void)
 {
 	/* No-op on this arch */
 }

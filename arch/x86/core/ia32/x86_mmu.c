@@ -506,7 +506,7 @@ static void add_mmu_region(struct x86_mmu_pdpt *pdpt, struct mmu_region *rgn,
 extern struct mmu_region z_x86_mmulist_start[];
 extern struct mmu_region z_x86_mmulist_end[];
 
-/* Called from x86's kernel_arch_init() */
+/* Called from x86's z_arch_kernel_init() */
 void z_x86_paging_init(void)
 {
 	size_t pages_free;
