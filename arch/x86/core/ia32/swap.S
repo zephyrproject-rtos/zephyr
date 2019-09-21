@@ -68,7 +68,7 @@
  * potential security leaks.
  *
  * @return -EAGAIN, or a return value set by a call to
- * z_set_thread_return_value()
+ * z_arch_thread_return_value_set()
  *
  * C function prototype:
  *
@@ -117,7 +117,7 @@ SECTION_FUNC(TEXT, __swap)
 	 * Carve space for the return value. Setting it to a default of
 	 * -EAGAIN eliminates the need for the timeout code to set it.
 	 * If another value is ever needed, it can be modified with
-	 * z_set_thread_return_value().
+	 * z_arch_thread_return_value_set().
 	 */
 
 	pushl   _k_neg_eagain
@@ -342,7 +342,7 @@ CROHandlingDone:
 	movl	_thread_offset_to_esp(%eax), %esp
 
 
-	/* load return value from a possible z_set_thread_return_value() */
+	/* load return value from a possible z_arch_thread_return_value_set() */
 
 	popl	%eax
 
@@ -357,7 +357,7 @@ CROHandlingDone:
 	 * %eax may contain one of these values:
 	 *
 	 * - the return value for __swap() that was set up by a call to
-	 * z_set_thread_return_value()
+	 * z_arch_thread_return_value_set()
 	 * - -EINVAL
 	 */
 

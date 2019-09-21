@@ -358,7 +358,7 @@ static int signal_poll_event(struct k_poll_event *event, u32_t state)
 	}
 
 	z_unpend_thread(thread);
-	z_set_thread_return_value(thread,
+	z_arch_thread_return_value_set(thread,
 				 state == K_POLL_STATE_CANCELLED ? -EINTR : 0);
 
 	if (!z_is_thread_ready(thread)) {

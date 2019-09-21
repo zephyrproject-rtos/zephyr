@@ -78,7 +78,7 @@ SECTION_FUNC(exception.other, __swap)
 	 * Prior to unlocking irq, load return value of
 	 * __swap to temp register t2 (from
 	 * _thread_offset_to_swap_return_value). Normally, it should be -EAGAIN,
-	 * unless someone has previously called z_set_thread_return_value(..).
+	 * unless someone has previously called z_arch_thread_return_value_set(..).
 	 */
 	la t0, _kernel
 

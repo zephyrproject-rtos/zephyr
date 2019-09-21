@@ -110,7 +110,7 @@ static void do_sem_give(struct k_sem *sem)
 
 	if (thread != NULL) {
 		z_ready_thread(thread);
-		z_set_thread_return_value(thread, 0);
+		z_arch_thread_return_value_set(thread, 0);
 	} else {
 		increment_count_up_to_limit(sem);
 		handle_poll_events(sem);

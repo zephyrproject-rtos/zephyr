@@ -29,7 +29,7 @@ static ALWAYS_INLINE void kernel_arch_init(void)
 }
 
 static ALWAYS_INLINE void
-z_set_thread_return_value(struct k_thread *thread, unsigned int value)
+z_arch_thread_return_value_set(struct k_thread *thread, unsigned int value)
 {
 	thread->arch.swap_return_value = value;
 }
