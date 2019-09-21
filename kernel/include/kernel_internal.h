@@ -280,6 +280,21 @@ extern void z_arch_busy_wait(u32_t usec_to_wait);
  */
 extern FUNC_NORETURN void z_arch_system_halt(unsigned int reason);
 
+#ifdef CONFIG_EXECUTION_BENCHMARKING
+extern u64_t z_arch_timing_swap_start;
+extern u64_t z_arch_timing_swap_end;
+extern u64_t z_arch_timing_irq_start;
+extern u64_t z_arch_timing_irq_end;
+extern u64_t z_arch_timing_tick_start;
+extern u64_t z_arch_timing_tick_end;
+extern u64_t z_arch_timing_user_mode_end;
+
+/* FIXME: Document. Temporary storage, seems x86 specific? */
+extern u32_t z_arch_timing_value_swap_end;
+extern u64_t z_arch_timing_value_swap_common;
+extern u64_t z_arch_timing_value_swap_temp;
+#endif /* CONFIG_EXECUTION_BENCHMARKING */
+
 #ifdef __cplusplus
 }
 #endif

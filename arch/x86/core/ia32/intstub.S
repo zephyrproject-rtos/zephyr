@@ -84,8 +84,8 @@ SECTION_FUNC(TEXT, _interrupt_enter)
 	pushl %eax
 	pushl %edx
 	rdtsc
-	mov %eax, __start_intr_time
-	mov %edx, __start_intr_time+4
+	mov %eax, z_arch_timing_irq_start
+	mov %edx, z_arch_timing_irq_start+4
 	pop %edx
 	pop %eax
 #endif
@@ -187,8 +187,8 @@ alreadyOnIntStack:
 	pushl %eax
 	pushl %edx
 	rdtsc
-	mov %eax,__end_intr_time
-	mov %edx,__end_intr_time+4
+	mov %eax,z_arch_timing_irq_end
+	mov %edx,z_arch_timing_irq_end+4
 	pop %edx
 	pop %eax
 #endif
