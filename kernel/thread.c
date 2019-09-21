@@ -412,8 +412,8 @@ static inline size_t adjust_stack_size(size_t stack_size)
 		random_val = sys_rand32_get();
 	}
 
-	/* Don't need to worry about alignment of the size here, z_new_thread()
-	 * is required to do it
+	/* Don't need to worry about alignment of the size here,
+	 * z_arch_new_thread() is required to do it.
 	 *
 	 * FIXME: Not the best way to get a random number in a range.
 	 * See #6493
@@ -462,12 +462,12 @@ void z_setup_new_thread(struct k_thread *new_thread,
 #endif
 #endif
 
-	z_new_thread(new_thread, stack, stack_size, entry, p1, p2, p3,
-		    prio, options);
+	z_arch_new_thread(new_thread, stack, stack_size, entry, p1, p2, p3,
+			  prio, options);
 
 #ifdef CONFIG_THREAD_USERSPACE_LOCAL_DATA
 #ifndef CONFIG_THREAD_USERSPACE_LOCAL_DATA_ARCH_DEFER_SETUP
-	/* don't set again if the arch's own code in z_new_thread() has
+	/* don't set again if the arch's own code in z_arch_new_thread() has
 	 * already set the pointer.
 	 */
 	new_thread->userspace_local_data =

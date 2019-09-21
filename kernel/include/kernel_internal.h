@@ -40,10 +40,10 @@ extern FUNC_NORETURN void z_thread_entry(k_thread_entry_t entry,
 			  void *p1, void *p2, void *p3);
 
 /* Implemented by architectures. Only called from z_setup_new_thread. */
-extern void z_new_thread(struct k_thread *thread, k_thread_stack_t *pStack,
-			size_t stackSize, k_thread_entry_t entry,
-			void *p1, void *p2, void *p3,
-			int prio, unsigned int options);
+extern void z_arch_new_thread(struct k_thread *thread, k_thread_stack_t *pStack,
+			      size_t stackSize, k_thread_entry_t entry,
+			      void *p1, void *p2, void *p3,
+			      int prio, unsigned int options);
 
 extern void z_setup_new_thread(struct k_thread *new_thread,
 			      k_thread_stack_t *stack, size_t stack_size,
@@ -181,7 +181,7 @@ extern int z_arch_buffer_validate(void *addr, size_t size, int write);
  * - Set up any kernel stack region for the CPU to use during privilege
  *   elevation
  * - Put the CPU in whatever its equivalent of user mode is
- * - Transfer execution to z_new_thread() passing along all the supplied
+ * - Transfer execution to z_arch_new_thread() passing along all the supplied
  *   arguments, in user mode.
  *
  * @param Entry point to start executing as a user thread

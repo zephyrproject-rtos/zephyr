@@ -24,10 +24,10 @@ struct device;
 struct z_arch_esf_t {
 };
 
-void z_new_thread(struct k_thread *t, k_thread_stack_t *stack,
-		 size_t sz, k_thread_entry_t entry,
-		 void *p1, void *p2, void *p3,
-		 int prio, unsigned int opts)
+void z_arch_new_thread(struct k_thread *t, k_thread_stack_t *stack,
+		       size_t sz, k_thread_entry_t entry,
+		       void *p1, void *p2, void *p3,
+		       int prio, unsigned int opts)
 {
 	void *args[] = { entry, p1, p2, p3 };
 	int nargs = 4;
