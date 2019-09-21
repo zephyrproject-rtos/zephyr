@@ -9,7 +9,7 @@
  * clock.
  *
  * Therefore, the code will always run until completion after each interrupt,
- * after which k_cpu_idle() will be called releasing the execution back to the
+ * after which z_arch_cpu_idle() will be called releasing the execution back to the
  * HW models.
  *
  * The HW models raising an interrupt will "awake the cpu" by calling
@@ -125,7 +125,7 @@ void posix_interrupt_raised(void)
 
 
 /**
- * Normally called from k_cpu_idle():
+ * Normally called from z_arch_cpu_idle():
  *   the idle loop will call this function to set the CPU to "sleep".
  * Others may also call this function with care. The CPU will be set to sleep
  * until some interrupt awakes it.
@@ -156,7 +156,7 @@ void posix_halt_cpu(void)
 
 
 /**
- * Implementation of k_cpu_atomic_idle() for this SOC
+ * Implementation of z_arch_cpu_atomic_idle() for this SOC
  */
 void posix_atomic_halt_cpu(unsigned int imask)
 {

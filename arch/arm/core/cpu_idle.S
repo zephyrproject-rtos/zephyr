@@ -21,8 +21,8 @@
 _ASM_FILE_PROLOGUE
 
 GTEXT(z_CpuIdleInit)
-GTEXT(k_cpu_idle)
-GTEXT(k_cpu_atomic_idle)
+GTEXT(z_arch_cpu_idle)
+GTEXT(z_arch_cpu_atomic_idle)
 
 #if defined(CONFIG_CPU_CORTEX_M)
 #define _SCB_SCR 0xE000ED10
@@ -68,10 +68,10 @@ SECTION_FUNC(TEXT, z_CpuIdleInit)
  *
  * C function prototype:
  *
- * void k_cpu_idle (void);
+ * void z_arch_cpu_idle (void);
  */
 
-SECTION_FUNC(TEXT, k_cpu_idle)
+SECTION_FUNC(TEXT, z_arch_cpu_idle)
 #ifdef CONFIG_TRACING
 	push {r0, lr}
 	bl    sys_trace_idle
@@ -103,7 +103,7 @@ SECTION_FUNC(TEXT, k_cpu_idle)
  * @brief Atomically re-enable interrupts and enter low power mode
  *
  * INTERNAL
- * The requirements for k_cpu_atomic_idle() are as follows:
+ * The requirements for z_arch_cpu_atomic_idle() are as follows:
  * 1) The enablement of interrupts and entering a low-power mode needs to be
  *    atomic, i.e. there should be no period of time where interrupts are
  *    enabled before the processor enters a low-power mode.  See the comments
@@ -117,10 +117,10 @@ SECTION_FUNC(TEXT, k_cpu_idle)
  *
  * C function prototype:
  *
- * void k_cpu_atomic_idle (unsigned int key);
+ * void z_arch_cpu_atomic_idle (unsigned int key);
  */
 
-SECTION_FUNC(TEXT, k_cpu_atomic_idle)
+SECTION_FUNC(TEXT, z_arch_cpu_atomic_idle)
 #ifdef CONFIG_TRACING
 	push {r0, lr}
 	bl    sys_trace_idle

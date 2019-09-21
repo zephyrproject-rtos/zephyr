@@ -407,14 +407,14 @@ CPU Idling/Power Management
 ***************************
 
 The kernel provides support for CPU power management with two functions:
-:c:func:`k_cpu_idle` and :c:func:`k_cpu_atomic_idle`.
+:c:func:`z_arch_cpu_idle` and :c:func:`z_arch_cpu_atomic_idle`.
 
-:c:func:`k_cpu_idle` can be as simple as calling the power saving instruction
-for the architecture with interrupts unlocked, for example :code:`hlt` on x86,
-:code:`wfi` or :code:`wfe` on ARM, :code:`sleep` on ARC. This function can be
-called in a loop within a context that does not care if it get interrupted or
-not by an interrupt before going to sleep. There are basically two scenarios
-when it is correct to use this function:
+:c:func:`z_arch_cpu_idle` can be as simple as calling the power saving
+instruction for the architecture with interrupts unlocked, for example
+:code:`hlt` on x86, :code:`wfi` or :code:`wfe` on ARM, :code:`sleep` on ARC.
+This function can be called in a loop within a context that does not care if it
+get interrupted or not by an interrupt before going to sleep. There are
+basically two scenarios when it is correct to use this function:
 
 * In a single-threaded system, in the only thread when the thread is not used
   for doing real work after initialization, i.e. it is sitting in a loop doing
@@ -422,7 +422,7 @@ when it is correct to use this function:
 
 * In the idle thread.
 
-:c:func:`k_cpu_atomic_idle`, on the other hand, must be able to atomically
+:c:func:`z_arch_cpu_atomic_idle`, on the other hand, must be able to atomically
 re-enable interrupts and invoke the power saving instruction. It can thus be
 used in real application code, again in single-threaded systems.
 

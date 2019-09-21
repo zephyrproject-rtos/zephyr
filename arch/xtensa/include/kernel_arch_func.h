@@ -83,8 +83,6 @@ static ALWAYS_INLINE void kernel_arch_init(void)
 #endif
 }
 
-extern void k_cpu_atomic_idle(unsigned int key);
-
 #ifdef __cplusplus
 }
 #endif

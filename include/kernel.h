@@ -4630,6 +4630,9 @@ extern void z_handle_obj_poll_events(sys_dlist_t *events, u32_t state);
  * @{
  */
 
+extern void z_arch_cpu_idle(void);
+extern void z_arch_cpu_atomic_idle(unsigned int key);
+
 /**
  * @brief Make the CPU idle.
  *
@@ -4643,7 +4646,10 @@ extern void z_handle_obj_poll_events(sys_dlist_t *events, u32_t state);
  * @return N/A
  * @req K-CPU-IDLE-001
  */
-extern void k_cpu_idle(void);
+static inline void k_cpu_idle(void)
+{
+	z_arch_cpu_idle();
+}
 
 /**
  * @brief Make the CPU idle in an atomic fashion.
@@ -4656,7 +4662,10 @@ extern void k_cpu_idle(void);
  * @return N/A
  * @req K-CPU-IDLE-002
  */
-extern void k_cpu_atomic_idle(unsigned int key);
+static inline void k_cpu_atomic_idle(unsigned int key)
+{
+	z_arch_cpu_atomic_idle(key);
+}
 
 /**
  * @}
