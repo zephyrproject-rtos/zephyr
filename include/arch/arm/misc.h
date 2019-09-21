@@ -27,7 +27,7 @@ extern u32_t z_timer_cycle_get_32(void);
 /**
  * @brief Explicitly nop operation.
  */
-static ALWAYS_INLINE void arch_nop(void)
+static ALWAYS_INLINE void z_arch_nop(void)
 {
 	__asm__ volatile("nop");
 }

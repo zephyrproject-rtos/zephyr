@@ -51,7 +51,7 @@ static inline bool z_arch_irq_unlocked(unsigned int key)
 	return (key & 0x200) != 0;
 }
 
-static inline void arch_nop(void)
+static inline void z_arch_nop(void)
 {
 	__asm__ volatile("nop");
 }

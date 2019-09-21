@@ -302,7 +302,7 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 void __weak main(void)
 {
 	/* NOP default main() if the application does not provide one. */
-	arch_nop();
+	z_arch_nop();
 }
 
 /* LCOV_EXCL_STOP */
