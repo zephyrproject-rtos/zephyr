@@ -9,7 +9,7 @@
 #include <irq.h>
 #include <xuk-switch.h>
 
-static inline void kernel_arch_init(void)
+static inline void z_arch_kernel_init(void)
 {
 	/* This is a noop, we already took care of things before
 	 * z_cstart() is entered

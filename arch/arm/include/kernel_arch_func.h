@@ -34,7 +34,7 @@ extern void z_arch_configure_static_mpu_regions(void);
 extern void z_arch_configure_dynamic_mpu_regions(struct k_thread *thread);
 #endif /* CONFIG_ARM_MPU */
 
-static ALWAYS_INLINE void kernel_arch_init(void)
+static ALWAYS_INLINE void z_arch_kernel_init(void)
 {
 	z_InterruptStackSetup();
 	z_ExcSetup();

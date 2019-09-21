@@ -61,7 +61,7 @@ static ALWAYS_INLINE _cpu_t *z_arch_curr_cpu(void)
  *
  * @return N/A
  */
-static ALWAYS_INLINE void kernel_arch_init(void)
+static ALWAYS_INLINE void z_arch_kernel_init(void)
 {
 	_cpu_t *cpu0 = &_kernel.cpus[0];
 

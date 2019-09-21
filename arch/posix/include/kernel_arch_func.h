@@ -36,7 +36,7 @@ void z_arch_switch_to_main_thread(struct k_thread *main_thread,
  *
  * @return N/A
  */
-static inline void kernel_arch_init(void)
+static inline void z_arch_kernel_init(void)
 {
 	/* Nothing to be done */
 }

@@ -44,7 +44,7 @@ static ALWAYS_INLINE _cpu_t *z_arch_curr_cpu(void)
 #endif
 }
 
-static ALWAYS_INLINE void kernel_arch_init(void)
+static ALWAYS_INLINE void z_arch_kernel_init(void)
 {
 	z_irq_setup();
 	_current_cpu->irq_stack =
