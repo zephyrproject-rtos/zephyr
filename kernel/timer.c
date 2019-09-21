@@ -184,7 +184,7 @@ static inline u32_t z_vrfy_k_timer_status_get(struct k_timer *timer)
 
 u32_t z_impl_k_timer_status_sync(struct k_timer *timer)
 {
-	__ASSERT(!z_is_in_isr(), "");
+	__ASSERT(!z_arch_is_in_isr(), "");
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 	u32_t result = timer->status;

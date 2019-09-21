@@ -138,7 +138,7 @@ static inline void z_vrfy_k_sem_give(struct k_sem *sem)
 
 int z_impl_k_sem_take(struct k_sem *sem, s32_t timeout)
 {
-	__ASSERT(((z_is_in_isr() == false) || (timeout == K_NO_WAIT)), "");
+	__ASSERT(((z_arch_is_in_isr() == false) || (timeout == K_NO_WAIT)), "");
 
 	sys_trace_void(SYS_TRACE_ID_SEMA_TAKE);
 	k_spinlock_key_t key = k_spin_lock(&lock);

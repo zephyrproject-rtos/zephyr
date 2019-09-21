@@ -110,7 +110,7 @@ void k_msgq_cleanup(struct k_msgq *msgq)
 
 int z_impl_k_msgq_put(struct k_msgq *msgq, void *data, s32_t timeout)
 {
-	__ASSERT(!z_is_in_isr() || timeout == K_NO_WAIT, "");
+	__ASSERT(!z_arch_is_in_isr() || timeout == K_NO_WAIT, "");
 
 	struct k_thread *pending_thread;
 	k_spinlock_key_t key;
@@ -185,7 +185,7 @@ static inline void z_vrfy_k_msgq_get_attrs(struct k_msgq *q,
 
 int z_impl_k_msgq_get(struct k_msgq *msgq, void *data, s32_t timeout)
 {
-	__ASSERT(!z_is_in_isr() || timeout == K_NO_WAIT, "");
+	__ASSERT(!z_arch_is_in_isr() || timeout == K_NO_WAIT, "");
 
 	k_spinlock_key_t key;
 	struct k_thread *pending_thread;

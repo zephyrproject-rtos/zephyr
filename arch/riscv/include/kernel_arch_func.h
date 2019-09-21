@@ -40,7 +40,7 @@ z_set_thread_return_value(struct k_thread *thread, unsigned int value)
 FUNC_NORETURN void z_riscv_fatal_error(unsigned int reason,
 				       const z_arch_esf_t *esf);
 
-#define z_is_in_isr() (_kernel.nested != 0U)
+#define z_arch_is_in_isr() (_kernel.nested != 0U)
 
 #ifdef CONFIG_IRQ_OFFLOAD
 int z_irq_do_offload(void);

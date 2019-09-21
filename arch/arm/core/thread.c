@@ -352,7 +352,7 @@ int z_arch_float_disable(struct k_thread *thread)
 		return -EINVAL;
 	}
 
-	if (z_is_in_isr()) {
+	if (z_arch_is_in_isr()) {
 		return -EINVAL;
 	}
 
