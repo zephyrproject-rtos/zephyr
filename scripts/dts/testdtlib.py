@@ -9,10 +9,9 @@ import sys
 
 import dtlib
 
-# Test suite for dtlib.py. Can be run directly as an executable.
+# Test suite for dtlib.py. Run it directly as an executable, in this directory:
 #
-# This script expects to be run from the directory its in. This simplifies
-# things, as paths in the output can be assumed below.
+#   $ ./testdtlib.py
 
 # TODO: Factor out common code from error tests
 
