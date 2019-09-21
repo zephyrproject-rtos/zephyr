@@ -147,9 +147,9 @@ void idle(void *unused1, void *unused2, void *unused3)
 #ifdef CONFIG_BOOT_TIME_MEASUREMENT
 	/* record timestamp when idling begins */
 
-	extern u32_t __idle_time_stamp;
+	extern u32_t z_timestamp_idle;
 
-	__idle_time_stamp = k_cycle_get_32();
+	z_timestamp_idle = k_cycle_get_32();
 #endif
 
 	while (true) {

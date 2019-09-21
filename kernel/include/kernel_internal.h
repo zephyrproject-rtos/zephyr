@@ -295,6 +295,11 @@ extern u64_t z_arch_timing_value_swap_common;
 extern u64_t z_arch_timing_value_swap_temp;
 #endif /* CONFIG_EXECUTION_BENCHMARKING */
 
+#ifdef CONFIG_BOOT_TIME_MEASUREMENT
+extern u32_t z_timestamp_main; /* timestamp when main task starts */
+extern u32_t z_timestamp_idle; /* timestamp when CPU goes idle */
+#endif
+
 #ifdef __cplusplus
 }
 #endif
