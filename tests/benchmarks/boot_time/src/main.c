@@ -17,6 +17,7 @@
 
 #include <zephyr.h>
 #include <tc_util.h>
+#include <kernel_internal.h>
 
 void main(void)
 {
@@ -34,17 +35,17 @@ void main(void)
 
 	int freq = sys_clock_hw_cycles_per_sec() / 1000000;
 
-	main_us = __main_time_stamp / freq;
+	main_us = z_timestamp_main / freq;
 	task_us = task_time_stamp / freq;
-	idle_us = __idle_time_stamp / freq;
+	idle_us = z_timestamp_idle / freq;
 
 	TC_START("Boot Time Measurement");
 	TC_PRINT("Boot Result: Clock Frequency: %d MHz\n", freq);
-	TC_PRINT("_start->main(): %u cycles, %u us\n", __main_time_stamp,
+	TC_PRINT("_start->main(): %u cycles, %u us\n", z_timestamp_main,
 						       main_us);
 	TC_PRINT("_start->task  : %u cycles, %u us\n", task_time_stamp,
 						       task_us);
-	TC_PRINT("_start->idle  : %u cycles, %u us\n", __idle_time_stamp,
+	TC_PRINT("_start->idle  : %u cycles, %u us\n", z_timestamp_idle,
 						       idle_us);
 	TC_PRINT("Boot Time Measurement finished\n");
 

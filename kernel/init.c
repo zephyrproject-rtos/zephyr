@@ -66,8 +66,8 @@ LOG_MODULE_REGISTER(os);
 /* boot time measurement items */
 
 #ifdef CONFIG_BOOT_TIME_MEASUREMENT
-u32_t __noinit __main_time_stamp;  /* timestamp when main task starts */
-u32_t __noinit __idle_time_stamp;  /* timestamp when CPU goes idle */
+u32_t __noinit z_timestamp_main;  /* timestamp when main task starts */
+u32_t __noinit z_timestamp_idle;  /* timestamp when CPU goes idle */
 #endif
 
 /* init/main and idle threads */
@@ -283,7 +283,7 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 #endif
 
 #ifdef CONFIG_BOOT_TIME_MEASUREMENT
-	__main_time_stamp = k_cycle_get_32();
+	z_timestamp_main = k_cycle_get_32();
 #endif
 
 	extern void main(void);
