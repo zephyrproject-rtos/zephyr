@@ -113,7 +113,7 @@ static inline void z_swap_unlocked(void)
 
 #else /* !CONFIG_USE_SWITCH */
 
-extern int __swap(unsigned int key);
+extern int z_arch_swap(unsigned int key);
 
 static inline int z_swap_irqlock(unsigned int key)
 {
@@ -123,7 +123,7 @@ static inline int z_swap_irqlock(unsigned int key)
 #ifndef CONFIG_ARM
 	sys_trace_thread_switched_out();
 #endif
-	ret = __swap(key);
+	ret = z_arch_swap(key);
 #ifndef CONFIG_ARM
 	sys_trace_thread_switched_in();
 #endif

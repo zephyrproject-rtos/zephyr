@@ -9,7 +9,7 @@
 #include <arch/arm/cortex_m/cmsis.h>
 #include <kernel_structs.h>
 #include <offsets_short_arch.h>
-
+#include <ksched.h>
 
 #if !defined(__GNUC__)
 #error __FILE__ goes only with Cortex-M GCC
@@ -20,7 +20,6 @@
 #define BASEPRI_MODIFIED_2 0x40
 #define SWAP_RETVAL        0x1234
 
-extern int __swap(unsigned int key);
 extern void z_move_thread_to_end_of_prio_q(struct k_thread *thread);
 
 static struct k_thread alt_thread;
@@ -200,7 +199,7 @@ static void alt_thread_entry(void)
 	zassert_true(p_ztest_thread->arch.basepri == BASEPRI_MODIFIED_1,
 		"ztest thread basepri not preserved in swap-out\n");
 
-	/* Verify original swap return value (set by __swap() */
+	/* Verify original swap return value (set by z_arch_swap() */
 	zassert_true(p_ztest_thread->arch.swap_return_value == -EAGAIN,
 		"ztest thread swap-return-value not preserved in swap-out\n");
 #endif
@@ -420,7 +419,7 @@ void test_arm_thread_swap(void)
 	 * This will be verified by the alternative test thread.
 	 */
 	register int swap_return_val __asm__("r0") =
-		__swap(BASEPRI_MODIFIED_1);
+		z_arch_swap(BASEPRI_MODIFIED_1);
 
 #endif /* CONFIG_NO_OPTIMIZATIONS */
 
