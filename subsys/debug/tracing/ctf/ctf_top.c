@@ -10,15 +10,6 @@
 #include <kernel_internal.h>
 #include "ctf_top.h"
 
-static inline int is_idle_thread(struct k_thread *thread)
-{
-#ifdef CONFIG_SMP
-	return thread->base.is_idle;
-#else
-	return thread == &z_idle_thread;
-#endif
-}
-
 void sys_trace_thread_switched_out(void)
 {
 	struct k_thread *thread = k_current_get();

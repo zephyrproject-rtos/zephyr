@@ -8,6 +8,7 @@
 #define ZEPHYR_KERNEL_INCLUDE_KSCHED_H_
 
 #include <kernel_structs.h>
+#include <kernel_internal.h>
 #include <timeout_q.h>
 #include <debug/tracing.h>
 #include <stdbool.h>
@@ -85,6 +86,15 @@ static ALWAYS_INLINE struct k_thread *z_get_next_ready_thread(void)
 static inline bool z_is_idle_thread_entry(void *entry_point)
 {
 	return entry_point == idle;
+}
+
+static inline bool z_is_idle_thread_object(struct k_thread *thread)
+{
+#ifdef CONFIG_SMP
+	return thread->base.is_idle;
+#else
+	return thread == &z_idle_thread;
+#endif
 }
 
 static inline bool z_is_thread_pending(struct k_thread *thread)

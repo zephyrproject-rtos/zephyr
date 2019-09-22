@@ -13,15 +13,6 @@
 #include <Global.h>
 #include "SEGGER_SYSVIEW_Zephyr.h"
 
-static inline int is_idle_thread(struct k_thread *thread)
-{
-#ifdef CONFIG_SMP
-	return thread->base.is_idle;
-#else
-	return thread == &z_idle_thread;
-#endif
-}
-
 void sys_trace_thread_switched_in(void);
 void sys_trace_thread_switched_out(void);
 void sys_trace_isr_enter(void);
