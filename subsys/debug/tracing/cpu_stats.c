@@ -7,6 +7,7 @@
 #include <tracing_cpu_stats.h>
 #include <sys/printk.h>
 #include <kernel_internal.h>
+#include <ksched.h>
 
 enum cpu_state {
 	CPU_STATE_IDLE,
@@ -21,15 +22,6 @@ static u32_t last_time;
 static struct cpu_stats stats_hw_tick;
 static int nested_interrupts;
 static struct k_thread *current_thread;
-
-static int is_idle_thread(struct k_thread *thread)
-{
-#ifdef CONFIG_SMP
-	return thread->base.is_idle;
-#else
-	return thread == &z_idle_thread;
-#endif
-}
 
 void update_counter(volatile u64_t *cnt)
 {
@@ -107,7 +99,7 @@ void sys_trace_thread_switched_in(void)
 
 	cpu_stats_update_counters();
 	current_thread = k_current_get();
-	if (is_idle_thread(current_thread)) {
+	if (z_is_idle_thread_object(current_thread)) {
 		last_cpu_state = CPU_STATE_IDLE;
 	} else {
 		last_cpu_state = CPU_STATE_NON_IDLE;
