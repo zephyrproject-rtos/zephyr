@@ -355,6 +355,7 @@
 /subsys/bluetooth/                        @joerchan @jhedberg @Vudentz
 /subsys/bluetooth/controller/             @carlescufi @cvinayak @thoh-ot
 /subsys/bluetooth/mesh/                   @jhedberg @trond-snekvik @joerchan @Vudentz
+/subsys/canbus/                           @alexanderwachter
 /subsys/cpp/                              @pabigot @vanwinkeljan
 /subsys/debug/                            @nashif
 /subsys/debug/asan_hacks.c                @vanwinkeljan @aescolar
