@@ -83,11 +83,11 @@ config TEST_LOGGING_DEFAULTS
 	bool "Enable test case logging defaults"
 	depends on TEST
 	select LOG
-	select LOG_IMMEDIATE
+	select LOG_MINIMAL
 	default y
 	help
 	  Option which implements default policy of enabling logging in
-	  immediate mode for all test cases. For tests that need alternate
+	  minimal mode for all test cases. For tests that need alternate
 	  logging configuration, or no logging at all, disable this
 	  in the project-level defconfig.
 

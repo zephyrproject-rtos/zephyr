@@ -169,7 +169,7 @@ void log_backend_enable(struct log_backend const *const backend,
  */
 void log_backend_disable(struct log_backend const *const backend);
 
-#if defined(CONFIG_LOG)
+#if defined(CONFIG_LOG) && !defined(CONFIG_LOG_MINIMAL)
 #define LOG_CORE_INIT() log_core_init()
 #define LOG_INIT() log_init()
 #define LOG_PANIC() log_panic()

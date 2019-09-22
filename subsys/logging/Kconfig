@@ -13,9 +13,21 @@ menuconfig LOG
 
 if LOG
 
+config LOG_MINIMAL
+	bool "Enable minimal-footprint logging"
+	imply PRINTK
+	help
+	  Enable minimal logging implementation. This has very little footprint
+	  overhead on top of the printk() implementation for standard
+	  logging macros. Hexdump macros are also supported, with a small
+	  amount of code pulled in if used. Build time filtering is supported,
+	  but not runtime filtering. There are no timestamps, prefixes,
+	  colors, or asynchronous logging, and all messages are simply
+	  sent to printk().
+
 config LOG_RUNTIME_FILTERING
 	bool "Enable runtime reconfiguration of the logger"
-	depends on !LOG_FRONTEND
+	depends on !LOG_FRONTEND && !LOG_MINIMAL
 	help
 	  Allow runtime configuration of maximal, independent severity
 	  level for instance.
@@ -68,6 +80,8 @@ config LOG_MAX_LEVEL
 	  - 2 WARNING, maximal level set to LOG_LEVEL_WRN
 	  - 3 INFO, maximal level set to LOG_LEVEL_INFO
 	  - 4 DEBUG, maximal level set to LOG_LEVEL_DBG
+
+if !LOG_MINIMAL
 
 menu "Prepend log message with function name"
 	depends on !LOG_FRONTEND
@@ -477,4 +491,5 @@ config LOG_BACKEND_FORMAT_TIMESTAMP
 	help
 	  When enabled timestamp is formatted to hh:mm:ss:ms,us.
 
+endif # LOG_MINIMAL
 endif # LOG
