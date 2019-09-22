@@ -299,10 +299,7 @@ static void usb_handle_control_transfer(u8_t ep,
 		length = sys_le16_to_cpu(setup->wLength);
 		if (length > CONFIG_USB_REQUEST_BUFFER_SIZE) {
 			if (REQTYPE_GET_DIR(setup->bmRequestType)
-			    == REQTYPE_DIR_TO_HOST) {
-				/* Limit wLength */
-				length = CONFIG_USB_REQUEST_BUFFER_SIZE;
-			} else {
+			    != REQTYPE_DIR_TO_HOST) {
 				LOG_ERR("Request buffer too small");
 				usb_dc_ep_set_stall(USB_CONTROL_IN_EP0);
 				usb_dc_ep_set_stall(USB_CONTROL_OUT_EP0);
