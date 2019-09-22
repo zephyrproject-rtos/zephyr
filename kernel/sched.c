@@ -13,6 +13,7 @@
 #include <syscall_handler.h>
 #include <drivers/timer/system_timer.h>
 #include <stdbool.h>
+#include <kernel_internal.h>
 
 #if defined(CONFIG_SCHED_DUMB)
 #define _priq_run_add		z_priq_dumb_add
@@ -84,9 +85,7 @@ static inline bool is_idle(struct k_thread *thread)
 #ifdef CONFIG_SMP
 	return thread->base.is_idle;
 #else
-	extern k_tid_t const _idle_thread;
-
-	return thread == _idle_thread;
+	return thread == &z_idle_thread;
 #endif
 }
 

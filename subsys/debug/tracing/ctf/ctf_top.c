@@ -7,19 +7,15 @@
 #include <zephyr.h>
 #include <kernel_structs.h>
 #include <init.h>
+#include <kernel_internal.h>
 #include "ctf_top.h"
-
-
-#ifndef CONFIG_SMP
-extern k_tid_t const _idle_thread;
-#endif
 
 static inline int is_idle_thread(struct k_thread *thread)
 {
 #ifdef CONFIG_SMP
 	return thread->base.is_idle;
 #else
-	return thread == _idle_thread;
+	return thread == &z_idle_thread;
 #endif
 }
 

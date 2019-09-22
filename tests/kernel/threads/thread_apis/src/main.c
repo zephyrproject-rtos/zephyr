@@ -146,7 +146,6 @@ void test_thread_name_get_set(void)
 #ifdef CONFIG_USERSPACE
 static char unreadable_string[64];
 static char not_my_buffer[CONFIG_THREAD_MAX_NAME_LEN];
-ZTEST_BMEM struct k_thread *main_thread_ptr;
 struct k_sem sem;
 #endif /* CONFIG_USERSPACE */
 
@@ -169,7 +168,7 @@ void test_thread_name_user_get_set(void)
 	zassert_equal(ret, -EFAULT, "accepted unreadable string");
 	ret = k_thread_name_set((struct k_thread *)&sem, "some name");
 	zassert_equal(ret, -EINVAL, "accepted non-thread object");
-	ret = k_thread_name_set(main_thread_ptr, "some name");
+	ret = k_thread_name_set(&z_main_thread, "some name");
 	zassert_equal(ret, -EINVAL, "no permission on thread object");
 
 	/* Set and get current thread's name */
@@ -191,7 +190,7 @@ void test_thread_name_user_get_set(void)
 	ret = k_thread_name_copy((struct k_thread *)&sem, thread_name,
 				     sizeof(thread_name));
 	zassert_equal(ret, -EINVAL, "not a thread object");
-	ret = k_thread_name_copy(main_thread_ptr, thread_name,
+	ret = k_thread_name_copy(&z_main_thread, thread_name,
 				     sizeof(thread_name));
 	zassert_equal(ret, 0, "couldn't get main thread name");
 	printk("Main thread name is '%s'\n", thread_name);
@@ -270,8 +269,6 @@ void test_user_mode(void)
 }
 #endif
 
-extern const k_tid_t _main_thread;
-
 void test_main(void)
 {
 	k_thread_access_grant(k_current_get(), &tdata, tstack);
@@ -281,8 +278,6 @@ void test_main(void)
 #ifdef CONFIG_USERSPACE
 	strncpy(unreadable_string, "unreadable string",
 		sizeof(unreadable_string));
-	/* Copy so user mode can get at it */
-	main_thread_ptr = _main_thread;
 #endif
 
 	ztest_test_suite(threads_lifecycle,

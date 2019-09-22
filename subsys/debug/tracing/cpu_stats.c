@@ -6,6 +6,7 @@
 
 #include <tracing_cpu_stats.h>
 #include <sys/printk.h>
+#include <kernel_internal.h>
 
 enum cpu_state {
 	CPU_STATE_IDLE,
@@ -21,16 +22,12 @@ static struct cpu_stats stats_hw_tick;
 static int nested_interrupts;
 static struct k_thread *current_thread;
 
-#ifndef CONFIG_SMP
-extern k_tid_t const _idle_thread;
-#endif
-
 static int is_idle_thread(struct k_thread *thread)
 {
 #ifdef CONFIG_SMP
 	return thread->base.is_idle;
 #else
-	return thread == _idle_thread;
+	return thread == &z_idle_thread;
 #endif
 }
 
