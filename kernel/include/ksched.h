@@ -17,7 +17,7 @@ BUILD_ASSERT(K_LOWEST_APPLICATION_THREAD_PRIO
 
 #ifdef CONFIG_MULTITHREADING
 #define Z_VALID_PRIO(prio, entry_point)				     \
-	(((prio) == K_IDLE_PRIO && z_is_idle_thread(entry_point)) || \
+	(((prio) == K_IDLE_PRIO && z_is_idle_thread_entry(entry_point)) || \
 	 ((K_LOWEST_APPLICATION_THREAD_PRIO			     \
 	   >= K_HIGHEST_APPLICATION_THREAD_PRIO)		     \
 	  && (prio) >= K_HIGHEST_APPLICATION_THREAD_PRIO	     \
@@ -82,7 +82,7 @@ static ALWAYS_INLINE struct k_thread *z_get_next_ready_thread(void)
 }
 #endif
 
-static inline bool z_is_idle_thread(void *entry_point)
+static inline bool z_is_idle_thread_entry(void *entry_point)
 {
 	return entry_point == idle;
 }
@@ -217,7 +217,7 @@ bool z_is_t1_higher_prio_than_t2(struct k_thread *t1, struct k_thread *t2);
 
 static inline bool _is_valid_prio(int prio, void *entry_point)
 {
-	if (prio == K_IDLE_PRIO && z_is_idle_thread(entry_point)) {
+	if (prio == K_IDLE_PRIO && z_is_idle_thread_entry(entry_point)) {
 		return true;
 	}
 
