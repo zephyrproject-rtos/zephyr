@@ -14,7 +14,7 @@
  *
  * The HW models raising an interrupt will "awake the cpu" by calling
  * poisix_interrupt_raised() which will transfer control to the irq handler,
- * which will run inside SW/Zephyr contenxt. After which a __swap() to whatever
+ * which will run inside SW/Zephyr contenxt. After which a z_arch_swap() to whatever
  * Zephyr thread may follow.
  * Again, once Zephyr is done, control is given back to the HW models.
  *
@@ -143,7 +143,7 @@ void posix_halt_cpu(void)
 	 * => let the "irq handler" check if/what interrupt was raised
 	 * and call the appropriate irq handler.
 	 *
-	 * Note that, the interrupt handling may trigger a __swap() to another
+	 * Note that, the interrupt handling may trigger a z_arch_swap() to another
 	 * Zephyr thread. When posix_irq_handler() returns, the Zephyr
 	 * kernel has swapped back to this thread again
 	 */

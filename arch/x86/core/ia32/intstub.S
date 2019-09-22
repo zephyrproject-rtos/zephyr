@@ -30,7 +30,7 @@
 
 	/* externs */
 
-	GTEXT(__swap)
+	GTEXT(z_arch_swap)
 
 #ifdef CONFIG_SYS_POWER_MANAGEMENT
 	GTEXT(z_sys_power_save_idle_exit)
@@ -126,7 +126,7 @@ SECTION_FUNC(TEXT, _interrupt_enter)
 
 	/* Push EDI as we will use it for scratch space.
 	 * Rest of the callee-saved regs get saved by invocation of C
-	 * functions (isr handler, __swap(), etc)
+	 * functions (isr handler, z_arch_swap(), etc)
 	 */
 	pushl	%edi
 
@@ -228,7 +228,7 @@ alreadyOnIntStack:
 
 	/*
 	 * Set X86_THREAD_FLAG_INT bit in k_thread to allow the upcoming call
-	 * to __swap() to determine whether non-floating registers need to be
+	 * to z_arch_swap() to determine whether non-floating registers need to be
 	 * preserved using the lazy save/restore algorithm, or to indicate to
 	 * debug tools that a preemptive context switch has occurred.
 	 */
@@ -240,7 +240,7 @@ alreadyOnIntStack:
 	/*
 	 * A context reschedule is required: keep the volatile registers of
 	 * the interrupted thread on the context's stack.  Utilize
-	 * the existing __swap() primitive to save the remaining
+	 * the existing z_arch_swap() primitive to save the remaining
 	 * thread's registers (including floating point) and perform
 	 * a switch to the new thread.
 	 */
@@ -251,12 +251,12 @@ alreadyOnIntStack:
 	call	z_check_stack_sentinel
 #endif
 	pushfl			/* push KERNEL_LOCK_KEY argument */
-	call	__swap
+	call	z_arch_swap
 	addl 	$4, %esp	/* pop KERNEL_LOCK_KEY argument */
 
 	/*
 	 * The interrupted thread has now been scheduled,
-	 * as the result of a _later_ invocation of __swap().
+	 * as the result of a _later_ invocation of z_arch_swap().
 	 *
 	 * Now need to restore the interrupted thread's environment before
 	 * returning control to it at the point where it was interrupted ...
@@ -264,7 +264,7 @@ alreadyOnIntStack:
 
 #if defined(CONFIG_LAZY_FP_SHARING)
 	/*
-	 * __swap() has restored the floating point registers, if needed.
+	 * z_arch_swap() has restored the floating point registers, if needed.
 	 * Clear X86_THREAD_FLAG_INT in the interrupted thread's state
 	 * since it has served its purpose.
 	 */

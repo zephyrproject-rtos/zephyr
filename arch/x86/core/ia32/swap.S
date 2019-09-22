@@ -8,7 +8,7 @@
  * @file
  * @brief Kernel swapper code for IA-32
  *
- * This module implements the __swap() routine for the IA-32 architecture.
+ * This module implements the z_arch_swap() routine for the IA-32 architecture.
  */
 
 #include <kernel_structs.h>
@@ -17,7 +17,7 @@
 
 	/* exports (internal APIs) */
 
-	GTEXT(__swap)
+	GTEXT(z_arch_swap)
 	GTEXT(z_x86_thread_entry_wrapper)
 	GTEXT(_x86_user_thread_entry_wrapper)
 
@@ -31,13 +31,13 @@
  *
  * @brief Initiate a cooperative context switch
  *
- * The __swap() routine is invoked by various kernel services to effect
- * a cooperative context switch.  Prior to invoking __swap(), the
+ * The z_arch_swap() routine is invoked by various kernel services to effect
+ * a cooperative context switch.  Prior to invoking z_arch_swap(), the
  * caller disables interrupts (via irq_lock) and the return 'key'
- * is passed as a parameter to __swap().  The 'key' actually represents
+ * is passed as a parameter to z_arch_swap().  The 'key' actually represents
  * the EFLAGS register prior to disabling interrupts via a 'cli' instruction.
  *
- * Given that __swap() is called to effect a cooperative context switch, only
+ * Given that z_arch_swap() is called to effect a cooperative context switch, only
  * the non-volatile integer registers need to be saved in the TCS of the
  * outgoing thread.  The restoration of the integer registers of the incoming
  * thread depends on whether that thread was preemptively context switched out.
@@ -72,7 +72,7 @@
  *
  * C function prototype:
  *
- * unsigned int __swap (unsigned int eflags);
+ * unsigned int z_arch_swap (unsigned int eflags);
  *
  */
 
@@ -85,7 +85,7 @@
 	pop %edx
 	pop %eax
 .endm
-SECTION_FUNC(TEXT, __swap)
+SECTION_FUNC(TEXT, z_arch_swap)
 #ifdef CONFIG_EXECUTION_BENCHMARKING
 	/* Save the eax and edx registers before reading the time stamp
 	* once done pop the values.
@@ -356,12 +356,12 @@ CROHandlingDone:
 	/*
 	 * %eax may contain one of these values:
 	 *
-	 * - the return value for __swap() that was set up by a call to
+	 * - the return value for z_arch_swap() that was set up by a call to
 	 * z_arch_thread_return_value_set()
 	 * - -EINVAL
 	 */
 
-	/* Utilize the 'eflags' parameter to __swap() */
+	/* Utilize the 'eflags' parameter to z_arch_swap() */
 
 	pushl	4(%esp)
 	popfl
