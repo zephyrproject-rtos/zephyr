@@ -505,15 +505,6 @@ void log_hexdump(const char *str,
 		 u32_t length,
 		 struct log_msg_ids src_level);
 
-/** @brief Format and put string into log message.
- *
- * @param fmt	String to format.
- * @param ap	Variable list of arguments.
- *
- * @return Number of bytes processed.
- */
-int log_printk(const char *fmt, va_list ap);
-
 /** @brief Process log message synchronously.
  *
  * @param src_level	Log message details.
