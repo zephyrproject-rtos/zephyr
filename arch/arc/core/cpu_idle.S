@@ -19,9 +19,9 @@
 
 GTEXT(z_arch_cpu_idle)
 GTEXT(z_arch_cpu_atomic_idle)
-GDATA(k_cpu_sleep_mode)
+GDATA(z_arc_cpu_sleep_mode)
 
-SECTION_VAR(BSS, k_cpu_sleep_mode)
+SECTION_VAR(BSS, z_arc_cpu_sleep_mode)
 	.balign 4
 	.word 0
 
@@ -41,7 +41,7 @@ SECTION_FUNC(TEXT, z_arch_cpu_idle)
 	pop_s blink
 #endif
 
-	ld r1, [k_cpu_sleep_mode]
+	ld r1, [z_arc_cpu_sleep_mode]
 	or r1, r1, (1 << 4) /* set IRQ-enabled bit */
 	sleep r1
 	j_s [blink]
@@ -62,7 +62,7 @@ SECTION_FUNC(TEXT, z_arch_cpu_atomic_idle)
 	pop_s blink
 #endif
 
-	ld r1, [k_cpu_sleep_mode]
+	ld r1, [z_arc_cpu_sleep_mode]
 	or r1, r1, (1 << 4) /* set IRQ-enabled bit */
 	sleep r1
 	j_s.d [blink]
