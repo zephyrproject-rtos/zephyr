@@ -19,7 +19,7 @@ extern "C" {
 #endif
 
 #ifndef _ASMLANGUAGE
-extern unsigned int k_cpu_sleep_mode;
+extern unsigned int z_arc_cpu_sleep_mode;
 
 extern u32_t z_timer_cycle_get_32(void);
 #define z_arch_k_cycle_get_32()	z_timer_cycle_get_32()
