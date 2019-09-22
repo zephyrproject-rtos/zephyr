@@ -14,9 +14,9 @@
 #ifndef _ASMLANGUAGE
 
 #include <fsl_common.h>
-#include <device.h>
-#include <sys/util.h>
-#include <random/rand32.h>
+
+/* Add include for DTS generated information */
+#include <generated_dts_board.h>
 
 #endif /* !_ASMLANGUAGE */
 

@@ -16,9 +16,12 @@
 #define _SOC__H_
 
 #ifndef _ASMLANGUAGE
-#include <device.h>
 #include <sys/util.h>
 #include <fsl_common.h>
+
+/* Add include for DTS generated information */
+#include <generated_dts_board.h>
+
 #endif /* !_ASMLANGUAGE */
 
 #define IOCON_PIO_DIGITAL_EN 0x0100u  /*!<@brief Enables digital function */
