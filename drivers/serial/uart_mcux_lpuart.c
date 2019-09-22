@@ -8,8 +8,8 @@
 #include <device.h>
 #include <drivers/uart.h>
 #include <drivers/clock_control.h>
-#include <fsl_lpuart.h>
 #include <soc.h>
+#include <fsl_lpuart.h>
 
 struct mcux_lpuart_config {
 	LPUART_Type *base;
