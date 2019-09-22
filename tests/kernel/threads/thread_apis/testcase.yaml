@@ -1,3 +1,4 @@
 tests:
   kernel.threads:
     tags: kernel threads userspace ignore_faults
+    platform_exclude: 96b_meerkat96 colibri_imx7d_m4 warp7_m4
