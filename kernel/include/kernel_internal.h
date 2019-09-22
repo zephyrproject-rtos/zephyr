@@ -300,6 +300,11 @@ extern u32_t z_timestamp_main; /* timestamp when main task starts */
 extern u32_t z_timestamp_idle; /* timestamp when CPU goes idle */
 #endif
 
+extern struct k_thread z_main_thread;
+extern struct k_thread z_idle_thread;
+extern K_THREAD_STACK_DEFINE(z_main_stack, CONFIG_MAIN_STACK_SIZE);
+extern K_THREAD_STACK_DEFINE(z_idle_stack, CONFIG_IDLE_STACK_SIZE);
+
 #ifdef __cplusplus
 }
 #endif

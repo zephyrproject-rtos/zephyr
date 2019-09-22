@@ -14,6 +14,7 @@
 LOG_MODULE_REGISTER(net_shell, LOG_LEVEL_DBG);
 
 #include <zephyr.h>
+#include <kernel_internal.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <shell/shell.h>
@@ -3248,7 +3249,6 @@ static int cmd_net_route(const struct shell *shell, size_t argc, char *argv[])
 }
 
 #if defined(CONFIG_INIT_STACKS)
-extern K_THREAD_STACK_DEFINE(_main_stack, CONFIG_MAIN_STACK_SIZE);
 extern K_THREAD_STACK_DEFINE(_interrupt_stack, CONFIG_ISR_STACK_SIZE);
 extern K_THREAD_STACK_DEFINE(sys_work_q_stack,
 			     CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE);
@@ -3294,11 +3294,11 @@ static int cmd_net_stacks(const struct shell *shell, size_t argc,
 	}
 
 #if defined(CONFIG_INIT_STACKS)
-	net_analyze_stack_get_values(Z_THREAD_STACK_BUFFER(_main_stack),
-				     K_THREAD_STACK_SIZEOF(_main_stack),
+	net_analyze_stack_get_values(Z_THREAD_STACK_BUFFER(z_main_stack),
+				     K_THREAD_STACK_SIZEOF(z_main_stack),
 				     &pcnt, &unused);
 	PR("%s [%s] stack size %d/%d bytes unused %u usage %d/%d (%u %%)\n",
-	   "main", "_main_stack", CONFIG_MAIN_STACK_SIZE,
+	   "main", "z_main_stack", CONFIG_MAIN_STACK_SIZE,
 	   CONFIG_MAIN_STACK_SIZE, unused,
 	   CONFIG_MAIN_STACK_SIZE - unused, CONFIG_MAIN_STACK_SIZE, pcnt);
 

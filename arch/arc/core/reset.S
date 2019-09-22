@@ -17,7 +17,7 @@
 #include <swap_macros.h>
 
 GDATA(_interrupt_stack)
-GDATA(_main_stack)
+GDATA(z_main_stack)
 GDATA(_VectorTable)
 
 /* use one of the available interrupt stacks during init */
@@ -154,7 +154,7 @@ _master_core_startup:
 	 * FIRQ stack when CONFIG_INIT_STACKS is enabled before switching to
 	 * one of them for the rest of the early boot
 	 */
-	mov_s sp, _main_stack
+	mov_s sp, z_main_stack
 	add sp, sp, CONFIG_MAIN_STACK_SIZE
 
 	mov_s r0, _interrupt_stack
