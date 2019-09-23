@@ -150,8 +150,8 @@ config SHELL_CMDS_SELECT
 
 config SHELL_LOG_BACKEND
 	bool
+	depends on !LOG_MINIMAL
 	default y if LOG
-	default n if !LOG
 
 source "subsys/shell/modules/Kconfig"
 
