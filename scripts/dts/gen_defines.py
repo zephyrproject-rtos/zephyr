@@ -5,10 +5,10 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 # This script uses edtlib to generate a header file and a .conf file (both
-# containing the same values) from a device tree (.dts) file. Information from
+# containing the same values) from a devicetree (.dts) file. Information from
 # binding files in YAML format is used as well.
 #
-# Bindings are files that describe device tree nodes. Device tree nodes are
+# Bindings are files that describe devicetree nodes. Devicetree nodes are
 # usually mapped to bindings via their 'compatible = "..."' property.
 #
 # See the docstring/comments at the top of edtlib.py for more information.
@@ -33,7 +33,7 @@ def main():
     try:
         edt = edtlib.EDT(args.dts, args.bindings_dirs)
     except edtlib.EDTError as e:
-        sys.exit("device tree error: " + str(e))
+        sys.exit("devicetree error: " + str(e))
 
     conf_file = open(args.conf_out, "w", encoding="utf-8")
     header_file = open(args.header_out, "w", encoding="utf-8")
@@ -45,33 +45,33 @@ def main():
 
     active_compats = set()
 
-    for dev in edt.devices:
-        if dev.enabled and dev.matching_compat:
+    for node in edt.nodes:
+        if node.enabled and node.matching_compat:
             # Skip 'fixed-partitions' devices since they are handled by
             # write_flash() and would generate extra spurious #defines
-            if dev.matching_compat == "fixed-partitions":
+            if node.matching_compat == "fixed-partitions":
                 continue
 
-            out_comment("Device tree node: " + dev.path)
+            out_comment("Devicetree node: " + node.path)
             out_comment("Binding (compatible = {}): {}".format(
-                            dev.matching_compat, dev.binding_path),
+                            node.matching_compat, node.binding_path),
                         blank_before=False)
-            out_comment("Binding description: " + dev.description,
+            out_comment("Binding description: " + node.description,
                         blank_before=False)
 
-            write_regs(dev)
-            write_irqs(dev)
-            for gpios in dev.gpios.values():
-                write_phandle_val_list(dev, gpios, "GPIO")
-            write_phandle_val_list(dev, dev.pwms, "PWM")
-            write_phandle_val_list(dev, dev.iochannels, "IO_CHANNEL")
-            write_clocks(dev)
-            write_spi_dev(dev)
-            write_props(dev)
-            write_bus(dev)
-            write_existence_flags(dev)
+            write_regs(node)
+            write_irqs(node)
+            for gpios in node.gpios.values():
+                write_phandle_val_list(node, gpios, "GPIO")
+            write_phandle_val_list(node, node.pwms, "PWM")
+            write_phandle_val_list(node, node.iochannels, "IO_CHANNEL")
+            write_clocks(node)
+            write_spi_dev(node)
+            write_props(node)
+            write_bus(node)
+            write_existence_flags(node)
 
-            active_compats.update(dev.compats)
+            active_compats.update(node.compats)
 
     out_comment("Active compatibles (mentioned in DTS + binding found)")
     for compat in sorted(active_compats):
@@ -83,20 +83,20 @@ def main():
     write_addr_size(edt, "zephyr,ccm", "CCM")
     write_addr_size(edt, "zephyr,dtcm", "DTCM")
 
-    write_flash(edt.chosen_dev("zephyr,flash"))
-    write_code_partition(edt.chosen_dev("zephyr,code-partition"))
+    write_flash(edt.chosen_node("zephyr,flash"))
+    write_code_partition(edt.chosen_node("zephyr,code-partition"))
 
     flash_index = 0
-    for dev in edt.devices:
-        if dev.name.startswith("partition@"):
-            write_flash_partition(dev, flash_index)
+    for node in edt.nodes:
+        if node.name.startswith("partition@"):
+            write_flash_partition(node, flash_index)
             flash_index += 1
 
     out_comment("Number of flash partitions")
     if flash_index != 0:
         out("FLASH_AREA_NUM", flash_index)
 
-    print("Device tree configuration written to " + args.conf_out)
+    print("Devicetree configuration written to " + args.conf_out)
 
 
 def parse_args():
@@ -115,8 +115,8 @@ def parse_args():
     return parser.parse_args()
 
 
-def write_regs(dev):
-    # Writes address/size output for the registers in dev's 'reg' property
+def write_regs(node):
+    # Writes address/size output for the registers in the node's 'reg' property
 
     def reg_addr_name_alias(reg):
         return str2ident(reg.name) + "_BASE_ADDRESS" if reg.name else None
@@ -124,20 +124,20 @@ def write_regs(dev):
     def reg_size_name_alias(reg):
         return str2ident(reg.name) + "_SIZE" if reg.name else None
 
-    for reg in dev.regs:
-        out_dev(dev, reg_addr_ident(reg), hex(reg.addr),
+    for reg in node.regs:
+        out_dev(node, reg_addr_ident(reg), hex(reg.addr),
                 name_alias=reg_addr_name_alias(reg))
 
         if reg.size:
-            out_dev(dev, reg_size_ident(reg), reg.size,
+            out_dev(node, reg_size_ident(reg), reg.size,
                     name_alias=reg_size_name_alias(reg))
 
 
-def write_props(dev):
+def write_props(node):
     # Writes any properties defined in the "properties" section of the binding
-    # for the device
+    # for the node
 
-    for prop in dev.props.values():
+    for prop in node.props.values():
         # Skip #size-cell and other property starting with #. Also skip mapping
         # properties like 'gpio-map'.
         if prop.name[0] == "#" or prop.name.endswith("-map"):
@@ -160,64 +160,65 @@ def write_props(dev):
         ident = str2ident(prop.name)
 
         if prop.type == "boolean":
-            out_dev(dev, ident, 1 if prop.val else 0)
+            out_dev(node, ident, 1 if prop.val else 0)
         elif prop.type == "string":
-            out_dev_s(dev, ident, prop.val)
+            out_dev_s(node, ident, prop.val)
         elif prop.type == "int":
-            out_dev(dev, ident, prop.val)
+            out_dev(node, ident, prop.val)
         elif prop.type == "array":
             for i, val in enumerate(prop.val):
-                out_dev(dev, "{}_{}".format(ident, i), val)
+                out_dev(node, "{}_{}".format(ident, i), val)
         elif prop.type == "string-array":
             for i, val in enumerate(prop.val):
-                out_dev_s(dev, "{}_{}".format(ident, i), val)
+                out_dev_s(node, "{}_{}".format(ident, i), val)
         elif prop.type == "uint8-array":
-            out_dev(dev, ident,
+            out_dev(node, ident,
                     "{ " + ", ".join("0x{:02x}".format(b) for b in prop.val) + " }")
 
         # Generate DT_..._ENUM if there's an 'enum:' key in the binding
         if prop.enum_index is not None:
-            out_dev(dev, ident + "_ENUM", prop.enum_index)
+            out_dev(node, ident + "_ENUM", prop.enum_index)
 
 
-def write_bus(dev):
+def write_bus(node):
     # Generate bus-related #defines
 
-    if not dev.bus:
+    if not node.bus:
         return
 
-    if dev.parent.label is None:
-        err("missing 'label' property on {!r}".format(dev.parent))
+    if node.parent.label is None:
+        err("missing 'label' property on {!r}".format(node.parent))
 
     # #define DT_<DEV-IDENT>_BUS_NAME <BUS-LABEL>
-    out_dev_s(dev, "BUS_NAME", str2ident(dev.parent.label))
+    out_dev_s(node, "BUS_NAME", str2ident(node.parent.label))
 
-    for compat in dev.compats:
+    for compat in node.compats:
         # #define DT_<COMPAT>_BUS_<BUS-TYPE> 1
-        out("{}_BUS_{}".format(str2ident(compat), str2ident(dev.bus)), 1)
+        out("{}_BUS_{}".format(str2ident(compat), str2ident(node.bus)), 1)
 
 
-def write_existence_flags(dev):
+def write_existence_flags(node):
     # Generate #defines of the form
     #
     #   #define DT_INST_<INSTANCE>_<COMPAT> 1
     #
     # These are flags for which devices exist.
 
-    for compat in dev.compats:
-        out("INST_{}_{}".format(dev.instance_no[compat], str2ident(compat)), 1)
+    for compat in node.compats:
+        out("INST_{}_{}".format(node.instance_no[compat],
+                                str2ident(compat)), 1)
 
 
 def reg_addr_ident(reg):
     # Returns the identifier (e.g., macro name) to be used for the address of
     # 'reg' in the output
 
-    dev = reg.dev
+    node = reg.node
 
     # NOTE: to maintain compat wit the old script we special case if there's
     # only a single register (we drop the '_0').
-    if len(dev.regs) > 1:
-        return "BASE_ADDRESS_{}".format(dev.regs.index(reg))
+    if len(node.regs) > 1:
+        return "BASE_ADDRESS_{}".format(node.regs.index(reg))
     else:
         return "BASE_ADDRESS"
 
@@ -226,61 +227,61 @@ def reg_size_ident(reg):
     # Returns the identifier (e.g., macro name) to be used for the size of
     # 'reg' in the output
 
-    dev = reg.dev
+    node = reg.node
 
     # NOTE: to maintain compat wit the old script we special case if there's
     # only a single register (we drop the '_0').
-    if len(dev.regs) > 1:
-        return "SIZE_{}".format(dev.regs.index(reg))
+    if len(node.regs) > 1:
+        return "SIZE_{}".format(node.regs.index(reg))
     else:
         return "SIZE"
 
 
-def dev_ident(dev):
-    # Returns an identifier for the Device 'dev'. Used when building e.g. macro
-    # names.
+def dev_ident(node):
+    # Returns an identifier for the device given by 'node'. Used when building
+    # e.g. macro names.
 
     # TODO: Handle PWM on STM
     # TODO: Better document the rules of how we generate things
 
     ident = ""
 
-    if dev.bus:
+    if node.bus:
         ident += "{}_{:X}_".format(
-            str2ident(dev.parent.matching_compat), dev.parent.unit_addr)
+            str2ident(node.parent.matching_compat), node.parent.unit_addr)
 
-    ident += "{}_".format(str2ident(dev.matching_compat))
+    ident += "{}_".format(str2ident(node.matching_compat))
 
-    if dev.unit_addr is not None:
-        ident += "{:X}".format(dev.unit_addr)
-    elif dev.parent.unit_addr is not None:
-        ident += "{:X}_{}".format(dev.parent.unit_addr, str2ident(dev.name))
+    if node.unit_addr is not None:
+        ident += "{:X}".format(node.unit_addr)
+    elif node.parent.unit_addr is not None:
+        ident += "{:X}_{}".format(node.parent.unit_addr, str2ident(node.name))
     else:
         # This is a bit of a hack
-        ident += "{}".format(str2ident(dev.name))
+        ident += "{}".format(str2ident(node.name))
 
     return ident
 
 
-def dev_aliases(dev):
-    # Returns a list of aliases for the Device 'dev', used e.g. when building
-    # macro names
+def dev_aliases(node):
+    # Returns a list of aliases for the device given by 'node', used e.g. when
+    # building macro names
 
-    return dev_path_aliases(dev) + dev_instance_aliases(dev)
+    return dev_path_aliases(node) + dev_instance_aliases(node)
 
 
-def dev_path_aliases(dev):
-    # Returns a list of aliases for the Device 'dev', based on the aliases
-    # registered for the device, in the /aliases node. Used when building e.g.
+def dev_path_aliases(node):
+    # Returns a list of aliases for the device given by 'node', based on the
+    # aliases registered for it, in the /aliases node. Used when building e.g.
     # macro names.
 
-    if dev.matching_compat is None:
+    if node.matching_compat is None:
         return []
 
-    compat_s = str2ident(dev.matching_compat)
+    compat_s = str2ident(node.matching_compat)
 
     aliases = []
-    for alias in dev.aliases:
+    for alias in node.aliases:
         aliases.append("ALIAS_{}".format(str2ident(alias)))
         # TODO: See if we can remove or deprecate this form
         aliases.append("{}_{}".format(compat_s, str2ident(alias)))
@@ -288,112 +289,112 @@ def dev_path_aliases(dev):
     return aliases
 
 
-def dev_instance_aliases(dev):
-    # Returns a list of aliases for the Device 'dev', based on the instance
-    # number of the device (based on how many instances of that particular
-    # device there are).
+def dev_instance_aliases(node):
+    # Returns a list of aliases for the device given by 'node', based on the
+    # instance number of the device (based on how many instances of that
+    # particular device there are).
     #
     # This is a list since a device can have multiple 'compatible' strings,
     # each with their own instance number.
 
-    return ["INST_{}_{}".format(dev.instance_no[compat], str2ident(compat))
-            for compat in dev.compats]
+    return ["INST_{}_{}".format(node.instance_no[compat], str2ident(compat))
+            for compat in node.compats]
 
 
 def write_addr_size(edt, prop_name, prefix):
-    # Writes <prefix>_BASE_ADDRESS and <prefix>_SIZE for the device
-    # pointed at by the /chosen property named 'prop_name', if it exists
+    # Writes <prefix>_BASE_ADDRESS and <prefix>_SIZE for the node pointed at by
+    # the /chosen property named 'prop_name', if it exists
 
-    dev = edt.chosen_dev(prop_name)
-    if not dev:
+    node = edt.chosen_node(prop_name)
+    if not node:
         return
 
-    if not dev.regs:
+    if not node.regs:
         err("missing 'reg' property in node pointed at by /chosen/{} ({!r})"
-            .format(prop_name, dev))
+            .format(prop_name, node))
 
-    out_comment("/chosen/{} ({})".format(prop_name, dev.path))
-    out("{}_BASE_ADDRESS".format(prefix), hex(dev.regs[0].addr))
-    out("{}_SIZE".format(prefix), dev.regs[0].size//1024)
+    out_comment("/chosen/{} ({})".format(prop_name, node.path))
+    out("{}_BASE_ADDRESS".format(prefix), hex(node.regs[0].addr))
+    out("{}_SIZE".format(prefix), node.regs[0].size//1024)
 
 
-def write_flash(flash_dev):
+def write_flash(flash_node):
     # Writes output for the node pointed at by the zephyr,flash property in
     # /chosen
 
     out_comment("/chosen/zephyr,flash ({})"
-                .format(flash_dev.path if flash_dev else "missing"))
+                .format(flash_node.path if flash_node else "missing"))
 
-    if not flash_dev:
-        # No flash device. Write dummy values.
+    if not flash_node:
+        # No flash node. Write dummy values.
         out("FLASH_BASE_ADDRESS", 0)
         out("FLASH_SIZE", 0)
         return
 
-    if len(flash_dev.regs) != 1:
+    if len(flash_node.regs) != 1:
         err("expected zephyr,flash to have a single register, has {}"
-            .format(len(flash_dev.regs)))
+            .format(len(flash_node.regs)))
 
-    if flash_dev.bus == "spi" and len(flash_dev.parent.regs) == 2:
-        reg = flash_dev.parent.regs[1]  # QSPI flash
+    if flash_node.bus == "spi" and len(flash_node.parent.regs) == 2:
+        reg = flash_node.parent.regs[1]  # QSPI flash
     else:
-        reg = flash_dev.regs[0]
+        reg = flash_node.regs[0]
 
     out("FLASH_BASE_ADDRESS", hex(reg.addr))
     if reg.size:
         out("FLASH_SIZE", reg.size//1024)
 
-    if "erase-block-size" in flash_dev.props:
-        out("FLASH_ERASE_BLOCK_SIZE", flash_dev.props["erase-block-size"].val)
+    if "erase-block-size" in flash_node.props:
+        out("FLASH_ERASE_BLOCK_SIZE", flash_node.props["erase-block-size"].val)
 
-    if "write-block-size" in flash_dev.props:
-        out("FLASH_WRITE_BLOCK_SIZE", flash_dev.props["write-block-size"].val)
+    if "write-block-size" in flash_node.props:
+        out("FLASH_WRITE_BLOCK_SIZE", flash_node.props["write-block-size"].val)
 
 
-def write_code_partition(code_dev):
+def write_code_partition(code_node):
     # Writes output for the node pointed at by the zephyr,code-partition
     # property in /chosen
 
     out_comment("/chosen/zephyr,code-partition ({})"
-                .format(code_dev.path if code_dev else "missing"))
+                .format(code_node.path if code_node else "missing"))
 
-    if not code_dev:
+    if not code_node:
         # No code partition. Write dummy values.
         out("CODE_PARTITION_OFFSET", 0)
         out("CODE_PARTITION_SIZE", 0)
         return
 
-    if not code_dev.regs:
-        err("missing 'regs' property on {!r}".format(code_dev))
+    if not code_node.regs:
+        err("missing 'regs' property on {!r}".format(code_node))
 
-    out("CODE_PARTITION_OFFSET", code_dev.regs[0].addr)
-    out("CODE_PARTITION_SIZE", code_dev.regs[0].size)
+    out("CODE_PARTITION_OFFSET", code_node.regs[0].addr)
+    out("CODE_PARTITION_SIZE", code_node.regs[0].size)
 
 
-def write_flash_partition(partition_dev, index):
-    out_comment("Flash partition at " + partition_dev.path)
+def write_flash_partition(partition_node, index):
+    out_comment("Flash partition at " + partition_node.path)
 
-    if partition_dev.label is None:
-        err("missing 'label' property on {!r}".format(partition_dev))
+    if partition_node.label is None:
+        err("missing 'label' property on {!r}".format(partition_node))
 
     # Generate label-based identifiers
     write_flash_partition_prefix(
-        "FLASH_AREA_" + str2ident(partition_dev.label), partition_dev, index)
+        "FLASH_AREA_" + str2ident(partition_node.label), partition_node, index)
 
     # Generate index-based identifiers
     write_flash_partition_prefix(
-        "FLASH_AREA_{}".format(index), partition_dev, index)
+        "FLASH_AREA_{}".format(index), partition_node, index)
 
 
-def write_flash_partition_prefix(prefix, partition_dev, index):
+def write_flash_partition_prefix(prefix, partition_node, index):
     # write_flash_partition() helper. Generates identifiers starting with
     # 'prefix'.
 
     out("{}_ID".format(prefix), index)
 
-    out("{}_READ_ONLY".format(prefix), 1 if partition_dev.read_only else 0)
+    out("{}_READ_ONLY".format(prefix), 1 if partition_node.read_only else 0)
 
-    for i, reg in enumerate(partition_dev.regs):
+    for i, reg in enumerate(partition_node.regs):
         # Also add aliases that point to the first sector (TODO: get rid of the
         # aliases?)
         out("{}_OFFSET_{}".format(prefix, i), reg.addr,
@@ -401,13 +402,14 @@ def write_flash_partition_prefix(prefix, partition_dev, index):
         out("{}_SIZE_{}".format(prefix, i), reg.size,
             aliases=["{}_SIZE".format(prefix)] if i == 0 else [])
 
-    controller = partition_dev.flash_controller
+    controller = partition_node.flash_controller
     if controller.label is not None:
         out_s("{}_DEV".format(prefix), controller.label)
 
 
-def write_irqs(dev):
-    # Writes IRQ num and data for the interrupts in dev's 'interrupt' property
+def write_irqs(node):
+    # Writes IRQ num and data for the interrupts in the node's 'interrupt'
+    # property
 
     def irq_name_alias(irq, cell_name):
         if not irq.name:
@@ -433,7 +435,7 @@ def write_irqs(dev):
             irq_ctrl = irq_ctrl.interrupts[0].controller
         return irq_num
 
-    for irq_i, irq in enumerate(dev.interrupts):
+    for irq_i, irq in enumerate(node.interrupts):
         for cell_name, cell_value in irq.specifier.items():
             ident = "IRQ_{}".format(irq_i)
             if cell_name == "irq":
@@ -441,25 +443,25 @@ def write_irqs(dev):
             else:
                 ident += "_" + str2ident(cell_name)
 
-            out_dev(dev, ident, cell_value,
+            out_dev(node, ident, cell_value,
                     name_alias=irq_name_alias(irq, cell_name))
 
 
-def write_spi_dev(dev):
+def write_spi_dev(node):
     # Writes SPI device GPIO chip select data if there is any
 
-    cs_gpio = edtlib.spi_dev_cs_gpio(dev)
+    cs_gpio = edtlib.spi_dev_cs_gpio(node)
     if cs_gpio is not None:
-        write_phandle_val_list_entry(dev, cs_gpio, None, "GPIO")
+        write_phandle_val_list_entry(node, cs_gpio, None, "GPIO")
 
 
-def write_phandle_val_list(dev, entries, ident):
+def write_phandle_val_list(node, entries, ident):
     # Writes output for a phandle/value list, e.g.
     #
     #    pwms = <&pwm-ctrl-1 10 20
     #            &pwm-ctrl-2 30 40>;
     #
-    # dev:
+    # node:
     #   Device used to generate device prefixes (see 'ident' below)
     #
     # entries:
@@ -487,13 +489,13 @@ def write_phandle_val_list(dev, entries, ident):
     initializer_vals = []
     for i, entry in enumerate(entries):
         initializer_vals.append(write_phandle_val_list_entry(
-            dev, entry, i if len(entries) > 1 else None, ident))
+            node, entry, i if len(entries) > 1 else None, ident))
     if len(entries) > 1:
-        out_dev(dev, ident + "S_COUNT", len(initializer_vals))
-        out_dev(dev, ident + "S", "{" + ", ".join(initializer_vals) + "}")
+        out_dev(node, ident + "S_COUNT", len(initializer_vals))
+        out_dev(node, ident + "S", "{" + ", ".join(initializer_vals) + "}")
 
 
-def write_phandle_val_list_entry(dev, entry, i, ident):
+def write_phandle_val_list_entry(node, entry, i, ident):
     # write_phandle_val_list() helper. We could get rid of it if it wasn't for
     # write_spi_dev(). Adds 'i' as an index to identifiers unless it's None.
     #
@@ -510,7 +512,7 @@ def write_phandle_val_list_entry(dev, entry, i, ident):
         if i is not None:
             ctrl_ident += "_{}".format(i)
         initializer_vals.append(quote_str(entry.controller.label))
-        out_dev_s(dev, ctrl_ident, entry.controller.label)
+        out_dev_s(node, ctrl_ident, entry.controller.label)
 
     for cell, val in entry.specifier.items():
         cell_ident = ident + "S_" + str2ident(cell)  # e.g. PWMS_CHANNEL
@@ -520,7 +522,7 @@ def write_phandle_val_list_entry(dev, entry, i, ident):
         # Backwards compatibility (see above)
         if i is not None:
             cell_ident += "_{}".format(i)
-        out_dev(dev, cell_ident, val)
+        out_dev(node, cell_ident, val)
 
     initializer_vals += entry.specifier.values()
 
@@ -529,20 +531,20 @@ def write_phandle_val_list_entry(dev, entry, i, ident):
         initializer_ident += "_" + str2ident(entry.name)
     if i is not None:
         initializer_ident += "_{}".format(i)
-    return out_dev(dev, initializer_ident,
+    return out_dev(node, initializer_ident,
                    "{" + ", ".join(map(str, initializer_vals)) + "}")
 
 
-def write_clocks(dev):
-    # Writes clock controller and specifier info for the clock in dev's 'clock'
-    # property
+def write_clocks(node):
+    # Writes clock controller and specifier info for the clock in the node's
+    # 'clock' property
 
-    for clock_i, clock in enumerate(dev.clocks):
+    for clock_i, clock in enumerate(node.clocks):
         if clock.controller.label is not None:
-            out_dev_s(dev, "CLOCK_CONTROLLER", clock.controller.label)
+            out_dev_s(node, "CLOCK_CONTROLLER", clock.controller.label)
 
         if clock.frequency is not None:
-            out_dev(dev, "CLOCKS_CLOCK_FREQUENCY", clock.frequency)
+            out_dev(node, "CLOCKS_CLOCK_FREQUENCY", clock.frequency)
 
         for spec, val in clock.specifier.items():
             if clock_i == 0:
@@ -550,7 +552,7 @@ def write_clocks(dev):
             else:
                 clk_name_alias = None
 
-            out_dev(dev, "CLOCK_{}_{}".format(str2ident(spec), clock_i), val,
+            out_dev(node, "CLOCK_{}_{}".format(str2ident(spec), clock_i), val,
                     name_alias=clk_name_alias)
 
 
@@ -566,7 +568,7 @@ def str2ident(s):
             .upper()
 
 
-def out_dev(dev, ident, val, name_alias=None):
+def out_dev(node, ident, val, name_alias=None):
     # Writes an
     #
     #   <device prefix>_<ident> = <val>
@@ -584,24 +586,24 @@ def out_dev(dev, ident, val, name_alias=None):
     # 'name_alias' is used for reg-names and the like.
     #
     # Returns the identifier used for the macro that provides the value
-    # for 'ident' within 'dev', e.g. DT_MFG_MODEL_CTL_GPIOS_PIN.
+    # for 'ident' within 'node', e.g. DT_MFG_MODEL_CTL_GPIOS_PIN.
 
-    dev_prefix = dev_ident(dev)
+    dev_prefix = dev_ident(node)
 
-    aliases = [alias + "_" + ident for alias in dev_aliases(dev)]
+    aliases = [alias + "_" + ident for alias in dev_aliases(node)]
     if name_alias is not None:
         aliases.append(dev_prefix + "_" + name_alias)
-        aliases += [alias + "_" + name_alias for alias in dev_aliases(dev)]
+        aliases += [alias + "_" + name_alias for alias in dev_aliases(node)]
 
     return out(dev_prefix + "_" + ident, val, aliases)
 
 
-def out_dev_s(dev, ident, s):
+def out_dev_s(node, ident, s):
     # Like out_dev(), but emits 's' as a string literal
     #
     # Returns the generated macro name for 'ident'.
 
-    return out_dev(dev, ident, quote_str(s))
+    return out_dev(node, ident, quote_str(s))
 
 
 def out_s(ident, val):

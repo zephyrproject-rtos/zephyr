@@ -40,109 +40,109 @@ def run():
     # Test interrupts
     #
 
-    verify_streq(edt.get_dev("/interrupt-parent-test/node").interrupts,
-                 "[<Interrupt, name: foo, target: <Device /interrupt-parent-test/controller in 'test.dts', binding test-bindings/interrupt-3-cell.yaml>, specifier: {'one': 1, 'two': 2, 'three': 3}>, <Interrupt, name: bar, target: <Device /interrupt-parent-test/controller in 'test.dts', binding test-bindings/interrupt-3-cell.yaml>, specifier: {'one': 4, 'two': 5, 'three': 6}>]")
+    verify_streq(edt.get_node("/interrupt-parent-test/node").interrupts,
+                 "[<Interrupt, name: foo, target: <Node /interrupt-parent-test/controller in 'test.dts', binding test-bindings/interrupt-3-cell.yaml>, specifier: {'one': 1, 'two': 2, 'three': 3}>, <Interrupt, name: bar, target: <Node /interrupt-parent-test/controller in 'test.dts', binding test-bindings/interrupt-3-cell.yaml>, specifier: {'one': 4, 'two': 5, 'three': 6}>]")
 
-    verify_streq(edt.get_dev("/interrupts-extended-test/node").interrupts,
-                 "[<Interrupt, target: <Device /interrupts-extended-test/controller-0 in 'test.dts', binding test-bindings/interrupt-1-cell.yaml>, specifier: {'one': 1}>, <Interrupt, target: <Device /interrupts-extended-test/controller-1 in 'test.dts', binding test-bindings/interrupt-2-cell.yaml>, specifier: {'one': 2, 'two': 3}>, <Interrupt, target: <Device /interrupts-extended-test/controller-2 in 'test.dts', binding test-bindings/interrupt-3-cell.yaml>, specifier: {'one': 4, 'two': 5, 'three': 6}>]")
+    verify_streq(edt.get_node("/interrupts-extended-test/node").interrupts,
+                 "[<Interrupt, target: <Node /interrupts-extended-test/controller-0 in 'test.dts', binding test-bindings/interrupt-1-cell.yaml>, specifier: {'one': 1}>, <Interrupt, target: <Node /interrupts-extended-test/controller-1 in 'test.dts', binding test-bindings/interrupt-2-cell.yaml>, specifier: {'one': 2, 'two': 3}>, <Interrupt, target: <Node /interrupts-extended-test/controller-2 in 'test.dts', binding test-bindings/interrupt-3-cell.yaml>, specifier: {'one': 4, 'two': 5, 'three': 6}>]")
 
-    verify_streq(edt.get_dev("/interrupt-map-test/node@0").interrupts,
-                 "[<Interrupt, target: <Device /interrupt-map-test/controller-0 in 'test.dts', binding test-bindings/interrupt-1-cell.yaml>, specifier: {'one': 0}>, <Interrupt, target: <Device /interrupt-map-test/controller-1 in 'test.dts', binding test-bindings/interrupt-2-cell.yaml>, specifier: {'one': 0, 'two': 1}>, <Interrupt, target: <Device /interrupt-map-test/controller-2 in 'test.dts', binding test-bindings/interrupt-3-cell.yaml>, specifier: {'one': 0, 'two': 0, 'three': 2}>]")
+    verify_streq(edt.get_node("/interrupt-map-test/node@0").interrupts,
+                 "[<Interrupt, target: <Node /interrupt-map-test/controller-0 in 'test.dts', binding test-bindings/interrupt-1-cell.yaml>, specifier: {'one': 0}>, <Interrupt, target: <Node /interrupt-map-test/controller-1 in 'test.dts', binding test-bindings/interrupt-2-cell.yaml>, specifier: {'one': 0, 'two': 1}>, <Interrupt, target: <Node /interrupt-map-test/controller-2 in 'test.dts', binding test-bindings/interrupt-3-cell.yaml>, specifier: {'one': 0, 'two': 0, 'three': 2}>]")
 
-    verify_streq(edt.get_dev("/interrupt-map-test/node@1").interrupts,
-                 "[<Interrupt, target: <Device /interrupt-map-test/controller-0 in 'test.dts', binding test-bindings/interrupt-1-cell.yaml>, specifier: {'one': 3}>, <Interrupt, target: <Device /interrupt-map-test/controller-1 in 'test.dts', binding test-bindings/interrupt-2-cell.yaml>, specifier: {'one': 0, 'two': 4}>, <Interrupt, target: <Device /interrupt-map-test/controller-2 in 'test.dts', binding test-bindings/interrupt-3-cell.yaml>, specifier: {'one': 0, 'two': 0, 'three': 5}>]")
+    verify_streq(edt.get_node("/interrupt-map-test/node@1").interrupts,
+                 "[<Interrupt, target: <Node /interrupt-map-test/controller-0 in 'test.dts', binding test-bindings/interrupt-1-cell.yaml>, specifier: {'one': 3}>, <Interrupt, target: <Node /interrupt-map-test/controller-1 in 'test.dts', binding test-bindings/interrupt-2-cell.yaml>, specifier: {'one': 0, 'two': 4}>, <Interrupt, target: <Node /interrupt-map-test/controller-2 in 'test.dts', binding test-bindings/interrupt-3-cell.yaml>, specifier: {'one': 0, 'two': 0, 'three': 5}>]")
 
-    verify_streq(edt.get_dev("/interrupt-map-bitops-test/node@70000000E").interrupts,
-                 "[<Interrupt, target: <Device /interrupt-map-bitops-test/controller in 'test.dts', binding test-bindings/interrupt-2-cell.yaml>, specifier: {'one': 3, 'two': 2}>]")
+    verify_streq(edt.get_node("/interrupt-map-bitops-test/node@70000000E").interrupts,
+                 "[<Interrupt, target: <Node /interrupt-map-bitops-test/controller in 'test.dts', binding test-bindings/interrupt-2-cell.yaml>, specifier: {'one': 3, 'two': 2}>]")
 
     #
     # Test GPIOs
     #
 
-    verify_streq(edt.get_dev("/gpio-test/node").gpios,
-                 "{'': [<GPIO, name: , target: <Device /gpio-test/controller-0 in 'test.dts', binding test-bindings/gpio-1-cell.yaml>, specifier: {'one': 1}>, <GPIO, name: , target: <Device /gpio-test/controller-1 in 'test.dts', binding test-bindings/gpio-2-cell.yaml>, specifier: {'one': 2, 'two': 3}>], 'foo': [<GPIO, name: foo, target: <Device /gpio-test/controller-1 in 'test.dts', binding test-bindings/gpio-2-cell.yaml>, specifier: {'one': 4, 'two': 5}>], 'bar': [<GPIO, name: bar, target: <Device /gpio-test/controller-1 in 'test.dts', binding test-bindings/gpio-2-cell.yaml>, specifier: {'one': 6, 'two': 7}>]}")
+    verify_streq(edt.get_node("/gpio-test/node").gpios,
+                 "{'': [<GPIO, name: , target: <Node /gpio-test/controller-0 in 'test.dts', binding test-bindings/gpio-1-cell.yaml>, specifier: {'one': 1}>, <GPIO, name: , target: <Node /gpio-test/controller-1 in 'test.dts', binding test-bindings/gpio-2-cell.yaml>, specifier: {'one': 2, 'two': 3}>], 'foo': [<GPIO, name: foo, target: <Node /gpio-test/controller-1 in 'test.dts', binding test-bindings/gpio-2-cell.yaml>, specifier: {'one': 4, 'two': 5}>], 'bar': [<GPIO, name: bar, target: <Node /gpio-test/controller-1 in 'test.dts', binding test-bindings/gpio-2-cell.yaml>, specifier: {'one': 6, 'two': 7}>]}")
 
     #
     # Test clocks
     #
 
-    verify_streq(edt.get_dev("/clock-test/node").clocks,
-                 "[<Clock, name: fixed, frequency: 123, target: <Device /clock-test/fixed-clock in 'test.dts', binding test-bindings/fixed-clock.yaml>, specifier: {}>, <Clock, name: one-cell, target: <Device /clock-test/clock-1 in 'test.dts', binding test-bindings/clock-1-cell.yaml>, specifier: {'one': 1}>, <Clock, name: two-cell, target: <Device /clock-test/clock-2 in 'test.dts', binding test-bindings/clock-2-cell.yaml>, specifier: {'one': 1, 'two': 2}>]")
+    verify_streq(edt.get_node("/clock-test/node").clocks,
+                 "[<Clock, name: fixed, frequency: 123, target: <Node /clock-test/fixed-clock in 'test.dts', binding test-bindings/fixed-clock.yaml>, specifier: {}>, <Clock, name: one-cell, target: <Node /clock-test/clock-1 in 'test.dts', binding test-bindings/clock-1-cell.yaml>, specifier: {'one': 1}>, <Clock, name: two-cell, target: <Node /clock-test/clock-2 in 'test.dts', binding test-bindings/clock-2-cell.yaml>, specifier: {'one': 1, 'two': 2}>]")
 
     #
     # Test PWMs
     #
 
-    verify_streq(edt.get_dev("/pwm-test/node").pwms,
-                 "[<PWM, name: zero-cell, target: <Device /pwm-test/pwm-0 in 'test.dts', binding test-bindings/pwm-0-cell.yaml>, specifier: {}>, <PWM, name: one-cell, target: <Device /pwm-test/pwm-1 in 'test.dts', binding test-bindings/pwm-1-cell.yaml>, specifier: {'one': 1}>]")
+    verify_streq(edt.get_node("/pwm-test/node").pwms,
+                 "[<PWM, name: zero-cell, target: <Node /pwm-test/pwm-0 in 'test.dts', binding test-bindings/pwm-0-cell.yaml>, specifier: {}>, <PWM, name: one-cell, target: <Node /pwm-test/pwm-1 in 'test.dts', binding test-bindings/pwm-1-cell.yaml>, specifier: {'one': 1}>]")
 
     #
     # Test IO channels
     #
 
-    verify_streq(edt.get_dev("/io-channel-test/node").iochannels,
-                 "[<IOChannel, name: io-channel, target: <Device /io-channel-test/io-channel in 'test.dts', binding test-bindings/io-channel.yaml>, specifier: {'one': 1}>]")
+    verify_streq(edt.get_node("/io-channel-test/node").iochannels,
+                 "[<IOChannel, name: io-channel, target: <Node /io-channel-test/io-channel in 'test.dts', binding test-bindings/io-channel.yaml>, specifier: {'one': 1}>]")
 
     #
     # Test 'reg'
     #
 
-    verify_streq(edt.get_dev("/reg-zero-address-cells/node").regs,
+    verify_streq(edt.get_node("/reg-zero-address-cells/node").regs,
                  "[<Register, addr: 0x0, size: 0x1>, <Register, addr: 0x0, size: 0x2>]")
 
-    verify_streq(edt.get_dev("/reg-zero-size-cells/node").regs,
+    verify_streq(edt.get_node("/reg-zero-size-cells/node").regs,
                  "[<Register, addr: 0x1, size: 0x0>, <Register, addr: 0x2, size: 0x0>]")
 
-    verify_streq(edt.get_dev("/reg-ranges/parent/node").regs,
+    verify_streq(edt.get_node("/reg-ranges/parent/node").regs,
                  "[<Register, addr: 0x5, size: 0x1>, <Register, addr: 0xe0000000f, size: 0x1>, <Register, addr: 0xc0000000e, size: 0x1>, <Register, addr: 0xc0000000d, size: 0x1>, <Register, addr: 0xa0000000b, size: 0x1>, <Register, addr: 0x0, size: 0x1>]")
 
-    verify_streq(edt.get_dev("/reg-nested-ranges/grandparent/parent/node").regs,
+    verify_streq(edt.get_node("/reg-nested-ranges/grandparent/parent/node").regs,
                  "[<Register, addr: 0x30000000200000001, size: 0x1>]")
 
     #
     # Test Device.parent and Device.children
     #
 
-    verify_eq(edt.get_dev("/").parent, None)
+    verify_eq(edt.get_node("/").parent, None)
 
-    verify_streq(edt.get_dev("/parent/child-1").parent,
-                 "<Device /parent in 'test.dts', no binding>")
+    verify_streq(edt.get_node("/parent/child-1").parent,
+                 "<Node /parent in 'test.dts', no binding>")
 
-    verify_streq(edt.get_dev("/parent/child-2/grandchild").parent,
-                 "<Device /parent/child-2 in 'test.dts', no binding>")
+    verify_streq(edt.get_node("/parent/child-2/grandchild").parent,
+                 "<Node /parent/child-2 in 'test.dts', no binding>")
 
-    verify_streq(edt.get_dev("/parent").children,
-                 "{'child-1': <Device /parent/child-1 in 'test.dts', no binding>, 'child-2': <Device /parent/child-2 in 'test.dts', no binding>}")
+    verify_streq(edt.get_node("/parent").children,
+                 "{'child-1': <Node /parent/child-1 in 'test.dts', no binding>, 'child-2': <Node /parent/child-2 in 'test.dts', no binding>}")
 
-    verify_eq(edt.get_dev("/parent/child-1").children, {})
+    verify_eq(edt.get_node("/parent/child-1").children, {})
 
     #
     # Test 'include:' and the legacy 'inherits: !include ...'
     #
 
-    verify_streq(edt.get_dev("/binding-include").description,
+    verify_streq(edt.get_node("/binding-include").description,
                  "Parent binding")
 
-    verify_streq(edt.get_dev("/binding-include").props,
+    verify_streq(edt.get_node("/binding-include").props,
                  "{'foo': <Property, name: foo, type: int, value: 0>, 'bar': <Property, name: bar, type: int, value: 1>, 'baz': <Property, name: baz, type: int, value: 2>, 'qaz': <Property, name: qaz, type: int, value: 3>}")
 
     #
     # Test 'child/parent-bus:'
     #
 
-    verify_streq(edt.get_dev("/buses/foo-bus/node").binding_path,
+    verify_streq(edt.get_node("/buses/foo-bus/node").binding_path,
                  "test-bindings/device-on-foo-bus.yaml")
 
-    verify_streq(edt.get_dev("/buses/bar-bus/node").binding_path,
+    verify_streq(edt.get_node("/buses/bar-bus/node").binding_path,
                  "test-bindings/device-on-bar-bus.yaml")
 
     #
     # Test 'child-binding:'
     #
 
-    child1 = edt.get_dev("/child-binding/child-1")
-    child2 = edt.get_dev("/child-binding/child-2")
-    grandchild = edt.get_dev("/child-binding/child-1/grandchild")
+    child1 = edt.get_node("/child-binding/child-1")
+    child2 = edt.get_node("/child-binding/child-2")
+    grandchild = edt.get_node("/child-binding/child-1/grandchild")
 
     verify_streq(child1.binding_path, "test-bindings/child-binding.yaml")
     verify_streq(child1.description, "child node")
@@ -160,21 +160,21 @@ def run():
     # Test deprecated 'sub-node:' key (replaced with 'child-binding:')
     #
 
-    verify_streq(edt.get_dev("/deprecated/sub-node").props,
+    verify_streq(edt.get_node("/deprecated/sub-node").props,
                  "{'child-prop': <Property, name: child-prop, type: int, value: 3>}")
 
     #
     # Test Device.property (derived from DT and 'properties:' in the binding)
     #
 
-    verify_streq(edt.get_dev("/props").props,
-                 r"{'nonexistent-boolean': <Property, name: nonexistent-boolean, type: boolean, value: False>, 'existent-boolean': <Property, name: existent-boolean, type: boolean, value: True>, 'int': <Property, name: int, type: int, value: 1>, 'array': <Property, name: array, type: array, value: [1, 2, 3]>, 'uint8-array': <Property, name: uint8-array, type: uint8-array, value: b'\x124'>, 'string': <Property, name: string, type: string, value: 'foo'>, 'string-array': <Property, name: string-array, type: string-array, value: ['foo', 'bar', 'baz']>, 'phandle-ref': <Property, name: phandle-ref, type: phandle, value: <Device /props/node in 'test.dts', no binding>>, 'phandle-refs': <Property, name: phandle-refs, type: phandles, value: [<Device /props/node in 'test.dts', no binding>, <Device /props/node2 in 'test.dts', no binding>]>}")
+    verify_streq(edt.get_node("/props").props,
+                 r"{'nonexistent-boolean': <Property, name: nonexistent-boolean, type: boolean, value: False>, 'existent-boolean': <Property, name: existent-boolean, type: boolean, value: True>, 'int': <Property, name: int, type: int, value: 1>, 'array': <Property, name: array, type: array, value: [1, 2, 3]>, 'uint8-array': <Property, name: uint8-array, type: uint8-array, value: b'\x124'>, 'string': <Property, name: string, type: string, value: 'foo'>, 'string-array': <Property, name: string-array, type: string-array, value: ['foo', 'bar', 'baz']>, 'phandle-ref': <Property, name: phandle-ref, type: phandle, value: <Node /props/node in 'test.dts', no binding>>, 'phandle-refs': <Property, name: phandle-refs, type: phandles, value: [<Node /props/node in 'test.dts', no binding>, <Node /props/node2 in 'test.dts', no binding>]>}")
 
     #
     # Test property default values given in bindings
     #
 
-    verify_streq(edt.get_dev("/defaults").props,
+    verify_streq(edt.get_node("/defaults").props,
                  r"{'int': <Property, name: int, type: int, value: 123>, 'array': <Property, name: array, type: array, value: [1, 2, 3]>, 'uint8-array': <Property, name: uint8-array, type: uint8-array, value: b'\x89\xab\xcd'>, 'string': <Property, name: string, type: string, value: 'hello'>, 'string-array': <Property, name: string-array, type: string-array, value: ['hello', 'there']>, 'default-not-used': <Property, name: default-not-used, type: int, value: 234>}")
 
     #
@@ -183,10 +183,10 @@ def run():
 
     edt = edtlib.EDT("test-multidir.dts", ["test-bindings", "test-bindings-2"])
 
-    verify_streq(edt.get_dev("/in-dir-1").binding_path,
+    verify_streq(edt.get_node("/in-dir-1").binding_path,
                  "test-bindings/multidir.yaml")
 
-    verify_streq(edt.get_dev("/in-dir-2").binding_path,
+    verify_streq(edt.get_node("/in-dir-2").binding_path,
                  "test-bindings-2/multidir.yaml")
 
 

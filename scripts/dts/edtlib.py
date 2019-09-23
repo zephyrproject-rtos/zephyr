@@ -5,22 +5,21 @@
 # Tip: You can view just the documentation with 'pydoc3 edtlib'
 
 """
-Library for working with .dts files and bindings at a higher level compared to
-dtlib. Deals with things at the level of devices, registers, interrupts,
-compatibles, bindings, etc., as opposed to dtlib, which is just a low-level
-device tree parser.
+Library for working with devicetrees at a higher level compared to dtlib. Like
+dtlib, this library presents a tree of devicetree nodes, but the nodes are
+augmented with information from bindings and include some interpretation of
+properties.
 
-Each device tree node (dtlib.Node) gets a Device instance, which has all the
-information related to the device, derived from both the device tree and from
-the binding for the device.
+Bindings are files that describe devicetree nodes. Devicetree nodes are usually
+mapped to bindings via their 'compatible = "..."' property, but a binding can
+also come from a 'child-binding:' key in the binding for the parent devicetree
+node.
 
-Bindings are files that describe device tree nodes. Device tree nodes are
-usually mapped to bindings via their 'compatible = "..."' property, but a
-binding can also come from a 'child-binding:' key in the binding for the parent
-device tree node.
+Each devicetree node (dtlib.Node) gets a corresponding edtlib.Node instance,
+which has all the information related to the node.
 
 The top-level entry point of the library is the EDT class. EDT.__init__() takes
-a .dts file to parse and the path of a directory containing bindings.
+a .dts file to parse and a list of paths to directories containing bindings.
 """
 
 import os
@@ -33,7 +32,9 @@ from dtlib import DT, DTError, to_num, to_nums, TYPE_EMPTY, TYPE_NUMS, \
                   TYPE_PHANDLE, TYPE_PHANDLES_AND_NUMS
 
 # NOTE: testedtlib.py is the test suite for this library. It can be run
-# directly.
+# directly as a script:
+#
+#   ./testedtlib.py
 
 # Implementation notes
 # --------------------
@@ -80,13 +81,12 @@ from dtlib import DT, DTError, to_num, to_nums, TYPE_EMPTY, TYPE_NUMS, \
 
 class EDT:
     """
-    Represents a "high-level" view of a device tree, with a list of devices
-    that each have some number of registers, etc.
+    Represents a devicetree augmented with information from bindings.
 
     These attributes are available on EDT objects:
 
-    devices:
-      A list of Device objects for the devices
+    nodes:
+      A list of Node objects for the nodes that appear in the devicetree
 
     dts_path:
       The .dts path passed to __init__()
@@ -99,7 +99,7 @@ class EDT:
         EDT constructor. This is the top-level entry point to the library.
 
         dts:
-          Path to device tree .dts file
+          Path to devicetree .dts file
 
         bindings_dirs:
           List of paths to directories containing bindings, in YAML format.
@@ -112,22 +112,22 @@ class EDT:
         _check_dt(self._dt)
 
         self._init_compat2binding(bindings_dirs)
-        self._init_devices()
+        self._init_nodes()
 
-    def get_dev(self, path):
+    def get_node(self, path):
         """
-        Returns the Device at the DT path or alias 'path'. Raises EDTError if
-        the path or alias doesn't exist.
+        Returns the Node at the DT path or alias 'path'. Raises EDTError if the
+        path or alias doesn't exist.
         """
         try:
-            return self._node2dev[self._dt.get_node(path)]
+            return self._node2enode[self._dt.get_node(path)]
         except DTError as e:
             _err(e)
 
-    def chosen_dev(self, name):
+    def chosen_node(self, name):
         """
-        Returns the Device pointed at by the property named 'name' in /chosen,
-        or None if the property is missing
+        Returns the Node pointed at by the property named 'name' in /chosen, or
+        None if the property is missing
         """
         try:
             chosen = self._dt.get_node("/chosen")
@@ -139,7 +139,7 @@ class EDT:
             return None
 
         # to_path() checks that the node exists
-        return self._node2dev[chosen.props[name].to_path()]
+        return self._node2enode[chosen.props[name].to_path()]
 
     def _init_compat2binding(self, bindings_dirs):
         # Creates self._compat2binding. This is a dictionary that maps
@@ -154,7 +154,7 @@ class EDT:
         # For bindings that don't specify a bus, <bus> is None, so that e.g.
         # self._compat2binding["company,notonbus", None] contains the binding.
         #
-        # Only bindings for 'compatible' strings that appear in the device tree
+        # Only bindings for 'compatible' strings that appear in the devicetree
         # are loaded.
 
         # Add legacy '!include foo.yaml' handling. Do
@@ -296,63 +296,63 @@ class EDT:
                 yaml.load(f, Loader=yaml.Loader),
                 paths[0])
 
-    def _init_devices(self):
-        # Creates a list of devices (Device objects) from the DT nodes, in
-        # self.devices
+    def _init_nodes(self):
+        # Creates a list of edtlib.Node objects from the dtlib.Node objects, in
+        # self.nodes
 
-        # Maps dtlib.Node's to their corresponding Devices
-        self._node2dev = {}
+        # Maps each dtlib.Node to its corresponding edtlib.Node
+        self._node2enode = {}
 
-        self.devices = []
+        self.nodes = []
 
-        for node in self._dt.node_iter():
-            # Warning: We depend on parent Devices being created before their
+        for dt_node in self._dt.node_iter():
+            # Warning: We depend on parent Nodes being created before their
             # children. This is guaranteed by node_iter().
-            dev = Device()
-            dev.edt = self
-            dev._node = node
-            dev._init_binding()
-            dev._init_regs()
-            dev._set_instance_no()
+            node = Node()
+            node.edt = self
+            node._node = dt_node
+            node._init_binding()
+            node._init_regs()
+            node._set_instance_no()
 
-            self.devices.append(dev)
-            self._node2dev[node] = dev
+            self.nodes.append(node)
+            self._node2enode[dt_node] = node
 
-        for dev in self.devices:
-            # Device._init_props() depends on all Device objects having been
+        for node in self.nodes:
+            # Node._init_props() depends on all Node objects having been
             # created, due to 'type: phandle', so we run it separately.
-            # Property.val is set to the pointed-to Device instance for
-            # phandles, which must exist.
-            dev._init_props()
+            # Property.val is set to the pointed-to Node instance for phandles,
+            # which must exist.
+            node._init_props()
 
-        for dev in self.devices:
-            # These also depend on all Device objects having been created, and
-            # might also depend on all Device.props having been initialized
+        for node in self.nodes:
+            # These also depend on all Node objects having been created, and
+            # might also depend on all Node.props having been initialized
             # (_init_clocks() does as of writing).
-            dev._init_interrupts()
-            dev._init_gpios()
-            dev._init_pwms()
-            dev._init_iochannels()
-            dev._init_clocks()
+            node._init_interrupts()
+            node._init_gpios()
+            node._init_pwms()
+            node._init_iochannels()
+            node._init_clocks()
 
     def __repr__(self):
         return "<EDT for '{}', binding directories '{}'>".format(
             self.dts_path, self.bindings_dirs)
 
 
-class Device:
+class Node:
     """
-    Represents a device, which is a devicetree node augmented with information
-    from bindings and some interpretation of devicetree properties. There's a
-    one-to-one correspondence between device tree nodes and Devices.
+    Represents a devicetree node, augmented with information from bindings, and
+    with some interpretation of devicetree properties. There's a one-to-one
+    correspondence between devicetree nodes and Nodes.
 
-    These attributes are available on Device objects:
+    These attributes are available on Node objects:
 
     edt:
-      The EDT instance this device is from
+      The EDT instance this node is from
 
     name:
-      The name of the device. This is fetched from the node name.
+      The name of the node
 
     unit_addr:
       An integer with the ...@<unit-address> portion of the node name,
@@ -360,67 +360,65 @@ class Device:
       the node name has no unit-address portion
 
     path:
-      The device tree path of the device
+      The devicetree path of the node
 
     label:
-      The text from the 'label' property on the DT node of the Device, or None
-      if the node has no 'label'
+      The text from the 'label' property on the node, or None if the node has
+      no 'label'
 
     parent:
-      The Device instance for the devicetree parent of the Device, or None if
-      there is no parent
+      The Node instance for the devicetree parent of the Node, or None if the
+      node is the root node
 
     children:
-      A dictionary with the Device instances for the devicetree children of the
-      Device, indexed by name
+      A dictionary with the Node instances for the devicetree children of the
+      node, indexed by name
 
     enabled:
-      True unless the device's node has 'status = "disabled"'
+      True unless the node has 'status = "disabled"'
 
     read_only:
-      True if the DT node of the Device has a 'read-only' property, and False
-      otherwise
+      True if the node has a 'read-only' property, and False otherwise
 
     instance_no:
-      Dictionary that maps each 'compatible' string for the device to a unique
-      index among all devices that have that 'compatible' string.
+      Dictionary that maps each 'compatible' string for the node to a unique
+      index among all nodes that have that 'compatible' string.
 
       As an example, 'instance_no["foo,led"] == 3' can be read as "this is the
-      fourth foo,led device".
+      fourth foo,led node".
 
-      Only enabled devices (status != "disabled") are counted. 'instance_no' is
-      meaningless for disabled devices.
+      Only enabled nodes (status != "disabled") are counted. 'instance_no' is
+      meaningless for disabled nodes.
 
     matching_compat:
-      The 'compatible' string for the binding that matched the device, or
-      None if the device has no binding
+      The 'compatible' string for the binding that matched the node, or None if
+      the node has no binding
 
     description:
-      The description string from the binding file for the device, or None if
-      the device has no binding. Trailing whitespace (including newlines) is
-      removed.
+      The description string from the binding file for the node, or None if the
+      node has no binding. Trailing whitespace (including newlines) is removed.
 
     binding_path:
-      The path to the binding file for the device, or None if the device has no
+      The path to the binding file for the node, or None if the node has no
       binding
 
     compats:
-      A list of 'compatible' strings for the device, in the same order that
+      A list of 'compatible' strings for the node, in the same order that
       they're listed in the .dts file
 
     regs:
-      A list of Register objects for the device's registers
+      A list of Register objects for the node's registers
 
     props:
       A dictionary that maps property names to Property objects. Property
-      objects are created for all DT properties on the device that are
+      objects are created for all devicetree properties on the node that are
       mentioned in 'properties:' in the binding.
 
     aliases:
-      A list of aliases for the device. This is fetched from the /aliases node.
+      A list of aliases for the node. This is fetched from the /aliases node.
 
     interrupts:
-      A list of Interrupt objects for the interrupts generated by the device
+      A list of Interrupt objects for the interrupts generated by the node
 
     gpios:
       A dictionary that maps the <prefix> part in '<prefix>-gpios' properties
@@ -431,24 +429,23 @@ class Device:
 
     pwms:
       A list of PWM objects, derived from the 'pwms' property. The list is
-      empty if the device has no 'pwms' property.
+      empty if the node has no 'pwms' property.
 
     iochannels:
-      A list of IOChannel objects, derived from the 'io-channels'
-      property. The list is empty if the device has no 'io-channels'
-      property.
+      A list of IOChannel objects, derived from the 'io-channels' property. The
+      list is empty if the node has no 'io-channels' property.
 
     clocks:
       A list of Clock objects, derived from the 'clocks' property. The list is
-      empty if the device has no 'clocks' property.
+      empty if the node has no 'clocks' property.
 
     bus:
-      The bus for the device as specified in its binding, e.g. "i2c" or "spi".
+      The bus for the node as specified in its binding, e.g. "i2c" or "spi".
       None if the binding doesn't specify a bus.
 
     flash_controller:
-      The flash controller for the device. Only meaningful for devices
-      representing flash partitions.
+      The flash controller for the node. Only meaningful for nodes representing
+      flash partitions.
     """
     @property
     def name(self):
@@ -492,15 +489,15 @@ class Device:
     @property
     def parent(self):
         "See the class docstring"
-        return self.edt._node2dev.get(self._node.parent)
+        return self.edt._node2enode.get(self._node.parent)
 
     @property
     def children(self):
         "See the class docstring"
         # Could be initialized statically too to preserve identity, but not
-        # sure if needed. Parent Devices being initialized before their
-        # children would need to be kept in mind.
-        return {name: self.edt._node2dev[node]
+        # sure if needed. Parent nodes being initialized before their children
+        # would need to be kept in mind.
+        return {name: self.edt._node2enode[node]
                 for name, node in self._node.nodes.items()}
 
     @property
@@ -546,20 +543,20 @@ class Device:
         return controller
 
     def __repr__(self):
-        return "<Device {} in '{}', {}>".format(
+        return "<Node {} in '{}', {}>".format(
             self.path, self.edt.dts_path,
             "binding " + self.binding_path if self.binding_path
                 else "no binding")
 
     def _init_binding(self):
-        # Initializes Device.matching_compat, Device._binding, and
-        # Device.binding_path.
+        # Initializes Node.matching_compat, Node._binding, and
+        # Node.binding_path.
         #
-        # Device._binding holds the data from the device's binding file, in the
+        # Node._binding holds the data from the node's binding file, in the
         # format returned by PyYAML (plain Python lists, dicts, etc.), or None
-        # if the device has no binding.
+        # if the node has no binding.
 
-        # This relies on the parent of the Device having already been
+        # This relies on the parent of the node having already been
         # initialized, which is guaranteed by going through the nodes in
         # node_iter() order.
 
@@ -696,7 +693,7 @@ class Device:
             return
 
         prop = Property()
-        prop.dev = self
+        prop.node = self
         prop.name = name
         prop.description = options.get("description")
         if prop.description:
@@ -768,10 +765,10 @@ class Device:
             return prop.to_strings()
 
         if prop_type == "phandle":
-            return self.edt._node2dev[prop.to_node()]
+            return self.edt._node2enode[prop.to_node()]
 
         if prop_type == "phandles":
-            return [self.edt._node2dev[node] for node in prop.to_nodes()]
+            return [self.edt._node2enode[node] for node in prop.to_nodes()]
 
         if prop_type == "phandle-array":
             # This property type only does a type check. No Property object is
@@ -831,7 +828,7 @@ class Device:
 
         for raw_reg in _slice(node, "reg", 4*(address_cells + size_cells)):
             reg = Register()
-            reg.dev = self
+            reg.node = self
             reg.addr = _translate(to_num(raw_reg[:4*address_cells]), node)
             reg.size = to_num(raw_reg[4*address_cells:])
             if size_cells != 0 and reg.size == 0:
@@ -852,8 +849,8 @@ class Device:
 
         for controller_node, spec in _interrupts(node):
             interrupt = Interrupt()
-            interrupt.dev = self
-            interrupt.controller = self.edt._node2dev[controller_node]
+            interrupt.node = self
+            interrupt.controller = self.edt._node2enode[controller_node]
             interrupt.specifier = self._named_cells(interrupt.controller, spec,
                                                     "interrupt")
 
@@ -870,8 +867,8 @@ class Device:
             self.gpios[prefix] = []
             for controller_node, spec in gpios:
                 gpio = GPIO()
-                gpio.dev = self
-                gpio.controller = self.edt._node2dev[controller_node]
+                gpio.node = self
+                gpio.controller = self.edt._node2enode[controller_node]
                 gpio.specifier = self._named_cells(gpio.controller, spec,
                                                    "GPIO")
                 gpio.name = prefix
@@ -928,7 +925,7 @@ class Device:
         #
         # cls:
         #   A class object. Instances of this class will be created and the
-        #   'dev', 'controller', 'specifier', and 'name' fields initialized.
+        #   'node', 'controller', 'specifier', and 'name' fields initialized.
         #   See the documentation for e.g. the PWM class.
         #
         # Returns a list of 'cls' instances.
@@ -941,8 +938,8 @@ class Device:
 
         for controller_node, spec in _phandle_val_list(prop, name):
             obj = cls()
-            obj.dev = self
-            obj.controller = self.edt._node2dev[controller_node]
+            obj.node = self
+            obj.controller = self.edt._node2enode[controller_node]
             obj.specifier = self._named_cells(obj.controller, spec, name)
 
             res.append(obj)
@@ -987,19 +984,19 @@ class Device:
 
         for compat in self.compats:
             self.instance_no[compat] = 0
-            for other_dev in self.edt.devices:
-                if compat in other_dev.compats and other_dev.enabled:
+            for other_node in self.edt.nodes:
+                if compat in other_node.compats and other_node.enabled:
                     self.instance_no[compat] += 1
 
 
 class Register:
     """
-    Represents a register on a device.
+    Represents a register on a node.
 
     These attributes are available on Register objects:
 
-    dev:
-      The Device instance this register is from
+    node:
+      The Node instance this register is from
 
     name:
       The name of the register as given in the 'reg-names' property, or None if
@@ -1025,19 +1022,19 @@ class Register:
 
 class Interrupt:
     """
-    Represents an interrupt generated by a device.
+    Represents an interrupt generated by a node.
 
     These attributes are available on Interrupt objects:
 
-    dev:
-      The Device instance that generated the interrupt
+    node:
+      The Node instance that generated the interrupt
 
     name:
       The name of the interrupt as given in the 'interrupt-names' property, or
       None if there is no 'interrupt-names' property
 
     controller:
-      The Device instance for the controller the interrupt gets sent to. Any
+      The Node instance for the controller the interrupt gets sent to. Any
       'interrupt-map' is taken into account, so that this is the final
       controller node.
 
@@ -1060,19 +1057,19 @@ class Interrupt:
 
 class GPIO:
     """
-    Represents a GPIO used by a device.
+    Represents a GPIO used by a node.
 
     These attributes are available on GPIO objects:
 
-    dev:
-      The Device instance that uses the GPIO
+    node:
+      The Node instance that uses the GPIO
 
     name:
       The name of the gpio as extracted out of the "<NAME>-gpios" property. If
       the property is just "gpios" than there is no name.
 
     controller:
-      The Device instance for the controller of the GPIO
+      The Node instance for the controller of the GPIO
 
     specifier:
       A dictionary that maps names from the #cells portion of the binding to
@@ -1093,19 +1090,19 @@ class GPIO:
 
 class Clock:
     """
-    Represents a clock used by a device.
+    Represents a clock used by a node.
 
     These attributes are available on Clock objects:
 
-    dev:
-      The Device instance that uses the clock
+    node:
+      The Node instance that uses the clock
 
     name:
       The name of the clock as given in the 'clock-names' property, or
       None if there is no 'clock-names' property
 
     controller:
-      The Device instance for the controller of the clock.
+      The Node instance for the controller of the clock.
 
     frequency:
       The frequency of the clock for fixed clocks ('fixed-clock' in
@@ -1133,19 +1130,19 @@ class Clock:
 
 class PWM:
     """
-    Represents a PWM used by a device.
+    Represents a PWM used by a node.
 
     These attributes are available on PWM objects:
 
-    dev:
-      The Device instance that uses the PWM
+    node:
+      The Node instance that uses the PWM
 
     name:
       The name of the pwm as given in the 'pwm-names' property, or the
       node name if the 'pwm-names' property doesn't exist.
 
     controller:
-      The Device instance for the controller of the PWM
+      The Node instance for the controller of the PWM
 
     specifier:
       A dictionary that maps names from the #cells portion of the binding to
@@ -1166,21 +1163,21 @@ class PWM:
 
 class IOChannel:
     """
-    Represents an IO channel used by a device, similar to the property used
+    Represents an IO channel used by a node, similar to the property used
     by the Linux IIO bindings and described at:
       https://www.kernel.org/doc/Documentation/devicetree/bindings/iio/iio-bindings.txt
 
     These attributes are available on IO channel objects:
 
-    dev:
-      The Device instance that uses the IO channel
+    node:
+      The Node instance that uses the IO channel
 
     name:
       The name of the IO channel as given in the 'io-channel-names' property,
       or the  node name if the 'io-channel-names' property doesn't exist.
 
     controller:
-      The Device instance for the controller of the IO channel
+      The Node instance for the controller of the IO channel
 
     specifier:
       A dictionary that maps names from the #cells portion of the binding to
@@ -1201,7 +1198,7 @@ class IOChannel:
 
 class Property:
     """
-    Represents a property on a Device, as set in its DT node and with
+    Represents a property on a Node, as set in its DT node and with
     additional info from the 'properties:' section of the binding.
 
     Only properties mentioned in 'properties:' get created. Properties with
@@ -1210,8 +1207,8 @@ class Property:
 
     These attributes are available on Property objects:
 
-    dev:
-      The Device instance the property is on
+    node:
+      The Node instance the property is on
 
     name:
       The name of the property
@@ -1227,9 +1224,9 @@ class Property:
       The value of the property, with the format determined by the 'type:' key
       from the binding.
 
-      For 'type: phandle' properties, this is the pointed-to Device instance.
+      For 'type: phandle' properties, this is the pointed-to Node instance.
 
-      For 'type: phandles' properties, this is a list of the pointed-to Device
+      For 'type: phandles' properties, this is a list of the pointed-to Node
       instances.
 
     enum_index:
@@ -1249,7 +1246,7 @@ class Property:
 
 
 class EDTError(Exception):
-    "Exception raised for Extended Device Tree-related errors"
+    "Exception raised for devicetree- and binding-related errors"
 
 
 #
@@ -1257,20 +1254,20 @@ class EDTError(Exception):
 #
 
 
-def spi_dev_cs_gpio(dev):
+def spi_dev_cs_gpio(node):
     # Returns an SPI device's GPIO chip select if it exists, as a GPIO
     # instance, and None otherwise. See
     # Documentation/devicetree/bindings/spi/spi-bus.txt in the Linux kernel.
 
-    if dev.bus == "spi" and dev.parent:
-        parent_cs = dev.parent.gpios.get("cs")
+    if node.bus == "spi" and node.parent:
+        parent_cs = node.parent.gpios.get("cs")
         if parent_cs:
             # cs-gpios is indexed by the unit address
-            cs_index = dev.regs[0].addr
+            cs_index = node.regs[0].addr
             if cs_index >= len(parent_cs):
                 _err("index from 'regs' in {!r} ({}) is >= number of cs-gpios "
                      "in {!r} ({})".format(
-                         dev, cs_index, dev.parent, len(parent_cs)))
+                         node, cs_index, node.parent, len(parent_cs)))
 
             return parent_cs[cs_index]
 
@@ -1283,7 +1280,7 @@ def spi_dev_cs_gpio(dev):
 
 
 def _dt_compats(dt):
-    # Returns a set() with all 'compatible' strings in the device tree
+    # Returns a set() with all 'compatible' strings in the devicetree
     # represented by dt (a dtlib.DT instance)
 
     return {compat
@@ -1647,6 +1644,9 @@ def _translate(addr, node):
     # Recursively translates 'addr' on 'node' to the address space(s) of its
     # parent(s), by looking at 'ranges' properties. Returns the translated
     # address.
+    #
+    # node:
+    #   dtlib.Node instance
 
     if not node.parent or "ranges" not in node.parent.props:
         # No translation
@@ -1691,7 +1691,7 @@ def _add_names(node, names_ident, objs):
     # Helper for registering names from <foo>-names properties.
     #
     # node:
-    #   Device tree node
+    #   edtlib.Node instance
     #
     # names-ident:
     #   The <foo> part of <foo>-names, e.g. "reg" for "reg-names"
