@@ -320,10 +320,8 @@ void log_hexdump(const char *str,
 	}
 }
 
-int log_printk(const char *fmt, va_list ap)
+void log_printk(const char *fmt, va_list ap)
 {
-	int length = 0;
-
 	if (IS_ENABLED(CONFIG_LOG_PRINTK)) {
 		union {
 			struct log_msg_ids structure;
@@ -337,8 +335,7 @@ int log_printk(const char *fmt, va_list ap)
 		if (_is_user_context()) {
 			u8_t str[CONFIG_LOG_PRINTK_MAX_STRING_LENGTH + 1];
 
-			length = vsnprintk(str, sizeof(str), fmt, ap);
-			length = MIN(length, sizeof(str));
+			vsnprintk(str, sizeof(str), fmt, ap);
 
 			z_log_string_from_user(src_level_union.value, str);
 		} else if (IS_ENABLED(CONFIG_LOG_IMMEDIATE)) {
@@ -346,20 +343,19 @@ int log_printk(const char *fmt, va_list ap)
 		} else {
 			u8_t str[CONFIG_LOG_PRINTK_MAX_STRING_LENGTH + 1];
 			struct log_msg *msg;
+			int length;
 
 			length = vsnprintk(str, sizeof(str), fmt, ap);
 			length = MIN(length, sizeof(str));
 
 			msg = log_msg_hexdump_create(NULL, str, length);
 			if (msg == NULL) {
-				return 0;
+				return;
 			}
 
 			msg_finalize(msg, src_level_union.structure);
 		}
 	}
-
-	return length;
 }
 
 /** @brief Count number of arguments in formatted string.
