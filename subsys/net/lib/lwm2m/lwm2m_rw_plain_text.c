@@ -154,7 +154,8 @@ size_t plain_text_put_float64fix(struct lwm2m_output_context *out,
 	char buf[sizeof("000000000")];
 
 	/* value of 123 -> "000000123" -- ignore sign */
-	len = snprintf(buf, sizeof(buf), "%09lld", abs(value->val2));
+	len = snprintf(buf, sizeof(buf), "%09lld",
+		       (long long int)abs(value->val2));
 	if (len != 9U) {
 		strcpy(buf, "0");
 	} else {
