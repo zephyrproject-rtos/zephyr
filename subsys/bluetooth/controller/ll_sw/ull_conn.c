@@ -3173,18 +3173,57 @@ static inline void event_len_prep(struct ll_conn *conn)
 		lr = &pdu_ctrl_tx->llctrl.length_req;
 		lr->max_rx_octets = sys_cpu_to_le16(LL_LENGTH_OCTETS_RX_MAX);
 		lr->max_tx_octets = sys_cpu_to_le16(conn->default_tx_octets);
-#if !defined(CONFIG_BT_CTLR_PHY)
-		lr->max_rx_time =
-			sys_cpu_to_le16(PKT_US(LL_LENGTH_OCTETS_RX_MAX, 0));
-		lr->max_tx_time =
-			sys_cpu_to_le16(PKT_US(conn->default_tx_octets, 0));
-#else /* CONFIG_BT_CTLR_PHY */
-		lr->max_rx_time =
-			sys_cpu_to_le16(PKT_US(LL_LENGTH_OCTETS_RX_MAX,
-					       BIT(2)));
-		lr->max_tx_time =
-			sys_cpu_to_le16(conn->default_tx_time);
+
+		if (!conn->common.fex_valid ||
+#if defined(CONFIG_BT_CTLR_PHY)
+		     (
+#if defined(CONFIG_BT_CTLR_PHY_CODED)
+		      !(conn->llcp_feature.features &
+			BIT(BT_LE_FEAT_BIT_PHY_CODED)) &&
+#endif /* CONFIG_BT_CTLR_PHY_CODED */
+
+#if defined(CONFIG_BT_CTLR_PHY_2M)
+		      !(conn->llcp_feature.features &
+			BIT(BT_LE_FEAT_BIT_PHY_2M)) &&
+#endif /* CONFIG_BT_CTLR_PHY_2M */
+		      1)
+#else /* !CONFIG_BT_CTLR_PHY */
+		    0
+#endif /* !CONFIG_BT_CTLR_PHY */
+		   ) {
+			u16_t rx_time = PKT_US(LL_LENGTH_OCTETS_RX_MAX, 0);
+			u16_t tx_time = PKT_US(conn->default_tx_octets, 0);
+
+			lr->max_rx_time = sys_cpu_to_le16(rx_time);
+			lr->max_tx_time = sys_cpu_to_le16(tx_time);
+#if defined(CONFIG_BT_CTLR_PHY)
+#if defined(CONFIG_BT_CTLR_PHY_CODED)
+		} else if (conn->llcp_feature.features &
+			   BIT(BT_LE_FEAT_BIT_PHY_CODED)) {
+			u16_t rx_time = PKT_US(LL_LENGTH_OCTETS_RX_MAX, BIT(2));
+			u16_t tx_time = conn->default_tx_time;
+
+			lr->max_rx_time = sys_cpu_to_le16(rx_time);
+			lr->max_tx_time = sys_cpu_to_le16(tx_time);
+#endif /* CONFIG_BT_CTLR_PHY_CODED */
+
+#if defined(CONFIG_BT_CTLR_PHY_2M)
+		} else if (conn->llcp_feature.features &
+			   BIT(BT_LE_FEAT_BIT_PHY_2M)) {
+			u16_t rx_time = PKT_US(LL_LENGTH_OCTETS_RX_MAX, BIT(1));
+			u16_t tx_time;
+
+			if (conn->default_tx_time > rx_time) {
+				tx_time = rx_time;
+			} else {
+				tx_time = conn->default_tx_time;
+			}
+
+			lr->max_rx_time = sys_cpu_to_le16(rx_time);
+			lr->max_tx_time = sys_cpu_to_le16(tx_time);
+#endif /* CONFIG_BT_CTLR_PHY_2M */
 #endif /* CONFIG_BT_CTLR_PHY */
+		}
 
 		ctrl_tx_enqueue(conn, tx);
 
