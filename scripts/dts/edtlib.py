@@ -851,8 +851,8 @@ class Node:
             interrupt = Interrupt()
             interrupt.node = self
             interrupt.controller = self.edt._node2enode[controller_node]
-            interrupt.specifier = self._named_cells(interrupt.controller, spec,
-                                                    "interrupt")
+            interrupt.data = self._named_cells(interrupt.controller, spec,
+                                               "interrupt")
 
             self.interrupts.append(interrupt)
 
@@ -869,8 +869,7 @@ class Node:
                 gpio = GPIO()
                 gpio.node = self
                 gpio.controller = self.edt._node2enode[controller_node]
-                gpio.specifier = self._named_cells(gpio.controller, spec,
-                                                   "GPIO")
+                gpio.data = self._named_cells(gpio.controller, spec, "GPIO")
                 gpio.name = prefix
 
                 self.gpios[prefix].append(gpio)
@@ -925,8 +924,8 @@ class Node:
         #
         # cls:
         #   A class object. Instances of this class will be created and the
-        #   'node', 'controller', 'specifier', and 'name' fields initialized.
-        #   See the documentation for e.g. the PWM class.
+        #   'node', 'controller', 'data', and 'name' fields initialized. See
+        #   the documentation for e.g. the PWM class.
         #
         # Returns a list of 'cls' instances.
 
@@ -940,7 +939,7 @@ class Node:
             obj = cls()
             obj.node = self
             obj.controller = self.edt._node2enode[controller_node]
-            obj.specifier = self._named_cells(obj.controller, spec, name)
+            obj.data = self._named_cells(obj.controller, spec, name)
 
             res.append(obj)
 
@@ -1038,9 +1037,9 @@ class Interrupt:
       'interrupt-map' is taken into account, so that this is the final
       controller node.
 
-    specifier:
+    data:
       A dictionary that maps names from the #cells portion of the binding to
-      cell values in the interrupt specifier. 'interrupts = <1 2>' might give
+      cell values in the interrupt data. 'interrupts = <1 2>' might give
       {"irq": 1, "level": 2}, for example.
     """
     def __repr__(self):
@@ -1050,7 +1049,7 @@ class Interrupt:
             fields.append("name: " + self.name)
 
         fields.append("target: {}".format(self.controller))
-        fields.append("specifier: {}".format(self.specifier))
+        fields.append("data: {}".format(self.data))
 
         return "<Interrupt, {}>".format(", ".join(fields))
 
@@ -1071,9 +1070,9 @@ class GPIO:
     controller:
       The Node instance for the controller of the GPIO
 
-    specifier:
+    data:
       A dictionary that maps names from the #cells portion of the binding to
-      cell values in the gpio specifier. 'foo-gpios = <&gpioc 5 0>' might give
+      cell values in the GPIO data. 'foo-gpios = <&gpioc 5 0>' might give
       {"pin": 5, "flags": 0}, for example.
     """
     def __repr__(self):
@@ -1083,7 +1082,7 @@ class GPIO:
             fields.append("name: " + self.name)
 
         fields.append("target: {}".format(self.controller))
-        fields.append("specifier: {}".format(self.specifier))
+        fields.append("data: {}".format(self.data))
 
         return "<GPIO, {}>".format(", ".join(fields))
 
@@ -1109,9 +1108,9 @@ class Clock:
       'compatible'), as an integer. Derived from the 'clock-frequency'
       property. None if the clock is not a fixed clock.
 
-    specifier:
+    data:
       A dictionary that maps names from the #cells portion of the binding to
-      cell values in the clock specifier
+      cell values in the clock data
     """
     def __repr__(self):
         fields = []
@@ -1123,7 +1122,7 @@ class Clock:
             fields.append("frequency: {}".format(self.frequency))
 
         fields.append("target: {}".format(self.controller))
-        fields.append("specifier: {}".format(self.specifier))
+        fields.append("data: {}".format(self.data))
 
         return "<Clock, {}>".format(", ".join(fields))
 
@@ -1144,9 +1143,9 @@ class PWM:
     controller:
       The Node instance for the controller of the PWM
 
-    specifier:
+    data:
       A dictionary that maps names from the #cells portion of the binding to
-      cell values in the pwm specifier. 'pwms = <&pwm 0 5000000>' might give
+      cell values in the PWM data. 'pwms = <&pwm 0 5000000>' might give
       {"channel": 0, "period": 5000000}, for example.
     """
     def __repr__(self):
@@ -1156,7 +1155,7 @@ class PWM:
             fields.append("name: " + self.name)
 
         fields.append("target: {}".format(self.controller))
-        fields.append("specifier: {}".format(self.specifier))
+        fields.append("data: {}".format(self.data))
 
         return "<PWM, {}>".format(", ".join(fields))
 
@@ -1179,10 +1178,10 @@ class IOChannel:
     controller:
       The Node instance for the controller of the IO channel
 
-    specifier:
+    data:
       A dictionary that maps names from the #cells portion of the binding to
-      cell values in the io-channel specifier. 'io-channels = <&adc 3>' might
-      give {"input": 3}, for example.
+      cell values in the io-channel data. 'io-channels = <&adc 3>' might give
+      {"input": 3}, for example.
     """
     def __repr__(self):
         fields = []
@@ -1191,7 +1190,7 @@ class IOChannel:
             fields.append("name: " + self.name)
 
         fields.append("target: {}".format(self.controller))
-        fields.append("specifier: {}".format(self.specifier))
+        fields.append("data: {}".format(self.data))
 
         return "<IOChannel, {}>".format(", ".join(fields))
 
@@ -1729,10 +1728,10 @@ def _interrupt_parent(node):
 
 
 def _interrupts(node):
-    # Returns a list of (<controller>, <specifier>) tuples, with one tuple per
+    # Returns a list of (<controller>, <data>) tuples, with one tuple per
     # interrupt generated by 'node'. <controller> is the destination of the
-    # interrupt (possibly after mapping through an 'interrupt-map'), and
-    # <specifier> the data associated with the interrupt (as a 'bytes' object).
+    # interrupt (possibly after mapping through an 'interrupt-map'), and <data>
+    # the data associated with the interrupt (as a 'bytes' object).
 
     # Takes precedence over 'interrupts' if both are present
     if "interrupts-extended" in node.props:
@@ -1754,10 +1753,9 @@ def _interrupts(node):
 
 
 def _map_interrupt(child, parent, child_spec):
-    # Translates an interrupt headed from 'child' to 'parent' with specifier
+    # Translates an interrupt headed from 'child' to 'parent' with data
     # 'child_spec' through any 'interrupt-map' properties. Returns a
-    # (<controller>, <specifier>) tuple with the final destination after
-    # mapping.
+    # (<controller>, <data>) tuple with the final destination after mapping.
 
     if "interrupt-controller" in parent.props:
         return (parent, child_spec)
@@ -1788,7 +1786,7 @@ def _map_interrupt(child, parent, child_spec):
 
 def _gpios(node):
     # Returns a dictionary that maps '<prefix>-gpios' prefixes to lists of
-    # (<controller>, <specifier>) tuples (possibly after mapping through an
+    # (<controller>, <data>) tuples (possibly after mapping through an
     # gpio-map). <controller> is a dtlib.Node.
 
     res = {}
@@ -1812,8 +1810,8 @@ def _gpios(node):
 
 
 def _map_gpio(child, parent, child_spec):
-    # Returns a (<controller>, <specifier>) tuple with the final destination
-    # after mapping through any 'gpio-map' properties. See _map_interrupt().
+    # Returns a (<controller>, <data>) tuple with the final destination after
+    # mapping through any 'gpio-map' properties. See _map_interrupt().
 
     if "gpio-map" not in parent.props:
         return (parent, child_spec)
@@ -1858,7 +1856,7 @@ def _map(prefix, child, parent, child_spec, spec_len_fn):
     raw = map_prop.value
     while raw:
         if len(raw) < len(child_spec):
-            _err("bad value for {!r}, missing/truncated child specifier"
+            _err("bad value for {!r}, missing/truncated child data"
                  .format(map_prop))
         child_spec_entry = raw[:len(child_spec)]
         raw = raw[len(child_spec):]
@@ -1876,12 +1874,12 @@ def _map(prefix, child, parent, child_spec, spec_len_fn):
 
         map_parent_spec_len = spec_len_fn(map_parent)
         if len(raw) < map_parent_spec_len:
-            _err("bad value for {!r}, missing/truncated parent specifier"
+            _err("bad value for {!r}, missing/truncated parent data"
                  .format(map_prop))
         parent_spec = raw[:map_parent_spec_len]
         raw = raw[map_parent_spec_len:]
 
-        # Got one *-map row. Check if it matches the child specifier.
+        # Got one *-map row. Check if it matches the child data.
         if child_spec_entry == masked_child_spec:
             # Handle *-map-pass-thru
             parent_spec = _pass_thru(
@@ -1890,7 +1888,7 @@ def _map(prefix, child, parent, child_spec, spec_len_fn):
             # Found match. Recursively map and return it.
             return _map(prefix, parent, map_parent, parent_spec, spec_len_fn)
 
-    _err("child specifier for {!r} ({}) does not appear in {!r}"
+    _err("child data for {!r} ({}) does not appear in {!r}"
          .format(child, child_spec, map_prop))
 
 
@@ -1916,8 +1914,7 @@ def _pass_thru(prefix, child, parent, child_spec, parent_spec):
     # interrupt-pass-thru.
     #
     # parent_spec:
-    #   The parent specifier from the matched entry in the <prefix>-map
-    #   property
+    #   The parent data from the matched entry in the <prefix>-map property
     #
     # See _map() for the other parameters.
 
