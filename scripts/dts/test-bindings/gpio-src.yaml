@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: BSD-3-Clause
+
+title: GPIO source for mapping test
+description: GPIO source for mapping test
+
+compatible: "gpio-src"
+
+properties:
+    foo-gpios:
+        type: phandle-array

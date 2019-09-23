@@ -86,37 +86,66 @@ parent-bus: <string describing bus type, e.g. "i2c">
 #     const: <string | int>
 #     default: <default>
 #
-# 'type: boolean' is for properties used as flags that don't take a value, e.g.
-# 'hw-flow-control;'. The macro generated for the property gets set to 1 if the
-# property exists on the node, and to 0 otherwise. When combined with
-# 'required: true', this type just forces the flag to appear on the node,
-# though the output will always be the same in that case (1).
+# These types are available:
 #
-# 'type: uint8-array' is for what the device tree specification calls
-# 'bytestring'. Properties of type 'uint8-array' should be set like this:
+#   - 'type: boolean' is for properties used as flags that don't take a value,
+#     e.g. 'hw-flow-control;'. The macro generated for the property gets set to
+#     1 if the property exists on the node, and to 0 otherwise. When combined
+#     with 'required: true', this type just forces the flag to appear on the
+#     node, though the output will always be the same in that case (1).
 #
-#   foo = [89 AB CD];
+#     Warning: Since a macro is always generated, don't use #ifdef in tests.
+#     Do this instead:
 #
-# Each value is a byte in hex.
+#       #if DT_SOME_BOOLEAN_PROP == 1
 #
-# 'type: phandle' is for properties that are assigned a single phandle, like
-# this:
+#   - 'type: uint8-array' is for what the device tree specification calls
+#     'bytestring'. Properties of type 'uint8-array' should be set like this:
 #
-#   foo = <&label>;
+#       foo = [89 AB CD];
 #
-# 'type: phandles' is for properties that are assigned a list of (just)
-# phandles, like this:
+#     Each value is a byte in hex.
 #
-#   foo = <&label1 &label2 ...>;
+#   - 'type: phandle' is for properties that are assigned a single phandle,
+#     like this:
 #
-# 'type: phandle-array' is for properties that are assigned a list of phandles
-# and (possibly) 32-bit numbers, like this:
+#       foo = <&label>;
 #
-#   foo = <&label1 1 2 &label2 3 4 ...>;
+#   - 'type: phandles' is for properties that are assigned a list of (just)
+#     phandles, like this:
 #
-# 'type: compound' is a catch-all for more complex types, e.g.
+#       foo = <&label1 &label2 ...>;
 #
-#   foo = <&label1>, [01 02];
+#   - 'type: phandle-array' is for properties that take a list of phandles and
+#     (possibly) 32-bit numbers, like this:
+#
+#       pwms = <&ctrl-1 1 2 &ctrl-2 3 4>;
+#
+#     This type requires that the property works in the standard way that
+#     devicetree properties like pwms, clocks, *-gpios, and io-channels work.
+#     Taking 'pwms' as an example, the final -s is stripped from the property
+#     name, and #pwm-cells is looked up in the node for the controller
+#     (&ctrl-1/&ctrl-2) to determine the number of data values after the
+#     phandle. The binding for each controller must also have a #cells key,
+#     giving names to data values. See below for an explanation of #cells.
+#
+#     A *-names (e.g. pwm-names) property can appear on the node as well,
+#     giving a name to each entry (the 'pwms' example above has two entries,
+#     <&ctrl-1 1 2> and <&ctrl-2 3 4>).
+#
+#     Because other property names are derived from the name of the property by
+#     removing the final -s, the property name must end in -s. An error is
+#     raised if it doesn't.
+#
+#     *-gpios properties are special-cased so that e.g. foo-gpios resolves to
+#     #gpio-cells rather than #foo-gpio-cells.
+#
+#     All phandle-array properties support mapping through *-map properties,
+#     e.g. gpio-map. See the devicetree spec.
+#
+#   - 'type: compound' is a catch-all for more complex types, e.g.
+#
+#       foo = <&label1>, [01 02];
 #
 # 'type: array' and the other array types also allow splitting the value into
 # several <> blocks, e.g. like this:
@@ -256,8 +285,8 @@ child-binding:
                 required: true
 
 # If the binding describes an interrupt controller, GPIO controller, pinmux
-# device, or any other node referenced by other nodes, then #cells should be
-# given.
+# device, or any other node referenced by other nodes via 'phandle-array'
+# properties, then #cells should be given.
 #
 # To understand the purpose of #cells, assume that some node has
 #

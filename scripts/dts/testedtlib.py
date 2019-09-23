@@ -41,47 +41,19 @@ def run():
     #
 
     verify_streq(edt.get_node("/interrupt-parent-test/node").interrupts,
-                 "[<Interrupt, name: foo, target: <Node /interrupt-parent-test/controller in 'test.dts', binding test-bindings/interrupt-3-cell.yaml>, data: {'one': 1, 'two': 2, 'three': 3}>, <Interrupt, name: bar, target: <Node /interrupt-parent-test/controller in 'test.dts', binding test-bindings/interrupt-3-cell.yaml>, data: {'one': 4, 'two': 5, 'three': 6}>]")
+                 "[<ControllerAndData, name: foo, controller: <Node /interrupt-parent-test/controller in 'test.dts', binding test-bindings/interrupt-3-cell.yaml>, data: {'one': 1, 'two': 2, 'three': 3}>, <ControllerAndData, name: bar, controller: <Node /interrupt-parent-test/controller in 'test.dts', binding test-bindings/interrupt-3-cell.yaml>, data: {'one': 4, 'two': 5, 'three': 6}>]")
 
     verify_streq(edt.get_node("/interrupts-extended-test/node").interrupts,
-                 "[<Interrupt, target: <Node /interrupts-extended-test/controller-0 in 'test.dts', binding test-bindings/interrupt-1-cell.yaml>, data: {'one': 1}>, <Interrupt, target: <Node /interrupts-extended-test/controller-1 in 'test.dts', binding test-bindings/interrupt-2-cell.yaml>, data: {'one': 2, 'two': 3}>, <Interrupt, target: <Node /interrupts-extended-test/controller-2 in 'test.dts', binding test-bindings/interrupt-3-cell.yaml>, data: {'one': 4, 'two': 5, 'three': 6}>]")
+                 "[<ControllerAndData, controller: <Node /interrupts-extended-test/controller-0 in 'test.dts', binding test-bindings/interrupt-1-cell.yaml>, data: {'one': 1}>, <ControllerAndData, controller: <Node /interrupts-extended-test/controller-1 in 'test.dts', binding test-bindings/interrupt-2-cell.yaml>, data: {'one': 2, 'two': 3}>, <ControllerAndData, controller: <Node /interrupts-extended-test/controller-2 in 'test.dts', binding test-bindings/interrupt-3-cell.yaml>, data: {'one': 4, 'two': 5, 'three': 6}>]")
 
     verify_streq(edt.get_node("/interrupt-map-test/node@0").interrupts,
-                 "[<Interrupt, target: <Node /interrupt-map-test/controller-0 in 'test.dts', binding test-bindings/interrupt-1-cell.yaml>, data: {'one': 0}>, <Interrupt, target: <Node /interrupt-map-test/controller-1 in 'test.dts', binding test-bindings/interrupt-2-cell.yaml>, data: {'one': 0, 'two': 1}>, <Interrupt, target: <Node /interrupt-map-test/controller-2 in 'test.dts', binding test-bindings/interrupt-3-cell.yaml>, data: {'one': 0, 'two': 0, 'three': 2}>]")
+                 "[<ControllerAndData, controller: <Node /interrupt-map-test/controller-0 in 'test.dts', binding test-bindings/interrupt-1-cell.yaml>, data: {'one': 0}>, <ControllerAndData, controller: <Node /interrupt-map-test/controller-1 in 'test.dts', binding test-bindings/interrupt-2-cell.yaml>, data: {'one': 0, 'two': 1}>, <ControllerAndData, controller: <Node /interrupt-map-test/controller-2 in 'test.dts', binding test-bindings/interrupt-3-cell.yaml>, data: {'one': 0, 'two': 0, 'three': 2}>]")
 
     verify_streq(edt.get_node("/interrupt-map-test/node@1").interrupts,
-                 "[<Interrupt, target: <Node /interrupt-map-test/controller-0 in 'test.dts', binding test-bindings/interrupt-1-cell.yaml>, data: {'one': 3}>, <Interrupt, target: <Node /interrupt-map-test/controller-1 in 'test.dts', binding test-bindings/interrupt-2-cell.yaml>, data: {'one': 0, 'two': 4}>, <Interrupt, target: <Node /interrupt-map-test/controller-2 in 'test.dts', binding test-bindings/interrupt-3-cell.yaml>, data: {'one': 0, 'two': 0, 'three': 5}>]")
+                 "[<ControllerAndData, controller: <Node /interrupt-map-test/controller-0 in 'test.dts', binding test-bindings/interrupt-1-cell.yaml>, data: {'one': 3}>, <ControllerAndData, controller: <Node /interrupt-map-test/controller-1 in 'test.dts', binding test-bindings/interrupt-2-cell.yaml>, data: {'one': 0, 'two': 4}>, <ControllerAndData, controller: <Node /interrupt-map-test/controller-2 in 'test.dts', binding test-bindings/interrupt-3-cell.yaml>, data: {'one': 0, 'two': 0, 'three': 5}>]")
 
     verify_streq(edt.get_node("/interrupt-map-bitops-test/node@70000000E").interrupts,
-                 "[<Interrupt, target: <Node /interrupt-map-bitops-test/controller in 'test.dts', binding test-bindings/interrupt-2-cell.yaml>, data: {'one': 3, 'two': 2}>]")
-
-    #
-    # Test GPIOs
-    #
-
-    verify_streq(edt.get_node("/gpio-test/node").gpios,
-                 "{'': [<GPIO, name: , target: <Node /gpio-test/controller-0 in 'test.dts', binding test-bindings/gpio-1-cell.yaml>, data: {'one': 1}>, <GPIO, name: , target: <Node /gpio-test/controller-1 in 'test.dts', binding test-bindings/gpio-2-cell.yaml>, data: {'one': 2, 'two': 3}>], 'foo': [<GPIO, name: foo, target: <Node /gpio-test/controller-1 in 'test.dts', binding test-bindings/gpio-2-cell.yaml>, data: {'one': 4, 'two': 5}>], 'bar': [<GPIO, name: bar, target: <Node /gpio-test/controller-1 in 'test.dts', binding test-bindings/gpio-2-cell.yaml>, data: {'one': 6, 'two': 7}>]}")
-
-    #
-    # Test clocks
-    #
-
-    verify_streq(edt.get_node("/clock-test/node").clocks,
-                 "[<Clock, name: fixed, frequency: 123, target: <Node /clock-test/fixed-clock in 'test.dts', binding test-bindings/fixed-clock.yaml>, data: {}>, <Clock, name: one-cell, target: <Node /clock-test/clock-1 in 'test.dts', binding test-bindings/clock-1-cell.yaml>, data: {'one': 1}>, <Clock, name: two-cell, target: <Node /clock-test/clock-2 in 'test.dts', binding test-bindings/clock-2-cell.yaml>, data: {'one': 1, 'two': 2}>]")
-
-    #
-    # Test PWMs
-    #
-
-    verify_streq(edt.get_node("/pwm-test/node").pwms,
-                 "[<PWM, name: zero-cell, target: <Node /pwm-test/pwm-0 in 'test.dts', binding test-bindings/pwm-0-cell.yaml>, data: {}>, <PWM, name: one-cell, target: <Node /pwm-test/pwm-1 in 'test.dts', binding test-bindings/pwm-1-cell.yaml>, data: {'one': 1}>]")
-
-    #
-    # Test IO channels
-    #
-
-    verify_streq(edt.get_node("/io-channel-test/node").iochannels,
-                 "[<IOChannel, name: io-channel, target: <Node /io-channel-test/io-channel in 'test.dts', binding test-bindings/io-channel.yaml>, data: {'one': 1}>]")
+                 "[<ControllerAndData, controller: <Node /interrupt-map-bitops-test/controller in 'test.dts', binding test-bindings/interrupt-2-cell.yaml>, data: {'one': 3, 'two': 2}>]")
 
     #
     # Test 'reg'
@@ -100,7 +72,7 @@ def run():
                  "[<Register, addr: 0x30000000200000001, size: 0x1>]")
 
     #
-    # Test Device.parent and Device.children
+    # Test Node.parent and Node.children
     #
 
     verify_eq(edt.get_node("/").parent, None)
@@ -164,11 +136,48 @@ def run():
                  "{'child-prop': <Property, name: child-prop, type: int, value: 3>}")
 
     #
-    # Test Device.property (derived from DT and 'properties:' in the binding)
+    # Test Node.props (derived from DT and 'properties:' in the binding)
     #
 
-    verify_streq(edt.get_node("/props").props,
-                 r"{'nonexistent-boolean': <Property, name: nonexistent-boolean, type: boolean, value: False>, 'existent-boolean': <Property, name: existent-boolean, type: boolean, value: True>, 'int': <Property, name: int, type: int, value: 1>, 'array': <Property, name: array, type: array, value: [1, 2, 3]>, 'uint8-array': <Property, name: uint8-array, type: uint8-array, value: b'\x124'>, 'string': <Property, name: string, type: string, value: 'foo'>, 'string-array': <Property, name: string-array, type: string-array, value: ['foo', 'bar', 'baz']>, 'phandle-ref': <Property, name: phandle-ref, type: phandle, value: <Node /props/node in 'test.dts', no binding>>, 'phandle-refs': <Property, name: phandle-refs, type: phandles, value: [<Node /props/node in 'test.dts', no binding>, <Node /props/node2 in 'test.dts', no binding>]>}")
+    verify_streq(edt.get_node("/props").props["int"],
+                 "<Property, name: int, type: int, value: 1>")
+
+    verify_streq(edt.get_node("/props").props["existent-boolean"],
+                 "<Property, name: existent-boolean, type: boolean, value: True>")
+
+    verify_streq(edt.get_node("/props").props["nonexistent-boolean"],
+                 "<Property, name: nonexistent-boolean, type: boolean, value: False>")
+
+    verify_streq(edt.get_node("/props").props["array"],
+                 "<Property, name: array, type: array, value: [1, 2, 3]>")
+
+    verify_streq(edt.get_node("/props").props["uint8-array"],
+                 r"<Property, name: uint8-array, type: uint8-array, value: b'\x124'>")
+
+    verify_streq(edt.get_node("/props").props["string"],
+                 "<Property, name: string, type: string, value: 'foo'>")
+
+    verify_streq(edt.get_node("/props").props["string-array"],
+                 "<Property, name: string-array, type: string-array, value: ['foo', 'bar', 'baz']>")
+
+    verify_streq(edt.get_node("/props").props["phandle-ref"],
+                 "<Property, name: phandle-ref, type: phandle, value: <Node /props/ctrl-1 in 'test.dts', binding test-bindings/phandle-array-controller-1.yaml>>")
+
+    verify_streq(edt.get_node("/props").props["phandle-refs"],
+                 "<Property, name: phandle-refs, type: phandles, value: [<Node /props/ctrl-1 in 'test.dts', binding test-bindings/phandle-array-controller-1.yaml>, <Node /props/ctrl-2 in 'test.dts', binding test-bindings/phandle-array-controller-2.yaml>]>")
+
+    verify_streq(edt.get_node("/props").props["phandle-array-foos"],
+                 "<Property, name: phandle-array-foos, type: phandle-array, value: [<ControllerAndData, controller: <Node /props/ctrl-1 in 'test.dts', binding test-bindings/phandle-array-controller-1.yaml>, data: {'one': 1}>, <ControllerAndData, controller: <Node /props/ctrl-2 in 'test.dts', binding test-bindings/phandle-array-controller-2.yaml>, data: {'one': 2, 'two': 3}>]>")
+
+    verify_streq(edt.get_node("/props").props["foo-gpios"],
+                 "<Property, name: foo-gpios, type: phandle-array, value: [<ControllerAndData, controller: <Node /props/ctrl-1 in 'test.dts', binding test-bindings/phandle-array-controller-1.yaml>, data: {'one': 1}>]>")
+
+    #
+    # Test <prefix>-map, via gpio-map (the most common case)
+    #
+
+    verify_streq(edt.get_node("/gpio-map/source").props["foo-gpios"],
+                 "<Property, name: foo-gpios, type: phandle-array, value: [<ControllerAndData, controller: <Node /gpio-map/destination in 'test.dts', binding test-bindings/gpio-dst.yaml>, data: {'val': 6}>, <ControllerAndData, controller: <Node /gpio-map/destination in 'test.dts', binding test-bindings/gpio-dst.yaml>, data: {'val': 5}>]>")
 
     #
     # Test property default values given in bindings
