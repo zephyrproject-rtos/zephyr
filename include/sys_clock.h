@@ -107,7 +107,7 @@ typedef k_ticks_t k_timeout_t;
 #else
 /* New API going forward: k_timeout_t is an opaque struct */
 typedef struct { k_ticks_t ticks; } k_timeout_t;
-#define K_TIMEOUT_TICKS(t) ((k_timeout_t){ (k_ticks_t)t })
+#define K_TIMEOUT_TICKS(t) ((k_timeout_t){ (k_ticks_t)(t) })
 #define K_TIMEOUT_GET(t) ((t).ticks)
 #define K_NO_WAIT K_TIMEOUT_TICKS(0)
 #define K_FOREVER K_TIMEOUT_TICKS(K_FOREVER_TICKS)
