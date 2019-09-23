@@ -181,8 +181,8 @@ mxcsr:	.long X86_MXCSR_SANE
 
 .globl __swap
 __swap:
-	movq $_kernel, %rsi
-	movq _kernel_offset_to_current(%rsi), %rsi
+	movq %gs:__x86_tss64_t_cpu_OFFSET, %rsi
+	movq ___cpu_t_current_OFFSET(%rsi), %rsi
 
 	andb $~X86_THREAD_FLAG_ALL, _thread_offset_to_flags(%rsi)
 
@@ -212,7 +212,8 @@ __swap:
 __resume:
 	movq $_kernel, %rdi
 	movq _kernel_offset_to_ready_q_cache(%rdi), %rsi
-	movq %rsi, _kernel_offset_to_current(%rdi)
+	movq %gs:__x86_tss64_t_cpu_OFFSET, %rdi
+	movq %rsi, ___cpu_t_current_OFFSET(%rdi)
 
 	pushq $X86_KERNEL_DS_64			/* SS */
 	pushq _thread_offset_to_rsp(%rsi)	/* RSP */
@@ -419,7 +420,7 @@ EXCEPT      (28); EXCEPT      (29); EXCEPT      (30); EXCEPT      (31)
 
 irq:
 	pushq %rsi
-	movq $_kernel, %rsi
+	movq %gs:__x86_tss64_t_cpu_OFFSET, %rsi
 
 	/*
 	 * Bump the IRQ nesting count and move to the next IRQ stack.
@@ -427,12 +428,12 @@ irq:
 	 * haven't reached the maximum nesting depth yet, do it.
 	 */
 
-	incl _kernel_offset_to_nested(%rsi)
+	incl ___cpu_t_nested_OFFSET(%rsi)
 	subq $CONFIG_ISR_SUBSTACK_SIZE, %gs:__x86_tss64_t_ist1_OFFSET
-	cmpl $CONFIG_ISR_DEPTH, _kernel_offset_to_nested(%rsi)
+	cmpl $CONFIG_ISR_DEPTH, ___cpu_t_nested_OFFSET(%rsi)
 	jz 1f
 	sti
-1:	cmpl $1, _kernel_offset_to_nested(%rsi)
+1:	cmpl $1, ___cpu_t_nested_OFFSET(%rsi)
 	je irq_enter_unnested
 
 	/*
@@ -462,7 +463,7 @@ irq_enter_nested: /* Nested IRQ: dump register state to stack. */
 	jmp irq_dispatch
 
 irq_enter_unnested: /* Not nested: dump state to thread struct for __resume */
-	movq _kernel_offset_to_current(%rsi), %rsi
+	movq ___cpu_t_current_OFFSET(%rsi), %rsi
 	orb $X86_THREAD_FLAG_ALL, _thread_offset_to_flags(%rsi)
 	fxsave _thread_offset_to_sse(%rsi)
 	movq %rbx, _thread_offset_to_rbx(%rsi)
@@ -508,10 +509,10 @@ irq_dispatch:
 #ifdef CONFIG_STACK_SENTINEL
 	call z_check_stack_sentinel
 #endif
-	movq $_kernel, %rsi
+	movq %gs:__x86_tss64_t_cpu_OFFSET, %rsi
 	cli
 	addq $CONFIG_ISR_SUBSTACK_SIZE, %gs:__x86_tss64_t_ist1_OFFSET
-	decl _kernel_offset_to_nested(%rsi)
+	decl ___cpu_t_nested_OFFSET(%rsi)
 	/* if not nested, exit via __resume (might change threads) */
 	jz __resume
 
