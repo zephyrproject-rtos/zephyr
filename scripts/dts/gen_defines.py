@@ -428,15 +428,15 @@ def write_irqs(node):
         # Look for interrupt controller parent until we have none
         while irq_ctrl.interrupts:
             irq_num = (irq_num + 1) << 8
-            if "irq" not in irq_ctrl.interrupts[0].specifier:
+            if "irq" not in irq_ctrl.interrupts[0].data:
                 err("Expected binding for {!r} to have 'irq' "
                     "in '#cells'".format(irq_ctrl))
-            irq_num |= irq_ctrl.interrupts[0].specifier["irq"]
+            irq_num |= irq_ctrl.interrupts[0].data["irq"]
             irq_ctrl = irq_ctrl.interrupts[0].controller
         return irq_num
 
     for irq_i, irq in enumerate(node.interrupts):
-        for cell_name, cell_value in irq.specifier.items():
+        for cell_name, cell_value in irq.data.items():
             ident = "IRQ_{}".format(irq_i)
             if cell_name == "irq":
                 cell_value = encode_zephyr_multi_level_irq(irq, cell_value)
@@ -514,7 +514,7 @@ def write_phandle_val_list_entry(node, entry, i, ident):
         initializer_vals.append(quote_str(entry.controller.label))
         out_dev_s(node, ctrl_ident, entry.controller.label)
 
-    for cell, val in entry.specifier.items():
+    for cell, val in entry.data.items():
         cell_ident = ident + "S_" + str2ident(cell)  # e.g. PWMS_CHANNEL
         if entry.name:
             # From e.g. 'pwm-names = ...'
@@ -524,7 +524,7 @@ def write_phandle_val_list_entry(node, entry, i, ident):
             cell_ident += "_{}".format(i)
         out_dev(node, cell_ident, val)
 
-    initializer_vals += entry.specifier.values()
+    initializer_vals += entry.data.values()
 
     initializer_ident = ident + "S"
     if entry.name:
@@ -536,7 +536,7 @@ def write_phandle_val_list_entry(node, entry, i, ident):
 
 
 def write_clocks(node):
-    # Writes clock controller and specifier info for the clock in the node's
+    # Writes clock controller and clock data for the clock in the node's
     # 'clock' property
 
     for clock_i, clock in enumerate(node.clocks):
@@ -546,7 +546,7 @@ def write_clocks(node):
         if clock.frequency is not None:
             out_dev(node, "CLOCKS_CLOCK_FREQUENCY", clock.frequency)
 
-        for spec, val in clock.specifier.items():
+        for spec, val in clock.data.items():
             if clock_i == 0:
                 clk_name_alias = "CLOCK_" + str2ident(spec)
             else:
