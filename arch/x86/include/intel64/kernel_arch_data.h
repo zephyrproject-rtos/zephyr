@@ -58,6 +58,12 @@ struct x86_tss64 {
 	u8_t reserved1[10];
 
 	u16_t iomapb;		/* offset to I/O base */
+
+	/*
+	 * Zephyr specific portion. Stash per-CPU data here for convenience.
+	 */
+
+	struct _cpu *cpu;
 } __packed __aligned(8);
 
 typedef struct x86_tss64 x86_tss64_t;
