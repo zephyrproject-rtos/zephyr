@@ -30,7 +30,6 @@ struct _callee_saved {
 	u64_t r15;
 	u64_t rip;
 	u64_t rflags;
-	u64_t rax;
 };
 
 typedef struct _callee_saved _callee_saved_t;
@@ -38,6 +37,7 @@ typedef struct _callee_saved _callee_saved_t;
 struct _thread_arch {
 	u8_t flags;
 
+	u64_t rax;
 	u64_t rcx;
 	u64_t rdx;
 	u64_t rsi;

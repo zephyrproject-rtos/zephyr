@@ -222,12 +222,12 @@ __resume:
 	movq _thread_offset_to_r13(%rdi), %r13
 	movq _thread_offset_to_r14(%rdi), %r14
 	movq _thread_offset_to_r15(%rdi), %r15
-	movq _thread_offset_to_rax(%rdi), %rax
 
 	testb $X86_THREAD_FLAG_ALL, _thread_offset_to_flags(%rdi)
 	jz 1f
 
 	fxrstor _thread_offset_to_sse(%rdi)
+	movq _thread_offset_to_rax(%rdi), %rax
 	movq _thread_offset_to_rcx(%rdi), %rcx
 	movq _thread_offset_to_rdx(%rdi), %rdx
 	movq _thread_offset_to_rsi(%rdi), %rsi
