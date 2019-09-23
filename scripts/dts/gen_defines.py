@@ -61,13 +61,9 @@ def main():
 
             write_regs(node)
             write_irqs(node)
-            for gpios in node.gpios.values():
-                write_phandle_val_list(node, gpios, "GPIO")
-            write_phandle_val_list(node, node.pwms, "PWM")
-            write_phandle_val_list(node, node.iochannels, "IO_CHANNEL")
+            write_props(node)
             write_clocks(node)
             write_spi_dev(node)
-            write_props(node)
             write_bus(node)
             write_existence_flags(node)
 
@@ -143,7 +139,13 @@ def write_props(node):
         if prop.name[0] == "#" or prop.name.endswith("-map"):
             continue
 
-        # Skip phandles
+        # See write_clocks()
+        if prop.name == "clocks":
+            continue
+
+        # edtlib provides these as well (Property.val becomes an edtlib.Node
+        # and a list of edtlib.Nodes, respectively). Nothing is generated for
+        # them currently though.
         if prop.type in {"phandle", "phandles"}:
             continue
 
@@ -174,6 +176,8 @@ def write_props(node):
         elif prop.type == "uint8-array":
             out_dev(node, ident,
                     "{ " + ", ".join("0x{:02x}".format(b) for b in prop.val) + " }")
+        elif prop.type == "phandle-array":
+            write_phandle_val_list(prop)
 
         # Generate DT_..._ENUM if there's an 'enum:' key in the binding
         if prop.enum_index is not None:
@@ -452,59 +456,61 @@ def write_spi_dev(node):
 
     cs_gpio = edtlib.spi_dev_cs_gpio(node)
     if cs_gpio is not None:
-        write_phandle_val_list_entry(node, cs_gpio, None, "GPIO")
+        write_phandle_val_list_entry(node, cs_gpio, None, "CS_GPIOS")
 
 
-def write_phandle_val_list(node, entries, ident):
+def write_phandle_val_list(prop):
     # Writes output for a phandle/value list, e.g.
     #
     #    pwms = <&pwm-ctrl-1 10 20
     #            &pwm-ctrl-2 30 40>;
     #
-    # node:
-    #   Device used to generate device prefixes (see 'ident' below)
+    # prop:
+    #   phandle/value Property instance.
     #
-    # entries:
-    #   List of entries (two for 'pwms' above). This might be a list of
-    #   edtlib.PWM instances, for example.  If only one entry is given it
-    #   does not have a suffix '_0', and the '_COUNT' and group initializer
-    #   are not emitted.
+    #   If only one entry appears in 'prop' (the example above has two), the
+    #   generated identifier won't get a '_0' suffix, and the '_COUNT' and
+    #   group initializer are skipped too.
     #
-    # ident:
-    #   Base identifier. For example, "PWM" generates output like this:
+    # The base identifier is derived from the property name. For example, 'pwms = ...'
+    # generates output like this:
     #
-    #     #define <device prefix>_PWMS_CONTROLLER_0 "PWM_0"  (name taken from 'label = ...')
-    #     #define <device prefix>_PWMS_CHANNEL_0 123         (name taken from #cells in binding)
-    #     #define <device prefix>_PWMS_0 {"PWM_0", 123}
-    #     #define <device prefix>_PWMS_CONTROLLER_1 "PWM_1"
-    #     #define <device prefix>_PWMS_CHANNEL_1 456
-    #     #define <device prefix>_PWMS_1 {"PWM_1", 456}
-    #     #define <device prefix>_PWMS_COUNT 2
-    #     #define <device prefix>_PWMS {<device prefix>_PWMS_0, <device prefix>_PWMS_1}
-    #     ...
-    #
-    #   Note: Do not add an "S" to 'ident'. It's added automatically, which
-    #   forces consistency.
+    #   #define <device prefix>_PWMS_CONTROLLER_0 "PWM_0"  (name taken from 'label = ...')
+    #   #define <device prefix>_PWMS_CHANNEL_0 123         (name taken from #cells in binding)
+    #   #define <device prefix>_PWMS_0 {"PWM_0", 123}
+    #   #define <device prefix>_PWMS_CONTROLLER_1 "PWM_1"
+    #   #define <device prefix>_PWMS_CHANNEL_1 456
+    #   #define <device prefix>_PWMS_1 {"PWM_1", 456}
+    #   #define <device prefix>_PWMS_COUNT 2
+    #   #define <device prefix>_PWMS {<device prefix>_PWMS_0, <device prefix>_PWMS_1}
+    #   ...
+
+    # pwms -> PWMS
+    # foo-gpios -> FOO_GPIOS
+    ident = str2ident(prop.name)
 
     initializer_vals = []
-    for i, entry in enumerate(entries):
+    for i, entry in enumerate(prop.val):
         initializer_vals.append(write_phandle_val_list_entry(
-            node, entry, i if len(entries) > 1 else None, ident))
-    if len(entries) > 1:
-        out_dev(node, ident + "S_COUNT", len(initializer_vals))
-        out_dev(node, ident + "S", "{" + ", ".join(initializer_vals) + "}")
+            prop.node, entry, i if len(prop.val) > 1 else None, ident))
+
+    if len(prop.val) > 1:
+        out_dev(prop.node, ident + "_COUNT", len(initializer_vals))
+        out_dev(prop.node, ident, "{" + ", ".join(initializer_vals) + "}")
 
 
 def write_phandle_val_list_entry(node, entry, i, ident):
     # write_phandle_val_list() helper. We could get rid of it if it wasn't for
     # write_spi_dev(). Adds 'i' as an index to identifiers unless it's None.
     #
+    # 'entry' is an edtlib.ControllerAndData instance.
+    #
     # Returns the identifier for the macro that provides the
     # initializer for the entire entry.
 
     initializer_vals = []
     if entry.controller.label is not None:
-        ctrl_ident = ident + "S_CONTROLLER"  # e.g. PWMS_CONTROLLER
+        ctrl_ident = ident + "_CONTROLLER"  # e.g. PWMS_CONTROLLER
         if entry.name:
             ctrl_ident = str2ident(entry.name) + "_" + ctrl_ident
         # Ugly backwards compatibility hack. Only add the index if there's
@@ -515,7 +521,7 @@ def write_phandle_val_list_entry(node, entry, i, ident):
         out_dev_s(node, ctrl_ident, entry.controller.label)
 
     for cell, val in entry.data.items():
-        cell_ident = ident + "S_" + str2ident(cell)  # e.g. PWMS_CHANNEL
+        cell_ident = ident + "_" + str2ident(cell)  # e.g. PWMS_CHANNEL
         if entry.name:
             # From e.g. 'pwm-names = ...'
             cell_ident = str2ident(entry.name) + "_" + cell_ident
@@ -526,7 +532,7 @@ def write_phandle_val_list_entry(node, entry, i, ident):
 
     initializer_vals += entry.data.values()
 
-    initializer_ident = ident + "S"
+    initializer_ident = ident
     if entry.name:
         initializer_ident += "_" + str2ident(entry.name)
     if i is not None:
@@ -536,24 +542,41 @@ def write_phandle_val_list_entry(node, entry, i, ident):
 
 
 def write_clocks(node):
-    # Writes clock controller and clock data for the clock in the node's
-    # 'clock' property
+    # Writes clock information.
+    #
+    # Most of this ought to be handled in write_props(), but the identifiers
+    # that get generated for 'clocks' are inconsistent with the with other
+    # 'phandle-array' properties.
+    #
+    # See https://github.com/zephyrproject-rtos/zephyr/pull/19327#issuecomment-534081845.
 
-    for clock_i, clock in enumerate(node.clocks):
-        if clock.controller.label is not None:
-            out_dev_s(node, "CLOCK_CONTROLLER", clock.controller.label)
+    if "clocks" not in node.props:
+        return
 
-        if clock.frequency is not None:
-            out_dev(node, "CLOCKS_CLOCK_FREQUENCY", clock.frequency)
+    for clock_i, clock in enumerate(node.props["clocks"].val):
+        controller = clock.controller
 
-        for spec, val in clock.data.items():
+        if controller.label is not None:
+            out_dev_s(node, "CLOCK_CONTROLLER", controller.label)
+
+        for name, val in clock.data.items():
             if clock_i == 0:
-                clk_name_alias = "CLOCK_" + str2ident(spec)
+                clk_name_alias = "CLOCK_" + str2ident(name)
             else:
                 clk_name_alias = None
 
-            out_dev(node, "CLOCK_{}_{}".format(str2ident(spec), clock_i), val,
+            out_dev(node, "CLOCK_{}_{}".format(str2ident(name), clock_i), val,
                     name_alias=clk_name_alias)
+
+        if "fixed-clock" not in controller.compats:
+            continue
+
+        if "clock-frequency" not in controller.props:
+            err("{!r} is a 'fixed-clock' but lacks a 'clock-frequency' "
+                "property".format(controller))
+
+        out_dev(node, "CLOCKS_CLOCK_FREQUENCY",
+                controller.props["clock-frequency"].val)
 
 
 def str2ident(s):
