@@ -8,11 +8,7 @@
 
 #ifndef _ASMLANGUAGE
 
-static ALWAYS_INLINE void
-z_set_thread_return_value(struct k_thread *thread, unsigned int value)
-{
-	thread->callee_saved.rax = value;
-}
+extern void z_arch_switch(void *switch_to, void **switched_from);
 
 static inline void kernel_arch_init(void)
 {

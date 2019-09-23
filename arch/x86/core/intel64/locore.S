@@ -174,25 +174,24 @@ mxcsr:	.long X86_MXCSR_SANE
 #endif
 
 /*
- * XXX: describe __swap, __resume, stacks
+ * void z_arch_switch(void *switch_to, void **switched_from);
+ *
+ * Note that switch_handle for us is simply a pointer to the containing
+ * 'struct k_thread', thus:
+ *
+ * RDI = (struct k_thread *) switch_to
+ * RSI = (struct k_thread **) switched_from
  */
 
-.globl _k_neg_eagain	/* from errno.c: int _k_neg_eagain = -EAGAIN; */
-
-.globl __swap
-__swap:
-	movq %gs:__x86_tss64_t_cpu_OFFSET, %rsi
-	movq ___cpu_t_current_OFFSET(%rsi), %rsi
+.globl z_arch_switch
+z_arch_switch:
+	movq (%rsi), %rsi
 
 	andb $~X86_THREAD_FLAG_ALL, _thread_offset_to_flags(%rsi)
 
-	movl _k_neg_eagain, %eax
-	movl %eax, _thread_offset_to_rax(%rsi)
 	popq %rax
 	movq %rax, _thread_offset_to_rip(%rsi)
 	movq %rsp, _thread_offset_to_rsp(%rsi)
-	movl %edi, %edi /* N.B.: zero extend */
-	movq %rdi, _thread_offset_to_rflags(%rsi)
 	movq %rbx, _thread_offset_to_rbx(%rsi)
 	movq %rbp, _thread_offset_to_rbp(%rsi)
 	movq %r12, _thread_offset_to_r12(%rsi)
@@ -207,40 +206,36 @@ __swap:
 /*
  * Entry:
  *   RSP = top of _interrupt_stack
+ *   RDI = (struct k_thread *) thread to resume
  */
 
 __resume:
-	movq $_kernel, %rdi
-	movq _kernel_offset_to_ready_q_cache(%rdi), %rsi
-	movq %gs:__x86_tss64_t_cpu_OFFSET, %rdi
-	movq %rsi, ___cpu_t_current_OFFSET(%rdi)
-
 	pushq $X86_KERNEL_DS_64			/* SS */
-	pushq _thread_offset_to_rsp(%rsi)	/* RSP */
-	pushq _thread_offset_to_rflags(%rsi)	/* RFLAGS */
+	pushq _thread_offset_to_rsp(%rdi)	/* RSP */
+	pushq _thread_offset_to_rflags(%rdi)	/* RFLAGS */
 	pushq $X86_KERNEL_CS_64			/* CS */
-	pushq _thread_offset_to_rip(%rsi)	/* RIP */
+	pushq _thread_offset_to_rip(%rdi)	/* RIP */
 
-	movq _thread_offset_to_rbx(%rsi), %rbx
-	movq _thread_offset_to_rbp(%rsi), %rbp
-	movq _thread_offset_to_r12(%rsi), %r12
-	movq _thread_offset_to_r13(%rsi), %r13
-	movq _thread_offset_to_r14(%rsi), %r14
-	movq _thread_offset_to_r15(%rsi), %r15
-	movq _thread_offset_to_rax(%rsi), %rax
+	movq _thread_offset_to_rbx(%rdi), %rbx
+	movq _thread_offset_to_rbp(%rdi), %rbp
+	movq _thread_offset_to_r12(%rdi), %r12
+	movq _thread_offset_to_r13(%rdi), %r13
+	movq _thread_offset_to_r14(%rdi), %r14
+	movq _thread_offset_to_r15(%rdi), %r15
+	movq _thread_offset_to_rax(%rdi), %rax
 
-	testb $X86_THREAD_FLAG_ALL, _thread_offset_to_flags(%rsi)
+	testb $X86_THREAD_FLAG_ALL, _thread_offset_to_flags(%rdi)
 	jz 1f
 
-	fxrstor _thread_offset_to_sse(%rsi)
-	movq _thread_offset_to_rcx(%rsi), %rcx
-	movq _thread_offset_to_rdx(%rsi), %rdx
-	movq _thread_offset_to_rdi(%rsi), %rdi
-	movq _thread_offset_to_r8(%rsi), %r8
-	movq _thread_offset_to_r9(%rsi), %r9
-	movq _thread_offset_to_r10(%rsi), %r10
-	movq _thread_offset_to_r11(%rsi), %r11
-	movq _thread_offset_to_rsi(%rsi), %rsi  /* do last :-) */
+	fxrstor _thread_offset_to_sse(%rdi)
+	movq _thread_offset_to_rcx(%rdi), %rcx
+	movq _thread_offset_to_rdx(%rdi), %rdx
+	movq _thread_offset_to_rsi(%rdi), %rsi
+	movq _thread_offset_to_r8(%rdi), %r8
+	movq _thread_offset_to_r9(%rdi), %r9
+	movq _thread_offset_to_r10(%rdi), %r10
+	movq _thread_offset_to_r11(%rdi), %r11
+	movq _thread_offset_to_rdi(%rdi), %rdi  /* do last :-) */
 
 1:	iretq
 
@@ -506,15 +501,18 @@ irq_dispatch:
 	movl %eax, (CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_EOI)
 #endif
 
-#ifdef CONFIG_STACK_SENTINEL
-	call z_check_stack_sentinel
-#endif
 	movq %gs:__x86_tss64_t_cpu_OFFSET, %rsi
 	cli
 	addq $CONFIG_ISR_SUBSTACK_SIZE, %gs:__x86_tss64_t_ist1_OFFSET
 	decl ___cpu_t_nested_OFFSET(%rsi)
-	/* if not nested, exit via __resume (might change threads) */
-	jz __resume
+	jnz irq_exit_nested
+
+	/* not nested; ask the scheduler who's up next and resume it */
+
+	movq ___cpu_t_current_OFFSET(%rsi), %rdi
+	call z_get_next_switch_handle
+	movq %rax, %rdi
+	jmp __resume
 
 irq_exit_nested:
 	fxrstor (%rsp)
