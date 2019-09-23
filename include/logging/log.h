@@ -257,10 +257,8 @@ extern "C" {
  *
  * @param fmt Formatted string to output.
  * @param ap  Variable parameters.
- *
- * return Number of bytes written.
  */
-int log_printk(const char *fmt, va_list ap);
+void log_printk(const char *fmt, va_list ap);
 
 /** @brief Copy transient string to a buffer from internal, logger pool.
  *
