@@ -36,7 +36,7 @@
 	(___thread_t_callee_saved_OFFSET + ___callee_saved_t_rflags_OFFSET)
 
 #define _thread_offset_to_rax \
-	(___thread_t_callee_saved_OFFSET + ___callee_saved_t_rax_OFFSET)
+	(___thread_t_arch_OFFSET + ___thread_arch_t_rax_OFFSET)
 
 #define _thread_offset_to_rcx \
 	(___thread_t_arch_OFFSET + ___thread_arch_t_rcx_OFFSET)
