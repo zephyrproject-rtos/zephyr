@@ -3211,18 +3211,36 @@ static void le_ltk_neg_reply(u16_t handle)
 	}
 
 	cp = net_buf_add(buf, sizeof(*cp));
-	cp->handle = handle;
+	cp->handle = sys_cpu_to_le16(handle);
 
 	bt_hci_cmd_send(BT_HCI_OP_LE_LTK_REQ_NEG_REPLY, buf);
+}
+
+static void le_ltk_reply(u16_t handle, u8_t *ltk)
+{
+	struct bt_hci_cp_le_ltk_req_reply *cp;
+	struct net_buf *buf;
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_LTK_REQ_REPLY,
+				sizeof(*cp));
+	if (!buf) {
+		BT_ERR("Out of command buffers");
+		return;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	cp->handle = sys_cpu_to_le16(handle);
+	memcpy(cp->ltk, ltk, sizeof(cp->ltk));
+
+	bt_hci_cmd_send(BT_HCI_OP_LE_LTK_REQ_REPLY, buf);
 }
 
 static void le_ltk_request(struct net_buf *buf)
 {
 	struct bt_hci_evt_le_ltk_request *evt = (void *)buf->data;
-	struct bt_hci_cp_le_ltk_req_reply *cp;
 	struct bt_conn *conn;
 	u16_t handle;
-	u8_t tk[16];
+	u8_t ltk[16];
 
 	handle = sys_le16_to_cpu(evt->handle);
 
@@ -3234,92 +3252,12 @@ static void le_ltk_request(struct net_buf *buf)
 		return;
 	}
 
-	/*
-	 * if TK is present use it, that means pairing is in progress and
-	 * we should use new TK for encryption
-	 *
-	 * Both legacy STK and LE SC LTK have rand and ediv equal to zero.
-	 */
-	if (evt->rand == 0U && evt->ediv == 0U && bt_smp_get_tk(conn, tk)) {
-		buf = bt_hci_cmd_create(BT_HCI_OP_LE_LTK_REQ_REPLY,
-					sizeof(*cp));
-		if (!buf) {
-			BT_ERR("Out of command buffers");
-			goto done;
-		}
-
-		cp = net_buf_add(buf, sizeof(*cp));
-		cp->handle = evt->handle;
-		memcpy(cp->ltk, tk, sizeof(cp->ltk));
-
-		bt_hci_cmd_send(BT_HCI_OP_LE_LTK_REQ_REPLY, buf);
-		goto done;
+	if (bt_smp_request_ltk(conn, evt->rand, evt->ediv, ltk)) {
+		le_ltk_reply(handle, ltk);
+	} else {
+		le_ltk_neg_reply(handle);
 	}
 
-	if (!conn->le.keys) {
-		conn->le.keys = bt_keys_find(BT_KEYS_LTK_P256, conn->id,
-					     &conn->le.dst);
-		if (!conn->le.keys) {
-			conn->le.keys = bt_keys_find(BT_KEYS_SLAVE_LTK,
-						     conn->id, &conn->le.dst);
-		}
-	}
-
-	if (conn->le.keys && (conn->le.keys->keys & BT_KEYS_LTK_P256) &&
-	    evt->rand == 0U && evt->ediv == 0U) {
-		buf = bt_hci_cmd_create(BT_HCI_OP_LE_LTK_REQ_REPLY,
-					sizeof(*cp));
-		if (!buf) {
-			BT_ERR("Out of command buffers");
-			goto done;
-		}
-
-		cp = net_buf_add(buf, sizeof(*cp));
-		cp->handle = evt->handle;
-
-		/* use only enc_size bytes of key for encryption */
-		memcpy(cp->ltk, conn->le.keys->ltk.val,
-		       conn->le.keys->enc_size);
-		if (conn->le.keys->enc_size < sizeof(cp->ltk)) {
-			(void)memset(cp->ltk + conn->le.keys->enc_size, 0,
-				     sizeof(cp->ltk) - conn->le.keys->enc_size);
-		}
-
-		bt_hci_cmd_send(BT_HCI_OP_LE_LTK_REQ_REPLY, buf);
-		goto done;
-	}
-
-#if !defined(CONFIG_BT_SMP_SC_PAIR_ONLY)
-	if (conn->le.keys && (conn->le.keys->keys & BT_KEYS_SLAVE_LTK) &&
-	    !memcmp(conn->le.keys->slave_ltk.rand, &evt->rand, 8) &&
-	    !memcmp(conn->le.keys->slave_ltk.ediv, &evt->ediv, 2)) {
-		buf = bt_hci_cmd_create(BT_HCI_OP_LE_LTK_REQ_REPLY,
-					sizeof(*cp));
-		if (!buf) {
-			BT_ERR("Out of command buffers");
-			goto done;
-		}
-
-		cp = net_buf_add(buf, sizeof(*cp));
-		cp->handle = evt->handle;
-
-		/* use only enc_size bytes of key for encryption */
-		memcpy(cp->ltk, conn->le.keys->slave_ltk.val,
-		       conn->le.keys->enc_size);
-		if (conn->le.keys->enc_size < sizeof(cp->ltk)) {
-			(void)memset(cp->ltk + conn->le.keys->enc_size, 0,
-				     sizeof(cp->ltk) - conn->le.keys->enc_size);
-		}
-
-		bt_hci_cmd_send(BT_HCI_OP_LE_LTK_REQ_REPLY, buf);
-		goto done;
-	}
-#endif /* !CONFIG_BT_SMP_SC_PAIR_ONLY */
-
-	le_ltk_neg_reply(evt->handle);
-	bt_smp_keys_reject(conn);
-
-done:
 	bt_conn_unref(conn);
 }
 #endif /* CONFIG_BT_SMP */
