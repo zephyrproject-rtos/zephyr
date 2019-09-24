@@ -19,16 +19,15 @@
 #ifndef _STM32L4X_SOC_H_
 #define _STM32L4X_SOC_H_
 
+#include <sys/util.h>
+
 #ifndef _ASMLANGUAGE
 
 #include <autoconf.h>
 #include <stm32l4xx.h>
 
-/* ARM CMSIS definitions must be included before kernel_includes.h.
- * Therefore, it is essential to include kernel_includes.h after including
- * core SOC-specific headers.
- */
-#include <kernel_includes.h>
+/* Add include for DTS generated information */
+#include <generated_dts_board.h>
 
 #ifdef CONFIG_EXTI_STM32
 #include <stm32l4xx_ll_exti.h>

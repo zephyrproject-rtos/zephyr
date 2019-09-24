@@ -13,6 +13,8 @@
 #ifndef _ATMEL_SAME70_SOC_H_
 #define _ATMEL_SAME70_SOC_H_
 
+#include <sys/util.h>
+
 #ifndef _ASMLANGUAGE
 
 #define DONT_USE_CMSIS_INIT
@@ -64,11 +66,8 @@
 #include "../common/soc_pmc.h"
 #include "../common/soc_gpio.h"
 
-/* ARM CMSIS definitions must be included before kernel_includes.h.
- * Therefore, it is essential to include kernel_includes.h after including
- * core SOC-specific headers.
- */
-#include <kernel_includes.h>
+/* Add include for DTS generated information */
+#include <generated_dts_board.h>
 
 #endif /* _ASMLANGUAGE */
 
