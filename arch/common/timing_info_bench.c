@@ -20,10 +20,8 @@ u32_t __read_swap_end_time_value;
 u64_t __common_var_swap_end_time;
 u64_t __temp_start_swap_time;
 
-#if CONFIG_ARM
-#include <arch/arm/cortex_m/cmsis.h>
-#endif
 #ifdef CONFIG_NRF_RTC_TIMER
+#include <nrfx.h>
 
 /* To get current count of timer, first 1 need to be written into
  * Capture Register and Current Count will be copied into corresponding
@@ -41,6 +39,7 @@ u64_t __temp_start_swap_time;
 #define SUBTRACT_CLOCK_CYCLES(val)     (val)
 
 #elif CONFIG_ARM
+#include <arch/arm/cortex_m/cmsis.h>
 #define TIMING_INFO_PRE_READ()
 #define TIMING_INFO_OS_GET_TIME()      (k_cycle_get_32())
 #define TIMING_INFO_GET_TIMER_VALUE()  (SysTick->VAL)
