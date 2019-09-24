@@ -21,6 +21,14 @@ LOG_MODULE_REGISTER(net_mqtt_publisher_sample, LOG_LEVEL_DBG);
 static u8_t rx_buffer[APP_MQTT_BUFFER_SIZE];
 static u8_t tx_buffer[APP_MQTT_BUFFER_SIZE];
 
+#if defined(CONFIG_MQTT_LIB_WEBSOCKET)
+/* Making RX buffer large enough that the full IPv6 packet can fit into it */
+#define MQTT_LIB_WEBSOCKET_RECV_BUF_LEN 1280
+
+/* Websocket needs temporary buffer to store partial packets */
+static u8_t temp_ws_rx_buf[MQTT_LIB_WEBSOCKET_RECV_BUF_LEN];
+#endif
+
 /* The mqtt client struct */
 static struct mqtt_client client_ctx;
 
@@ -293,7 +301,11 @@ static void client_init(struct mqtt_client *client)
 
 	/* MQTT transport configuration */
 #if defined(CONFIG_MQTT_LIB_TLS)
+#if defined(CONFIG_MQTT_LIB_WEBSOCKET)
+	client->transport.type = MQTT_TRANSPORT_SECURE_WEBSOCKET;
+#else
 	client->transport.type = MQTT_TRANSPORT_SECURE;
+#endif
 
 	struct mqtt_sec_config *tls_config = &client->transport.tls.config;
 
@@ -308,7 +320,20 @@ static void client_init(struct mqtt_client *client)
 #endif
 
 #else
+#if defined(CONFIG_MQTT_LIB_WEBSOCKET)
+	client->transport.type = MQTT_TRANSPORT_NON_SECURE_WEBSOCKET;
+#else
 	client->transport.type = MQTT_TRANSPORT_NON_SECURE;
+#endif
+#endif
+
+#if defined(CONFIG_MQTT_LIB_WEBSOCKET)
+	client->transport.websocket.config.host = SERVER_ADDR;
+	client->transport.websocket.config.url = "/mqtt";
+	client->transport.websocket.config.tmp_buf = temp_ws_rx_buf;
+	client->transport.websocket.config.tmp_buf_len =
+						sizeof(temp_ws_rx_buf);
+	client->transport.websocket.timeout = K_SECONDS(5);
 #endif
 
 #if defined(CONFIG_SOCKS)
