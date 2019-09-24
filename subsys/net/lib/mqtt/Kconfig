@@ -32,4 +32,9 @@ config MQTT_LIB_TLS
 	help
 	  Enable TLS support for socket MQTT Library
 
+config MQTT_LIB_WEBSOCKET
+	bool "Websocket support for socket MQTT Library"
+	help
+	  Enable Websocket support for socket MQTT Library.
+
 endif # MQTT_LIB
