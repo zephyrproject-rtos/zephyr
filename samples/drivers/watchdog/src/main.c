@@ -47,8 +47,8 @@ void main(void)
 	struct wdt_timeout_cfg wdt_config;
 
 	printk("Watchdog sample application\n");
-	wdt = device_get_binding(WDT_DEV_NAME);
 
+	wdt = device_get_binding(WDT_DEV_NAME);
 	if (!wdt) {
 		printk("Cannot get WDT device\n");
 		return;
