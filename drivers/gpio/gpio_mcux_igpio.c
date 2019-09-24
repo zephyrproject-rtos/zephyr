@@ -190,10 +190,12 @@ static int mcux_igpio_1_init(struct device *dev)
 
 	irq_enable(DT_MCUX_IGPIO_1_IRQ_0);
 
+#if defined(DT_MCUX_IGPIO_1_IRQ_1) && defined(DT_MCUX_IGPIO_1_IRQ_1_PRI)
 	IRQ_CONNECT(DT_MCUX_IGPIO_1_IRQ_1, DT_MCUX_IGPIO_1_IRQ_1_PRI,
 		    mcux_igpio_port_isr, DEVICE_GET(mcux_igpio_1), 0);
 
 	irq_enable(DT_MCUX_IGPIO_1_IRQ_1);
+#endif
 
 	return 0;
 }
@@ -221,10 +223,12 @@ static int mcux_igpio_2_init(struct device *dev)
 
 	irq_enable(DT_MCUX_IGPIO_2_IRQ_0);
 
+#if defined(DT_MCUX_IGPIO_2_IRQ_1) && defined(DT_MCUX_IGPIO_2_IRQ_1_PRI)
 	IRQ_CONNECT(DT_MCUX_IGPIO_2_IRQ_1, DT_MCUX_IGPIO_2_IRQ_1_PRI,
 		    mcux_igpio_port_isr, DEVICE_GET(mcux_igpio_2), 0);
 
 	irq_enable(DT_MCUX_IGPIO_2_IRQ_1);
+#endif
 
 	return 0;
 }
@@ -252,10 +256,12 @@ static int mcux_igpio_3_init(struct device *dev)
 
 	irq_enable(DT_MCUX_IGPIO_3_IRQ_0);
 
+#if defined(DT_MCUX_IGPIO_3_IRQ_1) && defined(DT_MCUX_IGPIO_3_IRQ_1_PRI)
 	IRQ_CONNECT(DT_MCUX_IGPIO_3_IRQ_1, DT_MCUX_IGPIO_3_IRQ_1_PRI,
 		    mcux_igpio_port_isr, DEVICE_GET(mcux_igpio_3), 0);
 
 	irq_enable(DT_MCUX_IGPIO_3_IRQ_1);
+#endif
 
 	return 0;
 }
@@ -283,10 +289,12 @@ static int mcux_igpio_4_init(struct device *dev)
 
 	irq_enable(DT_MCUX_IGPIO_4_IRQ_0);
 
+#if defined(DT_MCUX_IGPIO_4_IRQ_1) && defined(DT_MCUX_IGPIO_4_IRQ_1_PRI)
 	IRQ_CONNECT(DT_MCUX_IGPIO_4_IRQ_1, DT_MCUX_IGPIO_4_IRQ_1_PRI,
 		    mcux_igpio_port_isr, DEVICE_GET(mcux_igpio_4), 0);
 
 	irq_enable(DT_MCUX_IGPIO_4_IRQ_1);
+#endif
 
 	return 0;
 }
@@ -314,10 +322,12 @@ static int mcux_igpio_5_init(struct device *dev)
 
 	irq_enable(DT_MCUX_IGPIO_5_IRQ_0);
 
+#if defined(DT_MCUX_IGPIO_5_IRQ_1) && defined(DT_MCUX_IGPIO_5_IRQ_1_PRI)
 	IRQ_CONNECT(DT_MCUX_IGPIO_5_IRQ_1, DT_MCUX_IGPIO_5_IRQ_1_PRI,
 		    mcux_igpio_port_isr, DEVICE_GET(mcux_igpio_5), 0);
 
 	irq_enable(DT_MCUX_IGPIO_5_IRQ_1);
+#endif
 
 	return 0;
 }
