@@ -308,7 +308,7 @@ no_callbacks:
 static u8_t legacy_get_pair_method(struct bt_smp *smp, u8_t remote_io);
 #endif
 
-bool bt_smp_keys_check(struct bt_conn *conn)
+static bool smp_keys_check(struct bt_conn *conn)
 {
 	if (atomic_test_bit(conn->flags, BT_CONN_FORCE_PAIR)) {
 		return false;
@@ -2556,8 +2556,91 @@ static struct bt_smp *smp_chan_get(struct bt_conn *conn)
 	return CONTAINER_OF(chan, struct bt_smp, chan);
 }
 
+bool bt_smp_request_ltk(struct bt_conn *conn, u64_t rand, u16_t ediv, u8_t *ltk)
+{
+	struct bt_smp *smp;
+	u8_t enc_size;
+
+	smp = smp_chan_get(conn);
+	if (!smp) {
+		return false;
+	}
+
+	/*
+	 * Both legacy STK and LE SC LTK have rand and ediv equal to zero.
+	 * If pairing is in progress use the TK for encryption.
+	 */
+	if (ediv == 0U && rand == 0U &&
+	    atomic_test_bit(smp->flags, SMP_FLAG_PAIRING) &&
+	    atomic_test_bit(smp->flags, SMP_FLAG_ENC_PENDING)) {
+		enc_size = get_encryption_key_size(smp);
+
+		/*
+		 * We keep both legacy STK and LE SC LTK in TK.
+		 * Also use only enc_size bytes of key for encryption.
+		 */
+		memcpy(ltk, smp->tk, enc_size);
+		if (enc_size < BT_SMP_MAX_ENC_KEY_SIZE) {
+			(void)memset(ltk + enc_size, 0,
+				     BT_SMP_MAX_ENC_KEY_SIZE - enc_size);
+		}
+
+		return true;
+	}
+
+	if (!conn->le.keys) {
+		conn->le.keys = bt_keys_find(BT_KEYS_LTK_P256, conn->id,
+					     &conn->le.dst);
+		if (!conn->le.keys) {
+			conn->le.keys = bt_keys_find(BT_KEYS_SLAVE_LTK,
+						     conn->id, &conn->le.dst);
+		}
+	}
+
+	if (ediv == 0U && rand == 0U &&
+	    conn->le.keys && (conn->le.keys->keys & BT_KEYS_LTK_P256)) {
+		enc_size = conn->le.keys->enc_size;
+
+		memcpy(ltk, conn->le.keys->ltk.val, enc_size);
+		if (enc_size < BT_SMP_MAX_ENC_KEY_SIZE) {
+			(void)memset(ltk + enc_size, 0,
+				     BT_SMP_MAX_ENC_KEY_SIZE - enc_size);
+		}
+
+		return true;
+	}
+
+#if !defined(CONFIG_BT_SMP_SC_PAIR_ONLY)
+	if (conn->le.keys && (conn->le.keys->keys & BT_KEYS_SLAVE_LTK) &&
+	    !memcmp(conn->le.keys->slave_ltk.rand, &rand, 8) &&
+	    !memcmp(conn->le.keys->slave_ltk.ediv, &ediv, 2)) {
+		enc_size = conn->le.keys->enc_size;
+
+		memcpy(ltk, conn->le.keys->slave_ltk.val, enc_size);
+		if (enc_size < BT_SMP_MAX_ENC_KEY_SIZE) {
+			(void)memset(ltk + enc_size, 0,
+				     BT_SMP_MAX_ENC_KEY_SIZE - enc_size);
+		}
+
+		return true;
+	}
+#endif /* !CONFIG_BT_SMP_SC_PAIR_ONLY */
+
+	if (atomic_test_bit(smp->flags, SMP_FLAG_SEC_REQ)) {
+		/* Notify higher level that security failed if security was
+		 * initiated by slave.
+		 */
+		bt_conn_security_changed(smp->chan.chan.conn,
+					 BT_SECURITY_ERR_PIN_OR_KEY_MISSING);
+
+	}
+
+	smp_reset(smp);
+	return false;
+}
+
 #if defined(CONFIG_BT_PERIPHERAL)
-int bt_smp_send_security_req(struct bt_conn *conn)
+static int smp_send_security_req(struct bt_conn *conn)
 {
 	struct bt_smp *smp;
 	struct bt_smp_security_request *req;
@@ -2580,7 +2663,7 @@ int bt_smp_send_security_req(struct bt_conn *conn)
 	}
 
 	/* early verify if required sec level if reachable */
-	if (!(sec_level_reachable(conn) || bt_smp_keys_check(conn))) {
+	if (!(sec_level_reachable(conn) || smp_keys_check(conn))) {
 		return -EINVAL;
 	}
 
@@ -2752,7 +2835,7 @@ static u8_t sc_send_public_key(struct bt_smp *smp)
 }
 
 #if defined(CONFIG_BT_CENTRAL)
-int bt_smp_send_pairing_req(struct bt_conn *conn)
+static int smp_send_pairing_req(struct bt_conn *conn)
 {
 	struct bt_smp *smp;
 	struct bt_smp_pairing *req;
@@ -3623,7 +3706,7 @@ static u8_t smp_security_request(struct bt_smp *smp, struct net_buf *buf)
 
 	return 0;
 pair:
-	if (bt_smp_send_pairing_req(conn) < 0) {
+	if (smp_send_pairing_req(conn) < 0) {
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
@@ -4985,6 +5068,33 @@ int bt_passkey_set(unsigned int passkey)
 }
 #endif /* CONFIG_BT_FIXED_PASSKEY */
 
+int bt_smp_start_security(struct bt_conn *conn)
+{
+	switch (conn->role) {
+#if defined(CONFIG_BT_CENTRAL)
+	case BT_HCI_ROLE_MASTER:
+	{
+		if (!smp_keys_check(conn)) {
+			return smp_send_pairing_req(conn);
+		}
+
+		/* LE SC LTK and legacy master LTK are stored in same place */
+		return bt_conn_le_start_encryption(conn,
+						   conn->le.keys->ltk.rand,
+						   conn->le.keys->ltk.ediv,
+						   conn->le.keys->ltk.val,
+						   conn->le.keys->enc_size);
+	}
+#endif /* CONFIG_BT_CENTRAL && CONFIG_BT_SMP */
+#if defined(CONFIG_BT_PERIPHERAL)
+	case BT_HCI_ROLE_SLAVE:
+		return smp_send_security_req(conn);
+#endif /* CONFIG_BT_PERIPHERAL && CONFIG_BT_SMP */
+	default:
+		return -EINVAL;
+	}
+}
+
 void bt_smp_update_keys(struct bt_conn *conn)
 {
 	struct bt_smp *smp;
@@ -5060,55 +5170,6 @@ void bt_smp_update_keys(struct bt_conn *conn)
 	} else {
 		conn->le.keys->flags &= ~BT_KEYS_SC;
 	}
-}
-
-bool bt_smp_get_tk(struct bt_conn *conn, u8_t *tk)
-{
-	struct bt_smp *smp;
-	u8_t enc_size;
-
-	smp = smp_chan_get(conn);
-	if (!smp) {
-		return false;
-	}
-
-	if (!atomic_test_bit(smp->flags, SMP_FLAG_PAIRING)) {
-		return false;
-	}
-
-	if (!atomic_test_bit(smp->flags, SMP_FLAG_ENC_PENDING)) {
-		return false;
-	}
-
-	enc_size = get_encryption_key_size(smp);
-
-	/*
-	 * We keep both legacy STK and LE SC LTK in TK.
-	 * Also use only enc_size bytes of key for encryption.
-	 */
-	memcpy(tk, smp->tk, enc_size);
-	if (enc_size < sizeof(smp->tk)) {
-		(void)memset(tk + enc_size, 0, sizeof(smp->tk) - enc_size);
-	}
-
-	return true;
-}
-
-void bt_smp_keys_reject(struct bt_conn *conn)
-{
-	struct bt_smp *smp;
-
-	smp = smp_chan_get(conn);
-	if (!smp) {
-		return;
-	}
-
-	if (atomic_test_bit(smp->flags, SMP_FLAG_SEC_REQ)) {
-		bt_conn_security_changed(smp->chan.chan.conn,
-					 BT_SECURITY_ERR_PIN_OR_KEY_MISSING);
-	}
-
-	smp_reset(smp);
 }
 
 static int bt_smp_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
