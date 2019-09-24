@@ -22,11 +22,19 @@
 #define IOMUX_ALTF1_OUTSEL	(0x90 >> 2)
 #define IOMUX_ALTF1_OENSEL	(0x98 >> 2)
 #define IOMUX_ALTF1_DEFAULT_IN	(0xA0 >> 2)
+#define IOMUX_ALTF2_INSEL	(0xA8 >> 2)
+#define IOMUX_ALTF2_OUTSEL	(0xB0 >> 2)
+#define IOMUX_ALTF2_OENSEL	(0xB8 >> 2)
+#define IOMUX_ALTF2_DEFAULT_IN	(0xC0 >> 2)
 
-#ifdef CONFIG_TRUSTED_EXECUTION_SECURE
+#ifdef CONFIG_TRUSTED_EXECUTION_NONSECURE
+static void arm_musca_b1_pinmux_defaults(void)
+{
+}
+#else
 /*
  * Only configure pins if we are secure.  Otherwise secure violation will occur
-*/
+ */
 static void arm_musca_b1_pinmux_defaults(void)
 {
 	volatile u32_t *scc = (u32_t *)DT_ARM_SCC_BASE_ADDRESS;
@@ -42,11 +50,12 @@ static void arm_musca_b1_pinmux_defaults(void)
 	scc[IOMUX_MAIN_OUTSEL] &= ~(BIT(0) | BIT(1));
 	scc[IOMUX_MAIN_OENSEL] &= ~(BIT(0) | BIT(1));
 #endif
+	/* Enable PINs for LEDS */
+	scc[IOMUX_ALTF1_OUTSEL] &= ~(BIT(2) | BIT(3) | BIT(4));
+	scc[IOMUX_ALTF1_OENSEL] &= ~(BIT(2) | BIT(3) | BIT(4));
+	scc[IOMUX_ALTF2_OUTSEL] &= ~(BIT(2) | BIT(3) | BIT(4));
+	scc[IOMUX_ALTF2_OENSEL] &= ~(BIT(2) | BIT(3) | BIT(4));
 
-}
-#else
-static void arm_musca_b1_pinmux_defaults(void)
-{
 }
 #endif
 

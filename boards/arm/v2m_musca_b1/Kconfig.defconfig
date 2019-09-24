@@ -20,6 +20,15 @@ config BOARD
 
 endif
 
+if GPIO
+
+config GPIO_CMSDK_AHB
+	default y
+
+config GPIO_CMSDK_AHB_PORT0
+	default y
+
+endif
 
 if SERIAL
 
