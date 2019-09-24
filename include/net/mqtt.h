@@ -29,6 +29,7 @@
 #include <net/tls_credentials.h>
 #include <net/net_ip.h>
 #include <sys/mutex.h>
+#include <net/websocket.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -350,6 +351,15 @@ enum mqtt_transport_type {
 	MQTT_TRANSPORT_SECURE,
 #endif /* CONFIG_MQTT_LIB_TLS */
 
+#if defined(CONFIG_MQTT_LIB_WEBSOCKET)
+	/** Use non secure Websocket transport for MQTT connection. */
+	MQTT_TRANSPORT_NON_SECURE_WEBSOCKET,
+#if defined(CONFIG_MQTT_LIB_TLS)
+	/** Use secure Websocket transport (TLS) for MQTT connection. */
+	MQTT_TRANSPORT_SECURE_WEBSOCKET,
+#endif
+#endif /* CONFIG_MQTT_LIB_WEBSOCKET */
+
 	/** Shall not be used as a transport type.
 	 *  Indicator of maximum transport types possible.
 	 */
@@ -384,6 +394,20 @@ struct mqtt_transport {
 		} tls;
 #endif /* CONFIG_MQTT_LIB_TLS */
 	};
+
+#if defined(CONFIG_MQTT_LIB_WEBSOCKET)
+	/** Websocket transport for MQTT */
+	struct {
+		/** Websocket configuration. */
+		struct websocket_request config;
+
+		/** Socket descriptor */
+		int sock;
+
+		/** Websocket timeout */
+		s32_t timeout;
+	} websocket;
+#endif
 
 #if defined(CONFIG_SOCKS)
 	struct {
