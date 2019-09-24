@@ -1532,20 +1532,18 @@ the C preprocessor on a file which includes the following:
 #. Any file or files given by the :makevar:`DTC_OVERLAY_FILE` CMake
    variable.
 
-The Zephyr build system determines :makevar:`DTC_OVERLAY_FILE` as
-follows:
+The Zephyr build system determines the ``DTC_OVERLAY_FILE`` value by
+looking at these potential definition locations, in order, until a value
+is determined, and then stops looking:
 
-- Any value given to :makevar:`DTC_OVERLAY_FILE` in your application
-  :file:`CMakeLists.txt` (**before including the boilerplate.cmake file**),
-  passed to the the CMake command line, or present in the CMake variable cache,
-  takes precedence.
-
-- The :ref:`environment variable <env_vars>` :envvar:`DTC_OVERLAY_FILE` is
-  checked next. This mechanism is now deprecated; users should set this
-  variable using CMake instead of the environment.
-
-- If the file :file:`BOARD.overlay` exists in your application directory,
-  where ``BOARD`` is the BOARD value set earlier, it will be used.
+1. the cmake command line (``-DDTC_OVERLAY_FILE=filename``)
+#. the cmake variable cache (from a previous cmake run)
+#. a ``CMakeLists.txt`` file in your application folder
+#. a ``DTC_OVERLAY_FILE`` environment variable (deprecated)
+#. a ``boards/<BOARD>.overlay`` file in your application folder,
+   for your specified ``<BOARD>``
+#. a ``<BOARD>.overlay`` file in your application folder, for
+   your specified ``<BOARD>``
 
 If :makevar:`DTC_OVERLAY_FILE` specifies multiple files, they are
 included in order by the C preprocessor.
