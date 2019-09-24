@@ -5,6 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+. = CONFIG_FLEXSPI_CONFIG_BLOCK_OFFSET;
 KEEP(*(.boot_hdr.conf))
 . = CONFIG_IMAGE_VECTOR_TABLE_OFFSET;
 KEEP(*(.boot_hdr.ivt))
