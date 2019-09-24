@@ -163,7 +163,7 @@ if(SUPPORTS_DTS)
 
   set(CMD_NEW_EXTRACT ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/dts/gen_defines.py
   --dts ${BOARD}.dts.pre.tmp
-  --bindings-dir ${DTS_ROOT_BINDINGS}
+  --bindings-dirs ${DTS_ROOT_BINDINGS}
   --conf-out ${GENERATED_DTS_BOARD_CONF}
   --header-out ${GENERATED_DTS_BOARD_UNFIXED_H}
   )
