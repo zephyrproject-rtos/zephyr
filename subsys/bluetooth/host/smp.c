@@ -308,6 +308,42 @@ no_callbacks:
 static u8_t legacy_get_pair_method(struct bt_smp *smp, u8_t remote_io);
 #endif
 
+bool bt_smp_keys_check(struct bt_conn *conn)
+{
+	if (atomic_test_bit(conn->flags, BT_CONN_FORCE_PAIR)) {
+		return false;
+	}
+
+	if (!conn->le.keys) {
+		conn->le.keys = bt_keys_find(BT_KEYS_LTK_P256,
+						     conn->id, &conn->le.dst);
+		if (!conn->le.keys) {
+			conn->le.keys = bt_keys_find(BT_KEYS_LTK,
+						     conn->id,
+						     &conn->le.dst);
+		}
+	}
+
+	if (!conn->le.keys ||
+	    !(conn->le.keys->keys & (BT_KEYS_LTK | BT_KEYS_LTK_P256))) {
+		return false;
+	}
+
+	if (conn->required_sec_level > BT_SECURITY_L2 &&
+	    !(conn->le.keys->flags & BT_KEYS_AUTHENTICATED)) {
+		return false;
+	}
+
+	if (conn->required_sec_level > BT_SECURITY_L3 &&
+	    !(conn->le.keys->flags & BT_KEYS_AUTHENTICATED) &&
+	    !(conn->le.keys->keys & BT_KEYS_LTK_P256) &&
+	    !(conn->le.keys->enc_size == BT_SMP_MAX_ENC_KEY_SIZE)) {
+		return false;
+	}
+
+	return true;
+}
+
 static u8_t get_pair_method(struct bt_smp *smp, u8_t remote_io)
 {
 	struct bt_smp_pairing *req, *rsp;
@@ -5053,42 +5089,6 @@ bool bt_smp_get_tk(struct bt_conn *conn, u8_t *tk)
 	memcpy(tk, smp->tk, enc_size);
 	if (enc_size < sizeof(smp->tk)) {
 		(void)memset(tk + enc_size, 0, sizeof(smp->tk) - enc_size);
-	}
-
-	return true;
-}
-
-bool bt_smp_keys_check(struct bt_conn *conn)
-{
-	if (atomic_test_bit(conn->flags, BT_CONN_FORCE_PAIR)) {
-		return false;
-	}
-
-	if (!conn->le.keys) {
-		conn->le.keys = bt_keys_find(BT_KEYS_LTK_P256,
-						     conn->id, &conn->le.dst);
-		if (!conn->le.keys) {
-			conn->le.keys = bt_keys_find(BT_KEYS_LTK,
-						     conn->id,
-						     &conn->le.dst);
-		}
-	}
-
-	if (!conn->le.keys ||
-	    !(conn->le.keys->keys & (BT_KEYS_LTK | BT_KEYS_LTK_P256))) {
-		return false;
-	}
-
-	if (conn->required_sec_level > BT_SECURITY_L2 &&
-	    !(conn->le.keys->flags & BT_KEYS_AUTHENTICATED)) {
-		return false;
-	}
-
-	if (conn->required_sec_level > BT_SECURITY_L3 &&
-	    !(conn->le.keys->flags & BT_KEYS_AUTHENTICATED) &&
-	    !(conn->le.keys->keys & BT_KEYS_LTK_P256) &&
-	    !(conn->le.keys->enc_size == BT_SMP_MAX_ENC_KEY_SIZE)) {
-		return false;
 	}
 
 	return true;
