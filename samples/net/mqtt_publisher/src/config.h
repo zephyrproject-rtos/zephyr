@@ -31,9 +31,17 @@
 #endif
 
 #ifdef CONFIG_MQTT_LIB_TLS
+#ifdef CONFIG_MQTT_LIB_WEBSOCKET
+#define SERVER_PORT		9001
+#else
 #define SERVER_PORT		8883
+#endif /* CONFIG_MQTT_LIB_WEBSOCKET */
+#else
+#ifdef CONFIG_MQTT_LIB_WEBSOCKET
+#define SERVER_PORT		9001
 #else
 #define SERVER_PORT		1883
+#endif /* CONFIG_MQTT_LIB_WEBSOCKET */
 #endif
 
 #define APP_SLEEP_MSECS		500
