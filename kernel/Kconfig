@@ -722,6 +722,7 @@ config SMP
 config MP_NUM_CPUS
 	int "Number of CPUs/cores"
 	default 1
+	range 1 4
 	help
 	  Number of multiprocessing-capable cores available to the
 	  multicpu API and SMP features.
