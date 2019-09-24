@@ -114,7 +114,7 @@ Zephyr application. For example:
    :goals: build
 
 .. _link board ETH Website:
-   https://www.phytec.de/link_board_eth/
+   https://www.phytec.eu/product-eu/internet-of-things/link-board-eth
 
 .. _ENC424J600 Website:
    https://www.microchip.com/wwwproducts/en/ENC424J600
