@@ -70,14 +70,15 @@
 };
 
 &uart0 {
-	status = "okay";
 	compatible = "nordic,nrf-uart";
+	status = "okay";
 	current-speed = <115200>;
 	tx-pin = <3>;
 	rx-pin = <2>;
 };
 
 &i2c0 {
+	compatible = "nordic,nrf-twim";
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 	sda-pin = <7>;
@@ -112,6 +113,7 @@
 };
 
 &i2c1 {
+	compatible = "nordic,nrf-twim";
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 	sda-pin = <14>;

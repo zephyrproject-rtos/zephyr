@@ -149,7 +149,11 @@ uart3: uart@b000 {
 };
 
 i2c0: i2c@8000 {
-	compatible = "nordic,nrf-i2c";
+	/*
+	 * This i2c node can be either TWIM or TWIS, for the user to pick:
+	 * compatible = "nordic,nrf-twim" or
+	 *              "nordic,nrf-twis".
+	 */
 	#address-cells = <1>;
 	#size-cells = <0>;
 	reg = <0x8000 0x1000>;
@@ -160,7 +164,11 @@ i2c0: i2c@8000 {
 };
 
 i2c1: i2c@9000 {
-	compatible = "nordic,nrf-i2c";
+	/*
+	 * This i2c node can be either TWIM or TWIS, for the user to pick:
+	 * compatible = "nordic,nrf-twim" or
+	 *              "nordic,nrf-twis".
+	 */
 	#address-cells = <1>;
 	#size-cells = <0>;
 	reg = <0x9000 0x1000>;
@@ -171,7 +179,11 @@ i2c1: i2c@9000 {
 };
 
 i2c2: i2c@a000 {
-	compatible = "nordic,nrf-i2c";
+	/*
+	 * This i2c node can be either TWIM or TWIS, for the user to pick:
+	 * compatible = "nordic,nrf-twim" or
+	 *              "nordic,nrf-twis".
+	 */
 	#address-cells = <1>;
 	#size-cells = <0>;
 	reg = <0xa000 0x1000>;
@@ -182,7 +194,11 @@ i2c2: i2c@a000 {
 };
 
 i2c3: i2c@b000 {
-	compatible = "nordic,nrf-i2c";
+	/*
+	 * This i2c node can be either TWIM or TWIS, for the user to pick:
+	 * compatible = "nordic,nrf-twim" or
+	 *              "nordic,nrf-twis".
+	 */
 	#address-cells = <1>;
 	#size-cells = <0>;
 	reg = <0xb000 0x1000>;

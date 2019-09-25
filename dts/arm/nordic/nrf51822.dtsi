@@ -101,7 +101,7 @@
 		};
 
 		i2c0: i2c@40003000 {
-			compatible = "nordic,nrf-i2c";
+			compatible = "nordic,nrf-twi";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40003000 0x1000>;
@@ -112,7 +112,7 @@
 		};
 
 		i2c1: i2c@40004000 {
-			compatible = "nordic,nrf-i2c";
+			compatible = "nordic,nrf-twi";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40004000 0x1000>;
