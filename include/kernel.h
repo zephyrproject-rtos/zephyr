@@ -1524,7 +1524,10 @@ extern void k_timer_init(struct k_timer *timer,
  * @param timer     Address of timer.
  * @param duration Initial timer duration, initialized with one of the
  *                 K_TIMEOUT_*() macros, or K_NO_WAIT.
- * @param period   Timer period (likewise).
+ * @param period Timer period (likewise).  Specifying K_NO_WAIT or
+ *               K_FOREVER indicates that the timer is a one-shot and
+ *               the callback will not be invoked again after the
+ *               duration expires.
  *
  * @return N/A
  */
