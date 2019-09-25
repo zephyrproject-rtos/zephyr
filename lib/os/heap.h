@@ -49,19 +49,20 @@ typedef size_t chunkid_t;
 
 #define CHUNK_UNIT 8
 
-enum chunk_fields { SIZE_AND_USED, LEFT_SIZE, FREE_PREV, FREE_NEXT };
+typedef struct { char bytes[CHUNK_UNIT]; } chunk_unit_t;
 
-struct z_heap {
-	u64_t *buf;
-	struct z_heap_bucket *buckets;
-	u32_t len;
-	u32_t chunk0;
-	u32_t avail_buckets;
-};
+enum chunk_fields { SIZE_AND_USED, LEFT_SIZE, FREE_PREV, FREE_NEXT };
 
 struct z_heap_bucket {
 	chunkid_t next;
 	size_t list_size;
+};
+
+struct z_heap {
+	u64_t chunk0_hdr_area;  /* matches the largest header */
+	u32_t len;
+	u32_t avail_buckets;
+	struct z_heap_bucket buckets[0];
 };
 
 static inline bool big_heap(struct z_heap *h)
@@ -69,10 +70,17 @@ static inline bool big_heap(struct z_heap *h)
 	return sizeof(size_t) > 4 || h->len > 0x7fff;
 }
 
+static inline chunk_unit_t *chunk_buf(struct z_heap *h)
+{
+	/* the struct z_heap matches with the first chunk */
+	return (chunk_unit_t *)h;
+}
+
 static inline size_t chunk_field(struct z_heap *h, chunkid_t c,
 				 enum chunk_fields f)
 {
-	void *cmem = &h->buf[c];
+	chunk_unit_t *buf = chunk_buf(h);
+	void *cmem = &buf[c];
 
 	if (big_heap(h)) {
 		return ((u32_t *)cmem)[f];
@@ -84,9 +92,10 @@ static inline size_t chunk_field(struct z_heap *h, chunkid_t c,
 static inline void chunk_set(struct z_heap *h, chunkid_t c,
 			     enum chunk_fields f, chunkid_t val)
 {
-	CHECK(c >= h->chunk0 && c < h->len);
+	CHECK(c < h->len);
 
-	void *cmem = &h->buf[c];
+	chunk_unit_t *buf = chunk_buf(h);
+	void *cmem = &buf[c];
 
 	if (big_heap(h)) {
 		CHECK(val == (u32_t)val);
@@ -109,7 +118,8 @@ static inline size_t chunk_size(struct z_heap *h, chunkid_t c)
 
 static inline void set_chunk_used(struct z_heap *h, chunkid_t c, bool used)
 {
-	void *cmem = &h->buf[c];
+	chunk_unit_t *buf = chunk_buf(h);
+	void *cmem = &buf[c];
 
 	if (big_heap(h)) {
 		if (used) {
