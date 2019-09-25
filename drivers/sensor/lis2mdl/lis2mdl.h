@@ -17,8 +17,6 @@
 #include <sys/util.h>
 #include "lis2mdl_reg.h"
 
-/* Sensor sensitivity in uGa/LSB */
-#define LIS2MDL_SENSITIVITY             1500
 struct lis2mdl_config {
 	char *master_dev_name;
 	int (*bus_init)(struct device *dev);
@@ -44,8 +42,6 @@ struct lis2mdl_data {
 	s16_t mag[3];
 	s32_t temp_sample;
 
-	/* save sensitivity */
-	u16_t mag_fs_sensitivity;
 	lis2mdl_ctx_t *ctx;
 
 #ifdef DT_ST_LIS2MDL_BUS_I2C

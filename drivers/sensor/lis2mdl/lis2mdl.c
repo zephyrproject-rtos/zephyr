@@ -94,7 +94,7 @@ static void lis2mdl_channel_get_mag(struct device *dev,
 	}
 
 	for (i = ofs_start; i <= ofs_stop; i++) {
-		cval = lis2mdl->mag[i] * lis2mdl->mag_fs_sensitivity;
+		cval = lis2mdl->mag[i] * 1500;
 		pval->val1 = cval / 1000000;
 		pval->val2 = cval % 1000000;
 		pval++;
