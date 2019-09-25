@@ -3,12 +3,12 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <zephyr.h>
-#include <tc_util.h>
 #include <ztest.h>
 #include <sys/rb.h>
 
-#define CHECK(n) \
+#include "../../../lib/os/rb.c"
+
+#define _CHECK(n) \
 	zassert_true(!!(n), "Tree check failed: [ " #n " ] @%d", __LINE__)
 
 #define MAX_NODES 256
@@ -52,8 +52,8 @@ int node_index(struct rbnode *n)
 bool node_lessthan(struct rbnode *a, struct rbnode *b)
 {
 	if (current_insertee) {
-		CHECK(a == current_insertee);
-		CHECK(b != current_insertee);
+		_CHECK(a == current_insertee);
+		_CHECK(b != current_insertee);
 	}
 
 	return a < b;
@@ -78,7 +78,7 @@ void visit_node(struct rbnode *node, void *cookie)
 {
 	int *nwalked = cookie;
 
-	CHECK(*nwalked < MAX_NODES);
+	_CHECK(*nwalked < MAX_NODES);
 
 	walked_nodes[*nwalked] = node;
 	*nwalked += 1;
@@ -99,20 +99,20 @@ void check_rbnode(struct rbnode *node, int blacks_above)
 		if (ch) {
 			/* Basic tree requirement */
 			if (side == 0) {
-				CHECK(node_lessthan(ch, node));
+				_CHECK(node_lessthan(ch, node));
 			} else {
-				CHECK(node_lessthan(node, ch));
+				_CHECK(node_lessthan(node, ch));
 			}
 
 			/* Can't have adjacent red nodes */
-			CHECK(z_rb_is_black(node) || z_rb_is_black(ch));
+			_CHECK(z_rb_is_black(node) || z_rb_is_black(ch));
 
 			/* Recurse */
 			check_rbnode(ch, bheight);
 		} else {
 			/* All leaf nodes must be at the same black height */
 			if (last_black_height) {
-				CHECK(last_black_height == bheight);
+				_CHECK(last_black_height == bheight);
 			}
 			last_black_height = bheight;
 		}
@@ -123,8 +123,8 @@ void check_rb(void)
 {
 	last_black_height = 0;
 
-	CHECK(tree.root);
-	CHECK(z_rb_is_black(tree.root));
+	_CHECK(tree.root);
+	_CHECK(z_rb_is_black(tree.root));
 
 	check_rbnode(tree.root, 0);
 }
@@ -153,10 +153,10 @@ void _check_tree(int size, int use_foreach)
 		ni = node_index(n);
 
 		if (last) {
-			CHECK(node_lessthan(last, n));
+			_CHECK(node_lessthan(last, n));
 		}
 
-		CHECK(get_node_mask(ni));
+		_CHECK(get_node_mask(ni));
 
 		last = n;
 	}
@@ -164,15 +164,15 @@ void _check_tree(int size, int use_foreach)
 	/* Make sure all tree bits properly reflect the set of nodes we found */
 	ni = 0;
 	for (i = 0; i < MAX_NODES; i++) {
-		CHECK(get_node_mask(i) == rb_contains(&tree, &nodes[i]));
+		_CHECK(get_node_mask(i) == rb_contains(&tree, &nodes[i]));
 
 		if (get_node_mask(i)) {
-			CHECK(node_index(walked_nodes[ni]) == i);
+			_CHECK(node_index(walked_nodes[ni]) == i);
 			ni++;
 		}
 	}
 
-	CHECK(ni == nwalked);
+	_CHECK(ni == nwalked);
 
 	if (tree.root) {
 		check_rb();
