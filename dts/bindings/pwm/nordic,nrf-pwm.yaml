@@ -17,7 +17,7 @@ properties:
     center-aligned:
       type: boolean
       description: Use center-aligned (up and down) counter mode
-      category: optional
+      required: false
 
     ch0-pin:
       type: int
