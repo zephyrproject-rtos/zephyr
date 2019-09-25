@@ -37,8 +37,8 @@ static void free_list_remove(struct z_heap *h, int bidx,
 			  second = next_free_chunk(h, c);
 
 		b->next = second;
-		chunk_set(h, first, FREE_NEXT, second);
-		chunk_set(h, second, FREE_PREV, first);
+		set_next_free_chunk(h, first, second);
+		set_prev_free_chunk(h, second, first);
 	}
 }
 
@@ -53,17 +53,17 @@ static void free_list_add(struct z_heap *h, chunkid_t c)
 		/* Empty list, first item */
 		h->avail_buckets |= (1 << bi);
 		h->buckets[bi].next = c;
-		chunk_set(h, c, FREE_PREV, c);
-		chunk_set(h, c, FREE_NEXT, c);
+		set_prev_free_chunk(h, c, c);
+		set_next_free_chunk(h, c, c);
 	} else {
 		/* Insert before (!) the "next" pointer */
 		chunkid_t second = h->buckets[bi].next;
 		chunkid_t first = prev_free_chunk(h, second);
 
-		chunk_set(h, c, FREE_PREV, first);
-		chunk_set(h, c, FREE_NEXT, second);
-		chunk_set(h, first, FREE_NEXT, c);
-		chunk_set(h, second, FREE_PREV, c);
+		set_prev_free_chunk(h, c, first);
+		set_next_free_chunk(h, c, second);
+		set_next_free_chunk(h, first, c);
+		set_prev_free_chunk(h, second, c);
 	}
 
 	CHECK(h->avail_buckets & (1 << bucket_idx(h, chunk_size(h, c))));
@@ -95,16 +95,16 @@ static void *split_alloc(struct z_heap *h, int bidx, size_t sz)
 		chunkid_t c2 = c + sz;
 		chunkid_t c3 = right_chunk(h, c);
 
-		chunk_set(h, c, SIZE_AND_USED, sz);
-		chunk_set(h, c2, SIZE_AND_USED, rem);
-		chunk_set(h, c2, LEFT_SIZE, sz);
+		set_chunk_size(h, c, sz);
+		set_chunk_size(h, c2, rem);
+		set_left_chunk_size(h, c2, sz);
 		if (!last_chunk(h, c2)) {
-			chunk_set(h, c3, LEFT_SIZE, rem);
+			set_left_chunk_size(h, c3, rem);
 		}
 		free_list_add(h, c2);
 	}
 
-	chunk_set_used(h, c, true);
+	set_chunk_used(h, c, true);
 
 	return chunk_mem(h, c);
 }
@@ -125,9 +125,9 @@ void sys_heap_free(struct sys_heap *heap, void *mem)
 		size_t newsz = chunk_size(h, c) + chunk_size(h, rc);
 
 		free_list_remove(h, bucket_idx(h, chunk_size(h, rc)), rc);
-		chunk_set(h, c, SIZE_AND_USED, newsz);
+		set_chunk_size(h, c, newsz);
 		if (!last_chunk(h, c)) {
-			chunk_set(h, right_chunk(h, c), LEFT_SIZE, newsz);
+			set_left_chunk_size(h, right_chunk(h, c), newsz);
 		}
 	}
 
@@ -139,15 +139,15 @@ void sys_heap_free(struct sys_heap *heap, void *mem)
 		size_t merged_sz = csz + chunk_size(h, lc);
 
 		free_list_remove(h, bucket_idx(h, chunk_size(h, lc)), lc);
-		chunk_set(h, lc, SIZE_AND_USED, merged_sz);
+		set_chunk_size(h, lc, merged_sz);
 		if (!last_chunk(h, lc)) {
-			chunk_set(h, rc, LEFT_SIZE, merged_sz);
+			set_left_chunk_size(h, rc, merged_sz);
 		}
 
 		c = lc;
 	}
 
-	chunk_set_used(h, c, false);
+	set_chunk_used(h, c, false);
 	free_list_add(h, c);
 }
 
@@ -234,6 +234,6 @@ void sys_heap_init(struct sys_heap *heap, void *mem, size_t bytes)
 		heap->heap->buckets[i].next = 0;
 	}
 
-	chunk_set(h, h->chunk0, SIZE_AND_USED, buf_sz - h->chunk0);
+	set_chunk_size(h, h->chunk0, buf_sz - h->chunk0);
 	free_list_add(h, h->chunk0);
 }

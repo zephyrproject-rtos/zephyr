@@ -88,7 +88,7 @@ bool sys_heap_validate(struct sys_heap *heap)
 			if (!valid_chunk(h, c)) {
 				return false;
 			}
-			chunk_set_used(h, c, true);
+			set_chunk_used(h, c, true);
 		}
 
 		bool empty = (h->avail_buckets & (1 << b)) == 0;
@@ -129,7 +129,7 @@ bool sys_heap_validate(struct sys_heap *heap)
 		}
 		prev_chunk = c;
 
-		chunk_set_used(h, c, false);
+		set_chunk_used(h, c, false);
 	}
 	if (c != h->len) {
 		return false;  /* Should have exactly consumed the buffer */
@@ -151,7 +151,7 @@ bool sys_heap_validate(struct sys_heap *heap)
 			if (chunk_used(h, c)) {
 				return false;
 			}
-			chunk_set_used(h, c, true);
+			set_chunk_used(h, c, true);
 		}
 	}
 
@@ -159,7 +159,7 @@ bool sys_heap_validate(struct sys_heap *heap)
 	 * fields.  One more linear pass to fix them up
 	 */
 	for (c = h->chunk0; c <= max_chunkid(h); c = right_chunk(h, c)) {
-		chunk_set_used(h, c, !chunk_used(h, c));
+		set_chunk_used(h, c, !chunk_used(h, c));
 	}
 	return true;
 }
