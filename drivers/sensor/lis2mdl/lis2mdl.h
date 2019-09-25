@@ -17,6 +17,16 @@
 #include <sys/util.h>
 #include "lis2mdl_reg.h"
 
+union axis3bit16_t {
+	s16_t i16bit[3];
+	u8_t u8bit[6];
+};
+
+union axis1bit16_t {
+	s16_t i16bit;
+	u8_t u8bit[2];
+};
+
 struct lis2mdl_config {
 	char *master_dev_name;
 	int (*bus_init)(struct device *dev);
@@ -42,12 +52,12 @@ struct lis2mdl_data {
 	s16_t mag[3];
 	s32_t temp_sample;
 
-	lis2mdl_ctx_t *ctx;
+	stmdev_ctx_t *ctx;
 
 #ifdef DT_ST_LIS2MDL_BUS_I2C
-	lis2mdl_ctx_t ctx_i2c;
+	stmdev_ctx_t ctx_i2c;
 #elif DT_ST_LIS2MDL_BUS_SPI
-	lis2mdl_ctx_t ctx_spi;
+	stmdev_ctx_t ctx_spi;
 #endif
 
 #ifdef CONFIG_LIS2MDL_TRIGGER

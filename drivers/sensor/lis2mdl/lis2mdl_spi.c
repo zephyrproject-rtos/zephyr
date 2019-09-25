@@ -99,8 +99,8 @@ int lis2mdl_spi_init(struct device *dev)
 {
 	struct lis2mdl_data *data = dev->driver_data;
 
-	data->ctx_spi.read_reg = (lis2mdl_read_ptr) lis2mdl_spi_read;
-	data->ctx_spi.write_reg = (lis2mdl_write_ptr) lis2mdl_spi_write;
+	data->ctx_spi.read_reg = (stmdev_read_ptr) lis2mdl_spi_read;
+	data->ctx_spi.write_reg = (stmdev_write_ptr) lis2mdl_spi_write;
 
 	data->ctx = &data->ctx_spi;
 	data->ctx->handle = dev;

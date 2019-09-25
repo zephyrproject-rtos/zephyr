@@ -43,8 +43,8 @@ int lis2mdl_i2c_init(struct device *dev)
 {
 	struct lis2mdl_data *data = dev->driver_data;
 
-	data->ctx_i2c.read_reg = (lis2mdl_read_ptr) lis2mdl_i2c_read;
-	data->ctx_i2c.write_reg = (lis2mdl_write_ptr) lis2mdl_i2c_write;
+	data->ctx_i2c.read_reg = (stmdev_read_ptr) lis2mdl_i2c_read;
+	data->ctx_i2c.write_reg = (stmdev_write_ptr) lis2mdl_i2c_write;
 
 	data->ctx = &data->ctx_i2c;
 	data->ctx->handle = dev;

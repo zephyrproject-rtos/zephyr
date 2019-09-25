@@ -19,6 +19,11 @@
 #include <sys/util.h>
 #include "stts751_reg.h"
 
+union axis1bit16_t {
+	s16_t i16bit;
+	u8_t u8bit[2];
+};
+
 struct stts751_config {
 	char *master_dev_name;
 	int (*bus_init)(struct device *dev);
@@ -35,10 +40,10 @@ struct stts751_data {
 	struct device *bus;
 	s16_t sample_temp;
 
-	stts751_ctx_t *ctx;
+	stmdev_ctx_t *ctx;
 
 #ifdef DT_ST_STTS751_BUS_I2C
-	stts751_ctx_t ctx_i2c;
+	stmdev_ctx_t ctx_i2c;
 #endif
 
 #ifdef CONFIG_STTS751_TRIGGER

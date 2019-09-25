@@ -78,7 +78,7 @@ int lis2dw12_trigger_set(struct device *dev,
 			  sensor_trigger_handler_t handler)
 {
 	struct lis2dw12_data *lis2dw12 = dev->driver_data;
-	axis3bit16_t raw;
+	union axis3bit16_t raw;
 	int state = (handler != NULL) ? PROPERTY_ENABLE : PROPERTY_DISABLE;
 
 	switch (trig->type) {

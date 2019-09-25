@@ -42,8 +42,8 @@ int lps22hh_i2c_init(struct device *dev)
 {
 	struct lps22hh_data *data = dev->driver_data;
 
-	data->ctx_i2c.read_reg = (lps22hh_read_ptr) lps22hh_i2c_read;
-	data->ctx_i2c.write_reg = (lps22hh_write_ptr) lps22hh_i2c_write;
+	data->ctx_i2c.read_reg = (stmdev_read_ptr) lps22hh_i2c_read;
+	data->ctx_i2c.write_reg = (stmdev_write_ptr) lps22hh_i2c_write;
 
 	data->ctx = &data->ctx_i2c;
 	data->ctx->handle = dev;
