@@ -251,7 +251,7 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 		LL_ASSERT(!ret);
 	}
 
-	DEBUG_RADIO_START_S(1);
+	DEBUG_RADIO_START_S(0);
 
 	return 0;
 }
