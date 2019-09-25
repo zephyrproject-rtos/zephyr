@@ -49,6 +49,7 @@
 	current-speed = <115200>;
 	pinctrl-0 = <&usart3_pins_a>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &i2c1 {
