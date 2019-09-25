@@ -199,10 +199,16 @@ static inline size_t bytes_to_chunksz(struct z_heap *h, size_t bytes)
 	return chunksz(chunk_header_bytes(h) + bytes);
 }
 
-static int bucket_idx(struct z_heap *h, size_t sz)
+static inline int min_chunk_size(struct z_heap *h)
 {
-	/* A chunk of size 2 is the minimum size on big heaps */
-	return 31 - __builtin_clz(sz) - (big_heap(h) ? 1 : 0);
+	return bytes_to_chunksz(h, 1);
 }
+
+static inline int bucket_idx(struct z_heap *h, size_t sz)
+{
+	size_t usable_sz = sz - min_chunk_size(h) + 1;
+	return 31 - __builtin_clz(usable_sz);
+}
+
 
 #endif /* ZEPHYR_INCLUDE_LIB_OS_HEAP_H_ */

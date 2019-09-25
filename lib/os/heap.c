@@ -92,7 +92,7 @@ static void *split_alloc(struct z_heap *h, int bidx, size_t sz)
 
 	CHECK(rem < h->len);
 
-	if (rem >= (big_heap(h) ? 2 : 1)) {
+	if (rem >= min_chunk_size(h)) {
 		chunkid_t c2 = c + sz;
 		chunkid_t c3 = right_chunk(h, c);
 
@@ -224,7 +224,7 @@ void sys_heap_init(struct sys_heap *heap, void *mem, size_t bytes)
 	size_t chunk0_size = chunksz(sizeof(struct z_heap) +
 				     nb_buckets * sizeof(struct z_heap_bucket));
 
-	CHECK(chunk0_size < buf_sz);
+	CHECK(chunk0_size + min_chunk_size(h) < buf_sz);
 
 	for (int i = 0; i < nb_buckets; i++) {
 		h->buckets[i].list_size = 0;
