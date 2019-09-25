@@ -12,18 +12,18 @@
 #define SOCK_EOF 1
 #define SOCK_NONBLOCK 2
 
-static inline void sock_set_flag(struct net_context *ctx, u32_t mask,
-				 u32_t flag)
+static inline void sock_set_flag(struct net_context *ctx, uintptr_t mask,
+				 uintptr_t flag)
 {
-	u32_t val = POINTER_TO_INT(ctx->user_data);
+	uintptr_t val = POINTER_TO_UINT(ctx->socket_data);
 
 	val = (val & ~mask) | flag;
-	(ctx)->user_data = INT_TO_POINTER(val);
+	(ctx)->socket_data = UINT_TO_POINTER(val);
 }
 
-static inline u32_t sock_get_flag(struct net_context *ctx, u32_t mask)
+static inline uintptr_t sock_get_flag(struct net_context *ctx, uintptr_t mask)
 {
-	return POINTER_TO_INT(ctx->user_data) & mask;
+	return POINTER_TO_UINT(ctx->socket_data) & mask;
 }
 
 #define sock_is_eof(ctx) sock_get_flag(ctx, SOCK_EOF)
