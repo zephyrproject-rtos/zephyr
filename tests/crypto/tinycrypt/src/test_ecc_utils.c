@@ -58,70 +58,12 @@
 
 #include <test_ecc_utils.h>
 #include <tinycrypt/constants.h>
+#include <sys/util.h>
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
-
-int hex2int(char hex)
-{
-	uint8_t dec;
-
-	if ('0' <= hex && hex <= '9') {
-		dec = hex - '0';
-	} else if ('a' <= hex && hex <= 'f') {
-		dec = hex - 'a' + 10;
-	} else if ('A' <= hex && hex <= 'F') {
-		dec = hex - 'A' + 10;
-	} else                                                                                                                    {
-		return -1;
-	}
-
-	return dec;
-}
-
-/*
- * Convert hex string to byte string
- * Return number of bytes written to buf, or 0 on error
- */
-int hex2bin(uint8_t *buf, const size_t buflen, const char *hex,
-	    const size_t hexlen)
-{
-
-	int dec;
-
-	if (buflen < hexlen / 2 + hexlen % 2) {
-		return false;
-	}
-
-	/* if hexlen is uneven, insert leading zero nibble */
-	if (hexlen % 2) {
-		dec = hex2int(hex[0]);
-		if (dec == -1) {
-			return false;
-		}
-		buf[0] = dec;
-		buf++;
-		hex++;
-	}
-
-	/* regular hex conversion */
-	for (size_t i = 0; i < hexlen / 2; i++) {
-		dec = hex2int(hex[2 * i]);
-		if (dec == -1) {
-			return false;
-		}
-		buf[i] = dec << 4;
-
-		dec = hex2int(hex[2 * i + 1]);
-		if (dec == -1) {
-			return false;
-		}
-		buf[i] += dec;
-	}
-	return hexlen / 2 + hexlen % 2;
-}
 
 /*
  * Convert hex string to zero-padded nanoECC scalar
@@ -144,7 +86,7 @@ void string2scalar(unsigned int *scalar, unsigned int num_word32, char *str)
 
 	(void)memset(tmp, 0, padding / 2);
 
-	if (false == hex2bin(tmp + padding / 2, num_bytes, str, hexlen)) {
+	if (hex2bin(str, hexlen, tmp + padding / 2, num_bytes) == 0) {
 		k_panic();
 	}
 	uECC_vli_bytesToNative(scalar, tmp, num_bytes);

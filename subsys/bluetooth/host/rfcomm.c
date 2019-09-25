@@ -9,10 +9,10 @@
 #include <zephyr.h>
 #include <string.h>
 #include <errno.h>
-#include <atomic.h>
-#include <misc/byteorder.h>
-#include <misc/util.h>
-#include <misc/stack.h>
+#include <sys/atomic.h>
+#include <sys/byteorder.h>
+#include <sys/util.h>
+#include <debug/stack.h>
 
 #include <bluetooth/hci.h>
 #include <bluetooth/bluetooth.h>
@@ -785,7 +785,7 @@ static enum security_result rfcomm_dlc_security(struct bt_rfcomm_dlc *dlc)
 		return RFCOMM_SECURITY_PASSED;
 	}
 
-	if (!bt_conn_security(conn, dlc->required_sec_level)) {
+	if (!bt_conn_set_security(conn, dlc->required_sec_level)) {
 		/* If Security elevation is initiated or in progress */
 		return RFCOMM_SECURITY_PENDING;
 	}
@@ -1728,7 +1728,7 @@ void bt_rfcomm_init(void)
 	static struct bt_l2cap_server server = {
 		.psm       = BT_L2CAP_PSM_RFCOMM,
 		.accept    = rfcomm_accept,
-		.sec_level = BT_SECURITY_LOW,
+		.sec_level = BT_SECURITY_L1,
 	};
 
 	bt_l2cap_br_server_register(&server);

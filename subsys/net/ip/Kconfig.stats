@@ -89,6 +89,13 @@ config NET_STATISTICS_MLD
 	help
 	  Keep track of MLD related statistics
 
+config NET_STATISTICS_PPP
+	bool "Point-to-point (PPP) statistics"
+	depends on NET_PPP
+	default y
+	help
+	  Keep track of PPP related statistics
+
 config NET_STATISTICS_ETHERNET
 	bool "Ethernet statistics"
 	depends on NET_L2_ETHERNET

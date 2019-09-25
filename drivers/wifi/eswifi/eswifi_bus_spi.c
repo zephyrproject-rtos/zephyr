@@ -12,8 +12,8 @@ LOG_MODULE_REGISTER(wifi_eswifi_bus_spi);
 #include <device.h>
 #include <string.h>
 #include <errno.h>
-#include <gpio.h>
-#include <spi.h>
+#include <drivers/gpio.h>
+#include <drivers/spi.h>
 
 #include "eswifi.h"
 
@@ -182,15 +182,34 @@ data:
 
 static void eswifi_spi_read_msg(struct eswifi_dev *eswifi)
 {
+	const char startstr[] = "[SOMA]";
+	const char endstr[] = "[EOMA]";
 	char cmd[] = "MR\r";
+	size_t msg_len;
 	char *rsp;
-	int err;
+	int ret;
+
+	LOG_DBG("");
 
 	eswifi_lock(eswifi);
 
-	err = eswifi_at_cmd_rsp(eswifi, cmd, &rsp);
-	if (err < 0) {
-		LOG_ERR("Unable to read msg %d", err);
+	ret = eswifi_at_cmd_rsp(eswifi, cmd, &rsp);
+	if (ret < 0) {
+		LOG_ERR("Unable to read msg %d", ret);
+		eswifi_unlock(eswifi);
+		return;
+	}
+
+	if (strncmp(rsp, startstr, sizeof(endstr) - 1)) {
+		LOG_ERR("Malformed async msg");
+		eswifi_unlock(eswifi);
+		return;
+	}
+
+	/* \r\n[SOMA]...[EOMA]\r\nOK\r\n> */
+	msg_len = ret - (sizeof(startstr) - 1) - (sizeof(endstr) - 1);
+	if (msg_len > 0) {
+		eswifi_async_msg(eswifi, rsp + sizeof(endstr) - 1, msg_len);
 	}
 
 	eswifi_unlock(eswifi);
@@ -236,8 +255,8 @@ int eswifi_spi_init(struct eswifi_dev *eswifi)
 				  SPI_HOLD_ON_CS | SPI_LOCK_ON);
 	spi->spi_cfg.slave = DT_INVENTEK_ESWIFI_ESWIFI0_BASE_ADDRESS;
 	spi->spi_cs.gpio_dev =
-		device_get_binding(DT_INVENTEK_ESWIFI_ESWIFI0_CS_GPIO_CONTROLLER);
-	spi->spi_cs.gpio_pin = DT_INVENTEK_ESWIFI_ESWIFI0_CS_GPIO_PIN;
+		device_get_binding(DT_INVENTEK_ESWIFI_ESWIFI0_CS_GPIOS_CONTROLLER);
+	spi->spi_cs.gpio_pin = DT_INVENTEK_ESWIFI_ESWIFI0_CS_GPIOS_PIN;
 	spi->spi_cs.delay = 1000U;
 	spi->spi_cfg.cs = &spi->spi_cs;
 

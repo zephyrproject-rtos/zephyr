@@ -15,7 +15,7 @@
 #include <linker/sections.h>
 #include <string.h>
 #include <wait_q.h>
-#include <misc/dlist.h>
+#include <sys/dlist.h>
 #include <init.h>
 
 #if (CONFIG_NUM_MBOX_ASYNC_MSGS > 0)

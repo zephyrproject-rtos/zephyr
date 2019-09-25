@@ -39,7 +39,7 @@
 
 #include <init.h>
 #include <device.h>
-#include <entropy.h>
+#include <drivers/entropy.h>
 #include <kernel.h>
 
 static u64_t state[2];

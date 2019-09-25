@@ -10,26 +10,8 @@
 
 menu "HALs"
 
-source "ext/hal/atmel/asf/Kconfig"
-
 source "ext/hal/altera/Kconfig"
 
 source "ext/hal/cmsis/Kconfig"
-
-source "ext/hal/microchip/Kconfig"
-
-source "ext/hal/nordic/Kconfig"
-
-source "ext/hal/nxp/mcux/Kconfig"
-
-source "ext/hal/nxp/imx/Kconfig"
-
-source "ext/hal/openisa/vega_sdk_riscv/Kconfig"
-
-source "ext/hal/st/stm32cube/Kconfig"
-
-source "ext/hal/st/lib/Kconfig"
-
-source "ext/hal/ti/simplelink/Kconfig"
 
 endmenu

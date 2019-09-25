@@ -7,7 +7,7 @@
 #include <zephyr.h>
 #include <stdio.h>
 #include <device.h>
-#include <sensor.h>
+#include <drivers/sensor.h>
 
 K_SEM_DEFINE(sem, 0, 1);
 

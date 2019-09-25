@@ -1,0 +1,12 @@
+title: Nordic UICR (User Information Configuration Registers)
+
+description: >
+    Binding for the Nordic UICR (User Information Configuration Registers)
+
+compatible: "nordic,nrf-uicr"
+
+include: base.yaml
+
+properties:
+    reg:
+      required: true

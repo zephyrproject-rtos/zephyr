@@ -127,6 +127,8 @@ int bt_smp_send_pairing_req(struct bt_conn *conn);
 int bt_smp_send_security_req(struct bt_conn *conn);
 void bt_smp_update_keys(struct bt_conn *conn);
 bool bt_smp_get_tk(struct bt_conn *conn, u8_t *tk);
+bool bt_smp_keys_check(struct bt_conn *conn);
+void bt_smp_keys_reject(struct bt_conn *conn);
 
 int bt_smp_br_send_pairing_req(struct bt_conn *conn);
 
@@ -144,6 +146,11 @@ int bt_smp_le_oob_set_sc_data(struct bt_conn *conn,
 int bt_smp_le_oob_get_sc_data(struct bt_conn *conn,
 			      const struct bt_le_oob_sc_data **oobd_local,
 			      const struct bt_le_oob_sc_data **oobd_remote);
+
+
+void smp_ident_sent(struct bt_conn *conn, void *user_data);
+void smp_id_sent(struct bt_conn *conn, void *user_data);
+void smp_sign_info_sent(struct bt_conn *conn, void *user_data);
 
 /** brief Verify signed message
  *

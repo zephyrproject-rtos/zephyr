@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <counter.h>
+#include <drivers/counter.h>
 #include <device.h>
 #include <soc.h>
 
@@ -194,7 +194,7 @@ static int counter_sam0_tc32_set_alarm(struct device *dev, u8_t chan_id,
 	data->ch.callback = alarm_cfg->callback;
 	data->ch.user_data = alarm_cfg->user_data;
 
-	if (alarm_cfg->absolute) {
+	if ((alarm_cfg->flags & COUNTER_ALARM_CFG_ABSOLUTE) != 0) {
 		tc->CC[1].reg = alarm_cfg->ticks;
 		wait_synchronization(tc);
 		tc->INTFLAG.reg = TC_INTFLAG_MC1;
@@ -226,14 +226,13 @@ static int counter_sam0_tc32_cancel_alarm(struct device *dev, u8_t chan_id)
 	return 0;
 }
 
-static int counter_sam0_tc32_set_top_value(struct device *dev, u32_t ticks,
-					   counter_top_callback_t callback,
-					   void *user_data)
+static int counter_sam0_tc32_set_top_value(struct device *dev,
+					 const struct counter_top_cfg *top_cfg)
 {
-	bool reset = true;
 	struct counter_sam0_tc32_data *data = DEV_DATA(dev);
 	const struct counter_sam0_tc32_config *const cfg = DEV_CFG(dev);
 	TcCount32 *tc = cfg->regs;
+	int err = 0;
 	int key = irq_lock();
 
 	if (data->ch.callback) {
@@ -241,33 +240,36 @@ static int counter_sam0_tc32_set_top_value(struct device *dev, u32_t ticks,
 		return -EBUSY;
 	}
 
-	if (callback) {
-		data->top_cb = callback;
-		data->top_user_data = user_data;
+	if (top_cfg->callback) {
+		data->top_cb = top_cfg->callback;
+		data->top_user_data = top_cfg->user_data;
 		tc->INTENSET.reg = TC_INTFLAG_MC0;
 	} else {
 		tc->INTENCLR.reg = TC_INTFLAG_MC0;
 	}
 
-	tc->CC[0].reg = ticks;
+	tc->CC[0].reg = top_cfg->ticks;
 
-	if (reset) {
-		tc->CTRLBSET.reg = TC_CTRLBSET_CMD_RETRIGGER;
-	} else {
+	if (top_cfg->flags & COUNTER_TOP_CFG_DONT_RESET) {
 		/*
 		 * Top trigger is on equality of the rising edge only, so
 		 * manually reset it if the counter has missed the new top.
 		 */
-		if (counter_sam0_tc32_read(dev) >= ticks) {
-			tc->CTRLBSET.reg = TC_CTRLBSET_CMD_RETRIGGER;
+		if (counter_sam0_tc32_read(dev) >= top_cfg->ticks) {
+			err = -ETIME;
+			if (top_cfg->flags & COUNTER_TOP_CFG_RESET_WHEN_LATE) {
+				tc->CTRLBSET.reg = TC_CTRLBSET_CMD_RETRIGGER;
+			}
 		}
+	} else {
+		tc->CTRLBSET.reg = TC_CTRLBSET_CMD_RETRIGGER;
 	}
 
 	wait_synchronization(tc);
 
 	tc->INTFLAG.reg = TC_INTFLAG_MC0;
 	irq_unlock(key);
-	return 0;
+	return err;
 }
 
 static u32_t counter_sam0_tc32_get_pending_int(struct device *dev)
@@ -432,12 +434,12 @@ static const struct counter_driver_api counter_sam0_tc32_driver_api = {
 			    &counter_sam0_tc32_driver_api);		      \
 	static void counter_sam0_tc32_config_##n(struct device *dev)	      \
 	{								      \
-		IRQ_CONNECT(DT_ATMEL_SAM0_TC32_TC_##n##_IRQ,		      \
-			    DT_ATMEL_SAM0_TC32_TC_##n##_IRQ_PRIORITY,	      \
+		IRQ_CONNECT(DT_ATMEL_SAM0_TC32_TC_##n##_IRQ_0,		      \
+			    DT_ATMEL_SAM0_TC32_TC_##n##_IRQ_0_PRIORITY,	      \
 			    counter_sam0_tc32_isr,			      \
 			    DEVICE_GET(counter_sam0_tc32_##n),		      \
 			    0);						      \
-		irq_enable(DT_ATMEL_SAM0_TC32_TC_##n##_IRQ);		      \
+		irq_enable(DT_ATMEL_SAM0_TC32_TC_##n##_IRQ_0);		      \
 	}
 
 #if DT_ATMEL_SAM0_TC32_TC_0_BASE_ADDRESS

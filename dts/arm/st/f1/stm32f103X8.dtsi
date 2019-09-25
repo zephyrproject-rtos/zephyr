@@ -39,6 +39,7 @@
 			num-bidir-endpoints = <8>;
 			ram-size = <512>;
 			status = "disabled";
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00800000>;
 			phys = <&usb_fs_phy>;
 			label= "USB";
 		};

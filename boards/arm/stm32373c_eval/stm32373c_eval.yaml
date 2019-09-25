@@ -8,6 +8,5 @@ toolchain:
   - xtools
 ram: 32
 supported:
-  - rtc
   - watchdog
   - counter

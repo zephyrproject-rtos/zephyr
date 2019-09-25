@@ -9,9 +9,9 @@
 #include <zephyr.h>
 #include <string.h>
 #include <errno.h>
-#include <atomic.h>
-#include <misc/byteorder.h>
-#include <misc/util.h>
+#include <sys/atomic.h>
+#include <sys/byteorder.h>
+#include <sys/util.h>
 
 #include <bluetooth/hci.h>
 #include <bluetooth/bluetooth.h>
@@ -49,10 +49,6 @@
 
 #define L2CAP_CONN_TIMEOUT	K_SECONDS(40)
 #define L2CAP_DISC_TIMEOUT	K_SECONDS(2)
-
-/* Linker-defined symbols bound to the bt_l2cap_fixed_chan structs */
-extern const struct bt_l2cap_fixed_chan _bt_channels_start[];
-extern const struct bt_l2cap_fixed_chan _bt_channels_end[];
 
 #if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
 /* Size of MTU is based on the maximum amount of data the buffer can hold
@@ -323,7 +319,6 @@ static bool l2cap_chan_add(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 
 void bt_l2cap_connected(struct bt_conn *conn)
 {
-	const struct bt_l2cap_fixed_chan *fchan;
 	struct bt_l2cap_chan *chan;
 
 	if (IS_ENABLED(CONFIG_BT_BREDR) &&
@@ -332,7 +327,7 @@ void bt_l2cap_connected(struct bt_conn *conn)
 		return;
 	}
 
-	for (fchan = _bt_channels_start; fchan < _bt_channels_end; fchan++) {
+	Z_STRUCT_SECTION_FOREACH(bt_l2cap_fixed_chan, fchan) {
 		struct bt_l2cap_le_chan *ch;
 
 		if (fchan->accept(conn, &chan) < 0) {
@@ -379,7 +374,15 @@ static struct net_buf *l2cap_create_le_sig_pdu(struct net_buf *buf,
 {
 	struct bt_l2cap_sig_hdr *hdr;
 
-	buf = bt_l2cap_create_pdu(NULL, 0);
+	/* Don't wait more than the minimum RTX timeout of 2 seconds */
+	buf = bt_l2cap_create_pdu_timeout(NULL, 0, K_SECONDS(2));
+	if (!buf) {
+		/* If it was not possible to allocate a buffer within the
+		 * timeout return NULL.
+		 */
+		BT_ERR("Unable to allocate buffer for op 0x%02x", code);
+		return NULL;
+	}
 
 	hdr = net_buf_add(buf, sizeof(*hdr));
 	hdr->code = code;
@@ -420,6 +423,9 @@ static int l2cap_le_conn_req(struct bt_l2cap_le_chan *ch)
 
 	buf = l2cap_create_le_sig_pdu(NULL, BT_L2CAP_LE_CONN_REQ,
 				      ch->chan.ident, sizeof(*req));
+	if (!buf) {
+		return -ENOMEM;
+	}
 
 	req = net_buf_add(buf, sizeof(*req));
 	req->psm = sys_cpu_to_le16(ch->chan.psm);
@@ -472,9 +478,12 @@ void bt_l2cap_encrypt_change(struct bt_conn *conn, u8_t hci_status)
 	}
 }
 
-struct net_buf *bt_l2cap_create_pdu(struct net_buf_pool *pool, size_t reserve)
+struct net_buf *bt_l2cap_create_pdu_timeout(struct net_buf_pool *pool,
+					    size_t reserve, s32_t timeout)
 {
-	return bt_conn_create_pdu(pool, sizeof(struct bt_l2cap_hdr) + reserve);
+	return bt_conn_create_pdu_timeout(pool,
+					  sizeof(struct bt_l2cap_hdr) + reserve,
+					  timeout);
 }
 
 void bt_l2cap_send_cb(struct bt_conn *conn, u16_t cid, struct net_buf *buf,
@@ -499,6 +508,9 @@ static void l2cap_send_reject(struct bt_conn *conn, u8_t ident,
 
 	buf = l2cap_create_le_sig_pdu(NULL, BT_L2CAP_CMD_REJECT, ident,
 				      sizeof(*rej) + data_len);
+	if (!buf) {
+		return;
+	}
 
 	rej = net_buf_add(buf, sizeof(*rej));
 	rej->reason = sys_cpu_to_le16(reason);
@@ -554,6 +566,9 @@ static void le_conn_param_update_req(struct bt_l2cap *l2cap, u8_t ident,
 
 	buf = l2cap_create_le_sig_pdu(buf, BT_L2CAP_CONN_PARAM_RSP, ident,
 				      sizeof(*rsp));
+	if (!buf) {
+		return;
+	}
 
 	accepted = le_param_req(conn, &param);
 
@@ -650,11 +665,11 @@ int bt_l2cap_server_register(struct bt_l2cap_server *server)
 		server->psm = psm;
 	}
 
-	if (server->sec_level > BT_SECURITY_FIPS) {
+	if (server->sec_level > BT_SECURITY_L4) {
 		return -EINVAL;
-	} else if (server->sec_level < BT_SECURITY_LOW) {
+	} else if (server->sec_level < BT_SECURITY_L1) {
 		/* Level 0 is only applicable for BR/EDR */
-		server->sec_level = BT_SECURITY_LOW;
+		server->sec_level = BT_SECURITY_L1;
 	}
 
 	BT_DBG("PSM 0x%04x", server->psm);
@@ -806,6 +821,9 @@ static void le_conn_req(struct bt_l2cap *l2cap, u8_t ident,
 
 	buf = l2cap_create_le_sig_pdu(buf, BT_L2CAP_LE_CONN_RSP, ident,
 				      sizeof(*rsp));
+	if (!buf) {
+		return;
+	}
 
 	rsp = net_buf_add(buf, sizeof(*rsp));
 	(void)memset(rsp, 0, sizeof(*rsp));
@@ -938,6 +956,9 @@ static void le_disconn_req(struct bt_l2cap *l2cap, u8_t ident,
 
 	buf = l2cap_create_le_sig_pdu(buf, BT_L2CAP_DISCONN_RSP, ident,
 				      sizeof(*rsp));
+	if (!buf) {
+		return;
+	}
 
 	rsp = net_buf_add(buf, sizeof(*rsp));
 	rsp->dcid = sys_cpu_to_le16(chan->rx.cid);
@@ -952,18 +973,18 @@ static int l2cap_change_security(struct bt_l2cap_le_chan *chan, u16_t err)
 {
 	switch (err) {
 	case BT_L2CAP_LE_ERR_ENCRYPTION:
-		if (chan->chan.required_sec_level >= BT_SECURITY_MEDIUM) {
+		if (chan->chan.required_sec_level >= BT_SECURITY_L2) {
 			return -EALREADY;
 		}
-		chan->chan.required_sec_level = BT_SECURITY_MEDIUM;
+		chan->chan.required_sec_level = BT_SECURITY_L2;
 		break;
 	case BT_L2CAP_LE_ERR_AUTHENTICATION:
-		if (chan->chan.required_sec_level < BT_SECURITY_MEDIUM) {
-			chan->chan.required_sec_level = BT_SECURITY_MEDIUM;
-		} else if (chan->chan.required_sec_level < BT_SECURITY_HIGH) {
-			chan->chan.required_sec_level = BT_SECURITY_HIGH;
-		} else if (chan->chan.required_sec_level < BT_SECURITY_FIPS) {
-			chan->chan.required_sec_level = BT_SECURITY_FIPS;
+		if (chan->chan.required_sec_level < BT_SECURITY_L2) {
+			chan->chan.required_sec_level = BT_SECURITY_L2;
+		} else if (chan->chan.required_sec_level < BT_SECURITY_L3) {
+			chan->chan.required_sec_level = BT_SECURITY_L3;
+		} else if (chan->chan.required_sec_level < BT_SECURITY_L4) {
+			chan->chan.required_sec_level = BT_SECURITY_L4;
 		} else {
 			return -EALREADY;
 		}
@@ -972,7 +993,8 @@ static int l2cap_change_security(struct bt_l2cap_le_chan *chan, u16_t err)
 		return -EINVAL;
 	}
 
-	return bt_conn_security(chan->chan.conn, chan->chan.required_sec_level);
+	return bt_conn_set_security(chan->chan.conn,
+				    chan->chan.required_sec_level);
 }
 
 static void le_conn_rsp(struct bt_l2cap *l2cap, u8_t ident,
@@ -1133,7 +1155,7 @@ segment:
 	return seg;
 }
 
-static void l2cap_chan_sdu_sent(struct bt_conn *conn, void *user_data)
+void l2cap_chan_sdu_sent(struct bt_conn *conn, void *user_data)
 {
 	struct bt_l2cap_chan *chan = user_data;
 
@@ -1427,6 +1449,9 @@ static void l2cap_chan_send_credits(struct bt_l2cap_le_chan *chan,
 
 	buf = l2cap_create_le_sig_pdu(buf, BT_L2CAP_LE_CREDITS, get_ident(),
 				      sizeof(*ev));
+	if (!buf) {
+		return;
+	}
 
 	ev = net_buf_add(buf, sizeof(*ev));
 	ev->cid = sys_cpu_to_le16(chan->rx.cid);
@@ -1688,6 +1713,9 @@ int bt_l2cap_update_conn_param(struct bt_conn *conn,
 
 	buf = l2cap_create_le_sig_pdu(NULL, BT_L2CAP_CONN_PARAM_REQ,
 				      get_ident(), sizeof(*req));
+	if (!buf) {
+		return -ENOMEM;
+	}
 
 	req = net_buf_add(buf, sizeof(*req));
 	req->min_interval = sys_cpu_to_le16(param->interval_min);
@@ -1788,10 +1816,10 @@ int bt_l2cap_chan_connect(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 		return bt_l2cap_br_chan_connect(conn, chan, psm);
 	}
 
-	if (chan->required_sec_level > BT_SECURITY_FIPS) {
+	if (chan->required_sec_level > BT_SECURITY_L4) {
 		return -EINVAL;
-	} else if (chan->required_sec_level == BT_SECURITY_NONE) {
-		chan->required_sec_level = BT_SECURITY_LOW;
+	} else if (chan->required_sec_level == BT_SECURITY_L0) {
+		chan->required_sec_level = BT_SECURITY_L1;
 	}
 
 	return l2cap_le_connect(conn, BT_L2CAP_LE_CHAN(chan), psm);
@@ -1822,6 +1850,9 @@ int bt_l2cap_chan_disconnect(struct bt_l2cap_chan *chan)
 
 	buf = l2cap_create_le_sig_pdu(NULL, BT_L2CAP_DISCONN_REQ,
 				      ch->chan.ident, sizeof(*req));
+	if (!buf) {
+		return -ENOMEM;
+	}
 
 	req = net_buf_add(buf, sizeof(*req));
 	req->dcid = sys_cpu_to_le16(ch->rx.cid);

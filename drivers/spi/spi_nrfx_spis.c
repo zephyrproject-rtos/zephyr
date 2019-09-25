@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <spi.h>
+#include <drivers/spi.h>
 #include <nrfx_spis.h>
 
 #define LOG_DOMAIN "spi_nrfx_spis"
@@ -251,7 +251,7 @@ static int init_spis(struct device *dev, const nrfx_spis_config_t *config)
 	static int spi_##idx##_init(struct device *dev)			       \
 	{								       \
 		IRQ_CONNECT(NRFX_IRQ_NUMBER_GET(NRF_SPIS##idx),		       \
-			    DT_NORDIC_NRF_SPIS_SPI_##idx##_IRQ_PRIORITY,       \
+			    DT_NORDIC_NRF_SPIS_SPI_##idx##_IRQ_0_PRIORITY,     \
 			    nrfx_isr, nrfx_spis_##idx##_irq_handler, 0);       \
 		const nrfx_spis_config_t config = {			       \
 			.sck_pin    = DT_NORDIC_NRF_SPIS_SPI_##idx##_SCK_PIN,  \

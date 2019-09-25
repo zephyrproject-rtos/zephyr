@@ -67,7 +67,7 @@ An application reads data from the socket and passes the buffer to the CoAP libr
 to parse the message. If the CoAP message is proper, the library uses the buffer
 along with resources defined above to call the correct callback function
 to handle the CoAP request from the client. It's the callback function's
-responsibilty to either reply or act according to CoAP request.
+responsibility to either reply or act according to CoAP request.
 
 .. code-block:: c
 

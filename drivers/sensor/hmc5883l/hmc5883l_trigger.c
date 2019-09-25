@@ -5,11 +5,11 @@
  */
 
 #include <device.h>
-#include <i2c.h>
-#include <misc/__assert.h>
-#include <misc/util.h>
+#include <drivers/i2c.h>
+#include <sys/__assert.h>
+#include <sys/util.h>
 #include <kernel.h>
-#include <sensor.h>
+#include <drivers/sensor.h>
 
 #include "hmc5883l.h"
 

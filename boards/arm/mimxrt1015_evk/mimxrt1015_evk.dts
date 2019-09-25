@@ -53,8 +53,11 @@ arduino_serial: &uart4 {};
 	reg = <0x402a8000 0x4000>, <0x60000000 0x1000000>;
 	at25sf128a: at25sf128a@0 {
 		compatible = "adesto,at25sf128a", "jedec,spi-nor";
+		label = "AT25SF128A";
 		reg = <0>;
+		spi-max-frequency = <133000000>;
 		status = "okay";
+		jedec-id = [1f 89 01];
 	};
 };
 

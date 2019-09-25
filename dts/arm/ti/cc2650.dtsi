@@ -19,7 +19,6 @@
 	};
 
 	sram0: memory@20000000 {
-		device_type = "memory";
 		compatible = "mmio-sram";
 		reg = <0x20000000 0x5000>;
 	};
@@ -29,12 +28,17 @@
 		reg = <0x0 0x20000>;
 	};
 
+	sysclk: system-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <48000000>;
+		#clock-cells = <0>;
+	};
+
 	soc {
 		gpioa: gpio@40022000 {
 			compatible = "ti,cc2650-gpio";
 			reg = <0x40022000 0xE4>;
 			interrupts = <0 0>;
-			zephyr,irq-prio = <0>;
 			status = "disabled";
 
 			gpio-controller;
@@ -61,6 +65,7 @@
 		uart0: uart@40001000 {
 			compatible = "ti,stellaris-uart";
 			reg = <0x40001000 0x4C>;
+			clocks = <&sysclk>;
 			interrupts = <5 0>, <6 0>;
 			status = "disabled";
 			label = "UART_0";

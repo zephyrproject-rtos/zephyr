@@ -14,10 +14,10 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		cpu@0 {
+		cpu0: cpu@0 {
 			device_type = "cpu";
 			compatible = "snps,arcem";
-			reg = <1>;
+			reg = <0>;
 		};
 
 		intc: arcv2-intc {
@@ -28,20 +28,17 @@
 	};
 
 	iccm0: iccm@20000000 {
-		device_type = "memory";
 		compatible = "arc,iccm";
 		reg = <0x20000000 0x40000>;
 	};
 
 	dccm0: dccm@80000000 {
-		device_type = "memory";
 		compatible = "arc,dccm";
 		reg = <0x80000000 0x20000>;
 	};
 
 
 	sram: memory@30000000 {
-		device_type = "memory";
 		compatible = "mmio-sram";
 		reg = <0x30000000 0x20000>;
 	};
@@ -49,6 +46,12 @@
 	flash0: flash@0 {
 		compatible = "soc-nv-flash";
 		reg = <0x0 0x40000>;
+	};
+
+	sysclk: system-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <144000000>;
+		#clock-cells = <0>;
 	};
 
 	soc {
@@ -99,7 +102,6 @@
 		};
 
 		gpio8b0: gpio@80017800 {
-			compatible = "intel,qmsi-ss-gpio";
 			reg = <0x80017800 0x100>;
 			interrupts = <54 1>;
 			interrupt-parent = <&intc>;
@@ -110,7 +112,6 @@
 		};
 
 		gpio8b1: gpio@80017900 {
-			compatible = "intel,qmsi-ss-gpio";
 			reg = <0x80017900 0x100>;
 			interrupts = <55 1>;
 			interrupt-parent = <&intc>;
@@ -121,7 +122,6 @@
 		};
 
 		gpio8b2: gpio@80017a00 {
-			compatible = "intel,qmsi-ss-gpio";
 			reg = <0x80017a00 0x100>;
 			interrupts = <56 1>;
 			interrupt-parent = <&intc>;
@@ -132,7 +132,6 @@
 		};
 
 		gpio8b3: gpio@80017b00 {
-			compatible = "intel,qmsi-ss-gpio";
 			reg = <0x80017b00 0x100>;
 			interrupts = <57 1>;
 			interrupt-parent = <&intc>;
@@ -143,7 +142,6 @@
 		};
 
 		gpio4b0: gpio@80017c00 {
-			compatible = "intel,qmsi-ss-gpio";
 			reg = <0x80017c00 0x100>;
 			interrupts = <19 1>;
 			interrupt-parent = <&intc>;
@@ -154,7 +152,6 @@
 		};
 
 		gpio4b1: gpio@80017d00 {
-			compatible = "intel,qmsi-ss-gpio";
 			reg = <0x80017d00 0x100>;
 			interrupts = <52 1>;
 			interrupt-parent = <&intc>;
@@ -165,7 +162,6 @@
 		};
 
 		gpio4b2: gpio@80017e00 {
-			compatible = "intel,qmsi-ss-gpio";
 			reg = <0x80017e00 0x100>;
 			interrupts = <53 1>;
 			interrupt-parent = <&intc>;
@@ -177,7 +173,6 @@
 
 
 		i2c0: i2c@80012000 {
-			compatible = "intel,qmsi-ss-i2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -191,7 +186,6 @@
 		};
 
 		i2c1: i2c@80012100 {
-			compatible = "intel,qmsi-ss-i2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -205,7 +199,6 @@
 		};
 
 		i2c2: i2c@80012200 {
-			compatible = "intel,qmsi-ss-i2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -223,6 +216,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x80010000 0x100>;
+			clocks = <&sysclk>;
 			interrupts = <70 2>, <71 2>, <72 2>;
 			interrupt-names = "err-int", "rx-avail", "tx-req";
 			interrupt-parent = <&intc>;
@@ -235,6 +229,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x80010100 0x100>;
+			clocks = <&sysclk>;
 			interrupts = <74 2>, <75 2>, <76 2>;
 			interrupt-names = "err-int", "rx-avail", "tx-req";
 			interrupt-parent = <&intc>;
@@ -247,6 +242,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x80010200 0x100>;
+			clocks = <&sysclk>;
 			interrupts = <78 2>, <79 2>, <80 2>;
 			interrupt-names = "err-int", "rx-avail", "tx-req";
 			interrupt-parent = <&intc>;

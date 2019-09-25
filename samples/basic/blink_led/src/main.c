@@ -11,49 +11,23 @@
  */
 
 #include <zephyr.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 #include <device.h>
-#include <pwm.h>
+#include <drivers/pwm.h>
 
-#if defined(CONFIG_SOC_STM32F401XE) || defined(CONFIG_SOC_STM32F412ZG) || \
-	defined(CONFIG_SOC_STM32F413XX) || defined(CONFIG_SOC_STM32L476XX) || \
-	defined(CONFIG_SOC_STM32F407XG) || defined(CONFIG_SOC_STM32F302X8)
-#define PWM_DRIVER DT_PWM_STM32_2_DEV_NAME
-#define PWM_CHANNEL 1
-#elif CONFIG_SOC_STM32F103XB
-#define PWM_DRIVER DT_PWM_STM32_1_DEV_NAME
-#define PWM_CHANNEL 1
-#elif defined(CONFIG_SOC_QUARK_SE_C1000) || defined(CONFIG_SOC_QUARK_D2000)
-#define PWM_DRIVER CONFIG_PWM_QMSI_DEV_NAME
-#define PWM_CHANNEL 0
-#elif defined(CONFIG_SOC_FAMILY_NRF)
-#if defined(CONFIG_PWM_NRF5_SW)
-#define PWM_DRIVER CONFIG_PWM_NRF5_SW_0_DEV_NAME
-#else
-#define PWM_DRIVER DT_NORDIC_NRF_PWM_PWM_0_LABEL
-#endif  /* CONFIG_PWM_NRF5_SW */
-#define PWM_CHANNEL LED0_GPIO_PIN
-#elif defined(CONFIG_BOARD_COLIBRI_IMX7D_M4)
-#define PWM_DRIVER	PWM_1_LABEL
-#define PWM_CHANNEL	0
-#elif defined(PWM_LED0_PWM_CONTROLLER) && defined(PWM_LED0_PWM_CHANNEL)
+#if defined(DT_ALIAS_PWM_LED0_PWMS_CONTROLLER) && defined(DT_ALIAS_PWM_LED0_PWMS_CHANNEL)
 /* get the defines from dt (based on alias 'pwm-led0') */
-#define PWM_DRIVER	PWM_LED0_PWM_CONTROLLER
-#define PWM_CHANNEL	PWM_LED0_PWM_CHANNEL
+#define PWM_DRIVER	DT_ALIAS_PWM_LED0_PWMS_CONTROLLER
+#define PWM_CHANNEL	DT_ALIAS_PWM_LED0_PWMS_CHANNEL
 #else
 #error "Choose supported PWM driver"
 #endif
 
-/* in micro second */
-#define MIN_PERIOD	(USEC_PER_SEC / 64U)
-
-/* in micro second */
-#define MAX_PERIOD	USEC_PER_SEC
-
 void main(void)
 {
 	struct device *pwm_dev;
-	u32_t period = MAX_PERIOD;
+	u32_t period, min_period, max_period;
+	u64_t cycles;
 	u8_t dir = 0U;
 
 	printk("PWM demo app-blink LED\n");
@@ -63,6 +37,12 @@ void main(void)
 		printk("Cannot find %s!\n", PWM_DRIVER);
 		return;
 	}
+
+	/* Adjust max_period depending pwm capabilities */
+	pwm_get_cycles_per_sec(pwm_dev, PWM_CHANNEL, &cycles);
+	/* in very worst case, PWM has a 8 bit resolution and count up to 256 */
+	period = max_period = 256 * USEC_PER_SEC / cycles;
+	min_period = max_period / 64;
 
 	while (1) {
 		if (pwm_pin_set_usec(pwm_dev, PWM_CHANNEL,
@@ -74,16 +54,16 @@ void main(void)
 		if (dir) {
 			period *= 2U;
 
-			if (period > MAX_PERIOD) {
+			if (period > max_period) {
 				dir = 0U;
-				period = MAX_PERIOD;
+				period = max_period;
 			}
 		} else {
 			period /= 2U;
 
-			if (period < MIN_PERIOD) {
+			if (period < min_period) {
 				dir = 1U;
-				period = MIN_PERIOD;
+				period = min_period;
 			}
 		}
 

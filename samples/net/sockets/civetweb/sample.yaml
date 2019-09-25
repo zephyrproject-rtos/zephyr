@@ -1,0 +1,6 @@
+sample:
+  description: Civetweb HTTP API sample
+  name: civetweb
+tests:
+  sample.net.sockets.civetweb:
+    platform_whitelist: sam_e70_xplained

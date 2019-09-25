@@ -84,7 +84,12 @@ static int soc_clk32_init(void)
 	new_clk32 = MCHP_VBATR_USE_32KIN_PIN;
   #endif
 #else
-	/* Use internal 32KHz +/-2% silicon oscillator */
+	/* Use internal 32KHz +/-2% silicon oscillator
+	 * if required performed OTP value override
+	 */
+	if (MCHP_REVISION_ID() == MCHP_GCFG_REV_B0) {
+		VBATR_REGS->CKK32_TRIM = 0x06;
+	}
 	new_clk32 = MCHP_VBATR_USE_SIL_OSC;
 #endif
 	clk32_change(new_clk32);
@@ -112,7 +117,7 @@ static int soc_ecia_init(void)
 
 	/* Clear all GIRQn source enables and source status */
 	pg = &ECIA_REGS->GIRQ08;
-	for (n = 0u; n < MCHP_GIRQ_ZID_MAX; n++) {
+	for (n = MCHP_FIRST_GIRQ; n <= MCHP_LAST_GIRQ; n++) {
 		pg->EN_CLR = 0xFFFFFFFFul;
 		pg->SRC = 0xFFFFFFFFul;
 		pg++;

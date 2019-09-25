@@ -8,16 +8,14 @@
 
 #include <logging/log_msg.h>
 #include <logging/log_instance.h>
-#include <misc/util.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdarg.h>
+#include <syscall.h>
+#include <sys/util.h>
 
 #ifdef __cplusplus
 extern "C" {
-#endif
-
-#if UINTPTR_MAX == 0xFFFFFFFFFFFFFFFFUL
-#error "Logger does not support 64 bit architecture."
 #endif
 
 #ifndef CONFIG_LOG
@@ -165,9 +163,11 @@ extern "C" {
 
 #define Z_LOG_INTERNAL_X(N, ...)  UTIL_CAT(_LOG_INTERNAL_, N)(__VA_ARGS__)
 
-#define __LOG_INTERNAL(_src_level, ...)					 \
+#define __LOG_INTERNAL(is_user_context, _src_level, ...)		 \
 	do {								 \
-		if (IS_ENABLED(CONFIG_LOG_IMMEDIATE)) {		 \
+		if (is_user_context) {					 \
+			log_from_user(_src_level, __VA_ARGS__);		 \
+		} else if (IS_ENABLED(CONFIG_LOG_IMMEDIATE)) {		 \
 			log_string_sync(_src_level, __VA_ARGS__);	 \
 		} else {						 \
 			Z_LOG_INTERNAL_X(Z_LOG_NARGS_POSTFIX(__VA_ARGS__), \
@@ -179,22 +179,22 @@ extern "C" {
 	log_0(_str, _src_level)
 
 #define _LOG_INTERNAL_1(_src_level, _str, _arg0) \
-	log_1(_str, (u32_t)(_arg0), _src_level)
+	log_1(_str, (log_arg_t)(_arg0), _src_level)
 
 #define _LOG_INTERNAL_2(_src_level, _str, _arg0, _arg1)	\
-	log_2(_str, (u32_t)(_arg0), (u32_t)(_arg1), _src_level)
+	log_2(_str, (log_arg_t)(_arg0), (log_arg_t)(_arg1), _src_level)
 
 #define _LOG_INTERNAL_3(_src_level, _str, _arg0, _arg1, _arg2) \
-	log_3(_str, (u32_t)(_arg0), (u32_t)(_arg1), (u32_t)(_arg2), _src_level)
+	log_3(_str, (log_arg_t)(_arg0), (log_arg_t)(_arg1), (log_arg_t)(_arg2), _src_level)
 
-#define __LOG_ARG_CAST(_x) (u32_t)(_x),
+#define __LOG_ARG_CAST(_x) (log_arg_t)(_x),
 
 #define __LOG_ARGUMENTS(...) MACRO_MAP(__LOG_ARG_CAST, __VA_ARGS__)
 
-#define _LOG_INTERNAL_LONG(_src_level, _str, ...)		 \
-	do {							 \
-		u32_t args[] = {__LOG_ARGUMENTS(__VA_ARGS__)};	 \
-		log_n(_str, args, ARRAY_SIZE(args), _src_level); \
+#define _LOG_INTERNAL_LONG(_src_level, _str, ...)		  \
+	do {							  \
+		log_arg_t args[] = {__LOG_ARGUMENTS(__VA_ARGS__)};\
+		log_n(_str, args, ARRAY_SIZE(args), _src_level);  \
 	} while (false)
 
 #define Z_LOG_LEVEL_CHECK(_level, _check_level, _default_level) \
@@ -215,8 +215,11 @@ extern "C" {
 /******************************************************************************/
 #define __LOG(_level, _id, _filter, ...)				    \
 	do {								    \
+		bool is_user_context = _is_user_context();		    \
+									    \
 		if (Z_LOG_CONST_LEVEL_CHECK(_level) &&			    \
-		    (_level <= LOG_RUNTIME_FILTER(_filter))) {		    \
+		    (is_user_context ||					    \
+		     (_level <= LOG_RUNTIME_FILTER(_filter)))) {	    \
 			struct log_msg_ids src_level = {		    \
 				.level = _level,			    \
 				.domain_id = CONFIG_LOG_DOMAIN_ID,	    \
@@ -224,10 +227,11 @@ extern "C" {
 			};						    \
 									    \
 			if ((BIT(_level) & LOG_FUNCTION_PREFIX_MASK) != 0U) {\
-				__LOG_INTERNAL(src_level,		    \
-						Z_LOG_STR(__VA_ARGS__));	    \
+				__LOG_INTERNAL(is_user_context, src_level,  \
+						Z_LOG_STR(__VA_ARGS__));    \
 			} else {					    \
-				__LOG_INTERNAL(src_level, __VA_ARGS__);	    \
+				__LOG_INTERNAL(is_user_context, src_level,  \
+						__VA_ARGS__);		    \
 			}						    \
 		} else if (false) {					    \
 			/* Arguments checker present but never evaluated.*/ \
@@ -257,15 +261,21 @@ extern "C" {
 /******************************************************************************/
 #define __LOG_HEXDUMP(_level, _id, _filter, _data, _length, _str)	      \
 	do {								      \
+		bool is_user_context = _is_user_context();		      \
+									      \
 		if (Z_LOG_CONST_LEVEL_CHECK(_level) &&			      \
-		    (_level <= LOG_RUNTIME_FILTER(_filter))) {		      \
+		    (is_user_context ||					      \
+		     (_level <= LOG_RUNTIME_FILTER(_filter)))) {	      \
 			struct log_msg_ids src_level = {		      \
 				.level = _level,			      \
 				.source_id = _id,			      \
 				.domain_id = CONFIG_LOG_DOMAIN_ID	      \
 			};						      \
 									      \
-			if (IS_ENABLED(CONFIG_LOG_IMMEDIATE)) {	      \
+			if (is_user_context) {				      \
+				log_hexdump_from_user(src_level, _str,	      \
+						      _data, _length);	      \
+			} else if (IS_ENABLED(CONFIG_LOG_IMMEDIATE)) {	      \
 				log_hexdump_sync(src_level, _str,	      \
 						 _data, _length);	      \
 			} else {					      \
@@ -442,7 +452,7 @@ void log_0(const char *str, struct log_msg_ids src_level);
  * @param src_level	Log identification.
  */
 void log_1(const char *str,
-	   u32_t arg1,
+	   log_arg_t arg1,
 	   struct log_msg_ids src_level);
 
 /** @brief Standard log with two arguments.
@@ -453,8 +463,8 @@ void log_1(const char *str,
  * @param src_level	Log identification.
  */
 void log_2(const char *str,
-	   u32_t arg1,
-	   u32_t arg2,
+	   log_arg_t arg1,
+	   log_arg_t arg2,
 	   struct log_msg_ids src_level);
 
 /** @brief Standard log with three arguments.
@@ -466,9 +476,9 @@ void log_2(const char *str,
  * @param src_level	Log identification.
  */
 void log_3(const char *str,
-	   u32_t arg1,
-	   u32_t arg2,
-	   u32_t arg3,
+	   log_arg_t arg1,
+	   log_arg_t arg2,
+	   log_arg_t arg3,
 	   struct log_msg_ids src_level);
 
 /** @brief Standard log with arguments list.
@@ -479,7 +489,7 @@ void log_3(const char *str,
  * @param src_level	Log identification.
  */
 void log_n(const char *str,
-	   u32_t *args,
+	   log_arg_t *args,
 	   u32_t narg,
 	   struct log_msg_ids src_level);
 
@@ -529,6 +539,15 @@ void log_hexdump_sync(struct log_msg_ids src_level, const char *metadata,
  */
 void log_generic(struct log_msg_ids src_level, const char *fmt, va_list ap);
 
+/**
+ * @brief Writes a generic log message to the log from user mode.
+ *
+ * @note This function is intended to be used internally
+ *	 by the logging subsystem.
+ */
+void log_generic_from_user(struct log_msg_ids src_level,
+			   const char *fmt, va_list ap);
+
 /** @brief Check if address belongs to the memory pool used for transient.
  *
  * @param buf Buffer.
@@ -561,6 +580,42 @@ u32_t log_get_strdup_longest_string(void);
 /** @brief Indicate to the log core that one log message has been dropped.
  */
 void log_dropped(void);
+
+/** @brief Log a message from user mode context.
+ *
+ * @note This function is intended to be used internally
+ *	 by the logging subsystem.
+ *
+ * @param src_level    Log identification.
+ * @param fmt          String to format.
+ * @param ...          Variable list of arguments.
+ */
+void __printf_like(2, 3) log_from_user(struct log_msg_ids src_level,
+				       const char *fmt, ...);
+
+
+/* Internal function used by log_from_user(). */
+__syscall void z_log_string_from_user(u32_t src_level_val, const char *str);
+
+/** @brief Log binary data (displayed as hexdump) from user mode conext.
+ *
+ * @note This function is intended to be used internally
+ *	 by the logging subsystem.
+ *
+ * @param src_level	Log identification.
+ * @param metadata	Raw string associated with the data.
+ * @param data		Data.
+ * @param len		Data length.
+ */
+void log_hexdump_from_user(struct log_msg_ids src_level, const char *metadata,
+			   const u8_t *data, u32_t len);
+
+/* Internal function used by log_hexdump_from_user(). */
+__syscall void z_log_hexdump_from_user(u32_t src_level_val,
+				       const char *metadata,
+				       const u8_t *data, u32_t len);
+
+#include <syscalls/log_core.h>
 
 #ifdef __cplusplus
 }

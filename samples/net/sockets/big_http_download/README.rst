@@ -37,7 +37,9 @@ Build the Zephyr version of the application like this:
    :compact:
 
 ``board_to_use`` defaults to ``qemu_x86``. In this case, you can run the
-application in QEMU using ``make run``. If you used another BOARD, you
+application in QEMU using ``make run``.
+Exit QEMU by pressing :kbd:`CTRL+A` :kbd:`x`.
+If you used another BOARD, you
 will need to consult its documentation for application deployment
 instructions. You can read about Zephyr support for specific boards in
 the documentation at :ref:`boards`.

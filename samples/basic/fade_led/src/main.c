@@ -11,37 +11,14 @@
  */
 
 #include <zephyr.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 #include <device.h>
-#include <pwm.h>
+#include <drivers/pwm.h>
 
-#if defined(CONFIG_SOC_STM32F401XE) || defined(CONFIG_SOC_STM32L476XX)
-#define PWM_DRIVER DT_PWM_STM32_2_DEV_NAME
-#define PWM_CHANNEL 1
-#elif CONFIG_SOC_STM32F103XB
-#define PWM_DRIVER DT_PWM_STM32_1_DEV_NAME
-#define PWM_CHANNEL 1
-#elif defined(CONFIG_SOC_QUARK_SE_C1000) || defined(CONFIG_SOC_QUARK_D2000)
-#define PWM_DRIVER CONFIG_PWM_QMSI_DEV_NAME
-#define PWM_CHANNEL 0
-#elif defined(CONFIG_SOC_FAMILY_NRF)
-#if defined(CONFIG_PWM_NRF5_SW)
-#define PWM_DRIVER CONFIG_PWM_NRF5_SW_0_DEV_NAME
-#else
-#define PWM_DRIVER DT_NORDIC_NRF_PWM_PWM_0_LABEL
-#endif  /* CONFIG_PWM_NRF5_SW */
-#define PWM_CHANNEL LED0_GPIO_PIN
-#elif defined(CONFIG_SOC_ESP32)
-#define PWM_DRIVER CONFIG_PWM_LED_ESP32_DEV_NAME_0
-#define PWM_CHANNEL	21
-#elif defined(PWM_LED0_PWM_CONTROLLER) && defined(PWM_LED0_PWM_CHANNEL)
+#if defined(DT_ALIAS_PWM_LED0_PWMS_CONTROLLER) && defined(DT_ALIAS_PWM_LED0_PWMS_CHANNEL)
 /* get the defines from dt (based on alias 'pwm-led0') */
-#define PWM_DRIVER	PWM_LED0_PWM_CONTROLLER
-#define PWM_CHANNEL	PWM_LED0_PWM_CHANNEL
-#elif defined(CONFIG_BOARD_HIFIVE1)
-/* Blink the blue channel of the RGB LED */
-#define PWM_DRIVER	LED1_PWM_CONTROLLER
-#define PWM_CHANNEL	LED1_PWM_CHANNEL
+#define PWM_DRIVER	DT_ALIAS_PWM_LED0_PWMS_CONTROLLER
+#define PWM_CHANNEL	DT_ALIAS_PWM_LED0_PWMS_CHANNEL
 #else
 #error "Choose supported PWM driver"
 #endif

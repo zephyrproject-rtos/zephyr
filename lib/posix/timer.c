@@ -6,7 +6,7 @@
 #include <kernel.h>
 #include <errno.h>
 #include <string.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 #include <posix/time.h>
 
 #define ACTIVE 1

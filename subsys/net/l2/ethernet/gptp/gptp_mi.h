@@ -14,11 +14,11 @@
 #ifndef __GPTP_MI_H
 #define __GPTP_MI_H
 
+#include "gptp_md.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include "gptp_md.h"
 
 /**
  * @brief Media Independent Sync Information.

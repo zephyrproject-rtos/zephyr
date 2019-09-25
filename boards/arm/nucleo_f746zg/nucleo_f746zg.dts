@@ -16,6 +16,7 @@
 		zephyr,shell-uart = &usart3;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
+		zephyr,dtcm = &dtcm;
 	};
 
 	leds {
@@ -104,8 +105,9 @@ arduino_spi: &spi1 {};
 &can1 {
 	bus-speed = <125000>;
 	sjw = <1>;
-	prop_seg_phase_seg1 = <6>;
-	phase_seg2 = <5>;
+	prop-seg = <0>;
+	phase-seg1 = <6>;
+	phase-seg2 = <5>;
 	status = "okay";
 };
 

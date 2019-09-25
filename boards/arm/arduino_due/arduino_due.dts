@@ -13,6 +13,7 @@
 		uart-0 = &uart0;
 		i2c-0 = &i2c0;
 		i2c-1 = &i2c1;
+		led0 = &yellow_led;
 	};
 
 	chosen {
@@ -21,6 +22,19 @@
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
 	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		yellow_led: led_0 {
+			gpios = <&piob 27 0>;
+			label = "User LED";
+		};
+	};
+};
+
+&cpu0 {
+	clock-frequency = <84000000>;
 };
 
 &wdog {

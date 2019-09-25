@@ -17,6 +17,7 @@
 			ram-size = <1280>;
 			maximum-speed = "full-speed";
 			phys = <&otgfs_phy>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00001000>;
 			status = "disabled";
 			label= "OTGFS";
 		};

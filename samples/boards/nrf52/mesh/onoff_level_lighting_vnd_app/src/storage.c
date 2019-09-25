@@ -114,48 +114,52 @@ void save_on_flash(u8_t id)
 	k_work_submit(&storage_work);
 }
 
-static int ps_set(int argc, char **argv, size_t len_rd,
+static int ps_set(const char *key, size_t len_rd,
 		  settings_read_cb read_cb, void *cb_arg)
 {
 	ssize_t len = 0;
+	int key_len;
+	const char *next;
 
-	if (argc == 1) {
-		if (!strcmp(argv[0], "rc")) {
+	key_len = settings_name_next(key, &next);
+
+	if (!next) {
+		if (!strncmp(key, "rc", key_len)) {
 			len = read_cb(cb_arg, &reset_counter,
 				      sizeof(reset_counter));
 		}
 
-		if (!strcmp(argv[0], "gdtt")) {
+		if (!strncmp(key, "gdtt", key_len)) {
 			len = read_cb(cb_arg,
 			 &gen_def_trans_time_srv_user_data.tt,
 			 sizeof(gen_def_trans_time_srv_user_data.tt));
 		}
 
-		if (!strcmp(argv[0], "gpo")) {
+		if (!strncmp(key, "gpo", key_len)) {
 			len = read_cb(cb_arg,
 			 &gen_power_onoff_srv_user_data.onpowerup,
 			 sizeof(gen_power_onoff_srv_user_data.onpowerup));
 		}
 
-		if (!strcmp(argv[0], "ltd")) {
+		if (!strncmp(key, "ltd", key_len)) {
 			len = read_cb(cb_arg,
 			 &light_ctl_srv_user_data.lightness_temp_def,
 			 sizeof(light_ctl_srv_user_data.lightness_temp_def));
 		}
 
-		if (!strcmp(argv[0], "ltl")) {
+		if (!strncmp(key, "ltl", key_len)) {
 			len = read_cb(cb_arg,
 			 &light_ctl_srv_user_data.lightness_temp_last,
 			 sizeof(light_ctl_srv_user_data.lightness_temp_last));
 		}
 
-		if (!strcmp(argv[0], "lr")) {
+		if (!strncmp(key, "lr", key_len)) {
 			len = read_cb(cb_arg,
 			 &light_lightness_srv_user_data.lightness_range,
 			 sizeof(light_lightness_srv_user_data.lightness_range));
 		}
 
-		if (!strcmp(argv[0], "tr")) {
+		if (!strncmp(key, "tr", key_len)) {
 			len = read_cb(cb_arg,
 			 &light_ctl_srv_user_data.temperature_range,
 			 sizeof(light_ctl_srv_user_data.temperature_range));

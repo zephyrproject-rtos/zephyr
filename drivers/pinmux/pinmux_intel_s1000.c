@@ -5,7 +5,7 @@
  */
 
 #include <kernel.h>
-#include <pinmux.h>
+#include <drivers/pinmux.h>
 #include <iomux.h>
 
 static volatile u32_t *iomux_ctrl_regs = (volatile u32_t *)DT_PINMUX_BASE_ADDR;

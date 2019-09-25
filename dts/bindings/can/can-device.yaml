@@ -1,24 +1,14 @@
-#
 # Copyright (c) 2018 Alexander Wachter
-#
 # SPDX-License-Identifier: Apache-2.0
-#
----
-title: CAN Device Base Structure
-version: 0.1
 
-description: >
-    This binding gives the base structures for all can devices
+# Common fields for CAN devices
 
-inherits:
-    !include base.yaml
+include: base.yaml
 
-parent:
-    bus: can
+parent-bus: can
 
 properties:
     reg:
-      category: required
+      required: true
     label:
-      category: required
-...
+      required: true

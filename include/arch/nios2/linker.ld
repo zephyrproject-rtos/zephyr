@@ -25,7 +25,7 @@
 #define _RESET_SECTION_NAME reset
 
 /* This linker script requires the following macros to be defined in the
- * SOC-specfic linker script. All of these values can be found defined
+ * SOC-specific linker script. All of these values can be found defined
  * in system.h for CPU configurations that can generate a HAL.
  *
  * _RESET_VECTOR     CPU entry point at boot
@@ -163,6 +163,8 @@ SECTIONS
         . = ALIGN(4);
         } GROUP_LINK_IN(ROMABLE_REGION)
 
+#include <linker/cplusplus-rom.ld>
+
     _image_rom_end = .;
     __data_rom_start = ALIGN(4);    /* XIP imaged DATA ROM start addr */
 
@@ -279,6 +281,8 @@ SECTIONS
 #include <snippets-noinit.ld>
 
         } GROUP_LINK_IN(RAMABLE_REGION)
+
+#include <linker/cplusplus-ram.ld>
 
     /* Define linker symbols */
     _image_ram_end = .;

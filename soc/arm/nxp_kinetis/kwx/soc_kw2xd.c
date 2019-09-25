@@ -10,8 +10,7 @@
 #include <device.h>
 #include <init.h>
 #include <soc.h>
-#include <uart.h>
-#include <linker/sections.h>
+#include <drivers/uart.h>
 #include <fsl_common.h>
 #include <fsl_clock.h>
 #include <arch/cpu.h>
@@ -26,37 +25,6 @@
 #define ER32KSEL_LPO1KHZ	(3)
 
 #define TIMESRC_OSCERCLK        (2)
-
-/*
- * KW2xD Flash configuration fields
- * These 16 bytes, which must be loaded to address 0x400, include default
- * protection and security settings.
- * They are loaded at reset to various Flash Memory module (FTFE) registers.
- *
- * The structure is:
- * -Backdoor Comparison Key for unsecuring the MCU - 8 bytes
- * -Program flash protection bytes, 4 bytes, written to FPROT0-3
- * -Flash security byte, 1 byte, written to FSEC
- * -Flash nonvolatile option byte, 1 byte, written to FOPT
- * -Reserved, 1 byte, (Data flash protection byte for FlexNVM)
- * -Reserved, 1 byte, (EEPROM protection byte for FlexNVM)
- *
- */
-uint8_t __kinetis_flash_config_section __kinetis_flash_config[] = {
-	/* Backdoor Comparison Key (unused) */
-	0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-	/* Program flash protection; 1 bit/region - 0=protected, 1=unprotected
-	 */
-	0xFF, 0xFF, 0xFF, 0xFF,
-	/*
-	 * Flash security: Backdoor key disabled, Mass erase enabled,
-	 *                 Factory access enabled, MCU is unsecure
-	 */
-	0xFE,
-	/* Flash nonvolatile option: NMI enabled, EzPort enabled, Normal boot */
-	0xFF,
-	/* Reserved for FlexNVM feature (unsupported by this MCU) */
-	0xFF, 0xFF};
 
 static const osc_config_t oscConfig = {
 	.freq = CONFIG_OSC_XTAL0_FREQ,
@@ -164,7 +132,7 @@ static ALWAYS_INLINE void clkInit(void)
 	CLOCK_SetSimConfig(&simConfig);
 #if CONFIG_USB_KINETIS
 	CLOCK_EnableUsbfs0Clock(kCLOCK_UsbSrcPll0,
-				CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
+				DT_ARM_CORTEX_M4_0_CLOCK_FREQUENCY);
 #endif
 }
 

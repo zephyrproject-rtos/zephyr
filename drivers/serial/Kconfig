@@ -91,8 +91,6 @@ source "drivers/serial/Kconfig.usart_sam"
 
 source "drivers/serial/Kconfig.uart_sam"
 
-source "drivers/serial/Kconfig.qmsi"
-
 source "drivers/serial/Kconfig.stm32"
 
 source "drivers/serial/Kconfig.nrfx"
@@ -124,5 +122,9 @@ source "drivers/serial/Kconfig.pl011"
 source "drivers/serial/Kconfig.rv32m1_lpuart"
 
 source "drivers/serial/Kconfig.litex"
+
+source "drivers/serial/Kconfig.rtt"
+
+source "drivers/serial/Kconfig.xlnx"
 
 endif # SERIAL

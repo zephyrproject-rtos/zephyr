@@ -6,13 +6,13 @@
 
 #include <string.h>
 #include <zephyr/types.h>
-#include <misc/__assert.h>
-#include <misc/util.h>
-#include <disk_access.h>
+#include <sys/__assert.h>
+#include <sys/util.h>
+#include <disk/disk_access.h>
 #include <errno.h>
 #include <init.h>
 #include <device.h>
-#include <flash.h>
+#include <drivers/flash.h>
 
 #define SECTOR_SIZE 512
 

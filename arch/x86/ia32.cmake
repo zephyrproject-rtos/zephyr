@@ -9,23 +9,11 @@ else()
   zephyr_compile_definitions(PERF_OPT)
 endif()
 
-if(CONFIG_X86_IAMCU)
-  set_property(GLOBAL APPEND PROPERTY PROPERTY_LINKER_SCRIPT_DEFINES -D__IAMCU)
-  set_property(GLOBAL        PROPERTY PROPERTY_OUTPUT_FORMAT         "elf32-iamcu")
-  set_property(GLOBAL        PROPERTY PROPERTY_OUTPUT_ARCH           "iamcu:intel")
-else()
-  set_property(GLOBAL PROPERTY PROPERTY_OUTPUT_ARCH "i386")
-  set_property(GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT "elf32-i386")
-endif()
-
-
+set_property(GLOBAL PROPERTY PROPERTY_OUTPUT_ARCH "i386")
+set_property(GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT "elf32-i386")
 
 if(CMAKE_C_COMPILER_ID STREQUAL "Clang")
-  if(CONFIG_X86_IAMCU)
-    zephyr_compile_options(-miamcu)
-  else()
-    zephyr_compile_options(-Qunused-arguments)
-  endif()
+  zephyr_compile_options(-Qunused-arguments)
 
   zephyr_cc_option(
     -m32
@@ -104,38 +92,6 @@ endfunction()
 add_bin_file_to_the_next_link(gen_idt_output staticIdt)
 add_bin_file_to_the_next_link(gen_idt_output irq_int_vector_map)
 add_bin_file_to_the_next_link(gen_idt_output irq_vectors_alloc)
-
-if(CONFIG_X86_MMU)
-  if(CONFIG_X86_KPTI)
-    set(user_mmu_tables_bin user_mmu_tables.bin)
-  endif()
-
-  add_custom_target(
-    mmu_tables_bin_target
-    DEPENDS
-    mmu_tables.bin
-    ${user_mmu_tables_bin}
-  )
-  add_custom_command(
-    OUTPUT
-    mmu_tables.bin
-    ${user_mmu_tables_bin}
-    COMMAND
-    ${PYTHON_EXECUTABLE}
-    ${ZEPHYR_BASE}/arch/x86/gen_mmu_x86.py
-    -k $<TARGET_FILE:${ZEPHYR_PREBUILT_EXECUTABLE}>
-    -o mmu_tables.bin
-    -u user_mmu_tables.bin
-    $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:-v>
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-    DEPENDS ${ZEPHYR_PREBUILT_EXECUTABLE}
-    )
-
-  add_bin_file_to_the_next_link(  mmu_tables_bin_target      mmu_tables)
-  if(CONFIG_X86_KPTI)
-    add_bin_file_to_the_next_link(mmu_tables_bin_target user_mmu_tables)
-  endif()
-endif()
 
 if(CONFIG_GDT_DYNAMIC)
   # Use gen_gdt.py and objcopy to generate gdt.o from from the elf

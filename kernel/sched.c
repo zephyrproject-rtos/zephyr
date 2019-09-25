@@ -11,7 +11,7 @@
 #include <kswap.h>
 #include <kernel_arch_func.h>
 #include <syscall_handler.h>
-#include <drivers/system_timer.h>
+#include <drivers/timer/system_timer.h>
 #include <stdbool.h>
 
 #if defined(CONFIG_SCHED_DUMB)
@@ -255,9 +255,10 @@ static void reset_time_slice(void)
 	 * slice count, as we'll see those "expired" ticks arrive in a
 	 * FUTURE z_time_slice() call.
 	 */
-	_current_cpu->slice_ticks = slice_time + z_clock_elapsed();
-
-	z_set_timeout_expiry(slice_time, false);
+	if (slice_time != 0) {
+		_current_cpu->slice_ticks = slice_time + z_clock_elapsed();
+		z_set_timeout_expiry(slice_time, false);
+	}
 }
 
 void k_sched_time_slice_set(s32_t slice, int prio)
@@ -296,6 +297,8 @@ void z_time_slice(int ticks)
 		} else {
 			_current_cpu->slice_ticks -= ticks;
 		}
+	} else {
+		_current_cpu->slice_ticks = 0;
 	}
 }
 #else
@@ -474,7 +477,10 @@ void z_unpend_thread(struct k_thread *thread)
 	(void)z_abort_thread_timeout(thread);
 }
 
-void z_thread_priority_set(struct k_thread *thread, int prio)
+/* Priority set utility that does no rescheduling, it just changes the
+ * run queue state, returning true if a reschedule is needed later.
+ */
+bool z_set_prio(struct k_thread *thread, int prio)
 {
 	bool need_sched = 0;
 
@@ -482,15 +488,27 @@ void z_thread_priority_set(struct k_thread *thread, int prio)
 		need_sched = z_is_thread_ready(thread);
 
 		if (need_sched) {
-			_priq_run_remove(&_kernel.ready_q.runq, thread);
-			thread->base.prio = prio;
-			_priq_run_add(&_kernel.ready_q.runq, thread);
+			/* Don't requeue on SMP if it's the running thread */
+			if (!IS_ENABLED(CONFIG_SMP) || z_is_thread_queued(thread)) {
+				_priq_run_remove(&_kernel.ready_q.runq, thread);
+				thread->base.prio = prio;
+				_priq_run_add(&_kernel.ready_q.runq, thread);
+			} else {
+				thread->base.prio = prio;
+			}
 			update_cache(1);
 		} else {
 			thread->base.prio = prio;
 		}
 	}
 	sys_trace_thread_priority_set(thread);
+
+	return need_sched;
+}
+
+void z_thread_priority_set(struct k_thread *thread, int prio)
+{
+	bool need_sched = z_set_prio(thread, prio);
 
 	if (IS_ENABLED(CONFIG_SMP) &&
 	    !IS_ENABLED(CONFIG_SCHED_IPI_SUPPORTED)) {
@@ -547,7 +565,7 @@ void k_sched_unlock(void)
 
 	LOCKED(&sched_spinlock) {
 		++_current->base.sched_locked;
-		update_cache(1);
+		update_cache(0);
 	}
 
 	K_DEBUG("scheduler unlocked (%p:%d)\n",
@@ -824,8 +842,12 @@ int z_impl_k_thread_priority_get(k_tid_t thread)
 }
 
 #ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER1_SIMPLE(k_thread_priority_get, K_OBJ_THREAD,
-			  struct k_thread *);
+static inline int z_vrfy_k_thread_priority_get(k_tid_t thread)
+{
+	Z_OOPS(Z_SYSCALL_OBJ(thread, K_OBJ_THREAD));
+	return z_impl_k_thread_priority_get(thread);
+}
+#include <syscalls/k_thread_priority_get_mrsh.c>
 #endif
 
 void z_impl_k_thread_priority_set(k_tid_t tid, int prio)
@@ -843,20 +865,18 @@ void z_impl_k_thread_priority_set(k_tid_t tid, int prio)
 }
 
 #ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER(k_thread_priority_set, thread_p, prio)
+static inline void z_vrfy_k_thread_priority_set(k_tid_t thread, int prio)
 {
-	struct k_thread *thread = (struct k_thread *)thread_p;
-
 	Z_OOPS(Z_SYSCALL_OBJ(thread, K_OBJ_THREAD));
 	Z_OOPS(Z_SYSCALL_VERIFY_MSG(_is_valid_prio(prio, NULL),
-				    "invalid thread priority %d", (int)prio));
+				    "invalid thread priority %d", prio));
 	Z_OOPS(Z_SYSCALL_VERIFY_MSG((s8_t)prio >= thread->base.prio,
 				    "thread priority may only be downgraded (%d < %d)",
 				    prio, thread->base.prio));
 
-	z_impl_k_thread_priority_set((k_tid_t)thread, prio);
-	return 0;
+	z_impl_k_thread_priority_set(thread, prio);
 }
+#include <syscalls/k_thread_priority_set_mrsh.c>
 #endif
 
 #ifdef CONFIG_SCHED_DEADLINE
@@ -874,7 +894,7 @@ void z_impl_k_thread_deadline_set(k_tid_t tid, int deadline)
 }
 
 #ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER(k_thread_deadline_set, thread_p, deadline)
+static inline void z_vrfy_k_thread_deadline_set(k_tid_t tid, int deadline)
 {
 	struct k_thread *thread = (struct k_thread *)thread_p;
 
@@ -884,8 +904,8 @@ Z_SYSCALL_HANDLER(k_thread_deadline_set, thread_p, deadline)
 				    (int)deadline));
 
 	z_impl_k_thread_deadline_set((k_tid_t)thread, deadline);
-	return 0;
 }
+#include <syscalls/k_thread_deadline_set_mrsh.c>
 #endif
 #endif
 
@@ -909,7 +929,11 @@ void z_impl_k_yield(void)
 }
 
 #ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER0_SIMPLE_VOID(k_yield);
+static inline void z_vrfy_k_yield(void)
+{
+	z_impl_k_yield();
+}
+#include <syscalls/k_yield_mrsh.c>
 #endif
 
 static s32_t z_tick_sleep(s32_t ticks)
@@ -961,24 +985,17 @@ s32_t z_impl_k_sleep(int ms)
 {
 	s32_t ticks;
 
-	__ASSERT(ms != K_FOREVER, "");
-
 	ticks = z_ms_to_ticks(ms);
 	ticks = z_tick_sleep(ticks);
 	return __ticks_to_ms(ticks);
 }
 
 #ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER(k_sleep, ms)
+static inline s32_t z_vrfy_k_sleep(int ms)
 {
-	/* FIXME there were some discussions recently on whether we should
-	 * relax this, thread would be unscheduled until k_wakeup issued
-	 */
-	Z_OOPS(Z_SYSCALL_VERIFY_MSG(ms != K_FOREVER,
-				    "sleeping forever not allowed"));
-
 	return z_impl_k_sleep(ms);
 }
+#include <syscalls/k_sleep_mrsh.c>
 #endif
 
 s32_t z_impl_k_usleep(int us)
@@ -991,10 +1008,11 @@ s32_t z_impl_k_usleep(int us)
 }
 
 #ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER(k_usleep, us)
+static inline s32_t z_vrfy_k_usleep(int us)
 {
 	return z_impl_k_usleep(us);
 }
+#include <syscalls/k_usleep_mrsh.c>
 #endif
 
 void z_impl_k_wakeup(k_tid_t thread)
@@ -1069,7 +1087,12 @@ void z_sched_abort(struct k_thread *thread)
 #endif
 
 #ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER1_SIMPLE_VOID(k_wakeup, K_OBJ_THREAD, k_tid_t);
+static inline void z_vrfy_k_wakeup(k_tid_t thread)
+{
+	Z_OOPS(Z_SYSCALL_OBJ(thread, K_OBJ_THREAD));
+	z_impl_k_wakeup(thread);
+}
+#include <syscalls/k_wakeup_mrsh.c>
 #endif
 
 k_tid_t z_impl_k_current_get(void)
@@ -1078,7 +1101,11 @@ k_tid_t z_impl_k_current_get(void)
 }
 
 #ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER0_SIMPLE(k_current_get);
+static inline k_tid_t z_vrfy_k_current_get(void)
+{
+	return z_impl_k_current_get();
+}
+#include <syscalls/k_current_get_mrsh.c>
 #endif
 
 int z_impl_k_is_preempt_thread(void)
@@ -1087,7 +1114,11 @@ int z_impl_k_is_preempt_thread(void)
 }
 
 #ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER0_SIMPLE(k_is_preempt_thread);
+static inline int z_vrfy_k_is_preempt_thread(void)
+{
+	return z_impl_k_is_preempt_thread();
+}
+#include <syscalls/k_is_preempt_thread_mrsh.c>
 #endif
 
 #ifdef CONFIG_SCHED_CPU_MASK

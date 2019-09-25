@@ -14,10 +14,10 @@
 #include <stddef.h>
 #include <errno.h>
 #include <string.h>
-#include <atomic.h>
-#include <misc/util.h>
-#include <misc/byteorder.h>
-#include <misc/stack.h>
+#include <sys/atomic.h>
+#include <sys/util.h>
+#include <sys/byteorder.h>
+#include <debug/stack.h>
 
 #include <tinycrypt/constants.h>
 #include <tinycrypt/aes.h>

@@ -6,8 +6,8 @@
 
 #include <errno.h>
 #include <device.h>
-#include <uart.h>
-#include <clock_control.h>
+#include <drivers/uart.h>
+#include <drivers/clock_control.h>
 #include <fsl_lpsci.h>
 #include <soc.h>
 

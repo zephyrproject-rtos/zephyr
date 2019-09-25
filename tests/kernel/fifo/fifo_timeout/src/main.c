@@ -7,8 +7,8 @@
 #include <ztest.h>
 #include <irq_offload.h>
 #include <ksched.h>
-#include <misc/__assert.h>
-#include <misc/util.h>
+#include <sys/__assert.h>
+#include <sys/util.h>
 
 /*
  * @file

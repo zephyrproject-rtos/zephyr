@@ -11,7 +11,6 @@ depends on !NATIVE_APPLICATION
 
 config NEWLIB_LIBC
 	bool "Build with newlib c library"
-	depends on !X86_64
 	help
 	  Build with newlib library. The newlib library is expected to be
 	  part of the SDK in this case.
@@ -20,6 +19,7 @@ if "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "gnuarmemb"
 config NEWLIB_LIBC_NANO
 	bool "Build with newlib-nano c library"
 	depends on NEWLIB_LIBC
+	default y
 	help
 	  Build with newlib-nano library, for small embedded apps.
 	  The newlib-nano library for ARM embedded processors is a part of the

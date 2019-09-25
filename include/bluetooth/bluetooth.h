@@ -19,8 +19,8 @@
 
 #include <stdbool.h>
 #include <string.h>
-#include <misc/printk.h>
-#include <misc/util.h>
+#include <sys/printk.h>
+#include <sys/util.h>
 #include <net/buf.h>
 #include <bluetooth/hci.h>
 #include <bluetooth/crypto.h>
@@ -269,7 +269,7 @@ enum {
 	 */
 	BT_LE_ADV_OPT_USE_IDENTITY = BIT(2),
 
-	/* Advertise using GAP device name */
+	/** Advertise using GAP device name */
 	BT_LE_ADV_OPT_USE_NAME = BIT(3),
 
 	/** Use low duty directed advertising mode, otherwise high duty mode
@@ -288,6 +288,14 @@ enum {
 	 *  reading its Central Address Resolution characteristic.
 	 */
 	BT_LE_ADV_OPT_DIR_ADDR_RPA = BIT(5),
+
+	/** Use whitelist to filter devices that can request scan response
+	 *  data.
+	 */
+	BT_LE_ADV_OPT_FILTER_SCAN_REQ = BIT(6),
+
+	/** Use whitelist to filter devices that can connect. */
+	BT_LE_ADV_OPT_FILTER_CONN = BIT(7),
 };
 
 /** LE Advertising Parameters. */
@@ -400,14 +408,23 @@ int bt_le_adv_stop(void);
 typedef void bt_le_scan_cb_t(const bt_addr_le_t *addr, s8_t rssi,
 			     u8_t adv_type, struct net_buf_simple *buf);
 
+enum {
+	/* Filter duplicates. */
+	BT_LE_SCAN_FILTER_DUPLICATE = BIT(0),
+
+	/* Filter using whitelist. */
+	BT_LE_SCAN_FILTER_WHITELIST = BIT(1),
+
+	/* Filter using extended filter policies. */
+	BT_LE_SCAN_FILTER_EXTENDED = BIT(2),
+};
+
 /** LE scan parameters */
 struct bt_le_scan_param {
 	/** Scan type (BT_HCI_LE_SCAN_ACTIVE or BT_HCI_LE_SCAN_PASSIVE) */
 	u8_t  type;
 
-	/** Duplicate filtering (BT_HCI_LE_SCAN_FILTER_DUP_ENABLE or
-	 *  BT_HCI_LE_SCAN_FILTER_DUP_DISABLE)
-	 */
+	/** Bit-field of scanning filter options. */
 	u8_t  filter_dup;
 
 	/** Scan interval (N * 0.625 ms) */
@@ -420,7 +437,7 @@ struct bt_le_scan_param {
 /** Helper to declare scan parameters inline
   *
   * @param _type     Scan Type (BT_HCI_LE_SCAN_ACTIVE/BT_HCI_LE_SCAN_PASSIVE)
-  * @param _filter   Filter Duplicates
+  * @param _filter   Filter options
   * @param _interval Scan Interval (N * 0.625 ms)
   * @param _window   Scan Window (N * 0.625 ms)
   */
@@ -434,7 +451,7 @@ struct bt_le_scan_param {
 
 /** Helper macro to enable active scanning to discover new devices. */
 #define BT_LE_SCAN_ACTIVE BT_LE_SCAN_PARAM(BT_HCI_LE_SCAN_ACTIVE, \
-					   BT_HCI_LE_SCAN_FILTER_DUP_ENABLE, \
+					   BT_LE_SCAN_FILTER_DUPLICATE, \
 					   BT_GAP_SCAN_FAST_INTERVAL, \
 					   BT_GAP_SCAN_FAST_WINDOW)
 
@@ -444,7 +461,7 @@ struct bt_le_scan_param {
  * (e.g., UUID) are known to be placed in Advertising Data.
  */
 #define BT_LE_SCAN_PASSIVE BT_LE_SCAN_PARAM(BT_HCI_LE_SCAN_PASSIVE, \
-					    BT_HCI_LE_SCAN_FILTER_DUP_ENABLE, \
+					    BT_LE_SCAN_FILTER_DUPLICATE, \
 					    BT_GAP_SCAN_FAST_INTERVAL, \
 					    BT_GAP_SCAN_FAST_WINDOW)
 
@@ -470,6 +487,48 @@ int bt_le_scan_start(const struct bt_le_scan_param *param, bt_le_scan_cb_t cb);
  */
 int bt_le_scan_stop(void);
 
+/** @brief Add device (LE) to whitelist.
+ *
+ *  Add peer device LE address to the whitelist.
+ *
+ *  @note The whitelist cannot be modified when an LE role is using
+ *  the whitelist, i.e advertiser or scanner using a whitelist or automatic
+ *  connecting to devices using whitelist.
+ *
+ *  @param addr Bluetooth LE identity address.
+ *
+ *  @return Zero on success or error code otherwise, positive in case
+ *  of protocol error or negative (POSIX) in case of stack internal error.
+ */
+int bt_le_whitelist_add(const bt_addr_le_t *addr);
+
+/** @brief Remove device (LE) from whitelist.
+ *
+ *  Remove peer device LE address from the whitelist.
+ *
+ *  @note The whitelist cannot be modified when an LE role is using
+ *  the whitelist, i.e advertiser or scanner using a whitelist or automatic
+ *  connecting to devices using whitelist.
+ *
+ *  @param addr Bluetooth LE identity address.
+ *
+ *  @return Zero on success or error code otherwise, positive in case
+ *  of protocol error or negative (POSIX) in case of stack internal error.
+ */
+int bt_le_whitelist_rem(const bt_addr_le_t *addr);
+
+/** @brief Clear whitelist.
+ *
+ *  Clear all devices from the whitelist.
+ *
+ *  @note The whitelist cannot be modified when an LE role is using
+ *  the whitelist, i.e advertiser or scanner using a whitelist or automatic
+ *  connecting to devices using whitelist.
+ *
+ *  @return Zero on success or error code otherwise, positive in case
+ *  of protocol error or negative (POSIX) in case of stack internal error.
+ */
+int bt_le_whitelist_clear(void);
 
 /** @brief Set (LE) channel map.
  *
@@ -641,7 +700,7 @@ int bt_br_oob_get_local(struct bt_br_oob *oob);
  *  conversion will not lose valuable information about address being
  *  processed.
  */
-#define BT_ADDR_LE_STR_LEN 27
+#define BT_ADDR_LE_STR_LEN 30
 
 /** @brief Converts binary Bluetooth address to string.
  *
@@ -683,10 +742,10 @@ static inline int bt_addr_le_to_str(const bt_addr_le_t *addr, char *str,
 		strcpy(type, "random");
 		break;
 	case BT_ADDR_LE_PUBLIC_ID:
-		strcpy(type, "public id");
+		strcpy(type, "public-id");
 		break;
 	case BT_ADDR_LE_RANDOM_ID:
-		strcpy(type, "random id");
+		strcpy(type, "random-id");
 		break;
 	default:
 		snprintk(type, sizeof(type), "0x%02x", addr->type);
@@ -697,6 +756,27 @@ static inline int bt_addr_le_to_str(const bt_addr_le_t *addr, char *str,
 			addr->a.val[5], addr->a.val[4], addr->a.val[3],
 			addr->a.val[2], addr->a.val[1], addr->a.val[0], type);
 }
+
+/**
+ * @brief Convert Bluetooth address from string to binary.
+ *
+ * @param[in]  str   The string representation of a Bluetooth address.
+ * @param[out] addr  Address of buffer to store the Bluetooth address
+ *
+ *  @return Zero on success or (negative) error code otherwise.
+ */
+int bt_addr_from_str(const char *str, bt_addr_t *addr);
+
+/**
+ * @brief Convert LE Bluetooth address from string to binary.
+ *
+ * @param[in]  str   The string representation of an LE Bluetooth address.
+ * @param[in]  type  The string representation of the LE Bluetooth address type.
+ * @param[out] addr  Address of buffer to store the LE Bluetooth address
+ *
+ *  @return Zero on success or (negative) error code otherwise.
+ */
+int bt_addr_le_from_str(const char *str, const char *type, bt_addr_le_t *addr);
 
 /** @brief Enable/disable set controller in discoverable state.
  *

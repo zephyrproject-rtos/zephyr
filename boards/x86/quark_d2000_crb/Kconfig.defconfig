@@ -1,8 +1,0 @@
-# SPDX-License-Identifier: Apache-2.0
-
-if BOARD_QUARK_D2000_CRB
-
-config BOARD
-	default "quark_d2000_crb"
-
-endif # BOARD_QUARK_D2000_CRB

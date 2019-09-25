@@ -16,7 +16,7 @@ LOG_MODULE_REGISTER(net_ieee802154_shell, CONFIG_NET_L2_IEEE802154_LOG_LEVEL);
 #include <stdlib.h>
 #include <shell/shell.h>
 #include <shell/shell_uart.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 
 #include <net/net_if.h>
 #include <net/ieee802154_mgmt.h>

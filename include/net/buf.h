@@ -12,7 +12,7 @@
 
 #include <stddef.h>
 #include <zephyr/types.h>
-#include <misc/util.h>
+#include <sys/util.h>
 #include <zephyr.h>
 
 #ifdef __cplusplus

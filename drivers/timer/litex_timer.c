@@ -8,7 +8,7 @@
 #include <arch/cpu.h>
 #include <device.h>
 #include <irq.h>
-#include <system_timer.h>
+#include <drivers/timer/system_timer.h>
 
 #define TIMER_BASE		DT_LITEX_TIMER0_E0002800_BASE_ADDRESS
 #define TIMER_LOAD_ADDR		((TIMER_BASE) + 0x00)

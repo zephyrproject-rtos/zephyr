@@ -5,8 +5,8 @@
  */
 
 #include <zephyr.h>
-#include <flash.h>
-#include <flash_map.h>
+#include <drivers/flash.h>
+#include <storage/flash_map.h>
 #include <device.h>
 #include <stdio.h>
 #include <logging/log.h>

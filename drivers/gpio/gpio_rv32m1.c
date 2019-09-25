@@ -8,11 +8,11 @@
 
 #include <errno.h>
 #include <device.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 #include <soc.h>
 #include <fsl_common.h>
 #include <fsl_port.h>
-#include <clock_control.h>
+#include <drivers/clock_control.h>
 
 #include "gpio_utils.h"
 
@@ -269,7 +269,7 @@ static int gpio_rv32m1_porta_init(struct device *dev);
 static const struct gpio_rv32m1_config gpio_rv32m1_porta_config = {
 	.gpio_base = (GPIO_Type *) DT_OPENISA_RV32M1_GPIO_GPIO_A_BASE_ADDRESS,
 	.port_base = PORTA,
-#ifdef DT_OPENISA_RV32M1_GPIO_GPIO_A_IRQ
+#ifdef DT_OPENISA_RV32M1_GPIO_GPIO_A_IRQ_0
 	.flags = GPIO_INT,
 #else
 	.flags = 0,
@@ -294,12 +294,12 @@ DEVICE_AND_API_INIT(gpio_rv32m1_porta, DT_OPENISA_RV32M1_GPIO_GPIO_A_LABEL,
 
 static int gpio_rv32m1_porta_init(struct device *dev)
 {
-#ifdef DT_OPENISA_RV32M1_GPIO_GPIO_A_IRQ
-	IRQ_CONNECT(DT_OPENISA_RV32M1_GPIO_GPIO_A_IRQ,
-		    DT_OPENISA_RV32M1_GPIO_GPIO_A_IRQ_PRIORITY,
+#ifdef DT_OPENISA_RV32M1_GPIO_GPIO_A_IRQ_0
+	IRQ_CONNECT(DT_OPENISA_RV32M1_GPIO_GPIO_A_IRQ_0,
+		    0,
 		    gpio_rv32m1_port_isr, DEVICE_GET(gpio_rv32m1_porta), 0);
 
-	irq_enable(DT_OPENISA_RV32M1_GPIO_GPIO_A_IRQ);
+	irq_enable(DT_OPENISA_RV32M1_GPIO_GPIO_A_IRQ_0);
 
 	return 0;
 #else
@@ -314,7 +314,7 @@ static int gpio_rv32m1_portb_init(struct device *dev);
 static const struct gpio_rv32m1_config gpio_rv32m1_portb_config = {
 	.gpio_base = (GPIO_Type *) DT_OPENISA_RV32M1_GPIO_GPIO_B_BASE_ADDRESS,
 	.port_base = PORTB,
-#ifdef DT_OPENISA_RV32M1_GPIO_GPIO_B_IRQ
+#ifdef DT_OPENISA_RV32M1_GPIO_GPIO_B_IRQ_0
 	.flags = GPIO_INT,
 #else
 	.flags = 0,
@@ -339,12 +339,12 @@ DEVICE_AND_API_INIT(gpio_rv32m1_portb, DT_OPENISA_RV32M1_GPIO_GPIO_B_LABEL,
 
 static int gpio_rv32m1_portb_init(struct device *dev)
 {
-#ifdef DT_OPENISA_RV32M1_GPIO_GPIO_B_IRQ
-	IRQ_CONNECT(DT_OPENISA_RV32M1_GPIO_GPIO_B_IRQ,
-		    DT_OPENISA_RV32M1_GPIO_GPIO_B_IRQ_PRIORITY,
+#ifdef DT_OPENISA_RV32M1_GPIO_GPIO_B_IRQ_0
+	IRQ_CONNECT(DT_OPENISA_RV32M1_GPIO_GPIO_B_IRQ_0,
+		    0,
 		    gpio_rv32m1_port_isr, DEVICE_GET(gpio_rv32m1_portb), 0);
 
-	irq_enable(DT_OPENISA_RV32M1_GPIO_GPIO_B_IRQ);
+	irq_enable(DT_OPENISA_RV32M1_GPIO_GPIO_B_IRQ_0);
 
 	return 0;
 #else
@@ -359,7 +359,7 @@ static int gpio_rv32m1_portc_init(struct device *dev);
 static const struct gpio_rv32m1_config gpio_rv32m1_portc_config = {
 	.gpio_base = (GPIO_Type *) DT_OPENISA_RV32M1_GPIO_GPIO_C_BASE_ADDRESS,
 	.port_base = PORTC,
-#ifdef DT_OPENISA_RV32M1_GPIO_GPIO_C_IRQ
+#ifdef DT_OPENISA_RV32M1_GPIO_GPIO_C_IRQ_0
 	.flags = GPIO_INT,
 #else
 	.flags = 0,
@@ -385,12 +385,12 @@ DEVICE_AND_API_INIT(gpio_rv32m1_portc, DT_OPENISA_RV32M1_GPIO_GPIO_C_LABEL,
 
 static int gpio_rv32m1_portc_init(struct device *dev)
 {
-#ifdef DT_OPENISA_RV32M1_GPIO_GPIO_C_IRQ
-	IRQ_CONNECT(DT_OPENISA_RV32M1_GPIO_GPIO_C_IRQ,
-		    DT_OPENISA_RV32M1_GPIO_GPIO_C_IRQ_PRIORITY,
+#ifdef DT_OPENISA_RV32M1_GPIO_GPIO_C_IRQ_0
+	IRQ_CONNECT(DT_OPENISA_RV32M1_GPIO_GPIO_C_IRQ_0,
+		    0,
 		    gpio_rv32m1_port_isr, DEVICE_GET(gpio_rv32m1_portc), 0);
 
-	irq_enable(DT_OPENISA_RV32M1_GPIO_GPIO_C_IRQ);
+	irq_enable(DT_OPENISA_RV32M1_GPIO_GPIO_C_IRQ_0);
 
 	return 0;
 #else
@@ -405,7 +405,7 @@ static int gpio_rv32m1_portd_init(struct device *dev);
 static const struct gpio_rv32m1_config gpio_rv32m1_portd_config = {
 	.gpio_base = (GPIO_Type *) DT_OPENISA_RV32M1_GPIO_GPIO_D_BASE_ADDRESS,
 	.port_base = PORTD,
-#ifdef DT_OPENISA_RV32M1_GPIO_GPIO_D_IRQ
+#ifdef DT_OPENISA_RV32M1_GPIO_GPIO_D_IRQ_0
 	.flags = GPIO_INT,
 #else
 	.flags = 0,
@@ -430,12 +430,12 @@ DEVICE_AND_API_INIT(gpio_rv32m1_portd, DT_OPENISA_RV32M1_GPIO_GPIO_D_LABEL,
 
 static int gpio_rv32m1_portd_init(struct device *dev)
 {
-#ifdef DT_OPENISA_RV32M1_GPIO_GPIO_D_IRQ
-	IRQ_CONNECT(DT_OPENISA_RV32M1_GPIO_GPIO_D_IRQ,
-		    DT_OPENISA_RV32M1_GPIO_GPIO_D_IRQ_PRIORITY,
+#ifdef DT_OPENISA_RV32M1_GPIO_GPIO_D_IRQ_0
+	IRQ_CONNECT(DT_OPENISA_RV32M1_GPIO_GPIO_D_IRQ_0,
+		    0,
 		    gpio_rv32m1_port_isr, DEVICE_GET(gpio_rv32m1_portd), 0);
 
-	irq_enable(DT_OPENISA_RV32M1_GPIO_GPIO_D_IRQ);
+	irq_enable(DT_OPENISA_RV32M1_GPIO_GPIO_D_IRQ_0);
 
 	return 0;
 #else
@@ -450,7 +450,7 @@ static int gpio_rv32m1_porte_init(struct device *dev);
 static const struct gpio_rv32m1_config gpio_rv32m1_porte_config = {
 	.gpio_base = (GPIO_Type *) DT_OPENISA_RV32M1_GPIO_GPIO_E_BASE_ADDRESS,
 	.port_base = PORTE,
-#ifdef DT_OPENISA_RV32M1_GPIO_GPIO_E_IRQ
+#ifdef DT_OPENISA_RV32M1_GPIO_GPIO_E_IRQ_0
 	.flags = GPIO_INT,
 #else
 	.flags = 0,
@@ -475,12 +475,12 @@ DEVICE_AND_API_INIT(gpio_rv32m1_porte, DT_OPENISA_RV32M1_GPIO_GPIO_E_LABEL,
 
 static int gpio_rv32m1_porte_init(struct device *dev)
 {
-#ifdef DT_OPENISA_RV32M1_GPIO_GPIO_E_IRQ
-	IRQ_CONNECT(DT_OPENISA_RV32M1_GPIO_GPIO_E_IRQ,
-		    DT_OPENISA_RV32M1_GPIO_GPIO_E_IRQ_PRIORITY,
+#ifdef DT_OPENISA_RV32M1_GPIO_GPIO_E_IRQ_0
+	IRQ_CONNECT(DT_OPENISA_RV32M1_GPIO_GPIO_E_IRQ_0,
+		    0,
 		    gpio_rv32m1_port_isr, DEVICE_GET(gpio_rv32m1_porte), 0);
 
-	irq_enable(DT_OPENISA_RV32M1_GPIO_GPIO_E_IRQ);
+	irq_enable(DT_OPENISA_RV32M1_GPIO_GPIO_E_IRQ_0);
 
 	return 0;
 #else

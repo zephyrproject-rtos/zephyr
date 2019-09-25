@@ -15,8 +15,6 @@ static K_THREAD_STACK_DEFINE(child_stack, STACK_SIZE);
 static struct k_thread child_thread;
 static ZTEST_BMEM struct qdata qdata[LIST_LEN * 2];
 
-K_MEM_POOL_DEFINE(test_pool, 16, 96, 4, 4);
-
 /**
  * @brief Tests for queue
  * @defgroup kernel_queue_tests Queues
@@ -76,8 +74,6 @@ void test_queue_supv_to_user(void)
 	struct k_queue *q;
 	struct k_sem *sem;
 
-	k_thread_resource_pool_assign(k_current_get(), &test_pool);
-
 	q = k_object_alloc(K_OBJ_QUEUE);
 	zassert_not_null(q, "no memory for allocated queue object");
 	k_queue_init(q);
@@ -111,6 +107,50 @@ void test_queue_supv_to_user(void)
 	/* child thread runs until blocking on the last k_queue_get() call */
 	k_queue_cancel_wait(q);
 	k_sem_take(sem, K_FOREVER);
+}
+
+void test_queue_alloc_prepend_user(void)
+{
+	struct k_queue *q;
+
+	q = k_object_alloc(K_OBJ_QUEUE);
+	zassert_not_null(q, "no memory for allocated queue object");
+	k_queue_init(q);
+
+	for (int i = 0; i < LIST_LEN * 2; i++) {
+		qdata[i].data = i;
+		zassert_false(k_queue_alloc_prepend(q, &qdata[i]), NULL);
+	}
+
+	for (int i = (LIST_LEN * 2) - 1; i >= 0; i--) {
+		struct qdata *qd;
+
+		qd = k_queue_get(q, K_NO_WAIT);
+		zassert_true(qd != NULL, NULL);
+		zassert_equal(qd->data, i, NULL);
+	}
+}
+
+void test_queue_alloc_append_user(void)
+{
+	struct k_queue *q;
+
+	q = k_object_alloc(K_OBJ_QUEUE);
+	zassert_not_null(q, "no memory for allocated queue object");
+	k_queue_init(q);
+
+	for (int i = 0; i < LIST_LEN * 2; i++) {
+		qdata[i].data = i;
+		zassert_false(k_queue_alloc_append(q, &qdata[i]), NULL);
+	}
+
+	for (int i = 0; i < LIST_LEN * 2; i++) {
+		struct qdata *qd;
+
+		qd = k_queue_get(q, K_NO_WAIT);
+		zassert_true(qd != NULL, NULL);
+		zassert_equal(qd->data, i, NULL);
+	}
 }
 
 /**

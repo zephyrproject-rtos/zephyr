@@ -22,8 +22,6 @@ source "subsys/net/Kconfig.template.log_config.net"
 
 config LWM2M_DTLS_SUPPORT
 	bool "Enable DTLS support in the LwM2M client"
-	select MBEDTLS
-	select MBEDTLS_ENABLE_HEAP
 	select TLS_CREDENTIALS
 	select NET_SOCKETS_SOCKOPT_TLS
 	select NET_SOCKETS_ENABLE_DTLS
@@ -92,31 +90,6 @@ config LWM2M_LOCAL_PORT
 	  setting of 0 sets a random port for the client to be used for
 	  outgoing communication.
 
-config LWM2M_SECURITY_INSTANCE_COUNT
-	int "Maximum # of LWM2M Security object instances"
-	default 1
-	default 2 if LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP
-	range 1 10
-	help
-	  This setting establishes the total count of LWM2M Security instances
-	  available to the client.
-
-config LWM2M_SECURITY_KEY_SIZE
-	int "Buffer size of the security key resources"
-	default 16
-	range 16 256
-	help
-	  This setting establishes the size of the key (pre-shared / public)
-	  resources in the security object instances.
-
-config LWM2M_SERVER_INSTANCE_COUNT
-	int "Maximum # of LWM2M Server object instances"
-	default 1
-	range 1 10
-	help
-	  This setting establishes the total count of LWM2M Server instances
-	  available to the client (including: bootstrap and regular servers).
-
 config LWM2M_RD_CLIENT_SUPPORT
 	bool "support for LWM2M client bootstrap/registration state machine"
 	default y
@@ -135,6 +108,71 @@ config LWM2M_PEER_PORT
 	default 5683
 	help
 	  This is the default server port to connect to for LWM2M communication
+
+config LWM2M_SECURITY_INSTANCE_COUNT
+	int "Maximum # of LWM2M Security object instances"
+	default 2 if LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP
+	default 1
+	range 1 10
+	help
+	  This setting establishes the total count of LWM2M Security instances
+	  available to the client.
+
+config LWM2M_SECURITY_KEY_SIZE
+	int "Buffer size of the security key resources"
+	default 16
+	range 16 256
+	help
+	  This setting establishes the size of the key (pre-shared / public)
+	  resources in the security object instances.
+
+config LWM2M_SERVER_DEFAULT_PMIN
+	int "Default server record PMIN"
+	default 10
+	help
+	  Default minimum amount of time in seconds the client must wait
+	  between notifications.  If a resource has to be notified during this
+	  minimum time period, the notification must be sent after the time
+	  period expires.
+
+config LWM2M_SERVER_DEFAULT_PMAX
+	int "Default server record PMAX"
+	default 60
+	help
+	  Default maximum amount of time in seconds the client may wait
+	  between notifications.  When this time period expires a notification
+	  must be sent.
+
+config LWM2M_SERVER_INSTANCE_COUNT
+	int "Maximum # of LWM2M Server object instances"
+	default 2 if LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP
+	default 1
+	range 1 10
+	help
+	  This setting establishes the total count of LWM2M Server instances
+	  available to the client (including: bootstrap and regular servers).
+
+config LWM2M_CONN_MON_OBJ_SUPPORT
+	bool "Connectivity Monitoring object support"
+	help
+	  Include support for LWM2M Connectivity Monitoring Object (ID 4)
+
+config LWM2M_CONN_MON_BEARER_MAX
+	int "Maximum # of available network bearer resource instances"
+	depends on LWM2M_CONN_MON_OBJ_SUPPORT
+	default 1
+	help
+	  This value sets the maximum number of available network bearer
+	  resource instances.  These are displayed via the
+	  "Connection Monitoring" object /4/0/1.
+
+config LWM2M_CONN_MON_APN_MAX
+	int "Maximum # of APN resource instances"
+	depends on LWM2M_CONN_MON_OBJ_SUPPORT
+	default 1
+	help
+	  This value sets the maximum number of APN resource instances.
+	  These are displayed via the "Connection Monitoring" object /4/0/7.
 
 config LWM2M_FIRMWARE_UPDATE_OBJ_SUPPORT
 	bool "Firmware Update object support"
@@ -212,6 +250,11 @@ config LWM2M_NUM_ATTR
 	help
 	  This value sets up the maximum number of LwM2M attributes that
 	  we can handle at the same time.
+
+config LWM2M_LOCATION_OBJ_SUPPORT
+	bool "Location object support"
+	help
+	  Include support for LWM2M Location Object (ID 6)
 
 menu "IPSO Alliance Smart Object Support"
 

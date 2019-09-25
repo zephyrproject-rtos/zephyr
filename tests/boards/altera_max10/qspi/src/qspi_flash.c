@@ -6,7 +6,7 @@
 
 #include <zephyr.h>
 #include <kernel.h>
-#include <flash.h>
+#include <drivers/flash.h>
 #include <device.h>
 #include <ztest.h>
 

@@ -9,7 +9,7 @@
 #include <zephyr/types.h>
 #include <errno.h>
 #include <init.h>
-#include <fs.h>
+#include <fs/fs.h>
 
 
 #define LOG_LEVEL CONFIG_FS_LOG_LEVEL
@@ -25,8 +25,8 @@ static struct k_mutex mutex;
 /* file system map table */
 static struct fs_file_system_t *fs_map[FS_TYPE_END];
 
-int fs_get_mnt_point(struct fs_mount_t **mnt_pntp,
-		     const char *name, size_t *match_len)
+static int fs_get_mnt_point(struct fs_mount_t **mnt_pntp,
+			    const char *name, size_t *match_len)
 {
 	struct fs_mount_t *mnt_p = NULL, *itr;
 	size_t longest_match = 0;
@@ -213,9 +213,21 @@ int fs_opendir(struct fs_dir_t *zdp, const char *abs_path)
 	int rc = -EINVAL;
 
 	if ((abs_path == NULL) ||
-			(strlen(abs_path) <= 1) || (abs_path[0] != '/')) {
+			(strlen(abs_path) < 1) || (abs_path[0] != '/')) {
 		LOG_ERR("invalid file name!!");
 		return -EINVAL;
+	}
+
+	if (strcmp(abs_path, "/") == 0) {
+		/* Open VFS root dir, marked by zdp->mp == NULL */
+		k_mutex_lock(&mutex, K_FOREVER);
+
+		zdp->mp = NULL;
+		zdp->dirp = sys_dlist_peek_head(&fs_mnt_list);
+
+		k_mutex_unlock(&mutex);
+
+		return 0;
 	}
 
 	rc = fs_get_mnt_point(&mp, abs_path, NULL);
@@ -238,20 +250,89 @@ int fs_opendir(struct fs_dir_t *zdp, const char *abs_path)
 
 int fs_readdir(struct fs_dir_t *zdp, struct fs_dirent *entry)
 {
-	int rc = -EINVAL;
+	if (zdp->mp) {
+		/* Delegate to mounted filesystem */
+		int rc = -EINVAL;
 
-	if (zdp->mp->fs->readdir != NULL) {
-		rc = zdp->mp->fs->readdir(zdp, entry);
-		if (rc < 0) {
-			LOG_ERR("directory read error (%d)", rc);
+		if (zdp->mp->fs->readdir != NULL) {
+			/* Loop until error or not special directory */
+			while (true) {
+				rc = zdp->mp->fs->readdir(zdp, entry);
+				if (rc < 0) {
+					break;
+				}
+				if (entry->type != FS_DIR_ENTRY_DIR) {
+					break;
+				}
+				if ((strcmp(entry->name, ".") != 0)
+				    && (strcmp(entry->name, "..") != 0)) {
+					break;
+				}
+			}
+			if (rc < 0) {
+				LOG_ERR("directory read error (%d)", rc);
+			}
+		}
+
+		return rc;
+	}
+
+	/* VFS root dir */
+	if (zdp->dirp == NULL) {
+		/* No more entries */
+		entry->name[0] = 0;
+		return 0;
+	}
+
+	/* Find the current and next entries in the mount point dlist */
+	sys_dnode_t *node, *next = NULL;
+	bool found = false;
+
+	k_mutex_lock(&mutex, K_FOREVER);
+
+	SYS_DLIST_FOR_EACH_NODE(&fs_mnt_list, node) {
+		if (node == zdp->dirp) {
+			found = true;
+
+			/* Pull info from current entry */
+			struct fs_mount_t *mnt;
+
+			mnt = CONTAINER_OF(node, struct fs_mount_t, node);
+
+			entry->type = FS_DIR_ENTRY_DIR;
+			strncpy(entry->name, mnt->mnt_point + 1,
+				sizeof(entry->name) - 1);
+			entry->name[sizeof(entry->name) - 1] = 0;
+			entry->size = 0;
+
+			/* Save pointer to the next one, for later */
+			next = sys_dlist_peek_next(&fs_mnt_list, node);
+			break;
 		}
 	}
-	return rc;
+
+	k_mutex_unlock(&mutex);
+
+	if (!found) {
+		/* Current entry must have been removed before this
+		 * call to readdir -- return an error
+		 */
+		return -ENOENT;
+	}
+
+	zdp->dirp = next;
+	return 0;
 }
 
 int fs_closedir(struct fs_dir_t *zdp)
 {
 	int rc = -EINVAL;
+
+	if (zdp->mp == NULL) {
+		/* VFS root dir */
+		zdp->dirp = NULL;
+		return 0;
+	}
 
 	if (zdp->mp->fs->closedir != NULL) {
 		rc = zdp->mp->fs->closedir(zdp);
@@ -472,7 +553,7 @@ int fs_mount(struct fs_mount_t *mp)
 
 	/*  append to the mount list */
 	sys_dlist_append(&fs_mnt_list, &mp->node);
-	LOG_DBG("fs mouted, mount point:%s", mp->mnt_point);
+	LOG_DBG("fs mounted at %s", log_strdup(mp->mnt_point));
 
 mount_err:
 	k_mutex_unlock(&mutex);
@@ -508,7 +589,7 @@ int fs_unmount(struct fs_mount_t *mp)
 
 	/* remove mount node from the list */
 	sys_dlist_remove(&mp->node);
-	LOG_DBG("fs unmouted, mount point:%s", mp->mnt_point);
+	LOG_DBG("fs unmounted from %s", log_strdup(mp->mnt_point));
 
 unmount_err:
 	k_mutex_unlock(&mutex);

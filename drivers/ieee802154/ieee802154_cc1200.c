@@ -22,12 +22,12 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <net/net_if.h>
 #include <net/net_pkt.h>
 
-#include <misc/byteorder.h>
+#include <sys/byteorder.h>
 #include <string.h>
 #include <random/rand32.h>
 
-#include <spi.h>
-#include <gpio.h>
+#include <drivers/spi.h>
+#include <drivers/gpio.h>
 
 #include <net/ieee802154_radio.h>
 
@@ -798,7 +798,7 @@ static int cc1200_init(struct device *dev)
 	k_thread_create(&cc1200->rx_thread, cc1200->rx_stack,
 			CONFIG_IEEE802154_CC1200_RX_STACK_SIZE,
 			(k_thread_entry_t)cc1200_rx,
-			dev, NULL, NULL, K_PRIO_COOP(2), 0, 0);
+			dev, NULL, NULL, K_PRIO_COOP(2), 0, K_NO_WAIT);
 
 	LOG_INF("CC1200 initialized");
 

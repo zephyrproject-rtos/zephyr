@@ -17,14 +17,14 @@
  * @{
  */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#include <atomic.h>
+#include <sys/atomic.h>
 #include <bluetooth/buf.h>
 #include <bluetooth/conn.h>
 #include <bluetooth/hci.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* L2CAP header size, used for buffer size calculations */
 #define BT_L2CAP_HDR_SIZE               4
@@ -66,6 +66,7 @@ typedef enum bt_l2cap_chan_state {
 	BT_L2CAP_CONNECTED,
 	/** Channel in disconnecting state */
 	BT_L2CAP_DISCONNECT,
+
 } __packed bt_l2cap_chan_state_t;
 
 /** @brief Status of L2CAP channel. */

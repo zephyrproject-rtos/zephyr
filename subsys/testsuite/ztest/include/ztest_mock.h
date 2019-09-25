@@ -91,6 +91,10 @@
 
 #include <zephyr/types.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void z_init_mock(void);
 int z_cleanup_mock(void);
 
@@ -100,6 +104,10 @@ void z_ztest_check_expected_value(const char *fn, const char *param,
 
 void z_ztest_returns_value(const char *fn, uintptr_t value);
 uintptr_t z_ztest_get_return_value(const char *fn);
+
+#ifdef __cplusplus
+}
+#endif
 
 #else /* !CONFIG_ZTEST_MOCKING */
 

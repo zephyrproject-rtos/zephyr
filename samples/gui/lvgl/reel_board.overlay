@@ -5,7 +5,7 @@
  */
 
 &spi3 {
-	ssd1673fb@0 {
+	ssd16xxfb@0 {
 		label = "DISPLAY";
 	};
 };

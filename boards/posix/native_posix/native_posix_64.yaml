@@ -1,0 +1,10 @@
+identifier: native_posix_64
+name: Native 64-bit POSIX port
+type: native
+arch: posix
+toolchain:
+  - zephyr
+  - llvm
+supported:
+  - netif:eth
+  - usb_device

@@ -5,7 +5,7 @@
  */
 
 #include <soc.h>
-#include <hwinfo.h>
+#include <drivers/hwinfo.h>
 #include <string.h>
 
 struct imxrt_uid {

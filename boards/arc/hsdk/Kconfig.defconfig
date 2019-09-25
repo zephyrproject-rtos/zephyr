@@ -1,0 +1,54 @@
+#
+# Copyright (c) 2019 Synopsys, Inc. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_HSDK
+
+config BOARD
+	default "hsdk"
+
+if GPIO
+
+config GPIO_DW
+	default y
+
+if GPIO_DW
+
+config GPIO_DW_0
+	default y
+
+endif # GPIO_DW
+
+endif # GPIO
+
+if SPI
+
+config SPI_DW
+	default y
+
+if SPI_DW
+
+config SPI_DW_FIFO_DEPTH
+	default 32
+
+config SPI_DW_ARC_AUX_REGS
+	default n
+
+config SPI_DW_ACCESS_WORD_ONLY
+	default y
+
+config SPI_0
+	default y
+
+config SPI_1
+	default y
+
+config SPI_2
+	default y
+
+endif # SPI_DW
+
+endif # SPI
+
+endif # BOARD_HSDK

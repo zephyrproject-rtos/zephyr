@@ -5,8 +5,8 @@
  */
 
 #include <init.h>
-#include <pinmux.h>
-#include <gpio.h>
+#include <drivers/pinmux.h>
+#include <drivers/gpio.h>
 #include <fsl_port.h>
 
 static int hexiwear_k64_pinmux_init(struct device *dev)

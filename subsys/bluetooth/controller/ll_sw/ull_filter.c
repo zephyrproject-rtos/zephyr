@@ -7,7 +7,7 @@
 #include <string.h>
 
 #include <zephyr.h>
-#include <misc/byteorder.h>
+#include <sys/byteorder.h>
 #include <bluetooth/hci.h>
 
 #include "hal/ccm.h"
@@ -56,6 +56,7 @@ static struct {
 } wl[WL_SIZE];
 
 static u8_t rl_enable;
+
 static struct rl_dev {
 	u8_t      taken:1;
 	u8_t      rpas_ready:1;
@@ -871,6 +872,11 @@ static void rpa_adv_refresh(struct ll_adv_set *adv)
 		return;
 	}
 
+	idx = ull_filter_rl_find(adv->id_addr_type, adv->id_addr, NULL);
+	if (idx >= ARRAY_SIZE(rl)) {
+		return;
+	}
+
 	prev = lll_adv_data_peek(&adv->lll);
 	pdu = lll_adv_data_alloc(&adv->lll, &idx);
 	pdu->type = prev->type;
@@ -882,8 +888,6 @@ static void rpa_adv_refresh(struct ll_adv_set *adv)
 		pdu->chan_sel = 0;
 	}
 
-	idx = ull_filter_rl_find(adv->id_addr_type, adv->id_addr, NULL);
-	LL_ASSERT(idx < ARRAY_SIZE(rl));
 	ull_filter_adv_pdu_update(adv, idx, pdu);
 
 	memcpy(&pdu->adv_ind.data[0], &prev->adv_ind.data[0],
@@ -925,20 +929,12 @@ static void rpa_timeout(struct k_work *work)
 
 static void rpa_refresh_start(void)
 {
-	if (!rl_enable) {
-		return;
-	}
-
 	BT_DBG("");
 	k_delayed_work_submit(&rpa_work, rpa_timeout_ms);
 }
 
 static void rpa_refresh_stop(void)
 {
-	if (!rl_enable) {
-		return;
-	}
-
 	k_delayed_work_cancel(&rpa_work);
 }
 

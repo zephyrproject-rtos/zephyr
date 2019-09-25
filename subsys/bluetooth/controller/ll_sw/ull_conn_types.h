@@ -202,6 +202,11 @@ struct ll_conn {
 	u8_t phy_pref_rx:3;
 #endif /* CONFIG_BT_CTLR_PHY */
 
+#if defined(CONFIG_BT_CTLR_LLID_DATA_START_EMPTY)
+	/* Detect empty L2CAP start frame */
+	u8_t  start_empty:1;
+#endif /* CONFIG_BT_CTLR_LLID_DATA_START_EMPTY */
+
 	struct node_tx *tx_head;
 	struct node_tx *tx_ctrl;
 	struct node_tx *tx_ctrl_last;

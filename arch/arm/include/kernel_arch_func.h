@@ -109,8 +109,12 @@ z_arch_switch_to_main_thread(struct k_thread *main_thread,
 	 */
 	__asm__ volatile (
 	"mov   r0,  %0     \n\t"   /* Store _main in R0 */
+#if defined(CONFIG_CPU_CORTEX_M)
 	"msr   PSP, %1     \n\t"   /* __set_PSP(start_of_main_stack) */
-#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+#endif
+
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE) \
+			|| defined(CONFIG_ARMV7_R)
 	"cpsie i           \n\t"   /* __enable_irq() */
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 	"cpsie if          \n\t"   /* __enable_irq(); __enable_fault_irq() */
@@ -145,6 +149,8 @@ extern FUNC_NORETURN void z_arm_userspace_enter(k_thread_entry_t user_entry,
 					       void *p1, void *p2, void *p3,
 					       u32_t stack_end,
 					       u32_t stack_start);
+
+extern void z_arm_fatal_error(unsigned int reason, const z_arch_esf_t *esf);
 
 #endif /* _ASMLANGUAGE */
 

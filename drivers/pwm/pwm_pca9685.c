@@ -12,8 +12,8 @@
 
 #include <kernel.h>
 
-#include <i2c.h>
-#include <pwm.h>
+#include <drivers/i2c.h>
+#include <drivers/pwm.h>
 
 #include "pwm_pca9685.h"
 

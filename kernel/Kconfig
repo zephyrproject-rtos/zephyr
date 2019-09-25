@@ -148,7 +148,7 @@ config SCHED_CPU_MASK
 config MAIN_STACK_SIZE
 	int "Size of stack for initialization and main thread"
 	default 2048 if COVERAGE_GCOV
-	default 512 if ZTEST && !RISCV32
+	default 512 if ZTEST && !(RISCV || X86)
 	default 1024
 	help
 	  When the initialization is complete, the thread executing it then
@@ -161,7 +161,7 @@ config IDLE_STACK_SIZE
 	int "Size of stack for idle thread"
 	default 2048 if COVERAGE_GCOV
 	default 1024 if XTENSA
-	default 512 if RISCV32
+	default 512 if RISCV
 	default 320 if ARC || (ARM && CPU_HAS_FPU)
 	default 256
 	help
@@ -351,6 +351,16 @@ config THREAD_NAME
 	bool "Thread name [EXPERIMENTAL]"
 	help
 	  This option allows to set a name for a thread.
+
+config THREAD_MAX_NAME_LEN
+	int "Max length of a thread name"
+	default 32
+	range 8 128
+	depends on THREAD_NAME
+	help
+	  Thread names get stored in the k_thread struct. Indicate the max
+	  name length, including the terminating NULL byte. Reduce this value
+	  to conserve memory.
 endmenu
 
 menu "Work Queue Options"
@@ -519,9 +529,11 @@ config ARCH_HAS_CUSTOM_BUSY_WAIT
 
 config SYS_CLOCK_TICKS_PER_SEC
 	int "System tick frequency (in ticks/second)"
+	default 100 if QEMU_TARGET || SOC_POSIX
+	default 10000 if TICKLESS_CAPABLE
 	default 100
 	help
-	  This option specifies the frequency of the system clock in Hz.
+	  This option specifies the nominal frequency of the system clock in Hz.
 
 	  Depending on the choice made, an amount of possibly expensive math must
 	  occur when converting ticks to milliseconds and vice-versa. Some values
@@ -557,10 +569,13 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 	  and the user should generally avoid modifying it via the menu configuration.
 
 config SYS_CLOCK_EXISTS
-	def_bool (SYS_CLOCK_TICKS_PER_SEC != 0)
-	# omit prompt to signify a "hidden" option
+	bool "System clock exists and is enabled"
+	default y
 	help
 	  This option specifies that the kernel lacks timer support.
+	  Some device configurations can eliminate significant code if
+	  this is disabled.  Obviously timeout-related APIs will not
+	  work.
 
 config XIP
 	bool "Execute in place"

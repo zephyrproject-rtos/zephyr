@@ -12,7 +12,7 @@
 LOG_MODULE_REGISTER(main);
 
 #if CONFIG_DISK_ACCESS_FLASH && CONFIG_FAT_FILESYSTEM_ELM
-#include <fs.h>
+#include <fs/fs.h>
 #include <ff.h>
 
 static FATFS fat_fs;

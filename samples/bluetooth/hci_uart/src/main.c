@@ -12,13 +12,13 @@
 
 #include <zephyr.h>
 #include <arch/cpu.h>
-#include <misc/byteorder.h>
+#include <sys/byteorder.h>
 #include <logging/log.h>
-#include <misc/util.h>
+#include <sys/util.h>
 
 #include <device.h>
 #include <init.h>
-#include <uart.h>
+#include <drivers/uart.h>
 
 #include <net/buf.h>
 #include <bluetooth/bluetooth.h>
@@ -329,6 +329,7 @@ static int hci_uart_init(struct device *unused)
 {
 	LOG_DBG("");
 
+	/* Derived from DT's bt-c2h-uart chosen node */
 	hci_uart_dev = device_get_binding(CONFIG_BT_CTLR_TO_HOST_UART_DEV_NAME);
 	if (!hci_uart_dev) {
 		return -EINVAL;
@@ -354,6 +355,7 @@ void main(void)
 	int err;
 
 	LOG_DBG("Start");
+	__ASSERT(hci_uart_dev, "UART device is NULL");
 
 	/* Enable the raw interface, this will in turn open the HCI driver */
 	bt_enable_raw(&rx_queue);

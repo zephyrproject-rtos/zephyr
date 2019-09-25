@@ -11,8 +11,8 @@ LOG_MODULE_REGISTER(net_mgmt, CONFIG_NET_MGMT_EVENT_LOG_LEVEL);
 #include <toolchain.h>
 #include <linker/sections.h>
 
-#include <misc/util.h>
-#include <misc/slist.h>
+#include <sys/util.h>
+#include <sys/slist.h>
 #include <net/net_mgmt.h>
 
 #include "net_private.h"
@@ -181,8 +181,10 @@ static inline void mgmt_run_callbacks(struct mgmt_event_entry *mgmt_event)
 #ifdef CONFIG_NET_MGMT_EVENT_INFO
 		if (mgmt_event->info_length) {
 			cb->info = (void *)mgmt_event->info;
+			cb->info_length = mgmt_event->info_length;
 		} else {
 			cb->info = NULL;
+			cb->info_length = 0;
 		}
 #endif /* CONFIG_NET_MGMT_EVENT_INFO */
 
@@ -260,6 +262,7 @@ static int mgmt_event_wait_call(struct net_if *iface,
 				u32_t *raised_event,
 				struct net_if **event_iface,
 				const void **info,
+				size_t *info_length,
 				int timeout)
 {
 	struct mgmt_event_wait sync_data = {
@@ -295,6 +298,10 @@ static int mgmt_event_wait_call(struct net_if *iface,
 #ifdef CONFIG_NET_MGMT_EVENT_INFO
 			if (info) {
 				*info = sync.info;
+
+				if (info_length) {
+					*info_length = sync.info_length;
+				}
 			}
 #endif /* CONFIG_NET_MGMT_EVENT_INFO */
 		}
@@ -347,23 +354,27 @@ int net_mgmt_event_wait(u32_t mgmt_event_mask,
 			u32_t *raised_event,
 			struct net_if **iface,
 			const void **info,
+			size_t *info_length,
 			int timeout)
 {
 	return mgmt_event_wait_call(NULL, mgmt_event_mask,
-				    raised_event, iface, info, timeout);
+				    raised_event, iface, info, info_length,
+				    timeout);
 }
 
 int net_mgmt_event_wait_on_iface(struct net_if *iface,
 				 u32_t mgmt_event_mask,
 				 u32_t *raised_event,
 				 const void **info,
+				 size_t *info_length,
 				 int timeout)
 {
 	NET_ASSERT(NET_MGMT_ON_IFACE(mgmt_event_mask));
 	NET_ASSERT(iface);
 
 	return mgmt_event_wait_call(iface, mgmt_event_mask,
-				    raised_event, NULL, info, timeout);
+				    raised_event, NULL, info, info_length,
+				    timeout);
 }
 
 void net_mgmt_event_init(void)

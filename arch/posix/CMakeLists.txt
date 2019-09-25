@@ -1,9 +1,15 @@
 # SPDX-License-Identifier: Apache-2.0
 
+if (CONFIG_64BIT)
+	# some gcc versions fail to build without -fPIC
+	zephyr_compile_options(-m64 -fPIC)
+	zephyr_ld_options(-m64)
+else ()
+	zephyr_compile_options(-m32)
+	zephyr_ld_options(-m32)
+endif ()
+
 zephyr_compile_options(
-  -m32
-  -MMD
-  -MP
   ${ARCH_FLAG}
   -include ${ZEPHYR_BASE}/arch/posix/include/posix_cheats.h
   )
@@ -13,14 +19,9 @@ toolchain_cc_no_freestanding_options()
 
 zephyr_include_directories(${BOARD_DIR})
 
-zephyr_compile_options_ifdef(CONFIG_COVERAGE
-  -fprofile-arcs
-  -ftest-coverage
-  -fno-inline
-)
-zephyr_link_libraries_ifdef(CONFIG_COVERAGE
-	-lgcov
-	)
+if (CONFIG_COVERAGE)
+  toolchain_cc_coverage()
+endif ()
 
 if (CONFIG_ASAN)
 	zephyr_compile_options(-fsanitize=address)
@@ -33,7 +34,6 @@ zephyr_compile_definitions(_POSIX_C_SOURCE=200809 _XOPEN_SOURCE=600 _XOPEN_SOURC
 zephyr_ld_options(
   -ldl
   -pthread
-  -m32
 )
 
 # About the -include directive: The reason to do it this way, is because in this

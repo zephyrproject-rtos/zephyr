@@ -5,7 +5,7 @@
  */
 
 #include <ztest.h>
-#include <power.h>
+#include <power/power.h>
 
 #define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
 #define NUM_THREAD 4
@@ -23,16 +23,9 @@ static struct k_thread tdata[NUM_THREAD];
 
 /*slice size is set as half of the sleep duration*/
 #define SLICE_SIZE	 __ticks_to_ms(CONFIG_TICKLESS_IDLE_THRESH >> 1)
-#define SLICE_SIZE_CYCLES \
-	(u32_t)(SLICE_SIZE * sys_clock_hw_cycles_per_sec() / 1000)
 
-/*mimimum slice duration accepted by the test: (SLICE_SIZE - 1ms) */
-#define SLICE_SIZE_MIN_CYCLES \
-	(u32_t)(SLICE_SIZE_CYCLES - (sys_clock_hw_cycles_per_sec() / 1000))
-
-/*maximum slice duration accepted by the test: (SLICE_SIZE + 1ms) */
-#define SLICE_SIZE_MAX_CYCLES \
-	(u32_t)(SLICE_SIZE_CYCLES + (sys_clock_hw_cycles_per_sec() / 1000))
+/*maximum slice duration accepted by the test*/
+#define SLICE_SIZE_LIMIT __ticks_to_ms((CONFIG_TICKLESS_IDLE_THRESH >> 1) + 1)
 
 /*align to millisecond boundary*/
 #if defined(CONFIG_ARCH_POSIX)
@@ -51,30 +44,19 @@ static struct k_thread tdata[NUM_THREAD];
 	} while (0)
 #endif
 K_SEM_DEFINE(sema, 0, NUM_THREAD);
-static u32_t elapsed_slice;
-
-static u32_t cycles_delta(u32_t *reftime)
-{
-	u32_t now, delta;
-
-	now = k_cycle_get_32();
-	delta = now - *reftime;
-	*reftime = now;
-
-	return delta;
-}
-
+static s64_t elapsed_slice;
 
 static void thread_tslice(void *p1, void *p2, void *p3)
 {
-	u32_t t = cycles_delta(&elapsed_slice);
+	s64_t t = k_uptime_delta(&elapsed_slice);
 
-	TC_PRINT("elapsed slice %d, expected: <%d, %d>\n",
-		t, SLICE_SIZE_MIN_CYCLES, SLICE_SIZE_MAX_CYCLES);
+	TC_PRINT("elapsed slice %lld, expected: <%lld, %lld>\n",
+		t, SLICE_SIZE, SLICE_SIZE_LIMIT);
 
 	/**TESTPOINT: verify slicing scheduler behaves as expected*/
-	zassert_true(t >= SLICE_SIZE_MIN_CYCLES, NULL);
-	zassert_true(t <= SLICE_SIZE_MAX_CYCLES, NULL);
+	zassert_true(t >= SLICE_SIZE, NULL);
+	/*less than one tick delay*/
+	zassert_true(t <= SLICE_SIZE_LIMIT, NULL);
 
 	/*keep the current thread busy for more than one slice*/
 	k_busy_wait(1000 * SLEEP_TICKLESS);
@@ -126,23 +108,13 @@ void test_tickless_slice(void)
 	/*enable time slice*/
 	k_sched_time_slice_set(SLICE_SIZE, K_PRIO_PREEMPT(0));
 
-	/*synchronize to tick boundary*/
-	k_sleep(1);
-
 	/*create delayed threads with equal preemptive priority*/
 	for (int i = 0; i < NUM_THREAD; i++) {
 		tid[i] = k_thread_create(&tdata[i], tstack[i], STACK_SIZE,
 					 thread_tslice, NULL, NULL, NULL,
-					 K_PRIO_PREEMPT(0), 0,
-					 SLICE_SIZE + __ticks_to_ms(1));
+					 K_PRIO_PREEMPT(0), 0, SLICE_SIZE);
 	}
-
-	/*synchronize to tick boundary.*/
-	k_sleep(1);
-
-	/*set reference time to last tick boundary*/
-	elapsed_slice = z_tick_get_32() * sys_clock_hw_cycles_per_tick();
-
+	k_uptime_delta(&elapsed_slice);
 	/*relinquish CPU and wait for each thread to complete*/
 	for (int i = 0; i < NUM_THREAD; i++) {
 		k_sem_take(&sema, K_FOREVER);

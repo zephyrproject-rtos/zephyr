@@ -19,4 +19,23 @@ config NUM_IRQS
 	default 174
 
 source "soc/arm/microchip_mec/mec1501/Kconfig.defconfig.mec1501*"
+
+if RTOS_TIMER
+
+config MCHP_XEC_RTOS_TIMER
+	bool
+	default y
+
+config ARCH_HAS_CUSTOM_BUSY_WAIT
+	default y
+
+endif # RTOS_TIMER
+
+if !RTOS_TIMER
+
+config CORTEX_M_SYSTICK
+	default y
+
+endif # RTOS_TIMER
+
 endif # SOC_SERIES_MEC1501X

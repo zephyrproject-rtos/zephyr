@@ -4,7 +4,8 @@
 
 '''Runner for NIOS II, based on quartus-flash.py and GDB.'''
 
-from west import log
+import os
+
 from runners.core import ZephyrBinaryRunner, NetworkPortHelper
 
 
@@ -57,7 +58,12 @@ class Nios2BinaryRunner(ZephyrBinaryRunner):
             raise ValueError('Cannot flash; --quartus-flash not given.')
         if self.cpu_sof is None:
             raise ValueError('Cannot flash; --cpu-sof not given.')
+        if not os.path.isfile(self.hex_name):
+            raise ValueError('Cannot flash; hex file ({}) does not exist. '.
+                             format(self.hex_name) +
+                             'Try enabling CONFIG_BUILD_OUTPUT_HEX.')
 
+        self.logger.info('Flashing file: {}'.format(self.hex_name))
         cmd = [self.quartus_py,
                '--sof', self.cpu_sof,
                '--kernel', self.hex_name]
@@ -65,7 +71,8 @@ class Nios2BinaryRunner(ZephyrBinaryRunner):
         self.check_call(cmd)
 
     def print_gdbserver_message(self, gdb_port):
-        log.inf('Nios II GDB server running on port {}'.format(gdb_port))
+        self.logger.info('Nios II GDB server running on port {}'.
+                         format(gdb_port))
 
     def debug_debugserver(self, command, **kwargs):
         # Per comments in the shell script, the NIOSII GDB server

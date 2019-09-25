@@ -12,7 +12,9 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(net_utils, CONFIG_NET_UTILS_LOG_LEVEL);
 
+#include <kernel.h>
 #include <stdlib.h>
+#include <syscall_handler.h>
 #include <zephyr/types.h>
 #include <stdbool.h>
 #include <string.h>
@@ -93,6 +95,9 @@ char *net_sprint_ll_addr_buf(const u8_t *ll, u8_t ll_len,
 	case 6:
 		len = 6U;
 		break;
+	case 2:
+		len = 2U;
+		break;
 	default:
 		len = 6U;
 		break;
@@ -137,8 +142,8 @@ static int net_value_to_udec(char *buf, u32_t value, int precision)
 	return buf - start;
 }
 
-char *net_addr_ntop(sa_family_t family, const void *src,
-		    char *dst, size_t size)
+char *z_impl_net_addr_ntop(sa_family_t family, const void *src,
+			   char *dst, size_t size)
 {
 	struct in_addr *addr;
 	struct in6_addr *addr6;
@@ -270,8 +275,44 @@ char *net_addr_ntop(sa_family_t family, const void *src,
 	return dst;
 }
 
-int net_addr_pton(sa_family_t family, const char *src,
-		  void *dst)
+#if defined(CONFIG_USERSPACE)
+char *z_vrfy_net_addr_ntop(sa_family_t family, const void *src,
+			   char *dst, size_t size)
+{
+	char str[INET6_ADDRSTRLEN];
+	struct in6_addr addr6;
+	struct in_addr addr4;
+	char *out;
+	const void *addr;
+
+	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(dst, size));
+
+	if (family == AF_INET) {
+		Z_OOPS(z_user_from_copy(&addr4, (const void *)src,
+					sizeof(addr4)));
+		addr = &addr4;
+	} else if (family == AF_INET6) {
+		Z_OOPS(z_user_from_copy(&addr6, (const void *)src,
+					sizeof(addr6)));
+		addr = &addr6;
+	} else {
+		return 0;
+	}
+
+	out = z_impl_net_addr_ntop(family, addr, str, sizeof(str));
+	if (!out) {
+		return 0;
+	}
+
+	Z_OOPS(z_user_to_copy((void *)dst, str, MIN(size, sizeof(str))));
+
+	return dst;
+}
+#include <syscalls/net_addr_ntop_mrsh.c>
+#endif /* CONFIG_USERSPACE */
+
+int z_impl_net_addr_pton(sa_family_t family, const char *src,
+			 void *dst)
 {
 	if (family == AF_INET) {
 		struct in_addr *addr = (struct in_addr *)dst;
@@ -402,6 +443,51 @@ int net_addr_pton(sa_family_t family, const char *src,
 
 	return 0;
 }
+
+#if defined(CONFIG_USERSPACE)
+int z_vrfy_net_addr_pton(sa_family_t family, const char *src,
+			 void *dst)
+{
+	char str[INET6_ADDRSTRLEN];
+	struct in6_addr addr6;
+	struct in_addr addr4;
+	void *addr;
+	size_t size;
+	size_t nlen;
+	int err;
+
+	if (family == AF_INET) {
+		size = sizeof(struct in_addr);
+		addr = &addr4;
+	} else if (family == AF_INET6) {
+		size = sizeof(struct in6_addr);
+		addr = &addr6;
+	} else {
+		return -EINVAL;
+	}
+
+	memset(str, 0, sizeof(str));
+
+	nlen = z_user_string_nlen((const char *)src, sizeof(str), &err);
+	if (err) {
+		return -EINVAL;
+	}
+
+	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(dst, size));
+	Z_OOPS(Z_SYSCALL_MEMORY_READ(src, nlen));
+	Z_OOPS(z_user_from_copy(str, (const void *)src, nlen));
+
+	err = z_impl_net_addr_pton(family, str, addr);
+	if (err) {
+		return err;
+	}
+
+	Z_OOPS(z_user_to_copy((void *)src, addr, size));
+
+	return 0;
+}
+#include <syscalls/net_addr_pton_mrsh.c>
+#endif /* CONFIG_USERSPACE */
 
 static u16_t calc_chksum(u16_t sum, const u8_t *data, size_t len)
 {
@@ -597,10 +683,22 @@ static bool parse_ipv6(const char *str, size_t str_len,
 	}
 
 	if ((ptr + 1) < (str + str_len) && *(ptr + 1) == ':') {
-		len = str_len - end;
+		/* -1 as end does not contain first [
+		 * -2 as pointer is advanced by 2, skipping ]:
+		 */
+		len = str_len - end - 1 - 2;
+
+		ptr += 2;
+
+		for (i = 0; i < len; i++) {
+			if (!ptr[i]) {
+				len = i;
+				break;
+			}
+		}
 
 		/* Re-use the ipaddr buf for port conversion */
-		memcpy(ipaddr, ptr + 2, len);
+		memcpy(ipaddr, ptr, len);
 		ipaddr[len] = '\0';
 
 		ret = convert_port(ipaddr, &port);
@@ -768,4 +866,45 @@ int net_bytes_from_str(u8_t *buf, int buf_len, const char *src)
 	}
 
 	return 0;
+}
+
+const char *net_family2str(sa_family_t family)
+{
+	switch (family) {
+	case AF_UNSPEC:
+		return "AF_UNSPEC";
+	case AF_INET:
+		return "AF_INET";
+	case AF_INET6:
+		return "AF_INET6";
+	case AF_PACKET:
+		return "AF_PACKET";
+	case AF_CAN:
+		return "AF_CAN";
+	}
+
+	return NULL;
+}
+
+const struct in_addr *net_ipv4_unspecified_address(void)
+{
+	static const struct in_addr addr;
+
+	return &addr;
+}
+
+const struct in_addr *net_ipv4_broadcast_address(void)
+{
+	static const struct in_addr addr = { { { 255, 255, 255, 255 } } };
+
+	return &addr;
+}
+
+/* IPv6 wildcard and loopback address defined by RFC2553 */
+const struct in6_addr in6addr_any = IN6ADDR_ANY_INIT;
+const struct in6_addr in6addr_loopback = IN6ADDR_LOOPBACK_INIT;
+
+const struct in6_addr *net_ipv6_unspecified_address(void)
+{
+	return &in6addr_any;
 }

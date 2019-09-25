@@ -39,10 +39,10 @@
 
 #include <kernel.h>
 #include <init.h>
-#include <uart.h>
+#include <drivers/uart.h>
 #include <string.h>
-#include <ring_buffer.h>
-#include <misc/byteorder.h>
+#include <sys/ring_buffer.h>
+#include <sys/byteorder.h>
 #include <usb/class/usb_cdc.h>
 #include <usb/usb_device.h>
 #include <usb/usb_common.h>
@@ -408,17 +408,18 @@ static void cdc_acm_do_cb(struct cdc_acm_dev_data_t *dev_data,
 		dev_data->tx_ready = true;
 		dev_data->tx_irq_ena = true;
 		dev_data->rx_irq_ena = true;
-		LOG_DBG("USB device configured");
+		LOG_INF("USB device configured");
 		break;
 	case USB_DC_DISCONNECTED:
-		LOG_DBG("USB device disconnected");
+		LOG_INF("USB device disconnected");
 		cdc_acm_reset_port(dev_data);
 		break;
 	case USB_DC_SUSPEND:
-		LOG_DBG("USB device suspended");
+		LOG_INF("USB device suspended");
 		break;
 	case USB_DC_RESUME:
-		LOG_DBG("USB device resumed");
+		dev_data->usb_status = USB_DC_CONFIGURED;
+		LOG_INF("USB device resumed");
 		break;
 	case USB_DC_SOF:
 		break;
@@ -463,23 +464,6 @@ static void cdc_interface_config(struct usb_desc_header *head,
 #ifdef CONFIG_USB_COMPOSITE_DEVICE
 	desc->iad_cdc.bFirstInterface = bInterfaceNumber;
 #endif
-}
-
-/**
- * @brief Set the baud rate
- *
- * This routine set the given baud rate for the UART.
- *
- * @param dev             CDC ACM device struct.
- * @param baudrate        Baud rate.
- *
- * @return N/A.
- */
-static void cdc_acm_baudrate_set(struct device *dev, u32_t baudrate)
-{
-	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(dev);
-
-	dev_data->line_coding.dwDTERate = sys_cpu_to_le32(baudrate);
 }
 
 /**
@@ -548,6 +532,7 @@ static int cdc_acm_fifo_fill(struct device *dev,
 		dev_data, len, ring_buf_space_get(dev_data->tx_ringbuf));
 
 	if (dev_data->usb_status != USB_DC_CONFIGURED) {
+		LOG_WRN("Device not configured, drop %d bytes", len);
 		return 0;
 	}
 
@@ -743,6 +728,23 @@ static void cdc_acm_irq_callback_set(struct device *dev,
 }
 
 #ifdef CONFIG_UART_LINE_CTRL
+
+/**
+ * @brief Set the baud rate
+ *
+ * This routine set the given baud rate for the UART.
+ *
+ * @param dev             CDC ACM device struct.
+ * @param baudrate        Baud rate.
+ *
+ * @return N/A.
+ */
+static void cdc_acm_baudrate_set(struct device *dev, u32_t baudrate)
+{
+	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(dev);
+
+	dev_data->line_coding.dwDTERate = sys_cpu_to_le32(baudrate);
+}
 
 /**
  * @brief Send serial line state notification to the Host
@@ -966,7 +968,7 @@ static const struct uart_driver_api cdc_acm_driver_api = {
 	}
 
 #define DEFINE_CDC_ACM_CFG_DATA(x, _)					\
-	USBD_CFG_DATA_DEFINE(cdc_acm)					\
+	USBD_CFG_DATA_DEFINE(primary, cdc_acm)				\
 	struct usb_cfg_data cdc_acm_config_##x = {			\
 		.usb_device_description = NULL,				\
 		.interface_config = cdc_interface_config,		\

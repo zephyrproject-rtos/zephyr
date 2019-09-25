@@ -11,8 +11,8 @@
 #include <stddef.h>
 #include <string.h>
 #include <errno.h>
-#include <misc/printk.h>
-#include <misc/byteorder.h>
+#include <sys/printk.h>
+#include <sys/byteorder.h>
 #include <zephyr.h>
 
 #include <bluetooth/bluetooth.h>
@@ -20,8 +20,7 @@
 #include <bluetooth/conn.h>
 #include <bluetooth/uuid.h>
 #include <bluetooth/gatt.h>
-
-#include <gatt/bas.h>
+#include <bluetooth/services/bas.h>
 
 #define CSC_SUPPORTED_LOCATIONS		{ CSC_LOC_OTHER, \
 					  CSC_LOC_FRONT_WHEEL, \
@@ -77,8 +76,6 @@
 
 /* Cycling Speed and Cadence Service declaration */
 
-static struct bt_gatt_ccc_cfg csc_meas_ccc_cfg[BT_GATT_CCC_MAX];
-static struct bt_gatt_ccc_cfg ctrl_point_ccc_cfg[BT_GATT_CCC_MAX];
 static u32_t cwr; /* Cumulative Wheel Revolutions */
 static u8_t supported_locations[] = CSC_SUPPORTED_LOCATIONS;
 static u8_t sensor_location; /* Current Sensor Location */
@@ -205,7 +202,8 @@ BT_GATT_SERVICE_DEFINE(csc_svc,
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_CSC),
 	BT_GATT_CHARACTERISTIC(BT_UUID_CSC_MEASUREMENT, BT_GATT_CHRC_NOTIFY,
 			       0x00, NULL, NULL, NULL),
-	BT_GATT_CCC(csc_meas_ccc_cfg, csc_meas_ccc_cfg_changed),
+	BT_GATT_CCC(csc_meas_ccc_cfg_changed,
+		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE),
 	BT_GATT_CHARACTERISTIC(BT_UUID_SENSOR_LOCATION, BT_GATT_CHRC_READ,
 			       BT_GATT_PERM_READ, read_location, NULL,
 			       &sensor_location),
@@ -215,7 +213,8 @@ BT_GATT_SERVICE_DEFINE(csc_svc,
 			       BT_GATT_CHRC_WRITE | BT_GATT_CHRC_INDICATE,
 			       BT_GATT_PERM_WRITE, NULL, write_ctrl_point,
 			       &sensor_location),
-	BT_GATT_CCC(ctrl_point_ccc_cfg, ctrl_point_ccc_cfg_changed),
+	BT_GATT_CCC(ctrl_point_ccc_cfg_changed,
+		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE),
 );
 
 struct sc_ctrl_point_ind {
@@ -345,7 +344,7 @@ static void csc_simulation(void)
 static void connected(struct bt_conn *conn, u8_t err)
 {
 	if (err) {
-		printk("Connection failed (err %u)\n", err);
+		printk("Connection failed (err 0x%02x)\n", err);
 	} else {
 		printk("Connected\n");
 	}
@@ -353,7 +352,7 @@ static void connected(struct bt_conn *conn, u8_t err)
 
 static void disconnected(struct bt_conn *conn, u8_t reason)
 {
-	printk("Disconnected (reason %u)\n", reason);
+	printk("Disconnected (reason 0x%02x)\n", reason);
 }
 
 static struct bt_conn_cb conn_callbacks = {
@@ -375,8 +374,6 @@ static void bt_ready(int err)
 
 	printk("Bluetooth initialized\n");
 
-	bas_init();
-
 	err = bt_le_adv_start(BT_LE_ADV_CONN_NAME, ad, ARRAY_SIZE(ad), NULL, 0);
 	if (err) {
 		printk("Advertising failed to start (err %d)\n", err);
@@ -384,6 +381,19 @@ static void bt_ready(int err)
 	}
 
 	printk("Advertising successfully started\n");
+}
+
+static void bas_notify(void)
+{
+	u8_t battery_level = bt_gatt_bas_get_battery_level();
+
+	battery_level--;
+
+	if (!battery_level) {
+		battery_level = 100U;
+	}
+
+	bt_gatt_bas_set_battery_level(battery_level);
 }
 
 void main(void)

@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2017 Linaro Limited
  * Copyright (c) 2017 BayLibre, SAS
+ * Copyright (c) 2019 Centaur Analytics, Inc
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,7 +14,7 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 #include <kernel.h>
 #include <device.h>
 #include <string.h>
-#include <flash.h>
+#include <drivers/flash.h>
 #include <init.h>
 #include <soc.h>
 
@@ -48,9 +49,9 @@ static int write_dword(struct device *dev, off_t offset, u64_t val)
 {
 	volatile u32_t *flash = (u32_t *)(offset + CONFIG_FLASH_BASE_ADDRESS);
 	struct stm32l4x_flash *regs = FLASH_STM32_REGS(dev);
-#ifdef FLASH_OPTR_DUALBANK
+#if defined(FLASH_OPTR_DUALBANK) || defined(FLASH_OPTR_DBANK)
 	bool dcache_enabled = false;
-#endif /* FLASH_OPTR_DUALBANK */
+#endif /* FLASH_OPTR_DUALBANK || FLASH_OPTR_DBANK */
 	u32_t tmp;
 	int rc;
 
@@ -71,7 +72,7 @@ static int write_dword(struct device *dev, off_t offset, u64_t val)
 		return -EIO;
 	}
 
-#ifdef FLASH_OPTR_DUALBANK
+#if defined(FLASH_OPTR_DUALBANK) || defined(FLASH_OPTR_DBANK)
 	/*
 	 * Disable the data cache to avoid the silicon errata 2.2.3:
 	 * "Data cache might be corrupted during Flash memory read-while-write operation"
@@ -80,7 +81,7 @@ static int write_dword(struct device *dev, off_t offset, u64_t val)
 		dcache_enabled = true;
 		regs->acr.val &= (~FLASH_ACR_DCEN);
 	}
-#endif /* FLASH_OPTR_DUALBANK */
+#endif /* FLASH_OPTR_DUALBANK || FLASH_OPTR_DBANK */
 
 	/* Set the PG bit */
 	regs->cr |= FLASH_CR_PG;
@@ -98,14 +99,14 @@ static int write_dword(struct device *dev, off_t offset, u64_t val)
 	/* Clear the PG bit */
 	regs->cr &= (~FLASH_CR_PG);
 
-#ifdef FLASH_OPTR_DUALBANK
+#if defined(FLASH_OPTR_DUALBANK) || defined(FLASH_OPTR_DBANK)
 	/* Reset/enable the data cache if previously enabled */
 	if (dcache_enabled) {
 		regs->acr.val |= FLASH_ACR_DCRST;
 		regs->acr.val &= (~FLASH_ACR_DCRST);
 		regs->acr.val |= FLASH_ACR_DCEN;
 	}
-#endif /* FLASH_OPTR_DUALBANK */
+#endif /* FLASH_OPTR_DUALBANK || FLASH_OPTR_DBANK */
 
 	return rc;
 }
@@ -114,7 +115,34 @@ static int erase_page(struct device *dev, unsigned int page)
 {
 	struct stm32l4x_flash *regs = FLASH_STM32_REGS(dev);
 	u32_t tmp;
+	u16_t pages_per_bank;
 	int rc;
+
+#if !defined(FLASH_OPTR_DUALBANK) && !defined(FLASH_OPTR_DBANK)
+	/* Single bank device. Each page is of 2KB size */
+	pages_per_bank = DT_FLASH_SIZE >> 1;
+#elif defined(FLASH_OPTR_DUALBANK)
+	/* L4 series (2K page size) with configurable Dual Bank (default y) */
+	/* Dual Bank is only option for 1M devices */
+	if ((regs->optr & FLASH_OPTR_DUALBANK) || (DT_FLASH_SIZE == 1024)) {
+		/* Dual Bank configuration (nbr pages = flash size / 2 / 2K) */
+		pages_per_bank = DT_FLASH_SIZE >> 2;
+	} else {
+		/* Single bank configuration. This has not been validated. */
+		/* Not supported for now. */
+		return -ENOTSUP;
+	}
+#elif defined(FLASH_OPTR_DBANK)
+	/* L4+ series (4K page size) with configurable Dual Bank (default y)*/
+	if (regs->optr & FLASH_OPTR_DBANK) {
+		/* Dual Bank configuration (nbre pags = flash size / 2 / 4K) */
+		pages_per_bank = DT_FLASH_SIZE >> 3;
+	} else {
+		/* Single bank configuration */
+		/* Requires 128 bytes data read. This config is not supported */
+		return -ENOTSUP;
+	}
+#endif
 
 	/* if the control register is locked, do not fail silently */
 	if (regs->cr & FLASH_CR_LOCK) {
@@ -132,11 +160,11 @@ static int erase_page(struct device *dev, unsigned int page)
 #ifdef FLASH_CR_BKER
 	regs->cr &= ~FLASH_CR_BKER_Msk;
 	/* Select bank, only for DUALBANK devices */
-	if (page >= 256U)
+	if (page >= pages_per_bank)
 		regs->cr |= FLASH_CR_BKER;
 #endif
 	regs->cr &= ~FLASH_CR_PNB_Msk;
-	regs->cr |= ((page % 256) << 3);
+	regs->cr |= ((page % pages_per_bank) << 3);
 
 	/* Set the STRT bit */
 	regs->cr |= FLASH_CR_STRT;

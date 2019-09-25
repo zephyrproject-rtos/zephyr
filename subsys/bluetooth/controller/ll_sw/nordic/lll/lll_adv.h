@@ -101,3 +101,5 @@ static inline struct pdu_adv *lll_adv_scan_rsp_peek(struct lll_adv *lll)
 {
 	return (void *)lll->scan_rsp.pdu[lll->scan_rsp.last];
 }
+
+extern u16_t ull_adv_lll_handle_get(struct lll_adv *lll);

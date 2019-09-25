@@ -125,7 +125,7 @@ endif # BT_GAP_PERIPHERAL_PREF_PARAMS
 
 config BT_DEVICE_NAME_GATT_WRITABLE
 	bool "Allow to write name by remote GATT clients"
-	depends on BT_CONN && BT_DEVICE_NAME_DYNAMIC
+	depends on BT_DEVICE_NAME_DYNAMIC
 	default y
 	help
 	  Enabling this option allows remote GATT clients to write to device
@@ -135,14 +135,12 @@ if BT_DEBUG
 
 config BT_DEBUG_ATT
 	bool "Bluetooth Attribute Protocol (ATT) debug"
-	depends on BT_CONN
 	help
 	  This option enables debug support for the Bluetooth
 	  Attribute Protocol (ATT).
 
 config BT_DEBUG_GATT
 	bool "Bluetooth Generic Attribute Profile (GATT) debug"
-	depends on BT_CONN
 	help
 	  This option enables debug support for the Bluetooth
 	  Generic Attribute Profile (GATT).

@@ -10,7 +10,7 @@
 
 #include <toolchain/gcc.h>
 #include <init.h>
-#include <pinmux.h>
+#include <drivers/pinmux.h>
 #include <soc.h>
 
 #include "board.h"

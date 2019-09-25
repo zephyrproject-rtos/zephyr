@@ -18,3 +18,5 @@ testing:
   ignore_tags:
     - net
     - bluetooth
+supported:
+  - pwm

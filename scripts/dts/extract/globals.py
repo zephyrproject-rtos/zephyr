@@ -5,6 +5,12 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
+# NOTE: This file is part of the old device tree scripts, which will be removed
+# later. They are kept to generate some legacy #defines via the
+# --deprecated-only flag.
+#
+# The new scripts are gen_defines.py, edtlib.py, and dtlib.py.
+
 import sys
 
 from collections import defaultdict
@@ -19,17 +25,20 @@ bindings = {}
 bus_bindings = {}
 binding_compats = []
 deprecated = []
+deprecated_main = []
 old_alias_names = False
 
 regs_config = {
     'zephyr,sram'  : 'DT_SRAM',
-    'zephyr,ccm'   : 'DT_CCM'
+    'zephyr,ccm'   : 'DT_CCM',
+    'zephyr,dtcm'  : 'DT_DTCM'
 }
 
 name_config = {
     'zephyr,console'     : 'DT_UART_CONSOLE_ON_DEV_NAME',
     'zephyr,shell-uart'  : 'DT_UART_SHELL_ON_DEV_NAME',
     'zephyr,bt-uart'     : 'DT_BT_UART_ON_DEV_NAME',
+    'zephyr,bt-c2h-uart' : 'DT_BT_C2H_UART_ON_DEV_NAME',
     'zephyr,uart-pipe'   : 'DT_UART_PIPE_ON_DEV_NAME',
     'zephyr,bt-mon-uart' : 'DT_BT_MONITOR_ON_DEV_NAME',
     'zephyr,uart-mcumgr' : 'DT_UART_MCUMGR_ON_DEV_NAME'
@@ -42,6 +51,8 @@ def str_to_label(s):
             .replace(',', '_') \
             .replace('@', '_') \
             .replace('/', '_') \
+            .replace('.', '_') \
+            .replace('+', 'PLUS') \
             .upper()
 
 
@@ -141,7 +152,7 @@ def create_reduced(node, path):
     # Assign an instance ID for each compat
     compat = node['props'].get('compatible')
     if compat:
-        if type(compat) is not list:
+        if not isinstance(compat, list):
             compat = [compat]
 
         reduced[path]['instance_id'] = {}
@@ -175,7 +186,7 @@ def node_label(node_path):
             unit_addr += translate_addr(unit_addr, node_path,
                          nr_addr_cells, nr_size_cells)
             unit_addr = "%x" % unit_addr
-        except:
+        except Exception:
             unit_addr = node_path.split('@')[-1]
         def_label += '_' + str_to_label(unit_addr)
     else:
@@ -257,7 +268,7 @@ def enable_old_alias_names(enable):
     global old_alias_names
     old_alias_names = enable
 
-def add_compat_alias(node_path, label_postfix, label, prop_aliases):
+def add_compat_alias(node_path, label_postfix, label, prop_aliases, deprecate=False):
     if 'instance_id' in reduced[node_path]:
         instance = reduced[node_path]['instance_id']
         for k in instance:
@@ -267,9 +278,11 @@ def add_compat_alias(node_path, label_postfix, label, prop_aliases):
             prop_aliases[b] = label
             b = "DT_INST_{}_{}_{}".format(str(i), str_to_label(k), label_postfix)
             prop_aliases[b] = label
+            if deprecate:
+                deprecated.append(b)
 
 def add_prop_aliases(node_path,
-                     alias_label_function, prop_label, prop_aliases):
+                     alias_label_function, prop_label, prop_aliases, deprecate=False):
     node_compat = get_compat(node_path)
     new_alias_prefix = 'DT_'
 
@@ -280,25 +293,65 @@ def add_prop_aliases(node_path,
 
         if new_alias_label != prop_label:
             prop_aliases[new_alias_label] = prop_label
+            if deprecate:
+                deprecated.append(new_alias_label)
         if new_alias_compat_label != prop_label:
             prop_aliases[new_alias_compat_label] = prop_label
+            if deprecate:
+                deprecated.append(new_alias_compat_label)
         if old_alias_names and old_alias_label != prop_label:
             prop_aliases[old_alias_label] = prop_label
 
 def get_binding(node_path):
-    compat = get_compat(node_path)
+    compat = reduced[node_path]['props'].get('compatible')
+    if isinstance(compat, list):
+        compat = compat[0]
 
-    # First look for a bus-specific binding
+    # Support two levels of recursive 'child-binding:'. The new scripts support
+    # any number of levels, but it gets a bit tricky to implement here, because
+    # nodes don't store their bindings.
+
     parent_path = get_parent_path(node_path)
+    pparent_path = get_parent_path(parent_path)
+
     parent_compat = get_compat(parent_path)
-    if parent_compat in bindings:
-        parent_binding = bindings[parent_compat]
-        if 'child' in parent_binding and 'bus' in parent_binding['child']:
-            bus = parent_binding['child']['bus']
-            return bus_bindings[bus][compat]
+    pparent_compat = get_compat(pparent_path) if pparent_path else None
+
+    if parent_compat in bindings or pparent_compat in bindings:
+        if compat is None:
+            # The node doesn't get a binding from 'compatible'. See if it gets
+            # one via 'sub-node' or 'child-binding'.
+
+            parent_binding = bindings.get(parent_compat)
+            if parent_binding:
+                for sub_key in 'sub-node', 'child-binding':
+                    if sub_key in parent_binding:
+                        return parent_binding[sub_key]
+
+            # Look for 'child-binding: child-binding: ...' in grandparent node
+
+            pparent_binding = bindings.get(pparent_compat)
+            if pparent_binding and 'child-binding' in pparent_binding:
+                pp_child_binding = pparent_binding['child-binding']
+                if 'child-binding' in pp_child_binding:
+                    return pp_child_binding['child-binding']
+
+        # look for a bus-specific binding
+
+        parent_binding = bindings.get(parent_compat)
+        if parent_binding:
+            if 'child-bus' in parent_binding:
+                bus = parent_binding['child-bus']
+                return bus_bindings[bus][compat]
+
+            if 'child' in parent_binding and 'bus' in parent_binding['child']:
+                bus = parent_binding['child']['bus']
+                return bus_bindings[bus][compat]
 
     # No bus-specific binding found, look in the main dict.
-    return bindings[compat]
+    if compat:
+        return bindings[compat]
+    return None
 
 def get_binding_compats():
     return binding_compats
@@ -306,6 +359,11 @@ def get_binding_compats():
 def build_cell_array(prop_array):
     index = 0
     ret_array = []
+
+    if isinstance(prop_array, int):
+        # Work around old code generating an integer for e.g.
+        # 'pwms = <&foo>'
+        prop_array = [prop_array]
 
     while index < len(prop_array):
         handle = prop_array[index]
@@ -376,7 +434,8 @@ def child_to_parent_unmap(cell_parent, gpio_index):
 
 
 def extract_controller(node_path, prop, prop_values, index,
-                       def_label, generic, handle_single=False):
+                       def_label, generic, handle_single=False,
+                       deprecate=False):
 
     prop_def = {}
     prop_alias = {}
@@ -416,21 +475,11 @@ def extract_controller(node_path, prop, prop_values, index,
         else:
             l_idx = [str(i)]
 
-        # Check node generation requirements
-        try:
-            generation = get_binding(node_path)['properties'
-                    ][prop]['generation']
-        except:
-            generation = ''
-
-        if 'use-prop-name' in generation:
-            l_cellname = str_to_label(prop + '_' + 'controller')
-        else:
-            l_cellname = str_to_label(generic + '_' + 'controller')
+        l_cellname = str_to_label(generic + '_' + 'controller')
 
         label = l_base + [l_cellname] + l_idx
 
-        add_compat_alias(node_path, '_'.join(label[1:]), '_'.join(label), prop_alias)
+        add_compat_alias(node_path, '_'.join(label[1:]), '_'.join(label), prop_alias, deprecate)
         prop_def['_'.join(label)] = "\"" + l_cell + "\""
 
         #generate defs also if node is referenced as an alias in dts
@@ -439,13 +488,17 @@ def extract_controller(node_path, prop, prop_values, index,
                 node_path,
                 lambda alias: '_'.join([str_to_label(alias)] + label[1:]),
                 '_'.join(label),
-                prop_alias)
+                prop_alias, deprecate)
 
         insert_defs(node_path, prop_def, prop_alias)
 
+        if deprecate:
+            deprecated_main.extend(list(prop_def.keys()))
+
 
 def extract_cells(node_path, prop, prop_values, names, index,
-                  def_label, generic, handle_single=False):
+                  def_label, generic, handle_single=False,
+                  deprecate=False):
 
     prop_array = build_cell_array(prop_values)
     if handle_single:
@@ -479,7 +532,7 @@ def extract_cells(node_path, prop, prop_values, names, index,
 
         try:
             name = names.pop(0).upper()
-        except:
+        except Exception:
             name = ''
 
         # Get number of cells per element of current property
@@ -489,16 +542,8 @@ def extract_cells(node_path, prop, prop_values, names, index,
                     cell_yaml_names = props
                 else:
                     cell_yaml_names = '#cells'
-        try:
-            generation = get_binding(node_path)['properties'][prop
-                    ]['generation']
-        except:
-            generation = ''
 
-        if 'use-prop-name' in generation:
-            l_cell = [str_to_label(str(prop))]
-        else:
-            l_cell = [str_to_label(str(generic))]
+        l_cell = [str_to_label(str(generic))]
 
         l_base = [def_label]
         # Check if #define should be indexed (_0, _1, ...)
@@ -520,7 +565,7 @@ def extract_cells(node_path, prop, prop_values, names, index,
             else:
                 label = l_base + l_cell + l_cellname + l_idx
             label_name = l_base + [name] + l_cellname
-            add_compat_alias(node_path, '_'.join(label[1:]), '_'.join(label), prop_alias)
+            add_compat_alias(node_path, '_'.join(label[1:]), '_'.join(label), prop_alias, deprecate)
             prop_def['_'.join(label)] = elem[j+1]
             if name:
                 prop_alias['_'.join(label_name)] = '_'.join(label)
@@ -531,9 +576,12 @@ def extract_cells(node_path, prop, prop_values, names, index,
                     node_path,
                     lambda alias: '_'.join([str_to_label(alias)] + label[1:]),
                     '_'.join(label),
-                    prop_alias)
+                    prop_alias, deprecate)
 
             insert_defs(node_path, prop_def, prop_alias)
+
+            if deprecate:
+                deprecated_main.extend(list(prop_def.keys()))
 
 
 def err(msg):

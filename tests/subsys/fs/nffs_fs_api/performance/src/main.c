@@ -9,10 +9,10 @@
 
 void test_main(void)
 {
-	ztest_test_suite(nffs_fs_performace_test,
+	ztest_test_suite(nffs_fs_performance_test,
 		ztest_unit_test_setup_teardown(test_fs_mount,
 					       test_setup, test_teardown),
 		ztest_unit_test_setup_teardown(test_performance,
 					       test_setup, test_teardown));
-	ztest_run_test_suite(nffs_fs_performace_test);
+	ztest_run_test_suite(nffs_fs_performance_test);
 }

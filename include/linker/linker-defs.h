@@ -21,7 +21,7 @@
 
 #include <toolchain.h>
 #include <linker/sections.h>
-#include <misc/util.h>
+#include <sys/util.h>
 #include <offsets.h>
 
 #ifdef _LINKER
@@ -216,6 +216,18 @@ extern char __ccm_noinit_end[];
 extern char __ccm_end[];
 #endif /* DT_CCM_BASE_ADDRESS */
 
+#ifdef DT_DTCM_BASE_ADDRESS
+extern char __dtcm_data_start[];
+extern char __dtcm_data_end[];
+extern char __dtcm_bss_start[];
+extern char __dtcm_bss_end[];
+extern char __dtcm_noinit_start[];
+extern char __dtcm_noinit_end[];
+extern char __dtcm_data_rom_start[];
+extern char __dtcm_start[];
+extern char __dtcm_end[];
+#endif /* DT_DTCM_BASE_ADDRESS */
+
 /* Used by the Security Attribution Unit to configure the
  * Non-Secure Callable region.
  */
@@ -251,6 +263,17 @@ extern char _ramfunc_ram_end[];
 extern char _ramfunc_ram_size[];
 extern char _ramfunc_rom_start[];
 #endif /* CONFIG_ARCH_HAS_RAMFUNC_SUPPORT */
+
+/* Memory owned by the kernel. Memory region for thread privilege stack buffers,
+ * currently only applicable on ARM Cortex-M architecture when building with
+ * support for User Mode.
+ *
+ * All thread privilege stack buffers will be placed into this section.
+ */
+#ifdef CONFIG_USERSPACE
+extern char z_priv_stacks_ram_start[];
+extern char z_priv_stacks_ram_end[];
+#endif /* CONFIG_USERSPACE */
 
 #endif /* ! _ASMLANGUAGE */
 

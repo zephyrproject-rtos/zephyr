@@ -29,6 +29,12 @@
 		};
 	};
 
+	sysclk: system-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <600000000>;
+		#clock-cells = <0>;
+	};
+
 	soc {
 		flexram0: flexram@400b0000 {
 			compatible = "nxp,imx-flexram";
@@ -54,7 +60,7 @@
 			};
 		};
 
-		flexspi0: flexspi0@402a8000 {
+		flexspi0: spi@402a8000 {
 			compatible = "nxp,imx-flexspi";
 			reg = <0x402a8000 0x4000>;
 			interrupts = <108 0>;
@@ -63,7 +69,7 @@
 			#size-cells = <0>;
 		};
 
-		flexspi1: flexspi1@402a4000 {
+		flexspi1: spi@402a4000 {
 			compatible = "nxp,imx-flexspi";
 			reg = <0x402a4000 0x4000>;
 			interrupts = <107 0>;
@@ -81,12 +87,25 @@
 			#size-cells = <1>;
 		};
 
+		gpt1: gpt@401ec000 {
+			compatible = "nxp,imx-gpt";
+			reg = <0x401ec000 0x4000>;
+			interrupts = <100 0>;
+			label = "GPT1";
+		};
+
+		gpt2: gpt@401f0000 {
+			compatible = "nxp,imx-gpt";
+			reg = <0x401f0000 0x4000>;
+			interrupts = <101 0>;
+			label = "GPT2";
+		};
+
 		ccm: ccm@400fc000 {
 			compatible = "nxp,imx-ccm";
 			reg = <0x400fc000 0x4000>;
 			label = "CCM";
 
-			clock-controller;
 			#clock-cells = <3>;
 		};
 
@@ -312,6 +331,158 @@
 			status = "disabled";
 		};
 
+		flexpwm1: flexpwm@403dc000 {
+			compatible = "nxp,flexpwm";
+			reg = <0x403dc000 0x4000>;
+			interrupts = <106 0>;
+
+			flexpwm1_pwm0: pwm0 {
+				compatible = "nxp,imx-pwm";
+				index = <0>;
+				label = "FLEXPWM1_PWM0";
+				interrupts = <102 0>;
+				#pwm-cells = <1>;
+			};
+
+			flexpwm1_pwm1: pwm1 {
+				compatible = "nxp,imx-pwm";
+				index = <1>;
+				label = "FLEXPWM1_PWM1";
+				interrupts = <103 0>;
+				#pwm-cells = <1>;
+			};
+
+			flexpwm1_pwm2: pwm2 {
+				compatible = "nxp,imx-pwm";
+				index = <2>;
+				label = "FLEXPWM1_PWM2";
+				interrupts = <104 0>;
+				#pwm-cells = <1>;
+			};
+
+			flexpwm1_pwm3: pwm3 {
+				compatible = "nxp,imx-pwm";
+				index = <3>;
+				label = "FLEXPWM1_PWM3";
+				interrupts = <105 0>;
+				#pwm-cells = <1>;
+			};
+		};
+
+		flexpwm2: flexpwm@403e0000 {
+			compatible = "nxp,flexpwm";
+			reg = <0x403e0000 0x4000>;
+			interrupts =  <141 0>;
+
+			flexpwm2_pwm0: pwm0 {
+				compatible = "nxp,imx-pwm";
+				index = <0>;
+				label = "FLEXPWM2_PWM0";
+				interrupts = <137 0>;
+				#pwm-cells = <1>;
+			};
+
+			flexpwm2_pwm1: pwm1 {
+				compatible = "nxp,imx-pwm";
+				index = <1>;
+				label = "FLEXPWM2_PWM1";
+				interrupts = <138 0>;
+				#pwm-cells = <1>;
+			};
+
+			flexpwm2_pwm2: pwm2 {
+				compatible = "nxp,imx-pwm";
+				index = <2>;
+				label = "FLEXPWM2_PWM2";
+				interrupts = <139 0>;
+				#pwm-cells = <1>;
+			};
+
+			flexpwm2_pwm3: pwm3 {
+				compatible = "nxp,imx-pwm";
+				index = <3>;
+				label = "FLEXPWM2_PWM3";
+				interrupts = <140 0>;
+				#pwm-cells = <1>;
+			};
+		};
+
+		flexpwm3: flexpwm@403e4000 {
+			compatible = "nxp,flexpwm";
+			reg = <0x403e4000 0x4000>;
+			interrupts =  <146 0>;
+
+			flexpwm3_pwm0: pwm0 {
+				compatible = "nxp,imx-pwm";
+				index = <0>;
+				label = "FLEXPWM3_PWM0";
+				interrupts = <142 0>;
+				#pwm-cells = <1>;
+			};
+
+			flexpwm3_pwm1: pwm1 {
+				compatible = "nxp,imx-pwm";
+				index = <1>;
+				label = "FLEXPWM3_PWM1";
+				interrupts = <143 0>;
+				#pwm-cells = <1>;
+			};
+
+			flexpwm3_pwm2: pwm2 {
+				compatible = "nxp,imx-pwm";
+				index = <2>;
+				label = "FLEXPWM3_PWM2";
+				interrupts = <144 0>;
+				#pwm-cells = <1>;
+			};
+
+			flexpwm3_pwm3: pwm3 {
+				compatible = "nxp,imx-pwm";
+				index = <3>;
+				label = "FLEXPWM3_PWM3";
+				interrupts = <145 0>;
+				#pwm-cells = <1>;
+			};
+		};
+
+		flexpwm4: flexpwm@403e8000 {
+			compatible = "nxp,flexpwm";
+			reg = <0x403e8000 0x4000>;
+			interrupts = <151 0>;
+
+			flexpwm4_pwm0: pwm0 {
+				compatible = "nxp,imx-pwm";
+				index = <0>;
+				label = "FLEXPWM4_PWM0";
+				interrupts = <147 0>;
+				#pwm-cells = <1>;
+			};
+
+			flexpwm4_pwm1: pwm1 {
+				compatible = "nxp,imx-pwm";
+				index = <1>;
+				label = "FLEXPWM4_PWM1";
+				interrupts = <148 0>;
+				#pwm-cells = <1>;
+			};
+
+			flexpwm4_pwm2: pwm2 {
+				compatible = "nxp,imx-pwm";
+				index = <2>;
+				label = "FLEXPWM4_PWM2";
+				interrupts = <149 0>;
+				#pwm-cells = <1>;
+			};
+
+			flexpwm4_pwm3: pwm3 {
+				compatible = "nxp,imx-pwm";
+				index = <3>;
+				label = "FLEXPWM4_PWM3";
+				interrupts = <150 0>;
+				#pwm-cells = <1>;
+			};
+		};
+
 		eth: ethernet@402d8000 {
 			compatible = "nxp,kinetis-ethernet";
 			reg = <0x402D8000 0x628>;
@@ -341,6 +512,7 @@
 			reg = <0x402E0000 0x200>;
 			interrupts = <113 1>;
 			interrupt-names = "usb_otg";
+			clocks = <&sysclk>;
 			num-bidir-endpoints = <8>;
 			maximum-speed = "full-speed";
 			status = "disabled";
@@ -356,6 +528,24 @@
 			maximum-speed = "full-speed";
 			status = "disabled";
 			label = "USBD_2";
+		};
+
+		usdhc1: usdhc@402c0000 {
+			compatible = "nxp,imx-usdhc";
+			reg = <0x402c0000 0x4000>;
+			status = "disabled";
+			interrupts = <110 0>;
+			clocks = <&ccm IMX_CCM_USDHC1_CLK 0 0>;
+			label = "USDHC_1";
+		};
+
+		usdhc2: usdhc@402c4000 {
+			compatible = "nxp,imx-usdhc";
+			reg = <0x402c4000 0x4000>;
+			status = "disabled";
+			interrupts = <111 0>;
+			clocks = <&ccm IMX_CCM_USDHC2_CLK 0 0>;
+			label = "USDHC_2";
 		};
 	};
 };

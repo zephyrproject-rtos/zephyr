@@ -3,8 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <counter.h>
-#include <clock_control.h>
+#include <drivers/counter.h>
+#include <drivers/clock_control.h>
 #include <drivers/clock_control/nrf_clock_control.h>
 #include <nrfx_rtc.h>
 #ifdef DPPI_PRESENT
@@ -30,6 +30,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL);
 
 #define TOP_CH 0
 #define COUNTER_TOP_INT NRFX_RTC_INT_COMPARE0
+#define COUNTER_TOP_INT_MASK NRF_RTC_INT_COMPARE0_MASK
 
 struct counter_nrfx_data {
 	counter_top_callback_t top_cb;
@@ -101,7 +102,7 @@ static int counter_nrfx_set_alarm(struct device *dev, u8_t chan_id,
 		return -EBUSY;
 	}
 
-	if (alarm_cfg->absolute) {
+	if ((alarm_cfg->flags & COUNTER_ALARM_CFG_ABSOLUTE) != 0) {
 		cc_val = alarm_cfg->ticks;
 	} else {
 		/* As RTC is 24 bit there is no risk of overflow. */
@@ -141,13 +142,25 @@ static int counter_nrfx_cancel_alarm(struct device *dev, u8_t chan_id)
 	return 0;
 }
 
-static int counter_nrfx_set_top_value(struct device *dev, u32_t ticks,
-				      counter_top_callback_t callback,
-				      void *user_data)
+/* Return true if counter must be cleared by the CPU. It is cleared
+ * automatically in case of max top value or PPI usage.
+ */
+static bool sw_wrap_required(struct device *dev)
+{
+	return (get_dev_data(dev)->top != COUNTER_MAX_TOP_VALUE)
+#if CONFIG_COUNTER_RTC_WITH_PPI_WRAP
+		    && !get_nrfx_config(dev)->use_ppi
+#endif
+		;
+}
+
+static int counter_nrfx_set_top_value(struct device *dev,
+				      const struct counter_top_cfg *cfg)
 {
 	const struct counter_nrfx_config *nrfx_config = get_nrfx_config(dev);
 	const nrfx_rtc_t *rtc = &nrfx_config->rtc;
 	struct counter_nrfx_data *dev_data = get_dev_data(dev);
+	int err = 0;
 
 	for (int i = 0; i < counter_get_num_of_channels(dev); i++) {
 		/* Overflow can be changed only when all alarms are
@@ -159,14 +172,26 @@ static int counter_nrfx_set_top_value(struct device *dev, u32_t ticks,
 	}
 
 	nrfx_rtc_cc_disable(rtc, TOP_CH);
-	nrfx_rtc_counter_clear(rtc);
 
-	dev_data->top_cb = callback;
-	dev_data->top_user_data = user_data;
-	dev_data->top = ticks;
-	nrfx_rtc_cc_set(rtc, TOP_CH, ticks, callback ? true : false);
+	dev_data->top_cb = cfg->callback;
+	dev_data->top_user_data = cfg->user_data;
+	dev_data->top = cfg->ticks;
+	nrfx_rtc_cc_set(rtc, TOP_CH, cfg->ticks, false);
 
-	return 0;
+	if (!(cfg->flags & COUNTER_TOP_CFG_DONT_RESET)) {
+		nrfx_rtc_counter_clear(rtc);
+	} else if (counter_nrfx_read(dev) >= cfg->ticks) {
+		err = -ETIME;
+		if (cfg->flags & COUNTER_TOP_CFG_RESET_WHEN_LATE) {
+			nrfx_rtc_counter_clear(rtc);
+		}
+	}
+
+	if (cfg->callback || sw_wrap_required(dev)) {
+		nrfx_rtc_int_enable(rtc, COUNTER_TOP_INT_MASK);
+	}
+
+	return err;
 }
 
 static u32_t counter_nrfx_get_pending_int(struct device *dev)
@@ -196,12 +221,8 @@ static void event_handler(nrfx_rtc_int_type_t int_type, void *p_context)
 	struct counter_nrfx_data *data = get_dev_data(dev);
 
 	if (int_type == COUNTER_TOP_INT) {
-		/* Manually reset counter if top value is different than max. */
-		if ((data->top != COUNTER_MAX_TOP_VALUE)
-#if CONFIG_COUNTER_RTC_WITH_PPI_WRAP
-		    && !get_nrfx_config(dev)->use_ppi
-#endif
-		    ) {
+		/* Manual reset counter if needed. */
+		if (sw_wrap_required(dev)) {
 			nrfx_rtc_counter_clear(&get_nrfx_config(dev)->rtc);
 		}
 
@@ -328,8 +349,8 @@ static const struct counter_driver_api counter_nrfx_driver_api = {
 	}								       \
 	static int counter_##idx##_init(struct device *dev)		       \
 	{								       \
-		IRQ_CONNECT(DT_NORDIC_NRF_RTC_RTC_##idx##_IRQ,		       \
-			    DT_NORDIC_NRF_RTC_RTC_##idx##_IRQ_PRIORITY,	       \
+		IRQ_CONNECT(DT_NORDIC_NRF_RTC_RTC_##idx##_IRQ_0,	       \
+			    DT_NORDIC_NRF_RTC_RTC_##idx##_IRQ_0_PRIORITY,      \
 			    nrfx_isr, nrfx_rtc_##idx##_irq_handler, 0);	       \
 		const nrfx_rtc_config_t config = {			       \
 			.prescaler =					       \

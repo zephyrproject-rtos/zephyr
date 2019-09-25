@@ -1,0 +1,19 @@
+# Copyright (c) 2019, Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+title: MCUX PWM
+
+description: >
+    This binding gives a base representation of the NXP eFLEX PWM module which
+    is supposed to contain mcux-pwm submodules.
+
+compatible: "nxp,flexpwm"
+
+include: base.yaml
+
+properties:
+    reg:
+      required: true
+
+    interrupts:
+      required: true

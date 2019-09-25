@@ -1,22 +1,12 @@
-#
 # Copyright (c) 2018, Foundries.io
-#
 # SPDX-License-Identifier: Apache-2.0
-#
----
-title: UART Device Base Structure
-version: 0.1
 
-description: >
-    This binding gives the base structures for all uart devices
+# Common fields for UART devices
 
-inherits:
-    !include base.yaml
+include: base.yaml
 
-parent:
-    bus: uart
+parent-bus: uart
 
 properties:
     label:
-      category: required
-...
+      required: true

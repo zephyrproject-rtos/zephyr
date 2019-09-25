@@ -13,11 +13,15 @@ menuconfig ADC
 	bool "ADC drivers"
 	# All platforms that implement the ADC driver are now required to
 	# provide relevant DTS entries.
-	select HAS_DTS_ADC
 	help
 	  Enable ADC (Analog to Digital Converter) driver configuration.
 
 if ADC
+
+config ADC_SHELL
+	bool "Enable ADC Shell"
+	help
+	  Enable ADC Shell for testing.
 
 # By selecting or not this option particular ADC drivers indicate if it is
 # required to explicitly specify analog inputs when configuring channels or
@@ -55,8 +59,6 @@ source "drivers/adc/Kconfig.mcux"
 source "drivers/adc/Kconfig.nrfx"
 
 source "drivers/adc/Kconfig.sam_afec"
-
-source "drivers/adc/Kconfig.intel_quark"
 
 source "drivers/adc/Kconfig.sam0"
 

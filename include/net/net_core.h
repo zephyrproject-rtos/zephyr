@@ -13,11 +13,16 @@
 #ifndef ZEPHYR_INCLUDE_NET_NET_CORE_H_
 #define ZEPHYR_INCLUDE_NET_NET_CORE_H_
 
+#include <stdbool.h>
+#include <string.h>
+
+#include <logging/log.h>
+#include <sys/__assert.h>
+#include <kernel.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <stdbool.h>
 
 /**
  * @brief Networking
@@ -36,29 +41,21 @@ extern "C" {
 /** @cond INTERNAL_HIDDEN */
 
 /* Network subsystem logging helpers */
-#include <logging/log.h>
-
 #define NET_DBG(fmt, ...) LOG_DBG("(%p): " fmt, k_current_get(), \
 				  ##__VA_ARGS__)
 #define NET_ERR(fmt, ...) LOG_ERR(fmt, ##__VA_ARGS__)
 #define NET_WARN(fmt, ...) LOG_WRN(fmt, ##__VA_ARGS__)
 #define NET_INFO(fmt, ...) LOG_INF(fmt,  ##__VA_ARGS__)
 
-#include <misc/__assert.h>
-
 #define NET_ASSERT(cond) __ASSERT_NO_MSG(cond)
 #define NET_ASSERT_INFO(cond, fmt, ...) __ASSERT(cond, fmt, ##__VA_ARGS__)
 
 /** @endcond */
 
-#include <kernel.h>
-
 struct net_buf;
 struct net_pkt;
 struct net_context;
 struct net_if;
-
-#include <string.h>
 
 /**
  * @brief Net Verdict
@@ -187,7 +184,8 @@ struct net_stack_info {
 #define NET_STACK_DEFINE_EMBEDDED(name, size) char name[size]
 
 #if defined(CONFIG_INIT_STACKS)
-#include <misc/stack.h>
+/* Legacy case: retain containing extern "C" with C++ */
+#include <debug/stack.h>
 
 static inline void net_analyze_stack_get_values(const char *stack,
 						size_t size,

@@ -17,7 +17,7 @@
 #include <arch/arc/v2/aux_regs.h>
 #include <toolchain/common.h>
 #include <irq.h>
-#include <misc/util.h>
+#include <sys/util.h>
 #include <sw_isr_table.h>
 
 #ifdef __cplusplus

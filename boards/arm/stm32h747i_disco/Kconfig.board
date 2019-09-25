@@ -1,0 +1,16 @@
+# Kconfig - STM32H747I Discovery board configuration
+#
+# Copyright (c) 2019 Linaro Limited
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config BOARD_STM32H747I_DISCO_M7
+	bool "STM32H747I Discovery Development Board"
+	depends on SOC_STM32H747XX
+	select CPU_CORTEX_M7
+
+config BOARD_STM32H747I_DISCO_M4
+	bool "STM32H747I Discovery Development Board"
+	depends on SOC_STM32H747XX
+	select CPU_CORTEX_M4

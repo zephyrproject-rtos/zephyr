@@ -6,10 +6,10 @@
  */
 
 #include <zephyr.h>
-#include <sensor.h>
+#include <drivers/sensor.h>
 #include <device.h>
 #include <stdio.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 
 #ifdef CONFIG_APDS9960_TRIGGER
 K_SEM_DEFINE(sem, 0, 1);

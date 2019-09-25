@@ -20,11 +20,17 @@ zephyr_library_sources_ifdef(CONFIG_LWM2M_RD_CLIENT_SUPPORT
     )
 
 # LWM2M Object Support
+zephyr_library_sources_ifdef(CONFIG_LWM2M_CONN_MON_OBJ_SUPPORT
+    lwm2m_obj_connmon.c
+    )
 zephyr_library_sources_ifdef(CONFIG_LWM2M_FIRMWARE_UPDATE_OBJ_SUPPORT
     lwm2m_obj_firmware.c
     )
 zephyr_library_sources_ifdef(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT
     lwm2m_obj_firmware_pull.c
+    )
+zephyr_library_sources_ifdef(CONFIG_LWM2M_LOCATION_OBJ_SUPPORT
+    lwm2m_obj_location.c
     )
 
 # JSON Support
@@ -39,8 +45,20 @@ zephyr_library_sources_ifdef(CONFIG_LWM2M_IPSO_TEMP_SENSOR
 zephyr_library_sources_ifdef(CONFIG_LWM2M_IPSO_LIGHT_CONTROL
     ipso_light_control.c
     )
+zephyr_library_sources_ifdef(CONFIG_LWM2M_IPSO_ACCELEROMETER
+    ipso_accelerometer.c
+    )
+zephyr_library_sources_ifdef(CONFIG_LWM2M_IPSO_BUZZER
+    ipso_buzzer.c
+    )
 zephyr_library_sources_ifdef(CONFIG_LWM2M_IPSO_TIMER
     ipso_timer.c
+    )
+zephyr_library_sources_ifdef(CONFIG_LWM2M_IPSO_ONOFF_SWITCH
+    ipso_onoff_switch.c
+    )
+zephyr_library_sources_ifdef(CONFIG_LWM2M_IPSO_PUSH_BUTTON
+    ipso_push_button.c
     )
 
 zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS mbedTLS)

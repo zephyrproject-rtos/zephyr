@@ -7,7 +7,7 @@
  *  This file is part of mbed TLS (https://tls.mbed.org)
  */
 
-#include <misc/printk.h>
+#include <sys/printk.h>
 #define  MBEDTLS_PRINT (int(*)(const char *, ...)) printk
 
 #include <string.h>

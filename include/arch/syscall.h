@@ -9,8 +9,8 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_SYSCALL_H_
 #define ZEPHYR_INCLUDE_ARCH_SYSCALL_H_
 
-#if defined(CONFIG_X86)
-#include <arch/x86/syscall.h>
+#if defined(CONFIG_X86) && !defined(CONFIG_X86_LONGMODE)
+#include <arch/x86/ia32/syscall.h>
 #elif defined(CONFIG_ARM)
 #include <arch/arm/syscall.h>
 #elif defined(CONFIG_ARC)

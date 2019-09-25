@@ -7,10 +7,10 @@
 #include <device.h>
 #include <errno.h>
 #include <init.h>
-#include <misc/__assert.h>
+#include <sys/__assert.h>
 #include <soc.h>
-#include <uart.h>
-#include <dma.h>
+#include <drivers/uart.h>
+#include <drivers/dma.h>
 
 /* Device constant configuration parameters */
 struct uart_sam0_dev_cfg {
@@ -912,11 +912,11 @@ static void uart_sam0_irq_config_##n(struct device *dev)
 #define UART_SAM0_IRQ_HANDLER(n)					\
 static void uart_sam0_irq_config_##n(struct device *dev)		\
 {									\
-	IRQ_CONNECT(DT_ATMEL_SAM0_UART_SERCOM_##n##_IRQ,		\
-		    DT_ATMEL_SAM0_UART_SERCOM_##n##_IRQ_PRIORITY,	\
+	IRQ_CONNECT(DT_ATMEL_SAM0_UART_SERCOM_##n##_IRQ_0,		\
+		    DT_ATMEL_SAM0_UART_SERCOM_##n##_IRQ_0_PRIORITY,	\
 		    uart_sam0_isr, DEVICE_GET(uart_sam0_##n),		\
 		    0);							\
-	irq_enable(DT_ATMEL_SAM0_UART_SERCOM_##n##_IRQ);		\
+	irq_enable(DT_ATMEL_SAM0_UART_SERCOM_##n##_IRQ_0);		\
 }
 #else
 #define UART_SAM0_IRQ_HANDLER_DECL(n)

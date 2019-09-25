@@ -49,8 +49,7 @@
 extern const struct lwm2m_writer oma_tlv_writer;
 extern const struct lwm2m_reader oma_tlv_reader;
 
-int do_read_op_tlv(struct lwm2m_engine_obj *obj, struct lwm2m_message *msg,
-		   int content_format);
-int do_write_op_tlv(struct lwm2m_engine_obj *obj, struct lwm2m_message *msg);
+int do_read_op_tlv(struct lwm2m_message *msg, int content_format);
+int do_write_op_tlv(struct lwm2m_message *msg);
 
 #endif /* LWM2M_RW_OMA_TLV_H_ */

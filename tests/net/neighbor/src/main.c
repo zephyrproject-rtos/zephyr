@@ -17,7 +17,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_IPV6_NBR_CACHE_LOG_LEVEL);
 #include <errno.h>
 #include <device.h>
 #include <init.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 #include <net/net_core.h>
 #include <net/net_ip.h>
 #include <net/ethernet.h>

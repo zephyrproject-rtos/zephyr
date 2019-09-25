@@ -15,18 +15,19 @@
 #include <kernel_structs.h>
 #include <arch/cpu.h>
 #include <irq.h>
-#include <misc/printk.h>
 #include <sw_isr_table.h>
 #include <ksched.h>
 #include <kswap.h>
-#include <tracing.h>
+#include <debug/tracing.h>
+#include <logging/log.h>
+LOG_MODULE_DECLARE(os);
 
-void z_irq_spurious(void *unused)
+FUNC_NORETURN void z_irq_spurious(void *unused)
 {
 	ARG_UNUSED(unused);
-	printk("Spurious interrupt detected! ipending: %x\n",
-	       z_nios2_creg_read(NIOS2_CR_IPENDING));
-	z_NanoFatalErrorHandler(_NANO_ERR_SPURIOUS_INT, &_default_esf);
+	LOG_ERR("Spurious interrupt detected! ipending: %x",
+		z_nios2_creg_read(NIOS2_CR_IPENDING));
+	z_nios2_fatal_error(K_ERR_SPURIOUS_IRQ, NULL);
 }
 
 

@@ -8,7 +8,7 @@
  * @brief Driver for Nordic Semiconductor nRF5X UART
  */
 
-#include <uart.h>
+#include <drivers/uart.h>
 #include <hal/nrf_uart.h>
 #include <hal/nrf_gpio.h>
 
@@ -266,8 +266,19 @@ static int uart_nrfx_configure(struct device *dev,
 {
 	nrf_uart_parity_t parity;
 	nrf_uart_hwfc_t hwfc;
+#ifdef UART_CONFIG_STOP_Two
+	bool two_stop_bits = false;
+#endif
 
-	if (cfg->stop_bits != UART_CFG_STOP_BITS_1) {
+	switch (cfg->stop_bits) {
+	case UART_CFG_STOP_BITS_1:
+		break;
+#ifdef UART_CONFIG_STOP_Two
+	case UART_CFG_STOP_BITS_2:
+		two_stop_bits = true;
+		break;
+#endif
+	default:
 		return -ENOTSUP;
 	}
 
@@ -307,6 +318,13 @@ static int uart_nrfx_configure(struct device *dev,
 
 	nrf_uart_configure(uart0_addr, parity, hwfc);
 
+#ifdef UART_CONFIG_STOP_Two
+	if (two_stop_bits) {
+		/* TODO Change this to nrfx HAL function when available */
+		uart0_addr->CONFIG |=
+			UART_CONFIG_STOP_Two << UART_CONFIG_STOP_Pos;
+	}
+#endif
 	get_dev_data(dev)->uart_config = *cfg;
 
 	return 0;
@@ -724,7 +742,7 @@ static void uart_nrfx_irq_tx_enable(struct device *dev)
 		/* Due to HW limitation first TXDRDY interrupt shall be
 		 * triggered by the software.
 		 */
-		NVIC_SetPendingIRQ(DT_NORDIC_NRF_UART_UART_0_IRQ);
+		NVIC_SetPendingIRQ(DT_NORDIC_NRF_UART_UART_0_IRQ_0);
 	}
 	irq_unlock(key);
 }
@@ -897,12 +915,12 @@ static int uart_nrfx_init(struct device *dev)
 
 #if defined(CONFIG_UART_0_ASYNC) || defined(CONFIG_UART_0_INTERRUPT_DRIVEN)
 
-	IRQ_CONNECT(DT_NORDIC_NRF_UART_UART_0_IRQ,
-		    DT_NORDIC_NRF_UART_UART_0_IRQ_PRIORITY,
+	IRQ_CONNECT(DT_NORDIC_NRF_UART_UART_0_IRQ_0,
+		    DT_NORDIC_NRF_UART_UART_0_IRQ_0_PRIORITY,
 		    uart_nrfx_isr,
 		    DEVICE_GET(uart_nrfx_uart0),
 		    0);
-	irq_enable(DT_NORDIC_NRF_UART_UART_0_IRQ);
+	irq_enable(DT_NORDIC_NRF_UART_UART_0_IRQ_0);
 #endif
 
 #ifdef CONFIG_UART_0_ASYNC

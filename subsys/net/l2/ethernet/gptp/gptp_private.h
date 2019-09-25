@@ -14,11 +14,11 @@
 #ifndef __GPTP_PRIVATE_H
 #define __GPTP_PRIVATE_H
 
+#include <net/gptp.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <net/gptp.h>
 
 /* Common defines for the gPTP stack. */
 #define GPTP_THREAD_WAIT_TIMEOUT_MS 1

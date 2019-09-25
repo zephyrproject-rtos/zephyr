@@ -9,7 +9,7 @@
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <string.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 
 #include <net/buf.h>
 

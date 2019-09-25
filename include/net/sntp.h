@@ -8,7 +8,17 @@
 #ifndef ZEPHYR_INCLUDE_NET_SNTP_H_
 #define ZEPHYR_INCLUDE_NET_SNTP_H_
 
+#ifdef CONFIG_NET_SOCKETS_POSIX_NAMES
 #include <net/socket.h>
+#else
+#include <posix/sys/socket.h>
+#include <posix/unistd.h>
+#include <posix/poll.h>
+#endif
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * @brief Simple Network Time Protocol API
@@ -97,6 +107,10 @@ void sntp_close(struct sntp_ctx *ctx);
  */
 int sntp_simple(const char *server, u32_t timeout,
 		struct sntp_time *time);
+
+#ifdef __cplusplus
+}
+#endif
 
 /**
  * @}

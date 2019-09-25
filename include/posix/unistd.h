@@ -6,18 +6,21 @@
 #ifndef ZEPHYR_INCLUDE_POSIX_UNISTD_H_
 #define ZEPHYR_INCLUDE_POSIX_UNISTD_H_
 
+#include "posix_types.h"
+#include "sys/stat.h"
+#ifdef CONFIG_NETWORKING
+/* For zsock_gethostname() */
+#include "net/socket.h"
+#endif
+
+#ifdef CONFIG_POSIX_API
+#include <fs/fs.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include "posix_types.h"
-#include "sys/stat.h"
-
-#ifdef CONFIG_POSIX_API
-#include <fs.h>
-
 /* File related operations */
-extern int open(const char *name, int flags);
 extern int close(int file);
 extern ssize_t write(int file, const void *buffer, size_t count);
 extern ssize_t read(int file, void *buffer, size_t count);
@@ -32,6 +35,13 @@ extern int mkdir(const char *path, mode_t mode);
 
 unsigned sleep(unsigned int seconds);
 int usleep(useconds_t useconds);
+
+#ifdef CONFIG_NETWORKING
+static inline int gethostname(char *buf, size_t len)
+{
+	return zsock_gethostname(buf, len);
+}
+#endif
 
 #ifdef __cplusplus
 }

@@ -8,8 +8,8 @@
 #define ZEPHYR_DRIVERS_SENSOR_MPU6050_MPU6050_H_
 
 #include <device.h>
-#include <gpio.h>
-#include <misc/util.h>
+#include <drivers/gpio.h>
+#include <sys/util.h>
 #include <zephyr/types.h>
 
 #define MPU6050_REG_CHIP_ID		0x75

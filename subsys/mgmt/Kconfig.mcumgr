@@ -4,6 +4,7 @@
 #
 config MCUMGR
 	bool "mcumgr Support"
+	select NET_BUF
 	select TINYCBOR
 	help
 	  This option enables the mcumgr management library.

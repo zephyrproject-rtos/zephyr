@@ -15,7 +15,7 @@
 
 #include <errno.h>
 #include <device.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 #include <soc.h>
 #include <fsl_common.h>
 #include "gpio_utils.h"

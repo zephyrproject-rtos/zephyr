@@ -15,12 +15,11 @@
 
 #include "hw_models_top.h"
 #include <stdbool.h>
+#include "zephyr/types.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include "zephyr/types.h"
 
 /*
  * Types of clocks this RTC provides:

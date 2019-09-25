@@ -175,7 +175,7 @@ no_unlock:
 SECTION_FUNC(TEXT, z_thread_entry_wrapper)
 	/* This all corresponds to struct init_stack_frame defined in
 	 * thread.c. We need to take this stuff off the stack and put
-	 * it in the apporpriate registers
+	 * it in the appropriate registers
 	 */
 
 	/* Can't return from here, just put NULL in ra */

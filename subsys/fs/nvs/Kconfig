@@ -8,7 +8,6 @@
 
 config NVS
 	bool "Non-volatile Storage"
-	select FS_FLASH_STORAGE_PARTITION
 	help
 	  Enable support of Non-volatile Storage.
 

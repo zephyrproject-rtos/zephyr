@@ -1,0 +1,28 @@
+/*
+ * Copyright (c) 2019 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <st/h7/stm32h747.dtsi>
+
+/ {
+	cpus {
+		/delete-node/ cpu@1;
+	};
+
+	/* system data RAM accessible over over AXI bus */
+	sram0: memory@24000000 {
+		reg = <0x24000000 DT_SIZE_K(512)>;
+		compatible = "mmio-sram";
+	};
+
+	soc {
+		flash-controller@52002000 {
+			flash0: flash@8000000 {
+				reg = <0x08000000 DT_SIZE_K(1024)>;
+			};
+		};
+	};
+};

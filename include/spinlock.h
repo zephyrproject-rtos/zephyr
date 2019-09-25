@@ -6,7 +6,7 @@
 #ifndef ZEPHYR_INCLUDE_SPINLOCK_H_
 #define ZEPHYR_INCLUDE_SPINLOCK_H_
 
-#include <atomic.h>
+#include <sys/atomic.h>
 
 /* These stubs aren't provided by the mocking framework, and I can't
  * find a proper place to put them as mocking seems not to have a
@@ -34,7 +34,7 @@ static inline void z_arch_irq_unlock(int key)
  */
 #if (CONFIG_FLASH_SIZE == 0) || (CONFIG_FLASH_SIZE > 32)
 #if defined(CONFIG_ASSERT) && (CONFIG_MP_NUM_CPUS < 4)
-#include <misc/__assert.h>
+#include <sys/__assert.h>
 #include <stdbool.h>
 struct k_spinlock;
 bool z_spin_lock_valid(struct k_spinlock *l);
@@ -60,6 +60,23 @@ struct k_spinlock {
 	 * ID in the bottom two bits.
 	 */
 	uintptr_t thread_cpu;
+#endif
+
+#if defined(CONFIG_CPLUSPLUS) && !defined(CONFIG_SMP) && !defined(SPIN_VALIDATE)
+	/* If CONFIG_SMP and SPIN_VALIDATE are both not defined
+	 * the k_spinlock struct will have no members. The result
+	 * is that in C sizeof(k_spinlock) is 0 and in C++ it is 1.
+	 *
+	 * This size difference causes problems when the k_spinlock
+	 * is embedded into another struct like k_msgq, because C and
+	 * C++ will have different ideas on the offsets of the members
+	 * that come after the k_spinlock member.
+	 *
+	 * To prevent this we add a 1 byte dummy member to k_spinlock
+	 * when the user selects C++ support and k_spinlock would
+	 * otherwise be empty.
+	 */
+	char dummy;
 #endif
 };
 

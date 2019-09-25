@@ -37,6 +37,20 @@ config I2C_STM32_INTERRUPT
 
 endif # I2C
 
+if SPI
+
+config SPI_1
+	default y
+
+endif # SPI
+
+if ADC
+
+config ADC_1
+	default y
+
+endif # ADC
+
 if BT_DEBUG_MONITOR
 
 config LPUART_1

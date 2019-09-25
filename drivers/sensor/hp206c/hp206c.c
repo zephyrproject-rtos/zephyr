@@ -9,11 +9,11 @@
  */
 
 #include <init.h>
-#include <sensor.h>
-#include <i2c.h>
-#include <misc/byteorder.h>
+#include <drivers/sensor.h>
+#include <drivers/i2c.h>
+#include <sys/byteorder.h>
 #include <kernel.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 #include <logging/log.h>
 
 #include "hp206c.h"
@@ -182,7 +182,7 @@ static int hp206c_wait_dev_ready(struct device *dev, u32_t timeout_ms)
 	return -EBUSY;
 }
 
-static int hp206c_adc_aquire(struct device *dev, enum sensor_channel chan)
+static int hp206c_adc_acquire(struct device *dev, enum sensor_channel chan)
 {
 	struct hp206c_device_data *hp206c = dev->driver_data;
 
@@ -278,7 +278,7 @@ static int hp206c_channel_get(struct device *dev,
 
 static const struct sensor_driver_api hp206c_api = {
 	.attr_set = hp206c_attr_set,
-	.sample_fetch = hp206c_adc_aquire,
+	.sample_fetch = hp206c_adc_acquire,
 	.channel_get = hp206c_channel_get,
 };
 

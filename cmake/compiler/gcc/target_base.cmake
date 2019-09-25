@@ -7,6 +7,12 @@
 #
 # See root CMakeLists.txt for description and expectations of this macro
 
+macro(toolchain_cc_produce_debug_info)
+
+  zephyr_compile_options(-g) # TODO: build configuration enough?
+
+endmacro()
+
 macro(toolchain_cc_nocommon)
 
   zephyr_compile_options(-fno-common)

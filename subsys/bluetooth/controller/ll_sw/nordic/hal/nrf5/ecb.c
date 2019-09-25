@@ -7,8 +7,8 @@
 
 #include <string.h>
 
-#include <misc/dlist.h>
-#include <misc/mempool_base.h>
+#include <sys/dlist.h>
+#include <sys/mempool_base.h>
 
 #include "util/mem.h"
 #include "hal/ecb.h"
@@ -17,7 +17,7 @@
 #include "common/log.h"
 #include "hal/debug.h"
 
-#include "nrf_ecb.h"
+#include <nrfx/hal/nrf_ecb.h>
 
 struct ecb_param {
 	u8_t key[16];

@@ -21,10 +21,10 @@
  */
 
 #include <zephyr.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 
 #include <device.h>
-#include <i2s.h>
+#include <drivers/i2s.h>
 
 #define I2S_DEV_NAME "I2S_3"
 #define NUM_I2S_BUFFERS 4

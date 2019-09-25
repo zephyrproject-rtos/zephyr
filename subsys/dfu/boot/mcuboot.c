@@ -9,13 +9,13 @@
 #include <stddef.h>
 #include <errno.h>
 #include <string.h>
-#include <flash.h>
-#include <flash_map.h>
+#include <drivers/flash.h>
+#include <storage/flash_map.h>
 #include <zephyr.h>
 #include <init.h>
 
-#include <misc/__assert.h>
-#include <misc/byteorder.h>
+#include <sys/__assert.h>
+#include <sys/byteorder.h>
 #include <dfu/mcuboot.h>
 
 /*
@@ -32,8 +32,10 @@
 #define BOOT_HEADER_SIZE_V1 32
 
 /* Trailer: */
-#define BOOT_FLAG_SET 0x01
-#define BOOT_FLAG_UNSET 0xff
+#define BOOT_FLAG_SET   1
+#define BOOT_FLAG_BAD   2
+#define BOOT_FLAG_UNSET 3
+#define BOOT_FLAG_ANY   4  /* NOTE: control only, not dependent on sector */
 
 /*
  * Raw (on-flash) representation of the v1 image header.
@@ -58,11 +60,13 @@ struct mcuboot_v1_raw_header {
  * End of strict defines
  */
 
-#define BOOT_MAGIC_GOOD  1
-#define BOOT_MAGIC_BAD   2
-#define BOOT_MAGIC_UNSET 3
+#define BOOT_MAGIC_GOOD    1
+#define BOOT_MAGIC_BAD     2
+#define BOOT_MAGIC_UNSET   3
+#define BOOT_MAGIC_ANY     4  /* NOTE: control only, not dependent on sector */
+#define BOOT_MAGIC_NOTGOOD 5  /* NOTE: control only, not dependent on sector */
 
-#define BOOT_FLAG_IMAGE_OK 0
+#define BOOT_FLAG_IMAGE_OK  0
 #define BOOT_FLAG_COPY_DONE 1
 
 #define FLASH_MIN_WRITE_SIZE DT_FLASH_WRITE_BLOCK_SIZE
@@ -78,6 +82,11 @@ struct mcuboot_v1_raw_header {
 #define FLASH_AREA_IMAGE_SCRATCH DT_FLASH_AREA_IMAGE_SCRATCH_ID
 #endif /* CONFIG_TRUSTED_EXECUTION_NONSECURE */
 
+#ifdef CONFIG_MCUBOOT_TRAILER_SWAP_TYPE
+#define SWAP_TYPE_OFFS(bank_area) ((bank_area)->fa_size -\
+				   BOOT_MAGIC_SZ - BOOT_MAX_ALIGN * 3)
+#endif
+
 #define COPY_DONE_OFFS(bank_area) ((bank_area)->fa_size -\
 				   BOOT_MAGIC_SZ - BOOT_MAX_ALIGN * 2)
 
@@ -92,6 +101,8 @@ static const u32_t boot_img_magic[4] = {
 	0x8079b62c,
 };
 
+#define BOOT_MAGIC_ARR_SZ ARRAY_SIZE(boot_img_magic)
+
 struct boot_swap_table {
 	/** For each field, a value of 0 means "any". */
 	u8_t magic_primary_slot;
@@ -105,14 +116,22 @@ struct boot_swap_table {
 
 /** Represents the management state of a single image slot. */
 struct boot_swap_state {
-	u8_t magic;  /* One of the BOOT_MAGIC_[...] values. */
-	u8_t copy_done;
-	u8_t image_ok;
+	u8_t magic;     /* One of the BOOT_MAGIC_[...] values. */
+	u8_t swap_type; /* One of the BOOT_SWAP_TYPE_[...] values. */
+	u8_t copy_done; /* One of the BOOT_FLAG_[...] values. */
+	u8_t image_ok;  /* One of the BOOT_FLAG_[...] values. */
 };
 
 /**
  * This set of tables maps image trailer contents to swap operation type.
  * When searching for a match, these tables must be iterated sequentially.
+ *
+ * NOTE: the table order is very important. The settings in the secondary
+ * slot always are priority to the primary slot and should be located
+ * earlier in the table.
+ *
+ * The table lists only states where there is action needs to be taken by
+ * the bootloader, as in starting/finishing a swap operation.
  */
 static const struct boot_swap_table boot_swap_tables[] = {
 	{
@@ -124,11 +143,11 @@ static const struct boot_swap_table boot_swap_tables[] = {
 		 * swap: test                         |
 		 * -----------------------------------'
 		 */
-		.magic_primary_slot =      0,
+		.magic_primary_slot =      BOOT_MAGIC_ANY,
 		.magic_secondary_slot =    BOOT_MAGIC_GOOD,
-		.image_ok_primary_slot =   0,
-		.image_ok_secondary_slot = 0xff,
-		.copy_done_primary_slot =  0,
+		.image_ok_primary_slot =   BOOT_FLAG_ANY,
+		.image_ok_secondary_slot = BOOT_FLAG_UNSET,
+		.copy_done_primary_slot =  BOOT_FLAG_ANY,
 		.swap_type =               BOOT_SWAP_TYPE_TEST,
 	},
 	{
@@ -140,11 +159,11 @@ static const struct boot_swap_table boot_swap_tables[] = {
 		 * swap: permanent                    |
 		 * -----------------------------------'
 		 */
-		.magic_primary_slot =      0,
+		.magic_primary_slot =      BOOT_MAGIC_ANY,
 		.magic_secondary_slot =    BOOT_MAGIC_GOOD,
-		.image_ok_primary_slot =   0,
-		.image_ok_secondary_slot = 0x01,
-		.copy_done_primary_slot =  0,
+		.image_ok_primary_slot =   BOOT_FLAG_ANY,
+		.image_ok_secondary_slot = BOOT_FLAG_SET,
+		.copy_done_primary_slot =  BOOT_FLAG_ANY,
 		.swap_type =               BOOT_SWAP_TYPE_PERM,
 	},
 	{
@@ -158,13 +177,100 @@ static const struct boot_swap_table boot_swap_tables[] = {
 		 */
 		.magic_primary_slot =      BOOT_MAGIC_GOOD,
 		.magic_secondary_slot =    BOOT_MAGIC_UNSET,
-		.image_ok_primary_slot =   0xff,
-		.image_ok_secondary_slot = 0,
-		.copy_done_primary_slot =  0x01,
+		.image_ok_primary_slot =   BOOT_FLAG_UNSET,
+		.image_ok_secondary_slot = BOOT_FLAG_ANY,
+		.copy_done_primary_slot =  BOOT_FLAG_SET,
 		.swap_type =               BOOT_SWAP_TYPE_REVERT,
 	},
 };
 #define BOOT_SWAP_TABLES_COUNT (ARRAY_SIZE(boot_swap_tables))
+
+static int boot_magic_decode(const u32_t *magic)
+{
+	if (memcmp(magic, boot_img_magic, BOOT_MAGIC_SZ) == 0) {
+		return BOOT_MAGIC_GOOD;
+	}
+
+	return BOOT_MAGIC_BAD;
+}
+
+static int boot_flag_decode(u8_t flag)
+{
+	if (flag != BOOT_FLAG_SET) {
+		return BOOT_FLAG_BAD;
+	}
+
+	return BOOT_FLAG_SET;
+}
+
+/* TODO: this function should be moved to flash_area api in future */
+uint8_t flash_area_erased_val(const struct flash_area *fa)
+{
+	#define ERASED_VAL 0xff
+
+	(void)fa;
+	return ERASED_VAL;
+}
+
+/* TODO: this function should be moved to flash_area api in future */
+int flash_area_read_is_empty(const struct flash_area *fa, uint32_t off,
+	void *dst, uint32_t len)
+{
+	const u8_t erase_val = flash_area_erased_val(fa);
+	u8_t *u8dst;
+	u8_t i;
+	int rc;
+
+	rc = flash_area_read(fa, off, dst, len);
+	if (rc) {
+		return rc;
+	}
+
+	for (i = 0, u8dst = (uint8_t *)dst; i < len; i++) {
+		if (u8dst[i] != erase_val) {
+			return 0;
+		}
+	}
+
+	return 1;
+}
+
+static int erased_flag_val(u8_t bank_id)
+{
+	const struct flash_area *fa;
+	int rc;
+
+	rc = flash_area_open(bank_id, &fa);
+	if (rc) {
+		return -EINVAL;
+	}
+	return flash_area_erased_val(fa);
+}
+
+/**
+ * Determines if a status source table is satisfied by the specified magic
+ * code.
+ *
+ * @param tbl_val               A magic field from a status source table.
+ * @param val                   The magic value in a trailer, encoded as a
+ *                                  BOOT_MAGIC_[...].
+ *
+ * @return                      1 if the two values are compatible;
+ *                              0 otherwise.
+ */
+int boot_magic_compatible_check(u8_t tbl_val, u8_t val)
+{
+	switch (tbl_val) {
+	case BOOT_MAGIC_ANY:
+		return 1;
+
+	case BOOT_MAGIC_NOTGOOD:
+		return val != BOOT_MAGIC_GOOD;
+
+	default:
+		return tbl_val == val;
+	}
+}
 
 static int boot_flag_offs(int flag, const struct flash_area *fa, u32_t *offs)
 {
@@ -180,10 +286,31 @@ static int boot_flag_offs(int flag, const struct flash_area *fa, u32_t *offs)
 	}
 }
 
+static int boot_write_trailer_byte(const struct flash_area *fa, u32_t off,
+				   u8_t val)
+{
+	u8_t buf[BOOT_MAX_ALIGN];
+	u8_t align;
+	u8_t erased_val;
+	int rc;
+
+	align = flash_area_align(fa);
+	assert(align <= BOOT_MAX_ALIGN);
+	erased_val = flash_area_erased_val(fa);
+	memset(buf, erased_val, BOOT_MAX_ALIGN);
+	buf[0] = val;
+
+	rc = flash_area_write(fa, off, buf, align);
+	if (rc != 0) {
+		return -EIO;
+	}
+
+	return 0;
+}
+
 static int boot_flag_write(int flag, u8_t bank_id)
 {
 	const struct flash_area *fa;
-	u8_t buf[FLASH_MIN_WRITE_SIZE];
 	u32_t offs;
 	int rc;
 
@@ -198,10 +325,7 @@ static int boot_flag_write(int flag, u8_t bank_id)
 		return rc;
 	}
 
-	(void)memset(buf, BOOT_FLAG_UNSET, sizeof(buf));
-	buf[0] = BOOT_FLAG_SET;
-
-	rc = flash_area_write(fa, offs, buf, sizeof(buf));
+	rc = boot_write_trailer_byte(fa, offs, BOOT_FLAG_SET);
 	flash_area_close(fa);
 
 	return rc;
@@ -243,11 +367,6 @@ static int boot_image_ok_write(u8_t bank_id)
 	return boot_flag_write(BOOT_FLAG_IMAGE_OK, bank_id);
 }
 
-static int boot_copy_done_read(u8_t bank_id)
-{
-	return boot_flag_read(BOOT_FLAG_COPY_DONE, bank_id);
-}
-
 static int boot_magic_write(u8_t bank_id)
 {
 	const struct flash_area *fa;
@@ -266,6 +385,27 @@ static int boot_magic_write(u8_t bank_id)
 
 	return rc;
 }
+
+#ifdef CONFIG_MCUBOOT_TRAILER_SWAP_TYPE
+static int boot_swap_type_write(u8_t bank_id, u8_t swap_type)
+{
+	const struct flash_area *fa;
+	u32_t offs;
+	int rc;
+
+	rc = flash_area_open(bank_id, &fa);
+	if (rc) {
+		return rc;
+	}
+
+	offs = SWAP_TYPE_OFFS(fa);
+
+	rc = boot_write_trailer_byte(fa, offs, swap_type);
+	flash_area_close(fa);
+
+	return rc;
+}
+#endif
 
 static int boot_read_v1_header(u8_t area_id,
 			       struct mcuboot_v1_raw_header *v1_raw)
@@ -354,113 +494,142 @@ int boot_read_bank_header(u8_t area_id,
 	return 0;
 }
 
-static int boot_magic_code_check(const u32_t *magic)
+static int boot_read_swap_state(const struct flash_area *fa,
+				struct boot_swap_state *state)
 {
-	int i;
-
-	if (memcmp(magic, boot_img_magic, sizeof(boot_img_magic)) == 0) {
-		return BOOT_MAGIC_GOOD;
-	}
-
-	for (i = 0; i < ARRAY_SIZE(boot_img_magic); i++) {
-		if (magic[i] != 0xffffffff) {
-			return BOOT_MAGIC_BAD;
-		}
-	}
-
-	return BOOT_MAGIC_UNSET;
-}
-
-static int boot_magic_state_read(u8_t bank_id)
-{
-	const struct flash_area *fa;
-	u32_t magic[(sizeof(u32_t) - 1 + BOOT_MAGIC_SZ) / sizeof(u32_t)];
-	u32_t offs;
+	u32_t magic[BOOT_MAGIC_ARR_SZ];
+	u32_t off;
 	int rc;
 
-	rc = flash_area_open(bank_id, &fa);
-	if (rc) {
-		return rc;
-	}
-
-	offs = MAGIC_OFFS(fa);
-	rc = flash_area_read(fa, offs, magic, BOOT_MAGIC_SZ);
-	flash_area_close(fa);
-
-	if (rc != 0) {
-		return rc;
-	}
-
-	return boot_magic_code_check(magic);
-}
-
-static int boot_read_swap_state(u8_t bank_id, struct boot_swap_state *state)
-{
-	int rc;
-
-	rc = boot_magic_state_read(bank_id);
+	off = MAGIC_OFFS(fa);
+	rc = flash_area_read_is_empty(fa, off, magic, BOOT_MAGIC_SZ);
 	if (rc < 0) {
-		return rc;
+		return -EIO;
 	}
-	state->magic = rc;
+	if (rc == 1) {
+		state->magic = BOOT_MAGIC_UNSET;
+	} else {
+		state->magic = boot_magic_decode(magic);
+	}
 
-	if (bank_id != FLASH_AREA_IMAGE_SCRATCH) {
-		rc = boot_copy_done_read(bank_id);
+#ifdef CONFIG_MCUBOOT_TRAILER_SWAP_TYPE
+	off = SWAP_TYPE_OFFS(fa);
+	rc = flash_area_read_is_empty(fa, off, &state->swap_type,
+				      sizeof(state->swap_type));
+	if (rc < 0) {
+		return -EIO;
+	}
+	if (rc == 1 || state->swap_type > BOOT_SWAP_TYPE_REVERT) {
+		state->swap_type = BOOT_SWAP_TYPE_NONE;
+	}
+
+	off = COPY_DONE_OFFS(fa);
+	rc = flash_area_read_is_empty(fa, off, &state->copy_done,
+				      sizeof(state->copy_done));
+	if (rc < 0) {
+		return -EIO;
+	}
+	if (rc == 1) {
+		state->copy_done = BOOT_FLAG_UNSET;
+	} else {
+		state->copy_done = boot_flag_decode(state->copy_done);
+	}
+#else
+	if (fa->fa_id != FLASH_AREA_IMAGE_SCRATCH) {
+		off = COPY_DONE_OFFS(fa);
+		rc = flash_area_read_is_empty(fa, off, &state->copy_done,
+					      sizeof(state->copy_done));
 		if (rc < 0) {
-			return rc;
+			return -EIO;
 		}
-		state->copy_done = rc;
+		if (rc == 1) {
+			state->copy_done = BOOT_FLAG_UNSET;
+		} else {
+			state->copy_done = boot_flag_decode(state->copy_done);
+		}
 	}
+#endif
 
-	rc = boot_image_ok_read(bank_id);
+	off = IMAGE_OK_OFFS(fa);
+	rc = flash_area_read_is_empty(fa, off, &state->image_ok,
+				  sizeof(state->image_ok));
 	if (rc < 0) {
-		return rc;
+		return -EIO;
 	}
-	state->image_ok = rc;
+	if (rc == 1) {
+		state->image_ok = BOOT_FLAG_UNSET;
+	} else {
+		state->image_ok = boot_flag_decode(state->image_ok);
+	}
 
 	return 0;
 }
 
+/**
+ * Reads the image trailer from the scratch area.
+ */
+int
+boot_read_swap_state_by_id(int flash_area_id, struct boot_swap_state *state)
+{
+	const struct flash_area *fap;
+	int rc;
+
+	switch (flash_area_id) {
+	case FLASH_AREA_IMAGE_SCRATCH:
+	case FLASH_AREA_IMAGE_PRIMARY:
+	case FLASH_AREA_IMAGE_SECONDARY:
+		rc = flash_area_open(flash_area_id, &fap);
+		if (rc != 0) {
+			return -EIO;
+		}
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	rc = boot_read_swap_state(fap, state);
+	flash_area_close(fap);
+	return rc;
+}
+
+/* equivalent of boot_swap_type() in mcuboot bootutil_misc.c */
 int mcuboot_swap_type(void)
 {
 	const struct boot_swap_table *table;
-	struct boot_swap_state state_primary_slot;
-	struct boot_swap_state state_secondary_slot;
+	struct boot_swap_state primary_slot;
+	struct boot_swap_state secondary_slot;
 	int rc;
-	int i;
+	size_t i;
 
-	rc = boot_read_swap_state(FLASH_AREA_IMAGE_PRIMARY,
-				  &state_primary_slot);
-	if (rc != 0) {
+	rc = boot_read_swap_state_by_id(FLASH_AREA_IMAGE_PRIMARY,
+					&primary_slot);
+	if (rc) {
 		return rc;
 	}
 
-	rc = boot_read_swap_state(FLASH_AREA_IMAGE_SECONDARY,
-				  &state_secondary_slot);
-	if (rc != 0) {
+	rc = boot_read_swap_state_by_id(FLASH_AREA_IMAGE_SECONDARY,
+					&secondary_slot);
+	if (rc) {
 		return rc;
 	}
 
 	for (i = 0; i < BOOT_SWAP_TABLES_COUNT; i++) {
 		table = boot_swap_tables + i;
 
-		if ((table->magic_primary_slot == 0U ||
-		     table->magic_primary_slot == state_primary_slot.magic)
+		if (boot_magic_compatible_check(table->magic_primary_slot,
+						primary_slot.magic)
 		    &&
-		    (table->magic_secondary_slot == 0U ||
-		     table->magic_secondary_slot == state_secondary_slot.magic)
+		    boot_magic_compatible_check(table->magic_secondary_slot,
+						secondary_slot.magic)
 		    &&
-		    (table->image_ok_primary_slot == 0U ||
-		     table->image_ok_primary_slot ==
-		     state_primary_slot.image_ok)
+		    (table->image_ok_primary_slot == BOOT_FLAG_ANY   ||
+		     table->image_ok_primary_slot == primary_slot.image_ok)
 		    &&
-		    (table->image_ok_secondary_slot == 0U ||
-		     table->image_ok_secondary_slot ==
-		     state_secondary_slot.image_ok)
+		    (table->image_ok_secondary_slot == BOOT_FLAG_ANY ||
+		     table->image_ok_secondary_slot == secondary_slot.image_ok)
 		    &&
-		    (table->copy_done_primary_slot == 0U ||
-		     table->copy_done_primary_slot ==
-		     state_primary_slot.copy_done)) {
+		    (table->copy_done_primary_slot == BOOT_FLAG_ANY  ||
+		     table->copy_done_primary_slot == primary_slot.copy_done)) {
 
 			assert(table->swap_type == BOOT_SWAP_TYPE_TEST ||
 			       table->swap_type == BOOT_SWAP_TYPE_PERM ||
@@ -474,13 +643,34 @@ int mcuboot_swap_type(void)
 
 int boot_request_upgrade(int permanent)
 {
+#ifdef CONFIG_MCUBOOT_TRAILER_SWAP_TYPE
+	u8_t swap_type;
+#endif
 	int rc;
 
 	rc = boot_magic_write(FLASH_AREA_IMAGE_SECONDARY);
-	if (rc == 0 && permanent) {
-		rc = boot_image_ok_write(FLASH_AREA_IMAGE_SECONDARY);
+	if (rc) {
+		goto op_end;
 	}
 
+	if (permanent) {
+		rc = boot_image_ok_write(FLASH_AREA_IMAGE_SECONDARY);
+
+#ifdef CONFIG_MCUBOOT_TRAILER_SWAP_TYPE
+		if (rc) {
+			goto op_end;
+		}
+
+		swap_type = BOOT_SWAP_TYPE_PERM;
+	} else {
+		swap_type = BOOT_SWAP_TYPE_TEST;
+	}
+
+	rc = boot_swap_type_write(FLASH_AREA_IMAGE_SECONDARY, swap_type);
+#else
+	}
+#endif
+op_end:
 	return rc;
 }
 
@@ -493,7 +683,8 @@ int boot_write_img_confirmed(void)
 {
 	int rc;
 
-	if (boot_image_ok_read(FLASH_AREA_IMAGE_PRIMARY) != BOOT_FLAG_UNSET) {
+	if (boot_image_ok_read(FLASH_AREA_IMAGE_PRIMARY) !=
+	    erased_flag_val(FLASH_AREA_IMAGE_PRIMARY)) {
 		/* Already confirmed. */
 		return 0;
 	}

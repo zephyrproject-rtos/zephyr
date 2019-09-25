@@ -16,77 +16,21 @@
 #include <offsets_short.h>
 #include <toolchain.h>
 #include <arch/cpu.h>
-#include <misc/printk.h>
-#include <logging/log_ctrl.h>
+#include <logging/log.h>
+LOG_MODULE_DECLARE(os);
 
-/**
- *
- * @brief Kernel fatal error handler
- *
- * This routine is called when fatal error conditions are detected by software
- * and is responsible only for reporting the error. Once reported, it then
- * invokes the user provided routine z_SysFatalErrorHandler() which is
- * responsible for implementing the error handling policy.
- *
- * The caller is expected to always provide a usable ESF. In the event that the
- * fatal error does not have a hardware generated ESF, the caller should either
- * create its own or use a pointer to the global default ESF <_default_esf>.
- *
- * @return This function does not return.
- */
-void z_NanoFatalErrorHandler(unsigned int reason, const NANO_ESF *pEsf)
+void z_arc_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
 {
-	LOG_PANIC();
-
-	switch (reason) {
-	case _NANO_ERR_HW_EXCEPTION:
-		break;
-
-#if defined(CONFIG_STACK_CANARIES) || defined(CONFIG_ARC_STACK_CHECKING) \
-	|| defined(CONFIG_STACK_SENTINEL) || defined(CONFIG_MPU_STACK_GUARD)
-	case _NANO_ERR_STACK_CHK_FAIL:
-		printk("***** Stack Check Fail! *****\n");
-		break;
-#endif
-
-	case _NANO_ERR_ALLOCATION_FAIL:
-		printk("**** Kernel Allocation Failure! ****\n");
-		break;
-
-	case _NANO_ERR_KERNEL_OOPS:
-		printk("***** Kernel OOPS! *****\n");
-		break;
-
-	case _NANO_ERR_KERNEL_PANIC:
-		printk("***** Kernel Panic! *****\n");
-		break;
-
-	default:
-		printk("**** Unknown Fatal Error %d! ****\n", reason);
-		break;
+	if (reason == K_ERR_CPU_EXCEPTION) {
+		LOG_ERR("Faulting instruction address = 0x%lx",
+			z_arc_v2_aux_reg_read(_ARC_V2_ERET));
 	}
 
-	printk("Current thread ID = %p\n",  k_current_get());
-
-	if (reason == _NANO_ERR_HW_EXCEPTION) {
-		printk("Faulting instruction address = 0x%lx\n",
-		z_arc_v2_aux_reg_read(_ARC_V2_ERET));
-	}
-
-	/*
-	 * Now that the error has been reported, call the user implemented
-	 * policy
-	 * to respond to the error.  The decisions as to what responses are
-	 * appropriate to the various errors are something the customer must
-	 * decide.
-	 */
-
-	z_SysFatalErrorHandler(reason, pEsf);
+	z_fatal_error(reason, esf);
 }
 
 FUNC_NORETURN void z_arch_syscall_oops(void *ssf_ptr)
 {
-	LOG_PANIC();
-	z_SysFatalErrorHandler(_NANO_ERR_KERNEL_OOPS, ssf_ptr);
+	z_arc_fatal_error(K_ERR_KERNEL_OOPS, ssf_ptr);
 	CODE_UNREACHABLE;
 }

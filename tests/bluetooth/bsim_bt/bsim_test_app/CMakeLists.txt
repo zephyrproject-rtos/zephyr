@@ -17,8 +17,6 @@ target_sources(app PRIVATE
 	src/test_empty.c
 	src/test_connect1.c
 	src/test_connect2.c
-	../../../../samples/bluetooth/gatt/hrs.c
-	../../../../samples/bluetooth/gatt/bas.c
 )
 
 zephyr_include_directories(

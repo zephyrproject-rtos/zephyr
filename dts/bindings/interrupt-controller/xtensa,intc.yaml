@@ -1,30 +1,20 @@
----
 title: Xtensa Core Interrupt Controller
-version: 0.1
 
 description: >
     This binding describes Xtensa Core Interrupt controller
 
-inherits:
-    !include base.yaml
+compatible: "xtensa,core-intc"
+
+include: [interrupt-controller.yaml, base.yaml]
 
 properties:
-  compatible:
-      constraint: "xtensa,core-intc"
-
   reg:
-      category: required
+      required: true
 
-  snps,num-irq-priority-bits:
-      category: required
-      type: int
-      description: number of bits of IRQ priorities
-      generation: define
-
-cell_string: IRQ
+  "#interrupt-cells":
+      const: 3
 
 "#cells":
   - irq
   - sense
   - priority
-...

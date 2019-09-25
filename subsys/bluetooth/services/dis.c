@@ -1,5 +1,5 @@
 /** @file
- *  @brief GATT Device Infromation Service
+ *  @brief GATT Device Information Service
  */
 
 /*
@@ -24,8 +24,6 @@
 #include <bluetooth/conn.h>
 #include <bluetooth/uuid.h>
 #include <bluetooth/gatt.h>
-
-#include "../host/settings.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_SERVICE)
 #define LOG_MODULE_NAME bt_dis
@@ -144,12 +142,14 @@ BT_GATT_SERVICE_DEFINE(dis_svc,
 );
 
 #if defined(CONFIG_BT_SETTINGS) && defined(CONFIG_BT_GATT_DIS_SETTINGS)
-static int dis_set(int argc, char **argv, size_t len_rd,
+static int dis_set(const char *name, size_t len_rd,
 		   settings_read_cb read_cb, void *store)
 {
-	int len;
+	int len, nlen;
+	const char *next;
 
-	if (!strcmp(argv[0], "manuf")) {
+	nlen = settings_name_next(name, &next);
+	if (!strncmp(name, "manuf", nlen)) {
 		len = read_cb(store, &dis_manuf, sizeof(dis_manuf) - 1);
 		if (len < 0) {
 			BT_ERR("Failed to read manufacturer from storage"
@@ -161,7 +161,7 @@ static int dis_set(int argc, char **argv, size_t len_rd,
 		}
 		return 0;
 	}
-	if (!strcmp(argv[0], "model")) {
+	if (!strncmp(name, "model", nlen)) {
 		len = read_cb(store, &dis_model, sizeof(dis_model) - 1);
 		if (len < 0) {
 			BT_ERR("Failed to read model from storage"
@@ -174,7 +174,7 @@ static int dis_set(int argc, char **argv, size_t len_rd,
 		return 0;
 	}
 #if defined(CONFIG_BT_GATT_DIS_SERIAL_NUMBER)
-	if (!strcmp(argv[0], "serial")) {
+	if (!strncmp(name, "serial", nlen)) {
 		len = read_cb(store, &dis_serial_number,
 			   sizeof(dis_serial_number) - 1);
 		if (len < 0) {
@@ -189,7 +189,7 @@ static int dis_set(int argc, char **argv, size_t len_rd,
 	}
 #endif
 #if defined(CONFIG_BT_GATT_DIS_FW_REV)
-	if (!strcmp(argv[0], "fw")) {
+	if (!strncmp(name, "fw", nlen)) {
 		len = read_cb(store, &dis_fw_rev, sizeof(dis_fw_rev) - 1);
 		if (len < 0) {
 			BT_ERR("Failed to read firmware revision from storage"
@@ -203,7 +203,7 @@ static int dis_set(int argc, char **argv, size_t len_rd,
 	}
 #endif
 #if defined(CONFIG_BT_GATT_DIS_HW_REV)
-	if (!strcmp(argv[0], "hw")) {
+	if (!strncmp(name, "hw", nlen)) {
 		len = read_cb(store, &dis_hw_rev, sizeof(dis_hw_rev) - 1);
 		if (len < 0) {
 			BT_ERR("Failed to read hardware revision from storage"
@@ -217,7 +217,7 @@ static int dis_set(int argc, char **argv, size_t len_rd,
 	}
 #endif
 #if defined(CONFIG_BT_GATT_DIS_SW_REV)
-	if (!strcmp(argv[0], "sw")) {
+	if (!strncmp(name, "sw", nlen)) {
 		len = read_cb(store, &dis_sw_rev, sizeof(dis_sw_rev) - 1);
 		if (len < 0) {
 			BT_ERR("Failed to read software revision from storage"
@@ -233,5 +233,6 @@ static int dis_set(int argc, char **argv, size_t len_rd,
 	return 0;
 }
 
-BT_SETTINGS_DEFINE(dis, dis_set, NULL, NULL);
+SETTINGS_STATIC_HANDLER_DEFINE(bt_dis, "bt/dis", NULL, dis_set, NULL, NULL);
+
 #endif /* CONFIG_BT_GATT_DIS_SETTINGS && CONFIG_BT_SETTINGS*/

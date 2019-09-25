@@ -7,14 +7,14 @@
 #ifndef __ARP_H
 #define __ARP_H
 
+#if defined(CONFIG_NET_ARP) && defined(CONFIG_NET_NATIVE)
+
+#include <sys/slist.h>
+#include <net/ethernet.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#if defined(CONFIG_NET_ARP)
-
-#include <misc/slist.h>
-#include <net/ethernet.h>
 
 /**
  * @brief Address resolution (ARP) library
@@ -71,16 +71,17 @@ void net_arp_init(void);
  * @}
  */
 
+#ifdef __cplusplus
+}
+#endif
+
 #else /* CONFIG_NET_ARP */
 #define net_arp_prepare(_kt, _u1, _u2) _kt
 #define net_arp_input(...) NET_OK
 #define net_arp_clear_cache(...)
+#define net_arp_foreach(...) 0
 #define net_arp_init(...)
 
 #endif /* CONFIG_NET_ARP */
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* __ARP_H */

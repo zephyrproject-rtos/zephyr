@@ -9,8 +9,8 @@
 #include <device.h>
 #include <init.h>
 #include <soc.h>
-#include <i2c.h>
-#include <dma.h>
+#include <drivers/i2c.h>
+#include <drivers/dma.h>
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(i2c_sam0, CONFIG_I2C_LOG_LEVEL);
@@ -766,11 +766,11 @@ static const struct i2c_driver_api i2c_sam0_driver_api = {
 			    CONFIG_I2C_INIT_PRIORITY, &i2c_sam0_driver_api);\
 	static void i2c_sam_irq_config_##n(struct device *dev)		    \
 	{								    \
-		IRQ_CONNECT(DT_ATMEL_SAM0_I2C_SERCOM_##n##_IRQ,		    \
-			    DT_ATMEL_SAM0_I2C_SERCOM_##n##_IRQ_PRIORITY,    \
+		IRQ_CONNECT(DT_ATMEL_SAM0_I2C_SERCOM_##n##_IRQ_0,	    \
+			    DT_ATMEL_SAM0_I2C_SERCOM_##n##_IRQ_0_PRIORITY,  \
 			    i2c_sam0_isr, DEVICE_GET(i2c_sam0_##n),	    \
 			    0);						    \
-		irq_enable(DT_ATMEL_SAM0_I2C_SERCOM_##n##_IRQ);		    \
+		irq_enable(DT_ATMEL_SAM0_I2C_SERCOM_##n##_IRQ_0);	    \
 	}
 
 #if DT_ATMEL_SAM0_I2C_SERCOM_0_BASE_ADDRESS

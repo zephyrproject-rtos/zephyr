@@ -7,4 +7,4 @@
 
 config BOARD_NUCLEO_F429ZI
 	bool "NUCLEO-144 F429ZI Development Board"
-	depends on SOC_STM32F429XI
+	depends on SOC_STM32F429XX

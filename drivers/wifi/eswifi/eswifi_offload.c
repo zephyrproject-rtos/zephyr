@@ -20,99 +20,6 @@ LOG_MODULE_REGISTER(wifi_eswifi_offload);
 
 #include "eswifi.h"
 
-static inline int __select_socket(struct eswifi_dev *eswifi, u8_t idx)
-{
-	snprintf(eswifi->buf, sizeof(eswifi->buf), "P0=%d\r", idx);
-	return eswifi_at_cmd(eswifi, eswifi->buf);
-}
-
-static int __read_data(struct eswifi_dev *eswifi, size_t len, char **data)
-{
-	char cmd[] = "R0\r";
-	char size[] = "R1=9999\r";
-	char timeout[] = "R2=30000\r";
-	int ret;
-
-	/* Set max read size */
-	snprintf(size, sizeof(size), "R1=%u\r", len);
-	ret = eswifi_at_cmd(eswifi, size);
-	if (ret < 0) {
-		LOG_ERR("Unable to set read size");
-		return -EIO;
-	}
-
-	/* Set timeout */
-	snprintf(timeout, sizeof(timeout), "R2=%u\r", 30); /* 30 ms */
-	ret = eswifi_at_cmd(eswifi, timeout);
-	if (ret < 0) {
-		LOG_ERR("Unable to set timeout");
-		return -EIO;
-	}
-
-	return eswifi_at_cmd_rsp(eswifi, cmd, data);
-}
-
-static inline
-struct eswifi_dev *eswifi_socket_to_dev(struct eswifi_off_socket *socket)
-{
-	return CONTAINER_OF(socket - socket->index, struct eswifi_dev, socket);
-}
-
-static void eswifi_off_read_work(struct k_work *work)
-{
-	struct eswifi_off_socket *socket;
-	struct eswifi_dev *eswifi;
-	struct net_pkt *pkt;
-	int err, len;
-	char *data;
-
-	LOG_DBG("");
-
-	socket = CONTAINER_OF(work, struct eswifi_off_socket, read_work);
-	eswifi = eswifi_socket_to_dev(socket);
-
-	eswifi_lock(eswifi);
-
-	if (socket->state != ESWIFI_SOCKET_STATE_CONNECTED) {
-		goto done;
-	}
-
-	__select_socket(eswifi, socket->index);
-
-	len = __read_data(eswifi, 1460, &data); /* 1460 is max size */
-	if (len <= 0 || !socket->recv_cb) {
-		goto done;
-	}
-
-	LOG_ERR("payload sz = %d", len);
-
-	pkt = net_pkt_rx_alloc_with_buffer(eswifi->iface, len,
-					   AF_UNSPEC, 0, K_NO_WAIT);
-	if (!pkt) {
-		LOG_ERR("Cannot allocate rx packet");
-		goto done;
-	}
-
-	if (!net_pkt_write(pkt, data, len)) {
-		LOG_WRN("Incomplete buffer copy");
-	}
-
-	net_pkt_cursor_init(pkt);
-	socket->recv_cb(socket->context, pkt,
-			NULL, NULL, 0, socket->user_data);
-	k_sem_give(&socket->read_sem);
-	k_yield();
-
-done:
-	err = k_delayed_work_submit_to_queue(&eswifi->work_q,
-					     &socket->read_work,
-					     500);
-	if (err) {
-		LOG_ERR("Rescheduling socket read error");
-	}
-
-	eswifi_unlock(eswifi);
-}
 
 static int eswifi_off_bind(struct net_context *context,
 			   const struct sockaddr *addr,
@@ -122,97 +29,39 @@ static int eswifi_off_bind(struct net_context *context,
 	struct eswifi_dev *eswifi = eswifi_by_iface_idx(context->iface);
 	int err;
 
-	if (addr->sa_family != AF_INET) {
-		LOG_ERR("Only AF_INET is supported!");
-		return -EPFNOSUPPORT;
-	}
-
 	LOG_DBG("");
-
 	eswifi_lock(eswifi);
-
-	__select_socket(eswifi, socket->index);
-
-	/* Set Local Port */
-	snprintf(eswifi->buf, sizeof(eswifi->buf), "P2=%d\r",
-		 (u16_t)sys_be16_to_cpu(net_sin(addr)->sin_port));
-	err = eswifi_at_cmd(eswifi, eswifi->buf);
-	if (err < 0) {
-		LOG_ERR("Unable to set local port");
-		eswifi_unlock(eswifi);
-		return -EIO;
-	}
-
+	err = __eswifi_bind(eswifi, socket, addr, addrlen);
 	eswifi_unlock(eswifi);
 
-	return 0;
+	return err;
 }
 
 static int eswifi_off_listen(struct net_context *context, int backlog)
 {
 	struct eswifi_off_socket *socket = context->offload_context;
 	struct eswifi_dev *eswifi = eswifi_by_iface_idx(context->iface);
-	char cmd[] = "P5=1\r";
 	int err;
 
-	/* TODO */
-	LOG_ERR("");
+	LOG_DBG("Listening backlog=%d", backlog);
 
 	eswifi_lock(eswifi);
 
 	__select_socket(eswifi, socket->index);
 
-	/* Start TCP Server */
-	err = eswifi_at_cmd(eswifi, cmd);
+	/* Set backlog */
+	snprintf(eswifi->buf, sizeof(eswifi->buf), "P8=%d\r", backlog);
+	err = eswifi_at_cmd(eswifi, eswifi->buf);
 	if (err < 0) {
-		LOG_ERR("Unable to start TCP server");
+		LOG_ERR("Unable to start set listen backlog");
+		err = -EIO;
 	}
+
+	socket->is_server = true;
 
 	eswifi_unlock(eswifi);
 
 	return err;
-}
-
-static int __eswifi_off_connect(struct eswifi_dev *eswifi,
-				struct eswifi_off_socket *socket)
-{
-	struct sockaddr *addr = &socket->peer_addr;
-	struct in_addr *sin_addr = &net_sin(addr)->sin_addr;
-	int err;
-
-	LOG_DBG("");
-
-	__select_socket(eswifi, socket->index);
-
-	/* Set Remote IP */
-	snprintf(eswifi->buf, sizeof(eswifi->buf), "P3=%u.%u.%u.%u\r",
-		 sin_addr->s4_addr[0], sin_addr->s4_addr[1],
-		 sin_addr->s4_addr[2], sin_addr->s4_addr[3]);
-
-	err = eswifi_at_cmd(eswifi, eswifi->buf);
-	if (err < 0) {
-		LOG_ERR("Unable to set remote ip");
-		return -EIO;
-	}
-
-	/* Set Remote Port */
-	snprintf(eswifi->buf, sizeof(eswifi->buf), "P4=%d\r",
-		(u16_t)sys_be16_to_cpu(net_sin(addr)->sin_port));
-		err = eswifi_at_cmd(eswifi, eswifi->buf);
-		if (err < 0) {
-		LOG_ERR("Unable to set remote port");
-		return -EIO;
-	}
-
-	/* Start TCP client */
-	snprintf(eswifi->buf, sizeof(eswifi->buf), "P6=1\r");
-	err = eswifi_at_cmd(eswifi, eswifi->buf);
-	if (err < 0) {
-		LOG_ERR("Unable to connect");
-		return -EIO;
-	}
-
-	return 0;
 }
 
 static void eswifi_off_connect_work(struct k_work *work)
@@ -231,9 +80,9 @@ static void eswifi_off_connect_work(struct k_work *work)
 
 	cb = socket->conn_cb;
 	context = socket->context;
-	user_data = socket->user_data;
+	user_data = socket->conn_data;
 
-	err = __eswifi_off_connect(eswifi, socket);
+	err = __eswifi_off_start_client(eswifi, socket);
 	if (!err) {
 		socket->state = ESWIFI_SOCKET_STATE_CONNECTED;
 	} else {
@@ -273,7 +122,8 @@ static int eswifi_off_connect(struct net_context *context,
 	}
 
 	socket->peer_addr = *addr;
-	socket->user_data = user_data;
+	socket->conn_data = user_data;
+	socket->conn_cb = cb;
 	socket->state = ESWIFI_SOCKET_STATE_CONNECTING;
 
 	if (timeout == K_NO_WAIT) {
@@ -283,7 +133,7 @@ static int eswifi_off_connect(struct net_context *context,
 		return 0;
 	}
 
-	err = __eswifi_off_connect(eswifi, socket);
+	err = __eswifi_off_start_client(eswifi, socket);
 	if (!err) {
 		socket->state = ESWIFI_SOCKET_STATE_CONNECTED;
 	} else {
@@ -303,9 +153,29 @@ static int eswifi_off_accept(struct net_context *context,
 			     net_tcp_accept_cb_t cb, s32_t timeout,
 			     void *user_data)
 {
-	/* TODO */
-	LOG_DBG("");
-	return -ENOTSUP;
+	struct eswifi_off_socket *socket = context->offload_context;
+	struct eswifi_dev *eswifi = eswifi_by_iface_idx(context->iface);
+	int ret;
+
+	eswifi_lock(eswifi);
+
+	ret = __eswifi_accept(eswifi, socket);
+	if (ret < 0) {
+		eswifi_unlock(eswifi);
+		return ret;
+	}
+
+	socket->accept_cb = cb;
+	socket->accept_data = user_data;
+	k_sem_reset(&socket->accept_sem);
+
+	eswifi_unlock(eswifi);
+
+	if (timeout == K_NO_WAIT) {
+		return 0;
+	}
+
+	return k_sem_take(&socket->accept_sem, timeout);
 }
 
 static int __eswifi_off_send_pkt(struct eswifi_dev *eswifi,
@@ -357,12 +227,12 @@ static void eswifi_off_send_work(struct k_work *work)
 	void *user_data;
 	int err;
 
-	socket = CONTAINER_OF(work, struct eswifi_off_socket, connect_work);
+	socket = CONTAINER_OF(work, struct eswifi_off_socket, send_work);
 	eswifi = eswifi_socket_to_dev(socket);
 
 	eswifi_lock(eswifi);
 
-	user_data = socket->user_data;
+	user_data = socket->send_data;
 	cb = socket->send_cb;
 	context = socket->context;
 
@@ -401,7 +271,7 @@ static int eswifi_off_send(struct net_pkt *pkt,
 	socket->tx_pkt = pkt;
 
 	if (timeout == K_NO_WAIT) {
-		socket->user_data = user_data;
+		socket->send_data = user_data;
 		socket->send_cb = cb;
 
 		k_work_submit_to_queue(&eswifi->work_q, &socket->send_work);
@@ -430,9 +300,53 @@ static int eswifi_off_sendto(struct net_pkt *pkt,
 			     s32_t timeout,
 			     void *user_data)
 {
-	/* TODO */
-	LOG_DBG("");
-	return -ENOTSUP;
+	struct eswifi_off_socket *socket = pkt->context->offload_context;
+	struct eswifi_dev *eswifi = eswifi_by_iface_idx(socket->context->iface);
+	int err;
+
+	LOG_DBG("timeout=%d", timeout);
+
+	eswifi_lock(eswifi);
+
+	if (socket->tx_pkt) {
+		eswifi_unlock(eswifi);
+		return -EBUSY;
+	}
+
+	socket->tx_pkt = pkt;
+
+	if (socket->state != ESWIFI_SOCKET_STATE_CONNECTED) {
+		socket->peer_addr = *dst_addr;
+		err = __eswifi_off_start_client(eswifi, socket);
+		if (err < 0) {
+			eswifi_unlock(eswifi);
+			return err;
+		}
+
+		socket->state = ESWIFI_SOCKET_STATE_CONNECTED;
+	}
+
+	if (timeout == K_NO_WAIT) {
+		socket->send_data = user_data;
+		socket->send_cb = cb;
+
+		k_work_submit_to_queue(&eswifi->work_q, &socket->send_work);
+
+		eswifi_unlock(eswifi);
+
+		return 0;
+	}
+
+	err = __eswifi_off_send_pkt(eswifi, socket);
+	socket->tx_pkt = NULL;
+
+	eswifi_unlock(eswifi);
+
+	if (cb) {
+		cb(socket->context, err, user_data);
+	}
+
+	return err;
 }
 
 static int eswifi_off_recv(struct net_context *context,
@@ -449,7 +363,7 @@ static int eswifi_off_recv(struct net_context *context,
 
 	eswifi_lock(eswifi);
 	socket->recv_cb = cb;
-	socket->user_data = user_data;
+	socket->recv_data = user_data;
 	k_sem_reset(&socket->read_sem);
 	eswifi_unlock(eswifi);
 
@@ -471,35 +385,23 @@ static int eswifi_off_put(struct net_context *context)
 {
 	struct eswifi_off_socket *socket = context->offload_context;
 	struct eswifi_dev *eswifi = eswifi_by_iface_idx(context->iface);
-	int err;
+	int ret;
 
 	LOG_DBG("");
 
 	eswifi_lock(eswifi);
 
-	if (socket->state != ESWIFI_SOCKET_STATE_CONNECTED) {
-		eswifi_unlock(eswifi);
-		return -ENOTCONN;
+	ret = __eswifi_socket_free(eswifi, socket);
+	if (ret) {
+		goto done;
 	}
 
-	__select_socket(eswifi, socket->index);
-
-	k_delayed_work_cancel(&socket->read_work);
-
-	socket->context = NULL;
-	socket->state = ESWIFI_SOCKET_STATE_NONE;
-
-	/* Stop TCP client */
-	snprintf(eswifi->buf, sizeof(eswifi->buf), "P6=0\r");
-	err = eswifi_at_cmd(eswifi, eswifi->buf);
-	if (err < 0) {
-		err = -EIO;
-		LOG_ERR("Unable to disconnect");
+	if (--socket->usage <= 0) {
+		memset(socket, 0, sizeof(*socket));
 	}
-
+done:
 	eswifi_unlock(eswifi);
-
-	return err;
+	return ret;
 }
 
 static int eswifi_off_get(sa_family_t family,
@@ -509,68 +411,97 @@ static int eswifi_off_get(sa_family_t family,
 {
 	struct eswifi_dev *eswifi = eswifi_by_iface_idx((*context)->iface);
 	struct eswifi_off_socket *socket = NULL;
-	int err, i;
+	int idx;
 
 	LOG_DBG("");
 
-	if (family != AF_INET) {
-		LOG_ERR("Only AF_INET is supported!");
-		return -EPFNOSUPPORT;
-	}
-
-	if (ip_proto != IPPROTO_TCP) {
-		/* TODO: add UDP */
-		LOG_ERR("Only TCP supported");
-		return -EPROTONOSUPPORT;
-	}
-
 	eswifi_lock(eswifi);
 
-	/* pickup available socket */
-	for (i = 0; i < ESWIFI_OFFLOAD_MAX_SOCKETS; i++) {
-		if (!eswifi->socket[i].context) {
-			socket = &eswifi->socket[i];
-			socket->index = i;
-			socket->context = *context;
-			(*context)->offload_context = socket;
-			break;
-		}
+	idx = __eswifi_socket_new(eswifi, family, type, ip_proto, *context);
+	if (idx < 0) {
+		goto unlock;
 	}
 
-	if (!socket) {
-		LOG_ERR("No socket resource available");
-		eswifi_unlock(eswifi);
-		return -ENOMEM;
-	}
+	socket = &eswifi->socket[idx];
+	(*context)->offload_context = socket;
+
+	LOG_DBG("Socket index %d", socket->index);
 
 	k_work_init(&socket->connect_work, eswifi_off_connect_work);
 	k_work_init(&socket->send_work, eswifi_off_send_work);
-	k_delayed_work_init(&socket->read_work, eswifi_off_read_work);
 	k_sem_init(&socket->read_sem, 1, 1);
-
-	err = __select_socket(eswifi, socket->index);
-	if (err < 0) {
-		LOG_ERR("Unable to select socket %u", socket->index);
-		eswifi_unlock(eswifi);
-		return -EIO;
-	}
-
-	/* Set Transport Protocol */
-	snprintf(eswifi->buf, sizeof(eswifi->buf), "P1=%d\r",
-		ESWIFI_TRANSPORT_TCP);
-	err = eswifi_at_cmd(eswifi, eswifi->buf);
-	if (err < 0) {
-		LOG_ERR("Unable to set transport protocol");
-		eswifi_unlock(eswifi);
-		return -EIO;
-	}
+	k_sem_init(&socket->accept_sem, 1, 1);
 
 	k_delayed_work_submit_to_queue(&eswifi->work_q, &socket->read_work,
 				       500);
 
+unlock:
 	eswifi_unlock(eswifi);
+	return idx;
+}
 
-	return 0;
+void eswifi_offload_async_msg(struct eswifi_dev *eswifi, char *msg, size_t len)
+{
+	static const char msg_tcp_accept[] = "[TCP SVR] Accepted ";
+
+	if (!strncmp(msg, msg_tcp_accept, sizeof(msg_tcp_accept) - 1)) {
+		struct eswifi_off_socket *socket = NULL;
+		struct in_addr *sin_addr;
+		u8_t ip[4];
+		u16_t port = 0;
+		char *str;
+		int i = 0;
+
+		/* extract client ip/port e.g. 192.168.1.1:8080 */
+		/* TODO: use net_ipaddr_parse */
+		str = msg + sizeof(msg_tcp_accept) - 1;
+		while (*str) {
+			if (i < 4) {
+				ip[i++] = atoi(str);
+			} else if (i < 5) {
+				port = atoi(str);
+				break;
+			}
+
+			while (*str && (*str != '.') && (*str != ':')) {
+				str++;
+			}
+
+			str++;
+		}
+
+		for (i = 0; i < ESWIFI_OFFLOAD_MAX_SOCKETS; i++) {
+			struct eswifi_off_socket *s = &eswifi->socket[i];
+			if (s->context && s->port == port &&
+			    s->state == ESWIFI_SOCKET_STATE_ACCEPTING) {
+				socket = s;
+				break;
+			}
+		}
+
+		if (!socket) {
+			LOG_ERR("No listening socket");
+			return;
+		}
+
+		sin_addr = &net_sin(&socket->peer_addr)->sin_addr;
+		memcpy(&sin_addr->s4_addr, ip, 4);
+		socket->state = ESWIFI_SOCKET_STATE_CONNECTED;
+		socket->usage++;
+
+		LOG_DBG("%u.%u.%u.%u connected to port %u",
+			ip[0], ip[1], ip[2], ip[3], port);
+
+		if (socket->accept_cb) {
+			socket->accept_cb(socket->context,
+					  &socket->peer_addr,
+					  sizeof(struct sockaddr_in), 0,
+					  socket->accept_data);
+		}
+
+		k_sem_give(&socket->accept_sem);
+		k_yield();
+	}
 }
 
 static struct net_offload eswifi_offload = {

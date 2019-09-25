@@ -14,7 +14,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
-#include <misc/byteorder.h>
+#include <sys/byteorder.h>
 #include <zephyr.h>
 
 #include <bluetooth/bluetooth.h>
@@ -178,7 +178,9 @@ static int cmd_discover(const struct shell *shell, size_t argc, char *argv[])
 		}
 	}
 
-	if (!strcmp(argv[0], "discover-secondary")) {
+	if (!strcmp(argv[0], "discover")) {
+		discover_params.type = BT_GATT_DISCOVER_ATTRIBUTE;
+	} else if (!strcmp(argv[0], "discover-secondary")) {
 		discover_params.type = BT_GATT_DISCOVER_SECONDARY;
 	} else if (!strcmp(argv[0], "discover-include")) {
 		discover_params.type = BT_GATT_DISCOVER_INCLUDE;
@@ -206,7 +208,7 @@ static u8_t read_func(struct bt_conn *conn, u8_t err,
 			 struct bt_gatt_read_params *params,
 			 const void *data, u16_t length)
 {
-	shell_print(ctx_shell, "Read complete: err %u length %u", err, length);
+	shell_print(ctx_shell, "Read complete: err 0x%02x length %u", err, length);
 
 	if (!data) {
 		(void)memset(params, 0, sizeof(*params));
@@ -322,7 +324,7 @@ static u8_t gatt_write_buf[CHAR_SIZE_MAX];
 static void write_func(struct bt_conn *conn, u8_t err,
 		       struct bt_gatt_write_params *params)
 {
-	shell_print(ctx_shell, "Write complete: err %u", err);
+	shell_print(ctx_shell, "Write complete: err 0x%02x", err);
 
 	(void)memset(&write_params, 0, sizeof(write_params));
 }
@@ -522,7 +524,6 @@ static struct db_stats {
 	u16_t attr_count;
 	u16_t chrc_count;
 	u16_t ccc_count;
-	size_t ccc_cfg;
 } stats;
 
 static u8_t print_attr(const struct bt_gatt_attr *attr, void *user_data)
@@ -542,10 +543,7 @@ static u8_t print_attr(const struct bt_gatt_attr *attr, void *user_data)
 
 	if (!bt_uuid_cmp(attr->uuid, BT_UUID_GATT_CCC) &&
 	    attr->write == bt_gatt_attr_write_ccc) {
-		struct _bt_gatt_ccc *cfg = attr->user_data;
-
 		stats.ccc_count++;
-		stats.ccc_cfg += cfg->cfg_len;
 	}
 
 	shell_print(shell, "attr %p handle 0x%04x uuid %s perm 0x%02x",
@@ -588,7 +586,6 @@ static int cmd_show_db(const struct shell *shell, size_t argc, char *argv[])
 	total_len += stats.chrc_count * sizeof(struct bt_gatt_chrc);
 	total_len += stats.attr_count * sizeof(struct bt_gatt_attr);
 	total_len += stats.ccc_count * sizeof(struct _bt_gatt_ccc);
-	total_len += stats.ccc_cfg * sizeof(struct bt_gatt_ccc_cfg);
 
 	shell_print(shell, "=================================================");
 	shell_print(shell, "Total: %u services %u attributes (%u bytes)",
@@ -622,7 +619,6 @@ static const struct bt_uuid_128 vnd1_echo_uuid = BT_UUID_INIT_128(
 	0xf5, 0xde, 0xbc, 0x9a, 0x78, 0x56, 0x34, 0x12,
 	0x78, 0x56, 0x34, 0x12, 0x78, 0x56, 0x34, 0x12);
 
-static struct bt_gatt_ccc_cfg vnd1_ccc_cfg[BT_GATT_CCC_MAX] = {};
 static u8_t echo_enabled;
 
 static void vnd1_ccc_cfg_changed(const struct bt_gatt_attr *attr, u16_t value)
@@ -735,7 +731,8 @@ static struct bt_gatt_attr vnd1_attrs[] = {
 			       BT_GATT_CHRC_WRITE_WITHOUT_RESP |
 			       BT_GATT_CHRC_NOTIFY,
 			       BT_GATT_PERM_WRITE, NULL, write_vnd1, NULL),
-	BT_GATT_CCC(vnd1_ccc_cfg, vnd1_ccc_cfg_changed),
+	BT_GATT_CCC(vnd1_ccc_cfg_changed,
+		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE),
 };
 
 static struct bt_gatt_service vnd1_svc = BT_GATT_SERVICE(vnd1_attrs);
@@ -879,14 +876,8 @@ static int cmd_metrics(const struct shell *shell, size_t argc, char *argv[])
 	}
 
 	if (!strcmp(argv[1], "on")) {
-		static bool registered;
-
-		if (!registered) {
-			shell_print(shell, "Registering GATT metrics test "
-			      "Service.");
-			err = bt_gatt_service_register(&met_svc);
-			registered = true;
-		}
+		shell_print(shell, "Registering GATT metrics test Service.");
+		err = bt_gatt_service_register(&met_svc);
 	} else if (!strcmp(argv[1], "off")) {
 		shell_print(shell, "Unregistering GATT metrics test Service.");
 		err = bt_gatt_service_unregister(&met_svc);
@@ -1005,6 +996,8 @@ static int cmd_set(const struct shell *shell, size_t argc, char *argv[])
 
 SHELL_STATIC_SUBCMD_SET_CREATE(gatt_cmds,
 #if defined(CONFIG_BT_GATT_CLIENT)
+	SHELL_CMD_ARG(discover, NULL,
+		      "[UUID] [start handle] [end handle]", cmd_discover, 1, 3),
 	SHELL_CMD_ARG(discover-characteristic, NULL,
 		      "[UUID] [start handle] [end handle]", cmd_discover, 1, 3),
 	SHELL_CMD_ARG(discover-descriptor, NULL,

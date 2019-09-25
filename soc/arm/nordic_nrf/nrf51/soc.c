@@ -15,8 +15,7 @@
 
 #include <kernel.h>
 #include <init.h>
-#include <nrfx.h>
-#include <nrf_power.h>
+#include <hal/nrf_power.h>
 #include <soc/nrfx_coredep.h>
 #include <logging/log.h>
 

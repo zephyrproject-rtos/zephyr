@@ -1,0 +1,67 @@
+/*
+ * Copyright (c) 2019 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	leds {
+		compatible = "gpio-leds";
+		green_led_1:led_1 {
+			gpios = <&gpioi 12 GPIO_INT_ACTIVE_HIGH>;
+			label = "User LD1";
+			status = "disabled";
+		};
+		orange_led_2:led_2 {
+			gpios = <&gpioi 13 GPIO_INT_ACTIVE_HIGH>;
+			label = "User LD2";
+			status = "disabled";
+		};
+		red_led_3:led_3 {
+			gpios = <&gpioi 14 GPIO_INT_ACTIVE_HIGH>;
+			label = "User LD3";
+			status = "disabled";
+		};
+		blue_led_4:led_4 {
+			gpios = <&gpioi 15 GPIO_INT_ACTIVE_HIGH>;
+			label = "User LD4";
+			status = "disabled";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		wake_up: button {
+			label = "Wakeup";
+			gpios = <&gpioc 13 GPIO_INT_ACTIVE_HIGH>;
+			status = "disabled";
+		};
+		joy_center: joystick_center {
+			label = "joystick center";
+			gpios = <&gpiok 2 GPIO_INT_ACTIVE_LOW>;
+			status = "disabled";
+		};
+		joy_down: joystick_down {
+			label = "joystick down";
+			gpios = <&gpiok 3 GPIO_INT_ACTIVE_LOW>;
+			status = "disabled";
+		};
+		joy_up: joystick_up {
+			label = "joystick up";
+			gpios = <&gpiok 6 GPIO_INT_ACTIVE_LOW>;
+			status = "disabled";
+		};
+		joy_left: joystick_left {
+			label = "joystick left";
+			gpios = <&gpiok 4 GPIO_INT_ACTIVE_LOW>;
+			status = "disabled";
+		};
+		joy_right: joystick_right {
+			label = "joystick right";
+			gpios = <&gpiok 5 GPIO_INT_ACTIVE_LOW>;
+			status = "disabled";
+		};
+	};
+};
+
+arduino_serial: &uart8 {};

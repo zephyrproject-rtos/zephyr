@@ -5,7 +5,7 @@
  */
 
 #include <zephyr.h>
-#include <ipm.h>
+#include <drivers/ipm.h>
 #include <drivers/console/ipm_console.h>
 #include <device.h>
 #include <init.h>

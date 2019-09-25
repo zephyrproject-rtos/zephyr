@@ -229,7 +229,7 @@ References
 
 .. target-notes::
 
-.. _nRF5x Command-Line Tools: https://www.nordicsemi.com/Software-and-Tools/Development-Tools/nRF5-Command-Line-Tools
+.. _nRF5x Command-Line Tools: https://www.nordicsemi.com/Software-and-Tools/Development-Tools/nRF-Command-Line-Tools
 
 .. _Segger SAM3U Wiki: https://wiki.segger.com/index.php?title=J-Link-OB_SAM3U
 .. _Real-Time Tracing (RTT): https://www.segger.com/jlink-rtt.html

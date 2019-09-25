@@ -46,10 +46,8 @@
   #define XT_BOARD 1
 #endif
 
-#ifdef CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC
-  #undef XT_CLOCK_FREQ
-  #define XT_CLOCK_FREQ CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC
-#endif
+#undef  XT_CLOCK_FREQ
+#define XT_CLOCK_FREQ DT_CPU_CLOCK_FREQUENCY
 
 #ifndef XT_TIMER_INDEX
   #if defined configXT_TIMER_INDEX

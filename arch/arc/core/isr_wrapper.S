@@ -24,26 +24,6 @@
 GTEXT(_isr_wrapper)
 GTEXT(_isr_demux)
 
-GDATA(exc_nest_count)
-SECTION_VAR(BSS, exc_nest_count)
-	.balign 4
-	.word 0
-
-
-#if CONFIG_RGF_NUM_BANKS == 1
-GDATA(saved_r0)
-
-SECTION_VAR(BSS, saved_r0)
-	.balign 4
-	.word 0
-#else
-GDATA(saved_sp)
-
-SECTION_VAR(BSS, saved_sp)
-	.balign 4
-	.word 0
-#endif
-
 #if defined(CONFIG_SYS_POWER_MANAGEMENT)
 GTEXT(z_sys_power_save_idle_exit)
 #endif
@@ -62,7 +42,7 @@ Context switch explanation:
 
 The context switch code is spread in these files:
 
-  isr_wrapper.s, swap.s, swap_macros.s, fast_irq.s, regular_irq.s
+  isr_wrapper.s, switch.s, swap_macros.s, fast_irq.s, regular_irq.s
 
 IRQ stack frame layout:
 
@@ -80,10 +60,6 @@ IRQ stack frame layout:
 
   low address
 
-Registers not taken into account in the current implementation.
-          accl
-          acch
-
 The context switch code adopts this standard so that it is easier to follow:
 
   - r1 contains _kernel ASAP and is not overwritten over the lifespan of
@@ -92,7 +68,7 @@ The context switch code adopts this standard so that it is easier to follow:
     transition from outgoing thread to incoming thread
 
 Not loading _kernel into r0 allows loading _kernel without stomping on
-the parameter in r0 in z_swap().
+the parameter in r0 in z_arch_switch().
 
 
 ARCv2 processors have two kinds of interrupts: fast (FIRQ) and regular. The
@@ -124,7 +100,7 @@ done upfront, and the rest is done when needed:
 
 o RIRQ
 
-  All needed regisers to run C code in the ISR are saved automatically
+  All needed registers to run C code in the ISR are saved automatically
   on the outgoing thread's stack: loop, status32, pc, and the caller-
   saved GPRs. That stack frame layout is pre-determined. If returning
   to a thread, the stack is popped and no registers have to be saved by
@@ -174,7 +150,7 @@ From coop:
 
   o to coop
 
-    Restore interrupt lock level and do a normal function call return.
+    Do a normal function call return.
 
   o to any irq
 
@@ -192,14 +168,13 @@ From FIRQ:
 
   o to coop
 
-    The address of the returning instruction from z_swap() is loaded in ilink and
-    the saved status32 in status32_p0, taking care to adjust the interrupt lock
-    state desired in status32_p0. The return value is put in r0.
+    The address of the returning instruction from z_arch_switch() is loaded
+    in ilink and the saved status32 in status32_p0.
 
   o to any irq
 
     The IRQ has saved the caller-saved registers in a stack frame, which must be
-    popped, and statu32 and pc loaded in status32_p0 and ilink.
+    popped, and status32 and pc loaded in status32_p0 and ilink.
 
 From RIRQ:
 
@@ -207,7 +182,7 @@ From RIRQ:
 
     The interrupt return mechanism in the processor expects a stack frame, but
     the outgoing context did not create one. A fake one is created here, with
-    only the relevant values filled in: pc, status32 and the return value in r0.
+    only the relevant values filled in: pc, status32.
 
     There is a discrepancy between the ABI from the ARCv2 docs, including the
     way the processor pushes GPRs in pairs in the IRQ stack frame, and the ABI
@@ -229,27 +204,32 @@ From RIRQ:
 SECTION_FUNC(TEXT, _isr_wrapper)
 #if defined(CONFIG_ARC_FIRQ)
 #if CONFIG_RGF_NUM_BANKS == 1
-	st r0,[saved_r0]
+/* free r0 here, use r0 to check whether irq is firq.
+ * for rirq,  as sp will not change and r0 already saved, this action
+ * in fact is an action like nop.
+ * for firq,  r0 will be restored later
+ */
+	st_s r0, [sp]
 #endif
 	lr r0, [_ARC_V2_AUX_IRQ_ACT]
 	ffs r0, r0
 	cmp r0, 0
 #if CONFIG_RGF_NUM_BANKS == 1
 	bnz rirq_path
+	ld_s r0, [sp]
 	/* 1-register bank FIRQ handling must save registers on stack */
 	_create_irq_stack_frame
 	lr r0, [_ARC_V2_STATUS32_P0]
 	st_s r0, [sp, ___isf_t_status32_OFFSET]
-	mov r0,ilink
+	lr r0, [_ARC_V2_ERET]
 	st_s r0, [sp, ___isf_t_pc_OFFSET]
-	ld r0,[saved_r0]
-	st_s r0, [sp, ___isf_t_r0_OFFSET]
-	mov r3, _firq_exit
-	mov r2, _firq_enter
+
+	mov_s r3, _firq_exit
+	mov_s r2, _firq_enter
 	j_s [r2]
 rirq_path:
-	mov r3, _rirq_exit
-	mov r2, _rirq_enter
+	mov_s r3, _rirq_exit
+	mov_s r2, _rirq_enter
 	j_s [r2]
 #else
 	mov.z r3, _firq_exit
@@ -259,8 +239,8 @@ rirq_path:
 	j_s [r2]
 #endif
 #else
-	mov r3, _rirq_exit
-	mov r2, _rirq_enter
+	mov_s r3, _rirq_exit
+	mov_s r2, _rirq_enter
 	j_s [r2]
 #endif
 
@@ -307,6 +287,16 @@ _skip_sys_power_save_idle_exit:
 SECTION_FUNC(TEXT, _isr_demux)
 	push_s r3
 
+/* according to ARCv2 ISA, r25, r30, r58, r59 are caller-saved
+ * scratch registers, possibly used by interrupt handlers
+ */
+	push r25
+	push r30
+#ifdef CONFIG_ARC_HAS_ACCL_REGS
+	push r58
+	push r59
+#endif
+
 #ifdef CONFIG_EXECUTION_BENCHMARKING
 	bl read_timer_start_of_isr
 #endif
@@ -324,7 +314,7 @@ irq_hint_handled:
 
 	sub r0, r0, 16
 
-	mov r1, _sw_isr_table
+	mov_s r1, _sw_isr_table
 	add3 r0, r1, r0   /* table entries are 8-bytes wide */
 
 	ld_s r1, [r0, 4] /* ISR into r1 */
@@ -338,7 +328,15 @@ irq_hint_handled:
 	jl_s.d [r1]
 	ld_s r0, [r0] /* delay slot: ISR parameter into r0  */
 
+#ifdef CONFIG_ARC_HAS_ACCL_REGS
+	pop r59
+	pop r58
+#endif
+
+	pop r30
+	pop r25
+
 	/* back from ISR, jump to exit stub */
 	pop_s r3
 	j_s [r3]
-	nop
+	nop_s

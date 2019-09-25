@@ -27,8 +27,10 @@ extern bool valid_fault;
 
 #if defined(CONFIG_X86)
 #define MEM_REGION_ALLOC (4096)
-#elif defined(CONFIG_ARC) || defined(CONFIG_ARM)
+#elif defined(CONFIG_ARC)
 #define MEM_REGION_ALLOC (STACK_ALIGN)
+#elif defined(CONFIG_ARM)
+#define MEM_REGION_ALLOC (Z_THREAD_MIN_STACK_ALIGN)
 #else
 #error "Test suite not compatible for the given architecture"
 #endif

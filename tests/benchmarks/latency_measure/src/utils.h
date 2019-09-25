@@ -16,7 +16,7 @@
 #define IRQ_PRIORITY      3
 
 #ifdef CONFIG_PRINTK
-#include <misc/printk.h>
+#include <sys/printk.h>
 #include <stdio.h>
 #include "timestamp.h"
 extern char tmp_string[];

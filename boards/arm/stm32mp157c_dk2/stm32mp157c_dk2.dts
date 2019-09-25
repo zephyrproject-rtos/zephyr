@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <st/mp1/stm32mp157.dtsi>
+#include "arduino_r3_connector.dtsi"
 
 / {
 	model = "STMicroelectronics STM32MP157-DK2 board";
@@ -25,7 +26,13 @@
 	};
 };
 
-arduino_serial: &uart7 {};
+&spi4{
+	status = "okay";
+};
+
+&spi5{
+	status = "okay";
+};
 
 &usart3 {
 	current-speed = <115200>;
@@ -39,4 +46,13 @@ arduino_serial: &uart7 {};
 	pinctrl-0 = <&uart7_pins_a>;
 	pinctrl-names = "default";
 	status = "okay";
+};
+
+&mailbox {
+	status = "okay";
+};
+
+&i2c5 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
 };

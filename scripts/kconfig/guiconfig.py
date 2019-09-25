@@ -3,6 +3,12 @@
 # Copyright (c) 2019, Nordic Semiconductor ASA and Ulf Magnusson
 # SPDX-License-Identifier: ISC
 
+# _load_images() builds names dynamically to avoid having to give them twice
+# (once for the variable and once for the filename). This forces consistency
+# too.
+#
+# pylint: disable=undefined-variable
+
 """
 Overview
 ========
@@ -1308,15 +1314,13 @@ def _check_valid(dialog, entry, sym, s):
 
     for low_sym, high_sym, cond in sym.ranges:
         if expr_value(cond):
-            low = int(low_sym.str_value, base)
-            val = int(s, base)
-            high = int(high_sym.str_value, base)
+            low_s = low_sym.str_value
+            high_s = high_sym.str_value
 
-            if not low <= val <= high:
+            if not int(low_s, base) <= int(s, base) <= int(high_s, base):
                 messagebox.showerror(
                     "Value out of range",
-                    "{} is outside the range {}-{}".format(
-                        s, low_sym.str_value, high_sym.str_value),
+                    "{} is outside the range {}-{}".format(s, low_s, high_s),
                     parent=dialog)
                 entry.focus_set()
                 return False
@@ -1698,7 +1702,7 @@ def _try_save(save_fn, filename, description):
         _set_status(msg)
         print(msg)
         return True
-    except (OSError, IOError) as e:
+    except EnvironmentError as e:
         messagebox.showerror(
             "Error saving " + description,
             "Error saving {} to '{}': {} (errno: {})"
@@ -1719,7 +1723,7 @@ def _try_load(filename):
         _set_status(msg)
         print(msg)
         return True
-    except (OSError, IOError) as e:
+    except EnvironmentError as e:
         messagebox.showerror(
             "Error loading configuration",
             "Error loading '{}': {} (errno: {})"
@@ -2121,9 +2125,12 @@ def _defaults_info(sc):
     if not sc.defaults:
         return ""
 
-    s = "Defaults:\n"
+    s = "Default"
+    if len(sc.defaults) > 1:
+        s += "s"
+    s += ":\n"
 
-    for val, cond in sc.defaults:
+    for val, cond in sc.orig_defaults:
         s += "  - "
         if isinstance(sc, Symbol):
             s += _expr_str(val)

@@ -33,7 +33,7 @@ Hardware
 - 16 KB SRAM
 - On board sensors:
 
-  - Acclerometer: STMicro LIS3DH
+  - Accelerometer: STMicro LIS3DH
   - Integrated Environmental sensor: Bosch BME680
 
 - 2 User LEDs

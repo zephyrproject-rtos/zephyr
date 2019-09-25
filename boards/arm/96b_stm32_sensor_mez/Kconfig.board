@@ -7,4 +7,4 @@
 
 config BOARD_96B_STM32_SENSOR_MEZ
 	bool "96Boards STM32 Sensor Mezzanine Board"
-	depends on SOC_STM32F446XE
+	depends on SOC_STM32F446XX

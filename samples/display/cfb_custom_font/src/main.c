@@ -7,12 +7,12 @@
 #include <zephyr.h>
 #include <device.h>
 #include <display/cfb.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 
 #include "cfb_font_dice.h"
 
-#if defined(CONFIG_SSD1673)
-#define DISPLAY_DRIVER "SSD1673"
+#if defined(CONFIG_SSD16XX)
+#define DISPLAY_DRIVER "SSD16XX"
 #else
 #error Unsupported board
 #endif

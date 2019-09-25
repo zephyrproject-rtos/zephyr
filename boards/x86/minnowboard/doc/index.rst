@@ -96,8 +96,88 @@ The following platform features are unsupported:
 Creating a GRUB2 Boot Loader Image from a Linux Host
 ====================================================
 
-Follow the same steps documented for the :ref:`Galileo board <grub2>`.
 
+If you are having problems running an application using the preinstalled
+copy of GRUB, follow these steps to test on supported boards using a custom GRUB.
+
+#. Install the requirements to build GRUB on your host machine.
+
+   On Ubuntu, type:
+
+   .. code-block:: console
+
+      $ sudo apt-get install bison autoconf libopts25-dev flex automake \
+      pkg-config gettext autopoint
+
+   On Fedora, type:
+
+   .. code-block:: console
+
+     $ sudo dnf install gnu-efi bison m4 autoconf help2man flex \
+        automake texinfo gettext-devel
+
+#. Clone and build the GRUB repository using the script in Zephyr tree, type:
+
+   .. code-block:: console
+
+     $ cd $ZEPHYR_BASE
+     $ ./boards/x86/common/scripts/build_grub.sh i386
+
+#. Find the binary at
+   :file:`$ZEPHYR_BASE/boards/x86/common/scripts/grub/bin/grub_i386.efi`.
+
+
+
+Preparing the Boot Device
+=========================
+
+Prepare either an SD-micro card or USB flash drive to boot the Zephyr
+application image on the board. The following instructions apply to both
+devices.
+
+
+#. Build a Zephyr application; for instance, to build the ``hello_world``
+   application on the minnowboard:
+
+   .. zephyr-app-commands::
+      :zephyr-app: samples/hello_world
+      :board: minnowboard
+      :goals: build
+
+   .. note::
+
+      A stripped project image file named :file:`zephyr.strip` is automatically
+      created in the build directory after the application is built. This image
+      has removed debug information from the :file:`zephyr.elf` file.
+
+#. Use one of these cables for serial output:
+
+   `<http://www.ftdichip.com/Products/Cables/USBTTLSerial.htm>`_
+
+#. Format a microSD as FAT
+
+#. Create the following directories
+
+   :file:`efi`
+
+   :file:`efi/boot`
+
+   :file:`kernel`
+
+#. Copy the kernel file :file:`build/zephyr/zephyr.strip` to the :file:`$SDCARD/kernel` folder.
+
+#. Copy your built version of GRUB to :file:`$SDCARD/efi/boot/bootia32.efi`
+
+#. Create :file:`$SDCARD/efi/boot/grub.cfg` containing the following:
+
+   .. code-block:: console
+
+      set default=0
+      set timeout=10
+
+      menuentry "Zephyr Kernel" {
+         multiboot /kernel/zephyr.strip
+      }
 
 Booting Zephyr on the MinnowBoard
 =================================

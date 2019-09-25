@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <sensor.h>
-#include <i2c.h>
-#include <gpio.h>
+#include <drivers/sensor.h>
+#include <drivers/i2c.h>
+#include <drivers/gpio.h>
 
 #define MAX30101_I2C_ADDRESS		0x57
 

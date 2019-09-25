@@ -108,6 +108,16 @@ The stm32_min_dev board configuration supports the following hardware features:
 
 Other hardware features are not supported by the Zephyr kernel.
 
+I2C
+===
+
+The STM32 Minimum Development Board board supports two I2C devices. The default
+I2C mapping for Zephyr is:
+
+- I2C1_SCL : PB6
+- I2C1_SDA : PB7
+- I2C2_SCL : PB10
+- I2C2_SDA : PB11
 
 Programming and Debugging
 *************************

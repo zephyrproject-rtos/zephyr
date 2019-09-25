@@ -9,7 +9,7 @@
 
 #include <zephyr/types.h>
 #include <device.h>
-#include <i2c.h>
+#include <drivers/i2c.h>
 
 #define MS5837_CMD_RESET 0x1E
 

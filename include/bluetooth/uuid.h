@@ -17,7 +17,7 @@
  * @{
  */
 
-#include <misc/util.h>
+#include <sys/util.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -91,6 +91,10 @@ struct bt_uuid_128 {
  *  @brief Current Time Service
  */
 #define BT_UUID_CTS                       BT_UUID_DECLARE_16(0x1805)
+/** @def BT_UUID_HTS
+ *  @brief Health Thermometer Service
+ */
+#define BT_UUID_HTS                       BT_UUID_DECLARE_16(0x1809)
 /** @def BT_UUID_DIS
  *  @brief Device Information Service
  */
@@ -207,6 +211,10 @@ struct bt_uuid_128 {
  *  @brief BAS Characteristic Battery Level
  */
 #define BT_UUID_BAS_BATTERY_LEVEL         BT_UUID_DECLARE_16(0x2a19)
+/** @def BT_UUID_HTS_MEASUREMENT
+ *  @brief HTS Characteristic Measurement Value
+ */
+#define BT_UUID_HTS_MEASUREMENT           BT_UUID_DECLARE_16(0x2a1c)
 /** @def BT_UUID_HIDS_BOOT_KB_IN_REPORT
  *  @brief HID Characteristic Boot Keyboard Input Report
  */
@@ -457,6 +465,20 @@ struct bt_uuid_128 {
  */
 int bt_uuid_cmp(const struct bt_uuid *u1, const struct bt_uuid *u2);
 
+/** @brief Create a bt_uuid from a little-endian data buffer.
+ *
+ *  Create a bt_uuid from a little-endian data buffer. The data_len parameter
+ *  is used to determine whether the UUID is in 16, 32 or 128 bit format
+ *  (length 2, 4 or 16). Note: 32 bit format is not allowed over the air.
+ *
+ *  @param uuid Pointer to the bt_uuid variable
+ *  @param data pointer to UUID stored in little-endian data buffer
+ *  @param data_len length of the UUID in the data buffer
+ *
+ *  @return true if the data was valid and the UUID was successfully created.
+ */
+bool bt_uuid_create(struct bt_uuid *uuid, const u8_t *data, u8_t data_len);
+
 #if defined(CONFIG_BT_DEBUG)
 /** @brief Convert Bluetooth UUID to string.
  *
@@ -471,7 +493,10 @@ int bt_uuid_cmp(const struct bt_uuid *u1, const struct bt_uuid *u2);
  */
 void bt_uuid_to_str(const struct bt_uuid *uuid, char *str, size_t len);
 
-/** @brief Convert Bluetooth UUID to string in place.
+const char *bt_uuid_str_real(const struct bt_uuid *uuid);
+
+/** @def bt_uuid_str
+ *  @brief Convert Bluetooth UUID to string in place.
  *
  *  Converts Bluetooth UUID to string in place. UUID has to be in 16 bits or
  *  128 bits format.
@@ -480,7 +505,7 @@ void bt_uuid_to_str(const struct bt_uuid *uuid, char *str, size_t len);
  *
  *  @return String representation of the UUID given
  */
-const char *bt_uuid_str(const struct bt_uuid *uuid);
+#define bt_uuid_str(_uuid) log_strdup(bt_uuid_str_real(_uuid))
 #else
 static inline void bt_uuid_to_str(const struct bt_uuid *uuid, char *str,
 				  size_t len)

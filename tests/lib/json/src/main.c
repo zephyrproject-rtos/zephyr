@@ -7,7 +7,7 @@
 #include <zephyr/types.h>
 #include <stdbool.h>
 #include <ztest.h>
-#include <json.h>
+#include <data/json.h>
 
 struct test_nested {
 	int nested_int;
@@ -98,7 +98,7 @@ static const struct json_obj_descr array_array_descr[] = {
 static void test_json_encoding(void)
 {
 	struct test_struct ts = {
-		.some_string = "zephyr 123",
+		.some_string = "zephyr 123\uABCD",
 		.some_int = 42,
 		.some_bool = true,
 		.some_nested_struct = {
@@ -125,7 +125,7 @@ static void test_json_encoding(void)
 			.nested_string = "no escape necessary",
 		},
 	};
-	char encoded[] = "{\"some_string\":\"zephyr 123\","
+	char encoded[] = "{\"some_string\":\"zephyr 123\uABCD\","
 		"\"some_int\":42,\"some_bool\":true,"
 		"\"some_nested_struct\":{\"nested_int\":-1234,"
 		"\"nested_bool\":false,\"nested_string\":"
@@ -140,6 +140,10 @@ static void test_json_encoding(void)
 		"}";
 	char buffer[sizeof(encoded)];
 	int ret;
+	ssize_t len;
+
+	len = json_calc_encoded_len(test_descr, ARRAY_SIZE(test_descr), &ts);
+	zassert_equal(len, strlen(encoded), "encoded size mismatch");
 
 	ret = json_obj_encode_buf(test_descr, ARRAY_SIZE(test_descr),
 				  &ts, buffer, sizeof(buffer));
@@ -152,7 +156,7 @@ static void test_json_encoding(void)
 static void test_json_decoding(void)
 {
 	struct test_struct ts;
-	char encoded[] = "{\"some_string\":\"zephyr 123\","
+	char encoded[] = "{\"some_string\":\"zephyr 123\\uABCD456\","
 		"\"some_int\":\t42\n,"
 		"\"some_bool\":true    \t  "
 		"\n"
@@ -168,7 +172,7 @@ static void test_json_decoding(void)
 		"\"4nother_ne$+\":{\"nested_int\":1234,"
 		"\"nested_bool\":true,"
 		"\"nested_string\":\"no escape necessary\"}"
-		"}";
+		"}\n";
 	const int expected_array[] = { 11, 22, 33, 45, 299 };
 	const int expected_other_array[] = { 2, 3, 5, 7 };
 	int ret;
@@ -179,7 +183,7 @@ static void test_json_decoding(void)
 	zassert_equal(ret, (1 << ARRAY_SIZE(test_descr)) - 1,
 		     "All fields decoded correctly");
 
-	zassert_true(!strcmp(ts.some_string, "zephyr 123"),
+	zassert_true(!strcmp(ts.some_string, "zephyr 123\\uABCD456"),
 		    "String decoded correctly");
 	zassert_equal(ts.some_int, 42, "Positive integer decoded correctly");
 	zassert_equal(ts.some_bool, true, "Boolean decoded correctly");
@@ -312,57 +316,78 @@ static void test_json_obj_arr_decoding(void)
 		      "Array of object fields decoded correctly");
 	zassert_equal(oa.num_elements, 10,
 		      "Number of object fields decoded correctly");
-	zassert_true(!strcmp(oa.elements[0].name, expected.elements[0].name),
-		     "Element 0 name decoded correctly");
-	zassert_equal(oa.elements[0].height, expected.elements[0].height,
-		     "Element 0 height decoded correctly");
-	zassert_true(!strcmp(oa.elements[1].name, expected.elements[1].name),
-		     "Element 1 name decoded correctly");
-	zassert_equal(oa.elements[1].height, expected.elements[1].height,
-		     "Element 1 height decoded correctly");
-	zassert_true(!strcmp(oa.elements[2].name, expected.elements[2].name),
-		     "Element 2 name decoded correctly");
-	zassert_equal(oa.elements[2].height, expected.elements[2].height,
-		     "Element 2 height decoded correctly");
-	zassert_true(!strcmp(oa.elements[3].name, expected.elements[3].name),
-		     "Element 3 name decoded correctly");
-	zassert_equal(oa.elements[3].height, expected.elements[3].height,
-		     "Element 3 height decoded correctly");
-	zassert_true(!strcmp(oa.elements[4].name, expected.elements[4].name),
-		     "Element 4 name decoded correctly");
-	zassert_equal(oa.elements[4].height, expected.elements[4].height,
-		     "Element 4 height decoded correctly");
-	zassert_true(!strcmp(oa.elements[5].name, expected.elements[5].name),
-		     "Element 5 name decoded correctly");
-	zassert_equal(oa.elements[5].height, expected.elements[5].height,
-		     "Element 5 height decoded correctly");
-	zassert_true(!strcmp(oa.elements[6].name, expected.elements[6].name),
-		     "Element 6 name decoded correctly");
-	zassert_equal(oa.elements[6].height, expected.elements[6].height,
-		     "Element 6 height decoded correctly");
-	zassert_true(!strcmp(oa.elements[7].name, expected.elements[7].name),
-		     "Element 7 name decoded correctly");
-	zassert_equal(oa.elements[7].height, expected.elements[7].height,
-		     "Element 7 height decoded correctly");
-	zassert_true(!strcmp(oa.elements[8].name, expected.elements[8].name),
-		     "Element 8 name decoded correctly");
-	zassert_equal(oa.elements[8].height, expected.elements[8].height,
-		     "Element 8 height decoded correctly");
-	zassert_true(!strcmp(oa.elements[9].name, expected.elements[9].name),
-		     "Element 9 name decoded correctly");
-	zassert_equal(oa.elements[9].height, expected.elements[9].height,
-		     "Element 9 height decoded correctly");
+
+	for (int i = 0; i < expected.num_elements; i++) {
+		zassert_true(!strcmp(oa.elements[i].name,
+				     expected.elements[i].name),
+			     "Element %d name decoded correctly", i);
+		zassert_equal(oa.elements[i].height,
+			      expected.elements[i].height,
+			      "Element %d height decoded correctly", i);
+	}
 }
 
-static void test_json_invalid_unicode(void)
+struct encoding_test {
+	char *str;
+	int result;
+};
+
+static void parse_harness(struct encoding_test encoded[], size_t size)
 {
 	struct test_struct ts;
-	char encoded[] = "{\"some_string\":\"\\uABC@\"}";
 	int ret;
 
-	ret = json_obj_parse(encoded, sizeof(encoded) - 1, test_descr,
-			     ARRAY_SIZE(test_descr), &ts);
-	zassert_equal(ret, -EINVAL, "Decoding has to fail");
+	for (int i = 0; i < size; i++) {
+		ret = json_obj_parse(encoded[i].str, strlen(encoded[i].str),
+				     test_descr, ARRAY_SIZE(test_descr), &ts);
+		zassert_equal(ret, encoded[i].result,
+			      "Decoding '%s' result %d, expected %d",
+			      encoded[i].str, ret, encoded[i].result);
+	}
+}
+
+static void test_json_invalid_string(void)
+{
+	struct encoding_test encoded[] = {
+		{ "{\"some_string\":\"\\u@@@@\"}", -EINVAL },
+		{ "{\"some_string\":\"\\uA@@@\"}", -EINVAL },
+		{ "{\"some_string\":\"\\uAB@@\"}", -EINVAL },
+		{ "{\"some_string\":\"\\uABC@\"}", -EINVAL },
+		{ "{\"some_string\":\"\\X\"}", -EINVAL }
+	};
+
+	parse_harness(encoded, ARRAY_SIZE(encoded));
+}
+
+static void test_json_invalid_bool(void)
+{
+	struct encoding_test encoded[] = {
+		{ "{\"some_bool\":truffle }", -EINVAL},
+		{ "{\"some_bool\":fallacy }", -EINVAL},
+	};
+
+	parse_harness(encoded, ARRAY_SIZE(encoded));
+}
+
+static void test_json_invalid_null(void)
+{
+	struct encoding_test encoded[] = {
+		/* Parser will recognize 'null', but refuse to decode it */
+		{ "{\"some_string\":null }", -EINVAL},
+		/* Null spelled wrong */
+		{ "{\"some_string\":nutella }", -EINVAL},
+	};
+
+	parse_harness(encoded, ARRAY_SIZE(encoded));
+}
+
+static void test_json_invalid_number(void)
+{
+	struct encoding_test encoded[] = {
+		{ "{\"some_int\":xxx }", -EINVAL},
+	};
+
+	parse_harness(encoded, ARRAY_SIZE(encoded));
 }
 
 static void test_json_missing_quote(void)
@@ -450,7 +475,7 @@ static void test_json_escape_one(void)
 
 	ret = json_escape(buf, &len, sizeof(buf));
 	zassert_equal(ret, 0,
-		      "Escaping one character succeded");
+		      "Escaping one character succeeded");
 	zassert_equal(len, sizeof(buf) - 1,
 		      "Escaping one character length is correct");
 	zassert_true(!strcmp(buf, expected),
@@ -502,7 +527,10 @@ void test_main(void)
 			 ztest_unit_test(test_json_decoding_array_array),
 			 ztest_unit_test(test_json_obj_arr_encoding),
 			 ztest_unit_test(test_json_obj_arr_decoding),
-			 ztest_unit_test(test_json_invalid_unicode),
+			 ztest_unit_test(test_json_invalid_string),
+			 ztest_unit_test(test_json_invalid_bool),
+			 ztest_unit_test(test_json_invalid_null),
+			 ztest_unit_test(test_json_invalid_number),
 			 ztest_unit_test(test_json_missing_quote),
 			 ztest_unit_test(test_json_wrong_token),
 			 ztest_unit_test(test_json_item_wrong_type),

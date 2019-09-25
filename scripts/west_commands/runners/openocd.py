@@ -34,6 +34,7 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
         if cfg.openocd_search is not None:
             search_args = ['-s', cfg.openocd_search]
         self.openocd_cmd = [cfg.openocd] + search_args
+        self.hex_name = cfg.hex_file
         self.elf_name = cfg.elf_file
         self.load_cmd = load_cmd
         self.verify_cmd = verify_cmd
@@ -95,6 +96,10 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
             self.do_debugserver(**kwargs)
 
     def do_flash(self, **kwargs):
+        if not path.isfile(self.hex_name):
+            raise ValueError('Cannot flash; hex file ({}) does not exist. '.
+                             format(self.hex_name) +
+                             'Try enabling CONFIG_BUILD_OUTPUT_HEX.')
         if self.load_cmd is None:
             raise ValueError('Cannot flash; load command is missing')
         if self.verify_cmd is None:
@@ -108,15 +113,16 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
         if self.post_cmd is not None:
             post_cmd = ['-c', self.post_cmd]
 
+        self.logger.info('Flashing file: {}'.format(self.hex_name))
         cmd = (self.openocd_cmd +
                ['-f', self.openocd_config,
                 '-c', 'init',
                 '-c', 'targets'] +
                pre_cmd +
                ['-c', 'reset halt',
-                '-c', self.load_cmd,
+                '-c', self.load_cmd + ' ' + self.hex_name,
                 '-c', 'reset halt',
-                '-c', self.verify_cmd] +
+                '-c', self.verify_cmd + ' ' + self.hex_name] +
                post_cmd +
                ['-c', 'reset run',
                 '-c', 'shutdown'])

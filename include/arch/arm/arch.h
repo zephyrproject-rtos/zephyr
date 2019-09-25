@@ -22,17 +22,22 @@
 /* ARM GPRs are often designated by two different names */
 #define sys_define_gpr_with_alias(name1, name2) union { u32_t name1, name2; }
 
-#ifdef CONFIG_CPU_CORTEX_M
-#include <arch/arm/cortex_m/exc.h>
-#include <arch/arm/cortex_m/irq.h>
-#include <arch/arm/cortex_m/error.h>
-#include <arch/arm/cortex_m/misc.h>
-#include <arch/arm/cortex_m/memory_map.h>
-#include <arch/arm/cortex_m/asm_inline.h>
-#include <arch/common/sys_io.h>
+#include <arch/arm/exc.h>
+#include <arch/arm/irq.h>
+#include <arch/arm/error.h>
+#include <arch/arm/misc.h>
 #include <arch/common/addr_types.h>
 #include <arch/common/ffs.h>
-#include <arch/arm/cortex_m/nmi.h>
+#include <arch/arm/nmi.h>
+#include <arch/arm/asm_inline.h>
+
+#ifdef CONFIG_CPU_CORTEX_M
+#include <arch/arm/cortex_m/cpu.h>
+#include <arch/arm/cortex_m/memory_map.h>
+#include <arch/common/sys_io.h>
+#elif defined(CONFIG_CPU_CORTEX_R)
+#include <arch/arm/cortex_r/cpu.h>
+#include <arch/arm/cortex_r/sys_io.h>
 #endif
 
 #ifdef __cplusplus
@@ -50,6 +55,21 @@ extern "C" {
 #define STACK_ALIGN_SIZE 8
 #else
 #define STACK_ALIGN_SIZE 4
+#endif
+
+/**
+ * @brief Declare the minimum alignment for a thread stack
+ *
+ * Denotes the minimum required alignment of a thread stack.
+ *
+ * Note:
+ * User thread stacks must respect the minimum MPU region
+ * alignment requirement.
+ */
+#if defined(CONFIG_USERSPACE)
+#define Z_THREAD_MIN_STACK_ALIGN CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE
+#else
+#define Z_THREAD_MIN_STACK_ALIGN STACK_ALIGN_SIZE
 #endif
 
 /**
@@ -99,6 +119,37 @@ extern "C" {
 #endif
 
 /**
+ * @brief Declare the MPU guard alignment and size for a thread stack
+ *        that is using the Floating Point services.
+ *
+ * For threads that are using the Floating Point services under Shared
+ * Registers (CONFIG_FP_SHARING=y) mode, the exception stack frame may
+ * contain both the basic stack frame and the FP caller-saved context,
+ * upon exception entry. Therefore, a wide guard region is required to
+ * guarantee that stack-overflow detection will always be successful.
+ */
+#if defined(CONFIG_FLOAT) && defined(CONFIG_FP_SHARING) \
+	&& defined(CONFIG_MPU_STACK_GUARD)
+#define MPU_GUARD_ALIGN_AND_SIZE_FLOAT CONFIG_MPU_STACK_GUARD_MIN_SIZE_FLOAT
+#else
+#define MPU_GUARD_ALIGN_AND_SIZE_FLOAT 0
+#endif
+
+/**
+ * @brief Define alignment of an MPU guard
+ *
+ * Minimum alignment of the start address of an MPU guard, depending on
+ * whether the MPU architecture enforces a size (and power-of-two) alignment
+ * requirement.
+ */
+#if defined(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT)
+#define Z_MPU_GUARD_ALIGN (MAX(MPU_GUARD_ALIGN_AND_SIZE, \
+	MPU_GUARD_ALIGN_AND_SIZE_FLOAT))
+#else
+#define Z_MPU_GUARD_ALIGN MPU_GUARD_ALIGN_AND_SIZE
+#endif
+
+/**
  * @brief Define alignment of a stack buffer
  *
  * This is used for two different things:
@@ -107,10 +158,21 @@ extern "C" {
  * 2) Used to determine the alignment of a stack buffer
  *
  */
+#define STACK_ALIGN MAX(Z_THREAD_MIN_STACK_ALIGN, Z_MPU_GUARD_ALIGN)
+
+/**
+ * @brief Define alignment of a privilege stack buffer
+ *
+ * This is used to determine the required alignment of threads'
+ * privilege stacks when building with support for user mode.
+ *
+ * @note
+ * The privilege stacks do not need to respect the minimum MPU
+ * region alignment requirement (unless this is enforced via
+ * the MPU Stack Guard feature).
+ */
 #if defined(CONFIG_USERSPACE)
-#define STACK_ALIGN    CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE
-#else
-#define STACK_ALIGN    MAX(STACK_ALIGN_SIZE, MPU_GUARD_ALIGN_AND_SIZE)
+#define Z_PRIVILEGE_STACK_ALIGN MAX(STACK_ALIGN_SIZE, Z_MPU_GUARD_ALIGN)
 #endif
 
 /**
@@ -178,6 +240,7 @@ extern "C" {
 #define Z_ARCH_THREAD_STACK_BUFFER(sym) \
 		((char *)(sym) + MPU_GUARD_ALIGN_AND_SIZE)
 
+/* Legacy case: retain containing extern "C" with C++ */
 #ifdef CONFIG_ARM_MPU
 #ifdef CONFIG_CPU_HAS_ARM_MPU
 #include <arch/arm/cortex_m/mpu/arm_mpu.h>

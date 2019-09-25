@@ -25,11 +25,11 @@ directory:
   Generic config file, normally you should use this.
 
 - :file:`boards/reel_board.conf`
-  This overlay config enables support for SSD1673 display controller
+  This overlay config enables support for SSD16XX display controller
   on the reel_board.
 
 
-Example building for the reel_board with SSD1673 display support:
+Example building for the reel_board with SSD16XX display support:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/display/cfb_custom_font

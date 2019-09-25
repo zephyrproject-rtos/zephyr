@@ -6,8 +6,8 @@
 
 #include <device.h>
 #include <errno.h>
-#include <misc/__assert.h>
-#include <pinmux.h>
+#include <sys/__assert.h>
+#include <drivers/pinmux.h>
 
 #include <driverlib/ioc.h>
 

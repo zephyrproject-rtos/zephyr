@@ -1,0 +1,12 @@
+identifier: emsdp_em7d
+name: EM Software Development Platform
+type: mcu
+arch: arc
+toolchain:
+  - zephyr
+  - xtools
+ram: 128
+testing:
+  ignore_tags:
+    - net
+    - bluetooth

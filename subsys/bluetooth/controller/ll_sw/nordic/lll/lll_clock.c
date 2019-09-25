@@ -7,7 +7,7 @@
 #include <zephyr/types.h>
 #include <soc.h>
 #include <device.h>
-#include <clock_control.h>
+#include <drivers/clock_control.h>
 #include <drivers/clock_control/nrf_clock_control.h>
 
 #define LOG_MODULE_NAME bt_ctlr_llsw_nordic_lll_clock

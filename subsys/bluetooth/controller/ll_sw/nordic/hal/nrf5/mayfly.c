@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 Nordic Semiconductor ASA
+ * Copyright (c) 2016-2019 Nordic Semiconductor ASA
  * Copyright (c) 2016 Vinayak Kariappa Chettimada
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -8,6 +8,8 @@
 #include <zephyr/types.h>
 #include <soc.h>
 
+#include "hal/nrf5/swi.h"
+
 #include "util/memq.h"
 #include "util/mayfly.h"
 
@@ -15,7 +17,7 @@
 #include "common/log.h"
 #include "hal/debug.h"
 
-#if defined(CONFIG_BT_LL_SW)
+#if defined(CONFIG_BT_LL_SW_LEGACY)
 #define MAYFLY_CALL_ID_WORKER MAYFLY_CALL_ID_0
 #define MAYFLY_CALL_ID_JOB    MAYFLY_CALL_ID_1
 #elif defined(CONFIG_BT_LL_SW_SPLIT)
@@ -34,9 +36,9 @@ void mayfly_enable_cb(u8_t caller_id, u8_t callee_id, u8_t enable)
 	LL_ASSERT(callee_id == MAYFLY_CALL_ID_JOB);
 
 	if (enable) {
-		irq_enable(SWI5_IRQn);
+		irq_enable(HAL_SWI_JOB_IRQ);
 	} else {
-		irq_disable(SWI5_IRQn);
+		irq_disable(HAL_SWI_JOB_IRQ);
 	}
 }
 
@@ -47,14 +49,14 @@ u32_t mayfly_is_enabled(u8_t caller_id, u8_t callee_id)
 	switch (callee_id) {
 #if defined(CONFIG_BT_LL_SW_SPLIT)
 	case MAYFLY_CALL_ID_LLL:
-		return irq_is_enabled(SWI4_IRQn);
+		return irq_is_enabled(HAL_SWI_RADIO_IRQ);
 #endif /* CONFIG_BT_LL_SW_SPLIT */
 
 	case MAYFLY_CALL_ID_WORKER:
-		return irq_is_enabled(RTC0_IRQn);
+		return irq_is_enabled(HAL_SWI_WORKER_IRQ);
 
 	case MAYFLY_CALL_ID_JOB:
-		return irq_is_enabled(SWI5_IRQn);
+		return irq_is_enabled(HAL_SWI_JOB_IRQ);
 
 	default:
 		LL_ASSERT(0);
@@ -67,7 +69,7 @@ u32_t mayfly_is_enabled(u8_t caller_id, u8_t callee_id)
 u32_t mayfly_prio_is_equal(u8_t caller_id, u8_t callee_id)
 {
 	return (caller_id == callee_id) ||
-#if defined(CONFIG_BT_LL_SW)
+#if defined(CONFIG_BT_LL_SW_LEGACY)
 #if (CONFIG_BT_CTLR_WORKER_PRIO == CONFIG_BT_CTLR_JOB_PRIO)
 	       ((caller_id == MAYFLY_CALL_ID_WORKER) &&
 		(callee_id == MAYFLY_CALL_ID_JOB)) ||
@@ -104,16 +106,16 @@ void mayfly_pend(u8_t caller_id, u8_t callee_id)
 	switch (callee_id) {
 #if defined(CONFIG_BT_LL_SW_SPLIT)
 	case MAYFLY_CALL_ID_LLL:
-		NVIC_SetPendingIRQ(SWI4_IRQn);
+		hal_swi_lll_pend();
 		break;
 #endif /* CONFIG_BT_LL_SW_SPLIT */
 
 	case MAYFLY_CALL_ID_WORKER:
-		NVIC_SetPendingIRQ(RTC0_IRQn);
+		hal_swi_worker_pend();
 		break;
 
 	case MAYFLY_CALL_ID_JOB:
-		NVIC_SetPendingIRQ(SWI5_IRQn);
+		hal_swi_job_pend();
 		break;
 
 	default:

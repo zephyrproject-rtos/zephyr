@@ -1,0 +1,150 @@
+# Kconfig - MCUXpresso SDK
+#
+# Copyright (c) 2016, Freescale Semiconductor, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config HAS_MCUX
+	bool
+	select HAS_CMSIS
+	depends on SOC_FAMILY_KINETIS || SOC_FAMILY_IMX || SOC_FAMILY_LPC
+
+if HAS_MCUX
+
+config HAS_MCUX_ADC12
+	bool
+	help
+	  Set if the 12-bit ADC (ADC12) module is present in the SoC.
+
+config HAS_MCUX_ADC16
+	bool
+	help
+	  Set if the 16-bit ADC (ADC16) module is present in the SoC.
+
+config HAS_MCUX_CACHE
+	bool
+	help
+	  Set if the L1 or L2 cache is present in the SoC.
+
+config HAS_MCUX_CCM
+	bool
+	help
+	  Set if the clock control module (CCM) module is present in the SoC.
+
+config HAS_MCUX_PCC
+	bool
+	help
+	  Set if the peripheral clock controller module (PCC) module is
+	  present in the SoC.
+
+config HAS_MCUX_ELCDIF
+	bool
+	help
+	  Set if the enhanced LCD interface (eLCDIF) module is present in the
+	  SoC.
+
+config HAS_MCUX_ENET
+	bool
+	help
+	  Set if the ethernet (ENET) module is present in the SoC.
+
+config HAS_MCUX_FLEXCAN
+	bool
+	help
+	  Set if the FlexCAN module is presents in the SoC.
+
+config HAS_MCUX_FTFX
+	bool
+	help
+	  Set if the flash memory (FTFA, FTFE, or FTFL) module is present in
+	  the SoC.
+
+config HAS_MCUX_FTM
+	bool
+	help
+	  Set if the FlexTimer (FTM) module is present in the SoC.
+
+config HAS_MCUX_IGPIO
+	bool
+	help
+	  Set if the iMX GPIO (IGPIO) module is present in the SoC.
+
+config HAS_MCUX_LPI2C
+	bool
+	help
+	  Set if the low power I2C (LPI2C) module is present in the SoC.
+
+config HAS_MCUX_LPSCI
+	bool
+	help
+	  Set if the low power uart (LPSCI) module is present in the SoC.
+
+config HAS_MCUX_LPSPI
+	bool
+	help
+	  Set if the low power SPI (LPSPI) module is present in the SoC.
+
+config HAS_MCUX_LPUART
+	bool
+	help
+	  Set if the low power uart (LPUART) module is present in the SoC.
+
+config HAS_MCUX_GPT
+	bool
+	help
+	  Set if the general purpose timer (GPT) module is present in the SoC.
+
+config HAS_MCUX_RNGA
+	bool
+	help
+	  Set if the random number generator accelerator (RNGA) module is
+	  present in the SoC.
+
+config HAS_MCUX_RTC
+	bool
+	help
+	  Set if the real time clock (RTC) modules is present in the SoC.
+
+config HAS_MCUX_SCG
+	bool
+	help
+	  Set if the system clock generator (SCG) module is present in the
+	  SoC.
+
+config HAS_MCUX_SIM
+	bool
+	help
+	  Set if the system integration module (SIM) module is present in the
+	  SoC.
+
+config HAS_MCUX_TRNG
+	bool
+	help
+	  Set if the true random number generator (TRNG) module is present in
+	  the SoC.
+
+config HAS_MCUX_USB_EHCI
+	bool
+	help
+	  Set if the USB controller EHCI module is present in the SoC.
+
+config HAS_MCUX_USDHC1
+	bool
+	help
+	  Set if the USDHC instance 1 module is present in the SoC.
+
+config HAS_MCUX_USDHC2
+	bool
+	help
+	  Set if the USDHC2 instance 2 module is present in the SoC.
+
+config HAS_MCUX_WDOG32
+	bool
+	help
+	  Set if the watchdog (WDOG32) module is present in the SoC.
+
+config HAS_MCUX_PWM
+	bool
+	help
+	  Set if the PWM  module is present in the SoC.
+
+endif # HAS_MCUX

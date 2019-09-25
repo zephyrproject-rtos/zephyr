@@ -11,8 +11,8 @@
 #ifndef ZEPHYR_DRIVERS_PWM_PWM_PCA9685_H_
 #define ZEPHYR_DRIVERS_PWM_PWM_PCA9685_H_
 
-#include <gpio.h>
-#include <i2c.h>
+#include <drivers/gpio.h>
+#include <drivers/i2c.h>
 
 #ifdef __cplusplus
 extern "C" {

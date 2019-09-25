@@ -9,7 +9,7 @@
 
 #include <device.h>
 #include <kernel.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 
 #define SHT3XD_CMD_FETCH                0xE000
 #define SHT3XD_CMD_ART                  0x2B32

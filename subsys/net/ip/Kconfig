@@ -8,6 +8,50 @@
 
 menu "IP stack"
 
+config NET_NATIVE
+	bool "Enable native IP stack"
+	default y
+	help
+	  Enables Zephyr native IP stack. If you disable this, then
+	  you need to enable the offloading support if you want to
+	  have IP connectivity.
+
+# Hidden options for enabling native IPv6/IPv4. Using these options
+# avoids having "defined(CONFIG_NET_IPV6) && defined(CONFIG_NET_NATIVE)"
+# in the code as we can have "defined(CONFIG_NET_NATIVE_IPV6)" instead.
+config NET_NATIVE_IPV6
+	bool
+	depends on NET_NATIVE
+	default y if NET_IPV6
+
+config NET_NATIVE_IPV4
+	bool
+	depends on NET_NATIVE
+	default y if NET_IPV4
+
+config NET_NATIVE_TCP
+	bool
+	depends on NET_NATIVE
+	default y if NET_TCP
+
+config NET_NATIVE_UDP
+	bool
+	depends on NET_NATIVE
+	default y if NET_UDP
+
+config NET_OFFLOAD
+	bool "Offload IP stack [EXPERIMENTAL]"
+	help
+	  Enables TCP/IP stack to be offload to a co-processor.
+
+if NET_OFFLOAD
+module = NET_OFFLOAD
+module-dep = NET_LOG
+module-str = Log level for offload layer
+module-help = Enables offload layer to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+endif # NET_OFFLOAD
+
 # Hidden option
 config NET_RAW_MODE
 	bool
@@ -22,6 +66,7 @@ if !NET_RAW_MODE
 
 choice
 	prompt "Qemu networking"
+	default NET_QEMU_PPP if NET_PPP
 	default NET_QEMU_SLIP
 	depends on QEMU_TARGET
 	help
@@ -33,6 +78,11 @@ config NET_QEMU_SLIP
 	bool "SLIP"
 	help
 	  Connect to host or to another Qemu via SLIP.
+
+config NET_QEMU_PPP
+	bool "PPP"
+	help
+	  Connect to host via PPP.
 
 config NET_QEMU_ETHERNET
 	bool "Ethernet"
@@ -169,12 +219,16 @@ config NET_ROUTE
 	depends on NET_IPV6_NBR_CACHE
 	default y if NET_IPV6_NBR_CACHE
 
+# Temporarily hide the routing option as we do not have RPL in the system
+# that used to populate the routing table.
 config NET_ROUTING
-	bool "IP routing between interfaces"
+	bool
 	depends on NET_ROUTE
 	help
 	  Allow IPv6 routing between different network interfaces and
-	  technologies.
+	  technologies. Currently this has limited use as some entity
+	  would need to populate the routing table. RPL used to do that
+	  earlier but currently there is no RPL support in Zephyr.
 
 config	NET_MAX_ROUTES
 	int "Max number of routing entries stored."
@@ -370,10 +424,19 @@ config NET_CONTEXT_PRIORITY
 	  also traffic class support to work as expected.
 
 config NET_CONTEXT_TIMESTAMP
-	bool "Add timepstamp support to net_context"
+	bool "Add timestamp support to net_context"
 	select NET_PKT_TIMESTAMP
 	help
-	  It is possible to timestamp outgoing packets.
+	  It is possible to timestamp outgoing packets and get information
+	  about these timestamps.
+
+config NET_CONTEXT_TXTIME
+	bool "Add TXTIME support to net_context"
+	select NET_PKT_TXTIME
+	help
+	  It is possible to add information when the outgoing network packet
+	  should be sent. The TX time information should be placed into
+	  ancillary data field in sendmsg call.
 
 config NET_TEST
 	bool "Network Testing"
@@ -384,6 +447,7 @@ config NET_TEST
 config NET_SLIP_TAP
 	bool "TAP SLIP driver"
 	depends on NET_QEMU_SLIP
+	depends on NET_NATIVE
 	select SLIP
 	select UART_PIPE
 	select UART_INTERRUPT_DRIVEN
@@ -492,6 +556,14 @@ config NET_HEADERS_ALWAYS_CONTIGUOUS
 	  NET_BUF_FIXED_DATA_SIZE enabled and NET_BUF_DATA_SIZE of 128 for
 	  instance.
 
+config NET_IF_USERSPACE_ACCESS
+	bool "Allow userspace app to manipulate network interface"
+	depends on USERSPACE
+	help
+	  Only enable this if you want a userspace application to manipulate
+	  network interface. Currently this is limited to add or remove
+	  IP addresses. By default this is not allowed.
+
 choice
 	prompt "Default Network Interface"
 	default NET_DEFAULT_IF_FIRST
@@ -524,8 +596,13 @@ config NET_DEFAULT_IF_DUMMY
 	depends on NET_L2_DUMMY
 
 config NET_DEFAULT_IF_CANBUS
-	bool "Socket CAN interface"
+	bool "6LoCAN (IPv6 over CAN) interface"
 	depends on NET_L2_CANBUS
+
+config NET_DEFAULT_IF_CANBUS_RAW
+	bool "Socket CAN interface"
+	depends on NET_L2_CANBUS_RAW
+
 
 endchoice
 
@@ -536,14 +613,32 @@ config NET_PKT_TIMESTAMP
 	  example in gPTP which needs to know how long it takes to send
 	  a network packet.
 
+config NET_PKT_TIMESTAMP_THREAD
+	bool "Create TX timestamp thread"
+	default y if NET_GPTP
+	depends on NET_PKT_TIMESTAMP
+	help
+	  Create a TX timestamp thread that will pass the timestamped network
+	  packets to some other module like gPTP for further processing.
+	  If you just want to timestamp network packets and get information
+	  how long the network packets flow in the system, you can disable
+	  the thread support.
+
 config NET_PKT_TIMESTAMP_STACK_SIZE
 	int "Timestamp thread stack size"
 	default 1024
-	depends on NET_PKT_TIMESTAMP
+	depends on NET_PKT_TIMESTAMP_THREAD
 	help
 	  Set the timestamp thread stack size in bytes. The timestamp
 	  thread waits for timestamped TX frames and calls registered
 	  callbacks.
+
+config NET_PKT_TXTIME
+	bool "Enable network packet TX time support"
+	help
+	  Enable network packet TX time support. This is needed for
+	  when the application wants to set the exact time when the network
+	  packet should be sent.
 
 config NET_PROMISCUOUS_MODE
 	bool "Enable promiscuous mode support [EXPERIMENTAL]"
@@ -568,19 +663,6 @@ source "subsys/net/ip/Kconfig.stack"
 source "subsys/net/ip/Kconfig.mgmt"
 
 source "subsys/net/ip/Kconfig.stats"
-
-config NET_OFFLOAD
-	bool "Offload IP stack [EXPERIMENTAL]"
-	help
-	  Enables TCP/IP stack to be offload to a co-processor.
-
-if NET_OFFLOAD
-module = NET_OFFLOAD
-module-dep = NET_LOG
-module-str = Log level for offload layer
-module-help = Enables offload layer to output debug messages.
-source "subsys/net/Kconfig.template.log_config.net"
-endif # NET_OFFLOAD
 
 source "subsys/net/ip/Kconfig.debug"
 

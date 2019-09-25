@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <crc.h>
+#include <sys/crc.h>
 
 u32_t crc32_ieee(const u8_t *data, size_t len)
 {

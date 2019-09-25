@@ -5,9 +5,9 @@
  */
 
 #include <zephyr.h>
-#include <uart.h>
-#include <misc/printk.h>
-#include <tty.h>
+#include <drivers/uart.h>
+#include <sys/printk.h>
+#include <console/tty.h>
 
 static int tty_irq_input_hook(struct tty_serial *tty, u8_t c);
 static int tty_putchar(struct tty_serial *tty, u8_t c);
@@ -169,7 +169,7 @@ static ssize_t tty_read_unbuf(struct tty_serial *tty, void *buf, size_t size)
 		u8_t c;
 		res = uart_poll_in(tty->uart_dev, &c);
 		if (res <= -2) {
-			/* Error occured, best we can do is to return
+			/* Error occurred, best we can do is to return
 			 * accumulated data w/o error, or return error
 			 * directly if none.
 			 */
@@ -238,6 +238,10 @@ ssize_t tty_read(struct tty_serial *tty, void *buf, size_t size)
 
 int tty_init(struct tty_serial *tty, struct device *uart_dev)
 {
+	if (!uart_dev) {
+		return -ENODEV;
+	}
+
 	tty->uart_dev = uart_dev;
 
 	/* We start in unbuffer mode. */

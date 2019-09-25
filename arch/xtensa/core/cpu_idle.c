@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <tracing.h>
+#include <debug/tracing.h>
 
 /*
  * @brief Put the CPU in low-power mode

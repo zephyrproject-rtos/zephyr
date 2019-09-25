@@ -6,7 +6,7 @@
 
 #include <zephyr.h>
 #include <ztest.h>
-#include <fs.h>
+#include <fs/fs.h>
 #include <nffs/nffs.h>
 
 void test_nffs_mount(void);

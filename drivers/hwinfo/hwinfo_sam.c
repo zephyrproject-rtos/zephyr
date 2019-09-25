@@ -5,7 +5,7 @@
  */
 
 #include <device.h>
-#include <hwinfo.h>
+#include <drivers/hwinfo.h>
 #include <init.h>
 #include <soc.h>
 #include <string.h>

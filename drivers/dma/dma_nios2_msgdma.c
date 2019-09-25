@@ -9,7 +9,7 @@
 #include <init.h>
 #include <string.h>
 #include <soc.h>
-#include <dma.h>
+#include <drivers/dma.h>
 #include <altera_common.h>
 #include "altera_msgdma_csr_regs.h"
 #include "altera_msgdma_descriptor_regs.h"

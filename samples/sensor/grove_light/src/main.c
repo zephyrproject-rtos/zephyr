@@ -6,9 +6,9 @@
 
 #include <zephyr.h>
 #include <init.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 #include <stdio.h>
-#include <sensor.h>
+#include <drivers/sensor.h>
 
 #define SLEEP_TIME	1000
 

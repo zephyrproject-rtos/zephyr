@@ -4,6 +4,12 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
+# NOTE: This file is part of the old device tree scripts, which will be removed
+# later. They are kept to generate some legacy #defines via the
+# --deprecated-only flag.
+#
+# The new scripts are gen_defines.py, edtlib.py, and dtlib.py.
+
 from copy import deepcopy
 
 from extract.globals import *
@@ -26,7 +32,8 @@ class DTReg(DTDirective):
         binding = get_binding(node_path)
 
         reg = reduced[node_path]['props']['reg']
-        if type(reg) is not list: reg = [ reg, ]
+        if not isinstance(reg, list):
+            reg = [reg]
 
         (nr_address_cells, nr_size_cells) = get_addr_size_cells(node_path)
 
@@ -37,12 +44,14 @@ class DTReg(DTDirective):
 
                 try:
                     cs_gpios = deepcopy(find_parent_prop(node_path, 'cs-gpios'))
-                except:
+                except Exception:
                     pass
 
                 if cs_gpios:
-                    extract_controller(node_path, "cs-gpios", cs_gpios, reg[0], def_label, "cs-gpio", True)
-                    extract_cells(node_path, "cs-gpios", cs_gpios, None, reg[0], def_label, "cs-gpio", True)
+                    extract_controller(node_path, "cs-gpios", cs_gpios, reg[0], def_label, "cs-gpio", True, True)
+                    extract_controller(node_path, "cs-gpios", cs_gpios, reg[0], def_label, "cs-gpios", True)
+                    extract_cells(node_path, "cs-gpios", cs_gpios, None, reg[0], def_label, "cs-gpio", True, True)
+                    extract_cells(node_path, "cs-gpios", cs_gpios, None, reg[0], def_label, "cs-gpios", True)
 
         # generate defines
         l_base = [def_label]
@@ -66,7 +75,7 @@ class DTReg(DTDirective):
 
             try:
                 name = [names.pop(0).upper()]
-            except:
+            except Exception:
                 name = []
 
             for x in range(nr_address_cells):
@@ -85,7 +94,7 @@ class DTReg(DTDirective):
             if nr_size_cells:
                 prop_def[l_size_fqn] = int(size / div)
                 add_compat_alias(node_path, '_'.join(l_size + l_idx), l_size_fqn, prop_alias)
-            if len(name):
+            if name:
                 if nr_address_cells:
                     prop_alias['_'.join(l_base + name + l_addr)] = l_addr_fqn
                     add_compat_alias(node_path, '_'.join(name + l_addr), l_addr_fqn, prop_alias)

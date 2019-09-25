@@ -26,6 +26,11 @@
 /* Checks that MAX+1==MIN in the given type */
 #define ROLLOVER_CHECK(T, MAX, MIN) BUILD_ASSERT((T)((T)1 + (T)MAX) == (T)MIN)
 
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Winteger-overflow"
+#endif
+
 ROLLOVER_CHECK(unsigned int, 0xffffffff, 0);
 ROLLOVER_CHECK(unsigned short, 0xffff, 0);
 ROLLOVER_CHECK(unsigned char, 0xff, 0);
@@ -50,6 +55,11 @@ NEG_CHECK(int, -1);
 NEG_CHECK(int, 0x80000000);
 NEG_CHECK(int, 0x7fffffff);
 ROLLOVER_CHECK(int, 2147483647, -2147483648);
+
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+
 /**
  * @addtogroup kernel_common_tests
  * @{

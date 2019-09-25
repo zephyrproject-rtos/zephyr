@@ -42,6 +42,6 @@ search the archives.
 When copy/pasting more than 5 lines of text into Slack, create a `snippet`_.
 
 .. _Search archives and sign up here: https://lists.zephyrproject.org/g/users
-.. _Slack invite: https://tinyurl.com/yarkuemx
+.. _Slack invite: https://tinyurl.com/y5glwylp
 .. _GitHub issues: https://github.com/zephyrproject-rtos/zephyr/issues
 .. _snippet: https://get.slack.help/hc/en-us/articles/204145658-Create-a-snippet

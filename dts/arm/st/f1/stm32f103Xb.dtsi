@@ -42,6 +42,7 @@
 			ram-size = <512>;
 			phys = <&usb_fs_phy>;
 			status = "disabled";
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00800000>;
 			label= "USB";
 		};
 	};

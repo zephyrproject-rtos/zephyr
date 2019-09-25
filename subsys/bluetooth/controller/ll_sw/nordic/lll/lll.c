@@ -7,25 +7,30 @@
 #include <errno.h>
 #include <zephyr/types.h>
 #include <device.h>
-#include <clock_control.h>
+#include <drivers/entropy.h>
+#include <drivers/clock_control.h>
 #include <drivers/clock_control/nrf_clock_control.h>
 
+#include <soc.h>
+
+#include "hal/swi.h"
 #include "hal/ccm.h"
 #include "hal/radio.h"
 #include "hal/ticker.h"
 
 #include "util/mem.h"
 #include "util/memq.h"
-
 #include "util/mayfly.h"
+
 #include "ticker/ticker.h"
 
 #include "lll.h"
+#include "lll_vendor.h"
 #include "lll_internal.h"
 
 #define LOG_MODULE_NAME bt_ctlr_llsw_nordic_lll
 #include "common/log.h"
-#include <soc.h>
+
 #include "hal/debug.h"
 
 static struct {
@@ -39,6 +44,9 @@ static struct {
 static struct {
 	struct device *clk_hf;
 } lll;
+
+/* Entropy device */
+static struct device *dev_entropy;
 
 static int init_reset(void);
 static int prepare(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
@@ -82,10 +90,14 @@ static void rtc0_nrf5_isr(void *arg)
 
 	mayfly_run(TICKER_USER_ID_ULL_HIGH);
 
+#if (CONFIG_BT_CTLR_ULL_HIGH_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO)
+	mayfly_run(TICKER_USER_ID_ULL_LOW);
+#endif
+
 	DEBUG_TICKER_ISR(0);
 }
 
-static void swi4_nrf5_isr(void *arg)
+static void swi_lll_nrf5_isr(void *arg)
 {
 	DEBUG_RADIO_ISR(1);
 
@@ -94,7 +106,8 @@ static void swi4_nrf5_isr(void *arg)
 	DEBUG_RADIO_ISR(0);
 }
 
-static void swi5_nrf5_isr(void *arg)
+#if (CONFIG_BT_CTLR_ULL_HIGH_PRIO != CONFIG_BT_CTLR_ULL_LOW_PRIO)
+static void swi_ull_low_nrf5_isr(void *arg)
 {
 	DEBUG_TICKER_JOB(1);
 
@@ -102,11 +115,18 @@ static void swi5_nrf5_isr(void *arg)
 
 	DEBUG_TICKER_JOB(0);
 }
+#endif
 
 int lll_init(void)
 {
 	struct device *clk_k32;
 	int err;
+
+	/* Get reference to entropy device */
+	dev_entropy = device_get_binding(CONFIG_ENTROPY_NAME);
+	if (!dev_entropy) {
+		return -ENODEV;
+	}
 
 	/* Initialise LLL internals */
 	event.curr.abort_cb = NULL;
@@ -131,23 +151,35 @@ int lll_init(void)
 		return err;
 	}
 
+	/* Initialize SW IRQ structure */
+	hal_swi_init();
+
 	/* Connect ISRs */
-	IRQ_DIRECT_CONNECT(NRF5_IRQ_RADIO_IRQn, CONFIG_BT_CTLR_LLL_PRIO,
+	IRQ_DIRECT_CONNECT(RADIO_IRQn, CONFIG_BT_CTLR_LLL_PRIO,
 			   radio_nrf5_isr, 0);
-	IRQ_CONNECT(NRF5_IRQ_SWI4_IRQn, CONFIG_BT_CTLR_LLL_PRIO,
-		    swi4_nrf5_isr, NULL, 0);
-	IRQ_CONNECT(NRF5_IRQ_RTC0_IRQn, CONFIG_BT_CTLR_ULL_HIGH_PRIO,
+	IRQ_CONNECT(RTC0_IRQn, CONFIG_BT_CTLR_ULL_HIGH_PRIO,
 		    rtc0_nrf5_isr, NULL, 0);
-	IRQ_CONNECT(NRF5_IRQ_SWI5_IRQn, CONFIG_BT_CTLR_ULL_LOW_PRIO,
-		    swi5_nrf5_isr, NULL, 0);
+	IRQ_CONNECT(HAL_SWI_RADIO_IRQ, CONFIG_BT_CTLR_LLL_PRIO,
+		    swi_lll_nrf5_isr, NULL, 0);
+#if (CONFIG_BT_CTLR_ULL_HIGH_PRIO != CONFIG_BT_CTLR_ULL_LOW_PRIO)
+	IRQ_CONNECT(HAL_SWI_JOB_IRQ, CONFIG_BT_CTLR_ULL_LOW_PRIO,
+		    swi_ull_low_nrf5_isr, NULL, 0);
+#endif
 
 	/* Enable IRQs */
-	irq_enable(NRF5_IRQ_RADIO_IRQn);
-	irq_enable(NRF5_IRQ_SWI4_IRQn);
-	irq_enable(NRF5_IRQ_RTC0_IRQn);
-	irq_enable(NRF5_IRQ_SWI5_IRQn);
+	irq_enable(RADIO_IRQn);
+	irq_enable(RTC0_IRQn);
+	irq_enable(HAL_SWI_RADIO_IRQ);
+#if (CONFIG_BT_CTLR_ULL_HIGH_PRIO != CONFIG_BT_CTLR_ULL_LOW_PRIO)
+	irq_enable(HAL_SWI_JOB_IRQ);
+#endif
 
 	return 0;
+}
+
+u8_t lll_entropy_get(u8_t len, void *rand)
+{
+	return entropy_get_entropy_isr(dev_entropy, rand, len, 0);
 }
 
 int lll_reset(void)
@@ -175,21 +207,9 @@ void lll_resume(void *param)
 	struct lll_event *next = param;
 	int ret;
 
-	if (event.curr.abort_cb) {
-		ret = prepare(next->is_abort_cb, next->abort_cb,
-			      next->prepare_cb, next->prio,
-			      &next->prepare_param, next->is_resume);
-		LL_ASSERT(!ret || ret == -EINPROGRESS);
-
-		return;
-	}
-
-	event.curr.is_abort_cb = next->is_abort_cb;
-	event.curr.abort_cb = next->abort_cb;
-	event.curr.param = next->prepare_param.param;
-
-	ret = next->prepare_cb(&next->prepare_param);
-	LL_ASSERT(!ret);
+	ret = prepare(next->is_abort_cb, next->abort_cb, next->prepare_cb,
+		      next->prio, &next->prepare_param, next->is_resume);
+	LL_ASSERT(!ret || ret == -EINPROGRESS);
 }
 
 void lll_disable(void *param)
@@ -343,10 +363,24 @@ u32_t lll_evt_offset_get(struct evt_hdr *evt)
 u32_t lll_preempt_calc(struct evt_hdr *evt, u8_t ticker_id,
 		       u32_t ticks_at_event)
 {
-	/* TODO: */
+	u32_t ticks_now = ticker_ticks_now_get();
+	u32_t diff;
+
+	diff = ticker_ticks_diff_get(ticks_now, ticks_at_event);
+	diff += HAL_TICKER_CNTR_CMP_OFFSET_MIN;
+	if (!(diff & BIT(HAL_TICKER_CNTR_MSBIT)) &&
+	    (diff > HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US))) {
+		/* TODO: for Low Latency Feature with Advanced XTAL feature.
+		 * 1. Release retained HF clock.
+		 * 2. Advance the radio event to accommodate normal prepare
+		 *    duration.
+		 * 3. Increase the preempt to start ticks for future events.
+		 */
+		return 1;
+	}
+
 	return 0;
 }
-
 
 void lll_chan_set(u32_t chan)
 {
@@ -396,12 +430,14 @@ static int prepare(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 	struct lll_event *p;
 	u8_t idx = UINT8_MAX;
 
+	/* Find the ready prepare in the pipeline */
 	p = ull_prepare_dequeue_iter(&idx);
-	while (p && p->is_aborted) {
+	while (p && (p->is_aborted || p->is_resume)) {
 		p = ull_prepare_dequeue_iter(&idx);
 	}
 
-	if (event.curr.abort_cb || p) {
+	/* Current event active or another prepare is ready in the pipeline */
+	if (event.curr.abort_cb || (p && is_resume)) {
 #if !defined(CONFIG_BT_CTLR_LOW_LAT)
 		u32_t preempt_anchor;
 		struct evt_hdr *evt;
@@ -423,11 +459,11 @@ static int prepare(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 					  prepare_cb, prio, is_resume);
 		LL_ASSERT(!ret);
 
+#if !defined(CONFIG_BT_CTLR_LOW_LAT)
 		if (is_resume) {
 			return -EINPROGRESS;
 		}
 
-#if !defined(CONFIG_BT_CTLR_LOW_LAT)
 		/* Calc the preempt timeout */
 		evt = HDR_LLL2EVT(prepare_param->param);
 		preempt_anchor = prepare_param->ticks_at_expire;
@@ -541,7 +577,7 @@ static void preempt(void *param)
 		return;
 	}
 
-	while (next && next->is_resume) {
+	while (next && (next->is_aborted || next->is_resume)) {
 		next = ull_prepare_dequeue_iter(&idx);
 	}
 

@@ -46,6 +46,22 @@
 #include <stm32mp1xx_ll_usart.h>
 #endif
 
+#ifdef CONFIG_SPI_STM32
+#include <stm32mp1xx_ll_spi.h>
+#endif
+
+#ifdef CONFIG_IPM_STM32_IPCC
+#include <stm32mp1xx_ll_ipcc.h>
+#endif
+
+#ifdef CONFIG_I2C
+#include <stm32mp1xx_ll_i2c.h>
+#endif
+
+#ifdef CONFIG_WWDG_STM32
+#include <stm32mp1xx_ll_wwdg.h>
+#endif
+
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _STM32MP1SOC_H_ */

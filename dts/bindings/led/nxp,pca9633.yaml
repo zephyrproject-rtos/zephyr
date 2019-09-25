@@ -1,13 +1,7 @@
----
 title: NXP PCA9633 LED Driver
-version: 0.1
 
 description: NXP PCA9633 LED binding
 
-inherits:
-    !include i2c-device.yaml
+compatible: "nxp,pca9633"
 
-properties:
-    compatible:
-      constraint: "nxp,pca9633"
-...
+include: i2c-device.yaml

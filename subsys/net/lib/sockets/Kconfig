@@ -30,6 +30,15 @@ config NET_SOCKETS_POLL_MAX
 	help
 	  Maximum number of entries supported for poll() call.
 
+config NET_SOCKETS_CONNECT_TIMEOUT
+	int "Timeout value in milliseconds to CONNECT"
+	default 3000
+	range 0 60000
+	help
+	 This variable specifies time in milliseconds after connect()
+	 API call will timeout if we have not received SYN-ACK from
+	 peer.
+
 config NET_SOCKETS_DNS_TIMEOUT
 	int "Timeout value in milliseconds for DNS queries"
 	default 2000
@@ -120,9 +129,35 @@ config NET_SOCKETS_PACKET
 
 config NET_SOCKETS_CAN
 	bool "Enable socket CAN support [EXPERIMENTAL]"
-	select NET_L2_CANBUS
+	select NET_L2_CANBUS_RAW
 	help
 	  The value depends on your network needs.
+
+config NET_SOCKETS_CAN_RECEIVERS
+	int "How many simultaneous SocketCAN receivers are allowed"
+	default 1
+	depends on NET_SOCKETS_CAN
+	help
+	  The value tells how many sockets can receive data from same
+	  Socket-CAN interface.
+
+config NET_SOCKETS_NET_MGMT
+	bool "Enable network mangement socket support [EXPERIMENTAL]"
+	depends on NET_MGMT_EVENT
+	select NET_MGMT_EVENT_INFO
+	help
+	  Select this if you want to use socket API to get network
+	  managements events to your application.
+
+config NET_SOCKETS_NET_MGMT_MAX_LISTENERS
+	int "Max number of sockets to listen"
+	default 1
+	depends on NET_SOCKETS_NET_MGMT
+	help
+	  This sets the maximum number of net_mgmt sockets that can
+	  be set by the socket interface. So if you have two separate
+	  sockets that are used for listening events, you need to set
+	  this to two.
 
 module = NET_SOCKETS
 module-dep = NET_LOG

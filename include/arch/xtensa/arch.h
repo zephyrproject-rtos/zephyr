@@ -15,10 +15,6 @@
 
 #include <irq.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <generated_dts_board.h>
 #if !defined(_ASMLANGUAGE) && !defined(__ASSEMBLER__)
 #include <arch/common/sys_io.h>
@@ -31,17 +27,14 @@ extern "C" {
 
 #define STACK_ALIGN 16
 
-#define _NANO_ERR_HW_EXCEPTION (0)      /* MPU/Bus/Usage fault */
-#define _NANO_ERR_STACK_CHK_FAIL (2)    /* Stack corruption detected */
-#define _NANO_ERR_ALLOCATION_FAIL (3)   /* Kernel Allocation Failure */
-#define _NANO_ERR_RESERVED_IRQ (4)	/* Reserved interrupt */
-#define _NANO_ERR_KERNEL_OOPS (5)       /* Kernel oops (fatal to thread) */
-#define _NANO_ERR_KERNEL_PANIC (6)	/* Kernel panic (fatal to system) */
-
 /* Xtensa GPRs are often designated by two different names */
 #define sys_define_gpr_with_alias(name1, name2) union { u32_t name1, name2; }
 
 #include <arch/xtensa/exc.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* internal routine documented in C file, needed by IRQ_CONNECT() macro */
 extern void z_irq_priority_set(u32_t irq, u32_t prio, u32_t flags);
@@ -85,17 +78,7 @@ extern void z_irq_priority_set(u32_t irq, u32_t prio, u32_t flags);
 /* Spurious interrupt handler. Throws an error if called */
 extern void z_irq_spurious(void *unused);
 
-#ifdef CONFIG_XTENSA_ASM2
-#define XTENSA_ERR_NORET /**/
-#else
-#define XTENSA_ERR_NORET FUNC_NORETURN
-#endif
-
-XTENSA_ERR_NORET void z_SysFatalErrorHandler(unsigned int reason,
-					    const NANO_ESF *esf);
-
-XTENSA_ERR_NORET void z_NanoFatalErrorHandler(unsigned int reason,
-					     const NANO_ESF *pEsf);
+#define XTENSA_ERR_NORET
 
 extern u32_t z_timer_cycle_get_32(void);
 #define z_arch_k_cycle_get_32()	z_timer_cycle_get_32()
@@ -108,9 +91,10 @@ static ALWAYS_INLINE void arch_nop(void)
 	__asm__ volatile("nop");
 }
 
-#endif /* !defined(_ASMLANGUAGE) && !defined(__ASSEMBLER__)  */
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* !defined(_ASMLANGUAGE) && !defined(__ASSEMBLER__)  */
 
 #endif /* ZEPHYR_INCLUDE_ARCH_XTENSA_ARCH_H_ */

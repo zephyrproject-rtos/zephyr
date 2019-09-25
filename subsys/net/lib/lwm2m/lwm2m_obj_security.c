@@ -40,6 +40,12 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define IDENTITY_LEN			128
 #define KEY_LEN				CONFIG_LWM2M_SECURITY_KEY_SIZE
 
+/*
+ * Calculate resource instances as follows:
+ * start with SECURITY_MAX_ID
+ */
+#define RESOURCE_INSTANCE_COUNT	(SECURITY_MAX_ID)
+
 /* resource state variables */
 static char  security_uri[MAX_INSTANCE_COUNT][SECURITY_URI_LEN];
 static u8_t  client_identity[MAX_INSTANCE_COUNT][IDENTITY_LEN];
@@ -67,11 +73,13 @@ static struct lwm2m_engine_obj_field fields[] = {
 };
 
 static struct lwm2m_engine_obj_inst inst[MAX_INSTANCE_COUNT];
-static struct lwm2m_engine_res_inst res[MAX_INSTANCE_COUNT][SECURITY_MAX_ID];
+static struct lwm2m_engine_res res[MAX_INSTANCE_COUNT][SECURITY_MAX_ID];
+static struct lwm2m_engine_res_inst
+			res_inst[MAX_INSTANCE_COUNT][RESOURCE_INSTANCE_COUNT];
 
 static struct lwm2m_engine_obj_inst *security_create(u16_t obj_inst_id)
 {
-	int index, i = 0;
+	int index, i = 0, j = 0;
 
 	/* Check that there is no other instance with this ID */
 	for (index = 0; index < MAX_INSTANCE_COUNT; index++) {
@@ -101,25 +109,37 @@ static struct lwm2m_engine_obj_inst *security_create(u16_t obj_inst_id)
 	security_mode[index] = 0U;
 	short_server_id[index] = 0U;
 
+	(void)memset(res[index], 0,
+		     sizeof(res[index][0]) * ARRAY_SIZE(res[index]));
+	init_res_instance(res_inst[index], ARRAY_SIZE(res_inst[index]));
+
 	/* initialize instance resource data */
-	INIT_OBJ_RES_DATA(res[index], i, SECURITY_SERVER_URI_ID,
+	INIT_OBJ_RES_DATA(SECURITY_SERVER_URI_ID, res[index], i,
+			  res_inst[index], j,
 			  security_uri[index], SECURITY_URI_LEN);
-	INIT_OBJ_RES_DATA(res[index], i, SECURITY_BOOTSTRAP_FLAG_ID,
+	INIT_OBJ_RES_DATA(SECURITY_BOOTSTRAP_FLAG_ID, res[index], i,
+			  res_inst[index], j,
 			  &bootstrap_flag[index], sizeof(*bootstrap_flag));
-	INIT_OBJ_RES_DATA(res[index], i, SECURITY_MODE_ID,
+	INIT_OBJ_RES_DATA(SECURITY_MODE_ID, res[index], i,
+			  res_inst[index], j,
 			  &security_mode[index], sizeof(*security_mode));
-	INIT_OBJ_RES_DATA(res[index], i, SECURITY_CLIENT_PK_ID,
-			  &client_identity[index], IDENTITY_LEN),
-	INIT_OBJ_RES_DATA(res[index], i, SECURITY_SERVER_PK_ID,
-			  &server_pk[index], KEY_LEN),
-	INIT_OBJ_RES_DATA(res[index], i, SECURITY_SECRET_KEY_ID,
-			  &secret_key[index], KEY_LEN),
-	INIT_OBJ_RES_DATA(res[index], i, SECURITY_SHORT_SERVER_ID,
+	INIT_OBJ_RES_DATA(SECURITY_CLIENT_PK_ID, res[index], i,
+			  res_inst[index], j,
+			  &client_identity[index], IDENTITY_LEN);
+	INIT_OBJ_RES_DATA(SECURITY_SERVER_PK_ID, res[index], i,
+			  res_inst[index], j,
+			  &server_pk[index], KEY_LEN);
+	INIT_OBJ_RES_DATA(SECURITY_SECRET_KEY_ID, res[index], i,
+			  res_inst[index], j,
+			  &secret_key[index], KEY_LEN);
+	INIT_OBJ_RES_DATA(SECURITY_SHORT_SERVER_ID, res[index], i,
+			  res_inst[index], j,
 			  &short_server_id[index], sizeof(*short_server_id));
 
 	inst[index].resources = res[index];
 	inst[index].resource_count = i;
 	LOG_DBG("Create LWM2M security instance: %d", obj_inst_id);
+
 	return &inst[index];
 }
 
@@ -154,11 +174,6 @@ static int lwm2m_security_init(struct device *dev)
 {
 	struct lwm2m_engine_obj_inst *obj_inst = NULL;
 	int ret = 0;
-
-	/* Set default values */
-	(void)memset(inst, 0, sizeof(*inst) * MAX_INSTANCE_COUNT);
-	(void)memset(res, 0, sizeof(struct lwm2m_engine_res_inst) *
-			MAX_INSTANCE_COUNT * SECURITY_MAX_ID);
 
 	security.obj_id = LWM2M_OBJECT_SECURITY_ID;
 	security.fields = fields;

@@ -13,7 +13,7 @@ LOG_MODULE_REGISTER(net_test, LOG_LEVEL_DBG);
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 #include <kernel.h>
 
 #include <net/coap.h>
@@ -1462,7 +1462,7 @@ static const struct {
 } tests[] = {
 	{ "Build empty PDU test", test_build_empty_pdu, },
 	{ "Build simple PDU test", test_build_simple_pdu, },
-	{ "Parse emtpy PDU test", test_parse_empty_pdu, },
+	{ "Parse empty PDU test", test_parse_empty_pdu, },
 	{ "Parse empty PDU test no marker", test_parse_empty_pdu_1, },
 	{ "Parse simple PDU test", test_parse_simple_pdu, },
 	{ "Parse malformed option", test_parse_malformed_opt },

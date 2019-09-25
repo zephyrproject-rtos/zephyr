@@ -26,7 +26,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <device.h>
 #include <net/ieee802154_radio.h>
 #include <net/net_pkt.h>
-#include <misc/__assert.h>
+#include <sys/__assert.h>
 
 #include <openthread-system.h>
 #include <openthread/instance.h>

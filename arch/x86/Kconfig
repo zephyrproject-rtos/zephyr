@@ -1,10 +1,8 @@
 # Kconfig - x86 general configuration options
-
 #
 # Copyright (c) 2014-2015 Wind River Systems, Inc.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
+
 menu "X86 Architecture Options"
 	depends on X86
 
@@ -39,13 +37,31 @@ config CPU_APOLLO_LAKE
 	  This option signifies the use of a CPU from the Apollo Lake family.
 
 #
-# Configuration common to both IA32 and X64 sub-architectures.
+# Configuration common to both IA32 and Intel64 sub-architectures.
 #
 
 config X86_LONGMODE
 	bool
 	prompt "Run in long (64-bit) mode"
 	default n
+	select 64BIT
+	select USE_SWITCH_SUPPORTED
+	select USE_SWITCH
+
+config MAX_IRQ_LINES
+	int "Number of IRQ lines"
+	default 128
+	range 0 256
+	help
+	  This option specifies the number of IRQ lines in the system. It
+	  determines the size of the _irq_to_interrupt_vector_table, which
+	  is used to track the association between vectors and IRQ numbers.
+
+config IRQ_OFFLOAD_VECTOR
+	int "IDT vector to use for IRQ offload"
+	default 32
+	range 32 255
+	depends on IRQ_OFFLOAD
 
 config XIP
 	default n
@@ -108,7 +124,18 @@ endif # X86_MULTIBOOT_FRAMEBUF
 
 endif # X86_MULTIBOOT
 
+config X86_VERY_EARLY_CONSOLE
+	bool "Support very early boot printk"
+	depends on PRINTK
+	help
+	  Non-emulated X86 devices often require special hardware to attach
+	  a debugger, which may not be easily available. This option adds a
+	  very minimal serial driver which gets initialized at the very
+	  beginning of z_cstart(), via kernel_arch_init(). This driver enables
+	  printk to emit messages to the 16550 UART port 0 instance in device
+	  tree. This mini-driver assumes I/O to the UART is done via ports.
+
 source "arch/x86/core/Kconfig.ia32"
-source "arch/x86/core/Kconfig.x64"
+source "arch/x86/core/Kconfig.intel64"
 
 endmenu

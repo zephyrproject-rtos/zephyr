@@ -44,6 +44,7 @@ After the sample starts, it issues HTTP GET request to "google.com:80"
 and dumps the response. You can edit the source code to issue a request
 to any other site on the Internet (or on the local network, in which
 case no NAT/routing setup is needed).
+Exit QEMU by pressing :kbd:`CTRL+A` :kbd:`x`.
 
 Enabling TLS support
 =================================

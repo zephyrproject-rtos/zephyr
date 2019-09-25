@@ -31,14 +31,14 @@ choice I2C_0_NRF_TYPE
 config I2C_0_NRF_TWI
 	bool "nRF TWI 0"
 	depends on HAS_HW_NRF_TWI0
-	select NRFX_TWI
+	select NRFX_TWI0
 	help
 	  Enable nRF TWI Master without EasyDMA on port 0.
 
 config I2C_0_NRF_TWIM
 	bool "nRF TWIM 0"
 	depends on HAS_HW_NRF_TWIM0
-	select NRFX_TWIM
+	select NRFX_TWIM0
 	help
 	  Enable nRF TWI Master with EasyDMA on port 0.
 	  This peripheral accepts transfers from RAM only,
@@ -59,14 +59,14 @@ choice I2C_1_NRF_TYPE
 config I2C_1_NRF_TWI
 	bool "nRF TWI 1"
 	depends on HAS_HW_NRF_TWI1
-	select NRFX_TWI
+	select NRFX_TWI1
 	help
 	  Enable nRF TWI Master without EasyDMA on port 1.
 
 config I2C_1_NRF_TWIM
 	bool "nRF TWIM 1"
 	depends on HAS_HW_NRF_TWIM1
-	select NRFX_TWIM
+	select NRFX_TWIM1
 	help
 	  Enable nRF TWI Master with EasyDMA on port 1.
 	  This peripheral accepts transfers from RAM only,
@@ -87,7 +87,7 @@ choice I2C_2_NRF_TYPE
 config I2C_2_NRF_TWIM
 	bool "nRF TWIM 2"
 	depends on HAS_HW_NRF_TWIM2
-	select NRFX_TWIM
+	select NRFX_TWIM2
 	help
 	  Enable nRF TWI Master with EasyDMA on port 2.
 	  This peripheral accepts transfers from RAM only,
@@ -108,7 +108,7 @@ choice I2C_3_NRF_TYPE
 config I2C_3_NRF_TWIM
 	bool "nRF TWIM 3"
 	depends on HAS_HW_NRF_TWIM3
-	select NRFX_TWIM
+	select NRFX_TWIM3
 	help
 	  Enable nRF TWI Master with EasyDMA on port 3.
 	  This peripheral accepts transfers from RAM only,

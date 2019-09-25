@@ -11,8 +11,8 @@
 
 #include <zephyr.h>
 #include <errno.h>
-#include <atomic.h>
-#include <misc/util.h>
+#include <sys/atomic.h>
+#include <sys/util.h>
 
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/conn.h>

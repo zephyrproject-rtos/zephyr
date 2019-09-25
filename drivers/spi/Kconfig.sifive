@@ -8,7 +8,7 @@
 
 menuconfig SPI_SIFIVE
 	bool "SiFive SPI controller driver"
-	depends on SOC_SERIES_RISCV32_SIFIVE_FREEDOM
+	depends on SOC_SERIES_RISCV_SIFIVE_FREEDOM
 	help
 	  Enable the SPI peripherals on SiFive Freedom processors
 

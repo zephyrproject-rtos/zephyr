@@ -94,17 +94,49 @@ config DISK_VOLUME_SIZE
 endif # DISK_ACCESS_FLASH
 
 config DISK_ACCESS_SDHC
-	bool "SDHC card over SPI"
-	select SPI
+	bool "SDHC card access"
 	select FLASH
 	help
+	  File system on a SDHC card.
+
+if DISK_ACCESS_SDHC
+
+config DISK_ACCESS_SPI_SDHC
+	bool "SDHC access over SPI"
+	depends on SPI
+	help
 	  File system on a SDHC card accessed over SPI.
+
+config DISK_ACCESS_USDHC
+	bool "NXP i.MXRT USDHC driver"
+	depends on (HAS_MCUX_USDHC1 || HAS_MCUX_USDHC2)
+	help
+	  File system on a SDHC card accessed over
+	  NXP USDHC.
+
+if DISK_ACCESS_USDHC
+
+config DISK_ACCESS_USDHC1
+	bool "NXP i.MXRT USDHC instance 1"
+	depends on HAS_MCUX_USDHC1
+	help
+	  File system on a SDHC card accessed over
+	  USDHC instance 1.
+
+config DISK_ACCESS_USDHC2
+	bool "NXP i.MXRT USDHC instance 2"
+	depends on HAS_MCUX_USDHC2
+	help
+	  File system on a SDHC card accessed over
+	  USDHC instance 2.
+
+endif # DISK_ACCESS_USDHC
 
 config DISK_SDHC_VOLUME_NAME
 	string "SDHC Disk mount point or drive name"
 	default "SDHC"
-	depends on DISK_ACCESS_SDHC
 	help
 	  Disk name as per file system naming guidelines.
 
+endif # DISK_ACCESS_SDHC
 endif # DISK_ACCESS

@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2018 Peter Bigot Consulting, LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Add SPI support on Particle Mesh via nRF52840 SPI3
+ *
+ * NOTE: This file is replicated in particle_{argon,boron,xenon}.
+ * Changes should be made in all instances. */
+
+&spi3 { /* feather SPI */
+	status = "okay";
+	sck-pin = <47>;
+	mosi-pin = <45>;
+	miso-pin = <46>;
+	cs-gpios = <&gpio0 31 0>;
+};
+

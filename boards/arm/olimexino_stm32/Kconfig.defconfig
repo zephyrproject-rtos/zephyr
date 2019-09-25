@@ -19,6 +19,9 @@ endif # UART_CONSOLE
 
 if I2C
 
+config I2C_1
+	default y
+
 config I2C_2
 	default y
 

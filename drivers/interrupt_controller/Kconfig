@@ -84,27 +84,6 @@ config IOAPIC_MASK_RTE
 
 endif #LOAPIC
 
-config MVIC
-	bool "Intel Quark D2000 Interrupt Controller (MVIC)"
-	depends on X86
-	select X86_FIXED_IRQ_MAPPING
-	help
-	  The MVIC (Intel Quark microcontroller D2000 Interrupt Controller) is
-	  configured by default to support 32 external interrupt lines. Unlike the
-	  traditional IA LAPIC/IOAPIC, the interrupt vectors in MVIC are fixed and
-	  not programmable. In addition, the priorities of these interrupt
-	  lines are also fixed.
-
-config MVIC_TIMER_IRQ
-	int "IRQ line to use for timer interrupt"
-	range 0 15
-	default 10
-	depends on MVIC
-	help
-	  Specify the IRQ line to use for the timer interrupt. This should be
-	  an IRQ line unused by any hardware. If nested interrupts are enabled,
-	  higher interrupt lines have priority.
-
 config ARCV2_INTERRUPT_UNIT
 	bool "ARCv2 Interrupt Unit"
 	default y
@@ -121,6 +100,8 @@ config PLIC
 	default y
 	depends on SOC_FAMILY_RISCV_PRIVILEGE
 	select RISCV_HAS_PLIC
+	select MULTI_LEVEL_INTERRUPTS
+	select 2ND_LEVEL_INTERRUPTS
 	help
 	  Platform Level Interrupt Controller provides support
 	  for external interrupt lines defined by the RISC-V SoC;
@@ -167,6 +148,13 @@ config DW_ICTL_INIT_PRIORITY
 	depends on DW_ICTL
 	help
 	  DesignWare Interrupt Controller initialization priority.
+
+config GIC
+	bool "ARM Generic Interrupt Controller (GIC)"
+	depends on CPU_CORTEX_R
+	help
+	  The ARM Generic Interrupt Controller works with Cortex-A and
+	  Cortex-R processors.
 
 source "drivers/interrupt_controller/Kconfig.stm32"
 

@@ -22,6 +22,7 @@
 
 		cpu@0 {
 			compatible = "arm,cortex-m3";
+			clock-frequency = <24000000>;
 			reg = <0>;
 		};
 	};
@@ -34,6 +35,12 @@
 	flash0: flash@0 {
 		compatible = "soc-nv-flash";
 		reg = <0 0x40000>;
+	};
+
+	sysclk: system-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <24000000>;
+		#clock-cells = <0>;
 	};
 
 	soc {
@@ -62,6 +69,7 @@
 			compatible = "arm,cmsdk-uart";
 			reg = <0x40004000 0x1000>;
 			interrupts = <0 3>;
+			clocks = <&sysclk>;
 			current-speed = <115200>;
 			label = "UART_0";
 		};
@@ -70,12 +78,14 @@
 			compatible = "arm,cmsdk-uart";
 			reg = <0x40005000 0x1000>;
 			interrupts = <2 3>;
+			clocks = <&sysclk>;
 			current-speed = <115200>;
 			label = "UART_1";
 		};
 
 		wdog0: wdog@40008000 {
 			compatible = "arm,cmsdk-watchdog";
+			clocks = <&sysclk>;
 			reg = <0x40008000 0x1000>;
 		};
 
@@ -83,24 +93,32 @@
 			compatible = "arm,cmsdk-gpio";
 			reg = <0x40010000 0x1000>;
 			interrupts = <6 3>;
+			gpio-controller;
+			#gpio-cells = <2>;
 		};
 
 		gpio1: gpio@40011000 {
 			compatible = "arm,cmsdk-gpio";
 			reg = <0x40011000 0x1000>;
 			interrupts = <7 3>;
+			gpio-controller;
+			#gpio-cells = <2>;
 		};
 
 		gpio2: gpio@40012000 {
 			compatible = "arm,cmsdk-gpio";
 			reg = <0x40012000 0x1000>;
 			interrupts = <42 3>;
+			gpio-controller;
+			#gpio-cells = <2>;
 		};
 
 		gpio3: gpio@40013000 {
 			compatible = "arm,cmsdk-gpio";
 			reg = <0x40013000 0x1000>;
 			interrupts = <43 3>;
+			gpio-controller;
+			#gpio-cells = <2>;
 		};
 	};
 };

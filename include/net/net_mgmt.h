@@ -12,6 +12,10 @@
 #ifndef ZEPHYR_INCLUDE_NET_NET_MGMT_H_
 #define ZEPHYR_INCLUDE_NET_NET_MGMT_H_
 
+#include <sys/__assert.h>
+#include <net/net_core.h>
+#include <net/net_event.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -22,9 +26,6 @@ extern "C" {
  * @ingroup networking
  * @{
  */
-
-#include <misc/__assert.h>
-#include <net/net_core.h>
 
 struct net_if;
 
@@ -66,13 +67,11 @@ struct net_if;
 
 
 /* Useful generic definitions */
-#define NET_MGMT_LAYER_L1		1
-#define NET_MGMT_LAYER_L2		2
-#define NET_MGMT_LAYER_L3		3
+#define NET_MGMT_LAYER_L2		1
+#define NET_MGMT_LAYER_L3		2
+#define NET_MGMT_LAYER_L4		3
 
 /** @endcond */
-
-#include <net/net_event.h>
 
 
 /**
@@ -140,6 +139,7 @@ struct net_mgmt_event_callback {
 
 #ifdef CONFIG_NET_MGMT_EVENT_INFO
 	const void *info;
+	size_t info_length;
 #endif
 
 	/** A mask of network events on which the above handler should be
@@ -242,6 +242,8 @@ static inline void net_mgmt_event_notify(u32_t mgmt_event, struct net_if *iface)
  *        the caller wants to listen to.
  * @param info a valid pointer if user wants to get the information the
  *        event might bring along. NULL otherwise.
+ * @param info_length tells how long the info memory area is. Only valid if
+ *        the info is not NULL.
  * @param timeout a delay in milliseconds. K_FOREVER can be used to wait
  *        indefinitely.
  *
@@ -254,12 +256,14 @@ int net_mgmt_event_wait(u32_t mgmt_event_mask,
 			u32_t *raised_event,
 			struct net_if **iface,
 			const void **info,
+			size_t *info_length,
 			int timeout);
 #else
 static inline int net_mgmt_event_wait(u32_t mgmt_event_mask,
 				      u32_t *raised_event,
 				      struct net_if **iface,
 				      const void **info,
+				      size_t *info_length,
 				      int timeout)
 {
 	return 0;
@@ -277,6 +281,8 @@ static inline int net_mgmt_event_wait(u32_t mgmt_event_mask,
  *        interested in that information.
  * @param info a valid pointer if user wants to get the information the
  *        event might bring along. NULL otherwise.
+ * @param info_length tells how long the info memory area is. Only valid if
+ *        the info is not NULL.
  * @param timeout a delay in milliseconds. K_FOREVER can be used to wait
  *        indefinitely.
  *
@@ -289,12 +295,14 @@ int net_mgmt_event_wait_on_iface(struct net_if *iface,
 				 u32_t mgmt_event_mask,
 				 u32_t *raised_event,
 				 const void **info,
+				 size_t *info_length,
 				 int timeout);
 #else
 static inline int net_mgmt_event_wait_on_iface(struct net_if *iface,
 					       u32_t mgmt_event_mask,
 					       u32_t *raised_event,
 					       const void **info,
+					       size_t *info_length,
 					       int timeout)
 {
 	return 0;

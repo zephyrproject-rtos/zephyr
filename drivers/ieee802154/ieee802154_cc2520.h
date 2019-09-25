@@ -10,8 +10,8 @@
 #define ZEPHYR_DRIVERS_IEEE802154_IEEE802154_CC2520_H_
 
 #include <linker/sections.h>
-#include <atomic.h>
-#include <spi.h>
+#include <sys/atomic.h>
+#include <drivers/spi.h>
 
 #include <ieee802154/cc2520.h>
 

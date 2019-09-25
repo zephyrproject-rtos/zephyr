@@ -6,7 +6,7 @@
 
 #include <kernel.h>
 #include <string.h>
-#include <i2s.h>
+#include <drivers/i2s.h>
 
 int z_impl_i2s_buf_read(struct device *dev, void *buf, size_t *size)
 {

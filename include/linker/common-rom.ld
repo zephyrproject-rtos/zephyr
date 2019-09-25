@@ -3,6 +3,12 @@
 #if defined(CONFIG_GEN_ISR_TABLES) && !defined(CONFIG_DYNAMIC_INTERRUPTS)
 	SECTION_PROLOGUE(sw_isr_table,,)
 	{
+		/*
+		 * Some arch requires an entry to be aligned to arch
+		 * specific boundary for using double word load
+		 * instruction.  See include/sw_isr_table.h.
+		 */
+		. = ALIGN(CONFIG_ARCH_SW_ISR_TABLE_ALIGN);
 		*(SW_ISR_TABLE)
 	} GROUP_LINK_IN(ROMABLE_REGION)
 #endif
@@ -11,17 +17,26 @@
 	{
 		/*
 		 * The compiler fills the constructor pointers table below,
-		 * hence symbol __CTOR_LIST__ must be aligned on 4 byte
+		 * hence symbol __CTOR_LIST__ must be aligned on word
 		 * boundary.  To align with the C++ standard, the first elment
 		 * of the array contains the number of actual constructors. The
 		 * last element is NULL.
 		 */
+#ifdef CONFIG_64BIT
+		. = ALIGN(8);
+		__CTOR_LIST__ = .;
+		QUAD((__CTOR_END__ - __CTOR_LIST__) / 8 - 2)
+		KEEP(*(SORT_BY_NAME(".ctors*")))
+		QUAD(0)
+		__CTOR_END__ = .;
+#else
 		. = ALIGN(4);
 		__CTOR_LIST__ = .;
 		LONG((__CTOR_END__ - __CTOR_LIST__) / 4 - 2)
 		KEEP(*(SORT_BY_NAME(".ctors*")))
 		LONG(0)
 		__CTOR_END__ = .;
+#endif
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
 	SECTION_PROLOGUE(init_array,,)
@@ -70,42 +85,51 @@
 #if defined(CONFIG_NET_SOCKETS)
 	SECTION_PROLOGUE(net_socket_register,,)
 	{
-		__net_socket_register_start = .;
-		*(".net_socket_register.init")
-		KEEP(*(SORT_BY_NAME(".net_socket_register.init*")))
-		__net_socket_register_end = .;
+		_net_socket_register_list_start = .;
+		KEEP(*(SORT_BY_NAME("._net_socket_register.*")))
+		_net_socket_register_list_end = .;
+	} GROUP_LINK_IN(ROMABLE_REGION)
+#endif
+
+#if defined(CONFIG_NET_L2_PPP)
+	SECTION_PROLOGUE(net_ppp_proto,,)
+	{
+		__net_ppp_proto_start = .;
+		*(".net_ppp_proto.*")
+		KEEP(*(SORT_BY_NAME(".net_ppp_proto.*")))
+		__net_ppp_proto_end = .;
 	} GROUP_LINK_IN(ROMABLE_REGION)
 #endif
 
 	SECTION_DATA_PROLOGUE(_bt_channels_area,,SUBALIGN(4))
 	{
-		_bt_channels_start = .;
-		KEEP(*(SORT_BY_NAME("._bt_channels.static.*")))
-		_bt_channels_end = .;
+		_bt_l2cap_fixed_chan_list_start = .;
+		KEEP(*(SORT_BY_NAME("._bt_l2cap_fixed_chan.static.*")))
+		_bt_l2cap_fixed_chan_list_end = .;
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
 #if defined(CONFIG_BT_BREDR)
 	SECTION_DATA_PROLOGUE(_bt_br_channels_area,,SUBALIGN(4))
 	{
-		_bt_br_channels_start = .;
-		KEEP(*(SORT_BY_NAME("._bt_br_channels.static.*")))
-		_bt_br_channels_end = .;
+		_bt_l2cap_br_fixed_chan_list_start = .;
+		KEEP(*(SORT_BY_NAME("._bt_l2cap_br_fixed_chan.static.*")))
+		_bt_l2cap_br_fixed_chan_list_end = .;
 	} GROUP_LINK_IN(ROMABLE_REGION)
 #endif
 
 	SECTION_DATA_PROLOGUE(_bt_services_area,,SUBALIGN(4))
 	{
-		_bt_services_start = .;
-		KEEP(*(SORT_BY_NAME("._bt_services.static.*")))
-		_bt_services_end = .;
+		_bt_gatt_service_static_list_start = .;
+		KEEP(*(SORT_BY_NAME("._bt_gatt_service_static.static.*")))
+		_bt_gatt_service_static_list_end = .;
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
-#if defined(CONFIG_BT_SETTINGS)
-	SECTION_DATA_PROLOGUE(_bt_settings_area,,SUBALIGN(4))
+#if defined(CONFIG_SETTINGS)
+	SECTION_DATA_PROLOGUE(_settings_handlers_area,,SUBALIGN(4))
 	{
-		_bt_settings_start = .;
-		KEEP(*(SORT_BY_NAME("._bt_settings_handler.static.*")))
-		_bt_settings_end = .;
+		_settings_handler_static_list_start = .;
+		KEEP(*(SORT_BY_NAME("._settings_handler_static.static.*")))
+		_settings_handler_static_list_end = .;
 	} GROUP_LINK_IN(ROMABLE_REGION)
 #endif
 
@@ -119,7 +143,7 @@
 	SECTION_DATA_PROLOGUE(log_backends_sections,,)
 	{
 		__log_backends_start = .;
-		KEEP(*(".log_backends"));
+		KEEP(*("._log_backend.*"));
 		__log_backends_end = .;
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
@@ -133,6 +157,6 @@
 	SECTION_DATA_PROLOGUE(font_entry_sections,,)
 	{
 		__font_entry_start = .;
-		KEEP(*(SORT_BY_NAME(".font_entry.*")))
+		KEEP(*(SORT_BY_NAME("._cfb_font.*")))
 		__font_entry_end = .;
 	} GROUP_LINK_IN(ROMABLE_REGION)

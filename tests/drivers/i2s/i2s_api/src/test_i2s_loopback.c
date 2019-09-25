@@ -14,7 +14,7 @@
 
 #include <zephyr.h>
 #include <ztest.h>
-#include <i2s.h>
+#include <drivers/i2s.h>
 #include "i2s_api_test.h"
 
 #define NUM_RX_BLOCKS 2

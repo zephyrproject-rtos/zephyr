@@ -6,7 +6,7 @@
 
 #include <errno.h>
 #include <device.h>
-#include <pinmux.h>
+#include <drivers/pinmux.h>
 #include <soc.h>
 
 static const u32_t valid_ctrl_masks[NUM_MCHP_GPIO_PORTS] = {
@@ -31,8 +31,9 @@ static int pinmux_xec_set(struct device *dev, u32_t pin, u32_t func)
 	u32_t mask = 0;
 
 	/* Validate pin number in terms of current port */
-	if ((valid_ctrl_masks[config->port_num] & BIT(pin)) == 0)
+	if ((valid_ctrl_masks[config->port_num] & BIT(pin)) == 0) {
 		return -EINVAL;
+	}
 
 	mask |= MCHP_GPIO_CTRL_BUFT_MASK | MCHP_GPIO_CTRL_MUX_MASK;
 
@@ -81,8 +82,9 @@ static int pinmux_xec_get(struct device *dev, u32_t pin, u32_t *func)
 	__IO u32_t *current_pcr1;
 
 	/* Validate pin number in terms of current port */
-	if ((valid_ctrl_masks[config->port_num] & BIT(pin)) == 0)
+	if ((valid_ctrl_masks[config->port_num] & BIT(pin)) == 0) {
 		return -EINVAL;
+	}
 
 	current_pcr1 = config->pcr1_base + pin;
 	*func = *current_pcr1 & (MCHP_GPIO_CTRL_BUFT_MASK
@@ -135,6 +137,7 @@ static const struct pinmux_xec_config pinmux_xec_port040_076_config = {
 };
 
 DEVICE_AND_API_INIT(pinmux_xec_port040_076, CONFIG_PINMUX_XEC_GPIO040_076_NAME,
+		    &pinmux_xec_init,
 		    NULL, &pinmux_xec_port040_076_config,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &pinmux_xec_driver_api);

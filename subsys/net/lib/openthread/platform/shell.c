@@ -6,7 +6,7 @@
 
 #include <kernel.h>
 #include <stdio.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 #include <shell/shell.h>
 #include <shell/shell_uart.h>
 

@@ -16,6 +16,7 @@
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
 		zephyr,bt-mon-uart = &uart0;
+		zephyr,bt-c2h-uart = &uart0;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
@@ -82,7 +83,6 @@
 	sck-pin = <26>;
 	mosi-pin = <23>;
 	miso-pin = <25>;
-	csn-pin = <24>;
 };
 
 &flash0 {

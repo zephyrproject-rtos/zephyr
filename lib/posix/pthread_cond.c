@@ -9,6 +9,8 @@
 #include <wait_q.h>
 #include <posix/pthread.h>
 
+s64_t timespec_to_timeoutms(const struct timespec *abstime);
+
 static int cond_wait(pthread_cond_t *cv, pthread_mutex_t *mut, int timeout)
 {
 	__ASSERT(mut->lock_count == 1U, "");
@@ -73,8 +75,9 @@ int pthread_cond_wait(pthread_cond_t *cv, pthread_mutex_t *mut)
 }
 
 int pthread_cond_timedwait(pthread_cond_t *cv, pthread_mutex_t *mut,
-			   const struct timespec *to)
+			   const struct timespec *abstime)
 {
-	return cond_wait(cv, mut, _ts_to_ms(to));
+	s32_t timeout = (s32_t)timespec_to_timeoutms(abstime);
+	return cond_wait(cv, mut, timeout);
 }
 

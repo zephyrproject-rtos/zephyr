@@ -1,0 +1,13 @@
+# Kconfig.xec - Microchip XEC PWM configuration options
+#
+#
+# Copyright (c) 2019 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config PWM_XEC
+	bool "Microchip XEC PWM"
+	depends on SOC_FAMILY_MEC
+	help
+	  Enable driver to utilize PWM on the Microchip XEC IP block.

@@ -3,7 +3,7 @@
 
 if (CMAKE_C_COMPILER_ID STREQUAL "Clang")
   # We rely on GAS for assembling, so don't use the integrated assembler
-  zephyr_compile_options_ifndef(CONFIG_X86_IAMCU $<$<COMPILE_LANGUAGE:ASM>:-no-integrated-as>)
+  zephyr_compile_options($<$<COMPILE_LANGUAGE:ASM>:-no-integrated-as>)
 elseif(CMAKE_C_COMPILER_ID STREQUAL "GNU")
   zephyr_compile_options($<$<COMPILE_LANGUAGE:ASM>:-Wa,--divide>)
 endif()
@@ -11,15 +11,14 @@ endif()
 zephyr_library_sources(
   ia32/cache.c
   ia32/cache_s.S
-  ia32/cpuhalt.c
   ia32/crt0.S
   ia32/excstub.S
   ia32/intstub.S
   ia32/irq_manage.c
   ia32/swap.S
-  ia32/sys_fatal_error_handler.c
   ia32/thread.c
   ia32/spec_ctrl.c
+  ia32/prep_c.c
   )
 
 zephyr_library_sources_ifdef(CONFIG_IRQ_OFFLOAD		ia32/irq_offload.c)

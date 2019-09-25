@@ -6,8 +6,8 @@
 
 #include <zephyr.h>
 #include <device.h>
-#include <sensor.h>
-#include <misc/printk.h>
+#include <drivers/sensor.h>
+#include <sys/printk.h>
 
 static struct sensor_value temp_value[64];
 
@@ -50,7 +50,8 @@ void print_buffer(void *ptr, size_t l)
 void main(void)
 {
 	int ret;
-	struct device *dev = device_get_binding(CONFIG_AMG88XX_NAME);
+	struct device *dev = device_get_binding(
+				DT_INST_0_PANASONIC_AMG88XX_LABEL);
 
 	if (dev == NULL) {
 		printk("Could not get AMG88XX device\n");

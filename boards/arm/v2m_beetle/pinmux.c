@@ -7,9 +7,9 @@
 #include <device.h>
 #include <init.h>
 #include <kernel.h>
-#include <pinmux.h>
+#include <drivers/pinmux.h>
 #include <soc.h>
-#include <sys_io.h>
+#include <sys/sys_io.h>
 #include <gpio/gpio_cmsdk_ahb.h>
 
 #include "pinmux/pinmux.h"
@@ -99,21 +99,21 @@ static void arm_v2m_beetle_pinmux_defaults(void)
 
 	/* Set GPIO Alternate Functions */
 
-	gpio_0 = (1<<0); /* Sheild 0 UART 0 RXD */
-	gpio_0 |= (1<<1); /* Sheild 0 UART 0 TXD */
-	gpio_0 |= (1<<14); /* Sheild 0 I2C SDA SBCON2 */
-	gpio_0 |= (1<<15); /* Sheild 0 I2C SCL SBCON2 */
-	gpio_0 |= (1<<10); /* Sheild 0 SPI_3 nCS */
-	gpio_0 |= (1<<11); /* Sheild 0 SPI_3 MOSI */
-	gpio_0 |= (1<<12); /* Sheild 0 SPI_3 MISO */
-	gpio_0 |= (1<<13); /* Sheild 0 SPI_3 SCK */
+	gpio_0 = (1<<0); /* Shield 0 UART 0 RXD */
+	gpio_0 |= (1<<1); /* Shield 0 UART 0 TXD */
+	gpio_0 |= (1<<14); /* Shield 0 I2C SDA SBCON2 */
+	gpio_0 |= (1<<15); /* Shield 0 I2C SCL SBCON2 */
+	gpio_0 |= (1<<10); /* Shield 0 SPI_3 nCS */
+	gpio_0 |= (1<<11); /* Shield 0 SPI_3 MOSI */
+	gpio_0 |= (1<<12); /* Shield 0 SPI_3 MISO */
+	gpio_0 |= (1<<13); /* Shield 0 SPI_3 SCK */
 
 	CMSDK_AHB_GPIO0_DEV->altfuncset = gpio_0;
 
 	gpio_1 = (1<<0); /* UART 1 RXD */
 	gpio_1 |= (1<<1); /* UART 1 TXD */
-	gpio_1 |= (1<<6); /* Sheild 1 I2C SDA */
-	gpio_1 |= (1<<7); /* Sheild 1 I2C SCL */
+	gpio_1 |= (1<<6); /* Shield 1 I2C SDA */
+	gpio_1 |= (1<<7); /* Shield 1 I2C SCL */
 	gpio_1 |= (1<<2); /* ADC SPI_1 nCS */
 	gpio_1 |= (1<<3); /* ADC SPI_1 MOSI */
 	gpio_1 |= (1<<4); /* ADC SPI_1 MISO */

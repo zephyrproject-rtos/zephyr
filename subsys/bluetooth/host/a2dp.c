@@ -11,10 +11,10 @@
 #include <zephyr.h>
 #include <string.h>
 #include <errno.h>
-#include <atomic.h>
-#include <misc/byteorder.h>
-#include <misc/util.h>
-#include <misc/printk.h>
+#include <sys/atomic.h>
+#include <sys/byteorder.h>
+#include <sys/util.h>
+#include <sys/printk.h>
 #include <assert.h>
 
 #include <bluetooth/bluetooth.h>

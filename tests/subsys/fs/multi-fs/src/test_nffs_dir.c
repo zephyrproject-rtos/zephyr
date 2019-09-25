@@ -6,7 +6,7 @@
 
 #include <stdint.h>
 #include <stdio.h>
-#include <fs.h>
+#include <fs/fs.h>
 #include <ztest.h>
 #include <ztest_assert.h>
 #include "nffs_test_utils.h"

@@ -1,32 +1,18 @@
 /*
- * Copyright (c) 2016 Wind River Systems, Inc.
- *
+ * Copyright (c) 2019 Intel Corporation
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #ifndef ZEPHYR_ARCH_X86_INCLUDE_OFFSETS_SHORT_ARCH_H_
 #define ZEPHYR_ARCH_X86_INCLUDE_OFFSETS_SHORT_ARCH_H_
 
-#include <offsets.h>
+#ifdef CONFIG_X86_LONGMODE
+#include <intel64/offsets_short_arch.h>
+#else
+#include <ia32/offsets_short_arch.h>
+#endif
 
-/* kernel */
-
-#define _kernel_offset_to_isf \
-	(___kernel_t_arch_OFFSET + ___kernel_arch_t_isf_OFFSET)
-
-/* end - kernel */
-
-/* threads */
-
-#define _thread_offset_to_excNestCount \
-	(___thread_t_arch_OFFSET + ___thread_arch_t_excNestCount_OFFSET)
-
-#define _thread_offset_to_esp \
-	(___thread_t_callee_saved_OFFSET + ___callee_saved_t_esp_OFFSET)
-
-#define _thread_offset_to_preempFloatReg \
-	(___thread_t_arch_OFFSET + ___thread_arch_t_preempFloatReg_OFFSET)
-
-/* end - threads */
+#define _thread_offset_to_flags \
+	(___thread_t_arch_OFFSET + ___thread_arch_t_flags_OFFSET)
 
 #endif /* ZEPHYR_ARCH_X86_INCLUDE_OFFSETS_SHORT_ARCH_H_ */

@@ -8,11 +8,20 @@
 LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 #include <stdio.h>
+#include <sys/mutex.h>
 #include <ztest_assert.h>
 
 #include <net/socket.h>
+#include <net/ethernet.h>
 
+#include "ipv6.h"
 #include "../../socket_helpers.h"
+
+#if defined(CONFIG_NET_SOCKETS_LOG_LEVEL_DBG)
+#define DBG(fmt, ...) printk(fmt, ##__VA_ARGS__)
+#else
+#define DBG(fmt, ...)
+#endif
 
 #define BUF_AND_SIZE(buf) buf, sizeof(buf) - 1
 #define STRLEN(buf) (sizeof(buf) - 1)
@@ -335,15 +344,587 @@ void test_so_priority(void)
 	zassert_equal(rv, 0, "close failed");
 }
 
+static void comm_sendmsg_recvfrom(int client_sock,
+				  struct sockaddr *client_addr,
+				  socklen_t client_addrlen,
+				  const struct msghdr *client_msg,
+				  int server_sock,
+				  struct sockaddr *server_addr,
+				  socklen_t server_addrlen)
+{
+	ssize_t sent;
+	ssize_t recved;
+	struct sockaddr addr;
+	socklen_t addrlen;
+	static char rx_buf[400];
+	int len, i;
+
+	zassert_not_null(client_addr, "null client addr");
+	zassert_not_null(server_addr, "null server addr");
+
+	/*
+	 * Test client -> server sending
+	 */
+
+	sent = sendmsg(client_sock, client_msg, 0);
+	zassert_true(sent > 0, "sendmsg failed (%d)", -errno);
+
+	for (i = 0, len = 0; i < client_msg->msg_iovlen; i++) {
+		len += client_msg->msg_iov[i].iov_len;
+	}
+
+	zassert_equal(sent, len, "iovec len (%d) vs sent (%d)", len, sent);
+
+	/* Test recvfrom(MSG_PEEK) */
+	addrlen = sizeof(addr);
+	clear_buf(rx_buf);
+	recved = recvfrom(server_sock, rx_buf, sizeof(rx_buf),
+			  MSG_PEEK, &addr, &addrlen);
+	zassert_true(recved >= 0, "recvfrom fail");
+	zassert_equal(recved, strlen(TEST_STR_SMALL),
+		      "unexpected received bytes");
+	zassert_equal(sent, recved, "sent(%d)/received(%d) mismatch",
+		      sent, recved);
+
+	zassert_mem_equal(rx_buf, BUF_AND_SIZE(TEST_STR_SMALL),
+			  "wrong data (%s)", rx_buf);
+	zassert_equal(addrlen, client_addrlen, "unexpected addrlen");
+
+	/* Test normal recvfrom() */
+	addrlen = sizeof(addr);
+	clear_buf(rx_buf);
+	recved = recvfrom(server_sock, rx_buf, sizeof(rx_buf),
+			  0, &addr, &addrlen);
+	zassert_true(recved >= 0, "recvfrom fail");
+	zassert_equal(recved, strlen(TEST_STR_SMALL),
+		      "unexpected received bytes");
+	zassert_mem_equal(rx_buf, BUF_AND_SIZE(TEST_STR_SMALL), "wrong data");
+	zassert_equal(addrlen, client_addrlen, "unexpected addrlen");
+
+	/* Check the client port */
+	if (net_sin(client_addr)->sin_port != ANY_PORT) {
+		zassert_equal(net_sin(client_addr)->sin_port,
+			      net_sin(&addr)->sin_port,
+			      "unexpected client port");
+	}
+}
+
+void test_v4_sendmsg_recvfrom(void)
+{
+	int rv;
+	int client_sock;
+	int server_sock;
+	struct sockaddr_in client_addr;
+	struct sockaddr_in server_addr;
+	struct msghdr msg;
+	struct cmsghdr *cmsg;
+	struct iovec io_vector[1];
+	union {
+		struct cmsghdr hdr;
+		unsigned char  buf[CMSG_SPACE(sizeof(int))];
+	} cmsgbuf;
+
+	prepare_sock_udp_v4(CONFIG_NET_CONFIG_MY_IPV4_ADDR, ANY_PORT,
+			    &client_sock, &client_addr);
+	prepare_sock_udp_v4(CONFIG_NET_CONFIG_MY_IPV4_ADDR, SERVER_PORT,
+			    &server_sock, &server_addr);
+
+	rv = bind(server_sock,
+		  (struct sockaddr *)&server_addr,
+		  sizeof(server_addr));
+	zassert_equal(rv, 0, "server bind failed");
+
+	rv = bind(client_sock,
+		  (struct sockaddr *)&client_addr,
+		  sizeof(client_addr));
+	zassert_equal(rv, 0, "client bind failed");
+
+	io_vector[0].iov_base = TEST_STR_SMALL;
+	io_vector[0].iov_len = strlen(TEST_STR_SMALL);
+
+	memset(&msg, 0, sizeof(msg));
+	msg.msg_control = &cmsgbuf.buf;
+	msg.msg_controllen = sizeof(cmsgbuf.buf);
+	msg.msg_iov = io_vector;
+	msg.msg_iovlen = 1;
+	msg.msg_name = &server_addr;
+	msg.msg_namelen = sizeof(server_addr);
+
+	cmsg = CMSG_FIRSTHDR(&msg);
+	cmsg->cmsg_len = CMSG_LEN(sizeof(int));
+	cmsg->cmsg_level = SOL_SOCKET;
+	cmsg->cmsg_type = 1122;
+	*(int *)CMSG_DATA(cmsg) = 42;
+
+	comm_sendmsg_recvfrom(client_sock,
+			      (struct sockaddr *)&client_addr,
+			      sizeof(client_addr),
+			      &msg,
+			      server_sock,
+			      (struct sockaddr *)&server_addr,
+			      sizeof(server_addr));
+
+	rv = close(client_sock);
+	zassert_equal(rv, 0, "close failed");
+	rv = close(server_sock);
+	zassert_equal(rv, 0, "close failed");
+}
+
+void test_v6_sendmsg_recvfrom(void)
+{
+	int rv;
+	int client_sock;
+	int server_sock;
+	struct sockaddr_in6 client_addr;
+	struct sockaddr_in6 server_addr;
+	struct msghdr msg;
+	struct cmsghdr *cmsg;
+	struct iovec io_vector[1];
+	union {
+		struct cmsghdr hdr;
+		unsigned char  buf[CMSG_SPACE(sizeof(int))];
+	} cmsgbuf;
+
+	prepare_sock_udp_v6(CONFIG_NET_CONFIG_MY_IPV6_ADDR, ANY_PORT,
+			    &client_sock, &client_addr);
+	prepare_sock_udp_v6(CONFIG_NET_CONFIG_MY_IPV6_ADDR, SERVER_PORT,
+			    &server_sock, &server_addr);
+
+	rv = bind(server_sock,
+		  (struct sockaddr *)&server_addr, sizeof(server_addr));
+	zassert_equal(rv, 0, "server bind failed");
+
+	rv = bind(client_sock,
+		  (struct sockaddr *)&client_addr,
+		  sizeof(client_addr));
+	zassert_equal(rv, 0, "client bind failed");
+
+	io_vector[0].iov_base = TEST_STR_SMALL;
+	io_vector[0].iov_len = strlen(TEST_STR_SMALL);
+
+	memset(&msg, 0, sizeof(msg));
+	msg.msg_control = &cmsgbuf.buf;
+	msg.msg_controllen = sizeof(cmsgbuf.buf);
+	msg.msg_iov = io_vector;
+	msg.msg_iovlen = 1;
+	msg.msg_name = &server_addr;
+	msg.msg_namelen = sizeof(server_addr);
+
+	cmsg = CMSG_FIRSTHDR(&msg);
+	cmsg->cmsg_len = CMSG_LEN(sizeof(int));
+	cmsg->cmsg_level = SOL_SOCKET;
+	cmsg->cmsg_type = 1122;
+	*(int *)CMSG_DATA(cmsg) = 42;
+
+	comm_sendmsg_recvfrom(client_sock,
+			      (struct sockaddr *)&client_addr,
+			      sizeof(client_addr),
+			      &msg,
+			      server_sock,
+			      (struct sockaddr *)&server_addr,
+			      sizeof(server_addr));
+
+	rv = close(client_sock);
+	zassert_equal(rv, 0, "close failed");
+	rv = close(server_sock);
+	zassert_equal(rv, 0, "close failed");
+}
+
+void test_v4_sendmsg_recvfrom_connected(void)
+{
+	int rv;
+	int client_sock;
+	int server_sock;
+	struct sockaddr_in client_addr;
+	struct sockaddr_in server_addr;
+	struct msghdr msg;
+	struct cmsghdr *cmsg;
+	struct iovec io_vector[1];
+	union {
+		struct cmsghdr hdr;
+		unsigned char  buf[CMSG_SPACE(sizeof(int))];
+	} cmsgbuf;
+
+	prepare_sock_udp_v4(CONFIG_NET_CONFIG_MY_IPV4_ADDR, ANY_PORT,
+			    &client_sock, &client_addr);
+	prepare_sock_udp_v4(CONFIG_NET_CONFIG_MY_IPV4_ADDR, SERVER_PORT,
+			    &server_sock, &server_addr);
+
+	rv = bind(server_sock,
+		  (struct sockaddr *)&server_addr,
+		  sizeof(server_addr));
+	zassert_equal(rv, 0, "server bind failed");
+
+	rv = bind(client_sock,
+		  (struct sockaddr *)&client_addr,
+		  sizeof(client_addr));
+	zassert_equal(rv, 0, "client bind failed");
+
+	rv = connect(client_sock, (struct sockaddr *)&server_addr,
+		     sizeof(server_addr));
+	zassert_equal(rv, 0, "connect failed");
+
+	io_vector[0].iov_base = TEST_STR_SMALL;
+	io_vector[0].iov_len = strlen(TEST_STR_SMALL);
+
+	memset(&msg, 0, sizeof(msg));
+	msg.msg_control = &cmsgbuf.buf;
+	msg.msg_controllen = sizeof(cmsgbuf.buf);
+	msg.msg_iov = io_vector;
+	msg.msg_iovlen = 1;
+
+	cmsg = CMSG_FIRSTHDR(&msg);
+	cmsg->cmsg_len = CMSG_LEN(sizeof(int));
+	cmsg->cmsg_level = SOL_SOCKET;
+	cmsg->cmsg_type = 1122;
+	*(int *)CMSG_DATA(cmsg) = 42;
+
+	comm_sendmsg_recvfrom(client_sock,
+			      (struct sockaddr *)&client_addr,
+			      sizeof(client_addr),
+			      &msg,
+			      server_sock,
+			      (struct sockaddr *)&server_addr,
+			      sizeof(server_addr));
+
+	rv = close(client_sock);
+	zassert_equal(rv, 0, "close failed");
+	rv = close(server_sock);
+	zassert_equal(rv, 0, "close failed");
+}
+
+void test_v6_sendmsg_recvfrom_connected(void)
+{
+	int rv;
+	int client_sock;
+	int server_sock;
+	struct sockaddr_in6 client_addr;
+	struct sockaddr_in6 server_addr;
+	struct msghdr msg;
+	struct cmsghdr *cmsg;
+	struct iovec io_vector[1];
+	union {
+		struct cmsghdr hdr;
+		unsigned char  buf[CMSG_SPACE(sizeof(int))];
+	} cmsgbuf;
+
+	prepare_sock_udp_v6(CONFIG_NET_CONFIG_MY_IPV6_ADDR, ANY_PORT,
+			    &client_sock, &client_addr);
+	prepare_sock_udp_v6(CONFIG_NET_CONFIG_MY_IPV6_ADDR, SERVER_PORT,
+			    &server_sock, &server_addr);
+
+	rv = bind(server_sock,
+		  (struct sockaddr *)&server_addr, sizeof(server_addr));
+	zassert_equal(rv, 0, "server bind failed");
+
+	rv = bind(client_sock,
+		  (struct sockaddr *)&client_addr,
+		  sizeof(client_addr));
+	zassert_equal(rv, 0, "client bind failed");
+
+	rv = connect(client_sock, (struct sockaddr *)&server_addr,
+		     sizeof(server_addr));
+	zassert_equal(rv, 0, "connect failed");
+
+	io_vector[0].iov_base = TEST_STR_SMALL;
+	io_vector[0].iov_len = strlen(TEST_STR_SMALL);
+
+	memset(&msg, 0, sizeof(msg));
+	msg.msg_control = &cmsgbuf.buf;
+	msg.msg_controllen = sizeof(cmsgbuf.buf);
+	msg.msg_iov = io_vector;
+	msg.msg_iovlen = 1;
+
+	cmsg = CMSG_FIRSTHDR(&msg);
+	cmsg->cmsg_len = CMSG_LEN(sizeof(int));
+	cmsg->cmsg_level = SOL_SOCKET;
+	cmsg->cmsg_type = 1122;
+	*(int *)CMSG_DATA(cmsg) = 42;
+
+	comm_sendmsg_recvfrom(client_sock,
+			      (struct sockaddr *)&client_addr,
+			      sizeof(client_addr),
+			      &msg,
+			      server_sock,
+			      (struct sockaddr *)&server_addr,
+			      sizeof(server_addr));
+
+	rv = close(client_sock);
+	zassert_equal(rv, 0, "close failed");
+	rv = close(server_sock);
+	zassert_equal(rv, 0, "close failed");
+}
+
+void test_so_txtime(void)
+{
+	struct sockaddr_in bind_addr4;
+	struct sockaddr_in6 bind_addr6;
+	int sock1, sock2, rv;
+	socklen_t optlen;
+	bool optval;
+
+	prepare_sock_udp_v4(CONFIG_NET_CONFIG_MY_IPV4_ADDR, 55555,
+			    &sock1, &bind_addr4);
+	prepare_sock_udp_v6(CONFIG_NET_CONFIG_MY_IPV6_ADDR, 55555,
+			    &sock2, &bind_addr6);
+
+	rv = bind(sock1, (struct sockaddr *)&bind_addr4, sizeof(bind_addr4));
+	zassert_equal(rv, 0, "bind failed");
+
+	rv = bind(sock2, (struct sockaddr *)&bind_addr6, sizeof(bind_addr6));
+	zassert_equal(rv, 0, "bind failed");
+
+	optval = true;
+	rv = setsockopt(sock1, SOL_SOCKET, SO_TXTIME, &optval,
+			sizeof(optval));
+	zassert_equal(rv, 0, "setsockopt failed (%d)", errno);
+
+	optval = false;
+	rv = setsockopt(sock2, SOL_SOCKET, SO_TXTIME, &optval,
+			sizeof(optval));
+	zassert_equal(rv, 0, "setsockopt failed");
+
+	optlen = sizeof(optval);
+	rv = getsockopt(sock1, SOL_SOCKET, SO_TXTIME, &optval, &optlen);
+	zassert_equal(rv, 0, "getsockopt failed (%d)", errno);
+	zassert_equal(optlen, sizeof(optval), "invalid optlen %d vs %d",
+		      optlen, sizeof(optval));
+	zassert_equal(optval, true, "getsockopt txtime");
+
+	optlen = sizeof(optval);
+	rv = getsockopt(sock2, SOL_SOCKET, SO_TXTIME, &optval, &optlen);
+	zassert_equal(rv, 0, "getsockopt failed (%d)", errno);
+	zassert_equal(optlen, sizeof(optval), "invalid optlen %d vs %d",
+		      optlen, sizeof(optval));
+	zassert_equal(optval, false, "getsockopt txtime");
+
+	rv = close(sock1);
+	zassert_equal(rv, 0, "close failed");
+	rv = close(sock2);
+	zassert_equal(rv, 0, "close failed");
+}
+
+static void comm_sendmsg_with_txtime(int client_sock,
+				     struct sockaddr *client_addr,
+				     socklen_t client_addrlen,
+				     const struct msghdr *client_msg)
+{
+	ssize_t sent;
+	int len, i;
+
+	zassert_not_null(client_addr, "null client addr");
+
+	/*
+	 * Test client -> server sending
+	 */
+
+	sent = sendmsg(client_sock, client_msg, 0);
+	zassert_true(sent > 0, "sendmsg failed (%d)", -errno);
+
+	for (i = 0, len = 0; i < client_msg->msg_iovlen; i++) {
+		len += client_msg->msg_iov[i].iov_len;
+	}
+
+	zassert_equal(sent, len, "iovec len (%d) vs sent (%d)", len, sent);
+}
+
+/* In order to verify that the network device driver is able to receive
+ * the TXTIME option, create a separate network device and catch the packets
+ * we are sending.
+ */
+struct eth_fake_context {
+	struct net_if *iface;
+	u8_t mac_address[6];
+};
+
+static struct eth_fake_context eth_fake_data;
+static struct sockaddr_in6 server_addr;
+
+/* The semaphore is there to wait the data to be received. */
+static ZTEST_BMEM SYS_MUTEX_DEFINE(wait_data);
+
+static struct net_if *eth_iface;
+static ZTEST_BMEM bool test_started;
+static ZTEST_BMEM bool test_failed;
+static struct in6_addr my_addr1 = { { { 0x20, 0x01, 0x0d, 0xb8, 1, 0, 0, 0,
+					0, 0, 0, 0, 0, 0, 0, 0x1 } } };
+static u8_t server_lladdr[] = { 0x01, 0x02, 0x03, 0xff, 0xfe,
+				0x04, 0x05, 0x06 };
+static struct net_linkaddr server_link_addr = {
+	.addr = server_lladdr,
+	.len = sizeof(server_lladdr),
+};
+#define MY_IPV6_ADDR "2001:db8:100::1"
+#define PEER_IPV6_ADDR "2001:db8:100::2"
+#define TEST_TXTIME 0xff112233445566ff
+#define WAIT_TIME 250
+
+static void eth_fake_iface_init(struct net_if *iface)
+{
+	struct device *dev = net_if_get_device(iface);
+	struct eth_fake_context *ctx = dev->driver_data;
+
+	ctx->iface = iface;
+
+	net_if_set_link_addr(iface, ctx->mac_address,
+			     sizeof(ctx->mac_address),
+			     NET_LINK_ETHERNET);
+
+	ethernet_init(iface);
+}
+
+static int eth_fake_send(struct device *dev, struct net_pkt *pkt)
+{
+	u64_t txtime;
+
+	ARG_UNUSED(dev);
+	ARG_UNUSED(pkt);
+
+	if (!test_started) {
+		return 0;
+	}
+
+	txtime = net_pkt_txtime(pkt);
+	if (txtime != TEST_TXTIME) {
+		test_failed = true;
+	} else {
+		test_failed = false;
+	}
+
+	sys_mutex_unlock(&wait_data);
+
+	return 0;
+}
+
+static struct ethernet_api eth_fake_api_funcs = {
+	.iface_api.init = eth_fake_iface_init,
+	.send = eth_fake_send,
+};
+
+static int eth_fake_init(struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	return 0;
+}
+
+ETH_NET_DEVICE_INIT(eth_fake, "eth_fake", eth_fake_init, &eth_fake_data,
+		    NULL, CONFIG_ETH_INIT_PRIORITY, &eth_fake_api_funcs,
+		    NET_ETH_MTU);
+
+static void setup_eth(void)
+{
+	struct net_if_addr *ifaddr;
+	int ret;
+
+	eth_iface = net_if_get_first_by_type(&NET_L2_GET_NAME(ETHERNET));
+	zassert_not_null(eth_iface, "No ethernet interface found");
+
+	ifaddr = net_if_ipv6_addr_add(eth_iface, &my_addr1,
+				      NET_ADDR_MANUAL, 0);
+	if (!ifaddr) {
+		DBG("Cannot add IPv6 address %s\n",
+		       net_sprint_ipv6_addr(&my_addr1));
+		zassert_not_null(ifaddr, "addr1");
+	}
+
+	net_if_up(eth_iface);
+
+	(void)memset(&server_addr, 0, sizeof(server_addr));
+	server_addr.sin6_family = AF_INET6;
+	server_addr.sin6_port = htons(1234);
+	ret = inet_pton(AF_INET6, PEER_IPV6_ADDR, &server_addr.sin6_addr);
+	zassert_equal(ret, 1, "inet_pton failed");
+
+	/* In order to avoid neighbor discovery, populate neighbor cache */
+	net_ipv6_nbr_add(eth_iface, &server_addr.sin6_addr, &server_link_addr,
+			 true, NET_IPV6_NBR_STATE_REACHABLE);
+}
+
+void test_v6_sendmsg_with_txtime(void)
+{
+	int rv;
+	int client_sock;
+	bool optval;
+	u64_t txtime;
+	struct sockaddr_in6 client_addr;
+	struct msghdr msg;
+	struct cmsghdr *cmsg;
+	struct iovec io_vector[1];
+	union {
+		struct cmsghdr hdr;
+		unsigned char  buf[CMSG_SPACE(sizeof(u64_t))];
+	} cmsgbuf;
+
+	prepare_sock_udp_v6(MY_IPV6_ADDR, ANY_PORT, &client_sock,
+			    &client_addr);
+
+	rv = bind(client_sock,
+		  (struct sockaddr *)&client_addr,
+		  sizeof(client_addr));
+	zassert_equal(rv, 0, "client bind failed");
+
+	io_vector[0].iov_base = TEST_STR_SMALL;
+	io_vector[0].iov_len = strlen(TEST_STR_SMALL);
+
+	memset(&msg, 0, sizeof(msg));
+	msg.msg_control = &cmsgbuf.buf;
+	msg.msg_controllen = sizeof(cmsgbuf.buf);
+	msg.msg_iov = io_vector;
+	msg.msg_iovlen = 1;
+	msg.msg_name = &server_addr;
+	msg.msg_namelen = sizeof(server_addr);
+
+	txtime = TEST_TXTIME;
+
+	cmsg = CMSG_FIRSTHDR(&msg);
+	cmsg->cmsg_len = CMSG_LEN(sizeof(txtime));
+	cmsg->cmsg_level = SOL_SOCKET;
+	cmsg->cmsg_type = SCM_TXTIME;
+	*(u64_t *)CMSG_DATA(cmsg) = txtime;
+
+	optval = true;
+	rv = setsockopt(client_sock, SOL_SOCKET, SO_TXTIME, &optval,
+			sizeof(optval));
+
+	test_started = true;
+
+	comm_sendmsg_with_txtime(client_sock,
+				 (struct sockaddr *)&client_addr,
+				 sizeof(client_addr),
+				 &msg);
+
+	rv = close(client_sock);
+	zassert_equal(rv, 0, "close failed");
+
+	if (sys_mutex_lock(&wait_data, WAIT_TIME)) {
+		zassert_true(false, "Timeout DNS query not received");
+	}
+
+	zassert_false(test_failed, "Invalid txtime received");
+
+	test_started = false;
+}
+
 void test_main(void)
 {
+	k_thread_system_pool_assign(k_current_get());
+
 	ztest_test_suite(socket_udp,
 			 ztest_unit_test(test_send_recv_2_sock),
 			 ztest_unit_test(test_v4_sendto_recvfrom),
 			 ztest_unit_test(test_v6_sendto_recvfrom),
 			 ztest_unit_test(test_v4_bind_sendto),
 			 ztest_unit_test(test_v6_bind_sendto),
-			 ztest_unit_test(test_so_priority)
+			 ztest_unit_test(test_so_priority),
+			 ztest_unit_test(test_so_txtime),
+			 ztest_unit_test(test_v4_sendmsg_recvfrom),
+			 ztest_unit_test(test_v6_sendmsg_recvfrom),
+			 ztest_unit_test(test_v4_sendmsg_recvfrom_connected),
+			 ztest_unit_test(test_v6_sendmsg_recvfrom_connected),
+			 ztest_unit_test(setup_eth),
+			 ztest_unit_test(test_v6_sendmsg_with_txtime),
+			 ztest_user_unit_test(test_v6_sendmsg_with_txtime)
 		);
 
 	ztest_run_test_suite(socket_udp);

@@ -1,31 +1,21 @@
-#
 # Copyright (c) 2018, SiFive Inc.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
----
-title: RISC-V PLIC
-version: 0.1
 
-description: >
-    This binding describes the RISC-V Platform-Local Interrupt Controller
+# Common fields for the RISC-V platform-local interrupt controller
 
-inherits:
-    !include base.yaml
+include: [interrupt-controller.yaml, base.yaml]
 
 properties:
-  compatible:
-      constraint: "riscv,plic0"
-
   reg:
-      category: required
+      required: true
 
   riscv,max-priority:
       type: int
       description: maximum interrupt priority
-      category: required
-      generation: define
+      required: true
+
+  "#interrupt-cells":
+      const: 1
 
 "#cells":
   - irq
-...

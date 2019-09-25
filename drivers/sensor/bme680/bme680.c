@@ -11,13 +11,13 @@
  */
 
 #include "bme680.h"
-#include <gpio.h>
-#include <i2c.h>
+#include <drivers/gpio.h>
+#include <drivers/i2c.h>
 #include <init.h>
 #include <kernel.h>
-#include <misc/byteorder.h>
-#include <misc/__assert.h>
-#include <sensor.h>
+#include <sys/byteorder.h>
+#include <sys/__assert.h>
+#include <drivers/sensor.h>
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(bme680, CONFIG_SENSOR_LOG_LEVEL);

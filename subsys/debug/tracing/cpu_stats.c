@@ -5,7 +5,7 @@
  */
 
 #include <tracing_cpu_stats.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 
 enum cpu_state {
 	CPU_STATE_IDLE,
@@ -123,7 +123,7 @@ void sys_trace_thread_switched_out(void)
 	int key = irq_lock();
 
 	__ASSERT_NO_MSG(nested_interrupts == 0);
-	__ASSERT_NO_MSG(current_thread == k_current_get());
+	__ASSERT_NO_MSG(!current_thread || (current_thread == k_current_get()));
 
 	cpu_stats_update_counters();
 	last_cpu_state = CPU_STATE_SCHEDULER;

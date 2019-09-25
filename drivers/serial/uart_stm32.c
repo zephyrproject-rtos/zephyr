@@ -14,11 +14,11 @@
 
 #include <kernel.h>
 #include <arch/cpu.h>
-#include <misc/__assert.h>
+#include <sys/__assert.h>
 #include <soc.h>
 #include <init.h>
-#include <uart.h>
-#include <clock_control.h>
+#include <drivers/uart.h>
+#include <drivers/clock_control.h>
 
 #include <linker/sections.h>
 #include <clock_control/stm32_clock_control.h>
@@ -815,9 +815,10 @@ STM32_UART_INIT(UART_10)
 
 #endif
 
-#if defined(CONFIG_SOC_SERIES_STM32L4X) || \
-    defined(CONFIG_SOC_SERIES_STM32L0X) || \
-    defined(CONFIG_SOC_SERIES_STM32WBX)
+#if defined(CONFIG_SOC_SERIES_STM32H7X) || \
+	defined(CONFIG_SOC_SERIES_STM32L4X) || \
+	defined(CONFIG_SOC_SERIES_STM32L0X) || \
+	defined(CONFIG_SOC_SERIES_STM32WBX)
 #ifdef CONFIG_LPUART_1
 STM32_UART_INIT(LPUART_1)
 #endif /* CONFIG_LPUART_1 */

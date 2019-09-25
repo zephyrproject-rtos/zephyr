@@ -7,6 +7,8 @@
 #define ZEPHYR_INCLUDE_LOGGING_LOG_OUTPUT_H_
 
 #include <logging/log_msg.h>
+#include <sys/util.h>
+#include <stdarg.h>
 
 #ifdef __cplusplus
 extern "C" {

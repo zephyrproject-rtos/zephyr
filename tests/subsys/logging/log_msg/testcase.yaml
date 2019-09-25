@@ -1,4 +1,3 @@
 tests:
   logging.log_msg:
     tags: log_msg logging
-

@@ -6,9 +6,9 @@
 
 #include <zephyr.h>
 #include <device.h>
-#include <gpio.h>
-#include <misc/printk.h>
-#include <misc/util.h>
+#include <drivers/gpio.h>
+#include <sys/printk.h>
+#include <sys/util.h>
 
 /* GPIO driver name */
 #define GPIO_DRV_NAME	CONFIG_GPIO_ALTERA_NIOS2_OUTPUT_DEV_NAME

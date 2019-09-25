@@ -15,7 +15,7 @@ On Windows and macOS::
   pip3 install -U west
 
 .. note::
-   See :ref:`gs_python_deps` for additional clarification on using the
+   See :ref:`python-pip` for additional clarification on using the
    ``--user`` switch.
 
 Afterwards, you can run ``pip3 show -f west`` for information on where the west
@@ -41,8 +41,8 @@ completion script and have it sourced every time you enter a new shell session.
 
 To obtain the completion script you can use the ``west completion`` command::
 
-   cd ~
-   west completion bash > west-completion.bash
+   cd /path/to/zephyr/
+   west completion bash > ~/west-completion.bash
 
 .. note::
 

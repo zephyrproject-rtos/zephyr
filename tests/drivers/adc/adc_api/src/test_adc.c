@@ -13,7 +13,7 @@
  * @}
  */
 
-#include <adc.h>
+#include <drivers/adc.h>
 #include <zephyr.h>
 #include <ztest.h>
 
@@ -35,7 +35,8 @@
       defined(CONFIG_BOARD_NRF52840_BLIP) || \
       defined(CONFIG_BOARD_NRF52840_PAPYR) || \
       defined(CONFIG_BOARD_BL652_DVK) || \
-      defined(CONFIG_BOARD_BL654_DVK)
+      defined(CONFIG_BOARD_BL654_DVK) || \
+      defined(CONFIG_BOARD_DEGU_EVK)
 
 #include <hal/nrf_saadc.h>
 #define ADC_DEVICE_NAME		DT_ADC_0_NAME
@@ -102,25 +103,6 @@
 #define ADC_ACQUISITION_TIME	ADC_ACQ_TIME_DEFAULT
 #define ADC_1ST_CHANNEL_ID	0
 
-#elif defined(CONFIG_BOARD_QUARK_SE_C1000_DEVBOARD_SS) || \
-	defined(CONFIG_BOARD_ARDUINO_101_SSS)
-#define ADC_DEVICE_NAME		DT_ADC_0_NAME
-#define ADC_RESOLUTION		10
-#define ADC_GAIN		ADC_GAIN_1
-#define ADC_REFERENCE		ADC_REF_INTERNAL
-#define ADC_ACQUISITION_TIME	ADC_ACQ_TIME_DEFAULT
-#define ADC_1ST_CHANNEL_ID	10
-#define ADC_2ND_CHANNEL_ID	11
-
-#elif defined(CONFIG_BOARD_QUARK_D2000_CRB)
-#define ADC_DEVICE_NAME		DT_ADC_0_NAME
-#define ADC_RESOLUTION		10
-#define ADC_GAIN		ADC_GAIN_1
-#define ADC_REFERENCE		ADC_REF_INTERNAL
-#define ADC_ACQUISITION_TIME	ADC_ACQ_TIME_DEFAULT
-#define ADC_1ST_CHANNEL_ID	3
-#define ADC_2ND_CHANNEL_ID	4
-
 #elif defined(CONFIG_SOC_FAMILY_SAM0)
 #include <soc.h>
 #define ADC_DEVICE_NAME         DT_INST_0_ATMEL_SAM0_ADC_LABEL
@@ -136,7 +118,8 @@
 	defined(CONFIG_BOARD_NUCLEO_F207ZG) || \
 	defined(CONFIG_BOARD_NUCLEO_F401RE) || \
 	defined(CONFIG_BOARD_NUCLEO_F746ZG) || \
-	defined(CONFIG_BOARD_NUCLEO_L073RZ)
+	defined(CONFIG_BOARD_NUCLEO_L073RZ) || \
+	defined(CONFIG_BOARD_NUCLEO_WB55RG)
 #define ADC_DEVICE_NAME		DT_ADC_1_NAME
 #define ADC_RESOLUTION		12
 #define ADC_GAIN		ADC_GAIN_1

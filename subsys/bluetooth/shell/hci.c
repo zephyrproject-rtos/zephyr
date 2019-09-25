@@ -8,8 +8,8 @@
 #include <string.h>
 #include <zephyr.h>
 #include <shell/shell.h>
-#include <misc/printk.h>
-#include <misc/byteorder.h>
+#include <sys/printk.h>
+#include <sys/byteorder.h>
 
 #include <bluetooth/hci.h>
 #include <bluetooth/hci_vs.h>

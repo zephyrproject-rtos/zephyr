@@ -5,6 +5,7 @@ tests:
     harness: sensor
     platform_whitelist: frdm_k64f hexiwear_k64 warp7_m4 bbc_microbit
                         frdm_kl25z frdm_kw41z reel_board rv32m1_vega_ri5cy
+                        twr_ke18f
     tags: sensors
     depends_on: i2c gpio
     extra_configs:

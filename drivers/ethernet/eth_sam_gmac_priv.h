@@ -12,10 +12,14 @@
 
 #include <zephyr/types.h>
 
+#define ATMEL_OUI_B0 0x00
+#define ATMEL_OUI_B1 0x04
+#define ATMEL_OUI_B2 0x25
+
 /* This option enables support to push multiple packets to the DMA engine.
  * This currently doesn't work given the current version of net_pkt or
  * net_buf does not allowed access from multiple threads. This option is
- * therefore currenlty disabled.
+ * therefore currently disabled.
  */
 #define GMAC_MULTIPLE_TX_PACKETS 0
 

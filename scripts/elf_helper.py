@@ -16,8 +16,7 @@ from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
 
 if LooseVersion(elftools.__version__) < LooseVersion('0.24'):
-    sys.stderr.write("pyelftools is out of date, need version 0.24 or later\n")
-    sys.exit(1)
+    sys.exit("pyelftools is out of date, need version 0.24 or later")
 
 
 def subsystem_to_enum(subsys):
@@ -38,6 +37,7 @@ DW_OP_fbreg = 0x91
 STACK_TYPE = "_k_thread_stack_element"
 thread_counter = 0
 sys_mutex_counter = 0
+futex_counter = 0
 
 # Global type environment. Populated by pass 1.
 type_env = {}
@@ -56,6 +56,7 @@ class KobjectInstance:
     def __init__(self, type_obj, addr):
         global thread_counter
         global sys_mutex_counter
+        global futex_counter
 
         self.addr = addr
         self.type_obj = type_obj
@@ -72,6 +73,9 @@ class KobjectInstance:
         elif self.type_obj.name == "sys_mutex":
             self.data = "(u32_t)(&kernel_mutexes[%d])" % sys_mutex_counter
             sys_mutex_counter += 1
+        elif self.type_obj.name == "k_futex":
+            self.data = "(u32_t)(&futex_data[%d])" % futex_counter
+            futex_counter += 1
         else:
             self.data = 0
 
@@ -86,7 +90,8 @@ class KobjectType:
     def __repr__(self):
         return "<kobject %s>" % self.name
 
-    def has_kobject(self):
+    @staticmethod
+    def has_kobject():
         return True
 
     def get_kobjects(self, addr):
@@ -290,9 +295,12 @@ def analyze_die_struct(die):
         for child in die.iter_children():
             if child.tag != "DW_TAG_member":
                 continue
+            data_member_location = child.attributes.get("DW_AT_data_member_location")
+            if not data_member_location:
+                continue
+
             child_type = die_get_type_offset(child)
-            member_offset = \
-                child.attributes["DW_AT_data_member_location"].value
+            member_offset = data_member_location.value
             cname = die_get_name(child) or "<anon>"
             m = AggregateTypeMember(child.offset, cname, child_type,
                                     member_offset)
@@ -326,9 +334,23 @@ def analyze_die_array(die):
         elements.append(ub.value + 1)
 
     if not elements:
+        if type_offset in type_env.keys():
+            mt = type_env[type_offset]
+            if mt.has_kobject():
+                if isinstance(mt, KobjectType) and mt.name == STACK_TYPE:
+                    elements.append(1)
+                    type_env[die.offset] = ArrayType(die.offset, elements, type_offset)
+    else:
+        type_env[die.offset] = ArrayType(die.offset, elements, type_offset)
+
+
+def analyze_typedef(die):
+    type_offset = die_get_type_offset(die)
+
+    if type_offset not in type_env.keys():
         return
 
-    type_env[die.offset] = ArrayType(die.offset, elements, type_offset)
+    type_env[die.offset] = type_env[type_offset]
 
 
 def addr_deref(elf, addr):
@@ -336,7 +358,7 @@ def addr_deref(elf, addr):
         start = section['sh_addr']
         end = start + section['sh_size']
 
-        if addr >= start and addr < end:
+        if start <= addr < end:
             data = section.data()
             offset = addr - start
             return struct.unpack("<I" if elf.little_endian else ">I",
@@ -377,13 +399,10 @@ class ElfHelper:
 
     def find_kobjects(self, syms):
         if not self.elf.has_dwarf_info():
-            sys.stderr.write("ELF file has no DWARF information\n")
-            sys.exit(1)
+            sys.exit("ELF file has no DWARF information")
 
-        kram_start = syms["__kernel_ram_start"]
-        kram_end = syms["__kernel_ram_end"]
-        krom_start = syms["_image_rom_start"]
-        krom_end = syms["_image_rom_end"]
+        app_smem_start = syms["_app_smem_start"]
+        app_smem_end = syms["_app_smem_end"]
 
         di = self.elf.get_dwarf_info()
 
@@ -401,6 +420,8 @@ class ElfHelper:
                     analyze_die_const(die)
                 elif die.tag == "DW_TAG_array_type":
                     analyze_die_array(die)
+                elif die.tag == "DW_TAG_typedef":
+                    analyze_typedef(die)
                 elif die.tag == "DW_TAG_variable":
                     variables.append(die)
 
@@ -495,10 +516,7 @@ class ElfHelper:
                 continue
 
             _, user_ram_allowed = kobjects[ko.type_obj.name]
-            if (not user_ram_allowed and
-                    (addr < kram_start or addr >= kram_end) and
-                    (addr < krom_start or addr >= krom_end)):
-
+            if not user_ram_allowed and app_smem_start <= addr < app_smem_end:
                 self.debug_die(die,
                                "object '%s' found in invalid location %s"
                                % (name, hex(addr)))
@@ -550,9 +568,9 @@ class ElfHelper:
             return
         sys.stdout.write(scr + ": " + text + "\n")
 
-    def error(self, text):
-        sys.stderr.write("%s ERROR: %s\n" % (scr, text))
-        sys.exit(1)
+    @staticmethod
+    def error(text):
+        sys.exit("%s ERROR: %s" % (scr, text))
 
     def debug_die(self, die, text):
         fn, ln = get_filename_lineno(die)
@@ -561,8 +579,14 @@ class ElfHelper:
         self.debug("File '%s', line %d:" % (fn, ln))
         self.debug("    %s" % text)
 
-    def get_thread_counter(self):
+    @staticmethod
+    def get_thread_counter():
         return thread_counter
 
-    def get_sys_mutex_counter(self):
+    @staticmethod
+    def get_sys_mutex_counter():
         return sys_mutex_counter
+
+    @staticmethod
+    def get_futex_counter():
+        return futex_counter

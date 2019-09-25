@@ -19,7 +19,7 @@
 #include <linker/sections.h>
 #include <wait_q.h>
 #include <ksched.h>
-#include <misc/__assert.h>
+#include <sys/__assert.h>
 #include <syscall_handler.h>
 
 extern void z_thread_single_abort(struct k_thread *thread);
@@ -56,18 +56,5 @@ void z_impl_k_thread_abort(k_tid_t thread)
 		 */
 		z_reschedule(&lock, key);
 	}
-}
-#endif
-
-#ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER(k_thread_abort, thread_p)
-{
-	struct k_thread *thread = (struct k_thread *)thread_p;
-	Z_OOPS(Z_SYSCALL_OBJ(thread, K_OBJ_THREAD));
-	Z_OOPS(Z_SYSCALL_VERIFY_MSG(!(thread->base.user_options & K_ESSENTIAL),
-				    "aborting essential thread %p", thread));
-
-	z_impl_k_thread_abort((struct k_thread *)thread);
-	return 0;
 }
 #endif

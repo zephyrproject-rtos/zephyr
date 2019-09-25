@@ -39,6 +39,8 @@ set(ENV{SOC_DIR}   ${SOC_DIR})
 set(ENV{CMAKE_BINARY_DIR} ${CMAKE_BINARY_DIR})
 set(ENV{ARCH_DIR}   ${ARCH_DIR})
 set(ENV{GENERATED_DTS_BOARD_CONF} ${GENERATED_DTS_BOARD_CONF})
+set(ENV{DTS_POST_CPP} ${DTS_POST_CPP})
+set(ENV{DTS_ROOT_BINDINGS} "${DTS_ROOT_BINDINGS}")
 
 # Allow out-of-tree users to add their own Kconfig python frontend
 # targets by appending targets to the CMake list
@@ -77,6 +79,8 @@ foreach(kconfig_target
     ZEPHYR_TOOLCHAIN_VARIANT=${ZEPHYR_TOOLCHAIN_VARIANT}
     ARCH_DIR=$ENV{ARCH_DIR}
     GENERATED_DTS_BOARD_CONF=${GENERATED_DTS_BOARD_CONF}
+    DTS_POST_CPP=${DTS_POST_CPP}
+    DTS_ROOT_BINDINGS=${DTS_ROOT_BINDINGS}
     ${PYTHON_EXECUTABLE}
     ${EXTRA_KCONFIG_TARGET_COMMAND_FOR_${kconfig_target}}
     ${KCONFIG_ROOT}
@@ -94,7 +98,7 @@ get_cmake_property(cache_variable_names CACHE_VARIABLES)
 foreach (name ${cache_variable_names})
   if("${name}" MATCHES "^CONFIG_")
     # When a cache variable starts with 'CONFIG_', it is assumed to be
-    # a CLI Kconfig symbol assignment.
+    # a Kconfig symbol assignment from the CMake command line.
     set(EXTRA_KCONFIG_OPTIONS
       "${EXTRA_KCONFIG_OPTIONS}\n${name}=${${name}}"
       )

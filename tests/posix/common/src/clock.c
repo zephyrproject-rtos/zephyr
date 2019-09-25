@@ -84,10 +84,10 @@ void test_posix_realtime(void)
 	zassert_equal(ret, 0, "Fail to set realtime clock");
 
 	/*
-	 * Loop for 20 10ths of a second, sleeping a little bit for
-	 * each, making sure that the arithmetic roughly makes sense.
-	 * This tries to catch all of the boundary conditions of the
-	 * clock to make sure there are no errors in the arithmetic.
+	 * Loop 20 times, sleeping a little bit for each, making sure
+	 * that the arithmetic roughly makes sense.  This tries to
+	 * catch all of the boundary conditions of the clock to make
+	 * sure there are no errors in the arithmetic.
 	 */
 	s64_t last_delta = 0;
 	for (int i = 1; i <= 20; i++) {
@@ -100,7 +100,7 @@ void test_posix_realtime(void)
 			 (s64_t)nts.tv_sec * NSEC_PER_SEC) +
 			((s64_t)rts.tv_nsec - (s64_t)nts.tv_nsec);
 
-		/* Make the delta 10ths of a second. */
+		/* Make the delta milliseconds. */
 		delta /= (NSEC_PER_SEC / 1000U);
 
 		zassert_true(delta > last_delta, "Clock moved backward");
@@ -108,9 +108,11 @@ void test_posix_realtime(void)
 
 		/* printk("Delta %d: %lld\n", i, delta); */
 
-		/* Allow for a little drift */
-		zassert_true(error > 90, "Clock inaccurate");
-		zassert_true(error < 110, "Clock inaccurate");
+		/* Allow for a little drift upward, but not
+		 * downward
+		 */
+		zassert_true(error >= 90, "Clock inaccurate %d", error);
+		zassert_true(error < 110, "Clock inaccurate %d", error);
 
 		last_delta = delta;
 	}

@@ -31,9 +31,6 @@ There are configuration files for various setups in the
 - :file:`overlay-cc2520.conf`
     This overlay config enables support for CC2520
 
-- :file:`overlay-mcr20a.conf`
-    This overlay config enables support for MCR20A
-
 Build the WPANUSB sample like this:
 
 .. zephyr-app-commands::
@@ -49,16 +46,6 @@ Example building for the Nordic nRF52840 Development Kit:
    :zephyr-app: samples/net/wpanusb
    :host-os: unix
    :board: nrf52840_pca10056
-   :goals: run
-   :compact:
-
-Example building for the Quark SE C1000 Devboard with TI CC2520 support:
-
-.. zephyr-app-commands::
-   :zephyr-app: samples/net/wpanusb
-   :host-os: unix
-   :board: quark_se_c1000_devboard
-   :conf: "prj.conf overlay-cc2520.conf"
    :goals: run
    :compact:
 

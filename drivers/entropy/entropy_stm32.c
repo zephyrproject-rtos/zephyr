@@ -6,15 +6,15 @@
 
 #include <kernel.h>
 #include <device.h>
-#include <entropy.h>
+#include <drivers/entropy.h>
 #include <random/rand32.h>
 #include <init.h>
-#include <misc/__assert.h>
-#include <misc/util.h>
+#include <sys/__assert.h>
+#include <sys/util.h>
 #include <errno.h>
 #include <soc.h>
-#include <misc/printk.h>
-#include <clock_control.h>
+#include <sys/printk.h>
+#include <drivers/clock_control.h>
 #include <clock_control/stm32_clock_control.h>
 
 #if !defined(CONFIG_SOC_SERIES_STM32L4X) && !defined(CONFIG_SOC_SERIES_STM32F4X) && !defined(CONFIG_SOC_SERIES_STM32F7X)

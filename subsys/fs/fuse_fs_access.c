@@ -19,7 +19,7 @@
 #include <sys/types.h>
 
 #include <zephyr.h>
-#include <fs.h>
+#include <fs/fs.h>
 
 #include "cmdline.h"
 #include "soc.h"

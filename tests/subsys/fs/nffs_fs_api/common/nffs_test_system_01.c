@@ -26,7 +26,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <nffs/nffs.h>
-#include <fs.h>
+#include <fs/fs.h>
 #include "nffs_test_utils.h"
 
 const struct nffs_test_file_desc *nffs_test_system_01 =

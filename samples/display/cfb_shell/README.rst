@@ -46,7 +46,7 @@ Command example (reel_board):
 .. code-block:: console
 
          uart:~$ cfb init
-         Framebuffer initialized: SSD1673
+         Framebuffer initialized: SSD16XX
          Display Cleared
 
 **get_device**: prints the display device name.
@@ -56,7 +56,7 @@ Command example (reel_board):
 .. code-block:: console
 
          uart:~$ cfb get_device
-         Framebuffer Device: SSD1673
+         Framebuffer Device: SSD16XX
 
 **get_param**: get the display parameters where height, width and ppt
 (pixel per tile) are in pixels and the number of rows and columns. The row

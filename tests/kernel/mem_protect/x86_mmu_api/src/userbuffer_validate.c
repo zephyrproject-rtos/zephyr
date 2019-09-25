@@ -5,11 +5,10 @@
  */
 
 #include <zephyr.h>
-#include <misc/printk.h>
-#include <mmustructs.h>
-#include <arch/x86/arch.h>
+#include <sys/printk.h>
+#include <ia32/mmustructs.h>
+#include <arch/x86/ia32/arch.h>
 #include <linker/linker-defs.h>
-#include <arch/x86/arch.h>
 #include <ztest.h>
 #include <kernel_internal.h>
 
@@ -22,12 +21,11 @@ static int status;
 #define BUFF_WRITEABLE ((u32_t) 0x1)
 #define BUFF_USER ((u32_t) 0x2)
 
-int z_arch_buffer_validate(void *addr, size_t size, int write);
 void reset_flag(void);
 void reset_multi_pte_page_flag(void);
 void reset_multi_pde_flag(void);
 
-#define PDPT &USER_PDPT
+#define PDPT (&z_x86_kernel_pdpt)
 
 #define ADDR_PAGE_1 ((u8_t *)__bss_start + SKIP_SIZE * MMU_PAGE_SIZE)
 #define ADDR_PAGE_2 ((u8_t *)__bss_start + (SKIP_SIZE + 1) * MMU_PAGE_SIZE)
@@ -38,12 +36,16 @@ void reset_multi_pde_flag(void);
 static void set_flags(void *ptr, size_t size, x86_page_entry_data_t flags,
 		      x86_page_entry_data_t mask)
 {
-	z_x86_mmu_set_flags(PDPT, ptr, size, flags, mask);
+	z_x86_mmu_set_flags(PDPT, ptr, size, flags, mask, true);
 }
 
+static int buffer_validate(void *addr, size_t size, int write)
+{
+	return z_x86_mmu_validate(PDPT, addr, size, write);
+}
 
 /* if Failure occurs
- * z_arch_buffer_validate return -EPERM
+ * buffer_validate return -EPERM
  * else return 0.
  * Below conditions will be tested accordingly
  *
@@ -59,9 +61,7 @@ static int buffer_rw_read(void)
 			   MMU_ENTRY_READ,
 			   MMU_PDE_RW_MASK);
 
-	status = z_arch_buffer_validate(ADDR_PAGE_1,
-				       BUFF_SIZE,
-				       BUFF_WRITEABLE);
+	status = buffer_validate(ADDR_PAGE_1, BUFF_SIZE, BUFF_WRITEABLE);
 
 	if (status != -EPERM) {
 		TC_PRINT("%s failed\n", __func__);
@@ -80,9 +80,7 @@ static int buffer_writeable_write(void)
 			   MMU_ENTRY_WRITE,
 			   MMU_PDE_RW_MASK);
 
-	status = z_arch_buffer_validate(ADDR_PAGE_1,
-				       BUFF_SIZE,
-				       BUFF_WRITEABLE);
+	status = buffer_validate(ADDR_PAGE_1, BUFF_SIZE, BUFF_WRITEABLE);
 	if (status != 0) {
 		TC_PRINT("%s failed\n", __func__);
 		return TC_FAIL;
@@ -100,9 +98,7 @@ static int buffer_readable_read(void)
 			   MMU_ENTRY_READ,
 			   MMU_PDE_RW_MASK);
 
-	status = z_arch_buffer_validate(ADDR_PAGE_1,
-				       BUFF_SIZE,
-				       BUFF_READABLE);
+	status = buffer_validate(ADDR_PAGE_1, BUFF_SIZE, BUFF_READABLE);
 	if (status != 0) {
 		TC_PRINT("%s failed\n", __func__);
 		return TC_FAIL;
@@ -120,10 +116,7 @@ static int buffer_readable_write(void)
 			   MMU_ENTRY_WRITE,
 			   MMU_PDE_RW_MASK);
 
-	status = z_arch_buffer_validate(ADDR_PAGE_1,
-				       BUFF_SIZE,
-				       BUFF_READABLE);
-
+	status = buffer_validate(ADDR_PAGE_1, BUFF_SIZE, BUFF_READABLE);
 	if (status != 0) {
 		TC_PRINT("%s failed\n", __func__);
 		return TC_FAIL;
@@ -142,10 +135,8 @@ static int buffer_supervisor_rw(void)
 			   MMU_ENTRY_WRITE | MMU_ENTRY_SUPERVISOR,
 			   MMU_PTE_RW_MASK | MMU_PTE_US_MASK);
 
-	status = z_arch_buffer_validate(ADDR_PAGE_1,
-				       BUFF_SIZE,
-				       BUFF_READABLE | BUFF_USER);
-
+	status = buffer_validate(ADDR_PAGE_1, BUFF_SIZE, BUFF_READABLE |
+				 BUFF_USER);
 	if (status != -EPERM) {
 		TC_PRINT("%s failed\n", __func__);
 		return TC_FAIL;
@@ -163,10 +154,7 @@ static int buffer_supervisor_w(void)
 			   MMU_ENTRY_WRITE | MMU_ENTRY_SUPERVISOR,
 			   MMU_PTE_RW_MASK | MMU_PTE_US_MASK);
 
-	status = z_arch_buffer_validate(ADDR_PAGE_1,
-				       BUFF_SIZE,
-				       BUFF_WRITEABLE);
-
+	status = buffer_validate(ADDR_PAGE_1, BUFF_SIZE, BUFF_WRITEABLE);
 	if (status != -EPERM) {
 		TC_PRINT("%s failed\n", __func__);
 		return TC_FAIL;
@@ -183,9 +171,8 @@ static int buffer_user_rw_user(void)
 			   MMU_PAGE_SIZE,
 			   MMU_ENTRY_WRITE | MMU_ENTRY_USER,
 			   MMU_PTE_RW_MASK | MMU_PTE_US_MASK);
-	status = z_arch_buffer_validate(ADDR_PAGE_1,
-				       BUFF_SIZE,
-				       BUFF_WRITEABLE | BUFF_USER);
+	status = buffer_validate(ADDR_PAGE_1, BUFF_SIZE, BUFF_WRITEABLE |
+				 BUFF_USER);
 	if (status != 0) {
 		TC_PRINT("%s failed\n", __func__);
 		return TC_FAIL;
@@ -202,9 +189,8 @@ static int buffer_user_rw_supervisor(void)
 			   MMU_PAGE_SIZE,
 			   MMU_ENTRY_WRITE | MMU_ENTRY_SUPERVISOR,
 			   MMU_PTE_RW_MASK | MMU_PTE_US_MASK);
-	status = z_arch_buffer_validate(ADDR_PAGE_1,
-				       BUFF_SIZE,
-				       BUFF_WRITEABLE | BUFF_USER);
+	status = buffer_validate(ADDR_PAGE_1, BUFF_SIZE, BUFF_WRITEABLE |
+				 BUFF_USER);
 	if (status != -EPERM) {
 		TC_PRINT("%s failed\n", __func__);
 		return TC_FAIL;
@@ -229,7 +215,7 @@ static int multi_page_buffer_user(void)
 			   MMU_ENTRY_WRITE | MMU_ENTRY_SUPERVISOR,
 			   MMU_PTE_RW_MASK | MMU_PTE_US_MASK);
 
-	status = z_arch_buffer_validate(ADDR_PAGE_1,
+	status = buffer_validate(ADDR_PAGE_1,
 				       2 * MMU_PAGE_SIZE,
 				       BUFF_WRITEABLE | BUFF_USER);
 	if (status != -EPERM) {
@@ -255,9 +241,8 @@ static int multi_page_buffer_write_user(void)
 			   MMU_ENTRY_WRITE | MMU_ENTRY_SUPERVISOR,
 			   MMU_PTE_RW_MASK | MMU_PTE_US_MASK);
 
-	status = z_arch_buffer_validate(ADDR_PAGE_1,
-				       2 * MMU_PAGE_SIZE,
-				       BUFF_WRITEABLE);
+	status = buffer_validate(ADDR_PAGE_1, 2 * MMU_PAGE_SIZE,
+				 BUFF_WRITEABLE);
 	if (status != -EPERM) {
 		TC_PRINT("%s failed\n", __func__);
 		return TC_FAIL;
@@ -281,9 +266,8 @@ static int multi_page_buffer_read_user(void)
 			   MMU_ENTRY_READ | MMU_ENTRY_SUPERVISOR,
 			   MMU_PTE_RW_MASK | MMU_PTE_US_MASK);
 
-	status = z_arch_buffer_validate(ADDR_PAGE_1,
-				       2 * MMU_PAGE_SIZE,
-				       BUFF_READABLE | BUFF_USER);
+	status = buffer_validate(ADDR_PAGE_1, 2 * MMU_PAGE_SIZE, BUFF_READABLE
+				 | BUFF_USER);
 	if (status != -EPERM) {
 		TC_PRINT("%s failed\n", __func__);
 		return TC_FAIL;
@@ -307,9 +291,8 @@ static int multi_page_buffer_read(void)
 			   MMU_ENTRY_READ | MMU_ENTRY_SUPERVISOR,
 			   MMU_PTE_RW_MASK | MMU_PTE_US_MASK);
 
-	status = z_arch_buffer_validate(ADDR_PAGE_1,
-				       2 * MMU_PAGE_SIZE,
-				       BUFF_WRITEABLE);
+	status = buffer_validate(ADDR_PAGE_1, 2 * MMU_PAGE_SIZE,
+				 BUFF_WRITEABLE);
 	if (status != -EPERM) {
 		TC_PRINT("%s failed\n", __func__);
 		return TC_FAIL;
@@ -333,10 +316,8 @@ static int multi_pde_buffer_rw(void)
 			   MMU_ENTRY_READ,
 			   MMU_PDE_RW_MASK);
 
-	status = z_arch_buffer_validate(ADDR_PAGE_1,
-				       2 * MMU_PAGE_SIZE,
-				       BUFF_WRITEABLE);
-
+	status = buffer_validate(ADDR_PAGE_1, 2 * MMU_PAGE_SIZE,
+				 BUFF_WRITEABLE);
 	if (status != -EPERM) {
 		TC_PRINT("%s failed\n", __func__);
 		return TC_FAIL;
@@ -360,9 +341,8 @@ static int multi_pde_buffer_writeable_write(void)
 			   MMU_ENTRY_WRITE,
 			   MMU_PDE_RW_MASK);
 
-	status = z_arch_buffer_validate(ADDR_PAGE_1,
-				       2 * MMU_PAGE_SIZE,
-				       BUFF_WRITEABLE);
+	status = buffer_validate(ADDR_PAGE_1, 2 * MMU_PAGE_SIZE,
+				 BUFF_WRITEABLE);
 	if (status != 0) {
 		TC_PRINT("%s failed\n", __func__);
 		return TC_FAIL;
@@ -386,9 +366,8 @@ static int multi_pde_buffer_readable_read(void)
 			   MMU_ENTRY_READ,
 			   MMU_PDE_RW_MASK);
 
-	status = z_arch_buffer_validate(ADDR_PAGE_1,
-				       2 * MMU_PAGE_SIZE,
-				       BUFF_READABLE);
+	status = buffer_validate(ADDR_PAGE_1, 2 * MMU_PAGE_SIZE,
+				 BUFF_READABLE);
 	if (status != 0) {
 		TC_PRINT("%s failed\n", __func__);
 		return TC_FAIL;
@@ -412,10 +391,8 @@ static int multi_pde_buffer_readable_write(void)
 			   MMU_ENTRY_WRITE,
 			   MMU_PDE_RW_MASK);
 
-	status = z_arch_buffer_validate(ADDR_PAGE_1,
-				       2 * MMU_PAGE_SIZE,
-				       BUFF_READABLE);
-
+	status = buffer_validate(ADDR_PAGE_1, 2 * MMU_PAGE_SIZE,
+				 BUFF_READABLE);
 	if (status != 0) {
 		TC_PRINT("%s failed\n", __func__);
 		return TC_FAIL;
@@ -463,7 +440,7 @@ void reset_multi_pde_flag(void)
  *
  * @ingroup kernel_memprotect_tests
  *
- * @see z_arch_buffer_validate(), z_x86_mmu_set_flags()
+ * @see z_x86_mmu_validate(), z_x86_mmu_set_flags()
  */
 void test_multi_pde_buffer_readable_write(void)
 {
@@ -475,7 +452,7 @@ void test_multi_pde_buffer_readable_write(void)
  *
  * @ingroup kernel_memprotect_tests
  *
- * @see  z_arch_buffer_validate(), z_x86_mmu_set_flags()
+ * @see z_x86_mmu_validate(), z_x86_mmu_set_flags()
  */
 void test_multi_pde_buffer_readable_read(void)
 {
@@ -487,7 +464,7 @@ void test_multi_pde_buffer_readable_read(void)
  *
  * @ingroup kernel_memprotect_tests
  *
- * @see  z_arch_buffer_validate(), z_x86_mmu_set_flags()
+ * @see z_x86_mmu_validate(), z_x86_mmu_set_flags()
  */
 void test_multi_pde_buffer_writeable_write(void)
 {
@@ -499,7 +476,7 @@ void test_multi_pde_buffer_writeable_write(void)
  *
  * @ingroup kernel_memprotect_tests
  *
- * @see  z_arch_buffer_validate(), z_x86_mmu_set_flags()
+ * @see z_x86_mmu_validate(), z_x86_mmu_set_flags()
  */
 void test_multi_pde_buffer_rw(void)
 {
@@ -511,7 +488,7 @@ void test_multi_pde_buffer_rw(void)
  *
  * @ingroup kernel_memprotect_tests
  *
- * @see z_arch_buffer_validate(), z_x86_mmu_set_flags()
+ * @see z_x86_mmu_validate(), z_x86_mmu_set_flags()
  */
 void test_buffer_rw_read(void)
 {
@@ -523,7 +500,7 @@ void test_buffer_rw_read(void)
  *
  * @ingroup kernel_memprotect_tests
  *
- * @see z_arch_buffer_validate(), z_x86_mmu_set_flags()
+ * @see z_x86_mmu_validate(), z_x86_mmu_set_flags()
  */
 void test_buffer_writeable_write(void)
 {
@@ -535,7 +512,7 @@ void test_buffer_writeable_write(void)
  *
  * @ingroup kernel_memprotect_tests
  *
- * @see z_arch_buffer_validate(), z_x86_mmu_set_flags()
+ * @see z_x86_mmu_validate(), z_x86_mmu_set_flags()
  */
 void test_buffer_readable_read(void)
 {
@@ -547,7 +524,7 @@ void test_buffer_readable_read(void)
  *
  * @ingroup kernel_memprotect_tests
  *
- * @see z_arch_buffer_validate(), z_x86_mmu_set_flags()
+ * @see z_x86_mmu_validate(), z_x86_mmu_set_flags()
  */
 void test_buffer_readable_write(void)
 {
@@ -559,7 +536,7 @@ void test_buffer_readable_write(void)
  *
  * @ingroup kernel_memprotect_tests
  *
- * @see z_arch_buffer_validate(), z_x86_mmu_set_flags()
+ * @see z_x86_mmu_validate(), z_x86_mmu_set_flags()
  */
 void test_buffer_supervisor_rw(void)
 {
@@ -571,7 +548,7 @@ void test_buffer_supervisor_rw(void)
  *
  * @ingroup kernel_memprotect_tests
  *
- * @see z_arch_buffer_validate(), z_x86_mmu_set_flags()
+ * @see z_x86_mmu_validate(), z_x86_mmu_set_flags()
  */
 void test_buffer_supervisor_w(void)
 {
@@ -583,7 +560,7 @@ void test_buffer_supervisor_w(void)
  *
  * @ingroup kernel_memprotect_tests
  *
- * @see z_arch_buffer_validate(), z_x86_mmu_set_flags()
+ * @see z_x86_mmu_validate(), z_x86_mmu_set_flags()
  */
 void test_buffer_user_rw_user(void)
 {
@@ -595,7 +572,7 @@ void test_buffer_user_rw_user(void)
  *
  * @ingroup kernel_memprotect_tests
  *
- * @see z_arch_buffer_validate(), z_x86_mmu_set_flags()
+ * @see z_x86_mmu_validate(), z_x86_mmu_set_flags()
  */
 void test_buffer_user_rw_supervisor(void)
 {
@@ -607,7 +584,7 @@ void test_buffer_user_rw_supervisor(void)
  *
  * @ingroup kernel_memprotect_tests
  *
- * @see z_arch_buffer_validate(), z_x86_mmu_set_flags()
+ * @see z_x86_mmu_validate(), z_x86_mmu_set_flags()
  */
 void test_multi_page_buffer_user(void)
 {
@@ -619,7 +596,7 @@ void test_multi_page_buffer_user(void)
  *
  * @ingroup kernel_memprotect_tests
  *
- * @see z_arch_buffer_validate(), z_x86_mmu_set_flags()
+ * @see z_x86_mmu_validate(), z_x86_mmu_set_flags()
  */
 void test_multi_page_buffer_write_user(void)
 {
@@ -631,7 +608,7 @@ void test_multi_page_buffer_write_user(void)
  *
  * @ingroup kernel_memprotect_tests
  *
- * @see z_arch_buffer_validate(), z_x86_mmu_set_flags()
+ * @see z_x86_mmu_validate(), z_x86_mmu_set_flags()
  */
 void test_multi_page_buffer_read_user(void)
 {
@@ -643,7 +620,7 @@ void test_multi_page_buffer_read_user(void)
  *
  * @ingroup kernel_memprotect_tests
  *
- * @see z_arch_buffer_validate(), z_x86_mmu_set_flags()
+ * @see z_x86_mmu_validate(), z_x86_mmu_set_flags()
  */
 void test_multi_page_buffer_read(void)
 {

@@ -10,6 +10,8 @@
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_MESH_ACCESS_H_
 #define ZEPHYR_INCLUDE_BLUETOOTH_MESH_ACCESS_H_
 
+#include <settings/settings.h>
+
 /**
  * @brief Bluetooth Mesh Access Layer
  * @defgroup bt_mesh_access Bluetooth Mesh Access Layer
@@ -174,7 +176,18 @@ struct bt_mesh_model_op {
 /** Helper to define an empty model array */
 #define BT_MESH_MODEL_NONE ((struct bt_mesh_model []){})
 
-#define BT_MESH_MODEL(_id, _op, _pub, _user_data)                            \
+
+/** @def BT_MESH_MODEL_CB
+ *
+ * @brief Composition data SIG model entry with callback functions.
+ *
+ * @param _id Model ID.
+ * @param _op Array of model opcode handlers.
+ * @param _pub Model publish parameters.
+ * @param _user_data User data for the model.
+ * @param _cb Callback structure, or NULL to keep no callbacks.
+ */
+#define BT_MESH_MODEL_CB(_id, _op, _pub, _user_data, _cb)                    \
 {                                                                            \
 	.id = (_id),                                                         \
 	.op = _op,                                                           \
@@ -184,9 +197,21 @@ struct bt_mesh_model_op {
 	.groups = { [0 ... (CONFIG_BT_MESH_MODEL_GROUP_COUNT - 1)] =         \
 			BT_MESH_ADDR_UNASSIGNED },                           \
 	.user_data = _user_data,                                             \
+	.cb = _cb,                                                           \
 }
 
-#define BT_MESH_MODEL_VND(_company, _id, _op, _pub, _user_data)              \
+/** @def BT_MESH_MODEL_VND_CB
+ *
+ * @brief Composition data vendor model entry with callback functions.
+ *
+ * @param _company Company ID.
+ * @param _id Model ID.
+ * @param _op Array of model opcode handlers.
+ * @param _pub Model publish parameters.
+ * @param _user_data User data for the model.
+ * @param _cb Callback structure, or NULL to keep no callbacks.
+ */
+#define BT_MESH_MODEL_VND_CB(_company, _id, _op, _pub, _user_data, _cb)      \
 {                                                                            \
 	.vnd.company = (_company),                                           \
 	.vnd.id = (_id),                                                     \
@@ -197,7 +222,34 @@ struct bt_mesh_model_op {
 	.groups = { [0 ... (CONFIG_BT_MESH_MODEL_GROUP_COUNT - 1)] =         \
 			BT_MESH_ADDR_UNASSIGNED },                           \
 	.user_data = _user_data,                                             \
+	.cb = _cb,                                                           \
 }
+
+
+/** @def BT_MESH_MODEL
+ *
+ * @brief Composition data SIG model entry.
+ *
+ * @param _id Model ID.
+ * @param _op Array of model opcode handlers.
+ * @param _pub Model publish parameters.
+ * @param _user_data User data for the model.
+ */
+#define BT_MESH_MODEL(_id, _op, _pub, _user_data)                              \
+	BT_MESH_MODEL_CB(_id, _op, _pub, _user_data, NULL)
+
+/** @def BT_MESH_MODEL_VND
+ *
+ * @brief Composition data vendor model entry.
+ *
+ * @param _company Company ID.
+ * @param _id Model ID.
+ * @param _op Array of model opcode handlers.
+ * @param _pub Model publish parameters.
+ * @param _user_data User data for the model.
+ */
+#define BT_MESH_MODEL_VND(_company, _id, _op, _pub, _user_data)                \
+	BT_MESH_MODEL_VND_CB(_company, _id, _op, _pub, _user_data, NULL)
 
 /** @def BT_MESH_TRANSMIT
  *
@@ -330,6 +382,57 @@ struct bt_mesh_model_pub {
 		.msg = &bt_mesh_pub_msg_##_name, \
 	}
 
+/** Model callback functions. */
+struct bt_mesh_model_cb {
+	/** @brief Set value handler of user data tied to the model.
+	 *
+	 * @sa settings_handler::h_set
+	 *
+	 * @param model Model to set the persistent data of.
+	 * @param len_rd The size of the data found in the backend.
+	 * @param read_cb Function provided to read the data from the backend.
+	 * @param cb_arg Arguments for the read function provided by the
+	 * backend.
+	 *
+	 * @return 0 on success, error otherwise.
+	 */
+	int (*const settings_set)(struct bt_mesh_model *model,
+				  size_t len_rd, settings_read_cb read_cb,
+				  void *cb_arg);
+
+	/** @brief Callback called when all settings have been loaded.
+	 *
+	 * This handler gets called after the settings have been loaded in
+	 * full.
+	 *
+	 * @sa settings_handler::h_commit
+	 *
+	 * @param model Model this callback belongs to.
+	 *
+	 * @return 0 on success, error otherwise.
+	 */
+	int (*const settings_commit)(struct bt_mesh_model *model);
+
+	/** @brief Model init callback.
+	 *
+	 * Called on every model instance during mesh initialization.
+	 *
+	 * @param model Model to be initialized.
+	 *
+	 * @return 0 on success, error otherwise.
+	 */
+	int (*const init)(struct bt_mesh_model *model);
+
+	/** @brief Model reset callback.
+	 *
+	 * Called when the mesh node is reset. All model data is deleted on
+	 * reset, and the model should clear its state.
+	 *
+	 * @param model Model this callback belongs to.
+	 */
+	void (*const reset)(struct bt_mesh_model *model);
+};
+
 /** Abstraction that describes a Mesh Model instance */
 struct bt_mesh_model {
 	union {
@@ -355,6 +458,9 @@ struct bt_mesh_model {
 	u16_t groups[CONFIG_BT_MESH_MODEL_GROUP_COUNT];
 
 	const struct bt_mesh_model_op * const op;
+
+	/* Model callback structure. */
+	const struct bt_mesh_model_cb * const cb;
 
 	/* Model-specific user data */
 	void *user_data;
@@ -414,6 +520,52 @@ int bt_mesh_model_publish(struct bt_mesh_model *model);
  * @return Pointer to the element that the given model belongs to.
  */
 struct bt_mesh_elem *bt_mesh_model_elem(struct bt_mesh_model *mod);
+
+/** @brief Find a SIG model.
+ *
+ * @param elem Element to search for the model in.
+ * @param id Model ID of the model.
+ *
+ * @return A pointer to the Mesh model matching the given parameters, or NULL
+ * if no SIG model with the given ID exists in the given element.
+ */
+struct bt_mesh_model *bt_mesh_model_find(const struct bt_mesh_elem *elem,
+					 u16_t id);
+
+/** @brief Find a vendor model.
+ *
+ * @param elem Element to search for the model in.
+ * @param company Company ID of the model.
+ * @param id Model ID of the model.
+ *
+ * @return A pointer to the Mesh model matching the given parameters, or NULL
+ * if no vendor model with the given ID exists in the given element.
+ */
+struct bt_mesh_model *bt_mesh_model_find_vnd(const struct bt_mesh_elem *elem,
+					     u16_t company, u16_t id);
+
+/** @brief Get whether the model is in the primary element of the device.
+ *
+ * @param mod Mesh model.
+ *
+ * @return true if the model is on the primary element, false otherwise.
+ */
+static inline bool bt_mesh_model_in_primary(const struct bt_mesh_model *mod)
+{
+	return (mod->elem_idx == 0);
+}
+
+/** @brief Immediately store the model's user data in persistent storage.
+ *
+ * @param mod Mesh model.
+ * @param vnd This is a vendor model.
+ * @param data Model data to store, or NULL to delete any model data.
+ * @param data_len Length of the model data.
+ *
+ * @return 0 on success, or (negative) error code on failure.
+ */
+int bt_mesh_model_data_store(struct bt_mesh_model *mod, bool vnd,
+			     const void *data, size_t data_len);
 
 /** Node Composition */
 struct bt_mesh_comp {

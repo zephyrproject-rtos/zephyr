@@ -1,0 +1,9 @@
+# Kconfig - nRF51 PCA10031 board configuration
+#
+# Copyright (c) 2018 Nordic Semiconductor ASA.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NRF51_PCA10031
+	bool "nRF51 PCA10031"
+	depends on SOC_NRF51822_QFAC

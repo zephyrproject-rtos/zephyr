@@ -1,73 +1,66 @@
-#
 # Copyright (c) 2018, Phytec Messtechnik GmbH
-#
 # SPDX-License-Identifier: Apache-2.0
-#
----
+
 title: SSD1306 128x64 Dot Matrix Display Controller
-version: 0.1
 
 description: >
     This is a representation of the SSD1306 128x64 Dot Matrix Display Controller
 
-inherits:
-    !include i2c-device.yaml
+compatible: "solomon,ssd1306fb"
+
+include: i2c-device.yaml
 
 properties:
-    compatible:
-      constraint: "solomon,ssd1306fb"
-
     height:
       type: int
-      category: required
+      required: true
       description: Height in pixel of the panel driven by the controller
-      generation: define
 
     width:
       type: int
-      category: required
+      required: true
       description: Width in pixel of the panel driven by the controller
-      generation: define
 
     segment-offset:
       type: int
-      category: required
+      required: true
       description: 8-bit column start address for Page Addressing Mode
-      generation: define
 
     page-offset:
       type: int
-      category: required
+      required: true
       description: Start address for Page Addressing Mode
-      generation: define
 
     display-offset:
       type: int
-      category: required
+      required: true
       description: mapping of the display start line to one of COM0 .. COM63
-      generation: define
+
+    multiplex-ratio:
+      type: int
+      required: true
+      description: Multiplex Ratio
 
     segment-remap:
       type: boolean
-      category: optional
+      required: false
       description: Last column address is mapped to first segment
-      generation: define
 
     com-invdir:
       type: boolean
-      category: optional
+      required: false
       description: Scan direction is from last COM output to first COM output
-      generation: define
+
+    com-sequential:
+      type: boolean
+      required: false
+      description: Sequential COM pin configuration
 
     prechargep:
       type: int
-      category: required
+      required: true
       description: Duration of the pre-charge period
-      generation: define
 
     reset-gpios:
-      type: compound
-      category: optional
-      generation: define, use-prop-name
-
-...
+      type: phandle-array
+      required: false

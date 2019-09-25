@@ -35,7 +35,7 @@ config SOC_COMPATIBLE_NRF52832
 # SOC_*_LD: SoC specific Linker script additions
 #
 
-if ARC || ARM || X86 || NIOS2 || RISCV32
+if ARC || ARM || X86 || NIOS2 || RISCV
 
 config SOC_NOINIT_LD
 	bool
@@ -70,4 +70,4 @@ config SOC_RWDATA_LD
 	  This only has effect if the SoC uses the common linker script
 	  under include/arch/.
 
-endif # ARC || ARM || X86 || NIOS2 || RISCV32
+endif # ARC || ARM || X86 || NIOS2 || RISCV

@@ -7,7 +7,6 @@
 .. _west-apis-log:
 .. _west-apis-manifest:
 .. _west-apis-util:
-.. _west-apis-zext:
 
 West APIs
 #########

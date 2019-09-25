@@ -7,6 +7,8 @@ toolchain:
   - gnuarmemb
   - xtools
 supported:
+  - arduino_gpio
+  - arduino_i2c
   - netif:eth
   - adc
   - i2c
@@ -16,5 +18,7 @@ supported:
   - usb_device
   - watchdog
   - hwinfo
+  - can
+  - pwm
 testing:
   default: true

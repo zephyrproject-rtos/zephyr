@@ -66,6 +66,7 @@
 #include <tinycrypt/sha256.h>
 #include <test_utils.h>
 #include <test_ecc_utils.h>
+#include <sys/util.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -109,7 +110,7 @@ int sign_vectors(TCSha256State_t hash, char **d_vec, char **k_vec,
 		string2scalar(exp_r, NUM_ECC_WORDS, r_vec[i]);
 		string2scalar(exp_s, NUM_ECC_WORDS, s_vec[i]);
 
-		msglen = hex2bin(msg, BUF_SIZE, msg_vec[i], strlen(msg_vec[i]));
+		msglen = hex2bin(msg_vec[i], strlen(msg_vec[i]), msg, BUF_SIZE);
 
 		/**TESTPOINT: Check if msg imported*/
 		zassert_true(msglen, "failed to import message!");
@@ -366,7 +367,7 @@ int vrfy_vectors(TCSha256State_t hash, char **msg_vec, char **qx_vec, char **qy_
 		exp_rc = res_vec[i];
 
 		/* validate ECDSA: hash message, verify r+s */
-		msglen = hex2bin(msg, BUF_SIZE, msg_vec[i], strlen(msg_vec[i]));
+		msglen = hex2bin(msg_vec[i], strlen(msg_vec[i]), msg, BUF_SIZE);
 
 		/**TESTPOINT: Check if msg imported*/
 		zassert_true(msglen, "failed to import message!");

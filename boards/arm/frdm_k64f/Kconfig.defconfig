@@ -108,4 +108,11 @@ config ETH_MCUX_0
 
 endif # NETWORKING
 
+if CAN
+
+config CAN_0
+	default y
+
+endif # CAN
+
 endif # BOARD_FRDM_K64F

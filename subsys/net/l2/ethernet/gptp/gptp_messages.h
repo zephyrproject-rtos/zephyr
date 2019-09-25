@@ -14,13 +14,13 @@
 #ifndef __GPTP_MESSAGES_H
 #define __GPTP_MESSAGES_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <net/net_pkt.h>
 #include <net/ethernet.h>
 #include <net/gptp.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* Helpers to access gPTP messages. */
 #define GPTP_HDR(pkt) gptp_get_hdr(pkt)
@@ -46,7 +46,7 @@ extern "C" {
 #define GPTP_VALID_LEN(pkt, len) \
 	(len > (NET_ETH_MINIMAL_FRAME_SIZE - GPTP_L2_HDR_LEN(pkt)))
 #define GPTP_L2_HDR_LEN(pkt) \
-	((int)GPTP_HDR(pkt) - (int)NET_ETH_HDR(pkt))
+	((long)GPTP_HDR(pkt) - (long)NET_ETH_HDR(pkt))
 
 #define GPTP_SYNC_LEN \
 	(sizeof(struct gptp_hdr) + sizeof(struct gptp_sync))

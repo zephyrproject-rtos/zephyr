@@ -1,0 +1,28 @@
+# Kconfig - STMicroelectronics STM32G0 MCU line
+#
+# Copyright (c) 2019 Philippe Retornaz <philippe@shapescale.com>
+# Copyright (c) 2019 STMicroelectronics
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_SERIES_STM32G0X
+
+source "soc/arm/st_stm32/stm32g0/Kconfig.defconfig.stm32g0*"
+
+config SOC_SERIES
+	default "stm32g0"
+
+if GPIO_STM32
+
+# GPIO ports A, B and C are set in ../common/Kconfig.defconfig.series
+
+config GPIO_STM32_PORTD
+	default y
+
+config GPIO_STM32_PORTF
+	default y
+
+endif # GPIO_STM32
+
+endif # SOC_SERIES_STM32G0X

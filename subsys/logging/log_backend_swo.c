@@ -18,14 +18,15 @@
  * this frequency should much the one set by the SWO viewer program.
  *
  * The initialization code assumes that SWO core frequency is equal to HCLK
- * as defined by SYS_CLOCK_HW_CYCLES_PER_SEC Kconfig option. This may require
- * additional, vendor specific configuration.
+ * as defined by DT_CPU_CLOCK_FREQUENCY. This may require additional,
+ * vendor specific configuration.
  */
 
 #include <logging/log_backend.h>
 #include <logging/log_core.h>
 #include <logging/log_msg.h>
 #include <logging/log_output.h>
+#include "log_backend_std.h"
 #include <soc.h>
 
 /** The stimulus port from which SWO data is received and displayed */
@@ -35,13 +36,12 @@
 #if CONFIG_LOG_BACKEND_SWO_FREQ_HZ == 0
 #define SWO_FREQ_DIV  1
 #else
-#define SWO_FREQ (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC \
-		  + (CONFIG_LOG_BACKEND_SWO_FREQ_HZ / 2))
+#define SWO_FREQ (DT_CPU_CLOCK_FREQUENCY + (CONFIG_LOG_BACKEND_SWO_FREQ_HZ / 2))
 #define SWO_FREQ_DIV  (SWO_FREQ / CONFIG_LOG_BACKEND_SWO_FREQ_HZ)
 #if SWO_FREQ_DIV > 0xFFFF
 #error CONFIG_LOG_BACKEND_SWO_FREQ_HZ is too low. SWO clock divider is 16-bit. \
 	Minimum supported SWO clock frequency is \
-	CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC/2^16.
+	[CPU Clock Frequency]/2^16.
 #endif
 #endif
 
@@ -63,21 +63,7 @@ LOG_OUTPUT_DEFINE(log_output, char_out, buf, sizeof(buf));
 static void log_backend_swo_put(const struct log_backend *const backend,
 		struct log_msg *msg)
 {
-	log_msg_get(msg);
-
-	u32_t flags = LOG_OUTPUT_FLAG_LEVEL | LOG_OUTPUT_FLAG_TIMESTAMP;
-
-	if (IS_ENABLED(CONFIG_LOG_BACKEND_SHOW_COLOR)) {
-		flags |= LOG_OUTPUT_FLAG_COLORS;
-	}
-
-	if (IS_ENABLED(CONFIG_LOG_BACKEND_FORMAT_TIMESTAMP)) {
-		flags |= LOG_OUTPUT_FLAG_FORMAT_TIMESTAMP;
-	}
-
-	log_output_msg_process(&log_output, msg, flags);
-
-	log_msg_put(msg);
+	log_backend_std_put(&log_output, 0, msg);
 }
 
 static void log_backend_swo_init(void)
@@ -110,24 +96,19 @@ static void log_backend_swo_panic(struct log_backend const *const backend)
 {
 }
 
+static void dropped(const struct log_backend *const backend, u32_t cnt)
+{
+	ARG_UNUSED(backend);
+
+	log_backend_std_dropped(&log_output, cnt);
+}
+
 static void log_backend_swo_sync_string(const struct log_backend *const backend,
 		struct log_msg_ids src_level, u32_t timestamp,
 		const char *fmt, va_list ap)
 {
-	u32_t flags = LOG_OUTPUT_FLAG_LEVEL | LOG_OUTPUT_FLAG_TIMESTAMP;
-	u32_t key;
-
-	if (IS_ENABLED(CONFIG_LOG_BACKEND_SHOW_COLOR)) {
-		flags |= LOG_OUTPUT_FLAG_COLORS;
-	}
-
-	if (IS_ENABLED(CONFIG_LOG_BACKEND_FORMAT_TIMESTAMP)) {
-		flags |= LOG_OUTPUT_FLAG_FORMAT_TIMESTAMP;
-	}
-
-	key = irq_lock();
-	log_output_string(&log_output, src_level, timestamp, fmt, ap, flags);
-	irq_unlock(key);
+	log_backend_std_sync_string(&log_output, 0, src_level,
+				    timestamp, fmt, ap);
 }
 
 static void log_backend_swo_sync_hexdump(
@@ -135,21 +116,8 @@ static void log_backend_swo_sync_hexdump(
 		struct log_msg_ids src_level, u32_t timestamp,
 		const char *metadata, const u8_t *data, u32_t length)
 {
-	u32_t flags = LOG_OUTPUT_FLAG_LEVEL | LOG_OUTPUT_FLAG_TIMESTAMP;
-	u32_t key;
-
-	if (IS_ENABLED(CONFIG_LOG_BACKEND_SHOW_COLOR)) {
-		flags |= LOG_OUTPUT_FLAG_COLORS;
-	}
-
-	if (IS_ENABLED(CONFIG_LOG_BACKEND_FORMAT_TIMESTAMP)) {
-		flags |= LOG_OUTPUT_FLAG_FORMAT_TIMESTAMP;
-	}
-
-	key = irq_lock();
-	log_output_hexdump(&log_output, src_level, timestamp,
-			metadata, data, length, flags);
-	irq_unlock(key);
+	log_backend_std_sync_hexdump(&log_output, 0, src_level,
+				     timestamp, metadata, data, length);
 }
 
 const struct log_backend_api log_backend_swo_api = {
@@ -160,6 +128,7 @@ const struct log_backend_api log_backend_swo_api = {
 			log_backend_swo_sync_hexdump : NULL,
 	.panic = log_backend_swo_panic,
 	.init = log_backend_swo_init,
+	.dropped = IS_ENABLED(CONFIG_LOG_IMMEDIATE) ? NULL : dropped,
 };
 
 LOG_BACKEND_DEFINE(log_backend_swo, log_backend_swo_api, true);

@@ -39,11 +39,11 @@
 
 
 #include <zephyr.h>
-#include <misc/reboot.h>
+#include <power/reboot.h>
 #include <device.h>
 #include <string.h>
-#include <flash.h>
-#include <nvs/nvs.h>
+#include <drivers/flash.h>
+#include <fs/nvs.h>
 
 static struct nvs_fs fs;
 

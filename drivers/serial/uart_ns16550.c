@@ -29,10 +29,10 @@
 #include <init.h>
 #include <toolchain.h>
 #include <linker/sections.h>
-#include <uart.h>
-#include <sys_io.h>
+#include <drivers/uart.h>
+#include <sys/sys_io.h>
 
-#include <drivers/serial/uart_ns16550.h>
+#include "uart_ns16550.h"
 
 /*
  * If PCP is set for any of the ports, enable support.
@@ -240,6 +240,13 @@ BUILD_ASSERT_MSG(IS_ENABLED(CONFIG_PCIE), "NS16550(s) in DT need CONFIG_PCIE");
 #define UART_REG_ADDR_INTERVAL 4 /* address diff of adjacent regs. */
 #endif
 #endif /* UART_NS16550_ACCESS_IOPORT */
+
+#ifdef CONFIG_UART_NS16550_ACCESS_WORD_ONLY
+#undef INBYTE
+#define INBYTE(x) INWORD(x)
+#undef OUTBYTE
+#define OUTBYTE(x, d) OUTWORD(x, d)
+#endif
 
 
 struct uart_ns16550_device_config {

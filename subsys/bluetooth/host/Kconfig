@@ -26,6 +26,7 @@ config BT_HCI_CMD_COUNT
 config BT_RX_BUF_COUNT
 	int "Number of HCI RX buffers"
 	default 3 if BT_RECV_IS_RX_THREAD
+	default 20 if (BT_MESH && !(BT_DISCARDABLE_BUF_COUNT > 0))
 	default 10
 	range 2 255
 	help
@@ -47,16 +48,30 @@ config BT_RX_BUF_LEN
 	  an L2CAP MTU of 65 bytes. On top of this there's the L2CAP header
 	  (4 bytes) and the ACL header (also 4 bytes) which yields 73 bytes.
 
+config BT_DISCARDABLE_BUF_COUNT
+	int "Number of discardable event buffers"
+	range 1 255
+	default 20 if BT_MESH
+	default 3
+	depends on BT_H4 || BT_CTLR
+	help
+	  Number of buffers in a separate buffer pool for events which
+	  the HCI driver considers discardable. Examples of such events
+	  could be e.g. Advertising Reports. The benefit of having such
+	  a pool means that the if there is a heavy inflow of such events
+	  it will not cause the allocation for other critical events to
+	  block and may even eliminate deadlocks in some cases.
+
 config BT_HCI_TX_STACK_SIZE
-	# NOTE: This value is derived from other symbols and should not be
-	# user-configurable. Do not give it a prompt.
-	int
+	# NOTE: This value is derived from other symbols and should only be
+	# changed if required by architecture
+	int "HCI Tx thread stack size"
 	default 512 if BT_H4
 	default 512 if BT_H5
 	default 416 if BT_SPI
-	default 940 if BT_CTLR && (BT_LL_SW || BT_LL_SW_SPLIT) && NO_OPTIMIZATIONS
-	default 1024 if BT_CTLR && (BT_LL_SW || BT_LL_SW_SPLIT) && BT_CENTRAL
-	default 640 if BT_CTLR && (BT_LL_SW || BT_LL_SW_SPLIT)
+	default 940 if BT_CTLR && (BT_LL_SW_LEGACY || BT_LL_SW_SPLIT) && NO_OPTIMIZATIONS
+	default 1024 if BT_CTLR && (BT_LL_SW_LEGACY || BT_LL_SW_SPLIT) && BT_CENTRAL
+	default 640 if BT_CTLR && (BT_LL_SW_LEGACY || BT_LL_SW_SPLIT)
 	default 512 if BT_USERCHAN
 	default 640 if BT_STM32_IPM
 	# Even if no driver is selected the following default is still
@@ -64,7 +79,18 @@ config BT_HCI_TX_STACK_SIZE
 	# the worst-case stack size if an out-of-tree controller is used.
 	default 1024
 	help
-	  Stack size needed for executing bt_send with specified driver
+	  Stack size needed for executing bt_send with specified driver.
+	  NOTE: This is an advanced setting and should not be changed unless
+	  absolutely necessary
+
+config BT_HCI_ECC_STACK_SIZE
+	# NOTE: This value is derived from other symbols and should only be
+	# changed if required by architecture
+	int "HCI ECC thread stack size"
+	default 1100
+	help
+	  NOTE: This is an advanced setting and should not be changed unless
+	  absolutely necessary
 
 config BT_HCI_TX_PRIO
 	# Hidden option for Co-Operative Tx thread priority
@@ -120,8 +146,6 @@ config BT_RX_PRIO
 
 if BT_HCI_HOST
 
-source "subsys/bluetooth/host/mesh/Kconfig"
-
 config BT_HOST_CRYPTO
 	# Hidden option that compiles in random number generation and AES
 	# encryption support using TinyCrypt library if this is not provided
@@ -163,6 +187,24 @@ config BT_SETTINGS_CCC_STORE_ON_WRITE
 	  that expect to be reset suddenly. However, it requires additional
 	  workqueue stack space.
 endif # BT_SETTINGS
+
+config BT_WHITELIST
+	bool "Enable whitelist support"
+	help
+	  This option enables the whitelist API. This takes advantage of the
+	  whitelisting feature of a BLE controller.
+	  The whitelist is a global list and the same whitelist is used
+	  by both scanner and advertiser. The whitelist cannot be modified while
+	  it is in use.
+
+	  An Advertiser can whitelist which peers can connect or request scan
+	  response data.
+	  A scanner can whitelist advertiser for which it will generate
+	  advertising reports.
+	  Connections can be established automatically for whitelisted peers.
+
+	  This options deprecates the bt_le_set_auto_conn API in favor of the
+	  bt_conn_create_aute_le API.
 
 if BT_CONN
 
@@ -274,6 +316,21 @@ config BT_BONDABLE
 	  Bonding flag in AuthReq of SMP Pairing Request/Response will be set
 	  indicating the support for this mode.
 
+config BT_STORE_DEBUG_KEYS
+	bool "Store Debug Mode bonds"
+	help
+	  This option enables support for storing bonds where either of devices
+	  has the Security Manager in Debug mode. This option should
+	  only be enabled for debugging and should never be used in production.
+
+config BT_SMP_ENFORCE_MITM
+	bool "Enforce MITM protection"
+	default y
+	help
+	  With this option enabled, the Security Manager will set MITM option in
+	  the Authentication Requirements Flags whenever local IO Capabilities
+	  allow the generated key to be authenticated.
+
 config BT_OOB_DATA_FIXED
 	bool "Use a fixed random number for LESC OOB pairing"
 	depends on BT_TESTING
@@ -298,9 +355,21 @@ config BT_MAX_PAIRED
 	  default) number is 1.
 
 config BT_CREATE_CONN_TIMEOUT
-        int "Timeout for pending LE Create Connection command in seconds"
-        default 3
-        range 1 65535
+	int "Timeout for pending LE Create Connection command in seconds"
+	default 3
+	range 1 65535
+
+config BT_CONN_PARAM_UPDATE_TIMEOUT
+	int "Peripheral connection parameter update timeout in milliseconds"
+	default 5000
+	range 1 65535
+
+	help
+	  The value is a timeout used by peripheral device to wait until it
+	  starts the connection parameters update procedure to change default
+	  connection parameters. The default value is set to 5s, to comply
+	  with BT protocol specification: Core 4.2 Vol 3, Part C, 9.3.12.2
+
 endif # BT_CONN
 
 if BT_OBSERVER

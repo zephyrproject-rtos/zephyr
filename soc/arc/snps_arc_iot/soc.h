@@ -14,7 +14,7 @@
 #ifndef _SOC_H_
 #define _SOC_H_
 
-#include <misc/util.h>
+#include <sys/util.h>
 
 /* default system clock */
 #define SYSCLK_DEFAULT_IOSC_HZ			MHZ(16)
@@ -36,7 +36,7 @@
 #ifndef _ASMLANGUAGE
 
 
-#include <misc/util.h>
+#include <sys/util.h>
 #include <random/rand32.h>
 
 /*

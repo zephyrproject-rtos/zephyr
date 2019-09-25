@@ -6,8 +6,8 @@
  */
 
 #include "fxos8700.h"
-#include <misc/util.h>
-#include <misc/__assert.h>
+#include <sys/util.h>
+#include <sys/__assert.h>
 #include <logging/log.h>
 #include <stdlib.h>
 

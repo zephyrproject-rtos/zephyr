@@ -6,8 +6,8 @@
 
 #include <zephyr.h>
 #include <device.h>
-#include <sensor.h>
-#include <misc/printk.h>
+#include <drivers/sensor.h>
+#include <sys/printk.h>
 #include <stdio.h>
 
 static void do_main(struct device *dev)

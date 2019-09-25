@@ -10,8 +10,8 @@
 #include <zephyr/types.h>
 #include <errno.h>
 #include <init.h>
-#include <fs.h>
-#include <misc/__assert.h>
+#include <fs/fs.h>
+#include <sys/__assert.h>
 #include <ff.h>
 
 #define FATFS_MAX_FILE_NAME 12 /* Uses 8.3 SFN */

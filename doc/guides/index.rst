@@ -23,6 +23,7 @@ User and Developer Guides
    kconfig/index
    modules.rst
    networking/index
+   portability/index.rst
    porting/index
    test/index
    tracing/index

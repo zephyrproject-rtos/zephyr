@@ -9,14 +9,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <sensor.h>
+#include <drivers/sensor.h>
 #include <kernel.h>
 #include <device.h>
 #include <init.h>
-#include <misc/byteorder.h>
-#include <misc/__assert.h>
+#include <sys/byteorder.h>
+#include <sys/__assert.h>
 
-#include <gpio.h>
+#include <drivers/gpio.h>
 #include <logging/log.h>
 
 #include "bmc150_magn.h"

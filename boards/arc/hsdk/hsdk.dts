@@ -1,0 +1,49 @@
+/*
+ * Copyright (c) 2019, Synopsys, Inc. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <arc_hsdk.dtsi>
+
+/ {
+	model = "hsdk";
+	compatible = "snps,hsdk";
+
+	aliases {
+		uart-0 = &uart0;
+	};
+
+	chosen {
+		zephyr,sram = &ddr0;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+	};
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+};
+
+&gpio0 {
+	status = "okay";
+	interrupts = <56 1>;
+};
+
+&spi0 {
+	status = "okay";
+	clock-frequency = <33333333>;
+};
+
+&spi1 {
+	status = "okay";
+	clock-frequency = <33333333>;
+};
+
+&spi2 {
+	status = "okay";
+	clock-frequency = <33333333>;
+};

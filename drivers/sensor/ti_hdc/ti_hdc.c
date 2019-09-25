@@ -5,12 +5,12 @@
  */
 
 #include <device.h>
-#include <i2c.h>
-#include <gpio.h>
+#include <drivers/i2c.h>
+#include <drivers/gpio.h>
 #include <kernel.h>
-#include <sensor.h>
-#include <misc/util.h>
-#include <misc/__assert.h>
+#include <drivers/sensor.h>
+#include <sys/util.h>
+#include <sys/__assert.h>
 #include <logging/log.h>
 
 #include "ti_hdc.h"

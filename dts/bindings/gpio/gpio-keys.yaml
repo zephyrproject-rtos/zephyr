@@ -1,28 +1,20 @@
-#
 # Copyright (c) 2018, Linaro Limited
-#
 # SPDX-License-Identifier: Apache-2.0
-#
----
-title: GPIO KEYS
-version: 0.1
 
-description: >
-    This is a representation of the GPIO KEYS nodes
+title: GPIO KEYS parent
 
-inherits:
-    !include base.yaml
+description: GPIO KEYS parent node
 
-properties:
-    compatible:
-      constraint: "gpio-keys"
+compatible: "gpio-keys"
 
-    gpios:
-      type: compound
-      category: required
-      generation: define
-
-    label:
-      category: required
-
-...
+child-binding:
+    title: GPIO KEYS node
+    description: GPIO KEYS child node
+    properties:
+       gpios:
+          type: phandle-array
+          required: true
+       label:
+          required: true
+          type: string
+          description: Human readable string describing the device (used by Zephyr for API name)

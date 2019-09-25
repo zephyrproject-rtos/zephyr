@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017 RnDity Sp. z o.o.
+ * Copyright (c) 2019 Centaur Analytics, Inc
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,7 +24,6 @@
 	};
 
 	sram0: memory@20000000 {
-		device_type = "memory";
 		compatible = "mmio-sram";
 	};
 
@@ -47,7 +47,6 @@
 
 		rcc: rcc@40021000 {
 			compatible = "st,stm32-rcc";
-			clocks-controller;
 			#clock-cells = <2>;
 			reg = <0x40021000 0x400>;
 			label = "STM32_CLK_RCC";
@@ -164,6 +163,15 @@
 			compatible = "st,stm32-watchdog";
 			reg = <0x40003000 0x400>;
 			label = "IWDG";
+		};
+
+		wwdg: watchdog@40002c00 {
+			compatible = "st,stm32-window-watchdog";
+			reg = <0x40002C00 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000800>;
+			label = "WWDG";
+			interrupts = <0 7>;
+			status = "disabled";
 		};
 
 		timers1: timers@40012c00 {
@@ -301,6 +309,7 @@
 			interrupts = <12 0>;
 			status = "disabled";
 			label = "ADC_1";
+			#io-channel-cells = <1>;
 		};
 	};
 };

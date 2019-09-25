@@ -1,0 +1,33 @@
+/*
+ * Copyright (c) 2018, Synopsys, Inc. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <mem.h>
+#include "nsim_em.dtsi"
+
+/ {
+
+	model = "nsim_sem_normal";
+	compatible = "snps,nsim_sem_normal";
+
+	iccm0: iccm@0 {
+		device_type = "memory";
+		compatible = "arc,iccm";
+		reg = <0x40000 DT_SIZE_K(256)>;
+	};
+
+	dccm0: dccm@80000000 {
+		device_type = "memory";
+		compatible = "arc,dccm";
+		reg = <0x80040000 DT_SIZE_K(256)>;
+	};
+
+	chosen {
+		zephyr,sram = &dccm0;
+	};
+
+};

@@ -18,6 +18,7 @@ config SOC_MIMXRT1015
 	select HAS_MCUX_LPI2C
 	select HAS_MCUX_LPSPI
 	select HAS_MCUX_LPUART
+	select HAS_MCUX_GPT
 	select HAS_MCUX_TRNG
 	select CPU_HAS_FPU_DOUBLE_PRECISION
 	select CPU_HAS_ARM_MPU
@@ -25,6 +26,8 @@ config SOC_MIMXRT1015
 	select INIT_USB1_PLL
 	select INIT_ENET_PLL
 	select HAS_MCUX_USB_EHCI
+	select HAS_MCUX_USDHC1
+	select HAS_MCUX_USDHC2
 
 config SOC_MIMXRT1021
 	bool "SOC_MIMXRT1021"
@@ -36,6 +39,7 @@ config SOC_MIMXRT1021
 	select HAS_MCUX_LPI2C
 	select HAS_MCUX_LPSPI
 	select HAS_MCUX_LPUART
+	select HAS_MCUX_GPT
 	select HAS_MCUX_TRNG
 	select CPU_HAS_FPU_DOUBLE_PRECISION
 	select CPU_HAS_ARM_MPU
@@ -43,6 +47,8 @@ config SOC_MIMXRT1021
 	select INIT_USB1_PLL
 	select INIT_ENET_PLL
 	select HAS_MCUX_USB_EHCI
+	select HAS_MCUX_USDHC1
+	select HAS_MCUX_USDHC2
 
 config SOC_MIMXRT1051
 	bool "SOC_MIMXRT1051"
@@ -54,6 +60,7 @@ config SOC_MIMXRT1051
 	select HAS_MCUX_LPI2C
 	select HAS_MCUX_LPSPI
 	select HAS_MCUX_LPUART
+	select HAS_MCUX_GPT
 	select HAS_MCUX_TRNG
 	select CPU_HAS_FPU_DOUBLE_PRECISION
 	select CPU_HAS_ARM_MPU
@@ -61,6 +68,8 @@ config SOC_MIMXRT1051
 	select INIT_SYS_PLL
 	select INIT_USB1_PLL
 	select HAS_MCUX_USB_EHCI
+	select HAS_MCUX_USDHC1
+	select HAS_MCUX_USDHC2
 
 config SOC_MIMXRT1052
 	bool "SOC_MIMXRT1052"
@@ -73,6 +82,7 @@ config SOC_MIMXRT1052
 	select HAS_MCUX_LPI2C
 	select HAS_MCUX_LPSPI
 	select HAS_MCUX_LPUART
+	select HAS_MCUX_GPT
 	select HAS_MCUX_TRNG
 	select CPU_HAS_FPU_DOUBLE_PRECISION
 	select CPU_HAS_ARM_MPU
@@ -81,6 +91,8 @@ config SOC_MIMXRT1052
 	select INIT_USB1_PLL
 	select INIT_VIDEO_PLL if DISPLAY_MCUX_ELCDIF
 	select HAS_MCUX_USB_EHCI
+	select HAS_MCUX_USDHC1
+	select HAS_MCUX_USDHC2
 
 config SOC_MIMXRT1061
 	bool "SOC_MIMXRT1061"
@@ -91,6 +103,7 @@ config SOC_MIMXRT1061
 	select HAS_MCUX_IGPIO
 	select HAS_MCUX_LPI2C
 	select HAS_MCUX_LPUART
+	select HAS_MCUX_GPT
 	select HAS_MCUX_TRNG
 	select CPU_HAS_FPU_DOUBLE_PRECISION
 	select CPU_HAS_ARM_MPU
@@ -98,6 +111,8 @@ config SOC_MIMXRT1061
 	select INIT_SYS_PLL
 	select INIT_USB1_PLL
 	select HAS_MCUX_USB_EHCI
+	select HAS_MCUX_USDHC1
+	select HAS_MCUX_USDHC2
 
 config SOC_MIMXRT1062
 	bool "SOC_MIMXRT1062"
@@ -106,9 +121,11 @@ config SOC_MIMXRT1062
 	select HAS_MCUX_CCM
 	select HAS_MCUX_ELCDIF
 	select HAS_MCUX_ENET
+	select HAS_MCUX_PWM
 	select HAS_MCUX_IGPIO
 	select HAS_MCUX_LPI2C
 	select HAS_MCUX_LPUART
+	select HAS_MCUX_GPT
 	select HAS_MCUX_TRNG
 	select CPU_HAS_FPU_DOUBLE_PRECISION
 	select CPU_HAS_ARM_MPU
@@ -117,6 +134,8 @@ config SOC_MIMXRT1062
 	select INIT_USB1_PLL
 	select INIT_VIDEO_PLL if DISPLAY_MCUX_ELCDIF
 	select HAS_MCUX_USB_EHCI
+	select HAS_MCUX_USDHC1
+	select HAS_MCUX_USDHC2
 
 config SOC_MIMXRT1064
 	bool "SOC_MIMXRT1064"
@@ -125,9 +144,11 @@ config SOC_MIMXRT1064
 	select HAS_MCUX_CCM
 	select HAS_MCUX_ELCDIF
 	select HAS_MCUX_ENET
+	select HAS_MCUX_PWM
 	select HAS_MCUX_IGPIO
 	select HAS_MCUX_LPI2C
 	select HAS_MCUX_LPUART
+	select HAS_MCUX_GPT
 	select HAS_MCUX_TRNG
 	select CPU_HAS_FPU_DOUBLE_PRECISION
 	select CPU_HAS_ARM_MPU
@@ -136,6 +157,8 @@ config SOC_MIMXRT1064
 	select INIT_USB1_PLL
 	select INIT_VIDEO_PLL if DISPLAY_MCUX_ELCDIF
 	select HAS_MCUX_USB_EHCI
+	select HAS_MCUX_USDHC1
+	select HAS_MCUX_USDHC2
 
 endchoice
 
@@ -322,6 +345,9 @@ config DATA_DTCM
 config DATA_SEMC
 	bool "Link data into external SEMC-controlled memory"
 	select DEVICE_CONFIGURATION_DATA if NXP_IMX_RT_BOOT_HEADER
+
+config DATA_OCRAM
+	bool "Link data into On-Chip RAM memory"
 
 endchoice
 

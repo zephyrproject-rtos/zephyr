@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: BSD-3-Clause
+
+title: Clock source with two cells
+description: Clock source with two cells
+
+compatible: "clock-two-cell"
+
+"#cells":
+  - one
+  - two

@@ -15,8 +15,7 @@
 #include <kernel.h>
 #include <init.h>
 #include <cortex_m/exc.h>
-#include <nrfx.h>
-#include <nrf_power.h>
+#include <hal/nrf_power.h>
 #include <soc/nrfx_coredep.h>
 #include <logging/log.h>
 
@@ -38,8 +37,6 @@ extern void z_NmiInit(void);
 #else
 #error "Unknown SoC."
 #endif
-
-#include <hal/nrf_power.h>
 
 #define LOG_LEVEL CONFIG_SOC_LOG_LEVEL
 LOG_MODULE_REGISTER(soc);

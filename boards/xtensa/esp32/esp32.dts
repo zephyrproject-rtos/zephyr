@@ -5,11 +5,11 @@
  */
 /dts-v1/;
 
-#include "esp32.dtsi"
+#include <espressif/esp32.dtsi>
 
 / {
 	model = "esp32";
-	compatible = "xtensa,esp32";
+	compatible = "espressif,esp32";
 
 	aliases {
 		uart-0 = &uart0;
@@ -18,10 +18,41 @@
 	chosen {
 		zephyr,sram = &sram0;
 		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
 	};
+};
+
+&cpu0 {
+	clock-frequency = <40000000>;
+};
+
+&cpu1 {
+	clock-frequency = <40000000>;
 };
 
 &uart0 {
 	status = "okay";
 	current-speed = <115200>;
+	tx-pin = <1>;
+	rx-pin = <3>;
+	rts-pin = <22>;
+	cts-pin = <19>;
+};
+
+&uart1 {
+	current-speed = <115200>;
+	tx-pin = <10>;
+	rx-pin = <9>;
+	rts-pin = <11>;
+	cts-pin = <6>;
+	hw-flow-control;
+};
+
+&uart2 {
+	current-speed = <115200>;
+	tx-pin = <17>;
+	rx-pin = <16>;
+	rts-pin = <7>;
+	cts-pin = <8>;
+	hw-flow-control;
 };

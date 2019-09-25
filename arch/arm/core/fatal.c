@@ -17,107 +17,72 @@
 
 #include <kernel.h>
 #include <kernel_structs.h>
-#include <misc/printk.h>
-#include <logging/log_ctrl.h>
+#include <logging/log.h>
+LOG_MODULE_DECLARE(os);
 
-/**
- *
- * @brief Kernel fatal error handler
- *
- * This routine is called when fatal error conditions are detected by software
- * and is responsible only for reporting the error. Once reported, it then
- * invokes the user provided routine z_SysFatalErrorHandler() which is
- * responsible for implementing the error handling policy.
- *
- * The caller is expected to always provide a usable ESF. In the event that the
- * fatal error does not have a hardware generated ESF, the caller should either
- * create its own or use a pointer to the global default ESF <_default_esf>.
- *
- * Unlike other arches, this function may return if z_SysFatalErrorHandler
- * determines that only the current thread should be aborted and the CPU
- * was in handler mode. PendSV will be asserted in this case and the current
- * thread taken off the run queue. Leaving the exception will immediately
- * trigger a context switch.
- *
- * @param reason the reason that the handler was called
- * @param pEsf pointer to the exception stack frame
- *
- * @return This function does not return.
- */
-void z_NanoFatalErrorHandler(unsigned int reason,
-					  const NANO_ESF *pEsf)
+static void esf_dump(const z_arch_esf_t *esf)
 {
-#ifdef CONFIG_THREAD_NAME
-	const char *thread_name = k_thread_name_get(k_current_get());
-#endif
-
-	LOG_PANIC();
-
-	switch (reason) {
-	case _NANO_ERR_HW_EXCEPTION:
-		printk("***** Hardware exception *****\n");
-		break;
-#if defined(CONFIG_STACK_CANARIES) || defined(CONFIG_STACK_SENTINEL) || \
-		defined(CONFIG_HW_STACK_PROTECTION) || \
-		defined(CONFIG_USERSPACE)
-	case _NANO_ERR_STACK_CHK_FAIL:
-		printk("***** Stack Check Fail! *****\n");
-		break;
-#endif /* CONFIG_STACK_CANARIES */
-
-	case _NANO_ERR_ALLOCATION_FAIL:
-		printk("**** Kernel Allocation Failure! ****\n");
-		break;
-
-	case _NANO_ERR_KERNEL_OOPS:
-		printk("***** Kernel OOPS! *****\n");
-		break;
-
-	case _NANO_ERR_KERNEL_PANIC:
-		printk("***** Kernel Panic! *****\n");
-		break;
-
-	default:
-		printk("**** Unknown Fatal Error %d! ****\n", reason);
-		break;
+	LOG_ERR("r0/a1:  0x%08x  r1/a2:  0x%08x  r2/a3:  0x%08x",
+		esf->basic.a1, esf->basic.a2, esf->basic.a3);
+	LOG_ERR("r3/a4:  0x%08x r12/ip:  0x%08x r14/lr:  0x%08x",
+		esf->basic.a4, esf->basic.ip, esf->basic.lr);
+	LOG_ERR(" xpsr:  0x%08x", esf->basic.xpsr);
+#if defined(CONFIG_FLOAT) && defined(CONFIG_FP_SHARING)
+	for (int i = 0; i < 16; i += 4) {
+		LOG_ERR("s[%d]:  0x%08x  s[%d]:  0x%08x"
+			"  s[%d]:  0x%08x  s[%d]:  0x%08x\n",
+			i, (u32_t)esf->s[i],
+			i + 1, (u32_t)esf->s[i + 1],
+			i + 2, (u32_t)esf->s[i + 2],
+			i + 3, (u32_t)esf->s[i + 3]);
 	}
-	printk("Current thread ID = %p"
-#ifdef CONFIG_THREAD_NAME
-	       " (%s)"
+	LOG_ERR("fpscr:  0x%08x\n", esf->fpscr);
 #endif
-	       "\n"
-	       "Faulting instruction address = 0x%x\n",
-	       k_current_get(),
-#ifdef CONFIG_THREAD_NAME
-	       thread_name ? thread_name : "unknown",
-#endif
-		   pEsf->basic.pc);
-
-	/*
-	 * Now that the error has been reported, call the user implemented
-	 * policy
-	 * to respond to the error.  The decisions as to what responses are
-	 * appropriate to the various errors are something the customer must
-	 * decide.
-	 */
-
-	z_SysFatalErrorHandler(reason, pEsf);
+	LOG_ERR("Faulting instruction address (r15/pc): 0x%08x",
+		esf->basic.pc);
 }
 
-void z_do_kernel_oops(const NANO_ESF *esf)
+void z_arm_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
 {
-	z_NanoFatalErrorHandler(esf->basic.r0, esf);
+
+	if (esf != NULL) {
+		esf_dump(esf);
+	}
+	z_fatal_error(reason, esf);
+}
+
+void z_do_kernel_oops(const z_arch_esf_t *esf)
+{
+	/* Stacked R0 holds the exception reason. */
+	unsigned int reason = esf->basic.r0;
+
+#if defined(CONFIG_USERSPACE)
+	if ((__get_CONTROL() & CONTROL_nPRIV_Msk) == CONTROL_nPRIV_Msk) {
+		/*
+		 * Exception triggered from nPRIV mode.
+		 *
+		 * User mode is only allowed to induce oopses and stack check
+		 * failures via software-triggered system fatal exceptions.
+		 */
+		if (!((esf->basic.r0 == K_ERR_KERNEL_OOPS) ||
+			(esf->basic.r0 == K_ERR_STACK_CHK_FAIL))) {
+
+			reason = K_ERR_KERNEL_OOPS;
+		}
+	}
+
+#endif /* CONFIG_USERSPACE */
+	z_arm_fatal_error(reason, esf);
 }
 
 FUNC_NORETURN void z_arch_syscall_oops(void *ssf_ptr)
 {
 	u32_t *ssf_contents = ssf_ptr;
-	NANO_ESF oops_esf = { 0 };
+	z_arch_esf_t oops_esf = { 0 };
 
-	LOG_PANIC();
-
+	/* TODO: Copy the rest of the register set out of ssf_ptr */
 	oops_esf.basic.pc = ssf_contents[3];
 
-	z_do_kernel_oops(&oops_esf);
+	z_arm_fatal_error(K_ERR_KERNEL_OOPS, &oops_esf);
 	CODE_UNREACHABLE;
 }

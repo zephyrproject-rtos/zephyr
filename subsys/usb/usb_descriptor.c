@@ -8,8 +8,8 @@
  */
 
 #include <string.h>
-#include <misc/byteorder.h>
-#include <misc/__assert.h>
+#include <sys/byteorder.h>
+#include <sys/__assert.h>
 #include <usb/usbstruct.h>
 #include <usb/usb_device.h>
 #include <usb/usb_common.h>
@@ -164,8 +164,8 @@ static void ascii7_to_utf16le(void *descriptor)
 	int ascii_idx_max = USB_BSTRING_ASCII_IDX_MAX(str_descr->bLength);
 	u8_t *buf = (u8_t *)&str_descr->bString;
 
-	LOG_DBG("idx_max %d, ascii_idx_max %d, buf %x",
-		idx_max, ascii_idx_max, (u32_t)buf);
+	LOG_DBG("idx_max %d, ascii_idx_max %d, buf %p",
+		idx_max, ascii_idx_max, buf);
 
 	for (int i = idx_max; i >= 0; i -= 2) {
 		LOG_DBG("char %c : %x, idx %d -> %d",
@@ -377,6 +377,12 @@ static int usb_fix_descriptor(struct usb_desc_header *head)
 			numof_ifaces++;
 			break;
 		case USB_ENDPOINT_DESC:
+			if (!cfg_data) {
+				LOG_ERR("Uninitialized usb_cfg_data pointer, "
+					"corrupted device descriptor?");
+				return -1;
+			}
+
 			LOG_DBG("Endpoint descriptor %p", head);
 			ep_descr = (struct usb_ep_descriptor *)head;
 			if (usb_validate_ep_cfg_data(ep_descr,
@@ -409,7 +415,7 @@ static int usb_fix_descriptor(struct usb_desc_header *head)
 					return -1;
 				}
 
-				LOG_DBG("Now the wTotalLength is %d",
+				LOG_DBG("Now the wTotalLength is %zd",
 					(u8_t *)head - (u8_t *)cfg_descr);
 				sys_put_le16((u8_t *)head - (u8_t *)cfg_descr,
 					     (u8_t *)&cfg_descr->wTotalLength);

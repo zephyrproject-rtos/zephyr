@@ -13,7 +13,7 @@
 #ifndef __NET_6LO_H
 #define __NET_6LO_H
 
-#include <misc/slist.h>
+#include <sys/slist.h>
 #include <zephyr/types.h>
 
 #include <net/net_pkt.h>

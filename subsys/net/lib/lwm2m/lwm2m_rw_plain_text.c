@@ -121,20 +121,55 @@ static size_t put_s64(struct lwm2m_output_context *out,
 	return plain_text_put_format(out, "%lld", value);
 }
 
-static size_t put_float32fix(struct lwm2m_output_context *out,
-			     struct lwm2m_obj_path *path,
-			     float32_value_t *value)
+size_t plain_text_put_float32fix(struct lwm2m_output_context *out,
+				 struct lwm2m_obj_path *path,
+				 float32_value_t *value)
 {
-	return plain_text_put_format(out, "%d.%d",
-				     value->val1, value->val2);
+	size_t len;
+	char buf[sizeof("000000")];
+
+	/* value of 123 -> "000123" -- ignore sign */
+	len = snprintf(buf, sizeof(buf), "%06d", abs(value->val2));
+	if (len != 6U) {
+		strcpy(buf, "0");
+	} else {
+		/* clear ending zeroes, but leave 1 if needed */
+		while (len > 1U && buf[len - 1] == '0') {
+			buf[--len] = '\0';
+		}
+	}
+
+	return plain_text_put_format(out, "%s%d.%s",
+				     /* handle negative val2 when val1 is 0 */
+				     (value->val1 == 0 && value->val2 < 0) ?
+						"-" : "",
+				     value->val1, buf);
 }
 
-static size_t put_float64fix(struct lwm2m_output_context *out,
-			     struct lwm2m_obj_path *path,
-			     float64_value_t *value)
+size_t plain_text_put_float64fix(struct lwm2m_output_context *out,
+				 struct lwm2m_obj_path *path,
+				 float64_value_t *value)
 {
-	return plain_text_put_format(out, "%lld.%lld",
-				     value->val1, value->val2);
+	size_t len;
+	char buf[sizeof("000000000")];
+
+	/* value of 123 -> "000000123" -- ignore sign */
+	len = snprintf(buf, sizeof(buf), "%09lld",
+		       (long long int)abs(value->val2));
+	if (len != 9U) {
+		strcpy(buf, "0");
+	} else {
+		/* clear ending zeroes, but leave 1 if needed */
+		while (len > 1U && buf[len - 1] == '0') {
+			buf[--len] = '\0';
+		}
+	}
+
+	return plain_text_put_format(out, "%s%lld.%s",
+				     /* handle negative val2 when val1 is 0 */
+				     (value->val1 == 0 && value->val2 < 0) ?
+						"-" : "",
+				     value->val1, buf);
 }
 
 static size_t put_string(struct lwm2m_output_context *out,
@@ -301,8 +336,8 @@ const struct lwm2m_writer plain_text_writer = {
 	.put_s32 = put_s32,
 	.put_s64 = put_s64,
 	.put_string = put_string,
-	.put_float32fix = put_float32fix,
-	.put_float64fix = put_float64fix,
+	.put_float32fix = plain_text_put_float32fix,
+	.put_float64fix = plain_text_put_float64fix,
 	.put_bool = put_bool,
 };
 
@@ -316,23 +351,22 @@ const struct lwm2m_reader plain_text_reader = {
 	.get_opaque = get_opaque,
 };
 
-int do_read_op_plain_text(struct lwm2m_engine_obj *obj,
-			  struct lwm2m_message *msg, int content_format)
+int do_read_op_plain_text(struct lwm2m_message *msg, int content_format)
 {
 	/* Plain text can only return single resource */
 	if (msg->path.level != 3U) {
 		return -EPERM; /* NOT_ALLOWED */
 	}
 
-	return lwm2m_perform_read_op(obj, msg, content_format);
+	return lwm2m_perform_read_op(msg, content_format);
 }
 
-int do_write_op_plain_text(struct lwm2m_engine_obj *obj,
-			   struct lwm2m_message *msg)
+int do_write_op_plain_text(struct lwm2m_message *msg)
 {
 	struct lwm2m_engine_obj_inst *obj_inst = NULL;
 	struct lwm2m_engine_obj_field *obj_field;
-	struct lwm2m_engine_res_inst *res = NULL;
+	struct lwm2m_engine_res *res = NULL;
+	struct lwm2m_engine_res_inst *res_inst = NULL;
 	int ret, i;
 	u8_t created = 0U;
 
@@ -341,7 +375,7 @@ int do_write_op_plain_text(struct lwm2m_engine_obj *obj,
 		return ret;
 	}
 
-	obj_field = lwm2m_get_engine_obj_field(obj, msg->path.res_id);
+	obj_field = lwm2m_get_engine_obj_field(obj_inst->obj, msg->path.res_id);
 	if (!obj_field) {
 		return -ENOENT;
 	}
@@ -365,6 +399,21 @@ int do_write_op_plain_text(struct lwm2m_engine_obj *obj,
 		return -ENOENT;
 	}
 
-	msg->path.level = 3U;
-	return lwm2m_write_handler(obj_inst, res, obj_field, msg);
+	for (i = 0; i < res->res_inst_count; i++) {
+		if (res->res_instances[i].res_inst_id ==
+		    msg->path.res_inst_id) {
+			res_inst = &res->res_instances[i];
+			break;
+		}
+	}
+
+	if (!res_inst) {
+		return -ENOENT;
+	}
+
+	if (msg->path.level < 3) {
+		msg->path.level = 3U;
+	}
+
+	return lwm2m_write_handler(obj_inst, res, res_inst, obj_field, msg);
 }

@@ -5,7 +5,7 @@
  */
 
 #include <zephyr.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 
 u32_t var_sram2_data = 10U;
 u32_t var_sram2_bss;

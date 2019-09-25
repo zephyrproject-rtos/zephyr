@@ -41,6 +41,9 @@ z_set_thread_return_value(struct k_thread *thread, unsigned int value)
 	thread->callee_saved.retval = value;
 }
 
+FUNC_NORETURN void z_nios2_fatal_error(unsigned int reason,
+				       const z_arch_esf_t *esf);
+
 #define z_is_in_isr() (_kernel.nested != 0U)
 
 #ifdef CONFIG_IRQ_OFFLOAD

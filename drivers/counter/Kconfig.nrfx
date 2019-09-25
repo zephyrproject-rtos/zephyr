@@ -13,7 +13,7 @@ config COUNTER_NRF_RTC
 config COUNTER_TIMER0
 	bool "Enable Counter on TIMER0"
 	depends on HAS_HW_NRF_TIMER0
-	depends on !BT_LL_SW
+	depends on !BT_LL_SW_LEGACY && !BT_LL_SW_SPLIT
 	select COUNTER_NRF_TIMER
 	select NRFX_TIMER0
 
@@ -44,7 +44,7 @@ config COUNTER_TIMER4
 config COUNTER_RTC0
 	bool "Enable Counter on RTC0"
 	depends on HAS_HW_NRF_RTC0
-	depends on !BT_LL_SW
+	depends on !BT_LL_SW_LEGACY && !BT_LL_SW_SPLIT
 	select COUNTER_NRF_RTC
 	select NRFX_RTC0
 
@@ -62,9 +62,9 @@ config COUNTER_RTC2
 	select NRFX_RTC2
 
 # Internal flag which detects if PPI wrap feature is enabled for any instance
-if $(dt_int_val,DT_INST_0_NORDIC_NRF_RTC_PPI_WRAP) > 0 || \
-   $(dt_int_val,DT_INST_1_NORDIC_NRF_RTC_PPI_WRAP) > 0 || \
-   $(dt_int_val,DT_INST_2_NORDIC_NRF_RTC_PPI_WRAP) > 0
+if $(dt_node_has_bool_prop,rtc-0,ppi-wrap) || \
+   $(dt_node_has_bool_prop,rtc-1,ppi-wrap) || \
+   $(dt_node_has_bool_prop,rtc-2,ppi-wrap)
 
 config COUNTER_RTC_WITH_PPI_WRAP
 	bool

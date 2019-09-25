@@ -1,21 +1,12 @@
-#
 # Copyright (c) 2018, Linaro Limited
-#
 # SPDX-License-Identifier: Apache-2.0
-#
----
+
 title: AMS (Austria Mikro Systeme) Digital Air Quality Sensor CCS811
-version: 0.1
 
 description: >
     This binding gives a base representation of CCS811 digital air quality
     sensor
 
-inherits:
-    !include i2c-device.yaml
+compatible: "ams,ccs811"
 
-properties:
-    compatible:
-      constraint: "ams,ccs811"
-
-...
+include: i2c-device.yaml

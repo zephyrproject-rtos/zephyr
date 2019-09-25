@@ -8,7 +8,7 @@
 
 #include <init.h>
 
-#include <misc/byteorder.h>
+#include <sys/byteorder.h>
 #include <usb/usb_device.h>
 #include <usb/usb_common.h>
 #include <usb_descriptor.h>
@@ -142,12 +142,6 @@ static int loopback_vendor_handler(struct usb_setup_packet *setup,
 
 	if ((REQTYPE_GET_DIR(setup->bmRequestType) == REQTYPE_DIR_TO_HOST) &&
 	    (setup->bRequest == 0x5c)) {
-		if (setup->wLength > sizeof(loopback_buf)) {
-			return -ENOTSUP;
-		}
-
-		*data = loopback_buf;
-		*len = setup->wLength;
 		LOG_DBG("Device-to-Host, wLength %d, data %p",
 			setup->wLength, *data);
 		return 0;
@@ -166,7 +160,7 @@ static void loopback_interface_config(struct usb_desc_header *head,
 }
 
 /* usb.rst device config data start */
-USBD_CFG_DATA_DEFINE(loopback) struct usb_cfg_data loopback_config = {
+USBD_CFG_DATA_DEFINE(primary, loopback) struct usb_cfg_data loopback_config = {
 	.usb_device_description = NULL,
 	.interface_config = loopback_interface_config,
 	.interface_descriptor = &loopback_cfg.if0,

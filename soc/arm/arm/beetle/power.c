@@ -6,7 +6,7 @@
 
 #include <device.h>
 #include <init.h>
-#include <power.h>
+#include <power/power.h>
 #include <soc.h>
 #include <soc_power.h>
 #include <arch/cpu.h>

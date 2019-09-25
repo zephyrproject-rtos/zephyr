@@ -20,6 +20,12 @@ module = CAN
 module-str = CAN
 source "subsys/logging/Kconfig.template.log_config"
 
+config CAN_SHELL
+	bool "Enable CAN Shell"
+	depends on SHELL
+	help
+	  Enable CAN Shell for testing.
+
 config CAN_INIT_PRIORITY
 	int "CAN driver init priority"
 	default 80
@@ -36,14 +42,28 @@ config CAN_WORKQ_FRAMES_BUF_CNT
 	help
 	  Number of frames in the buffer of a zcan_work.
 
+config CAN_RX_TIMESTAMP
+	bool "Enable receiving timestamps"
+	depends on CAN_STM32 || CAN_MCUX_FLEXCAN
+	help
+	  This option enables a timestamp value of the CAN free running timer.
+	  The value is incremented every bit time and starts when the controller
+	  is initialized.
+
+config CAN_0
+	bool "Enable CAN 0"
+	help
+	  Enable CAN controller 0
+
 config CAN_1
 	bool "Enable CAN 1"
-	default y
 	help
 	  Enable CAN controller 1
 
 source "drivers/can/Kconfig.stm32"
+source "drivers/can/Kconfig.mcux"
 source "drivers/can/Kconfig.mcp2515"
 source "drivers/can/Kconfig.loopback"
+source "drivers/can/Kconfig.net"
 
 endif # CAN

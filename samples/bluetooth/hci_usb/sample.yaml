@@ -3,6 +3,7 @@ sample:
 tests:
   sample.bluetooth.hci_usb:
     harness: bluetooth
-    depends_on: usb_device
-    platform_whitelist: quark_se_c1000_devboard nrf52840_pca10056
+    depends_on: usb_device ble
     tags: usb bluetooth
+    # FIXME: exclude due to build error
+    platform_exclude: 96b_carbon

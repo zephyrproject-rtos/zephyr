@@ -15,6 +15,10 @@
 
 #include <app_memory/app_memdomain.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct unit_test {
 	const char *name;
 	void (*test)(void);
@@ -48,7 +52,7 @@ void ztest_test_fail(void);
  *
  * Normally a test passes just by returning without an assertion failure.
  * However, if the success case for your test involves a fatal fault,
- * you can call this function from z_SysFatalErrorHandler to indicate that
+ * you can call this function from k_sys_fatal_error_handler to indicate that
  * the test passed before aborting the thread.
  */
 void ztest_test_pass(void);
@@ -170,5 +174,9 @@ extern struct k_mem_domain ztest_mem_domain;
 /**
  * @}
  */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __ZTEST_ASSERT_H__ */

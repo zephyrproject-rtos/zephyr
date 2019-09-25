@@ -23,17 +23,20 @@
 		compatible = "st,lsm6dsl";
 		reg = <0x6b>;
 		label = "LSM6DSL";
+		irq-gpios = <&arduino_header 10 0>;	/* D4 */
 	};
 
 	lsm303agr-magn@1e {
-		compatible = "st,lis2mdl-magn","st,lsm303agr-magn";
+		compatible = "st,lis2mdl","st,lsm303agr-magn";
 		reg = <0x1e>;
 		label = "LSM303AGR-MAGN";
+		irq-gpios = <&arduino_header 3 0>;	/* A3 */
 	};
 
 	lsm303agr-accel@19 {
 		compatible = "st,lis2dh", "st,lsm303agr-accel";
 		reg = <0x19>;
 		label = "LSM303AGR-ACCEL";
+		irq-gpios = <&arduino_header 3 0>;	/* A3 */
 	};
 };

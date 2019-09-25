@@ -14,7 +14,7 @@
 #else
 #define BT_HCI_VS_HW_PLAT 0
 #define BT_HCI_VS_HW_VAR  0
-#endif /* CONFIG_SOC_FAMILY_NRF */
+#endif /* CONFIG_SOC_COMPATIBLE_NRF */
 
 /* Map vendor command handler directly to common implementation */
 inline int hci_vendor_cmd_handle(u16_t ocf, struct net_buf *cmd,

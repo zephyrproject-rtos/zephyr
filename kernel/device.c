@@ -4,11 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <errno.h>
 #include <string.h>
 #include <device.h>
-#include <misc/util.h>
-#include <atomic.h>
+#include <sys/atomic.h>
 #include <syscall_handler.h>
 
 extern struct device __device_init_start[];
@@ -95,7 +93,7 @@ struct device *z_impl_device_get_binding(const char *name)
 }
 
 #ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER(device_get_binding, name)
+static inline struct device *z_vrfy_device_get_binding(const char *name)
 {
 	char name_copy[Z_DEVICE_MAX_NAME_LEN];
 
@@ -104,8 +102,9 @@ Z_SYSCALL_HANDLER(device_get_binding, name)
 		return 0;
 	}
 
-	return (u32_t)z_impl_device_get_binding(name_copy);
+	return z_impl_device_get_binding(name_copy);
 }
+#include <syscalls/device_get_binding_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT

@@ -18,22 +18,23 @@
 #include <limits.h>
 #include <toolchain.h>
 #include <linker/sections.h>
-#include <atomic.h>
-#include <misc/__assert.h>
+#include <sys/atomic.h>
+#include <sys/__assert.h>
 #include <sched_priq.h>
-#include <misc/dlist.h>
-#include <misc/slist.h>
-#include <misc/sflist.h>
-#include <misc/util.h>
-#include <misc/mempool_base.h>
+#include <sys/dlist.h>
+#include <sys/slist.h>
+#include <sys/sflist.h>
+#include <sys/util.h>
+#include <sys/mempool_base.h>
 #include <kernel_version.h>
 #include <random/rand32.h>
 #include <kernel_arch_thread.h>
 #include <syscall.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 #include <arch/cpu.h>
-#include <misc/rb.h>
+#include <sys/rb.h>
 #include <sys_clock.h>
 #include <spinlock.h>
+#include <fatal.h>
 
 #endif /* ZEPHYR_INCLUDE_KERNEL_INCLUDES_H_ */

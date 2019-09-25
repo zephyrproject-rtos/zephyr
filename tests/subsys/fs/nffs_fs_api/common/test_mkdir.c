@@ -23,7 +23,7 @@
 
 #include <stdint.h>
 #include <stdio.h>
-#include <fs.h>
+#include <fs/fs.h>
 #include <nffs/nffs.h>
 #include "nffs_test_utils.h"
 #include <ztest.h>

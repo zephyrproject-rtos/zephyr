@@ -207,6 +207,6 @@ int sntp_query(struct sntp_ctx *ctx, u32_t timeout, struct sntp_time *time)
 void sntp_close(struct sntp_ctx *ctx)
 {
 	if (ctx) {
-		close(ctx->sock.fd);
+		(void)close(ctx->sock.fd);
 	}
 }

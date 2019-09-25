@@ -13,7 +13,7 @@
 #ifndef __NET_IEEE802154_FRAGMENT_H__
 #define __NET_IEEE802154_FRAGMENT_H__
 
-#include <misc/slist.h>
+#include <sys/slist.h>
 #include <zephyr/types.h>
 
 #include <net/net_pkt.h>

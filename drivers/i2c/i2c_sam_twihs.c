@@ -12,12 +12,12 @@
 
 
 #include <errno.h>
-#include <misc/__assert.h>
+#include <sys/__assert.h>
 #include <kernel.h>
 #include <device.h>
 #include <init.h>
 #include <soc.h>
-#include <i2c.h>
+#include <drivers/i2c.h>
 
 #define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
 #include <logging/log.h>

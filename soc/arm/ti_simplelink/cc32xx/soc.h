@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#ifndef TI_SIMPLELINK_CC32XX_SOC_H_
+#define TI_SIMPLELINK_CC32XX_SOC_H_
+
 #include <inc/hw_types.h>
 #include <driverlib/prcm.h>
 
@@ -34,3 +37,6 @@ typedef enum {
 #define __MPU_PRESENT                  0 /* Zephyr has no MPU support */
 #define __NVIC_PRIO_BITS               DT_NUM_IRQ_PRIO_BITS
 #define __Vendor_SysTickConfig         0 /* Default to standard SysTick */
+
+#endif /* TI_SIMPLELINK_CC32XX_SOC_H_ */
+

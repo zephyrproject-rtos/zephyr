@@ -1,36 +1,18 @@
----
 title: STM32 TIMERS
-version: 0.1
 
 description: >
     This binding gives a base representation of the STM32 TIMERS
 
-inherits:
-    !include base.yaml
+compatible: "st,stm32-timers"
+
+include: base.yaml
 
 properties:
-    "#address-cells":
-      type: int
-      category: required
-      description: should be 1.
-    "#size-cells":
-      type: int
-      category: required
-      description: should be 0.
-
-    compatible:
-      constraint: "st,stm32-timers"
-
     label:
-      category: required
+      required: true
 
     reg:
-      category: required
+      required: true
 
     clocks:
-      type: array
-      category: required
-      description: Clock gate information
-      generation: define
-
-...
+      required: true

@@ -1,0 +1,12 @@
+# Copyright (c) 2019 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for CPUs
+
+include: base.yaml
+
+properties:
+    clock-frequency:
+      type: int
+      required: false
+      description: Clock frequency in Hz

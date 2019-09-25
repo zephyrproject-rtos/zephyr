@@ -22,30 +22,10 @@
 extern "C" {
 #endif
 
-#ifndef _ASMLANGUAGE
-#include <toolchain/gcc.h>
-extern void z_NanoFatalErrorHandler(unsigned int, const NANO_ESF*);
-extern void z_SysFatalErrorHandler(unsigned int cause, const NANO_ESF *esf);
-#endif
-
-#define _NANO_ERR_HW_EXCEPTION (0)      /* MPU/Bus/Usage fault */
-#define _NANO_ERR_STACK_CHK_FAIL (2)    /* Stack corruption detected */
-#define _NANO_ERR_ALLOCATION_FAIL (3)   /* Kernel Allocation Failure */
-#define _NANO_ERR_KERNEL_OOPS (4)       /* Kernel oops (fatal to thread) */
-#define _NANO_ERR_KERNEL_PANIC (5)	/* Kernel panic (fatal to system) */
-
-
 /*
- * the exception caused by kernel will be handled in interrupt context
- * when the processor is already in interrupt context, no need to raise
- * a new exception; when the processor is in thread context, the exception
- * will be raised
+ * use trap_s to raise a SW exception
  */
 #define Z_ARCH_EXCEPT(reason_p)	do { \
-	if (z_arc_v2_irq_unit_is_in_isr()) { \
-		printk("@ %s:%d:\n", __FILE__,  __LINE__); \
-		z_NanoFatalErrorHandler(reason_p, 0); \
-	} else {\
 		__asm__ volatile ( \
 		"mov r0, %[reason]\n\t" \
 		"trap_s %[id]\n\t" \
@@ -54,7 +34,6 @@ extern void z_SysFatalErrorHandler(unsigned int cause, const NANO_ESF *esf);
 		[id] "i" (_TRAP_S_CALL_RUNTIME_EXCEPT) \
 		: "memory"); \
 		CODE_UNREACHABLE; \
-	} \
 	} while (false)
 
 #ifdef __cplusplus

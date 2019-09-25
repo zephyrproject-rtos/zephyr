@@ -14,7 +14,7 @@
 #include <zephyr.h>
 #include <device.h>
 #include <soc.h>
-#include <dma.h>
+#include <drivers/dma.h>
 
 #include <audio/dmic.h>
 #include "intel_dmic.h"
@@ -505,7 +505,7 @@ static int fir_coef_scale(s32_t *fir_scale, int *fir_shift, int add_shift,
  * decimator. For the settings chosen for FIFOs A and B output a lookup
  * is done for FIR coefficients from the included coefficients tables.
  * For some decimation factors there may be several length coefficient sets.
- * It is due to possible restruction of decimation engine cycles per given
+ * It is due to possible restriction of decimation engine cycles per given
  * sample rate. If the coefficients length is exceeded the lookup continues.
  * Therefore the list of coefficient set must present the filters for a
  * decimation factor in decreasing length order.
@@ -1218,7 +1218,7 @@ static void dmic_start(struct device *dev)
 	/* Clear soft reset for all/used PDM controllers. This should
 	 * start capture in sync.
 	 */
-	LOG_DBG("Releasing soft reset for all PDM controlers");
+	LOG_DBG("Releasing soft reset for all PDM controllers");
 	for (i = 0; i < DMIC_HW_CONTROLLERS; i++) {
 		DMIC_REG_UPD(CIC_CONTROL(i), CIC_CONTROL_SOFT_RESET_BIT, 0);
 	}

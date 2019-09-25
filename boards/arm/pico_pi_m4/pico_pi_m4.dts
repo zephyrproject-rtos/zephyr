@@ -1,0 +1,31 @@
+/*
+ * Copyright (c) 2019, Joris Offouga
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_imx7d_m4.dtsi>
+
+/ {
+	model = "Pico-Pi IMX7D board";
+	compatible = "nxp,mcimx7d_m4";
+
+	aliases {
+		uart-6 = &uart6;
+	};
+
+	chosen {
+		zephyr,flash = &tcml_code;
+		zephyr,sram = &tcmu_sys;
+		zephyr,console = &uart6;
+		zephyr,shell-uart = &uart6;
+	};
+};
+
+&uart6 {
+	status = "okay";
+	current-speed = <115200>;
+	modem-mode = <0>;
+};

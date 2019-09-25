@@ -6,6 +6,12 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
+# NOTE: This file is part of the old device tree scripts, which will be removed
+# later. They are kept to generate some legacy #defines via the
+# --deprecated-only flag.
+#
+# The new scripts are gen_defines.py, edtlib.py, and dtlib.py.
+
 # vim: ai:ts=4:sw=4
 
 import os, fnmatch
@@ -59,7 +65,8 @@ def generate_prop_defines(node_path, prop):
     # named 'prop' on the device tree node at 'node_path'
 
     binding = get_binding(node_path)
-    if 'parent' in binding and 'bus' in binding['parent']:
+    if 'parent-bus' in binding or \
+       'parent' in binding and 'bus' in binding['parent']:
         # If the binding specifies a parent for the node, then include the
         # parent in the #define's generated for the properties
         parent_path = get_parent_path(node_path)
@@ -72,20 +79,26 @@ def generate_prop_defines(node_path, prop):
 
     if prop == 'reg':
         reg.extract(node_path, names, def_label, 1)
-    elif prop == 'interrupts' or prop == 'interrupts-extended':
+    elif prop in {'interrupts', 'interrupts-extended'}:
         interrupts.extract(node_path, prop, names, def_label)
     elif prop == 'compatible':
         compatible.extract(node_path, prop, def_label)
     elif 'clocks' in prop:
         clocks.extract(node_path, prop, def_label)
-    elif 'pwms' in prop or 'gpios' in prop:
+    elif 'pwms' in prop or '-gpios' in prop or prop == "gpios":
         prop_values = reduced[node_path]['props'][prop]
         generic = prop[:-1]  # Drop the 's' from the prop
 
+        # Deprecated the non-'S' form
         extract_controller(node_path, prop, prop_values, 0,
-                           def_label, generic)
+                           def_label, generic, deprecate=True)
+        extract_controller(node_path, prop, prop_values, 0,
+                           def_label, prop)
+        # Deprecated the non-'S' form
         extract_cells(node_path, prop, prop_values,
-                      names, 0, def_label, generic)
+                      names, 0, def_label, generic, deprecate=True)
+        extract_cells(node_path, prop, prop_values,
+                      names, 0, def_label, prop)
     else:
         default.extract(node_path, prop,
                         binding['properties'][prop]['type'],
@@ -105,11 +118,18 @@ def generate_node_defines(node_path):
         flash.extract_partition(node_path)
         return
 
+    if get_binding(node_path) is None:
+        return
+
     generate_bus_defines(node_path)
 
+    props = get_binding(node_path).get('properties')
+    if not props:
+        return
+
     # Generate per-property ('foo = <1 2 3>', etc.) #defines
-    for yaml_prop, yaml_val in get_binding(node_path)['properties'].items():
-        if 'generation' not in yaml_val:
+    for yaml_prop, yaml_val in props.items():
+        if yaml_prop.startswith("#") or yaml_prop.endswith("-map"):
             continue
 
         match = False
@@ -135,7 +155,8 @@ def generate_bus_defines(node_path):
     #   bus: ...
 
     binding = get_binding(node_path)
-    if not ('parent' in binding and 'bus' in binding['parent']):
+    if not ('parent-bus' in binding or
+            'parent' in binding and 'bus' in binding['parent']):
         return
 
     parent_path = get_parent_path(node_path)
@@ -143,17 +164,24 @@ def generate_bus_defines(node_path):
     # Check that parent has matching child bus value
     try:
         parent_binding = get_binding(parent_path)
-        parent_bus = parent_binding['child']['bus']
+        if 'child-bus' in parent_binding:
+            parent_bus = parent_binding['child-bus']
+        else:
+            parent_bus = parent_binding['child']['bus']
     except (KeyError, TypeError):
         raise Exception("{0} defines parent {1} as bus master, but {1} is not "
                         "configured as bus master in binding"
                         .format(node_path, parent_path))
 
-    if parent_bus != binding['parent']['bus']:
+    if 'parent-bus' in binding:
+        bus = binding['parent-bus']
+    else:
+        bus = binding['parent']['bus']
+
+    if parent_bus != bus:
         raise Exception("{0} defines parent {1} as {2} bus master, but {1} is "
                         "configured as {3} bus master"
-                        .format(node_path, parent_path,
-                                binding['parent']['bus'], parent_bus))
+                        .format(node_path, parent_path, bus, parent_bus))
 
     # Generate *_BUS_NAME #define
     extract_bus_name(
@@ -190,54 +218,32 @@ def merge_properties(parent, fname, to_dict, from_dict):
         else:
             to_dict[k] = from_dict[k]
 
-            # Warn when overriding a property and changing its value...
-            if (k in to_dict and to_dict[k] != from_dict[k] and
-                # ...unless it's the 'title', 'description', or 'version'
-                # property. These are overriden deliberately.
-                not k in {'title', 'version', 'description'} and
-                # Also allow the category to be changed from 'optional' to
-                # 'required' without a warning
-                not (k == "category" and to_dict[k] == "optional" and
-                     from_dict[k] == "required")):
-
-                print("extract_dts_includes.py: {}('{}') merge of property "
-                      "'{}': '{}' overwrites '{}'"
-                      .format(fname, parent, k, from_dict[k], to_dict[k]))
-
 
 def merge_included_bindings(fname, node):
     # Recursively merges properties from files !include'd from the 'inherits'
     # section of the binding. 'fname' is the path to the top-level binding
     # file, and 'node' the current top-level YAML node being processed.
 
-    check_binding_properties(node)
+    res = node
+
+    if "include" in node:
+        included = node.pop("include")
+        if isinstance(included, str):
+            included = [included]
+
+        for included_fname in included:
+            binding = load_binding_file(included_fname)
+            inherited = merge_included_bindings(fname, binding)
+            merge_properties(None, fname, inherited, res)
+            res = inherited
 
     if 'inherits' in node:
         for inherited in node.pop('inherits'):
             inherited = merge_included_bindings(fname, inherited)
-            merge_properties(None, fname, inherited, node)
-            node = inherited
+            merge_properties(None, fname, inherited, res)
+            res = inherited
 
-    return node
-
-
-def check_binding_properties(node):
-    # Checks that the top-level YAML node 'node' has the expected properties.
-    # Prints warnings and substitutes defaults otherwise.
-
-    if 'title' not in node:
-        print("extract_dts_includes.py: node without 'title' -", node)
-
-    for prop in 'title', 'version', 'description':
-        if prop not in node:
-            node[prop] = "<unknown {}>".format(prop)
-            print("extract_dts_includes.py: '{}' property missing "
-                  "in '{}' binding. Using '{}'."
-                  .format(prop, node['title'], node[prop]))
-
-    if 'id' in node:
-        print("extract_dts_includes.py: WARNING: id field set "
-              "in '{}', should be removed.".format(node['title']))
+    return res
 
 
 def define_str(name, value, value_tabs, is_deprecated=False):
@@ -265,7 +271,7 @@ def write_conf(f):
         f.write('\n')
 
 
-def write_header(f):
+def write_header(f, deprecated_only):
     f.write('''\
 /**********************************************
 *                 Generated include file
@@ -293,17 +299,26 @@ def write_header(f):
 
         for prop in sorted(defs[node]):
             if prop != 'aliases':
-                f.write(define_str(prop, defs[node][prop], value_tabs))
+                deprecated_warn = False
+                if prop in deprecated_main:
+                    deprecated_warn = True
+                if not prop.startswith('DT_'):
+                    deprecated_warn = True
+                if deprecated_only and not deprecated_warn:
+                    continue
+                f.write(define_str(prop, defs[node][prop], value_tabs, deprecated_warn))
 
         for alias in sorted(defs[node]['aliases']):
             alias_target = defs[node]['aliases'][alias]
             deprecated_warn = False
             # Mark any non-DT_ prefixed define as deprecated except
             # for now we special case LED, SW, and *PWM_LED*
-            if not alias.startswith(('DT_', 'LED', 'SW')) and not 'PWM_LED' in alias:
+            if not alias.startswith('DT_'):
                 deprecated_warn = True
             if alias in deprecated:
                 deprecated_warn = True
+            if deprecated_only and not deprecated_warn:
+                continue
             f.write(define_str(alias, alias_target, value_tabs, deprecated_warn))
 
         f.write('\n')
@@ -323,35 +338,37 @@ def load_bindings(root, binding_dirs):
     # Add '!include foo.yaml' handling
     yaml.Loader.add_constructor('!include', yaml_include)
 
-    loaded_yamls = set()
+    # Code below is adapated from edtlib.py
+
+    # Searches for any 'compatible' string mentioned in the devicetree
+    # files, with a regex
+    dt_compats_search = re.compile(
+        "|".join(re.escape(compat) for compat in dts_compats)
+    ).search
 
     for file in binding_files:
-        # Extract compat from 'constraint:' line
-        for line in open(file, 'r', encoding='utf-8'):
-            match = re.match(r'\s+constraint:\s*"([^"]*)"', line)
-            if match:
-                break
-        else:
-            # No 'constraint:' line found. Move on to next yaml file.
+        with open(file, encoding="utf-8") as f:
+            contents = f.read()
+
+        if not dt_compats_search(contents):
             continue
 
-        compat = match.group(1)
-        if compat not in dts_compats or file in loaded_yamls:
-            # The compat does not appear in the device tree, or the yaml
-            # file has already been loaded
+        binding = yaml.load(contents, Loader=yaml.Loader)
+
+        binding_compats = _binding_compats(binding)
+        if not binding_compats:
             continue
-
-        # Found a binding (.yaml file) for a 'compatible' value that
-        # appears in DTS. Load it.
-
-        loaded_yamls.add(file)
-
-        if compat not in compats:
-            compats.append(compat)
 
         with open(file, 'r', encoding='utf-8') as yf:
             binding = merge_included_bindings(file,
                                               yaml.load(yf, Loader=yaml.Loader))
+
+        for compat in binding_compats:
+            if compat not in compats:
+                compats.append(compat)
+
+            if 'parent-bus' in binding:
+                bus_to_binding[binding['parent-bus']][compat] = binding
 
             if 'parent' in binding:
                 bus_to_binding[binding['parent']['bus']][compat] = binding
@@ -364,6 +381,32 @@ def load_bindings(root, binding_dirs):
     extract.globals.bindings = compat_to_binding
     extract.globals.bus_bindings = bus_to_binding
     extract.globals.binding_compats = compats
+
+
+def _binding_compats(binding):
+    # Adapated from edtlib.py
+
+    def new_style_compats():
+        if binding is None or "compatible" not in binding:
+            return []
+
+        val = binding["compatible"]
+
+        if isinstance(val, str):
+            return [val]
+        return val
+
+    def old_style_compat():
+        try:
+            return binding["properties"]["compatible"]["constraint"]
+        except Exception:
+            return None
+
+    new_compats = new_style_compats()
+    old_compat = old_style_compat()
+    if old_compat:
+        return [old_compat]
+    return new_compats
 
 
 def find_binding_files(binding_dirs):
@@ -444,10 +487,6 @@ def generate_defines():
     flash.extract_flash()
     flash.extract_code_partition()
 
-    # Add DT_CHOSEN_<X> defines
-    for c in sorted(chosen):
-        insert_defs('chosen', {'DT_CHOSEN_' + str_to_label(c): '1'}, {})
-
 
 def parse_arguments():
     rdh = argparse.RawDescriptionHelpFormatter
@@ -463,6 +502,8 @@ def parse_arguments():
     parser.add_argument("--old-alias-names", action='store_true',
                         help="Generate aliases also in the old way, without "
                              "compatibility information in their labels")
+    parser.add_argument("--deprecated-only", action='store_true',
+                        help="Generate only the deprecated defines")
     return parser.parse_args()
 
 
@@ -517,7 +558,7 @@ def main():
 
     if args.include is not None:
         with open(args.include, 'w', encoding='utf-8') as f:
-            write_header(f)
+            write_header(f, args.deprecated_only)
 
 
 if __name__ == '__main__':

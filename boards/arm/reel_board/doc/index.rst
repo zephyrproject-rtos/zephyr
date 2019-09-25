@@ -39,10 +39,10 @@ The RGB-LED is controlled by the nRF52840 via GPIO pins.
 Display is controlled by the nRF52840 via SPI and 3 GPIOs.
 
 On the back side of the board are all other components such as nRF52840,
-circuit for the Debug Adapter, On/Off and power source switch, battery holder,
-buttons and MMA8652FC (accelerometer) sensor.
+a circuit for the Debug Adapter, On/Off and power source switch, battery holder,
+buttons and the MMA8652FC (accelerometer) sensor.
 
-ADPS9960 is Digital Proximity, Ambient Light, RGB and Gesture sensor.
+ADPS9960 is a Digital Proximity, Ambient Light, RGB and Gesture sensor.
 HDC1010 is a digital humidity and temperature sensor.
 MMA8652FC is a 12-bit Digital Accelerometer.
 All sensors are connected to the I2C bus and one GPIO pin each,
@@ -62,6 +62,35 @@ which can be used as an interrupt source.
 
      reel board back (Credit: PHYTEC)
 
+Since PCB version 1507.2, the nRF52840 SoC is not soldered directly to
+the board but integrated as a module on a NOTM.2 adapter.
+The wiring is identical for versions 1507.1 and 1507.2.
+
+.. _reel_board_display:
+
+Display
+=======
+
+GDEH0213B1 is the display with which the board was introduced
+in 2018. Unfortunately, this display has been discontinued.
+Currently the board is delivered with the display GDEH0213B72.
+It is expected that the display will be replaced over time
+due the short product lifecycle of this type of displays.
+The following table lists the displays used on the reel board.
+The label on the ribbon cable can help to distinguish the displays.
+According to the display type, the correct designation must be
+used for building an application.
+
++--------------+--------------------+----------------------+-------------------+
+| Display      | Ribbon Cable Label | Controller / Driver  | Board Designation |
++==============+====================+======================+===================+
+| Good Display | HINK-E0213         | SSD1673 /            | reel_board        |
+| GDEH0213B1   |                    | ssd16xx              |                   |
++--------------+--------------------+----------------------+-------------------+
+| Good Display | HINK-E0213A22      | IL3897 /             | reel_board_v2     |
+| GDEH0213B72  |                    | ssd16xx              |                   |
++--------------+--------------------+----------------------+-------------------+
+
 Power supply
 ============
 
@@ -70,7 +99,7 @@ power source configurations, battery and micro USB connector.
 
 The On/Off switch can choose which power source is used.
 
-reel board uses TPS610981 boost converter to generate supply voltage
+reel board uses a TPS610981 boost converter to generate supply voltage
 for nRF52840 and peripherals (sensors and EPD).
 The boost converter has two modes:
 
@@ -123,122 +152,112 @@ Connections and IOs
 Port P0
 -------
 
-+-------+-----------------------+---------------------------+
-| Name  | Function              | Usage                     |
-+=======+=======================+===========================+
-| P0.00 | XL1                   | 32.768 kHz oscillator     |
-+-------+-----------------------+---------------------------+
-| P0.01 | XL2                   | 32.768 kHz oscillator     |
-+-------+-----------------------+---------------------------+
-| P0.02 | edge connector pin 30 | None                      |
-+-------+-----------------------+---------------------------+
-| P0.03 | edge connector pin 31 | None                      |
-+-------+-----------------------+---------------------------+
-| P0.04 | edge connector pin 19 | None                      |
-+-------+-----------------------+---------------------------+
-| P0.05 | edge connector pin 11 | None                      |
-+-------+-----------------------+---------------------------+
-| P0.06 | UART0_TX              | UART Console over USB     |
-+-------+-----------------------+---------------------------+
-| P0.07 | Button                | user button (S5)          |
-+-------+-----------------------+---------------------------+
-| P0.08 | UART0_RX              | UART Console over USB     |
-+-------+-----------------------+---------------------------+
-| P0.09 | edge connector pin 27 | None                      |
-+-------+-----------------------+---------------------------+
-| P0.10 | edge connector pin 29 | None                      |
-+-------+-----------------------+---------------------------+
-| P0.11 | RGB LED (red)         | GPIO                      |
-+-------+-----------------------+---------------------------+
-| P0.12 | RGB LED (green)       | GPIO                      |
-+-------+-----------------------+---------------------------+
-| P0.13 | LED1 (yellow)         | GPIO                      |
-+-------+-----------------------+---------------------------+
-| P0.14 | EPD Busy output       | GPIO                      |
-+-------+-----------------------+---------------------------+
-| P0.15 | EPD Reset input       | GPIO                      |
-+-------+-----------------------+---------------------------+
-| P0.16 | EPD DC input          | GPIO                      |
-+-------+-----------------------+---------------------------+
-| P0.17 | EPD SPI3_CS           | SPI                       |
-+-------+-----------------------+---------------------------+
-| P0.18 | CPU Reset             | Reset (S4)                |
-+-------+-----------------------+---------------------------+
-| P0.19 | EPD SPI3_CLK          | SPI                       |
-+-------+-----------------------+---------------------------+
-| P0.20 | EPD SPI3_MOSI         | SPI                       |
-+-------+-----------------------+---------------------------+
-| P0.21 | SPI3_MISO             | SPI (not connected)       |
-+-------+-----------------------+---------------------------+
-| P0.22 | HDC1010 DRDYn         | GPIO                      |
-+-------+-----------------------+---------------------------+
-| P0.23 | APDS9960 INT          | GPIO                      |
-+-------+-----------------------+---------------------------+
-| P0.24 | MMA8652FC INT1        | GPIO                      |
-+-------+-----------------------+---------------------------+
-| P0.25 | MMA8652FC INT2        | GPIO                      |
-+-------+-----------------------+---------------------------+
-| P0.26 | I2C_0                 | I2C                       |
-+-------+-----------------------+---------------------------+
-| P0.27 | I2C_0                 | I2C                       |
-+-------+-----------------------+---------------------------+
-| P0.28 | edge connector pin 3  | None                      |
-+-------+-----------------------+---------------------------+
-| P0.29 | edge connector pin 52 | None                      |
-+-------+-----------------------+---------------------------+
-| P0.30 | edge connector pin 1  | None                      |
-+-------+-----------------------+---------------------------+
-| P0.31 | edge connector pin 37 | None                      |
-+-------+-----------------------+---------------------------+
++-------+----------------------------+---------------------------+
+| Name  | Function                   | Usage                     |
++=======+============================+===========================+
+| P0.00 | XL1                        | 32.768 kHz oscillator     |
++-------+----------------------------+---------------------------+
+| P0.01 | XL2                        | 32.768 kHz oscillator     |
++-------+----------------------------+---------------------------+
+| P0.02 | expansion connector pin 30 | None                      |
++-------+----------------------------+---------------------------+
+| P0.03 | expansion connector pin 31 | None                      |
++-------+----------------------------+---------------------------+
+| P0.04 | expansion connector pin 19 | None                      |
++-------+----------------------------+---------------------------+
+| P0.05 | expansion connector pin 11 | None                      |
++-------+----------------------------+---------------------------+
+| P0.06 | UART0_TX                   | UART Console over USB     |
++-------+----------------------------+---------------------------+
+| P0.07 | Button                     | user button (S5)          |
++-------+----------------------------+---------------------------+
+| P0.08 | UART0_RX                   | UART Console over USB     |
++-------+----------------------------+---------------------------+
+| P0.09 | expansion connector pin 27 | None                      |
++-------+----------------------------+---------------------------+
+| P0.10 | expansion connector pin 29 | None                      |
++-------+----------------------------+---------------------------+
+| P0.11 | RGB LED (red)              | GPIO                      |
++-------+----------------------------+---------------------------+
+| P0.12 | RGB LED (green)            | GPIO                      |
++-------+----------------------------+---------------------------+
+| P0.13 | LED1 (yellow)              | GPIO                      |
++-------+----------------------------+---------------------------+
+| P0.14 | EPD Busy output            | GPIO                      |
++-------+----------------------------+---------------------------+
+| P0.15 | EPD Reset input            | GPIO                      |
++-------+----------------------------+---------------------------+
+| P0.16 | EPD DC input               | GPIO                      |
++-------+----------------------------+---------------------------+
+| P0.17 | EPD SPI3_CS                | SPI                       |
++-------+----------------------------+---------------------------+
+| P0.18 | CPU Reset                  | Reset (S4)                |
++-------+----------------------------+---------------------------+
+| P0.19 | EPD SPI3_CLK               | SPI                       |
++-------+----------------------------+---------------------------+
+| P0.20 | EPD SPI3_MOSI              | SPI                       |
++-------+----------------------------+---------------------------+
+| P0.21 | SPI3_MISO                  | SPI (not connected)       |
++-------+----------------------------+---------------------------+
+| P0.22 | HDC1010 DRDYn              | GPIO                      |
++-------+----------------------------+---------------------------+
+| P0.23 | APDS9960 INT               | GPIO                      |
++-------+----------------------------+---------------------------+
+| P0.24 | MMA8652FC INT1             | GPIO                      |
++-------+----------------------------+---------------------------+
+| P0.25 | MMA8652FC INT2             | GPIO                      |
++-------+----------------------------+---------------------------+
+| P0.26 | I2C_0                      | I2C                       |
++-------+----------------------------+---------------------------+
+| P0.27 | I2C_0                      | I2C                       |
++-------+----------------------------+---------------------------+
+| P0.28 | expansion connector pin 3  | None                      |
++-------+----------------------------+---------------------------+
+| P0.29 | expansion connector pin 52 | None                      |
++-------+----------------------------+---------------------------+
+| P0.30 | expansion connector pin 1  | None                      |
++-------+----------------------------+---------------------------+
+| P0.31 | expansion connector pin 37 | None                      |
++-------+----------------------------+---------------------------+
 
 Port P1
 -------
 
-+-------+-----------------------+---------------------------+
-| Name  | Function              | Usage                     |
-+=======+=======================+===========================+
-| P1.00 | peripheral power on   | GPIO                      |
-+-------+-----------------------+---------------------------+
-| P1.01 | edge connector pin 32 | None                      |
-+-------+-----------------------+---------------------------+
-| P1.02 | edge connector pin 34 | None                      |
-+-------+-----------------------+---------------------------+
-| P1.03 | edge connector pin 17 | None                      |
-+-------+-----------------------+---------------------------+
-| P1.04 | edge connector pin 15 | None                      |
-+-------+-----------------------+---------------------------+
-| P1.05 | edge connector pin 13 | None                      |
-+-------+-----------------------+---------------------------+
-| P1.06 | edge connector pin 33 | None                      |
-+-------+-----------------------+---------------------------+
-| P1.07 | edge connector pin 35 | None                      |
-+-------+-----------------------+---------------------------+
-| P1.08 | edge connector pin 45 | None                      |
-+-------+-----------------------+---------------------------+
-| P1.09 | RGB LED (blue)        | GPIO                      |
-+-------+-----------------------+---------------------------+
-| P1.10 | edge connector pin 47 | None                      |
-+-------+-----------------------+---------------------------+
-| P1.11 | edge connector pin 49 | None                      |
-+-------+-----------------------+---------------------------+
-| P1.12 | edge connector pin 51 | None                      |
-+-------+-----------------------+---------------------------+
-| P1.13 | edge connector pin 36 | None                      |
-+-------+-----------------------+---------------------------+
-| P1.14 | edge connector pin 48 | None                      |
-+-------+-----------------------+---------------------------+
-| P1.15 | edge connector pin 50 | None                      |
-+-------+-----------------------+---------------------------+
-
-Edge Connector
---------------
-
-.. figure:: img/reel_board_excon.png
-     :width: 442px
-     :align: center
-     :alt: reel board edge connector
-
-     reel board edge connector (Credit: PHYTEC)
++-------+----------------------------+---------------------------+
+| Name  | Function                   | Usage                     |
++=======+============================+===========================+
+| P1.00 | peripheral power on        | GPIO                      |
++-------+----------------------------+---------------------------+
+| P1.01 | expansion connector pin 32 | None                      |
++-------+----------------------------+---------------------------+
+| P1.02 | expansion connector pin 34 | None                      |
++-------+----------------------------+---------------------------+
+| P1.03 | expansion connector pin 17 | None                      |
++-------+----------------------------+---------------------------+
+| P1.04 | expansion connector pin 15 | None                      |
++-------+----------------------------+---------------------------+
+| P1.05 | expansion connector pin 13 | None                      |
++-------+----------------------------+---------------------------+
+| P1.06 | expansion connector pin 33 | None                      |
++-------+----------------------------+---------------------------+
+| P1.07 | expansion connector pin 35 | None                      |
++-------+----------------------------+---------------------------+
+| P1.08 | expansion connector pin 45 | None                      |
++-------+----------------------------+---------------------------+
+| P1.09 | RGB LED (blue)             | GPIO                      |
++-------+----------------------------+---------------------------+
+| P1.10 | expansion connector pin 47 | None                      |
++-------+----------------------------+---------------------------+
+| P1.11 | expansion connector pin 49 | None                      |
++-------+----------------------------+---------------------------+
+| P1.12 | expansion connector pin 51 | None                      |
++-------+----------------------------+---------------------------+
+| P1.13 | expansion connector pin 36 | None                      |
++-------+----------------------------+---------------------------+
+| P1.14 | expansion connector pin 48 | None                      |
++-------+----------------------------+---------------------------+
+| P1.15 | expansion connector pin 50 | None                      |
++-------+----------------------------+---------------------------+
 
 Solder Jumper and Testpoints
 ============================
@@ -310,8 +329,8 @@ Power supply testpoint
 Build-in Debug Adapter
 ======================
 
-Debug Adapter is based on the DAPLink interface firmware and
-NXP MK20DX128VFM5 SoC. The adapter is powered via micro USB connector and
+The debug adapter is based on the DAPLink interface firmware and
+NXP MK20DX128VFM5 SoC. The adapter is powered via a micro USB connector and
 is always on when the board is connected to the USB host.
 reel board can be flashed and debugged, powered either from battery or USB.
 If the Adapter is powered via USB, the Adapter circuit heats the board
@@ -339,17 +358,9 @@ Debug Adapter Jumper
 +-------+-----------------------+----------------------------------------------+
 | Name  | Type                  | Usage                                        |
 +=======+=======================+==============================================+
-| J1    | closed solder jumper  | open to use adapter for external target      |
-+-------+-----------------------+----------------------------------------------+
-| J2    | closed solder jumper  | open to use adapter for external target      |
-+-------+-----------------------+----------------------------------------------+
 | J3    | open solder jumper    | close to pass UART TX to external adapter    |
 +-------+-----------------------+----------------------------------------------+
 | J4    | open solder jumper    | close to pass UART RX to external adapter    |
-+-------+-----------------------+----------------------------------------------+
-| J5    | closed solder jumper  | open to connect external adapter to nRF52840 |
-+-------+-----------------------+----------------------------------------------+
-| J6    | closed solder jumper  | open to connect external adapter to nRF52840 |
 +-------+-----------------------+----------------------------------------------+
 | J22   | open solder jumper    | close to start adapter in bootloader mode    |
 +-------+-----------------------+----------------------------------------------+
@@ -366,6 +377,102 @@ Adapter LEDs
 +-------+-----------------------+--------------------------------+
 | D15   | yellow                | reserved                       |
 +-------+-----------------------+--------------------------------+
+
+Expansion Connector
+************************
+
+The expansion connector has the same dimensions and similar pinout
+as the BBC MicroBit edge connector. The expansion components that are
+designed especially for the reel board are called link boards.
+
+.. figure:: img/reel_board_excon.png
+     :width: 442px
+     :align: center
+     :alt: reel board Expansion Connector
+
+     reel board Expansion Connector (Credit: PHYTEC)
+
+link board BASE
+===============
+
+link board BASE is a passive expansion board and allows other link boards or
+third party shields in Arduino UNO R3 format to be connected to the reel board.
+In addition, it includes a NOTM.2 connector and more powerful DCDC converter
+then reel board.
+
+.. figure:: img/rb_lb_shield.png
+     :width: 442px
+     :align: center
+     :alt: reel board and link board BASE
+
+     reel board and link board BASE (Credit: PHYTEC)
+
+link board BASE can be used in combination with other link boards or
+third party shields in two ways:
+
+    As an adapter
+        reel board is plugged into the link board BASE. Both peripherals on
+        reel board and shields can be used as long as there is no conflict
+        between I2C devices. Care should be taken to provide enough power
+        to the complete circuit.
+
+    Stand-alone
+        NOTM.2 adapter is removed from the reel board and
+        connected to NOTM.2 connector on the link board BASE.
+        The wiring to the shield connector is identical to the
+        configuraiton above and no software modifications for the shield
+        are necessary.
+        Stand-alone configuration is more suitable for applications where
+        peripherals on the reel board are not used or in conflict,
+        power provided by the reel board is not enough,
+        or for prototypes in the field.
+
+.. figure:: img/link_board_base.png
+     :width: 442px
+     :align: center
+     :alt: link board BASE
+
+     link board BASE (Credit: PHYTEC)
+
+Components on the link board BASE:
+
+    reel board Connector:
+        2x40 position edge connector.
+
+    Micro USB Connector:
+        USB can be used as power source. USB data lines are wired
+        to NOTM.2 connector.
+
+    NOTM.2 Connector:
+        Connector for NOTM.2 adapter. If the connector is used then
+        reel board should be removed from reel board connector.
+
+    SWD Connector X11:
+        Wired to NOTM.2 connector. A debug probe can
+        be connected to program or debug MCU in Stand-alone configuration.
+
+    Alternative Power Source X5 or X9:
+        Positive pin is closer to the + character. Nominal voltage is
+        3.3V, there is no protection against reverse polarity or overvoltage.
+        Use it with care.
+
+    Shield Connector:
+        Connector for link boards and third party shields in Arduino UNO R3
+        format. Only shields designed for 3.3V supply voltage are supported.
+
+Meaning of the Power Source Switch positions:
+
+    EXT
+        link board BASE is powered from Alternative Power Source Connector
+        X9 or X5.
+
+    USB
+        link board BASE is powered from from USB connector
+        (via DCDC converter).
+
+    RB
+        link board BASE is powered from reel board. The available power is
+        below 0.3W and depends on which source is used to power the reel board.
 
 Programming and Debugging
 *************************
@@ -412,6 +519,15 @@ Then build and flash the application in the usual way.
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
    :board: reel_board
+   :goals: build flash
+
+.. note::
+   Please use reel_board_v2 to build a application for the board equipped with
+   the GDEH0213B72, see :ref:`reel_board_display`.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: reel_board_v2
    :goals: build flash
 
 Debugging

@@ -12,7 +12,7 @@ LOG_MODULE_REGISTER(wifi_eswifi_core);
 #include <device.h>
 #include <string.h>
 #include <errno.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 #include <net/net_pkt.h>
 #include <net/net_if.h>
 #include <net/net_context.h>
@@ -27,7 +27,7 @@ LOG_MODULE_REGISTER(wifi_eswifi_core);
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <misc/printk.h>
+#include <sys/printk.h>
 
 #include "eswifi.h"
 
@@ -401,6 +401,10 @@ static void eswifi_iface_init(struct net_if *iface)
 	eswifi_unlock(eswifi);
 
 	eswifi_offload_init(eswifi);
+#if defined(CONFIG_NET_SOCKETS_OFFLOAD)
+	eswifi_socket_offload_init(eswifi);
+#endif
+
 }
 
 static int eswifi_mgmt_scan(struct device *dev, scan_result_cb_t cb)
@@ -485,6 +489,11 @@ static int eswifi_mgmt_connect(struct device *dev,
 	eswifi_unlock(eswifi);
 
 	return err;
+}
+
+void eswifi_async_msg(struct eswifi_dev *eswifi, char *msg, size_t len)
+{
+	eswifi_offload_async_msg(eswifi, msg, len);
 }
 
 #if defined(CONFIG_NET_IPV4)

@@ -7,17 +7,18 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_ARC_V2_SYS_IO_H_
 #define ZEPHYR_INCLUDE_ARCH_ARC_V2_SYS_IO_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #ifndef _ASMLANGUAGE
 
-#include <sys_io.h>
+#include <sys/sys_io.h>
 #include <arch/arc/v2/aux_regs.h>
 
 #include <zephyr/types.h>
 #include <stddef.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Implementation of sys_io.h's documented functions */
 
 static ALWAYS_INLINE
@@ -300,10 +301,10 @@ static ALWAYS_INLINE
 	return ret;
 }
 
-#endif /* _ASMLANGUAGE */
-
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* _ASMLANGUAGE */
 
 #endif /* ZEPHYR_INCLUDE_ARCH_ARC_V2_SYS_IO_H_ */

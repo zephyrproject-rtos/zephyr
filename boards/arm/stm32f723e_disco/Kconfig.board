@@ -7,4 +7,4 @@
 
 config BOARD_STM32F723E_DISCO
 	bool "STM32F723E Discovery Development Board"
-	depends on SOC_STM32F723XE
+	depends on SOC_STM32F723XX

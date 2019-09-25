@@ -1,0 +1,113 @@
+# Kconfig.stm32 - STM32 PWM configuration options
+#
+#
+# Copyright (c) 2019 Linaro Limited.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig PWM_MCUX
+	bool "MCUX PWM driver"
+	depends on HAS_MCUX_PWM
+	help
+	  Enable mcux pwm driver.
+
+if PWM_MCUX
+
+config FLEXPWM1_PWM0
+	bool "NXP MCUX FLEXPWM1_PWM0 Output"
+	  help
+	    Enable output for FLEXPWM1_PWM0 in the driver. Say y here
+	    if you want to use FLEXPWM1_PWM0 output.
+
+config FLEXPWM1_PWM1
+	bool "NXP MCUX FLEXPWM1_PWM1 Output"
+	  help
+	    Enable output for FLEXPWM1_PWM1 in the driver. Say y here
+	    if you want to use FLEXPWM1_PWM1 output.
+
+config FLEXPWM1_PWM2
+	bool "NXP MCUX FLEXPWM1_PWM2 Output"
+	  help
+	    Enable output for FLEXPWM1_PWM2 in the driver. Say y here
+	    if you want to use FLEXPWM1_PWM2 output.
+
+config FLEXPWM1_PWM3
+	bool "NXP MCUX FLEXPWM1_PWM3 Output"
+	  help
+	    Enable output for FLEXPWM1_PWM3 in the driver. Say y here
+	    if you want to use FLEXPWM1_PWM3 output.
+
+config FLEXPWM2_PWM0
+	bool "NXP MCUX FLEXPWM2_PWM0 Output"
+	  help
+	    Enable output for FLEXPWM2_PWM0 in the driver. Say y here
+	    if you want to use FLEXPWM2_PWM0 output.
+
+config FLEXPWM2_PWM1
+	bool "NXP MCUX FLEXPWM2_PWM1 Output"
+	  help
+	    Enable output for FLEXPWM2_PWM1 in the driver. Say y here
+	    if you want to use FLEXPWM2_PWM1 output.
+
+config FLEXPWM2_PWM2
+	bool "NXP MCUX FLEXPWM2_PWM2 Output"
+	  help
+	    Enable output for FLEXPWM2_PWM2 in the driver. Say y here
+	    if you want to use FLEXPWM2_PWM2 output.
+
+config FLEXPWM2_PWM3
+	bool "NXP MCUX FLEXPWM2_PWM3 Output"
+	  help
+	    Enable output for FLEXPWM2_PWM3 in the driver. Say y here
+	    if you want to use FLEXPWM2_PWM3 output.
+
+config FLEXPWM3_PWM0
+	bool "NXP MCUX FLEXPWM3_PWM0 Output"
+	  help
+	    Enable output for FLEXPWM3_PWM0 in the driver. Say y here
+	    if you want to use FLEXPWM3_PWM0 output.
+
+config FLEXPWM3_PWM1
+	bool "NXP MCUX FLEXPWM3_PWM1 Output"
+	  help
+	    Enable output for FLEXPWM3_PWM1 in the driver. Say y here
+	    if you want to use FLEXPWM3_PWM1 output.
+
+config FLEXPWM3_PWM2
+	bool "NXP MCUX FLEXPWM3_PWM2 Output"
+	  help
+	    Enable output for FLEXPWM3_PWM2 in the driver. Say y here
+	    if you want to use FLEXPWM3_PWM2 output.
+
+config FLEXPWM3_PWM3
+	bool "NXP MCUX FLEXPWM3_PWM3 Output"
+	  help
+	    Enable output for FLEXPWM3_PWM3 in the driver. Say y here
+	    if you want to use FLEXPWM3_PWM3 output.
+
+config FLEXPWM4_PWM0
+	bool "NXP MCUX FLEXPWM4_PWM0 Output"
+	  help
+	    Enable output for FLEXPWM4_PWM0 in the driver. Say y here
+	    if you want to use FLEXPWM4_PWM0 output.
+
+config FLEXPWM4_PWM1
+	bool "NXP MCUX FLEXPWM4_PWM1 Output"
+	  help
+	    Enable output for FLEXPWM4_PWM1 in the driver. Say y here
+	    if you want to use FLEXPWM4_PWM1 output.
+
+config FLEXPWM4_PWM2
+	bool "NXP MCUX FLEXPWM4_PWM2 Output"
+	  help
+	    Enable output for FLEXPWM4_PWM2 in the driver. Say y here
+	    if you want to use FLEXPWM4_PWM2 output.
+
+config FLEXPWM4_PWM3
+	bool "NXP MCUX FLEXPWM4_PWM3 Output"
+	  help
+	    Enable output for FLEXPWM4_PWM3 in the driver. Say y here
+	    if you want to use FLEXPWM4_PWM3 output.
+
+endif # PWM_MCUX

@@ -10,12 +10,12 @@
  *
  */
 
-#include <misc/__assert.h>
+#include <sys/__assert.h>
 #include <kernel.h>
 #include <arch/cpu.h>
-#include <drivers/ioapic.h>
-#include <drivers/loapic.h>
-#include <drivers/sysapic.h>
+#include <drivers/interrupt_controller/ioapic.h>
+#include <drivers/interrupt_controller/loapic.h>
+#include <drivers/interrupt_controller/sysapic.h>
 #include <irq.h>
 
 #define IS_IOAPIC_IRQ(irq)  (irq < LOAPIC_IRQ_BASE)
@@ -43,7 +43,7 @@
  * @param flags interrupt flags
  *
  */
-void __irq_controller_irq_config(unsigned int vector, unsigned int irq,
+void z_irq_controller_irq_config(unsigned int vector, unsigned int irq,
 				 u32_t flags)
 {
 	__ASSERT(irq <= HARDWARE_IRQ_LIMIT, "invalid irq line");

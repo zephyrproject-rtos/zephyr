@@ -22,11 +22,11 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <net/net_if.h>
 #include <net/net_pkt.h>
 
-#include <misc/byteorder.h>
+#include <sys/byteorder.h>
 #include <string.h>
 #include <random/rand32.h>
 
-#include <gpio.h>
+#include <drivers/gpio.h>
 
 #include <net/ieee802154_radio.h>
 
@@ -1378,23 +1378,23 @@ static inline int configure_spi(struct device *dev)
 		return -ENODEV;
 	}
 
-#if defined(DT_NXP_MCR20A_0_CS_GPIO_CONTROLLER)
+#if defined(DT_NXP_MCR20A_0_CS_GPIOS_CONTROLLER)
 	mcr20a->cs_ctrl.gpio_dev = device_get_binding(
-		DT_NXP_MCR20A_0_CS_GPIO_CONTROLLER);
+		DT_NXP_MCR20A_0_CS_GPIOS_CONTROLLER);
 	if (!mcr20a->cs_ctrl.gpio_dev) {
 		LOG_ERR("Unable to get GPIO SPI CS device");
 		return -ENODEV;
 	}
 
-	mcr20a->cs_ctrl.gpio_pin = DT_NXP_MCR20A_0_CS_GPIO_PIN;
+	mcr20a->cs_ctrl.gpio_pin = DT_NXP_MCR20A_0_CS_GPIOS_PIN;
 	mcr20a->cs_ctrl.delay = 0U;
 
 	mcr20a->spi_cfg.cs = &mcr20a->cs_ctrl;
 
 	LOG_DBG("SPI GPIO CS configured on %s:%u",
-		DT_NXP_MCR20A_0_CS_GPIO_CONTROLLER,
-		DT_NXP_MCR20A_0_CS_GPIO_PIN);
-#endif /* DT_NXP_MCR20A_0_CS_GPIO_CONTROLLER */
+		DT_NXP_MCR20A_0_CS_GPIOS_CONTROLLER,
+		DT_NXP_MCR20A_0_CS_GPIOS_PIN);
+#endif /* DT_NXP_MCR20A_0_CS_GPIOS_CONTROLLER */
 
 	mcr20a->spi_cfg.frequency = DT_INST_0_NXP_MCR20A_SPI_MAX_FREQUENCY;
 	mcr20a->spi_cfg.operation = SPI_WORD_SET(8);
@@ -1436,7 +1436,7 @@ static int mcr20a_init(struct device *dev)
 	k_thread_create(&mcr20a->mcr20a_rx_thread, mcr20a->mcr20a_rx_stack,
 			CONFIG_IEEE802154_MCR20A_RX_STACK_SIZE,
 			(k_thread_entry_t)mcr20a_thread_main,
-			dev, NULL, NULL, K_PRIO_COOP(2), 0, 0);
+			dev, NULL, NULL, K_PRIO_COOP(2), 0, K_NO_WAIT);
 
 	return 0;
 }

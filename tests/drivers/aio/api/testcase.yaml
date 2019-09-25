@@ -1,5 +1,0 @@
-tests:
-  peripheral.aio:
-    depends_on: aio
-    harness: aio
-    tags: aio

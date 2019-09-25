@@ -16,7 +16,7 @@ if !ENTROPY_NRF_FORCE_ALT
 
 menuconfig ENTROPY_NRF5_RNG
 	bool "nRF5 RNG driver"
-	depends on SOC_COMPATIBLE_NRF
+	depends on HAS_HW_NRF_RNG
 	select ENTROPY_HAS_DRIVER
 	default y
 	help

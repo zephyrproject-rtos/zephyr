@@ -1,23 +1,14 @@
-#
 # Copyright (c) 2018, Linaro Limited
-#
 # SPDX-License-Identifier: Apache-2.0
-#
----
-title: Ethernet Base Structure
-version: 0.1
 
-description: >
-    This binding gives a base structures for all Ethernet devices
+# Common fields for Ethernet devices
 
-inherits:
-    !include base.yaml
+include: base.yaml
+
 properties:
     local-mac-address:
       type: uint8-array
-      category: optional
+      required: false
       description: mac address
-      generation: define
     label:
-      category: required
-...
+      required: true

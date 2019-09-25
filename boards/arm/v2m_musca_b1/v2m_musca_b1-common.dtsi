@@ -22,6 +22,7 @@ timer: timer@10c000 {
 	compatible = "arm,cmsdk-timer";
 	reg = <0x10c000 0x1000>;
 	interrupts = <3 3>;
+	label = "TIMER_0";
 };
 
 uart0: uart@105000 {
@@ -29,6 +30,7 @@ uart0: uart@105000 {
 	reg = <0x105000 0x1000>;
 	interrupts = <39 3 40 3 41 3 43 3>;
 	interrupt-names = "rx", "tx", "rxtim", "err";
+	clocks = <&sysclk>;
 	current-speed = <115200>;
 	label = "UART_0";
 };
@@ -38,6 +40,7 @@ uart1: uart@106000 {
 	reg = <0x106000 0x1000>;
 	interrupts = <45 3 46 3 47 3 49 3>;
 	interrupt-names = "rx", "tx", "rxtim", "err";
+	clocks = <&sysclk>;
 	current-speed = <115200>;
 	label = "UART_1";
 };

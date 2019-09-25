@@ -15,7 +15,17 @@ config NUM_IRQS
 	# must be >= the highest interrupt number used
 	default 91
 
+if KINETIS_FLASH_CONFIG
+
+config KINETIS_FLASH_CONFIG_FOPT
+	default 0x7d
+
+endif # KINETIS_FLASH_CONFIG
+
 if CLOCK_CONTROL
+
+config CLOCK_CONTROL_MCUX_SCG
+	default y
 
 config CLOCK_CONTROL_MCUX_SIM
 	default y
@@ -25,12 +35,12 @@ config CLOCK_CONTROL_MCUX_PCC
 
 endif # CLOCK_CONTROL
 
-if RTC
+if WATCHDOG
 
-config RTC_MCUX
+config WDT_MCUX_WDOG32
 	default y
 
-endif # RTC
+endif # WATCHDOG
 
 if COUNTER
 
@@ -38,6 +48,13 @@ config COUNTER_MCUX_RTC
 	default y
 
 endif # COUNTER
+
+if PWM
+
+config PWM_MCUX_FTM
+	default y
+
+endif # PWM
 
 if PINMUX
 

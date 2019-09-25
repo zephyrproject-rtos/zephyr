@@ -19,7 +19,7 @@
 	};
 
 
-	flash-controller@0 {
+	flashcontroller0: flash-controller@0 {
 		compatible = "zephyr,native-posix-flash-controller";
 		reg = <0x00000000 DT_SIZE_K(2048)>;
 
@@ -65,10 +65,13 @@
 		};
 	};
 
-	uart0: uart@1 {
+	uart0: uart {
 		status = "okay";
 		compatible = "zephyr,native-posix-uart";
-		reg = <1 0>;
 		label = "UART_0";
+		/* Dummy current-speed entry to comply with serial
+		 * DTS binding
+		 */
+		current-speed = <0>;
 	};
 };

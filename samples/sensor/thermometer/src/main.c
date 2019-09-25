@@ -5,7 +5,7 @@
  */
 
 #include <zephyr.h>
-#include <sensor.h>
+#include <drivers/sensor.h>
 #include <stdio.h>
 
 void main(void)

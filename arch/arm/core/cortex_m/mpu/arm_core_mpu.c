@@ -8,6 +8,7 @@
 #include <init.h>
 #include <kernel.h>
 #include <soc.h>
+#include <kernel_structs.h>
 
 #include "arm_core_mpu_dev.h"
 #include <linker/linker-defs.h>
@@ -175,7 +176,7 @@ void z_arch_configure_dynamic_mpu_regions(struct k_thread *thread)
 				 */
 				continue;
 			}
-			LOG_DBG("set region 0x%x 0x%x",
+			LOG_DBG("set region 0x%lx 0x%x",
 				partition.start, partition.size);
 			__ASSERT(region_num < _MAX_DYNAMIC_MPU_REGIONS_NUM,
 				"Out-of-bounds error for dynamic region map.");
@@ -212,19 +213,30 @@ void z_arch_configure_dynamic_mpu_regions(struct k_thread *thread)
 
 	/* Privileged stack guard */
 	u32_t guard_start;
+	u32_t guard_size = MPU_GUARD_ALIGN_AND_SIZE;
+
+#if defined(CONFIG_FLOAT) && defined(CONFIG_FP_SHARING)
+	if ((thread->base.user_options & K_FP_REGS) != 0) {
+		guard_size = MPU_GUARD_ALIGN_AND_SIZE_FLOAT;
+	}
+#endif
+
 #if defined(CONFIG_USERSPACE)
 	if (thread->arch.priv_stack_start) {
-		guard_start = thread->arch.priv_stack_start;
+		guard_start = thread->arch.priv_stack_start - guard_size;
+
+		__ASSERT((u32_t)&z_priv_stacks_ram_start <= guard_start,
+		"Guard start: (0x%x) below privilege stacks boundary: (0x%x)",
+		guard_start, (u32_t)&z_priv_stacks_ram_start);
 	} else {
-		guard_start = thread->stack_info.start -
-			MPU_GUARD_ALIGN_AND_SIZE;
+		guard_start = thread->stack_info.start - guard_size;
+
 		__ASSERT((u32_t)thread->stack_obj == guard_start,
 		"Guard start (0x%x) not beginning at stack object (0x%x)\n",
 		guard_start, (u32_t)thread->stack_obj);
 	}
 #else
-	guard_start = thread->stack_info.start -
-		MPU_GUARD_ALIGN_AND_SIZE;
+	guard_start = thread->stack_info.start - guard_size;
 #endif /* CONFIG_USERSPACE */
 
 	__ASSERT(region_num < _MAX_DYNAMIC_MPU_REGIONS_NUM,
@@ -232,7 +244,7 @@ void z_arch_configure_dynamic_mpu_regions(struct k_thread *thread)
 	guard = (const struct k_mem_partition)
 	{
 		guard_start,
-		MPU_GUARD_ALIGN_AND_SIZE,
+		guard_size,
 		K_MEM_PARTITION_P_RO_U_NA
 	};
 	dynamic_regions[region_num] = &guard;
@@ -271,8 +283,12 @@ int z_arch_mem_domain_max_partitions_get(void)
 /**
  * @brief Configure the memory domain of the thread.
  */
-void z_arch_mem_domain_configure(struct k_thread *thread)
+void z_arch_mem_domain_thread_add(struct k_thread *thread)
 {
+	if (_current != thread) {
+		return;
+	}
+
 	/* Request to configure memory domain for a thread.
 	 * This triggers re-programming of the entire dynamic
 	 * memory map.
@@ -293,6 +309,11 @@ void z_arch_mem_domain_destroy(struct k_mem_domain *domain)
 	 */
 	int i;
 	struct k_mem_partition partition;
+
+	if (_current->mem_domain_info.mem_domain != domain) {
+		return;
+	}
+
 	/* Partitions belonging to the memory domain will be reset
 	 * to default (Privileged RW, Unprivileged NA) permissions.
 	 */
@@ -327,6 +348,10 @@ void z_arch_mem_domain_partition_remove(struct k_mem_domain *domain,
 	 */
 	k_mem_partition_attr_t reset_attr = K_MEM_PARTITION_P_RW_U_NA;
 
+	if (_current->mem_domain_info.mem_domain != domain) {
+		return;
+	}
+
 	arm_core_mpu_mem_partition_config_update(
 		&domain->partitions[partition_id], &reset_attr);
 }
@@ -335,6 +360,15 @@ void z_arch_mem_domain_partition_add(struct k_mem_domain *domain,
 				    u32_t partition_id)
 {
 	/* No-op on this architecture */
+}
+
+void z_arch_mem_domain_thread_remove(struct k_thread *thread)
+{
+	if (_current != thread) {
+		return;
+	}
+
+	z_arch_mem_domain_destroy(thread->mem_domain_info.mem_domain);
 }
 
 /*

@@ -105,7 +105,7 @@ static int exec_query(const char *host, int family,
 {
 	enum dns_query_type qtype = DNS_QUERY_TYPE_A;
 
-	if (IS_ENABLED(CONFIG_NET_IPV6) && family != AF_INET) {
+	if (IS_ENABLED(CONFIG_NET_IPV6) && family == AF_INET6) {
 		qtype = DNS_QUERY_TYPE_AAAA;
 	}
 
@@ -205,6 +205,7 @@ int z_impl_z_zsock_getaddrinfo_internal(const char *host, const char *service,
 	/* Link entries in advance */
 	ai_state.ai_arr[0].ai_next = &ai_state.ai_arr[1];
 
+	/* If the family is AF_UNSPEC, then we query IPv4 address first */
 	ret = exec_query(host, family, &ai_state);
 	if (ret == 0) {
 		/* If the DNS query for reason fails so that the
@@ -222,8 +223,37 @@ int z_impl_z_zsock_getaddrinfo_internal(const char *host, const char *service,
 
 		st1 = ai_state.status;
 	} else {
-		errno = -ret;
-		st1 = DNS_EAI_SYSTEM;
+		/* If we are returned -EPFNOSUPPORT then that will indicate
+		 * wrong address family type queried. Check that and return
+		 * DNS_EAI_ADDRFAMILY and set errno to EINVAL.
+		 */
+		if (ret == -EPFNOSUPPORT) {
+			errno = EINVAL;
+			st1 = DNS_EAI_ADDRFAMILY;
+		} else {
+			errno = -ret;
+			st1 = DNS_EAI_SYSTEM;
+		}
+	}
+
+	/* If family is AF_UNSPEC, the IPv4 query has been already done
+	 * so we can do IPv6 query next if IPv6 is enabled in the config.
+	 */
+	if (family == AF_UNSPEC && IS_ENABLED(CONFIG_NET_IPV6)) {
+		ret = exec_query(host, AF_INET6, &ai_state);
+		if (ret == 0) {
+			int ret = k_sem_take(&ai_state.sem,
+					     CONFIG_NET_SOCKETS_DNS_TIMEOUT +
+					     K_MSEC(100));
+			if (ret == -EAGAIN) {
+				return DNS_EAI_AGAIN;
+			}
+
+			st2 = ai_state.status;
+		} else {
+			errno = -ret;
+			st2 = DNS_EAI_SYSTEM;
+		}
 	}
 
 	if (ai_state.idx > 0) {
@@ -246,7 +276,10 @@ int z_impl_z_zsock_getaddrinfo_internal(const char *host, const char *service,
 }
 
 #ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER(z_zsock_getaddrinfo_internal, host, service, hints, res)
+static inline int z_vrfy_z_zsock_getaddrinfo_internal(const char *host,
+					const char *service,
+				       const struct zsock_addrinfo *hints,
+				       struct zsock_addrinfo *res)
 {
 	struct zsock_addrinfo hints_copy;
 	char *host_copy = NULL, *service_copy = NULL;
@@ -284,6 +317,7 @@ out:
 
 	return ret;
 }
+#include <syscalls/z_zsock_getaddrinfo_internal_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 int zsock_getaddrinfo(const char *host, const char *service,

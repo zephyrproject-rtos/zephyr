@@ -16,8 +16,8 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <kernel.h>
-#include <misc/fdtable.h>
-#include <misc/speculation.h>
+#include <sys/fdtable.h>
+#include <sys/speculation.h>
 
 struct fd_entry {
 	void *obj;

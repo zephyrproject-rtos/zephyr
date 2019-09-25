@@ -65,6 +65,7 @@ u32_t radio_bc_has_match(void);
 void radio_tmr_status_reset(void);
 void radio_tmr_tifs_set(u32_t tifs);
 u32_t radio_tmr_start(u8_t trx, u32_t ticks_start, u32_t remainder);
+u32_t radio_tmr_start_tick(u8_t trx, u32_t tick);
 void radio_tmr_start_us(u8_t trx, u32_t us);
 u32_t radio_tmr_start_now(u8_t trx);
 u32_t radio_tmr_start_get(void);

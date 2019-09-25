@@ -9,6 +9,6 @@ toolchain:
   - xtools
 supported:
   - counter
-  - netif:slip
+  - netif:serial-net
 testing:
   default: true

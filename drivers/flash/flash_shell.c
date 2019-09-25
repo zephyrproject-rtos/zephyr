@@ -11,7 +11,7 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include "flash.h"
+#include <drivers/flash.h>
 #include <soc.h>
 
 #define FLASH_SHELL_MODULE "flash"

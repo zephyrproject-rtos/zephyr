@@ -12,18 +12,9 @@
 
 #define STACK_ALIGN 8
 
-typedef struct NANO_ESF NANO_ESF;
-extern const NANO_ESF _default_esf;
-void z_SysFatalErrorHandler(unsigned int reason, const NANO_ESF *esf);
-void z_NanoFatalErrorHandler(unsigned int reason, const NANO_ESF *esf);
+#define DT_INST_0_INTEL_HPET_BASE_ADDRESS	0xFED00000U
+#define DT_INST_0_INTEL_HPET_IRQ_0		2
+#define DT_INST_0_INTEL_HPET_IRQ_0_PRIORITY	4
 
-/* Existing code requires only these particular symbols be defined,
- * but doesn't put them in a global header.  Needs cleaner
- * cross-architecture standardization.  Implement only the minimal set
- * here.
- */
-#define _NANO_ERR_STACK_CHK_FAIL 1
-#define _NANO_ERR_KERNEL_OOPS    2
-#define _NANO_ERR_KERNEL_PANIC   3
-
+typedef struct z_arch_esf_t z_arch_esf_t;
 #endif /* _X86_64_ARCH_H */

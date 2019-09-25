@@ -34,10 +34,10 @@
 #if defined(CONFIG_STDOUT_CONSOLE)
 #include <stdio.h>
 #else
-#include <misc/printk.h>
+#include <sys/printk.h>
 #endif
 
-#include <misc/__assert.h>
+#include <sys/__assert.h>
 
 #include "phil_obj_abstract.h"
 

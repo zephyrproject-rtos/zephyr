@@ -18,7 +18,7 @@
 #define ZEPHYR_INCLUDE_CRYPTO_CIPHER_STRUCTS_H_
 
 #include <device.h>
-#include <misc/util.h>
+#include <sys/util.h>
 
 enum cipher_algo {
 	CRYPTO_CIPHER_ALGO_AES = 1,

@@ -36,7 +36,6 @@ application for the GP MRB:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :tool: all
    :board: gpmrb
    :goals: build
 

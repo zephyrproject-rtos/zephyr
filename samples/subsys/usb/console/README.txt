@@ -17,9 +17,7 @@ trying to access the device in the background.
 
 Building and Running Project:
 
-Refer to https://www.zephyrproject.org/doc/boards/x86/arduino_101/doc/board.html
-for details on flashing the image into an Arduno 101.
-
+$ west build -b reel_board
 
 Sample Output:
 

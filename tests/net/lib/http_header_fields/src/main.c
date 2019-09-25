@@ -23,7 +23,7 @@
 #include <string.h>
 #include <errno.h>
 
-#include <misc/printk.h>
+#include <sys/printk.h>
 #include <tc_util.h>
 #include <ztest.h>
 
@@ -462,7 +462,7 @@ const struct url_test url_tests[] = {
 	},
 
 	{
-	.name = "proxy emtpy hostname",
+	.name = "proxy empty hostname",
 	.url = "http:///fo",
 	.rv = 1 /* s_dead */
 	},

@@ -7,7 +7,7 @@
 #ifndef ZEPHYR_INCLUDE_DISPLAY_FRAMEBUF_H_
 #define ZEPHYR_INCLUDE_DISPLAY_FRAMEBUF_H_
 
-#include <display.h>
+#include <drivers/display.h>
 
 extern const struct display_driver_api framebuf_display_api;
 

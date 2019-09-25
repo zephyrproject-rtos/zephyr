@@ -11,7 +11,7 @@
 
 #include "mbedtls/md.h"
 
-#ifndef __ZEPHYR__
+#if !defined(__ZEPHYR__) || defined(CONFIG_POSIX_API)
 
 #include <netinet/in.h>
 #include <sys/socket.h>

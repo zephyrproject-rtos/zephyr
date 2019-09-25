@@ -6,11 +6,11 @@
 
 #include <zephyr.h>
 #include <device.h>
-#include <sensor.h>
-#include <misc/printk.h>
-#include <misc/__assert.h>
+#include <drivers/sensor.h>
+#include <sys/printk.h>
+#include <sys/__assert.h>
 #include <logging/log.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 
 void main(void)
 {

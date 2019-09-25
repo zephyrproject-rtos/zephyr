@@ -1,5 +1,4 @@
 # Copyright (c) 2018 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
 
 config TINYCBOR
@@ -58,4 +57,4 @@ config CBOR_PRETTY_PRINTING
 	help
 	  This option enables cbor_value_to_pretty_stream function.
 
-endif #TINYCBOR
+endif # TINYCBOR

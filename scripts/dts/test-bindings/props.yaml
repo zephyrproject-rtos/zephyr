@@ -1,0 +1,39 @@
+# SPDX-License-Identifier: BSD-3-Clause
+
+title: Device.props test
+description: Device.props test
+
+compatible: "props"
+
+properties:
+    nonexistent-boolean:
+        type: boolean
+
+    existent-boolean:
+        type: boolean
+
+    int:
+        type: int
+        const: 1
+
+    array:
+        type: array
+
+    uint8-array:
+        type: uint8-array
+
+    string:
+        type: string
+        const: "foo"
+
+    string-array:
+        type: string-array
+
+    phandle-ref:
+        type: phandle
+
+    phandle-refs:
+        type: phandles
+
+    phandle-refs-and-vals:
+        type: phandle-array

@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "fcb.h"
+#include <fs/fcb.h>
 #include "fcb_priv.h"
 
 int
@@ -16,12 +16,12 @@ fcb_rotate(struct fcb *fcb)
 
 	rc = k_mutex_lock(&fcb->f_mtx, K_FOREVER);
 	if (rc) {
-		return FCB_ERR_ARGS;
+		return -EINVAL;
 	}
 
 	rc = fcb_erase_sector(fcb, fcb->f_oldest);
 	if (rc) {
-		rc = FCB_ERR_FLASH;
+		rc = -EIO;
 		goto out;
 	}
 	if (fcb->f_oldest == fcb->f_active.fe_sector) {

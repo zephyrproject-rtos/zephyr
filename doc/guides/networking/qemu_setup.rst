@@ -138,6 +138,7 @@ laptop to normal Wi-Fi use.
 To stop the daemons, press Ctrl+C in the corresponding terminal windows
 (you need to stop both ``loop-slip-tap.sh`` and ``loop-socat.sh``).
 
+Exit QEMU by pressing :kbd:`CTRL+A` :kbd:`x`.
 
 .. _networking_internet:
 

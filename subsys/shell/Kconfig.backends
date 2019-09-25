@@ -30,9 +30,12 @@ config SHELL_PROMPT_UART
 	help
 	  Displayed prompt name for UART backend.
 
+# Workaround for not being able to have commas in macro arguments
+DT_CHOSEN_Z_SHELL_UART := zephyr,shell-uart
+
 config UART_SHELL_ON_DEV_NAME
 	string "Device Name of UART Device for SHELL_BACKEND_SERIAL"
-	default "$(dt_str_val,DT_UART_SHELL_ON_DEV_NAME)" if HAS_DTS
+	default "$(dt_chosen_label,$(DT_CHOSEN_Z_SHELL_UART))" if HAS_DTS
 	default "UART_0"
 	help
 	  This option specifies the name of UART device to be used for the

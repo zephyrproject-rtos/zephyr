@@ -1,0 +1,22 @@
+# Kconfig - nRF51 PCA10031 board configuration
+#
+# Copyright (c) 2018 Nordic Semiconductor ASA.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_NRF51_PCA10031
+
+config BOARD
+	default "nrf51_pca10031"
+
+if ADC
+
+config ADC_0
+	default y
+
+endif # ADC
+
+config BT_CTLR
+	default BT
+
+endif # BOARD_NRF51_PCA10031

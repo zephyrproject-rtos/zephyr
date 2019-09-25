@@ -1,0 +1,151 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+#include <xtensa/xtensa.dtsi>
+#include <dt-bindings/i2c/i2c.h>
+#include <dt-bindings/gpio/gpio.h>
+#include <mem.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "cadence,tensilica-xtensa-lx6";
+			reg = <0>;
+		};
+
+		cpu1: cpu@1 {
+			device_type = "cpu";
+			compatible = "cadence,tensilica-xtensa-lx6";
+			reg = <1>;
+		};
+	};
+
+	sram0: memory@be000000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0xbe000000 DT_SIZE_M(4)>;
+	};
+
+	sram1: memory@be800000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0xbe800000 DT_SIZE_K(64)>;
+	};
+
+	sysclk: system-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <400000000>;
+		#clock-cells = <0>;
+	};
+
+	soc {
+		core_intc: core_intc@0 {
+			compatible = "xtensa,core-intc";
+			reg = <0x00 0x400>;
+			interrupt-controller;
+			#interrupt-cells = <3>;
+		};
+
+		cavs0: cavs@78800  {
+			compatible = "intel,cavs-intc";
+			reg = <0x78800 0x10>;
+			interrupt-controller;
+			#interrupt-cells = <3>;
+			interrupts = <6 0 0>;
+			interrupt-parent = <&core_intc>;
+		};
+
+		cavs1: cavs@78810  {
+			compatible = "intel,cavs-intc";
+			reg = <0x78810 0x10>;
+			interrupt-controller;
+			#interrupt-cells = <3>;
+			interrupts = <0xA 0 0>;
+			interrupt-parent = <&core_intc>;
+		};
+
+		cavs2: cavs@78820  {
+			compatible = "intel,cavs-intc";
+			reg = <0x78820 0x10>;
+			interrupt-controller;
+			#interrupt-cells = <3>;
+			interrupts = <0XD 0 0>;
+			interrupt-parent = <&core_intc>;
+		};
+
+		cavs3: cavs@78830  {
+			compatible = "intel,cavs-intc";
+			reg = <0x78830 0x10>;
+			interrupt-controller;
+			#interrupt-cells = <3>;
+			interrupts = <0x10 0 0>;
+			interrupt-parent = <&core_intc>;
+		};
+
+		dw_intc: intc@81800  {
+			compatible = "snps,designware-intc";
+			reg = <0x00081800 0x400>;
+			interrupt-controller;
+			#interrupt-cells = <3>;
+			interrupts = <6 0 0>;
+			interrupt-parent = <&cavs0>;
+		};
+
+		gpio0: gpio@80c00 {
+			compatible = "snps,designware-gpio";
+			reg = <0x00080c00 0x400>;
+			bits = <32>;
+			label = "GPIO";
+			interrupts = <3 1 0>;
+			interrupt-parent = <&dw_intc>;
+
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+
+		pinmux: pinmux@81c30 {
+			compatible = "intel,s1000-pinmux";
+			reg = <0x00081c30 0xC>;
+		};
+
+		uart0: uart@80800 {
+			compatible = "ns16550";
+			reg = <0x80800 0x400>;
+			label = "UART_0";
+			clock-frequency = <38400000>;
+			interrupts = <2 0 0>;
+			interrupt-parent = <&dw_intc>;
+
+
+			status = "disabled";
+		};
+
+		i2c0: i2c@80400 {
+			compatible = "snps,designware-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x80400 0x400>;
+			interrupts = <1 0 0>;
+			interrupt-parent = <&dw_intc>;
+			label = "I2C_0";
+
+			status = "disabled";
+		};
+
+		spi0: spi@e000 {
+			compatible = "snps,designware-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x0000E000 0x400>;
+			clocks = <&sysclk>;
+			interrupts = <6 0 0>;
+			interrupt-parent = <&dw_intc>;
+			label = "SPI_0";
+		};
+
+	};
+};

@@ -19,8 +19,8 @@ extern "C" {
  * Recorded line must be NULL terminated.
  */
 struct console_input {
-	/** FIFO uses first 4 bytes itself, reserve space */
-	int _unused;
+	/** FIFO uses first word itself, reserve space */
+	intptr_t _unused;
 	/** Whether this is an mcumgr command */
 	u8_t is_mcumgr : 1;
 	/** Buffer where the input line is recorded */

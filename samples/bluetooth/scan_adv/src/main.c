@@ -8,8 +8,8 @@
 
 #include <zephyr/types.h>
 #include <stddef.h>
-#include <misc/printk.h>
-#include <misc/util.h>
+#include <sys/printk.h>
+#include <sys/util.h>
 
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/hci.h>

@@ -5,7 +5,7 @@
  */
 
 
-#include <i2c.h>
+#include <drivers/i2c.h>
 #include <dt-bindings/i2c/i2c.h>
 #include <nrfx_twim.h>
 
@@ -18,10 +18,15 @@ struct i2c_nrfx_twim_data {
 	struct k_sem transfer_sync;
 	struct k_sem completion_sync;
 	volatile nrfx_err_t res;
+	uint32_t dev_config;
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+	u32_t pm_state;
+#endif
 };
 
 struct i2c_nrfx_twim_config {
 	nrfx_twim_t twim;
+	nrfx_twim_config_t config;
 };
 
 static inline struct i2c_nrfx_twim_data *get_dev_data(struct device *dev)
@@ -128,6 +133,7 @@ static int i2c_nrfx_twim_configure(struct device *dev, u32_t dev_config)
 		LOG_ERR("unsupported speed");
 		return -EINVAL;
 	}
+	get_dev_data(dev)->dev_config = dev_config;
 
 	return 0;
 }
@@ -137,19 +143,70 @@ static const struct i2c_driver_api i2c_nrfx_twim_driver_api = {
 	.transfer  = i2c_nrfx_twim_transfer,
 };
 
-static int init_twim(struct device *dev, const nrfx_twim_config_t *config)
+static int init_twim(struct device *dev)
 {
-
-	nrfx_err_t result = nrfx_twim_init(&get_dev_config(dev)->twim, config,
-					   event_handler, dev);
+	nrfx_err_t result = nrfx_twim_init(&get_dev_config(dev)->twim,
+					   &get_dev_config(dev)->config,
+					   event_handler,
+					   dev);
 	if (result != NRFX_SUCCESS) {
 		LOG_ERR("Failed to initialize device: %s",
-			    dev->config->name);
+			dev->config->name);
 		return -EBUSY;
 	}
 
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+	get_dev_data(dev)->pm_state = DEVICE_PM_ACTIVE_STATE;
+#endif
+
 	return 0;
 }
+
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+static int twim_nrfx_pm_control(struct device *dev, u32_t ctrl_command,
+				void *context, device_pm_cb cb, void *arg)
+{
+	int ret = 0;
+
+	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
+		u32_t new_state = *((const u32_t *)context);
+
+		if (new_state != get_dev_data(dev)->pm_state) {
+			switch (new_state) {
+			case DEVICE_PM_ACTIVE_STATE:
+				init_twim(dev);
+				if (get_dev_data(dev)->dev_config) {
+					i2c_nrfx_twim_configure(
+						dev,
+						get_dev_data(dev)->dev_config);
+				}
+				break;
+
+			case DEVICE_PM_LOW_POWER_STATE:
+			case DEVICE_PM_SUSPEND_STATE:
+			case DEVICE_PM_OFF_STATE:
+				nrfx_twim_uninit(&get_dev_config(dev)->twim);
+				break;
+
+			default:
+				ret = -ENOTSUP;
+			}
+			if (!ret) {
+				get_dev_data(dev)->pm_state = new_state;
+			}
+		}
+	} else {
+		assert(ctrl_command == DEVICE_PM_GET_POWER_STATE);
+		*((u32_t *)context) = get_dev_data(dev)->pm_state;
+	}
+
+	if (cb) {
+		cb(dev, ret, context, arg);
+	}
+
+	return ret;
+}
+#endif /* CONFIG_DEVICE_POWER_MANAGEMENT */
 
 #define I2C_NRFX_TWIM_INVALID_FREQUENCY  ((nrf_twim_frequency_t)-1)
 #define I2C_NRFX_TWIM_FREQUENCY(bitrate)				       \
@@ -166,34 +223,35 @@ static int init_twim(struct device *dev, const nrfx_twim_config_t *config)
 		"Wrong I2C " #idx " frequency setting in dts");		       \
 	static int twim_##idx##_init(struct device *dev)		       \
 	{								       \
-		IRQ_CONNECT(DT_NORDIC_NRF_I2C_I2C_##idx##_IRQ,		       \
-			    DT_NORDIC_NRF_I2C_I2C_##idx##_IRQ_PRIORITY,	       \
+		IRQ_CONNECT(DT_NORDIC_NRF_I2C_I2C_##idx##_IRQ_0,	       \
+			    DT_NORDIC_NRF_I2C_I2C_##idx##_IRQ_0_PRIORITY,      \
 			    nrfx_isr, nrfx_twim_##idx##_irq_handler, 0);       \
-		const nrfx_twim_config_t config = {			       \
+		return init_twim(dev);					       \
+	}								       \
+	static struct i2c_nrfx_twim_data twim_##idx##_data = {		       \
+		.transfer_sync = Z_SEM_INITIALIZER(                            \
+			twim_##idx##_data.transfer_sync, 1, 1),                \
+		.completion_sync = Z_SEM_INITIALIZER(                          \
+			twim_##idx##_data.completion_sync, 0, 1)               \
+	};								       \
+	static const struct i2c_nrfx_twim_config twim_##idx##z_config = {      \
+		.twim = NRFX_TWIM_INSTANCE(idx),			       \
+		.config = {						       \
 			.scl       = DT_NORDIC_NRF_I2C_I2C_##idx##_SCL_PIN,    \
 			.sda       = DT_NORDIC_NRF_I2C_I2C_##idx##_SDA_PIN,    \
 			.frequency = I2C_NRFX_TWIM_FREQUENCY(		       \
 				DT_NORDIC_NRF_I2C_I2C_##idx##_CLOCK_FREQUENCY) \
-		};							       \
-		return init_twim(dev, &config);				       \
-	}								       \
-	static struct i2c_nrfx_twim_data twim_##idx##_data = {		       \
-		.transfer_sync = Z_SEM_INITIALIZER(                           \
-			twim_##idx##_data.transfer_sync, 1, 1),                \
-		.completion_sync = Z_SEM_INITIALIZER(                         \
-			twim_##idx##_data.completion_sync, 0, 1)               \
+		}							       \
 	};								       \
-	static const struct i2c_nrfx_twim_config twim_##idx##z_config = {       \
-		.twim = NRFX_TWIM_INSTANCE(idx)				       \
-	};								       \
-	DEVICE_AND_API_INIT(twim_##idx,					       \
-			    DT_NORDIC_NRF_I2C_I2C_##idx##_LABEL,	       \
-			    twim_##idx##_init,				       \
-			    &twim_##idx##_data,				       \
-			    &twim_##idx##z_config,			       \
-			    POST_KERNEL,				       \
-			    CONFIG_I2C_INIT_PRIORITY,			       \
-			    &i2c_nrfx_twim_driver_api)
+	DEVICE_DEFINE(twim_##idx,					       \
+		      DT_NORDIC_NRF_I2C_I2C_##idx##_LABEL,		       \
+		      twim_##idx##_init,				       \
+		      twim_nrfx_pm_control,				       \
+		      &twim_##idx##_data,				       \
+		      &twim_##idx##z_config,				       \
+		      POST_KERNEL,					       \
+		      CONFIG_I2C_INIT_PRIORITY,				       \
+		      &i2c_nrfx_twim_driver_api)
 
 #ifdef CONFIG_I2C_0_NRF_TWIM
 I2C_NRFX_TWIM_DEVICE(0);

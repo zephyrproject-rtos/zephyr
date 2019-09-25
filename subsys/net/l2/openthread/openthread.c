@@ -15,8 +15,8 @@ LOG_MODULE_REGISTER(net_l2_openthread, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
 #include <net_private.h>
 
 #include <init.h>
-#include <misc/util.h>
-#include <misc/__assert.h>
+#include <sys/util.h>
+#include <sys/__assert.h>
 
 #include <openthread/cli.h>
 #include <openthread/ip6.h>
@@ -68,6 +68,10 @@ static void ipv6_addr_event_handler(struct net_mgmt_event_callback *cb,
 				    u32_t mgmt_event, struct net_if *iface)
 {
 	struct openthread_context *ot_context = net_if_l2_data(iface);
+
+	if (net_if_l2(iface) != &NET_L2_GET_NAME(OPENTHREAD)) {
+		return;
+	}
 
 	if (mgmt_event == NET_EVENT_IPV6_ADDR_ADD) {
 		add_ipv6_addr_to_ot(ot_context);

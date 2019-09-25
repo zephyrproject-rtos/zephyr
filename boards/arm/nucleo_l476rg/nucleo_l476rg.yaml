@@ -12,7 +12,6 @@ supported:
   - gpio
   - spi
   - i2c
-  - rtc
   - counter
   - adc
 ram: 96

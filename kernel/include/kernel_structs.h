@@ -10,10 +10,10 @@
 #include <kernel.h>
 
 #if !defined(_ASMLANGUAGE)
-#include <atomic.h>
-#include <misc/dlist.h>
-#include <misc/rb.h>
-#include <misc/util.h>
+#include <sys/atomic.h>
+#include <sys/dlist.h>
+#include <sys/rb.h>
+#include <sys/util.h>
 #include <string.h>
 #endif
 
@@ -98,6 +98,11 @@ struct _cpu {
 
 	/* one assigned idle thread per CPU */
 	struct k_thread *idle_thread;
+
+#ifdef CONFIG_USERSPACE
+	/* current syscall frame pointer */
+	void *syscall_frame;
+#endif
 
 #ifdef CONFIG_TIMESLICING
 	/* number of ticks remaining in current time slice */
@@ -185,7 +190,7 @@ extern struct z_kernel _kernel;
 
 #include <kernel_arch_func.h>
 
-#if CONFIG_USE_SWITCH
+#ifdef CONFIG_USE_SWITCH
 /* This is a arch function traditionally, but when the switch-based
  * z_swap() is in use it's a simple inline provided by the kernel.
  */
@@ -241,7 +246,7 @@ static ALWAYS_INLINE void z_new_thread_init(struct k_thread *thread,
 #endif
 
 #ifdef CONFIG_THREAD_NAME
-	thread->name = NULL;
+	thread->name[0] = '\0';
 #endif
 
 #if defined(CONFIG_USERSPACE)

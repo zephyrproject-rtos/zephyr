@@ -8,6 +8,7 @@
 #include <logging/log_core.h>
 #include <logging/log_msg.h>
 #include <logging/log_output.h>
+#include "log_backend_std.h"
 #include <SEGGER_RTT.h>
 
 #ifndef CONFIG_LOG_BACKEND_RTT_BUFFER_SIZE
@@ -220,21 +221,7 @@ LOG_OUTPUT_DEFINE(log_output, IS_ENABLED(CONFIG_LOG_BACKEND_RTT_MODE_BLOCK) ?
 static void put(const struct log_backend *const backend,
 		struct log_msg *msg)
 {
-	log_msg_get(msg);
-
-	u32_t flags = LOG_OUTPUT_FLAG_LEVEL | LOG_OUTPUT_FLAG_TIMESTAMP;
-
-	if (IS_ENABLED(CONFIG_LOG_BACKEND_SHOW_COLOR)) {
-		flags |= LOG_OUTPUT_FLAG_COLORS;
-	}
-
-	if (IS_ENABLED(CONFIG_LOG_BACKEND_FORMAT_TIMESTAMP)) {
-		flags |= LOG_OUTPUT_FLAG_FORMAT_TIMESTAMP;
-	}
-
-	log_output_msg_process(&log_output, msg, flags);
-
-	log_msg_put(msg);
+	log_backend_std_put(&log_output, 0, msg);
 }
 
 static void log_backend_rtt_cfg(void)
@@ -257,7 +244,7 @@ static void log_backend_rtt_init(void)
 
 static void panic(struct log_backend const *const backend)
 {
-	log_output_flush(&log_output);
+	log_backend_std_panic(&log_output);
 	sync_mode = true;
 }
 
@@ -265,48 +252,23 @@ static void dropped(const struct log_backend *const backend, u32_t cnt)
 {
 	ARG_UNUSED(backend);
 
-	log_output_dropped_process(&log_output, cnt);
+	log_backend_std_dropped(&log_output, cnt);
 }
 
 static void sync_string(const struct log_backend *const backend,
 		     struct log_msg_ids src_level, u32_t timestamp,
 		     const char *fmt, va_list ap)
 {
-	u32_t flags = LOG_OUTPUT_FLAG_LEVEL | LOG_OUTPUT_FLAG_TIMESTAMP;
-	u32_t key;
-
-	if (IS_ENABLED(CONFIG_LOG_BACKEND_SHOW_COLOR)) {
-		flags |= LOG_OUTPUT_FLAG_COLORS;
-	}
-
-	if (IS_ENABLED(CONFIG_LOG_BACKEND_FORMAT_TIMESTAMP)) {
-		flags |= LOG_OUTPUT_FLAG_FORMAT_TIMESTAMP;
-	}
-
-	key = irq_lock();
-	log_output_string(&log_output, src_level, timestamp, fmt, ap, flags);
-	irq_unlock(key);
+	log_backend_std_sync_string(&log_output, 0, src_level,
+				    timestamp, fmt, ap);
 }
 
 static void sync_hexdump(const struct log_backend *const backend,
 			 struct log_msg_ids src_level, u32_t timestamp,
 			 const char *metadata, const u8_t *data, u32_t length)
 {
-	u32_t flags = LOG_OUTPUT_FLAG_LEVEL | LOG_OUTPUT_FLAG_TIMESTAMP;
-	u32_t key;
-
-	if (IS_ENABLED(CONFIG_LOG_BACKEND_SHOW_COLOR)) {
-		flags |= LOG_OUTPUT_FLAG_COLORS;
-	}
-
-	if (IS_ENABLED(CONFIG_LOG_BACKEND_FORMAT_TIMESTAMP)) {
-		flags |= LOG_OUTPUT_FLAG_FORMAT_TIMESTAMP;
-	}
-
-	key = irq_lock();
-	log_output_hexdump(&log_output, src_level, timestamp,
-			metadata, data, length, flags);
-	irq_unlock(key);
+	log_backend_std_sync_hexdump(&log_output, 0, src_level,
+				     timestamp, metadata, data, length);
 }
 
 const struct log_backend_api log_backend_rtt_api = {

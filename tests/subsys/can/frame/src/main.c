@@ -12,7 +12,7 @@ LOG_MODULE_REGISTER(can_test, LOG_LEVEL_ERR);
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <string.h>
-#include <can.h>
+#include <drivers/can.h>
 
 #include <ztest.h>
 

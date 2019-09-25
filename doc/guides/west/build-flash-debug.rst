@@ -219,6 +219,16 @@ You can :ref:`configure <west-config-cmd>` ``west build`` using these options.
      - String, default ``Ninja``. The `CMake Generator`_ to use to create a
        build system. (To set a generator for a single build, see the
        :ref:`above example <west-building-generator>`)
+   * - ``build.guess-dir``
+     - String, instructs west whether to try to guess what build folder to use
+       when ``build.dir-fmt`` is in use and not enough information is available
+       to resolve the build folder name. Can take these values:
+
+         - ``never`` (default): Never try to guess, bail out instead and
+           require the user to provide a build folder with ``-d``.
+         - ``runners``: Try to guess the folder when using any of the 'runner'
+           commands.  These are typically all commands that invoke an external
+           tool, such as ``flash`` and ``debug``.
    * - ``build.pristine``
      - String. Controls the way in which ``west build`` may clean the build
        folder before building. Can take the following values:
@@ -453,13 +463,22 @@ determined by the imported subclasses of ``ZephyrBinaryRunner``.
 individual runner implementations are in other submodules, such as
 ``runners.nrfjprog``, ``runners.openocd``, etc.
 
-Hacking and APIs
-****************
+Hacking
+*******
 
-Developers can add support for new ways to flash and debug Zephyr
-programs by implementing additional runners. To get this support into
-upstream Zephyr, the runner should be added into a new or existing
-``runners`` module, and imported from :file:`runner/__init__.py`.
+This section documents the ``runners.core`` module used by the
+flash and debug commands. This is the core abstraction used to implement
+support for these features.
+
+.. warning::
+
+   These APIs are provided for reference, but they are more "shared code" used
+   to implement multiple extension commands than a stable API.
+
+Developers can add support for new ways to flash and debug Zephyr programs by
+implementing additional runners. To get this support into upstream Zephyr, the
+runner should be added into a new or existing ``runners`` module, and imported
+from :file:`runners/__init__.py`.
 
 .. note::
 
@@ -470,8 +489,8 @@ upstream Zephyr, the runner should be added into a new or existing
    changes break existing test cases, CI testing on upstream pull
    requests will fail.
 
-API Documentation for the ``runners.core`` module can be found in
-:ref:`west-apis`.
+.. automodule:: runners.core
+   :members:
 
 Doing it By Hand
 ****************

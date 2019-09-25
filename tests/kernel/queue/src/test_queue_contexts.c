@@ -11,7 +11,7 @@
 /**TESTPOINT: init via K_QUEUE_DEFINE*/
 K_QUEUE_DEFINE(kqueue);
 
-K_MEM_POOL_DEFINE(mem_pool_fail, 4, 8, 1, 4);
+K_MEM_POOL_DEFINE(mem_pool_fail, 4, _MPOOL_MINBLK, 1, 4);
 K_MEM_POOL_DEFINE(mem_pool_pass, 4, 64, 4, 4);
 
 struct k_queue queue;
@@ -227,6 +227,8 @@ void test_queue_get_2threads(void)
 
 static void tqueue_alloc(struct k_queue *pqueue)
 {
+	k_thread_resource_pool_assign(k_current_get(), NULL);
+
 	/* Alloc append without resource pool */
 	k_queue_alloc_append(pqueue, (void *)&data_append);
 

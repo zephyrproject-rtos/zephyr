@@ -5,12 +5,12 @@
  */
 
 #include <device.h>
-#include <i2c.h>
-#include <misc/byteorder.h>
-#include <misc/util.h>
+#include <drivers/i2c.h>
+#include <sys/byteorder.h>
+#include <sys/util.h>
 #include <kernel.h>
-#include <sensor.h>
-#include <misc/__assert.h>
+#include <drivers/sensor.h>
+#include <sys/__assert.h>
 #include <logging/log.h>
 
 #define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL

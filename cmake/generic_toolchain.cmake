@@ -54,7 +54,7 @@ set(ZEPHYR_TOOLCHAIN_VARIANT ${ZEPHYR_TOOLCHAIN_VARIANT} CACHE STRING "Zephyr to
 assert(ZEPHYR_TOOLCHAIN_VARIANT "Zephyr toolchain variant invalid: please set the ZEPHYR_TOOLCHAIN_VARIANT-variable")
 
 # Pick host system's toolchain if we are targeting posix
-if((${ARCH} STREQUAL "posix") OR (${ARCH} STREQUAL "x86_64"))
+if(${ARCH} STREQUAL "posix")
   if(NOT "${ZEPHYR_TOOLCHAIN_VARIANT}" STREQUAL "llvm")
     set(ZEPHYR_TOOLCHAIN_VARIANT "host")
   endif()
@@ -65,4 +65,6 @@ include(${TOOLCHAIN_ROOT}/cmake/toolchain/${ZEPHYR_TOOLCHAIN_VARIANT}/generic.cm
 
 # Configure the toolchain based on what toolchain technology is used
 # (gcc, host-gcc etc.)
-include(${ZEPHYR_BASE}/cmake/compiler/${COMPILER}/generic.cmake OPTIONAL)
+include(${TOOLCHAIN_ROOT}/cmake/compiler/${COMPILER}/generic.cmake OPTIONAL)
+include(${TOOLCHAIN_ROOT}/cmake/linker/${LINKER}/generic.cmake OPTIONAL)
+include(${TOOLCHAIN_ROOT}/cmake/bintools/${BINTOOLS}/generic.cmake OPTIONAL)

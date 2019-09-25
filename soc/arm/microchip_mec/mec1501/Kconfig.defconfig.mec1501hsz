@@ -11,10 +11,6 @@ config SOC
 	string
 	default "mec1501hsz"
 
-config SYS_CLOCK_HW_CYCLES_PER_SEC
-	int
-	default 48000000
-
 if SERIAL
 
 config UART_NS16550
@@ -45,5 +41,26 @@ config I2C_XEC
 	def_bool y
 
 endif # I2C
+
+if COUNTER
+
+config COUNTER_XEC
+	def_bool y
+
+endif # COUNTER
+
+if PS2
+
+config PS2_XEC
+	default y
+
+endif # PS2
+
+if PWM
+
+config PWM_XEC
+	def_bool y
+
+endif # PWM
 
 endif # SOC_MEC1501_HSZ

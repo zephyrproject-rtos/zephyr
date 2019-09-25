@@ -36,7 +36,11 @@
 
 /** \brief Timer node type size.
  */
+#if defined(CONFIG_BT_TICKER_COMPATIBILITY_MODE)
+#define TICKER_NODE_T_SIZE      40
+#else
 #define TICKER_NODE_T_SIZE      44
+#endif
 
 /** \brief Timer user type size.
  */
@@ -117,6 +121,8 @@ u32_t ticker_job_idle_get(u8_t instance_index, u8_t user_id,
 void ticker_job_sched(u8_t instance_index, u8_t user_id);
 u32_t ticker_ticks_now_get(void);
 u32_t ticker_ticks_diff_get(u32_t ticks_now, u32_t ticks_old);
+#if !defined(CONFIG_BT_TICKER_COMPATIBILITY_MODE)
 u32_t ticker_priority_set(u8_t instance_index, u8_t user_id, u8_t ticker_id,
 			  s8_t priority, ticker_op_func fp_op_func,
 			  void *op_context);
+#endif /* !CONFIG_BT_TICKER_COMPATIBILITY_MODE */

@@ -6,6 +6,7 @@
 
 menuconfig LOG
 	bool "Logging"
+	select PRINTK if USERSPACE
 	help
 	  Global switch for the logger, when turned off log calls will not be
 	  compiled in.
@@ -14,6 +15,7 @@ if LOG
 
 config LOG_RUNTIME_FILTERING
 	bool "Enable runtime reconfiguration of the logger"
+	depends on !LOG_FRONTEND
 	help
 	  Allow runtime configuration of maximal, independent severity
 	  level for instance.
@@ -68,6 +70,7 @@ config LOG_MAX_LEVEL
 	  - 4 DEBUG, maximal level set to LOG_LEVEL_DBG
 
 menu "Prepend log message with function name"
+	depends on !LOG_FRONTEND
 
 config LOG_FUNC_NAME_PREFIX_ERR
 	bool "Error messages prepended"
@@ -92,7 +95,7 @@ config LOG_PRINTK
 config LOG_PRINTK_MAX_STRING_LENGTH
 	int "Maximum string length supported by LOG_PRINTK"
 	depends on LOG_PRINTK
-	depends on !LOG_IMMEDIATE
+	depends on (!LOG_IMMEDIATE || USERSPACE)
 	default 128
 	help
 	  Array is allocated on the stack.
@@ -129,6 +132,26 @@ config LOG_MODE_NO_OVERFLOW
 
 endchoice
 
+config LOG_BLOCK_IN_THREAD
+	bool "On log full block in thread context"
+	help
+	  When enabled logger will block (if in the thread context) when
+	  internal logger buffer is full and new message cannot be allocated.
+
+if LOG_BLOCK_IN_THREAD
+
+config LOG_BLOCK_IN_THREAD_TIMEOUT_MS
+	int "Maximum time (in milliseconds) thread can be blocked"
+	default 1000
+	range -1 10000
+	help
+	  If new buffer for a log message cannot be allocated in that time, log
+	  message is dropped. Forever blocking (-1) is possible however may lead
+	  to the logger deadlock if logging is enabled in threads used for
+	  logging (e.g. logger or shell thread).
+
+endif # LOG_BLOCK_IN_THREAD
+
 config LOG_PROCESS_TRIGGER_THRESHOLD
 	int "Amount of buffered logs which triggers processing thread."
 	default 10
@@ -162,6 +185,7 @@ config LOG_PROCESS_THREAD_STACK_SIZE
 	default 2048 if COVERAGE_GCOV
 	default 1024 if NO_OPTIMIZATIONS
 	default 1024 if XTENSA
+	default 4096 if (X86 && X86_LONGMODE)
 	default 768
 	help
 	  Set the internal stack size for log processing thread.
@@ -222,6 +246,14 @@ config LOG_CMDS
 	bool "Enable shell commands"
 	depends on SHELL
 	default y if SHELL
+
+config LOG_FRONTEND
+	bool "Enable frontend"
+	default n
+	select LOG_IMMEDIATE
+	help
+	  When enabled, logs are redirected to a custom frontend instead
+	  of being processed by the logger.
 
 config LOG_BACKEND_UART
 	bool "Enable UART backend"
@@ -361,6 +393,12 @@ config LOG_BACKEND_NATIVE_POSIX
 	depends on ARCH_POSIX
 	help
 	  Enable backend in native_posix
+
+config LOG_BACKEND_QEMU_X86_64
+	bool "Enable QEMU x86_64 backend"
+	depends on BOARD_QEMU_X86_64
+	help
+	  Enable backend for qemu_x86_64 board
 
 config LOG_BACKEND_XTENSA_SIM
 	bool "Enable xtensa simulator backend"

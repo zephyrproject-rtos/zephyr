@@ -6,9 +6,9 @@
 
 #include <kernel.h>
 #include <string.h>
-#include <misc/__assert.h>
-#include <misc/mempool_base.h>
-#include <misc/mempool.h>
+#include <sys/__assert.h>
+#include <sys/mempool_base.h>
+#include <sys/mempool.h>
 
 #ifdef CONFIG_MISRA_SANE
 #define LVL_ARRAY_SZ(n) (8 * sizeof(void *) / 2)
@@ -33,7 +33,7 @@ static int get_bit_ptr(struct sys_mem_pool_base *p, int level, int bn,
 		       u32_t **word)
 {
 	u32_t *bitarray = level <= p->max_inline_level ?
-		&p->levels[level].bits : p->levels[level].bits_p;
+		p->levels[level].bits : p->levels[level].bits_p;
 
 	*word = &bitarray[bn / 32];
 
@@ -67,16 +67,6 @@ static int partner_bits(struct sys_mem_pool_base *p, int level, int bn)
 	return (*word >> (4*(bit / 4))) & 0xf;
 }
 
-static size_t buf_size(struct sys_mem_pool_base *p)
-{
-	return p->n_max * p->max_sz;
-}
-
-static bool block_fits(struct sys_mem_pool_base *p, void *block, size_t bsz)
-{
-	return ((u8_t *)block + bsz - 1 - (u8_t *)p->buf) < buf_size(p);
-}
-
 void z_sys_mem_pool_base_init(struct sys_mem_pool_base *p)
 {
 	int i;
@@ -90,14 +80,14 @@ void z_sys_mem_pool_base_init(struct sys_mem_pool_base *p)
 
 		sys_dlist_init(&p->levels[i].free_list);
 
-		if (nblocks < 32) {
+		if (nblocks <= sizeof(p->levels[i].bits)*8) {
 			p->max_inline_level = i;
 		} else {
 			p->levels[i].bits_p = bits;
 			bits += (nblocks + 31)/32;
 		}
 
-		sz = _ALIGN4(sz / 4);
+		sz = WB_DN(sz / 4);
 	}
 
 	for (i = 0; i < p->n_max; i++) {
@@ -161,8 +151,6 @@ static unsigned int bfree_recombine(struct sys_mem_pool_base *p, int level,
 		int i, lsz = lsizes[level];
 		void *block = block_ptr(p, lsz, bn);
 
-		__ASSERT(block_fits(p, block, lsz), "");
-
 		/* Put it back */
 		set_free_bit(p, level, bn);
 		sys_dlist_append(&p->levels[level].free_list, block);
@@ -179,10 +167,8 @@ static unsigned int bfree_recombine(struct sys_mem_pool_base *p, int level,
 		for (i = 0; i < 4; i++) {
 			int b = (bn & ~3) + i;
 
-			if (block_fits(p, block_ptr(p, lsz, b), lsz)) {
-				clear_free_bit(p, level, b);
-				sys_dlist_remove(block_ptr(p, lsz, b));
-			}
+			clear_free_bit(p, level, b);
+			sys_dlist_remove(block_ptr(p, lsz, b));
 		}
 
 		/* Free the larger block */
@@ -220,9 +206,7 @@ static void *block_break(struct sys_mem_pool_base *p, void *block, int l,
 		void *block2 = (lsz * i) + (char *)block;
 
 		set_free_bit(p, l + 1, lbn);
-		if (block_fits(p, block2, lsz)) {
-			sys_dlist_append(&p->levels[l + 1].free_list, block2);
-		}
+		sys_dlist_append(&p->levels[l + 1].free_list, block2);
 	}
 
 	return block;
@@ -242,10 +226,10 @@ int z_sys_mem_pool_block_alloc(struct sys_mem_pool_base *p, size_t size,
 	 * way, we populate an array of sizes for each level so we
 	 * don't need to waste RAM storing it.
 	 */
-	lsizes[0] = _ALIGN4(p->max_sz);
+	lsizes[0] = p->max_sz;
 	for (i = 0; i < p->n_levels; i++) {
 		if (i > 0) {
-			lsizes[i] = _ALIGN4(lsizes[i-1] / 4);
+			lsizes[i] = WB_DN(lsizes[i-1] / 4);
 		}
 
 		if (lsizes[i] < size) {
@@ -315,9 +299,9 @@ void z_sys_mem_pool_block_free(struct sys_mem_pool_base *p, u32_t level,
 	 * doesn't inherently need to traverse all the larger
 	 * sublevels.
 	 */
-	lsizes[0] = _ALIGN4(p->max_sz);
+	lsizes[0] = p->max_sz;
 	for (i = 1; i <= level; i++) {
-		lsizes[i] = _ALIGN4(lsizes[i-1] / 4);
+		lsizes[i] = WB_DN(lsizes[i-1] / 4);
 	}
 
 	block_free(p, level, lsizes, block);
@@ -335,7 +319,7 @@ void *sys_mem_pool_alloc(struct sys_mem_pool *p, size_t size)
 
 	sys_mutex_lock(&p->mutex, K_FOREVER);
 
-	size += sizeof(struct sys_mem_pool_block);
+	size += WB_UP(sizeof(struct sys_mem_pool_block));
 	if (z_sys_mem_pool_block_alloc(&p->base, size, &level, &block,
 				      (void **)&ret)) {
 		ret = NULL;
@@ -346,7 +330,7 @@ void *sys_mem_pool_alloc(struct sys_mem_pool *p, size_t size)
 	blk->level = level;
 	blk->block = block;
 	blk->pool = p;
-	ret += sizeof(*blk);
+	ret += WB_UP(sizeof(struct sys_mem_pool_block));
 out:
 	sys_mutex_unlock(&p->mutex);
 	return ret;
@@ -361,7 +345,8 @@ void sys_mem_pool_free(void *ptr)
 		return;
 	}
 
-	blk = (struct sys_mem_pool_block *)((char *)ptr - sizeof(*blk));
+	ptr = (char *)ptr - WB_UP(sizeof(struct sys_mem_pool_block));
+	blk = (struct sys_mem_pool_block *)ptr;
 	p = blk->pool;
 
 	sys_mutex_lock(&p->mutex, K_FOREVER);

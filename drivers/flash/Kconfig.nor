@@ -26,16 +26,27 @@ config SPI_NOR_CS_WAIT_DELAY
 	help
 	This is the wait delay (in us) to allow for CS switching to take effect
 
+config SPI_NOR_FLASH_LAYOUT_PAGE_SIZE
+	int "Page size to use for FLASH_LAYOUT feature"
+	default 65536
+	help
+	  When CONFIG_FLASH_PAGE_LAYOUT is used this driver will support
+	  that API.  By default the page size corresponds to the block
+	  size (65536).  Other options include the 32K-byte erase size
+	  (32768), and the sector size (4096).
+
 config SPI_NOR_PAGE_SIZE
 	int "Page size of SPI flash"
 	default 0
 	help
-	This option specifies page size of SPI flash
+	  Note: This option is deprecated and is ignored.  Page size is
+	  always 256.
 
 config SPI_NOR_SECTOR_SIZE
 	int "Sector size of SPI flash"
 	default 0
 	help
-	This option specifies sector size of SPI flash
+	  Note: This option is deprecated and is ignored.  Sector size
+	  is always 4096.
 
 endif # SPI_NOR

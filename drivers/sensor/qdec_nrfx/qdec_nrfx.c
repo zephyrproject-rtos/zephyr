@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <sensor.h>
+#include <drivers/sensor.h>
 
 #include <nrfx_qdec.h>
 #include <hal/nrf_gpio.h>
@@ -195,8 +195,8 @@ static int qdec_nrfx_init(struct device *dev)
 
 	LOG_DBG("");
 
-	IRQ_CONNECT(DT_NORDIC_NRF_QDEC_QDEC_0_IRQ,
-		    DT_NORDIC_NRF_QDEC_QDEC_0_IRQ_PRIORITY,
+	IRQ_CONNECT(DT_NORDIC_NRF_QDEC_QDEC_0_IRQ_0,
+		    DT_NORDIC_NRF_QDEC_QDEC_0_IRQ_0_PRIORITY,
 		    nrfx_isr, nrfx_qdec_irq_handler, 0);
 
 	nerr = nrfx_qdec_init(&config, qdec_nrfx_event_handler);

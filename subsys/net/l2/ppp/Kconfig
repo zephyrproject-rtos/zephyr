@@ -1,0 +1,81 @@
+#
+# Copyright (c) 2019 Intel Corporation.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig NET_L2_PPP
+	bool "Enable point-to-point (PPP) support [EXPERIMENTAL]"
+	help
+	  Add support for PPP.
+
+if NET_L2_PPP
+
+config NET_L2_PPP_DELAY_STARTUP_MS
+	int "PPP delay startup ms"
+	default 0
+	help
+	  If the PPP starts too fast, it is possible to delay it
+	  a bit. This is mostly useful in debugging if you want the
+	  device be fully up before PPP handshake is started.
+	  Wait amount of milliseconds before starting PPP. Value 0 disables
+	  the wait.
+
+config NET_L2_PPP_TIMEOUT
+	int "Maximum timeout in ms for Configure-Req"
+	default 3000
+	range 1 4294967295
+	help
+	  How long to wait Configure-Req.
+
+config NET_L2_PPP_MAX_CONFIGURE_REQ_RETRANSMITS
+	int "Maximum number of Configure-Req retransmits"
+	default 10
+	range 0 4294967295
+	help
+	  How many times to resend Configure-Req messages before deciding the
+	  link is not working properly.
+
+config NET_L2_PPP_MAX_TERMINATE_REQ_RETRANSMITS
+	int "Maximum number of Terminate-Req retransmits"
+	default 2
+	range 0 4294967295
+	help
+	  How many times to resend Terminate-Req messages before terminating
+	  the link.
+
+config NET_L2_PPP_MAX_NACK_LOOPS
+	int "Maximum number of NACK loops accepted"
+	default 5
+	range 0 4294967295
+	help
+	  How many times to accept NACK loops.
+
+config NET_L2_PPP_MAX_OPTIONS
+	int "Maximum number of options supported"
+	default 8
+	range 0 16
+	help
+	  How many options we support. This is used to allocate space for
+	  each option. The default (8) is a reasonably small value.
+
+config NET_L2_PPP_OPTION_MRU_NEG
+	bool "Negotiate MRU option if needed"
+	help
+	  Try to negotiate with peer for MRU (MTU) for the link.
+
+module = NET_L2_PPP
+module-dep = NET_LOG
+module-str = Log level for ppp L2 layer
+module-help = Enables ppp L2 to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+
+config NET_L2_PPP_MGMT
+	bool "Enable ppp network management interface"
+	select NET_MGMT
+	select NET_MGMT_EVENT
+	help
+	  Enable support net_mgmt ppp interface which can be used to
+	  configure at run-time ppp drivers and L2 settings.
+
+endif # NET_L2_PPP

@@ -6,9 +6,9 @@
 
 #include <errno.h>
 #include <zephyr.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 #include <device.h>
-#include <i2c.h>
+#include <drivers/i2c.h>
 
 #ifdef ARDUINO_I2C_LABEL
 #define I2C_DEV ARDUINO_I2C_LABEL

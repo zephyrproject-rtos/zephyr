@@ -6,8 +6,8 @@
 
 #include <init.h>
 #include "board.h"
-#include <gpio.h>
-#include <misc/printk.h>
+#include <drivers/gpio.h>
+#include <sys/printk.h>
 
 static int efm32pg_stk3402a_init(struct device *dev)
 {

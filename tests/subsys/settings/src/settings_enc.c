@@ -14,7 +14,7 @@ static u8_t test_rwbs = 1U;
 
 static int write_handler(void *ctx, off_t off, char const *buf, size_t len)
 {
-	zassert_equal(ctx, (void *)ENC_CTX_VAL, "bad write calback context\n");
+	zassert_equal(ctx, (void *)ENC_CTX_VAL, "bad write callback context\n");
 
 	if (off % test_rwbs || len % test_rwbs) {
 		return -EIO;
@@ -74,7 +74,7 @@ static int read_handle(void *ctx, off_t off, char *buf, size_t *len)
 {
 	int r_len;
 
-	zassert_equal(ctx, (void *)ENC_CTX_VAL, "bad write calback context\n");
+	zassert_equal(ctx, (void *)ENC_CTX_VAL, "bad write callback context\n");
 
 	if (off % test_rwbs || *len % test_rwbs) {
 		return -EIO;

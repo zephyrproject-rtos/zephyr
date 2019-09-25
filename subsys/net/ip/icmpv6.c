@@ -12,8 +12,8 @@
 LOG_MODULE_REGISTER(net_icmpv6, CONFIG_NET_ICMPV6_LOG_LEVEL);
 
 #include <errno.h>
-#include <misc/slist.h>
-#include <misc/byteorder.h>
+#include <sys/slist.h>
+#include <sys/byteorder.h>
 #include <net/net_core.h>
 #include <net/net_pkt.h>
 #include <net/net_if.h>

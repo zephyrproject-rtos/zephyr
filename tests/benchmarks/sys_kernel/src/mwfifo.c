@@ -41,15 +41,14 @@ void fifo_test_init(void)
 void fifo_thread1(void *par1, void *par2, void *par3)
 {
 	int i;
-	int element[2];
-	int *pelement;
+	intptr_t element[2];
+	intptr_t *pelement;
 	int num_loops = POINTER_TO_INT(par2);
 
 	ARG_UNUSED(par1);
 	ARG_UNUSED(par3);
 	for (i = 0; i < num_loops; i++) {
-		pelement = (int *)k_fifo_get(&fifo1,
-						      K_FOREVER);
+		pelement = k_fifo_get(&fifo1, K_FOREVER);
 		if (pelement[1] != i) {
 			break;
 		}
@@ -74,8 +73,8 @@ void fifo_thread1(void *par1, void *par2, void *par3)
 void fifo_thread2(void *par1, void *par2, void *par3)
 {
 	int i;
-	int element[2];
-	int *pelement;
+	intptr_t element[2];
+	intptr_t *pelement;
 	int *pcounter = par1;
 	int num_loops = POINTER_TO_INT(par2);
 
@@ -84,8 +83,7 @@ void fifo_thread2(void *par1, void *par2, void *par3)
 	for (i = 0; i < num_loops; i++) {
 		element[1] = i;
 		k_fifo_put(&fifo1, element);
-		pelement = (int *)k_fifo_get(&fifo2,
-						      K_FOREVER);
+		pelement = k_fifo_get(&fifo2, K_FOREVER);
 		if (pelement[1] != i) {
 			break;
 		}
@@ -109,8 +107,8 @@ void fifo_thread2(void *par1, void *par2, void *par3)
 void fifo_thread3(void *par1, void *par2, void *par3)
 {
 	int i;
-	int element[2];
-	int *pelement;
+	intptr_t element[2];
+	intptr_t *pelement;
 	int *pcounter = par1;
 	int num_loops = POINTER_TO_INT(par2);
 
@@ -119,8 +117,7 @@ void fifo_thread3(void *par1, void *par2, void *par3)
 	for (i = 0; i < num_loops; i++) {
 		element[1] = i;
 		k_fifo_put(&fifo1, element);
-		while ((pelement = k_fifo_get(&fifo2,
-							K_NO_WAIT)) == NULL) {
+		while ((pelement = k_fifo_get(&fifo2, K_NO_WAIT)) == NULL) {
 			k_yield();
 		}
 		if (pelement[1] != i) {
@@ -144,7 +141,7 @@ int fifo_test(void)
 	u32_t t;
 	int i = 0;
 	int return_value = 0;
-	int element[2];
+	intptr_t element[2];
 	int j;
 
 	k_fifo_init(&sync_fifo);
@@ -175,7 +172,7 @@ int fifo_test(void)
 
 	/* threads have done their job, they can stop now safely: */
 	for (j = 0; j < 2; j++) {
-		k_fifo_put(&sync_fifo, (void *) element);
+		k_fifo_put(&sync_fifo, element);
 	}
 
 	/* test get/yield & put thread functions between co-op threads */
@@ -207,7 +204,7 @@ int fifo_test(void)
 
 	/* threads have done their job, they can stop now safely: */
 	for (j = 0; j < 2; j++) {
-		k_fifo_put(&sync_fifo, (void *) element);
+		k_fifo_put(&sync_fifo, element);
 	}
 
 	/* test get wait & put functions between co-op and premptive threads */
@@ -232,21 +229,19 @@ int fifo_test(void)
 			 NULL, INT_TO_POINTER(number_of_loops / 2U), NULL,
 			 K_PRIO_COOP(3), 0, K_NO_WAIT);
 	for (i = 0; i < number_of_loops / 2U; i++) {
-		int element[2];
-		int *pelement;
+		intptr_t element[2];
+		intptr_t *pelement;
 
 		element[1] = i;
 		k_fifo_put(&fifo1, element);
 		element[1] = i;
 		k_fifo_put(&fifo1, element);
 
-		pelement = (int *)k_fifo_get(&fifo2,
-						     K_FOREVER);
+		pelement = k_fifo_get(&fifo2, K_FOREVER);
 		if (pelement[1] != i) {
 			break;
 		}
-		pelement = (int *)k_fifo_get(&fifo2,
-						     K_FOREVER);
+		pelement = k_fifo_get(&fifo2, K_FOREVER);
 		if (pelement[1] != i) {
 			break;
 		}
@@ -257,7 +252,7 @@ int fifo_test(void)
 
 	/* threads have done their job, they can stop now safely: */
 	for (j = 0; j < 2; j++) {
-		k_fifo_put(&sync_fifo, (void *) element);
+		k_fifo_put(&sync_fifo, element);
 	}
 
 	return return_value;

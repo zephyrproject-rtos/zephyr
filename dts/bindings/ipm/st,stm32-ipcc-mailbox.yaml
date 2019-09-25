@@ -1,0 +1,15 @@
+# Copyright (c) 2019, STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+title: STM32 MAILBOX
+
+description: >
+  This binding gives a base representation of the STM32 IPCC
+
+compatible: "st,stm32-ipcc-mailbox"
+
+include: base.yaml
+
+properties:
+  clocks:
+    required: true

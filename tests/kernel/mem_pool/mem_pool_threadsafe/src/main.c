@@ -5,7 +5,7 @@
  */
 
 #include <ztest.h>
-#include <atomic.h>
+#include <sys/atomic.h>
 #define THREAD_NUM 4
 #define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
 #define POOL_NUM 2

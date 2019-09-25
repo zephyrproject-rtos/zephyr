@@ -132,7 +132,9 @@ void test_chained_read(void)
 		uart_tx(uart_dev, tx_buf, sizeof(tx_buf), 100);
 		zassert_equal(k_sem_take(&tx_done, 100), 0, "TX_DONE timeout");
 		zassert_equal(k_sem_take(&rx_rdy, 1000), 0, "RX_RDY timeout");
-		zassert_equal(read_len, sizeof(tx_buf),
+		size_t read_len_temp = read_len;
+
+		zassert_equal(read_len_temp, sizeof(tx_buf),
 			      "Incorrect read length");
 		zassert_equal(memcmp(tx_buf, read_ptr, sizeof(tx_buf)),
 			      0,

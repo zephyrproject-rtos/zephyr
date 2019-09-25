@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <nffs/nffs.h>
-#include <fs.h>
+#include <fs/fs.h>
 #include "nffs_test_utils.h"
 #include <ztest_assert.h>
 #include <timestamp.h>

@@ -10,14 +10,14 @@
 #include <toolchain.h>
 #include <zephyr/types.h>
 #include <soc.h>
-#include <clock_control.h>
+#include <drivers/clock_control.h>
 
 #include "hal/cpu.h"
 #include "hal/cntr.h"
 #include "hal/ccm.h"
 #include "hal/radio.h"
 
-#if defined(CONFIG_BT_LL_SW)
+#if defined(CONFIG_BT_LL_SW_LEGACY)
 #include "util/util.h"
 #include "util/memq.h"
 #include "pdu.h"

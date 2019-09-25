@@ -12,17 +12,25 @@ menu "ARC Options"
 config ARCH
 	default "arc"
 
-menu "ARC processor options"
+choice
+	prompt "ARC core family"
+	default CPU_ARCEM
 
 config	CPU_ARCEM
-	bool
-	default y
+	bool "ARC EM cores"
 	select CPU_ARCV2
 	select ATOMIC_OPERATIONS_C
 	help
 	  This option signifies the use of an ARC EM CPU
 
-endmenu
+config	CPU_ARCHS
+	bool "ARC HS cores"
+	select CPU_ARCV2
+	select ATOMIC_OPERATIONS_BUILTIN
+	help
+	  This option signifies the use of an ARC HS CPU
+
+endchoice
 
 menu "ARCv2 Family Options"
 
@@ -30,6 +38,8 @@ config	CPU_ARCV2
 	bool
 	select ARCH_HAS_STACK_PROTECTION if ARC_HAS_STACK_CHECKING || ARC_MPU
 	select ARCH_HAS_USERSPACE if ARC_MPU
+	select USE_SWITCH
+	select USE_SWITCH_SUPPORTED
 	default y
 	help
 	  This option signifies the use of a CPU of the ARCv2 family.
@@ -93,6 +103,13 @@ config 	ARC_HAS_STACK_CHECKING
 	  checking stack accesses and raising an exception when a stack
 	  overflow or underflow is detected.
 
+config	ARC_CONNECT
+	bool "ARC has ARC connect"
+	select SCHED_IPI_SUPPORTED
+	help
+	  ARC is configured with ARC CONNECT which is a hardware for connecting
+	  multi cores.
+
 config  ARC_STACK_CHECKING
 	bool
 	help
@@ -113,6 +130,16 @@ config	ARC_STACK_PROTECTION
 	  The two stack guard options are mutually exclusive. The
 	  selection of the ARC stack checking is
 	  prioritized over the MPU-based stack guard.
+
+config	ARC_USE_UNALIGNED_MEM_ACCESS
+	bool "Enable unaligned access in HW"
+	default n if CPU_ARCEM
+	default y if CPU_ARCHS
+	depends on (CPU_ARCEM && !ARC_HAS_SECURE) || CPU_ARCHS
+	help
+	  ARC EM cores w/o secure shield 2+2 mode support might be configured
+	  to support unaligned memory access which is then disabled by default.
+	  Enable unaligned access in hardware and make software to use it.
 
 config	FAULT_DUMP
 	int "Fault dump level"
@@ -149,11 +176,67 @@ config CODE_DENSITY
 	help
 	  Enable code density option to get better code density
 
+config ARC_HAS_ACCL_REGS
+	bool "Reg Pair ACCL:ACCH (FPU and/or MPY > 6)"
+	default y if FLOAT
+	help
+	  Depending on the configuration, CPU can contain accumulator reg-pair
+	  (also referred to as r58:r59). These can also be used by gcc as GPR so
+	  kernel needs to save/restore per process
+
 config ARC_HAS_SECURE
-	bool
-	#  a hidden option
+	bool "ARC has SecureShield"
+	select CPU_HAS_TEE
+	select ARCH_HAS_TRUSTED_EXECUTION
 	help
 	  This option is enabled when ARC core supports secure mode
+
+config SJLI_TABLE_SIZE
+	int "SJLI table size"
+	depends on ARC_SECURE_FIRMWARE
+	default 8
+	help
+	  The size of sjli (Secure Jump and Link Indexed) table. The
+	  code in normal mode call secure services in secure mode through
+	  sjli instruction.
+
+config ARC_SECURE_FIRMWARE
+	prompt "Generate Secure Firmware"
+	bool
+	depends on ARC_HAS_SECURE
+	default y if TRUSTED_EXECUTION_SECURE
+	help
+	  This option indicates that we are building a Zephyr image that
+	  is intended to execute in secure mode. The option is only
+	  applicable to ARC processors that implement the SecureShield.
+
+	  This option enables Zephyr to include code that executes in
+	  secure mode, as well as to exclude code that is designed to
+	  execute only in normal mode.
+
+	  Code executing in secure mode has access to both the secure
+	  and normal resources of the ARC processors.
+
+config ARC_NORMAL_FIRMWARE
+	prompt "Generate Normal Firmware"
+	bool
+	depends on !ARC_SECURE_FIRMWARE
+	depends on ARC_HAS_SECURE
+	default y if TRUSTED_EXECUTION_NONSECURE
+	help
+	  This option indicates that we are building a Zephyr image that
+	  is intended to execute in normal mode. Execution of this
+	  image is triggered by secure firmware that executes in secure
+	  mode. The option is only applicable to ARC processors that
+	  implement the SecureShield.
+
+	  This option enables Zephyr to include code that executes in
+	  normal mode only, as well as to exclude code that is
+	  designed to execute only in secure mode.
+
+	  Code executing in normal mode has no access to secure
+	  resources of the ARC processors, and, therefore, it shall avoid
+	  accessing them.
 
 menu "ARC MPU Options"
 depends on CPU_HAS_MPU
@@ -202,7 +285,7 @@ endmenu
 config ARC_EXCEPTION_DEBUG
 	bool "Unhandled exception debugging information"
 	default n
-	depends on PRINTK
+	depends on PRINTK || LOG
 	help
 	  Print human-readable information about exception vectors, cause codes,
 	  and parameters, at a cost of code/data size for the human-readable

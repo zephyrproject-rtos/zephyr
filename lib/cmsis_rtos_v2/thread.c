@@ -8,8 +8,8 @@
 #include <string.h>
 #include <kernel_structs.h>
 #include <ksched.h>
-#include <atomic.h>
-#include <misc/stack.h>
+#include <sys/atomic.h>
+#include <debug/stack.h>
 #include "wrapper.h"
 
 static const osThreadAttr_t init_thread_attrs = {

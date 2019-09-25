@@ -8,7 +8,7 @@
 #include <ztest.h>
 #include <tc_util.h>
 
-#include <misc/byteorder.h>
+#include <sys/byteorder.h>
 #include <usb/usb_device.h>
 #include <usb/usb_common.h>
 
@@ -76,7 +76,7 @@ static struct usb_ep_cfg_data device_ep[] = {
 	},
 };
 
-USBD_CFG_DATA_DEFINE(device) struct usb_cfg_data device_config = {
+USBD_CFG_DATA_DEFINE(primary, device) struct usb_cfg_data device_config = {
 	.usb_device_description = NULL,
 	.interface_descriptor = &dev_desc.if0,
 	.cb_usb_status = status_cb,
@@ -111,15 +111,12 @@ static void test_usb_dc_api(void)
 	/* Bulk EP is not configured yet */
 	zassert_equal(usb_dc_ep_mps(ENDP_BULK_IN), 0,
 		      "usb_dc_ep_mps(ENDP_BULK_IN) not configured");
-
-	zassert_equal(usb_dc_set_address(0x01), TC_PASS,
-		      "usb_dc_set_address(0x01)");
 }
 
 /* Test USB Device Cotnroller API for invalid parameters */
 static void test_usb_dc_api_invalid(void)
 {
-	size_t size;
+	u32_t size;
 	u8_t byte;
 
 	/* Set stall to invalid EP */
@@ -178,7 +175,7 @@ static void test_usb_dc_api_invalid(void)
 
 static void test_usb_dc_api_read_write(void)
 {
-	size_t size;
+	u32_t size;
 	u8_t byte;
 
 	/* Read invalid EP */

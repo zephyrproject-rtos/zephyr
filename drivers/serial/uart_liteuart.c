@@ -9,7 +9,7 @@
 #include <init.h>
 #include <irq.h>
 #include <device.h>
-#include <uart.h>
+#include <drivers/uart.h>
 #include <zephyr/types.h>
 
 #define UART_EV_TX	(1 << 0)

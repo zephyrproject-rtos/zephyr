@@ -13,8 +13,8 @@
  */
 
 #include <soc.h>
-#include <clock_control.h>
-#include <misc/util.h>
+#include <drivers/clock_control.h>
+#include <sys/util.h>
 #include <clock_control/arm_clock_control.h>
 
 #define MAINCLK_BASE_FREQ 24000000
@@ -233,7 +233,7 @@ static int beetle_clock_control_init(struct device *dev)
 
 static const struct beetle_clock_control_cfg_t beetle_cc_cfg = {
 	.clock_control_id = 0,
-	.freq = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC,
+	.freq = DT_ARM_CORTEX_M3_0_CLOCK_FREQUENCY,
 };
 
 /**

@@ -47,20 +47,23 @@ endif # SPI
 # Apply this configuration below by setting the Kconfig symbols used by
 # the linker according to the information extracted from DT partitions.
 
+# Workaround for not being able to have commas in macro arguments
+DT_CHOSEN_Z_CODE_PARTITION := zephyr,code-partition
+
 if BOARD_NRF9160_PCA10090 && TRUSTED_EXECUTION_SECURE
 
 config FLASH_LOAD_SIZE
-	default $(dt_hex_val,DT_CODE_PARTITION_SIZE)
+	default $(dt_chosen_reg_size,$(DT_CHOSEN_Z_CODE_PARTITION))
 
 endif # BOARD_NRF9160_PCA10090 && TRUSTED_EXECUTION_SECURE
 
 if BOARD_NRF9160_PCA10090NS
 
 config FLASH_LOAD_OFFSET
-	default $(dt_hex_val,DT_CODE_PARTITION_OFFSET)
+	default $(dt_chosen_reg_addr,$(DT_CHOSEN_Z_CODE_PARTITION))
 
 config FLASH_LOAD_SIZE
-	default $(dt_hex_val,DT_CODE_PARTITION_SIZE)
+	default $(dt_chosen_reg_size,$(DT_CHOSEN_Z_CODE_PARTITION))
 
 endif # BOARD_NRF9160_PCA10090NS
 

@@ -8,8 +8,8 @@
 LOG_MODULE_REGISTER(net_coap_client_sample, LOG_LEVEL_DBG);
 
 #include <errno.h>
-#include <misc/printk.h>
-#include <misc/byteorder.h>
+#include <sys/printk.h>
+#include <sys/byteorder.h>
 #include <zephyr.h>
 
 #include <net/socket.h>
@@ -627,14 +627,14 @@ void main(void)
 	}
 
 	/* Close the socket */
-	close(sock);
+	(void)close(sock);
 
 	LOG_DBG("Done");
 
 	return;
 
 quit:
-	close(sock);
+	(void)close(sock);
 
 	LOG_ERR("quit");
 }

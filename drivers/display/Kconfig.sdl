@@ -27,4 +27,24 @@ config SDL_DISPLAY_Y_RES
 	int "Y resolution for SDL display"
 	default 240
 
-endif #SDL_DISPLAY
+choice SDL_DISPLAY_DEFAULT_PIXEL_FORMAT
+	prompt "Default pixel format"
+	default SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_ARGB_8888
+	help
+	  Default pixel format to be used by the display
+
+	config SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_ARGB_8888
+		bool "ARGB 8888"
+
+	config SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_RGB_888
+		bool "RGB 888"
+
+	config SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_MONO01
+		bool "Mono Black=0"
+
+	config SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_MONO10
+		bool "Mono Black=1"
+
+endchoice
+
+endif # SDL_DISPLAY

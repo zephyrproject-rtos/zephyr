@@ -13,9 +13,9 @@
 
 #include <soc.h>
 #include <errno.h>
-#include <pwm.h>
+#include <drivers/pwm.h>
 #include <kernel.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 #include <string.h>
 
 #define PWM_ESP32_HSCH_HPOINT(i) (LEDC_HSCH0_HPOINT_REG + (0x14 * i))

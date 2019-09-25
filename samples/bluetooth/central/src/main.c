@@ -10,14 +10,14 @@
 #include <stddef.h>
 #include <errno.h>
 #include <zephyr.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/hci.h>
 #include <bluetooth/conn.h>
 #include <bluetooth/uuid.h>
 #include <bluetooth/gatt.h>
-#include <misc/byteorder.h>
+#include <sys/byteorder.h>
 
 static struct bt_conn *default_conn;
 
@@ -81,7 +81,7 @@ static void disconnected(struct bt_conn *conn, u8_t reason)
 
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
-	printk("Disconnected: %s (reason %u)\n", addr, reason);
+	printk("Disconnected: %s (reason 0x%02x)\n", addr, reason);
 
 	bt_conn_unref(default_conn);
 	default_conn = NULL;

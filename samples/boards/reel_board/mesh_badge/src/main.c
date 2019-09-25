@@ -5,7 +5,7 @@
  */
 
 #include <zephyr.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 
 #include <string.h>
 
@@ -13,7 +13,7 @@
 
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/gatt.h>
-#include <sensor.h>
+#include <drivers/sensor.h>
 
 #include "mesh.h"
 #include "board.h"
@@ -106,9 +106,9 @@ static void pairing_complete(struct bt_conn *conn, bool bonded)
 	board_show_text("Pairing Complete", false, K_SECONDS(2));
 }
 
-static void pairing_failed(struct bt_conn *conn)
+static void pairing_failed(struct bt_conn *conn, enum bt_security_err reason)
 {
-	printk("Pairing Failed\n");
+	printk("Pairing Failed (%d)\n", reason);
 	board_show_text("Pairing Failed", false, K_SECONDS(2));
 }
 

@@ -2,8 +2,8 @@ sample:
   name: SPI Flash Sample
 tests:
   sample.driver.spi_flash:
-    platform_whitelist: arduino_101
     tags: spi flash
+    filter: DT_INST_0_JEDEC_SPI_NOR_LABEL
     harness: console
     harness_config:
         type: multi_line

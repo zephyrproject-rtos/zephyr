@@ -7,7 +7,7 @@
 #include <tc_util.h>
 #include <ztest.h>
 #include <arch/cpu.h>
-#include <misc/util.h>
+#include <sys/util.h>
 #include <irq_offload.h>
 #include <stdbool.h>
 
@@ -240,6 +240,6 @@ void test_main(void)
 {
 	ztest_test_suite(sleep,
 			 ztest_unit_test(test_sleep),
-			 ztest_unit_test(test_usleep));
+			 ztest_user_unit_test(test_usleep));
 	ztest_run_test_suite(sleep);
 }

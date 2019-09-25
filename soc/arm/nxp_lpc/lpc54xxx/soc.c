@@ -16,7 +16,7 @@
 #include <device.h>
 #include <init.h>
 #include <soc.h>
-#include <uart.h>
+#include <drivers/uart.h>
 #include <linker/sections.h>
 #include <arch/cpu.h>
 #include <cortex_m/exc.h>
@@ -49,10 +49,10 @@ static ALWAYS_INLINE void clkInit(void)
 	CLOCK_AttachClk(kFRO12M_to_MAIN_CLK);
 
 	/* Set FLASH wait states for core */
-	CLOCK_SetFLASHAccessCyclesForFreq(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
+	CLOCK_SetFLASHAccessCyclesForFreq(DT_ARM_CORTEX_M4F_0_CLOCK_FREQUENCY);
 
 	/* Set up high frequency FRO output to selected frequency */
-	CLOCK_SetupFROClocking(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
+	CLOCK_SetupFROClocking(DT_ARM_CORTEX_M4F_0_CLOCK_FREQUENCY);
 
 	/* Set up dividers */
 	/* Set AHBCLKDIV divider to value 1 */

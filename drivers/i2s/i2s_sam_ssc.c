@@ -19,12 +19,12 @@
 
 #include <errno.h>
 #include <string.h>
-#include <misc/__assert.h>
+#include <sys/__assert.h>
 #include <kernel.h>
 #include <device.h>
 #include <init.h>
-#include <dma.h>
-#include <i2s.h>
+#include <drivers/dma.h>
+#include <drivers/i2s.h>
 #include <soc.h>
 
 #define LOG_DOMAIN dev_i2s_sam_ssc

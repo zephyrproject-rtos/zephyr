@@ -14,10 +14,9 @@ try:
     import ply.lex as lex
     import ply.yacc as yacc
 except ImportError:
-    print("PLY library for Python 3 not installed.")
-    print("Please install the ply package using your workstation's")
-    print("package manager or the 'pip' tool.")
-    sys.exit(1)
+    sys.exit("PLY library for Python 3 not installed.\n"
+             "Please install the ply package using your workstation's\n"
+             "package manager or the 'pip' tool.")
 
 reserved = {
     'and' : 'AND',
@@ -101,7 +100,7 @@ precedence = (
     ('left', 'OR'),
     ('left', 'AND'),
     ('right', 'NOT'),
-    ('nonassoc' , 'EQUALS', 'NOTEQUALS', 'GT', 'LT', 'GTEQ', 'LTEQ', 'IN'),
+    ('nonassoc', 'EQUALS', 'NOTEQUALS', 'GT', 'LT', 'GTEQ', 'LTEQ', 'IN'),
 )
 
 def p_expr_or(p):
@@ -205,9 +204,9 @@ def ast_expr(ast, env):
     elif ast[0] == "in":
         return ast_sym(ast[1], env) in ast[2]
     elif ast[0] == "exists":
-        return True if ast_sym(ast[1], env) else False
+        return bool(ast_sym(ast[1], env))
     elif ast[0] == ":":
-        return True if re.compile(ast[2]).match(ast_sym(ast[1], env)) else False
+        return bool(re.match(ast[2], ast_sym(ast[1], env)))
 
 mutex = threading.Lock()
 

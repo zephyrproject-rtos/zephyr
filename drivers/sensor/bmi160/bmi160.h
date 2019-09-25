@@ -8,9 +8,9 @@
 #ifndef ZEPHYR_DRIVERS_SENSOR_BMI160_BMI160_H_
 #define ZEPHYR_DRIVERS_SENSOR_BMI160_BMI160_H_
 
-#include <gpio.h>
-#include <spi.h>
-#include <misc/util.h>
+#include <drivers/gpio.h>
+#include <drivers/spi.h>
+#include <sys/util.h>
 
 /* registers */
 #define BMI160_REG_CHIPID		0x00

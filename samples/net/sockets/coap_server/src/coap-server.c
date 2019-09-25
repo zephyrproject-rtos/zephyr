@@ -8,8 +8,8 @@
 LOG_MODULE_REGISTER(net_coap_server_sample, LOG_LEVEL_DBG);
 
 #include <errno.h>
-#include <misc/printk.h>
-#include <misc/byteorder.h>
+#include <sys/printk.h>
+#include <sys/byteorder.h>
 #include <zephyr.h>
 
 #include <net/socket.h>

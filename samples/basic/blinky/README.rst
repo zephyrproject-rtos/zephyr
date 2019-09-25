@@ -18,8 +18,8 @@ sample code is configured to work on boards that have defined the led0
 alias in their board device tree description file. Doing so will generate
 these variables:
 
-- LED0_GPIO_CONTROLLER
-- LED0_GPIO_PIN
+- DT_ALIAS_LED0_GPIOS_CONTROLLER
+- DT_ALIAS_LED0_GPIOS_PIN
 
 
 Building and Running

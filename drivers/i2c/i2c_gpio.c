@@ -22,8 +22,8 @@
 
 #include <device.h>
 #include <errno.h>
-#include <gpio.h>
-#include <i2c.h>
+#include <drivers/gpio.h>
+#include <drivers/i2c.h>
 #include "i2c_bitbang.h"
 
 /* Driver config */

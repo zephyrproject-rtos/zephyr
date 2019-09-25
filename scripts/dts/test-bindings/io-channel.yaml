@@ -1,0 +1,11 @@
+#
+# SPDX-License-Identifier: BSD-3-Clause
+#
+
+title: IO channel with one cell
+description: IO channel with one cell
+
+compatible: "io-channel"
+
+"#cells":
+  - one

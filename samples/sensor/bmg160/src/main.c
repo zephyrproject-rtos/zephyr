@@ -6,13 +6,13 @@
 
 #include <zephyr.h>
 
-#include <misc/printk.h>
+#include <sys/printk.h>
 #include <sys_clock.h>
 #include <stdio.h>
 
 #include <device.h>
-#include <sensor.h>
-#include <i2c.h>
+#include <drivers/sensor.h>
+#include <drivers/i2c.h>
 
 #define MAX_TEST_TIME	15000
 #define SLEEPTIME	300

@@ -1,6 +1,8 @@
 /*
  * Copyright (c) 2019 Antmicro Ltd
  *
+ * Copyright (c) 2019 Intel Corporation
+ *
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -10,99 +12,108 @@ LOG_MODULE_REGISTER(net_socks, CONFIG_SOCKS_LOG_LEVEL);
 #include <zephyr.h>
 #include <net/socket.h>
 #include <net/socks.h>
+#include <net/net_pkt.h>
 
 #include "socks_internal.h"
 
-static int socks5_tcp_send(int fd, u8_t *data, u32_t len)
+static void socks5_method_rsp_cb(struct net_context *ctx,
+				 struct net_pkt *pkt,
+				 union net_ip_header *ip_hdr,
+				 union net_proto_header *proto_hdr,
+				 int status,
+				 void *user_data)
 {
-	u32_t offset = 0U;
-	int ret;
+	struct socks5_method_response *method_rsp =
+			(struct socks5_method_response *)user_data;
 
-	while (offset < len) {
-		ret = send(fd, data + offset, len - offset, 0);
-		if (ret < 0) {
-			return ret;
-		}
-
-		offset += ret;
+	if (!pkt || status) {
+		memset(method_rsp, 0, sizeof(struct socks5_method_response));
+		goto end;
 	}
 
-	return 0;
-}
-
-static int socks5_tcp_recv(int fd, u8_t *data, u32_t len)
-{
-	u32_t offset = 0U;
-	int ret;
-
-	while (offset < len) {
-		ret = recv(fd, data + offset, len - offset, 0);
-		if (ret < 0) {
-			return ret;
-		}
-
-		offset += ret;
+	if (net_pkt_read(pkt, (u8_t *)method_rsp,
+			 sizeof(struct socks5_method_response))) {
+		memset(method_rsp, 0, sizeof(struct socks5_method_response));
 	}
 
-	return 0;
+end:
+	net_pkt_unref(pkt);
 }
 
-int socks5_client_tcp_connect(const struct sockaddr *proxy,
-			      const struct sockaddr *destination)
+static void socks5_cmd_rsp_cb(struct net_context *ctx,
+			      struct net_pkt *pkt,
+			      union net_ip_header *ip_hdr,
+			      union net_proto_header *proto_hdr,
+			      int status,
+			      void *user_data)
 {
-	struct socks5_method_request mthd_req;
-	struct socks5_method_response mthd_rep;
+	struct socks5_command_response *cmd_rsp =
+			(struct socks5_command_response *)user_data;
+	int size;
+
+	if (!pkt || status) {
+		memset(cmd_rsp, 0,
+		       sizeof(struct socks5_command_request_common));
+		goto end;
+	}
+
+	size = sizeof(struct socks5_command_request_common);
+
+	if (net_pkt_read(pkt, (u8_t *)cmd_rsp, size)) {
+		memset(cmd_rsp, 0,
+		       sizeof(struct socks5_command_request_common));
+	}
+
+end:
+	net_pkt_unref(pkt);
+}
+
+static int socks5_tcp_connect(struct net_context *ctx,
+			      const struct sockaddr *proxy,
+			      socklen_t proxy_len,
+			      const struct sockaddr *dest,
+			      socklen_t dest_len)
+{
+	struct socks5_method_request method_req;
+	struct socks5_method_response method_rsp;
 	struct socks5_command_request cmd_req;
-	struct socks5_command_response cmd_rep;
+	struct socks5_command_response cmd_rsp;
 	int size;
 	int ret;
-	int fd;
-
-	fd = socket(proxy->sa_family, SOCK_STREAM, IPPROTO_TCP);
-	if (fd < 0) {
-		return fd;
-	}
-
-	ret = connect(fd, proxy, sizeof(struct sockaddr_in));
-	if (ret < 0) {
-		LOG_ERR("Unable to connect to the proxy server");
-		(void)close(fd);
-		return ret;
-	}
 
 	/* Negotiate authentication method */
-	mthd_req.r.ver = SOCKS5_PKT_MAGIC;
+	method_req.r.ver = SOCKS5_PKT_MAGIC;
 
 	/* We only support NOAUTH at the moment */
-	mthd_req.r.nmethods = 1U;
-	mthd_req.methods[0] = SOCKS5_AUTH_METHOD_NOAUTH;
+	method_req.r.nmethods = 1U;
+	method_req.methods[0] = SOCKS5_AUTH_METHOD_NOAUTH;
 
 	/* size + 1 because just one method is supported */
 	size = sizeof(struct socks5_method_request_common) + 1;
 
-	ret = socks5_tcp_send(fd, (u8_t *)&mthd_req, size);
+	ret = net_context_sendto(ctx, (u8_t *)&method_req, size,
+				 proxy, proxy_len, NULL, K_NO_WAIT,
+				 ctx->user_data);
 	if (ret < 0) {
-		(void)close(fd);
 		LOG_ERR("Could not send negotiation packet");
 		return ret;
 	}
 
-	ret = socks5_tcp_recv(fd, (u8_t *)&mthd_rep, sizeof(mthd_rep));
+	ret = net_context_recv(ctx, socks5_method_rsp_cb,
+			       K_MSEC(CONFIG_NET_SOCKETS_CONNECT_TIMEOUT),
+			       &method_rsp);
 	if (ret < 0) {
 		LOG_ERR("Could not receive negotiation response");
-		(void)close(fd);
 		return ret;
 	}
 
-	if (mthd_rep.ver != SOCKS5_PKT_MAGIC) {
+	if (method_rsp.ver != SOCKS5_PKT_MAGIC) {
 		LOG_ERR("Invalid negotiation response magic");
-		(void)close(fd);
 		return -EINVAL;
 	}
 
-	if (mthd_rep.method != SOCKS5_AUTH_METHOD_NOAUTH) {
+	if (method_rsp.method != SOCKS5_AUTH_METHOD_NOAUTH) {
 		LOG_ERR("Invalid negotiation response");
-		(void)close(fd);
 		return -ENOTSUP;
 	}
 
@@ -113,7 +124,7 @@ int socks5_client_tcp_connect(const struct sockaddr *proxy,
 
 	if (proxy->sa_family == AF_INET) {
 		const struct sockaddr_in *d4 =
-			(struct sockaddr_in *)destination;
+			(struct sockaddr_in *)dest;
 
 		cmd_req.r.atyp = SOCKS5_ATYP_IPV4;
 
@@ -127,7 +138,7 @@ int socks5_client_tcp_connect(const struct sockaddr *proxy,
 			+ sizeof(struct socks5_ipv4_addr);
 	} else if (proxy->sa_family == AF_INET6) {
 		const struct sockaddr_in6 *d6 =
-			(struct sockaddr_in6 *)destination;
+			(struct sockaddr_in6 *)dest;
 
 		cmd_req.r.atyp = SOCKS5_ATYP_IPV6;
 
@@ -135,35 +146,35 @@ int socks5_client_tcp_connect(const struct sockaddr *proxy,
 		       (u8_t *)&d6->sin6_addr,
 		       sizeof(cmd_req.ipv6_addr.addr));
 
-		cmd_req.ipv4_addr.port = d6->sin6_port;
+		cmd_req.ipv6_addr.port = d6->sin6_port;
 
 		size = sizeof(struct socks5_command_request_common)
 			+ sizeof(struct socks5_ipv6_addr);
 	}
 
-	ret = socks5_tcp_send(fd, (u8_t *)&cmd_req, size);
+	ret = net_context_sendto(ctx, (u8_t *)&cmd_req, size,
+				 proxy, proxy_len, NULL, K_NO_WAIT,
+				 ctx->user_data);
 	if (ret < 0) {
 		LOG_ERR("Could not send CONNECT command");
-		(void)close(fd);
-		return -EINVAL;
+		return ret;
 	}
 
-	ret = socks5_tcp_recv(fd, (u8_t *)&cmd_rep, size);
+	ret = net_context_recv(ctx, socks5_cmd_rsp_cb,
+			       K_MSEC(CONFIG_NET_SOCKETS_CONNECT_TIMEOUT),
+			       &cmd_rsp);
 	if (ret < 0) {
 		LOG_ERR("Could not receive CONNECT response");
-		(void)close(fd);
-		return -EINVAL;
+		return ret;
 	}
 
-	if (cmd_rep.r.ver != SOCKS5_PKT_MAGIC) {
+	if (cmd_rsp.r.ver != SOCKS5_PKT_MAGIC) {
 		LOG_ERR("Invalid CONNECT response");
-		(void)close(fd);
 		return -EINVAL;
 	}
 
-	if (cmd_rep.r.rep != SOCKS5_CMD_RESP_SUCCESS) {
+	if (cmd_rsp.r.rep != SOCKS5_CMD_RESP_SUCCESS) {
 		LOG_ERR("Unable to connect to destination");
-		(void)close(fd);
 		return -EINVAL;
 	}
 
@@ -171,5 +182,35 @@ int socks5_client_tcp_connect(const struct sockaddr *proxy,
 
 	LOG_DBG("Connection through SOCKS5 proxy successful");
 
-	return fd;
+	return 0;
+}
+
+int net_socks5_connect(struct net_context *ctx, const struct sockaddr *addr,
+		       socklen_t addrlen)
+{
+	struct sockaddr proxy;
+	socklen_t proxy_len;
+	int type;
+	int ret;
+
+	type = net_context_get_type(ctx);
+	/* TODO: Only TCP and TLS supported, UDP and DTLS yet to support. */
+	if (type != SOCK_STREAM) {
+		return -ENOTSUP;
+	}
+
+	ret = net_context_get_option(ctx, NET_OPT_SOCKS5, &proxy, &proxy_len);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* Connect to Proxy Server */
+	ret = net_context_connect(ctx, &proxy, proxy_len, NULL,
+				  K_MSEC(CONFIG_NET_SOCKETS_CONNECT_TIMEOUT),
+				  NULL);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return socks5_tcp_connect(ctx, &proxy, proxy_len, addr, addrlen);
 }

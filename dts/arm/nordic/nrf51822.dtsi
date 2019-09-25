@@ -55,7 +55,6 @@
 		};
 
 		sram0: memory@20000000 {
-			device_type = "memory";
 			compatible = "mmio-sram";
 		};
 
@@ -65,6 +64,7 @@
 			interrupts = <7 1>;
 			status = "disabled";
 			label = "ADC_0";
+			#io-channel-cells = <1>;
 		};
 
 		clock: clock@40000000 {

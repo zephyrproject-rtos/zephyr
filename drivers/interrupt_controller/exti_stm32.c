@@ -11,18 +11,19 @@
  *
  * Driver is currently implemented to support following EXTI lines
  * STM32F1/STM32F3: Lines 0 to 15. Lines > 15 not supported
- * STM32F0/STM32L0/STM32L4: Lines 0 to 15. Lines > 15 are not mapped on an IRQ
+ * STM32F0/STM32L0/STM32L4/STM32G0: Lines 0 to 15. Lines > 15 are not mapped on an IRQ
  * STM32F2/STM32F4: Lines 0 to 15, 16, 17 18, 21 and 22. Others not supported
  * STM32F7: Lines 0 to 15, 16, 17 18, 21, 22 and 23. Others not supported
  *
  */
 #include <device.h>
 #include <soc.h>
-#include <misc/__assert.h>
+#include <sys/__assert.h>
 #include "exti_stm32.h"
 
 #if defined(CONFIG_SOC_SERIES_STM32F0X) || \
-    defined(CONFIG_SOC_SERIES_STM32L0X)
+    defined(CONFIG_SOC_SERIES_STM32L0X) || \
+    defined(CONFIG_SOC_SERIES_STM32G0X)
 const IRQn_Type exti_irq_table[] = {
 	EXTI0_1_IRQn, EXTI0_1_IRQn, EXTI2_3_IRQn, EXTI2_3_IRQn,
 	EXTI4_15_IRQn, EXTI4_15_IRQn, EXTI4_15_IRQn, EXTI4_15_IRQn,
@@ -30,9 +31,10 @@ const IRQn_Type exti_irq_table[] = {
 	EXTI4_15_IRQn, EXTI4_15_IRQn, EXTI4_15_IRQn, EXTI4_15_IRQn
 };
 #elif defined(CONFIG_SOC_SERIES_STM32F1X) || \
-      defined(CONFIG_SOC_SERIES_STM32L1X) || \
-      defined(CONFIG_SOC_SERIES_STM32L4X) || \
-      defined(CONFIG_SOC_SERIES_STM32WBX)
+	defined(CONFIG_SOC_SERIES_STM32H7X) || \
+	defined(CONFIG_SOC_SERIES_STM32L1X) || \
+	defined(CONFIG_SOC_SERIES_STM32L4X) || \
+	defined(CONFIG_SOC_SERIES_STM32WBX)
 const IRQn_Type exti_irq_table[] = {
 	EXTI0_IRQn, EXTI1_IRQn, EXTI2_IRQn, EXTI3_IRQn,
 	EXTI4_IRQn, EXTI9_5_IRQn, EXTI9_5_IRQn, EXTI9_5_IRQn,
@@ -47,7 +49,7 @@ const IRQn_Type exti_irq_table[] = {
 	EXTI15_10_IRQn, EXTI15_10_IRQn, EXTI15_10_IRQn, EXTI15_10_IRQn
 };
 #elif defined(CONFIG_SOC_SERIES_STM32F2X) || \
-      defined(CONFIG_SOC_SERIES_STM32F4X)
+	defined(CONFIG_SOC_SERIES_STM32F4X)
 const IRQn_Type exti_irq_table[] = {
 	EXTI0_IRQn, EXTI1_IRQn, EXTI2_IRQn, EXTI3_IRQn,
 	EXTI4_IRQn, EXTI9_5_IRQn, EXTI9_5_IRQn, EXTI9_5_IRQn,
@@ -98,7 +100,7 @@ int stm32_exti_enable(int line)
 	}
 
 	/* Get matching exti irq mathcing provided line thanks to irq_table */
-	if (line <= ARRAY_SIZE(exti_irq_table)) {
+	if (line < ARRAY_SIZE(exti_irq_table)) {
 		irqnum = exti_irq_table[line];
 		if (irqnum == 0xFF)
 			return 0;
@@ -131,7 +133,7 @@ void stm32_exti_disable(int line)
 static inline int stm32_exti_is_pending(int line)
 {
 	if (line < 32) {
-#if defined(CONFIG_SOC_SERIES_STM32MP1X)
+#if defined(CONFIG_SOC_SERIES_STM32MP1X) || defined(CONFIG_SOC_SERIES_STM32G0X)
 		return (LL_EXTI_IsActiveRisingFlag_0_31(1 << line) ||
 			LL_EXTI_IsActiveFallingFlag_0_31(1 << line));
 #else
@@ -151,7 +153,7 @@ static inline int stm32_exti_is_pending(int line)
 static inline void stm32_exti_clear_pending(int line)
 {
 	if (line < 32) {
-#if defined(CONFIG_SOC_SERIES_STM32MP1X)
+#if defined(CONFIG_SOC_SERIES_STM32MP1X) || defined(CONFIG_SOC_SERIES_STM32G0X)
 		LL_EXTI_ClearRisingFlag_0_31(1 << line);
 		LL_EXTI_ClearFallingFlag_0_31(1 << line);
 #else
@@ -213,7 +215,9 @@ static void __stm32_exti_isr(int min, int max, void *arg)
 	}
 }
 
-#if defined(CONFIG_SOC_SERIES_STM32F0X) || defined(CONFIG_SOC_SERIES_STM32L0X)
+#if defined(CONFIG_SOC_SERIES_STM32F0X) || \
+	defined(CONFIG_SOC_SERIES_STM32L0X) || \
+	defined(CONFIG_SOC_SERIES_STM32G0X)
 static inline void __stm32_exti_isr_0_1(void *arg)
 {
 	__stm32_exti_isr(0, 2, arg);
@@ -408,7 +412,8 @@ static void __stm32_exti_connect_irqs(struct device *dev)
 	ARG_UNUSED(dev);
 
 #if defined(CONFIG_SOC_SERIES_STM32F0X) || \
-    defined(CONFIG_SOC_SERIES_STM32L0X)
+	defined(CONFIG_SOC_SERIES_STM32L0X) || \
+	defined(CONFIG_SOC_SERIES_STM32G0X)
 	IRQ_CONNECT(EXTI0_1_IRQn,
 		CONFIG_EXTI_STM32_EXTI1_0_IRQ_PRI,
 		__stm32_exti_isr_0_1, DEVICE_GET(exti_stm32),
@@ -422,14 +427,15 @@ static void __stm32_exti_connect_irqs(struct device *dev)
 		__stm32_exti_isr_4_15, DEVICE_GET(exti_stm32),
 		0);
 #elif defined(CONFIG_SOC_SERIES_STM32F1X) || \
-      defined(CONFIG_SOC_SERIES_STM32F2X) || \
-      defined(CONFIG_SOC_SERIES_STM32F3X) || \
-      defined(CONFIG_SOC_SERIES_STM32F4X) || \
-      defined(CONFIG_SOC_SERIES_STM32F7X) || \
-      defined(CONFIG_SOC_SERIES_STM32L1X) || \
-      defined(CONFIG_SOC_SERIES_STM32L4X) || \
-      defined(CONFIG_SOC_SERIES_STM32MP1X) || \
-      defined(CONFIG_SOC_SERIES_STM32WBX)
+	defined(CONFIG_SOC_SERIES_STM32F2X) || \
+	defined(CONFIG_SOC_SERIES_STM32F3X) || \
+	defined(CONFIG_SOC_SERIES_STM32F4X) || \
+	defined(CONFIG_SOC_SERIES_STM32F7X) || \
+	defined(CONFIG_SOC_SERIES_STM32H7X) || \
+	defined(CONFIG_SOC_SERIES_STM32L1X) || \
+	defined(CONFIG_SOC_SERIES_STM32L4X) || \
+	defined(CONFIG_SOC_SERIES_STM32MP1X) || \
+	defined(CONFIG_SOC_SERIES_STM32WBX)
 	IRQ_CONNECT(EXTI0_IRQn,
 		CONFIG_EXTI_STM32_EXTI0_IRQ_PRI,
 		__stm32_exti_isr_0, DEVICE_GET(exti_stm32),
@@ -514,8 +520,8 @@ static void __stm32_exti_connect_irqs(struct device *dev)
 #endif /* CONFIG_SOC_SERIES_STM32MP1X */
 
 #if defined(CONFIG_SOC_SERIES_STM32F2X) || \
-      defined(CONFIG_SOC_SERIES_STM32F4X) || \
-      defined(CONFIG_SOC_SERIES_STM32F7X)
+	defined(CONFIG_SOC_SERIES_STM32F4X) || \
+	defined(CONFIG_SOC_SERIES_STM32F7X)
 	IRQ_CONNECT(PVD_IRQn,
 		CONFIG_EXTI_STM32_PVD_IRQ_PRI,
 		__stm32_exti_isr_16, DEVICE_GET(exti_stm32),

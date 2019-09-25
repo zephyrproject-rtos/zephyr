@@ -1,33 +1,23 @@
----
 title: DesignWare Interrupt Controller
-version: 0.1
 
 description: >
     This binding describes DesignWare Programmable Interrupt controller
 
-inherits:
-    !include base.yaml
+compatible: "snps,designware-intc"
+
+include: [interrupt-controller.yaml, base.yaml]
 
 properties:
-  compatible:
-      constraint: "snps,designware-intc"
-
   reg:
-      category: required
-
-  snps,num-irq-priority-bits:
-      category: required
-      type: int
-      description: number of bits of IRQ priorities
-      generation: define
+      required: true
 
   interrupts:
-      category: required
+      required: true
 
-cell_string: IRQ
+  "#interrupt-cells":
+      const: 3
 
 "#cells":
   - irq
   - sense
   - priority
-...

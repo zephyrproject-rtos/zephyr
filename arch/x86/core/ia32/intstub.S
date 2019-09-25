@@ -15,10 +15,10 @@
  */
 
 #include <kernel_structs.h>
-#include <arch/x86/asm.h>
+#include <arch/x86/ia32/asm.h>
 #include <offsets_short.h>
-#include <arch/cpu.h>	/* _NANO_ERR_SPURIOUS_INT */
-#include <arch/x86/irq_controller.h>
+#include <arch/cpu.h>
+#include <drivers/interrupt_controller/sysapic.h>
 
 	/* exports (internal APIs) */
 
@@ -178,12 +178,8 @@ SECTION_FUNC(TEXT, _interrupt_enter)
 
 alreadyOnIntStack:
 
-#ifndef CONFIG_X86_IAMCU
-	/* EAX has the interrupt handler argument, needs to go on
-	 * stack for sys V calling convention
-	 */
-	push	%eax
-#endif
+	push	%eax	/* interrupt handler argument */
+
 #ifdef CONFIG_EXECUTION_BENCHMARKING
 	/* Save the eax and edx registers before reading the time stamp
 	* once done pop the values
@@ -202,16 +198,20 @@ alreadyOnIntStack:
 #endif
 	/* Now call the interrupt handler */
 	INDIRECT_CALL(%edx)
-#ifndef CONFIG_X86_IAMCU
 	/* Discard ISR argument */
 	addl	$0x4, %esp
-#endif
 #ifdef CONFIG_NESTED_INTERRUPTS
 	cli			/* disable interrupts again */
 #endif
 
-	/* irq_controller.h interface */
-	_irq_controller_eoi_macro
+	xorl	%eax, %eax
+#if defined(CONFIG_X2APIC)
+	xorl	%edx, %edx
+	movl	$(X86_X2APIC_BASE_MSR + (LOAPIC_EOI >> 4)), %ecx
+	wrmsr
+#else /* xAPIC */
+	movl	%eax, (CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_EOI)
+#endif
 
 	/* determine whether exiting from a nested interrupt */
 	movl	$_kernel, %ecx
@@ -227,14 +227,14 @@ alreadyOnIntStack:
 	je	noReschedule
 
 	/*
-	 * Set the _INT_ACTIVE bit in the k_thread to allow the upcoming call to
-	 * __swap() to determine whether non-floating registers need to be
+	 * Set X86_THREAD_FLAG_INT bit in k_thread to allow the upcoming call
+	 * to __swap() to determine whether non-floating registers need to be
 	 * preserved using the lazy save/restore algorithm, or to indicate to
 	 * debug tools that a preemptive context switch has occurred.
 	 */
 
 #if defined(CONFIG_LAZY_FP_SHARING)
-	orb	$_INT_ACTIVE, _thread_offset_to_thread_state(%edx)
+	orb	$X86_THREAD_FLAG_INT, _thread_offset_to_flags(%edx)
 #endif
 
 	/*
@@ -251,16 +251,9 @@ alreadyOnIntStack:
 	call	z_check_stack_sentinel
 #endif
 	pushfl			/* push KERNEL_LOCK_KEY argument */
-#ifdef CONFIG_X86_IAMCU
-	/* IAMCU first argument goes into a register, not the stack.
-	 */
-	popl	%eax
-#endif
 	call	__swap
-
-#ifndef CONFIG_X86_IAMCU
 	addl 	$4, %esp	/* pop KERNEL_LOCK_KEY argument */
-#endif
+
 	/*
 	 * The interrupted thread has now been scheduled,
 	 * as the result of a _later_ invocation of __swap().
@@ -272,12 +265,12 @@ alreadyOnIntStack:
 #if defined(CONFIG_LAZY_FP_SHARING)
 	/*
 	 * __swap() has restored the floating point registers, if needed.
-	 * Clear the _INT_ACTIVE bit in the interrupted thread's state
+	 * Clear X86_THREAD_FLAG_INT in the interrupted thread's state
 	 * since it has served its purpose.
 	 */
 
 	movl	_kernel + _kernel_offset_to_current, %eax
-	andb	$~_INT_ACTIVE, _thread_offset_to_thread_state(%eax)
+	andb	$~X86_THREAD_FLAG_INT, _thread_offset_to_flags(%eax)
 #endif /* CONFIG_LAZY_FP_SHARING */
 
 	/* Restore volatile registers and return to the interrupted thread */
@@ -327,12 +320,7 @@ handle_idle:
 	pushl	%eax
 	pushl	%edx
 	/* Populate 'ticks' argument to z_sys_power_save_idle_exit */
-#ifdef CONFIG_X86_IAMCU
-	movl	_kernel_offset_to_idle(%ecx), %eax
-#else
-	/* SYS V calling convention */
 	push	_kernel_offset_to_idle(%ecx)
-#endif
 	/* Zero out _kernel.idle */
 	movl	$0, _kernel_offset_to_idle(%ecx)
 
@@ -344,10 +332,8 @@ handle_idle:
 	 */
 
 	call	z_sys_power_save_idle_exit
-#ifndef CONFIG_X86_IAMCU
-	/* SYS V: discard 'ticks' argument passed on the stack */
+	/* discard 'ticks' argument passed on the stack */
 	add	$0x4, %esp
-#endif
 	popl	%edx
 	popl	%eax
 	jmp	alreadyOnIntStack
@@ -364,11 +350,9 @@ handle_idle:
  * error code onto the stack (or kernel stack) in addition to the EFLAGS/CS/EIP
  * records.
  *
- * A spurious interrupt is considered a fatal condition, thus this routine
- * merely sets up the 'reason' and 'pEsf' parameters to the routine
- *  _SysFatalHwErrorHandler().  In other words, there is no provision to return
- * to the interrupted execution context and thus the volatile registers are not
- * saved.
+ * A spurious interrupt is considered a fatal condition; there is no provision
+ * to return to the interrupted execution context and thus the volatile
+ * registers are not saved.
  *
  * @return Never returns
  *
@@ -407,23 +391,13 @@ SECTION_FUNC(TEXT, z_SpuriousIntHandler)
 	leal	44(%esp), %ecx   /* Calculate ESP before exception occurred */
 	pushl	%ecx             /* Save calculated ESP */
 
-#ifndef CONFIG_X86_IAMCU
-	pushl	%esp			/* push cur stack pointer: pEsf arg */
-#else
-	mov	%esp, %edx
-#endif
+	pushl	%esp		/* push cur stack pointer: pEsf arg */
 
 	/* re-enable interrupts */
 	sti
 
-	/* push the 'unsigned int reason' parameter */
-#ifndef CONFIG_X86_IAMCU
-	pushl	$_NANO_ERR_SPURIOUS_INT
-#else
-	movl	$_NANO_ERR_SPURIOUS_INT, %eax
-#endif
 	/* call the fatal error handler */
-	call	z_NanoFatalErrorHandler
+	call	z_x86_spurious_irq
 
 	/* handler doesn't  return */
 
@@ -443,9 +417,9 @@ z_dynamic_irq_stub_common:
 
 /* Create all the dynamic IRQ stubs
  *
- * NOTE: Please update DYN_STUB_SIZE in include/arch/x86/arch.h if you change
- * how large the generated stubs are, otherwise _get_dynamic_stub() will
- * be unable to correctly determine the offset
+ * NOTE: Please update DYN_STUB_SIZE in include/arch/x86/ia32/arch.h if you
+ * change how large the generated stubs are, otherwise _get_dynamic_stub()
+ * will be unable to correctly determine the offset
  */
 
 /*

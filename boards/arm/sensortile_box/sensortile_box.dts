@@ -1,0 +1,186 @@
+/*
+ * Copyright (c) 2019 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/l4/stm32l4r9Xi.dtsi>
+
+/ {
+	model = "STMicroelectronics SensorTile.box board";
+	compatible = "st,sensortile-box", "st,stm32l4r9";
+
+	chosen {
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		blue_led: led {
+			gpios = <&gpiob 15 GPIO_INT_ACTIVE_HIGH>;
+			label = "User LD1";
+		};
+
+		green_led: led_2 {
+			gpios = <&gpiof 2 GPIO_INT_ACTIVE_HIGH>;
+			label = "User LD4";
+		};
+	};
+
+	aliases {
+		led0 = &blue_led;
+		led1 = &green_led;
+	};
+};
+
+&usart1 {
+	current-speed = <115200>;
+	pinctrl-0 = <&usart1_pins_b>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&usart2 {
+	current-speed = <115200>;
+	pinctrl-0 = <&usart2_pins_a>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&i2c1 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+
+	hts221@5f {
+		compatible = "st,hts221";
+		reg = <0x5f>;
+		label = "HTS221";
+		drdy-gpios = <&gpiod 13 GPIO_INT_ACTIVE_LOW>;
+	};
+
+	lps22hh@5d {
+		compatible = "st,lps22hh";
+		reg = <0x5d>;
+		label = "LPS22HH";
+		drdy-gpios = <&gpiod 15 GPIO_INT_ACTIVE_LOW>;
+	};
+};
+
+&i2c3 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+
+	stts751@38 {
+		compatible = "st,stts751";
+		reg = <0x38>;
+		drdy-gpios = <&gpiog 5 GPIO_INT_ACTIVE_LOW>;
+		label = "STTS751";
+	};
+};
+
+&spi1 {
+	status = "okay";
+
+	cs-gpios = <&gpioe 11 0>, <&gpioe 12 0>, <&gpioe 10 0>;
+
+	lis2dw12@0 {
+		compatible = "st,lis2dw12";
+		spi-max-frequency = <1000000>;
+		reg = <0>;
+		irq-gpios = <&gpioc 5 0>;
+		label = "LIS2DW12";
+	};
+
+	lsm6dso@1 {
+		compatible = "st,lsm6dso";
+		spi-max-frequency = <1000000>;
+		reg = <1>;
+		irq-gpios = <&gpioa 2 0>;
+		label = "LSM6DSO";
+	};
+
+	iis3dhhc@2 {
+		compatible = "st,iis3dhhc";
+		spi-max-frequency = <1000000>;
+		reg = <2>;
+		irq-gpios = <&gpioc 13 0>, <&gpioe 6 0>;
+		label = "IIS3DHHC";
+	};
+};
+
+&spi3 {
+	status = "okay";
+
+	cs-gpios = <&gpioa 15 0>;
+
+	lis2mdl@0 {
+		compatible = "st,lis2mdl";
+		spi-max-frequency = <1000000>;
+		reg = <0>;
+		irq-gpios = <&gpiod 12 0>;
+		label = "LIS2MDL";
+	};
+};
+
+&usbotg_fs {
+	status = "okay";
+};
+
+&timers2 {
+	status = "okay";
+
+	pwm {
+		status = "okay";
+	};
+};
+
+&rtc {
+	status = "okay";
+};
+
+&flash0 {
+	/*
+	 * For more information, see:
+	 * http://docs.zephyrproject.org/latest/guides/dts/index.html#flash-partitions
+	 */
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0x00010000>;
+			read-only;
+		};
+
+		/*
+		 * The flash starting at offset 0x10000 and ending at
+		 * offset 0x1ffff is reserved for use by the application.
+		 */
+
+		slot0_partition: partition@20000 {
+			label = "image-0";
+			reg = <0x00020000 0x0006C000>;
+		};
+		slot1_partition: partition@8c000 {
+			label = "image-1";
+			reg = <0x0008C000 0x0006C000>;
+		};
+		scratch_partition: partition@f8000 {
+			label = "image-scratch";
+			reg = <0x000F8000 0x00006000>;
+		};
+
+		storage_partition: partition@fc000 {
+			label = "storage";
+			reg = <0x000fc000 0x00004000>;
+		};
+	};
+
+
+};

@@ -9,12 +9,12 @@
 #include <kernel.h>
 #include <arch/cpu.h>
 #include <linker/sections.h>
-#include <misc/__assert.h>
+#include <sys/__assert.h>
 #include <zephyr/types.h>
-#include <misc/util.h>
+#include <sys/util.h>
 #include <string.h>
 #include <init.h>
-#include <uart.h>
+#include <drivers/uart.h>
 
 /*
  * for nsimdrv, "nsim_mem-dev=uart0,base=0xf0000000,irq=24" is

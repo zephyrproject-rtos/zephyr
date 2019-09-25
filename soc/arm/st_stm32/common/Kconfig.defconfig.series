@@ -44,6 +44,9 @@ if WATCHDOG
 config IWDG_STM32
 	default y
 
+config WWDG_STM32
+	default n
+
 endif # WATCHDOG
 
 if PWM
@@ -73,13 +76,6 @@ config USB_DC_STM32
 	default y
 
 endif # USB
-
-if RTC
-
-config RTC_STM32
-	default y
-
-endif # RTC
 
 if COUNTER
 

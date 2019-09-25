@@ -38,7 +38,7 @@ static u32_t cycles_delta(u32_t *reftime)
 	return delta;
 }
 
-static void thread_tslice(void *p1, void *p2, void *p3)
+static void thread_time_slice(void *p1, void *p2, void *p3)
 {
 	u32_t t = cycles_delta(&elapsed_slice);
 	u32_t expected_slice_min, expected_slice_max;
@@ -64,14 +64,22 @@ static void thread_tslice(void *p1, void *p2, void *p3)
 				     (sys_clock_hw_cycles_per_sec() / 1000);
 	}
 
-	#ifdef CONFIG_DEBUG
+#ifdef CONFIG_DEBUG
 	TC_PRINT("thread[%d] elapsed slice: %d, expected: <%d, %d>\n",
 		thread_idx, t, expected_slice_min, expected_slice_max);
-	#endif
+#endif
 
 	/** TESTPOINT: timeslice should be reset for each preemptive thread*/
-	zassert_true(t >= expected_slice_min, NULL);
-	zassert_true(t <= expected_slice_max, NULL);
+#ifndef CONFIG_COVERAGE
+	zassert_true(t >= expected_slice_min,
+		     "timeslice too small, expected %u got %u",
+		     expected_slice_min, t);
+	zassert_true(t <= expected_slice_max,
+		     "timeslice too big, expected %u got %u",
+		     expected_slice_max, t);
+#else
+	(void)t;
+#endif /* CONFIG_COVERAGE */
 	thread_idx = (thread_idx + 1) % NUM_THREAD;
 
 	/* Keep the current thread busy for more than one slice, even though,
@@ -108,12 +116,14 @@ void test_slice_reset(void)
 
 	for (int j = 0; j < 2; j++) {
 		k_sem_reset(&sema);
+
 		/* update priority for current thread*/
 		k_thread_priority_set(k_current_get(), K_PRIO_PREEMPT(j));
+
 		/* create delayed threads with equal preemptive priority*/
 		for (int i = 0; i < NUM_THREAD; i++) {
 			tid[i] = k_thread_create(&t[i], tstacks[i], STACK_SIZE,
-						 thread_tslice, NULL, NULL, NULL,
+						 thread_time_slice, NULL, NULL, NULL,
 						 K_PRIO_PREEMPT(j), 0, 0);
 		}
 		/* enable time slice*/

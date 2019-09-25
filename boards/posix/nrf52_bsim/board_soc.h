@@ -20,7 +20,7 @@
 #define _POSIX_NRF52_BOARD_SOC_H
 
 #include <toolchain.h>
-#include <misc/util.h>
+#include <sys/util.h>
 
 #include <stdint.h>
 #include <stdbool.h>

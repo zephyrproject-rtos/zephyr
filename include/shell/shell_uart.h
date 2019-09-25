@@ -8,8 +8,8 @@
 #define SHELL_UART_H__
 
 #include <shell/shell.h>
-#include <ring_buffer.h>
-#include <atomic.h>
+#include <sys/ring_buffer.h>
+#include <sys/atomic.h>
 #ifdef CONFIG_MCUMGR_SMP_SHELL
 #include "mgmt/smp_shell.h"
 #endif

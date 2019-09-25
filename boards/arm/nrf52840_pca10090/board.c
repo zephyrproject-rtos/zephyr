@@ -6,7 +6,7 @@
 
 #include <zephyr.h>
 #include <init.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 #include <logging/log.h>
 
 LOG_MODULE_REGISTER(board_control, CONFIG_BOARD_PCA10090_LOG_LEVEL);
@@ -226,7 +226,7 @@ static void reset_pin_wait_low(struct device *port, u32_t pin)
 static int reset_pin_configure(struct device *p0, struct device *p1)
 {
 	int err;
-	u32_t pin;
+	u32_t pin = 0;
 	struct device *port = NULL;
 
 	static struct gpio_callback gpio_ctx;
@@ -258,9 +258,7 @@ static int reset_pin_configure(struct device *p0, struct device *p1)
 		pin = 2;
 	}
 
-	if (port == NULL) {
-		return -EINVAL;
-	}
+	__ASSERT_NO_MSG(port != NULL);
 
 	err = gpio_pin_configure(port, pin,
 				 GPIO_DIR_IN | GPIO_INT | GPIO_PUD_PULL_DOWN |

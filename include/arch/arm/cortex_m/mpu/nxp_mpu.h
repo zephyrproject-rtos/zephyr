@@ -118,6 +118,13 @@
 #define REGION_USER_RO_ATTR {(MPU_REGION_READ | \
 			     MPU_REGION_SU)}
 
+/* ENET (Master 3) and USB (Master 4) devices will not be able
+to access RAM when the region is dynamically disabled in NXP MPU.
+DEBUGGER (Master 1) can't be disabled in Region 0. */
+#define REGION_DEBUGGER_AND_DEVICE_ATTR  {((MPU_REGION_SU) | \
+				((UM_READ | UM_WRITE) << BM3_UM_SHIFT) | \
+				(BM4_PERMISSIONS))}
+
 #define REGION_DEBUG_ATTR  {MPU_REGION_SU}
 
 #define REGION_BACKGROUND_ATTR	{MPU_REGION_SU_RW}

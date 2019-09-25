@@ -10,7 +10,7 @@
 
 #include <kernel.h>
 #include <arch/cpu.h>
-#include <uart.h>
+#include <drivers/uart.h>
 
 #define RXDATA_EMPTY   (1 << 31)   /* Receive FIFO Empty */
 #define RXDATA_MASK    0xFF        /* Receive Data Mask */
@@ -45,7 +45,7 @@ typedef void (*irq_cfg_func_t)(void);
 #endif
 
 struct uart_sifive_device_config {
-	u32_t       port;
+	uintptr_t   port;
 	u32_t       sys_clk_freq;
 	u32_t       baud_rate;
 	u32_t       rxcnt_irq;
@@ -219,7 +219,7 @@ static int uart_sifive_irq_tx_complete(struct device *dev)
 	volatile struct uart_sifive_regs_t *uart = DEV_UART(dev);
 
 	/*
-	 * No TX EMTPY flag for this controller,
+	 * No TX EMPTY flag for this controller,
 	 * just check if TX FIFO is not full
 	 */
 	return !(uart->tx & TXDATA_FULL);
@@ -400,12 +400,12 @@ DEVICE_AND_API_INIT(uart_sifive_0, DT_INST_0_SIFIVE_UART0_LABEL,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void uart_sifive_irq_cfg_func_0(void)
 {
-	IRQ_CONNECT(RISCV_MAX_GENERIC_IRQ + DT_INST_0_SIFIVE_UART0_IRQ_0,
+	IRQ_CONNECT(DT_INST_0_SIFIVE_UART0_IRQ_0,
 		    CONFIG_UART_SIFIVE_PORT_0_IRQ_PRIORITY,
 		    uart_sifive_irq_handler, DEVICE_GET(uart_sifive_0),
 		    0);
 
-	irq_enable(RISCV_MAX_GENERIC_IRQ + DT_INST_0_SIFIVE_UART0_IRQ_0);
+	irq_enable(DT_INST_0_SIFIVE_UART0_IRQ_0);
 }
 #endif
 
@@ -439,12 +439,12 @@ DEVICE_AND_API_INIT(uart_sifive_1, DT_INST_1_SIFIVE_UART0_LABEL,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void uart_sifive_irq_cfg_func_1(void)
 {
-	IRQ_CONNECT(RISCV_MAX_GENERIC_IRQ + DT_INST_1_SIFIVE_UART0_IRQ_0,
+	IRQ_CONNECT(DT_INST_1_SIFIVE_UART0_IRQ_0,
 		    CONFIG_UART_SIFIVE_PORT_1_IRQ_PRIORITY,
 		    uart_sifive_irq_handler, DEVICE_GET(uart_sifive_1),
 		    0);
 
-	irq_enable(RISCV_MAX_GENERIC_IRQ + DT_INST_1_SIFIVE_UART0_IRQ_0);
+	irq_enable(DT_INST_1_SIFIVE_UART0_IRQ_0);
 }
 #endif
 

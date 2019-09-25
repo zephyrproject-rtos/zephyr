@@ -17,12 +17,12 @@
 #include <kernel.h>
 #include <arch/cpu.h>
 #include <kernel_structs.h>
-#include <misc/__assert.h>
-#include <misc/printk.h>
+#include <sys/__assert.h>
+#include <sys/printk.h>
 #include <irq.h>
-#include <tracing.h>
+#include <debug/tracing.h>
 #include <kswap.h>
-#include <arch/x86/segmentation.h>
+#include <arch/x86/ia32/segmentation.h>
 
 extern void z_SpuriousIntHandler(void *handler);
 extern void z_SpuriousIntNoErrCodeHandler(void *handler);
@@ -129,7 +129,6 @@ static unsigned int next_irq_stub;
  */
 extern char z_dynamic_stubs_begin[];
 
-#ifndef CONFIG_X86_FIXED_IRQ_MAPPING
 /**
  * @brief Allocate a free interrupt vector given <priority>
  *
@@ -211,7 +210,6 @@ static unsigned int priority_to_free_vector(unsigned int requested_priority)
 
 	return vector;
 }
-#endif /* !CONFIG_X86_FIXED_IRQ_MAPPING */
 
 /**
  * @brief Get the memory address of an unused dynamic IRQ or exception stub
@@ -228,7 +226,7 @@ static void *get_dynamic_stub(int stub_idx)
 	u32_t offset;
 
 	/*
-	 * Because we want the sizes of the stubs to be consisent and minimized,
+	 * Because we want the sizes of the stubs to be consistent and minimized,
 	 * stubs are grouped into blocks, each containing a push and subsequent
 	 * 2-byte jump instruction to the end of the block, which then contains
 	 * a larger jump instruction to common dynamic IRQ handling code
@@ -249,10 +247,6 @@ static void idt_vector_install(int vector, void *irq_handler)
 	key = irq_lock();
 	z_init_irq_gate(&z_x86_idt.entries[vector], CODE_SEG,
 		       (u32_t)irq_handler, 0);
-#ifdef CONFIG_MVIC
-	/* MVIC requires IDT be reloaded if the entries table is ever changed */
-	z_set_idt(&z_x86_idt);
-#endif
 	irq_unlock(key);
 }
 
@@ -307,15 +301,11 @@ int z_arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 
 	key = irq_lock();
 
-#ifdef CONFIG_X86_FIXED_IRQ_MAPPING
-	vector = Z_IRQ_TO_INTERRUPT_VECTOR(irq);
-#else
 	vector = priority_to_free_vector(priority);
 	/* 0 indicates not used, vectors for interrupts start at 32 */
 	__ASSERT(_irq_to_interrupt_vector[irq] == 0U,
 		 "IRQ %d already configured", irq);
 	_irq_to_interrupt_vector[irq] = vector;
-#endif
 	z_irq_controller_irq_config(vector, irq, flags);
 
 	stub_idx = next_irq_stub++;

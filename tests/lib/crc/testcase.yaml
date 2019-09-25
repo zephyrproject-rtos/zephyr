@@ -1,0 +1,3 @@
+tests:
+  misc.crc:
+    tags: net crc

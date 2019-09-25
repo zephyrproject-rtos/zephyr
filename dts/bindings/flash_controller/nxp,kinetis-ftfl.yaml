@@ -1,15 +1,8 @@
----
 title: NXP Kinetis Flash Memory Module (FTFL)
-version: 0.1
 
 description: >
     This binding gives for the NXP Kinetis Flash Memory Module L (FTFL)
 
-inherits:
-    !include flash-controller.yaml
+compatible: "nxp,kinetis-ftfl"
 
-properties:
-    compatible:
-      constraint: "nxp,kinetis-ftfl"
-
-...
+include: flash-controller.yaml

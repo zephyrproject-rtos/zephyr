@@ -7,14 +7,14 @@
 #ifndef MPXXDTYY_H
 #define MPXXDTYY_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <audio/dmic.h>
 #include <zephyr.h>
 #include <device.h>
 #include "OpenPDMFilter.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define MPXXDTYY_MIN_PDM_FREQ		1200000 /* 1.2MHz */
 #define MPXXDTYY_MAX_PDM_FREQ		3250000 /* 3.25MHz */

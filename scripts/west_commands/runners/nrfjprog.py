@@ -5,9 +5,8 @@
 
 '''Runner for flashing with nrfjprog.'''
 
+import os
 import sys
-
-from west import log
 
 from runners.core import ZephyrBinaryRunner, RunnerCaps
 
@@ -46,25 +45,29 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
 
     @classmethod
     def create(cls, cfg, args):
-        return NrfJprogBinaryRunner(cfg, args.nrf_family, args.softreset,
-                                    args.snr, erase=args.erase)
+        ret = NrfJprogBinaryRunner(cfg, args.nrf_family, args.softreset,
+                                   args.snr, erase=args.erase)
+        ret.ensure_snr()
+        return ret
+
+    def ensure_snr(self):
+        if not self.snr:
+            self.snr = self.get_board_snr_from_user()
 
     def get_board_snr_from_user(self):
         snrs = self.check_output(['nrfjprog', '--ids'])
         snrs = snrs.decode(sys.getdefaultencoding()).strip().splitlines()
 
-        if len(snrs) == 0:
+        if not snrs:
             raise RuntimeError('"nrfjprog --ids" did not find a board; '
                                'is the board connected?')
-        elif len(snrs) == 1:
+
+        if len(snrs) == 1:
             board_snr = snrs[0]
             if board_snr == '0':
                 raise RuntimeError('"nrfjprog --ids" returned 0; '
                                    'is a debugger already connected?')
             return board_snr
-
-        log.dbg("Refusing the temptation to guess a board",
-                level=log.VERBOSE_EXTREME)
 
         # Use of print() here is advised. We don't want to lose
         # this information in a separate log -- this is
@@ -91,13 +94,18 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
 
         commands = []
         if self.snr is None:
-            board_snr = self.get_board_snr_from_user()
+            raise ValueError("self.snr must not be None")
         else:
             board_snr = self.snr.lstrip("0")
+
+        if not os.path.isfile(self.hex_):
+            raise ValueError('Cannot flash; hex file ({}) does not exist. '.
+                             format(self.hex_) +
+                             'Try enabling CONFIG_BUILD_OUTPUT_HEX.')
+
         program_cmd = ['nrfjprog', '--program', self.hex_, '-f', self.family,
                        '--snr', board_snr]
-
-        print('Flashing file: {}'.format(self.hex_))
+        self.logger.info('Flashing file: {}'.format(self.hex_))
         if self.erase:
             commands.extend([
                 ['nrfjprog',
@@ -129,5 +137,5 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
         for cmd in commands:
             self.check_call(cmd)
 
-        log.inf('Board with serial number {} flashed successfully.'.format(
-                  board_snr))
+        self.logger.info('Board with serial number {} flashed successfully.'.
+                         format(board_snr))

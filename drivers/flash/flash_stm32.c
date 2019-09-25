@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2017 Linaro Limited
  * Copyright (c) 2017 BayLibre, SAS.
+ * Copyright (c) 2019 Centaur Analytics, Inc
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,7 +9,7 @@
 #include <kernel.h>
 #include <device.h>
 #include <string.h>
-#include <flash.h>
+#include <drivers/flash.h>
 #include <init.h>
 #include <soc.h>
 
@@ -16,23 +17,31 @@
 
 /* STM32F0: maximum erase time of 40ms for a 2K sector */
 #if defined(CONFIG_SOC_SERIES_STM32F0X)
-#define STM32_FLASH_TIMEOUT	(K_MSEC(40))
+#define STM32_FLASH_MAX_ERASE_TIME	(K_MSEC(40))
 /* STM32F3: maximum erase time of 40ms for a 2K sector */
 #elif defined(CONFIG_SOC_SERIES_STM32F3X)
-#define STM32_FLASH_TIMEOUT	(K_MSEC(40))
+#define STM32_FLASH_MAX_ERASE_TIME	(K_MSEC(40))
 /* STM32F4: maximum erase time of 4s for a 128K sector */
 #elif defined(CONFIG_SOC_SERIES_STM32F4X)
-#define STM32_FLASH_TIMEOUT	(K_MSEC(4000))
+#define STM32_FLASH_MAX_ERASE_TIME	(K_MSEC(4000))
 /* STM32F7: maximum erase time of 4s for a 256K sector */
 #elif defined(CONFIG_SOC_SERIES_STM32F7X)
-#define STM32_FLASH_TIMEOUT	(K_MSEC(4000))
+#define STM32_FLASH_MAX_ERASE_TIME	(K_MSEC(4000))
 /* STM32L4: maximum erase time of 24.47ms for a 2K sector */
 #elif defined(CONFIG_SOC_SERIES_STM32L4X)
-#define STM32_FLASH_TIMEOUT	(K_MSEC(25))
+#define STM32_FLASH_MAX_ERASE_TIME	(K_MSEC(25))
 /* STM32WB: maximum erase time of 24.5ms for a 4K sector */
 #elif defined(CONFIG_SOC_SERIES_STM32WBX)
-#define STM32_FLASH_TIMEOUT	(K_MSEC(25))
+#define STM32_FLASH_MAX_ERASE_TIME	(K_MSEC(25))
+#elif defined(CONFIG_SOC_SERIES_STM32G0X)
+/* STM32G0: maximum erase time of 40ms for a 2K sector */
+#define STM32_FLASH_MAX_ERASE_TIME	(K_MSEC(40))
 #endif
+
+/* Let's wait for double the max erase time to be sure that the operation is
+ * completed.
+ */
+#define STM32_FLASH_TIMEOUT	(2 * STM32_FLASH_MAX_ERASE_TIME)
 
 #define CFG_HW_FLASH_SEMID	2
 
@@ -117,7 +126,8 @@ int flash_stm32_wait_flash_idle(struct device *dev)
 static void flash_stm32_flush_caches(struct device *dev,
 				     off_t offset, size_t len)
 {
-#if defined(CONFIG_SOC_SERIES_STM32F0X) || defined(CONFIG_SOC_SERIES_STM32F3X)
+#if defined(CONFIG_SOC_SERIES_STM32F0X) || defined(CONFIG_SOC_SERIES_STM32F3X) || \
+	defined(CONFIG_SOC_SERIES_STM32G0X)
 	ARG_UNUSED(dev);
 	ARG_UNUSED(offset);
 	ARG_UNUSED(len);
@@ -220,6 +230,8 @@ static int flash_stm32_write_protection(struct device *dev, bool enable)
 	struct stm32l4x_flash *regs = FLASH_STM32_REGS(dev);
 #elif defined(CONFIG_SOC_SERIES_STM32WBX)
 	struct stm32wbx_flash *regs = FLASH_STM32_REGS(dev);
+#elif defined(CONFIG_SOC_SERIES_STM32G0X)
+	struct stm32g0x_flash *regs = FLASH_STM32_REGS(dev);
 #endif
 	int rc = 0;
 
@@ -263,6 +275,10 @@ static struct flash_stm32_priv flash_data = {
 		    .enr = LL_AHB1_GRP1_PERIPH_FLASH },
 #elif defined(CONFIG_SOC_SERIES_STM32WBX)
 	.regs = (struct stm32wbx_flash *) DT_FLASH_DEV_BASE_ADDRESS,
+#elif defined(CONFIG_SOC_SERIES_STM32G0X)
+	.regs = (struct stm32g0x_flash *) DT_FLASH_DEV_BASE_ADDRESS,
+	.pclken = { .bus = STM32_CLOCK_BUS_AHB1,
+		    .enr = LL_AHB1_GRP1_PERIPH_FLASH },
 #endif
 };
 
@@ -288,7 +304,8 @@ static int stm32_flash_init(struct device *dev)
 	struct flash_stm32_priv *p = FLASH_STM32_PRIV(dev);
 #if defined(CONFIG_SOC_SERIES_STM32L4X) || \
 	defined(CONFIG_SOC_SERIES_STM32F0X) || \
-	defined(CONFIG_SOC_SERIES_STM32F3X)
+	defined(CONFIG_SOC_SERIES_STM32F3X) || \
+	defined(CONFIG_SOC_SERIES_STM32G0X)
 	struct device *clk = device_get_binding(STM32_CLOCK_CONTROL_NAME);
 
 	/*

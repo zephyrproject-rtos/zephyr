@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <gpio.h>
+#include <drivers/gpio.h>
 
 #include "ble_mesh.h"
 #include "device_composition.h"

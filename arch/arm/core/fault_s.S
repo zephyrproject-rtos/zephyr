@@ -30,6 +30,10 @@ GTEXT(__usage_fault)
 GTEXT(__secure_fault)
 #endif /* CONFIG_ARM_SECURE_FIRMWARE*/
 GTEXT(__debug_monitor)
+#elif defined(CONFIG_ARMV7_R)
+GTEXT(__undef_instruction)
+GTEXT(__prefetch_abort)
+GTEXT(__data_abort)
 #else
 #error Unknown ARM architecture
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
@@ -70,6 +74,10 @@ SECTION_SUBSEC_FUNC(TEXT,__fault,__usage_fault)
 SECTION_SUBSEC_FUNC(TEXT,__fault,__secure_fault)
 #endif /* CONFIG_ARM_SECURE_FIRMWARE */
 SECTION_SUBSEC_FUNC(TEXT,__fault,__debug_monitor)
+#elif defined(CONFIG_ARMV7_R)
+SECTION_SUBSEC_FUNC(TEXT,__fault,__undef_instruction)
+SECTION_SUBSEC_FUNC(TEXT,__fault,__prefetch_abort)
+SECTION_SUBSEC_FUNC(TEXT,__fault,__data_abort)
 #else
 #error Unknown ARM architecture
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
@@ -127,6 +135,12 @@ _s_stack_frame_msp:
 	mrs r0, MSP
 _s_stack_frame_endif:
 #endif /* CONFIG_ARM_SECURE_FIRMWARE || CONFIG_ARM_NONSECURE_FIRMWARE */
+#elif defined(CONFIG_ARMV7_R)
+	/*
+	 * Pass null for the esf to _Fault for now.  A future PR will add better
+	 * exception debug for Cortex-R  that subsumes what esf provides.
+	 */
+	mov r0, #0
 #else
 #error Unknown ARM architecture
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
@@ -146,6 +160,11 @@ _s_stack_frame_endif:
 	push {r0, lr}
 	bl _Fault
 
+#if defined(CONFIG_CPU_CORTEX_M)
 	pop {r0, pc}
+#elif defined(CONFIG_CPU_CORTEX_R)
+	pop {r0, lr}
+	subs pc, lr, #8
+#endif
 
 	.end

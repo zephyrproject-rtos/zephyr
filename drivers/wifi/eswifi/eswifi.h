@@ -9,6 +9,8 @@
 
 #include <zephyr.h>
 #include <kernel.h>
+#include <stdio.h>
+#include <kernel_structs.h>
 
 #include <net/wifi_mgmt.h>
 
@@ -71,6 +73,8 @@ struct eswifi_dev {
 	u8_t mac[6];
 	char buf[MAX_DATA_SIZE];
 	struct k_mutex mutex;
+	atomic_val_t mutex_owner;
+	unsigned int mutex_depth;
 	void *bus_data;
 	struct eswifi_off_socket socket[ESWIFI_OFFLOAD_MAX_SOCKETS];
 };
@@ -89,18 +93,55 @@ static inline int eswifi_request(struct eswifi_dev *eswifi, char *cmd,
 
 static inline void eswifi_lock(struct eswifi_dev *eswifi)
 {
-	k_mutex_lock(&eswifi->mutex, K_FOREVER);
+	/* Nested locking */
+	if (atomic_get(&eswifi->mutex_owner) != (atomic_t)(uintptr_t)_current) {
+		k_mutex_lock(&eswifi->mutex, K_FOREVER);
+		atomic_set(&eswifi->mutex_owner, (atomic_t)(uintptr_t)_current);
+		eswifi->mutex_depth = 1;
+	} else {
+		eswifi->mutex_depth++;
+	}
 }
 
 static inline void eswifi_unlock(struct eswifi_dev *eswifi)
 {
-	k_mutex_unlock(&eswifi->mutex);
+	if (!--eswifi->mutex_depth) {
+		atomic_set(&eswifi->mutex_owner, -1);
+		k_mutex_unlock(&eswifi->mutex);
+	}
+}
+
+int eswifi_at_cmd(struct eswifi_dev *eswifi, char *cmd);
+static inline int __select_socket(struct eswifi_dev *eswifi, u8_t idx)
+{
+	snprintf(eswifi->buf, sizeof(eswifi->buf), "P0=%d\r", idx);
+	return eswifi_at_cmd(eswifi, eswifi->buf);
+}
+
+static inline
+struct eswifi_dev *eswifi_socket_to_dev(struct eswifi_off_socket *socket)
+{
+	return CONTAINER_OF(socket - socket->index, struct eswifi_dev, socket);
 }
 
 extern struct eswifi_bus_ops eswifi_bus_ops_spi;
 int eswifi_offload_init(struct eswifi_dev *eswifi);
 struct eswifi_dev *eswifi_by_iface_idx(u8_t iface);
 int eswifi_at_cmd_rsp(struct eswifi_dev *eswifi, char *cmd, char **rsp);
-int eswifi_at_cmd(struct eswifi_dev *eswifi, char *cmd);
+void eswifi_async_msg(struct eswifi_dev *eswifi, char *msg, size_t len);
+void eswifi_offload_async_msg(struct eswifi_dev *eswifi, char *msg, size_t len);
+
+int __eswifi_socket_free(struct eswifi_dev *eswifi,
+			 struct eswifi_off_socket *socket);
+int __eswifi_socket_new(struct eswifi_dev *eswifi, int family, int type,
+			int proto, void *context);
+int __eswifi_off_start_client(struct eswifi_dev *eswifi,
+			      struct eswifi_off_socket *socket);
+int __eswifi_accept(struct eswifi_dev *eswifi, struct eswifi_off_socket *socket);
+int __eswifi_bind(struct eswifi_dev *eswifi, struct eswifi_off_socket *socket,
+		  const struct sockaddr *addr, socklen_t addrlen);
+#if defined(CONFIG_NET_SOCKETS_OFFLOAD)
+int eswifi_socket_offload_init(struct eswifi_dev *leswifi);
+#endif
 
 #endif

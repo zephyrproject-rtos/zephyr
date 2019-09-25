@@ -7,7 +7,7 @@
 #include <errno.h>
 
 #include <soc.h>
-#include <pwm.h>
+#include <drivers/pwm.h>
 #include <device.h>
 #include <kernel.h>
 #include <init.h>
@@ -35,7 +35,7 @@ static u32_t __get_tim_clk(u32_t bus_clk,
 	if (pclken->bus == STM32_CLOCK_BUS_APB1) {
 		apb_psc = CONFIG_CLOCK_STM32_APB1_PRESCALER;
 	}
-#ifndef CONFIG_SOC_SERIES_STM32F0X
+#if !defined(CONFIG_SOC_SERIES_STM32F0X) && !defined(CONFIG_SOC_SERIES_STM32G0X)
 	else {
 		apb_psc = CONFIG_CLOCK_STM32_APB2_PRESCALER;
 	}

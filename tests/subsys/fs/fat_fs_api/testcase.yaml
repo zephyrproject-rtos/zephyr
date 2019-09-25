@@ -1,4 +1,4 @@
 tests:
   filesystem.fat:
-    platform_whitelist: arduino_101 native_posix
+    platform_whitelist: native_posix native_posix_64
     tags: filesystem

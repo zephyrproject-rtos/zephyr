@@ -1,0 +1,67 @@
+# Kconfig - STM32H747I DISCOVERY board configuration
+#
+# Copyright (c) 2019 Linaro Limited
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if BOARD_STM32H747I_DISCO_M7 || BOARD_STM32H747I_DISCO_M4
+
+config BOARD
+	default "stm32h747i_disco_m7" if BOARD_STM32H747I_DISCO_M7
+	default "stm32h747i_disco_m4" if BOARD_STM32H747I_DISCO_M4
+
+# clock configuration
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 400000000 if BOARD_STM32H747I_DISCO_M7
+	# SYS_CLOCK_M4 = SYS_CLOCK_M7 / CLOCK_STM32_HPRE
+	default 200000000 if BOARD_STM32H747I_DISCO_M4
+
+config CLOCK_STM32_D1CPRE
+	default 1
+
+config CLOCK_STM32_HPRE
+	# HCLK: 200MHz
+	default 2
+
+config CLOCK_STM32_D2PPRE1
+	# APBX: 100MHz
+	default 2
+
+config CLOCK_STM32_D2PPRE2
+	default 2
+
+config CLOCK_STM32_D1PPRE
+	default 2
+
+config CLOCK_STM32_D3PPRE
+	default 2
+
+config STM32H7_DUAL_CORE
+	def_bool y
+
+# Dual core boot configuration
+if STM32H7_DUAL_CORE
+# Boot method is selected in common file to avoid desync issues
+choice STM32H7_DUAL_CORE_BOOT
+	# Use out of the box config by default
+	# default STM32H7_BOOT_CM4_CM7
+	default STM32H7_BOOT_CM7_CM4GATED
+endchoice
+endif # STM32H7_DUAL_CORE
+
+if UART_CONSOLE
+
+config UART_1
+	default y if BOARD_STM32H747I_DISCO_M7
+
+endif # UART_CONSOLE
+
+if SERIAL
+
+config UART_8
+	default y if BOARD_STM32H747I_DISCO_M7
+
+endif # SERIAL
+
+endif # BOARD_STM32H747I_DISCO_M7

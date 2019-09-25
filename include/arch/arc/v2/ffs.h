@@ -14,13 +14,13 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_ARC_V2_FFS_H_
 #define ZEPHYR_INCLUDE_ARCH_ARC_V2_FFS_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #ifndef _ASMLANGUAGE
 
 #include <zephyr/types.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  *
@@ -81,10 +81,10 @@ static ALWAYS_INLINE unsigned int find_lsb_set(u32_t op)
 }
 #endif
 
-#endif /* _ASMLANGUAGE */
-
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* _ASMLANGUAGE */
 
 #endif /* ZEPHYR_INCLUDE_ARCH_ARC_V2_FFS_H_ */

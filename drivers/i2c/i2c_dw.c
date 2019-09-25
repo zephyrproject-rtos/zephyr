@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-#include <i2c.h>
+#include <drivers/i2c.h>
 #include <kernel.h>
 #include <init.h>
 #include <arch/cpu.h>
@@ -18,12 +18,12 @@
 
 #include <soc.h>
 #include <errno.h>
-#include <sys_io.h>
+#include <sys/sys_io.h>
 
-#include <misc/util.h>
+#include <sys/util.h>
 
 #ifdef CONFIG_IOAPIC
-#include <drivers/ioapic.h>
+#include <drivers/interrupt_controller/ioapic.h>
 #endif
 
 #include "i2c_dw.h"

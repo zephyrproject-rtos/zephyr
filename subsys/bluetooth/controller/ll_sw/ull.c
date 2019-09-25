@@ -10,7 +10,7 @@
 
 #include <zephyr/types.h>
 #include <device.h>
-#include <entropy.h>
+#include <drivers/entropy.h>
 #include <bluetooth/hci.h>
 
 #include "hal/cntr.h"
@@ -119,28 +119,26 @@ static struct k_sem sem_ticker_api_cb;
 /* Semaphore to wakeup thread on Rx-ed objects */
 static struct k_sem *sem_recv;
 
-/* Entropy device */
-static struct device *dev_entropy;
-
-/* Declare prepare-event FIFO: mfifo_prep: Queue of struct node_rx_event_done */
+/* Declare prepare-event FIFO: mfifo_prep.
+ * Queue of struct node_rx_event_done
+ */
 static MFIFO_DEFINE(prep, sizeof(struct lll_event), EVENT_PIPELINE_MAX);
 
 /* Declare done-event FIFO: mfifo_done.
  * Queue of pointers to struct node_rx_event_done.
  * The actual backing behind these pointers is mem_done
  */
-static MFIFO_DEFINE(done, sizeof(struct node_rx_event_done *),
-							EVENT_PIPELINE_MAX);
+static MFIFO_DEFINE(done, sizeof(struct node_rx_event_done *), EVENT_DONE_MAX);
 
 /* Backing storage for elements in mfifo_done */
 static struct {
 	void *free;
-	u8_t pool[sizeof(struct node_rx_event_done) * EVENT_PIPELINE_MAX];
+	u8_t pool[sizeof(struct node_rx_event_done) * EVENT_DONE_MAX];
 } mem_done;
 
 static struct {
 	void *free;
-	u8_t pool[sizeof(memq_link_t) * EVENT_PIPELINE_MAX];
+	u8_t pool[sizeof(memq_link_t) * EVENT_DONE_MAX];
 } mem_link_done;
 
 #define PDU_RX_CNT    (CONFIG_BT_CTLR_RX_BUFFERS + 3)
@@ -148,7 +146,6 @@ static struct {
 #define RX_CNT        (PDU_RX_CNT + LL_PDU_RX_CNT)
 
 static MFIFO_DEFINE(pdu_rx_free, sizeof(void *), PDU_RX_CNT);
-static MFIFO_DEFINE(ll_pdu_rx_free, sizeof(void *), LL_PDU_RX_CNT);
 
 #if defined(CONFIG_BT_RX_USER_PDU_LEN)
 #define PDU_RX_USER_PDU_OCTETS_MAX (CONFIG_BT_RX_USER_PDU_LEN)
@@ -169,18 +166,29 @@ static MFIFO_DEFINE(ll_pdu_rx_free, sizeof(void *), LL_PDU_RX_CNT);
 		      PDU_RX_USER_PDU_OCTETS_MAX)              \
 	)
 
-#define PDU_RX_POOL_SIZE (PDU_RX_NODE_POOL_ELEMENT_SIZE * (RX_CNT + 1))
+/* When both central and peripheral are supported, one each Rx node will be
+ * needed by connectable advertising and the initiator to generate connection
+ * complete event, hence conditionally set the count.
+ */
+#if defined(CONFIG_BT_MAX_CONN)
+#if defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_PERIPHERAL)
+#define BT_CTLR_MAX_CONNECTABLE 2
+#else
+#define BT_CTLR_MAX_CONNECTABLE 1
+#endif
+#define BT_CTLR_MAX_CONN        CONFIG_BT_MAX_CONN
+#else
+#define BT_CTLR_MAX_CONNECTABLE 0
+#define BT_CTLR_MAX_CONN        0
+#endif
+
+#define PDU_RX_POOL_SIZE (PDU_RX_NODE_POOL_ELEMENT_SIZE * \
+			  (RX_CNT + BT_CTLR_MAX_CONNECTABLE))
 
 static struct {
 	void *free;
 	u8_t pool[PDU_RX_POOL_SIZE];
 } mem_pdu_rx;
-
-#if defined(CONFIG_BT_MAX_CONN)
-#define BT_CTLR_MAX_CONN CONFIG_BT_MAX_CONN
-#else
-#define BT_CTLR_MAX_CONN 0
-#endif
 
 #define LINK_RX_POOL_SIZE (sizeof(memq_link_t) * (RX_CNT + 2 + \
 						  BT_CTLR_MAX_CONN))
@@ -195,6 +203,7 @@ static MEMQ_DECLARE(ull_rx);
 static MEMQ_DECLARE(ll_rx);
 
 #if defined(CONFIG_BT_CONN)
+static MFIFO_DEFINE(ll_pdu_rx_free, sizeof(void *), LL_PDU_RX_CNT);
 static MFIFO_DEFINE(tx_ack, sizeof(struct lll_tx),
 		    CONFIG_BT_CTLR_TX_BUFFERS);
 
@@ -213,6 +222,7 @@ static void rx_demux(void *param);
 static inline int rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx);
 static inline void rx_demux_event_done(memq_link_t *link,
 				       struct node_rx_hdr *rx);
+static inline void ll_rx_link_inc_quota(int8_t delta);
 static void disabled_cb(void *param);
 
 #if defined(CONFIG_BT_CONN)
@@ -225,11 +235,6 @@ int ll_init(struct k_sem *sem_rx)
 
 	/* Store the semaphore to be used to wakeup Thread context */
 	sem_recv = sem_rx;
-	/* Get reference to entropy device */
-	dev_entropy = device_get_binding(CONFIG_ENTROPY_NAME);
-	if (!dev_entropy) {
-		return -ENODEV;
-	}
 
 	/* Initialize counter */
 	/* TODO: Bind and use counter driver? */
@@ -382,8 +387,10 @@ void ll_reset(void)
 	/* Re-initialize the free rx mfifo */
 	MFIFO_INIT(pdu_rx_free);
 
+#if defined(CONFIG_BT_CONN)
 	/* Re-initialize the free ll rx mfifo */
 	MFIFO_INIT(ll_pdu_rx_free);
+#endif /* CONFIG_BT_CONN */
 
 	/* Common to init and reset */
 	err = init_reset();
@@ -436,8 +443,7 @@ ll_rx_get_again:
 						   &memq_ll_rx.head, NULL);
 				mem_release(link, &mem_link_rx.free);
 
-				LL_ASSERT(mem_link_rx.quota_pdu < RX_CNT);
-				mem_link_rx.quota_pdu++;
+				ll_rx_link_inc_quota(1);
 
 				mem_release(rx, &mem_pdu_rx.free);
 
@@ -561,9 +567,7 @@ void ll_rx_dequeue(void)
 		 * since prio_recv_thread() peeked in memq_ll_rx via
 		 * ll_rx_get() before.
 		 */
-		LL_ASSERT(mem_link_rx.quota_pdu < RX_CNT);
-
-		mem_link_rx.quota_pdu++;
+		ll_rx_link_inc_quota(1);
 		break;
 #endif /* CONFIG_BT_OBSERVER ||
 	* CONFIG_BT_CTLR_SCAN_REQ_NOTIFY ||
@@ -786,6 +790,11 @@ void ll_rx_mem_release(void **node_rx)
 		case NODE_RX_TYPE_USER_START ... NODE_RX_TYPE_USER_END:
 #endif /* CONFIG_BT_CTLR_USER_EXT */
 
+		/* Ensure that at least one 'case' statement is present for this
+		 * code block.
+		 */
+		case NODE_RX_TYPE_NONE:
+			LL_ASSERT(rx_free->type != NODE_RX_TYPE_NONE);
 			mem_release(rx_free, &mem_pdu_rx.free);
 			break;
 
@@ -808,7 +817,6 @@ void ll_rx_mem_release(void **node_rx)
 		break;
 #endif /* CONFIG_BT_CONN */
 
-		case NODE_RX_TYPE_NONE:
 		case NODE_RX_TYPE_EVENT_DONE:
 		default:
 			LL_ASSERT(0);
@@ -819,6 +827,12 @@ void ll_rx_mem_release(void **node_rx)
 	*node_rx = rx;
 
 	rx_alloc(UINT8_MAX);
+}
+
+static inline void ll_rx_link_inc_quota(int8_t delta)
+{
+	LL_ASSERT(delta <= 0 || mem_link_rx.quota_pdu < RX_CNT);
+	mem_link_rx.quota_pdu += delta;
 }
 
 void *ll_rx_link_alloc(void)
@@ -839,20 +853,6 @@ void *ll_rx_alloc(void)
 void ll_rx_release(void *node_rx)
 {
 	mem_release(node_rx, &mem_pdu_rx.free);
-}
-
-void *ll_pdu_rx_alloc_peek(u8_t count)
-{
-	if (count > MFIFO_AVAIL_COUNT_GET(ll_pdu_rx_free)) {
-		return NULL;
-	}
-
-	return MFIFO_DEQUEUE_PEEK(ll_pdu_rx_free);
-}
-
-void *ll_pdu_rx_alloc(void)
-{
-	return MFIFO_DEQUEUE(ll_pdu_rx_free);
 }
 
 void ll_rx_put(memq_link_t *link, void *rx)
@@ -885,6 +885,20 @@ void ll_rx_sched(void)
 }
 
 #if defined(CONFIG_BT_CONN)
+void *ll_pdu_rx_alloc_peek(u8_t count)
+{
+	if (count > MFIFO_AVAIL_COUNT_GET(ll_pdu_rx_free)) {
+		return NULL;
+	}
+
+	return MFIFO_DEQUEUE_PEEK(ll_pdu_rx_free);
+}
+
+void *ll_pdu_rx_alloc(void)
+{
+	return MFIFO_DEQUEUE(ll_pdu_rx_free);
+}
+
 void ll_tx_ack_put(u16_t handle, struct node_tx *node_tx)
 {
 	struct lll_tx *tx;
@@ -1123,21 +1137,16 @@ void *ull_event_done(void *param)
 	return evdone;
 }
 
-u8_t ull_entropy_get(u8_t len, void *rand)
-{
-	return entropy_get_entropy_isr(dev_entropy, rand, len, 0);
-}
-
 static inline int init_reset(void)
 {
 	memq_link_t *link;
 
 	/* Initialize done pool. */
 	mem_init(mem_done.pool, sizeof(struct node_rx_event_done),
-		 EVENT_PIPELINE_MAX, &mem_done.free);
+		 EVENT_DONE_MAX, &mem_done.free);
 
 	/* Initialize done link pool. */
-	mem_init(mem_link_done.pool, sizeof(memq_link_t), EVENT_PIPELINE_MAX,
+	mem_init(mem_link_done.pool, sizeof(memq_link_t), EVENT_DONE_MAX,
 		 &mem_link_done.free);
 
 	/* Allocate done buffers */
@@ -1233,11 +1242,11 @@ static inline void *done_release(memq_link_t *link,
 {
 	u8_t idx;
 
-	done->hdr.link = link;
-
 	if (!MFIFO_ENQUEUE_IDX_GET(done, &idx)) {
 		return NULL;
 	}
+
+	done->hdr.link = link;
 
 	MFIFO_BY_IDX_ENQUEUE(done, idx, done);
 
@@ -1248,6 +1257,7 @@ static inline void rx_alloc(u8_t max)
 {
 	u8_t idx;
 
+#if defined(CONFIG_BT_CONN)
 	while (mem_link_rx.quota_pdu &&
 	       MFIFO_ENQUEUE_IDX_GET(ll_pdu_rx_free, &idx)) {
 		memq_link_t *link;
@@ -1268,8 +1278,9 @@ static inline void rx_alloc(u8_t max)
 
 		MFIFO_BY_IDX_ENQUEUE(ll_pdu_rx_free, idx, rx);
 
-		mem_link_rx.quota_pdu--;
+		ll_rx_link_inc_quota(-1);
 	}
+#endif /* CONFIG_BT_CONN */
 
 	if (max > mem_link_rx.quota_pdu) {
 		max = mem_link_rx.quota_pdu;
@@ -1294,7 +1305,7 @@ static inline void rx_alloc(u8_t max)
 
 		MFIFO_BY_IDX_ENQUEUE(pdu_rx_free, idx, rx);
 
-		mem_link_rx.quota_pdu--;
+		ll_rx_link_inc_quota(-1);
 	}
 }
 
@@ -1598,9 +1609,10 @@ static inline void rx_demux_event_done(memq_link_t *link,
 	/* dequeue prepare pipeline */
 	next = ull_prepare_dequeue_get();
 	while (next) {
+		u8_t is_aborted = next->is_aborted;
 		u8_t is_resume = next->is_resume;
 
-		if (!next->is_aborted) {
+		if (!is_aborted) {
 			static memq_link_t link;
 			static struct mayfly mfy = {0, 0, &link, NULL,
 						    lll_resume};
@@ -1616,7 +1628,7 @@ static inline void rx_demux_event_done(memq_link_t *link,
 
 		next = ull_prepare_dequeue_get();
 
-		if (!next || next->is_resume || !is_resume) {
+		if (!next || (!is_aborted && (!is_resume || next->is_resume))) {
 			break;
 		}
 	}

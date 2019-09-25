@@ -1,45 +1,68 @@
----
-title: base device binding
-version: 0.1
-
-description: >
-    Binding for device
+# Common fields for all devices
 
 properties:
+    status:
+        type: string
+        required: false
+        description: indicates the operational status of a device
+        enum:
+           - "okay"
+           - "disabled"
+           - "reserved"
+           - "fail"
+           - "fail-sss"
+
     compatible:
         type: string-array
-        category: required
+        required: true
         description: compatible strings
-        generation: define
 
     reg:
         type: array
         description: register space
-        generation: define
-        category: optional
+        required: false
 
     reg-names:
         type: string-array
         description: name of each register space
-        generation: define
-        category: optional
+        required: false
 
     interrupts:
         type: array
-        category: optional
+        required: false
         description: interrupts for device
-        generation: define
+
+    interrupts-extended:
+        type: phandle-array
+        required: false
+        description: extended interrupt specifier for device
 
     interrupt-names:
         type: string-array
-        category: optional
+        required: false
         description: name of each interrupt
-        generation: define
+
+    interrupt-parent:
+        type: phandle
+        required: false
+        description: phandle to interrupt controller node
 
     label:
         type: string
-        category: optional
+        required: false
         description: Human readable string describing the device (used by Zephyr for API name)
-        generation: define
 
-...
+    clocks:
+        type: phandle-array
+        required: false
+        description: Clock gate information
+
+    "#address-cells":
+        type: int
+        required: false
+        description: number of address cells in reg property
+
+    "#size-cells":
+        type: int
+        required: false
+        description: number of size cells in reg property

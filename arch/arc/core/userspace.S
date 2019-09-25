@@ -11,37 +11,38 @@
 #include <arch/cpu.h>
 #include <syscall.h>
 #include <swap_macros.h>
+#include <v2/irq.h>
 
 .macro clear_scratch_regs
-	mov r1, 0
-	mov r2, 0
-	mov r3, 0
-	mov r4, 0
-	mov r5, 0
-	mov r6, 0
-	mov r7, 0
-	mov r8, 0
-	mov r9, 0
-	mov r10, 0
-	mov r11, 0
-	mov r12, 0
+	mov_s r1, 0
+	mov_s r2, 0
+	mov_s r3, 0
+	mov_s r4, 0
+	mov_s r5, 0
+	mov_s r6, 0
+	mov_s r7, 0
+	mov_s r8, 0
+	mov_s r9, 0
+	mov_s r10, 0
+	mov_s r11, 0
+	mov_s r12, 0
 .endm
 
 .macro clear_callee_regs
-	mov r25, 0
-	mov r24, 0
-	mov r23, 0
-	mov r22, 0
-	mov r21, 0
-	mov r20, 0
-	mov r19, 0
-	mov r18, 0
-	mov r17, 0
-	mov r16, 0
+	mov_s r25, 0
+	mov_s r24, 0
+	mov_s r23, 0
+	mov_s r22, 0
+	mov_s r21, 0
+	mov_s r20, 0
+	mov_s r19, 0
+	mov_s r18, 0
+	mov_s r17, 0
+	mov_s r16, 0
 
-	mov r15, 0
-	mov r14, 0
-	mov r13, 0
+	mov_s r15, 0
+	mov_s r14, 0
+	mov_s r13, 0
 .endm
 
 GTEXT(z_arc_userspace_enter)
@@ -58,6 +59,7 @@ GTEXT(z_arch_user_string_nlen_fixup)
  * @return N/A
  */
 SECTION_FUNC(TEXT, z_user_thread_entry_wrapper)
+	seti _ARC_V2_INIT_IRQ_LOCK_KEY
 	pop_s r3
 	pop_s r2
 	pop_s r1
@@ -65,7 +67,7 @@ SECTION_FUNC(TEXT, z_user_thread_entry_wrapper)
 /* the start of user sp is in r5 */
 	pop r5
 /* start of privilege stack in blink */
-	mov blink, sp
+	mov_s blink, sp
 
 	st.aw r0, [r5, -4]
 	st.aw r1, [r5, -4]
@@ -93,12 +95,10 @@ SECTION_FUNC(TEXT, z_arc_userspace_enter)
 	 */
 #ifdef CONFIG_ARC_STACK_CHECKING
 	/* disable stack checking as the stack should be initialized */
-#ifdef CONFIG_ARC_HAS_SECURE
+#ifdef CONFIG_ARC_SECURE_FIRMWARE
 	lr blink, [_ARC_V2_SEC_STAT]
 	bclr blink, blink, _ARC_V2_SEC_STAT_SSC_BIT
-	/* sflag blink */
-	/* sflag instruction is not supported in current ARC GNU */
-	.long 0x07ff302f
+	sflag blink
 #else
 	lr blink, [_ARC_V2_STATUS32]
 	bclr blink, blink, _ARC_V2_STATUS32_SC_BIT
@@ -109,7 +109,7 @@ SECTION_FUNC(TEXT, z_arc_userspace_enter)
 	add r5, r4, r5
 	/* start of privilege stack */
 	add blink, r5, CONFIG_PRIVILEGED_STACK_SIZE+STACK_GUARD_SIZE
-	mov sp, r5
+	mov_s sp, r5
 
 	push_s r0
 	push_s r1
@@ -119,9 +119,9 @@ SECTION_FUNC(TEXT, z_arc_userspace_enter)
 	mov r5, sp /* skip r0, r1, r2, r3 */
 
 #ifdef CONFIG_INIT_STACKS
-	mov r0, 0xaaaaaaaa
+	mov_s r0, 0xaaaaaaaa
 #else
-	mov r0, 0x0
+	mov_s r0, 0x0
 #endif
 _clear_user_stack:
 	st.ab r0, [r4, 4]
@@ -129,17 +129,15 @@ _clear_user_stack:
 	jlt _clear_user_stack
 
 #ifdef CONFIG_ARC_STACK_CHECKING
-	mov r1, _kernel
+	mov_s r1, _kernel
 	ld_s r2, [r1, _kernel_offset_to_current]
 
 	_load_stack_check_regs
 
-#ifdef CONFIG_ARC_HAS_SECURE
+#ifdef CONFIG_ARC_SECURE_FIRMWARE
 	lr r0, [_ARC_V2_SEC_STAT]
 	bset r0, r0, _ARC_V2_SEC_STAT_SSC_BIT
-	/* sflag r0 */
-	/* sflag instruction is not supported in current ARC GNU */
-	.long 0x003f302f
+	sflag r0
 #else
 	lr r0, [_ARC_V2_STATUS32]
 	bset r0, r0, _ARC_V2_STATUS32_SC_BIT
@@ -151,38 +149,40 @@ _arc_go_to_user_space:
 	lr r0, [_ARC_V2_STATUS32]
 	bset r0, r0, _ARC_V2_STATUS32_U_BIT
 
-	mov r1, z_thread_entry_wrapper
-
-	/* fake exception return */
-	kflag _ARC_V2_STATUS32_AE
+	mov_s r1, z_thread_entry_wrapper1
 
 	sr r0, [_ARC_V2_ERSTATUS]
 	sr r1, [_ARC_V2_ERET]
 
-#ifdef CONFIG_ARC_HAS_SECURE
+	/* fake exception return */
+	lr r0, [_ARC_V2_STATUS32]
+	bclr r0, r0, _ARC_V2_STATUS32_AE_BIT
+	kflag r0
+
+/* when exception returns from kernel to user, sp and _ARC_V2_USER_SP
+ * /_ARC_V2_SECU_SP will be switched
+ */
+#if defined(CONFIG_ARC_HAS_SECURE) && defined(CONFIG_ARC_SECURE_FIRMWARE)
 	lr r0, [_ARC_V2_SEC_STAT]
 	/* the mode returns from exception return is secure mode */
 	bset r0, r0, 31
 	sr r0, [_ARC_V2_ERSEC_STAT]
 	sr r5, [_ARC_V2_SEC_U_SP]
 #else
-	/* when exception returns from kernel to user, sp and _ARC_V2_USER_SP
-	 * will be switched
-	 */
 	sr r5, [_ARC_V2_USER_SP]
 #endif
-	mov sp, blink
+	mov_s sp, blink
 
-	mov r0, 0
+	mov_s r0, 0
 
 	clear_callee_regs
 
 	clear_scratch_regs
 
-	mov fp, 0
-	mov r29, 0
-	mov r30, 0
-	mov blink, 0
+	mov_s fp, 0
+	mov_s r29, 0
+	mov_s r30, 0
+	mov_s blink, 0
 
 #ifdef CONFIG_EXECUTION_BENCHMARKING
 	b _capture_value_for_benchmarking_userspace
@@ -206,7 +206,7 @@ SECTION_FUNC(TEXT, _arc_do_syscall)
 	/* the call id is already checked in trap_s handler */
 	push_s blink
 
-	mov blink, _k_syscall_table
+	mov_s blink, _k_syscall_table
 	ld.as r6, [blink, r6]
 
 	jl [r6]
@@ -217,25 +217,27 @@ SECTION_FUNC(TEXT, _arc_do_syscall)
 	 */
 	clear_scratch_regs
 
-	mov r29, 0
-	mov r30, 0
+	mov_s r29, 0
+	mov_s r30, 0
 
 	pop_s blink
 
 	/* through fake exception return, go back to the caller */
-	kflag _ARC_V2_STATUS32_AE
+	lr r6, [_ARC_V2_STATUS32]
+	bclr r6, r6, _ARC_V2_STATUS32_AE_BIT
+	kflag r6
 
 	/* the status and return address are saved in trap_s handler */
 	pop r6
 	sr r6, [_ARC_V2_ERSTATUS]
 	pop r6
 	sr r6, [_ARC_V2_ERET]
-#ifdef CONFIG_ARC_HAS_SECURE
+#ifdef CONFIG_ARC_SECURE_FIRMWARE
 	pop r6
 	sr r6, [_ARC_V2_ERSEC_STAT]
 #endif
 
-	mov r6, 0
+	mov_s r6, 0
 
 	rtie
 

@@ -14,7 +14,7 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		cpu@0 {
+		cpu0: cpu@0 {
 			device_type = "cpu";
 			compatible = "arm,cortex-m7";
 			reg = <0>;
@@ -30,7 +30,6 @@
 	};
 
 	sram0: memory@20400000 {
-		device_type = "memory";
 		compatible = "mmio-sram";
 	};
 
@@ -201,6 +200,7 @@
 			peripheral-id = <29>;
 			status = "disabled";
 			label = "ADC_0";
+			#io-channel-cells = <1>;
 		};
 
 		adc1: adc@40064000 {
@@ -210,6 +210,7 @@
 			peripheral-id = <40>;
 			status = "disabled";
 			label = "ADC_1";
+			#io-channel-cells = <1>;
 		};
 
 		porta: gpio@400e0e00 {

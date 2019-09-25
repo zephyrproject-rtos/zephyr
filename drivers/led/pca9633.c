@@ -9,9 +9,9 @@
  * @brief LED driver for the PCA9633 I2C LED driver (7-bit slave address 0x62)
  */
 
-#include <i2c.h>
-#include <led.h>
-#include <misc/util.h>
+#include <drivers/i2c.h>
+#include <drivers/led.h>
+#include <sys/util.h>
 #include <zephyr.h>
 
 #define LOG_LEVEL CONFIG_LED_LOG_LEVEL

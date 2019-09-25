@@ -9,12 +9,12 @@
  */
 
 #include <errno.h>
-#include <misc/__assert.h>
+#include <sys/__assert.h>
 #include <device.h>
 #include <init.h>
 #include <string.h>
 #include <soc.h>
-#include <dma.h>
+#include <drivers/dma.h>
 #include "dma_sam_xdmac.h"
 
 #define LOG_LEVEL CONFIG_DMA_LOG_LEVEL

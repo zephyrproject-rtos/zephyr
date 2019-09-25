@@ -11,14 +11,14 @@
 LOG_MODULE_REGISTER(net_sock_packet, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 #include <kernel.h>
-#include <entropy.h>
-#include <misc/util.h>
+#include <drivers/entropy.h>
+#include <sys/util.h>
 #include <net/net_context.h>
 #include <net/net_pkt.h>
 #include <net/socket.h>
 #include <net/ethernet.h>
 #include <syscall_handler.h>
-#include <misc/fdtable.h>
+#include <sys/fdtable.h>
 
 #include "sockets_internal.h"
 
@@ -45,6 +45,12 @@ static int zpacket_socket(int family, int type, int proto)
 	fd = z_reserve_fd();
 	if (fd < 0) {
 		return -1;
+	}
+
+	if (proto == 0) {
+		if (type == SOCK_RAW) {
+			proto = IPPROTO_RAW;
+		}
 	}
 
 	ret = net_context_get(family, type, proto, &ctx);

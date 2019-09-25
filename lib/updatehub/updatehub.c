@@ -17,10 +17,10 @@ LOG_MODULE_REGISTER(updatehub);
 #include <net/udp.h>
 #include <net/coap.h>
 #include <net/dns_resolve.h>
-#include <flash.h>
-#include <misc/reboot.h>
+#include <drivers/flash.h>
+#include <power/reboot.h>
 #include <tinycrypt/sha256.h>
-#include <json.h>
+#include <data/json.h>
 
 #include <updatehub.h>
 #include "updatehub_priv.h"
@@ -191,7 +191,7 @@ static bool start_coap_client(void)
 	return true;
 }
 
-static void cleanup_conection(void)
+static void cleanup_connection(void)
 {
 	if (close(ctx.sock) < 0) {
 		LOG_ERR("Could not close the socket");
@@ -466,7 +466,7 @@ static enum updatehub_response install_update(void)
 	}
 
 cleanup:
-	cleanup_conection();
+	cleanup_connection();
 
 error:
 	ctx.downloaded_size = 0;
@@ -550,7 +550,7 @@ static int report(enum updatehub_state state)
 	wait_fds();
 
 cleanup:
-	cleanup_conection();
+	cleanup_connection();
 
 error:
 	k_free(firmware_version);
@@ -709,7 +709,7 @@ enum updatehub_response updatehub_probe(void)
 	ctx.code_status = UPDATEHUB_HAS_UPDATE;
 
 cleanup:
-	cleanup_conection();
+	cleanup_connection();
 
 error:
 	k_free(metadata);

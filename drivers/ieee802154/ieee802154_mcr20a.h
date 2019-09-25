@@ -11,8 +11,8 @@
 #define ZEPHYR_DRIVERS_IEEE802154_IEEE802154_MCR20A_H_
 
 #include <linker/sections.h>
-#include <atomic.h>
-#include <spi.h>
+#include <sys/atomic.h>
+#include <drivers/spi.h>
 
 /* Runtime context structure
  ***************************
@@ -25,7 +25,7 @@ struct mcr20a_context {
 	struct gpio_callback irqb_cb;
 	struct device *spi;
 	struct spi_config spi_cfg;
-#if defined(DT_NXP_MCR20A_0_CS_GPIO_CONTROLLER)
+#if defined(DT_NXP_MCR20A_0_CS_GPIOS_CONTROLLER)
 	struct spi_cs_control cs_ctrl;
 #endif
 	u8_t mac_addr[8];

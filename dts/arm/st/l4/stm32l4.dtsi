@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017 Linaro Limited
+ * Copyright (c) 2019 Centaur Analytics, Inc
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,7 +25,6 @@
 	};
 
 	sram0: memory@20000000 {
-		device_type = "memory";
 		compatible = "mmio-sram";
 	};
 
@@ -49,7 +49,6 @@
 
 		rcc: rcc@40021000 {
 			compatible = "st,stm32-rcc";
-			clocks-controller;
 			#clock-cells = <2>;
 			reg = <0x40021000 0x400>;
 			label = "STM32_CLK_RCC";
@@ -102,6 +101,15 @@
 			compatible = "st,stm32-watchdog";
 			reg = <0x40003000 0x400>;
 			label = "IWDG";
+			status = "disabled";
+		};
+
+		wwdg: watchdog@40002c00 {
+			compatible = "st,stm32-window-watchdog";
+			reg = <0x40002C00 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000800>;
+			label = "WWDG";
+			interrupts = <0 7>;
 			status = "disabled";
 		};
 
@@ -278,8 +286,9 @@
 			label = "CAN_1";
 			bus-speed = <125000>;
 			sjw = <1>;
-			prop_seg_phase_seg1 = <4>;
-			phase_seg2 = <5>;
+			prop-seg = <0>;
+			phase-seg1 = <4>;
+			phase-seg2 = <5>;
 		};
 
 		rtc: rtc@40002800 {
@@ -299,6 +308,7 @@
 			interrupts = <18 0>;
 			status = "disabled";
 			label = "ADC_1";
+			#io-channel-cells = <1>;
 		};
 	};
 };

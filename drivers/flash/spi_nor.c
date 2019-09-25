@@ -7,35 +7,18 @@
  */
 
 #include <errno.h>
-#include <flash.h>
-#include <spi.h>
+#include <drivers/flash.h>
+#include <drivers/spi.h>
 #include <init.h>
 #include <string.h>
+#include <logging/log.h>
+
 #include "spi_nor.h"
 #include "flash_priv.h"
 
-#define SZ_256  0x100
-#define SZ_512  0x200
-#define SZ_1024 0x400
-#define SZ_4K   0x1000
-#define SZ_32K  0x8000
-#define SZ_64K  0x10000
-
-#define MASK_256 0xFF
-#define MASK_4K  0xFFF
-#define MASK_32K 0x7FFF
-#define MASK_64K 0xFFFF
+LOG_MODULE_REGISTER(spi_nor, CONFIG_FLASH_LOG_LEVEL);
 
 #define SPI_NOR_MAX_ADDR_WIDTH 4
-#define SECTORS_COUNT ((DT_INST_0_JEDEC_SPI_NOR_SIZE / 8) \
-		       / CONFIG_SPI_NOR_SECTOR_SIZE)
-
-#define JEDEC_ID(x)		    \
-	{			    \
-		((x) >> 16) & 0xFF, \
-		((x) >> 8) & 0xFF,  \
-		(x) & 0xFF,	    \
-	}
 
 /**
  * struct spi_nor_data - Structure for defining the SPI NOR access
@@ -47,9 +30,9 @@
 struct spi_nor_data {
 	struct device *spi;
 	struct spi_config spi_cfg;
-#ifdef DT_INST_0_JEDEC_SPI_NOR_CS_GPIO_CONTROLLER
+#ifdef DT_INST_0_JEDEC_SPI_NOR_CS_GPIOS_CONTROLLER
 	struct spi_cs_control cs_ctrl;
-#endif /* DT_INST_0_JEDEC_SPI_NOR_CS_GPIO_CONTROLLER */
+#endif /* DT_INST_0_JEDEC_SPI_NOR_CS_GPIOS_CONTROLLER */
 	struct k_sem sem;
 };
 
@@ -125,7 +108,7 @@ static int spi_nor_access(const struct device *const dev,
 #define spi_nor_cmd_write(dev, opcode) \
 	spi_nor_access(dev, opcode, false, 0, NULL, 0, true)
 #define spi_nor_cmd_addr_write(dev, opcode, addr, src, length) \
-	spi_nor_access(dev, opcode, true, addr, src, length, true)
+	spi_nor_access(dev, opcode, true, addr, (void *)src, length, true)
 
 /**
  * @brief Retrieve the Flash JEDEC ID and compare it with the one expected
@@ -175,11 +158,9 @@ static int spi_nor_read(struct device *dev, off_t addr, void *dest,
 	struct spi_nor_data *const driver_data = dev->driver_data;
 	const struct spi_nor_config *params = dev->config->config_info;
 	int ret;
-	int to_read;
 
 	/* should be between 0 and flash size */
-	if ((addr < 0) || (addr + size) >  (params->sector_size
-					   * params->n_sectors)) {
+	if ((addr < 0) || ((addr + size) > params->size)) {
 		return -EINVAL;
 	}
 
@@ -187,26 +168,10 @@ static int spi_nor_read(struct device *dev, off_t addr, void *dest,
 
 	spi_nor_wait_until_ready(dev);
 
-	while (size) {
-		to_read = size;
-		if (size > params->page_size) {
-			to_read = params->page_size;
-		}
-
-		ret = spi_nor_cmd_addr_read(dev, SPI_NOR_CMD_READ, addr,
-					    dest, to_read);
-		if (ret != 0) {
-			SYNC_UNLOCK();
-			return ret;
-		}
-
-		size -= to_read;
-		addr += to_read;
-		dest = (u8_t *)dest + to_read;
-	}
+	ret = spi_nor_cmd_addr_read(dev, SPI_NOR_CMD_READ, addr, dest, size);
 
 	SYNC_UNLOCK();
-	return 0;
+	return ret;
 }
 
 static int spi_nor_write(struct device *dev, off_t addr, const void *src,
@@ -215,35 +180,39 @@ static int spi_nor_write(struct device *dev, off_t addr, const void *src,
 	struct spi_nor_data *const driver_data = dev->driver_data;
 	const struct spi_nor_config *params = dev->config->config_info;
 	int ret;
-	size_t to_write;
 
 	/* should be between 0 and flash size */
-	if ((addr < 0) || ((size + addr) > (params->sector_size *
-						params->n_sectors))) {
+	if ((addr < 0) || ((size + addr) > params->size)) {
 		return -EINVAL;
 	}
 
 	SYNC_LOCK();
 
-	while (size) {
-		/* write enable */
-		spi_nor_cmd_write(dev, SPI_NOR_CMD_WREN);
+	while (size > 0) {
+		size_t to_write = size;
 
-		to_write = size;
-		if (size >= params->page_size) {
-			to_write = params->page_size;
+		/* Don't write more than a page. */
+		if (to_write >= SPI_NOR_PAGE_SIZE) {
+			to_write = SPI_NOR_PAGE_SIZE;
 		}
 
+		/* Don't write across a page boundary */
+		if (((addr + to_write - 1U) / SPI_NOR_PAGE_SIZE)
+		    != (addr / SPI_NOR_PAGE_SIZE)) {
+			to_write = SPI_NOR_PAGE_SIZE - (addr % SPI_NOR_PAGE_SIZE);
+		}
+
+		spi_nor_cmd_write(dev, SPI_NOR_CMD_WREN);
 		ret = spi_nor_cmd_addr_write(dev, SPI_NOR_CMD_PP, addr,
-					     (void *)src, to_write);
+					     src, to_write);
 		if (ret != 0) {
 			SYNC_UNLOCK();
 			return ret;
 		}
 
 		size -= to_write;
+		src = (const u8_t *)src + to_write;
 		addr += to_write;
-		src = (u8_t *)src + to_write;
 
 		spi_nor_wait_until_ready(dev);
 	}
@@ -258,8 +227,7 @@ static int spi_nor_erase(struct device *dev, off_t addr, size_t size)
 	const struct spi_nor_config *params = dev->config->config_info;
 
 	/* should be between 0 and flash size */
-	if ((addr < 0) || ((size + addr) >
-		(params->sector_size * params->n_sectors))) {
+	if ((addr < 0) || ((size + addr) > params->size)) {
 		return -ENODEV;
 	}
 
@@ -269,36 +237,36 @@ static int spi_nor_erase(struct device *dev, off_t addr, size_t size)
 		/* write enable */
 		spi_nor_cmd_write(dev, SPI_NOR_CMD_WREN);
 
-		if (size == (params->sector_size * params->n_sectors)) {
+		if (size == params->size) {
 			/* chip erase */
 			spi_nor_cmd_write(dev, SPI_NOR_CMD_CE);
-			size -= (params->sector_size * params->n_sectors);
-		} else if ((DT_JEDEC_SPI_NOR_0_ERASE_BLOCK_SIZE == SZ_64K)
-			  && (size >= SZ_64K)
-			  && ((addr & MASK_64K) == 0)) {
+			size -= params->size;
+		} else if ((size >= SPI_NOR_BLOCK_SIZE)
+			   && SPI_NOR_IS_BLOCK_ALIGNED(addr)) {
 			/* 64 KiB block erase */
 			spi_nor_cmd_addr_write(dev, SPI_NOR_CMD_BE, addr,
 			NULL, 0);
-			addr += SZ_64K;
-			size -= SZ_64K;
-		} else if ((DT_JEDEC_SPI_NOR_0_ERASE_BLOCK_SIZE == SZ_32K)
-			  && (size >= SZ_32K)
-			  && ((addr & MASK_32K) == 0)) {
+			addr += SPI_NOR_BLOCK_SIZE;
+			size -= SPI_NOR_BLOCK_SIZE;
+		} else if ((size >= SPI_NOR_BLOCK32_SIZE)
+			   && SPI_NOR_IS_BLOCK32_ALIGNED(addr)) {
 			/* 32 KiB block erase */
 			spi_nor_cmd_addr_write(dev, SPI_NOR_CMD_BE_32K, addr,
 					       NULL, 0);
-			addr += SZ_32K;
-			size -= SZ_32K;
-		} else if ((size >= params->sector_size) &&
-			  ((addr & (params->sector_size - 1)) == 0)) {
+			addr += SPI_NOR_BLOCK32_SIZE;
+			size -= SPI_NOR_BLOCK32_SIZE;
+		} else if ((size >= SPI_NOR_SECTOR_SIZE)
+			   && SPI_NOR_IS_SECTOR_ALIGNED(addr)) {
 			/* sector erase */
 			spi_nor_cmd_addr_write(dev, SPI_NOR_CMD_SE, addr,
 					       NULL, 0);
-			addr += params->sector_size;
-			size -= params->sector_size;
+			addr += SPI_NOR_SECTOR_SIZE;
+			size -= SPI_NOR_SECTOR_SIZE;
 		} else {
 			/* minimal erase size is at least a sector size */
 			SYNC_UNLOCK();
+			LOG_DBG("unsupported at 0x%lx size %zu", (long)addr,
+				size);
 			return -EINVAL;
 		}
 
@@ -348,18 +316,18 @@ static int spi_nor_configure(struct device *dev)
 	data->spi_cfg.operation = SPI_WORD_SET(8);
 	data->spi_cfg.slave = DT_INST_0_JEDEC_SPI_NOR_BASE_ADDRESS;
 
-#ifdef DT_INST_0_JEDEC_SPI_NOR_CS_GPIO_CONTROLLER
+#ifdef DT_INST_0_JEDEC_SPI_NOR_CS_GPIOS_CONTROLLER
 	data->cs_ctrl.gpio_dev =
-		device_get_binding(DT_INST_0_JEDEC_SPI_NOR_CS_GPIO_CONTROLLER);
+		device_get_binding(DT_INST_0_JEDEC_SPI_NOR_CS_GPIOS_CONTROLLER);
 	if (!data->cs_ctrl.gpio_dev) {
 		return -ENODEV;
 	}
 
-	data->cs_ctrl.gpio_pin = DT_INST_0_JEDEC_SPI_NOR_CS_GPIO_PIN;
+	data->cs_ctrl.gpio_pin = DT_INST_0_JEDEC_SPI_NOR_CS_GPIOS_PIN;
 	data->cs_ctrl.delay = CONFIG_SPI_NOR_CS_WAIT_DELAY;
 
 	data->spi_cfg.cs = &data->cs_ctrl;
-#endif /* DT_INST_0_JEDEC_SPI_NOR_CS_GPIO_CONTROLLER */
+#endif /* DT_INST_0_JEDEC_SPI_NOR_CS_GPIOS_CONTROLLER */
 
 	/* now the spi bus is configured, we can verify the flash id */
 	if (spi_nor_read_id(dev, params) != 0) {
@@ -384,14 +352,26 @@ static int spi_nor_init(struct device *dev)
 }
 
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
+
+/* instance 0 size in bytes */
+#define INST_0_BYTES (DT_INST_0_JEDEC_SPI_NOR_SIZE / 8)
+
+/* instance 0 page count */
+#define LAYOUT_PAGES_COUNT (INST_0_BYTES / CONFIG_SPI_NOR_FLASH_LAYOUT_PAGE_SIZE)
+
+BUILD_ASSERT_MSG((CONFIG_SPI_NOR_FLASH_LAYOUT_PAGE_SIZE * LAYOUT_PAGES_COUNT)
+		 == INST_0_BYTES,
+		 "SPI_NOR_FLASH_LAYOUT_PAGE_SIZE incompatible with flash size");
+
 static const struct flash_pages_layout dev_layout = {
-	.pages_count = DT_INST_0_JEDEC_SPI_NOR_SIZE / 8 / DT_JEDEC_SPI_NOR_0_ERASE_BLOCK_SIZE,
-	.pages_size = DT_JEDEC_SPI_NOR_0_ERASE_BLOCK_SIZE,
+	.pages_count = LAYOUT_PAGES_COUNT,
+	.pages_size = CONFIG_SPI_NOR_FLASH_LAYOUT_PAGE_SIZE,
 };
+#undef LAYOUT_PAGES_COUNT
 
 static void spi_nor_pages_layout(struct device *dev,
-				const struct flash_pages_layout **layout,
-				size_t *layout_size)
+				 const struct flash_pages_layout **layout,
+				 size_t *layout_size)
 {
 	*layout = &dev_layout;
 	*layout_size = 1;
@@ -406,18 +386,15 @@ static const struct flash_driver_api spi_nor_api = {
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 	.page_layout = spi_nor_pages_layout,
 #endif
-	.write_block_size = DT_JEDEC_SPI_NOR_0_WRITE_BLOCK_SIZE,
+	.write_block_size = 1,
 };
 
 static const struct spi_nor_config flash_id = {
-	.id = {
-		DT_INST_0_JEDEC_SPI_NOR_JEDEC_ID_0,
-		DT_INST_0_JEDEC_SPI_NOR_JEDEC_ID_1,
-		DT_INST_0_JEDEC_SPI_NOR_JEDEC_ID_2,
-	},
-	.page_size = CONFIG_SPI_NOR_PAGE_SIZE,
-	.sector_size = CONFIG_SPI_NOR_SECTOR_SIZE,
-	.n_sectors = SECTORS_COUNT,
+	.id = DT_INST_0_JEDEC_SPI_NOR_JEDEC_ID,
+#ifdef DT_INST_0_JEDEC_SPI_NOR_HAS_BE32K
+	.has_be32k = true,
+#endif /* DT_INST_0_JEDEC_SPI_NOR_HAS_BE32K */
+	.size = DT_INST_0_JEDEC_SPI_NOR_SIZE / 8,
 };
 
 static struct spi_nor_data spi_nor_memory_data;

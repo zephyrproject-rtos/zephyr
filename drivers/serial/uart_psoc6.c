@@ -13,9 +13,9 @@
 #include <device.h>
 #include <errno.h>
 #include <init.h>
-#include <misc/__assert.h>
+#include <sys/__assert.h>
 #include <soc.h>
-#include <uart.h>
+#include <drivers/uart.h>
 
 #include "cy_syslib.h"
 #include "cy_sysclk.h"

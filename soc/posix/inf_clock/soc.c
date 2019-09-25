@@ -5,7 +5,7 @@
  */
 
 /**
- * For all purposes, Zephyr threads see a CPU running at an infinitly high
+ * For all purposes, Zephyr threads see a CPU running at an infinitely high
  * clock.
  *
  * Therefore, the code will always run until completion after each interrupt,

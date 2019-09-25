@@ -1,0 +1,21 @@
+# Copyright (c) 2019 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: Microchip XEC RTOS timer
+
+description: >
+    This is a representation of the Microchip XEC RTOS timer node
+
+compatible: "microchip,xec-rtos-timer"
+
+include: base.yaml
+
+properties:
+    reg:
+      required: true
+
+    interrupts:
+      required: true
+
+    label:
+      required: true

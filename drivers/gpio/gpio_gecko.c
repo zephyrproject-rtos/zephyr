@@ -5,7 +5,7 @@
  */
 
 #include <errno.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 #include <soc.h>
 #include <em_gpio.h>
 

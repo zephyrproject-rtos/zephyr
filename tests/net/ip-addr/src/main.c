@@ -291,7 +291,8 @@ static void test_ipv6_addresses(void)
 	ifaddr2->addr_state = NET_ADDR_PREFERRED;
 
 	tmp = net_if_ipv6_get_ll(net_if_get_default(), NET_ADDR_PREFERRED);
-	zassert_false(memcmp(tmp, &addr6.s6_addr, sizeof(struct in6_addr)),
+	zassert_false(tmp && memcmp(tmp, &addr6.s6_addr,
+				    sizeof(struct in6_addr)),
 		      "IPv6 ll address fetch failed");
 
 	ifaddr2->addr_state = NET_ADDR_DEPRECATED;

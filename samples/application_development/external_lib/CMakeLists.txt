@@ -34,6 +34,13 @@ set(mylib_build_dir ${CMAKE_CURRENT_BINARY_DIR}/mylib)
 set(MYLIB_LIB_DIR     ${mylib_build_dir}/lib)
 set(MYLIB_INCLUDE_DIR ${mylib_src_dir}/include)
 
+if(CMAKE_GENERATOR STREQUAL "Unix Makefiles")
+# https://www.gnu.org/software/make/manual/html_node/MAKE-Variable.html
+set(submake "$(MAKE)")
+else() # Obviously no MAKEFLAGS. Let's hope a "make" can be found somewhere.
+set(submake "make")
+endif()
+
 ExternalProject_Add(
   mylib_project                 # Name for custom target
   PREFIX     ${mylib_build_dir} # Root dir for entire project
@@ -41,7 +48,7 @@ ExternalProject_Add(
   BINARY_DIR ${mylib_src_dir} # This particular build system is invoked from the root
   CONFIGURE_COMMAND ""    # Skip configuring the project, e.g. with autoconf
   BUILD_COMMAND
-  make
+  ${submake}
   PREFIX=${mylib_build_dir}
   CC=${CMAKE_C_COMPILER}
   AR=${CMAKE_AR}

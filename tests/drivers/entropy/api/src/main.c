@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <entropy.h>
+#include <drivers/entropy.h>
 #include <ztest.h>
 
 /*

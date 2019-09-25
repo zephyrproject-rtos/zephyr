@@ -8,6 +8,10 @@ toolchain:
   - zephyr
   - gnuarmemb
   - xtools
+supported:
+  - gpio
+  - i2c
+  - nvs
 testing:
   ignore_tags:
     - net

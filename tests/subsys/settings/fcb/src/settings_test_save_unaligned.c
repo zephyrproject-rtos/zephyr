@@ -22,8 +22,11 @@ void test_config_save_fcb_unaligned(void)
 	rc = settings_fcb_src(&cf);
 	zassert_true(rc == 0, "can't register FCB as configuration source");
 
-	/* override flash driver alignment */
-	cf.cf_fcb.f_align = 4;
+	if (cf.cf_fcb.f_align == 1) {
+		/* override flash driver alignment */
+		cf.cf_fcb.f_align = 4;
+	}
+
 	settings_mount_fcb_backend(&cf);
 
 	rc = settings_fcb_dst(&cf);

@@ -12,7 +12,7 @@
 #include <zephyr/types.h>
 #include <stdbool.h>
 #include <string.h>
-#include <misc/util.h>
+#include <sys/util.h>
 #include <net/buf.h>
 
 #ifdef __cplusplus
@@ -108,7 +108,7 @@ static inline bool bt_addr_le_is_identity(const bt_addr_le_t *addr)
 #define BT_HCI_ERR_UNKNOWN_CONN_ID              0x02
 #define BT_HCI_ERR_HW_FAILURE                   0x03
 #define BT_HCI_ERR_PAGE_TIMEOUT                 0x04
-#define BT_HCI_ERR_AUTHENTICATION_FAIL          0x05
+#define BT_HCI_ERR_AUTH_FAIL                    0x05
 #define BT_HCI_ERR_PIN_OR_KEY_MISSING           0x06
 #define BT_HCI_ERR_MEM_CAPACITY_EXCEEDED        0x07
 #define BT_HCI_ERR_CONN_TIMEOUT                 0x08
@@ -140,6 +140,8 @@ static inline bool bt_addr_le_is_identity(const bt_addr_le_t *addr)
 #define BT_HCI_ERR_ADV_TIMEOUT                  0x3c
 #define BT_HCI_ERR_TERM_DUE_TO_MIC_FAIL         0x3d
 #define BT_HCI_ERR_CONN_FAIL_TO_ESTAB           0x3e
+
+#define BT_HCI_ERR_AUTHENTICATION_FAIL __DEPRECATED_MACRO BT_HCI_ERR_AUTH_FAIL
 
 /* EIR/AD data type definitions */
 #define BT_DATA_FLAGS                   0x01 /* AD flags */
@@ -708,6 +710,9 @@ struct bt_hci_rp_read_rssi {
 	s8_t  rssi;
 } __packed;
 
+#define BT_HCI_ENCRYPTION_KEY_SIZE_MIN          7
+#define BT_HCI_ENCRYPTION_KEY_SIZE_MAX          16
+
 #define BT_HCI_OP_READ_ENCRYPTION_KEY_SIZE      BT_OP(BT_OGF_STATUS, 0x0008)
 struct bt_hci_cp_read_encryption_key_size {
 	u16_t handle;
@@ -752,6 +757,11 @@ struct bt_hci_cp_le_set_random_address {
 /* Needed in advertising reports when getting info about */
 #define BT_LE_ADV_SCAN_RSP                      0x04
 
+#define BT_LE_ADV_FP_NO_WHITELIST               0x00
+#define BT_LE_ADV_FP_WHITELIST_SCAN_REQ         0x01
+#define BT_LE_ADV_FP_WHITELIST_CONN_IND         0x02
+#define BT_LE_ADV_FP_WHITELIST_BOTH             0x03
+
 #define BT_HCI_OP_LE_SET_ADV_PARAM              BT_OP(BT_OGF_LE, 0x0006)
 struct bt_hci_cp_le_set_adv_param {
 	u16_t        min_interval;
@@ -794,6 +804,9 @@ struct bt_hci_cp_le_set_adv_enable {
 #define BT_HCI_LE_SCAN_PASSIVE                  0x00
 #define BT_HCI_LE_SCAN_ACTIVE                   0x01
 
+#define BT_HCI_LE_SCAN_FP_NO_WHITELIST          0x00
+#define BT_HCI_LE_SCAN_FP_USE_WHITELIST         0x01
+
 struct bt_hci_cp_le_set_scan_param {
 	u8_t  scan_type;
 	u16_t interval;
@@ -816,6 +829,10 @@ struct bt_hci_cp_le_set_scan_enable {
 } __packed;
 
 #define BT_HCI_OP_LE_CREATE_CONN                BT_OP(BT_OGF_LE, 0x000d)
+
+#define BT_HCI_LE_CREATE_CONN_FP_DIRECT         0x00
+#define BT_HCI_LE_CREATE_CONN_FP_WHITELIST      0x01
+
 struct bt_hci_cp_le_create_conn {
 	u16_t        scan_interval;
 	u16_t        scan_window;
@@ -1362,6 +1379,7 @@ struct bt_hci_cp_le_set_privacy_mode {
 
 /* Event definitions */
 
+#define BT_HCI_EVT_UNKNOWN                      0x00
 #define BT_HCI_EVT_VENDOR                       0xff
 
 #define BT_HCI_EVT_INQUIRY_COMPLETE             0x01

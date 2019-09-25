@@ -5,7 +5,4 @@ if BOARD_IOTDK
 config BOARD
 	default "iotdk"
 
-config CPU_ARCEM
-	default y
-
 endif # BOARD_IOTDK

@@ -10,8 +10,8 @@
 #define ZEPHYR_DRIVERS_SENSOR_LSM9DS0_GYRO_LSM9DS0_GYRO_H_
 
 #include <zephyr/types.h>
-#include <i2c.h>
-#include <misc/util.h>
+#include <drivers/i2c.h>
+#include <sys/util.h>
 
 #define DEG2RAD					0.017453292519943295769236907684
 

@@ -22,6 +22,7 @@ target_sources(app PRIVATE
 	src/intmath.c
 	src/main.c
 	src/slist.c
+	src/sflist.c
 	src/timeout_order.c
 	src/multilib.c
   src/errno.c

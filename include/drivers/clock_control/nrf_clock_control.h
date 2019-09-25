@@ -10,7 +10,7 @@
 #if defined(CONFIG_USB) && defined(CONFIG_SOC_NRF52840)
 #include <device.h>
 #endif
-#include <nrf_clock.h>
+#include <hal/nrf_clock.h>
 
 /* TODO: move all these to clock_control.h ? */
 
@@ -23,6 +23,12 @@
 #endif
 #ifdef CONFIG_CLOCK_CONTROL_NRF_K32SRC_SYNTH
 #define CLOCK_CONTROL_NRF_K32SRC NRF_CLOCK_LFCLK_Synth
+#endif
+#ifdef CONFIG_CLOCK_CONTROL_NRF_K32SRC_EXT_LOW_SWING
+#define CLOCK_CONTROL_NRF_K32SRC NRF_CLOCK_LFCLK_Xtal_Low_Swing
+#endif
+#ifdef CONFIG_CLOCK_CONTROL_NRF_K32SRC_EXT_FULL_SWING
+#define CLOCK_CONTROL_NRF_K32SRC NRF_CLOCK_LFCLK_Xtal_Full_Swing
 #endif
 
 /* Define 32KHz clock accuracy */

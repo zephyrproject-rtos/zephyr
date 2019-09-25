@@ -1,0 +1,79 @@
+/*
+ * Copyright (c) 2018 - 2019 Antmicro <www.antmicro.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+	compatible = "litex,vexriscv", "litex-dev";
+	model = "litex,vexriscv";
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		cpu@0 {
+			clock-frequency = <100000000>;
+			compatible = "spinalhdl,vexriscv", "riscv";
+			device_type = "cpu";
+			reg = <0>;
+			riscv,isa = "rv32imac";
+			status = "okay";
+			timebase-frequency = <32768>;
+		};
+	};
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "litex,vexriscv";
+		ranges;
+		intc0: interrupt-controller@bc0 {
+			#interrupt-cells = <2>;
+			compatible = "vexriscv,intc0";
+			interrupt-controller;
+			reg = <0xbc0 0x4 0xfc0 0x4>;
+			reg-names = "irq_mask", "irq_pending";
+			riscv,max-priority = <7>;
+		};
+		uart0: serial@e0001800 {
+			compatible = "litex,uart0";
+			interrupt-parent = <&intc0>;
+			interrupts = <2 10>;
+			reg = <0xe0001800 0x18>;
+			reg-names = "control";
+			label = "uart0";
+			status = "disabled";
+		};
+		timer0: serial@e0002800 {
+			compatible = "litex,timer0";
+			interrupt-parent = <&intc0>;
+			interrupts = <1 0>;
+			reg = <0xe0002800 0x40>;
+			reg-names = "control";
+			label = "timer0";
+			status = "disabled";
+		};
+		eth0: ethernet@e0009800 {
+			compatible = "litex,eth0";
+			interrupt-parent = <&intc0>;
+			interrupts = <3 0>;
+			reg = <0xb0000000 0x2000 0xe0009800 0x6b>;
+			local-mac-address = [10 e2 d5 00 00 02];
+			reg-names = "buffers", "control";
+			label = "eth0";
+			status = "disabled";
+		};
+		dna0: dna@e0003800 {
+			compatible = "litex,dna0";
+			/* DNA data is 57-bits long,
+			so it requires 8 bytes.
+			In LiteX each 32-bit register holds
+			only a single byte of meaningful data,
+			hence 8 registers. */
+			reg = <0xe0003800 0x20>;
+			reg-names = "mem";
+			label = "dna0";
+			status = "disabled";
+		};
+	};
+};

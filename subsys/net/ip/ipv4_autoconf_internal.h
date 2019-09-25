@@ -54,7 +54,11 @@
  *
  * @param iface A valid pointer on an interface
  */
+#if defined(CONFIG_NET_IPV4_AUTO)
 void net_ipv4_autoconf_start(struct net_if *iface);
+#else
+#define net_ipv4_autoconf_start(...)
+#endif
 
 /**
  * @brief Reset autoconf process
@@ -63,7 +67,11 @@ void net_ipv4_autoconf_start(struct net_if *iface);
  *
  * @param iface A valid pointer on an interface
  */
+#if defined(CONFIG_NET_IPV4_AUTO)
 void net_ipv4_autoconf_reset(struct net_if *iface);
+#else
+#define net_ipv4_autoconf_reset(...)
+#endif
 
 /**
  * @brief Autoconf ARP input message handler.
@@ -75,7 +83,11 @@ void net_ipv4_autoconf_reset(struct net_if *iface);
  *
  * @return What should be done with packet (drop or accept)
  */
+#if defined(CONFIG_NET_IPV4_AUTO)
 enum net_verdict net_ipv4_autoconf_input(struct net_if *iface,
 					 struct net_pkt *pkt);
+#else
+#define net_ipv4_autoconf_input(...) NET_CONTINUE
+#endif
 
 #endif /* __IPV4_AUTOCONF_INTERNAL_H */

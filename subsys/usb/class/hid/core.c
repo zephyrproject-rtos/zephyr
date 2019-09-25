@@ -11,7 +11,7 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(usb_hid);
 
-#include <misc/byteorder.h>
+#include <sys/byteorder.h>
 #include <usb_device.h>
 #include <usb_common.h>
 
@@ -631,7 +631,7 @@ static void hid_interface_config(struct usb_desc_header *head,
 }
 
 #define DEFINE_HID_CFG_DATA(x, _)					\
-	USBD_CFG_DATA_DEFINE(hid)					\
+	USBD_CFG_DATA_DEFINE(primary, hid)				\
 	struct usb_cfg_data hid_config_##x = {				\
 		.usb_device_description = NULL,				\
 		.interface_config = hid_interface_config,		\

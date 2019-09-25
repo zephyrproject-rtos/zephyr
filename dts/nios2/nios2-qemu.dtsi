@@ -15,13 +15,12 @@
 
 	};
 
-	flash0: flash@0 {
+	flash0: flash@420000 {
 		compatible = "soc-nv-flash";
 		reg = <0x420000 0x20000>;
 	};
 
 	sram0: memory@400000 {
-		device_type = "memory";
 		compatible = "mmio-sram";
 		reg = <0x400000 0x20000>;
 	};

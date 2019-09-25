@@ -21,12 +21,6 @@ based web application (web page) running in the browser at host.
 This application is intended for testing purposes only. For running
 real usecase, implement applications based on the WebUSB API.
 
-Building and flashing
-*********************
-
-Refer to :ref:`arduino_101` for details on building and flashing the image into
-an Arduino 101.
-
 Testing with latest Google Chrome on host
 *****************************************
 

@@ -6,7 +6,7 @@
 
 
 #include <soc.h>
-#include <adc.h>
+#include <drivers/adc.h>
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(adc_sam0, CONFIG_ADC_LOG_LEVEL);
@@ -597,12 +597,12 @@ static const struct adc_driver_api adc_sam0_api = {
 			    &adc_sam0_api);				      \
 	static void adc_sam0_config_##n(struct device *dev)		      \
 	{								      \
-		IRQ_CONNECT(DT_ATMEL_SAM0_ADC_ADC_##n##_IRQ,		      \
-			    DT_ATMEL_SAM0_ADC_ADC_##n##_IRQ_PRIORITY,	      \
+		IRQ_CONNECT(DT_ATMEL_SAM0_ADC_ADC_##n##_IRQ_0,		      \
+			    DT_ATMEL_SAM0_ADC_ADC_##n##_IRQ_0_PRIORITY,	      \
 			    adc_sam0_isr,				      \
 			    DEVICE_GET(adc0_sam_##n),			      \
 			    0);						      \
-		irq_enable(DT_ATMEL_SAM0_ADC_ADC_##n##_IRQ);		      \
+		irq_enable(DT_ATMEL_SAM0_ADC_ADC_##n##_IRQ_0);		      \
 		ADC_SAM0_CONFIGURE(n);					      \
 	}
 

@@ -52,9 +52,15 @@ extern const struct lwm2m_reader plain_text_reader;
 size_t plain_text_put_format(struct lwm2m_output_context *out,
 			     const char *format, ...);
 
-int do_read_op_plain_text(struct lwm2m_engine_obj *obj,
-			  struct lwm2m_message *msg, int content_format);
-int do_write_op_plain_text(struct lwm2m_engine_obj *obj,
-			   struct lwm2m_message *msg);
+size_t plain_text_put_float32fix(struct lwm2m_output_context *out,
+				 struct lwm2m_obj_path *path,
+				 float32_value_t *value);
+size_t plain_text_put_float64fix(struct lwm2m_output_context *out,
+				 struct lwm2m_obj_path *path,
+				 float64_value_t *value);
+
+
+int do_read_op_plain_text(struct lwm2m_message *msg, int content_format);
+int do_write_op_plain_text(struct lwm2m_message *msg);
 
 #endif /* LWM2M_RW_PLAIN_TEXT_H_ */

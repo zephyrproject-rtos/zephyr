@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <led_strip.h>
+#include <drivers/led_strip.h>
 
 #include <string.h>
 
@@ -14,8 +14,8 @@ LOG_MODULE_REGISTER(ws2812);
 
 #include <zephyr.h>
 #include <device.h>
-#include <spi.h>
-#include <misc/util.h>
+#include <drivers/spi.h>
+#include <sys/util.h>
 
 /*
  * WS2812-ish SPI master configuration:

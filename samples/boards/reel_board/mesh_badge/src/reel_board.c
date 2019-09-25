@@ -7,11 +7,11 @@
 
 #include <zephyr.h>
 #include <device.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 #include <display/cfb.h>
-#include <misc/printk.h>
-#include <flash.h>
-#include <sensor.h>
+#include <sys/printk.h>
+#include <drivers/flash.h>
+#include <drivers/sensor.h>
 
 #include <string.h>
 #include <stdio.h>
@@ -23,9 +23,9 @@
 #include "board.h"
 
 enum font_size {
-	FONT_BIG = 0,
+	FONT_SMALL = 0,
 	FONT_MEDIUM = 1,
-	FONT_SMALL = 2,
+	FONT_BIG = 2,
 };
 
 enum screen_ids {
@@ -49,8 +49,8 @@ struct font_info {
 
 #define EDGE (GPIO_INT_EDGE | GPIO_INT_DOUBLE_EDGE)
 
-#ifdef SW0_GPIO_FLAGS
-#define PULL_UP SW0_GPIO_FLAGS
+#ifdef DT_ALIAS_SW0_GPIOS_FLAGS
+#define PULL_UP DT_ALIAS_SW0_GPIOS_FLAGS
 #else
 #define PULL_UP 0
 #endif
@@ -68,10 +68,10 @@ static struct {
 	const char *name;
 	u32_t pin;
 } leds[] = {
-	{ .name = LED0_GPIO_CONTROLLER, .pin = LED0_GPIO_PIN, },
-	{ .name = LED1_GPIO_CONTROLLER, .pin = LED1_GPIO_PIN, },
-	{ .name = LED2_GPIO_CONTROLLER, .pin = LED2_GPIO_PIN, },
-	{ .name = LED3_GPIO_CONTROLLER, .pin = LED3_GPIO_PIN, },
+	{ .name = DT_ALIAS_LED0_GPIOS_CONTROLLER, .pin = DT_ALIAS_LED0_GPIOS_PIN, },
+	{ .name = DT_ALIAS_LED1_GPIOS_CONTROLLER, .pin = DT_ALIAS_LED1_GPIOS_PIN, },
+	{ .name = DT_ALIAS_LED2_GPIOS_CONTROLLER, .pin = DT_ALIAS_LED2_GPIOS_PIN, },
+	{ .name = DT_ALIAS_LED3_GPIOS_CONTROLLER, .pin = DT_ALIAS_LED3_GPIOS_PIN, },
 };
 
 struct k_delayed_work led_timer;
@@ -447,7 +447,7 @@ static bool button_is_pressed(void)
 {
 	u32_t val;
 
-	gpio_pin_read(gpio, SW0_GPIO_PIN, &val);
+	gpio_pin_read(gpio, DT_ALIAS_SW0_GPIOS_PIN, &val);
 
 	return !val;
 }
@@ -479,7 +479,7 @@ static void button_interrupt(struct device *dev, struct gpio_callback *cb,
 	case SCREEN_STATS:
 		return;
 	case SCREEN_MAIN:
-		if (pins & BIT(SW0_GPIO_PIN)) {
+		if (pins & BIT(DT_ALIAS_SW0_GPIOS_PIN)) {
 			u32_t uptime = k_uptime_get_32();
 			static u32_t bad_count, press_ts;
 
@@ -512,18 +512,18 @@ static int configure_button(void)
 {
 	static struct gpio_callback button_cb;
 
-	gpio = device_get_binding(SW0_GPIO_CONTROLLER);
+	gpio = device_get_binding(DT_ALIAS_SW0_GPIOS_CONTROLLER);
 	if (!gpio) {
 		return -ENODEV;
 	}
 
-	gpio_pin_configure(gpio, SW0_GPIO_PIN,
+	gpio_pin_configure(gpio, DT_ALIAS_SW0_GPIOS_PIN,
 			   (GPIO_DIR_IN | GPIO_INT |  PULL_UP | EDGE));
 
-	gpio_init_callback(&button_cb, button_interrupt, BIT(SW0_GPIO_PIN));
+	gpio_init_callback(&button_cb, button_interrupt, BIT(DT_ALIAS_SW0_GPIOS_PIN));
 	gpio_add_callback(gpio, &button_cb);
 
-	gpio_pin_enable_callback(gpio, SW0_GPIO_PIN);
+	gpio_pin_enable_callback(gpio, DT_ALIAS_SW0_GPIOS_PIN);
 
 	return 0;
 }
@@ -588,9 +588,9 @@ void board_refresh_display(void)
 
 int board_init(void)
 {
-	epd_dev = device_get_binding(DT_INST_0_SOLOMON_SSD1673FB_LABEL);
+	epd_dev = device_get_binding(DT_INST_0_SOLOMON_SSD16XXFB_LABEL);
 	if (epd_dev == NULL) {
-		printk("SSD1673 device not found\n");
+		printk("SSD16XX device not found\n");
 		return -ENODEV;
 	}
 

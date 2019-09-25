@@ -20,6 +20,7 @@ config SOC_NRF9160
 	select HAS_HW_NRF_GPIO0
 	select HAS_HW_NRF_GPIOTE
 	select HAS_HW_NRF_I2S
+	select HAS_HW_NRF_IPC
 	select HAS_HW_NRF_PDM
 	select HAS_HW_NRF_POWER
 	select HAS_HW_NRF_PWM0
@@ -64,11 +65,6 @@ config SOC_NRF9160_SICA
 	select SOC_NRF9160
 
 endchoice
-
-config GPIO_AS_PINRESET
-	bool "GPIO as pin reset (reset button)"
-	depends on SOC_SERIES_NRF91X
-	default y
 
 config NRF_ENABLE_ICACHE
 	bool "Enable the instruction cache (I-Cache)"

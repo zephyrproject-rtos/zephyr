@@ -6,7 +6,7 @@
 #include <zephyr.h>
 #include <tc_util.h>
 #include <ztest.h>
-#include <misc/rb.h>
+#include <sys/rb.h>
 
 #define CHECK(n) \
 	zassert_true(!!(n), "Tree check failed: [ " #n " ] @%d", __LINE__)

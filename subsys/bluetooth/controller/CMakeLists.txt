@@ -18,7 +18,7 @@ zephyr_library_sources_ifdef(
   crypto/crypto.c
   )
 
-if(CONFIG_BT_LL_SW)
+if(CONFIG_BT_LL_SW_LEGACY)
   zephyr_library_sources(
     ll_sw/ctrl.c
     ll_sw/ll.c
@@ -139,6 +139,11 @@ if(CONFIG_BT_LL_SW_SPLIT)
       )
   endif()
 endif()
+
+zephyr_library_sources_ifdef(
+  CONFIG_BT_CTLR_SETTINGS
+  ll_sw/ll_settings.c
+)
 
 zephyr_library_sources_ifdef(
   CONFIG_SOC_COMPATIBLE_NRF

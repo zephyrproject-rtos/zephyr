@@ -6,7 +6,7 @@
 
 #include <device.h>
 #include <soc.h>
-#include <dma.h>
+#include <drivers/dma.h>
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(dma_sam0, CONFIG_DMA_LOG_LEVEL);
@@ -430,16 +430,16 @@ static int dma_sam0_init(struct device *dev)
 #ifdef DT_INST_0_ATMEL_SAM0_DMAC_IRQ_0
 	DMA_SAM0_IRQ_CONNECT(0);
 #endif
-#ifdef DT_ATMEL_SAM0_DMAC_0_IRQ_1
+#ifdef DT_INST_0_ATMEL_SAM0_DMAC_IRQ_1
 	DMA_SAM0_IRQ_CONNECT(1);
 #endif
-#ifdef DT_ATMEL_SAM0_DMAC_0_IRQ_2
+#ifdef DT_INST_0_ATMEL_SAM0_DMAC_IRQ_2
 	DMA_SAM0_IRQ_CONNECT(2);
 #endif
-#ifdef DT_ATMEL_SAM0_DMAC_0_IRQ_3
+#ifdef DT_INST_0_ATMEL_SAM0_DMAC_IRQ_3
 	DMA_SAM0_IRQ_CONNECT(3);
 #endif
-#ifdef DT_ATMEL_SAM0_DMAC_0_IRQ_4
+#ifdef DT_INST_0_ATMEL_SAM0_DMAC_IRQ_4
 	DMA_SAM0_IRQ_CONNECT(4);
 #endif
 

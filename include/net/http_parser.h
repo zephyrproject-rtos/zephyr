@@ -20,9 +20,6 @@
  */
 #ifndef ZEPHYR_INCLUDE_NET_HTTP_PARSER_H_
 #define ZEPHYR_INCLUDE_NET_HTTP_PARSER_H_
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 /* Also update SONAME in the Makefile whenever you change these. */
 #define HTTP_PARSER_VERSION_MAJOR 2
@@ -49,6 +46,10 @@ typedef unsigned __int64 u64_t;
 #include <net/http_parser_state.h>
 #include <net/http_parser_url.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Maximium header size allowed. If the macro is not defined
  * before including this header then the default is used. To
  * change the maximum header size, define the macro in the build
@@ -74,7 +75,7 @@ struct http_parser_settings;
  * chunked' headers that indicate the presence of a body.
  *
  * Returning `2` from on_headers_complete will tell parser that it should not
- * expect neither a body nor any futher responses on this connection. This is
+ * expect neither a body nor any further responses on this connection. This is
  * useful for handling responses to a CONNECT request which may not contain
  * `Upgrade` or `Connection: upgrade` headers.
  *

@@ -1,0 +1,156 @@
+/*
+ * Copyright (c) 2019 Philippe Retornaz <philippe@shapescale.com>
+ * Copyright (c) 2019 ST Microelectronics
+ * Copyright (c) 2019 Centaur Analytics, Inc
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/g0/stm32g0-pinctrl.dtsi>
+#include <arm/armv6-m.dtsi>
+#include <dt-bindings/clock/stm32_clock.h>
+#include <dt-bindings/gpio/gpio.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m0+";
+			reg = <0>;
+		};
+	};
+
+	sram0: memory@20000000 {
+		compatible = "mmio-sram";
+	};
+
+	soc {
+		flash-controller@40022000 {
+			compatible = "st,stm32g0-flash-controller";
+			label = "FLASH_CTRL";
+			reg = <0x40022000 0x400>;
+			interrupts = <3 0>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			flash0: flash@8000000 {
+				compatible = "soc-nv-flash";
+				label = "FLASH_STM32";
+
+				write-block-size = <8>;
+				erase-block-size = <2048>;
+			};
+		};
+
+		rcc: rcc@40021000 {
+			compatible = "st,stm32-rcc";
+			#clock-cells = <2>;
+			reg = <0x40021000 0x400>;
+			label = "STM32_CLK_RCC";
+		};
+
+		pinctrl: pin-controller@50000000 {
+			compatible = "st,stm32-pinmux";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			reg = <0x50000000 0x2000>;
+
+			gpioa: gpio@50000000 {
+				compatible = "st,stm32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x50000000 0x400>;
+				clocks = <&rcc STM32_CLOCK_BUS_IOP 0x00000001>;
+				label = "GPIOA";
+			};
+
+			gpiob: gpio@50000400 {
+				compatible = "st,stm32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x50000400 0x400>;
+				clocks = <&rcc STM32_CLOCK_BUS_IOP 0x00000002>;
+				label = "GPIOB";
+			};
+
+			gpioc: gpio@50000800 {
+				compatible = "st,stm32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x50000800 0x400>;
+				clocks = <&rcc STM32_CLOCK_BUS_IOP 0x00000004>;
+				label = "GPIOC";
+			};
+
+			gpiod: gpio@50000c00 {
+				compatible = "st,stm32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x50000c00 0x400>;
+				clocks = <&rcc STM32_CLOCK_BUS_IOP 0x00000008>;
+				label = "GPIOD";
+			};
+
+			gpiof: gpio@50001400 {
+				compatible = "st,stm32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x50001400 0x400>;
+				clocks = <&rcc STM32_CLOCK_BUS_IOP 0x00000020>;
+				label = "GPIOF";
+			};
+		};
+
+		wwdg: watchdog@40002c00 {
+			compatible = "st,stm32-window-watchdog";
+			reg = <0x40002C00 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000800>;
+			label = "WWDG";
+			interrupts = <0 7>;
+			status = "disabled";
+		};
+
+		usart1: serial@40013800 {
+			compatible = "st,stm32-usart", "st,stm32-uart";
+			reg = <0x40013800 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00004000>;
+			interrupts = <27 0>;
+			status = "disabled";
+			label = "UART_1";
+		};
+
+		usart2: serial@40004400 {
+			compatible = "st,stm32-usart", "st,stm32-uart";
+			reg = <0x40004400 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00020000>;
+			interrupts = <28 0>;
+			status = "disabled";
+			label = "UART_2";
+		};
+
+		timers3: timers@40000400 {
+			compatible = "st,stm32-timers";
+			reg = <0x40000400 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000002>;
+			status = "disabled";
+			label = "TIMERS_3";
+
+			pwm {
+				compatible = "st,stm32-pwm";
+				status = "disabled";
+				st,prescaler = <10000>;
+				label = "PWM_3";
+				#pwm-cells = <2>;
+			};
+		};
+
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <2>;
+};

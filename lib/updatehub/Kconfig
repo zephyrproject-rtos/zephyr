@@ -25,7 +25,7 @@ menuconfig UPDATEHUB
 	select HWINFO
 	help
 	  UpdateHub is an enterprise-grade solution which makes simple to
-	  remotely update all your embbeded devices in the field. It
+	  remotely update all your embedded devices in the field. It
 	  handles all aspects related to sending Firmware Over-the-Air
 	  (FOTA) updates with maximum security and efficiency, while you
 	  focus in adding value to your product.
@@ -79,7 +79,7 @@ config UPDATEHUB_SHELL
 	  Activate shell module that provides UpdateHub commands like
 
 config UPDATEHUB_DTLS
-	bool"Activite communication CoAPS/DTLS"
+	bool"Activate communication CoAPS/DTLS"
 	depends on UPDATEHUB
 	select MBEDTLS
 	select MBEDTLS_ENABLE_HEAP

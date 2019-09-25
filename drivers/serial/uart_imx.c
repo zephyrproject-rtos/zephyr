@@ -14,10 +14,10 @@
 
 #include <kernel.h>
 #include <arch/cpu.h>
-#include <misc/__assert.h>
+#include <sys/__assert.h>
 #include <soc.h>
 #include <init.h>
-#include <uart.h>
+#include <drivers/uart.h>
 #include <uart_imx.h>
 
 #define DEV_CFG(dev) \

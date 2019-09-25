@@ -1,9 +1,9 @@
 .. _gap-pics:
 
-GAP PICS
-********
+GAP ICS
+*******
 
-PTS version: 7.2.0
+PTS version: 7.4.1
 
 \* - different than PTS defaults
 
@@ -32,11 +32,9 @@ Version Configuration
 ==============	==============	=======================================
 Parameter Name	Selected	Description
 ==============	==============	=======================================
-TSPC_GAP_0A_1	False (*)	Core Specification Addendum 3 (CSA3) (C.1)
-TSPC_GAP_0A_2	False (*)	Core Specification Addendum 4 (CSA4) (C.2)
-TSPC_GAP_0A_3	False (*)	Core Spec version 4.1 (Core v4.1) (C.3)
-TSPC_GAP_0A_4	True		Core Spec version 4.2 (Core v4.2) (C.4)
-TSPC_GAP_0A_5	False (*)	Core Spec version 5.0 (Core v5.0) (C.4)
+TSPC_GAP_0A_4	False (*)	Core Spec version 4.2 (Core v4.2) (C.4)
+TSPC_GAP_0A_5	False (*)	Core Spec version 5.0 (Core v5.0) (C.5)
+TSPC_GAP_0A_6	True		Core Spec version 5.1 (Core v5.1) (C.6)
 ==============	==============	=======================================
 
 
@@ -159,7 +157,6 @@ TSPC_GAP_8_2	True		Scannable Undirected Event (O)
 TSPC_GAP_8_3	False (*)	Non-Connectable and Non-Scannable
 				Directed Event (C.1)
 TSPC_GAP_8_4	False (*)	Scannable Directed Event (C.1)
-
 ==============	==============	=======================================
 
 
@@ -173,20 +170,20 @@ TSPC_GAP_8A_1	True		AD Type-Service UUID (O)
 TSPC_GAP_8A_2	True		AD Type-Local Name (O)
 TSPC_GAP_8A_3	True		AD Type-Flags (O)
 TSPC_GAP_8A_4	True		AD Type-Manufacturer Specific Data (O)
-TSPC_GAP_8A_5	False (*)	AD Type-TX Power Level (O)
+TSPC_GAP_8A_5	True		AD Type-TX Power Level (O)
 TSPC_GAP_8A_6	False (*)	AD Type-Security Manager Out of Band
 				(OOB) (C.1)
-TSPC_GAP_8A_7	False (*)	AD Type-Security manager TK Value (O)
-TSPC_GAP_8A_8	False (*)	AD Type-Slave Connection Interval Range (O)
-TSPC_GAP_8A_9	False (*)	AD Type-Service Solicitation (O)
+TSPC_GAP_8A_7	True		AD Type-Security manager TK Value (O)
+TSPC_GAP_8A_8	True		AD Type-Slave Connection Interval Range (O)
+TSPC_GAP_8A_9	True		AD Type-Service Solicitation (O)
 TSPC_GAP_8A_10	True		AD Type-Service Data (O)
 TSPC_GAP_8A_11	True		AD Type-Appearance (O)
-TSPC_GAP_8A_12	False (*)	AD Type-Public Target Address (O)
-TSPC_GAP_8A_13	False (*)	AD Type-Random Target Address (O)
-TSPC_GAP_8A_14	False (*)	AD Type-Advertising Interval (O)
-TSPC_GAP_8A_15	False (*)	AD Type-LE Bluetooth Device Address (O)
-TSPC_GAP_8A_16	False (*)	AD Type-LE Role (O)
-TSPC_GAP_8A_17	False (*)	AD Type-URI (C.3)
+TSPC_GAP_8A_12	True		AD Type-Public Target Address (O)
+TSPC_GAP_8A_13	True		AD Type-Random Target Address (O)
+TSPC_GAP_8A_14	True		AD Type-Advertising Interval (O)
+TSPC_GAP_8A_15	True		AD Type-LE Bluetooth Device Address (O)
+TSPC_GAP_8A_16	True		AD Type-LE Role (O)
+TSPC_GAP_8A_17	True		AD Type-URI (C.3)
 ==============	==============	=======================================
 
 
@@ -219,7 +216,7 @@ Parameter Name	Selected	Description
 TSPC_GAP_11_1	True		Privacy Feature v1.0 (O)
 TSPC_GAP_11_2	True		Resolvable Private Address Generation
 				Procedure (C.1)
-TSPC_GAP_11_3	False (*)	Non-Resolvable Private Address Generation
+TSPC_GAP_11_3	True		Non-Resolvable Private Address Generation
 				Procedure (C.2)
 ==============	==============	=======================================
 
@@ -296,7 +293,7 @@ Observer Privacy Feature
 Parameter Name	Selected	Description
 ==============	==============	=======================================
 TSPC_GAP_17_1	True		Privacy Feature v1.0 (O)
-TSPC_GAP_17_2	False (*)	Non-Resolvable Private Address Generation
+TSPC_GAP_17_2	True		Non-Resolvable Private Address Generation
 				Procedure (C.1)
 TSPC_GAP_17_3	True		Resolvable Private Address Resolution
 				Procedure (C.2)
@@ -369,20 +366,20 @@ TSPC_GAP_20A_1	True		AD Type-Service UUID (C.1)
 TSPC_GAP_20A_2	True		AD Type-Local Name (C.1)
 TSPC_GAP_20A_3	True		AD Type-Flags (C.2)
 TSPC_GAP_20A_4	True		AD Type-Manufacturer Specific Data (C.1)
-TSPC_GAP_20A_5	False (*)	AD Type-TX Power Level (C.1)
+TSPC_GAP_20A_5	True		AD Type-TX Power Level (C.1)
 TSPC_GAP_20A_6	False (*)	AD Type-Security Manager Out of Band (OOB)
 				(C.3)
-TSPC_GAP_20A_7	False (*)	AD Type-Security manager TK Value (C.1)
-TSPC_GAP_20A_8	False (*)	AD Type-Slave Connection Interval Range (C.1)
-TSPC_GAP_20A_9	False (*)	AD Type-Service Solicitation (C.1)
+TSPC_GAP_20A_7	True		AD Type-Security manager TK Value (C.1)
+TSPC_GAP_20A_8	True		AD Type-Slave Connection Interval Range (C.1)
+TSPC_GAP_20A_9	True		AD Type-Service Solicitation (C.1)
 TSPC_GAP_20A_10	True		AD Type-Service Data (C.1)
 TSPC_GAP_20A_11	True		AD Type-Appearance (C.1)
-TSPC_GAP_20A_12	False (*)	AD Type-Public Target Address (C.1)
-TSPC_GAP_20A_13	False (*)	AD Type-Random Target Address (C.1)
-TSPC_GAP_20A_14	False (*)	AD Type-Advertising Interval (C.1)
-TSPC_GAP_20A_15	False (*)	AD Type-LE Bluetooth Device Address (C.1)
-TSPC_GAP_20A_16	False (*)	AD Type-LE Role (C.1)
-TSPC_GAP_20A_17	False (*)	AD Type-URI (C.4)
+TSPC_GAP_20A_12	True		AD Type-Public Target Address (C.1)
+TSPC_GAP_20A_13	True		AD Type-Random Target Address (C.1)
+TSPC_GAP_20A_14	True		AD Type-Advertising Interval (C.1)
+TSPC_GAP_20A_15	True		AD Type-LE Bluetooth Device Address (C.1)
+TSPC_GAP_20A_16	True		AD Type-LE Role (C.1)
+TSPC_GAP_20A_17	True		AD Type-URI (C.4)
 ===============	=============	=======================================
 
 
@@ -465,7 +462,7 @@ TSPC_GAP_25_7	True		Authenticated Pairing
 TSPC_GAP_25_8	True		Unauthenticated Pairing
 				(LE security mode 1 level 2) (C.1)
 TSPC_GAP_25_9	True		LE Security Mode 1 Level 4 (C.3)
-TSPC_GAP_25_10	False (*)	Secure Connections Only Mode  (C.4)
+TSPC_GAP_25_10	True		Secure Connections Only Mode  (C.4)
 ==============	==============	=======================================
 
 
@@ -495,12 +492,31 @@ TSPC_GAP_27_1	True		Device Name (M)
 TSPC_GAP_27_2	True		Appearance (M)
 TSPC_GAP_27_3	False (*)	Peripheral Privacy Flag (C.1)
 TSPC_GAP_27_4	False (*)	Reconnection Address (C.2)
-TSPC_GAP_27_5	False (*)	Peripheral Preferred Connection Parameters
+TSPC_GAP_27_5	True		Peripheral Preferred Connection Parameters
 				(C.3)
-TSPC_GAP_27_6	False (*)	Writable Device Name (C.3)
+TSPC_GAP_27_6	True		Writable Device Name (C.3)
 TSPC_GAP_27_7	False (*)	Writable Appearance (C.3)
 TSPC_GAP_27_8	False (*)	Writable Peripheral Privacy Flag (C.4)
-TSPC_GAP_27_9	False (*)	Central Address Resolution (C.5)
+TSPC_GAP_27_9	True		Central Address Resolution (C.5)
+==============	==============	=======================================
+
+
+Periodic Advertising Modes and Procedures
+=========================================
+
+==============	==============	=======================================
+Parameter Name	Selected	Description
+==============	==============	=======================================
+TSPC_GAP_27A_1	False (*)	Periodic Advertising Synchronization
+				Transfer procedure (C.1)
+TSPC_GAP_27A_2	False (*)	Periodic Advertising Synchronization
+				Establishment procedure over an LE
+				connection without listening for periodic
+				advertising (C.2)
+TSPC_GAP_27A_3	False (*)	Periodic Advertising Synchronization
+				Establishment procedure over an LE
+				connection with listening for periodic
+				advertising (C.3)
 ==============	==============	=======================================
 
 
@@ -554,7 +570,7 @@ TSPC_GAP_31_6	True		Termination Procedure (M)
 TSPC_GAP_31_7	False (*)	LE Ping Procedure (C.1)
 TSPC_GAP_31_8	True		Slave Initiated Feature Exchange Procedure
 				(C.2)
-TSPC_GAP_31_9	False (*)	Connection Parameter Request Procedure (C.3)
+TSPC_GAP_31_9	True		Connection Parameter Request Procedure (C.3)
 TSPC_GAP_31_10	True		Data Length Update Procedure (C.4)
 TSPC_GAP_31_11	True		PHY Update Procedure (C.5)
 TSPC_GAP_31_12	False (*)	Minimum Number Of Used Channels Procedure (C.5)
@@ -629,7 +645,7 @@ Central Privacy Feature
 Parameter Name	Selected	Description
 ==============	==============	=======================================
 TSPC_GAP_36_1	True		Privacy Feature v1.0 (O)
-TSPC_GAP_36_2	False (*)	Non-Resolvable Private Address Generation
+TSPC_GAP_36_2	True		Non-Resolvable Private Address Generation
 				Procedure (C.1)
 TSPC_GAP_36_3	True		Resolvable Private Address Resolution
 				Procedure (C.2)
@@ -649,6 +665,25 @@ Parameter Name	Selected	Description
 TSPC_GAP_37_1	True		Device Name (M)
 TSPC_GAP_37_2	True		Appearance (M)
 TSPC_GAP_37_3	True		Central Address Resolution  (C.1)
+==============	==============	=======================================
+
+
+Periodic Advertising Modes and Procedures
+=========================================
+
+==============	==============	=======================================
+Parameter Name	Selected	Description
+==============	==============	=======================================
+TSPC_GAP_37A_1	False (*)	Periodic Advertising Synchronization
+				Transfer procedure (C.1)
+TSPC_GAP_37A_2	False (*)	Periodic Advertising Synchronization
+				Establishment procedure over an LE
+				connection without listening for
+				periodic advertising
+TSPC_GAP_37A_3	False (*)	Periodic Advertising Synchronization
+				Establishment procedure over an LE
+				connection with listening for periodic
+				advertising
 ==============	==============	=======================================
 
 
@@ -758,13 +793,3 @@ TSPC_GAP_45_2	False (*)	Simultaneous BR/EDR and LE Transports - BR/EDR
 				Master to the same device (C.1)
 ==============	==============	=======================================
 
-
-==============	==============	=======================================
-Parameter Name	Selected	Description
-==============	==============	=======================================
-TSPC_GATT_1_1	True		GATT Client Role (O)
-TSPC_GATT_1_2	True		GATT Server Role (O)
-TSPC_SM_1_1	True		Master Role (Initiator)
-TSPC_SM_1_2	True		Slave Role (Responder)
-TSPC_SM_2_4	False (*)	OOB supported (O)
-==============	==============	=======================================

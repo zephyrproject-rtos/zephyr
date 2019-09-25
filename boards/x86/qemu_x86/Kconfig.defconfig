@@ -2,7 +2,6 @@
 
 if BOARD_QEMU_X86
 
-
 config BUILD_OUTPUT_BIN
         default n
 
@@ -18,20 +17,9 @@ endif
 
 endif # BOARD_QEMU_X86
 
-if BOARD_QEMU_X86_IAMCU
-
-config BUILD_OUTPUT_BIN
-        default n
+if BOARD_QEMU_X86_LONG
 
 config BOARD
-	default "qemu_x86_iamcu"
+	default "qemu_x86_long"
 
-# Enabled here because IAMCU targets run on some Quark CPUs that are immune to
-# these attacks, and the compiler doesn't even recognize instructions like
-# 'lfence'
-# We set this here because the QEMU targets derive from the generic IA32 SOC
-# definition and not a specific CPU; this is normally set at the SOC level.
-config X86_NO_SPECULATIVE_VULNERABILITIES
-	default y
-
-endif # BOARD_QEMU_X86_IAMCU
+endif # BOARD_QEMU_X86_LONG

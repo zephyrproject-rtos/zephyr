@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <misc/printk.h>
+#include <sys/printk.h>
 #include <shell/shell.h>
 #include <init.h>
 #include <string.h>
 #include <stdio.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 #include <stdlib.h>
 #include <ctype.h>
 #include <logging/log.h>

@@ -6,13 +6,13 @@
 
 #include <zephyr.h>
 #include <string.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/mesh.h>
 #include <bluetooth/hci.h>
 
-#include <sensor.h>
+#include <drivers/sensor.h>
 
 #include "mesh.h"
 #include "board.h"
@@ -37,9 +37,9 @@
 
 #define MAX_SENS_STATUS_LEN 8
 
-#define SENS_PROP_ID_TEMP_CELCIUS 0x2A1F
-#define SENS_PROP_ID_UNIT_TEMP_CELCIUS 0x272F
-#define SENS_PROP_ID_TEMP_CELCIUS_SIZE 2
+#define SENS_PROP_ID_TEMP_CELSIUS 0x2A1F
+#define SENS_PROP_ID_UNIT_TEMP_CELSIUS 0x272F
+#define SENS_PROP_ID_TEMP_CELSIUS_SIZE 2
 
 enum {
 	SENSOR_HDR_A = 0,
@@ -203,7 +203,7 @@ static void sensor_desc_get(struct bt_mesh_model *model,
 	/* TODO */
 }
 
-static void sens_temperature_celcius_fill(struct net_buf_simple *msg)
+static void sens_temperature_celsius_fill(struct net_buf_simple *msg)
 {
 	struct sensor_hdr_b hdr;
 	/* TODO Get only temperature from sensor */
@@ -212,7 +212,7 @@ static void sens_temperature_celcius_fill(struct net_buf_simple *msg)
 
 	hdr.format = SENSOR_HDR_B;
 	hdr.length = sizeof(temp_degrees);
-	hdr.prop_id = SENS_PROP_ID_UNIT_TEMP_CELCIUS;
+	hdr.prop_id = SENS_PROP_ID_UNIT_TEMP_CELSIUS;
 
 	get_hdc1010_val(val);
 	temp_degrees = sensor_value_to_double(&val[0]);
@@ -243,8 +243,8 @@ static void sensor_create_status(u16_t id, struct net_buf_simple *msg)
 	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_SENS_STATUS);
 
 	switch (id) {
-	case SENS_PROP_ID_TEMP_CELCIUS:
-		sens_temperature_celcius_fill(msg);
+	case SENS_PROP_ID_TEMP_CELSIUS:
+		sens_temperature_celsius_fill(msg);
 		break;
 	default:
 		sens_unknown_fill(id, msg);

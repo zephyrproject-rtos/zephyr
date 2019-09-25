@@ -1,38 +1,18 @@
-#
 # Copyright (c) 2018 Foundries.io
-#
 # SPDX-License-Identifier: Apache-2.0
-#
----
+
 title: RV32M1 INTMUX
-version: 0.1
 
 description: >
     This binding describes the RV32M1 INTMUX IP
 
-inherits:
-    !include base.yaml
+compatible: "openisa,rv32m1-intmux"
+
+include: base.yaml
 
 properties:
-  compatible:
-      constraint: "openisa,rv32m1-intmux"
-
   reg:
-      category: required
-
-  clocks:
-      type: array
-      category: optional
-      description: Clock gate information
-      generation: define
+      required: true
 
   label:
-      category: required
-
-  interrupts:
-      category: required
-
-"#cells":
-  - irq
-  - pri
-...
+      required: true

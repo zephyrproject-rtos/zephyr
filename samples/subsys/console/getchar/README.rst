@@ -39,3 +39,4 @@ The easiest way to run this sample is using QEMU:
 Now start pressing keys on a keyboard, and they will be printed both as
 hex values and in character form. Be sure to press Enter, Up/Down, etc.
 key to check what control characters are produced for them.
+Exit QEMU by pressing :kbd:`CTRL+A` :kbd:`x`.

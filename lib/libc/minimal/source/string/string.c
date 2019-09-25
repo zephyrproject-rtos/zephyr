@@ -118,6 +118,25 @@ size_t strlen(const char *s)
 
 /**
  *
+ * @brief Get fixed-size string length
+ *
+ * @return number of bytes in fixed-size string <s>
+ */
+
+size_t strnlen(const char *s, size_t maxlen)
+{
+	size_t n = 0;
+
+	while (*s != '\0' && n < maxlen) {
+		s++;
+		n++;
+	}
+
+	return n;
+}
+
+/**
+ *
  * @brief Compare two strings
  *
  * @return negative # if <s1> < <s2>, 0 if <s1> == <s2>, else positive #
@@ -338,13 +357,13 @@ void *memset(void *buf, int c, size_t n)
  * @return pointer to start of found byte
  */
 
-void *memchr(const void *s, unsigned char c, size_t n)
+void *memchr(const void *s, int c, size_t n)
 {
 	if (n != 0) {
 		const unsigned char *p = s;
 
 		do {
-			if (*p++ == c) {
+			if (*p++ == (unsigned char)c) {
 				return ((void *)(p - 1));
 			}
 

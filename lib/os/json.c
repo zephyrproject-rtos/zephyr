@@ -8,14 +8,14 @@
 #include <ctype.h>
 #include <errno.h>
 #include <limits.h>
-#include <misc/printk.h>
-#include <misc/util.h>
+#include <sys/printk.h>
+#include <sys/util.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 #include <zephyr/types.h>
 
-#include "json.h"
+#include <data/json.h>
 
 struct token {
 	enum json_tokens type;

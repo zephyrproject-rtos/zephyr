@@ -11,8 +11,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <kernel.h>
 #include <device.h>
-#include <misc/__assert.h>
-#include <misc/util.h>
+#include <sys/__assert.h>
+#include <sys/util.h>
 #include <errno.h>
 #include <stdbool.h>
 #include <net/net_pkt.h>
@@ -20,16 +20,52 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <net/ethernet.h>
 #include <ethernet/eth_stats.h>
 #include <soc.h>
-#include <misc/printk.h>
-#include <clock_control.h>
+#include <sys/printk.h>
+#include <drivers/clock_control.h>
 #include <clock_control/stm32_clock_control.h>
 
 #include "eth_stm32_hal_priv.h"
 
+#if defined(CONFIG_ETH_STM32_HAL_USE_DTCM_FOR_DMA_BUFFER) && \
+    !defined(DT_DTCM_BASE_ADDRESS)
+#error DTCM for DMA buffer is activated but DT_DTCM_BASE_ADDRESS is not present
+#endif
+
+#if defined(CONFIG_ETH_STM32_HAL_USE_DTCM_FOR_DMA_BUFFER) && \
+    defined(DT_DTCM_BASE_ADDRESS)
+static ETH_DMADescTypeDef dma_rx_desc_tab[ETH_RXBUFNB] __dtcm_noinit_section;
+static ETH_DMADescTypeDef dma_tx_desc_tab[ETH_TXBUFNB] __dtcm_noinit_section;
+static u8_t dma_rx_buffer[ETH_RXBUFNB][ETH_RX_BUF_SIZE] __dtcm_noinit_section;
+static u8_t dma_tx_buffer[ETH_TXBUFNB][ETH_TX_BUF_SIZE] __dtcm_noinit_section;
+#else
 static ETH_DMADescTypeDef dma_rx_desc_tab[ETH_RXBUFNB] __aligned(4);
 static ETH_DMADescTypeDef dma_tx_desc_tab[ETH_TXBUFNB] __aligned(4);
 static u8_t dma_rx_buffer[ETH_RXBUFNB][ETH_RX_BUF_SIZE] __aligned(4);
 static u8_t dma_tx_buffer[ETH_TXBUFNB][ETH_TX_BUF_SIZE] __aligned(4);
+#endif /* CONFIG_ETH_STM32_HAL_USE_DTCM_FOR_DMA_BUFFER */
+
+#if defined(CONFIG_NET_L2_CANBUS_ETH_TRANSLATOR)
+#include <net/can.h>
+
+static void set_mac_to_translator_addr(u8_t *mac_addr)
+{
+	/* Set the last 14 bit to the translator  link layer address to avoid
+	 * address collissions with the 6LoCAN address range
+	 */
+	mac_addr[4] = (mac_addr[4] & 0xC0) | (NET_CAN_ETH_TRANSLATOR_ADDR >> 8);
+	mac_addr[5] = NET_CAN_ETH_TRANSLATOR_ADDR & 0xFF;
+}
+
+static void enable_canbus_eth_translator_filter(ETH_HandleTypeDef *heth,
+						u8_t *mac_addr)
+{
+	heth->Instance->MACA1LR = (mac_addr[3] << 24U) | (mac_addr[2] << 16U) |
+				  (mac_addr[1] << 8U) | mac_addr[0];
+	/*enable filter 1 and ignore byte 5 and 6 for filtering*/
+	heth->Instance->MACA1HR = ETH_MACA1HR_AE |  ETH_MACA1HR_MBC_HBits15_8 |
+				  ETH_MACA1HR_MBC_HBits7_0;
+}
+#endif /*CONFIG_NET_L2_CANBUS_ETH_TRANSLATOR*/
 
 static inline void disable_mcast_filter(ETH_HandleTypeDef *heth)
 {
@@ -194,6 +230,7 @@ static void rx_thread(void *arg1, void *unused1, void *unused2)
 	struct eth_stm32_hal_dev_data *dev_data;
 	struct net_pkt *pkt;
 	int res;
+	u32_t status;
 
 	__ASSERT_NO_MSG(arg1 != NULL);
 	ARG_UNUSED(unused1);
@@ -205,16 +242,39 @@ static void rx_thread(void *arg1, void *unused1, void *unused2)
 	__ASSERT_NO_MSG(dev_data != NULL);
 
 	while (1) {
-		k_sem_take(&dev_data->rx_int_sem, K_FOREVER);
-
-		while ((pkt = eth_rx(dev)) != NULL) {
-			net_pkt_print_frags(pkt);
-			res = net_recv_data(dev_data->iface, pkt);
-			if (res < 0) {
-				eth_stats_update_errors_rx(dev_data->iface);
-				LOG_ERR("Failed to enqueue frame "
-					"into RX queue: %d", res);
-				net_pkt_unref(pkt);
+		res = k_sem_take(&dev_data->rx_int_sem,
+			K_MSEC(CONFIG_ETH_STM32_CARRIER_CHECK_RX_IDLE_TIMEOUT_MS));
+		if (res == 0) {
+			/* semaphore taken, update link status and receive packets */
+			if (dev_data->link_up != true) {
+				dev_data->link_up = true;
+				net_eth_carrier_on(dev_data->iface);
+			}
+			while ((pkt = eth_rx(dev)) != NULL) {
+				net_pkt_print_frags(pkt);
+				res = net_recv_data(dev_data->iface, pkt);
+				if (res < 0) {
+					eth_stats_update_errors_rx(dev_data->iface);
+					LOG_ERR("Failed to enqueue frame "
+						"into RX queue: %d", res);
+					net_pkt_unref(pkt);
+				}
+			}
+		} else if (res == -EAGAIN) {
+			/* semaphore timeout period expired, check link status */
+			if (HAL_ETH_ReadPHYRegister(&dev_data->heth, PHY_BSR,
+				(uint32_t *) &status) == HAL_OK) {
+				if ((status & PHY_LINKED_STATUS) == PHY_LINKED_STATUS) {
+					if (dev_data->link_up != true) {
+						dev_data->link_up = true;
+						net_eth_carrier_on(dev_data->iface);
+					}
+				} else {
+					if (dev_data->link_up != false) {
+						dev_data->link_up = false;
+						net_eth_carrier_off(dev_data->iface);
+					}
+				}
 			}
 		}
 	}
@@ -299,10 +359,11 @@ static void generate_mac(u8_t *mac_addr)
 
 	entropy = sys_rand32_get();
 
-	mac_addr[3] = entropy >> 8;
-	mac_addr[4] = entropy >> 16;
-	/* Locally administered, unicast */
-	mac_addr[5] = ((entropy >> 0) & 0xfc) | 0x02;
+	mac_addr[0] |= 0x02; /* force LAA bit */
+
+	mac_addr[3] = entropy >> 16;
+	mac_addr[4] = entropy >> 8;
+	mac_addr[5] = entropy >> 0;
 }
 #endif
 
@@ -328,6 +389,9 @@ static void eth_iface_init(struct net_if *iface)
 #if defined(CONFIG_ETH_STM32_HAL_RANDOM_MAC)
 	generate_mac(dev_data->mac_addr);
 #endif
+#if defined(CONFIG_NET_L2_CANBUS_ETH_TRANSLATOR)
+	set_mac_to_translator_addr(dev_data->mac_addr);
+#endif
 
 	heth->Init.MACAddr = dev_data->mac_addr;
 
@@ -342,6 +406,8 @@ static void eth_iface_init(struct net_if *iface)
 		LOG_ERR("HAL_ETH_Init failed: %d", hal_ret);
 		return;
 	}
+
+	dev_data->link_up = false;
 
 	/* Initialize semaphores */
 	k_mutex_init(&dev_data->tx_mutex);
@@ -363,6 +429,10 @@ static void eth_iface_init(struct net_if *iface)
 
 	disable_mcast_filter(heth);
 
+#if defined(CONFIG_NET_L2_CANBUS_ETH_TRANSLATOR)
+	enable_canbus_eth_translator_filter(heth, dev_data->mac_addr);
+#endif
+
 	LOG_DBG("MAC %02x:%02x:%02x:%02x:%02x:%02x",
 		dev_data->mac_addr[0], dev_data->mac_addr[1],
 		dev_data->mac_addr[2], dev_data->mac_addr[3],
@@ -374,6 +444,7 @@ static void eth_iface_init(struct net_if *iface)
 			     NET_LINK_ETHERNET);
 
 	ethernet_init(iface);
+	net_if_flag_set(iface, NET_IF_NO_AUTO_START);
 }
 
 static enum ethernet_hw_caps eth_stm32_hal_get_capabilities(struct device *dev)
@@ -383,10 +454,38 @@ static enum ethernet_hw_caps eth_stm32_hal_get_capabilities(struct device *dev)
 	return ETHERNET_LINK_10BASE_T | ETHERNET_LINK_100BASE_T;
 }
 
+static int eth_stm32_hal_set_config(struct device *dev,
+				    enum ethernet_config_type type,
+				    const struct ethernet_config *config)
+{
+	struct eth_stm32_hal_dev_data *dev_data;
+	ETH_HandleTypeDef *heth;
+
+	switch (type) {
+	case ETHERNET_CONFIG_TYPE_MAC_ADDRESS:
+		dev_data = DEV_DATA(dev);
+		heth = &dev_data->heth;
+
+		memcpy(dev_data->mac_addr, config->mac_address.addr, 6);
+		heth->Instance->MACA0HR = (dev_data->mac_addr[5] << 8) |
+			dev_data->mac_addr[4];
+		heth->Instance->MACA0LR = (dev_data->mac_addr[3] << 24) |
+			(dev_data->mac_addr[2] << 16) |
+			(dev_data->mac_addr[1] << 8) |
+			dev_data->mac_addr[0];
+		return 0;
+	default:
+		break;
+	}
+
+	return -ENOTSUP;
+}
+
 static const struct ethernet_api eth_api = {
 	.iface_api.init = eth_iface_init,
 
 	.get_capabilities = eth_stm32_hal_get_capabilities,
+	.set_config = eth_stm32_hal_set_config,
 	.send = eth_tx,
 };
 
@@ -427,10 +526,9 @@ static struct eth_stm32_hal_dev_data eth0_data = {
 		},
 	},
 	.mac_addr = {
-		/* ST's OUI */
-		0x00,
-		0x80,
-		0xE1,
+		ST_OUI_B0,
+		ST_OUI_B1,
+		ST_OUI_B2,
 #if !defined(CONFIG_ETH_STM32_HAL_RANDOM_MAC)
 		CONFIG_ETH_STM32_HAL_MAC3,
 		CONFIG_ETH_STM32_HAL_MAC4,

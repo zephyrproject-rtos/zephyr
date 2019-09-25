@@ -8,16 +8,16 @@
  */
 
 #include <kernel.h>
-#include <sensor.h>
+#include <drivers/sensor.h>
 #include <init.h>
-#include <gpio.h>
-#include <misc/byteorder.h>
-#include <misc/__assert.h>
+#include <drivers/gpio.h>
+#include <sys/byteorder.h>
+#include <sys/__assert.h>
 
 #ifdef DT_BOSCH_BME280_BUS_I2C
-#include <i2c.h>
+#include <drivers/i2c.h>
 #elif defined DT_BOSCH_BME280_BUS_SPI
-#include <spi.h>
+#include <drivers/spi.h>
 #endif
 #include <logging/log.h>
 

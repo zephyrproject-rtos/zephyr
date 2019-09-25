@@ -1,0 +1,12 @@
+# Copyright (c) 2019 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+# Author: Sathish Kuttan <sathish.k.kuttan@intel.com>
+
+general:
+    name:      Sue Creek
+
+usb:
+    vid:       0x8087 # Vendor ID: Intel Corporation
+    pid:       0x0b1a # Product ID

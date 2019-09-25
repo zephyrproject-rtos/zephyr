@@ -36,10 +36,6 @@
   #define _DATA_IN_ROM
 #endif
 
-#if !defined(SKIP_TO_KINETIS_FLASH_CONFIG)
-  #define SKIP_TO_KINETIS_FLASH_CONFIG
-#endif
-
 #if !defined(CONFIG_XIP) && (CONFIG_FLASH_SIZE == 0)
 #define ROM_ADDR RAM_ADDR
 #else
@@ -73,6 +69,9 @@
 	#define RAM_ADDR CONFIG_SRAM_BASE_ADDRESS
 #endif
 
+#if defined(CONFIG_CUSTOM_SECTION_ALIGN)
+_region_min_align = CONFIG_CUSTOM_SECTION_MIN_ALIGN_SIZE;
+#else
 /* Set alignment to CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE
  * to make linker section alignment comply with MPU granularity.
  */
@@ -82,8 +81,9 @@ _region_min_align = CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE;
 /* If building without MPU support, use default 4-byte alignment. */
 _region_min_align = 4;
 #endif
+#endif
 
-#if defined(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT)
+#if !defined(CONFIG_CUSTOM_SECTION_ALIGN) && defined(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT)
 #define MPU_ALIGN(region_size) \
     . = ALIGN(_region_min_align); \
     . = ALIGN( 1 << LOG2CEIL(region_size))
@@ -100,6 +100,9 @@ MEMORY
 #endif
 #ifdef DT_CCM_BASE_ADDRESS
     CCM                   (rw) : ORIGIN = DT_CCM_BASE_ADDRESS, LENGTH = DT_CCM_SIZE * 1K
+#endif
+#ifdef DT_DTCM_BASE_ADDRESS
+    DTCM                  (rw) : ORIGIN = DT_DTCM_BASE_ADDRESS, LENGTH = DT_DTCM_SIZE * 1K
 #endif
     SRAM                  (wx) : ORIGIN = RAM_ADDR, LENGTH = RAM_SIZE
 #ifdef CONFIG_BT_STM32_IPM
@@ -137,8 +140,8 @@ SECTIONS
 
     SECTION_PROLOGUE(_TEXT_SECTION_NAME,,)
 	{
-#ifdef CONFIG_CC3220SF_DEBUG
-	/* Add CC3220SF flash header to disable flash verification */
+#if defined(CONFIG_CC3220SF_DEBUG) || defined(CONFIG_CC3235SF_DEBUG)
+	/* Add CC32xx flash header to disable flash verification */
 	. = 0x0;
 	KEEP(*(.dbghdr))
 	KEEP(*(".dbghdr.*"))
@@ -174,10 +177,11 @@ SECTIONS
 	KEEP(*(.openocd_dbg))
 	KEEP(*(".openocd_dbg.*"))
 
-	/* Kinetis has to write 16 bytes at 0x400 */
-	SKIP_TO_KINETIS_FLASH_CONFIG
+#ifdef CONFIG_KINETIS_FLASH_CONFIG
+	. = CONFIG_KINETIS_FLASH_CONFIG_OFFSET;
 	KEEP(*(.kinetis_flash_config))
 	KEEP(*(".kinetis_flash_config.*"))
+#endif
 
 	_vector_end = .;
 	} GROUP_LINK_IN(ROMABLE_REGION)
@@ -191,6 +195,10 @@ SECTIONS
     SECTION_PROLOGUE(_TEXT_SECTION_NAME_2,,)
 	{
 	_image_text_start = .;
+
+#include <linker/priv_stacks-text.ld>
+#include <linker/kobject-text.ld>
+
 	*(.text)
 	*(".text.*")
 	*(.gnu.linkonce.t.*)
@@ -200,9 +208,6 @@ SECTIONS
 	 * after .gnu.linkonce.t.*
 	 */
 	*(.glue_7t) *(.glue_7) *(.vfp11_veneer) *(.v4_bx)
-
-#include <linker/priv_stacks-text.ld>
-#include <linker/kobject-text.ld>
 
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
@@ -271,6 +276,8 @@ SECTIONS
 	 */
 	. = ALIGN(4);
 	} GROUP_LINK_IN(ROMABLE_REGION)
+
+#include <linker/cplusplus-rom.ld>
 
 	_image_rodata_end = .;
 	MPU_ALIGN(_image_rodata_end -_image_rom_start);
@@ -410,6 +417,7 @@ SECTIONS
 #include <linker/kobject.ld>
 
 #include <linker/priv_stacks-noinit.ld>
+#include <linker/cplusplus-ram.ld>
 
     __data_ram_end = .;
 
@@ -424,6 +432,42 @@ SECTIONS
 
     GROUP_END(RAMABLE_REGION)
 
+#ifdef DT_DTCM_BASE_ADDRESS
+GROUP_START(DTCM)
+
+	SECTION_PROLOGUE(_DTCM_BSS_SECTION_NAME, (NOLOAD),SUBALIGN(4))
+	{
+		__dtcm_start = .;
+		__dtcm_bss_start = .;
+		*(.dtcm_bss)
+		*(".dtcm_bss.*")
+	} GROUP_LINK_IN(DTCM)
+
+	__dtcm_bss_end = .;
+
+	SECTION_PROLOGUE(_DTCM_NOINIT_SECTION_NAME, (NOLOAD),SUBALIGN(4))
+	{
+		__dtcm_noinit_start = .;
+		*(.dtcm_noinit)
+		*(".dtcm_noinit.*")
+	} GROUP_LINK_IN(DTCM)
+
+	__dtcm_noinit_end = .;
+
+	SECTION_PROLOGUE(_DTCM_DATA_SECTION_NAME,,SUBALIGN(4))
+	{
+		__dtcm_data_start = .;
+		*(.dtcm_data)
+		*(".dtcm_data.*")
+	} GROUP_LINK_IN(DTCM AT> ROMABLE_REGION)
+
+	__dtcm_data_end = .;
+	__dtcm_end = .;
+
+	__dtcm_data_rom_start = LOADADDR(_DTCM_DATA_SECTION_NAME);
+
+GROUP_END(DTCM)
+#endif /* DT_DTCM_BASE_ADDRESS */
 #ifdef CONFIG_CUSTOM_SECTIONS_LD
 /* Located in project source directory */
 #include <custom-sections.ld>

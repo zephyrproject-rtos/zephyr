@@ -23,7 +23,7 @@
 		cpu@1 {
 			device_type = "cpu";
 			compatible = "arm,cortex-m4f";
-			reg = <0>;
+			reg = <1>;
 		};
 	};
 

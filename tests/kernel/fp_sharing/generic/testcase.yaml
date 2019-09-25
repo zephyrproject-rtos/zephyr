@@ -1,0 +1,21 @@
+tests:
+  kernel.fp_sharing:
+    extra_args: PI_NUM_ITERATIONS=70000
+    filter: CONFIG_ARMV7_M_ARMV8_M_FP
+    slow: true
+    tags: kernel
+    timeout: 600
+    min_ram: 16
+  kernel.fp_sharing.x86:
+    extra_args: CONF_FILE=prj_x86.conf
+    platform_whitelist: qemu_x86
+    slow: true
+    tags: kernel
+    timeout: 600
+  kernel.fp_sharing.arc:
+    extra_args: PI_NUM_ITERATIONS=500
+    filter: CONFIG_CPU_ARCV2 and CONFIG_CPU_HAS_FPU
+    slow: true
+    tags: kernel
+    timeout: 600
+    min_ram: 16

@@ -19,12 +19,12 @@
 
 #include <kernel.h>
 #include <arch/cpu.h>
-#include <misc/__assert.h>
+#include <sys/__assert.h>
 #include <toolchain.h>
 #include <linker/sections.h>
 #include <sw_isr_table.h>
 #include <irq.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 
 /*
  * @brief Enable an interrupt line
@@ -83,6 +83,16 @@ void z_irq_priority_set(unsigned int irq, unsigned int prio, u32_t flags)
 
 	__ASSERT(prio < CONFIG_NUM_IRQ_PRIO_LEVELS,
 		 "invalid priority %d for irq %d", prio, irq);
+/* 0 -> CONFIG_NUM_IRQ_PRIO_LEVELS allocted to secure world
+ * left prio levels allocated to normal world
+ */
+#if defined(CONFIG_ARC_SECURE_FIRMWARE)
+	prio = prio < ARC_N_IRQ_START_LEVEL ?
+		prio : (ARC_N_IRQ_START_LEVEL - 1);
+#elif defined(CONFIG_ARC_NORMAL_FIRMWARE)
+	prio = prio < ARC_N_IRQ_START_LEVEL ?
+		 ARC_N_IRQ_START_LEVEL : prio;
+#endif
 	z_arc_v2_irq_unit_prio_set(irq, prio);
 	irq_unlock(key);
 }
@@ -99,10 +109,7 @@ void z_irq_priority_set(unsigned int irq, unsigned int prio, u32_t flags)
 void z_irq_spurious(void *unused)
 {
 	ARG_UNUSED(unused);
-	printk("z_irq_spurious(). Spinning...\n");
-	for (;;) {
-		;
-	}
+	z_fatal_error(K_ERR_SPURIOUS_IRQ, NULL);
 }
 
 #ifdef CONFIG_DYNAMIC_INTERRUPTS

@@ -24,7 +24,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <nffs/nffs.h>
-#include <fs.h>
+#include <fs/fs.h>
 #include "nffs_test_utils.h"
 #include <ztest.h>
 #include <ztest_assert.h>

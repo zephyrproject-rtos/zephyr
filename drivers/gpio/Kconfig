@@ -26,10 +26,6 @@ source "drivers/gpio/Kconfig.dw"
 
 source "drivers/gpio/Kconfig.pcal9535a"
 
-source "drivers/gpio/Kconfig.qmsi"
-
-source "drivers/gpio/Kconfig.sch"
-
 source "drivers/gpio/Kconfig.mcux"
 
 source "drivers/gpio/Kconfig.mcux_igpio"
@@ -37,8 +33,6 @@ source "drivers/gpio/Kconfig.mcux_igpio"
 source "drivers/gpio/Kconfig.mcux_lpc"
 
 source "drivers/gpio/Kconfig.mmio32"
-
-source "drivers/gpio/Kconfig.atmel_sam3"
 
 source "drivers/gpio/Kconfig.stm32"
 

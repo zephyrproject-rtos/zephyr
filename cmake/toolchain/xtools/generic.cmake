@@ -8,10 +8,11 @@ set(TOOLCHAIN_HOME ${XTOOLS_TOOLCHAIN_PATH})
 
 set(COMPILER gcc)
 set(LINKER ld)
+set(BINTOOLS gnu)
 
 # Choose one of the toolchains in 'TOOLCHAIN_HOME' at random to use as
 # a 'generic' toolchain until we know for sure which toolchain we
-# should use. Note that we can't use ARCH to distingush between
+# should use. Note that we can't use ARCH to distinguish between
 # toolchains because choosing between iamcu and non-iamcu is dependent
 # on Kconfig, not ARCH.
 file(GLOB toolchain_paths ${TOOLCHAIN_HOME}/*)

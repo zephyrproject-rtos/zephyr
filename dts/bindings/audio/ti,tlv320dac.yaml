@@ -1,24 +1,16 @@
-#
 # Copyright (c) 2018, Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
----
+
 title: Texas Instruments TLV320DAC Audio DAC
-version: 0.1
 
 description: >
     This binding gives a base representation of TLV320DAC310x Audio DAC
 
-inherits:
-    !include i2c-device.yaml
+compatible: "ti,tlv320dac"
+
+include: i2c-device.yaml
 
 properties:
-    compatible:
-      constraint: "ti,tlv320dac"
-
     reset-gpios:
-      type: compound
-      category: required
-      generation: define, use-prop-name
-...
+      type: phandle-array
+      required: true

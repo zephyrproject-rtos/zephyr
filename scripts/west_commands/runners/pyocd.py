@@ -6,8 +6,6 @@
 
 import os
 
-from west import log
-
 from runners.core import ZephyrBinaryRunner, RunnerCaps, \
     BuildConfiguration
 
@@ -36,7 +34,7 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
 
         board_args = []
         if board_id is not None:
-            board_args = ['-b', board_id]
+            board_args = ['-u', board_id]
         self.board_args = board_args
 
         daparg_args = []
@@ -71,7 +69,7 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
                             help='path to pyocd tool, default is pyocd')
         parser.add_argument('--flash-opt', default=[], action='append',
                             help='''Additional options for pyocd flash,
-                            e.g. \'-e chip\' to chip erase''')
+                            e.g. --flash-opt="-e=chip" to chip erase''')
         parser.add_argument('--frequency',
                             help='SWD clock frequency in Hz')
         parser.add_argument('--gdb-port', default=DEFAULT_PYOCD_GDB_PORT,
@@ -84,25 +82,24 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
 
     @classmethod
     def create(cls, cfg, args):
-        daparg = os.environ.get('PYOCD_DAPARG')
-        if daparg:
-            log.wrn('Setting PYOCD_DAPARG in the environment is',
-                    'deprecated; use the --daparg option instead.')
-            if args.daparg is None:
-                log.dbg('Missing --daparg set to {} from environment'.format(
-                    daparg), level=log.VERBOSE_VERY)
-                args.daparg = daparg
-
         build_conf = BuildConfiguration(cfg.build_dir)
         flash_addr = cls.get_flash_address(args, build_conf)
 
-        return PyOcdBinaryRunner(
+        ret = PyOcdBinaryRunner(
             cfg, args.target,
             pyocd=args.pyocd,
             flash_addr=flash_addr, flash_opts=args.flash_opt,
             gdb_port=args.gdb_port, tui=args.tui,
             board_id=args.board_id, daparg=args.daparg,
             frequency=args.frequency)
+
+        daparg = os.environ.get('PYOCD_DAPARG')
+        if not ret.daparg_args and daparg:
+            ret.logger.warning('PYOCD_DAPARG is deprecated; use --daparg')
+            ret.logger.debug('--daparg={} via PYOCD_DAPARG'.format(daparg))
+            ret.daparg_args = ['-da', daparg]
+
+        return ret
 
     def port_args(self):
         return ['-p', str(self.gdb_port)]
@@ -118,10 +115,14 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
         if os.path.isfile(self.hex_name):
             fname = self.hex_name
         elif os.path.isfile(self.bin_name):
+            self.logger.warning(
+                'hex file ({}) does not exist; falling back on .bin ({}). '.
+                format(self.hex_name, self.bin_name) +
+                'Consider enabling CONFIG_BUILD_OUTPUT_HEX.')
             fname = self.bin_name
         else:
             raise ValueError(
-                'Cannot flash; no hex ({}) or bin ({}) files'.format(
+                'Cannot flash; no hex ({}) or bin ({}) files found. '.format(
                     self.hex_name, self.bin_name))
 
         cmd = ([self.pyocd] +
@@ -135,11 +136,12 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
                self.flash_extra +
                [fname])
 
-        log.inf('Flashing Target Device')
+        self.logger.info('Flashing file: {}'.format(fname))
         self.check_call(cmd)
 
-    def print_gdbserver_message(self):
-        log.inf('pyOCD GDB server running on port {}'.format(self.gdb_port))
+    def log_gdbserver_message(self):
+        self.logger.info('pyOCD GDB server running on port {}'.
+                         format(self.gdb_port))
 
     def debug_debugserver(self, command, **kwargs):
         server_cmd = ([self.pyocd] +
@@ -151,7 +153,7 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
                       self.frequency_args)
 
         if command == 'debugserver':
-            self.print_gdbserver_message()
+            self.log_gdbserver_message()
             self.check_call(server_cmd)
         else:
             if self.gdb_cmd is None:
@@ -168,5 +170,5 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
                                '-ex', 'load']
 
             self.require(client_cmd[0])
-            self.print_gdbserver_message()
+            self.log_gdbserver_message()
             self.run_server_and_client(server_cmd, client_cmd)

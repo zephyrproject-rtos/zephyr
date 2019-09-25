@@ -5,11 +5,11 @@
  */
 
 #include <device.h>
-#include <gpio.h>
-#include <i2c.h>
-#include <misc/util.h>
+#include <drivers/gpio.h>
+#include <drivers/i2c.h>
+#include <sys/util.h>
 #include <kernel.h>
-#include <sensor.h>
+#include <drivers/sensor.h>
 #include "apds9960.h"
 
 extern struct apds9960_data apds9960_driver;

@@ -1,22 +1,16 @@
----
 title: STM32 PINMUX
-version: 0.1
 
 description: >
     This binding gives a base representation of the STM32 PINMUX
 
-inherits:
-    !include base.yaml
+compatible: "st,stm32-pinmux"
+
+include: base.yaml
 
 properties:
-    compatible:
-      constraint: "st,stm32-pinmux"
-
     reg:
-      category: required
+      required: true
 
 "#cells":
   - pin
   - function
-
-...

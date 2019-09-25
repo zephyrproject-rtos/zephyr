@@ -4,6 +4,12 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
+# NOTE: This file is part of the old device tree scripts, which will be removed
+# later. They are kept to generate some legacy #defines via the
+# --deprecated-only flag.
+#
+# The new scripts are gen_defines.py, edtlib.py, and dtlib.py.
+
 from extract.globals import *
 from extract.directive import DTDirective
 
@@ -50,6 +56,7 @@ class DTCompatible(DTDirective):
             compat_instance = 'DT_' + str_to_label(compat) + '_' + str(instance_id)
 
             insert_defs(node_path, {compat_instance: '1'}, {})
+            deprecated_main.append(compat_instance)
 
             # Generate defines of the form:
             # #define DT_<COMPAT>_<INSTANCE ID>_BUS_<BUS> 1
@@ -58,6 +65,7 @@ class DTCompatible(DTDirective):
                 insert_defs(node_path,
                             {compat_instance + '_BUS_' + bus.upper(): '1'},
                             {})
+                deprecated_main.append(compat_instance + '_BUS_' + bus.upper())
 
 
 ##

@@ -8,13 +8,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <sensor.h>
+#include <drivers/sensor.h>
 #include <kernel.h>
 #include <device.h>
 #include <init.h>
 #include <string.h>
-#include <misc/byteorder.h>
-#include <misc/__assert.h>
+#include <sys/byteorder.h>
+#include <sys/__assert.h>
 #include <logging/log.h>
 
 #include "lsm6dsl.h"

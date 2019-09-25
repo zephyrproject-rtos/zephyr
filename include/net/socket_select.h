@@ -35,7 +35,7 @@ typedef struct zsock_fd_set {
  * @brief Legacy function to poll multiple sockets for events
  *
  * @details
- * @rststar
+ * @rst
  * See `POSIX.1-2017 article
  * <http://pubs.opengroup.org/onlinepubs/9699919799/functions/select.html>`__
  * for normative description. This function is provided to ease porting of
@@ -45,7 +45,7 @@ typedef struct zsock_fd_set {
  * This function is also exposed as ``select()``
  * if :option:`CONFIG_NET_SOCKETS_POSIX_NAMES` is defined (in which case
  * it may conflict with generic POSIX ``select()`` function).
- * @endrststar
+ * @endrst
  */
 int zsock_select(int nfds, zsock_fd_set *readfds, zsock_fd_set *writefds,
 		 zsock_fd_set *exceptfds, struct zsock_timeval *timeout);
@@ -57,13 +57,13 @@ int zsock_select(int nfds, zsock_fd_set *readfds, zsock_fd_set *writefds,
  * @brief Initialize (clear) fd_set
  *
  * @details
- * @rststar
+ * @rst
  * See `POSIX.1-2017 article
  * <http://pubs.opengroup.org/onlinepubs/9699919799/functions/select.html>`__
  * for normative description.
  * This function is also exposed as ``FD_ZERO()``
  * if :option:`CONFIG_NET_SOCKETS_POSIX_NAMES` is defined.
- * @endrststar
+ * @endrst
  */
 void ZSOCK_FD_ZERO(zsock_fd_set *set);
 
@@ -71,13 +71,13 @@ void ZSOCK_FD_ZERO(zsock_fd_set *set);
  * @brief Check whether socket is a member of fd_set
  *
  * @details
- * @rststar
+ * @rst
  * See `POSIX.1-2017 article
  * <http://pubs.opengroup.org/onlinepubs/9699919799/functions/select.html>`__
  * for normative description.
  * This function is also exposed as ``FD_ISSET()``
  * if :option:`CONFIG_NET_SOCKETS_POSIX_NAMES` is defined.
- * @endrststar
+ * @endrst
  */
 int ZSOCK_FD_ISSET(int fd, zsock_fd_set *set);
 
@@ -85,13 +85,13 @@ int ZSOCK_FD_ISSET(int fd, zsock_fd_set *set);
  * @brief Remove socket from fd_set
  *
  * @details
- * @rststar
+ * @rst
  * See `POSIX.1-2017 article
  * <http://pubs.opengroup.org/onlinepubs/9699919799/functions/select.html>`__
  * for normative description.
  * This function is also exposed as ``FD_CLR()``
  * if :option:`CONFIG_NET_SOCKETS_POSIX_NAMES` is defined.
- * @endrststar
+ * @endrst
  */
 void ZSOCK_FD_CLR(int fd, zsock_fd_set *set);
 
@@ -99,13 +99,13 @@ void ZSOCK_FD_CLR(int fd, zsock_fd_set *set);
  * @brief Add socket to fd_set
  *
  * @details
- * @rststar
+ * @rst
  * See `POSIX.1-2017 article
  * <http://pubs.opengroup.org/onlinepubs/9699919799/functions/select.html>`__
  * for normative description.
  * This function is also exposed as ``FD_SET()``
  * if :option:`CONFIG_NET_SOCKETS_POSIX_NAMES` is defined.
- * @endrststar
+ * @endrst
  */
 void ZSOCK_FD_SET(int fd, zsock_fd_set *set);
 

@@ -59,6 +59,31 @@ config BT_RPA
 	select TINYCRYPT
 	select TINYCRYPT_AES
 
+config BT_ASSERT
+	bool "Custom Bluetooth assert implementation"
+	default y
+	help
+	  Use a custom Bluetooth assert implementation instead of the
+	  kernel-wide __ASSERT(), which is enabled by CONFIG_ASSERT and is
+	  disabled by default.
+
+if BT_ASSERT
+
+config BT_ASSERT_VERBOSE
+	bool "Print out an assert string when using BT_ASSERT"
+	default y
+	help
+	  When CONFIG_BT_ASSERT is enabled, this option turns on printing the
+	  cause of the assert to the console using printk().
+
+config BT_ASSERT_PANIC
+	bool "Use k_panic() instead of k_oops()"
+	help
+	  When CONFIG_BT_ASSERT is enabled, this option makes the code call
+	  k_panic() instead of k_oops() when an assertion is triggered.
+
+endif # BT_ASSERT
+
 config BT_DEBUG
 	# Virtual/hidden option to make the conditions more intuitive
 	bool
@@ -101,10 +126,13 @@ endchoice
 
 if BT_DEBUG
 
+# Workaround for not being able to have commas in macro arguments
+DT_CHOSEN_Z_BT_MON_UART := zephyr,bt-mon-uart
+
 config BT_MONITOR_ON_DEV_NAME
 	string "Device Name of Bluetooth monitor logging UART"
 	depends on BT_DEBUG_MONITOR
-	default "$(dt_str_val,DT_BT_MONITOR_ON_DEV_NAME)" if HAS_DTS
+	default "$(dt_chosen_label,$(DT_CHOSEN_Z_BT_MON_UART))" if HAS_DTS
 	default "UART_0"
 	help
 	 This option specifies the name of UART device to be used

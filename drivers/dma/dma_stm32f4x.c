@@ -7,13 +7,13 @@
 
 
 #include <device.h>
-#include <dma.h>
+#include <drivers/dma.h>
 #include <errno.h>
 #include <init.h>
 #include <stdio.h>
 #include <soc.h>
 #include <string.h>
-#include <misc/util.h>
+#include <sys/util.h>
 
 #define LOG_LEVEL CONFIG_DMA_LOG_LEVEL
 #include <logging/log.h>

@@ -174,6 +174,44 @@ SECTION_FUNC(TEXT,z_arm_userspace_enter)
  *
  */
 SECTION_FUNC(TEXT, z_arm_do_syscall)
+
+    /* The function is executing in privileged mode. This implies that we
+     * shall not be allowed to use the thread's default unprivileged stack,
+     * (i.e push to or pop from it), to avoid a possible stack corruption.
+     *
+     * Rationale: since we execute in PRIV mode and no MPU guard or PSPLIM
+     * register is guarding the end of the default stack, we won't be able
+     * to detect any stack overflows.
+     */
+
+#if defined(CONFIG_BUILTIN_STACK_GUARD)
+    /* clear stack pointer limit before setting the PSP */
+    mov ip, #0
+    msr PSPLIM, ip
+#endif
+
+    /* setup privileged stack */
+    ldr ip, =_kernel
+    ldr ip, [ip, #_kernel_offset_to_current]
+    ldr ip, [ip, #_thread_offset_to_priv_stack_start]    /* priv stack ptr */
+    add ip, #CONFIG_PRIVILEGED_STACK_SIZE
+
+    /* Store current SP and LR at the beginning of the priv stack */
+    subs ip, #8
+    str sp, [ip, #0]
+    str lr, [ip, #4]
+
+    /* switch to privileged stack */
+    msr PSP, ip
+
+#if defined(CONFIG_BUILTIN_STACK_GUARD)
+    /* Set stack pointer limit (needed in privileged mode) */
+    ldr ip, =_kernel
+    ldr ip, [ip, #_kernel_offset_to_current]
+    ldr ip, [ip, #_thread_offset_to_priv_stack_start]    /* priv stack ptr */
+    msr PSPLIM, ip
+#endif
+
     /*
      * r0-r5 contain arguments
      * r6 contains call_id
@@ -184,45 +222,12 @@ SECTION_FUNC(TEXT, z_arm_do_syscall)
     bne valid_syscall
 
     /* BAD SYSCALL path */
-    /* fixup stack frame on unprivileged stack, adding ssf */
+    /* fixup stack frame on the privileged stack, adding ssf */
     mov ip, sp
     push {r4,r5,ip,lr}
     b dispatch_syscall
 
 valid_syscall:
-    /* setup privileged stack */
-    push {r6}
-    ldr r6, =_kernel
-    ldr r6, [r6, #_kernel_offset_to_current]
-    ldr ip, [r6, #_thread_offset_to_priv_stack_start]    /* priv stack ptr */
-    ldr r6, =CONFIG_PRIVILEGED_STACK_SIZE
-    add ip, r6
-    pop {r6}
-    subs ip, #8
-    str sp, [ip, #0]
-    str lr, [ip, #4]
-
-#if defined(CONFIG_BUILTIN_STACK_GUARD)
-    /* clear stack pointer limit before setting the PSP */
-    push {r3}
-    mov r3, #0
-    msr PSPLIM, r3
-    pop {r3}
-#endif
-
-    /* switch to privileged stack */
-    msr PSP, ip
-
-#if defined(CONFIG_BUILTIN_STACK_GUARD)
-    /* Set stack pointer limit (needed in privileged mode) */
-    push {r6}
-    ldr r6, =_kernel
-    ldr r6, [r6, #_kernel_offset_to_current]
-    ldr r6, [r6, #_thread_offset_to_priv_stack_start]    /* priv stack ptr */
-    msr PSPLIM, r6
-    pop {r6}
-#endif
-
     /* push args to complete stack frame */
     push {r4,r5}
 

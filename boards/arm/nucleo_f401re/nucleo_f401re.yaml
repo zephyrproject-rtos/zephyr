@@ -7,13 +7,14 @@ toolchain:
   - gnuarmemb
   - xtools
 supported:
+  - arduino_gpio
   - arduino_i2c
   - pwm
-  - rtc
   - counter
   - gpio
   - i2c
   - spi
   - adc
+  - watchdog
 ram: 96
 flash: 512

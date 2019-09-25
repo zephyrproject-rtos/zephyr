@@ -1,24 +1,22 @@
----
 title: Atmel SAM0 GPIO PORT driver
-version: 0.1
 
 description: >
     This is a representation of the SAM0 GPIO PORT nodes
 
-inherits:
-    !include base.yaml
+compatible: "atmel,sam0-gpio"
+
+include: [gpio-controller.yaml, base.yaml]
 
 properties:
-    compatible:
-      constraint: "atmel,sam0-gpio"
-
     reg:
-      category: required
+      required: true
 
     label:
-      category: required
+      required: true
+
+    "#gpio-cells":
+      const: 2
 
 "#cells":
   - pin
   - flags
-...

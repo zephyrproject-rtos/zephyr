@@ -5,7 +5,7 @@
  */
 
 #include <ztest.h>
-#include <misc/math_extras.h>
+#include <sys/math_extras.h>
 #include <inttypes.h>
 
 static void VNAME(u32_add)(void)

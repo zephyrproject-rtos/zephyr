@@ -37,6 +37,14 @@ config ETH_STM32_HAL_RX_THREAD_PRIO
 	help
 	  RX thread priority
 
+config ETH_STM32_HAL_USE_DTCM_FOR_DMA_BUFFER
+	bool "Use DTCM for DMA buffers"
+	default y
+	depends on SOC_SERIES_STM32F7X
+	help
+	  When this option is activated, the buffers for DMA transfer are
+	  moved from SRAM to the DTCM (Data Tightly Coupled Memory).
+
 config ETH_STM32_HAL_PHY_ADDRESS
 	int "Phy address"
 	default 0
@@ -79,5 +87,13 @@ config ETH_STM32_HAL_MII
 	bool "Use MII interface"
 	help
 	  Use the MII physical interface instead of RMII.
+
+config ETH_STM32_CARRIER_CHECK_RX_IDLE_TIMEOUT_MS
+	int "Carrier check timeout period (ms)"
+ 	default 500
+ 	range 100 30000
+ 	help
+ 	  Set the RX idle timeout period in milliseconds after which the
+	  PHY's carrier status is re-evaluated.
 
 endif # ETH_STM32_HAL

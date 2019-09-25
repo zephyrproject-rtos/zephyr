@@ -13,11 +13,7 @@
 #ifndef _SOC__H_
 #define _SOC__H_
 
-#include <misc/util.h>
-
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include <sys/util.h>
 
 #ifndef _ASMLANGUAGE
 
@@ -29,9 +25,5 @@ extern "C" {
 #include "../common/soc_gpio.h"
 
 #endif /* !_ASMLANGUAGE */
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* _SOC__H_ */

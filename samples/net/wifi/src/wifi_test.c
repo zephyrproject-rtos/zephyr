@@ -10,7 +10,7 @@
 #ifdef CONFIG_WIFI_WINC1500
 
 #include <device.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 #include <wifi/winc1500.h>
 
 static

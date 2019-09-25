@@ -12,7 +12,7 @@ LOG_MODULE_REGISTER(spi_sam);
 #include "spi_context.h"
 #include <errno.h>
 #include <device.h>
-#include <spi.h>
+#include <drivers/spi.h>
 #include <soc.h>
 
 #define SAM_SPI_CHIP_SELECT_COUNT			4
@@ -90,7 +90,7 @@ static int spi_sam_configure(struct device *dev,
 		spi_csr |= SPI_CSR_BITS(SPI_CSR_BITS_8_BIT);
 	}
 
-	/* Use the requested or next higest possible frequency */
+	/* Use the requested or next highest possible frequency */
 	div = SOC_ATMEL_SAM_MCK_FREQ_HZ / config->frequency;
 	div = MAX(1, MIN(UINT8_MAX, div));
 	spi_csr |= SPI_CSR_SCBR(div);

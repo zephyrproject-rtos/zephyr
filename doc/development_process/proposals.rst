@@ -114,14 +114,14 @@ stakeholders, to help recruit new members and it can be a helpful resource the
 team and community can refer to throughout the project's development, to ensure
 they are still executing according to plan.
 
-As such, the roadmap should contain only strategic-level details—major project
+As such, the roadmap should contain only strategic-level details, major project
 themes, epics, and goals.
 
 
 Release Plans
 ==============
 
-The release plan comes into play when the project roadmap’s high-level strategy
+The release plan comes into play when the project roadmap's high-level strategy
 is translated into an actionable plan built on specific features, enhancements,
 and fixes that need to go into a specific release or milestone.
 

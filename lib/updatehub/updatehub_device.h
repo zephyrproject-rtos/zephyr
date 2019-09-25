@@ -8,7 +8,7 @@
 #define __UPDATEHUB_DEVICE_H__
 
 #include <zephyr.h>
-#include <hwinfo.h>
+#include <drivers/hwinfo.h>
 
 #define DEVICE_ID_MAX_SIZE 65
 

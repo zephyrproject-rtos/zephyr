@@ -5,11 +5,11 @@
  */
 
 #include <clock_control/stm32_clock_control.h>
-#include <clock_control.h>
-#include <misc/util.h>
+#include <drivers/clock_control.h>
+#include <sys/util.h>
 #include <kernel.h>
 #include <errno.h>
-#include <i2c.h>
+#include <drivers/i2c.h>
 
 #define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
 #include <logging/log.h>

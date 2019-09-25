@@ -9,11 +9,11 @@
 #include <kernel.h>
 #include <device.h>
 #include <soc.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 #include <clock_control/stm32_clock_control.h>
 #include <pinmux/stm32/pinmux_stm32.h>
-#include <pinmux.h>
-#include <misc/util.h>
+#include <drivers/pinmux.h>
+#include <sys/util.h>
 #include <interrupt_controller/exti_stm32.h>
 
 #include "gpio_stm32.h"
@@ -194,12 +194,18 @@ const int gpio_stm32_enable_int(int port, int pin)
 	defined(CONFIG_SOC_SERIES_STM32F3X) || \
 	defined(CONFIG_SOC_SERIES_STM32F4X) || \
 	defined(CONFIG_SOC_SERIES_STM32F7X) || \
+	defined(CONFIG_SOC_SERIES_STM32H7X) || \
 	defined(CONFIG_SOC_SERIES_STM32L1X) || \
 	defined(CONFIG_SOC_SERIES_STM32L4X)
 	struct device *clk = device_get_binding(STM32_CLOCK_CONTROL_NAME);
 	struct stm32_pclken pclken = {
+#ifdef CONFIG_SOC_SERIES_STM32H7X
+		.bus = STM32_CLOCK_BUS_APB4,
+		.enr = LL_APB4_GRP1_PERIPH_SYSCFG
+#else
 		.bus = STM32_CLOCK_BUS_APB2,
 		.enr = LL_APB2_GRP1_PERIPH_SYSCFG
+#endif /* CONFIG_SOC_SERIES_STM32H7X */
 	};
 	/* Enable SYSCFG clock */
 	clock_control_on(clk, (clock_control_subsys_t *) &pclken);
@@ -216,11 +222,13 @@ const int gpio_stm32_enable_int(int port, int pin)
 	line = ((pin % 4 * 4) << 16) | (pin / 4);
 #elif defined(CONFIG_SOC_SERIES_STM32MP1X)
 	line = (((pin * 8) % 32) << 16) | (pin / 4);
+#elif defined(CONFIG_SOC_SERIES_STM32G0X)
+	line = ((pin & 0x3) << (16 + 3)) | (pin >> 2);
 #else
 	line = (0xF << ((pin % 4 * 4) + 16)) | (pin / 4);
 #endif
 
-#ifdef CONFIG_SOC_SERIES_STM32L0X
+#if defined(CONFIG_SOC_SERIES_STM32L0X) && defined(LL_SYSCFG_EXTI_PORTH)
 	/*
 	 * Ports F and G are not present on some STM32L0 parts, so
 	 * for these parts port H external interrupt should be enabled
@@ -234,6 +242,8 @@ const int gpio_stm32_enable_int(int port, int pin)
 #ifdef CONFIG_SOC_SERIES_STM32F1X
 	LL_GPIO_AF_SetEXTISource(port, line);
 #elif CONFIG_SOC_SERIES_STM32MP1X
+	LL_EXTI_SetEXTISource(port, line);
+#elif defined(CONFIG_SOC_SERIES_STM32G0X)
 	LL_EXTI_SetEXTISource(port, line);
 #else
 	LL_SYSCFG_SetEXTISource(port, line);
@@ -260,6 +270,11 @@ static int gpio_stm32_config(struct device *dev, int access_op,
 		/* hardware cannot invert signal */
 		return -ENOTSUP;
 	}
+
+#if defined(CONFIG_STM32H7_DUAL_CORE)
+	while (LL_HSEM_1StepLock(HSEM, LL_HSEM_ID_1)) {
+	}
+#endif /* CONFIG_STM32H7_DUAL_CORE */
 
 	/* figure out if we can map the requested GPIO
 	 * configuration
@@ -305,6 +320,10 @@ static int gpio_stm32_config(struct device *dev, int access_op,
 		}
 
 	}
+
+#if defined(CONFIG_STM32H7_DUAL_CORE)
+	LL_HSEM_ReleaseLock(HSEM, LL_HSEM_ID_1, 0);
+#endif /* CONFIG_STM32H7_DUAL_CORE */
 
 	return 0;
 }
@@ -437,7 +456,6 @@ static int gpio_stm32_init(struct device *device)
 	return 0;
 }
 
-
 #define GPIO_DEVICE_INIT(__name, __suffix, __base_addr, __port, __cenr, __bus) \
 	static const struct gpio_stm32_config gpio_stm32_cfg_## __suffix = {   \
 		.base = (u32_t *)__base_addr,				       \
@@ -505,3 +523,32 @@ GPIO_DEVICE_INIT_STM32(j, J);
 #ifdef CONFIG_GPIO_STM32_PORTK
 GPIO_DEVICE_INIT_STM32(k, K);
 #endif /* CONFIG_GPIO_STM32_PORTK */
+
+
+#if defined(CONFIG_SOC_SERIES_STM32F1X)
+
+static int gpio_stm32_afio_init(struct device *device)
+{
+	UNUSED(device);
+
+	LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_AFIO);
+
+#if defined(CONFIG_GPIO_STM32_SWJ_NONJTRST)
+	/* released PB4 */
+	__HAL_AFIO_REMAP_SWJ_NONJTRST();
+#elif defined(CONFIG_GPIO_STM32_SWJ_NOJTAG)
+	/* released PB4 PB3 PA15 */
+	__HAL_AFIO_REMAP_SWJ_NOJTAG();
+#elif defined(CONFIG_GPIO_STM32_SWJ_DISABLE)
+	/* released PB4 PB3 PA13 PA14 PA15 */
+	__HAL_AFIO_REMAP_SWJ_DISABLE();
+#endif
+
+	LL_APB2_GRP1_DisableClock(LL_APB2_GRP1_PERIPH_AFIO);
+
+	return 0;
+}
+
+DEVICE_INIT(gpio_stm32_afio, "", gpio_stm32_afio_init, NULL, NULL, PRE_KERNEL_2, 0);
+
+#endif /* CONFIG_SOC_SERIES_STM32F1X */

@@ -13,13 +13,13 @@
 
 #include <kernel.h>
 #include <init.h>
-#include <uart.h>
+#include <drivers/uart.h>
 
 #include <logging/log.h>
 
 LOG_MODULE_REGISTER(mdm_receiver, CONFIG_MODEM_LOG_LEVEL);
 
-#include <drivers/modem/modem_receiver.h>
+#include "modem_receiver.h"
 
 #define MAX_MDM_CTX	CONFIG_MODEM_RECEIVER_MAX_CONTEXTS
 #define MAX_READ_SIZE	128
@@ -189,6 +189,25 @@ int mdm_receiver_send(struct mdm_receiver_context *ctx,
 	do {
 		uart_poll_out(ctx->uart_dev, *buf++);
 	} while (--size);
+
+	return 0;
+}
+
+int mdm_receiver_sleep(struct mdm_receiver_context *ctx)
+{
+	uart_irq_rx_disable(ctx->uart_dev);
+#ifdef DEVICE_PM_LOW_POWER_STATE
+	device_set_power_state(ctx->uart_dev, DEVICE_PM_LOW_POWER_STATE, NULL, NULL);
+#endif
+	return 0;
+}
+
+int mdm_receiver_wake(struct mdm_receiver_context *ctx)
+{
+#ifdef DEVICE_PM_LOW_POWER_STATE
+	device_set_power_state(ctx->uart_dev, DEVICE_PM_ACTIVE_STATE, NULL, NULL);
+#endif
+	uart_irq_rx_enable(ctx->uart_dev);
 
 	return 0;
 }

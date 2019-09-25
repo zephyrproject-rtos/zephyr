@@ -15,7 +15,7 @@
 #ifndef __SOC_H_
 #define __SOC_H_
 
-#include <misc/util.h>
+#include <sys/util.h>
 
 #ifndef _ASMLANGUAGE
 #include <device.h>

@@ -8,7 +8,7 @@
 #define ZEPHYR_INCLUDE_DRIVERS_GPIO_GPIO_MMIO32_H_
 
 #include <device.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 #include <zephyr/types.h>
 
 struct gpio_mmio32_config {

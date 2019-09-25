@@ -1,0 +1,12 @@
+identifier: nrf51_pca10031
+name: nRF51-PCA10031
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 32
+supported:
+  - ble
+  - nvs

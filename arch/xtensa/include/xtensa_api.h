@@ -15,7 +15,6 @@
  *
  * mask     - Bit mask of interrupts to be enabled.
  */
-#if CONFIG_XTENSA_ASM2
 static inline void z_xt_ints_on(unsigned int mask)
 {
 	int val;
@@ -24,9 +23,6 @@ static inline void z_xt_ints_on(unsigned int mask)
 	val |= mask;
 	__asm__ volatile("wsr.intenable %0; rsync" : : "r"(val));
 }
-#else
-extern void z_xt_ints_on(unsigned int mask);
-#endif
 
 
 /*
@@ -34,7 +30,6 @@ extern void z_xt_ints_on(unsigned int mask);
  *
  * mask     - Bit mask of interrupts to be disabled.
  */
-#if CONFIG_XTENSA_ASM2
 static inline void z_xt_ints_off(unsigned int mask)
 {
 	int val;
@@ -43,9 +38,6 @@ static inline void z_xt_ints_off(unsigned int mask)
 	val &= ~mask;
 	__asm__ volatile("wsr.intenable %0; rsync" : : "r"(val));
 }
-#else
-extern void z_xt_ints_off(unsigned int mask);
-#endif
 
 /*
  * Call this function to set the specified (s/w) interrupt.

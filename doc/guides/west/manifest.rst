@@ -206,6 +206,11 @@ described next.
 - ``remote``: The name of the project's remote. If not given, the ``remote``
   value in the ``defaults`` subsection is tried next. If both are missing, the
   manifest is invalid.
+- ``repo-path``: Optional. If given, this is concatenated on to the remote's
+  ``url-base`` instead of the project's ``name`` to form its fetch URL.
+- ``url``: Optional. If given, this is the project's complete fetch URL.
+  It cannot be combined with either ``remote`` or ``repo-path``. Note that this
+  overrides any default remote.
 - ``revision``: Optional. The current project revision used by ``west update``.
   If not given, the value from the ``defaults`` subsection will be used if
   present.  If both are missing, ``master`` is used. A project revision can be

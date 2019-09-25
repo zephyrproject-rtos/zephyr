@@ -26,4 +26,11 @@ config IPG_DIV
 config GPIO
 	default y
 
+if NET_L2_ETHERNET
+
+config INIT_ENET_PLL
+	def_bool y
+
+endif # NET_L2_ETHERNET
+
 endif # SOC_MIMXRT1062

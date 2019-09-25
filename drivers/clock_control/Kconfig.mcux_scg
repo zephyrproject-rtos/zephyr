@@ -1,0 +1,12 @@
+# Kconfig - MCUXpresso SDK SCG
+#
+# Copyright (c) 2019 Vestas Wind Systems A/S
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig CLOCK_CONTROL_MCUX_SCG
+	bool "MCUX SCG driver"
+	depends on HAS_MCUX_SCG
+	help
+	  Enable support for mcux scg driver.

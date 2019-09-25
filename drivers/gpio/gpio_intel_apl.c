@@ -22,12 +22,12 @@
 #define GPIO_INTEL_APL_NR_SUBDEVS 10
 
 #include <errno.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 #include <soc.h>
-#include <sys_io.h>
-#include <misc/__assert.h>
-#include <misc/slist.h>
-#include <misc/speculation.h>
+#include <sys/sys_io.h>
+#include <sys/__assert.h>
+#include <sys/slist.h>
+#include <sys/speculation.h>
 
 #include "gpio_utils.h"
 
@@ -265,7 +265,7 @@ static int gpio_intel_apl_config(struct device *dev, int access_op,
 	/* setup interrupt if desired */
 	if (flags & GPIO_INT) {
 		/* invert signal for interrupt controller */
-		if ((flags & GPIO_INT_ACTIVE_HIGH) == GPIO_INT_ACTIVE_LOW) {
+		if ((flags & GPIO_INT_ACTIVE_HIGH) == 0) {
 			cfg0 |= PAD_CFG0_RXINV;
 		}
 

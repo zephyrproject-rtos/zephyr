@@ -5,8 +5,8 @@
  */
 
 #include <errno.h>
-#include <spi.h>
-#include <clock_control.h>
+#include <drivers/spi.h>
+#include <drivers/clock_control.h>
 #include <fsl_lpspi.h>
 
 #define LOG_LEVEL CONFIG_SPI_LOG_LEVEL
@@ -293,10 +293,10 @@ DEVICE_AND_API_INIT(spi_mcux_0, DT_NXP_IMX_LPSPI_SPI_0_LABEL, &spi_mcux_init,
 
 static void spi_mcux_config_func_0(struct device *dev)
 {
-	IRQ_CONNECT(DT_NXP_IMX_LPSPI_SPI_0_IRQ, DT_NXP_IMX_LPSPI_SPI_0_IRQ_PRIORITY,
+	IRQ_CONNECT(DT_NXP_IMX_LPSPI_SPI_0_IRQ_0, DT_NXP_IMX_LPSPI_SPI_0_IRQ_0_PRIORITY,
 		    spi_mcux_isr, DEVICE_GET(spi_mcux_0), 0);
 
-	irq_enable(DT_NXP_IMX_LPSPI_SPI_0_IRQ);
+	irq_enable(DT_NXP_IMX_LPSPI_SPI_0_IRQ_0);
 }
 #endif /* SPI_0 */
 
@@ -322,10 +322,10 @@ DEVICE_AND_API_INIT(spi_mcux_1, DT_NXP_IMX_LPSPI_SPI_1_LABEL, &spi_mcux_init,
 
 static void spi_mcux_config_func_1(struct device *dev)
 {
-	IRQ_CONNECT(DT_NXP_IMX_LPSPI_SPI_1_IRQ, DT_NXP_IMX_LPSPI_SPI_1_IRQ_PRIORITY,
+	IRQ_CONNECT(DT_NXP_IMX_LPSPI_SPI_1_IRQ_0, DT_NXP_IMX_LPSPI_SPI_1_IRQ_0_PRIORITY,
 		    spi_mcux_isr, DEVICE_GET(spi_mcux_1), 0);
 
-	irq_enable(DT_NXP_IMX_LPSPI_SPI_1_IRQ);
+	irq_enable(DT_NXP_IMX_LPSPI_SPI_1_IRQ_0);
 }
 #endif /* SPI_1 */
 
@@ -351,10 +351,10 @@ DEVICE_AND_API_INIT(spi_mcux_2, DT_NXP_IMX_LPSPI_SPI_2_LABEL, &spi_mcux_init,
 
 static void spi_mcux_config_func_2(struct device *dev)
 {
-	IRQ_CONNECT(DT_NXP_IMX_LPSPI_SPI_2_IRQ, DT_NXP_IMX_LPSPI_SPI_2_IRQ_PRIORITY,
+	IRQ_CONNECT(DT_NXP_IMX_LPSPI_SPI_2_IRQ_0, DT_NXP_IMX_LPSPI_SPI_2_IRQ_0_PRIORITY,
 		    spi_mcux_isr, DEVICE_GET(spi_mcux_2), 0);
 
-	irq_enable(DT_NXP_IMX_LPSPI_SPI_2_IRQ);
+	irq_enable(DT_NXP_IMX_LPSPI_SPI_2_IRQ_0);
 }
 #endif /* SPI_2 */
 
@@ -380,9 +380,9 @@ DEVICE_AND_API_INIT(spi_mcux_3, DT_NXP_IMX_LPSPI_SPI_3_LABEL, &spi_mcux_init,
 
 static void spi_mcux_config_func_3(struct device *dev)
 {
-	IRQ_CONNECT(DT_NXP_IMX_LPSPI_SPI_3_IRQ, DT_NXP_IMX_LPSPI_SPI_3_IRQ_PRIORITY,
+	IRQ_CONNECT(DT_NXP_IMX_LPSPI_SPI_3_IRQ_0, DT_NXP_IMX_LPSPI_SPI_3_IRQ_0_PRIORITY,
 		    spi_mcux_isr, DEVICE_GET(spi_mcux_3), 0);
 
-	irq_enable(DT_NXP_IMX_LPSPI_SPI_3_IRQ);
+	irq_enable(DT_NXP_IMX_LPSPI_SPI_3_IRQ_0);
 }
 #endif /* CONFIG_SPI_3 */

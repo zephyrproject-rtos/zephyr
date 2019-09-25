@@ -7,7 +7,9 @@
 #define ZEPHYR_INCLUDE_LOGGING_LOG_BACKEND_H_
 
 #include <logging/log_msg.h>
-#include <assert.h>
+#include <stdarg.h>
+#include <sys/__assert.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -76,8 +78,7 @@ extern const struct log_backend __log_backends_end[0];
 		.active = false,					       \
 		.id = 0,						       \
 	};								       \
-	static const struct log_backend _name				       \
-	__attribute__ ((section(".log_backends"))) __attribute__((used)) =     \
+	static const Z_STRUCT_SECTION_ITERABLE(log_backend, _name) =	       \
 	{								       \
 		.api = &_api,						       \
 		.cb = &UTIL_CAT(backend_cb_, _name),			       \

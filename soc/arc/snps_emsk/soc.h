@@ -14,7 +14,7 @@
 #ifndef _SOC__H_
 #define _SOC__H_
 
-#include <misc/util.h>
+#include <sys/util.h>
 
 /* default system clock */
 /* On the EM Starter Kit board, the peripheral bus clock frequency is 50Mhz */
@@ -39,7 +39,7 @@
 
 #ifndef _ASMLANGUAGE
 
-#include <misc/util.h>
+#include <sys/util.h>
 #include <random/rand32.h>
 
 #define INT_ENABLE_ARC				~(0x00000001 << 8)
@@ -82,8 +82,6 @@
 #define GPIO_DW_PORT_3_INT_MASK			0 /* n/a */
 
 /* SPI */
-#define DT_SPI_DW_SPI_CLOCK			SYSCLK_DEFAULT_IOSC_HZ
-
 #define DT_SPI_DW_IRQ_FLAGS			0
 
 /*

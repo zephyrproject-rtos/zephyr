@@ -129,7 +129,7 @@ Default Zephyr Peripheral Mapping:
 System Clock
 ------------
 
-Dragino LSN50 System Clock is at 32mhz,
+Dragino LSN50 System Clock is at 32MHz,
 
 Serial Port
 -----------

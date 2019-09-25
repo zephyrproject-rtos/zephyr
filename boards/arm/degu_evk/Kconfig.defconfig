@@ -1,0 +1,86 @@
+# Kconfig - Degu Evaluation Kit configuration
+#
+# Copyright (c) 2019 Atmark Techno, Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_DEGU_EVK
+
+config BOARD
+	default "degu_evk"
+
+if USB
+
+config USB_NRF52840
+	default y
+
+config USB_DEVICE_STACK
+	default y
+
+endif # USB
+
+if IEEE802154
+
+config IEEE802154_NRF5
+	default y
+
+endif # IEEE802154
+
+if I2C
+
+config I2C_0
+	default y
+
+config I2C_1
+	default y
+
+endif # I2C
+
+if I2C_0
+
+choice I2C_0_NRF_TYPE
+	default I2C_0_NRF_TWIM
+
+endchoice
+
+endif # I2C_0
+
+if I2C_1
+
+choice I2C_1_NRF_TYPE
+	default I2C_1_NRF_TWIM
+
+endchoice
+
+endif # I2C_1
+
+if ADC
+
+config ADC_0
+	default y
+
+endif # ADC
+
+if DISK_ACCESS_FLASH
+
+config DISK_FLASH_DEV_NAME
+	default "NRF_FLASH_DRV_NAME"
+
+config DISK_FLASH_START
+	default 0xf8000
+
+config DISK_FLASH_MAX_RW_SIZE
+	default 4
+
+config DISK_ERASE_BLOCK_SIZE
+	default 0x1000
+
+config DISK_FLASH_ERASE_ALIGNMENT
+	default 0x1000
+
+config DISK_VOLUME_SIZE
+	default 0x8000
+
+endif # DISK_ACCESS_FLASH
+
+endif # BOARD_DEGU_EVK

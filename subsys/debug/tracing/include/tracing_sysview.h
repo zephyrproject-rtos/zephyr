@@ -56,8 +56,7 @@ static inline void sys_trace_thread_info(struct k_thread *thread)
 {
 	char name[20];
 
-	snprintk(name, sizeof(name), "T%xE%x", (uintptr_t)thread,
-		 (uintptr_t)&thread->entry);
+	snprintk(name, sizeof(name), "T%pE%p", thread, &thread->entry);
 
 	SEGGER_SYSVIEW_TASKINFO Info;
 
@@ -74,6 +73,8 @@ static inline void sys_trace_thread_info(struct k_thread *thread)
 		SEGGER_SYSVIEW_OnTaskCreate((u32_t)(uintptr_t)thread); \
 		sys_trace_thread_info(thread);			       \
 	} while (0)
+
+#define sys_trace_thread_name_set(thread)
 
 #define sys_trace_thread_abort(thread)
 

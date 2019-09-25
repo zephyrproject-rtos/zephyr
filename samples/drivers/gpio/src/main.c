@@ -8,23 +8,23 @@
  * @file
  * @brief GPIO driver sample
  *
- * This sample toggles LED1 and wait interrupt on BUTTON1.
- * Note that an internet pull-up is set on BUTTON1 as the button
+ * This sample toggles LED1 and waits for an interrupt on BUTTON1.
+ * Note that an internal pull-up is set on BUTTON1 as the button
  * only drives low when pressed.
  */
 #include <zephyr.h>
 
-#include <misc/printk.h>
+#include <sys/printk.h>
 
 #include <device.h>
-#include <gpio.h>
-#include <misc/util.h>
+#include <drivers/gpio.h>
+#include <sys/util.h>
 
-#if defined(SW0_GPIO_CONTROLLER) && defined(LED0_GPIO_CONTROLLER)
-#define GPIO_OUT_DRV_NAME LED0_GPIO_CONTROLLER
-#define GPIO_OUT_PIN  LED0_GPIO_PIN
-#define GPIO_IN_DRV_NAME SW0_GPIO_CONTROLLER
-#define GPIO_INT_PIN  SW0_GPIO_PIN
+#if defined(DT_ALIAS_SW0_GPIOS_CONTROLLER) && defined(DT_ALIAS_LED0_GPIOS_CONTROLLER)
+#define GPIO_OUT_DRV_NAME DT_ALIAS_LED0_GPIOS_CONTROLLER
+#define GPIO_OUT_PIN  DT_ALIAS_LED0_GPIOS_PIN
+#define GPIO_IN_DRV_NAME DT_ALIAS_SW0_GPIOS_CONTROLLER
+#define GPIO_INT_PIN  DT_ALIAS_SW0_GPIOS_PIN
 #else
 #error Change the pins based on your configuration. This sample \
 	defaults to built-in buttons and LEDs

@@ -20,6 +20,7 @@ LOG_MODULE_REGISTER(net_ctx, CONFIG_NET_CONTEXT_LOG_LEVEL);
 
 #include <net/net_pkt.h>
 #include <net/net_ip.h>
+#include <net/socket.h>
 #include <net/net_context.h>
 #include <net/net_offload.h>
 #include <net/ethernet.h>
@@ -228,7 +229,12 @@ int net_context_get(sa_family_t family,
 			continue;
 		}
 
-		if (ip_proto == IPPROTO_TCP) {
+		memset(&contexts[i], 0, sizeof(contexts[i]));
+	/* FIXME - Figure out a way to get the correct network interface
+	 * as it is not known at this point yet.
+	 */
+		if (!net_if_is_ip_offloaded(net_if_get_default())
+			&& ip_proto == IPPROTO_TCP) {
 			if (net_tcp_get(&contexts[i]) < 0) {
 				break;
 			}
@@ -330,7 +336,8 @@ int net_context_unref(struct net_context *context)
 	net_tcp_unref(context);
 
 	if (context->conn_handler) {
-		if (IS_ENABLED(CONFIG_NET_TCP) || IS_ENABLED(CONFIG_NET_UDP)) {
+		if (IS_ENABLED(CONFIG_NET_TCP) || IS_ENABLED(CONFIG_NET_UDP) ||
+		    IS_ENABLED(CONFIG_NET_SOCKETS_CAN)) {
 			net_conn_unregister(context->conn_handler);
 		}
 
@@ -444,11 +451,11 @@ static int bind_default(struct net_context *context)
 		if (context->iface >= 0) {
 			return 0;
 		} else {
-#if defined(CONFIG_NET_L2_CANBUS)
+#if defined(CONFIG_NET_L2_CANBUS_RAW)
 			struct net_if *iface;
 
 			iface = net_if_get_first_by_type(
-						&NET_L2_GET_NAME(CANBUS));
+						&NET_L2_GET_NAME(CANBUS_RAW));
 			if (!iface) {
 				return -ENOENT;
 			}
@@ -1113,10 +1120,93 @@ static int get_context_timepstamp(struct net_context *context,
 #endif
 }
 
+static int get_context_proxy(struct net_context *context,
+			     void *value, size_t *len)
+{
+#if defined(CONFIG_SOCKS)
+	struct sockaddr *addr = (struct sockaddr *)value;
+
+	if (!value || !len) {
+		return -EINVAL;
+	}
+
+	if (*len < context->options.proxy.addrlen) {
+		return -EINVAL;
+	}
+
+	*len = MIN(context->options.proxy.addrlen, *len);
+
+	memcpy(addr, &context->options.proxy.addr, *len);
+
+	return 0;
+#else
+	return -ENOTSUP;
+#endif
+}
+
+#if defined(CONFIG_NET_CONTEXT_TIMESTAMP)
+int net_context_get_timestamp(struct net_context *context,
+			      struct net_pkt *pkt,
+			      struct net_ptp_time *timestamp)
+{
+	bool is_timestamped;
+
+	get_context_timepstamp(context, &is_timestamped, NULL);
+	if (is_timestamped) {
+		memcpy(timestamp, net_pkt_timestamp(pkt), sizeof(*timestamp));
+		return 0;
+	}
+
+	return -ENOENT;
+}
+#endif /* CONFIG_NET_CONTEXT_TIMESTAMP */
+
+static int get_context_txtime(struct net_context *context,
+			      void *value, size_t *len)
+{
+#if defined(CONFIG_NET_CONTEXT_TXTIME)
+	*((bool *)value) = context->options.txtime;
+
+	if (len) {
+		*len = sizeof(bool);
+	}
+
+	return 0;
+#else
+	return -ENOTSUP;
+#endif
+}
+
+/* If buf is not NULL, then use it. Otherwise read the data to be written
+ * to net_pkt from msghdr.
+ */
+static int context_write_data(struct net_pkt *pkt, const void *buf,
+			      int buf_len, const struct msghdr *msghdr)
+{
+	int ret = 0;
+
+	if (msghdr) {
+		int i;
+
+		for (i = 0; i < msghdr->msg_iovlen; i++) {
+			ret = net_pkt_write(pkt, msghdr->msg_iov[i].iov_base,
+					    msghdr->msg_iov[i].iov_len);
+			if (ret < 0) {
+				break;
+			}
+		}
+	} else {
+		ret = net_pkt_write(pkt, buf, buf_len);
+	}
+
+	return ret;
+}
+
 static int context_setup_udp_packet(struct net_context *context,
 				    struct net_pkt *pkt,
 				    const void *buf,
 				    size_t len,
+				    const struct msghdr *msg,
 				    const struct sockaddr *dst_addr,
 				    socklen_t addrlen)
 {
@@ -1158,7 +1248,7 @@ static int context_setup_udp_packet(struct net_context *context,
 		return ret;
 	}
 
-	ret = net_pkt_write(pkt, buf, len);
+	ret = context_write_data(pkt, buf, len, msg);
 	if (ret) {
 		return ret;
 	}
@@ -1221,6 +1311,22 @@ static struct net_pkt *context_alloc_pkt(struct net_context *context,
 	return pkt;
 }
 
+static void set_pkt_txtime(struct net_pkt *pkt, const struct msghdr *msghdr)
+{
+	struct cmsghdr *cmsg;
+
+	for (cmsg = CMSG_FIRSTHDR(msghdr); cmsg != NULL;
+	     cmsg = CMSG_NXTHDR(msghdr, cmsg)) {
+		if (cmsg->cmsg_len == CMSG_LEN(sizeof(u64_t)) &&
+		    cmsg->cmsg_level == SOL_SOCKET &&
+		    cmsg->cmsg_type == SCM_TXTIME) {
+			u64_t txtime = *(u64_t *)CMSG_DATA(cmsg);
+
+			net_pkt_set_txtime(pkt, txtime);
+			break;
+		}
+	}
+}
 
 static int context_sendto(struct net_context *context,
 			  const void *buf,
@@ -1232,6 +1338,7 @@ static int context_sendto(struct net_context *context,
 			  void *user_data,
 			  bool sendto)
 {
+	const struct msghdr *msghdr = NULL;
 	struct net_pkt *pkt;
 	size_t tmp_len;
 	int ret;
@@ -1242,7 +1349,12 @@ static int context_sendto(struct net_context *context,
 		return -EBADF;
 	}
 
-	if (!dst_addr &&
+	if (sendto && addrlen == 0 && dst_addr == NULL && buf != NULL) {
+		/* User wants to call sendmsg */
+		msghdr = buf;
+	}
+
+	if (!msghdr && !dst_addr &&
 	    !(IS_ENABLED(CONFIG_NET_SOCKETS_CAN) &&
 	      net_context_get_ip_proto(context) == CAN_RAW)) {
 		return -EDESTADDRREQ;
@@ -1250,7 +1362,22 @@ static int context_sendto(struct net_context *context,
 
 	if (IS_ENABLED(CONFIG_NET_IPV6) &&
 	    net_context_get_family(context) == AF_INET6) {
-		struct sockaddr_in6 *addr6 = (struct sockaddr_in6 *)dst_addr;
+		const struct sockaddr_in6 *addr6 =
+			(const struct sockaddr_in6 *)dst_addr;
+
+		if (msghdr) {
+			addr6 = msghdr->msg_name;
+			addrlen = msghdr->msg_namelen;
+
+			if (!addr6) {
+				addr6 = net_sin6(&context->remote);
+				addrlen = sizeof(struct sockaddr_in6);
+			}
+
+			/* For sendmsg(), the dst_addr is NULL so set it here.
+			 */
+			dst_addr = (const struct sockaddr *)addr6;
+		}
 
 		if (addrlen < sizeof(struct sockaddr_in6)) {
 			return -EINVAL;
@@ -1261,7 +1388,22 @@ static int context_sendto(struct net_context *context,
 		}
 	} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
 		   net_context_get_family(context) == AF_INET) {
-		struct sockaddr_in *addr4 = (struct sockaddr_in *)dst_addr;
+		const struct sockaddr_in *addr4 =
+			(const struct sockaddr_in *)dst_addr;
+
+		if (msghdr) {
+			addr4 = msghdr->msg_name;
+			addrlen = msghdr->msg_namelen;
+
+			if (!addr4) {
+				addr4 = net_sin(&context->remote);
+				addrlen = sizeof(struct sockaddr_in);
+			}
+
+			/* For sendmsg(), the dst_addr is NULL so set it here.
+			 */
+			dst_addr = (const struct sockaddr *)addr4;
+		}
 
 		if (addrlen < sizeof(struct sockaddr_in)) {
 			return -EINVAL;
@@ -1320,6 +1462,14 @@ static int context_sendto(struct net_context *context,
 		return -EINVAL;
 	}
 
+	if (msghdr && len == 0) {
+		int i;
+
+		for (i = 0; i < msghdr->msg_iovlen; i++) {
+			len += msghdr->msg_iov[i].iov_len;
+		}
+	}
+
 	pkt = context_alloc_pkt(context, len, PKT_WAIT_TIME);
 	if (!pkt) {
 		return -ENOMEM;
@@ -1347,16 +1497,47 @@ static int context_sendto(struct net_context *context,
 		get_context_timepstamp(context, &timestamp, NULL);
 		if (timestamp) {
 			struct net_ptp_time tp = {
-				.second = k_cycle_get_32(),
+				/* Use the nanosecond field to temporarily
+				 * store the cycle count as it is a 32-bit
+				 * variable. The value is checked in
+				 * net_if.c:net_if_tx()
+				 *
+				 * The net_pkt timestamp field is used in two
+				 * roles here:
+				 * 1) To calculate how long it takes the packet
+				 *    from net_context to be sent by the
+				 *    network device driver.
+				 * 2) gPTP enabled Ethernet device driver will
+				 *    use the value to tell gPTP what time the
+				 *    packet was sent.
+				 *
+				 * Because these two things are happening at
+				 * different times, we can share the variable.
+				 */
+				.nanosecond = k_cycle_get_32(),
 			};
 
 			net_pkt_set_timestamp(pkt, &tp);
 		}
 	}
 
+	/* If there is ancillary data in msghdr, then we need to add that
+	 * to net_pkt as there is no other way to store it.
+	 */
+	if (msghdr && msghdr->msg_control && msghdr->msg_controllen) {
+		if (IS_ENABLED(CONFIG_NET_CONTEXT_TXTIME)) {
+			bool is_txtime;
+
+			get_context_txtime(context, &is_txtime, NULL);
+			if (is_txtime) {
+				set_pkt_txtime(pkt, msghdr);
+			}
+		}
+	}
+
 	if (IS_ENABLED(CONFIG_NET_OFFLOAD) &&
 	    net_if_is_ip_offloaded(net_context_get_iface(context))) {
-		ret = net_pkt_write(pkt, buf, len);
+		ret = context_write_data(pkt, buf, len, msghdr);
 		if (ret < 0) {
 			goto fail;
 		}
@@ -1373,7 +1554,7 @@ static int context_sendto(struct net_context *context,
 		}
 	} else if (IS_ENABLED(CONFIG_NET_UDP) &&
 	    net_context_get_ip_proto(context) == IPPROTO_UDP) {
-		ret = context_setup_udp_packet(context, pkt, buf, len,
+		ret = context_setup_udp_packet(context, pkt, buf, len, msghdr,
 					       dst_addr, addrlen);
 		if (ret < 0) {
 			goto fail;
@@ -1384,7 +1565,7 @@ static int context_sendto(struct net_context *context,
 		ret = net_send_data(pkt);
 	} else if (IS_ENABLED(CONFIG_NET_TCP) &&
 		   net_context_get_ip_proto(context) == IPPROTO_TCP) {
-		ret = net_pkt_write(pkt, buf, len);
+		ret = context_write_data(pkt, buf, len, msghdr);
 		if (ret < 0) {
 			goto fail;
 		}
@@ -1398,7 +1579,7 @@ static int context_sendto(struct net_context *context,
 		ret = net_tcp_send_data(context, cb, user_data);
 	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) &&
 		   net_context_get_family(context) == AF_PACKET) {
-		ret = net_pkt_write(pkt, buf, len);
+		ret = context_write_data(pkt, buf, len, msghdr);
 		if (ret < 0) {
 			goto fail;
 		}
@@ -1409,7 +1590,7 @@ static int context_sendto(struct net_context *context,
 	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_CAN) &&
 		   net_context_get_family(context) == AF_CAN &&
 		   net_context_get_ip_proto(context) == CAN_RAW) {
-		ret = net_pkt_write(pkt, buf, len);
+		ret = context_write_data(pkt, buf, len, msghdr);
 		if (ret < 0) {
 			goto fail;
 		}
@@ -1477,6 +1658,24 @@ unlock:
 	return ret;
 }
 
+int net_context_sendmsg(struct net_context *context,
+			const struct msghdr *msghdr,
+			int flags,
+			net_context_send_cb_t cb,
+			s32_t timeout,
+			void *user_data)
+{
+	int ret;
+
+	k_mutex_lock(&context->lock, K_FOREVER);
+
+	ret = context_sendto(context, msghdr, 0, NULL, 0,
+			     cb, timeout, user_data, true);
+
+	k_mutex_unlock(&context->lock);
+
+	return ret;
+}
 
 int net_context_sendto(struct net_context *context,
 		       const void *buf,
@@ -1645,6 +1844,7 @@ static enum net_verdict net_context_raw_packet_received(
 static int recv_raw(struct net_context *context,
 		    net_context_recv_cb_t cb,
 		    s32_t timeout,
+		    struct sockaddr *local_addr,
 		    void *user_data)
 {
 	int ret;
@@ -1665,7 +1865,7 @@ static int recv_raw(struct net_context *context,
 
 	ret = net_conn_register(net_context_get_ip_proto(context),
 				net_context_get_family(context),
-				NULL, NULL, 0, 0,
+				NULL, local_addr, 0, 0,
 				net_context_raw_packet_received,
 				user_data,
 				&context->conn_handler);
@@ -1704,10 +1904,23 @@ int net_context_recv(struct net_context *context,
 	} else {
 		if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) &&
 		    net_context_get_family(context) == AF_PACKET) {
-			ret = recv_raw(context, cb, timeout, user_data);
+			ret = recv_raw(context, cb, timeout, NULL, user_data);
 		} else if (IS_ENABLED(CONFIG_NET_SOCKETS_CAN) &&
 			   net_context_get_family(context) == AF_CAN) {
-			ret = recv_raw(context, cb, timeout, user_data);
+			struct sockaddr_can local_addr = {
+				.can_family = AF_CAN,
+			};
+
+			ret = recv_raw(context, cb, timeout,
+				       (struct sockaddr *)&local_addr,
+				       user_data);
+			if (ret == -EALREADY) {
+				/* This is perfectly normal for CAN sockets.
+				 * The SocketCAN will dispatch the packet to
+				 * correct net_context listener.
+				 */
+				ret = 0;
+			}
 		} else {
 			ret = -EPROTOTYPE;
 		}
@@ -1751,6 +1964,11 @@ int net_context_update_recv_wnd(struct net_context *context,
 {
 	int ret;
 
+	if (IS_ENABLED(CONFIG_NET_OFFLOAD) &&
+		net_if_is_ip_offloaded(net_context_get_iface(context))) {
+		return 0;
+	}
+
 	k_mutex_lock(&context->lock, K_FOREVER);
 
 	ret = net_tcp_update_recv_wnd(context, delta);
@@ -1792,6 +2010,45 @@ static int set_context_timestamp(struct net_context *context,
 #endif
 }
 
+static int set_context_txtime(struct net_context *context,
+			      const void *value, size_t len)
+{
+#if defined(CONFIG_NET_CONTEXT_TXTIME)
+	if (len > sizeof(bool)) {
+		return -EINVAL;
+	}
+
+	context->options.txtime = *((bool *)value);
+
+	return 0;
+#else
+	return -ENOTSUP;
+#endif
+}
+
+static int set_context_proxy(struct net_context *context,
+			     const void *value, size_t len)
+{
+#if defined(CONFIG_SOCKS)
+	struct sockaddr *addr = (struct sockaddr *)value;
+
+	if (len > NET_SOCKADDR_MAX_SIZE) {
+		return -EINVAL;
+	}
+
+	if (addr->sa_family != net_context_get_family(context)) {
+		return -EINVAL;
+	}
+
+	context->options.proxy.addrlen = len;
+	memcpy(&context->options.proxy.addr, addr, len);
+
+	return 0;
+#else
+	return -ENOTSUP;
+#endif
+}
+
 int net_context_set_option(struct net_context *context,
 			   enum net_context_option option,
 			   const void *value, size_t len)
@@ -1812,6 +2069,12 @@ int net_context_set_option(struct net_context *context,
 		break;
 	case NET_OPT_TIMESTAMP:
 		ret = set_context_timestamp(context, value, len);
+		break;
+	case NET_OPT_TXTIME:
+		ret = set_context_txtime(context, value, len);
+		break;
+	case NET_OPT_SOCKS5:
+		ret = set_context_proxy(context, value, len);
 		break;
 	}
 
@@ -1840,6 +2103,12 @@ int net_context_get_option(struct net_context *context,
 		break;
 	case NET_OPT_TIMESTAMP:
 		ret = get_context_timepstamp(context, value, len);
+		break;
+	case NET_OPT_TXTIME:
+		ret = get_context_txtime(context, value, len);
+		break;
+	case NET_OPT_SOCKS5:
+		ret = get_context_proxy(context, value, len);
 		break;
 	}
 

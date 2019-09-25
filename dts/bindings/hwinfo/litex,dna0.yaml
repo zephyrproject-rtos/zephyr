@@ -1,0 +1,20 @@
+#
+# Copyright (c)  2019 Antmicro <www.antmicro.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+title: LiteX DNA
+description: >
+    This binding gives a base representation of the LiteX DNA
+inherits:
+        !include base.yaml
+
+properties:
+    compatible:
+      constraint: "litex,dna0"
+
+    reg:
+      category: required
+
+

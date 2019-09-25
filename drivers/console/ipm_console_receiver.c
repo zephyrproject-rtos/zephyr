@@ -9,12 +9,12 @@
 #include <errno.h>
 
 #include <kernel.h>
-#include <ring_buffer.h>
-#include <misc/printk.h>
+#include <sys/ring_buffer.h>
+#include <sys/printk.h>
 #include <stdio.h>
-#include <ipm.h>
+#include <drivers/ipm.h>
 #include <console/ipm_console.h>
-#include <misc/__assert.h>
+#include <sys/__assert.h>
 
 static void ipm_console_thread(void *arg1, void *arg2, void *arg3)
 {
@@ -146,7 +146,7 @@ int ipm_console_receiver_init(struct device *d)
 
 	k_thread_create(&driver_data->rx_thread, config_info->thread_stack,
 			CONFIG_IPM_CONSOLE_STACK_SIZE, ipm_console_thread, d,
-			NULL, NULL, K_PRIO_COOP(IPM_CONSOLE_PRI), 0, 0);
+			NULL, NULL, K_PRIO_COOP(IPM_CONSOLE_PRI), 0, K_NO_WAIT);
 	ipm_set_enabled(ipm, 1);
 
 	return 0;

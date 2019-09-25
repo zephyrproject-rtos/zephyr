@@ -5,10 +5,10 @@
  */
 
 #include <zephyr/types.h>
-#include <misc/__assert.h>
+#include <sys/__assert.h>
 #include <device.h>
 #include <errno.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 
 #include <driverlib/gpio.h>
 #include <driverlib/interrupt.h>

@@ -8,9 +8,9 @@
 #define ZEPHYR_DRIVERS_SENSOR_BMA280_BMA280_H_
 
 #include <device.h>
-#include <misc/util.h>
+#include <sys/util.h>
 #include <zephyr/types.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 
 #define BMA280_I2C_ADDRESS		CONFIG_BMA280_I2C_ADDR
 

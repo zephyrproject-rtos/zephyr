@@ -2,6 +2,8 @@
 
 if("${ARCH}" STREQUAL "x86")
   set_ifndef(QEMU_binary_suffix i386)
+elseif(DEFINED QEMU_ARCH)
+  set_ifndef(QEMU_binary_suffix ${QEMU_ARCH})
 else()
   set_ifndef(QEMU_binary_suffix ${ARCH})
 endif()
@@ -64,6 +66,9 @@ endif()
 # Add a BT serial device when building for bluetooth, unless the
 # application explicitly opts out with NO_QEMU_SERIAL_BT_SERVER.
 if(CONFIG_BT)
+  if(CONFIG_BT_NO_DRIVER)
+      set(NO_QEMU_SERIAL_BT_SERVER 1)
+  endif()
   if(NOT NO_QEMU_SERIAL_BT_SERVER)
     list(APPEND QEMU_FLAGS -serial unix:/tmp/bt-server-bredr)
   endif()
@@ -72,12 +77,15 @@ endif()
 # If we are running a networking application in QEMU, then set proper
 # QEMU variables. This also allows two QEMUs to be hooked together and
 # pass data between them. The QEMU flags are not set for standalone
-# tests defined by CONFIG_NET_TEST.
+# tests defined by CONFIG_NET_TEST. For PPP, the serial port file is
+# not available if we run unit tests which define CONFIG_NET_TEST.
 if(CONFIG_NETWORKING)
   if(CONFIG_NET_QEMU_SLIP)
     if((CONFIG_NET_SLIP_TAP) OR (CONFIG_IEEE802154_UPIPE))
       set(QEMU_NET_STACK 1)
     endif()
+  elseif((CONFIG_NET_QEMU_PPP) AND NOT (CONFIG_NET_TEST))
+      set(QEMU_NET_STACK 1)
   endif()
 endif()
 
@@ -140,15 +148,28 @@ elseif(QEMU_NET_STACK)
       # appending the instance name to the pid file we can easily run more
       # instances of the same sample.
 
-      if(${CMAKE_GENERATOR} STREQUAL "Unix Makefiles")
-        set(tmp_file unix:/tmp/slip.sock\${QEMU_INSTANCE})
+      if(CONFIG_NET_QEMU_PPP)
+	if(${CMAKE_GENERATOR} STREQUAL "Unix Makefiles")
+	  set(ppp_path unix:/tmp/ppp\${QEMU_INSTANCE})
+	else()
+	  set(ppp_path unix:/tmp/ppp${QEMU_INSTANCE})
+	endif()
+
+	list(APPEND MORE_FLAGS_FOR_${target}
+          -serial ${ppp_path}
+          )
       else()
-        set(tmp_file unix:/tmp/slip.sock${QEMU_INSTANCE})
+	if(${CMAKE_GENERATOR} STREQUAL "Unix Makefiles")
+          set(tmp_file unix:/tmp/slip.sock\${QEMU_INSTANCE})
+	else()
+          set(tmp_file unix:/tmp/slip.sock${QEMU_INSTANCE})
+	endif()
+
+	list(APPEND MORE_FLAGS_FOR_${target}
+          -serial ${tmp_file}
+          )
       endif()
 
-      list(APPEND MORE_FLAGS_FOR_${target}
-        -serial ${tmp_file}
-        )
     endif()
   endforeach()
 
@@ -212,11 +233,13 @@ elseif(QEMU_NET_STACK)
   endif()
 endif(QEMU_PIPE_STACK)
 
-if(CONFIG_X86_IAMCU)
+if(CONFIG_X86_LONGMODE)
+  # QEMU doesn't like 64-bit ELF files. Since we don't use any >4GB
+  # addresses, converting it to 32-bit is safe enough for emulation.
   list(APPEND PRE_QEMU_COMMANDS
     COMMAND
-    ${PYTHON_EXECUTABLE}
-    ${ZEPHYR_BASE}/scripts/qemu-machine-hack.py
+    ${CMAKE_OBJCOPY}
+    -O elf32-i386
     $<TARGET_FILE:${logical_target_for_zephyr_elf}>
     )
 endif()

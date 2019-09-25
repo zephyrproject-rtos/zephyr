@@ -16,6 +16,9 @@ config SOC_MEC1501_HSZ
 
 endchoice
 
+config RTOS_TIMER
+	bool "MEC1501 RTOS timer"
+
 config SOC_MEC1501_PROC_CLK_DIV
 	int "PROC_CLK_DIV"
 	default 1
@@ -41,7 +44,7 @@ config SOC_MEC1501_EXT_32K
 config SOC_MEC1501_EXT_32K_CRYSTAL
 	bool "External 32KHz is a crystal"
 	depends on SOC_MEC1501_EXT_32K
-	default y
+	default n
 	help
 	  Choose a crystal as the external 32KHz source.
 
@@ -54,7 +57,7 @@ config SOC_MEC1501_EXT_32K_CRYSTAL
 config SOC_MEC1501_EXT_32K_PARALLEL_CRYSTAL
 	bool "Use parallel connected 32KHz crystal"
 	depends on SOC_MEC1501_EXT_32K_CRYSTAL
-	default y
+	default n
 	help
 	  Choose external 32KHz crystal connection.
 

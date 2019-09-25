@@ -15,7 +15,7 @@
  */
 
 #include <ztest.h>
-#include <misc/util.h>
+#include <sys/util.h>
 
 #define TEST_DEFINE_1 1
 #define TEST_DEFINE_0 0

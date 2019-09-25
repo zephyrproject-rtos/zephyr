@@ -6,7 +6,7 @@
 
 #include <ztest.h>
 #include <irq_offload.h>
-#include <misc/stack.h>
+#include <debug/stack.h>
 
 #define SLEEP_MS 100
 #define TEST_STRING "TEST"

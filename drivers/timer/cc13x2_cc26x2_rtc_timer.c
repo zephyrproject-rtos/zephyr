@@ -1,0 +1,242 @@
+/*
+ * Copyright (c) 2019, Texas Instruments Incorporated
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * TI SimpleLink CC13X2/CC26X2 RTC-based system timer
+ *
+ * This system timer implementation supports both tickless and ticking modes.
+ * RTC counts continually in 64-bit mode and timeouts are
+ * scheduled using the RTC comparator. An interrupt is triggered whenever
+ * the comparator value set is reached.
+ */
+
+#include <soc.h>
+#include <drivers/clock_control.h>
+#include <drivers/timer/system_timer.h>
+#include <sys_clock.h>
+
+#include <driverlib/interrupt.h>
+#include <driverlib/aon_rtc.h>
+#include <driverlib/aon_event.h>
+
+#define RTC_COUNTS_PER_SEC 0x100000000ULL
+
+/* Number of counts per rtc timer cycle */
+#define RTC_COUNTS_PER_CYCLE (RTC_COUNTS_PER_SEC / \
+	sys_clock_hw_cycles_per_sec())
+
+/* Number of counts per system clock tick */
+#define RTC_COUNTS_PER_TICK (RTC_COUNTS_PER_SEC / \
+	CONFIG_SYS_CLOCK_TICKS_PER_SEC)
+
+/* Number of RTC cycles per system clock tick */
+#define CYCLES_PER_TICK (sys_clock_hw_cycles_per_sec() / \
+	CONFIG_SYS_CLOCK_TICKS_PER_SEC)
+
+/*
+ * Maximum number of ticks.
+ */
+#define MAX_TICKS (0x7FFFFFFFFFFFULL / RTC_COUNTS_PER_TICK)
+
+/*
+ * Due to the nature of clock synchronization, the comparator cannot be set
+ * to a value that is too close to the current time. This constant defines
+ * a safe threshold for the comparator.
+ */
+#define COMPARE_MARGIN 6
+
+/* RTC count of the last announce call, rounded down to tick boundary. */
+static volatile u64_t rtc_last;
+
+#ifdef CONFIG_TICKLESS_KERNEL
+static struct k_spinlock lock;
+#else
+static u64_t nextThreshold = RTC_COUNTS_PER_TICK;
+#endif /* CONFIG_TICKLESS_KERNEL */
+
+
+static void setThreshold(u32_t next)
+{
+	u32_t now;
+	unsigned int key;
+
+	key = irq_lock();
+
+	/* get the current RTC count corresponding to compare window */
+	now = AONRTCCurrentCompareValueGet();
+
+	/* if next is too soon, set at least one RTC tick in future */
+	/* assume next never be more than half the maximum 32 bit count value */
+	if ((next - now) > (u32_t)0x80000000) {
+		/* now is past next */
+		next = now + COMPARE_MARGIN;
+	} else if ((now + COMPARE_MARGIN - next) < (u32_t)0x80000000) {
+		if (next < now + COMPARE_MARGIN) {
+			next = now + COMPARE_MARGIN;
+		}
+	}
+
+	/* set next compare threshold in RTC */
+	AONRTCCompareValueSet(AON_RTC_CH0, next);
+
+	irq_unlock(key);
+}
+
+void rtc_isr(void *arg)
+{
+#ifndef CONFIG_TICKLESS_KERNEL
+	u64_t newThreshold;
+	u32_t next;
+#else
+	u64_t ticks, currCount;
+#endif
+
+	ARG_UNUSED(arg);
+
+	AONRTCEventClear(AON_RTC_CH0);
+
+#ifdef CONFIG_TICKLESS_KERNEL
+	k_spinlock_key_t key = k_spin_lock(&lock);
+	currCount = (u64_t)AONRTCCurrent64BitValueGet();
+	ticks = (currCount - rtc_last) / RTC_COUNTS_PER_TICK;
+
+	rtc_last += ticks * RTC_COUNTS_PER_TICK;
+	k_spin_unlock(&lock, key);
+
+	z_clock_announce(ticks);
+
+#else /* !CONFIG_TICKLESS_KERNEL */
+
+	/* calculate new 64-bit RTC count for next interrupt */
+	newThreshold = nextThreshold + RTC_COUNTS_PER_TICK;
+
+	next = (u32_t)((u64_t)newThreshold >> 16);
+	setThreshold(next);
+
+	nextThreshold = newThreshold;
+
+	rtc_last += RTC_COUNTS_PER_TICK;
+
+	z_clock_announce(1);
+
+#endif /* CONFIG_TICKLESS_KERNEL */
+}
+
+static void initDevice(void)
+{
+	AONRTCDisable();
+	AONRTCReset();
+
+	HWREG(AON_RTC_BASE + AON_RTC_O_SYNC) = 1;
+	/* read sync register to complete reset */
+	HWREG(AON_RTC_BASE + AON_RTC_O_SYNC);
+
+	AONRTCEventClear(AON_RTC_CH0);
+	IntPendClear(INT_AON_RTC_COMB);
+
+	HWREG(AON_RTC_BASE + AON_RTC_O_SYNC);
+}
+
+static void startDevice(void)
+{
+	u32_t compare;
+	u64_t period;
+	unsigned int key;
+
+	key = irq_lock();
+
+	/* reset timer */
+	AONRTCReset();
+	AONRTCEventClear(AON_RTC_CH0);
+	IntPendClear(INT_AON_RTC_COMB);
+
+	/*
+	 * set the compare register to one period.
+	 * For a very small period round up to interrupt upon 4th tick in
+	 * compare register
+	 */
+	period = RTC_COUNTS_PER_TICK;
+	if (period < 0x40000) {
+		compare = 0x4; /* 4 * 15.5us ~= 62us */
+	} else {
+		/* else, interrupt on first period expiration */
+		compare = period >> 16;
+	}
+
+	/* set the compare value at the RTC */
+	AONRTCCompareValueSet(AON_RTC_CH0, compare);
+
+	/* enable compare channel 0 */
+	AONEventMcuWakeUpSet(AON_EVENT_MCU_WU0, AON_EVENT_RTC0);
+	AONRTCChannelEnable(AON_RTC_CH0);
+	AONRTCCombinedEventConfig(AON_RTC_CH0);
+
+	/* start timer */
+	AONRTCEnable();
+
+	irq_unlock(key);
+}
+
+int z_clock_driver_init(struct device *device)
+{
+	ARG_UNUSED(device);
+
+	rtc_last = 0U;
+
+	initDevice();
+	startDevice();
+
+	/* Enable RTC interrupt. */
+	IRQ_CONNECT(DT_INST_0_TI_CC13XX_CC26XX_RTC_IRQ_0,
+		DT_INST_0_TI_CC13XX_CC26XX_RTC_IRQ_0_PRIORITY,
+		rtc_isr, 0, 0);
+	irq_enable(DT_INST_0_TI_CC13XX_CC26XX_RTC_IRQ_0);
+
+	return 0;
+}
+
+void z_clock_set_timeout(s32_t ticks, bool idle)
+{
+	ARG_UNUSED(idle);
+
+#ifdef CONFIG_TICKLESS_KERNEL
+
+	ticks = (ticks == K_FOREVER) ? MAX_TICKS : ticks;
+	ticks = MAX(MIN(ticks - 1, (s32_t) MAX_TICKS), 0);
+
+	k_spinlock_key_t key = k_spin_lock(&lock);
+
+	/* Compute number of RTC cycles until the next timeout. */
+	u64_t count = AONRTCCurrent64BitValueGet();
+	u64_t timeout = ticks * RTC_COUNTS_PER_TICK +
+		(count - rtc_last);
+
+	/* Round to the nearest tick boundary. */
+	timeout = (timeout + RTC_COUNTS_PER_TICK - 1) / RTC_COUNTS_PER_TICK
+		  * RTC_COUNTS_PER_TICK;
+
+	timeout += rtc_last;
+
+	/* Set the comparator */
+	setThreshold(timeout >> 16);
+
+	k_spin_unlock(&lock, key);
+#endif /* CONFIG_TICKLESS_KERNEL */
+}
+
+u32_t z_clock_elapsed(void)
+{
+	u32_t ret = (AONRTCCurrent64BitValueGet() - rtc_last) /
+		RTC_COUNTS_PER_TICK;
+
+	return ret;
+}
+
+u32_t z_timer_cycle_get_32(void)
+{
+	return (AONRTCCurrent64BitValueGet() / RTC_COUNTS_PER_CYCLE)
+		& 0xFFFFFFFF;
+}

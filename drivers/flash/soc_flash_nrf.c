@@ -12,12 +12,12 @@
 #include <device.h>
 #include <init.h>
 #include <soc.h>
-#include <flash.h>
+#include <drivers/flash.h>
 #include <string.h>
 #include <nrfx_nvmc.h>
 
 #if defined(CONFIG_SOC_FLASH_NRF_RADIO_SYNC)
-#include <misc/__assert.h>
+#include <sys/__assert.h>
 #include <bluetooth/hci.h>
 #include "controller/hal/ticker.h"
 #include "controller/ticker/ticker.h"

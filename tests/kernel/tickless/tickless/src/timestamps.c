@@ -14,7 +14,7 @@
 
 #include <tc_util.h>
 #include <stddef.h>
-#include <misc/__assert.h>
+#include <sys/__assert.h>
 
 #if defined(CONFIG_SOC_TI_LM3S6965_QEMU)
 /*

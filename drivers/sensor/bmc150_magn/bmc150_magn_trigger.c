@@ -5,10 +5,10 @@
  */
 
 #include <device.h>
-#include <gpio.h>
-#include <misc/util.h>
+#include <drivers/gpio.h>
+#include <sys/util.h>
 #include <kernel.h>
-#include <sensor.h>
+#include <drivers/sensor.h>
 
 #include "bmc150_magn.h"
 
@@ -143,7 +143,7 @@ int bmc150_magn_init_interrupt(struct device *dev)
 	k_thread_create(&data->thread, data->thread_stack,
 			CONFIG_BMC150_MAGN_TRIGGER_THREAD_STACK,
 			bmc150_magn_thread_main, dev, NULL, NULL,
-			K_PRIO_COOP(10), 0, 0);
+			K_PRIO_COOP(10), 0, K_NO_WAIT);
 
 	data->gpio_drdy = device_get_binding(config->gpio_drdy_dev_name);
 	if (!data->gpio_drdy) {

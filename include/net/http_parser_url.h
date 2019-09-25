@@ -20,14 +20,15 @@
  */
 #ifndef ZEPHYR_INCLUDE_NET_HTTP_PARSER_URL_H_
 #define ZEPHYR_INCLUDE_NET_HTTP_PARSER_URL_H_
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 #include <sys/types.h>
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <net/http_parser_state.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 enum http_parser_url_fields {
 	  UF_SCHEMA           = 0

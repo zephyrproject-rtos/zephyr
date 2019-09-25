@@ -10,11 +10,11 @@
 
 #include "vl53l0x_platform.h"
 
-#include <sensor.h>
+#include <drivers/sensor.h>
 #include <kernel.h>
 #include <device.h>
 #include <init.h>
-#include <i2c.h>
+#include <drivers/i2c.h>
 #include <logging/log.h>
 
 #define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL

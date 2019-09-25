@@ -17,12 +17,12 @@
  * @{
  */
 
+#include <bluetooth/buf.h>
+#include <bluetooth/conn.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <bluetooth/buf.h>
-#include <bluetooth/conn.h>
 
 /* RFCOMM channels (1-30): pre-allocated for profiles to avoid conflicts */
 enum {

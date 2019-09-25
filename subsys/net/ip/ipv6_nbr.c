@@ -972,17 +972,10 @@ struct net_nbr *net_ipv6_get_nbr(struct net_if *iface, u8_t idx)
 
 static inline u8_t get_llao_len(struct net_if *iface)
 {
-	if (net_if_get_link_addr(iface)->len == 6U) {
-		return 8;
-	} else if (net_if_get_link_addr(iface)->len == 8U) {
-		return 16;
-	}
+	u8_t total_len = net_if_get_link_addr(iface)->len +
+			 sizeof(struct net_icmpv6_nd_opt_hdr);
 
-	/* What else could it be? */
-	NET_ASSERT_INFO(0, "Invalid link address length %d",
-			net_if_get_link_addr(iface)->len);
-
-	return 0;
+	return ROUND_UP(total_len, 8U);
 }
 
 static inline bool set_llao(struct net_pkt *pkt,
@@ -1530,7 +1523,7 @@ static inline bool handle_na_neighbor(struct net_pkt *pkt,
 	}
 
 	if (tllao_offset) {
-		lladdr.len = net_if_get_link_addr(net_pkt_iface(pkt))->len;
+		lladdr.len = net_pkt_lladdr_src(pkt)->len;
 
 		net_pkt_cursor_init(pkt);
 
@@ -2182,6 +2175,7 @@ static inline bool handle_ra_prefix(struct net_pkt *pkt)
 	NET_PKT_DATA_ACCESS_DEFINE(rapfx_access,
 				   struct net_icmpv6_nd_opt_prefix_info);
 	struct net_icmpv6_nd_opt_prefix_info *pfx_info;
+	u32_t valid_lifetime, preferred_lifetime;
 
 	pfx_info = (struct net_icmpv6_nd_opt_prefix_info *)
 				net_pkt_get_data(pkt, &rapfx_access);
@@ -2191,17 +2185,17 @@ static inline bool handle_ra_prefix(struct net_pkt *pkt)
 
 	net_pkt_acknowledge_data(pkt, &rapfx_access);
 
-	pfx_info->valid_lifetime = ntohl(pfx_info->valid_lifetime);
-	pfx_info->preferred_lifetime = ntohl(pfx_info->preferred_lifetime);
+	valid_lifetime = ntohl(pfx_info->valid_lifetime);
+	preferred_lifetime = ntohl(pfx_info->preferred_lifetime);
 
-	if (pfx_info->valid_lifetime >= pfx_info->preferred_lifetime &&
+	if (valid_lifetime >= preferred_lifetime &&
 	    !net_ipv6_is_ll_addr(&pfx_info->prefix)) {
 		if (pfx_info->flags & NET_ICMPV6_RA_FLAG_ONLINK) {
 			handle_prefix_onlink(pkt, pfx_info);
 		}
 
 		if ((pfx_info->flags & NET_ICMPV6_RA_FLAG_AUTONOMOUS) &&
-		    pfx_info->valid_lifetime &&
+		    valid_lifetime &&
 		    (pfx_info->prefix_len == NET_IPV6_DEFAULT_PREFIX_LEN)) {
 			handle_prefix_autonomous(pkt, pfx_info);
 		}
@@ -2263,7 +2257,8 @@ static enum net_verdict handle_ra_input(struct net_pkt *pkt,
 	struct net_icmpv6_nd_opt_hdr *nd_opt_hdr;
 	struct net_icmpv6_ra_hdr *ra_hdr;
 	struct net_if_router *router;
-	u32_t mtu;
+	u32_t mtu, reachable_time, retrans_timer;
+	u16_t router_lifetime;
 
 	ra_hdr = (struct net_icmpv6_ra_hdr *)net_pkt_get_data(pkt, &ra_access);
 	if (!ra_hdr) {
@@ -2287,9 +2282,9 @@ static enum net_verdict handle_ra_input(struct net_pkt *pkt,
 
 	net_pkt_acknowledge_data(pkt, &ra_access);
 
-	ra_hdr->router_lifetime = ntohs(ra_hdr->router_lifetime);
-	ra_hdr->reachable_time = ntohl(ra_hdr->reachable_time);
-	ra_hdr->retrans_timer = ntohl(ra_hdr->retrans_timer);
+	router_lifetime = ntohs(ra_hdr->router_lifetime);
+	reachable_time = ntohl(ra_hdr->reachable_time);
+	retrans_timer = ntohl(ra_hdr->retrans_timer);
 
 	if (ra_hdr->cur_hop_limit) {
 		net_ipv6_set_hop_limit(net_pkt_iface(pkt),
@@ -2298,17 +2293,16 @@ static enum net_verdict handle_ra_input(struct net_pkt *pkt,
 			net_if_ipv6_get_hop_limit(net_pkt_iface(pkt)));
 	}
 
-	if (ra_hdr->reachable_time &&
-	    ra_hdr->reachable_time <= MAX_REACHABLE_TIME &&
+	if (reachable_time && reachable_time <= MAX_REACHABLE_TIME &&
 	    (net_if_ipv6_get_reachable_time(net_pkt_iface(pkt)) !=
-	     ra_hdr->reachable_time)) {
+	     reachable_time)) {
 		net_if_ipv6_set_base_reachable_time(net_pkt_iface(pkt),
-						    ra_hdr->reachable_time);
+						    reachable_time);
 		net_if_ipv6_set_reachable_time(
 			net_pkt_iface(pkt)->config.ip.ipv6);
 	}
 
-	if (ra_hdr->retrans_timer) {
+	if (retrans_timer) {
 		net_if_ipv6_set_retrans_timer(net_pkt_iface(pkt),
 					      ra_hdr->retrans_timer);
 	}
@@ -2397,7 +2391,7 @@ static enum net_verdict handle_ra_input(struct net_pkt *pkt,
 
 	router = net_if_ipv6_router_lookup(net_pkt_iface(pkt), &ip_hdr->src);
 	if (router) {
-		if (!ra_hdr->router_lifetime) {
+		if (!router_lifetime) {
 			/* TODO: Start rs_timer on iface if no routers
 			 * at all available on iface.
 			 */
@@ -2408,11 +2402,11 @@ static enum net_verdict handle_ra_input(struct net_pkt *pkt,
 			}
 
 			net_if_ipv6_router_update_lifetime(
-					router, ra_hdr->router_lifetime);
+					router, router_lifetime);
 		}
 	} else {
 		net_if_ipv6_router_add(net_pkt_iface(pkt),
-				       &ip_hdr->src, ra_hdr->router_lifetime);
+				       &ip_hdr->src, router_lifetime);
 	}
 
 	if (nbr && net_ipv6_nbr_data(nbr)->pending) {
@@ -2429,7 +2423,7 @@ static enum net_verdict handle_ra_input(struct net_pkt *pkt,
 	}
 
 	/* Cancel the RS timer on iface */
-	k_delayed_work_cancel(&net_pkt_iface(pkt)->config.ip.ipv6->rs_timer);
+	net_if_stop_rs(net_pkt_iface(pkt));
 
 	net_pkt_unref(pkt);
 

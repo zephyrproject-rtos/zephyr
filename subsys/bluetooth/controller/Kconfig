@@ -16,12 +16,20 @@ if BT_CTLR
 
 choice BT_LL_CHOICE
 	prompt "Bluetooth Link Layer Selection"
-	default BT_LL_SW
 	help
 	  Select the Bluetooth Link Layer to compile.
 
-config BT_LL_SW
+config BT_LL_SW_SPLIT
 	bool "Software-based BLE Link Layer"
+	select BT_RECV_IS_RX_THREAD
+	select ENTROPY_GENERATOR
+	help
+	  Use Zephyr software BLE Link Layer ULL LLL split implementation.
+
+config BT_LL_SW_LEGACY
+	# NOTE: This OLD architecture implementation will be deprecated, with
+	#       no further new feature development.
+	bool "Software-based BLE Link Layer (deprecated)"
 	select BT_RECV_IS_RX_THREAD
 	select BT_HAS_HCI_VS
 	select ENTROPY_GENERATOR
@@ -29,13 +37,6 @@ config BT_LL_SW
 	select ENTROPY_NRF5_BIAS_CORRECTION if SOC_COMPATIBLE_NRF
 	help
 	  Use Zephyr software BLE Link Layer implementation.
-
-config BT_LL_SW_SPLIT
-	bool "Software-based BLE Link Layer (ULL/LLL split)"
-	select BT_RECV_IS_RX_THREAD
-	select ENTROPY_GENERATOR
-	help
-	  Use Zephyr software BLE Link Layer ULL LLL split implementation.
 
 endchoice
 
@@ -200,6 +201,19 @@ config BT_CTLR_TX_PWR_MINUS_40
 
 endchoice
 
+config BT_CTLR_SETTINGS
+	bool "Settings System"
+	depends on BT_SETTINGS
+	help
+	  Enable use of settings system in controller.
+
+config BT_CTLR_VERSION_SETTINGS
+	bool "Version Settings"
+	depends on BT_CTLR_SETTINGS
+	help
+	  Make Company Id and Subversion Number configurable through
+	  settings system.
+
 config BT_CTLR_COMPANY_ID
 	hex "Company Id"
 	default 0x05F1
@@ -330,7 +344,6 @@ config BT_CTLR_ADV_EXT
 	bool "LE Advertising Extensions"
 	select BT_CTLR_SCAN_REQ_NOTIFY
 	select BT_CTLR_CHAN_SEL_2
-	default y
 	help
 	  Enable support for Bluetooth 5.0 LE Advertising Extensions in the
 	  Controller.
@@ -393,13 +406,13 @@ config BT_CTLR_PHY_2M
 
 config BT_CTLR_PHY_CODED
 	bool "Coded PHY Support"
-	depends on (BT_CTLR_PHY || BT_CTLR_ADV_EXT) && SOC_NRF52840
+	depends on (BT_CTLR_PHY || BT_CTLR_ADV_EXT) && HAS_HW_NRF_RADIO_BLE_CODED
 	default y
 	help
 	  Enable support for Bluetooth 5.0 Coded PHY in the Controller.
 endif # BT_PHY_UPDATE
 
-if BT_LL_SW
+if BT_LL_SW_LEGACY
 
 config BT_CTLR_WORKER_PRIO
 	int "Radio and Ticker's Worker IRQ priority"
@@ -419,7 +432,7 @@ config BT_CTLR_JOB_PRIO
 	  The interrupt priority for Ticker's Job (SWI4) IRQ. This value shall
 	  be greater than or equal to the Ticker's Worker IRQ priority value.
 
-endif # BT_LL_SW
+endif # BT_LL_SW_LEGACY
 
 config BT_CTLR_XTAL_ADVANCED
 	bool "Advanced event preparation"
@@ -559,6 +572,7 @@ if BT_CONN
 config BT_CTLR_FAST_ENC
 	bool "Fast Encryption Setup"
 	depends on BT_CTLR_LE_ENC
+	default y if BT_HCI_RAW
 	help
 	  Enable connection encryption setup in 3 connection intervals.
 	  Peripheral will respond to Encryption Request with Encryption Response
@@ -569,6 +583,19 @@ config BT_CTLR_FAST_ENC
 	  connection establishment.
 	  Maximum CPU time in Radio ISR will increase if this feature is
 	  selected.
+
+config BT_CTLR_LLID_DATA_START_EMPTY
+	bool "Handle zero length L2CAP start frame"
+	default y if BT_HCI_RAW
+	help
+	  Handle zero length L2CAP start frame.
+
+config BT_CTLR_RX_ENQUEUE_HOLD
+	bool "Procedure Complete after on-air instant"
+	default y if BT_HCI_RAW
+	help
+	  Hold enqueue of Procedure Complete events with instant until after the
+	  on-air instant is reached.
 
 config BT_CTLR_TX_RETRY_DISABLE
 	bool "Disable Tx Retry"
@@ -585,6 +612,7 @@ config BT_CTLR_TX_RETRY_DISABLE
 
 config BT_CTLR_CONN_RSSI
 	bool "Connection RSSI"
+	default y if BT_HCI_RAW
 	help
 	  Enable connection RSSI measurement.
 
@@ -622,6 +650,15 @@ config BT_MAYFLY_YIELD_AFTER_CALL
 	  If set to 'n', all pending mayflies for callee are executed before
 	  yielding
 
+config BT_TICKER_COMPATIBILITY_MODE
+	bool "Ticker compatibility mode"
+	default y if SOC_SERIES_NRF51X
+	help
+	  This option enables legacy ticker scheduling which defers overlapping
+	  ticker node timeouts and thereby prevents ticker interrupts during
+	  radio RX/TX. Enabling this option disables the ticker priority- and
+	  'must expire' features.
+
 config BT_CTLR_USER_EXT
 	prompt "Enable proprietary extensions in Controller"
 	depends on BT_LL_SW_SPLIT
@@ -630,7 +667,7 @@ config BT_CTLR_USER_EXT
 	  Catch-all for enabling proprietary event types in Controller behavior.
 
 config BT_CTLR_USER_EVT_RANGE
-	int "Range of event contants reserved for proprietary event types"
+	int "Range of event constants reserved for proprietary event types"
 	depends on BT_CTLR_USER_EXT
 	default 5
 	range 0 10
@@ -664,6 +701,8 @@ if BT_CTLR_GPIO_PA
 
 config BT_CTLR_GPIO_PA_PIN
 	int "Power Amplifier GPIO pin number"
+	range 0 47 if SOC_NRF52840
+	range 0 31
 	help
 	  GPIO Pin number connected to a Power Amplifier.
 
@@ -693,6 +732,8 @@ if BT_CTLR_GPIO_LNA
 
 config BT_CTLR_GPIO_LNA_PIN
 	int "Low Noise Amplifier GPIO pin number"
+	range 0 47 if SOC_NRF52840
+	range 0 31
 	help
 	  GPIO Pin number connected to a Low Noise Amplifier.
 
@@ -722,12 +763,11 @@ config BT_CTLR_PA_LNA_GPIOTE_CHAN
 comment "BLE Controller debug configuration"
 
 config BT_CTLR_ASSERT_HANDLER
-	bool "Bluetooth Controller Assertion Handler"
-	depends on BT_HCI_RAW
+	bool "Application Defined Assertion Handler"
 	help
 	  This option enables an application-defined sink for the
 	  controller assertion mechanism. This must be defined in
-	  application code as void \"bt_controller_assert_handle(char \*, int)\"
+	  application code as void \"bt_ctlr_assert_handle(char \*, int)\"
 	  and will be invoked whenever the controller code encounters
 	  an unrecoverable error.
 

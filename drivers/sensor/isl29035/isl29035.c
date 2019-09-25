@@ -8,9 +8,9 @@
 
 #include <kernel.h>
 #include <init.h>
-#include <i2c.h>
-#include <sensor.h>
-#include <misc/__assert.h>
+#include <drivers/i2c.h>
+#include <drivers/sensor.h>
+#include <sys/__assert.h>
 #include <logging/log.h>
 
 #include "isl29035.h"

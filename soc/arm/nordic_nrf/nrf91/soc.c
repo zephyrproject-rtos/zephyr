@@ -15,7 +15,6 @@
 #include <kernel.h>
 #include <init.h>
 #include <cortex_m/exc.h>
-#include <nrfx.h>
 #include <soc/nrfx_coredep.h>
 #include <logging/log.h>
 

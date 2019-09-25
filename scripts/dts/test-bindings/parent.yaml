@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: BSD-3-Clause
+
+title: Parent binding
+description: Parent binding
+
+compatible: "binding-include-test"
+
+include: child.yaml
+
+properties:
+    foo:
+        # Changed from not being required in grandchild-1.yaml
+        required: true
+        # Type set in grandchild

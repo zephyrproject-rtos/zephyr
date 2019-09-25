@@ -70,6 +70,35 @@ void test_poll_no_wait(void)
 					 NULL),
 	};
 
+#ifdef CONFIG_USERSPACE
+	/* Test that k_poll() syscall handler safely handles being
+	 * fed garbage
+	 *
+	 * TODO: Where possible migrate these to the main k_poll()
+	 * implementation
+	 */
+
+	zassert_equal(k_poll(events, 0, 0), -EINVAL, NULL);
+	zassert_equal(k_poll(events, INT_MAX, 0), -EINVAL, NULL);
+	zassert_equal(k_poll(events, 4096, 0), -ENOMEM, NULL);
+
+	struct k_poll_event bad_events[] = {
+		K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SEM_AVAILABLE,
+					 K_POLL_NUM_MODES,
+					 &no_wait_sem),
+	};
+	zassert_equal(k_poll(bad_events, ARRAY_SIZE(bad_events), 0), -EINVAL,
+		      NULL);
+
+	struct k_poll_event bad_events2[] = {
+		K_POLL_EVENT_INITIALIZER(0xFU,
+					 K_POLL_MODE_NOTIFY_ONLY,
+					 &no_wait_sem),
+	};
+	zassert_equal(k_poll(bad_events2, ARRAY_SIZE(bad_events), 0), -EINVAL,
+		      NULL);
+#endif /* CONFIG_USERSPACE */
+
 	/* test polling events that are already ready */
 	zassert_false(k_fifo_alloc_put(&no_wait_fifo, &msg), NULL);
 	k_poll_signal_raise(&no_wait_signal, SIGNAL_RESULT);

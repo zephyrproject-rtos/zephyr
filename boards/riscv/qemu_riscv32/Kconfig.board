@@ -1,0 +1,6 @@
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_QEMU_RISCV32
+	bool "QEMU RISCV32 target"
+	depends on SOC_RISCV_SIFIVE_FREEDOM
+	select QEMU_TARGET

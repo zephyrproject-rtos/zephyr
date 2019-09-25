@@ -1,0 +1,32 @@
+#
+# Copyright (c) 2019 Antmicro
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig ETH_LITEETH
+	bool "LiteEth Ethernet core driver"
+
+if ETH_LITEETH
+
+config ETH_LITEETH_0
+	bool "LiteEth Ethernet port 0"
+
+if ETH_LITEETH_0
+
+config ETH_LITEETH_0_IRQ_PRI
+	int "LiteEth interrupt priority"
+	default 0
+	help
+	    IRQ priority
+
+config ETH_LITEETH_0_RANDOM_MAC
+	bool "Random MAC address"
+	depends on ENTROPY_GENERATOR
+	default n
+	help
+	  Generate a random MAC address dynamically.
+
+endif # ETH_LITEETH_0
+
+endif # ETH_LITEETH

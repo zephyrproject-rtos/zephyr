@@ -39,23 +39,21 @@ void lifo_test_init(void)
 void lifo_thread1(void *par1, void *par2, void *par3)
 {
 	int i;
-	int element_a[2];
-	int element_b[2];
-	int *pelement;
+	intptr_t element_a[2];
+	intptr_t element_b[2];
+	intptr_t *pelement;
 	int num_loops = POINTER_TO_INT(par2);
 
 	ARG_UNUSED(par1);
 
 	for (i = 0; i < num_loops / 2; i++) {
-		pelement = (int *)k_lifo_get(&lifo1,
-						      K_FOREVER);
+		pelement = k_lifo_get(&lifo1, K_FOREVER);
 		if (pelement[1] != 2 * i) {
 			break;
 		}
 		element_a[1] = 2 * i;
 		k_lifo_put(&lifo2, element_a);
-		pelement = (int *)k_lifo_get(&lifo1,
-						      K_FOREVER);
+		pelement = k_lifo_get(&lifo1, K_FOREVER);
 		if (pelement[1] != 2 * i + 1) {
 			break;
 		}
@@ -80,16 +78,15 @@ void lifo_thread1(void *par1, void *par2, void *par3)
 void lifo_thread2(void *par1, void *par2, void *par3)
 {
 	int i;
-	int element[2];
-	int *pelement;
+	intptr_t element[2];
+	intptr_t *pelement;
 	int *pcounter = par1;
 	int num_loops = POINTER_TO_INT(par2);
 
 	for (i = 0; i < num_loops; i++) {
 		element[1] = i;
 		k_lifo_put(&lifo1, element);
-		pelement = (int *)k_lifo_get(&lifo2,
-						      K_FOREVER);
+		pelement = k_lifo_get(&lifo2, K_FOREVER);
 		if (pelement[1] != i) {
 			break;
 		}
@@ -112,16 +109,15 @@ void lifo_thread2(void *par1, void *par2, void *par3)
 void lifo_thread3(void *par1, void *par2, void *par3)
 {
 	int i;
-	int element[2];
-	int *pelement;
+	intptr_t element[2];
+	intptr_t *pelement;
 	int *pcounter = par1;
 	int num_loops = POINTER_TO_INT(par2);
 
 	for (i = 0; i < num_loops; i++) {
 		element[1] = i;
 		k_lifo_put(&lifo1, element);
-		while ((pelement = k_lifo_get(&lifo2,
-							K_NO_WAIT)) == NULL) {
+		while ((pelement = k_lifo_get(&lifo2, K_NO_WAIT)) == NULL) {
 			k_yield();
 		}
 		if (pelement[1] != i) {
@@ -144,7 +140,7 @@ int lifo_test(void)
 	u32_t t;
 	int i = 0;
 	int return_value = 0;
-	int element[2];
+	intptr_t element[2];
 	int j;
 
 	k_fifo_init(&sync_fifo);
@@ -176,7 +172,7 @@ int lifo_test(void)
 
 	/* threads have done their job, they can stop now safely: */
 	for (j = 0; j < 2; j++) {
-		k_fifo_put(&sync_fifo, (void *) element);
+		k_fifo_put(&sync_fifo, element);
 	}
 
 	/* test get/yield & put thread functions between co-op threads */
@@ -210,7 +206,7 @@ int lifo_test(void)
 
 	/* threads have done their job, they can stop now safely: */
 	for (j = 0; j < 2; j++) {
-		k_fifo_put(&sync_fifo, (void *) element);
+		k_fifo_put(&sync_fifo, element);
 	}
 
 	/* test get wait & put functions between co-op and premptive threads */
@@ -232,21 +228,19 @@ int lifo_test(void)
 			 NULL, INT_TO_POINTER(number_of_loops), NULL,
 			 K_PRIO_COOP(3), 0, K_NO_WAIT);
 	for (i = 0; i < number_of_loops / 2U; i++) {
-		int element[2];
-		int *pelement;
+		intptr_t element[2];
+		intptr_t *pelement;
 
 		element[1] = 2 * i;
 		k_lifo_put(&lifo1, element);
 		element[1] = 2 * i + 1;
 		k_lifo_put(&lifo1, element);
 
-		pelement = (int *)k_lifo_get(&lifo2,
-						     K_FOREVER);
+		pelement = k_lifo_get(&lifo2, K_FOREVER);
 		if (pelement[1] != 2 * i + 1) {
 			break;
 		}
-		pelement = (int *)k_lifo_get(&lifo2,
-						     K_FOREVER);
+		pelement = k_lifo_get(&lifo2, K_FOREVER);
 		if (pelement[1] != 2 * i) {
 			break;
 		}
@@ -258,7 +252,7 @@ int lifo_test(void)
 
 	/* threads have done their job, they can stop now safely: */
 	for (j = 0; j < 2; j++) {
-		k_fifo_put(&sync_fifo, (void *) element);
+		k_fifo_put(&sync_fifo, element);
 	}
 
 	return return_value;

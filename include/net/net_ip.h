@@ -23,8 +23,8 @@
 #include <string.h>
 #include <zephyr/types.h>
 #include <stdbool.h>
-#include <misc/util.h>
-#include <misc/byteorder.h>
+#include <sys/util.h>
+#include <sys/byteorder.h>
 #include <toolchain.h>
 
 #include <net/net_linkaddr.h>
@@ -44,13 +44,15 @@ extern "C" {
 #define PF_INET6        2          /**< IP protocol family version 6. */
 #define PF_PACKET       3          /**< Packet family.                */
 #define PF_CAN          4          /**< Controller Area Network.      */
+#define PF_NET_MGMT     5          /**< Network management info.      */
 
 /* Address families. */
-#define AF_UNSPEC       PF_UNSPEC  /**< Unspecified address family.   */
-#define AF_INET         PF_INET    /**< IP protocol family version 4. */
-#define AF_INET6        PF_INET6   /**< IP protocol family version 6. */
-#define AF_PACKET       PF_PACKET  /**< Packet family.                */
-#define AF_CAN          PF_CAN     /**< Controller Area Network.      */
+#define AF_UNSPEC      PF_UNSPEC   /**< Unspecified address family.   */
+#define AF_INET        PF_INET     /**< IP protocol family version 4. */
+#define AF_INET6       PF_INET6    /**< IP protocol family version 6. */
+#define AF_PACKET      PF_PACKET   /**< Packet family.                */
+#define AF_CAN         PF_CAN      /**< Controller Area Network.      */
+#define AF_NET_MGMT    PF_NET_MGMT /**< Network management info.      */
 
 /** Protocol numbers from IANA/BSD */
 enum net_ip_protocol {
@@ -60,6 +62,7 @@ enum net_ip_protocol {
 	IPPROTO_UDP = 17,          /**< UDP protocol    */
 	IPPROTO_IPV6 = 41,         /**< IPv6 protocol   */
 	IPPROTO_ICMPV6 = 58,       /**< ICMPv6 protocol */
+	IPPROTO_RAW = 255,         /**< RAW IP packets  */
 };
 
 /** Protocol numbers for TLS protocols */
@@ -209,6 +212,69 @@ struct sockaddr_can_ptr {
 	sa_family_t can_family;
 	int         can_ifindex;
 };
+
+#if !defined(HAVE_IOVEC)
+struct iovec {
+	void  *iov_base;
+	size_t iov_len;
+};
+#endif
+
+struct msghdr {
+	void         *msg_name;       /* optional socket address */
+	socklen_t     msg_namelen;    /* size of socket address */
+	struct iovec *msg_iov;        /* scatter/gather array */
+	size_t        msg_iovlen;     /* number of elements in msg_iov */
+	void         *msg_control;    /* ancillary data */
+	size_t        msg_controllen; /* ancillary data buffer len */
+	int           msg_flags;      /* flags on received message */
+};
+
+struct cmsghdr {
+	socklen_t cmsg_len;    /* Number of bytes, including header */
+	int       cmsg_level;  /* Originating protocol */
+	int       cmsg_type;   /* Protocol-specific type */
+	/* Followed by unsigned char cmsg_data[]; */
+};
+
+/* Alignment for headers and data. These are arch specific but define
+ * them here atm if not found alredy.
+ */
+#if !defined(ALIGN_H)
+#define ALIGN_H(x) WB_UP(x)
+#endif
+#if !defined(ALIGN_D)
+#define ALIGN_D(x) WB_UP(x)
+#endif
+
+#if !defined(CMSG_FIRSTHDR)
+#define CMSG_FIRSTHDR(msghdr)					\
+	((msghdr)->msg_controllen >= sizeof(struct cmsghdr) ?	\
+	 (struct cmsghdr *)((msghdr)->msg_control) : NULL)
+#endif
+
+#if !defined(CMSG_NXTHDR)
+#define CMSG_NXTHDR(msghdr, cmsg)					 \
+	(((cmsg) == NULL) ? CMSG_FIRSTHDR(msghdr) :			 \
+	 (((u8_t *)(cmsg) + ALIGN_H((cmsg)->cmsg_len)	+		 \
+	   ALIGN_D(sizeof(struct cmsghdr)) >				 \
+	   (u8_t *)((msghdr)->msg_control) + (msghdr)->msg_controllen) ? \
+	  NULL :							 \
+	  (struct cmsghdr *)((u8_t *)(cmsg) +				 \
+			     ALIGN_H((cmsg)->cmsg_len))))
+#endif
+
+#if !defined(CMSG_DATA)
+#define CMSG_DATA(cmsg) ((u8_t *)(cmsg) + ALIGN_D(sizeof(struct cmsghdr)))
+#endif
+
+#if !defined(CMSG_SPACE)
+#define CMSG_SPACE(length) (ALIGN_D(sizeof(struct cmsghdr)) + ALIGN_H(length))
+#endif
+
+#if !defined(CMSG_LEN)
+#define CMSG_LEN(length) (ALIGN_D(sizeof(struct cmsghdr)) + length)
+#endif
 
 /** @cond INTERNAL_HIDDEN */
 
@@ -735,6 +801,7 @@ extern bool net_if_ipv4_is_addr_bcast(struct net_if *iface,
  *
  * @return True if address is a broadcast address, false otherwise.
  */
+#if defined(CONFIG_NET_NATIVE_IPV4)
 static inline bool net_ipv4_is_addr_bcast(struct net_if *iface,
 					  const struct in_addr *addr)
 {
@@ -744,6 +811,16 @@ static inline bool net_ipv4_is_addr_bcast(struct net_if *iface,
 
 	return net_if_ipv4_is_addr_bcast(iface, addr);
 }
+#else
+static inline bool net_ipv4_is_addr_bcast(struct net_if *iface,
+					  const struct in_addr *addr)
+{
+	ARG_UNUSED(iface);
+	ARG_UNUSED(addr);
+
+	return false;
+}
+#endif
 
 extern struct net_if_addr *net_if_ipv4_addr_lookup(const struct in_addr *addr,
 						   struct net_if **iface);
@@ -973,7 +1050,8 @@ static inline void net_ipv6_addr_create_iid(struct in6_addr *addr,
 		/* The generated IPv6 shall not toggle the
 		 * Universal/Local bit. RFC 6282 ch 3.2.2
 		 */
-		if (lladdr->type == NET_LINK_IEEE802154) {
+		if (lladdr->type == NET_LINK_IEEE802154 ||
+		    lladdr->type == NET_LINK_CANBUS) {
 			UNALIGNED_PUT(0, &addr->s6_addr32[2]);
 			addr->s6_addr[11] = 0xff;
 			addr->s6_addr[12] = 0xfe;
@@ -1171,7 +1249,7 @@ struct sockaddr_can_ptr *net_can_ptr(const struct sockaddr_ptr *addr)
  *
  * @return 0 if ok, < 0 if error
  */
-int net_addr_pton(sa_family_t family, const char *src, void *dst);
+__syscall int net_addr_pton(sa_family_t family, const char *src, void *dst);
 
 /**
  * @brief Convert IP address to string form.
@@ -1184,8 +1262,8 @@ int net_addr_pton(sa_family_t family, const char *src, void *dst);
  *
  * @return dst pointer if ok, NULL if error
  */
-char *net_addr_ntop(sa_family_t family, const void *src,
-		    char *dst, size_t size);
+__syscall char *net_addr_ntop(sa_family_t family, const void *src,
+			      char *dst, size_t size);
 
 /**
  * @brief Parse a string that contains either IPv4 or IPv6 address
@@ -1318,9 +1396,21 @@ static inline u8_t net_priority2vlan(enum net_priority priority)
 	return (u8_t)net_vlan2priority(priority);
 }
 
+/**
+ * @brief Return network address family value as a string. This is only usable
+ * for debugging.
+ *
+ * @param family Network address family code
+ *
+ * @return Network address family as a string, or NULL if family is unknown.
+ */
+const char *net_family2str(sa_family_t family);
+
 #ifdef __cplusplus
 }
 #endif
+
+#include <syscalls/net_ip.h>
 
 /**
  * @}

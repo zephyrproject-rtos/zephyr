@@ -23,7 +23,7 @@
 
 #include <stdint.h>
 #include <nffs/nffs.h>
-#include <fs.h>
+#include <fs/fs.h>
 #include "nffs_test_utils.h"
 #include <ztest_assert.h>
 
@@ -73,7 +73,7 @@ void test_rename(void)
 
 	/* Don't allow a directory to be moved into a descendent directory. */
 	rc = nffs_path_rename("/mydir", "/mydir/leafdir/a");
-	zassert_equal(rc, FS_EINVAL, "directory moved to decendent dir");
+	zassert_equal(rc, FS_EINVAL, "directory moved to descendant dir");
 
 	rc = nffs_path_rename("/mydir", "/mydir2");
 	zassert_equal(rc, 0, "cannot rename directory");

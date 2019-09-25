@@ -14,8 +14,8 @@
 #include <zephyr.h>
 #include <offsets_short.h>
 #include <kernel.h>
-#include <misc/printk.h>
-#include <misc/stack.h>
+#include <sys/printk.h>
+#include <debug/stack.h>
 #include <random/rand32.h>
 #include <linker/sections.h>
 #include <toolchain.h>
@@ -26,14 +26,14 @@
 #include <ksched.h>
 #include <version.h>
 #include <string.h>
-#include <misc/dlist.h>
+#include <sys/dlist.h>
 #include <kernel_internal.h>
 #include <kswap.h>
-#include <entropy.h>
+#include <drivers/entropy.h>
 #include <logging/log_ctrl.h>
-#include <tracing.h>
+#include <debug/tracing.h>
 #include <stdbool.h>
-#include <misc/gcov.h>
+#include <debug/gcov.h>
 
 #define IDLE_THREAD_NAME	"idle"
 #define LOG_LEVEL CONFIG_KERNEL_LOG_LEVEL
@@ -50,10 +50,10 @@ LOG_MODULE_REGISTER(os);
 #endif
 
 #ifdef BUILD_VERSION
-#define BOOT_BANNER "Booting Zephyr OS "	\
+#define BOOT_BANNER "Booting Zephyr OS build "		\
 	 STRINGIFY(BUILD_VERSION) BOOT_DELAY_BANNER
 #else
-#define BOOT_BANNER "Booting Zephyr OS "	\
+#define BOOT_BANNER "Booting Zephyr OS version "	\
 	 KERNEL_VERSION_STRING BOOT_DELAY_BANNER
 #endif
 
@@ -66,9 +66,8 @@ LOG_MODULE_REGISTER(os);
 /* boot time measurement items */
 
 #ifdef CONFIG_BOOT_TIME_MEASUREMENT
-u64_t __noinit __start_time_stamp; /* timestamp when kernel starts */
-u64_t __noinit __main_time_stamp;  /* timestamp when main task starts */
-u64_t __noinit __idle_time_stamp;  /* timestamp when CPU goes idle */
+u32_t __noinit __main_time_stamp;  /* timestamp when main task starts */
+u32_t __noinit __idle_time_stamp;  /* timestamp when CPU goes idle */
 #endif
 
 /* init/main and idle threads */
@@ -133,6 +132,13 @@ K_THREAD_STACK_DEFINE(_interrupt_stack3, CONFIG_ISR_STACK_SIZE);
 extern void idle(void *unused1, void *unused2, void *unused3);
 
 
+/* LCOV_EXCL_START
+ *
+ * This code is called so early in the boot process that code coverage
+ * doesn't work properly. In addition, not all arches call this code,
+ * some like x86 do this with optimized assembly
+ */
+
 /**
  *
  * @brief Clear BSS
@@ -147,6 +153,10 @@ void z_bss_zero(void)
 #ifdef DT_CCM_BASE_ADDRESS
 	(void)memset(&__ccm_bss_start, 0,
 		     ((u32_t) &__ccm_bss_end - (u32_t) &__ccm_bss_start));
+#endif
+#ifdef DT_DTCM_BASE_ADDRESS
+	(void)memset(&__dtcm_bss_start, 0,
+		     ((u32_t) &__dtcm_bss_end - (u32_t) &__dtcm_bss_start));
 #endif
 #ifdef CONFIG_CODE_DATA_RELOCATION
 	extern void bss_zeroing_relocation(void);
@@ -185,6 +195,10 @@ void z_data_copy(void)
 	(void)memcpy(&__ccm_data_start, &__ccm_data_rom_start,
 		 __ccm_data_end - __ccm_data_start);
 #endif
+#ifdef DT_DTCM_BASE_ADDRESS
+	(void)memcpy(&__dtcm_data_start, &__dtcm_data_rom_start,
+		 __dtcm_data_end - __dtcm_data_start);
+#endif
 #ifdef CONFIG_CODE_DATA_RELOCATION
 	extern void data_copy_xip_relocation(void);
 
@@ -215,7 +229,9 @@ void z_data_copy(void)
 #endif /* CONFIG_STACK_CANARIES */
 #endif /* CONFIG_USERSPACE */
 }
-#endif
+#endif /* CONFIG_XIP */
+
+/* LCOV_EXCL_STOP */
 
 /**
  *
@@ -267,28 +283,29 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 #endif
 
 #ifdef CONFIG_BOOT_TIME_MEASUREMENT
-	/* record timestamp for kernel's _main() function */
-	extern u64_t __main_time_stamp;
-
-	__main_time_stamp = (u64_t)k_cycle_get_32();
+	__main_time_stamp = k_cycle_get_32();
 #endif
 
 	extern void main(void);
 
 	main();
 
+	/* Mark nonessenrial since main() has no more work to do */
+	_main_thread->base.user_options &= ~K_ESSENTIAL;
+
 	/* Dump coverage data once the main() has exited. */
 	gcov_coverage_dump();
+} /* LCOV_EXCL_LINE ... because we just dumped final coverage data */
 
-	/* Terminate thread normally since it has no more work to do */
-	_main_thread->base.user_options &= ~K_ESSENTIAL;
-}
+/* LCOV_EXCL_START */
 
 void __weak main(void)
 {
 	/* NOP default main() if the application does not provide one. */
 	arch_nop();
 }
+
+/* LCOV_EXCL_STOP */
 
 #if defined(CONFIG_MULTITHREADING)
 static void init_idle_thread(struct k_thread *thr, k_thread_stack_t *stack)
@@ -398,7 +415,7 @@ static void prepare_multithreading(struct k_thread *dummy_thread)
 
 }
 
-static void switch_to_main_thread(void)
+static FUNC_NORETURN void switch_to_main_thread(void)
 {
 #ifdef CONFIG_ARCH_HAS_CUSTOM_SWAP_TO_MAIN
 	z_arch_switch_to_main_thread(_main_thread, _main_stack,
@@ -412,6 +429,7 @@ static void switch_to_main_thread(void)
 	 */
 	z_swap_unlocked();
 #endif
+	CODE_UNREACHABLE; /* LCOV_EXCL_LINE */
 }
 #endif /* CONFIG_MULTITHREADING */
 
@@ -506,9 +524,13 @@ FUNC_NORETURN void z_cstart(void)
 #else
 	bg_thread_main(NULL, NULL, NULL);
 
+	/* LCOV_EXCL_START
+	 * We've already dumped coverage data at this point.
+	 */
 	irq_lock();
 	while (true) {
 	}
+	/* LCOV_EXCL_STOP */
 #endif
 
 	/*
@@ -517,5 +539,5 @@ FUNC_NORETURN void z_cstart(void)
 	 * far.
 	 */
 
-	CODE_UNREACHABLE;
+	CODE_UNREACHABLE; /* LCOV_EXCL_LINE */
 }

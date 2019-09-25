@@ -1,0 +1,4 @@
+tests:
+  filesystem.littlefs:
+    platform_whitelist: nrf52840_pca10056 native_posix native_posix_64
+    tags: filesystem

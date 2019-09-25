@@ -6,7 +6,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <misc/slist.h>
+#include <sys/slist.h>
 #include <arch/arm/cortex_m/mpu/arm_mpu.h>
 
 

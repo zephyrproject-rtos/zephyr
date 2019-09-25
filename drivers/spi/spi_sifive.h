@@ -9,9 +9,9 @@
 
 #include "spi_context.h"
 
-#include <sys_io.h>
+#include <sys/sys_io.h>
 #include <device.h>
-#include <spi.h>
+#include <drivers/spi.h>
 
 #define SPI_CFG(dev) ((struct spi_sifive_cfg *) ((dev)->config->config_info))
 #define SPI_DATA(dev) ((struct spi_sifive_data *) ((dev)->driver_data))

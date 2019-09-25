@@ -13,11 +13,11 @@
 #ifndef __GPTP_STATE_H
 #define __GPTP_STATE_H
 
+#include "gptp_mi.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include "gptp_mi.h"
 
 /* PDelayRequest states. */
 enum gptp_pdelay_req_states {

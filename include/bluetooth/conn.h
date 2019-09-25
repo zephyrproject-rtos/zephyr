@@ -17,14 +17,14 @@
  * @{
  */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <stdbool.h>
 
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/hci.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /** Opaque type representing a connection to a remote device */
 struct bt_conn;
@@ -79,6 +79,15 @@ struct bt_conn *bt_conn_ref(struct bt_conn *conn);
  */
 void bt_conn_unref(struct bt_conn *conn);
 
+/** @brief Iterate through all existing connections.
+ *
+ * @param type  Connection Type
+ * @param func  Function to call for each connection.
+ * @param data  Data to pass to the callback function.
+ */
+void bt_conn_foreach(int type, void (*func)(struct bt_conn *conn, void *data),
+		     void *data);
+
 /** @brief Look up an existing connection by address.
  *
  *  Look up an existing connection based on the remote address.
@@ -115,17 +124,27 @@ u8_t bt_conn_index(struct bt_conn *conn);
 /** Connection Type */
 enum {
 	/** LE Connection Type */
-	BT_CONN_TYPE_LE,
+	BT_CONN_TYPE_LE = BIT(0),
 	/** BR/EDR Connection Type */
-	BT_CONN_TYPE_BR,
+	BT_CONN_TYPE_BR = BIT(1),
 	/** SCO Connection Type */
-	BT_CONN_TYPE_SCO,
+	BT_CONN_TYPE_SCO = BIT(2),
+	/** All Connection Type */
+	BT_CONN_TYPE_ALL = BT_CONN_TYPE_LE | BT_CONN_TYPE_BR | BT_CONN_TYPE_SCO,
 };
 
 /** LE Connection Info Structure */
 struct bt_conn_le_info {
-	const bt_addr_le_t *src; /** Source (Local) Address */
-	const bt_addr_le_t *dst; /** Destination (Remote) Address */
+	/** Source (Local) Identity Address */
+	const bt_addr_le_t *src;
+	/** Destination (Remote) Identity Address or remote Resolvable Private
+	 *  Address (RPA) before identity has been resolved.
+	 */
+	const bt_addr_le_t *dst;
+	/** Local device address used during connection setup. */
+	const bt_addr_le_t *local;
+	/** Remote device address used during connection setup. */
+	const bt_addr_le_t *remote;
 	u16_t interval; /** Connection interval */
 	u16_t latency; /** Connection slave latency */
 	u16_t timeout; /** Connection supervision timeout */
@@ -201,6 +220,8 @@ int bt_conn_disconnect(struct bt_conn *conn, u8_t reason);
  *  Allows initiate new LE link to remote peer using its address.
  *  Returns a new reference that the the caller is responsible for managing.
  *
+ *  This uses the General Connection Establishment procedure.
+ *
  *  @param peer  Remote address.
  *  @param param Initial connection parameters.
  *
@@ -208,6 +229,22 @@ int bt_conn_disconnect(struct bt_conn *conn, u8_t reason);
  */
 struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer,
 				  const struct bt_le_conn_param *param);
+
+/** @brief Automatically connect to remote devices in whitelist.
+ *
+ *  This uses the Auto Connection Establishment procedure.
+ *
+ *  @param param Initial connection parameters.
+ *
+ *  @return Zero on success or (negative) error code on failure.
+ */
+int bt_conn_create_auto_le(const struct bt_le_conn_param *param);
+
+/** @brief Stop automatic connect creation.
+ *
+ *  @return Zero on success or (negative) error code on failure.
+ */
+int bt_conn_create_auto_stop(void);
 
 /** @brief Automatically connect to remote device if it's in range.
  *
@@ -252,16 +289,27 @@ struct bt_conn *bt_conn_create_slave_le(const bt_addr_le_t *peer,
 
 /** Security level. */
 typedef enum __packed {
-	/** Only for BR/EDR special cases, like SDP */
-	BT_SECURITY_NONE,
-	/** No encryption and no authentication. */
-	BT_SECURITY_LOW,
-	/** Encryption and no authentication (no MITM). */
-	BT_SECURITY_MEDIUM,
-	/** Encryption and authentication (MITM). */
-	BT_SECURITY_HIGH,
-	/** Authenticated Secure Connections */
-	BT_SECURITY_FIPS,
+	/** Level 0: Only for BR/EDR special cases, like SDP */
+	BT_SECURITY_L0,
+	/** Level 1: No encryption and no authentication. */
+	BT_SECURITY_L1,
+	/** Level 2: Encryption and no authentication (no MITM). */
+	BT_SECURITY_L2,
+	/** Level 3: Encryption and authentication (MITM). */
+	BT_SECURITY_L3,
+	/** Level 4: Authenticated Secure Connections and 128-bit key. */
+	BT_SECURITY_L4,
+
+	BT_SECURITY_NONE   __deprecated = BT_SECURITY_L0,
+	BT_SECURITY_LOW    __deprecated = BT_SECURITY_L1,
+	BT_SECURITY_MEDIUM __deprecated = BT_SECURITY_L2,
+	BT_SECURITY_HIGH   __deprecated = BT_SECURITY_L3,
+	BT_SECURITY_FIPS   __deprecated = BT_SECURITY_L4,
+
+	/** Bit to force new pairing procedure, bit-wise OR with requested
+	 *  security level.
+	 */
+	BT_SECURITY_FORCE_PAIR = BIT(7),
 } bt_security_t;
 
 /** @brief Set security level for a connection.
@@ -277,14 +325,26 @@ typedef enum __packed {
  *
  *  This function may return error if required level of security is not possible
  *  to achieve due to local or remote device limitation (e.g., input output
- *  capabilities).
+ *  capabilities), or if the maximum number of paired devices has been reached.
  *
  *  @param conn Connection object.
  *  @param sec Requested security level.
  *
  *  @return 0 on success or negative error
  */
-int bt_conn_security(struct bt_conn *conn, bt_security_t sec);
+int bt_conn_set_security(struct bt_conn *conn, bt_security_t sec);
+
+/** @brief Get security level for a connection.
+ *
+ *  @return Connection security level
+ */
+bt_security_t bt_conn_get_security(struct bt_conn *conn);
+
+static inline int __deprecated bt_conn_security(struct bt_conn *conn,
+						bt_security_t sec)
+{
+	return bt_conn_set_security(conn, sec);
+}
 
 /** @brief Get encryption key size.
  *
@@ -296,6 +356,35 @@ int bt_conn_security(struct bt_conn *conn, bt_security_t sec);
  *  @return Encryption key size.
  */
 u8_t bt_conn_enc_key_size(struct bt_conn *conn);
+
+enum bt_security_err {
+	/** Security procedure successful. */
+	BT_SECURITY_ERR_SUCCESS,
+
+	/** Authentication failed. */
+	BT_SECURITY_ERR_AUTH_FAIL,
+
+	/** PIN or encryption key is missing. */
+	BT_SECURITY_ERR_PIN_OR_KEY_MISSING,
+
+	/** OOB data is not available.  */
+	BT_SECURITY_ERR_OOB_NOT_AVAILABLE,
+
+	/** The requested security level could not be reached. */
+	BT_SECURITY_ERR_AUTH_REQUIREMENT,
+
+	/** Pairing is not supported */
+	BT_SECURITY_ERR_PAIR_NOT_SUPPORTED,
+
+	/** Pairing is not allowed. */
+	BT_SECURITY_ERR_PAIR_NOT_ALLOWED,
+
+	/** Invalid parameters. */
+	BT_SECURITY_ERR_INVALID_PARAM,
+
+	/** Pairing failed but the exact reason could not be specified. */
+	BT_SECURITY_ERR_UNSPECIFIED,
+};
 
 /** @brief Connection callback structure.
  *
@@ -387,8 +476,10 @@ struct bt_conn_cb {
 	 *
 	 *  @param conn Connection object.
 	 *  @param level New security level of the connection.
+	 *  @param err Security error. Zero for success, non-zero otherwise.
 	 */
-	void (*security_changed)(struct bt_conn *conn, bt_security_t level);
+	void (*security_changed)(struct bt_conn *conn, bt_security_t level,
+				 enum bt_security_err err);
 #endif /* defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR) */
 	struct bt_conn_cb *_next;
 };
@@ -661,7 +752,7 @@ struct bt_conn_auth_cb {
 
 	/** @brief notify that pairing process was complete.
 	 *
-	 * This callback notifies the applicaiton that the pairing process
+	 * This callback notifies the application that the pairing process
 	 * has been completed.
 	 *
 	 * @param conn Connection object.
@@ -672,8 +763,10 @@ struct bt_conn_auth_cb {
 	/** @brief notify that pairing process has failed.
 	 *
 	 * @param conn Connection object.
+	 * @param reason Pairing failed reason
 	 */
-	void (*pairing_failed)(struct bt_conn *conn);
+	void (*pairing_failed)(struct bt_conn *conn,
+			       enum bt_security_err reason);
 };
 
 /** @brief Register authentication callbacks.

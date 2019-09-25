@@ -65,7 +65,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <string.h>
 #include <stdint.h>
-#include <misc/byteorder.h>
+#include <sys/byteorder.h>
 
 #include "lwm2m_rw_oma_tlv.h"
 #include "lwm2m_engine.h"
@@ -492,7 +492,7 @@ static size_t put_string(struct lwm2m_output_context *out,
 	}
 
 	tlv_setup(&tlv, tlv_calc_type(fd->writer_flags),
-		  path->res_id, (u32_t)buflen);
+		  tlv_calc_id(fd->writer_flags, path), (u32_t)buflen);
 	len = oma_tlv_put(&tlv, out, (u8_t *)buf, false);
 	return len;
 }
@@ -776,15 +776,14 @@ const struct lwm2m_reader oma_tlv_reader = {
 	.get_opaque = get_opaque,
 };
 
-int do_read_op_tlv(struct lwm2m_engine_obj *obj, struct lwm2m_message *msg,
-		   int content_format)
+int do_read_op_tlv(struct lwm2m_message *msg, int content_format)
 {
 	struct tlv_out_formatter_data fd;
 	int ret;
 
 	(void)memset(&fd, 0, sizeof(fd));
 	engine_set_out_user_data(&msg->out, &fd);
-	ret = lwm2m_perform_read_op(obj, msg, content_format);
+	ret = lwm2m_perform_read_op(msg, content_format);
 	engine_clear_out_user_data(&msg->out);
 	return ret;
 }
@@ -808,7 +807,8 @@ static int do_write_op_tlv_dummy_read(struct lwm2m_message *msg)
 static int do_write_op_tlv_item(struct lwm2m_message *msg)
 {
 	struct lwm2m_engine_obj_inst *obj_inst = NULL;
-	struct lwm2m_engine_res_inst *res = NULL;
+	struct lwm2m_engine_res *res = NULL;
+	struct lwm2m_engine_res_inst *res_inst = NULL;
 	struct lwm2m_engine_obj_field *obj_field = NULL;
 	u8_t created = 0U;
 	int ret, i;
@@ -842,7 +842,17 @@ static int do_write_op_tlv_item(struct lwm2m_message *msg)
 		}
 	}
 
-	if (!res) {
+	if (res) {
+		for (i = 0; i < res->res_inst_count; i++) {
+			if (res->res_instances[i].res_inst_id ==
+			    msg->path.res_inst_id) {
+				res_inst = &res->res_instances[i];
+				break;
+			}
+		}
+	}
+
+	if (!res || !res_inst) {
 		/* if OPTIONAL and BOOTSTRAP-WRITE or CREATE use ENOTSUP */
 		if ((msg->ctx->bootstrap_mode ||
 		     msg->operation == LWM2M_OP_CREATE) &&
@@ -855,7 +865,7 @@ static int do_write_op_tlv_item(struct lwm2m_message *msg)
 		goto error;
 	}
 
-	ret = lwm2m_write_handler(obj_inst, res, obj_field, msg);
+	ret = lwm2m_write_handler(obj_inst, res, res_inst, obj_field, msg);
 	if (ret == -EACCES || ret == -ENOENT) {
 		/* if read-only or non-existent data buffer move on */
 		do_write_op_tlv_dummy_read(msg);
@@ -869,7 +879,7 @@ error:
 	return ret;
 }
 
-int do_write_op_tlv(struct lwm2m_engine_obj *obj, struct lwm2m_message *msg)
+int do_write_op_tlv(struct lwm2m_message *msg)
 {
 	struct lwm2m_engine_obj_inst *obj_inst = NULL;
 	size_t len;

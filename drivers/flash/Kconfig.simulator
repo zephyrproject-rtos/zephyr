@@ -6,7 +6,6 @@
 menuconfig FLASH_SIMULATOR
 	bool
 	prompt "Flash simulator"
-	depends on FLASH
 	select STATS
 	select STATS_NAMES
 	select FLASH_HAS_PAGE_LAYOUT
@@ -43,6 +42,19 @@ config FLASH_SIMULATOR_ERASE_PROTECT
 config FLASH_SIMULATOR_SIMULATE_TIMING
 	bool
 	prompt "Enable hardware timing simulation"
+
+config FLASH_SIMULATOR_STAT_PAGE_COUNT
+	int "Pages under statistic"
+	range 1 256
+	default 256
+	help
+	  Only up to this number of beginning pages will be tracked
+	  while catching dedicated flash operations and thresholds.
+	  This number is not automatic because implementation uses
+	  UNTIL_REPEAT() macro, which is limited to take explicitly
+	  number of iterations.
+	  This is why it's not possible to calculate the number of pages with
+	  preprocessor using DT properties.
 
 if FLASH_SIMULATOR_SIMULATE_TIMING
 

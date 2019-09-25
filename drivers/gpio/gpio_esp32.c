@@ -13,10 +13,10 @@
 #include <soc.h>
 #include <errno.h>
 #include <device.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 #include <kernel.h>
-#include <misc/util.h>
-#include <pinmux.h>
+#include <sys/util.h>
+#include <drivers/pinmux.h>
 
 #include "gpio_utils.h"
 

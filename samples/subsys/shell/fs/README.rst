@@ -19,8 +19,9 @@ Building
 Native Posix
 ============
 
-Before starting a build, make sure that the i386 pkconfig directory is in your
-search path.
+Before starting a build, make sure that the i386 pkgconfig directory is in your
+search path and that a 32-bit version of libfuse is installed. For more
+background information on this requirement see :ref:`native_posix`.
 
 .. code-block:: console
 
@@ -40,6 +41,18 @@ Reel Board
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/shell/fs
    :board: reel_board
+   :goals: build
+   :compact:
+
+Particle Xenon
+==============
+
+This target is customized to support the same SPI NOR partition table as
+the :ref:`littlefs-sample`.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/subsys/shell/fs
+   :board: particle_xenon
    :goals: build
    :compact:
 

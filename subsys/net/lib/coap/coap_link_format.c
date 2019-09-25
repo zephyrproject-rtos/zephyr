@@ -14,9 +14,9 @@ LOG_MODULE_DECLARE(net_coap, CONFIG_COAP_LOG_LEVEL);
 #include <stdbool.h>
 #include <errno.h>
 
-#include <misc/byteorder.h>
+#include <sys/byteorder.h>
 
-#include <misc/printk.h>
+#include <sys/printk.h>
 
 #include <net/coap.h>
 #include <net/coap_link_format.h>

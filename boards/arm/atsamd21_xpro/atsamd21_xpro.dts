@@ -41,6 +41,10 @@
 	};
 };
 
+&cpu0 {
+	clock-frequency = <48000000>;
+};
+
 &sercom0 {
 	status = "okay";
 	compatible = "atmel,sam0-uart";
@@ -70,6 +74,8 @@
 	compatible = "atmel,sam0-spi";
 	dipo = <0>;
 	dopo = <2>;
+	#address-cells = <1>;
+	#size-cells = <0>;
 };
 
 &usb0 {

@@ -2,13 +2,13 @@
 
 if (NOT DEFINED ENV{BSIM_COMPONENTS_PATH})
 	message(FATAL_ERROR "This board requires the BabbleSim simulator. Please set\
- the  enviroment variable BSIM_COMPONENTS_PATH to point to its components \
+ the  environment variable BSIM_COMPONENTS_PATH to point to its components \
  folder. More information can be found in\
  https://babblesim.github.io/folder_structure_and_env.html")
 endif()
 if (NOT DEFINED ENV{BSIM_OUT_PATH})
 	message(FATAL_ERROR "This board requires the BabbleSim simulator. Please set\
- the enviroment variable BSIM_OUT_PATH to point to the folder where the\
+ the environment variable BSIM_OUT_PATH to point to the folder where the\
  simulator is compiled to. More information can be found in\
  https://babblesim.github.io/folder_structure_and_env.html")
 endif()
@@ -62,6 +62,7 @@ zephyr_include_directories(
   fake
   $ENV{BSIM_COMPONENTS_PATH}/ext_NRF52_hw_models/src/
   $ENV{BSIM_COMPONENTS_PATH}/ext_NRF52_hw_models/src/nrfx/hal/
+  $ENV{BSIM_COMPONENTS_PATH}/ext_NRF52_hw_models/src/nrfx/
   $ENV{BSIM_COMPONENTS_PATH}/ext_NRF52_hw_models/src/HW_models/
 )
 

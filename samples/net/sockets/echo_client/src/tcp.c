@@ -22,6 +22,15 @@ LOG_MODULE_DECLARE(net_echo_client_sample, LOG_LEVEL_DBG);
 
 #define RECV_BUF_SIZE 128
 
+/* These proxy server addresses are only used when CONFIG_SOCKS
+ * is enabled. To connect to a proxy server that is not running
+ * under the same IP as the peer or uses a different port number,
+ * modify the values.
+ */
+#define SOCKS5_PROXY_V6_ADDR CONFIG_NET_CONFIG_PEER_IPV6_ADDR
+#define SOCKS5_PROXY_V4_ADDR CONFIG_NET_CONFIG_PEER_IPV4_ADDR
+#define SOCKS5_PROXY_PORT 1080
+
 static ssize_t sendall(int sock, const void *buf, size_t len)
 {
 	while (len) {
@@ -89,6 +98,39 @@ static int start_tcp_proto(struct data *data, struct sockaddr *addr,
 		LOG_ERR("Failed to create TCP socket (%s): %d", data->proto,
 			errno);
 		return -errno;
+	}
+
+	if (IS_ENABLED(CONFIG_SOCKS)) {
+		struct sockaddr proxy_addr;
+		socklen_t proxy_addrlen;
+
+		if (addr->sa_family == AF_INET) {
+			struct sockaddr_in *proxy4 =
+				(struct sockaddr_in *)&proxy_addr;
+
+			proxy4->sin_family = AF_INET;
+			proxy4->sin_port = htons(SOCKS5_PROXY_PORT);
+			inet_pton(AF_INET, SOCKS5_PROXY_V4_ADDR,
+				  &proxy4->sin_addr);
+			proxy_addrlen = sizeof(struct sockaddr_in);
+		} else if (addr->sa_family == AF_INET6) {
+			struct sockaddr_in6 *proxy6 =
+				(struct sockaddr_in6 *)&proxy_addr;
+
+			proxy6->sin6_family = AF_INET6;
+			proxy6->sin6_port = htons(SOCKS5_PROXY_PORT);
+			inet_pton(AF_INET6, SOCKS5_PROXY_V6_ADDR,
+				  &proxy6->sin6_addr);
+			proxy_addrlen = sizeof(struct sockaddr_in6);
+		} else {
+			return -EINVAL;
+		}
+
+		ret = setsockopt(data->tcp.sock, SOL_SOCKET, SO_SOCKS5,
+				 &proxy_addr, proxy_addrlen);
+		if (ret < 0) {
+			return ret;
+		}
 	}
 
 #if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)

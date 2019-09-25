@@ -17,7 +17,7 @@
  *   CONFIG_WDT_DISABLE_AT_BOOT must be unset in the app's config file
  */
 
-#include <watchdog.h>
+#include <drivers/watchdog.h>
 #include <soc.h>
 
 #define LOG_LEVEL CONFIG_WDT_LOG_LEVEL

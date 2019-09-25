@@ -6,14 +6,14 @@
 
 #include <kernel.h>
 #include <string.h>
-#include <sensor.h>
+#include <drivers/sensor.h>
 #include <init.h>
-#include <gpio.h>
-#include <misc/printk.h>
-#include <misc/__assert.h>
+#include <drivers/gpio.h>
+#include <sys/printk.h>
+#include <sys/__assert.h>
 #include <stdlib.h>
-#include <spi.h>
-#include <i2c.h>
+#include <drivers/spi.h>
+#include <drivers/i2c.h>
 #include <logging/log.h>
 
 #include "adxl372.h"
@@ -898,7 +898,7 @@ static int adxl372_init(struct device *dev)
 	data->spi_cfg.frequency = cfg->spi_max_frequency;
 	data->spi_cfg.slave = cfg->spi_slave;
 
-#if defined(DT_INST_0_ADI_ADXL372_CS_GPIO_CONTROLLER)
+#if defined(DT_INST_0_ADI_ADXL372_CS_GPIOS_CONTROLLER)
 	/* handle SPI CS thru GPIO if it is the case */
 
 	data->adxl372_cs_ctrl.gpio_dev = device_get_binding(cfg->gpio_cs_port);
@@ -932,9 +932,9 @@ static const struct adxl372_dev_config adxl372_config = {
 	.spi_port = DT_INST_0_ADI_ADXL372_BUS_NAME,
 	.spi_slave = DT_INST_0_ADI_ADXL372_BASE_ADDRESS,
 	.spi_max_frequency = DT_INST_0_ADI_ADXL372_SPI_MAX_FREQUENCY,
-#ifdef DT_INST_0_ADI_ADXL372_CS_GPIO_CONTROLLER
-	.gpio_cs_port = DT_INST_0_ADI_ADXL372_CS_GPIO_CONTROLLER,
-	.cs_gpio = DT_INST_0_ADI_ADXL372_CS_GPIO_PIN,
+#ifdef DT_INST_0_ADI_ADXL372_CS_GPIOS_CONTROLLER
+	.gpio_cs_port = DT_INST_0_ADI_ADXL372_CS_GPIOS_CONTROLLER,
+	.cs_gpio = DT_INST_0_ADI_ADXL372_CS_GPIOS_PIN,
 #endif
 #endif
 #ifdef CONFIG_ADXL372_TRIGGER

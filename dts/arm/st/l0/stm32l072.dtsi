@@ -14,7 +14,7 @@
 				compatible = "st,stm32-gpio";
 				gpio-controller;
 				#gpio-cells = <2>;
-				reg = <0x48001000 0x400>;
+				reg = <0x50001000 0x400>;
 				clocks = <&rcc STM32_CLOCK_BUS_IOP 0x00000010>;
 				label = "GPIOE";
 			};
@@ -65,6 +65,7 @@
 			num-bidir-endpoints = <8>;
 			ram-size = <1024>;
 			phys = <&otgfs_phy>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00800000>;
 			status = "disabled";
 			label= "USB";
 		};

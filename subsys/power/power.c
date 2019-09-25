@@ -8,7 +8,7 @@
 #include <kernel.h>
 #include <init.h>
 #include <string.h>
-#include <power.h>
+#include <power/power.h>
 #include "policy/pm_policy.h"
 
 #define LOG_LEVEL CONFIG_SYS_PM_LOG_LEVEL

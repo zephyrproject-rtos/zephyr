@@ -8,15 +8,15 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(spi_ll_stm32);
 
-#include <misc/util.h>
+#include <sys/util.h>
 #include <kernel.h>
 #include <soc.h>
 #include <errno.h>
-#include <spi.h>
+#include <drivers/spi.h>
 #include <toolchain.h>
 
 #include <clock_control/stm32_clock_control.h>
-#include <clock_control.h>
+#include <drivers/clock_control.h>
 
 #include "spi_ll_stm32.h"
 
@@ -31,6 +31,10 @@ LOG_MODULE_REGISTER(spi_ll_stm32);
  * error flag, because STM32F1 SoCs do not support it and  STM32CUBE
  * for F1 family defines an unused LL_SPI_SR_FRE.
  */
+#ifdef CONFIG_SOC_SERIES_STM32MP1X
+#define SPI_STM32_ERR_MSK (LL_SPI_SR_UDR | LL_SPI_SR_CRCE | LL_SPI_SR_MODF | \
+			   LL_SPI_SR_OVR | LL_SPI_SR_TIFRE)
+#else
 #if defined(LL_SPI_SR_UDR)
 #define SPI_STM32_ERR_MSK (LL_SPI_SR_UDR | LL_SPI_SR_CRCERR | LL_SPI_SR_MODF | \
 			   LL_SPI_SR_OVR | LL_SPI_SR_FRE)
@@ -40,6 +44,7 @@ LOG_MODULE_REGISTER(spi_ll_stm32);
 #else
 #define SPI_STM32_ERR_MSK (LL_SPI_SR_CRCERR | LL_SPI_SR_MODF | LL_SPI_SR_OVR)
 #endif
+#endif /* CONFIG_SOC_SERIES_STM32MP1X */
 
 /* Value to shift out when no application data needs transmitting. */
 #define SPI_STM32_TX_NOP 0x00
@@ -90,9 +95,22 @@ static void spi_stm32_shift_m(SPI_TypeDef *spi, struct spi_stm32_data *data)
 	u16_t rx_frame;
 
 	tx_frame = spi_stm32_next_tx(data);
-	while (!LL_SPI_IsActiveFlag_TXE(spi)) {
+	while (!ll_func_tx_is_empty(spi)) {
 		/* NOP */
 	}
+
+#ifdef CONFIG_SOC_SERIES_STM32MP1X
+	/* With the STM32MP1, if the device is the SPI master, we need to enable
+	 * the start of the transfer with LL_SPI_StartMasterTransfer(spi)
+	 */
+	if (LL_SPI_GetMode(spi) == LL_SPI_MODE_MASTER) {
+		LL_SPI_StartMasterTransfer(spi);
+		while (!LL_SPI_IsActiveMasterTransfer(spi)) {
+			/* NOP */
+		}
+	}
+#endif
+
 	if (SPI_WORD_SIZE_GET(data->ctx.config->operation) == 8) {
 		LL_SPI_TransmitData8(spi, tx_frame);
 		/* The update is ignored if TX is off. */
@@ -103,7 +121,7 @@ static void spi_stm32_shift_m(SPI_TypeDef *spi, struct spi_stm32_data *data)
 		spi_context_update_tx(&data->ctx, 2, 1);
 	}
 
-	while (!LL_SPI_IsActiveFlag_RXNE(spi)) {
+	while (!ll_func_rx_is_not_empty(spi)) {
 		/* NOP */
 	}
 
@@ -125,7 +143,7 @@ static void spi_stm32_shift_m(SPI_TypeDef *spi, struct spi_stm32_data *data)
 /* Shift a SPI frame as slave. */
 static void spi_stm32_shift_s(SPI_TypeDef *spi, struct spi_stm32_data *data)
 {
-	if (LL_SPI_IsActiveFlag_TXE(spi) && spi_context_tx_on(&data->ctx)) {
+	if (ll_func_tx_is_empty(spi) && spi_context_tx_on(&data->ctx)) {
 		u16_t tx_frame = spi_stm32_next_tx(data);
 
 		if (SPI_WORD_SIZE_GET(data->ctx.config->operation) == 8) {
@@ -136,10 +154,11 @@ static void spi_stm32_shift_s(SPI_TypeDef *spi, struct spi_stm32_data *data)
 			spi_context_update_tx(&data->ctx, 2, 1);
 		}
 	} else {
-		LL_SPI_DisableIT_TXE(spi);
+		ll_func_disable_int_tx_empty(spi);
 	}
 
-	if (LL_SPI_IsActiveFlag_RXNE(spi) && spi_context_rx_buf_on(&data->ctx)) {
+	if (ll_func_rx_is_not_empty(spi) &&
+	    spi_context_rx_buf_on(&data->ctx)) {
 		u16_t rx_frame;
 
 		if (SPI_WORD_SIZE_GET(data->ctx.config->operation) == 8) {
@@ -177,27 +196,31 @@ static void spi_stm32_complete(struct spi_stm32_data *data, SPI_TypeDef *spi,
 			       int status)
 {
 #ifdef CONFIG_SPI_STM32_INTERRUPT
-	LL_SPI_DisableIT_TXE(spi);
-	LL_SPI_DisableIT_RXNE(spi);
-	LL_SPI_DisableIT_ERR(spi);
+	ll_func_disable_int_tx_empty(spi);
+	ll_func_disable_int_rx_not_empty(spi);
+	ll_func_disable_int_errors(spi);
 #endif
 
 	spi_context_cs_control(&data->ctx, false);
 
 #if defined(CONFIG_SPI_STM32_HAS_FIFO)
 	/* Flush RX buffer */
-	while (LL_SPI_IsActiveFlag_RXNE(spi)) {
+	while (ll_func_rx_is_not_empty(spi)) {
 		(void) LL_SPI_ReceiveData8(spi);
 	}
 #endif
 
 	if (LL_SPI_GetMode(spi) == LL_SPI_MODE_MASTER) {
-		while (LL_SPI_IsActiveFlag_BSY(spi)) {
+		while (ll_func_spi_is_busy(spi)) {
 			/* NOP */
 		}
 	}
+	/* BSY flag is cleared when MODF flag is raised */
+	if (LL_SPI_IsActiveFlag_MODF(spi)) {
+		LL_SPI_ClearFlag_MODF(spi);
+	}
 
-	LL_SPI_Disable(spi);
+	ll_func_disable_spi(spi);
 
 #ifdef CONFIG_SPI_STM32_INTERRUPT
 	spi_context_complete(&data->ctx, status);
@@ -302,13 +325,7 @@ static int spi_stm32_configure(struct device *dev,
 
 	LL_SPI_DisableCRC(spi);
 
-	if (config->operation & SPI_OP_MODE_SLAVE) {
-		LL_SPI_SetMode(spi, LL_SPI_MODE_SLAVE);
-	} else {
-		LL_SPI_SetMode(spi, LL_SPI_MODE_MASTER);
-	}
-
-	if (config->cs) {
+	if (config->cs || !IS_ENABLED(CONFIG_SPI_STM32_USE_HW_SS)) {
 		LL_SPI_SetNSSMode(spi, LL_SPI_NSS_SOFT);
 	} else {
 		if (config->operation & SPI_OP_MODE_SLAVE) {
@@ -318,6 +335,12 @@ static int spi_stm32_configure(struct device *dev,
 		}
 	}
 
+	if (config->operation & SPI_OP_MODE_SLAVE) {
+		LL_SPI_SetMode(spi, LL_SPI_MODE_SLAVE);
+	} else {
+		LL_SPI_SetMode(spi, LL_SPI_MODE_MASTER);
+	}
+
 	if (SPI_WORD_SIZE_GET(config->operation) ==  8) {
 		LL_SPI_SetDataWidth(spi, LL_SPI_DATAWIDTH_8BIT);
 	} else {
@@ -325,7 +348,7 @@ static int spi_stm32_configure(struct device *dev,
 	}
 
 #if defined(CONFIG_SPI_STM32_HAS_FIFO)
-	LL_SPI_SetRxFIFOThreshold(spi, LL_SPI_RX_FIFO_TH_QUARTER);
+	ll_func_set_fifo_threshold_8bit(spi);
 #endif
 
 #ifndef CONFIG_SOC_SERIES_STM32F1X
@@ -391,7 +414,7 @@ static int transceive(struct device *dev,
 
 #if defined(CONFIG_SPI_STM32_HAS_FIFO)
 	/* Flush RX buffer */
-	while (LL_SPI_IsActiveFlag_RXNE(spi)) {
+	while (ll_func_rx_is_not_empty(spi)) {
 		(void) LL_SPI_ReceiveData8(spi);
 	}
 #endif
@@ -402,13 +425,13 @@ static int transceive(struct device *dev,
 	spi_context_cs_control(&data->ctx, true);
 
 #ifdef CONFIG_SPI_STM32_INTERRUPT
-	LL_SPI_EnableIT_ERR(spi);
+	ll_func_enable_int_errors(spi);
 
 	if (rx_bufs) {
-		LL_SPI_EnableIT_RXNE(spi);
+		ll_func_enable_int_rx_not_empty(spi);
 	}
 
-	LL_SPI_EnableIT_TXE(spi);
+	ll_func_enable_int_tx_empty(spi);
 
 	ret = spi_context_wait_for_completion(&data->ctx);
 #else

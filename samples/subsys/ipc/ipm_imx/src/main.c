@@ -5,9 +5,9 @@
  */
 
 #include <zephyr.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 #include <device.h>
-#include <ipm.h>
+#include <drivers/ipm.h>
 
 static struct device *ipm;
 

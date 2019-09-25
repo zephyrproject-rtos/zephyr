@@ -15,14 +15,14 @@
 #include <stddef.h>
 #include <errno.h>
 #include <zephyr.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/hci.h>
 #include <bluetooth/conn.h>
 #include <bluetooth/uuid.h>
 #include <bluetooth/gatt.h>
-#include <misc/byteorder.h>
+#include <sys/byteorder.h>
 
 static struct bt_conn *default_conn;
 
@@ -225,9 +225,9 @@ static void connected(struct bt_conn *conn, u8_t conn_err)
 	if (encrypt_link) {
 		k_sleep(500);
 		bt_conn_auth_cb_register(&auth_cb_success);
-		err = bt_conn_security(conn, BT_SECURITY_MEDIUM);
+		err = bt_conn_set_security(conn, BT_SECURITY_L2);
 		if (err) {
-			FAIL("bt_conn_security failed (err %d)\n", err);
+			FAIL("bt_conn_set_security failed (err %d)\n", err);
 			return;
 		}
 	} else {
@@ -337,7 +337,7 @@ static void disconnected(struct bt_conn *conn, u8_t reason)
 
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
-	printk("Disconnected: %s (reason %u)\n", addr, reason);
+	printk("Disconnected: %s (reason 0x%02x)\n", addr, reason);
 
 	if (default_conn != conn) {
 		return;

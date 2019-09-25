@@ -18,7 +18,6 @@
 	};
 
 	sram0: memory@20000000 {
-		device_type = "memory";
 		compatible = "mmio-sram";
 		reg = <0x20000000 0x4000>;
 	};
@@ -27,8 +26,6 @@
 		mcg: clock-controller@40064000 {
 			compatible = "nxp,kw41z-mcg";
 			reg = <0x40064000 0x13>;
-			system-clock-frequency = <48000000>;
-			clock-controller;
 		};
 
 		clock-controller@40065000 {
@@ -48,7 +45,6 @@
 			reg = <0x40047000 0x1060>;
 			label = "SIM";
 
-			clock-controller;
 			#clock-cells = <3>;
 		};
 
@@ -215,7 +211,6 @@
 			reg = <0x40038000 0x88>;
 			prescaler = <2>;
 			period = <1000>;
-			clock-source = <0>;
 			/* channel information needed - fixme */
 		};
 
@@ -224,7 +219,6 @@
 			reg = <0x40039000 0x88>;
 			prescaler = <2>;
 			period = <1000>;
-			clock-source = <0>;
 			/* channel information needed - fixme */
 		};
 
@@ -233,7 +227,6 @@
 			reg = <0x4003a000 0x88>;
 			prescaler = <2>;
 			period = <1000>;
-			clock-source = <0>;
 			/* channel information needed - fixme */
 		};
 
@@ -243,6 +236,7 @@
 			interrupts = <15 0>;
 			label = "ADC_0";
 			status = "disabled";
+			#io-channel-cells = <1>;
 		};
 
 		trng: random@40029000 {

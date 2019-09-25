@@ -5,9 +5,9 @@
  */
 
 #include <errno.h>
-#include <i2c.h>
+#include <drivers/i2c.h>
 #include <soc.h>
-#include <misc/util.h>
+#include <sys/util.h>
 #include <altera_common.h>
 #include "altera_avalon_i2c.h"
 
@@ -39,7 +39,7 @@ static int i2c_nios2_configure(struct device *dev, u32_t dev_config)
 	}
 
 	if (I2C_ADDR_10_BITS & dev_config) {
-		LOG_ERR("i2c config addresing error\n");
+		LOG_ERR("i2c config addressing error\n");
 		rc = -EINVAL;
 		goto i2c_cfg_err;
 	}

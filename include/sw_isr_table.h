@@ -14,13 +14,13 @@
 #ifndef ZEPHYR_INCLUDE_SW_ISR_TABLE_H_
 #define ZEPHYR_INCLUDE_SW_ISR_TABLE_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #if !defined(_ASMLANGUAGE)
 #include <zephyr/types.h>
 #include <toolchain.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /*
  * Note the order: arg first, then ISR. This allows a table entry to be
@@ -65,8 +65,8 @@ struct _isr_list {
  * and/or SW ISR tables.
  */
 #define Z_ISR_DECLARE(irq, flags, func, param) \
-	static struct _isr_list Z_GENERIC_SECTION(.intList) __used \
-		_MK_ISR_NAME(func, __COUNTER__) = \
+	static Z_DECL_ALIGN(struct _isr_list) Z_GENERIC_SECTION(.intList) \
+		__used _MK_ISR_NAME(func, __COUNTER__) = \
 			{irq, flags, &func, (void *)param}
 
 #define IRQ_TABLE_SIZE (CONFIG_NUM_IRQS - CONFIG_GEN_IRQ_START_VECTOR)
@@ -75,10 +75,10 @@ struct _isr_list {
 void z_isr_install(unsigned int irq, void (*routine)(void *), void *param);
 #endif
 
-#endif /* _ASMLANGUAGE */
-
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* _ASMLANGUAGE */
 
 #endif /* ZEPHYR_INCLUDE_SW_ISR_TABLE_H_ */

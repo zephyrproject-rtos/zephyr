@@ -16,7 +16,7 @@
 #include <device.h>
 #include <init.h>
 #include <soc.h>
-#include <uart.h>
+#include <drivers/uart.h>
 #include <linker/sections.h>
 #include <arch/cpu.h>
 #include <cortex_m/exc.h>

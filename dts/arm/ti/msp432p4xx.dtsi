@@ -7,7 +7,7 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		cpu@0 {
+		cpu0: cpu@0 {
 			compatible = "arm,cortex-m4f";
 			reg = <0>;
 		};
@@ -21,11 +21,18 @@
 		compatible = "serial-flash";
 	};
 
+	sysclk: system-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <48000000>;
+		#clock-cells = <0>;
+	};
+
 	soc {
 		uart0: uart@40001000 {
 			compatible = "ti,msp432p4xx-uart";
 			reg = <0x40001000 0x400>;
 			interrupts = <32 0>;
+			clocks = <&sysclk>;
 			status = "disabled";
 			label = "UART_0";
 		};

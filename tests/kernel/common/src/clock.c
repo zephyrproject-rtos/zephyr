@@ -61,8 +61,7 @@ void test_clock_uptime(void)
 
 	/**TESTPOINT: uptime delta*/
 	d64 = k_uptime_delta(&d64);
-	/* Note: this will stall if the systick period < 5ms */
-	while (k_uptime_delta(&d64) < 5) {
+	while (k_uptime_delta(&d64) == 0) {
 #if defined(CONFIG_ARCH_POSIX)
 		k_busy_wait(50);
 #endif
@@ -70,8 +69,7 @@ void test_clock_uptime(void)
 
 	/**TESTPOINT: uptime delta lower 32-bit*/
 	k_uptime_delta_32(&d64);
-	/* Note: this will stall if the systick period < 5ms */
-	while (k_uptime_delta_32(&d64) < 5) {
+	while (k_uptime_delta_32(&d64) == 0) {
 #if defined(CONFIG_ARCH_POSIX)
 		k_busy_wait(50);
 #endif

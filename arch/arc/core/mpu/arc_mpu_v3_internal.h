@@ -62,6 +62,68 @@ static u8_t dynamic_region_index;
  */
 static struct dynamic_region_info dyn_reg_info[MPU_DYNAMIC_REGION_AREAS_NUM];
 
+#ifdef CONFIG_ARC_NORMAL_FIRMWARE
+/* \todo through secure service to access mpu */
+static inline void _region_init(u32_t index, u32_t region_addr, u32_t size,
+				u32_t region_attr)
+{
+}
+
+static inline void _region_set_attr(u32_t index, u32_t attr)
+{
+
+}
+
+static inline u32_t _region_get_attr(u32_t index)
+{
+	return 0;
+}
+
+static inline u32_t _region_get_start(u32_t index)
+{
+	return 0;
+}
+
+static inline void _region_set_start(u32_t index, u32_t start)
+{
+
+}
+
+static inline u32_t _region_get_end(u32_t index)
+{
+	return 0;
+}
+
+static inline void _region_set_end(u32_t index, u32_t end)
+{
+}
+
+/**
+ * This internal function probes the given addr's MPU index.if not
+ * in MPU, returns error
+ */
+static inline int _mpu_probe(u32_t addr)
+{
+	return -EINVAL;
+}
+
+/**
+ * This internal function checks if MPU region is enabled or not
+ */
+static inline bool _is_enabled_region(u32_t r_index)
+{
+	return false;
+}
+
+/**
+ * This internal function check if the region is user accessible or not
+ */
+static inline bool _is_user_accessible_region(u32_t r_index, int write)
+{
+	return false;
+}
+#else /* CONFIG_ARC_NORMAL_FIRMWARE */
+/* the following functions are prepared for SECURE_FRIMWARE */
 static inline void _region_init(u32_t index, u32_t region_addr, u32_t size,
 				u32_t region_attr)
 {
@@ -77,7 +139,7 @@ static inline void _region_init(u32_t index, u32_t region_addr, u32_t size,
 	z_arc_v2_aux_reg_write(_ARC_V2_MPU_INDEX, index);
 	z_arc_v2_aux_reg_write(_ARC_V2_MPU_RSTART, region_addr);
 	z_arc_v2_aux_reg_write(_ARC_V2_MPU_REND,
-			      CALC_REGION_END_ADDR(region_addr, size));
+			CALC_REGION_END_ADDR(region_addr, size));
 	z_arc_v2_aux_reg_write(_ARC_V2_MPU_RPER, region_attr);
 }
 
@@ -143,20 +205,6 @@ static inline int _mpu_probe(u32_t addr)
 }
 
 /**
- * This internal function allocates a dynamic MPU region and returns
- * the index or error
- */
-static inline int _dynamic_region_allocate_index(void)
-{
-	if (dynamic_region_index >= get_num_regions()) {
-		LOG_ERR("no enough mpu entries %d", dynamic_region_index);
-		return -EINVAL;
-	}
-
-	return dynamic_region_index++;
-}
-
-/**
  * This internal function checks if MPU region is enabled or not
  */
 static inline bool _is_enabled_region(u32_t r_index)
@@ -164,21 +212,6 @@ static inline bool _is_enabled_region(u32_t r_index)
 	z_arc_v2_aux_reg_write(_ARC_V2_MPU_INDEX, r_index);
 	return ((z_arc_v2_aux_reg_read(_ARC_V2_MPU_RPER) &
 		 AUX_MPU_RPER_VALID_MASK) == AUX_MPU_RPER_VALID_MASK);
-}
-
-/**
- * This internal function checks the area given by (start, size)
- * and returns the index if the area match one MPU entry
- */
-static inline int _get_region_index(u32_t start, u32_t size)
-{
-	int index = _mpu_probe(start);
-
-	if (index > 0 && index == _mpu_probe(start + size - 1)) {
-		return index;
-	}
-
-	return -EINVAL;
 }
 
 /**
@@ -199,6 +232,37 @@ static inline bool _is_user_accessible_region(u32_t r_index, int write)
 
 	return ((r_ap & (AUX_MPU_ATTR_UR | AUX_MPU_ATTR_KR)) ==
 		(AUX_MPU_ATTR_UR | AUX_MPU_ATTR_KR));
+}
+
+#endif /* CONFIG_ARC_NORMAL_FIRMWARE */
+
+/**
+ * This internal function allocates a dynamic MPU region and returns
+ * the index or error
+ */
+static inline int _dynamic_region_allocate_index(void)
+{
+	if (dynamic_region_index >= get_num_regions()) {
+		LOG_ERR("no enough mpu entries %d", dynamic_region_index);
+		return -EINVAL;
+	}
+
+	return dynamic_region_index++;
+}
+
+/**
+ * This internal function checks the area given by (start, size)
+ * and returns the index if the area match one MPU entry
+ */
+static inline int _get_region_index(u32_t start, u32_t size)
+{
+	int index = _mpu_probe(start);
+
+	if (index > 0 && index == _mpu_probe(start + size - 1)) {
+		return index;
+	}
+
+	return -EINVAL;
 }
 
 /* @brief allocate and init a dynamic MPU region
@@ -353,7 +417,14 @@ static inline int _mpu_configure(u8_t type, u32_t base, u32_t size)
  */
 void arc_core_mpu_enable(void)
 {
-#define MPU_ENABLE_ATTR   0
+#ifdef CONFIG_ARC_SECURE_FIRMWARE
+/* the default region:
+ * normal:0x000, SID:0x10000, KW:0x100 KR:0x80, KE:0x4 0
+ */
+#define MPU_ENABLE_ATTR	0x101c0
+#else
+#define MPU_ENABLE_ATTR	0
+#endif
 	arc_core_mpu_default(MPU_ENABLE_ATTR);
 }
 
@@ -365,7 +436,8 @@ void arc_core_mpu_disable(void)
 	/* MPU is always enabled, use default region to
 	 * simulate MPU disable
 	 */
-	arc_core_mpu_default(REGION_ALL_ATTR);
+	arc_core_mpu_default(REGION_ALL_ATTR | AUX_MPU_ATTR_S |
+				AUX_MPU_RPER_SID1);
 }
 
 /**
@@ -474,12 +546,11 @@ void arc_core_mpu_configure_thread(struct k_thread *thread)
  */
 void arc_core_mpu_default(u32_t region_attr)
 {
-	u32_t val =  z_arc_v2_aux_reg_read(_ARC_V2_MPU_EN) &
-		    (~AUX_MPU_RPER_ATTR_MASK);
-
-	region_attr &= AUX_MPU_RPER_ATTR_MASK;
-
-	z_arc_v2_aux_reg_write(_ARC_V2_MPU_EN, region_attr | val);
+#ifdef CONFIG_ARC_NORMAL_FIRMWARE
+/* \todo through secure service to access mpu */
+#else
+	z_arc_v2_aux_reg_write(_ARC_V2_MPU_EN, region_attr);
+#endif
 }
 
 /**

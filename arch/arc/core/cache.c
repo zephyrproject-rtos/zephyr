@@ -15,17 +15,15 @@
 
 #include <kernel.h>
 #include <arch/cpu.h>
-#include <misc/util.h>
+#include <sys/util.h>
 #include <toolchain.h>
 #include <cache.h>
 #include <linker/linker-defs.h>
 #include <arch/arc/v2/aux_regs.h>
 #include <kernel_internal.h>
-#include <misc/__assert.h>
+#include <sys/__assert.h>
 #include <init.h>
 #include <stdbool.h>
-
-#if defined(CONFIG_CACHE_FLUSHING)
 
 #if (CONFIG_CACHE_LINE_SIZE == 0) && !defined(CONFIG_CACHE_LINE_SIZE_DETECT)
 #error Cannot use this implementation with a cache line size of 0
@@ -171,6 +169,3 @@ static int init_dcache(struct device *unused)
 }
 
 SYS_INIT(init_dcache, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
-
-#endif /* CONFIG_CACHE_FLUSHING */
-

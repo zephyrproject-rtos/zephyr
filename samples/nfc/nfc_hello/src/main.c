@@ -8,8 +8,8 @@
 #include <stdio.h>
 #include <zephyr/types.h>
 #include <string.h>
-#include <uart.h>
-#include <misc/byteorder.h>
+#include <drivers/uart.h>
+#include <sys/byteorder.h>
 
 #define BUF_MAXSIZE	256
 #define SLEEP_TIME	500

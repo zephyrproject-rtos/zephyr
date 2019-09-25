@@ -6,6 +6,7 @@ tests:
   net.mqtt:
     min_ram: 16
   net.mqtt.tls:
+    min_ram: 16
     extra_args: CONF_FILE="prj_tls.conf"
     extra_configs:
       - CONFIG_NET_PKT_RX_COUNT=20

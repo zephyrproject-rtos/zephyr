@@ -1,0 +1,17 @@
+identifier: stm32h747i_disco_m4
+name: STM32H747IDISCOVERY
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 288
+flash: 1024
+supported:
+  - gpio
+testing:
+  ignore_tags:
+    - mpu
+    - nfc
+    - net

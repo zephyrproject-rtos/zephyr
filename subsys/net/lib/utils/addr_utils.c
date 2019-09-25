@@ -4,12 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <net/socket.h>
+#ifdef CONFIG_NET_SOCKETS
 
-/* These utility functions are intended to be on top of POSIX API, and don't
- * make sense if it's not available.
- */
-#ifdef CONFIG_NET_SOCKETS_POSIX_NAMES
+#include <net/socketutils.h>
 
 const char *net_addr_str_find_port(const char *addr_str)
 {
@@ -24,7 +21,7 @@ const char *net_addr_str_find_port(const char *addr_str)
 		return p + 1;
 	}
 
-	/* IPv6 numeric address, and ':' preceeded by ']' */
+	/* IPv6 numeric address, and ':' preceded by ']' */
 	if (p[-1] == ']') {
 		return p + 1;
 	}

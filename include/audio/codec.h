@@ -14,7 +14,7 @@
 #ifndef ZEPHYR_INCLUDE_AUDIO_CODEC_H_
 #define ZEPHYR_INCLUDE_AUDIO_CODEC_H_
 
-#include <i2s.h>
+#include <drivers/i2s.h>
 
 #ifdef __cplusplus
 extern "C" {

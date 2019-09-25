@@ -27,10 +27,10 @@
  */
 
 #include <zephyr.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 
 #include <device.h>
-#include <dma.h>
+#include <drivers/dma.h>
 
 #include <string.h>
 #include <xtensa/hal.h>

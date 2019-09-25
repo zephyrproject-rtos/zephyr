@@ -8,9 +8,12 @@ zephyr_sources(
   crc8_sw.c
   crc7_sw.c
   fdtable.c
+  hex.c
   mempool.c
   rb.c
+  sem.c
   thread_entry.c
+  timeutil.c
   work_q.c
   )
 

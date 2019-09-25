@@ -12,7 +12,7 @@
 #include "settings_priv.h"
 
 #ifdef CONFIG_SETTINGS_USE_BASE64
-#include "base64.h"
+#include <sys/base64.h>
 #endif
 
 #include <logging/log.h>
@@ -312,17 +312,27 @@ int settings_line_val_read(off_t val_off, off_t off, char *out, size_t len_req,
 			return rc;
 		}
 
-		enc_buf[read_size] = 0; /* breaking guaranted */
+		enc_buf[read_size] = 0; /* breaking guaranteed */
 		read_size = strlen(enc_buf);
 
-		if (read_size == 0 || read_size % 4) {
-			/* unexpected use case - a NULL value or an encoding */
-			/* problem */
+		if (read_size == 0) {
+			/* a NULL value (deleted entry) */
+			*len_read = 0;
+			return 0;
+		}
+
+		if (read_size % 4) {
+			/* unexpected use case - an encoding problem */
 			return -EINVAL;
 		}
 
 		rc = base64_decode(dec_buf, sizeof(dec_buf), &olen, enc_buf,
 				   read_size);
+
+		if (rc) {
+			return rc;
+		}
+
 		dec_buf[olen] = 0;
 
 		clen = MIN(olen + off_begin - off, rem_size);
@@ -396,7 +406,7 @@ size_t settings_line_val_get_len(off_t val_off, void *read_cb_ctx)
 
 /**
  * @param line_loc offset of the settings line, expect that it is aligned to rbs physically.
- * @param seek offset form the line begining.
+ * @param seek offset form the line beginning.
  * @retval 0 : read proper name
  * 1 : when read unproper name
  * -ERCODE for storage errors
@@ -487,7 +497,7 @@ static int settings_line_cmp(char const *val, size_t val_len,
 	return rc;
 }
 
-void settings_line_dup_check_cb(char *name, void *val_read_cb_ctx,
+int settings_line_dup_check_cb(const char *name, void *val_read_cb_ctx,
 				off_t off, void *cb_arg)
 {
 	struct settings_line_dup_check_arg *cdca;
@@ -495,7 +505,7 @@ void settings_line_dup_check_cb(char *name, void *val_read_cb_ctx,
 
 	cdca = (struct settings_line_dup_check_arg *)cb_arg;
 	if (strcmp(name, cdca->name)) {
-		return;
+		return 0;
 	}
 
 	len_read = settings_line_val_get_len(off, val_read_cb_ctx);
@@ -511,6 +521,7 @@ void settings_line_dup_check_cb(char *name, void *val_read_cb_ctx,
 			cdca->is_dup = 0;
 		}
 	}
+	return 0;
 }
 
 static ssize_t settings_line_read_cb(void *cb_arg, void *data, size_t len)
@@ -530,35 +541,16 @@ static ssize_t settings_line_read_cb(void *cb_arg, void *data, size_t len)
 	return -1;
 }
 
-void settings_line_load_cb(char *name, void *val_read_cb_ctx, off_t off,
-			   void *cb_arg)
+int settings_line_load_cb(const char *name, void *val_read_cb_ctx, off_t off,
+			  void *cb_arg)
 {
-	int name_argc;
-	char *name_argv[SETTINGS_MAX_DIR_DEPTH];
-	struct settings_handler *ch;
-	struct settings_line_read_value_cb_ctx value_ctx;
-	int rc;
 	size_t len;
-
-	ch = settings_parse_and_lookup(name, &name_argc, name_argv);
-	if (!ch) {
-		return;
-	}
-
+	struct settings_line_read_value_cb_ctx value_ctx;
+	struct settings_load_arg *arg = cb_arg;
 	value_ctx.read_cb_ctx = val_read_cb_ctx;
 	value_ctx.off = off;
-
 	len = settings_line_val_get_len(off, val_read_cb_ctx);
 
-	rc = ch->h_set(name_argc - 1, &name_argv[1], len, settings_line_read_cb,
-		       (void *)&value_ctx);
-
-	if (rc != 0) {
-		LOG_ERR("set-value failure. key: %s error(%d)",
-			log_strdup(name), rc);
-	} else {
-		LOG_DBG("set-value OK. key: %s",
-			log_strdup(name));
-	}
-	(void)rc;
+	return settings_call_set_handler(name, len, settings_line_read_cb,
+					 &value_ctx, arg);
 }

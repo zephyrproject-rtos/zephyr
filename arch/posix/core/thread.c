@@ -13,10 +13,6 @@
  * architecture
  */
 
-#ifdef CONFIG_INIT_STACKS
-#include <string.h>
-#endif /* CONFIG_INIT_STACKS */
-
 #include <toolchain.h>
 #include <kernel_structs.h>
 #include <wait_q.h>
@@ -75,7 +71,7 @@ void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	thread_status->aborted = 0;
 #endif
 
-	thread->callee_saved.thread_status = (u32_t)thread_status;
+	thread->callee_saved.thread_status = thread_status;
 
 	posix_new_thread(thread_status);
 }

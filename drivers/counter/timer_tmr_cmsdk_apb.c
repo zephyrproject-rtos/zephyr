@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <counter.h>
+#include <drivers/counter.h>
 #include <device.h>
 #include <errno.h>
 #include <init.h>
@@ -69,25 +69,28 @@ static u32_t tmr_cmsdk_apb_read(struct device *dev)
 }
 
 static int tmr_cmsdk_apb_set_top_value(struct device *dev,
-					      u32_t ticks,
-					      counter_top_callback_t callback,
-					      void *user_data)
+				       const struct counter_top_cfg *top_cfg)
 {
 	const struct tmr_cmsdk_apb_cfg * const cfg =
 						dev->config->config_info;
 	struct tmr_cmsdk_apb_dev_data *data = dev->driver_data;
 
-	data->top_callback = callback;
-	data->top_user_data = user_data;
+	/* Counter is always reset when top value is updated. */
+	if (top_cfg->flags & COUNTER_TOP_CFG_DONT_RESET) {
+		return -ENOTSUP;
+	}
+
+	data->top_callback = top_cfg->callback;
+	data->top_user_data = top_cfg->user_data;
 
 	/* Store the reload value */
-	data->load = ticks;
+	data->load = top_cfg->ticks;
 
 	/* Set value register to count */
-	cfg->timer->value = ticks;
+	cfg->timer->value = top_cfg->ticks;
 
 	/* Set the timer reload to count */
-	cfg->timer->reload = ticks;
+	cfg->timer->reload = top_cfg->ticks;
 
 	/* Enable IRQ */
 	cfg->timer->ctrl |= TIMER_CTRL_IRQ_EN;
@@ -157,7 +160,7 @@ static int tmr_cmsdk_apb_init(struct device *dev)
 }
 
 /* TIMER 0 */
-#ifdef DT_ARM_CMSDK_TIMER_0
+#ifdef DT_INST_0_ARM_CMSDK_TIMER
 static void timer_cmsdk_apb_config_0(struct device *dev);
 
 static const struct tmr_cmsdk_apb_cfg tmr_cmsdk_apb_cfg_0 = {
@@ -195,10 +198,10 @@ static void timer_cmsdk_apb_config_0(struct device *dev)
 		    DEVICE_GET(tmr_cmsdk_apb_0), 0);
 	irq_enable(DT_INST_0_ARM_CMSDK_TIMER_IRQ_0);
 }
-#endif /* DT_ARM_CMSDK_TIMER_0 */
+#endif /* DT_INST_0_ARM_CMSDK_TIMER */
 
 /* TIMER 1 */
-#ifdef DT_ARM_CMSDK_TIMER_1
+#ifdef DT_INST_1_ARM_CMSDK_TIMER
 static void timer_cmsdk_apb_config_1(struct device *dev);
 
 static const struct tmr_cmsdk_apb_cfg tmr_cmsdk_apb_cfg_1 = {
@@ -236,4 +239,4 @@ static void timer_cmsdk_apb_config_1(struct device *dev)
 		    DEVICE_GET(tmr_cmsdk_apb_1), 0);
 	irq_enable(DT_INST_1_ARM_CMSDK_TIMER_IRQ_0);
 }
-#endif /* DT_ARM_CMSDK_TIMER_1 */
+#endif /* DT_INST_1_ARM_CMSDK_TIMER */

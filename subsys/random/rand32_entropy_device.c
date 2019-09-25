@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <atomic.h>
+#include <sys/atomic.h>
 #include <kernel.h>
-#include <entropy.h>
+#include <drivers/entropy.h>
 
 static struct device *entropy_driver;
 

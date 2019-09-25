@@ -2,8 +2,7 @@ tests:
   bluetooth.shell:
     extra_configs:
       - CONFIG_NATIVE_UART_0_ON_STDINOUT=y
-    platform_whitelist: qemu_cortex_m3 qemu_x86 arduino_101 native_posix
-                        nrf52840_pca10056
+    platform_whitelist: qemu_cortex_m3 qemu_x86 native_posix native_posix_64 nrf52840_pca10056
     platform_exclude: nrf52810_pca10040
     tags: bluetooth
     harness: keyboard
@@ -12,7 +11,7 @@ tests:
     extra_configs:
       - CONFIG_NATIVE_UART_0_ON_STDINOUT=y
     extra_args: CONF_FILE="prj_br.conf"
-    platform_whitelist: qemu_cortex_m3 qemu_x86 native_posix
+    platform_whitelist: qemu_cortex_m3 qemu_x86 native_posix native_posix_64
     platform_exclude: nrf52810_pca10040
     tags: bluetooth
     harness: keyboard

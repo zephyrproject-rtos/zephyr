@@ -14,7 +14,7 @@ extern "C" {
 #endif
 
 /* configuration flags for interrupt unit */
-
+#define _ARC_V2_INT_PRIO_MASK 0xf
 #define _ARC_V2_INT_DISABLE 0
 #define _ARC_V2_INT_ENABLE 1
 
@@ -97,15 +97,34 @@ void z_arc_v2_irq_unit_int_disable(int irq)
 static ALWAYS_INLINE
 void z_arc_v2_irq_unit_prio_set(int irq, unsigned char prio)
 {
+
 	z_arc_v2_aux_reg_write(_ARC_V2_IRQ_SELECT, irq);
-#ifdef CONFIG_ARC_HAS_SECURE
-/* if ARC has secure mode, all interrupt should be secure */
-	z_arc_v2_aux_reg_write(_ARC_V2_IRQ_PRIORITY, prio |
-			 _ARC_V2_IRQ_PRIORITY_SECURE);
+#if defined(CONFIG_ARC_SECURE_FIRMWARE)
+	z_arc_v2_aux_reg_write(_ARC_V2_IRQ_PRIORITY,
+	(z_arc_v2_aux_reg_read(_ARC_V2_IRQ_PRIORITY) & (~_ARC_V2_INT_PRIO_MASK))
+	| prio);
 #else
 	z_arc_v2_aux_reg_write(_ARC_V2_IRQ_PRIORITY, prio);
 #endif
 }
+
+#if defined(CONFIG_ARC_SECURE_FIRMWARE)
+static ALWAYS_INLINE
+void z_arc_v2_irq_uinit_secure_set(int irq, bool secure)
+{
+		z_arc_v2_aux_reg_write(_ARC_V2_IRQ_SELECT, irq);
+
+		if (secure) {
+			z_arc_v2_aux_reg_write(_ARC_V2_IRQ_PRIORITY,
+			z_arc_v2_aux_reg_read(_ARC_V2_IRQ_PRIORITY)  |
+			_ARC_V2_IRQ_PRIORITY_SECURE);
+		} else {
+			z_arc_v2_aux_reg_write(_ARC_V2_IRQ_PRIORITY,
+			z_arc_v2_aux_reg_read(_ARC_V2_IRQ_PRIORITY) &
+			_ARC_V2_INT_PRIO_MASK);
+		}
+}
+#endif
 
 /*
  * @brief Set interrupt sensitivity
@@ -119,7 +138,7 @@ void z_arc_v2_irq_unit_prio_set(int irq, unsigned char prio)
  */
 
 static ALWAYS_INLINE
-void _arc_v2_irq_unit_sensitivity_set(int irq, int s)
+void z_arc_v2_irq_unit_sensitivity_set(int irq, int s)
 {
 	z_arc_v2_aux_reg_write(_ARC_V2_IRQ_SELECT, irq);
 	z_arc_v2_aux_reg_write(_ARC_V2_IRQ_TRIGGER, s);

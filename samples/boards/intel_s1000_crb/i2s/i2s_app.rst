@@ -86,7 +86,6 @@ Audio Playback from a Host
 
 .. zephyr-app-commands::
    :zephyr-app: samples/boards/intel_s1000_crb/i2s
-   :tool: all
    :board:
    :goals: build
    :gen-args: -DAUDIO_PLAY_FROM_HOST=Y
@@ -97,7 +96,6 @@ Tone Sequence Playback
 
 .. zephyr-app-commands::
    :zephyr-app: samples/boards/intel_s1000_crb/i2s
-   :tool: all
    :board:
    :goals: build
    :gen-args: -DAUDIO_PLAY_FROM_HOST=N

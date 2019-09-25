@@ -63,14 +63,14 @@ def main():
     existing = ''
 
     if os.path.exists(args.out_file):
-        with open(args.out_file, 'r') as fp:
+        with open(args.out_file, 'r', encoding="utf-8") as fp:
             existing = fp.read()
 
         if new != existing:
-            with open(args.out_file, 'w') as fp:
+            with open(args.out_file, 'w', encoding="utf-8") as fp:
                 fp.write(new)
     else:
-        with open(args.out_file, 'w') as fp:
+        with open(args.out_file, 'w', encoding="utf-8") as fp:
             fp.write(new)
 
     # Always touch trigger file to ensure json files are updated

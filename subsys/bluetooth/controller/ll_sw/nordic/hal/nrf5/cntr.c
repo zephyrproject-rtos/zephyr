@@ -5,15 +5,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <misc/dlist.h>
-#include <misc/mempool_base.h>
+#include <sys/dlist.h>
+#include <sys/mempool_base.h>
 
 #include "hal/cntr.h"
 
 #define LOG_MODULE_NAME bt_ctlr_cntr
 #include "common/log.h"
 #include "hal/debug.h"
-#include "nrf_rtc.h"
+#include <nrfx/hal/nrf_rtc.h>
 
 #ifndef NRF_RTC
 #define NRF_RTC NRF_RTC0

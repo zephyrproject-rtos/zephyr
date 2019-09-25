@@ -9,6 +9,10 @@
 #include <kernel.h>
 #include <zephyr/types.h>
 
+#define ST_OUI_B0 0x00
+#define ST_OUI_B1 0x80
+#define ST_OUI_B2 0xE1
+
 #define ETH_STM32_HAL_MTU NET_ETH_MTU
 #define ETH_STM32_HAL_FRAME_SIZE_MAX (ETH_STM32_HAL_MTU + 18)
 
@@ -37,6 +41,7 @@ struct eth_stm32_hal_dev_data {
 	K_THREAD_STACK_MEMBER(rx_thread_stack,
 		CONFIG_ETH_STM32_HAL_RX_THREAD_STACK_SIZE);
 	struct k_thread rx_thread;
+	bool link_up;
 };
 
 #define DEV_CFG(dev) \
@@ -45,4 +50,3 @@ struct eth_stm32_hal_dev_data {
 	((struct eth_stm32_hal_dev_data *)(dev)->driver_data)
 
 #endif /* ZEPHYR_DRIVERS_ETHERNET_ETH_STM32_HAL_PRIV_H_ */
-

@@ -7,27 +7,27 @@
 #include <errno.h>
 
 #include <kernel.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 #include "gpio_dw.h"
 #include "gpio_utils.h"
 
 #include <soc.h>
-#include <sys_io.h>
+#include <sys/sys_io.h>
 #include <init.h>
-#include <misc/util.h>
-#include <misc/__assert.h>
-#include <clock_control.h>
+#include <sys/util.h>
+#include <sys/__assert.h>
+#include <drivers/clock_control.h>
 
 #ifdef CONFIG_SHARED_IRQ
 #include <shared_irq.h>
 #endif
 
 #ifdef CONFIG_IOAPIC
-#include <drivers/ioapic.h>
+#include <drivers/interrupt_controller/ioapic.h>
 #endif
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-#include <power.h>
+#include <power/power.h>
 #endif
 
 /*
@@ -47,7 +47,7 @@ static inline void dw_write(u32_t base_addr, u32_t offset,
 }
 
 static void dw_set_bit(u32_t base_addr, u32_t offset,
-		       u32_t bit, u8_t value)
+		       u32_t bit, bool value)
 {
 	if (!value) {
 		sys_io_clear_bit(base_addr + offset, bit);
@@ -68,7 +68,7 @@ static inline void dw_write(u32_t base_addr, u32_t offset,
 }
 
 static void dw_set_bit(u32_t base_addr, u32_t offset,
-		       u32_t bit, u8_t value)
+		       u32_t bit, bool value)
 {
 	if (!value) {
 		sys_clear_bit(base_addr + offset, bit);
@@ -113,22 +113,6 @@ static inline void gpio_dw_clock_off(struct device *port)
 #define gpio_dw_clock_off(...)
 #endif
 
-#ifdef CONFIG_SOC_QUARK_SE_C1000_SS
-static inline void dw_set_both_edges(u32_t base_addr, u32_t pin)
-{
-	ARG_UNUSED(base_addr);
-	ARG_UNUSED(pin);
-}
-static inline int dw_base_to_block_base(u32_t base_addr)
-{
-	return base_addr;
-}
-static inline int dw_interrupt_support(const struct gpio_dw_config *config)
-{
-	ARG_UNUSED(config);
-	return 1;
-}
-#else
 static inline void dw_set_both_edges(u32_t base_addr, u32_t pin)
 {
 	dw_set_bit(base_addr, INT_BOTHEDGE, pin, 1);
@@ -146,7 +130,6 @@ static inline int dw_interrupt_support(const struct gpio_dw_config *config)
 {
 	return ((int)(config->irq_num) > 0);
 }
-#endif
 
 static inline void dw_interrupt_config(struct device *port, int access_op,
 				       u32_t pin, int flags)
@@ -154,7 +137,7 @@ static inline void dw_interrupt_config(struct device *port, int access_op,
 	struct gpio_dw_runtime *context = port->driver_data;
 	const struct gpio_dw_config *config = port->config->config_info;
 	u32_t base_addr = dw_base_to_block_base(context->base_addr);
-	u8_t flag_is_set;
+	bool flag_is_set;
 
 	ARG_UNUSED(access_op);
 
@@ -254,13 +237,8 @@ static inline int gpio_dw_read(struct device *port, int access_op,
 {
 	struct gpio_dw_runtime *context = port->driver_data;
 	u32_t base_addr = context->base_addr;
-#ifndef CONFIG_SOC_QUARK_SE_C1000_SS
 	u32_t ext_port = EXT_PORTA;
-#endif
 
-#ifdef CONFIG_SOC_QUARK_SE_C1000_SS
-	*value = dw_read(base_addr, EXT_PORTA);
-#else
 	/* 4-port GPIO implementation translates from base address to port */
 	switch (dw_derive_port_from_base(base_addr)) {
 	case 1:
@@ -277,7 +255,6 @@ static inline int gpio_dw_read(struct device *port, int access_op,
 		break;
 	}
 	*value = dw_read(dw_base_to_block_base(base_addr), ext_port);
-#endif
 
 	if (GPIO_ACCESS_BY_PIN == access_op) {
 		*value = !!(*value & BIT(pin));
@@ -387,19 +364,7 @@ static int gpio_dw_device_ctrl(struct device *port, u32_t ctrl_command,
 #define gpio_dw_set_power_state(...)
 #endif
 
-#if defined(CONFIG_SOC_QUARK_SE_C1000) || defined(CONFIG_SOC_QUARK_D2000)
-static inline void gpio_dw_unmask_int(u32_t mask_addr)
-{
-	sys_write32(sys_read32(mask_addr) & INT_UNMASK_IA, mask_addr);
-}
-#elif CONFIG_SOC_QUARK_SE_C1000_SS
-static inline void gpio_dw_unmask_int(u32_t mask_addr)
-{
-	sys_write32(sys_read32(mask_addr) & INT_ENABLE_ARC, mask_addr);
-}
-#else
 #define gpio_dw_unmask_int(...)
-#endif
 
 static void gpio_dw_isr(void *arg)
 {
@@ -434,49 +399,15 @@ static const struct gpio_driver_api api_funcs = {
 	.disable_callback = gpio_dw_disable_callback,
 };
 
-#ifdef CONFIG_PCI
-static inline int gpio_dw_setup(struct device *dev)
-{
-	struct gpio_dw_runtime *context = dev->driver_data;
-
-	pci_bus_scan_init();
-
-	if (!pci_bus_scan(&context->pci_dev)) {
-		return 0;
-	}
-
-#ifdef CONFIG_PCI_ENUMERATION
-	context->base_addr = context->pci_dev.addr;
-#endif
-	pci_enable_regs(&context->pci_dev);
-
-	pci_show(&context->pci_dev);
-
-	return 1;
-}
-#else
-#define gpio_dw_setup(_unused_) (1)
-#endif /* CONFIG_PCI */
-
-
 static int gpio_dw_initialize(struct device *port)
 {
 	struct gpio_dw_runtime *context = port->driver_data;
 	const struct gpio_dw_config *config = port->config->config_info;
 	u32_t base_addr;
 
-	if (!gpio_dw_setup(port)) {
-		port->driver_api = NULL;
-		return -EPERM;
-	}
-
 	if (dw_interrupt_support(config)) {
 
 		base_addr = dw_base_to_block_base(context->base_addr);
-#ifdef CONFIG_SOC_QUARK_SE_C1000_SS
-		/* Need to enable clock for GPIO controller */
-		dw_set_bit(base_addr, INT_CLOCK_SYNC, CLK_ENA_POS, 1);
-#endif /* CONFIG_SOC_QUARK_SE_C1000_SS */
 
 		/* interrupts in sync with system clock */
 		dw_set_bit(base_addr, INT_CLOCK_SYNC, LS_SYNC_POS, 1);
@@ -516,15 +447,6 @@ static const struct gpio_dw_config gpio_config_0 = {
 
 static struct gpio_dw_runtime gpio_0_runtime = {
 	.base_addr = DT_GPIO_DW_0_BASE_ADDR,
-#if CONFIG_PCI
-	.pci_dev.class_type = GPIO_DW_PCI_CLASS,
-	.pci_dev.bus = GPIO_DW_0_PCI_BUS,
-	.pci_dev.dev = GPIO_DW_0_PCI_DEV,
-	.pci_dev.vendor_id = GPIO_DW_PCI_VENDOR_ID,
-	.pci_dev.device_id = GPIO_DW_PCI_DEVICE_ID,
-	.pci_dev.function = GPIO_DW_0_PCI_FUNCTION,
-	.pci_dev.bar = GPIO_DW_0_PCI_BAR,
-#endif
 };
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
@@ -585,15 +507,6 @@ static const struct gpio_dw_config gpio_dw_config_1 = {
 
 static struct gpio_dw_runtime gpio_1_runtime = {
 	.base_addr = DT_GPIO_DW_1_BASE_ADDR,
-#if CONFIG_PCI
-	.pci_dev.class_type = GPIO_DW_PCI_CLASS,
-	.pci_dev.bus = GPIO_DW_1_PCI_BUS,
-	.pci_dev.dev = GPIO_DW_1_PCI_DEV,
-	.pci_dev.vendor_id = GPIO_DW_PCI_VENDOR_ID,
-	.pci_dev.device_id = GPIO_DW_PCI_DEVICE_ID,
-	.pci_dev.function = GPIO_DW_1_PCI_FUNCTION,
-	.pci_dev.bar = GPIO_DW_1_PCI_BAR,
-#endif
 };
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
@@ -652,15 +565,6 @@ static const struct gpio_dw_config gpio_dw_config_2 = {
 
 static struct gpio_dw_runtime gpio_2_runtime = {
 	.base_addr = DT_GPIO_DW_2_BASE_ADDR,
-#if CONFIG_PCI
-	.pci_dev.class_type = GPIO_DW_PCI_CLASS,
-	.pci_dev.bus = GPIO_DW_2_PCI_BUS,
-	.pci_dev.dev = GPIO_DW_2_PCI_DEV,
-	.pci_dev.vendor_id = GPIO_DW_PCI_VENDOR_ID,
-	.pci_dev.device_id = GPIO_DW_PCI_DEVICE_ID,
-	.pci_dev.function = GPIO_DW_2_PCI_FUNCTION,
-	.pci_dev.bar = GPIO_DW_2_PCI_BAR,
-#endif
 };
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
@@ -719,15 +623,6 @@ static const struct gpio_dw_config gpio_dw_config_3 = {
 
 static struct gpio_dw_runtime gpio_3_runtime = {
 	.base_addr = DT_GPIO_DW_3_BASE_ADDR,
-#if CONFIG_PCI
-	.pci_dev.class_type = GPIO_DW_PCI_CLASS,
-	.pci_dev.bus = GPIO_DW_3_PCI_BUS,
-	.pci_dev.dev = GPIO_DW_3_PCI_DEV,
-	.pci_dev.vendor_id = GPIO_DW_PCI_VENDOR_ID,
-	.pci_dev.device_id = GPIO_DW_PCI_DEVICE_ID,
-	.pci_dev.function = GPIO_DW_3_PCI_FUNCTION,
-	.pci_dev.bar = GPIO_DW_3_PCI_BAR,
-#endif
 };
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT

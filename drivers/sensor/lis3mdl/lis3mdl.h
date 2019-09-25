@@ -8,9 +8,9 @@
 #define ZEPHYR_DRIVERS_SENSOR_LIS3MDL_LIS3MDL_H_
 
 #include <device.h>
-#include <misc/util.h>
+#include <sys/util.h>
 #include <zephyr/types.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 
 #define LIS3MDL_I2C_ADDR_BASE           0x1C
 #define LIS3MDL_I2C_ADDR_MASK           (~BIT(1))

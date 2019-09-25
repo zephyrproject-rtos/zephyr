@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <gpio.h>
+#include <drivers/gpio.h>
 
 #include "app_gpio.h"
 #include "storage.h"
@@ -1144,10 +1144,10 @@ static void vnd_set_unack(struct bt_mesh_model *model,
 
 	if (state->current == STATE_ON) {
 		/* LED2 On */
-		gpio_pin_write(led_device[1], LED1_GPIO_PIN, 0);
+		gpio_pin_write(led_device[1], DT_ALIAS_LED1_GPIOS_PIN, 0);
 	} else {
 		/* LED2 Off */
-		gpio_pin_write(led_device[1], LED1_GPIO_PIN, 1);
+		gpio_pin_write(led_device[1], DT_ALIAS_LED1_GPIOS_PIN, 1);
 	}
 }
 

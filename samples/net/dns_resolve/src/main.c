@@ -65,19 +65,9 @@ void dns_result_cb(enum dns_resolve_status status,
 	if (info->ai_family == AF_INET) {
 		hr_family = "IPv4";
 		addr = &net_sin(&info->ai_addr)->sin_addr;
-
-#if defined(CONFIG_MDNS_RESOLVER) && defined(CONFIG_NET_IPV4)
-		k_delayed_work_init(&mdns_ipv4_timer, do_mdns_ipv4_lookup);
-		k_delayed_work_submit(&mdns_ipv4_timer, 0);
-#endif
 	} else if (info->ai_family == AF_INET6) {
 		hr_family = "IPv6";
 		addr = &net_sin6(&info->ai_addr)->sin6_addr;
-
-#if defined(CONFIG_MDNS_RESOLVER) && defined(CONFIG_NET_IPV6)
-		k_delayed_work_init(&mdns_ipv6_timer, do_mdns_ipv6_lookup);
-		k_delayed_work_submit(&mdns_ipv6_timer, 0);
-#endif
 	} else {
 		LOG_ERR("Invalid IP address family %d", info->ai_family);
 		return;
@@ -204,6 +194,11 @@ static void ipv4_addr_add_handler(struct net_mgmt_event_callback *cb,
 	 */
 	k_delayed_work_init(&ipv4_timer, do_ipv4_lookup);
 	k_delayed_work_submit(&ipv4_timer, 0);
+
+#if defined(CONFIG_MDNS_RESOLVER)
+	k_delayed_work_init(&mdns_ipv4_timer, do_mdns_ipv4_lookup);
+	k_delayed_work_submit(&mdns_ipv4_timer, 0);
+#endif
 }
 
 static void setup_dhcpv4(struct net_if *iface)
@@ -226,14 +221,13 @@ static void setup_dhcpv4(struct net_if *iface)
 static void do_mdns_ipv4_lookup(struct k_work *work)
 {
 	static const char *query = "zephyr.local";
-	u16_t dns_id;
 	int ret;
 
 	LOG_DBG("Doing mDNS IPv4 query");
 
 	ret = dns_get_addr_info(query,
 				DNS_QUERY_TYPE_A,
-				&dns_id,
+				NULL,
 				mdns_result_cb,
 				(void *)query,
 				DNS_TIMEOUT);
@@ -242,7 +236,7 @@ static void do_mdns_ipv4_lookup(struct k_work *work)
 		return;
 	}
 
-	LOG_DBG("mDNS id %u", dns_id);
+	LOG_DBG("mDNS v4 query sent");
 }
 #endif
 #endif
@@ -284,6 +278,11 @@ static void setup_ipv4(struct net_if *iface)
 	}
 
 	LOG_DBG("DNS id %u", dns_id);
+
+#if defined(CONFIG_MDNS_RESOLVER) && defined(CONFIG_NET_IPV4)
+	k_delayed_work_init(&mdns_ipv4_timer, do_mdns_ipv4_lookup);
+	k_delayed_work_submit(&mdns_ipv4_timer, 0);
+#endif
 }
 
 #else
@@ -319,20 +318,24 @@ static void do_ipv6_lookup(void)
 static void setup_ipv6(struct net_if *iface)
 {
 	do_ipv6_lookup();
+
+#if defined(CONFIG_MDNS_RESOLVER) && defined(CONFIG_NET_IPV6)
+	k_delayed_work_init(&mdns_ipv6_timer, do_mdns_ipv6_lookup);
+	k_delayed_work_submit(&mdns_ipv6_timer, 0);
+#endif
 }
 
 #if defined(CONFIG_MDNS_RESOLVER)
 static void do_mdns_ipv6_lookup(struct k_work *work)
 {
 	static const char *query = "zephyr.local";
-	u16_t dns_id;
 	int ret;
 
 	LOG_DBG("Doing mDNS IPv6 query");
 
 	ret = dns_get_addr_info(query,
 				DNS_QUERY_TYPE_AAAA,
-				&dns_id,
+				NULL,
 				mdns_result_cb,
 				(void *)query,
 				DNS_TIMEOUT);
@@ -341,7 +344,7 @@ static void do_mdns_ipv6_lookup(struct k_work *work)
 		return;
 	}
 
-	LOG_DBG("mDNS id %u", dns_id);
+	LOG_DBG("mDNS v6 query sent");
 }
 #endif
 

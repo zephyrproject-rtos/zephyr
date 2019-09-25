@@ -15,15 +15,16 @@
 			interrupt-names = "usb";
 			num-bidir-endpoints = <8>;
 			ram-size = <1024>;
-			phys = <&otgfs_phy>;
+			phys = <&usb_fs_phy>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x04000000>;
 			status = "disabled";
 			label = "USB";
 		};
 	};
 
-	otgfs_phy: otgfs_phy {
+	usb_fs_phy: usbphy {
 		compatible = "usb-nop-xceiv";
 		#phy-cells = <0>;
-		label = "OTGFS_PHY";
+		label = "USB_FS_PHY";
 	};
 };

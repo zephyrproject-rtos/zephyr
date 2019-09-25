@@ -8,7 +8,7 @@
 #ifndef _CC2650_SOC_H_
 #define _CC2650_SOC_H_
 
-#include <misc/util.h>
+#include <sys/util.h>
 #include "registers/ccfg.h"
 #include "registers/gpio.h"
 #include "registers/ioc.h"

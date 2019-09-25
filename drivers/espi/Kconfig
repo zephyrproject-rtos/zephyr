@@ -1,0 +1,91 @@
+# Kconfig - eSPI configuration options
+#
+# Copyright (c) 2019 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig ESPI
+	bool "ESPI Driver"
+	help
+	  Enable ESPI Driver
+
+if ESPI
+
+source "drivers/espi/Kconfig.xec"
+
+module = ESPI
+module-str = espi
+source "subsys/logging/Kconfig.template.log_config"
+
+config ESPI_SLAVE
+	bool "ESPI slave driver"
+	default y
+	help
+	  Enables eSPI driver in slave mode
+
+config ESPI_INIT_PRIORITY
+	int "IRQ Priority for ESPI Controller"
+	default 3
+	help
+	  IRQ Priority for ESPI Controller
+
+config ESPI_PERIPHERAL_CHANNEL
+	bool "eSPI peripheral channel"
+	default y
+	help
+	  eSPI Controller supports peripheral channel
+
+config ESPI_VWIRE_CHANNEL
+	bool "eSPI virtual wire channel"
+	default y
+	help
+	  eSPI Controller supports virtual wires channel
+
+config ESPI_OOB_CHANNEL
+	bool "eSPI Out-of-band channel"
+	default n
+	help
+	  eSPI Controller supports OOB channel
+
+config ESPI_FLASH_CHANNEL
+	bool "ESPI flash channel"
+	default n
+	help
+	  eSPI Controller supports flash channel
+
+if ESPI_PERIPHERAL_CHANNEL
+
+config ESPI_PERIPHERAL_UART
+	bool "UART peripheral"
+	default n
+	help
+	  Enables UART over eSPI peripheral channel
+
+config ESPI_PERIPHERAL_8042_KEYBOARD
+	bool "8042 keyboard peripheral"
+	default n
+	help
+	  Enables 8042 keyboard over eSPI peripheral channel
+
+config ESPI_PERIPHERAL_HOST_IO
+	bool "Host I/O peripheral"
+	default n
+	help
+	  Enables ACPI Host I/O over eSPI peripheral channel
+
+config ESPI_PERIPHERAL_PORT_92
+	bool "Legacy Port 92 peripheral"
+	default n
+	help
+	  Enables legacy Port 92 over eSPI peripheral channel
+
+config ESPI_PERIPHERAL_DEBUG_PORT_80
+	bool "Debug Port 80 peripheral"
+	default n
+	help
+	  Enables debug Port 80 over eSPI peripheral channel
+
+endif # ESPI_PERIPHERAL_CHANNEL
+
+endif # ESPI

@@ -140,7 +140,7 @@ static int init_vlan(void)
 
 static enum net_verdict parse_lldp(struct net_if *iface, struct net_pkt *pkt)
 {
-	LOG_DBG("iface %p Parsing LLDP, len %u", iface, net_pkt_get_len(pkt));
+	LOG_DBG("iface %p Parsing LLDP, len %zu", iface, net_pkt_get_len(pkt));
 
 	net_pkt_cursor_init(pkt);
 

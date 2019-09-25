@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <i2c.h>
+#include <drivers/i2c.h>
 #include <init.h>
-#include <sensor.h>
-#include <misc/__assert.h>
+#include <drivers/sensor.h>
+#include <sys/__assert.h>
 #include <logging/log.h>
 
 #include "bma280.h"

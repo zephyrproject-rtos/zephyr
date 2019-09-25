@@ -12,12 +12,12 @@
 LOG_MODULE_REGISTER(net_sock_tls, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 #include <init.h>
-#include <entropy.h>
-#include <misc/util.h>
+#include <drivers/entropy.h>
+#include <sys/util.h>
 #include <net/net_context.h>
 #include <net/socket.h>
 #include <syscall_handler.h>
-#include <misc/fdtable.h>
+#include <sys/fdtable.h>
 
 #if defined(CONFIG_MBEDTLS)
 #if !defined(CONFIG_MBEDTLS_CFG_FILE)

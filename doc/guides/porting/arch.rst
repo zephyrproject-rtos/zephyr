@@ -10,7 +10,6 @@ Interface)` that is not currently supported.
 The following are examples of ISAs and ABIs that Zephyr supports:
 
 * x86_32 ISA with System V ABI
-* x86_32 ISA with IAMCU ABI
 * ARMv7-M ISA with Thumb2 instruction set and ARM Embedded ABI (aeabi)
 * ARCv2 ISA
 
@@ -320,10 +319,7 @@ There can be significant differences between the interrupt controllers and the
 interrupt concepts across architectures.
 
 For example, x86 has the concept of an :abbr:`IDT (Interrupt Descriptor Table)`
-and different interrupt controllers. Although modern systems mostly
-standardized on the :abbr:`APIC (Advanced Programmable Interrupt Controller)`,
-some small Quark-based systems use the :abbr:`MVIC (Micro-controller Vectored
-Interrupt Controller)`. Also, the position of an interrupt in the IDT
+and different interrupt controllers. The position of an interrupt in the IDT
 determines its priority.
 
 On the other hand, the ARM Cortex-M has the :abbr:`NVIC (Nested Vectored
@@ -444,13 +440,14 @@ However, a real implementation is strongly recommended.
 Fault Management
 ****************
 
-Each architecture provides two fatal error handlers:
-
-* :code:`_NanoFatalErrorHandler`, called by software for unrecoverable errors.
-* :code:`_SysFatalErrorHandler`, which makes the decision on how to handle
-  the thread where the error is generated, most likely by terminating it.
-
-See the current architecture implementations for examples.
+In the event of an unhandled CPU exception, the architecture
+code must call into :c:func:`z_fatal_error`.  This function dumps
+out architecture-agnostic information and makes a policy
+decision on what to do next by invoking :c:func:`k_sys_fatal_error`.
+This function can be overridden to implement application-specific
+policies that could include locking interrupts and spinning forever
+(the default implementation) or even powering off the
+system (if supported).
 
 Toolchain and Linking
 *********************

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2017 Linaro Limited
- * Copyright (c) 2018 Centaur Analytics, Inc
+ * Copyright (c) 2018-2019 Centaur Analytics, Inc
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -62,6 +62,12 @@
 				rx_tx {
 					rx = <STM32_PIN_PD9 (STM32_PINMUX_ALT_FUNC_7 | STM32_PUPDR_NO_PULL)>;
 					tx = <STM32_PIN_PD8 (STM32_PINMUX_ALT_FUNC_7 | STM32_PUSHPULL_NOPULL)>;
+				};
+			};
+			usart3_pins_c: usart3_c {
+				rx_tx {
+					rx = <STM32_PIN_PC5 (STM32_PINMUX_ALT_FUNC_7 | STM32_PUPDR_NO_PULL)>;
+					tx = <STM32_PIN_PC4 (STM32_PINMUX_ALT_FUNC_7 | STM32_PUSHPULL_NOPULL)>;
 				};
 			};
 			uart4_pins_a: uart4_a {

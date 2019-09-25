@@ -25,16 +25,8 @@ Hardware
 
 The following Xtensa cores are officially supported:
 
-- hifi3_bd5
-- XRC_FUSION_AON_ALL_LM
-- D_108mini
-- D_212GP
-- D_233L
-- hifi_mini_4swIrq (call0 ABI, added 4 SW IRQ for tests and 1 timer level 1)
-- hifi2_std
-- XRC_D2PM_5swIrq (added 4 SW IRQ for tests and 1 timer level 1)
-- hifi4_bd7 (Big Endian)
-- hifi3_bd5_call0 (call0 ABI, added 3 SW IRQs for tests)
+- Intel S1000
+- sample_controller
 
 System Clock
 ============

@@ -1,0 +1,11 @@
+# Kconfig - STM32 Nucleo-64 development board with STM32G071RB MCU configuration
+#
+# Copyright (c) 2019 Philippe Retornaz <philippe@shapescale.com>
+# Copyright (c) 2019 STMicroelectronics
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config BOARD_NUCLEO_G071RB
+	bool "NUCLEO-64 G071RB Development Board"
+	depends on SOC_STM32G071XX

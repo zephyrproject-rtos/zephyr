@@ -36,7 +36,7 @@ void FUNC_NORETURN _StackCheckHandler(void)
 {
 	/* Stack canary error is a software fatal condition; treat it as such.
 	 */
-	z_except_reason(_NANO_ERR_STACK_CHK_FAIL);
+	z_except_reason(K_ERR_STACK_CHK_FAIL);
 	CODE_UNREACHABLE;
 }
 

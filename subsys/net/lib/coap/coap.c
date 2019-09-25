@@ -14,7 +14,7 @@ LOG_MODULE_REGISTER(net_coap, CONFIG_COAP_LOG_LEVEL);
 #include <errno.h>
 
 #include <zephyr/types.h>
-#include <misc/byteorder.h>
+#include <sys/byteorder.h>
 
 #include <net/net_ip.h>
 #include <net/net_core.h>
@@ -550,7 +550,7 @@ int coap_packet_parse(struct coap_packet *cpkt, u8_t *data, u16_t len,
 	cpkt->hdr_len = 0U;
 	cpkt->delta = 0U;
 
-	/* Token lenghts 9-15 are reserved. */
+	/* Token lengths 9-15 are reserved. */
 	tkl = cpkt->data[0] & 0x0f;
 	if (tkl > 8) {
 		return -EINVAL;

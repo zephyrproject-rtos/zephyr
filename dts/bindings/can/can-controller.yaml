@@ -1,0 +1,35 @@
+# Common fields for CAN controllers
+
+include: base.yaml
+
+child-bus: can
+
+properties:
+    "#address-cells":
+      required: true
+      const: 1
+    "#size-cells":
+      required: true
+      const: 0
+    label:
+      required: true
+    bus-speed:
+      type: int
+      required: true
+      description: bus speed in Baud/s
+    sjw:
+      type: int
+      required: true
+      description: Resynchronization jump width (ISO 11898-1)
+    prop-seg:
+      type: int
+      required: true
+      description: Time quantums of propagation segment (ISO 11898-1)
+    phase-seg1:
+      type: int
+      required: true
+      description: Time quantums of phase buffer 1 segment (ISO 11898-1)
+    phase-seg2:
+      type: int
+      required: true
+      description: Time quantums of phase buffer 2 segment (ISO 11898-1)

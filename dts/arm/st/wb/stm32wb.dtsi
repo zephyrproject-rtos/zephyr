@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019 Linaro Limited
+ * Copyright (c) 2019 Centaur Analytics, Inc
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,7 +23,6 @@
 	};
 
 	sram0: memory@20000000 {
-		device_type = "memory";
 		compatible = "mmio-sram";
 	};
 
@@ -47,7 +47,6 @@
 
 		rcc: rcc@58000000 {
 			compatible = "st,stm32-rcc";
-			clocks-controller;
 			#clock-cells = <2>;
 			reg = <0x58000000 0x400>;
 			label = "STM32_CLK_RCC";
@@ -114,6 +113,15 @@
 			};
 		};
 
+		wwdg: watchdog@40002c00 {
+			compatible = "st,stm32-window-watchdog";
+			reg = <0x40002C00 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000800>;
+			label = "WWDG";
+			interrupts = <0 7>;
+			status = "disabled";
+		};
+
 		usart1: serial@40013800 {
 			compatible = "st,stm32-usart", "st,stm32-uart";
 			reg = <0x40013800 0x400>;
@@ -149,6 +157,38 @@
 			label= "I2C_3";
 		};
 
+		rtc: rtc@40002800 {
+			compatible = "st,stm32-rtc";
+			reg = <0x40002800 0x400>;
+			interrupts = <41 0>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000400>;
+			prescaler = <32768>;
+			status = "disabled";
+			label = "RTC_0";
+		};
+
+		spi1: spi@40013000 {
+			compatible = "st,stm32-spi-fifo";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40013000 0x400>;
+			interrupts = <34 5>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00001000>;
+			status = "disabled";
+			label = "SPI_1";
+		};
+
+		spi2: spi@40003800 {
+			compatible = "st,stm32-spi-fifo";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40003800 0x400>;
+			interrupts = <35 5>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00004000>;
+			status = "disabled";
+			label = "SPI_2";
+		};
+
 		lpuart1: serial@40008000 {
 			compatible = "st,stm32-lpuart", "st,stm32-uart";
 			reg = <0x40008000 0x400>;
@@ -156,6 +196,86 @@
 			interrupts = <37 0>;
 			status = "disabled";
 			label = "LPUART_1";
+		};
+
+		timers1: timers@40012c00 {
+			compatible = "st,stm32-timers";
+			reg = <0x40012c00 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000800>;
+			status = "disabled";
+			label = "TIMERS_1";
+
+			pwm {
+				compatible = "st,stm32-pwm";
+				status = "disabled";
+				st,prescaler = <10000>;
+				label = "PWM_1";
+				#pwm-cells = <2>;
+			};
+		};
+
+		timers2: timers@40000000 {
+			compatible = "st,stm32-timers";
+			reg = <0x40000000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000001>;
+			status = "disabled";
+			label = "TIMERS_2";
+
+			pwm {
+				compatible = "st,stm32-pwm";
+				status = "disabled";
+				st,prescaler = <0>;
+				label = "PWM_2";
+				#pwm-cells = <2>;
+			};
+		};
+
+		timers16: timers@40014400 {
+			compatible = "st,stm32-timers";
+			reg = <0x40014400 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00020000>;
+			status = "disabled";
+			label = "TIMERS_16";
+
+			pwm {
+				compatible = "st,stm32-pwm";
+				status = "disabled";
+				st,prescaler = <10000>;
+				label = "PWM_16";
+				#pwm-cells = <2>;
+			};
+		};
+
+		timers17: timers@40014800 {
+			compatible = "st,stm32-timers";
+			reg = <0x40014800 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00040000>;
+			status = "disabled";
+			label = "TIMERS_17";
+
+			pwm {
+				compatible = "st,stm32-pwm";
+				status = "disabled";
+				st,prescaler = <10000>;
+				label = "PWM_17";
+				#pwm-cells = <2>;
+			};
+		};
+
+		adc1: adc@50040000 {
+			compatible = "st,stm32-adc";
+			reg = <0x50040000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00002000>;
+			interrupts = <18 0>;
+			status = "disabled";
+			label = "ADC_1";
+			#io-channel-cells = <1>;
+		};
+
+		iwdg: watchdog@40003000 {
+			compatible = "st,stm32-watchdog";
+			reg = <0x40003000 0x400>;
+			label = "IWDG";
 		};
 	};
 };

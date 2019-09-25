@@ -6,7 +6,7 @@
 
 #include <zephyr.h>
 #include <ztest.h>
-#include <fs.h>
+#include <fs/fs.h>
 
 /* Make sure to match the drive name to ELM FAT Lib volume strings */
 #define FATFS_MNTP	"/RAM:"

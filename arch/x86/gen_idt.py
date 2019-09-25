@@ -38,8 +38,7 @@ from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
 
 if LooseVersion(elftools.__version__) < LooseVersion('0.24'):
-    sys.stderr.write("pyelftools is out of date, need version 0.24 or later\n")
-    sys.exit(1)
+    sys.exit("pyelftools is out of date, need version 0.24 or later")
 
 # This will never change, first selector in the GDT after the null selector
 KERNEL_CODE_SEG = 0x08
@@ -55,8 +54,7 @@ def debug(text):
 
 
 def error(text):
-    sys.stderr.write(os.path.basename(sys.argv[0]) + ": " + text + "\n")
-    sys.exit(1)
+    sys.exit(os.path.basename(sys.argv[0]) + ": " + text)
 
 
 # See Section 6.11 of the Intel Architecture Software Developer's Manual
@@ -129,7 +127,7 @@ def update_irq_vec_map(irq_vec_map, irq, vector, max_irq):
     # This table will never have values less than 32 since those are for
     # exceptions; 0 means unconfigured
     if irq_vec_map[irq] != 0:
-        error("multiple vector assignments for interrupt line %d", irq)
+        error("multiple vector assignments for interrupt line %d" % irq)
 
     debug("assign IRQ %d to vector %d" % (irq, vector))
     irq_vec_map[irq] = vector
@@ -276,10 +274,9 @@ def create_irq_vectors_allocated(vectors, spur_code, spur_nocode, filename):
     # interrupt handlers installed, they are free for runtime installation
     # of interrupts
     num_chars = (len(vectors) + 7) // 8
-    vbits = [0 for i in range(num_chars)]
-    for i in range(len(vectors)):
-        handler, _, _ = vectors[i]
-        if handler != spur_code and handler != spur_nocode:
+    vbits = num_chars*[0]
+    for i, (handler, _, _) in enumerate(vectors):
+        if handler not in (spur_code, spur_nocode):
             continue
 
         vbit_index = i // 8

@@ -5,7 +5,7 @@ sample:
 tests:
   sample.threads:
     tags: kernel threads gpio
-    filter: DT_GPIO_LEDS_LED0_GPIO_CONTROLLER and DT_GPIO_LEDS_LED1_GPIO_CONTROLLER
+    filter: DT_GPIO_LEDS_LED0_GPIOS_CONTROLLER and DT_GPIO_LEDS_LED1_GPIOS_CONTROLLER
     depends_on: gpio
     harness: console
     harness_config:

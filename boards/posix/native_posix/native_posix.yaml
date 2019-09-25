@@ -1,5 +1,5 @@
 identifier: native_posix
-name: Native POSIX port
+name: Native 32-bit POSIX port
 type: native
 arch: posix
 toolchain:

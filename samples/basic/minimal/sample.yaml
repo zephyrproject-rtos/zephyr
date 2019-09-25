@@ -42,4 +42,3 @@ tests:
     build_only: true
     extra_args: CONF_FILE='common.conf;no-mt.conf;no-timers.conf;x86.conf'
     platform_whitelist: qemu_x86
-

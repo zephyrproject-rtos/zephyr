@@ -7,7 +7,7 @@
 #define ZEPHYR_INCLUDE_APP_MEMORY_APP_MEMDOMAIN_H_
 
 #include <linker/linker-defs.h>
-#include <misc/dlist.h>
+#include <sys/dlist.h>
 #include <kernel.h>
 
 #ifdef CONFIG_USERSPACE

@@ -1,0 +1,8 @@
+# Copyright (c) 2019 BayLibre SAS
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_QEMU_RISCV64
+	bool "QEMU RISCV64 target"
+	depends on SOC_RISCV_SIFIVE_FREEDOM
+	select QEMU_TARGET
+	select 64BIT

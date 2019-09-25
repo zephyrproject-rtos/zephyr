@@ -8,6 +8,7 @@ menuconfig USART_MCUX_LPC
 	bool "MCUX USART driver"
 	depends on HAS_MCUX
 	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
 	help
 	  Enable the MCUX USART driver.
 

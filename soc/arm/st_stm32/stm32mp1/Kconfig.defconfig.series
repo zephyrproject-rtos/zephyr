@@ -40,4 +40,18 @@ config GPIO_STM32_PORTK
 
 endif # GPIO_STM32
 
+if IPM
+
+config IPM_STM32_IPCC
+	default y
+
+endif # IPM
+
+if I2C_STM32
+
+config I2C_STM32_V2
+	default y
+
+endif # I2C_STM32
+
 endif # SOC_SERIES_STM32MP1X

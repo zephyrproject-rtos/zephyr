@@ -10,7 +10,6 @@ ram: 320
 flash: 2048
 supported:
   - arduino_i2c
-  - rtc
   - counter
   - i2c
   - spi

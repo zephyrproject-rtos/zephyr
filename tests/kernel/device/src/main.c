@@ -7,7 +7,7 @@
 #include <zephyr.h>
 #include <device.h>
 #include <ztest.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 
 
 #define DUMMY_PORT_1    "dummy"
@@ -176,7 +176,7 @@ void test_main(void)
 			 ztest_unit_test(test_dummy_device_pm),
 			 ztest_unit_test(build_suspend_device_list),
 			 ztest_unit_test(test_dummy_device),
-			 ztest_unit_test(test_bogus_dynamic_name),
-			 ztest_unit_test(test_dynamic_name));
+			 ztest_user_unit_test(test_bogus_dynamic_name),
+			 ztest_user_unit_test(test_dynamic_name));
 	ztest_run_test_suite(device);
 }

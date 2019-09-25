@@ -1,0 +1,6 @@
+# SPDX-License-Identifier: BSD-3-Clause
+
+title: PWM source with zero cells
+description: PWM source with zero cells
+
+compatible: "pwm-zero-cell"

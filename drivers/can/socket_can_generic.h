@@ -80,6 +80,7 @@ static inline int socket_can_setsockopt(struct device *dev, void *obj,
 					const void *optval, socklen_t optlen)
 {
 	struct socket_can_context *socket_context = dev->driver_data;
+	struct net_context *ctx = obj;
 	int ret;
 
 	if (level != SOL_CAN_RAW && optname != CAN_RAW_FILTER) {
@@ -96,12 +97,22 @@ static inline int socket_can_setsockopt(struct device *dev, void *obj,
 		return -1;
 	}
 
+	net_context_set_filter_id(ctx, ret);
+
 	return 0;
+}
+
+static inline void socket_can_close(struct device *dev, int filter_id)
+{
+	struct socket_can_context *socket_context = dev->driver_data;
+
+	can_detach(socket_context->can_dev, filter_id);
 }
 
 static struct canbus_api socket_can_api = {
 	.iface_api.init = socket_can_iface_init,
 	.send = socket_can_send,
+	.close = socket_can_close,
 	.setsockopt = socket_can_setsockopt,
 };
 

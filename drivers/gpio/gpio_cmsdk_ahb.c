@@ -8,7 +8,7 @@
 
 #include <device.h>
 #include <errno.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 #include <init.h>
 #include <soc.h>
 #include <clock_control/arm_clock_control.h>

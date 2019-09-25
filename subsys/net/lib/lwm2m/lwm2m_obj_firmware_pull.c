@@ -109,7 +109,7 @@ static int transfer_request(struct coap_block_context *ctx,
 	ret = coap_packet_append_option(&msg->cpkt, COAP_OPTION_URI_PATH,
 					cursor, strlen(cursor));
 	if (ret < 0) {
-		LOG_ERR("Error adding URI_PATH '%s'", cursor);
+		LOG_ERR("Error adding URI_PATH '%s'", log_strdup(cursor));
 		goto cleanup;
 	}
 #else
@@ -117,7 +117,7 @@ static int transfer_request(struct coap_block_context *ctx,
 	ret = http_parser_parse_url(firmware_uri, strlen(firmware_uri), 0,
 				    &parser);
 	if (ret < 0) {
-		LOG_ERR("Invalid firmware url: %s", firmware_uri);
+		LOG_ERR("Invalid firmware url: %s", log_strdup(firmware_uri));
 		ret = -ENOTSUP;
 		goto cleanup;
 	}
@@ -167,7 +167,8 @@ static int transfer_request(struct coap_block_context *ctx,
 	ret = coap_packet_append_option(&msg->cpkt, COAP_OPTION_PROXY_URI,
 					firmware_uri, strlen(firmware_uri));
 	if (ret < 0) {
-		LOG_ERR("Error adding PROXY_URI '%s'", firmware_uri);
+		LOG_ERR("Error adding PROXY_URI '%s'",
+			log_strdup(firmware_uri));
 		goto cleanup;
 	}
 #else
@@ -237,7 +238,7 @@ do_firmware_transfer_reply_cb(const struct coap_packet *response,
 	u8_t tkl;
 	u16_t payload_len, payload_offset, len;
 	struct coap_packet *check_response = (struct coap_packet *)response;
-	struct lwm2m_engine_res_inst *res = NULL;
+	struct lwm2m_engine_res *res = NULL;
 	lwm2m_engine_set_data_cb_t write_cb;
 	size_t write_buflen;
 	u8_t resp_code, *write_buf;
@@ -310,12 +311,12 @@ do_firmware_transfer_reply_cb(const struct coap_packet *response,
 		}
 
 		/* get buffer data */
-		write_buf = res->data_ptr;
-		write_buflen = res->data_len;
+		write_buf = res->res_instances->data_ptr;
+		write_buflen = res->res_instances->data_len;
 
 		/* check for user override to buffer */
 		if (res->pre_write_cb) {
-			write_buf = res->pre_write_cb(0, &write_buflen);
+			write_buf = res->pre_write_cb(0, 0, 0, &write_buflen);
 		}
 
 		write_cb = lwm2m_firmware_get_write_cb();
@@ -334,7 +335,10 @@ do_firmware_transfer_reply_cb(const struct coap_packet *response,
 					goto error;
 				}
 
-				ret = write_cb(0, write_buf, len, last_block,
+				ret = write_cb(0, 0, 0,
+					       write_buf, len,
+					       last_block &&
+							(payload_len == 0U),
 					       firmware_block_ctx.total_size);
 				if (ret < 0) {
 					goto error;
@@ -396,7 +400,7 @@ static void firmware_transfer(struct k_work *work)
 #if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_SUPPORT)
 	server_addr = CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_ADDR;
 	if (strlen(server_addr) >= URI_LEN) {
-		LOG_ERR("Invalid Proxy URI: %s", server_addr);
+		LOG_ERR("Invalid Proxy URI: %s", log_strdup(server_addr));
 		ret = -ENOTSUP;
 		goto error;
 	}
@@ -422,7 +426,7 @@ static void firmware_transfer(struct k_work *work)
 		goto error;
 	}
 
-	LOG_INF("Connecting to server %s", firmware_uri);
+	LOG_INF("Connecting to server %s", log_strdup(firmware_uri));
 
 	/* reset block transfer context */
 	coap_block_transfer_init(&firmware_block_ctx,
@@ -450,7 +454,7 @@ int lwm2m_firmware_start_transfer(char *package_uri)
 	/* close old socket */
 	if (firmware_ctx.sock_fd > 0) {
 		lwm2m_socket_del(&firmware_ctx);
-		close(firmware_ctx.sock_fd);
+		(void)close(firmware_ctx.sock_fd);
 	}
 
 	(void)memset(&firmware_ctx, 0, sizeof(struct lwm2m_ctx));

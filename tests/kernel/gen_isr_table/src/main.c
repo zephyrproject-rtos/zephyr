@@ -18,7 +18,7 @@ extern u32_t _irq_vector_table[];
 #define ISR1_OFFSET	0
 #define ISR2_OFFSET	1
 
-#if defined(CONFIG_RISCV32)
+#if defined(CONFIG_RISCV)
 /* RISC-V has very few IRQ lines which can be triggered from software */
 #define ISR3_OFFSET	1
 #define ISR5_OFFSET	5
@@ -56,7 +56,7 @@ void trigger_irq(int irq)
 	NVIC->STIR = irq;
 #endif
 }
-#elif defined(CONFIG_RISCV32)
+#elif defined(CONFIG_RISCV)
 void trigger_irq(int irq)
 {
 	u32_t mip;

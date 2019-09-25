@@ -48,14 +48,11 @@
  * is not defined in platform, generate an error
  */
 #if defined(CONFIG_HPET_TIMER)
-#define TICK_IRQ CONFIG_HPET_TIMER_IRQ
+#define TICK_IRQ DT_INST_0_INTEL_HPET_IRQ_0
+#elif defined(CONFIG_APIC_TIMER)
+#define TICK_IRQ CONFIG_APIC_TIMER_IRQ
 #elif defined(CONFIG_LOAPIC_TIMER)
-#if defined(CONFIG_LOAPIC)
 #define TICK_IRQ CONFIG_LOAPIC_TIMER_IRQ
-#else
-/* MVIC case */
-#define TICK_IRQ CONFIG_MVIC_TIMER_IRQ
-#endif
 #elif defined(CONFIG_XTENSA)
 #define TICK_IRQ UTIL_CAT(XCHAL_TIMER,		\
 			  UTIL_CAT(CONFIG_XTENSA_TIMER_ID, _INTERRUPT))
@@ -69,7 +66,9 @@
 #elif defined(CONFIG_LITEX_TIMER)
 #define TICK_IRQ DT_LITEX_TIMER0_E0002800_IRQ_0
 #elif defined(CONFIG_RV32M1_LPTMR_TIMER)
-#define TICK_IRQ DT_OPENISA_RV32M1_LPTMR_SYSTEM_LPTMR_IRQ
+#define TICK_IRQ DT_OPENISA_RV32M1_LPTMR_SYSTEM_LPTMR_IRQ_0
+#elif defined(CONFIG_XLNX_PSTTC_TIMER)
+#define TICK_IRQ DT_INST_0_CDNS_TTC_IRQ_0
 #elif defined(CONFIG_CPU_CORTEX_M)
 /*
  * The Cortex-M use the SYSTICK exception for the system timer, which is
@@ -89,11 +88,11 @@
 #error Timer type is not defined for this platform
 #endif
 
-/* Nios II and RISCV32 without CONFIG_RISCV_HAS_CPU_IDLE
+/* Nios II and RISCV without CONFIG_RISCV_HAS_CPU_IDLE
  * do have a power saving instruction, so k_cpu_idle() returns immediately
  */
 #if !defined(CONFIG_NIOS2) && \
-	(!defined(CONFIG_RISCV32) || defined(CONFIG_RISCV_HAS_CPU_IDLE))
+	(!defined(CONFIG_RISCV) || defined(CONFIG_RISCV_HAS_CPU_IDLE))
 #define HAS_POWERSAVE_INSTRUCTION
 #endif
 
@@ -700,7 +699,9 @@ static void thread_sleep(void *delta, void *arg2, void *arg3)
 	timestamp = k_uptime_get() - timestamp;
 	TC_PRINT(" thread back from sleep\n");
 
-	if (timestamp < timeout || timestamp > timeout + __ticks_to_ms(2)) {
+	int slop = MAX(__ticks_to_ms(2), 1);
+
+	if (timestamp < timeout || timestamp > timeout + slop) {
 		TC_ERROR("timestamp out of range, got %d\n", (int)timestamp);
 		return;
 	}

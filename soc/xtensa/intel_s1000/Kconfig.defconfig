@@ -12,9 +12,6 @@ config SOC
 config IRQ_OFFLOAD_INTNUM
 	default 0
 
-config XTENSA_ASM2
-	default y
-
 # S1000 does not have MISC0.
 # Since EXCSAVE2 is unused by Zephyr, use it instead.
 config XTENSA_KERNEL_CPU_PTR_SR

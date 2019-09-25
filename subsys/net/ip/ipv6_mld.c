@@ -203,14 +203,22 @@ int net_ipv6_mld_join(struct net_if *iface, const struct in6_addr *addr)
 
 	net_if_mcast_monitor(iface, addr, true);
 
-	net_mgmt_event_notify(NET_EVENT_IPV6_MCAST_JOIN, iface);
+	net_mgmt_event_notify_with_info(NET_EVENT_IPV6_MCAST_JOIN, iface,
+					&maddr->address.in6_addr,
+					sizeof(struct in6_addr));
 
 	return ret;
 }
 
 int net_ipv6_mld_leave(struct net_if *iface, const struct in6_addr *addr)
 {
+	struct net_if_mcast_addr *maddr;
 	int ret;
+
+	maddr = net_if_ipv6_maddr_lookup(addr, &iface);
+	if (!maddr) {
+		return -ENOENT;
+	}
 
 	if (!net_if_ipv6_maddr_rm(iface, addr)) {
 		return -EINVAL;
@@ -223,7 +231,9 @@ int net_ipv6_mld_leave(struct net_if *iface, const struct in6_addr *addr)
 
 	net_if_mcast_monitor(iface, addr, false);
 
-	net_mgmt_event_notify(NET_EVENT_IPV6_MCAST_LEAVE, iface);
+	net_mgmt_event_notify_with_info(NET_EVENT_IPV6_MCAST_LEAVE, iface,
+					&maddr->address.in6_addr,
+					sizeof(struct in6_addr));
 
 	return ret;
 }

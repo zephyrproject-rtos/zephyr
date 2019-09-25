@@ -1,0 +1,11 @@
+identifier: rv32m1_vega_ri5cy
+name: RV32M1-VEGA
+type: mcu
+arch: riscv32
+toolchain:
+  - cross-compile
+  - zephyr
+supported:
+  - arduino_gpio
+  - arduino_i2c
+  - i2c

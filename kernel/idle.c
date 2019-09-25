@@ -8,9 +8,9 @@
 #include <kernel_structs.h>
 #include <toolchain.h>
 #include <linker/sections.h>
-#include <drivers/system_timer.h>
+#include <drivers/timer/system_timer.h>
 #include <wait_q.h>
-#include <power.h>
+#include <power/power.h>
 #include <stdbool.h>
 
 #ifdef CONFIG_TICKLESS_IDLE_THRESH
@@ -26,6 +26,10 @@
  */
 unsigned char sys_pm_idle_exit_notify;
 
+
+/* LCOV_EXCL_START
+ * These are almost certainly overidden and in any event do nothing
+ */
 #if defined(CONFIG_SYS_POWER_SLEEP_STATES)
 void __attribute__((weak)) _sys_resume(void)
 {
@@ -37,6 +41,7 @@ void __attribute__((weak)) _sys_resume_from_deep_sleep(void)
 {
 }
 #endif
+/* LCOV_EXCL_STOP */
 
 #endif /* CONFIG_SYS_POWER_MANAGEMENT */
 
@@ -135,9 +140,9 @@ void idle(void *unused1, void *unused2, void *unused3)
 #ifdef CONFIG_BOOT_TIME_MEASUREMENT
 	/* record timestamp when idling begins */
 
-	extern u64_t __idle_time_stamp;
+	extern u32_t __idle_time_stamp;
 
-	__idle_time_stamp = (u64_t)k_cycle_get_32();
+	__idle_time_stamp = k_cycle_get_32();
 #endif
 
 #ifdef CONFIG_SMP

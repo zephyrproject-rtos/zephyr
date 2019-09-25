@@ -8,7 +8,7 @@
 
 
 #include <init.h>
-#include <misc/util.h>
+#include <sys/util.h>
 
 #include <bluetooth/hci.h>
 #include <bluetooth/hci_driver.h>
@@ -114,12 +114,9 @@ void TM_EvtReceivedCb(TL_EvtPacket_t *hcievt)
 			BT_ERR("Unknown evtcode type 0x%02x",
 			       hcievt->evtserial.evt.evtcode);
 			goto out;
-		case BT_HCI_EVT_CMD_COMPLETE:
-		case BT_HCI_EVT_CMD_STATUS:
-			buf = bt_buf_get_cmd_complete(K_FOREVER);
-			break;
 		default:
-			buf = bt_buf_get_rx(BT_BUF_EVT, K_FOREVER);
+			buf = bt_buf_get_evt(hcievt->evtserial.evt.evtcode, false,
+					     K_FOREVER);
 			break;
 		}
 		net_buf_add_mem(buf, &hcievt->evtserial.evt,

@@ -35,4 +35,11 @@ config SPI_STM32_INTERRUPT
 
 endif # SPI
 
+if CAN
+
+config CAN_1
+	default y
+
+endif # CAN
+
 endif # BOARD_NUCLEO_L432KC

@@ -20,7 +20,7 @@
 
 #include <stddef.h>
 #include <kernel.h>
-#include <misc/mutex.h>
+#include <sys/mutex.h>
 
 #include <net/net_core.h>
 

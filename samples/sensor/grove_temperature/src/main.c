@@ -7,7 +7,7 @@
 #include <zephyr.h>
 #include <init.h>
 #include <stdio.h>
-#include <sensor.h>
+#include <drivers/sensor.h>
 
 #ifdef CONFIG_GROVE_LCD_RGB
 #include <display/grove_lcd.h>

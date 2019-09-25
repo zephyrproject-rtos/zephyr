@@ -46,6 +46,16 @@ config UART_MCUX_LPUART_3
 
 endif # UART_MCUX_LPUART
 
+if NETWORKING
+
+config NET_L2_ETHERNET
+	default y
+
+config ETH_MCUX_0
+	default y if NET_L2_ETHERNET
+
+endif # NETWORKING
+
 if LVGL
 
 config LVGL_DISPLAY_DEV_NAME
@@ -62,9 +72,6 @@ config LVGL_VDB_SIZE
 
 config LVGL_DPI
 	default 128
-
-config LVGL_BITS_PER_PIXEL
-	default 0
 
 choice LVGL_COLOR_DEPTH
 	default LVGL_COLOR_DEPTH_16

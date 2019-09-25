@@ -19,10 +19,10 @@
 #include <string.h>
 #include <ztest.h>
 
-#include "flash.h"
-#include "flash_map.h"
-#include "stats.h"
-#include "nvs/nvs.h"
+#include <drivers/flash.h>
+#include <storage/flash_map.h>
+#include <stats/stats.h>
+#include <fs/nvs.h>
 #include "nvs_priv.h"
 
 #define TEST_FLASH_AREA_STORAGE_OFFSET	DT_FLASH_AREA_STORAGE_OFFSET
@@ -484,6 +484,118 @@ void test_nvs_corrupted_sector_close_operation(void)
 	execute_long_pattern_write(max_id);
 }
 
+/**
+ * @brief Test case when storage become full, so only deletion is possible.
+ */
+void test_nvs_full_sector(void)
+{
+	int err;
+	ssize_t len;
+	u16_t filling_id = 0;
+	u16_t i, data_read;
+
+	fs.sector_count = 3;
+
+	err = nvs_init(&fs, DT_FLASH_DEV_NAME);
+	zassert_true(err == 0,  "nvs_init call failure: %d", err);
+
+	while (1) {
+		len = nvs_write(&fs, filling_id, &filling_id,
+				sizeof(filling_id));
+		if (len == -ENOSPC) {
+			break;
+		}
+		zassert_true(len == sizeof(filling_id), "nvs_write failed: %d",
+			     len);
+		filling_id++;
+	}
+
+	/* check whether can delete whatever from full storage */
+	err = nvs_delete(&fs, 1);
+	zassert_true(err == 0,  "nvs_delete call failure: %d", err);
+
+	/* the last sector is full now, test re-initialization */
+	err = nvs_init(&fs, DT_FLASH_DEV_NAME);
+	zassert_true(err == 0,  "nvs_init call failure: %d", err);
+
+	len = nvs_write(&fs, filling_id, &filling_id, sizeof(filling_id));
+	zassert_true(len == sizeof(filling_id), "nvs_write failed: %d", len);
+
+	/* sanitycheck on NVS content */
+	for (i = 0; i <= filling_id; i++) {
+		len = nvs_read(&fs, i, &data_read, sizeof(data_read));
+		if (i == 1) {
+			zassert_true(len == -ENOENT,
+				     "nvs_read shouldn't found the entry: %d",
+				     len);
+		} else {
+			zassert_true(len == sizeof(data_read),
+				     "nvs_read failed: %d", i, len);
+			zassert_equal(data_read, i,
+				      "read unexpected data: %d instead of %d",
+				      data_read, i);
+		}
+	}
+}
+
+void test_delete(void)
+{
+	int err;
+	ssize_t len;
+	u16_t filling_id, data_read;
+	u32_t ate_wra, data_wra;
+
+	fs.sector_count = 3;
+
+	err = nvs_init(&fs, DT_FLASH_DEV_NAME);
+	zassert_true(err == 0,  "nvs_init call failure: %d", err);
+
+	for (filling_id = 0; filling_id < 10; filling_id++) {
+		len = nvs_write(&fs, filling_id, &filling_id,
+				sizeof(filling_id));
+
+		zassert_true(len == sizeof(filling_id), "nvs_write failed: %d",
+			     len);
+
+		if (filling_id != 0) {
+			continue;
+		}
+
+		/* delete the first entry while it is the most recent one */
+		err = nvs_delete(&fs, filling_id);
+		zassert_true(err == 0,  "nvs_delete call failure: %d", err);
+
+		len = nvs_read(&fs, filling_id, &data_read, sizeof(data_read));
+		zassert_true(len == -ENOENT,
+			     "nvs_read shouldn't found the entry: %d", len);
+	}
+
+	/* delete existing entry */
+	err = nvs_delete(&fs, 1);
+	zassert_true(err == 0,  "nvs_delete call failure: %d", err);
+
+	len = nvs_read(&fs, 1, &data_read, sizeof(data_read));
+	zassert_true(len == -ENOENT, "nvs_read shouldn't found the entry: %d",
+		     len);
+
+	ate_wra = fs.ate_wra;
+	data_wra = fs.data_wra;
+
+	/* delete already deleted entry */
+	err = nvs_delete(&fs, 1);
+	zassert_true(err == 0,  "nvs_delete call failure: %d", err);
+	zassert_true(ate_wra == fs.ate_wra && data_wra == fs.data_wra,
+		     "delete already deleted entry should not make"
+		     " any footprint in the storage");
+
+	/* delete nonexisting entry */
+	err = nvs_delete(&fs, filling_id);
+	zassert_true(err == 0,  "nvs_delete call failure: %d", err);
+	zassert_true(ate_wra == fs.ate_wra && data_wra == fs.data_wra,
+		     "delete nonexistent entry should not make"
+		     " any footprint in the storage");
+}
+
 void test_main(void)
 {
 	ztest_test_suite(test_nvs,
@@ -499,7 +611,11 @@ void test_main(void)
 				 test_nvs_gc_3sectors, setup, teardown),
 			 ztest_unit_test_setup_teardown(
 				 test_nvs_corrupted_sector_close_operation,
-				 setup, teardown)
+				 setup, teardown),
+			 ztest_unit_test_setup_teardown(test_nvs_full_sector,
+				 setup, teardown),
+			 ztest_unit_test_setup_teardown(test_delete, setup,
+				 teardown)
 			);
 
 	ztest_run_test_suite(test_nvs);

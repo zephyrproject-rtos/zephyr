@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <counter.h>
+#include <drivers/counter.h>
 #include <device.h>
 #include <errno.h>
 #include <init.h>
@@ -69,22 +69,32 @@ static u32_t dtmr_cmsdk_apb_read(struct device *dev)
 }
 
 static int dtmr_cmsdk_apb_set_top_value(struct device *dev,
-					       u32_t ticks,
-					       counter_top_callback_t callback,
-					       void *user_data)
+					const struct counter_top_cfg *top_cfg)
 {
 	const struct dtmr_cmsdk_apb_cfg * const cfg =
 						dev->config->config_info;
 	struct dtmr_cmsdk_apb_dev_data *data = dev->driver_data;
 
-	data->top_callback = callback;
-	data->top_user_data = user_data;
+	data->top_callback = top_cfg->callback;
+	data->top_user_data = top_cfg->user_data;
 
 	/* Store the reload value */
-	data->load = ticks;
+	data->load = top_cfg->ticks;
 
 	/* Set the timer to count */
-	cfg->dtimer->timer1load = ticks;
+	if (top_cfg->flags & COUNTER_TOP_CFG_DONT_RESET) {
+		/*
+		 * Write to background load register will not affect
+		 * the current value of the counter.
+		 */
+		cfg->dtimer->timer1bgload = top_cfg->ticks;
+	} else {
+		/*
+		 * Write to load register will also set
+		 * the current value of the counter.
+		 */
+		cfg->dtimer->timer1load = top_cfg->ticks;
+	}
 
 	/* Enable IRQ */
 	cfg->dtimer->timer1ctrl |= (DUALTIMER_CTRL_INTEN
@@ -155,7 +165,7 @@ static int dtmr_cmsdk_apb_init(struct device *dev)
 }
 
 /* TIMER 0 */
-#ifdef DT_ARM_CMSDK_DTIMER_0
+#ifdef DT_INST_0_ARM_CMSDK_DTIMER
 static void dtimer_cmsdk_apb_config_0(struct device *dev);
 
 static const struct dtmr_cmsdk_apb_cfg dtmr_cmsdk_apb_cfg_0 = {
@@ -195,4 +205,4 @@ static void dtimer_cmsdk_apb_config_0(struct device *dev)
 		    DEVICE_GET(dtmr_cmsdk_apb_0), 0);
 	irq_enable(DT_INST_0_ARM_CMSDK_DTIMER_IRQ_0);
 }
-#endif /* DT_ARM_CMSDK_DTIMER_0 */
+#endif /* DT_INST_0_ARM_CMSDK_DTIMER */

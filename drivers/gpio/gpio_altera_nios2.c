@@ -13,7 +13,7 @@
 #include <device.h>
 #include <init.h>
 #include <soc.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 
 #include "gpio_utils.h"
 #include "altera_avalon_pio_regs.h"

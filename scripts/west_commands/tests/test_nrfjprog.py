@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import argparse
+import os
 from unittest.mock import patch, call
 
 import pytest
@@ -189,6 +190,10 @@ def get_board_snr_patch():
 def require_patch(program):
     assert program == 'nrfjprog'
 
+def os_path_isfile_patch(filename):
+    if filename == RC_KERNEL_HEX:
+        return True
+    return os.path.isfile(filename)
 
 def id_fn(test_case):
     ret = ''
@@ -210,14 +215,16 @@ def test_nrfjprog_init(cc, get_snr, req, test_case, runner_config):
 
     runner = NrfJprogBinaryRunner(runner_config, family, softreset, snr,
                                   erase=erase)
-    runner.run('flash')
-
-    assert req.called
-    assert cc.call_args_list == [call(x) for x in
-                                 expected_commands(*test_case)]
     if snr is None:
-        get_snr.assert_called_once_with()
+        with pytest.raises(ValueError) as e:
+            runner.run('flash')
+        assert 'snr must not be None' in str(e.value)
     else:
+        with patch('os.path.isfile', side_effect=os_path_isfile_patch):
+            runner.run('flash')
+        assert req.called
+        assert cc.call_args_list == [call(x) for x in
+                                     expected_commands(*test_case)]
         get_snr.assert_not_called()
 
 
@@ -241,7 +248,8 @@ def test_nrfjprog_create(cc, get_snr, req, test_case, runner_config):
     NrfJprogBinaryRunner.add_parser(parser)
     arg_namespace = parser.parse_args(args)
     runner = NrfJprogBinaryRunner.create(runner_config, arg_namespace)
-    runner.run('flash')
+    with patch('os.path.isfile', side_effect=os_path_isfile_patch):
+        runner.run('flash')
 
     assert req.called
     assert cc.call_args_list == [call(x) for x in

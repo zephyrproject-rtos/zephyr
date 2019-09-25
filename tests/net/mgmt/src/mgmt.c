@@ -18,29 +18,34 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_MGMT_EVENT_LOG_LEVEL);
 #include <net/net_pkt.h>
 #include <ztest.h>
 
+#define TEST_INFO_STRING "mgmt event info"
+
 #define TEST_MGMT_REQUEST		0x17AB1234
 #define TEST_MGMT_EVENT			0x97AB1234
 #define TEST_MGMT_EVENT_UNHANDLED	0x97AB4321
-#define TEST_MGMT_EVENT_INFO_SIZE	sizeof("mgmt event info")
+#define TEST_MGMT_EVENT_INFO_SIZE	\
+	MAX(sizeof(TEST_INFO_STRING), sizeof(struct in6_addr))
 
 /* Notifier infra */
 static u32_t event2throw;
 static u32_t throw_times;
 static int throw_sleep;
 static bool with_info;
-static K_THREAD_STACK_DEFINE(thrower_stack, 512);
+static K_THREAD_STACK_DEFINE(thrower_stack, 512 + CONFIG_TEST_EXTRA_STACKSIZE);
 static struct k_thread thrower_thread_data;
 static struct k_sem thrower_lock;
 
 /* Receiver infra */
 static u32_t rx_event;
 static u32_t rx_calls;
+static size_t info_length_in_test;
 static struct net_mgmt_event_callback rx_cb;
+static char *info_string = TEST_INFO_STRING;
 
 static struct in6_addr addr6 = { { { 0xfe, 0x80, 0, 0, 0, 0, 0, 0,
 				     0, 0, 0, 0, 0, 0, 0, 0x1 } } };
 
-static char info_data[TEST_MGMT_EVENT_INFO_SIZE] = "mgmt event info";
+static char info_data[TEST_MGMT_EVENT_INFO_SIZE];
 
 static int test_mgmt_request(u32_t mgmt_request,
 			     struct net_if *iface, void *data, u32_t len)
@@ -129,8 +134,12 @@ static void receiver_cb(struct net_mgmt_event_callback *cb,
 	TC_PRINT("\t\tReceived event 0x%08X\n", nm_event);
 
 	if (with_info && cb->info) {
-		if (memcmp(info_data, cb->info,
-			   TEST_MGMT_EVENT_INFO_SIZE)) {
+		if (cb->info_length != info_length_in_test) {
+			rx_calls = (u32_t) -1;
+			return;
+		}
+
+		if (memcmp(info_data, cb->info, info_length_in_test)) {
 			rx_calls = (u32_t) -1;
 			return;
 		}
@@ -201,9 +210,9 @@ static int test_synchronous_event_listener(u32_t times, bool on_iface)
 	if (on_iface) {
 		ret = net_mgmt_event_wait_on_iface(net_if_get_default(),
 						   event_mask, NULL, NULL,
-						   K_SECONDS(1));
+						   NULL, K_SECONDS(1));
 	} else {
-		ret = net_mgmt_event_wait(event_mask, NULL, NULL, NULL,
+		ret = net_mgmt_event_wait(event_mask, NULL, NULL, NULL, NULL,
 					  K_SECONDS(1));
 	}
 
@@ -230,6 +239,9 @@ static void initialize_event_tests(void)
 
 	k_sem_init(&thrower_lock, 0, UINT_MAX);
 
+	info_length_in_test = TEST_MGMT_EVENT_INFO_SIZE;
+	memcpy(info_data, info_string, strlen(info_string) + 1);
+
 	net_mgmt_init_event_callback(&rx_cb, receiver_cb, TEST_MGMT_EVENT);
 
 	k_thread_create(&thrower_thread_data, thrower_stack,
@@ -242,6 +254,9 @@ static int test_core_event(u32_t event, bool (*func)(void))
 {
 	TC_PRINT("- Triggering core event: 0x%08X\n", event);
 
+	info_length_in_test = sizeof(struct in6_addr);
+	memcpy(info_data, &addr6, sizeof(addr6));
+
 	net_mgmt_init_event_callback(&rx_cb, receiver_cb, event);
 
 	net_mgmt_add_event_callback(&rx_cb);
@@ -250,8 +265,9 @@ static int test_core_event(u32_t event, bool (*func)(void))
 
 	k_yield();
 
-	zassert_true(rx_calls, "rx_calls empty");
-	zassert_equal(rx_event, event, "rx_event check failed");
+	zassert_true(rx_calls > 0 && rx_calls != -1, "rx_calls empty");
+	zassert_equal(rx_event, event, "rx_event check failed, "
+		      "0x%08x vs 0x%08x", rx_event, event);
 
 	net_mgmt_del_event_callback(&rx_cb);
 	rx_event = rx_calls = 0U;

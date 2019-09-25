@@ -20,7 +20,7 @@ extern "C" {
 
 #ifdef _ASMLANGUAGE
 #else
-typedef struct  _irq_stack_frame NANO_ESF;
+typedef struct  _irq_stack_frame z_arch_esf_t;
 #endif
 
 #ifdef __cplusplus

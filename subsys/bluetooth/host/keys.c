@@ -9,8 +9,8 @@
 #include <zephyr.h>
 #include <string.h>
 #include <stdlib.h>
-#include <atomic.h>
-#include <misc/util.h>
+#include <sys/atomic.h>
+#include <sys/util.h>
 
 #include <settings/settings.h>
 
@@ -224,7 +224,7 @@ void bt_keys_clear(struct bt_keys *keys)
 					       &keys->addr, NULL);
 		}
 
-		BT_DBG("Deleting key %s", key);
+		BT_DBG("Deleting key %s", log_strdup(key));
 		settings_delete(key);
 	}
 
@@ -272,13 +272,14 @@ int bt_keys_store(struct bt_keys *keys)
 		return err;
 	}
 
-	BT_DBG("Stored keys for %s (%s)", bt_addr_le_str(&keys->addr), log_strdup(key));
+	BT_DBG("Stored keys for %s (%s)", bt_addr_le_str(&keys->addr),
+	       log_strdup(key));
 
 	return 0;
 }
 
-static int keys_set(int argc, char **argv, size_t len_rd,
-		    settings_read_cb read_cb, void *cb_arg)
+static int keys_set(const char *name, size_t len_rd, settings_read_cb read_cb,
+		    void *cb_arg)
 {
 	struct bt_keys *keys;
 	bt_addr_le_t addr;
@@ -286,8 +287,9 @@ static int keys_set(int argc, char **argv, size_t len_rd,
 	size_t len;
 	int err;
 	char val[BT_KEYS_STORAGE_LEN];
+	const char *next;
 
-	if (argc < 1) {
+	if (!name) {
 		BT_ERR("Insufficient number of arguments");
 		return -EINVAL;
 	}
@@ -298,18 +300,21 @@ static int keys_set(int argc, char **argv, size_t len_rd,
 		return -EINVAL;
 	}
 
-	BT_DBG("argv[0] %s val %s", argv[0], (len) ? val : "(null)");
+	BT_DBG("name %s val %s", log_strdup(name),
+	       (len) ? bt_hex(val, sizeof(val)) : "(null)");
 
-	err = bt_settings_decode_key(argv[0], &addr);
+	err = bt_settings_decode_key(name, &addr);
 	if (err) {
-		BT_ERR("Unable to decode address %s", argv[0]);
+		BT_ERR("Unable to decode address %s", name);
 		return -EINVAL;
 	}
 
-	if (argc == 1) {
+	settings_name_next(name, &next);
+
+	if (!next) {
 		id = BT_ID_DEFAULT;
 	} else {
-		id = strtol(argv[1], NULL, 10);
+		id = strtol(next, NULL, 10);
 	}
 
 	if (!len) {
@@ -362,5 +367,7 @@ static int keys_commit(void)
 	return 0;
 }
 
-BT_SETTINGS_DEFINE(keys, keys_set, keys_commit, NULL);
+SETTINGS_STATIC_HANDLER_DEFINE(bt_keys, "bt/keys", NULL, keys_set, keys_commit,
+			       NULL);
+
 #endif /* CONFIG_BT_SETTINGS */

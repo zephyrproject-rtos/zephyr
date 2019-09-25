@@ -10,10 +10,10 @@
  */
 
 #include <device.h>
-#include <sensor.h>
-#include <i2c.h>
-#include <misc/__assert.h>
-#include <misc/byteorder.h>
+#include <drivers/sensor.h>
+#include <drivers/i2c.h>
+#include <sys/__assert.h>
+#include <sys/byteorder.h>
 #include <init.h>
 #include <kernel.h>
 #include <string.h>

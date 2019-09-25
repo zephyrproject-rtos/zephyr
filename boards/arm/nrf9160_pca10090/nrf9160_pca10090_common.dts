@@ -98,6 +98,11 @@
 	cts-pin = <15>;
 };
 
+&uart2 {
+	tx-pin = <24>;
+	rx-pin = <23>;
+};
+
 &i2c2 {
 	status = "okay";
 	sda-pin = <30>;
@@ -168,13 +173,11 @@
 / {
 	/* SRAM allocated and used by the BSD library */
 	sram0_bsd: memory@20010000 {
-		device_type = "memory";
 		compatible = "mmio-sram";
 	};
 
 	/* SRAM allocated to the Non-Secure image */
 	sram0_ns: memory@20020000 {
-		device_type = "memory";
 		compatible = "mmio-sram";
 	};
 };

@@ -11,10 +11,10 @@
 #ifndef ZEPHYR_DRIVERS_SENSOR_LSM6DSL_LSM6DSL_H_
 #define ZEPHYR_DRIVERS_SENSOR_LSM6DSL_LSM6DSL_H_
 
-#include <sensor.h>
+#include <drivers/sensor.h>
 #include <zephyr/types.h>
-#include <gpio.h>
-#include <misc/util.h>
+#include <drivers/gpio.h>
+#include <sys/util.h>
 
 #define LSM6DSL_REG_FUNC_CFG_ACCESS			0x01
 #define LSM6DSL_MASK_FUNC_CFG_EN			BIT(7)

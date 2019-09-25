@@ -9,7 +9,10 @@
 #ifndef ZEPHYR_DRIVERS_SPI_SPI_DW_H_
 #define ZEPHYR_DRIVERS_SPI_SPI_DW_H_
 
-#include <spi.h>
+#include <string.h>
+#include <drivers/spi.h>
+
+#include "spi_context.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -20,6 +23,7 @@ typedef void (*spi_dw_config_t)(void);
 /* Private structures */
 struct spi_dw_config {
 	u32_t regs;
+	u32_t clock_frequency;
 #ifdef CONFIG_CLOCK_CONTROL
 	const char *clock_name;
 	void *clock_data;
@@ -27,8 +31,6 @@ struct spi_dw_config {
 	spi_dw_config_t config_func;
 	u8_t op_modes;
 };
-
-#include "spi_context.h"
 
 struct spi_dw_data {
 #ifdef CONFIG_CLOCK_CONTROL
@@ -42,15 +44,8 @@ struct spi_dw_data {
 
 /* Helper macros */
 
-#ifdef DT_SPI_DW_SPI_CLOCK
-#define SPI_DW_CLK_DIVIDER(ssi_clk_hz) \
-		((DT_SPI_DW_SPI_CLOCK / ssi_clk_hz) & 0xFFFF)
-/* provision for soc.h providing a clock that is different than CPU clock */
-#else
-#define SPI_DW_CLK_DIVIDER(ssi_clk_hz) \
-		((CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / ssi_clk_hz) & 0xFFFF)
-#endif
-
+#define SPI_DW_CLK_DIVIDER(clock_freq, ssi_clk_hz) \
+		((clock_freq / ssi_clk_hz) & 0xFFFF)
 
 #ifdef CONFIG_SPI_DW_ARC_AUX_REGS
 #define Z_REG_READ(__sz) sys_in##__sz
@@ -200,40 +195,32 @@ struct spi_dw_data {
 /*
  * Including the right register definition file
  * SoC SPECIFIC!
+ *
+ * The file included next uses the DEFINE_MM_REG macros above to
+ * declare functions.  In this situation we'll leave the containing
+ * extern "C" active in C++ compilations.
  */
-#ifdef CONFIG_SOC_QUARK_SE_C1000_SS
-#include "spi_dw_quark_se_ss_regs.h"
-#else
 #include "spi_dw_regs.h"
 
 #define z_extra_clock_on(...)
 #define z_extra_clock_off(...)
 
-#endif
-
-/* Interrupt mask
- * SoC SPECIFIC!
- */
-#if defined(CONFIG_SOC_QUARK_SE_C1000) || defined(CONFIG_SOC_QUARK_SE_C1000_SS)
-#ifdef CONFIG_ARC
-#define _INT_UNMASK     INT_ENABLE_ARC
-#else
-#define _INT_UNMASK	INT_UNMASK_IA
-#endif
-
-#define z_spi_int_unmask(__mask)						\
-	sys_write32(sys_read32(__mask) & _INT_UNMASK, __mask)
-#else
-#define z_spi_int_unmask(...)
-#endif /* CONFIG_SOC_QUARK_SE_C1000 || CONFIG_SOC_QUARK_SE_C1000_SS */
-
 /* Based on those macros above, here are common helpers for some registers */
-DEFINE_MM_REG_WRITE(baudr, DW_SPI_REG_BAUDR, 16)
+
 DEFINE_MM_REG_READ(txflr, DW_SPI_REG_TXFLR, 32)
 DEFINE_MM_REG_READ(rxflr, DW_SPI_REG_RXFLR, 32)
+
+#ifdef CONFIG_SPI_DW_ACCESS_WORD_ONLY
+DEFINE_MM_REG_WRITE(baudr, DW_SPI_REG_BAUDR, 32)
+DEFINE_MM_REG_WRITE(imr, DW_SPI_REG_IMR, 32)
+DEFINE_MM_REG_READ(imr, DW_SPI_REG_IMR, 32)
+DEFINE_MM_REG_READ(isr, DW_SPI_REG_ISR, 32)
+#else
+DEFINE_MM_REG_WRITE(baudr, DW_SPI_REG_BAUDR, 16)
 DEFINE_MM_REG_WRITE(imr, DW_SPI_REG_IMR, 8)
 DEFINE_MM_REG_READ(imr, DW_SPI_REG_IMR, 8)
 DEFINE_MM_REG_READ(isr, DW_SPI_REG_ISR, 8)
+#endif
 
 DEFINE_SET_BIT_OP(ssienr, DW_SPI_REG_SSIENR, DW_SPI_SSIENR_SSIEN_BIT)
 DEFINE_CLEAR_BIT_OP(ssienr, DW_SPI_REG_SSIENR, DW_SPI_SSIENR_SSIEN_BIT)
@@ -241,8 +228,6 @@ DEFINE_TEST_BIT_OP(ssienr, DW_SPI_REG_SSIENR, DW_SPI_SSIENR_SSIEN_BIT)
 DEFINE_TEST_BIT_OP(sr_busy, DW_SPI_REG_SR, DW_SPI_SR_BUSY_BIT)
 
 #ifdef CONFIG_CLOCK_CONTROL
-
-#include <string.h>
 
 static inline int clock_config(struct device *dev)
 {
@@ -287,7 +272,8 @@ static inline void clock_off(struct device *dev)
 
 	extra_clock_off(dev);
 }
-#else
+
+#else /* CONFIG_CLOCK_CONTROL */
 #define clock_config(...)
 #define clock_on(...)
 #define clock_off(...)
@@ -296,4 +282,5 @@ static inline void clock_off(struct device *dev)
 #ifdef __cplusplus
 }
 #endif
+
 #endif /* ZEPHYR_DRIVERS_SPI_SPI_DW_H_ */

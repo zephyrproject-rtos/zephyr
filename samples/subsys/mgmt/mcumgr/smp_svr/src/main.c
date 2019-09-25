@@ -8,12 +8,12 @@
 #include <zephyr.h>
 #include <string.h>
 #include <stdlib.h>
-#include <stats.h>
+#include <stats/stats.h>
 #include <mgmt/buf.h>
 
 #ifdef CONFIG_MCUMGR_CMD_FS_MGMT
 #include <device.h>
-#include <fs.h>
+#include <fs/fs.h>
 #include "fs_mgmt/fs_mgmt.h"
 #include <nffs/nffs.h>
 #endif
@@ -83,7 +83,7 @@ static void advertise(void)
 static void connected(struct bt_conn *conn, u8_t err)
 {
 	if (err) {
-		printk("Connection failed (err %u)\n", err);
+		printk("Connection failed (err 0x%02x)\n", err);
 	} else {
 		printk("Connected\n");
 	}
@@ -91,7 +91,7 @@ static void connected(struct bt_conn *conn, u8_t err)
 
 static void disconnected(struct bt_conn *conn, u8_t reason)
 {
-	printk("Disconnected (reason %u)\n", reason);
+	printk("Disconnected (reason 0x%02x)\n", reason);
 	advertise();
 }
 

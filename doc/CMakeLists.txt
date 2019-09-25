@@ -15,6 +15,11 @@ endif()
 file(TO_CMAKE_PATH "$ENV{ZEPHYR_BASE}" ZEPHYR_BASE)
 
 message(STATUS "Zephyr base: ${ZEPHYR_BASE}")
+if(DEFINED WEST)
+  message(STATUS "West: ${WEST}")
+else()
+  message(STATUS "West: not found")
+endif()
 
 find_package(PythonInterp 3.4)
 set(DOXYGEN_SKIP_DOT True)
@@ -131,6 +136,7 @@ add_custom_target(
 file(GLOB_RECURSE  DOXY_SOURCES
   ${ZEPHYR_BASE}/include/*.[c,h,S]
   ${ZEPHYR_BASE}/lib/libc/*.[c,h,S]
+  ${ZEPHYR_BASE}/subsys/testsuite/ztest/include/*.[h,c,S]
   ${ZEPHYR_BASE}/tests/*.[h,c,S]
   )
 # For debug. Also find generated list in doc/_build/(build.ninja|CMakeFiles/)
@@ -178,7 +184,7 @@ add_custom_target(
 )
 
 if(WIN32)
-  set(SEP ;)
+  set(SEP $<SEMICOLON>)
 else()
   set(SEP :)
 endif()

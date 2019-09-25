@@ -14,11 +14,11 @@
 #ifndef __GPTP_MD_H
 #define __GPTP_MD_H
 
+#include <net/gptp.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <net/gptp.h>
 
 /**
  * @brief Media Dependent Sync Information.

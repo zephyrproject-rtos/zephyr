@@ -20,7 +20,7 @@
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <device.h>
-#include <misc/util.h>
+#include <sys/util.h>
 #include <kernel.h>
 #include <net/net_pkt.h>
 #include <net/net_if.h>
@@ -34,6 +34,10 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include "fsl_enet.h"
 #include "fsl_phy.h"
+
+#define FREESCALE_OUI_B0 0x00
+#define FREESCALE_OUI_B1 0x04
+#define FREESCALE_OUI_B2 0x9f
 
 enum eth_mcux_phy_state {
 	eth_mcux_phy_state_initial,
@@ -216,7 +220,11 @@ static void eth_mcux_phy_start(struct eth_context *context)
 		ENET_StartSMIWrite(ENET, phy_addr, PHY_BASICCONTROL_REG,
 			   kENET_MiiWriteValidFrame,
 			   PHY_BCTL_RESET_MASK);
+#ifdef CONFIG_SOC_SERIES_IMX_RT
 		context->phy_state = eth_mcux_phy_state_initial;
+#else
+		context->phy_state = eth_mcux_phy_state_reset;
+#endif
 		break;
 	case eth_mcux_phy_state_reset:
 		eth_mcux_phy_enter_reset(context);
@@ -746,10 +754,11 @@ static void generate_mac(u8_t *mac_addr)
 
 	entropy = sys_rand32_get();
 
+	mac_addr[0] |= 0x02; /* force LAA bit */
+
 	mac_addr[3] = entropy >> 8;
 	mac_addr[4] = entropy >> 16;
-	/* Locally administered, unicast */
-	mac_addr[5] = ((entropy >> 0) & 0xfc) | 0x02;
+	mac_addr[5] = entropy >> 0;
 }
 #elif defined(CONFIG_ETH_MCUX_0_UNIQUE_MAC)
 static void generate_mac(u8_t *mac_addr)
@@ -762,10 +771,11 @@ static void generate_mac(u8_t *mac_addr)
 	u32_t id = SIM->UIDH ^ SIM->UIDMH ^ SIM->UIDML ^ SIM->UIDL;
 #endif
 
+	mac_addr[0] |= 0x02; /* force LAA bit */
+
 	mac_addr[3] = id >> 8;
 	mac_addr[4] = id >> 16;
-	/* Locally administered, unicast */
-	mac_addr[5] = ((id >> 0) & 0xfc) | 0x02;
+	mac_addr[5] = id >> 0;
 }
 #endif
 
@@ -817,6 +827,12 @@ static int eth_0_init(struct device *dev)
 	enet_config.macSpecialConfig |= kENET_ControlPromiscuousEnable;
 #endif
 
+	/* Initialize/override OUI which may not be correct in
+	 * devicetree.
+	 */
+	context->mac_addr[0] = FREESCALE_OUI_B0;
+	context->mac_addr[1] = FREESCALE_OUI_B1;
+	context->mac_addr[2] = FREESCALE_OUI_B2;
 #if defined(CONFIG_ETH_MCUX_0_UNIQUE_MAC) || \
     defined(CONFIG_ETH_MCUX_0_RANDOM_MAC)
 	generate_mac(context->mac_addr);
@@ -860,7 +876,6 @@ static int eth_0_init(struct device *dev)
 		context->mac_addr[4], context->mac_addr[5]);
 
 	ENET_SetCallback(&context->enet_handle, eth_callback, dev);
-	eth_0_config_func();
 
 	eth_mcux_phy_start(context);
 
@@ -903,6 +918,9 @@ static void eth_iface_init(struct net_if *iface)
 	context->iface = iface;
 
 	ethernet_init(iface);
+	net_if_flag_set(iface, NET_IF_NO_AUTO_START);
+
+	eth_0_config_func();
 }
 
 static enum ethernet_hw_caps eth_mcux_get_capabilities(struct device *dev)
@@ -1004,17 +1022,9 @@ static void eth_mcux_error_isr(void *p)
 static struct eth_context eth_0_context = {
 	.phy_duplex = kPHY_FullDuplex,
 	.phy_speed = kPHY_Speed100M,
-	.mac_addr = {
-		/* Freescale's OUI */
-		0x00,
-		0x04,
-		0x9f,
 #if defined(CONFIG_ETH_MCUX_0_MANUAL_MAC)
-		DT_ETH_MCUX_0_MAC3,
-		DT_ETH_MCUX_0_MAC4,
-		DT_ETH_MCUX_0_MAC5
+	.mac_addr = DT_ETH_MCUX_0_MAC,
 #endif
-	}
 };
 
 ETH_NET_DEVICE_INIT(eth_mcux_0, DT_ETH_MCUX_0_NAME, eth_0_init,

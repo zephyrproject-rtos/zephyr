@@ -14,10 +14,6 @@
 #ifndef ZEPHYR_ARCH_ARM_INCLUDE_CORTEX_M_CMSE_H_
 #define ZEPHYR_ARCH_ARM_INCLUDE_CORTEX_M_CMSE_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #ifdef _ASMLANGUAGE
 
 /* nothing */
@@ -27,6 +23,9 @@ extern "C" {
 #include <arm_cmse.h>
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /*
  * Address information retrieval based on the TT instructions.
@@ -135,6 +134,13 @@ int arm_cmse_addr_range_read_ok(u32_t addr, u32_t size, int force_npriv);
  * @return 1 if address range is Read and Writable, 0 otherwise.
  */
 int arm_cmse_addr_range_readwrite_ok(u32_t addr, u32_t size, int force_npriv);
+
+/* Required for C99 compilation (required for GCC-8.x version,
+ * where typeof is used instead of __typeof__)
+ */
+#ifndef typeof
+#define typeof  __typeof__
+#endif
 
 /**
  * @brief Read accessibility of an object
@@ -438,10 +444,10 @@ int arm_cmse_addr_range_nonsecure_readwrite_ok(u32_t addr, u32_t size,
 
 #endif /* CONFIG_ARM_SECURE_FIRMWARE */
 
-#endif /* _ASMLANGUAGE */
-
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* _ASMLANGUAGE */
 
 #endif /* ZEPHYR_ARCH_ARM_INCLUDE_CORTEX_M_CMSE_H_ */

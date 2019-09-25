@@ -2,7 +2,6 @@
 #
 # Copyright (c) 2019 Intel Corp.
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if !X86_LONGMODE
 
@@ -32,17 +31,6 @@ config IDT_NUM_VECTORS
 	  This option specifies the number of interrupt vector entries in the
 	  Interrupt Descriptor Table (IDT). By default all 256 vectors are
 	  supported in an IDT requiring 2048 bytes of memory.
-
-config MAX_IRQ_LINES
-	int "Number of IRQ lines"
-	default 128
-	range 0 256
-	help
-	  This option specifies the number of IRQ lines in the system.
-	  It can be tuned to save some bytes in ROM, as it determines the
-	  size of the _irq_to_interrupt_vector_table, which is used at runtime
-	  to program to the PIC the association between vectors and
-	  interrupts.
 
 config SET_GDT
 	bool "Setup GDT as part of boot process"
@@ -114,23 +102,22 @@ config X86_BOUNDS_CHECK_BYPASS_MITIGATION
 
 menu "Processor Capabilities"
 
-config X86_IAMCU
-	bool "IAMCU calling convention"
-	help
-	  The IAMCU calling convention changes the X86 C calling convention to
-	  pass some arguments via registers allowing for code size and performance
-	  improvements.  Great care needs to be taken if you have assembly code
-	  that will be called from C or C code called from assembly code, the
-	  assembly code will need to be updated to conform to the new calling
-	  convention.  If in doubt say N
-
 config X86_MMU
 	bool "Enable Memory Management Unit"
 	select MEMORY_PROTECTION
 	help
 	  This options enables the memory management unit present in x86
-	  and creates a set of page tables at build time. Requires an MMU
+	  and creates a set of page tables at boot time. Requires an MMU
 	  which supports PAE page tables.
+
+config X86_MMU_PAGE_POOL_PAGES
+	int "Number of pages to reserve for building page tables"
+	default 16
+	depends on X86_MMU
+	help
+	  Building page tables at boot requires a pool of free memory pages
+	  to construct it. This can't be derived at build time, tune this
+	  to your SoC's specific memory map.
 
 config X86_NO_MELTDOWN
 	bool
@@ -272,7 +259,7 @@ config LAZY_FP_SHARING
 	  registers, using logic to lazily save/restore the floating point
 	  register state on context switch.
 
-	  On Intel Core procesors, may be vulnerable to exploits which allows
+	  On Intel Core processors, may be vulnerable to exploits which allows
 	  malware to read the contents of all floating point registers, see
 	  CVE-2018-3665.
 
@@ -345,27 +332,11 @@ config X86_KERNEL_OOPS
 
 config X86_KERNEL_OOPS_VECTOR
 	int "IDT vector to use for kernel oops"
-	default 62 if MVIC
-	default 33 if !MVIC
+	default 33
 	range 32 255
 	depends on X86_KERNEL_OOPS
 	help
 	  Specify the IDT vector to use for the kernel oops exception handler.
-	  The default should be fine for most arches, but on systems like MVIC
-	  where there is a fixed IRQ-to-vector mapping another value may be
-	  needed to avoid collision.
-
-config IRQ_OFFLOAD_VECTOR
-	int "IDT vector to use for IRQ offload"
-	default 63 if MVIC
-	default 32 if !MVIC
-	range 32 255
-	depends on IRQ_OFFLOAD
-	help
-	  Specify the IDT vector to use for the IRQ offload interrupt handler.
-	  The default should be fine for most arches, but on systems like MVIC
-	  where there is a fixed IRQ-to-vector mapping another value may be
-	  needed to avoid collision.
 
 config X86_DYNAMIC_IRQ_STUBS
 	int "Number of dynamic interrupt stubs"
@@ -375,12 +346,6 @@ config X86_DYNAMIC_IRQ_STUBS
 	  Installing interrupt handlers with irq_connect_dynamic() requires
 	  some stub code to be generated at build time, one stub per dynamic
 	  interrupt.
-
-config X86_FIXED_IRQ_MAPPING
-	bool
-	help
-	  Specify whether the current interrupt controller in use has a fixed
-	  mapping between IDT vectors and IRQ lines.
 
 endmenu
 

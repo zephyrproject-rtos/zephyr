@@ -8,10 +8,10 @@
 
 #include <board.h>
 #include <soc.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 
-#include <misc/printk.h>
-#include <misc/util.h>
+#include <sys/printk.h>
+#include <sys/util.h>
 
 /**
  * @file

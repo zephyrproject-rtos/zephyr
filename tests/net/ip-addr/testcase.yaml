@@ -1,7 +1,6 @@
 common:
   depends_on: netif
-  platform_whitelist: native_posix qemu_x86 qemu_cortex_m3
+  tags: net ip-addr
 tests:
   net.ip-addr:
     min_ram: 16
-    tags: net ip-addr

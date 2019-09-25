@@ -62,6 +62,9 @@ config HAS_HW_NRF_GPIOTE
 config HAS_HW_NRF_I2S
 	bool
 
+config HAS_HW_NRF_IPC
+	bool
+
 config HAS_HW_NRF_LPCOMP
 	bool
 
@@ -99,6 +102,12 @@ config HAS_HW_NRF_QDEC
 	bool
 
 config HAS_HW_NRF_QSPI
+	bool
+
+config HAS_HW_NRF_RADIO_BLE_CODED
+	bool
+
+config HAS_HW_NRF_RADIO_IEEE802154
 	bool
 
 config HAS_HW_NRF_RNG

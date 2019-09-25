@@ -14,23 +14,10 @@
 #ifndef ZEPHYR_ARCH_POSIX_INCLUDE_KERNEL_ARCH_DATA_H_
 #define ZEPHYR_ARCH_POSIX_INCLUDE_KERNEL_ARCH_DATA_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <kernel_internal.h>
 
 /* stacks */
 #define STACK_ROUND_UP(x) ROUND_UP(x, STACK_ALIGN_SIZE)
 #define STACK_ROUND_DOWN(x) ROUND_DOWN(x, STACK_ALIGN_SIZE)
-
-
-#ifndef _ASMLANGUAGE
-
-#endif /* _ASMLANGUAGE */
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* ZEPHYR_ARCH_POSIX_INCLUDE_KERNEL_ARCH_DATA_H_ */

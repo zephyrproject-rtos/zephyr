@@ -3,6 +3,8 @@
 # SPDX-License-Identifier: Apache-2.0
 """Zephyr Sanity Tests
 
+Also check the "User and Developer Guides" at https://docs.zephyrproject.org/
+
 This script scans for the set of unit test applications in the git
 repository and attempts to execute them. By default, it tries to
 build each test case on one platform per architecture, using a precedence
@@ -42,8 +44,8 @@ pairs:
     when building or running the test case.
 
   build_only: <True|False> (default False)
-    If true, don't try to run the test under QEMU even if the
-    selected platform supports it.
+    If true, don't try to run the test even if the selected platform
+    supports it.
 
   build_on_all: <True|False> (default False)
     If true, attempt to build test on all available platforms.
@@ -139,9 +141,9 @@ pairs:
 
     The ':' operator compiles the string argument as a regular expression,
     and then returns a true value only if the symbol's value in the environment
-    matches. For example, if CONFIG_SOC="quark_se" then
+    matches. For example, if CONFIG_SOC="stm32f107xc" then
 
-        filter = CONFIG_SOC : "quark.*"
+        filter = CONFIG_SOC : "stm.*"
 
     Would match it.
 
@@ -189,6 +191,7 @@ import serial
 import concurrent
 import concurrent.futures
 import xml.etree.ElementTree as ET
+import resource
 from xml.sax.saxutils import escape
 from collections import OrderedDict
 from itertools import islice
@@ -226,7 +229,6 @@ LAST_SANITY_XUNIT = os.path.join(ZEPHYR_BASE, "scripts", "sanity_chk",
                                  "last_sanity.xml")
 RELEASE_DATA = os.path.join(ZEPHYR_BASE, "scripts", "sanity_chk",
                             "sanity_last_release.csv")
-JOBS = multiprocessing.cpu_count() * 2
 
 if os.isatty(sys.stdout.fileno()):
     TERMINAL = True
@@ -571,7 +573,7 @@ class BinaryHandler(Handler):
         else:
             command = [self.binary]
 
-        if shutil.which("valgrind") and self.valgrind:
+        if self.valgrind and shutil.which("valgrind"):
             command = ["valgrind", "--error-exitcode=2",
                        "--leak-check=full",
                        "--suppressions="+ZEPHYR_BASE+"/scripts/valgrind.supp",
@@ -581,6 +583,9 @@ class BinaryHandler(Handler):
         verbose("Spawning process: " +
                 " ".join(shlex.quote(word) for word in command) + os.linesep +
                 "Spawning process in directory: " + self.outdir)
+
+        start_time = time.time();
+
         with subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=self.outdir) as proc:
             verbose("Spawning BinaryHandler Thread for %s" % self.name)
             t = threading.Thread(target=self._output_reader, args=(proc, harness, ))
@@ -593,6 +598,8 @@ class BinaryHandler(Handler):
                 t.join()
             proc.wait()
             self.returncode = proc.returncode
+
+        self.metrics["handler_time"] = time.time() - start_time;
 
         if options.enable_coverage:
             returncode = subprocess.call(["GCOV_PREFIX=" + self.outdir,
@@ -669,14 +676,19 @@ class DeviceHandler(Handler):
 
         if options.west_flash is not None:
             command = ["west", "flash", "--skip-rebuild", "-d", self.outdir]
-            # There are two ways this option is used.
+            if options.west_runner is not None:
+                command.append("--runner")
+                command.append(options.west_runner)
+            # There are three ways this option is used.
             # 1) bare: --west-flash
             #    This results in options.west_flash == []
             # 2) with a value: --west-flash="--board-id=42"
             #    This results in options.west_flash == "--board-id=42"
+            # 3) Multiple values: --west-flash="--board-id=42,--erase"
+            #    This results in options.west_flash == "--board-id=42 --erase"
             if options.west_flash != []:
                 command.append('--')
-                command.append(options.west_flash)
+                command.extend(options.west_flash.split(','))
         else:
             if options.ninja:
                 generator_cmd = "ninja"
@@ -811,12 +823,14 @@ class QEMUHandler(Handler):
                     out_state = harness.state
 
                 # if we get some state, that means test is doing well, we reset
-                # the timeout and wait for 2 more seconds just in case we have
-                # crashed after test has completed
+                # the timeout and wait for 2 more seconds to catch anything
+                # printed late. We wait much longer if code
+                # coverage is enabled since dumping this information can
+                # take some time.
                 if not timeout_extended or harness.capture_coverage:
                     timeout_extended= True
                     if harness.capture_coverage:
-                        timeout_time = time.time() + 10
+                        timeout_time = time.time() + 30
                     else:
                         timeout_time = time.time() + 2
 
@@ -908,8 +922,9 @@ class SizeCalculator:
     # These get copied into RAM only on non-XIP
     ro_sections = ["text", "ctors", "init_array", "reset", "object_access",
                    "rodata", "devconfig", "net_l2", "vector", "sw_isr_table",
-                   "_bt_settings_area", "_bt_channels_area","_bt_services_area",
-                   "vectors", "net_socket_register"]
+                   "_settings_handlers_area", "_bt_channels_area",
+                   "_bt_br_channels_area", "_bt_services_area",
+                   "vectors", "net_socket_register", "net_ppp_proto"]
 
     def __init__(self, filename, extra_sections):
         """Constructor
@@ -1107,17 +1122,18 @@ class MakeGenerator:
 {goal}:
 """
 
-    MAKE_RULE_TMPL = """\t@echo sanity_test_{phase} {goal} >&2
+    MAKE_RULE_TMPL_CMAKE = """\t@echo sanity_test_{phase} {goal} >&2
 \tcmake  \\
 \t\t-G"{generator}"\\
-\t\t-H{directory}\\
+\t\t-S{directory}\\
 \t\t-B{outdir}\\
 \t\t-DEXTRA_CFLAGS="-Werror {cflags}"\\
 \t\t-DEXTRA_AFLAGS=-Wa,--fatal-warnings\\
 \t\t-DEXTRA_LDFLAGS="{ldflags}"\\
 \t\t{args}\\
 \t\t>{logfile} 2>&1
-\t{generator_cmd} -C {outdir}\\
+"""
+    MAKE_RULE_TMPL_BLD = """\t{generator_cmd} -C {outdir}\\
 \t\t{verb} {make_args}\\
 \t\t>>{logfile} 2>&1
 """
@@ -1186,20 +1202,30 @@ class MakeGenerator:
                 make_args=make_args
             )
         else:
-            return MakeGenerator.MAKE_RULE_TMPL.format(
+            cmake_rule = MakeGenerator.MAKE_RULE_TMPL_CMAKE.format(
                 generator=generator,
-                generator_cmd=generator_cmd,
                 phase=phase,
                 goal=name,
                 outdir=outdir,
                 cflags=cflags,
                 ldflags=ldflags,
                 directory=workdir,
-                verb=verb,
                 args=args,
                 logfile=logfile,
-                make_args=make_args
             )
+
+            if options.cmake_only:
+                build_rule = ""
+            else:
+                build_rule = MakeGenerator.MAKE_RULE_TMPL_BLD.format(
+                    generator_cmd=generator_cmd,
+                    outdir=outdir,
+                    verb=verb,
+                    make_args=make_args,
+                    logfile=logfile,
+                )
+
+            return cmake_rule + build_rule
 
     def _get_rule_footer(self, name):
         return MakeGenerator.GOAL_FOOTER_TMPL.format(goal=name)
@@ -1257,9 +1283,8 @@ class MakeGenerator:
             handler = QEMUHandler(instance, "qemu")
         elif type == "native":
             handler = BinaryHandler(instance, "native")
+            # defined by __build_dir in cmake/boilerplate.cmake
             handler.binary = os.path.join(outdir, "zephyr", "zephyr.exe")
-            if options.enable_coverage:
-                args += ["EXTRA_LDFLAGS=--coverage"]
         elif type == "nsim":
             handler = BinaryHandler(instance, "nsim")
             handler.call_make_run = True
@@ -1313,7 +1338,8 @@ class MakeGenerator:
 
         if len(ti.test.extra_configs) > 0 or options.coverage:
             args.append("OVERLAY_CONFIG=\"%s %s\"" %(overlays,
-                        os.path.join(ti.outdir, "overlay.conf")))
+                        os.path.join(ti.outdir,
+                                     "sanitycheck", "testcase_extra.conf")))
 
         if ti.test.type == "unit" and options.enable_coverage:
             args.append("COVERAGE=1")
@@ -1322,7 +1348,7 @@ class MakeGenerator:
         args.extend(extra_args)
 
         do_build_only = ti.build_only or options.build_only
-        do_run = not do_build_only
+        do_run = not do_build_only and not options.cmake_only
         skip_slow = ti.test.slow and not options.enable_slow
 
         # FIXME: Need refactoring and cleanup
@@ -1347,7 +1373,22 @@ class MakeGenerator:
         else:
             verbose("Skipping slow test: " + ti.name)
 
-    def execute(self, callback_fn=None, context=None):
+    def _remove_unkept_files(self, base_path, keep_paths):
+        for dirpath, dirnames, filenames in os.walk(base_path, topdown=False):
+            for name in filenames:
+                path = os.path.join(dirpath, name)
+                if path not in keep_paths:
+                    os.remove(path)
+            # Remove empty directories and symbolic links to directories
+            for dir in dirnames:
+                path = os.path.join(dirpath, dir)
+                if os.path.islink(path):
+                    os.remove(path)
+                elif not os.listdir(path):
+                    os.rmdir(path)
+
+
+    def execute(self, callback_fn=None, context=None, keep_files=None):
         """Execute all the registered build goals
 
         @param callback_fn If not None, a callback function will be called
@@ -1356,6 +1397,11 @@ class MakeGenerator:
             context object, supplied here
         @param context Context object to pass to the callback function.
             Type and semantics are specific to that callback function.
+        @param keep_files If not None, we will remove all files except those
+            defined in keep_files.  keep_files is a dictionary with the key
+            being the 'goal' and the value is a pair.  The pair first element
+            is the dir path of the test and the second is a list of file paths
+            that we should keep.
         @return A dictionary mapping goal names to final status.
         """
 
@@ -1374,9 +1420,11 @@ class MakeGenerator:
 
             cmd = ["make", "-k", "-j", str(JOBS), "-f", tf.name, "all"]
 
-            # assure language neutral environemnt
+            # assure language neutral environment
             make_env = os.environ.copy()
             make_env['LC_MESSAGES'] = 'C.UTF-8'
+            verbose("In %s, spawning: " % os.getcwd()
+                    + " ".join(shlex.quote(word)for word in cmd))
             p = subprocess.Popen(cmd, stderr=subprocess.PIPE,
                                  stdout=devnull, env=make_env)
 
@@ -1407,7 +1455,7 @@ class MakeGenerator:
                     goal.make_state = state
 
                     if state == "finished":
-                        if goal.handler:
+                        if goal.handler and not options.cmake_only:
                             if hasattr(goal.handler, "handle"):
                                 goal.handler.handle()
                                 goal.handler_log = goal.handler.log
@@ -1420,6 +1468,10 @@ class MakeGenerator:
                                 goal.fail(thread_status)
                         else:
                             goal.success()
+
+                        if keep_files is not None:
+                            tc_path, keep_paths = keep_files[name]
+                            self._remove_unkept_files(tc_path, keep_paths)
 
                 if callback_fn:
                     callback_fn(context, self.goals, goal)
@@ -1562,7 +1614,14 @@ class SanityConfigParser:
 
             if k in d:
                 if isinstance(d[k], str):
-                    d[k] += " " + v
+                    # By default, we just concatenate string values of keys
+                    # which appear both in "common" and per-test sections,
+                    # but some keys are handled in adhoc way based on their
+                    # semantics.
+                    if k == "filter":
+                        d[k] = "(%s) and (%s)" % (d[k], v)
+                    else:
+                        d[k] += " " + v
             else:
                 d[k] = v
 
@@ -1729,7 +1788,7 @@ class TestCase:
     def get_unique(self, testcase_root, workdir, name):
 
         canonical_testcase_root = os.path.realpath(testcase_root)
-        if canonical_testcase_root.startswith(canonical_zephyr_base):
+        if Path(canonical_zephyr_base) in Path(canonical_testcase_root).parents:
             # This is in ZEPHYR_BASE, so include path in name for uniqueness
             # FIXME: We should not depend on path of test for unique names.
             relative_tc_root = os.path.relpath(canonical_testcase_root,
@@ -1843,7 +1902,7 @@ class TestInstance:
         self.outdir = os.path.join(base_outdir, platform.name, test.name)
 
         self.build_only = options.build_only or test.build_only \
-                or self.check_dependency()
+                or self.check_dependency() or options.cmake_only
         self.results = {}
 
     def __lt__(self, other):
@@ -1862,8 +1921,13 @@ class TestInstance:
         return build_only
 
     def create_overlay(self, platform):
-        file = os.path.join(self.outdir, "overlay.conf")
-        os.makedirs(self.outdir, exist_ok=True)
+        # Create this in a "sanitycheck/" subdirectory otherwise this
+        # will pass this overlay to kconfig.py *twice* and kconfig.cmake
+        # will silently give that second time precedence over any
+        # --extra-args=CONFIG_*
+        subdir = os.path.join(self.outdir, "sanitycheck")
+        os.makedirs(subdir, exist_ok=True)
+        file = os.path.join(subdir, "testcase_extra.conf")
         with open(file, "w") as f:
             content = ""
 
@@ -2090,6 +2154,7 @@ class TestSuite:
         defconfig_list = {}
         dt_list = {}
         cmake_list = {}
+        tc_file_list = {}
         for tc_name, tc in self.testcases.items():
             for arch_name, arch in self.arches.items():
                 for plat in arch.platforms:
@@ -2168,15 +2233,18 @@ class TestSuite:
                         cmake_cache_path = os.path.join(o, "CMakeCache.txt")
                         generated_dt_confg = "include/generated/generated_dts_board.conf"
                         dt_config_path = os.path.join(o, "zephyr", generated_dt_confg)
+                        defconfig_path = os.path.join(o, "zephyr", ".config")
                         dt_list[tc, plat, tc.name.split("/")[-1]] = dt_config_path
                         cmake_list[tc, plat, tc.name.split("/")[-1]] = cmake_cache_path
-                        defconfig_list[tc, plat, tc.name.split("/")[-1]] = os.path.join(o, "zephyr", ".config")
+                        defconfig_list[tc, plat, tc.name.split("/")[-1]] = defconfig_path
                         goal = "_".join([plat.name, "_".join(tc.name.split("/")), "config-sanitycheck"])
+                        tc_file_list[goal] = (o, [dt_config_path, cmake_cache_path, defconfig_path])
                         mg.add_build_goal(goal, os.path.join(ZEPHYR_BASE, tc.test_path),
                                 o, args, "config-sanitycheck.log", make_args="config-sanitycheck")
 
         info("Building testcase defconfigs...")
-        results = mg.execute(defconfig_cb)
+        kept_files = tc_file_list if options.save_tests else None
+        results = mg.execute(defconfig_cb, keep_files=kept_files)
 
         info("Filtering test cases...")
         for name, goal in results.items():
@@ -2408,7 +2476,7 @@ class TestSuite:
             mg.add_test_instance(i, options.extra_args)
         self.goals = mg.execute(cb, cb_context)
 
-        if not options.disable_size_report:
+        if not options.disable_size_report and not options.cmake_only:
             # Parallelize size calculation
             executor = concurrent.futures.ThreadPoolExecutor(JOBS)
             futures = [executor.submit(calc_one_elf_size, name, goal)
@@ -2418,6 +2486,7 @@ class TestSuite:
             for goal in self.goals.values():
                 goal.metrics["ram_size"] = 0
                 goal.metrics["rom_size"] = 0
+                goal.metrics["handler_time"] = 0
                 goal.metrics["unrecognized"] = []
 
         return self.goals
@@ -2701,8 +2770,8 @@ def parse_arguments():
                                             """
 Artificially long but functional example:
     $ ./scripts/sanitycheck -v     \\
-      --testcase-root tests/     \\
-      --testcase-root mytests/   \\
+      --testcase-root tests/ztest/base    \\
+      --testcase-root tests/kernel   \\
       --test      tests/ztest/base/testing.ztest.verbose_0  \\
       --test      tests/kernel/fifo/fifo_api/kernel.fifo.poll
 
@@ -2754,7 +2823,7 @@ Artificially long but functional example:
     test_xor_subtest.add_argument(
         "-s", "--test", action="append",
         help="Run only the specified test cases. These are named by "
-        "path/relative/to/Zephyr/base/section.name.in.testcase.yaml>")
+        "<path/relative/to/Zephyr/base/section.name.in.testcase.yaml>")
 
     test_xor_subtest.add_argument(
         "--sub-test", action="append",
@@ -2772,7 +2841,9 @@ Artificially long but functional example:
 
     parser.add_argument(
         "-o", "--testcase-report",
-        help="Output a CSV spreadsheet containing results of the test run")
+        help="""Output a CSV spreadsheet containing results of the test run.
+        The handler_time column is left blank for tests that were only
+        compiled and not run.""")
     parser.add_argument(
         "-d", "--discard-report",
         help="Output a CSV spreadsheet showing tests that were skipped "
@@ -2822,7 +2893,11 @@ Artificially long but functional example:
     parser.add_argument("--detailed-report",
             action="store",
             metavar="FILENAME",
-            help="Generate a junit report with detailed testcase results.")
+            help="""Generate a junit report with detailed testcase results.
+            Unlike the CSV file produced by --testcase-report, this XML
+            report includes only tests which have run and none which were
+            merely built. If an image with multiple tests crashes early then
+            later tests are not accounted for either.""")
 
     parser.add_argument("--timestamps",
             action="store_true",
@@ -2883,9 +2958,14 @@ Artificially long but functional example:
         help="""Only run device tests with current artifacts, do not build
              the code""")
     parser.add_argument(
+        "--cmake-only", action="store_true",
+        help="Test on device directly. Specify the serial device to "
+             "use with the --device-serial option.")
+
+    parser.add_argument(
         "-j", "--jobs", type=int,
-        help="Number of jobs for building, defaults to number of CPU threads "
-        "overcommited by factor 2")
+        help="Number of jobs for building, defaults to number of CPU threads, "
+        "overcommited by factor 2 when --build-only")
 
     parser.add_argument(
         "--device-testing", action="store_true",
@@ -2897,7 +2977,7 @@ Artificially long but functional example:
         help="Specify a fixture that a board might support")
     parser.add_argument(
         "--device-serial",
-		help="Serial device for accessing the board (e.g., /dev/ttyACM0)")
+        help="Serial device for accessing the board (e.g., /dev/ttyACM0)")
     parser.add_argument(
             "--show-footprint", action="store_true",
             help="Show footprint statistics and deltas since last release."
@@ -2974,31 +3054,47 @@ Artificially long but functional example:
         which will ultimately disable ccache.
         """
     )
+
     parser.add_argument(
         "--west-flash", nargs='?', const=[],
         help="""Uses west instead of ninja or make to flash when running with
-             --device-testing"
+             --device-testing. Supports comma-separated argument list.
 
-        E.g
-         sanitycheck --device-testing --device-serial /dev/ttyACM0 \
-                     --west-flash="--board-id=foobar"
-        will translate to
-         west flash -- --board-id=foobar
+        E.g "sanitycheck --device-testing --device-serial /dev/ttyACM0
+                         --west-flash="--board-id=foobar,--erase"
+        will translate to "west flash -- --board-id=foobar --erase"
+
+        NOTE: device-testing must be enabled to use this option.
         """
     )
-    parser.add_argument("--gcov-tool", default="gcov",
-                        help="Path to the gcov tool. Default is gcov in the path.")
+    parser.add_argument(
+        "--west-runner",
+        help="""Uses the specified west runner instead of default when running
+             with --west-flash.
+
+        E.g "sanitycheck --device-testing --device-serial /dev/ttyACM0
+                         --west-flash --west-runner=pyocd"
+        will translate to "west flash --runner pyocd"
+
+        NOTE: west-flash must be enabled to use this option.
+        """
+    )
+
+    parser.add_argument("--gcov-tool", default=None,
+                        help="Path to the gcov tool to use for code coverage "
+                        "reports")
 
     parser.add_argument("--enable-coverage", action="store_true",
                         help="Enable code coverage using gcov.")
 
     parser.add_argument("-C", "--coverage", action="store_true",
-                        help="Generate coverage reports. Implies --enable_coverage")
+                        help="Generate coverage reports. Implies "
+                        "--enable_coverage and --enable-slow")
 
-    coverage_platforms = ["native_posix", "nrf52_bsim"]
-    parser.add_argument("--coverage-platform", action="append", default=coverage_platforms,
+    parser.add_argument("--coverage-platform", action="append", default=[],
                         help="Plarforms to run coverage reports on. "
-                        "This option may be used multiple times.")
+                        "This option may be used multiple times. "
+                        "Default to what was selected with --platform.")
 
     return parser.parse_args()
 
@@ -3077,6 +3173,9 @@ def chatty_test_cb(instances, goals, goal):
 
     if goal.handler:
         handler_type = goal.handler.type_str
+        htime = goal.metrics.get("handler_time", None)
+        if htime:
+            handler_type += " {:.3f}s".format(htime)
     else:
         handler_type = "build"
 
@@ -3212,10 +3311,24 @@ def main():
     global VERBOSE, INLINE_LOGS, JOBS, log_file
     global options
     global run_individual_tests
+
+    # XXX: Workaround for #17239
+    resource.setrlimit(resource.RLIMIT_NOFILE, (4096, 4096))
     options = parse_arguments()
+
+    if options.west_runner and not options.west_flash:
+        error("west-runner requires west-flash to be enabled")
+        sys.exit(1)
+
+    if options.west_flash and not options.device_testing:
+        error("west-flash requires device-testing to be enabled")
+        sys.exit(1)
 
     if options.coverage:
         options.enable_coverage = True
+        options.enable_slow = True
+        if not options.coverage_platform:
+            options.coverage_platform = options.platform
 
     if options.size:
         for fn in options.size:
@@ -3234,6 +3347,10 @@ def main():
 
     if options.jobs:
         JOBS = options.jobs
+    elif options.build_only:
+        JOBS = multiprocessing.cpu_count() * 2
+    else:
+        JOBS = multiprocessing.cpu_count()
 
     # Decrease JOBS for Ninja, if jobs weren't explicitly set
     if options.ninja and not options.jobs:
@@ -3481,6 +3598,20 @@ def main():
             failed += 1
 
     if options.coverage:
+        if options.gcov_tool == None:
+            use_system_gcov = False
+
+            for plat in options.coverage_platform:
+                ts_plat = ts.get_platform(plat)
+                if ts_plat and (ts_plat.type in {"native", "unit"}):
+                    use_system_gcov = True
+
+            if use_system_gcov or "ZEPHYR_SDK_INSTALL_DIR" not in os.environ:
+                options.gcov_tool = "gcov"
+            else:
+                options.gcov_tool = os.path.join(os.environ["ZEPHYR_SDK_INSTALL_DIR"],
+                    "i586-zephyr-elf/bin/i586-zephyr-elf-gcov")
+
         info("Generating coverage files...")
         generate_coverage(options.outdir, ["*generated*", "tests/*", "samples/*"])
 

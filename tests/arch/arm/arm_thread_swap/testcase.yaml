@@ -1,0 +1,28 @@
+tests:
+  arch.arm.swap.common:
+    arch_whitelist: arm
+    filter: CONFIG_ARMV7_M_ARMV8_M_MAINLINE
+    tags: arm
+  arch.arm.swap.common.no_optimizations:
+    arch_whitelist: arm
+    filter: CONFIG_ARMV7_M_ARMV8_M_MAINLINE
+    extra_configs:
+      - CONFIG_NO_OPTIMIZATIONS=y
+    tags: arm
+    min_flash: 64
+  arch.arm.swap.common.fp_sharing:
+    arch_whitelist: arm
+    filter: CONFIG_ARMV7_M_ARMV8_M_FP
+    extra_configs:
+      - CONFIG_FLOAT=y
+      - CONFIG_FP_SHARING=y
+    tags: arm
+  arch.arm.swap.common.fp_sharing.no_optimizations:
+    arch_whitelist: arm
+    filter: CONFIG_ARMV7_M_ARMV8_M_FP
+    extra_configs:
+      - CONFIG_FLOAT=y
+      - CONFIG_FP_SHARING=y
+      - CONFIG_NO_OPTIMIZATIONS=y
+    tags: arm
+    min_flash: 64

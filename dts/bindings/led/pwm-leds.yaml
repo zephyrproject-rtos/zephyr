@@ -1,28 +1,21 @@
-#
 # Copyright (c) 2018, Linaro Limited
-#
 # SPDX-License-Identifier: Apache-2.0
-#
----
-title: PWM LED
-version: 0.1
 
-description: >
-    This is a representation of the PWM GPIO nodes
+title: PWM LEDs
 
-inherits:
-    !include base.yaml
+description: PWM LEDs parent node
 
-properties:
-    compatible:
-      constraint: "pwm-leds"
+compatible: "pwm-leds"
 
-    pwms:
-      type: compound
-      category: required
-      generation: define
+child-binding:
+    title: PWM LED node
+    description: PWM LED child node
+    properties:
+        pwms:
+          type: phandle-array
+          required: true
 
-    label:
-      category: required
-
-...
+        label:
+          required: false
+          type: string
+          description: Human readable string describing the device (used by Zephyr for API name)

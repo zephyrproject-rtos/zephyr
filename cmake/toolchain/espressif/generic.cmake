@@ -8,6 +8,7 @@ set(TOOLCHAIN_HOME ${ESPRESSIF_TOOLCHAIN_PATH})
 
 set(COMPILER gcc)
 set(LINKER ld)
+set(BINTOOLS gnu)
 
 set(CROSS_COMPILE_TARGET xtensa-esp32-elf)
 set(SYSROOT_TARGET       xtensa-esp32-elf)

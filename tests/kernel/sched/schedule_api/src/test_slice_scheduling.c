@@ -44,6 +44,14 @@ static void thread_tslice(void *p1, void *p2, void *p3)
 	s64_t expected_slice_min = __ticks_to_ms(z_ms_to_ticks(SLICE_SIZE));
 	s64_t expected_slice_max = __ticks_to_ms(z_ms_to_ticks(SLICE_SIZE) + 1);
 
+	/* Clumsy, but need to handle the precision loss with
+	 * submillisecond ticks.  It's always possible to alias and
+	 * produce a tdelta of "1", no matter how fast ticks are.
+	 */
+	if (expected_slice_max == expected_slice_min) {
+		expected_slice_max = expected_slice_min + 1;
+	}
+
 	while (1) {
 		s64_t tdelta = k_uptime_delta(&elapsed_slice);
 		TC_PRINT("%c", thread_parameter);

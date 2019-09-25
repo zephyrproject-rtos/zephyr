@@ -13,12 +13,12 @@
  */
 
 #include <errno.h>
-#include <misc/__assert.h>
-#include <misc/util.h>
+#include <sys/__assert.h>
+#include <sys/util.h>
 #include <device.h>
 #include <init.h>
 #include <soc.h>
-#include <adc.h>
+#include <drivers/adc.h>
 
 #define ADC_CONTEXT_USES_KERNEL_TIMER
 #include "adc_context.h"

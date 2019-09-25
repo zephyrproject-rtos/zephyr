@@ -12,7 +12,7 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		cpu@0 {
+		cpu0: cpu@0 {
 			device_type = "cpu";
 			compatible = "arm,cortex-m4";
 			reg = <0>;
@@ -20,7 +20,6 @@
 	};
 
 	sram0: memory@20070000 {
-		device_type = "memory";
 		compatible = "mmio-sram";
 		reg = <0x20070000 0x18000>;
 	};
@@ -49,6 +48,8 @@
 			peripheral-id = <22>;
 			label = "I2C_0";
 			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
 		};
 
 		i2c1: i2c@40090000 {
@@ -59,6 +60,8 @@
 			peripheral-id = <23>;
 			label = "I2C_1";
 			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
 		};
 
 		uart0: uart@400e0800 {
@@ -104,6 +107,56 @@
 			peripheral-id = <20>;
 			status = "disabled";
 			label = "USART_3";
+		};
+
+		pioa: pio@400e0e00 {
+			compatible = "atmel,sam-gpio";
+			reg = <0x400e0e00 0x190>;
+			interrupts = <11 1>;
+			peripheral-id = <11>;
+			label = "PIO_A";
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+
+		piob: pio@400e1000 {
+			compatible = "atmel,sam-gpio";
+			reg = <0x400e1000 0x190>;
+			interrupts = <12 1>;
+			peripheral-id = <12>;
+			label = "PIO_B";
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+
+		pioc: pio@400e1200 {
+			compatible = "atmel,sam-gpio";
+			reg = <0x400e1200 0x190>;
+			interrupts = <13 1>;
+			peripheral-id = <13>;
+			label = "PIO_C";
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+
+		piod: pio@400e1400 {
+			compatible = "atmel,sam-gpio";
+			reg = <0x400e1400 0x190>;
+			interrupts = <14 1>;
+			peripheral-id = <14>;
+			label = "PIO_D";
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+
+		pioe: pio@400e1600 {
+			compatible = "atmel,sam-gpio";
+			reg = <0x400e1600 0x190>;
+			interrupts = <15 1>;
+			peripheral-id = <15>;
+			label = "PIO_E";
+			gpio-controller;
+			#gpio-cells = <2>;
 		};
 	};
 };

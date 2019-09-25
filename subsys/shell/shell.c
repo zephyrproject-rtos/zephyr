@@ -6,7 +6,7 @@
 
 #include <ctype.h>
 #include <stdlib.h>
-#include <atomic.h>
+#include <sys/atomic.h>
 #include <shell/shell.h>
 #include <shell/shell_dummy.h>
 #include "shell_ops.h"
@@ -801,6 +801,14 @@ static void ctrl_metakeys_handle(const struct shell *shell, char data)
 		shell_print_prompt_and_cmd(shell);
 		break;
 
+	case SHELL_VT100_ASCII_CTRL_N: /* CTRL + N */
+		history_handle(shell, false);
+		break;
+
+	case SHELL_VT100_ASCII_CTRL_P: /* CTRL + P */
+		history_handle(shell, true);
+		break;
+
 	case SHELL_VT100_ASCII_CTRL_U: /* CTRL + U */
 		shell_op_cursor_home_move(shell);
 		cmd_buffer_clear(shell);
@@ -1401,7 +1409,7 @@ int shell_execute_cmd(const struct shell *shell, const char *cmd)
 	}
 
 	if (shell == NULL) {
-#if CONFIG_SHELL_BACKEND_DUMMY
+#if defined(CONFIG_SHELL_BACKEND_DUMMY)
 		shell = shell_backend_dummy_get_ptr();
 #else
 		return -EINVAL;

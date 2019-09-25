@@ -71,7 +71,7 @@ def main():
     for warning in kconf.warnings:
         print("\n" + warning, file=sys.stderr)
 
-    # Turn all warnings except for explicity whitelisted ones into errors. In
+    # Turn all warnings except for explicitly whitelisted ones into errors. In
     # particular, this will turn assignments to undefined Kconfig variables
     # into errors.
     #
@@ -148,7 +148,7 @@ def verify_assigned_choice_value(choice):
     #
     # We check choice symbols separately to avoid warnings when two different
     # choice symbols within the same choice are set to y. This might happen if
-    # a choice selection from a board defconfig is overriden in a prj.conf, for
+    # a choice selection from a board defconfig is overridden in a prj.conf, for
     # example. The last choice symbol set to y becomes the selection (and all
     # other choice symbols get the value n).
     #
@@ -184,6 +184,7 @@ def promptless(sym):
 
     return not any(node.prompt for node in sym.nodes)
 
+
 def write_kconfig_filenames(paths, root_path, output_file_path):
     # 'paths' is a list of paths. The list has duplicates and the
     # paths are either absolute or relative to 'root_path'.
@@ -191,24 +192,20 @@ def write_kconfig_filenames(paths, root_path, output_file_path):
     # We need to write this list, in a format that CMake can easily
     # parse, to the output file at 'output_file_path'.
 
-    # The written list should also have absolute paths instead of
-    # relative paths, and it should not have duplicates.
+    # The written list has sorted real (absolute) paths, and it does not have
+    # duplicates. The list is sorted to be deterministic. It is realpath()'d
+    # to ensure that different representations of the same path does not end
+    # up with two entries, as that could cause the build system to fail.
 
-    # Remove duplicates
-    paths_uniq = set(paths)
+    paths_uniq = sorted({os.path.realpath(os.path.join(root_path, path)) for path in paths})
 
     with open(output_file_path, 'w') as out:
-        # sort to be deterministic
-        for path in sorted(paths_uniq):
-            # Change from relative to absolute path (do nothing for
-            # absolute paths)
-            abs_path = os.path.join(root_path, path)
-
+        for path in paths_uniq:
             # Assert that the file exists, since it was sourced, it
             # must surely also exist.
-            assert os.path.isfile(abs_path), "Internal error"
+            assert os.path.isfile(path), "Internal error: '{}' does not exist".format(path)
 
-            out.write("{}\n".format(abs_path))
+            out.write("{}\n".format(path))
 
 
 def parse_args():

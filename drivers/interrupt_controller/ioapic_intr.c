@@ -58,8 +58,8 @@
 #include <init.h>
 #include <string.h>
 
-#include <drivers/ioapic.h> /* public API declarations */
-#include <drivers/loapic.h> /* public API declarations and registers */
+#include <drivers/interrupt_controller/ioapic.h> /* public API declarations */
+#include <drivers/interrupt_controller/loapic.h> /* public API declarations and registers */
 #include "ioapic_priv.h"
 
 #define BITS_PER_IRQ  3
@@ -70,7 +70,7 @@
 #define SUSPEND_BITS_REQD (ROUND_UP((CONFIG_IOAPIC_NUM_RTES * BITS_PER_IRQ), 32))
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-#include <power.h>
+#include <power/power.h>
 u32_t ioapic_suspend_buf[SUSPEND_BITS_REQD / 32] = {0};
 static u32_t ioapic_device_power_state = DEVICE_PM_ACTIVE_STATE;
 #endif

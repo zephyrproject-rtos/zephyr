@@ -72,24 +72,52 @@ static inline void set_dns_msg_response(struct dns_msg_t *dns_msg, int type,
 	dns_msg->response_length = len;
 }
 
+/*
+ * Skip encoded FQDN in DNS message.
+ * Returns size in bytes of encoded FQDN, or negative error code.
+ */
+static int skip_fqdn(u8_t *answer, int buf_sz)
+{
+	int i = 0;
+
+	while (1) {
+		if (i >= buf_sz) {
+			return -EINVAL;
+		}
+
+		if (answer[i] == 0) {
+			i += 1;
+			break;
+		} else if (answer[i] >= 0xc0) {
+			i += 2;
+			if (i > buf_sz) {
+				return -EINVAL;
+			}
+			break;
+		} else if (answer[i] < DNS_LABEL_MAX_SIZE) {
+			i += answer[i] + 1;
+		} else {
+			return -EINVAL;
+		}
+	}
+
+	return i;
+}
+
 int dns_unpack_answer(struct dns_msg_t *dns_msg, int dname_ptr, u32_t *ttl)
 {
-	u16_t buf_size;
+	int dname_len;
+	u16_t rem_size;
 	u16_t pos;
 	u16_t len;
 	u8_t *answer;
-	int ptr;
 
 	answer = dns_msg->msg + dns_msg->answer_offset;
 
-	if (answer[0] < DNS_LABEL_MAX_SIZE) {
-		return -ENOMEM;
-	}
-
-	/* Recovery of the pointer value */
-	ptr = (((answer[0] & DNS_LABEL_MAX_SIZE) << 8) + answer[1]);
-	if (ptr != dname_ptr) {
-		return -ENOMEM;
+	dname_len = skip_fqdn(answer,
+			      dns_msg->msg_size - dns_msg->answer_offset);
+	if (dname_len < 0) {
+		return dname_len;
 	}
 
 	/*
@@ -103,24 +131,30 @@ int dns_unpack_answer(struct dns_msg_t *dns_msg, int dname_ptr, u32_t *ttl)
 	 *
 	 * See RFC-1035 4.1.3. Resource record format
 	 */
-	buf_size = dns_msg->msg_size - dns_msg->answer_offset;
-	if (buf_size < DNS_ANSWER_MIN_SIZE) {
-		return -ENOMEM;
+	rem_size = dns_msg->msg_size - dname_len;
+	if (rem_size < 2 + 2 + 4 + 2) {
+		return -EINVAL;
 	}
 
-	/* Only DNS_CLASS_IN answers
-	 * Here we use 2 as an offset because a ptr uses only 2 bytes.
+	/* Only DNS_CLASS_IN answers. If mDNS is enabled, strip away the
+	 * Cache-Flush bit (highest one).
 	 */
-	if (dns_answer_class(DNS_COMMON_UINT_SIZE, answer) != DNS_CLASS_IN) {
+	if ((dns_answer_class(dname_len, answer) &
+	     (IS_ENABLED(CONFIG_MDNS_RESOLVER) ? 0x7fff : 0xffff))
+							!= DNS_CLASS_IN) {
 		return -EINVAL;
 	}
 
 	/* TTL value */
-	*ttl = dns_answer_ttl(DNS_COMMON_UINT_SIZE, answer);
-	pos = dns_msg->answer_offset + DNS_ANSWER_MIN_SIZE;
-	len = dns_answer_rdlength(DNS_COMMON_UINT_SIZE, answer);
+	*ttl = dns_answer_ttl(dname_len, answer);
+	len = dns_answer_rdlength(dname_len, answer);
+	pos = dns_msg->answer_offset + dname_len +
+		DNS_COMMON_UINT_SIZE + /* class length */
+		DNS_COMMON_UINT_SIZE + /* type length */
+		DNS_TTL_LEN +
+		DNS_RDLENGTH_LEN;
 
-	switch (dns_answer_type(DNS_COMMON_UINT_SIZE, answer)) {
+	switch (dns_answer_type(dname_len, answer)) {
 	case DNS_RR_TYPE_A:
 	case DNS_RR_TYPE_AAAA:
 		set_dns_msg_response(dns_msg, DNS_RESPONSE_IP, pos, len);
@@ -181,7 +215,11 @@ int dns_unpack_response_header(struct dns_msg_t *msg, int src_id)
 
 	qdcount = dns_unpack_header_qdcount(dns_header);
 	ancount = dns_unpack_header_ancount(dns_header);
-	if (qdcount < 1 || ancount < 1) {
+
+	/* For mDNS (when src_id == 0) the query count is 0 so accept
+	 * the packet in that case.
+	 */
+	if ((qdcount < 1 && src_id > 0) || ancount < 1) {
 		return -EINVAL;
 	}
 

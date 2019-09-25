@@ -6,9 +6,9 @@
 
 #include <zephyr.h>
 #include <device.h>
-#include <sensor.h>
+#include <drivers/sensor.h>
 #include <stdio.h>
-#include <misc/__assert.h>
+#include <sys/__assert.h>
 
 K_SEM_DEFINE(sem, 0, 1);
 

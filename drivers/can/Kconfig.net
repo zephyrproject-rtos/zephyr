@@ -1,0 +1,37 @@
+# Kconfig.net - Configuration options for IPv6 over CAN
+
+#
+# Copyright (c) 2019 Alexander Wachter
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config CAN_NET
+	bool "Enable 6loCAN network interface [EXPERIMENTAL]"
+	help
+	  Enable IPv6 Networking over can (6loCAN)
+
+if CAN_NET
+
+module = CAN_NET
+module-dep = NET_LOG
+module-str = Log level for Network CAN
+module-help = Enables logging for CAN L2 networking
+source "subsys/net/Kconfig.template.log_config.net"
+
+config CAN_NET_NAME
+	string "Network device name"
+	default "NET_CAN"
+	help
+	  Name of the network device driver for IPv6 over CAN.
+
+config CAN_NET_INIT_PRIORITY
+	int "CAN NET driver init priority"
+	default 80
+	help
+	  CAN NET device driver initialization priority.
+	  Do not mess with it unless you know what you are doing.
+	  Note that the priority needs to be lower than the net stack
+	  so that it can start before the networking sub-system.
+
+endif #CAN_NET

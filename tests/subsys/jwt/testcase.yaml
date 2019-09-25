@@ -1,5 +1,6 @@
 tests:
   libraries.encoding:
     min_ram: 96
+    min_flash: 72
     tags: jwt
-    platform_exclude: esp32 qemu_x86_64 #no newlib
+    platform_exclude: qemu_x86_64 #no newlib

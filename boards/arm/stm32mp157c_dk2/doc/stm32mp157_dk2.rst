@@ -110,7 +110,7 @@ The STM32MP157 SoC provides the following hardware capabilities:
   - HDMI-CEC interface
   - MDIO Slave interface
   - 3 × SDMMC up to 8-bit (SD / e•MMC™ / SDIO)
-  - 2 × CAN controllers supporting CAN FD protocol, TTCAN capiblity
+  - 2 × CAN controllers supporting CAN FD protocol, TTCAN capability
   - 2 × USB 2.0 high-speed Host+ 1 × USB 2.0 full-speed OTG simultaneously
   - 10/100M or Gigabit Ethernet GMAC (IEEE 1588v2 hardware, MII/RMII/GMII/RGMI)
   - 8- to 14-bit camera interface up to 140 Mbyte/s
@@ -175,6 +175,10 @@ features:
 +-----------+------------+-------------------------------------+
 | PINMUX    | on-chip    | pinmux                              |
 +-----------+------------+-------------------------------------+
+| I2C       | on-chip    | i2c                                 |
++-----------+------------+-------------------------------------+
+| SPI       | on-chip    | spi                                 |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 ``boards/arm/stm32mp157c_dk2/stm32mp157c_dk2_defconfig``
@@ -192,11 +196,15 @@ Default Zephyr Peripheral Mapping:
 
 - USART_3 TX/RX : PB10/PB12 (UART console)
 - UART_7 TX/RX : PE8/PE7 (Arduino Serial)
+- I2C5 SCL/SDA : PA11/PA12 (Arduino I2C)
+- SPI4 SCK/MISO/MOSI : PE12/PE13/PE14 (Arduino SPI)
+- SPI5 SCK/MISO/MOSI : PF7/PF8/PF9
 
 System Clock
 ------------
 
-The Cortex®-M4 Core is configured to run at a 209 MHz clock speed.
+The Cortex®-M4 Core is configured to run at a 209 MHz clock speed. This value
+must match the configured mlhclk_ck frequency.
 
 Serial Port
 -----------
@@ -242,7 +250,7 @@ Debugging
 You can debug an application using OpenOCD and GDB. The Solution proposed below
 is based on the Linux STM32MP1 SDK OpenOCD and is available only for a Linux
 environment. The firmware must first be loaded by the Cortex®-A7. Developer
-then attachs the debugger to the running Zephyr using OpenOCD.
+then attaches the debugger to the running Zephyr using OpenOCD.
 
 Prerequisite
 ------------
@@ -262,7 +270,6 @@ install `stm32mp1 developer package`_.
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :tool: all
       :board: stm32mp157_dk2
       :goals: debug
 

@@ -31,3 +31,9 @@ source "subsys/net/lib/sockets/Kconfig"
 source "subsys/net/lib/tls_credentials/Kconfig"
 
 endmenu
+
+menu "Network additional services"
+
+source "subsys/net/lib/conn_mgr/Kconfig"
+
+endmenu

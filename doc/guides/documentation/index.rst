@@ -127,12 +127,14 @@ Would be rendered as:
 Multi-column lists
 ******************
 
-If you have a long bullet list of items, where each item is short,
-you can indicate the list items should be rendered in multiple columns
-with a special ``hlist`` directive::
+If you have a long bullet list of items, where each item is short, you
+can indicate the list items should be rendered in multiple columns with
+a special ``.. rst-class:: rst-columns`` directive.  The content under
+this directive can be indented as shown, otherwise the directive will
+apply to the next non-comment element (e.g., paragraph). For example,
+this unordered list::
 
-   .. hlist::
-      :columns: 3
+   .. rst-class:: rst-columns
 
       * A list of
       * short items
@@ -144,10 +146,9 @@ with a special ``hlist`` directive::
       * space on
       * the page
 
-This would be rendered as:
+would be rendered as:
 
-.. hlist::
-   :columns: 3
+.. rst-class:: rst-columns
 
    * A list of
    * short items
@@ -159,8 +160,10 @@ This would be rendered as:
    * space on
    * the page
 
-Note the optional ``:columns:`` parameter (default is two columns), and
-all the list items are indented by three spaces.
+The number of columns displayed will change based on the available width
+of the display window, reducing to one column on narrow (phone) screens
+if necessary.  We've deprecated use of the ``hlist`` directive because it
+misbehaves on smaller screens.
 
 Tables
 ******

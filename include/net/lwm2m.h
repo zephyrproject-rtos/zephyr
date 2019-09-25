@@ -51,7 +51,11 @@
 
 #define IPSO_OBJECT_TEMP_SENSOR_ID			3303
 #define IPSO_OBJECT_LIGHT_CONTROL_ID			3311
+#define IPSO_OBJECT_ACCELEROMETER_ID			3313
+#define IPSO_OBJECT_BUZZER_ID				3338
 #define IPSO_OBJECT_TIMER_ID				3340
+#define IPSO_OBJECT_ONOFF_SWITCH_ID			3342
+#define IPSO_OBJECT_PUSH_BUTTON_ID			3347
 
 /**
  * @brief LwM2M context structure to maintain information for a single
@@ -71,6 +75,11 @@ struct lwm2m_ctx {
 	 *  LwM2M engine calls tls_credential_(add|delete)
 	 */
 	int tls_tag;
+
+	/** Client can set load_credentials function as a way of overriding
+	 *  the default behavior of load_tls_credential() in lwm2m_engine.c
+	 */
+	int (*load_credentials)(struct lwm2m_ctx *client_ctx);
 #endif
 	/** Flag to indicate if context should use DTLS.
 	 *  Enabled via the use of coaps:// protocol prefix in connection
@@ -112,12 +121,16 @@ struct lwm2m_ctx {
  * lwm2m_engine_register_pre_write_callback()
  *
  * @param[in] obj_inst_id Object instance ID generating the callback.
+ * @param[in] res_id Resource ID generating the callback.
+ * @param[in] res_inst_id Resource instance ID generating the callback
+ *                        (typically 0 for non-multi instance resources).
  * @param[out] data_len Length of the data buffer.
  *
  * @return Callback returns a pointer to the data buffer or NULL for failure.
  */
 typedef void *(*lwm2m_engine_get_data_cb_t)(u16_t obj_inst_id,
-				       size_t *data_len);
+					    u16_t res_id, u16_t res_inst_id,
+					    size_t *data_len);
 
 /**
  * @brief Asynchronous callback when data has been set to a resource buffer.
@@ -130,6 +143,9 @@ typedef void *(*lwm2m_engine_get_data_cb_t)(u16_t obj_inst_id,
  * lwm2m_engine_register_post_write_callback()
  *
  * @param[in] obj_inst_id Object instance ID generating the callback.
+ * @param[in] res_id Resource ID generating the callback.
+ * @param[in] res_inst_id Resource instance ID generating the callback
+ *                        (typically 0 for non-multi instance resources).
  * @param[in] data Pointer to data.
  * @param[in] data_len Length of the data.
  * @param[in] last_block Flag used during block transfer to indicate the last
@@ -142,8 +158,9 @@ typedef void *(*lwm2m_engine_get_data_cb_t)(u16_t obj_inst_id,
  *         reason of failure or 0 for success.
  */
 typedef int (*lwm2m_engine_set_data_cb_t)(u16_t obj_inst_id,
-				       u8_t *data, u16_t data_len,
-				       bool last_block, size_t total_size);
+					  u16_t res_id, u16_t res_inst_id,
+					  u8_t *data, u16_t data_len,
+					  bool last_block, size_t total_size);
 
 /**
  * @brief Asynchronous event notification callback.
@@ -216,7 +233,7 @@ typedef int (*lwm2m_engine_user_cb_t)(u16_t obj_inst_id);
  * @return The newly added index of the power source.  The index is used
  *         for removing the power source, setting voltage or setting current.
  */
-int lwm2m_device_add_pwrsrc(u8_t pwr_src_type); /* returns index */
+__deprecated int lwm2m_device_add_pwrsrc(u8_t pwr_src_type);
 
 /**
  * @brief Remove power source previously registered in the LwM2M Device object.
@@ -226,7 +243,7 @@ int lwm2m_device_add_pwrsrc(u8_t pwr_src_type); /* returns index */
  *
  * @return 0 for success or negative in case of error.
  */
-int lwm2m_device_remove_pwrsrc(int index);
+__deprecated int lwm2m_device_remove_pwrsrc(int index);
 
 /**
  * @brief Set power source voltage (in millivolts).
@@ -237,7 +254,7 @@ int lwm2m_device_remove_pwrsrc(int index);
  *
  * @return 0 for success or negative in case of error.
  */
-int lwm2m_device_set_pwrsrc_voltage_mv(int index, int voltage_mv);
+__deprecated int lwm2m_device_set_pwrsrc_voltage_mv(int index, int voltage_mv);
 
 /**
  * @brief Set power source current (in milliamps).
@@ -248,7 +265,7 @@ int lwm2m_device_set_pwrsrc_voltage_mv(int index, int voltage_mv);
  *
  * @return 0 for success or negative in case of error.
  */
-int lwm2m_device_set_pwrsrc_current_ma(int index, int current_ma);
+__deprecated int lwm2m_device_set_pwrsrc_current_ma(int index, int current_ma);
 
 /**
  * @brief Register a new error code with LwM2M Device object.
@@ -367,17 +384,16 @@ typedef struct float64_value {
  * Example to create first temperature sensor object:
  * lwm2m_engine_create_obj_inst("3303/0");
  *
- * @param[in] pathstr LwM2M object instance path string (obj/obj-instance)
+ * @param[in] pathstr LwM2M path string "obj/obj-inst"
  *
  * @return 0 for success or negative in case of error.
  */
 int lwm2m_engine_create_obj_inst(char *pathstr);
 
 /**
- * @brief Set resource value (opaque buffer)
+ * @brief Set resource (instance) value (opaque buffer)
  *
- * @param[in] pathstr LwM2M resource path string
- *                    (obj/obj-instance/resource)
+ * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
  * @param[in] data_ptr Data buffer
  * @param[in] data_len Length of buffer
  *
@@ -386,109 +402,109 @@ int lwm2m_engine_create_obj_inst(char *pathstr);
 int lwm2m_engine_set_opaque(char *pathstr, char *data_ptr, u16_t data_len);
 
 /**
- * @brief Set resource value (string)
+ * @brief Set resource (instance) value (string)
  *
- * @param[in] path LwM2M resource path string (obj/obj-instance/resource)
+ * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
  * @param[in] data_ptr NULL terminated char buffer
  *
  * @return 0 for success or negative in case of error.
  */
-int lwm2m_engine_set_string(char *path, char *data_ptr);
+int lwm2m_engine_set_string(char *pathstr, char *data_ptr);
 
 /**
- * @brief Set resource value (u8)
+ * @brief Set resource (instance) value (u8)
  *
- * @param[in] path LwM2M resource path string (obj/obj-instance/resource)
+ * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
  * @param[in] value u8 value
  *
  * @return 0 for success or negative in case of error.
  */
-int lwm2m_engine_set_u8(char *path, u8_t value);
+int lwm2m_engine_set_u8(char *pathstr, u8_t value);
 
 /**
- * @brief Set resource value (u16)
+ * @brief Set resource (instance) value (u16)
  *
- * @param[in] path LwM2M resource path string (obj/obj-instance/resource)
+ * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
  * @param[in] value u16 value
  *
  * @return 0 for success or negative in case of error.
  */
-int lwm2m_engine_set_u16(char *path, u16_t value);
+int lwm2m_engine_set_u16(char *pathstr, u16_t value);
 
 /**
- * @brief Set resource value (u32)
+ * @brief Set resource (instance) value (u32)
  *
- * @param[in] path LwM2M resource path string (obj/obj-instance/resource)
+ * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
  * @param[in] value u32 value
  *
  * @return 0 for success or negative in case of error.
  */
-int lwm2m_engine_set_u32(char *path, u32_t value);
+int lwm2m_engine_set_u32(char *pathstr, u32_t value);
 
 /**
- * @brief Set resource value (u64)
+ * @brief Set resource (instance) value (u64)
  *
- * @param[in] path LwM2M resource path string (obj/obj-instance/resource)
+ * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
  * @param[in] value u64 value
  *
  * @return 0 for success or negative in case of error.
  */
-int lwm2m_engine_set_u64(char *path, u64_t value);
+int lwm2m_engine_set_u64(char *pathstr, u64_t value);
 
 /**
- * @brief Set resource value (s8)
+ * @brief Set resource (instance) value (s8)
  *
- * @param[in] path LwM2M resource path string (obj/obj-instance/resource)
+ * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
  * @param[in] value s8 value
  *
  * @return 0 for success or negative in case of error.
  */
-int lwm2m_engine_set_s8(char *path, s8_t value);
+int lwm2m_engine_set_s8(char *pathstr, s8_t value);
 
 /**
- * @brief Set resource value (s16)
+ * @brief Set resource (instance) value (s16)
  *
- * @param[in] path LwM2M resource path string (obj/obj-instance/resource)
+ * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
  * @param[in] value s16 value
  *
  * @return 0 for success or negative in case of error.
  */
-int lwm2m_engine_set_s16(char *path, s16_t value);
+int lwm2m_engine_set_s16(char *pathstr, s16_t value);
 
 /**
- * @brief Set resource value (s32)
+ * @brief Set resource (instance) value (s32)
  *
- * @param[in] path LwM2M resource path string (obj/obj-instance/resource)
+ * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
  * @param[in] value s32 value
  *
  * @return 0 for success or negative in case of error.
  */
-int lwm2m_engine_set_s32(char *path, s32_t value);
+int lwm2m_engine_set_s32(char *pathstr, s32_t value);
 
 /**
- * @brief Set resource value (s64)
+ * @brief Set resource (instance) value (s64)
  *
- * @param[in] path LwM2M resource path string (obj/obj-instance/resource)
+ * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
  * @param[in] value s64 value
  *
  * @return 0 for success or negative in case of error.
  */
-int lwm2m_engine_set_s64(char *path, s64_t value);
+int lwm2m_engine_set_s64(char *pathstr, s64_t value);
 
 /**
- * @brief Set resource value (bool)
+ * @brief Set resource (instance) value (bool)
  *
- * @param[in] path LwM2M resource path string (obj/obj-instance/resource)
+ * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
  * @param[in] value bool value
  *
  * @return 0 for success or negative in case of error.
  */
-int lwm2m_engine_set_bool(char *path, bool value);
+int lwm2m_engine_set_bool(char *pathstr, bool value);
 
 /**
- * @brief Set resource value (32-bit float structure)
+ * @brief Set resource (instance) value (32-bit float structure)
  *
- * @param[in] pathstr LwM2M resource path string (obj/obj-instance/resource)
+ * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
  * @param[in] value 32-bit float value
  *
  * @return 0 for success or negative in case of error.
@@ -496,9 +512,9 @@ int lwm2m_engine_set_bool(char *path, bool value);
 int lwm2m_engine_set_float32(char *pathstr, float32_value_t *value);
 
 /**
- * @brief Set resource value (64-bit float structure)
+ * @brief Set resource (instance) value (64-bit float structure)
  *
- * @param[in] pathstr LwM2M resource path string (obj/obj-instance/resource)
+ * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
  * @param[in] value 64-bit float value
  *
  * @return 0 for success or negative in case of error.
@@ -506,9 +522,9 @@ int lwm2m_engine_set_float32(char *pathstr, float32_value_t *value);
 int lwm2m_engine_set_float64(char *pathstr, float64_value_t *value);
 
 /**
- * @brief Get resource value (opaque buffer)
+ * @brief Get resource (instance) value (opaque buffer)
  *
- * @param[in] pathstr LwM2M resource path string (obj/obj-instance/resource)
+ * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
  * @param[out] buf Data buffer to copy data into
  * @param[in] buflen Length of buffer
  *
@@ -517,110 +533,110 @@ int lwm2m_engine_set_float64(char *pathstr, float64_value_t *value);
 int lwm2m_engine_get_opaque(char *pathstr, void *buf, u16_t buflen);
 
 /**
- * @brief Get resource value (string)
+ * @brief Get resource (instance) value (string)
  *
- * @param[in] path LwM2M resource path string (obj/obj-instance/resource)
+ * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
  * @param[out] str String buffer to copy data into
  * @param[in] strlen Length of buffer
  *
  * @return 0 for success or negative in case of error.
  */
-int lwm2m_engine_get_string(char *path, void *str, u16_t strlen);
+int lwm2m_engine_get_string(char *pathstr, void *str, u16_t strlen);
 
 /**
- * @brief Get resource value (u8)
+ * @brief Get resource (instance) value (u8)
  *
- * @param[in] path LwM2M resource path string (obj/obj-instance/resource)
+ * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
  * @param[out] value u8 buffer to copy data into
  *
  * @return 0 for success or negative in case of error.
  */
-int lwm2m_engine_get_u8(char *path, u8_t *value);
+int lwm2m_engine_get_u8(char *pathstr, u8_t *value);
 
 /**
- * @brief Get resource value (u16)
+ * @brief Get resource (instance) value (u16)
  *
- * @param[in] path LwM2M resource path string (obj/obj-instance/resource)
+ * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
  * @param[out] value u16 buffer to copy data into
  *
  * @return 0 for success or negative in case of error.
  */
-int lwm2m_engine_get_u16(char *path, u16_t *value);
+int lwm2m_engine_get_u16(char *pathstr, u16_t *value);
 
 /**
- * @brief Get resource value (u32)
+ * @brief Get resource (instance) value (u32)
  *
- * @param[in] path LwM2M resource path string (obj/obj-instance/resource)
+ * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
  * @param[out] value u32 buffer to copy data into
  *
  * @return 0 for success or negative in case of error.
  */
-int lwm2m_engine_get_u32(char *path, u32_t *value);
+int lwm2m_engine_get_u32(char *pathstr, u32_t *value);
 
 /**
- * @brief Get resource value (u64)
+ * @brief Get resource (instance) value (u64)
  *
- * @param[in] path LwM2M resource path string (obj/obj-instance/resource)
+ * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
  * @param[out] value u64 buffer to copy data into
  *
  * @return 0 for success or negative in case of error.
  */
-int lwm2m_engine_get_u64(char *path, u64_t *value);
+int lwm2m_engine_get_u64(char *pathstr, u64_t *value);
 
 /**
- * @brief Get resource value (s8)
+ * @brief Get resource (instance) value (s8)
  *
- * @param[in] path LwM2M resource path string (obj/obj-instance/resource)
+ * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
  * @param[out] value s8 buffer to copy data into
  *
  * @return 0 for success or negative in case of error.
  */
-int lwm2m_engine_get_s8(char *path, s8_t *value);
+int lwm2m_engine_get_s8(char *pathstr, s8_t *value);
 
 /**
- * @brief Get resource value (s16)
+ * @brief Get resource (instance) value (s16)
  *
- * @param[in] path LwM2M resource path string (obj/obj-instance/resource)
+ * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
  * @param[out] value s16 buffer to copy data into
  *
  * @return 0 for success or negative in case of error.
  */
-int lwm2m_engine_get_s16(char *path, s16_t *value);
+int lwm2m_engine_get_s16(char *pathstr, s16_t *value);
 
 /**
- * @brief Get resource value (s32)
+ * @brief Get resource (instance) value (s32)
  *
- * @param[in] path LwM2M resource path string (obj/obj-instance/resource)
+ * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
  * @param[out] value s32 buffer to copy data into
  *
  * @return 0 for success or negative in case of error.
  */
-int lwm2m_engine_get_s32(char *path, s32_t *value);
+int lwm2m_engine_get_s32(char *pathstr, s32_t *value);
 
 /**
- * @brief Get resource value (s64)
+ * @brief Get resource (instance) value (s64)
  *
- * @param[in] path LwM2M resource path string (obj/obj-instance/resource)
+ * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
  * @param[out] value s64 buffer to copy data into
  *
  * @return 0 for success or negative in case of error.
  */
-int lwm2m_engine_get_s64(char *path, s64_t *value);
+int lwm2m_engine_get_s64(char *pathstr, s64_t *value);
 
 /**
- * @brief Get resource value (bool)
+ * @brief Get resource (instance) value (bool)
  *
- * @param[in] path LwM2M resource path string (obj/obj-instance/resource)
+ * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
  * @param[out] value bool buffer to copy data into
  *
  * @return 0 for success or negative in case of error.
  */
-int lwm2m_engine_get_bool(char *path, bool *value);
+int lwm2m_engine_get_bool(char *pathstr, bool *value);
 
 /**
- * @brief Get resource value (32-bit float structure)
+ * @brief Get resource (instance) value (32-bit float structure)
  *
- * @param[in] pathstr LwM2M resource path string (obj/obj-instance/resource)
+ * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
  * @param[out] buf 32-bit float buffer to copy data into
  *
  * @return 0 for success or negative in case of error.
@@ -628,9 +644,9 @@ int lwm2m_engine_get_bool(char *path, bool *value);
 int lwm2m_engine_get_float32(char *pathstr, float32_value_t *buf);
 
 /**
- * @brief Get resource value (64-bit float structure)
+ * @brief Get resource (instance) value (64-bit float structure)
  *
- * @param[in] pathstr LwM2M resource path string (obj/obj-instance/resource)
+ * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
  * @param[out] buf 64-bit float buffer to copy data into
  *
  * @return 0 for success or negative in case of error.
@@ -638,35 +654,35 @@ int lwm2m_engine_get_float32(char *pathstr, float32_value_t *buf);
 int lwm2m_engine_get_float64(char *pathstr, float64_value_t *buf);
 
 /**
- * @brief Set resource read callback
+ * @brief Set resource (instance) read callback
  *
  * LwM2M clients can use this to set the callback function for resource reads.
  *
- * @param[in] path LwM2M resource path string (obj/obj-instance/resource)
+ * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
  * @param[in] cb Read resource callback
  *
  * @return 0 for success or negative in case of error.
  */
-int lwm2m_engine_register_read_callback(char *path,
+int lwm2m_engine_register_read_callback(char *pathstr,
 					lwm2m_engine_get_data_cb_t cb);
 
 /**
- * @brief Set resource pre-write callback
+ * @brief Set resource (instance) pre-write callback
  *
  * This callback is triggered before setting the value of a resource.  It
  * can pass a special data buffer to the engine so that the actual resource
  * value can be calculated later, etc.
  *
- * @param[in] path LwM2M resource path string (obj/obj-instance/resource)
+ * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
  * @param[in] cb Pre-write resource callback
  *
  * @return 0 for success or negative in case of error.
  */
-int lwm2m_engine_register_pre_write_callback(char *path,
+int lwm2m_engine_register_pre_write_callback(char *pathstr,
 					     lwm2m_engine_get_data_cb_t cb);
 
 /**
- * @brief Set resource post-write callback
+ * @brief Set resource (instance) post-write callback
  *
  * This callback is triggered after setting the value of a resource to the
  * resource data buffer.
@@ -674,12 +690,12 @@ int lwm2m_engine_register_pre_write_callback(char *path,
  * It allows an LwM2M client or object to post-process the value of a resource
  * or trigger other related resource calculations.
  *
- * @param[in] path LwM2M resource path string (obj/obj-instance/resource)
+ * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
  * @param[in] cb Post-write resource callback
  *
  * @return 0 for success or negative in case of error.
  */
-int lwm2m_engine_register_post_write_callback(char *path,
+int lwm2m_engine_register_post_write_callback(char *pathstr,
 					      lwm2m_engine_set_data_cb_t cb);
 
 /**
@@ -687,12 +703,12 @@ int lwm2m_engine_register_post_write_callback(char *path,
  *
  * This event is triggered when the execute method of a resource is enabled.
  *
- * @param[in] path LwM2M resource path string (obj/obj-instance/resource)
+ * @param[in] pathstr LwM2M path string "obj/obj-inst/res"
  * @param[in] cb Execute resource callback
  *
  * @return 0 for success or negative in case of error.
  */
-int lwm2m_engine_register_exec_callback(char *path,
+int lwm2m_engine_register_exec_callback(char *pathstr,
 					lwm2m_engine_user_cb_t cb);
 
 /**
@@ -742,8 +758,7 @@ int lwm2m_engine_register_delete_callback(u16_t obj_id,
  * Use this function to set the data buffer and flags for the specified LwM2M
  * resource.
  *
- * @param[in] pathstr LwM2M resource path string
- *            (obj/obj-instance/resource)
+ * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
  * @param[in] data_ptr Data buffer pointer
  * @param[in] data_len Length of buffer
  * @param[in] data_flags Data buffer flags (such as read-only, etc)
@@ -759,8 +774,7 @@ int lwm2m_engine_set_res_data(char *pathstr, void *data_ptr, u16_t data_len,
  * Use this function to get the data buffer information for the specified LwM2M
  * resource.
  *
- * @param[in] pathstr LwM2M resource path string
- *            (obj/obj-instance/resource)
+ * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
  * @param[out] data_ptr Data buffer pointer
  * @param[out] data_len Length of buffer
  * @param[out] data_flags Data buffer flags (such as read-only, etc)
@@ -769,6 +783,30 @@ int lwm2m_engine_set_res_data(char *pathstr, void *data_ptr, u16_t data_len,
  */
 int lwm2m_engine_get_res_data(char *pathstr, void **data_ptr, u16_t *data_len,
 			      u8_t *data_flags);
+
+/**
+ * @brief Create a resource instance
+ *
+ * LwM2M clients use this function to create multi-resource instances:
+ * Example to create 0 instance of device available power sources:
+ * lwm2m_engine_create_res_inst("3/0/6/0");
+ *
+ * @param[in] pathstr LwM2M path string "obj/obj-inst/res/res-inst"
+ *
+ * @return 0 for success or negative in case of error.
+ */
+int lwm2m_engine_create_res_inst(char *pathstr);
+
+/**
+ * @brief Delete a resource instance
+ *
+ * Use this function to remove an existing resource instance
+ *
+ * @param[in] pathstr LwM2M path string "obj/obj-inst/res/res-inst"
+ *
+ * @return 0 for success or negative in case of error.
+ */
+int lwm2m_engine_delete_res_inst(char *pathstr);
 
 /**
  * @brief Start the LwM2M engine
@@ -830,6 +868,21 @@ typedef void (*lwm2m_ctx_event_cb_t)(struct lwm2m_ctx *ctx,
 void lwm2m_rd_client_start(struct lwm2m_ctx *client_ctx, const char *ep_name,
 			   lwm2m_ctx_event_cb_t event_cb);
 
-#endif	/* ZEPHYR_INCLUDE_NET_LWM2M_H_ */
+/**
+ * @brief Stop the LwM2M RD (De-register) Client
+ *
+ * The RD client sits just above the LwM2M engine and performs the necessary
+ * actions to implement the "Registration interface".
+ * For more information see Section 5.3 "Client Registration Interface" of the
+ * LwM2M Technical Specification.
+ *
+ * @param[in] client_ctx LwM2M context
+ * @param[in] event_cb Client event callback function
+ *
+ * @return 0 for success or negative in case of error.
+ */
+void lwm2m_rd_client_stop(struct lwm2m_ctx *client_ctx,
+			  lwm2m_ctx_event_cb_t event_cb);
 
+#endif	/* ZEPHYR_INCLUDE_NET_LWM2M_H_ */
 /**@}  */

@@ -264,7 +264,7 @@ Documentation
 * Added description for kernel test cases through extensive doxygen comments
 * Discovered some API docs were missing, and fixed
 * Documentation added covering system calls and userspace, kernel, and
-  threading APIs, POSIX compability, VLANs, network traffic
+  threading APIs, POSIX compatibility, VLANs, network traffic
   classification, and the sanitycheck script used by CI.
 * Documented writing guidelines and local doc generation process
 * Improved Sphinx search results output (removed markup)
@@ -649,7 +649,7 @@ These GitHub issues were closed since the previous 1.11.0 tagged release:
 * :github:`7480` - pthread_attr_init( ) does not conform to POSIX specification
 * :github:`7482` - [Coverity CID :185523]  Out-of-bounds read in lsm6dsl driver
 * :github:`7495` - cmake: extensions: ToolchainCapabilityDatabase.cmake parse error in shippable
-* :github:`7500` - DHCP: when CONFIG_NET_APP_MY_IPV4_ADDR is IP stack needs to rebind on DHCP aquire
+* :github:`7500` - DHCP: when CONFIG_NET_APP_MY_IPV4_ADDR is IP stack needs to rebind on DHCP acquire
 * :github:`7508` - [Coverity CID :185523] Memory - illegal accesses in /drivers/sensor/lsm6dsl/lsm6dsl.c
 * :github:`7511` - [Coverity CID :185391] Incorrect expression in /tests/lib/rbtree/src/main.c
 * :github:`7519` - Verify CODEOWNERS (not) including subfolders is intended

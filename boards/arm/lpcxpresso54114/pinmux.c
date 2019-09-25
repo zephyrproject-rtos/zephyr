@@ -4,7 +4,7 @@
  */
 
 #include <init.h>
-#include <pinmux.h>
+#include <drivers/pinmux.h>
 #include <fsl_common.h>
 #include <fsl_iocon.h>
 #include <soc.h>

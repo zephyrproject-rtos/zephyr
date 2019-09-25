@@ -3,9 +3,10 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <app_memory/app_memdomain.h>
 #include "ext_log_system.h"
 
-static ext_log_handler log_handler;
+K_APP_BMEM(app_part) static ext_log_handler log_handler;
 
 void ext_log_handler_set(ext_log_handler handler)
 {

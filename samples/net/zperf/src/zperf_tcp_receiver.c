@@ -12,7 +12,7 @@ LOG_MODULE_DECLARE(net_zperf_sample, LOG_LEVEL_DBG);
 #include <linker/sections.h>
 #include <toolchain.h>
 
-#include <misc/printk.h>
+#include <sys/printk.h>
 
 #include <net/net_core.h>
 #include <net/net_ip.h>

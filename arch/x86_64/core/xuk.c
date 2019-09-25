@@ -176,15 +176,7 @@ long _isr_c_top(unsigned long vecret, unsigned long rsp,
 
 	z_isr_entry();
 
-	/* Set current priority in CR8 to the currently-serviced IRQ
-	 * and re-enable interrupts
-	 */
-	unsigned long long cr8, cr8new = vector >> 4;
-
-	__asm__ volatile("movq %%cr8, %0;"
-			 "movq %1, %%cr8;"
-			 "sti"
-			 : "=r"(cr8) : "r"(cr8new));
+	__asm__ volatile("sti"); /* re-enable interrupts */
 
 	if (h->fn) {
 		h->fn(h->arg, err);
@@ -192,10 +184,7 @@ long _isr_c_top(unsigned long vecret, unsigned long rsp,
 		z_unhandled_vector(vector, err, frame);
 	}
 
-	/* Mask interrupts to finish processing (they'll get restored
-	 * in the upcoming IRET) and restore CR8
-	 */
-	__asm__ volatile("cli; movq %0, %%cr8" : : "r"(cr8));
+	__asm__ volatile("cli"); /* mask [at least] until upcoming IRET */
 
 	/* Signal EOI if it's an APIC-managed interrupt */
 	if (vector > 0x1f) {

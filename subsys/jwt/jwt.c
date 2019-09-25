@@ -8,8 +8,8 @@
 #include <zephyr/types.h>
 #include <errno.h>
 
-#include <zephyr/jwt.h>
-#include <json.h>
+#include <data/jwt.h>
+#include <data/json.h>
 
 #ifdef CONFIG_JWT_SIGN_RSA
 #include <mbedtls/pk.h>

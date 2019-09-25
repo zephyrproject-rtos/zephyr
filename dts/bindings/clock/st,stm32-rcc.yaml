@@ -1,22 +1,19 @@
----
 title: STM32 RCC
-version: 0.1
 
 description: >
     This binding gives a base representation of the STM32 Clock control
 
-inherits:
-    !include base.yaml
+compatible: "st,stm32-rcc"
+
+include: [clock-controller.yaml, base.yaml]
 
 properties:
-    compatible:
-      constraint: "st,stm32-rcc"
-
     reg:
-      category: required
+      required: true
+
+    "#clock-cells":
+      const: 2
 
 "#cells":
   - bus
   - bits
-
-...

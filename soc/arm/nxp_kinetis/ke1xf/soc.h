@@ -7,6 +7,15 @@
 #ifndef _SOC__H_
 #define _SOC__H_
 
-#include <misc/util.h>
+#include <sys/util.h>
+
+#ifndef _ASMLANGUAGE
+
+#include <fsl_common.h>
+
+/* Add include for DTS generated information */
+#include <generated_dts_board.h>
+
+#endif /* !_ASMLANGUAGE */
 
 #endif /* _SOC__H_ */

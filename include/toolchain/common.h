@@ -70,7 +70,7 @@
 
     #define PERFOPT_ALIGN .balign  4
 
-  #elif defined(CONFIG_NIOS2) || defined(CONFIG_RISCV32) || \
+  #elif defined(CONFIG_NIOS2) || defined(CONFIG_RISCV) || \
 	  defined(CONFIG_XTENSA)
     #define PERFOPT_ALIGN .balign 4
 
@@ -145,7 +145,7 @@
 #endif
 
 /*
- * This is meant to be used in conjonction with __in_section() and similar
+ * This is meant to be used in conjunction with __in_section() and similar
  * where scattered structure instances are concatened together by the linker
  * and walked by the code at run time just like a contiguous array of such
  * structures.

@@ -15,7 +15,7 @@
 # -b  base branch
 # -r  the remote to rebase on
 #
-# The script can be run locally using for exmaple:
+# The script can be run locally using for example:
 # ./scripts/ci/run_ci.sh -b master -r origin  -l -R <commit range>
 
 set -xe
@@ -24,99 +24,15 @@ SANITYCHECK_OPTIONS=" --inline-logs -N"
 SANITYCHECK_OPTIONS_RETRY="${SANITYCHECK_OPTIONS} --only-failed --outdir=out-2nd-pass"
 SANITYCHECK_OPTIONS_RETRY_2="${SANITYCHECK_OPTIONS} --only-failed --outdir=out-3nd-pass"
 export BSIM_OUT_PATH="${BSIM_OUT_PATH:-/opt/bsim/}"
+if [ ! -d "${BSIM_OUT_PATH}" ]; then
+        unset BSIM_OUT_PATH
+fi
 export BSIM_COMPONENTS_PATH="${BSIM_OUT_PATH}/components/"
 BSIM_BT_TEST_RESULTS_FILE="./bsim_bt_out/bsim_results.xml"
 WEST_COMMANDS_RESULTS_FILE="./pytest_out/west_commands.xml"
 
 MATRIX_BUILDS=1
 MATRIX=1
-
-while getopts ":p:m:b:r:M:cfslR:" opt; do
-	case $opt in
-		c)
-			echo "Execute CI" >&2
-			MAIN_CI=1
-			;;
-		l)
-			echo "Executing script locally" >&2
-			LOCAL_RUN=1
-			MAIN_CI=1
-			;;
-		s)
-			echo "Success" >&2
-			SUCCESS=1
-			;;
-		f)
-			echo "Failure" >&2
-			FAILURE=1
-			;;
-		p)
-			echo "Testing a Pull Request: $OPTARG." >&2
-			PULL_REQUEST_NR=$OPTARG
-			;;
-		m)
-			echo "Running on Matrix $OPTARG" >&2
-			MATRIX=$OPTARG
-			;;
-		M)
-			echo "Running a matrix of $OPTARG slaves" >&2
-			MATRIX_BUILDS=$OPTARG
-			;;
-		b)
-			echo "Base Branch: $OPTARG" >&2
-			BRANCH=$OPTARG
-			;;
-		r)
-			echo "Remote: $OPTARG" >&2
-			REMOTE=$OPTARG
-			;;
-		R)
-			echo "Range: $OPTARG" >&2
-			RANGE=$OPTARG
-			;;
-		\?)
-			echo "Invalid option: -$OPTARG" >&2
-			;;
-	esac
-done
-
-DOC_MATRIX=${MATRIX_BUILDS}
-
-if [ -n "$MAIN_CI" ]; then
-
-	# West handling
-        pushd ..
-	if [ ! -d .west ]; then
-		west init -l zephyr
-		west update
-	fi
-        popd
-
-	if [ -z "$BRANCH" ]; then
-		echo "No base branch given"
-		exit 1
-	else
-		COMMIT_RANGE=$REMOTE/${BRANCH}..HEAD
-		echo "Commit range:" ${COMMIT_RANGE}
-	fi
-	if [ -n "$RANGE" ]; then
-		COMMIT_RANGE=$RANGE
-	fi
-	source zephyr-env.sh
-	SANITYCHECK="${ZEPHYR_BASE}/scripts/sanitycheck"
-
-	# Possibly the only record of what exact version is being tested:
-	short_git_log='git log -n 5 --oneline --decorate --abbrev=12 '
-
-	if [ -n "$PULL_REQUEST_NR" ]; then
-		$short_git_log $REMOTE/${BRANCH}
-		# Now let's pray this script is being run from a
-		# different location
-# https://stackoverflow.com/questions/3398258/edit-shell-script-while-its-running
-		git rebase $REMOTE/${BRANCH};
-	fi
-	$short_git_log
-fi
 
 function handle_coverage() {
 	# this is for shippable coverage reports
@@ -249,7 +165,96 @@ function get_tests_to_run() {
 	rm -f modified_tests.args modified_boards.args;
 }
 
+
+function west_setup() {
+	# West handling
+	GIT_DIR=$(basename $PWD)
+	pushd ..
+	if [ ! -d .west ]; then
+		west init -l ${GIT_DIR}
+		west update
+	fi
+	popd
+}
+
+
+while getopts ":p:m:b:r:M:cfslR:" opt; do
+	case $opt in
+		c)
+			echo "Execute CI" >&2
+			MAIN_CI=1
+			;;
+		l)
+			echo "Executing script locally" >&2
+			LOCAL_RUN=1
+			MAIN_CI=1
+			;;
+		s)
+			echo "Success" >&2
+			SUCCESS=1
+			;;
+		f)
+			echo "Failure" >&2
+			FAILURE=1
+			;;
+		p)
+			echo "Testing a Pull Request: $OPTARG." >&2
+			PULL_REQUEST_NR=$OPTARG
+			;;
+		m)
+			echo "Running on Matrix $OPTARG" >&2
+			MATRIX=$OPTARG
+			;;
+		M)
+			echo "Running a matrix of $OPTARG slaves" >&2
+			MATRIX_BUILDS=$OPTARG
+			;;
+		b)
+			echo "Base Branch: $OPTARG" >&2
+			BRANCH=$OPTARG
+			;;
+		r)
+			echo "Remote: $OPTARG" >&2
+			REMOTE=$OPTARG
+			;;
+		R)
+			echo "Range: $OPTARG" >&2
+			RANGE=$OPTARG
+			;;
+		\?)
+			echo "Invalid option: -$OPTARG" >&2
+			;;
+	esac
+done
+
 if [ -n "$MAIN_CI" ]; then
+
+	west_setup
+
+	if [ -z "$BRANCH" ]; then
+		echo "No base branch given"
+		exit 1
+	else
+		COMMIT_RANGE=$REMOTE/${BRANCH}..HEAD
+		echo "Commit range:" ${COMMIT_RANGE}
+	fi
+	if [ -n "$RANGE" ]; then
+		COMMIT_RANGE=$RANGE
+	fi
+	source zephyr-env.sh
+	SANITYCHECK="${ZEPHYR_BASE}/scripts/sanitycheck"
+
+	# Possibly the only record of what exact version is being tested:
+	short_git_log='git log -n 5 --oneline --decorate --abbrev=12 '
+
+	if [ -n "$PULL_REQUEST_NR" ]; then
+		$short_git_log $REMOTE/${BRANCH}
+		# Now let's pray this script is being run from a
+		# different location
+# https://stackoverflow.com/questions/3398258/edit-shell-script-while-its-running
+		git rebase $REMOTE/${BRANCH};
+	fi
+	$short_git_log
 
 	if [ -n "${BSIM_OUT_PATH}" -a -d "${BSIM_OUT_PATH}" ]; then
 		echo "Build BT simulator tests"
@@ -271,8 +276,7 @@ if [ -n "$MAIN_CI" ]; then
 		# run pytest could go here too.
 		PYTEST=$(type -p pytest-3 || echo "pytest")
 		mkdir -p $(dirname ${WEST_COMMANDS_RESULTS_FILE})
-		WEST_SRC=$(west list --format='{abspath}' west)/src
-		PYTHONPATH=./scripts/west_commands:$WEST_SRC "${PYTEST}" \
+		PYTHONPATH=./scripts/west_commands "${PYTEST}" \
 			  --junitxml=${WEST_COMMANDS_RESULTS_FILE} \
 			  ./scripts/west_commands/tests
 	else
@@ -290,8 +294,8 @@ if [ -n "$MAIN_CI" ]; then
 	# Run a subset of tests based on matrix size
 	${SANITYCHECK} ${SANITYCHECK_OPTIONS} --load-tests test_file.txt \
 		--subset ${MATRIX}/${MATRIX_BUILDS} || \
-		( sleep 10; ${SANITYCHECK} ${SANITYCHECK_OPTIONS_RETRY} ) || \
-		( sleep 10; ${SANITYCHECK} ${SANITYCHECK_OPTIONS_RETRY_2}; )
+		( sleep 30; ${SANITYCHECK} ${SANITYCHECK_OPTIONS_RETRY} ) || \
+		( sleep 90; ${SANITYCHECK} ${SANITYCHECK_OPTIONS_RETRY_2}; )
 		# sleep 10 to let the host settle down
 
 	# cleanup

@@ -24,7 +24,3 @@ Zephyr tree.
 
 See :ref:`bluetooth samples section <bluetooth-samples>` for details.
 
-References
-**********
-
-* :ref:`env_sensing_sample`

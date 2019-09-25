@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <i2c.h>
+#include <drivers/i2c.h>
 #include <init.h>
-#include <misc/byteorder.h>
-#include <sensor.h>
+#include <sys/byteorder.h>
+#include <drivers/sensor.h>
 #include <logging/log.h>
 
 #include "mpu6050.h"

@@ -73,6 +73,8 @@ source "drivers/sensor/hp206c/Kconfig"
 
 source "drivers/sensor/hts221/Kconfig"
 
+source "drivers/sensor/iis3dhhc/Kconfig"
+
 source "drivers/sensor/isl29035/Kconfig"
 
 source "drivers/sensor/lis2dh/Kconfig"
@@ -87,6 +89,8 @@ source "drivers/sensor/lis3mdl/Kconfig"
 
 source "drivers/sensor/lps22hb/Kconfig"
 
+source "drivers/sensor/lps22hh/Kconfig"
+
 source "drivers/sensor/lps25hb/Kconfig"
 
 source "drivers/sensor/lsm303dlhc_magn/Kconfig"
@@ -94,6 +98,8 @@ source "drivers/sensor/lsm303dlhc_magn/Kconfig"
 source "drivers/sensor/lsm6ds0/Kconfig"
 
 source "drivers/sensor/lsm6dsl/Kconfig"
+
+source "drivers/sensor/lsm6dso/Kconfig"
 
 source "drivers/sensor/lsm9ds0_gyro/Kconfig"
 
@@ -116,6 +122,10 @@ source "drivers/sensor/pms7003/Kconfig"
 source "drivers/sensor/qdec_nrfx/Kconfig"
 
 source "drivers/sensor/sht3xd/Kconfig"
+
+source "drivers/sensor/si7006/Kconfig"
+
+source "drivers/sensor/stts751/Kconfig"
 
 source "drivers/sensor/sx9500/Kconfig"
 

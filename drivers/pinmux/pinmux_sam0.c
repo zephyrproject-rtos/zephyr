@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <pinmux.h>
+#include <drivers/pinmux.h>
 #include <soc.h>
 
 struct pinmux_sam0_config {

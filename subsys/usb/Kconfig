@@ -62,7 +62,14 @@ config USB_REQUEST_BUFFER_SIZE
 	range 256 65536 if USB_DEVICE_NETWORK_RNDIS
 	range 8 65536
 	default 256 if USB_DEVICE_NETWORK_RNDIS
-	default 64
+	default 1024 if USB_DEVICE_LOOPBACK
+	default 128
+
+config USB_NUMOF_EP_WRITE_RETRIES
+	int "Number of endpoint write retries"
+	default 3
+	help
+	  Number of endpoint write retries.
 
 config USB_DEVICE_SOF
 	bool "Enable Start of Frame processing in events"

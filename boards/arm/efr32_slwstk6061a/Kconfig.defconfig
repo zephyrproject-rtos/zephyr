@@ -16,6 +16,13 @@ config CMU_HFXO_FREQ
 config CMU_LFXO_FREQ
 	default 32768
 
+if LOG_BACKEND_SWO
+
+config LOG_BACKEND_SWO_FREQ_HZ
+	default 875000
+
+endif # LOG_BACKEND_SWO
+
 if GPIO_GECKO
 
 config GPIO_GECKO_PORTA

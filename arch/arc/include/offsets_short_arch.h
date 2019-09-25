@@ -17,14 +17,8 @@
 
 /* threads */
 
-#define _thread_offset_to_intlock_key \
-	(___thread_t_arch_OFFSET + ___thread_arch_t_intlock_key_OFFSET)
-
 #define _thread_offset_to_relinquish_cause \
 	(___thread_t_arch_OFFSET + ___thread_arch_t_relinquish_cause_OFFSET)
-
-#define _thread_offset_to_return_value \
-	(___thread_t_arch_OFFSET + ___thread_arch_t_return_value_OFFSET)
 
 #define _thread_offset_to_k_stack_base \
 	(___thread_t_arch_OFFSET + ___thread_arch_t_k_stack_base_OFFSET)

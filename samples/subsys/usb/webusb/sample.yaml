@@ -3,5 +3,6 @@ sample:
 tests:
   sample.usb.webusb:
     depends_on: usb_device
-    platform_whitelist: quark_se_c1000_devboard
     tags: usb
+    platform_exclude: native_posix native_posix_64
+    harness: TBD

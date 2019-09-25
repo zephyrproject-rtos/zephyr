@@ -25,15 +25,17 @@ source "subsys/logging/Kconfig.template.log_config"
 
 source "drivers/clock_control/Kconfig.nrf"
 
-source "drivers/clock_control/Kconfig.quark_se"
-
 source "drivers/clock_control/Kconfig.stm32"
 
 source "drivers/clock_control/Kconfig.beetle"
 
 source "drivers/clock_control/Kconfig.mcux_ccm"
 
+source "drivers/clock_control/Kconfig.mcux_mcg"
+
 source "drivers/clock_control/Kconfig.mcux_pcc"
+
+source "drivers/clock_control/Kconfig.mcux_scg"
 
 source "drivers/clock_control/Kconfig.mcux_sim"
 

@@ -1,0 +1,11 @@
+identifier: hsdk
+name: HS Development Kit
+type: mcu
+arch: arc
+toolchain:
+  - zephyr
+  - xtools
+testing:
+  ignore_tags:
+    - net
+    - bluetooth

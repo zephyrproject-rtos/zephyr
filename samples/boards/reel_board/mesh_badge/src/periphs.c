@@ -5,8 +5,8 @@
  */
 
 #include <zephyr.h>
-#include <gpio.h>
-#include <sensor.h>
+#include <drivers/gpio.h>
+#include <drivers/sensor.h>
 #include "board.h"
 #include "mesh.h"
 
@@ -24,18 +24,18 @@ struct led_device_info {
 };
 
 static struct led_device_info led_dev_info[] = {
-	{ NULL, LED0_GPIO_CONTROLLER, LED0_GPIO_PIN }, /* green back LED */
-	{ NULL, LED1_GPIO_CONTROLLER, LED1_GPIO_PIN }, /* red front LED */
-	{ NULL, LED2_GPIO_CONTROLLER, LED2_GPIO_PIN }, /* green front LED */
-	{ NULL, LED3_GPIO_CONTROLLER, LED3_GPIO_PIN }, /* blue front LED */
+	{ NULL, DT_ALIAS_LED0_GPIOS_CONTROLLER, DT_ALIAS_LED0_GPIOS_PIN }, /* green back LED */
+	{ NULL, DT_ALIAS_LED1_GPIOS_CONTROLLER, DT_ALIAS_LED1_GPIOS_PIN }, /* red front LED */
+	{ NULL, DT_ALIAS_LED2_GPIOS_CONTROLLER, DT_ALIAS_LED2_GPIOS_PIN }, /* green front LED */
+	{ NULL, DT_ALIAS_LED3_GPIOS_CONTROLLER, DT_ALIAS_LED3_GPIOS_PIN }, /* blue front LED */
 };
 
 static struct device_info dev_info[] = {
-	{ NULL, SW0_GPIO_CONTROLLER },
+	{ NULL, DT_ALIAS_SW0_GPIOS_CONTROLLER },
 	{ NULL, DT_INST_0_TI_HDC1010_LABEL },
 	{ NULL, DT_INST_0_NXP_MMA8652FC_LABEL },
 	{ NULL, DT_INST_0_AVAGO_APDS9960_LABEL },
-	{ NULL, DT_INST_0_SOLOMON_SSD1673FB_LABEL },
+	{ NULL, DT_INST_0_SOLOMON_SSD16XXFB_LABEL },
 };
 
 static void configure_gpios(void)

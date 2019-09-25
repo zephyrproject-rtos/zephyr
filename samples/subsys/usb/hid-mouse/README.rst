@@ -25,14 +25,14 @@ GPIO button in your board.
 To use this sample, you will require a board that defines the user switch in its
 header file. The :file:`board.h` must define the following variables:
 
-- SW0_GPIO_CONTROLLER
-- SW0_GPIO_PIN
+- DT_ALIAS_SW0_GPIOS_CONTROLLER
+- DT_ALIAS_SW0_GPIOS_PIN
 
 The following variables are optional and depend on available board buttons:
 
-- For right-button: SW1_GPIO_CONTROLLER, SW1_GPIO_PIN
-- For X-axis: SW2_GPIO_CONTROLLER, SW2_GPIO_PIN
-- For Y-axis: SW3_GPIO_CONTROLLER, SW3_GPIO_PIN
+- For right-button: DT_ALIAS_SW1_GPIOS_CONTROLLER, DT_ALIAS_SW1_GPIOS_PIN
+- For X-axis: DT_ALIAS_SW2_GPIOS_CONTROLLER, DT_ALIAS_SW2_GPIOS_PIN
+- For Y-axis: DT_ALIAS_SW3_GPIOS_CONTROLLER, DT_ALIAS_SW3_GPIOS_PIN
 
 Building and Running
 ********************

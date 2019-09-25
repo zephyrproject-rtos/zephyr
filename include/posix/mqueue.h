@@ -9,6 +9,7 @@
 
 #include <kernel.h>
 #include <posix/time.h>
+#include <fcntl.h>
 #include "posix_types.h"
 #include "sys/stat.h"
 
@@ -24,21 +25,6 @@ typedef struct mq_attr {
 	long mq_msgsize;
 	long mq_curmsgs;	/* Number of messages currently queued. */
 } mq_attr;
-
-/* FIXME: below should be defined into fcntl.h file.
- * This is temporarily put here.
- */
-
-#ifndef _SYS_FCNTL_H_
-#define O_CREAT_POS	9
-#define O_CREAT         (1 << O_CREAT_POS)
-
-#define O_EXCL_POS	11
-#define O_EXCL          (1 << O_EXCL_POS)
-
-#define O_NONBLOCK_POS	14
-#define O_NONBLOCK      (1 << O_NONBLOCK_POS)
-#endif /* _SYS_FCNTL_H_ */
 
 mqd_t mq_open(const char *name, int oflags, ...);
 int mq_close(mqd_t mqdes);

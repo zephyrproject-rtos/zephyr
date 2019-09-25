@@ -20,10 +20,10 @@
 #include <wait_q.h>
 #include <ksched.h>
 #include <syscall_handler.h>
-#include <misc/slist.h>
-#include <misc/dlist.h>
-#include <misc/util.h>
-#include <misc/__assert.h>
+#include <sys/slist.h>
+#include <sys/dlist.h>
+#include <sys/util.h>
+#include <sys/__assert.h>
 #include <stdbool.h>
 
 /* Single subsystem lock.  Locking per-event would be better on highly
@@ -259,7 +259,8 @@ int z_impl_k_poll(struct k_poll_event *events, int num_events, s32_t timeout)
 }
 
 #ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER(k_poll, events, num_events, timeout)
+static inline int z_vrfy_k_poll(struct k_poll_event *events,
+				int num_events, s32_t timeout)
 {
 	int ret;
 	k_spinlock_key_t key;
@@ -291,7 +292,7 @@ Z_SYSCALL_HANDLER(k_poll, events, num_events, timeout)
 		k_spin_unlock(&lock, key);
 		goto oops_free;
 	}
-	(void)memcpy(events_copy, (void *)events, bounds);
+	(void)memcpy(events_copy, events, bounds);
 	k_spin_unlock(&lock, key);
 
 	/* Validate what's inside events_copy */
@@ -331,6 +332,7 @@ oops_free:
 	k_free(events_copy);
 	Z_OOPS(1);
 }
+#include <syscalls/k_poll_mrsh.c>
 #endif
 
 /* must be called with interrupts locked */
@@ -389,12 +391,12 @@ void z_impl_k_poll_signal_init(struct k_poll_signal *signal)
 }
 
 #ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER(k_poll_signal_init, signal)
+static inline void z_vrfy_k_poll_signal_init(struct k_poll_signal *signal)
 {
 	Z_OOPS(Z_SYSCALL_OBJ_INIT(signal, K_OBJ_POLL_SIGNAL));
-	z_impl_k_poll_signal_init((struct k_poll_signal *)signal);
-	return 0;
+	z_impl_k_poll_signal_init(signal);
 }
+#include <syscalls/k_poll_signal_init_mrsh.c>
 #endif
 
 void z_impl_k_poll_signal_check(struct k_poll_signal *signal,
@@ -405,16 +407,15 @@ void z_impl_k_poll_signal_check(struct k_poll_signal *signal,
 }
 
 #ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER(k_poll_signal_check, signal, signaled, result)
+void z_vrfy_k_poll_signal_check(struct k_poll_signal *signal,
+			       unsigned int *signaled, int *result)
 {
 	Z_OOPS(Z_SYSCALL_OBJ(signal, K_OBJ_POLL_SIGNAL));
 	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(signaled, sizeof(unsigned int)));
 	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(result, sizeof(int)));
-
-	z_impl_k_poll_signal_check((struct k_poll_signal *)signal,
-				  (unsigned int *)signaled, (int *)result);
-	return 0;
+	z_impl_k_poll_signal_check(signal, signaled, result);
 }
+#include <syscalls/k_poll_signal_check_mrsh.c>
 #endif
 
 int z_impl_k_poll_signal_raise(struct k_poll_signal *signal, int result)
@@ -438,12 +439,20 @@ int z_impl_k_poll_signal_raise(struct k_poll_signal *signal, int result)
 }
 
 #ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER(k_poll_signal_raise, signal, result)
+static inline int z_vrfy_k_poll_signal_raise(struct k_poll_signal *signal,
+					     int result)
 {
 	Z_OOPS(Z_SYSCALL_OBJ(signal, K_OBJ_POLL_SIGNAL));
-	return z_impl_k_poll_signal_raise((struct k_poll_signal *)signal, result);
+	return z_impl_k_poll_signal_raise(signal, result);
 }
-Z_SYSCALL_HANDLER1_SIMPLE_VOID(k_poll_signal_reset, K_OBJ_POLL_SIGNAL,
-			       struct k_poll_signal *);
+#include <syscalls/k_poll_signal_raise_mrsh.c>
+
+static inline void z_vrfy_k_poll_signal_reset(struct k_poll_signal *signal)
+{
+	Z_OOPS(Z_SYSCALL_OBJ(signal, K_OBJ_POLL_SIGNAL));
+	z_impl_k_poll_signal_reset(signal);
+}
+#include <syscalls/k_poll_signal_reset_mrsh.c>
+
 #endif
 

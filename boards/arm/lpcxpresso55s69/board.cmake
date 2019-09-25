@@ -22,4 +22,7 @@ if(CONFIG_BOARD_LPCXPRESSO55S69_CPU1)
 board_runner_args(jlink "--device=LPC55S69_core1")
 endif()
 
+board_runner_args(pyocd "--target=lpc55s69")
+
 include(${ZEPHYR_BASE}/boards/common/jlink.board.cmake)
+include(${ZEPHYR_BASE}/boards/common/pyocd.board.cmake)

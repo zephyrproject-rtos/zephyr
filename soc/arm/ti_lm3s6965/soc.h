@@ -15,11 +15,7 @@
 #ifndef _BOARD__H_
 #define _BOARD__H_
 
-#include <misc/util.h>
-
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include <sys/util.h>
 
 /* default system clock */
 
@@ -72,20 +68,9 @@ extern "C" {
 #ifndef _ASMLANGUAGE
 
 #include <device.h>
-#include <misc/util.h>
+#include <sys/util.h>
 #include <random/rand32.h>
 
-/* uart configuration settings */
-#if defined(CONFIG_UART_STELLARIS)
-
-#define DT_UART_STELLARIS_CLK_FREQ		SYSCLK_DEFAULT_IOSC_HZ
-
-#endif /* CONFIG_UART_STELLARIS */
-
 #endif /* !_ASMLANGUAGE */
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* _BOARD__H_ */

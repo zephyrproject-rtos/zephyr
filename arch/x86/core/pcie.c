@@ -6,7 +6,6 @@
 
 #include <kernel.h>
 #include <drivers/pcie/pcie.h>
-#include <arch/x86/arch.h>
 
 #ifdef CONFIG_PCIE_MSI
 #include <drivers/pcie/msi.h>
@@ -82,7 +81,7 @@ u32_t pcie_msi_map(unsigned int irq)
 
 u16_t pcie_msi_mdr(unsigned int irq)
 {
-	unsigned char vector = _irq_to_interrupt_vector[irq];
+	unsigned char vector = Z_IRQ_TO_INTERRUPT_VECTOR(irq);
 
 	return 0x4000U | vector;  /* edge triggered */
 }

@@ -10,7 +10,7 @@ LOG_MODULE_DECLARE(net_zperf_sample, LOG_LEVEL_DBG);
 #include <zephyr.h>
 
 #include <errno.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 
 #include <net/net_pkt.h>
 #include <net/net_ip.h>
@@ -85,7 +85,7 @@ void zperf_tcp_upload(const struct shell *shell,
 		}
 
 #if defined(CONFIG_ARCH_POSIX)
-		k_busy_wait(K_MSEC(100));
+		k_busy_wait(K_MSEC(100) * USEC_PER_MSEC);
 #else
 		k_yield();
 #endif

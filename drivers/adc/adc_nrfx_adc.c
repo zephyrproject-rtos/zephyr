@@ -259,8 +259,8 @@ static int init_adc(struct device *dev)
 		return -EBUSY;
 	}
 
-	IRQ_CONNECT(DT_NORDIC_NRF_ADC_ADC_0_IRQ,
-		    DT_NORDIC_NRF_ADC_ADC_0_IRQ_PRIORITY,
+	IRQ_CONNECT(DT_NORDIC_NRF_ADC_ADC_0_IRQ_0,
+		    DT_NORDIC_NRF_ADC_ADC_0_IRQ_0_PRIORITY,
 		    nrfx_isr, nrfx_adc_irq_handler, 0);
 
 	adc_context_unlock_unconditionally(&m_data.ctx);
@@ -274,6 +274,7 @@ static const struct adc_driver_api adc_nrfx_driver_api = {
 #ifdef CONFIG_ADC_ASYNC
 	.read_async    = adc_nrfx_read_async,
 #endif
+	.ref_internal  = 1200,
 };
 
 #ifdef CONFIG_ADC_0

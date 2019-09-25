@@ -36,8 +36,7 @@ from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
 
 if LooseVersion(elftools.__version__) < LooseVersion('0.24'):
-    sys.stderr.write("pyelftools is out of date, need version 0.24 or later\n")
-    sys.exit(1)
+    sys.exit("pyelftools is out of date, need version 0.24 or later")
 
 
 def debug(text):
@@ -47,8 +46,7 @@ def debug(text):
 
 
 def error(text):
-    sys.stderr.write(os.path.basename(sys.argv[0]) + ": " + text + "\n")
-    sys.exit(1)
+    sys.exit(os.path.basename(sys.argv[0]) + ": " + text)
 
 
 gdt_pd_fmt = "<HIH"

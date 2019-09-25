@@ -16,7 +16,7 @@
 #include <bluetooth/buf.h>
 #include <bluetooth/bluetooth.h>
 #include <drivers/bluetooth/hci_driver.h>
-#include <misc/byteorder.h>
+#include <sys/byteorder.h>
 
 /* HCI Proprietary vendor event */
 const u8_t hci_prop_evt_prefix[2] = { 0xAB, 0xBA };
@@ -53,7 +53,7 @@ static void *cmd_complete(struct net_buf **buf, u8_t plen, u16_t opcode)
 {
 	struct bt_hci_evt_cmd_complete *cc;
 
-	*buf = bt_buf_get_cmd_complete(K_FOREVER);
+	*buf = bt_buf_get_evt(BT_HCI_EVT_CMD_COMPLETE, false, K_FOREVER);
 	evt_create(*buf, BT_HCI_EVT_CMD_COMPLETE, sizeof(*cc) + plen);
 	cc = net_buf_add(*buf, sizeof(*cc));
 	cc->ncmd = 1U;

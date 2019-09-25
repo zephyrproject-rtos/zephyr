@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <led_strip.h>
+#include <drivers/led_strip.h>
 
 #include <errno.h>
 #include <string.h>
 
-#ifdef DT_COLORWAY_LPD8806_0
+#ifdef DT_INST_0_COLORWAY_LPD8806
 #define DT_INST_0_COLORWAY_LPD880X DT_INST_0_COLORWAY_LPD8806
 #define DT_INST_0_COLORWAY_LPD880X_BASE_ADDRESS DT_INST_0_COLORWAY_LPD8806_BASE_ADDRESS
 #define DT_INST_0_COLORWAY_LPD880X_BUS_NAME DT_INST_0_COLORWAY_LPD8806_BUS_NAME
@@ -29,8 +29,8 @@ LOG_MODULE_REGISTER(lpd880x);
 
 #include <zephyr.h>
 #include <device.h>
-#include <spi.h>
-#include <misc/util.h>
+#include <drivers/spi.h>
+#include <sys/util.h>
 
 /*
  * LPD880X SPI master configuration:

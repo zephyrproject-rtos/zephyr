@@ -5,7 +5,7 @@
  */
 
 #include <ztest.h>
-#include <misc/dlist.h>
+#include <sys/dlist.h>
 
 static sys_dlist_t test_list;
 

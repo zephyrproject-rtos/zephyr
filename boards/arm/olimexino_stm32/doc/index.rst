@@ -317,8 +317,11 @@ OLIMEXINO-STM32 board has up to 2 SPIs. The default SPI mapping for Zephyr is:
 I2C
 ===
 
-OLIMEXINO-STM32 board has up to 1 I2C. The default I2C mapping for Zephyr is:
+The OLIMEXINO-STM32 board supports two I2C devices. The default I2C mapping for
+Zephyr is:
 
+- I2C1_SCL : PB6
+- I2C1_SDA : PB7
 - I2C2_SCL : PB10
 - I2C2_SDA : PB11
 

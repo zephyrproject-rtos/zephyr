@@ -5,11 +5,11 @@
  */
 
 #include <string.h>
-#include <dma.h>
-#include <i2s.h>
+#include <drivers/dma.h>
+#include <drivers/i2s.h>
 #include <soc.h>
 #include <clock_control/stm32_clock_control.h>
-#include <clock_control.h>
+#include <drivers/clock_control.h>
 
 #include "i2s_ll_stm32.h"
 #include <logging/log.h>

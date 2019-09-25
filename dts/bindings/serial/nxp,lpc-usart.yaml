@@ -1,36 +1,18 @@
-#
 # Copyright (c) 2017, NXP
-#
 # SPDX-License-Identifier: Apache-2.0
-#
----
+
 title: LPC USART
-version: 0.1
 
 description: >
     This binding gives a base representation of the LPC USART
 
-inherits:
-    !include uart.yaml
+compatible: "nxp,lpc-usart"
+
+include: uart-controller.yaml
 
 properties:
-    compatible:
-      constraint: "nxp,lpc-usart"
-
     reg:
-      category: required
+      required: true
 
     interrupts:
-      category: required
-
-    pinctrl-\d+:
-      type: array
-      category: optional
-      description: pinmux information for RX, TX, CTS, RTS
-
-    clocks:
-      type: array
-      category: required
-      description: Clock gate information
-      generation: define
-...
+      required: true

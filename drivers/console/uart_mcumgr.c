@@ -12,7 +12,7 @@
 #include <assert.h>
 #include <string.h>
 #include <kernel.h>
-#include <uart.h>
+#include <drivers/uart.h>
 #include <mgmt/serial.h>
 #include <console/uart_mcumgr.h>
 

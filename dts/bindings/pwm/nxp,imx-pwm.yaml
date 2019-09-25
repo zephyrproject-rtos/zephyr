@@ -1,0 +1,29 @@
+# Copyright (c) 2019, Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+title: MCUX PWM
+
+description: >
+    This binding gives a base representation of the NXP MCUX PWM
+
+compatible: "nxp,imx-pwm"
+
+include: [pwm-controller.yaml, base.yaml]
+
+properties:
+    index:
+      type: int
+      description: flexpwm submodule index
+      required: true
+
+    interrupts:
+      required: true
+
+    label:
+      required: true
+
+    "#pwm-cells":
+      const: 1
+
+"#cells":
+  - channel

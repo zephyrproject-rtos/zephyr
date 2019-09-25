@@ -8,6 +8,6 @@ toolchain:
   - xtools
 supported:
   - pci
-  - netif:slip
+  - netif:serial-net
 testing:
   default: true

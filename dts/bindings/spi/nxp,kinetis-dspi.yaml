@@ -1,31 +1,21 @@
-#
 # Copyright (c) 2018, NXP
-#
 # SPDX-License-Identifier: Apache-2.0
-#
----
+
 title: NXP DSPI
-version: 0.1
 
 description: >
     This binding gives a base representation of the NXP Kinetis DSPI controller
 
-inherits:
-    !include spi.yaml
+compatible: "nxp,kinetis-dspi"
+
+include: spi-controller.yaml
 
 properties:
-    compatible:
-      constraint: "nxp,kinetis-dspi"
-
     reg:
-      category: required
+      required: true
 
     interrupts:
-      category: required
+      required: true
 
     clocks:
-      type: array
-      category: required
-      description: Clock gate information
-      generation: define
-...
+      required: true

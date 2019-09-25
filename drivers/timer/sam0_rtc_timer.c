@@ -15,15 +15,15 @@
  */
 
 #include <soc.h>
-#include <clock_control.h>
-#include <system_timer.h>
+#include <drivers/clock_control.h>
+#include <drivers/timer/system_timer.h>
 #include <sys_clock.h>
 
 /* RTC registers. */
 #define RTC0 ((RtcMode0 *) DT_INST_0_ATMEL_SAM0_RTC_BASE_ADDRESS)
 
 /* Number of sys timer cycles per on tick. */
-#define CYCLES_PER_TICK (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC \
+#define CYCLES_PER_TICK (SOC_ATMEL_SAM0_GCLK0_FREQ_HZ \
 			 / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 
 /* Maximum number of ticks. */

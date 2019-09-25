@@ -17,7 +17,7 @@
 #ifndef ZEPHYR_LIB_LIBC_MINIMAL_INCLUDE_ERRNO_H_
 #define ZEPHYR_LIB_LIBC_MINIMAL_INCLUDE_ERRNO_H_
 
-#include <misc/errno_private.h>
+#include <sys/errno_private.h>
 
 #ifdef __cplusplus
 extern "C" {

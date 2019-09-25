@@ -29,7 +29,7 @@ config CHARACTER_FRAMEBUFFER_SHELL
 if CHARACTER_FRAMEBUFFER_SHELL
 	config CHARACTER_FRAMEBUFFER_SHELL_DRIVER_NAME
 	string
-	default "SSD1673" if SSD1673
+	default "SSD16XX" if SSD16XX
 	default "SSD1306" if SSD1306
 	help
 	  Character Framebuffer Display Driver Name

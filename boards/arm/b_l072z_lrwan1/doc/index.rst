@@ -163,7 +163,7 @@ Default Zephyr Peripheral Mapping:
 System Clock
 ------------
 
-B-L072Z-LRWAN1 Discovery board System Clock is at 32mhz.
+B-L072Z-LRWAN1 Discovery board System Clock is at 32MHz.
 
 Serial Port
 -----------

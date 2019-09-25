@@ -6,9 +6,9 @@
 
 #include <errno.h>
 #include <device.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 #include <soc.h>
-#include <sys_io.h>
+#include <sys/sys_io.h>
 #include "gpio_utils.h"
 
 typedef void (*config_func_t)(struct device *dev);

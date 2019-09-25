@@ -50,13 +50,13 @@
  * 0x38 - RF Core SMI command link in
  */
 
-#include <misc/__assert.h>
-#include <misc/util.h>
+#include <sys/__assert.h>
+#include <sys/util.h>
 #include <toolchain.h>
 #include <device.h>
-#include <pinmux.h>
+#include <drivers/pinmux.h>
 #include <soc.h>
-#include <sys_io.h>
+#include <sys/sys_io.h>
 
 
 #define IOCFG_REG(Func) \

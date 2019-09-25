@@ -20,10 +20,10 @@
 #include <zephyr.h>
 #include <ztest.h>
 #include <tc_util.h>
-#include <misc/util.h>
+#include <sys/util.h>
 
-#define  ONE_SECOND     (CONFIG_SYS_CLOCK_TICKS_PER_SEC)
-#define  TENTH_SECOND   (CONFIG_SYS_CLOCK_TICKS_PER_SEC / 10)
+#define  ONE_SECOND     1000
+#define  TENTH_SECOND   100
 
 #define  NUM_BLOCKS     64
 

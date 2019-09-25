@@ -4,10 +4,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-# Hidden. Automatically selected by file systems or FCB that need it
-config FS_FLASH_STORAGE_PARTITION
-	bool
-
 menu "File Systems"
 
 config FILE_SYSTEM
@@ -38,15 +34,22 @@ config FAT_FILESYSTEM_ELM
 config FILE_SYSTEM_NFFS
 	bool "NFFS file system support"
 	depends on FLASH_PAGE_LAYOUT
-	select FS_FLASH_STORAGE_PARTITION
 	help
 	  Enables NFFS file system support.
 	  Note: NFFS requires 1-byte unaligned access to flash thus it
 	  will not work on devices that support only aligned flash access.
 
+config FILE_SYSTEM_LITTLEFS
+	bool "LittleFS file system support"
+	depends on FLASH_MAP
+	depends on FLASH_PAGE_LAYOUT
+	help
+	  Enables LittleFS file system support.
+
 config FILE_SYSTEM_SHELL
 	bool "Enable file system shell"
 	depends on SHELL
+	depends on HEAP_MEM_POOL_SIZE > 0
 	help
 	  This shell provides basic browsing of the contents of the
 	  file system.
@@ -124,6 +127,8 @@ config NFFS_FILESYSTEM_MAX_BLOCK_SIZE
           Writes larger than this size are split into multiple write operations.
 
 endmenu
+
+source "subsys/fs/Kconfig.littlefs"
 
 endif # FILE_SYSTEM
 

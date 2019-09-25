@@ -11,9 +11,9 @@
 
 #include <zephyr/types.h>
 #include <device.h>
-#include <sensor.h>
-#include <misc/util.h>
-#include <gpio.h>
+#include <drivers/sensor.h>
+#include <sys/util.h>
+#include <drivers/gpio.h>
 
 #define MCP9808_REG_CONFIG		0x01
 #define MCP9808_REG_UPPER_LIMIT		0x02

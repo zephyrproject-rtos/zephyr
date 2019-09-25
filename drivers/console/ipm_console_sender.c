@@ -9,8 +9,8 @@
 #include <errno.h>
 
 #include <kernel.h>
-#include <misc/printk.h>
-#include <ipm.h>
+#include <sys/printk.h>
+#include <drivers/ipm.h>
 #include <console/ipm_console.h>
 
 static struct device *ipm_console_device;

@@ -1,4 +1,3 @@
 tests:
   logging.log_output:
     tags: log_output logging
-

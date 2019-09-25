@@ -5,10 +5,10 @@
  */
 
 #include <device.h>
-#include <gpio.h>
-#include <misc/util.h>
+#include <drivers/gpio.h>
+#include <sys/util.h>
 #include <kernel.h>
-#include <sensor.h>
+#include <drivers/sensor.h>
 #include "adxl372.h"
 
 #define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL

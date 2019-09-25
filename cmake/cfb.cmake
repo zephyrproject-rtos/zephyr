@@ -15,6 +15,7 @@ function(generate_cfb_font
     ${ZEPHYR_BASE}/scripts/gen_cfb_font_header.py
     --input ${input_file}
     --output ${output_file}
+    --bindir ${CMAKE_BINARY_DIR}
     --width ${width}
     --height ${height}
     ${ARGN} # Extra arguments are passed to gen_cfb_font_header.py

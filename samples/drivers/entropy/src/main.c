@@ -5,7 +5,7 @@
  */
 
 #include <zephyr.h>
-#include <entropy.h>
+#include <drivers/entropy.h>
 #include <stdio.h>
 
 void main(void)

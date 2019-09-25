@@ -19,7 +19,7 @@
 
 #include <string.h>
 
-#include <misc/util.h>
+#include <sys/util.h>
 
 
 /* uncomment the define below to use floating point arithmetic */

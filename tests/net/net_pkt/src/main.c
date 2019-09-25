@@ -294,7 +294,7 @@ static void test_net_pkt_basics_of_rw(void)
 	/* Sometimes you might want to advance in the buffer without caring
 	 * what's written there since you'll eventually come back for that.
 	 * net_pkt_skip() is used for it.
-	 * Note: usally you will not have to use that function a lot yourself.
+	 * Note: usually you will not have to use that function a lot yourself.
 	 */
 	ret = net_pkt_skip(pkt, 20);
 	zassert_true(ret == 0, "Pkt skip failed");

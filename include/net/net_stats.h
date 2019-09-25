@@ -16,6 +16,7 @@
 
 #include <zephyr/types.h>
 #include <net/net_core.h>
+#include <net/net_mgmt.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -128,7 +129,7 @@ struct net_stats_tcp {
 	/** Amount of retransmitted data. */
 	net_stats_t resent;
 
-	/** Number of recived TCP segments. */
+	/** Number of received TCP segments. */
 	net_stats_t recv;
 
 	/** Number of sent TCP segments. */
@@ -168,7 +169,7 @@ struct net_stats_udp {
 	/** Number of dropped UDP segments. */
 	net_stats_t drop;
 
-	/** Number of recived UDP segments. */
+	/** Number of received UDP segments. */
 	net_stats_t recv;
 
 	/** Number of sent UDP segments. */
@@ -202,6 +203,14 @@ struct net_stats_ipv6_mld {
 };
 
 /**
+ * @brief Network packet transfer times
+ */
+struct net_stats_tx_time {
+	u64_t time_sum;
+	net_stats_t time_count;
+};
+
+/**
  * @brief Traffic class statistics
  */
 struct net_stats_tc {
@@ -209,6 +218,7 @@ struct net_stats_tc {
 		net_stats_t pkts;
 		net_stats_t bytes;
 		u8_t priority;
+		struct net_stats_tx_time tx_time;
 	} sent[NET_TC_TX_COUNT];
 
 	struct {
@@ -272,6 +282,11 @@ struct net_stats {
 #if NET_TC_COUNT > 1
 	/** Traffic class statistics */
 	struct net_stats_tc tc;
+#endif
+
+#if defined(CONFIG_NET_CONTEXT_TIMESTAMP)
+	/** Network packet TX time statistics */
+	struct net_stats_tx_time tx_time;
 #endif
 };
 
@@ -362,10 +377,22 @@ struct net_stats_eth {
 #endif
 };
 
+/**
+ * @brief All PPP specific statistics
+ */
+struct net_stats_ppp {
+	struct net_stats_bytes bytes;
+	struct net_stats_pkts pkts;
+
+	/** Number of received and dropped PPP frames. */
+	net_stats_t drop;
+
+	/** Number of received PPP frames with a bad checksum. */
+	net_stats_t chkerr;
+};
+
 #if defined(CONFIG_NET_STATISTICS_USER_API)
 /* Management part definitions */
-
-#include <net/net_mgmt.h>
 
 #define _NET_STATS_LAYER	NET_MGMT_LAYER_L3
 #define _NET_STATS_CODE		0x101
@@ -384,6 +411,7 @@ enum net_request_stats_cmd {
 	NET_REQUEST_STATS_CMD_GET_UDP,
 	NET_REQUEST_STATS_CMD_GET_TCP,
 	NET_REQUEST_STATS_CMD_GET_ETHERNET,
+	NET_REQUEST_STATS_CMD_GET_PPP,
 };
 
 #define NET_REQUEST_STATS_GET_ALL				\
@@ -454,6 +482,13 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_GET_TCP);
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_GET_ETHERNET);
 #endif /* CONFIG_NET_STATISTICS_ETHERNET */
+
+#if defined(CONFIG_NET_STATISTICS_PPP)
+#define NET_REQUEST_STATS_GET_PPP				\
+	(_NET_STATS_BASE | NET_REQUEST_STATS_CMD_GET_PPP)
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_GET_PPP);
+#endif /* CONFIG_NET_STATISTICS_PPP */
 
 #endif /* CONFIG_NET_STATISTICS_USER_API */
 

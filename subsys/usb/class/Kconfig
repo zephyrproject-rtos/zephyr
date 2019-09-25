@@ -48,7 +48,7 @@ config CDC_ACM_BULK_EP_MPS
 
 config CDC_ACM_IAD
 	bool "Force using Interface Association Descriptor"
-	default n
+	default y
 	help
 	  IAD should not be required for non-composite CDC ACM device,
 	  but Windows 7 fails to properly enumerate without it.

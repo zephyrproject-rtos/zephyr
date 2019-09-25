@@ -8,7 +8,7 @@
 #include <ztest.h>
 #include <tc_util.h>
 
-#include <misc/byteorder.h>
+#include <sys/byteorder.h>
 #include <usb/usb_device.h>
 #include <usb/usb_common.h>
 #include <usb_descriptor.h>
@@ -91,7 +91,7 @@ struct usb_test_config {
 	};
 
 #define DEFINE_TEST_CFG_DATA(x, _)				\
-	USBD_CFG_DATA_DEFINE(test_##x)				\
+	USBD_CFG_DATA_DEFINE(primary, test_##x)			\
 	struct usb_cfg_data test_config_##x = {			\
 	.usb_device_description = NULL,				\
 	.interface_config = interface_config,			\
@@ -198,41 +198,46 @@ static void check_endpoint_allocation(struct usb_desc_header *head)
 	}
 }
 
+/* Determine the number of bytes spanned between two linker-defined
+ * symbols that are normally interpreted as pointers.
+ */
+#define SYMBOL_SPAN(_ep, _sp) (int)(intptr_t)((uintptr_t)(_ep) - (uintptr_t)(_sp))
+
 static void test_desc_sections(void)
 {
 	struct usb_desc_header *head;
 
 	TC_PRINT("__usb_descriptor_start %p\n", __usb_descriptor_start);
 	TC_PRINT("__usb_descriptor_end %p\n",  __usb_descriptor_end);
-	TC_PRINT("USB Descriptor table size %d\n",
-		 (int)__usb_descriptor_end - (int)__usb_descriptor_start);
+	TC_PRINT("USB Descriptor table span %d\n",
+		 SYMBOL_SPAN(__usb_descriptor_end, __usb_descriptor_start));
 
 	TC_PRINT("__usb_data_start %p\n", __usb_data_start);
 	TC_PRINT("__usb_data_end %p\n", __usb_data_end);
-	TC_PRINT("USB Configuration data size %d\n",
-		 (int)__usb_data_end - (int)__usb_data_start);
+	TC_PRINT("USB Configuration data span %d\n",
+		 SYMBOL_SPAN(__usb_data_end, __usb_data_start));
 
-	TC_PRINT("sizeof usb_cfg_data %u\n", sizeof(struct usb_cfg_data));
+	TC_PRINT("sizeof usb_cfg_data %zu\n", sizeof(struct usb_cfg_data));
 
 	LOG_DBG("Starting logs");
 
 	LOG_HEXDUMP_DBG((u8_t *)__usb_descriptor_start,
-			(int)__usb_descriptor_end - (int)__usb_descriptor_start,
+			SYMBOL_SPAN(__usb_descriptor_end, __usb_descriptor_start),
 			"USB Descriptor table section");
 
 	LOG_HEXDUMP_DBG((u8_t *)__usb_data_start,
-			(int)__usb_data_end - (int)__usb_data_start,
+			SYMBOL_SPAN(__usb_data_end, __usb_data_start),
 			"USB Configuratio structures section");
 
 	head = (struct usb_desc_header *)__usb_descriptor_start;
 	zassert_not_null(head, NULL);
 
-	zassert_equal((int)__usb_descriptor_end - (int)__usb_descriptor_start,
+	zassert_equal(SYMBOL_SPAN(__usb_descriptor_end, __usb_descriptor_start),
 		      133, NULL);
 
 	/* Calculate number of structures */
 	zassert_equal(__usb_data_end - __usb_data_start, NUM_INSTANCES, NULL);
-	zassert_equal((int)__usb_data_end - (int)__usb_data_start,
+	zassert_equal(SYMBOL_SPAN(__usb_data_end, __usb_data_start),
 		      NUM_INSTANCES * sizeof(struct usb_cfg_data), NULL);
 
 	check_endpoint_allocation(head);

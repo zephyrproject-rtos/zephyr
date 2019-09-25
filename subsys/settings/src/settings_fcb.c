@@ -6,7 +6,7 @@
  */
 
 #include <errno.h>
-#include <fcb.h>
+#include <fs/fcb.h>
 #include <string.h>
 
 #include "settings/settings.h"
@@ -23,11 +23,12 @@ struct settings_fcb_load_cb_arg {
 	void *cb_arg;
 };
 
-static int settings_fcb_load(struct settings_store *cs);
+static int settings_fcb_load(struct settings_store *cs,
+			     const struct settings_load_arg *arg);
 static int settings_fcb_save(struct settings_store *cs, const char *name,
 			     const char *value, size_t val_len);
 
-static struct settings_store_itf settings_fcb_itf = {
+static const struct settings_store_itf settings_fcb_itf = {
 	.csi_load = settings_fcb_load,
 	.csi_save = settings_fcb_save,
 };
@@ -117,9 +118,10 @@ static int settings_fcb_load_priv(struct settings_store *cs, line_load_cb cb,
 	return 0;
 }
 
-static int settings_fcb_load(struct settings_store *cs)
+static int settings_fcb_load(struct settings_store *cs,
+			     const struct settings_load_arg *arg)
 {
-	return settings_fcb_load_priv(cs, settings_line_load_cb, NULL);
+	return settings_fcb_load_priv(cs, settings_line_load_cb, (void *)arg);
 }
 
 
@@ -267,7 +269,7 @@ static int settings_fcb_save_priv(struct settings_store *cs, const char *name,
 
 	for (i = 0; i < cf->cf_fcb.f_sector_cnt - 1; i++) {
 		rc = fcb_append(&cf->cf_fcb, len, &loc.loc);
-		if (rc != FCB_ERR_NOSPACE) {
+		if (rc != -ENOSPC) {
 			break;
 		}
 		settings_fcb_compress(cf);

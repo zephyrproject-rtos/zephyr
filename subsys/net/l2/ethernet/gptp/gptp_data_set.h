@@ -14,14 +14,14 @@
 #ifndef __GPTP_DS_H
 #define __GPTP_DS_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #if defined(CONFIG_NET_GPTP)
 
 #include <net/gptp.h>
 #include "gptp_state.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* Parameters for PTP data sets. */
 #define GPTP_ALLOWED_LOST_RESP 3
@@ -592,10 +592,10 @@ int gptp_get_port_data(struct gptp_domain *domain, int port,
 		       struct gptp_port_bmca_data **port_bmca_data,
 		       struct net_if **iface);
 
-#endif /* CONFIG_NET_GPTP */
-
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* CONFIG_NET_GPTP */
 
 #endif /* __GPTP_DS_H */

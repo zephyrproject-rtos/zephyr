@@ -5,10 +5,10 @@
  */
 
 #include <errno.h>
-#include <i2c.h>
+#include <drivers/i2c.h>
 #include <soc.h>
 #include <i2c_imx.h>
-#include <misc/util.h>
+#include <sys/util.h>
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(i2c_imx);
@@ -373,10 +373,10 @@ static void i2c_imx_config_func_1(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	IRQ_CONNECT(DT_FSL_IMX7D_I2C_I2C_1_IRQ, DT_FSL_IMX7D_I2C_I2C_1_IRQ_PRIORITY,
+	IRQ_CONNECT(DT_FSL_IMX7D_I2C_I2C_1_IRQ_0, DT_FSL_IMX7D_I2C_I2C_1_IRQ_0_PRIORITY,
 			i2c_imx_isr, DEVICE_GET(i2c_imx_1), 0);
 
-	irq_enable(DT_FSL_IMX7D_I2C_I2C_1_IRQ);
+	irq_enable(DT_FSL_IMX7D_I2C_I2C_1_IRQ_0);
 }
 #endif /* CONFIG_I2C_1 */
 
@@ -400,10 +400,10 @@ static void i2c_imx_config_func_2(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	IRQ_CONNECT(DT_FSL_IMX7D_I2C_I2C_2_IRQ, DT_FSL_IMX7D_I2C_I2C_2_IRQ_PRIORITY,
+	IRQ_CONNECT(DT_FSL_IMX7D_I2C_I2C_2_IRQ_0, DT_FSL_IMX7D_I2C_I2C_2_IRQ_0_PRIORITY,
 			i2c_imx_isr, DEVICE_GET(i2c_imx_2), 0);
 
-	irq_enable(DT_FSL_IMX7D_I2C_I2C_2_IRQ);
+	irq_enable(DT_FSL_IMX7D_I2C_I2C_2_IRQ_0);
 }
 #endif /* CONFIG_I2C_2 */
 
@@ -427,10 +427,10 @@ static void i2c_imx_config_func_3(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	IRQ_CONNECT(DT_FSL_IMX7D_I2C_I2C_3_IRQ, DT_FSL_IMX7D_I2C_I2C_3_IRQ_PRIORITY,
+	IRQ_CONNECT(DT_FSL_IMX7D_I2C_I2C_3_IRQ_0, DT_FSL_IMX7D_I2C_I2C_3_IRQ_0_PRIORITY,
 			i2c_imx_isr, DEVICE_GET(i2c_imx_3), 0);
 
-	irq_enable(DT_FSL_IMX7D_I2C_I2C_3_IRQ);
+	irq_enable(DT_FSL_IMX7D_I2C_I2C_3_IRQ_0);
 }
 #endif /* CONFIG_I2C_3 */
 
@@ -453,9 +453,9 @@ DEVICE_AND_API_INIT(i2c_imx_4, DT_FSL_IMX7D_I2C_I2C_4_LABEL, &i2c_imx_init,
 static void i2c_imx_config_func_4(struct device *dev)
 {
 	ARG_UNUSED(dev);
-	IRQ_CONNECT(DT_FSL_IMX7D_I2C_I2C_4_IRQ, DT_FSL_IMX7D_I2C_I2C_4_IRQ_PRIORITY,
+	IRQ_CONNECT(DT_FSL_IMX7D_I2C_I2C_4_IRQ_0, DT_FSL_IMX7D_I2C_I2C_4_IRQ_0_PRIORITY,
 			i2c_imx_isr, DEVICE_GET(i2c_imx_4), 0);
 
-	irq_enable(DT_FSL_IMX7D_I2C_I2C_4_IRQ);
+	irq_enable(DT_FSL_IMX7D_I2C_I2C_4_IRQ_0);
 }
 #endif /* CONFIG_I2C_4 */

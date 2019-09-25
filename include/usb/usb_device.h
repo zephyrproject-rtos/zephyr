@@ -65,8 +65,8 @@ extern "C" {
  * This macro should be used to place the struct usb_cfg_data
  * inside usb data section in the RAM.
  */
-#define USBD_CFG_DATA_DEFINE(name) \
-	static __in_section(usb, data, name) __used
+#define USBD_CFG_DATA_DEFINE(p, name) \
+	static __in_section(usb, data_##p, name) __used
 
 /*************************************************************************
  *  USB configuration

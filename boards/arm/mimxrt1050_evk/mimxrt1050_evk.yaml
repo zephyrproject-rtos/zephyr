@@ -21,3 +21,5 @@ supported:
   - netif:eth
   - hwinfo
   - usb_device
+  - counter
+  - sdhc

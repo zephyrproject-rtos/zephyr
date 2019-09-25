@@ -9,7 +9,7 @@
 #include <zephyr.h>
 #include <ztest.h>
 #include <tc_util.h>
-#include <misc/util.h>
+#include <sys/util.h>
 
 #define NUM_TEST_ITEMS          6
 /* Each work item takes 100ms */
@@ -26,6 +26,11 @@
 #define SUBMIT_WAIT             50
 
 #define STACK_SIZE      (1024 + CONFIG_TEST_EXTRA_STACKSIZE)
+
+/* How long to wait for the full test suite to complete.  Allow for a
+ * little slop
+ */
+#define CHECK_WAIT ((NUM_TEST_ITEMS + 1) * WORK_ITEM_WAIT_ALIGNED)
 
 struct test_item {
 	int key;
@@ -144,7 +149,7 @@ static void test_sequence(void)
 	test_items_submit();
 
 	TC_PRINT(" - Waiting for work to finish\n");
-	k_sleep(NUM_TEST_ITEMS * WORK_ITEM_WAIT_ALIGNED);
+	k_sleep(CHECK_WAIT);
 
 	check_results(NUM_TEST_ITEMS);
 	reset_results();
@@ -184,7 +189,7 @@ static void test_resubmit(void)
 	k_work_submit(&tests[0].work.work);
 
 	TC_PRINT(" - Waiting for work to finish\n");
-	k_sleep(NUM_TEST_ITEMS * WORK_ITEM_WAIT_ALIGNED);
+	k_sleep(CHECK_WAIT);
 
 	TC_PRINT(" - Checking results\n");
 	check_results(NUM_TEST_ITEMS);
@@ -336,7 +341,7 @@ static void test_delayed_resubmit(void)
 	k_delayed_work_submit(&tests[0].work, WORK_ITEM_WAIT);
 
 	TC_PRINT(" - Waiting for work to finish\n");
-	k_sleep(NUM_TEST_ITEMS * WORK_ITEM_WAIT_ALIGNED);
+	k_sleep(CHECK_WAIT);
 
 	TC_PRINT(" - Checking results\n");
 	check_results(NUM_TEST_ITEMS);
@@ -408,7 +413,7 @@ static void test_delayed(void)
 	test_delayed_submit();
 
 	TC_PRINT(" - Waiting for delayed work to finish\n");
-	k_sleep(NUM_TEST_ITEMS * WORK_ITEM_WAIT_ALIGNED);
+	k_sleep(CHECK_WAIT);
 
 	TC_PRINT(" - Checking results\n");
 	check_results(NUM_TEST_ITEMS);

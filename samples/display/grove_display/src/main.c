@@ -6,10 +6,10 @@
 
 #include <zephyr.h>
 
-#include <misc/printk.h>
+#include <sys/printk.h>
 
 #include <device.h>
-#include <i2c.h>
+#include <drivers/i2c.h>
 
 #include <display/grove_lcd.h>
 

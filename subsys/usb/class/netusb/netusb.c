@@ -32,7 +32,7 @@ static int netusb_send(struct device *dev, struct net_pkt *pkt)
 
 	ARG_UNUSED(dev);
 
-	LOG_DBG("Send pkt, len %u", net_pkt_get_len(pkt));
+	LOG_DBG("Send pkt, len %zu", net_pkt_get_len(pkt));
 
 	if (!netusb_enabled()) {
 		LOG_ERR("interface disabled");
@@ -54,7 +54,7 @@ struct net_if *netusb_net_iface(void)
 
 void netusb_recv(struct net_pkt *pkt)
 {
-	LOG_DBG("Recv pkt, len %u", net_pkt_get_len(pkt));
+	LOG_DBG("Recv pkt, len %zu", net_pkt_get_len(pkt));
 
 	if (net_recv_data(netusb.iface, pkt) < 0) {
 		LOG_ERR("Packet %p dropped by NET stack", pkt);

@@ -1,0 +1,78 @@
+#
+# Copyright (c) 2019 Alexander Wachter
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config NET_L2_CANBUS
+	bool "Enable CANBUS L2 layer [EXPERIMENTAL]"
+	depends on CAN_NET
+	select NET_6LO
+	help
+	  Add a CANBUS L2 layer driver. This is the layer for IPv6 over CAN
+	  (6loCAN). It uses IPHC to compress the IP header and ISO-TP for
+	  flow control and reassembling.
+
+if NET_L2_CANBUS
+
+config NET_L2_CANBUS_USE_FIXED_ADDR
+	bool "Use fixed L2 address"
+	help
+	  Use a fixed L2 address for 6LoCAN instead of a random chosen one.
+
+config NET_L2_CANBUS_FIXED_ADDR
+	hex "L2 address"
+	depends on NET_L2_CANBUS_USE_FIXED_ADDR
+	range 0x00FF 0x3DEF
+
+config NET_L2_CANBUS_DAD_RETRIES
+	int "Number of DAD retries"
+	default 5
+	help
+	  Number of retries for Duplicate Address Detection.
+	  Greater than one only makes sense for random link layer addresses.
+
+config NET_L2_CANBUS_STMIN
+	int "STmin"
+	default 0
+	range 0 127
+	help
+	  Minimal separation time between frames in ms.
+	  The timer starts when the frame is queued and the next frame is
+	  transmitted after expiration.
+	  STmin is chosen by the receiver and transmitted in the FC
+	  (Flow Control) frame. See also: ISO 15765-2:2016
+
+config NET_L2_CANBUS_BS
+	int "BS (Block Size)"
+	default 8
+	range 0 256
+	help
+	  Number of CF (Contiguous Frame) PDUs before next FC (Flow Control)
+	  frame is sent. Zero value means all frames are sent consecutive
+	  without an additional FC frame.
+	  A BS counter at the sender counts from one to BS. When BS is reached,
+	  the sender waits for a FC frame again an BS is reset.
+	  See also: ISO 15765-2:2016
+
+config NET_L2_CANBUS_ETH_TRANSLATOR
+	bool "Enable 6LoCAN to Ethernet translator"
+	depends on NET_L2_ETHERNET
+	help
+	  Enable a 6LoCAN Ethernet translator. With this translator it is
+	  possible to connect a 6LoCAN network to a Ethernet network directly,
+	  via a Switch or trough a router. Messages that goes through the
+	  translator have a special address and the MAC address is carried inline.
+	  The packet is forwarded with uncompressed IPv6 header.
+
+module = NET_L2_CANBUS
+module-dep = NET_LOG
+module-str = Log level for CANbus L2 layer
+module-help = Enables CANbus L2 to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+endif #NET_L2_CANBUS
+
+config NET_L2_CANBUS_RAW
+	bool "Enable CANBUS RAW l2 layer"
+	help
+	  Add a CANBUS L2 layer driver. This is the layer for SOCKET CAN.

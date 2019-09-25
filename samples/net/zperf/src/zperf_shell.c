@@ -12,7 +12,7 @@ LOG_MODULE_REGISTER(net_zperf_sample, LOG_LEVEL_DBG);
 #include <stdlib.h>
 
 #include <zephyr.h>
-#include <misc/printk.h>
+#include <sys/printk.h>
 #include <shell/shell.h>
 #include <shell/shell_uart.h>
 

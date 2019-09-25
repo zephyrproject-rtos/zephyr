@@ -4,25 +4,85 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <kernel.h>
+#include <logging/log.h>
 #include <logging/log_msg.h>
 #include <logging/log_ctrl.h>
 #include <logging/log_core.h>
 #include <string.h>
+#include <assert.h>
+
+BUILD_ASSERT_MSG((sizeof(struct log_msg_ids) == sizeof(u16_t)),
+		  "Structure must fit in 2 bytes");
+
+BUILD_ASSERT_MSG((sizeof(struct log_msg_generic_hdr) == sizeof(u16_t)),
+		 "Structure must fit in 2 bytes");
+
+BUILD_ASSERT_MSG((sizeof(struct log_msg_std_hdr) == sizeof(u16_t)),
+		 "Structure must fit in 2 bytes");
+
+BUILD_ASSERT_MSG((sizeof(struct log_msg_hexdump_hdr) == sizeof(u16_t)),
+		 "Structure must fit in 2 bytes");
+
+BUILD_ASSERT_MSG((sizeof(union log_msg_head_data) ==
+		  sizeof(struct log_msg_ext_head_data)),
+		  "Structure must be same size");
 
 #ifndef CONFIG_LOG_BUFFER_SIZE
 #define CONFIG_LOG_BUFFER_SIZE 0
+#endif
+
+/* Define needed when CONFIG_LOG_BLOCK_IN_THREAD is disabled to satisfy
+ * compiler. */
+#ifndef CONFIG_LOG_BLOCK_IN_THREAD_TIMEOUT_MS
+#define CONFIG_LOG_BLOCK_IN_THREAD_TIMEOUT_MS 0
 #endif
 
 #define MSG_SIZE sizeof(union log_msg_chunk)
 #define NUM_OF_MSGS (CONFIG_LOG_BUFFER_SIZE / MSG_SIZE)
 
 struct k_mem_slab log_msg_pool;
-static u8_t __noinit __aligned(sizeof(u32_t))
+static u8_t __noinit __aligned(sizeof(void *))
 		log_msg_pool_buf[CONFIG_LOG_BUFFER_SIZE];
 
 void log_msg_pool_init(void)
 {
 	k_mem_slab_init(&log_msg_pool, log_msg_pool_buf, MSG_SIZE, NUM_OF_MSGS);
+}
+
+/* Return true if interrupts were locked in the context of this call. */
+static bool is_irq_locked(void)
+{
+	unsigned int key = z_arch_irq_lock();
+	bool ret = z_arch_irq_unlocked(key);
+
+	z_arch_irq_unlock(key);
+	return ret;
+}
+
+/* Check if context can be blocked and pend on available memory slab. Context
+ * can be blocked if in a thread and interrupts are not locked.
+ */
+static bool block_on_alloc(void)
+{
+	if (!IS_ENABLED(CONFIG_LOG_BLOCK_IN_THREAD)) {
+		return false;
+	}
+
+	return (!k_is_in_isr() && !is_irq_locked());
+}
+
+union log_msg_chunk *log_msg_chunk_alloc(void)
+{
+	union log_msg_chunk *msg = NULL;
+	int err = k_mem_slab_alloc(&log_msg_pool, (void **)&msg,
+			block_on_alloc() ?
+			CONFIG_LOG_BLOCK_IN_THREAD_TIMEOUT_MS : K_NO_WAIT);
+
+	if (err != 0) {
+		msg = log_msg_no_space_handle();
+	}
+
+	return msg;
 }
 
 void log_msg_get(struct log_msg *msg)
@@ -55,6 +115,17 @@ static void msg_free(struct log_msg *msg)
 			if (log_is_strdup(buf)) {
 				log_free(buf);
 			}
+		}
+	} else if (IS_ENABLED(CONFIG_USERSPACE) &&
+		   (log_msg_level_get(msg) != LOG_LEVEL_INTERNAL_RAW_STRING)) {
+		/*
+		 * When userspace support is enabled, the hex message metadata
+		 * might be located in log_strdup() memory pool.
+		 */
+		const char *str = log_msg_str_get(msg);
+
+		if (log_is_strdup(str)) {
+			log_free((void *)(str));
 		}
 	}
 
@@ -99,7 +170,7 @@ u32_t log_msg_nargs_get(struct log_msg *msg)
 	return msg->hdr.params.std.nargs;
 }
 
-static u32_t cont_arg_get(struct log_msg *msg, u32_t arg_idx)
+static log_arg_t cont_arg_get(struct log_msg *msg, u32_t arg_idx)
 {
 	struct log_msg_cont *cont;
 
@@ -119,9 +190,9 @@ static u32_t cont_arg_get(struct log_msg *msg, u32_t arg_idx)
 	return cont->payload.args[arg_idx];
 }
 
-u32_t log_msg_arg_get(struct log_msg *msg, u32_t arg_idx)
+log_arg_t log_msg_arg_get(struct log_msg *msg, u32_t arg_idx)
 {
-	u32_t arg;
+	log_arg_t arg;
 
 	/* Return early if requested argument not present in the message. */
 	if (arg_idx >= msg->hdr.params.std.nargs) {
@@ -186,18 +257,18 @@ static struct log_msg *msg_alloc(u32_t nargs)
 	return msg;
 }
 
-static void copy_args_to_msg(struct  log_msg *msg, u32_t *args, u32_t nargs)
+static void copy_args_to_msg(struct  log_msg *msg, log_arg_t *args, u32_t nargs)
 {
 	struct log_msg_cont *cont = msg->payload.ext.next;
 
 	if (nargs > LOG_MSG_NARGS_SINGLE_CHUNK) {
 		(void)memcpy(msg->payload.ext.data.args, args,
-		       LOG_MSG_NARGS_HEAD_CHUNK * sizeof(u32_t));
+		       LOG_MSG_NARGS_HEAD_CHUNK * sizeof(log_arg_t));
 		nargs -= LOG_MSG_NARGS_HEAD_CHUNK;
 		args += LOG_MSG_NARGS_HEAD_CHUNK;
 	} else {
 		(void)memcpy(msg->payload.single.args, args,
-			     nargs * sizeof(u32_t));
+			     nargs * sizeof(log_arg_t));
 		nargs  = 0U;
 	}
 
@@ -205,14 +276,14 @@ static void copy_args_to_msg(struct  log_msg *msg, u32_t *args, u32_t nargs)
 		u32_t cpy_args = MIN(nargs, ARGS_CONT_MSG);
 
 		(void)memcpy(cont->payload.args, args,
-			     cpy_args * sizeof(u32_t));
+			     cpy_args * sizeof(log_arg_t));
 		nargs -= cpy_args;
 		args += cpy_args;
 		cont = cont->next;
 	}
 }
 
-struct log_msg *log_msg_create_n(const char *str, u32_t *args, u32_t nargs)
+struct log_msg *log_msg_create_n(const char *str, log_arg_t *args, u32_t nargs)
 {
 	__ASSERT_NO_MSG(nargs < LOG_MAX_NARGS);
 

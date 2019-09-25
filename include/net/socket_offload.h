@@ -12,11 +12,11 @@
 #ifndef ZEPHYR_INCLUDE_NET_SOCKET_OFFLOAD_H_
 #define ZEPHYR_INCLUDE_NET_SOCKET_OFFLOAD_H_
 
+#include <net/socket_offload_ops.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <net/socket_offload_ops.h>
 
 extern const struct socket_offload *socket_ops;
 

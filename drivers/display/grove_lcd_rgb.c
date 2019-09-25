@@ -9,9 +9,9 @@
 #include <init.h>
 #include <stdbool.h>
 
-#include <i2c.h>
+#include <drivers/i2c.h>
 #include <display/grove_lcd.h>
-#include <misc/util.h>
+#include <sys/util.h>
 
 #define LOG_LEVEL CONFIG_DISPLAY_LOG_LEVEL
 #include <logging/log.h>

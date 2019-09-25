@@ -15,8 +15,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <device.h>
 #include <string.h>
 #include <errno.h>
-#include <gpio.h>
-#include <spi.h>
+#include <drivers/gpio.h>
+#include <drivers/spi.h>
 #include <net/net_pkt.h>
 #include <net/net_if.h>
 #include <net/ethernet.h>
@@ -348,6 +348,7 @@ static void eth_enc28j60_init_buffers(struct device *dev)
 static void eth_enc28j60_init_mac(struct device *dev)
 {
 	const struct eth_enc28j60_config *config = dev->config->config_info;
+	struct eth_enc28j60_runtime *context = dev->driver_data;
 	u8_t data_macon;
 
 	eth_enc28j60_set_bank(dev, ENC28J60_REG_MACON1);
@@ -381,14 +382,17 @@ static void eth_enc28j60_init_mac(struct device *dev)
 	/* Configure MAC address */
 	eth_enc28j60_set_bank(dev, ENC28J60_REG_MAADR0);
 	eth_enc28j60_write_reg(dev, ENC28J60_REG_MAADR0,
-			       DT_INST_0_MICROCHIP_ENC28J60_LOCAL_MAC_ADDRESS_5);
+			       context->mac_address[5]);
 	eth_enc28j60_write_reg(dev, ENC28J60_REG_MAADR1,
-			       DT_INST_0_MICROCHIP_ENC28J60_LOCAL_MAC_ADDRESS_4);
+			       context->mac_address[4]);
 	eth_enc28j60_write_reg(dev, ENC28J60_REG_MAADR2,
-			       DT_INST_0_MICROCHIP_ENC28J60_LOCAL_MAC_ADDRESS_3);
-	eth_enc28j60_write_reg(dev, ENC28J60_REG_MAADR3, MICROCHIP_OUI_B2);
-	eth_enc28j60_write_reg(dev, ENC28J60_REG_MAADR4, MICROCHIP_OUI_B1);
-	eth_enc28j60_write_reg(dev, ENC28J60_REG_MAADR5, MICROCHIP_OUI_B0);
+			       context->mac_address[3]);
+	eth_enc28j60_write_reg(dev, ENC28J60_REG_MAADR3,
+			       context->mac_address[2]);
+	eth_enc28j60_write_reg(dev, ENC28J60_REG_MAADR4,
+			       context->mac_address[1]);
+	eth_enc28j60_write_reg(dev, ENC28J60_REG_MAADR5,
+			       context->mac_address[0]);
 }
 
 static void eth_enc28j60_init_phy(struct device *dev)
@@ -715,6 +719,11 @@ static int eth_enc28j60_init(struct device *dev)
 	/* Errata B7/1 */
 	k_busy_wait(D10D24S);
 
+	/* Assign octets not previously taken from devicetree */
+	context->mac_address[0] = MICROCHIP_OUI_B0;
+	context->mac_address[1] = MICROCHIP_OUI_B1;
+	context->mac_address[2] = MICROCHIP_OUI_B2;
+
 	eth_enc28j60_init_buffers(dev);
 	eth_enc28j60_init_mac(dev);
 	eth_enc28j60_init_phy(dev);
@@ -743,14 +752,7 @@ static int eth_enc28j60_init(struct device *dev)
 #ifdef CONFIG_ETH_ENC28J60_0
 
 static struct eth_enc28j60_runtime eth_enc28j60_0_runtime = {
-	.mac_address = {
-		MICROCHIP_OUI_B0,
-		MICROCHIP_OUI_B1,
-		MICROCHIP_OUI_B2,
-		DT_INST_0_MICROCHIP_ENC28J60_LOCAL_MAC_ADDRESS_3,
-		DT_INST_0_MICROCHIP_ENC28J60_LOCAL_MAC_ADDRESS_4,
-		DT_INST_0_MICROCHIP_ENC28J60_LOCAL_MAC_ADDRESS_5
-	},
+	.mac_address = DT_INST_0_MICROCHIP_ENC28J60_LOCAL_MAC_ADDRESS,
 	.tx_rx_sem = Z_SEM_INITIALIZER(eth_enc28j60_0_runtime.tx_rx_sem,
 					1,  UINT_MAX),
 	.int_sem  = Z_SEM_INITIALIZER(eth_enc28j60_0_runtime.int_sem,
@@ -764,8 +766,8 @@ static const struct eth_enc28j60_config eth_enc28j60_0_config = {
 	.spi_freq  = DT_INST_0_MICROCHIP_ENC28J60_SPI_MAX_FREQUENCY,
 	.spi_slave = DT_INST_0_MICROCHIP_ENC28J60_BASE_ADDRESS,
 #ifdef CONFIG_ETH_ENC28J60_0_GPIO_SPI_CS
-	.spi_cs_port = DT_INST_0_MICROCHIP_ENC28J60_CS_GPIO_CONTROLLER,
-	.spi_cs_pin = DT_INST_0_MICROCHIP_ENC28J60_CS_GPIO_PIN,
+	.spi_cs_port = DT_INST_0_MICROCHIP_ENC28J60_CS_GPIOS_CONTROLLER,
+	.spi_cs_pin = DT_INST_0_MICROCHIP_ENC28J60_CS_GPIOS_PIN,
 #endif /* CONFIG_ETH_ENC28J60_0_GPIO_SPI_CS */
 	.full_duplex = IS_ENABLED(CONFIG_ETH_ENC28J60_0_FULL_DUPLEX),
 	.timeout = CONFIG_ETH_ENC28J60_TIMEOUT,

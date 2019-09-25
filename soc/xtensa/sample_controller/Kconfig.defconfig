@@ -13,9 +13,6 @@ config SOC
 config IRQ_OFFLOAD_INTNUM
 	default 7
 
-config XTENSA_ASM2
-	default y
-
 config LOG_BACKEND_XTENSA_SIM
 	default LOG
 

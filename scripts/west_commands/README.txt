@@ -11,12 +11,12 @@ itself.
 When extending this code, please keep the unit tests (in tests/) up to
 date. You can run the tests with this command from this directory:
 
-$ PYTHONPATH=$(west list --format="{abspath}" west)/src:$PWD py.test
+$ PYTHONPATH=$PWD py.test
 
 Windows users will need to find the path to .west/west/src in their
 Zephyr installation, then run something like this:
 
-> cmd /C "set PYTHONPATH=path\to\.west\west\src:path\to\zephyr\scripts\west_commands && py.test"
+> cmd /C "set PYTHONPATH=path\to\zephyr\scripts\west_commands && py.test"
 
 Note that these tests are run as part of Zephyr's CI when submitting
 an upstream pull request, and pull requests which break the tests

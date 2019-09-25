@@ -16,7 +16,7 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(webusb);
 
-#include <misc/byteorder.h>
+#include <sys/byteorder.h>
 #include <usb/usb_device.h>
 #include <usb/usb_common.h>
 #include <usb_descriptor.h>
@@ -213,7 +213,7 @@ static struct usb_ep_cfg_data webusb_ep_data[] = {
 	}
 };
 
-USBD_CFG_DATA_DEFINE(webusb) struct usb_cfg_data webusb_config = {
+USBD_CFG_DATA_DEFINE(primary, webusb) struct usb_cfg_data webusb_config = {
 	.usb_device_description = NULL,
 	.interface_descriptor = &webusb_desc.if0,
 	.cb_usb_status = webusb_dev_status_cb,

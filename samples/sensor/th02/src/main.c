@@ -6,9 +6,9 @@
 
 #include <zephyr.h>
 #include <device.h>
-#include <sensor.h>
-#include <misc/printk.h>
-#include <misc/util.h>
+#include <drivers/sensor.h>
+#include <sys/printk.h>
+#include <sys/util.h>
 
 #ifdef CONFIG_GROVE_LCD_RGB
 #include <display/grove_lcd.h>

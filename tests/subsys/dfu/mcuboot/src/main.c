@@ -5,7 +5,7 @@
  */
 
 #include <ztest.h>
-#include <flash_map.h>
+#include <storage/flash_map.h>
 #include <dfu/mcuboot.h>
 
 #define BOOT_MAGIC_VAL_W0 0xf395c277

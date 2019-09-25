@@ -6,8 +6,8 @@
 
 #include <string.h>
 #include <zephyr.h>
-#include <misc/printk.h>
-#include <console.h>
+#include <sys/printk.h>
+#include <console/console.h>
 
 void main(void)
 {

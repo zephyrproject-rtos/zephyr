@@ -13,6 +13,8 @@
 #ifndef _ATMEL_SAME70_SOC_H_
 #define _ATMEL_SAME70_SOC_H_
 
+#include <sys/util.h>
+
 #ifndef _ASMLANGUAGE
 
 #define DONT_USE_CMSIS_INIT
@@ -64,11 +66,8 @@
 #include "../common/soc_pmc.h"
 #include "../common/soc_gpio.h"
 
-/* ARM CMSIS definitions must be included before kernel_includes.h.
- * Therefore, it is essential to include kernel_includes.h after including
- * core SOC-specific headers.
- */
-#include <kernel_includes.h>
+/* Add include for DTS generated information */
+#include <generated_dts_board.h>
 
 #endif /* _ASMLANGUAGE */
 
@@ -118,7 +117,7 @@
 #define DMA_PERID_TC3_RX      43
 
 /** Processor Clock (HCLK) Frequency */
-#define SOC_ATMEL_SAM_HCLK_FREQ_HZ CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC
+#define SOC_ATMEL_SAM_HCLK_FREQ_HZ DT_ARM_CORTEX_M7_0_CLOCK_FREQUENCY
 /** Master Clock (MCK) Frequency */
 #define SOC_ATMEL_SAM_MCK_FREQ_HZ \
 		(SOC_ATMEL_SAM_HCLK_FREQ_HZ / CONFIG_SOC_ATMEL_SAME70_MDIV)
