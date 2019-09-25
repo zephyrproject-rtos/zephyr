@@ -9,7 +9,8 @@
 
 static void *chunk_mem(struct z_heap *h, chunkid_t c)
 {
-	uint8_t *ret = ((uint8_t *)&h->buf[c]) + chunk_header_bytes(h);
+	chunk_unit_t *buf = chunk_buf(h);
+	uint8_t *ret = ((uint8_t *)&buf[c]) + chunk_header_bytes(h);
 
 	CHECK(!(((size_t)ret) & (big_heap(h) ? 7 : 3)));
 
@@ -117,7 +118,7 @@ void sys_heap_free(struct sys_heap *heap, void *mem)
 
 	struct z_heap *h = heap->heap;
 	chunkid_t c = ((uint8_t *)mem - chunk_header_bytes(h)
-		       - (uint8_t *)h->buf) / CHUNK_UNIT;
+		       - (uint8_t *)chunk_buf(h)) / CHUNK_UNIT;
 
 	/* Merge with right chunk?  We can just absorb it. */
 	if (!last_chunk(h, c) && !chunk_used(h, right_chunk(h, c))) {
@@ -132,7 +133,7 @@ void sys_heap_free(struct sys_heap *heap, void *mem)
 	}
 
 	/* Merge with left chunk?  It absorbs us. */
-	if (c != h->chunk0 && !chunk_used(h, left_chunk(h, c))) {
+	if (!chunk_used(h, left_chunk(h, c))) {
 		chunkid_t lc = left_chunk(h, c);
 		chunkid_t rc = right_chunk(h, c);
 		size_t csz = chunk_size(h, c);
@@ -202,37 +203,38 @@ void *sys_heap_alloc(struct sys_heap *heap, size_t bytes)
 
 void sys_heap_init(struct sys_heap *heap, void *mem, size_t bytes)
 {
-	/* Must fit in a 32 bit count of u64's */
-#if __SIZEOF_SIZE_T__ > 4
-	CHECK(bytes < 0x800000000ULL);
-#endif
+	/* Must fit in a 32 bit count of HUNK_UNIT */
+	CHECK(bytes / CHUNK_UNIT <= 0xffffffffU);
 
 	/* Round the start up, the end down */
-	size_t addr = ((size_t)mem + CHUNK_UNIT - 1) & ~(CHUNK_UNIT - 1);
-	size_t end = ((size_t)mem + bytes) & ~(CHUNK_UNIT - 1);
+	uintptr_t addr = ROUND_UP(mem, CHUNK_UNIT);
+	uintptr_t end = ROUND_DOWN((uint8_t *)mem + bytes, CHUNK_UNIT);
 	size_t buf_sz = (end - addr) / CHUNK_UNIT;
-	size_t hdr_chunks = chunksz(sizeof(struct z_heap));
 
 	CHECK(end > addr);
+	CHECK(buf_sz > chunksz(sizeof(struct z_heap)));
 
 	struct z_heap *h = (struct z_heap *)addr;
-
-	heap->heap = (struct z_heap *)addr;
-	h->buf = (uint64_t *)addr;
-	h->buckets = (void *)(addr + CHUNK_UNIT * hdr_chunks);
+	heap->heap = h;
+	h->chunk0_hdr_area = 0;
 	h->len = buf_sz;
 	h->avail_buckets = 0;
 
-	size_t buckets_bytes = ((bucket_idx(h, buf_sz) + 1)
-				* sizeof(struct z_heap_bucket));
+	int nb_buckets = bucket_idx(h, buf_sz) + 1;
+	size_t chunk0_size = chunksz(sizeof(struct z_heap) +
+				     nb_buckets * sizeof(struct z_heap_bucket));
 
-	h->chunk0 = hdr_chunks + chunksz(buckets_bytes);
+	CHECK(chunk0_size < buf_sz);
 
-	for (int i = 0; i <= bucket_idx(heap->heap, heap->heap->len); i++) {
-		heap->heap->buckets[i].list_size = 0;
-		heap->heap->buckets[i].next = 0;
+	for (int i = 0; i < nb_buckets; i++) {
+		h->buckets[i].list_size = 0;
+		h->buckets[i].next = 0;
 	}
 
-	set_chunk_size(h, h->chunk0, buf_sz - h->chunk0);
-	free_list_add(h, h->chunk0);
+	set_chunk_size(h, 0, chunk0_size);
+	set_chunk_used(h, 0, true);
+
+	set_chunk_size(h, chunk0_size, buf_sz - chunk0_size);
+	set_left_chunk_size(h, chunk0_size, chunk0_size);
+	free_list_add(h, chunk0_size);
 }

@@ -24,7 +24,7 @@ static size_t max_chunkid(struct z_heap *h)
 
 static bool in_bounds(struct z_heap *h, chunkid_t c)
 {
-	return (c >= h->chunk0)
+	return (c >= right_chunk(h, 0))
 		&& (c <= max_chunkid(h))
 		&& (chunk_size(h, c) < h->len);
 }
@@ -34,7 +34,7 @@ static bool valid_chunk(struct z_heap *h, chunkid_t c)
 	return (chunk_size(h, c) > 0
 		&& (c + chunk_size(h, c) <= h->len)
 		&& in_bounds(h, c)
-		&& ((c == h->chunk0) || in_bounds(h, left_chunk(h, c)))
+		&& (!left_chunk(h, c) || in_bounds(h, left_chunk(h, c)))
 		&& (chunk_used(h, c) || in_bounds(h, prev_free_chunk(h, c)))
 		&& (chunk_used(h, c) || in_bounds(h, next_free_chunk(h, c))));
 }
@@ -114,18 +114,15 @@ bool sys_heap_validate(struct sys_heap *heap)
 	 */
 	chunkid_t prev_chunk = 0;
 
-	for (c = h->chunk0; c <= max_chunkid(h); c = right_chunk(h, c)) {
+	for (c = right_chunk(h, 0); c <= max_chunkid(h); c = right_chunk(h, c)) {
 		if (!valid_chunk(h, c)) {
 			return false;
 		}
 		if (!chunk_used(h, c)) {
 			return false;
 		}
-
-		if (c != h->chunk0) {
-			if (left_chunk(h, c) != prev_chunk) {
-				return false;
-			}
+		if (left_chunk(h, c) != prev_chunk) {
+			return false;
 		}
 		prev_chunk = c;
 
@@ -158,7 +155,7 @@ bool sys_heap_validate(struct sys_heap *heap)
 	/* Now we are valid, but have managed to invert all the in-use
 	 * fields.  One more linear pass to fix them up
 	 */
-	for (c = h->chunk0; c <= max_chunkid(h); c = right_chunk(h, c)) {
+	for (c = right_chunk(h, 0); c <= max_chunkid(h); c = right_chunk(h, c)) {
 		set_chunk_used(h, c, !chunk_used(h, c));
 	}
 	return true;
