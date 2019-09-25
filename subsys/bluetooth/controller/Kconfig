@@ -48,6 +48,14 @@ config BT_LLL_VENDOR_NORDIC
 	help
 	  Use Nordic Lower Link Layer implementation.
 
+config BT_LLL_VENDOR_OPENISA
+	bool "Use OpenISA LLL"
+	depends on BT_LL_SW_SPLIT && SOC_OPENISA_RV32M1_RISCV32
+	select BT_HAS_HCI_VS
+	default y
+	help
+	  Use OpenISA Lower Link Layer implementation.
+
 comment "BLE Controller configuration"
 
 config BT_CTLR_CRYPTO
