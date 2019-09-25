@@ -1,26 +1,19 @@
-#
 # Copyright (c) 2019, Yannis Damigos
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
-title: ESP32 GPIO
+title: ESP32 GPIO controller
+description: ESP32 GPIO controller
 
-description: >
-    This is a representation of the ESP32 GPIO nodes
+compatible: "espressif,esp32-gpio"
 
-inherits:
-    !include base.yaml
+include: [gpio-controller.yaml, base.yaml]
 
 properties:
-    compatible:
-      constraint: "espressif,esp32-gpio"
-
     reg:
-      category: required
+        required: true
 
     label:
-      category: required
+        required: true
 
 "#cells":
   - pin
