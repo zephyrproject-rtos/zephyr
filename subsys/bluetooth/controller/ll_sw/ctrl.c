@@ -1911,6 +1911,9 @@ static inline u32_t isr_rx_conn_pkt_ack(struct pdu_data *pdu_data_tx,
 		 */
 		_radio.conn_curr->procedure_expire =
 			_radio.conn_curr->procedure_reload;
+
+		/* Reset enc req queued state */
+		_radio.conn_curr->llcp_enc.ack = _radio.conn_curr->llcp_enc.req;
 		break;
 
 	case PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_RSP:
@@ -1976,9 +1979,25 @@ static inline u32_t isr_rx_conn_pkt_ack(struct pdu_data *pdu_data_tx,
 					break;
 				}
 
-				/* Procedure complete */
-				conn->llcp_length.ack = conn->llcp_length.req;
-				conn->procedure_expire = 0U;
+				/* check cache */
+				if (!conn->llcp_length.cache.tx_octets) {
+					/* Procedure complete */
+					conn->llcp_length.ack =
+						conn->llcp_length.req;
+					conn->procedure_expire = 0U;
+
+					break;
+				}
+
+				/* Initiate cached procedure */
+				conn->llcp_length.tx_octets =
+					conn->llcp_length.cache.tx_octets;
+				conn->llcp_length.cache.tx_octets = 0;
+#if defined(CONFIG_BT_CTLR_PHY)
+				conn->llcp_length.tx_time =
+					conn->llcp_length.cache.tx_time;
+#endif /* CONFIG_BT_CTLR_PHY */
+				conn->llcp_length.state = LLCP_LENGTH_STATE_REQ;
 
 				break;
 
@@ -2678,6 +2697,17 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx,
 			goto isr_rx_conn_unknown_rsp_send;
 		}
 
+		/* NOTE: workaround to defer peer initiated encryption while
+		 *       local initiated procedure with instant is not complete.
+		 *       Peer master has sent CONN_UPDATE_IND in response to
+		 *	 CONN_PARAM_REQ, and also has initiated a Encryption
+		 *       Setup thereafter.
+		 */
+		if (_radio.conn_curr->llcp_req != _radio.conn_curr->llcp_ack) {
+			nack = 1U;
+			break;
+		}
+
 #if defined(CONFIG_BT_CTLR_FAST_ENC)
 		/* TODO: BT Spec. text: may finalize the sending of additional
 		 * data channel PDUs queued in the controller.
@@ -2821,7 +2851,8 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx,
 		rsp = &pdu_data_rx->llctrl.feature_rsp;
 
 		/* AND the feature set to get Feature USED */
-		_radio.conn_curr->llcp_features &= feat_get(&rsp->features[0]);
+		_radio.conn_curr->llcp_feature.features &=
+			feat_get(&rsp->features[0]);
 
 		/* features exchanged */
 		_radio.conn_curr->common.fex_valid = 1U;
@@ -2830,6 +2861,8 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx,
 		*rx_enqueue = 1U;
 
 		/* Procedure complete */
+		_radio.conn_curr->llcp_feature.ack =
+			_radio.conn_curr->llcp_feature.req;
 		_radio.conn_curr->procedure_expire = 0U;
 	}
 	break;
@@ -7579,7 +7612,7 @@ static inline void event_enc_reject_prep(struct connection *conn,
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
 
 	if (conn->common.fex_valid &&
-	    (conn->llcp_features & BIT(BT_LE_FEAT_BIT_EXT_REJ_IND))) {
+	    (conn->llcp_feature.features & BIT(BT_LE_FEAT_BIT_EXT_REJ_IND))) {
 		struct pdu_data_llctrl_reject_ext_ind *p;
 
 		pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND;
@@ -7744,12 +7777,17 @@ static inline void event_fex_prep(struct connection *conn)
 {
 	struct radio_pdu_node_tx *node_tx;
 
+	/* If waiting for response, do nothing */
+	if (!((conn->llcp_feature.ack - conn->llcp_feature.req) & 0x01)) {
+		return;
+	}
+
 	if (conn->common.fex_valid) {
 		struct radio_pdu_node_rx *node_rx;
 		struct pdu_data *pdu_ctrl_rx;
 
 		/* procedure request acked */
-		conn->llcp_ack = conn->llcp_req;
+		conn->llcp_feature.ack = conn->llcp_feature.req;
 
 		/* Prepare the rx packet structure */
 		node_rx = packet_rx_reserve_get(2);
@@ -7768,11 +7806,11 @@ static inline void event_fex_prep(struct connection *conn)
 		(void)memset(&pdu_ctrl_rx->llctrl.feature_rsp.features[0], 0x00,
 			     sizeof(pdu_ctrl_rx->llctrl.feature_rsp.features));
 		pdu_ctrl_rx->llctrl.feature_req.features[0] =
-			conn->llcp_features & 0xFF;
+			conn->llcp_feature.features & 0xFF;
 		pdu_ctrl_rx->llctrl.feature_req.features[1] =
-			(conn->llcp_features >> 8) & 0xFF;
+			(conn->llcp_feature.features >> 8) & 0xFF;
 		pdu_ctrl_rx->llctrl.feature_req.features[2] =
-			(conn->llcp_features >> 16) & 0xFF;
+			(conn->llcp_feature.features >> 16) & 0xFF;
 
 		/* enqueue feature rsp structure into rx queue */
 		packet_rx_enqueue();
@@ -7784,11 +7822,11 @@ static inline void event_fex_prep(struct connection *conn)
 	if (node_tx) {
 		struct pdu_data *pdu_ctrl_tx = (void *)node_tx->pdu_data;
 
-		/* procedure request acked */
-		conn->llcp_ack = conn->llcp_req;
+		/* procedure request acked, move to waiting state  */
+		conn->llcp_feature.ack--;
 
 		/* use initial feature bitmap */
-		conn->llcp_features = LL_FEAT;
+		conn->llcp_feature.features = LL_FEAT;
 
 		/* place the feature exchange req packet as next in tx queue */
 		pdu_ctrl_tx->ll_id = PDU_DATA_LLID_CTRL;
@@ -7803,11 +7841,11 @@ static inline void event_fex_prep(struct connection *conn)
 			     0x00,
 			     sizeof(pdu_ctrl_tx->llctrl.feature_req.features));
 		pdu_ctrl_tx->llctrl.feature_req.features[0] =
-			conn->llcp_features & 0xFF;
+			conn->llcp_feature.features & 0xFF;
 		pdu_ctrl_tx->llctrl.feature_req.features[1] =
-			(conn->llcp_features >> 8) & 0xFF;
+			(conn->llcp_feature.features >> 8) & 0xFF;
 		pdu_ctrl_tx->llctrl.feature_req.features[2] =
-			(conn->llcp_features >> 16) & 0xFF;
+			(conn->llcp_feature.features >> 16) & 0xFF;
 
 		ctrl_tx_enqueue(conn, node_tx);
 
@@ -7821,6 +7859,10 @@ static inline void event_fex_prep(struct connection *conn)
 
 static inline void event_vex_prep(struct connection *conn)
 {
+	/* If waiting for response, do nothing */
+	if (!((conn->llcp_version.ack - conn->llcp_version.req) & 0x01)) {
+		return;
+	}
 
 	if (conn->llcp_version.tx == 0) {
 		struct radio_pdu_node_tx *node_tx;
@@ -7830,8 +7872,8 @@ static inline void event_vex_prep(struct connection *conn)
 			struct pdu_data *pdu_ctrl_tx = (void *)
 						       node_tx->pdu_data;
 
-			/* procedure request acked */
-			conn->llcp_ack = conn->llcp_req;
+			/* procedure request acked, move to waiting state  */
+			conn->llcp_version.ack--;
 
 			/* set version ind tx-ed flag */
 			conn->llcp_version.tx = 1U;
@@ -7862,7 +7904,7 @@ static inline void event_vex_prep(struct connection *conn)
 		struct pdu_data *pdu_ctrl_rx;
 
 		/* procedure request acked */
-		conn->llcp_ack = conn->llcp_req;
+		conn->llcp_version.ack = conn->llcp_version.req;
 
 		/* Prepare the rx packet structure */
 		node_rx = packet_rx_reserve_get(2);
@@ -8261,6 +8303,7 @@ static inline int event_len_prep(struct connection *conn)
 		u16_t packet_rx_data_size;
 		u16_t free_count_conn;
 		u16_t free_count_rx;
+		u16_t tx_octets;
 
 		/* Ensure the rx pool is not in use.
 		 * This is important to be able to re-size the pool
@@ -8280,24 +8323,47 @@ static inline int event_len_prep(struct connection *conn)
 			return -EAGAIN;
 		}
 
-		if (conn->llcp_length.state == LLCP_LENGTH_STATE_RESIZE) {
-			/* Procedure complete */
-			conn->llcp_length.ack = conn->llcp_length.req;
-			conn->procedure_expire = 0U;
-		} else {
-			conn->llcp_length.state =
-				LLCP_LENGTH_STATE_RESIZE_RSP_ACK_WAIT;
-		}
-
-		/* Use the new rx octets/time in the connection */
+		/* Use the new rx octets in the connection */
 		conn->max_rx_octets = conn->llcp_length.rx_octets;
 
+		/* backup tx_octets */
+		tx_octets = conn->llcp_length.tx_octets;
+
 #if defined(CONFIG_BT_CTLR_PHY)
+		/* Use the new rx time in the connection */
 		conn->max_rx_time = conn->llcp_length.rx_time;
+
+		/* backup tx time */
+		u16_t tx_time = conn->llcp_length.tx_time;
 #endif /* CONFIG_BT_CTLR_PHY */
 
 		/* Reset event length update advanced flag */
 		conn->evt_len_adv = 0U;
+
+		/* switch states, to wait for ack, to request cached values or
+		 * complete the procedure
+		 */
+		if (conn->llcp_length.state == LLCP_LENGTH_STATE_RESIZE) {
+			/* check cache */
+			if (!conn->llcp_length.cache.tx_octets) {
+				/* Procedure complete */
+				conn->llcp_length.ack = conn->llcp_length.req;
+				conn->procedure_expire = 0U;
+			} else {
+				/* Initiate cached procedure */
+				conn->llcp_length.tx_octets =
+					conn->llcp_length.cache.tx_octets;
+				conn->llcp_length.cache.tx_octets = 0;
+#if defined(CONFIG_BT_CTLR_PHY)
+				conn->llcp_length.tx_time =
+					conn->llcp_length.cache.tx_time;
+#endif /* CONFIG_BT_CTLR_PHY */
+				conn->llcp_length.state = LLCP_LENGTH_STATE_REQ;
+			}
+		} else {
+			conn->llcp_length.state =
+				LLCP_LENGTH_STATE_RESIZE_RSP_ACK_WAIT;
+		}
 
 		/** TODO This design is exception as memory initialization
 		 * and allocation is done in radio context here, breaking the
@@ -8395,13 +8461,13 @@ static inline int event_len_prep(struct connection *conn)
 
 		lr = &pdu_ctrl_rx->llctrl.length_rsp;
 		lr->max_rx_octets = conn->max_rx_octets;
-		lr->max_tx_octets = conn->llcp_length.tx_octets;
+		lr->max_tx_octets = tx_octets;
 #if !defined(CONFIG_BT_CTLR_PHY)
 		lr->max_rx_time = RADIO_PKT_TIME(conn->max_rx_octets, 0);
-		lr->max_tx_time = RADIO_PKT_TIME(lr->max_tx_octets, 0);
+		lr->max_tx_time = RADIO_PKT_TIME(tx_octets, 0);
 #else /* CONFIG_BT_CTLR_PHY */
 		lr->max_rx_time = conn->max_rx_time;
-		lr->max_tx_time = conn->llcp_length.tx_time;
+		lr->max_tx_time = tx_time;
 #endif /* CONFIG_BT_CTLR_PHY */
 
 		/* enqueue version ind structure into rx queue */
@@ -8769,12 +8835,26 @@ static void event_connection_prepare(u32_t ticks_at_expire,
 	/* calc current event counter value */
 	event_counter = conn->event_counter + conn->latency_prepare;
 
-#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ) || defined(CONFIG_BT_CTLR_PHY)
 	/* Check if no other procedure with instant is requested and not in
 	 * Encryption setup.
 	 */
 	if ((conn->llcp_ack == conn->llcp_req) && !conn->pause_rx) {
-		if (0) {
+		if (conn->llcp_feature.ack != conn->llcp_feature.req) {
+			/* Stop previous event, to avoid Radio DMA corrupting
+			 * the rx queue.
+			 */
+			event_stop(0, 0, 0, (void *)STATE_ABORT);
+
+			event_fex_prep(conn);
+
+		} else if (conn->llcp_version.ack != conn->llcp_version.req) {
+			/* Stop previous event, to avoid Radio DMA corrupting
+			 * the rx queue.
+			 */
+			event_stop(0, 0, 0, (void *)STATE_ABORT);
+
+			event_vex_prep(conn);
+
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 		/* check if CPR procedure is requested */
 		} else if (conn->llcp_conn_param.ack !=
@@ -8789,6 +8869,25 @@ static void event_connection_prepare(u32_t ticks_at_expire,
 					      ticks_at_expire);
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
+		/* check if DLE procedure is requested */
+		} else if (conn->llcp_length.ack != conn->llcp_length.req) {
+			/* Stop previous event, to avoid Radio DMA corrupting
+			 * the rx queue
+			 */
+			event_stop(0, 0, 0, (void *)STATE_ABORT);
+
+			/* handle DLU state machine */
+			if (event_len_prep(conn)) {
+				/* NOTE: rx pool could not be resized, lets
+				 * skip this event and try in the next event.
+				 */
+				_radio.ticker_id_prepare = 0U;
+
+				goto event_connection_prepare_skip;
+			}
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+
 #if defined(CONFIG_BT_CTLR_PHY)
 		/* check if PHY Req procedure is requested */
 		} else if (conn->llcp_phy.ack != conn->llcp_phy.req) {
@@ -8800,29 +8899,8 @@ static void event_connection_prepare(u32_t ticks_at_expire,
 			/* handle PHY Upd state machine */
 			event_phy_req_prep(conn);
 #endif /* CONFIG_BT_CTLR_PHY */
-
-#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
-			/* check if procedure is requested */
-		} else if (conn->llcp_length.ack != conn->llcp_length.req) {
-			/* Stop previous event, to avoid Radio DMA corrupting
-			 * the rx queue
-			 */
-			event_stop(0, 0, 0, (void *)STATE_ABORT);
-
-			/* handle DLU state machine */
-			if (event_len_prep(conn)) {
-				/* NOTE: rx pool could not be resized,
-				 * lets skip this event and try in the next
-				 * event.
-				 */
-				_radio.ticker_id_prepare = 0U;
-
-				goto event_connection_prepare_skip;
-			}
-#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 		}
 	}
-#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ || CONFIG_BT_CTLR_PHY */
 
 	/* check if procedure is requested */
 	if (conn->llcp_ack != conn->llcp_req) {
@@ -8847,14 +8925,6 @@ static void event_connection_prepare(u32_t ticks_at_expire,
 			event_enc_prep(conn);
 			break;
 #endif /* CONFIG_BT_CTLR_LE_ENC */
-
-		case LLCP_FEATURE_EXCHANGE:
-			event_fex_prep(conn);
-			break;
-
-		case LLCP_VERSION_EXCHANGE:
-			event_vex_prep(conn);
-			break;
 
 #if defined(CONFIG_BT_CTLR_LE_PING)
 		case LLCP_PING:
@@ -8916,7 +8986,6 @@ static void event_connection_prepare(u32_t ticks_at_expire,
 			}
 		}
 	}
-
 
 	/* Setup XTAL startup and radio active events */
 	event_common_prepare(ticks_at_expire, remainder,
@@ -9716,18 +9785,26 @@ static bool is_enc_req_pause_tx(struct connection *conn)
 
 	pdu_data_tx = (void *)conn->pkt_tx_head->pdu_data;
 	if ((pdu_data_tx->ll_id == PDU_DATA_LLID_CTRL) &&
-	    (pdu_data_tx->llctrl.opcode == PDU_DATA_LLCTRL_TYPE_ENC_REQ)) {
-		if ((conn->llcp_req != conn->llcp_ack) ||
+	    ((pdu_data_tx->llctrl.opcode ==
+	      PDU_DATA_LLCTRL_TYPE_ENC_REQ) ||
+	     (pdu_data_tx->llctrl.opcode ==
+	      PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_REQ))) {
+		if (((conn->llcp_req != conn->llcp_ack) &&
+		     (conn->llcp_type != LLCP_ENCRYPTION)) ||
+		    ((conn->llcp_req == conn->llcp_ack) &&
+		     ((conn->llcp_feature.ack != conn->llcp_feature.req) ||
+		      (conn->llcp_version.ack != conn->llcp_version.req) ||
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
-		    (conn->llcp_conn_param.ack != conn->llcp_conn_param.req) ||
+		      (conn->llcp_conn_param.ack !=
+		       conn->llcp_conn_param.req) ||
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
-		    (conn->llcp_length.ack != conn->llcp_length.req) ||
+		      (conn->llcp_length.ack != conn->llcp_length.req) ||
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 #if defined(CONFIG_BT_CTLR_PHY)
-		    (conn->llcp_phy.ack != conn->llcp_phy.req) ||
+		      (conn->llcp_phy.ack != conn->llcp_phy.req) ||
 #endif /* CONFIG_BT_CTLR_PHY */
-		    0) {
+		      0))) {
 			struct radio_pdu_node_tx *node_tx;
 
 			/* if we have control packets enqueued after this PDU
@@ -9757,10 +9834,14 @@ static bool is_enc_req_pause_tx(struct connection *conn)
 			return true;
 		}
 
-		conn->llcp.encryption.initiate = 1U;
+		if (conn->llcp_req == conn->llcp_ack) {
+			conn->llcp.encryption.initiate = 1U;
 
-		conn->llcp_type = LLCP_ENCRYPTION;
-		conn->llcp_ack--;
+			conn->llcp_type = LLCP_ENCRYPTION;
+			conn->llcp_ack--;
+		} else {
+			LL_ASSERT(conn->llcp_type == LLCP_ENCRYPTION);
+		}
 	}
 
 	/* Head contains a permitted data or control packet. */
@@ -9880,8 +9961,17 @@ static void prepare_pdu_data_tx(struct connection *conn,
 
 		if (!conn->pkt_tx_ctrl &&
 		    (conn->pkt_tx_head != conn->pkt_tx_data)) {
-			conn->pkt_tx_ctrl = conn->pkt_tx_ctrl_last =
-				conn->pkt_tx_head;
+			struct pdu_data *pdu_data_tx;
+
+			pdu_data_tx = (void *)conn->pkt_tx_head->pdu_data;
+			if ((pdu_data_tx->ll_id != PDU_DATA_LLID_CTRL) ||
+			    ((pdu_data_tx->llctrl.opcode !=
+			      PDU_DATA_LLCTRL_TYPE_ENC_REQ) &&
+			     (pdu_data_tx->llctrl.opcode !=
+			      PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_REQ))) {
+				conn->pkt_tx_ctrl = conn->pkt_tx_ctrl_last =
+					conn->pkt_tx_head;
+			}
 		}
 	}
 
@@ -9902,8 +9992,9 @@ static void ctrl_tx_last_enqueue(struct connection *conn,
 	conn->pkt_tx_ctrl_last = node_tx;
 }
 
-static void ctrl_tx_enqueue(struct connection *conn,
-			    struct radio_pdu_node_tx *node_tx)
+static inline void ctrl_tx_pause_enqueue(struct connection *conn,
+					 struct radio_pdu_node_tx *node_tx,
+					 bool pause)
 {
 	/* check if a packet was tx-ed and not acked by peer */
 	if (
@@ -9931,9 +10022,27 @@ static void ctrl_tx_enqueue(struct connection *conn,
 		if (!conn->pkt_tx_ctrl) {
 			node_tx->next = conn->pkt_tx_head->next;
 			conn->pkt_tx_head->next = node_tx;
-			conn->pkt_tx_ctrl = node_tx;
-			conn->pkt_tx_ctrl_last = node_tx;
+
+			/* If in Encryption Procedure, other control PDUs,
+			 * Feature Rsp and Version Ind, are placed before data
+			 * marker and after control last marker. Hence, if no
+			 * control marker i.e. this is the first control PDU and
+			 * to be paused, do not set the control marker. A valid
+			 * control PDU in Encryption Procedure that is not
+			 * implicitly paused, will set the control and control
+			 * last marker.
+			 */
+			if (!pause) {
+				conn->pkt_tx_ctrl = node_tx;
+				conn->pkt_tx_ctrl_last = node_tx;
+			}
 		} else {
+			/* ENC_REQ PDU is always allocated from data pool, hence
+			 * the head can not have the control marker, and pause
+			 * be true.
+			 */
+			LL_ASSERT(!pause);
+
 			ctrl_tx_last_enqueue(conn, node_tx);
 		}
 	} else {
@@ -9945,9 +10054,13 @@ static void ctrl_tx_enqueue(struct connection *conn,
 		if (!conn->pkt_tx_ctrl) {
 			node_tx->next = conn->pkt_tx_head;
 			conn->pkt_tx_head = node_tx;
-			conn->pkt_tx_ctrl = node_tx;
-			conn->pkt_tx_ctrl_last = node_tx;
+			if (!pause) {
+				conn->pkt_tx_ctrl = node_tx;
+				conn->pkt_tx_ctrl_last = node_tx;
+			}
 		} else {
+			LL_ASSERT(!pause);
+
 			ctrl_tx_last_enqueue(conn, node_tx);
 		}
 	}
@@ -9958,19 +10071,59 @@ static void ctrl_tx_enqueue(struct connection *conn,
 	}
 }
 
+static void ctrl_tx_enqueue(struct connection *conn,
+			    struct radio_pdu_node_tx *node_tx)
+{
+	ctrl_tx_pause_enqueue(conn, node_tx, false);
+}
+
 static void ctrl_tx_sec_enqueue(struct connection *conn,
 				  struct radio_pdu_node_tx *node_tx)
 {
 	if (conn->pause_tx) {
 		if (!conn->pkt_tx_ctrl) {
+			/* As data PDU tx is paused and no control PDU in queue,
+			 * its safe to add new control PDU at head.
+			 * Note, here the PDUs are stacked, not queued. Last In
+			 * First Out.
+			 */
 			node_tx->next = conn->pkt_tx_head;
 			conn->pkt_tx_head = node_tx;
 		} else {
+			/* As data PDU tx is paused and there are control PDUs
+			 * in the queue, add it after control PDUs last marker
+			 * and before the data start marker.
+			 * Note, here the PDUs are stacked, not queued. Last In
+			 * First Out.
+			 */
 			node_tx->next = conn->pkt_tx_ctrl_last->next;
 			conn->pkt_tx_ctrl_last->next = node_tx;
 		}
+
+		/* Update last pointer if ctrl added at end of tx list */
+		if (!node_tx->next) {
+			conn->pkt_tx_last = node_tx;
+		}
 	} else {
-		ctrl_tx_enqueue(conn, node_tx);
+		bool pause = false;
+
+		/* check if Encryption Request is at head, it may have been
+		 * transmitted and not ack-ed. Hence, enqueue this control PDU
+		 * after control last marker and before data marker.
+		 * This way it is paused until Encryption Setup completes.
+		 */
+		if (conn->pkt_tx_head) {
+			struct pdu_data *pdu_data_tx;
+
+			pdu_data_tx = (void *)conn->pkt_tx_head->pdu_data;
+			if ((pdu_data_tx->ll_id == PDU_DATA_LLID_CTRL) &&
+			    (pdu_data_tx->llctrl.opcode ==
+			     PDU_DATA_LLCTRL_TYPE_ENC_REQ)) {
+				pause = true;
+			}
+		}
+
+		ctrl_tx_pause_enqueue(conn, node_tx, pause);
 	}
 }
 
@@ -10186,7 +10339,7 @@ static u32_t conn_update_req(struct connection *conn)
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 	} else if (!conn->llcp_conn_param.disabled &&
 		   (!conn->common.fex_valid ||
-		    (conn->llcp_features &
+		    (conn->llcp_feature.features &
 		     BIT(BT_LE_FEAT_BIT_CONN_PARAM_REQ)))) {
 		/** Perform slave intiated conn param req */
 		conn->llcp_conn_param.status = 0U;
@@ -10511,7 +10664,7 @@ static u8_t feature_rsp_send(struct connection *conn,
 
 	/* AND the feature set to get Feature USED */
 	req = &pdu_data_rx->llctrl.feature_req;
-	conn->llcp_features &= feat_get(&req->features[0]);
+	conn->llcp_feature.features &= feat_get(&req->features[0]);
 
 	/* features exchanged */
 	conn->common.fex_valid = 1U;
@@ -10525,11 +10678,11 @@ static u8_t feature_rsp_send(struct connection *conn,
 	(void)memset(&pdu_ctrl_tx->llctrl.feature_rsp.features[0], 0x00,
 		     sizeof(pdu_ctrl_tx->llctrl.feature_rsp.features));
 	pdu_ctrl_tx->llctrl.feature_req.features[0] =
-		conn->llcp_features & 0xFF;
+		conn->llcp_feature.features & 0xFF;
 	pdu_ctrl_tx->llctrl.feature_req.features[1] =
-		(conn->llcp_features >> 8) & 0xFF;
+		(conn->llcp_feature.features >> 8) & 0xFF;
 	pdu_ctrl_tx->llctrl.feature_req.features[2] =
-		(conn->llcp_features >> 16) & 0xFF;
+		(conn->llcp_feature.features >> 16) & 0xFF;
 
 	ctrl_tx_sec_enqueue(conn, node_tx);
 
@@ -10568,7 +10721,10 @@ static u8_t version_ind_send(struct connection *conn,
 		empty_tx_enqueue(conn);
 
 	} else if (!conn->llcp_version.rx) {
+		LL_ASSERT(conn->llcp_version.ack != conn->llcp_version.req);
+
 		/* Procedure complete */
+		conn->llcp_version.ack = conn->llcp_version.req;
 		conn->procedure_expire = 0U;
 
 		/* enqueue the version ind */
@@ -11128,7 +11284,7 @@ u32_t radio_adv_enable(u16_t interval, u8_t chan_map, u8_t filter_policy,
 		}
 
 		conn->handle = 0xFFFF;
-		conn->llcp_features = LL_FEAT;
+		conn->llcp_feature.features = LL_FEAT;
 		conn->data_chan_sel = 0U;
 		conn->data_chan_use = 0U;
 		conn->event_counter = 0U;
@@ -11177,6 +11333,10 @@ u32_t radio_adv_enable(u16_t interval, u8_t chan_map, u8_t filter_policy,
 
 		conn->llcp_req = 0U;
 		conn->llcp_ack = 0U;
+		conn->llcp_feature.req = 0U;
+		conn->llcp_feature.ack = 0U;
+		conn->llcp_version.req = 0U;
+		conn->llcp_version.ack = 0U;
 		conn->llcp_version.tx = 0U;
 		conn->llcp_version.rx = 0U;
 		conn->llcp_terminate.req = 0U;
@@ -11202,6 +11362,7 @@ u32_t radio_adv_enable(u16_t interval, u8_t chan_map, u8_t filter_policy,
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 		conn->llcp_length.req = 0U;
 		conn->llcp_length.ack = 0U;
+		conn->llcp_length.cache.tx_octets = 0U;
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
 #if defined(CONFIG_BT_CTLR_PHY)
@@ -11648,7 +11809,7 @@ u32_t radio_connect_enable(u8_t adv_addr_type, u8_t *adv_addr, u16_t interval,
 		328 + RADIO_TIFS + 328);
 
 	conn->handle = 0xFFFF;
-	conn->llcp_features = LL_FEAT;
+	conn->llcp_feature.features = LL_FEAT;
 	access_addr = access_addr_get();
 	memcpy(&conn->access_addr[0], &access_addr, sizeof(conn->access_addr));
 	bt_rand(&conn->crc_init[0], 3);
@@ -11717,6 +11878,10 @@ u32_t radio_connect_enable(u8_t adv_addr_type, u8_t *adv_addr, u16_t interval,
 
 	conn->llcp_req = 0U;
 	conn->llcp_ack = 0U;
+	conn->llcp_feature.req = 0U;
+	conn->llcp_feature.ack = 0U;
+	conn->llcp_version.req = 0U;
+	conn->llcp_version.ack = 0U;
 	conn->llcp_version.tx = 0U;
 	conn->llcp_version.rx = 0U;
 	conn->llcp_terminate.req = 0U;
@@ -11742,6 +11907,7 @@ u32_t radio_connect_enable(u8_t adv_addr_type, u8_t *adv_addr, u16_t interval,
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	conn->llcp_length.req = 0U;
 	conn->llcp_length.ack = 0U;
+	conn->llcp_length.cache.tx_octets = 0U;
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
 #if defined(CONFIG_BT_CTLR_PHY)
@@ -11820,7 +11986,7 @@ u8_t ll_conn_update(u16_t handle, u8_t cmd, u8_t status, u16_t interval_min,
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 		if (!conn->llcp_conn_param.disabled &&
 		    (!conn->common.fex_valid ||
-		     (conn->llcp_features &
+		     (conn->llcp_feature.features &
 		      BIT(BT_LE_FEAT_BIT_CONN_PARAM_REQ)))) {
 			cmd++;
 		} else if (conn->role) {
@@ -11955,7 +12121,9 @@ u8_t ll_enc_req_send(u16_t handle, u8_t *rand, u8_t *ediv, u8_t *ltk)
 		return BT_HCI_ERR_UNKNOWN_CONN_ID;
 	}
 
-	if (conn->llcp_enc.req != conn->llcp_enc.ack) {
+	if ((conn->llcp_enc.req != conn->llcp_enc.ack) ||
+	    ((conn->llcp_req != conn->llcp_ack) &&
+	     (conn->llcp_type == LLCP_ENCRYPTION))) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
@@ -11967,7 +12135,7 @@ u8_t ll_enc_req_send(u16_t handle, u8_t *rand, u8_t *ediv, u8_t *ltk)
 
 		memcpy(&conn->llcp_enc.ltk[0], ltk, sizeof(conn->llcp_enc.ltk));
 
-		if ((conn->enc_rx == 0) && (conn->enc_tx == 0)) {
+		if (!conn->enc_rx && !conn->enc_tx) {
 			struct pdu_data_llctrl_enc_req *enc_req;
 
 			pdu_data_tx->ll_id = PDU_DATA_LLID_CTRL;
@@ -11983,7 +12151,7 @@ u8_t ll_enc_req_send(u16_t handle, u8_t *rand, u8_t *ediv, u8_t *ltk)
 			enc_req->ediv[1] = ediv[1];
 			bt_rand(enc_req->skdm, sizeof(enc_req->skdm));
 			bt_rand(enc_req->ivm, sizeof(enc_req->ivm));
-		} else if ((conn->enc_rx != 0) && (conn->enc_tx != 0)) {
+		} else if (conn->enc_rx && conn->enc_tx) {
 			memcpy(&conn->llcp_enc.rand[0], rand,
 			       sizeof(conn->llcp_enc.rand));
 
@@ -12074,12 +12242,11 @@ u8_t ll_feature_req_send(u16_t handle)
 		return BT_HCI_ERR_UNKNOWN_CONN_ID;
 	}
 
-	if (conn->llcp_req != conn->llcp_ack) {
+	if (conn->llcp_feature.req != conn->llcp_feature.ack) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
-	conn->llcp_type = LLCP_FEATURE_EXCHANGE;
-	conn->llcp_req++;
+	conn->llcp_feature.req++;
 
 	return 0;
 }
@@ -12093,12 +12260,11 @@ u8_t ll_version_ind_send(u16_t handle)
 		return BT_HCI_ERR_UNKNOWN_CONN_ID;
 	}
 
-	if (conn->llcp_req != conn->llcp_ack) {
+	if (conn->llcp_version.req != conn->llcp_version.ack) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
-	conn->llcp_type = LLCP_VERSION_EXCHANGE;
-	conn->llcp_req++;
+	conn->llcp_version.req++;
 
 	return 0;
 }
@@ -12199,9 +12365,23 @@ u32_t ll_length_req_send(u16_t handle, u16_t tx_octets, u16_t tx_time)
 		return BT_HCI_ERR_UNKNOWN_CONN_ID;
 	}
 
-	if ((conn->llcp_req != conn->llcp_ack) ||
-	    (conn->llcp_length.req != conn->llcp_length.ack)) {
-		return BT_HCI_ERR_CMD_DISALLOWED;
+	if (conn->llcp_length.req != conn->llcp_length.ack) {
+		switch (conn->llcp_length.state) {
+		case LLCP_LENGTH_STATE_RSP_ACK_WAIT:
+		case LLCP_LENGTH_STATE_RESIZE_RSP:
+		case LLCP_LENGTH_STATE_RESIZE_RSP_ACK_WAIT:
+			/* cached until peer procedure completes */
+			if (!conn->llcp_length.cache.tx_octets) {
+				conn->llcp_length.cache.tx_octets = tx_octets;
+#if defined(CONFIG_BT_CTLR_PHY)
+				conn->llcp_length.cache.tx_time = tx_time;
+#endif /* CONFIG_BT_CTLR_PHY */
+				return 0;
+			}
+			/* pass through */
+		default:
+			return BT_HCI_ERR_CMD_DISALLOWED;
+		}
 	}
 
 	/* TODO: parameter check tx_octets and tx_time */
@@ -12280,8 +12460,7 @@ u8_t ll_phy_req_send(u16_t handle, u8_t tx, u8_t flags, u8_t rx)
 		return BT_HCI_ERR_UNKNOWN_CONN_ID;
 	}
 
-	if ((conn->llcp_req != conn->llcp_ack) ||
-	    (conn->llcp_phy.req != conn->llcp_phy.ack)) {
+	if (conn->llcp_phy.req != conn->llcp_phy.ack) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
