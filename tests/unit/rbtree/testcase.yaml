@@ -1,0 +1,4 @@
+tests:
+  libraries.data_structures.rbtree:
+    tags: rbtree
+    type: unit
