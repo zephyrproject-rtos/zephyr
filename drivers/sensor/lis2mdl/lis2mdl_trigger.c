@@ -1,9 +1,11 @@
-/*
- * Copyright (c) 2018 STMicroelectronics
+/* ST Microelectronics LIS2MDL 3-axis magnetometer sensor
  *
- * LIS2MDL mag interrupt configuration and management
+ * Copyright (c) 2018-2019 STMicroelectronics
  *
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * Datasheet:
+ * https://www.st.com/resource/en/datasheet/lis2mdl.pdf
  */
 
 #include <kernel.h>
@@ -21,10 +23,7 @@ static int lis2mdl_enable_int(struct device *dev, int enable)
 	struct lis2mdl_data *lis2mdl = dev->driver_data;
 
 	/* set interrupt on mag */
-	return i2c_reg_update_byte(lis2mdl->i2c, lis2mdl->i2c_addr,
-				   LIS2MDL_CFG_REG_C,
-				   LIS2MDL_INT_MAG_MASK,
-				   enable ? LIS2MDL_INT_MAG : 0);
+	return lis2mdl_drdy_on_pin_set(lis2mdl->ctx, enable);
 }
 
 /* link external trigger to event data ready */
@@ -33,18 +32,14 @@ int lis2mdl_trigger_set(struct device *dev,
 			  sensor_trigger_handler_t handler)
 {
 	struct lis2mdl_data *lis2mdl = dev->driver_data;
-	u8_t raw[LIS2MDL_OUT_REG_SIZE];
+	axis3bit16_t raw;
 
 	if (trig->chan == SENSOR_CHAN_MAGN_XYZ) {
 		lis2mdl->handler_drdy = handler;
 		if (handler) {
 			/* fetch raw data sample: re-trigger lost interrupt */
-			if (i2c_burst_read(lis2mdl->i2c, lis2mdl->i2c_addr,
-					   LIS2MDL_OUT_REG, raw,
-					   sizeof(raw)) < 0) {
-				LOG_ERR("Failed to fetch raw data sample.");
-				return -EIO;
-			}
+			lis2mdl_magnetic_raw_get(lis2mdl->ctx, raw.u8bit);
+
 			return lis2mdl_enable_int(dev, 1);
 		} else {
 			return lis2mdl_enable_int(dev, 0);
@@ -59,7 +54,7 @@ static void lis2mdl_handle_interrupt(void *arg)
 {
 	struct device *dev = arg;
 	struct lis2mdl_data *lis2mdl = dev->driver_data;
-	const struct lis2mdl_device_config *const config =
+	const struct lis2mdl_config *const config =
 						dev->config->config_info;
 	struct sensor_trigger drdy_trigger = {
 		.type = SENSOR_TRIG_DATA_READY,
@@ -77,8 +72,7 @@ static void lis2mdl_gpio_callback(struct device *dev,
 {
 	struct lis2mdl_data *lis2mdl =
 		CONTAINER_OF(cb, struct lis2mdl_data, gpio_cb);
-	const struct lis2mdl_device_config *const config =
-						dev->config->config_info;
+	const struct lis2mdl_config *const config = dev->config->config_info;
 
 	ARG_UNUSED(pins);
 
@@ -119,8 +113,7 @@ static void lis2mdl_work_cb(struct k_work *work)
 int lis2mdl_init_interrupt(struct device *dev)
 {
 	struct lis2mdl_data *lis2mdl = dev->driver_data;
-	const struct lis2mdl_device_config *const config =
-						dev->config->config_info;
+	const struct lis2mdl_config *const config = dev->config->config_info;
 
 	/* setup data ready gpio interrupt */
 	lis2mdl->gpio = device_get_binding(config->gpio_name);
