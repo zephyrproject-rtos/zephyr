@@ -26,17 +26,17 @@ static bool in_bounds(struct z_heap *h, chunkid_t c)
 {
 	return (c >= h->chunk0)
 		&& (c <= max_chunkid(h))
-		&& (size(h, c) < h->len);
+		&& (chunk_size(h, c) < h->len);
 }
 
 static bool valid_chunk(struct z_heap *h, chunkid_t c)
 {
-	return (size(h, c) > 0
-		&& (c + size(h, c) <= h->len)
+	return (chunk_size(h, c) > 0
+		&& (c + chunk_size(h, c) <= h->len)
 		&& in_bounds(h, c)
-		&& ((c == h->chunk0) || in_bounds(h, c - left_size(h, c)))
-		&& (used(h, c) || in_bounds(h, free_prev(h, c)))
-		&& (used(h, c) || in_bounds(h, free_next(h, c))));
+		&& ((c == h->chunk0) || in_bounds(h, left_chunk(h, c)))
+		&& (chunk_used(h, c) || in_bounds(h, prev_free_chunk(h, c)))
+		&& (chunk_used(h, c) || in_bounds(h, next_free_chunk(h, c))));
 }
 
 /* Validate multiple state dimensions for the bucket "next" pointer
@@ -60,11 +60,11 @@ static inline void check_nexts(struct z_heap *h, int bidx)
 	}
 
 	if (b->list_size == 2) {
-		CHECK(free_next(h, b->next) == free_prev(h, b->next));
-		CHECK(free_next(h, b->next) != b->next);
+		CHECK(next_free_chunk(h, b->next) == prev_free_chunk(h, b->next));
+		CHECK(next_free_chunk(h, b->next) != b->next);
 	} else if (b->list_size == 1) {
-		CHECK(free_next(h, b->next) == free_prev(h, b->next));
-		CHECK(free_next(h, b->next) == b->next);
+		CHECK(next_free_chunk(h, b->next) == prev_free_chunk(h, b->next));
+		CHECK(next_free_chunk(h, b->next) == b->next);
 	}
 }
 
@@ -84,7 +84,7 @@ bool sys_heap_validate(struct sys_heap *heap)
 		check_nexts(h, b);
 
 		for (c = c0; c != 0 && (n == 0 || c != c0);
-		    n++, c = free_next(h, c)) {
+		     n++, c = next_free_chunk(h, c)) {
 			if (!valid_chunk(h, c)) {
 				return false;
 			}
@@ -112,22 +112,22 @@ bool sys_heap_validate(struct sys_heap *heap)
 	 * blocks were found during enumeration).  Mark all blocks
 	 * UNUSED
 	 */
-	size_t prev_size = 0;
+	chunkid_t prev_chunk = 0;
 
 	for (c = h->chunk0; c <= max_chunkid(h); c = right_chunk(h, c)) {
 		if (!valid_chunk(h, c)) {
 			return false;
 		}
-		if (!used(h, c)) {
+		if (!chunk_used(h, c)) {
 			return false;
 		}
 
 		if (c != h->chunk0) {
-			if (left_size(h, c) != prev_size) {
+			if (left_chunk(h, c) != prev_chunk) {
 				return false;
 			}
 		}
-		prev_size = size(h, c);
+		prev_chunk = c;
 
 		chunk_set_used(h, c, false);
 	}
@@ -147,8 +147,8 @@ bool sys_heap_validate(struct sys_heap *heap)
 			continue;
 		}
 
-		for (c = c0; n == 0 || c != c0; n++, c = free_next(h, c)) {
-			if (used(h, c)) {
+		for (c = c0; n == 0 || c != c0; n++, c = next_free_chunk(h, c)) {
+			if (chunk_used(h, c)) {
 				return false;
 			}
 			chunk_set_used(h, c, true);
@@ -159,7 +159,7 @@ bool sys_heap_validate(struct sys_heap *heap)
 	 * fields.  One more linear pass to fix them up
 	 */
 	for (c = h->chunk0; c <= max_chunkid(h); c = right_chunk(h, c)) {
-		chunk_set_used(h, c, !used(h, c));
+		chunk_set_used(h, c, !chunk_used(h, c));
 	}
 	return true;
 }
