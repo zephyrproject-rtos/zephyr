@@ -217,6 +217,7 @@ arch/arm/include/cortex_m/cmse.h          @ioannisg
 /lib/gui/                                 @vanwinkeljan
 /lib/os/                                  @andrewboie @andyross
 /lib/posix/                               @pfalcon
+/lib/libc/                                @nashif @andrewboie
 /kernel/device.c                          @andrewboie @andyross @nashif
 /kernel/idle.c                            @andrewboie @andyross @nashif
 /samples/basic/servo_motor/*microbit*     @jhe
@@ -277,6 +278,7 @@ arch/arm/include/cortex_m/cmse.h          @ioannisg
 /subsys/storage/                          @nvlsianpu
 /subsys/testsuite/                        @nashif
 /subsys/usb/                              @jfischer-phytec-iot @finikorg
+/tests/application_development/libcxx/    @pabigot
 /tests/boards/native_posix/               @aescolar
 /tests/boards/intel_s1000_crb/            @rgundi @dcpleung @sathishkuttan
 /tests/bluetooth/                         @sjanc @jhedberg @Vudentz

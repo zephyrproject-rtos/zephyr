@@ -15,6 +15,10 @@
 
 #include <app_memory/app_memdomain.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct unit_test {
 	const char *name;
 	void (*test)(void);
@@ -169,5 +173,9 @@ extern struct k_mem_domain ztest_mem_domain;
 /**
  * @}
  */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __ZTEST_ASSERT_H__ */
