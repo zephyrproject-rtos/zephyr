@@ -146,6 +146,66 @@ static int lvgl_allocate_rendering_buffers(lv_disp_drv_t *disp_drv)
 }
 #endif /* CONFIG_LVGL_BUFFER_ALLOC_STATIC */
 
+/*
+ * Temporary solution till the new sensor IO api merged
+ */
+#ifdef CONFIG_BOARD_NATIVE_POSIX
+#include <SDL.h>
+
+static struct {
+	bool press;
+	int x;
+	int y;
+} s_point_data;
+
+static int sdl_filter(void *arg, SDL_Event *event)
+{
+	switch (event->type) {
+	case SDL_MOUSEBUTTONDOWN: {
+		s_point_data.press = true;
+		s_point_data.x = event->button.x;
+		s_point_data.y = event->button.y;
+	} break;
+
+	case SDL_MOUSEBUTTONUP: {
+		s_point_data.press = false;
+		s_point_data.x = event->button.x;
+		s_point_data.y = event->button.y;
+	} break;
+	case SDL_MOUSEMOTION: {
+		if (!event->motion.state)
+			break;
+		s_point_data.x = event->button.x;
+		s_point_data.y = event->button.y;
+	} break;
+	default:
+		break;
+	}
+	return 1;
+}
+
+static bool pointer_read(struct _lv_indev_drv_t *drv, lv_indev_data_t *data)
+{
+	data->point.x = s_point_data.x;
+	data->point.y = s_point_data.y;
+	data->state = s_point_data.press ?
+			LV_INDEV_STATE_PR : LV_INDEV_STATE_REL;
+	return false;
+}
+
+static int lv_input_init(void)
+{
+	lv_indev_drv_t indev_drv;
+
+	lv_indev_drv_init(&indev_drv);
+	indev_drv.type = LV_INDEV_TYPE_POINTER;
+	indev_drv.read_cb = pointer_read;
+	lv_indev_drv_register(&indev_drv);
+	SDL_SetEventFilter(sdl_filter, NULL);
+	return 0;
+}
+#endif
+
 static int lvgl_init(struct device *dev)
 {
 	ARG_UNUSED(dev);
@@ -183,6 +243,9 @@ static int lvgl_init(struct device *dev)
 		LOG_ERR("Failed to register display device.");
 		return -EPERM;
 	}
+#ifdef CONFIG_BOARD_NATIVE_POSIX
+	lv_input_init();
+#endif
 
 	return 0;
 }
