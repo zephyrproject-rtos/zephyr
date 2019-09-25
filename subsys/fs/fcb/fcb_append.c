@@ -61,9 +61,9 @@ fcb_append(struct fcb *fcb, u16_t len, struct fcb_entry *append_loc)
 {
 	struct flash_sector *sector;
 	struct fcb_entry *active;
-	u8_t tmp_str[2];
 	int cnt;
 	int rc;
+	u8_t tmp_str[8];
 
 	cnt = fcb_put_len(tmp_str, len);
 	if (cnt < 0) {
@@ -71,6 +71,8 @@ fcb_append(struct fcb *fcb, u16_t len, struct fcb_entry *append_loc)
 	}
 	cnt = fcb_len_in_flash(fcb, cnt);
 	len = fcb_len_in_flash(fcb, len) + fcb_len_in_flash(fcb, FCB_CRC_SZ);
+
+	__ASSERT_NO_MSG(cnt <= sizeof(tmp_str));
 
 	rc = k_mutex_lock(&fcb->f_mtx, K_FOREVER);
 	if (rc) {
