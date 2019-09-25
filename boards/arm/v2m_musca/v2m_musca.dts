@@ -30,15 +30,15 @@
 		compatible = "gpio-leds";
 		red_led: led_0 {
 			gpios = <&gpio 2 0>;
-			label = "User LD1";
+			label = "User LED1";
 		};
 		green_led: led_1 {
 			gpios = <&gpio 3 0>;
-			label = "User LD2";
+			label = "User LED2";
 		};
 		blue_led: led_2 {
 			gpios = <&gpio 4 0>;
-			label = "User LD3";
+			label = "User LED3";
 		};
 	};
 	cpus {
