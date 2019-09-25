@@ -1,11 +1,13 @@
-# Copyright (c) 2018 STMicroelectronics
+# Copyright (c) 2018-2019 STMicroelectronics
 #
 # SPDX-License-Identifier: Apache-2.0
 #
 
 menuconfig LIS2MDL
 	bool "LIS2MDL Magnetometer"
-	depends on (I2C && HAS_DTS_I2C)
+	depends on (I2C && HAS_DTS_I2C) || SPI
+	select HAS_STMEMSC
+	select USE_STDC_LIS2MDL
 	help
 	  Enable driver for LIS2MDL I2C-based magnetometer sensor.
 
