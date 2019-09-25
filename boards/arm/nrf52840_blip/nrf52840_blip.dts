@@ -85,12 +85,14 @@
 };
 
 &i2c0 {
+	compatible = "nordic,nrf-twi";
 	status = "okay";
 	sda-pin = <12>;
 	scl-pin = <11>;
 };
 
 &i2c1 {
+	compatible = "nordic,nrf-twi";
 	/* Cannot be used together with spi1. */
 	/* status = "okay"; */
 	sda-pin = <2>;

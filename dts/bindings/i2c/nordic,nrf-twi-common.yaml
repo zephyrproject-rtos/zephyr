@@ -2,12 +2,7 @@
 # Copyright (c) 2018 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-title: Nordic nRF Family I2C Master node
-
-description: >
-    This is a representation of the Nordic nRF I2C node
-
-compatible: "nordic,nrf-i2c"
+# Common fields for Nordic nRF family TWI peripherals
 
 include: i2c-controller.yaml
 
@@ -20,10 +15,10 @@ properties:
 
     sda-pin:
       type: int
-      description: SDA pin
       required: true
+      description: SDA pin
 
     scl-pin:
       type: int
-      description: SCL pin
       required: true
+      description: SCL pin

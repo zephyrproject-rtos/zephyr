@@ -135,7 +135,13 @@
 		};
 
 		i2c0: i2c@40003000 {
-			compatible = "nordic,nrf-i2c";
+			/*
+			 * This i2c node can be TWI, TWIM, or TWIS,
+			 * for the user to pick:
+			 * compatible = "nordic,nrf-twi" or
+			 *              "nordic,nrf-twim" or
+			 *              "nordic,nrf-twis".
+			 */
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40003000 0x1000>;
@@ -146,7 +152,13 @@
 		};
 
 		i2c1: i2c@40004000 {
-			compatible = "nordic,nrf-i2c";
+			/*
+			 * This i2c node can be TWI, TWIM, or TWIS,
+			 * for the user to pick:
+			 * compatible = "nordic,nrf-twi" or
+			 *              "nordic,nrf-twim" or
+			 *              "nordic,nrf-twis".
+			 */
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40004000 0x1000>;
