@@ -128,6 +128,7 @@ arduino_i2c: &i2c0 {
 };
 
 arduino_spi: &spi1 {
+	compatible = "nordic,nrf-spi";
 	status = "okay";
 	sck-pin = <47>;
 	miso-pin = <46>;

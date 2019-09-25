@@ -116,6 +116,7 @@
 };
 
 &spi3 {
+	compatible = "nordic,nrf-spim";
 	status = "okay";
 	sck-pin = <19>;
 	mosi-pin = <18>;

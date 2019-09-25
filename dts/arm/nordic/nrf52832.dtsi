@@ -175,7 +175,13 @@
 		};
 
 		spi0: spi@40003000 {
-			compatible = "nordic,nrf-spi";
+			/*
+			 * This spi node can be SPI, SPIM, or SPIS,
+			 * for the user to pick:
+			 * compatible = "nordic,nrf-spi" or
+			 *              "nordic,nrf-spim" or
+			 *              "nordic,nrf-spis".
+			 */
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40003000 0x1000>;
@@ -185,7 +191,13 @@
 		};
 
 		spi1: spi@40004000 {
-			compatible = "nordic,nrf-spi";
+			/*
+			 * This spi node can be SPI, SPIM, or SPIS,
+			 * for the user to pick:
+			 * compatible = "nordic,nrf-spi" or
+			 *              "nordic,nrf-spim" or
+			 *              "nordic,nrf-spis".
+			 */
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40004000 0x1000>;
@@ -195,7 +207,13 @@
 		};
 
 		spi2: spi@40023000 {
-			compatible = "nordic,nrf-spi";
+			/*
+			 * This spi node can be SPI, SPIM, or SPIS,
+			 * for the user to pick:
+			 * compatible = "nordic,nrf-spi" or
+			 *              "nordic,nrf-spim" or
+			 *              "nordic,nrf-spis".
+			 */
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40023000 0x1000>;
