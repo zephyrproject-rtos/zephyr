@@ -66,3 +66,8 @@ config SOC_MEC1501_EXT_32K_PARALLEL_CRYSTAL
 
 	  Say n if the crystal is connected single ended to
 	  the XTAL2 pin or a 32KHz square wave is on XTAL2.
+
+config SOC_MEC1501_VTR3_1_8V
+	bool "VTR3 power rail is tied to 1.8V"
+	help
+	  Set this is if VTR3 power sourcejumper in the board is changed.
