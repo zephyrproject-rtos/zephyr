@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
 #include <sys/util.h>
 
 u8_t u8_to_dec(char *buf, u8_t buflen, u8_t value)
