@@ -221,7 +221,6 @@ void sys_heap_init(struct sys_heap *heap, void *mem, size_t bytes)
 	h->buf = (uint64_t *)addr;
 	h->buckets = (void *)(addr + CHUNK_UNIT * hdr_chunks);
 	h->len = buf_sz;
-	h->size_mask = (1 << (big_heap(h) ? 31 : 15)) - 1;
 	h->avail_buckets = 0;
 
 	size_t buckets_bytes = ((bucket_idx(h, buf_sz) + 1)

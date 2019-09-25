@@ -34,7 +34,7 @@
  *
  * The fields are:
  *   SIZE_AND_USED: the total size (including header) of the chunk in
- *                  8-byte units.  The top bit stores a "used" flag.
+ *                  8-byte units.  The bottom bit stores a "used" flag.
  *   LEFT_SIZE: The size of the left (next lower chunk in memory)
  *              neighbor chunk.
  *   FREE_PREV: Chunk ID of the previous node in a free list.
@@ -55,7 +55,6 @@ struct z_heap {
 	uint64_t *buf;
 	struct z_heap_bucket *buckets;
 	uint32_t len;
-	uint32_t size_mask;
 	uint32_t chunk0;
 	uint32_t avail_buckets;
 };
@@ -86,38 +85,55 @@ static inline void chunk_set(struct z_heap *h, chunkid_t c,
 			     enum chunk_fields f, chunkid_t val)
 {
 	CHECK(c >= h->chunk0 && c < h->len);
-	CHECK((val & ~((h->size_mask << 1) + 1)) == 0);
-	CHECK((val & h->size_mask) < h->len);
 
 	void *cmem = &h->buf[c];
 
 	if (big_heap(h)) {
-		((uint32_t *)cmem)[f] = (uint32_t) val;
+		CHECK(val == (uint32_t)val);
+		((uint32_t *)cmem)[f] = val;
 	} else {
-		((uint16_t *)cmem)[f] = (uint16_t) val;
+		CHECK(val == (uint16_t)val);
+		((uint16_t *)cmem)[f] = val;
 	}
 }
 
 static inline bool chunk_used(struct z_heap *h, chunkid_t c)
 {
-	return (chunk_field(h, c, SIZE_AND_USED) & ~h->size_mask) != 0;
+	return chunk_field(h, c, SIZE_AND_USED) & 1;
 }
 
-static ALWAYS_INLINE size_t chunk_size(struct z_heap *h, chunkid_t c)
+static inline size_t chunk_size(struct z_heap *h, chunkid_t c)
 {
-	return chunk_field(h, c, SIZE_AND_USED) & h->size_mask;
+	return chunk_field(h, c, SIZE_AND_USED) >> 1;
 }
 
 static inline void set_chunk_used(struct z_heap *h, chunkid_t c, bool used)
 {
-	chunk_set(h, c, SIZE_AND_USED,
-		  chunk_size(h, c) | (used ? (h->size_mask + 1) : 0));
+	void *cmem = &h->buf[c];
+
+	if (big_heap(h)) {
+		if (used) {
+			((uint32_t *)cmem)[SIZE_AND_USED] |= 1;
+		} else {
+			((uint32_t *)cmem)[SIZE_AND_USED] &= ~1;
+		}
+	} else {
+		if (used) {
+			((uint16_t *)cmem)[SIZE_AND_USED] |= 1;
+		} else {
+			((uint16_t *)cmem)[SIZE_AND_USED] &= ~1;
+		}
+	}
 }
 
+/*
+ * Note: no need to preserve the used bit here as the chunk is never in use
+ * when its size is modified, and potential set_chunk_used() is always
+ * invoked after set_chunk_size().
+ */
 static inline void set_chunk_size(struct z_heap *h, chunkid_t c, size_t size)
 {
-	chunk_set(h, c, SIZE_AND_USED,
-		  size | (chunk_used(h, c) ? (h->size_mask + 1) : 0));
+	chunk_set(h, c, SIZE_AND_USED, size << 1);
 }
 
 static inline chunkid_t prev_free_chunk(struct z_heap *h, chunkid_t c)
