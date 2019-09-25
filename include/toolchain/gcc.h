@@ -174,7 +174,9 @@ do {                                                                    \
 #define __printf_like(f, a)   __attribute__((format (printf, f, a)))
 #endif
 #define __used		__attribute__((__used__))
+#ifndef __deprecated
 #define __deprecated	__attribute__((deprecated))
+#endif
 #define ARG_UNUSED(x) (void)(x)
 
 #define likely(x)   __builtin_expect((bool)!!(x), true)
