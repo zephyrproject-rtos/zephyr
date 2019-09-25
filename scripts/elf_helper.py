@@ -326,9 +326,23 @@ def analyze_die_array(die):
         elements.append(ub.value + 1)
 
     if not elements:
+        if type_offset in type_env.keys():
+            mt = type_env[type_offset]
+            if mt.has_kobject():
+                if isinstance(mt, KobjectType) and mt.name == STACK_TYPE:
+                    elements.append(1)
+                    type_env[die.offset] = ArrayType(die.offset, elements, type_offset)
+    else:
+        type_env[die.offset] = ArrayType(die.offset, elements, type_offset)
+
+
+def analyze_typedef(die):
+    type_offset = die_get_type_offset(die)
+
+    if type_offset not in type_env.keys():
         return
 
-    type_env[die.offset] = ArrayType(die.offset, elements, type_offset)
+    type_env[die.offset] = type_env[type_offset]
 
 
 def addr_deref(elf, addr):
@@ -399,6 +413,8 @@ class ElfHelper:
                     analyze_die_const(die)
                 elif die.tag == "DW_TAG_array_type":
                     analyze_die_array(die)
+                elif die.tag == "DW_TAG_typedef":
+                    analyze_typedef(die)
                 elif die.tag == "DW_TAG_variable":
                     variables.append(die)
 
