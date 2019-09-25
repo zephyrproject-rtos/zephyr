@@ -19,7 +19,7 @@
 
 static size_t max_chunkid(struct z_heap *h)
 {
-	return h->len - bytes_to_chunksz(h, 1);
+	return h->len - min_chunk_size(h);
 }
 
 static bool in_bounds(struct z_heap *h, chunkid_t c)
