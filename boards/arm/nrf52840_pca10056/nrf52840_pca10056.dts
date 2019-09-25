@@ -158,6 +158,7 @@ arduino_i2c: &i2c0 {
 };
 
 &spi0 {
+	compatible = "nordic,nrf-spi";
 	/* Cannot be used together with i2c0. */
 	/* status = "okay"; */
 	sck-pin = <27>;
@@ -166,6 +167,7 @@ arduino_i2c: &i2c0 {
 };
 
 &spi1 {
+	compatible = "nordic,nrf-spi";
 	status = "okay";
 	sck-pin = <31>;
 	mosi-pin = <30>;
@@ -173,6 +175,7 @@ arduino_i2c: &i2c0 {
 };
 
 &spi2 {
+	compatible = "nordic,nrf-spi";
 	status = "okay";
 	sck-pin = <19>;
 	mosi-pin = <20>;
