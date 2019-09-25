@@ -13,6 +13,9 @@ if HAS_STMEMSC
 config USE_STDC_A3G4250D
 	bool
 
+config USE_STDC_AIS2DW12
+	bool
+
 config USE_STDC_AIS328DQ
 	bool
 
@@ -43,13 +46,22 @@ config USE_STDC_IIS328DQ
 config USE_STDC_IIS3DHHC
 	bool
 
+config USE_STDC_IIS3DWB
+	bool
+
 config USE_STDC_ISM303DAC
+	bool
+
+config USE_STDC_ISM330DHCX
 	bool
 
 config USE_STDC_ISM330DLC
 	bool
 
 config USE_STDC_L20G20IS
+	bool
+
+config USE_STDC_L3GD20H
 	bool
 
 config USE_STDC_LIS2DE12
@@ -59,6 +71,9 @@ config USE_STDC_LIS2DH12
 	bool
 
 config USE_STDC_LIS2DS12
+	bool
+
+config USE_STDC_LIS2DTW12
 	bool
 
 config USE_STDC_LIS2DW12
@@ -94,7 +109,13 @@ config USE_STDC_LPS22HH
 config USE_STDC_LPS25HB
 	bool
 
+config USE_STDC_LPS27HHW
+	bool
+
 config USE_STDC_LPS33HW
+	bool
+
+config USE_STDC_LPS33W
 	bool
 
 config USE_STDC_LSM303AGR
@@ -104,6 +125,9 @@ config USE_STDC_LSM303AH
 	bool
 
 config USE_STDC_LSM6DS3
+	bool
+
+config USE_STDC_LSM6DS3TR
 	bool
 
 config USE_STDC_LSM6DSL
@@ -116,6 +140,9 @@ config USE_STDC_LSM6DSO
 	bool
 
 config USE_STDC_LSM6DSOX
+	bool
+
+config USE_STDC_LSM6DSR
 	bool
 
 config USE_STDC_LSM9DS1

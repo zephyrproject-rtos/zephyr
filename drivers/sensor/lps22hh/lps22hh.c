@@ -31,8 +31,8 @@ static int lps22hh_sample_fetch(struct device *dev,
 				enum sensor_channel chan)
 {
 	struct lps22hh_data *data = dev->driver_data;
-	axis1bit32_t raw_press;
-	axis1bit16_t raw_temp;
+	union axis1bit32_t raw_press;
+	union axis1bit16_t raw_temp;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 

@@ -98,8 +98,8 @@ int lsm6dso_spi_init(struct device *dev)
 {
 	struct lsm6dso_data *data = dev->driver_data;
 
-	data->ctx_spi.read_reg = (lsm6dso_read_ptr) lsm6dso_spi_read,
-	data->ctx_spi.write_reg = (lsm6dso_write_ptr) lsm6dso_spi_write,
+	data->ctx_spi.read_reg = (stmdev_read_ptr) lsm6dso_spi_read,
+	data->ctx_spi.write_reg = (stmdev_write_ptr) lsm6dso_spi_write,
 
 	data->ctx = &data->ctx_spi;
 	data->ctx->handle = dev;

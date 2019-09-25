@@ -31,7 +31,7 @@ static int stts751_sample_fetch(struct device *dev,
 				enum sensor_channel chan)
 {
 	struct stts751_data *data = dev->driver_data;
-	axis1bit16_t raw_temp;
+	union axis1bit16_t raw_temp;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 

@@ -99,8 +99,8 @@ int lps22hh_spi_init(struct device *dev)
 {
 	struct lps22hh_data *data = dev->driver_data;
 
-	data->ctx_spi.read_reg = (lps22hh_read_ptr) lps22hh_spi_read;
-	data->ctx_spi.write_reg = (lps22hh_write_ptr) lps22hh_spi_write;
+	data->ctx_spi.read_reg = (stmdev_read_ptr) lps22hh_spi_read;
+	data->ctx_spi.write_reg = (stmdev_write_ptr) lps22hh_spi_write;
 
 	data->ctx = &data->ctx_spi;
 	data->ctx->handle = dev;

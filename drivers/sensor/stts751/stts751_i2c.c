@@ -42,8 +42,8 @@ int stts751_i2c_init(struct device *dev)
 {
 	struct stts751_data *data = dev->driver_data;
 
-	data->ctx_i2c.read_reg = (stts751_read_ptr) stts751_i2c_read;
-	data->ctx_i2c.write_reg = (stts751_write_ptr) stts751_i2c_write;
+	data->ctx_i2c.read_reg = (stmdev_read_ptr) stts751_i2c_read;
+	data->ctx_i2c.write_reg = (stmdev_write_ptr) stts751_i2c_write;
 
 	data->ctx = &data->ctx_i2c;
 	data->ctx->handle = dev;

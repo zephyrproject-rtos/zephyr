@@ -30,7 +30,7 @@ int lis2mdl_trigger_set(struct device *dev,
 			  sensor_trigger_handler_t handler)
 {
 	struct lis2mdl_data *lis2mdl = dev->driver_data;
-	axis3bit16_t raw;
+	union axis3bit16_t raw;
 
 	if (trig->chan == SENSOR_CHAN_MAGN_XYZ) {
 		lis2mdl->handler_drdy = handler;

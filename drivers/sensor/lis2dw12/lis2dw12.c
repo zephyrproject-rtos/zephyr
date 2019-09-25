@@ -178,7 +178,7 @@ static int lis2dw12_sample_fetch(struct device *dev, enum sensor_channel chan)
 	struct lis2dw12_data *lis2dw12 = dev->driver_data;
 	const struct lis2dw12_device_config *cfg = dev->config->config_info;
 	u8_t shift;
-	axis3bit16_t buf;
+	union axis3bit16_t buf;
 
 	/* fetch raw data sample */
 	if (lis2dw12_acceleration_raw_get(lis2dw12->ctx, buf.u8bit) < 0) {

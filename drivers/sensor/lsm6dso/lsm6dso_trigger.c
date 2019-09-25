@@ -28,7 +28,7 @@ static int lsm6dso_enable_t_int(struct device *dev, int enable)
 	lsm6dso_pin_int2_route_t int2_route;
 
 	if (enable) {
-		axis1bit16_t buf;
+		union axis1bit16_t buf;
 
 		/* dummy read: re-trigger interrupt */
 		lsm6dso_temperature_raw_get(lsm6dso->ctx, buf.u8bit);
@@ -55,7 +55,7 @@ static int lsm6dso_enable_xl_int(struct device *dev, int enable)
 	struct lsm6dso_data *lsm6dso = dev->driver_data;
 
 	if (enable) {
-		axis3bit16_t buf;
+		union axis3bit16_t buf;
 
 		/* dummy read: re-trigger interrupt */
 		lsm6dso_acceleration_raw_get(lsm6dso->ctx, buf.u8bit);
@@ -91,7 +91,7 @@ static int lsm6dso_enable_g_int(struct device *dev, int enable)
 	struct lsm6dso_data *lsm6dso = dev->driver_data;
 
 	if (enable) {
-		axis3bit16_t buf;
+		union axis3bit16_t buf;
 
 		/* dummy read: re-trigger interrupt */
 		lsm6dso_angular_rate_raw_get(lsm6dso->ctx, buf.u8bit);
