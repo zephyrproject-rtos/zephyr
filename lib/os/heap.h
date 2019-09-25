@@ -98,12 +98,12 @@ static inline void chunk_set(struct z_heap *h, chunkid_t c,
 	}
 }
 
-static inline chunkid_t used(struct z_heap *h, chunkid_t c)
+static inline bool chunk_used(struct z_heap *h, chunkid_t c)
 {
 	return (chunk_field(h, c, SIZE_AND_USED) & ~h->size_mask) != 0;
 }
 
-static ALWAYS_INLINE chunkid_t size(struct z_heap *h, chunkid_t c)
+static ALWAYS_INLINE size_t chunk_size(struct z_heap *h, chunkid_t c)
 {
 	return chunk_field(h, c, SIZE_AND_USED) & h->size_mask;
 }
@@ -112,32 +112,27 @@ static inline void chunk_set_used(struct z_heap *h, chunkid_t c,
 				  bool used)
 {
 	chunk_set(h, c, SIZE_AND_USED,
-		  size(h, c) | (used ? (h->size_mask + 1) : 0));
+		  chunk_size(h, c) | (used ? (h->size_mask + 1) : 0));
 }
 
-static inline chunkid_t left_size(struct z_heap *h, chunkid_t c)
-{
-	return chunk_field(h, c, LEFT_SIZE);
-}
-
-static inline chunkid_t free_prev(struct z_heap *h, chunkid_t c)
+static inline chunkid_t prev_free_chunk(struct z_heap *h, chunkid_t c)
 {
 	return chunk_field(h, c, FREE_PREV);
 }
 
-static inline chunkid_t free_next(struct z_heap *h, chunkid_t c)
+static inline chunkid_t next_free_chunk(struct z_heap *h, chunkid_t c)
 {
 	return chunk_field(h, c, FREE_NEXT);
 }
 
 static inline chunkid_t left_chunk(struct z_heap *h, chunkid_t c)
 {
-	return c - left_size(h, c);
+	return c - chunk_field(h, c, LEFT_SIZE);
 }
 
 static inline chunkid_t right_chunk(struct z_heap *h, chunkid_t c)
 {
-	return c + size(h, c);
+	return c + chunk_size(h, c);
 }
 
 static inline size_t chunk_header_bytes(struct z_heap *h)
