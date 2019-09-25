@@ -518,7 +518,7 @@ static int uart_stm32_irq_tx_complete(struct device *dev)
 {
 	USART_TypeDef *UartInstance = UART_STRUCT(dev);
 
-	return LL_USART_IsActiveFlag_TXE(UartInstance);
+	return LL_USART_IsActiveFlag_TC(UartInstance);
 }
 
 static void uart_stm32_irq_rx_enable(struct device *dev)
