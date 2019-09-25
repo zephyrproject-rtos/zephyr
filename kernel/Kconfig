@@ -591,6 +591,7 @@ config SYS_TIMEOUT_64BIT
 
 config SYS_TIMEOUT_LEGACY_API
 	bool "Enable old millisecond timeout API"
+	default y
 	depends on !SYS_TIMEOUT_64BIT
 	help
 	  When enabled, k_timeout_t values passed to kernel APIs are
