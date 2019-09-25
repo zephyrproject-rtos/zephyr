@@ -340,7 +340,7 @@ static int pwm_xec_pin_set(struct device *dev, u32_t pwm,
 	return 0;
 }
 
-static int pwm_xec_get_cyclet_per_sec(struct device *dev, u32_t pwm,
+static int pwm_xec_get_cycles_per_sec(struct device *dev, u32_t pwm,
 				      u64_t *cycles)
 {
 	ARG_UNUSED(dev);
@@ -368,7 +368,7 @@ static int pwm_xec_init(struct device *dev)
 
 static struct pwm_driver_api pwm_xec_api = {
 	.pin_set = pwm_xec_pin_set,
-	.get_cycles_per_sec = pwm_xec_get_cyclet_per_sec
+	.get_cycles_per_sec = pwm_xec_get_cycles_per_sec
 };
 
 #if defined(DT_INST_0_MICROCHIP_XEC_PWM)
