@@ -27,9 +27,6 @@ extern void test_sys_put_le64(void);
 extern void test_atomic(void);
 extern void test_intmath(void);
 extern void test_printk(void);
-extern void test_slist(void);
-extern void test_sflist(void);
-extern void test_dlist(void);
 extern void test_timeout_order(void);
 extern void test_clock_cycle(void);
 extern void test_clock_uptime(void);
@@ -122,9 +119,6 @@ void test_main(void)
 			 ztest_user_unit_test(test_atomic),
 			 ztest_unit_test(test_bitfield),
 			 ztest_unit_test(test_printk),
-			 ztest_unit_test(test_slist),
-			 ztest_unit_test(test_sflist),
-			 ztest_unit_test(test_dlist),
 			 ztest_unit_test(test_intmath),
 			 ztest_unit_test(test_timeout_order),
 			 ztest_1cpu_user_unit_test(test_clock_uptime),
