@@ -18,7 +18,6 @@ target_sources(app PRIVATE
 	src/atomic.c
 	src/byteorder.c
 	src/clock.c
-	src/intmath.c
 	src/main.c
 	src/timeout_order.c
 	src/multilib.c
