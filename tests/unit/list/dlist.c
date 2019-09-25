@@ -162,7 +162,7 @@ static inline bool verify_tail_head(sys_dlist_t *list,
 	return true;
 }
 /**
- * @addtogroup kernel_common_tests
+ * @addtogroup unit_tests
  * @{
  */
 
@@ -177,7 +177,8 @@ void test_dlist(void)
 {
 	sys_dlist_init(&test_list);
 
-	zassert_true((verify_emptyness(&test_list)), "test_list should be empty");
+	zassert_true((verify_emptyness(&test_list)),
+			"test_list should be empty");
 
 	/* Appending node 1 */
 	sys_dlist_append(&test_list, &test_node_1.node);
