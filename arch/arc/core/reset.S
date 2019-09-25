@@ -143,6 +143,9 @@ _slave_core_wait:
 	/* get sp set by master core */
 	_get_curr_cpu_irq_stack sp
 
+#if defined(CONFIG_ARC_FIRQ_STACK)
+	jl z_arc_firq_stack_set
+#endif
 	j z_arch_slave_start
 
 _master_core_startup:
@@ -166,5 +169,9 @@ _master_core_startup:
 
 	mov_s sp, INIT_STACK
 	add sp, sp, INIT_STACK_SIZE
+
+#if defined(CONFIG_ARC_FIRQ_STACK)
+	jl z_arc_firq_stack_set
+#endif
 
 	j @_PrepC

@@ -95,6 +95,21 @@ config ARC_FIRQ
 	  If FIRQ is disabled, the handle of interrupts with highest priority
 	  will be same with other interrupts.
 
+config ARC_FIRQ_STACK
+	bool "Enable separate firq stack"
+	depends on ARC_FIRQ && RGF_NUM_BANKS > 1
+	default n
+	help
+	  Use separate stack for FIRQ handing. When the fast irq is also a direct
+	  irq, this will get the minimal interrupt latency.
+
+config ARC_FIRQ_STACK_SIZE
+	int "FIRQ stack size"
+	depends on ARC_FIRQ_STACK
+	default 1024
+	help
+	  The size of firq stack.
+
 config 	ARC_HAS_STACK_CHECKING
 	bool "ARC has STACK_CHECKING"
 	default y
