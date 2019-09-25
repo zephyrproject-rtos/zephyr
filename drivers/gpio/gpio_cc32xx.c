@@ -25,11 +25,29 @@
 
 #include "gpio_utils.h"
 
+/* Reserved */
+#define PIN_XX  0xFF
+
+static const u8_t pinTable[] = {
+	/* 00     01      02      03      04      05      06      07  */
+	PIN_50, PIN_55, PIN_57, PIN_58, PIN_59, PIN_60, PIN_61, PIN_62,
+	/* 08     09      10      11      12      13      14      15  */
+	PIN_63, PIN_64, PIN_01, PIN_02, PIN_03, PIN_04, PIN_05, PIN_06,
+	/* 16     17      18      19      20      21      22      23  */
+	PIN_07, PIN_08, PIN_XX, PIN_XX, PIN_XX, PIN_XX, PIN_15, PIN_16,
+	/* 24     25      26      27      28      29      30      31  */
+	PIN_17, PIN_21, PIN_29, PIN_30, PIN_18, PIN_20, PIN_53, PIN_45,
+	/* 32 */
+	PIN_52
+};
+
 struct gpio_cc32xx_config {
 	/* base address of GPIO port */
 	unsigned long port_base;
 	/* GPIO IRQ number */
 	unsigned long irq_num;
+	/* GPIO port number */
+	u8_t port_num;
 };
 
 struct gpio_cc32xx_data {
@@ -46,42 +64,42 @@ struct gpio_cc32xx_data {
 #define DEV_DATA(dev) \
 	((struct gpio_cc32xx_data *)(dev)->driver_data)
 
+static int gpio_cc32xx_port_set_bits_raw(struct device *port, u32_t mask);
+static int gpio_cc32xx_port_clear_bits_raw(struct device *port, u32_t mask);
+
 static inline int gpio_cc32xx_config(struct device *port,
 				   int access_op, u32_t pin, int flags)
 {
 	const struct gpio_cc32xx_config *gpio_config = DEV_CFG(port);
 	unsigned long port_base = gpio_config->port_base;
-	unsigned long int_type;
 
-	/*
-	 * See pinmux_initialize(): which leverages TI's recommended
-	 * method of using the PinMux utility for most pin configuration.
-	 */
+	if (((flags & GPIO_INPUT) != 0) && ((flags & GPIO_OUTPUT) != 0)) {
+		return -ENOTSUP;
+	}
 
-	if (access_op == GPIO_ACCESS_BY_PIN) {
-		/* Just handle runtime interrupt type config here: */
-		if (flags & GPIO_INT) {
-			if (flags & GPIO_INT_EDGE) {
-				if (flags & GPIO_INT_ACTIVE_HIGH) {
-					int_type = GPIO_RISING_EDGE;
-				} else if (flags & GPIO_INT_DOUBLE_EDGE) {
-					int_type = GPIO_BOTH_EDGES;
-				} else {
-					int_type = GPIO_FALLING_EDGE;
-				}
-			} else { /* GPIO_INT_LEVEL */
-				if (flags & GPIO_INT_ACTIVE_HIGH) {
-					int_type = GPIO_HIGH_LEVEL;
-				} else {
-					int_type = GPIO_LOW_LEVEL;
-				}
-			}
-			MAP_GPIOIntTypeSet(port_base, (1 << pin), int_type);
-			MAP_GPIOIntClear(port_base, (1 << pin));
-			MAP_GPIOIntEnable(port_base, (1 << pin));
+	if ((flags & (GPIO_INPUT | GPIO_OUTPUT)) == 0) {
+		return -ENOTSUP;
+	}
+
+	if ((flags & (GPIO_PULL_UP | GPIO_PULL_DOWN)) != 0) {
+		return -ENOTSUP;
+	}
+
+	if (access_op != GPIO_ACCESS_BY_PIN) {
+		return -ENOTSUP;
+	}
+
+	MAP_PinTypeGPIO(pinTable[gpio_config->port_num * 8 + pin],
+		PIN_MODE_0, false);
+	if (flags & GPIO_OUTPUT) {
+		MAP_GPIODirModeSet(port_base, (1 << pin), GPIO_DIR_MODE_OUT);
+		if ((flags & GPIO_OUTPUT_INIT_HIGH) != 0) {
+			gpio_cc32xx_port_set_bits_raw(port, BIT(pin));
+		} else if ((flags & GPIO_OUTPUT_INIT_LOW) != 0) {
+			gpio_cc32xx_port_clear_bits_raw(port, BIT(pin));
 		}
 	} else {
-		return -ENOTSUP;
+		MAP_GPIODirModeSet(port_base, (1 << pin), GPIO_DIR_MODE_IN);
 	}
 
 	return 0;
@@ -98,7 +116,8 @@ static inline int gpio_cc32xx_write(struct device *port,
 		/* Bitpack external GPIO pin number for GPIOPinWrite API: */
 		pin = 1 << pin;
 
-		MAP_GPIOPinWrite(port_base, (unsigned char)pin, value);
+		MAP_GPIOPinWrite(port_base, (unsigned char)pin,
+			(unsigned char)value);
 	} else {
 		return -ENOTSUP;
 	}
@@ -121,6 +140,100 @@ static inline int gpio_cc32xx_read(struct device *port,
 		*value = status >> pin;
 	} else {
 		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
+static int gpio_cc32xx_port_get_raw(struct device *port, u32_t *value)
+{
+	const struct gpio_cc32xx_config *gpio_config = DEV_CFG(port);
+	unsigned long port_base = gpio_config->port_base;
+	unsigned char pin_packed = 0xFF;
+
+	*value = MAP_GPIOPinRead(port_base, pin_packed);
+
+	return 0;
+}
+
+static int gpio_cc32xx_port_set_masked_raw(struct device *port, u32_t mask,
+					  u32_t value)
+{
+	const struct gpio_cc32xx_config *gpio_config = DEV_CFG(port);
+	unsigned long port_base = gpio_config->port_base;
+
+	MAP_GPIOPinWrite(port_base, (unsigned char)mask, (unsigned char)value);
+
+	return 0;
+}
+
+static int gpio_cc32xx_port_set_bits_raw(struct device *port, u32_t mask)
+{
+	const struct gpio_cc32xx_config *gpio_config = DEV_CFG(port);
+	unsigned long port_base = gpio_config->port_base;
+
+	MAP_GPIOPinWrite(port_base, (unsigned char)mask, (unsigned char)mask);
+
+	return 0;
+}
+
+static int gpio_cc32xx_port_clear_bits_raw(struct device *port, u32_t mask)
+{
+	const struct gpio_cc32xx_config *gpio_config = DEV_CFG(port);
+	unsigned long port_base = gpio_config->port_base;
+
+	MAP_GPIOPinWrite(port_base, (unsigned char)mask, (unsigned char)~mask);
+
+	return 0;
+}
+
+static int gpio_cc32xx_port_toggle_bits(struct device *port, u32_t mask)
+{
+	const struct gpio_cc32xx_config *gpio_config = DEV_CFG(port);
+	unsigned long port_base = gpio_config->port_base;
+	long value;
+
+	value = MAP_GPIOPinRead(port_base, mask);
+
+	MAP_GPIOPinWrite(port_base, (unsigned char)mask,
+		(unsigned char)~value);
+
+	return 0;
+}
+
+static int gpio_cc32xx_pin_interrupt_configure(struct device *port,
+		unsigned int pin, enum gpio_int_mode mode,
+		enum gpio_int_trig trig)
+{
+	const struct gpio_cc32xx_config *gpio_config = DEV_CFG(port);
+	struct gpio_cc32xx_data *data = DEV_DATA(port);
+	unsigned long port_base = gpio_config->port_base;
+	unsigned long int_type;
+
+	if (mode != GPIO_INT_MODE_DISABLED) {
+		if (mode == GPIO_INT_MODE_EDGE) {
+			if (trig == GPIO_INT_TRIG_BOTH) {
+				int_type = GPIO_BOTH_EDGES;
+			} else if (trig == GPIO_INT_TRIG_HIGH) {
+				int_type = GPIO_RISING_EDGE;
+			} else {
+				int_type = GPIO_FALLING_EDGE;
+			}
+		} else { /* GPIO_INT_LEVEL */
+			if (trig == GPIO_INT_TRIG_HIGH) {
+				int_type = GPIO_HIGH_LEVEL;
+			} else {
+				int_type = GPIO_LOW_LEVEL;
+			}
+		}
+		MAP_GPIOIntTypeSet(port_base, (1 << pin), int_type);
+		MAP_GPIOIntClear(port_base, (1 << pin));
+		MAP_GPIOIntEnable(port_base, (1 << pin));
+
+		WRITE_BIT(data->pin_callback_enables, pin,
+			mode != GPIO_INT_MODE_DISABLED);
+	} else {
+		MAP_GPIOIntDisable(port_base, (1 << pin));
 	}
 
 	return 0;
@@ -192,6 +305,12 @@ static const struct gpio_driver_api api_funcs = {
 	.config = gpio_cc32xx_config,
 	.write = gpio_cc32xx_write,
 	.read = gpio_cc32xx_read,
+	.port_get_raw = gpio_cc32xx_port_get_raw,
+	.port_set_masked_raw = gpio_cc32xx_port_set_masked_raw,
+	.port_set_bits_raw = gpio_cc32xx_port_set_bits_raw,
+	.port_clear_bits_raw = gpio_cc32xx_port_clear_bits_raw,
+	.port_toggle_bits = gpio_cc32xx_port_toggle_bits,
+	.pin_interrupt_configure = gpio_cc32xx_pin_interrupt_configure,
 	.manage_callback = gpio_cc32xx_manage_callback,
 	.enable_callback = gpio_cc32xx_enable_callback,
 	.disable_callback = gpio_cc32xx_disable_callback,
@@ -202,6 +321,7 @@ static const struct gpio_driver_api api_funcs = {
 static const struct gpio_cc32xx_config gpio_cc32xx_a0_config = {
 	.port_base = DT_GPIO_CC32XX_A0_BASE_ADDRESS,
 	.irq_num = DT_GPIO_CC32XX_A0_IRQ+16,
+	.port_num = 0
 };
 
 static struct device DEVICE_NAME_GET(gpio_cc32xx_a0);
@@ -232,6 +352,7 @@ DEVICE_AND_API_INIT(gpio_cc32xx_a0, DT_GPIO_CC32XX_A0_NAME,
 static const struct gpio_cc32xx_config gpio_cc32xx_a1_config = {
 	.port_base = DT_GPIO_CC32XX_A1_BASE_ADDRESS,
 	.irq_num = DT_GPIO_CC32XX_A1_IRQ+16,
+	.port_num = 1
 };
 
 static struct device DEVICE_NAME_GET(gpio_cc32xx_a1);
@@ -262,6 +383,7 @@ DEVICE_AND_API_INIT(gpio_cc32xx_a1, DT_GPIO_CC32XX_A1_NAME,
 static const struct gpio_cc32xx_config gpio_cc32xx_a2_config = {
 	.port_base = DT_GPIO_CC32XX_A2_BASE_ADDRESS,
 	.irq_num = DT_GPIO_CC32XX_A2_IRQ+16,
+	.port_num = 2
 };
 
 static struct device DEVICE_NAME_GET(gpio_cc32xx_a2);
@@ -292,6 +414,7 @@ DEVICE_AND_API_INIT(gpio_cc32xx_a2, DT_GPIO_CC32XX_A2_NAME,
 static const struct gpio_cc32xx_config gpio_cc32xx_a3_config = {
 	.port_base = DT_GPIO_CC32XX_A3_BASE_ADDRESS,
 	.irq_num = DT_GPIO_CC32XX_A3_IRQ+16,
+	.port_num = 3
 };
 
 static struct device DEVICE_NAME_GET(gpio_cc32xx_a3);
