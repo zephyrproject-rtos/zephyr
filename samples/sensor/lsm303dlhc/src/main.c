@@ -65,6 +65,6 @@ void main(void)
 			printf("Failed to read accelerometer data\n");
 		}
 
-		k_sleep(2000);
+		k_msleep(2000);
 	}
 }

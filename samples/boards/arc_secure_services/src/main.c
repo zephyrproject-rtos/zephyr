@@ -54,6 +54,6 @@ void main(void)
 	while (1) {
 		printk("I am the %s thread in secure world: %d\n",
 				 __func__, i++);
-		k_sleep(SLEEPTIME);
+		k_msleep(SLEEPTIME);
 	}
 }

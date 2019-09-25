@@ -784,7 +784,7 @@ static void net_ctx_recv_v6_timeout_forever(void)
 	tid = start_timeout_v6_thread(K_FOREVER);
 
 	/* Wait a bit so that we see if recv waited or not */
-	k_sleep(WAIT_TIME);
+	k_msleep(WAIT_TIME);
 
 	net_ctx_send_v6();
 
@@ -810,7 +810,7 @@ static void net_ctx_recv_v4_timeout_forever(void)
 	tid = start_timeout_v4_thread(K_FOREVER);
 
 	/* Wait a bit so that we see if recv waited or not */
-	k_sleep(WAIT_TIME);
+	k_msleep(WAIT_TIME);
 
 	net_ctx_send_v4();
 

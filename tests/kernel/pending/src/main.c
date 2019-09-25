@@ -315,7 +315,7 @@ void test_pending(void)
 		      (task_low_state != FIFO_TEST_START), NULL);
 
 	/* Give waiting threads time to time-out */
-	k_sleep(NUM_SECONDS(2));
+	k_msleep(NUM_SECONDS(2));
 
 	/*
 	 * Verify that the cooperative and preemptible threads timed-out in
@@ -373,7 +373,7 @@ void test_pending(void)
 		      (task_low_state != LIFO_TEST_START), NULL);
 
 	/* Give waiting threads time to time-out */
-	k_sleep(NUM_SECONDS(2));
+	k_msleep(NUM_SECONDS(2));
 
 	TC_PRINT("Testing lifos time-out in correct order ...\n");
 	zassert_false((task_low_state != LIFO_TEST_START + 1) ||
@@ -423,7 +423,7 @@ void test_pending(void)
 	zassert_equal(timer_end_tick, 0, "Task did not pend on timer");
 
 	/* Let the timer expire */
-	k_sleep(NUM_SECONDS(2));
+	k_msleep(NUM_SECONDS(2));
 
 	zassert_false((timer_end_tick < timer_start_tick + NUM_SECONDS(1)),
 			"Task waiting on timer error");

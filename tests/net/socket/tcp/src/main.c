@@ -142,7 +142,7 @@ static void test_eof(int sock)
 	zassert_equal(recved, 0, "");
 
 	/* Calling when TCP connection is fully torn down should be still OK. */
-	k_sleep(TCP_TEARDOWN_TIMEOUT);
+	k_msleep(TCP_TEARDOWN_TIMEOUT);
 	recved = recv(sock, rx_buf, sizeof(rx_buf), 0);
 	zassert_equal(recved, 0, "");
 }
@@ -181,7 +181,7 @@ void test_v4_send_recv(void)
 	test_close(new_sock);
 	test_close(s_sock);
 
-	k_sleep(TCP_TEARDOWN_TIMEOUT);
+	k_msleep(TCP_TEARDOWN_TIMEOUT);
 }
 
 void test_v6_send_recv(void)
@@ -218,7 +218,7 @@ void test_v6_send_recv(void)
 	test_close(new_sock);
 	test_close(s_sock);
 
-	k_sleep(TCP_TEARDOWN_TIMEOUT);
+	k_msleep(TCP_TEARDOWN_TIMEOUT);
 }
 
 void test_v4_sendto_recvfrom(void)
@@ -256,7 +256,7 @@ void test_v4_sendto_recvfrom(void)
 	test_close(s_sock);
 	test_close(c_sock);
 
-	k_sleep(TCP_TEARDOWN_TIMEOUT);
+	k_msleep(TCP_TEARDOWN_TIMEOUT);
 }
 
 void test_v6_sendto_recvfrom(void)
@@ -295,7 +295,7 @@ void test_v6_sendto_recvfrom(void)
 	test_close(s_sock);
 	test_close(c_sock);
 
-	k_sleep(TCP_TEARDOWN_TIMEOUT);
+	k_msleep(TCP_TEARDOWN_TIMEOUT);
 }
 
 void test_v4_sendto_recvfrom_null_dest(void)
@@ -330,7 +330,7 @@ void test_v4_sendto_recvfrom_null_dest(void)
 	test_close(s_sock);
 	test_close(c_sock);
 
-	k_sleep(TCP_TEARDOWN_TIMEOUT);
+	k_msleep(TCP_TEARDOWN_TIMEOUT);
 }
 
 void test_v6_sendto_recvfrom_null_dest(void)
@@ -365,7 +365,7 @@ void test_v6_sendto_recvfrom_null_dest(void)
 	test_close(s_sock);
 	test_close(c_sock);
 
-	k_sleep(TCP_TEARDOWN_TIMEOUT);
+	k_msleep(TCP_TEARDOWN_TIMEOUT);
 }
 
 static void calc_net_context(struct net_context *context, void *user_data)
@@ -416,7 +416,7 @@ void test_open_close_immediately(void)
 		      "net_context still in use (before %d vs after %d)",
 		      count_before - 1, count_after);
 
-	k_sleep(TCP_TEARDOWN_TIMEOUT);
+	k_msleep(TCP_TEARDOWN_TIMEOUT);
 }
 
 void test_v4_accept_timeout(void)
@@ -443,7 +443,7 @@ void test_v4_accept_timeout(void)
 
 	test_close(s_sock);
 
-	k_sleep(TCP_TEARDOWN_TIMEOUT);
+	k_msleep(TCP_TEARDOWN_TIMEOUT);
 }
 
 void test_main(void)

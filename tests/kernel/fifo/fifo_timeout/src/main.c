@@ -113,7 +113,7 @@ static void test_thread_put_timeout(void *p1, void *p2, void *p3)
 {
 	u32_t timeout = *((u32_t *)p2);
 
-	k_sleep(timeout);
+	k_msleep(timeout);
 	k_fifo_put((struct k_fifo *)p1, get_scratch_packet());
 }
 
@@ -124,7 +124,7 @@ static void test_thread_pend_and_timeout(void *p1, void *p2, void *p3)
 	u32_t start_time;
 	void *packet;
 
-	k_sleep(1); /* Align to ticks */
+	k_msleep(1); /* Align to ticks */
 
 	start_time = k_cycle_get_32();
 	packet = k_fifo_get(d->fifo, K_TIMEOUT_MS(d->timeout));
@@ -300,7 +300,7 @@ static void test_timeout_empty_fifo(void)
 	void *packet;
 	u32_t start_time, timeout;
 
-	k_sleep(1); /* Align to ticks */
+	k_msleep(1); /* Align to ticks */
 
 	/* Test empty fifo with timeout */
 	timeout = 10U;
@@ -353,7 +353,7 @@ static void test_timeout_fifo_thread(void)
 	struct reply_packet reply_packet;
 	u32_t start_time, timeout;
 
-	k_sleep(1); /* Align to ticks */
+	k_msleep(1); /* Align to ticks */
 
 	/*
 	 * Test fifo with some timeout and child thread that puts

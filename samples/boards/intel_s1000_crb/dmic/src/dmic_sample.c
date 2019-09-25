@@ -133,7 +133,7 @@ static void dmic_sample_app(void *p1, void *p2, void *p3)
 		dmic_start();
 		dmic_receive();
 		dmic_stop();
-		k_sleep(DELAY_BTW_ITERATIONS);
+		k_msleep(DELAY_BTW_ITERATIONS);
 		LOG_INF("Iteration %d/%d complete, %d audio frames received.",
 				loop_count, NUM_ITERATIONS,
 				FRAMES_PER_ITERATION);

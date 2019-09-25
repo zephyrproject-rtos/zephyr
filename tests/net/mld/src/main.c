@@ -461,7 +461,7 @@ static void test_allnodes(void)
 	net_ipv6_addr_create_ll_allnodes_mcast(&addr);
 
 	/* Let the DAD succeed so that the multicast address will be there */
-	k_sleep(DAD_TIMEOUT);
+	k_msleep(DAD_TIMEOUT);
 
 	ifmaddr = net_if_ipv6_maddr_lookup(&addr, &iface);
 

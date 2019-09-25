@@ -131,7 +131,7 @@ struct _timeout {
 #  define K_TIMEOUT_CYC(t) K_TIMEOUT_TICKS(k_cyc_to_ticks_ceil64(t))
 # else
 #  define K_TIMEOUT_MS(t) K_TIMEOUT_TICKS(k_ms_to_ticks_ceil32(t))
-#  define K_TIMEOUT_US(t) K_TIMEOUT_TICKS(k_us_to_ticks_ceil32(t))
+#  define K_TIMEOUT_US(t) K_TIMEOUT_TICKS(k_us_to_ticks_ceil64(t))
 #  define K_TIMEOUT_CYC(t) K_TIMEOUT_TICKS(k_cyc_to_ticks_ceil32(t))
 # endif
 #endif

@@ -108,7 +108,7 @@ void main(void)
 				     partner_prio, 0, 0);
 
 	/* Let it start running and pend */
-	k_sleep(100);
+	k_msleep(100);
 
 	u64_t tot = 0U;
 	u32_t runs = 0U;

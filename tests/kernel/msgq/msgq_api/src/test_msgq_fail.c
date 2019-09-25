@@ -20,7 +20,7 @@ static void put_fail(struct k_msgq *q)
 	ret = k_msgq_put(q, (void *)&data[1], K_NO_WAIT);
 	zassert_equal(ret, -ENOMSG, NULL);
 	/**TESTPOINT: msgq put returns -EAGAIN*/
-	ret = k_msgq_put(q, (void *)&data[0], TIMEOUT);
+	ret = k_msgq_put(q, (void *)&data[0], K_TIMEOUT_MS(TIMEOUT));
 	zassert_equal(ret, -EAGAIN, NULL);
 
 	k_msgq_purge(q);
@@ -35,7 +35,7 @@ static void get_fail(struct k_msgq *q)
 
 	zassert_equal(ret, -ENOMSG, NULL);
 	/**TESTPOINT: msgq get returns -EAGAIN*/
-	ret = k_msgq_get(q, &rx_data, TIMEOUT);
+	ret = k_msgq_get(q, &rx_data, K_TIMEOUT_MS(TIMEOUT));
 	zassert_equal(ret, -EAGAIN, NULL);
 }
 

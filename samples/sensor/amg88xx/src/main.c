@@ -105,6 +105,6 @@ void main(void)
 		printk("new sample:\n");
 		print_buffer(temp_value, ARRAY_SIZE(temp_value));
 
-		k_sleep(1000);
+		k_msleep(1000);
 	}
 }

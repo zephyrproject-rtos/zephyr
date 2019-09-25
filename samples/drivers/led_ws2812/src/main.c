@@ -83,7 +83,7 @@ void main(void)
 			       sizeof(strip_colors[i]));
 		}
 		led_strip_update_rgb(strip, strip_colors, STRIP_NUM_LEDS);
-		k_sleep(DELAY_TIME);
+		k_msleep(DELAY_TIME);
 		time++;
 	}
 }

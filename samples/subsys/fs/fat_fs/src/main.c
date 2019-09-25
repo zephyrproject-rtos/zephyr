@@ -74,7 +74,7 @@ void main(void)
 	}
 
 	while (1) {
-		k_sleep(1000);
+		k_msleep(1000);
 	}
 }
 

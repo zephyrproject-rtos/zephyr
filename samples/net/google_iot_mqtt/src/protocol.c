@@ -316,7 +316,7 @@ void mqtt_startup(char *hostname, int port)
 			LOG_ERR("could not connect, error %d", err);
 			mqtt_disconnect(client);
 			retries--;
-			k_sleep(ALIVE_TIME);
+			k_msleep(ALIVE_TIME);
 			continue;
 		}
 
@@ -326,7 +326,7 @@ void mqtt_startup(char *hostname, int port)
 				LOG_ERR("failed to connect to mqtt_broker");
 				mqtt_disconnect(client);
 				retries--;
-				k_sleep(ALIVE_TIME);
+				k_msleep(ALIVE_TIME);
 				continue;
 			} else {
 				break;
@@ -335,7 +335,7 @@ void mqtt_startup(char *hostname, int port)
 			LOG_ERR("failed to connect to mqtt broker");
 			mqtt_disconnect(client);
 			retries--;
-			k_sleep(ALIVE_TIME);
+			k_msleep(ALIVE_TIME);
 			continue;
 		}
 	}

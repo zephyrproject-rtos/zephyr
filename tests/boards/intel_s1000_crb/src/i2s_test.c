@@ -177,7 +177,7 @@ void i2s_thread(void *dummy1, void *dummy2, void *dummy3)
 		k_sem_give(&thread_sem);
 
 		/* wait a while */
-		k_sleep(SLEEPTIME);
+		k_msleep(SLEEPTIME);
 	}
 }
 

@@ -173,7 +173,7 @@ static void pend_thread_entry(void *p1, void *p2, void *p3)
 {
 	int ret;
 
-	ret = k_msgq_put(p1, &data[1], TIMEOUT);
+	ret = k_msgq_put(p1, &data[1], K_TIMEOUT_MS(TIMEOUT));
 	zassert_equal(ret, 0, NULL);
 }
 

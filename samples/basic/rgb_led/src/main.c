@@ -88,7 +88,7 @@ void main(void)
 						printk("pin 2 write fails!\n");
 						return;
 					}
-					k_sleep(MSEC_PER_SEC);
+					k_msleep(MSEC_PER_SEC);
 				}
 			}
 		}

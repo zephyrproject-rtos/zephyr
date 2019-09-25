@@ -30,7 +30,7 @@ void main(void)
 	while (1) {
 		gpio_pin_write(gpio0, LED0, cnt % 2);
 		gpio_pin_write(gpio1, LED1, (cnt + 1) % 2);
-		k_sleep(SLEEP_TIME);
+		k_msleep(SLEEP_TIME);
 		cnt++;
 	}
 }

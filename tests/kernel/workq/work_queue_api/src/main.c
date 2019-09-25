@@ -32,7 +32,7 @@ static struct k_thread *main_thread;
 
 static void work_sleepy(struct k_work *w)
 {
-	k_sleep(TIMEOUT);
+	k_msleep(TIMEOUT);
 	k_sem_give(&sync_sema);
 }
 
@@ -190,7 +190,7 @@ static void tdelayed_work_cancel(void *data)
 	zassert_false(k_work_pending((struct k_work *)&delayed_work[0]), NULL);
 	if (!k_is_in_isr()) {
 		/*wait for handling work_sleepy*/
-		k_sleep(TIMEOUT);
+		k_msleep(TIMEOUT);
 		/**TESTPOINT: check pending when work pending*/
 		zassert_true(k_work_pending((struct k_work *)&delayed_work[1]),
 			     NULL);
@@ -199,7 +199,7 @@ static void tdelayed_work_cancel(void *data)
 		zassert_equal(ret, 0, NULL);
 		k_sem_give(&sync_sema);
 		/*wait for completed work_sleepy and delayed_work[1]*/
-		k_sleep(TIMEOUT);
+		k_msleep(TIMEOUT);
 		/**TESTPOINT: check pending when work completed*/
 		zassert_false(k_work_pending(
 				      (struct k_work *)&delayed_work_sleepy), NULL);

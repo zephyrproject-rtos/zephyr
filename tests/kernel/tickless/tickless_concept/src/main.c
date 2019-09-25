@@ -79,7 +79,7 @@ void test_tickless_sysclock(void)
 
 	ALIGN_MS_BOUNDARY();
 	t0 = k_uptime_get_32();
-	k_sleep(SLEEP_TICKLESS);
+	k_msleep(SLEEP_TICKLESS);
 	t1 = k_uptime_get_32();
 	TC_PRINT("time %d, %d\n", t0, t1);
 	/**TESTPOINT: verify system clock recovery after exiting tickless idle*/

@@ -4045,7 +4045,7 @@ static void socket_receive_loop(void)
 	while (1) {
 		/* wait for sockets */
 		if (sock_nfds < 1) {
-			k_sleep(lwm2m_engine_service());
+			k_msleep(lwm2m_engine_service());
 			continue;
 		}
 
@@ -4056,14 +4056,14 @@ static void socket_receive_loop(void)
 		if (poll(sock_fds, sock_nfds, lwm2m_engine_service()) < 0) {
 			LOG_ERR("Error in poll:%d", errno);
 			errno = 0;
-			k_sleep(ENGINE_UPDATE_INTERVAL);
+			k_msleep(ENGINE_UPDATE_INTERVAL);
 			continue;
 		}
 
 		for (i = 0; i < sock_nfds; i++) {
 			if (sock_fds[i].revents & POLLERR) {
 				LOG_ERR("Error in poll.. waiting a moment.");
-				k_sleep(ENGINE_UPDATE_INTERVAL);
+				k_msleep(ENGINE_UPDATE_INTERVAL);
 				continue;
 			}
 

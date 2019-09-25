@@ -926,22 +926,18 @@ static inline void z_vrfy_k_yield(void)
 #include <syscalls/k_yield_mrsh.c>
 #endif
 
-static s32_t z_tick_sleep(s32_t ticks)
+static k_ticks_t z_sleep(k_timeout_t timeout)
 {
 #ifdef CONFIG_MULTITHREADING
-	u32_t expected_wakeup_time;
+	k_ticks_t start, end, ticks, expires;
 
 	__ASSERT(!z_arch_is_in_isr(), "");
 
-	K_DEBUG("thread %p for %d ticks\n", _current, ticks);
-
-	/* wait of 0 ms is treated as a 'yield' */
-	if (ticks == 0) {
+	/* historical API convention: zero sleep means "yield" */
+	if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
 		k_yield();
 		return 0;
 	}
-
-	expected_wakeup_time = ticks + z_tick_get_32();
 
 	/* Spinlock purely for local interrupt locking to prevent us
 	 * from being interrupted while _current is in an intermediate
@@ -950,23 +946,38 @@ static s32_t z_tick_sleep(s32_t ticks)
 	struct k_spinlock local_lock = {};
 	k_spinlock_key_t key = k_spin_lock(&local_lock);
 
+	start = z_tick_get();
 #if defined(CONFIG_TIMESLICING) && defined(CONFIG_SWAP_NONATOMIC)
 	pending_current = _current;
 #endif
 	z_remove_thread_from_ready_q(_current);
-	z_add_thread_timeout(_current, K_TIMEOUT_TICKS(ticks));
+	z_add_thread_timeout(_current, timeout);
 	z_mark_thread_as_suspended(_current);
 
 	(void)z_swap(&local_lock, key);
+	end = z_tick_get();
 
 	__ASSERT(!z_is_thread_state_set(_current, _THREAD_SUSPENDED), "");
 
-	ticks = expected_wakeup_time - z_tick_get_32();
-	if (ticks > 0) {
-		return ticks;
+	/* Return value is zero if the timeout expired, otherwise the
+	 * time remaining.
+	 */
+	ticks = K_TIMEOUT_GET(timeout);
+	if (IS_ENABLED(CONFIG_SYS_TIMEOUT_LEGACY_API)) {
+		ticks = (k_ticks_t)k_ms_to_ticks_ceil64(ticks);
+	}
+
+	expires = start + ticks;
+	if (IS_ENABLED(CONFIG_SYS_TIMEOUT_64BIT)
+	    && K_TIMEOUT_GET(timeout) < K_FOREVER_TICKS) {
+		/* Absolute timeout */
+		expires = K_FOREVER_TICKS - 1 - K_TIMEOUT_GET(timeout);
+	}
+
+	if (end < expires) {
+		return expires - end;
 	}
 #endif
-
 	return 0;
 }
 
@@ -990,38 +1001,17 @@ k_ticks_t z_thread_remaining(k_tid_t thread)
 	return z_thread_end(thread) - (k_ticks_t) z_tick_get();
 }
 
-s32_t z_impl_k_sleep(int ms)
+k_ticks_t z_impl_k_sleep(k_timeout_t timeout)
 {
-	s32_t ticks;
-
-	ticks = z_ms_to_ticks(ms);
-	ticks = z_tick_sleep(ticks);
-	return __ticks_to_ms(ticks);
+	return z_sleep(timeout);
 }
 
 #ifdef CONFIG_USERSPACE
-static inline s32_t z_vrfy_k_sleep(int ms)
+static inline k_ticks_t z_vrfy_k_sleep(k_timeout_t t)
 {
-	return z_impl_k_sleep(ms);
+	return z_impl_k_sleep(t);
 }
 #include <syscalls/k_sleep_mrsh.c>
-#endif
-
-s32_t z_impl_k_usleep(int us)
-{
-	s32_t ticks;
-
-	ticks = z_us_to_ticks(us);
-	ticks = z_tick_sleep(ticks);
-	return __ticks_to_us(ticks);
-}
-
-#ifdef CONFIG_USERSPACE
-static inline s32_t z_vrfy_k_usleep(int us)
-{
-	return z_impl_k_usleep(us);
-}
-#include <syscalls/k_usleep_mrsh.c>
 #endif
 
 void z_impl_k_wakeup(k_tid_t thread)

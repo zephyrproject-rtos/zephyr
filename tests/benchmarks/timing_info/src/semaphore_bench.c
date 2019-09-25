@@ -60,7 +60,7 @@ void semaphore_bench(void)
 				   NULL, NULL, NULL,
 				   2 /*priority*/, 0, 0);
 
-	k_sleep(1000);
+	k_msleep(1000);
 
 
 	/* u64_t test_time1 = z_tsc_read(); */
@@ -76,7 +76,7 @@ void semaphore_bench(void)
 				   NULL, NULL, NULL,
 				   2 /*priority*/, 0, 0);
 
-	k_sleep(1000);
+	k_msleep(1000);
 	sem_give_end_time = (z_arch_timing_value_swap_common);
 	u32_t sem_give_cycles = sem_give_end_time - sem_give_start_time;
 

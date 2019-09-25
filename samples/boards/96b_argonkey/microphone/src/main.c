@@ -106,13 +106,13 @@ void main(void)
 	/* turn all leds on */
 	for (i = 0; i < NUM_LEDS; i++) {
 		led_on(ledc, i);
-		k_sleep(DELAY_TIME);
+		k_msleep(DELAY_TIME);
 	}
 
 	/* turn all leds off */
 	for (i = 0; i < NUM_LEDS; i++) {
 		led_off(ledc, i);
-		k_sleep(DELAY_TIME);
+		k_msleep(DELAY_TIME);
 	}
 
 #endif

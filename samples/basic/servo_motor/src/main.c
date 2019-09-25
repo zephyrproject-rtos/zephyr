@@ -66,6 +66,6 @@ void main(void)
 			}
 		}
 
-		k_sleep(MSEC_PER_SEC);
+		k_msleep(MSEC_PER_SEC);
 	}
 }

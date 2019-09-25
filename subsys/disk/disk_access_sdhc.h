@@ -568,7 +568,7 @@ static inline bool sdhc_retry_ok(struct sdhc_retry *retry)
 	if (retry->tries < SDHC_MIN_TRIES) {
 		retry->tries++;
 		if (retry->sleep != 0U) {
-			k_sleep(retry->sleep);
+			k_msleep(retry->sleep);
 		}
 
 		return true;
@@ -576,7 +576,7 @@ static inline bool sdhc_retry_ok(struct sdhc_retry *retry)
 
 	if (remain >= 0) {
 		if (retry->sleep > 0) {
-			k_sleep(retry->sleep);
+			k_msleep(retry->sleep);
 		} else {
 			k_yield();
 		}

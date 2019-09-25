@@ -251,7 +251,7 @@ static void native_stdio_runner(void *p1, void *p2, void *p3)
 	while (1) {
 		s32_t wait_time = attempt_read_from_stdin();
 
-		k_sleep(wait_time);
+		k_msleep(wait_time);
 	}
 }
 #endif /* CONFIG_NATIVE_POSIX_STDIN_CONSOLE */

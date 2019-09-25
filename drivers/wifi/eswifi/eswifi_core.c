@@ -39,10 +39,10 @@ static struct eswifi_dev eswifi0; /* static instance */
 static int eswifi_reset(struct eswifi_dev *eswifi)
 {
 	gpio_pin_write(eswifi->resetn.dev, eswifi->resetn.pin, 0);
-	k_sleep(10);
+	k_msleep(10);
 	gpio_pin_write(eswifi->resetn.dev, eswifi->resetn.pin, 1);
 	gpio_pin_write(eswifi->wakeup.dev, eswifi->wakeup.pin, 1);
-	k_sleep(500);
+	k_msleep(500);
 
 	/* fetch the cursor */
 	return eswifi_request(eswifi, NULL, 0, eswifi->buf,

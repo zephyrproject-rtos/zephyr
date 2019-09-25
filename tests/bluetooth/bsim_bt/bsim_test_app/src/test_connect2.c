@@ -160,7 +160,7 @@ static void test_con2_main(void)
 	 * of starting delayed work so we do it here
 	 */
 	while (1) {
-		k_sleep(MSEC_PER_SEC);
+		k_msleep(MSEC_PER_SEC);
 
 		/* Heartrate measurements simulation */
 		hrs_notify();

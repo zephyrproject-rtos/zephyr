@@ -112,7 +112,7 @@ static void thrower_thread(void)
 			 event2throw, throw_times);
 
 		for (; throw_times; throw_times--) {
-			k_sleep(throw_sleep);
+			k_msleep(throw_sleep);
 
 			if (with_info) {
 				net_mgmt_event_notify_with_info(

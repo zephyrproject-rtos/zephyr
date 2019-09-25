@@ -51,7 +51,7 @@ static void work_handler(struct k_work *work)
 	struct test_item *ti = CONTAINER_OF(work, struct test_item, work);
 
 	TC_PRINT(" - Running test item %d\n", ti->key);
-	k_sleep(WORK_ITEM_WAIT);
+	k_msleep(WORK_ITEM_WAIT);
 
 	results[num_results++] = ti->key;
 }
@@ -89,12 +89,12 @@ static void coop_work_main(int arg1, int arg2)
 	ARG_UNUSED(arg2);
 
 	/* Let the preempt thread submit the first work item. */
-	k_sleep(SUBMIT_WAIT / 2);
+	k_msleep(SUBMIT_WAIT / 2);
 
 	for (i = 1; i < NUM_TEST_ITEMS; i += 2) {
 		TC_PRINT(" - Submitting work %d from coop thread\n", i + 1);
 		k_work_submit(&tests[i].work.work);
-		k_sleep(SUBMIT_WAIT);
+		k_msleep(SUBMIT_WAIT);
 	}
 }
 
@@ -113,7 +113,7 @@ static void test_items_submit(void)
 	for (i = 0; i < NUM_TEST_ITEMS; i += 2) {
 		TC_PRINT(" - Submitting work %d from preempt thread\n", i + 1);
 		k_work_submit(&tests[i].work.work);
-		k_sleep(SUBMIT_WAIT);
+		k_msleep(SUBMIT_WAIT);
 	}
 }
 
@@ -150,7 +150,7 @@ static void test_sequence(void)
 	test_items_submit();
 
 	TC_PRINT(" - Waiting for work to finish\n");
-	k_sleep(CHECK_WAIT);
+	k_msleep(CHECK_WAIT);
 
 	check_results(NUM_TEST_ITEMS);
 	reset_results();
@@ -162,7 +162,7 @@ static void resubmit_work_handler(struct k_work *work)
 {
 	struct test_item *ti = CONTAINER_OF(work, struct test_item, work);
 
-	k_sleep(WORK_ITEM_WAIT);
+	k_msleep(WORK_ITEM_WAIT);
 
 	results[num_results++] = ti->key;
 
@@ -190,7 +190,7 @@ static void test_resubmit(void)
 	k_work_submit(&tests[0].work.work);
 
 	TC_PRINT(" - Waiting for work to finish\n");
-	k_sleep(CHECK_WAIT);
+	k_msleep(CHECK_WAIT);
 
 	TC_PRINT(" - Checking results\n");
 	check_results(NUM_TEST_ITEMS);
@@ -231,7 +231,7 @@ static void coop_delayed_work_main(int arg1, int arg2)
 	ARG_UNUSED(arg2);
 
 	/* Let the preempt thread submit the first work item. */
-	k_sleep(SUBMIT_WAIT / 2);
+	k_msleep(SUBMIT_WAIT / 2);
 
 	for (i = 1; i < NUM_TEST_ITEMS; i += 2) {
 		TC_PRINT(" - Submitting delayed work %d from"
@@ -320,7 +320,7 @@ static void test_delayed_cancel(void)
 			NULL, NULL, NULL, K_HIGHEST_THREAD_PRIO, 0, K_NO_WAIT);
 
 	TC_PRINT(" - Waiting for work to finish\n");
-	k_sleep(WORK_ITEM_WAIT_ALIGNED);
+	k_msleep(WORK_ITEM_WAIT_ALIGNED);
 
 	TC_PRINT(" - Checking results\n");
 	check_results(0);
@@ -357,7 +357,7 @@ static void test_delayed_resubmit(void)
 	k_delayed_work_submit(&tests[0].work, K_TIMEOUT_MS(WORK_ITEM_WAIT));
 
 	TC_PRINT(" - Waiting for work to finish\n");
-	k_sleep(CHECK_WAIT);
+	k_msleep(CHECK_WAIT);
 
 	TC_PRINT(" - Checking results\n");
 	check_results(NUM_TEST_ITEMS);
@@ -404,7 +404,7 @@ static void test_delayed_resubmit_thread(void)
 			NULL, NULL, NULL, K_PRIO_COOP(10), 0, K_NO_WAIT);
 
 	TC_PRINT(" - Waiting for work to finish\n");
-	k_sleep(WORK_ITEM_WAIT_ALIGNED);
+	k_msleep(WORK_ITEM_WAIT_ALIGNED);
 
 	TC_PRINT(" - Checking results\n");
 	check_results(1);
@@ -429,7 +429,7 @@ static void test_delayed(void)
 	test_delayed_submit();
 
 	TC_PRINT(" - Waiting for delayed work to finish\n");
-	k_sleep(CHECK_WAIT);
+	k_msleep(CHECK_WAIT);
 
 	TC_PRINT(" - Checking results\n");
 	check_results(NUM_TEST_ITEMS);

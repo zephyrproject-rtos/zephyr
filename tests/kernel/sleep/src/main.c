@@ -99,11 +99,11 @@ static void test_thread(int arg1, int arg2)
 
 	k_sem_take(&test_thread_sem, K_FOREVER);
 
-	TC_PRINT("Testing normal expiration of k_sleep()\n");
+	TC_PRINT("Testing normal expiration of k_msleep()\n");
 	align_to_tick_boundary();
 
 	start_tick = k_uptime_get_32();
-	k_sleep(ONE_SECOND);
+	k_msleep(ONE_SECOND);
 	end_tick = k_uptime_get_32();
 
 	if (!sleep_time_valid(start_tick, end_tick, ONE_SECOND_ALIGNED)) {
@@ -118,7 +118,7 @@ static void test_thread(int arg1, int arg2)
 	align_to_tick_boundary();
 
 	start_tick = k_uptime_get_32();
-	k_sleep(ONE_SECOND);
+	k_msleep(ONE_SECOND);
 	end_tick = k_uptime_get_32();
 
 	if (end_tick - start_tick > 1) {
@@ -132,7 +132,7 @@ static void test_thread(int arg1, int arg2)
 	align_to_tick_boundary();
 
 	start_tick = k_uptime_get_32();
-	k_sleep(ONE_SECOND);
+	k_msleep(ONE_SECOND);
 	end_tick = k_uptime_get_32();
 
 	if (end_tick - start_tick > 1) {
@@ -146,7 +146,7 @@ static void test_thread(int arg1, int arg2)
 	align_to_tick_boundary();
 
 	start_tick = k_uptime_get_32();
-	k_sleep(ONE_SECOND);	/* Task will execute */
+	k_msleep(ONE_SECOND);	/* Task will execute */
 	end_tick = k_uptime_get_32();
 
 	if (end_tick - start_tick > 1) {
@@ -228,10 +228,10 @@ void test_sleep(void)
 
 	zassert_false(test_failure, "test failure");
 
-	TC_PRINT("Testing kernel k_sleep()\n");
+	TC_PRINT("Testing kernel k_msleep()\n");
 	align_to_tick_boundary();
 	start_tick = k_uptime_get_32();
-	k_sleep(ONE_SECOND);
+	k_msleep(ONE_SECOND);
 	end_tick = k_uptime_get_32();
 	zassert_true(sleep_time_valid(start_tick, end_tick, ONE_SECOND_ALIGNED),
 		     "k_sleep() slept for %d ticks, not %d\n",

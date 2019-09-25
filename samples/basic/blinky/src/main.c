@@ -27,6 +27,6 @@ void main(void)
 		/* Set pin to HIGH/LOW every 1 second */
 		gpio_pin_write(dev, LED, cnt % 2);
 		cnt++;
-		k_sleep(SLEEP_TIME);
+		k_msleep(SLEEP_TIME);
 	}
 }

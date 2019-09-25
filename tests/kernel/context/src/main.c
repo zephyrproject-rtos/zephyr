@@ -695,7 +695,7 @@ static void thread_sleep(void *delta, void *arg2, void *arg3)
 
 	TC_PRINT(" thread sleeping for %d milliseconds\n", timeout);
 	timestamp = k_uptime_get();
-	k_sleep(timeout);
+	k_msleep(timeout);
 	timestamp = k_uptime_get() - timestamp;
 	TC_PRINT(" thread back from sleep\n");
 
@@ -771,7 +771,7 @@ static void test_k_sleep(void)
 
 	rv = k_sem_take(&reply_timeout, K_TIMEOUT_MS(timeout * 2));
 	zassert_equal(rv, 0, " *** thread timed out waiting for thread on "
-		      "k_sleep().");
+		      "k_msleep().");
 
 	/* test k_thread_create() without cancellation */
 	TC_PRINT("Testing k_thread_create() without cancellation\n");

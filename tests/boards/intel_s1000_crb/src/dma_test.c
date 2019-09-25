@@ -241,7 +241,7 @@ void dma_thread(void)
 			printk("DMA Failed\n");
 		}
 		k_sem_give(&thread_sem);
-		k_sleep(SLEEPTIME);
+		k_msleep(SLEEPTIME);
 
 		k_sem_take(&thread_sem, K_FOREVER);
 		if (test_task(1, 8, 3) == 0) {
@@ -250,7 +250,7 @@ void dma_thread(void)
 			printk("DMA Failed\n");
 		}
 		k_sem_give(&thread_sem);
-		k_sleep(SLEEPTIME);
+		k_msleep(SLEEPTIME);
 
 		k_sem_take(&thread_sem, K_FOREVER);
 		if (test_task(0, 16, 4) == 0) {
@@ -259,7 +259,7 @@ void dma_thread(void)
 			printk("DMA Failed\n");
 		}
 		k_sem_give(&thread_sem);
-		k_sleep(SLEEPTIME);
+		k_msleep(SLEEPTIME);
 
 		k_sem_take(&thread_sem, K_FOREVER);
 		if (test_task(1, 16, 1) == 0) {
@@ -268,7 +268,7 @@ void dma_thread(void)
 			printk("DMA Failed\n");
 		}
 		k_sem_give(&thread_sem);
-		k_sleep(SLEEPTIME);
+		k_msleep(SLEEPTIME);
 	}
 }
 

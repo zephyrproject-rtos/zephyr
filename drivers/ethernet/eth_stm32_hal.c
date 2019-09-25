@@ -87,7 +87,7 @@ static inline void disable_mcast_filter(ETH_HandleTypeDef *heth)
 	 * at least four TX_CLK/RX_CLK clock cycles
 	 */
 	tmp = heth->Instance->MACFFR;
-	k_sleep(1);
+	k_msleep(1);
 	heth->Instance->MACFFR = tmp;
 }
 

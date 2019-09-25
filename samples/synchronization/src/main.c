@@ -52,7 +52,7 @@ void helloLoop(const char *my_name,
 		}
 
 		/* wait a while, then let other thread have a turn */
-		k_sleep(SLEEPTIME);
+		k_msleep(SLEEPTIME);
 		k_sem_give(other_sem);
 	}
 }

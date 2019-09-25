@@ -110,7 +110,7 @@ static inline void ssd16xx_busy_wait(struct ssd16xx_data *driver)
 
 	gpio_pin_read(driver->busy, SSD16XX_BUSY_PIN, &val);
 	while (val) {
-		k_sleep(SSD16XX_BUSY_DELAY);
+		k_msleep(SSD16XX_BUSY_DELAY);
 		gpio_pin_read(driver->busy, SSD16XX_BUSY_PIN, &val);
 	}
 }
@@ -449,9 +449,9 @@ static int ssd16xx_controller_init(struct device *dev)
 	LOG_DBG("");
 
 	gpio_pin_write(driver->reset, SSD16XX_RESET_PIN, 0);
-	k_sleep(SSD16XX_RESET_DELAY);
+	k_msleep(SSD16XX_RESET_DELAY);
 	gpio_pin_write(driver->reset, SSD16XX_RESET_PIN, 1);
-	k_sleep(SSD16XX_RESET_DELAY);
+	k_msleep(SSD16XX_RESET_DELAY);
 	ssd16xx_busy_wait(driver);
 
 	err = ssd16xx_write_cmd(driver, SSD16XX_CMD_SW_RESET, NULL, 0);

@@ -35,7 +35,7 @@ static void beep(struct k_work *work)
 	 * should result in the maximum sound volume.
 	 */
 	pwm_pin_set_usec(pwm, BUZZER_PIN, period, period / 2U);
-	k_sleep(BEEP_DURATION);
+	k_msleep(BEEP_DURATION);
 
 	/* Disable the PWM */
 	pwm_pin_set_usec(pwm, BUZZER_PIN, 0, 0);

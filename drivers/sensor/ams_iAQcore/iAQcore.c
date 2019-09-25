@@ -51,7 +51,7 @@ static int iaqcore_sample_fetch(struct device *dev, enum sensor_channel chan)
 			return 0;
 		}
 
-		k_sleep(100);
+		k_msleep(100);
 	}
 
 	if (drv_data->status == 0x01) {

@@ -795,14 +795,37 @@ void k_thread_system_pool_assign(struct k_thread *thread);
 /**
  * @brief Put the current thread to sleep.
  *
- * This routine puts the current thread to sleep for @a duration milliseconds.
+ * This routine puts the current thread to sleep for @a duration.
  *
- * @param ms Number of milliseconds to sleep.
+ * @param ms Duration of sleep, specified via a k_timeout_t
+ *           initialized via one of the K_TIMEOUT_*() macros.
+ *
+ * @return Zero if the requested time has elapsed or the number of
+ * system ticks left to sleep, if thread was woken up by \ref k_wakeup
+ * call.
+ */
+__syscall k_ticks_t k_sleep(k_timeout_t ms);
+
+/**
+ * @brief Sleep for ms timeout.
+ *
+ * This routine puts the current thread to sleep for @a duration
+ * milliseconds.  Simple wrapper around k_sleep().  Note that
+ * milliseconds may not match the rate of the internal tick counter
+ * and so this API can suffer from accidental precision loss where the
+ * k_timeout_t provides more control over units.
+ *
+ * @param ms Duration of sleep, specified in milliseconds
  *
  * @return Zero if the requested time has elapsed or the number of milliseconds
  * left to sleep, if thread was woken up by \ref k_wakeup call.
  */
-__syscall s32_t k_sleep(s32_t ms);
+static inline k_ticks_t k_msleep(s32_t ms)
+{
+	k_ticks_t ticks = k_sleep(K_TIMEOUT_MS(ms));
+
+	return (k_ticks_t)k_ticks_to_ms_floor64(ticks);
+}
 
 /**
  * @brief Put the current thread to sleep with microsecond resolution.
@@ -818,7 +841,12 @@ __syscall s32_t k_sleep(s32_t ms);
  * @return Zero if the requested time has elapsed or the number of microseconds
  * left to sleep, if thread was woken up by \ref k_wakeup call.
  */
-__syscall s32_t k_usleep(s32_t us);
+static inline k_ticks_t k_usleep(s32_t us)
+{
+	k_ticks_t ticks = k_sleep(K_TIMEOUT_US(us));
+
+	return (k_ticks_t)k_ticks_to_us_floor64(ticks);
+}
 
 /**
  * @brief Cause the current thread to busy wait.

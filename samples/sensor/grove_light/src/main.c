@@ -37,6 +37,6 @@ void main(void)
 #else
 		printk("lux: %d\n", lux.val1);
 #endif
-		k_sleep(SLEEP_TIME);
+		k_msleep(SLEEP_TIME);
 	}
 }

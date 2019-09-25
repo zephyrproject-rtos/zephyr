@@ -39,7 +39,7 @@ void worker(void *p1, void *p2, void *p3)
 	 * with the scheduling.
 	 */
 	while (1) {
-		k_sleep(1000000);
+		k_msleep(1000000);
 	}
 }
 
@@ -78,7 +78,7 @@ void test_deadline(void)
 
 	zassert_true(n_exec == 0, "threads ran too soon");
 
-	k_sleep(100);
+	k_msleep(100);
 
 	zassert_true(n_exec == NUM_THREADS, "not enough threads ran");
 

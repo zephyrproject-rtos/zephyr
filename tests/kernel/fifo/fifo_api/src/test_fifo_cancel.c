@@ -18,7 +18,7 @@ static struct k_thread thread;
 
 static void t_cancel_wait_entry(void *p1, void *p2, void *p3)
 {
-	k_sleep(50);
+	k_msleep(50);
 	k_fifo_cancel_wait((struct k_fifo *)p1);
 }
 

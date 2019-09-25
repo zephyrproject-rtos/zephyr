@@ -175,13 +175,13 @@ void main(void)
 		/* This sending call is none blocking. */
 		can_send(can_dev, &change_led_frame, K_FOREVER, tx_irq_callback,
 			 "LED change");
-		k_sleep(SLEEP_TIME);
+		k_msleep(SLEEP_TIME);
 
 		UNALIGNED_PUT(sys_cpu_to_be16(counter),
 			      (u16_t *)&counter_frame.data[0]);
 		counter++;
 		/* This sending call is blocking until the message is sent. */
 		can_send(can_dev, &counter_frame, K_MSEC(100), NULL, NULL);
-		k_sleep(SLEEP_TIME);
+		k_msleep(SLEEP_TIME);
 	}
 }

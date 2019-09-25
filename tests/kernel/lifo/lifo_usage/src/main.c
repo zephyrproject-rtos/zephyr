@@ -199,7 +199,7 @@ static void test_thread_put_timeout(void *p1, void *p2, void *p3)
 {
 	u32_t timeout = *((u32_t *)p2);
 
-	k_sleep(timeout);
+	k_msleep(timeout);
 	k_lifo_put((struct k_lifo *)p1, get_scratch_packet());
 }
 

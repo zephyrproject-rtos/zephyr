@@ -136,7 +136,7 @@ void main(void)
 			break;
 		}
 
-		k_sleep(100);
+		k_msleep(100);
 	}
 
 	while (1) {
@@ -145,7 +145,7 @@ void main(void)
 			break;
 		}
 
-		k_sleep(100);
+		k_msleep(100);
 	}
 
 	LOG_INF("DTR set, start test");

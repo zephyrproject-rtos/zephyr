@@ -319,7 +319,7 @@ void test_i2s_transfer_restart(void)
 	TC_PRINT("Stop transmission\n");
 
 	/* Keep interface inactive */
-	k_sleep(TEST_I2S_TRANSFER_RESTART_PAUSE_LENGTH_US);
+	k_msleep(TEST_I2S_TRANSFER_RESTART_PAUSE_LENGTH_US);
 
 	TC_PRINT("Start transmission\n");
 
@@ -396,7 +396,7 @@ void test_i2s_transfer_rx_overrun(void)
 	zassert_equal(ret, 0, "TX DRAIN trigger failed");
 
 	/* Wait for transmission to finish */
-	k_sleep(TEST_I2S_TRANSFER_RX_OVERRUN_PAUSE_LENGTH_US);
+	k_msleep(TEST_I2S_TRANSFER_RX_OVERRUN_PAUSE_LENGTH_US);
 
 	/* Read all available data blocks in RX queue */
 	for (int i = 0; i < NUM_RX_BLOCKS; i++) {
@@ -426,7 +426,7 @@ void test_i2s_transfer_rx_overrun(void)
 	ret = rx_block_read(dev_i2s, 0);
 	zassert_equal(ret, TC_PASS, NULL);
 
-	k_sleep(200);
+	k_msleep(200);
 }
 
 /** @brief TX buffer underrun.
@@ -463,7 +463,7 @@ void test_i2s_transfer_tx_underrun(void)
 	ret = rx_block_read(dev_i2s, 0);
 	zassert_equal(ret, TC_PASS, NULL);
 
-	k_sleep(200);
+	k_msleep(200);
 
 	/* Write one more TX data block, expect an error */
 	ret = tx_block_write(dev_i2s, 2, -EIO);
@@ -472,7 +472,7 @@ void test_i2s_transfer_tx_underrun(void)
 	ret = i2s_trigger(dev_i2s, I2S_DIR_TX, I2S_TRIGGER_PREPARE);
 	zassert_equal(ret, 0, "TX PREPARE trigger failed");
 
-	k_sleep(200);
+	k_msleep(200);
 
 	/* Transmit and receive two more data blocks */
 	ret = tx_block_write(dev_i2s, 1, 0);
@@ -492,5 +492,5 @@ void test_i2s_transfer_tx_underrun(void)
 	ret = rx_block_read(dev_i2s, 1);
 	zassert_equal(ret, TC_PASS, NULL);
 
-	k_sleep(200);
+	k_msleep(200);
 }

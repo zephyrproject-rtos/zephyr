@@ -65,7 +65,7 @@ static void tx(int *can_fd)
 			LOG_ERR("Cannot send CAN message (%d)", -errno);
 		}
 
-		k_sleep(SLEEP_PERIOD);
+		k_msleep(SLEEP_PERIOD);
 	}
 }
 

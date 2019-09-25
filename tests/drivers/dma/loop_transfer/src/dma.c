@@ -103,7 +103,7 @@ void main(void)
 		return;
 	}
 
-	k_sleep(SLEEPTIME);
+	k_msleep(SLEEPTIME);
 
 	if (transfer_count < TRANSFER_LOOPS) {
 		transfer_count = TRANSFER_LOOPS;

@@ -94,12 +94,12 @@ void main(void)
 	/* Show a short scrolling animation */
 	mb_display_image(disp, MB_DISPLAY_MODE_SCROLL, K_SECONDS(1),
 			 scroll, ARRAY_SIZE(scroll));
-	k_sleep(K_SECONDS(1) * (ARRAY_SIZE(scroll) + 2));
+	k_sleep(K_SECONDS(ARRAY_SIZE(scroll) + 2));
 
 	/* Show a sequential animation */
 	mb_display_image(disp, MB_DISPLAY_MODE_DEFAULT | MB_DISPLAY_FLAG_LOOP,
 			 K_MSEC(150), animation, ARRAY_SIZE(animation));
-	k_sleep(K_MSEC(150) * ARRAY_SIZE(animation) * 5);
+	k_sleep(K_MSEC(150 * ARRAY_SIZE(animation) * 5));
 
 	/* Show some scrolling text ("Hello Zephyr!") */
 	mb_display_print(disp, MB_DISPLAY_MODE_DEFAULT | MB_DISPLAY_FLAG_LOOP,

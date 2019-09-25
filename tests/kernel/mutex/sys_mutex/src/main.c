@@ -79,7 +79,7 @@ void thread_05(void)
 {
 	int rv;
 
-	k_sleep(3500);
+	k_msleep(3500);
 
 	/* Wait and boost owner priority to 5 */
 	rv = sys_mutex_lock(&mutex_4, K_TIMEOUT_MS(1000));
@@ -102,7 +102,7 @@ void thread_06(void)
 {
 	int rv;
 
-	k_sleep(3750);
+	k_msleep(3750);
 
 	/*
 	 * Wait for the mutex.  There is a higher priority level thread waiting
@@ -134,7 +134,7 @@ void thread_07(void)
 {
 	int rv;
 
-	k_sleep(2500);
+	k_msleep(2500);
 
 	/*
 	 * Wait and boost owner priority to 7.  While waiting, another thread of
@@ -164,7 +164,7 @@ void thread_08(void)
 {
 	int rv;
 
-	k_sleep(1500);
+	k_msleep(1500);
 
 	/* Wait and boost owner priority to 8 */
 	rv = sys_mutex_lock(&mutex_2, K_FOREVER);
@@ -188,7 +188,7 @@ void thread_09(void)
 {
 	int rv;
 
-	k_sleep(500);	/* Allow lower priority thread to run */
+	k_msleep(500);	/* Allow lower priority thread to run */
 
 	/*<mutex_1> is already locked. */
 	rv = sys_mutex_lock(&mutex_1, K_NO_WAIT);
@@ -221,7 +221,7 @@ void thread_11(void)
 {
 	int rv;
 
-	k_sleep(3500);
+	k_msleep(3500);
 	rv = sys_mutex_lock(&mutex_3, K_FOREVER);
 	if (rv != 0) {
 		tc_rc = TC_FAIL;
@@ -282,7 +282,7 @@ void test_mutex(void)
 	for (i = 0; i < 4; i++) {
 		rv = sys_mutex_lock(mutexes[i], K_NO_WAIT);
 		zassert_equal(rv, 0, "Failed to lock mutex %p\n", mutexes[i]);
-		k_sleep(1000);
+		k_msleep(1000);
 
 		rv = k_thread_priority_get(k_current_get());
 		zassert_equal(rv, priority[i], "expected priority %d, not %d\n",
@@ -297,7 +297,7 @@ void test_mutex(void)
 	TC_PRINT("Done LOCKING!  Current priority = %d\n",
 		 k_thread_priority_get(k_current_get()));
 
-	k_sleep(1000);       /* thread_05 should time out */
+	k_msleep(1000);       /* thread_05 should time out */
 
 	/* ~ 5 seconds have passed */
 
@@ -311,7 +311,7 @@ void test_mutex(void)
 	zassert_equal(rv, 7, "Gave %s and priority should drop.\n", "mutex_4");
 	zassert_equal(rv, 7, "Expected priority %d, not %d\n", 7, rv);
 
-	k_sleep(1000);       /* thread_07 should time out */
+	k_msleep(1000);       /* thread_07 should time out */
 
 	/* ~ 6 seconds have passed */
 
@@ -327,7 +327,7 @@ void test_mutex(void)
 	rv = k_thread_priority_get(k_current_get());
 	zassert_equal(rv, 10, "Expected priority %d, not %d\n", 10, rv);
 
-	k_sleep(1000);     /* Give thread_11 time to run */
+	k_msleep(1000);     /* Give thread_11 time to run */
 
 	zassert_equal(tc_rc, TC_PASS, NULL);
 
@@ -345,7 +345,7 @@ void test_mutex(void)
 	k_thread_create(&thread_12_thread_data, thread_12_stack_area, STACKSIZE,
 			(k_thread_entry_t)thread_12, NULL, NULL, NULL,
 			K_PRIO_PREEMPT(12), thread_flags, K_NO_WAIT);
-	k_sleep(1);     /* Give thread_12 a chance to block on the mutex */
+	k_msleep(1);     /* Give thread_12 a chance to block on the mutex */
 
 	sys_mutex_unlock(&private_mutex);
 	sys_mutex_unlock(&private_mutex); /* thread_12 should now have lock */

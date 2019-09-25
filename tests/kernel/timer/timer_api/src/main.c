@@ -520,7 +520,7 @@ void test_timer_user_data(void)
 			      K_NO_WAIT);
 	}
 
-	k_sleep(50 * ii + 50);
+	k_msleep(50 * ii + 50);
 
 	for (ii = 0; ii < 5; ii++) {
 		k_timer_stop(user_data_timer[ii]);

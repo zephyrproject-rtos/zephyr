@@ -46,7 +46,7 @@ static void errno_thread(void *_n, void *_my_errno, void *_unused)
 
 	errno = my_errno;
 
-	k_sleep(30 - (n * 10));
+	k_msleep(30 - (n * 10));
 	if (errno == my_errno) {
 		result[n].pass = 1;
 	}

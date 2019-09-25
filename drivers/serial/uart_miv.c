@@ -322,7 +322,7 @@ void uart_miv_rx_thread(void *arg1, void *arg2, void *arg3)
 		if (uart->status & STATUS_RXFULL_MASK) {
 			uart_miv_irq_handler(dev);
 		}
-		k_sleep(delay);
+		k_msleep(delay);
 	}
 }
 

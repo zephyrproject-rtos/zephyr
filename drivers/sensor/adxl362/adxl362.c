@@ -755,7 +755,7 @@ static int adxl362_init(struct device *dev)
 		return -ENODEV;
 	}
 
-	k_sleep(5);
+	k_msleep(5);
 
 	adxl362_get_reg(dev, &value, ADXL362_REG_PARTID, 1);
 	if (value != ADXL362_PART_ID) {

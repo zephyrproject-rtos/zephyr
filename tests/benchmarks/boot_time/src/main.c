@@ -31,7 +31,7 @@ void main(void)
 	/*
 	 * Go to sleep for 1 tick in order to timestamp when idle thread halts.
 	 */
-	k_sleep(1);
+	k_msleep(1);
 
 	int freq = sys_clock_hw_cycles_per_sec() / 1000000;
 

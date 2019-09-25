@@ -1056,7 +1056,7 @@ static void shell_log_process(const struct shell *shell)
 		 * readable and can be used to enter further commands.
 		 */
 		if (shell->ctx->cmd_buff_len) {
-			k_sleep(15);
+			k_msleep(15);
 		}
 
 		k_poll_signal_check(signal, &signaled, &result);

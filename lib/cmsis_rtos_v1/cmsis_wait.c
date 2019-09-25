@@ -16,6 +16,6 @@ osStatus osDelay(uint32_t delay_ms)
 		return osErrorISR;
 	}
 
-	k_sleep(delay_ms);
+	k_msleep(delay_ms);
 	return osEventTimeout;
 }

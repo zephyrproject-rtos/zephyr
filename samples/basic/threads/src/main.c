@@ -64,7 +64,7 @@ void blink(const char *port, u32_t sleep_ms, u32_t led, u32_t id)
 
 		k_fifo_put(&printk_fifo, mem_ptr);
 
-		k_sleep(sleep_ms);
+		k_msleep(sleep_ms);
 		cnt++;
 	}
 }

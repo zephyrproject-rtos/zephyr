@@ -290,6 +290,6 @@ void main(void)
 #endif
 
 		cnt++;
-		k_sleep(2000);
+		k_msleep(2000);
 	}
 }

@@ -291,7 +291,7 @@ void worker(void *p1, void *p2, void *p3)
 		if (do_sleep) {
 			u64_t start = k_uptime_get();
 
-			k_sleep(1);
+			k_msleep(1);
 
 			zassert_true(k_uptime_get() - start > 0,
 				     "didn't sleep");

@@ -55,7 +55,7 @@ static void tmutex_test_lock(struct k_mutex *pmutex,
 	TC_PRINT("access resource from main thread\n");
 
 	/* wait for spawn thread to take action */
-	k_sleep(TIMEOUT);
+	k_msleep(TIMEOUT);
 }
 
 static void tmutex_test_lock_timeout(struct k_mutex *pmutex,
@@ -71,9 +71,9 @@ static void tmutex_test_lock_timeout(struct k_mutex *pmutex,
 	TC_PRINT("access resource from main thread\n");
 
 	/* wait for spawn thread to take action */
-	k_sleep(TIMEOUT);
+	k_msleep(TIMEOUT);
 	k_mutex_unlock(pmutex);
-	k_sleep(TIMEOUT);
+	k_msleep(TIMEOUT);
 
 }
 

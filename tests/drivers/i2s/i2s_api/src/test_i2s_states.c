@@ -363,7 +363,7 @@ void test_i2s_state_error_neg(void)
 	}
 
 	/* Wait for transmission to finish */
-	k_sleep(TEST_I2S_STATE_ERROR_NEG_PAUSE_LENGTH_US);
+	k_msleep(TEST_I2S_STATE_ERROR_NEG_PAUSE_LENGTH_US);
 
 	/* Read all available data blocks in RX queue */
 	for (int i = 0; i < NUM_RX_BLOCKS; i++) {
@@ -417,5 +417,5 @@ void test_i2s_state_error_neg(void)
 	ret = rx_block_read(dev_i2s, 0);
 	zassert_equal(ret, TC_PASS, NULL);
 
-	k_sleep(200);
+	k_msleep(200);
 }

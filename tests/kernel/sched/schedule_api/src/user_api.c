@@ -19,7 +19,7 @@ static void sleepy_thread(void *p1, void *p2, void *p3)
 	ARG_UNUSED(p2);
 	ARG_UNUSED(p3);
 
-	k_sleep(INT_MAX);
+	k_msleep(INT_MAX);
 	k_sem_give(&user_sem);
 }
 

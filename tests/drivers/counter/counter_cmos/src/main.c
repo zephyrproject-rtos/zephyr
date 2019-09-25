@@ -24,7 +24,7 @@ void test_cmos_rate(void)
 	zassert_true(cmos != NULL, "can't find CMOS counter device");
 
 	start = counter_read(cmos);
-	k_sleep(DELAY_MS);
+	k_msleep(DELAY_MS);
 	elapsed = counter_read(cmos) - start;
 
 	zassert_true(elapsed >= MIN_BOUND, "busted minimum bound");

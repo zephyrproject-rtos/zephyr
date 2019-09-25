@@ -12,7 +12,7 @@
 #include <ztest.h>
 #include <limits.h>
 
-#define TIMEOUT K_TIMEOUT_MS(100)
+#define TIMEOUT 100
 #define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
 #define MSG_SIZE 4
 #define MSGQ_LEN 2

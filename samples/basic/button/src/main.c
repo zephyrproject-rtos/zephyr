@@ -84,6 +84,6 @@ void main(void)
 		u32_t val = 0U;
 
 		gpio_pin_read(gpiob, PIN, &val);
-		k_sleep(SLEEP_TIME);
+		k_msleep(SLEEP_TIME);
 	}
 }

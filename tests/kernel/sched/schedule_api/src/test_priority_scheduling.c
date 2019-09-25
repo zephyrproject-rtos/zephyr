@@ -91,7 +91,7 @@ void test_priority_scheduling(void)
 			k_sem_take(&sema2, K_FOREVER);
 		}
 		/* Delay to give chance to last thread to run */
-		k_sleep(1);
+		k_msleep(1);
 
 		/* Giving Chance to other threads to run */
 		for (int i = 0; i < NUM_THREAD; i++) {

@@ -14,7 +14,8 @@ static ZTEST_DMEM u32_t data[MSGQ_LEN] = { MSG0, MSG1 };
 
 static void tThread_entry(void *p1, void *p2, void *p3)
 {
-	int ret = k_msgq_put((struct k_msgq *)p1, (void *)&data[0], TIMEOUT);
+	int ret = k_msgq_put((struct k_msgq *)p1, (void *)&data[0],
+			     K_TIMEOUT_MS(TIMEOUT));
 
 	zassert_equal(ret, -ENOMSG, NULL);
 }
@@ -32,7 +33,7 @@ static void purge_when_put(struct k_msgq *q)
 	k_thread_create(&tdata, tstack, STACK_SIZE,
 			tThread_entry, q, NULL, NULL,
 			K_PRIO_PREEMPT(0), K_USER | K_INHERIT_PERMS, K_NO_WAIT);
-	k_sleep(K_TIMEOUT_GET(TIMEOUT) >> 1);
+	k_msleep(TIMEOUT >> 1);
 	/**TESTPOINT: msgq purge while another thread waiting to put msg*/
 	k_msgq_purge(q);
 

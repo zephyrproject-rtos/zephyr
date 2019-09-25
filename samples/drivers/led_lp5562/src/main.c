@@ -188,7 +188,7 @@ void main(void)
 				return;
 			}
 
-			k_sleep(DELAY_TIME);
+			k_msleep(DELAY_TIME);
 		}
 
 		ret = turn_off_all_leds(dev);
@@ -204,7 +204,7 @@ void main(void)
 		}
 
 		/* Wait a few blinking before turning off the LEDs */
-		k_sleep(DELAY_TIME * 2);
+		k_msleep(DELAY_TIME * 2);
 
 		/* Change the color of the LEDs while keeping blinking. */
 		for (i = 0; i < COLORS_TO_SHOW; i++) {
@@ -216,7 +216,7 @@ void main(void)
 				return;
 			}
 
-			k_sleep(DELAY_TIME * 2);
+			k_msleep(DELAY_TIME * 2);
 		}
 
 		ret = turn_off_all_leds(dev);
@@ -224,6 +224,6 @@ void main(void)
 			return;
 		}
 
-		k_sleep(DELAY_TIME);
+		k_msleep(DELAY_TIME);
 	}
 }

@@ -79,6 +79,6 @@ void main(void)
 #else
 		printk("Temperature: %d\n", temp.val1);
 #endif
-		k_sleep(SLEEP_TIME);
+		k_msleep(SLEEP_TIME);
 	}
 }

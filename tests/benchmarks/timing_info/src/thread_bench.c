@@ -141,7 +141,7 @@ void system_thread_bench(void)
 			NULL, NULL, NULL,
 			-1 /*priority*/, 0, 0);
 
-	k_sleep(1);
+	k_msleep(1);
 	thread_abort_end_time = (z_arch_timing_value_swap_common);
 	z_arch_timing_swap_end = z_arch_timing_value_swap_common;
 #if defined(CONFIG_X86) || defined(CONFIG_X86_64)
@@ -290,7 +290,7 @@ void heap_malloc_free_bench(void)
 	u32_t sum_malloc = 0U;
 	u32_t sum_free = 0U;
 
-	k_sleep(10);
+	k_msleep(10);
 	while (count++ != 100) {
 		TIMING_INFO_PRE_READ();
 		heap_malloc_start_time = TIMING_INFO_OS_GET_TIME();

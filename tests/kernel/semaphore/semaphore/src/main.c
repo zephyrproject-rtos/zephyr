@@ -60,7 +60,7 @@ void sem_give_task(void *p1, void *p2, void *p3)
 
 void sem_take_timeout_forever_helper(void *p1, void *p2, void *p3)
 {
-	k_sleep(100);
+	k_msleep(100);
 	k_sem_give(&simple_sem);
 }
 
@@ -363,17 +363,17 @@ void test_sem_take_multiple(void)
 
 
 	/* time for those 3 threads to complete */
-	k_sleep(20);
+	k_msleep(20);
 
 	/* Let these threads proceed to take the multiple_sem */
 	k_sem_give(&high_prio_sem);
 	k_sem_give(&mid_prio_sem);
 	k_sem_give(&low_prio_sem);
-	k_sleep(200);
+	k_msleep(200);
 
 	/* enable the higher priority thread to run. */
 	k_sem_give(&multiple_thread_sem);
-	k_sleep(200);
+	k_msleep(200);
 	/* check which threads completed. */
 	signal_count = k_sem_count_get(&high_prio_sem);
 	zassert_true(signal_count == 1U,
@@ -389,7 +389,7 @@ void test_sem_take_multiple(void)
 
 	/* enable the Medium priority thread to run. */
 	k_sem_give(&multiple_thread_sem);
-	k_sleep(200);
+	k_msleep(200);
 	/* check which threads completed. */
 	signal_count = k_sem_count_get(&high_prio_sem);
 	zassert_true(signal_count == 1U,
@@ -405,7 +405,7 @@ void test_sem_take_multiple(void)
 
 	/* enable the low priority thread to run. */
 	k_sem_give(&multiple_thread_sem);
-	k_sleep(200);
+	k_msleep(200);
 	/* check which threads completed. */
 	signal_count = k_sem_count_get(&high_prio_sem);
 	zassert_true(signal_count == 1U,
@@ -492,7 +492,7 @@ void test_sem_multiple_threads_wait(void)
 		}
 
 		/* giving time for the other threads to execute  */
-		k_sleep(500);
+		k_msleep(500);
 
 		/* Give the semaphores */
 		for (int i = 0; i < TOTAL_THREADS_WAITING; i++) {
@@ -500,7 +500,7 @@ void test_sem_multiple_threads_wait(void)
 		}
 
 		/* giving time for the other threads to execute  */
-		k_sleep(500);
+		k_msleep(500);
 
 		/* check if all the threads are done. */
 		for (int i = 0; i < TOTAL_THREADS_WAITING; i++) {

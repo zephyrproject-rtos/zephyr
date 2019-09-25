@@ -266,7 +266,7 @@ static int send_socket_data(struct modem_socket *sock,
 	}
 
 	/* slight pause per spec so that @ prompt is received */
-	k_sleep(MDM_PROMPT_CMD_DELAY);
+	k_msleep(MDM_PROMPT_CMD_DELAY);
 #if defined(CONFIG_MODEM_UBLOX_SARA_R4)
 	/*
 	 * HACK: Apparently, enabling HEX transmit mode also
@@ -830,7 +830,7 @@ restart:
 
 	/* query modem RSSI */
 	modem_rssi_query_work(NULL);
-	k_sleep(MDM_WAIT_FOR_RSSI_DELAY);
+	k_msleep(MDM_WAIT_FOR_RSSI_DELAY);
 
 	counter = 0;
 	/* wait for RSSI < 0 and > -1000 */
@@ -838,7 +838,7 @@ restart:
 	       (mctx.data_rssi >= 0 ||
 		mctx.data_rssi <= -1000)) {
 		modem_rssi_query_work(NULL);
-		k_sleep(MDM_WAIT_FOR_RSSI_DELAY);
+		k_msleep(MDM_WAIT_FOR_RSSI_DELAY);
 	}
 
 	if (mctx.data_rssi >= 0 || mctx.data_rssi <= -1000) {

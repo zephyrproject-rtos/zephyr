@@ -107,6 +107,6 @@ void main(void)
 			idx = 0;
 		}
 
-		k_sleep(SLEEPTIME);
+		k_msleep(SLEEPTIME);
 	}
 }

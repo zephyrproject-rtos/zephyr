@@ -138,7 +138,7 @@ static void child_fn(void *p1, void *p2, void *p3)
 void test_cpu_id_threads(void)
 {
 	/* Make sure idle thread runs on each core */
-	k_sleep(1000);
+	k_msleep(1000);
 
 	int parent_cpu_id = z_arch_curr_cpu()->id;
 
@@ -339,7 +339,7 @@ void test_sleep_threads(void)
 	spawn_threads(K_PRIO_COOP(10), THREADS_NUM, !EQUAL_PRIORITY,
 		      &thread_entry, !THREAD_DELAY);
 
-	k_sleep(TIMEOUT);
+	k_msleep(TIMEOUT);
 
 	for (int i = 0; i < THREADS_NUM; i++) {
 		zassert_true(tinfo[i].executed == 1,
@@ -358,7 +358,7 @@ static void thread_wakeup_entry(void *p1, void *p2, void *p3)
 
 	thread_started[thread_num] = 1;
 
-	k_sleep(DELAY_US * 1000);
+	k_msleep(DELAY_US * 1000);
 
 	tinfo[thread_num].executed  = 1;
 }
@@ -437,7 +437,7 @@ void test_main(void)
 	 * thread from which they can exit correctly to run the main
 	 * test.
 	 */
-	k_sleep(1000);
+	k_msleep(1000);
 
 	ztest_test_suite(smp,
 			 ztest_unit_test(test_smp_coop_threads),

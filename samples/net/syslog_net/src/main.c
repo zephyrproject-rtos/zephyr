@@ -19,7 +19,7 @@ void main(void)
 	int count = K_SECONDS(60) / SLEEP_BETWEEN_PRINTS;
 
 	/* Allow some setup time before starting to send data */
-	k_sleep(SLEEP_BETWEEN_PRINTS);
+	k_msleep(SLEEP_BETWEEN_PRINTS);
 
 	LOG_DBG("Starting");
 
@@ -29,7 +29,7 @@ void main(void)
 		LOG_INF("Info message");
 		LOG_DBG("Debug message");
 
-		k_sleep(SLEEP_BETWEEN_PRINTS);
+		k_msleep(SLEEP_BETWEEN_PRINTS);
 
 	} while (count--);
 

@@ -45,7 +45,7 @@ void main(void)
 				return;
 			}
 
-			k_sleep(DELAY_TIME);
+			k_msleep(DELAY_TIME);
 		}
 
 		/* Turn off LEDs one by one */
@@ -55,7 +55,7 @@ void main(void)
 				return;
 			}
 
-			k_sleep(DELAY_TIME);
+			k_msleep(DELAY_TIME);
 		}
 
 		/* Set the brightness to half max of LEDs one by one */
@@ -65,7 +65,7 @@ void main(void)
 				return;
 			}
 
-			k_sleep(DELAY_TIME);
+			k_msleep(DELAY_TIME);
 		}
 
 		/* Turn off LEDs one by one */
@@ -75,7 +75,7 @@ void main(void)
 				return;
 			}
 
-			k_sleep(DELAY_TIME);
+			k_msleep(DELAY_TIME);
 		}
 
 		/* Test the blinking of LEDs one by one */
@@ -86,11 +86,11 @@ void main(void)
 				return;
 			}
 
-			k_sleep(DELAY_TIME);
+			k_msleep(DELAY_TIME);
 		}
 
 		/* Wait a few blinking before turning off the LEDs */
-		k_sleep(DELAY_TIME * 10);
+		k_msleep(DELAY_TIME * 10);
 
 		/* Turn off LEDs one by one */
 		for (i = 0; i < NUM_LEDS; i++) {
@@ -99,7 +99,7 @@ void main(void)
 				return;
 			}
 
-			k_sleep(DELAY_TIME);
+			k_msleep(DELAY_TIME);
 		}
 
 	}

@@ -45,7 +45,7 @@ void thread_12(void)
 
 	/* Wait a bit, then release the mutex */
 
-	k_sleep(500);
+	k_msleep(500);
 	sys_mutex_unlock(&private_mutex);
 
 }

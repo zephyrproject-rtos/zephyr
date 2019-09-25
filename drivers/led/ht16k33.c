@@ -270,7 +270,7 @@ static void ht16k33_irq_thread(struct device *dev)
 		do {
 			k_sem_reset(&data->irq_sem);
 			pressed = ht16k33_process_keyscan_data(dev);
-			k_sleep(CONFIG_HT16K33_KEYSCAN_DEBOUNCE_MSEC);
+			k_msleep(CONFIG_HT16K33_KEYSCAN_DEBOUNCE_MSEC);
 		} while (pressed);
 	}
 }

@@ -538,7 +538,7 @@ static void test_prefix_timeout(void)
 	net_if_ipv6_prefix_set_lf(prefix, false);
 	net_if_ipv6_prefix_set_timer(prefix, lifetime);
 
-	k_sleep((lifetime * 2U) * MSEC_PER_SEC);
+	k_msleep((lifetime * 2U) * MSEC_PER_SEC);
 
 	prefix = net_if_ipv6_prefix_lookup(net_if_get_default(),
 					   &addr, len);

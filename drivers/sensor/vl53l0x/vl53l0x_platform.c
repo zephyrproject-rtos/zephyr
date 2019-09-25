@@ -190,7 +190,7 @@ VL53L0X_Error  VL53L0X_RdDWord(VL53L0X_DEV Dev, uint8_t index, uint32_t *data)
 
 VL53L0X_Error VL53L0X_PollingDelay(VL53L0X_DEV Dev)
 {
-	k_sleep(2);
+	k_msleep(2);
 	return VL53L0X_ERROR_NONE;
 }
 

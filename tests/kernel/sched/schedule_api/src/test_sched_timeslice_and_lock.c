@@ -25,7 +25,7 @@ static void thread_entry(void *p1, void *p2, void *p3)
 	int sleep_ms = POINTER_TO_INT(p2);
 
 	if (sleep_ms > 0) {
-		k_sleep(sleep_ms);
+		k_msleep(sleep_ms);
 	}
 
 	int tnum = POINTER_TO_INT(p1);
@@ -131,7 +131,7 @@ void test_sleep_cooperative(void)
 
 	spawn_threads(0);
 	/* checkpoint: all ready threads get executed when k_sleep */
-	k_sleep(100);
+	k_msleep(100);
 	for (int i = 0; i < THREADS_NUM; i++) {
 		zassert_true(tdata[i].executed == 1, NULL);
 	}
@@ -325,7 +325,7 @@ void test_lock_preemptible(void)
 		zassert_true(tdata[i].executed == 0, NULL);
 	}
 	/* make current thread unready */
-	k_sleep(100);
+	k_msleep(100);
 	/* checkpoint: all other threads get executed */
 	for (int i = 0; i < THREADS_NUM; i++) {
 		zassert_true(tdata[i].executed == 1, NULL);

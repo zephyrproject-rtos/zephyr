@@ -60,7 +60,7 @@ void sem_give_task(void *p1, void *p2, void *p3)
 
 void sem_take_timeout_forever_helper(void *p1, void *p2, void *p3)
 {
-	k_sleep(100);
+	k_msleep(100);
 	sys_sem_give(&simple_sem);
 }
 

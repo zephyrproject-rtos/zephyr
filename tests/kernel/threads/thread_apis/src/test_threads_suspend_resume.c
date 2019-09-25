@@ -29,11 +29,11 @@ static void threads_suspend_resume(int prio)
 				      create_prio, K_USER, K_NO_WAIT);
 	/* checkpoint: suspend current thread */
 	k_thread_suspend(tid);
-	k_sleep(100);
+	k_msleep(100);
 	/* checkpoint: created thread shouldn't be executed after suspend */
 	zassert_false(last_prio == create_prio, NULL);
 	k_thread_resume(tid);
-	k_sleep(100);
+	k_msleep(100);
 	/* checkpoint: created thread should be executed after resume */
 	zassert_true(last_prio == create_prio, NULL);
 }

@@ -28,7 +28,7 @@ void *normal_mutex_entry(void *p1)
 		if (rc == 0) {
 			break;
 		}
-		k_sleep(SLEEP_MS);
+		k_msleep(SLEEP_MS);
 	}
 
 	zassert_false(rc, "try lock failed");
@@ -102,7 +102,7 @@ void test_posix_normal_mutex(void)
 	if (ret) {
 		TC_PRINT("Thread1 creation failed %d", ret);
 	}
-	k_sleep(SLEEP_MS);
+	k_msleep(SLEEP_MS);
 	pthread_mutex_unlock(&mutex1);
 
 	pthread_join(thread_1, NULL);

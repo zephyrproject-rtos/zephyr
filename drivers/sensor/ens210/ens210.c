@@ -162,7 +162,7 @@ static int ens210_wait_boot(struct device *i2c_dev)
 					 (u8_t *)&sys_stat);
 
 		if (ret < 0) {
-			k_sleep(1);
+			k_msleep(1);
 			continue;
 		}
 
@@ -176,7 +176,7 @@ static int ens210_wait_boot(struct device *i2c_dev)
 
 		ens210_sys_enable(i2c_dev);
 
-		k_sleep(2);
+		k_msleep(2);
 	}
 
 	if (ret < 0) {

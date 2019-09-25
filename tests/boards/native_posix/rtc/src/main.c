@@ -69,7 +69,7 @@ static void test_realtime(void)
 	hwtimer_set_rt_ratio(1.0);
 
 	/*Let's wait >=1 tick to ensure everything is settled*/
-	k_sleep(TICK_MS);
+	k_msleep(TICK_MS);
 
 	start_time = get_host_us_time();
 	start_rtc_time[2] = native_rtc_gettime_us(RTC_CLOCK_PSEUDOHOSTREALTIME);
@@ -81,7 +81,7 @@ static void test_realtime(void)
 		acc_ratio *= time_ratios[i];
 
 		/* k_sleep waits 1 tick more than asked */
-		k_sleep(WAIT_TIME - TICK_MS);
+		k_msleep(WAIT_TIME - TICK_MS);
 
 		/*
 		 * Check that during the sleep, the correct amount of real time

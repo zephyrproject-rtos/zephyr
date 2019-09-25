@@ -331,7 +331,7 @@ static int try_to_connect(struct mqtt_client *client)
 		rc = mqtt_connect(client);
 		if (rc != 0) {
 			PRINT_RESULT("mqtt_connect", rc);
-			k_sleep(APP_SLEEP_MSECS);
+			k_msleep(APP_SLEEP_MSECS);
 			continue;
 		}
 
@@ -443,6 +443,6 @@ void main(void)
 
 	while (1) {
 		publisher();
-		k_sleep(5000);
+		k_msleep(5000);
 	}
 }
