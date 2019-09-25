@@ -17,6 +17,10 @@
 		zephyr,console = &uart2;
 		zephyr,flash = &flash0;
 	};
+
+	aliases {
+		pwm-0 = &pwm0;
+	};
 };
 
 &uart2 {
