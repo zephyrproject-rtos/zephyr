@@ -365,6 +365,18 @@
 #endif
 .endm
 
+/* macro to push aux reg through reg */
+.macro PUSHAX reg aux
+	lr \reg, [\aux]
+	st.a \reg, [sp, -4]
+.endm
+
+/* macro to pop aux reg through reg */
+.macro POPAX reg aux
+	ld.ab \reg, [sp, 4]
+	sr \reg, [\aux]
+.endm
+
 #endif /* _ASMLANGUAGE */
 
 #endif /*  ZEPHYR_ARCH_ARC_INCLUDE_SWAP_MACROS_H_ */

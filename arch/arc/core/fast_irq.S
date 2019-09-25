@@ -101,20 +101,25 @@ firq_nest:
 	 * save original value of _ARC_V2_USER_SP and ilink into
 	 * the stack of interrupted context first, then restore them later
 	 */
-	st ilink, [sp]
-	lr ilink, [_ARC_V2_USER_SP]
-	st ilink, [sp, -4]
+	push ilink
+	PUSHAX ilink, _ARC_V2_USER_SP
+
 	/* sp here is the sp of interrupted context */
 	sr sp, [_ARC_V2_USER_SP]
+	/* here, bank 0 sp must go back to the value before push and
+	 * PUSHAX as we will switch to bank1, the pop and POPAX later will
+	 * change bank1's sp, not bank0's sp
+	 */
+	add sp, sp, 8
 
 	/* switch back to banked reg, only ilink can be used */
 	lr ilink, [_ARC_V2_STATUS32]
 	or ilink, ilink, _ARC_V2_STATUS32_RB(1)
 	kflag ilink
 	lr sp, [_ARC_V2_USER_SP]
-	ld ilink, [sp, -4]
-	sr ilink, [_ARC_V2_USER_SP]
-	ld ilink, [sp]
+
+	POPAX ilink, _ARC_V2_USER_SP
+	pop ilink
 firq_nest_1:
 #else
 firq_nest:
