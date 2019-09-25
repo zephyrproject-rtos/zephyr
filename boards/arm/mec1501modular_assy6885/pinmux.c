@@ -40,6 +40,13 @@ static int board_pinmux_init(struct device *dev)
 		device_get_binding(CONFIG_PINMUX_XEC_GPIO240_276_NAME);
 #endif
 
+	/* Configure GPIO bank before usage
+	 * VTR1 is not configurable
+	 * VTR2 doesn't need configuration if setting VTR2_STRAP
+	 */
+#ifdef CONFIG_SOC_MEC1501_VTR3_1_8V
+	ECS_REGS->GPIO_BANK_PWR |= MCHP_ECS_VTR3_LVL_18;
+#endif
 	/* Release JTAG TDI and JTAG TDO pins so they can be
 	 * controlled by their respective PCR register (UART2).
 	 * For more details see table 44-1
