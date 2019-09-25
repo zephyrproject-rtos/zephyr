@@ -98,3 +98,14 @@ void test_intmath(void)
 /**
  * @}
  */
+
+
+
+void test_main(void)
+{
+	ztest_test_suite(intmath,
+			 ztest_unit_test(test_intmath)
+			 );
+
+	ztest_run_test_suite(intmath);
+}
