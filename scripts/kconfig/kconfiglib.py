@@ -554,7 +554,7 @@ from glob import iglob
 from os.path import dirname, exists, expandvars, islink, join, realpath
 
 
-VERSION = (12, 14, 0)
+VERSION = (12, 14, 1)
 
 
 # File layout:
@@ -2603,10 +2603,9 @@ class Kconfig(object):
         while 1:
             match = _name_special_search(s, i)
 
-            if match.group() == "$(":
-                s, i = self._expand_macro(s, match.start(), ())
-            else:
+            if match.group() != "$(":
                 return (s, match.start())
+            s, i = self._expand_macro(s, match.start(), ())
 
     def _expand_str(self, s, i):
         # Expands a quoted string starting at index 'i' in 's'. Handles both
@@ -2649,14 +2648,12 @@ class Kconfig(object):
         # Returns the expanded 's' (including the part before the macro) and
         # the index of the first character after the expanded macro in 's'.
 
-        start = i
+        res = s[:i]
         i += 2  # Skip over "$("
 
-        # Start of current macro argument
-        arg_start = i
-
-        # Arguments of this macro call
-        new_args = []
+        arg_start = i  # Start of current macro argument
+        new_args = []  # Arguments of this macro call
+        nesting = 0  # Current parentheses nesting level
 
         while 1:
             match = _macro_special_search(s, i)
@@ -2664,12 +2661,19 @@ class Kconfig(object):
                 self._parse_error("missing end parenthesis in macro expansion")
 
 
-            if match.group() == ")":
+            if match.group() == "(":
+                nesting += 1
+                i = match.end()
+
+            elif match.group() == ")":
+                if nesting:
+                    nesting -= 1
+                    i = match.end()
+                    continue
+
                 # Found the end of the macro
 
                 new_args.append(s[arg_start:match.start()])
-
-                prefix = s[:start]
 
                 # $(1) is replaced by the first argument to the function, etc.,
                 # provided at least that many arguments were passed
@@ -2677,19 +2681,22 @@ class Kconfig(object):
                 try:
                     # Does the macro look like an integer, with a corresponding
                     # argument? If so, expand it to the value of the argument.
-                    prefix += args[int(new_args[0])]
+                    res += args[int(new_args[0])]
                 except (ValueError, IndexError):
                     # Regular variables are just functions without arguments,
                     # and also go through the function value path
-                    prefix += self._fn_val(new_args)
+                    res += self._fn_val(new_args)
 
-                return (prefix + s[match.end():],
-                        len(prefix))
+                return (res + s[match.end():], len(res))
 
             elif match.group() == ",":
+                i = match.end()
+                if nesting:
+                    continue
+
                 # Found the end of a macro argument
                 new_args.append(s[arg_start:match.start()])
-                arg_start = i = match.end()
+                arg_start = i
 
             else:  # match.group() == "$("
                 # A nested macro call within the macro
@@ -7015,8 +7022,8 @@ _assignment_lhs_fragment_match = _re_match("[A-Za-z0-9_-]*")
 # variable assignment
 _assignment_rhs_match = _re_match(r"\s*(=|:=|\+=)\s*(.*)")
 
-# Special characters/strings while expanding a macro (')', ',', and '$(')
-_macro_special_search = _re_search(r"\)|,|\$\(")
+# Special characters/strings while expanding a macro ('(', ')', ',', and '$(')
+_macro_special_search = _re_search(r"\(|\)|,|\$\(")
 
 # Special characters/strings while expanding a string (quotes, '\', and '$(')
 _string_special_search = _re_search(r'"|\'|\\|\$\(')
