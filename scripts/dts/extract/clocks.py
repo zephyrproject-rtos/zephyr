@@ -46,8 +46,14 @@ class DTClocks(DTDirective):
                                      '#clock-cells', 0))
                 clock_cells_string = clock_provider_bindings.get(
                     'cell_string', 'CLOCK')
-                clock_cells_names = clock_provider_bindings.get(
-                    '#cells', ['ID', 'CELL1',  "CELL2", "CELL3"])
+
+                if "clock-cells" in clock_provider_bindings:
+                    clock_cells_names = clock_provider_bindings["clock-cells"]
+                elif "#cells" in clock_provider_bindings:
+                    clock_cells_names = clock_provider_bindings["#cells"]
+                else:
+                    clock_cells_names = ["ID", "CELL1",  "CELL2", "CELL3"]
+
                 clock_cells = []
             else:
                 clock_cells.append(cell)

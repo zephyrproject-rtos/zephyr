@@ -433,8 +433,8 @@ def write_irqs(node):
         while irq_ctrl.interrupts:
             irq_num = (irq_num + 1) << 8
             if "irq" not in irq_ctrl.interrupts[0].data:
-                err("Expected binding for {!r} to have 'irq' "
-                    "in '#cells'".format(irq_ctrl))
+                err("Expected binding for {!r} to have 'irq' in *-cells"
+                    .format(irq_ctrl))
             irq_num |= irq_ctrl.interrupts[0].data["irq"]
             irq_ctrl = irq_ctrl.interrupts[0].controller
         return irq_num
@@ -476,7 +476,7 @@ def write_phandle_val_list(prop):
     # generates output like this:
     #
     #   #define <device prefix>_PWMS_CONTROLLER_0 "PWM_0"  (name taken from 'label = ...')
-    #   #define <device prefix>_PWMS_CHANNEL_0 123         (name taken from #cells in binding)
+    #   #define <device prefix>_PWMS_CHANNEL_0 123         (name taken from *-cells in binding)
     #   #define <device prefix>_PWMS_0 {"PWM_0", 123}
     #   #define <device prefix>_PWMS_CONTROLLER_1 "PWM_1"
     #   #define <device prefix>_PWMS_CHANNEL_1 456

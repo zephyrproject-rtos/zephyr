@@ -20,5 +20,5 @@ properties:
     "#clock-cells":
       const: 1
 
-"#cells":
+clock-cells:
   - name

@@ -11,6 +11,6 @@ properties:
     reg:
       required: true
 
-"#cells":
+pinmux-cells:
   - pin
   - function

@@ -12,6 +12,6 @@ compatible: "snps,archs-idu-intc"
 
 include: [interrupt-controller.yaml, base.yaml]
 
-"#cells":
+interrupt-cells:
   - irq
   - priority

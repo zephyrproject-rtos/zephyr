@@ -5,6 +5,6 @@ description: Controller with two data values
 
 compatible: "phandle-array-controller-2"
 
-"#cells":
+phandle-array-foo-cells:
     - one
     - two

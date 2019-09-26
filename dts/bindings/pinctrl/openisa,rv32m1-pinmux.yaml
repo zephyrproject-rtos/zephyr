@@ -14,6 +14,6 @@ properties:
     clocks:
       required: true
 
-"#cells":
+pinmux-cells:
   - pin
   - function
