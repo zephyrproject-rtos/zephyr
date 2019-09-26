@@ -538,8 +538,8 @@ def extract_cells(node_path, prop, prop_values, names, index,
         # Get number of cells per element of current property
         for props in reduced[cell_parent]['props']:
             if props[0] == '#' and '-cells' in props:
-                if props in cell_yaml:
-                    cell_yaml_names = props
+                if props[1:] in cell_yaml:
+                    cell_yaml_names = props[1:]  # #foo-cells -> foo-cells
                 else:
                     cell_yaml_names = '#cells'
 

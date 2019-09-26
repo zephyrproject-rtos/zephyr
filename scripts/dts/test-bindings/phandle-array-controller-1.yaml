@@ -5,5 +5,8 @@ description: Controller with one data value
 
 compatible: "phandle-array-controller-1"
 
-"#cells":
+phandle-array-foo-cells:
     - one
+
+gpio-cells:
+    - gpio-one

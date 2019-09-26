@@ -55,7 +55,12 @@ class DTInterrupts(DTDirective):
             l_cell_prefix = ['IRQ']
 
             for i in range(reduced[irq_parent]['props']['#interrupt-cells']):
-                l_cell_name = [cell_yaml['#cells'][i].upper()]
+                if "interrupt-cells" in cell_yaml:
+                    cell_yaml_name = "interrupt-cells"
+                else:
+                    cell_yaml_name = "#cells"
+
+                l_cell_name = [cell_yaml[cell_yaml_name][i].upper()]
                 if l_cell_name == l_cell_prefix:
                     l_cell_name = []
 

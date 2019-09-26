@@ -32,7 +32,7 @@ properties:
       required: false
       const: 3
 
-"#cells":
+clock-cells:
   - name
   - offset
   - bits

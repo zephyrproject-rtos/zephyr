@@ -5,6 +5,6 @@ description: Interrupt controller with two cells
 
 compatible: "interrupt-two-cell"
 
-"#cells":
-  - one
-  - two
+interrupt-cells:
+    - one
+    - two

@@ -17,7 +17,7 @@ properties:
   "#interrupt-cells":
       const: 3
 
-"#cells":
+interrupt-cells:
   - irq
   - sense
   - priority
