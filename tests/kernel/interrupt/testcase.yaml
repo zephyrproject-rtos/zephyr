@@ -1,6 +1,6 @@
 tests:
   arch.interrupt:
-    arch_exclude: nios2 riscv32 arc
+    arch_exclude: nios2 riscv32
     platform_exclude: qemu_x86 qemu_x86_coverage qemu_x86_64
     tags: interrupt
 
