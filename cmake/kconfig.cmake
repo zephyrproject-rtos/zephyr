@@ -26,6 +26,12 @@ if(OVERLAY_CONFIG)
   string(REPLACE " " ";" OVERLAY_CONFIG_AS_LIST "${OVERLAY_CONFIG}")
 endif()
 
+# DTS_ROOT_BINDINGS is a semicolon separated list, this causes
+# problems when invoking kconfig_target since semicolon is a special
+# character in the C shell, so we make it into a question-mark
+# separated list instead.
+string(REPLACE ";" "?" DTS_ROOT_BINDINGS "${DTS_ROOT_BINDINGS}")
+
 set(ENV{srctree}            ${ZEPHYR_BASE})
 set(ENV{KERNELVERSION}      ${KERNELVERSION})
 set(ENV{KCONFIG_CONFIG}     ${DOTCONFIG})
