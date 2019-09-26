@@ -130,7 +130,7 @@ void z_clock_set_timeout(s32_t n, bool idle)
 	u32_t full_cycles;	/* full_ticks represented as cycles */
 	u32_t partial_cycles;	/* number of cycles to first tick boundary */
 
-	if (idle && (n == K_FOREVER)) {
+	if (idle && (n == K_FOREVER_TICKS)) {
 		/*
 		 * We are not in a locked section. Are writes to two
 		 * global objects safe from pre-emption?
@@ -142,7 +142,7 @@ void z_clock_set_timeout(s32_t n, bool idle)
 
 	if (n < 1) {
 		full_ticks = 0;
-	} else if ((n == K_FOREVER) || (n > MAX_TICKS)) {
+	} else if ((n == K_FOREVER_TICKS) || (n > MAX_TICKS)) {
 		full_ticks = MAX_TICKS - 1;
 	} else {
 		full_ticks = n - 1;
