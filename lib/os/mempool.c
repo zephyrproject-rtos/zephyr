@@ -354,3 +354,30 @@ void sys_mem_pool_free(void *ptr)
 	sys_mutex_unlock(&p->mutex);
 }
 
+size_t sys_mem_pool_try_expand_inplace(void *ptr, size_t requested_size)
+{
+	struct sys_mem_pool_block *blk;
+	size_t struct_blk_size = WB_UP(sizeof(struct sys_mem_pool_block));
+	size_t block_size, total_requested_size;
+
+	ptr = (char *)ptr - struct_blk_size;
+	blk = (struct sys_mem_pool_block *)ptr;
+
+	/*
+	 * Determine size of previously allocated block by its level.
+	 * Most likely a bit larger than the original allocation
+	 */
+	block_size = blk->pool->base.max_sz;
+	for (int i = 1; i <= blk->level; i++) {
+		block_size = WB_DN(block_size / 4);
+	}
+
+	/* We really need this much memory */
+	total_requested_size = requested_size + struct_blk_size;
+
+	if (block_size >= total_requested_size) {
+		/* size adjustment can occur in-place */
+		return 0;
+	}
+	return block_size - struct_blk_size;
+}

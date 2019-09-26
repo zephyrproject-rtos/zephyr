@@ -99,4 +99,17 @@ void *sys_mem_pool_alloc(struct sys_mem_pool *p, size_t size);
  */
 void sys_mem_pool_free(void *ptr);
 
+/**
+ * @brief Try to perform in-place expansion of memory allocated from a pool
+ *
+ * Return 0 if memory previously allocated by sys_mem_pool_alloc()
+ * can accommodate a new size, otherwise return the size of data that
+ * needs to be copied over to new memory.
+ *
+ * @param ptr Pointer to previously allocated memory
+ * @param new_size New size requested for the memory block
+ * @return A 0 if OK, or size of data to copy elsewhere
+ */
+size_t sys_mem_pool_try_expand_inplace(void *ptr, size_t new_size);
+
 #endif
