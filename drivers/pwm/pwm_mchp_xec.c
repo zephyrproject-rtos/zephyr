@@ -136,7 +136,8 @@ static u32_t xec_compute_dc(u32_t on, u32_t off)
 {
 	int dc = (on + 1) + (off + 1);
 
-	dc = (((on + 1) * XEC_PWM_DC_PF) / dc);
+	/* Make calculation in u64_t since XEC_PWM_DC_PF is large */
+	dc = (((u64_t)(on + 1) * XEC_PWM_DC_PF) / dc);
 
 	return (u32_t)dc;
 }
