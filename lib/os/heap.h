@@ -51,7 +51,7 @@ typedef size_t chunkid_t;
 
 typedef struct { char bytes[CHUNK_UNIT]; } chunk_unit_t;
 
-enum chunk_fields { SIZE_AND_USED, LEFT_SIZE, FREE_PREV, FREE_NEXT };
+enum chunk_fields { LEFT_SIZE, SIZE_AND_USED, FREE_PREV, FREE_NEXT };
 
 struct z_heap_bucket {
 	chunkid_t next;
