@@ -9,7 +9,7 @@ tests:
     extra_configs:
       - CONFIG_NO_OPTIMIZATIONS=y
     tags: arm
-    min_flash: 64
+    min_flash: 192
   arch.arm.swap.common.fp_sharing:
     arch_whitelist: arm
     filter: CONFIG_ARMV7_M_ARMV8_M_FP
@@ -25,4 +25,4 @@ tests:
       - CONFIG_FP_SHARING=y
       - CONFIG_NO_OPTIMIZATIONS=y
     tags: arm
-    min_flash: 64
+    min_flash: 192
