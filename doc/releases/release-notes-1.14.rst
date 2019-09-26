@@ -5,28 +5,30 @@
 Zephyr Kernel 1.14.1
 ####################
 
-This is an LTS maintenance release with fixes.
+This is an LTS maintenance release with fixes, as well as Bluetooth
+qualification listings for the Bluetooth protocol stack included in Zephyr.
 
-Kernel
-######
+Security Vulnerability Related
+******************************
 
-Architectures
-#############
+The following security vulnerability (CVE) was addressed in this
+release:
 
-Boards
-######
-
-Drivers and Sensors
-###################
+* Fixes CVE-2019-9506: The Bluetooth BR/EDR specification up to and
+  including version 5.1 permits sufficiently low encryption key length
+  and does not prevent an attacker from influencing the key length
+  negotiation. This allows practical brute-force attacks (aka "KNOB")
+  that can decrypt traffic and inject arbitrary ciphertext without the
+  victim noticing.
 
 Bluetooth
-#########
+*********
 
- * Qualification ready host (including Mesh)
- * Qualification ready controller
+* Qualification:
 
-Networking
-##########
+  * 1.14.x Host subsystem qualified with QDID 95152
+  * 1.14.x Mesh subsystem qualified with QDID 95153
+  * 1.14.x Controller subsystem qualified on Nordic nRF52 with QDID <TBD>
 
 Zephyr Kernel 1.14.0
 ####################
