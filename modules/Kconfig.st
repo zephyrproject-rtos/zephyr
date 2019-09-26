@@ -7,8 +7,6 @@ config HAS_STLIB
 
 config HAS_STMEMSC
 	bool
-	imply NEWLIB_LIBC
-	imply NEWLIB_LIBC_FLOAT_PRINTF
 
 if HAS_STMEMSC
 
