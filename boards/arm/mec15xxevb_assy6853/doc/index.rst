@@ -237,6 +237,13 @@ Setup
 
    Note that the tools for Linux and Windows have different file names.
 
+#. If needed, a custom SPI image configuration file can be specified
+   to override the default one.
+
+   .. code-block:: console
+
+      export EVERGLADES_SPI_CFG=custom_spi_cfg.txt
+
 Building
 ========
 
