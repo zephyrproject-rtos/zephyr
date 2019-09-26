@@ -49,6 +49,22 @@ config CANOPEN_TX_WORKQUEUE_PRIORITY
 	help
 	  Priority level of the internal CANopen transmit workqueue.
 
+config CANOPEN_STORAGE
+	bool "CANopen object dictionary storage"
+	depends on SETTINGS
+	default y
+	help
+	  Enable support for storing the CANopen object dictionary to
+	  non-volatile storage.
+
+config CANOPEN_STORAGE_HANDLER_ERASES_EEPROM
+	bool "Erase CANopen object dictionary EEPROM entries in storage handler"
+	depends on CANOPEN_STORAGE
+	default n
+	help
+	  Erase CANopen object dictionary EEPROM entries upon write to
+	  object dictionary index 0x1011 subindex 1.
+
 config CANOPEN_SYNC_THREAD
 	bool "CANopen SYNC thread"
 	default y
