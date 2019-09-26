@@ -38,8 +38,17 @@ GTEXT(__ev_maligned)
 GTEXT(z_irq_do_offload);
 #endif
 
-/* the necessary stack size for exception handling */
-#define EXCEPTION_STACK_SIZE 384
+
+/*
+ * The exception handling will use top part of interrupt stack to
+ * get smaller memory footprint, because exception is not frequent.
+ * To reduce the impact on interrupt handling, especially nested interrupt
+ * the top part of interrupt stack cannot be too large, so add a check
+ * here
+ */
+#if CONFIG_ARC_EXCEPTION_STACK_SIZE > (CONFIG_ISR_STACK_SIZE >> 1)
+#error "interrupt stack size is too small"
+#endif
 
 /*
  * @brief Fault handler installed in the fault and reserved vectors
@@ -67,7 +76,7 @@ _exc_entry:
 	 */
 	mov_s ilink, sp
 	_get_curr_cpu_irq_stack sp
-	sub sp, sp, (CONFIG_ISR_STACK_SIZE - EXCEPTION_STACK_SIZE)
+	sub sp, sp, (CONFIG_ISR_STACK_SIZE - CONFIG_ARC_EXCEPTION_STACK_SIZE)
 
 	/*
 	 * save caller saved registers
