@@ -267,6 +267,7 @@
 /include/sys/atomic.h                     @andrewboie @andyross
 /include/bluetooth/                       @joerchan @jhedberg @Vudentz
 /include/cache.h                          @andrewboie @andyross
+/include/canbus/                          @alexanderwachter
 /include/device.h                         @wentongwu @nashif
 /include/display/                         @vanwinkeljan
 /include/dt-bindings/clock/kinetis_mcg.h  @henrikbrixandersen
