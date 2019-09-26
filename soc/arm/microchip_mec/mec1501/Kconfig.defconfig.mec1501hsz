@@ -77,4 +77,11 @@ config KSCAN_XEC
 
 endif # KSCAN
 
+if SPI
+
+config SPI_XEC_QMSPI
+	def_bool y
+
+endif # SPI
+
 endif # SOC_MEC1501_HSZ

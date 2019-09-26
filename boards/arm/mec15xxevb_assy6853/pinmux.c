@@ -261,6 +261,40 @@ static int board_pinmux_init(struct device *dev)
 		       MCHP_GPIO_CTRL_MUX_F1 | MCHP_GPIO_CTRL_BUFT_OPENDRAIN);
 #endif /* CONFIG_KSCAN_XEC */
 
+#ifdef CONFIG_SPI_XEC_QMSPI
+#if defined(DT_INST_0_MICROCHIP_XEC_QMSPI)
+	mchp_pcr_periph_slp_ctrl(PCR_QMSPI, MCHP_PCR_SLEEP_DIS);
+
+#if DT_SPI_XEC_QMSPI_0_PORT_SEL == 0
+	/* Port 0: Shared SPI pins. Shared has two chip selects */
+#if DT_SPI_XEC_QMSPI_0_CHIP_SELECT == 0
+	pinmux_pin_set(portb, MCHP_GPIO_055, MCHP_GPIO_CTRL_MUX_F2);
+#else
+	pinmux_pin_set(porta, MCHP_GPIO_002, MCHP_GPIO_CTRL_MUX_F2);
+#endif
+	pinmux_pin_set(portb, MCHP_GPIO_056, MCHP_GPIO_CTRL_MUX_F2);
+	pinmux_pin_set(porte, MCHP_GPIO_223, MCHP_GPIO_CTRL_MUX_F1);
+	pinmux_pin_set(porte, MCHP_GPIO_224, MCHP_GPIO_CTRL_MUX_F2);
+#if DT_SPI_XEC_QMSPI_0_LINES == 4
+	pinmux_pin_set(porte, MCHP_GPIO_227, MCHP_GPIO_CTRL_MUX_F1);
+	pinmux_pin_set(porta, MCHP_GPIO_016, MCHP_GPIO_CTRL_MUX_F2);
+#endif
+
+#else
+	/* Port 1: Private SPI pins. Only one chip select */
+	pinmux_pin_set(portc, MCHP_GPIO_124, MCHP_GPIO_CTRL_MUX_F1);
+	pinmux_pin_set(portc, MCHP_GPIO_125, MCHP_GPIO_CTRL_MUX_F1);
+	pinmux_pin_set(portc, MCHP_GPIO_121, MCHP_GPIO_CTRL_MUX_F1);
+	pinmux_pin_set(portc, MCHP_GPIO_122, MCHP_GPIO_CTRL_MUX_F1);
+#if DT_SPI_XEC_QMSPI_0_LINES == 4
+	pinmux_pin_set(portc, MCHP_GPIO_123, MCHP_GPIO_CTRL_MUX_F1);
+	pinmux_pin_set(portc, MCHP_GPIO_126, MCHP_GPIO_CTRL_MUX_F1);
+#endif
+#endif /* DT_SPI_XEC_QMSPI_0_PORT_SEL == 0 */
+
+#endif /* DT_INST_0_MICROCHIP_XEC_QMSPI */
+#endif /* CONFIG_SPI_XEC_QMSPI */
+
 	return 0;
 }
 
