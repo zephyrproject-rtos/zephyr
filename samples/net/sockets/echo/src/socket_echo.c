@@ -82,7 +82,9 @@ int main(void)
 				}
 				break;
 			}
-
+#if IS_ENABLED(CONFIG_NET_TCP2)
+			printf("recv: %d byte(s)\n", len);
+#endif
 			p = buf;
 			do {
 				out_len = send(client, p, len, 0);
