@@ -351,6 +351,21 @@ config BT_OOB_DATA_FIXED
 	  value. This option should only be enabled for debugging and should
 	  never be used in production.
 
+config BT_KEYS_OVERWRITE_OLDEST
+	bool "Overwrite oldest keys with new ones if key storage is full"
+	help
+	  With this option enabled, if a pairing attempt occurs and the key storage
+	  is full, then the oldest keys in storage will be removed to free space
+	  for the new pairing keys.
+
+config BT_KEYS_SAVE_AGING_COUNTER_ON_PAIRING
+	bool "Store aging counter every time a successful paring occurs"
+	depends on BT_SETTINGS && BT_KEYS_OVERWRITE_OLDEST
+	help
+	  With this option enabled, aging counter will be stored in settings every
+	  time a successful pairing occurs. This increases flash wear out but offers
+	  a more correct finding of the oldest unused paiting info.
+
 endif # BT_SMP
 
 source "subsys/bluetooth/host/Kconfig.l2cap"
