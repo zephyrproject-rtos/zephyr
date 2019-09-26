@@ -6,6 +6,7 @@ properties:
         required: false
         description: indicates the operational status of a device
         enum:
+           - "ok" # Deprecated form
            - "okay"
            - "disabled"
            - "reserved"
