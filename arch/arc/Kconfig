@@ -280,6 +280,15 @@ config CACHE_FLUSHING
 	  If the d-cache is present, set this to y.
 	  If the d-cache is NOT present, set this to n.
 
+config ARC_EXCEPTION_STACK_SIZE
+	int "ARC exception handling stack size"
+	default 768
+	help
+	  Size in bytes of exception handling stack which is at the top of
+	  interrupt stack to get smaller memory footprint because exception
+	  is not frequent. To reduce the impact on interrupt handling,
+	  especially nested interrupt, it cannot be too large.
+
 endmenu
 
 config ARC_EXCEPTION_DEBUG
