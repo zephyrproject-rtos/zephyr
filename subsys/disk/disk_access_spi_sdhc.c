@@ -862,11 +862,6 @@ static int disk_spi_sdhc_access_init(struct disk_info *disk)
 	struct sdhc_spi_data *data = dev->driver_data;
 	int err;
 
-	if (data->status == DISK_STATUS_OK) {
-		/* Called twice, don't re-init. */
-		return 0;
-	}
-
 	err = sdhc_spi_detect(data);
 	sdhc_spi_set_cs(data, 1);
 
