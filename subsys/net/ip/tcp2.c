@@ -868,6 +868,7 @@ static struct tcp *tcp_conn_new(struct net_pkt *pkt)
 		tcp_endpoint_to_string(conn->dst));
 
 	memcpy(&context->remote, conn->dst, sizeof(context->remote));
+	context->flags |= NET_CONTEXT_REMOTE_ADDR_SET;
 
 	((struct sockaddr_in *)&context->local)->sin_family = af;
 
