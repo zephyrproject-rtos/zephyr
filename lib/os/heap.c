@@ -112,6 +112,20 @@ void sys_heap_free(struct sys_heap *heap, void *mem)
 	chunkid_t c = ((uint8_t *)mem - chunk_header_bytes(h)
 		       - (uint8_t *)chunk_buf(h)) / CHUNK_UNIT;
 
+	/*
+	 * This should catch many double-free cases.
+	 * This is cheap enough so let's do it all the time.
+	 */
+	__ASSERT(chunk_used(h, c),
+		 "unexpected heap state (double-free?) for memory at %p", mem);
+	/*
+	 * It is easy to catch many common memory overflow cases with
+	 * a quick check on this and next chunk header fields that are
+	 * immediately before and after the freed memory.
+	 */
+	__ASSERT(left_chunk(h, right_chunk(h, c)) == c,
+		 "corrupted heap bounds (buffer overflow?) for memory at %p", mem);
+
 	/* Merge with right chunk?  We can just absorb it. */
 	if (!chunk_used(h, right_chunk(h, c))) {
 		chunkid_t rc = right_chunk(h, c);
