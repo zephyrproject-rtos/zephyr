@@ -2060,7 +2060,8 @@ def _check_dt(dt):
 
     # Check that 'status' has one of the values given in the devicetree spec.
 
-    ok_status = {"okay", "disabled", "reserved", "fail", "fail-sss"}
+    # Accept "ok" for backwards compatibility
+    ok_status = {"ok", "okay", "disabled", "reserved", "fail", "fail-sss"}
 
     for node in dt.node_iter():
         if "status" in node.props:
