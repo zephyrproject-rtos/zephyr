@@ -26,9 +26,15 @@ config ESPI_GPIO_DEV_NEEDED
 
 if ESPI_GPIO_DEV_NEEDED
 
-config ESPI_GPIO_DEV
-	string "Name of the GPIO port"
+config ESPI_GPIO_DEV0
+	string "Name of the GPIO port 0"
 	default "GPIO_0"
+	help
+	  Name of the port used in mimimal handshake
+
+config ESPI_GPIO_DEV1
+	string "Name of the GPIO port 1"
+	default "GPIO_1"
 	help
 	  Name of the port used in mimimal handshake
 
@@ -37,6 +43,12 @@ config ESPI_INIT_PIN
 	default 0
 	help
 	  Pin number of eSPI master init pin
+
+config PWRGD_PIN
+	int "Indication espi master power is up"
+	default 0
+	help
+	  Pin number of eSPI master power indication
 
 endif # ESPI_GPIO_DEV_NEEDED
 
