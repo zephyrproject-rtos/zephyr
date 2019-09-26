@@ -1282,11 +1282,15 @@ static void le_set_data_len(struct net_buf *buf, struct net_buf **evt)
 static void le_read_default_data_len(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_rp_le_read_default_data_len *rp;
+	u16_t max_tx_octets;
+	u16_t max_tx_time;
 
 	rp = hci_cmd_complete(evt, sizeof(*rp));
 
-	ll_length_default_get(&rp->max_tx_octets, &rp->max_tx_time);
+	ll_length_default_get(&max_tx_octets, &max_tx_time);
 
+	rp->max_tx_octets = sys_cpu_to_le16(max_tx_octets);
+	rp->max_tx_time = sys_cpu_to_le16(max_tx_time);
 	rp->status = 0x00;
 }
 
@@ -1295,9 +1299,13 @@ static void le_write_default_data_len(struct net_buf *buf,
 {
 	struct bt_hci_cp_le_write_default_data_len *cmd = (void *)buf->data;
 	struct bt_hci_evt_cc_status *ccst;
+	u16_t max_tx_octets;
+	u16_t max_tx_time;
 	u8_t status;
 
-	status = ll_length_default_set(cmd->max_tx_octets, cmd->max_tx_time);
+	max_tx_octets = sys_le16_to_cpu(cmd->max_tx_octets);
+	max_tx_time = sys_le16_to_cpu(cmd->max_tx_time);
+	status = ll_length_default_set(max_tx_octets, max_tx_time);
 
 	ccst = hci_cmd_complete(evt, sizeof(*ccst));
 	ccst->status = status;
@@ -1306,11 +1314,20 @@ static void le_write_default_data_len(struct net_buf *buf,
 static void le_read_max_data_len(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_rp_le_read_max_data_len *rp;
+	u16_t max_tx_octets;
+	u16_t max_tx_time;
+	u16_t max_rx_octets;
+	u16_t max_rx_time;
 
 	rp = hci_cmd_complete(evt, sizeof(*rp));
 
-	ll_length_max_get(&rp->max_tx_octets, &rp->max_tx_time,
-			  &rp->max_rx_octets, &rp->max_rx_time);
+	ll_length_max_get(&max_tx_octets, &max_tx_time,
+			  &max_rx_octets, &max_rx_time);
+
+	rp->max_tx_octets = sys_cpu_to_le16(max_tx_octets);
+	rp->max_tx_time = sys_cpu_to_le16(max_tx_time);
+	rp->max_tx_octets = sys_cpu_to_le16(max_tx_octets);
+	rp->max_tx_time = sys_cpu_to_le16(max_tx_time);
 	rp->status = 0x00;
 }
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
