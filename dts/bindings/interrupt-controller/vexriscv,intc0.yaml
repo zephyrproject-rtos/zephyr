@@ -22,6 +22,6 @@ properties:
   "#interrupt-cells":
       const: 2
 
-"#cells":
+interrupt-cells:
   - irq
   - priority

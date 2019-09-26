@@ -844,7 +844,7 @@ class Node:
         #     #<name>-cells = <size>
         #
         # property that gives the number of cells in the value after the
-        # phandle. These values are given names in #cells in the binding for
+        # phandle. These values are given names in *-cells in the binding for
         # the controller.
         #
         # Also parses any
@@ -882,32 +882,32 @@ class Node:
 
         return res
 
-    def _named_cells(self, controller, data, controller_s):
-        # Returns a dictionary that maps #cells names given in the binding for
-        # 'controller' to cell values. 'data' is the raw data, as a byte array,
-        # and 'controller_s' a string that gives the context (for error
-        # messages).
+    def _named_cells(self, controller, data, basename):
+        # Returns a dictionary that maps <basename>-cells names given in the
+        # binding for 'controller' to cell values. 'data' is the raw data, as a
+        # byte array.
 
         if not controller._binding:
             _err("{} controller {!r} for {!r} lacks binding"
-                 .format(controller_s, controller._node, self._node))
+                 .format(basename, controller._node, self._node))
 
-        if "#cells" in controller._binding:
+        if basename + "-cells" in controller._binding:
+            cell_names = controller._binding[basename + "-cells"]
+        elif "#cells" in controller._binding:
+            # Backwards compatibility
             cell_names = controller._binding["#cells"]
-            if not isinstance(cell_names, list):
-                _err("binding for {} controller {!r} has malformed #cells array"
-                     .format(controller_s, controller._node))
         else:
-            # Treat no #cells in the binding the same as an empty #cells, so
-            # that bindings don't have to have an empty #cells for e.g.
+            # Treat no *-cells in the binding the same as an empty *-cells, so
+            # that bindings don't have to have e.g. an empty 'clock-cells:' for
             # '#clock-cells = <0>'.
             cell_names = []
 
         data_list = to_nums(data)
         if len(data_list) != len(cell_names):
-            _err("unexpected #cells length in binding for {!r} - {} instead "
-                 "of {}".format(controller._node, len(cell_names),
-                                len(data_list)))
+            _err("unexpected '{}-cells:' length in binding for {!r} - {} "
+                 "instead of {}"
+                 .format(basename, controller._node, len(cell_names),
+                         len(data_list)))
 
         return dict(zip(cell_names, data_list))
 
@@ -971,9 +971,9 @@ class ControllerAndData:
       gets sent to for interrupts)
 
     data:
-      A dictionary that maps names from the #cells key in the binding for
-      the controller to data values, e.g. {"pin": 4, "flags": 0} for the
-      example above.
+      A dictionary that maps names from the *-cells key in the binding for the
+      controller to data values, e.g. {"pin": 4, "flags": 0} for the example
+      above.
 
       'interrupts = <1 2>' might give {"irq": 1, "level": 2}.
 
@@ -1291,8 +1291,8 @@ def _check_binding(binding, binding_path):
               "sub-node"}
 
     for prop in binding:
-        if prop not in ok_top:
-            _err("unknown key '{}' in {}, expected one of {}"
+        if prop not in ok_top and not prop.endswith("-cells"):
+            _err("unknown key '{}' in {}, expected one of {}, or *-cells"
                  .format(prop, binding_path, ", ".join(ok_top)))
 
     for pc in "parent", "child":
@@ -1338,6 +1338,26 @@ def _check_binding(binding, binding_path):
                  .format(binding_path))
 
         _check_binding_properties(binding["sub-node"], binding_path)
+
+    if "#cells" in binding:
+        _warn('"#cells:" in {} is deprecated and will be removed - please put '
+              "'interrupt-cells:', 'pwm-cells:', 'gpio-cells:', etc., "
+              "instead. The name should match the name of the corresponding "
+              "phandle-array property (see binding-template.yaml)"
+              .format(binding_path))
+
+    def ok_cells_val(val):
+        # Returns True if 'val' is an okay value for '*-cells:' (or the legacy
+        # '#cells:')
+
+        return isinstance(val, list) and \
+               all(isinstance(elm, str) for elm in val)
+
+    for key, val in binding.items():
+        if key.endswith("-cells") or key == "#cells":
+            if not ok_cells_val(val):
+                _err("malformed '{}:' in {}, expected a list of strings"
+                     .format(key, binding_path))
 
 
 def _check_binding_properties(binding, binding_path):

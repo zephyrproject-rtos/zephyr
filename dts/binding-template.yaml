@@ -126,8 +126,9 @@ parent-bus: <string describing bus type, e.g. "i2c">
 #     Taking 'pwms' as an example, the final -s is stripped from the property
 #     name, and #pwm-cells is looked up in the node for the controller
 #     (&ctrl-1/&ctrl-2) to determine the number of data values after the
-#     phandle. The binding for each controller must also have a #cells key,
-#     giving names to data values. See below for an explanation of #cells.
+#     phandle. The binding for each controller must also have a *-cells key
+#     (e.g. pwm-cells), giving names to data values. See below for an
+#     explanation of *-cells.
 #
 #     A *-names (e.g. pwm-names) property can appear on the node as well,
 #     giving a name to each entry (the 'pwms' example above has two entries,
@@ -286,28 +287,41 @@ child-binding:
 
 # If the binding describes an interrupt controller, GPIO controller, pinmux
 # device, or any other node referenced by other nodes via 'phandle-array'
-# properties, then #cells should be given.
+# properties, then *-cells should be given.
 #
-# To understand the purpose of #cells, assume that some node has
+# To understand the purpose of *-cells, assume that some node has
 #
-#     foo-gpios = <&gpio-ctrl 1 2>;
+#     pwms = <&pwm-ctrl 1 2>;
 #
-# , where &gpio-ctrl refers to a node whose binding is this file.
+# , where &pwm-ctrl refers to a node whose binding is this file.
 #
 # The <1 2> part of the property value is called a *specifier* (this
 # terminology is from the devicetree specification), and contains additional
 # data associated with the GPIO. Here, the specifier has two cells, and the
-# node pointed at by &gpio-ctrl is expected to have '#gpio-cells = <2>'.
+# node pointed at by &gpio-ctrl is expected to have '#pwm-cells = <2>'.
 #
-# #cells gives a name to each cell in the specifier. These names are used
-# when generating identifiers.
+# *-cells gives a name to each cell in the specifier. These names are used when
+# generating identifiers.
 #
 # In this example, assume that 1 refers to a pin and that 2 is a flag value.
-# This gives a #cells assignment like below.
-"#cells":
-    - pin  # name of first cell
-    - flag # name of second cell
+# This gives a *-cells assignment like below.
+pwm-cells:
+    - channel # name of first cell
+    - period  # name of second cell
 
-# If the specifier is empty (e.g. '#clock-cells = <0>'), then #cells can either
-# be omitted (recommended) or set to an empty array. Note that an empty array
-# is specified as '"#cells": []' in YAML.
+# If the specifier is empty (e.g. '#clock-cells = <0>'), then *-cells can
+# either be omitted (recommended) or set to an empty array. Note that an empty
+# array is specified as e.g. 'clock-cells: []' in YAML.
+
+# As a special case, all *-gpio properties map to the key 'gpio-cells',
+# regardless of prefix
+gpio-cells:
+    - pin
+    - flags
+
+# This older syntax is deprecated and will generate a warning when used. It
+# works as a catch-all, where the name of the referencing 'phandle-array'
+# property doesn't matter.
+"#cells":
+    - pin
+    - flags

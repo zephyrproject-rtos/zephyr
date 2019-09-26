@@ -18,6 +18,6 @@ properties:
     "#gpio-cells":
         const: 2
 
-"#cells":
+gpio-cells:
   - pin
   - flags

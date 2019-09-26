@@ -5,5 +5,5 @@ description: Interrupt controller with one cell
 
 compatible: "interrupt-one-cell"
 
-"#cells":
-  - one
+interrupt-cells:
+    - one

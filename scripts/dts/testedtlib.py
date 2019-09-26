@@ -129,11 +129,12 @@ def run():
     verify_streq(grandchild.props, "{'grandchild-prop': <Property, name: grandchild-prop, type: int, value: 2>}")
 
     #
-    # Test deprecated 'sub-node:' key (replaced with 'child-binding:')
+    # Test deprecated 'sub-node' key (replaced with 'child-binding') and
+    # deprecated '#cells' key (replaced with '*-cells')
     #
 
     verify_streq(edt.get_node("/deprecated/sub-node").props,
-                 "{'child-prop': <Property, name: child-prop, type: int, value: 3>}")
+                 "{'foos': <Property, name: foos, type: phandle-array, value: [<ControllerAndData, controller: <Node /deprecated in 'test.dts', binding test-bindings/deprecated.yaml>, data: {'foo': 1, 'bar': 2}>]>}")
 
     #
     # Test Node.props (derived from DT and 'properties:' in the binding)
@@ -170,7 +171,7 @@ def run():
                  "<Property, name: phandle-array-foos, type: phandle-array, value: [<ControllerAndData, controller: <Node /props/ctrl-1 in 'test.dts', binding test-bindings/phandle-array-controller-1.yaml>, data: {'one': 1}>, <ControllerAndData, controller: <Node /props/ctrl-2 in 'test.dts', binding test-bindings/phandle-array-controller-2.yaml>, data: {'one': 2, 'two': 3}>]>")
 
     verify_streq(edt.get_node("/props").props["foo-gpios"],
-                 "<Property, name: foo-gpios, type: phandle-array, value: [<ControllerAndData, controller: <Node /props/ctrl-1 in 'test.dts', binding test-bindings/phandle-array-controller-1.yaml>, data: {'one': 1}>]>")
+                 "<Property, name: foo-gpios, type: phandle-array, value: [<ControllerAndData, controller: <Node /props/ctrl-1 in 'test.dts', binding test-bindings/phandle-array-controller-1.yaml>, data: {'gpio-one': 1}>]>")
 
     #
     # Test <prefix>-map, via gpio-map (the most common case)

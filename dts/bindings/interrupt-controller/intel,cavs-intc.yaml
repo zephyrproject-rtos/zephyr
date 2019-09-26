@@ -5,7 +5,7 @@ description: >
 
 compatible: "intel,cavs-intc"
 
-include: base.yaml
+include: [interrupt-controller.yaml, base.yaml]
 
 properties:
   reg:
@@ -17,7 +17,7 @@ properties:
   "#interrupt-cells":
       const: 3
 
-"#cells":
+interrupt-cells:
   - irq
   - sense
   - priority
