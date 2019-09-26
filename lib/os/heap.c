@@ -25,8 +25,7 @@ static void free_list_remove(struct z_heap *h, int bidx,
 	CHECK(!chunk_used(h, c));
 	CHECK(b->next != 0);
 	CHECK(b->list_size > 0);
-	CHECK((((h->avail_buckets & (1 << bidx)) == 0)
-	       == (h->buckets[bidx].next == 0)));
+	CHECK(h->avail_buckets & (1 << bidx));
 
 	b->list_size--;
 
@@ -67,7 +66,7 @@ static void free_list_add(struct z_heap *h, chunkid_t c)
 		set_prev_free_chunk(h, second, c);
 	}
 
-	CHECK(h->avail_buckets & (1 << bucket_idx(h, chunk_size(h, c))));
+	CHECK(h->avail_buckets & (1 << bi));
 }
 
 /* Allocates (fit check has already been perfomred) from the next
