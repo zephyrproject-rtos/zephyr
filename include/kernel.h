@@ -4194,7 +4194,7 @@ struct k_mem_pool {
 			.flags = SYS_MEM_POOL_KERNEL			\
 		} \
 	}; \
-	BUILD_ASSERT(WB_UP(maxsz) >= _MPOOL_MINBLK);
+	BUILD_ASSERT(WB_UP(maxsz) >= _MPOOL_MINBLK)
 
 /**
  * @brief Allocate memory from a memory pool.
