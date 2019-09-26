@@ -560,9 +560,7 @@ demux:
     beq _oops
 
 #if CONFIG_IRQ_OFFLOAD
-    push {r0, lr}
     blx z_irq_do_offload  /* call C routine which executes the offload */
-    pop {r0, lr}
 
     /* exception return is done in z_arm_int_exit() */
     mov r0, #RET_FROM_SVC
@@ -571,9 +569,7 @@ demux:
 
 _context_switch:
     /* handler mode exit, to PendSV */
-    push {r0, lr}
     bl z_arm_pendsv
-    pop {r0, lr}
 
     mov r0, #RET_FROM_SVC
     b z_arm_int_exit

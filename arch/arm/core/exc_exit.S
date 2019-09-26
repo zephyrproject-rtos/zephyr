@@ -90,9 +90,7 @@ SECTION_SUBSEC_FUNC(TEXT, _HandlerModeExit, z_arm_exc_exit)
     ldr r2, =_SCS_ICSR_PENDSV
     str r2, [r1]
 #elif defined(CONFIG_CPU_CORTEX_R)
-    push {r0, lr}
     bl z_arm_pendsv
-    pop {r0, lr}
 #endif
 
 _ExcExitWithGdbStub:
@@ -101,6 +99,7 @@ _EXIT_EXC:
 #endif /* CONFIG_PREEMPT_ENABLED */
 
 #ifdef CONFIG_STACK_SENTINEL
+#if defined(CONFIG_CPU_CORTEX_M)
     push {r0, lr}
     bl z_check_stack_sentinel
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
@@ -109,6 +108,9 @@ _EXIT_EXC:
 #else
     pop {r0, lr}
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
+#else
+    bl z_check_stack_sentinel
+#endif /* CONFIG_CPU_CORTEX_M */
 #endif /* CONFIG_STACK_SENTINEL */
 
 #if defined(CONFIG_CPU_CORTEX_M)
