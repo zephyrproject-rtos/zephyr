@@ -218,7 +218,8 @@ void lll_resume(void *param)
 
 void lll_disable(void *param)
 {
-	if (!param || param == event.curr.param) {
+	/* LLL disable of current event, done is generated */
+	if (!param || (param == event.curr.param)) {
 		if (event.curr.abort_cb && event.curr.param) {
 			event.curr.abort_cb(NULL, event.curr.param);
 		} else {
@@ -232,7 +233,7 @@ void lll_disable(void *param)
 		next = ull_prepare_dequeue_iter(&idx);
 		while (next) {
 			if (!next->is_aborted &&
-			    param == next->prepare_param.param) {
+			    (!param || (param == next->prepare_param.param))) {
 				next->is_aborted = 1;
 				next->abort_cb(&next->prepare_param,
 					       next->prepare_param.param);
