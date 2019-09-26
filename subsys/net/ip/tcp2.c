@@ -830,10 +830,10 @@ enum net_verdict tcp_pkt_received(struct net_conn *net_conn,
 
 		conn_old->context->remote = conn->dst->sa;
 
-		conn_old->accept_cb(conn_old->context,
+		conn_old->accept_cb(conn->context,
 					&conn_old->context->remote,
 					sizeof(struct sockaddr), 0,
-					conn_old->context->user_data);
+					conn_old->context);
 	}
 
 	if (conn) {
