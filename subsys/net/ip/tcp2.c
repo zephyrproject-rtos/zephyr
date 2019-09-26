@@ -514,10 +514,16 @@ static size_t tcp_data_get(struct tcp *conn, struct net_pkt *pkt)
 
 		tcp_free(buf);
 
-		if (!IS_ENABLED(CONFIG_NET_TP)) {
+		if (conn->context->recv_cb) {
+			struct net_pkt *up = net_pkt_clone(pkt, K_NO_WAIT);
+
+			net_pkt_cursor_init(up);
+			net_pkt_set_overwrite(up, true);
+			net_pkt_skip(up, 40);
+
 			net_context_packet_received(
 				(struct net_conn *)conn->context->conn_handler,
-				pkt, NULL, NULL, conn->recv_user_data);
+				up, NULL, NULL, conn->recv_user_data);
 		}
 	}
 
