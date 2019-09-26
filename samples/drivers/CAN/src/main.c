@@ -134,7 +134,7 @@ void main(void)
 	}
 
 #ifdef CONFIG_LOOPBACK_MODE
-	can_configure(can_dev, CAN_LOOPBACK_MODE, 250000);
+	can_configure(can_dev, CAN_LOOPBACK_MODE, 125000);
 #endif
 
 #if defined(DT_ALIAS_LED0_GPIOS_PIN) && defined(DT_ALIAS_LED0_GPIOS_CONTROLLER)
