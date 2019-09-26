@@ -70,7 +70,7 @@ static union tcp_endpoint *tcp_endpoint_new(struct net_pkt *pkt, int src)
 	return ep;
 }
 
-static char *tcp_endpoint_to_string(union tcp_endpoint *ep)
+char *tcp_endpoint_to_string(union tcp_endpoint *ep)
 {
 #define NBUFS 2
 #define BUF_SIZE 80

@@ -20,6 +20,9 @@ ssize_t _tcp_send(int fd, const void *buf, size_t len, int flags);
 int net_tcp_queue(struct tcp *conn, const void *buf, size_t len,
 		  const struct msghdr *msghdr);
 
+union tcp_endpoint;
+char *tcp_endpoint_to_string(union tcp_endpoint *ep);
+
 #ifdef __cplusplus
 }
 #endif
