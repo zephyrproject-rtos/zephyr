@@ -2090,10 +2090,16 @@ def _check_dt(dt):
                 _err(str(e))
 
             if status_val not in ok_status:
-                _err("unknown 'status' value \"{}\" in {} in {}, expected one "
-                     "of {} (see the devicetree specification)"
-                     .format(status_val, node.path, node.dt.filename,
-                             ", ".join(ok_status)))
+                if status_val == "ok":
+                    _warn("'status = \"ok\"' in {} in {} is deprecated, "
+                          "please use 'status = \"okay\"' instead (see the "
+                          "devicetree specification)"
+                          .format(node.path, node.dt.filename))
+                else:
+                    _err("unknown 'status' value \"{}\" in {} in {}, expected "
+                         "one of {} (see the devicetree specification)"
+                         .format(status_val, node.path, node.dt.filename,
+                                 ", ".join(ok_status)))
 
         ranges_prop = node.props.get("ranges")
         if ranges_prop:
