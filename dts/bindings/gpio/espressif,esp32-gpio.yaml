@@ -15,6 +15,9 @@ properties:
     label:
         required: true
 
+    "#gpio-cells":
+        const: 2
+
 "#cells":
   - pin
   - flags
