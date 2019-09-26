@@ -201,4 +201,6 @@ source "drivers/spi/Kconfig.litex"
 
 source "drivers/spi/Kconfig.oc_simple"
 
+source "drivers/spi/Kconfig.xec_qmspi"
+
 endif # SPI
