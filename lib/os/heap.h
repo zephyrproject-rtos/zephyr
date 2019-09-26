@@ -65,9 +65,19 @@ struct z_heap {
 	struct z_heap_bucket buckets[0];
 };
 
+static inline bool big_heap_chunks(size_t chunks)
+{
+	return sizeof(void *) > 4 || chunks > 0x7fff;
+}
+
+static inline bool big_heap_bytes(size_t bytes)
+{
+	return big_heap_chunks(bytes / CHUNK_UNIT);
+}
+
 static inline bool big_heap(struct z_heap *h)
 {
-	return sizeof(size_t) > 4 || h->len > 0x7fff;
+	return big_heap_chunks(h->len);
 }
 
 static inline chunk_unit_t *chunk_buf(struct z_heap *h)
@@ -92,7 +102,7 @@ static inline size_t chunk_field(struct z_heap *h, chunkid_t c,
 static inline void chunk_set(struct z_heap *h, chunkid_t c,
 			     enum chunk_fields f, chunkid_t val)
 {
-	CHECK(c < h->len);
+	CHECK(c <= h->len);
 
 	chunk_unit_t *buf = chunk_buf(h);
 	void *cmem = &buf[c];
@@ -187,6 +197,11 @@ static inline void set_left_chunk_size(struct z_heap *h, chunkid_t c,
 static inline size_t chunk_header_bytes(struct z_heap *h)
 {
 	return big_heap(h) ? 8 : 4;
+}
+
+static inline size_t heap_footer_bytes(size_t size)
+{
+	return big_heap_bytes(size) ? 8 : 4;
 }
 
 static inline size_t chunksz(size_t bytes)
