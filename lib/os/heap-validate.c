@@ -34,7 +34,8 @@ static bool valid_chunk(struct z_heap *h, chunkid_t c)
 	return (chunk_size(h, c) > 0
 		&& (c + chunk_size(h, c) <= h->len)
 		&& in_bounds(h, c)
-		&& (!left_chunk(h, c) || in_bounds(h, left_chunk(h, c)))
+		&& (right_chunk(h, left_chunk(h, c)) == c)
+		&& (left_chunk(h, right_chunk(h, c)) == c)
 		&& (chunk_used(h, c) || in_bounds(h, prev_free_chunk(h, c)))
 		&& (chunk_used(h, c) || in_bounds(h, next_free_chunk(h, c))));
 }

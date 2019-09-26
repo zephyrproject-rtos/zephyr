@@ -70,11 +70,6 @@ static void free_list_add(struct z_heap *h, chunkid_t c)
 	CHECK(h->avail_buckets & (1 << bucket_idx(h, chunk_size(h, c))));
 }
 
-static ALWAYS_INLINE bool last_chunk(struct z_heap *h, chunkid_t c)
-{
-	return (c + chunk_size(h, c)) == h->len;
-}
-
 /* Allocates (fit check has already been perfomred) from the next
  * chunk at the specified bucket level
  */
@@ -99,9 +94,7 @@ static void *split_alloc(struct z_heap *h, int bidx, size_t sz)
 		set_chunk_size(h, c, sz);
 		set_chunk_size(h, c2, rem);
 		set_left_chunk_size(h, c2, sz);
-		if (!last_chunk(h, c2)) {
-			set_left_chunk_size(h, c3, rem);
-		}
+		set_left_chunk_size(h, c3, rem);
 		free_list_add(h, c2);
 	}
 
@@ -121,15 +114,13 @@ void sys_heap_free(struct sys_heap *heap, void *mem)
 		       - (uint8_t *)chunk_buf(h)) / CHUNK_UNIT;
 
 	/* Merge with right chunk?  We can just absorb it. */
-	if (!last_chunk(h, c) && !chunk_used(h, right_chunk(h, c))) {
+	if (!chunk_used(h, right_chunk(h, c))) {
 		chunkid_t rc = right_chunk(h, c);
 		size_t newsz = chunk_size(h, c) + chunk_size(h, rc);
 
 		free_list_remove(h, bucket_idx(h, chunk_size(h, rc)), rc);
 		set_chunk_size(h, c, newsz);
-		if (!last_chunk(h, c)) {
-			set_left_chunk_size(h, right_chunk(h, c), newsz);
-		}
+		set_left_chunk_size(h, right_chunk(h, c), newsz);
 	}
 
 	/* Merge with left chunk?  It absorbs us. */
@@ -141,9 +132,7 @@ void sys_heap_free(struct sys_heap *heap, void *mem)
 
 		free_list_remove(h, bucket_idx(h, chunk_size(h, lc)), lc);
 		set_chunk_size(h, lc, merged_sz);
-		if (!last_chunk(h, lc)) {
-			set_left_chunk_size(h, rc, merged_sz);
-		}
+		set_left_chunk_size(h, rc, merged_sz);
 
 		c = lc;
 	}
@@ -206,6 +195,10 @@ void sys_heap_init(struct sys_heap *heap, void *mem, size_t bytes)
 	/* Must fit in a 32 bit count of HUNK_UNIT */
 	CHECK(bytes / CHUNK_UNIT <= 0xffffffffU);
 
+	/* Reserve the final marker chunk's header */
+	CHECK(bytes > heap_footer_bytes(bytes));
+	bytes -= heap_footer_bytes(bytes);
+
 	/* Round the start up, the end down */
 	uintptr_t addr = ROUND_UP(mem, CHUNK_UNIT);
 	uintptr_t end = ROUND_DOWN((uint8_t *)mem + bytes, CHUNK_UNIT);
@@ -231,10 +224,18 @@ void sys_heap_init(struct sys_heap *heap, void *mem, size_t bytes)
 		h->buckets[i].next = 0;
 	}
 
+	/* chunk containing our struct z_heap */
 	set_chunk_size(h, 0, chunk0_size);
 	set_chunk_used(h, 0, true);
 
+	/* chunk containing the free heap */
 	set_chunk_size(h, chunk0_size, buf_sz - chunk0_size);
 	set_left_chunk_size(h, chunk0_size, chunk0_size);
+
+	/* the end marker chunk */
+	set_chunk_size(h, buf_sz, 0);
+	set_left_chunk_size(h, buf_sz, buf_sz - chunk0_size);
+	set_chunk_used(h, buf_sz, true);
+
 	free_list_add(h, chunk0_size);
 }
