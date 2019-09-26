@@ -1007,6 +1007,11 @@ void bt_conn_security_changed(struct bt_conn *conn, enum bt_security_err err)
 			cb->security_changed(conn, conn->sec_level, err);
 		}
 	}
+#if IS_ENABLED(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
+	if (!err && conn->sec_level >= BT_SECURITY_L2) {
+		bt_keys_update_usage(conn->id, bt_conn_get_dst(conn));
+	}
+#endif
 }
 
 static int start_security(struct bt_conn *conn)
