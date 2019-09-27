@@ -1013,7 +1013,15 @@ next_state:
 		break;
 	case TCP_CLOSED:
 		fl = 0;
-		net_tcp_unref(conn->context);
+		{
+			struct net_context *context = conn->context;
+			if (context->recv_cb) {
+				context->recv_cb(context, NULL, NULL, NULL,
+							-ECONNRESET,
+							conn->recv_user_data);
+			}
+			net_tcp_unref(context);
+		}
 		break;
 	case TCP_TIME_WAIT:
 	case TCP_CLOSING:
