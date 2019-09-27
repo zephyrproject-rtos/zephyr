@@ -7,7 +7,7 @@ Overview
 ********
 
 ODROID-GO Game Kit is a "Do it yourself" ("DIY") portable game console by
-HardKernel. It fetaures a custom ESP32-WROVER with 16 MB flash and it operates
+HardKernel. It features a custom ESP32-WROVER with 16 MB flash and it operates
 from 80 MHz - 240 MHz [1]_.
 
 The features include the following:
