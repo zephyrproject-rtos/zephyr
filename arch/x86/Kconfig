@@ -82,7 +82,7 @@ choice
 		  Reboot via the RST_CNT register, going back to BIOS.
 endchoice
 
-config X86_ACPI
+config ACPI
 	bool "ACPI (Advanced Configuration and Power Interface) support"
 	default n
 	help
