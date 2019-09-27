@@ -235,7 +235,7 @@
 			status = "disabled";
 			label = "I2S_0";
 		};
-		
+
 		rtc0: rtc@4000b000 {
 			compatible = "nordic,nrf-rtc";
 			reg = <0x4000b000 0x1000>;

@@ -1,0 +1,26 @@
+# Kconfig - nrfx I2S driver configuration options
+#
+# Copyright (c) 2019 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig NRFX_I2S
+	bool "NRFX I2S controller driver"
+	depends on HAS_HW_NRF_I2S
+	default y
+	help
+	  Enable nrfx I2S support for Nordic CPUs
+
+if NRFX_I2S
+
+config NRFX_I2S_RX_BLOCK_COUNT
+	int "RX queue length"
+	default 4
+
+config NRFX_I2S_TX_BLOCK_COUNT
+	int "TX queue length"
+	default 4
+
+endif # NRFX_I2S
+
