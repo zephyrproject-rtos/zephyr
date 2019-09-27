@@ -251,7 +251,8 @@ static int ids_print(const struct log_output *log_output, bool level_on,
 				(func_on &&
 				((1 << level) & LOG_FUNCTION_PREFIX_MASK)) ?
 				"%s." : "%s: ",
-				log_source_name_get(domain_id, source_id));
+				log_source_name_get(NULL, 0, domain_id,
+						    source_id));
 
 	return total;
 }

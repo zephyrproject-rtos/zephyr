@@ -30,9 +30,8 @@ extern "C" {
 #define CONFIG_LOG_MAX_LEVEL 0
 #endif
 
-#if !defined(CONFIG_LOG) || defined(CONFIG_LOG_MINIMAL)
-#define CONFIG_LOG_DOMAIN_ID 0
-#endif
+/* Id of local domain. */
+#define Z_LOG_LOCAL_DOMAIN_ID 0
 
 #define LOG_FUNCTION_PREFIX_MASK \
 	(((u32_t)IS_ENABLED(CONFIG_LOG_FUNC_NAME_PREFIX_ERR) << \
@@ -259,7 +258,7 @@ static inline char z_log_minimal_level_to_char(int level)
 				   (_level <= LOG_RUNTIME_FILTER(_filter))) {  \
 				struct log_msg_ids src_level = {	       \
 					.level = _level,		       \
-					.domain_id = CONFIG_LOG_DOMAIN_ID,     \
+					.domain_id = Z_LOG_LOCAL_DOMAIN_ID,    \
 					.source_id = _id		       \
 				};					       \
 									       \
@@ -315,7 +314,7 @@ static inline char z_log_minimal_level_to_char(int level)
 				struct log_msg_ids src_level = {	       \
 					.level = _level,		       \
 					.source_id = _id,		       \
-					.domain_id = CONFIG_LOG_DOMAIN_ID      \
+					.domain_id = Z_LOG_LOCAL_DOMAIN_ID     \
 				};					       \
 									       \
 				if (is_user_context) {			       \
@@ -403,25 +402,14 @@ static inline char z_log_minimal_level_to_char(int level)
 extern struct log_source_const_data __log_const_start[0];
 extern struct log_source_const_data __log_const_end[0];
 
-/** @brief Get name of the log source.
- *
- * @param source_id Source ID.
- * @return Name.
- */
-static inline const char *log_name_get(u32_t source_id)
-{
-	return __log_const_start[source_id].name;
-}
-
 /** @brief Get compiled level of the log source.
  *
- * @param source_id Source ID.
+ * @param domain_id	Domain ID.
+ * @param source_id	Source ID.
+ *
  * @return Level.
  */
-static inline u8_t log_compiled_level_get(u32_t source_id)
-{
-	return __log_const_start[source_id].level;
-}
+u8_t log_compiled_level_get(u8_t domain_id, u16_t source_id);
 
 /** @brief Get index of the log source based on the address of the constant data
  *         associated with the source.
@@ -437,11 +425,19 @@ static inline u32_t log_const_source_id(
 			sizeof(struct log_source_const_data);
 }
 
-/** @brief Get number of registered sources. */
-static inline u32_t log_sources_count(void)
-{
-	return log_const_source_id(__log_const_end);
-}
+/** @brief Get number of registered sources.
+ *
+ * @param domain_id Absolute domain ID.
+ *
+ * @return Number of log sources in the given domain.
+ */
+u16_t log_sources_count(u8_t domain_id);
+
+/** @brief Get number of domains.
+ *
+ * @return Number of domains.
+ */
+u8_t log_domains_count(void);
 
 extern struct log_source_dynamic_data __log_dynamic_start[0];
 extern struct log_source_dynamic_data __log_dynamic_end[0];
@@ -457,14 +453,12 @@ extern struct log_source_dynamic_data __log_dynamic_end[0];
 
 /** @brief Get pointer to the filter set of the log source.
  *
+ * @param domain_id Domain ID.
  * @param source_id Source ID.
  *
  * @return Pointer to the filter set.
  */
-static inline u32_t *log_dynamic_filters_get(u32_t source_id)
-{
-	return &__log_dynamic_start[source_id].filters;
-}
+u32_t *log_dynamic_filters_get(u8_t domain_id, u32_t source_id);
 
 /** @brief Get index of the log source based on the address of the dynamic data
  *         associated with the source.
@@ -484,6 +478,18 @@ static inline __printf_like(1, 2)
 void log_printf_arg_checker(const char *fmt, ...)
 {
 	ARG_UNUSED(fmt);
+}
+
+/** @brief Check if domain is local.
+ *
+ * @param domain_id Domain ID.
+ *
+ * @return True if domain is local.
+ */
+static inline bool z_log_is_local_domain(u8_t domain_id)
+{
+	return !IS_ENABLED(CONFIG_LOG_MULTIDOMAIN) ||
+			(domain_id == 0);
 }
 
 /** @brief Standard log with no arguments.
@@ -586,6 +592,16 @@ void log_generic(struct log_msg_ids src_level, const char *fmt, va_list ap);
  */
 void log_generic_from_user(struct log_msg_ids src_level,
 			   const char *fmt, va_list ap);
+
+/**
+ * @brief Enqueue external log message.
+ *
+ * Add log message to processing queue. Log message is created outside local
+ * core. For example it maybe coming from extrnal domain.
+ *
+ * @param msg Message to enqueue.
+ */
+void z_log_msg_enqueue(struct log_msg *msg);
 
 /** @brief Check if address belongs to the memory pool used for transient.
  *
