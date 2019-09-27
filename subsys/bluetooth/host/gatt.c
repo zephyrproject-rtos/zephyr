@@ -1586,6 +1586,10 @@ int bt_gatt_notify_cb(struct bt_conn *conn,
 
 	attr = params->attr;
 
+	if (conn && conn->state != BT_CONN_CONNECTED) {
+		return -ENOTCONN;
+	}
+
 	handle = attr->handle ? : find_static_attr(attr);
 	if (!handle) {
 		return -ENOENT;
@@ -1643,6 +1647,10 @@ int bt_gatt_indicate(struct bt_conn *conn,
 	__ASSERT(params->attr, "invalid parameters\n");
 
 	attr = params->attr;
+
+	if (conn && conn->state != BT_CONN_CONNECTED) {
+		return -ENOTCONN;
+	}
 
 	handle = attr->handle ? : find_static_attr(attr);
 	if (!handle) {
