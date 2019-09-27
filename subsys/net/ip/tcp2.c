@@ -1078,19 +1078,19 @@ ssize_t _tcp_send(struct tcp *conn, const void *buf, size_t len, int flags)
 	return len;
 }
 
-int tcp_close(struct tcp *conn)
-{
-	conn->state = TCP_CLOSE_WAIT;
-
-	tcp_in(conn, NULL);
-
-	return 0;
-}
-
 /* close() has been called on the socket */
 int net_tcp_put(struct net_context *context)
 {
-	return tcp_close(context->tcp);
+	struct tcp *conn = context->tcp;
+
+	tcp_dbg("%s", conn ? tcp_conn_state(conn, NULL) : "");
+
+	if (conn) {
+		conn->state = TCP_CLOSE_WAIT;
+		tcp_in(conn, NULL);
+	}
+
+	return 0;
 }
 
 int net_tcp_listen(struct net_context *context)
@@ -1442,9 +1442,9 @@ bool tp_input(struct net_pkt *pkt)
 			tp_seq_stat();
 		}
 		if (is("CLOSE2", tp->op)) {
-			struct tcp *conn = (void *) sys_slist_peek_head(&tp_conns);
-
-			tcp_close(conn);
+			struct tcp *conn =
+				(void *)sys_slist_peek_head(&tp_conns);
+			net_tcp_put(conn->context);
 		}
 		if (is("RECV", tp->op)) {
 			ssize_t len = tcp_recv(0, buf, sizeof(buf), 0);
