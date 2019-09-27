@@ -11,7 +11,7 @@
  * it once, early, and then cache the "interesting" results for later.
  */
 
-static struct x86_acpi_madt *madt;
+static struct acpi_madt *madt;
 
 /*
  * ACPI structures use a simple checksum, such that
@@ -36,13 +36,13 @@ static bool validate_checksum(void *buf, int len)
  * we then use to find the MADT. (This function is long, but easy to follow.)
  */
 
-void z_x86_acpi_init(void)
+void z_acpi_init(void)
 {
 	/*
 	 * First, find the RSDP by probing "well-known" areas of memory.
 	 */
 
-	struct x86_acpi_rsdp *rsdp = NULL;
+	struct acpi_rsdp *rsdp = NULL;
 
 	static const struct {
 		u32_t base;
@@ -56,9 +56,9 @@ void z_x86_acpi_init(void)
 		u32_t addr = area[i].base;
 
 		while (addr < area[i].top) {
-			struct x86_acpi_rsdp *probe = UINT_TO_POINTER(addr);
+			struct acpi_rsdp *probe = UINT_TO_POINTER(addr);
 
-			if ((probe->signature == X86_ACPI_RSDP_SIGNATURE) &&
+			if ((probe->signature == ACPI_RSDP_SIGNATURE) &&
 			    (validate_checksum(probe, sizeof(*probe)))) {
 				rsdp = probe;
 				break;
@@ -76,8 +76,8 @@ void z_x86_acpi_init(void)
 	 * Then, validate the RSDT fingered by the RSDP.
 	 */
 
-	struct x86_acpi_rsdt *rsdt = UINT_TO_POINTER(rsdp->rsdt);
-	if ((rsdt->sdt.signature != X86_ACPI_RSDT_SIGNATURE) ||
+	struct acpi_rsdt *rsdt = UINT_TO_POINTER(rsdp->rsdt);
+	if ((rsdt->sdt.signature != ACPI_RSDT_SIGNATURE) ||
 	    !validate_checksum(rsdt, rsdt->sdt.length)) {
 		rsdt = NULL;
 		return;
@@ -90,11 +90,11 @@ void z_x86_acpi_init(void)
 
 	int nr_sdts = (rsdt->sdt.length - sizeof(rsdt)) / sizeof(u32_t);
 	for (int i = 0; i < nr_sdts; ++i) {
-		struct x86_acpi_sdt *sdt = UINT_TO_POINTER(rsdt->sdts[i]);
+		struct acpi_sdt *sdt = UINT_TO_POINTER(rsdt->sdts[i]);
 
-		if ((sdt->signature == X86_ACPI_MADT_SIGNATURE)
+		if ((sdt->signature == ACPI_MADT_SIGNATURE)
 		    && validate_checksum(sdt, sdt->length)) {
-			madt = (struct x86_acpi_madt *) sdt;
+			madt = (struct acpi_madt *) sdt;
 			break;
 		}
 	}
@@ -104,7 +104,7 @@ void z_x86_acpi_init(void)
  * Return the 'n'th CPU entry from the ACPI MADT, or NULL if not available.
  */
 
-struct x86_acpi_cpu *z_x86_acpi_get_cpu(int n)
+struct acpi_cpu *z_acpi_get_cpu(int n)
 {
 	u32_t base = POINTER_TO_UINT(madt);
 	u32_t offset;
@@ -113,15 +113,15 @@ struct x86_acpi_cpu *z_x86_acpi_get_cpu(int n)
 		offset = POINTER_TO_UINT(madt->entries) - base;
 
 		while (offset < madt->sdt.length) {
-			struct x86_acpi_madt_entry *entry;
+			struct acpi_madt_entry *entry;
 
-			entry = (struct x86_acpi_madt_entry *) (offset + base);
+			entry = (struct acpi_madt_entry *) (offset + base);
 
-			if (entry->type == X86_ACPI_MADT_ENTRY_CPU) {
+			if (entry->type == ACPI_MADT_ENTRY_CPU) {
 				if (n) {
 					--n;
 				} else {
-					return (struct x86_acpi_cpu *) entry;
+					return (struct acpi_cpu *) entry;
 				}
 			}
 

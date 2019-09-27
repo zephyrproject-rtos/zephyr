@@ -24,8 +24,8 @@ FUNC_NORETURN void z_x86_prep_c(struct multiboot_info *info)
 	ARG_UNUSED(info);
 #endif
 
-#ifdef CONFIG_X86_ACPI
-	z_x86_acpi_init();
+#ifdef CONFIG_ACPI
+	z_acpi_init();
 #endif
 
 #ifdef CONFIG_X86_MMU

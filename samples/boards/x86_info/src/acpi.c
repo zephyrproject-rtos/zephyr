@@ -10,7 +10,7 @@ void acpi(void)
 {
 	int nr_cpus;
 
-	for (nr_cpus = 0; z_x86_acpi_get_cpu(nr_cpus); ++nr_cpus) {
+	for (nr_cpus = 0; z_acpi_get_cpu(nr_cpus); ++nr_cpus) {
 		/* count number of CPUs present */
 	}
 
@@ -20,7 +20,7 @@ void acpi(void)
 		printk("ACPI: %d CPUs found\n", nr_cpus);
 
 		for (int i = 0; i < nr_cpus; ++i) {
-			struct x86_acpi_cpu *cpu = z_x86_acpi_get_cpu(i);
+			struct acpi_cpu *cpu = z_acpi_get_cpu(i);
 			printk("\tCPU #%d: APIC ID 0x%02x\n", i, cpu->id);
 		}
 	}
