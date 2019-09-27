@@ -36,6 +36,7 @@ except ImportError:
 
 from dtlib import DT, DTError, to_num, to_nums, TYPE_EMPTY, TYPE_NUMS, \
                   TYPE_PHANDLE, TYPE_PHANDLES_AND_NUMS
+from grutils import Graph
 
 # NOTE: testedtlib.py is the test suite for this library. It can be run
 # directly as a script:
@@ -127,6 +128,8 @@ class EDT:
         self._init_compat2binding(bindings_dirs)
         self._init_nodes()
 
+        self._define_order()
+
     def get_node(self, path):
         """
         Returns the Node at the DT path or alias 'path'. Raises EDTError if the
@@ -157,6 +160,68 @@ class EDT:
     def __repr__(self):
         return "<EDT for '{}', binding directories '{}'>".format(
             self.dts_path, self.bindings_dirs)
+
+    def required_by(self, node):
+        """
+        Returns a list of Nodes that have direct dependencies on 'node'.
+        """
+        return self._graph.required_by(node)
+
+    def depends_on(self, node):
+        """
+        Returns a list of Nodes on which 'node' directly depends.
+        """
+        return self._graph.depends_on(node)
+
+    def scc_order(self):
+        """
+        Returns a list of lists of Nodes where all elements of each list
+        depend on each other, and the Nodes in any list do not depend
+        on any Node in a subsequent list.  Each list defines a Strongly
+        Connected Component (SCC) of the graph.
+
+        For an acyclic graph each list will be a singleton.  Cycles
+        will be represented by lists with multiple nodes.  Cycles are
+        not expected to be present in devicetree graphs.
+        """
+        try:
+            return self._graph.scc_order()
+        except Exception as e:
+            raise EDTError(e)
+
+    def _define_order(self):
+        # Constructs a graph of dependencies between Node instances,
+        # then calculates a partial order over the dependencies.  The
+        # algorithm supports detecting dependency loops.
+
+        self._graph = Graph()
+
+        for node in self.nodes:
+            # A Node always depends on its parent.
+            for child in node.children.values():
+                self._graph.add_edge(child, node)
+
+            # A Node depends on any Nodes present in 'phandle',
+            # 'phandles', or 'phandle-array' property values.
+            for prop in node.props.values():
+                if prop.type == 'phandle':
+                    self._graph.add_edge(node, prop.val)
+                elif prop.type == 'phandles':
+                    for phandle_node in prop.val:
+                        self._graph.add_edge(node, phandle_node)
+                elif prop.type == 'phandle-array':
+                    for cd in prop.val:
+                        self._graph.add_edge(node, cd.controller)
+
+            # A Node depends on whatever supports the interrupts it
+            # generates.
+            for intr in node.interrupts:
+                self._graph.add_edge(node, intr.controller)
+
+        # Calculate an order that ensures no node is before any node
+        # it depends on.  This sets the dep_ordinal field in each
+        # Node.
+        self.scc_order()
 
     def _init_compat2binding(self, bindings_dirs):
         # Creates self._compat2binding. This is a dictionary that maps
@@ -582,6 +647,13 @@ class Node:
     children:
       A dictionary with the Node instances for the devicetree children of the
       node, indexed by name
+
+    dep_ordinal:
+      A non-negative integer value such that the value for a Node is
+      less than the value for all Nodes that depend on it.
+
+      The ordinal is defined for all Nodes including those that are not
+      'enabled', and is unique among nodes in its EDT 'nodes' list.
 
     enabled:
       True unless the node has 'status = "disabled"'
