@@ -16,9 +16,8 @@
 
 GEN_OFFSET_SYM(_thread_arch_t, flags);
 
-/* size of struct x86_multiboot_info, used by crt0.S/locore.S */
+/* size of struct multiboot_info, used by crt0.S/locore.S */
 
-GEN_ABSOLUTE_SYM(__X86_MULTIBOOT_INFO_SIZEOF,
-	sizeof(struct x86_multiboot_info));
+GEN_ABSOLUTE_SYM(__MULTIBOOT_INFO_SIZEOF, sizeof(struct multiboot_info));
 
 GEN_ABS_SYM_END

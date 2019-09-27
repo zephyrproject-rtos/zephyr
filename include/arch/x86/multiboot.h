@@ -16,7 +16,7 @@
  * present, that means only those pertaining to the framebuffer.
  */
 
-struct x86_multiboot_info {
+struct multiboot_info {
 	u32_t flags;
 	u32_t mem_lower;
 	u32_t mem_upper;
@@ -34,15 +34,15 @@ struct x86_multiboot_info {
 	u8_t  fb_color_info[6];
 };
 
-extern struct x86_multiboot_info x86_multiboot_info;
+extern struct multiboot_info multiboot_info;
 
-extern void z_x86_multiboot_init(struct x86_multiboot_info *);
+extern void z_multiboot_init(struct multiboot_info *);
 
 /*
  * the mmap_addr field points to a series of entries of the following form.
  */
 
-struct x86_multiboot_mmap {
+struct multiboot_mmap {
 	u32_t size;
 	u64_t base;
 	u64_t length;
@@ -52,24 +52,24 @@ struct x86_multiboot_mmap {
 #endif /* _ASMLANGUAGE */
 
 /*
- * Possible values for x86_multiboot_mmap.type field.
+ * Possible values for multiboot_mmap.type field.
  * Other values should be assumed to be unusable ranges.
  */
 
-#define X86_MULTIBOOT_MMAP_RAM		1	/* available RAM */
-#define X86_MULTIBOOT_MMAP_ACPI		3	/* reserved for ACPI */
-#define X86_MULTIBOOT_MMAP_NVS		4	/* ACPI non-volatile */
-#define X86_MULTIBOOT_MMAP_DEFECTIVE	5	/* defective RAM module */
+#define MULTIBOOT_MMAP_RAM		1	/* available RAM */
+#define MULTIBOOT_MMAP_ACPI		3	/* reserved for ACPI */
+#define MULTIBOOT_MMAP_NVS		4	/* ACPI non-volatile */
+#define MULTIBOOT_MMAP_DEFECTIVE	5	/* defective RAM module */
 
 /*
  * Magic numbers: the kernel multiboot header (see crt0.S) begins with
- * X86_MULTIBOOT_HEADER_MAGIC to signal to the booter that it supports
- * multiboot. On kernel entry, EAX is set to X86_MULTIBOOT_EAX_MAGIC to
+ * MULTIBOOT_HEADER_MAGIC to signal to the booter that it supports
+ * multiboot. On kernel entry, EAX is set to MULTIBOOT_EAX_MAGIC to
  * signal that the boot loader is multiboot compliant.
  */
 
-#define X86_MULTIBOOT_HEADER_MAGIC	0x1BADB002
-#define X86_MULTIBOOT_EAX_MAGIC		0x2BADB002
+#define MULTIBOOT_HEADER_MAGIC		0x1BADB002
+#define MULTIBOOT_EAX_MAGIC		0x2BADB002
 
 /*
  * Typically, we put no flags in the multiboot header, as it exists solely
@@ -77,24 +77,24 @@ struct x86_multiboot_mmap {
  * is when we want the loader to configure the framebuffer for us.
  */
 
-#define X86_MULTIBOOT_HEADER_FLAG_MEM	(1 << 1)  /* want mem_/mmap_* info */
-#define X86_MULTIBOOT_HEADER_FLAG_FB	(1 << 2)  /* want fb_* info */
+#define MULTIBOOT_HEADER_FLAG_MEM	(1 << 1)  /* want mem_/mmap_* info */
+#define MULTIBOOT_HEADER_FLAG_FB	(1 << 2)  /* want fb_* info */
 
-#ifdef CONFIG_X86_MULTIBOOT_FRAMEBUF
-#define X86_MULTIBOOT_HEADER_FLAGS \
-	(X86_MULTIBOOT_HEADER_FLAG_FB | X86_MULTIBOOT_HEADER_FLAG_MEM)
+#ifdef CONFIG_MULTIBOOT_FRAMEBUF
+#define MULTIBOOT_HEADER_FLAGS \
+	(MULTIBOOT_HEADER_FLAG_FB | MULTIBOOT_HEADER_FLAG_MEM)
 #else
-#define X86_MULTIBOOT_HEADER_FLAGS	X86_MULTIBOOT_HEADER_FLAG_MEM
+#define MULTIBOOT_HEADER_FLAGS MULTIBOOT_HEADER_FLAG_MEM
 #endif
 
 /* The flags in the boot info structure tell us which fields are valid. */
 
-#define X86_MULTIBOOT_INFO_FLAGS_MEM	(1 << 0)	/* mem_* valid */
-#define X86_MULTIBOOT_INFO_FLAGS_MMAP	(1 << 6)	/* mmap_* valid */
-#define X86_MULTIBOOT_INFO_FLAGS_FB	(1 << 12)	/* fb_* valid */
+#define MULTIBOOT_INFO_FLAGS_MEM	(1 << 0)	/* mem_* valid */
+#define MULTIBOOT_INFO_FLAGS_MMAP	(1 << 6)	/* mmap_* valid */
+#define MULTIBOOT_INFO_FLAGS_FB		(1 << 12)	/* fb_* valid */
 
 /* The only fb_type we support is RGB. No text modes and no color palettes. */
 
-#define X86_MULTIBOOT_INFO_FB_TYPE_RGB	1
+#define MULTIBOOT_INFO_FB_TYPE_RGB	1
 
 #endif /* ZEPHYR_INCLUDE_ARCH_X86_MULTIBOOT_H_ */

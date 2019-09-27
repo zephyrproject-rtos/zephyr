@@ -8,7 +8,7 @@
 #include <arch/x86/acpi.h>
 #include <arch/x86/multiboot.h>
 
-FUNC_NORETURN void z_x86_prep_c(struct x86_multiboot_info *info)
+FUNC_NORETURN void z_x86_prep_c(struct multiboot_info *info)
 {
 	_kernel.nested = 0;
 	_kernel.irq_stack = Z_THREAD_STACK_BUFFER(_interrupt_stack) +
@@ -18,8 +18,8 @@ FUNC_NORETURN void z_x86_prep_c(struct x86_multiboot_info *info)
 	z_x86_early_serial_init();
 #endif
 
-#ifdef CONFIG_X86_MULTIBOOT_INFO
-	z_x86_multiboot_init(info);
+#ifdef CONFIG_MULTIBOOT_INFO
+	z_multiboot_init(info);
 #else
 	ARG_UNUSED(info);
 #endif

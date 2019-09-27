@@ -91,12 +91,12 @@ config X86_ACPI
 config X86_MEMMAP_ENTRIES
 	int "Number of memory map entries"
 	range 1 256
-	default 1 if !X86_MULTIBOOT_MEMMAP
-	default 64 if X86_MULTIBOOT_MEMMAP
+	default 1 if !MULTIBOOT_MEMMAP
+	default 64 if MULTIBOOT_MEMMAP
 	help
 	  Maximum number of memory regions to hold in the memory map.
 
-config X86_MULTIBOOT
+config MULTIBOOT
 	bool "Generate multiboot header"
 	default y
 	help
@@ -105,9 +105,9 @@ config X86_MULTIBOOT
 	  to leave this option on if you're not sure. It only expands the
 	  text segment by 12-16 bytes and is typically ignored if not needed.
 
-if X86_MULTIBOOT
+if MULTIBOOT
 
-config X86_MULTIBOOT_INFO
+config MULTIBOOT_INFO
 	bool "Preserve multiboot information structure"
 	default n
 	help
@@ -116,33 +116,33 @@ config X86_MULTIBOOT_INFO
 	  display driver) need to refer to information in this structure,
 	  and so set this option to preserve the data in a permanent location.
 
-config X86_MULTIBOOT_MEMMAP
+config MULTIBOOT_MEMMAP
 	bool "Use multiboot memory map if provided"
 	default n
-	select X86_MULTIBOOT_INFO
+	select MULTIBOOT_INFO
 	help
 	  Use the multiboot memory map if the loader provides one.
 
-config X86_MULTIBOOT_FRAMEBUF
+config MULTIBOOT_FRAMEBUF
 	bool "Multiboot framebuffer support"
 	default n
 	select DISPLAY
 	select FRAMEBUF_DISPLAY
-	select X86_MULTIBOOT_INFO
+	select MULTIBOOT_INFO
 
-if X86_MULTIBOOT_FRAMEBUF
+if MULTIBOOT_FRAMEBUF
 
-config X86_MULTIBOOT_FRAMEBUF_X
+config MULTIBOOT_FRAMEBUF_X
 	int "Multiboot framebuffer X pixels"
 	default 640
 
-config X86_MULTIBOOT_FRAMEBUF_Y
+config MULTIBOOT_FRAMEBUF_Y
 	int "Multiboot framebuffer Y pixels"
 	default 480
 
-endif # X86_MULTIBOOT_FRAMEBUF
+endif # MULTIBOOT_FRAMEBUF
 
-endif # X86_MULTIBOOT
+endif # MULTIBOOT
 
 config X86_VERY_EARLY_CONSOLE
 	bool "Support very early boot printk"

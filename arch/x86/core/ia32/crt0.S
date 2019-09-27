@@ -43,11 +43,11 @@
 
 SECTION_FUNC(TEXT_START, __start)
 
-#ifdef CONFIG_X86_MULTIBOOT_INFO
+#ifdef CONFIG_MULTIBOOT_INFO
 	/*
 	 * If we were loaded by a multiboot-compliant loader, then EAX
-	 * contains X86_MULTIBOOT_EAX_MAGIC and EBX points to a 'struct
-	 * x86_multiboot_info' somewhere in memory that the kernel load
+	 * contains MULTIBOOT_EAX_MAGIC and EBX points to a 'struct
+	 * multiboot_info' somewhere in memory that the kernel load
 	 * image doesn't claim. Since the kernel will consider such memory
 	 * "free", we must copy the contents of the struct before the kernel
 	 * decides to use that RAM for something else. However, we can't
@@ -59,7 +59,7 @@ SECTION_FUNC(TEXT_START, __start)
 	 * EBX (0) if the multiboot data isn't valid.
 	 */
 
-	cmpl $X86_MULTIBOOT_EAX_MAGIC, %eax
+	cmpl $MULTIBOOT_EAX_MAGIC, %eax
 	je 1f
 	xorl %ebx, %ebx
 1:
@@ -390,7 +390,7 @@ z_x86_idt:
 	.long	_idt_base_address		/* physical start address */
 
 
-#ifdef CONFIG_X86_MULTIBOOT
+#ifdef CONFIG_MULTIBOOT
 	/*
 	 * The multiboot header must be in the first 8 Kb of the kernel image
 	 * (not including the ELF section header(s)) and be aligned on a
@@ -399,19 +399,19 @@ z_x86_idt:
 
 	.balign 4,0x90
 
-	.long	X86_MULTIBOOT_HEADER_MAGIC
-	.long	X86_MULTIBOOT_HEADER_FLAGS
-	.long	-(X86_MULTIBOOT_HEADER_MAGIC + X86_MULTIBOOT_HEADER_FLAGS)
+	.long	MULTIBOOT_HEADER_MAGIC
+	.long	MULTIBOOT_HEADER_FLAGS
+	.long	-(MULTIBOOT_HEADER_MAGIC + MULTIBOOT_HEADER_FLAGS)
 
-#ifdef CONFIG_X86_MULTIBOOT_FRAMEBUF
+#ifdef CONFIG_MULTIBOOT_FRAMEBUF
 	.fill	5,4,0				/* (unused exec layout) */
 	.long	0				/* linear graphics mode */
-	.long	CONFIG_X86_MULTIBOOT_FRAMEBUF_X	/* width */
-	.long	CONFIG_X86_MULTIBOOT_FRAMEBUF_Y	/* height */
+	.long	CONFIG_MULTIBOOT_FRAMEBUF_X	/* width */
+	.long	CONFIG_MULTIBOOT_FRAMEBUF_Y	/* height */
 	.long	32				/* depth */
-#endif /* CONFIG_X86_MULTIBOOT_FRAMEBUF */
+#endif /* CONFIG_MULTIBOOT_FRAMEBUF */
 
-#endif /* CONFIG_X86_MULTIBOOT */
+#endif /* CONFIG_MULTIBOOT */
 
 #ifdef CONFIG_SET_GDT
 
