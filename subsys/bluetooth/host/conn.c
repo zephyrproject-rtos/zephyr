@@ -154,6 +154,27 @@ static void notify_disconnected(struct bt_conn *conn)
 	}
 }
 
+#if defined(CONFIG_BT_REMOTE_INFO)
+void notify_remote_info(struct bt_conn *conn)
+{
+	struct bt_conn_remote_info remote_info;
+	struct bt_conn_cb *cb;
+	int err;
+
+	err = bt_conn_get_remote_info(conn, &remote_info);
+	if (err) {
+		BT_DBG("Notify remote info failed %d", err);
+		return;
+	}
+
+	for (cb = callback_list; cb; cb = cb->_next) {
+		if (cb->remote_info_available) {
+			cb->remote_info_available(conn, &remote_info);
+		}
+	}
+}
+#endif /* defined(CONFIG_BT_REMOTE_INFO) */
+
 void notify_le_param_updated(struct bt_conn *conn)
 {
 	struct bt_conn_cb *cb;
@@ -1638,6 +1659,7 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 			bt_conn_unref(conn);
 			break;
 		}
+
 		/* Notify disconnection and queue a dummy buffer to wake
 		 * up and stop the tx thread for states where it was
 		 * running.
@@ -1900,6 +1922,42 @@ int bt_conn_get_info(const struct bt_conn *conn, struct bt_conn_info *info)
 	}
 
 	return -EINVAL;
+}
+
+int bt_conn_get_remote_info(struct bt_conn *conn,
+			    struct bt_conn_remote_info *remote_info)
+{
+	if (!atomic_test_bit(conn->flags, BT_CONN_AUTO_FEATURE_EXCH) ||
+	    (IS_ENABLED(CONFIG_BT_REMOTE_VERSION) &&
+	     !atomic_test_bit(conn->flags, BT_CONN_AUTO_VERSION_INFO))) {
+		return -EBUSY;
+	}
+
+	remote_info->type = conn->type;
+#if defined(CONFIG_BT_REMOTE_VERSION)
+	/* The conn->rv values will be just zeroes if the operation failed */
+	remote_info->version = conn->rv.version;
+	remote_info->manufacturer = conn->rv.manufacturer;
+	remote_info->subversion = conn->rv.subversion;
+#else
+	remote_info->version = 0;
+	remote_info->manufacturer = 0;
+	remote_info->subversion = 0;
+#endif
+
+	switch (conn->type) {
+	case BT_CONN_TYPE_LE:
+		remote_info->le.features = conn->le.features;
+		return 0;
+#if defined(CONFIG_BT_BREDR)
+	case BT_CONN_TYPE_BR:
+		/* TODO: Make sure the HCI commands to read br features and
+		*  extended features has finished. */
+		return -ENOTSUP;
+#endif
+	default:
+		return -EINVAL;
+	}
 }
 
 static int bt_hci_disconnect(struct bt_conn *conn, u8_t reason)
