@@ -850,7 +850,14 @@ u8_t ll_adv_enable(u8_t enable)
 				   ticks_anchor, 0,
 				   HAL_TICKER_US_TO_TICKS((u64_t)interval *
 							  625),
-				   TICKER_NULL_REMAINDER, TICKER_NULL_LAZY,
+				   TICKER_NULL_REMAINDER,
+#if !defined(CONFIG_BT_TICKER_COMPATIBILITY_MODE) && \
+	!defined(CONFIG_BT_CTLR_LOW_LAT)
+				   /* Force expiry to ensure timing update */
+				   TICKER_LAZY_MUST_EXPIRE,
+#else
+				   TICKER_NULL_LAZY,
+#endif
 				   (adv->evt.ticks_slot + ticks_slot_overhead),
 				   ticker_cb, adv,
 				   ull_ticker_status_give, (void *)&ret_cb);
@@ -1004,23 +1011,26 @@ static void ticker_cb(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 
 	DEBUG_RADIO_PREPARE_A(1);
 
-	/* Increment prepare reference count */
-	ref = ull_ref_inc(&adv->ull);
-	LL_ASSERT(ref);
-
 	lll = &adv->lll;
 
-	/* Append timing parameters */
-	p.ticks_at_expire = ticks_at_expire;
-	p.remainder = remainder;
-	p.lazy = lazy;
-	p.param = lll;
-	mfy.param = &p;
+	if (IS_ENABLED(CONFIG_BT_TICKER_COMPATIBILITY_MODE) ||
+	    (lazy != TICKER_LAZY_MUST_EXPIRE)) {
+		/* Increment prepare reference count */
+		ref = ull_ref_inc(&adv->ull);
+		LL_ASSERT(ref);
 
-	/* Kick LLL prepare */
-	ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_LLL,
-			     0, &mfy);
-	LL_ASSERT(!ret);
+		/* Append timing parameters */
+		p.ticks_at_expire = ticks_at_expire;
+		p.remainder = remainder;
+		p.lazy = lazy;
+		p.param = lll;
+		mfy.param = &p;
+
+		/* Kick LLL prepare */
+		ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH,
+				     TICKER_USER_ID_LLL, 0, &mfy);
+		LL_ASSERT(!ret);
+	}
 
 	/* Apply adv random delay */
 #if defined(CONFIG_BT_PERIPHERAL)
