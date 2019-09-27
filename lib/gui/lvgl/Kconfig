@@ -143,7 +143,7 @@ choice
 
 	config LVGL_MEM_POOL_HEAP_LIB_C
 	  bool "C library Heap"
-	  depends on NEWLIB_LIBC || (MINIMAL_LIBC_MALLOC_ARENA_SIZE != 0)
+	  depends on !MINIMAL_LIBC || (MINIMAL_LIBC_MALLOC_ARENA_SIZE != 0)
 	  help
 		Use C library malloc and free to allocate objects on the C library heap
 

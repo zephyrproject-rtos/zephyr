@@ -55,7 +55,7 @@ config LIB_CPLUSPLUS
 config EXCEPTIONS
 	bool "Enable C++ exceptions support"
 	select LIB_CPLUSPLUS
-	depends on NEWLIB_LIBC
+	depends on !MINIMAL_LIBC
 	help
 	  This option enables support of C++ exceptions.
 
