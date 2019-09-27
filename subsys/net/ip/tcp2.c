@@ -1020,6 +1020,10 @@ next_state:
 							-ECONNRESET,
 							conn->recv_user_data);
 			}
+			if (context->conn_handler) {
+				net_conn_unregister(context->conn_handler);
+				context->conn_handler = NULL;
+			}
 			net_tcp_unref(context);
 		}
 		break;
