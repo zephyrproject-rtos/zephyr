@@ -146,7 +146,7 @@ These jumpers configure MEC1501 Boot-ROM straps.
 
 ``JP23 3-4`` pulls SHD SPI CS0# up to VTR2. MEC1501 Boot-ROM samples
 SHD SPI CS0# and if high, it loads code from SHD SPI.
-This is the recomended setup.
+This is the recommended setup.
 
 +-------------+------------+----------------------------+
 |  CR_STRAP   | BSS_STRAP  |         SOURCE             |

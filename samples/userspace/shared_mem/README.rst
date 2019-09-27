@@ -42,7 +42,7 @@ Exit QEMU by pressing :kbd:`CTRL+A` :kbd:`x`.
 
 Two definitions can be inserted to change the wheel settings and print
 the state information.  To enable the definitions uncomment the last
-two lines in CMakelists.txt.
+two lines in CMakeLists.txt.
 
 Functionality
 *************
