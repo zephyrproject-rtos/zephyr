@@ -542,6 +542,10 @@ config BT_CTLR_CONN_META
 	  Enables vendor specific per-connection meta data as part of the
 	  LLL connection object.
 
+config BT_CTLR_RX_PDU_META
+	prompt "Enable RX pdu meta data"
+	bool
+
 endif # BT_LL_SW_SPLIT
 
 config BT_CTLR_RADIO_ENABLE_FAST
