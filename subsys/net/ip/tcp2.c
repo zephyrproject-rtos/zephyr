@@ -1265,10 +1265,13 @@ int net_tcp_accept(struct net_context *context, net_tcp_accept_cb_t cb,
 int net_tcp_recv(struct net_context *context, net_context_recv_cb_t cb,
 		 void *user_data)
 {
-	tcp_dbg("");
+	tcp_dbg("context: %p, cb: %p, user_data: %p", context, cb, user_data);
 
 	context->recv_cb = cb;
-	context->tcp->recv_user_data = user_data;
+
+	if (context->tcp) {
+		context->tcp->recv_user_data = user_data;
+	}
 
 	return 0;
 }
