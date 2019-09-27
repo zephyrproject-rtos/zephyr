@@ -214,6 +214,15 @@ arduino_spi: &spi3 {
 	mosi-pin = <45>;
 };
 
+&i2s0 {
+	status = "okay";
+	mck-pin = <27>;
+	sck-pin = <31>;
+	lrck-pin = <28>;
+	sdout-pin = <30>;
+	sdin-pin = <29>;
+};
+
 &flash0 {
 	/*
 	 * For more information, see:
