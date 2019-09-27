@@ -164,7 +164,6 @@ enum {
 
 /** @brief Connection Info Structure
  *
- *
  *  @param type Connection Type
  *  @param role Connection Role
  *  @param id Which local identity the connection was created with
@@ -185,6 +184,50 @@ struct bt_conn_info {
 	};
 };
 
+/** LE Connection Remote Info Structure */
+struct bt_conn_le_remote_info {
+
+	/** Remote LE feature set (bitmask). */
+	const u8_t *features;
+};
+
+/** BR/EDR Connection Remote Info structure */
+struct bt_conn_br_remote_info {
+
+	/** Remote feature set (pages of bitmasks). */
+	const u8_t *features;
+
+	/** Number of pages in the remote feature set. */
+	u8_t num_pages;
+};
+
+/** @brief Connection Remote Info Structure
+ *
+ *  @note The version, manufacturer and subversion fields will only contain
+ *        valid data if :option:`CONFIG_BT_REMOTE_VERSION` is enabled.
+ */
+struct bt_conn_remote_info {
+	/* Connection Type */
+	u8_t  type;
+
+	/* Remote Link Layer version */
+	u8_t  version;
+
+	/* Remote manufacturer identifier */
+	u16_t manufacturer;
+
+	/* Per-manufacturer unique revision */
+	u16_t subversion;
+
+	union {
+		/* LE connection remote info */
+		struct bt_conn_le_remote_info le;
+
+		/* BR/EDR connection remote info */
+		struct bt_conn_br_remote_info br;
+	};
+};
+
 /** @brief Get connection info
  *
  *  @param conn Connection object.
@@ -193,6 +236,24 @@ struct bt_conn_info {
  *  @return Zero on success or (negative) error code on failure.
  */
 int bt_conn_get_info(const struct bt_conn *conn, struct bt_conn_info *info);
+
+/** @brief Get connection info for the remote device.
+ *
+ *  @param conn Connection object.
+ *  @param remote_info Connection remote info object.
+ *
+ *  @note In order to retrieve the remote version (version, manufacturer
+ *  and subversion) :option:`CONFIG_BT_REMOTE_VERSION` must be enabled
+ *
+ *  @note The remote information is exchanged directly after the connection has
+ *  been established. The application can be notified about when the remote
+ *  information is available through the remote_info_available callback.
+ *
+ *  @return Zero on success or (negative) error code on failure.
+ *  @return -EBUSY The remote information is not yet available.
+ */
+int bt_conn_get_remote_info(struct bt_conn *conn,
+			    struct bt_conn_remote_info *remote_info);
 
 /** @brief Update the connection parameters.
  *
@@ -494,6 +555,17 @@ struct bt_conn_cb {
 	void (*security_changed)(struct bt_conn *conn, bt_security_t level,
 				 enum bt_security_err err);
 #endif /* defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR) */
+
+#if defined(CONFIG_BT_REMOTE_INFO)
+	/** @brief Remote information procedures has completed.
+	 *
+	 *  This callback notifies the application that the remote information
+	 *  has been retrieved from the remote peer.
+	 */
+	void (*remote_info_available)(struct bt_conn *conn,
+				      struct bt_conn_remote_info *remote_info);
+#endif /* defined(CONFIG_BT_REMOTE_INFO) */
+
 	struct bt_conn_cb *_next;
 };
 

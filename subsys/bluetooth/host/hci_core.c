@@ -967,6 +967,33 @@ static int hci_le_read_remote_features(struct bt_conn *conn)
 	return 0;
 }
 
+static int hci_read_remote_version(struct bt_conn *conn)
+{
+	struct bt_hci_cp_read_remote_version_info *cp;
+	struct net_buf *buf;
+
+	if (conn->state != BT_CONN_CONNECTED) {
+		return -ENOTCONN;
+	}
+
+	/* Remote version cannot change. */
+	if (atomic_test_bit(conn->flags, BT_CONN_AUTO_VERSION_INFO)) {
+		return 0;
+	}
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_READ_REMOTE_VERSION_INFO,
+				sizeof(*cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	cp->handle = sys_cpu_to_le16(conn->handle);
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_READ_REMOTE_VERSION_INFO, buf,
+				   NULL);
+}
+
 /* LE Data Length Change Event is optional so this function just ignore
  * error and stack will continue to use default values.
  */
@@ -1094,6 +1121,14 @@ static void conn_auto_initiate(struct bt_conn *conn)
 	    ((conn->role == BT_HCI_ROLE_MASTER) ||
 	     BT_FEAT_LE_SLAVE_FEATURE_XCHG(bt_dev.le.features))) {
 		err = hci_le_read_remote_features(conn);
+		if (!err) {
+			return;
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_BT_REMOTE_VERSION) &&
+	    !atomic_test_bit(conn->flags, BT_CONN_AUTO_VERSION_INFO)) {
+		err = hci_read_remote_version(conn);
 		if (!err) {
 			return;
 		}
@@ -1372,6 +1407,12 @@ static void le_remote_feat_complete(struct net_buf *buf)
 	}
 
 	atomic_set_bit(conn->flags, BT_CONN_AUTO_FEATURE_EXCH);
+
+	if (IS_ENABLED(CONFIG_BT_REMOTE_INFO) &&
+	    !IS_ENABLED(CONFIG_BT_REMOTE_VERSION)) {
+		notify_remote_info(conn);
+	}
+
 	/* Continue with auto-initiated procedures */
 	conn_auto_initiate(conn);
 
@@ -3231,6 +3272,39 @@ static void hci_encrypt_key_refresh_complete(struct net_buf *buf)
 }
 #endif /* CONFIG_BT_SMP || CONFIG_BT_BREDR */
 
+#if defined(CONFIG_BT_REMOTE_VERSION)
+static void bt_hci_evt_read_remote_version_complete(struct net_buf *buf)
+{
+	struct bt_hci_evt_remote_version_info *evt;
+	struct bt_conn *conn;
+
+	evt = net_buf_pull_mem(buf, sizeof(*evt));
+	conn = bt_conn_lookup_handle(evt->handle);
+	if (!conn) {
+		BT_ERR("No connection for handle %u", evt->handle);
+		return;
+	}
+
+	if (!evt->status) {
+		conn->rv.version = evt->version;
+		conn->rv.manufacturer = sys_le16_to_cpu(evt->manufacturer);
+		conn->rv.subversion = sys_le16_to_cpu(evt->subversion);
+	}
+
+	atomic_set_bit(conn->flags, BT_CONN_AUTO_VERSION_INFO);
+
+	if (IS_ENABLED(CONFIG_BT_REMOTE_INFO)) {
+		/* Remote features is already present */
+		notify_remote_info(conn);
+	}
+
+	/* Continue with auto-initiated procedures */
+	conn_auto_initiate(conn);
+
+	bt_conn_unref(conn);
+}
+#endif /* CONFIG_BT_REMOTE_VERSION */
+
 #if defined(CONFIG_BT_SMP)
 static void le_ltk_neg_reply(u16_t handle)
 {
@@ -3795,6 +3869,11 @@ static const struct event_handler normal_events[] = {
 		      hci_encrypt_key_refresh_complete,
 		      sizeof(struct bt_hci_evt_encrypt_key_refresh_complete)),
 #endif /* CONFIG_BT_SMP || CONFIG_BT_BREDR */
+#if defined(CONFIG_BT_REMOTE_VERSION)
+	EVENT_HANDLER(BT_HCI_EVT_REMOTE_VERSION_INFO,
+		      bt_hci_evt_read_remote_version_complete,
+		      sizeof(struct bt_hci_evt_remote_version_info)),
+#endif /* CONFIG_BT_REMOTE_VERSION */
 };
 
 static void hci_event(struct net_buf *buf)

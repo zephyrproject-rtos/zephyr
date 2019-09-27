@@ -33,6 +33,7 @@ enum {
 
 	BT_CONN_AUTO_PHY_COMPLETE,      /* Auto-initiated PHY procedure done */
 	BT_CONN_AUTO_FEATURE_EXCH,	/* Auto-initiated LE Feat done */
+	BT_CONN_AUTO_VERSION_INFO,      /* Auto-initiated LE version done */
 
 	/* Total number of flags - must be at the end of the enum */
 	BT_CONN_NUM_FLAGS,
@@ -146,6 +147,14 @@ struct bt_conn {
 		struct bt_conn_sco	sco;
 #endif
 	};
+
+#if defined(CONFIG_BT_REMOTE_VERSION)
+	struct bt_conn_rv {
+		u8_t  version;
+		u16_t manufacturer;
+		u16_t subversion;
+	} rv;
+#endif
 };
 
 /* Process incoming data for a connection */
@@ -211,6 +220,8 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state);
 
 int bt_conn_le_conn_update(struct bt_conn *conn,
 			   const struct bt_le_conn_param *param);
+
+void notify_remote_info(struct bt_conn *conn);
 
 void notify_le_param_updated(struct bt_conn *conn);
 
