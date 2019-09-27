@@ -46,7 +46,7 @@
 static int init_reset(void);
 static void ticker_update_conn_op_cb(u32_t status, void *param);
 static inline void disable(u16_t handle);
-static void conn_cleanup(struct ll_conn *conn);
+static void conn_cleanup(struct ll_conn *conn, u8_t reason);
 
 #if defined(CONFIG_BT_CTLR_LLID_DATA_START_EMPTY)
 static int empty_data_start_release(struct ll_conn *conn, struct node_tx *tx);
@@ -59,7 +59,6 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, u16_t lazy,
 				      u32_t ticks_at_expire);
 static inline void event_ch_map_prep(struct ll_conn *conn,
 				     u16_t event_counter);
-static void terminate_ind_rx_enqueue(struct ll_conn *conn, u8_t reason);
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 static bool is_enc_req_pause_tx(struct ll_conn *conn);
@@ -939,8 +938,7 @@ void ull_conn_done(struct node_rx_event_done *done)
 	 */
 	reason_peer = conn->llcp_terminate.reason_peer;
 	if (reason_peer && (lll->role || lll->master.terminate_ack)) {
-		terminate_ind_rx_enqueue(conn, reason_peer);
-		conn_cleanup(conn);
+		conn_cleanup(conn, reason_peer);
 
 		return;
 	}
@@ -984,9 +982,7 @@ void ull_conn_done(struct node_rx_event_done *done)
 		if (conn->connect_expire > elapsed_event) {
 			conn->connect_expire -= elapsed_event;
 		} else {
-			terminate_ind_rx_enqueue(conn, 0x3e);
-
-			conn_cleanup(conn);
+			conn_cleanup(conn, BT_HCI_ERR_CONN_FAIL_TO_ESTAB);
 
 			return;
 		}
@@ -1034,9 +1030,7 @@ void ull_conn_done(struct node_rx_event_done *done)
 				}
 			}
 		} else {
-			terminate_ind_rx_enqueue(conn, 0x08);
-
-			conn_cleanup(conn);
+			conn_cleanup(conn, BT_HCI_ERR_CONN_TIMEOUT);
 
 			return;
 		}
@@ -1047,9 +1041,7 @@ void ull_conn_done(struct node_rx_event_done *done)
 		if (conn->procedure_expire > elapsed_event) {
 			conn->procedure_expire -= elapsed_event;
 		} else {
-			terminate_ind_rx_enqueue(conn, 0x22);
-
-			conn_cleanup(conn);
+			conn_cleanup(conn, BT_HCI_ERR_LL_RESP_TIMEOUT);
 
 			return;
 		}
@@ -1335,7 +1327,9 @@ void ull_conn_lll_ack_enqueue(u16_t handle, struct node_tx *tx)
 
 void ull_conn_lll_tx_flush(void *param)
 {
+	struct ll_conn *conn = (void *)HDR_LLL2EVT(param);
 	struct lll_conn *lll = param;
+	struct node_rx_pdu *rx;
 	struct node_tx *tx;
 	memq_link_t *link;
 
@@ -1360,6 +1354,16 @@ void ull_conn_lll_tx_flush(void *param)
 		link = memq_dequeue(lll->memq_tx.tail, &lll->memq_tx.head,
 				    (void **)&tx);
 	}
+
+	/* Get the link mem reserved in the connection context */
+	rx = (void *)&conn->llcp_terminate.node_rx;
+	LL_ASSERT(rx->hdr.link);
+	link = rx->hdr.link;
+	rx->hdr.link = NULL;
+
+	/* Enqueue the terminate towards ULL context */
+	ull_rx_put(link, rx);
+	ull_rx_sched();
 }
 
 struct ll_conn *ull_conn_tx_ack(u16_t handle, memq_link_t *link,
@@ -1516,11 +1520,17 @@ static inline void disable(u16_t handle)
 	LL_ASSERT(mark == conn);
 }
 
-static void conn_cleanup(struct ll_conn *conn)
+static void conn_cleanup(struct ll_conn *conn, u8_t reason)
 {
 	struct lll_conn *lll = &conn->lll;
 	struct node_rx_pdu *rx;
 	u32_t ticker_status;
+
+	/* Prepare the rx packet structure */
+	rx = (void *)&conn->llcp_terminate.node_rx;
+	rx->hdr.handle = conn->lll.handle;
+	rx->hdr.type = NODE_RX_TYPE_TERMINATE;
+	*((u8_t *)rx->pdu) = reason;
 
 	/* release any llcp reserved rx node */
 	rx = conn->llcp_rx;
@@ -3250,27 +3260,6 @@ static void terminate_ind_recv(struct ll_conn *conn, struct node_rx_pdu *rx,
 	rx->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
 }
 
-static void terminate_ind_rx_enqueue(struct ll_conn *conn, u8_t reason)
-{
-	struct node_rx_pdu *rx;
-	memq_link_t *link;
-
-	/* Prepare the rx packet structure */
-	rx = (void *)&conn->llcp_terminate.node_rx;
-	LL_ASSERT(rx->hdr.link);
-
-	rx->hdr.handle = conn->lll.handle;
-	rx->hdr.type = NODE_RX_TYPE_TERMINATE;
-	*((u8_t *)rx->pdu) = reason;
-
-	/* Get the link mem reserved in the connection context */
-	link = rx->hdr.link;
-	rx->hdr.link = NULL;
-
-	ll_rx_put(link, rx);
-	ll_rx_sched();
-}
-
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 static void enc_req_reused_send(struct ll_conn *conn, struct node_tx **tx)
 {
@@ -4348,8 +4337,7 @@ static inline void ctrl_tx_ack(struct ll_conn *conn, struct node_tx **tx,
 			      BT_HCI_ERR_LOCALHOST_TERM_CONN :
 			      pdu_tx->llctrl.terminate_ind.error_code;
 
-		terminate_ind_rx_enqueue(conn, reason);
-		conn_cleanup(conn);
+		conn_cleanup(conn, reason);
 	}
 	break;
 
