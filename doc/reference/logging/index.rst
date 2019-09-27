@@ -153,8 +153,6 @@ using log_strdup().
 :option:`CONFIG_LOG_STRDUP_BUF_COUNT`: Number of buffers in the pool used by
 log_strdup().
 
-:option:`CONFIG_LOG_DOMAIN_ID`: Domain ID. Valid in multi-domain systems.
-
 :option:`CONFIG_LOG_FRONTEND`: Redirect logs to a custom frontend.
 
 :option:`CONFIG_LOG_BACKEND_UART`: Enabled build-in UART backend.

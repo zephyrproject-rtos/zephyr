@@ -108,7 +108,7 @@ void test_log_output_string(void)
 		.level = LOG_LEVEL_DBG,
 		.source_id = log_const_source_id(
 				&LOG_ITEM_CONST_DATA(LOG_MODULE_NAME)),
-		.domain_id = CONFIG_LOG_DOMAIN_ID,
+		.domain_id = Z_LOG_LOCAL_DOMAIN_ID,
 	};
 
 	log_output_string_varg(&log_output, src_level, 0,

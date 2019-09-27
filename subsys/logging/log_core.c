@@ -16,6 +16,7 @@
 #include <ctype.h>
 #include <logging/log_frontend.h>
 #include <syscall_handler.h>
+#include <logging/log_link.h>
 
 LOG_MODULE_REGISTER(log);
 
@@ -72,7 +73,7 @@ static struct k_timer log_process_thread_timer;
 
 static u32_t dummy_timestamp(void);
 static timestamp_get_t timestamp_func = dummy_timestamp;
-
+static K_SEM_DEFINE(log_init_sync, 0, 1);
 
 bool log_is_strdup(const void *buf);
 
@@ -192,13 +193,9 @@ static void detect_missed_strdup(struct log_msg *msg)
 #undef ERR_MSG
 }
 
-static inline void msg_finalize(struct log_msg *msg,
-				struct log_msg_ids src_level)
+void z_log_msg_enqueue(struct log_msg *msg)
 {
 	unsigned int key;
-
-	msg->hdr.ids = src_level;
-	msg->hdr.timestamp = timestamp_func();
 
 	atomic_inc(&buffered_cnt);
 
@@ -222,6 +219,14 @@ static inline void msg_finalize(struct log_msg *msg,
 			k_sem_give(&log_process_thread_sem);
 		}
 	}
+}
+
+static inline void msg_finalize(struct log_msg *msg,
+				struct log_msg_ids src_level)
+{
+	msg->hdr.ids = src_level;
+	msg->hdr.timestamp = timestamp_func();
+	z_log_msg_enqueue(msg);
 }
 
 void log_0(const char *str, struct log_msg_ids src_level)
@@ -458,6 +463,84 @@ static u32_t k_cycle_get_32_wrapper(void)
 	return k_cycle_get_32();
 }
 
+/* @brief return link and relative domain id based on absolute domain id.
+ *
+ * @param[in,out] domain_id	Aboslute domain ID as input, relative to the
+ *				link domain ID as output.
+ *
+ * @return Link to which given domain belongs.
+ */
+static const struct log_link *get_link_domain(u8_t *domain_id)
+{
+	const struct log_link *link;
+	u8_t domain_max;
+
+	for (int i = 0; i < log_link_count(); i++) {
+		link = log_link_get(i);
+		domain_max = link->ctrl_blk->domain_offset +
+				link->ctrl_blk->domain_cnt;
+		if (*domain_id < domain_max) {
+			*domain_id -= link->ctrl_blk->domain_offset;
+			return link;
+		}
+	}
+
+	return NULL;
+}
+
+/** @brief Get source offset used for getting runtime filter.
+ *
+ * Runtime filters for each link are dynamically allocated as an array of
+ * filters for all domains in the link. In order to fetch link associated with
+ * given source an index in the array must be retrieved.
+ */
+static u32_t get_source_offset(const struct log_link *link, u8_t rel_domain_id)
+{
+	u32_t offset = 0;
+
+	for (u8_t i = 0; i < rel_domain_id; i++) {
+		offset += log_link_sources_count(link, i);
+	}
+
+	return offset;
+}
+
+static u32_t *get_dynamic_filter(u8_t domain_id, u32_t source_id)
+{
+	const struct log_link *link;
+	u32_t source_offset = 0;
+	u8_t rel_domain_id = domain_id;
+
+	if (z_log_is_local_domain(domain_id)) {
+		return &__log_dynamic_start[source_id].filters;
+	}
+
+	link = get_link_domain(&rel_domain_id);
+	source_offset = get_source_offset(link, rel_domain_id);
+	return &link->ctrl_blk->filters[source_offset + source_id];
+}
+
+static void runtime_filters_init(void)
+{
+	/*
+	 * Initialize aggregated runtime filter levels (no backends are
+	 * attached yet, so leave backend slots in each dynamic filter set
+	 * alone for now).
+	 *
+	 * Each log source's aggregated runtime level is set to match its
+	 * compile-time level. When backends are attached later on in
+	 * log_init(), they'll be initialized to the same value.
+	 */
+	for (int i = 0; i < log_sources_count(Z_LOG_LOCAL_DOMAIN_ID); i++) {
+		u32_t *filters = get_dynamic_filter(Z_LOG_LOCAL_DOMAIN_ID, i);
+		u8_t level = log_compiled_level_get(Z_LOG_LOCAL_DOMAIN_ID, i);
+
+		LOG_FILTER_SLOT_SET(filters,
+				    LOG_FILTER_AGGR_SLOT_IDX,
+				    level);
+	}
+}
+
 void log_core_init(void)
 {
 	u32_t freq;
@@ -482,23 +565,83 @@ void log_core_init(void)
 
 	log_output_timestamp_freq_set(freq);
 
-	/*
-	 * Initialize aggregated runtime filter levels (no backends are
-	 * attached yet, so leave backend slots in each dynamic filter set
-	 * alone for now).
-	 *
-	 * Each log source's aggregated runtime level is set to match its
-	 * compile-time level. When backends are attached later on in
-	 * log_init(), they'll be initialized to the same value.
-	 */
 	if (IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)) {
-		for (int i = 0; i < log_sources_count(); i++) {
-			u32_t *filters = log_dynamic_filters_get(i);
-			u8_t level = log_compiled_level_get(i);
+		runtime_filters_init();
+	}
+}
 
-			LOG_FILTER_SLOT_SET(filters,
-					    LOG_FILTER_AGGR_SLOT_IDX,
-					    level);
+static int link_filters_init(const struct log_link *link)
+{
+	u32_t total_cnt = get_source_offset(link, link->ctrl_blk->domain_cnt);
+
+	link->ctrl_blk->filters = k_malloc(sizeof(u32_t) * total_cnt);
+	if (link->ctrl_blk->filters == NULL) {
+		LOG_ERR("Failed to allocate buffer for runtime filtering.");
+		__ASSERT(0, "Failed to allocate buffer.");
+	}
+
+	memset(link->ctrl_blk->filters, 0, sizeof(u32_t) * total_cnt);
+	LOG_INF("%s: heap used for filters:%d",
+		link->name, (int)(total_cnt * sizeof(u32_t)));
+
+	return 0;
+}
+
+static void link_domain_names_init(const struct log_link *link)
+{
+	u8_t cnt = link->ctrl_blk->domain_cnt;
+	int len;
+	char *name;
+	u32_t heap_used = 0;
+
+	link->ctrl_blk->domain_names = k_malloc(sizeof(void *) * cnt);
+	if (link->ctrl_blk->domain_names == NULL) {
+		LOG_WRN("Failed to allocate for domain names.");
+		return;
+	}
+
+	heap_used = sizeof(void *) * cnt;
+
+	for (u8_t i = 0; i < cnt; i++) {
+		log_link_get_domain_name(link, i, NULL, &len);
+		len++; /* for null termination. */
+		name = k_malloc(len);
+		link->ctrl_blk->domain_names[i] = name;
+		if (name) {
+			log_link_get_domain_name(link, i, name, &len);
+			if (len == 0) {
+				k_free(name);
+				link->ctrl_blk->domain_names[i] = NULL;
+			} else {
+				heap_used += len;
+			}
+		} else {
+			LOG_ERR("Failed to allocate for domain name.");
+			__ASSERT(0, "Failed to allocate for domain name.");
+		}
+	}
+
+	LOG_INF("%s: heap used for domain names:%d", link->name, heap_used);
+}
+
+static void log_links_init(void)
+{
+	const struct log_link *link;
+	u8_t domain_cnt;
+	int err;
+	u8_t offset = 1;
+
+	for (int i = 0; i < log_link_count(); i++) {
+		link = log_link_get(i);
+		err = log_link_init(link, NULL);
+		__ASSERT(err == 0, "Failed to initialize link");
+		domain_cnt = log_link_domains_count(link);
+		link->ctrl_blk->domain_offset = offset;
+		link->ctrl_blk->domain_cnt = domain_cnt;
+		offset += domain_cnt;
+		link_domain_names_init(link);
+		if (IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)) {
+			link_filters_init(link);
 		}
 	}
 }
@@ -516,6 +659,10 @@ void log_init(void)
 		return;
 	}
 
+	if (IS_ENABLED(CONFIG_LOG_MULTIDOMAIN)) {
+		log_links_init();
+	}
+
 	/* Assign ids to backends. */
 	for (i = 0; i < log_backend_count_get(); i++) {
 		const struct log_backend *backend = log_backend_get(i);
@@ -528,6 +675,12 @@ void log_init(void)
 			log_backend_enable(backend, NULL, CONFIG_LOG_MAX_LEVEL);
 		}
 	}
+
+	if (IS_ENABLED(CONFIG_LOG_MULTIDOMAIN)) {
+		k_sem_give(&log_init_sync);
+	}
+
+
 }
 
 static void thread_set(k_tid_t process_tid)
@@ -709,14 +862,85 @@ void log_dropped(void)
 	atomic_inc(&dropped_cnt);
 }
 
-u32_t log_src_cnt_get(u32_t domain_id)
+u16_t log_sources_count(u8_t domain_id)
 {
-	return log_sources_count();
+	if (!z_log_is_local_domain(domain_id)) {
+		u8_t rel_domain_id = domain_id;
+		const struct log_link *link = get_link_domain(&rel_domain_id);
+
+		return log_link_sources_count(link, rel_domain_id);
+	}
+
+	return log_const_source_id(__log_const_end);
 }
 
-const char *log_source_name_get(u32_t domain_id, u32_t src_id)
+u8_t log_domains_count(void)
 {
-	return src_id < log_sources_count() ? log_name_get(src_id) : NULL;
+	u8_t cnt = 1;
+
+	for (int i = 0; i < log_link_count(); i++) {
+		cnt += log_link_get(i)->ctrl_blk->domain_cnt;
+	}
+
+	return cnt;
+}
+
+const char *log_source_name_get(char *buf, u32_t len,
+				u8_t domain_id, u16_t source_id)
+{
+	const struct log_link *link;
+	u8_t rel_domain_id;
+
+	if (source_id >= log_sources_count(domain_id)) {
+		return NULL;
+	}
+
+	if (z_log_is_local_domain(domain_id)) {
+		return __log_const_start[source_id].name;
+	}
+
+	rel_domain_id = domain_id;
+	link = get_link_domain(&rel_domain_id);
+
+	log_link_get_source_name(link, rel_domain_id, source_id, buf, len);
+
+	return buf;
+}
+
+const char *log_domain_name_get(u8_t domain_id)
+{
+	const struct log_link *link;
+	u8_t rel_domain_id;
+
+	if (z_log_is_local_domain(domain_id)) {
+		return "";
+	}
+
+	rel_domain_id = domain_id;
+	link = get_link_domain(&rel_domain_id);
+
+	return link->ctrl_blk->domain_names[rel_domain_id];
+}
+
+u8_t log_compiled_level_get(u8_t domain_id, u16_t source_id)
+{
+	const struct log_link *link;
+	u8_t rel_domain_id;
+	u8_t level;
+
+	if (source_id >= log_sources_count(domain_id)) {
+		return 0;
+	}
+
+	if (z_log_is_local_domain(domain_id)) {
+		return __log_const_start[source_id].level;
+	}
+
+	rel_domain_id = domain_id;
+	link = get_link_domain(&rel_domain_id);
+	log_link_get_compiled_level(link, rel_domain_id, source_id, &level);
+
+	return level;
 }
 
 static u32_t max_filter_get(u32_t filters)
@@ -736,17 +960,41 @@ static u32_t max_filter_get(u32_t filters)
 	return max_filter;
 }
 
+static void set_runtime_filter(u8_t backend_id, u8_t domain_id,
+				u16_t src_id, u32_t *filters, u32_t level)
+{
+	u32_t prev_max;
+	u32_t new_max;
+
+	prev_max = LOG_FILTER_SLOT_GET(filters, LOG_FILTER_AGGR_SLOT_IDX);
+
+	LOG_FILTER_SLOT_SET(filters, backend_id, level);
+
+	/* Once current backend filter is updated recalculate
+	 * aggregated maximal level
+	 */
+	new_max = max_filter_get(*filters);
+
+	LOG_FILTER_SLOT_SET(filters, LOG_FILTER_AGGR_SLOT_IDX, new_max);
+
+	if (!z_log_is_local_domain(domain_id) && (new_max != prev_max)) {
+		u8_t rel_domain_id = domain_id;
+		const struct log_link *link = get_link_domain(&rel_domain_id);
+
+		log_link_set_runtime_level(link, rel_domain_id,
+					   src_id, new_max);
+	}
+}
+
 u32_t z_impl_log_filter_set(struct log_backend const *const backend,
 			    u32_t domain_id,
 			    u32_t src_id,
 			    u32_t level)
 {
-	assert(src_id < log_sources_count());
+	assert(src_id < log_sources_count(domain_id));
 
 	if (IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)) {
-		u32_t new_aggr_filter;
-
-		u32_t *filters = log_dynamic_filters_get(src_id);
+		u32_t *filters = get_dynamic_filter(domain_id, src_id);
 
 		if (backend == NULL) {
 			struct log_backend const *backend;
@@ -762,23 +1010,12 @@ u32_t z_impl_log_filter_set(struct log_backend const *const backend,
 
 			level = max;
 		} else {
-			u32_t max = log_filter_get(backend, domain_id,
-						   src_id, false);
+			u32_t max;
 
+			max = log_filter_get(backend, domain_id, src_id, false);
 			level = MIN(level, max);
-
-			LOG_FILTER_SLOT_SET(filters,
-					    log_backend_id_get(backend),
-					    level);
-
-			/* Once current backend filter is updated recalculate
-			 * aggregated maximal level
-			 */
-			new_aggr_filter = max_filter_get(*filters);
-
-			LOG_FILTER_SLOT_SET(filters,
-					    LOG_FILTER_AGGR_SLOT_IDX,
-					    new_aggr_filter);
+			set_runtime_filter(log_backend_id_get(backend),
+					   domain_id, src_id, filters, level);
 		}
 	}
 
@@ -793,9 +1030,10 @@ u32_t z_vrfy_log_filter_set(struct log_backend const *const backend,
 {
 	Z_OOPS(Z_SYSCALL_VERIFY_MSG(backend == 0,
 		"Setting per-backend filters from user mode is not supported"));
-	Z_OOPS(Z_SYSCALL_VERIFY_MSG(domain_id == CONFIG_LOG_DOMAIN_ID,
+	Z_OOPS(Z_SYSCALL_VERIFY_MSG(domain_id == Z_LOG_LOCAL_DOMAIN_ID,
 		"Invalid log domain_id"));
-	Z_OOPS(Z_SYSCALL_VERIFY_MSG(src_id < log_sources_count(),
+	Z_OOPS(Z_SYSCALL_VERIFY_MSG(
+		src_id < log_sources_count(Z_LOG_LOCAL_DOMAIN_ID),
 		"Invalid log source id"));
 	Z_OOPS(Z_SYSCALL_VERIFY_MSG(
 		(level <= LOG_LEVEL_DBG) && (level >= LOG_LEVEL_NONE),
@@ -807,11 +1045,15 @@ u32_t z_vrfy_log_filter_set(struct log_backend const *const backend,
 #endif
 
 static void backend_filter_set(struct log_backend const *const backend,
-			       u32_t level)
+				u32_t level)
 {
-	if (IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)) {
-		for (int i = 0; i < log_sources_count(); i++) {
-			log_filter_set(backend, CONFIG_LOG_DOMAIN_ID, i, level);
+	if (!IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)) {
+		return;
+	}
+
+	for (u8_t d = 0; d < log_domains_count(); d++) {
+		for (u16_t s = 0; s < log_sources_count(d); s++) {
+			log_filter_set(backend, d, s, level);
 		}
 	}
 }
@@ -822,6 +1064,10 @@ void log_backend_enable(struct log_backend const *const backend,
 {
 	/* As first slot in filtering mask is reserved, backend ID has offset.*/
 	u32_t id = LOG_FILTER_FIRST_BACKEND_SLOT_IDX;
+
+	if (IS_ENABLED(CONFIG_LOG_MULTIDOMAIN)) {
+		k_sem_take(&log_init_sync, K_FOREVER);
+	}
 
 	id += backend - log_backend_get(0);
 
@@ -837,12 +1083,19 @@ void log_backend_enable(struct log_backend const *const backend,
 	}
 
 	backend_attached = true;
+
+	if (IS_ENABLED(CONFIG_LOG_MULTIDOMAIN)) {
+		k_sem_give(&log_init_sync);
+	}
 }
 
 void log_backend_disable(struct log_backend const *const backend)
 {
+	if (log_backend_is_active(backend)) {
+		backend_filter_set(backend, LOG_LEVEL_NONE);
+	}
+
 	log_backend_deactivate(backend);
-	backend_filter_set(backend, LOG_LEVEL_NONE);
 }
 
 u32_t log_filter_get(struct log_backend const *const backend,
@@ -850,15 +1103,15 @@ u32_t log_filter_get(struct log_backend const *const backend,
 		     u32_t src_id,
 		     bool runtime)
 {
-	assert(src_id < log_sources_count());
+	assert(src_id < log_sources_count(domain_id));
 
 	if (IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) && runtime) {
-		u32_t *filters = log_dynamic_filters_get(src_id);
+		u32_t *filters = get_dynamic_filter(domain_id, src_id);
 
 		return LOG_FILTER_SLOT_GET(filters,
 					   log_backend_id_get(backend));
 	} else {
-		return log_compiled_level_get(src_id);
+		return log_compiled_level_get(domain_id, src_id);
 	}
 }
 
@@ -959,14 +1212,15 @@ void z_vrfy_z_log_string_from_user(u32_t src_level_val, const char *str)
 		(IS_ENABLED(CONFIG_LOG_PRINTK) || (level >= LOG_LEVEL_ERR)) &&
 		(level <= LOG_LEVEL_DBG),
 		"Invalid log level"));
-	Z_OOPS(Z_SYSCALL_VERIFY_MSG(domain_id == CONFIG_LOG_DOMAIN_ID,
+	Z_OOPS(Z_SYSCALL_VERIFY_MSG(domain_id == Z_LOG_LOCAL_DOMAIN_ID,
 		"Invalid log domain_id"));
-	Z_OOPS(Z_SYSCALL_VERIFY_MSG(source_id < log_sources_count(),
+	Z_OOPS(Z_SYSCALL_VERIFY_MSG(
+		source_id < log_sources_count(Z_LOG_LOCAL_DOMAIN_ID),
 		"Invalid log source id"));
 
 	if (IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) &&
 	    (level != LOG_LEVEL_INTERNAL_RAW_STRING) &&
-	    (level > LOG_FILTER_SLOT_GET(log_dynamic_filters_get(source_id),
+	    (level > LOG_FILTER_SLOT_GET(get_dynamic_filter(0, source_id),
 					LOG_FILTER_AGGR_SLOT_IDX))) {
 		/* Skip filtered out messages. */
 		return;
@@ -1054,15 +1308,16 @@ void z_vrfy_z_log_hexdump_from_user(u32_t src_level_val, const char *metadata,
 		(src_level_union.structure.level >= LOG_LEVEL_ERR),
 		"Invalid log level"));
 	Z_OOPS(Z_SYSCALL_VERIFY_MSG(
-		src_level_union.structure.domain_id == CONFIG_LOG_DOMAIN_ID,
+		src_level_union.structure.domain_id == Z_LOG_LOCAL_DOMAIN_ID,
 		"Invalid log domain_id"));
 	Z_OOPS(Z_SYSCALL_VERIFY_MSG(
-		src_level_union.structure.source_id < log_sources_count(),
+		src_level_union.structure.source_id <
+		log_sources_count(Z_LOG_LOCAL_DOMAIN_ID),
 		"Invalid log source id"));
 
 	if (IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) &&
 	    (src_level_union.structure.level > LOG_FILTER_SLOT_GET(
-	     log_dynamic_filters_get(src_level_union.structure.source_id),
+	     get_dynamic_filter(0, src_level_union.structure.source_id),
 	     LOG_FILTER_AGGR_SLOT_IDX))) {
 		/* Skip filtered out messages. */
 		return;

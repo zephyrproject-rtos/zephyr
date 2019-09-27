@@ -135,7 +135,7 @@ struct log_msg_ext_head_data {
 
 /** @brief Log message structure. */
 struct log_msg {
-	struct log_msg *next;   /*!< Used by logger core list.*/
+	struct log_msg *next;   /*!< Used by the logger core. Must be first. */
 	struct log_msg_hdr hdr; /*!< Message header. */
 	const char *str;
 	union log_msg_data {
@@ -146,7 +146,10 @@ struct log_msg {
 
 /** @brief Chunks following message head when message is extended. */
 struct log_msg_cont {
-	struct log_msg_cont *next; /*!< Pointer to the next chunk. */
+	struct log_msg_cont *next; /*!< Pointer to the next chunk. Must be at
+					the beginning of the struct as it maybe
+					use by the log core. */
+
 	union log_msg_cont_data {
 		log_arg_t args[ARGS_CONT_MSG];
 		u8_t bytes[HEXDUMP_BYTES_CONT_MSG];

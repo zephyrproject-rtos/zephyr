@@ -26,7 +26,7 @@ static void log_handler(enum ext_log_level level, const char *fmt, ...)
 {
 	struct log_msg_ids src_level = {
 		.level = log_level_lut[level],
-		.domain_id = CONFIG_LOG_DOMAIN_ID,
+		.domain_id = Z_LOG_LOCAL_DOMAIN_ID,
 		.source_id = LOG_CURRENT_MODULE_ID()
 	};
 

@@ -29,6 +29,9 @@ extern "C" {
  * @{
  */
 
+/* Id of local domain. */
+#define LOCAL_DOMAIN_ID 0
+
 typedef u32_t (*timestamp_get_t)(void);
 
 /** @brief Function system initialization of the logger.
@@ -94,23 +97,19 @@ __syscall bool log_process(bool bypass);
  */
 __syscall u32_t log_buffered_cnt(void);
 
-/** @brief Get number of independent logger sources (modules and instances)
- *
- * @param domain_id Domain ID.
- *
- * @return Number of sources.
- */
-u32_t log_src_cnt_get(u32_t domain_id);
-
 
 /** @brief Get name of the source (module or instance).
  *
- * @param domain_id Domain ID.
- * @param src_id    Source ID.
+ * @param buf		Optional output buffer. If name cannot be used through
+ *			pointer then name is copied into the buffer.
+ * @param len		Buffer length.
+ * @param domain_id	Domain ID.
+ * @param src_id	Source ID.
  *
  * @return Source name or NULL if invalid arguments.
  */
-const char *log_source_name_get(u32_t domain_id, u32_t src_id);
+const char *log_source_name_get(char *buf, u32_t len,
+				u8_t domain_id, u16_t src_id);
 
 /** @brief Get name of the domain.
  *
@@ -118,7 +117,7 @@ const char *log_source_name_get(u32_t domain_id, u32_t src_id);
  *
  * @return Domain name.
  */
-const char *log_domain_name_get(u32_t domain_id);
+const char *log_domain_name_get(u8_t domain_id);
 
 /**
  * @brief Get source filter for the provided backend.
