@@ -131,7 +131,7 @@ config LOG_IMMEDIATE
 	  by another one in the higher priority context.
 
 config LOG_ENABLE_FANCY_OUTPUT_FORMATTING
-	depends on !NEWLIB_LIBC && !ARCH_POSIX
+	depends on MINIMAL_LIBC
 	bool "Format strings with minimal libc _prf() instead of _vprintk()"
 	help
 	  Selecting this option will choose more robust _prf() function from
