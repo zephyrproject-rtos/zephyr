@@ -279,7 +279,7 @@ static struct canbus_isotp_rx_ctx *canbus_get_rx_ctx(u8_t state,
 		if (ctx->state == state) {
 			if (state == NET_CAN_RX_STATE_UNUSED) {
 				ctx->state = NET_CAN_RX_STATE_RESET;
-				z_init_timeout(&ctx->timeout, canbus_rx_timeout);
+				z_init_timeout(&ctx->timeout);
 				ret = ctx;
 				break;
 			}
@@ -308,7 +308,7 @@ static struct canbus_isotp_tx_ctx *canbus_get_tx_ctx(u8_t state,
 		if (ctx->state == state) {
 			if (state == NET_CAN_TX_STATE_UNUSED) {
 				ctx->state = NET_CAN_TX_STATE_RESET;
-				z_init_timeout(&ctx->timeout, canbus_tx_timeout);
+				z_init_timeout(&ctx->timeout);
 				ret = ctx;
 				break;
 			}
