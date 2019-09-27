@@ -66,6 +66,7 @@ static int gpio_xec_configure(struct device *dev,
 	 * 0 - pin is input, 1 - pin is output
 	 */
 	mask |= MCHP_GPIO_CTRL_DIR_MASK;
+	mask |= MCHP_GPIO_CTRL_INPAD_DIS_MASK;
 	if (access_op == GPIO_ACCESS_BY_PIN) {
 		if ((flags & GPIO_DIR_MASK) == GPIO_DIR_IN) {
 			pcr1 &= ~BIT(MCHP_GPIO_CTRL_DIR_POS);
