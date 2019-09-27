@@ -438,13 +438,159 @@ static void test_direct_loading(void)
 	zassert_equal(23, val_directly_loaded, NULL);
 }
 
+struct test_loading_data {
+	const char *n;
+	const char *v;
+};
+
+/* Final data */
+static const struct test_loading_data data_final[] = {
+	{ .n = "val/1", .v = "final 1" },
+	{ .n = "val/2", .v = "final 2" },
+	{ .n = "val/3", .v = "final 3" },
+	{ .n = "val/4", .v = "final 4" },
+	{ .n = NULL }
+};
+
+/* The counter of the callback called */
+static unsigned int data_final_called[ARRAY_SIZE(data_final)];
+
+
+static int filtered_loader(
+	const char *key,
+	size_t len,
+	settings_read_cb read_cb,
+	void *cb_arg)
+{
+	int rc;
+	const char *next;
+	char buf[32];
+	const struct test_loading_data *ldata;
+
+	printk("-- Called: %s\n", key);
+
+	/* Searching for a element in an array */
+	for (ldata = data_final; ldata->n; ldata += 1) {
+		if (settings_name_steq(key, ldata->n, &next)) {
+			break;
+		}
+	}
+	zassert_not_null(ldata->n, "Unexpected data name: %s", key);
+	zassert_is_null(next, NULL);
+	zassert_equal(strlen(ldata->v) + 1, len, "e: \"%s\", a:\"%s\"", ldata->v, buf);
+	zassert_true(len <= sizeof(buf), NULL);
+
+	rc = read_cb(cb_arg, buf, len);
+	zassert_equal(len, rc, NULL);
+
+	zassert_false(strcmp(ldata->v, buf), "e: \"%s\", a:\"%s\"", ldata->v, buf);
+
+	/* Count an element that was properly loaded */
+	data_final_called[ldata - data_final] += 1;
+
+	return 0;
+}
+
+static struct settings_handler filtered_loader_settings = {
+	.name = "filtered_test",
+	.h_set = filtered_loader,
+};
+
+
+static int direct_filtered_loader(
+	const char *key,
+	size_t len,
+	settings_read_cb read_cb,
+	void *cb_arg,
+	void *param)
+{
+	zassert_equal(0x3456, (size_t)param, NULL);
+	return filtered_loader(key, len, read_cb, cb_arg);
+}
+
+
+static void test_direct_loading_filter(void)
+{
+	int rc;
+	const struct test_loading_data *ldata;
+	const char *prefix = filtered_loader_settings.name;
+	char buffer[48];
+	size_t n;
+
+	/* Duplicated data */
+	static const struct test_loading_data data_duplicates[] = {
+		{ .n = "val/1", .v = "dup abc" },
+		{ .n = "val/2", .v = "dup 123" },
+		{ .n = "val/3", .v = "dup 11" },
+		{ .n = "val/4", .v = "dup 34" },
+		{ .n = "val/1", .v = "dup 56" },
+		{ .n = "val/2", .v = "dup 7890" },
+		{ .n = "val/4", .v = "dup niety" },
+		{ .n = "val/3", .v = "dup er" },
+		{ .n = "val/3", .v = "dup super" },
+		{ .n = "val/3", .v = "dup xxx" },
+		{ .n = NULL }
+	};
+
+	/* Data that is going to be deleted */
+	strcpy(buffer, prefix);
+	strcat(buffer, "/to_delete");
+	settings_save_one(buffer, "1", 2);
+	settings_delete(buffer);
+
+	/* Saving all the data */
+	for (ldata = data_duplicates; ldata->n; ++ldata) {
+		strcpy(buffer, prefix);
+		strcat(buffer, "/");
+		strcat(buffer, ldata->n);
+		settings_save_one(buffer, ldata->v, strlen(ldata->v) + 1);
+	}
+	for (ldata = data_final; ldata->n; ++ldata) {
+		strcpy(buffer, prefix);
+		strcat(buffer, "/");
+		strcat(buffer, ldata->n);
+		settings_save_one(buffer, ldata->v, strlen(ldata->v) + 1);
+	}
+
+
+	memset(data_final_called, 0, sizeof(data_final_called));
+
+	rc = settings_load_subtree_direct(
+		prefix,
+		direct_filtered_loader,
+		(void *)0x3456);
+	zassert_equal(0, rc, NULL);
+
+	/* Check if all the data was called */
+	for (n = 0; data_final[n].n; ++n) {
+		zassert_equal(1, data_final_called[n],
+			"Unexpected number of calls (%u) of (%s) element",
+			n, data_final[n].n);
+	}
+
+	rc = settings_register(&filtered_loader_settings);
+	zassert_true(rc == 0, NULL);
+
+	rc = settings_load_subtree(prefix);
+	zassert_equal(0, rc, NULL);
+
+	/* Check if all the data was called */
+	for (n = 0; data_final[n].n; ++n) {
+		zassert_equal(2, data_final_called[n],
+			"Unexpected number of calls (%u) of (%s) element",
+			n, data_final[n].n);
+	}
+}
+
+
 void test_main(void)
 {
 	ztest_test_suite(settings_test_suite,
 			 ztest_unit_test(test_clear_settings),
 			 ztest_unit_test(test_support_rtn),
 			 ztest_unit_test(test_register_and_loading),
-			 ztest_unit_test(test_direct_loading)
+			 ztest_unit_test(test_direct_loading),
+			 ztest_unit_test(test_direct_loading_filter)
 			);
 
 	ztest_run_test_suite(settings_test_suite);
