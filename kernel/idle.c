@@ -20,8 +20,11 @@
 #endif
 
 /* Fallback idle spin loop for SMP platforms without a working IPI */
-#define SMP_FALLBACK \
-	(defined(CONFIG_SMP) && !defined(CONFIG_SCHED_IPI_SUPPORTED))
+#if (defined(CONFIG_SMP) && !defined(CONFIG_SCHED_IPI_SUPPORTED))
+#define SMP_FALLBACK 1
+#else
+#define SMP_FALLBACK 0
+#endif
 
 #ifdef CONFIG_SYS_POWER_MANAGEMENT
 /*
