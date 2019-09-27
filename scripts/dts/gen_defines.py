@@ -51,6 +51,15 @@ Directories with bindings:
     args.dts, ", ".join(map(relativize, args.bindings_dirs))
 ), blank_before=False)
 
+    out_comment("Nodes in dependency order (ordinal : path):")
+    for scc in edt.scc_order():
+        if len(scc) > 1:
+            err("Cycle in devicetree involving: {}".format(
+                ", ".join([n.path for n in scc])))
+        node = scc[0]
+        out_comment("{} : {}".format(node.dep_ordinal, node.path),
+                    blank_before = False)
+
     active_compats = set()
 
     for node in edt.nodes:
@@ -60,6 +69,20 @@ Directories with bindings:
             if node.matching_compat == "fixed-partitions":
                 continue
 
+            requires_text = ""
+            if edt.depends_on(node):
+                requires_text = "Requires:\n"
+                for depends in edt.depends_on(node):
+                    requires_text += "  {} {}\n".format(depends.dep_ordinal, depends.path)
+                requires_text += "\n"
+
+            supports_text = ""
+            if edt.required_by(node):
+                supports_text = "Supports:\n"
+                for required in edt.required_by(node):
+                    supports_text += "  {} {}\n".format(required.dep_ordinal, required.path)
+                supports_text += "\n"
+
             out_comment("""\
 Devicetree node:
   {}
@@ -67,9 +90,12 @@ Devicetree node:
 Binding (compatible = {}):
   {}
 
-Description:
+Dependency Ordinal: {}
+
+{}{}Description:
 {}""".format(
     node.path, node.matching_compat, relativize(node.binding_path),
+    node.dep_ordinal, requires_text, supports_text,
     # Indent description by two spaces
     "\n".join("  " + line for line in node.description.splitlines())
 ))

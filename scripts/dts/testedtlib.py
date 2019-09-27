@@ -212,6 +212,24 @@ warning: "#cells:" in test-bindings/deprecated.yaml is deprecated and will be re
                  "test-bindings-2/multidir.yaml")
 
 
+    #
+    # Test dependency relations
+    #
+
+    #for node in edt.nodes:
+    #    print("{}: {}".format(node.path, node.ordinal))
+    #    for before in edt.depends_on(node):
+    #        print("  Requires: {} {}".format(before.ordinal, before.path))
+    #    for after in edt.required_by(node):
+    #        print("  Supports: {} {}".format(after.ordinal, after.path))
+
+    verify_eq(edt.get_node("/").ordinal, 0)
+    verify_eq(edt.get_node("/in-dir-1").ordinal, 1)
+    if edt.get_node("/") not in edt.depends_on(edt.get_node("/in-dir-1")):
+        fail("/ depends-on /in-dir-1")
+    if edt.get_node("/in-dir-1") not in edt.required_by(edt.get_node("/")):
+        fail("/in-dir-1 required-by /")
+
     print("all tests passed")
 
 
