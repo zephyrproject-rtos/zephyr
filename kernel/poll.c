@@ -252,7 +252,7 @@ int z_impl_k_poll(struct k_poll_event *events, int num_events, s32_t timeout)
 				  .thread     = _current,
 				  .cb         = k_poll_poller_cb };
 
-	__ASSERT(!z_is_in_isr(), "");
+	__ASSERT(!z_arch_is_in_isr(), "");
 	__ASSERT(events != NULL, "NULL events\n");
 	__ASSERT(num_events > 0, "zero events\n");
 
@@ -482,3 +482,211 @@ static inline void z_vrfy_k_poll_signal_reset(struct k_poll_signal *signal)
 
 #endif
 
+static void triggered_work_handler(struct k_work *work)
+{
+	k_work_handler_t handler;
+	struct k_work_poll *twork =
+			CONTAINER_OF(work, struct k_work_poll, work);
+
+	/*
+	 * If callback is not set, the k_work_poll_submit_to_queue()
+	 * already cleared event registrations.
+	 */
+	if (twork->poller.cb != NULL) {
+		k_spinlock_key_t key;
+
+		key = k_spin_lock(&lock);
+		clear_event_registrations(twork->events,
+					  twork->num_events, key);
+		k_spin_unlock(&lock, key);
+	}
+
+	/* Drop work ownership and execute real handler. */
+	handler = twork->real_handler;
+	twork->poller.thread = NULL;
+	handler(work);
+}
+
+static void triggered_work_expiration_handler(struct _timeout *timeout)
+{
+	struct k_work_poll *twork =
+		CONTAINER_OF(timeout, struct k_work_poll, timeout);
+	struct k_work_q *work_q =
+		CONTAINER_OF(twork->poller.thread, struct k_work_q, thread);
+
+	twork->poller.is_polling = false;
+	twork->poll_result = -EAGAIN;
+
+	k_work_submit_to_queue(work_q, &twork->work);
+}
+
+static int triggered_work_poller_cb(struct k_poll_event *event, u32_t status)
+{
+	struct _poller *poller = event->poller;
+
+	if (poller->is_polling && poller->thread) {
+		struct k_work_poll *twork =
+			CONTAINER_OF(poller, struct k_work_poll, poller);
+		struct k_work_q *work_q =
+			CONTAINER_OF(poller->thread, struct k_work_q, thread);
+
+		z_abort_timeout(&twork->timeout);
+		twork->poll_result = 0;
+		k_work_submit_to_queue(work_q, &twork->work);
+	}
+
+	return 0;
+}
+
+static int triggered_work_cancel(struct k_work_poll *work,
+				 k_spinlock_key_t key)
+{
+	/* Check if the work waits for event. */
+	if (work->poller.is_polling && work->poller.cb != NULL) {
+		/* Remove timeout associated with the work. */
+		z_abort_timeout(&work->timeout);
+
+		/*
+		 * Prevent work execution if event arrives while we will be
+		 * clearing registrations.
+		 */
+		work->poller.cb = NULL;
+
+		/* Clear registrations and work ownership. */
+		clear_event_registrations(work->events, work->num_events, key);
+		work->poller.thread = NULL;
+		return 0;
+	}
+
+	/*
+	 * If we reached here, the work is either being registered in
+	 * the k_work_poll_submit_to_queue(), executed or is pending.
+	 * Only in the last case we have a chance to cancel it, but
+	 * unfortunately there is no public API performing this task.
+	 */
+
+	return -EINVAL;
+}
+
+void k_work_poll_init(struct k_work_poll *work,
+		      k_work_handler_t handler)
+{
+	k_work_init(&work->work, triggered_work_handler);
+	work->events = NULL;
+	work->poller.thread = NULL;
+	work->real_handler = handler;
+	z_init_timeout(&work->timeout);
+}
+
+int k_work_poll_submit_to_queue(struct k_work_q *work_q,
+				struct k_work_poll *work,
+				struct k_poll_event *events,
+				int num_events,
+				s32_t timeout)
+{
+	int events_registered;
+	k_spinlock_key_t key;
+
+	__ASSERT(work_q != NULL, "NULL work_q\n");
+	__ASSERT(work != NULL, "NULL work\n");
+	__ASSERT(events != NULL, "NULL events\n");
+	__ASSERT(num_events > 0, "zero events\n");
+
+	/* Take overship of the work if it is possible. */
+	key = k_spin_lock(&lock);
+	if (work->poller.thread != NULL) {
+		if (work->poller.thread == &work_q->thread) {
+			int retval;
+
+			retval = triggered_work_cancel(work, key);
+			if (retval < 0) {
+				k_spin_unlock(&lock, key);
+				return retval;
+			}
+		} else {
+			k_spin_unlock(&lock, key);
+			return -EADDRINUSE;
+		}
+	}
+
+	work->poller.is_polling = true;
+	work->poller.thread = &work_q->thread;
+	work->poller.cb = NULL;
+	k_spin_unlock(&lock, key);
+
+	/* Save list of events. */
+	work->events = events;
+	work->num_events = num_events;
+
+	/* Clear result */
+	work->poll_result = -EINPROGRESS;
+
+	/* Register events */
+	events_registered = register_events(events, num_events,
+					    &work->poller, false);
+
+	key = k_spin_lock(&lock);
+	if (work->poller.is_polling && timeout != K_NO_WAIT) {
+		/*
+		 * Poller is still polling.
+		 * No event is ready and all are watched.
+		 */
+		__ASSERT(num_events == events_registered,
+			 "Some events were not registered!\n");
+
+		/* Setup timeout if such action is requested */
+		if (timeout != K_FOREVER) {
+			z_add_timeout(&work->timeout,
+				      triggered_work_expiration_handler,
+				      z_ms_to_ticks(timeout));
+		}
+
+		/* From now, any event will result in submitted work. */
+		work->poller.cb = triggered_work_poller_cb;
+		k_spin_unlock(&lock, key);
+		return 0;
+	}
+
+	/*
+	 * The K_NO_WAIT timeout was specified or at least one event was ready
+	 * at registration time or changed state since registration. Hopefully,
+	 * the poller->cb was not set, so work was not submitted to workqueue.
+	 */
+
+	/*
+	 * If poller is still polling, no watched event occurred. This means
+	 * we reached here due to K_NO_WAIT timeout "expiration".
+	 */
+	if (work->poller.is_polling) {
+		work->poller.is_polling = false;
+		work->poll_result = -EAGAIN;
+	} else {
+		work->poll_result = 0;
+	}
+
+	/* Clear registrations. */
+	clear_event_registrations(events, events_registered, key);
+	k_spin_unlock(&lock, key);
+
+	/* Submit work. */
+	k_work_submit_to_queue(work_q, &work->work);
+
+	return 0;
+}
+
+int k_work_poll_cancel(struct k_work_poll *work)
+{
+	k_spinlock_key_t key;
+	int retval;
+
+	/* Check if the work was submitted. */
+	if (work == NULL || work->poller.thread == NULL) {
+		return -EINVAL;
+	}
+
+	key = k_spin_lock(&lock);
+	retval = triggered_work_cancel(work, key);
+	k_spin_unlock(&lock, key);
+
+	return retval;
+}
