@@ -39,6 +39,10 @@ GDATA(_kernel)
  * When PendSV is pended, the decision that a context switch must happen has
  * already been taken. In other words, when z_arm_pendsv() runs, we *know* we
  * have to swap *something*.
+ *
+ * For Cortex-R, PendSV exception is not supported by the architecture and this
+ * function is directly called either by _IntExit in case of preemption, or
+ * z_arm_svc in case of cooperative switching.
  */
 
 SECTION_FUNC(TEXT, z_arm_pendsv)
@@ -328,7 +332,10 @@ _thread_irq_disabled:
 #endif
 #endif /* CONFIG_TRACING */
 
-    /* exc return */
+    /*
+     * Cortex-M: return from PendSV exception
+     * Cortex-R: return to the caller (_IntExit or z_arm_svc)
+     */
     bx lr
 
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
@@ -514,13 +521,25 @@ valid_syscall_id:
 
     /* return from SVC to the modified LR - z_arm_do_syscall */
     bx lr
-#endif
+#endif /* CONFIG_USERSPACE */
 
 #elif defined(CONFIG_ARMV7_R)
+
+/**
+ *
+ * @brief Service call handler
+ *
+ * The service call (svc) is used in the following occasions:
+ * - Cooperative context switching
+ * - IRQ offloading
+ * - Kernel run-time exceptions
+ *
+ * @return N/A
+ */
 SECTION_FUNC(TEXT, z_arm_svc)
     /*
      * Switch to system mode to store r0-r3 to the process stack pointer.
-     * Save r12 and the lr as we will be swapping in another process and
+     * Save r12 and the lr as we could be swapping in another process and
      * returning to a different location.
      */
     push {r4, r5}
