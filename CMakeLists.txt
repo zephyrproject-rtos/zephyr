@@ -35,8 +35,6 @@ endif()
 # For Zephyr more specifically this breaks (at least)
 #     -fmacro-prefix-map=${ZEPHYR_BASE}=
 
-project(Zephyr-Kernel VERSION ${PROJECT_VERSION})
-enable_language(C CXX ASM)
 
 # Verify that the toolchain can compile a dummy file, if it is not we
 # won't be able to test for compatibility with certain C flags.
