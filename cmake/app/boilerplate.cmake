@@ -470,6 +470,15 @@ endif()
 
 include(${ZEPHYR_BASE}/cmake/target_toolchain.cmake)
 
+project(Zephyr-Kernel VERSION ${PROJECT_VERSION})
+enable_language(C CXX ASM)
+
+# 'project' sets PROJECT_BINARY_DIR to ${CMAKE_CURRENT_BINARY_DIR},
+# but for legacy reasons we need it to be set to
+# ${CMAKE_CURRENT_BINARY_DIR}/zephyr
+set(PROJECT_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/zephyr)
+set(PROJECT_SOURCE_DIR ${ZEPHYR_BASE})
+
 set(KERNEL_NAME ${CONFIG_KERNEL_BIN_NAME})
 
 set(KERNEL_ELF_NAME   ${KERNEL_NAME}.elf)
