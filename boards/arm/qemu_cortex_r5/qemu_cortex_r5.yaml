@@ -46,3 +46,4 @@ testing:
     - userspace
     - util
     - xip
+    - tracing
