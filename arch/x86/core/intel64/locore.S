@@ -24,8 +24,8 @@ __start:
 	 * Remember not to clobber EBX until we've copied the boot info struct!
 	 */
 
-#ifdef CONFIG_X86_MULTIBOOT_INFO
-	cmpl $X86_MULTIBOOT_EAX_MAGIC, %eax
+#ifdef CONFIG_MULTIBOOT_INFO
+	cmpl $MULTIBOOT_EAX_MAGIC, %eax
 	je 1f
 	xorl %ebx, %ebx
 1:
@@ -108,19 +108,19 @@ __start:
 	rep stosq
 #endif
 
-#ifdef CONFIG_X86_MULTIBOOT_INFO
+#ifdef CONFIG_MULTIBOOT_INFO
 	/* If EBX isn't 0, then we have a valid multiboot info struct. */
 
 	testl %ebx, %ebx
 	jz 1f
 	movl %ebx, %esi
 
-	movl $__X86_MULTIBOOT_INFO_SIZEOF, %ecx
-	movq $x86_multiboot_info, %rdi
+	movl $__MULTIBOOT_INFO_SIZEOF, %ecx
+	movq $multiboot_info, %rdi
 	rep
 	movsb
 1:
-#endif /* CONFIG_X86_MULTIBOOT_INFO */
+#endif /* CONFIG_MULTIBOOT_INFO */
 
 	/*
 	 * set up SSE in case something uses the floating-point unit during
@@ -159,18 +159,18 @@ mxcsr:	.long X86_MXCSR_SANE
  * version in ia32/crt0.S. They should be refactored into a common file.
  */
 
-#ifdef CONFIG_X86_MULTIBOOT
+#ifdef CONFIG_MULTIBOOT
 	.align 4
-	.long X86_MULTIBOOT_HEADER_MAGIC
-	.long X86_MULTIBOOT_HEADER_FLAGS
-	.long -(X86_MULTIBOOT_HEADER_MAGIC + X86_MULTIBOOT_HEADER_FLAGS)
-#ifdef CONFIG_X86_MULTIBOOT_FRAMEBUF
+	.long MULTIBOOT_HEADER_MAGIC
+	.long MULTIBOOT_HEADER_FLAGS
+	.long -(MULTIBOOT_HEADER_MAGIC + MULTIBOOT_HEADER_FLAGS)
+#ifdef CONFIG_MULTIBOOT_FRAMEBUF
 	.fill 5,4,0				/* (unused exec layout) */
 	.long 0					/* linear graphics mode */
-	.long CONFIG_X86_MULTIBOOT_FRAMEBUF_X	/* width */
-	.long CONFIG_X86_MULTIBOOT_FRAMEBUF_Y	/* height */
+	.long CONFIG_MULTIBOOT_FRAMEBUF_X	/* width */
+	.long CONFIG_MULTIBOOT_FRAMEBUF_Y	/* height */
 	.long 32				/* depth */
-#endif /* CONFIG_X86_MULTIBOOT_FRAMEBUF */
+#endif /* CONFIG_MULTIBOOT_FRAMEBUF */
 #endif
 
 /*
