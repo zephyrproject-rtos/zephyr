@@ -1448,51 +1448,7 @@ static inline int rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 	}
 	break;
 
-#if defined(CONFIG_BT_OBSERVER) || \
-	defined(CONFIG_BT_CTLR_SCAN_REQ_NOTIFY) || \
-	defined(CONFIG_BT_CTLR_PROFILE_ISR) || \
-	defined(CONFIG_BT_CTLR_ADV_INDICATION) || \
-	defined(CONFIG_BT_CTLR_SCAN_INDICATION)
-#if defined(CONFIG_BT_OBSERVER)
-	case NODE_RX_TYPE_REPORT:
-#endif /* CONFIG_BT_OBSERVER */
-
-#if defined(CONFIG_BT_CTLR_ADV_EXT)
-	case NODE_RX_TYPE_EXT_1M_REPORT:
-	case NODE_RX_TYPE_EXT_CODED_REPORT:
-#endif /* CONFIG_BT_CTLR_ADV_EXT */
-
-#if defined(CONFIG_BT_CTLR_SCAN_REQ_NOTIFY)
-	case NODE_RX_TYPE_SCAN_REQ:
-#endif /* CONFIG_BT_CTLR_SCAN_REQ_NOTIFY */
-
-#if defined(CONFIG_BT_CTLR_PROFILE_ISR)
-	/* fallthrough */
-	case NODE_RX_TYPE_PROFILE:
-#endif /* CONFIG_BT_CTLR_PROFILE_ISR */
-
-#if defined(CONFIG_BT_CTLR_ADV_INDICATION)
-	case NODE_RX_TYPE_ADV_INDICATION:
-#endif /* CONFIG_BT_CTLR_ADV_INDICATION */
-
-#if defined(CONFIG_BT_CTLR_SCAN_INDICATION)
-	case NODE_RX_TYPE_SCAN_INDICATION:
-#endif /* CONFIG_BT_CTLR_SCAN_INDICATION */
-	{
-		memq_dequeue(memq_ull_rx.tail, &memq_ull_rx.head, NULL);
-		ll_rx_put(link, rx);
-		ll_rx_sched();
-	}
-	break;
-#endif /* CONFIG_BT_OBSERVER ||
-	* CONFIG_BT_CTLR_SCAN_REQ_NOTIFY ||
-	* CONFIG_BT_CTLR_PROFILE_ISR ||
-	* CONFIG_BT_CTLR_ADV_INDICATION ||
-	* CONFIG_BT_CTLR_SCAN_INDICATION
-	*/
-
 #if defined(CONFIG_BT_CONN)
-	/* fallthrough */
 	case NODE_RX_TYPE_CONNECTION:
 	{
 		memq_dequeue(memq_ull_rx.tail, &memq_ull_rx.head, NULL);
@@ -1517,7 +1473,54 @@ static inline int rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 		}
 	}
 	break;
+
+	case NODE_RX_TYPE_TERMINATE:
 #endif /* CONFIG_BT_CONN */
+
+#if defined(CONFIG_BT_OBSERVER) || \
+	defined(CONFIG_BT_CTLR_SCAN_REQ_NOTIFY) || \
+	defined(CONFIG_BT_CTLR_PROFILE_ISR) || \
+	defined(CONFIG_BT_CTLR_ADV_INDICATION) || \
+	defined(CONFIG_BT_CTLR_SCAN_INDICATION) || \
+	defined(CONFIG_BT_CONN)
+
+#if defined(CONFIG_BT_OBSERVER)
+	case NODE_RX_TYPE_REPORT:
+#endif /* CONFIG_BT_OBSERVER */
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+	case NODE_RX_TYPE_EXT_1M_REPORT:
+	case NODE_RX_TYPE_EXT_CODED_REPORT:
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
+
+#if defined(CONFIG_BT_CTLR_SCAN_REQ_NOTIFY)
+	case NODE_RX_TYPE_SCAN_REQ:
+#endif /* CONFIG_BT_CTLR_SCAN_REQ_NOTIFY */
+
+#if defined(CONFIG_BT_CTLR_PROFILE_ISR)
+	case NODE_RX_TYPE_PROFILE:
+#endif /* CONFIG_BT_CTLR_PROFILE_ISR */
+
+#if defined(CONFIG_BT_CTLR_ADV_INDICATION)
+	case NODE_RX_TYPE_ADV_INDICATION:
+#endif /* CONFIG_BT_CTLR_ADV_INDICATION */
+
+#if defined(CONFIG_BT_CTLR_SCAN_INDICATION)
+	case NODE_RX_TYPE_SCAN_INDICATION:
+#endif /* CONFIG_BT_CTLR_SCAN_INDICATION */
+	{
+		memq_dequeue(memq_ull_rx.tail, &memq_ull_rx.head, NULL);
+		ll_rx_put(link, rx);
+		ll_rx_sched();
+	}
+	break;
+#endif /* CONFIG_BT_OBSERVER ||
+	* CONFIG_BT_CTLR_SCAN_REQ_NOTIFY ||
+	* CONFIG_BT_CTLR_PROFILE_ISR ||
+	* CONFIG_BT_CTLR_ADV_INDICATION ||
+	* CONFIG_BT_CTLR_SCAN_INDICATION ||
+	* CONFIG_BT_CONN
+	*/
 
 	default:
 	{
