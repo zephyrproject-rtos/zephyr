@@ -14,10 +14,10 @@ behaviors and features that might be cryptic or that are easily overlooked.
 
 .. note::
 
-   The official Kconfig documentation is `kconfig-language.txt
-   <https://raw.githubusercontent.com/torvalds/linux/master/Documentation/kbuild/kconfig-language.txt>`_
-   and `kconfig-macro-language.txt
-   <https://raw.githubusercontent.com/torvalds/linux/master/Documentation/kbuild/kconfig-macro-language.txt>`_.
+   The official Kconfig documentation is `kconfig-language.rst
+   <https://www.kernel.org/doc/html/latest/kbuild/kconfig-language.html>`_
+   and `kconfig-macro-language.rst
+   <https://www.kernel.org/doc/html/latest/kbuild/kconfig-macro-language.html>`_.
 
 
 What to turn into Kconfig options
