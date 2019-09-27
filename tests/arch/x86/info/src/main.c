@@ -4,7 +4,7 @@
  */
 
 #include <zephyr.h>
-#include "x86_info.h"
+#include "info.h"
 
 __weak void multiboot(void)
 {
@@ -18,12 +18,12 @@ __weak void acpi(void)
 
 void main(void)
 {
-	printk("\n\nx86_info: the Zephyr x86 platform information tool\n\n");
+	printk("\n\ninfo: the Zephyr x86 platform information tool\n\n");
 
 	multiboot();
 	memmap();
 	acpi();
 	timer();
 
-	printk("x86_info: complete\n");
+	printk("info: complete\n");
 }
