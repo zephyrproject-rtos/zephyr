@@ -8,6 +8,8 @@
 #include <logging/log_ctrl.h>
 #include <logging/log.h>
 #include <string.h>
+#include <logging/log_link.h>
+LOG_MODULE_REGISTER(log_cmds);
 
 typedef int (*log_backend_cmd_t)(const struct shell *shell,
 				 const struct log_backend *backend,
@@ -87,17 +89,59 @@ static int shell_backend_cmd_execute(const struct shell *shell,
 	return 0;
 }
 
+static char * get_domain_source_name(char * buf, int len, u8_t abs_domain_id,
+				     u16_t source_id)
+{
+	const char *dname;
+	int dname_len;
+	int sname_maxlen;
+
+	if (z_log_is_local_domain(abs_domain_id)) {
+		return (char *)log_source_name_get(NULL, 0, abs_domain_id,
+							source_id);
+	}
+
+	dname = log_domain_name_get(abs_domain_id);
+	dname_len = strlen(dname);
+	sname_maxlen = len - (dname_len + 1);
+	memcpy(buf, dname, dname_len);
+	buf[dname_len++] = '/';
+	log_source_name_get(&buf[dname_len], sname_maxlen,
+			    abs_domain_id, source_id);
+	return buf;
+}
+
+static void print_source_status(const struct shell *shell,
+				const struct log_backend *backend,
+				u8_t domain_id, u16_t source_id)
+{
+	u32_t dynamic_lvl = log_filter_get(backend, domain_id, source_id, true);
+	u32_t static_lvl = log_filter_get(backend, domain_id, source_id, false);
+	char buf[96];
+	const char *src_name;
+
+	src_name = get_domain_source_name(buf, sizeof(buf),
+					  domain_id, source_id);
+
+	shell_fprintf(shell, SHELL_NORMAL, "%-40s | %-7s | %s\r\n", src_name,
+			severity_lvls[dynamic_lvl], severity_lvls[static_lvl]);
+}
+
+typedef bool (*on_each_source_fn_t)(u8_t domain_id, u16_t source_id,
+		void *arg0, void *arg1, void *arg2);
+
+/* Helper macro for iterating over all sources */
+#define LOG_FOR_EACH_SOURCE(code) \
+	for (u8_t d = 0; d < log_domains_count(); d++) { \
+		for (u16_t s = 0; s < log_sources_count(d); s++) { \
+			code; \
+		} \
+	}
 
 static int log_status(const struct shell *shell,
 		      const struct log_backend *backend,
 		      size_t argc, char **argv)
 {
-	u32_t modules_cnt = log_sources_count(Z_LOG_LOCAL_DOMAIN_ID);
-	u32_t dynamic_lvl;
-	u32_t compiled_lvl;
-	u32_t i;
-
-
 	if (!log_backend_is_active(backend)) {
 		shell_warn(shell, "Logs are halted!");
 	}
@@ -107,16 +151,8 @@ static int log_status(const struct shell *shell,
 	shell_fprintf(shell, SHELL_NORMAL,
 	      "----------------------------------------------------------\r\n");
 
-	for (i = 0U; i < modules_cnt; i++) {
-		dynamic_lvl = log_filter_get(backend, Z_LOG_LOCAL_DOMAIN_ID,
-					     i, true);
-		compiled_lvl = log_filter_get(backend, Z_LOG_LOCAL_DOMAIN_ID,
-					      i, false);
+	LOG_FOR_EACH_SOURCE(print_source_status(shell, backend, d, s));
 
-		shell_fprintf(shell, SHELL_NORMAL, "%-40s | %-7s | %s\r\n",
-		       log_source_name_get(NULL, 0, Z_LOG_LOCAL_DOMAIN_ID, i),
-		       severity_lvls[dynamic_lvl], severity_lvls[compiled_lvl]);
-	}
 	return 0;
 }
 
@@ -139,55 +175,72 @@ static int cmd_log_backend_status(const struct shell *shell,
 	return 0;
 }
 
-static int module_id_get(const char *name)
+static int source_find(const char *name, u8_t *abs_domain_id,
+			u16_t *src_domain_id)
 {
-	u32_t modules_cnt = log_sources_count(Z_LOG_LOCAL_DOMAIN_ID);
-	const char *tmp_name;
-	u32_t i;
+	char buf[96];
 
-	for (i = 0U; i < modules_cnt; i++) {
-		tmp_name = log_source_name_get(NULL, 0,
-					       Z_LOG_LOCAL_DOMAIN_ID, i);
-
-		if (strncmp(tmp_name, name, 64) == 0) {
-			return i;
+	LOG_FOR_EACH_SOURCE(
+		if (strcmp(name,
+			get_domain_source_name(buf, sizeof(buf), d, s)) == 0) {
+			*abs_domain_id = d;
+			*src_domain_id = s;
+			return 0;
 		}
+	)
+
+	return -EINVAL;
+}
+
+static void source_set_level(const struct shell *shell,
+			     const struct log_backend *backend,
+			     u8_t abs_domain_id, u16_t source_id, u32_t level)
+{
+	u32_t set_lvl;
+
+	set_lvl = log_filter_set(backend, abs_domain_id, source_id, level);
+	if (set_lvl != level) {
+		char buf[96];
+		const char *name;
+
+		name = log_source_name_get(buf, sizeof(buf),
+					   abs_domain_id, source_id);
+		shell_warn(shell, "%s: level set to %s.",
+			   buf, severity_lvls[set_lvl]);
 	}
-	return -1;
+}
+
+static void named_source_set_level(const struct shell *shell,
+				   const struct log_backend *backend,
+				   const char *name, u32_t level)
+{
+	u8_t abs_domain_id = 0;
+	u16_t source_id = 0;
+	int err;
+
+	err = source_find(name, &abs_domain_id, &source_id);
+	if (err != 0) {
+		shell_error(shell, "%s: unknown source name.", name);
+		return;
+	}
+
+	source_set_level(shell, backend, abs_domain_id, source_id, level);
 }
 
 static void filters_set(const struct shell *shell,
 			const struct log_backend *backend,
 			size_t argc, char **argv, u32_t level)
 {
-	int i;
-	int id;
-	bool all = argc ? false : true;
-	int cnt = all ? log_sources_count(Z_LOG_LOCAL_DOMAIN_ID) : argc;
-
 	if (!backend->cb->active) {
 		shell_warn(shell, "Backend not active.");
 	}
 
-	for (i = 0; i < cnt; i++) {
-		id = all ? i : module_id_get(argv[i]);
-		if (id >= 0) {
-			u32_t set_lvl = log_filter_set(backend,
-						       Z_LOG_LOCAL_DOMAIN_ID,
-						       id, level);
-
-			if (set_lvl != level) {
-				const char *name;
-
-				name = all ?
-					log_source_name_get(NULL, 0,
-						Z_LOG_LOCAL_DOMAIN_ID, i) :
-					argv[i];
-				shell_warn(shell, "%s: level set to %s.",
-					   name, severity_lvls[set_lvl]);
-			}
-		} else {
-			shell_error(shell, "%s: unknown source name.", argv[i]);
+	if (argc == 0) {
+		/* Set level for all modules if no module name specified. */
+		LOG_FOR_EACH_SOURCE(source_set_level(shell, backend, d, s, level));
+	} else {
+		for (size_t i = 0; i < argc; i++) {
+			named_source_set_level(shell, backend, argv[i], level);
 		}
 	}
 }
@@ -268,15 +321,36 @@ static void module_name_get(size_t idx, struct shell_static_entry *entry);
 
 SHELL_DYNAMIC_CMD_CREATE(dsub_module_name, module_name_get);
 
+static void idx_to_domain_source(size_t idx, u8_t *domain_id, u16_t *source_id)
+{
+	for(u8_t d = 0; d < log_domains_count(); d++) {
+		u16_t cnt = log_sources_count(d);
+		if (idx < cnt) {
+			*domain_id = d;
+			*source_id = idx;
+			return;
+		}
+		idx -= cnt;
+	}
+}
+
 static void module_name_get(size_t idx, struct shell_static_entry *entry)
 {
+	u8_t d = 0;
+	u16_t s = idx;
+	/* Note that if name is from remote domain then function is not
+	 * re-entrant and it will lead to invalid data being printed on one
+	 * shell if two shell instances execute autocompletion of log command
+	 * at once. It is rather unlikely thus risk is taken.
+	 */
+	static char buf[96];
+
+	idx_to_domain_source(idx, &d, &s);
 	entry->handler = NULL;
 	entry->help  = NULL;
 	entry->subcmd = &dsub_module_name;
-	entry->syntax =
-		log_source_name_get(NULL, 0, Z_LOG_LOCAL_DOMAIN_ID, idx);
+	entry->syntax = get_domain_source_name(buf, sizeof(buf), d, s);
 }
-
 
 static void severity_lvl_get(size_t idx, struct shell_static_entry *entry)
 {
