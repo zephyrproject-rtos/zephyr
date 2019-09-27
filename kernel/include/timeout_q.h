@@ -22,7 +22,7 @@ extern "C" {
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 
-static inline void z_init_timeout(struct _timeout *t, _timeout_func_t fn)
+static inline void z_init_timeout(struct _timeout *t)
 {
 	sys_dnode_init(&t->node);
 }
@@ -38,7 +38,7 @@ static inline bool z_is_inactive_timeout(struct _timeout *t)
 
 static inline void z_init_thread_timeout(struct _thread_base *thread_base)
 {
-	z_init_timeout(&thread_base->timeout, NULL);
+	z_init_timeout(&thread_base->timeout);
 }
 
 extern void z_thread_timeout(struct _timeout *to);
