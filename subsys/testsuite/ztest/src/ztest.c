@@ -55,6 +55,7 @@ static int cleanup_test(struct unit_test *test)
 	return ret;
 }
 
+#ifdef KERNEL
 #ifdef CONFIG_SMP
 #define NUM_CPUHOLD (CONFIG_MP_NUM_CPUS - 1)
 #else
@@ -123,6 +124,8 @@ void z_test_1cpu_stop(void)
 		k_thread_abort(&cpuhold_threads[i]);
 	}
 }
+
+#endif
 
 static void run_test_functions(struct unit_test *test)
 {
