@@ -17,37 +17,9 @@
 .globl __start
 __start:
 
-	/*
-	 * multiboot starts us here in 32-bit flat mode with interrupts and
-	 * paging disabled. first, check to see if EAX has a valid multiboot
-	 * magic in it, and if not, zero EBX so we know it's bogus later.
-	 * Remember not to clobber EBX until we've copied the boot info struct!
-	 */
+#include "../common.S"
 
-#ifdef CONFIG_MULTIBOOT_INFO
-	cmpl $MULTIBOOT_EAX_MAGIC, %eax
-	je 1f
-	xorl %ebx, %ebx
-1:
-#endif
-
-	/* FIXME: ...resetting TSC here is common to IA32 and Intel64... */
-	/* FIXME: ...disabling the PICs is common to IA32 and Intel64... */
-
-#ifdef CONFIG_BOOT_TIME_MEASUREMENT
-	xorl %eax, %eax
-	xorl %edx, %edx
-	movl $X86_TIME_STAMP_COUNTER_MSR, %ecx
-	wrmsr
-#endif
-
-#ifdef CONFIG_PIC_DISABLE
-	movb $0xff, %al
-	outb %al, $0x21
-	outb %al, $0xA1
-#endif
-
-	/* next, switch to our own GDT/IDT and stack. */
+	/* switch to our own GDT/IDT and stack. */
 
 	lgdt gdt48
 	lidt idt48
@@ -140,25 +112,6 @@ x86_sse_init:
 1:	retq
 
 mxcsr:	.long X86_MXCSR_SANE
-
-/*
- * FIXME: The multiboot header is identical (for obvious reasons) to the
- * version in ia32/crt0.S. They should be refactored into a common file.
- */
-
-#ifdef CONFIG_MULTIBOOT
-	.align 4
-	.long MULTIBOOT_HEADER_MAGIC
-	.long MULTIBOOT_HEADER_FLAGS
-	.long -(MULTIBOOT_HEADER_MAGIC + MULTIBOOT_HEADER_FLAGS)
-#ifdef CONFIG_MULTIBOOT_FRAMEBUF
-	.fill 5,4,0				/* (unused exec layout) */
-	.long 0					/* linear graphics mode */
-	.long CONFIG_MULTIBOOT_FRAMEBUF_X	/* width */
-	.long CONFIG_MULTIBOOT_FRAMEBUF_Y	/* height */
-	.long 32				/* depth */
-#endif /* CONFIG_MULTIBOOT_FRAMEBUF */
-#endif
 
 /*
  * void z_arch_switch(void *switch_to, void **switched_from);
