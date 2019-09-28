@@ -87,11 +87,11 @@ SECTIONS
 	*(.bss)
 	*(.bss.*)
 	*(COMMON)
-	. = ALIGN(8);	/* so __bss_num_qwords is exact */
+	. = ALIGN(4);	/* so __bss_num_dwords is exact */
 	__bss_end = .;
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
 
-	__bss_num_qwords = (__bss_end - __bss_start) >> 3;
+	__bss_num_dwords = (__bss_end - __bss_start) >> 2;
 
 	SECTION_PROLOGUE(_NOINIT_SECTION_NAME, (NOLOAD), ALIGN(16))
 	{
