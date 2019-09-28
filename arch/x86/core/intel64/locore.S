@@ -31,6 +31,17 @@ __start:
 	movw %ax, %fs
 	movw %ax, %gs
 
+	/*
+	 * clear the BSS. note that we do this in 32-bit mode, so
+	 * the BSS must fit entirely in the first 4GB of RAM.
+	 */
+
+	cld
+	xorl %eax, %eax
+	movl $__bss_start, %edi
+	movl $__bss_num_dwords, %ecx
+	rep stosl
+
 	movl $(_interrupt_stack + CONFIG_ISR_STACK_SIZE), %esp
 
 	/* transition to long mode. along the way, we enable SSE. */
@@ -67,11 +78,7 @@ __start:
 	movl $X86_KERNEL_GS_64, %eax
 	movw %ax, %gs
 
-	cld
-	xorl %eax, %eax
-	movq $__bss_start, %rdi
-	movq $__bss_num_qwords, %rcx
-	rep stosq
+	movl $(_interrupt_stack + CONFIG_ISR_STACK_SIZE), %esp
 
 #ifdef CONFIG_INIT_STACKS
 	movq $0xAAAAAAAAAAAAAAAA, %rax
