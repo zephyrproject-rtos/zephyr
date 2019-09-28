@@ -59,7 +59,7 @@
 #include <tinycrypt/ecc.h>
 #include <tinycrypt/ecc_dh.h>
 #include <tinycrypt/ecc_platform_specific.h>
-#include <test_ecc_utils.h>
+#include "test_ecc_utils.h"
 #include <test_utils.h>
 #include <tinycrypt/constants.h>
 
