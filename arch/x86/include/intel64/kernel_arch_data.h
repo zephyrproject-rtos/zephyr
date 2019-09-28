@@ -28,6 +28,10 @@
 
 #ifndef _ASMLANGUAGE
 
+/* linker symbols defining the bounds of the kernel part loaded in locore */
+
+extern char _locore_start[], _locore_end[];
+
 /*
  * 64-bit Task State Segment. One defined per CPU.
  */
