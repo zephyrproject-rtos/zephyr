@@ -66,18 +66,13 @@ static u32_t loapic_device_power_state = DEVICE_PM_ACTIVE_STATE;
 #endif
 
 /**
+ * @brief Enable and initialize the local APIC.
  *
- * @brief Initialize the Local APIC or xAPIC
- *
- * This routine initializes Local APIC or xAPIC.
- *
- * @return N/A
- *
+ * Called from early assembly layer (e.g., crt0.S).
  */
 
-static int loapic_init(struct device *unused)
+void z_loapic_enable(void)
 {
-	ARG_UNUSED(unused);
 	s32_t loApicMaxLvt; /* local APIC Max LVT */
 
 	/*
@@ -150,7 +145,19 @@ static int loapic_init(struct device *unused)
 
 	/* discard a pending interrupt if any */
 	x86_write_loapic(LOAPIC_EOI, 0);
+}
 
+/**
+ *
+ * @brief Dummy initialization function.
+ *
+ * The local APIC is initialized via z_loapic_enable() long before the
+ * kernel runs through its device initializations, so this is unneeded.
+ */
+
+static int loapic_init(struct device *unused)
+{
+	ARG_UNUSED(unused);
 	return 0;
 }
 

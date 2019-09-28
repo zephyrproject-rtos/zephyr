@@ -88,6 +88,10 @@ __start:
 	xorl %edi, %edi
 	call x86_sse_init
 
+#ifdef CONFIG_LOAPIC
+	call z_loapic_enable
+#endif
+
 	/* don't replace CALL with JMP; honor the ABI stack alignment! */
 
 	movl %ebx, %edi		/* multiboot pointer (or NULL) */
