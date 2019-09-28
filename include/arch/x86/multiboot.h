@@ -77,8 +77,8 @@ struct multiboot_mmap {
  * is when we want the loader to configure the framebuffer for us.
  */
 
-#define MULTIBOOT_HEADER_FLAG_MEM	(1 << 1)  /* want mem_/mmap_* info */
-#define MULTIBOOT_HEADER_FLAG_FB	(1 << 2)  /* want fb_* info */
+#define MULTIBOOT_HEADER_FLAG_MEM	BIT(1)	/* want mem_/mmap_* info */
+#define MULTIBOOT_HEADER_FLAG_FB	BIT(2)	/* want fb_* info */
 
 #ifdef CONFIG_MULTIBOOT_FRAMEBUF
 #define MULTIBOOT_HEADER_FLAGS \
