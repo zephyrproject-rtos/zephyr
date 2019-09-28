@@ -159,8 +159,7 @@ void idle(void *unused1, void *unused2, void *unused3)
 #else
 		(void)z_arch_irq_lock();
 		sys_power_save_idle();
-
 		IDLE_YIELD_IF_COOP();
-	}
 #endif
+	}
 }
