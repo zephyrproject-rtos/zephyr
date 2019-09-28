@@ -49,6 +49,7 @@
 extern "C" {
 #endif
 
+extern void z_loapic_enable(void);
 extern void z_loapic_int_vec_set(unsigned int irq, unsigned int vector);
 extern void z_loapic_irq_enable(unsigned int irq);
 extern void z_loapic_irq_disable(unsigned int irq);

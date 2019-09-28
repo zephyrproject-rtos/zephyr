@@ -235,6 +235,10 @@ __csSet:
 #endif
 	lidt	z_x86_idt		/* load 32-bit operand size IDT */
 
+#ifdef CONFIG_LOAPIC
+	call	z_loapic_enable
+#endif
+
 	pushl	%ebx		/* pointer to multiboot info, or NULL */
 	call	z_x86_prep_c	/* enter kernel; never returns */
 
