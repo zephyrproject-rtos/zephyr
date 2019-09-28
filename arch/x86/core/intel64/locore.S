@@ -63,17 +63,17 @@ __start:
 
 	lgdt gdt48
 	lidt idt48
-	jmpl $X86_KERNEL_CS_64, $1f
+	jmpl $X86_KERNEL_CS, $1f
 .code64
-1:	movl $X86_KERNEL_DS_64, %eax
+1:	movl $X86_KERNEL_DS, %eax
 	movw %ax, %ds
 	movw %ax, %es
 	movw %ax, %ss
 	movw %ax, %fs
 
-	movl $X86_KERNEL_TSS, %eax
+	movl $X86_KERNEL_CPU0_TR, %eax
 	ltr %ax
-	movl $X86_KERNEL_GS_64, %eax
+	movl $X86_KERNEL_CPU0_GS, %eax
 	movw %ax, %gs
 
 	movl $(_interrupt_stack + CONFIG_ISR_STACK_SIZE), %esp
@@ -158,10 +158,10 @@ z_arch_switch:
  */
 
 __resume:
-	pushq $X86_KERNEL_DS_64			/* SS */
+	pushq $X86_KERNEL_DS			/* SS */
 	pushq _thread_offset_to_rsp(%rdi)	/* RSP */
 	pushq _thread_offset_to_rflags(%rdi)	/* RFLAGS */
-	pushq $X86_KERNEL_CS_64			/* CS */
+	pushq $X86_KERNEL_CS			/* CS */
 	pushq _thread_offset_to_rip(%rdi)	/* RIP */
 
 	movq _thread_offset_to_rbx(%rdi), %rbx
@@ -231,7 +231,7 @@ gdt48:
 #define INTR 0x8e
 
 #define IDT(nr, type, ist) \
-	.word vector_ ## nr, X86_KERNEL_CS_64; \
+	.word vector_ ## nr, X86_KERNEL_CS; \
 	.byte ist, type; \
 	.word 0, 0, 0, 0, 0
 

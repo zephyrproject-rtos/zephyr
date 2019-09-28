@@ -20,11 +20,11 @@
 
 #define X86_KERNEL_CS_32	0x08	/* 32-bit kernel code */
 #define X86_KERNEL_DS_32	0x10	/* 32-bit kernel data */
-#define X86_KERNEL_CS_64	0x18	/* 64-bit kernel code */
-#define X86_KERNEL_DS_64	0x20	/* 64-bit kernel data */
+#define X86_KERNEL_CS		0x18	/* 64-bit kernel code */
+#define X86_KERNEL_DS		0x20	/* 64-bit kernel data */
 
-#define X86_KERNEL_GS_64	0x30	/* data selector covering TSS */
-#define X86_KERNEL_TSS		0x40	/* 64-bit task state segment */
+#define X86_KERNEL_CPU0_GS	0x30	/* data selector covering TSS */
+#define X86_KERNEL_CPU0_TR	0x40	/* 64-bit task state segment */
 
 #ifndef _ASMLANGUAGE
 
