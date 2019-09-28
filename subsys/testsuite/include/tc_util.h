@@ -42,10 +42,10 @@
  *
  * TC_RUNID is any string, that will be converted to a string literal.
  */
-#define __str(x) #x
-#define _str(x) __str(x)
+#define TC_STR_HELPER(x) #x
+#define TC_STR(x) TC_STR_HELPER(x)
 #ifdef TC_RUNID
-#define TC_PRINT_RUNID PRINT_DATA("RunID: " _str(TC_RUNID) "\n")
+#define TC_PRINT_RUNID PRINT_DATA("RunID: " TC_STR(TC_RUNID) "\n")
 #else
 #define TC_PRINT_RUNID do {} while (0)
 #endif
