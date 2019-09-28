@@ -3,6 +3,7 @@
 # Copyright (c) 2019 Nordic Semiconductor ASA
 # SPDX-License-Identifier: BSD-3-Clause
 
+import io
 import sys
 
 import edtlib
@@ -34,7 +35,18 @@ def run():
     def verify_streq(actual, expected):
         verify_eq(str(actual), expected)
 
-    edt = edtlib.EDT("test.dts", ["test-bindings"])
+    warnings = io.StringIO()
+    edt = edtlib.EDT("test.dts", ["test-bindings"], warnings)
+
+    # Deprecated features are tested too, which generate warnings. Verify them.
+    verify_streq(warnings.getvalue(), """\
+warning: The 'properties: compatible: constraint: ...' way of specifying the compatible in test-bindings/deprecated.yaml is deprecated. Put 'compatible: "deprecated"' at the top level of the binding instead.
+warning: the 'inherits:' syntax in test-bindings/deprecated.yaml is deprecated and will be removed - please use 'include: foo.yaml' or 'include: [foo.yaml, bar.yaml]' instead
+warning: please put 'required: true' instead of 'category: required' in properties: required: ...' in test-bindings/deprecated.yaml - 'category' will be removed
+warning: please put 'required: false' instead of 'category: optional' in properties: optional: ...' in test-bindings/deprecated.yaml - 'category' will be removed
+warning: 'sub-node: properties: ...' in test-bindings/deprecated.yaml is deprecated and will be removed - please give a full binding for the child node in 'child-binding:' instead (see binding-template.yaml)
+warning: "#cells:" in test-bindings/deprecated.yaml is deprecated and will be removed - please put 'interrupt-cells:', 'pwm-cells:', 'gpio-cells:', etc., instead. The name should match the name of the corresponding phandle-array property (see binding-template.yaml)
+""")
 
     #
     # Test interrupts
