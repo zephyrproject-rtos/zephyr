@@ -24,9 +24,11 @@ SECTIONS
 
 	.locore 0x8000 : ALIGN(16)
 	{
+	_locore_start = .;
 	*(.locore)
 	*(.locore.*)
 	*(.tss)
+	_locore_end = .;
 	}
 
 	/*
@@ -36,6 +38,7 @@ SECTIONS
 
 	SECTION_PROLOGUE(_TEXT_SECTION_NAME,,ALIGN(16))
 	{
+	_image_rom_start = .;
 	*(.text)
 	*(.text.*)
 	} GROUP_LINK_IN(ROMABLE_REGION)
@@ -61,9 +64,11 @@ SECTIONS
 
 	_image_rodata_end = .;
 	_image_rodata_size = _image_rodata_end - _image_rodata_start;
+	_image_rom_end = .;
 
 	SECTION_PROLOGUE(_DATA_SECTION_NAME,,ALIGN(16))
 	{
+	_image_ram_start = .;
 	*(.data)
 	*(.data.*)
 	#include <snippets-rwdata.ld>
@@ -101,6 +106,7 @@ SECTIONS
 #endif /* CONFIG_CUSTOM_SECTIONS_LD */
 
 	. = ALIGN(8);
+	_image_ram_end = .;
 	_end = .;
 
 	/DISCARD/ :
