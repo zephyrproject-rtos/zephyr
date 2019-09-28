@@ -8,11 +8,13 @@
 #include <arch/x86/acpi.h>
 #include <arch/x86/multiboot.h>
 
+extern FUNC_NORETURN void z_cstart(void);
+
 FUNC_NORETURN void z_x86_prep_c(struct multiboot_info *info)
 {
-	_kernel.nested = 0;
-	_kernel.irq_stack = Z_THREAD_STACK_BUFFER(_interrupt_stack) +
-				CONFIG_ISR_STACK_SIZE;
+	_kernel.cpus[0].nested = 0;
+	_kernel.cpus[0].irq_stack = Z_THREAD_STACK_BUFFER(_interrupt_stack) +
+					CONFIG_ISR_STACK_SIZE;
 
 #ifdef CONFIG_X86_VERY_EARLY_CONSOLE
 	z_x86_early_serial_init();
