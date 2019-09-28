@@ -65,6 +65,21 @@ config CANOPEN_STORAGE_HANDLER_ERASES_EEPROM
 	  Erase CANopen object dictionary EEPROM entries upon write to
 	  object dictionary index 0x1011 subindex 1.
 
+config CANOPEN_LEDS
+	bool "CANopen LED indicators"
+	default y
+	help
+	  Enable support for CANopen LED indicators according to the CiA
+	  303-3 specification.
+
+config CANOPEN_LEDS_BICOLOR
+	bool "CANopen bicolor LED indicator"
+	depends on CANOPEN_LEDS
+	help
+	  Handle CANopen LEDs as one bicolor LED, favoring the red LED
+	  over the green LED in accordance with the CiA 303-3
+	  specification.
+
 config CANOPEN_SYNC_THREAD
 	bool "CANopen SYNC thread"
 	default y

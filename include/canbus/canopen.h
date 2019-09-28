@@ -86,6 +86,32 @@ int canopen_storage_save(enum canopen_storage storage);
  */
 int canopen_storage_erase(enum canopen_storage storage);
 
+/**
+ * @typedef canopen_led_callback_t
+ * @brief CANopen LED indicator callback function signature.
+ *
+ * @param value true if the LED indicator shall be turned on, false otherwise.
+ * @param arg argument that was passed when LEDs were initialized.
+ */
+typedef void (*canopen_led_callback_t)(bool value, void *arg);
+
+/**
+ * @brief Initialize CANopen LED indicators.
+ *
+ * Initialize CANopen LED indicators and attach callbacks for setting
+ * their state. Two LED indicators, a red and a green, are supported
+ * according to CiA 303-3.
+ *
+ * @param nmt CANopenNode NMT object.
+ * @param green_cb callback for changing state on the green LED indicator.
+ * @param green_arg argument to pass to the green LED indicator callback.
+ * @param red_cb callback for changing state on the red LED indicator.
+ * @param red_arg argument to pass to the red LED indicator callback.
+ */
+void canopen_leds_init(CO_NMT_t *nmt,
+		       canopen_led_callback_t green_cb, void *green_arg,
+		       canopen_led_callback_t red_cb, void *red_arg);
+
 #ifdef __cplusplus
 }
 #endif
